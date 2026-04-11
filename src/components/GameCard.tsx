@@ -34,6 +34,13 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-yellow-400',
     gradient: 'from-yellow-600/20 to-amber-600/20',
   },
+  [GameType.G2048]: {
+    title: '2048',
+    description: '滑动合并数字方块，挑战达到 2048！简单规则，无限策略。',
+    icon: '🎯',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-orange-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

@@ -50,6 +50,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '点击屏幕 / 空格 / ↑ 跳跃 | 穿越管道得分',
     difficulty: '困难',
   },
+  [GameType.G2048]: {
+    type: GameType.G2048,
+    name: '2048',
+    description: '滑动合并数字方块，挑战达到 2048！简单规则，无限策略。',
+    icon: '🎯',
+    color: '#f59e0b',
+    gradient: 'from-amber-500 to-orange-400',
+    controls: '方向键 / WASD 滑动 | 合并相同数字',
+    difficulty: '中等',
+  },
 };
 
 // ========== Storage Keys ==========

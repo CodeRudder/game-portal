@@ -4,6 +4,7 @@ export enum GameType {
   SNAKE = 'snake',
   SOKOBAN = 'sokoban',
   FLAPPY_BIRD = 'flappy-bird',
+  G2048 = 'g2048',
 }
 
 // ========== 游戏状态枚举 ==========

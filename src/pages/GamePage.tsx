@@ -10,6 +10,7 @@ const VALID_TYPES: Record<string, GameType> = {
   snake: GameType.SNAKE,
   sokoban: GameType.SOKOBAN,
   'flappy-bird': GameType.FLAPPY_BIRD,
+  'g2048': GameType.G2048,
 };
 
 export default function GamePage() {
