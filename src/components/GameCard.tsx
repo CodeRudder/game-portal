@@ -27,6 +27,13 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-orange-400',
     gradient: 'from-orange-600/20 to-red-600/20',
   },
+  [GameType.FLAPPY_BIRD]: {
+    title: 'Flappy Bird',
+    description: '点击屏幕控制小鸟飞行，穿越管道，看你能飞多远！',
+    icon: '🐦',
+    color: 'text-yellow-400',
+    gradient: 'from-yellow-600/20 to-amber-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

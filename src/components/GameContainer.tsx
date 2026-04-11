@@ -4,6 +4,7 @@ import { GameType as GameTypeEnum } from '@/types';
 import { TetrisEngine } from '@/games/tetris/TetrisEngine';
 import { SnakeEngine } from '@/games/snake/SnakeEngine';
 import { SokobanEngine } from '@/games/sokoban/SokobanEngine';
+import { FlappyBirdEngine } from '@/games/flappy-bird/FlappyBirdEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -16,6 +17,7 @@ function createEngine(type: GameType) {
     case GameTypeEnum.TETRIS: return new TetrisEngine();
     case GameTypeEnum.SNAKE: return new SnakeEngine();
     case GameTypeEnum.SOKOBAN: return new SokobanEngine();
+    case GameTypeEnum.FLAPPY_BIRD: return new FlappyBirdEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
@@ -107,6 +109,26 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
       window.removeEventListener('keyup', upHandler);
     };
   }, []);
+
+  // 点击/触摸（Flappy Bird 等需要点击的游戏）
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleClick = (e: Event) => {
+      e.preventDefault();
+      if (engineRef.current && gameType === GameTypeEnum.FLAPPY_BIRD) {
+        (engineRef.current as FlappyBirdEngine).flap();
+      }
+    };
+
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleClick, { passive: false });
+    return () => {
+      canvas.removeEventListener('click', handleClick);
+      canvas.removeEventListener('touchstart', handleClick);
+    };
+  }, [gameType]);
 
   const start = useCallback(() => {
     const e = engineRef.current;
@@ -218,10 +240,11 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
 
       {/* 操作提示 */}
       <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-500">
-        {!isSokoban && <span>↑↓←→ / WASD 移动</span>}
+        {!isSokoban && gameType !== GameTypeEnum.FLAPPY_BIRD && <span>↑↓←→ / WASD 移动</span>}
         {gameType === GameTypeEnum.TETRIS && <span>↑ 旋转 · ↓ 加速 · 空格 硬降</span>}
         {gameType === GameTypeEnum.SNAKE && <span>吃食物增长 · 碰墙或自身结束</span>}
         {isSokoban && <span>方向键移动 · Z 撤销 · R 重置关卡</span>}
+        {gameType === GameTypeEnum.FLAPPY_BIRD && <span>点击屏幕 / 空格键 / ↑ 跳跃 · 穿越管道得分</span>}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ const VALID_TYPES: Record<string, GameType> = {
   tetris: GameType.TETRIS,
   snake: GameType.SNAKE,
   sokoban: GameType.SOKOBAN,
+  'flappy-bird': GameType.FLAPPY_BIRD,
 };
 
 export default function GamePage() {

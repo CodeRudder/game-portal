@@ -3,6 +3,7 @@ export enum GameType {
   TETRIS = 'tetris',
   SNAKE = 'snake',
   SOKOBAN = 'sokoban',
+  FLAPPY_BIRD = 'flappy-bird',
 }
 
 // ========== 游戏状态枚举 ==========

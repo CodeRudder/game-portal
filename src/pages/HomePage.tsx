@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import GameCard from '../components/GameCard';
 import ScoreBoard from '../components/ScoreBoard';
 
-const GAMES: GameType[] = [GameType.TETRIS, GameType.SNAKE, GameType.SOKOBAN];
+const GAMES: GameType[] = [GameType.TETRIS, GameType.SNAKE, GameType.SOKOBAN, GameType.FLAPPY_BIRD];
 
 export default function HomePage() {
   return (

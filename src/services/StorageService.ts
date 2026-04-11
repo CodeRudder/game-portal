@@ -40,6 +40,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键 / WASD 移动 | R 重置关卡 | Z 撤销',
     difficulty: '困难',
   },
+  [GameType.FLAPPY_BIRD]: {
+    type: GameType.FLAPPY_BIRD,
+    name: 'Flappy Bird',
+    description: '点击屏幕让小鸟跳跃，穿越管道间的缝隙。看似简单，实则极具挑战！',
+    icon: '🐦',
+    color: '#ffd32a',
+    gradient: 'from-yellow-400 to-orange-400',
+    controls: '点击屏幕 / 空格 / ↑ 跳跃 | 穿越管道得分',
+    difficulty: '困难',
+  },
 };
 
 // ========== Storage Keys ==========
