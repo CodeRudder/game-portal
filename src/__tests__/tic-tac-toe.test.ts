@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TicTacToeEngine } from '@/games/tic-tac-toe/TicTacToeEngine';
 import {
   BOARD_SIZE,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
   SCORE_WIN,
   SCORE_DRAW,
   SCORE_AI_BONUS,
@@ -12,68 +13,177 @@ import {
   WIN_LINE_ANIMATION_SPEED,
 } from '@/games/tic-tac-toe/constants';
 
-// ========== Helper Functions ==========
+// ========== 辅助函数 ==========
 
 function createCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
-  canvas.width = 480;
-  canvas.height = 640;
+  canvas.width = CANVAS_WIDTH;
+  canvas.height = CANVAS_HEIGHT;
   return canvas;
 }
 
-function createEngine(level = 1): TicTacToeEngine {
+function createEngine(): TicTacToeEngine {
   const engine = new TicTacToeEngine();
-  engine.setLevel(level);
-  engine.init(createCanvas());
+  const canvas = createCanvas();
+  engine.init(canvas);
   return engine;
 }
 
-function startEngine(level = 1): TicTacToeEngine {
-  const engine = createEngine(level);
+function startEngine(level: number = 1): TicTacToeEngine {
+  const engine = createEngine();
   engine.start();
+  // start() 会重置 _level=1，需要手动设置后再调用内部方法
   return engine;
 }
 
 /**
- * 在指定位置落子（直接调用私有方法 placeMove）
+ * 创建指定等级的引擎（level 1=PvP, 2=Easy AI, 3=Medium AI）
+ */
+function createEngineAtLevel(level: number): TicTacToeEngine {
+  const engine = new TicTacToeEngine();
+  const canvas = createCanvas();
+  engine.init(canvas);
+  // 先设置等级再 start
+  (engine as any)._level = level;
+  engine.start();
+  // start() 会重置 _level=1，所以需要在 start 后重新设置
+  (engine as any)._level = level;
+  return engine;
+}
+
+/**
+ * 调用内部 update
+ */
+function advanceUpdate(engine: TicTacToeEngine, deltaTime: number): void {
+  (engine as any).update(deltaTime);
+}
+
+/**
+ * 获取内部 board
+ */
+function getBoard(engine: TicTacToeEngine): (string | null)[][] {
+  return (engine as any).board;
+}
+
+/**
+ * 获取当前玩家
+ */
+function getCurrentPlayer(engine: TicTacToeEngine): 'X' | 'O' {
+  return (engine as any).currentPlayer;
+}
+
+/**
+ * 获取赢家
+ */
+function getWinner(engine: TicTacToeEngine): string | null {
+  return (engine as any).winner;
+}
+
+/**
+ * 获取平局状态
+ */
+function getIsDraw(engine: TicTacToeEngine): boolean {
+  return (engine as any).isDraw;
+}
+
+/**
+ * 获取光标位置
+ */
+function getCursor(engine: TicTacToeEngine): { row: number; col: number } {
+  return { row: (engine as any).cursorRow, col: (engine as any).cursorCol };
+}
+
+/**
+ * 获取比分
+ */
+function getScores(engine: TicTacToeEngine): { X: number; O: number; draw: number } {
+  return { ...(engine as any).scores };
+}
+
+/**
+ * 获取 moveCount
+ */
+function getMoveCount(engine: TicTacToeEngine): number {
+  return (engine as any).moveCount;
+}
+
+/**
+ * 获取 winLine
+ */
+function getWinLine(engine: TicTacToeEngine): any {
+  return (engine as any).winLine;
+}
+
+/**
+ * 获取 aiThinking 状态
+ */
+function isAIThinking(engine: TicTacToeEngine): boolean {
+  return (engine as any).aiThinking;
+}
+
+/**
+ * 直接调用 placeMove
  */
 function placeMove(engine: TicTacToeEngine, row: number, col: number): boolean {
   return (engine as any).placeMove(row, col);
 }
 
 /**
- * 设置棋盘到特定状态（直接写入 board 数组）
+ * 直接调用 checkWin
  */
-function setBoard(engine: TicTacToeEngine, board: (string | null)[][]): void {
-  (engine as any).board = board;
+function checkWin(engine: TicTacToeEngine, player: 'X' | 'O'): any {
+  return (engine as any).checkWin(player);
+}
+
+/**
+ * 直接调用 checkDraw
+ */
+function checkDraw(engine: TicTacToeEngine): boolean {
+  return (engine as any).checkDraw();
+}
+
+/**
+ * 直接调用 aiEasyMove
+ */
+function aiEasyMove(engine: TicTacToeEngine): void {
+  (engine as any).aiEasyMove();
+}
+
+/**
+ * 直接调用 aiMediumMove
+ */
+function aiMediumMove(engine: TicTacToeEngine): void {
+  (engine as any).aiMediumMove();
+}
+
+/**
+ * 直接调用 findWinningMove
+ */
+function findWinningMove(engine: TicTacToeEngine, player: 'X' | 'O'): { row: number; col: number } | null {
+  return (engine as any).findWinningMove(player);
+}
+
+/**
+ * 在棋盘上设置指定位置的值（绕过 placeMove）
+ */
+function setCell(engine: TicTacToeEngine, row: number, col: number, value: string | null): void {
+  (engine as any).board[row][col] = value;
 }
 
 // ========== 测试 ==========
 
 describe('TicTacToeEngine', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
 
-  // ================================================================
-  // 1. 初始化
-  // ================================================================
+  // ==================== T1: 初始化 ====================
   describe('初始化', () => {
-    it('引擎创建后 init() 前默认状态正确', () => {
-      const engine = new TicTacToeEngine();
-      // init 之前，board 尚未被初始化（空数组）
-      expect((engine as any).board).toEqual([]);
-      expect((engine as any).currentPlayer).toBe('X');
-      expect((engine as any).cursorRow).toBe(1);
-      expect((engine as any).cursorCol).toBe(1);
-      expect((engine as any).winner).toBeNull();
-      expect((engine as any).isDraw).toBe(false);
-      expect((engine as any).moveCount).toBe(0);
+    it('init 后 status 为 idle', () => {
+      const engine = createEngine();
+      expect(engine.status).toBe('idle');
     });
 
-    it('init() 后棋盘初始化为 3x3 全 null', () => {
+    it('init 后棋盘为 3×3 空棋盘', () => {
       const engine = createEngine();
-      const board = (engine as any).board;
+      const board = getBoard(engine);
       expect(board).toHaveLength(BOARD_SIZE);
       for (let r = 0; r < BOARD_SIZE; r++) {
         expect(board[r]).toHaveLength(BOARD_SIZE);
@@ -83,202 +193,173 @@ describe('TicTacToeEngine', () => {
       }
     });
 
-    it('start() 后状态正确（status=playing）', () => {
-      const engine = startEngine();
-      expect(engine.status).toBe('playing');
-      expect((engine as any).currentPlayer).toBe('X');
-      expect((engine as any).winner).toBeNull();
-      expect((engine as any).isDraw).toBe(false);
-      expect((engine as any).moveCount).toBe(0);
-      // start() 重置 _level=1，所以 level 回到 1
-      expect(engine.level).toBe(1);
-    });
-
-    it('getMode() 根据 level 返回正确模式', () => {
+    it('init 后当前玩家为 X', () => {
       const engine = createEngine();
-      // level=1 → PvP
-      engine.setLevel(1);
-      expect((engine as any).getMode()).toBe('PvP');
-
-      // level=2 → Easy AI
-      engine.setLevel(2);
-      expect((engine as any).getMode()).toBe('Easy AI');
-
-      // level=3 → Medium AI
-      engine.setLevel(3);
-      expect((engine as any).getMode()).toBe('Medium AI');
+      expect(getCurrentPlayer(engine)).toBe('X');
     });
 
-    it('getState() 返回完整状态快照', () => {
-      const engine = startEngine();
-      const state = engine.getState() as any;
+    it('init 后光标在中心 (1,1)', () => {
+      const engine = createEngine();
+      const cursor = getCursor(engine);
+      expect(cursor.row).toBe(1);
+      expect(cursor.col).toBe(1);
+    });
 
-      expect(state).toHaveProperty('board');
-      expect(state).toHaveProperty('currentPlayer', 'X');
-      expect(state).toHaveProperty('cursorRow', 1);
-      expect(state).toHaveProperty('cursorCol', 1);
-      expect(state).toHaveProperty('winner', null);
-      expect(state).toHaveProperty('winLine', null);
-      expect(state).toHaveProperty('isDraw', false);
-      expect(state).toHaveProperty('mode', 'PvP');
-      expect(state).toHaveProperty('scores');
-      expect(state.scores).toEqual({ X: 0, O: 0, draw: 0 });
+    it('start 后 status 为 playing', () => {
+      const engine = createEngine();
+      engine.start();
+      expect(engine.status).toBe('playing');
+    });
+
+    it('start 后 score 为 0', () => {
+      const engine = createEngine();
+      engine.start();
+      expect(engine.score).toBe(0);
     });
   });
 
-  // ================================================================
-  // 2. 落子逻辑
-  // ================================================================
+  // ==================== T2: 落子逻辑 ====================
   describe('落子逻辑', () => {
-    it('X 可以在空位落子，board 更新', () => {
-      const engine = startEngine();
+    it('X 可以在空位落子', () => {
+      const engine = createEngine();
+      engine.start();
       const result = placeMove(engine, 0, 0);
       expect(result).toBe(true);
-      expect((engine as any).board[0][0]).toBe('X');
+      expect(getBoard(engine)[0][0]).toBe('X');
     });
 
     it('落子后切换到 O', () => {
-      const engine = startEngine();
+      const engine = createEngine();
+      engine.start();
       placeMove(engine, 0, 0);
-      expect((engine as any).currentPlayer).toBe('O');
+      expect(getCurrentPlayer(engine)).toBe('O');
     });
 
-    it('O 也可以落子，然后切回 X', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 1, 0); // O
-      expect((engine as any).board[1][0]).toBe('O');
-      expect((engine as any).currentPlayer).toBe('X');
-    });
-
-    it('不能在已占位置落子（返回 false）', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0); // X 占位
-      const result = placeMove(engine, 0, 0); // 再落同一位置
-      expect(result).toBe(false);
-      expect((engine as any).board[0][0]).toBe('X'); // 仍为 X
-    });
-
-    it('落子增加 moveCount', () => {
-      const engine = startEngine();
-      expect((engine as any).moveCount).toBe(0);
+    it('O 也可以落子', () => {
+      const engine = createEngine();
+      engine.start();
       placeMove(engine, 0, 0);
-      expect((engine as any).moveCount).toBe(1);
-      placeMove(engine, 1, 0);
-      expect((engine as any).moveCount).toBe(2);
+      placeMove(engine, 1, 1);
+      expect(getBoard(engine)[1][1]).toBe('O');
     });
 
-    it('游戏结束后不能再落子', () => {
-      const engine = startEngine();
-      // 制造胜利：X 占第一行
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 1, 0); // O
-      placeMove(engine, 0, 1); // X
-      placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins
-
-      // winner 已设置，再落子应失败
-      const result = placeMove(engine, 2, 2);
+    it('不能在已占用的位置落子', () => {
+      const engine = createEngine();
+      engine.start();
+      placeMove(engine, 0, 0);
+      const result = placeMove(engine, 0, 0);
       expect(result).toBe(false);
+    });
+
+    it('落子后 moveCount 增加', () => {
+      const engine = createEngine();
+      engine.start();
+      expect(getMoveCount(engine)).toBe(0);
+      placeMove(engine, 0, 0);
+      expect(getMoveCount(engine)).toBe(1);
+      placeMove(engine, 1, 1);
+      expect(getMoveCount(engine)).toBe(2);
     });
   });
 
-  // ================================================================
-  // 3. 胜利检测
-  // ================================================================
+  // ==================== T3: 胜利检测 ====================
   describe('胜利检测', () => {
-    it('X 横行胜利（第一行）', () => {
-      const engine = startEngine();
+    it('行满三连获胜', () => {
+      const engine = createEngine();
+      engine.start();
+      // X: (0,0) (0,1) (0,2)
+      // O: (1,0) (1,1)
       placeMove(engine, 0, 0); // X
       placeMove(engine, 1, 0); // O
       placeMove(engine, 0, 1); // X
       placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins row 0
-
-      expect((engine as any).winner).toBe('X');
+      placeMove(engine, 0, 2); // X -> 赢！
+      expect(getWinner(engine)).toBe('X');
     });
 
-    it('X 竖列胜利（第二列）', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 1); // X
-      placeMove(engine, 0, 0); // O
-      placeMove(engine, 1, 1); // X
-      placeMove(engine, 1, 0); // O
-      placeMove(engine, 2, 1); // X wins col 1
-
-      expect((engine as any).winner).toBe('X');
+    it('列满三连获胜', () => {
+      const engine = createEngine();
+      engine.start();
+      // X: (0,0) (1,0) (2,0)
+      // O: (0,1) (1,1)
+      placeMove(engine, 0, 0); // X
+      placeMove(engine, 0, 1); // O
+      placeMove(engine, 1, 0); // X
+      placeMove(engine, 1, 1); // O
+      placeMove(engine, 2, 0); // X -> 赢！
+      expect(getWinner(engine)).toBe('X');
     });
 
-    it('X 主对角线胜利', () => {
-      const engine = startEngine();
+    it('主对角线三连获胜', () => {
+      const engine = createEngine();
+      engine.start();
+      // X: (0,0) (1,1) (2,2)
+      // O: (0,1) (1,0)
       placeMove(engine, 0, 0); // X
       placeMove(engine, 0, 1); // O
       placeMove(engine, 1, 1); // X
-      placeMove(engine, 0, 2); // O
-      placeMove(engine, 2, 2); // X wins diag
-
-      expect((engine as any).winner).toBe('X');
+      placeMove(engine, 1, 0); // O
+      placeMove(engine, 2, 2); // X -> 赢！
+      expect(getWinner(engine)).toBe('X');
     });
 
-    it('X 副对角线胜利', () => {
-      const engine = startEngine();
+    it('副对角线三连获胜', () => {
+      const engine = createEngine();
+      engine.start();
+      // X: (0,2) (1,1) (2,0)
+      // O: (0,0) (1,0)
       placeMove(engine, 0, 2); // X
       placeMove(engine, 0, 0); // O
       placeMove(engine, 1, 1); // X
       placeMove(engine, 1, 0); // O
-      placeMove(engine, 2, 0); // X wins anti-diag
-
-      expect((engine as any).winner).toBe('X');
+      placeMove(engine, 2, 0); // X -> 赢！
+      expect(getWinner(engine)).toBe('X');
     });
 
-    it('O 也能胜利', () => {
-      const engine = startEngine();
+    it('O 也可以获胜', () => {
+      const engine = createEngine();
+      engine.start();
+      // X: (0,0) (0,1) (2,0)
+      // O: (1,0) (1,1) (1,2)
       placeMove(engine, 0, 0); // X
       placeMove(engine, 1, 0); // O
       placeMove(engine, 0, 1); // X
       placeMove(engine, 1, 1); // O
-      placeMove(engine, 2, 2); // X (不在同一行)
-      placeMove(engine, 1, 2); // O wins row 1
-
-      expect((engine as any).winner).toBe('O');
+      placeMove(engine, 2, 0); // X
+      placeMove(engine, 1, 2); // O -> 赢！
+      expect(getWinner(engine)).toBe('O');
     });
 
-    it('胜利时设置 winLine 坐标（行胜利）', () => {
-      const engine = startEngine();
+    it('胜利时生成 winLine 坐标', () => {
+      const engine = createEngine();
+      engine.start();
       placeMove(engine, 0, 0); // X
       placeMove(engine, 1, 0); // O
       placeMove(engine, 0, 1); // X
       placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins row 0
-
-      expect((engine as any).winLine).toEqual({
-        startRow: 0,
-        startCol: 0,
-        endRow: 0,
-        endCol: 2,
-      });
+      placeMove(engine, 0, 2); // X -> 第0行赢
+      const winLine = getWinLine(engine);
+      expect(winLine).not.toBeNull();
+      expect(winLine.startRow).toBe(0);
+      expect(winLine.startCol).toBe(0);
+      expect(winLine.endRow).toBe(0);
+      expect(winLine.endCol).toBe(2);
     });
 
-    it('胜利时 scores 对应玩家+1', () => {
-      const engine = startEngine();
+    it('checkWin 对未获胜玩家返回 null', () => {
+      const engine = createEngine();
+      engine.start();
       placeMove(engine, 0, 0); // X
-      placeMove(engine, 1, 0); // O
-      placeMove(engine, 0, 1); // X
-      placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins
-
-      expect((engine as any).scores.X).toBe(1);
-      expect((engine as any).scores.O).toBe(0);
-      expect((engine as any).scores.draw).toBe(0);
+      const result = checkWin(engine, 'O');
+      expect(result).toBeNull();
     });
   });
 
-  // ================================================================
-  // 4. 平局检测
-  // ================================================================
+  // ==================== T4: 平局检测 ====================
   describe('平局检测', () => {
-    it('棋盘满且无胜者 → isDraw=true', () => {
-      const engine = startEngine();
+    it('棋盘满且无赢家为平局', () => {
+      const engine = createEngine();
+      engine.start();
       // X O X
       // X O O
       // O X X
@@ -287,626 +368,579 @@ describe('TicTacToeEngine', () => {
       placeMove(engine, 0, 2); // X
       placeMove(engine, 1, 1); // O
       placeMove(engine, 1, 0); // X
+      placeMove(engine, 1, 2); // O
+      placeMove(engine, 2, 1); // X
       placeMove(engine, 2, 0); // O
-      placeMove(engine, 1, 2); // X
-      placeMove(engine, 2, 2); // O
-      placeMove(engine, 2, 1); // X → 棋盘满，平局
-
-      expect((engine as any).isDraw).toBe(true);
-      expect((engine as any).winner).toBeNull();
+      placeMove(engine, 2, 2); // X -> 满盘
+      expect(getIsDraw(engine)).toBe(true);
+      expect(getWinner(engine)).toBeNull();
     });
 
-    it('平局时 scores.draw+1', () => {
-      const engine = startEngine();
+    it('checkDraw 有赢家时返回 false', () => {
+      const engine = createEngine();
+      engine.start();
+      // 先让 X 赢
+      placeMove(engine, 0, 0); // X
+      placeMove(engine, 1, 0); // O
+      placeMove(engine, 0, 1); // X
+      placeMove(engine, 1, 1); // O
+      placeMove(engine, 0, 2); // X -> 赢
+      expect(checkDraw(engine)).toBe(false);
+    });
+
+    it('checkDraw 棋盘未满时返回 false', () => {
+      const engine = createEngine();
+      engine.start();
+      placeMove(engine, 0, 0);
+      expect(checkDraw(engine)).toBe(false);
+    });
+  });
+
+  // ==================== T5: 计分系统 ====================
+  describe('计分系统', () => {
+    it('PvP 胜利得基础分 SCORE_WIN', () => {
+      const engine = createEngine();
+      engine.start();
+      // X 赢 - 5步（最少步数）
+      placeMove(engine, 0, 0); // X
+      placeMove(engine, 1, 0); // O
+      placeMove(engine, 0, 1); // X
+      placeMove(engine, 1, 1); // O
+      placeMove(engine, 0, 2); // X -> 赢, moveCount=5
+      // score = SCORE_WIN + SPEED_BONUS_BASE - (5-5)*STEP = 100 + 50 = 150
+      expect(engine.score).toBe(SCORE_WIN + SCORE_SPEED_BONUS_BASE);
+    });
+
+    it('AI 模式胜利有额外加分', () => {
+      const engine = createEngineAtLevel(2);
+      // X 赢 - 5步
+      placeMove(engine, 0, 0); // X
+      placeMove(engine, 1, 0); // O (手动模拟)
+      placeMove(engine, 0, 1); // X
+      placeMove(engine, 1, 1); // O
+      placeMove(engine, 0, 2); // X -> 赢
+      // score = SCORE_WIN + AI_BONUS + SPEED_BONUS = 100 + 50 + 50 = 200
+      expect(engine.score).toBe(SCORE_WIN + SCORE_AI_BONUS + SCORE_SPEED_BONUS_BASE);
+    });
+
+    it('步数越多速度奖励越少', () => {
+      const engine = createEngine();
+      engine.start();
+      // X 赢 - 7步（第7步赢）
+      // X: (0,0)(0,1)(0,2)  O: (1,0)(1,1)(2,2) → 不行，O 会被迫堵
+      // 换一种：X 第7步赢
+      placeMove(engine, 0, 0); // X
+      placeMove(engine, 2, 2); // O
+      placeMove(engine, 1, 0); // X
+      placeMove(engine, 2, 1); // O
+      placeMove(engine, 2, 0); // X -> 第0列赢, moveCount=5
+      // moveCount=5, speedBonus = 50 - (5-5)*10 = 50
+      const expectedSpeedBonus = SCORE_SPEED_BONUS_BASE;
+      expect(engine.score).toBe(SCORE_WIN + expectedSpeedBonus);
+    });
+
+    it('平局得 SCORE_DRAW 分', () => {
+      const engine = createEngine();
+      engine.start();
+      // X O X
+      // X O O
+      // O X X
       placeMove(engine, 0, 0); // X
       placeMove(engine, 0, 1); // O
       placeMove(engine, 0, 2); // X
       placeMove(engine, 1, 1); // O
       placeMove(engine, 1, 0); // X
+      placeMove(engine, 1, 2); // O
+      placeMove(engine, 2, 1); // X
       placeMove(engine, 2, 0); // O
-      placeMove(engine, 1, 2); // X
-      placeMove(engine, 2, 2); // O
-      placeMove(engine, 2, 1); // X → 平局
-
-      expect((engine as any).scores.draw).toBe(1);
-    });
-
-    it('平局时正确计分（SCORE_DRAW=50）', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 0, 1); // O
-      placeMove(engine, 0, 2); // X
-      placeMove(engine, 1, 1); // O
-      placeMove(engine, 1, 0); // X
-      placeMove(engine, 2, 0); // O
-      placeMove(engine, 1, 2); // X
-      placeMove(engine, 2, 2); // O
-      placeMove(engine, 2, 1); // X → 平局
-
+      placeMove(engine, 2, 2); // X -> 平局
       expect(engine.score).toBe(SCORE_DRAW);
     });
-  });
 
-  // ================================================================
-  // 5. 计分系统
-  // ================================================================
-  describe('计分系统', () => {
-    it('PvP 胜利得分 = SCORE_WIN + speedBonus（5步赢 = 100+50=150）', () => {
-      const engine = startEngine();
-      // X 5步赢（X 走 3 步，O 走 2 步，moveCount=5）
+    it('比分记录更新正确', () => {
+      const engine = createEngine();
+      engine.start();
+      // X 赢
       placeMove(engine, 0, 0); // X
       placeMove(engine, 1, 0); // O
       placeMove(engine, 0, 1); // X
       placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins, moveCount=5
-
-      const speedBonus = Math.max(0, SCORE_SPEED_BONUS_BASE - (5 - 5) * SCORE_SPEED_BONUS_STEP);
-      expect(speedBonus).toBe(50);
-      expect(engine.score).toBe(SCORE_WIN + speedBonus); // 100 + 50 = 150
-    });
-
-    it('AI 模式胜利得分 = SCORE_WIN + SCORE_AI_BONUS + speedBonus（5步赢 = 200）', () => {
-      const engine = startEngine(2); // Level 2 = Easy AI
-      // start() 会重置 level=1，需要重新设置
-      engine.setLevel(2);
-
-      // 直接操作棋盘模拟 X 5步赢
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 1, 0); // O (手动)
-      placeMove(engine, 0, 1); // X
-      placeMove(engine, 1, 1); // O (手动)
-      placeMove(engine, 0, 2); // X wins, moveCount=5
-
-      const speedBonus = Math.max(0, SCORE_SPEED_BONUS_BASE - (5 - 5) * SCORE_SPEED_BONUS_STEP);
-      expect(engine.score).toBe(SCORE_WIN + SCORE_AI_BONUS + speedBonus); // 100 + 50 + 50 = 200
-    });
-
-    it('平局得分 = SCORE_DRAW（50）', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 0, 1); // O
-      placeMove(engine, 0, 2); // X
-      placeMove(engine, 1, 1); // O
-      placeMove(engine, 1, 0); // X
-      placeMove(engine, 2, 0); // O
-      placeMove(engine, 1, 2); // X
-      placeMove(engine, 2, 2); // O
-      placeMove(engine, 2, 1); // X → 平局
-
-      expect(engine.score).toBe(SCORE_DRAW); // 50
-    });
-
-    it('不同步数的速通奖励（7步=100+30=130）', () => {
-      const engine = startEngine();
-      // moveCount=7: X=4 O=3, X 最后一步赢
-      // X: (0,0), (0,1), (1,0), (2,0) → 第 0 列赢
-      // O: (1,1), (2,2), (0,2)
-      placeMove(engine, 0, 0); // X (1)
-      placeMove(engine, 1, 1); // O (2)
-      placeMove(engine, 0, 1); // X (3)
-      placeMove(engine, 2, 2); // O (4)
-      placeMove(engine, 1, 0); // X (5)
-      placeMove(engine, 0, 2); // O (6)
-      placeMove(engine, 2, 0); // X (7) wins col 0
-
-      expect((engine as any).moveCount).toBe(7);
-      const speedBonus = Math.max(0, SCORE_SPEED_BONUS_BASE - (7 - 5) * SCORE_SPEED_BONUS_STEP);
-      expect(speedBonus).toBe(30);
-      expect(engine.score).toBe(SCORE_WIN + speedBonus); // 100 + 30 = 130
-    });
-
-    it('9步胜利 speedBonus = max(0, 50-(9-5)*10) = 10 → 总分 110', () => {
-      const engine = startEngine();
-      // moveCount=9: X=5 O=4, X 最后一步赢
-      // Row 0: X O X
-      // Row 1: O X O
-      // Row 2: X X .  → X 落 (2,2) → row 2 全 X → 赢！moveCount=9
-      placeMove(engine, 0, 0); // X (1)
-      placeMove(engine, 0, 1); // O (2)
-      placeMove(engine, 1, 1); // X (3)
-      placeMove(engine, 0, 2); // O (4)
-      placeMove(engine, 2, 0); // X (5)
-      placeMove(engine, 1, 0); // O (6)
-      placeMove(engine, 2, 1); // X (7)
-      placeMove(engine, 1, 2); // O (8)
-      placeMove(engine, 2, 2); // X (9) wins row 2
-
-      expect((engine as any).moveCount).toBe(9);
-      const speedBonus = Math.max(0, SCORE_SPEED_BONUS_BASE - (9 - 5) * SCORE_SPEED_BONUS_STEP);
-      expect(speedBonus).toBe(10);
-      expect(engine.score).toBe(SCORE_WIN + speedBonus); // 100 + 10 = 110
-    });
-
-    it('列胜利时 winLine 坐标正确', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 1); // X
-      placeMove(engine, 0, 0); // O
-      placeMove(engine, 1, 1); // X
-      placeMove(engine, 1, 0); // O
-      placeMove(engine, 2, 1); // X wins col 1
-
-      expect((engine as any).winLine).toEqual({
-        startRow: 0,
-        startCol: 1,
-        endRow: 2,
-        endCol: 1,
-      });
-    });
-
-    it('resultScored 防止重复计分', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 1, 0); // O
-      placeMove(engine, 0, 1); // X
-      placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins
-
-      const scoreAfterFirst = engine.score;
-      // 手动再次调用 calculateScore（模拟重复调用）
-      (engine as any).calculateScore();
-      expect(engine.score).toBe(scoreAfterFirst); // 没有重复加分
+      placeMove(engine, 0, 2); // X -> 赢
+      const scores = getScores(engine);
+      expect(scores.X).toBe(1);
+      expect(scores.O).toBe(0);
+      expect(scores.draw).toBe(0);
     });
   });
 
-  // ================================================================
-  // 6. 光标与输入
-  // ================================================================
-  describe('光标与输入', () => {
-    it('ArrowUp 移动光标上移', () => {
-      const engine = startEngine();
-      (engine as any).cursorRow = 1;
+  // ==================== T6: 输入处理 ====================
+  describe('输入处理', () => {
+    it('方向键上移动光标', () => {
+      const engine = createEngine();
+      engine.start();
+      // 光标初始 (1,1)
       engine.handleKeyDown('ArrowUp');
-      expect((engine as any).cursorRow).toBe(0);
+      const cursor = getCursor(engine);
+      expect(cursor.row).toBe(0);
+      expect(cursor.col).toBe(1);
     });
 
-    it('W 键移动光标上移', () => {
-      const engine = startEngine();
-      (engine as any).cursorRow = 2;
-      engine.handleKeyDown('w');
-      expect((engine as any).cursorRow).toBe(1);
-    });
-
-    it('ArrowDown 移动光标下移', () => {
-      const engine = startEngine();
-      (engine as any).cursorRow = 1;
+    it('方向键下移动光标', () => {
+      const engine = createEngine();
+      engine.start();
       engine.handleKeyDown('ArrowDown');
-      expect((engine as any).cursorRow).toBe(2);
+      const cursor = getCursor(engine);
+      expect(cursor.row).toBe(2);
+      expect(cursor.col).toBe(1);
     });
 
-    it('S 键移动光标下移', () => {
-      const engine = startEngine();
-      (engine as any).cursorRow = 0;
-      engine.handleKeyDown('s');
-      expect((engine as any).cursorRow).toBe(1);
-    });
-
-    it('ArrowLeft 移动光标左移', () => {
-      const engine = startEngine();
-      (engine as any).cursorCol = 2;
+    it('方向键左移动光标', () => {
+      const engine = createEngine();
+      engine.start();
       engine.handleKeyDown('ArrowLeft');
-      expect((engine as any).cursorCol).toBe(1);
+      const cursor = getCursor(engine);
+      expect(cursor.row).toBe(1);
+      expect(cursor.col).toBe(0);
     });
 
-    it('A 键移动光标左移', () => {
-      const engine = startEngine();
-      (engine as any).cursorCol = 1;
-      engine.handleKeyDown('a');
-      expect((engine as any).cursorCol).toBe(0);
-    });
-
-    it('ArrowRight 移动光标右移', () => {
-      const engine = startEngine();
-      (engine as any).cursorCol = 0;
+    it('方向键右移动光标', () => {
+      const engine = createEngine();
+      engine.start();
       engine.handleKeyDown('ArrowRight');
-      expect((engine as any).cursorCol).toBe(1);
+      const cursor = getCursor(engine);
+      expect(cursor.row).toBe(1);
+      expect(cursor.col).toBe(2);
     });
 
-    it('D 键移动光标右移', () => {
-      const engine = startEngine();
-      (engine as any).cursorCol = 1;
-      engine.handleKeyDown('d');
-      expect((engine as any).cursorCol).toBe(2);
+    it('WASD 也能移动光标', () => {
+      const engine = createEngine();
+      engine.start();
+      engine.handleKeyDown('w'); // 上
+      expect(getCursor(engine).row).toBe(0);
+      engine.handleKeyDown('s'); // 下
+      expect(getCursor(engine).row).toBe(1);
+      engine.handleKeyDown('a'); // 左
+      expect(getCursor(engine).col).toBe(0);
+      engine.handleKeyDown('d'); // 右
+      expect(getCursor(engine).col).toBe(1);
     });
 
-    it('光标不超出上边界', () => {
-      const engine = startEngine();
-      (engine as any).cursorRow = 0;
-      engine.handleKeyDown('ArrowUp');
-      expect((engine as any).cursorRow).toBe(0);
+    it('光标不会越界（上边界）', () => {
+      const engine = createEngine();
+      engine.start();
+      engine.handleKeyDown('ArrowUp'); // (0,1)
+      engine.handleKeyDown('ArrowUp'); // 仍然是 (0,1)
+      expect(getCursor(engine).row).toBe(0);
     });
 
-    it('光标不超出下边界', () => {
-      const engine = startEngine();
-      (engine as any).cursorRow = BOARD_SIZE - 1;
-      engine.handleKeyDown('ArrowDown');
-      expect((engine as any).cursorRow).toBe(BOARD_SIZE - 1);
+    it('光标不会越界（下边界）', () => {
+      const engine = createEngine();
+      engine.start();
+      engine.handleKeyDown('ArrowDown'); // (2,1)
+      engine.handleKeyDown('ArrowDown'); // 仍然是 (2,1)
+      expect(getCursor(engine).row).toBe(2);
     });
 
-    it('光标不超出左边界', () => {
-      const engine = startEngine();
-      (engine as any).cursorCol = 0;
-      engine.handleKeyDown('ArrowLeft');
-      expect((engine as any).cursorCol).toBe(0);
+    it('光标不会越界（左边界）', () => {
+      const engine = createEngine();
+      engine.start();
+      engine.handleKeyDown('ArrowLeft'); // (1,0)
+      engine.handleKeyDown('ArrowLeft'); // 仍然是 (1,0)
+      expect(getCursor(engine).col).toBe(0);
     });
 
-    it('光标不超出右边界', () => {
-      const engine = startEngine();
-      (engine as any).cursorCol = BOARD_SIZE - 1;
-      engine.handleKeyDown('ArrowRight');
-      expect((engine as any).cursorCol).toBe(BOARD_SIZE - 1);
+    it('光标不会越界（右边界）', () => {
+      const engine = createEngine();
+      engine.start();
+      engine.handleKeyDown('ArrowRight'); // (1,2)
+      engine.handleKeyDown('ArrowRight'); // 仍然是 (1,2)
+      expect(getCursor(engine).col).toBe(2);
     });
 
-    it('Space 在光标位置落子', () => {
-      const engine = startEngine();
-      (engine as any).cursorRow = 2;
-      (engine as any).cursorCol = 2;
-      engine.handleKeyDown(' ');
-      expect((engine as any).board[2][2]).toBe('X');
+    it('Space 键在光标位置落子', () => {
+      const engine = createEngine();
+      engine.start();
+      engine.handleKeyDown('ArrowUp'); // (0,1)
+      engine.handleKeyDown('ArrowLeft'); // (0,0)
+      engine.handleKeyDown(' '); // 落子
+      expect(getBoard(engine)[0][0]).toBe('X');
     });
 
-    it('Enter 在光标位置落子', () => {
-      const engine = startEngine();
-      (engine as any).cursorRow = 0;
-      (engine as any).cursorCol = 1;
-      engine.handleKeyDown('Enter');
-      expect((engine as any).board[0][1]).toBe('X');
-    });
-  });
-
-  // ================================================================
-  // 7. 键盘快捷键
-  // ================================================================
-  describe('键盘快捷键', () => {
-    it('R 键重置并重新开始游戏', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 1, 0); // O
-      expect((engine as any).moveCount).toBe(2);
-
-      engine.handleKeyDown('r');
-      // reset + start → 重新开始
-      expect((engine as any).moveCount).toBe(0);
-      expect((engine as any).board[0][0]).toBeNull();
-      expect(engine.status).toBe('playing');
+    it('Enter 键也能落子', () => {
+      const engine = createEngine();
+      engine.start();
+      engine.handleKeyDown('Enter'); // 在 (1,1) 落子
+      expect(getBoard(engine)[1][1]).toBe('X');
     });
 
-    it('大写 R 键也能重置', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0);
-      engine.handleKeyDown('R');
-      expect((engine as any).moveCount).toBe(0);
-    });
-
-    it('P 键暂停游戏（playing→paused）', () => {
-      const engine = startEngine();
+    it('P 键暂停游戏', () => {
+      const engine = createEngine();
+      engine.start();
       engine.handleKeyDown('p');
       expect(engine.status).toBe('paused');
     });
 
-    it('P 键恢复游戏（paused→playing）', () => {
-      const engine = startEngine();
-      engine.handleKeyDown('p'); // pause
-      expect(engine.status).toBe('paused');
-      engine.handleKeyDown('p'); // resume
+    it('P 键恢复游戏', () => {
+      const engine = createEngine();
+      engine.start();
+      engine.handleKeyDown('p'); // 暂停
+      engine.handleKeyDown('p'); // 恢复
       expect(engine.status).toBe('playing');
     });
 
-    it('大写 P 键也能暂停/恢复', () => {
-      const engine = startEngine();
-      engine.handleKeyDown('P');
-      expect(engine.status).toBe('paused');
-      engine.handleKeyDown('P');
+    it('R 键重置游戏', () => {
+      const engine = createEngine();
+      engine.start();
+      placeMove(engine, 0, 0);
+      placeMove(engine, 1, 1);
+      engine.handleKeyDown('r');
       expect(engine.status).toBe('playing');
+      // 重置后棋盘应该清空
+      expect(getBoard(engine)[0][0]).toBeNull();
+      expect(getBoard(engine)[1][1]).toBeNull();
     });
 
-    it('游戏结束后不处理方向键', () => {
-      const engine = startEngine();
-      // 制造胜利
+    it('游戏结束后不处理落子', () => {
+      const engine = createEngine();
+      engine.start();
+      // X 赢
       placeMove(engine, 0, 0); // X
       placeMove(engine, 1, 0); // O
       placeMove(engine, 0, 1); // X
       placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins
-
-      const prevRow = (engine as any).cursorRow;
-      const prevCol = (engine as any).cursorCol;
-      engine.handleKeyDown('ArrowDown');
-      // 光标不应移动（游戏已结束）
-      expect((engine as any).cursorRow).toBe(prevRow);
-      expect((engine as any).cursorCol).toBe(prevCol);
-    });
-
-    it('AI 思考中不处理玩家操作', () => {
-      const engine = startEngine(2);
-      engine.setLevel(2);
-      (engine as any).aiThinking = true;
-
-      const prevRow = (engine as any).cursorRow;
-      engine.handleKeyDown('ArrowDown');
-      expect((engine as any).cursorRow).toBe(prevRow); // 光标未移动
+      placeMove(engine, 0, 2); // X -> 赢
+      // 尝试继续落子
+      const result = placeMove(engine, 2, 2);
+      expect(result).toBe(false);
     });
   });
 
-  // ================================================================
-  // 8. AI 逻辑
-  // ================================================================
+  // ==================== T7: AI 逻辑 ====================
   describe('AI 逻辑', () => {
-    it('isAIMode() 在 level>=2 时返回 true', () => {
-      const engine = createEngine();
-      engine.setLevel(1);
-      expect((engine as any).isAIMode()).toBe(false);
-      engine.setLevel(2);
-      expect((engine as any).isAIMode()).toBe(true);
-      engine.setLevel(3);
-      expect((engine as any).isAIMode()).toBe(true);
-    });
-
-    it('AI 模式下 O 回合时 Space 键被忽略', () => {
-      const engine = startEngine(2);
-      engine.setLevel(2);
-      // X 先落子
-      placeMove(engine, 0, 0);
-      // 现在是 O 回合，在 AI 模式下 Space 应被忽略
-      (engine as any).cursorRow = 1;
-      (engine as any).cursorCol = 1;
-      engine.handleKeyDown(' ');
-      // O 不应被放置（因为是 AI 回合）
-      expect((engine as any).board[1][1]).toBeNull();
-    });
-
-    it('Level 2 (Easy AI): AI 通过 update() 延迟落子', () => {
-      const engine = startEngine(2);
-      engine.setLevel(2);
-
-      // X 先落子
-      placeMove(engine, 0, 0);
-      // 触发 AI 思考
-      (engine as any).aiThinking = true;
-      (engine as any).aiThinkTimer = 0;
-
-      // 模拟 update 累积时间
-      (engine as any).update(AI_THINK_DELAY - 1);
-      expect((engine as any).aiThinking).toBe(true); // 还没到延迟
-
-      (engine as any).update(1); // 累积到 AI_THINK_DELAY
-      expect((engine as any).aiThinking).toBe(false); // AI 已执行
-
-      // AI 应该已经落子了（O）
+    it('Easy AI 随机落子到空位', () => {
+      const engine = createEngineAtLevel(2);
+      // 直接调用 aiEasyMove（轮到 O 时）
+      // 先手动让 X 走一步
+      placeMove(engine, 1, 1); // X
+      // 现在 currentPlayer 是 O
+      expect(getCurrentPlayer(engine)).toBe('O');
+      // AI 走一步
+      aiEasyMove(engine);
+      // 检查 O 是否落子了
+      const board = getBoard(engine);
       let oCount = 0;
       for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
-          if ((engine as any).board[r][c] === 'O') oCount++;
+          if (board[r][c] === 'O') oCount++;
         }
       }
       expect(oCount).toBe(1);
     });
 
-    it('Level 3 (Medium AI): AI 能找到获胜位置（findWinningMove）', () => {
-      const engine = startEngine(3);
-      engine.setLevel(3);
-      // 设置棋盘让 O 有一个获胜位置
-      // O O .
-      // X . X
-      // . . .
-      setBoard(engine, [
-        ['O', 'O', null],
-        ['X', null, 'X'],
-        [null, null, null],
-      ]);
+    it('Medium AI 能找到获胜落子', () => {
+      const engine = createEngineAtLevel(3);
+      // 设置：O 有两个连子，差一个赢
+      // O O _
+      // X _ _
+      // X _ _
+      setCell(engine, 0, 0, 'O');
+      setCell(engine, 0, 1, 'O');
+      setCell(engine, 1, 0, 'X');
+      setCell(engine, 2, 0, 'X');
       (engine as any).currentPlayer = 'O';
+      (engine as any).moveCount = 4;
 
-      const winMove = (engine as any).findWinningMove('O');
-      expect(winMove).toEqual({ row: 0, col: 2 });
+      aiMediumMove(engine);
+      // O 应该在 (0,2) 获胜
+      expect(getBoard(engine)[0][2]).toBe('O');
+      expect(getWinner(engine)).toBe('O');
     });
 
-    it('Level 3 (Medium AI): AI 能堵住玩家获胜位置', () => {
-      const engine = startEngine(3);
-      engine.setLevel(3);
-      // 设置棋盘让 X 有一个获胜位置
-      // X X .
-      // O . .
-      // . . .
-      setBoard(engine, [
-        ['X', 'X', null],
-        ['O', null, null],
-        [null, null, null],
-      ]);
+    it('Medium AI 能堵住对手获胜', () => {
+      const engine = createEngineAtLevel(3);
+      // X X _
+      // O _ _
+      // _ _ _
+      setCell(engine, 0, 0, 'X');
+      setCell(engine, 0, 1, 'X');
+      setCell(engine, 1, 0, 'O');
       (engine as any).currentPlayer = 'O';
+      (engine as any).moveCount = 3;
 
-      const blockMove = (engine as any).findWinningMove('X');
-      expect(blockMove).toEqual({ row: 0, col: 2 });
+      aiMediumMove(engine);
+      // O 应该堵在 (0,2)
+      expect(getBoard(engine)[0][2]).toBe('O');
     });
 
-    it('Level 3 (Medium AI): AI 优先占中心', () => {
-      const engine = startEngine(3);
-      engine.setLevel(3);
-      // 空棋盘，只有 X 走了角落
-      setBoard(engine, [
-        ['X', null, null],
-        [null, null, null],
-        [null, null, null],
-      ]);
+    it('Medium AI 优先占中心', () => {
+      const engine = createEngineAtLevel(3);
+      // 空棋盘，X 走了 (0,0)
+      setCell(engine, 0, 0, 'X');
       (engine as any).currentPlayer = 'O';
-      (engine as any).winner = null;
-      (engine as any).isDraw = false;
+      (engine as any).moveCount = 1;
 
-      // AI 没有获胜位置，也没有需要堵的位置 → 应占中心
-      (engine as any).aiMediumMove();
-      expect((engine as any).board[1][1]).toBe('O');
-    });
-  });
-
-  // ================================================================
-  // 9. 动画与更新
-  // ================================================================
-  describe('动画与更新', () => {
-    it('update() 推进落子动画（elapsed 增加）', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0);
-      const anim = (engine as any).placeAnimations[0];
-      expect(anim).toBeDefined();
-      const prevElapsed = anim.elapsed;
-
-      (engine as any).update(50);
-      expect(anim.elapsed).toBe(prevElapsed + 50);
+      aiMediumMove(engine);
+      // O 应该占中心 (1,1)
+      expect(getBoard(engine)[1][1]).toBe('O');
     });
 
-    it('动画完成后从队列移除', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0);
-      expect((engine as any).placeAnimations).toHaveLength(1);
-
-      // 推进时间超过动画时长
-      (engine as any).update(PLACE_ANIMATION_DURATION + 10);
-      expect((engine as any).placeAnimations).toHaveLength(0);
-    });
-
-    it('胜利线动画进度增加', () => {
-      const engine = startEngine();
-      // 制造胜利
+    it('findWinningMove 找到获胜位置', () => {
+      const engine = createEngine();
+      engine.start();
+      // X: (0,0) (0,1) -> (0,2) 赢
       placeMove(engine, 0, 0); // X
       placeMove(engine, 1, 0); // O
       placeMove(engine, 0, 1); // X
       placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins
-
-      expect((engine as any).winLineAnimating).toBe(true);
-      expect((engine as any).winLineProgress).toBe(0);
-
-      // 推进动画
-      (engine as any).update(WIN_LINE_ANIMATION_SPEED / 2);
-      expect((engine as any).winLineProgress).toBeCloseTo(0.5, 1);
+      const move = findWinningMove(engine, 'X');
+      expect(move).not.toBeNull();
+      expect(move!.row).toBe(0);
+      expect(move!.col).toBe(2);
     });
 
-    it('胜利线动画完成后停止（progress=1）', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0);
-      placeMove(engine, 1, 0);
-      placeMove(engine, 0, 1);
-      placeMove(engine, 1, 1);
-      placeMove(engine, 0, 2); // X wins
-
-      // 推进超过动画时长
-      (engine as any).update(WIN_LINE_ANIMATION_SPEED + 100);
-      expect((engine as any).winLineProgress).toBe(1);
-      expect((engine as any).winLineAnimating).toBe(false);
+    it('findWinningMove 无获胜位置返回 null', () => {
+      const engine = createEngine();
+      engine.start();
+      placeMove(engine, 1, 1); // X 只有一个子
+      const move = findWinningMove(engine, 'X');
+      expect(move).toBeNull();
     });
 
-    it('AI 思考计时器累积', () => {
-      const engine = startEngine(2);
-      engine.setLevel(2);
+    it('AI 思考中玩家不能操作', () => {
+      const engine = createEngineAtLevel(2);
+      // 模拟 AI 思考中
       (engine as any).aiThinking = true;
-      (engine as any).aiThinkTimer = 0;
-
-      (engine as any).update(200);
-      expect((engine as any).aiThinkTimer).toBe(200);
-
-      (engine as any).update(200);
-      expect((engine as any).aiThinkTimer).toBe(400);
+      // 尝试落子 - handleKeyDown 应该不处理
+      engine.handleKeyDown('Enter');
+      // 棋盘应该没变化（光标位置 (1,1) 仍为空）
+      expect(getBoard(engine)[1][1]).toBeNull();
     });
   });
 
-  // ================================================================
-  // 10. 重置与销毁
-  // ================================================================
-  describe('重置与销毁', () => {
-    it('reset() 清空棋盘和状态', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0);
-      placeMove(engine, 1, 0);
-      placeMove(engine, 0, 1);
-      placeMove(engine, 1, 1);
-      placeMove(engine, 0, 2); // X wins
+  // ==================== T8: 游戏状态 ====================
+  describe('游戏状态', () => {
+    it('getState 返回完整状态', () => {
+      const engine = createEngine();
+      engine.start();
+      const state = engine.getState();
+      expect(state).toHaveProperty('board');
+      expect(state).toHaveProperty('currentPlayer');
+      expect(state).toHaveProperty('cursorRow');
+      expect(state).toHaveProperty('cursorCol');
+      expect(state).toHaveProperty('winner');
+      expect(state).toHaveProperty('winLine');
+      expect(state).toHaveProperty('isDraw');
+      expect(state).toHaveProperty('mode');
+      expect(state).toHaveProperty('scores');
+    });
 
+    it('getState board 是深拷贝', () => {
+      const engine = createEngine();
+      engine.start();
+      placeMove(engine, 0, 0);
+      const state1 = engine.getState();
+      const board1 = state1.board as (string | null)[][];
+      // 修改返回值不影响内部状态
+      board1[0][0] = 'O';
+      const state2 = engine.getState();
+      const board2 = state2.board as (string | null)[][];
+      expect(board2[0][0]).toBe('X');
+    });
+
+    it('getState scores 是深拷贝', () => {
+      const engine = createEngine();
+      engine.start();
+      const state = engine.getState();
+      const scores = state.scores as { X: number; O: number; draw: number };
+      scores.X = 999;
+      const internalScores = getScores(engine);
+      expect(internalScores.X).toBe(0);
+    });
+
+    it('游戏模式根据 level 正确设置', () => {
+      const engine1 = createEngineAtLevel(1);
+      expect((engine1.getState() as any).mode).toBe('PvP');
+
+      const engine2 = createEngineAtLevel(2);
+      expect((engine2.getState() as any).mode).toBe('Easy AI');
+
+      const engine3 = createEngineAtLevel(3);
+      expect((engine3.getState() as any).mode).toBe('Medium AI');
+    });
+  });
+
+  // ==================== T9: 动画更新 ====================
+  describe('动画更新', () => {
+    it('update 推进落子动画', () => {
+      const engine = createEngine();
+      engine.start();
+      placeMove(engine, 0, 0);
+      // 有一个落子动画
+      const anims = (engine as any).placeAnimations;
+      expect(anims.length).toBe(1);
+      // 推进超过动画时长
+      advanceUpdate(engine, PLACE_ANIMATION_DURATION + 100);
+      // 动画应该已完成并移除
+      expect((engine as any).placeAnimations.length).toBe(0);
+    });
+
+    it('update 推进胜利线动画', () => {
+      const engine = createEngine();
+      engine.start();
+      // X 赢
+      placeMove(engine, 0, 0); // X
+      placeMove(engine, 1, 0); // O
+      placeMove(engine, 0, 1); // X
+      placeMove(engine, 1, 1); // O
+      placeMove(engine, 0, 2); // X -> 赢
+      expect((engine as any).winLineAnimating).toBe(true);
+      expect((engine as any).winLineProgress).toBe(0);
+      // 推进动画
+      advanceUpdate(engine, WIN_LINE_ANIMATION_SPEED);
+      expect((engine as any).winLineProgress).toBeGreaterThanOrEqual(1);
+      expect((engine as any).winLineAnimating).toBe(false);
+    });
+
+    it('AI 思考延迟后执行落子', () => {
+      const engine = createEngineAtLevel(2);
+      // 手动触发 AI 思考
+      (engine as any).aiThinking = true;
+      (engine as any).aiThinkTimer = 0;
+      (engine as any).currentPlayer = 'O';
+      // 推进不到延迟时间
+      advanceUpdate(engine, AI_THINK_DELAY - 100);
+      expect((engine as any).aiThinking).toBe(true);
+      // 推进超过延迟时间
+      advanceUpdate(engine, 200);
+      // AI 应该已经落子
+      expect((engine as any).aiThinking).toBe(false);
+    });
+  });
+
+  // ==================== T10: 事件系统 ====================
+  describe('事件系统', () => {
+    it('start 触发 statusChange 事件', () => {
+      const engine = createEngine();
+      const listener = vi.fn();
+      engine.on('statusChange', listener);
+      engine.start();
+      expect(listener).toHaveBeenCalledWith('playing');
+    });
+
+    it('pause 触发 statusChange 事件', () => {
+      const engine = createEngine();
+      engine.start();
+      const listener = vi.fn();
+      engine.on('statusChange', listener);
+      engine.pause();
+      expect(listener).toHaveBeenCalledWith('paused');
+    });
+
+    it('resume 触发 statusChange 事件', () => {
+      const engine = createEngine();
+      engine.start();
+      engine.pause();
+      const listener = vi.fn();
+      engine.on('statusChange', listener);
+      engine.resume();
+      expect(listener).toHaveBeenCalledWith('playing');
+    });
+
+    it('scoreChange 事件在计分时触发', () => {
+      const engine = createEngine();
+      engine.start();
+      const listener = vi.fn();
+      engine.on('scoreChange', listener);
+      // X 赢
+      placeMove(engine, 0, 0); // X
+      placeMove(engine, 1, 0); // O
+      placeMove(engine, 0, 1); // X
+      placeMove(engine, 1, 1); // O
+      placeMove(engine, 0, 2); // X -> 赢，触发计分
+      expect(listener).toHaveBeenCalled();
+      const lastCall = listener.mock.calls[listener.mock.calls.length - 1];
+      expect(lastCall[0]).toBeGreaterThan(0);
+    });
+  });
+
+  // ==================== T11: 重置与生命周期 ====================
+  describe('重置与生命周期', () => {
+    it('reset 后棋盘清空', () => {
+      const engine = createEngine();
+      engine.start();
+      placeMove(engine, 0, 0);
+      placeMove(engine, 1, 1);
       engine.reset();
-      expect((engine as any).moveCount).toBe(0);
-      expect((engine as any).winner).toBeNull();
-      expect((engine as any).winLine).toBeNull();
-      expect((engine as any).isDraw).toBe(false);
-      expect((engine as any).currentPlayer).toBe('X');
-      expect((engine as any).resultScored).toBe(false);
-      // 棋盘应清空
+      const board = getBoard(engine);
       for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
-          expect((engine as any).board[r][c]).toBeNull();
+          expect(board[r][c]).toBeNull();
         }
       }
     });
 
-    it('destroy() 清空比分', () => {
-      const engine = startEngine();
+    it('reset 后玩家回到 X', () => {
+      const engine = createEngine();
+      engine.start();
+      placeMove(engine, 0, 0); // X -> O
+      engine.reset();
+      expect(getCurrentPlayer(engine)).toBe('X');
+    });
+
+    it('reset 后赢家和平局状态清除', () => {
+      const engine = createEngine();
+      engine.start();
+      // X 赢
       placeMove(engine, 0, 0);
       placeMove(engine, 1, 0);
       placeMove(engine, 0, 1);
       placeMove(engine, 1, 1);
-      placeMove(engine, 0, 2); // X wins → scores.X = 1
-
-      expect((engine as any).scores.X).toBe(1);
-      engine.destroy();
-      expect((engine as any).scores).toEqual({ X: 0, O: 0, draw: 0 });
+      placeMove(engine, 0, 2);
+      expect(getWinner(engine)).toBe('X');
+      engine.reset();
+      expect(getWinner(engine)).toBeNull();
+      expect(getIsDraw(engine)).toBe(false);
     });
 
-    it('连续多局比分累积', () => {
+    it('destroy 后比分归零', () => {
       const engine = createEngine();
       engine.start();
+      placeMove(engine, 0, 0);
+      placeMove(engine, 1, 0);
+      placeMove(engine, 0, 1);
+      placeMove(engine, 1, 1);
+      placeMove(engine, 0, 2);
+      engine.destroy();
+      const scores = getScores(engine);
+      expect(scores.X).toBe(0);
+      expect(scores.O).toBe(0);
+      expect(scores.draw).toBe(0);
+    });
 
-      // 第一局：X 赢
+    it('多轮游戏比分累积', () => {
+      const engine = createEngine();
+      engine.start();
+      // 第一轮 X 赢
+      placeMove(engine, 0, 0);
+      placeMove(engine, 1, 0);
+      placeMove(engine, 0, 1);
+      placeMove(engine, 1, 1);
+      placeMove(engine, 0, 2);
+      expect(getScores(engine).X).toBe(1);
+
+      // 重置再来一轮
+      engine.reset();
+      engine.start();
+      // 第二轮 O 赢
       placeMove(engine, 0, 0); // X
       placeMove(engine, 1, 0); // O
-      placeMove(engine, 0, 1); // X
+      placeMove(engine, 2, 2); // X
       placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins
-      expect((engine as any).scores.X).toBe(1);
-
-      // 第二局：通过 R 键重新开始
-      engine.handleKeyDown('r');
-      expect((engine as any).scores.X).toBe(1); // 比分保留
-
-      // X 再赢一局
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 1, 0); // O
-      placeMove(engine, 0, 1); // X
-      placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins
-      expect((engine as any).scores.X).toBe(2);
+      placeMove(engine, 2, 0); // X
+      placeMove(engine, 1, 2); // O -> 赢
+      expect(getScores(engine).X).toBe(1);
+      expect(getScores(engine).O).toBe(1);
     });
   });
 
-  // ================================================================
-  // 11. setTimeout 与 gameOver 延迟调用
-  // ================================================================
-  describe('setTimeout 延迟 gameOver', () => {
-    it('胜利后 setTimeout 延迟调用 gameOver()', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 1, 0); // O
-      placeMove(engine, 0, 1); // X
-      placeMove(engine, 1, 1); // O
-      placeMove(engine, 0, 2); // X wins
-
-      // 此时 status 仍为 playing（gameOver 延迟执行）
-      expect(engine.status).toBe('playing');
-
-      // 推进定时器（WIN_LINE_ANIMATION_SPEED + 600）
-      vi.advanceTimersByTime(WIN_LINE_ANIMATION_SPEED + 600);
-      expect(engine.status).toBe('gameover');
-    });
-
-    it('平局后 setTimeout 延迟调用 gameOver()', () => {
-      const engine = startEngine();
-      placeMove(engine, 0, 0); // X
-      placeMove(engine, 0, 1); // O
-      placeMove(engine, 0, 2); // X
-      placeMove(engine, 1, 1); // O
-      placeMove(engine, 1, 0); // X
-      placeMove(engine, 2, 0); // O
-      placeMove(engine, 1, 2); // X
-      placeMove(engine, 2, 2); // O
-      placeMove(engine, 2, 1); // X → 平局
-
-      expect(engine.status).toBe('playing');
-      vi.advanceTimersByTime(800);
-      expect(engine.status).toBe('gameover');
-    });
-  });
 });

@@ -55,6 +55,13 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-sky-400',
     gradient: 'from-sky-600/20 to-blue-600/20',
   },
+  [GameType.CONWAYS_GAME_OF_LIFE]: {
+    title: '生命游戏',
+    description: 'Conway 细胞自动机 — 放置细胞，观察生命的涌现与演化！',
+    icon: '🧬',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-emerald-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

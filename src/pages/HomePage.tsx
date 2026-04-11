@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import GameCard from '../components/GameCard';
 import ScoreBoard from '../components/ScoreBoard';
 
-const GAMES: GameType[] = [GameType.TETRIS, GameType.SNAKE, GameType.SOKOBAN, GameType.FLAPPY_BIRD, GameType.G2048, GameType.MEMORY_MATCH, GameType.TIC_TAC_TOE];
+const GAMES: GameType[] = [GameType.TETRIS, GameType.SNAKE, GameType.SOKOBAN, GameType.FLAPPY_BIRD, GameType.G2048, GameType.MEMORY_MATCH, GameType.TIC_TAC_TOE, GameType.CONWAYS_GAME_OF_LIFE];
 
 export default function HomePage() {
   return (

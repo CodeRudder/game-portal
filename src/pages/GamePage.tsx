@@ -13,6 +13,7 @@ const VALID_TYPES: Record<string, GameType> = {
   'g2048': GameType.G2048,
   'memory-match': GameType.MEMORY_MATCH,
   'tic-tac-toe': GameType.TIC_TAC_TOE,
+  'conways-game-of-life': GameType.CONWAYS_GAME_OF_LIFE,
 };
 
 export default function GamePage() {

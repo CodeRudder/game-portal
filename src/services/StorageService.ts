@@ -80,6 +80,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键移动光标 + 空格/回车落子 | R 重开 | P 暂停',
     difficulty: '简单',
   },
+  [GameType.CONWAYS_GAME_OF_LIFE]: {
+    type: GameType.CONWAYS_GAME_OF_LIFE,
+    name: '生命游戏',
+    description: 'Conway 生命游戏 — 经典细胞自动机！放置初始细胞，观察生命的演化与涌现。',
+    icon: '🧬',
+    color: '#00ff88',
+    gradient: 'from-green-400 to-emerald-500',
+    controls: '点击放置细胞 | 空格 开始/暂停 | N 单步 | +/- 调速 | 1-9 预设图案',
+    difficulty: '简单',
+  },
 };
 
 // ========== Storage Keys ==========

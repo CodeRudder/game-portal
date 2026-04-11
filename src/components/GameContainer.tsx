@@ -8,6 +8,7 @@ import { FlappyBirdEngine } from '@/games/flappy-bird/FlappyBirdEngine';
 import { G2048Engine } from '@/games/g2048/G2048Engine';
 import { MemoryMatchEngine } from '@/games/memory-match/MemoryMatchEngine';
 import { TicTacToeEngine } from '@/games/tic-tac-toe/TicTacToeEngine';
+import { GameOfLifeEngine } from '@/games/game-of-life/GameOfLifeEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -24,6 +25,7 @@ function createEngine(type: GameType) {
     case GameTypeEnum.G2048: return new G2048Engine();
     case GameTypeEnum.MEMORY_MATCH: return new MemoryMatchEngine();
     case GameTypeEnum.TIC_TAC_TOE: return new TicTacToeEngine();
+    case GameTypeEnum.CONWAYS_GAME_OF_LIFE: return new GameOfLifeEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
@@ -142,6 +144,22 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         const canvasX = (clientX - rect.left) * scaleX;
         const canvasY = (clientY - rect.top) * scaleY;
         (engineRef.current as MemoryMatchEngine).handleClick(canvasX, canvasY);
+      } else if (gameType === GameTypeEnum.CONWAYS_GAME_OF_LIFE) {
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        let clientX: number, clientY: number;
+        if (e instanceof TouchEvent) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = (e as MouseEvent).clientX;
+          clientY = (e as MouseEvent).clientY;
+        }
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        (engineRef.current as GameOfLifeEngine).handleClick(canvasX, canvasY);
       }
     };
 
@@ -150,6 +168,43 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
     return () => {
       canvas.removeEventListener('click', handleClick);
       canvas.removeEventListener('touchstart', handleClick);
+    };
+  }, [gameType]);
+
+  // 鼠标移动（Game of Life 悬停效果）
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || gameType !== GameTypeEnum.CONWAYS_GAME_OF_LIFE) return;
+    const engine = engineRef.current as GameOfLifeEngine | null;
+    if (!engine) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const canvasX = (e.clientX - rect.left) * scaleX;
+      const canvasY = (e.clientY - rect.top) * scaleY;
+      engine.handleMouseMove(canvasX, canvasY);
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      // 标记鼠标按下状态用于拖拽
+      (engine as any)._isMouseDown = true;
+    };
+
+    const handleMouseUp = () => {
+      (engine as any)._isMouseDown = false;
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mouseleave', handleMouseUp);
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mouseleave', handleMouseUp);
     };
   }, [gameType]);
 
@@ -269,6 +324,7 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         {isSokoban && <span>方向键移动 · Z 撤销 · R 重置关卡</span>}
         {gameType === GameTypeEnum.FLAPPY_BIRD && <span>点击屏幕 / 空格键 / ↑ 跳跃 · 穿越管道得分</span>}
         {gameType === GameTypeEnum.MEMORY_MATCH && <span>点击卡牌或方向键导航 + 空格翻牌 · 配对越快分越高</span>}
+        {gameType === GameTypeEnum.CONWAYS_GAME_OF_LIFE && <span>点击放置细胞 · 空格 开始/暂停 · N 单步 · +/- 调速</span>}
       </div>
     </div>
   );
