@@ -12,6 +12,7 @@ const VALID_TYPES: Record<string, GameType> = {
   'flappy-bird': GameType.FLAPPY_BIRD,
   'g2048': GameType.G2048,
   'memory-match': GameType.MEMORY_MATCH,
+  'tic-tac-toe': GameType.TIC_TAC_TOE,
 };
 
 export default function GamePage() {

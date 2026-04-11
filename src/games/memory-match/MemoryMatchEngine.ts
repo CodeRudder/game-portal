@@ -80,6 +80,9 @@ export class MemoryMatchEngine extends GameEngine {
   private totalPairs: number = 8;
   private levelConfig: LevelConfig = LEVEL_CONFIGS[1];
 
+  /** 保存初始化时的关卡（防止基类 start() 重置 _level 为 1 后丢失） */
+  private _initialLevel: number = 1;
+
   // ========== 卡牌状态 ==========
 
   /** 卡牌数组（一维，行优先排列） */
@@ -125,18 +128,21 @@ export class MemoryMatchEngine extends GameEngine {
   private gridStartX: number = 0;
   /** 网格起始 Y 坐标 */
   private gridStartY: number = GRID_OFFSET_Y;
+  /** init 阶段保存的 level，防止 start() 被基类重置 */
+  private _initLevel: number = 1;
 
   // ========== 生命周期 ==========
 
   protected onInit(): void {
-    this.applyLevelConfig(1);
+    this._initLevel = this._level;
+    this.applyLevelConfig(this._level);
     this.calculateLayout();
     this.cards = this.createCards();
   }
 
   protected onStart(): void {
-    // 根据当前 _level 设置网格大小
-    // 注意：基类 start() 已将 _level 设为 1
+    // 基类 start() 已将 _level 重置为 1，用 onInit 时保存的值恢复
+    this._level = this._initLevel;
     this.applyLevelConfig(this._level);
     this.calculateLayout();
 

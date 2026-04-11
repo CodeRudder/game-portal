@@ -6,6 +6,7 @@ export enum GameType {
   FLAPPY_BIRD = 'flappy-bird',
   G2048 = 'g2048',
   MEMORY_MATCH = 'memory-match',
+  TIC_TAC_TOE = 'tic-tac-toe',
 }
 
 // ========== 游戏状态枚举 ==========

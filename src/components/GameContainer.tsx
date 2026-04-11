@@ -7,6 +7,7 @@ import { SokobanEngine } from '@/games/sokoban/SokobanEngine';
 import { FlappyBirdEngine } from '@/games/flappy-bird/FlappyBirdEngine';
 import { G2048Engine } from '@/games/g2048/G2048Engine';
 import { MemoryMatchEngine } from '@/games/memory-match/MemoryMatchEngine';
+import { TicTacToeEngine } from '@/games/tic-tac-toe/TicTacToeEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -22,6 +23,7 @@ function createEngine(type: GameType) {
     case GameTypeEnum.FLAPPY_BIRD: return new FlappyBirdEngine();
     case GameTypeEnum.G2048: return new G2048Engine();
     case GameTypeEnum.MEMORY_MATCH: return new MemoryMatchEngine();
+    case GameTypeEnum.TIC_TAC_TOE: return new TicTacToeEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

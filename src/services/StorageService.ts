@@ -70,6 +70,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键导航 + 空格/回车翻牌 | 鼠标点击',
     difficulty: '简单',
   },
+  [GameType.TIC_TAC_TOE]: {
+    type: GameType.TIC_TAC_TOE,
+    name: '井字棋',
+    description: '经典双人对战棋，三子连线即胜！支持 AI 对手模式。',
+    icon: '⭕',
+    color: '#38bdf8',
+    gradient: 'from-sky-500 to-blue-500',
+    controls: '方向键移动光标 + 空格/回车落子 | R 重开 | P 暂停',
+    difficulty: '简单',
+  },
 };
 
 // ========== Storage Keys ==========

@@ -48,6 +48,13 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-pink-400',
     gradient: 'from-pink-600/20 to-purple-600/20',
   },
+  [GameType.TIC_TAC_TOE]: {
+    title: '井字棋',
+    description: '经典双人对战棋，三子连线即胜！支持 AI 对手模式。',
+    icon: '⭕',
+    color: 'text-sky-400',
+    gradient: 'from-sky-600/20 to-blue-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {
