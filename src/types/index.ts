@@ -5,6 +5,7 @@ export enum GameType {
   SOKOBAN = 'sokoban',
   FLAPPY_BIRD = 'flappy-bird',
   G2048 = 'g2048',
+  MEMORY_MATCH = 'memory-match',
 }
 
 // ========== 游戏状态枚举 ==========

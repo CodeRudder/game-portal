@@ -60,6 +60,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键 / WASD 滑动 | 合并相同数字',
     difficulty: '中等',
   },
+  [GameType.MEMORY_MATCH]: {
+    type: GameType.MEMORY_MATCH,
+    name: '记忆翻牌',
+    description: '翻开卡牌寻找配对，考验你的记忆力！配对越快分数越高。',
+    icon: '🃏',
+    color: '#ec4899',
+    gradient: 'from-pink-500 to-purple-500',
+    controls: '方向键导航 + 空格/回车翻牌 | 鼠标点击',
+    difficulty: '简单',
+  },
 };
 
 // ========== Storage Keys ==========

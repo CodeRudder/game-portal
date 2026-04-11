@@ -6,6 +6,7 @@ import { SnakeEngine } from '@/games/snake/SnakeEngine';
 import { SokobanEngine } from '@/games/sokoban/SokobanEngine';
 import { FlappyBirdEngine } from '@/games/flappy-bird/FlappyBirdEngine';
 import { G2048Engine } from '@/games/g2048/G2048Engine';
+import { MemoryMatchEngine } from '@/games/memory-match/MemoryMatchEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -20,6 +21,7 @@ function createEngine(type: GameType) {
     case GameTypeEnum.SOKOBAN: return new SokobanEngine();
     case GameTypeEnum.FLAPPY_BIRD: return new FlappyBirdEngine();
     case GameTypeEnum.G2048: return new G2048Engine();
+    case GameTypeEnum.MEMORY_MATCH: return new MemoryMatchEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
@@ -119,8 +121,25 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
 
     const handleClick = (e: Event) => {
       e.preventDefault();
-      if (engineRef.current && gameType === GameTypeEnum.FLAPPY_BIRD) {
+      if (!engineRef.current) return;
+      if (gameType === GameTypeEnum.FLAPPY_BIRD) {
         (engineRef.current as FlappyBirdEngine).flap();
+      } else if (gameType === GameTypeEnum.MEMORY_MATCH) {
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        let clientX: number, clientY: number;
+        if (e instanceof TouchEvent) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = (e as MouseEvent).clientX;
+          clientY = (e as MouseEvent).clientY;
+        }
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        (engineRef.current as MemoryMatchEngine).handleClick(canvasX, canvasY);
       }
     };
 
@@ -247,6 +266,7 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         {gameType === GameTypeEnum.SNAKE && <span>吃食物增长 · 碰墙或自身结束</span>}
         {isSokoban && <span>方向键移动 · Z 撤销 · R 重置关卡</span>}
         {gameType === GameTypeEnum.FLAPPY_BIRD && <span>点击屏幕 / 空格键 / ↑ 跳跃 · 穿越管道得分</span>}
+        {gameType === GameTypeEnum.MEMORY_MATCH && <span>点击卡牌或方向键导航 + 空格翻牌 · 配对越快分越高</span>}
       </div>
     </div>
   );

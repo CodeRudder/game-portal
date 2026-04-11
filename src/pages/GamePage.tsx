@@ -11,6 +11,7 @@ const VALID_TYPES: Record<string, GameType> = {
   sokoban: GameType.SOKOBAN,
   'flappy-bird': GameType.FLAPPY_BIRD,
   'g2048': GameType.G2048,
+  'memory-match': GameType.MEMORY_MATCH,
 };
 
 export default function GamePage() {

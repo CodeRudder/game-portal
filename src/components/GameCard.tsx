@@ -41,6 +41,13 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-amber-400',
     gradient: 'from-amber-600/20 to-orange-600/20',
   },
+  [GameType.MEMORY_MATCH]: {
+    title: '记忆翻牌',
+    description: '翻开卡牌寻找配对，考验你的记忆力！配对越快分数越高。',
+    icon: '🃏',
+    color: 'text-pink-400',
+    gradient: 'from-pink-600/20 to-purple-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {
