@@ -80,8 +80,8 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键移动光标 + 空格/回车落子 | R 重开 | P 暂停',
     difficulty: '简单',
   },
-  [GameType.CONWAYS_GAME_OF_LIFE]: {
-    type: GameType.CONWAYS_GAME_OF_LIFE,
+  [GameType.GAME_OF_LIFE]: {
+    type: GameType.GAME_OF_LIFE,
     name: '生命游戏',
     description: 'Conway 生命游戏 — 经典细胞自动机！放置初始细胞，观察生命的演化与涌现。',
     icon: '🧬',

@@ -25,7 +25,7 @@ function createEngine(type: GameType) {
     case GameTypeEnum.G2048: return new G2048Engine();
     case GameTypeEnum.MEMORY_MATCH: return new MemoryMatchEngine();
     case GameTypeEnum.TIC_TAC_TOE: return new TicTacToeEngine();
-    case GameTypeEnum.CONWAYS_GAME_OF_LIFE: return new GameOfLifeEngine();
+    case GameTypeEnum.GAME_OF_LIFE: return new GameOfLifeEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
@@ -144,7 +144,7 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         const canvasX = (clientX - rect.left) * scaleX;
         const canvasY = (clientY - rect.top) * scaleY;
         (engineRef.current as MemoryMatchEngine).handleClick(canvasX, canvasY);
-      } else if (gameType === GameTypeEnum.CONWAYS_GAME_OF_LIFE) {
+      } else if (gameType === GameTypeEnum.GAME_OF_LIFE) {
         const canvas = canvasRef.current!;
         const rect = canvas.getBoundingClientRect();
         let clientX: number, clientY: number;
@@ -174,7 +174,7 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
   // 鼠标移动（Game of Life 悬停效果）
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || gameType !== GameTypeEnum.CONWAYS_GAME_OF_LIFE) return;
+    if (!canvas || gameType !== GameTypeEnum.GAME_OF_LIFE) return;
     const engine = engineRef.current as GameOfLifeEngine | null;
     if (!engine) return;
 
@@ -324,7 +324,7 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         {isSokoban && <span>方向键移动 · Z 撤销 · R 重置关卡</span>}
         {gameType === GameTypeEnum.FLAPPY_BIRD && <span>点击屏幕 / 空格键 / ↑ 跳跃 · 穿越管道得分</span>}
         {gameType === GameTypeEnum.MEMORY_MATCH && <span>点击卡牌或方向键导航 + 空格翻牌 · 配对越快分越高</span>}
-        {gameType === GameTypeEnum.CONWAYS_GAME_OF_LIFE && <span>点击放置细胞 · 空格 开始/暂停 · N 单步 · +/- 调速</span>}
+        {gameType === GameTypeEnum.GAME_OF_LIFE && <span>点击放置细胞 · 空格 开始/暂停 · N 单步 · +/- 调速</span>}
       </div>
     </div>
   );
