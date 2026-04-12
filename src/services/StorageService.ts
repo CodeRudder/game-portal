@@ -170,6 +170,26 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '← → 移动飞船 · 空格发射子弹',
     difficulty: '中等',
   },
+  [GameType.OTHELLO]: {
+    type: GameType.OTHELLO,
+    name: '黑白棋',
+    description: '经典翻转棋，落子翻转对手棋子，占据更多格子获胜！',
+    icon: '⚫',
+    color: '#22c55e',
+    gradient: 'from-green-400 to-emerald-400',
+    controls: '点击棋盘落子 · AI 自动对弈',
+    difficulty: '中等',
+  },
+  [GameType.CHECKERS]: {
+    type: GameType.CHECKERS,
+    name: '跳棋',
+    description: '经典西洋跳棋，吃子升王，策略对弈！',
+    icon: '🟤',
+    color: '#f59e0b',
+    gradient: 'from-amber-400 to-orange-400',
+    controls: '点击选子 · 点击落子',
+    difficulty: '中等',
+  },
 };
 
 // ========== Storage Keys ==========

@@ -17,6 +17,8 @@ import { PipeManiaEngine } from '@/games/pipe-mania/PipeManiaEngine';
 import { BreakoutEngine } from '@/games/breakout/BreakoutEngine';
 import { PacmanEngine } from '@/games/pacman/PacmanEngine';
 import { SpaceInvadersEngine } from '@/games/space-invaders/SpaceInvadersEngine';
+import { OthelloEngine } from '@/games/othello/OthelloEngine';
+import { CheckersEngine } from '@/games/checkers/CheckersEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -42,6 +44,8 @@ function createEngine(type: GameType) {
     case GameTypeEnum.BREAKOUT: return new BreakoutEngine();
     case GameTypeEnum.PACMAN: return new PacmanEngine();
     case GameTypeEnum.SPACE_INVADERS: return new SpaceInvadersEngine();
+    case GameTypeEnum.OTHELLO: return new OthelloEngine();
+    case GameTypeEnum.CHECKERS: return new CheckersEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

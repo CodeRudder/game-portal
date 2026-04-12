@@ -118,6 +118,20 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-cyan-400',
     gradient: 'from-cyan-600/20 to-purple-600/20',
   },
+  [GameType.OTHELLO]: {
+    title: '黑白棋',
+    description: '经典翻转棋，落子翻转对手棋子，占据更多格子获胜！',
+    icon: '⚫',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-emerald-600/20',
+  },
+  [GameType.CHECKERS]: {
+    title: '跳棋',
+    description: '经典西洋跳棋，吃子连跳，升变为王，击败 AI 对手！',
+    icon: '🔴',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-orange-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

@@ -22,6 +22,8 @@ const VALID_TYPES: Record<string, GameType> = {
   'breakout': GameType.BREAKOUT,
   'pacman': GameType.PACMAN,
   'space-invaders': GameType.SPACE_INVADERS,
+  'othello': GameType.OTHELLO,
+  'checkers': GameType.CHECKERS,
 };
 
 export default function GamePage() {
