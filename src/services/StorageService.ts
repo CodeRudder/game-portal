@@ -120,6 +120,26 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '空格/↑ 跳跃 · ↓ 下蹲 · 点击屏幕跳跃',
     difficulty: '简单',
   },
+  [GameType.TRON]: {
+    type: GameType.TRON,
+    name: '贪吃虫 Tron',
+    description: '双人光线对抗！各自控制一条光线，碰到墙壁或轨迹就输。支持 AI 模式。',
+    icon: '⚡',
+    color: '#a3e635',
+    gradient: 'from-lime-400 to-green-400',
+    controls: '玩家1 WASD · 玩家2 方向键 · 碰墙或轨迹即输',
+    difficulty: '中等',
+  },
+  [GameType.PIPE_MANIA]: {
+    type: GameType.PIPE_MANIA,
+    name: '接水管',
+    description: '放置管道连接水源到出口，让水流通过尽可能长的管道！',
+    icon: '🔧',
+    color: '#60a5fa',
+    gradient: 'from-blue-400 to-cyan-400',
+    controls: '点击网格放置管道 · 空格跳过 · 倒计时结束后开始流水',
+    difficulty: '中等',
+  },
 };
 
 // ========== Storage Keys ==========

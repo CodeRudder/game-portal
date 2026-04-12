@@ -17,6 +17,8 @@ const VALID_TYPES: Record<string, GameType> = {
   'minesweeper': GameType.MINESWEEPER,
   'gomoku': GameType.GOMOKU,
   'dino-runner': GameType.DINO_RUNNER,
+  'tron': GameType.TRON,
+  'pipe-mania': GameType.PIPE_MANIA,
 };
 
 export default function GamePage() {

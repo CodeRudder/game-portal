@@ -12,6 +12,8 @@ import { GameOfLifeEngine } from '@/games/game-of-life/GameOfLifeEngine';
 import { MinesweeperEngine } from '@/games/minesweeper/MinesweeperEngine';
 import { GomokuEngine } from '@/games/gomoku/GomokuEngine';
 import { DinoRunnerEngine } from '@/games/dino-runner/DinoRunnerEngine';
+import { TronEngine } from '@/games/tron/TronEngine';
+import { PipeManiaEngine } from '@/games/pipe-mania/PipeManiaEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -32,6 +34,8 @@ function createEngine(type: GameType) {
     case GameTypeEnum.MINESWEEPER: return new MinesweeperEngine();
     case GameTypeEnum.GOMOKU: return new GomokuEngine();
     case GameTypeEnum.DINO_RUNNER: return new DinoRunnerEngine();
+    case GameTypeEnum.TRON: return new TronEngine();
+    case GameTypeEnum.PIPE_MANIA: return new PipeManiaEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
@@ -192,6 +196,22 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         const canvasX = (clientX - rect.left) * scaleX;
         const canvasY = (clientY - rect.top) * scaleY;
         (engineRef.current as GomokuEngine).handleClick(canvasX, canvasY);
+      } else if (gameType === GameTypeEnum.PIPE_MANIA) {
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        let clientX: number, clientY: number;
+        if (e instanceof TouchEvent) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = (e as MouseEvent).clientX;
+          clientY = (e as MouseEvent).clientY;
+        }
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        (engineRef.current as PipeManiaEngine).handleClick(canvasX, canvasY);
       } else if (gameType === GameTypeEnum.DINO_RUNNER) {
         (engineRef.current as DinoRunnerEngine).flap();
       }

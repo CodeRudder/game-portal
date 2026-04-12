@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import GameCard from '../components/GameCard';
 import ScoreBoard from '../components/ScoreBoard';
 
-const GAMES: GameType[] = [GameType.TETRIS, GameType.SNAKE, GameType.SOKOBAN, GameType.FLAPPY_BIRD, GameType.G2048, GameType.MEMORY_MATCH, GameType.TIC_TAC_TOE, GameType.GAME_OF_LIFE, GameType.MINESWEEPER, GameType.GOMOKU, GameType.DINO_RUNNER];
+const GAMES: GameType[] = [GameType.TETRIS, GameType.SNAKE, GameType.SOKOBAN, GameType.FLAPPY_BIRD, GameType.G2048, GameType.MEMORY_MATCH, GameType.TIC_TAC_TOE, GameType.GAME_OF_LIFE, GameType.MINESWEEPER, GameType.GOMOKU, GameType.DINO_RUNNER, GameType.TRON, GameType.PIPE_MANIA];
 
 export default function HomePage() {
   return (

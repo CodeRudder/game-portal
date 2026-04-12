@@ -83,6 +83,20 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-emerald-400',
     gradient: 'from-emerald-600/20 to-teal-600/20',
   },
+  [GameType.TRON]: {
+    title: '贪吃虫 Tron',
+    description: '双人光线对抗！控制光线移动，碰到墙壁或轨迹就输，支持 AI 模式。',
+    icon: '⚡',
+    color: 'text-lime-400',
+    gradient: 'from-lime-600/20 to-green-600/20',
+  },
+  [GameType.PIPE_MANIA]: {
+    title: '接水管',
+    description: '放置管道连接水源到出口，让水流通过尽可能长的管道！',
+    icon: '🔧',
+    color: 'text-blue-400',
+    gradient: 'from-blue-600/20 to-cyan-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

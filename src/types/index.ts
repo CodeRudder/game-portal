@@ -11,6 +11,8 @@ export enum GameType {
   MINESWEEPER = 'minesweeper',
   GOMOKU = 'gomoku',
   DINO_RUNNER = 'dino-runner',
+  TRON = 'tron',
+  PIPE_MANIA = 'pipe-mania',
 }
 
 // ========== 游戏状态枚举 ==========
