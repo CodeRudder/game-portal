@@ -88,6 +88,9 @@ describe('SnakeEngine', () => {
     it('连续多次 update 蛇持续移动', () => {
       const engine = startEngine();
 
+      // 将食物放到蛇路径之外，避免随机食物恰好落在蛇的行进路线上
+      (engine as any).food = { x: 0, y: 0 };
+
       // 推进 3 次移动
       for (let i = 0; i < 3; i++) {
         advanceUpdate(engine, 150);
