@@ -132,6 +132,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-red-400',
     gradient: 'from-red-600/20 to-orange-600/20',
   },
+  [GameType.PINBALL]: {
+    title: '弹珠台',
+    description: '经典弹珠台，控制挡板弹射弹珠，碰撞bumper得分！',
+    icon: '🎰',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-pink-600/20',
+  },
+  [GameType.MAHJONG_CONNECT]: {
+    title: '连连看',
+    description: '找到相同图案的牌面，通过不超过2个拐弯的路径连接消除！',
+    icon: '🀄',
+    color: 'text-teal-400',
+    gradient: 'from-teal-600/20 to-cyan-600/20',
+  },
+  [GameType.MATCH_3]: {
+    title: '消消乐',
+    description: '交换相邻宝石，三连消除得分，连锁反应获得更高倍率！',
+    icon: '💎',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-yellow-600/20',
+  },
+  [GameType.SUDOKU]: {
+    title: '数独',
+    description: '经典数字推理，每行每列每宫1-9不重复，三种难度挑战！',
+    icon: '🔢',
+    color: 'text-blue-400',
+    gradient: 'from-blue-600/20 to-indigo-600/20',
+  },
+  [GameType.TETRIS_BATTLE]: {
+    title: '方块对战',
+    description: '俄罗斯方块双人对战！消行攻击对手，AI对手等你挑战！',
+    icon: '⚔️',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-orange-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

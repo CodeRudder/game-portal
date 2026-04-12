@@ -19,6 +19,11 @@ import { PacmanEngine } from '@/games/pacman/PacmanEngine';
 import { SpaceInvadersEngine } from '@/games/space-invaders/SpaceInvadersEngine';
 import { OthelloEngine } from '@/games/othello/OthelloEngine';
 import { CheckersEngine } from '@/games/checkers/CheckersEngine';
+import { PinballEngine } from '@/games/pinball/PinballEngine';
+import { MahjongConnectEngine } from '@/games/mahjong-connect/MahjongConnectEngine';
+import { Match3Engine } from '@/games/match-3/Match3Engine';
+import { SudokuEngine } from '@/games/sudoku/SudokuEngine';
+import { TetrisBattleEngine } from '@/games/tetris-battle/TetrisBattleEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -46,6 +51,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.SPACE_INVADERS: return new SpaceInvadersEngine();
     case GameTypeEnum.OTHELLO: return new OthelloEngine();
     case GameTypeEnum.CHECKERS: return new CheckersEngine();
+    case GameTypeEnum.PINBALL: return new PinballEngine();
+    case GameTypeEnum.MAHJONG_CONNECT: return new MahjongConnectEngine();
+    case GameTypeEnum.MATCH_3: return new Match3Engine();
+    case GameTypeEnum.SUDOKU: return new SudokuEngine();
+    case GameTypeEnum.TETRIS_BATTLE: return new TetrisBattleEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
@@ -224,6 +234,54 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         (engineRef.current as PipeManiaEngine).handleClick(canvasX, canvasY);
       } else if (gameType === GameTypeEnum.DINO_RUNNER) {
         (engineRef.current as DinoRunnerEngine).flap();
+      } else if (gameType === GameTypeEnum.MAHJONG_CONNECT) {
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        let clientX: number, clientY: number;
+        if (e instanceof TouchEvent) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = (e as MouseEvent).clientX;
+          clientY = (e as MouseEvent).clientY;
+        }
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        (engineRef.current as MahjongConnectEngine).handleClick(canvasX, canvasY);
+      } else if (gameType === GameTypeEnum.MATCH_3) {
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        let clientX: number, clientY: number;
+        if (e instanceof TouchEvent) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = (e as MouseEvent).clientX;
+          clientY = (e as MouseEvent).clientY;
+        }
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        (engineRef.current as Match3Engine).handleClick(canvasX, canvasY);
+      } else if (gameType === GameTypeEnum.SUDOKU) {
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        let clientX: number, clientY: number;
+        if (e instanceof TouchEvent) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = (e as MouseEvent).clientX;
+          clientY = (e as MouseEvent).clientY;
+        }
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        (engineRef.current as SudokuEngine).handleClick(canvasX, canvasY);
       }
     };
 

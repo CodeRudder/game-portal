@@ -18,6 +18,11 @@ export enum GameType {
   SPACE_INVADERS = 'space-invaders',
   OTHELLO = 'othello',
   CHECKERS = 'checkers',
+  PINBALL = 'pinball',
+  MAHJONG_CONNECT = 'mahjong-connect',
+  MATCH_3 = 'match-3',
+  SUDOKU = 'sudoku',
+  TETRIS_BATTLE = 'tetris-battle',
 }
 
 // ========== 游戏状态枚举 ==========
