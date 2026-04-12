@@ -13,6 +13,7 @@ export enum GameType {
   DINO_RUNNER = 'dino-runner',
   TRON = 'tron',
   PIPE_MANIA = 'pipe-mania',
+  BREAKOUT = 'breakout',
 }
 
 // ========== 游戏状态枚举 ==========

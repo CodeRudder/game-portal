@@ -140,6 +140,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '点击网格放置管道 · 空格跳过 · 倒计时结束后开始流水',
     difficulty: '中等',
   },
+  [GameType.BREAKOUT]: {
+    type: GameType.BREAKOUT,
+    name: '打砖块',
+    description: '控制挡板反弹球击碎砖块，不同颜色不同分数，挑战你的反应速度！',
+    icon: '🧱',
+    color: '#f97316',
+    gradient: 'from-orange-400 to-red-400',
+    controls: '← → 移动挡板 · 空格发射球',
+    difficulty: '中等',
+  },
 };
 
 // ========== Storage Keys ==========

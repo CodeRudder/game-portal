@@ -97,6 +97,13 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-blue-400',
     gradient: 'from-blue-600/20 to-cyan-600/20',
   },
+  [GameType.BREAKOUT]: {
+    title: '打砖块',
+    description: '控制挡板反弹球击碎砖块，不同颜色不同分数，挑战你的反应速度！',
+    icon: '🧱',
+    color: 'text-orange-400',
+    gradient: 'from-orange-600/20 to-red-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

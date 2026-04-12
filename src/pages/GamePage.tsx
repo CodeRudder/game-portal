@@ -19,6 +19,7 @@ const VALID_TYPES: Record<string, GameType> = {
   'dino-runner': GameType.DINO_RUNNER,
   'tron': GameType.TRON,
   'pipe-mania': GameType.PIPE_MANIA,
+  'breakout': GameType.BREAKOUT,
 };
 
 export default function GamePage() {
