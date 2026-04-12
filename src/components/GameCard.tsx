@@ -62,6 +62,27 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-green-400',
     gradient: 'from-green-600/20 to-emerald-600/20',
   },
+  [GameType.MINESWEEPER]: {
+    title: '扫雷',
+    description: '经典格子推理，揭开安全格、标记地雷！三种难度挑战。',
+    icon: '💣',
+    color: 'text-gray-300',
+    gradient: 'from-gray-600/20 to-slate-600/20',
+  },
+  [GameType.GOMOKU]: {
+    title: '五子棋',
+    description: '经典连五棋类游戏，支持人机对战和双人对弈！',
+    icon: '⚫',
+    color: 'text-violet-400',
+    gradient: 'from-violet-600/20 to-purple-600/20',
+  },
+  [GameType.DINO_RUNNER]: {
+    title: '跑酷恐龙',
+    description: 'Chrome 经典离线小恐龙，跳跃躲避仙人掌，看你能跑多远！',
+    icon: '🦖',
+    color: 'text-emerald-400',
+    gradient: 'from-emerald-600/20 to-teal-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

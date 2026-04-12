@@ -9,6 +9,9 @@ import { G2048Engine } from '@/games/g2048/G2048Engine';
 import { MemoryMatchEngine } from '@/games/memory-match/MemoryMatchEngine';
 import { TicTacToeEngine } from '@/games/tic-tac-toe/TicTacToeEngine';
 import { GameOfLifeEngine } from '@/games/game-of-life/GameOfLifeEngine';
+import { MinesweeperEngine } from '@/games/minesweeper/MinesweeperEngine';
+import { GomokuEngine } from '@/games/gomoku/GomokuEngine';
+import { DinoRunnerEngine } from '@/games/dino-runner/DinoRunnerEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -26,6 +29,9 @@ function createEngine(type: GameType) {
     case GameTypeEnum.MEMORY_MATCH: return new MemoryMatchEngine();
     case GameTypeEnum.TIC_TAC_TOE: return new TicTacToeEngine();
     case GameTypeEnum.GAME_OF_LIFE: return new GameOfLifeEngine();
+    case GameTypeEnum.MINESWEEPER: return new MinesweeperEngine();
+    case GameTypeEnum.GOMOKU: return new GomokuEngine();
+    case GameTypeEnum.DINO_RUNNER: return new DinoRunnerEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
@@ -160,6 +166,34 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         const canvasX = (clientX - rect.left) * scaleX;
         const canvasY = (clientY - rect.top) * scaleY;
         (engineRef.current as GameOfLifeEngine).handleClick(canvasX, canvasY);
+      } else if (gameType === GameTypeEnum.MINESWEEPER) {
+        // 扫雷：左键揭开，右键标旗（click 事件不含右键，由 contextmenu 处理）
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        const me = e as MouseEvent;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const canvasX = (me.clientX - rect.left) * scaleX;
+        const canvasY = (me.clientY - rect.top) * scaleY;
+        (engineRef.current as MinesweeperEngine).handleClick(canvasX, canvasY, false);
+      } else if (gameType === GameTypeEnum.GOMOKU) {
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        let clientX: number, clientY: number;
+        if (e instanceof TouchEvent) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = (e as MouseEvent).clientX;
+          clientY = (e as MouseEvent).clientY;
+        }
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        (engineRef.current as GomokuEngine).handleClick(canvasX, canvasY);
+      } else if (gameType === GameTypeEnum.DINO_RUNNER) {
+        (engineRef.current as DinoRunnerEngine).flap();
       }
     };
 
@@ -168,6 +202,28 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
     return () => {
       canvas.removeEventListener('click', handleClick);
       canvas.removeEventListener('touchstart', handleClick);
+    };
+  }, [gameType]);
+
+  // 扫雷右键标旗（contextmenu 事件）
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || gameType !== GameTypeEnum.MINESWEEPER) return;
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      if (!engineRef.current) return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const canvasX = (e.clientX - rect.left) * scaleX;
+      const canvasY = (e.clientY - rect.top) * scaleY;
+      (engineRef.current as MinesweeperEngine).handleClick(canvasX, canvasY, true);
+    };
+
+    canvas.addEventListener('contextmenu', handleContextMenu);
+    return () => {
+      canvas.removeEventListener('contextmenu', handleContextMenu);
     };
   }, [gameType]);
 
@@ -318,13 +374,16 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
 
       {/* 操作提示 */}
       <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-500">
-        {!isSokoban && gameType !== GameTypeEnum.FLAPPY_BIRD && <span>↑↓←→ / WASD 移动</span>}
+        {!isSokoban && gameType !== GameTypeEnum.FLAPPY_BIRD && gameType !== GameTypeEnum.DINO_RUNNER && <span>↑↓←→ / WASD 移动</span>}
         {gameType === GameTypeEnum.TETRIS && <span>↑ 旋转 · ↓ 加速 · 空格 硬降</span>}
         {gameType === GameTypeEnum.SNAKE && <span>吃食物增长 · 碰墙或自身结束</span>}
         {isSokoban && <span>方向键移动 · Z 撤销 · R 重置关卡</span>}
         {gameType === GameTypeEnum.FLAPPY_BIRD && <span>点击屏幕 / 空格键 / ↑ 跳跃 · 穿越管道得分</span>}
         {gameType === GameTypeEnum.MEMORY_MATCH && <span>点击卡牌或方向键导航 + 空格翻牌 · 配对越快分越高</span>}
         {gameType === GameTypeEnum.GAME_OF_LIFE && <span>点击放置细胞 · 空格 开始/暂停 · N 单步 · +/- 调速</span>}
+        {gameType === GameTypeEnum.MINESWEEPER && <span>点击揭开 · 右键标旗 · 方向键移动 · F 标旗 · 1/2/3 切换难度</span>}
+        {gameType === GameTypeEnum.GOMOKU && <span>点击/方向键落子 · T 切换模式 · R 重开</span>}
+        {gameType === GameTypeEnum.DINO_RUNNER && <span>空格/↑ 跳跃 · ↓ 下蹲 · 点击屏幕跳跃</span>}
       </div>
     </div>
   );

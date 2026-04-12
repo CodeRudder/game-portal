@@ -90,6 +90,36 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '点击放置细胞 | 空格 开始/暂停 | N 单步 | +/- 调速 | 1-9 预设图案',
     difficulty: '简单',
   },
+  [GameType.MINESWEEPER]: {
+    type: GameType.MINESWEEPER,
+    name: '扫雷',
+    description: '经典扫雷游戏，根据数字线索推理出所有地雷的位置。支持三种难度！',
+    icon: '💣',
+    color: '#94a3b8',
+    gradient: 'from-gray-500 to-slate-500',
+    controls: '点击揭开 · 右键标旗 · 方向键移动光标 · F 标旗 · 1/2/3 切换难度',
+    difficulty: '中等',
+  },
+  [GameType.GOMOKU]: {
+    type: GameType.GOMOKU,
+    name: '五子棋',
+    description: '15×15 棋盘上先连成五子者胜！支持人机对战和双人对弈。',
+    icon: '⚫',
+    color: '#8b5cf6',
+    gradient: 'from-violet-500 to-purple-500',
+    controls: '点击/方向键落子 · T 切换模式 · R 重开',
+    difficulty: '中等',
+  },
+  [GameType.DINO_RUNNER]: {
+    type: GameType.DINO_RUNNER,
+    name: '跑酷恐龙',
+    description: 'Chrome 经典离线恐龙跑酷！跳跃躲避仙人掌和翼龙，速度越来越快。',
+    icon: '🦖',
+    color: '#34d399',
+    gradient: 'from-emerald-400 to-teal-400',
+    controls: '空格/↑ 跳跃 · ↓ 下蹲 · 点击屏幕跳跃',
+    difficulty: '简单',
+  },
 };
 
 // ========== Storage Keys ==========

@@ -14,6 +14,9 @@ const VALID_TYPES: Record<string, GameType> = {
   'memory-match': GameType.MEMORY_MATCH,
   'tic-tac-toe': GameType.TIC_TAC_TOE,
   'game-of-life': GameType.GAME_OF_LIFE,
+  'minesweeper': GameType.MINESWEEPER,
+  'gomoku': GameType.GOMOKU,
+  'dino-runner': GameType.DINO_RUNNER,
 };
 
 export default function GamePage() {

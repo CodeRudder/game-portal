@@ -8,6 +8,9 @@ export enum GameType {
   MEMORY_MATCH = 'memory-match',
   TIC_TAC_TOE = 'tic-tac-toe',
   GAME_OF_LIFE = 'game-of-life',
+  MINESWEEPER = 'minesweeper',
+  GOMOKU = 'gomoku',
+  DINO_RUNNER = 'dino-runner',
 }
 
 // ========== 游戏状态枚举 ==========
