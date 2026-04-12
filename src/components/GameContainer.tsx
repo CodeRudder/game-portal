@@ -225,10 +225,11 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
     };
   }, [gameType]);
 
-  // 扫雷右键标旗（contextmenu 事件）
+  // 右键事件（扫雷标旗、接水管旋转）
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || gameType !== GameTypeEnum.MINESWEEPER) return;
+    if (!canvas) return;
+    if (gameType !== GameTypeEnum.MINESWEEPER && gameType !== GameTypeEnum.PIPE_MANIA) return;
 
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
@@ -238,7 +239,11 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
       const scaleY = canvas.height / rect.height;
       const canvasX = (e.clientX - rect.left) * scaleX;
       const canvasY = (e.clientY - rect.top) * scaleY;
-      (engineRef.current as MinesweeperEngine).handleClick(canvasX, canvasY, true);
+      if (gameType === GameTypeEnum.MINESWEEPER) {
+        (engineRef.current as MinesweeperEngine).handleClick(canvasX, canvasY, true);
+      } else if (gameType === GameTypeEnum.PIPE_MANIA) {
+        (engineRef.current as PipeManiaEngine).handleRightClick(canvasX, canvasY);
+      }
     };
 
     canvas.addEventListener('contextmenu', handleContextMenu);
