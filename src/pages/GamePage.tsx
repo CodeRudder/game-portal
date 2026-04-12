@@ -21,6 +21,7 @@ const VALID_TYPES: Record<string, GameType> = {
   'pipe-mania': GameType.PIPE_MANIA,
   'breakout': GameType.BREAKOUT,
   'pacman': GameType.PACMAN,
+  'space-invaders': GameType.SPACE_INVADERS,
 };
 
 export default function GamePage() {

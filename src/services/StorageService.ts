@@ -160,6 +160,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键/WASD 移动 · 吃大力丸反击幽灵',
     difficulty: '中等',
   },
+  [GameType.SPACE_INVADERS]: {
+    type: GameType.SPACE_INVADERS,
+    name: '太空射击',
+    description: '驾驶飞船消灭外星人阵列，保护掩体，拯救地球！',
+    icon: '🚀',
+    color: '#22d3ee',
+    gradient: 'from-cyan-400 to-purple-400',
+    controls: '← → 移动飞船 · 空格发射子弹',
+    difficulty: '中等',
+  },
 };
 
 // ========== Storage Keys ==========

@@ -111,6 +111,13 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-yellow-400',
     gradient: 'from-yellow-600/20 to-amber-600/20',
   },
+  [GameType.SPACE_INVADERS]: {
+    title: '太空射击',
+    description: '驾驶飞船消灭外星人阵列，保护掩体，拯救地球！',
+    icon: '🚀',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-purple-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

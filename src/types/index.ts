@@ -15,6 +15,7 @@ export enum GameType {
   PIPE_MANIA = 'pipe-mania',
   BREAKOUT = 'breakout',
   PACMAN = 'pacman',
+  SPACE_INVADERS = 'space-invaders',
 }
 
 // ========== 游戏状态枚举 ==========
