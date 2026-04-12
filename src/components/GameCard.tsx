@@ -104,6 +104,13 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-orange-400',
     gradient: 'from-orange-600/20 to-red-600/20',
   },
+  [GameType.PACMAN]: {
+    title: '吃豆人',
+    description: '经典吃豆人，在迷宫中吃掉所有豆子，躲避幽灵追击！',
+    icon: '🟡',
+    color: 'text-yellow-400',
+    gradient: 'from-yellow-600/20 to-amber-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

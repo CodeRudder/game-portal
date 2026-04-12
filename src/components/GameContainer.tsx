@@ -15,6 +15,7 @@ import { DinoRunnerEngine } from '@/games/dino-runner/DinoRunnerEngine';
 import { TronEngine } from '@/games/tron/TronEngine';
 import { PipeManiaEngine } from '@/games/pipe-mania/PipeManiaEngine';
 import { BreakoutEngine } from '@/games/breakout/BreakoutEngine';
+import { PacmanEngine } from '@/games/pacman/PacmanEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -38,6 +39,7 @@ function createEngine(type: GameType) {
     case GameTypeEnum.TRON: return new TronEngine();
     case GameTypeEnum.PIPE_MANIA: return new PipeManiaEngine();
     case GameTypeEnum.BREAKOUT: return new BreakoutEngine();
+    case GameTypeEnum.PACMAN: return new PacmanEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

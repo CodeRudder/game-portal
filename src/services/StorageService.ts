@@ -150,6 +150,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '← → 移动挡板 · 空格发射球',
     difficulty: '中等',
   },
+  [GameType.PACMAN]: {
+    type: GameType.PACMAN,
+    name: '吃豆人',
+    description: '经典吃豆人，在迷宫中吃掉所有豆子，躲避幽灵追击！',
+    icon: '🟡',
+    color: '#facc15',
+    gradient: 'from-yellow-400 to-amber-400',
+    controls: '方向键/WASD 移动 · 吃大力丸反击幽灵',
+    difficulty: '中等',
+  },
 };
 
 // ========== Storage Keys ==========

@@ -20,6 +20,7 @@ const VALID_TYPES: Record<string, GameType> = {
   'tron': GameType.TRON,
   'pipe-mania': GameType.PIPE_MANIA,
   'breakout': GameType.BREAKOUT,
+  'pacman': GameType.PACMAN,
 };
 
 export default function GamePage() {

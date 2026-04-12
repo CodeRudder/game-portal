@@ -14,6 +14,7 @@ export enum GameType {
   TRON = 'tron',
   PIPE_MANIA = 'pipe-mania',
   BREAKOUT = 'breakout',
+  PACMAN = 'pacman',
 }
 
 // ========== 游戏状态枚举 ==========
