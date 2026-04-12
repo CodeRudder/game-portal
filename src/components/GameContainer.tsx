@@ -467,7 +467,7 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
 
       {/* 操作提示 */}
       <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-500">
-        {!isSokoban && gameType !== GameTypeEnum.FLAPPY_BIRD && gameType !== GameTypeEnum.DINO_RUNNER && <span>↑↓←→ / WASD 移动</span>}
+        {!isSokoban && gameType !== GameTypeEnum.FLAPPY_BIRD && gameType !== GameTypeEnum.DINO_RUNNER && gameType !== GameTypeEnum.PINBALL && gameType !== GameTypeEnum.MAHJONG_CONNECT && gameType !== GameTypeEnum.MATCH_3 && gameType !== GameTypeEnum.SUDOKU && <span>↑↓←→ / WASD 移动</span>}
         {gameType === GameTypeEnum.TETRIS && <span>↑ 旋转 · ↓ 加速 · 空格 硬降</span>}
         {gameType === GameTypeEnum.SNAKE && <span>吃食物增长 · 碰墙或自身结束</span>}
         {isSokoban && <span>方向键移动 · Z 撤销 · R 重置关卡</span>}
@@ -477,6 +477,11 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         {gameType === GameTypeEnum.MINESWEEPER && <span>点击揭开 · 右键标旗 · 方向键移动 · F 标旗 · 1/2/3 切换难度</span>}
         {gameType === GameTypeEnum.GOMOKU && <span>点击/方向键落子 · T 切换模式 · R 重开</span>}
         {gameType === GameTypeEnum.DINO_RUNNER && <span>空格/↑ 跳跃 · ↓ 下蹲 · 点击屏幕跳跃</span>}
+        {gameType === GameTypeEnum.PINBALL && <span>Z/← 左挡板 · →/M 右挡板 · 空格 蓄力发射</span>}
+        {gameType === GameTypeEnum.MAHJONG_CONNECT && <span>点击选牌配对 · H 提示 · S 洗牌</span>}
+        {gameType === GameTypeEnum.MATCH_3 && <span>点击交换宝石 · 方向键移动+空格选择</span>}
+        {gameType === GameTypeEnum.SUDOKU && <span>方向键移动 · 1-9 输入 · N 笔记 · H 提示 · Z 撤销</span>}
+        {gameType === GameTypeEnum.TETRIS_BATTLE && <span>WASD/方向键 · 空格 硬降 · Q 旋转</span>}
       </div>
     </div>
   );

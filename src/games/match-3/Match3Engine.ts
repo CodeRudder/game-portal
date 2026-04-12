@@ -129,15 +129,15 @@ export class Match3Engine extends GameEngine {
 
   // ===== 连锁 =====
   /** 当前连击数 */
-  private comboCount: number = 0;
+  private _comboCount: number = 0;
 
   // ===== 关卡 =====
   /** 当前关卡目标分数 */
-  private targetScore: number = LEVEL_TARGETS[0];
+  private _targetScore: number = LEVEL_TARGETS[0];
   /** 关卡开始时间戳（毫秒） */
   private levelStartTime: number = 0;
   /** 剩余时间（秒） */
-  private timeRemaining: number = TIME_PER_LEVEL;
+  private _timeRemaining: number = TIME_PER_LEVEL;
 
   // ===== 动画计时器 =====
   /** 状态计时器（毫秒） */
@@ -167,17 +167,17 @@ export class Match3Engine extends GameEngine {
 
   /** 当前连击数 */
   get comboCount(): number {
-    return this.comboCount;
+    return this._comboCount;
   }
 
   /** 剩余时间（秒） */
   get timeRemaining(): number {
-    return this.timeRemaining;
+    return this._timeRemaining;
   }
 
   /** 当前关卡目标分数 */
   get targetScore(): number {
-    return this.targetScore;
+    return this._targetScore;
   }
 
   // ========== 生命周期方法 ==========
@@ -189,9 +189,9 @@ export class Match3Engine extends GameEngine {
     this.selectedCol = -1;
     this.cursorRow = 0;
     this.cursorCol = 0;
-    this.comboCount = 0;
-    this.timeRemaining = TIME_PER_LEVEL;
-    this.targetScore = this.getTargetForLevel(1);
+    this._comboCount = 0;
+    this._timeRemaining = TIME_PER_LEVEL;
+    this._targetScore = this.getTargetForLevel(1);
     this.stateTimer = 0;
     this.swapProgress = 0;
     this.swapReverting = false;
@@ -207,10 +207,10 @@ export class Match3Engine extends GameEngine {
     this.selectedCol = -1;
     this.cursorRow = 0;
     this.cursorCol = 0;
-    this.comboCount = 0;
+    this._comboCount = 0;
     // 不使用步数限制
-    this.targetScore = this.getTargetForLevel(1);
-    this.timeRemaining = TIME_PER_LEVEL;
+    this._targetScore = this.getTargetForLevel(1);
+    this._timeRemaining = TIME_PER_LEVEL;
     this.levelStartTime = Date.now();
     this.swappingGem1 = null;
     this.swappingGem2 = null;
@@ -294,12 +294,12 @@ export class Match3Engine extends GameEngine {
         const matches = this.findMatches();
         if (matches.size > 0) {
           // 有匹配，进入消除阶段
-          this.comboCount = 1;
+          this._comboCount = 1;
           this.boardState = 'removing';
           this.stateTimer = 0;
           this.removeProgress = 0;
           this.markMatches(matches);
-          this.emit('match', { count: matches.size, combo: this.comboCount });
+          this.emit('match', { count: matches.size, combo: this._comboCount });
         } else {
           // 无匹配，回退交换
           this.swapReverting = true;
@@ -392,15 +392,15 @@ export class Match3Engine extends GameEngine {
     const matches = this.findMatches();
     if (matches.size > 0) {
       // 有新的匹配，连锁继续
-      this.comboCount++;
+      this._comboCount++;
       this.boardState = 'removing';
       this.stateTimer = 0;
       this.removeProgress = 0;
       this.markMatches(matches);
-      this.emit('cascade', { combo: this.comboCount });
+      this.emit('cascade', { combo: this._comboCount });
     } else {
       // 无新匹配，连锁结束
-      this.comboCount = 0;
+      this._comboCount = 0;
       this.boardState = 'idle';
 
       // 检查关卡目标
@@ -417,9 +417,9 @@ export class Match3Engine extends GameEngine {
    * 更新计时器
    */
   private updateTimer(dt: number): void {
-    this.timeRemaining -= dt / 1000;
-    if (this.timeRemaining <= 0) {
-      this.timeRemaining = 0;
+    this._timeRemaining -= dt / 1000;
+    if (this._timeRemaining <= 0) {
+      this._timeRemaining = 0;
       this.gameOver();
     }
   }
@@ -642,10 +642,10 @@ export class Match3Engine extends GameEngine {
     }
 
     // 连击倍率
-    const comboMultiplier = COMBO_MULTIPLIER_BASE + (this.comboCount - 1) * COMBO_MULTIPLIER_INCREMENT;
+    const comboMultiplier = COMBO_MULTIPLIER_BASE + (this._comboCount - 1) * COMBO_MULTIPLIER_INCREMENT;
     const points = Math.floor(baseScore * comboMultiplier);
     this.addScore(points);
-    this.emit('scoreCalc', { baseScore, combo: this.comboCount, multiplier: comboMultiplier, points });
+    this.emit('scoreCalc', { baseScore, combo: this._comboCount, multiplier: comboMultiplier, points });
   }
 
   /**
@@ -883,14 +883,14 @@ export class Match3Engine extends GameEngine {
    * 检查关卡进度
    */
   private checkLevelProgress(): void {
-    if (this._score >= this.targetScore) {
+    if (this._score >= this._targetScore) {
       // 过关
       const nextLevel = this._level + 1;
       this.setLevel(nextLevel);
-      this.targetScore = this.getTargetForLevel(nextLevel);
+      this._targetScore = this.getTargetForLevel(nextLevel);
       // 重置时间
-      this.timeRemaining = TIME_PER_LEVEL;
-      this.emit('levelUp', { level: nextLevel, targetScore: this.targetScore });
+      this._timeRemaining = TIME_PER_LEVEL;
+      this.emit('levelUp', { level: nextLevel, targetScore: this._targetScore });
     }
   }
 
@@ -1094,9 +1094,9 @@ export class Match3Engine extends GameEngine {
       selectedCol: this.selectedCol,
       cursorRow: this.cursorRow,
       cursorCol: this.cursorCol,
-      comboCount: this.comboCount,
-      timeRemaining: this.timeRemaining,
-      targetScore: this.targetScore,
+      comboCount: this._comboCount,
+      timeRemaining: this._timeRemaining,
+      targetScore: this._targetScore,
       score: this._score,
       level: this._level,
       status: this._status,
@@ -1193,20 +1193,20 @@ export class Match3Engine extends GameEngine {
 
     // 目标分数
     ctx.textAlign = 'center';
-    ctx.fillText(`目标: ${this.targetScore}`, w / 2, 22);
+    ctx.fillText(`目标: ${this._targetScore}`, w / 2, 22);
 
     // 剩余时间
-    ctx.fillStyle = this.timeRemaining <= 10 ? '#FF4444' : TEXT_COLOR;
+    ctx.fillStyle = this._timeRemaining <= 10 ? '#FF4444' : TEXT_COLOR;
     ctx.font = `bold 18px ${FONT_FAMILY}`;
     ctx.textAlign = 'right';
-    ctx.fillText(`${Math.ceil(this.timeRemaining)}s`, w - 10, 22);
+    ctx.fillText(`${Math.ceil(this._timeRemaining)}s`, w - 10, 22);
 
     // 连击
-    if (this.comboCount > 1) {
+    if (this._comboCount > 1) {
       ctx.fillStyle = '#FFD700';
       ctx.font = `bold 16px ${FONT_FAMILY}`;
       ctx.textAlign = 'center';
-      ctx.fillText(`${this.comboCount}x 连击!`, w / 2, 56);
+      ctx.fillText(`${this._comboCount}x 连击!`, w / 2, 56);
     }
   }
 
@@ -1390,9 +1390,9 @@ export class Match3Engine extends GameEngine {
     this.selectedCol = -1;
     this.cursorRow = 0;
     this.cursorCol = 0;
-    this.comboCount = 0;
-    this.timeRemaining = TIME_PER_LEVEL;
-    this.targetScore = this.getTargetForLevel(1);
+    this._comboCount = 0;
+    this._timeRemaining = TIME_PER_LEVEL;
+    this._targetScore = this.getTargetForLevel(1);
     this.swappingGem1 = null;
     this.swappingGem2 = null;
     this.swapProgress = 0;

@@ -216,7 +216,7 @@ describe('Match3Engine', () => {
     });
 
     it('剩余时间应为 TIME_PER_LEVEL', () => {
-      expect(engine.timeRemaining).toBe(TIME_PER_LEVEL);
+      expect(engine._timeRemaining).toBe(TIME_PER_LEVEL);
     });
 
     it('目标分数应为第 1 关目标', () => {
@@ -987,12 +987,12 @@ describe('Match3Engine', () => {
 
     it('升级后时间应重置为 TIME_PER_LEVEL', () => {
       // 先消耗一些时间
-      (engine as any).timeRemaining = 50;
+      (engine as any)._timeRemaining = 50;
 
       (engine as any).addScore(LEVEL_TARGETS[0]);
       (engine as any).checkLevelProgress();
 
-      expect(engine.timeRemaining).toBe(TIME_PER_LEVEL);
+      expect(engine._timeRemaining).toBe(TIME_PER_LEVEL);
     });
 
     it('应触发 levelUp 事件', () => {
@@ -1029,36 +1029,36 @@ describe('Match3Engine', () => {
   // ============================================================
   describe('时间限制', () => {
     it('初始剩余时间应为 TIME_PER_LEVEL (120秒)', () => {
-      expect(engine.timeRemaining).toBe(TIME_PER_LEVEL);
+      expect(engine._timeRemaining).toBe(TIME_PER_LEVEL);
     });
 
     it('idle 状态下 update 应减少剩余时间', () => {
-      const initialTime = engine.timeRemaining;
+      const initialTime = engine._timeRemaining;
       engine.update(1000); // 1秒
-      expect(engine.timeRemaining).toBeLessThan(initialTime);
+      expect(engine._timeRemaining).toBeLessThan(initialTime);
     });
 
     it('时间减少量应与 deltaTime 成正比', () => {
       // deltaTime 被限制在 100ms 以内，所以使用小于 100 的值
-      const time1 = engine.timeRemaining;
+      const time1 = engine._timeRemaining;
       engine.update(50); // 0.05秒
-      const time2 = engine.timeRemaining;
+      const time2 = engine._timeRemaining;
       expect(time1 - time2).toBeCloseTo(0.05, 2);
 
       engine.update(50); // 0.05秒
-      const time3 = engine.timeRemaining;
+      const time3 = engine._timeRemaining;
       expect(time2 - time3).toBeCloseTo(0.05, 2);
     });
 
     it('时间耗尽应触发游戏结束', () => {
-      (engine as any).timeRemaining = 0.001;
+      (engine as any)._timeRemaining = 0.001;
       engine.update(10);
 
       expect(engine.status).toBe('gameover');
     });
 
     it('游戏结束后状态应为 gameover', () => {
-      (engine as any).timeRemaining = 0.001;
+      (engine as any)._timeRemaining = 0.001;
       engine.update(10);
 
       expect(engine.status).toBe('gameover');
@@ -1066,10 +1066,10 @@ describe('Match3Engine', () => {
     });
 
     it('时间不应变为负数', () => {
-      (engine as any).timeRemaining = 0.001;
+      (engine as any)._timeRemaining = 0.001;
       engine.update(10000);
 
-      expect(engine.timeRemaining).toBe(0);
+      expect(engine._timeRemaining).toBe(0);
     });
   });
 
@@ -1512,10 +1512,10 @@ describe('Match3Engine', () => {
   // ============================================================
   describe('边界条件', () => {
     it('deltaTime 被限制在 100ms 以内', () => {
-      const prevTime = engine.timeRemaining;
+      const prevTime = engine._timeRemaining;
       engine.update(10000); // 超大 deltaTime
       // 由于限制，实际只减少了 100ms 对应的时间
-      expect(engine.timeRemaining).toBeGreaterThan(prevTime - 11);
+      expect(engine._timeRemaining).toBeGreaterThan(prevTime - 11);
     });
 
     it('连续快速点击不应导致崩溃', () => {
@@ -1652,14 +1652,14 @@ describe('Match3Engine', () => {
 
       expect(e.status).toBe('playing');
 
-      (e as any).timeRemaining = 0.001;
+      (e as any)._timeRemaining = 0.001;
       e.update(10);
 
       expect(e.status).toBe('gameover');
     });
 
     it('重置后可重新开始', () => {
-      (engine as any).timeRemaining = 0.001;
+      (engine as any)._timeRemaining = 0.001;
       engine.update(10);
       expect(engine.status).toBe('gameover');
 
