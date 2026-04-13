@@ -28,6 +28,11 @@ export enum GameType {
   CONNECT_FOUR = 'connect-four',
   LIGHTS_OUT = 'lights-out',
   WHACK_A_MOLE = 'whack-a-mole',
+  KLOTSKI = 'klotski',
+  SOLITAIRE = 'solitaire',
+  ASTEROIDS = 'asteroids',
+  AIR_HOCKEY = 'air-hockey',
+  FRUIT_NINJA = 'fruit-ninja',
 }
 
 // ========== 游戏状态枚举 ==========

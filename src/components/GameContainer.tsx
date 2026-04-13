@@ -29,6 +29,11 @@ import { PongEngine } from '@/games/pong/PongEngine';
 import { ConnectFourEngine } from '@/games/connect-four/ConnectFourEngine';
 import { LightsOutEngine } from '@/games/lights-out/LightsOutEngine';
 import { WhackAMoleEngine } from '@/games/whack-a-mole/WhackAMoleEngine';
+import { KlotskiEngine } from '@/games/klotski/KlotskiEngine';
+import { SolitaireEngine } from '@/games/solitaire/SolitaireEngine';
+import { AsteroidsEngine } from '@/games/asteroids/AsteroidsEngine';
+import { AirHockeyEngine } from '@/games/air-hockey/AirHockeyEngine';
+import { FruitNinjaEngine } from '@/games/fruit-ninja/FruitNinjaEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -66,6 +71,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.CONNECT_FOUR: return new ConnectFourEngine();
     case GameTypeEnum.LIGHTS_OUT: return new LightsOutEngine();
     case GameTypeEnum.WHACK_A_MOLE: return new WhackAMoleEngine();
+    case GameTypeEnum.KLOTSKI: return new KlotskiEngine();
+    case GameTypeEnum.SOLITAIRE: return new SolitaireEngine();
+    case GameTypeEnum.ASTEROIDS: return new AsteroidsEngine();
+    case GameTypeEnum.AIR_HOCKEY: return new AirHockeyEngine();
+    case GameTypeEnum.FRUIT_NINJA: return new FruitNinjaEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

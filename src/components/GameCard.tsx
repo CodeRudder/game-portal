@@ -202,6 +202,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-orange-400',
     gradient: 'from-orange-600/20 to-amber-600/20',
   },
+  [GameType.KLOTSKI]: {
+    title: '华容道',
+    description: '经典三国滑块益智，移动方块为曹操开路，助其从底部逃脱！',
+    icon: '🏯',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-amber-600/20',
+  },
+  [GameType.SOLITAIRE]: {
+    title: '纸牌接龙',
+    description: '经典 Windows 纸牌，将牌按花色从 A 到 K 依次移到基础堆！',
+    icon: '🃏',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-emerald-600/20',
+  },
+  [GameType.ASTEROIDS]: {
+    title: '小行星',
+    description: '经典街机射击！驾驶飞船旋转射击，摧毁四面八方的小行星！',
+    icon: '☄️',
+    color: 'text-gray-300',
+    gradient: 'from-gray-600/20 to-slate-600/20',
+  },
+  [GameType.AIR_HOCKEY]: {
+    title: '空气曲棍球',
+    description: '双人桌上曲棍球对决！滑动推杆击球，先得7分获胜，支持AI对手。',
+    icon: '🏒',
+    color: 'text-blue-400',
+    gradient: 'from-blue-600/20 to-cyan-600/20',
+  },
+  [GameType.FRUIT_NINJA]: {
+    title: '水果忍者',
+    description: '滑动切割飞出的水果，躲避炸弹，挑战最高连击！',
+    icon: '🍉',
+    color: 'text-yellow-400',
+    gradient: 'from-yellow-600/20 to-green-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {
