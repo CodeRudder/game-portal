@@ -346,6 +346,8 @@ describe('WhackAMoleEngine - 地鼠生命周期', () => {
   });
 
   it('HIDDEN 状态的洞不受 update 影响', () => {
+    // 防止 update 中随机生成地鼠干扰断言
+    setPrivate(engine, '_spawnTimer', 99999);
     const holes = getHoles(engine);
     const beforeState = holes[0].state;
     const beforeTimer = holes[0].stateTimer;
