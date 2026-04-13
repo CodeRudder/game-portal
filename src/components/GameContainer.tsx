@@ -39,6 +39,11 @@ import { BubbleShooterEngine } from '@/games/bubble-shooter/BubbleShooterEngine'
 import { Snake2PEngine } from '@/games/snake-2p/Snake2PEngine';
 import { MancalaEngine } from '@/games/mancala/MancalaEngine';
 import { EightQueensEngine } from '@/games/eight-queens/EightQueensEngine';
+import { CentipedeEngine } from '@/games/centipede/CentipedeEngine';
+import { MissileCommandEngine } from '@/games/missile-command/MissileCommandEngine';
+import { LunarLanderEngine } from '@/games/lunar-lander/LunarLanderEngine';
+import { SliderPuzzleEngine } from '@/games/slider-puzzle/SliderPuzzleEngine';
+import { TowerOfHanoiEngine } from '@/games/tower-of-hanoi/TowerOfHanoiEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -86,6 +91,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.SNAKE_2P: return new Snake2PEngine();
     case GameTypeEnum.MANCALA: return new MancalaEngine();
     case GameTypeEnum.EIGHT_QUEENS: return new EightQueensEngine();
+    case GameTypeEnum.CENTIPEDE: return new CentipedeEngine();
+    case GameTypeEnum.MISSILE_COMMAND: return new MissileCommandEngine();
+    case GameTypeEnum.LUNAR_LANDER: return new LunarLanderEngine();
+    case GameTypeEnum.SLIDER_PUZZLE: return new SliderPuzzleEngine();
+    case GameTypeEnum.TOWER_OF_HANOI: return new TowerOfHanoiEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

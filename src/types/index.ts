@@ -38,6 +38,11 @@ export enum GameType {
   SNAKE_2P = 'snake-2p',
   MANCALA = 'mancala',
   EIGHT_QUEENS = 'eight-queens',
+  CENTIPEDE = 'centipede',
+  MISSILE_COMMAND = 'missile-command',
+  LUNAR_LANDER = 'lunar-lander',
+  SLIDER_PUZZLE = 'slider-puzzle',
+  TOWER_OF_HANOI = 'tower-of-hanoi',
 }
 
 // ========== 游戏状态枚举 ==========

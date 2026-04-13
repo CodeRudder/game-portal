@@ -272,6 +272,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-violet-400',
     gradient: 'from-violet-600/20 to-purple-600/20',
   },
+  [GameType.CENTIPEDE]: {
+    title: '蜈蚣',
+    description: '经典街机射击！消灭从顶部蜿蜒而下的蜈蚣，躲避蜘蛛和蝎子！',
+    icon: '🐛',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-lime-600/20',
+  },
+  [GameType.MISSILE_COMMAND]: {
+    title: '导弹指挥官',
+    description: '发射拦截导弹保护城市！瞄准来袭导弹，保卫最后防线！',
+    icon: '🚀',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-orange-600/20',
+  },
+  [GameType.LUNAR_LANDER]: {
+    title: '月球着陆器',
+    description: '控制推力安全着陆月球！注意燃料消耗，平稳降落在着陆区！',
+    icon: '🌙',
+    color: 'text-gray-300',
+    gradient: 'from-gray-600/20 to-slate-600/20',
+  },
+  [GameType.SLIDER_PUZZLE]: {
+    title: '滑块拼图',
+    description: '经典数字滑块益智，滑动方块将数字按顺序排列！',
+    icon: '🧩',
+    color: 'text-blue-400',
+    gradient: 'from-blue-600/20 to-indigo-600/20',
+  },
+  [GameType.TOWER_OF_HANOI]: {
+    title: '河内塔',
+    description: '经典递归益智，将所有圆盘从A柱移到C柱，大盘不能放在小盘上！',
+    icon: '🗼',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-yellow-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {
