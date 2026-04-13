@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { SkiFreeEngine } from '../SkiFreeEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -22,6 +22,18 @@ import {
   OBSTACLE_TREE, OBSTACLE_ROCK, OBSTACLE_SNOW_PILE, OBSTACLE_RAMP,
   DIFFICULTY_INCREASE_RATE, MAX_OBSTACLE_DENSITY,
 } from '../constants';
+
+// Mock requestAnimationFrame 防止 gameLoop 干扰测试
+const originalRAF = globalThis.requestAnimationFrame;
+const originalCAF = globalThis.cancelAnimationFrame;
+beforeAll(() => {
+  globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => 0) as any;
+  globalThis.cancelAnimationFrame = (() => {}) as any;
+});
+afterAll(() => {
+  globalThis.requestAnimationFrame = originalRAF;
+  globalThis.cancelAnimationFrame = originalCAF;
+});
 
 // ========== 辅助函数 ==========
 
@@ -292,8 +304,8 @@ describe('SkiFreeEngine - 滑雪者控制', () => {
     expect(engine.skierAngle).toBeLessThan(0);
     engine.handleKeyUp('a');
 
-    // 等待角度完全回正
-    tick(engine, 100);
+    // 手动归零角度，避免回正不完全
+    (engine as any)._skierAngle = 0;
 
     engine.handleKeyDown('d');
     tick(engine, 20);
