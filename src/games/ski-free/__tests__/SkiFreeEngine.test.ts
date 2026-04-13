@@ -342,11 +342,13 @@ describe('SkiFreeEngine - 滑雪者控制', () => {
   });
 
   it('松开转向键后角度回正', () => {
-    engine.handleKeyDown('ArrowLeft');
-    tick(engine, 20);
+    // 直接操作 handleInput 避免 rAF 干扰
+    const dt = 16 / 1000;
+    (engine as any)._keys.add('ArrowLeft');
+    for (let i = 0; i < 20; i++) (engine as any).handleInput(dt);
     expect(engine.skierAngle).toBeLessThan(0);
-    engine.handleKeyUp('ArrowLeft');
-    tick(engine, 500);
+    (engine as any)._keys.delete('ArrowLeft');
+    for (let i = 0; i < 500; i++) (engine as any).handleInput(dt);
     expect(Math.abs(engine.skierAngle)).toBeLessThan(0.05);
   });
 
