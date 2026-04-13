@@ -419,6 +419,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-cyan-400',
     gradient: 'from-cyan-600/20 to-blue-600/20',
   },
+  [GameType.VIRTUAL_PET]: {
+    title: '电子宠物',
+    description: '照顾你的虚拟宠物！喂食、洗澡、玩耍、睡觉，保持它的饥饿度、清洁度、快乐度和体力！',
+    icon: '🐾',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-pink-600/20',
+  },
+  [GameType.ZTYPE]: {
+    title: '打字练习 ZType',
+    description: '单词从天而降，快速输入消灭它们！连击加分、难度递增，挑战你的打字速度和准确度！',
+    icon: '⌨️',
+    color: 'text-emerald-400',
+    gradient: 'from-emerald-600/20 to-cyan-600/20',
+  },
+  [GameType.WATER_SORT]: {
+    title: '水排序',
+    description: '将不同颜色的水在试管间倒来倒去，最终让每根试管只有一种颜色！考验逻辑与耐心！',
+    icon: '🧪',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-blue-600/20',
+  },
+  [GameType.SCREW_PUZZLE]: {
+    title: '拧螺丝',
+    description: '拧下螺丝让板掉落！按正确顺序拧下所有螺丝，让所有板掉落即可过关！',
+    icon: '🔧',
+    color: 'text-gray-400',
+    gradient: 'from-gray-600/20 to-slate-600/20',
+  },
+  [GameType.SAND_SIMULATION]: {
+    title: '沙盒粒子',
+    description: '在网格上绘制沙子、水、石头、火、木头等材质，观察它们按物理规则相互作用！',
+    icon: '🏜️',
+    color: 'text-yellow-400',
+    gradient: 'from-yellow-600/20 to-amber-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

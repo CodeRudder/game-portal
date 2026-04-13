@@ -59,6 +59,11 @@ export enum GameType {
   CAVE_FLYER = 'cave-flyer',
   GRAVITY_FLIP = 'gravity-flip',
   KNIGHTS_TOUR = 'knights-tour',
+  VIRTUAL_PET = 'virtual-pet',
+  ZTYPE = 'ztype',
+  WATER_SORT = 'water-sort',
+  SAND_SIMULATION = 'sand-simulation',
+  SCREW_PUZZLE = 'screw-puzzle',
 }
 
 // ========== 游戏状态枚举 ==========

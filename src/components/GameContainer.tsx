@@ -60,6 +60,11 @@ import { FallDownEngine } from '@/games/fall-down/FallDownEngine';
 import { CaveFlyerEngine } from '@/games/cave-flyer/CaveFlyerEngine';
 import { GravityFlipEngine } from '@/games/gravity-flip/GravityFlipEngine';
 import { KnightsTourEngine } from '@/games/knights-tour/KnightsTourEngine';
+import { VirtualPetEngine } from '@/games/virtual-pet/VirtualPetEngine';
+import { ZTypeEngine } from '@/games/ztype/ZTypeEngine';
+import { WaterSortEngine } from '@/games/water-sort/WaterSortEngine';
+import { ScrewPuzzleEngine } from '@/games/screw-puzzle/ScrewPuzzleEngine';
+import { SandSimulationEngine } from '@/games/sand-simulation/SandSimulationEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -128,6 +133,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.CAVE_FLYER: return new CaveFlyerEngine();
     case GameTypeEnum.GRAVITY_FLIP: return new GravityFlipEngine();
     case GameTypeEnum.KNIGHTS_TOUR: return new KnightsTourEngine();
+    case GameTypeEnum.VIRTUAL_PET: return new VirtualPetEngine();
+    case GameTypeEnum.ZTYPE: return new ZTypeEngine();
+    case GameTypeEnum.WATER_SORT: return new WaterSortEngine();
+    case GameTypeEnum.SCREW_PUZZLE: return new ScrewPuzzleEngine();
+    case GameTypeEnum.SAND_SIMULATION: return new SandSimulationEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
