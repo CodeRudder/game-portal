@@ -342,6 +342,20 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-green-400',
     gradient: 'from-green-600/20 to-emerald-600/20',
   },
+  [GameType.COOKIE_CLICKER]: {
+    title: 'Cookie Clicker',
+    description: '放置类经典！点击生产饼干，购买升级自动产出，看你的饼干帝国能有多大！',
+    icon: '🍪',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-orange-600/20',
+  },
+  [GameType.REACTION_TEST]: {
+    title: '反应力测试',
+    description: '测试你的反应速度！屏幕变绿后尽快按键，多轮测试取平均值，挑战极限！',
+    icon: '⚡',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-emerald-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

@@ -490,6 +490,26 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键选择 · 空格确认 · 用四则运算凑出24',
     difficulty: '中等',
   },
+  [GameType.COOKIE_CLICKER]: {
+    type: GameType.COOKIE_CLICKER,
+    name: 'Cookie Clicker',
+    description: '放置类经典！点击生产饼干，购买升级自动产出，看你的饼干帝国能有多大！',
+    icon: '🍪',
+    color: '#f59e0b',
+    gradient: 'from-amber-500 to-orange-400',
+    controls: '空格/点击 生产饼干 · ↑↓ 选择升级 · Enter 购买',
+    difficulty: '简单',
+  },
+  [GameType.REACTION_TEST]: {
+    type: GameType.REACTION_TEST,
+    name: '反应力测试',
+    description: '测试你的反应速度！屏幕变绿后尽快按键，多轮测试取平均值，挑战极限！',
+    icon: '⚡',
+    color: '#00b894',
+    gradient: 'from-green-500 to-emerald-400',
+    controls: '空格/点击 反应 · 等屏幕变绿后尽快按键',
+    difficulty: '简单',
+  },
 };
 
 // ========== Storage Keys ==========

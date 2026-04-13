@@ -48,6 +48,8 @@ export enum GameType {
   BATTLE_CITY = 'battle-city',
   MASTERMIND = 'mastermind',
   MAKE_24 = 'make-24',
+  COOKIE_CLICKER = 'cookie-clicker',
+  REACTION_TEST = 'reaction-test',
 }
 
 // ========== 游戏状态枚举 ==========

@@ -49,6 +49,8 @@ import { DigDugEngine } from '@/games/dig-dug/DigDugEngine';
 import { BattleCityEngine } from '@/games/battle-city/BattleCityEngine';
 import { MastermindEngine } from '@/games/mastermind/MastermindEngine';
 import { Make24Engine } from '@/games/make-24/Make24Engine';
+import { CookieClickerEngine } from '@/games/cookie-clicker/CookieClickerEngine';
+import { ReactionTestEngine } from '@/games/reaction-test/ReactionTestEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -106,6 +108,8 @@ function createEngine(type: GameType) {
     case GameTypeEnum.BATTLE_CITY: return new BattleCityEngine();
     case GameTypeEnum.MASTERMIND: return new MastermindEngine();
     case GameTypeEnum.MAKE_24: return new Make24Engine();
+    case GameTypeEnum.COOKIE_CLICKER: return new CookieClickerEngine();
+    case GameTypeEnum.REACTION_TEST: return new ReactionTestEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
@@ -332,6 +336,8 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         const canvasX = (clientX - rect.left) * scaleX;
         const canvasY = (clientY - rect.top) * scaleY;
         (engineRef.current as SudokuEngine).handleClick(canvasX, canvasY);
+      } else if (gameType === GameTypeEnum.REACTION_TEST) {
+        (engineRef.current as ReactionTestEngine).handleClick();
       }
     };
 
