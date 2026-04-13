@@ -1,6 +1,6 @@
 # 🎮 Game Portal
 
-一个纯前端的迷你游戏门户，采用暗色霓虹主题设计，像素风字体，支持响应式布局。当前包含 8 款经典 Canvas 游戏，覆盖益智、反应、策略、模拟四大类型。
+一个纯前端的迷你游戏门户，采用暗色霓虹主题设计，像素风字体，支持响应式布局。当前包含 33 款经典 Canvas 游戏，覆盖益智、反应、策略、模拟、街机五大类型。
 
 [**English**](./README.en.md)
 
@@ -8,12 +8,12 @@
 
 ## ✨ 特性
 
-- 🎮 八款经典游戏：俄罗斯方块、贪吃蛇、推箱子、Flappy Bird、2048、记忆翻牌、井字棋、生命游戏
+- 🎮 33 款经典游戏：俄罗斯方块、贪吃蛇、推箱子、扫雷、五子棋、打砖块、吃豆人、华容道、纸牌接龙、小行星等
 - 🏆 游戏记录 & 高分榜（localStorage 持久化）
 - 🎨 暗色霓虹主题，像素风字体（Press Start 2P）
 - 📱 响应式设计，支持桌面和移动端
 - ⚡ Canvas 渲染，统一引擎抽象层
-- 🧪 518 个测试用例，100% 通过率
+- 🧪 3574 个测试用例，100% 通过率
 - 🐳 Docker 多阶段构建（最终镜像约 25MB）
 - 🚀 Vercel 一键部署
 
@@ -45,7 +45,7 @@ npm run build
 # 预览构建产物
 npm run preview
 
-# 运行测试（518 用例）
+# 运行测试（3574 用例）
 npm test
 
 # 测试覆盖率
@@ -73,7 +73,7 @@ docker compose --profile dev up
 
 | 环境 | 地址 |
 |------|------|
-| Vercel（v2.0） | https://skill-deploy-u7xvhb5l1p-agent-skill-vercel.vercel.app |
+| Vercel（v7.0） | https://skill-deploy-u7xvhb5l1p-agent-skill-vercel.vercel.app |
 
 > 使用 [Claim URL](https://vercel.com/claim-deployment?code=2dea1012-1232-4078-95c6-ea953efee223) 可将部署关联到你的 Vercel 账号进行管理。
 
@@ -154,7 +154,7 @@ GameEngine (abstract)
 
 ## 🗺 扩展计划
 
-v2.0 Batch 1 已完成 ✅，规划 v3.0 → v5.0 三批次迭代，新增 15 款游戏（扫雷、五子棋、跑酷恐龙、打砖块、吃豆人等）。
+v7.0 Batch 6 已完成 ✅，规划 v8.0 → v21.0 后续批次迭代，已包含华容道、纸牌接龙、小行星、空气曲棍球、水果忍者等 33 款游戏。
 
 详见 → [GAME-EXPANSION-PLAN.md](./GAME-EXPANSION-PLAN.md)
 
