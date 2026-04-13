@@ -1064,10 +1064,15 @@ describe('DinoRunnerEngine', () => {
 
     it('reset 后障碍物清空', () => {
       const engine = startEngine();
-      setNextObstacleInterval(engine, 100);
-      for (let i = 0; i < 10; i++) {
-        advanceUpdate(engine, 200);
-      }
+      // 手动添加障碍物，避免依赖随机生成和速度导致的不确定性
+      addObstacle(engine, {
+        type: 'small_cactus',
+        x: 200,
+        y: 100,
+        width: 20,
+        height: 40,
+        pteroAnimFrame: 0,
+      });
       expect(getObstacles(engine).length).toBeGreaterThan(0);
 
       engine.reset();
