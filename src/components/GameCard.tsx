@@ -384,6 +384,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-emerald-400',
     gradient: 'from-emerald-600/20 to-green-600/20',
   },
+  [GameType.GEOMETRY_DASH]: {
+    title: '跑跑跳跳',
+    description: 'Geometry Dash Lite！方块自动奔跑，按空格跳跃躲避尖刺、方块和柱子，节奏感超强！',
+    icon: '🔷',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-cyan-600/20',
+  },
+  [GameType.CAVE_FLYER]: {
+    title: '洞穴飞行',
+    description: '驾驶直升机穿越洞穴，按住上升松开下降，躲避地形和障碍物，收集星星加分！',
+    icon: '🚁',
+    color: 'text-orange-400',
+    gradient: 'from-orange-600/20 to-amber-600/20',
+  },
+  [GameType.GRAVITY_FLIP]: {
+    title: '重力翻转',
+    description: '角色自动奔跑，按空格翻转重力方向，在天花板和地面之间切换躲避障碍物！',
+    icon: '🔄',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-indigo-600/20',
+  },
+  [GameType.KNIGHTS_TOUR]: {
+    title: '骑士巡游',
+    description: '国际象棋马走日字，尝试遍历棋盘每一格恰好一次！支持提示和撤销，考验你的策略思维！',
+    icon: '♞',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-yellow-600/20',
+  },
+  [GameType.FALL_DOWN]: {
+    title: '下落跑酷',
+    description: '控制小球穿过上升平台的间隙，被顶到顶部则游戏结束！速度越来越快，你能坚持多久？',
+    icon: '⬇️',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-blue-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

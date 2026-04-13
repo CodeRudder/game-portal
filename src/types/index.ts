@@ -54,6 +54,11 @@ export enum GameType {
   PIXEL_ART = 'pixel-art',
   SPIROGRAPH = 'spirograph',
   WORDLE = 'wordle',
+  GEOMETRY_DASH = 'geometry-dash',
+  FALL_DOWN = 'fall-down',
+  CAVE_FLYER = 'cave-flyer',
+  GRAVITY_FLIP = 'gravity-flip',
+  KNIGHTS_TOUR = 'knights-tour',
 }
 
 // ========== 游戏状态枚举 ==========

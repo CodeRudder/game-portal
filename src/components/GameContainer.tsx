@@ -55,6 +55,11 @@ import { ZumaEngine } from '@/games/zuma/ZumaEngine';
 import { PixelArtEngine } from '@/games/pixel-art/PixelArtEngine';
 import { SpirographEngine } from '@/games/spirograph/SpirographEngine';
 import { WordleEngine } from '@/games/wordle/WordleEngine';
+import { GeometryDashEngine } from '@/games/geometry-dash/GeometryDashEngine';
+import { FallDownEngine } from '@/games/fall-down/FallDownEngine';
+import { CaveFlyerEngine } from '@/games/cave-flyer/CaveFlyerEngine';
+import { GravityFlipEngine } from '@/games/gravity-flip/GravityFlipEngine';
+import { KnightsTourEngine } from '@/games/knights-tour/KnightsTourEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -118,6 +123,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.PIXEL_ART: return new PixelArtEngine();
     case GameTypeEnum.SPIROGRAPH: return new SpirographEngine();
     case GameTypeEnum.WORDLE: return new WordleEngine();
+    case GameTypeEnum.GEOMETRY_DASH: return new GeometryDashEngine();
+    case GameTypeEnum.FALL_DOWN: return new FallDownEngine();
+    case GameTypeEnum.CAVE_FLYER: return new CaveFlyerEngine();
+    case GameTypeEnum.GRAVITY_FLIP: return new GravityFlipEngine();
+    case GameTypeEnum.KNIGHTS_TOUR: return new KnightsTourEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

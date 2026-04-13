@@ -44,6 +44,7 @@ HTMLCanvasElement.prototype.getContext = function (
       lineTo: () => {},
       arc: () => {},
       arcTo: () => {},
+      ellipse: () => {},
       rect: () => {},
       roundRect: () => {},
       fill: () => {},
