@@ -1326,6 +1326,13 @@ describe('暂停与恢复', () => {
 
   it('暂停后 P 键恢复游戏', () => {
     const engine = createPlayingEngine();
+    // resume() 需要 canvas，手动设置 mock canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+    (engine as any).canvas = canvas;
+    (engine as any).ctx = canvas.getContext('2d');
+
     engine.handleKeyDown('p'); // 暂停
     engine.handleKeyDown('p'); // 恢复
 
@@ -1344,6 +1351,13 @@ describe('暂停与恢复', () => {
 
   it('恢复状态触发 statusChange 事件', () => {
     const engine = createPlayingEngine();
+    // resume() 需要 canvas，手动设置 mock canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+    (engine as any).canvas = canvas;
+    (engine as any).ctx = canvas.getContext('2d');
+
     engine.handleKeyDown('p'); // 暂停
 
     const listener = vi.fn();

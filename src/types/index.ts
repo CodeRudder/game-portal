@@ -50,6 +50,10 @@ export enum GameType {
   MAKE_24 = 'make-24',
   COOKIE_CLICKER = 'cookie-clicker',
   REACTION_TEST = 'reaction-test',
+  ZUMA = 'zuma',
+  PIXEL_ART = 'pixel-art',
+  SPIROGRAPH = 'spirograph',
+  WORDLE = 'wordle',
 }
 
 // ========== 游戏状态枚举 ==========

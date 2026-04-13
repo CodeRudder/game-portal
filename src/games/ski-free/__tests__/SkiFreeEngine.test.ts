@@ -322,9 +322,13 @@ describe('SkiFreeEngine - 滑雪者控制', () => {
   });
 
   it('速度不低于最小值', () => {
-    (engine as any)._obstacles = [];
-    engine.handleKeyDown('ArrowDown');
-    tick(engine, 500);
+    // 直接测试 handleInput 的减速逻辑，不依赖 gameLoop
+    const dt = 16 / 1000;
+    (engine as any)._skierSpeed = 200;
+    (engine as any)._keys.add('ArrowDown');
+    for (let i = 0; i < 500; i++) {
+      (engine as any).handleInput(dt);
+    }
     expect(engine.skierSpeed).toBeGreaterThanOrEqual(SKIER_SPEED_MIN);
   });
 
@@ -383,25 +387,25 @@ describe('SkiFreeEngine - 距离与计分', () => {
   });
 
   it('速度越快距离增长越快', () => {
-    // 先让两个引擎跑一段基础距离
-    tick(engine, 20);
-    const d1 = engine.distance;
-    // 加速后继续跑
-    engine.handleKeyDown('ArrowUp');
-    tick(engine, 40);
-    const d2 = engine.distance;
-    // 加速后的增量应大于加速前
-    const accelIncrement = d2 - d1;
+    // 手动控制速度，直接调用 update 比较距离增量
+    const dt = 16;
+    const fastEngine = createEngine();
+    fastEngine.start();
+    (fastEngine as any)._skierSpeed = 300;
+    (fastEngine as any)._obstacles = [];
+    (fastEngine as any)._snowflakes = [];
+    for (let i = 0; i < 30; i++) (fastEngine as any).update(dt);
+    const fastDist = fastEngine.distance;
 
-    const engine2 = createEngine();
-    engine2.start();
-    tick(engine2, 20);
-    const d3 = engine2.distance;
-    tick(engine2, 40);
-    const d4 = engine2.distance;
-    const normalIncrement = d4 - d3;
+    const slowEngine = createEngine();
+    slowEngine.start();
+    (slowEngine as any)._skierSpeed = 100;
+    (slowEngine as any)._obstacles = [];
+    (slowEngine as any)._snowflakes = [];
+    for (let i = 0; i < 30; i++) (slowEngine as any).update(dt);
+    const slowDist = slowEngine.distance;
 
-    expect(accelIncrement).toBeGreaterThan(normalIncrement);
+    expect(fastDist).toBeGreaterThan(slowDist);
   });
 
   it('距离分数与距离成正比', () => {

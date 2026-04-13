@@ -356,6 +356,34 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-green-400',
     gradient: 'from-green-600/20 to-emerald-600/20',
   },
+  [GameType.ZUMA]: {
+    title: '祖玛',
+    description: '彩色球沿螺旋轨道前进，射出彩球插入链中，同色三连消除，连锁加分！',
+    icon: '🔮',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-violet-600/20',
+  },
+  [GameType.PIXEL_ART]: {
+    title: '涂色画板',
+    description: '像素涂色画板！在网格上绘画创作，支持画笔、橡皮擦、填充、取色等工具，多种模板任你选择！',
+    icon: '🎨',
+    color: 'text-pink-400',
+    gradient: 'from-pink-600/20 to-fuchsia-600/20',
+  },
+  [GameType.SPIROGRAPH]: {
+    title: '万花尺',
+    description: '经典万花尺 Spirograph！调节参数绘制精美的数学曲线图案，支持多种预设和颜色方案！',
+    icon: '🌀',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-green-600/20',
+  },
+  [GameType.WORDLE]: {
+    title: 'Wordle',
+    description: '经典猜词游戏！6次机会猜出5字母单词，根据颜色提示推理，考验你的词汇量和逻辑！',
+    icon: '🔤',
+    color: 'text-emerald-400',
+    gradient: 'from-emerald-600/20 to-green-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

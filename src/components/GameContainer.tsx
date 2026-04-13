@@ -51,6 +51,10 @@ import { MastermindEngine } from '@/games/mastermind/MastermindEngine';
 import { Make24Engine } from '@/games/make-24/Make24Engine';
 import { CookieClickerEngine } from '@/games/cookie-clicker/CookieClickerEngine';
 import { ReactionTestEngine } from '@/games/reaction-test/ReactionTestEngine';
+import { ZumaEngine } from '@/games/zuma/ZumaEngine';
+import { PixelArtEngine } from '@/games/pixel-art/PixelArtEngine';
+import { SpirographEngine } from '@/games/spirograph/SpirographEngine';
+import { WordleEngine } from '@/games/wordle/WordleEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -110,6 +114,10 @@ function createEngine(type: GameType) {
     case GameTypeEnum.MAKE_24: return new Make24Engine();
     case GameTypeEnum.COOKIE_CLICKER: return new CookieClickerEngine();
     case GameTypeEnum.REACTION_TEST: return new ReactionTestEngine();
+    case GameTypeEnum.ZUMA: return new ZumaEngine();
+    case GameTypeEnum.PIXEL_ART: return new PixelArtEngine();
+    case GameTypeEnum.SPIROGRAPH: return new SpirographEngine();
+    case GameTypeEnum.WORDLE: return new WordleEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

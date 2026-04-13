@@ -65,8 +65,9 @@ export abstract class GameEngine implements IGameEngine {
   start(): void {
     if (!this.canvas || !this.ctx) throw new Error('Canvas not initialized');
     this._status = 'playing';
-    this._startTime = performance.now();
-    this.lastTime = performance.now();
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    this._startTime = now;
+    this.lastTime = now;
     this._score = 0;
     this._level = 1;
     this.onStart();
@@ -89,8 +90,9 @@ export abstract class GameEngine implements IGameEngine {
 
   resume(): void {
     if (this._status !== 'paused') return;
+    if (!this.canvas || !this.ctx) throw new Error('Canvas not initialized');
     this._status = 'playing';
-    this.lastTime = performance.now();
+    this.lastTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
     this.onResume();
     this.emit('statusChange', 'playing');
     this.animationId = requestAnimationFrame(this.gameLoop);
