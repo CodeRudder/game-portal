@@ -167,6 +167,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-red-400',
     gradient: 'from-red-600/20 to-orange-600/20',
   },
+  [GameType.FROGGER]: {
+    title: '青蛙过河',
+    description: '控制小青蛙穿越车流和河流，安全到达对岸！经典街机重现。',
+    icon: '🐸',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-lime-600/20',
+  },
+  [GameType.PONG]: {
+    title: '乒乓球',
+    description: '经典乒乓对战！控制挡板反弹球，先得7分获胜，支持AI对手。',
+    icon: '🏓',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-blue-600/20',
+  },
+  [GameType.CONNECT_FOUR]: {
+    title: '四子棋',
+    description: '双人对战策略棋！选择列落子，先连成四子者获胜，支持AI。',
+    icon: '🔴',
+    color: 'text-yellow-400',
+    gradient: 'from-yellow-600/20 to-red-600/20',
+  },
+  [GameType.LIGHTS_OUT]: {
+    title: '点灯',
+    description: '点击切换灯光，影响相邻格子，目标是全部熄灭！考验逻辑推理。',
+    icon: '💡',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-yellow-600/20',
+  },
+  [GameType.WHACK_A_MOLE]: {
+    title: '打地鼠',
+    description: '地鼠随机冒出，快速敲击得分！考验反应速度和手眼协调。',
+    icon: '🔨',
+    color: 'text-orange-400',
+    gradient: 'from-orange-600/20 to-amber-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

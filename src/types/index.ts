@@ -23,6 +23,11 @@ export enum GameType {
   MATCH_3 = 'match-3',
   SUDOKU = 'sudoku',
   TETRIS_BATTLE = 'tetris-battle',
+  FROGGER = 'frogger',
+  PONG = 'pong',
+  CONNECT_FOUR = 'connect-four',
+  LIGHTS_OUT = 'lights-out',
+  WHACK_A_MOLE = 'whack-a-mole',
 }
 
 // ========== 游戏状态枚举 ==========

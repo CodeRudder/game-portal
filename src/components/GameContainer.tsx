@@ -24,6 +24,11 @@ import { MahjongConnectEngine } from '@/games/mahjong-connect/MahjongConnectEngi
 import { Match3Engine } from '@/games/match-3/Match3Engine';
 import { SudokuEngine } from '@/games/sudoku/SudokuEngine';
 import { TetrisBattleEngine } from '@/games/tetris-battle/TetrisBattleEngine';
+import { FroggerEngine } from '@/games/frogger/FroggerEngine';
+import { PongEngine } from '@/games/pong/PongEngine';
+import { ConnectFourEngine } from '@/games/connect-four/ConnectFourEngine';
+import { LightsOutEngine } from '@/games/lights-out/LightsOutEngine';
+import { WhackAMoleEngine } from '@/games/whack-a-mole/WhackAMoleEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -56,6 +61,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.MATCH_3: return new Match3Engine();
     case GameTypeEnum.SUDOKU: return new SudokuEngine();
     case GameTypeEnum.TETRIS_BATTLE: return new TetrisBattleEngine();
+    case GameTypeEnum.FROGGER: return new FroggerEngine();
+    case GameTypeEnum.PONG: return new PongEngine();
+    case GameTypeEnum.CONNECT_FOUR: return new ConnectFourEngine();
+    case GameTypeEnum.LIGHTS_OUT: return new LightsOutEngine();
+    case GameTypeEnum.WHACK_A_MOLE: return new WhackAMoleEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
@@ -482,6 +492,11 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         {gameType === GameTypeEnum.MATCH_3 && <span>点击交换宝石 · 方向键移动+空格选择</span>}
         {gameType === GameTypeEnum.SUDOKU && <span>方向键移动 · 1-9 输入 · N 笔记 · H 提示 · Z 撤销</span>}
         {gameType === GameTypeEnum.TETRIS_BATTLE && <span>WASD/方向键 · 空格 硬降 · Q 旋转</span>}
+        {gameType === GameTypeEnum.FROGGER && <span>↑↓←→ / WASD 移动 · 穿越车流到达对岸</span>}
+        {gameType === GameTypeEnum.PONG && <span>↑↓ / WS 控制挡板 · 先得7分获胜</span>}
+        {gameType === GameTypeEnum.CONNECT_FOUR && <span>←→ 选择列 · 空格/↓ 落子 · 四子连线获胜</span>}
+        {gameType === GameTypeEnum.LIGHTS_OUT && <span>方向键移动 · 空格切换灯 · 全部熄灭过关</span>}
+        {gameType === GameTypeEnum.WHACK_A_MOLE && <span>方向键移动锤子 · 空格敲击 · 打中地鼠得分</span>}
       </div>
     </div>
   );
