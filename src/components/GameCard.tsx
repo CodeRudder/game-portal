@@ -237,6 +237,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-yellow-400',
     gradient: 'from-yellow-600/20 to-green-600/20',
   },
+  [GameType.GALAGA]: {
+    title: '小蜜蜂',
+    description: '经典街机射击！驾驶战机消灭外星虫群，躲避俯冲攻击！',
+    icon: '🐝',
+    color: 'text-yellow-400',
+    gradient: 'from-yellow-600/20 to-orange-600/20',
+  },
+  [GameType.BUBBLE_SHOOTER]: {
+    title: '泡泡龙',
+    description: '瞄准发射泡泡，三个同色即可消除！清空全部泡泡过关。',
+    icon: '🫧',
+    color: 'text-pink-400',
+    gradient: 'from-pink-600/20 to-purple-600/20',
+  },
+  [GameType.SNAKE_2P]: {
+    title: '双人贪吃蛇',
+    description: '双蛇同屏竞技！WASD vs 方向键，比拼谁活到最后！',
+    icon: '🐍',
+    color: 'text-lime-400',
+    gradient: 'from-lime-600/20 to-green-600/20',
+  },
+  [GameType.MANCALA]: {
+    title: '曼卡拉',
+    description: '古老非洲播棋策略游戏，收集最多种子获胜！支持AI对手。',
+    icon: '🫘',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-orange-600/20',
+  },
+  [GameType.EIGHT_QUEENS]: {
+    title: '八皇后',
+    description: '经典棋盘谜题，在8×8棋盘上放置8个互不攻击的皇后！',
+    icon: '👑',
+    color: 'text-violet-400',
+    gradient: 'from-violet-600/20 to-purple-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

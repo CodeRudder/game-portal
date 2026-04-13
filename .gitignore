@@ -5,6 +5,9 @@ node_modules/
 dist/
 build/
 
+vitest_out.txt
+
+
 # Environment
 .env
 .env.local

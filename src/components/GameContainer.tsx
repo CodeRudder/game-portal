@@ -34,6 +34,11 @@ import { SolitaireEngine } from '@/games/solitaire/SolitaireEngine';
 import { AsteroidsEngine } from '@/games/asteroids/AsteroidsEngine';
 import { AirHockeyEngine } from '@/games/air-hockey/AirHockeyEngine';
 import { FruitNinjaEngine } from '@/games/fruit-ninja/FruitNinjaEngine';
+import { GalagaEngine } from '@/games/galaga/GalagaEngine';
+import { BubbleShooterEngine } from '@/games/bubble-shooter/BubbleShooterEngine';
+import { Snake2PEngine } from '@/games/snake-2p/Snake2PEngine';
+import { MancalaEngine } from '@/games/mancala/MancalaEngine';
+import { EightQueensEngine } from '@/games/eight-queens/EightQueensEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -76,6 +81,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.ASTEROIDS: return new AsteroidsEngine();
     case GameTypeEnum.AIR_HOCKEY: return new AirHockeyEngine();
     case GameTypeEnum.FRUIT_NINJA: return new FruitNinjaEngine();
+    case GameTypeEnum.GALAGA: return new GalagaEngine();
+    case GameTypeEnum.BUBBLE_SHOOTER: return new BubbleShooterEngine();
+    case GameTypeEnum.SNAKE_2P: return new Snake2PEngine();
+    case GameTypeEnum.MANCALA: return new MancalaEngine();
+    case GameTypeEnum.EIGHT_QUEENS: return new EightQueensEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

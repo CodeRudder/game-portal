@@ -1,0 +1,4 @@
+
+1、发现一个问题，首页没有显示新开发的小游戏。修改一下任务计划文档，添加要求：每次开发完游戏需要加到首页，并部署到https://skill-deploy-u7xvhb5l1p-agent-skill-vercel.vercel.app/
+
+

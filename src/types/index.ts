@@ -33,6 +33,11 @@ export enum GameType {
   ASTEROIDS = 'asteroids',
   AIR_HOCKEY = 'air-hockey',
   FRUIT_NINJA = 'fruit-ninja',
+  GALAGA = 'galaga',
+  BUBBLE_SHOOTER = 'bubble-shooter',
+  SNAKE_2P = 'snake-2p',
+  MANCALA = 'mancala',
+  EIGHT_QUEENS = 'eight-queens',
 }
 
 // ========== 游戏状态枚举 ==========
