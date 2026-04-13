@@ -307,6 +307,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-amber-400',
     gradient: 'from-amber-600/20 to-yellow-600/20',
   },
+  [GameType.DONKEY_KONG]: {
+    title: '大金刚',
+    description: '经典街机平台跳跃！攀爬梯子、躲避障碍，营救被大金刚抓走的人质！',
+    icon: '🦍',
+    color: 'text-orange-400',
+    gradient: 'from-orange-600/20 to-red-600/20',
+  },
+  [GameType.DIG_DUG]: {
+    title: '挖掘者',
+    description: '经典街机挖掘游戏！在地下挖隧道，用气泵消灭怪物，越深分数越高！',
+    icon: '⛏️',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-blue-600/20',
+  },
+  [GameType.BATTLE_CITY]: {
+    title: '坦克大战',
+    description: '经典坦克射击！保卫基地，消灭敌方坦克，支持多种地形和道具！',
+    icon: '🪖',
+    color: 'text-yellow-400',
+    gradient: 'from-yellow-600/20 to-amber-600/20',
+  },
+  [GameType.MASTERMIND]: {
+    title: '猜数字',
+    description: '经典逻辑推理！猜出隐藏的数字组合，根据提示逐步推理，考验你的头脑！',
+    icon: '🔮',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-violet-600/20',
+  },
+  [GameType.MAKE_24]: {
+    title: '算术24点',
+    description: '用4个数字和加减乘除运算，凑出24！锻炼数学思维和速算能力！',
+    icon: '🧮',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-emerald-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

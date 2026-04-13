@@ -44,6 +44,11 @@ import { MissileCommandEngine } from '@/games/missile-command/MissileCommandEngi
 import { LunarLanderEngine } from '@/games/lunar-lander/LunarLanderEngine';
 import { SliderPuzzleEngine } from '@/games/slider-puzzle/SliderPuzzleEngine';
 import { TowerOfHanoiEngine } from '@/games/tower-of-hanoi/TowerOfHanoiEngine';
+import { DonkeyKongEngine } from '@/games/donkey-kong/DonkeyKongEngine';
+import { DigDugEngine } from '@/games/dig-dug/DigDugEngine';
+import { BattleCityEngine } from '@/games/battle-city/BattleCityEngine';
+import { MastermindEngine } from '@/games/mastermind/MastermindEngine';
+import { Make24Engine } from '@/games/make-24/Make24Engine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -96,6 +101,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.LUNAR_LANDER: return new LunarLanderEngine();
     case GameTypeEnum.SLIDER_PUZZLE: return new SliderPuzzleEngine();
     case GameTypeEnum.TOWER_OF_HANOI: return new TowerOfHanoiEngine();
+    case GameTypeEnum.DONKEY_KONG: return new DonkeyKongEngine();
+    case GameTypeEnum.DIG_DUG: return new DigDugEngine();
+    case GameTypeEnum.BATTLE_CITY: return new BattleCityEngine();
+    case GameTypeEnum.MASTERMIND: return new MastermindEngine();
+    case GameTypeEnum.MAKE_24: return new Make24Engine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

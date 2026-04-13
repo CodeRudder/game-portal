@@ -43,6 +43,11 @@ export enum GameType {
   LUNAR_LANDER = 'lunar-lander',
   SLIDER_PUZZLE = 'slider-puzzle',
   TOWER_OF_HANOI = 'tower-of-hanoi',
+  DONKEY_KONG = 'donkey-kong',
+  DIG_DUG = 'dig-dug',
+  BATTLE_CITY = 'battle-city',
+  MASTERMIND = 'mastermind',
+  MAKE_24 = 'make-24',
 }
 
 // ========== 游戏状态枚举 ==========
