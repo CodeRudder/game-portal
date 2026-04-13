@@ -65,6 +65,10 @@ import { ZTypeEngine } from '@/games/ztype/ZTypeEngine';
 import { WaterSortEngine } from '@/games/water-sort/WaterSortEngine';
 import { ScrewPuzzleEngine } from '@/games/screw-puzzle/ScrewPuzzleEngine';
 import { SandSimulationEngine } from '@/games/sand-simulation/SandSimulationEngine';
+import { VideoPokerEngine } from '@/games/video-poker/VideoPokerEngine';
+import { BlackjackEngine } from '@/games/blackjack/BlackjackEngine';
+import { SpaceDodgeEngine } from '@/games/space-dodge/SpaceDodgeEngine';
+import { BalloonPopEngine } from '@/games/balloon-pop/BalloonPopEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -138,6 +142,10 @@ function createEngine(type: GameType) {
     case GameTypeEnum.WATER_SORT: return new WaterSortEngine();
     case GameTypeEnum.SCREW_PUZZLE: return new ScrewPuzzleEngine();
     case GameTypeEnum.SAND_SIMULATION: return new SandSimulationEngine();
+    case GameTypeEnum.VIDEO_POKER: return new VideoPokerEngine();
+    case GameTypeEnum.BLACKJACK: return new BlackjackEngine();
+    case GameTypeEnum.SPACE_DODGE: return new SpaceDodgeEngine();
+    case GameTypeEnum.BALLOON_POP: return new BalloonPopEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

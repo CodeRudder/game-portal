@@ -64,6 +64,11 @@ export enum GameType {
   WATER_SORT = 'water-sort',
   SAND_SIMULATION = 'sand-simulation',
   SCREW_PUZZLE = 'screw-puzzle',
+  VIDEO_POKER = 'video-poker',
+  BLACKJACK = 'blackjack',
+  DOTS_AND_BOXES = 'dots-and-boxes',
+  SPACE_DODGE = 'space-dodge',
+  BALLOON_POP = 'balloon-pop',
 }
 
 // ========== 游戏状态枚举 ==========

@@ -55,6 +55,7 @@ HTMLCanvasElement.prototype.getContext = function (
       translate: () => {},
       rotate: () => {},
       scale: () => {},
+      setLineDash: () => {},
       createLinearGradient: () => ({
         addColorStop: () => {},
       }),

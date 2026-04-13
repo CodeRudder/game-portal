@@ -454,6 +454,34 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-yellow-400',
     gradient: 'from-yellow-600/20 to-amber-600/20',
   },
+  [GameType.VIDEO_POKER]: {
+    title: 'Video Poker',
+    description: '经典扑克！发5张牌，选择保留/换牌，根据牌型获得赔率。皇家同花顺800倍！',
+    icon: '🃏',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-purple-600/20',
+  },
+  [GameType.BLACKJACK]: {
+    title: '21点 Blackjack',
+    description: '经典21点！与庄家比牌点数，尽量接近21点但不超过。支持要牌、停牌、加倍！',
+    icon: '🂡',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-emerald-600/20',
+  },
+  [GameType.SPACE_DODGE]: {
+    title: '太空陨石躲避',
+    description: '驾驶飞船在太空中躲避陨石，生存越久得分越高！收集能量球加分，速度逐渐递增！',
+    icon: '☄️',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-indigo-600/20',
+  },
+  [GameType.BALLOON_POP]: {
+    title: '气球射击',
+    description: '用准星瞄准射击上升的气球！不同气球不同分数，连击获得倍率加成，小心炸弹！',
+    icon: '🎈',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-pink-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {
