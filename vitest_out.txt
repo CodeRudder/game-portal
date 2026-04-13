@@ -1,0 +1,49 @@
+
+ RUN  v1.6.1 /home/gongdewei/work/projects/deer-flow/backend/.deer-flow/threads/df886916-d106-4944-ba66-5161ec715bb3/user-data/workspace
+
+ ✓ src/games/fruit-ninja/__tests__/FruitNinjaEngine.test.ts  (135 tests) 65ms
+ ✓ src/games/frogger/__tests__/FroggerEngine.test.ts  (162 tests) 99ms
+ ❯ src/games/whack-a-mole/__tests__/WhackAMoleEngine.test.ts  (198 tests | 1 failed) 135ms
+   ❯ src/games/whack-a-mole/__tests__/WhackAMoleEngine.test.ts > WhackAMoleEngine - 地鼠生命周期 > WHACKED 经过 MOLE_HIDE_DURATION 后变为 HIDDEN
+     → expected 'appearing' to be 'hidden' // Object.is equality
+ ✓ src/games/pinball/__tests__/PinballEngine.test.ts  (165 tests) 147ms
+ ✓ src/games/mahjong-connect/__tests__/MahjongConnectEngine.test.ts  (144 tests) 114ms
+ ✓ src/games/match-3/__tests__/Match3Engine.test.ts  (139 tests) 185ms
+ ✓ src/games/tetris-battle/__tests__/TetrisBattleEngine.test.ts  (169 tests) 201ms
+ ✓ src/games/connect-four/__tests__/ConnectFourEngine.test.ts  (161 tests) 83ms
+ ✓ src/games/asteroids/__tests__/AsteroidsEngine.test.ts  (128 tests) 91ms
+ ✓ src/games/pong/__tests__/PongEngine.test.ts  (139 tests) 89ms
+ ✓ src/games/klotski/__tests__/KlotskiEngine.test.ts  (153 tests) 102ms
+ ✓ src/__tests__/breakout.test.ts  (114 tests) 142ms
+ ✓ src/games/solitaire/__tests__/SolitaireEngine.test.ts  (156 tests) 150ms
+ ✓ src/games/sudoku/__tests__/SudokuEngine.test.ts  (117 tests) 875ms
+ ✓ src/__tests__/pipe-mania.test.ts  (134 tests) 108ms
+ ✓ src/games/air-hockey/__tests__/AirHockeyEngine.test.ts  (118 tests) 83ms
+ ✓ src/__tests__/gomoku.test.ts  (94 tests) 124ms
+ ✓ src/__tests__/dino-runner.test.ts  (86 tests) 131ms
+ ✓ src/__tests__/minesweeper.test.ts  (86 tests) 173ms
+ ✓ src/__tests__/game-of-life.test.ts  (86 tests) 353ms
+ ✓ src/__tests__/checkers.test.ts  (70 tests) 81ms
+ ✓ src/games/lights-out/__tests__/LightsOutEngine.test.ts  (114 tests) 91ms
+ ✓ src/__tests__/tic-tac-toe.test.ts  (64 tests) 58ms
+ ✓ src/__tests__/memory-match.test.ts  (43 tests) 42ms
+ ✓ src/__tests__/tetris.test.ts  (53 tests) 86ms
+ ✓ src/__tests__/games/game-of-life.test.ts  (75 tests) 384ms
+ ✓ src/__tests__/games/gomoku.test.ts  (63 tests) 180ms
+ ✓ src/__tests__/othello.test.ts  (74 tests) 85ms
+ ✓ src/__tests__/g2048.test.ts  (48 tests) 49ms
+ ✓ src/__tests__/flappy-bird.test.ts  (46 tests) 56ms
+ ✓ src/__tests__/tron.test.ts  (61 tests) 132ms
+ ✓ src/__tests__/sokoban.test.ts  (41 tests) 62ms
+ ✓ src/__tests__/snake.test.ts  (29 tests) 45ms
+ ✓ src/__tests__/pacman.test.ts  (36 tests) 37ms
+ ✓ src/__tests__/space-invaders.test.ts  (40 tests) 34ms
+ ✓ src/__tests__/storage.test.ts  (21 tests) 11ms
+ ✓ src/__tests__/game-container.test.tsx  (6 tests) 186ms
+ ✓ src/__tests__/routing.test.tsx  (6 tests) 446ms
+
+ Test Files  1 failed | 37 passed (38)
+      Tests  1 failed | 3573 passed (3574)
+   Start at  23:07:22
+   Duration  14.03s (transform 4.99s, setup 5.50s, collect 8.65s, tests 5.51s, environment 39.16s, prepare 9.82s)
+
