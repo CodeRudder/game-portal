@@ -2,9 +2,9 @@
  * 现代都市 (Modern City) — 放置类游戏常量定义
  *
  * 核心玩法：
- * - 点击获得资金 (money)
- * - 建设城市建筑，自动产出资源
- * - 城市等级系统，解锁更多建筑和功能
+ * - 点击获得金币 (coin)
+ * - 建设城市建筑，自动产出资源（金币/人口/科技）
+ * - 城市升级系统，解锁更多建筑和功能
  * - 科技树系统（通过建筑前置依赖体现）
  * - 声望系统：重置进度获得声望点数，提供永久加成
  * - 离线收益
@@ -17,9 +17,9 @@ export const CANVAS_HEIGHT = 640;
 // ========== 资源 ID ==========
 
 export const RESOURCE_IDS = {
-  MONEY: 'money',
+  COIN: 'coin',
   POPULATION: 'population',
-  POWER: 'power',
+  TECH: 'tech',
 } as const;
 
 // ========== 建筑 ID ==========
@@ -28,17 +28,17 @@ export const BUILDING_IDS = {
   HOUSE: 'house',
   SHOP: 'shop',
   FACTORY: 'factory',
-  POWER_PLANT: 'power-plant',
+  SCHOOL: 'school',
   OFFICE: 'office',
   HOSPITAL: 'hospital',
-  SCHOOL: 'school',
+  LABORATORY: 'laboratory',
   SKYSCRAPER: 'skyscraper',
 } as const;
 
 // ========== 核心常量 ==========
 
-/** 点击获得的资金数 */
-export const MONEY_PER_CLICK = 1;
+/** 点击获得的金币数 */
+export const COIN_PER_CLICK = 1;
 
 /** 声望加成系数（每声望点数增加的产出倍率） */
 export const PRESTIGE_BONUS_MULTIPLIER = 0.1; // 10% per prestige point
@@ -46,10 +46,10 @@ export const PRESTIGE_BONUS_MULTIPLIER = 0.1; // 10% per prestige point
 /** 声望货币计算基数 */
 export const PRESTIGE_BASE_POINTS = 1;
 
-/** 声望所需最低总资金 */
-export const MIN_PRESTIGE_MONEY = 50000;
+/** 声望所需最低总金币 */
+export const MIN_PRESTIGE_COIN = 50000;
 
-/** 城市等级所需资金表 */
+/** 城市等级所需金币表 */
 export const CITY_LEVEL_COSTS: Record<number, number> = {
   2: 500,
   3: 2000,
@@ -93,7 +93,7 @@ export const BUILDINGS: BuildingDef[] = [
     id: 'house',
     name: '住宅',
     icon: '🏠',
-    baseCost: { money: 15 },
+    baseCost: { coin: 15 },
     costMultiplier: 1.15,
     maxLevel: 50,
     productionResource: 'population',
@@ -103,10 +103,10 @@ export const BUILDINGS: BuildingDef[] = [
     id: 'shop',
     name: '商店',
     icon: '🏪',
-    baseCost: { money: 100 },
+    baseCost: { coin: 100 },
     costMultiplier: 1.18,
     maxLevel: 40,
-    productionResource: 'money',
+    productionResource: 'coin',
     baseProduction: 2,
     requires: ['house'],
   },
@@ -114,21 +114,21 @@ export const BUILDINGS: BuildingDef[] = [
     id: 'factory',
     name: '工厂',
     icon: '🏭',
-    baseCost: { money: 500 },
+    baseCost: { coin: 500 },
     costMultiplier: 1.2,
     maxLevel: 30,
-    productionResource: 'money',
+    productionResource: 'coin',
     baseProduction: 8,
     requires: ['shop'],
   },
   {
-    id: 'power-plant',
-    name: '发电厂',
-    icon: '⚡',
-    baseCost: { money: 800 },
+    id: 'school',
+    name: '学校',
+    icon: '🏫',
+    baseCost: { coin: 800 },
     costMultiplier: 1.22,
     maxLevel: 25,
-    productionResource: 'power',
+    productionResource: 'tech',
     baseProduction: 1,
     requires: ['factory'],
   },
@@ -136,19 +136,19 @@ export const BUILDINGS: BuildingDef[] = [
     id: 'office',
     name: '办公楼',
     icon: '🏢',
-    baseCost: { money: 3000, power: 5 },
+    baseCost: { coin: 3000, tech: 5 },
     costMultiplier: 1.25,
     maxLevel: 20,
-    productionResource: 'money',
+    productionResource: 'coin',
     baseProduction: 20,
-    requires: ['power-plant'],
+    requires: ['school'],
     requiresCityLevel: 3,
   },
   {
     id: 'hospital',
     name: '医院',
     icon: '🏥',
-    baseCost: { money: 8000, population: 20, power: 10 },
+    baseCost: { coin: 8000, population: 20, tech: 10 },
     costMultiplier: 1.28,
     maxLevel: 15,
     productionResource: 'population',
@@ -157,14 +157,14 @@ export const BUILDINGS: BuildingDef[] = [
     requiresCityLevel: 4,
   },
   {
-    id: 'school',
-    name: '学校',
-    icon: '🏫',
-    baseCost: { money: 15000, population: 50, power: 20 },
+    id: 'laboratory',
+    name: '实验室',
+    icon: '🔬',
+    baseCost: { coin: 15000, population: 50, tech: 20 },
     costMultiplier: 1.3,
     maxLevel: 15,
-    productionResource: 'money',
-    baseProduction: 50,
+    productionResource: 'tech',
+    baseProduction: 5,
     requires: ['hospital'],
     requiresCityLevel: 5,
   },
@@ -172,12 +172,12 @@ export const BUILDINGS: BuildingDef[] = [
     id: 'skyscraper',
     name: '摩天大楼',
     icon: '🏙️',
-    baseCost: { money: 100000, population: 200, power: 100 },
+    baseCost: { coin: 100000, population: 200, tech: 100 },
     costMultiplier: 1.35,
     maxLevel: 10,
-    productionResource: 'money',
+    productionResource: 'coin',
     baseProduction: 200,
-    requires: ['school'],
+    requires: ['laboratory'],
     requiresCityLevel: 7,
   },
 ];
@@ -206,9 +206,9 @@ export const COLORS = {
   affordable: '#2ECC71',
   unaffordable: '#E74C3C',
   buildingShadow: 'rgba(0,0,0,0.3)',
-  moneyColor: '#F1C40F',
+  coinColor: '#F1C40F',
   populationColor: '#2ECC71',
-  powerColor: '#3498DB',
+  techColor: '#9B59B6',
   windowColor: '#F39C12',
   neonGlow: '#00D4FF',
 } as const;

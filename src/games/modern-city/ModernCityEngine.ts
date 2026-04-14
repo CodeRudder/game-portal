@@ -2,9 +2,9 @@
  * 现代都市 (Modern City) — 放置类游戏引擎
  *
  * 继承 IdleGameEngine，实现：
- * - 多资源系统（资金/人口/电力）
- * - 建筑升级系统
- * - 城市等级系统
+ * - 多资源系统（金币/人口/科技）
+ * - 建筑升级系统（8种建筑）
+ * - 城市等级系统（10级）
  * - 科技树（通过建筑前置依赖体现）
  * - 声望重置系统
  * - Canvas 现代都市风格渲染
@@ -16,10 +16,10 @@ import type { Resource, Upgrade, SaveData } from '@/types/idle';
 import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
-  MONEY_PER_CLICK,
+  COIN_PER_CLICK,
   PRESTIGE_BONUS_MULTIPLIER,
   PRESTIGE_BASE_POINTS,
-  MIN_PRESTIGE_MONEY,
+  MIN_PRESTIGE_COIN,
   CITY_LEVEL_COSTS,
   MAX_CITY_LEVEL,
   BUILDINGS,
@@ -34,10 +34,10 @@ import {
 
 /** 游戏统计 */
 export interface ModernCityStatistics {
-  totalMoneyEarned: number;
+  totalCoinEarned: number;
   totalClicks: number;
   totalPopulationEarned: number;
-  totalPowerEarned: number;
+  totalTechEarned: number;
   totalPrestigeCount: number;
   totalBuildingsPurchased: number;
   totalCityUpgrades: number;
@@ -79,10 +79,10 @@ export class ModernCityEngine extends IdleGameEngine {
 
   /** 统计数据 */
   private _stats: ModernCityStatistics = {
-    totalMoneyEarned: 0,
+    totalCoinEarned: 0,
     totalClicks: 0,
     totalPopulationEarned: 0,
-    totalPowerEarned: 0,
+    totalTechEarned: 0,
     totalPrestigeCount: 0,
     totalBuildingsPurchased: 0,
     totalCityUpgrades: 0,
@@ -126,8 +126,8 @@ export class ModernCityEngine extends IdleGameEngine {
     return this._cityLevel;
   }
 
-  get totalMoneyEarned(): number {
-    return this._stats.totalMoneyEarned;
+  get totalCoinEarned(): number {
+    return this._stats.totalCoinEarned;
   }
 
   get totalClicks(): number {
@@ -142,8 +142,8 @@ export class ModernCityEngine extends IdleGameEngine {
     // 初始化资源
     this.initializeResources([
       {
-        id: RESOURCE_IDS.MONEY,
-        name: '资金',
+        id: RESOURCE_IDS.COIN,
+        name: '金币',
         amount: 0,
         perSecond: 0,
         maxAmount: 1e15,
@@ -158,8 +158,8 @@ export class ModernCityEngine extends IdleGameEngine {
         unlocked: false,
       },
       {
-        id: RESOURCE_IDS.POWER,
-        name: '电力',
+        id: RESOURCE_IDS.TECH,
+        name: '科技',
         amount: 0,
         perSecond: 0,
         maxAmount: 1e9,
@@ -192,10 +192,10 @@ export class ModernCityEngine extends IdleGameEngine {
     this._selectedIndex = 0;
     this._cityLevel = 1;
     this._stats = {
-      totalMoneyEarned: 0,
+      totalCoinEarned: 0,
       totalClicks: 0,
       totalPopulationEarned: 0,
-      totalPowerEarned: 0,
+      totalTechEarned: 0,
       totalPrestigeCount: 0,
       totalBuildingsPurchased: 0,
       totalCityUpgrades: 0,
@@ -249,17 +249,17 @@ export class ModernCityEngine extends IdleGameEngine {
     }
 
     // 统计资源产出
-    const money = this.getResource(RESOURCE_IDS.MONEY);
-    if (money && money.perSecond > 0) {
-      this._stats.totalMoneyEarned += money.perSecond * (deltaTime / 1000);
+    const coin = this.getResource(RESOURCE_IDS.COIN);
+    if (coin && coin.perSecond > 0) {
+      this._stats.totalCoinEarned += coin.perSecond * (deltaTime / 1000);
     }
     const pop = this.getResource(RESOURCE_IDS.POPULATION);
     if (pop && pop.perSecond > 0) {
       this._stats.totalPopulationEarned += pop.perSecond * (deltaTime / 1000);
     }
-    const power = this.getResource(RESOURCE_IDS.POWER);
-    if (power && power.perSecond > 0) {
-      this._stats.totalPowerEarned += power.perSecond * (deltaTime / 1000);
+    const tech = this.getResource(RESOURCE_IDS.TECH);
+    if (tech && tech.perSecond > 0) {
+      this._stats.totalTechEarned += tech.perSecond * (deltaTime / 1000);
     }
 
     // 检查建筑解锁条件
@@ -271,12 +271,12 @@ export class ModernCityEngine extends IdleGameEngine {
   // ========== 核心玩法 ==========
 
   /**
-   * 点击获得资金
+   * 点击获得金币
    */
   click(): number {
     if (this._status !== 'playing') return 0;
 
-    let gained = MONEY_PER_CLICK;
+    let gained = COIN_PER_CLICK;
 
     // 城市等级加成
     gained *= this.getCityLevelMultiplier();
@@ -286,8 +286,8 @@ export class ModernCityEngine extends IdleGameEngine {
 
     gained = Math.floor(gained * 100) / 100;
 
-    this.addResource(RESOURCE_IDS.MONEY, gained);
-    this._stats.totalMoneyEarned += gained;
+    this.addResource(RESOURCE_IDS.COIN, gained);
+    this._stats.totalCoinEarned += gained;
     this._stats.totalClicks++;
     this.addScore(gained);
 
@@ -304,7 +304,7 @@ export class ModernCityEngine extends IdleGameEngine {
       y: CITY_DRAW.centerY + Math.sin(angle) * dist - 30,
       life: 800,
       maxLife: 800,
-      color: COLORS.moneyColor,
+      color: COLORS.coinColor,
     });
 
     this.emit('stateChange');
@@ -363,10 +363,10 @@ export class ModernCityEngine extends IdleGameEngine {
     const cost = CITY_LEVEL_COSTS[nextLevel];
     if (!cost) return false;
 
-    const money = this.getResource(RESOURCE_IDS.MONEY);
-    if (!money || money.amount < cost) return false;
+    const coin = this.getResource(RESOURCE_IDS.COIN);
+    if (!coin || coin.amount < cost) return false;
 
-    this.spendResource(RESOURCE_IDS.MONEY, cost);
+    this.spendResource(RESOURCE_IDS.COIN, cost);
     this._cityLevel = nextLevel;
     this._stats.totalCityUpgrades++;
 
@@ -392,18 +392,18 @@ export class ModernCityEngine extends IdleGameEngine {
   canUpgradeCity(): boolean {
     if (this._cityLevel >= MAX_CITY_LEVEL) return false;
     const cost = this.getCityUpgradeCost();
-    return cost > 0 && this.hasResource(RESOURCE_IDS.MONEY, cost);
+    return cost > 0 && this.hasResource(RESOURCE_IDS.COIN, cost);
   }
 
   /**
    * 声望重置
    */
   doPrestige(): number {
-    if (this._stats.totalMoneyEarned < MIN_PRESTIGE_MONEY) return 0;
+    if (this._stats.totalCoinEarned < MIN_PRESTIGE_COIN) return 0;
 
     // 计算获得的声望点数
     const pointsGained = Math.floor(
-      PRESTIGE_BASE_POINTS * Math.sqrt(this._stats.totalMoneyEarned / MIN_PRESTIGE_MONEY)
+      PRESTIGE_BASE_POINTS * Math.sqrt(this._stats.totalCoinEarned / MIN_PRESTIGE_COIN)
     );
 
     if (pointsGained <= 0) return 0;
@@ -416,10 +416,10 @@ export class ModernCityEngine extends IdleGameEngine {
     // 保存统计（部分重置）
     const savedStats: ModernCityStatistics = {
       ...this._stats,
-      totalMoneyEarned: 0,
+      totalCoinEarned: 0,
       totalClicks: 0,
       totalPopulationEarned: 0,
-      totalPowerEarned: 0,
+      totalTechEarned: 0,
     };
 
     // 重置
@@ -470,9 +470,9 @@ export class ModernCityEngine extends IdleGameEngine {
    * 获取预览声望点数
    */
   getPrestigePreview(): number {
-    if (this._stats.totalMoneyEarned < MIN_PRESTIGE_MONEY) return 0;
+    if (this._stats.totalCoinEarned < MIN_PRESTIGE_COIN) return 0;
     return Math.floor(
-      PRESTIGE_BASE_POINTS * Math.sqrt(this._stats.totalMoneyEarned / MIN_PRESTIGE_MONEY)
+      PRESTIGE_BASE_POINTS * Math.sqrt(this._stats.totalCoinEarned / MIN_PRESTIGE_COIN)
     );
   }
 
@@ -480,7 +480,7 @@ export class ModernCityEngine extends IdleGameEngine {
    * 检查是否可以声望
    */
   canPrestige(): boolean {
-    return this._stats.totalMoneyEarned >= MIN_PRESTIGE_MONEY;
+    return this._stats.totalCoinEarned >= MIN_PRESTIGE_COIN;
   }
 
   // ========== 内部方法 ==========
@@ -554,13 +554,13 @@ export class ModernCityEngine extends IdleGameEngine {
       }
     }
 
-    // 电力：发电厂等级 >= 1 时解锁
-    const powerPlant = this.upgrades.get(BUILDING_IDS.POWER_PLANT);
-    if (powerPlant && powerPlant.level >= 1) {
-      const power = this.resources.get(RESOURCE_IDS.POWER);
-      if (power && !power.unlocked) {
-        power.unlocked = true;
-        this.emit('resourceUnlocked', RESOURCE_IDS.POWER);
+    // 科技：学校等级 >= 1 时解锁
+    const school = this.upgrades.get(BUILDING_IDS.SCHOOL);
+    if (school && school.level >= 1) {
+      const tech = this.resources.get(RESOURCE_IDS.TECH);
+      if (tech && !tech.unlocked) {
+        tech.unlocked = true;
+        this.emit('resourceUnlocked', RESOURCE_IDS.TECH);
       }
     }
   }
@@ -699,7 +699,7 @@ export class ModernCityEngine extends IdleGameEngine {
 
     let y = panel.startY + panel.padding;
     for (const res of resources) {
-      const icon = res.id === RESOURCE_IDS.MONEY ? '💰' : res.id === RESOURCE_IDS.POPULATION ? '👥' : '⚡';
+      const icon = res.id === RESOURCE_IDS.COIN ? '💰' : res.id === RESOURCE_IDS.POPULATION ? '👥' : '🔬';
 
       // 图标
       ctx.font = '14px sans-serif';
@@ -782,7 +782,7 @@ export class ModernCityEngine extends IdleGameEngine {
       if (level < building.maxLevel) {
         const costStr = Object.entries(cost)
           .map(([id, amount]) => {
-            const icon = id === RESOURCE_IDS.MONEY ? '💰' : id === RESOURCE_IDS.POPULATION ? '👥' : '⚡';
+            const icon = id === RESOURCE_IDS.COIN ? '💰' : id === RESOURCE_IDS.POPULATION ? '👥' : '🔬';
             return `${icon}${this.formatNumber(amount)}`;
           })
           .join(' ');

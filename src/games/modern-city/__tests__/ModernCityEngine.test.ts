@@ -6,9 +6,9 @@ import { ModernCityEngine } from '@/games/modern-city/ModernCityEngine';
 import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
-  MONEY_PER_CLICK,
+  COIN_PER_CLICK,
   PRESTIGE_BONUS_MULTIPLIER,
-  MIN_PRESTIGE_MONEY,
+  MIN_PRESTIGE_COIN,
   MAX_CITY_LEVEL,
   CITY_LEVEL_COSTS,
   BUILDINGS,
@@ -67,16 +67,16 @@ function startEngine(): ModernCityEngine {
 }
 
 /** 直接添加资源 */
-function addMoney(engine: ModernCityEngine, amount: number): void {
-  (engine as any).addResource(RESOURCE_IDS.MONEY, amount);
+function addCoin(engine: ModernCityEngine, amount: number): void {
+  (engine as any).addResource(RESOURCE_IDS.COIN, amount);
 }
 
 function addPopulation(engine: ModernCityEngine, amount: number): void {
   (engine as any).addResource(RESOURCE_IDS.POPULATION, amount);
 }
 
-function addPower(engine: ModernCityEngine, amount: number): void {
-  (engine as any).addResource(RESOURCE_IDS.POWER, amount);
+function addTech(engine: ModernCityEngine, amount: number): void {
+  (engine as any).addResource(RESOURCE_IDS.TECH, amount);
 }
 
 /** 触发一次 update */
@@ -85,16 +85,16 @@ function tick(engine: ModernCityEngine, dt: number = 16): void {
 }
 
 /** 获取内部资源数量 */
-function getMoney(engine: ModernCityEngine): number {
-  return (engine as any).getResource(RESOURCE_IDS.MONEY)?.amount ?? 0;
+function getCoin(engine: ModernCityEngine): number {
+  return (engine as any).getResource(RESOURCE_IDS.COIN)?.amount ?? 0;
 }
 
 function getPopulation(engine: ModernCityEngine): number {
   return (engine as any).getResource(RESOURCE_IDS.POPULATION)?.amount ?? 0;
 }
 
-function getPower(engine: ModernCityEngine): number {
-  return (engine as any).getResource(RESOURCE_IDS.POWER)?.amount ?? 0;
+function getTech(engine: ModernCityEngine): number {
+  return (engine as any).getResource(RESOURCE_IDS.TECH)?.amount ?? 0;
 }
 
 // ========== 测试 ==========
@@ -118,20 +118,20 @@ describe('ModernCityEngine', () => {
       expect((engine as any)._status).toBe('idle');
     });
 
-    it('init 后资金为 0', () => {
-      expect(getMoney(engine)).toBe(0);
+    it('init 后金币为 0', () => {
+      expect(getCoin(engine)).toBe(0);
     });
 
     it('init 后人口为 0', () => {
       expect(getPopulation(engine)).toBe(0);
     });
 
-    it('init 后电力为 0', () => {
-      expect(getPower(engine)).toBe(0);
+    it('init 后科技为 0', () => {
+      expect(getTech(engine)).toBe(0);
     });
 
-    it('init 后总资金获得为 0', () => {
-      expect(engine.totalMoneyEarned).toBe(0);
+    it('init 后总金币获得为 0', () => {
+      expect(engine.totalCoinEarned).toBe(0);
     });
 
     it('init 后总点击数为 0', () => {
@@ -146,8 +146,8 @@ describe('ModernCityEngine', () => {
       expect(engine.gameId).toBe('modern-city');
     });
 
-    it('init 后资金已解锁', () => {
-      const res = (engine as any).getResource(RESOURCE_IDS.MONEY);
+    it('init 后金币已解锁', () => {
+      const res = (engine as any).getResource(RESOURCE_IDS.COIN);
       expect(res.unlocked).toBe(true);
     });
 
@@ -156,8 +156,8 @@ describe('ModernCityEngine', () => {
       expect(res.unlocked).toBe(false);
     });
 
-    it('init 后电力未解锁', () => {
-      const res = (engine as any).getResource(RESOURCE_IDS.POWER);
+    it('init 后科技未解锁', () => {
+      const res = (engine as any).getResource(RESOURCE_IDS.TECH);
       expect(res.unlocked).toBe(false);
     });
 
@@ -173,12 +173,12 @@ describe('ModernCityEngine', () => {
   // ========== 常量验证 ==========
 
   describe('常量', () => {
-    it('MONEY_PER_CLICK 为 1', () => {
-      expect(MONEY_PER_CLICK).toBe(1);
+    it('COIN_PER_CLICK 为 1', () => {
+      expect(COIN_PER_CLICK).toBe(1);
     });
 
-    it('MIN_PRESTIGE_MONEY 为 50000', () => {
-      expect(MIN_PRESTIGE_MONEY).toBe(50000);
+    it('MIN_PRESTIGE_COIN 为 50000', () => {
+      expect(MIN_PRESTIGE_COIN).toBe(50000);
     });
 
     it('MAX_CITY_LEVEL 为 10', () => {
@@ -186,9 +186,9 @@ describe('ModernCityEngine', () => {
     });
 
     it('RESOURCE_IDS 包含三种资源', () => {
-      expect(RESOURCE_IDS.MONEY).toBe('money');
+      expect(RESOURCE_IDS.COIN).toBe('coin');
       expect(RESOURCE_IDS.POPULATION).toBe('population');
-      expect(RESOURCE_IDS.POWER).toBe('power');
+      expect(RESOURCE_IDS.TECH).toBe('tech');
     });
 
     it('BUILDING_IDS 包含 8 种建筑', () => {
@@ -235,9 +235,9 @@ describe('ModernCityEngine', () => {
     it('COLORS 定义完整', () => {
       expect(COLORS.textPrimary).toBeDefined();
       expect(COLORS.accent).toBeDefined();
-      expect(COLORS.moneyColor).toBeDefined();
+      expect(COLORS.coinColor).toBeDefined();
       expect(COLORS.populationColor).toBeDefined();
-      expect(COLORS.powerColor).toBeDefined();
+      expect(COLORS.techColor).toBeDefined();
     });
 
     it('CITY_DRAW 定义完整', () => {
@@ -274,11 +274,11 @@ describe('ModernCityEngine', () => {
       expect((engine as any)._status).toBe('idle');
     });
 
-    it('reset 后资金归零', () => {
+    it('reset 后金币归零', () => {
       engine.start();
-      addMoney(engine, 1000);
+      addCoin(engine, 1000);
       engine.reset();
-      expect(getMoney(engine)).toBe(0);
+      expect(getCoin(engine)).toBe(0);
     });
 
     it('destroy 后状态为 idle', () => {
@@ -294,24 +294,24 @@ describe('ModernCityEngine', () => {
 
     it('start-reset 循环正常', () => {
       engine.start();
-      addMoney(engine, 500);
+      addCoin(engine, 500);
       engine.reset();
       engine.start();
-      expect(getMoney(engine)).toBe(0);
+      expect(getCoin(engine)).toBe(0);
     });
   });
 
-  // ========== 点击产生资金 ==========
+  // ========== 点击产生金币 ==========
 
-  describe('点击产生资金', () => {
-    it('点击一次产生资金', () => {
+  describe('点击产生金币', () => {
+    it('点击一次产生金币', () => {
       engine.start();
       const gained = engine.click();
       expect(gained).toBeGreaterThan(0);
-      expect(getMoney(engine)).toBeGreaterThan(0);
+      expect(getCoin(engine)).toBeGreaterThan(0);
     });
 
-    it('连续点击 10 次产生资金', () => {
+    it('连续点击 10 次产生金币', () => {
       engine.start();
       let total = 0;
       for (let i = 0; i < 10; i++) {
@@ -328,10 +328,10 @@ describe('ModernCityEngine', () => {
       expect(engine.totalClicks).toBe(3);
     });
 
-    it('点击增加总资金获得', () => {
+    it('点击增加总金币获得', () => {
       engine.start();
       engine.click();
-      expect(engine.totalMoneyEarned).toBeGreaterThan(0);
+      expect(engine.totalCoinEarned).toBeGreaterThan(0);
     });
 
     it('点击增加 score', () => {
@@ -343,7 +343,7 @@ describe('ModernCityEngine', () => {
     it('idle 状态下点击无效', () => {
       const gained = engine.click();
       expect(gained).toBe(0);
-      expect(getMoney(engine)).toBe(0);
+      expect(getCoin(engine)).toBe(0);
     });
 
     it('paused 状态下点击无效', () => {
@@ -375,9 +375,9 @@ describe('ModernCityEngine', () => {
   // ========== 资源系统 ==========
 
   describe('资源系统', () => {
-    it('增加资金', () => {
-      addMoney(engine, 100);
-      expect(getMoney(engine)).toBe(100);
+    it('增加金币', () => {
+      addCoin(engine, 100);
+      expect(getCoin(engine)).toBe(100);
     });
 
     it('增加人口', () => {
@@ -385,35 +385,35 @@ describe('ModernCityEngine', () => {
       expect(getPopulation(engine)).toBe(50);
     });
 
-    it('增加电力', () => {
-      addPower(engine, 30);
-      expect(getPower(engine)).toBe(30);
+    it('增加科技', () => {
+      addTech(engine, 30);
+      expect(getTech(engine)).toBe(30);
     });
 
-    it('消耗资金成功', () => {
-      addMoney(engine, 100);
-      (engine as any).spendResource(RESOURCE_IDS.MONEY, 50);
-      expect(getMoney(engine)).toBe(50);
+    it('消耗金币成功', () => {
+      addCoin(engine, 100);
+      (engine as any).spendResource(RESOURCE_IDS.COIN, 50);
+      expect(getCoin(engine)).toBe(50);
     });
 
-    it('消耗资金失败（不足）', () => {
-      addMoney(engine, 10);
-      const result = (engine as any).spendResource(RESOURCE_IDS.MONEY, 50);
+    it('消耗金币失败（不足）', () => {
+      addCoin(engine, 10);
+      const result = (engine as any).spendResource(RESOURCE_IDS.COIN, 50);
       expect(result).toBeFalsy();
-      expect(getMoney(engine)).toBe(10);
+      expect(getCoin(engine)).toBe(10);
     });
 
     it('检查是否有足够资源', () => {
-      addMoney(engine, 100);
-      expect((engine as any).hasResource(RESOURCE_IDS.MONEY, 50)).toBe(true);
-      expect((engine as any).hasResource(RESOURCE_IDS.MONEY, 200)).toBe(false);
+      addCoin(engine, 100);
+      expect((engine as any).hasResource(RESOURCE_IDS.COIN, 50)).toBe(true);
+      expect((engine as any).hasResource(RESOURCE_IDS.COIN, 200)).toBe(false);
     });
 
     it('canAfford 多资源检查', () => {
-      addMoney(engine, 100);
+      addCoin(engine, 100);
       addPopulation(engine, 50);
-      expect((engine as any).canAfford({ money: 50, population: 20 })).toBe(true);
-      expect((engine as any).canAfford({ money: 50, population: 200 })).toBe(false);
+      expect((engine as any).canAfford({ coin: 50, population: 20 })).toBe(true);
+      expect((engine as any).canAfford({ coin: 50, population: 200 })).toBe(false);
     });
   });
 
@@ -436,7 +436,7 @@ describe('ModernCityEngine', () => {
 
     it('购买住宅成功', () => {
       engine.start();
-      addMoney(engine, 100);
+      addCoin(engine, 100);
       const result = engine.purchaseBuilding(0); // house
       expect(result).toBe(true);
       expect(engine.getBuildingLevel(0)).toBe(1);
@@ -451,23 +451,23 @@ describe('ModernCityEngine', () => {
 
     it('建筑费用递增', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       const cost1 = engine.getBuildingCost(0);
       engine.purchaseBuilding(0);
       const cost2 = engine.getBuildingCost(0);
-      expect(cost2.money).toBeGreaterThan(cost1.money);
+      expect(cost2.coin).toBeGreaterThan(cost1.coin);
     });
 
     it('无效索引购买失败', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       expect(engine.purchaseBuilding(-1)).toBe(false);
       expect(engine.purchaseBuilding(99)).toBe(false);
     });
 
     it('未解锁建筑购买失败', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       // 商店需要住宅等级 > 0
       const result = engine.purchaseBuilding(1); // shop
       expect(result).toBe(false);
@@ -475,15 +475,15 @@ describe('ModernCityEngine', () => {
 
     it('购买后资源减少', () => {
       engine.start();
-      addMoney(engine, 100);
-      const before = getMoney(engine);
+      addCoin(engine, 100);
+      const before = getCoin(engine);
       engine.purchaseBuilding(0);
-      expect(getMoney(engine)).toBeLessThan(before);
+      expect(getCoin(engine)).toBeLessThan(before);
     });
 
     it('购买建筑触发 stateChange', () => {
       engine.start();
-      addMoney(engine, 100);
+      addCoin(engine, 100);
       const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
@@ -492,7 +492,7 @@ describe('ModernCityEngine', () => {
 
     it('购买建筑增加统计计数', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       engine.purchaseBuilding(0);
       expect(engine.statistics.totalBuildingsPurchased).toBe(1);
     });
@@ -503,7 +503,7 @@ describe('ModernCityEngine', () => {
   describe('建筑解锁', () => {
     it('商店在住宅有等级后解锁', () => {
       engine.start();
-      addMoney(engine, 100);
+      addCoin(engine, 100);
       engine.purchaseBuilding(0); // house
       tick(engine, 16);
       const shop = (engine as any).upgrades.get(BUILDING_IDS.SHOP);
@@ -512,7 +512,7 @@ describe('ModernCityEngine', () => {
 
     it('工厂在商店有等级后解锁', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       engine.purchaseBuilding(0); // house
       tick(engine, 16);
       engine.purchaseBuilding(1); // shop
@@ -521,22 +521,22 @@ describe('ModernCityEngine', () => {
       expect(factory.unlocked).toBe(true);
     });
 
-    it('发电厂在工厂有等级后解锁', () => {
+    it('学校在工厂有等级后解锁', () => {
       engine.start();
-      addMoney(engine, 100000);
+      addCoin(engine, 100000);
       engine.purchaseBuilding(0); // house
       tick(engine, 16);
       engine.purchaseBuilding(1); // shop
       tick(engine, 16);
       engine.purchaseBuilding(2); // factory
       tick(engine, 16);
-      const powerPlant = (engine as any).upgrades.get(BUILDING_IDS.POWER_PLANT);
-      expect(powerPlant.unlocked).toBe(true);
+      const school = (engine as any).upgrades.get(BUILDING_IDS.SCHOOL);
+      expect(school.unlocked).toBe(true);
     });
 
-    it('摩天大楼需要学校和城市等级 7', () => {
+    it('摩天大楼需要实验室和城市等级 7', () => {
       engine.start();
-      addMoney(engine, 1000000);
+      addCoin(engine, 1000000);
       // 解锁前置建筑链
       for (let i = 0; i < 6; i++) {
         engine.purchaseBuilding(i);
@@ -556,16 +556,16 @@ describe('ModernCityEngine', () => {
   describe('资源解锁', () => {
     it('人口在住宅等级>=1时解锁', () => {
       engine.start();
-      addMoney(engine, 100);
+      addCoin(engine, 100);
       engine.purchaseBuilding(0); // house
       tick(engine, 16);
       const pop = (engine as any).getResource(RESOURCE_IDS.POPULATION);
       expect(pop.unlocked).toBe(true);
     });
 
-    it('电力在发电厂等级>=1时解锁', () => {
+    it('科技在学校等级>=1时解锁', () => {
       engine.start();
-      addMoney(engine, 100000);
+      addCoin(engine, 100000);
       // 解锁前置建筑链
       engine.purchaseBuilding(0); // house
       tick(engine, 16);
@@ -573,10 +573,10 @@ describe('ModernCityEngine', () => {
       tick(engine, 16);
       engine.purchaseBuilding(2); // factory
       tick(engine, 16);
-      engine.purchaseBuilding(3); // power-plant
+      engine.purchaseBuilding(3); // school
       tick(engine, 16);
-      const power = (engine as any).getResource(RESOURCE_IDS.POWER);
-      expect(power.unlocked).toBe(true);
+      const tech = (engine as any).getResource(RESOURCE_IDS.TECH);
+      expect(tech.unlocked).toBe(true);
     });
   });
 
@@ -587,25 +587,25 @@ describe('ModernCityEngine', () => {
       expect(engine.cityLevel).toBe(1);
     });
 
-    it('升级城市需要足够资金', () => {
+    it('升级城市需要足够金币', () => {
       engine.start();
-      addMoney(engine, 1000);
+      addCoin(engine, 1000);
       const result = engine.upgradeCity();
       expect(result).toBe(true);
       expect(engine.cityLevel).toBe(2);
     });
 
-    it('升级城市扣除资金', () => {
+    it('升级城市扣除金币', () => {
       engine.start();
-      addMoney(engine, 1000);
-      const before = getMoney(engine);
+      addCoin(engine, 1000);
+      const before = getCoin(engine);
       engine.upgradeCity();
-      expect(getMoney(engine)).toBeLessThan(before);
+      expect(getCoin(engine)).toBeLessThan(before);
     });
 
-    it('资金不足时升级失败', () => {
+    it('金币不足时升级失败', () => {
       engine.start();
-      addMoney(engine, 100);
+      addCoin(engine, 100);
       const result = engine.upgradeCity();
       expect(result).toBe(false);
       expect(engine.cityLevel).toBe(1);
@@ -613,7 +613,7 @@ describe('ModernCityEngine', () => {
 
     it('连续升级城市', () => {
       engine.start();
-      addMoney(engine, 100000);
+      addCoin(engine, 100000);
       engine.upgradeCity(); // 2: 500
       expect(engine.cityLevel).toBe(2);
       engine.upgradeCity(); // 3: 2000
@@ -624,14 +624,14 @@ describe('ModernCityEngine', () => {
 
     it('升级城市增加统计计数', () => {
       engine.start();
-      addMoney(engine, 1000);
+      addCoin(engine, 1000);
       engine.upgradeCity();
       expect(engine.statistics.totalCityUpgrades).toBe(1);
     });
 
     it('升级城市触发 cityUpgraded 事件', () => {
       engine.start();
-      addMoney(engine, 1000);
+      addCoin(engine, 1000);
       const listener = vi.fn();
       engine.on('cityUpgraded', listener);
       engine.upgradeCity();
@@ -641,7 +641,7 @@ describe('ModernCityEngine', () => {
     it('canUpgradeCity 返回正确状态', () => {
       engine.start();
       expect(engine.canUpgradeCity()).toBe(false);
-      addMoney(engine, 1000);
+      addCoin(engine, 1000);
       expect(engine.canUpgradeCity()).toBe(true);
     });
 
@@ -660,7 +660,7 @@ describe('ModernCityEngine', () => {
     it('满级后无法继续升级', () => {
       engine.start();
       (engine as any)._cityLevel = MAX_CITY_LEVEL;
-      addMoney(engine, 1e15);
+      addCoin(engine, 1e15);
       const result = engine.upgradeCity();
       expect(result).toBe(false);
     });
@@ -677,64 +677,64 @@ describe('ModernCityEngine', () => {
       expect((engine as any).prestige.count).toBe(0);
     });
 
-    it('资金不足时无法声望', () => {
+    it('金币不足时无法声望', () => {
       engine.start();
       expect(engine.canPrestige()).toBe(false);
     });
 
-    it('声望预览为 0（资金不足）', () => {
+    it('声望预览为 0（金币不足）', () => {
       engine.start();
       expect(engine.getPrestigePreview()).toBe(0);
     });
 
-    it('资金达到最低要求时可以声望', () => {
+    it('金币达到最低要求时可以声望', () => {
       engine.start();
-      (engine as any)._stats.totalMoneyEarned = MIN_PRESTIGE_MONEY * 4;
+      (engine as any)._stats.totalCoinEarned = MIN_PRESTIGE_COIN * 4;
       expect(engine.canPrestige()).toBe(true);
       expect(engine.getPrestigePreview()).toBeGreaterThan(0);
     });
 
     it('声望重置成功', () => {
       engine.start();
-      (engine as any)._stats.totalMoneyEarned = MIN_PRESTIGE_MONEY * 4;
+      (engine as any)._stats.totalCoinEarned = MIN_PRESTIGE_COIN * 4;
       const points = engine.doPrestige();
       expect(points).toBeGreaterThan(0);
     });
 
     it('声望后声望点数增加', () => {
       engine.start();
-      (engine as any)._stats.totalMoneyEarned = MIN_PRESTIGE_MONEY * 4;
+      (engine as any)._stats.totalCoinEarned = MIN_PRESTIGE_COIN * 4;
       engine.doPrestige();
       expect((engine as any).prestige.currency).toBeGreaterThan(0);
     });
 
     it('声望后声望次数增加', () => {
       engine.start();
-      (engine as any)._stats.totalMoneyEarned = MIN_PRESTIGE_MONEY * 4;
+      (engine as any)._stats.totalCoinEarned = MIN_PRESTIGE_COIN * 4;
       engine.doPrestige();
       expect((engine as any).prestige.count).toBe(1);
     });
 
     it('声望后资源归零', () => {
       engine.start();
-      addMoney(engine, MIN_PRESTIGE_MONEY * 4);
-      (engine as any)._stats.totalMoneyEarned = MIN_PRESTIGE_MONEY * 4;
+      addCoin(engine, MIN_PRESTIGE_COIN * 4);
+      (engine as any)._stats.totalCoinEarned = MIN_PRESTIGE_COIN * 4;
       engine.doPrestige();
-      expect(getMoney(engine)).toBe(0);
+      expect(getCoin(engine)).toBe(0);
     });
 
     it('声望后城市等级重置为 1', () => {
       engine.start();
-      addMoney(engine, 100000);
+      addCoin(engine, 100000);
       engine.upgradeCity(); // level 2
-      (engine as any)._stats.totalMoneyEarned = MIN_PRESTIGE_MONEY * 4;
+      (engine as any)._stats.totalCoinEarned = MIN_PRESTIGE_COIN * 4;
       engine.doPrestige();
       expect(engine.cityLevel).toBe(1);
     });
 
     it('声望触发 prestige 事件', () => {
       engine.start();
-      (engine as any)._stats.totalMoneyEarned = MIN_PRESTIGE_MONEY * 4;
+      (engine as any)._stats.totalCoinEarned = MIN_PRESTIGE_COIN * 4;
       const listener = vi.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
@@ -766,7 +766,7 @@ describe('ModernCityEngine', () => {
 
     it('save 包含资源数据', () => {
       engine.start();
-      addMoney(engine, 500);
+      addCoin(engine, 500);
       const data = engine.save();
       expect(data.resources).toBeDefined();
     });
@@ -787,18 +787,18 @@ describe('ModernCityEngine', () => {
 
     it('load 恢复游戏状态', () => {
       engine.start();
-      addMoney(engine, 500);
+      addCoin(engine, 500);
       const data = engine.save();
 
       const engine2 = createEngine();
       engine2.start();
       engine2.load(data);
-      expect(getMoney(engine2)).toBeCloseTo(500, 0);
+      expect(getCoin(engine2)).toBeCloseTo(500, 0);
     });
 
     it('load 恢复城市等级', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       engine.upgradeCity();
       engine.upgradeCity();
       const data = engine.save();
@@ -811,7 +811,7 @@ describe('ModernCityEngine', () => {
 
     it('load 恢复建筑等级', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       engine.purchaseBuilding(0);
       engine.purchaseBuilding(0);
       const data = engine.save();
@@ -840,13 +840,13 @@ describe('ModernCityEngine', () => {
 
     it('loadState 恢复状态', () => {
       engine.start();
-      addMoney(engine, 1000);
+      addCoin(engine, 1000);
       const state = engine.getState();
 
       const engine2 = createEngine();
       engine2.start();
       engine2.loadState(state as any);
-      expect(getMoney(engine2)).toBeCloseTo(1000, 0);
+      expect(getCoin(engine2)).toBeCloseTo(1000, 0);
     });
 
     it('loadState 恢复声望', () => {
@@ -864,7 +864,7 @@ describe('ModernCityEngine', () => {
 
     it('loadState 恢复城市等级', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       engine.upgradeCity();
       engine.upgradeCity();
       const state = engine.getState();
@@ -909,7 +909,7 @@ describe('ModernCityEngine', () => {
     it('空格键触发点击', () => {
       engine.start();
       engine.handleKeyDown(' ');
-      expect(getMoney(engine)).toBeGreaterThan(0);
+      expect(getCoin(engine)).toBeGreaterThan(0);
     });
 
     it('上箭头减少选中索引', () => {
@@ -941,7 +941,7 @@ describe('ModernCityEngine', () => {
 
     it('回车购买建筑', () => {
       engine.start();
-      addMoney(engine, 100);
+      addCoin(engine, 100);
       (engine as any)._selectedIndex = 0;
       engine.handleKeyDown('Enter');
       expect(engine.getBuildingLevel(0)).toBe(1);
@@ -949,21 +949,21 @@ describe('ModernCityEngine', () => {
 
     it('U 键升级城市', () => {
       engine.start();
-      addMoney(engine, 1000);
+      addCoin(engine, 1000);
       engine.handleKeyDown('u');
       expect(engine.cityLevel).toBe(2);
     });
 
     it('P 键触发声望', () => {
       engine.start();
-      (engine as any)._stats.totalMoneyEarned = MIN_PRESTIGE_MONEY * 4;
+      (engine as any)._stats.totalCoinEarned = MIN_PRESTIGE_COIN * 4;
       engine.handleKeyDown('p');
       expect((engine as any).prestige.count).toBe(1);
     });
 
     it('idle 状态下键盘无效', () => {
       engine.handleKeyDown(' ');
-      expect(getMoney(engine)).toBe(0);
+      expect(getCoin(engine)).toBe(0);
     });
 
     it('handleKeyUp 不抛错', () => {
@@ -997,7 +997,7 @@ describe('ModernCityEngine', () => {
 
     it('有建筑时渲染正常', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       engine.purchaseBuilding(0);
       const ctx = createMockCtx();
       expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
@@ -1036,7 +1036,7 @@ describe('ModernCityEngine', () => {
   describe('自动生产', () => {
     it('有建筑后 update 增加资源', () => {
       engine.start();
-      addMoney(engine, 100);
+      addCoin(engine, 100);
       engine.purchaseBuilding(0); // house -> produces population
       tick(engine, 16);
       // 住宅产出人口
@@ -1046,7 +1046,7 @@ describe('ModernCityEngine', () => {
 
     it('多个 tick 累积产出', () => {
       engine.start();
-      addMoney(engine, 100);
+      addCoin(engine, 100);
       engine.purchaseBuilding(0);
       const before = getPopulation(engine);
       for (let i = 0; i < 10; i++) {
@@ -1056,18 +1056,18 @@ describe('ModernCityEngine', () => {
       expect(after).toBeGreaterThanOrEqual(before);
     });
 
-    it('建筑产出资金', () => {
+    it('建筑产出金币', () => {
       engine.start();
-      addMoney(engine, 10000);
+      addCoin(engine, 10000);
       engine.purchaseBuilding(0); // house
       tick(engine, 16);
-      engine.purchaseBuilding(1); // shop -> produces money
+      engine.purchaseBuilding(1); // shop -> produces coin
       tick(engine, 16);
-      const before = getMoney(engine);
+      const before = getCoin(engine);
       for (let i = 0; i < 10; i++) {
         tick(engine, 100);
       }
-      const after = getMoney(engine);
+      const after = getCoin(engine);
       expect(after).toBeGreaterThan(before);
     });
   });
@@ -1076,8 +1076,8 @@ describe('ModernCityEngine', () => {
 
   describe('边界情况', () => {
     it('大量资源不溢出', () => {
-      addMoney(engine, 1e14);
-      expect(getMoney(engine)).toBeGreaterThan(0);
+      addCoin(engine, 1e14);
+      expect(getCoin(engine)).toBeGreaterThan(0);
     });
 
     it('负数 deltaTime 不崩溃', () => {
