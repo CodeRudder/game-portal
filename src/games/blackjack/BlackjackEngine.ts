@@ -45,6 +45,13 @@ import {
   KEY_BET_DOWN,
   KEY_NEW_GAME,
   KEY_NEW_GAME_ALT,
+  BUTTON_WIDTH,
+  BUTTON_HEIGHT,
+  BUTTON_RADIUS,
+  BUTTON_GAP,
+  BUTTON_AREA_Y,
+  BUTTON_COLORS,
+  type ButtonRect,
 } from './constants';
 
 // ========== 类型定义 ==========
@@ -166,6 +173,9 @@ export class BlackjackEngine extends GameEngine {
   private _dealerRevealed: boolean = false;
   private _dealerAnimating: boolean = false;
 
+  // 鼠标悬停状态
+  private _hoveredButton: string | null = null;
+
   // ========== 属性访问器 ==========
 
   get chips(): number { return this._chips; }
@@ -230,6 +240,7 @@ export class BlackjackEngine extends GameEngine {
     this.renderPlayerHand(ctx, w, h);
     this.renderUI(ctx, w, h);
     this.renderResult(ctx, w, h);
+    this.renderButtons(ctx);
   }
 
   handleKeyDown(key: string): void {
@@ -257,6 +268,37 @@ export class BlackjackEngine extends GameEngine {
           this.startNewRound();
         }
         break;
+    }
+  }
+
+  /** 鼠标点击：命中检测并执行对应操作 */
+  handleClick(canvasX: number, canvasY: number): void {
+    if (this._status !== 'playing') return;
+
+    const buttons = this.getActiveButtons();
+    for (const btn of buttons) {
+      if (btn.enabled && this.isPointInRect(canvasX, canvasY, btn)) {
+        this.executeButtonAction(btn.action);
+        return;
+      }
+    }
+  }
+
+  /** 鼠标移动：更新悬停状态 */
+  handleMouseMove(canvasX: number, canvasY: number): void {
+    if (this._status !== 'playing') return;
+
+    const buttons = this.getActiveButtons();
+    let found = false;
+    for (const btn of buttons) {
+      if (this.isPointInRect(canvasX, canvasY, btn)) {
+        this._hoveredButton = btn.action;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      this._hoveredButton = null;
     }
   }
 
@@ -570,6 +612,161 @@ export class BlackjackEngine extends GameEngine {
   /** 获取牌组剩余张数 */
   getDeckRemaining(): number {
     return this.deck.length;
+  }
+
+  // ========== 按钮辅助方法 ==========
+
+  /** 获取当前阶段的活动按钮列表 */
+  private getActiveButtons(): ButtonRect[] {
+    const centerX = CANVAS_WIDTH / 2;
+
+    if (this._phase === GamePhase.BETTING) {
+      // 下注阶段：[Deal] 按钮
+      return [{
+        x: centerX - BUTTON_WIDTH / 2,
+        y: BUTTON_AREA_Y,
+        width: BUTTON_WIDTH,
+        height: BUTTON_HEIGHT,
+        label: '发牌',
+        action: 'deal',
+        enabled: this._currentBet >= MIN_BET && this._currentBet <= this._chips,
+        bgColor: BUTTON_COLORS.DEAL_BG,
+        hoverColor: BUTTON_COLORS.DEAL_HOVER,
+        disabledColor: BUTTON_COLORS.DEAL_DISABLED,
+      }];
+    }
+
+    if (this._phase === GamePhase.PLAYER_TURN) {
+      // 玩家回合：[Hit] [Stand] [Double Down] 按钮
+      const buttons: ButtonRect[] = [];
+      const totalWidth = 3 * BUTTON_WIDTH + 2 * BUTTON_GAP;
+      const startX = centerX - totalWidth / 2;
+
+      buttons.push({
+        x: startX,
+        y: BUTTON_AREA_Y,
+        width: BUTTON_WIDTH,
+        height: BUTTON_HEIGHT,
+        label: '要牌',
+        action: 'hit',
+        enabled: this.canHit,
+        bgColor: BUTTON_COLORS.HIT_BG,
+        hoverColor: BUTTON_COLORS.HIT_HOVER,
+        disabledColor: BUTTON_COLORS.HIT_DISABLED,
+      });
+
+      buttons.push({
+        x: startX + BUTTON_WIDTH + BUTTON_GAP,
+        y: BUTTON_AREA_Y,
+        width: BUTTON_WIDTH,
+        height: BUTTON_HEIGHT,
+        label: '停牌',
+        action: 'stand',
+        enabled: this.canStand,
+        bgColor: BUTTON_COLORS.STAND_BG,
+        hoverColor: BUTTON_COLORS.STAND_HOVER,
+        disabledColor: BUTTON_COLORS.STAND_DISABLED,
+      });
+
+      buttons.push({
+        x: startX + 2 * (BUTTON_WIDTH + BUTTON_GAP),
+        y: BUTTON_AREA_Y,
+        width: BUTTON_WIDTH,
+        height: BUTTON_HEIGHT,
+        label: '加倍',
+        action: 'double',
+        enabled: this.canDouble,
+        bgColor: BUTTON_COLORS.DOUBLE_BG,
+        hoverColor: BUTTON_COLORS.DOUBLE_HOVER,
+        disabledColor: BUTTON_COLORS.DOUBLE_DISABLED,
+      });
+
+      return buttons;
+    }
+
+    if (this._phase === GamePhase.DEALER_TURN || this._phase === GamePhase.SETTLEMENT) {
+      // 庄家回合 / 结算阶段：[New Game] 按钮
+      return [{
+        x: centerX - BUTTON_WIDTH / 2,
+        y: BUTTON_AREA_Y,
+        width: BUTTON_WIDTH,
+        height: BUTTON_HEIGHT,
+        label: '新一局',
+        action: 'newgame',
+        enabled: this._phase === GamePhase.SETTLEMENT && this._chips >= MIN_BET,
+        bgColor: BUTTON_COLORS.NEW_GAME_BG,
+        hoverColor: BUTTON_COLORS.NEW_GAME_HOVER,
+        disabledColor: BUTTON_COLORS.DEAL_DISABLED,
+      }];
+    }
+
+    return [];
+  }
+
+  /** 判断点是否在矩形内 */
+  private isPointInRect(px: number, py: number, rect: { x: number; y: number; width: number; height: number }): boolean {
+    return px >= rect.x && px <= rect.x + rect.width &&
+           py >= rect.y && py <= rect.y + rect.height;
+  }
+
+  /** 执行按钮动作 */
+  private executeButtonAction(action: string): void {
+    switch (action) {
+      case 'deal':
+        this.placeBet();
+        break;
+      case 'hit':
+        this.hit();
+        break;
+      case 'stand':
+        this.stand();
+        break;
+      case 'double':
+        this.doubleDown();
+        break;
+      case 'newgame':
+        if (this._phase === GamePhase.SETTLEMENT) {
+          this.startNewRound();
+        }
+        break;
+    }
+  }
+
+  /** 渲染操作按钮 */
+  private renderButtons(ctx: CanvasRenderingContext2D): void {
+    const buttons = this.getActiveButtons();
+
+    for (const btn of buttons) {
+      const isHovered = this._hoveredButton === btn.action;
+
+      // 按钮背景
+      if (!btn.enabled) {
+        ctx.fillStyle = btn.disabledColor;
+      } else if (isHovered) {
+        ctx.fillStyle = btn.hoverColor;
+      } else {
+        ctx.fillStyle = btn.bgColor;
+      }
+
+      this.roundRect(ctx, btn.x, btn.y, btn.width, btn.height, BUTTON_RADIUS);
+      ctx.fill();
+
+      // 悬停时加边框
+      if (isHovered && btn.enabled) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        this.roundRect(ctx, btn.x, btn.y, btn.width, btn.height, BUTTON_RADIUS);
+        ctx.stroke();
+      }
+
+      // 按钮文字
+      ctx.fillStyle = btn.enabled ? BUTTON_COLORS.TEXT : BUTTON_COLORS.TEXT_DISABLED;
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(btn.label, btn.x + btn.width / 2, btn.y + btn.height / 2);
+      ctx.textBaseline = 'alphabetic'; // 重置
+    }
   }
 
   // ========== 渲染方法 ==========

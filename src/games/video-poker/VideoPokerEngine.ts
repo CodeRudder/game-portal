@@ -16,6 +16,15 @@ import {
   HAND_SIZE,
   GamePhase,
   HandRank,
+  VP_BUTTON_WIDTH,
+  VP_BUTTON_HEIGHT,
+  VP_BUTTON_RADIUS,
+  VP_BUTTON_Y,
+  VP_CARD_WIDTH,
+  VP_CARD_HEIGHT,
+  VP_CARD_GAP,
+  VP_BUTTON_COLORS,
+  type VPButtonRect,
 } from './constants';
 import type { Card, Suit, Rank, VideoPokerState } from './constants';
 
@@ -29,6 +38,10 @@ export class VideoPokerEngine extends GameEngine {
   private lastWin: number = 0;
   private handRank: HandRank | null = null;
   private deck: Card[] = [];
+
+  // 鼠标悬停状态
+  private _hoveredCardIndex: number = -1; // -1 表示没有悬停
+  private _hoveredButton: string | null = null;
 
   // ========== 牌组操作 ==========
 
@@ -289,6 +302,128 @@ export class VideoPokerEngine extends GameEngine {
     this.renderResult(ctx, w, h);
   }
 
+  // ========== 按钮辅助方法 ==========
+
+  /** 获取5张牌的渲染位置 */
+  private getCardPositions(): { x: number; y: number }[] {
+    const totalWidth = HAND_SIZE * VP_CARD_WIDTH + (HAND_SIZE - 1) * VP_CARD_GAP;
+    const startX = (CANVAS_WIDTH - totalWidth) / 2;
+    const startY = CANVAS_HEIGHT / 2 - VP_CARD_HEIGHT / 2 + 20;
+
+    const positions: { x: number; y: number }[] = [];
+    for (let i = 0; i < HAND_SIZE; i++) {
+      positions.push({
+        x: startX + i * (VP_CARD_WIDTH + VP_CARD_GAP),
+        y: startY,
+      });
+    }
+    return positions;
+  }
+
+  /** 获取 Deal/Draw 按钮定义 */
+  private getDealDrawButton(): VPButtonRect {
+    const centerX = CANVAS_WIDTH / 2;
+    let label: string;
+    let action: string;
+    let enabled: boolean;
+
+    if (this.phase === GamePhase.IDLE || this.phase === GamePhase.RESULT) {
+      label = '发牌';
+      action = 'deal';
+      enabled = this.credits >= this.bet;
+    } else if (this.phase === GamePhase.HOLDING) {
+      label = '换牌';
+      action = 'draw';
+      enabled = true;
+    } else {
+      label = '发牌';
+      action = 'deal';
+      enabled = false;
+    }
+
+    return {
+      x: centerX - VP_BUTTON_WIDTH / 2,
+      y: VP_BUTTON_Y,
+      width: VP_BUTTON_WIDTH,
+      height: VP_BUTTON_HEIGHT,
+      label,
+      action,
+      enabled,
+      bgColor: VP_BUTTON_COLORS.DEAL_DRAW_BG,
+      hoverColor: VP_BUTTON_COLORS.DEAL_DRAW_HOVER,
+      disabledColor: VP_BUTTON_COLORS.DEAL_DRAW_DISABLED,
+    };
+  }
+
+  /** 判断点击位置对应哪张牌（返回 -1 表示没有） */
+  private getCardIndexAtPoint(px: number, py: number): number {
+    const positions = this.getCardPositions();
+    for (let i = 0; i < HAND_SIZE; i++) {
+      const { x, y } = positions[i];
+      if (px >= x && px <= x + VP_CARD_WIDTH && py >= y && py <= y + VP_CARD_HEIGHT) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /** 判断点是否在矩形内 */
+  private isPointInRect(px: number, py: number, rect: { x: number; y: number; width: number; height: number }): boolean {
+    return px >= rect.x && px <= rect.x + rect.width &&
+           py >= rect.y && py <= rect.y + rect.height;
+  }
+
+  /** 执行按钮动作 */
+  private executeButtonAction(action: string): void {
+    switch (action) {
+      case 'deal':
+        if (this.phase === GamePhase.IDLE || this.phase === GamePhase.RESULT) {
+          this.newRound();
+          this.deal();
+        }
+        break;
+      case 'draw':
+        if (this.phase === GamePhase.HOLDING) {
+          this.draw();
+        }
+        break;
+    }
+  }
+
+  /** 渲染 Deal/Draw 按钮 */
+  private renderDealDrawButton(ctx: CanvasRenderingContext2D): void {
+    const button = this.getDealDrawButton();
+    const isHovered = this._hoveredButton === button.action;
+
+    // 按钮背景
+    if (!button.enabled) {
+      ctx.fillStyle = button.disabledColor;
+    } else if (isHovered) {
+      ctx.fillStyle = button.hoverColor;
+    } else {
+      ctx.fillStyle = button.bgColor;
+    }
+
+    this.roundRect(ctx, button.x, button.y, button.width, button.height, VP_BUTTON_RADIUS);
+    ctx.fill();
+
+    // 悬停时加边框
+    if (isHovered && button.enabled) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      this.roundRect(ctx, button.x, button.y, button.width, button.height, VP_BUTTON_RADIUS);
+      ctx.stroke();
+    }
+
+    // 按钮文字
+    ctx.fillStyle = button.enabled ? VP_BUTTON_COLORS.TEXT : VP_BUTTON_COLORS.TEXT_DISABLED;
+    ctx.font = 'bold 16px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(button.label, button.x + button.width / 2, button.y + button.height / 2);
+    ctx.textBaseline = 'alphabetic';
+  }
+
   private renderHeader(ctx: CanvasRenderingContext2D, w: number): void {
     // 标题
     ctx.fillStyle = '#ffd700';
@@ -346,9 +481,9 @@ export class VideoPokerEngine extends GameEngine {
   }
 
   private renderHand(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const cardWidth = 70;
-    const cardHeight = 100;
-    const gap = 12;
+    const cardWidth = VP_CARD_WIDTH;
+    const cardHeight = VP_CARD_HEIGHT;
+    const gap = VP_CARD_GAP;
     const totalWidth = HAND_SIZE * cardWidth + (HAND_SIZE - 1) * gap;
     const startX = (w - totalWidth) / 2;
     const startY = h / 2 - cardHeight / 2 + 20;
@@ -357,11 +492,23 @@ export class VideoPokerEngine extends GameEngine {
       const x = startX + i * (cardWidth + gap);
       const y = startY;
 
+      // 悬停高亮效果（在牌后面绘制发光边框）
+      const isHovered = this._hoveredCardIndex === i && this.phase === GamePhase.HOLDING;
+      if (isHovered) {
+        ctx.shadowColor = VP_BUTTON_COLORS.CARD_HOVER_BORDER;
+        ctx.shadowBlur = 10;
+        ctx.strokeStyle = VP_BUTTON_COLORS.CARD_HOVER_BORDER;
+        ctx.lineWidth = 3;
+        this.roundRect(ctx, x - 2, y - 2, cardWidth + 4, cardHeight + 4, 8);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
       if (card) {
         // 卡牌背景
         const isHeld = this.held[i];
         ctx.fillStyle = isHeld ? '#1a3a5c' : '#1c1c3a';
-        ctx.strokeStyle = isHeld ? '#ffd700' : '#444466';
+        ctx.strokeStyle = isHeld ? '#ffd700' : (isHovered ? '#ffd700' : '#444466');
         ctx.lineWidth = isHeld ? 2 : 1;
 
         // 圆角矩形
@@ -401,11 +548,11 @@ export class VideoPokerEngine extends GameEngine {
   private renderHeldIndicators(ctx: CanvasRenderingContext2D, w: number, h: number): void {
     if (this.phase !== GamePhase.HOLDING) return;
 
-    const cardWidth = 70;
-    const gap = 12;
+    const cardWidth = VP_CARD_WIDTH;
+    const gap = VP_CARD_GAP;
     const totalWidth = HAND_SIZE * cardWidth + (HAND_SIZE - 1) * gap;
     const startX = (w - totalWidth) / 2;
-    const startY = h / 2 - 50 / 2 + 20 + 100 + 8;
+    const startY = h / 2 - 50 / 2 + 20 + VP_CARD_HEIGHT + 8;
 
     ctx.font = 'bold 12px monospace';
     ctx.textAlign = 'center';
@@ -423,22 +570,24 @@ export class VideoPokerEngine extends GameEngine {
   }
 
   private renderControls(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const y = h - 60;
+    // 渲染 Deal/Draw 按钮
+    this.renderDealDrawButton(ctx);
 
-    ctx.font = '12px monospace';
+    // 键盘提示（保留在按钮下方）
+    const y = VP_BUTTON_Y + VP_BUTTON_HEIGHT + 12;
+
+    ctx.font = '11px monospace';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#8888aa';
+    ctx.fillStyle = '#666688';
 
     if (this.phase === GamePhase.IDLE) {
-      ctx.fillText('按 空格/Enter 发牌', w / 2, y);
-      ctx.fillText('↑↓ 调整下注 (1-5)', w / 2, y + 18);
+      ctx.fillText('↑↓ 调整下注 (1-5)', w / 2, y);
     } else if (this.phase === GamePhase.HOLDING) {
-      ctx.fillStyle = '#aabbcc';
-      ctx.fillText('按 1-5 保留/取消保留牌', w / 2, y);
-      ctx.fillText('按 空格/Enter 换牌', w / 2, y + 18);
+      ctx.fillStyle = '#7788aa';
+      ctx.fillText('点击选牌 · 按 1-5 保留/取消', w / 2, y);
     } else if (this.phase === GamePhase.RESULT) {
-      ctx.fillStyle = '#aabbcc';
-      ctx.fillText('按 空格/Enter 开始新一局', w / 2, y);
+      ctx.fillStyle = '#7788aa';
+      ctx.fillText('点击按钮或按空格开始新一局', w / 2, y);
     }
   }
 
@@ -507,6 +656,42 @@ export class VideoPokerEngine extends GameEngine {
       case 'ArrowDown':
         this.adjustBet(-1);
         break;
+    }
+  }
+
+  /** 鼠标点击：点击选牌或操作按钮 */
+  handleClick(canvasX: number, canvasY: number): void {
+    if (this._status !== 'playing') return;
+
+    // 检测是否点击了 Deal/Draw 按钮
+    const button = this.getDealDrawButton();
+    if (button.enabled && this.isPointInRect(canvasX, canvasY, button)) {
+      this.executeButtonAction(button.action);
+      return;
+    }
+
+    // 检测是否点击了手牌（仅在 HOLDING 阶段）
+    if (this.phase === GamePhase.HOLDING) {
+      const cardIndex = this.getCardIndexAtPoint(canvasX, canvasY);
+      if (cardIndex >= 0) {
+        this.toggleHold(cardIndex);
+      }
+    }
+  }
+
+  /** 鼠标移动：更新悬停状态 */
+  handleMouseMove(canvasX: number, canvasY: number): void {
+    if (this._status !== 'playing') return;
+
+    // 检测悬停在按钮上
+    const button = this.getDealDrawButton();
+    if (this.isPointInRect(canvasX, canvasY, button)) {
+      this._hoveredButton = button.action;
+      this._hoveredCardIndex = -1;
+    } else {
+      this._hoveredButton = null;
+      // 检测悬停在牌上
+      this._hoveredCardIndex = this.getCardIndexAtPoint(canvasX, canvasY);
     }
   }
 

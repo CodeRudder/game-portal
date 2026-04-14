@@ -91,6 +91,12 @@ export class MahjongSolitaireEngine extends GameEngine {
   private removeAnimation: RemoveAnimation | null = null;
   private hintState: HintState | null = null;
 
+  // 鼠标交互
+  private hoveredTileId: number | null = null;
+
+  /** 无效点击闪烁反馈 */
+  private invalidClickFlash: { tileId: number; elapsed: number } | null = null;
+
   // 计时
   private gameTimer = 0;
 
@@ -127,6 +133,14 @@ export class MahjongSolitaireEngine extends GameEngine {
       this.removeAnimation.elapsed += deltaTime;
       if (this.removeAnimation.elapsed >= REMOVE_ANIM_DURATION) {
         this.removeAnimation = null;
+      }
+    }
+
+    // 更新无效点击闪烁
+    if (this.invalidClickFlash) {
+      this.invalidClickFlash.elapsed += deltaTime;
+      if (this.invalidClickFlash.elapsed >= 300) {
+        this.invalidClickFlash = null;
       }
     }
 
@@ -186,6 +200,8 @@ export class MahjongSolitaireEngine extends GameEngine {
     this._isWin = false;
     this.removeAnimation = null;
     this.hintState = null;
+    this.hoveredTileId = null;
+    this.invalidClickFlash = null;
     this.gameTimer = 0;
     this.nextId = 0;
   }
@@ -244,6 +260,91 @@ export class MahjongSolitaireEngine extends GameEngine {
 
   handleKeyUp(_key: string): void {
     // 不需要处理
+  }
+
+  // ========== 鼠标交互 ==========
+
+  /**
+   * 处理鼠标点击：命中检测 → 选择/匹配牌
+   * 按层级从高到低检测（上层优先），只有自由牌可以被点击
+   */
+  handleClick(canvasX: number, canvasY: number): void {
+    if (this._status !== 'playing') return;
+
+    const tile = this.hitTestTile(canvasX, canvasY);
+    if (!tile) return;
+
+    // 只有自由牌可以被点击
+    if (!this.isTileFree(tile)) {
+      // 无效点击反馈：短暂闪红
+      this.invalidClickFlash = { tileId: tile.id, elapsed: 0 };
+      return;
+    }
+
+    // 清除提示
+    this.hintState = null;
+
+    // 同步光标到点击位置
+    this.cursor = { layer: tile.layer, row: tile.row, col: tile.col };
+
+    if (this.selectedTileId === null) {
+      // 第一次选择
+      this.selectedTileId = tile.id;
+    } else if (this.selectedTileId === tile.id) {
+      // 取消选择
+      this.selectedTileId = null;
+    } else {
+      // 第二次选择，尝试配对
+      const selectedTile = this.tiles.find(t => t.id === this.selectedTileId);
+      if (selectedTile && selectedTile.faceIndex === tile.faceIndex) {
+        // 配对成功
+        this.matchTiles(selectedTile, tile);
+      } else {
+        // 配对失败，切换选择
+        this.selectedTileId = tile.id;
+      }
+    }
+  }
+
+  /**
+   * 处理鼠标移动：悬停高亮
+   * 追踪鼠标当前悬停的牌，用于渲染高亮效果
+   */
+  handleMouseMove(canvasX: number, canvasY: number): void {
+    if (this._status !== 'playing') {
+      this.hoveredTileId = null;
+      return;
+    }
+
+    const tile = this.hitTestTile(canvasX, canvasY);
+    this.hoveredTileId = tile ? tile.id : null;
+  }
+
+  /**
+   * 命中检测：根据画布坐标找到被点击的牌
+   * 从最高层向最低层遍历，上层优先
+   */
+  private hitTestTile(canvasX: number, canvasY: number): MahjongTile | null {
+    const { offsetX, offsetY } = this.calculateLayoutOffset(CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // 从最高层向最低层遍历（上层优先）
+    for (let layer = this.layout.length - 1; layer >= 0; layer--) {
+      const layerTiles = this.tiles.filter(t => t.layer === layer && !t.removed);
+
+      for (const tile of layerTiles) {
+        const px = offsetX + tile.col * TILE_WIDTH + layer * LAYER_OFFSET_X;
+        const py = offsetY + tile.row * TILE_HEIGHT + layer * LAYER_OFFSET_Y;
+
+        if (
+          canvasX >= px && canvasX < px + TILE_WIDTH &&
+          canvasY >= py && canvasY < py + TILE_HEIGHT
+        ) {
+          return tile;
+        }
+      }
+    }
+
+    return null;
   }
 
   // ========== 核心逻辑 ==========
@@ -725,12 +826,28 @@ export class MahjongSolitaireEngine extends GameEngine {
       // 绘制牌面边框
       const isSelected = this.selectedTileId === tile.id;
       const isFree = this.isTileFree(tile);
+      const isHovered = this.hoveredTileId === tile.id && isFree && !isSelected;
 
-      if (isSelected) {
+      // 无效点击闪烁效果
+      const isInvalidFlash = this.invalidClickFlash &&
+        this.invalidClickFlash.tileId === tile.id;
+
+      if (isInvalidFlash) {
+        ctx.strokeStyle = '#ff4757';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = 'rgba(255, 71, 87, 0.6)';
+        ctx.shadowBlur = 8;
+      } else if (isSelected) {
         ctx.strokeStyle = COLORS.tileSelectedBorder;
         ctx.lineWidth = 2;
         ctx.shadowColor = COLORS.tileSelectedGlow;
         ctx.shadowBlur = 8;
+      } else if (isHovered) {
+        // 悬停高亮：使用明亮的青色边框
+        ctx.strokeStyle = '#00d2ff';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = 'rgba(0, 210, 255, 0.4)';
+        ctx.shadowBlur = 6;
       } else if (isFree) {
         ctx.strokeStyle = COLORS.tileFreeBorder;
         ctx.lineWidth = 1;

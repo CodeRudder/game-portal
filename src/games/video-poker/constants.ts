@@ -112,3 +112,40 @@ export interface VideoPokerState {
   handRank: HandRank | null;
   deck: Card[];
 }
+
+// ========== 鼠标操作按钮布局 ==========
+
+/** 按钮区域 */
+export const VP_BUTTON_WIDTH = 120;
+export const VP_BUTTON_HEIGHT = 40;
+export const VP_BUTTON_RADIUS = 8;
+export const VP_BUTTON_Y = 580; // Deal/Draw 按钮的 Y 位置
+
+/** 牌区域布局（与 renderHand 保持一致） */
+export const VP_CARD_WIDTH = 70;
+export const VP_CARD_HEIGHT = 100;
+export const VP_CARD_GAP = 12;
+
+/** 按钮颜色 */
+export const VP_BUTTON_COLORS = {
+  DEAL_DRAW_BG: '#27ae60',
+  DEAL_DRAW_HOVER: '#3dd676',
+  DEAL_DRAW_DISABLED: '#165a30',
+  CARD_HOVER_BORDER: '#ffd700',
+  TEXT: '#ffffff',
+  TEXT_DISABLED: '#888888',
+} as const;
+
+/** 按钮定义 */
+export interface VPButtonRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  action: string;
+  enabled: boolean;
+  bgColor: string;
+  hoverColor: string;
+  disabledColor: string;
+}

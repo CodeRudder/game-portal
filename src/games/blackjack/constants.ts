@@ -133,3 +133,46 @@ export const KEY_BET_UP = 'ArrowUp';
 export const KEY_BET_DOWN = 'ArrowDown';
 export const KEY_NEW_GAME = ' '; // 空格
 export const KEY_NEW_GAME_ALT = 'Enter';
+
+// ========== 鼠标操作按钮布局 ==========
+
+/** 按钮区域 */
+export const BUTTON_WIDTH = 100;
+export const BUTTON_HEIGHT = 40;
+export const BUTTON_RADIUS = 8;
+export const BUTTON_GAP = 20;
+export const BUTTON_AREA_Y = 540; // 按钮区域起始 Y（画布底部区域）
+
+/** 按钮颜色 */
+export const BUTTON_COLORS = {
+  HIT_BG: '#e74c3c',
+  HIT_HOVER: '#ff6b5b',
+  HIT_DISABLED: '#7a2a25',
+  STAND_BG: '#3498db',
+  STAND_HOVER: '#5bb5f0',
+  STAND_DISABLED: '#1f5a82',
+  DOUBLE_BG: '#f39c12',
+  DOUBLE_HOVER: '#ffc042',
+  DOUBLE_DISABLED: '#8a5a0a',
+  DEAL_BG: '#27ae60',
+  DEAL_HOVER: '#3dd676',
+  DEAL_DISABLED: '#165a30',
+  NEW_GAME_BG: '#8e44ad',
+  NEW_GAME_HOVER: '#a96bc5',
+  TEXT: '#ffffff',
+  TEXT_DISABLED: '#888888',
+} as const;
+
+/** 按钮定义（用于命中检测和渲染） */
+export interface ButtonRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  action: string;
+  enabled: boolean;
+  bgColor: string;
+  hoverColor: string;
+  disabledColor: string;
+}

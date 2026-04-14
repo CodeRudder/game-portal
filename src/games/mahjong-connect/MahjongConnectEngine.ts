@@ -127,6 +127,12 @@ export class MahjongConnectEngine extends GameEngine {
   /** 当前选中的牌位置 */
   private selectedTile: Point | null = null;
 
+  /** 鼠标悬停的牌位置 */
+  private hoveredTile: Point | null = null;
+
+  /** 无效点击闪烁反馈 */
+  private invalidClickFlash: { row: number; col: number; elapsed: number } | null = null;
+
   // ========== 动画状态 ==========
 
   /** 连线动画 */
@@ -193,6 +199,8 @@ export class MahjongConnectEngine extends GameEngine {
     this.removedPairs = 0;
     this.lastMatchTime = 0;
     this.selectedTile = null;
+    this.hoveredTile = null;
+    this.invalidClickFlash = null;
     this.connectAnim = null;
     this.removeAnim = null;
     this.hintState = null;
@@ -250,6 +258,14 @@ export class MahjongConnectEngine extends GameEngine {
         this.combo = 0;
       }
     }
+
+    // 更新无效点击闪烁
+    if (this.invalidClickFlash) {
+      this.invalidClickFlash.elapsed += deltaTime;
+      if (this.invalidClickFlash.elapsed >= 300) {
+        this.invalidClickFlash = null;
+      }
+    }
   }
 
   protected onRender(ctx: CanvasRenderingContext2D, w: number, h: number): void {
@@ -274,6 +290,8 @@ export class MahjongConnectEngine extends GameEngine {
     this.generateGrid();
     this.calculateLayout();
     this.selectedTile = null;
+    this.hoveredTile = null;
+    this.invalidClickFlash = null;
     this.connectAnim = null;
     this.removeAnim = null;
     this.hintState = null;
@@ -317,12 +335,11 @@ export class MahjongConnectEngine extends GameEngine {
       this.connectAnim = null;
     }
 
-    // 将画布坐标转换为网格坐标
-    const col = Math.floor((canvasX - this.gridOffsetX) / (this.tileW + TILE_GAP));
-    const row = Math.floor((canvasY - this.gridOffsetY) / (this.tileH + TILE_GAP));
+    // 精确命中检测：检查点击是否在牌面矩形范围内
+    const hitResult = this.hitTestTile(canvasX, canvasY);
+    if (!hitResult) return;
 
-    // 检查是否在有效网格范围内
-    if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) return;
+    const { row, col } = hitResult;
 
     // 检查点击位置是否有牌
     if (this.grid[row][col] === null) return;
@@ -385,6 +402,88 @@ export class MahjongConnectEngine extends GameEngine {
   /** 键盘释放处理（连连看不需要） */
   handleKeyUp(_key: string): void {
     // 连连看不需要 keyUp 处理
+  }
+
+  /**
+   * 处理鼠标移动：悬停高亮
+   * 追踪鼠标当前悬停的牌位置
+   */
+  handleMouseMove(canvasX: number, canvasY: number): void {
+    if (this._status !== 'playing') {
+      this.hoveredTile = null;
+      return;
+    }
+
+    const hitResult = this.hitTestTile(canvasX, canvasY);
+    this.hoveredTile = hitResult;
+  }
+
+  /**
+   * 处理鼠标双击：自动匹配（如果有唯一匹配）
+   * 双击一张牌时，自动查找并匹配同类型的可连接牌
+   */
+  handleDoubleClick(canvasX: number, canvasY: number): void {
+    if (this._status !== 'playing') return;
+    if (this.removeAnim || this.connectAnim) return;
+
+    const hitResult = this.hitTestTile(canvasX, canvasY);
+    if (!hitResult) return;
+
+    const { row, col } = hitResult;
+    if (this.grid[row][col] === null) return;
+
+    const clickedPoint: Point = { row, col };
+    const patternType = this.grid[row][col]!;
+
+    // 查找所有同类型牌
+    const sameTypeTiles: Point[] = [];
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        if (this.grid[r][c] === patternType && !(r === row && c === col)) {
+          sameTypeTiles.push({ row: r, col: c });
+        }
+      }
+    }
+
+    // 尝试找到可连接的配对
+    for (const other of sameTypeTiles) {
+      const path = this.canConnect(clickedPoint, other);
+      if (path) {
+        // 清除当前选择和提示
+        this.selectedTile = null;
+        this.hintState = null;
+        // 执行匹配
+        this.matchSuccess(clickedPoint, other, path);
+        return;
+      }
+    }
+
+    // 没有找到可连接的配对，给无效反馈
+    this.invalidClickFlash = { row, col, elapsed: 0 };
+  }
+
+  /**
+   * 精确命中检测：检查画布坐标是否在某个牌面矩形范围内
+   * @returns 命中的网格坐标 { row, col } 或 null
+   */
+  private hitTestTile(canvasX: number, canvasY: number): { row: number; col: number } | null {
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        if (this.grid[r][c] === null) continue;
+
+        const x = this.gridOffsetX + c * (this.tileW + TILE_GAP);
+        const y = this.gridOffsetY + r * (this.tileH + TILE_GAP);
+
+        if (
+          canvasX >= x && canvasX < x + this.tileW &&
+          canvasY >= y && canvasY < y + this.tileH
+        ) {
+          return { row: r, col: c };
+        }
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -986,7 +1085,14 @@ export class MahjongConnectEngine extends GameEngine {
         const isSelected = this.selectedTile !== null &&
           this.selectedTile.row === r && this.selectedTile.col === c;
 
-        this.drawTile(ctx, x, y, this.tileW, this.tileH, patternType, isSelected);
+        const isHovered = this.hoveredTile !== null &&
+          this.hoveredTile.row === r && this.hoveredTile.col === c &&
+          !isSelected;
+
+        const isInvalidFlash = this.invalidClickFlash !== null &&
+          this.invalidClickFlash.row === r && this.invalidClickFlash.col === c;
+
+        this.drawTile(ctx, x, y, this.tileW, this.tileH, patternType, isSelected, isHovered, isInvalidFlash);
       }
     }
   }
@@ -997,17 +1103,31 @@ export class MahjongConnectEngine extends GameEngine {
     x: number, y: number,
     w: number, h: number,
     patternType: number,
-    selected: boolean
+    selected: boolean,
+    hovered: boolean = false,
+    invalidFlash: boolean = false
   ): void {
     // 背景填充
-    ctx.fillStyle = selected ? COLORS.tileBgHover : COLORS.tileBg;
+    const bg = selected ? COLORS.tileBgHover : (hovered ? '#1e2d50' : COLORS.tileBg);
+    ctx.fillStyle = bg;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, TILE_RADIUS);
     ctx.fill();
 
     // 边框
-    ctx.strokeStyle = selected ? COLORS.tileSelectedBorder : COLORS.tileBorder;
-    ctx.lineWidth = selected ? 2 : 1;
+    if (invalidFlash) {
+      ctx.strokeStyle = '#ff4757';
+      ctx.lineWidth = 2;
+    } else if (selected) {
+      ctx.strokeStyle = COLORS.tileSelectedBorder;
+      ctx.lineWidth = 2;
+    } else if (hovered) {
+      ctx.strokeStyle = '#00d2ff';
+      ctx.lineWidth = 2;
+    } else {
+      ctx.strokeStyle = COLORS.tileBorder;
+      ctx.lineWidth = 1;
+    }
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, TILE_RADIUS);
     ctx.stroke();
@@ -1017,6 +1137,30 @@ export class MahjongConnectEngine extends GameEngine {
       ctx.shadowColor = COLORS.tileSelectedGlow;
       ctx.shadowBlur = 8;
       ctx.strokeStyle = COLORS.tileSelectedBorder;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, TILE_RADIUS);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // 悬停发光效果
+    if (hovered && !selected) {
+      ctx.shadowColor = 'rgba(0, 210, 255, 0.3)';
+      ctx.shadowBlur = 6;
+      ctx.strokeStyle = '#00d2ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, TILE_RADIUS);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // 无效点击闪烁发光
+    if (invalidFlash) {
+      ctx.shadowColor = 'rgba(255, 71, 87, 0.5)';
+      ctx.shadowBlur = 8;
+      ctx.strokeStyle = '#ff4757';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.roundRect(x, y, w, h, TILE_RADIUS);
