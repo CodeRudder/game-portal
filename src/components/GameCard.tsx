@@ -706,6 +706,55 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-purple-400',
     gradient: 'from-purple-600/20 to-indigo-600/20',
   },
+  [GameType.DOGGO_HOME]: {
+    title: '狗狗家园',
+    description: '收集各种可爱狗狗，升级建筑，打造温馨的狗狗家园！',
+    icon: '🐕',
+    color: 'text-yellow-400',
+    gradient: 'from-yellow-600/20 to-amber-600/20',
+  },
+  [GameType.KITTENS_KINGDOM]: {
+    title: '猫咪王国',
+    description: '点击产鱼干，解锁猫咪品种，建设你的猫咪王国！',
+    icon: '🐱',
+    color: 'text-orange-400',
+    gradient: 'from-orange-600/20 to-red-600/20',
+  },
+  [GameType.PENGUIN_EMPIRE]: {
+    title: '企鹅帝国',
+    description: '收集冰块，建造设施，征服南极大陆！',
+    icon: '🐧',
+    color: 'text-blue-400',
+    gradient: 'from-blue-600/20 to-cyan-600/20',
+  },
+  [GameType.ANT_KINGDOM]: {
+    title: '蚂蚁王国',
+    description: '建立蚁巢，繁殖工蚁，打造地下蚂蚁帝国！',
+    icon: '🐜',
+    color: 'text-amber-700',
+    gradient: 'from-amber-800/20 to-yellow-900/20',
+  },
+  [GameType.DINO_RANCH]: {
+    title: '恐龙牧场',
+    description: '饲养恐龙，升级牧场，打造史前恐龙乐园！',
+    icon: '🦕',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-emerald-600/20',
+  },
+  [GameType.IDLE_XIANXIA]: {
+    title: '修仙放置',
+    description: '修炼灵气，突破境界，踏上修仙之路！',
+    icon: '🏔️',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-indigo-600/20',
+  },
+  [GameType.SECT_RISE]: {
+    title: '宗门崛起',
+    description: '创建宗门，招收弟子，成就修仙霸业！',
+    icon: '⚔️',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-rose-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

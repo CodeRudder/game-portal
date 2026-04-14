@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import type { IdleGameMeta } from '@/types/idle';
 import Header from '@/components/Header';
 
-/** 放置游戏列表（目前只有 Cookie Clicker，后续扩展） */
+/** 放置游戏列表 */
 const IDLE_GAMES: IdleGameMeta[] = [
   {
     id: 'cookie-clicker',
@@ -20,7 +20,76 @@ const IDLE_GAMES: IdleGameMeta[] = [
     series: '经典',
     tags: ['点击', '生产'],
   },
-  // 后续添加更多放置游戏...
+  {
+    id: 'doggo-home',
+    name: '狗狗家园',
+    description: '收集各种可爱狗狗，升级建筑，打造温馨的狗狗家园！',
+    icon: '🐕',
+    color: 'text-yellow-400',
+    gradient: 'from-yellow-600/20 to-amber-600/20',
+    series: '萌宠',
+    tags: ['点击', '养成'],
+  },
+  {
+    id: 'kittens-kingdom',
+    name: '猫咪王国',
+    description: '点击产鱼干，解锁猫咪品种，建设你的猫咪王国！',
+    icon: '🐱',
+    color: 'text-orange-400',
+    gradient: 'from-orange-600/20 to-red-600/20',
+    series: '萌宠',
+    tags: ['点击', '品种'],
+  },
+  {
+    id: 'penguin-empire',
+    name: '企鹅帝国',
+    description: '收集冰块，建造设施，征服南极大陆！',
+    icon: '🐧',
+    color: 'text-blue-400',
+    gradient: 'from-blue-600/20 to-cyan-600/20',
+    series: '萌宠',
+    tags: ['点击', '建造'],
+  },
+  {
+    id: 'ant-kingdom',
+    name: '蚂蚁王国',
+    description: '建立蚁巢，繁殖工蚁，打造地下蚂蚁帝国！',
+    icon: '🐜',
+    color: 'text-amber-700',
+    gradient: 'from-amber-800/20 to-yellow-900/20',
+    series: '自然',
+    tags: ['策略', '建造'],
+  },
+  {
+    id: 'dino-ranch',
+    name: '恐龙牧场',
+    description: '饲养恐龙，升级牧场，打造史前恐龙乐园！',
+    icon: '🦕',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-emerald-600/20',
+    series: '自然',
+    tags: ['养成', '收集'],
+  },
+  {
+    id: 'idle-xianxia',
+    name: '修仙放置',
+    description: '修炼灵气，突破境界，踏上修仙之路！',
+    icon: '🏔️',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-indigo-600/20',
+    series: '仙侠',
+    tags: ['修炼', '突破'],
+  },
+  {
+    id: 'sect-rise',
+    name: '宗门崛起',
+    description: '创建宗门，招收弟子，成就修仙霸业！',
+    icon: '⚔️',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-rose-600/20',
+    series: '仙侠',
+    tags: ['策略', '经营'],
+  },
 ];
 
 /** 所有系列 */

@@ -22,6 +22,48 @@ const IDLE_GAME_REGISTRY: Record<string, IdleGameConfig> = {
     description: '点击生产饼干，购买升级自动产出，打造你的饼干帝国！',
     legacyRoute: '/game/cookie-clicker',
   },
+  'doggo-home': {
+    name: '狗狗家园',
+    icon: '🐕',
+    description: '收集各种可爱狗狗，升级建筑，打造温馨的狗狗家园！',
+    legacyRoute: '/game/doggo-home',
+  },
+  'kittens-kingdom': {
+    name: '猫咪王国',
+    icon: '🐱',
+    description: '点击产鱼干，解锁猫咪品种，建设你的猫咪王国！',
+    legacyRoute: '/game/kittens-kingdom',
+  },
+  'penguin-empire': {
+    name: '企鹅帝国',
+    icon: '🐧',
+    description: '收集冰块，建造设施，征服南极大陆！',
+    legacyRoute: '/game/penguin-empire',
+  },
+  'ant-kingdom': {
+    name: '蚂蚁王国',
+    icon: '🐜',
+    description: '建立蚁巢，繁殖工蚁，打造地下蚂蚁帝国！',
+    legacyRoute: '/game/ant-kingdom',
+  },
+  'dino-ranch': {
+    name: '恐龙牧场',
+    icon: '🦕',
+    description: '饲养恐龙，升级牧场，打造史前恐龙乐园！',
+    legacyRoute: '/game/dino-ranch',
+  },
+  'idle-xianxia': {
+    name: '修仙放置',
+    icon: '🏔️',
+    description: '修炼灵气，突破境界，踏上修仙之路！',
+    legacyRoute: '/game/idle-xianxia',
+  },
+  'sect-rise': {
+    name: '宗门崛起',
+    icon: '⚔️',
+    description: '创建宗门，招收弟子，成就修仙霸业！',
+    legacyRoute: '/game/sect-rise',
+  },
 };
 
 export default function IdleGamePage() {

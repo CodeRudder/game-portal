@@ -106,6 +106,13 @@ const VALID_TYPES: Record<string, GameType> = {
   'ski-free': GameType.SKI_FREE,
   'chips-challenge': GameType.CHIPS_CHALLENGE,
   maze: GameType.MAZE,
+  'doggo-home': GameType.DOGGO_HOME,
+  'kittens-kingdom': GameType.KITTENS_KINGDOM,
+  'penguin-empire': GameType.PENGUIN_EMPIRE,
+  'ant-kingdom': GameType.ANT_KINGDOM,
+  'dino-ranch': GameType.DINO_RANCH,
+  'idle-xianxia': GameType.IDLE_XIANXIA,
+  'sect-rise': GameType.SECT_RISE,
 };
 
 export default function GamePage() {

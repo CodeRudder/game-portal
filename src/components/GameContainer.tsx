@@ -101,6 +101,13 @@ import { SkiFreeEngine } from '@/games/ski-free/SkiFreeEngine';
 import { ChipsChallengeEngine } from '@/games/chips-challenge/ChipsChallengeEngine';
 import { DotsAndBoxesEngine } from '@/games/dots-and-boxes/DotsAndBoxesEngine';
 import { MazeEngine } from '@/games/maze/MazeEngine';
+import { DoggoHomeEngine } from '@/games/doggo-home/DoggoHomeEngine';
+import { KittensKingdomEngine } from '@/games/kittens-kingdom/KittensKingdomEngine';
+import { PenguinEmpireEngine } from '@/games/penguin-empire/PenguinEmpireEngine';
+import { AntKingdomEngine } from '@/games/ant-kingdom/AntKingdomEngine';
+import { DinoRanchEngine } from '@/games/dino-ranch/DinoRanchEngine';
+import { IdleXianxiaEngine } from '@/games/idle-xianxia/IdleXianxiaEngine';
+import { SectRiseEngine } from '@/games/sect-rise/SectRiseEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -210,6 +217,13 @@ function createEngine(type: GameType) {
     case GameTypeEnum.CHIPS_CHALLENGE: return new ChipsChallengeEngine();
     case GameTypeEnum.DOTS_AND_BOXES: return new DotsAndBoxesEngine();
     case GameTypeEnum.MAZE: return new MazeEngine();
+    case GameTypeEnum.DOGGO_HOME: return new DoggoHomeEngine();
+    case GameTypeEnum.KITTENS_KINGDOM: return new KittensKingdomEngine();
+    case GameTypeEnum.PENGUIN_EMPIRE: return new PenguinEmpireEngine();
+    case GameTypeEnum.ANT_KINGDOM: return new AntKingdomEngine();
+    case GameTypeEnum.DINO_RANCH: return new DinoRanchEngine();
+    case GameTypeEnum.IDLE_XIANXIA: return new IdleXianxiaEngine();
+    case GameTypeEnum.SECT_RISE: return new SectRiseEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

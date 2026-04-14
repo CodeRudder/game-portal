@@ -100,6 +100,13 @@ export enum GameType {
   SKI_FREE = 'ski-free',
   CHIPS_CHALLENGE = 'chips-challenge',
   MAZE = 'maze',
+  DOGGO_HOME = 'doggo-home',
+  KITTENS_KINGDOM = 'kittens-kingdom',
+  PENGUIN_EMPIRE = 'penguin-empire',
+  ANT_KINGDOM = 'ant-kingdom',
+  DINO_RANCH = 'dino-ranch',
+  IDLE_XIANXIA = 'idle-xianxia',
+  SECT_RISE = 'sect-rise',
 }
 
 // ========== 游戏状态枚举 ==========
