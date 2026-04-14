@@ -26,6 +26,12 @@ export default function Header() {
             🏠 首页
           </button>
           <button
+            onClick={() => navigate('/idle')}
+            className="text-sm text-gray-400 hover:text-gp-gold transition-colors"
+          >
+            🌙 放置专区
+          </button>
+          <button
             onClick={() => {
               const el = document.getElementById('scoreboard');
               el?.scrollIntoView({ behavior: 'smooth' });

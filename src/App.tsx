@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import GamePage from './pages/GamePage';
+import IdleGameZone from './pages/IdleGameZone';
+import IdleGamePage from './pages/IdleGamePage';
 
 function App() {
   return (
@@ -8,6 +10,8 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/game/:gameType" element={<GamePage />} />
+        <Route path="/idle" element={<IdleGameZone />} />
+        <Route path="/idle/:gameId" element={<IdleGamePage />} />
       </Routes>
     </div>
   );

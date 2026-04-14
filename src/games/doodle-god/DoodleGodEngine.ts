@@ -416,7 +416,7 @@ export class DoodleGodEngine extends GameEngine {
       totalDiscovered: this.discoveredIds.size,
       totalElements: getTotalElementCount(),
       progress: this.getProgress(),
-    } as DoodleGodState;
+    } as Record<string, unknown>;
   }
 
   // ========== 键盘导航 ==========

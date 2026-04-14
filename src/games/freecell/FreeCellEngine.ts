@@ -953,7 +953,7 @@ export class FreeCellEngine extends GameEngine {
       isWin: this._isWin,
       score: this._score,
       seed: this.seed,
-    } as FreeCellState;
+    } as Record<string, unknown>;
   }
 
   // ========== 公开方法（供测试和外部调用） ==========

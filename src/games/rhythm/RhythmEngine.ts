@@ -283,7 +283,7 @@ export class RhythmEngine extends GameEngine {
     this._keysPressed.delete(lowerKey);
   }
 
-  getState(): RhythmGameState {
+  getState(): Record<string, unknown> {
     return {
       score: this._score,
       combo: this._combo,
