@@ -69,6 +69,10 @@ import { VideoPokerEngine } from '@/games/video-poker/VideoPokerEngine';
 import { BlackjackEngine } from '@/games/blackjack/BlackjackEngine';
 import { SpaceDodgeEngine } from '@/games/space-dodge/SpaceDodgeEngine';
 import { BalloonPopEngine } from '@/games/balloon-pop/BalloonPopEngine';
+import { MiniGoEngine } from '@/games/mini-go/MiniGoEngine';
+import { HexEngine } from '@/games/hex/HexEngine';
+import { RhythmEngine } from '@/games/rhythm/RhythmEngine';
+import { DoodleGodEngine } from '@/games/doodle-god/DoodleGodEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -146,6 +150,10 @@ function createEngine(type: GameType) {
     case GameTypeEnum.BLACKJACK: return new BlackjackEngine();
     case GameTypeEnum.SPACE_DODGE: return new SpaceDodgeEngine();
     case GameTypeEnum.BALLOON_POP: return new BalloonPopEngine();
+    case GameTypeEnum.MINI_GO: return new MiniGoEngine();
+    case GameTypeEnum.HEX: return new HexEngine();
+    case GameTypeEnum.RHYTHM: return new RhythmEngine();
+    case GameTypeEnum.DOODLE_GOD: return new DoodleGodEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

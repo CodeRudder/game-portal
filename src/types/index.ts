@@ -69,6 +69,10 @@ export enum GameType {
   DOTS_AND_BOXES = 'dots-and-boxes',
   SPACE_DODGE = 'space-dodge',
   BALLOON_POP = 'balloon-pop',
+  MINI_GO = 'mini-go',
+  HEX = 'hex',
+  RHYTHM = 'rhythm',
+  DOODLE_GOD = 'doodle-god',
 }
 
 // ========== 游戏状态枚举 ==========

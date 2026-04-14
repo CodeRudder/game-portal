@@ -489,6 +489,34 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-indigo-400',
     gradient: 'from-indigo-600/20 to-blue-600/20',
   },
+  [GameType.MINI_GO]: {
+    title: '围棋 9×9',
+    description: '9×9 简化围棋，黑白交替落子，围地多者胜！支持提子、禁入点、劫争等完整规则，AI 对手等你挑战！',
+    icon: '♟️',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-yellow-600/20',
+  },
+  [GameType.HEX]: {
+    title: '六角棋 Hex',
+    description: '经典策略棋！11×11 六角棋盘，红方连上下、蓝方连左右，先连通对边者胜！支持交换规则和AI对手。',
+    icon: '⬡',
+    color: 'text-violet-400',
+    gradient: 'from-violet-600/20 to-indigo-600/20',
+  },
+  [GameType.RHYTHM]: {
+    title: '音乐节拍',
+    description: '音符从顶部下落到判定线，在正确时机按键得分！Perfect/Great/Good判定，连击倍率加成！',
+    icon: '🎵',
+    color: 'text-pink-400',
+    gradient: 'from-pink-600/20 to-purple-600/20',
+  },
+  [GameType.DOODLE_GOD]: {
+    title: '涂鸦上帝',
+    description: '组合基础元素创造新事物！从水、火、土、气开始，探索数百种合成配方，成为造物主！',
+    icon: '🔬',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-violet-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {
