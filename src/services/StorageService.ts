@@ -990,6 +990,26 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '← → / A D 左右转向 · ↑ 加速 · 躲避障碍物',
     difficulty: '中等',
   },
+  [GameType.CHIPS_CHALLENGE]: {
+    type: GameType.CHIPS_CHALLENGE,
+    name: '推箱子冒险',
+    description: 'Chips Challenge 经典重现！收集所有芯片，用钥匙开门、穿靴过水火、推方块填水，到达出口通关！',
+    icon: '💎',
+    color: '#f59e0b',
+    gradient: 'from-amber-500 to-yellow-400',
+    controls: '方向键/WASD 移动 · Z 撤销 · R 重置 · 收集芯片到达出口',
+    difficulty: '中等',
+  },
+  [GameType.MAZE]: {
+    type: GameType.MAZE,
+    name: '迷宫探险',
+    description: '随机生成迷宫，收集金币，找到出口！支持多难度和迷雾模式，按H显示提示路径。',
+    icon: '🏰',
+    color: '#a855f7',
+    gradient: 'from-purple-500 to-blue-500',
+    controls: '方向键/WASD 移动 · 1/2/3 切换难度 · F 迷雾 · H 提示 · 空格开始',
+    difficulty: '简单',
+  },
 };
 
 // ========== Storage Keys ==========

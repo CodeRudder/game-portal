@@ -104,6 +104,8 @@ const VALID_TYPES: Record<string, GameType> = {
   'ninja-jump': GameType.NINJA_JUMP,
   nonogram: GameType.NONOGRAM,
   'ski-free': GameType.SKI_FREE,
+  'chips-challenge': GameType.CHIPS_CHALLENGE,
+  maze: GameType.MAZE,
 };
 
 export default function GamePage() {

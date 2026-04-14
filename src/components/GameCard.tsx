@@ -692,6 +692,20 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-cyan-400',
     gradient: 'from-cyan-600/20 to-white/10',
   },
+  [GameType.CHIPS_CHALLENGE]: {
+    title: '推箱子冒险',
+    description: 'Chips Challenge 经典重现！收集所有芯片，用钥匙开门、穿靴过水火、推方块填水，到达出口通关！',
+    icon: '💎',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-yellow-600/20',
+  },
+  [GameType.MAZE]: {
+    title: '迷宫',
+    description: '随机生成迷宫，方向键控制角色从起点走到终点！收集金币、多关卡递增、迷雾模式、按H显示提示路径！',
+    icon: '🏰',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-indigo-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

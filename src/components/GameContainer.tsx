@@ -98,6 +98,9 @@ import { FishingMasterEngine } from '@/games/fishing-master/FishingMasterEngine'
 import { NinjaJumpEngine } from '@/games/ninja-jump/NinjaJumpEngine';
 import { NonogramEngine } from '@/games/nonogram/NonogramEngine';
 import { SkiFreeEngine } from '@/games/ski-free/SkiFreeEngine';
+import { ChipsChallengeEngine } from '@/games/chips-challenge/ChipsChallengeEngine';
+import { DotsAndBoxesEngine } from '@/games/dots-and-boxes/DotsAndBoxesEngine';
+import { MazeEngine } from '@/games/maze/MazeEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -204,6 +207,9 @@ function createEngine(type: GameType) {
     case GameTypeEnum.NINJA_JUMP: return new NinjaJumpEngine();
     case GameTypeEnum.NONOGRAM: return new NonogramEngine();
     case GameTypeEnum.SKI_FREE: return new SkiFreeEngine();
+    case GameTypeEnum.CHIPS_CHALLENGE: return new ChipsChallengeEngine();
+    case GameTypeEnum.DOTS_AND_BOXES: return new DotsAndBoxesEngine();
+    case GameTypeEnum.MAZE: return new MazeEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

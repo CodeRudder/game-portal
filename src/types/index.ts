@@ -98,6 +98,8 @@ export enum GameType {
   NINJA_JUMP = 'ninja-jump',
   NONOGRAM = 'nonogram',
   SKI_FREE = 'ski-free',
+  CHIPS_CHALLENGE = 'chips-challenge',
+  MAZE = 'maze',
 }
 
 // ========== 游戏状态枚举 ==========
