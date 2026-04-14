@@ -94,6 +94,16 @@ const VALID_TYPES: Record<string, GameType> = {
   'jigsaw-puzzle': GameType.JIGSAW_PUZZLE,
   bloons: GameType.BLOONS,
   ctf: GameType.CTF,
+  backgammon: GameType.BACKGAMMON,
+  'pong-2p': GameType.PONG_2P,
+  'head-soccer': GameType.HEAD_SOCCER,
+  'mahjong-solitaire': GameType.MAHJONG_SOLITAIRE,
+  'space-war': GameType.SPACE_WAR,
+  'duck-hunt': GameType.DUCK_HUNT,
+  'fishing-master': GameType.FISHING_MASTER,
+  'ninja-jump': GameType.NINJA_JUMP,
+  nonogram: GameType.NONOGRAM,
+  'ski-free': GameType.SKI_FREE,
 };
 
 export default function GamePage() {

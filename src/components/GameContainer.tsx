@@ -93,6 +93,11 @@ import { Pong2PEngine } from '@/games/pong-2p/Pong2PEngine';
 import { HeadSoccerEngine } from '@/games/head-soccer/HeadSoccerEngine';
 import { MahjongSolitaireEngine } from '@/games/mahjong-solitaire/MahjongSolitaireEngine';
 import { SpaceWarEngine } from '@/games/space-war/SpaceWarEngine';
+import { DuckHuntEngine } from '@/games/duck-hunt/DuckHuntEngine';
+import { FishingMasterEngine } from '@/games/fishing-master/FishingMasterEngine';
+import { NinjaJumpEngine } from '@/games/ninja-jump/NinjaJumpEngine';
+import { NonogramEngine } from '@/games/nonogram/NonogramEngine';
+import { SkiFreeEngine } from '@/games/ski-free/SkiFreeEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -194,6 +199,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.HEAD_SOCCER: return new HeadSoccerEngine();
     case GameTypeEnum.MAHJONG_SOLITAIRE: return new MahjongSolitaireEngine();
     case GameTypeEnum.SPACE_WAR: return new SpaceWarEngine();
+    case GameTypeEnum.DUCK_HUNT: return new DuckHuntEngine();
+    case GameTypeEnum.FISHING_MASTER: return new FishingMasterEngine();
+    case GameTypeEnum.NINJA_JUMP: return new NinjaJumpEngine();
+    case GameTypeEnum.NONOGRAM: return new NonogramEngine();
+    case GameTypeEnum.SKI_FREE: return new SkiFreeEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

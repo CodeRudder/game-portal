@@ -657,6 +657,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-cyan-400',
     gradient: 'from-cyan-600/20 to-purple-600/20',
   },
+  [GameType.DUCK_HUNT]: {
+    title: '打鸭子',
+    description: '经典光枪射击！用准星瞄准射击飞过的鸭子，别让它们跑掉！支持多轮挑战。',
+    icon: '🦆',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-green-600/20',
+  },
+  [GameType.FISHING_MASTER]: {
+    title: '钓鱼大师',
+    description: '在湖边悠闲钓鱼！控制鱼钩深度，等待鱼儿上钩，不同鱼种不同分数！',
+    icon: '🎣',
+    color: 'text-blue-400',
+    gradient: 'from-blue-600/20 to-cyan-600/20',
+  },
+  [GameType.NINJA_JUMP]: {
+    title: '忍者跳跃',
+    description: '操控忍者不断向上跳跃！踩踏平台攀升，躲避障碍物，挑战最高纪录！',
+    icon: '🥷',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-red-600/20',
+  },
+  [GameType.NONOGRAM]: {
+    title: '数织',
+    description: '经典逻辑填色益智！根据行列数字提示推理出隐藏图案，考验你的逻辑思维！',
+    icon: '🔲',
+    color: 'text-indigo-400',
+    gradient: 'from-indigo-600/20 to-blue-600/20',
+  },
+  [GameType.SKI_FREE]: {
+    title: '滑雪大冒险',
+    description: '在雪山上自由滑雪！躲避树木和障碍物，速度越来越快，看你能滑多远！',
+    icon: '⛷',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-white/10',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

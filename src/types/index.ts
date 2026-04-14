@@ -93,6 +93,11 @@ export enum GameType {
   HEAD_SOCCER = 'head-soccer',
   MAHJONG_SOLITAIRE = 'mahjong-solitaire',
   SPACE_WAR = 'space-war',
+  DUCK_HUNT = 'duck-hunt',
+  FISHING_MASTER = 'fishing-master',
+  NINJA_JUMP = 'ninja-jump',
+  NONOGRAM = 'nonogram',
+  SKI_FREE = 'ski-free',
 }
 
 // ========== 游戏状态枚举 ==========
