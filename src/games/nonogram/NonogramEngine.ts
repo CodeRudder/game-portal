@@ -53,6 +53,7 @@ export interface ClueGroup {
 
 /** 引擎对外状态 */
 export interface NonogramState {
+  [key: string]: unknown;
   gridSize: number;
   grid: CellState[][];
   solution: number[][];

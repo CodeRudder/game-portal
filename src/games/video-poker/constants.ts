@@ -102,6 +102,7 @@ export interface Card {
 
 /** 游戏状态接口 */
 export interface VideoPokerState {
+  [key: string]: unknown;
   phase: GamePhase;
   hand: (Card | null)[];
   held: boolean[];

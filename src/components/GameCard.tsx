@@ -482,6 +482,13 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-red-400',
     gradient: 'from-red-600/20 to-pink-600/20',
   },
+  [GameType.DOTS_AND_BOXES]: {
+    title: '点格棋',
+    description: '经典双人策略棋！在点阵中画线围成方格，围成最多方格的玩家获胜，支持AI对手。',
+    icon: '⬜',
+    color: 'text-indigo-400',
+    gradient: 'from-indigo-600/20 to-blue-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

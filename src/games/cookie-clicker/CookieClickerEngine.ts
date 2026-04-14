@@ -31,6 +31,7 @@ export interface UpgradeState {
 
 /** 游戏状态（用于 getState / 序列化） */
 export interface CookieClickerState {
+  [key: string]: unknown;
   cookies: number;
   totalCookies: number;
   totalClicks: number;

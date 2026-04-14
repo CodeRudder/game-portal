@@ -135,6 +135,7 @@ export interface Star {
 
 /** ZType 游戏状态 */
 export interface ZTypeState {
+  [key: string]: unknown;
   words: FallingWord[];
   input: string;
   score: number;

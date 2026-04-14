@@ -690,6 +690,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键/WASD 移动准星 · 空格 射击 · 60秒限时挑战',
     difficulty: '中等',
   },
+  [GameType.DOTS_AND_BOXES]: {
+    type: GameType.DOTS_AND_BOXES,
+    name: '点格棋',
+    description: '经典双人策略棋！在点阵中画线围成方格，围成最多方格的玩家获胜，支持AI对手。',
+    icon: '⬜',
+    color: '#6366f1',
+    gradient: 'from-indigo-500 to-blue-500',
+    controls: '方向键选择边 · 空格/回车画线 · 围成方格得1分',
+    difficulty: '中等',
+  },
 };
 
 // ========== Storage Keys ==========

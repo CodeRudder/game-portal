@@ -35,6 +35,7 @@ import {
 
 /** 游戏状态（用于 getState / 序列化） */
 export interface VirtualPetState {
+  [key: string]: unknown;
   stats: Record<StatKey, number>;
   mood: Mood;
   growthStage: GrowthStage;

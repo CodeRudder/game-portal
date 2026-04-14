@@ -39,6 +39,7 @@ interface Cell {
 
 /** 游戏状态 */
 export interface SandSimulationState {
+  [key: string]: unknown;
   grid: MaterialType[][];
   cursorX: number;
   cursorY: number;
