@@ -525,7 +525,9 @@ export class KittensKingdomEngine extends IdleGameEngine {
     const baseState = super.getState();
 
     return {
-      ...baseState,
+      resources: baseState.resources as Record<string, { amount: number; unlocked: boolean }>,
+      upgrades: baseState.upgrades as Record<string, number>,
+      statistics: baseState.statistics as Record<string, number>,
       breeds: this._breeds.map((b) => ({ ...b })),
       totalFishEarned: this._totalFishEarned,
       totalClicks: this._totalClicks,
@@ -785,7 +787,7 @@ export class KittensKingdomEngine extends IdleGameEngine {
 
     // 猫身体颜色
     const breed = CAT_BREEDS[breedIndex];
-    let bodyColor = COLORS.catOrange;
+    let bodyColor: string = COLORS.catOrange;
     if (breed) {
       switch (breed.id) {
         case 'orange': bodyColor = COLORS.catOrange; break;

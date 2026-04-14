@@ -420,7 +420,9 @@ export class PenguinEmpireEngine extends IdleGameEngine {
     const baseState = super.getState();
 
     return {
-      ...baseState,
+      resources: baseState.resources as Record<string, { amount: number; unlocked: boolean }>,
+      upgrades: baseState.upgrades as Record<string, number>,
+      statistics: baseState.statistics as Record<string, number>,
       totalIceEarned: this._totalIceEarned,
       totalClicks: this._totalClicks,
       selectedBuildingIndex: this._selectedBuildingIndex,

@@ -397,7 +397,7 @@ describe('DoggoHomeEngine', () => {
       addTreats(engine, PRESTIGE_MIN_TOTAL_TREATS * 2);
       // 需要满足声望条件
       if (engine.canPrestige()) {
-        const stars = engine.prestige();
+        const stars = engine.performPrestige();
         expect(stars).toBeGreaterThan(0);
       }
     });
@@ -406,7 +406,7 @@ describe('DoggoHomeEngine', () => {
       const engine = createEngine();
       addTreats(engine, PRESTIGE_MIN_TOTAL_TREATS * 2);
       if (engine.canPrestige()) {
-        engine.prestige();
+        engine.performPrestige();
         const state = engine.getState();
         expect(state.resources.treats.amount).toBe(0);
       }
@@ -417,7 +417,7 @@ describe('DoggoHomeEngine', () => {
       addTreats(engine, PRESTIGE_MIN_TOTAL_TREATS * 2);
       engine.purchaseBuilding(0);
       if (engine.canPrestige()) {
-        engine.prestige();
+        engine.performPrestige();
         expect(engine.getBuildingLevel(0)).toBe(0);
       }
     });
@@ -426,7 +426,7 @@ describe('DoggoHomeEngine', () => {
       const engine = createEngine();
       addTreats(engine, PRESTIGE_MIN_TOTAL_TREATS * 2);
       if (engine.canPrestige()) {
-        engine.prestige();
+        engine.performPrestige();
         expect(engine.getPrestigeMultiplier()).toBeGreaterThan(1);
       }
     });
@@ -435,7 +435,7 @@ describe('DoggoHomeEngine', () => {
       const engine = createEngine();
       addTreats(engine, PRESTIGE_MIN_TOTAL_TREATS * 2);
       if (engine.canPrestige()) {
-        const stars = engine.prestige();
+        const stars = engine.performPrestige();
         const expected = 1 + stars * STAR_BONUS_MULTIPLIER;
         expect(engine.getPrestigeMultiplier()).toBeCloseTo(expected, 1);
       }

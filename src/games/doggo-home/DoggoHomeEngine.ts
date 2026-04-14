@@ -108,7 +108,8 @@ export class DoggoHomeEngine extends IdleGameEngine {
     return this._dogs.map((d) => ({ ...d }));
   }
 
-  get statistics(): DoggoStatistics {
+  /** 获取游戏统计数据（公共访问） */
+  get gameStatistics(): DoggoStatistics {
     return { ...this._stats };
   }
 
@@ -356,7 +357,7 @@ export class DoggoHomeEngine extends IdleGameEngine {
   /**
    * 声望重置
    */
-  prestige(): number {
+  performPrestige(): number {
     const treats = this.getResource('treats');
     if (!treats || this._stats.totalTreatsEarned < PRESTIGE_MIN_TOTAL_TREATS) return 0;
 
@@ -943,7 +944,7 @@ export class DoggoHomeEngine extends IdleGameEngine {
         break;
       case 'p':
       case 'P':
-        this.prestige();
+        this.performPrestige();
         break;
     }
   }
