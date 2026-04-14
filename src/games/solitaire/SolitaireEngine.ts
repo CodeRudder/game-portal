@@ -357,15 +357,29 @@ export class SolitaireEngine extends GameEngine {
         const cx = TABLEAU_X_START + col * TABLEAU_GAP;
         if (canvasX >= cx && canvasX < cx + CARD_WIDTH) {
           const pile = this._tableau[col];
-          // 从底部向上检查每张牌
+          if (pile.length === 0) {
+            // 空列
+            if (canvasY >= TABLEAU_Y && canvasY < TABLEAU_Y + CARD_HEIGHT) {
+              return { area: 'tableau', col, row: -1 };
+            }
+            continue;
+          }
+          // 预计算每张牌的 Y 位置（与渲染逻辑一致：累积偏移）
+          const cardYs: number[] = [];
+          let y = TABLEAU_Y;
+          for (let i = 0; i < pile.length; i++) {
+            cardYs[i] = y;
+            y += pile[i].faceUp ? TABLEAU_OVERLAP_FACE_UP : TABLEAU_OVERLAP_FACE_DOWN;
+          }
+          // 从底部向上检查每张牌（最底部的牌在最上层，优先命中）
           for (let i = pile.length - 1; i >= 0; i--) {
-            const cy = TABLEAU_Y + i * (pile[i].faceUp ? TABLEAU_OVERLAP_FACE_UP : TABLEAU_OVERLAP_FACE_DOWN);
+            const cy = cardYs[i];
             if (canvasY >= cy && canvasY < cy + CARD_HEIGHT) {
               return { area: 'tableau', col, row: i };
             }
           }
-          // 空列或列底部空白区域
-          if (canvasY >= TABLEAU_Y && canvasY < TABLEAU_Y + CARD_HEIGHT) {
+          // 点击区域在所有牌之下但仍在列范围内
+          if (canvasY >= TABLEAU_Y) {
             return { area: 'tableau', col, row: -1 };
           }
         }
@@ -743,7 +757,7 @@ export class SolitaireEngine extends GameEngine {
         }
         break;
       case 'tableau':
-        placed = this.tryPlaceOnTableau(firstCard, this._cursorCol);
+        placed = this.tryPlaceOnTableau(this._selectedCards, this._cursorCol);
         break;
       case 'waste':
         // 不能放到 waste
@@ -787,19 +801,20 @@ export class SolitaireEngine extends GameEngine {
   }
 
   /** 尝试放到 tableau */
-  private tryPlaceOnTableau(card: Card, col: number): boolean {
+  private tryPlaceOnTableau(cards: Card[], col: number): boolean {
     const pile = this._tableau[col];
+    const firstCard = cards[0];
     if (pile.length === 0) {
-      if (card.rank !== 'K') return false;
-      pile.push(card);
+      if (firstCard.rank !== 'K') return false;
+      pile.push(...cards);
       // 从 foundation 移回不扣分（只有放到 foundation 再移回才扣分，这里不处理）
       return true;
     }
     const topCard = pile[pile.length - 1];
     if (!topCard.faceUp) return false;
-    if (isRedSuit(card.suit) !== isRedSuit(topCard.suit)
-      && rankValue(card.rank) === rankValue(topCard.rank) - 1) {
-      pile.push(card);
+    if (isRedSuit(firstCard.suit) !== isRedSuit(topCard.suit)
+      && rankValue(firstCard.rank) === rankValue(topCard.rank) - 1) {
+      pile.push(...cards);
       return true;
     }
     return false;

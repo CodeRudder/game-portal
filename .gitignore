@@ -6,7 +6,7 @@ dist/
 build/
 
 vitest_out.txt
-
+test*.txt
 
 # Environment
 .env

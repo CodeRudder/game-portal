@@ -1503,4 +1503,758 @@ describe('SolitaireEngine', () => {
       expect(SCORE_FOUNDATION_BACK).toBe(-15);
     });
   });
+
+  // ========== 鼠标交互：hitTest 区域判定 ==========
+
+  describe('hitTest 区域判定', () => {
+    // 布局常量（与 constants.ts 一致）
+    const STOCK_X = 15;
+    const WASTE_X = 83; // STOCK_X + CARD_WIDTH(60) + CARD_GAP(8)
+    const FOUNDATION_X_START = 275;
+    const FOUNDATION_GAP = 68; // CARD_WIDTH(60) + CARD_GAP(8)
+    const TABLEAU_X_START = 15;
+    const TABLEAU_GAP = 65;
+    const TOP_ROW_Y = 10;
+    const TABLEAU_Y = 115;
+    const CARD_WIDTH = 60;
+    const CARD_HEIGHT = 84;
+    const TABLEAU_OVERLAP_FACE_UP = 22;
+    const TABLEAU_OVERLAP_FACE_DOWN = 16;
+
+    // TC-M01: stock 区域命中
+    it('TC-M01: stock 区域命中 → {area:"stock", col:0, row:0}', () => {
+      startEngine(engine);
+      const result = (engine as any).hitTest(STOCK_X + 1, TOP_ROW_Y + 1);
+      expect(result).toEqual({ area: 'stock', col: 0, row: 0 });
+    });
+
+    // TC-M02: waste 区域命中
+    it('TC-M02: waste 区域命中 → {area:"waste", col:0, row:0}', () => {
+      startEngine(engine);
+      const result = (engine as any).hitTest(WASTE_X + 5, TOP_ROW_Y + 10);
+      expect(result).toEqual({ area: 'waste', col: 0, row: 0 });
+    });
+
+    // TC-M03: foundation 各列命中
+    it('TC-M03: foundation 各列命中 → {area:"foundation", col:i, row:0}', () => {
+      startEngine(engine);
+      for (let i = 0; i < 4; i++) {
+        const fx = FOUNDATION_X_START + i * FOUNDATION_GAP;
+        const result = (engine as any).hitTest(fx + 10, TOP_ROW_Y + 20);
+        expect(result).toEqual({ area: 'foundation', col: i, row: 0 });
+      }
+    });
+
+    // TC-M04: tableau 各列命中
+    it('TC-M04: tableau 各列命中 → {area:"tableau", col, row}', () => {
+      startEngine(engine);
+      for (let col = 0; col < 7; col++) {
+        const cx = TABLEAU_X_START + col * TABLEAU_GAP;
+        const result = (engine as any).hitTest(cx + 5, TABLEAU_Y + 5);
+        // 各列有牌，顶牌面朝上，应命中 row >= 0
+        expect(result).not.toBeNull();
+        expect(result.area).toBe('tableau');
+        expect(result.col).toBe(col);
+        expect(result.row).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    // TC-M05: tableau 牌叠中间行命中（需计算累积 Y 偏移）
+    it('TC-M05: tableau 牌叠中间行命中（累积 Y 偏移）', () => {
+      startEngine(engine);
+      // 第 6 列有 7 张牌：前 6 张面朝下，第 7 张面朝上
+      const pile = getTableau(engine)[6];
+      expect(pile.length).toBe(7);
+
+      // 计算第 3 张牌（index=2, 面朝下）的 Y 位置
+      let y = TABLEAU_Y;
+      for (let i = 0; i < 2; i++) {
+        y += pile[i].faceUp ? TABLEAU_OVERLAP_FACE_UP : TABLEAU_OVERLAP_FACE_DOWN;
+      }
+      // y 现在是第 2 张牌（index=2）的顶部位置
+      const cx = TABLEAU_X_START + 6 * TABLEAU_GAP;
+      const result = (engine as any).hitTest(cx + 10, y + 5);
+      expect(result).not.toBeNull();
+      expect(result.area).toBe('tableau');
+      expect(result.col).toBe(6);
+      expect(result.row).toBe(2);
+    });
+
+    // TC-M06: tableau 空列命中
+    it('TC-M06: tableau 空列命中 → {area:"tableau", col, row:-1}', () => {
+      startEngine(engine);
+      // 清空第 0 列
+      getTableau(engine)[0] = [];
+      const cx = TABLEAU_X_START + 0 * TABLEAU_GAP;
+      const result = (engine as any).hitTest(cx + 10, TABLEAU_Y + 10);
+      expect(result).toEqual({ area: 'tableau', col: 0, row: -1 });
+    });
+
+    // TC-M07: 空白区域返回 null
+    it('TC-M07: 空白区域返回 null', () => {
+      startEngine(engine);
+      // 点击两个区域之间的空白
+      const result = (engine as any).hitTest(200, 50);
+      expect(result).toBeNull();
+    });
+
+    // TC-M08: 边界坐标精确命中
+    it('TC-M08: 边界坐标精确命中', () => {
+      startEngine(engine);
+      // stock 左上角精确命中
+      const r1 = (engine as any).hitTest(STOCK_X, TOP_ROW_Y);
+      expect(r1).toEqual({ area: 'stock', col: 0, row: 0 });
+
+      // stock 右边界外一点 → 不命中 stock
+      const r2 = (engine as any).hitTest(STOCK_X + CARD_WIDTH, TOP_ROW_Y);
+      expect(r2 === null || r2.area !== 'stock').toBe(true);
+
+      // stock 下边界外一点 → 不命中 stock
+      const r3 = (engine as any).hitTest(STOCK_X + 5, TOP_ROW_Y + CARD_HEIGHT);
+      expect(r3 === null || r3.area !== 'stock').toBe(true);
+    });
+  });
+
+  // ========== 鼠标交互：handleClick ==========
+
+  describe('handleClick', () => {
+    const STOCK_X = 15;
+    const WASTE_X = 83;
+    const FOUNDATION_X_START = 275;
+    const FOUNDATION_GAP = 68;
+    const TABLEAU_X_START = 15;
+    const TABLEAU_GAP = 65;
+    const TOP_ROW_Y = 10;
+    const TABLEAU_Y = 115;
+
+    // TC-M10: 点击 stock 翻牌
+    it('TC-M10: 点击 stock 翻牌（waste+1, stock-1）', () => {
+      startEngine(engine);
+      const prevStock = engine.stock.length;
+      const prevWaste = engine.waste.length;
+
+      engine.handleClick(STOCK_X + 10, TOP_ROW_Y + 10);
+
+      expect(engine.waste.length).toBe(prevWaste + 1);
+      expect(engine.stock.length).toBe(prevStock - 1);
+    });
+
+    // TC-M11: 点击 waste 选牌
+    it('TC-M11: 点击 waste 选牌（selection.source==="waste"）', () => {
+      startEngine(engine);
+      engine.drawFromStock(); // 确保 waste 有牌
+
+      engine.handleClick(WASTE_X + 10, TOP_ROW_Y + 10);
+
+      expect(engine.selection).not.toBeNull();
+      expect(engine.selection!.source).toBe('waste');
+    });
+
+    // TC-M12: 点击空 waste 无操作
+    it('TC-M12: 点击空 waste 无操作', () => {
+      startEngine(engine);
+      // waste 初始为空
+      expect(engine.waste.length).toBe(0);
+
+      engine.handleClick(WASTE_X + 10, TOP_ROW_Y + 10);
+
+      expect(engine.selection).toBeNull();
+    });
+
+    // TC-M13: 已选牌后点击 foundation 放置
+    it('TC-M13: 已选牌后点击 foundation 放置', () => {
+      startEngine(engine);
+      // 准备：waste 放一张 A♥
+      const ace = makeCard('hearts', 'A');
+      getWaste(engine).push(ace);
+
+      // 先选中 waste 牌
+      engine.handleClick(WASTE_X + 10, TOP_ROW_Y + 10);
+      expect(engine.selection).not.toBeNull();
+
+      // 再点击 foundation[0] 放置
+      const fx = FOUNDATION_X_START + 0 * FOUNDATION_GAP;
+      engine.handleClick(fx + 10, TOP_ROW_Y + 10);
+
+      expect(engine.foundations[0].length).toBe(1);
+      expect(engine.selection).toBeNull(); // 放置后清除选择
+    });
+
+    // TC-M14: 已选牌后点击 tableau 放置
+    it('TC-M14: 已选牌后点击 tableau 放置', () => {
+      startEngine(engine);
+      // 准备：waste 放一张 Q♠，tableau[0] 放一张 K♥
+      const king = makeCard('hearts', 'K');
+      const queen = makeCard('spades', 'Q');
+      getTableau(engine)[0] = [king];
+      getWaste(engine).push(queen);
+
+      // 先选中 waste 牌
+      engine.handleClick(WASTE_X + 10, TOP_ROW_Y + 10);
+      expect(engine.selection).not.toBeNull();
+
+      // 再点击 tableau[0] 放置
+      const tx = TABLEAU_X_START + 0 * TABLEAU_GAP;
+      engine.handleClick(tx + 10, TABLEAU_Y + 10);
+
+      expect(engine.tableau[0].length).toBe(2);
+      expect(engine.selection).toBeNull(); // 放置后清除选择
+    });
+
+    // TC-M15: 点击空白区域取消选择
+    it('TC-M15: 点击空白区域取消选择', () => {
+      startEngine(engine);
+      engine.drawFromStock();
+
+      // 先选中 waste 牌
+      engine.handleClick(WASTE_X + 10, TOP_ROW_Y + 10);
+      expect(engine.selection).not.toBeNull();
+
+      // 点击空白区域（两个区域之间的间隙）
+      engine.handleClick(200, 50);
+
+      expect(engine.selection).toBeNull();
+    });
+
+    // TC-M16: 拖拽中忽略 click
+    it('TC-M16: 拖拽中忽略 click（_isDragging=true 时 handleClick 无效果）', () => {
+      startEngine(engine);
+      const prevStock = engine.stock.length;
+
+      // 设置拖拽状态
+      (engine as any)._isDragging = true;
+
+      engine.handleClick(STOCK_X + 10, TOP_ROW_Y + 10);
+
+      // stock 不应减少（click 被忽略）
+      expect(engine.stock.length).toBe(prevStock);
+      expect(engine.waste.length).toBe(0);
+
+      // 恢复
+      (engine as any)._isDragging = false;
+    });
+  });
+
+  // ========== 鼠标交互：handleDoubleClick ==========
+
+  describe('handleDoubleClick', () => {
+    const WASTE_X = 83;
+    const FOUNDATION_X_START = 275;
+    const FOUNDATION_GAP = 68;
+    const TABLEAU_X_START = 15;
+    const TABLEAU_GAP = 65;
+    const TOP_ROW_Y = 10;
+    const TABLEAU_Y = 115;
+
+    // TC-M40: 双击 waste 牌自动到 foundation
+    it('TC-M40: 双击 waste 牌自动到 foundation', () => {
+      startEngine(engine);
+      // 准备：waste 放一张 A♥
+      const ace = makeCard('hearts', 'A');
+      getWaste(engine).push(ace);
+
+      engine.handleClick(WASTE_X + 10, TOP_ROW_Y + 10); // 第一次 click
+      engine.handleDoubleClick(WASTE_X + 10, TOP_ROW_Y + 10);
+
+      // A 应该被移到 foundation
+      expect(engine.foundations[0].length).toBe(1);
+      expect(engine.waste.length).toBe(0);
+    });
+
+    // TC-M41: 双击 tableau 顶牌自动到 foundation
+    it('TC-M41: 双击 tableau 顶牌自动到 foundation', () => {
+      startEngine(engine);
+      // 准备：tableau[0] 放一张 A♠
+      const ace = makeCard('spades', 'A');
+      getTableau(engine)[0] = [ace];
+
+      const tx = TABLEAU_X_START + 0 * TABLEAU_GAP;
+      engine.handleDoubleClick(tx + 10, TABLEAU_Y + 10);
+
+      // A 应该被移到 foundation
+      expect(engine.foundations[0].length).toBe(1);
+      expect(engine.tableau[0].length).toBe(0);
+    });
+
+    // TC-M42: 双击非顶牌无效果
+    it('TC-M42: 双击非顶牌无效果', () => {
+      startEngine(engine);
+      // 准备：tableau[0] 放两张面朝上的牌
+      const king = makeCard('hearts', 'K');
+      const ace = makeCard('spades', 'A');
+      getTableau(engine)[0] = [king, ace];
+
+      const tx = TABLEAU_X_START + 0 * TABLEAU_GAP;
+      // 双击第一张牌（index=0, 非顶牌）的位置
+      engine.handleDoubleClick(tx + 10, TABLEAU_Y + 10);
+
+      // 不应移动任何牌到 foundation
+      const totalFoundation = engine.foundations.reduce((s, f) => s + f.length, 0);
+      expect(totalFoundation).toBe(0);
+    });
+
+    // TC-M43: 双击面朝下牌无效果
+    it('TC-M43: 双击面朝下牌无效果', () => {
+      startEngine(engine);
+      // 准备：tableau[0] 只有一张面朝下的牌
+      const card = makeCard('hearts', 'A', false);
+      getTableau(engine)[0] = [card];
+
+      const tx = TABLEAU_X_START + 0 * TABLEAU_GAP;
+      engine.handleDoubleClick(tx + 10, TABLEAU_Y + 10);
+
+      // 不应移动任何牌
+      expect(engine.foundations[0].length).toBe(0);
+    });
+
+    // TC-M44: 找不到合适 foundation 时无操作
+    it('TC-M44: 找不到合适 foundation 时无操作', () => {
+      startEngine(engine);
+      // 准备：waste 放一张非 A 的牌（不能放到空 foundation）
+      const two = makeCard('hearts', '2');
+      getWaste(engine).push(two);
+
+      engine.handleDoubleClick(WASTE_X + 10, TOP_ROW_Y + 10);
+
+      // 不应移动到 foundation
+      expect(engine.foundations[0].length).toBe(0);
+      expect(engine.waste.length).toBe(1);
+    });
+
+    // TC-M45: gameover 状态不响应双击
+    it('TC-M45: gameover 状态不响应双击', () => {
+      startEngine(engine);
+      // 准备：waste 放一张 A♥
+      const ace = makeCard('hearts', 'A');
+      getWaste(engine).push(ace);
+
+      // 设置为 gameover 状态
+      (engine as any)._isWin = true;
+      (engine as any)._status = 'gameover';
+
+      engine.handleDoubleClick(WASTE_X + 10, TOP_ROW_Y + 10);
+
+      // 不应移动任何牌
+      expect(engine.foundations[0].length).toBe(0);
+      expect(engine.waste.length).toBe(1);
+
+      // 恢复状态
+      (engine as any)._isWin = false;
+      (engine as any)._status = 'playing';
+    });
+  });
+
+  // ========== 鼠标拖拽流程测试 ==========
+
+  describe('鼠标拖拽流程', () => {
+    // 坐标常量（与 constants.ts 一致，其他 describe 块也采用本地定义）
+    const STOCK_X = 15;
+    const WASTE_X = 83;
+    const FOUNDATION_X_START = 275;
+    const FOUNDATION_GAP = 68; // CARD_WIDTH(60) + CARD_GAP(8)
+    const TABLEAU_X_START = 15;
+    const TABLEAU_GAP = 65;
+    const TOP_ROW_Y = 10;
+    const TABLEAU_Y = 115;
+    const TABLEAU_OVERLAP_FACE_UP = 22;
+    const CARD_WIDTH = 60;
+    const CARD_HEIGHT = 84;
+
+    // 区域中心坐标（方便点击/拖拽定位）
+    const STOCK_CX = STOCK_X + CARD_WIDTH / 2;
+    const WASTE_CX = WASTE_X + CARD_WIDTH / 2;
+    const TOP_ROW_CY = TOP_ROW_Y + CARD_HEIGHT / 2;
+    const FOUND0_CX = FOUNDATION_X_START + CARD_WIDTH / 2;
+    const FOUND1_CX = FOUNDATION_X_START + 1 * FOUNDATION_GAP + CARD_WIDTH / 2;
+    const TAB0_CX = TABLEAU_X_START + 0 * TABLEAU_GAP + CARD_WIDTH / 2;
+    const TAB1_CX = TABLEAU_X_START + 1 * TABLEAU_GAP + CARD_WIDTH / 2;
+    const TAB3_CX = TABLEAU_X_START + 3 * TABLEAU_GAP + CARD_WIDTH / 2;
+    const TAB6_CX = TABLEAU_X_START + 6 * TABLEAU_GAP + CARD_WIDTH / 2;
+
+    // ---------- handleMouseDown ----------
+
+    it('TC-M20: 从 waste 拖拽单牌', () => {
+      startEngine(engine);
+      // 翻一张牌到 waste
+      engine.drawFromStock();
+
+      // 点击 waste 中心
+      engine.handleMouseDown(WASTE_CX, TOP_ROW_CY);
+
+      expect((engine as any)._isDragging).toBe(true);
+      expect((engine as any)._dragCards.length).toBe(1);
+      expect((engine as any)._dragSource.area).toBe('waste');
+      expect((engine as any)._dragCards[0].faceUp).toBe(true);
+    });
+
+    it('TC-M21: 从 foundation 拖拽单牌', () => {
+      startEngine(engine);
+      // 放一张 A♥ 到 foundation[0]
+      const card = makeCard('hearts', 'A');
+      getFoundations(engine)[0].push(card);
+
+      // 点击 foundation[0] 中心
+      engine.handleMouseDown(FOUND0_CX, TOP_ROW_CY);
+
+      expect((engine as any)._isDragging).toBe(true);
+      expect((engine as any)._dragCards.length).toBe(1);
+      expect((engine as any)._dragSource.area).toBe('foundation');
+      expect((engine as any)._dragSource.col).toBe(0);
+    });
+
+    it('TC-M22: 从 tableau 拖拽单牌（顶牌）', () => {
+      startEngine(engine);
+      // 第 0 列有 1 张面朝上的牌（发牌后顶牌朝上）
+      const pile = getTableau(engine)[0];
+      expect(pile.length).toBeGreaterThanOrEqual(1);
+      const topCard = pile[pile.length - 1];
+      expect(topCard.faceUp).toBe(true);
+
+      // 点击第 0 列顶牌中心（只有 1 张牌时 Y = TABLEAU_Y + 42）
+      const topCardY = TABLEAU_Y + 42;
+      engine.handleMouseDown(TAB0_CX, topCardY);
+
+      expect((engine as any)._isDragging).toBe(true);
+      expect((engine as any)._dragCards.length).toBe(1);
+      expect((engine as any)._dragSource.area).toBe('tableau');
+      expect((engine as any)._dragSource.col).toBe(0);
+    });
+
+    it('TC-M23: 从 tableau 拖拽多牌（从中间拾取）', () => {
+      startEngine(engine);
+      // 手动构建一个多牌场景：第 0 列放 3 张面朝上的牌
+      const pile = getTableau(engine)[0];
+      pile.length = 0;
+      pile.push(makeCard('hearts', 'K'));  // row 0, faceUp, Y=115
+      pile.push(makeCard('spades', 'Q'));  // row 1, faceUp, Y=137
+      pile.push(makeCard('hearts', 'J'));  // row 2, faceUp, Y=159
+
+      // hitTest 从底部向上扫描，row 2 范围 [159,243]，row 1 范围 [137,221]
+      // 要命中 row 1 而非 row 2，Y 必须在 [137, 159) 内
+      const row1ExposedY = TABLEAU_Y + TABLEAU_OVERLAP_FACE_UP + 5; // 142
+      engine.handleMouseDown(TAB0_CX, row1ExposedY);
+
+      expect((engine as any)._isDragging).toBe(true);
+      // 从 row 1 开始拾取，应该拿到 2 张牌（Q♠ 和 J♥）
+      expect((engine as any)._dragCards.length).toBe(2);
+      expect((engine as any)._dragCards[0].rank).toBe('Q');
+      expect((engine as any)._dragCards[1].rank).toBe('J');
+      expect((engine as any)._dragSource.area).toBe('tableau');
+      expect((engine as any)._dragSource.row).toBe(1);
+    });
+
+    it('TC-M24: stock 不支持拖拽', () => {
+      startEngine(engine);
+      // 点击 stock 中心
+      engine.handleMouseDown(STOCK_CX, TOP_ROW_CY);
+
+      expect((engine as any)._isDragging).toBe(false);
+      expect((engine as any)._dragCards.length).toBe(0);
+    });
+
+    it('TC-M25: 面朝下的牌不支持拖拽', () => {
+      startEngine(engine);
+      // 第 6 列有 7 张牌，前 6 张面朝下，最后 1 张面朝上
+      const pile = getTableau(engine)[6];
+      expect(pile.length).toBe(7);
+      expect(pile[0].faceUp).toBe(false);
+
+      // 计算第 0 张牌（面朝下）的 Y 中心：TABLEAU_Y + 42
+      const row0Y = TABLEAU_Y + 42;
+      engine.handleMouseDown(TAB6_CX, row0Y);
+
+      // 面朝下的牌不能拖拽
+      expect((engine as any)._isDragging).toBe(false);
+    });
+
+    it('TC-M26: 空区域不拖拽（空 waste / 空 foundation / 空 tableau）', () => {
+      startEngine(engine);
+
+      // 空 waste（初始就是空的）
+      expect(getWaste(engine).length).toBe(0);
+      engine.handleMouseDown(WASTE_CX, TOP_ROW_CY);
+      expect((engine as any)._isDragging).toBe(false);
+
+      // 空 foundation[0]
+      expect(getFoundations(engine)[0].length).toBe(0);
+      engine.handleMouseDown(FOUND0_CX, TOP_ROW_CY);
+      expect((engine as any)._isDragging).toBe(false);
+
+      // 空 tableau 列
+      getTableau(engine)[0] = [];
+      engine.handleMouseDown(TAB0_CX, TABLEAU_Y + 42);
+      expect((engine as any)._isDragging).toBe(false);
+    });
+
+    // ---------- handleMouseMove ----------
+
+    it('TC-M27: 拖拽中移动鼠标更新 _dragX/_dragY', () => {
+      startEngine(engine);
+      engine.drawFromStock();
+
+      // 开始拖拽
+      engine.handleMouseDown(WASTE_CX, TOP_ROW_CY);
+      expect((engine as any)._isDragging).toBe(true);
+
+      // 移动鼠标到新位置
+      engine.handleMouseMove(200, 300);
+
+      // _dragX = canvasX - CARD_WIDTH/2 = 200 - 30 = 170
+      // _dragY = canvasY - CARD_HEIGHT/2 = 300 - 42 = 258
+      expect((engine as any)._dragX).toBe(200 - 30);
+      expect((engine as any)._dragY).toBe(300 - 42);
+
+      // 再次移动
+      engine.handleMouseMove(250, 350);
+      expect((engine as any)._dragX).toBe(250 - 30);
+      expect((engine as any)._dragY).toBe(350 - 42);
+    });
+
+    it('TC-M28: 非拖拽状态下移动鼠标更新 _hoverTarget', () => {
+      startEngine(engine);
+      expect((engine as any)._isDragging).toBe(false);
+
+      // 移动到 waste 区域
+      engine.handleMouseMove(WASTE_CX, TOP_ROW_CY);
+      expect((engine as any)._hoverTarget).not.toBeNull();
+      expect((engine as any)._hoverTarget.area).toBe('waste');
+
+      // 移动到 foundation[1]
+      engine.handleMouseMove(FOUND1_CX, TOP_ROW_CY);
+      expect((engine as any)._hoverTarget.area).toBe('foundation');
+      expect((engine as any)._hoverTarget.col).toBe(1);
+
+      // 移动到 tableau col 3
+      engine.handleMouseMove(TAB3_CX, TABLEAU_Y + 42);
+      expect((engine as any)._hoverTarget.area).toBe('tableau');
+      expect((engine as any)._hoverTarget.col).toBe(3);
+    });
+
+    it('TC-M29: 拖拽中未调用 handleMouseMove 时坐标保持不变', () => {
+      startEngine(engine);
+      engine.drawFromStock();
+
+      // 开始拖拽
+      engine.handleMouseDown(WASTE_CX, TOP_ROW_CY);
+      const dragXAfterDown = (engine as any)._dragX;
+      const dragYAfterDown = (engine as any)._dragY;
+
+      // 不调用 handleMouseMove，坐标应保持不变
+      expect((engine as any)._dragX).toBe(dragXAfterDown);
+      expect((engine as any)._dragY).toBe(dragYAfterDown);
+
+      // 移动一次后记录
+      engine.handleMouseMove(100, 100);
+      const afterMoveX = (engine as any)._dragX;
+      const afterMoveY = (engine as any)._dragY;
+
+      // 不再调用 handleMouseMove，坐标应保持
+      expect((engine as any)._dragX).toBe(afterMoveX);
+      expect((engine as any)._dragY).toBe(afterMoveY);
+    });
+
+    // ---------- handleMouseUp ----------
+
+    it('TC-M30: 拖拽到 foundation 成功放置（waste→foundation）', () => {
+      startEngine(engine);
+
+      // 在 waste 中放一张 A♥
+      getWaste(engine).push(makeCard('hearts', 'A'));
+
+      // 开始拖拽
+      engine.handleMouseDown(WASTE_CX, TOP_ROW_CY);
+      expect((engine as any)._isDragging).toBe(true);
+
+      // 拖到 foundation[0] 并释放
+      engine.handleMouseMove(FOUND0_CX, TOP_ROW_CY);
+      engine.handleMouseUp(FOUND0_CX, TOP_ROW_CY);
+
+      // 拖拽状态应重置
+      expect((engine as any)._isDragging).toBe(false);
+      // foundation[0] 应该有 A♥
+      expect(getFoundations(engine)[0].length).toBe(1);
+      expect(getFoundations(engine)[0][0].rank).toBe('A');
+      expect(getFoundations(engine)[0][0].suit).toBe('hearts');
+      // waste 应为空
+      expect(getWaste(engine).length).toBe(0);
+    });
+
+    it('TC-M31: 拖拽到 tableau 成功放置（waste→tableau）', () => {
+      startEngine(engine);
+
+      // 准备场景：waste 中放 Q♠，tableau[0] 顶牌为 K♥（红黑交替，值递减）
+      const tabPile = getTableau(engine)[0];
+      tabPile.length = 0;
+      tabPile.push(makeCard('hearts', 'K'));
+      getWaste(engine).push(makeCard('spades', 'Q'));
+
+      // 开始拖拽 waste 中的 Q♠
+      engine.handleMouseDown(WASTE_CX, TOP_ROW_CY);
+      expect((engine as any)._isDragging).toBe(true);
+
+      // 拖到 tableau[0] 并释放（点击 K♥ 下方的位置）
+      const targetY = TABLEAU_Y + TABLEAU_OVERLAP_FACE_UP + 42;
+      engine.handleMouseMove(TAB0_CX, targetY);
+      engine.handleMouseUp(TAB0_CX, targetY);
+
+      // 拖拽状态应重置
+      expect((engine as any)._isDragging).toBe(false);
+      // tableau[0] 应该有 2 张牌：K♥, Q♠
+      expect(getTableau(engine)[0].length).toBe(2);
+      expect(getTableau(engine)[0][1].rank).toBe('Q');
+      expect(getTableau(engine)[0][1].suit).toBe('spades');
+      // waste 应为空
+      expect(getWaste(engine).length).toBe(0);
+    });
+
+    it('TC-M32: 拖拽多牌到 tableau 成功放置（tableau→tableau，2+张牌）', () => {
+      startEngine(engine);
+
+      // 准备场景：
+      // tableau[0]: K♥（红）
+      // tableau[1]: Q♠（黑）, J♥（红）  ← 拖拽 Q♠ 和 J♥ 到 tableau[0]
+      const tab0 = getTableau(engine)[0];
+      const tab1 = getTableau(engine)[1];
+      tab0.length = 0;
+      tab1.length = 0;
+
+      tab0.push(makeCard('hearts', 'K'));  // K♥ 红色
+      tab1.push(makeCard('spades', 'Q'));  // Q♠ 黑色
+      tab1.push(makeCard('hearts', 'J'));  // J♥ 红色
+
+      // 开始拖拽 tableau[1] 的 Q♠（row 0）
+      // 只有 2 张牌，row 0 的 Y = TABLEAU_Y，范围 [115, 199]
+      // row 1 的 Y = TABLEAU_Y + 22 = 137，范围 [137, 221]
+      // hitTest 从底部向上扫描，row 1 先被检查
+      // 要命中 row 0 而非 row 1，Y 必须在 [115, 137) 内
+      const row0ExposedY = TABLEAU_Y + 5; // 120
+      engine.handleMouseDown(TAB1_CX, row0ExposedY);
+
+      // DEBUG
+      console.log('DEBUG _isDragging:', (engine as any)._isDragging);
+      console.log('DEBUG _dragCards length:', (engine as any)._dragCards.length);
+      console.log('DEBUG _dragCards:', (engine as any)._dragCards.map((c: any) => c.rank + c.suit));
+      console.log('DEBUG _dragSource:', JSON.stringify((engine as any)._dragSource));
+      console.log('DEBUG _selection:', JSON.stringify((engine as any)._selection));
+      console.log('DEBUG _selectedCards length:', (engine as any)._selectedCards.length);
+
+      expect((engine as any)._isDragging).toBe(true);
+      expect((engine as any)._dragCards.length).toBe(2); // Q♠ + J♥
+
+      // 拖到 tableau[0]（目标位置是 K♥ 下方）
+      // K♥ 在 tableau[0] 的 row 0，下方区域 Y > TABLEAU_Y + CARD_HEIGHT
+      const targetY = TABLEAU_Y + TABLEAU_OVERLAP_FACE_UP + 42;
+      console.log('DEBUG targetY:', targetY);
+      console.log('DEBUG TAB0_CX:', TAB0_CX);
+
+      // Check hitTest at target
+      const hitResult = (engine as any).hitTest(TAB0_CX, targetY);
+      console.log('DEBUG hitTest result:', JSON.stringify(hitResult));
+
+      engine.handleMouseMove(TAB0_CX, targetY);
+      engine.handleMouseUp(TAB0_CX, targetY);
+
+      console.log('DEBUG after mouseUp tab0 length:', getTableau(engine)[0].length);
+      console.log('DEBUG after mouseUp tab0:', getTableau(engine)[0].map((c: any) => c.rank + c.suit));
+      console.log('DEBUG after mouseUp tab1 length:', getTableau(engine)[1].length);
+      console.log('DEBUG after mouseUp _isDragging:', (engine as any)._isDragging);
+
+      // 拖拽状态应重置
+      expect((engine as any)._isDragging).toBe(false);
+      // tableau[0] 应该有 3 张牌：K♥, Q♠, J♥
+      expect(getTableau(engine)[0].length).toBe(3);
+      expect(getTableau(engine)[0][1].rank).toBe('Q');
+      expect(getTableau(engine)[0][2].rank).toBe('J');
+      // tableau[1] 应为空
+      expect(getTableau(engine)[1].length).toBe(0);
+    });
+
+    it('TC-M33: 拖拽到无效位置取消（hit=null 时牌回到原位）', () => {
+      startEngine(engine);
+
+      // 在 waste 中放一张 A♥
+      getWaste(engine).push(makeCard('hearts', 'A'));
+      const wasteLenBefore = getWaste(engine).length;
+
+      // 开始拖拽
+      engine.handleMouseDown(WASTE_CX, TOP_ROW_CY);
+      expect((engine as any)._isDragging).toBe(true);
+
+      // 释放在画布外/无效区域（坐标超出所有区域）
+      engine.handleMouseMove(0, 0);
+      engine.handleMouseUp(0, 0);
+
+      // 拖拽状态应重置
+      expect((engine as any)._isDragging).toBe(false);
+      // 牌应回到 waste（未被移除）
+      expect(getWaste(engine).length).toBe(wasteLenBefore);
+      expect(getWaste(engine)[wasteLenBefore - 1].rank).toBe('A');
+    });
+
+    it('TC-M34: 拖拽放回原位取消（同列同位置）', () => {
+      startEngine(engine);
+
+      // 在 waste 中放一张牌
+      getWaste(engine).push(makeCard('hearts', 'A'));
+
+      // 开始拖拽 waste
+      engine.handleMouseDown(WASTE_CX, TOP_ROW_CY);
+      expect((engine as any)._isDragging).toBe(true);
+
+      // 释放在同一位置（waste 区域）
+      engine.handleMouseMove(WASTE_CX, TOP_ROW_CY);
+      engine.handleMouseUp(WASTE_CX, TOP_ROW_CY);
+
+      // 拖拽状态应重置
+      expect((engine as any)._isDragging).toBe(false);
+      // 牌应还在 waste（放回原位不移动）
+      expect(getWaste(engine).length).toBe(1);
+      expect(getWaste(engine)[0].rank).toBe('A');
+    });
+
+    it('TC-M35: 无拖拽时调用 handleMouseUp 无效果', () => {
+      startEngine(engine);
+
+      // 确保没有拖拽状态
+      expect((engine as any)._isDragging).toBe(false);
+
+      // 记录当前状态
+      const movesBefore = engine.moves;
+      const wasteBefore = getWaste(engine).length;
+      const foundBefore = getFoundations(engine)[0].length;
+
+      // 直接调用 handleMouseUp（未开始拖拽）
+      engine.handleMouseUp(FOUND0_CX, TOP_ROW_CY);
+
+      // 状态不应有任何变化
+      expect((engine as any)._isDragging).toBe(false);
+      expect(engine.moves).toBe(movesBefore);
+      expect(getWaste(engine).length).toBe(wasteBefore);
+      expect(getFoundations(engine)[0].length).toBe(foundBefore);
+    });
+
+    it('TC-M36: 拖拽后状态完全重置（_isDragging=false, _dragCards=[], _dragSource=null）', () => {
+      startEngine(engine);
+
+      // 在 waste 中放一张 A♥
+      getWaste(engine).push(makeCard('hearts', 'A'));
+
+      // 开始拖拽
+      engine.handleMouseDown(WASTE_CX, TOP_ROW_CY);
+      expect((engine as any)._isDragging).toBe(true);
+      expect((engine as any)._dragCards.length).toBe(1);
+      expect((engine as any)._dragSource).not.toBeNull();
+
+      // 拖到 foundation[0] 并释放
+      engine.handleMouseMove(FOUND0_CX, TOP_ROW_CY);
+      engine.handleMouseUp(FOUND0_CX, TOP_ROW_CY);
+
+      // 所有拖拽状态应完全重置
+      expect((engine as any)._isDragging).toBe(false);
+      expect((engine as any)._dragCards).toEqual([]);
+      expect((engine as any)._dragSource).toBeNull();
+      // _mouseSelection 也应重置
+      expect((engine as any)._mouseSelection).toBeNull();
+    });
+  });
 });

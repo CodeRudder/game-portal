@@ -583,11 +583,8 @@ export class MahjongSolitaireEngine extends GameEngine {
     } else {
       // 检查是否有解
       if (this.findAvailablePair() === null) {
-        // 无解，自动洗牌（如果还有洗牌次数）
-        if (this.shufflesRemaining > 0) {
-          this.shuffle();
-        }
-        // 否则游戏可能卡住（无解且无法洗牌）
+        // 无解，自动洗牌（不扣分，仅重新分配牌面）
+        this.autoShuffle();
       }
     }
   }
@@ -608,6 +605,28 @@ export class MahjongSolitaireEngine extends GameEngine {
 
     // 扣分
     this.addScore(-HINT_PENALTY);
+  }
+
+  /**
+   * 自动洗牌（消除后无解时触发，不扣分、不消耗洗牌次数）
+   */
+  private autoShuffle(): void {
+    this.selectedTileId = null;
+    this.hintState = null;
+
+    // 重新分配牌面，确保有解
+    let attempts = 0;
+    do {
+      this.shuffleFaceIndices();
+      attempts++;
+    } while (this.findAvailablePair() === null && attempts < 100);
+
+    // 如果100次都无法找到有解的排列，游戏结束
+    if (this.findAvailablePair() === null) {
+      this._isWin = false;
+      this._status = 'gameover';
+      this.emit('statusChange', 'gameover');
+    }
   }
 
   /**
