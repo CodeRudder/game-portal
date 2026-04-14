@@ -99,6 +99,15 @@ import { AntKingdomEngine } from '@/games/ant-kingdom/AntKingdomEngine';
 import { DinoRanchEngine } from '@/games/dino-ranch/DinoRanchEngine';
 import { IdleXianxiaEngine } from '@/games/idle-xianxia/IdleXianxiaEngine';
 import { SectRiseEngine } from '@/games/sect-rise/SectRiseEngine';
+import { MemoryMatchEngine } from '@/games/memory-match/MemoryMatchEngine';
+import { GameOfLifeEngine } from '@/games/game-of-life/GameOfLifeEngine';
+import { MinesweeperEngine } from '@/games/minesweeper/MinesweeperEngine';
+import { GomokuEngine } from '@/games/gomoku/GomokuEngine';
+import { DinoRunnerEngine } from '@/games/dino-runner/DinoRunnerEngine';
+import { PipeManiaEngine } from '@/games/pipe-mania/PipeManiaEngine';
+import { MahjongConnectEngine } from '@/games/mahjong-connect/MahjongConnectEngine';
+import { Match3Engine } from '@/games/match-3/Match3Engine';
+import { SudokuEngine } from '@/games/sudoku/SudokuEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
