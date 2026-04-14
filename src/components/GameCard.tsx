@@ -587,6 +587,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-olive-400',
     gradient: 'from-green-700/20 to-yellow-700/20',
   },
+  [GameType.BASKETBALL_HOOPS]: {
+    title: '疯狂投篮',
+    description: '调节角度和力度投篮，连续进球有奖励！空心入网3分，60秒挑战最高分！',
+    icon: '🏀',
+    color: 'text-orange-400',
+    gradient: 'from-orange-600/20 to-red-600/20',
+  },
+  [GameType.FLAPPY_PLANE]: {
+    title: '飞行小鸟',
+    description: '控制飞机穿越障碍物，收集星星加分！速度逐渐递增，挑战你的反应极限！',
+    icon: '✈️',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-blue-600/20',
+  },
+  [GameType.JIGSAW_PUZZLE]: {
+    title: '拼图游戏',
+    description: '将打乱的拼图碎片拖拽到正确位置，完成拼图！4×4网格，多个图案可选，考验你的观察力和耐心！',
+    icon: '🧩',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-orange-600/20',
+  },
+  [GameType.BLOONS]: {
+    title: '打气球',
+    description: '控制准星投掷飞镖击破沿路径移动的气球！放置飞镖猴自动攻击，10关挑战，多种气球类型！',
+    icon: '🎈',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-pink-600/20',
+  },
+  [GameType.CTF]: {
+    title: '抢旗大战',
+    description: '双方队伍在场地中争夺对方旗帜，带回己方基地得分！先得3分获胜，支持AI对手。',
+    icon: '🚩',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-red-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

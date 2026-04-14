@@ -83,6 +83,11 @@ import { TankDuelEngine } from '@/games/tank-duel/TankDuelEngine';
 import { ChineseChessEngine } from '@/games/chinese-chess/ChineseChessEngine';
 import { TempleRunEngine } from '@/games/temple-run/TempleRunEngine';
 import { SenetEngine } from '@/games/senet/SenetEngine';
+import { BasketballHoopsEngine } from '@/games/basketball-hoops/BasketballHoopsEngine';
+import { FlappyPlaneEngine } from '@/games/flappy-plane/FlappyPlaneEngine';
+import { JigsawPuzzleEngine } from '@/games/jigsaw-puzzle/JigsawPuzzleEngine';
+import { BloonsEngine } from '@/games/bloons/BloonsEngine';
+import { CTFEngine } from '@/games/ctf/CTFEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -174,6 +179,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.CHINESE_CHESS: return new ChineseChessEngine();
     case GameTypeEnum.TEMPLE_RUN: return new TempleRunEngine();
     case GameTypeEnum.SENET: return new SenetEngine();
+    case GameTypeEnum.BASKETBALL_HOOPS: return new BasketballHoopsEngine();
+    case GameTypeEnum.FLAPPY_PLANE: return new FlappyPlaneEngine();
+    case GameTypeEnum.JIGSAW_PUZZLE: return new JigsawPuzzleEngine();
+    case GameTypeEnum.BLOONS: return new BloonsEngine();
+    case GameTypeEnum.CTF: return new CTFEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

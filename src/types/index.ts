@@ -83,6 +83,11 @@ export enum GameType {
   CHINESE_CHESS = 'chinese-chess',
   TEMPLE_RUN = 'temple-run',
   SENET = 'senet',
+  BASKETBALL_HOOPS = 'basketball-hoops',
+  FLAPPY_PLANE = 'flappy-plane',
+  JIGSAW_PUZZLE = 'jigsaw-puzzle',
+  BLOONS = 'bloons',
+  CTF = 'ctf',
 }
 
 // ========== 游戏状态枚举 ==========

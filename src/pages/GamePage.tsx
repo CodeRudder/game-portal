@@ -24,6 +24,8 @@ const VALID_TYPES: Record<string, GameType> = {
   'space-invaders': GameType.SPACE_INVADERS,
   'othello': GameType.OTHELLO,
   'checkers': GameType.CHECKERS,
+  'jigsaw-puzzle': GameType.JIGSAW_PUZZLE,
+  'bloons': GameType.BLOONS,
 };
 
 export default function GamePage() {
