@@ -227,6 +227,7 @@ export interface JudgeFeedback {
 
 /** 游戏状态 */
 export interface RhythmGameState {
+  [key: string]: unknown;
   score: number;
   combo: number;
   maxCombo: number;

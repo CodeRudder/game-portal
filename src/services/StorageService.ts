@@ -470,6 +470,16 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键移动 · 空格射击 · 保卫基地消灭敌军',
     difficulty: '中等',
   },
+  [GameType.TANK_DUEL]: {
+    type: GameType.TANK_DUEL,
+    name: '坦克对决',
+    description: '双人坦克对决！在战场上操控坦克，利用地形和弹药，击败对手赢得胜利！',
+    icon: '🔫',
+    color: '#84cc16',
+    gradient: 'from-green-700 to-yellow-700',
+    controls: 'WASD/方向键移动 · 空格射击 · 利用地形掩护',
+    difficulty: '中等',
+  },
   [GameType.MASTERMIND]: {
     type: GameType.MASTERMIND,
     name: '猜数字',

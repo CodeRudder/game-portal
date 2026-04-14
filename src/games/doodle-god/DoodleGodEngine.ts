@@ -26,6 +26,7 @@ import {
 // ========== 游戏状态接口 ==========
 
 export interface DoodleGodState {
+  [key: string]: unknown;
   discoveredIds: string[];
   selectedSlot: SlotType;
   firstElementId: string | null;

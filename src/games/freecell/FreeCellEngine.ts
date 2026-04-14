@@ -48,6 +48,7 @@ import {
 
 // ========== 游戏状态接口 ==========
 export interface FreeCellState {
+  [key: string]: unknown;
   tableau: Card[][];       // 8列牌
   freeCells: (Card | null)[]; // 4个自由单元格
   foundations: (Card | null)[][];  // 4个基础堆（每堆可能为空或有多张已排序的牌）
@@ -943,9 +944,9 @@ export class FreeCellEngine extends GameEngine {
 
   getState(): Record<string, unknown> {
     return {
-      tableau: this.tableau.map(col => col.map(c => ({ suit: c.suit, rank: c.rank }))),
-      freeCells: this.freeCells.map(c => c ? { suit: c.suit, rank: c.rank } : null),
-      foundations: this.foundations.map(pile => pile.map(c => ({ suit: c.suit, rank: c.rank }))),
+      tableau: this.tableau.map(col => col.map(c => ({ suit: c.suit, rank: c.rank, faceUp: c.faceUp }))),
+      freeCells: this.freeCells.map(c => c ? { suit: c.suit, rank: c.rank, faceUp: c.faceUp } : null),
+      foundations: this.foundations.map(pile => pile.map(c => ({ suit: c.suit, rank: c.rank, faceUp: c.faceUp }))),
       selected: this.selected,
       cursor: this.cursor,
       moveCount: this.moveCount,

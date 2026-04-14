@@ -917,7 +917,7 @@ export class ChessEngine extends GameEngine {
         this.validMoves = [];
 
         // AI 回合
-        if (!this.gameOverFlag && this.currentTurn === Color.BLACK) {
+        if (!this.gameOverFlag && (this.currentTurn as string) === Color.BLACK) {
           // 使用 setTimeout 让渲染有机会更新
           setTimeout(() => {
             if (this._status === 'playing' && !this.gameOverFlag) {
