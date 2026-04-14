@@ -73,6 +73,11 @@ export enum GameType {
   HEX = 'hex',
   RHYTHM = 'rhythm',
   DOODLE_GOD = 'doodle-god',
+  SLITHER_IO = 'slither-io',
+  CHESS = 'chess',
+  STICK_FIGHTER = 'stick-fighter',
+  FREECELL = 'freecell',
+  FOLD_PUZZLE = 'fold-puzzle',
 }
 
 // ========== 游戏状态枚举 ==========

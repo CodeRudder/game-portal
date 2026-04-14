@@ -517,6 +517,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-purple-400',
     gradient: 'from-purple-600/20 to-violet-600/20',
   },
+  [GameType.CHESS]: {
+    title: '国际象棋',
+    description: '经典国际象棋，六种棋子各展所长。王车易位、吃过路兵、兵升变，挑战智能AI对手！',
+    icon: '♔',
+    color: 'text-purple-400',
+    gradient: 'from-purple-600/20 to-indigo-600/20',
+  },
+  [GameType.STICK_FIGHTER]: {
+    title: '双人格斗',
+    description: '火柴人格斗对战！拳击、踢腿、防御、跳跃，击败对手赢得胜利！支持双人对战和AI模式！',
+    icon: '🥊',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-orange-600/20',
+  },
+  [GameType.SLITHER_IO]: {
+    title: '虫虫大作战',
+    description: '控制虫子吃食物变长，包围对手使其撞上你的身体！Shift 加速消耗身体，策略与操作并重！',
+    icon: '🐛',
+    color: 'text-lime-400',
+    gradient: 'from-lime-600/20 to-green-600/20',
+  },
+  [GameType.FREECELL]: {
+    title: '空当接龙',
+    description: '经典 FreeCell 纸牌！利用4个自由单元格和4个基础堆，将52张牌按花色从A到K完成排序！',
+    icon: '🂠',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-teal-600/20',
+  },
+  [GameType.FOLD_PUZZLE]: {
+    title: '折纸拼图',
+    description: '彩色网格纸片，通过折叠使其匹配目标图案！选择折线和方向，考验你的空间思维！',
+    icon: '📄',
+    color: 'text-orange-400',
+    gradient: 'from-orange-600/20 to-yellow-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

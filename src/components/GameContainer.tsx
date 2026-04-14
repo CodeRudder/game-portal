@@ -73,6 +73,11 @@ import { MiniGoEngine } from '@/games/mini-go/MiniGoEngine';
 import { HexEngine } from '@/games/hex/HexEngine';
 import { RhythmEngine } from '@/games/rhythm/RhythmEngine';
 import { DoodleGodEngine } from '@/games/doodle-god/DoodleGodEngine';
+import { SlitherIoEngine } from '@/games/slither-io/SlitherIoEngine';
+import { ChessEngine } from '@/games/chess/ChessEngine';
+import { StickFighterEngine } from '@/games/stick-fighter/StickFighterEngine';
+import { FreeCellEngine } from '@/games/freecell/FreeCellEngine';
+import { FoldPuzzleEngine } from '@/games/fold-puzzle/FoldPuzzleEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -154,6 +159,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.HEX: return new HexEngine();
     case GameTypeEnum.RHYTHM: return new RhythmEngine();
     case GameTypeEnum.DOODLE_GOD: return new DoodleGodEngine();
+    case GameTypeEnum.SLITHER_IO: return new SlitherIoEngine();
+    case GameTypeEnum.CHESS: return new ChessEngine();
+    case GameTypeEnum.STICK_FIGHTER: return new StickFighterEngine();
+    case GameTypeEnum.FREECELL: return new FreeCellEngine();
+    case GameTypeEnum.FOLD_PUZZLE: return new FoldPuzzleEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
