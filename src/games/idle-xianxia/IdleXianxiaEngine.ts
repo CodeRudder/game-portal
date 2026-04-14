@@ -676,9 +676,17 @@ export class IdleXianxiaEngine extends IdleGameEngine {
       }
     }
     if (state.upgrades) {
-      for (const [id, level] of Object.entries(state.upgrades)) {
+      for (const [id, value] of Object.entries(state.upgrades)) {
         const upgrade = this.upgrades.get(id);
-        if (upgrade) upgrade.level = level;
+        if (upgrade) {
+          // Handle both number (level only) and object ({ level, unlocked }) formats
+          if (typeof value === 'number') {
+            upgrade.level = value;
+          } else if (value && typeof value === 'object' && 'level' in value) {
+            upgrade.level = (value as { level: number }).level;
+            if ('unlocked' in value) upgrade.unlocked = (value as { unlocked: boolean }).unlocked;
+          }
+        }
       }
     }
     if (state.prestige) this.prestige = { ...state.prestige };

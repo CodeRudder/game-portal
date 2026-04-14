@@ -75,7 +75,7 @@ export class SectRiseEngine extends IdleGameEngine {
   /** 弟子状态 */
   private _disciples: DiscipleState[] = DISCIPLES.map((d) => ({
     id: d.id,
-    unlocked: d.id === 'outer-disciple', // 外门弟子初始解锁
+    unlocked: d.id === 'outer', // 外门弟子初始解锁
   }));
 
   /** 当前选中的建筑索引 */
@@ -194,7 +194,7 @@ export class SectRiseEngine extends IdleGameEngine {
           target: b.productionResource,
           value: b.baseProduction,
         },
-        unlocked: b.id === 'main-hall', // 主殿初始解锁
+        unlocked: b.id === 'stone-mine', // 灵石矿场初始解锁
         requires: b.requires,
         icon: b.icon,
       }))
@@ -203,7 +203,7 @@ export class SectRiseEngine extends IdleGameEngine {
     // 重置状态
     this._disciples = DISCIPLES.map((d) => ({
       id: d.id,
-      unlocked: d.id === 'outer-disciple',
+      unlocked: d.id === 'outer',
     }));
     this._selectedIndex = 0;
     this._stats = {
@@ -628,9 +628,9 @@ export class SectRiseEngine extends IdleGameEngine {
    * 检查资源解锁条件
    */
   private checkResourceUnlocks(): void {
-    // 仙草：主殿等级 >= 5 时解锁
-    const mainHall = this.upgrades.get('main-hall');
-    if (mainHall && mainHall.level >= 5) {
+    // 仙草：灵石矿场等级 >= 5 时解锁
+    const stoneMine = this.upgrades.get('stone-mine');
+    if (stoneMine && stoneMine.level >= 5) {
       const herb = this.resources.get('herb');
       if (herb && !herb.unlocked) {
         herb.unlocked = true;
@@ -638,9 +638,9 @@ export class SectRiseEngine extends IdleGameEngine {
       }
     }
 
-    // 法器：锻造坊等级 >= 1 时解锁
-    const forge = this.upgrades.get('forge');
-    if (forge && forge.level >= 1) {
+    // 法器：炼丹房等级 >= 1 时解锁
+    const pillRoom = this.upgrades.get('pill-room');
+    if (pillRoom && pillRoom.level >= 1) {
       const artifact = this.resources.get('artifact');
       if (artifact && !artifact.unlocked) {
         artifact.unlocked = true;
@@ -649,8 +649,8 @@ export class SectRiseEngine extends IdleGameEngine {
     }
 
     // 声望：护宗大阵等级 >= 1 时解锁
-    const sectArray = this.upgrades.get('sect-array');
-    if (sectArray && sectArray.level >= 1) {
+    const formation = this.upgrades.get('formation');
+    if (formation && formation.level >= 1) {
       const rep = this.resources.get('reputation');
       if (rep && !rep.unlocked) {
         rep.unlocked = true;
