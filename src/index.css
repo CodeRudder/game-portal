@@ -31,9 +31,8 @@ body {
   background: #6c5ce7;
 }
 
-/* 霓虹发光文字 */
+/* 霓虹文字（保留 class 名，发光效果已移除） */
 .neon-text {
-  text-shadow: 0 0 10px rgba(108, 92, 231, 0.5), 0 0 20px rgba(108, 92, 231, 0.3);
 }
 
 /* 游戏卡片悬浮效果 */
@@ -41,7 +40,7 @@ body {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .game-card:hover {
-  transform: translateY(-8px) scale(1.02);
+  transform: translateY(-4px);
 }
 
 /* Canvas 容器 */
@@ -59,27 +58,12 @@ canvas {
     radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.2), transparent),
     radial-gradient(2px 2px at 160px 30px, rgba(255,255,255,0.3), transparent);
   background-size: 200px 100px;
-  animation: twinkle 4s ease-in-out infinite alternate;
 }
 
-@keyframes twinkle {
-  0% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-/* 按钮脉冲 */
+/* 按钮（保留 class 名，光效动画已移除，改为简单 hover） */
 .btn-pulse {
-  position: relative;
-  overflow: hidden;
+  transition: background-color 0.2s ease;
 }
-.btn-pulse::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.5s;
-}
-.btn-pulse:hover::after {
-  transform: translateX(100%);
+.btn-pulse:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }

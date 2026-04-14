@@ -20,17 +20,12 @@ export default {
         ui: ['"Inter"', 'system-ui', 'sans-serif'],
       },
       animation: {
-        'glow': 'glow 2s ease-in-out infinite alternate',
         'float': 'float 3s ease-in-out infinite',
         'pulse-slow': 'pulse 3s ease-in-out infinite',
         'slide-up': 'slideUp 0.5s ease-out',
         'fade-in': 'fadeIn 0.3s ease-out',
       },
       keyframes: {
-        glow: {
-          '0%': { boxShadow: '0 0 5px #6c5ce7, 0 0 10px #6c5ce7' },
-          '100%': { boxShadow: '0 0 20px #6c5ce7, 0 0 40px #6c5ce7' },
-        },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-10px)' },
