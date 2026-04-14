@@ -262,6 +262,11 @@ export class DinoRunnerEngine extends GameEngine {
     this.jump();
   }
 
+  /** 鼠标点击事件（委托给 flap/jump） */
+  handleClick(_canvasX: number, _canvasY: number): void {
+    this.flap();
+  }
+
   /** 获取恐龙状态（供测试使用） */
   getDinoState(): { y: number; velocity: number; state: DinoState } {
     return {

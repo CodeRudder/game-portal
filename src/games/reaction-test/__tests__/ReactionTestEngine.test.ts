@@ -47,7 +47,7 @@ function pressKey(engine: ReactionTestEngine, key: string = ' '): void {
 
 // ========== Helper: 模拟点击 ==========
 function click(engine: ReactionTestEngine): void {
-  engine.handleClick();
+  engine.handleClick(0, 0);
 }
 
 // ============================================================

@@ -119,6 +119,11 @@ export class CookieClickerEngine extends GameEngine {
 
   // ========== 核心逻辑 ==========
 
+  /** 鼠标点击事件（委托给 click） */
+  handleClick(_canvasX: number, _canvasY: number): void {
+    this.click();
+  }
+
   /**
    * 点击产生饼干
    * @returns 本次获得的饼干数

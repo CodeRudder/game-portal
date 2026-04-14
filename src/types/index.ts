@@ -210,4 +210,10 @@ export interface IGameEngine {
   handleKeyDown(key: string): void;
   handleKeyUp(key: string): void;
   getState(): Record<string, unknown>;
+  handleClick(canvasX: number, canvasY: number): void;
+  handleMouseDown(canvasX: number, canvasY: number): void;
+  handleMouseUp(canvasX: number, canvasY: number): void;
+  handleMouseMove(canvasX: number, canvasY: number): void;
+  handleRightClick(canvasX: number, canvasY: number): void;
+  handleDoubleClick(canvasX: number, canvasY: number): void;
 }

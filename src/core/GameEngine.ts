@@ -158,6 +158,15 @@ export abstract class GameEngine implements IGameEngine {
   protected onDestroy(): void {}
   protected onGameOver(): void {}
 
+  // ========== 鼠标事件（子类可选覆盖） ==========
+
+  handleClick(canvasX: number, canvasY: number): void {}
+  handleMouseDown(canvasX: number, canvasY: number): void {}
+  handleMouseUp(canvasX: number, canvasY: number): void {}
+  handleMouseMove(canvasX: number, canvasY: number): void {}
+  handleRightClick(canvasX: number, canvasY: number): void {}
+  handleDoubleClick(canvasX: number, canvasY: number): void {}
+
   abstract handleKeyDown(key: string): void;
   abstract handleKeyUp(key: string): void;
   abstract getState(): Record<string, unknown>;

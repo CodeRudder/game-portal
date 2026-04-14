@@ -176,7 +176,7 @@ export class ReactionTestEngine extends GameEngine {
   }
 
   /** 处理点击事件（供 GameContainer 调用） */
-  handleClick(): void {
+  handleClick(_canvasX: number, _canvasY: number): void {
     if (this._status !== 'playing') return;
     this._handleAction();
   }

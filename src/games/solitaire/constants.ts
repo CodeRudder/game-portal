@@ -36,6 +36,7 @@ export const CARD_BACK_PATTERN = '#1976d2';
 export const CARD_FACE_COLOR = '#ffffff';
 export const CARD_BORDER_COLOR = '#333333';
 export const CARD_SELECTED_COLOR = '#ffeb3b';
+export const CARD_HOVER_COLOR = '#81d4fa';
 export const RED_SUIT_COLOR = '#d32f2f';
 export const BLACK_SUIT_COLOR = '#212121';
 export const EMPTY_SLOT_COLOR = 'rgba(0,0,0,0.2)';

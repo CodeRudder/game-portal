@@ -376,12 +376,27 @@ export class MinesweeperEngine extends GameEngine {
   // ========== 公开方法 ==========
 
   /**
-   * 处理鼠标点击
+   * 处理鼠标左键点击
    * @param x canvas 坐标 x
    * @param y canvas 坐标 y
-   * @param isRightClick 是否右键
    */
-  handleClick(x: number, y: number, isRightClick: boolean): void {
+  handleClick(x: number, y: number): void {
+    this._handleClickInternal(x, y, false);
+  }
+
+  /**
+   * 处理鼠标右键点击（标旗）
+   * @param x canvas 坐标 x
+   * @param y canvas 坐标 y
+   */
+  handleRightClick(x: number, y: number): void {
+    this._handleClickInternal(x, y, true);
+  }
+
+  /**
+   * 内部点击处理
+   */
+  private _handleClickInternal(x: number, y: number, isRightClick: boolean): void {
     if (this._status === 'gameover') return;
 
     // 检查表情按钮点击（重置）

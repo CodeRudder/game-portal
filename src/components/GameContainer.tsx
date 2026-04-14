@@ -6,23 +6,14 @@ import { SnakeEngine } from '@/games/snake/SnakeEngine';
 import { SokobanEngine } from '@/games/sokoban/SokobanEngine';
 import { FlappyBirdEngine } from '@/games/flappy-bird/FlappyBirdEngine';
 import { G2048Engine } from '@/games/g2048/G2048Engine';
-import { MemoryMatchEngine } from '@/games/memory-match/MemoryMatchEngine';
 import { TicTacToeEngine } from '@/games/tic-tac-toe/TicTacToeEngine';
-import { GameOfLifeEngine } from '@/games/game-of-life/GameOfLifeEngine';
-import { MinesweeperEngine } from '@/games/minesweeper/MinesweeperEngine';
-import { GomokuEngine } from '@/games/gomoku/GomokuEngine';
-import { DinoRunnerEngine } from '@/games/dino-runner/DinoRunnerEngine';
 import { TronEngine } from '@/games/tron/TronEngine';
-import { PipeManiaEngine } from '@/games/pipe-mania/PipeManiaEngine';
 import { BreakoutEngine } from '@/games/breakout/BreakoutEngine';
 import { PacmanEngine } from '@/games/pacman/PacmanEngine';
 import { SpaceInvadersEngine } from '@/games/space-invaders/SpaceInvadersEngine';
 import { OthelloEngine } from '@/games/othello/OthelloEngine';
 import { CheckersEngine } from '@/games/checkers/CheckersEngine';
 import { PinballEngine } from '@/games/pinball/PinballEngine';
-import { MahjongConnectEngine } from '@/games/mahjong-connect/MahjongConnectEngine';
-import { Match3Engine } from '@/games/match-3/Match3Engine';
-import { SudokuEngine } from '@/games/sudoku/SudokuEngine';
 import { TetrisBattleEngine } from '@/games/tetris-battle/TetrisBattleEngine';
 import { FroggerEngine } from '@/games/frogger/FroggerEngine';
 import { PongEngine } from '@/games/pong/PongEngine';
@@ -316,214 +307,87 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
     };
   }, []);
 
-  // 点击/触摸（Flappy Bird 等需要点击的游戏）
+  // 鼠标/触摸事件统一分发
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const handleClick = (e: Event) => {
-      e.preventDefault();
-      if (!engineRef.current) return;
-      if (gameType === GameTypeEnum.FLAPPY_BIRD) {
-        (engineRef.current as FlappyBirdEngine).flap();
-      } else if (gameType === GameTypeEnum.MEMORY_MATCH) {
-        const canvas = canvasRef.current!;
-        const rect = canvas.getBoundingClientRect();
-        let clientX: number, clientY: number;
-        if (e instanceof TouchEvent) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else {
-          clientX = (e as MouseEvent).clientX;
-          clientY = (e as MouseEvent).clientY;
-        }
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const canvasX = (clientX - rect.left) * scaleX;
-        const canvasY = (clientY - rect.top) * scaleY;
-        (engineRef.current as MemoryMatchEngine).handleClick(canvasX, canvasY);
-      } else if (gameType === GameTypeEnum.GAME_OF_LIFE) {
-        const canvas = canvasRef.current!;
-        const rect = canvas.getBoundingClientRect();
-        let clientX: number, clientY: number;
-        if (e instanceof TouchEvent) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else {
-          clientX = (e as MouseEvent).clientX;
-          clientY = (e as MouseEvent).clientY;
-        }
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const canvasX = (clientX - rect.left) * scaleX;
-        const canvasY = (clientY - rect.top) * scaleY;
-        (engineRef.current as GameOfLifeEngine).handleClick(canvasX, canvasY);
-      } else if (gameType === GameTypeEnum.MINESWEEPER) {
-        // 扫雷：左键揭开，右键标旗（click 事件不含右键，由 contextmenu 处理）
-        const canvas = canvasRef.current!;
-        const rect = canvas.getBoundingClientRect();
-        const me = e as MouseEvent;
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const canvasX = (me.clientX - rect.left) * scaleX;
-        const canvasY = (me.clientY - rect.top) * scaleY;
-        (engineRef.current as MinesweeperEngine).handleClick(canvasX, canvasY, false);
-      } else if (gameType === GameTypeEnum.GOMOKU) {
-        const canvas = canvasRef.current!;
-        const rect = canvas.getBoundingClientRect();
-        let clientX: number, clientY: number;
-        if (e instanceof TouchEvent) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else {
-          clientX = (e as MouseEvent).clientX;
-          clientY = (e as MouseEvent).clientY;
-        }
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const canvasX = (clientX - rect.left) * scaleX;
-        const canvasY = (clientY - rect.top) * scaleY;
-        (engineRef.current as GomokuEngine).handleClick(canvasX, canvasY);
-      } else if (gameType === GameTypeEnum.PIPE_MANIA) {
-        const canvas = canvasRef.current!;
-        const rect = canvas.getBoundingClientRect();
-        let clientX: number, clientY: number;
-        if (e instanceof TouchEvent) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else {
-          clientX = (e as MouseEvent).clientX;
-          clientY = (e as MouseEvent).clientY;
-        }
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const canvasX = (clientX - rect.left) * scaleX;
-        const canvasY = (clientY - rect.top) * scaleY;
-        (engineRef.current as PipeManiaEngine).handleClick(canvasX, canvasY);
-      } else if (gameType === GameTypeEnum.DINO_RUNNER) {
-        (engineRef.current as DinoRunnerEngine).flap();
-      } else if (gameType === GameTypeEnum.MAHJONG_CONNECT) {
-        const canvas = canvasRef.current!;
-        const rect = canvas.getBoundingClientRect();
-        let clientX: number, clientY: number;
-        if (e instanceof TouchEvent) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else {
-          clientX = (e as MouseEvent).clientX;
-          clientY = (e as MouseEvent).clientY;
-        }
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const canvasX = (clientX - rect.left) * scaleX;
-        const canvasY = (clientY - rect.top) * scaleY;
-        (engineRef.current as MahjongConnectEngine).handleClick(canvasX, canvasY);
-      } else if (gameType === GameTypeEnum.MATCH_3) {
-        const canvas = canvasRef.current!;
-        const rect = canvas.getBoundingClientRect();
-        let clientX: number, clientY: number;
-        if (e instanceof TouchEvent) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else {
-          clientX = (e as MouseEvent).clientX;
-          clientY = (e as MouseEvent).clientY;
-        }
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const canvasX = (clientX - rect.left) * scaleX;
-        const canvasY = (clientY - rect.top) * scaleY;
-        (engineRef.current as Match3Engine).handleClick(canvasX, canvasY);
-      } else if (gameType === GameTypeEnum.SUDOKU) {
-        const canvas = canvasRef.current!;
-        const rect = canvas.getBoundingClientRect();
-        let clientX: number, clientY: number;
-        if (e instanceof TouchEvent) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else {
-          clientX = (e as MouseEvent).clientX;
-          clientY = (e as MouseEvent).clientY;
-        }
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const canvasX = (clientX - rect.left) * scaleX;
-        const canvasY = (clientY - rect.top) * scaleY;
-        (engineRef.current as SudokuEngine).handleClick(canvasX, canvasY);
-      } else if (gameType === GameTypeEnum.REACTION_TEST) {
-        (engineRef.current as ReactionTestEngine).handleClick();
-      }
-    };
-
-    canvas.addEventListener('click', handleClick);
-    canvas.addEventListener('touchstart', handleClick, { passive: false });
-    return () => {
-      canvas.removeEventListener('click', handleClick);
-      canvas.removeEventListener('touchstart', handleClick);
-    };
-  }, [gameType]);
-
-  // 右键事件（扫雷标旗、接水管旋转）
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    if (gameType !== GameTypeEnum.MINESWEEPER && gameType !== GameTypeEnum.PIPE_MANIA) return;
-
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      if (!engineRef.current) return;
+    const toCanvasCoords = (clientX: number, clientY: number): [number, number] => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
-      const canvasX = (e.clientX - rect.left) * scaleX;
-      const canvasY = (e.clientY - rect.top) * scaleY;
-      if (gameType === GameTypeEnum.MINESWEEPER) {
-        (engineRef.current as MinesweeperEngine).handleClick(canvasX, canvasY, true);
-      } else if (gameType === GameTypeEnum.PIPE_MANIA) {
-        (engineRef.current as PipeManiaEngine).handleRightClick(canvasX, canvasY);
+      return [(clientX - rect.left) * scaleX, (clientY - rect.top) * scaleY];
+    };
+
+    // Click 事件（含触摸）
+    const onClick = (e: Event) => {
+      e.preventDefault();
+      if (!engineRef.current) return;
+      let clientX: number, clientY: number;
+      if (e instanceof TouchEvent) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = (e as MouseEvent).clientX;
+        clientY = (e as MouseEvent).clientY;
       }
+      const [canvasX, canvasY] = toCanvasCoords(clientX, clientY);
+      engineRef.current.handleClick(canvasX, canvasY);
     };
 
-    canvas.addEventListener('contextmenu', handleContextMenu);
+    // MouseDown 事件
+    const onMouseDown = (e: MouseEvent) => {
+      if (!engineRef.current) return;
+      const [canvasX, canvasY] = toCanvasCoords(e.clientX, e.clientY);
+      engineRef.current.handleMouseDown(canvasX, canvasY);
+    };
+
+    // MouseUp 事件
+    const onMouseUp = (e: MouseEvent) => {
+      if (!engineRef.current) return;
+      const [canvasX, canvasY] = toCanvasCoords(e.clientX, e.clientY);
+      engineRef.current.handleMouseUp(canvasX, canvasY);
+    };
+
+    // MouseMove 事件
+    const onMouseMove = (e: MouseEvent) => {
+      if (!engineRef.current) return;
+      const [canvasX, canvasY] = toCanvasCoords(e.clientX, e.clientY);
+      engineRef.current.handleMouseMove(canvasX, canvasY);
+    };
+
+    // ContextMenu 事件（右键）
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      if (!engineRef.current) return;
+      const [canvasX, canvasY] = toCanvasCoords(e.clientX, e.clientY);
+      engineRef.current.handleRightClick(canvasX, canvasY);
+    };
+
+    // DoubleClick 事件
+    const onDoubleClick = (e: MouseEvent) => {
+      if (!engineRef.current) return;
+      const [canvasX, canvasY] = toCanvasCoords(e.clientX, e.clientY);
+      engineRef.current.handleDoubleClick(canvasX, canvasY);
+    };
+
+    canvas.addEventListener('click', onClick);
+    canvas.addEventListener('touchstart', onClick, { passive: false });
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseleave', onMouseUp);
+    canvas.addEventListener('contextmenu', onContextMenu);
+    canvas.addEventListener('dblclick', onDoubleClick);
     return () => {
-      canvas.removeEventListener('contextmenu', handleContextMenu);
-    };
-  }, [gameType]);
-
-  // 鼠标移动（Game of Life 悬停效果）
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || gameType !== GameTypeEnum.GAME_OF_LIFE) return;
-    const engine = engineRef.current as GameOfLifeEngine | null;
-    if (!engine) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const canvasX = (e.clientX - rect.left) * scaleX;
-      const canvasY = (e.clientY - rect.top) * scaleY;
-      engine.handleMouseMove(canvasX, canvasY);
-    };
-
-    const handleMouseDown = (e: MouseEvent) => {
-      // 标记鼠标按下状态用于拖拽
-      (engine as any)._isMouseDown = true;
-    };
-
-    const handleMouseUp = () => {
-      (engine as any)._isMouseDown = false;
-    };
-
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mouseup', handleMouseUp);
-    canvas.addEventListener('mouseleave', handleMouseUp);
-    return () => {
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      canvas.removeEventListener('mouseup', handleMouseUp);
-      canvas.removeEventListener('mouseleave', handleMouseUp);
+      canvas.removeEventListener('click', onClick);
+      canvas.removeEventListener('touchstart', onClick);
+      canvas.removeEventListener('mousedown', onMouseDown);
+      canvas.removeEventListener('mouseup', onMouseUp);
+      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mouseleave', onMouseUp);
+      canvas.removeEventListener('contextmenu', onContextMenu);
+      canvas.removeEventListener('dblclick', onDoubleClick);
     };
   }, [gameType]);
 

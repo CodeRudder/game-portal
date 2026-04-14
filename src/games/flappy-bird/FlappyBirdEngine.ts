@@ -191,6 +191,11 @@ export class FlappyBirdEngine extends GameEngine {
     this.bird.velocity = JUMP_FORCE;
   }
 
+  /** 鼠标点击事件（委托给 flap） */
+  handleClick(_canvasX: number, _canvasY: number): void {
+    this.flap();
+  }
+
   // ========== 私有方法 ==========
 
   private updateBird(dt: number): void {

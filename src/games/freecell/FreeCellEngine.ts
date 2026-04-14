@@ -80,6 +80,15 @@ export class FreeCellEngine extends GameEngine {
   private _isWin = false;
   private seed = 0;
 
+  // 鼠标交互状态
+  private _isDragging: boolean = false;
+  private _dragCards: Card[] = [];
+  private _dragSource: { area: Area; index: number; cardIndex?: number } | null = null;
+  private _dragX: number = 0;
+  private _dragY: number = 0;
+  private _mouseSelection: { area: Area; index: number; cardIndex?: number } | null = null;
+  private _hoverTarget: { area: Area; index: number; cardIndex?: number } | null = null;
+
   // 公开属性
   get isWin(): boolean { return this._isWin; }
 
@@ -112,6 +121,13 @@ export class FreeCellEngine extends GameEngine {
     this.renderTableau(ctx);
     this.renderCursor(ctx);
     this.renderHUD(ctx);
+
+    // 拖拽中的牌渲染在最上层
+    if (this._isDragging && this._dragCards.length > 0) {
+      for (let i = 0; i < this._dragCards.length; i++) {
+        this.renderCard(ctx, this._dragX, this._dragY + i * TABLEAU_OVERLAP, this._dragCards[i], true);
+      }
+    }
 
     if (this._isWin) {
       this.renderWin(ctx, w, h);
@@ -798,7 +814,15 @@ export class FreeCellEngine extends GameEngine {
       if (card) {
         const x = FREECELL_X_START + i * FREECELL_GAP;
         const isSelected = this.selected?.area === Area.FREECELL && this.selected?.index === i;
-        this.renderCard(ctx, x, TOP_ROW_Y, card, isSelected);
+        const isDragged = this._isDragging && this._dragSource?.area === Area.FREECELL && this._dragSource?.index === i;
+        const isHovered = this._hoverTarget?.area === Area.FREECELL && this._hoverTarget?.index === i;
+        if (isDragged) {
+          ctx.globalAlpha = 0.3;
+          this.renderCard(ctx, x, TOP_ROW_Y, card, false);
+          ctx.globalAlpha = 1.0;
+        } else {
+          this.renderCard(ctx, x, TOP_ROW_Y, card, isSelected, isHovered && !isSelected);
+        }
       }
     }
   }
@@ -810,7 +834,8 @@ export class FreeCellEngine extends GameEngine {
         const topCard = pile[pile.length - 1];
         const x = FOUNDATION_X_START + i * FOUNDATION_GAP;
         const isSelected = this.selected?.area === Area.FOUNDATION && this.selected?.index === i;
-        this.renderCard(ctx, x, TOP_ROW_Y, topCard, isSelected);
+        const isHovered = this._hoverTarget?.area === Area.FOUNDATION && this._hoverTarget?.index === i;
+        this.renderCard(ctx, x, TOP_ROW_Y, topCard, isSelected, isHovered && !isSelected);
       }
     }
   }
@@ -832,7 +857,24 @@ export class FreeCellEngine extends GameEngine {
           this.selected?.index === col &&
           this.selected?.cardIndex !== undefined &&
           row >= this.selected.cardIndex;
-        this.renderCard(ctx, x, y, cards[row], isSelected);
+        const isDraggedFrom =
+          this._isDragging &&
+          this._dragSource?.area === Area.TABLEAU &&
+          this._dragSource?.index === col &&
+          this._dragSource.cardIndex !== undefined &&
+          row >= this._dragSource.cardIndex;
+        const isHovered =
+          this._hoverTarget?.area === Area.TABLEAU &&
+          this._hoverTarget?.index === col &&
+          this._hoverTarget?.cardIndex === row;
+
+        if (isDraggedFrom) {
+          ctx.globalAlpha = 0.3;
+          this.renderCard(ctx, x, y, cards[row], false);
+          ctx.globalAlpha = 1.0;
+        } else {
+          this.renderCard(ctx, x, y, cards[row], isSelected, isHovered && !isSelected);
+        }
       }
     }
   }
@@ -842,8 +884,20 @@ export class FreeCellEngine extends GameEngine {
     x: number,
     y: number,
     card: Card,
-    isSelected: boolean
+    isSelected: boolean,
+    hover: boolean = false
   ): void {
+    // 悬停高亮（仅当未选中时显示）
+    if (hover && !isSelected) {
+      ctx.fillStyle = CARD_HOVER_COLOR;
+      ctx.strokeStyle = CARD_BORDER_COLOR;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x - 2, y - 2, CARD_WIDTH + 4, CARD_HEIGHT + 4, 5);
+      ctx.fill();
+      ctx.stroke();
+    }
+
     // 牌面背景
     ctx.fillStyle = isSelected ? CARD_SELECTED_COLOR : CARD_FACE_COLOR;
     ctx.strokeStyle = CARD_BORDER_COLOR;
@@ -938,6 +992,231 @@ export class FreeCellEngine extends GameEngine {
     ctx.font = '16px sans-serif';
     ctx.fillText(`移动次数: ${this.moveCount}`, w / 2, h / 2 + 20);
     ctx.fillText(`得分: ${this._score}`, w / 2, h / 2 + 50);
+  }
+
+  // ========== 鼠标交互 ==========
+
+  /** 命中检测：根据画布坐标判断点击了哪个区域 */
+  private hitTest(canvasX: number, canvasY: number): { area: Area; index: number; cardIndex?: number } | null {
+    // 1. 检查自由单元格区域 (4个)
+    if (canvasY >= TOP_ROW_Y && canvasY < TOP_ROW_Y + CARD_HEIGHT) {
+      for (let i = 0; i < 4; i++) {
+        const fx = FREECELL_X_START + i * FREECELL_GAP;
+        if (canvasX >= fx && canvasX < fx + CARD_WIDTH) {
+          return { area: Area.FREECELL, index: i };
+        }
+      }
+    }
+
+    // 2. 检查基础堆区域 (4个)
+    if (canvasY >= TOP_ROW_Y && canvasY < TOP_ROW_Y + CARD_HEIGHT) {
+      for (let i = 0; i < 4; i++) {
+        const fx = FOUNDATION_X_START + i * FOUNDATION_GAP;
+        if (canvasX >= fx && canvasX < fx + CARD_WIDTH) {
+          return { area: Area.FOUNDATION, index: i };
+        }
+      }
+    }
+
+    // 3. 检查 tableau 区域 (8列)
+    if (canvasY >= TABLEAU_Y) {
+      for (let col = 0; col < 8; col++) {
+        const cx = TABLEAU_X_START + col * TABLEAU_GAP;
+        if (canvasX >= cx && canvasX < cx + CARD_WIDTH) {
+          const cards = this.tableau[col];
+          // 从底部向上检查每张牌
+          for (let i = cards.length - 1; i >= 0; i--) {
+            const cy = TABLEAU_Y + i * TABLEAU_OVERLAP;
+            if (canvasY >= cy && canvasY < cy + CARD_HEIGHT) {
+              return { area: Area.TABLEAU, index: col, cardIndex: i };
+            }
+          }
+          // 空列或列底部空白区域
+          if (canvasY >= TABLEAU_Y && canvasY < TABLEAU_Y + CARD_HEIGHT) {
+            return { area: Area.TABLEAU, index: col, cardIndex: -1 };
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /** 鼠标点击：选牌/放牌 */
+  handleClick(canvasX: number, canvasY: number): void {
+    if (this._isWin || this._status !== 'playing') return;
+    if (this._isDragging) return;
+
+    const hit = this.hitTest(canvasX, canvasY);
+    if (!hit) {
+      this.selected = null;
+      this._mouseSelection = null;
+      return;
+    }
+
+    // 如果已有选中牌，尝试放置
+    if (this.selected) {
+      this.placeCard(hit.area, hit.index);
+      this.selected = null;
+      this._mouseSelection = null;
+      this.updateCursorCardIndex();
+      return;
+    }
+
+    // 没有选中牌，尝试选择
+    if (hit.area === Area.TABLEAU) {
+      const col = this.tableau[hit.index];
+      if (col.length === 0 || hit.cardIndex === undefined || hit.cardIndex < 0) {
+        this._mouseSelection = null;
+        return;
+      }
+      const ci = hit.cardIndex;
+      if (ci >= col.length) {
+        this._mouseSelection = null;
+        return;
+      }
+      // 检查从 ci 到底部是否形成有效序列
+      const seq = col.slice(ci);
+      if (!isValidSequence(seq)) {
+        this._mouseSelection = null;
+        return;
+      }
+      this.selected = { area: Area.TABLEAU, index: hit.index, cardIndex: ci };
+      this._mouseSelection = hit;
+    } else if (hit.area === Area.FREECELL) {
+      const card = this.freeCells[hit.index];
+      if (card === null) {
+        this._mouseSelection = null;
+        return;
+      }
+      this.selected = { area: Area.FREECELL, index: hit.index };
+      this._mouseSelection = hit;
+    } else if (hit.area === Area.FOUNDATION) {
+      // 不允许从 foundation 选牌（通常不需要）
+      this._mouseSelection = null;
+    }
+  }
+
+  /** 鼠标双击：自动移到 foundation */
+  handleDoubleClick(canvasX: number, canvasY: number): void {
+    if (this._isWin || this._status !== 'playing') return;
+
+    const hit = this.hitTest(canvasX, canvasY);
+    if (!hit) return;
+
+    let card: Card | null = null;
+    let fromArea: Area | null = null;
+    let fromIndex = 0;
+
+    if (hit.area === Area.TABLEAU) {
+      const col = this.tableau[hit.index];
+      if (col.length === 0) return;
+      // 只有最顶部的牌才能双击
+      if (hit.cardIndex !== undefined && hit.cardIndex === col.length - 1) {
+        card = col[col.length - 1];
+        fromArea = Area.TABLEAU;
+        fromIndex = hit.index;
+      }
+    } else if (hit.area === Area.FREECELL) {
+      card = this.freeCells[hit.index];
+      if (card) {
+        fromArea = Area.FREECELL;
+        fromIndex = hit.index;
+      }
+    }
+
+    if (!card || !fromArea) return;
+
+    // 尝试移到 foundation
+    this.selected = null;
+    this.moveToFoundation(card, fromArea, fromIndex);
+    this._mouseSelection = null;
+    this.updateCursorCardIndex();
+  }
+
+  /** 鼠标按下：开始拖拽 */
+  handleMouseDown(canvasX: number, canvasY: number): void {
+    if (this._isWin || this._status !== 'playing') return;
+
+    const hit = this.hitTest(canvasX, canvasY);
+    if (!hit) return;
+
+    let cards: Card[] = [];
+    let source: { area: Area; index: number; cardIndex?: number } | null = null;
+
+    if (hit.area === Area.TABLEAU) {
+      const col = this.tableau[hit.index];
+      if (col.length === 0 || hit.cardIndex === undefined || hit.cardIndex < 0) return;
+      const ci = hit.cardIndex;
+      if (ci >= col.length) return;
+      const seq = col.slice(ci);
+      if (!isValidSequence(seq)) return;
+      cards = seq;
+      source = hit;
+    } else if (hit.area === Area.FREECELL) {
+      const card = this.freeCells[hit.index];
+      if (!card) return;
+      cards = [card];
+      source = hit;
+    } else if (hit.area === Area.FOUNDATION) {
+      // 不允许从 foundation 拖拽
+      return;
+    }
+
+    if (cards.length === 0 || !source) return;
+
+    // 设置选择状态
+    this.selected = {
+      area: source.area,
+      index: source.index,
+      cardIndex: source.area === Area.TABLEAU ? source.cardIndex : undefined,
+    };
+    this._mouseSelection = source;
+
+    // 开始拖拽
+    this._isDragging = true;
+    this._dragCards = cards;
+    this._dragSource = source;
+    this._dragX = canvasX - CARD_WIDTH / 2;
+    this._dragY = canvasY - CARD_HEIGHT / 2;
+  }
+
+  /** 鼠标移动：更新拖拽位置和悬停高亮 */
+  handleMouseMove(canvasX: number, canvasY: number): void {
+    this._hoverTarget = this.hitTest(canvasX, canvasY);
+
+    if (!this._isDragging) return;
+
+    this._dragX = canvasX - CARD_WIDTH / 2;
+    this._dragY = canvasY - CARD_HEIGHT / 2;
+  }
+
+  /** 鼠标松开：结束拖拽，尝试放置 */
+  handleMouseUp(canvasX: number, canvasY: number): void {
+    if (!this._isDragging) return;
+
+    const hit = this.hitTest(canvasX, canvasY);
+
+    if (hit && this.selected) {
+      // 检查是否放回原位
+      const isSamePlace = this._dragSource &&
+        this._dragSource.area === hit.area &&
+        this._dragSource.index === hit.index;
+
+      if (!isSamePlace) {
+        this.placeCard(hit.area, hit.index);
+      }
+      this.selected = null;
+    } else {
+      this.selected = null;
+    }
+
+    // 重置拖拽状态
+    this._isDragging = false;
+    this._dragCards = [];
+    this._dragSource = null;
+    this._mouseSelection = null;
+    this.updateCursorCardIndex();
   }
 
   // ========== 状态序列化 ==========

@@ -77,7 +77,7 @@ function cellToPixel(engine: MinesweeperEngine, row: number, col: number): { x: 
  */
 function doFirstClick(engine: MinesweeperEngine, row: number, col: number): void {
   const pos = cellToPixel(engine, row, col);
-  engine.handleClick(pos.x, pos.y, false);
+  engine.handleClick(pos.x, pos.y);
 }
 
 /**
@@ -85,7 +85,7 @@ function doFirstClick(engine: MinesweeperEngine, row: number, col: number): void
  */
 function doRightClick(engine: MinesweeperEngine, row: number, col: number): void {
   const pos = cellToPixel(engine, row, col);
-  engine.handleClick(pos.x, pos.y, true);
+  engine.handleRightClick(pos.x, pos.y);
 }
 
 /**
@@ -93,7 +93,7 @@ function doRightClick(engine: MinesweeperEngine, row: number, col: number): void
  */
 function doLeftClick(engine: MinesweeperEngine, row: number, col: number): void {
   const pos = cellToPixel(engine, row, col);
-  engine.handleClick(pos.x, pos.y, false);
+  engine.handleClick(pos.x, pos.y);
 }
 
 /**
@@ -974,14 +974,14 @@ describe('MinesweeperEngine', () => {
       // 点击表情按钮（画布中央，HUD 中央）
       const faceX = CANVAS_WIDTH / 2;
       const faceY = HUD_HEIGHT / 2;
-      engine.handleClick(faceX, faceY, false);
+      engine.handleClick(faceX, faceY);
       expect(engine.status).toBe('idle');
     });
 
     it('点击网格外坐标不揭开任何格子', () => {
       const engine = createEngine();
       // 点击画布左上角（网格外）
-      engine.handleClick(0, 0, false);
+      engine.handleClick(0, 0);
       // handleClick 在 idle 状态下会先 start()，但坐标在网格外不会揭开格子
       // 也不会生成地雷（因为坐标不在网格内）
       expect((engine as any).minesGenerated).toBe(false);
