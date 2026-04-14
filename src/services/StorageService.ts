@@ -800,16 +800,6 @@ export const GAME_META: Record<GameType, GameMeta> = {
     controls: '方向键选择折线位置 · 空格确认折叠 · U 撤销 · R 重置关卡',
     difficulty: '中等',
   },
-  [GameType.TANK_DUEL]: {
-    type: GameType.TANK_DUEL,
-    name: '坦克大战',
-    description: '双人坦克对决！在战场上操控坦克，利用地形和弹药，击败对手赢得胜利！',
-    icon: '🔫',
-    color: '#6b8e23',
-    gradient: 'from-green-700 to-yellow-700',
-    controls: 'P1: WASD移动 空格射击 · P2: 方向键移动 Enter射击',
-    difficulty: '中等',
-  },
   [GameType.SLOPE_BALL]: {
     type: GameType.SLOPE_BALL,
     name: '滚球跑酷',

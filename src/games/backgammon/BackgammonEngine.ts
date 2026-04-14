@@ -562,7 +562,7 @@ export class BackgammonEngine extends GameEngine {
     this._message = `${this._currentPlayer === PLAYER_WHITE ? '白方' : '黑方'}回合 — 按空格/D掷骰子`;
 
     // AI 回合
-    if (this._currentPlayer === PLAYER_BLACK && this._aiEnabled && this._phase !== GamePhase.GAME_OVER) {
+    if (this._currentPlayer === PLAYER_BLACK && this._aiEnabled && (this._phase as string) !== GamePhase.GAME_OVER) {
       this.startAITurn();
     }
   }
@@ -624,7 +624,7 @@ export class BackgammonEngine extends GameEngine {
     const move = this.aiChooseMove(moves);
     this.makeMove(move.from, move.to);
 
-    if (this._phase !== GamePhase.GAME_OVER && this._dice.remaining.length > 0 && this._currentPlayer === PLAYER_BLACK) {
+    if ((this._phase as string) !== GamePhase.GAME_OVER && this._dice.remaining.length > 0 && this._currentPlayer === PLAYER_BLACK) {
       this._aiTimer = setTimeout(() => {
         this.aiMakeNextMove();
       }, 300);
