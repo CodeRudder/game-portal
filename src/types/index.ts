@@ -88,6 +88,11 @@ export enum GameType {
   JIGSAW_PUZZLE = 'jigsaw-puzzle',
   BLOONS = 'bloons',
   CTF = 'ctf',
+  BACKGAMMON = 'backgammon',
+  PONG_2P = 'pong-2p',
+  HEAD_SOCCER = 'head-soccer',
+  MAHJONG_SOLITAIRE = 'mahjong-solitaire',
+  SPACE_WAR = 'space-war',
 }
 
 // ========== 游戏状态枚举 ==========

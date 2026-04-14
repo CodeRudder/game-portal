@@ -622,6 +622,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-amber-400',
     gradient: 'from-amber-600/20 to-red-600/20',
   },
+  [GameType.BACKGAMMON]: {
+    title: '双陆棋',
+    description: '经典双陆棋 Backgammon！掷骰子移动棋子，将所有棋子移到己方内盘后归巢获胜。支持AI对手！',
+    icon: '🎲',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-orange-600/20',
+  },
+  [GameType.PONG_2P]: {
+    title: '双人乒乓球',
+    description: '经典双人乒乓球对战！P1用W/S控制，P2用↑/↓控制，先到11分且领先2分获胜，支持AI模式！',
+    icon: '🏓',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-blue-600/20',
+  },
+  [GameType.HEAD_SOCCER]: {
+    title: '顶球对战',
+    description: '双人顶球足球对战！用头和身体顶球、踢球，先到5分获胜，支持AI对手！',
+    icon: '⚽',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-emerald-600/20',
+  },
+  [GameType.MAHJONG_SOLITAIRE]: {
+    title: '麻将消除',
+    description: '经典麻将消除游戏！选择配对的自由麻将牌进行消除，清除所有牌即可过关！',
+    icon: '🀄',
+    color: 'text-teal-400',
+    gradient: 'from-teal-600/20 to-cyan-600/20',
+  },
+  [GameType.SPACE_WAR]: {
+    title: '双人射击',
+    description: '双人飞船太空对决！旋转推进射击，屏幕包裹，3局2胜，支持AI模式！',
+    icon: '🚀',
+    color: 'text-cyan-400',
+    gradient: 'from-cyan-600/20 to-purple-600/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

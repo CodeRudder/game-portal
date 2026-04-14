@@ -88,6 +88,11 @@ import { FlappyPlaneEngine } from '@/games/flappy-plane/FlappyPlaneEngine';
 import { JigsawPuzzleEngine } from '@/games/jigsaw-puzzle/JigsawPuzzleEngine';
 import { BloonsEngine } from '@/games/bloons/BloonsEngine';
 import { CTFEngine } from '@/games/ctf/CTFEngine';
+import { BackgammonEngine } from '@/games/backgammon/BackgammonEngine';
+import { Pong2PEngine } from '@/games/pong-2p/Pong2PEngine';
+import { HeadSoccerEngine } from '@/games/head-soccer/HeadSoccerEngine';
+import { MahjongSolitaireEngine } from '@/games/mahjong-solitaire/MahjongSolitaireEngine';
+import { SpaceWarEngine } from '@/games/space-war/SpaceWarEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -184,6 +189,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.JIGSAW_PUZZLE: return new JigsawPuzzleEngine();
     case GameTypeEnum.BLOONS: return new BloonsEngine();
     case GameTypeEnum.CTF: return new CTFEngine();
+    case GameTypeEnum.BACKGAMMON: return new BackgammonEngine();
+    case GameTypeEnum.PONG_2P: return new Pong2PEngine();
+    case GameTypeEnum.HEAD_SOCCER: return new HeadSoccerEngine();
+    case GameTypeEnum.MAHJONG_SOLITAIRE: return new MahjongSolitaireEngine();
+    case GameTypeEnum.SPACE_WAR: return new SpaceWarEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }
