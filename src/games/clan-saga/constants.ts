@@ -1,11 +1,12 @@
 /**
- * Clan Saga（家族风云）放置类游戏 — 常量定义
+ * 家族风云 (Clan Saga) 放置类游戏 — 常量定义
  *
  * 核心玩法：
- * - 点击/空格键获得家族贡献点
- * - 建筑系统（祠堂、练功房、丹药房、藏书阁、演武场、灵兽园）
- * - 家族成员系统（家主、长老、精英弟子、普通弟子、外门弟子、杂役）
- * - 声望系统（重置获得传承点，永久加成）
+ * - 点击/空格键获得财富
+ * - 建筑系统（商铺、书院、武馆、祠堂、茶馆、钱庄、使馆、宝库）
+ * - 后代培养系统（武将、文士、商人、外交官）
+ * - 联姻系统（与其他家族联姻获得加成）
+ * - 声望系统（转生获得家族传承，永久加成）
  * - 离线收益
  * - 自动存档/读档
  */
@@ -14,35 +15,34 @@
 export const CANVAS_WIDTH = 480;
 export const CANVAS_HEIGHT = 640;
 
-/** 点击产生的贡献点数量 */
-export const CONTRIBUTION_PER_CLICK = 1;
+/** 点击产生的财富数量 */
+export const WEALTH_PER_CLICK = 1;
 
 /** 资源 ID 常量 */
 export const RESOURCE_IDS = {
-  CONTRIBUTION: 'contribution',
-  SPIRIT_STONE: 'spirit-stone',
-  PILL: 'pill',
-  PRESTIGE: 'prestige',
+  WEALTH: 'wealth',
+  REPUTATION: 'reputation',
+  CONNECTION: 'connection',
 } as const;
 
 /** 建筑 ID 常量 */
 export const BUILDING_IDS = {
-  SHRINE: 'shrine',
-  TRAINING_GROUND: 'training-ground',
-  PILL_ROOM: 'pill-room',
-  LIBRARY: 'library',
-  ARENA: 'arena',
-  BEAST_GARDEN: 'beast-garden',
+  SHOP: 'shop',
+  ACADEMY: 'academy',
+  DOJO: 'dojo',
+  ANCESTRAL_HALL: 'ancestral-hall',
+  TEA_HOUSE: 'tea-house',
+  BANK: 'bank',
+  EMBASSY: 'embassy',
+  TREASURY: 'treasury',
 } as const;
 
-/** 家族成员 ID 常量 */
-export const MEMBER_IDS = {
-  PATRIARCH: 'patriarch',
-  ELDER: 'elder',
-  ELITE: 'elite',
-  DISCIPLE: 'disciple',
-  OUTER: 'outer',
-  SERVANT: 'servant',
+/** 后代类型 */
+export const HEIR_TYPES = {
+  WARRIOR: 'warrior',
+  SCHOLAR: 'scholar',
+  MERCHANT: 'merchant',
+  DIPLOMAT: 'diplomat',
 } as const;
 
 /** 建筑定义 */
@@ -56,198 +56,294 @@ export interface BuildingDef {
   maxLevel: number;
   productionResource: string;
   baseProduction: number;
+  /** 解锁条件：需要某种资源达到一定量 */
   unlockCondition?: Record<string, number>;
+  /** 解锁需要的建筑等级 { buildingId: level } */
+  unlockBuildingLevel?: Record<string, number>;
 }
 
-/** 家族成员定义 */
-export interface MemberDef {
+/** 后代类型定义 */
+export interface HeirTypeDef {
   id: string;
   name: string;
   icon: string;
   description: string;
-  unlockCost: Record<string, number>;
-  bonusType: string;
-  bonusValue: number;
+  /** 培养消耗 */
+  trainCost: Record<string, number>;
+  /** 培养消耗倍率（每级） */
+  trainCostMultiplier: number;
+  /** 被动加成目标资源 */
   bonusTarget: string;
+  /** 被动加成值（每级） */
+  bonusPerLevel: number;
+  /** 最大等级 */
+  maxLevel: number;
+}
+
+/** 联姻家族定义 */
+export interface MarriageFamilyDef {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  /** 联姻消耗 */
+  cost: Record<string, number>;
+  /** 联姻加成 */
+  bonus: Record<string, number>;
+  /** 需要后代类型 */
+  requiredHeirType?: string;
+  /** 需要后代最低等级 */
+  requiredHeirLevel?: number;
 }
 
 /** 建筑列表 */
 export const BUILDINGS: BuildingDef[] = [
   {
-    id: BUILDING_IDS.SHRINE,
-    name: '祠堂',
-    icon: '🏯',
-    description: '基础建筑，产出贡献点',
-    baseCost: { contribution: 10 },
+    id: BUILDING_IDS.SHOP,
+    name: '商铺',
+    icon: '🏪',
+    description: '基础建筑，经营买卖赚取财富',
+    baseCost: { wealth: 10 },
     costMultiplier: 1.15,
     maxLevel: 50,
-    productionResource: RESOURCE_IDS.CONTRIBUTION,
+    productionResource: RESOURCE_IDS.WEALTH,
     baseProduction: 0.5,
   },
   {
-    id: BUILDING_IDS.TRAINING_GROUND,
-    name: '练功房',
-    icon: '⚔️',
-    description: '弟子修炼，产出贡献点',
-    baseCost: { contribution: 50 },
+    id: BUILDING_IDS.ACADEMY,
+    name: '书院',
+    icon: '📚',
+    description: '培养文士，产出声望',
+    baseCost: { wealth: 50 },
     costMultiplier: 1.18,
     maxLevel: 50,
-    productionResource: RESOURCE_IDS.CONTRIBUTION,
+    productionResource: RESOURCE_IDS.REPUTATION,
     baseProduction: 0.3,
-    unlockCondition: { contribution: 30 },
+    unlockCondition: { wealth: 30 },
   },
   {
-    id: BUILDING_IDS.PILL_ROOM,
-    name: '丹药房',
-    icon: '⚗️',
-    description: '炼制丹药，产出灵石',
-    baseCost: { contribution: 200, 'spirit-stone': 50 },
+    id: BUILDING_IDS.DOJO,
+    name: '武馆',
+    icon: '⚔️',
+    description: '训练武将，提升点击力量',
+    baseCost: { wealth: 100 },
     costMultiplier: 1.2,
     maxLevel: 30,
-    productionResource: RESOURCE_IDS.SPIRIT_STONE,
-    baseProduction: 0.1,
-    unlockCondition: { contribution: 100, 'spirit-stone': 20 },
+    productionResource: RESOURCE_IDS.WEALTH,
+    baseProduction: 0,
+    unlockCondition: { wealth: 60 },
   },
   {
-    id: BUILDING_IDS.LIBRARY,
-    name: '藏书阁',
-    icon: '📚',
-    description: '藏经纳典，产出丹药',
-    baseCost: { contribution: 500, 'spirit-stone': 100 },
+    id: BUILDING_IDS.ANCESTRAL_HALL,
+    name: '祠堂',
+    icon: '🏛️',
+    description: '祭祀先祖，提升产出倍率',
+    baseCost: { wealth: 300, reputation: 50 },
     costMultiplier: 1.25,
     maxLevel: 20,
-    productionResource: RESOURCE_IDS.PILL,
-    baseProduction: 0.05,
-    unlockCondition: { contribution: 300, 'spirit-stone': 50 },
+    productionResource: RESOURCE_IDS.REPUTATION,
+    baseProduction: 0.1,
+    unlockCondition: { wealth: 200, reputation: 30 },
   },
   {
-    id: BUILDING_IDS.ARENA,
-    name: '演武场',
-    icon: '🏟️',
-    description: '比武较技，产出声望',
-    baseCost: { contribution: 2000, 'spirit-stone': 500, pill: 100 },
+    id: BUILDING_IDS.TEA_HOUSE,
+    name: '茶馆',
+    icon: '🍵',
+    description: '结交人脉，产出人脉资源',
+    baseCost: { wealth: 500, reputation: 100 },
+    costMultiplier: 1.22,
+    maxLevel: 40,
+    productionResource: RESOURCE_IDS.CONNECTION,
+    baseProduction: 0.2,
+    unlockCondition: { wealth: 300, reputation: 60 },
+  },
+  {
+    id: BUILDING_IDS.BANK,
+    name: '钱庄',
+    icon: '🏦',
+    description: '经营金融，大量产出财富',
+    baseCost: { wealth: 2000, reputation: 300, connection: 100 },
     costMultiplier: 1.3,
     maxLevel: 30,
-    productionResource: RESOURCE_IDS.PRESTIGE,
-    baseProduction: 0.02,
-    unlockCondition: { contribution: 1000, 'spirit-stone': 200, pill: 50 },
+    productionResource: RESOURCE_IDS.WEALTH,
+    baseProduction: 1.0,
+    unlockCondition: { wealth: 1000, reputation: 150 },
   },
   {
-    id: BUILDING_IDS.BEAST_GARDEN,
-    name: '灵兽园',
-    icon: '🐉',
-    description: '驯养灵兽，产出丹药和声望',
-    baseCost: { contribution: 50000, 'spirit-stone': 10000, pill: 2000 },
+    id: BUILDING_IDS.EMBASSY,
+    name: '使馆',
+    icon: '🏰',
+    description: '外交联络，大量产出人脉',
+    baseCost: { wealth: 5000, reputation: 500, connection: 200 },
+    costMultiplier: 1.35,
+    maxLevel: 25,
+    productionResource: RESOURCE_IDS.CONNECTION,
+    baseProduction: 0.5,
+    unlockCondition: { wealth: 3000, reputation: 300, connection: 100 },
+  },
+  {
+    id: BUILDING_IDS.TREASURY,
+    name: '宝库',
+    icon: '💎',
+    description: '家族宝库，提升所有产出',
+    baseCost: { wealth: 10000, reputation: 1000, connection: 500 },
     costMultiplier: 1.5,
-    maxLevel: 10,
-    productionResource: RESOURCE_IDS.PILL,
-    baseProduction: 0.005,
-    unlockCondition: { contribution: 20000, 'spirit-stone': 5000, pill: 500 },
+    maxLevel: 15,
+    productionResource: RESOURCE_IDS.WEALTH,
+    baseProduction: 0,
+    unlockCondition: { wealth: 5000, reputation: 500, connection: 200 },
   },
 ];
 
-/** 家族成员列表 */
-export const MEMBERS: MemberDef[] = [
+/** 后代类型列表 */
+export const HEIR_TYPE_DEFS: HeirTypeDef[] = [
   {
-    id: MEMBER_IDS.PATRIARCH,
-    name: '家主',
-    icon: '👑',
-    description: '家族之主，全加成+30%',
-    unlockCost: {},
-    bonusType: 'multiply_all',
-    bonusValue: 0.30,
-    bonusTarget: 'all',
+    id: HEIR_TYPES.WARRIOR,
+    name: '武将',
+    icon: '⚔️',
+    description: '勇武过人，提升点击力量',
+    trainCost: { wealth: 100, reputation: 20 },
+    trainCostMultiplier: 1.5,
+    bonusTarget: RESOURCE_IDS.WEALTH,
+    bonusPerLevel: 0.5,
+    maxLevel: 20,
   },
   {
-    id: MEMBER_IDS.ELDER,
-    name: '长老',
-    icon: '🧙',
-    description: '家族长老，全加成+20%',
-    unlockCost: { contribution: 500 },
-    bonusType: 'multiply_all',
-    bonusValue: 0.20,
-    bonusTarget: 'all',
+    id: HEIR_TYPES.SCHOLAR,
+    name: '文士',
+    icon: '📖',
+    description: '才学渊博，提升声望产出',
+    trainCost: { wealth: 80, connection: 10 },
+    trainCostMultiplier: 1.4,
+    bonusTarget: RESOURCE_IDS.REPUTATION,
+    bonusPerLevel: 0.3,
+    maxLevel: 20,
   },
   {
-    id: MEMBER_IDS.ELITE,
-    name: '精英弟子',
-    icon: '🗡️',
-    description: '精英弟子，贡献加成+25%',
-    unlockCost: { contribution: 2000 },
-    bonusType: 'multiply_production',
-    bonusValue: 0.25,
-    bonusTarget: RESOURCE_IDS.CONTRIBUTION,
+    id: HEIR_TYPES.MERCHANT,
+    name: '商人',
+    icon: '💰',
+    description: '精于商道，提升财富产出',
+    trainCost: { wealth: 150, connection: 20 },
+    trainCostMultiplier: 1.6,
+    bonusTarget: RESOURCE_IDS.WEALTH,
+    bonusPerLevel: 0.4,
+    maxLevel: 20,
   },
   {
-    id: MEMBER_IDS.DISCIPLE,
-    name: '普通弟子',
-    icon: '🥋',
-    description: '普通弟子，贡献加成+15%',
-    unlockCost: { contribution: 5000 },
-    bonusType: 'multiply_production',
-    bonusValue: 0.15,
-    bonusTarget: RESOURCE_IDS.CONTRIBUTION,
+    id: HEIR_TYPES.DIPLOMAT,
+    name: '外交官',
+    icon: '🤝',
+    description: '长袖善舞，提升人脉产出',
+    trainCost: { wealth: 120, reputation: 30 },
+    trainCostMultiplier: 1.45,
+    bonusTarget: RESOURCE_IDS.CONNECTION,
+    bonusPerLevel: 0.3,
+    maxLevel: 20,
+  },
+];
+
+/** 联姻家族列表 */
+export const MARRIAGE_FAMILIES: MarriageFamilyDef[] = [
+  {
+    id: 'family-zhang',
+    name: '张家',
+    icon: '🏠',
+    description: '书香门第，声望加成',
+    cost: { wealth: 500, reputation: 100 },
+    bonus: { reputation: 0.5 },
+    requiredHeirType: HEIR_TYPES.SCHOLAR,
+    requiredHeirLevel: 1,
   },
   {
-    id: MEMBER_IDS.OUTER,
-    name: '外门弟子',
-    icon: '👘',
-    description: '外门弟子，贡献加成+10%',
-    unlockCost: { contribution: 15000 },
-    bonusType: 'multiply_production',
-    bonusValue: 0.10,
-    bonusTarget: RESOURCE_IDS.CONTRIBUTION,
+    id: 'family-li',
+    name: '李家',
+    icon: '⚔️',
+    description: '武将世家，点击力量加成',
+    cost: { wealth: 800, reputation: 50, connection: 50 },
+    bonus: { wealth: 1.0 },
+    requiredHeirType: HEIR_TYPES.WARRIOR,
+    requiredHeirLevel: 2,
   },
   {
-    id: MEMBER_IDS.SERVANT,
-    name: '杂役',
-    icon: '🧹',
-    description: '杂役仆从，贡献加成+5%',
-    unlockCost: { contribution: 50000 },
-    bonusType: 'multiply_production',
-    bonusValue: 0.05,
-    bonusTarget: RESOURCE_IDS.CONTRIBUTION,
+    id: 'family-wang',
+    name: '王家',
+    icon: '💰',
+    description: '商贾巨族，财富产出加成',
+    cost: { wealth: 2000, reputation: 200, connection: 100 },
+    bonus: { wealth: 2.0, reputation: 0.3 },
+    requiredHeirType: HEIR_TYPES.MERCHANT,
+    requiredHeirLevel: 3,
+  },
+  {
+    id: 'family-zhao',
+    name: '赵家',
+    icon: '🏰',
+    description: '名门望族，全资源加成',
+    cost: { wealth: 5000, reputation: 500, connection: 300 },
+    bonus: { wealth: 1.0, reputation: 1.0, connection: 1.0 },
+    requiredHeirType: HEIR_TYPES.DIPLOMAT,
+    requiredHeirLevel: 5,
+  },
+  {
+    id: 'family-chen',
+    name: '陈家',
+    icon: '🏯',
+    description: '皇亲国戚，大幅全资源加成',
+    cost: { wealth: 20000, reputation: 2000, connection: 1000 },
+    bonus: { wealth: 3.0, reputation: 2.0, connection: 2.0 },
+    requiredHeirType: HEIR_TYPES.DIPLOMAT,
+    requiredHeirLevel: 8,
   },
 ];
 
 /** 声望系统常量 */
-export const PRESTIGE_MULTIPLIER = 0.03;
-export const MIN_PRESTIGE_CONTRIBUTION = 8000;
+export const PRESTIGE_MULTIPLIER = 0.04;
+export const MIN_PRESTIGE_WEALTH = 50000;
 
-/** 颜色主题 — 水墨国风 */
+/** 颜色主题 — 古风雅韵（朱红/金色/墨色） */
 export const COLORS = {
-  bgGradient1: '#0a0f1a',
-  bgGradient2: '#1a1a2e',
-  mountainFar: '#16213e',
-  mountainNear: '#1a1a2e',
-  inkColor: '#2c3e50',
-  textPrimary: '#e8d5b7',
-  textSecondary: '#b8a088',
-  textDim: '#7a6a5a',
-  accentGold: '#d4a853',
-  accentJade: '#5a8f7b',
-  accentCinnabar: '#c0392b',
-  accentAzure: '#3498db',
-  panelBg: 'rgba(15, 15, 30, 0.9)',
-  panelBorder: 'rgba(212, 168, 83, 0.3)',
-  selectedBg: 'rgba(212, 168, 83, 0.15)',
-  selectedBorder: 'rgba(212, 168, 83, 0.6)',
-  affordable: '#5a8f7b',
-  unaffordable: '#c0392b',
-  contributionColor: '#d4a853',
-  spiritStoneColor: '#3498db',
-  pillColor: '#e74c3c',
-  prestigeColor: '#9b59b6',
-  inkWash1: 'rgba(44, 62, 80, 0.1)',
-  inkWash2: 'rgba(44, 62, 80, 0.2)',
-  cloudColor: 'rgba(200, 200, 220, 0.08)',
-  bambooColor: '#2d5a3f',
-  cherryColor: '#d4756b',
+  bgGradient1: '#1a0f0a',
+  bgGradient2: '#2a1810',
+  bgGradient3: '#1a1210',
+  inkDark: '#2a1a10',
+  inkMid: '#3d2a1a',
+  inkLight: '#5a4030',
+  redPrimary: '#c05040',
+  redLight: '#e07060',
+  redDark: '#8b3020',
+  goldPrimary: '#c9a84c',
+  goldLight: '#f0d080',
+  goldDark: '#8b6914',
+  textPrimary: '#f0e0c8',
+  textSecondary: '#c0a888',
+  textDim: '#807060',
+  accentRed: '#c05040',
+  accentGold: '#c9a84c',
+  accentGreen: '#5a9e6f',
+  accentBlue: '#4a90a4',
+  panelBg: 'rgba(26, 15, 10, 0.92)',
+  panelBorder: 'rgba(201, 168, 76, 0.3)',
+  selectedBg: 'rgba(201, 168, 76, 0.15)',
+  selectedBorder: 'rgba(201, 168, 76, 0.6)',
+  affordable: '#5a9e6f',
+  unaffordable: '#c05050',
+  wealthColor: '#f0d080',
+  reputationColor: '#e07060',
+  connectionColor: '#7ec8d8',
+  paperWhite: '#f5e6c8',
+  roofRed: '#8b3020',
+  wallGray: '#d0c0a0',
+  lanternGlow: 'rgba(240, 160, 60, 0.3)',
+  courtyardGreen: '#3a5a3a',
+  prestigeGlow: '#c9a84c',
+  successGlow: '#5a9e6f',
+  failGlow: '#c05050',
 } as const;
 
 /** 升级列表面板参数 */
 export const UPGRADE_PANEL = {
-  startY: 280,
+  startY: 300,
   itemHeight: 48,
   itemPadding: 4,
   itemMarginX: 12,
@@ -257,25 +353,35 @@ export const UPGRADE_PANEL = {
 
 /** 资源图标映射 */
 export const RESOURCE_ICONS: Record<string, string> = {
-  [RESOURCE_IDS.CONTRIBUTION]: '🏯',
-  [RESOURCE_IDS.SPIRIT_STONE]: '💎',
-  [RESOURCE_IDS.PILL]: '💊',
-  [RESOURCE_IDS.PRESTIGE]: '⭐',
+  [RESOURCE_IDS.WEALTH]: '💰',
+  [RESOURCE_IDS.REPUTATION]: '⭐',
+  [RESOURCE_IDS.CONNECTION]: '🤝',
 };
 
 /** 资源名称映射 */
 export const RESOURCE_NAMES: Record<string, string> = {
-  [RESOURCE_IDS.CONTRIBUTION]: '贡献点',
-  [RESOURCE_IDS.SPIRIT_STONE]: '灵石',
-  [RESOURCE_IDS.PILL]: '丹药',
-  [RESOURCE_IDS.PRESTIGE]: '声望',
+  [RESOURCE_IDS.WEALTH]: '财富',
+  [RESOURCE_IDS.REPUTATION]: '声望',
+  [RESOURCE_IDS.CONNECTION]: '人脉',
 };
-
-/** 场景中最大成员数量 */
-export const MAX_VISIBLE_MEMBERS = 8;
-
-/** 成员行走速度（像素/秒） */
-export const MEMBER_WALK_SPEED = 25;
 
 /** 飘字效果持续时间（毫秒） */
 export const FLOATING_TEXT_DURATION = 1000;
+
+/** 灯笼粒子数量 */
+export const MAX_LANTERN_PARTICLES = 8;
+
+/** 落叶粒子数量 */
+export const MAX_LEAF_PARTICLES = 10;
+
+/** 动画参数 */
+export const ANIMATION = {
+  /** 飘字效果持续时间（毫秒） */
+  floatingTextDuration: 1200,
+  /** 灯笼粒子数量 */
+  lanternCount: 8,
+  /** 落叶粒子数量 */
+  leafCount: 10,
+  /** 转生光效持续时间（毫秒） */
+  prestigeDuration: 2000,
+} as const;
