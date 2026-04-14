@@ -1298,6 +1298,8 @@ describe('对象清理', () => {
   it('active 炸弹保留', () => {
     const engine = createPlayingEngine();
     injectBomb(engine, { active: true, y: 300 });
+    // 阻止 update 中生成新炸弹
+    setPrivate(engine, '_spawnTimer', 99999);
 
     callUpdate(engine, 16);
 
