@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import App from '@/App';
 import GamePage from '@/pages/GamePage';
@@ -73,10 +73,10 @@ describe('路由与导航', () => {
     localStorage.clear();
   });
 
-  it('首页渲染正确 — 显示 Game Portal 标题', () => {
+  it('首页渲染正确 — 显示 Game Portal 标题', async () => {
     renderWithRouter(<App />);
-    // "Game Portal" 在 header/h1/footer 出现多次，用 getAllByText
-    const matches = screen.getAllByText(/Game Portal/i);
+    // "Game Portal" 在 header/h1/footer 出现多次，用 waitFor 等待渲染完成
+    const matches = await waitFor(() => screen.getAllByText(/Game Portal/i));
     expect(matches.length).toBeGreaterThanOrEqual(1);
     // h1 标题应存在
     const h1 = matches.find(el => el.tagName === 'H1');

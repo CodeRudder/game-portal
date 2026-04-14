@@ -552,6 +552,41 @@ const gameInfo: Record<GameType, { title: string; description: string; icon: str
     color: 'text-orange-400',
     gradient: 'from-orange-600/20 to-yellow-600/20',
   },
+  [GameType.SLOPE_BALL]: {
+    title: '滚球跑酷',
+    description: '控制球在斜坡上滚动，左右躲避障碍物，速度越来越快！你能坚持多久？',
+    icon: '⚽',
+    color: 'text-green-400',
+    gradient: 'from-green-600/20 to-cyan-600/20',
+  },
+  [GameType.CHINESE_CHESS]: {
+    title: '象棋',
+    description: '经典中国象棋，楚河汉界，车马炮兵各显神通。支持人机对战，挑战智能AI！',
+    icon: '♟',
+    color: 'text-red-400',
+    gradient: 'from-red-600/20 to-amber-600/20',
+  },
+  [GameType.TEMPLE_RUN]: {
+    title: '神庙逃亡',
+    description: '三跑道跑酷！左右切换跑道，跳跃和滑铲躲避障碍，收集金币，速度递增挑战极限！',
+    icon: '🏃',
+    color: 'text-amber-400',
+    gradient: 'from-amber-600/20 to-red-600/20',
+  },
+  [GameType.SENET]: {
+    title: '塞尼特',
+    description: '古埃及棋盘游戏！掷棍决定步数，策略移动棋子，吃掉对方棋子，先将所有棋子移出者胜！',
+    icon: '🏛',
+    color: 'text-amber-700',
+    gradient: 'from-amber-800/20 to-yellow-700/20',
+  },
+  [GameType.TANK_DUEL]: {
+    title: '坦克大战',
+    description: '双人坦克对决！在战场上操控坦克，利用地形和弹药，击败对手赢得胜利！',
+    icon: '🔫',
+    color: 'text-olive-400',
+    gradient: 'from-green-700/20 to-yellow-700/20',
+  },
 };
 
 export default function GameCard({ type }: GameCardProps) {

@@ -78,6 +78,11 @@ export enum GameType {
   STICK_FIGHTER = 'stick-fighter',
   FREECELL = 'freecell',
   FOLD_PUZZLE = 'fold-puzzle',
+  SLOPE_BALL = 'slope-ball',
+  TANK_DUEL = 'tank-duel',
+  CHINESE_CHESS = 'chinese-chess',
+  TEMPLE_RUN = 'temple-run',
+  SENET = 'senet',
 }
 
 // ========== 游戏状态枚举 ==========

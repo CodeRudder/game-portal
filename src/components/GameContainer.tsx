@@ -78,6 +78,11 @@ import { ChessEngine } from '@/games/chess/ChessEngine';
 import { StickFighterEngine } from '@/games/stick-fighter/StickFighterEngine';
 import { FreeCellEngine } from '@/games/freecell/FreeCellEngine';
 import { FoldPuzzleEngine } from '@/games/fold-puzzle/FoldPuzzleEngine';
+import { SlopeBallEngine } from '@/games/slope-ball/SlopeBallEngine';
+import { TankDuelEngine } from '@/games/tank-duel/TankDuelEngine';
+import { ChineseChessEngine } from '@/games/chinese-chess/ChineseChessEngine';
+import { TempleRunEngine } from '@/games/temple-run/TempleRunEngine';
+import { SenetEngine } from '@/games/senet/SenetEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -164,6 +169,11 @@ function createEngine(type: GameType) {
     case GameTypeEnum.STICK_FIGHTER: return new StickFighterEngine();
     case GameTypeEnum.FREECELL: return new FreeCellEngine();
     case GameTypeEnum.FOLD_PUZZLE: return new FoldPuzzleEngine();
+    case GameTypeEnum.SLOPE_BALL: return new SlopeBallEngine();
+    case GameTypeEnum.TANK_DUEL: return new TankDuelEngine();
+    case GameTypeEnum.CHINESE_CHESS: return new ChineseChessEngine();
+    case GameTypeEnum.TEMPLE_RUN: return new TempleRunEngine();
+    case GameTypeEnum.SENET: return new SenetEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

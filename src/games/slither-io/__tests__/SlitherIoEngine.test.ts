@@ -1337,7 +1337,9 @@ describe('SlitherIoEngine', () => {
         tick(engine);
       }
 
-      expect(getFoods(engine).length).toBe(MAX_FOOD_COUNT);
+      // replenishFood 补充到 MAX_FOOD_COUNT，但 AI 虫子死亡时 killWorm
+      // 会在身体位置额外生成食物，因此总数可能超过 MAX_FOOD_COUNT
+      expect(getFoods(engine).length).toBeGreaterThanOrEqual(MAX_FOOD_COUNT);
     });
 
     it('转向 + 移动应改变方向', () => {
