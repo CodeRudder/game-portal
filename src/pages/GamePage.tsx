@@ -113,6 +113,19 @@ const VALID_TYPES: Record<string, GameType> = {
   'dino-ranch': GameType.DINO_RANCH,
   'idle-xianxia': GameType.IDLE_XIANXIA,
   'sect-rise': GameType.SECT_RISE,
+  'alchemy-master': GameType.ALCHEMY_MASTER,
+  'civ-babylon': GameType.CIV_BABYLON,
+  'civ-china': GameType.CIV_CHINA,
+  'civ-egypt': GameType.CIV_EGYPT,
+  'civ-india': GameType.CIV_INDIA,
+  'clan-saga': GameType.CLAN_SAGA,
+  'doomsday': GameType.DOOMSDAY,
+  'dungeon-explore': GameType.DUNGEON_EXPLORE,
+  'island-drift': GameType.ISLAND_DRIFT,
+  'modern-city': GameType.MODERN_CITY,
+  'space-drift': GameType.SPACE_DRIFT,
+  'tribulation': GameType.TRIBULATION,
+  'wild-survival': GameType.WILD_SURVIVAL,
 };
 
 export default function GamePage() {

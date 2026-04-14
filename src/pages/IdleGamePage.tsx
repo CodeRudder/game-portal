@@ -64,6 +64,84 @@ const IDLE_GAME_REGISTRY: Record<string, IdleGameConfig> = {
     description: '创建宗门，招收弟子，成就修仙霸业！',
     legacyRoute: '/game/sect-rise',
   },
+  'alchemy-master': {
+    name: '炼金大师',
+    icon: '⚗️',
+    description: '调配药剂，炼制神器，成为传奇炼金术士！',
+    legacyRoute: '/game/alchemy-master',
+  },
+  'civ-babylon': {
+    name: '巴比伦文明',
+    icon: '🏛️',
+    description: '建造空中花园，发展两河文明，成就帝国霸业！',
+    legacyRoute: '/game/civ-babylon',
+  },
+  'civ-china': {
+    name: '华夏文明',
+    icon: '🐉',
+    description: '发展农耕丝织，建设万里长城，缔造华夏盛世！',
+    legacyRoute: '/game/civ-china',
+  },
+  'civ-egypt': {
+    name: '埃及文明',
+    icon: '🏺',
+    description: '建造金字塔，统治尼罗河，成就法老王朝！',
+    legacyRoute: '/game/civ-egypt',
+  },
+  'civ-india': {
+    name: '印度文明',
+    icon: '🕉️',
+    description: '种植香料，修建神庙，繁荣恒河流域！',
+    legacyRoute: '/game/civ-india',
+  },
+  'clan-saga': {
+    name: '氏族传说',
+    icon: '⚔️',
+    description: '统领氏族，征战四方，书写属于你的传奇！',
+    legacyRoute: '/game/clan-saga',
+  },
+  'doomsday': {
+    name: '末日求生',
+    icon: '☢️',
+    description: '核战之后，收集资源，建立避难所，重建文明！',
+    legacyRoute: '/game/doomsday',
+  },
+  'dungeon-explore': {
+    name: '地牢探索',
+    icon: '🏰',
+    description: '深入地下城，击败怪物，收集宝藏和装备！',
+    legacyRoute: '/game/dungeon-explore',
+  },
+  'island-drift': {
+    name: '荒岛漂流',
+    icon: '🏝️',
+    description: '流落荒岛，采集资源，建造庇护所，等待救援！',
+    legacyRoute: '/game/island-drift',
+  },
+  'modern-city': {
+    name: '现代都市',
+    icon: '🏙️',
+    description: '规划建设，发展经济，打造国际化现代都市！',
+    legacyRoute: '/game/modern-city',
+  },
+  'space-drift': {
+    name: '星际漂流',
+    icon: '🚀',
+    description: '驾驶飞船，开采小行星，探索无尽宇宙！',
+    legacyRoute: '/game/space-drift',
+  },
+  'tribulation': {
+    name: '天劫修仙',
+    icon: '⚡',
+    description: '渡过天劫，飞升仙界，成就无上大道！',
+    legacyRoute: '/game/tribulation',
+  },
+  'wild-survival': {
+    name: '荒野求生',
+    icon: '🌲',
+    description: '在原始荒野中生存，狩猎采集，对抗自然！',
+    legacyRoute: '/game/wild-survival',
+  },
 };
 
 export default function IdleGamePage() {

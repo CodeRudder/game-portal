@@ -107,6 +107,19 @@ export enum GameType {
   DINO_RANCH = 'dino-ranch',
   IDLE_XIANXIA = 'idle-xianxia',
   SECT_RISE = 'sect-rise',
+  ALCHEMY_MASTER = 'alchemy-master',
+  CIV_BABYLON = 'civ-babylon',
+  CIV_CHINA = 'civ-china',
+  CIV_EGYPT = 'civ-egypt',
+  CIV_INDIA = 'civ-india',
+  CLAN_SAGA = 'clan-saga',
+  DOOMSDAY = 'doomsday',
+  DUNGEON_EXPLORE = 'dungeon-explore',
+  ISLAND_DRIFT = 'island-drift',
+  MODERN_CITY = 'modern-city',
+  SPACE_DRIFT = 'space-drift',
+  TRIBULATION = 'tribulation',
+  WILD_SURVIVAL = 'wild-survival',
 }
 
 // ========== 游戏状态枚举 ==========
