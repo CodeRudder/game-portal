@@ -159,9 +159,16 @@ export const BUTTON_COLORS = {
   DEAL_DISABLED: '#165a30',
   NEW_GAME_BG: '#8e44ad',
   NEW_GAME_HOVER: '#a96bc5',
+  BET_UP_BG: '#2ecc71',
+  BET_UP_HOVER: '#55d98d',
+  BET_DOWN_BG: '#e67e22',
+  BET_DOWN_HOVER: '#f0a04b',
   TEXT: '#ffffff',
   TEXT_DISABLED: '#888888',
 } as const;
+
+/** 下注调整按钮宽度（比操作按钮窄） */
+export const BET_BUTTON_WIDTH = 80;
 
 /** 按钮定义（用于命中检测和渲染） */
 export interface ButtonRect {

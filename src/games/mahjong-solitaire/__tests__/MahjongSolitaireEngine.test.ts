@@ -53,6 +53,29 @@ function createTinyEngine(): MahjongSolitaireEngine {
   return engine;
 }
 
+/** 创建一个使用小型布局且处于 playing 状态的引擎 */
+function createPlayingTinyEngine(): MahjongSolitaireEngine {
+  const engine = new MahjongSolitaireEngine();
+  const canvas = document.createElement('canvas');
+  canvas.width = 480;
+  canvas.height = 640;
+  engine.setCanvas(canvas);
+  engine.init();
+
+  // 先 start 以进入 playing 状态（会生成 TURTLE_LAYOUT 牌局）
+  engine.start();
+
+  // 然后覆盖为 TINY_LAYOUT
+  engine.setLayout(TINY_LAYOUT);
+  const tiles = createTilesForLayout(TINY_LAYOUT, [
+    0, 0, 1, 1,
+    2, 2, 3, 3,
+  ]);
+  engine.setTiles(tiles);
+
+  return engine;
+}
+
 /** 为布局创建牌 */
 function createTilesForLayout(layout: LayoutLayer[], faceIndices: number[]): any[] {
   const tiles: any[] = [];
@@ -1168,6 +1191,304 @@ describe('MahjongSolitaireEngine', () => {
       engine.reset();
       expect(engine.getTiles()).toHaveLength(0);
       expect(engine.getRemainingCount()).toBe(0);
+    });
+  });
+
+  // ========== 鼠标交互 ==========
+
+  describe('鼠标交互 - 命中检测', () => {
+    it('点击牌面中心应该命中该牌', () => {
+      const e = createPlayingTinyEngine();
+      // TINY_LAYOUT: 4x2, layer 0, offsetX=168, offsetY=297
+      // Tile (0,0) id=0: center=(186, 321)
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBe(0);
+    });
+
+    it('点击牌面左上角应该命中该牌', () => {
+      const e = createPlayingTinyEngine();
+      // Tile (0,0): x=168, y=297
+      e.handleClick(168, 297);
+      expect(e.getSelectedTileId()).toBe(0);
+    });
+
+    it('点击牌面右下角边缘应该命中该牌', () => {
+      const e = createPlayingTinyEngine();
+      // Tile (0,0): x=168..204 (exclusive), y=297..345 (exclusive)
+      e.handleClick(203, 344);
+      expect(e.getSelectedTileId()).toBe(0);
+    });
+
+    it('点击牌面外部不应该命中', () => {
+      const e = createPlayingTinyEngine();
+      e.handleClick(10, 10);
+      // Clicking blank area deselects (was null), so still null
+      expect(e.getSelectedTileId()).toBeNull();
+    });
+
+    it('点击两张牌之间的行边界应该命中下一行', () => {
+      const e = createPlayingTinyEngine();
+      // Tile (0,0): y=297..345, Tile (1,0): y=345..393
+      // Click at y=345 (boundary) — should be in row 1
+      e.handleClick(186, 345);
+      // Should select tile at row=1, col=0 (id=4)
+      expect(e.getSelectedTileId()).toBe(4);
+    });
+
+    it('多层布局中上层牌优先命中', () => {
+      // SIMPLE_LAYOUT: 2 layers
+      const simpleEngine = new MahjongSolitaireEngine();
+      const canvas = document.createElement('canvas');
+      canvas.width = 480;
+      canvas.height = 640;
+      simpleEngine.setCanvas(canvas);
+      simpleEngine.init();
+      simpleEngine.start(); // Enter playing state
+
+      // Override with SIMPLE_LAYOUT
+      simpleEngine.setLayout(SIMPLE_LAYOUT);
+      const tiles = createTilesForLayout(SIMPLE_LAYOUT, [
+        0, 0, 1, 1,  // layer 0: faceIndex 0,0,1,1
+        2, 2,          // layer 1: faceIndex 2,2
+      ]);
+      simpleEngine.setTiles(tiles);
+
+      // offsetX=168, offsetY=318
+      // Layer 1, (0,0) id=4: center=(190, 348)
+      // Overlaps with Layer 0, (0,0) id=0: (168..204, 318..366)
+      simpleEngine.handleClick(190, 348);
+      expect(simpleEngine.getSelectedTileId()).toBe(4);
+    });
+  });
+
+  describe('鼠标交互 - 点击选牌', () => {
+    it('点击空闲牌应该选中它', () => {
+      const e = createPlayingTinyEngine();
+      // Tile (0,0) is free (leftmost). Center=(186, 321)
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBe(0);
+    });
+
+    it('再次点击已选中的牌应该取消选择', () => {
+      const e = createPlayingTinyEngine();
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBe(0);
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBeNull();
+    });
+
+    it('点击两张同面牌应该消除配对', () => {
+      const e = createPlayingTinyEngine();
+      // faceIndices = [0, 0, 1, 1, 2, 2, 3, 3]
+      // Tile 0 (faceIndex=0) at (0,0) center=(186, 321) - free (leftmost)
+      // Tile 1 (faceIndex=0) at (0,1) center=(222, 321) - NOT free (blocked both sides)
+      // Need two free tiles with same faceIndex
+      // Free tiles: (0,0) id=0, (0,3) id=3, (1,0) id=4, (1,3) id=7
+      // faceIndex: id=0→0, id=3→1, id=4→2, id=7→3 - all different!
+      // We need to set up matching free tiles. Let's use custom face indices.
+      const e2 = createPlayingTinyEngine();
+      // Override tiles so that two free tiles have same faceIndex
+      // Free tiles are at (0,0), (0,3), (1,0), (1,3)
+      // Set (0,0) and (0,3) to same faceIndex
+      const customTiles = createTilesForLayout(TINY_LAYOUT, [
+        5, 0, 0, 5,   // row 0: (0,0)=5, (0,3)=5 → both free, same face
+        1, 0, 0, 1,   // row 1
+      ]);
+      e2.setTiles(customTiles);
+
+      // Click (0,0) center=(186, 321) - free, faceIndex=5
+      e2.handleClick(186, 321);
+      expect(e2.getSelectedTileId()).toBe(0);
+
+      // Click (0,3) center=(294, 321) - free, faceIndex=5
+      e2.handleClick(294, 321);
+      expect(e2.getSelectedTileId()).toBeNull();
+      expect(customTiles[0].removed).toBe(true);
+      expect(customTiles[3].removed).toBe(true);
+      expect(e2.getMoves()).toBe(1);
+    });
+
+    it('点击两张不同面牌应该切换选择', () => {
+      const e = createPlayingTinyEngine();
+      // Tile 0 (faceIndex=0) at (0,0) center=(186, 321) - free
+      // Tile at (1,0) id=4 (faceIndex=2) center=(186, 369) - free
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBe(0);
+
+      e.handleClick(186, 369);
+      expect(e.getSelectedTileId()).toBe(4);
+      expect(e.getTiles()[0].removed).toBe(false);
+    });
+
+    it('点击空白区域应该取消选择', () => {
+      const e = createPlayingTinyEngine();
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBe(0);
+      e.handleClick(10, 10);
+      expect(e.getSelectedTileId()).toBeNull();
+    });
+
+    it('点击非空闲牌应该取消选择并闪烁', () => {
+      const e = createPlayingTinyEngine();
+      // Free: (0,0), (0,3), (1,0), (1,3)
+      // Blocked: (0,1), (0,2), (1,1), (1,2)
+      // Select free tile (0,0)
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBe(0);
+
+      // Click blocked tile (0,1) center=(222, 321)
+      e.handleClick(222, 321);
+      expect(e.getSelectedTileId()).toBeNull();
+      expect(e.getInvalidClickFlash()).not.toBeNull();
+    });
+
+    it('点击时应该同步光标位置', () => {
+      const e = createPlayingTinyEngine();
+      // Click free tile (0,3) center=(294, 321)
+      e.handleClick(294, 321);
+      const cursor = e.getCursor();
+      expect(cursor).not.toBeNull();
+      expect(cursor!.layer).toBe(0);
+      expect(cursor!.row).toBe(0);
+      expect(cursor!.col).toBe(3);
+    });
+
+    it('点击时应该清除提示状态', () => {
+      const e = createPlayingTinyEngine();
+      // Default tiles [0,0,1,1,2,2,3,3] have no matching free pair.
+      // Free tiles are at (0,0), (0,3), (1,0), (1,3).
+      // Set custom faces so free tiles match: (0,0)=5, (0,3)=5
+      const customTiles = createTilesForLayout(TINY_LAYOUT, [
+        5, 0, 0, 5,   // row 0: (0,0)=5, (0,3)=5 → both free, same face
+        1, 0, 0, 1,   // row 1
+      ]);
+      e.setTiles(customTiles);
+
+      e.showHint();
+      expect(e.getHintState()).not.toBeNull();
+      // Click a free tile to clear hint
+      e.handleClick(186, 321);
+      expect(e.getHintState()).toBeNull();
+    });
+
+    it('非 playing 状态下点击不应该有效果', () => {
+      const e = createTinyEngine(); // Not started, idle status
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBeNull();
+    });
+  });
+
+  describe('鼠标交互 - 悬停高亮', () => {
+    it('鼠标移到空闲牌上应该设置悬停状态', () => {
+      const e = createPlayingTinyEngine();
+      e.handleMouseMove(186, 321);
+      expect(e.getHoveredTileId()).toBe(0);
+    });
+
+    it('鼠标移到不同牌上应该更新悬停状态', () => {
+      const e = createPlayingTinyEngine();
+      e.handleMouseMove(186, 321);
+      expect(e.getHoveredTileId()).toBe(0);
+
+      // Move to free tile (0,3) center=(294, 321)
+      e.handleMouseMove(294, 321);
+      expect(e.getHoveredTileId()).toBe(3);
+    });
+
+    it('鼠标移到空白区域应该清除悬停状态', () => {
+      const e = createPlayingTinyEngine();
+      e.handleMouseMove(186, 321);
+      expect(e.getHoveredTileId()).toBe(0);
+      e.handleMouseMove(10, 10);
+      expect(e.getHoveredTileId()).toBeNull();
+    });
+
+    it('非 playing 状态下移动鼠标不应该设置悬停', () => {
+      const e = createTinyEngine(); // Not started
+      e.handleMouseMove(186, 321);
+      expect(e.getHoveredTileId()).toBeNull();
+    });
+  });
+
+  describe('鼠标交互 - 鼠标与键盘共享状态', () => {
+    it('鼠标选中后可以用键盘空格取消选择', () => {
+      const e = createPlayingTinyEngine();
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBe(0);
+
+      e.setCursor({ layer: 0, row: 0, col: 0 });
+      e.handleKeyDown(' ');
+      expect(e.getSelectedTileId()).toBeNull();
+    });
+
+    it('键盘选中后可以用鼠标取消选择', () => {
+      const e = createPlayingTinyEngine();
+      e.setCursor({ layer: 0, row: 0, col: 0 });
+      e.handleKeyDown(' ');
+      expect(e.getSelectedTileId()).toBe(0);
+
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBeNull();
+    });
+
+    it('鼠标选中后键盘可以配对消除', () => {
+      // Set up two free tiles with same faceIndex
+      const e = createPlayingTinyEngine();
+      const customTiles = createTilesForLayout(TINY_LAYOUT, [
+        5, 0, 0, 5,   // (0,0)=5, (0,3)=5 → both free
+        1, 0, 0, 1,
+      ]);
+      e.setTiles(customTiles);
+
+      // Select (0,0) via mouse
+      e.handleClick(186, 321);
+      expect(e.getSelectedTileId()).toBe(0);
+
+      // Move cursor to (0,3) and select via keyboard
+      e.setCursor({ layer: 0, row: 0, col: 3 });
+      e.handleKeyDown(' ');
+      expect(e.getSelectedTileId()).toBeNull();
+      expect(customTiles[0].removed).toBe(true);
+      expect(customTiles[3].removed).toBe(true);
+    });
+
+    it('键盘选中后鼠标可以配对消除', () => {
+      const e = createPlayingTinyEngine();
+      const customTiles = createTilesForLayout(TINY_LAYOUT, [
+        5, 0, 0, 5,   // (0,0)=5, (0,3)=5 → both free
+        1, 0, 0, 1,
+      ]);
+      e.setTiles(customTiles);
+
+      // Select (0,0) via keyboard
+      e.setCursor({ layer: 0, row: 0, col: 0 });
+      e.handleKeyDown(' ');
+      expect(e.getSelectedTileId()).toBe(0);
+
+      // Click (0,3) via mouse center=(294, 321)
+      e.handleClick(294, 321);
+      expect(e.getSelectedTileId()).toBeNull();
+      expect(customTiles[0].removed).toBe(true);
+      expect(customTiles[3].removed).toBe(true);
+    });
+  });
+
+  describe('鼠标交互 - 无效点击闪烁', () => {
+    it('点击被侧边遮挡的牌应该触发闪烁', () => {
+      const e = createPlayingTinyEngine();
+      // Tile (0,1) id=1: blocked both sides, center=(222, 321)
+      e.handleClick(222, 321);
+      expect(e.getInvalidClickFlash()).not.toBeNull();
+      expect(e.getInvalidClickFlash()!.tileId).toBe(1);
+    });
+
+    it('闪烁应该在 300ms 后消失', () => {
+      const e = createPlayingTinyEngine();
+      e.handleClick(222, 321);
+      expect(e.getInvalidClickFlash()).not.toBeNull();
+
+      tick(e, 300);
+      expect(e.getInvalidClickFlash()).toBeNull();
     });
   });
 });

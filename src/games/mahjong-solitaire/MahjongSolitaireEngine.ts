@@ -272,11 +272,16 @@ export class MahjongSolitaireEngine extends GameEngine {
     if (this._status !== 'playing') return;
 
     const tile = this.hitTestTile(canvasX, canvasY);
-    if (!tile) return;
 
-    // 只有自由牌可以被点击
+    // 点击空白区域 → 取消选择
+    if (!tile) {
+      this.selectedTileId = null;
+      return;
+    }
+
+    // 点击非空闲牌 → 取消选择 + 无效点击反馈
     if (!this.isTileFree(tile)) {
-      // 无效点击反馈：短暂闪红
+      this.selectedTileId = null;
       this.invalidClickFlash = { tileId: tile.id, elapsed: 0 };
       return;
     }
@@ -1063,5 +1068,19 @@ export class MahjongSolitaireEngine extends GameEngine {
    */
   getRemoveAnimation(): RemoveAnimation | null {
     return this.removeAnimation;
+  }
+
+  /**
+   * 获取悬停牌 ID（用于测试）
+   */
+  getHoveredTileId(): number | null {
+    return this.hoveredTileId;
+  }
+
+  /**
+   * 获取无效点击闪烁状态（用于测试）
+   */
+  getInvalidClickFlash(): { tileId: number; elapsed: number } | null {
+    return this.invalidClickFlash;
   }
 }

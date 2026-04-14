@@ -51,6 +51,7 @@ import {
   BUTTON_GAP,
   BUTTON_AREA_Y,
   BUTTON_COLORS,
+  BET_BUTTON_WIDTH,
   type ButtonRect,
 } from './constants';
 
@@ -621,8 +622,56 @@ export class BlackjackEngine extends GameEngine {
     const centerX = CANVAS_WIDTH / 2;
 
     if (this._phase === GamePhase.BETTING) {
-      // 下注阶段：[Deal] 按钮
-      return [{
+      // 下注阶段：[−50] [+50] [+100] 按钮 + [发牌] 按钮
+      const betButtons: ButtonRect[] = [];
+
+      // 下注调整按钮行（在发牌按钮上方）
+      const betRowY = BUTTON_AREA_Y - BUTTON_HEIGHT - 12;
+      const betGap = 12;
+      const totalBetWidth = 3 * BET_BUTTON_WIDTH + 2 * betGap;
+      const betStartX = centerX - totalBetWidth / 2;
+
+      betButtons.push({
+        x: betStartX,
+        y: betRowY,
+        width: BET_BUTTON_WIDTH,
+        height: BUTTON_HEIGHT,
+        label: '−50',
+        action: 'betDown50',
+        enabled: this._currentBet > MIN_BET,
+        bgColor: BUTTON_COLORS.BET_DOWN_BG,
+        hoverColor: BUTTON_COLORS.BET_DOWN_HOVER,
+        disabledColor: '#7a4a10',
+      });
+
+      betButtons.push({
+        x: betStartX + BET_BUTTON_WIDTH + betGap,
+        y: betRowY,
+        width: BET_BUTTON_WIDTH,
+        height: BUTTON_HEIGHT,
+        label: '+50',
+        action: 'betUp50',
+        enabled: this._currentBet + 50 <= Math.min(MAX_BET, this._chips),
+        bgColor: BUTTON_COLORS.BET_UP_BG,
+        hoverColor: BUTTON_COLORS.BET_UP_HOVER,
+        disabledColor: '#165a30',
+      });
+
+      betButtons.push({
+        x: betStartX + 2 * (BET_BUTTON_WIDTH + betGap),
+        y: betRowY,
+        width: BET_BUTTON_WIDTH,
+        height: BUTTON_HEIGHT,
+        label: '+100',
+        action: 'betUp100',
+        enabled: this._currentBet + 100 <= Math.min(MAX_BET, this._chips),
+        bgColor: BUTTON_COLORS.BET_UP_BG,
+        hoverColor: BUTTON_COLORS.BET_UP_HOVER,
+        disabledColor: '#165a30',
+      });
+
+      // 发牌按钮
+      betButtons.push({
         x: centerX - BUTTON_WIDTH / 2,
         y: BUTTON_AREA_Y,
         width: BUTTON_WIDTH,
@@ -633,7 +682,9 @@ export class BlackjackEngine extends GameEngine {
         bgColor: BUTTON_COLORS.DEAL_BG,
         hoverColor: BUTTON_COLORS.DEAL_HOVER,
         disabledColor: BUTTON_COLORS.DEAL_DISABLED,
-      }];
+      });
+
+      return betButtons;
     }
 
     if (this._phase === GamePhase.PLAYER_TURN) {
@@ -727,6 +778,21 @@ export class BlackjackEngine extends GameEngine {
       case 'newgame':
         if (this._phase === GamePhase.SETTLEMENT) {
           this.startNewRound();
+        }
+        break;
+      case 'betUp100':
+        if (this._phase === GamePhase.BETTING) {
+          this.setBet(this._currentBet + 100);
+        }
+        break;
+      case 'betUp50':
+        if (this._phase === GamePhase.BETTING) {
+          this.setBet(this._currentBet + 50);
+        }
+        break;
+      case 'betDown50':
+        if (this._phase === GamePhase.BETTING) {
+          this.setBet(this._currentBet - 50);
         }
         break;
     }
@@ -931,7 +997,7 @@ export class BlackjackEngine extends GameEngine {
     if (this._phase === GamePhase.BETTING) {
       ctx.fillStyle = COLORS.TEXT_GOLD;
       ctx.font = 'bold 14px sans-serif';
-      ctx.fillText('↑↓ 调整赌注 · 空格/Enter 开始', w / 2, h / 2);
+      ctx.fillText('↑↓ 调整赌注 · 点击按钮 · 空格/Enter 开始', w / 2, h / 2);
     } else if (this._phase === GamePhase.PLAYER_TURN) {
       ctx.fillStyle = COLORS.TEXT_WHITE;
       ctx.font = '12px sans-serif';

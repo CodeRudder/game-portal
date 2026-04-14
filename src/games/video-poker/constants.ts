@@ -131,10 +131,18 @@ export const VP_BUTTON_COLORS = {
   DEAL_DRAW_BG: '#27ae60',
   DEAL_DRAW_HOVER: '#3dd676',
   DEAL_DRAW_DISABLED: '#165a30',
+  BET_UP_BG: '#2ecc71',
+  BET_UP_HOVER: '#55d98d',
+  BET_DOWN_BG: '#e67e22',
+  BET_DOWN_HOVER: '#f0a04b',
   CARD_HOVER_BORDER: '#ffd700',
   TEXT: '#ffffff',
   TEXT_DISABLED: '#888888',
 } as const;
+
+/** 下注调整按钮尺寸 */
+export const VP_BET_BUTTON_WIDTH = 60;
+export const VP_BET_BUTTON_HEIGHT = 32;
 
 /** 按钮定义 */
 export interface VPButtonRect {

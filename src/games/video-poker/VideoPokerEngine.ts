@@ -24,6 +24,8 @@ import {
   VP_CARD_HEIGHT,
   VP_CARD_GAP,
   VP_BUTTON_COLORS,
+  VP_BET_BUTTON_WIDTH,
+  VP_BET_BUTTON_HEIGHT,
   type VPButtonRect,
 } from './constants';
 import type { Card, Suit, Rank, VideoPokerState } from './constants';
@@ -367,6 +369,46 @@ export class VideoPokerEngine extends GameEngine {
     return -1;
   }
 
+  /** 获取下注调整按钮列表（仅在 IDLE/RESULT 阶段显示） */
+  private getBetButtons(): VPButtonRect[] {
+    if (this.phase !== GamePhase.IDLE && this.phase !== GamePhase.RESULT) {
+      return [];
+    }
+
+    const centerX = CANVAS_WIDTH / 2;
+    const gap = 12;
+    const totalWidth = 2 * VP_BET_BUTTON_WIDTH + gap;
+    const startX = centerX - totalWidth / 2;
+    const y = VP_BUTTON_Y - VP_BET_BUTTON_HEIGHT - 10;
+
+    return [
+      {
+        x: startX,
+        y,
+        width: VP_BET_BUTTON_WIDTH,
+        height: VP_BET_BUTTON_HEIGHT,
+        label: '−1',
+        action: 'betDown',
+        enabled: this.bet > MIN_BET,
+        bgColor: VP_BUTTON_COLORS.BET_DOWN_BG,
+        hoverColor: VP_BUTTON_COLORS.BET_DOWN_HOVER,
+        disabledColor: '#7a4a10',
+      },
+      {
+        x: startX + VP_BET_BUTTON_WIDTH + gap,
+        y,
+        width: VP_BET_BUTTON_WIDTH,
+        height: VP_BET_BUTTON_HEIGHT,
+        label: '+1',
+        action: 'betUp',
+        enabled: this.bet < Math.min(MAX_BET, this.credits),
+        bgColor: VP_BUTTON_COLORS.BET_UP_BG,
+        hoverColor: VP_BUTTON_COLORS.BET_UP_HOVER,
+        disabledColor: '#165a30',
+      },
+    ];
+  }
+
   /** 判断点是否在矩形内 */
   private isPointInRect(px: number, py: number, rect: { x: number; y: number; width: number; height: number }): boolean {
     return px >= rect.x && px <= rect.x + rect.width &&
@@ -385,6 +427,16 @@ export class VideoPokerEngine extends GameEngine {
       case 'draw':
         if (this.phase === GamePhase.HOLDING) {
           this.draw();
+        }
+        break;
+      case 'betUp':
+        if (this.phase === GamePhase.IDLE || this.phase === GamePhase.RESULT) {
+          this.adjustBet(1);
+        }
+        break;
+      case 'betDown':
+        if (this.phase === GamePhase.IDLE || this.phase === GamePhase.RESULT) {
+          this.adjustBet(-1);
         }
         break;
     }
@@ -570,6 +622,9 @@ export class VideoPokerEngine extends GameEngine {
   }
 
   private renderControls(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    // 渲染下注调整按钮（IDLE/RESULT 阶段）
+    this.renderBetButtons(ctx);
+
     // 渲染 Deal/Draw 按钮
     this.renderDealDrawButton(ctx);
 
@@ -581,13 +636,50 @@ export class VideoPokerEngine extends GameEngine {
     ctx.fillStyle = '#666688';
 
     if (this.phase === GamePhase.IDLE) {
-      ctx.fillText('↑↓ 调整下注 (1-5)', w / 2, y);
+      ctx.fillText('↑↓ 或点击按钮调整下注 (1-5)', w / 2, y);
     } else if (this.phase === GamePhase.HOLDING) {
       ctx.fillStyle = '#7788aa';
       ctx.fillText('点击选牌 · 按 1-5 保留/取消', w / 2, y);
     } else if (this.phase === GamePhase.RESULT) {
       ctx.fillStyle = '#7788aa';
       ctx.fillText('点击按钮或按空格开始新一局', w / 2, y);
+    }
+  }
+
+  /** 渲染下注调整按钮 */
+  private renderBetButtons(ctx: CanvasRenderingContext2D): void {
+    const betButtons = this.getBetButtons();
+
+    for (const btn of betButtons) {
+      const isHovered = this._hoveredButton === btn.action;
+
+      // 按钮背景
+      if (!btn.enabled) {
+        ctx.fillStyle = btn.disabledColor;
+      } else if (isHovered) {
+        ctx.fillStyle = btn.hoverColor;
+      } else {
+        ctx.fillStyle = btn.bgColor;
+      }
+
+      this.roundRect(ctx, btn.x, btn.y, btn.width, btn.height, VP_BUTTON_RADIUS);
+      ctx.fill();
+
+      // 悬停时加边框
+      if (isHovered && btn.enabled) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        this.roundRect(ctx, btn.x, btn.y, btn.width, btn.height, VP_BUTTON_RADIUS);
+        ctx.stroke();
+      }
+
+      // 按钮文字
+      ctx.fillStyle = btn.enabled ? VP_BUTTON_COLORS.TEXT : VP_BUTTON_COLORS.TEXT_DISABLED;
+      ctx.font = 'bold 14px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(btn.label, btn.x + btn.width / 2, btn.y + btn.height / 2);
+      ctx.textBaseline = 'alphabetic';
     }
   }
 
@@ -670,6 +762,15 @@ export class VideoPokerEngine extends GameEngine {
       return;
     }
 
+    // 检测是否点击了下注调整按钮
+    const betButtons = this.getBetButtons();
+    for (const btn of betButtons) {
+      if (btn.enabled && this.isPointInRect(canvasX, canvasY, btn)) {
+        this.executeButtonAction(btn.action);
+        return;
+      }
+    }
+
     // 检测是否点击了手牌（仅在 HOLDING 阶段）
     if (this.phase === GamePhase.HOLDING) {
       const cardIndex = this.getCardIndexAtPoint(canvasX, canvasY);
@@ -683,16 +784,27 @@ export class VideoPokerEngine extends GameEngine {
   handleMouseMove(canvasX: number, canvasY: number): void {
     if (this._status !== 'playing') return;
 
-    // 检测悬停在按钮上
+    // 检测悬停在 Deal/Draw 按钮上
     const button = this.getDealDrawButton();
     if (this.isPointInRect(canvasX, canvasY, button)) {
       this._hoveredButton = button.action;
       this._hoveredCardIndex = -1;
-    } else {
-      this._hoveredButton = null;
-      // 检测悬停在牌上
-      this._hoveredCardIndex = this.getCardIndexAtPoint(canvasX, canvasY);
+      return;
     }
+
+    // 检测悬停在下注调整按钮上
+    const betButtons = this.getBetButtons();
+    for (const btn of betButtons) {
+      if (this.isPointInRect(canvasX, canvasY, btn)) {
+        this._hoveredButton = btn.action;
+        this._hoveredCardIndex = -1;
+        return;
+      }
+    }
+
+    this._hoveredButton = null;
+    // 检测悬停在牌上
+    this._hoveredCardIndex = this.getCardIndexAtPoint(canvasX, canvasY);
   }
 
   handleKeyUp(_key: string): void {
