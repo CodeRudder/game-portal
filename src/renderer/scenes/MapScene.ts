@@ -24,6 +24,13 @@ import { BaseScene, type SceneEventBridge } from './BaseScene';
 import type { AssetManager } from '../managers/AssetManager';
 import type { AnimationManager } from '../managers/AnimationManager';
 import type { CameraManager } from '../managers/CameraManager';
+import type {
+  GameMap,
+  MapTile,
+  MapNPC,
+  MapLandmark,
+  TerrainType,
+} from '../../games/three-kingdoms/MapGenerator';
 
 // ═══════════════════════════════════════════════════════════════
 // 常量
@@ -196,6 +203,68 @@ const BUILDING_LEVEL_TEXTURES: Record<number, string> = {
   5: 'building-lv5',
 };
 
+// ─── 瓦片地图渲染常量 ──────────────────────────────────────
+
+/** 地形颜色映射 */
+const TERRAIN_COLORS: Record<TerrainType, number> = {
+  plain: 0x4a7c4f,
+  mountain: 0x8b7355,
+  forest: 0x2d5a2d,
+  water: 0x4a8db7,
+  road: 0xc4a35a,
+  city: 0xd4a574,
+  village: 0x8fbc8f,
+  fortress: 0xa0522d,
+};
+
+/** 地形文字标签 */
+const TERRAIN_LABELS: Record<TerrainType, string> = {
+  plain: '平原',
+  mountain: '山地',
+  forest: '森林',
+  water: '水域',
+  road: '道路',
+  city: '城市',
+  village: '村庄',
+  fortress: '关卡',
+};
+
+/** 瓦片边界线颜色 */
+const TILE_BORDER_COLOR = 0x2a2a4e;
+
+/** 瓦片边界线宽度 */
+const TILE_BORDER_WIDTH = 0.5;
+
+/** 瓦片边界线透明度 */
+const TILE_BORDER_ALPHA = 0.3;
+
+/** 地标标签字号 */
+const LANDMARK_FONT_SIZE = 11;
+
+/** 地标标签颜色 */
+const LANDMARK_LABEL_COLOR = 0xffd700;
+
+/** NPC 点半径 */
+const NPC_DOT_RADIUS = 6;
+
+/** NPC 类型颜色映射 */
+const NPC_TYPE_COLORS: Record<string, number> = {
+  farmer: 0x4caf50,
+  soldier: 0xf44336,
+  merchant: 0xffc107,
+  scholar: 0x2196f3,
+  scout: 0x9c27b0,
+};
+
+/** NPC 类型 emoji 映射 */
+const NPC_TYPE_EMOJI: Record<string, string> = {
+  farmer: '🌾',
+  soldier: '⚔️',
+  merchant: '💰',
+  scholar: '📖',
+  scout: '🔍',
+};
+
 // ═══════════════════════════════════════════════════════════════
 // 内部渲染对象接口
 // ═══════════════════════════════════════════════════════════════
@@ -255,6 +324,31 @@ interface CellHighlight {
   visible: boolean;
   gridX: number;
   gridY: number;
+}
+
+/** 瓦片地图渲染对象 */
+interface TileMapView {
+  tileLayer: Container;
+  labelLayer: Container;
+  buildingLayer: Container;
+  npcLayer: Container;
+  borderLayer: Container;
+  landmarkLayer: Container;
+  graphics: Graphics;
+}
+
+/** NPC 渲染对象 */
+interface NPCDotView {
+  id: string;
+  container: Container;
+  data: MapNPC | null;
+}
+
+/** 地标渲染对象 */
+interface LandmarkView {
+  id: string;
+  container: Container;
+  data: MapLandmark;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -350,6 +444,19 @@ export class MapScene extends BaseScene {
 
   /** 右键选区状态 */
   private selection: SelectionState;
+
+  // ─── 瓦片地图渲染模式 ─────────────────────────────────────
+
+  /** 瓦片地图数据（由外部注入） */
+  private tileMapData: GameMap | null = null;
+  /** 瓦片地图渲染对象（仅瓦片模式时使用） */
+  private tileMapView: TileMapView | null = null;
+  /** NPC 渲染点映射 */
+  private npcDots: Map<string, NPCDotView> = new Map();
+  /** 地标渲染映射 */
+  private landmarkViews: Map<string, LandmarkView> = new Map();
+  /** 是否使用瓦片地图模式 */
+  private useTileMapMode: boolean = false;
 
   // ═══════════════════════════════════════════════════════════
   // 构造函数
@@ -475,12 +582,16 @@ export class MapScene extends BaseScene {
 
   protected onSetData(data: unknown): void {
     const state = data as GameRenderState;
-    if (!state.map) return;
 
+    // 瓦片地图模式：直接使用瓦片渲染，跳过节点图
+    if (this.useTileMapMode) return;
+
+    if (!state.map) return;
     this.renderMap(state.map);
   }
 
   protected onDestroy(): void {
+    this.destroyTileMapView();
     this.territoryNodes.clear();
     this.buildingIcons.clear();
     this.decorations = [];
@@ -1221,6 +1332,394 @@ export class MapScene extends BaseScene {
         this.capturePulseGraphics.delete(territoryId);
       }
     }, 5000);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 瓦片地图渲染模式
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 注入瓦片地图数据，切换到瓦片地图渲染模式
+   *
+   * 当 GameMap 数据可用时，优先使用瓦片地图渲染；
+   * 否则 fallback 到原有节点图模式。
+   *
+   * @param mapData - MapGenerator 生成的完整地图数据
+   */
+  setTileMapData(mapData: GameMap): void {
+    this.tileMapData = mapData;
+    this.useTileMapMode = true;
+
+    // 更新摄像机边界以适配瓦片地图
+    const mapWidth = mapData.width * mapData.tileSize;
+    const mapHeight = mapData.height * mapData.tileSize;
+    this.cameraManager.setBounds({
+      minX: -200,
+      maxX: mapWidth + 200,
+      minY: -200,
+      maxY: mapHeight + 200,
+    });
+
+    // 渲染瓦片地图
+    this.renderTileMap();
+  }
+
+  /**
+   * 渲染完整瓦片地图
+   *
+   * 按层级绘制：瓦片地形 → 领土边界 → 建筑 → NPC → 地标标签
+   */
+  private renderTileMap(): void {
+    if (!this.tileMapData) return;
+
+    // 清理旧的瓦片地图渲染
+    this.destroyTileMapView();
+
+    const map = this.tileMapData;
+    const tileSize = map.tileSize;
+
+    // 创建瓦片地图子容器
+    const tileLayer = new Container({ label: 'tile-terrain' });
+    const borderLayer = new Container({ label: 'tile-borders' });
+    const buildingLayer = new Container({ label: 'tile-buildings' });
+    const npcLayer = new Container({ label: 'tile-npcs' });
+    const landmarkLayer = new Container({ label: 'tile-landmarks' });
+    const labelLayer = new Container({ label: 'tile-labels' });
+
+    // 按层级添加到容器（地形 → 边界 → 建筑 → NPC → 标签）
+    this.container.addChildAt(tileLayer, 0);
+    this.container.addChildAt(borderLayer, 1);
+    this.container.addChildAt(buildingLayer, 2);
+    this.container.addChildAt(npcLayer, 3);
+    this.container.addChildAt(landmarkLayer, 4);
+    this.container.addChildAt(labelLayer, 5);
+
+    const graphics = new Graphics();
+
+    // ── 1. 绘制地形瓦片 ────────────────────────────────────
+    for (let row = 0; row < map.height; row++) {
+      for (let col = 0; col < map.width; col++) {
+        const tile = map.tiles[row]?.[col];
+        if (!tile) continue;
+
+        const x = col * tileSize;
+        const y = row * tileSize;
+        const color = TERRAIN_COLORS[tile.terrain] ?? TERRAIN_COLORS.plain;
+
+        // 填充地形色块
+        graphics.rect(x, y, tileSize, tileSize).fill({ color });
+
+        // 瓦片网格线
+        graphics.rect(x, y, tileSize, tileSize).stroke({
+          width: TILE_BORDER_WIDTH,
+          color: TILE_BORDER_COLOR,
+          alpha: TILE_BORDER_ALPHA,
+        });
+
+        // 海拔视觉变化：高海拔区域加深颜色
+        if (tile.elevation >= 3) {
+          graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.15 });
+        } else if (tile.elevation >= 2) {
+          graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.07 });
+        }
+      }
+    }
+    tileLayer.addChild(graphics);
+
+    // ── 2. 绘制领土边界（虚线） ────────────────────────────
+    this.renderTileTerritoryBorders(borderLayer, map);
+
+    // ── 3. 绘制建筑图标 ────────────────────────────────────
+    this.renderTileBuildings(buildingLayer, map);
+
+    // ── 4. 绘制 NPC 点 ─────────────────────────────────────
+    this.renderTileNPCs(npcLayer, map);
+
+    // ── 5. 绘制地标文字标签 ────────────────────────────────
+    this.renderTileLandmarks(landmarkLayer, labelLayer, map);
+
+    this.tileMapView = {
+      tileLayer,
+      labelLayer,
+      buildingLayer,
+      npcLayer,
+      borderLayer,
+      landmarkLayer,
+      graphics,
+    };
+  }
+
+  /**
+   * 绘制领土边界虚线
+   *
+   * 遍历所有瓦片，当相邻瓦片属于不同领土时绘制虚线边界。
+   */
+  private renderTileTerritoryBorders(borderLayer: Container, map: GameMap): void {
+    const borderGfx = new Graphics();
+    const tileSize = map.tileSize;
+
+    for (let row = 0; row < map.height; row++) {
+      for (let col = 0; col < map.width; col++) {
+        const tile = map.tiles[row]?.[col];
+        if (!tile?.territoryId) continue;
+
+        // 检查右邻瓦片
+        const rightTile = map.tiles[row]?.[col + 1];
+        if (rightTile && rightTile.territoryId && rightTile.territoryId !== tile.territoryId) {
+          const x = (col + 1) * tileSize;
+          const y1 = row * tileSize;
+          const y2 = (row + 1) * tileSize;
+          this.drawDashedLine(borderGfx, x, y1, x, y2, FACTION_COLORS[tile.territoryId.split('_')[0]] ?? 0xe94560);
+        }
+
+        // 检查下邻瓦片
+        const bottomTile = map.tiles[row + 1]?.[col];
+        if (bottomTile && bottomTile.territoryId && bottomTile.territoryId !== tile.territoryId) {
+          const x1 = col * tileSize;
+          const x2 = (col + 1) * tileSize;
+          const y = (row + 1) * tileSize;
+          this.drawDashedLine(borderGfx, x1, y, x2, y, FACTION_COLORS[tile.territoryId.split('_')[0]] ?? 0xe94560);
+        }
+      }
+    }
+
+    borderLayer.addChild(borderGfx);
+  }
+
+  /**
+   * 绘制建筑图标（用 PixiJS Graphics 绘制简单形状）
+   *
+   * 不同建筑类型使用不同形状和颜色：
+   * - 城市：方形 + 城墙
+   * - 村庄：小屋形状
+   * - 关卡：堡垒形状
+   * - 其他：简单圆形
+   */
+  private renderTileBuildings(buildingLayer: Container, map: GameMap): void {
+    const tileSize = map.tileSize;
+
+    for (let row = 0; row < map.height; row++) {
+      for (let col = 0; col < map.width; col++) {
+        const tile = map.tiles[row]?.[col];
+        if (!tile?.buildingId) continue;
+
+        const cx = col * tileSize + tileSize / 2;
+        const cy = row * tileSize + tileSize / 2;
+        const container = new Container({ label: `tile-bldg-${tile.buildingId}` });
+        container.position.set(cx, cy);
+        container.eventMode = 'static';
+        container.cursor = 'pointer';
+
+        const gfx = new Graphics();
+        const halfSize = tileSize * 0.3;
+
+        // 根据地形类型绘制不同建筑形状
+        switch (tile.terrain) {
+          case 'city':
+            // 城市方形 + 城墙
+            gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
+              .fill({ color: 0xd4a574 });
+            gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
+              .stroke({ color: 0x8b6914, width: 2 });
+            // 城墙锯齿
+            gfx.rect(-halfSize, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
+            gfx.rect(halfSize - 8, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
+            break;
+
+          case 'village':
+            // 小屋形状（三角屋顶 + 方形主体）
+            gfx.rect(-halfSize * 0.7, -halfSize * 0.2, halfSize * 1.4, halfSize * 0.9)
+              .fill({ color: 0x8fbc8f });
+            gfx.moveTo(-halfSize * 0.8, -halfSize * 0.2)
+              .lineTo(0, -halfSize * 0.9)
+              .lineTo(halfSize * 0.8, -halfSize * 0.2)
+              .closePath()
+              .fill({ color: 0x8b4513 });
+            break;
+
+          case 'fortress':
+            // 堡垒形状
+            gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
+              .fill({ color: 0xa0522d });
+            gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
+              .stroke({ color: 0x5c3317, width: 2 });
+            // 塔楼
+            gfx.rect(-halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
+              .fill({ color: 0x8b6914 });
+            gfx.rect(halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
+              .fill({ color: 0x8b6914 });
+            break;
+
+          default:
+            // 通用建筑圆形
+            gfx.circle(0, 0, halfSize * 0.7).fill({ color: 0x95a5a6 });
+            gfx.circle(0, 0, halfSize * 0.7).stroke({ color: 0x7f8c8d, width: 1 });
+            break;
+        }
+
+        container.addChild(gfx);
+
+        // 建筑点击事件
+        container.on('pointerdown', () => {
+          this.bridgeEvent('buildingClick', tile.buildingId!);
+        });
+
+        buildingLayer.addChild(container);
+      }
+    }
+  }
+
+  /**
+   * 绘制 NPC 点（彩色小圆点 + emoji）
+   */
+  private renderTileNPCs(npcLayer: Container, map: GameMap): void {
+    // 清理旧 NPC
+    for (const [, view] of this.npcDots) {
+      view.container.destroy({ children: true });
+    }
+    this.npcDots.clear();
+
+    const tileSize = map.tileSize;
+
+    for (const npc of map.npcs) {
+      const cx = npc.tileX * tileSize + tileSize / 2;
+      const cy = npc.tileY * tileSize + tileSize / 2;
+
+      const container = new Container({ label: `tile-npc-${npc.id}` });
+      container.position.set(cx, cy);
+      container.eventMode = 'static';
+      container.cursor = 'pointer';
+
+      const gfx = new Graphics();
+      const color = NPC_TYPE_COLORS[npc.type] ?? 0x9e9e9e;
+
+      // 底部彩色圆点
+      gfx.circle(0, 0, NPC_DOT_RADIUS).fill({ color });
+      gfx.circle(0, 0, NPC_DOT_RADIUS).stroke({ color: 0xffffff, width: 1 });
+
+      container.addChild(gfx);
+
+      // Emoji 标签
+      const emoji = NPC_TYPE_EMOJI[npc.type] ?? '👤';
+      const emojiText = new Text({
+        text: emoji,
+        style: new TextStyle({ fontSize: 10 }),
+      });
+      emojiText.anchor.set(0.5, 0.5);
+      emojiText.position.set(0, -NPC_DOT_RADIUS - 8);
+      container.addChild(emojiText);
+
+      // NPC 名称
+      const nameText = new Text({
+        text: npc.name,
+        style: new TextStyle({
+          fontSize: 9,
+          fill: '#e0e0e0',
+          fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+        }),
+      });
+      nameText.anchor.set(0.5, 0);
+      nameText.position.set(0, NPC_DOT_RADIUS + 2);
+      container.addChild(nameText);
+
+      // 点击事件
+      container.on('pointerdown', () => {
+        this.bridgeEvent('heroClick', npc.id);
+      });
+
+      npcLayer.addChild(container);
+      this.npcDots.set(npc.id, { id: npc.id, container, data: npc });
+    }
+  }
+
+  /**
+   * 绘制地标文字标签
+   */
+  private renderTileLandmarks(
+    landmarkLayer: Container,
+    labelLayer: Container,
+    map: GameMap,
+  ): void {
+    // 清理旧地标
+    for (const [, view] of this.landmarkViews) {
+      view.container.destroy({ children: true });
+    }
+    this.landmarkViews.clear();
+
+    const tileSize = map.tileSize;
+
+    for (const lm of map.landmarks) {
+      const cx = lm.x * tileSize + tileSize / 2;
+      const cy = lm.y * tileSize + tileSize / 2;
+
+      const container = new Container({ label: `tile-landmark-${lm.name}` });
+      container.position.set(cx, cy);
+
+      // 地标标记（金色圆环）
+      const marker = new Graphics();
+      marker.circle(0, 0, 14).stroke({ color: LANDMARK_LABEL_COLOR, width: 2 });
+      marker.circle(0, 0, 8).fill({ color: LANDMARK_LABEL_COLOR, alpha: 0.3 });
+      container.addChild(marker);
+
+      // 地标类型图标
+      const iconMap: Record<string, string> = {
+        capital: '👑',
+        city: '🏙️',
+        fortress: '🏰',
+        bridge: '🌉',
+      };
+      const icon = new Text({
+        text: iconMap[lm.type] ?? '📍',
+        style: new TextStyle({ fontSize: 12 },
+        ),
+      });
+      icon.anchor.set(0.5, 0.5);
+      container.addChild(icon);
+
+      landmarkLayer.addChild(container);
+
+      // 文字标签（单独一层，在最高层显示）
+      const label = new Text({
+        text: lm.name,
+        style: new TextStyle({
+          fontSize: LANDMARK_FONT_SIZE,
+          fill: LANDMARK_LABEL_COLOR,
+          fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+          fontWeight: 'bold',
+          stroke: { color: '#000000', width: 2 },
+        }),
+      });
+      label.anchor.set(0.5, 0);
+      label.position.set(cx, cy + 18);
+      labelLayer.addChild(label);
+
+      this.landmarkViews.set(lm.name, { id: lm.name, container, data: lm });
+    }
+  }
+
+  /**
+   * 销毁瓦片地图渲染对象
+   */
+  private destroyTileMapView(): void {
+    if (!this.tileMapView) return;
+
+    const layers = [
+      this.tileMapView.tileLayer,
+      this.tileMapView.borderLayer,
+      this.tileMapView.buildingLayer,
+      this.tileMapView.npcLayer,
+      this.tileMapView.landmarkLayer,
+      this.tileMapView.labelLayer,
+    ];
+
+    for (const layer of layers) {
+      if (layer.parent) layer.parent.removeChild(layer);
+      layer.destroy({ children: true });
+    }
+
+    this.tileMapView = null;
+    this.npcDots.clear();
+    this.landmarkViews.clear();
   }
 
   // ═══════════════════════════════════════════════════════════

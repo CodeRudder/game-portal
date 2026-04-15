@@ -31,6 +31,9 @@ import { OrientationManager } from './managers/OrientationManager';
 import { BaseScene } from './scenes/BaseScene';
 import { MapScene } from './scenes/MapScene';
 import { CombatScene } from './scenes/CombatScene';
+import { TechTreeScene } from './scenes/TechTreeScene';
+import { HeroDetailScene } from './scenes/HeroDetailScene';
+import { StageInfoScene } from './scenes/StageInfoScene';
 
 // ═══════════════════════════════════════════════════════════════
 // 事件回调类型
@@ -468,6 +471,24 @@ export class GameRenderer {
     return this.initialized;
   }
 
+  /**
+   * 获取指定类型的场景实例
+   *
+   * 用于外部代码需要直接访问场景（如注入瓦片地图数据）。
+   */
+  getScene<T extends BaseScene>(type: SceneType): T | undefined {
+    return this.scenes.get(type) as T | undefined;
+  }
+
+  /**
+   * 获取 MapScene 实例
+   *
+   * 便捷方法，用于注入瓦片地图数据等操作。
+   */
+  getMapScene(): MapScene | undefined {
+    return this.scenes.get('map') as MapScene | undefined;
+  }
+
   // ═══════════════════════════════════════════════════════════
   // 内部方法
   // ═══════════════════════════════════════════════════════════
@@ -496,13 +517,30 @@ export class GameRenderer {
           this.bridgeSceneEvent.bind(this),
         ),
       },
-      // TODO: 注册更多场景
-      // { type: 'building-detail', create: () => new BuildingDetailScene(...) },
-      // { type: 'tech-tree', create: () => new TechTreeScene(...) },
-      // { type: 'hero-detail', create: () => new HeroDetailScene(...) },
-      // { type: 'prestige', create: () => new PrestigeScene(...) },
-      // { type: 'dialog', create: () => new DialogScene(...) },
-      // { type: 'stage-info', create: () => new StageInfoScene(...) },
+      {
+        type: 'tech-tree',
+        create: () => new TechTreeScene(
+          this.assetManager,
+          this.animationManager,
+          this.bridgeSceneEvent.bind(this),
+        ),
+      },
+      {
+        type: 'hero-detail',
+        create: () => new HeroDetailScene(
+          this.assetManager,
+          this.animationManager,
+          this.bridgeSceneEvent.bind(this),
+        ),
+      },
+      {
+        type: 'stage-info',
+        create: () => new StageInfoScene(
+          this.assetManager,
+          this.animationManager,
+          this.bridgeSceneEvent.bind(this),
+        ),
+      },
     ];
 
     for (const { type, create } of sceneClasses) {

@@ -21,6 +21,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ThreeKingdomsEngine } from '@/games/three-kingdoms/ThreeKingdomsEngine';
 import { ThreeKingdomsRenderStateAdapter } from '@/games/three-kingdoms/ThreeKingdomsRenderStateAdapter';
+import { ThreeKingdomsEventSystem, type ActiveEvent, type EventChoice } from '@/games/three-kingdoms/ThreeKingdomsEventSystem';
+import { MapGenerator, type GameMap } from '@/games/three-kingdoms/MapGenerator';
 import {
   BUILDINGS,
   GENERALS,
@@ -57,6 +59,7 @@ const SCENE_TABS: { scene: SceneType; label: string; icon: string; subScene?: st
   { scene: 'map',        label: '领土', icon: '🗺️', subScene: 'territory', key: 'm' },
   { scene: 'tech-tree',  label: '科技', icon: '📜', key: 't' },
   { scene: 'combat',     label: '战斗', icon: '🔥', key: 'b' },
+  { scene: 'stage-info', label: '关卡', icon: '⚔️', key: 's' },
   { scene: 'prestige',   label: '声望', icon: '👑', key: 'r' },
 ];
 
@@ -75,6 +78,25 @@ interface ToastData {
   id: number;
   text: string;
   type: 'success' | 'error';
+}
+
+/** 任务数据 */
+interface QuestData {
+  id: string;
+  title: string;
+  description: string;
+  progress: number;
+  maxProgress: number;
+  isComplete: boolean;
+  reward: Record<string, number>;
+}
+
+/** NPC 对话数据 */
+interface NPCDialogue {
+  npcName: string;
+  npcType: string;
+  lines: string[];
+  currentLine: number;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -102,6 +124,18 @@ export default function ThreeKingdomsPixiGame() {
   const [showGuide, setShowGuide] = useState(true);
   const [guideStep, setGuideStep] = useState(0);
   const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  // ─── 事件系统 / 任务 / NPC 对话 / 瓦片地图 ──────────────
+
+  const eventSystemRef = useRef<ThreeKingdomsEventSystem | null>(null);
+  const tileMapRef = useRef<GameMap | null>(null);
+  const [activeEvents, setActiveEvents] = useState<ActiveEvent[]>([]);
+  const [showEventDialog, setShowEventDialog] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState<ActiveEvent | null>(null);
+  const [showQuestPanel, setShowQuestPanel] = useState(false);
+  const [quests, setQuests] = useState<QuestData[]>([]);
+  const [showNPCDialogue, setShowNPCDialogue] = useState(false);
+  const [npcDialogue, setNPCDialogue] = useState<NPCDialogue | null>(null);
 
   /** 添加 toast 提示，2 秒后自动消失 */
   const addToast = useCallback((text: string, type: 'success' | 'error') => {
@@ -171,8 +205,43 @@ export default function ThreeKingdomsPixiGame() {
     // 初始渲染
     setRenderState(adapterRef.current.toRenderState());
 
+    // ── 初始化事件系统 ─────────────────────────────────────
+    const eventSystem = new ThreeKingdomsEventSystem();
+    eventSystemRef.current = eventSystem;
+
+    // ── 生成瓦片地图数据 ───────────────────────────────────
+    try {
+      const mapGen = new MapGenerator();
+      tileMapRef.current = mapGen.generate();
+    } catch (err) {
+      console.warn('[ThreeKingdomsPixiGame] MapGenerator not available:', err);
+    }
+
+    // ── 初始化任务列表 ─────────────────────────────────────
+    setQuests([
+      { id: 'q1', title: '建造第一座农田', description: '建造一座农田开始资源生产', progress: 0, maxProgress: 1, isComplete: false, reward: { gold: 50 } },
+      { id: 'q2', title: '招募第一位武将', description: '招募一位武将加入麾下', progress: 0, maxProgress: 1, isComplete: false, reward: { gold: 100 } },
+      { id: 'q3', title: '征服第一块领土', description: '征服一块敌方领土', progress: 0, maxProgress: 1, isComplete: false, reward: { food: 200, gold: 200 } },
+    ]);
+
     // 启动游戏循环
     engine.start();
+
+    // ── 定期检查事件系统 ───────────────────────────────────
+    const eventCheckTimer = setInterval(() => {
+      if (!eventSystemRef.current) return;
+      const events = eventSystemRef.current.getActiveEvents();
+      if (events.length > 0) {
+        setActiveEvents(events);
+        if (!currentEvent && events.some(e => !e.resolved)) {
+          const unresolved = events.find(e => !e.resolved);
+          if (unresolved) {
+            setCurrentEvent(unresolved);
+            setShowEventDialog(true);
+          }
+        }
+      }
+    }, 3000);
 
     // 模拟资源预加载进度
     let progress = 0;
@@ -188,10 +257,12 @@ export default function ThreeKingdomsPixiGame() {
 
     return () => {
       clearInterval(loadTimer);
+      clearInterval(eventCheckTimer);
       engine.pause();
       engine.destroy();
       engineRef.current = null;
       adapterRef.current = null;
+      eventSystemRef.current = null;
     };
   }, []);
 
@@ -321,11 +392,90 @@ export default function ThreeKingdomsPixiGame() {
     setScene(newScene);
   }, []);
 
-  // ═══════════════════════════════════════════════════════════
-  // 渲染
-  // ═══════════════════════════════════════════════════════════
+  // ─── 事件系统处理 ───────────────────────────────────────
 
-  // ─── 加载画面 ─────────────────────────────────────────────
+  /** 处理事件选择 */
+  const handleEventChoice = useCallback((choice: EventChoice) => {
+    if (!currentEvent || !eventSystemRef.current) return;
+
+    // 应用奖励/惩罚
+    if (choice.reward) {
+      const engine = engineRef.current;
+      if (engine) {
+        const payMethod = (engine as any).giveRes;
+        if (payMethod) {
+          for (const [res, amount] of Object.entries(choice.reward)) {
+            payMethod.call(engine, res, amount);
+          }
+        }
+      }
+      const rewardStr = Object.entries(choice.reward).map(([k, v]) => `${k}+${v}`).join(' ');
+      addToast(`事件奖励：${rewardStr}`, 'success');
+    }
+
+    if (choice.penalty) {
+      const penaltyStr = Object.entries(choice.penalty).map(([k, v]) => `${k}${v}`).join(' ');
+      addToast(`事件惩罚：${penaltyStr}`, 'error');
+    }
+
+    // 标记事件已解决
+    currentEvent.resolved = true;
+    setActiveEvents(prev => prev.filter(e => !e.resolved));
+    setCurrentEvent(null);
+    setShowEventDialog(false);
+
+    // 触发引擎状态更新
+    engineRef.current?.handleKeyDown(' ');
+  }, [currentEvent, addToast]);
+
+  /** 处理 NPC 点击 → 显示对话 */
+  const handleNPCClick = useCallback((npcId: string) => {
+    // 模拟 NPC 对话内容
+    const dialogues: Record<string, string[]> = {
+      farmer: ['大人，今年的收成不错！', '需要更多农田才能养活百姓。'],
+      soldier: ['末将誓死守卫城池！', '请加强军备，敌军蠢蠢欲动。'],
+      merchant: ['大人，有些好货要不要看看？', '最近从西域运来了一批宝物。'],
+      scholar: ['书中自有黄金屋。', '大人应该多注重文教。'],
+      scout: ['前方发现敌军动向！', '需要加强斥候侦察。'],
+    };
+
+    // 从 npcId 推断类型（简化处理）
+    const npcTypes = ['farmer', 'soldier', 'merchant', 'scholar', 'scout'];
+    const typeIndex = npcId.charCodeAt(0) % npcTypes.length;
+    const npcType = npcTypes[typeIndex];
+    const lines = dialogues[npcType] ?? ['你好，大人！'];
+
+    setNPCDialogue({
+      npcName: npcId,
+      npcType,
+      lines,
+      currentLine: 0,
+    });
+    setShowNPCDialogue(true);
+  }, []);
+
+  /** 推进 NPC 对话 */
+  const handleNPCDialogueNext = useCallback(() => {
+    if (!npcDialogue) return;
+    if (npcDialogue.currentLine < npcDialogue.lines.length - 1) {
+      setNPCDialogue({
+        ...npcDialogue,
+        currentLine: npcDialogue.currentLine + 1,
+      });
+    } else {
+      setShowNPCDialogue(false);
+      setNPCDialogue(null);
+    }
+  }, [npcDialogue]);
+
+  /** 更新任务进度 */
+  const updateQuestProgress = useCallback((questId: string, delta: number) => {
+    setQuests(prev => prev.map(q => {
+      if (q.id !== questId) return q;
+      const newProgress = Math.min(q.progress + delta, q.maxProgress);
+      return { ...q, progress: newProgress, isComplete: newProgress >= q.maxProgress };
+    }));
+  }, []);
 
   if (loading) {
     return (
