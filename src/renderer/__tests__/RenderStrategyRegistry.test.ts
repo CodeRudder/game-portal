@@ -110,14 +110,14 @@ describe('RenderStrategyRegistry', () => {
       expect(strategy.name).toBe('cookie-clicker');
     });
 
-    it('should return civilization strategy for civ-egypt', () => {
+    it('should return civ-egypt strategy for civ-egypt', () => {
       const strategy = RenderStrategyRegistry.get('civ-egypt');
-      expect(strategy.name).toBe('civilization');
+      expect(strategy.name).toBe('civ-egypt');
     });
 
-    it('should return civilization strategy for civ-china', () => {
+    it('should return civ-china strategy for civ-china', () => {
       const strategy = RenderStrategyRegistry.get('civ-china');
-      expect(strategy.name).toBe('civilization');
+      expect(strategy.name).toBe('civ-china');
     });
 
     it('should return fantasy strategy for idle-xianxia', () => {

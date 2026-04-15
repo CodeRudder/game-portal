@@ -102,6 +102,9 @@ export { PixiGameAdapter } from './PixiGameAdapter';
 export type { AdapterEventMap } from './PixiGameAdapter';
 export { RenderStrategyRegistry } from './RenderStrategyRegistry';
 export { IdleScene } from './scenes/IdleScene';
+export { TotalWarScene } from './scenes/TotalWarScene';
+export { HeroesMightScene } from './scenes/HeroesMightScene';
+export { AgeOfEmpiresScene } from './scenes/AgeOfEmpiresScene';
 
 // 适配层类型导出（已在 types.ts 中定义，此处重新导出方便引用）
 export type {

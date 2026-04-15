@@ -164,6 +164,202 @@ const SCIFI_STRATEGY: RenderStrategy = {
   },
 };
 
+/** 全面战争风格策略 — 钢铁灰+血红色军事主题 */
+const TOTAL_WAR_STRATEGY: RenderStrategy = {
+  name: 'total-war',
+  sceneType: 'idle',
+  theme: {
+    background: '#1a1a1e',
+    panelBackground: '#2a2a30',
+    textPrimary: '#d0d0d8',
+    textSecondary: '#7a7a8a',
+    accent: '#c0392b',
+    success: '#27ae60',
+    warning: '#e67e22',
+    resourceBarBg: '#1e1e24',
+    buttonBg: '#3a2a2a',
+    buttonHover: '#4a3a3a',
+  },
+  layout: {
+    resourceBarHeight: 0.08,
+    buildingAreaHeight: 0.5,
+    upgradePanelHeight: 0.38,
+    statsPanelWidth: 0.25,
+    gridColumns: 4,
+    gridGap: 8,
+    padding: 12,
+    borderRadius: 6,
+  },
+};
+
+/** 英雄无敌风格策略 — 紫金奇幻主题 */
+const HEROES_MIGHT_STRATEGY: RenderStrategy = {
+  name: 'heroes-might',
+  sceneType: 'idle',
+  theme: {
+    background: '#12061f',
+    panelBackground: '#1a0a2e',
+    textPrimary: '#e8d0f8',
+    textSecondary: '#8a6aaa',
+    accent: '#ffd700',
+    success: '#34d399',
+    warning: '#fbbf24',
+    resourceBarBg: '#160828',
+    buttonBg: '#2a1a4a',
+    buttonHover: '#3a2a6a',
+  },
+  layout: {
+    resourceBarHeight: 0.08,
+    buildingAreaHeight: 0.5,
+    upgradePanelHeight: 0.38,
+    statsPanelWidth: 0.25,
+    gridColumns: 4,
+    gridGap: 8,
+    padding: 12,
+    borderRadius: 12,
+  },
+};
+
+/** 帝国时代风格策略 — 棕金帝国主题 */
+const AGE_OF_EMPIRES_STRATEGY: RenderStrategy = {
+  name: 'age-of-empires',
+  sceneType: 'idle',
+  theme: {
+    background: '#1a1408',
+    panelBackground: '#2a2010',
+    textPrimary: '#f0e6d3',
+    textSecondary: '#a89070',
+    accent: '#d4a017',
+    success: '#6ab04c',
+    warning: '#f0932b',
+    resourceBarBg: '#1e1808',
+    buttonBg: '#3a2a1a',
+    buttonHover: '#4a3a2a',
+  },
+  layout: {
+    resourceBarHeight: 0.08,
+    buildingAreaHeight: 0.5,
+    upgradePanelHeight: 0.38,
+    statsPanelWidth: 0.25,
+    gridColumns: 4,
+    gridGap: 8,
+    padding: 12,
+    borderRadius: 8,
+  },
+};
+
+/** 华夏文明策略 — 朱红+金色主题 */
+const CIV_CHINA_STRATEGY: RenderStrategy = {
+  name: 'civ-china',
+  sceneType: 'idle',
+  theme: {
+    background: '#1a0a0a',
+    panelBackground: '#2a1414',
+    textPrimary: '#fff0d0',
+    textSecondary: '#c8a080',
+    accent: '#cc2936',
+    success: '#ffd700',
+    warning: '#f39c12',
+    resourceBarBg: '#1e0e0e',
+    buttonBg: '#3a1a1a',
+    buttonHover: '#4a2a2a',
+  },
+  layout: {
+    resourceBarHeight: 0.08,
+    buildingAreaHeight: 0.48,
+    upgradePanelHeight: 0.32,
+    statsPanelWidth: 0.22,
+    gridColumns: 4,
+    gridGap: 8,
+    padding: 12,
+    borderRadius: 6,
+  },
+};
+
+/** 埃及文明策略 — 沙金+蓝色主题 */
+const CIV_EGYPT_STRATEGY: RenderStrategy = {
+  name: 'civ-egypt',
+  sceneType: 'idle',
+  theme: {
+    background: '#1a1500',
+    panelBackground: '#2a2008',
+    textPrimary: '#f0e6d3',
+    textSecondary: '#a89860',
+    accent: '#daa520',
+    success: '#1e90ff',
+    warning: '#e67e22',
+    resourceBarBg: '#1e1800',
+    buttonBg: '#3a2a08',
+    buttonHover: '#4a3a18',
+  },
+  layout: {
+    resourceBarHeight: 0.08,
+    buildingAreaHeight: 0.48,
+    upgradePanelHeight: 0.32,
+    statsPanelWidth: 0.22,
+    gridColumns: 4,
+    gridGap: 8,
+    padding: 12,
+    borderRadius: 4,
+  },
+};
+
+/** 巴比伦文明策略 — 青铜+紫色主题 */
+const CIV_BABYLON_STRATEGY: RenderStrategy = {
+  name: 'civ-babylon',
+  sceneType: 'idle',
+  theme: {
+    background: '#150a1a',
+    panelBackground: '#200e28',
+    textPrimary: '#e8d0c8',
+    textSecondary: '#9a7a8a',
+    accent: '#cd7f32',
+    success: '#9370db',
+    warning: '#fbbf24',
+    resourceBarBg: '#18081e',
+    buttonBg: '#2a1a3a',
+    buttonHover: '#3a2a4a',
+  },
+  layout: {
+    resourceBarHeight: 0.08,
+    buildingAreaHeight: 0.48,
+    upgradePanelHeight: 0.32,
+    statsPanelWidth: 0.22,
+    gridColumns: 4,
+    gridGap: 8,
+    padding: 12,
+    borderRadius: 8,
+  },
+};
+
+/** 印度文明策略 — 翠绿+橙色主题 */
+const CIV_INDIA_STRATEGY: RenderStrategy = {
+  name: 'civ-india',
+  sceneType: 'idle',
+  theme: {
+    background: '#0a1a0a',
+    panelBackground: '#102a14',
+    textPrimary: '#f0f8e8',
+    textSecondary: '#7aaa6a',
+    accent: '#2e8b57',
+    success: '#ff8c00',
+    warning: '#f39c12',
+    resourceBarBg: '#0e1e0e',
+    buttonBg: '#1a3a1a',
+    buttonHover: '#2a4a2a',
+  },
+  layout: {
+    resourceBarHeight: 0.08,
+    buildingAreaHeight: 0.48,
+    upgradePanelHeight: 0.32,
+    statsPanelWidth: 0.22,
+    gridColumns: 4,
+    gridGap: 8,
+    padding: 12,
+    borderRadius: 10,
+  },
+};
+
 /** 自然/农场风格策略 — 绿色暖调 */
 const NATURE_STRATEGY: RenderStrategy = {
   name: 'nature',
@@ -207,12 +403,12 @@ const GAME_STRATEGY_MAP: Record<string, string> = {
   'cookie-clicker': 'cookie-clicker',
   'clicker-heroes': 'cookie-clicker',
 
-  // 文明建设类
-  'civ-egypt': 'civilization',
-  'civ-china': 'civilization',
-  'civ-india': 'civilization',
-  'civ-babylon': 'civilization',
-  'age-of-empires': 'civilization',
+  // 文明建设类 — 使用文明专属策略
+  'civ-china': 'civ-china',
+  'civ-egypt': 'civ-egypt',
+  'civ-babylon': 'civ-babylon',
+  'civ-india': 'civ-india',
+  'age-of-empires': 'age-of-empires',
   'modern-city': 'civilization',
 
   // 奇幻 RPG 类
@@ -223,14 +419,13 @@ const GAME_STRATEGY_MAP: Record<string, string> = {
   'yokai-night': 'fantasy',
   'egypt-myth': 'fantasy',
   'baldurs-gate': 'fantasy',
-  'heroes-might': 'fantasy',
+  'heroes-might': 'heroes-might',
   'final-fantasy': 'fantasy',
 
   // 科幻类
   'space-war': 'scifi',
   'space-drift': 'scifi',
   'space-dodge': 'scifi',
-  'total-war': 'scifi',
 
   // 自然/农场类
   'ant-kingdom': 'nature',
@@ -249,6 +444,9 @@ const GAME_STRATEGY_MAP: Record<string, string> = {
   'clan-saga': 'fantasy',
   'alchemy-master': 'fantasy',
   'doodle-god': 'fantasy',
+
+  // 专属策略游戏
+  'total-war': 'total-war',
 };
 
 /**
@@ -261,6 +459,13 @@ const STRATEGIES: Map<string, RenderStrategy> = new Map([
   ['fantasy', FANTASY_STRATEGY],
   ['scifi', SCIFI_STRATEGY],
   ['nature', NATURE_STRATEGY],
+  ['total-war', TOTAL_WAR_STRATEGY],
+  ['heroes-might', HEROES_MIGHT_STRATEGY],
+  ['age-of-empires', AGE_OF_EMPIRES_STRATEGY],
+  ['civ-china', CIV_CHINA_STRATEGY],
+  ['civ-egypt', CIV_EGYPT_STRATEGY],
+  ['civ-babylon', CIV_BABYLON_STRATEGY],
+  ['civ-india', CIV_INDIA_STRATEGY],
 ]);
 
 // ═══════════════════════════════════════════════════════════════
