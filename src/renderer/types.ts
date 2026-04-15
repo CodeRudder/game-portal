@@ -484,6 +484,25 @@ export interface GameRenderState {
   dayNight?: DayNightRenderData;
   /** 日历时间数据（始终填充） */
   calendar?: CalendarRenderData;
+  /** 城市列表（已征服领土的城市内地图数据） */
+  cities?: Array<{
+    cityId: string;
+    cityName: string;
+    prosperity: number;
+    population: number;
+    buildingCount: number;
+  }>;
+  /** 资源点列表（野外可占领资源点） */
+  resourcePoints?: Array<{
+    id: string;
+    type: string;
+    name: string;
+    position: { tileX: number; tileY: number };
+    isOccupied: boolean;
+    workerCount: number;
+    maxWorkers: number;
+    level: number;
+  }>;
 }
 
 // ═══════════════════════════════════════════════════════════════

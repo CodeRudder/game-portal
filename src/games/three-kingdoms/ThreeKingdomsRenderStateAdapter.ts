@@ -134,6 +134,8 @@ export class ThreeKingdomsRenderStateAdapter {
       tileMapData: this.getTileMapData(),
       dayNight: this.toDayNightData(),
       calendar: this.toCalendarData(),
+      cities: this.toCityList(),
+      resourcePoints: this.toResourcePointList(),
     };
   }
 
@@ -571,6 +573,59 @@ export class ThreeKingdomsRenderStateAdapter {
       }));
     } catch {
       return [];
+    }
+  }
+
+  // ─── 城市列表 ────────────────────────────────────────────
+
+  /**
+   * 组装城市列表渲染数据
+   *
+   * 从引擎 CityMapSystem 获取所有城市，提取核心展示信息。
+   */
+  private toCityList(): GameRenderState['cities'] {
+    try {
+      const cityMapSys = this.engine.getCityMapSystem();
+      if (!cityMapSys) return undefined;
+      const cities = cityMapSys.getAllCities();
+      if (cities.length === 0) return undefined;
+      return cities.map(city => ({
+        cityId: city.cityId,
+        cityName: city.cityName,
+        prosperity: city.prosperity,
+        population: city.population,
+        buildingCount: city.buildings.length,
+      }));
+    } catch {
+      return undefined;
+    }
+  }
+
+  // ─── 资源点列表 ──────────────────────────────────────────
+
+  /**
+   * 组装资源点列表渲染数据
+   *
+   * 从引擎 ResourcePointSystem 获取所有资源点，提取核心展示信息。
+   */
+  private toResourcePointList(): GameRenderState['resourcePoints'] {
+    try {
+      const rpSys = this.engine.getResourcePointSystem();
+      if (!rpSys) return undefined;
+      const points = rpSys.getAllResourcePoints();
+      if (points.length === 0) return undefined;
+      return points.map(rp => ({
+        id: rp.id,
+        type: rp.type,
+        name: rp.name,
+        position: { tileX: rp.position.tileX, tileY: rp.position.tileY },
+        isOccupied: rp.isOccupied,
+        workerCount: rp.workerCount,
+        maxWorkers: rp.maxWorkers,
+        level: rp.level,
+      }));
+    } catch {
+      return undefined;
     }
   }
 

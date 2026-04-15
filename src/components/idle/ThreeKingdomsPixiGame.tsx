@@ -127,6 +127,7 @@ export default function ThreeKingdomsPixiGame() {
   const [showGuide, setShowGuide] = useState(true);
   const [guideStep, setGuideStep] = useState(0);
   const [toasts, setToasts] = useState<ToastData[]>([]);
+  const [activeMapSubTab, setActiveMapSubTab] = useState<'building' | 'cities' | 'resources'>('building');
 
   // ─── 事件系统 / 任务 / NPC 对话 / 瓦片地图 ──────────────
 
@@ -168,6 +169,12 @@ export default function ThreeKingdomsPixiGame() {
 
   /** 声望数据 */
   const prestigeData = useMemo(() => renderState?.prestige, [renderState]);
+
+  /** 城市列表 */
+  const cities = useMemo(() => renderState?.cities ?? [], [renderState]);
+
+  /** 资源点列表 */
+  const resourcePoints = useMemo(() => renderState?.resourcePoints ?? [], [renderState]);
 
   /** 根据场景决定侧边栏显隐 */
   const showBuildingPanel = scene === 'map';
@@ -525,6 +532,50 @@ export default function ThreeKingdomsPixiGame() {
     }));
   }, []);
 
+  /** 占领资源点 */
+  const handleOccupyResourcePoint = useCallback((rpId: string) => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    const rpSys = engine.getResourcePointSystem();
+    const rp = rpSys.getResourcePoint(rpId);
+    if (!rp || rp.isOccupied) return;
+    const ok = rpSys.occupyResourcePoint(rpId, 'player');
+    if (ok) {
+      addToast(`占领成功：${rp.name}`, 'success');
+      engine.handleKeyDown(' ');
+    } else {
+      addToast('占领失败', 'error');
+    }
+  }, [addToast]);
+
+  /** 为资源点分配工人 */
+  const handleAssignWorkers = useCallback((rpId: string, count: number) => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    const rpSys = engine.getResourcePointSystem();
+    const ok = rpSys.assignWorkers(rpId, count);
+    if (ok) {
+      addToast(`已分配 ${count} 名工人`, 'success');
+      engine.handleKeyDown(' ');
+    } else {
+      addToast('分配工人失败', 'error');
+    }
+  }, [addToast]);
+
+  /** 升级资源点 */
+  const handleUpgradeResourcePoint = useCallback((rpId: string) => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    const rpSys = engine.getResourcePointSystem();
+    const ok = rpSys.upgradeResourcePoint(rpId);
+    if (ok) {
+      addToast('资源点升级成功！', 'success');
+      engine.handleKeyDown(' ');
+    } else {
+      addToast('升级失败（可能已达上限）', 'error');
+    }
+  }, [addToast]);
+
   if (loading) {
     return (
       <div style={{
@@ -671,61 +722,272 @@ export default function ThreeKingdomsPixiGame() {
       {/* ═══════════ 中间区域：左面板 + PixiJS Canvas + 右面板 ═══════════ */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
 
-        {/* ─── 左侧面板：建筑列表（仅地图场景显示） ─── */}
+        {/* ─── 左侧面板：建筑/城市/资源点（仅地图场景显示） ─── */}
         {showBuildingPanel && (
         <aside style={{
-          width: 220, flexShrink: 0,
+          width: 240, flexShrink: 0,
           background: 'rgba(0,0,0,0.5)',
           borderRight: '1px solid rgba(255,255,255,0.08)',
           overflowY: 'auto', padding: 8,
           zIndex: 5,
+          display: 'flex', flexDirection: 'column',
         }}>
-          <h3 style={{
-            fontSize: 14, fontWeight: 'bold',
-            color: COLOR_THEME.accentGold,
-            marginBottom: 8, paddingBottom: 4,
-            borderBottom: `1px solid ${COLOR_THEME.selectedBorder}`,
-          }}>
-            🏗️ 建筑
-          </h3>
-          {buildings.map(b => (
-            <div
-              key={b.id}
-              onClick={() => handleBuildingClick(b.id)}
-              style={{
-                padding: '6px 8px', marginBottom: 4,
-                borderRadius: 4, cursor: 'pointer',
-                background: b.state === 'locked'
-                  ? 'rgba(255,255,255,0.03)'
-                  : 'rgba(255,255,255,0.06)',
-                border: `1px solid ${b.state === 'producing' ? 'rgba(76,175,80,0.3)' : 'transparent'}`,
-                opacity: b.state === 'locked' ? 0.5 : 1,
-                transition: 'background 0.2s',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 'bold' }}>
-                  {b.iconAsset} {b.name}
-                </span>
-                <span style={{
-                  fontSize: 10,
-                  color: b.level > 0 ? COLOR_THEME.accentGold : COLOR_THEME.textDim,
+          {/* 子标签栏 */}
+          <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
+            {[
+              { key: 'building' as const, label: '🏗️建筑' },
+              { key: 'cities' as const, label: '🏰城市' },
+              { key: 'resources' as const, label: '⛏️资源' },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveMapSubTab(tab.key)}
+                style={{
+                  flex: 1, padding: '4px 6px', fontSize: 10,
+                  borderRadius: 4, border: 'none', cursor: 'pointer',
+                  background: activeMapSubTab === tab.key
+                    ? 'rgba(255,215,0,0.15)'
+                    : 'rgba(255,255,255,0.05)',
+                  color: activeMapSubTab === tab.key
+                    ? COLOR_THEME.accentGold
+                    : COLOR_THEME.textSecondary,
+                  fontWeight: activeMapSubTab === tab.key ? 'bold' : 'normal',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── 建筑列表 ── */}
+          {activeMapSubTab === 'building' && (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {buildings.map(b => (
+                <div
+                  key={b.id}
+                  onClick={() => handleBuildingClick(b.id)}
+                  style={{
+                    padding: '6px 8px', marginBottom: 4,
+                    borderRadius: 4, cursor: 'pointer',
+                    background: b.state === 'locked'
+                      ? 'rgba(255,255,255,0.03)'
+                      : 'rgba(255,255,255,0.06)',
+                    border: `1px solid ${b.state === 'producing' ? 'rgba(76,175,80,0.3)' : 'transparent'}`,
+                    opacity: b.state === 'locked' ? 0.5 : 1,
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, fontWeight: 'bold' }}>
+                      {b.iconAsset} {b.name}
+                    </span>
+                    <span style={{
+                      fontSize: 10,
+                      color: b.level > 0 ? COLOR_THEME.accentGold : COLOR_THEME.textDim,
+                    }}>
+                      Lv.{b.level}
+                    </span>
+                  </div>
+                  {b.level > 0 && (b.productionRate ?? 0) > 0 && (
+                    <div style={{ fontSize: 10, color: COLOR_THEME.accentGreen, marginTop: 2 }}>
+                      +{fmt(b.productionRate ?? 0)}/s {b.productionResource}
+                    </div>
+                  )}
+                  {b.canUpgrade && (
+                    <div style={{ fontSize: 9, color: COLOR_THEME.affordable, marginTop: 2 }}>
+                      ▲ 可升级
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── 城市列表 ── */}
+          {activeMapSubTab === 'cities' && (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {cities.length === 0 ? (
+                <div style={{
+                  fontSize: 11, color: COLOR_THEME.textDim,
+                  textAlign: 'center', padding: '20px 0',
                 }}>
-                  Lv.{b.level}
-                </span>
-              </div>
-              {b.level > 0 && (b.productionRate ?? 0) > 0 && (
-                <div style={{ fontSize: 10, color: COLOR_THEME.accentGreen, marginTop: 2 }}>
-                  +{fmt(b.productionRate ?? 0)}/s {b.productionResource}
+                  暂无城市<br />
+                  <span style={{ fontSize: 10 }}>征服领土后将自动生成城市</span>
                 </div>
-              )}
-              {b.canUpgrade && (
-                <div style={{ fontSize: 9, color: COLOR_THEME.affordable, marginTop: 2 }}>
-                  ▲ 可升级
-                </div>
+              ) : (
+                cities.map(city => (
+                  <div
+                    key={city.cityId}
+                    style={{
+                      padding: '8px 10px', marginBottom: 4,
+                      borderRadius: 4,
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,215,0,0.15)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, fontWeight: 'bold', color: COLOR_THEME.accentGold }}>
+                        🏰 {city.cityName}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 10, color: COLOR_THEME.textSecondary }}>
+                        🏛️ 繁荣 {city.prosperity.toFixed(1)}
+                      </span>
+                      <span style={{ fontSize: 10, color: COLOR_THEME.textSecondary }}>
+                        👥 {fmt(city.population)}
+                      </span>
+                      <span style={{ fontSize: 10, color: COLOR_THEME.textSecondary }}>
+                        🏗️ {city.buildingCount}建筑
+                      </span>
+                    </div>
+                    {/* 繁荣度进度条 */}
+                    <div style={{
+                      height: 3, borderRadius: 2, marginTop: 4,
+                      background: 'rgba(255,255,255,0.1)',
+                    }}>
+                      <div style={{
+                        width: `${city.prosperity}%`, height: '100%',
+                        borderRadius: 2,
+                        background: city.prosperity > 60
+                          ? COLOR_THEME.accentGreen
+                          : city.prosperity > 30
+                            ? COLOR_THEME.accentGold
+                            : '#e74c3c',
+                      }} />
+                    </div>
+                  </div>
+                ))
               )}
             </div>
-          ))}
+          )}
+
+          {/* ── 资源点列表 ── */}
+          {activeMapSubTab === 'resources' && (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {resourcePoints.length === 0 ? (
+                <div style={{
+                  fontSize: 11, color: COLOR_THEME.textDim,
+                  textAlign: 'center', padding: '20px 0',
+                }}>
+                  暂无资源点<br />
+                  <span style={{ fontSize: 10 }}>地图生成后将出现资源点</span>
+                </div>
+              ) : (
+                resourcePoints.map(rp => {
+                  const typeIcons: Record<string, string> = {
+                    farm: '🌾', mine: '⛏️', lumber: '🪓', fishery: '🐟', herb: '🌿',
+                  };
+                  const icon = typeIcons[rp.type] || '📦';
+                  return (
+                    <div
+                      key={rp.id}
+                      style={{
+                        padding: '8px 10px', marginBottom: 4,
+                        borderRadius: 4,
+                        background: rp.isOccupied
+                          ? 'rgba(76,175,80,0.08)'
+                          : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${rp.isOccupied ? 'rgba(76,175,80,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                        opacity: rp.isOccupied ? 1 : 0.7,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 12, fontWeight: 'bold' }}>
+                          {icon} {rp.name}
+                        </span>
+                        <span style={{
+                          fontSize: 9,
+                          color: rp.isOccupied ? COLOR_THEME.accentGreen : COLOR_THEME.textDim,
+                          background: rp.isOccupied ? 'rgba(76,175,80,0.15)' : 'rgba(255,255,255,0.05)',
+                          padding: '1px 6px', borderRadius: 3,
+                        }}>
+                          Lv.{rp.level} {rp.isOccupied ? '✅' : '空闲'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 10, color: COLOR_THEME.textSecondary, marginTop: 3 }}>
+                        位置: ({rp.position.tileX}, {rp.position.tileY})
+                      </div>
+                      {rp.isOccupied && (
+                        <div style={{ fontSize: 10, color: COLOR_THEME.textSecondary, marginTop: 2 }}>
+                          👷 {rp.workerCount}/{rp.maxWorkers} 工人
+                        </div>
+                      )}
+                      {/* 操作按钮 */}
+                      <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                        {!rp.isOccupied && (
+                          <button
+                            onClick={() => handleOccupyResourcePoint(rp.id)}
+                            style={{
+                              padding: '2px 8px', fontSize: 9,
+                              borderRadius: 3, border: 'none', cursor: 'pointer',
+                              background: 'rgba(76,175,80,0.3)',
+                              color: COLOR_THEME.accentGreen,
+                            }}
+                          >
+                            占领
+                          </button>
+                        )}
+                        {rp.isOccupied && (
+                          <>
+                            <button
+                              onClick={() => handleAssignWorkers(rp.id, Math.min(rp.workerCount + 1, rp.maxWorkers))}
+                              disabled={rp.workerCount >= rp.maxWorkers}
+                              style={{
+                                padding: '2px 6px', fontSize: 9,
+                                borderRadius: 3, border: 'none', cursor: 'pointer',
+                                background: rp.workerCount >= rp.maxWorkers
+                                  ? 'rgba(255,255,255,0.05)'
+                                  : 'rgba(255,215,0,0.2)',
+                                color: rp.workerCount >= rp.maxWorkers
+                                  ? COLOR_THEME.textDim
+                                  : COLOR_THEME.accentGold,
+                              }}
+                            >
+                              +工人
+                            </button>
+                            <button
+                              onClick={() => handleAssignWorkers(rp.id, Math.max(rp.workerCount - 1, 0))}
+                              disabled={rp.workerCount <= 0}
+                              style={{
+                                padding: '2px 6px', fontSize: 9,
+                                borderRadius: 3, border: 'none', cursor: 'pointer',
+                                background: rp.workerCount <= 0
+                                  ? 'rgba(255,255,255,0.05)'
+                                  : 'rgba(231,76,60,0.2)',
+                                color: rp.workerCount <= 0
+                                  ? COLOR_THEME.textDim
+                                  : '#e74c3c',
+                              }}
+                            >
+                              -工人
+                            </button>
+                            <button
+                              onClick={() => handleUpgradeResourcePoint(rp.id)}
+                              disabled={rp.level >= 5}
+                              style={{
+                                padding: '2px 6px', fontSize: 9,
+                                borderRadius: 3, border: 'none', cursor: 'pointer',
+                                background: rp.level >= 5
+                                  ? 'rgba(255,255,255,0.05)'
+                                  : 'rgba(76,175,80,0.2)',
+                                color: rp.level >= 5
+                                  ? COLOR_THEME.textDim
+                                  : COLOR_THEME.accentGreen,
+                              }}
+                            >
+                              ▲升级
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </aside>
         )}
 

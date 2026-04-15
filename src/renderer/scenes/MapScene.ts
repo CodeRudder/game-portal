@@ -31,6 +31,11 @@ import type {
   MapLandmark,
   TerrainType,
 } from '../../games/three-kingdoms/MapGenerator';
+import {
+  TERRAIN_ASSETS,
+  TERRAIN_SPRITE_NAMES,
+  BUILDING_SPRITE_NAMES,
+} from '../../games/three-kingdoms/AssetConfig';
 
 // ═══════════════════════════════════════════════════════════════
 // 常量
@@ -458,6 +463,13 @@ export class MapScene extends BaseScene {
   /** 是否使用瓦片地图模式 */
   private useTileMapMode: boolean = false;
 
+  // ─── 精灵纹理缓存 ────────────────────────────────────────
+
+  /** 已加载的精灵纹理缓存（spriteName → Texture） */
+  private spriteTextureCache: Map<string, import('pixi.js').Texture> = new Map();
+  /** 精灵图是否已加载 */
+  private kenneySpritesLoaded: boolean = false;
+
   // ═══════════════════════════════════════════════════════════
   // 构造函数
   // ═══════════════════════════════════════════════════════════
@@ -537,8 +549,18 @@ export class MapScene extends BaseScene {
   }
 
   protected async onEnter(_params?: Record<string, unknown>): Promise<void> {
-    // TODO: 加载地图资源包
-    // await this.assetManager.loadBundle('map');
+    // 加载 Kenney Tower Defense 精灵图（仅首次）
+    if (!this.kenneySpritesLoaded) {
+      try {
+        const frameNames = await this.assetManager.loadKenneySpritesheet();
+        if (frameNames.length > 0) {
+          this.kenneySpritesLoaded = true;
+          console.info(`[MapScene] Kenney spritesheet loaded: ${frameNames.length} frames`);
+        }
+      } catch (err) {
+        console.warn('[MapScene] Failed to load Kenney spritesheet, using fallback rendering:', err);
+      }
+    }
 
     // 设置摄像机边界
     this.cameraManager.setBounds({
@@ -1340,6 +1362,56 @@ export class MapScene extends BaseScene {
   }
 
   // ═══════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════
+  // 精灵纹理加载
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 尝试获取精灵纹理
+   *
+   * 优先从 AssetManager 的 textureCache 中查找（spritesheet 方式），
+   * 回退到按帧名直接查找。找不到时返回 null，由调用方决定 fallback。
+   *
+   * @param spriteName - spritesheet 帧名（如 'terrain_grass'）
+   * @returns Texture 或 null
+   */
+  private getSpriteTexture(spriteName: string): import('pixi.js').Texture | null {
+    // 1. 查本地缓存
+    const cached = this.spriteTextureCache.get(spriteName);
+    if (cached) return cached;
+
+    // 2. 查 AssetManager 缓存（spritesheet 加载的帧）
+    const tex = this.assetManager.getTexture(spriteName);
+    if (tex) {
+      this.spriteTextureCache.set(spriteName, tex);
+      return tex;
+    }
+
+    return null;
+  }
+
+  /**
+   * 获取地形精灵纹理
+   *
+   * @param terrain - 地形类型
+   * @returns Texture 或 null
+   */
+  private getTerrainTexture(terrain: TerrainType): import('pixi.js').Texture | null {
+    const spriteName = TERRAIN_SPRITE_NAMES[terrain];
+    return spriteName ? this.getSpriteTexture(spriteName) : null;
+  }
+
+  /**
+   * 获取建筑精灵纹理
+   *
+   * @param buildingType - 建筑类型（地形名称）
+   * @returns Texture 或 null
+   */
+  private getBuildingTexture(buildingType: string): import('pixi.js').Texture | null {
+    const spriteName = BUILDING_SPRITE_NAMES[buildingType];
+    return spriteName ? this.getSpriteTexture(spriteName) : null;
+  }
   // 瓦片地图渲染模式
   // ═══════════════════════════════════════════════════════════
 
@@ -1402,6 +1474,7 @@ export class MapScene extends BaseScene {
     const graphics = new Graphics();
 
     // ── 1. 绘制地形瓦片 ────────────────────────────────────
+    // 尝试使用精灵纹理渲染，找不到时 fallback 到色块
     for (let row = 0; row < map.height; row++) {
       for (let col = 0; col < map.width; col++) {
         const tile = map.tiles[row]?.[col];
@@ -1409,26 +1482,50 @@ export class MapScene extends BaseScene {
 
         const x = col * tileSize;
         const y = row * tileSize;
-        const color = TERRAIN_COLORS[tile.terrain] ?? TERRAIN_COLORS.plain;
 
-        // 填充地形色块
-        graphics.rect(x, y, tileSize, tileSize).fill({ color });
+        // 尝试获取精灵纹理
+        const terrainTexture = this.getTerrainTexture(tile.terrain);
 
-        // 瓦片网格线
+        if (terrainTexture) {
+          // 使用精灵纹理渲染地形瓦片
+          const tileSprite = new Sprite(terrainTexture);
+          tileSprite.position.set(x, y);
+          tileSprite.width = tileSize;
+          tileSprite.height = tileSize;
+          tileLayer.addChild(tileSprite);
+
+          // 海拔视觉变化：高海拔区域叠加半透明暗色
+          if (tile.elevation >= 3) {
+            const elevGfx = new Graphics();
+            elevGfx.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.15 });
+            tileLayer.addChild(elevGfx);
+          } else if (tile.elevation >= 2) {
+            const elevGfx = new Graphics();
+            elevGfx.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.07 });
+            tileLayer.addChild(elevGfx);
+          }
+        } else {
+          // Fallback：使用色块渲染（保留原有逻辑）
+          const color = TERRAIN_COLORS[tile.terrain] ?? TERRAIN_COLORS.plain;
+          graphics.rect(x, y, tileSize, tileSize).fill({ color });
+
+          // 海拔视觉变化
+          if (tile.elevation >= 3) {
+            graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.15 });
+          } else if (tile.elevation >= 2) {
+            graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.07 });
+          }
+        }
+
+        // 瓦片网格线（始终绘制）
         graphics.rect(x, y, tileSize, tileSize).stroke({
           width: TILE_BORDER_WIDTH,
           color: TILE_BORDER_COLOR,
           alpha: TILE_BORDER_ALPHA,
         });
-
-        // 海拔视觉变化：高海拔区域加深颜色
-        if (tile.elevation >= 3) {
-          graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.15 });
-        } else if (tile.elevation >= 2) {
-          graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.07 });
-        }
       }
     }
+    // 将网格线和 fallback 色块图形添加到瓦片层
     tileLayer.addChild(graphics);
 
     // ── 2. 绘制领土边界（虚线） ────────────────────────────
@@ -1492,13 +1589,10 @@ export class MapScene extends BaseScene {
   }
 
   /**
-   * 绘制建筑图标（用 PixiJS Graphics 绘制简单形状）
+   * 绘制建筑图标
    *
-   * 不同建筑类型使用不同形状和颜色：
-   * - 城市：方形 + 城墙
-   * - 村庄：小屋形状
-   * - 关卡：堡垒形状
-   * - 其他：简单圆形
+   * 优先使用精灵纹理（从 Kenney spritesheet 获取），
+   * 找不到时 fallback 到 PixiJS Graphics 绘制简单形状。
    */
   private renderTileBuildings(buildingLayer: Container, map: GameMap): void {
     const tileSize = map.tileSize;
@@ -1515,54 +1609,72 @@ export class MapScene extends BaseScene {
         container.eventMode = 'static';
         container.cursor = 'pointer';
 
-        const gfx = new Graphics();
-        const halfSize = tileSize * 0.3;
+        // 尝试获取建筑精灵纹理
+        const buildingTexture = this.getBuildingTexture(tile.terrain);
 
-        // 根据地形类型绘制不同建筑形状
-        switch (tile.terrain) {
-          case 'city':
-            // 城市方形 + 城墙
-            gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
-              .fill({ color: 0xd4a574 });
-            gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
-              .stroke({ color: 0x8b6914, width: 2 });
-            // 城墙锯齿
-            gfx.rect(-halfSize, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
-            gfx.rect(halfSize - 8, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
-            break;
+        if (buildingTexture) {
+          // 使用精灵纹理渲染建筑
+          const sprite = new Sprite(buildingTexture);
+          sprite.anchor.set(0.5, 0.5);
+          const spriteSize = tileSize * 0.6;
+          sprite.width = spriteSize;
+          sprite.height = spriteSize;
+          container.addChild(sprite);
 
-          case 'village':
-            // 小屋形状（三角屋顶 + 方形主体）
-            gfx.rect(-halfSize * 0.7, -halfSize * 0.2, halfSize * 1.4, halfSize * 0.9)
-              .fill({ color: 0x8fbc8f });
-            gfx.moveTo(-halfSize * 0.8, -halfSize * 0.2)
-              .lineTo(0, -halfSize * 0.9)
-              .lineTo(halfSize * 0.8, -halfSize * 0.2)
-              .closePath()
-              .fill({ color: 0x8b4513 });
-            break;
+          // 叠加半透明背景色表示所属势力
+          if (tile.territoryId) {
+            const factionKey = tile.territoryId.split('_')[0];
+            const factionColor = FACTION_COLORS[factionKey];
+            if (factionColor) {
+              const overlay = new Graphics();
+              overlay.circle(0, 0, spriteSize * 0.55).fill({ color: factionColor, alpha: 0.2 });
+              container.addChildAt(overlay, 0);
+            }
+          }
+        } else {
+          // Fallback：使用 Graphics 绘制建筑形状
+          const gfx = new Graphics();
+          const halfSize = tileSize * 0.3;
 
-          case 'fortress':
-            // 堡垒形状
-            gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
-              .fill({ color: 0xa0522d });
-            gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
-              .stroke({ color: 0x5c3317, width: 2 });
-            // 塔楼
-            gfx.rect(-halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
-              .fill({ color: 0x8b6914 });
-            gfx.rect(halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
-              .fill({ color: 0x8b6914 });
-            break;
+          switch (tile.terrain) {
+            case 'city':
+              gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
+                .fill({ color: 0xd4a574 });
+              gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
+                .stroke({ color: 0x8b6914, width: 2 });
+              gfx.rect(-halfSize, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
+              gfx.rect(halfSize - 8, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
+              break;
 
-          default:
-            // 通用建筑圆形
-            gfx.circle(0, 0, halfSize * 0.7).fill({ color: 0x95a5a6 });
-            gfx.circle(0, 0, halfSize * 0.7).stroke({ color: 0x7f8c8d, width: 1 });
-            break;
+            case 'village':
+              gfx.rect(-halfSize * 0.7, -halfSize * 0.2, halfSize * 1.4, halfSize * 0.9)
+                .fill({ color: 0x8fbc8f });
+              gfx.moveTo(-halfSize * 0.8, -halfSize * 0.2)
+                .lineTo(0, -halfSize * 0.9)
+                .lineTo(halfSize * 0.8, -halfSize * 0.2)
+                .closePath()
+                .fill({ color: 0x8b4513 });
+              break;
+
+            case 'fortress':
+              gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
+                .fill({ color: 0xa0522d });
+              gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
+                .stroke({ color: 0x5c3317, width: 2 });
+              gfx.rect(-halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
+                .fill({ color: 0x8b6914 });
+              gfx.rect(halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
+                .fill({ color: 0x8b6914 });
+              break;
+
+            default:
+              gfx.circle(0, 0, halfSize * 0.7).fill({ color: 0x95a5a6 });
+              gfx.circle(0, 0, halfSize * 0.7).stroke({ color: 0x7f8c8d, width: 1 });
+              break;
+          }
+
+          container.addChild(gfx);
         }
-
-        container.addChild(gfx);
 
         // 建筑点击事件
         container.on('pointerdown', () => {

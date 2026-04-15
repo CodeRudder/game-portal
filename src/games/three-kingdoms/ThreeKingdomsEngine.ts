@@ -31,6 +31,9 @@ import { RewardSystem } from '@/engines/idle/modules/RewardSystem';
 import { DayNightWeatherSystem } from './DayNightWeatherSystem';
 import { NPCActivitySystem } from './NPCActivitySystem';
 import { GameCalendarSystem } from './GameCalendarSystem';
+import { CityMapSystem } from './CityMapSystem';
+import { ResourcePointSystem } from './ResourcePointSystem';
+import { OfflineRewardSystem } from './OfflineRewardSystem';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -56,6 +59,9 @@ export interface ThreeKingdomsSaveState {
   prestigeState: { currency: number; count: number };
   gameStats: string;
   totalPlayTime: number;
+  cityMaps?: object;
+  resourcePoints?: object;
+  offlineReward?: object;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -89,6 +95,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private dayNightWeather!: DayNightWeatherSystem;
   private npcActivitySys!: NPCActivitySystem;
   private calendar!: GameCalendarSystem;
+  private cityMapSys!: CityMapSystem;
+  private resourcePointSys!: ResourcePointSystem;
+  private offlineRewardSys!: OfflineRewardSystem;
 
   // 状态
   private res: Record<string, number> = {};
@@ -166,6 +175,15 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     // ── 游戏日历系统 ──
     this.calendar = new GameCalendarSystem();
 
+    // ── 城市地图系统 ──
+    this.cityMapSys = new CityMapSystem();
+
+    // ── 野外资源点系统 ──
+    this.resourcePointSys = new ResourcePointSystem();
+
+    // ── 离线收益系统 ──
+    this.offlineRewardSys = new OfflineRewardSystem();
+
     this.panel = 'none';
     this.selIdx = 0;
     this.scroll = 0;
@@ -174,6 +192,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     // ── 新手福利：免费赠送一个 uncommon 武将 ──
     this.grantFreeStarterGeneral();
+
+    // ── 为已有领土生成城市地图 ──
+    this.generateCityMapsForConqueredTerritories();
+
+    // ── 为地图生成资源点 ──
+    this.generateResourcePointsFromMap();
 
     this.emit('stateChange');
   }
@@ -199,6 +223,34 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     const chosen = GENERALS.find(g => g.id === FREE_STARTER_HERO);
     if (!chosen) return null;
     return this.units.isUnlocked(chosen.id) ? chosen.name : null;
+  }
+
+  /**
+   * 为所有已征服领土生成城市地图
+   * 在 onInit 和 load 时调用
+   */
+  private generateCityMapsForConqueredTerritories(): void {
+    const conquered = this.terr.getConqueredIds();
+    for (const tId of conquered) {
+      const def = TERRITORIES.find(t => t.id === tId);
+      if (def && !this.cityMapSys.getCityMap(tId)) {
+        this.cityMapSys.generateCityMap(tId, def.name, def.type);
+      }
+    }
+  }
+
+  /**
+   * 从地图生成器瓦片数据生成资源点
+   */
+  private generateResourcePointsFromMap(): void {
+    try {
+      const gameMap = this.mapGen.generate();
+      if (gameMap && gameMap.tiles) {
+        this.resourcePointSys.generateResourcePoints(gameMap.tiles);
+      }
+    } catch {
+      // MapGenerator 可能未初始化，静默忽略
+    }
   }
 
   // ─── 更新 ───────────────────────────────────────────────
@@ -237,6 +289,17 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.ftSys.update(dt);
     this.ptSys.update(dt);
     this.calendar.update(sec);
+
+    // 城市地图更新（繁荣度/人口增长）
+    this.cityMapSys.getAllCities().forEach(city => {
+      this.cityMapSys.updateCity(city.cityId, dt);
+    });
+
+    // 资源点产出累加到引擎资源
+    const resourceOutput = this.resourcePointSys.calculateOutput(dt);
+    for (const [resId, amount] of Object.entries(resourceOutput)) {
+      if (amount > 0) this.giveRes(resId, amount);
+    }
 
     // 通用 NPC 引擎更新（以游戏内时间驱动）
     const gameHour = (this.playTime / 60) % 24; // 简化：60 秒 = 1 游戏小时
@@ -352,6 +415,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       prestigeState: { currency: this.prest.getState().currency, count: this.prest.getState().count },
       gameStats: this.stats.serialize(),
       totalPlayTime: this.playTime,
+      cityMaps: this.cityMapSys.serialize(),
+      resourcePoints: this.resourcePointSys.serialize(),
+      offlineReward: this.offlineRewardSys.serialize(),
     };
   }
 
@@ -369,6 +435,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.prest.loadState({ currency: ps.currency, count: ps.count });
     if (d.gameStats) this.stats.deserialize(d.gameStats);
     this.playTime = d.totalPlayTime || 0;
+
+    // 反序列化新系统
+    if (d.cityMaps) this.cityMapSys.deserialize(d.cityMaps);
+    if (d.resourcePoints) this.resourcePointSys.deserialize(d.resourcePoints);
+    if (d.offlineReward) this.offlineRewardSys.deserialize(d.offlineReward as Record<string, unknown>);
+
     this.emit('stateChange');
   }
 
@@ -807,6 +879,15 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   /** 获取游戏日历系统 */
   public getCalendar(): GameCalendarSystem { return this.calendar; }
 
+  /** 获取城市地图系统 */
+  public getCityMapSystem(): CityMapSystem { return this.cityMapSys; }
+
+  /** 获取野外资源点系统 */
+  public getResourcePointSystem(): ResourcePointSystem { return this.resourcePointSys; }
+
+  /** 获取离线收益系统 */
+  public getOfflineRewardSystem(): OfflineRewardSystem { return this.offlineRewardSys; }
+
   // ═══════════════════════════════════════════════════════════
   // 核心玩法公共 API
   // ═══════════════════════════════════════════════════════════
@@ -880,6 +961,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     this.stats.increment('totalTerritoriesConquered');
     this.emit('territoryConquered', { territoryId: id, name: def.name });
+
+    // 自动为新征服领土生成城市地图
+    if (!this.cityMapSys.getCityMap(id)) {
+      this.cityMapSys.generateCityMap(id, def.name, def.type);
+    }
+
     this.emit('stateChange');
     return true;
   }
