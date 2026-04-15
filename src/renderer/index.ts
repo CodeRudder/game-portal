@@ -93,3 +93,19 @@ export { OrientationManager } from './managers/OrientationManager';
 
 export { default as PixiGameCanvas } from './components/PixiGameCanvas';
 export type { PixiGameCanvasProps } from './components/PixiGameCanvas';
+
+// ═══════════════════════════════════════════════════════════════
+// 通用适配层导出
+// ═══════════════════════════════════════════════════════════════
+
+export { PixiGameAdapter } from './PixiGameAdapter';
+export type { AdapterEventMap } from './PixiGameAdapter';
+export { RenderStrategyRegistry } from './RenderStrategyRegistry';
+export { IdleScene } from './scenes/IdleScene';
+
+// 适配层类型导出（已在 types.ts 中定义，此处重新导出方便引用）
+export type {
+  IdleGameRenderState,
+  RenderStrategy,
+  PixiGameAdapterConfig,
+} from './types';

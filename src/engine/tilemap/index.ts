@@ -39,6 +39,53 @@ export { TileMapRenderer } from './TileMapRenderer';
 export { PathFinder } from './PathFinder';
 export type { PathFindOptions } from './PathFinder';
 
-// 地图生成
+// 地图生成（原有）
 export { MapGenerator } from './MapGenerator';
 export type { MapGenConfig } from './MapGenerator';
+
+// Biome 配置
+export { BiomeType } from './BiomeConfig';
+export {
+  BIOME_CONFIGS,
+  getBiomeConfig,
+  getBiomeTerrainType,
+  isBiomeBuildable,
+  isBiomeWalkable,
+  getBuildableBiomes,
+  getWalkableBiomes,
+} from './BiomeConfig';
+export type { BiomeConfig as BiomeConfigType, ResourceYield, DecoTheme } from './BiomeConfig';
+
+// Simplex Noise
+export { NoiseGenerator, createSeededRandom } from './SimplexNoiseWrapper';
+export type { NoiseConfig } from './SimplexNoiseWrapper';
+
+// 建筑放置
+export { BuildingPlacementManager, getLevelVisual, LEVEL_VISUALS } from './BuildingPlacementManager';
+export type { PlacementResult, LevelVisualConfig } from './BuildingPlacementManager';
+
+// 装饰层
+export { DecoLayer, DEFAULT_DECO_CONFIG } from './DecoLayer';
+export type { DecoLayerConfig } from './DecoLayer';
+
+// 地形过渡
+export { TerrainTransition, blendColors, DIR_N, DIR_NE, DIR_E, DIR_SE, DIR_S, DIR_SW, DIR_W, DIR_NW } from './TerrainTransition';
+export type { TransitionTile } from './TerrainTransition';
+
+// 地图模板
+export {
+  TEMPLATE_CHINESE_CAPITAL,
+  TEMPLATE_EGYPTIAN_DESERT,
+  TEMPLATE_BABYLONIAN_CITY,
+  TEMPLATE_INDIAN_JUNGLE,
+  MAP_TEMPLATES,
+  getTemplate,
+  getTemplateIds,
+  getAllTemplates,
+  generateBuildingDefsFromTemplate,
+} from './MapTemplates';
+export type { MapTemplate, BiomeWeights, BuildingStyle, DecoTemplateConfig } from './MapTemplates';
+
+// 增强版地图生成
+export { EnhancedMapGenerator } from './EnhancedMapGenerator';
+export type { EnhancedMapGenConfig, EnhancedMapResult, BiomeWeightConfig } from './EnhancedMapGenerator';

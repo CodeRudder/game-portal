@@ -772,3 +772,117 @@ export interface IGameRenderer {
   /** 获取当前帧率 */
   getFPS(): number;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// 16. PixiGameAdapter — 通用放置游戏渲染适配层类型
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * 从 IdleGameEngine 提取的渲染状态
+ *
+ * 适配器通过此接口将引擎内部状态序列化为渲染层可消费的数据。
+ */
+export interface IdleGameRenderState {
+  /** 游戏 ID */
+  gameId: string;
+  /** 资源列表（已解锁） */
+  resources: Array<{
+    id: string;
+    name: string;
+    amount: number;
+    perSecond: number;
+    maxAmount: number;
+    unlocked: boolean;
+  }>;
+  /** 升级列表（可购买的） */
+  upgrades: Array<{
+    id: string;
+    name: string;
+    description: string;
+    level: number;
+    maxLevel: number;
+    baseCost: Record<string, number>;
+    costMultiplier: number;
+    unlocked: boolean;
+    canAfford: boolean;
+    effect: { type: string; target: string; value: number };
+    icon?: string;
+  }>;
+  /** 声望数据 */
+  prestige: {
+    currency: number;
+    count: number;
+  };
+  /** 游戏统计 */
+  statistics: Record<string, number>;
+}
+
+/**
+ * 渲染策略接口
+ *
+ * 定义游戏类型对应的渲染行为，包括场景类型、颜色主题、布局参数。
+ */
+export interface RenderStrategy {
+  /** 策略名称（用于日志和调试） */
+  name: string;
+  /** 对应的场景类型（默认 'idle'） */
+  sceneType: 'idle';
+  /** 颜色主题 */
+  theme: {
+    /** 主背景色 */
+    background: string;
+    /** 面板背景色 */
+    panelBackground: string;
+    /** 主文字颜色 */
+    textPrimary: string;
+    /** 次要文字颜色 */
+    textSecondary: string;
+    /** 强调色（用于标题、高亮） */
+    accent: string;
+    /** 成功色（用于产出、可购买） */
+    success: string;
+    /** 警告色（用于资源不足） */
+    warning: string;
+    /** 资源栏背景色 */
+    resourceBarBg: string;
+    /** 按钮背景色 */
+    buttonBg: string;
+    /** 按钮悬停色 */
+    buttonHover: string;
+  };
+  /** 布局参数 */
+  layout: {
+    /** 资源栏高度比例（0~1） */
+    resourceBarHeight: number;
+    /** 建筑区域高度比例（0~1） */
+    buildingAreaHeight: number;
+    /** 升级面板高度比例（0~1） */
+    upgradePanelHeight: number;
+    /** 统计面板宽度比例（0~1，侧边栏） */
+    statsPanelWidth: number;
+    /** 建筑网格列数 */
+    gridColumns: number;
+    /** 建筑卡片间距（像素） */
+    gridGap: number;
+    /** 内边距（像素） */
+    padding: number;
+    /** 圆角半径（像素） */
+    borderRadius: number;
+  };
+}
+
+/**
+ * PixiGameAdapter 配置
+ */
+export interface PixiGameAdapterConfig {
+  /** 渲染器配置（覆盖默认值） */
+  rendererConfig?: Partial<RendererConfig>;
+  /** 自定义渲染策略（覆盖默认策略） */
+  strategy?: RenderStrategy;
+  /** 状态同步间隔（毫秒，默认 1000） */
+  syncInterval?: number;
+  /** 是否自动启动引擎（默认 true） */
+  autoStart?: boolean;
+  /** 是否显示 FPS 指示器（默认 false） */
+  showFPS?: boolean;
+}
