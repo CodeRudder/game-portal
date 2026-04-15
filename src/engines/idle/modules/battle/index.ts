@@ -45,3 +45,33 @@ export {
   SiegeMode,
   type SiegeModeOptions,
 } from './SiegeMode';
+
+export {
+  TowerDefenseMode,
+  type TowerDefenseConfig,
+  type TowerDef,
+  type PathNode,
+  type EnemyWave,
+  type Tower,
+  type EnemyUnit,
+  type TowerDefenseState,
+} from './TowerDefenseMode';
+
+export {
+  NavalMode,
+  type NavalConfig,
+  type ShipDef,
+  type ShipUnit,
+  type Wind,
+  type NavalState,
+} from './NavalMode';
+
+export {
+  FightingMode,
+  type FightingConfig,
+  type FighterExtension,
+  type FightAction,
+  type FightingEvent,
+  type AIStrategy,
+  type FightingState,
+} from './FightingMode';
