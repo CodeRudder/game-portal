@@ -434,6 +434,24 @@ export interface DayNightRenderData {
   weatherIntensity: number;
 }
 
+/** 日历时间渲染数据 */
+export interface CalendarRenderData {
+  /** 格式化日期字符串（如"建安三年 五月初七 午时"） */
+  dateStr: string;
+  /** 当前季节 */
+  season: string;
+  /** 当前时辰 */
+  shichen: string;
+  /** 当前小时 0-23 */
+  timeOfDay: number;
+  /** 时间缩放倍率 */
+  timeScale: number;
+  /** 是否暂停 */
+  isPaused: boolean;
+  /** 即将到来的事件（最多3个） */
+  upcomingEvents: { id: string; name: string; daysRemaining: number }[];
+}
+
 // ═══════════════════════════════════════════════════════════════
 // 11. 全局游戏渲染状态（逻辑层 → 渲染层的完整数据包）
 // ═══════════════════════════════════════════════════════════════
@@ -464,6 +482,8 @@ export interface GameRenderState {
   tileMapData?: unknown;
   /** 昼夜天气数据（始终填充） */
   dayNight?: DayNightRenderData;
+  /** 日历时间数据（始终填充） */
+  calendar?: CalendarRenderData;
 }
 
 // ═══════════════════════════════════════════════════════════════

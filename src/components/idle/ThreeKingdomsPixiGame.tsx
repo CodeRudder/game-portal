@@ -612,6 +612,60 @@ export default function ThreeKingdomsPixiGame() {
             </div>
           ))}
         </div>
+
+        {/* 日历时间显示 */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12 }}>
+          <span style={{ color: COLOR_THEME.accentGold, fontFamily: '"Noto Serif SC", serif' }}>
+            {renderState?.calendar?.dateStr}
+          </span>
+          <span style={{
+            color: COLOR_THEME.accentGold,
+            background: 'rgba(255,215,0,0.1)',
+            padding: '1px 8px', borderRadius: 8,
+            fontSize: 11,
+          }}>
+            {renderState?.calendar?.season}季 · {renderState?.calendar?.shichen}时
+          </span>
+          {renderState?.calendar?.isPaused && (
+            <span style={{ color: '#e74c3c', fontSize: 10 }}>⏸ 已暂停</span>
+          )}
+          <div style={{ display: 'flex', gap: 3 }}>
+            {[1, 2, 5].map(speed => (
+              <button
+                key={speed}
+                onClick={() => engineRef.current?.getCalendar().setTimeScale(speed)}
+                style={{
+                  padding: '2px 8px', fontSize: 10,
+                  borderRadius: 3, border: 'none', cursor: 'pointer',
+                  background: renderState?.calendar?.timeScale === speed
+                    ? COLOR_THEME.accentGold
+                    : 'rgba(255,255,255,0.1)',
+                  color: renderState?.calendar?.timeScale === speed
+                    ? '#1a0a0a'
+                    : COLOR_THEME.textSecondary,
+                  fontWeight: renderState?.calendar?.timeScale === speed ? 'bold' : 'normal',
+                }}
+              >
+                {speed}x
+              </button>
+            ))}
+            <button
+              onClick={() => {
+                const cal = engineRef.current?.getCalendar();
+                if (!cal) return;
+                cal.isPaused() ? cal.resume() : cal.pause();
+              }}
+              style={{
+                padding: '2px 8px', fontSize: 10,
+                borderRadius: 3, border: 'none', cursor: 'pointer',
+                background: 'rgba(255,255,255,0.1)',
+                color: COLOR_THEME.textSecondary,
+              }}
+            >
+              {renderState?.calendar?.isPaused ? '▶' : '⏸'}
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* ═══════════ 中间区域：左面板 + PixiJS Canvas + 右面板 ═══════════ */}

@@ -25,7 +25,7 @@ import type {
   BuildingRenderData, CombatRenderData, CombatUnitRenderData,
   ResourceBarRenderData, ResourceItemRenderData, StageRenderData,
   PrestigeRenderData, HeroRenderData, TechTreeRenderData, TechNodeRenderData,
-  NPCRenderData, DayNightRenderData,
+  NPCRenderData, DayNightRenderData, CalendarRenderData,
 } from '@/renderer/types';
 import type { ThreeKingdomsEngine } from './ThreeKingdomsEngine';
 import {
@@ -133,6 +133,7 @@ export class ThreeKingdomsRenderStateAdapter {
       npcs: this.toNPCList(),
       tileMapData: this.getTileMapData(),
       dayNight: this.toDayNightData(),
+      calendar: this.toCalendarData(),
     };
   }
 
@@ -691,6 +692,36 @@ export class ThreeKingdomsRenderStateAdapter {
         ambientAlpha: state.ambientAlpha,
         weather: state.weather,
         weatherIntensity: state.weatherIntensity,
+      };
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * 组装日历时间渲染数据
+   *
+   * 从引擎 GameCalendarSystem 获取当前游戏日期、时辰、季节等信息，
+   * 转换为渲染层可消费的 CalendarRenderData。
+   */
+  private toCalendarData(): CalendarRenderData | undefined {
+    try {
+      const cal = this.engine.getCalendar();
+      if (!cal) return undefined;
+      const currentDate = cal.getCurrentDate();
+      const upcomingEvents = cal.getUpcomingEvents().slice(0, 3);
+      return {
+        dateStr: cal.formatDate(currentDate),
+        season: currentDate.season,
+        shichen: currentDate.shichen,
+        timeOfDay: currentDate.hour,
+        timeScale: cal.getTimeScale(),
+        isPaused: cal.isPaused(),
+        upcomingEvents: upcomingEvents.map(e => ({
+          id: e.id,
+          name: e.name,
+          daysRemaining: e.daysRemaining,
+        })),
       };
     } catch {
       return undefined;

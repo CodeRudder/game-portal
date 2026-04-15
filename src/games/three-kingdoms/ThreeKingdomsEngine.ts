@@ -30,6 +30,7 @@ import { EventSystem, type GameEvent } from '@/engines/idle/modules/EventSystem'
 import { RewardSystem } from '@/engines/idle/modules/RewardSystem';
 import { DayNightWeatherSystem } from './DayNightWeatherSystem';
 import { NPCActivitySystem } from './NPCActivitySystem';
+import { GameCalendarSystem } from './GameCalendarSystem';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -87,6 +88,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private rewardSys!: RewardSystem;
   private dayNightWeather!: DayNightWeatherSystem;
   private npcActivitySys!: NPCActivitySystem;
+  private calendar!: GameCalendarSystem;
 
   // 状态
   private res: Record<string, number> = {};
@@ -161,6 +163,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     // ── NPC 职业活动系统 ──
     this.npcActivitySys = new NPCActivitySystem();
 
+    // ── 游戏日历系统 ──
+    this.calendar = new GameCalendarSystem();
+
     this.panel = 'none';
     this.selIdx = 0;
     this.scroll = 0;
@@ -231,6 +236,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.terr.update(dt);
     this.ftSys.update(dt);
     this.ptSys.update(dt);
+    this.calendar.update(sec);
 
     // 通用 NPC 引擎更新（以游戏内时间驱动）
     const gameHour = (this.playTime / 60) % 24; // 简化：60 秒 = 1 游戏小时
@@ -797,6 +803,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 获取 NPC 职业活动系统 */
   public getNPCActivitySystem(): NPCActivitySystem { return this.npcActivitySys; }
+
+  /** 获取游戏日历系统 */
+  public getCalendar(): GameCalendarSystem { return this.calendar; }
 
   // ═══════════════════════════════════════════════════════════
   // 核心玩法公共 API
