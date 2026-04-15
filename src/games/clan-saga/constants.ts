@@ -1,387 +1,172 @@
 /**
- * 家族风云 (Clan Saga) 放置类游戏 — 常量定义
+ * 家族传说 (Clan Saga) — 放置游戏常量 v2.0
  *
- * 核心玩法：
- * - 点击/空格键获得财富
- * - 建筑系统（商铺、书院、武馆、祠堂、茶馆、钱庄、使馆、宝库）
- * - 后代培养系统（武将、文士、商人、外交官）
- * - 联姻系统（与其他家族联姻获得加成）
- * - 声望系统（转生获得家族传承，永久加成）
- * - 离线收益
- * - 自动存档/读档
+ * 基于统一子系统架构重建。使用 BuildingSystem + PrestigeSystem +
+ * StageSystem(家族阶段) + UnitSystem(族人) + TechTreeSystem(传承)。
  */
 
-/** Canvas 尺寸 */
+import type { BuildingDef } from '@/engines/idle/modules/BuildingSystem';
+import type { PrestigeConfig } from '@/engines/idle/modules/PrestigeSystem';
+import type { UIColorScheme } from '@/engines/idle/modules/CanvasUIRenderer';
+import type { StageDef } from '@/engines/idle/modules/StageSystem';
+import type { TechDef } from '@/engines/idle/modules/TechTreeSystem';
+
+// ═══════════════════════════════════════════════════════════════
+// 游戏标识
+// ═══════════════════════════════════════════════════════════════
+
+export const GAME_ID = 'clan-saga';
+export const GAME_TITLE = '家族传说';
+
 export const CANVAS_WIDTH = 480;
 export const CANVAS_HEIGHT = 640;
 
-/** 点击产生的财富数量 */
-export const WEALTH_PER_CLICK = 1;
+// ═══════════════════════════════════════════════════════════════
+// 建筑系统 (8个)
+// ═══════════════════════════════════════════════════════════════
 
-/** 资源 ID 常量 */
-export const RESOURCE_IDS = {
-  WEALTH: 'wealth',
-  REPUTATION: 'reputation',
-  CONNECTION: 'connection',
-} as const;
-
-/** 建筑 ID 常量 */
-export const BUILDING_IDS = {
-  SHOP: 'shop',
-  ACADEMY: 'academy',
-  DOJO: 'dojo',
-  ANCESTRAL_HALL: 'ancestral-hall',
-  TEA_HOUSE: 'tea-house',
-  BANK: 'bank',
-  EMBASSY: 'embassy',
-  TREASURY: 'treasury',
-} as const;
-
-/** 后代类型 */
-export const HEIR_TYPES = {
-  WARRIOR: 'warrior',
-  SCHOLAR: 'scholar',
-  MERCHANT: 'merchant',
-  DIPLOMAT: 'diplomat',
-} as const;
-
-/** 建筑定义 */
-export interface BuildingDef {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  baseCost: Record<string, number>;
-  costMultiplier: number;
-  maxLevel: number;
-  productionResource: string;
-  baseProduction: number;
-  /** 解锁条件：需要某种资源达到一定量 */
-  unlockCondition?: Record<string, number>;
-  /** 解锁需要的建筑等级 { buildingId: level } */
-  unlockBuildingLevel?: Record<string, number>;
-}
-
-/** 后代类型定义 */
-export interface HeirTypeDef {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  /** 培养消耗 */
-  trainCost: Record<string, number>;
-  /** 培养消耗倍率（每级） */
-  trainCostMultiplier: number;
-  /** 被动加成目标资源 */
-  bonusTarget: string;
-  /** 被动加成值（每级） */
-  bonusPerLevel: number;
-  /** 最大等级 */
-  maxLevel: number;
-}
-
-/** 联姻家族定义 */
-export interface MarriageFamilyDef {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  /** 联姻消耗 */
-  cost: Record<string, number>;
-  /** 联姻加成 */
-  bonus: Record<string, number>;
-  /** 需要后代类型 */
-  requiredHeirType?: string;
-  /** 需要后代最低等级 */
-  requiredHeirLevel?: number;
-}
-
-/** 建筑列表 */
 export const BUILDINGS: BuildingDef[] = [
-  {
-    id: BUILDING_IDS.SHOP,
-    name: '商铺',
-    icon: '🏪',
-    description: '基础建筑，经营买卖赚取财富',
-    baseCost: { wealth: 10 },
-    costMultiplier: 1.15,
-    maxLevel: 50,
-    productionResource: RESOURCE_IDS.WEALTH,
-    baseProduction: 0.5,
-  },
-  {
-    id: BUILDING_IDS.ACADEMY,
-    name: '书院',
-    icon: '📚',
-    description: '培养文士，产出声望',
-    baseCost: { wealth: 50 },
-    costMultiplier: 1.18,
-    maxLevel: 50,
-    productionResource: RESOURCE_IDS.REPUTATION,
-    baseProduction: 0.3,
-    unlockCondition: { wealth: 30 },
-  },
-  {
-    id: BUILDING_IDS.DOJO,
-    name: '武馆',
-    icon: '⚔️',
-    description: '训练武将，提升点击力量',
-    baseCost: { wealth: 100 },
-    costMultiplier: 1.2,
-    maxLevel: 30,
-    productionResource: RESOURCE_IDS.WEALTH,
-    baseProduction: 0,
-    unlockCondition: { wealth: 60 },
-  },
-  {
-    id: BUILDING_IDS.ANCESTRAL_HALL,
-    name: '祠堂',
-    icon: '🏛️',
-    description: '祭祀先祖，提升产出倍率',
-    baseCost: { wealth: 300, reputation: 50 },
-    costMultiplier: 1.25,
-    maxLevel: 20,
-    productionResource: RESOURCE_IDS.REPUTATION,
-    baseProduction: 0.1,
-    unlockCondition: { wealth: 200, reputation: 30 },
-  },
-  {
-    id: BUILDING_IDS.TEA_HOUSE,
-    name: '茶馆',
-    icon: '🍵',
-    description: '结交人脉，产出人脉资源',
-    baseCost: { wealth: 500, reputation: 100 },
-    costMultiplier: 1.22,
-    maxLevel: 40,
-    productionResource: RESOURCE_IDS.CONNECTION,
-    baseProduction: 0.2,
-    unlockCondition: { wealth: 300, reputation: 60 },
-  },
-  {
-    id: BUILDING_IDS.BANK,
-    name: '钱庄',
-    icon: '🏦',
-    description: '经营金融，大量产出财富',
-    baseCost: { wealth: 2000, reputation: 300, connection: 100 },
-    costMultiplier: 1.3,
-    maxLevel: 30,
-    productionResource: RESOURCE_IDS.WEALTH,
-    baseProduction: 1.0,
-    unlockCondition: { wealth: 1000, reputation: 150 },
-  },
-  {
-    id: BUILDING_IDS.EMBASSY,
-    name: '使馆',
-    icon: '🏰',
-    description: '外交联络，大量产出人脉',
-    baseCost: { wealth: 5000, reputation: 500, connection: 200 },
-    costMultiplier: 1.35,
-    maxLevel: 25,
-    productionResource: RESOURCE_IDS.CONNECTION,
-    baseProduction: 0.5,
-    unlockCondition: { wealth: 3000, reputation: 300, connection: 100 },
-  },
-  {
-    id: BUILDING_IDS.TREASURY,
-    name: '宝库',
-    icon: '💎',
-    description: '家族宝库，提升所有产出',
-    baseCost: { wealth: 10000, reputation: 1000, connection: 500 },
-    costMultiplier: 1.5,
-    maxLevel: 15,
-    productionResource: RESOURCE_IDS.WEALTH,
-    baseProduction: 0,
-    unlockCondition: { wealth: 5000, reputation: 500, connection: 200 },
-  },
+  { id: 'farm', name: '灵田', icon: '🌾', baseCost: { grain: 10 }, costMultiplier: 1.07, maxLevel: 0, productionResource: 'grain', baseProduction: 0.1, unlockCondition: '初始' },
+  { id: 'workshop', name: '织造坊', icon: '🧵', baseCost: { grain: 30 }, costMultiplier: 1.08, maxLevel: 0, productionResource: 'silk', baseProduction: 0.08, requires: ['farm'], unlockCondition: '灵田 Lv.1' },
+  { id: 'mine', name: '灵石矿', icon: '💎', baseCost: { grain: 50, silk: 20 }, costMultiplier: 1.09, maxLevel: 0, productionResource: 'stone', baseProduction: 0.06, requires: ['workshop'], unlockCondition: '织造坊 Lv.1' },
+  { id: 'shrine', name: '祖祠', icon: '⛩️', baseCost: { silk: 60, stone: 40 }, costMultiplier: 1.10, maxLevel: 0, productionResource: 'prestige', baseProduction: 0.04, requires: ['mine'], unlockCondition: '灵石矿 Lv.1' },
+  { id: 'school', name: '族学', icon: '📚', baseCost: { stone: 200, silk: 100 }, costMultiplier: 1.12, maxLevel: 0, productionResource: 'grain', baseProduction: 0.10, requires: ['shrine'], unlockCondition: '祖祠 Lv.1' },
+  { id: 'treasury', name: '宝库', icon: '🏦', baseCost: { stone: 300, prestige: 150 }, costMultiplier: 1.11, maxLevel: 0, productionResource: 'silk', baseProduction: 0.08, requires: ['school'], unlockCondition: '族学 Lv.1' },
+  { id: 'mansion', name: '府邸', icon: '🏠', baseCost: { stone: 600, silk: 400, prestige: 100 }, costMultiplier: 1.14, maxLevel: 0, productionResource: 'stone', baseProduction: 0.15, requires: ['treasury'], unlockCondition: '宝库 Lv.1' },
+  { id: 'palace', name: '宗祠大殿', icon: '🏯', baseCost: { stone: 1500, silk: 1000, prestige: 300 }, costMultiplier: 1.18, maxLevel: 0, productionResource: 'prestige', baseProduction: 0.25, requires: ['mansion'], unlockCondition: '府邸 Lv.1' },
 ];
 
-/** 后代类型列表 */
-export const HEIR_TYPE_DEFS: HeirTypeDef[] = [
-  {
-    id: HEIR_TYPES.WARRIOR,
-    name: '武将',
-    icon: '⚔️',
-    description: '勇武过人，提升点击力量',
-    trainCost: { wealth: 100, reputation: 20 },
-    trainCostMultiplier: 1.5,
-    bonusTarget: RESOURCE_IDS.WEALTH,
-    bonusPerLevel: 0.5,
-    maxLevel: 20,
-  },
-  {
-    id: HEIR_TYPES.SCHOLAR,
-    name: '文士',
-    icon: '📖',
-    description: '才学渊博，提升声望产出',
-    trainCost: { wealth: 80, connection: 10 },
-    trainCostMultiplier: 1.4,
-    bonusTarget: RESOURCE_IDS.REPUTATION,
-    bonusPerLevel: 0.3,
-    maxLevel: 20,
-  },
-  {
-    id: HEIR_TYPES.MERCHANT,
-    name: '商人',
-    icon: '💰',
-    description: '精于商道，提升财富产出',
-    trainCost: { wealth: 150, connection: 20 },
-    trainCostMultiplier: 1.6,
-    bonusTarget: RESOURCE_IDS.WEALTH,
-    bonusPerLevel: 0.4,
-    maxLevel: 20,
-  },
-  {
-    id: HEIR_TYPES.DIPLOMAT,
-    name: '外交官',
-    icon: '🤝',
-    description: '长袖善舞，提升人脉产出',
-    trainCost: { wealth: 120, reputation: 30 },
-    trainCostMultiplier: 1.45,
-    bonusTarget: RESOURCE_IDS.CONNECTION,
-    bonusPerLevel: 0.3,
-    maxLevel: 20,
-  },
+// ═══════════════════════════════════════════════════════════════
+// 家族阶段系统 → StageSystem (6个)
+// ═══════════════════════════════════════════════════════════════
+
+export const DYNASTIES: StageDef[] = [
+  { id: 'small_clan', name: '小族', description: '初兴家族，聚族而居', order: 1, prerequisiteStageId: null, requiredResources: {}, requiredConditions: [], rewards: [], productionMultiplier: 1.0, combatMultiplier: 1.0, iconAsset: '🏠', themeColor: '#8b6914' },
+  { id: 'growing_clan', name: '望族', description: '声名渐起，人丁兴旺', order: 2, prerequisiteStageId: 'small_clan', requiredResources: { grain: 500, silk: 200 }, requiredConditions: [], rewards: [], productionMultiplier: 1.3, combatMultiplier: 1.0, iconAsset: '🏘️', themeColor: '#a0522d' },
+  { id: 'noble', name: '名门', description: '名门望族，世代簪缨', order: 3, prerequisiteStageId: 'growing_clan', requiredResources: { grain: 3000, silk: 1500, stone: 300 }, requiredConditions: [], rewards: [], productionMultiplier: 1.6, combatMultiplier: 1.0, iconAsset: '🏯', themeColor: '#b8860b' },
+  { id: 'aristocrat', name: '世家', description: '世家大族，权倾一方', order: 4, prerequisiteStageId: 'noble', requiredResources: { grain: 15000, silk: 8000, stone: 2000, prestige: 500 }, requiredConditions: [], rewards: [], productionMultiplier: 2.0, combatMultiplier: 1.0, iconAsset: '🏛️', themeColor: '#cd853f' },
+  { id: 'great_clan', name: '大族', description: '一方豪族，门生故吏遍布', order: 5, prerequisiteStageId: 'aristocrat', requiredResources: { grain: 80000, silk: 40000, stone: 10000, prestige: 3000 }, requiredConditions: [], rewards: [], productionMultiplier: 2.5, combatMultiplier: 1.0, iconAsset: '🏰', themeColor: '#daa520' },
+  { id: 'holy_clan', name: '圣族', description: '圣族降临，万世不朽', order: 6, prerequisiteStageId: 'great_clan', requiredResources: { grain: 300000, silk: 150000, stone: 50000, prestige: 15000 }, requiredConditions: [], rewards: [], productionMultiplier: 3.0, combatMultiplier: 1.0, iconAsset: '✨', themeColor: '#ffd700' },
 ];
 
-/** 联姻家族列表 */
-export const MARRIAGE_FAMILIES: MarriageFamilyDef[] = [
-  {
-    id: 'family-zhang',
-    name: '张家',
-    icon: '🏠',
-    description: '书香门第，声望加成',
-    cost: { wealth: 500, reputation: 100 },
-    bonus: { reputation: 0.5 },
-    requiredHeirType: HEIR_TYPES.SCHOLAR,
-    requiredHeirLevel: 1,
-  },
-  {
-    id: 'family-li',
-    name: '李家',
-    icon: '⚔️',
-    description: '武将世家，点击力量加成',
-    cost: { wealth: 800, reputation: 50, connection: 50 },
-    bonus: { wealth: 1.0 },
-    requiredHeirType: HEIR_TYPES.WARRIOR,
-    requiredHeirLevel: 2,
-  },
-  {
-    id: 'family-wang',
-    name: '王家',
-    icon: '💰',
-    description: '商贾巨族，财富产出加成',
-    cost: { wealth: 2000, reputation: 200, connection: 100 },
-    bonus: { wealth: 2.0, reputation: 0.3 },
-    requiredHeirType: HEIR_TYPES.MERCHANT,
-    requiredHeirLevel: 3,
-  },
-  {
-    id: 'family-zhao',
-    name: '赵家',
-    icon: '🏰',
-    description: '名门望族，全资源加成',
-    cost: { wealth: 5000, reputation: 500, connection: 300 },
-    bonus: { wealth: 1.0, reputation: 1.0, connection: 1.0 },
-    requiredHeirType: HEIR_TYPES.DIPLOMAT,
-    requiredHeirLevel: 5,
-  },
-  {
-    id: 'family-chen',
-    name: '陈家',
-    icon: '🏯',
-    description: '皇亲国戚，大幅全资源加成',
-    cost: { wealth: 20000, reputation: 2000, connection: 1000 },
-    bonus: { wealth: 3.0, reputation: 2.0, connection: 2.0 },
-    requiredHeirType: HEIR_TYPES.DIPLOMAT,
-    requiredHeirLevel: 8,
-  },
-];
+// ═══════════════════════════════════════════════════════════════
+// 族人系统 → UnitSystem (8个)
+// ═══════════════════════════════════════════════════════════════
 
-/** 声望系统常量 */
-export const PRESTIGE_MULTIPLIER = 0.04;
-export const MIN_PRESTIGE_WEALTH = 50000;
+export interface HeroDef {
+  id: string;
+  name: string;
+  title: string;
+  rarity: string;
+  baseStats: { administration: number; military: number; culture: number };
+  growthRates: { administration: number; military: number; culture: number };
+  recruitCost: { grain: number; silk: number };
+  bonus: string;
+}
 
-/** 颜色主题 — 古风雅韵（朱红/金色/墨色） */
-export const COLORS = {
-  bgGradient1: '#1a0f0a',
-  bgGradient2: '#2a1810',
-  bgGradient3: '#1a1210',
-  inkDark: '#2a1a10',
-  inkMid: '#3d2a1a',
-  inkLight: '#5a4030',
-  redPrimary: '#c05040',
-  redLight: '#e07060',
-  redDark: '#8b3020',
-  goldPrimary: '#c9a84c',
-  goldLight: '#f0d080',
-  goldDark: '#8b6914',
-  textPrimary: '#f0e0c8',
-  textSecondary: '#c0a888',
-  textDim: '#807060',
-  accentRed: '#c05040',
-  accentGold: '#c9a84c',
-  accentGreen: '#5a9e6f',
-  accentBlue: '#4a90a4',
-  panelBg: 'rgba(26, 15, 10, 0.92)',
-  panelBorder: 'rgba(201, 168, 76, 0.3)',
-  selectedBg: 'rgba(201, 168, 76, 0.15)',
-  selectedBorder: 'rgba(201, 168, 76, 0.6)',
-  affordable: '#5a9e6f',
-  unaffordable: '#c05050',
-  wealthColor: '#f0d080',
-  reputationColor: '#e07060',
-  connectionColor: '#7ec8d8',
-  paperWhite: '#f5e6c8',
-  roofRed: '#8b3020',
-  wallGray: '#d0c0a0',
-  lanternGlow: 'rgba(240, 160, 60, 0.3)',
-  courtyardGreen: '#3a5a3a',
-  prestigeGlow: '#c9a84c',
-  successGlow: '#5a9e6f',
-  failGlow: '#c05050',
-} as const;
-
-/** 升级列表面板参数 */
-export const UPGRADE_PANEL = {
-  startY: 300,
-  itemHeight: 48,
-  itemPadding: 4,
-  itemMarginX: 12,
-  itemWidth: CANVAS_WIDTH - 24,
-  visibleCount: 6,
-} as const;
-
-/** 资源图标映射 */
-export const RESOURCE_ICONS: Record<string, string> = {
-  [RESOURCE_IDS.WEALTH]: '💰',
-  [RESOURCE_IDS.REPUTATION]: '⭐',
-  [RESOURCE_IDS.CONNECTION]: '🤝',
+const HERO_RARITY_GROWTH: Record<string, number> = { uncommon: 2, rare: 3.5, epic: 5, legendary: 7 };
+const HERO_RARITY_COST: Record<string, { grain: number; silk: number }> = {
+  uncommon: { grain: 200, silk: 100 },
+  rare: { grain: 600, silk: 300 },
+  epic: { grain: 2000, silk: 1000 },
+  legendary: { grain: 8000, silk: 4000 },
 };
 
-/** 资源名称映射 */
-export const RESOURCE_NAMES: Record<string, string> = {
-  [RESOURCE_IDS.WEALTH]: '财富',
-  [RESOURCE_IDS.REPUTATION]: '声望',
-  [RESOURCE_IDS.CONNECTION]: '人脉',
+function makeHero(id: string, name: string, title: string, rarity: string, adm: number, mil: number, cul: number, bonus: string): HeroDef {
+  const g = HERO_RARITY_GROWTH[rarity];
+  return {
+    id, name, title, rarity,
+    baseStats: { administration: adm, military: mil, culture: cul },
+    growthRates: { administration: g, military: g, culture: g },
+    recruitCost: HERO_RARITY_COST[rarity],
+    bonus,
+  };
+}
+
+export const HEROES: HeroDef[] = [
+  makeHero('clan_head', '族长', '一族之主', 'legendary', 80, 70, 90, '全部产出 +30%'),
+  makeHero('elder', '大长老', '德高望重', 'epic', 75, 40, 80, '粮食产出 +25%'),
+  makeHero('prodigy', '天才', '天资聪颖', 'rare', 50, 60, 70, '文化产出 +30%'),
+  makeHero('matriarch', '族母', '慈爱持家', 'epic', 60, 30, 85, '丝绸产出 +25%'),
+  makeHero('general', '武将', '勇冠三军', 'rare', 30, 95, 40, '灵石产出 +30%'),
+  makeHero('scholar', '学士', '博学多才', 'uncommon', 55, 20, 75, '威望产出 +20%'),
+  makeHero('alchemist', '炼药师', '丹道宗师', 'uncommon', 40, 35, 65, '建筑费用 -10%'),
+  makeHero('artisan', '工匠', '巧夺天工', 'uncommon', 45, 50, 55, '全部产出 +10%'),
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 传承系统 → TechTreeSystem (9项)
+// ═══════════════════════════════════════════════════════════════
+
+export const INVENTIONS: TechDef[] = [
+  // 农业路线 (agriculture)
+  { id: 'seed_selection', name: '选种术', description: '粮食产出 +50%', requires: [], cost: { grain: 500 }, researchTime: 30000, tier: 1, icon: '🌱', branch: 'agriculture', effects: [{ type: 'multiplier', target: 'grain', value: 1.5, description: '粮食产出 ×1.5' }] },
+  { id: 'crop_rotation', name: '轮作制', description: '粮食产出 ×2.0', requires: ['seed_selection'], cost: { grain: 2000 }, researchTime: 60000, tier: 2, icon: '🌾', branch: 'agriculture', effects: [{ type: 'multiplier', target: 'grain', value: 2.0, description: '粮食产出 ×2.0' }] },
+  { id: 'spirit_farming', name: '灵植术', description: '全部产出 ×1.5', requires: ['crop_rotation'], cost: { grain: 5000, stone: 2000 }, researchTime: 120000, tier: 3, icon: '🌿', branch: 'agriculture', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.5, description: '全部产出 ×1.5' }] },
+  // 商业路线 (commerce)
+  { id: 'trade_route', name: '商道路', description: '丝绸产出 +50%', requires: [], cost: { silk: 400 }, researchTime: 30000, tier: 1, icon: '🛤️', branch: 'commerce', effects: [{ type: 'multiplier', target: 'silk', value: 1.5, description: '丝绸产出 ×1.5' }] },
+  { id: 'weaving_art', name: '织造术', description: '丝绸产出 ×2.0', requires: ['trade_route'], cost: { silk: 1500 }, researchTime: 60000, tier: 2, icon: '🧵', branch: 'commerce', effects: [{ type: 'multiplier', target: 'silk', value: 2.0, description: '丝绸产出 ×2.0' }] },
+  { id: 'silk_road', name: '灵路贸易', description: '全部产出 +30%', requires: ['weaving_art'], cost: { silk: 5000, prestige: 2000 }, researchTime: 120000, tier: 3, icon: '🐪', branch: 'commerce', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.3, description: '全部产出 +30%' }] },
+  // 修炼路线 (cultivation)
+  { id: 'meditation', name: '冥想术', description: '灵石产出 +50%', requires: [], cost: { stone: 600 }, researchTime: 30000, tier: 1, icon: '🧘', branch: 'cultivation', effects: [{ type: 'multiplier', target: 'stone', value: 1.5, description: '灵石产出 ×1.5' }] },
+  { id: 'alchemy', name: '炼丹术', description: '全部产出 ×1.5', requires: ['meditation'], cost: { stone: 3000, grain: 2000 }, researchTime: 90000, tier: 2, icon: '⚗️', branch: 'cultivation', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.5, description: '全部产出 ×1.5' }] },
+  { id: 'ascension', name: '飞升术', description: '全部加成 ×2.0', requires: ['alchemy'], cost: { stone: 8000, prestige: 5000 }, researchTime: 150000, tier: 3, icon: '🌟', branch: 'cultivation', effects: [{ type: 'multiplier', target: 'all', value: 2.0, description: '全部加成 ×2.0' }] },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 血脉（声望）配置
+// ═══════════════════════════════════════════════════════════════
+
+export const PRESTIGE_CONFIG: PrestigeConfig = {
+  currencyName: '血脉',
+  currencyIcon: '🩸',
+  base: 10,
+  threshold: 13000,
+  bonusMultiplier: 0.13,
+  retention: 0.1,
 };
 
-/** 飘字效果持续时间（毫秒） */
-export const FLOATING_TEXT_DURATION = 1000;
+// ═══════════════════════════════════════════════════════════════
+// UI 色彩主题（古典红金系）
+// ═══════════════════════════════════════════════════════════════
 
-/** 灯笼粒子数量 */
-export const MAX_LANTERN_PARTICLES = 8;
+export const COLOR_THEME: UIColorScheme = {
+  bgGradient1: '#1a0505',
+  bgGradient2: '#2a0a0a',
+  textPrimary: '#f5e6d0',
+  textSecondary: '#c4a882',
+  textDim: '#7a6050',
+  accentGold: '#c0392b',
+  accentGreen: '#6b8e23',
+  panelBg: 'rgba(192,57,43,0.05)',
+  selectedBg: 'rgba(192,57,43,0.1)',
+  selectedBorder: 'rgba(192,57,43,0.4)',
+  affordable: '#6b8e23',
+  unaffordable: '#555555',
+};
 
-/** 落叶粒子数量 */
-export const MAX_LEAF_PARTICLES = 10;
+// ═══════════════════════════════════════════════════════════════
+// 稀有度颜色
+// ═══════════════════════════════════════════════════════════════
 
-/** 动画参数 */
-export const ANIMATION = {
-  /** 飘字效果持续时间（毫秒） */
-  floatingTextDuration: 1200,
-  /** 灯笼粒子数量 */
-  lanternCount: 8,
-  /** 落叶粒子数量 */
-  leafCount: 10,
-  /** 转生光效持续时间（毫秒） */
-  prestigeDuration: 2000,
-} as const;
+export const RARITY_COLORS: Record<string, string> = {
+  rare: '#3498db',
+  epic: '#9b59b6',
+  legendary: '#f39c12',
+  mythic: '#e74c3c',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 资源定义
+// ═══════════════════════════════════════════════════════════════
+
+export const RESOURCES = [
+  { id: 'grain', name: '粮食', icon: '🌾' },
+  { id: 'silk', name: '丝绸', icon: '🧵' },
+  { id: 'stone', name: '灵石', icon: '💎' },
+  { id: 'prestige', name: '威望', icon: '👑' },
+];
+
+export const INITIAL_RESOURCES: Record<string, number> = { grain: 50, silk: 0, stone: 0, prestige: 0 };
+export const INITIALLY_UNLOCKED: string[] = ['farm'];
+export const CLICK_REWARD = { grain: 1 };

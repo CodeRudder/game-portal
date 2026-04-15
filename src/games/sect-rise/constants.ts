@@ -1,336 +1,172 @@
 /**
- * 宗门崛起 (Sect Rise) — 放置类游戏常量定义
+ * 门派崛起 (Sect Rise) — 放置游戏常量 v2.0
  *
- * 核心玩法：
- * - 点击获得灵石 (spirit-stone)
- * - 建设宗门建筑，自动产出资源
- * - 招募弟子，获得能力加成
- * - 声望系统：重置进度获得道韵，提供永久加成
- * - 离线收益
- * - 自动存档
+ * 基于统一子系统架构重建。使用 BuildingSystem + PrestigeSystem +
+ * StageSystem(门派阶段) + UnitSystem(弟子) + TechTreeSystem(武学)。
  */
 
-/** Canvas 尺寸 */
+import type { BuildingDef } from '@/engines/idle/modules/BuildingSystem';
+import type { PrestigeConfig } from '@/engines/idle/modules/PrestigeSystem';
+import type { UIColorScheme } from '@/engines/idle/modules/CanvasUIRenderer';
+import type { StageDef } from '@/engines/idle/modules/StageSystem';
+import type { TechDef } from '@/engines/idle/modules/TechTreeSystem';
+
+// ═══════════════════════════════════════════════════════════════
+// 游戏标识
+// ═══════════════════════════════════════════════════════════════
+
+export const GAME_ID = 'sect-rise';
+export const GAME_TITLE = '门派崛起';
+
 export const CANVAS_WIDTH = 480;
 export const CANVAS_HEIGHT = 640;
 
-// ========== 资源常量 ==========
+// ═══════════════════════════════════════════════════════════════
+// 建筑系统 (8个)
+// ═══════════════════════════════════════════════════════════════
 
-/** 点击获得的灵石数 */
-export const SPIRIT_STONE_PER_CLICK = 1;
-
-/** 声望加成系数（每道韵增加的产出倍率） */
-export const PRESTIGE_MULTIPLIER = 0.035; // 3.5% per dao-rhyme
-
-/** 声望货币计算基数 */
-export const PRESTIGE_BASE_RHYME = 1;
-
-/** 声望货币计算基数（别名） */
-export const PRESTIGE_BASE_FORTUNE = 1;
-
-/** 声望所需最低灵石总量 */
-export const MIN_PRESTIGE_STONES = 30000;
-
-// ========== 资源 ID ==========
-
-export const RESOURCE_IDS = {
-  SPIRIT_STONE: 'spirit-stone',
-  HERB: 'herb',
-  ARTIFACT: 'artifact',
-  REPUTATION: 'reputation',
-} as const;
-
-// ========== 弟子定义 ==========
-
-export interface DiscipleDef {
-  id: string;
-  name: string;
-  icon: string;
-  /** 解锁所需灵石 */
-  unlockCost: number;
-  /** 能力类型 */
-  bonusType: 'spirit_stone' | 'herb' | 'artifact' | 'reputation' | 'all';
-  /** 能力值（百分比加成，0.1 = 10%） */
-  bonusValue: number;
-  /** 描述 */
-  description: string;
-  /** 颜色（Canvas 绘制用） */
-  color: string;
-  robeColor: string;
-}
-
-/** 弟子列表 — 6 种 */
-export const DISCIPLES: DiscipleDef[] = [
-  {
-    id: 'outer',
-    name: '外门弟子',
-    icon: '👦',
-    unlockCost: 0,
-    bonusType: 'spirit_stone',
-    bonusValue: 0.1,
-    description: '灵石采集 +10%',
-    color: '#8D6E63',
-    robeColor: '#A1887F',
-  },
-  {
-    id: 'inner',
-    name: '内门弟子',
-    icon: '🧑',
-    unlockCost: 500,
-    bonusType: 'spirit_stone',
-    bonusValue: 0.15,
-    description: '修炼效率 +15%',
-    color: '#5C6BC0',
-    robeColor: '#7986CB',
-  },
-  {
-    id: 'core',
-    name: '核心弟子',
-    icon: '👨',
-    unlockCost: 3000,
-    bonusType: 'herb',
-    bonusValue: 0.2,
-    description: '产出 +20%',
-    color: '#2E7D32',
-    robeColor: '#43A047',
-  },
-  {
-    id: 'elder',
-    name: '长老',
-    icon: '🧓',
-    unlockCost: 10000,
-    bonusType: 'all',
-    bonusValue: 0.15,
-    description: '全加成 +15%',
-    color: '#E65100',
-    robeColor: '#F57C00',
-  },
-  {
-    id: 'supreme',
-    name: '太上长老',
-    icon: '👴',
-    unlockCost: 50000,
-    bonusType: 'all',
-    bonusValue: 0.25,
-    description: '全加成 +25%',
-    color: '#6A1B9A',
-    robeColor: '#8E24AA',
-  },
-  {
-    id: 'patriarch',
-    name: '掌门',
-    icon: '🧙',
-    unlockCost: 200000,
-    bonusType: 'all',
-    bonusValue: 0.4,
-    description: '全加成 +40%',
-    color: '#B71C1C',
-    robeColor: '#D32F2F',
-  },
-];
-
-// ========== 建筑定义 ==========
-
-export const BUILDING_IDS = {
-  STONE_MINE: 'stone-mine',
-  HERB_GARDEN: 'herb-garden',
-  PILL_ROOM: 'pill-room',
-  SCRIPTURE: 'scripture',
-  ARENA: 'arena',
-  FORMATION: 'formation',
-} as const;
-
-export interface BuildingDef {
-  id: string;
-  name: string;
-  icon: string;
-  /** 基础费用 */
-  baseCost: Record<string, number>;
-  /** 费用递增系数 */
-  costMultiplier: number;
-  /** 最大等级 */
-  maxLevel: number;
-  /** 产出资源 */
-  productionResource: string;
-  /** 每级基础产出 */
-  baseProduction: number;
-  /** 前置建筑（需达到指定等级） */
-  requires?: string[];
-  /** 解锁条件：资源 ID -> 最少数量 */
-  unlockCondition?: Record<string, number>;
-}
-
-/** 建筑列表 — 6 种 */
 export const BUILDINGS: BuildingDef[] = [
-  {
-    id: BUILDING_IDS.STONE_MINE,
-    name: '灵石矿场',
-    icon: '⛏️',
-    baseCost: { 'spirit-stone': 15 },
-    costMultiplier: 1.15,
-    maxLevel: 50,
-    productionResource: RESOURCE_IDS.SPIRIT_STONE,
-    baseProduction: 0.5,
-  },
-  {
-    id: BUILDING_IDS.HERB_GARDEN,
-    name: '药园',
-    icon: '🌿',
-    baseCost: { 'spirit-stone': 120 },
-    costMultiplier: 1.18,
-    maxLevel: 30,
-    productionResource: RESOURCE_IDS.HERB,
-    baseProduction: 0.3,
-    requires: ['stone-mine'],
-    unlockCondition: { 'spirit-stone': 80 },
-  },
-  {
-    id: BUILDING_IDS.PILL_ROOM,
-    name: '炼丹房',
-    icon: '⚗️',
-    baseCost: { 'spirit-stone': 600, herb: 20 },
-    costMultiplier: 1.2,
-    maxLevel: 30,
-    productionResource: RESOURCE_IDS.ARTIFACT,
-    baseProduction: 0.2,
-    requires: ['herb-garden'],
-    unlockCondition: { 'spirit-stone': 400, herb: 10 },
-  },
-  {
-    id: BUILDING_IDS.SCRIPTURE,
-    name: '藏经阁',
-    icon: '📚',
-    baseCost: { 'spirit-stone': 3000, herb: 50 },
-    costMultiplier: 1.22,
-    maxLevel: 20,
-    productionResource: RESOURCE_IDS.SPIRIT_STONE,
-    baseProduction: 5,
-    requires: ['herb-garden'],
-    unlockCondition: { 'spirit-stone': 2000 },
-  },
-  {
-    id: BUILDING_IDS.ARENA,
-    name: '演武场',
-    icon: '⚔️',
-    baseCost: { 'spirit-stone': 15000, artifact: 10 },
-    costMultiplier: 1.25,
-    maxLevel: 15,
-    productionResource: RESOURCE_IDS.HERB,
-    baseProduction: 2,
-    requires: ['pill-room'],
-    unlockCondition: { 'spirit-stone': 8000, artifact: 5 },
-  },
-  {
-    id: BUILDING_IDS.FORMATION,
-    name: '护宗大阵',
-    icon: '🔮',
-    baseCost: { 'spirit-stone': 100000, artifact: 30 },
-    costMultiplier: 1.3,
-    maxLevel: 10,
-    productionResource: RESOURCE_IDS.REPUTATION,
-    baseProduction: 0.1,
-    requires: ['scripture', 'arena'],
-    unlockCondition: { 'spirit-stone': 50000, artifact: 20 },
-  },
+  { id: 'lumber', name: '灵木场', icon: '🪵', baseCost: { wood: 10 }, costMultiplier: 1.07, maxLevel: 0, productionResource: 'wood', baseProduction: 0.1, unlockCondition: '初始' },
+  { id: 'mine', name: '灵铁矿', icon: '⚙️', baseCost: { wood: 30 }, costMultiplier: 1.08, maxLevel: 0, productionResource: 'iron', baseProduction: 0.08, requires: ['lumber'], unlockCondition: '灵木场 Lv.1' },
+  { id: 'hall', name: '传功殿', icon: '📚', baseCost: { wood: 50, iron: 20 }, costMultiplier: 1.09, maxLevel: 0, productionResource: 'stone', baseProduction: 0.06, requires: ['mine'], unlockCondition: '灵铁矿 Lv.1' },
+  { id: 'forge', name: '炼器坊', icon: '🔨', baseCost: { iron: 60, wood: 40 }, costMultiplier: 1.10, maxLevel: 0, productionResource: 'iron', baseProduction: 0.04, requires: ['hall'], unlockCondition: '传功殿 Lv.1' },
+  { id: 'garden', name: '灵药园', icon: '🌱', baseCost: { stone: 200, iron: 100 }, costMultiplier: 1.12, maxLevel: 0, productionResource: 'wood', baseProduction: 0.10, requires: ['forge'], unlockCondition: '炼器坊 Lv.1' },
+  { id: 'tower', name: '观星塔', icon: '🔮', baseCost: { stone: 300, iron: 150 }, costMultiplier: 1.11, maxLevel: 0, productionResource: 'stone', baseProduction: 0.08, requires: ['garden'], unlockCondition: '灵药园 Lv.1' },
+  { id: 'gate', name: '山门', icon: '⛩️', baseCost: { stone: 600, iron: 400, wood: 100 }, costMultiplier: 1.14, maxLevel: 0, productionResource: 'iron', baseProduction: 0.15, requires: ['tower'], unlockCondition: '观星塔 Lv.1' },
+  { id: 'golden_hall', name: '金顶大殿', icon: '🏯', baseCost: { stone: 1500, iron: 1000, wood: 300 }, costMultiplier: 1.18, maxLevel: 0, productionResource: 'stone', baseProduction: 0.25, requires: ['gate'], unlockCondition: '山门 Lv.1' },
 ];
 
-// ========== 数字格式化后缀 ==========
+// ═══════════════════════════════════════════════════════════════
+// 门派阶段 → StageSystem (6个)
+// ═══════════════════════════════════════════════════════════════
 
-export const NUMBER_SUFFIXES: [number, string][] = [
-  [1e18, 'Qi'],
-  [1e15, 'Qa'],
-  [1e12, 'T'],
-  [1e9, 'B'],
-  [1e6, 'M'],
-  [1e3, 'K'],
+export const DYNASTIES: StageDef[] = [
+  { id: 'small_sect', name: '小门派', description: '草创之初，百废待兴', order: 1, prerequisiteStageId: null, requiredResources: {}, requiredConditions: [], rewards: [], productionMultiplier: 1.0, combatMultiplier: 1.0, iconAsset: '🏕️', themeColor: '#5a7a5a' },
+  { id: 'growing', name: '初具规模', description: '门派渐成，弟子初聚', order: 2, prerequisiteStageId: 'small_sect', requiredResources: { wood: 500, iron: 200 }, requiredConditions: [], rewards: [], productionMultiplier: 1.3, combatMultiplier: 1.0, iconAsset: '🏘️', themeColor: '#6b8e6b' },
+  { id: 'known', name: '名声远扬', description: '声名鹊起，江湖闻名', order: 3, prerequisiteStageId: 'growing', requiredResources: { wood: 3000, iron: 1500, stone: 300 }, requiredConditions: [], rewards: [], productionMultiplier: 1.6, combatMultiplier: 1.0, iconAsset: '🏯', themeColor: '#40a080' },
+  { id: 'dominant', name: '一方霸主', description: '雄踞一方，无人敢犯', order: 4, prerequisiteStageId: 'known', requiredResources: { wood: 15000, iron: 8000, stone: 2000 }, requiredConditions: [], rewards: [], productionMultiplier: 2.0, combatMultiplier: 1.0, iconAsset: '⚔️', themeColor: '#30b090' },
+  { id: 'alliance', name: '武林盟主', description: '统领江湖，号令群雄', order: 5, prerequisiteStageId: 'dominant', requiredResources: { wood: 80000, iron: 40000, stone: 10000 }, requiredConditions: [], rewards: [], productionMultiplier: 2.5, combatMultiplier: 1.0, iconAsset: '👑', themeColor: '#40e0d0' },
+  { id: 'founder', name: '开宗立派', description: '开宗立派，万世流芳', order: 6, prerequisiteStageId: 'alliance', requiredResources: { wood: 300000, iron: 150000, stone: 50000 }, requiredConditions: [], rewards: [], productionMultiplier: 3.0, combatMultiplier: 1.0, iconAsset: '🌟', themeColor: '#ffd700' },
 ];
 
-// ========== 资源图标映射 ==========
+// ═══════════════════════════════════════════════════════════════
+// 弟子系统 → UnitSystem (8个)
+// ═══════════════════════════════════════════════════════════════
 
-export const RESOURCE_ICONS: Record<string, string> = {
-  [RESOURCE_IDS.SPIRIT_STONE]: '💎',
-  [RESOURCE_IDS.HERB]: '🌿',
-  [RESOURCE_IDS.ARTIFACT]: '⚒️',
-  [RESOURCE_IDS.REPUTATION]: '🏆',
+export interface HeroDef {
+  id: string;
+  name: string;
+  title: string;
+  rarity: string;
+  baseStats: { martial: number; internal: number; charisma: number };
+  growthRates: { martial: number; internal: number; charisma: number };
+  recruitCost: { wood: number; iron: number };
+  bonus: string;
+}
+
+const HERO_RARITY_GROWTH: Record<string, number> = { uncommon: 2, rare: 3.5, epic: 5, legendary: 7 };
+const HERO_RARITY_COST: Record<string, { wood: number; iron: number }> = {
+  uncommon: { wood: 200, iron: 100 },
+  rare: { wood: 600, iron: 300 },
+  epic: { wood: 2000, iron: 1000 },
+  legendary: { wood: 8000, iron: 4000 },
 };
 
-/** 资源名称映射 */
-export const RESOURCE_NAMES: Record<string, string> = {
-  [RESOURCE_IDS.SPIRIT_STONE]: '灵石',
-  [RESOURCE_IDS.HERB]: '灵草',
-  [RESOURCE_IDS.ARTIFACT]: '法器',
-  [RESOURCE_IDS.REPUTATION]: '声望',
+function makeHero(id: string, name: string, title: string, rarity: string, martial: number, internal: number, charisma: number, bonus: string): HeroDef {
+  const g = HERO_RARITY_GROWTH[rarity];
+  return {
+    id, name, title, rarity,
+    baseStats: { martial, internal, charisma },
+    growthRates: { martial: g, internal: g, charisma: g },
+    recruitCost: HERO_RARITY_COST[rarity],
+    bonus,
+  };
+}
+
+export const HEROES: HeroDef[] = [
+  makeHero('zhangsanfeng', '张三丰', '太极宗师', 'legendary', 90, 95, 80, '全部产出 +50%'),
+  makeHero('dongfang', '东方不败', '日月神教', 'epic', 95, 70, 50, '灵铁产出 +40%'),
+  makeHero('linghu', '令狐冲', '独孤九剑', 'rare', 85, 60, 70, '灵木产出 +30%'),
+  makeHero('yangguo', '杨过', '神雕大侠', 'epic', 90, 80, 65, '灵石产出 +35%'),
+  makeHero('guojing', '郭靖', '北侠', 'legendary', 85, 70, 90, '全部产出 +25%'),
+  makeHero('xiaolongnv', '小龙女', '古墓传人', 'rare', 60, 90, 85, '灵石产出 +30%'),
+  makeHero('huangrong', '黄蓉', '桃花岛主', 'uncommon', 50, 70, 90, '建筑费用 -10%'),
+  makeHero('qiaofeng', '乔峰', '丐帮帮主', 'uncommon', 90, 50, 75, '灵铁产出 +20%'),
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 武学系统 → TechTreeSystem (9项：武学3+炼器3+管理3)
+// ═══════════════════════════════════════════════════════════════
+
+export const INVENTIONS: TechDef[] = [
+  // 武学路线
+  { id: 'basic_sword', name: '基础剑法', description: '灵木产出 +50%', requires: [], cost: { wood: 500 }, researchTime: 30000, tier: 1, icon: '⚔️', branch: 'martial', effects: [{ type: 'multiplier', target: 'wood', value: 1.5, description: '灵木产出 ×1.5' }] },
+  { id: 'tai_chi', name: '太极拳法', description: '灵木产出 ×2.0', requires: ['basic_sword'], cost: { wood: 2000 }, researchTime: 60000, tier: 2, icon: '☯️', branch: 'martial', effects: [{ type: 'multiplier', target: 'wood', value: 2.0, description: '灵木产出 ×2.0' }] },
+  { id: 'nine_yang', name: '九阳神功', description: '全部产出 ×2.0', requires: ['tai_chi'], cost: { stone: 3000 }, researchTime: 120000, tier: 3, icon: '🔥', branch: 'martial', effects: [{ type: 'multiplier', target: 'all_resources', value: 2.0, description: '全部产出 ×2.0' }] },
+  // 炼器路线
+  { id: 'basic_forge', name: '基础锻造', description: '灵铁产出 +50%', requires: [], cost: { iron: 400 }, researchTime: 30000, tier: 1, icon: '🔨', branch: 'crafting', effects: [{ type: 'multiplier', target: 'iron', value: 1.5, description: '灵铁产出 ×1.5' }] },
+  { id: 'refining', name: '精炼秘术', description: '灵铁产出 ×2.0', requires: ['basic_forge'], cost: { iron: 1500 }, researchTime: 60000, tier: 2, icon: '⚒️', branch: 'crafting', effects: [{ type: 'multiplier', target: 'iron', value: 2.0, description: '灵铁产出 ×2.0' }] },
+  { id: 'divine_forge', name: '神兵锻造', description: '全部产出 +30%', requires: ['refining'], cost: { iron: 5000, stone: 2000 }, researchTime: 120000, tier: 3, icon: '🗡️', branch: 'crafting', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.3, description: '全部产出 +30%' }] },
+  // 管理路线
+  { id: 'sect_rules', name: '门派规矩', description: '招募费用 -20%', requires: [], cost: { stone: 600 }, researchTime: 30000, tier: 1, icon: '📜', branch: 'management', effects: [{ type: 'modifier', target: 'recruit_cost', value: -0.2, description: '招募费用 -20%' }] },
+  { id: 'formation', name: '阵法研究', description: '全部产出 ×1.5', requires: ['sect_rules'], cost: { wood: 3000, iron: 2000 }, researchTime: 90000, tier: 2, icon: '🔷', branch: 'management', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.5, description: '全部产出 ×1.5' }] },
+  { id: 'mandate', name: '天命所归', description: '全部加成 ×2.0', requires: ['formation'], cost: { stone: 8000, wood: 5000 }, researchTime: 150000, tier: 3, icon: '🌟', branch: 'management', effects: [{ type: 'multiplier', target: 'all', value: 2.0, description: '全部加成 ×2.0' }] },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 声望配置
+// ═══════════════════════════════════════════════════════════════
+
+export const PRESTIGE_CONFIG: PrestigeConfig = {
+  currencyName: '声望',
+  currencyIcon: '⭐',
+  base: 10,
+  threshold: 12000,
+  bonusMultiplier: 0.12,
+  retention: 0.1,
 };
 
-// ========== 颜色主题（水墨国风：青色/白色/金色） ==========
+// ═══════════════════════════════════════════════════════════════
+// UI 色彩主题（武侠青绿系）
+// ═══════════════════════════════════════════════════════════════
 
-export const COLORS = {
-  bgGradient1: '#0d1b2a',
-  bgGradient2: '#1b2838',
-  mountainFar: '#2d3436',
-  mountainMid: '#353b48',
-  mountainNear: '#404050',
-  mistColor: 'rgba(200, 210, 220, 0.08)',
-  skyTop: '#0a1628',
-  skyBottom: '#162a40',
-  textPrimary: '#f0e6d3',
-  textSecondary: '#c4b8a5',
-  textDim: '#8a7e6e',
-  accent: '#c0392b',
-  accentGold: '#d4a017',
-  accentGreen: '#2ecc71',
-  accentBlue: '#5dade2',
-  accentCyan: '#00bcd4',
-  panelBg: 'rgba(13, 27, 42, 0.92)',
-  panelBorder: 'rgba(0, 188, 212, 0.3)',
-  selectedBg: 'rgba(0, 188, 212, 0.15)',
-  selectedBorder: 'rgba(0, 188, 212, 0.6)',
-  affordable: '#2ecc71',
-  unaffordable: '#e74c3c',
-  spiritStoneColor: '#5dade2',
-  herbColor: '#27ae60',
-  artifactColor: '#d4a017',
-  reputationColor: '#c0392b',
-  cloudWhite: 'rgba(240, 230, 211, 0.12)',
-  inkBlack: '#1a1a2e',
-  inkWash: 'rgba(26, 26, 46, 0.3)',
-  pagodaRed: '#c0392b',
-  pagodaGold: '#d4a017',
-  moonGlow: 'rgba(240, 230, 211, 0.9)',
-  moonHalo: 'rgba(240, 230, 211, 0.08)',
-  starColor: '#f0e6d3',
-  spiritGlow: 'rgba(212, 160, 23, 0.2)',
-} as const;
+export const COLOR_THEME: UIColorScheme = {
+  bgGradient1: '#0a1a0f',
+  bgGradient2: '#0f2a1a',
+  textPrimary: '#e8f5e8',
+  textSecondary: '#a0c4a0',
+  textDim: '#607060',
+  accentGold: '#40e0d0',
+  accentGreen: '#2e8b57',
+  panelBg: 'rgba(64,224,208,0.05)',
+  selectedBg: 'rgba(64,224,208,0.1)',
+  selectedBorder: 'rgba(64,224,208,0.4)',
+  affordable: '#2e8b57',
+  unaffordable: '#555555',
+};
 
-// ========== 渲染参数 ==========
+// ═══════════════════════════════════════════════════════════════
+// 稀有度颜色
+// ═══════════════════════════════════════════════════════════════
 
-export const SECT_DRAW = {
-  centerX: 240,
-  centerY: 180,
-  pagodaWidth: 80,
-  pagodaHeight: 100,
-} as const;
+export const RARITY_COLORS: Record<string, string> = {
+  uncommon: '#4caf50',
+  rare: '#2196f3',
+  epic: '#9c27b0',
+  legendary: '#ff9800',
+};
 
-/** 建筑列表面板参数 */
-export const BUILDING_PANEL = {
-  startY: 360,
-  itemHeight: 42,
-  itemPadding: 4,
-  itemMarginX: 12,
-  itemWidth: CANVAS_WIDTH - 24,
-  visibleCount: 6,
-} as const;
+// ═══════════════════════════════════════════════════════════════
+// 资源定义
+// ═══════════════════════════════════════════════════════════════
 
-/** 资源面板参数 */
-export const RESOURCE_PANEL = {
-  startY: 8,
-  itemHeight: 24,
-  itemPadding: 4,
-  padding: 8,
-} as const;
+export const RESOURCES = [
+  { id: 'wood', name: '灵木', icon: '🪵' },
+  { id: 'iron', name: '灵铁', icon: '⚙️' },
+  { id: 'stone', name: '灵石', icon: '💎' },
+  { id: 'reputation', name: '声望', icon: '⭐' },
+];
 
-/** 灵气粒子最大数量 */
-export const MAX_SPIRIT_PARTICLES = 30;
-
-/** 飘字效果持续时间（毫秒） */
-export const FLOATING_TEXT_DURATION = 1000;
+export const INITIAL_RESOURCES: Record<string, number> = { wood: 50, iron: 0, stone: 0, reputation: 0 };
+export const INITIALLY_UNLOCKED: string[] = ['lumber'];
+export const CLICK_REWARD = { wood: 1 };

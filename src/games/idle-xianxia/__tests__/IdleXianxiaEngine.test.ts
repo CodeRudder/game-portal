@@ -1,912 +1,796 @@
 /**
- * 挂机修仙·凡人篇 (Idle Xianxia) — 完整测试套件
+ * 修仙放置 (Idle Xianxia) — v3.0 引擎测试套件
+ *
+ * 匹配 v3.0 统一子系统架构的公共 API。
+ * 覆盖常量验证、引擎初始化、建筑系统、阶段系统(境界)、
+ * 仙友系统、科技系统(功法)、声望系统(飞升转生)、
+ * 资源系统、序列化、渲染和输入处理。
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { IdleXianxiaEngine } from '@/games/idle-xianxia/IdleXianxiaEngine';
+import { IdleXianxiaEngine, type IdleXianxiaSaveState } from '@/games/idle-xianxia/IdleXianxiaEngine';
 import {
-  CANVAS_WIDTH,
-  CANVAS_HEIGHT,
-  SPIRIT_PER_CLICK,
-  RESOURCE_IDS,
-  BUILDING_IDS,
+  GAME_ID,
+  GAME_TITLE,
   BUILDINGS,
-  REALM_IDS,
-  REALMS,
-  PRESTIGE_MULTIPLIER,
-  MIN_PRESTIGE_SPIRIT,
-  COLORS,
-  MEDITATION,
-  ANIMATION,
+  DYNASTIES,
+  HEROES,
+  INVENTIONS,
+  PRESTIGE_CONFIG,
+  COLOR_THEME,
+  RARITY_COLORS,
+  RESOURCES,
+  INITIAL_RESOURCES,
+  INITIALLY_UNLOCKED,
+  CLICK_REWARD,
 } from '@/games/idle-xianxia/constants';
 
-// ========== 测试辅助 ==========
+// ═══════════════════════════════════════════════════════════════
+// 测试辅助
+// ═══════════════════════════════════════════════════════════════
 
 function createCanvas(): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  canvas.width = CANVAS_WIDTH;
-  canvas.height = CANVAS_HEIGHT;
-  return canvas;
+  return document.createElement('canvas');
 }
 
 function createEngine(): IdleXianxiaEngine {
   const engine = new IdleXianxiaEngine();
-  engine.init(createCanvas());
+  const canvas = createCanvas();
+  canvas.width = 480;
+  canvas.height = 640;
+  (engine as any).canvas = canvas;
+  (engine as any).ctx = canvas.getContext('2d');
+  (engine as any)._status = 'playing';
+  (engine as any).onInit();
+  return engine;
+}
+
+function createStartedEngine(): IdleXianxiaEngine {
+  const engine = createEngine();
   engine.start();
   return engine;
 }
 
-/** 直接添加资源 */
-function addSpirit(engine: IdleXianxiaEngine, amount: number): void {
-  (engine as any).addResource(RESOURCE_IDS.SPIRIT, amount);
+/** 直接设置引擎内部资源（绕过正常游戏逻辑） */
+function setResources(engine: IdleXianxiaEngine, resources: Record<string, number>): void {
+  const res = (engine as any).res as Record<string, number>;
+  for (const [id, amount] of Object.entries(resources)) {
+    res[id] = amount;
+  }
 }
 
-function addStone(engine: IdleXianxiaEngine, amount: number): void {
-  (engine as any).addResource(RESOURCE_IDS.STONE, amount);
-}
+// ═══════════════════════════════════════════════════════════════
+// 1. 常量验证 (6 tests)
+// ═══════════════════════════════════════════════════════════════
 
-function addPill(engine: IdleXianxiaEngine, amount: number): void {
-  (engine as any).addResource(RESOURCE_IDS.PILL, amount);
-}
+describe('常量验证', () => {
+  it('BUILDINGS 有 8 个建筑', () => {
+    expect(BUILDINGS).toHaveLength(8);
+  });
 
-function addFate(engine: IdleXianxiaEngine, amount: number): void {
-  (engine as any).addResource(RESOURCE_IDS.FATE, amount);
-}
+  it('DYNASTIES 有 6 个境界', () => {
+    expect(DYNASTIES).toHaveLength(6);
+  });
 
-/** 触发一次 update */
-function tick(engine: IdleXianxiaEngine, dt: number = 16): void {
-  (engine as any).update(dt);
-}
+  it('HEROES 有 8 个仙友', () => {
+    expect(HEROES).toHaveLength(8);
+  });
 
-/** 获取资源数量 */
-function getResourceAmount(engine: IdleXianxiaEngine, id: string): number {
-  return (engine as any).getResource(id)?.amount ?? 0;
-}
+  it('INVENTIONS 有 9 项功法', () => {
+    expect(INVENTIONS).toHaveLength(9);
+  });
 
-// ========== 测试套件 ==========
+  it('RESOURCES 有 4 种资源', () => {
+    expect(RESOURCES).toHaveLength(4);
+    const ids = RESOURCES.map(r => r.id);
+    expect(ids).toContain('qi');
+    expect(ids).toContain('herb');
+    expect(ids).toContain('pill');
+    expect(ids).toContain('stone');
+  });
 
-describe('IdleXianxiaEngine', () => {
+  it('GAME_ID 是 "idle-xianxia"', () => {
+    expect(GAME_ID).toBe('idle-xianxia');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 2. 引擎初始化 (5 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('引擎初始化', () => {
+  it('创建引擎不报错', () => {
+    expect(() => createEngine()).not.toThrow();
+  });
+
+  it('init 后状态正常（_gameId 正确）', () => {
+    const engine = createEngine();
+    expect((engine as any)._gameId).toBe('idle-xianxia');
+  });
+
+  it('start 后状态为 playing', () => {
+    const engine = createStartedEngine();
+    expect(engine.status).toBe('playing');
+  });
+
+  it('pause 后状态为 paused', () => {
+    const engine = createStartedEngine();
+    engine.pause();
+    expect(engine.status).toBe('paused');
+  });
+
+  it('初始资源为 qi=50, herb=0, pill=0, stone=0', () => {
+    const engine = createEngine();
+    const res = engine.getResources();
+    expect(res.qi).toBe(50);
+    expect(res.herb).toBe(0);
+    expect(res.pill).toBe(0);
+    expect(res.stone).toBe(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 3. 建筑系统 (8 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('建筑系统', () => {
   let engine: IdleXianxiaEngine;
 
   beforeEach(() => {
     engine = createEngine();
   });
 
-  // ==================== 1. 引擎创建与初始化 ====================
-
-  describe('引擎创建与初始化', () => {
-    it('应正确创建引擎实例', () => {
-      expect(engine).toBeInstanceOf(IdleXianxiaEngine);
-    });
-
-    it('gameId 应为 idle-xianxia', () => {
-      expect((engine as any)._gameId).toBe('idle-xianxia');
-    });
-
-    it('初始状态应为 playing（start 后）', () => {
-      expect((engine as any)._status).toBe('playing');
-    });
-
-    it('Canvas 尺寸应正确设置', () => {
-      const canvas = createCanvas();
-      expect(canvas.width).toBe(CANVAS_WIDTH);
-      expect(canvas.height).toBe(CANVAS_HEIGHT);
-    });
-
-    it('初始化后资源应正确设置', () => {
-      expect(getResourceAmount(engine, RESOURCE_IDS.SPIRIT)).toBe(0);
-    });
-
-    it('灵气初始应已解锁', () => {
-      const spirit = (engine as any).getResource(RESOURCE_IDS.SPIRIT);
-      expect(spirit.unlocked).toBe(true);
-    });
-
-    it('灵石初始应未解锁', () => {
-      const stone = (engine as any).getResource(RESOURCE_IDS.STONE);
-      expect(stone.unlocked).toBe(false);
-    });
-
-    it('丹药初始应未解锁', () => {
-      const pill = (engine as any).getResource(RESOURCE_IDS.PILL);
-      expect(pill.unlocked).toBe(false);
-    });
-
-    it('仙缘初始应未解锁', () => {
-      const fate = (engine as any).getResource(RESOURCE_IDS.FATE);
-      expect(fate.unlocked).toBe(false);
-    });
-
-    it('初始 totalSpiritEarned 应为 0', () => {
-      expect(engine.totalSpiritEarned).toBe(0);
-    });
-
-    it('初始 totalClicks 应为 0', () => {
-      expect(engine.totalClicks).toBe(0);
-    });
-
-    it('初始 currentRealmIndex 应为 0（凡人）', () => {
-      expect(engine.currentRealmIndex).toBe(0);
-    });
-
-    it('初始 totalBreakthroughs 应为 0', () => {
-      expect(engine.totalBreakthroughs).toBe(0);
-    });
-
-    it('初始 meditationActive 应为 false', () => {
-      expect(engine.meditationActive).toBe(false);
-    });
-
-    it('初始 selectedBuildingIndex 应为 0', () => {
-      expect(engine.selectedBuildingIndex).toBe(0);
-    });
+  it('初始解锁 qi_pool', () => {
+    const bldg = (engine as any).bldg;
+    expect(bldg.isUnlocked('qi_pool')).toBe(true);
   });
 
-  // ==================== 2. 常量验证 ====================
-
-  describe('常量验证', () => {
-    it('CANVAS_WIDTH 应为 480', () => {
-      expect(CANVAS_WIDTH).toBe(480);
-    });
-
-    it('CANVAS_HEIGHT 应为 640', () => {
-      expect(CANVAS_HEIGHT).toBe(640);
-    });
-
-    it('SPIRIT_PER_CLICK 应为 1', () => {
-      expect(SPIRIT_PER_CLICK).toBe(1);
-    });
-
-    it('RESOURCE_IDS 应包含四个资源', () => {
-      expect(RESOURCE_IDS.SPIRIT).toBe('spirit');
-      expect(RESOURCE_IDS.STONE).toBe('stone');
-      expect(RESOURCE_IDS.PILL).toBe('pill');
-      expect(RESOURCE_IDS.FATE).toBe('fate');
-    });
-
-    it('BUILDING_IDS 应包含六个建筑', () => {
-      expect(BUILDING_IDS.SPIRIT_POOL).toBe('spirit-pool');
-      expect(BUILDING_IDS.STONE_MINE).toBe('stone-mine');
-      expect(BUILDING_IDS.PILL_FURNACE).toBe('pill-furnace');
-      expect(BUILDING_IDS.CAVE_DWELLING).toBe('cave-dwelling');
-      expect(BUILDING_IDS.BEAST_GARDEN).toBe('beast-garden');
-      expect(BUILDING_IDS.FATE_PAVILION).toBe('fate-pavilion');
-    });
-
-    it('REALM_IDS 应包含境界', () => {
-      expect(REALM_IDS.QI_REFINING).toBe('qi-refining');
-      expect(REALM_IDS.FOUNDATION).toBe('foundation');
-      expect(REALM_IDS.GOLDEN_CORE).toBe('golden-core');
-      expect(REALM_IDS.NASCENT_SOUL).toBe('nascent-soul');
-      expect(REALM_IDS.SPIRIT_SEVERING).toBe('spirit-severing');
-      expect(REALM_IDS.VOID_REFINING).toBe('void-refining');
-      expect(REALM_IDS.BODY_INTEGRATION).toBe('body-integration');
-      expect(REALM_IDS.GREAT_ASCENSION).toBe('great-ascension');
-    });
-
-    it('REALMS 数组长度应为 8', () => {
-      expect(REALMS.length).toBe(8);
-    });
-
-    it('PRESTIGE_MULTIPLIER 应为 0.04', () => {
-      expect(PRESTIGE_MULTIPLIER).toBe(0.04);
-    });
-
-    it('MIN_PRESTIGE_SPIRIT 应为 100000', () => {
-      expect(MIN_PRESTIGE_SPIRIT).toBe(100000);
-    });
-
-    it('COLORS 应包含必要颜色', () => {
-      expect(COLORS.spiritColor).toBeDefined();
-      expect(COLORS.stoneColor).toBeDefined();
-      expect(COLORS.pillColor).toBeDefined();
-      expect(COLORS.fateColor).toBeDefined();
-    });
-
-    it('BUILDINGS 数组长度应为 6', () => {
-      expect(BUILDINGS.length).toBe(6);
-    });
-
-    it('炼气境突破消耗应为空', () => {
-      expect(Object.keys(REALMS[0].cost).length).toBe(0);
-    });
-
-    it('筑基境应需要灵气突破', () => {
-      expect(REALMS[1].cost.spirit).toBe(1000);
-    });
-
-    it('金丹境应需要灵气突破', () => {
-      expect(REALMS[2].cost.spirit).toBe(5000);
-    });
+  it('购买建筑成功（资源充足时）', () => {
+    setResources(engine, { qi: 100 });
+    (engine as any).buyBuilding(); // selIdx=0 → qi_pool, cost 10 qi
+    const bldg = (engine as any).bldg;
+    expect(bldg.getLevel('qi_pool')).toBe(1);
   });
 
-  // ==================== 3. 点击系统 ====================
-
-  describe('点击系统', () => {
-    it('点击应返回点击力量', () => {
-      const result = engine.click();
-      expect(result).toBeGreaterThan(0);
-    });
-
-    it('点击应增加灵气资源', () => {
-      engine.click();
-      expect(getResourceAmount(engine, RESOURCE_IDS.SPIRIT)).toBeGreaterThan(0);
-    });
-
-    it('点击应增加 totalSpiritEarned', () => {
-      engine.click();
-      expect(engine.totalSpiritEarned).toBeGreaterThan(0);
-    });
-
-    it('点击应增加 totalClicks', () => {
-      engine.click();
-      expect(engine.totalClicks).toBe(1);
-    });
-
-    it('多次点击应累加灵气', () => {
-      engine.click();
-      engine.click();
-      engine.click();
-      expect(engine.totalClicks).toBe(3);
-      expect(getResourceAmount(engine, RESOURCE_IDS.SPIRIT)).toBeGreaterThanOrEqual(3);
-    });
-
-    it('未启动时点击应返回 0', () => {
-      const rawEngine = new IdleXianxiaEngine();
-      // Don't init or start
-      expect(rawEngine.click()).toBe(0);
-    });
-
-    it('getClickPower 基础值应为 SPIRIT_PER_CLICK', () => {
-      const power = engine.getClickPower();
-      expect(power).toBeGreaterThanOrEqual(SPIRIT_PER_CLICK);
-    });
-
-    it('境界等级应提升点击力量', () => {
-      const basePower = engine.getClickPower();
-      (engine as any)._currentRealmIndex = 3;
-      const newPower = engine.getClickPower();
-      expect(newPower).toBeGreaterThan(basePower);
-    });
+  it('资源不足时购买失败', () => {
+    setResources(engine, { qi: 0 });
+    (engine as any).buyBuilding();
+    const bldg = (engine as any).bldg;
+    expect(bldg.getLevel('qi_pool')).toBe(0);
   });
 
-  // ==================== 4. 境界系统 ====================
-
-  describe('境界系统', () => {
-    it('初始境界应为炼气', () => {
-      expect(engine.currentRealm.name).toBe('炼气');
-    });
-
-    it('初始境界索引应为 0', () => {
-      expect(engine.currentRealmIndex).toBe(0);
-    });
-
-    it('currentRealm 应返回正确的 RealmDef', () => {
-      const realm = engine.currentRealm;
-      expect(realm.id).toBe(REALM_IDS.QI_REFINING);
-    });
-
-    it('canAttemptBreakthrough 在资源不足时应返回 false', () => {
-      // Next realm is Foundation, costs { spirit: 1000 }
-      expect(engine.canAttemptBreakthrough()).toBe(false);
-    });
-
-    it('canAttemptBreakthrough 在资源充足时应返回 true', () => {
-      addSpirit(engine, 2000);
-      expect(engine.canAttemptBreakthrough()).toBe(true);
-    });
-
-    it('getNextRealm 应返回下一境界', () => {
-      const next = engine.getNextRealm();
-      expect(next).not.toBeNull();
-      expect(next!.name).toBe('筑基');
-    });
-
-    it('getNextRealm 在最高境界时应返回 null', () => {
-      (engine as any)._currentRealmIndex = REALMS.length - 1;
-      expect(engine.getNextRealm()).toBeNull();
-    });
-
-    it('炼气境突破消耗应为空', () => {
-      expect(Object.keys(REALMS[0].cost).length).toBe(0);
-    });
-
-    it('筑基境基础成功率应为 0.95', () => {
-      expect(REALMS[1].baseSuccessRate).toBe(0.95);
-    });
-
-    it('突破失败应损失部分灵气', () => {
-      addSpirit(engine, 5000);
-      // Mock random to force failure
-      const spy = vi.spyOn(Math, 'random').mockReturnValue(1);
-      const result = engine.attemptBreakthrough();
-      expect(result.success).toBe(false);
-      spy.mockRestore();
-    });
-
-    it('突破失败应返回失败结果', () => {
-      addSpirit(engine, 5000);
-      const spy = vi.spyOn(Math, 'random').mockReturnValue(1);
-      const result = engine.attemptBreakthrough();
-      expect(result.success).toBe(false);
-      expect(result.message).toBeDefined();
-      spy.mockRestore();
-    });
-
-    it('突破成功应提升境界索引', () => {
-      addSpirit(engine, 5000);
-      const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
-      const result = engine.attemptBreakthrough();
-      expect(result.success).toBe(true);
-      expect(engine.currentRealmIndex).toBe(1);
-      spy.mockRestore();
-    });
-
-    it('突破成功应增加 totalBreakthroughs', () => {
-      addSpirit(engine, 5000);
-      const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
-      engine.attemptBreakthrough();
-      expect(engine.totalBreakthroughs).toBe(1);
-      spy.mockRestore();
-    });
-
-    it('资源不足时突破应返回失败', () => {
-      addSpirit(engine, 10);
-      const result = engine.attemptBreakthrough();
-      expect(result.success).toBe(false);
-    });
-
-    it('已达最高境界时突破应返回失败', () => {
-      (engine as any)._currentRealmIndex = REALMS.length - 1;
-      const result = engine.attemptBreakthrough();
-      expect(result.success).toBe(false);
-      expect(result.message).toContain('最高境界');
-    });
-
-    it('getBreakthroughRate 应受丹药加成', () => {
-      addPill(engine, 10);
-      // Use a realm with lower base rate so pill bonus doesn't hit the 0.95 cap
-      const realm = REALMS[2]; // 金丹: baseSuccessRate 0.85
-      const rate = engine.getBreakthroughRate(realm);
-      expect(rate).toBeGreaterThan(realm.baseSuccessRate);
-    });
-
-    it('getBreakthroughRate 上限应为 0.95', () => {
-      addPill(engine, 100000);
-      const rate = engine.getBreakthroughRate(REALMS[1]);
-      expect(rate).toBeLessThanOrEqual(0.95);
-    });
-
-    it('境界提升应解锁新资源（灵石）', () => {
-      (engine as any)._currentRealmIndex = 1;
-      (engine as any).checkResourceUnlocks();
-      const stone = (engine as any).getResource(RESOURCE_IDS.STONE);
-      expect(stone.unlocked).toBe(true);
-    });
-
-    it('金丹境应解锁丹药资源', () => {
-      (engine as any)._currentRealmIndex = 2;
-      (engine as any).checkResourceUnlocks();
-      const pill = (engine as any).getResource(RESOURCE_IDS.PILL);
-      expect(pill.unlocked).toBe(true);
-    });
-
-    it('斩灵境应解锁仙缘资源', () => {
-      (engine as any)._currentRealmIndex = 4;
-      (engine as any).checkResourceUnlocks();
-      const fate = (engine as any).getResource(RESOURCE_IDS.FATE);
-      expect(fate.unlocked).toBe(true);
-    });
+  it('建筑升级后费用增加', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { qi: 100000 });
+    // Get cost at Lv.0
+    const cost0 = bldg.getCost('qi_pool');
+    // Upgrade qi_pool several times (costMultiplier = 1.07)
+    for (let i = 0; i < 5; i++) {
+      bldg.purchase('qi_pool', () => true, () => {});
+    }
+    const cost5 = bldg.getCost('qi_pool');
+    // After 5 upgrades, cost should be noticeably higher
+    // 10 * 1.07^5 ≈ 14.03 → floor = 14 > 10
+    expect(cost5.qi).toBeGreaterThan(cost0.qi);
   });
 
-  // ==================== 5. 建筑系统 ====================
-
-  describe('建筑系统', () => {
-    it('灵气池初始应已解锁', () => {
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.SPIRIT_POOL);
-      expect(upgrade.unlocked).toBe(true);
-    });
-
-    it('灵石矿初始应未解锁（需筑基）', () => {
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.STONE_MINE);
-      expect(upgrade.unlocked).toBe(false);
-    });
-
-    it('getBuildingCost 应返回建筑费用', () => {
-      const cost = engine.getBuildingCost(BUILDING_IDS.SPIRIT_POOL);
-      expect(cost).toBeDefined();
-      expect(cost.spirit).toBeGreaterThan(0);
-    });
-
-    it('getBuildingLevel 初始应为 0', () => {
-      expect(engine.getBuildingLevel(BUILDING_IDS.SPIRIT_POOL)).toBe(0);
-    });
-
-    it('purchaseBuilding 资源不足时应返回 false', () => {
-      expect(engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL)).toBe(false);
-    });
-
-    it('purchaseBuilding 资源充足时应返回 true', () => {
-      addSpirit(engine, 100);
-      expect(engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL)).toBe(true);
-    });
-
-    it('购买后建筑等级应为 1', () => {
-      addSpirit(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL);
-      expect(engine.getBuildingLevel(BUILDING_IDS.SPIRIT_POOL)).toBe(1);
-    });
-
-    it('购买后应扣除资源', () => {
-      addSpirit(engine, 100);
-      const cost = engine.getBuildingCost(BUILDING_IDS.SPIRIT_POOL);
-      const before = getResourceAmount(engine, RESOURCE_IDS.SPIRIT);
-      engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL);
-      const after = getResourceAmount(engine, RESOURCE_IDS.SPIRIT);
-      expect(before - after).toBe(cost.spirit);
-    });
-
-    it('buyBuildingByIndex 应正常工作', () => {
-      addSpirit(engine, 100);
-      expect(engine.buyBuildingByIndex(0)).toBe(true);
-    });
-
-    it('buyBuildingByIndex 越界应返回 false', () => {
-      expect(engine.buyBuildingByIndex(-1)).toBe(false);
-      expect(engine.buyBuildingByIndex(999)).toBe(false);
-    });
-
-    it('建筑费用应随等级递增', () => {
-      addSpirit(engine, 10000);
-      const cost0 = engine.getBuildingCost(BUILDING_IDS.SPIRIT_POOL);
-      engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL);
-      const cost1 = engine.getBuildingCost(BUILDING_IDS.SPIRIT_POOL);
-      expect(cost1.spirit).toBeGreaterThan(cost0.spirit);
-    });
-
-    it('境界提升应解锁新建筑', () => {
-      (engine as any)._currentRealmIndex = 1;
-      (engine as any).checkBuildingUnlocks();
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.STONE_MINE);
-      expect(upgrade.unlocked).toBe(true);
-    });
-
-    it('建筑应正确产出资源', () => {
-      addSpirit(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL);
-      (engine as any).recalculateProduction();
-      const spirit = (engine as any).getResource(RESOURCE_IDS.SPIRIT);
-      expect(spirit.perSecond).toBeGreaterThan(0);
-    });
-
-    it('购买建筑达到 maxLevel 后不能再购买', () => {
-      const building = BUILDINGS.find(b => b.id === BUILDING_IDS.SPIRIT_POOL)!;
-      // Set level to max
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.SPIRIT_POOL);
-      upgrade.level = building.maxLevel;
-      upgrade.unlocked = true;
-      addSpirit(engine, 1e10);
-      expect(engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL)).toBe(false);
-    });
+  it('建筑产出资源（qi_pool Lv.1 产出 qi）', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { qi: 10000 });
+    bldg.purchase('qi_pool', () => true, () => {}); // qi_pool → Lv.1
+    const before = engine.getResources().qi;
+    (engine as any).onUpdate(10000); // 10 seconds
+    const after = engine.getResources().qi;
+    expect(after).toBeGreaterThan(before);
   });
 
-  // ==================== 6. 产出系统 ====================
-
-  describe('产出系统', () => {
-    it('getProductionMultiplier 初始应为 1', () => {
-      expect(engine.getProductionMultiplier()).toBe(1);
-    });
-
-    it('境界等级应提升产出倍率', () => {
-      const base = engine.getProductionMultiplier();
-      (engine as any)._currentRealmIndex = 3;
-      expect(engine.getProductionMultiplier()).toBeGreaterThan(base);
-    });
-
-    it('getEffectiveProduction 未配置资源应返回 0', () => {
-      expect(engine.getEffectiveProduction('nonexistent')).toBe(0);
-    });
-
-    it('getEffectiveProduction 有建筑时应返回正值', () => {
-      addSpirit(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL);
-      (engine as any).recalculateProduction();
-      const prod = engine.getEffectiveProduction(RESOURCE_IDS.SPIRIT);
-      expect(prod).toBeGreaterThan(0);
-    });
+  it('建筑解锁条件（qi_pool Lv.1 解锁 herb_garden）', () => {
+    const bldg = (engine as any).bldg;
+    expect(bldg.isUnlocked('herb_garden')).toBe(false);
+    // Upgrade qi_pool 1 time
+    bldg.purchase('qi_pool', () => true, () => {});
+    (engine as any).checkUnlocks();
+    expect(bldg.isUnlocked('herb_garden')).toBe(true);
   });
 
-  // ==================== 7. 打坐系统 ====================
-
-  describe('打坐系统', () => {
-    it('初始 meditationActive 应为 false', () => {
-      expect(engine.meditationActive).toBe(false);
-    });
-
-    it('初始 meditationOnCooldown 应为 false', () => {
-      expect(engine.meditationOnCooldown).toBe(false);
-    });
-
-    it('startMeditation 应返回 true', () => {
-      expect(engine.startMeditation()).toBe(true);
-    });
-
-    it('startMeditation 后 meditationActive 应为 true', () => {
-      engine.startMeditation();
-      expect(engine.meditationActive).toBe(true);
-    });
-
-    it('打坐中再次 startMeditation 应返回 false', () => {
-      engine.startMeditation();
-      expect(engine.startMeditation()).toBe(false);
-    });
-
-    it('MEDITATION.duration 应为 5000', () => {
-      expect(MEDITATION.duration).toBe(5000);
-    });
-
-    it('MEDITATION.multiplier 应为 3', () => {
-      expect(MEDITATION.multiplier).toBe(3);
-    });
-
-    it('MEDITATION.cooldown 应为 10000', () => {
-      expect(MEDITATION.cooldown).toBe(10000);
-    });
+  it('获取建筑列表（初始解锁 1 个）', () => {
+    const bldg = (engine as any).bldg;
+    const unlocked = bldg.getUnlockedBuildings();
+    expect(unlocked.length).toBeGreaterThanOrEqual(1);
+    const ids = unlocked.map((b: any) => b.id);
+    expect(ids).toContain('qi_pool');
   });
 
-  // ==================== 8. 声望系统 ====================
+  it('建筑等级初始为 0，购买后增加', () => {
+    const bldg = (engine as any).bldg;
+    expect(bldg.getLevel('qi_pool')).toBe(0);
+    setResources(engine, { qi: 10000 });
+    bldg.purchase('qi_pool', () => true, () => {});
+    expect(bldg.getLevel('qi_pool')).toBe(1);
+    bldg.purchase('qi_pool', () => true, () => {});
+    expect(bldg.getLevel('qi_pool')).toBe(2);
+  });
+});
 
-  describe('声望系统', () => {
-    it('初始声望 currency 应为 0', () => {
-      expect(engine.prestige.currency).toBe(0);
-    });
+// ═══════════════════════════════════════════════════════════════
+// 4. 阶段系统(境界) (5 tests)
+// ═══════════════════════════════════════════════════════════════
 
-    it('初始声望 count 应为 0', () => {
-      expect(engine.prestige.count).toBe(0);
-    });
+describe('阶段系统', () => {
+  let engine: IdleXianxiaEngine;
 
-    it('calculatePrestigeDaoRhyme 灵气不足时应返回 0', () => {
-      expect(engine.calculatePrestigeDaoRhyme()).toBe(0);
-    });
-
-    it('calculatePrestigeDaoRhyme 灵气充足时应返回正值', () => {
-      addSpirit(engine, 200000);
-      expect(engine.calculatePrestigeDaoRhyme()).toBeGreaterThan(0);
-    });
-
-    it('doPrestige 灵气不足时应返回 false', () => {
-      expect(engine.doPrestige()).toBe(false);
-    });
-
-    it('doPrestige 灵气充足时应返回 true', () => {
-      addSpirit(engine, 500000);
-      expect(engine.doPrestige()).toBe(true);
-    });
-
-    it('doPrestige 后应增加道韵', () => {
-      addSpirit(engine, 500000);
-      engine.doPrestige();
-      expect(engine.prestige.currency).toBeGreaterThan(0);
-    });
-
-    it('doPrestige 后应增加声望次数', () => {
-      addSpirit(engine, 500000);
-      engine.doPrestige();
-      expect(engine.prestige.count).toBe(1);
-    });
-
-    it('doPrestige 后资源应被重置', () => {
-      addSpirit(engine, 500000);
-      engine.doPrestige();
-      expect(getResourceAmount(engine, RESOURCE_IDS.SPIRIT)).toBe(0);
-    });
-
-    it('doPrestige 后建筑等级应被重置', () => {
-      addSpirit(engine, 500000);
-      engine.doPrestige();
-      expect(engine.getBuildingLevel(BUILDING_IDS.SPIRIT_POOL)).toBe(0);
-    });
-
-    it('声望加成应提升产出倍率', () => {
-      const base = engine.getProductionMultiplier();
-      engine.prestige.currency = 10;
-      expect(engine.getProductionMultiplier()).toBeGreaterThan(base);
-    });
-
-    it('声望加成应提升点击力量', () => {
-      const base = engine.getClickPower();
-      engine.prestige.currency = 10;
-      expect(engine.getClickPower()).toBeGreaterThan(base);
-    });
+  beforeEach(() => {
+    engine = createEngine();
   });
 
-  // ==================== 9. 存档系统 ====================
-
-  describe('存档系统', () => {
-    it('save 应返回有效 SaveData', () => {
-      const data = engine.save();
-      expect(data).toBeDefined();
-      expect(data.statistics).toBeDefined();
-    });
-
-    it('save 应包含统计数据', () => {
-      engine.click();
-      const data = engine.save();
-      expect(data.statistics.totalSpiritEarned).toBeGreaterThan(0);
-      expect(data.statistics.totalClicks).toBe(1);
-    });
-
-    it('save 应包含境界索引', () => {
-      const data = engine.save();
-      expect(data.statistics.currentRealmIndex).toBe(0);
-    });
-
-    it('load 应恢复统计数据', () => {
-      engine.click();
-      engine.click();
-      const data = engine.save();
-      const newEngine = createEngine();
-      newEngine.load(data);
-      expect(newEngine.totalClicks).toBe(2);
-    });
-
-    it('load 应恢复境界索引', () => {
-      (engine as any)._currentRealmIndex = 3;
-      const data = engine.save();
-      const newEngine = createEngine();
-      newEngine.load(data);
-      expect(newEngine.currentRealmIndex).toBe(3);
-    });
-
-    it('load 应恢复 totalSpiritEarned', () => {
-      engine.click();
-      const data = engine.save();
-      const newEngine = createEngine();
-      newEngine.load(data);
-      expect(newEngine.totalSpiritEarned).toBeGreaterThan(0);
-    });
-
-    it('load 应恢复 totalBreakthroughs', () => {
-      (engine as any)._totalBreakthroughs = 5;
-      const data = engine.save();
-      const newEngine = createEngine();
-      newEngine.load(data);
-      expect(newEngine.totalBreakthroughs).toBe(5);
-    });
-
-    it('getState 应返回完整状态', () => {
-      const state = engine.getState();
-      expect(state.resources).toBeDefined();
-      expect(state.upgrades).toBeDefined();
-      expect(state.prestige).toBeDefined();
-      expect(state.currentRealmIndex).toBe(0);
-    });
-
-    it('getState 应包含 totalSpiritEarned', () => {
-      engine.click();
-      const state = engine.getState();
-      expect(state.totalSpiritEarned).toBeGreaterThan(0);
-    });
-
-    it('getState 应包含 totalClicks', () => {
-      engine.click();
-      const state = engine.getState();
-      expect(state.totalClicks).toBe(1);
-    });
-
-    it('loadState 应恢复资源数量', () => {
-      addSpirit(engine, 500);
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(getResourceAmount(newEngine, RESOURCE_IDS.SPIRIT)).toBe(500);
-    });
-
-    it('loadState 应恢复建筑等级', () => {
-      addSpirit(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL);
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(newEngine.getBuildingLevel(BUILDING_IDS.SPIRIT_POOL)).toBe(1);
-    });
-
-    it('loadState 应恢复声望数据', () => {
-      engine.prestige = { currency: 5, count: 2 };
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(newEngine.prestige.currency).toBe(5);
-      expect(newEngine.prestige.count).toBe(2);
-    });
-
-    it('loadState 应恢复境界索引', () => {
-      (engine as any)._currentRealmIndex = 4;
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(newEngine.currentRealmIndex).toBe(4);
-    });
-
-    it('save → load 往返应保持一致', () => {
-      addSpirit(engine, 1000);
-      engine.click();
-      (engine as any)._currentRealmIndex = 2;
-      const data = engine.save();
-      const newEngine = createEngine();
-      newEngine.load(data);
-      expect(newEngine.currentRealmIndex).toBe(2);
-      expect(newEngine.totalClicks).toBe(1);
-    });
+  it('初始境界为炼气（qi_refining）', () => {
+    const stage = engine.getStageInfo();
+    expect(stage).toBeDefined();
+    expect(stage!.id).toBe('qi_refining');
+    expect(stage!.name).toBe('炼气');
   });
 
-  // ==================== 10. 键盘输入 ====================
-
-  describe('键盘输入', () => {
-    it('空格键应触发点击', () => {
-      engine.handleKeyDown(' ');
-      expect(engine.totalClicks).toBe(1);
-    });
-
-    it('m 键应触发打坐', () => {
-      engine.handleKeyDown('m');
-      expect(engine.meditationActive).toBe(true);
-    });
-
-    it('M 键应触发打坐', () => {
-      engine.handleKeyDown('M');
-      expect(engine.meditationActive).toBe(true);
-    });
-
-    it('b 键应触发突破', () => {
-      addSpirit(engine, 5000);
-      const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
-      engine.handleKeyDown('b');
-      expect(engine.totalBreakthroughs).toBe(1);
-      spy.mockRestore();
-    });
-
-    it('B 键应触发突破', () => {
-      addSpirit(engine, 5000);
-      const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
-      engine.handleKeyDown('B');
-      expect(engine.totalBreakthroughs).toBe(1);
-      spy.mockRestore();
-    });
-
-    it('p 键应触发声望', () => {
-      addSpirit(engine, 500000);
-      engine.handleKeyDown('p');
-      expect(engine.prestige.currency).toBeGreaterThan(0);
-    });
-
-    it('P 键应触发声望', () => {
-      addSpirit(engine, 500000);
-      engine.handleKeyDown('P');
-      expect(engine.prestige.currency).toBeGreaterThan(0);
-    });
-
-    it('ArrowUp 应减少选中建筑索引', () => {
-      (engine as any)._selectedBuildingIndex = 2;
-      engine.handleKeyDown('ArrowUp');
-      expect(engine.selectedBuildingIndex).toBe(1);
-    });
-
-    it('ArrowUp 不应低于 0', () => {
-      engine.handleKeyDown('ArrowUp');
-      expect(engine.selectedBuildingIndex).toBe(0);
-    });
-
-    it('ArrowDown 应增加选中建筑索引', () => {
-      engine.handleKeyDown('ArrowDown');
-      expect(engine.selectedBuildingIndex).toBeGreaterThanOrEqual(0);
-    });
-
-    it('Enter 应购买选中建筑', () => {
-      addSpirit(engine, 100);
-      (engine as any)._selectedBuildingIndex = 0;
-      engine.handleKeyDown('Enter');
-      expect(engine.getBuildingLevel(BUILDING_IDS.SPIRIT_POOL)).toBe(1);
-    });
+  it('满足条件后境界升级（foundation 需要 qi >= 500, herb >= 200）', () => {
+    setResources(engine, { qi: 1000, herb: 500 });
+    (engine as any).checkStage();
+    const stage = engine.getStageInfo();
+    expect(stage).toBeDefined();
+    expect(stage!.id).toBe('foundation');
   });
 
-  // ==================== 11. 渲染 ====================
+  it('境界倍率影响产出（qi_refining = 1.0，foundation = 1.3）', () => {
+    const stages = (engine as any).stages;
+    // qi_refining multiplier = 1.0
+    expect(stages.getMultiplier('production')).toBe(1.0);
 
-  describe('渲染', () => {
-    it('onRender 不应抛出异常', () => {
-      const canvas = createCanvas();
-      const ctx = canvas.getContext('2d')!;
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
-
-    it('onRender 点击后不应抛出异常', () => {
-      engine.click();
-      const canvas = createCanvas();
-      const ctx = canvas.getContext('2d')!;
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
-
-    it('onRender 有建筑后不应抛出异常', () => {
-      addSpirit(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SPIRIT_POOL);
-      const canvas = createCanvas();
-      const ctx = canvas.getContext('2d')!;
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
+    // Advance to foundation
+    setResources(engine, { qi: 1000, herb: 500 });
+    (engine as any).checkStage();
+    expect(stages.getMultiplier('production')).toBe(1.3);
   });
 
-  // ==================== 12. 动画参数 ====================
-
-  describe('动画参数', () => {
-    it('ANIMATION.floatingTextDuration 应为 1200', () => {
-      expect(ANIMATION.floatingTextDuration).toBe(1200);
-    });
-
-    it('ANIMATION.cloudCount 应为 8', () => {
-      expect(ANIMATION.cloudCount).toBe(8);
-    });
-
-    it('ANIMATION.spiritParticleCount 应为 15', () => {
-      expect(ANIMATION.spiritParticleCount).toBe(15);
-    });
-
-    it('ANIMATION.breakthroughDuration 应为 2000', () => {
-      expect(ANIMATION.breakthroughDuration).toBe(2000);
-    });
+  it('最终境界为飞升（ascension）', () => {
+    const last = DYNASTIES[DYNASTIES.length - 1];
+    expect(last.id).toBe('ascension');
+    expect(last.name).toBe('飞升');
+    expect(last.productionMultiplier).toBe(3.0);
   });
 
-  // ==================== 13. 边界条件 ====================
+  it('资源不足时不会升级境界', () => {
+    setResources(engine, { qi: 100 });
+    (engine as any).checkStage();
+    const stage = engine.getStageInfo();
+    expect(stage!.id).toBe('qi_refining');
+  });
+});
 
-  describe('边界条件', () => {
-    it('购买不存在的建筑应返回 false', () => {
-      expect(engine.purchaseBuilding('nonexistent')).toBe(false);
-    });
+// ═══════════════════════════════════════════════════════════════
+// 5. 仙友系统 (5 tests)
+// ═══════════════════════════════════════════════════════════════
 
-    it('获取不存在的建筑等级应返回 0', () => {
-      expect(engine.getBuildingLevel('nonexistent')).toBe(0);
-    });
+describe('仙友系统', () => {
+  it('仙友列表可获取（8 个仙友）', () => {
+    expect(HEROES).toHaveLength(8);
+    for (const h of HEROES) {
+      expect(h.id).toBeTruthy();
+      expect(h.name).toBeTruthy();
+    }
+  });
 
-    it('获取不存在的建筑费用应安全返回', () => {
-      const cost = engine.getBuildingCost('nonexistent');
-      expect(cost).toBeDefined();
-    });
+  it('招募仙友需要资源（recruitCost 存在且非零）', () => {
+    for (const h of HEROES) {
+      expect(h.recruitCost).toBeDefined();
+      const costs = Object.values(h.recruitCost);
+      expect(costs.some(c => c > 0)).toBe(true);
+    }
+  });
 
-    it('多次声望应累积道韵', () => {
-      addSpirit(engine, 500000);
-      engine.doPrestige();
-      const firstCurrency = engine.prestige.currency;
-      addSpirit(engine, 500000);
-      engine.doPrestige();
-      expect(engine.prestige.currency).toBeGreaterThan(firstCurrency);
-    });
+  it('仙友稀有度包含 rare/epic/legendary/mythic', () => {
+    const validRarities = ['rare', 'epic', 'legendary', 'mythic'];
+    for (const h of HEROES) {
+      expect(validRarities).toContain(h.rarity);
+    }
+    // Verify at least one of each rarity exists
+    const rarities = new Set(HEROES.map(h => h.rarity));
+    expect(rarities.has('rare')).toBe(true);
+    expect(rarities.has('epic')).toBe(true);
+    expect(rarities.has('legendary')).toBe(true);
+    expect(rarities.has('mythic')).toBe(true);
+  });
 
-    it('声望后 totalBreakthroughs 应保留', () => {
-      (engine as any)._totalBreakthroughs = 3;
-      addSpirit(engine, 500000);
-      engine.doPrestige();
-      expect(engine.totalBreakthroughs).toBe(3);
-    });
+  it('仙友属性（baseStats 包含 administration/military/culture）', () => {
+    for (const h of HEROES) {
+      expect(h.baseStats).toBeDefined();
+      expect(typeof h.baseStats.administration).toBe('number');
+      expect(typeof h.baseStats.military).toBe('number');
+      expect(typeof h.baseStats.culture).toBe('number');
+      expect(h.baseStats.administration).toBeGreaterThan(0);
+      expect(h.baseStats.culture).toBeGreaterThan(0);
+    }
+  });
 
-    it('连续点击不应出错', () => {
-      for (let i = 0; i < 100; i++) {
-        engine.click();
+  it('仙友加成描述（bonus 字段非空）', () => {
+    for (const h of HEROES) {
+      expect(h.bonus).toBeTruthy();
+      expect(typeof h.bonus).toBe('string');
+      expect(h.bonus.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 6. 科技系统(功法) (5 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('科技系统', () => {
+  let engine: IdleXianxiaEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('科技列表（9 项功法，3 个分支）', () => {
+    expect(INVENTIONS).toHaveLength(9);
+    const branches = new Set(INVENTIONS.map(t => t.branch));
+    expect(branches.size).toBe(3);
+    expect(branches.has('cultivation')).toBe(true);
+    expect(branches.has('alchemy')).toBe(true);
+    expect(branches.has('formation')).toBe(true);
+  });
+
+  it('科技前置条件（tier 1 无前置，tier 2+ 有前置）', () => {
+    const tier1 = INVENTIONS.filter(t => t.tier === 1);
+    expect(tier1).toHaveLength(3);
+    for (const t of tier1) {
+      expect(t.requires).toHaveLength(0);
+    }
+    const higher = INVENTIONS.filter(t => t.tier >= 2);
+    for (const t of higher) {
+      expect(t.requires.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('科技效果（每项科技有至少一个 effect）', () => {
+    for (const t of INVENTIONS) {
+      expect(t.effects.length).toBeGreaterThanOrEqual(1);
+      for (const e of t.effects) {
+        expect(e.type).toBeDefined();
+        expect(Math.abs(e.value)).toBeGreaterThan(0);
       }
-      expect(engine.totalClicks).toBe(100);
-    });
+    }
+  });
 
-    it('load 空数据不应崩溃', () => {
-      expect(() => engine.load({} as any)).not.toThrow();
-    });
+  it('科技分支（cultivation/alchemy/formation 各 3 级）', () => {
+    const cult = INVENTIONS.filter(t => t.branch === 'cultivation');
+    const alch = INVENTIONS.filter(t => t.branch === 'alchemy');
+    const form = INVENTIONS.filter(t => t.branch === 'formation');
+    expect(cult).toHaveLength(3);
+    expect(alch).toHaveLength(3);
+    expect(form).toHaveLength(3);
+    // Each branch has tier 1, 2, 3
+    for (const branch of [cult, alch, form]) {
+      const tiers = branch.map(t => t.tier).sort();
+      expect(tiers).toEqual([1, 2, 3]);
+    }
+  });
 
-    it('loadState 空状态不应崩溃', () => {
-      expect(() => engine.loadState({} as any)).not.toThrow();
-    });
+  it('科技系统可查询已研究状态', () => {
+    const techs = (engine as any).techs;
+    expect(techs.isResearched('qi_gathering')).toBe(false);
+  });
+});
 
-    it('handleKeyUp 不应抛出异常', () => {
-      expect(() => engine.handleKeyUp(' ')).not.toThrow();
-    });
+// ═══════════════════════════════════════════════════════════════
+// 7. 声望转生系统 (5 tests)
+// ═══════════════════════════════════════════════════════════════
 
-    it('getEffectiveProduction 对无产出资源应返回 0', () => {
-      expect(engine.getEffectiveProduction(RESOURCE_IDS.SPIRIT)).toBe(0);
-    });
+describe('声望转生系统', () => {
+  let engine: IdleXianxiaEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('声望转生（资源不足时不可转生）', () => {
+    setResources(engine, { qi: 100 });
+    engine.doPrestige();
+    expect(engine.getPrestigeState().count).toBe(0);
+  });
+
+  it('资源保留（转生后保留 8% 资源）', () => {
+    setResources(engine, { qi: 200000, herb: 0, pill: 0, stone: 0 });
+    engine.doPrestige();
+    const res = engine.getResources();
+    // retention = 0.08, so qi should be > 0 but < 200000
+    expect(res.qi).toBeGreaterThan(0);
+    expect(res.qi).toBeLessThan(200000);
+  });
+
+  it('声望货币（转生后获得道果）', () => {
+    setResources(engine, { qi: 200000, herb: 0, pill: 0, stone: 0 });
+    engine.doPrestige();
+    const ps = engine.getPrestigeState();
+    expect(ps.count).toBe(1);
+    expect(ps.currency).toBeGreaterThan(0);
+  });
+
+  it('声望倍率（转生后 multiplier > 1）', () => {
+    setResources(engine, { qi: 200000, herb: 0, pill: 0, stone: 0 });
+    engine.doPrestige();
+    const ps = engine.getPrestigeState();
+    expect(ps.multiplier).toBeGreaterThan(1);
+  });
+
+  it('转生后重置建筑等级和境界', () => {
+    setResources(engine, { qi: 200000, herb: 0, pill: 0, stone: 0 });
+    engine.doPrestige();
+    const stage = engine.getStageInfo();
+    expect(stage!.id).toBe('qi_refining');
+    const bldg = (engine as any).bldg;
+    // After reset, only initially unlocked buildings remain
+    expect(bldg.isUnlocked('qi_pool')).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 8. 资源系统 (5 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('资源系统', () => {
+  let engine: IdleXianxiaEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('资源自动增长（建筑产出）', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { qi: 10000 });
+    bldg.purchase('qi_pool', () => true, () => {}); // qi_pool → Lv.1
+    const before = engine.getResources().qi;
+    (engine as any).onUpdate(10000); // 10 seconds
+    expect(engine.getResources().qi).toBeGreaterThan(before);
+  });
+
+  it('点击产出资源（Space 键增加 qi）', () => {
+    const before = engine.getResources().qi;
+    engine.handleKeyDown(' ');
+    expect(engine.getResources().qi).toBe(before + CLICK_REWARD.qi);
+  });
+
+  it('资源消耗（购买建筑扣除 qi）', () => {
+    setResources(engine, { qi: 100 });
+    const before = engine.getResources().qi;
+    (engine as any).buyBuilding(); // buy qi_pool, cost 10 qi
+    expect(engine.getResources().qi).toBeLessThan(before);
+  });
+
+  it('多种资源独立（herb_garden 产出 herb，qi_pool 产出 qi）', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { qi: 10000 });
+    bldg.purchase('qi_pool', () => true, () => {});
+    // herb_garden requires qi_pool Lv.1 → unlock it
+    bldg.forceUnlock('herb_garden');
+    bldg.purchase('herb_garden', () => true, () => {});
+    (engine as any).onUpdate(10000);
+    const res = engine.getResources();
+    expect(res.qi).toBeGreaterThan(0);
+    expect(res.herb).toBeGreaterThan(0);
+  });
+
+  it('资源格式化（formatNumber 处理大数）', () => {
+    expect(engine.formatNumber(1000, 1)).toMatch(/K/);
+    expect(engine.formatNumber(1000000, 1)).toMatch(/M/);
+    expect(engine.formatNumber(1000000000, 1)).toMatch(/B/);
+    expect(engine.formatNumber(1000000000000, 1)).toMatch(/T/);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 9. 序列化 (4 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('序列化', () => {
+  let engine: IdleXianxiaEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('serialize 返回有效状态', () => {
+    const state = engine.serialize();
+    expect(state).toBeDefined();
+    expect(typeof state).toBe('object');
+    expect(state.resources).toBeDefined();
+    expect(state.buildings).toBeDefined();
+    expect(state.currentStage).toBe('qi_refining');
+    expect(state.prestigeState).toBeDefined();
+    expect(state.prestigeState.currency).toBe(0);
+    expect(state.prestigeState.count).toBe(0);
+  });
+
+  it('deserialize 恢复状态', () => {
+    setResources(engine, { qi: 9999, herb: 8888, pill: 7777 });
+    const bldg = (engine as any).bldg;
+    bldg.purchase('qi_pool', () => true, () => {});
+
+    const state = engine.serialize();
+    const engine2 = createEngine();
+    engine2.deserialize(state);
+
+    const res = engine2.getResources();
+    expect(res.qi).toBe(9999);
+    expect(res.herb).toBe(8888);
+    expect(res.pill).toBe(7777);
+  });
+
+  it('循环一致性（serialize → deserialize → serialize 一致）', () => {
+    setResources(engine, { qi: 5555, herb: 3333, pill: 1111 });
+    const state = engine.serialize();
+
+    const engine2 = createEngine();
+    engine2.deserialize(state);
+    const state2 = engine2.serialize();
+
+    expect(state2.resources.qi).toBe(state.resources.qi);
+    expect(state2.resources.herb).toBe(state.resources.herb);
+    expect(state2.resources.pill).toBe(state.resources.pill);
+    expect(state2.currentStage).toBe(state.currentStage);
+  });
+
+  it('序列化包含仙友和科技数据', () => {
+    const state = engine.serialize();
+    expect(state.heroes).toBeDefined();
+    expect(state.researchedTechs).toBeDefined();
+    expect(Array.isArray(state.researchedTechs)).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 10. 渲染 (4 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('渲染', () => {
+  let engine: IdleXianxiaEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('render 不报错（主面板）', () => {
+    const canvas = (engine as any).canvas as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+    expect(() => {
+      (engine as any).onRender(ctx, canvas.width, canvas.height);
+    }).not.toThrow();
+  });
+
+  it('render 调用 Canvas API（fillRect 被调用）', () => {
+    const canvas = (engine as any).canvas as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+    const fillRectSpy = vi.spyOn(ctx, 'fillRect');
+    (engine as any).onRender(ctx, canvas.width, canvas.height);
+    expect(fillRectSpy).toHaveBeenCalled();
+    fillRectSpy.mockRestore();
+  });
+
+  it('不同面板渲染（tech/officials/prestige 均不报错）', () => {
+    const canvas = (engine as any).canvas as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+
+    const panels: Array<'tech' | 'officials' | 'prestige'> = ['tech', 'officials', 'prestige'];
+    for (const panel of panels) {
+      (engine as any).panel = panel;
+      expect(() => {
+        (engine as any).onRender(ctx, canvas.width, canvas.height);
+      }).not.toThrow();
+    }
+  });
+
+  it('update + render 组合不报错', () => {
+    const canvas = (engine as any).canvas as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+    expect(() => {
+      (engine as any).onUpdate(1000);
+      (engine as any).onRender(ctx, canvas.width, canvas.height);
+    }).not.toThrow();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 11. 输入处理 (6 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('输入处理', () => {
+  let engine: IdleXianxiaEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('handleKeyDown 不报错', () => {
+    expect(() => engine.handleKeyDown('ArrowDown')).not.toThrow();
+    expect(() => engine.handleKeyDown('ArrowUp')).not.toThrow();
+    expect(() => engine.handleKeyDown('Enter')).not.toThrow();
+    expect(() => engine.handleKeyDown('Escape')).not.toThrow();
+  });
+
+  it('Space 键触发点击（增加 qi）', () => {
+    const before = engine.getResources().qi;
+    engine.handleKeyDown(' ');
+    expect(engine.getResources().qi).toBe(before + CLICK_REWARD.qi);
+  });
+
+  it('T 键切换功法面板', () => {
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('tech');
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('U 键切换仙友面板', () => {
+    engine.handleKeyDown('u');
+    expect(engine.getActivePanel()).toBe('officials');
+    engine.handleKeyDown('u');
+    expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('Escape 返回主面板', () => {
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('tech');
+    engine.handleKeyDown('Escape');
+    expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('ArrowDown/ArrowUp 导航建筑列表', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { qi: 10000 });
+    bldg.purchase('qi_pool', () => true, () => {});
+    // Unlock herb_garden so there are 2 buildings in the list
+    bldg.forceUnlock('herb_garden');
+    bldg.purchase('herb_garden', () => true, () => {});
+    engine.handleKeyDown('ArrowDown');
+    expect((engine as any).selIdx).toBe(1);
+    engine.handleKeyDown('ArrowUp');
+    expect((engine as any).selIdx).toBe(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 12. 边界情况 (6 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('边界情况', () => {
+  let engine: IdleXianxiaEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('零 dt 更新不报错', () => {
+    expect(() => (engine as any).onUpdate(0)).not.toThrow();
+  });
+
+  it('极大 dt 更新不报错', () => {
+    expect(() => (engine as any).onUpdate(3600000)).not.toThrow();
+  });
+
+  it('多次声望转生', () => {
+    for (let i = 0; i < 3; i++) {
+      setResources(engine, { qi: 200000, herb: 0, pill: 0, stone: 0 });
+      engine.doPrestige();
+    }
+    expect(engine.getPrestigeState().count).toBe(3);
+  });
+
+  it('getResources 返回副本，修改不影响引擎内部', () => {
+    const res = engine.getResources();
+    res.qi = 9999;
+    expect(engine.getResources().qi).toBe(50);
+  });
+
+  it('资源不会变为负数', () => {
+    setResources(engine, { qi: 5 });
+    (engine as any).buyBuilding(); // qi_pool costs 10, but only 5 qi
+    expect(engine.getResources().qi).toBeGreaterThanOrEqual(0);
+  });
+
+  it('快速面板切换不报错', () => {
+    expect(() => {
+      engine.handleKeyDown('t');
+      engine.handleKeyDown('u');
+      engine.handleKeyDown('t');
+      engine.handleKeyDown('Escape');
+    }).not.toThrow();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 13. 常量详细验证 (7 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('常量详细验证', () => {
+  it('BUILDINGS 所有建筑有唯一 ID', () => {
+    const ids = BUILDINGS.map(b => b.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('DYNASTIES 按顺序排列', () => {
+    for (let i = 0; i < DYNASTIES.length; i++) {
+      expect(DYNASTIES[i].order).toBe(i + 1);
+    }
+    // First dynasty has no prerequisite
+    expect(DYNASTIES[0].prerequisiteStageId).toBeNull();
+    // Others have prerequisite
+    for (let i = 1; i < DYNASTIES.length; i++) {
+      expect(DYNASTIES[i].prerequisiteStageId).toBeTruthy();
+    }
+  });
+
+  it('COLOR_THEME 包含所有必要字段', () => {
+    expect(COLOR_THEME).toHaveProperty('bgGradient1');
+    expect(COLOR_THEME).toHaveProperty('bgGradient2');
+    expect(COLOR_THEME).toHaveProperty('textPrimary');
+    expect(COLOR_THEME).toHaveProperty('textSecondary');
+    expect(COLOR_THEME).toHaveProperty('textDim');
+    expect(COLOR_THEME).toHaveProperty('accentGold');
+    expect(COLOR_THEME).toHaveProperty('accentGreen');
+    expect(COLOR_THEME).toHaveProperty('panelBg');
+    expect(COLOR_THEME).toHaveProperty('selectedBg');
+    expect(COLOR_THEME).toHaveProperty('selectedBorder');
+    expect(COLOR_THEME).toHaveProperty('affordable');
+    expect(COLOR_THEME).toHaveProperty('unaffordable');
+  });
+
+  it('RARITY_COLORS 包含所有稀有度', () => {
+    expect(RARITY_COLORS).toHaveProperty('rare');
+    expect(RARITY_COLORS).toHaveProperty('epic');
+    expect(RARITY_COLORS).toHaveProperty('legendary');
+    expect(RARITY_COLORS).toHaveProperty('mythic');
+  });
+
+  it('PRESTIGE_CONFIG 参数正确', () => {
+    expect(PRESTIGE_CONFIG.currencyName).toBe('道果');
+    expect(PRESTIGE_CONFIG.base).toBe(10);
+    expect(PRESTIGE_CONFIG.threshold).toBe(15000);
+    expect(PRESTIGE_CONFIG.bonusMultiplier).toBe(0.15);
+    expect(PRESTIGE_CONFIG.retention).toBe(0.08);
+  });
+
+  it('INITIALLY_UNLOCKED 包含 qi_pool', () => {
+    expect(INITIALLY_UNLOCKED).toEqual(['qi_pool']);
+  });
+
+  it('CLICK_REWARD 为 { qi: 1 }', () => {
+    expect(CLICK_REWARD).toEqual({ qi: 1 });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 14. 资源类型验证 (4 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('资源类型验证', () => {
+  it('RESOURCES 包含 qi（灵气）', () => {
+    const qi = RESOURCES.find(r => r.id === 'qi');
+    expect(qi).toBeDefined();
+    expect(qi!.name).toBe('灵气');
+  });
+
+  it('RESOURCES 包含 herb（仙草）', () => {
+    const herb = RESOURCES.find(r => r.id === 'herb');
+    expect(herb).toBeDefined();
+    expect(herb!.name).toBe('仙草');
+  });
+
+  it('RESOURCES 包含 pill（丹药）', () => {
+    const pill = RESOURCES.find(r => r.id === 'pill');
+    expect(pill).toBeDefined();
+    expect(pill!.name).toBe('丹药');
+  });
+
+  it('RESOURCES 包含 stone（灵石）', () => {
+    const stone = RESOURCES.find(r => r.id === 'stone');
+    expect(stone).toBeDefined();
+    expect(stone!.name).toBe('灵石');
   });
 });

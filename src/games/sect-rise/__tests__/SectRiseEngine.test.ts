@@ -1,1005 +1,724 @@
 /**
- * 宗门崛起 (Sect Rise) — 完整测试套件
+ * 门派崛起 (Sect Rise) — v3.0 引擎测试套件
+ *
+ * 完全重写，匹配 v3.0 统一子系统架构的公共 API。
+ * 覆盖常量验证、引擎初始化、建筑系统、弟子系统、资源系统、
+ * 阶段系统(门派阶段)、科技系统(武学)、声望系统、存档系统、渲染和输入处理。
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SectRiseEngine } from '@/games/sect-rise/SectRiseEngine';
+import { SectRiseEngine, type SectRiseSaveState } from '@/games/sect-rise/SectRiseEngine';
 import {
-  CANVAS_WIDTH,
-  CANVAS_HEIGHT,
-  SPIRIT_STONE_PER_CLICK,
-  PRESTIGE_MULTIPLIER,
-  MIN_PRESTIGE_STONES,
-  DISCIPLES,
+  GAME_ID,
+  GAME_TITLE,
   BUILDINGS,
-  COLORS,
-  SECT_DRAW,
-  BUILDING_PANEL,
+  DYNASTIES,
+  HEROES,
+  INVENTIONS,
+  PRESTIGE_CONFIG,
+  COLOR_THEME,
+  RARITY_COLORS,
+  RESOURCES,
+  INITIAL_RESOURCES,
+  INITIALLY_UNLOCKED,
+  CLICK_REWARD,
 } from '@/games/sect-rise/constants';
 
-// ========== 测试辅助 ==========
+// ═══════════════════════════════════════════════════════════════
+// 测试辅助
+// ═══════════════════════════════════════════════════════════════
 
 function createCanvas(): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  canvas.width = CANVAS_WIDTH;
-  canvas.height = CANVAS_HEIGHT;
-  return canvas;
+  return document.createElement('canvas');
 }
 
 function createEngine(): SectRiseEngine {
   const engine = new SectRiseEngine();
-  engine.init(createCanvas());
+  const canvas = createCanvas();
+  canvas.width = 480;
+  canvas.height = 640;
+  (engine as any).canvas = canvas;
+  (engine as any).ctx = canvas.getContext('2d');
+  (engine as any)._status = 'playing';
+  (engine as any).onInit();
+  return engine;
+}
+
+function createStartedEngine(): SectRiseEngine {
+  const engine = createEngine();
   engine.start();
   return engine;
 }
 
-/** 直接添加资源 */
-function addSpiritStones(engine: SectRiseEngine, amount: number): void {
-  (engine as any).addResource('spirit-stone', amount);
+/** 直接设置引擎内部资源（绕过正常游戏逻辑） */
+function setResources(engine: SectRiseEngine, resources: Record<string, number>): void {
+  const res = (engine as any).res as Record<string, number>;
+  for (const [id, amount] of Object.entries(resources)) {
+    res[id] = amount;
+  }
 }
 
-function addHerb(engine: SectRiseEngine, amount: number): void {
-  (engine as any).addResource('herb', amount);
-}
+// ═══════════════════════════════════════════════════════════════
+// 1. 常量验证 (6 tests)
+// ═══════════════════════════════════════════════════════════════
 
-function addArtifact(engine: SectRiseEngine, amount: number): void {
-  (engine as any).addResource('artifact', amount);
-}
+describe('常量验证', () => {
+  it('BUILDINGS 有 8 个建筑', () => {
+    expect(BUILDINGS).toHaveLength(8);
+  });
 
-function addReputation(engine: SectRiseEngine, amount: number): void {
-  (engine as any).addResource('reputation', amount);
-}
+  it('DYNASTIES 有 6 个门派阶段', () => {
+    expect(DYNASTIES).toHaveLength(6);
+  });
 
-/** 获取资源数量 */
-function getResourceAmount(engine: SectRiseEngine, id: string): number {
-  return (engine as any).getResource(id)?.amount ?? 0;
-}
+  it('HEROES 有 8 个弟子', () => {
+    expect(HEROES).toHaveLength(8);
+  });
 
-// ========== 测试套件 ==========
+  it('INVENTIONS 有 9 项武学', () => {
+    expect(INVENTIONS).toHaveLength(9);
+  });
 
-describe('SectRiseEngine', () => {
+  it('RESOURCES 有 3 种基础资源（+声望）', () => {
+    expect(RESOURCES).toHaveLength(4);
+    const ids = RESOURCES.map(r => r.id);
+    expect(ids).toContain('wood');
+    expect(ids).toContain('iron');
+    expect(ids).toContain('stone');
+    expect(ids).toContain('reputation');
+  });
+
+  it('GAME_ID 是 "sect-rise"', () => {
+    expect(GAME_ID).toBe('sect-rise');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 2. 引擎初始化 (5 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('引擎初始化', () => {
+  it('创建引擎不报错', () => {
+    expect(() => createEngine()).not.toThrow();
+  });
+
+  it('init 后状态正常（_gameId 正确）', () => {
+    const engine = createEngine();
+    expect((engine as any)._gameId).toBe('sect-rise');
+  });
+
+  it('start 后状态为 playing', () => {
+    const engine = createStartedEngine();
+    expect(engine.status).toBe('playing');
+  });
+
+  it('stop（pause）后状态为 paused', () => {
+    const engine = createStartedEngine();
+    engine.pause();
+    expect(engine.status).toBe('paused');
+  });
+
+  it('初始资源为 wood=50, iron=0, stone=0', () => {
+    const engine = createEngine();
+    const res = engine.getResources();
+    expect(res.wood).toBe(50);
+    expect(res.iron).toBe(0);
+    expect(res.stone).toBe(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 3. 建筑系统 (8 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('建筑系统', () => {
   let engine: SectRiseEngine;
 
   beforeEach(() => {
     engine = createEngine();
   });
 
-  // ==================== 1. 引擎创建与初始化 ====================
-
-  describe('引擎创建与初始化', () => {
-    it('应正确创建引擎实例', () => {
-      expect(engine).toBeInstanceOf(SectRiseEngine);
-    });
-
-    it('gameId 应为 sect-rise', () => {
-      expect((engine as any)._gameId).toBe('sect-rise');
-    });
-
-    it('初始状态应为 playing（start 后）', () => {
-      expect((engine as any)._status).toBe('playing');
-    });
-
-    it('Canvas 尺寸应正确设置', () => {
-      const canvas = createCanvas();
-      expect(canvas.width).toBe(CANVAS_WIDTH);
-      expect(canvas.height).toBe(CANVAS_HEIGHT);
-    });
-
-    it('灵石资源初始应为 0', () => {
-      expect(getResourceAmount(engine, 'spirit-stone')).toBe(0);
-    });
-
-    it('灵石初始应已解锁', () => {
-      const ss = (engine as any).getResource('spirit-stone');
-      expect(ss.unlocked).toBe(true);
-    });
-
-    it('仙草初始应未解锁', () => {
-      const herb = (engine as any).getResource('herb');
-      expect(herb.unlocked).toBe(false);
-    });
-
-    it('法器初始应未解锁', () => {
-      const artifact = (engine as any).getResource('artifact');
-      expect(artifact.unlocked).toBe(false);
-    });
-
-    it('声望初始应未解锁', () => {
-      const rep = (engine as any).getResource('reputation');
-      expect(rep.unlocked).toBe(false);
-    });
-
-    it('初始 totalSpiritStonesEarned 应为 0', () => {
-      expect(engine.totalSpiritStonesEarned).toBe(0);
-    });
-
-    it('初始 totalClicks 应为 0', () => {
-      expect(engine.totalClicks).toBe(0);
-    });
-
-    it('初始 selectedIndex 应为 0', () => {
-      expect(engine.selectedIndex).toBe(0);
-    });
-
-    it('初始声望 currency 应为 0', () => {
-      expect(engine.prestige.currency).toBe(0);
-    });
-
-    it('初始声望 count 应为 0', () => {
-      expect(engine.prestige.count).toBe(0);
-    });
+  it('初始解锁 lumber（灵木场）', () => {
+    const bldg = (engine as any).bldg;
+    expect(bldg.isUnlocked('lumber')).toBe(true);
   });
 
-  // ==================== 2. 常量验证 ====================
-
-  describe('常量验证', () => {
-    it('CANVAS_WIDTH 应为 480', () => {
-      expect(CANVAS_WIDTH).toBe(480);
-    });
-
-    it('CANVAS_HEIGHT 应为 640', () => {
-      expect(CANVAS_HEIGHT).toBe(640);
-    });
-
-    it('SPIRIT_STONE_PER_CLICK 应为 1', () => {
-      expect(SPIRIT_STONE_PER_CLICK).toBe(1);
-    });
-
-    it('PRESTIGE_MULTIPLIER 应为 0.035', () => {
-      expect(PRESTIGE_MULTIPLIER).toBe(0.035);
-    });
-
-    it('MIN_PRESTIGE_STONES 应为 30000', () => {
-      expect(MIN_PRESTIGE_STONES).toBe(30000);
-    });
-
-    it('DISCIPLES 应包含六种弟子', () => {
-      expect(DISCIPLES.length).toBe(6);
-    });
-
-    it('DISCIPLES 应包含外门弟子', () => {
-      expect(DISCIPLES.find(d => d.id === 'outer')).toBeDefined();
-    });
-
-    it('DISCIPLES 应包含内门弟子', () => {
-      expect(DISCIPLES.find(d => d.id === 'inner')).toBeDefined();
-    });
-
-    it('DISCIPLES 应包含核心弟子', () => {
-      expect(DISCIPLES.find(d => d.id === 'core')).toBeDefined();
-    });
-
-    it('DISCIPLES 应包含长老', () => {
-      expect(DISCIPLES.find(d => d.id === 'elder')).toBeDefined();
-    });
-
-    it('DISCIPLES 应包含太上长老', () => {
-      expect(DISCIPLES.find(d => d.id === 'supreme')).toBeDefined();
-    });
-
-    it('DISCIPLES 应包含掌门', () => {
-      expect(DISCIPLES.find(d => d.id === 'patriarch')).toBeDefined();
-    });
-
-    it('BUILDINGS 应包含六个建筑', () => {
-      expect(BUILDINGS.length).toBe(6);
-    });
-
-    it('COLORS 应包含必要颜色', () => {
-      expect(COLORS.spiritStoneColor).toBeDefined();
-      expect(COLORS.herbColor).toBeDefined();
-      expect(COLORS.artifactColor).toBeDefined();
-      expect(COLORS.reputationColor).toBeDefined();
-    });
-
-    it('SECT_DRAW 应包含渲染参数', () => {
-      expect(SECT_DRAW.centerX).toBeDefined();
-      expect(SECT_DRAW.centerY).toBeDefined();
-    });
-
-    it('BUILDING_PANEL 应包含面板参数', () => {
-      expect(BUILDING_PANEL.startY).toBeDefined();
-      expect(BUILDING_PANEL.itemHeight).toBeDefined();
-    });
+  it('购买建筑成功（资源充足时）', () => {
+    setResources(engine, { wood: 100 });
+    (engine as any).buyBuilding(); // selIdx=0 → lumber, cost 10 wood
+    const bldg = (engine as any).bldg;
+    expect(bldg.getLevel('lumber')).toBe(1);
   });
 
-  // ==================== 3. 点击系统 ====================
-
-  describe('点击系统', () => {
-    it('点击应返回获得的灵石数', () => {
-      const result = engine.click();
-      expect(result).toBeGreaterThan(0);
-    });
-
-    it('点击应增加灵石资源', () => {
-      engine.click();
-      expect(getResourceAmount(engine, 'spirit-stone')).toBeGreaterThan(0);
-    });
-
-    it('点击应增加 totalSpiritStonesEarned', () => {
-      engine.click();
-      expect(engine.totalSpiritStonesEarned).toBeGreaterThan(0);
-    });
-
-    it('点击应增加 totalClicks', () => {
-      engine.click();
-      expect(engine.totalClicks).toBe(1);
-    });
-
-    it('多次点击应累加灵石', () => {
-      engine.click();
-      engine.click();
-      engine.click();
-      expect(engine.totalClicks).toBe(3);
-      expect(getResourceAmount(engine, 'spirit-stone')).toBeGreaterThanOrEqual(3);
-    });
-
-    it('未初始化时点击应返回 0', () => {
-      const rawEngine = new SectRiseEngine();
-      expect(rawEngine.click()).toBe(0);
-    });
-
-    it('点击基础值应至少为 SPIRIT_STONE_PER_CLICK', () => {
-      const result = engine.click();
-      expect(result).toBeGreaterThanOrEqual(SPIRIT_STONE_PER_CLICK);
-    });
+  it('资源不足时购买失败', () => {
+    setResources(engine, { wood: 0 });
+    (engine as any).buyBuilding();
+    const bldg = (engine as any).bldg;
+    expect(bldg.getLevel('lumber')).toBe(0);
   });
 
-  // ==================== 4. 建筑系统 ====================
-
-  describe('建筑系统', () => {
-    it('灵石矿场初始应已解锁', () => {
-      const upgrade = (engine as any).upgrades.get('stone-mine');
-      expect(upgrade.unlocked).toBe(true);
-    });
-
-    it('药园初始应未解锁', () => {
-      const upgrade = (engine as any).upgrades.get('herb-garden');
-      expect(upgrade.unlocked).toBe(false);
-    });
-
-    it('getBuildingCost 应返回建筑费用', () => {
-      const cost = engine.getBuildingCost(0);
-      expect(cost).toBeDefined();
-      expect(cost['spirit-stone']).toBeGreaterThan(0);
-    });
-
-    it('getBuildingCost 越界应返回空对象', () => {
-      expect(engine.getBuildingCost(-1)).toEqual({});
-      expect(engine.getBuildingCost(999)).toEqual({});
-    });
-
-    it('getBuildingLevel 初始应为 0', () => {
-      expect(engine.getBuildingLevel(0)).toBe(0);
-    });
-
-    it('getBuildingLevel 越界应返回 0', () => {
-      expect(engine.getBuildingLevel(-1)).toBe(0);
-      expect(engine.getBuildingLevel(999)).toBe(0);
-    });
-
-    it('purchaseBuilding 资源不足时应返回 false', () => {
-      expect(engine.purchaseBuilding(0)).toBe(false);
-    });
-
-    it('purchaseBuilding 资源充足时应返回 true', () => {
-      addSpiritStones(engine, 100);
-      expect(engine.purchaseBuilding(0)).toBe(true);
-    });
-
-    it('购买后建筑等级应为 1', () => {
-      addSpiritStones(engine, 100);
-      engine.purchaseBuilding(0);
-      expect(engine.getBuildingLevel(0)).toBe(1);
-    });
-
-    it('购买后应扣除资源', () => {
-      addSpiritStones(engine, 100);
-      const cost = engine.getBuildingCost(0);
-      const before = getResourceAmount(engine, 'spirit-stone');
-      engine.purchaseBuilding(0);
-      const after = getResourceAmount(engine, 'spirit-stone');
-      expect(before - after).toBe(cost['spirit-stone']);
-    });
-
-    it('purchaseBuilding 越界应返回 false', () => {
-      expect(engine.purchaseBuilding(-1)).toBe(false);
-      expect(engine.purchaseBuilding(999)).toBe(false);
-    });
-
-    it('建筑费用应随等级递增', () => {
-      addSpiritStones(engine, 10000);
-      const cost0 = engine.getBuildingCost(0);
-      engine.purchaseBuilding(0);
-      const cost1 = engine.getBuildingCost(0);
-      expect(cost1['spirit-stone']).toBeGreaterThan(cost0['spirit-stone']);
-    });
-
-    it('建筑应正确产出灵石', () => {
-      addSpiritStones(engine, 100);
-      engine.purchaseBuilding(0);
-      (engine as any).recalculateProduction();
-      const ss = (engine as any).getResource('spirit-stone');
-      expect(ss.perSecond).toBeGreaterThan(0);
-    });
-
-    it('购买建筑达到 maxLevel 后不能再购买', () => {
-      const upgrade = (engine as any).upgrades.get('stone-mine');
-      upgrade.level = BUILDINGS[0].maxLevel;
-      upgrade.unlocked = true;
-      addSpiritStones(engine, 1e10);
-      expect(engine.purchaseBuilding(0)).toBe(false);
-    });
-
-    it('未解锁建筑不应能购买', () => {
-      addSpiritStones(engine, 1e10);
-      expect(engine.purchaseBuilding(1)).toBe(false); // herb-garden requires stone-mine
-    });
-
-    it('前置建筑满足后应解锁新建筑', () => {
-      addSpiritStones(engine, 10000);
-      engine.purchaseBuilding(0); // stone-mine level 1
-      (engine as any).checkBuildingUnlocks();
-      const herbGarden = (engine as any).upgrades.get('herb-garden');
-      expect(herbGarden.unlocked).toBe(true);
-    });
-
-    it('灵石矿场等级 >= 5 应解锁仙草资源', () => {
-      const upgrade = (engine as any).upgrades.get('stone-mine');
-      upgrade.level = 5;
-      upgrade.unlocked = true;
-      (engine as any).checkResourceUnlocks();
-      const herb = (engine as any).getResource('herb');
-      expect(herb.unlocked).toBe(true);
-    });
-
-    it('炼丹房等级 >= 1 应解锁法器资源', () => {
-      const upgrade = (engine as any).upgrades.get('pill-room');
-      upgrade.level = 1;
-      upgrade.unlocked = true;
-      (engine as any).checkResourceUnlocks();
-      const artifact = (engine as any).getResource('artifact');
-      expect(artifact.unlocked).toBe(true);
-    });
-
-    it('护宗大阵等级 >= 1 应解锁声望资源', () => {
-      const upgrade = (engine as any).upgrades.get('formation');
-      upgrade.level = 1;
-      upgrade.unlocked = true;
-      (engine as any).checkResourceUnlocks();
-      const rep = (engine as any).getResource('reputation');
-      expect(rep.unlocked).toBe(true);
-    });
+  it('建筑升级后费用增加', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { wood: 100000 });
+    const cost0 = bldg.getCost('lumber');
+    for (let i = 0; i < 5; i++) {
+      bldg.purchase('lumber', () => true, () => {});
+    }
+    const cost5 = bldg.getCost('lumber');
+    // 10 * 1.07^5 ≈ 14.03 → floor = 14 > 10
+    expect(cost5.wood).toBeGreaterThan(cost0.wood);
   });
 
-  // ==================== 5. 弟子系统 ====================
-
-  describe('弟子系统', () => {
-    it('初始外门弟子应已解锁', () => {
-      expect(engine.isDiscipleUnlocked('outer')).toBe(true);
-    });
-
-    it('初始内门弟子应未解锁', () => {
-      expect(engine.isDiscipleUnlocked('inner')).toBe(false);
-    });
-
-    it('初始核心弟子应未解锁', () => {
-      expect(engine.isDiscipleUnlocked('core')).toBe(false);
-    });
-
-    it('初始长老应未解锁', () => {
-      expect(engine.isDiscipleUnlocked('elder')).toBe(false);
-    });
-
-    it('初始太上长老应未解锁', () => {
-      expect(engine.isDiscipleUnlocked('supreme')).toBe(false);
-    });
-
-    it('初始掌门应未解锁', () => {
-      expect(engine.isDiscipleUnlocked('patriarch')).toBe(false);
-    });
-
-    it('disciples 应返回所有弟子状态', () => {
-      expect(engine.disciples.length).toBe(DISCIPLES.length);
-    });
-
-    it('disciples 返回的应是副本', () => {
-      const d1 = engine.disciples;
-      const d2 = engine.disciples;
-      expect(d1).not.toBe(d2);
-    });
-
-    it('recruitDisciple 灵石不足应返回 false', () => {
-      expect(engine.recruitDisciple('inner')).toBe(false);
-    });
-
-    it('recruitDisciple 灵石充足应返回 true', () => {
-      addSpiritStones(engine, 5000);
-      expect(engine.recruitDisciple('inner')).toBe(true);
-    });
-
-    it('招募后弟子应已解锁', () => {
-      addSpiritStones(engine, 5000);
-      engine.recruitDisciple('inner');
-      expect(engine.isDiscipleUnlocked('inner')).toBe(true);
-    });
-
-    it('招募后应扣除灵石', () => {
-      addSpiritStones(engine, 5000);
-      const before = getResourceAmount(engine, 'spirit-stone');
-      engine.recruitDisciple('inner');
-      const after = getResourceAmount(engine, 'spirit-stone');
-      expect(after).toBeLessThan(before);
-    });
-
-    it('重复招募同一弟子应返回 false', () => {
-      addSpiritStones(engine, 5000);
-      engine.recruitDisciple('inner');
-      addSpiritStones(engine, 5000);
-      expect(engine.recruitDisciple('inner')).toBe(false);
-    });
-
-    it('招募不存在的弟子应返回 false', () => {
-      expect(engine.recruitDisciple('nonexistent')).toBe(false);
-    });
-
-    it('外门弟子解锁费用应为 0', () => {
-      const outer = DISCIPLES.find(d => d.id === 'outer')!;
-      expect(outer.unlockCost).toBe(0);
-    });
-
-    it('内门弟子解锁费用应为 500', () => {
-      const inner = DISCIPLES.find(d => d.id === 'inner')!;
-      expect(inner.unlockCost).toBe(500);
-    });
-
-    it('核心弟子解锁费用应为 3000', () => {
-      const core = DISCIPLES.find(d => d.id === 'core')!;
-      expect(core.unlockCost).toBe(3000);
-    });
-
-    it('弟子加成应提升点击倍率', () => {
-      const base = engine.getClickMultiplier();
-      // outer already unlocked, gives spirit_stone bonus
-      expect(base).toBeGreaterThanOrEqual(1);
-    });
-
-    it('招募内门弟子应提升点击倍率', () => {
-      const base = engine.getClickMultiplier();
-      addSpiritStones(engine, 5000);
-      engine.recruitDisciple('inner');
-      expect(engine.getClickMultiplier()).toBeGreaterThan(base);
-    });
-
-    it('弟子应提升灵石产出倍率', () => {
-      const base = engine.getSpiritStoneMultiplier();
-      addSpiritStones(engine, 5000);
-      engine.recruitDisciple('inner');
-      expect(engine.getSpiritStoneMultiplier()).toBeGreaterThan(base);
-    });
-
-    it('弟子应提升仙草产出倍率', () => {
-      const base = engine.getHerbMultiplier();
-      addSpiritStones(engine, 10000);
-      engine.recruitDisciple('core');
-      expect(engine.getHerbMultiplier()).toBeGreaterThan(base);
-    });
-
-    it('弟子应提升法器产出倍率', () => {
-      const base = engine.getArtifactMultiplier();
-      addSpiritStones(engine, 50000);
-      engine.recruitDisciple('elder');
-      expect(engine.getArtifactMultiplier()).toBeGreaterThan(base);
-    });
-
-    it('太上长老应提升全产出倍率', () => {
-      addSpiritStones(engine, 200000);
-      engine.recruitDisciple('supreme');
-      expect(engine.getSpiritStoneMultiplier()).toBeGreaterThan(1);
-      expect(engine.getHerbMultiplier()).toBeGreaterThan(1);
-    });
-
-    it('掌门应提升全产出倍率', () => {
-      addSpiritStones(engine, 500000);
-      engine.recruitDisciple('patriarch');
-      expect(engine.getSpiritStoneMultiplier()).toBeGreaterThan(1);
-      expect(engine.getReputationMultiplier()).toBeGreaterThan(1);
-    });
+  it('建筑产出资源（lumber Lv.1 产出 wood）', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { wood: 10000 });
+    bldg.purchase('lumber', () => true, () => {});
+    const before = engine.getResources().wood;
+    (engine as any).onUpdate(10000); // 10 seconds
+    const after = engine.getResources().wood;
+    expect(after).toBeGreaterThan(before);
   });
 
-  // ==================== 6. 声望系统 ====================
+  it('建筑解锁条件（lumber Lv.1 解锁 mine）', () => {
+    const bldg = (engine as any).bldg;
+    expect(bldg.isUnlocked('mine')).toBe(false);
+    bldg.purchase('lumber', () => true, () => {});
+    (engine as any).checkUnlocks();
+    expect(bldg.isUnlocked('mine')).toBe(true);
+  });
 
-  describe('声望系统', () => {
-    it('canPrestige 灵石不足时应返回 false', () => {
-      expect(engine.canPrestige()).toBe(false);
-    });
+  it('获取建筑列表（初始解锁 1 个）', () => {
+    const bldg = (engine as any).bldg;
+    const unlocked = bldg.getUnlockedBuildings();
+    expect(unlocked.length).toBeGreaterThanOrEqual(1);
+    const ids = unlocked.map((b: any) => b.id);
+    expect(ids).toContain('lumber');
+  });
 
-    it('canPrestige 灵石充足时应返回 true', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      expect(engine.canPrestige()).toBe(true);
-    });
+  it('建筑等级初始为 0，购买后增加', () => {
+    const bldg = (engine as any).bldg;
+    expect(bldg.getLevel('lumber')).toBe(0);
+    setResources(engine, { wood: 10000 });
+    bldg.purchase('lumber', () => true, () => {});
+    expect(bldg.getLevel('lumber')).toBe(1);
+    bldg.purchase('lumber', () => true, () => {});
+    expect(bldg.getLevel('lumber')).toBe(2);
+  });
+});
 
-    it('getPrestigePreview 灵石不足时应返回 0', () => {
-      expect(engine.getPrestigePreview()).toBe(0);
-    });
+// ═══════════════════════════════════════════════════════════════
+// 4. 弟子系统 (6 tests)
+// ═══════════════════════════════════════════════════════════════
 
-    it('getPrestigePreview 灵石充足时应返回正值', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      expect(engine.getPrestigePreview()).toBeGreaterThan(0);
-    });
+describe('弟子系统', () => {
+  it('弟子列表可获取（8 个弟子）', () => {
+    expect(HEROES).toHaveLength(8);
+    for (const h of HEROES) {
+      expect(h.id).toBeTruthy();
+      expect(h.name).toBeTruthy();
+    }
+  });
 
-    it('doPrestige 灵石不足时应返回 0', () => {
-      expect(engine.doPrestige()).toBe(0);
-    });
+  it('招募费用（recruitCost 存在且非零）', () => {
+    for (const h of HEROES) {
+      expect(h.recruitCost).toBeDefined();
+      const costs = Object.values(h.recruitCost);
+      expect(costs.some(c => c > 0)).toBe(true);
+    }
+  });
 
-    it('doPrestige 灵石充足时应返回正值', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      const result = engine.doPrestige();
-      expect(result).toBeGreaterThan(0);
-    });
+  it('稀有度包含 uncommon/rare/epic/legendary', () => {
+    const validRarities = ['uncommon', 'rare', 'epic', 'legendary'];
+    for (const h of HEROES) {
+      expect(validRarities).toContain(h.rarity);
+    }
+    const rarities = new Set(HEROES.map(h => h.rarity));
+    expect(rarities.has('uncommon')).toBe(true);
+    expect(rarities.has('rare')).toBe(true);
+    expect(rarities.has('epic')).toBe(true);
+    expect(rarities.has('legendary')).toBe(true);
+  });
 
-    it('doPrestige 后应增加宗门气运', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
+  it('弟子属性（baseStats 包含 martial/internal/charisma）', () => {
+    for (const h of HEROES) {
+      expect(h.baseStats).toBeDefined();
+      expect(typeof h.baseStats.martial).toBe('number');
+      expect(typeof h.baseStats.internal).toBe('number');
+      expect(typeof h.baseStats.charisma).toBe('number');
+      expect(h.baseStats.martial).toBeGreaterThan(0);
+      expect(h.baseStats.internal).toBeGreaterThan(0);
+      expect(h.baseStats.charisma).toBeGreaterThan(0);
+    }
+  });
+
+  it('弟子加成描述（bonus 字段非空）', () => {
+    for (const h of HEROES) {
+      expect(h.bonus).toBeTruthy();
+      expect(typeof h.bonus).toBe('string');
+      expect(h.bonus.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('弟子成长率（growthRates 与稀有度相关）', () => {
+    for (const h of HEROES) {
+      expect(h.growthRates).toBeDefined();
+      expect(typeof h.growthRates.martial).toBe('number');
+      expect(typeof h.growthRates.internal).toBe('number');
+      expect(typeof h.growthRates.charisma).toBe('number');
+      expect(h.growthRates.martial).toBeGreaterThan(0);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 5. 阶段系统 (4 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('阶段系统', () => {
+  let engine: SectRiseEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('初始阶段为 small_sect（小门派）', () => {
+    const stage = engine.getStageInfo();
+    expect(stage).toBeDefined();
+    expect(stage!.id).toBe('small_sect');
+    expect(stage!.name).toBe('小门派');
+  });
+
+  it('满足条件后阶段升级（growing 需要 wood>=500, iron>=200）', () => {
+    setResources(engine, { wood: 1000, iron: 500 });
+    (engine as any).checkStage();
+    const stage = engine.getStageInfo();
+    expect(stage).toBeDefined();
+    expect(stage!.id).toBe('growing');
+  });
+
+  it('阶段倍率影响产出（small_sect = 1.0，growing = 1.3）', () => {
+    const stages = (engine as any).stages;
+    expect(stages.getMultiplier('production')).toBe(1.0);
+
+    setResources(engine, { wood: 1000, iron: 500 });
+    (engine as any).checkStage();
+    expect(stages.getMultiplier('production')).toBe(1.3);
+  });
+
+  it('最终阶段为 founder（开宗立派）', () => {
+    const last = DYNASTIES[DYNASTIES.length - 1];
+    expect(last.id).toBe('founder');
+    expect(last.name).toBe('开宗立派');
+    expect(last.productionMultiplier).toBe(3.0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 6. 科技系统 (4 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('科技系统', () => {
+  let engine: SectRiseEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('科技列表（9 项武学，3 个分支）', () => {
+    expect(INVENTIONS).toHaveLength(9);
+    const branches = new Set(INVENTIONS.map(t => t.branch));
+    expect(branches.size).toBe(3);
+    expect(branches.has('martial')).toBe(true);
+    expect(branches.has('crafting')).toBe(true);
+    expect(branches.has('management')).toBe(true);
+  });
+
+  it('科技前置条件（tier 1 无前置，tier 2+ 有前置）', () => {
+    const tier1 = INVENTIONS.filter(t => t.tier === 1);
+    expect(tier1).toHaveLength(3);
+    for (const t of tier1) {
+      expect(t.requires).toHaveLength(0);
+    }
+    const higher = INVENTIONS.filter(t => t.tier >= 2);
+    for (const t of higher) {
+      expect(t.requires.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('科技效果（每项科技有至少一个 effect）', () => {
+    for (const t of INVENTIONS) {
+      expect(t.effects.length).toBeGreaterThanOrEqual(1);
+      for (const e of t.effects) {
+        expect(e.type).toBeDefined();
+        expect(Math.abs(e.value)).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('科技分支（martial/crafting/management 各 3 级）', () => {
+    const martial = INVENTIONS.filter(t => t.branch === 'martial');
+    const crafting = INVENTIONS.filter(t => t.branch === 'crafting');
+    const management = INVENTIONS.filter(t => t.branch === 'management');
+    expect(martial).toHaveLength(3);
+    expect(crafting).toHaveLength(3);
+    expect(management).toHaveLength(3);
+    for (const branch of [martial, crafting, management]) {
+      const tiers = branch.map(t => t.tier).sort();
+      expect(tiers).toEqual([1, 2, 3]);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 7. 声望系统 (4 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('声望系统', () => {
+  let engine: SectRiseEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('声望转生（资源不足时不可转生）', () => {
+    setResources(engine, { wood: 100 });
+    engine.doPrestige();
+    expect(engine.getPrestigeState().count).toBe(0);
+  });
+
+  it('资源保留（转生后保留 10% 资源）', () => {
+    setResources(engine, { wood: 200000, iron: 0, stone: 0 });
+    engine.doPrestige();
+    const res = engine.getResources();
+    // retention = 0.1, so wood should be ~20000
+    expect(res.wood).toBeGreaterThan(0);
+    expect(res.wood).toBeLessThan(200000);
+  });
+
+  it('声望货币（转生后获得声望）', () => {
+    setResources(engine, { wood: 200000, iron: 0, stone: 0 });
+    engine.doPrestige();
+    const ps = engine.getPrestigeState();
+    expect(ps.count).toBe(1);
+    expect(ps.currency).toBeGreaterThan(0);
+  });
+
+  it('声望倍率（转生后 multiplier > 1）', () => {
+    setResources(engine, { wood: 200000, iron: 0, stone: 0 });
+    engine.doPrestige();
+    const ps = engine.getPrestigeState();
+    expect(ps.multiplier).toBeGreaterThan(1);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 8. 资源系统 (5 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('资源系统', () => {
+  let engine: SectRiseEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('资源自动增长（建筑产出）', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { wood: 10000 });
+    bldg.purchase('lumber', () => true, () => {}); // lumber → Lv.1
+    const before = engine.getResources().wood;
+    (engine as any).onUpdate(10000); // 10 seconds
+    expect(engine.getResources().wood).toBeGreaterThan(before);
+  });
+
+  it('点击产出资源（Space 键增加 wood）', () => {
+    const before = engine.getResources().wood;
+    engine.handleKeyDown(' ');
+    expect(engine.getResources().wood).toBe(before + CLICK_REWARD.wood);
+  });
+
+  it('资源消耗（购买建筑扣除 wood）', () => {
+    setResources(engine, { wood: 100 });
+    const before = engine.getResources().wood;
+    (engine as any).buyBuilding(); // buy lumber, cost 10 wood
+    expect(engine.getResources().wood).toBeLessThan(before);
+  });
+
+  it('多种资源独立（不同建筑产出不同资源）', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { wood: 100000, iron: 100000 });
+    bldg.purchase('lumber', () => true, () => {}); // wood
+    bldg.purchase('mine', () => true, () => {});   // iron
+    (engine as any).onUpdate(10000);
+    const res = engine.getResources();
+    expect(res.wood).toBeGreaterThan(0);
+    expect(res.iron).toBeGreaterThan(0);
+  });
+
+  it('资源格式化（formatNumber 处理大数）', () => {
+    expect(engine.formatNumber(1000, 1)).toMatch(/K/);
+    expect(engine.formatNumber(1000000, 1)).toMatch(/M/);
+    expect(engine.formatNumber(1000000000, 1)).toMatch(/B/);
+    expect(engine.formatNumber(1000000000000, 1)).toMatch(/T/);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 9. 序列化 (3 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('序列化', () => {
+  let engine: SectRiseEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('serialize 返回有效状态', () => {
+    const state = engine.serialize();
+    expect(state).toBeDefined();
+    expect(typeof state).toBe('object');
+    expect(state.resources).toBeDefined();
+    expect(state.buildings).toBeDefined();
+    expect(state.currentStage).toBe('small_sect');
+    expect(state.prestigeState).toBeDefined();
+    expect(state.prestigeState.currency).toBe(0);
+    expect(state.prestigeState.count).toBe(0);
+  });
+
+  it('deserialize 恢复状态', () => {
+    setResources(engine, { wood: 9999, iron: 8888, stone: 7777 });
+    const bldg = (engine as any).bldg;
+    bldg.purchase('lumber', () => true, () => {});
+
+    const state = engine.serialize();
+    const engine2 = createEngine();
+    engine2.deserialize(state);
+
+    const res = engine2.getResources();
+    expect(res.wood).toBe(9999);
+    expect(res.iron).toBe(8888);
+    expect(res.stone).toBe(7777);
+  });
+
+  it('循环一致性（serialize → deserialize → serialize 一致）', () => {
+    setResources(engine, { wood: 5555, iron: 3333, stone: 1111 });
+    const state = engine.serialize();
+
+    const engine2 = createEngine();
+    engine2.deserialize(state);
+    const state2 = engine2.serialize();
+
+    expect(state2.resources.wood).toBe(state.resources.wood);
+    expect(state2.resources.iron).toBe(state.resources.iron);
+    expect(state2.resources.stone).toBe(state.resources.stone);
+    expect(state2.currentStage).toBe(state.currentStage);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 10. 渲染 (3 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('渲染', () => {
+  let engine: SectRiseEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('render 不报错（主面板）', () => {
+    const canvas = (engine as any).canvas as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+    expect(() => {
+      (engine as any).onRender(ctx, canvas.width, canvas.height);
+    }).not.toThrow();
+  });
+
+  it('render 调用 Canvas API（fillRect 被调用）', () => {
+    const canvas = (engine as any).canvas as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+    const fillRectSpy = vi.spyOn(ctx, 'fillRect');
+    (engine as any).onRender(ctx, canvas.width, canvas.height);
+    expect(fillRectSpy).toHaveBeenCalled();
+    fillRectSpy.mockRestore();
+  });
+
+  it('不同面板渲染（tech/heroes/prestige 均不报错）', () => {
+    const canvas = (engine as any).canvas as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+
+    const panels: Array<'tech' | 'heroes' | 'prestige'> = ['tech', 'heroes', 'prestige'];
+    for (const panel of panels) {
+      (engine as any).panel = panel;
+      expect(() => {
+        (engine as any).onRender(ctx, canvas.width, canvas.height);
+      }).not.toThrow();
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 11. 输入处理 (6 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('输入处理', () => {
+  let engine: SectRiseEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('handleKeyDown 不报错', () => {
+    expect(() => engine.handleKeyDown('ArrowDown')).not.toThrow();
+    expect(() => engine.handleKeyDown('ArrowUp')).not.toThrow();
+    expect(() => engine.handleKeyDown('Enter')).not.toThrow();
+    expect(() => engine.handleKeyDown('Escape')).not.toThrow();
+  });
+
+  it('Space 键触发点击（增加 wood）', () => {
+    const before = engine.getResources().wood;
+    engine.handleKeyDown(' ');
+    expect(engine.getResources().wood).toBe(before + CLICK_REWARD.wood);
+  });
+
+  it('T 键切换武学面板', () => {
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('tech');
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('U 键切换弟子面板', () => {
+    engine.handleKeyDown('u');
+    expect(engine.getActivePanel()).toBe('heroes');
+    engine.handleKeyDown('u');
+    expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('Escape 返回主面板', () => {
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('tech');
+    engine.handleKeyDown('Escape');
+    expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('ArrowDown/ArrowUp 导航建筑列表', () => {
+    const bldg = (engine as any).bldg;
+    setResources(engine, { wood: 10000 });
+    bldg.purchase('lumber', () => true, () => {});
+    // Unlock mine so we have 2 buildings
+    (engine as any).checkUnlocks();
+    engine.handleKeyDown('ArrowDown');
+    expect((engine as any).selIdx).toBe(1);
+    engine.handleKeyDown('ArrowUp');
+    expect((engine as any).selIdx).toBe(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 12. 边界情况 (6 tests)
+// ═══════════════════════════════════════════════════════════════
+
+describe('边界情况', () => {
+  let engine: SectRiseEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('零 dt 更新不报错', () => {
+    expect(() => (engine as any).onUpdate(0)).not.toThrow();
+  });
+
+  it('极大 dt 更新不报错', () => {
+    expect(() => (engine as any).onUpdate(3600000)).not.toThrow();
+  });
+
+  it('多次声望转生', () => {
+    for (let i = 0; i < 3; i++) {
+      setResources(engine, { wood: 200000, iron: 0, stone: 0 });
       engine.doPrestige();
-      expect(engine.prestige.currency).toBeGreaterThan(0);
-    });
-
-    it('doPrestige 后应增加声望次数', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      engine.doPrestige();
-      expect(engine.prestige.count).toBe(1);
-    });
-
-    it('doPrestige 后资源应被重置', () => {
-      addSpiritStones(engine, 50000);
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      engine.doPrestige();
-      expect(getResourceAmount(engine, 'spirit-stone')).toBe(0);
-    });
-
-    it('doPrestige 后建筑等级应被重置', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      engine.doPrestige();
-      expect(engine.getBuildingLevel(0)).toBe(0);
-    });
-
-    it('doPrestige 后弟子解锁状态应保留', () => {
-      addSpiritStones(engine, 5000);
-      engine.recruitDisciple('inner');
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      engine.doPrestige();
-      expect(engine.isDiscipleUnlocked('inner')).toBe(true);
-    });
-
-    it('getPrestigeMultiplier 初始应为 1', () => {
-      expect(engine.getPrestigeMultiplier()).toBe(1);
-    });
-
-    it('getPrestigeMultiplier 有宗门气运时应大于 1', () => {
-      engine.prestige.currency = 10;
-      expect(engine.getPrestigeMultiplier()).toBeGreaterThan(1);
-    });
-
-    it('声望加成应正确计算', () => {
-      engine.prestige.currency = 10;
-      const expected = 1 + 10 * PRESTIGE_MULTIPLIER;
-      expect(engine.getPrestigeMultiplier()).toBeCloseTo(expected, 5);
-    });
-
-    it('多次声望应累积宗门气运', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      engine.doPrestige();
-      const firstCurrency = engine.prestige.currency;
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      engine.doPrestige();
-      expect(engine.prestige.currency).toBeGreaterThan(firstCurrency);
-    });
+    }
+    expect(engine.getPrestigeState().count).toBe(3);
   });
 
-  // ==================== 7. 产出倍率系统 ====================
-
-  describe('产出倍率系统', () => {
-    it('getClickMultiplier 初始应 >= 1（外门弟子加成）', () => {
-      expect(engine.getClickMultiplier()).toBeGreaterThanOrEqual(1);
-    });
-
-    it('getSpiritStoneMultiplier 初始应 >= 1', () => {
-      expect(engine.getSpiritStoneMultiplier()).toBeGreaterThanOrEqual(1);
-    });
-
-    it('getHerbMultiplier 初始应为 1', () => {
-      expect(engine.getHerbMultiplier()).toBe(1);
-    });
-
-    it('getArtifactMultiplier 初始应为 1', () => {
-      expect(engine.getArtifactMultiplier()).toBe(1);
-    });
-
-    it('getReputationMultiplier 初始应为 1', () => {
-      expect(engine.getReputationMultiplier()).toBe(1);
-    });
-
-    it('声望应乘入灵石产出倍率', () => {
-      engine.prestige.currency = 5;
-      const mult = engine.getSpiritStoneMultiplier();
-      expect(mult).toBeGreaterThan(1);
-    });
-
-    it('声望应乘入仙草产出倍率', () => {
-      engine.prestige.currency = 5;
-      const mult = engine.getHerbMultiplier();
-      expect(mult).toBeGreaterThan(1);
-    });
-
-    it('声望应乘入法器产出倍率', () => {
-      engine.prestige.currency = 5;
-      const mult = engine.getArtifactMultiplier();
-      expect(mult).toBeGreaterThan(1);
-    });
-
-    it('声望应乘入声望产出倍率', () => {
-      engine.prestige.currency = 5;
-      const mult = engine.getReputationMultiplier();
-      expect(mult).toBeGreaterThan(1);
-    });
+  it('getResources 返回副本，修改不影响引擎内部', () => {
+    const res = engine.getResources();
+    res.wood = 9999;
+    expect(engine.getResources().wood).toBe(50);
   });
 
-  // ==================== 8. 存档系统 ====================
-
-  describe('存档系统', () => {
-    it('save 应返回有效 SaveData', () => {
-      const data = engine.save();
-      expect(data).toBeDefined();
-    });
-
-    it('save 应包含设置数据', () => {
-      const data = engine.save();
-      expect(data.settings).toBeDefined();
-    });
-
-    it('save 应包含弟子状态', () => {
-      const data = engine.save();
-      const settings = data.settings as Record<string, unknown>;
-      expect(settings.disciples).toBeDefined();
-    });
-
-    it('save 应包含统计数据', () => {
-      const data = engine.save();
-      const settings = data.settings as Record<string, unknown>;
-      expect(settings.stats).toBeDefined();
-    });
-
-    it('load 应恢复统计数据', () => {
-      engine.click();
-      const data = engine.save();
-      const newEngine = createEngine();
-      newEngine.load(data);
-      expect(newEngine.totalClicks).toBe(1);
-    });
-
-    it('load 应恢复弟子状态', () => {
-      addSpiritStones(engine, 5000);
-      engine.recruitDisciple('inner');
-      const data = engine.save();
-      const newEngine = createEngine();
-      newEngine.load(data);
-      expect(newEngine.isDiscipleUnlocked('inner')).toBe(true);
-    });
-
-    it('load 应恢复选中索引', () => {
-      (engine as any)._selectedIndex = 3;
-      const data = engine.save();
-      const newEngine = createEngine();
-      newEngine.load(data);
-      expect(newEngine.selectedIndex).toBe(3);
-    });
-
-    it('getState 应返回完整状态', () => {
-      const state = engine.getState();
-      expect(state.resources).toBeDefined();
-      expect(state.buildings).toBeDefined();
-      expect(state.disciples).toBeDefined();
-      expect(state.prestige).toBeDefined();
-      expect(state.statistics).toBeDefined();
-    });
-
-    it('getState 应包含 selectedIndex', () => {
-      const state = engine.getState();
-      expect(state.selectedIndex).toBe(0);
-    });
-
-    it('loadState 应恢复资源数量', () => {
-      addSpiritStones(engine, 500);
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(getResourceAmount(newEngine, 'spirit-stone')).toBe(500);
-    });
-
-    it('loadState 应恢复建筑等级', () => {
-      addSpiritStones(engine, 100);
-      engine.purchaseBuilding(0);
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(newEngine.getBuildingLevel(0)).toBe(1);
-    });
-
-    it('loadState 应恢复弟子状态', () => {
-      addSpiritStones(engine, 5000);
-      engine.recruitDisciple('inner');
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(newEngine.isDiscipleUnlocked('inner')).toBe(true);
-    });
-
-    it('loadState 应恢复声望数据', () => {
-      engine.prestige = { currency: 5, count: 2 };
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(newEngine.prestige.currency).toBe(5);
-      expect(newEngine.prestige.count).toBe(2);
-    });
-
-    it('loadState 应恢复统计数据', () => {
-      engine.click();
-      engine.click();
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(newEngine.totalClicks).toBe(2);
-    });
-
-    it('loadState 应恢复 selectedIndex', () => {
-      (engine as any)._selectedIndex = 4;
-      const state = engine.getState();
-      const newEngine = createEngine();
-      newEngine.loadState(state);
-      expect(newEngine.selectedIndex).toBe(4);
-    });
-
-    it('save → load 往返应保持一致', () => {
-      engine.click();
-      addSpiritStones(engine, 5000);
-      engine.recruitDisciple('inner');
-      const data = engine.save();
-      const newEngine = createEngine();
-      newEngine.load(data);
-      expect(newEngine.isDiscipleUnlocked('inner')).toBe(true);
-      expect(newEngine.totalClicks).toBe(1);
-    });
+  it('资源不会变为负数', () => {
+    setResources(engine, { wood: 5 });
+    (engine as any).buyBuilding(); // lumber costs 10, but only 5 wood
+    expect(engine.getResources().wood).toBeGreaterThanOrEqual(0);
   });
 
-  // ==================== 9. 键盘输入 ====================
+  it('快速面板切换不报错', () => {
+    expect(() => {
+      engine.handleKeyDown('t');
+      engine.handleKeyDown('u');
+      engine.handleKeyDown('t');
+      engine.handleKeyDown('Escape');
+    }).not.toThrow();
+  });
+});
 
-  describe('键盘输入', () => {
-    it('空格键应触发点击', () => {
-      engine.handleKeyDown(' ');
-      expect(engine.totalClicks).toBe(1);
-    });
+// ═══════════════════════════════════════════════════════════════
+// 13. 常量详细验证 (7 tests)
+// ═══════════════════════════════════════════════════════════════
 
-    it('ArrowUp 应减少选中建筑索引', () => {
-      (engine as any)._selectedIndex = 3;
-      engine.handleKeyDown('ArrowUp');
-      expect(engine.selectedIndex).toBe(2);
-    });
-
-    it('ArrowUp 不应低于 0', () => {
-      engine.handleKeyDown('ArrowUp');
-      expect(engine.selectedIndex).toBe(0);
-    });
-
-    it('ArrowDown 应增加选中建筑索引', () => {
-      engine.handleKeyDown('ArrowDown');
-      expect(engine.selectedIndex).toBe(1);
-    });
-
-    it('ArrowDown 不应超过建筑数 - 1', () => {
-      (engine as any)._selectedIndex = BUILDINGS.length - 1;
-      engine.handleKeyDown('ArrowDown');
-      expect(engine.selectedIndex).toBe(BUILDINGS.length - 1);
-    });
-
-    it('Enter 应购买选中建筑', () => {
-      addSpiritStones(engine, 100);
-      engine.handleKeyDown('Enter');
-      expect(engine.getBuildingLevel(0)).toBe(1);
-    });
-
-    it('d 键应招募下一个未解锁弟子', () => {
-      addSpiritStones(engine, 5000);
-      engine.handleKeyDown('d');
-      expect(engine.isDiscipleUnlocked('inner')).toBe(true);
-    });
-
-    it('D 键应招募下一个未解锁弟子', () => {
-      addSpiritStones(engine, 5000);
-      engine.handleKeyDown('D');
-      expect(engine.isDiscipleUnlocked('inner')).toBe(true);
-    });
-
-    it('p 键应触发声望', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      engine.handleKeyDown('p');
-      expect(engine.prestige.currency).toBeGreaterThan(0);
-    });
-
-    it('P 键应触发声望', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      engine.handleKeyDown('P');
-      expect(engine.prestige.currency).toBeGreaterThan(0);
-    });
-
-    it('handleKeyUp 不应抛出异常', () => {
-      expect(() => engine.handleKeyUp(' ')).not.toThrow();
-    });
+describe('常量详细验证', () => {
+  it('BUILDINGS 所有建筑有唯一 ID', () => {
+    const ids = BUILDINGS.map(b => b.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
-  // ==================== 10. 渲染 ====================
-
-  describe('渲染', () => {
-    it('onRender 不应抛出异常', () => {
-      const canvas = createCanvas();
-      const ctx = canvas.getContext('2d')!;
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
-
-    it('onRender 点击后不应抛出异常', () => {
-      engine.click();
-      const canvas = createCanvas();
-      const ctx = canvas.getContext('2d')!;
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
-
-    it('onRender 有建筑后不应抛出异常', () => {
-      addSpiritStones(engine, 100);
-      engine.purchaseBuilding(0);
-      const canvas = createCanvas();
-      const ctx = canvas.getContext('2d')!;
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
-
-    it('onRender 有弟子后不应抛出异常', () => {
-      addSpiritStones(engine, 5000);
-      engine.recruitDisciple('inner');
-      const canvas = createCanvas();
-      const ctx = canvas.getContext('2d')!;
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
+  it('DYNASTIES 按顺序排列', () => {
+    for (let i = 0; i < DYNASTIES.length; i++) {
+      expect(DYNASTIES[i].order).toBe(i + 1);
+    }
+    expect(DYNASTIES[0].prerequisiteStageId).toBeNull();
+    for (let i = 1; i < DYNASTIES.length; i++) {
+      expect(DYNASTIES[i].prerequisiteStageId).toBeTruthy();
+    }
   });
 
-  // ==================== 11. 弟子定义验证 ====================
-
-  describe('弟子定义验证', () => {
-    it('所有弟子应有 id', () => {
-      for (const d of DISCIPLES) {
-        expect(d.id).toBeTruthy();
-      }
-    });
-
-    it('所有弟子应有名称', () => {
-      for (const d of DISCIPLES) {
-        expect(d.name).toBeTruthy();
-      }
-    });
-
-    it('所有弟子应有图标', () => {
-      for (const d of DISCIPLES) {
-        expect(d.icon).toBeTruthy();
-      }
-    });
-
-    it('所有弟子应有描述', () => {
-      for (const d of DISCIPLES) {
-        expect(d.description).toBeTruthy();
-      }
-    });
-
-    it('所有弟子应有有效的 bonusType', () => {
-      const validTypes = ['spirit_stone', 'herb', 'artifact', 'reputation', 'all'];
-      for (const d of DISCIPLES) {
-        expect(validTypes).toContain(d.bonusType);
-      }
-    });
-
-    it('所有弟子 bonusValue 应大于 0', () => {
-      for (const d of DISCIPLES) {
-        expect(d.bonusValue).toBeGreaterThan(0);
-      }
-    });
-
-    it('弟子解锁费用应递增', () => {
-      for (let i = 1; i < DISCIPLES.length; i++) {
-        expect(DISCIPLES[i].unlockCost).toBeGreaterThan(DISCIPLES[i - 1].unlockCost);
-      }
-    });
+  it('COLOR_THEME 包含所有必要字段', () => {
+    expect(COLOR_THEME).toHaveProperty('bgGradient1');
+    expect(COLOR_THEME).toHaveProperty('bgGradient2');
+    expect(COLOR_THEME).toHaveProperty('textPrimary');
+    expect(COLOR_THEME).toHaveProperty('textSecondary');
+    expect(COLOR_THEME).toHaveProperty('textDim');
+    expect(COLOR_THEME).toHaveProperty('accentGold');
+    expect(COLOR_THEME).toHaveProperty('accentGreen');
+    expect(COLOR_THEME).toHaveProperty('panelBg');
+    expect(COLOR_THEME).toHaveProperty('selectedBg');
+    expect(COLOR_THEME).toHaveProperty('selectedBorder');
+    expect(COLOR_THEME).toHaveProperty('affordable');
+    expect(COLOR_THEME).toHaveProperty('unaffordable');
   });
 
-  // ==================== 12. 建筑定义验证 ====================
-
-  describe('建筑定义验证', () => {
-    it('所有建筑应有 id', () => {
-      for (const b of BUILDINGS) {
-        expect(b.id).toBeTruthy();
-      }
-    });
-
-    it('所有建筑应有名称', () => {
-      for (const b of BUILDINGS) {
-        expect(b.name).toBeTruthy();
-      }
-    });
-
-    it('所有建筑应有图标', () => {
-      for (const b of BUILDINGS) {
-        expect(b.icon).toBeTruthy();
-      }
-    });
-
-    it('所有建筑应有 costMultiplier > 1', () => {
-      for (const b of BUILDINGS) {
-        expect(b.costMultiplier).toBeGreaterThan(1);
-      }
-    });
-
-    it('所有建筑应有 maxLevel > 0', () => {
-      for (const b of BUILDINGS) {
-        expect(b.maxLevel).toBeGreaterThan(0);
-      }
-    });
-
-    it('所有建筑应有 baseProduction >= 0', () => {
-      for (const b of BUILDINGS) {
-        expect(b.baseProduction).toBeGreaterThanOrEqual(0);
-      }
-    });
-
-    it('所有建筑应有 productionResource', () => {
-      for (const b of BUILDINGS) {
-        expect(b.productionResource).toBeTruthy();
-      }
-    });
+  it('RARITY_COLORS 包含所有稀有度', () => {
+    expect(RARITY_COLORS).toHaveProperty('uncommon');
+    expect(RARITY_COLORS).toHaveProperty('rare');
+    expect(RARITY_COLORS).toHaveProperty('epic');
+    expect(RARITY_COLORS).toHaveProperty('legendary');
   });
 
-  // ==================== 13. 边界条件 ====================
+  it('PRESTIGE_CONFIG 参数正确', () => {
+    expect(PRESTIGE_CONFIG.currencyName).toBe('声望');
+    expect(PRESTIGE_CONFIG.base).toBe(10);
+    expect(PRESTIGE_CONFIG.threshold).toBe(12000);
+    expect(PRESTIGE_CONFIG.bonusMultiplier).toBe(0.12);
+    expect(PRESTIGE_CONFIG.retention).toBe(0.1);
+  });
 
-  describe('边界条件', () => {
-    it('连续点击不应出错', () => {
-      for (let i = 0; i < 100; i++) {
-        engine.click();
-      }
-      expect(engine.totalClicks).toBe(100);
-    });
+  it('INITIALLY_UNLOCKED 包含 lumber', () => {
+    expect(INITIALLY_UNLOCKED).toEqual(['lumber']);
+  });
 
-    it('load 空数据不应崩溃', () => {
-      expect(() => engine.load({} as any)).not.toThrow();
-    });
-
-    it('loadState 空状态不应崩溃', () => {
-      expect(() => engine.loadState({} as any)).not.toThrow();
-    });
-
-    it('isDiscipleUnlocked 不存在的弟子应返回 false', () => {
-      expect(engine.isDiscipleUnlocked('nonexistent')).toBe(false);
-    });
-
-    it('recruitDisciple 不存在的弟子应返回 false', () => {
-      expect(engine.recruitDisciple('nonexistent')).toBe(false);
-    });
-
-    it('getPrestigePreview 计算应正确', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = MIN_PRESTIGE_STONES * 4;
-      const preview = engine.getPrestigePreview();
-      // PRESTIGE_BASE_FORTUNE * sqrt(4) = 1 * 2 = 2
-      expect(preview).toBe(2);
-    });
-
-    it('doPrestige 后 totalPrestigeCount 应增加', () => {
-      (engine as any)._stats.totalSpiritStonesEarned = 50000;
-      engine.doPrestige();
-      const state = engine.getState();
-      expect(state.statistics.totalPrestigeCount).toBe(1);
-    });
+  it('CLICK_REWARD 为 { wood: 1 }', () => {
+    expect(CLICK_REWARD).toEqual({ wood: 1 });
   });
 });

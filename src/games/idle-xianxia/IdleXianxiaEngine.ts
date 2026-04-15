@@ -1,1287 +1,570 @@
 /**
- * 挂机修仙·凡人篇 (Idle Xianxia) 放置类游戏引擎
+ * 修仙放置游戏 (Idle Xianxia) — 主引擎 v3.0
  *
- * 继承 IdleGameEngine，核心玩法：
- * - 点击/打坐获得灵气
- * - 境界修炼 + 突破系统（8大境界）
- * - 修炼建筑（灵气池、灵石矿、炼丹炉、洞府、灵兽园、仙缘阁）
- * - 声望系统（重置获得道韵，永久加成）
- * - 离线收益
- * - 自动存档/读档
- * - 水墨国风画面（黑/白/淡青/金色）
+ * 基于统一子系统架构，继承 IdleGameEngine 基类。
+ * 使用子系统：BuildingSystem, PrestigeSystem, UnitSystem,
+ * StageSystem, TechTreeSystem, FloatingTextSystem,
+ * ParticleSystem, StatisticsTracker, UnlockChecker, InputHandler。
  */
 import { IdleGameEngine } from '@/engines/idle/IdleGameEngine';
-import type { SaveData } from '@/types/idle';
+import { BuildingSystem } from '@/engines/idle/modules/BuildingSystem';
+import { PrestigeSystem } from '@/engines/idle/modules/PrestigeSystem';
+import { UnitSystem } from '@/engines/idle/modules/UnitSystem';
+import { StageSystem } from '@/engines/idle/modules/StageSystem';
+import { TechTreeSystem } from '@/engines/idle/modules/TechTreeSystem';
+import { FloatingTextSystem } from '@/engines/idle/modules/FloatingTextSystem';
+import { ParticleSystem } from '@/engines/idle/modules/ParticleSystem';
+import { StatisticsTracker } from '@/engines/idle/modules/StatisticsTracker';
+import { UnlockChecker } from '@/engines/idle/modules/UnlockChecker';
+import { InputHandler } from '@/engines/idle/modules/InputHandler';
 import {
-  CANVAS_WIDTH,
-  CANVAS_HEIGHT,
-  SPIRIT_PER_CLICK,
-  RESOURCE_IDS,
-  BUILDING_IDS,
-  BUILDINGS,
-  REALMS,
-  REALM_IDS,
-  PRESTIGE_MULTIPLIER,
-  MIN_PRESTIGE_SPIRIT,
-  COLORS,
-  UPGRADE_PANEL,
-  RESOURCE_ICONS,
-  RESOURCE_NAMES,
-  MEDITATION,
-  ANIMATION,
-  type RealmDef,
-  type BuildingDef,
+  GAME_ID, GAME_TITLE, BUILDINGS, HEROES, DYNASTIES, INVENTIONS,
+  PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
+  INITIAL_RESOURCES, INITIALLY_UNLOCKED, CLICK_REWARD,
+  type HeroDef,
 } from './constants';
+import type { BuildingDef } from '@/engines/idle/modules/BuildingSystem';
+import type { StageDef } from '@/engines/idle/modules/StageSystem';
+import type { TechDef } from '@/engines/idle/modules/TechTreeSystem';
 
-// ========== 游戏状态接口 ==========
+// ═══════════════════════════════════════════════════════════════
+// 类型
+// ═══════════════════════════════════════════════════════════════
 
-/** 灵气粒子 */
-interface SpiritParticle {
-  x: number;
-  y: number;
-  speed: number;
-  size: number;
-  opacity: number;
-  angle: number;
+type ActivePanel = 'none' | 'prestige' | 'tech' | 'officials';
+
+export interface IdleXianxiaSaveState {
+  resources: Record<string, number>;
+  buildings: Record<string, number>;
+  heroes: Record<string, { level: number; exp: number }>;
+  researchedTechs: string[];
+  currentStage: string;
+  prestigeState: { currency: number; count: number };
+  gameStats: string;
+  totalPlayTime: number;
 }
 
-/** 飘字效果 */
-interface FloatingText {
-  text: string;
-  x: number;
-  y: number;
-  life: number;
-  maxLife: number;
-  color: string;
-}
-
-/** 云雾粒子 */
-interface CloudParticle {
-  x: number;
-  y: number;
-  speed: number;
-  width: number;
-  opacity: number;
-}
-
-/** 场景灵兽 */
-interface SceneBeast {
-  x: number;
-  y: number;
-  targetX: number;
-  direction: number;
-  idle: boolean;
-  walkTimer: number;
-  type: number; // 0=鹤, 1=鹿, 2=龟
-}
-
-/** 突破结果 */
-export interface BreakthroughResult {
-  success: boolean;
-  realmFrom: string;
-  realmTo: string;
-  resourcesLost: Record<string, number>;
-  message: string;
-}
-
-/** 游戏完整状态 */
-export interface IdleXianxiaState {
-  [key: string]: unknown;
-  resources: Record<string, { amount: number; unlocked: boolean }>;
-  upgrades: Record<string, number>;
-  prestige: { currency: number; count: number };
-  statistics: Record<string, number>;
-  currentRealmIndex: number;
-  totalSpiritEarned: number;
-  totalClicks: number;
-  totalBreakthroughs: number;
-  meditationActive: boolean;
-  meditationEndTime: number;
-  meditationCooldownEnd: number;
-  selectedBuildingIndex: number;
-}
+// ═══════════════════════════════════════════════════════════════
+// 引擎
+// ═══════════════════════════════════════════════════════════════
 
 export class IdleXianxiaEngine extends IdleGameEngine {
-  // ========== 游戏状态 ==========
+  protected _gameId = GAME_ID;
 
-  protected _gameId = 'idle-xianxia';
+  // 子系统
+  private bldg!: BuildingSystem<BuildingDef>;
+  private prest!: PrestigeSystem;
+  private units!: UnitSystem;
+  private stages!: StageSystem<StageDef>;
+  private techs!: TechTreeSystem<TechDef>;
+  private ftSys!: FloatingTextSystem;
+  private ptSys!: ParticleSystem;
+  private stats!: StatisticsTracker;
+  private unlock!: UnlockChecker;
+  private input!: InputHandler;
 
-  /** 当前境界索引 */
-  private _currentRealmIndex: number = 0;
-  /** 累计灵气获得 */
-  private _totalSpiritEarned: number = 0;
-  /** 累计点击次数 */
-  private _totalClicks: number = 0;
-  /** 累计突破次数 */
-  private _totalBreakthroughs: number = 0;
-  /** 当前选中建筑索引 */
-  private _selectedBuildingIndex: number = 0;
+  // 状态
+  private res: Record<string, number> = {};
+  private psCache: Record<string, number> = {};
+  private panel: ActivePanel = 'none';
+  private selIdx = 0;
+  private scroll = 0;
+  private playTime = 0;
 
-  // ========== 打坐状态 ==========
-
-  /** 是否正在打坐 */
-  private _meditationActive: boolean = false;
-  /** 打坐结束时间 */
-  private _meditationEndTime: number = 0;
-  /** 打坐冷却结束时间 */
-  private _meditationCooldownEnd: number = 0;
-
-  // ========== 动画状态 ==========
-
-  /** 飘字效果列表 */
-  private _floatingTexts: FloatingText[] = [];
-  /** 灵气粒子 */
-  private _spiritParticles: SpiritParticle[] = [];
-  /** 云雾粒子 */
-  private _cloudParticles: CloudParticle[] = [];
-  /** 场景灵兽 */
-  private _sceneBeasts: SceneBeast[] = [];
-  /** 点击缩放动画 */
-  private _clickScale: number = 1;
-  /** 点击动画计时器 */
-  private _clickAnimTimer: number = 0;
-  /** 全局动画计时 */
-  private _animTimer: number = 0;
-  /** 突破光效计时 */
-  private _breakthroughTimer: number = 0;
-  /** 突破成功标记 */
-  private _breakthroughSuccess: boolean = false;
-
-  // ========== 公开属性 ==========
-
-  get currentRealmIndex(): number {
-    return this._currentRealmIndex;
-  }
-
-  get currentRealm(): RealmDef {
-    return REALMS[this._currentRealmIndex];
-  }
-
-  get totalSpiritEarned(): number {
-    return this._totalSpiritEarned;
-  }
-
-  get totalClicks(): number {
-    return this._totalClicks;
-  }
-
-  get totalBreakthroughs(): number {
-    return this._totalBreakthroughs;
-  }
-
-  get meditationActive(): boolean {
-    return this._meditationActive;
-  }
-
-  get meditationOnCooldown(): boolean {
-    return Date.now() < this._meditationCooldownEnd;
-  }
-
-  get selectedBuildingIndex(): number {
-    return this._selectedBuildingIndex;
-  }
-
-  // ========== 生命周期 ==========
+  // ─── 生命周期 ───────────────────────────────────────────
 
   protected onInit(): void {
     super.onInit();
+    this.res = { ...INITIAL_RESOURCES };
 
-    // 初始化资源
-    this.initializeResources([
-      {
-        id: RESOURCE_IDS.SPIRIT,
-        name: '灵气',
-        amount: 0,
-        perSecond: 0,
-        maxAmount: Infinity,
-        unlocked: true,
-      },
-      {
-        id: RESOURCE_IDS.STONE,
-        name: '灵石',
-        amount: 0,
-        perSecond: 0,
-        maxAmount: Infinity,
-        unlocked: false,
-      },
-      {
-        id: RESOURCE_IDS.PILL,
-        name: '丹药',
-        amount: 0,
-        perSecond: 0,
-        maxAmount: Infinity,
-        unlocked: false,
-      },
-      {
-        id: RESOURCE_IDS.FATE,
-        name: '仙缘',
-        amount: 0,
-        perSecond: 0,
-        maxAmount: Infinity,
-        unlocked: false,
-      },
-    ]);
+    this.bldg = new BuildingSystem<BuildingDef>({ initiallyUnlocked: INITIALLY_UNLOCKED });
+    this.bldg.register(BUILDINGS);
 
-    // 初始化建筑（升级）
-    this.initializeUpgrades(
-      BUILDINGS.map((b) => ({
-        id: b.id,
-        name: b.name,
-        description: b.description,
-        baseCost: b.baseCost,
-        costMultiplier: b.costMultiplier,
-        level: 0,
-        maxLevel: b.maxLevel,
-        effect: {
-          type: 'add_production',
-          target: b.productionResource,
-          value: b.baseProduction,
-        },
-        unlocked: b.unlockRealmIndex === 0,
-        icon: b.icon,
-      }))
-    );
+    this.prest = new PrestigeSystem(PRESTIGE_CONFIG);
+    this.units = new UnitSystem(this.toUnitDefs());
+    this.stages = new StageSystem<StageDef>(DYNASTIES, 'qi_refining');
+    this.techs = new TechTreeSystem<TechDef>(INVENTIONS);
+    this.ftSys = new FloatingTextSystem();
+    this.ptSys = new ParticleSystem();
+    this.stats = new StatisticsTracker(this.makeStatDefs());
+    this.unlock = new UnlockChecker();
+    this.input = new InputHandler({
+      bindings: [
+        { key: 't', action: 'custom', actionId: 'toggle_tech' },
+        { key: 'T', action: 'custom', actionId: 'toggle_tech' },
+        { key: 'u', action: 'custom', actionId: 'toggle_heroes' },
+        { key: 'U', action: 'custom', actionId: 'toggle_heroes' },
+      ],
+    });
+    this.bindInput();
 
-    // 重置游戏状态
-    this._currentRealmIndex = 0;
-    this._totalSpiritEarned = 0;
-    this._totalClicks = 0;
-    this._totalBreakthroughs = 0;
-    this._selectedBuildingIndex = 0;
-    this._meditationActive = false;
-    this._meditationEndTime = 0;
-    this._meditationCooldownEnd = 0;
-
-    // 重置动画状态
-    this._floatingTexts = [];
-    this._spiritParticles = [];
-    this._cloudParticles = [];
-    this._sceneBeasts = [];
-    this._clickScale = 1;
-    this._clickAnimTimer = 0;
-    this._animTimer = 0;
-    this._breakthroughTimer = 0;
-    this._breakthroughSuccess = false;
-
-    // 初始化粒子
-    this.initSpiritParticles();
-    this.initCloudParticles();
-    this.initSceneBeasts();
+    this.panel = 'none';
+    this.selIdx = 0;
+    this.scroll = 0;
+    this.playTime = 0;
+    this.psCache = {};
+    this.emit('stateChange');
   }
 
   protected onStart(): void {
-    this.loadFromStorage();
+    // 基类自动处理
   }
 
-  protected onUpdate(deltaTime: number): void {
-    this.updateAnimations(deltaTime);
-    this.updateMeditation();
-    this.checkBuildingUnlocks();
-    this.checkResourceUnlocks();
+  // ─── 更新 ───────────────────────────────────────────────
+
+  protected onUpdate(dt: number): void {
+    const sec = dt / 1000;
+    this.playTime += sec;
+
+    // 全局倍率
+    const sMult = this.stages.getMultiplier('production');
+    const pMult = this.prest.getMultiplier();
+    const tMult = this.techMult();
+    const gMult = sMult * pMult * tMult;
+
+    // 建筑产出
+    const prod = this.bldg.getTotalProduction();
+    this.psCache = {};
+    for (const [r, rate] of Object.entries(prod)) {
+      if (rate > 0) {
+        const adj = rate * gMult;
+        this.psCache[r] = adj;
+        this.giveRes(r, adj * sec);
+      }
+    }
+
+    // 子系统更新
+    this.techs.update(dt);
+    this.ftSys.update(dt);
+    this.ptSys.update(dt);
+
+    // 阶段检查
+    this.checkStage();
+    this.checkUnlocks();
   }
 
-  // ========== 核心逻辑：点击 ==========
+  // ─── 渲染 ───────────────────────────────────────────────
 
-  /**
-   * 点击获得灵气
-   * @returns 本次获得的灵气数
-   */
-  click(): number {
-    if (this._status !== 'playing') return 0;
+  protected onRender(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    this.drawBg(ctx, w, h);
+    this.drawHeader(ctx, w);
+    this.drawResBar(ctx, w);
 
-    const clickPower = this.getClickPower();
-    this.addResource(RESOURCE_IDS.SPIRIT, clickPower);
-    this._totalSpiritEarned += clickPower;
-    this._totalClicks++;
-    this.addScore(clickPower);
+    const cy = 100, ch = h - 145;
+    switch (this.panel) {
+      case 'none': this.drawBuildings(ctx, w, cy, ch); break;
+      case 'prestige': this.drawPrestige(ctx, w, cy, ch); break;
+      case 'tech': this.drawTech(ctx, w, cy, ch); break;
+      case 'officials': this.drawHeroes(ctx, w, cy, ch); break;
+    }
 
-    // 触发点击动画
-    this._clickScale = 1.2;
-    this._clickAnimTimer = 200;
+    this.drawFooter(ctx, w, h);
+    this.ftSys.render(ctx);
+    this.ptSys.render(ctx);
+  }
 
-    // 飘字效果
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 40 + Math.random() * 30;
-    this._floatingTexts.push({
-      text: `+${this.formatNumber(clickPower)}`,
-      x: 240 + Math.cos(angle) * dist,
-      y: 200 + Math.sin(angle) * dist,
-      life: ANIMATION.floatingTextDuration,
-      maxLife: ANIMATION.floatingTextDuration,
-      color: COLORS.spiritColor,
+  // ─── 输入 ───────────────────────────────────────────────
+
+  public handleKeyDown(key: string): void {
+    this.input.handleKeyDown(key);
+  }
+
+  private bindInput(): void {
+    this.input.on('click', () => this.doClick());
+    this.input.on('select_down', () => {
+      const n = this.bldg.getUnlockedBuildings().length;
+      this.selIdx = Math.min(this.selIdx + 1, n - 1);
     });
-
-    this.emit('stateChange');
-    return clickPower;
-  }
-
-  /**
-   * 获取当前点击力量
-   */
-  getClickPower(): number {
-    let power = SPIRIT_PER_CLICK;
-
-    // 洞府加成
-    const caveLevel = this.getBuildingLevel(BUILDING_IDS.CAVE_DWELLING);
-    power += caveLevel * 0.3;
-
-    // 境界加成（每级 +0.5）
-    power += this._currentRealmIndex * 0.5;
-
-    // 声望加成
-    power *= 1 + this.prestige.currency * PRESTIGE_MULTIPLIER;
-
-    return power;
-  }
-
-  // ========== 核心逻辑：打坐 ==========
-
-  /**
-   * 开始打坐（持续获得灵气倍率加成）
-   */
-  startMeditation(): boolean {
-    if (this._status !== 'playing') return false;
-    if (this._meditationActive) return false;
-    if (this.meditationOnCooldown) return false;
-
-    this._meditationActive = true;
-    this._meditationEndTime = Date.now() + MEDITATION.duration;
-
-    this.emit('meditationStart');
-    this.emit('stateChange');
-    return true;
-  }
-
-  /**
-   * 更新打坐状态
-   */
-  private updateMeditation(): void {
-    if (!this._meditationActive) return;
-
-    if (Date.now() >= this._meditationEndTime) {
-      this._meditationActive = false;
-      this._meditationCooldownEnd = Date.now() + MEDITATION.cooldown;
-      this.emit('meditationEnd');
-    } else {
-      // 打坐期间持续产出灵气
-      const medProd = this.getClickPower() * MEDITATION.multiplier / 10;
-      this.addResource(RESOURCE_IDS.SPIRIT, medProd);
-      this._totalSpiritEarned += medProd;
-    }
-  }
-
-  // ========== 核心逻辑：境界突破 ==========
-
-  /**
-   * 尝试突破到下一境界
-   */
-  attemptBreakthrough(): BreakthroughResult {
-    if (this._status !== 'playing') {
-      return this.failResult('当前状态不可突破');
-    }
-
-    const nextIndex = this._currentRealmIndex + 1;
-    if (nextIndex >= REALMS.length) {
-      return this.failResult('已达最高境界');
-    }
-
-    const nextRealm = REALMS[nextIndex];
-    const cost = nextRealm.cost;
-
-    // 检查资源
-    if (!this.canAfford(cost)) {
-      return this.failResult('资源不足，无法突破');
-    }
-
-    // 计算成功率
-    const successRate = this.getBreakthroughRate(nextRealm);
-
-    // 扣除资源
-    for (const [id, amount] of Object.entries(cost)) {
-      this.spendResource(id, amount);
-    }
-
-    // 判定成功
-    const roll = Math.random();
-    if (roll < successRate) {
-      // 突破成功
-      this._currentRealmIndex = nextIndex;
-      this._totalBreakthroughs++;
-      this.setLevel(this._currentRealmIndex + 1);
-
-      // 突破光效
-      this._breakthroughTimer = ANIMATION.breakthroughDuration;
-      this._breakthroughSuccess = true;
-
-      // 突破奖励灵气
-      const bonus = Math.floor(nextIndex * 100 * (1 + this.prestige.currency * PRESTIGE_MULTIPLIER));
-      this.addResource(RESOURCE_IDS.SPIRIT, bonus);
-      this._totalSpiritEarned += bonus;
-
-      this.emit('breakthrough', { success: true, realm: nextRealm.name });
-      this.emit('stateChange');
-
-      return {
-        success: true,
-        realmFrom: REALMS[nextIndex - 1].name,
-        realmTo: nextRealm.name,
-        resourcesLost: cost,
-        message: `突破成功！踏入${nextRealm.name}境！`,
-      };
-    } else {
-      // 突破失败，损失部分灵气
-      const lost: Record<string, number> = {};
-      const spiritResource = this.getResource(RESOURCE_IDS.SPIRIT);
-      if (spiritResource) {
-        const lossAmount = Math.floor(spiritResource.amount * nextRealm.failLossRate);
-        if (lossAmount > 0) {
-          this.spendResource(RESOURCE_IDS.SPIRIT, lossAmount);
-          lost[RESOURCE_IDS.SPIRIT] = lossAmount;
-        }
-      }
-
-      this._breakthroughTimer = ANIMATION.breakthroughDuration;
-      this._breakthroughSuccess = false;
-
-      this.emit('breakthrough', { success: false, realm: nextRealm.name });
-      this.emit('stateChange');
-
-      return {
-        success: false,
-        realmFrom: REALMS[this._currentRealmIndex].name,
-        realmTo: nextRealm.name,
-        resourcesLost: lost,
-        message: `突破失败！${nextRealm.name}境机缘未到…`,
-      };
-    }
-  }
-
-  /**
-   * 计算突破成功率
-   */
-  getBreakthroughRate(realm: RealmDef): number {
-    let rate = realm.baseSuccessRate;
-
-    // 丹药加成（每颗丹药 +2%，最多 +30%）
-    const pillAmount = this.getResource(RESOURCE_IDS.PILL)?.amount || 0;
-    const pillBonus = Math.min(pillAmount * 0.02, 0.3);
-    rate += pillBonus;
-
-    // 洞府加成（每级 +1%）
-    const caveLevel = this.getBuildingLevel(BUILDING_IDS.CAVE_DWELLING);
-    rate += caveLevel * 0.01;
-
-    // 声望加成
-    rate += this.prestige.currency * PRESTIGE_MULTIPLIER * 0.1;
-
-    // 上限 95%
-    return Math.min(rate, 0.95);
-  }
-
-  /**
-   * 检查是否可以尝试突破
-   */
-  canAttemptBreakthrough(): boolean {
-    const nextIndex = this._currentRealmIndex + 1;
-    if (nextIndex >= REALMS.length) return false;
-    return this.canAfford(REALMS[nextIndex].cost);
-  }
-
-  /**
-   * 获取下一境界信息
-   */
-  getNextRealm(): RealmDef | null {
-    const nextIndex = this._currentRealmIndex + 1;
-    return nextIndex < REALMS.length ? REALMS[nextIndex] : null;
-  }
-
-  private failResult(message: string): BreakthroughResult {
-    return {
-      success: false,
-      realmFrom: this.currentRealm.name,
-      realmTo: '',
-      resourcesLost: {},
-      message,
-    };
-  }
-
-  // ========== 核心逻辑：建筑 ==========
-
-  getBuildingCost(buildingId: string): Record<string, number> {
-    return this.getUpgradeCost(buildingId);
-  }
-
-  purchaseBuilding(buildingId: string): boolean {
-    return this.purchaseUpgrade(buildingId);
-  }
-
-  buyBuildingByIndex(index: number): boolean {
-    if (index < 0 || index >= BUILDINGS.length) return false;
-    return this.purchaseBuilding(BUILDINGS[index].id);
-  }
-
-  getBuildingLevel(buildingId: string): number {
-    const upgrade = this.upgrades.get(buildingId);
-    return upgrade ? upgrade.level : 0;
-  }
-
-  // ========== 产出计算 ==========
-
-  /**
-   * 计算总产出倍率
-   */
-  getProductionMultiplier(): number {
-    let multiplier = 1;
-
-    // 洞府加成
-    const caveLevel = this.getBuildingLevel(BUILDING_IDS.CAVE_DWELLING);
-    multiplier += caveLevel * 0.05;
-
-    // 灵兽园加成
-    const beastLevel = this.getBuildingLevel(BUILDING_IDS.BEAST_GARDEN);
-    multiplier += beastLevel * 0.08;
-
-    // 境界加成（每级 +10%）
-    multiplier += this._currentRealmIndex * 0.1;
-
-    // 声望加成
-    multiplier += this.prestige.currency * PRESTIGE_MULTIPLIER;
-
-    return multiplier;
-  }
-
-  /**
-   * 获取实际每秒产出（含加成）
-   */
-  getEffectiveProduction(resourceId: string): number {
-    const resource = this.getResource(resourceId);
-    if (!resource) return 0;
-    return resource.perSecond * this.getProductionMultiplier();
-  }
-
-  // ========== 声望系统 ==========
-
-  /**
-   * 计算声望重置可获得的道韵数
-   */
-  calculatePrestigeDaoRhyme(): number {
-    const spirit = this.getResource(RESOURCE_IDS.SPIRIT);
-    if (!spirit || spirit.amount < MIN_PRESTIGE_SPIRIT) return 0;
-    return Math.floor(Math.sqrt(spirit.amount / MIN_PRESTIGE_SPIRIT));
-  }
-
-  /**
-   * 执行声望重置（使用 doPrestige 避免与基类 prestige 属性冲突）
-   */
-  doPrestige(): boolean {
-    const daoRhyme = this.calculatePrestigeDaoRhyme();
-    if (daoRhyme <= 0) return false;
-
-    // 保存声望数据
-    const prestigeData = { currency: this.prestige.currency + daoRhyme, count: this.prestige.count + 1 };
-    const totalBreakthroughs = this._totalBreakthroughs;
-
-    // 重置游戏
-    this.onInit();
-
-    // 恢复声望数据
-    this.prestige = prestigeData;
-    this._totalBreakthroughs = totalBreakthroughs;
-
-    // 重新计算产出
-    this.recalculateProduction();
-
-    // 给予初始道韵奖励（以仙缘体现）
-    this.addResource(RESOURCE_IDS.FATE, daoRhyme);
-
-    this.emit('prestigeReset', daoRhyme);
-    this.emit('stateChange');
-    return true;
-  }
-
-  // ========== 重新计算产出 ==========
-
-  protected recalculateProduction(): void {
-    for (const r of this.resources.values()) {
-      r.perSecond = 0;
-    }
-
-    for (const building of BUILDINGS) {
-      const upgrade = this.upgrades.get(building.id);
-      if (upgrade && upgrade.level > 0) {
-        const resource = this.resources.get(building.productionResource);
-        if (resource) {
-          resource.perSecond += building.baseProduction * upgrade.level;
-        }
-      }
-    }
-  }
-
-  // ========== 存档系统 ==========
-
-  save(): SaveData {
-    const data = super.save();
-    data.statistics = {
-      ...this.statistics,
-      totalSpiritEarned: this._totalSpiritEarned,
-      totalClicks: this._totalClicks,
-      totalBreakthroughs: this._totalBreakthroughs,
-      currentRealmIndex: this._currentRealmIndex,
-      meditationActive: this._meditationActive ? 1 : 0,
-      meditationEndTime: this._meditationEndTime,
-      meditationCooldownEnd: this._meditationCooldownEnd,
-    };
-    return data;
-  }
-
-  load(data: SaveData): void {
-    super.load(data);
-    this._totalSpiritEarned = (data.statistics?.totalSpiritEarned as number) || 0;
-    this._totalClicks = (data.statistics?.totalClicks as number) || 0;
-    this._totalBreakthroughs = (data.statistics?.totalBreakthroughs as number) || 0;
-    this._currentRealmIndex = (data.statistics?.currentRealmIndex as number) || 0;
-    this._meditationActive = ((data.statistics?.meditationActive as number) || 0) === 1;
-    this._meditationEndTime = (data.statistics?.meditationEndTime as number) || 0;
-    this._meditationCooldownEnd = (data.statistics?.meditationCooldownEnd as number) || 0;
-    this.setLevel(this._currentRealmIndex + 1);
-    this.recalculateProduction();
-  }
-
-  getState(): IdleXianxiaState {
-    const base = super.getState();
-    return {
-      resources: (base.resources as Record<string, { amount: number; unlocked: boolean }>) ?? {},
-      upgrades: (base.upgrades as Record<string, number>) ?? {},
-      prestige: { ...this.prestige },
-      statistics: (base.statistics as Record<string, number>) ?? {},
-      currentRealmIndex: this._currentRealmIndex,
-      totalSpiritEarned: this._totalSpiritEarned,
-      totalClicks: this._totalClicks,
-      totalBreakthroughs: this._totalBreakthroughs,
-      meditationActive: this._meditationActive,
-      meditationEndTime: this._meditationEndTime,
-      meditationCooldownEnd: this._meditationCooldownEnd,
-      selectedBuildingIndex: this._selectedBuildingIndex,
-    };
-  }
-
-  loadState(state: IdleXianxiaState): void {
-    if (state.resources) {
-      for (const [id, data] of Object.entries(state.resources)) {
-        const resource = this.resources.get(id);
-        if (resource) {
-          resource.amount = data.amount;
-          resource.unlocked = data.unlocked;
-        }
-      }
-    }
-    if (state.upgrades) {
-      for (const [id, value] of Object.entries(state.upgrades)) {
-        const upgrade = this.upgrades.get(id);
-        if (upgrade) {
-          // Handle both number (level only) and object ({ level, unlocked }) formats
-          if (typeof value === 'number') {
-            upgrade.level = value;
-          } else if (value && typeof value === 'object' && 'level' in value) {
-            upgrade.level = (value as { level: number }).level;
-            if ('unlocked' in value) upgrade.unlocked = (value as { unlocked: boolean }).unlocked;
-          }
-        }
-      }
-    }
-    if (state.prestige) this.prestige = { ...state.prestige };
-    this._currentRealmIndex = state.currentRealmIndex || 0;
-    this._totalSpiritEarned = state.totalSpiritEarned || 0;
-    this._totalClicks = state.totalClicks || 0;
-    this._totalBreakthroughs = state.totalBreakthroughs || 0;
-    this._meditationActive = state.meditationActive || false;
-    this._meditationEndTime = state.meditationEndTime || 0;
-    this._meditationCooldownEnd = state.meditationCooldownEnd || 0;
-    this._selectedBuildingIndex = state.selectedBuildingIndex || 0;
-    this.setLevel(this._currentRealmIndex + 1);
-    this.recalculateProduction();
-    this.emit('stateChange');
-  }
-
-  // ========== 自动检查 ==========
-
-  private checkBuildingUnlocks(): void {
-    for (const building of BUILDINGS) {
-      const upgrade = this.upgrades.get(building.id);
-      if (upgrade && !upgrade.unlocked) {
-        if (this._currentRealmIndex >= building.unlockRealmIndex) {
-          upgrade.unlocked = true;
-          this.emit('buildingUnlocked', building.id);
-        }
-      }
-    }
-  }
-
-  private checkResourceUnlocks(): void {
-    // 灵石：筑基后解锁
-    if (this._currentRealmIndex >= 1) {
-      const stone = this.getResource(RESOURCE_IDS.STONE);
-      if (stone && !stone.unlocked) {
-        stone.unlocked = true;
-        this.emit('resourceUnlocked', RESOURCE_IDS.STONE);
-      }
-    }
-
-    // 丹药：金丹后解锁
-    if (this._currentRealmIndex >= 2) {
-      const pill = this.getResource(RESOURCE_IDS.PILL);
-      if (pill && !pill.unlocked) {
-        pill.unlocked = true;
-        this.emit('resourceUnlocked', RESOURCE_IDS.PILL);
-      }
-    }
-
-    // 仙缘：化神后解锁 或 声望后解锁
-    if (this._currentRealmIndex >= 4 || this.prestige.count > 0) {
-      const fate = this.getResource(RESOURCE_IDS.FATE);
-      if (fate && !fate.unlocked) {
-        fate.unlocked = true;
-        this.emit('resourceUnlocked', RESOURCE_IDS.FATE);
-      }
-    }
-  }
-
-  // ========== 动画系统 ==========
-
-  private initSpiritParticles(): void {
-    this._spiritParticles = [];
-    for (let i = 0; i < ANIMATION.spiritParticleCount; i++) {
-      this._spiritParticles.push({
-        x: Math.random() * CANVAS_WIDTH,
-        y: 100 + Math.random() * 200,
-        speed: 10 + Math.random() * 20,
-        size: 1 + Math.random() * 2,
-        opacity: 0.2 + Math.random() * 0.4,
-        angle: Math.random() * Math.PI * 2,
-      });
-    }
-  }
-
-  private initCloudParticles(): void {
-    this._cloudParticles = [];
-    for (let i = 0; i < ANIMATION.cloudCount; i++) {
-      this._cloudParticles.push({
-        x: Math.random() * CANVAS_WIDTH,
-        y: 60 + Math.random() * 120,
-        speed: 3 + Math.random() * 8,
-        width: 60 + Math.random() * 100,
-        opacity: 0.03 + Math.random() * 0.06,
-      });
-    }
-  }
-
-  private initSceneBeasts(): void {
-    this._sceneBeasts = [];
-    for (let i = 0; i < 2; i++) {
-      this._sceneBeasts.push({
-        x: 80 + Math.random() * 320,
-        y: 210 + Math.random() * 40,
-        targetX: 80 + Math.random() * 320,
-        direction: Math.random() > 0.5 ? 1 : -1,
-        idle: Math.random() > 0.5,
-        walkTimer: 0,
-        type: i % 3,
-      });
-    }
-  }
-
-  private updateAnimations(deltaTime: number): void {
-    this._animTimer += deltaTime;
-
-    // 点击动画
-    if (this._clickAnimTimer > 0) {
-      this._clickAnimTimer -= deltaTime;
-      if (this._clickAnimTimer <= 0) {
-        this._clickScale = 1;
-        this._clickAnimTimer = 0;
-      } else {
-        this._clickScale = 1 + 0.2 * (this._clickAnimTimer / 200);
-      }
-    }
-
-    // 突破光效
-    if (this._breakthroughTimer > 0) {
-      this._breakthroughTimer -= deltaTime;
-      if (this._breakthroughTimer < 0) this._breakthroughTimer = 0;
-    }
-
-    // 飘字更新
-    this._floatingTexts = this._floatingTexts.filter((ft) => {
-      ft.life -= deltaTime;
-      ft.y -= deltaTime * 0.03;
-      return ft.life > 0;
+    this.input.on('select_up', () => {
+      this.selIdx = Math.max(this.selIdx - 1, 0);
     });
-
-    // 灵气粒子飘动
-    for (const p of this._spiritParticles) {
-      p.angle += deltaTime * 0.001;
-      p.y -= (p.speed * deltaTime) / 1000;
-      p.x += Math.sin(p.angle) * 0.3;
-      if (p.y < 50) {
-        p.y = 300;
-        p.x = Math.random() * CANVAS_WIDTH;
-      }
-    }
-
-    // 云雾飘动
-    for (const c of this._cloudParticles) {
-      c.x += (c.speed * deltaTime) / 1000;
-      if (c.x > CANVAS_WIDTH + c.width) {
-        c.x = -c.width;
-        c.y = 60 + Math.random() * 120;
-      }
-    }
-
-    // 灵兽行走
-    for (const beast of this._sceneBeasts) {
-      beast.walkTimer += deltaTime;
-      if (beast.idle) {
-        if (beast.walkTimer > 3000 + Math.random() * 4000) {
-          beast.idle = false;
-          beast.walkTimer = 0;
-          beast.targetX = 60 + Math.random() * 360;
-          beast.direction = beast.targetX > beast.x ? 1 : -1;
-        }
-      } else {
-        const dx = beast.targetX - beast.x;
-        const step = (15 * deltaTime) / 1000;
-        if (Math.abs(dx) < step) {
-          beast.x = beast.targetX;
-          beast.idle = true;
-          beast.walkTimer = 0;
-        } else {
-          beast.x += Math.sign(dx) * step;
-        }
-      }
-    }
+    this.input.on('confirm', () => this.buyBuilding());
+    this.input.on('prestige', () => this.toggle('prestige'));
+    this.input.on('cancel', () => { this.panel = 'none'; });
+    this.input.on('custom', (e) => {
+      const map: Record<string, ActivePanel> = {
+        toggle_tech: 'tech',
+        toggle_heroes: 'officials',
+      };
+      const p = map[e.actionId as string || ''];
+      if (p) this.toggle(p);
+    });
   }
 
-  // ========== 渲染 ==========
+  // ─── 序列化 ─────────────────────────────────────────────
 
-  onRender(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    this.drawBackground(ctx, w, h);
-    this.drawMountains(ctx, w);
-    this.drawClouds(ctx, w);
-    this.drawSpiritParticles(ctx);
-    this.drawSceneBeasts(ctx);
-    this.drawBreakthroughEffect(ctx, w, h);
-    this.drawFloatingTexts(ctx);
-    this.drawInfoPanel(ctx, w);
-    this.drawRealmPanel(ctx, w);
-    this.drawBuildingList(ctx, w, h);
-    this.drawBottomHint(ctx, w, h);
+  public serialize(): IdleXianxiaSaveState {
+    const heroSave: Record<string, { level: number; exp: number }> = {};
+    for (const h of HEROES) {
+      const s = this.units.getState(h.id);
+      if (s?.unlocked) heroSave[h.id] = { level: s.level, exp: s.exp };
+    }
+    return {
+      resources: { ...this.res },
+      buildings: this.bldg.saveState(),
+      heroes: heroSave,
+      researchedTechs: (this.techs.saveState().researched as string[]) || [],
+      currentStage: this.stages.getCurrentId(),
+      prestigeState: { currency: this.prest.getState().currency, count: this.prest.getState().count },
+      gameStats: this.stats.serialize(),
+      totalPlayTime: this.playTime,
+    };
   }
 
-  private drawBackground(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const gradient = ctx.createLinearGradient(0, 0, 0, h);
-    gradient.addColorStop(0, COLORS.bgGradient1);
-    gradient.addColorStop(0.5, COLORS.bgGradient2);
-    gradient.addColorStop(1, COLORS.bgGradient1);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, w, h);
-
-    // 星辰点缀
-    ctx.globalAlpha = 0.15;
-    ctx.fillStyle = COLORS.paperWhite;
-    for (let i = 0; i < 20; i++) {
-      const x = ((i * 73 + 17) % w);
-      const y = ((i * 47 + 13) % 160);
-      const r = 0.5 + (i % 3) * 0.5;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
+  public deserialize(d: IdleXianxiaSaveState): void {
+    this.res = { ...d.resources };
+    this.bldg.loadState(d.buildings);
+    for (const [id, o] of Object.entries(d.heroes)) {
+      this.units.loadState({ [id]: { defId: id, level: o.level, exp: o.exp, unlocked: true,
+        currentEvolutionBranch: null, evolutionStartTime: null, equippedIds: [] } });
     }
-    ctx.globalAlpha = 1;
+    this.techs.loadState({ researched: d.researchedTechs, current: null, queue: [], totalInvestment: {} });
+    this.stages.loadState({ currentStageId: d.currentStage });
+    const ps = d.prestigeState;
+    this.prest.loadState({ currency: ps.currency, count: ps.count });
+    if (d.gameStats) this.stats.deserialize(d.gameStats);
+    this.playTime = d.totalPlayTime || 0;
+    this.emit('stateChange');
   }
 
-  private drawMountains(ctx: CanvasRenderingContext2D, w: number): void {
-    const t = this._animTimer / 1000;
+  // ─── 飞升转生 ───────────────────────────────────────────
 
-    // 远山
-    ctx.fillStyle = COLORS.mountainFar;
-    ctx.beginPath();
-    ctx.moveTo(0, 260);
-    for (let x = 0; x <= w; x += 10) {
-      const y = 230 + Math.sin(x * 0.008 + 1) * 25 + Math.sin(x * 0.02) * 10;
-      ctx.lineTo(x, y);
-    }
-    ctx.lineTo(w, 260);
-    ctx.closePath();
-    ctx.fill();
+  public doPrestige(): void {
+    const total = (this.res.qi || 0) + (this.res.herb || 0) + (this.res.pill || 0) + (this.res.stone || 0);
+    const preview = this.prest.getPreview(total);
+    if (!preview.canPrestige) return;
 
-    // 近山
-    ctx.fillStyle = COLORS.mountainNear;
-    ctx.beginPath();
-    ctx.moveTo(0, 270);
-    for (let x = 0; x <= w; x += 10) {
-      const y = 245 + Math.sin(x * 0.012 + 3) * 20 + Math.sin(x * 0.025 + t * 0.1) * 8;
-      ctx.lineTo(x, y);
-    }
-    ctx.lineTo(w, 270);
-    ctx.closePath();
-    ctx.fill();
+    const result = this.prest.doPrestige(total);
+    if (!result) return;
+
+    const ret = PRESTIGE_CONFIG.retention;
+    this.res.qi = (this.res.qi || 0) * ret;
+    this.res.herb = (this.res.herb || 0) * ret;
+    this.res.pill = (this.res.pill || 0) * ret;
+    this.res.stone = (this.res.stone || 0) * ret;
+
+    // 重置建筑和阶段
+    this.bldg.reset(true);
+    this.stages.loadState({ currentStageId: 'qi_refining' });
+
+    this.stats.increment('totalPrestiges');
+    this.ftSys.add('飞升转生！道果加持！', 0.5, 0.4, { style: { color: COLOR_THEME.accentGold, fontSize: 24 } });
+    this.emit('stateChange');
   }
 
-  private drawClouds(ctx: CanvasRenderingContext2D, _w: number): void {
-    for (const cloud of this._cloudParticles) {
-      ctx.globalAlpha = cloud.opacity;
-      ctx.fillStyle = COLORS.cloudColor;
-      ctx.beginPath();
-      ctx.ellipse(cloud.x, cloud.y, cloud.width / 2, 12, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-  }
+  // ═══════════════════════════════════════════════════════════
+  // 核心操作
+  // ═══════════════════════════════════════════════════════════
 
-  private drawSpiritParticles(ctx: CanvasRenderingContext2D): void {
-    for (const p of this._spiritParticles) {
-      ctx.globalAlpha = p.opacity;
-      ctx.fillStyle = COLORS.accentCyan;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  private drawSceneBeasts(ctx: CanvasRenderingContext2D): void {
-    for (const beast of this._sceneBeasts) {
-      this.drawBeast(ctx, beast);
-    }
-  }
-
-  private drawBeast(ctx: CanvasRenderingContext2D, beast: SceneBeast): void {
-    const { x, y, type, idle, direction } = beast;
-    ctx.save();
-    ctx.translate(x, y);
-    if (direction < 0) ctx.scale(-1, 1);
-
-    ctx.globalAlpha = 0.6;
-    ctx.fillStyle = COLORS.paperWhite;
-
-    if (type === 0) {
-      // 鹤 — 简笔
-      ctx.fillRect(-3, -8, 6, 8);
-      ctx.fillRect(-6, -12, 12, 4);
-      ctx.fillRect(-8, -8, 3, 3);
-      ctx.fillRect(5, -8, 3, 3);
-      if (!idle) {
-        ctx.fillRect(-2, 0, 4, 3);
-      }
-    } else if (type === 1) {
-      // 鹿 — 简笔
-      ctx.fillRect(-4, -6, 8, 6);
-      ctx.fillRect(-3, -10, 6, 4);
-      ctx.fillRect(-5, -14, 2, 5);
-      ctx.fillRect(3, -14, 2, 5);
-      ctx.fillRect(-3, 0, 2, 3);
-      ctx.fillRect(1, 0, 2, 3);
-    } else {
-      // 龟 — 简笔
-      ctx.fillRect(-5, -4, 10, 4);
-      ctx.fillRect(-6, -3, 1, 2);
-      ctx.fillRect(5, -3, 1, 2);
-      ctx.fillRect(-3, 0, 2, 2);
-      ctx.fillRect(1, 0, 2, 2);
-    }
-
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }
-
-  private drawBreakthroughEffect(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    if (this._breakthroughTimer <= 0) return;
-
-    const progress = 1 - this._breakthroughTimer / ANIMATION.breakthroughDuration;
-    const alpha = (1 - progress) * 0.3;
-
-    if (this._breakthroughSuccess) {
-      // 金色光芒
-      ctx.globalAlpha = alpha;
-      const gradient = ctx.createRadialGradient(w / 2, h / 3, 0, w / 2, h / 3, 200);
-      gradient.addColorStop(0, COLORS.accentGold);
-      gradient.addColorStop(1, 'rgba(212, 168, 67, 0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, w, h);
-    } else {
-      // 红色闪烁
-      ctx.globalAlpha = alpha * 0.5;
-      ctx.fillStyle = COLORS.accentRed;
-      ctx.fillRect(0, 0, w, h);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  private drawFloatingTexts(ctx: CanvasRenderingContext2D): void {
-    for (const ft of this._floatingTexts) {
-      const alpha = ft.life / ft.maxLife;
-      ctx.globalAlpha = alpha;
-      ctx.font = 'bold 16px "Segoe UI", sans-serif';
-      ctx.fillStyle = ft.color;
-      ctx.textAlign = 'center';
-      ctx.fillText(ft.text, ft.x, ft.y);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  private drawInfoPanel(ctx: CanvasRenderingContext2D, w: number): void {
-    // 游戏标题
-    ctx.font = 'bold 18px "Segoe UI", sans-serif';
-    ctx.fillStyle = COLORS.accentGold;
-    ctx.textAlign = 'center';
-    ctx.fillText('修仙·凡人篇', w / 2, 24);
-
-    // 境界显示
-    const realm = this.currentRealm;
-    ctx.font = 'bold 14px "Segoe UI", sans-serif';
-    ctx.fillStyle = COLORS.accentCyan;
-    ctx.fillText(`${realm.name} (${realm.nameEn})`, w / 2, 42);
-
-    // 资源显示
-    const resources = this.getUnlockedResources();
-    const resPerRow = Math.min(resources.length, 4);
-    const colWidth = (w - 40) / resPerRow;
-    const startX = 20;
-
-    for (let i = 0; i < resources.length; i++) {
-      const resource = resources[i];
-      const rx = startX + i * colWidth;
-      const icon = RESOURCE_ICONS[resource.id] || '';
-      const amount = this.formatNumber(resource.amount);
-      const effectiveProd = this.getEffectiveProduction(resource.id);
-
-      ctx.textAlign = 'left';
-      ctx.font = 'bold 13px "Segoe UI", sans-serif';
-      ctx.fillStyle = COLORS.textPrimary;
-      ctx.fillText(`${icon} ${amount}`, rx, 62);
-
-      if (effectiveProd > 0) {
-        ctx.font = '10px "Segoe UI", sans-serif';
-        ctx.fillStyle = COLORS.accentGreen;
-        ctx.fillText(`+${this.formatNumber(effectiveProd)}/s`, rx, 76);
-      }
-    }
-
-    // 点击力量 & 产出倍率
-    ctx.font = '11px "Segoe UI", sans-serif';
-    ctx.fillStyle = COLORS.textDim;
-    ctx.textAlign = 'center';
-    ctx.fillText(`点击: ${this.formatNumber(this.getClickPower())} 灵气 | 倍率: x${this.getProductionMultiplier().toFixed(2)}`, w / 2, 92);
-
-    // 打坐状态
-    if (this._meditationActive) {
-      ctx.fillStyle = COLORS.accentGold;
-      ctx.fillText('🧘 打坐中…', w / 2, 106);
-    } else if (this.meditationOnCooldown) {
-      const remain = Math.ceil((this._meditationCooldownEnd - Date.now()) / 1000);
-      ctx.fillStyle = COLORS.textDim;
-      ctx.fillText(`打坐冷却: ${remain}s`, w / 2, 106);
-    }
-
-    // 声望信息
-    if (this.prestige.count > 0) {
-      ctx.fillStyle = COLORS.fateColor;
-      ctx.fillText(`🏮 ${this.formatNumber(this.prestige.currency)} 道韵 (x${this.prestige.count})`, w / 2, 120);
-    }
-  }
-
-  private drawRealmPanel(ctx: CanvasRenderingContext2D, w: number): void {
-    const panelY = 130;
-    const nextRealm = this.getNextRealm();
-
-    // 境界进度框
-    ctx.fillStyle = COLORS.panelBg;
-    ctx.strokeStyle = COLORS.panelBorder;
-    ctx.lineWidth = 1;
-    this.roundRect(ctx, 12, panelY, w - 24, 70, 8);
-    ctx.fill();
-    ctx.stroke();
-
-    // 当前境界
-    ctx.font = 'bold 13px "Segoe UI", sans-serif';
-    ctx.fillStyle = COLORS.accentCyan;
-    ctx.textAlign = 'left';
-    ctx.fillText(`当前: ${this.currentRealm.name}境`, 24, panelY + 20);
-
-    // 突破信息
-    if (nextRealm) {
-      ctx.fillStyle = COLORS.textSecondary;
-      ctx.font = '11px "Segoe UI", sans-serif';
-      ctx.fillText(`→ ${nextRealm.name}境 (${nextRealm.nameEn})`, 24, panelY + 36);
-
-      // 所需资源
-      const costEntries = Object.entries(nextRealm.cost);
-      if (costEntries.length > 0) {
-        const costText = costEntries
-          .map(([id, amount]) => `${RESOURCE_ICONS[id] || ''}${this.formatNumber(amount)}`)
-          .join('  ');
-        ctx.fillStyle = this.canAfford(nextRealm.cost) ? COLORS.affordable : COLORS.unaffordable;
-        ctx.fillText(`需: ${costText}`, 24, panelY + 52);
-      }
-
-      // 成功率
-      const rate = this.getBreakthroughRate(nextRealm);
-      ctx.fillStyle = COLORS.textDim;
-      ctx.textAlign = 'right';
-      ctx.fillText(`成功率: ${(rate * 100).toFixed(0)}%`, w - 24, panelY + 52);
-
-      // 突破按钮
-      const canBreak = this.canAttemptBreakthrough();
-      ctx.fillStyle = canBreak ? COLORS.accentGold : COLORS.inkGray;
-      ctx.font = 'bold 11px "Segoe UI", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(canBreak ? '[ 突破 ]' : '[ 资源不足 ]', w / 2, panelY + 66);
-    } else {
-      ctx.fillStyle = COLORS.accentGold;
-      ctx.font = 'bold 12px "Segoe UI", sans-serif';
-      ctx.fillText('已臻至大乘圆满！', 24, panelY + 40);
-    }
-  }
-
-  private drawBuildingList(ctx: CanvasRenderingContext2D, w: number, _h: number): void {
-    const panel = UPGRADE_PANEL;
-
-    // 标题
-    ctx.font = 'bold 12px "Segoe UI", sans-serif';
-    ctx.fillStyle = COLORS.textSecondary;
-    ctx.textAlign = 'center';
-    ctx.fillText('— 修炼建筑 —', w / 2, panel.startY - 8);
-
-    let visibleIndex = 0;
-    for (let i = 0; i < BUILDINGS.length; i++) {
-      const building = BUILDINGS[i];
-      const upgrade = this.upgrades.get(building.id);
-      if (!upgrade || !upgrade.unlocked) continue;
-
-      const selected = visibleIndex === this._selectedBuildingIndex;
-      const cost = this.getBuildingCost(building.id);
-      const affordable = this.canAfford(cost);
-      const level = upgrade.level;
-
-      const y = panel.startY + visibleIndex * (panel.itemHeight + panel.itemPadding);
-      const x = panel.itemMarginX;
-
-      // 背景
-      if (selected) {
-        ctx.fillStyle = COLORS.selectedBg;
-        ctx.strokeStyle = COLORS.selectedBorder;
-        ctx.lineWidth = 2;
-      } else {
-        ctx.fillStyle = COLORS.panelBg;
-        ctx.strokeStyle = 'rgba(126, 200, 200, 0.1)';
-        ctx.lineWidth = 1;
-      }
-      this.roundRect(ctx, x, y, panel.itemWidth, panel.itemHeight, 6);
-      ctx.fill();
-      ctx.stroke();
-
-      // 图标
-      ctx.font = '18px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(building.icon, x + 8, y + 26);
-
-      // 名称 + 等级
-      ctx.font = 'bold 12px "Segoe UI", sans-serif';
-      ctx.fillStyle = COLORS.textPrimary;
-      ctx.fillText(building.name, x + 34, y + 18);
-
-      ctx.font = '10px "Segoe UI", sans-serif';
-      ctx.fillStyle = COLORS.textDim;
-      const prodText = building.baseProduction > 0
-        ? `Lv.${level} (+${this.formatNumber(building.baseProduction * level)}/s)`
-        : `Lv.${level} (+${level * 5}%效率)`;
-      ctx.fillText(prodText, x + 34, y + 34);
-
-      // 费用
-      ctx.font = 'bold 11px "Segoe UI", monospace';
-      ctx.textAlign = 'right';
-      ctx.fillStyle = affordable ? COLORS.affordable : COLORS.unaffordable;
-      const costText = Object.entries(cost)
-        .map(([id, amount]) => `${RESOURCE_ICONS[id] || ''}${this.formatNumber(amount)}`)
-        .join(' ');
-      ctx.fillText(costText, x + panel.itemWidth - 8, y + 26);
-
-      visibleIndex++;
-    }
-  }
-
-  private drawBottomHint(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    ctx.font = '10px "Segoe UI", sans-serif';
-    ctx.fillStyle = COLORS.textDim;
-    ctx.textAlign = 'center';
-    ctx.fillText('空格 点击 · M 打坐 · B 突破 · ↑↓ 选择 · Enter 购买 · P 声望', w / 2, h - 8);
-  }
-
-  private roundRect(
-    ctx: CanvasRenderingContext2D,
-    x: number, y: number, w: number, h: number, r: number
-  ): void {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.arcTo(x + w, y, x + w, y + r, r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-    ctx.lineTo(x + r, y + h);
-    ctx.arcTo(x, y + h, x, y + h - r, r);
-    ctx.lineTo(x, y + r);
-    ctx.arcTo(x, y, x + r, y, r);
-    ctx.closePath();
-  }
-
-  // ========== 输入处理 ==========
-
-  handleKeyDown(key: string): void {
+  private doClick(): void {
     if (this._status !== 'playing') return;
+    for (const [r, a] of Object.entries(CLICK_REWARD)) this.giveRes(r, a);
+    for (const [r, rate] of Object.entries(this.psCache)) {
+      if (rate > 0) this.giveRes(r, rate * 0.1);
+    }
+    this.stats.increment('totalClicks');
+    this.emit('stateChange');
+  }
 
-    switch (key) {
-      case ' ':
-        this.click();
-        break;
-      case 'm':
-      case 'M':
-        this.startMeditation();
-        break;
-      case 'b':
-      case 'B':
-        this.attemptBreakthrough();
-        break;
-      case 'p':
-      case 'P':
-        this.doPrestige();
-        break;
-      case 'ArrowUp':
-        this._selectedBuildingIndex = Math.max(0, this._selectedBuildingIndex - 1);
-        this.emit('stateChange');
-        break;
-      case 'ArrowDown': {
-        const visibleCount = BUILDINGS.filter((b) => {
-          const u = this.upgrades.get(b.id);
-          return u && u.unlocked;
-        }).length;
-        this._selectedBuildingIndex = Math.min(visibleCount - 1, this._selectedBuildingIndex + 1);
-        this.emit('stateChange');
-        break;
-      }
-      case 'Enter': {
-        const visibleBuildings = BUILDINGS.filter((b) => {
-          const u = this.upgrades.get(b.id);
-          return u && u.unlocked;
-        });
-        if (this._selectedBuildingIndex < visibleBuildings.length) {
-          this.buyBuildingByIndex(BUILDINGS.indexOf(visibleBuildings[this._selectedBuildingIndex]));
+  private buyBuilding(): void {
+    const bs = this.bldg.getUnlockedBuildings();
+    if (this.selIdx >= bs.length) return;
+    const b = bs[this.selIdx];
+    const cost = this.bldg.getCost(b.id);
+    if (!this.canPay(cost)) return;
+    this.pay(cost);
+    this.bldg.purchase(b.id, (id, a) => this.has(id, a), () => {});
+    this.ftSys.add(`+1 ${b.name}`, 0.5, 0.5, { style: { color: COLOR_THEME.accentGreen, fontSize: 14 } });
+    this.emit('stateChange');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 资源
+  // ═══════════════════════════════════════════════════════════
+
+  private giveRes(id: string, amt: number): void {
+    this.res[id] = Math.max(0, (this.res[id] || 0) + amt);
+    if (amt > 0) {
+      const k = `total${id[0].toUpperCase()}${id.slice(1)}`;
+      this.stats.increment(k, amt);
+    }
+  }
+  private canPay(cost: Record<string, number>): boolean {
+    return Object.entries(cost).every(([id, a]) => (this.res[id] || 0) >= a);
+  }
+  private pay(cost: Record<string, number>): void {
+    for (const [id, a] of Object.entries(cost)) this.res[id] = Math.max(0, (this.res[id] || 0) - a);
+  }
+  private has(id: string, a: number): boolean { return (this.res[id] || 0) >= a; }
+
+  // ═══════════════════════════════════════════════════════════
+  // 辅助
+  // ═══════════════════════════════════════════════════════════
+
+  private techMult(): number {
+    let m = 1;
+    for (const t of INVENTIONS) {
+      if (this.techs.isResearched(t.id)) {
+        for (const e of t.effects) {
+          if (e.type === 'multiplier' && (e.target === 'all_resources' || e.target === 'all')) m *= e.value;
         }
-        break;
       }
+    }
+    return m;
+  }
+
+  private checkStage(): void {
+    const next = this.stages.getNextStage();
+    if (!next) return;
+    const can = Object.entries(next.requiredResources).every(([id, a]) => (this.res[id] || 0) >= a);
+    if (can) {
+      this.stages.advance(this.res, (_type: string, targetId: string) => this.res[targetId] || 0);
+      this.ftSys.add(`境界突破：${next.name}`, 0.5, 0.3, { style: { color: COLOR_THEME.accentGold, fontSize: 22 } });
     }
   }
 
-  handleKeyUp(_key: string): void {
-    // 不需要处理
+  private checkUnlocks(): void {
+    for (const b of BUILDINGS) {
+      if (this.bldg.isUnlocked(b.id) || !b.requires?.length) continue;
+      if (b.requires.every(r => this.bldg.getLevel(r) > 0)) this.bldg.forceUnlock(b.id);
+    }
   }
+
+  private toggle(p: ActivePanel): void {
+    this.panel = this.panel === p ? 'none' : p;
+    this.scroll = 0;
+  }
+
+  private toUnitDefs() {
+    const rMap: Record<string, number> = { rare: 2, epic: 3, legendary: 4, mythic: 5 };
+    return HEROES.map(h => ({
+      id: h.id, name: h.name, description: h.title,
+      rarity: rMap[h.rarity] ?? 0,
+      baseStats: { administration: h.baseStats.administration, military: h.baseStats.military, culture: h.baseStats.culture },
+      growthRates: { ...h.growthRates },
+      evolutions: [],
+      recruitCost: Object.entries(h.recruitCost).map(([materialId, quantity]) => ({ materialId, quantity })),
+      maxLevel: 50, tags: [h.rarity], passiveSkillIds: [],
+    }));
+  }
+
+  private makeStatDefs() {
+    const ids = [
+      'totalQi', 'totalHerb', 'totalPill', 'totalStone', 'totalDaoFruit',
+      'totalClicks', 'totalPrestiges', 'totalHeroesRecruited', 'totalTechsResearched', 'totalPlayTime',
+    ];
+    return ids.map(id => ({
+      id, displayName: id, category: 'game',
+      valueType: 'number' as const, aggregation: 'sum' as const,
+      initialValue: 0, linkedAchievementIds: [], persistent: true,
+    }));
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 渲染
+  // ═══════════════════════════════════════════════════════════
+
+  private drawBg(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, COLOR_THEME.bgGradient1);
+    g.addColorStop(1, COLOR_THEME.bgGradient2);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  private drawHeader(ctx: CanvasRenderingContext2D, w: number): void {
+    const stage = this.stages.getCurrent();
+    ctx.fillStyle = COLOR_THEME.accentGold;
+    ctx.font = 'bold 18px "Noto Serif SC", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(GAME_TITLE, w / 2, 22);
+    ctx.textAlign = 'left';
+    if (stage) {
+      ctx.fillStyle = stage.themeColor || COLOR_THEME.textSecondary;
+      ctx.font = '12px sans-serif';
+      ctx.fillText(`${stage.iconAsset} ${stage.name} — ${stage.description}`, 10, 42);
+    }
+    // 面板标签
+    const tabs = [
+      { id: 'none' as ActivePanel, label: '🏗️修炼' },
+      { id: 'officials' as ActivePanel, label: '🧑‍🤝‍🧑仙友' },
+      { id: 'tech' as ActivePanel, label: '💡功法' },
+      { id: 'prestige' as ActivePanel, label: '🔮飞升' },
+    ];
+    const tw = (w - 20) / tabs.length;
+    for (let i = 0; i < tabs.length; i++) {
+      const active = this.panel === tabs[i].id;
+      ctx.fillStyle = active ? COLOR_THEME.selectedBg : COLOR_THEME.panelBg;
+      rr(ctx, 10 + i * tw, 50, tw - 2, 28, 4); ctx.fill();
+      if (active) { ctx.strokeStyle = COLOR_THEME.selectedBorder; ctx.lineWidth = 1; rr(ctx, 10 + i * tw, 50, tw - 2, 28, 4); ctx.stroke(); }
+      ctx.fillStyle = active ? COLOR_THEME.accentGold : COLOR_THEME.textSecondary;
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(tabs[i].label, 10 + i * tw + (tw - 2) / 2, 68);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  private drawResBar(ctx: CanvasRenderingContext2D, w: number): void {
+    const y = 88;
+    ctx.fillStyle = COLOR_THEME.panelBg;
+    rr(ctx, 5, y - 10, w - 10, 18, 3); ctx.fill();
+    const cw = (w - 10) / RESOURCES.length;
+    for (let i = 0; i < RESOURCES.length; i++) {
+      const r = RESOURCES[i];
+      const v = fmt(this.res[r.id] || 0);
+      const ps = this.psCache[r.id];
+      const psT = ps > 0 ? `+${fmt(ps)}/s` : '';
+      ctx.fillStyle = COLOR_THEME.textPrimary;
+      ctx.font = '11px sans-serif';
+      ctx.fillText(`${r.icon}${v}`, 10 + i * cw, y);
+      if (psT) { ctx.fillStyle = COLOR_THEME.accentGreen; ctx.font = '9px sans-serif'; ctx.fillText(psT, 10 + i * cw, y + 10); }
+    }
+  }
+
+  private drawBuildings(ctx: CanvasRenderingContext2D, w: number, sy: number, h: number): void {
+    const bs = this.bldg.getUnlockedBuildings();
+    const ih = 55, vis = Math.floor(h / ih);
+    for (let i = 0; i < Math.min(bs.length, vis); i++) {
+      const idx = i + this.scroll;
+      if (idx >= bs.length) break;
+      const d = bs[idx], lv = this.bldg.getLevel(d.id), cost = this.bldg.getCost(d.id);
+      const ok = this.canPay(cost), sel = idx === this.selIdx, iy = sy + i * ih;
+      ctx.fillStyle = sel ? COLOR_THEME.selectedBg : COLOR_THEME.panelBg;
+      rr(ctx, 10, iy, w - 20, ih - 4, 4); ctx.fill();
+      if (sel) { ctx.strokeStyle = COLOR_THEME.selectedBorder; ctx.lineWidth = 1; rr(ctx, 10, iy, w - 20, ih - 4, 4); ctx.stroke(); }
+      ctx.fillStyle = COLOR_THEME.textPrimary; ctx.font = '13px sans-serif';
+      ctx.fillText(`${d.icon} ${d.name} Lv.${lv}`, 18, iy + 18);
+      const pr = lv > 0 ? (this.psCache[d.productionResource] || 0) : 0;
+      ctx.fillStyle = COLOR_THEME.accentGreen; ctx.font = '10px sans-serif';
+      ctx.fillText(`产出: ${fmt(pr)}/s`, 18, iy + 35);
+      const cs = Object.entries(cost).map(([, c]) => fmt(c)).join('+');
+      ctx.fillStyle = ok ? COLOR_THEME.affordable : COLOR_THEME.unaffordable;
+      ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+      ctx.fillText(`升级: ${cs}`, w - 18, iy + 26);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  private drawPrestige(ctx: CanvasRenderingContext2D, w: number, sy: number, _h: number): void {
+    const st = this.prest.getState();
+    const total = (this.res.qi || 0) + (this.res.herb || 0) + (this.res.pill || 0) + (this.res.stone || 0);
+    const pv = this.prest.getPreview(total);
+    ctx.fillStyle = COLOR_THEME.accentGold; ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('🔮 飞升转生', 18, sy + 22);
+    ctx.fillStyle = COLOR_THEME.textPrimary; ctx.font = '12px sans-serif';
+    let y = sy + 44;
+    const lines = [
+      `道果: ${fmt(st.currency)} | 转生: ${st.count}次`,
+      `当前倍率: ×${st.multiplier.toFixed(2)}`,
+      `本次获得: ${pv.gain} 道果`,
+      `新倍率: ×${pv.newMultiplier.toFixed(2)}`,
+      `资源保留: ${(pv.retentionRate * 100).toFixed(0)}%`,
+    ];
+    for (const l of lines) { ctx.fillText(l, 18, y); y += 20; }
+    if (pv.warning) { ctx.fillStyle = COLOR_THEME.textDim; ctx.fillText(pv.warning, 18, y); }
+    y += 30;
+    ctx.fillStyle = pv.canPrestige ? 'rgba(123,104,238,0.2)' : COLOR_THEME.panelBg;
+    rr(ctx, w / 2 - 70, y, 140, 32, 6); ctx.fill();
+    ctx.fillStyle = pv.canPrestige ? COLOR_THEME.accentGold : COLOR_THEME.textDim;
+    ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(pv.canPrestige ? '执行飞升 (R)' : '资源不足', w / 2, y + 20);
+    ctx.textAlign = 'left';
+  }
+
+  private drawTech(ctx: CanvasRenderingContext2D, w: number, sy: number, h: number): void {
+    const ih = 50, vis = Math.floor(h / ih);
+    for (let i = 0; i < Math.min(INVENTIONS.length, vis); i++) {
+      const idx = i + this.scroll;
+      if (idx >= INVENTIONS.length) break;
+      const t = INVENTIONS[idx], iy = sy + i * ih;
+      const done = this.techs.isResearched(t.id);
+      const cur = this.techs.getCurrentResearch();
+      const active = cur?.techId === t.id;
+      const can = !done && !active && this.techs.canResearch(t.id, this.res);
+      ctx.fillStyle = done ? 'rgba(76,175,80,0.1)' : COLOR_THEME.panelBg;
+      rr(ctx, 10, iy, w - 20, ih - 4, 4); ctx.fill();
+      ctx.fillStyle = done ? COLOR_THEME.accentGreen : COLOR_THEME.textPrimary;
+      ctx.font = '12px sans-serif';
+      ctx.fillText(`${done ? '✅' : t.icon} ${t.name} (T${t.tier})`, 18, iy + 18);
+      ctx.fillStyle = COLOR_THEME.textDim; ctx.font = '10px sans-serif';
+      ctx.fillText(t.description, 18, iy + 34);
+      if (active && cur) {
+        ctx.fillStyle = COLOR_THEME.accentGold; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillText(`${(cur.progress * 100).toFixed(0)}%`, w - 18, iy + 24);
+      } else if (!done) {
+        const cs = Object.values(t.cost).map(c => fmt(c)).join('+');
+        ctx.fillStyle = can ? COLOR_THEME.affordable : COLOR_THEME.unaffordable;
+        ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillText(cs, w - 18, iy + 24);
+      }
+      ctx.textAlign = 'left';
+    }
+  }
+
+  private drawHeroes(ctx: CanvasRenderingContext2D, w: number, sy: number, h: number): void {
+    const ih = 65, vis = Math.floor(h / ih);
+    for (let i = 0; i < Math.min(HEROES.length, vis); i++) {
+      const idx = i + this.scroll;
+      if (idx >= HEROES.length) break;
+      const o = HEROES[idx], iy = sy + i * ih;
+      const own = this.units.isUnlocked(o.id);
+      const rc = RARITY_COLORS[o.rarity] || COLOR_THEME.textPrimary;
+      ctx.fillStyle = COLOR_THEME.panelBg;
+      rr(ctx, 10, iy, w - 20, ih - 4, 4); ctx.fill();
+      ctx.fillStyle = rc; ctx.font = 'bold 14px sans-serif';
+      ctx.fillText(o.name, 18, iy + 18);
+      ctx.fillStyle = COLOR_THEME.textDim; ctx.font = '10px sans-serif';
+      ctx.fillText(`[${o.rarity}] ${o.title}`, 18, iy + 33);
+      const s = o.baseStats;
+      ctx.fillStyle = COLOR_THEME.textSecondary; ctx.font = '10px sans-serif';
+      ctx.fillText(`政${s.administration} 军${s.military} 文${s.culture}`, 18, iy + 50);
+      ctx.textAlign = 'right';
+      if (!own) {
+        const costStr = Object.entries(o.recruitCost).map(([k, v]) => `${v}${k === 'qi' ? '🌿' : '🌱'}`).join(' ');
+        const ok = this.canPay(o.recruitCost as unknown as Record<string, number>);
+        ctx.fillStyle = ok ? COLOR_THEME.affordable : COLOR_THEME.unaffordable;
+        ctx.font = '11px sans-serif';
+        ctx.fillText(`招募: ${costStr}`, w - 18, iy + 30);
+      } else {
+        ctx.fillStyle = COLOR_THEME.accentGreen; ctx.font = '11px sans-serif';
+        ctx.fillText('✅ 已招募', w - 18, iy + 30);
+      }
+      ctx.textAlign = 'left';
+    }
+  }
+
+  private drawFooter(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    ctx.fillStyle = COLOR_THEME.textDim; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('[Space]点击 [↑↓]选择 [Enter]购买 [R]飞升 [T]功法 [U]仙友 [Esc]返回', w / 2, h - 12);
+    ctx.textAlign = 'left';
+  }
+
+  // ─── 公共接口 ───────────────────────────────────────────
+
+  public getResources(): Record<string, number> { return { ...this.res }; }
+  public getActivePanel(): ActivePanel { return this.panel; }
+  public getPrestigeState() { return this.prest.getState(); }
+  public getStageInfo() { return this.stages.getCurrent(); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 工具函数
+// ═══════════════════════════════════════════════════════════════
+
+function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r); ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r); ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
+}
+
+function fmt(n: number): string {
+  if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return n < 10 ? n.toFixed(1) : Math.floor(n).toString();
 }
