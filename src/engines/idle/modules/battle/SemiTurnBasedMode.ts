@@ -13,6 +13,7 @@ import type {
   BattleModeContext,
   BattleResult,
   BattleStats,
+  BattleUnit,
   StrategyPreset,
 } from './BattleMode';
 import { DEFAULT_STRATEGY_PRESET } from './BattleMode';
