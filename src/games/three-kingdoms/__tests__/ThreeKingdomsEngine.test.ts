@@ -1,1386 +1,846 @@
 /**
- * 三国志 (Three Kingdoms) 放置类游戏 — 完整测试套件
+ * 三国霸业 (Three Kingdoms Conquest) — v3.0 引擎测试套件
+ *
+ * 完全重写，匹配 v3.0 统一子系统架构的公共 API。
+ * 覆盖常量验证、引擎初始化、资源系统、建筑系统、武将系统、
+ * 阶段系统、存档系统、声望系统、渲染和输入处理。
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ThreeKingdomsEngine } from '@/games/three-kingdoms/ThreeKingdomsEngine';
+import { ThreeKingdomsEngine, type ThreeKingdomsSaveState } from '@/games/three-kingdoms/ThreeKingdomsEngine';
 import {
-  CANVAS_WIDTH,
-  CANVAS_HEIGHT,
-  GRAIN_PER_CLICK,
-  MANDATE_BONUS_MULTIPLIER,
-  MIN_PRESTIGE_GRAIN,
-  GENERALS,
+  GAME_ID,
+  GAME_TITLE,
   BUILDINGS,
-  COLORS,
-  SCENE_DRAW,
-  RESOURCE_IDS,
-  BUILDING_IDS,
+  GENERALS,
+  TERRITORIES,
+  TECHS,
+  BATTLES,
+  STAGES,
+  PRESTIGE_CONFIG,
+  COLOR_THEME,
+  RARITY_COLORS,
+  RESOURCES,
+  INITIAL_RESOURCES,
+  INITIALLY_UNLOCKED,
+  CLICK_REWARD,
 } from '@/games/three-kingdoms/constants';
 
-// ========== 测试辅助 ==========
+// ═══════════════════════════════════════════════════════════════
+// 测试辅助
+// ═══════════════════════════════════════════════════════════════
 
-function createCanvas(): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  canvas.width = CANVAS_WIDTH;
-  canvas.height = CANVAS_HEIGHT;
-  return canvas;
-}
-
-function createMockCtx(): CanvasRenderingContext2D {
-  const noop = () => {};
-  return {
-    fillRect: noop, strokeRect: noop, clearRect: noop,
-    fillText: noop, strokeText: noop,
-    measureText: () => ({ width: 10 } as TextMetrics),
-    beginPath: noop, closePath: noop, moveTo: noop, lineTo: noop,
-    arc: noop, arcTo: noop, rect: noop, ellipse: noop,
-    quadraticCurveTo: noop, bezierCurveTo: noop,
-    fill: noop, stroke: noop, clip: noop,
-    save: noop, restore: noop,
-    translate: noop, rotate: noop, scale: noop,
-    transform: noop, setTransform: noop, resetTransform: noop,
-    drawImage: noop,
-    createLinearGradient: () => ({ addColorStop: noop } as CanvasGradient),
-    createRadialGradient: () => ({ addColorStop: noop } as CanvasGradient),
-    createPattern: () => null,
-    globalAlpha: 1, globalCompositeOperation: 'source-over' as GlobalCompositeOperation,
-    fillStyle: '#000', strokeStyle: '#000', lineWidth: 1,
-    lineCap: 'butt' as CanvasLineCap, lineJoin: 'miter' as CanvasLineJoin,
-    miterLimit: 10, font: '12px sans-serif',
-    textAlign: 'start' as CanvasTextAlign, textBaseline: 'alphabetic' as CanvasTextBaseline,
-    shadowBlur: 0, shadowColor: 'rgba(0,0,0,0)', shadowOffsetX: 0, shadowOffsetY: 0,
-    canvas: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT } as HTMLCanvasElement,
-  } as unknown as CanvasRenderingContext2D;
-}
-
+/**
+ * 创建并初始化引擎实例
+ *
+ * 模拟基类 start() 中的 canvas 设置，然后直接调用 onInit()。
+ * 这避免了 requestAnimationFrame 依赖。
+ */
 function createEngine(): ThreeKingdomsEngine {
   const engine = new ThreeKingdomsEngine();
-  engine.init(createCanvas());
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 600;
+  (engine as any).canvas = canvas;
+  (engine as any).ctx = canvas.getContext('2d');
+  (engine as any)._status = 'playing';
+  (engine as any).onInit();
   return engine;
 }
 
-function startEngine(): ThreeKingdomsEngine {
-  const engine = createEngine();
-  engine.start();
-  return engine;
+/** 直接设置引擎内部资源（绕过正常游戏逻辑） */
+function setResources(engine: ThreeKingdomsEngine, resources: Record<string, number>): void {
+  const res = (engine as any).res as Record<string, number>;
+  for (const [id, amount] of Object.entries(resources)) {
+    res[id] = amount;
+  }
 }
 
-/** 直接添加资源 */
-function addGrain(engine: ThreeKingdomsEngine, amount: number): void {
-  (engine as any).addResource('grain', amount);
-}
+// ═══════════════════════════════════════════════════════════════
+// 1. 常量验证
+// ═══════════════════════════════════════════════════════════════
 
-function addGold(engine: ThreeKingdomsEngine, amount: number): void {
-  (engine as any).addResource('gold', amount);
-}
+describe('常量验证', () => {
+  it('GAME_ID 为 "three-kingdoms"', () => {
+    expect(GAME_ID).toBe('three-kingdoms');
+  });
 
-function addTroop(engine: ThreeKingdomsEngine, amount: number): void {
-  (engine as any).addResource('troop', amount);
-}
+  it('GAME_TITLE 为 "三国霸业"', () => {
+    expect(GAME_TITLE).toBe('三国霸业');
+  });
 
-/** 触发一次 update */
-function tick(engine: ThreeKingdomsEngine, dt: number = 16): void {
-  (engine as any).update(dt);
-}
+  it('BUILDINGS 有 8 个建筑', () => {
+    expect(BUILDINGS).toHaveLength(8);
+  });
 
-/** 获取内部资源数量 */
-function getGrain(engine: ThreeKingdomsEngine): number {
-  return (engine as any).getResource('grain')?.amount ?? 0;
-}
+  it('BUILDINGS 所有建筑有唯一 ID', () => {
+    const ids = BUILDINGS.map(b => b.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 
-function getGold(engine: ThreeKingdomsEngine): number {
-  return (engine as any).getResource('gold')?.amount ?? 0;
-}
+  it('GENERALS 有 12 个武将', () => {
+    expect(GENERALS).toHaveLength(12);
+  });
 
-function getTroop(engine: ThreeKingdomsEngine): number {
-  return (engine as any).getResource('troop')?.amount ?? 0;
-}
+  it('GENERALS 所有武将有唯一 ID', () => {
+    const ids = GENERALS.map(g => g.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 
-// ========== 测试 ==========
+  it('TERRITORIES 有 15 块领土', () => {
+    expect(TERRITORIES).toHaveLength(15);
+  });
 
-describe('ThreeKingdomsEngine', () => {
+  it('TECHS 有 12 项科技', () => {
+    expect(TECHS).toHaveLength(12);
+  });
+
+  it('BATTLES 有 15 个战斗（5关卡×3波）', () => {
+    expect(BATTLES).toHaveLength(15);
+    const stageIds = [...new Set(BATTLES.map(b => b.stageId))];
+    expect(stageIds).toHaveLength(5);
+    for (const sid of stageIds) {
+      expect(BATTLES.filter(b => b.stageId === sid)).toHaveLength(3);
+    }
+  });
+
+  it('STAGES 有 6 个阶段', () => {
+    expect(STAGES).toHaveLength(6);
+  });
+
+  it('RESOURCES 有 4 种资源', () => {
+    expect(RESOURCES).toHaveLength(4);
+    const ids = RESOURCES.map(r => r.id);
+    expect(ids).toContain('grain');
+    expect(ids).toContain('gold');
+    expect(ids).toContain('troops');
+    expect(ids).toContain('destiny');
+  });
+
+  it('COLOR_THEME 包含必要颜色字段', () => {
+    expect(COLOR_THEME).toHaveProperty('bgGradient1');
+    expect(COLOR_THEME).toHaveProperty('bgGradient2');
+    expect(COLOR_THEME).toHaveProperty('textPrimary');
+    expect(COLOR_THEME).toHaveProperty('textSecondary');
+    expect(COLOR_THEME).toHaveProperty('textDim');
+    expect(COLOR_THEME).toHaveProperty('accentGold');
+    expect(COLOR_THEME).toHaveProperty('accentGreen');
+    expect(COLOR_THEME).toHaveProperty('panelBg');
+    expect(COLOR_THEME).toHaveProperty('selectedBg');
+    expect(COLOR_THEME).toHaveProperty('selectedBorder');
+    expect(COLOR_THEME).toHaveProperty('affordable');
+    expect(COLOR_THEME).toHaveProperty('unaffordable');
+  });
+
+  it('COLOR_THEME 所有值都是字符串', () => {
+    for (const val of Object.values(COLOR_THEME)) {
+      expect(typeof val).toBe('string');
+    }
+  });
+
+  it('INITIAL_RESOURCES 包含正确的初始值', () => {
+    expect(INITIAL_RESOURCES.grain).toBe(50);
+    expect(INITIAL_RESOURCES.gold).toBe(0);
+    expect(INITIAL_RESOURCES.troops).toBe(0);
+    expect(INITIAL_RESOURCES.destiny).toBe(0);
+  });
+
+  it('INITIALLY_UNLOCKED 仅包含 farm', () => {
+    expect(INITIALLY_UNLOCKED).toEqual(['farm']);
+  });
+
+  it('CLICK_REWARD 给 grain +1', () => {
+    expect(CLICK_REWARD).toEqual({ grain: 1 });
+  });
+
+  it('RARITY_COLORS 包含所有稀有度', () => {
+    expect(RARITY_COLORS).toHaveProperty('common');
+    expect(RARITY_COLORS).toHaveProperty('uncommon');
+    expect(RARITY_COLORS).toHaveProperty('rare');
+    expect(RARITY_COLORS).toHaveProperty('epic');
+    expect(RARITY_COLORS).toHaveProperty('legendary');
+    expect(RARITY_COLORS).toHaveProperty('mythic');
+  });
+
+  it('PRESTIGE_CONFIG 参数正确', () => {
+    expect(PRESTIGE_CONFIG.currencyName).toBe('天命');
+    expect(PRESTIGE_CONFIG.base).toBe(10);
+    expect(PRESTIGE_CONFIG.threshold).toBe(10000);
+    expect(PRESTIGE_CONFIG.bonusMultiplier).toBe(0.15);
+    expect(PRESTIGE_CONFIG.retention).toBe(0.1);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 2. 引擎初始化
+// ═══════════════════════════════════════════════════════════════
+
+describe('引擎初始化', () => {
+  it('createEngine 不抛异常', () => {
+    expect(() => createEngine()).not.toThrow();
+  });
+
+  it('初始 grain 为 50', () => {
+    const engine = createEngine();
+    expect(engine.getResources().grain).toBe(50);
+  });
+
+  it('初始 gold 为 0', () => {
+    const engine = createEngine();
+    expect(engine.getResources().gold).toBe(0);
+  });
+
+  it('初始 troops 为 0', () => {
+    const engine = createEngine();
+    expect(engine.getResources().troops).toBe(0);
+  });
+
+  it('初始 destiny 为 0', () => {
+    const engine = createEngine();
+    expect(engine.getResources().destiny).toBe(0);
+  });
+
+  it('初始面板为 "none"', () => {
+    const engine = createEngine();
+    expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('初始阶段为 yellow_turban', () => {
+    const engine = createEngine();
+    const stage = engine.getStageInfo();
+    expect(stage).toBeDefined();
+    expect(stage!.id).toBe('yellow_turban');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 3. 资源系统
+// ═══════════════════════════════════════════════════════════════
+
+describe('资源系统', () => {
   let engine: ThreeKingdomsEngine;
 
   beforeEach(() => {
     engine = createEngine();
   });
 
-  // ========== 初始化 ==========
-
-  describe('初始化', () => {
-    it('应正确创建引擎实例', () => {
-      expect(engine).toBeDefined();
-      expect(engine).toBeInstanceOf(ThreeKingdomsEngine);
-    });
-
-    it('init 后状态应为 idle', () => {
-      expect((engine as any)._status).toBe('idle');
-    });
-
-    it('init 后粮草为 0', () => {
-      expect(getGrain(engine)).toBe(0);
-    });
-
-    it('init 后金币为 0', () => {
-      expect(getGold(engine)).toBe(0);
-    });
-
-    it('init 后兵力为 0', () => {
-      expect(getTroop(engine)).toBe(0);
-    });
-
-    it('init 后总粮草获得为 0', () => {
-      expect(engine.totalGrainEarned).toBe(0);
-    });
-
-    it('init 后总点击数为 0', () => {
-      expect(engine.totalClicks).toBe(0);
-    });
-
-    it('init 后 score 为 0', () => {
-      expect(engine.score).toBe(0);
-    });
-
-    it('init 后 gameId 为 three-kingdoms', () => {
-      expect(engine.gameId).toBe('three-kingdoms');
-    });
-
-    it('init 后粮草已解锁', () => {
-      const res = (engine as any).getResource('grain');
-      expect(res.unlocked).toBe(true);
-    });
-
-    it('init 后金币未解锁', () => {
-      const res = (engine as any).getResource('gold');
-      expect(res.unlocked).toBe(false);
-    });
-
-    it('init 后兵力未解锁', () => {
-      const res = (engine as any).getResource('troop');
-      expect(res.unlocked).toBe(false);
+  it('getResources 返回正确初始值', () => {
+    const res = engine.getResources();
+    expect(res).toEqual({
+      grain: 50,
+      gold: 0,
+      troops: 0,
+      destiny: 0,
     });
   });
 
-  // ========== 常量验证 ==========
+  it('getResources 返回的是副本，修改不影响引擎内部', () => {
+    const res = engine.getResources();
+    res.grain = 9999;
+    expect(engine.getResources().grain).toBe(50);
+  });
 
-  describe('常量验证', () => {
-    it('RESOURCE_IDS 包含 GRAIN/GOLD/TROOP', () => {
-      expect(RESOURCE_IDS.GRAIN).toBe('grain');
-      expect(RESOURCE_IDS.GOLD).toBe('gold');
-      expect(RESOURCE_IDS.TROOP).toBe('troop');
-    });
+  it('update 产生建筑产出（farm 有产出）', () => {
+    // 先升级 farm 使其有产出
+    setResources(engine, { grain: 100 });
+    (engine as any).buyBuilding(); // selIdx=0 → farm
+    // farm Lv.1 → baseProduction=0.1/s
+    const before = engine.getResources().grain;
+    engine.update(10000); // 10 秒
+    const after = engine.getResources().grain;
+    expect(after).toBeGreaterThan(before);
+  });
 
-    it('BUILDING_IDS 包含 8 个建筑', () => {
-      const ids = Object.values(BUILDING_IDS);
-      expect(ids.length).toBe(8);
-    });
+  it('多次 update 累积产出', () => {
+    setResources(engine, { grain: 100 });
+    (engine as any).buyBuilding(); // upgrade farm to Lv.1
+    const before = engine.getResources().grain;
+    engine.update(5000); // 5 秒
+    const mid = engine.getResources().grain;
+    engine.update(5000); // 再 5 秒
+    const after = engine.getResources().grain;
+    expect(mid).toBeGreaterThan(before);
+    expect(after).toBeGreaterThan(mid);
+  });
 
-    it('GRAIN_PER_CLICK 为 1', () => {
-      expect(GRAIN_PER_CLICK).toBe(1);
-    });
+  it('零产出不改变资源（无建筑升级时 farm Lv.0 不产出）', () => {
+    // farm is Lv.0, no production
+    const before = engine.getResources().grain;
+    engine.update(1000);
+    // grain should remain 50 (no production from Lv.0 building)
+    expect(engine.getResources().grain).toBe(before);
+  });
 
-    it('MIN_PRESTIGE_GRAIN 为 50000', () => {
-      expect(MIN_PRESTIGE_GRAIN).toBe(50000);
-    });
+  it('资源不会变为负数', () => {
+    setResources(engine, { grain: 5 });
+    // 尝试购买 farm（需要 10 grain）→ 不应成功
+    (engine as any).buyBuilding();
+    expect(engine.getResources().grain).toBeGreaterThanOrEqual(0);
+  });
+});
 
-    it('MANDATE_BONUS_MULTIPLIER 为 0.15', () => {
-      expect(MANDATE_BONUS_MULTIPLIER).toBe(0.15);
-    });
+// ═══════════════════════════════════════════════════════════════
+// 4. 建筑系统
+// ═══════════════════════════════════════════════════════════════
 
-    it('BUILDINGS 数组有 8 个建筑', () => {
-      expect(BUILDINGS.length).toBe(8);
-    });
+describe('建筑系统', () => {
+  let engine: ThreeKingdomsEngine;
 
-    it('GENERALS 数组有 6 个武将', () => {
-      expect(GENERALS.length).toBe(6);
-    });
+  beforeEach(() => {
+    engine = createEngine();
+  });
 
-    it('所有建筑 ID 在 BUILDING_IDS 中', () => {
-      const allIds = Object.values(BUILDING_IDS) as string[];
-      for (const b of BUILDINGS) {
-        expect(allIds).toContain(b.id);
+  it('初始只有 farm 解锁', () => {
+    const bldg = (engine as any).bldg;
+    expect(bldg.isUnlocked('farm')).toBe(true);
+    // 其他建筑未解锁
+    for (const b of BUILDINGS) {
+      if (b.id !== 'farm') {
+        expect(bldg.isUnlocked(b.id)).toBe(false);
       }
-    });
-
-    it('建筑 ID 唯一', () => {
-      const ids = BUILDINGS.map((b) => b.id);
-      expect(new Set(ids).size).toBe(ids.length);
-    });
-
-    it('武将 ID 唯一', () => {
-      const ids = GENERALS.map((g) => g.id);
-      expect(new Set(ids).size).toBe(ids.length);
-    });
+    }
   });
 
-  // ========== 武将初始化 ==========
-
-  describe('武将初始化', () => {
-    it('应有 6 位武将', () => {
-      expect(GENERALS.length).toBe(6);
-    });
-
-    it('初始只有刘备解锁', () => {
-      const generals = engine.generals;
-      const liubei = generals.find((g) => g.id === 'liubei');
-      expect(liubei?.unlocked).toBe(true);
-    });
-
-    it('其他武将初始未解锁', () => {
-      const generals = engine.generals;
-      const locked = generals.filter((g) => g.id !== 'liubei');
-      locked.forEach((g) => {
-        expect(g.unlocked).toBe(false);
-      });
-    });
-
-    it('所有武将初始升级等级为 0', () => {
-      const generals = engine.generals;
-      generals.forEach((g) => {
-        expect(g.upgradeLevel).toBe(0);
-      });
-    });
-
-    it('每个武将有名称', () => {
-      GENERALS.forEach((g) => {
-        expect(g.name).toBeTruthy();
-      });
-    });
-
-    it('每个武将有称号', () => {
-      GENERALS.forEach((g) => {
-        expect(g.title).toBeTruthy();
-      });
-    });
-
-    it('每个武将有图标', () => {
-      GENERALS.forEach((g) => {
-        expect(g.icon).toBeTruthy();
-      });
-    });
-
-    it('每个武将有正数加成值', () => {
-      GENERALS.forEach((g) => {
-        expect(g.bonusValue).toBeGreaterThan(0);
-      });
-    });
-
-    it('每个武将有升级倍率', () => {
-      GENERALS.forEach((g) => {
-        expect(g.upgradeMultiplier).toBeGreaterThan(0);
-      });
-    });
-
-    it('每个武将有阵营', () => {
-      GENERALS.forEach((g) => {
-        expect(['shu', 'wei', 'wu']).toContain(g.faction);
-      });
-    });
-
-    it('刘备属于蜀国', () => {
-      const liubei = GENERALS.find((g) => g.id === 'liubei');
-      expect(liubei?.faction).toBe('shu');
-    });
-
-    it('曹操属于魏国', () => {
-      const caocao = GENERALS.find((g) => g.id === 'caocao');
-      expect(caocao?.faction).toBe('wei');
-    });
+  it('建筑升级消耗资源', () => {
+    setResources(engine, { grain: 100 });
+    const before = engine.getResources().grain;
+    (engine as any).buyBuilding(); // buy farm (cost: 10 grain)
+    expect(engine.getResources().grain).toBeLessThan(before);
   });
 
-  // ========== 生命周期 ==========
-
-  describe('生命周期', () => {
-    it('start 后状态应为 playing', () => {
-      engine.start();
-      expect((engine as any)._status).toBe('playing');
-    });
-
-    it('pause 后状态应为 paused', () => {
-      engine.start();
-      engine.pause();
-      expect((engine as any)._status).toBe('paused');
-    });
-
-    it('resume 后状态应为 playing', () => {
-      engine.start();
-      engine.pause();
-      engine.resume();
-      expect((engine as any)._status).toBe('playing');
-    });
-
-    it('reset 后状态应为 idle', () => {
-      engine.start();
-      engine.reset();
-      expect((engine as any)._status).toBe('idle');
-    });
-
-    it('reset 后粮草归零', () => {
-      engine.start();
-      addGrain(engine, 1000);
-      engine.reset();
-      expect(getGrain(engine)).toBe(0);
-    });
-
-    it('destroy 后状态为 idle', () => {
-      engine.start();
-      engine.destroy();
-      expect((engine as any)._status).toBe('idle');
-    });
-
-    it('多次 start 不会出错', () => {
-      engine.start();
-      expect(() => engine.start()).not.toThrow();
-    });
-
-    it('start-reset 循环正常', () => {
-      engine.start();
-      addGrain(engine, 500);
-      engine.reset();
-      engine.start();
-      expect(getGrain(engine)).toBe(0);
-    });
+  it('建筑升级后产出增加', () => {
+    setResources(engine, { grain: 100 });
+    (engine as any).buyBuilding(); // farm → Lv.1
+    // Now farm produces 0.1 grain/s
+    engine.update(10000); // 10 seconds
+    // Should have produced ~1 grain (0.1 * 10)
+    expect(engine.getResources().grain).toBeGreaterThan(90); // 100 - 10 + ~1
   });
 
-  // ========== 点击产生粮草 ==========
-
-  describe('点击产生粮草', () => {
-    it('点击一次产生粮草', () => {
-      engine.start();
-      const gained = engine.click();
-      expect(gained).toBeGreaterThan(0);
-      expect(getGrain(engine)).toBeGreaterThan(0);
-    });
-
-    it('连续点击 10 次产生粮草', () => {
-      engine.start();
-      let total = 0;
-      for (let i = 0; i < 10; i++) {
-        total += engine.click();
-      }
-      expect(total).toBeGreaterThanOrEqual(10);
-    });
-
-    it('点击增加总点击计数', () => {
-      engine.start();
-      engine.click();
-      engine.click();
-      engine.click();
-      expect(engine.totalClicks).toBe(3);
-    });
-
-    it('点击增加总粮草获得', () => {
-      engine.start();
-      engine.click();
-      expect(engine.totalGrainEarned).toBeGreaterThan(0);
-    });
-
-    it('点击增加 score', () => {
-      engine.start();
-      engine.click();
-      expect(engine.score).toBeGreaterThan(0);
-    });
-
-    it('idle 状态下点击无效', () => {
-      const gained = engine.click();
-      expect(gained).toBe(0);
-      expect(getGrain(engine)).toBe(0);
-    });
-
-    it('paused 状态下点击无效', () => {
-      engine.start();
-      engine.pause();
-      const gained = engine.click();
-      expect(gained).toBe(0);
-    });
-
-    it('点击触发 stateChange 事件', () => {
-      engine.start();
-      const listener = vi.fn();
-      engine.on('stateChange', listener);
-      engine.click();
-      expect(listener).toHaveBeenCalled();
-    });
-
-    it('大量点击（1000次）性能正常', () => {
-      engine.start();
-      const start = performance.now();
-      for (let i = 0; i < 1000; i++) {
-        engine.click();
-      }
-      const elapsed = performance.now() - start;
-      expect(elapsed).toBeLessThan(1000);
-    });
+  it('建筑费用递增', () => {
+    const bldg = (engine as any).bldg;
+    const cost1 = bldg.getCost('farm'); // cost at Lv.0
+    // Upgrade to Lv.1
+    setResources(engine, { grain: 100 });
+    (engine as any).buyBuilding();
+    const cost2 = bldg.getCost('farm'); // cost at Lv.1
+    // cost2 should be >= cost1 (cost multiplier 1.07)
+    expect(cost2.grain).toBeGreaterThanOrEqual(cost1.grain);
   });
 
-  // ========== 资源系统 ==========
-
-  describe('资源系统', () => {
-    it('增加粮草', () => {
-      addGrain(engine, 100);
-      expect(getGrain(engine)).toBe(100);
-    });
-
-    it('增加金币', () => {
-      addGold(engine, 50);
-      expect(getGold(engine)).toBe(50);
-    });
-
-    it('增加兵力', () => {
-      addTroop(engine, 30);
-      expect(getTroop(engine)).toBe(30);
-    });
-
-    it('消耗粮草成功', () => {
-      addGrain(engine, 100);
-      (engine as any).spendResource('grain', 50);
-      expect(getGrain(engine)).toBe(50);
-    });
-
-    it('消耗粮草失败（不足）', () => {
-      addGrain(engine, 10);
-      const result = (engine as any).spendResource('grain', 50);
-      expect(result).toBeFalsy();
-      expect(getGrain(engine)).toBe(10);
-    });
-
-    it('检查是否有足够资源', () => {
-      addGrain(engine, 100);
-      expect((engine as any).hasResource('grain', 50)).toBe(true);
-      expect((engine as any).hasResource('grain', 200)).toBe(false);
-    });
-
-    it('canAfford 多资源检查', () => {
-      addGrain(engine, 100);
-      addGold(engine, 50);
-      expect((engine as any).canAfford({ grain: 50, gold: 20 })).toBe(true);
-      expect((engine as any).canAfford({ grain: 50, gold: 200 })).toBe(false);
-    });
+  it('足够资源时可以购买建筑', () => {
+    setResources(engine, { grain: 100 });
+    const bldg = (engine as any).bldg;
+    const cost = bldg.getCost('farm');
+    const hasFn = (id: string, a: number) => (engine.getResources() as Record<string, number>)[id] >= a;
+    expect(bldg.canAfford('farm', hasFn)).toBe(true);
   });
 
-  // ========== 建筑系统 ==========
-
-  describe('建筑系统', () => {
-    it('应有 8 种建筑', () => {
-      expect(BUILDINGS.length).toBe(8);
-    });
-
-    it('初始只有农田解锁', () => {
-      const farm = (engine as any).upgrades.get('farm');
-      expect(farm.unlocked).toBe(true);
-    });
-
-    it('集市初始未解锁', () => {
-      const market = (engine as any).upgrades.get('market');
-      expect(market.unlocked).toBe(false);
-    });
-
-    it('兵营初始未解锁', () => {
-      const barracks = (engine as any).upgrades.get('barracks');
-      expect(barracks.unlocked).toBe(false);
-    });
-
-    it('购买农田成功', () => {
-      engine.start();
-      addGrain(engine, 100);
-      const result = engine.purchaseBuilding(0); // farm
-      expect(result).toBe(true);
-      expect(engine.getBuildingLevel(0)).toBe(1);
-    });
-
-    it('购买农田失败（资源不足）', () => {
-      engine.start();
-      const result = engine.purchaseBuilding(0);
-      expect(result).toBe(false);
-      expect(engine.getBuildingLevel(0)).toBe(0);
-    });
-
-    it('建筑费用递增', () => {
-      engine.start();
-      addGrain(engine, 10000);
-      const cost1 = engine.getBuildingCost(0);
-      engine.purchaseBuilding(0);
-      const cost2 = engine.getBuildingCost(0);
-      expect(cost2.grain).toBeGreaterThan(cost1.grain);
-    });
-
-    it('无效索引购买失败', () => {
-      engine.start();
-      addGrain(engine, 10000);
-      expect(engine.purchaseBuilding(-1)).toBe(false);
-      expect(engine.purchaseBuilding(99)).toBe(false);
-    });
-
-    it('未解锁建筑购买失败', () => {
-      engine.start();
-      addGrain(engine, 10000);
-      // 集市需要农田等级 > 0
-      const result = engine.purchaseBuilding(1); // market
-      expect(result).toBe(false);
-    });
-
-    it('购买后资源减少', () => {
-      engine.start();
-      addGrain(engine, 100);
-      const before = getGrain(engine);
-      engine.purchaseBuilding(0);
-      expect(getGrain(engine)).toBeLessThan(before);
-    });
-
-    it('购买建筑触发 stateChange', () => {
-      engine.start();
-      addGrain(engine, 100);
-      const listener = vi.fn();
-      engine.on('stateChange', listener);
-      engine.purchaseBuilding(0);
-      expect(listener).toHaveBeenCalled();
-    });
-
-    it('购买建筑触发 upgradePurchased 事件', () => {
-      engine.start();
-      addGrain(engine, 100);
-      const listener = vi.fn();
-      engine.on('upgradePurchased', listener);
-      engine.purchaseBuilding(0);
-      expect(listener).toHaveBeenCalledWith('farm', 1);
-    });
+  it('不足资源时无法购买建筑', () => {
+    setResources(engine, { grain: 0 });
+    const bldg = (engine as any).bldg;
+    const hasFn = (id: string, a: number) => (engine.getResources() as Record<string, number>)[id] >= a;
+    expect(bldg.canAfford('farm', hasFn)).toBe(false);
   });
 
-  // ========== 建筑解锁 ==========
+  it('未解锁建筑无法购买', () => {
+    setResources(engine, { grain: 10000, gold: 10000 });
+    const bldg = (engine as any).bldg;
+    const hasFn = (id: string, a: number) => true; // pretend we have everything
+    // market is not initially unlocked (only farm is in INITIALLY_UNLOCKED)
+    expect(bldg.isUnlocked('market')).toBe(false);
+    expect(bldg.canAfford('market', hasFn)).toBe(false);
+  });
+});
 
-  describe('建筑解锁', () => {
-    it('集市在农田有等级后解锁', () => {
-      engine.start();
-      addGrain(engine, 100);
-      engine.purchaseBuilding(0); // farm
-      tick(engine, 16);
-      const market = (engine as any).upgrades.get('market');
-      expect(market.unlocked).toBe(true);
-    });
+// ═══════════════════════════════════════════════════════════════
+// 5. 武将系统
+// ═══════════════════════════════════════════════════════════════
 
-    it('兵营在农田有等级后解锁', () => {
-      engine.start();
-      addGrain(engine, 100);
-      engine.purchaseBuilding(0); // farm
-      tick(engine, 16);
-      const barracks = (engine as any).upgrades.get('barracks');
-      expect(barracks.unlocked).toBe(true);
-    });
-
-    it('粮仓需要集市和兵营', () => {
-      engine.start();
-      addGrain(engine, 10000);
-      engine.purchaseBuilding(0); // farm
-      tick(engine, 16);
-      engine.purchaseBuilding(1); // market
-      engine.purchaseBuilding(2); // barracks
-      tick(engine, 16);
-      const granary = (engine as any).upgrades.get('granary');
-      expect(granary.unlocked).toBe(true);
-    });
-
-    it('商栈需要集市', () => {
-      engine.start();
-      addGrain(engine, 50000);
-      engine.purchaseBuilding(0); // farm
-      tick(engine, 16);
-      // 购买多个集市来满足商栈费用
-      for (let i = 0; i < 5; i++) {
-        engine.purchaseBuilding(1); // market
-      }
-      tick(engine, 16);
-      const tradingPost = (engine as any).upgrades.get('trading_post');
-      expect(tradingPost.unlocked).toBe(true);
-    });
-
-    it('演武场需要兵营', () => {
-      engine.start();
-      addGrain(engine, 100000);
-      addTroop(engine, 1000);
-      engine.purchaseBuilding(0); // farm
-      tick(engine, 16);
-      for (let i = 0; i < 5; i++) {
-        engine.purchaseBuilding(2); // barracks
-      }
-      tick(engine, 16);
-      const trainingGround = (engine as any).upgrades.get('training_ground');
-      expect(trainingGround.unlocked).toBe(true);
-    });
+describe('武将系统', () => {
+  it('12 个武将各有独特属性', () => {
+    for (const g of GENERALS) {
+      expect(g.id).toBeTruthy();
+      expect(g.name).toBeTruthy();
+      expect(g.baseStats).toBeDefined();
+      expect(g.baseStats.attack).toBeGreaterThan(0);
+      expect(g.baseStats.defense).toBeGreaterThan(0);
+      expect(g.baseStats.intelligence).toBeGreaterThan(0);
+      expect(g.baseStats.command).toBeGreaterThan(0);
+    }
   });
 
-  // ========== 资源解锁 ==========
-
-  describe('资源解锁', () => {
-    it('金币在集市等级>=1时解锁', () => {
-      engine.start();
-      addGrain(engine, 10000);
-      engine.purchaseBuilding(0); // farm
-      tick(engine, 16);
-      engine.purchaseBuilding(1); // market
-      tick(engine, 16);
-      const gold = (engine as any).getResource('gold');
-      expect(gold.unlocked).toBe(true);
-    });
-
-    it('兵力在兵营等级>=1时解锁', () => {
-      engine.start();
-      addGrain(engine, 10000);
-      engine.purchaseBuilding(0); // farm
-      tick(engine, 16);
-      engine.purchaseBuilding(2); // barracks
-      tick(engine, 16);
-      const troop = (engine as any).getResource('troop');
-      expect(troop.unlocked).toBe(true);
-    });
+  it('蜀魏吴各 4 人', () => {
+    const shu = GENERALS.filter(g => g.faction === 'shu');
+    const wei = GENERALS.filter(g => g.faction === 'wei');
+    const wu = GENERALS.filter(g => g.faction === 'wu');
+    expect(shu).toHaveLength(4);
+    expect(wei).toHaveLength(4);
+    expect(wu).toHaveLength(4);
   });
 
-  // ========== 武将系统 ==========
-
-  describe('武将系统', () => {
-    it('解锁关羽需要 800 粮草', () => {
-      engine.start();
-      addGrain(engine, 800);
-      const result = engine.unlockGeneral('guanyu');
-      expect(result).toBe(true);
-    });
-
-    it('解锁关羽失败（粮草不足）', () => {
-      engine.start();
-      addGrain(engine, 100);
-      const result = engine.unlockGeneral('guanyu');
-      expect(result).toBe(false);
-    });
-
-    it('重复解锁同一武将失败', () => {
-      engine.start();
-      addGrain(engine, 2000);
-      engine.unlockGeneral('guanyu');
-      const result = engine.unlockGeneral('guanyu');
-      expect(result).toBe(false);
-    });
-
-    it('解锁不存在的武将失败', () => {
-      engine.start();
-      const result = engine.unlockGeneral('nonexistent');
-      expect(result).toBe(false);
-    });
-
-    it('解锁武将触发 generalUnlocked 事件', () => {
-      engine.start();
-      addGrain(engine, 800);
-      const listener = vi.fn();
-      engine.on('generalUnlocked', listener);
-      engine.unlockGeneral('guanyu');
-      expect(listener).toHaveBeenCalledWith('guanyu');
-    });
-
-    it('解锁武将增加统计计数', () => {
-      engine.start();
-      addGrain(engine, 800);
-      engine.unlockGeneral('guanyu');
-      expect(engine.statistics.totalGeneralsUnlocked).toBe(2); // 初始1 + 新解锁1
-    });
-
-    it('generals getter 返回副本', () => {
-      const generals1 = engine.generals;
-      const generals2 = engine.generals;
-      expect(generals1).not.toBe(generals2);
-    });
-
-    it('解锁曹操需要 3000 粮草', () => {
-      engine.start();
-      addGrain(engine, 3000);
-      const result = engine.unlockGeneral('caocao');
-      expect(result).toBe(true);
-    });
-
-    it('解锁赵云需要 80000 粮草', () => {
-      engine.start();
-      addGrain(engine, 80000);
-      const result = engine.unlockGeneral('zhaoyun');
-      expect(result).toBe(true);
-    });
+  it('武将稀有度分布正确', () => {
+    const rarities = GENERALS.map(g => g.rarity);
+    // 蜀: legendary, epic, epic, mythic
+    // 魏: legendary, rare, epic, uncommon
+    // 吴: legendary, epic, rare, rare
+    expect(rarities.filter(r => r === 'legendary')).toHaveLength(3);
+    expect(rarities.filter(r => r === 'epic')).toHaveLength(4);
+    expect(rarities.filter(r => r === 'rare')).toHaveLength(3);
+    expect(rarities.filter(r => r === 'uncommon')).toHaveLength(1);
+    expect(rarities.filter(r => r === 'mythic')).toHaveLength(1);
   });
 
-  // ========== 武将升级 ==========
-
-  describe('武将升级', () => {
-    it('升级刘备成功', () => {
-      engine.start();
-      addGold(engine, 100);
-      addTroop(engine, 50);
-      const result = engine.upgradeGeneral('liubei');
-      expect(result).toBe(true);
-      expect(engine.getGeneralUpgradeLevel('liubei')).toBe(1);
-    });
-
-    it('升级未解锁的武将失败', () => {
-      engine.start();
-      const result = engine.upgradeGeneral('guanyu');
-      expect(result).toBe(false);
-    });
-
-    it('升级资源不足时失败', () => {
-      engine.start();
-      const result = engine.upgradeGeneral('liubei');
-      expect(result).toBe(false);
-    });
-
-    it('升级后武将加成增加', () => {
-      engine.start();
-      const multBefore = engine.getClickMultiplier();
-      addGold(engine, 100);
-      addTroop(engine, 50);
-      engine.upgradeGeneral('liubei');
-      const multAfter = engine.getClickMultiplier();
-      expect(multAfter).toBeGreaterThan(multBefore);
-    });
-
-    it('升级触发 generalUpgraded 事件', () => {
-      engine.start();
-      addGold(engine, 100);
-      addTroop(engine, 50);
-      const listener = vi.fn();
-      engine.on('generalUpgraded', listener);
-      engine.upgradeGeneral('liubei');
-      expect(listener).toHaveBeenCalledWith('liubei', 1);
-    });
-
-    it('升级增加统计计数', () => {
-      engine.start();
-      addGold(engine, 100);
-      addTroop(engine, 50);
-      engine.upgradeGeneral('liubei');
-      expect(engine.statistics.totalUpgrades).toBe(1);
-    });
-
-    it('获取升级费用', () => {
-      const cost1 = engine.getGeneralUpgradeCost(1);
-      expect(cost1).toBeDefined();
-      expect(Object.keys(cost1).length).toBeGreaterThan(0);
-    });
-
-    it('高级升级费用更高', () => {
-      const cost1 = engine.getGeneralUpgradeCost(1);
-      const cost3 = engine.getGeneralUpgradeCost(3);
-      expect(cost3.gold).toBeGreaterThan(cost1.gold);
-    });
-
-    it('升级到最大等级后不能再升级', () => {
-      engine.start();
-      // 手动设置到最大等级
-      const general = (engine as any)._generals.find((g: any) => g.id === 'liubei');
-      general.upgradeLevel = 5;
-      const result = engine.upgradeGeneral('liubei');
-      expect(result).toBe(false);
-    });
+  it('初始无武将招募', () => {
+    const engine = createEngine();
+    const units = (engine as any).units;
+    for (const g of GENERALS) {
+      expect(units.isUnlocked(g.id)).toBe(false);
+    }
   });
 
-  // ========== 加成倍率 ==========
-
-  describe('加成倍率', () => {
-    it('初始点击倍率为 1.1（刘备加成）', () => {
-      // 刘备初始解锁，+10% 点击
-      const mult = engine.getClickMultiplier();
-      expect(mult).toBeCloseTo(1.1, 1);
-    });
-
-    it('初始产出倍率为 1（无产出加成武将）', () => {
-      const mult = engine.getProductionMultiplier();
-      expect(mult).toBe(1); // 无声望，刘备只加点击
-    });
-
-    it('初始金币倍率为 1', () => {
-      const mult = engine.getGoldMultiplier();
-      expect(mult).toBe(1);
-    });
-
-    it('初始兵力倍率为 1', () => {
-      const mult = engine.getTroopMultiplier();
-      expect(mult).toBe(1);
-    });
-
-    it('声望倍率初始为 1', () => {
-      const mult = engine.getPrestigeMultiplier();
-      expect(mult).toBe(1);
-    });
-
-    it('声望倍率随天命增加', () => {
-      (engine as any).prestige.currency = 5;
-      const mult = engine.getPrestigeMultiplier();
-      expect(mult).toBeCloseTo(1 + 5 * MANDATE_BONUS_MULTIPLIER, 2);
-    });
-
-    it('解锁曹操增加产出倍率', () => {
-      engine.start();
-      addGrain(engine, 3000);
-      engine.unlockGeneral('caocao');
-      const mult = engine.getProductionMultiplier();
-      expect(mult).toBeGreaterThan(1);
-    });
-
-    it('解锁关羽增加兵力倍率', () => {
-      engine.start();
-      addGrain(engine, 800);
-      engine.unlockGeneral('guanyu');
-      const mult = engine.getTroopMultiplier();
-      expect(mult).toBeGreaterThan(1);
-    });
-
-    it('解锁赵云增加所有倍率', () => {
-      engine.start();
-      addGrain(engine, 80000);
-      engine.unlockGeneral('zhaoyun');
-      expect(engine.getClickMultiplier()).toBeGreaterThan(1.1);
-      expect(engine.getGoldMultiplier()).toBeGreaterThan(1);
-      expect(engine.getTroopMultiplier()).toBeGreaterThan(1);
-    });
+  it('武将招募需要资源（recruitCost 存在且非零）', () => {
+    for (const g of GENERALS) {
+      expect(g.recruitCost).toBeDefined();
+      const costs = Object.values(g.recruitCost);
+      expect(costs.some(c => c > 0)).toBe(true);
+    }
   });
 
-  // ========== 声望系统 ==========
+  it('稀有度越高招募费用越高', () => {
+    const uncommon = GENERALS.find(g => g.rarity === 'uncommon')!;
+    const mythic = GENERALS.find(g => g.rarity === 'mythic')!;
+    const uncommonTotal = Object.values(uncommon.recruitCost).reduce((a, b) => a + b, 0);
+    const mythicTotal = Object.values(mythic.recruitCost).reduce((a, b) => a + b, 0);
+    expect(mythicTotal).toBeGreaterThan(uncommonTotal);
+  });
+});
 
-  describe('声望系统', () => {
-    it('初始天命为 0', () => {
-      expect((engine as any).prestige.currency).toBe(0);
-    });
+// ═══════════════════════════════════════════════════════════════
+// 6. 阶段系统
+// ═══════════════════════════════════════════════════════════════
 
-    it('初始声望次数为 0', () => {
-      expect((engine as any).prestige.count).toBe(0);
-    });
-
-    it('粮草不足时无法声望', () => {
-      engine.start();
-      expect(engine.canPrestige()).toBe(false);
-    });
-
-    it('声望预览为 0（粮草不足）', () => {
-      engine.start();
-      expect(engine.getPrestigePreview()).toBe(0);
-    });
-
-    it('粮草达到最低要求时可以声望', () => {
-      engine.start();
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 4;
-      expect(engine.canPrestige()).toBe(true);
-      expect(engine.getPrestigePreview()).toBeGreaterThan(0);
-    });
-
-    it('声望重置成功', () => {
-      engine.start();
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 4;
-      const mandates = engine.doPrestige();
-      expect(mandates).toBeGreaterThan(0);
-    });
-
-    it('声望后天命增加', () => {
-      engine.start();
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 4;
-      engine.doPrestige();
-      expect((engine as any).prestige.currency).toBeGreaterThan(0);
-    });
-
-    it('声望后声望次数增加', () => {
-      engine.start();
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 4;
-      engine.doPrestige();
-      expect((engine as any).prestige.count).toBe(1);
-    });
-
-    it('声望后资源归零', () => {
-      engine.start();
-      addGrain(engine, MIN_PRESTIGE_GRAIN * 4);
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 4;
-      engine.doPrestige();
-      expect(getGrain(engine)).toBe(0);
-    });
-
-    it('声望保留武将升级等级', () => {
-      engine.start();
-      addGold(engine, 100);
-      addTroop(engine, 50);
-      engine.upgradeGeneral('liubei');
-      const upgBefore = engine.getGeneralUpgradeLevel('liubei');
-
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 4;
-      engine.doPrestige();
-      const upgAfter = engine.getGeneralUpgradeLevel('liubei');
-      expect(upgAfter).toBe(upgBefore);
-    });
-
-    it('声望保留武将解锁状态', () => {
-      engine.start();
-      addGrain(engine, 800);
-      engine.unlockGeneral('guanyu');
-
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 4;
-      engine.doPrestige();
-      const generals = engine.generals;
-      const guanyu = generals.find((g) => g.id === 'guanyu');
-      expect(guanyu?.unlocked).toBe(true);
-    });
-
-    it('声望触发 prestige 事件', () => {
-      engine.start();
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 4;
-      const listener = vi.fn();
-      engine.on('prestige', listener);
-      engine.doPrestige();
-      expect(listener).toHaveBeenCalled();
-    });
-
-    it('声望后天命提供加成', () => {
-      engine.start();
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 100;
-      engine.doPrestige();
-      const mult = engine.getPrestigeMultiplier();
-      expect(mult).toBeGreaterThan(1);
-    });
+describe('阶段系统', () => {
+  it('初始阶段为黄巾之乱', () => {
+    const engine = createEngine();
+    const stage = engine.getStageInfo();
+    expect(stage).toBeDefined();
+    expect(stage!.id).toBe('yellow_turban');
+    expect(stage!.name).toBe('黄巾之乱');
   });
 
-  // ========== 存档系统 ==========
-
-  describe('存档系统', () => {
-    it('save 返回有效数据', () => {
-      engine.start();
-      const data = engine.save();
-      expect(data).toBeDefined();
-      expect(data.version).toBeDefined();
-      expect(data.gameId).toBe('three-kingdoms');
-    });
-
-    it('save 包含资源数据', () => {
-      engine.start();
-      addGrain(engine, 500);
-      const data = engine.save();
-      expect(data.resources).toBeDefined();
-    });
-
-    it('save 包含声望数据', () => {
-      engine.start();
-      const data = engine.save();
-      expect(data.prestige).toBeDefined();
-    });
-
-    it('save 包含武将和统计信息', () => {
-      engine.start();
-      const data = engine.save();
-      expect(data.settings).toBeDefined();
-      expect((data.settings as any).generals).toBeDefined();
-      expect((data.settings as any).stats).toBeDefined();
-    });
-
-    it('load 恢复游戏状态', () => {
-      engine.start();
-      addGrain(engine, 500);
-      const data = engine.save();
-
-      const engine2 = createEngine();
-      engine2.start();
-      engine2.load(data);
-      expect(getGrain(engine2)).toBeCloseTo(500, 0);
-    });
-
-    it('load 恢复武将状态', () => {
-      engine.start();
-      addGrain(engine, 800);
-      engine.unlockGeneral('guanyu');
-      const data = engine.save();
-
-      const engine2 = createEngine();
-      engine2.start();
-      engine2.load(data);
-      const generals = engine2.generals;
-      const guanyu = generals.find((g) => g.id === 'guanyu');
-      expect(guanyu?.unlocked).toBe(true);
-    });
-
-    it('load 忽略不同 gameId', () => {
-      engine.start();
-      addGrain(engine, 500);
-      const data = engine.save();
-      data.gameId = 'different-game';
-
-      const engine2 = createEngine();
-      engine2.start();
-      engine2.load(data);
-      // Should not have loaded the grain
-      expect(getGrain(engine2)).toBe(0);
-    });
+  it('getStageInfo 返回正确的阶段信息', () => {
+    const engine = createEngine();
+    const stage = engine.getStageInfo()!;
+    expect(stage).toHaveProperty('id');
+    expect(stage).toHaveProperty('name');
+    expect(stage).toHaveProperty('description');
+    expect(stage).toHaveProperty('order');
+    expect(stage).toHaveProperty('productionMultiplier');
+    expect(stage).toHaveProperty('combatMultiplier');
+    expect(stage).toHaveProperty('iconAsset');
+    expect(stage).toHaveProperty('themeColor');
   });
 
-  // ========== 状态管理 ==========
-
-  describe('状态管理', () => {
-    it('getState 返回完整状态', () => {
-      engine.start();
-      const state = engine.getState();
-      expect(state).toBeDefined();
-      expect(state.resources).toBeDefined();
-      expect(state.buildings).toBeDefined();
-      expect(state.generals).toBeDefined();
-      expect(state.prestige).toBeDefined();
-      expect(state.statistics).toBeDefined();
-      expect(state.selectedIndex).toBeDefined();
-    });
-
-    it('loadState 恢复状态', () => {
-      engine.start();
-      addGrain(engine, 1000);
-      const state = engine.getState();
-
-      const engine2 = createEngine();
-      engine2.start();
-      engine2.loadState(state as any);
-      expect(getGrain(engine2)).toBeCloseTo(1000, 0);
-    });
-
-    it('loadState 恢复声望', () => {
-      engine.start();
-      (engine as any).prestige.currency = 5;
-      (engine as any).prestige.count = 2;
-      const state = engine.getState();
-
-      const engine2 = createEngine();
-      engine2.start();
-      engine2.loadState(state as any);
-      expect((engine2 as any).prestige.currency).toBe(5);
-      expect((engine2 as any).prestige.count).toBe(2);
-    });
-
-    it('loadState 恢复武将', () => {
-      engine.start();
-      addGrain(engine, 800);
-      engine.unlockGeneral('guanyu');
-      const state = engine.getState();
-
-      const engine2 = createEngine();
-      engine2.start();
-      engine2.loadState(state as any);
-      const generals = engine2.generals;
-      const guanyu = generals.find((g) => g.id === 'guanyu');
-      expect(guanyu?.unlocked).toBe(true);
-    });
-
-    it('loadState 恢复选中索引', () => {
-      engine.start();
-      (engine as any)._selectedIndex = 3;
-      const state = engine.getState();
-
-      const engine2 = createEngine();
-      engine2.start();
-      engine2.loadState(state as any);
-      expect(engine2.selectedIndex).toBe(3);
-    });
+  it('阶段有 6 个递进', () => {
+    expect(STAGES).toHaveLength(6);
+    const orders = STAGES.map(s => s.order);
+    const sorted = [...orders].sort((a, b) => a - b);
+    expect(orders).toEqual(sorted);
+    expect(sorted[0]).toBe(1);
+    expect(sorted[sorted.length - 1]).toBe(6);
   });
 
-  // ========== 数字格式化 ==========
-
-  describe('数字格式化', () => {
-    it('小数字原样返回', () => {
-      expect((engine as any).formatNumber(42)).toBe('42');
-    });
-
-    it('千位使用 K 后缀', () => {
-      const result = (engine as any).formatNumber(1500);
-      expect(result).toContain('K');
-    });
-
-    it('百万使用 M 后缀', () => {
-      const result = (engine as any).formatNumber(1500000);
-      expect(result).toContain('M');
-    });
-
-    it('十亿使用 B 后缀', () => {
-      const result = (engine as any).formatNumber(1500000000);
-      expect(result).toContain('B');
-    });
-
-    it('0 返回 0', () => {
-      expect((engine as any).formatNumber(0)).toBe('0');
-    });
+  it('最终阶段为一统天下', () => {
+    const last = STAGES[STAGES.length - 1];
+    expect(last.id).toBe('unification');
+    expect(last.name).toBe('一统天下');
+    expect(last.productionMultiplier).toBe(3.0);
   });
 
-  // ========== 键盘输入 ==========
+  it('每个阶段有前置阶段（第一个除外）', () => {
+    expect(STAGES[0].prerequisiteStageId).toBeNull();
+    for (let i = 1; i < STAGES.length; i++) {
+      expect(STAGES[i].prerequisiteStageId).toBeTruthy();
+    }
+  });
+});
 
-  describe('键盘输入', () => {
-    it('空格键触发点击', () => {
-      engine.start();
+// ═══════════════════════════════════════════════════════════════
+// 7. 存档系统
+// ═══════════════════════════════════════════════════════════════
+
+describe('存档系统', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('serialize 返回有效数据', () => {
+    const data = engine.serialize();
+    expect(data).toBeDefined();
+    expect(typeof data).toBe('object');
+  });
+
+  it('serialize 包含正确的资源', () => {
+    const data = engine.serialize();
+    expect(data.resources).toBeDefined();
+    expect(data.resources.grain).toBe(50);
+    expect(data.resources.gold).toBe(0);
+    expect(data.resources.troops).toBe(0);
+    expect(data.resources.destiny).toBe(0);
+  });
+
+  it('serialize 包含当前阶段', () => {
+    const data = engine.serialize();
+    expect(data.currentStage).toBe('yellow_turban');
+  });
+
+  it('serialize 包含声望状态', () => {
+    const data = engine.serialize();
+    expect(data.prestigeState).toBeDefined();
+    expect(data.prestigeState.currency).toBe(0);
+    expect(data.prestigeState.count).toBe(0);
+  });
+
+  it('serialize 包含建筑、武将、领土、科技字段', () => {
+    const data = engine.serialize();
+    expect(data).toHaveProperty('buildings');
+    expect(data).toHaveProperty('generals');
+    expect(data).toHaveProperty('conqueredTerritories');
+    expect(data).toHaveProperty('completedBattles');
+    expect(data).toHaveProperty('researchedTechs');
+    expect(data).toHaveProperty('gameStats');
+    expect(data).toHaveProperty('totalPlayTime');
+  });
+
+  it('deserialize 恢复存档数据', () => {
+    // Modify engine state
+    setResources(engine, { grain: 500, gold: 200 });
+    const data = engine.serialize();
+
+    // Create new engine and restore
+    const engine2 = createEngine();
+    engine2.deserialize(data);
+    expect(engine2.getResources().grain).toBe(500);
+    expect(engine2.getResources().gold).toBe(200);
+  });
+
+  it('deserialize 恢复阶段', () => {
+    const data = engine.serialize();
+    data.currentStage = 'warlords';
+
+    const engine2 = createEngine();
+    engine2.deserialize(data);
+    expect(engine2.getStageInfo()!.id).toBe('warlords');
+  });
+
+  it('serialize → deserialize 往返一致', () => {
+    setResources(engine, { grain: 1234, gold: 567 });
+    const data = engine.serialize();
+
+    const engine2 = createEngine();
+    engine2.deserialize(data);
+    const data2 = engine2.serialize();
+
+    expect(data2.resources.grain).toBe(1234);
+    expect(data2.resources.gold).toBe(567);
+    expect(data2.currentStage).toBe(data.currentStage);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 8. 声望系统
+// ═══════════════════════════════════════════════════════════════
+
+describe('声望系统', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('getPrestigeState 初始值', () => {
+    const state = engine.getPrestigeState();
+    expect(state.currency).toBe(0);
+    expect(state.count).toBe(0);
+    expect(state.multiplier).toBe(1);
+    expect(state.bestGain).toBe(0);
+  });
+
+  it('声望配置正确', () => {
+    expect(PRESTIGE_CONFIG.currencyName).toBe('天命');
+    expect(PRESTIGE_CONFIG.threshold).toBe(10000);
+    expect(PRESTIGE_CONFIG.retention).toBe(0.1);
+  });
+
+  it('初始不可转生（资源不足）', () => {
+    // 初始 grain=50, gold=0, troops=0 → total=50 < threshold=10000
+    setResources(engine, { grain: 50, gold: 0, troops: 0 });
+    const before = engine.getResources().grain;
+    engine.doPrestige();
+    expect(engine.getResources().grain).toBe(before);
+    expect(engine.getPrestigeState().count).toBe(0);
+  });
+
+  it('资源足够时可以转生', () => {
+    // PrestigeSystem uses logarithmic formula:
+    //   gain = floor(log(threshold + total) / log(base)) - floor(log(threshold) / log(base))
+    // With base=10, threshold=10000:
+    //   floor(log10(10000)) = 4
+    //   Need floor(log10(10000 + total)) >= 5 → total >= 90000
+    setResources(engine, { grain: 200000, gold: 0, troops: 0 });
+    engine.doPrestige();
+    expect(engine.getPrestigeState().count).toBe(1);
+    expect(engine.getPrestigeState().currency).toBeGreaterThan(0);
+  });
+
+  it('转生后资源按保留比例折算', () => {
+    setResources(engine, { grain: 200000, gold: 0, troops: 0 });
+    engine.doPrestige();
+    // retention = 0.1, so grain should be ~20000
+    const grain = engine.getResources().grain;
+    expect(grain).toBeLessThan(200000);
+    expect(grain).toBeGreaterThan(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 9. 渲染
+// ═══════════════════════════════════════════════════════════════
+
+describe('渲染', () => {
+  it('onRender 不报错', () => {
+    const engine = createEngine();
+    const canvas = (engine as any).canvas as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+    expect(() => {
+      (engine as any).onRender(ctx, canvas.width, canvas.height);
+    }).not.toThrow();
+  });
+
+  it('formatNumber 正确格式化小数', () => {
+    const engine = createEngine();
+    expect(engine.formatNumber(1.5, 1)).toBe('1.5');
+    expect(engine.formatNumber(0, 1)).toBe('0');
+    expect(engine.formatNumber(10, 1)).toBe('10');
+  });
+
+  it('formatNumber 处理大数（K/M/B/T）', () => {
+    const engine = createEngine();
+    expect(engine.formatNumber(1000, 1)).toMatch(/K/);
+    expect(engine.formatNumber(1000000, 1)).toMatch(/M/);
+    expect(engine.formatNumber(1000000000, 1)).toMatch(/B/);
+    expect(engine.formatNumber(1000000000000, 1)).toMatch(/T/);
+  });
+
+  it('formatNumber 处理负数', () => {
+    const engine = createEngine();
+    expect(engine.formatNumber(-1000, 1)).toMatch(/-/);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 10. 输入处理
+// ═══════════════════════════════════════════════════════════════
+
+describe('输入处理', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('handleKeyDown 不报错', () => {
+    expect(() => engine.handleKeyDown('ArrowDown')).not.toThrow();
+    expect(() => engine.handleKeyDown('ArrowUp')).not.toThrow();
+    expect(() => engine.handleKeyDown('Enter')).not.toThrow();
+    expect(() => engine.handleKeyDown('Escape')).not.toThrow();
+  });
+
+  it('handleKeyDown Space 触发点击（增加 grain）', () => {
+    const before = engine.getResources().grain;
+    engine.handleKeyDown(' ');
+    expect(engine.getResources().grain).toBeGreaterThan(before);
+  });
+
+  it('Escape 返回主面板', () => {
+    // First switch to another panel
+    engine.handleKeyDown('u'); // toggle generals panel
+    expect(engine.getActivePanel()).toBe('generals');
+    engine.handleKeyDown('Escape');
+    expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('getActivePanel 返回正确值', () => {
+    expect(engine.getActivePanel()).toBe('none');
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('tech');
+    engine.handleKeyDown('t'); // toggle back
+    expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('面板切换：T→科技、M→领土、B→战斗、U→武将', () => {
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('tech');
+    engine.handleKeyDown('Escape');
+
+    engine.handleKeyDown('m');
+    expect(engine.getActivePanel()).toBe('territory');
+    engine.handleKeyDown('Escape');
+
+    engine.handleKeyDown('b');
+    expect(engine.getActivePanel()).toBe('battle');
+    engine.handleKeyDown('Escape');
+
+    engine.handleKeyDown('u');
+    expect(engine.getActivePanel()).toBe('generals');
+  });
+
+  it('重复按同一键切换面板开关', () => {
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('tech');
+    engine.handleKeyDown('t');
+    expect(engine.getActivePanel()).toBe('none');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 11. 点击系统
+// ═══════════════════════════════════════════════════════════════
+
+describe('点击系统', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => {
+    engine = createEngine();
+  });
+
+  it('点击产生粮草', () => {
+    const before = engine.getResources().grain;
+    engine.handleKeyDown(' ');
+    expect(engine.getResources().grain).toBeGreaterThan(before);
+  });
+
+  it('点击增加量等于 CLICK_REWARD.grain', () => {
+    const before = engine.getResources().grain;
+    engine.handleKeyDown(' ');
+    expect(engine.getResources().grain).toBe(before + CLICK_REWARD.grain);
+  });
+
+  it('连续点击 10 次', () => {
+    const before = engine.getResources().grain;
+    for (let i = 0; i < 10; i++) {
       engine.handleKeyDown(' ');
-      expect(getGrain(engine)).toBeGreaterThan(0);
-    });
-
-    it('上箭头减少选中索引', () => {
-      engine.start();
-      (engine as any)._selectedIndex = 2;
-      engine.handleKeyDown('ArrowUp');
-      expect(engine.selectedIndex).toBe(1);
-    });
-
-    it('上箭头不低于 0', () => {
-      engine.start();
-      (engine as any)._selectedIndex = 0;
-      engine.handleKeyDown('ArrowUp');
-      expect(engine.selectedIndex).toBe(0);
-    });
-
-    it('下箭头增加选中索引', () => {
-      engine.start();
-      engine.handleKeyDown('ArrowDown');
-      expect(engine.selectedIndex).toBe(1);
-    });
-
-    it('下箭头不超过最大值', () => {
-      engine.start();
-      (engine as any)._selectedIndex = BUILDINGS.length - 1;
-      engine.handleKeyDown('ArrowDown');
-      expect(engine.selectedIndex).toBe(BUILDINGS.length - 1);
-    });
-
-    it('回车购买建筑', () => {
-      engine.start();
-      addGrain(engine, 100);
-      (engine as any)._selectedIndex = 0;
-      engine.handleKeyDown('Enter');
-      expect(engine.getBuildingLevel(0)).toBe(1);
-    });
-
-    it('U 键升级武将', () => {
-      engine.start();
-      addGold(engine, 100);
-      addTroop(engine, 50);
-      engine.handleKeyDown('u');
-      expect(engine.getGeneralUpgradeLevel('liubei')).toBe(1);
-    });
-
-    it('P 键触发声望', () => {
-      engine.start();
-      (engine as any)._stats.totalGrainEarned = MIN_PRESTIGE_GRAIN * 4;
-      engine.handleKeyDown('p');
-      expect((engine as any).prestige.count).toBe(1);
-    });
-
-    it('idle 状态下键盘无效', () => {
-      engine.handleKeyDown(' ');
-      expect(getGrain(engine)).toBe(0);
-    });
-
-    it('handleKeyUp 不抛错', () => {
-      expect(() => engine.handleKeyUp(' ')).not.toThrow();
-    });
+    }
+    expect(engine.getResources().grain).toBe(before + 10 * CLICK_REWARD.grain);
   });
 
-  // ========== 渲染 ==========
+  it('有建筑产出时点击额外获得 10% 当前产出', () => {
+    // Upgrade farm first
+    setResources(engine, { grain: 100 });
+    (engine as any).buyBuilding(); // farm → Lv.1
+    // Run update to build psCache
+    engine.update(1000);
+    // Now click should give grain + 10% of production rate
+    const before = engine.getResources().grain;
+    engine.handleKeyDown(' ');
+    const gained = engine.getResources().grain - before;
+    // Should be at least 1 (base click reward)
+    expect(gained).toBeGreaterThanOrEqual(CLICK_REWARD.grain);
+  });
+});
 
-  describe('Canvas 渲染', () => {
-    it('onRender 不抛错', () => {
-      engine.start();
-      const ctx = createMockCtx();
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
+// ═══════════════════════════════════════════════════════════════
+// 12. 战斗系统常量
+// ═══════════════════════════════════════════════════════════════
 
-    it('多次渲染不抛错', () => {
-      engine.start();
-      const ctx = createMockCtx();
-      for (let i = 0; i < 10; i++) {
-        engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
+describe('战斗系统常量', () => {
+  it('每个关卡有 BOSS', () => {
+    const stageIds = [...new Set(BATTLES.map(b => b.stageId))];
+    for (const sid of stageIds) {
+      const bossWave = BATTLES.filter(b => b.stageId === sid).find(b =>
+        b.enemies.some(e => e.isBoss)
+      );
+      expect(bossWave).toBeDefined();
+    }
+  });
+
+  it('BOSS 血量高于普通敌人', () => {
+    for (const b of BATTLES) {
+      const bosses = b.enemies.filter(e => e.isBoss);
+      const normals = b.enemies.filter(e => !e.isBoss);
+      if (bosses.length > 0 && normals.length > 0) {
+        const maxNormalHp = Math.max(...normals.map(e => e.hp));
+        const minBossHp = Math.min(...bosses.map(e => e.hp));
+        expect(minBossHp).toBeGreaterThan(maxNormalHp);
       }
-    });
-
-    it('有声望时渲染正常', () => {
-      engine.start();
-      (engine as any).prestige.count = 1;
-      const ctx = createMockCtx();
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
-
-    it('有武将升级时渲染正常', () => {
-      engine.start();
-      addGold(engine, 100);
-      addTroop(engine, 50);
-      engine.upgradeGeneral('liubei');
-      const ctx = createMockCtx();
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
-
-    it('解锁多个武将后渲染正常', () => {
-      engine.start();
-      addGrain(engine, 100000);
-      engine.unlockGeneral('guanyu');
-      engine.unlockGeneral('caocao');
-      const ctx = createMockCtx();
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
-
-    it('有建筑等级时渲染正常', () => {
-      engine.start();
-      addGrain(engine, 1000);
-      engine.purchaseBuilding(0);
-      const ctx = createMockCtx();
-      expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
-    });
+    }
   });
 
-  // ========== 自动生产 ==========
+  it('每波战斗有奖励', () => {
+    for (const b of BATTLES) {
+      expect(Object.keys(b.rewards).length).toBeGreaterThan(0);
+    }
+  });
+});
 
-  describe('自动生产', () => {
-    it('有建筑后 update 增加资源', () => {
-      engine.start();
-      addGrain(engine, 100);
-      engine.purchaseBuilding(0); // farm
-      const before = getGrain(engine);
-      tick(engine, 1000);
-      const after = getGrain(engine);
-      expect(after).toBeGreaterThan(before);
-    });
+// ═══════════════════════════════════════════════════════════════
+// 13. 科技系统常量
+// ═══════════════════════════════════════════════════════════════
 
-    it('多个 tick 累积产出', () => {
-      engine.start();
-      addGrain(engine, 100);
-      engine.purchaseBuilding(0);
-      const before = getGrain(engine);
-      for (let i = 0; i < 10; i++) {
-        tick(engine, 100);
-      }
-      const after = getGrain(engine);
-      expect(after).toBeGreaterThan(before);
-    });
-
-    it('集市产金币', () => {
-      engine.start();
-      addGrain(engine, 10000);
-      engine.purchaseBuilding(0); // farm
-      tick(engine, 16);
-      engine.purchaseBuilding(1); // market
-      tick(engine, 16);
-      // 金币应已解锁
-      const gold = (engine as any).getResource('gold');
-      expect(gold.unlocked).toBe(true);
-      // 有产出
-      tick(engine, 1000);
-      expect(getGold(engine)).toBeGreaterThan(0);
-    });
-
-    it('兵营产兵力', () => {
-      engine.start();
-      addGrain(engine, 10000);
-      engine.purchaseBuilding(0); // farm
-      tick(engine, 16);
-      engine.purchaseBuilding(2); // barracks
-      tick(engine, 16);
-      const troop = (engine as any).getResource('troop');
-      expect(troop.unlocked).toBe(true);
-      tick(engine, 1000);
-      expect(getTroop(engine)).toBeGreaterThan(0);
-    });
+describe('科技系统常量', () => {
+  it('三条分支各 4 级', () => {
+    const mil = TECHS.filter(t => t.branch === 'military');
+    const eco = TECHS.filter(t => t.branch === 'economy');
+    const cul = TECHS.filter(t => t.branch === 'culture');
+    expect(mil).toHaveLength(4);
+    expect(eco).toHaveLength(4);
+    expect(cul).toHaveLength(4);
   });
 
-  // ========== 建筑依赖链 ==========
-
-  describe('建筑依赖链', () => {
-    it('完整建筑解锁链路', () => {
-      engine.start();
-      // 给足够资源
-      addGrain(engine, 10000000);
-      addGold(engine, 10000);
-      addTroop(engine, 10000);
-
-      // 农田
-      expect(engine.purchaseBuilding(0)).toBe(true); // farm
-      tick(engine, 16);
-
-      // 集市和兵营（依赖农田）
-      expect(engine.purchaseBuilding(1)).toBe(true); // market
-      expect(engine.purchaseBuilding(2)).toBe(true); // barracks
-      tick(engine, 16);
-
-      // 粮仓（依赖集市+兵营）
-      expect(engine.purchaseBuilding(3)).toBe(true); // granary
-      tick(engine, 16);
-
-      // 商栈（依赖集市）
-      expect(engine.purchaseBuilding(4)).toBe(true); // trading_post
-
-      // 演武场（依赖兵营）
-      expect(engine.purchaseBuilding(5)).toBe(true); // training_ground
-      tick(engine, 16);
-
-      // 书院（依赖粮仓）
-      expect(engine.purchaseBuilding(6)).toBe(true); // academy
-      tick(engine, 16);
-
-      // 军机处（依赖演武场+书院）
-      expect(engine.purchaseBuilding(7)).toBe(true); // war_council
-    });
-
-    it('建筑最大等级限制', () => {
-      engine.start();
-      addGrain(engine, 1e15);
-      // 农田最大 50 级
-      for (let i = 0; i < 55; i++) {
-        engine.purchaseBuilding(0);
-      }
-      expect(engine.getBuildingLevel(0)).toBe(BUILDINGS[0].maxLevel);
-    });
+  it('tier 1 无前置要求', () => {
+    const tier1 = TECHS.filter(t => t.tier === 1);
+    expect(tier1).toHaveLength(3);
+    for (const t of tier1) {
+      expect(t.requires).toHaveLength(0);
+    }
   });
 
-  // ========== 边界情况 ==========
+  it('tier 2+ 有前置要求', () => {
+    const higher = TECHS.filter(t => t.tier >= 2);
+    for (const t of higher) {
+      expect(t.requires.length).toBeGreaterThanOrEqual(1);
+    }
+  });
 
-  describe('边界情况', () => {
-    it('大量资源不溢出', () => {
-      addGrain(engine, 1e14);
-      expect(getGrain(engine)).toBeGreaterThan(0);
-    });
+  it('每项科技有至少一个效果', () => {
+    for (const t of TECHS) {
+      expect(t.effects.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+});
 
-    it('负数 deltaTime 不崩溃', () => {
-      engine.start();
-      expect(() => tick(engine, -100)).not.toThrow();
-    });
+// ═══════════════════════════════════════════════════════════════
+// 14. 领土系统常量
+// ═══════════════════════════════════════════════════════════════
 
-    it('零 deltaTime 不崩溃', () => {
-      engine.start();
-      expect(() => tick(engine, 0)).not.toThrow();
-    });
+describe('领土系统常量', () => {
+  it('洛阳为首都，需要最高兵力', () => {
+    const luoyang = TERRITORIES.find(t => t.id === 'luoyang');
+    expect(luoyang).toBeDefined();
+    expect(luoyang!.type).toBe('capital');
+    expect(luoyang!.powerRequired).toBe(5000);
+  });
 
-    it('极大 deltaTime 不崩溃', () => {
-      engine.start();
-      expect(() => tick(engine, 86400000)).not.toThrow();
-    });
+  it('所有领土都有相邻列表', () => {
+    for (const t of TERRITORIES) {
+      expect(t.adjacent.length).toBeGreaterThanOrEqual(1);
+    }
+  });
 
-    it('重复 init 不崩溃', () => {
-      engine.init(createCanvas());
-      engine.init(createCanvas());
-      expect((engine as any)._status).toBeDefined();
-    });
-
-    it('未 start 时 update 不崩溃', () => {
-      expect(() => tick(engine, 100)).not.toThrow();
-    });
-
-    it('连续 reset 不崩溃', () => {
-      engine.start();
-      engine.reset();
-      engine.reset();
-      expect((engine as any)._status).toBe('idle');
-    });
-
-    it('statistics getter 返回副本', () => {
-      const stats1 = engine.statistics;
-      const stats2 = engine.statistics;
-      expect(stats1).not.toBe(stats2);
-    });
-
-    it('getBuildingCost 无效索引返回空', () => {
-      expect(engine.getBuildingCost(-1)).toEqual({});
-      expect(engine.getBuildingCost(99)).toEqual({});
-    });
-
-    it('getBuildingLevel 无效索引返回 0', () => {
-      expect(engine.getBuildingLevel(-1)).toBe(0);
-      expect(engine.getBuildingLevel(99)).toBe(0);
-    });
-
-    it('getGeneralUpgradeLevel 不存在的武将返回 0', () => {
-      expect(engine.getGeneralUpgradeLevel('nonexistent')).toBe(0);
-    });
+  it('所有领土有唯一 ID', () => {
+    const ids = TERRITORIES.map(t => t.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

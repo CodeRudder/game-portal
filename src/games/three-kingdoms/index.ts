@@ -1,23 +1,24 @@
 /**
- * 三国志 (Three Kingdoms) — 放置类游戏入口
+ * 三国霸业 (Three Kingdoms Conquest) — 放置策略游戏入口
  *
  * 导出引擎和常量，供游戏门户注册使用。
  */
 export { ThreeKingdomsEngine } from './ThreeKingdomsEngine';
-export type { ThreeKingdomsState, ThreeKingdomsStatistics, GeneralState } from './ThreeKingdomsEngine';
+export type { ThreeKingdomsSaveState } from './ThreeKingdomsEngine';
+export type { GeneralDef } from './constants';
 export {
-  CANVAS_WIDTH,
-  CANVAS_HEIGHT,
-  GRAIN_PER_CLICK,
-  MANDATE_BONUS_MULTIPLIER,
-  MIN_PRESTIGE_GRAIN,
-  RESOURCE_IDS,
-  BUILDING_IDS,
-  GENERALS,
+  GAME_ID,
+  GAME_TITLE,
+  COLOR_THEME,
   BUILDINGS,
-  COLORS,
-  SCENE_DRAW,
-  BUILDING_PANEL,
-  RESOURCE_PANEL,
+  GENERALS,
+  TERRITORIES,
+  TECHS,
+  BATTLES,
+  STAGES,
+  PRESTIGE_CONFIG,
+  RESOURCES,
+  INITIAL_RESOURCES,
+  CLICK_REWARD,
+  RARITY_COLORS,
 } from './constants';
-export type { GeneralDef, BuildingDef } from './constants';
