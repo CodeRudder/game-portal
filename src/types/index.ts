@@ -120,6 +120,17 @@ export enum GameType {
   SPACE_DRIFT = 'space-drift',
   TRIBULATION = 'tribulation',
   WILD_SURVIVAL = 'wild-survival',
+  AGE_OF_EMPIRES = 'age-of-empires',
+  BALDURS_GATE = 'baldurs-gate',
+  EGYPT_MYTH = 'egypt-myth',
+  FINAL_FANTASY = 'final-fantasy',
+  GREEK_GODS = 'greek-gods',
+  HEROES_MIGHT = 'heroes-might',
+  NORSE_VALKYRIE = 'norse-valkyrie',
+  RED_ALERT = 'red-alert',
+  THREE_KINGDOMS = 'three-kingdoms',
+  TOTAL_WAR = 'total-war',
+  YOKAI_NIGHT = 'yokai-night',
 }
 
 // ========== 游戏状态枚举 ==========

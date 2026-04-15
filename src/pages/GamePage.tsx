@@ -126,6 +126,17 @@ const VALID_TYPES: Record<string, GameType> = {
   'space-drift': GameType.SPACE_DRIFT,
   'tribulation': GameType.TRIBULATION,
   'wild-survival': GameType.WILD_SURVIVAL,
+  'age-of-empires': GameType.AGE_OF_EMPIRES,
+  'baldurs-gate': GameType.BALDURS_GATE,
+  'egypt-myth': GameType.EGYPT_MYTH,
+  'final-fantasy': GameType.FINAL_FANTASY,
+  'greek-gods': GameType.GREEK_GODS,
+  'heroes-might': GameType.HEROES_MIGHT,
+  'norse-valkyrie': GameType.NORSE_VALKYRIE,
+  'red-alert': GameType.RED_ALERT,
+  'three-kingdoms': GameType.THREE_KINGDOMS,
+  'total-war': GameType.TOTAL_WAR,
+  'yokai-night': GameType.YOKAI_NIGHT,
 };
 
 export default function GamePage() {

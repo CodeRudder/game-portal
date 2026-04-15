@@ -112,6 +112,17 @@ import { ModernCityEngine } from '@/games/modern-city/ModernCityEngine';
 import { SpaceDriftEngine } from '@/games/space-drift/SpaceDriftEngine';
 import { TribulationEngine } from '@/games/tribulation/TribulationEngine';
 import { WildSurvivalEngine } from '@/games/wild-survival/WildSurvivalEngine';
+import { AgeOfEmpiresEngine } from '@/games/age-of-empires/AgeOfEmpiresEngine';
+import { BaldursGateEngine } from '@/games/baldurs-gate/BaldursGateEngine';
+import { EgyptMythEngine } from '@/games/egypt-myth/EgyptMythEngine';
+import { FinalFantasyEngine } from '@/games/final-fantasy/FinalFantasyEngine';
+import { GreekGodsEngine } from '@/games/greek-gods/GreekGodsEngine';
+import { HeroesMightEngine } from '@/games/heroes-might/HeroesMightEngine';
+import { NorseValkyrieEngine } from '@/games/norse-valkyrie/NorseValkyrieEngine';
+import { RedAlertEngine } from '@/games/red-alert/RedAlertEngine';
+import { ThreeKingdomsEngine } from '@/games/three-kingdoms/ThreeKingdomsEngine';
+import { TotalWarEngine } from '@/games/total-war/TotalWarEngine';
+import { YokaiNightEngine } from '@/games/yokai-night/YokaiNightEngine';
 import { MemoryMatchEngine } from '@/games/memory-match/MemoryMatchEngine';
 import { GameOfLifeEngine } from '@/games/game-of-life/GameOfLifeEngine';
 import { MinesweeperEngine } from '@/games/minesweeper/MinesweeperEngine';
@@ -250,6 +261,17 @@ function createEngine(type: GameType) {
     case GameTypeEnum.SPACE_DRIFT: return new SpaceDriftEngine();
     case GameTypeEnum.TRIBULATION: return new TribulationEngine();
     case GameTypeEnum.WILD_SURVIVAL: return new WildSurvivalEngine();
+    case GameTypeEnum.AGE_OF_EMPIRES: return new AgeOfEmpiresEngine();
+    case GameTypeEnum.BALDURS_GATE: return new BaldursGateEngine();
+    case GameTypeEnum.EGYPT_MYTH: return new EgyptMythEngine();
+    case GameTypeEnum.FINAL_FANTASY: return new FinalFantasyEngine();
+    case GameTypeEnum.GREEK_GODS: return new GreekGodsEngine();
+    case GameTypeEnum.HEROES_MIGHT: return new HeroesMightEngine();
+    case GameTypeEnum.NORSE_VALKYRIE: return new NorseValkyrieEngine();
+    case GameTypeEnum.RED_ALERT: return new RedAlertEngine();
+    case GameTypeEnum.THREE_KINGDOMS: return new ThreeKingdomsEngine();
+    case GameTypeEnum.TOTAL_WAR: return new TotalWarEngine();
+    case GameTypeEnum.YOKAI_NIGHT: return new YokaiNightEngine();
     default: throw new Error(`Unknown game type: ${type}`);
   }
 }

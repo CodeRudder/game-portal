@@ -151,6 +151,72 @@ const IDLE_GAME_REGISTRY: Record<string, IdleGameConfig> = {
     description: '在原始荒野中生存，狩猎采集，对抗自然！',
     legacyRoute: '/game/wild-survival',
   },
+  'age-of-empires': {
+    name: '帝国时代',
+    icon: '🏰',
+    description: '从石器时代到帝国时代，发展文明，征服世界！',
+    legacyRoute: '/game/age-of-empires',
+  },
+  'baldurs-gate': {
+    name: '博德之门',
+    icon: '⚔️',
+    description: '探索地下城，招募英雄，挑战博德之门！',
+    legacyRoute: '/game/baldurs-gate',
+  },
+  'egypt-myth': {
+    name: '埃及神话',
+    icon: '🐪',
+    description: '召唤埃及众神，建造神庙，统治沙漠王国！',
+    legacyRoute: '/game/egypt-myth',
+  },
+  'final-fantasy': {
+    name: '最终幻想',
+    icon: '💎',
+    description: '集结勇者，探索幻想世界，击败最终Boss！',
+    legacyRoute: '/game/final-fantasy',
+  },
+  'greek-gods': {
+    name: '希腊众神',
+    icon: '⚡',
+    description: '信仰奥林匹斯众神，建设城邦，成就希腊霸业！',
+    legacyRoute: '/game/greek-gods',
+  },
+  'heroes-might': {
+    name: '英雄无敌',
+    icon: '🏇',
+    description: '招募英雄，建设城堡，征服魔法大陆！',
+    legacyRoute: '/game/heroes-might',
+  },
+  'norse-valkyrie': {
+    name: '北欧女武神',
+    icon: '🛡️',
+    description: '召唤女武神，征服九界，书写北欧传奇！',
+    legacyRoute: '/game/norse-valkyrie',
+  },
+  'red-alert': {
+    name: '红色警戒',
+    icon: '🎖️',
+    description: '建造基地，训练军队，赢得终极战争！',
+    legacyRoute: '/game/red-alert',
+  },
+  'three-kingdoms': {
+    name: '三国霸业',
+    icon: '🐴',
+    description: '招兵买马，攻城略地，一统三国天下！',
+    legacyRoute: '/game/three-kingdoms',
+  },
+  'total-war': {
+    name: '全面战争',
+    icon: '🗡️',
+    description: '统帅三军，运筹帷幄，成就战争霸业！',
+    legacyRoute: '/game/total-war',
+  },
+  'yokai-night': {
+    name: '百鬼夜行',
+    icon: '👻',
+    description: '收集妖怪，驱鬼除魔，探索平安京！',
+    legacyRoute: '/game/yokai-night',
+  },
 };
 
 export default function IdleGamePage() {
