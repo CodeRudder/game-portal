@@ -23,6 +23,11 @@ import { BattleChallengeSystem } from './BattleChallengeSystem';
 import { TutorialStorySystem } from './TutorialStorySystem';
 import { MapGenerator } from './MapGenerator';
 import { NPCSystem } from './NPCSystem';
+import { NPCManager } from '../../engine/npc/NPCManager';
+import { THREE_KINGDOMS_NPC_DEFS, THREE_KINGDOMS_SPAWN_CONFIG } from './ThreeKingdomsNPCDefs';
+import { QuestSystem, type QuestDef } from '@/engines/idle/modules/QuestSystem';
+import { EventSystem, type GameEvent } from '@/engines/idle/modules/EventSystem';
+import { RewardSystem } from '@/engines/idle/modules/RewardSystem';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -74,6 +79,10 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private tutorialStory!: TutorialStorySystem;
   private mapGen!: MapGenerator;
   private npcSys!: NPCSystem;
+  private npcManager!: NPCManager;
+  private questSys!: QuestSystem;
+  private eventSys!: EventSystem;
+  private rewardSys!: RewardSystem;
 
   // 状态
   private res: Record<string, number> = {};
@@ -121,6 +130,26 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.tutorialStory = new TutorialStorySystem();
     this.mapGen = new MapGenerator(42);
     this.npcSys = new NPCSystem();
+
+    // ── 通用 NPC 引擎集成 ──
+    this.npcManager = new NPCManager();
+    for (const def of THREE_KINGDOMS_NPC_DEFS) {
+      this.npcManager.registerDef(def);
+    }
+    // 在地图城市/村庄位置 spawn 所有 NPC
+    for (const def of THREE_KINGDOMS_NPC_DEFS) {
+      const spawn = THREE_KINGDOMS_SPAWN_CONFIG[def.id];
+      if (spawn) {
+        this.npcManager.spawnNPC(def.id, spawn.x, spawn.y);
+      }
+    }
+
+    // ── 通用引擎系统集成 ──
+    this.questSys = new QuestSystem({ dailyRefreshHour: 0, weeklyRefreshDay: 1 });
+    this.eventSys = new EventSystem();
+    this.rewardSys = new RewardSystem();
+    this.registerThreeKingdomsQuests();
+    this.registerThreeKingdomsEvents();
 
     this.panel = 'none';
     this.selIdx = 0;
@@ -193,6 +222,10 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.ftSys.update(dt);
     this.ptSys.update(dt);
 
+    // 通用 NPC 引擎更新（以游戏内时间驱动）
+    const gameHour = (this.playTime / 60) % 24; // 简化：60 秒 = 1 游戏小时
+    this.npcManager.update(sec, gameHour);
+
     // 战斗结算
     const bState = this.battles.getCurrentState();
     if (bState.currentWave && bState.aliveEnemies.length === 0) {
@@ -202,6 +235,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     // 阶段检查
     this.checkStage();
     this.checkUnlocks();
+
+    // 通用引擎系统更新
+    this.eventSys.updateEventStatuses(Date.now());
   }
 
   // ─── 渲染 ───────────────────────────────────────────────
@@ -716,6 +752,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   /** 获取 NPC 活动系统 */
   public getNPCSystem(): NPCSystem { return this.npcSys; }
 
+  /** 获取通用 NPC 管理器（AI 状态机/对话/协作） */
+  public getNPCManager(): NPCManager { return this.npcManager; }
+
   // ═══════════════════════════════════════════════════════════
   // 核心玩法公共 API
   // ═══════════════════════════════════════════════════════════
@@ -946,6 +985,200 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   /** 获取指定类型资源的当前数量 */
   public getResourceAmount(type: string): number {
     return this.res[type] || 0;
+  }
+
+  // ─── 通用引擎系统集成 ─────────────────────────────────────
+
+  /** 获取任务系统实例 */
+  public get questSystem(): QuestSystem { return this.questSys; }
+
+  /** 获取事件系统实例 */
+  public get eventSystem(): EventSystem { return this.eventSys; }
+
+  /** 获取奖励系统实例 */
+  public get rewardSystem(): RewardSystem { return this.rewardSys; }
+
+  // ─── 三国主题任务注册 ──────────────────────────────────────
+
+  /** 注册三国主题任务（主线 / 日常 / 周常） */
+  private registerThreeKingdomsQuests(): void {
+    const quests: QuestDef[] = [
+      // ── 主线任务 ──
+      {
+        id: 'q01', name: '初入乱世', description: '建造第一座农田',
+        type: 'main',
+        conditions: [{ type: 'build', targetId: 'farm', requiredCount: 1 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 100 }],
+        autoAccept: true, priority: 100,
+      },
+      {
+        id: 'q02', name: '招兵买马', description: '招募第一位武将',
+        type: 'main',
+        conditions: [{ type: 'custom', targetId: 'recruit_general', requiredCount: 1 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 200 }],
+        prerequisiteQuest: 'q01', autoAccept: true, priority: 90,
+      },
+      {
+        id: 'q03', name: '初试锋芒', description: '完成第一场战斗',
+        type: 'main',
+        conditions: [{ type: 'defeat', targetId: 'any', requiredCount: 1 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 300 }],
+        prerequisiteQuest: 'q02', autoAccept: true, priority: 80,
+      },
+      {
+        id: 'q04', name: '开疆拓土', description: '征服第一块领土',
+        type: 'main',
+        conditions: [{ type: 'custom', targetId: 'conquer_territory', requiredCount: 1 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 500 }],
+        prerequisiteQuest: 'q03', autoAccept: true, priority: 70,
+      },
+      {
+        id: 'q05', name: '百废待兴', description: '建造 3 座建筑',
+        type: 'main',
+        conditions: [{ type: 'build', targetId: 'any', requiredCount: 3 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 800 }],
+        prerequisiteQuest: 'q04', autoAccept: true, priority: 60,
+      },
+      {
+        id: 'q06', name: '猛将如云', description: '拥有 3 名武将',
+        type: 'main',
+        conditions: [{ type: 'custom', targetId: 'recruit_general', requiredCount: 3 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 1000 }],
+        prerequisiteQuest: 'q05', autoAccept: true, priority: 50,
+      },
+      // ── 日常任务 ──
+      {
+        id: 'dq01', name: '日积月累', description: '生产 500 粮草',
+        type: 'daily',
+        conditions: [{ type: 'collect', targetId: 'food', requiredCount: 500 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 50 }],
+        autoAccept: true, priority: 30,
+      },
+      {
+        id: 'dq02', name: '勤政爱民', description: '升级 2 座建筑',
+        type: 'daily',
+        conditions: [{ type: 'upgrade', targetId: 'any', requiredCount: 2 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 80 }],
+        autoAccept: true, priority: 20,
+      },
+      {
+        id: 'dq03', name: '操练兵马', description: '完成 3 场战斗',
+        type: 'daily',
+        conditions: [{ type: 'defeat', targetId: 'any', requiredCount: 3 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 100 }],
+        autoAccept: true, priority: 10,
+      },
+      // ── 周常任务 ──
+      {
+        id: 'wq01', name: '周末征伐', description: '征服 5 块领土',
+        type: 'weekly',
+        conditions: [{ type: 'custom', targetId: 'conquer_territory', requiredCount: 5 }],
+        rewards: [{ type: 'resource', id: 'gold', amount: 500 }],
+        autoAccept: true, priority: 40,
+      },
+    ];
+    this.questSys.register(quests);
+  }
+
+  // ─── 三国主题活动注册 ──────────────────────────────────────
+
+  /** 注册三国主题限时活动 */
+  private registerThreeKingdomsEvents(): void {
+    const now = Date.now();
+    const DAY = 86400000;
+
+    const events: GameEvent[] = [
+      {
+        id: 'ev01', name: '黄巾之乱讨伐战',
+        description: '限时活动：击败黄巾军获取积分，积分可兑换丰厚奖励',
+        status: 'active',
+        startsAt: now - DAY, endsAt: now + DAY * 7,
+        rewards: [
+          { id: 'ev01_r1', name: '青铜奖', resources: { gold: 500 }, tier: 'bronze' },
+          { id: 'ev01_r2', name: '白银奖', resources: { gold: 2000 }, tier: 'silver' },
+          { id: 'ev01_r3', name: '黄金奖', resources: { gold: 5000 }, tier: 'gold' },
+        ],
+        shop: [
+          { id: 'ev01_s1', name: '黄巾宝箱', cost: 100, reward: { gold: 1000 }, stock: 5, purchased: 0 },
+          { id: 'ev01_s2', name: '稀有将令', cost: 300, reward: { gem: 50 }, stock: 2, purchased: 0 },
+        ],
+        milestones: [
+          { points: 100, reward: { gold: 200 }, claimed: false },
+          { points: 500, reward: { gold: 1000 }, claimed: false },
+          { points: 1000, reward: { gem: 100 }, claimed: false },
+        ],
+        playerPoints: 0, playerTokens: 0,
+      },
+      {
+        id: 'ev02', name: '赤壁庆典',
+        description: '收集东风代币，兑换限定奖励',
+        status: 'active',
+        startsAt: now - DAY, endsAt: now + DAY * 5,
+        rewards: [
+          { id: 'ev02_r1', name: '东风之力', resources: { gem: 200 }, tier: 'gold' },
+        ],
+        shop: [
+          { id: 'ev02_s1', name: '赤壁令', cost: 50, reward: { gold: 500 }, stock: -1, purchased: 0 },
+          { id: 'ev02_s2', name: '火攻秘卷', cost: 200, reward: { gem: 30 }, stock: 3, purchased: 0 },
+        ],
+        milestones: [
+          { points: 200, reward: { gold: 500 }, claimed: false },
+          { points: 800, reward: { gem: 50 }, claimed: false },
+        ],
+        playerPoints: 0, playerTokens: 0,
+      },
+      {
+        id: 'ev03', name: '春耕祭',
+        description: '粮草产出翻倍，限时丰收活动',
+        status: 'upcoming',
+        startsAt: now + DAY * 3, endsAt: now + DAY * 10,
+        rewards: [],
+        shop: [],
+        milestones: [
+          { points: 300, reward: { food: 5000 }, claimed: false },
+        ],
+        playerPoints: 0, playerTokens: 0,
+      },
+      {
+        id: 'ev04', name: '招贤纳士',
+        description: '武将招募折扣活动，招贤榜半价',
+        status: 'upcoming',
+        startsAt: now + DAY * 5, endsAt: now + DAY * 12,
+        rewards: [
+          { id: 'ev04_r1', name: '贤才礼', resources: { gem: 100 }, tier: 'silver' },
+        ],
+        shop: [
+          { id: 'ev04_s1', name: '招贤令', cost: 80, reward: { gold: 800 }, stock: 5, purchased: 0 },
+        ],
+        milestones: [
+          { points: 150, reward: { gold: 300 }, claimed: false },
+        ],
+        playerPoints: 0, playerTokens: 0,
+      },
+      {
+        id: 'ev05', name: '天下第一武道会',
+        description: '战斗挑战排行，争夺天下第一',
+        status: 'active',
+        startsAt: now - DAY * 2, endsAt: now + DAY * 5,
+        rewards: [
+          { id: 'ev05_r1', name: '武道冠军', resources: { gem: 500, gold: 10000 }, tier: 'diamond' },
+          { id: 'ev05_r2', name: '武道亚军', resources: { gem: 200, gold: 5000 }, tier: 'gold' },
+        ],
+        shop: [
+          { id: 'ev05_s1', name: '武道宝箱', cost: 150, reward: { gold: 2000 }, stock: 3, purchased: 0 },
+        ],
+        milestones: [
+          { points: 300, reward: { gold: 1000 }, claimed: false },
+          { points: 700, reward: { gem: 80 }, claimed: false },
+          { points: 1500, reward: { gem: 200 }, claimed: false },
+        ],
+        playerPoints: 0, playerTokens: 0,
+      },
+    ];
+
+    for (const ev of events) {
+      this.eventSys.registerEvent(ev);
+    }
   }
 }
 

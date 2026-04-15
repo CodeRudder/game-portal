@@ -63,3 +63,11 @@ export type {
 
 // ── 渲染状态适配器 ──
 export { ThreeKingdomsRenderStateAdapter } from './ThreeKingdomsRenderStateAdapter';
+
+// ── 通用引擎系统集成 ──
+export { QuestSystem } from '@/engines/idle/modules/QuestSystem';
+export type { QuestDef, QuestType, QuestCondition, QuestReward, QuestState } from '@/engines/idle/modules/QuestSystem';
+export { EventSystem } from '@/engines/idle/modules/EventSystem';
+export type { GameEvent, EventStatus, EventTier, EventReward, EventShopItem, EventMilestone } from '@/engines/idle/modules/EventSystem';
+export { RewardSystem } from '@/engines/idle/modules/RewardSystem';
+export type { RewardItem, RewardType, Mail, LoginBonusDef, LevelRewardDef } from '@/engines/idle/modules/RewardSystem';
