@@ -163,9 +163,35 @@ export class HeroDetailScene extends BaseScene {
   }
 
   protected onSetData(data: unknown): void {
-    const state = data as { hero?: HeroDetail };
+    const state = data as any;
+
+    // 优先处理直接传入的 { hero?: HeroDetail } 格式
     if (state.hero) {
       this.hero = state.hero;
+      this.renderAll();
+      return;
+    }
+
+    // 处理 GameRenderState 格式：从 heroes 数组提取第一个武将
+    if (state.heroes && Array.isArray(state.heroes) && state.heroes.length > 0) {
+      const heroData = state.heroes[0];
+      this.hero = {
+        id: heroData.id,
+        name: heroData.name,
+        rarity: heroData.rarity || 'common',
+        faction: heroData.faction || 'neutral',
+        level: heroData.level || 1,
+        exp: heroData.exp || 0,
+        maxExp: heroData.maxExp || 100,
+        stats: {
+          attack: heroData.stats?.attack || 0,
+          defense: heroData.stats?.defense || 0,
+          intelligence: heroData.stats?.intelligence || 0,
+          leadership: heroData.stats?.command || 0,
+          loyalty: 50,
+        },
+        skills: heroData.skills || [],
+      };
       this.renderAll();
     }
   }

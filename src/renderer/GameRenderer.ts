@@ -209,6 +209,23 @@ export class GameRenderer {
       // 场景注册失败不应阻塞渲染器初始化，继续执行
     }
 
+    // ── 激活默认场景（map）──
+    // registerScenes() 只将场景实例放入 Map，但没有设置 activeScene，
+    // 导致 pushRenderState() 在首帧因 activeScene === null 直接 return，
+    // 而 switchScene() 只在 pushRenderState() 内部被调用 → 形成死锁。
+    // 必须在此处主动激活默认场景，渲染管线才能正常工作。
+    const defaultScene = this.scenes.get('map');
+    if (defaultScene && this.sceneRoot) {
+      this.activeScene = defaultScene;
+      this.currentSceneType = 'map';
+      this.sceneRoot.addChild(defaultScene.getContainer());
+      // enter() 是 async：设置 visible=true、active=true，并触发 onCreate/onEnter
+      await defaultScene.enter();
+      console.info('[GameRenderer] Default scene "map" activated');
+    } else {
+      console.error('[GameRenderer] Failed to activate default scene: map scene not found or sceneRoot missing');
+    }
+
     // 注册主循环
     this.app.ticker.add(this.onTick);
 
@@ -359,7 +376,15 @@ export class GameRenderer {
    * @param state - 逻辑层推送的完整渲染状态
    */
   pushRenderState(state: GameRenderState): void {
-    if (!this.activeScene) return;
+    // 如果当前没有活跃场景，尝试激活逻辑层请求的场景
+    if (!this.activeScene) {
+      if (state.activeScene) {
+        this.switchScene(state.activeScene);
+        // switchScene 是 async，同步调用后 activeScene 可能尚未就绪
+        // 后续帧会再次调用 pushRenderState，届时场景已激活
+      }
+      return;
+    }
 
     // 如果逻辑层请求了场景切换
     if (state.activeScene !== this.currentSceneType) {

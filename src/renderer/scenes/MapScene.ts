@@ -583,6 +583,11 @@ export class MapScene extends BaseScene {
   protected onSetData(data: unknown): void {
     const state = data as GameRenderState;
 
+    // 瓦片地图数据注入：首次检测到 tileMapData 时自动切换到瓦片地图模式
+    if (state.tileMapData && !this.useTileMapMode) {
+      this.setTileMapData(state.tileMapData as Parameters<typeof this.setTileMapData>[0]);
+    }
+
     // 瓦片地图模式：直接使用瓦片渲染，跳过节点图
     if (this.useTileMapMode) return;
 

@@ -25,12 +25,14 @@ import type {
   BuildingRenderData, CombatRenderData, CombatUnitRenderData,
   ResourceBarRenderData, ResourceItemRenderData, StageRenderData,
   PrestigeRenderData, HeroRenderData, TechTreeRenderData, TechNodeRenderData,
+  NPCRenderData,
 } from '@/renderer/types';
 import type { ThreeKingdomsEngine } from './ThreeKingdomsEngine';
 import {
   BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES, STAGES,
   RESOURCES, PRESTIGE_CONFIG,
 } from './constants';
+import type { GameMap } from './MapGenerator';
 
 // ═══════════════════════════════════════════════════════════════
 // 领土类型映射
@@ -101,6 +103,8 @@ const UNIT_START_Y = 150;
  */
 export class ThreeKingdomsRenderStateAdapter {
   private engine: ThreeKingdomsEngine;
+  /** 缓存的瓦片地图数据（首次生成后缓存） */
+  private cachedTileMap: GameMap | null = null;
 
   constructor(engine: ThreeKingdomsEngine) {
     this.engine = engine;
@@ -123,9 +127,11 @@ export class ThreeKingdomsRenderStateAdapter {
       map: activeScene === 'map' ? this.toMapData() : undefined,
       combat: activeScene === 'combat' ? this.toCombatData() : undefined,
       techTree: activeScene === 'tech-tree' ? this.toTechTreeData() : undefined,
-      heroes: activeScene === 'hero-detail' ? this.toHeroList() : undefined,
+      heroes: this.toHeroList(),
       prestige: activeScene === 'prestige' ? this.toPrestigeData() : undefined,
       buildings: activeScene === 'building-detail' ? this.toBuildingList() : undefined,
+      npcs: this.toNPCList(),
+      tileMapData: this.getTileMapData(),
     };
   }
 
@@ -538,6 +544,52 @@ export class ThreeKingdomsRenderStateAdapter {
         canRecruit,
       };
     });
+  }
+
+  // ─── NPC 列表 ────────────────────────────────────────────
+
+  /**
+   * 组装 NPC 渲染数据列表
+   *
+   * 从引擎 NPCManager 获取所有 NPC 实例，转换为渲染层数据。
+   * 使用 try-catch 防护，NPC 系统不可用时返回空数组。
+   */
+  private toNPCList(): NPCRenderData[] {
+    try {
+      const npcManager = this.engine.getNPCManager();
+      if (!npcManager) return [];
+      const allNpcs = npcManager.getAllNPCs();
+      return allNpcs.map(npc => ({
+        id: npc.id,
+        name: npc.defId,
+        type: npc.defId,
+        x: npc.x,
+        y: npc.y,
+        state: npc.state,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // ─── 瓦片地图数据 ────────────────────────────────────────
+
+  /**
+   * 获取瓦片地图数据（带缓存）
+   *
+   * 首次调用时从引擎 MapGenerator 生成并缓存，
+   * 后续调用直接返回缓存结果。
+   */
+  private getTileMapData(): unknown {
+    if (this.cachedTileMap) return this.cachedTileMap;
+    try {
+      const mapGen = this.engine.getMapData();
+      if (!mapGen) return undefined;
+      this.cachedTileMap = mapGen.generate();
+      return this.cachedTileMap;
+    } catch {
+      return undefined;
+    }
   }
 
   // ─── 声望数据 ───────────────────────────────────────────

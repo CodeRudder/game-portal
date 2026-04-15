@@ -395,6 +395,26 @@ export interface PrestigeRenderData {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 10.5 NPC 渲染数据
+// ═══════════════════════════════════════════════════════════════
+
+/** NPC 渲染数据 */
+export interface NPCRenderData {
+  /** NPC 实例 ID */
+  id: string;
+  /** 显示名称（对应 defId） */
+  name: string;
+  /** NPC 类型（对应 defId） */
+  type: string;
+  /** 地图 X 坐标 */
+  x: number;
+  /** 地图 Y 坐标 */
+  y: number;
+  /** 当前状态 */
+  state?: string;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // 11. 全局游戏渲染状态（逻辑层 → 渲染层的完整数据包）
 // ═══════════════════════════════════════════════════════════════
 
@@ -418,6 +438,10 @@ export interface GameRenderState {
   prestige?: PrestigeRenderData;
   /** 建筑列表（仅在 building-detail 场景有效） */
   buildings?: BuildingRenderData[];
+  /** NPC 列表（始终填充） */
+  npcs?: NPCRenderData[];
+  /** 瓦片地图数据（由 MapGenerator 生成，注入到 MapScene） */
+  tileMapData?: unknown;
 }
 
 // ═══════════════════════════════════════════════════════════════
