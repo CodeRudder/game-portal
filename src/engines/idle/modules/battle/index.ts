@@ -30,3 +30,18 @@ export {
   type DamageContext,
   type DamageResult,
 } from './DamageCalculator';
+
+export {
+  SiegeSystem,
+  type WallSegment,
+  type GateState,
+  type MoraleModifier,
+  type SiegeConfig,
+  type SiegeEvent,
+  type SiegeUnitLike,
+} from './SiegeSystem';
+
+export {
+  SiegeMode,
+  type SiegeModeOptions,
+} from './SiegeMode';
