@@ -8,6 +8,8 @@
  * @module engines/idle/modules/BattleSystem
  */
 
+import { TimeSource } from './TimeSource';
+
 // ============================================================
 // 类型定义
 // ============================================================
@@ -65,8 +67,8 @@ function deepClone<T>(obj: T): T {
 }
 
 let instanceCounter = 0;
-function genInstanceId(defId: string): string {
-  return `${defId}_${Date.now()}_${++instanceCounter}`;
+function genInstanceId(defId: string, now: () => number = () => Date.now()): string {
+  return `${defId}_${now()}_${++instanceCounter}`;
 }
 
 /** 掷骰判定掉落（drops 中 value 为 0~1 概率） */
@@ -93,6 +95,7 @@ function mergeRecords(a: Record<string, number>, b: Record<string, number>): Rec
  * @typeParam Def - 波次定义类型，必须继承 BattleDef
  */
 export class BattleSystem<Def extends BattleDef = BattleDef> {
+  private readonly timeSource: TimeSource = TimeSource.default();
   private waveDefs = new Map<string, Def>();
   private currentWave: string | null = null;
   private aliveEnemies: BattleEnemy[] = [];
@@ -122,7 +125,7 @@ export class BattleSystem<Def extends BattleDef = BattleDef> {
       isAlive: true, buffs: [],
     }));
     this.killCount = 0;
-    this.waveStartTime = Date.now();
+    this.waveStartTime = this.timeSource.now();
     this.pendingDrops = {};
     this.emit({ type: 'wave_started', data: { waveId, enemyCount: def.enemies.length } });
     return true;

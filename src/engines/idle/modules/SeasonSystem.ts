@@ -81,7 +81,10 @@ export interface SeasonEvent {
  * const unsub = system.onEvent(e => console.log(e));
  * ```
  */
+import { TimeSource } from './TimeSource';
+
 export class SeasonSystem {
+  private readonly timeSource: TimeSource = TimeSource.default();
   /** 季节定义列表（不可变副本） */
   private readonly seasons: Season[];
   /** 当前季节索引 */
@@ -115,7 +118,7 @@ export class SeasonSystem {
     this.elapsed = 0;
     this.year = 1;
     this.history = [];
-    this.currentSeasonStartedAt = Date.now();
+    this.currentSeasonStartedAt = this.timeSource.now();
   }
 
   // ============================================================
@@ -141,7 +144,7 @@ export class SeasonSystem {
         seasonId: this.seasons[this.currentIndex].id,
         year: this.year,
         startedAt: this.currentSeasonStartedAt,
-        endedAt: Date.now(),
+        endedAt: this.timeSource.now(),
       });
 
       const fromId = this.seasons[this.currentIndex].id;
@@ -160,7 +163,7 @@ export class SeasonSystem {
 
       // 4. 重置计时，保留溢出时间
       this.elapsed = overflow;
-      this.currentSeasonStartedAt = Date.now() - overflow;
+      this.currentSeasonStartedAt = this.timeSource.now() - overflow;
 
       const toId = this.seasons[this.currentIndex].id;
 
@@ -362,7 +365,7 @@ export class SeasonSystem {
     this.elapsed = 0;
     this.year = 1;
     this.history = [];
-    this.currentSeasonStartedAt = Date.now();
+    this.currentSeasonStartedAt = this.timeSource.now();
   }
 
   // ============================================================

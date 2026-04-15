@@ -16,6 +16,8 @@
  * @module engines/idle/modules/StatisticsTracker
  */
 
+import { TimeSource } from './TimeSource';
+
 // ============================================================
 // 类型定义
 // ============================================================

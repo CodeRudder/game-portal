@@ -61,7 +61,10 @@ export interface TechTreeEvent {
 // TechTreeSystem 实现
 // ============================================================
 
+import { TimeSource } from './TimeSource';
+
 export class TechTreeSystem<Def extends TechDef = TechDef> {
+  private readonly timeSource: TimeSource = TimeSource.default();
   private readonly techMap: Map<string, Def>;
   private researched: Set<string>;
   private current: ActiveResearch | null;
@@ -91,7 +94,7 @@ export class TechTreeSystem<Def extends TechDef = TechDef> {
       if ((resources[res] ?? 0) < amt) return false;
     }
     this.recordInvestment(def.cost);
-    const now = Date.now();
+    const now = this.timeSource.now();
     this.current = { techId: id, startTime: now, endTime: now + def.researchTime, progress: 0 };
     this.emit({ type: 'research_started', techId: id, data: { techId: id, name: def.name, cost: { ...def.cost } } });
     return true;
@@ -162,7 +165,7 @@ export class TechTreeSystem<Def extends TechDef = TechDef> {
     if (!this.current) { this.startNext(); return; }
     const def = this.techMap.get(this.current.techId);
     if (!def) { this.current = null; return; }
-    this.current.progress = Math.min((Date.now() - this.current.startTime) / def.researchTime, 1);
+    this.current.progress = Math.min((this.timeSource.now() - this.current.startTime) / def.researchTime, 1);
     if (this.current.progress >= 1) this.complete(this.current.techId);
   }
 
@@ -186,8 +189,8 @@ export class TechTreeSystem<Def extends TechDef = TechDef> {
       : new Set<string>();
     const c = data.current as Record<string, unknown> | null;
     this.current = c && typeof c === 'object' && !Array.isArray(c)
-      ? { techId: String(c.techId ?? ''), startTime: Number(c.startTime ?? Date.now()),
-          endTime: Number(c.endTime ?? Date.now()), progress: Number(c.progress ?? 0) }
+      ? { techId: String(c.techId ?? ''), startTime: Number(c.startTime ?? this.timeSource.now()),
+          endTime: Number(c.endTime ?? this.timeSource.now()), progress: Number(c.progress ?? 0) }
       : null;
     this.queue = Array.isArray(data.queue)
       ? (data.queue as unknown[]).filter((x): x is string => typeof x === 'string') : [];
@@ -231,7 +234,7 @@ export class TechTreeSystem<Def extends TechDef = TechDef> {
       if (this.researched.has(id)) continue;
       const def = this.techMap.get(id);
       if (!def || !def.requires.every((r) => this.researched.has(r))) continue;
-      const now = Date.now();
+      const now = this.timeSource.now();
       this.current = { techId: id, startTime: now, endTime: now + def.researchTime, progress: 0 };
       this.emit({ type: 'research_started', techId: id, data: { techId: id, name: def.name, fromQueue: true } });
       break;

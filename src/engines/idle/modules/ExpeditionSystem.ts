@@ -1,3 +1,5 @@
+import { TimeSource } from './TimeSource';
+
 /**
  * ExpeditionSystem — 放置游戏远征系统核心模块（P2）
  *

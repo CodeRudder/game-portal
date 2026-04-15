@@ -150,7 +150,10 @@ export interface UnitResult<T> {
  * }
  * ```
  */
+import { TimeSource } from './TimeSource';
+
 export class UnitSystem<Def extends UnitDef = UnitDef> {
+  private readonly timeSource: TimeSource = TimeSource.default();
 
   // ========== 内部数据 ==========
 
@@ -259,7 +262,7 @@ export class UnitSystem<Def extends UnitDef = UnitDef> {
 
     // 设置进化状态
     state.currentEvolutionBranch = branchId;
-    state.evolutionStartTime = Date.now();
+    state.evolutionStartTime = this.timeSource.now();
 
     return { ok: true };
   }
@@ -445,7 +448,7 @@ export class UnitSystem<Def extends UnitDef = UnitDef> {
    */
   checkEvolutionCompletion(): string[] {
     const completed: string[] = [];
-    const now = Date.now();
+    const now = this.timeSource.now();
 
     for (const [id, state] of this.states) {
       if (state.evolutionStartTime === null || state.currentEvolutionBranch === null) {

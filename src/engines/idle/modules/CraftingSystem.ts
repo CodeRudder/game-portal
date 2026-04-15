@@ -107,7 +107,10 @@ export type CraftingEventListener = (event: CraftingEvent) => void;
  * 炼制/合成系统 — 管理配方注册、材料检查、炼制进度、品质掷骰、完成结算
  * @typeParam Def - 配方定义类型，必须继承 RecipeDef
  */
+import { TimeSource } from './TimeSource';
+
 export class CraftingSystem<Def extends RecipeDef = RecipeDef> {
+  private readonly timeSource: TimeSource = TimeSource.default();
   /** 配方定义注册表 */
   private readonly defs: Map<string, Def> = new Map();
   /** 事件监听器回调数组（简单数组代替 EventBus） */
@@ -158,7 +161,7 @@ export class CraftingSystem<Def extends RecipeDef = RecipeDef> {
       inventory[itemId] = (inventory[itemId] ?? 0) - required;
     }
     // 创建炼制任务
-    const now = Date.now();
+    const now = this.timeSource.now();
     const instance: ActiveCraft = {
       instanceId: `craft_${++this.instanceIdCounter}`,
       recipeId, startTime: now, endTime: now + def.craftTime, progress: 0,
@@ -175,7 +178,7 @@ export class CraftingSystem<Def extends RecipeDef = RecipeDef> {
    */
   update(dt: number): void {
     if (this.active.length === 0) return;
-    const now = Date.now();
+    const now = this.timeSource.now();
     const completed: string[] = [];
     for (const craft of this.active) {
       if (craft.progress >= 1) continue;

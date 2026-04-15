@@ -7,6 +7,8 @@
  * @module engines/idle/modules/TerritorySystem
  */
 
+import { TimeSource } from './TimeSource';
+
 export interface TerritoryDef {
   id: string; name: string; powerRequired: number;
   rewards: Record<string, number>; conquestBonus?: Record<string, number>;
@@ -40,6 +42,7 @@ export class TerritorySystem<Def extends TerritoryDef = TerritoryDef> {
   private attackPower = 0;
   private totalPower = 0;
   private readonly listeners: Array<(e: TerritoryEvent) => void> = [];
+  private readonly timeSource: TimeSource = TimeSource.default();
 
   constructor(defs: Def[]) {
     for (const d of defs) {
@@ -69,7 +72,7 @@ export class TerritorySystem<Def extends TerritoryDef = TerritoryDef> {
     if (!def) throw new Error(`[TerritorySystem] Territory not found: "${id}"`);
     this.conqueredSet.add(id);
     const s = this.territories[id];
-    if (s) { s.conquered = true; s.conqueredAt = Date.now(); s.prosperity = 10; }
+    if (s) { s.conquered = true; s.conqueredAt = this.timeSource.now(); s.prosperity = 10; }
     const rewards = { ...def.rewards };
     const bonus = def.conquestBonus ? { ...def.conquestBonus } : {};
     if (this.attacking === id) { this.attacking = null; this.attackProgress = 0; this.attackPower = 0; }

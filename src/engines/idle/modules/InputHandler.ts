@@ -71,7 +71,10 @@ export type InputCallback = (event: InputEvent) => void;
  * 外部通过调用 handleKeyDown(key) 传入按键，InputHandler
  * 查表后触发已注册的回调函数。
  */
+import { TimeSource } from './TimeSource';
+
 export class InputHandler {
+  private readonly timeSource: TimeSource = TimeSource.default();
   // ----------------------------------------------------------
   // 静态默认映射
   // ----------------------------------------------------------
@@ -171,7 +174,7 @@ export class InputHandler {
       action: binding.action,
       actionId: binding.actionId,
       originalKey: key,
-      timestamp: typeof performance !== 'undefined' ? performance.now() : Date.now(),
+      timestamp: this.timeSource.now(),
     };
 
     this.dispatch(event);
