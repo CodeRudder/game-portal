@@ -85,6 +85,8 @@ export class NPCAI {
         this.transitionTo(NPCState.WORKING);
       } else if (scheduledTask.type === 'patrol') {
         this.transitionTo(NPCState.PATROLLING);
+      } else if (scheduledTask.type === 'rest') {
+        this.transitionTo(NPCState.RESTING);
       } else {
         this.transitionTo(NPCState.IDLE);
       }
@@ -232,7 +234,7 @@ export class NPCAI {
       id: `sched_${this.npc.id}_${hour}`,
       type: bestItem.state === 'working' ? 'work' :
             bestItem.state === 'patrolling' ? 'patrol' :
-            bestItem.state === 'resting' ? 'work' : 'move',
+            bestItem.state === 'resting' ? 'rest' : 'move',
       progress: 0,
       duration: this.def.workCycleMinutes * 60,
     };

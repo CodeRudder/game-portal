@@ -122,6 +122,21 @@ describe('NPC 系统', () => {
     manager.registerDef(createFarmerDef());
     manager.registerDef(createSoldierDef());
     manager.registerDef(createVillagerDef());
+    // general 定义（组队系统测试需要）
+    manager.registerDef({
+      id: 'general',
+      profession: NPCProfession.GENERAL,
+      name: '将军王五',
+      color: '#ffd700',
+      iconEmoji: '⚔️',
+      speed: 2.0,
+      workCycleMinutes: 10,
+      dialogues: [],
+      schedule: [
+        { hour: 6, state: NPCState.PATROLLING, targetX: 5, targetY: 5 },
+        { hour: 18, state: NPCState.RESTING, targetX: 10, targetY: 10 },
+      ],
+    });
   });
 
   // -----------------------------------------------------------------------

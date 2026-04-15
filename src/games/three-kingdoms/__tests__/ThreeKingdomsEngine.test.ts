@@ -391,12 +391,13 @@ describe('武将系统', () => {
     expect(rarities.filter(r => r === 'mythic')).toHaveLength(1);
   });
 
-  it('初始仅赠送一个 uncommon 武将，其余未解锁', () => {
+  it('初始无武将招募（除免费赠送的许褚外）', () => {
     const engine = createEngine();
     const units = (engine as any).units;
     const starterId = FREE_STARTER_HERO;
     for (const g of GENERALS) {
       if (g.id === starterId) {
+        // 许褚为新手免费赠送，应已解锁
         expect(units.isUnlocked(g.id)).toBe(true);
       } else {
         expect(units.isUnlocked(g.id)).toBe(false);
