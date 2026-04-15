@@ -311,16 +311,6 @@ const IDLE_GAMES: IdleGameMeta[] = [
     tags: ['战争', '基地'],
   },
   {
-    id: 'three-kingdoms',
-    name: '三国霸业',
-    description: '招兵买马，攻城略地，一统三国天下！',
-    icon: '🐴',
-    color: 'text-red-700',
-    gradient: 'from-red-700/20 to-amber-700/20',
-    series: '中世纪',
-    tags: ['三国', '征服'],
-  },
-  {
     id: 'total-war',
     name: '全面战争',
     description: '统帅三军，运筹帷幄，成就战争霸业！',

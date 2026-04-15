@@ -199,12 +199,6 @@ const IDLE_GAME_REGISTRY: Record<string, IdleGameConfig> = {
     description: '建造基地，训练军队，赢得终极战争！',
     legacyRoute: '/game/red-alert',
   },
-  'three-kingdoms': {
-    name: '三国霸业',
-    icon: '🐴',
-    description: '招兵买马，攻城略地，一统三国天下！',
-    legacyRoute: '/game/three-kingdoms',
-  },
   'total-war': {
     name: '全面战争',
     icon: '🗡️',
