@@ -22,7 +22,7 @@ import { InputHandler } from '@/engines/idle/modules/InputHandler';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
-  INITIAL_RESOURCES, INITIALLY_UNLOCKED, CLICK_REWARD,
+  INITIAL_RESOURCES, INITIALLY_UNLOCKED, CLICK_REWARD, FREE_STARTER_HERO,
   type BuildingDef, type GeneralDef, type TerritoryDef, type TechDef,
   type BattleDef, type StageDef,
 } from './constants';
@@ -121,13 +121,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   }
 
   /**
-   * 新手福利：随机赠送一个 uncommon 稀有度的武将（免费抽卡）。
+   * 新手福利：赠送 FREE_STARTER_HERO 指定的 uncommon 武将（免费抽卡）。
    * 不消耗任何资源，直接解锁招募。
    */
   private grantFreeStarterGeneral(): void {
-    const uncommons = GENERALS.filter(g => g.rarity === 'uncommon');
-    if (uncommons.length === 0) return;
-    const chosen = uncommons[Math.floor(Math.random() * uncommons.length)];
+    const chosen = GENERALS.find(g => g.id === FREE_STARTER_HERO);
+    if (!chosen) return;
     const result = this.units.unlock(chosen.id);
     if (result.ok) {
       this.stats.increment('totalGeneralsRecruited');
@@ -139,12 +138,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 获取免费赠送的初始武将名称（供 UI 引导使用） */
   public getStarterGeneralName(): string | null {
-    const uncommons = GENERALS.filter(g => g.rarity === 'uncommon');
-    if (uncommons.length === 0) return null;
-    for (const g of uncommons) {
-      if (this.units.isUnlocked(g.id)) return g.name;
-    }
-    return null;
+    const chosen = GENERALS.find(g => g.id === FREE_STARTER_HERO);
+    if (!chosen) return null;
+    return this.units.isUnlocked(chosen.id) ? chosen.name : null;
   }
 
   // ─── 更新 ───────────────────────────────────────────────

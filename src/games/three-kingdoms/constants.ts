@@ -598,3 +598,10 @@ export const INITIALLY_UNLOCKED: string[] = ['farm'];
 // ═══════════════════════════════════════════════════════════════
 
 export const CLICK_REWARD = { grain: 1 };
+
+// ═══════════════════════════════════════════════════════════════
+// 免费赠送武将（新手福利）
+// ═══════════════════════════════════════════════════════════════
+
+/** 新手免费赠送的武将 ID（取第一个 uncommon 武将） */
+export const FREE_STARTER_HERO = GENERALS.find(g => g.rarity === 'uncommon')?.id ?? 'xuchu';

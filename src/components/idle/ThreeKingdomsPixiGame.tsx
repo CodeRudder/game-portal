@@ -915,7 +915,7 @@ export default function ThreeKingdomsPixiGame() {
           <div
             style={{
               position: 'absolute', inset: 0,
-              background: 'rgba(0,0,0,0.7)',
+              background: 'rgba(0,0,0,0.8)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 200,
             }}
