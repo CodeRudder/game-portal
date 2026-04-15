@@ -1,26 +1,24 @@
 /**
- * 四大文明·古中国 (Civ China) — 游戏入口
+ * 四大文明·华夏 (Civ China) — 游戏入口 v2.0
  *
- * 导出引擎、常量和类型定义
+ * 基于统一子系统架构重建
  */
 export { CivChinaEngine } from './CivChinaEngine';
-export type { CivChinaState, CivChinaStatistics, OfficialState } from './CivChinaEngine';
+export type { CivChinaSaveState } from './CivChinaEngine';
 export {
+  GAME_ID,
+  GAME_TITLE,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
-  RESOURCE_IDS,
-  BUILDING_IDS,
   BUILDINGS,
   DYNASTIES,
   OFFICIALS,
-  COLORS,
-  FOOD_PER_CLICK,
-  MANDATE_BONUS_MULTIPLIER,
-  MIN_PRESTIGE_FOOD,
-  SCENE_DRAW,
-  BUILDING_PANEL,
-  RESOURCE_PANEL,
-  type BuildingDef,
-  type DynastyDef,
+  INVENTIONS,
+  PRESTIGE_CONFIG,
+  COLOR_THEME,
+  RARITY_COLORS,
+  RESOURCES,
+  INITIAL_RESOURCES,
+  CLICK_REWARD,
   type OfficialDef,
 } from './constants';

@@ -1,388 +1,172 @@
 /**
- * 四大文明·古印度 (Civ India) — 放置类游戏常量定义
+ * 四大文明·印度 (Civ India) — 放置游戏常量 v2.0
  *
- * 核心玩法：
- * - 点击获得香料 (spice)
- * - 建设佛塔、恒河灌溉、瑜伽修行所等建筑
- * - 积累香料、宝石、业力三种资源
- * - 种姓制度系统：婆罗门 / 刹帝利 / 吠舍 / 首陀罗
- * - 佛法修行系统：冥想 / 布施 / 忍辱 / 精进 / 禅定 / 般若
- * - 声望系统：涅槃重生，获得永久加成
- * - 离线收益
+ * 基于统一子系统架构重建。使用 BuildingSystem + PrestigeSystem +
+ * StageSystem(时代) + UnitSystem(英雄) + TechTreeSystem(发明)。
  */
 
-/** Canvas 尺寸 */
+import type { BuildingDef } from '@/engines/idle/modules/BuildingSystem';
+import type { PrestigeConfig } from '@/engines/idle/modules/PrestigeSystem';
+import type { UIColorScheme } from '@/engines/idle/modules/CanvasUIRenderer';
+import type { StageDef } from '@/engines/idle/modules/StageSystem';
+import type { TechDef } from '@/engines/idle/modules/TechTreeSystem';
+
+// ═══════════════════════════════════════════════════════════════
+// 游戏标识
+// ═══════════════════════════════════════════════════════════════
+
+export const GAME_ID = 'civ-india';
+export const GAME_TITLE = '印度文明';
+
 export const CANVAS_WIDTH = 480;
 export const CANVAS_HEIGHT = 640;
 
-// ========== 资源 ID ==========
+// ═══════════════════════════════════════════════════════════════
+// 建筑系统 (8个)
+// ═══════════════════════════════════════════════════════════════
 
-export const RESOURCE_IDS = {
-  SPICE: 'spice',
-  GEM: 'gem',
-  KARMA: 'karma',
-} as const;
-
-/** 点击获得的香料数 */
-export const SPICE_PER_CLICK = 1;
-
-/** 声望加成系数（每涅槃点增加的产出倍率） */
-export const NIRVANA_BONUS_MULTIPLIER = 0.12; // 12% per nirvana point
-
-/** 声望货币计算基数 */
-export const PRESTIGE_BASE_NIRVANA = 1;
-
-/** 声望所需最低香料总量 */
-export const MIN_PRESTIGE_SPICE = 50000;
-
-// ========== 种姓等级 ==========
-
-export interface CasteDef {
-  id: string;
-  name: string;
-  icon: string;
-  /** 解锁所需香料 */
-  unlockCost: number;
-  /** 加成类型 */
-  bonusType: 'click' | 'production' | 'gem' | 'karma' | 'all';
-  /** 加成值（百分比，0.1 = 10%） */
-  bonusValue: number;
-  /** 描述 */
-  description: string;
-  /** 颜色 */
-  color: string;
-  /** 修行加成倍率 */
- 修行Multiplier: number;
-}
-
-/** 种姓列表（从低到高） */
-export const CASTES: CasteDef[] = [
-  {
-    id: 'sudra',
-    name: '首陀罗',
-    icon: '👷',
-    unlockCost: 0,
-    bonusType: 'click',
-    bonusValue: 0.1,
-    description: '点击产香料 +10%',
-    color: '#8D6E63',
-    修行Multiplier: 1.3,
-  },
-  {
-    id: 'vaisya',
-    name: '吠舍',
-    icon: '💰',
-    unlockCost: 800,
-    bonusType: 'production',
-    bonusValue: 0.15,
-    description: '所有产出 +15%',
-    color: '#FFB300',
-    修行Multiplier: 1.4,
-  },
-  {
-    id: 'kshatriya',
-    name: '刹帝利',
-    icon: '⚔️',
-    unlockCost: 5000,
-    bonusType: 'gem',
-    bonusValue: 0.2,
-    description: '宝石产出 +20%',
-    color: '#E53935',
-    修行Multiplier: 1.5,
-  },
-  {
-    id: 'brahmin',
-    name: '婆罗门',
-    icon: '🙏',
-    unlockCost: 30000,
-    bonusType: 'all',
-    bonusValue: 0.25,
-    description: '所有加成 +25%',
-    color: '#FF8F00',
-    修行Multiplier: 2.0,
-  },
-];
-
-// ========== 佛法修行定义 ==========
-
-export interface DharmaDef {
-  id: string;
-  name: string;
-  icon: string;
-  /** 解锁所需业力 */
-  unlockCost: number;
-  /** 加成类型 */
-  bonusType: 'click' | 'production' | 'gem' | 'karma' | 'all';
-  /** 加成值 */
-  bonusValue: number;
-  /** 描述 */
-  description: string;
-  /** 进化加成倍率 */
-  evolutionMultiplier: number;
-}
-
-/** 佛法修行列表 */
-export const DHARMAS: DharmaDef[] = [
-  {
-    id: 'meditation',
-    name: '冥想',
-    icon: '🧘',
-    unlockCost: 0,
-    bonusType: 'click',
-    bonusValue: 0.1,
-    description: '点击产香料 +10%',
-    evolutionMultiplier: 1.4,
-  },
-  {
-    id: 'dana',
-    name: '布施',
-    icon: '🤲',
-    unlockCost: 200,
-    bonusType: 'production',
-    bonusValue: 0.12,
-    description: '所有产出 +12%',
-    evolutionMultiplier: 1.3,
-  },
-  {
-    id: 'ksanti',
-    name: '忍辱',
-    icon: '🛡️',
-    unlockCost: 800,
-    bonusType: 'gem',
-    bonusValue: 0.15,
-    description: '宝石产出 +15%',
-    evolutionMultiplier: 1.5,
-  },
-  {
-    id: 'virya',
-    name: '精进',
-    icon: '⚡',
-    unlockCost: 3000,
-    bonusType: 'karma',
-    bonusValue: 0.2,
-    description: '业力产出 +20%',
-    evolutionMultiplier: 1.6,
-  },
-  {
-    id: 'dhyana',
-    name: '禅定',
-    icon: '🔮',
-    unlockCost: 10000,
-    bonusType: 'all',
-    bonusValue: 0.18,
-    description: '所有加成 +18%',
-    evolutionMultiplier: 1.8,
-  },
-  {
-    id: 'prajna',
-    name: '般若',
-    icon: '💡',
-    unlockCost: 50000,
-    bonusType: 'all',
-    bonusValue: 0.3,
-    description: '所有加成 +30%',
-    evolutionMultiplier: 2.0,
-  },
-];
-
-// ========== 建筑定义 ==========
-
-export interface BuildingDef {
-  id: string;
-  name: string;
-  icon: string;
-  /** 基础费用 */
-  baseCost: Record<string, number>;
-  /** 费用递增系数 */
-  costMultiplier: number;
-  /** 最大等级 */
-  maxLevel: number;
-  /** 产出资源 */
-  productionResource: string;
-  /** 每级基础产出 */
-  baseProduction: number;
-  /** 前置建筑（需达到指定等级） */
-  requires?: string[];
-}
-
-// ========== 建筑 ID ==========
-
-export const BUILDING_IDS = {
-  SPICE_GARDEN: 'spice_garden',
-  STUPA: 'stupa',
-  GANGES_IRRIGATION: 'ganges_irrigation',
-  YOGA_STUDIO: 'yoga_studio',
-  GEM_MINE: 'gem_mine',
-  TEMPLE: 'temple',
-  MONASTERY: 'monastery',
-  ASHOKA_PILLAR: 'ashoka_pillar',
-} as const;
-
-/** 建筑列表 */
 export const BUILDINGS: BuildingDef[] = [
-  {
-    id: BUILDING_IDS.SPICE_GARDEN,
-    name: '香料园',
-    icon: '🌿',
-    baseCost: { spice: 15 },
-    costMultiplier: 1.15,
-    maxLevel: 50,
-    productionResource: RESOURCE_IDS.SPICE,
-    baseProduction: 0.5,
-  },
-  {
-    id: BUILDING_IDS.STUPA,
-    name: '佛塔',
-    icon: '🏛️',
-    baseCost: { spice: 120 },
-    costMultiplier: 1.18,
-    maxLevel: 30,
-    productionResource: RESOURCE_IDS.SPICE,
-    baseProduction: 3,
-    requires: [BUILDING_IDS.SPICE_GARDEN],
-  },
-  {
-    id: BUILDING_IDS.GANGES_IRRIGATION,
-    name: '恒河灌溉',
-    icon: '🌊',
-    baseCost: { spice: 600 },
-    costMultiplier: 1.2,
-    maxLevel: 30,
-    productionResource: RESOURCE_IDS.SPICE,
-    baseProduction: 8,
-    requires: [BUILDING_IDS.SPICE_GARDEN],
-  },
-  {
-    id: BUILDING_IDS.YOGA_STUDIO,
-    name: '瑜伽修行所',
-    icon: '🧘',
-    baseCost: { spice: 3000, gem: 20 },
-    costMultiplier: 1.22,
-    maxLevel: 20,
-    productionResource: RESOURCE_IDS.KARMA,
-    baseProduction: 0.2,
-    requires: [BUILDING_IDS.STUPA, BUILDING_IDS.GANGES_IRRIGATION],
-  },
-  {
-    id: BUILDING_IDS.GEM_MINE,
-    name: '宝石矿场',
-    icon: '💎',
-    baseCost: { spice: 5000 },
-    costMultiplier: 1.2,
-    maxLevel: 25,
-    productionResource: RESOURCE_IDS.GEM,
-    baseProduction: 0.3,
-    requires: [BUILDING_IDS.STUPA],
-  },
-  {
-    id: BUILDING_IDS.TEMPLE,
-    name: '印度教神庙',
-    icon: '🛕',
-    baseCost: { spice: 15000, gem: 100 },
-    costMultiplier: 1.25,
-    maxLevel: 15,
-    productionResource: RESOURCE_IDS.KARMA,
-    baseProduction: 0.5,
-    requires: [BUILDING_IDS.YOGA_STUDIO],
-  },
-  {
-    id: BUILDING_IDS.MONASTERY,
-    name: '佛教寺院',
-    icon: '🏯',
-    baseCost: { spice: 50000, gem: 200, karma: 50 },
-    costMultiplier: 1.28,
-    maxLevel: 12,
-    productionResource: RESOURCE_IDS.KARMA,
-    baseProduction: 1.0,
-    requires: [BUILDING_IDS.TEMPLE, BUILDING_IDS.GEM_MINE],
-  },
-  {
-    id: BUILDING_IDS.ASHOKA_PILLAR,
-    name: '阿育王柱',
-    icon: '🗼',
-    baseCost: { spice: 200000, gem: 500, karma: 200 },
-    costMultiplier: 1.3,
-    maxLevel: 10,
-    productionResource: RESOURCE_IDS.KARMA,
-    baseProduction: 2.0,
-    requires: [BUILDING_IDS.MONASTERY],
-  },
+  { id: 'rice_paddy', name: '稻田', icon: '🍚', baseCost: { rice: 10 }, costMultiplier: 1.07, maxLevel: 0, productionResource: 'rice', baseProduction: 0.1, unlockCondition: '初始' },
+  { id: 'spice_garden', name: '香料园', icon: '🌶️', baseCost: { rice: 30 }, costMultiplier: 1.08, maxLevel: 0, productionResource: 'spice', baseProduction: 0.08, requires: ['rice_paddy'], unlockCondition: '稻田 Lv.1' },
+  { id: 'gem_mine', name: '宝石矿', icon: '💎', baseCost: { rice: 50, spice: 20 }, costMultiplier: 1.09, maxLevel: 0, productionResource: 'gem', baseProduction: 0.06, requires: ['spice_garden'], unlockCondition: '香料园 Lv.1' },
+  { id: 'bazaar', name: '集市', icon: '💰', baseCost: { spice: 60, rice: 40 }, costMultiplier: 1.10, maxLevel: 0, productionResource: 'gold', baseProduction: 0.04, requires: ['gem_mine'], unlockCondition: '宝石矿 Lv.1' },
+  { id: 'temple', name: '神庙', icon: '⛩️', baseCost: { gold: 200, gem: 100 }, costMultiplier: 1.12, maxLevel: 0, productionResource: 'spice', baseProduction: 0.10, requires: ['bazaar'], unlockCondition: '集市 Lv.1' },
+  { id: 'university', name: '那烂陀大学', icon: '📚', baseCost: { gold: 300, gem: 150 }, costMultiplier: 1.11, maxLevel: 0, productionResource: 'gold', baseProduction: 0.08, requires: ['temple'], unlockCondition: '神庙 Lv.1' },
+  { id: 'taj_mahal', name: '泰姬陵', icon: '🕌', baseCost: { gold: 600, gem: 400, spice: 100 }, costMultiplier: 1.14, maxLevel: 0, productionResource: 'rice', baseProduction: 0.15, requires: ['university'], unlockCondition: '那烂陀大学 Lv.1' },
+  { id: 'ashoka_pillar', name: '阿育王柱', icon: '🏛️', baseCost: { gold: 1500, gem: 1000, spice: 300 }, costMultiplier: 1.18, maxLevel: 0, productionResource: 'gold', baseProduction: 0.25, requires: ['taj_mahal'], unlockCondition: '泰姬陵 Lv.1' },
 ];
 
-// ========== 颜色主题（印度风格：金色/橙色/深红/紫色） ==========
+// ═══════════════════════════════════════════════════════════════
+// 时代系统 → StageSystem (6个)
+// ═══════════════════════════════════════════════════════════════
 
-export const COLORS = {
-  bgGradient1: '#1A0A2E',
-  bgGradient2: '#0D0520',
-  groundLight: '#4A148C',
-  groundDark: '#1A0A2E',
-  skyTop: '#FF6F00',
-  skyBottom: '#E65100',
-  riverColor: '#1565C0',
-  riverHighlight: '#42A5F5',
-  textPrimary: '#FFF8E1',
-  textSecondary: '#D7CCC8',
-  textDim: '#8D6E63',
-  accent: '#FFB300',
-  accentGreen: '#76FF03',
-  accentRed: '#FF1744',
-  accentBlue: '#40C4FF',
-  accentPurple: '#CE93D8',
-  panelBg: 'rgba(26, 10, 46, 0.9)',
-  panelBorder: 'rgba(255, 179, 0, 0.3)',
-  selectedBg: 'rgba(255, 179, 0, 0.15)',
-  selectedBorder: 'rgba(255, 179, 0, 0.6)',
-  affordable: '#76FF03',
-  unaffordable: '#FF1744',
-  spiceColor: '#FF8F00',
-  gemColor: '#40C4FF',
-  karmaColor: '#CE93D8',
-  stupaColor: '#FFD54F',
-  sunColor: '#FF6F00',
-  sunGlow: 'rgba(255, 111, 0, 0.2)',
-  lotusColor: '#F48FB1',
-  lotusLeaf: '#4CAF50',
-} as const;
+export const DYNASTIES: StageDef[] = [
+  { id: 'indus_valley', name: '印度河', description: '哈拉帕文明，印度河畔的曙光', order: 1, prerequisiteStageId: null, requiredResources: {}, requiredConditions: [], rewards: [], productionMultiplier: 1.0, combatMultiplier: 1.0, iconAsset: '🏺', themeColor: '#a0522d' },
+  { id: 'vedic', name: '吠陀', description: '吠陀经典，婆罗门教兴起', order: 2, prerequisiteStageId: 'indus_valley', requiredResources: { rice: 500, spice: 200 }, requiredConditions: [], rewards: [], productionMultiplier: 1.3, combatMultiplier: 1.0, iconAsset: '📿', themeColor: '#b8860b' },
+  { id: 'maurya', name: '孔雀', description: '阿育王统一，佛法远播', order: 3, prerequisiteStageId: 'vedic', requiredResources: { rice: 3000, spice: 1500, gem: 300 }, requiredConditions: [], rewards: [], productionMultiplier: 1.6, combatMultiplier: 1.0, iconAsset: '🦁', themeColor: '#cd853f' },
+  { id: 'gupta', name: '笈多', description: '黄金时代，科学艺术鼎盛', order: 4, prerequisiteStageId: 'maurya', requiredResources: { rice: 15000, spice: 8000, gem: 2000, gold: 500 }, requiredConditions: [], rewards: [], productionMultiplier: 2.0, combatMultiplier: 1.0, iconAsset: '💎', themeColor: '#daa520' },
+  { id: 'mughal', name: '莫卧儿', description: '泰姬陵耸立，帝国辉煌', order: 5, prerequisiteStageId: 'gupta', requiredResources: { rice: 80000, spice: 40000, gem: 10000, gold: 3000 }, requiredConditions: [], rewards: [], productionMultiplier: 2.5, combatMultiplier: 1.0, iconAsset: '🕌', themeColor: '#e8a040' },
+  { id: 'modern', name: '现代', description: '新兴大国，科技腾飞', order: 6, prerequisiteStageId: 'mughal', requiredResources: { rice: 300000, spice: 150000, gem: 50000, gold: 15000 }, requiredConditions: [], rewards: [], productionMultiplier: 3.0, combatMultiplier: 1.0, iconAsset: '🚀', themeColor: '#ffd700' },
+];
 
-// ========== 渲染参数 ==========
+// ═══════════════════════════════════════════════════════════════
+// 英雄系统 → UnitSystem (8个)
+// ═══════════════════════════════════════════════════════════════
 
-export const STUPA_DRAW = {
-  centerX: 240,
-  centerY: 200,
-  bodyWidth: 50,
-  bodyHeight: 60,
-  domeRadius: 30,
-  spireHeight: 40,
-} as const;
+export interface HeroDef {
+  id: string;
+  name: string;
+  title: string;
+  rarity: string;
+  baseStats: { administration: number; military: number; culture: number };
+  growthRates: { administration: number; military: number; culture: number };
+  recruitCost: { rice: number; spice: number };
+  bonus: string;
+}
 
-/** 建筑列表面板参数 */
-export const BUILDING_PANEL = {
-  startY: 360,
-  itemHeight: 42,
-  itemPadding: 4,
-  itemMarginX: 12,
-  itemWidth: CANVAS_WIDTH - 24,
-  visibleCount: 8,
-} as const;
-
-/** 资源面板参数 */
-export const RESOURCE_PANEL = {
-  startY: 8,
-  itemHeight: 24,
-  itemPadding: 4,
-  padding: 8,
-} as const;
-
-// ========== 修行进化费用 ==========
-
-/** 进化费用表（按进化等级） */
-export const EVOLUTION_COSTS: Record<number, Record<string, number>> = {
-  1: { gem: 10, karma: 5 },
-  2: { gem: 50, karma: 20, spice: 500 },
-  3: { gem: 200, karma: 80, spice: 2000 },
-  4: { gem: 800, karma: 300, spice: 8000 },
-  5: { gem: 3000, karma: 1000, spice: 30000 },
+const HERO_RARITY_GROWTH: Record<string, number> = { uncommon: 2, rare: 3.5, epic: 5, legendary: 7 };
+const HERO_RARITY_COST: Record<string, { rice: number; spice: number }> = {
+  uncommon: { rice: 200, spice: 100 },
+  rare: { rice: 600, spice: 300 },
+  epic: { rice: 2000, spice: 1000 },
+  legendary: { rice: 8000, spice: 4000 },
 };
 
-/** 最大进化等级 */
-export const MAX_EVOLUTION_LEVEL = 5;
+function makeHero(id: string, name: string, title: string, rarity: string, adm: number, mil: number, cul: number, bonus: string): HeroDef {
+  const g = HERO_RARITY_GROWTH[rarity];
+  return {
+    id, name, title, rarity,
+    baseStats: { administration: adm, military: mil, culture: cul },
+    growthRates: { administration: g, military: g, culture: g },
+    recruitCost: HERO_RARITY_COST[rarity],
+    bonus,
+  };
+}
+
+export const HEROES: HeroDef[] = [
+  makeHero('ashoka', '阿育王', '伟大的转轮圣王', 'legendary', 90, 85, 80, '全部产出 +25%'),
+  makeHero('chandragupta', '旃陀罗笈多', '孔雀帝国缔造者', 'legendary', 85, 90, 60, '军事产出 +40%'),
+  makeHero('akbar', '阿克巴大帝', '莫卧儿明君', 'epic', 80, 70, 75, '全部产出 +15%'),
+  makeHero('ramanuja', '罗摩奴阇', '吠檀多哲学大师', 'epic', 50, 30, 90, '文化产出 +35%'),
+  makeHero('chanakya', '考底利耶', '政事论作者', 'rare', 95, 60, 70, '建筑费用 -10%'),
+  makeHero('kalidasa', '迦梨陀娑', '梵文诗圣', 'rare', 30, 20, 95, '文化产出 +30%'),
+  makeHero('aryabhata', '阿耶波多', '数学天文学家', 'uncommon', 70, 25, 85, '科技速度 +20%'),
+  makeHero('buddha', '佛陀', '觉悟者', 'uncommon', 60, 20, 90, '业力收益 +20%'),
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 发明系统 → TechTreeSystem (9项)
+// ═══════════════════════════════════════════════════════════════
+
+export const INVENTIONS: TechDef[] = [
+  // 农业路线
+  { id: 'stepwell', name: '阶梯井', description: '稻米产出 +50%', requires: [], cost: { rice: 500 }, researchTime: 30000, tier: 1, icon: '🪣', branch: 'agriculture', effects: [{ type: 'multiplier', target: 'rice', value: 1.5, description: '稻米产出 ×1.5' }] },
+  { id: 'spice_trade_route', name: '香料贸易路', description: '香料产出 ×2.0', requires: ['stepwell'], cost: { rice: 2000 }, researchTime: 60000, tier: 2, icon: '🐪', branch: 'agriculture', effects: [{ type: 'multiplier', target: 'spice', value: 2.0, description: '香料产出 ×2.0' }] },
+  { id: 'cotton_gin', name: '轧棉术', description: '全部产出 ×1.5', requires: ['spice_trade_route'], cost: { spice: 3000 }, researchTime: 120000, tier: 3, icon: '🧶', branch: 'agriculture', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.5, description: '全部产出 ×1.5' }] },
+  // 商业路线
+  { id: 'gem_cutting', name: '宝石切割', description: '宝石产出 +50%', requires: [], cost: { gem: 400 }, researchTime: 30000, tier: 1, icon: '💎', branch: 'commerce', effects: [{ type: 'multiplier', target: 'gem', value: 1.5, description: '宝石产出 ×1.5' }] },
+  { id: 'decimal_system', name: '十进制', description: '黄金产出 ×2.0', requires: ['gem_cutting'], cost: { gem: 1500 }, researchTime: 60000, tier: 2, icon: '🔢', branch: 'commerce', effects: [{ type: 'multiplier', target: 'gold', value: 2.0, description: '黄金产出 ×2.0' }] },
+  { id: 'zero_concept', name: '零的发明', description: '全部产出 +30%', requires: ['decimal_system'], cost: { gem: 5000, gold: 2000 }, researchTime: 120000, tier: 3, icon: '0️⃣', branch: 'commerce', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.3, description: '全部产出 +30%' }] },
+  // 精神路线
+  { id: 'meditation', name: '冥想术', description: '招募费用 -20%', requires: [], cost: { spice: 600 }, researchTime: 30000, tier: 1, icon: '🧘', branch: 'spirituality', effects: [{ type: 'modifier', target: 'recruit_cost', value: -0.2, description: '招募费用 -20%' }] },
+  { id: 'yoga', name: '瑜伽', description: '全部产出 ×1.5', requires: ['meditation'], cost: { rice: 3000, spice: 2000 }, researchTime: 90000, tier: 2, icon: '🙏', branch: 'spirituality', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.5, description: '全部产出 ×1.5' }] },
+  { id: 'nirvana', name: '涅槃', description: '全部加成 ×2.0', requires: ['yoga'], cost: { spice: 8000, rice: 5000 }, researchTime: 150000, tier: 3, icon: '☸️', branch: 'spirituality', effects: [{ type: 'multiplier', target: 'all', value: 2.0, description: '全部加成 ×2.0' }] },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 业力（声望）配置
+// ═══════════════════════════════════════════════════════════════
+
+export const PRESTIGE_CONFIG: PrestigeConfig = {
+  currencyName: '业力',
+  currencyIcon: '🕉️',
+  base: 10,
+  threshold: 13000,
+  bonusMultiplier: 0.13,
+  retention: 0.1,
+};
+
+// ═══════════════════════════════════════════════════════════════
+// UI 色彩主题（印度暖色系：深棕+橙金+米白）
+// ═══════════════════════════════════════════════════════════════
+
+export const COLOR_THEME: UIColorScheme = {
+  bgGradient1: '#1a0a00',
+  bgGradient2: '#2d1508',
+  textPrimary: '#f5f0e8',
+  textSecondary: '#c4a882',
+  textDim: '#7a6050',
+  accentGold: '#e8a040',
+  accentGreen: '#8b8e23',
+  panelBg: 'rgba(232,160,64,0.05)',
+  selectedBg: 'rgba(232,160,64,0.1)',
+  selectedBorder: 'rgba(232,160,64,0.4)',
+  affordable: '#8b8e23',
+  unaffordable: '#555555',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 稀有度颜色
+// ═══════════════════════════════════════════════════════════════
+
+export const RARITY_COLORS: Record<string, string> = {
+  uncommon: '#4caf50',
+  rare: '#2196f3',
+  epic: '#9c27b0',
+  legendary: '#ff9800',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 资源定义
+// ═══════════════════════════════════════════════════════════════
+
+export const RESOURCES = [
+  { id: 'rice', name: '稻米', icon: '🍚' },
+  { id: 'spice', name: '香料', icon: '🌶️' },
+  { id: 'gem', name: '宝石', icon: '💎' },
+  { id: 'gold', name: '黄金', icon: '💰' },
+];
+
+export const INITIAL_RESOURCES: Record<string, number> = { rice: 50, spice: 0, gem: 0, gold: 0, karma: 0 };
+export const INITIALLY_UNLOCKED: string[] = ['rice_paddy'];
+export const CLICK_REWARD = { rice: 1 };

@@ -1,328 +1,172 @@
 /**
- * 四大文明·古巴比伦 (Civ Babylon) — 放置类游戏常量定义
+ * 四大文明·巴比伦 (Civ Babylon) — 放置游戏常量 v2.0
  *
- * 核心玩法：
- * - 玩家建设空中花园、巴别塔、城墙
- * - 积累「泥砖」「铜币」「星象知识」三种资源
- * - 空中花园建造系统（逐层解锁）
- * - 占星术系统（观星台升级）
- * - 声望系统：重置进度获得「泥板」，提供永久加成
- * - 离线收益
+ * 基于统一子系统架构重建。使用 BuildingSystem + PrestigeSystem +
+ * StageSystem(时代) + UnitSystem(英雄) + TechTreeSystem(发明)。
  */
 
-/** Canvas 尺寸 */
+import type { BuildingDef } from '@/engines/idle/modules/BuildingSystem';
+import type { PrestigeConfig } from '@/engines/idle/modules/PrestigeSystem';
+import type { UIColorScheme } from '@/engines/idle/modules/CanvasUIRenderer';
+import type { StageDef } from '@/engines/idle/modules/StageSystem';
+import type { TechDef } from '@/engines/idle/modules/TechTreeSystem';
+
+// ═══════════════════════════════════════════════════════════════
+// 游戏标识
+// ═══════════════════════════════════════════════════════════════
+
+export const GAME_ID = 'civ-babylon';
+export const GAME_TITLE = '巴比伦文明';
+
 export const CANVAS_WIDTH = 480;
 export const CANVAS_HEIGHT = 640;
 
-// ========== 资源常量 ==========
+// ═══════════════════════════════════════════════════════════════
+// 建筑系统 (8个)
+// ═══════════════════════════════════════════════════════════════
 
-export const RESOURCE_IDS = {
-  BRICK: 'brick',
-  COPPER: 'copper',
-  ASTRO: 'astro',
-} as const;
-
-/** 点击获得的泥砖数 */
-export const BRICK_PER_CLICK = 1;
-
-/** 声望加成系数（每泥板增加的产出倍率） */
-export const PRESTIGE_BONUS_MULTIPLIER = 0.12; // 12% per tablet
-
-/** 声望货币计算基数 */
-export const PRESTIGE_BASE_TABLETS = 1;
-
-/** 声望所需最低泥砖总量 */
-export const MIN_PRESTIGE_BRICK = 5000;
-
-// ========== 空中花园层定义 ==========
-
-export interface GardenLayerDef {
-  layer: number;
-  name: string;
-  icon: string;
-  /** 解锁所需泥砖 */
-  unlockCost: number;
-  /** 产出资源类型 */
-  productionResource: string;
-  /** 基础产出 */
-  baseProduction: number;
-  /** 描述 */
-  description: string;
-  /** 花园颜色（Canvas 绘制用） */
-  color: string;
-  /** 植被颜色 */
-  plantColor: string;
-}
-
-/** 空中花园层列表（7 层） */
-export const GARDEN_LAYERS: GardenLayerDef[] = [
-  {
-    layer: 1,
-    name: '基座平台',
-    icon: '🧱',
-    unlockCost: 0,
-    productionResource: RESOURCE_IDS.BRICK,
-    baseProduction: 0.5,
-    description: '空中花园的坚实基础',
-    color: '#8D6E63',
-    plantColor: '#4CAF50',
-  },
-  {
-    layer: 2,
-    name: '灌溉水渠',
-    icon: '💧',
-    unlockCost: 500,
-    productionResource: RESOURCE_IDS.BRICK,
-    baseProduction: 1.0,
-    description: '引幼发拉底河水灌溉',
-    color: '#4FC3F7',
-    plantColor: '#66BB6A',
-  },
-  {
-    layer: 3,
-    name: '花木台地',
-    icon: '🌿',
-    unlockCost: 2000,
-    productionResource: RESOURCE_IDS.COPPER,
-    baseProduction: 0.4,
-    description: '种植异国奇花异草',
-    color: '#66BB6A',
-    plantColor: '#AED581',
-  },
-  {
-    layer: 4,
-    name: '棕榈回廊',
-    icon: '🌴',
-    unlockCost: 8000,
-    productionResource: RESOURCE_IDS.COPPER,
-    baseProduction: 0.8,
-    description: '高大的棕榈树遮荫回廊',
-    color: '#2E7D32',
-    plantColor: '#81C784',
-  },
-  {
-    layer: 5,
-    name: '瀑布层叠',
-    icon: '🌊',
-    unlockCost: 25000,
-    productionResource: RESOURCE_IDS.ASTRO,
-    baseProduction: 0.3,
-    description: '水流从高处倾泻而下',
-    color: '#0288D1',
-    plantColor: '#4DD0E1',
-  },
-  {
-    layer: 6,
-    name: '皇家观景台',
-    icon: '👑',
-    unlockCost: 80000,
-    productionResource: RESOURCE_IDS.ASTRO,
-    baseProduction: 0.6,
-    description: '国王与王后远眺之处',
-    color: '#FF8F00',
-    plantColor: '#FFB74D',
-  },
-  {
-    layer: 7,
-    name: '天穹之巅',
-    icon: '✨',
-    unlockCost: 250000,
-    productionResource: RESOURCE_IDS.ASTRO,
-    baseProduction: 1.0,
-    description: '触摸星空的至高殿堂',
-    color: '#7C4DFF',
-    plantColor: '#B388FF',
-  },
+export const BUILDINGS: BuildingDef[] = [
+  { id: 'farm', name: '农田', icon: '🌾', baseCost: { grain: 10 }, costMultiplier: 1.07, maxLevel: 0, productionResource: 'grain', baseProduction: 0.1, unlockCondition: '初始' },
+  { id: 'brick_kiln', name: '砖窑', icon: '🧱', baseCost: { grain: 30 }, costMultiplier: 1.08, maxLevel: 0, productionResource: 'clay', baseProduction: 0.08, requires: ['farm'], unlockCondition: '农田 Lv.1' },
+  { id: 'copper_mine', name: '铜矿', icon: '🔶', baseCost: { grain: 50, clay: 20 }, costMultiplier: 1.09, maxLevel: 0, productionResource: 'copper', baseProduction: 0.06, requires: ['brick_kiln'], unlockCondition: '砖窑 Lv.1' },
+  { id: 'market', name: '市集', icon: '💰', baseCost: { clay: 60, grain: 40 }, costMultiplier: 1.10, maxLevel: 0, productionResource: 'silver', baseProduction: 0.04, requires: ['copper_mine'], unlockCondition: '铜矿 Lv.1' },
+  { id: 'ziggurat', name: '金字形神塔', icon: '🏛️', baseCost: { silver: 200, copper: 100 }, costMultiplier: 1.12, maxLevel: 0, productionResource: 'clay', baseProduction: 0.10, requires: ['market'], unlockCondition: '市集 Lv.1' },
+  { id: 'library', name: '图书馆', icon: '📚', baseCost: { silver: 300, copper: 150 }, costMultiplier: 1.11, maxLevel: 0, productionResource: 'silver', baseProduction: 0.08, requires: ['ziggurat'], unlockCondition: '金字形神塔 Lv.1' },
+  { id: 'hanging_garden', name: '空中花园', icon: '🌺', baseCost: { silver: 600, copper: 400, clay: 100 }, costMultiplier: 1.14, maxLevel: 0, productionResource: 'grain', baseProduction: 0.15, requires: ['library'], unlockCondition: '图书馆 Lv.1' },
+  { id: 'ishtar_gate', name: '伊什塔尔门', icon: '🚪', baseCost: { silver: 1500, copper: 1000, clay: 300 }, costMultiplier: 1.18, maxLevel: 0, productionResource: 'silver', baseProduction: 0.25, requires: ['hanging_garden'], unlockCondition: '空中花园 Lv.1' },
 ];
 
-// ========== 建筑定义 ==========
+// ═══════════════════════════════════════════════════════════════
+// 时代系统 → StageSystem (6个)
+// ═══════════════════════════════════════════════════════════════
 
-export const BUILDING_IDS = {
-  BRICK_KILN: 'brick_kiln',
-  COPPER_MINE: 'copper_mine',
-  CITY_WALL: 'city_wall',
-  OBSERVATORY: 'observatory',
-  ZIGGURAT: 'ziggurat',
-  MARKETPLACE: 'marketplace',
-  HANGING_GARDEN: 'hanging_garden',
-  ISHTAR_GATE: 'ishtar_gate',
-} as const;
+export const DYNASTIES: StageDef[] = [
+  { id: 'sumer', name: '苏美尔', description: '两河初兴，文明萌芽', order: 1, prerequisiteStageId: null, requiredResources: {}, requiredConditions: [], rewards: [], productionMultiplier: 1.0, combatMultiplier: 1.0, iconAsset: '🏺', themeColor: '#8b6914' },
+  { id: 'akkadian', name: '阿卡德', description: '萨尔贡一统，帝国崛起', order: 2, prerequisiteStageId: 'sumer', requiredResources: { grain: 500, clay: 200 }, requiredConditions: [], rewards: [], productionMultiplier: 1.3, combatMultiplier: 1.0, iconAsset: '⚔️', themeColor: '#a0522d' },
+  { id: 'babylonian', name: '巴比伦', description: '汉谟拉比法典，文明鼎盛', order: 3, prerequisiteStageId: 'akkadian', requiredResources: { grain: 3000, clay: 1500, copper: 300 }, requiredConditions: [], rewards: [], productionMultiplier: 1.6, combatMultiplier: 1.0, iconAsset: '🏛️', themeColor: '#b8860b' },
+  { id: 'assyrian', name: '亚述', description: '铁血帝国，征伐四方', order: 4, prerequisiteStageId: 'babylonian', requiredResources: { grain: 15000, clay: 8000, copper: 2000, silver: 500 }, requiredConditions: [], rewards: [], productionMultiplier: 2.0, combatMultiplier: 1.0, iconAsset: '🗡️', themeColor: '#cd853f' },
+  { id: 'neobabylonian', name: '新巴比伦', description: '空中花园，世界奇迹', order: 5, prerequisiteStageId: 'assyrian', requiredResources: { grain: 80000, clay: 40000, copper: 10000, silver: 3000 }, requiredConditions: [], rewards: [], productionMultiplier: 2.5, combatMultiplier: 1.0, iconAsset: '🌺', themeColor: '#daa520' },
+  { id: 'persian', name: '波斯', description: '居鲁士征服，万邦归一', order: 6, prerequisiteStageId: 'neobabylonian', requiredResources: { grain: 300000, clay: 150000, copper: 50000, silver: 15000 }, requiredConditions: [], rewards: [], productionMultiplier: 3.0, combatMultiplier: 1.0, iconAsset: '👑', themeColor: '#ffd700' },
+];
 
-export interface BuildingDef {
+// ═══════════════════════════════════════════════════════════════
+// 英雄系统 → UnitSystem (8个)
+// ═══════════════════════════════════════════════════════════════
+
+export interface HeroDef {
   id: string;
   name: string;
-  icon: string;
-  /** 基础费用 */
-  baseCost: Record<string, number>;
-  /** 费用递增系数 */
-  costMultiplier: number;
-  /** 最大等级 */
-  maxLevel: number;
-  /** 产出资源 */
-  productionResource: string;
-  /** 每级基础产出 */
-  baseProduction: number;
-  /** 前置建筑（需达到指定等级） */
-  requires?: string[];
-  /** 解锁条件（需要某资源达到数量） */
-  unlockCondition?: Record<string, number>;
-  /** 描述 */
-  description: string;
+  title: string;
+  rarity: string;
+  baseStats: { administration: number; military: number; culture: number };
+  growthRates: { administration: number; military: number; culture: number };
+  recruitCost: { grain: number; clay: number };
+  bonus: string;
 }
 
-/** 建筑列表（8 个建筑） */
-export const BUILDINGS: BuildingDef[] = [
-  {
-    id: BUILDING_IDS.BRICK_KILN,
-    name: '泥砖窑',
-    icon: '🧱',
-    baseCost: { brick: 15 },
-    costMultiplier: 1.15,
-    maxLevel: 50,
-    productionResource: RESOURCE_IDS.BRICK,
-    baseProduction: 0.5,
-    description: '烧制泥砖的基础窑炉',
-  },
-  {
-    id: BUILDING_IDS.COPPER_MINE,
-    name: '铜矿场',
-    icon: '⛏️',
-    baseCost: { brick: 120 },
-    costMultiplier: 1.18,
-    maxLevel: 30,
-    productionResource: RESOURCE_IDS.COPPER,
-    baseProduction: 0.3,
-    requires: [BUILDING_IDS.BRICK_KILN],
-    description: '开采铜矿石的矿场',
-  },
-  {
-    id: BUILDING_IDS.CITY_WALL,
-    name: '城墙',
-    icon: '🏰',
-    baseCost: { brick: 600 },
-    costMultiplier: 1.2,
-    maxLevel: 30,
-    productionResource: RESOURCE_IDS.BRICK,
-    baseProduction: 3,
-    requires: [BUILDING_IDS.BRICK_KILN],
-    description: '保卫巴比伦城的宏伟城墙',
-  },
-  {
-    id: BUILDING_IDS.OBSERVATORY,
-    name: '观星台',
-    icon: '🔭',
-    baseCost: { brick: 3000, copper: 50 },
-    costMultiplier: 1.22,
-    maxLevel: 20,
-    productionResource: RESOURCE_IDS.ASTRO,
-    baseProduction: 0.2,
-    requires: [BUILDING_IDS.COPPER_MINE, BUILDING_IDS.CITY_WALL],
-    description: '仰望星空，探索宇宙奥秘',
-  },
-  {
-    id: BUILDING_IDS.ZIGGURAT,
-    name: '巴别塔',
-    icon: '🏛️',
-    baseCost: { brick: 1500, copper: 100 },
-    costMultiplier: 1.2,
-    maxLevel: 25,
-    productionResource: RESOURCE_IDS.ASTRO,
-    baseProduction: 0.4,
-    requires: [BUILDING_IDS.COPPER_MINE],
-    description: '通天高塔，连接天地',
-  },
-  {
-    id: BUILDING_IDS.MARKETPLACE,
-    name: '集市',
-    icon: '🏪',
-    baseCost: { brick: 4000, copper: 200 },
-    costMultiplier: 1.25,
-    maxLevel: 20,
-    productionResource: RESOURCE_IDS.COPPER,
-    baseProduction: 2,
-    requires: [BUILDING_IDS.COPPER_MINE, BUILDING_IDS.CITY_WALL],
-    description: '繁荣的贸易集市',
-  },
-  {
-    id: BUILDING_IDS.HANGING_GARDEN,
-    name: '空中花园',
-    icon: '🌺',
-    baseCost: { brick: 20000, copper: 500, astro: 20 },
-    costMultiplier: 1.3,
-    maxLevel: 15,
-    productionResource: RESOURCE_IDS.ASTRO,
-    baseProduction: 0.8,
-    requires: [BUILDING_IDS.OBSERVATORY, BUILDING_IDS.ZIGGURAT],
-    description: '世界七大奇迹之一的空中花园',
-  },
-  {
-    id: BUILDING_IDS.ISHTAR_GATE,
-    name: '伊什塔尔门',
-    icon: '🚪',
-    baseCost: { brick: 100000, copper: 2000, astro: 100 },
-    costMultiplier: 1.35,
-    maxLevel: 10,
-    productionResource: RESOURCE_IDS.COPPER,
-    baseProduction: 5,
-    requires: [BUILDING_IDS.MARKETPLACE, BUILDING_IDS.HANGING_GARDEN],
-    description: '巴比伦最宏伟的城门',
-  },
+const HERO_RARITY_GROWTH: Record<string, number> = { uncommon: 2, rare: 3.5, epic: 5, legendary: 7 };
+const HERO_RARITY_COST: Record<string, { grain: number; clay: number }> = {
+  uncommon: { grain: 200, clay: 100 },
+  rare: { grain: 600, clay: 300 },
+  epic: { grain: 2000, clay: 1000 },
+  legendary: { grain: 8000, clay: 4000 },
+};
+
+function makeHero(id: string, name: string, title: string, rarity: string, adm: number, mil: number, cul: number, bonus: string): HeroDef {
+  const g = HERO_RARITY_GROWTH[rarity];
+  return {
+    id, name, title, rarity,
+    baseStats: { administration: adm, military: mil, culture: cul },
+    growthRates: { administration: g, military: g, culture: g },
+    recruitCost: HERO_RARITY_COST[rarity],
+    bonus,
+  };
+}
+
+export const HEROES: HeroDef[] = [
+  makeHero('gilgamesh', '吉尔伽美什', '乌鲁克之王', 'legendary', 80, 95, 70, '全部产出 +25%'),
+  makeHero('enkidu', '恩奇都', '荒野之子', 'epic', 50, 85, 60, '军事产出 +30%'),
+  makeHero('hammurabi', '汉谟拉比', '立法者', 'legendary', 95, 60, 85, '全部产出 +25%'),
+  makeHero('sargon', '萨尔贡', '阿卡德之主', 'epic', 85, 90, 50, '军事产出 +30%'),
+  makeHero('nebuchadnezzar', '尼布甲尼撒', '伟大建造者', 'rare', 70, 50, 75, '建筑费用 -10%'),
+  makeHero('semiramis', '塞米拉米斯', '传奇女王', 'rare', 60, 65, 70, '谷物产出 +30%'),
+  makeHero('enheduanna', '恩赫杜安娜', '月神祭司', 'uncommon', 40, 20, 80, '文化产出 +20%'),
+  makeHero('nabu', '纳布', '智慧之神', 'uncommon', 55, 25, 75, '声望收益 +20%'),
 ];
 
-// ========== 颜色主题（美索不达米亚风格：金色/蓝色/赭石色调） ==========
+// ═══════════════════════════════════════════════════════════════
+// 发明系统 → TechTreeSystem (9项)
+// ═══════════════════════════════════════════════════════════════
 
-export const COLORS = {
-  bgGradient1: '#1A237E',
-  bgGradient2: '#0D1B2A',
-  groundLight: '#C4A35A',
-  groundDark: '#8B6914',
-  skyTop: '#0D47A1',
-  skyBottom: '#1A237E',
-  starGlow: '#FFD54F',
-  textPrimary: '#FFF8E1',
-  textSecondary: '#D7CCC8',
-  textDim: '#8D6E63',
-  accent: '#FFB300',
-  accentGreen: '#76FF03',
-  accentRed: '#FF1744',
-  accentBlue: '#40C4FF',
-  panelBg: 'rgba(26, 35, 126, 0.85)',
-  panelBorder: 'rgba(255, 179, 0, 0.3)',
-  selectedBg: 'rgba(255, 179, 0, 0.15)',
-  selectedBorder: 'rgba(255, 179, 0, 0.6)',
-  affordable: '#76FF03',
-  unaffordable: '#FF1744',
-  brickColor: '#D84315',
-  copperColor: '#FF8F00',
-  astroColor: '#7C4DFF',
-  waterColor: '#0288D1',
-  gardenShadow: 'rgba(0,0,0,0.3)',
-} as const;
+export const INVENTIONS: TechDef[] = [
+  // 建筑路线
+  { id: 'mudbrick', name: '泥砖烧制', description: '黏土产出 +50%', requires: [], cost: { clay: 500 }, researchTime: 30000, tier: 1, icon: '🧱', branch: 'building', effects: [{ type: 'multiplier', target: 'clay', value: 1.5, description: '黏土产出 ×1.5' }] },
+  { id: 'arch', name: '拱券技术', description: '黏土产出 ×2.0', requires: ['mudbrick'], cost: { clay: 2000 }, researchTime: 60000, tier: 2, icon: '🏛️', branch: 'building', effects: [{ type: 'multiplier', target: 'clay', value: 2.0, description: '黏土产出 ×2.0' }] },
+  { id: 'aqueduct', name: '引水渠', description: '谷物产出 ×2.0', requires: ['arch'], cost: { grain: 3000 }, researchTime: 120000, tier: 3, icon: '💧', branch: 'building', effects: [{ type: 'multiplier', target: 'grain', value: 2.0, description: '谷物产出 ×2.0' }] },
+  // 农业路线
+  { id: 'irrigation', name: '灌溉术', description: '谷物产出 +50%', requires: [], cost: { grain: 400 }, researchTime: 30000, tier: 1, icon: '🌾', branch: 'agriculture', effects: [{ type: 'multiplier', target: 'grain', value: 1.5, description: '谷物产出 ×1.5' }] },
+  { id: 'plow', name: '犁耕技术', description: '谷物产出 ×2.0', requires: ['irrigation'], cost: { grain: 1500 }, researchTime: 60000, tier: 2, icon: '🐂', branch: 'agriculture', effects: [{ type: 'multiplier', target: 'grain', value: 2.0, description: '谷物产出 ×2.0' }] },
+  { id: 'calendar', name: '太阴历', description: '全部产出 +30%', requires: ['plow'], cost: { grain: 5000, silver: 2000 }, researchTime: 120000, tier: 3, icon: '🌙', branch: 'agriculture', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.3, description: '全部产出 +30%' }] },
+  // 文化路线
+  { id: 'cuneiform', name: '楔形文字', description: '招募费用 -20%', requires: [], cost: { silver: 600 }, researchTime: 30000, tier: 1, icon: '📝', branch: 'culture', effects: [{ type: 'modifier', target: 'recruit_cost', value: -0.2, description: '招募费用 -20%' }] },
+  { id: 'astronomy', name: '天文学', description: '全部产出 ×1.5', requires: ['cuneiform'], cost: { grain: 3000, silver: 2000 }, researchTime: 90000, tier: 2, icon: '🔭', branch: 'culture', effects: [{ type: 'multiplier', target: 'all_resources', value: 1.5, description: '全部产出 ×1.5' }] },
+  { id: 'mathematics', name: '六十进制', description: '全部加成 ×2.0', requires: ['astronomy'], cost: { silver: 8000, grain: 5000 }, researchTime: 150000, tier: 3, icon: '🔢', branch: 'culture', effects: [{ type: 'multiplier', target: 'all', value: 2.0, description: '全部加成 ×2.0' }] },
+];
 
-// ========== 渲染参数 ==========
+// ═══════════════════════════════════════════════════════════════
+// 声望配置
+// ═══════════════════════════════════════════════════════════════
 
-export const GARDEN_DRAW = {
-  centerX: 240,
-  baseY: 340,
-  layerWidth: 120,
-  layerHeight: 30,
-  plantHeight: 20,
-} as const;
+export const PRESTIGE_CONFIG: PrestigeConfig = {
+  currencyName: '神眷',
+  currencyIcon: '⭐',
+  base: 10,
+  threshold: 12000,
+  bonusMultiplier: 0.12,
+  retention: 0.1,
+};
 
-/** 建筑列表面板参数 */
-export const BUILDING_PANEL = {
-  startY: 360,
-  itemHeight: 42,
-  itemPadding: 4,
-  itemMarginX: 12,
-  itemWidth: CANVAS_WIDTH - 24,
-  visibleCount: 8,
-} as const;
+// ═══════════════════════════════════════════════════════════════
+// UI 色彩主题（沙漠棕金系）
+// ═══════════════════════════════════════════════════════════════
 
-/** 资源面板参数 */
-export const RESOURCE_PANEL = {
-  startY: 8,
-  itemHeight: 24,
-  itemPadding: 4,
-  padding: 8,
-} as const;
+export const COLOR_THEME: UIColorScheme = {
+  bgGradient1: '#1a0f05',
+  bgGradient2: '#2d1f10',
+  textPrimary: '#f5f0e8',
+  textSecondary: '#c4b99a',
+  textDim: '#7a7060',
+  accentGold: '#c9a96e',
+  accentGreen: '#8b7d3c',
+  panelBg: 'rgba(201,169,110,0.05)',
+  selectedBg: 'rgba(201,169,110,0.1)',
+  selectedBorder: 'rgba(201,169,110,0.4)',
+  affordable: '#8b7d3c',
+  unaffordable: '#555555',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 稀有度颜色
+// ═══════════════════════════════════════════════════════════════
+
+export const RARITY_COLORS: Record<string, string> = {
+  uncommon: '#4caf50',
+  rare: '#2196f3',
+  epic: '#9c27b0',
+  legendary: '#ff9800',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 资源定义
+// ═══════════════════════════════════════════════════════════════
+
+export const RESOURCES = [
+  { id: 'grain', name: '谷物', icon: '🌾' },
+  { id: 'clay', name: '黏土', icon: '🧱' },
+  { id: 'copper', name: '铜矿', icon: '🔶' },
+  { id: 'silver', name: '白银', icon: '🥈' },
+];
+
+export const INITIAL_RESOURCES: Record<string, number> = { grain: 50, clay: 0, copper: 0, silver: 0 };
+export const INITIALLY_UNLOCKED: string[] = ['farm'];
+export const CLICK_REWARD = { grain: 1 };

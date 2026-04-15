@@ -1,23 +1,24 @@
 /**
- * 四大文明·古埃及 (Civ Egypt) — 游戏入口
+ * 四大文明·古埃及 (Civ Egypt) — 游戏入口 v2.0
+ *
+ * 基于统一子系统架构重建
  */
 export { CivEgyptEngine } from './CivEgyptEngine';
-export type { CivEgyptStatistics, CivEgyptState } from './CivEgyptEngine';
+export type { CivEgyptSaveState } from './CivEgyptEngine';
 export {
+  GAME_ID,
+  GAME_TITLE,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
-  RESOURCE_IDS,
-  FOOD_PER_CLICK,
-  PRESTIGE_BONUS_MULTIPLIER,
-  PRESTIGE_BASE_BLESSINGS,
-  MIN_PRESTIGE_FOOD,
-  ERAS,
   BUILDINGS,
-  BUILDING_IDS,
-  COLORS,
-  PYRAMID_DRAW,
-  BUILDING_PANEL,
-  RESOURCE_PANEL,
-  type EraDef,
-  type BuildingDef,
+  DYNASTIES,
+  DEITIES,
+  INVENTIONS,
+  PRESTIGE_CONFIG,
+  COLOR_THEME,
+  RARITY_COLORS,
+  RESOURCES,
+  INITIAL_RESOURCES,
+  CLICK_REWARD,
+  type DeityDef,
 } from './constants';
