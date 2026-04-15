@@ -3,13 +3,36 @@
  *
  * 负责纹理图集、精灵图等资源的加载、缓存和卸载。
  * 支持按场景/资源包（bundle）的按需加载策略。
+ * 支持程序化 spritesheet 生成和字体加载。
  *
  * @module renderer/managers/AssetManager
  */
 
-import { Texture, Assets, Cache, Spritesheet } from 'pixi.js';
-import type { SpritesheetData } from 'pixi.js';
+import { Texture, Assets, Cache, Spritesheet, Rectangle } from 'pixi.js';
+import type { SpritesheetData, TextureSource } from 'pixi.js';
 import type { LoadProgressCallback, IAssetManager } from '../types';
+import {
+  resolveAssetPath,
+  MAP_ASSET_PATHS,
+  COMBAT_ASSET_PATHS,
+  UI_ASSET_PATHS,
+  TERRAIN_COLORS,
+  BUILDING_ICONS,
+  COMBAT_EFFECTS,
+  COMBAT_UI_ELEMENTS,
+  BUTTON_STYLES,
+  PANEL_STYLES,
+  FONT_CONFIGS,
+  DEFAULT_FONT_FAMILY,
+  FALLBACK_FONT_FAMILIES,
+  getWebFonts,
+  getFontStack,
+  getTerrainSpritesheetConfig,
+  getCombatEffectSpritesheetConfig,
+  getUISpritesheetConfig,
+  type ProceduralSpritesheetConfig,
+  type FontDef,
+} from '../config/AssetPaths';
 
 // ═══════════════════════════════════════════════════════════════
 // 资源包定义
@@ -51,6 +74,9 @@ interface PreloadManifestItem {
 /** 加载进度回调（含百分比） */
 type PreloadProgressCallback = (loaded: number, total: number, percent: number) => void;
 
+/** 字体加载状态 */
+type FontLoadStatus = 'pending' | 'loading' | 'loaded' | 'failed';
+
 // ═══════════════════════════════════════════════════════════════
 // AssetManager
 // ═══════════════════════════════════════════════════════════════
@@ -60,6 +86,7 @@ type PreloadProgressCallback = (loaded: number, total: number, percent: number) 
  *
  * 基于 PixiJS v8 的 Assets 系统封装。
  * 提供按资源包粒度的加载/卸载，纹理缓存查询。
+ * 支持程序化 spritesheet 生成和字体加载。
  *
  * @example
  * ```ts
@@ -85,6 +112,9 @@ export class AssetManager implements IAssetManager {
   /** 纹理别名映射（alias → textureKey） */
   private textureAliases: Map<string, string> = new Map();
 
+  /** 字体加载状态映射 */
+  private fontStatus: Map<string, FontLoadStatus> = new Map();
+
   /** Kenney Tower Defense spritesheet 默认路径 */
   private static readonly KENNEY_SPRITESHEET_PATH =
     '/assets/kenney-tower-defense/spritesheet.json';
@@ -94,6 +124,10 @@ export class AssetManager implements IAssetManager {
   // ═══════════════════════════════════════════════════════════
 
   constructor() {
+    // 初始化字体状态
+    for (const font of FONT_CONFIGS) {
+      this.fontStatus.set(font.family, 'pending');
+    }
     // 注册内置资源包清单
     this.registerBuiltinManifests();
   }
@@ -101,32 +135,60 @@ export class AssetManager implements IAssetManager {
   /**
    * 注册内置资源包清单
    *
-   * TODO: 在实际资源就绪后，填写真实的资源路径。
-   * 目前仅定义骨架，不加载任何文件。
+   * 定义地图、战斗、UI 三个场景的资源包。
+   * 资源路径通过 resolveAssetPath 解析。
    */
   private registerBuiltinManifests(): void {
     const bundles: AssetBundleManifest[] = [
       {
         name: 'map',
         assets: [
-          // TODO: 添加地图场景资源
-          // { id: 'territory-capital', src: '/assets/map/capital.png', type: 'texture' },
-          // { id: 'territory-city', src: '/assets/map/city.png', type: 'texture' },
+          // 地形瓦片 spritesheet（程序化生成）
+          {
+            id: 'terrain',
+            src: resolveAssetPath(MAP_ASSET_PATHS.terrainSpritesheet),
+            type: 'spritesheet',
+          },
+          // 建筑 spritesheet（程序化生成）
+          {
+            id: 'buildings',
+            src: resolveAssetPath(MAP_ASSET_PATHS.buildingSpritesheet),
+            type: 'spritesheet',
+          },
         ],
       },
       {
         name: 'combat',
         assets: [
-          // TODO: 添加战斗场景资源
-          // { id: 'hero-warrior', src: '/assets/combat/warrior.png', type: 'texture' },
-          // { id: 'effect-slash', src: '/assets/combat/slash.json', type: 'spritesheet' },
+          // 战斗特效 spritesheet
+          {
+            id: 'combat-effects',
+            src: resolveAssetPath(COMBAT_ASSET_PATHS.effectSpritesheet),
+            type: 'spritesheet',
+          },
+          // 战斗 UI spritesheet
+          {
+            id: 'combat-ui',
+            src: resolveAssetPath(COMBAT_ASSET_PATHS.combatUISpritesheet),
+            type: 'spritesheet',
+          },
         ],
       },
       {
         name: 'ui',
         assets: [
-          // TODO: 添加 UI 通用资源
-          // { id: 'btn-primary', src: '/assets/ui/btn-primary.png', type: 'texture' },
+          // UI spritesheet（按钮、面板等）
+          {
+            id: 'ui-buttons',
+            src: resolveAssetPath(UI_ASSET_PATHS.uiSpritesheet),
+            type: 'spritesheet',
+          },
+          // 字体加载
+          {
+            id: 'font-primary',
+            src: 'font://primary',
+            type: 'font',
+          },
         ],
       },
     ];
@@ -180,16 +242,11 @@ export class AssetManager implements IAssetManager {
             break;
           }
           case 'spritesheet': {
-            // TODO: PixiJS v8 spritesheet 加载
-            // const sheet = await Assets.load<SpriteSheet>(asset.src);
-            // for (const [frameName, frameTexture] of Object.entries(sheet.textures)) {
-            //   this.textureCache.set(`${asset.id}:${frameName}`, frameTexture);
-            // }
+            await this.loadSpritesheetAsset(asset.id, asset.src);
             break;
           }
           case 'font': {
-            // TODO: 字体加载
-            await Assets.load(asset.src);
+            await this.loadFontAsset(asset.id);
             break;
           }
         }
@@ -232,6 +289,300 @@ export class AssetManager implements IAssetManager {
 
     this.loadedBundles.delete(bundleName);
     console.info(`[AssetManager] Bundle "${bundleName}" unloaded`);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Spritesheet 加载
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 加载 spritesheet 资源
+   *
+   * 支持两种模式：
+   * 1. 从 URL 加载真实 spritesheet JSON
+   * 2. 程序化生成 spritesheet（当 URL 不可用时）
+   *
+   * @param assetId - 资源 ID
+   * @param src - 资源路径
+   */
+  private async loadSpritesheetAsset(assetId: string, src: string): Promise<void> {
+    try {
+      // 尝试从 PixiJS Assets 系统加载
+      const sheet = await Assets.load<Spritesheet<SpritesheetData>>(src);
+      if (sheet?.textures) {
+        for (const [frameName, frameTexture] of Object.entries(sheet.textures)) {
+          if (frameTexture instanceof Texture) {
+            this.textureCache.set(`${assetId}:${frameName}`, frameTexture);
+          }
+        }
+        return;
+      }
+    } catch {
+      // 加载失败，回退到程序化生成
+      console.info(`[AssetManager] Falling back to procedural spritesheet for "${assetId}"`);
+    }
+
+    // 程序化生成 spritesheet
+    await this.generateProceduralSpritesheet(assetId);
+  }
+
+  /**
+   * 程序化生成 spritesheet
+   *
+   * 使用 Canvas API 动态生成精灵图并注册到纹理缓存。
+   * 根据 assetId 选择对应的生成配置。
+   *
+   * @param assetId - 资源 ID
+   */
+  async generateProceduralSpritesheet(assetId: string): Promise<void> {
+    let config: ProceduralSpritesheetConfig | null = null;
+
+    switch (assetId) {
+      case 'terrain':
+        config = getTerrainSpritesheetConfig();
+        break;
+      case 'buildings':
+        config = this.getBuildingSpritesheetConfig();
+        break;
+      case 'combat-effects':
+        config = getCombatEffectSpritesheetConfig();
+        break;
+      case 'combat-ui':
+        config = this.getCombatUISpritesheetConfig();
+        break;
+      case 'ui-buttons':
+        config = getUISpritesheetConfig();
+        break;
+      default:
+        console.warn(`[AssetManager] No procedural config for "${assetId}"`);
+        return;
+    }
+
+    if (!config) return;
+
+    // 使用 Canvas API 生成 spritesheet 图像
+    const canvas = document.createElement('canvas');
+    canvas.width = config.sheetWidth;
+    canvas.height = config.sheetHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // 绘制所有帧
+    for (const frame of config.frames) {
+      config.drawFrame(ctx, frame);
+    }
+
+    // 从 Canvas 创建 PixiJS Texture
+    const baseTexture = Texture.from(canvas as unknown as TextureSource);
+
+    // 为每个帧创建子纹理
+    for (const frame of config.frames) {
+      const frameTexture = new Texture({
+        source: baseTexture.source,
+        frame: new Rectangle(frame.x, frame.y, frame.width, frame.height),
+      });
+      this.textureCache.set(`${assetId}:${frame.name}`, frameTexture);
+    }
+
+    console.info(
+      `[AssetManager] Generated procedural spritesheet "${assetId}" (${config.frames.length} frames)`,
+    );
+  }
+
+  /**
+   * 获取建筑 spritesheet 配置
+   */
+  private getBuildingSpritesheetConfig(): ProceduralSpritesheetConfig {
+    const buildingTypes = Object.keys(BUILDING_ICONS);
+    const frameSize = 48;
+    const cols = 4;
+    const rows = Math.ceil(buildingTypes.length / cols);
+
+    const frames = buildingTypes.map((type, i) => ({
+      name: `building_${type}`,
+      x: (i % cols) * frameSize,
+      y: Math.floor(i / cols) * frameSize,
+      width: frameSize,
+      height: frameSize,
+    }));
+
+    return {
+      id: 'buildings',
+      sheetWidth: cols * frameSize,
+      sheetHeight: rows * frameSize,
+      frames,
+      drawFrame: (ctx, frame) => {
+        const buildingType = frame.name.replace('building_', '');
+        const iconDef = BUILDING_ICONS[buildingType];
+        if (!iconDef) return;
+
+        const r = (iconDef.color >> 16) & 0xff;
+        const g = (iconDef.color >> 8) & 0xff;
+        const b = iconDef.color & 0xff;
+
+        // 绘制圆角矩形背景
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.beginPath();
+        ctx.roundRect(frame.x + 2, frame.y + 2, frame.width - 4, frame.height - 4, 8);
+        ctx.fill();
+
+        // 绘制边框
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(frame.x + 2, frame.y + 2, frame.width - 4, frame.height - 4, 8);
+        ctx.stroke();
+
+        // 绘制标签文字
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(iconDef.label, frame.x + frame.width / 2, frame.y + frame.height / 2);
+      },
+    };
+  }
+
+  /**
+   * 获取战斗 UI spritesheet 配置
+   */
+  private getCombatUISpritesheetConfig(): ProceduralSpritesheetConfig {
+    const elements = Object.entries(COMBAT_UI_ELEMENTS);
+    const cols = 3;
+    const rows = Math.ceil(elements.length / cols);
+
+    const frames = elements.map(([name, def], i) => ({
+      name: `combat_ui_${name}`,
+      x: (i % cols) * def.width,
+      y: Math.floor(i / cols) * def.height,
+      width: def.width,
+      height: def.height,
+    }));
+
+    return {
+      id: 'combat-ui',
+      sheetWidth: cols * 120,
+      sheetHeight: rows * 40,
+      frames,
+      drawFrame: (ctx, frame) => {
+        const elementName = frame.name.replace('combat_ui_', '');
+        const def = COMBAT_UI_ELEMENTS[elementName];
+        if (!def) return;
+
+        const r = (def.color >> 16) & 0xff;
+        const g = (def.color >> 8) & 0xff;
+        const b = def.color & 0xff;
+
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.beginPath();
+        ctx.roundRect(frame.x, frame.y, frame.width, frame.height, def.radius);
+        ctx.fill();
+      },
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 字体加载
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 加载字体资源
+   *
+   * 支持系统字体和 Web 字体加载。
+   * 使用 FontFace API 加载 Web 字体，系统字体直接标记为已加载。
+   *
+   * @param assetId - 字体资源 ID
+   */
+  private async loadFontAsset(assetId: string): Promise<void> {
+    const webFonts = getWebFonts();
+
+    for (const font of webFonts) {
+      const status = this.fontStatus.get(font.family);
+      if (status === 'loaded' || status === 'loading') continue;
+
+      this.fontStatus.set(font.family, 'loading');
+
+      try {
+        if (font.source === 'web' && font.url) {
+          // 使用 FontFace API 加载 Web 字体
+          const fontFace = new FontFace(font.family, `url(${font.url})`, {
+            weight: String(font.weight),
+          });
+          const loaded = await fontFace.load();
+          document.fonts.add(loaded);
+        } else if (font.source === 'google' && font.url) {
+          // Google Fonts: 通过 link 标签加载
+          await this.loadGoogleFont(font);
+        }
+        this.fontStatus.set(font.family, 'loaded');
+      } catch (err) {
+        console.warn(`[AssetManager] Failed to load font "${font.family}":`, err);
+        this.fontStatus.set(font.family, 'failed');
+      }
+    }
+
+    // 系统字体直接标记为已加载
+    for (const font of FONT_CONFIGS) {
+      if (font.source === 'system') {
+        this.fontStatus.set(font.family, 'loaded');
+      }
+    }
+  }
+
+  /**
+   * 加载 Google Font
+   *
+   * 通过动态创建 <link> 标签加载 Google Fonts CSS。
+   *
+   * @param font - 字体定义
+   */
+  private loadGoogleFont(font: FontDef): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!font.url) {
+        resolve();
+        return;
+      }
+
+      // 检查是否已加载
+      const existing = document.querySelector(`link[href="${font.url}"]`);
+      if (existing) {
+        resolve();
+        return;
+      }
+
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = font.url;
+      link.onload = () => resolve();
+      link.onerror = () => reject(new Error(`Failed to load font: ${font.family}`));
+      document.head.appendChild(link);
+    });
+  }
+
+  /**
+   * 获取字体加载状态
+   *
+   * @param family - 字体族名称
+   * @returns 加载状态
+   */
+  getFontStatus(family: string): FontLoadStatus {
+    return this.fontStatus.get(family) ?? 'pending';
+  }
+
+  /**
+   * 检查字体是否已加载
+   *
+   * @param family - 字体族名称
+   */
+  isFontLoaded(family: string): boolean {
+    return this.fontStatus.get(family) === 'loaded';
+  }
+
+  /**
+   * 获取所有字体加载状态
+   */
+  getAllFontStatus(): Map<string, FontLoadStatus> {
+    return new Map(this.fontStatus);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -482,5 +833,6 @@ export class AssetManager implements IAssetManager {
     this.textureAliases.clear();
     this.loadedBundles.clear();
     this.manifests.clear();
+    this.fontStatus.clear();
   }
 }
