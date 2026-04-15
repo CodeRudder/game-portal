@@ -11,10 +11,25 @@
  * @module renderer/managers/AnimationManager
  */
 
-import { Container, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import gsap from 'gsap';
 import type { SceneTransition, DamageNumberData } from '../types';
 import type { IAnimationManager } from '../types';
+
+// ═══════════════════════════════════════════════════════════════
+// 粒子类型
+// ═══════════════════════════════════════════════════════════════
+
+/** 粒子对象（池复用） */
+interface Particle {
+  /** Graphics 小圆点 */
+  gfx: Graphics;
+  /** 是否正在使用中 */
+  active: boolean;
+}
+
+/** 滑入方向 */
+type SlideDirection = 'left' | 'right' | 'top' | 'bottom';
 
 // ═══════════════════════════════════════════════════════════════
 // AnimationManager
@@ -39,6 +54,397 @@ export class AnimationManager implements IAnimationManager {
 
   /** 活跃的 Timeline 列表（用于统一管理） */
   private activeTimelines: gsap.core.Timeline[] = [];
+
+  /** 粒子池（复用 Graphics 对象，避免频繁创建/销毁） */
+  private particlePool: Particle[] = [];
+
+  /** 粒子池最大容量 */
+  private static readonly PARTICLE_POOL_SIZE = 200;
+
+  /** 粒子容器（所有粒子添加到此容器，方便统一管理） */
+  private particleContainer: Container | null = null;
+
+  /** 屏幕效果覆盖层 */
+  private flashOverlay: Graphics | null = null;
+
+  /** 慢动作原始时间缩放 */
+  private previousTimeScale = 1;
+
+  // ═══════════════════════════════════════════════════════════
+  // 粒子系统
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 设置粒子容器
+   *
+   * 必须在使用粒子系统前调用，将粒子渲染到指定容器。
+   *
+   * @param container - 粒子容器（通常添加到场景顶层）
+   */
+  setParticleContainer(container: Container): void {
+    this.particleContainer = container;
+  }
+
+  /**
+   * 创建粒子爆发效果
+   *
+   * 从中心点向四周发射粒子，适用于爆炸、命中反馈等。
+   *
+   * @param x - 爆发中心 X
+   * @param y - 爆发中心 Y
+   * @param count - 粒子数量（默认 12）
+   * @param color - 粒子颜色（默认 '#ffffff'）
+   * @param duration - 持续时间秒（默认 0.6）
+   */
+  createParticleBurst(
+    x: number,
+    y: number,
+    count = 12,
+    color: string | number = '#ffffff',
+    duration = 0.6,
+  ): void {
+    if (!this.particleContainer) return;
+
+    for (let i = 0; i < count; i++) {
+      const particle = this.acquireParticle();
+      if (!particle) continue;
+
+      const gfx = particle.gfx;
+      gfx.tint = typeof color === 'string' ? color : color;
+      gfx.alpha = 1;
+      gfx.scale.set(1);
+      gfx.position.set(x, y);
+
+      // 随机角度和速度
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+      const speed = 60 + Math.random() * 80;
+      const targetX = x + Math.cos(angle) * speed;
+      const targetY = y + Math.sin(angle) * speed;
+      const particleSize = 2 + Math.random() * 3;
+
+      gfx.circle(0, 0, particleSize);
+      gfx.fill(color);
+
+      const tl = gsap.timeline({
+        onComplete: () => this.releaseParticle(particle),
+      });
+
+      tl.to(gfx, {
+        x: targetX,
+        y: targetY,
+        alpha: 0,
+        duration,
+        ease: 'power2.out',
+      }).to(gfx.scale, {
+        x: 0.2,
+        y: 0.2,
+        duration,
+        ease: 'power1.in',
+      }, 0);
+
+      this.addTimeline(tl);
+    }
+  }
+
+  /**
+   * 创建粒子拖尾效果
+   *
+   * 在指定位置生成短生命周期的粒子，适用于移动拖尾。
+   *
+   * @param x - 粒子位置 X
+   * @param y - 粒子位置 Y
+   * @param color - 粒子颜色（默认 '#ffffff'）
+   */
+  createParticleTrail(x: number, y: number, color: string | number = '#ffffff'): void {
+    if (!this.particleContainer) return;
+
+    const particle = this.acquireParticle();
+    if (!particle) return;
+
+    const gfx = particle.gfx;
+    const offsetX = (Math.random() - 0.5) * 6;
+    const offsetY = (Math.random() - 0.5) * 6;
+    const particleSize = 1.5 + Math.random() * 2;
+
+    gfx.clear();
+    gfx.circle(0, 0, particleSize);
+    gfx.fill(color);
+    gfx.alpha = 0.8;
+    gfx.scale.set(1);
+    gfx.position.set(x + offsetX, y + offsetY);
+
+    const tl = gsap.timeline({
+      onComplete: () => this.releaseParticle(particle),
+    });
+
+    tl.to(gfx, {
+      y: gfx.y - 15 - Math.random() * 10,
+      alpha: 0,
+      duration: 0.3 + Math.random() * 0.2,
+      ease: 'power1.out',
+    }).to(gfx.scale, {
+      x: 0.3,
+      y: 0.3,
+      duration: 0.4,
+      ease: 'power1.in',
+    }, 0);
+
+    this.addTimeline(tl);
+  }
+
+  /**
+   * 获取一个可用粒子（从池中取或新建）
+   */
+  private acquireParticle(): Particle | null {
+    // 尝试从池中取空闲粒子
+    for (const p of this.particlePool) {
+      if (!p.active) {
+        p.active = true;
+        p.gfx.clear();
+        p.gfx.alpha = 1;
+        p.gfx.scale.set(1);
+        this.particleContainer!.addChild(p.gfx);
+        return p;
+      }
+    }
+
+    // 池未满则新建
+    if (this.particlePool.length < AnimationManager.PARTICLE_POOL_SIZE) {
+      const gfx = new Graphics();
+      const p: Particle = { gfx, active: true };
+      this.particlePool.push(p);
+      this.particleContainer!.addChild(gfx);
+      return p;
+    }
+
+    return null; // 池已满
+  }
+
+  /**
+   * 释放粒子回池
+   */
+  private releaseParticle(particle: Particle): void {
+    particle.active = false;
+    particle.gfx.clear();
+    particle.gfx.removeFromParent();
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 屏幕效果
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 屏幕震动效果
+   *
+   * 对容器施加随机位移抖动，适用于爆炸、受击等。
+   *
+   * @param intensity - 震动强度（像素，默认 8）
+   * @param duration - 持续时间秒（默认 0.3）
+   * @param container - 要震动的容器（默认 particleContainer）
+   */
+  screenShake(intensity = 8, duration = 0.3, container?: Container): void {
+    const target = container ?? this.particleContainer?.parent;
+    if (!target) return;
+
+    const originalX = target.x;
+    const originalY = target.y;
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        target.x = originalX;
+        target.y = originalY;
+        this.removeTimeline(tl);
+      },
+    });
+
+    // 快速来回抖动
+    const steps = Math.max(4, Math.round(duration / 0.03));
+    for (let i = 0; i < steps; i++) {
+      const decay = 1 - i / steps; // 逐渐减弱
+      tl.to(target, {
+        x: originalX + (Math.random() - 0.5) * 2 * intensity * decay,
+        y: originalY + (Math.random() - 0.5) * 2 * intensity * decay,
+        duration: duration / steps,
+        ease: 'none',
+      });
+    }
+
+    this.addTimeline(tl);
+  }
+
+  /**
+   * 屏幕闪光效果
+   *
+   * 全屏覆盖一层半透明颜色然后淡出。
+   *
+   * @param color - 闪光颜色（默认 '#ffffff'）
+   * @param duration - 持续时间秒（默认 0.2）
+   * @param parent - 覆盖层添加到的父容器（默认 particleContainer）
+   */
+  screenFlash(color: string | number = '#ffffff', duration = 0.2, parent?: Container): void {
+    const target = parent ?? this.particleContainer;
+    if (!target) return;
+
+    const overlay = new Graphics();
+    // 覆盖足够大的区域
+    overlay.rect(-2000, -2000, 6000, 6000);
+    overlay.fill({ color, alpha: 0.6 });
+    target.addChild(overlay);
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        target.removeChild(overlay);
+        overlay.destroy();
+        this.removeTimeline(tl);
+      },
+    });
+
+    tl.to(overlay, { alpha: 0, duration, ease: 'power1.out' });
+    this.addTimeline(tl);
+  }
+
+  /**
+   * 慢动作效果
+   *
+   * 临时降低 GSAP 全局时间缩放，到期后恢复。
+   *
+   * @param scale - 时间缩放（0~1，默认 0.3）
+   * @param duration - 持续时间秒（默认 1）
+   */
+  slowMotion(scale = 0.3, duration = 1): void {
+    this.previousTimeScale = gsap.globalTimeline.timeScale();
+    gsap.globalTimeline.timeScale(scale);
+
+    gsap.delayedCall(duration, () => {
+      gsap.globalTimeline.timeScale(this.previousTimeScale);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // UI 动画
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 从指定方向滑入容器
+   *
+   * @param container - 目标容器
+   * @param direction - 滑入方向
+   * @param duration - 持续时间秒（默认 0.4）
+   */
+  async slideIn(container: Container, direction: SlideDirection = 'left', duration = 0.4): Promise<void> {
+    const parentWidth = container.parent?.width ?? 1920;
+    const parentHeight = container.parent?.height ?? 1080;
+    const targetX = container.x;
+    const targetY = container.y;
+
+    // 根据方向设置初始位置
+    switch (direction) {
+      case 'left':
+        container.x = -parentWidth;
+        break;
+      case 'right':
+        container.x = parentWidth;
+        break;
+      case 'top':
+        container.y = -parentHeight;
+        break;
+      case 'bottom':
+        container.y = parentHeight;
+        break;
+    }
+
+    return new Promise<void>((resolve) => {
+      const tl = gsap.timeline({
+        onComplete: () => {
+          container.x = targetX;
+          container.y = targetY;
+          this.removeTimeline(tl);
+          resolve();
+        },
+      });
+
+      tl.to(container, {
+        x: targetX,
+        y: targetY,
+        duration,
+        ease: 'power2.out',
+      });
+
+      this.addTimeline(tl);
+    });
+  }
+
+  /**
+   * 渐入效果
+   *
+   * @param container - 目标容器
+   * @param duration - 持续时间秒（默认 0.3）
+   */
+  async fadeIn(container: Container, duration = 0.3): Promise<void> {
+    container.alpha = 0;
+
+    return new Promise<void>((resolve) => {
+      const tl = gsap.timeline({
+        onComplete: () => {
+          this.removeTimeline(tl);
+          resolve();
+        },
+      });
+
+      tl.to(container, { alpha: 1, duration, ease: 'power1.out' });
+      this.addTimeline(tl);
+    });
+  }
+
+  /**
+   * 渐出效果
+   *
+   * @param container - 目标容器
+   * @param duration - 持续时间秒（默认 0.3）
+   */
+  async fadeOut(container: Container, duration = 0.3): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const tl = gsap.timeline({
+        onComplete: () => {
+          this.removeTimeline(tl);
+          resolve();
+        },
+      });
+
+      tl.to(container, { alpha: 0, duration, ease: 'power1.in' });
+      this.addTimeline(tl);
+    });
+  }
+
+  /**
+   * 弹入效果（缩放弹跳）
+   *
+   * @param container - 目标容器
+   * @param duration - 持续时间秒（默认 0.5）
+   */
+  async bounceIn(container: Container, duration = 0.5): Promise<void> {
+    container.scale.set(0);
+    container.alpha = 0;
+
+    return new Promise<void>((resolve) => {
+      const tl = gsap.timeline({
+        onComplete: () => {
+          this.removeTimeline(tl);
+          resolve();
+        },
+      });
+
+      tl.to(container, { alpha: 1, duration: duration * 0.3, ease: 'power1.out' })
+        .to(container.scale, {
+          x: 1,
+          y: 1,
+          duration: duration * 0.7,
+          ease: 'elastic.out(1, 0.5)',
+        }, 0);
+
+      this.addTimeline(tl);
+    });
+  }
 
   // ═══════════════════════════════════════════════════════════
   // 建筑动画
@@ -398,6 +804,19 @@ export class AnimationManager implements IAnimationManager {
       tl.kill();
     }
     this.activeTimelines = [];
+
+    // 清理粒子池
+    for (const particle of this.particlePool) {
+      particle.gfx.destroy();
+    }
+    this.particlePool = [];
+
+    // 清理闪光覆盖层
+    if (this.flashOverlay) {
+      this.flashOverlay.destroy();
+      this.flashOverlay = null;
+    }
+
     gsap.killTweensOf('*');
   }
 

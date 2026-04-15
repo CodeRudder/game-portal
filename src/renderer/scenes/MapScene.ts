@@ -12,7 +12,7 @@
  * @module renderer/scenes/MapScene
  */
 
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import type {
   SceneType,
   MapRenderData,
@@ -113,6 +113,89 @@ const TERRITORY_TYPE_LABELS: Record<string, string> = {
   wilderness: '荒野',
 };
 
+// ─── 增强渲染常量 ──────────────────────────────────────────
+
+/** 势力颜色映射（红/蓝/绿/黄） */
+const FACTION_COLORS: Record<string, number> = {
+  wei: 0x4a90d9,    // 蓝 — 魏
+  shu: 0xe74c3c,    // 红 — 蜀
+  wu: 0x2ecc71,     // 绿 — 吴
+  qun: 0xf1c40f,    // 黄 — 群
+};
+
+/** 领土边界虚线段长 */
+const DASH_SEGMENT_LENGTH = 8;
+
+/** 领土边界虚线间隙 */
+const DASH_GAP_LENGTH = 5;
+
+/** 领土边界线宽 */
+const BORDER_LINE_WIDTH = 2.5;
+
+/** 新占领领土脉冲扩散动画周期（毫秒） */
+const CAPTURE_PULSE_PERIOD = 3000;
+
+/** 新占领领土脉冲最大半径 */
+const CAPTURE_PULSE_MAX_RADIUS = 80;
+
+/** 新占领领土脉冲透明度 */
+const CAPTURE_PULSE_ALPHA = 0.4;
+
+/** 格子悬停高亮颜色（半透明黄色） */
+const CELL_HOVER_COLOR = 0xffeb3b;
+
+/** 格子悬停高亮透明度 */
+const CELL_HOVER_ALPHA = 0.25;
+
+/** 格子悬停高亮尺寸 */
+const CELL_HOVER_SIZE = 20;
+
+/** 选区边框颜色 */
+const SELECTION_BORDER_COLOR = 0x00ff88;
+
+/** 选区边框宽度 */
+const SELECTION_BORDER_WIDTH = 2;
+
+/** 选区填充透明度 */
+const SELECTION_FILL_ALPHA = 0.1;
+
+/** 装饰物数量（树木/石头） */
+const DECORATION_COUNT = 30;
+
+/** 装饰物随机种子区域范围 */
+const DECORATION_AREA = { minX: -400, maxX: 2400, minY: -400, maxY: 1400 };
+
+/** 树木颜色 */
+const TREE_TRUNK_COLOR = 0x8b5e3c;
+const TREE_LEAF_COLOR = 0x27ae60;
+
+/** 石头颜色 */
+const ROCK_COLOR = 0x7f8c8d;
+
+/** 河流颜色 */
+const RIVER_COLOR = 0x3498db;
+
+/** 河流宽度 */
+const RIVER_WIDTH = 6;
+
+/** 道路颜色 */
+const ROAD_COLOR = 0xd4a574;
+
+/** 道路宽度 */
+const ROAD_WIDTH = 4;
+
+/** 建筑精灵图尺寸 */
+const BUILDING_SPRITE_SIZE = 48;
+
+/** 建筑等级纹理后缀映射 */
+const BUILDING_LEVEL_TEXTURES: Record<number, string> = {
+  1: 'building-lv1',
+  2: 'building-lv2',
+  3: 'building-lv3',
+  4: 'building-lv4',
+  5: 'building-lv5',
+};
+
 // ═══════════════════════════════════════════════════════════════
 // 内部渲染对象接口
 // ═══════════════════════════════════════════════════════════════
@@ -143,6 +226,35 @@ interface TooltipView {
   container: Container;
   background: Graphics;
   texts: Text[];
+}
+
+/** 装饰物渲染对象 */
+interface DecorationItem {
+  container: Container;
+  type: 'tree' | 'rock';
+}
+
+/** 河流/道路渲染数据 */
+interface TerrainPath {
+  graphics: Graphics;
+  points: { x: number; y: number }[];
+}
+
+/** 选区状态 */
+interface SelectionState {
+  active: boolean;
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+  graphics: Graphics;
+  selectedTerritories: Set<string>;
+}
+
+/** 格子悬停高亮 */
+interface CellHighlight {
+  graphics: Graphics;
+  visible: boolean;
+  gridX: number;
+  gridY: number;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -209,6 +321,36 @@ export class MapScene extends BaseScene {
   /** 当前鼠标全局位置 */
   private pointerGlobalPos: { x: number; y: number } = { x: 0, y: 0 };
 
+  // ─── 增强渲染：装饰层 ────────────────────────────────────
+
+  /** 装饰物层（树木/石头，位于连接线下方） */
+  private decorationLayer: Container;
+  /** 装饰物列表 */
+  private decorations: DecorationItem[] = [];
+  /** 河流/道路图形列表 */
+  private terrainPaths: TerrainPath[] = [];
+
+  // ─── 增强渲染：领土边界 ──────────────────────────────────
+
+  /** 领土边界层（虚线边界） */
+  private borderLayer: Container;
+  /** 新占领领土脉冲动画计时 */
+  private capturePulseTime: number = 0;
+  /** 新占领领土 ID 集合（最近被占领的，用于播放扩散动画） */
+  private recentlyCaptured: Set<string> = new Set();
+  /** 新占领脉冲图形缓存 */
+  private capturePulseGraphics: Map<string, Graphics> = new Map();
+
+  // ─── 增强渲染：格子悬停高亮 ──────────────────────────────
+
+  /** 格子悬停高亮图形 */
+  private cellHighlight: CellHighlight;
+
+  // ─── 增强渲染：右键选区 ──────────────────────────────────
+
+  /** 右键选区状态 */
+  private selection: SelectionState;
+
   // ═══════════════════════════════════════════════════════════
   // 构造函数
   // ═══════════════════════════════════════════════════════════
@@ -223,17 +365,44 @@ export class MapScene extends BaseScene {
     this.cameraManager = cameraManager;
 
     // 创建子容器层
+    this.decorationLayer = new Container({ label: 'decorations' });
     this.connectionLayer = new Container({ label: 'connections' });
+    this.borderLayer = new Container({ label: 'borders' });
     this.territoryLayer = new Container({ label: 'territories' });
     this.buildingLayer = new Container({ label: 'buildings' });
     this.tooltipLayer = new Container({ label: 'tooltips' });
 
     this.container.addChild(
+      this.decorationLayer,
       this.connectionLayer,
+      this.borderLayer,
       this.territoryLayer,
       this.buildingLayer,
       this.tooltipLayer,
     );
+
+    // 初始化格子悬停高亮
+    const highlightGfx = new Graphics();
+    highlightGfx.visible = false;
+    this.container.addChild(highlightGfx);
+    this.cellHighlight = {
+      graphics: highlightGfx,
+      visible: false,
+      gridX: 0,
+      gridY: 0,
+    };
+
+    // 初始化右键选区
+    const selectionGfx = new Graphics();
+    selectionGfx.visible = false;
+    this.container.addChild(selectionGfx);
+    this.selection = {
+      active: false,
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 0 },
+      graphics: selectionGfx,
+      selectedTerritories: new Set(),
+    };
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -253,6 +422,11 @@ export class MapScene extends BaseScene {
 
     // 绑定滚轮缩放事件
     this.container.on('wheel', this.onWheel);
+
+    // 右键选区事件
+    this.container.on('rightdown', this.onRightDown);
+    this.container.on('rightup', this.onRightUp);
+    this.container.on('rightupoutside', this.onRightUp);
   }
 
   protected async onEnter(_params?: Record<string, unknown>): Promise<void> {
@@ -288,6 +462,15 @@ export class MapScene extends BaseScene {
 
     // ── 4. 更新 Tooltip 位置 ─────────────────────────────────
     this.updateTooltip();
+
+    // ── 5. 更新新占领领土脉冲扩散动画 ───────────────────────
+    this.updateCapturePulse(deltaTime);
+
+    // ── 6. 更新格子悬停高亮 ─────────────────────────────────
+    this.updateCellHighlight();
+
+    // ── 7. 更新右键选区 ─────────────────────────────────────
+    this.updateSelection();
   }
 
   protected onSetData(data: unknown): void {
@@ -300,11 +483,19 @@ export class MapScene extends BaseScene {
   protected onDestroy(): void {
     this.territoryNodes.clear();
     this.buildingIcons.clear();
+    this.decorations = [];
+    this.terrainPaths = [];
+    this.recentlyCaptured.clear();
+    this.capturePulseGraphics.clear();
     this.destroyTooltip();
+    this.decorationLayer.destroy({ children: true });
     this.connectionLayer.destroy({ children: true });
+    this.borderLayer.destroy({ children: true });
     this.territoryLayer.destroy({ children: true });
     this.buildingLayer.destroy({ children: true });
     this.tooltipLayer.destroy({ children: true });
+    this.cellHighlight.graphics.destroy();
+    this.selection.graphics.destroy();
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -568,8 +759,15 @@ export class MapScene extends BaseScene {
    * 对比新旧数据，增量更新节点和连接线。
    */
   private renderMap(data: MapRenderData): void {
+    // 生成装饰物（仅首次有领土数据时）
+    if (this.decorations.length === 0 && data.territories.length > 0) {
+      this.generateDecorations();
+      this.generateTerrainPaths();
+    }
+
     this.renderConnections(data);
     this.renderTerritories(data.territories);
+    this.renderBorders(data.territories);
     this.renderBuildings(data.buildings ?? []);
   }
 
@@ -732,6 +930,9 @@ export class MapScene extends BaseScene {
 
   /**
    * 创建建筑图标
+   *
+   * 优先使用精灵纹理（从 AssetManager 获取），纹理不可用时 fallback 到 Graphics 矩形。
+   * 不同等级的建筑使用不同纹理 key。
    */
   private createBuildingIcon(data: BuildingRenderData): BuildingIcon {
     const container = new Container({ label: `building-${data.id}` });
@@ -739,13 +940,42 @@ export class MapScene extends BaseScene {
     container.eventMode = 'static';
     container.cursor = 'pointer';
 
-    // 占位图标（使用 emoji 文字，后续替换为精灵图）
-    const icon = new Text({
-      text: data.iconAsset ?? '🏗️',
-      style: new TextStyle({ fontSize: BUILDING_ICON_SIZE }),
-    });
-    icon.anchor.set(0.5, 0.5);
-    container.addChild(icon);
+    // 尝试从 AssetManager 获取精灵纹理
+    const textureKey = BUILDING_LEVEL_TEXTURES[data.level] ?? BUILDING_LEVEL_TEXTURES[1];
+    const texture = this.assetManager.getTexture(textureKey);
+
+    if (texture) {
+      // 使用真实精灵纹理
+      const sprite = new Sprite(texture);
+      sprite.anchor.set(0.5, 0.5);
+      sprite.width = BUILDING_SPRITE_SIZE;
+      sprite.height = BUILDING_SPRITE_SIZE;
+      container.addChild(sprite);
+    } else {
+      // Fallback：使用 Graphics 绘制建筑矩形 + 屋顶
+      const fallbackGfx = new Graphics();
+      // 建筑主体
+      fallbackGfx
+        .rect(
+          -BUILDING_SPRITE_SIZE / 2,
+          -BUILDING_SPRITE_SIZE / 4,
+          BUILDING_SPRITE_SIZE,
+          BUILDING_SPRITE_SIZE * 0.6,
+        )
+        .fill({ color: this.getBuildingColor(data.level) });
+      // 屋顶（三角形）
+      fallbackGfx
+        .moveTo(-BUILDING_SPRITE_SIZE / 2 - 4, -BUILDING_SPRITE_SIZE / 4)
+        .lineTo(0, -BUILDING_SPRITE_SIZE / 2 - 4)
+        .lineTo(BUILDING_SPRITE_SIZE / 2 + 4, -BUILDING_SPRITE_SIZE / 4)
+        .closePath()
+        .fill({ color: 0xc0392b });
+      // 等级标记
+      fallbackGfx
+        .circle(BUILDING_SPRITE_SIZE / 3, -BUILDING_SPRITE_SIZE / 3, 6)
+        .fill({ color: 0xf39c12 });
+      container.addChild(fallbackGfx);
+    }
 
     // 进度弧线（初始为空，在 updateBuildingProgress 中绘制）
     const progressArc = new Graphics();
@@ -762,17 +992,482 @@ export class MapScene extends BaseScene {
       this.bridgeEvent('buildingHover', null);
     });
 
-    return { id: data.id, container, icon, progressArc, hasProgressArc: false, data };
+    return { id: data.id, container, icon: new Text(''), progressArc, hasProgressArc: false, data };
   }
 
   /**
    * 更新建筑图标
+   *
+   * 当建筑等级变化时，重新选择纹理或重新绘制 fallback。
    */
   private updateBuildingIcon(icon: BuildingIcon, data: BuildingRenderData): void {
+    const levelChanged = icon.data?.level !== data.level;
     icon.data = data;
     icon.container.position.set(data.position.x, data.position.y);
+
+    // 等级变化时重新绘制图标
+    if (levelChanged) {
+      // 移除旧图标（保留 progressArc，它在最后）
+      const children = icon.container.removeChildren();
+      for (let i = 0; i < children.length - 1; i++) {
+        children[i].destroy();
+      }
+
+      // 重新创建图标
+      const textureKey = BUILDING_LEVEL_TEXTURES[data.level] ?? BUILDING_LEVEL_TEXTURES[1];
+      const texture = this.assetManager.getTexture(textureKey);
+
+      if (texture) {
+        const sprite = new Sprite(texture);
+        sprite.anchor.set(0.5, 0.5);
+        sprite.width = BUILDING_SPRITE_SIZE;
+        sprite.height = BUILDING_SPRITE_SIZE;
+        icon.container.addChildAt(sprite, 0);
+      } else {
+        const fallbackGfx = new Graphics();
+        fallbackGfx
+          .rect(
+            -BUILDING_SPRITE_SIZE / 2,
+            -BUILDING_SPRITE_SIZE / 4,
+            BUILDING_SPRITE_SIZE,
+            BUILDING_SPRITE_SIZE * 0.6,
+          )
+          .fill({ color: this.getBuildingColor(data.level) });
+        fallbackGfx
+          .moveTo(-BUILDING_SPRITE_SIZE / 2 - 4, -BUILDING_SPRITE_SIZE / 4)
+          .lineTo(0, -BUILDING_SPRITE_SIZE / 2 - 4)
+          .lineTo(BUILDING_SPRITE_SIZE / 2 + 4, -BUILDING_SPRITE_SIZE / 4)
+          .closePath()
+          .fill({ color: 0xc0392b });
+        fallbackGfx
+          .circle(BUILDING_SPRITE_SIZE / 3, -BUILDING_SPRITE_SIZE / 3, 6)
+          .fill({ color: 0xf39c12 });
+        icon.container.addChildAt(fallbackGfx, 0);
+      }
+    }
     // 进度弧线由 updateBuildingProgress() 每帧绘制，此处不重复处理
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // 建筑颜色辅助
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 根据建筑等级返回颜色
+   */
+  private getBuildingColor(level: number): number {
+    const colors = [0x95a5a6, 0x2ecc71, 0x3498db, 0x9b59b6, 0xf39c12];
+    return colors[Math.min(level, colors.length) - 1] ?? colors[0];
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 领土边界渲染（虚线 + 势力颜色）
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 渲染领土间虚线边界
+   *
+   * 每条连接线绘制为虚线，颜色根据两端领土所属势力决定。
+   */
+  private renderBorders(territories: TerritoryRenderData[]): void {
+    this.borderLayer.removeChildren();
+    const borderGfx = new Graphics();
+
+    for (const territory of territories) {
+      for (const neighborId of territory.neighbors) {
+        // 避免重复绘制（只处理 id < neighborId 的对）
+        if (territory.id >= neighborId) continue;
+
+        const neighbor = this.territoryNodes.get(neighborId);
+        const currentNode = this.territoryNodes.get(territory.id);
+        if (!neighbor?.data || !currentNode?.data) continue;
+
+        const from = territory.position;
+        const to = neighbor.data.position;
+
+        // 根据势力选择颜色
+        const color = this.getFactionBorderColor(territory, neighbor.data);
+
+        // 绘制虚线
+        this.drawDashedLine(borderGfx, from.x, from.y, to.x, to.y, color);
+      }
+    }
+
+    this.borderLayer.addChild(borderGfx);
+  }
+
+  /**
+   * 绘制虚线
+   */
+  private drawDashedLine(
+    gfx: Graphics,
+    x1: number, y1: number,
+    x2: number, y2: number,
+    color: number,
+  ): void {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return;
+
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    const segmentLen = DASH_SEGMENT_LENGTH;
+    const gapLen = DASH_GAP_LENGTH;
+    const step = segmentLen + gapLen;
+
+    let pos = 0;
+    while (pos < dist) {
+      const segEnd = Math.min(pos + segmentLen, dist);
+      gfx
+        .moveTo(x1 + nx * pos, y1 + ny * pos)
+        .lineTo(x1 + nx * segEnd, y1 + ny * segEnd)
+        .stroke({ width: BORDER_LINE_WIDTH, color, alpha: 0.7 });
+      pos += step;
+    }
+  }
+
+  /**
+   * 根据两端领土获取边界颜色
+   */
+  private getFactionBorderColor(t1: TerritoryRenderData, t2: TerritoryRenderData): number {
+    // 优先使用势力颜色，同势力用势力色，不同势力用混合色
+    const faction1 = this.inferFaction(t1);
+    const faction2 = this.inferFaction(t2);
+
+    if (faction1 && FACTION_COLORS[faction1]) return FACTION_COLORS[faction1];
+    if (faction2 && FACTION_COLORS[faction2]) return FACTION_COLORS[faction2];
+
+    // 默认：已征服用征服色，未征服用连接色
+    return t1.conquered && t2.conquered ? CONQUERED_COLOR : CONNECTION_COLOR;
+  }
+
+  /**
+   * 从领土数据推断势力
+   *
+   * 通过领土 color 字段或名称关键词推断所属势力。
+   */
+  private inferFaction(data: TerritoryRenderData): string | null {
+    if (data.color) {
+      const c = data.color.toLowerCase();
+      if (c.includes('wei') || c.includes('蓝')) return 'wei';
+      if (c.includes('shu') || c.includes('红')) return 'shu';
+      if (c.includes('wu') || c.includes('绿')) return 'wu';
+      if (c.includes('qun') || c.includes('黄')) return 'qun';
+    }
+    // 通过名称关键词推断
+    const name = data.name;
+    if (name.includes('魏') || name.includes('许') || name.includes('洛')) return 'wei';
+    if (name.includes('蜀') || name.includes('成') || name.includes('汉')) return 'shu';
+    if (name.includes('吴') || name.includes('建') || name.includes('会')) return 'wu';
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 新占领领土脉冲扩散动画
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 更新新占领领土的脉冲扩散动画
+   *
+   * 扩散圆环从领土中心向外扩展，透明度逐渐降低。
+   */
+  private updateCapturePulse(deltaTime: number): void {
+    this.capturePulseTime += deltaTime;
+
+    for (const territoryId of this.recentlyCaptured) {
+      const node = this.territoryNodes.get(territoryId);
+      if (!node?.data) continue;
+
+      let gfx = this.capturePulseGraphics.get(territoryId);
+      if (!gfx) {
+        gfx = new Graphics();
+        this.container.addChild(gfx);
+        this.capturePulseGraphics.set(territoryId, gfx);
+      }
+
+      gfx.clear();
+
+      const phase = (this.capturePulseTime % CAPTURE_PULSE_PERIOD) / CAPTURE_PULSE_PERIOD;
+      const radius = TERRITORY_RADIUS + (CAPTURE_PULSE_MAX_RADIUS - TERRITORY_RADIUS) * phase;
+      const alpha = CAPTURE_PULSE_ALPHA * (1 - phase);
+
+      const faction = this.inferFaction(node.data);
+      const color = (faction && FACTION_COLORS[faction]) ?? CONQUERED_COLOR;
+
+      gfx.circle(node.data.position.x, node.data.position.y, radius);
+      gfx.stroke({ width: 2, color, alpha });
+
+      // 内部填充光晕
+      gfx.circle(node.data.position.x, node.data.position.y, radius * 0.5);
+      gfx.fill({ color, alpha: alpha * 0.3 });
+    }
+  }
+
+  /**
+   * 标记领土为新占领（触发脉冲扩散动画）
+   */
+  markRecentlyCaptured(territoryId: string): void {
+    this.recentlyCaptured.add(territoryId);
+    // 5 秒后自动移除
+    setTimeout(() => {
+      this.recentlyCaptured.delete(territoryId);
+      const gfx = this.capturePulseGraphics.get(territoryId);
+      if (gfx) {
+        gfx.clear();
+        this.container.removeChild(gfx);
+        gfx.destroy();
+        this.capturePulseGraphics.delete(territoryId);
+      }
+    }, 5000);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 地图装饰元素
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 生成随机装饰物（树木/石头）
+   *
+   * 使用简单伪随机数确保每次生成结果一致。
+   */
+  private generateDecorations(): void {
+    this.decorationLayer.removeChildren();
+    this.decorations = [];
+
+    let seed = 42;
+    const random = () => {
+      seed = (seed * 16807 + 0) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+
+    for (let i = 0; i < DECORATION_COUNT; i++) {
+      const x = DECORATION_AREA.minX + random() * (DECORATION_AREA.maxX - DECORATION_AREA.minX);
+      const y = DECORATION_AREA.minY + random() * (DECORATION_AREA.maxY - DECORATION_AREA.minY);
+      const type = random() > 0.4 ? 'tree' : 'rock';
+      const scale = 0.5 + random() * 0.8;
+
+      const container = new Container({ label: `decoration-${i}` });
+      container.position.set(x, y);
+      container.scale.set(scale);
+
+      const gfx = new Graphics();
+
+      if (type === 'tree') {
+        // 树干
+        gfx.rect(-3, 0, 6, 14).fill({ color: TREE_TRUNK_COLOR });
+        // 树冠（三角形叠加）
+        gfx.moveTo(-10, 2).lineTo(0, -14).lineTo(10, 2).closePath().fill({ color: TREE_LEAF_COLOR });
+        gfx.moveTo(-8, -4).lineTo(0, -18).lineTo(8, -4).closePath().fill({ color: 0x2ecc71 });
+      } else {
+        // 石头（不规则多边形）
+        gfx
+          .moveTo(-8, 2).lineTo(-6, -6).lineTo(0, -8).lineTo(7, -5)
+          .lineTo(9, 1).lineTo(5, 6).lineTo(-4, 5).closePath()
+          .fill({ color: ROCK_COLOR });
+        // 高光
+        gfx.moveTo(-3, -4).lineTo(0, -6).lineTo(4, -3).lineTo(1, -1).closePath()
+          .fill({ color: 0x95a5a6, alpha: 0.6 });
+      }
+
+      container.addChild(gfx);
+      this.decorationLayer.addChild(container);
+      this.decorations.push({ container, type });
+    }
+  }
+
+  /**
+   * 生成河流和道路（贝塞尔曲线）
+   */
+  private generateTerrainPaths(): void {
+    this.terrainPaths = [];
+
+    const riverGfx = new Graphics();
+    // 河流：从左上到右下的贝塞尔曲线
+    const riverPoints = [
+      { x: -300, y: 200 },
+      { x: 200, y: 350 },
+      { x: 600, y: 250 },
+      { x: 1000, y: 500 },
+      { x: 1400, y: 400 },
+      { x: 1800, y: 600 },
+      { x: 2200, y: 550 },
+    ];
+    this.drawBezierPath(riverGfx, riverPoints, RIVER_COLOR, RIVER_WIDTH);
+    // 河流高光
+    this.drawBezierPath(riverGfx, riverPoints, 0x85c1e9, RIVER_WIDTH * 0.4);
+    this.decorationLayer.addChild(riverGfx);
+    this.terrainPaths.push({ graphics: riverGfx, points: riverPoints });
+
+    // 道路：另一条贝塞尔曲线
+    const roadGfx = new Graphics();
+    const roadPoints = [
+      { x: 100, y: -300 },
+      { x: 300, y: 100 },
+      { x: 500, y: 400 },
+      { x: 800, y: 600 },
+      { x: 1100, y: 800 },
+      { x: 1500, y: 900 },
+    ];
+    this.drawBezierPath(roadGfx, roadPoints, ROAD_COLOR, ROAD_WIDTH);
+    this.decorationLayer.addChild(roadGfx);
+    this.terrainPaths.push({ graphics: roadGfx, points: roadPoints });
+  }
+
+  /**
+   * 用贝塞尔曲线绘制平滑路径
+   *
+   * 使用二次贝塞尔曲线在相邻点之间插值。
+   */
+  private drawBezierPath(
+    gfx: Graphics,
+    points: { x: number; y: number }[],
+    color: number,
+    width: number,
+  ): void {
+    if (points.length < 2) return;
+
+    gfx.moveTo(points[0].x, points[0].y);
+
+    if (points.length === 2) {
+      gfx.lineTo(points[1].x, points[1].y);
+    } else {
+      // 使用中点法绘制平滑曲线
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i];
+        const p1 = points[i + 1];
+
+        if (i === 0) {
+          gfx.lineTo((p0.x + p1.x) / 2, (p0.y + p1.y) / 2);
+        } else if (i === points.length - 2) {
+          gfx.quadraticCurveTo(p0.x, p0.y, p1.x, p1.y);
+        } else {
+          const midX = (p0.x + p1.x) / 2;
+          const midY = (p0.y + p1.y) / 2;
+          gfx.quadraticCurveTo(p0.x, p0.y, midX, midY);
+        }
+      }
+    }
+
+    gfx.stroke({ width, color, cap: 'round', join: 'round' });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 格子悬停高亮
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 更新格子悬停高亮
+   *
+   * 将鼠标位置对齐到虚拟网格，显示半透明黄色覆盖。
+   */
+  private updateCellHighlight(): void {
+    if (this.dragging || this.selection.active) {
+      this.cellHighlight.graphics.visible = false;
+      this.cellHighlight.visible = false;
+      return;
+    }
+
+    // 将全局坐标转换为本地坐标
+    const camState = this.cameraManager.getState();
+    const localX = this.pointerGlobalPos.x + camState.x;
+    const localY = this.pointerGlobalPos.y + camState.y;
+
+    // 对齐到虚拟网格
+    const gridX = Math.floor(localX / CELL_HOVER_SIZE) * CELL_HOVER_SIZE;
+    const gridY = Math.floor(localY / CELL_HOVER_SIZE) * CELL_HOVER_SIZE;
+
+    if (gridX !== this.cellHighlight.gridX || gridY !== this.cellHighlight.gridY) {
+      this.cellHighlight.gridX = gridX;
+      this.cellHighlight.gridY = gridY;
+
+      const gfx = this.cellHighlight.graphics;
+      gfx.clear();
+      gfx.rect(gridX, gridY, CELL_HOVER_SIZE, CELL_HOVER_SIZE)
+        .fill({ color: CELL_HOVER_COLOR, alpha: CELL_HOVER_ALPHA });
+      gfx.visible = true;
+      this.cellHighlight.visible = true;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 右键选区（框选多个格子）
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 更新右键选区显示
+   */
+  private updateSelection(): void {
+    if (!this.selection.active) return;
+
+    const gfx = this.selection.graphics;
+    const s = this.selection.start;
+    const e = this.selection.end;
+
+    const x = Math.min(s.x, e.x);
+    const y = Math.min(s.y, e.y);
+    const w = Math.abs(e.x - s.x);
+    const h = Math.abs(e.y - s.y);
+
+    gfx.clear();
+    gfx.rect(x, y, w, h).fill({ color: SELECTION_BORDER_COLOR, alpha: SELECTION_FILL_ALPHA });
+    gfx.rect(x, y, w, h).stroke({ width: SELECTION_BORDER_WIDTH, color: SELECTION_BORDER_COLOR });
+    gfx.visible = true;
+
+    // 查找选区内的领土
+    this.selection.selectedTerritories.clear();
+    for (const [id, node] of this.territoryNodes) {
+      if (!node.data) continue;
+      const px = node.data.position.x;
+      const py = node.data.position.y;
+      if (px >= x && px <= x + w && py >= y && py <= y + h) {
+        this.selection.selectedTerritories.add(id);
+      }
+    }
+  }
+
+  /**
+   * 右键按下：开始选区
+   */
+  private onRightDown = (e: import('pixi.js').FederatedPointerEvent): void => {
+    const camState = this.cameraManager.getState();
+    const localX = e.globalX + camState.x;
+    const localY = e.globalY + camState.y;
+
+    this.selection.active = true;
+    this.selection.start = { x: localX, y: localY };
+    this.selection.end = { x: localX, y: localY };
+  };
+
+  /**
+   * 右键移动：更新选区范围（在 onPointerMove 中处理）
+   */
+  private onRightMove(globalX: number, globalY: number): void {
+    if (!this.selection.active) return;
+
+    const camState = this.cameraManager.getState();
+    this.selection.end = {
+      x: globalX + camState.x,
+      y: globalY + camState.y,
+    };
+  }
+
+  /**
+   * 右键松开：完成选区
+   */
+  private onRightUp = (): void => {
+    if (this.selection.active && this.selection.selectedTerritories.size > 0) {
+      // 将选中的领土 ID 列表通过事件桥接上报
+      const ids = Array.from(this.selection.selectedTerritories);
+      this.bridgeEvent('territoryClick', ids.join(','));
+    }
+
+    this.selection.active = false;
+    this.selection.selectedTerritories.clear();
+    this.selection.graphics.clear();
+    this.selection.graphics.visible = false;
+  };
 
   // ═══════════════════════════════════════════════════════════
   // 拖拽交互
@@ -791,6 +1486,12 @@ export class MapScene extends BaseScene {
   private onPointerMove = (e: import('pixi.js').FederatedPointerEvent): void => {
     // 记录鼠标位置（用于 Tooltip 跟随）
     this.pointerGlobalPos = { x: e.globalX, y: e.globalY };
+
+    // 右键选区拖拽
+    if (this.selection.active) {
+      this.onRightMove(e.globalX, e.globalY);
+      return;
+    }
 
     if (!this.dragging) return;
 

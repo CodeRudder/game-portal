@@ -7,7 +7,8 @@
  * @module renderer/managers/AssetManager
  */
 
-import { Texture, Assets, Cache } from 'pixi.js';
+import { Texture, Assets, Cache, Spritesheet } from 'pixi.js';
+import type { SpritesheetData } from 'pixi.js';
 import type { LoadProgressCallback, IAssetManager } from '../types';
 
 // ═══════════════════════════════════════════════════════════════
@@ -36,6 +37,19 @@ interface AssetDescriptor {
   /** 资源类型 */
   type: 'texture' | 'spritesheet' | 'font';
 }
+
+/** 预加载清单项 */
+interface PreloadManifestItem {
+  /** 资源唯一标识 */
+  id: string;
+  /** 资源路径 */
+  src: string;
+  /** 资源类型 */
+  type: 'texture' | 'spritesheet' | 'font';
+}
+
+/** 加载进度回调（含百分比） */
+type PreloadProgressCallback = (loaded: number, total: number, percent: number) => void;
 
 // ═══════════════════════════════════════════════════════════════
 // AssetManager
@@ -67,6 +81,13 @@ export class AssetManager implements IAssetManager {
 
   /** 纹理缓存（id → Texture） */
   private textureCache: Map<string, Texture> = new Map();
+
+  /** 纹理别名映射（alias → textureKey） */
+  private textureAliases: Map<string, string> = new Map();
+
+  /** Kenney Tower Defense spritesheet 默认路径 */
+  private static readonly KENNEY_SPRITESHEET_PATH =
+    '/assets/kenney-tower-defense/spritesheet.json';
 
   // ═══════════════════════════════════════════════════════════
   // 初始化
@@ -260,6 +281,179 @@ export class AssetManager implements IAssetManager {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // Kenney 资源加载
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 加载 Kenney Tower Defense spritesheet
+   *
+   * 从标准路径加载 spritesheet.json，解析后将所有帧纹理
+   * 注册到 textureCache，键名为帧名（如 'tower_archer'）。
+   *
+   * @param path - spritesheet JSON 路径（默认使用内置路径）
+   * @returns 加载的帧名称列表
+   *
+   * @example
+   * ```ts
+   * const frames = await assetManager.loadKenneySpritesheet();
+   * // frames: ['tower_archer', 'tower_magic', 'enemy_skeleton', ...]
+   * const tex = assetManager.getTexture('tower_archer');
+   * ```
+   */
+  async loadKenneySpritesheet(
+    path: string = AssetManager.KENNEY_SPRITESHEET_PATH,
+  ): Promise<string[]> {
+    try {
+      // 使用 PixiJS v8 Assets 系统加载 spritesheet
+      // Assets.load 会自动识别 JSON spritesheet 并解析帧纹理
+      const sheet = await Assets.load<Spritesheet<SpritesheetData>>(path);
+
+      if (!sheet || !sheet.textures) {
+        console.warn('[AssetManager] Kenney spritesheet loaded but no textures found');
+        return [];
+      }
+
+      const frameNames: string[] = [];
+
+      // 将所有帧纹理注册到缓存
+      for (const [frameName, frameTexture] of Object.entries(sheet.textures)) {
+        if (frameTexture instanceof Texture) {
+          this.textureCache.set(frameName, frameTexture);
+          frameNames.push(frameName);
+        }
+      }
+
+      console.info(
+        `[AssetManager] Kenney spritesheet loaded (${frameNames.length} frames)`,
+      );
+      return frameNames;
+    } catch (err) {
+      console.error('[AssetManager] Failed to load Kenney spritesheet:', err);
+      return [];
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 纹理别名管理
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 注册纹理别名
+   *
+   * 为一个纹理键注册别名，后续可通过别名获取纹理。
+   *
+   * @param name - 别名
+   * @param textureKey - 原始纹理键
+   *
+   * @example
+   * ```ts
+   * assetManager.registerAlias('hero', 'tower_archer');
+   * const tex = assetManager.getTextureByAlias('hero'); // 等价于 getTexture('tower_archer')
+   * ```
+   */
+  registerAlias(name: string, textureKey: string): void {
+    this.textureAliases.set(name, textureKey);
+  }
+
+  /**
+   * 批量注册纹理别名
+   *
+   * @param aliases - 别名映射表 { alias: textureKey }
+   */
+  registerAliases(aliases: Record<string, string>): void {
+    for (const [alias, key] of Object.entries(aliases)) {
+      this.textureAliases.set(alias, key);
+    }
+  }
+
+  /**
+   * 通过别名获取纹理
+   *
+   * 先查别名映射，再查纹理缓存。如果别名不存在，
+   * 退化为直接用 name 作为 textureKey 查询。
+   *
+   * @param name - 别名或纹理键
+   * @returns Texture 或 null
+   */
+  getTextureByAlias(name: string): Texture | null {
+    const key = this.textureAliases.get(name) ?? name;
+    return this.textureCache.get(key) ?? null;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 资源预加载
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 批量预加载资源
+   *
+   * 根据清单逐项加载资源，支持进度回调。
+   * 所有资源加载完成后 resolve。
+   *
+   * @param manifest - 资源清单列表
+   * @param onProgress - 加载进度回调（已加载数, 总数, 百分比）
+   * @returns 所有资源 ID 列表
+   *
+   * @example
+   * ```ts
+   * const ids = await assetManager.preloadAssets([
+   *   { id: 'bg', src: '/assets/bg.png', type: 'texture' },
+   *   { id: 'fx', src: '/assets/fx.json', type: 'spritesheet' },
+   * ], (loaded, total, pct) => {
+   *   console.log(`Loading: ${pct}%`);
+   * });
+   * ```
+   */
+  async preloadAssets(
+    manifest: PreloadManifestItem[],
+    onProgress?: PreloadProgressCallback,
+  ): Promise<string[]> {
+    const total = manifest.length;
+    let loaded = 0;
+    const loadedIds: string[] = [];
+
+    for (const item of manifest) {
+      try {
+        switch (item.type) {
+          case 'texture': {
+            const texture = await Assets.load<Texture>(item.src);
+            if (texture) {
+              this.textureCache.set(item.id, texture);
+              loadedIds.push(item.id);
+            }
+            break;
+          }
+          case 'spritesheet': {
+            const sheet = await Assets.load<Spritesheet<SpritesheetData>>(item.src);
+            if (sheet?.textures) {
+              for (const [frameName, frameTexture] of Object.entries(sheet.textures)) {
+                if (frameTexture instanceof Texture) {
+                  this.textureCache.set(`${item.id}:${frameName}`, frameTexture);
+                }
+              }
+              loadedIds.push(item.id);
+            }
+            break;
+          }
+          case 'font': {
+            await Assets.load(item.src);
+            loadedIds.push(item.id);
+            break;
+          }
+        }
+      } catch (err) {
+        console.error(`[AssetManager] Failed to preload "${item.id}":`, err);
+      }
+
+      loaded++;
+      onProgress?.(loaded, total, Math.round((loaded / total) * 100));
+    }
+
+    console.info(`[AssetManager] Preloaded ${loadedIds.length}/${total} assets`);
+    return loadedIds;
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // 销毁
   // ═══════════════════════════════════════════════════════════
 
@@ -285,6 +479,7 @@ export class AssetManager implements IAssetManager {
     }
 
     this.textureCache.clear();
+    this.textureAliases.clear();
     this.loadedBundles.clear();
     this.manifests.clear();
   }

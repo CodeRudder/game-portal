@@ -170,7 +170,7 @@ export interface SkillEffectData {
   /** 特效 ID */
   id: string;
   /** 特效类型 */
-  type: 'slash' | 'fire' | 'ice' | 'lightning' | 'heal' | 'buff' | 'debuff';
+  type: 'slash' | 'fire' | 'ice' | 'lightning' | 'heal' | 'buff' | 'debuff' | 'freeze' | 'flame' | 'thunder';
   /** 起始位置 */
   from: { x: number; y: number };
   /** 目标位置 */
