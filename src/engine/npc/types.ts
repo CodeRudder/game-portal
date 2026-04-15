@@ -158,7 +158,7 @@ export interface NPCTask {
   /** 任务唯一 ID */
   id: string;
   /** 任务类型 */
-  type: 'move' | 'work' | 'talk' | 'trade' | 'patrol' | 'gather' | 'fight' | 'collaborate';
+  type: 'move' | 'work' | 'talk' | 'trade' | 'patrol' | 'rest' | 'gather' | 'fight' | 'collaborate';
   /** 目标 X */
   targetX?: number;
   /** 目标 Y */
