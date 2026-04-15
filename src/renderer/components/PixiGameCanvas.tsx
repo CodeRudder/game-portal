@@ -27,7 +27,6 @@ import { GameRenderer } from '../GameRenderer';
 import type {
   GameRenderState,
   SceneType,
-  RendererEventMap,
   RendererConfig,
 } from '../types';
 
@@ -196,56 +195,125 @@ export default function PixiGameCanvas({
   /** 当前方向 */
   const [orientation, setOrientation] = useState<'landscape' | 'portrait'>('landscape');
 
-  // ─── 事件绑定辅助 ─────────────────────────────────────────
+  // ─── 事件绑定辅助（ref 模式，避免闭包陷阱）──────────────
+
+  /**
+   * 使用 ref 存储最新的回调引用。
+   *
+   * 每次 render 更新 ref，事件绑定只在初始化时执行一次，
+   * 通过 ref 间接调用，始终获取最新回调。
+   */
+  const callbacksRef = useRef({
+    onRendererReady,
+    onSceneChange,
+    onBuildingClick,
+    onBuildingHover,
+    onMapClick,
+    onTerritoryClick,
+    onTerritoryHover,
+    onCombatAction,
+    onTechClick,
+    onHeroClick,
+    onBuildingBuy,
+    onBuildingUpgrade,
+    onHeroRecruit,
+    onTechResearch,
+    onTerritoryConquer,
+    onPrestigeExecute,
+    onOrientationChange,
+    onResize,
+  });
+
+  // 每次 render 更新 ref（无依赖 → 每次都执行）
+  useEffect(() => {
+    callbacksRef.current = {
+      onRendererReady,
+      onSceneChange,
+      onBuildingClick,
+      onBuildingHover,
+      onMapClick,
+      onTerritoryClick,
+      onTerritoryHover,
+      onCombatAction,
+      onTechClick,
+      onHeroClick,
+      onBuildingBuy,
+      onBuildingUpgrade,
+      onHeroRecruit,
+      onTechResearch,
+      onTerritoryConquer,
+      onPrestigeExecute,
+      onOrientationChange,
+      onResize,
+    };
+  });
 
   /**
    * 将渲染器事件映射到 React 回调
    *
-   * 使用 useCallback + useRef 避免闭包陷阱。
+   * 使用 ref 间接调用，绑定只在初始化时执行一次。
    */
   const bindEvents = useCallback((renderer: GameRenderer) => {
-    // 类型安全的事件绑定辅助函数
-    const bind = <K extends keyof RendererEventMap>(
-      event: K,
-      handler: ((...args: RendererEventMap[K]) => void) | undefined,
-    ): void => {
-      if (handler) {
-        renderer.on(event, handler);
-      }
-    };
-
-    bind('rendererReady', () => {
+    renderer.on('rendererReady', () => {
       setReady(true);
-      onRendererReady?.();
+      callbacksRef.current.onRendererReady?.();
     });
 
-    bind('sceneChange', onSceneChange);
-    bind('buildingClick', onBuildingClick);
-    bind('buildingHover', onBuildingHover);
-    bind('mapClick', onMapClick);
-    bind('territoryClick', onTerritoryClick);
-    bind('territoryHover', onTerritoryHover);
-    bind('combatAction', onCombatAction);
-    bind('techClick', onTechClick);
-    bind('heroClick', onHeroClick);
-    bind('buildingBuy', onBuildingBuy);
-    bind('buildingUpgrade', onBuildingUpgrade);
-    bind('heroRecruit', onHeroRecruit);
-    bind('techResearch', onTechResearch);
-    bind('territoryConquer', onTerritoryConquer);
-    bind('prestigeExecute', onPrestigeExecute);
-    bind('orientationChange', (layout) => {
-      setOrientation(layout);
-      onOrientationChange?.(layout);
+    renderer.on('sceneChange', (...args) => {
+      callbacksRef.current.onSceneChange?.(...args);
     });
-    bind('resize', onResize);
-  }, [
-    onRendererReady, onSceneChange, onBuildingClick, onBuildingHover,
-    onMapClick, onTerritoryClick, onTerritoryHover, onCombatAction,
-    onTechClick, onHeroClick, onBuildingBuy, onBuildingUpgrade,
-    onHeroRecruit, onTechResearch, onTerritoryConquer, onPrestigeExecute,
-    onOrientationChange, onResize,
-  ]);
+    renderer.on('buildingClick', (...args) => {
+      callbacksRef.current.onBuildingClick?.(...args);
+    });
+    renderer.on('buildingHover', (...args) => {
+      callbacksRef.current.onBuildingHover?.(...args);
+    });
+    renderer.on('mapClick', (...args) => {
+      callbacksRef.current.onMapClick?.(...args);
+    });
+    renderer.on('territoryClick', (...args) => {
+      callbacksRef.current.onTerritoryClick?.(...args);
+    });
+    renderer.on('territoryHover', (...args) => {
+      callbacksRef.current.onTerritoryHover?.(...args);
+    });
+    renderer.on('combatAction', (...args) => {
+      callbacksRef.current.onCombatAction?.(...args);
+    });
+    renderer.on('techClick', (...args) => {
+      callbacksRef.current.onTechClick?.(...args);
+    });
+    renderer.on('heroClick', (...args) => {
+      callbacksRef.current.onHeroClick?.(...args);
+    });
+    renderer.on('buildingBuy', (...args) => {
+      callbacksRef.current.onBuildingBuy?.(...args);
+    });
+    renderer.on('buildingUpgrade', (...args) => {
+      callbacksRef.current.onBuildingUpgrade?.(...args);
+    });
+    renderer.on('heroRecruit', (...args) => {
+      callbacksRef.current.onHeroRecruit?.(...args);
+    });
+    renderer.on('techResearch', (...args) => {
+      callbacksRef.current.onTechResearch?.(...args);
+    });
+    renderer.on('territoryConquer', (...args) => {
+      callbacksRef.current.onTerritoryConquer?.(...args);
+    });
+    renderer.on('prestigeExecute', () => {
+      callbacksRef.current.onPrestigeExecute?.();
+    });
+
+    renderer.on('orientationChange', (layout) => {
+      setOrientation(layout);
+      callbacksRef.current.onOrientationChange?.(layout);
+    });
+
+    renderer.on('resize', (...args) => {
+      callbacksRef.current.onResize?.(...args);
+    });
+  }, []); // 空依赖 — 只绑定一次
 
   // ─── 初始化渲染器 ─────────────────────────────────────────
 

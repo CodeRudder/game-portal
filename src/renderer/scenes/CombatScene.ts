@@ -12,6 +12,7 @@
  */
 
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import gsap from 'gsap';
 import type {
   SceneType,
   CombatRenderData,
@@ -219,17 +220,77 @@ export class CombatScene extends BaseScene {
 
   /**
    * 创建战斗背景
+   *
+   * 深蓝→深紫渐变 + 地面纹理 + 阵营标记 + 虚线分隔
    */
   private createBackground(): void {
     const bg = new Graphics();
-    // 战场背景 — 左右分区
-    bg.rect(0, 0, 1920, 1080)
-      .fill({ color: 0x1a1a2e, alpha: 0.9 });
-    // 中线
-    bg.moveTo(960, 0)
-      .lineTo(960, 1080)
-      .stroke({ width: 1, color: 0x333355, alpha: 0.5 });
+
+    // ─── 渐变背景（深蓝到深紫，分段模拟） ───────────────────
+    const steps = 20;
+    const w = 1920;
+    const h = 1080;
+    for (let i = 0; i < steps; i++) {
+      const t = i / (steps - 1);
+      // 深蓝 0x0d1b2a → 深紫 0x1a0a2e
+      const r = Math.round(0x0d + (0x1a - 0x0d) * t);
+      const g = Math.round(0x1b + (0x0a - 0x1b) * t);
+      const b = Math.round(0x2a + (0x2e - 0x2a) * t);
+      const color = (r << 16) | (g << 8) | b;
+      bg.rect(0, (h / steps) * i, w, h / steps + 1)
+        .fill({ color });
+    }
+
+    // ─── 地面纹理（棕色横条） ──────────────────────────────
+    const groundY = 700;
+    bg.rect(0, groundY, w, 8)
+      .fill({ color: 0x3d2b1f, alpha: 0.7 });
+    bg.rect(0, groundY + 8, w, 4)
+      .fill({ color: 0x2a1f14, alpha: 0.5 });
+    // 地面纹理点
+    for (let x = 0; x < w; x += 60) {
+      bg.rect(x + Math.random() * 20, groundY - 2, 2 + Math.random() * 4, 2)
+        .fill({ color: 0x5c4033, alpha: 0.3 });
+    }
+
+    // ─── 虚线分隔 ──────────────────────────────────────────
+    const dashLen = 16;
+    const gapLen = 12;
+    for (let y = 0; y < h; y += dashLen + gapLen) {
+      bg.moveTo(w / 2, y)
+        .lineTo(w / 2, y + dashLen)
+        .stroke({ width: 1, color: 0x555577, alpha: 0.25 });
+    }
+
+    // ─── 左右阵营标记 ──────────────────────────────────────
+    const playerLabel = new Text({
+      text: '⚔ 我方',
+      style: new TextStyle({
+        fontSize: 18,
+        fill: '#4ecdc4',
+        fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+        fontWeight: 'bold',
+      }),
+    });
+    playerLabel.anchor.set(0.5, 0);
+    playerLabel.position.set(480, groundY + 30);
+    playerLabel.alpha = 0.6;
     this.bgLayer.addChild(bg);
+    this.bgLayer.addChild(playerLabel);
+
+    const enemyLabel = new Text({
+      text: '💀 敌方',
+      style: new TextStyle({
+        fontSize: 18,
+        fill: '#e74c3c',
+        fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+        fontWeight: 'bold',
+      }),
+    });
+    enemyLabel.anchor.set(0.5, 0);
+    enemyLabel.position.set(1440, groundY + 30);
+    enemyLabel.alpha = 0.6;
+    this.bgLayer.addChild(enemyLabel);
   }
 
   /**
@@ -365,6 +426,8 @@ export class CombatScene extends BaseScene {
 
   /**
    * 更新角色显示对象
+   *
+   * 刷新数据并根据 animState 播放 GSAP 动画。
    */
   private updateUnitDisplay(display: CombatUnitDisplay, data: CombatUnitRenderData): void {
     display.data = data;
@@ -376,11 +439,90 @@ export class CombatScene extends BaseScene {
     const faction = data.faction;
     this.drawHpBar(display.hpBar, display.hpFill, data.currentHp, data.maxHp, faction);
 
-    // 更新存活状态
+    // 更新存活状态（死亡动画播完后变灰）
     display.container.alpha = data.alive ? 1 : 0.4;
 
-    // TODO: 根据 animState 播放对应动画
-    // idle / attack / hurt / die / skill
+    // ─── 根据 animState 播放角色动画 ────────────────────────
+    const animState = data.animState ?? 'idle';
+    if (animState === 'idle') return;
+
+    // 清除该角色上正在进行的动画，避免冲突
+    gsap.killTweensOf(display.sprite);
+    gsap.killTweensOf(display.container);
+
+    switch (animState) {
+      case 'attack': {
+        // 前冲：x 偏移 +20px，0.2 秒回归
+        const dir = data.faction === 'player' ? 1 : -1;
+        gsap.to(display.sprite, {
+          x: 20 * dir,
+          duration: 0.1,
+          ease: 'power2.out',
+          yoyo: true,
+          repeat: 1,
+          onComplete: () => {
+            display.sprite.x = 0;
+          },
+        });
+        break;
+      }
+
+      case 'hurt': {
+        // 红色闪烁：alpha 0.3→1 循环 2 次
+        const body = display.sprite.getChildAt(0) as Graphics | undefined;
+        if (!body) break;
+        // 先记录原始 tint（PixiJS v8 没有 tint on Graphics，改用 alpha 闪烁）
+        gsap.to(display.container, {
+          alpha: 0.3,
+          duration: 0.08,
+          yoyo: true,
+          repeat: 3,
+          ease: 'steps(1)',
+          onComplete: () => {
+            display.container.alpha = data.alive ? 1 : 0.4;
+          },
+        });
+        break;
+      }
+
+      case 'die': {
+        // 缩放到 0 + alpha 到 0，然后标记灰色
+        gsap.to(display.sprite, {
+          scale: 0,
+          alpha: 0,
+          duration: 0.5,
+          ease: 'power2.in',
+          onComplete: () => {
+            display.container.alpha = 0.4;
+            display.sprite.alpha = 0.4;
+            display.sprite.scale.set(1);
+            // 将角色方块变灰（重绘 body）
+            const body = display.sprite.getChildAt(0) as Graphics | undefined;
+            if (body) {
+              body.clear();
+              body.roundRect(-UNIT_SIZE / 2, -UNIT_SIZE / 2, UNIT_SIZE, UNIT_SIZE, 8)
+                .fill({ color: 0x555555 });
+            }
+          },
+        });
+        break;
+      }
+
+      case 'skill': {
+        // 发光效果：scale 1.2 然后回归
+        gsap.to(display.sprite, {
+          scale: 1.2,
+          duration: 0.15,
+          ease: 'power2.out',
+          yoyo: true,
+          repeat: 1,
+          onComplete: () => {
+            display.sprite.scale.set(1);
+          },
+        });
+        break;
+      }
+    }
   }
 
   /**
@@ -476,13 +618,158 @@ export class CombatScene extends BaseScene {
 
   /**
    * 创建技能特效
+   *
+   * 根据特效类型在 effectLayer 上创建图形，使用 GSAP 编排动画，
+   * 动画完成后自动销毁并从 effectLayer 移除。
    */
-  private createSkillEffect(_data: SkillEffectData): void {
-    // TODO: 实现技能特效
-    // 1. 根据 type 选择特效模板
-    // 2. 在 effectLayer 创建粒子/图形
-    // 3. 使用 GSAP 编排动画
-    // 4. 动画完成后自动清理
+  private createSkillEffect(data: SkillEffectData): void {
+    const effectContainer = new Container({ label: `fx-${data.id}` });
+    this.effectLayer.addChild(effectContainer);
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        effectContainer.destroy({ children: true });
+      },
+    });
+
+    switch (data.type) {
+      // ─── 斩击：白色弧线从 from 到 to，0.3 秒消失 ────────
+      case 'slash': {
+        const arc = new Graphics();
+        const cx = (data.from.x + data.to.x) / 2;
+        const cy = (data.from.y + data.to.y) / 2;
+        const radius = Math.hypot(data.to.x - data.from.x, data.to.y - data.from.y) / 2;
+        const startAngle = Math.atan2(data.to.y - data.from.y, data.to.x - data.from.x) - 0.5;
+        const endAngle = startAngle + 1.0;
+        arc.arc(cx, cy, Math.max(radius, 30), startAngle, endAngle)
+          .stroke({ width: 4, color: 0xffffff, alpha: 0.9 });
+        effectContainer.addChild(arc);
+        tl.to(arc, { alpha: 0, duration: 0.3, ease: 'power2.out' });
+        break;
+      }
+
+      // ─── 火焰：红橙色圆形从 from 向 to 扩散移动，0.5 秒 ─
+      case 'fire': {
+        const fire = new Graphics();
+        fire.circle(0, 0, 12)
+          .fill({ color: 0xff6622, alpha: 0.85 });
+        fire.circle(0, 0, 6)
+          .fill({ color: 0xffaa00, alpha: 0.9 });
+        fire.position.set(data.from.x, data.from.y);
+        effectContainer.addChild(fire);
+        tl.to(fire, {
+          x: data.to.x,
+          y: data.to.y,
+          duration: 0.3,
+          ease: 'power1.in',
+        });
+        tl.to(fire.scale, { x: 2.5, y: 2.5, duration: 0.2, ease: 'power2.out' }, '<');
+        tl.to(fire, { alpha: 0, duration: 0.2, ease: 'power2.in' });
+        break;
+      }
+
+      // ─── 冰霜：蓝色菱形在 to 位置出现并缩放消失，0.4 秒
+      case 'ice': {
+        const ice = new Graphics();
+        const s = 20;
+        ice.moveTo(0, -s)
+          .lineTo(s, 0)
+          .lineTo(0, s)
+          .lineTo(-s, 0)
+          .closePath()
+          .fill({ color: 0x66ccff, alpha: 0.85 });
+        ice.moveTo(0, -s * 0.5)
+          .lineTo(s * 0.5, 0)
+          .lineTo(0, s * 0.5)
+          .lineTo(-s * 0.5, 0)
+          .closePath()
+          .fill({ color: 0xaaeeff, alpha: 0.9 });
+        ice.position.set(data.to.x, data.to.y);
+        effectContainer.addChild(ice);
+        tl.from(ice.scale, { x: 0, y: 0, duration: 0.15, ease: 'back.out(2)' });
+        tl.to(ice, { alpha: 0, duration: 0.25, ease: 'power2.out' });
+        tl.to(ice.scale, { x: 1.5, y: 1.5, duration: 0.25, ease: 'power2.out' }, '<');
+        break;
+      }
+
+      // ─── 闪电：黄色锯齿线从 from 到 to，0.2 秒闪烁 ─────
+      case 'lightning': {
+        const bolt = new Graphics();
+        const segments = 6;
+        const dx = data.to.x - data.from.x;
+        const dy = data.to.y - data.from.y;
+        bolt.moveTo(data.from.x, data.from.y);
+        for (let i = 1; i < segments; i++) {
+          const t = i / segments;
+          const px = data.from.x + dx * t + (Math.random() - 0.5) * 30;
+          const py = data.from.y + dy * t + (Math.random() - 0.5) * 30;
+          bolt.lineTo(px, py);
+        }
+        bolt.lineTo(data.to.x, data.to.y);
+        bolt.stroke({ width: 3, color: 0xffee44, alpha: 1 });
+        // 外发光层
+        bolt.stroke({ width: 8, color: 0xffee44, alpha: 0.3 });
+        effectContainer.addChild(bolt);
+        // 闪烁 3 次
+        tl.to(bolt, { alpha: 0, duration: 0.03 });
+        tl.to(bolt, { alpha: 1, duration: 0.03 });
+        tl.to(bolt, { alpha: 0, duration: 0.03 });
+        tl.to(bolt, { alpha: 1, duration: 0.03 });
+        tl.to(bolt, { alpha: 0, duration: 0.08, ease: 'power2.out' });
+        break;
+      }
+
+      // ─── 治疗：绿色十字在 to 位置旋转上升，0.6 秒 ──────
+      case 'heal': {
+        const cross = new Graphics();
+        const arm = 14;
+        const thick = 5;
+        cross.rect(-thick / 2, -arm, thick, arm * 2)
+          .fill({ color: 0x44ff88, alpha: 0.9 });
+        cross.rect(-arm, -thick / 2, arm * 2, thick)
+          .fill({ color: 0x44ff88, alpha: 0.9 });
+        cross.position.set(data.to.x, data.to.y);
+        effectContainer.addChild(cross);
+        tl.to(cross, {
+          y: data.to.y - 40,
+          rotation: Math.PI * 0.5,
+          duration: 0.6,
+          ease: 'power1.out',
+        });
+        tl.to(cross, { alpha: 0, duration: 0.3, ease: 'power2.in' }, '-=0.3');
+        break;
+      }
+
+      // ─── 增益：蓝色光环在 from 位置缩放消失，0.5 秒 ────
+      case 'buff': {
+        const ring = new Graphics();
+        ring.circle(0, 0, 30)
+          .stroke({ width: 3, color: 0x4488ff, alpha: 0.8 });
+        ring.circle(0, 0, 20)
+          .stroke({ width: 2, color: 0x88bbff, alpha: 0.6 });
+        ring.position.set(data.from.x, data.from.y);
+        effectContainer.addChild(ring);
+        tl.from(ring.scale, { x: 0.3, y: 0.3, duration: 0.15, ease: 'back.out(1.5)' });
+        tl.to(ring.scale, { x: 1.8, y: 1.8, duration: 0.35, ease: 'power2.out' });
+        tl.to(ring, { alpha: 0, duration: 0.35, ease: 'power2.in' }, '<');
+        break;
+      }
+
+      // ─── 减益：紫色光环在 to 位置缩放消失，0.5 秒 ──────
+      case 'debuff': {
+        const ring = new Graphics();
+        ring.circle(0, 0, 30)
+          .stroke({ width: 3, color: 0xaa44ff, alpha: 0.8 });
+        ring.circle(0, 0, 20)
+          .stroke({ width: 2, color: 0xcc88ff, alpha: 0.6 });
+        ring.position.set(data.to.x, data.to.y);
+        effectContainer.addChild(ring);
+        tl.from(ring.scale, { x: 1.5, y: 1.5, duration: 0.15, ease: 'power2.out' });
+        tl.to(ring.scale, { x: 0.3, y: 0.3, duration: 0.35, ease: 'power2.in' });
+        tl.to(ring, { alpha: 0, duration: 0.35, ease: 'power2.in' }, '<');
+        break;
+      }
+    }
   }
 
   // ═══════════════════════════════════════════════════════════

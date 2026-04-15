@@ -11,7 +11,7 @@
  * @module renderer/managers/AnimationManager
  */
 
-import { Container } from 'pixi.js';
+import { Container, Text, TextStyle } from 'pixi.js';
 import gsap from 'gsap';
 import type { SceneTransition, DamageNumberData } from '../types';
 import type { IAnimationManager } from '../types';
@@ -196,13 +196,41 @@ export class AnimationManager implements IAnimationManager {
    * @param data - 飘字数据
    */
   playDamageNumber(parent: Container, data: DamageNumberData): void {
-    // 飘字由 CombatScene 自行管理（使用 onUpdate 驱动），
-    // 这里提供 GSAP 版本的动画驱动作为备选。
-    // 实际使用时由场景选择使用哪种方式。
+    // 1. 创建 Text 对象
+    const colorMap: Record<DamageNumberData['type'], string> = {
+      normal: '#ffffff',
+      critical: '#ffd700',
+      heal: '#4ecdc4',
+      miss: '#888888',
+    };
+    const text = new Text({
+      text: data.type === 'miss' ? 'MISS' : `${data.value}`,
+      style: new TextStyle({
+        fontSize: data.type === 'critical' ? 28 : 20,
+        fill: data.color ?? colorMap[data.type],
+        fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+        fontWeight: 'bold',
+        stroke: { color: '#000000', width: 2 },
+      }),
+    });
+    text.anchor.set(0.5);
+    text.position.set(data.position.x, data.position.y);
+    parent.addChild(text);
 
-    // TODO: 如果需要 GSAP 驱动的飘字，在此实现
-    void parent;
-    void data;
+    // 2. GSAP 动画：缩放弹跳 → 上升 + 淡出
+    const tl = gsap.timeline({
+      onComplete: () => {
+        parent.removeChild(text);
+        text.destroy();
+        this.removeTimeline(tl);
+      },
+    });
+
+    tl.from(text.scale, { x: 0.5, y: 0.5, duration: 0.1, ease: 'back.out(2)' })
+      .to(text, { y: text.y - 60, duration: 0.8, ease: 'power2.out' }, 0)
+      .to(text, { alpha: 0, duration: 0.3, ease: 'power1.in' }, 0.5);
+
+    this.addTimeline(tl);
   }
 
   // ═══════════════════════════════════════════════════════════
