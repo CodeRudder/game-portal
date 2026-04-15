@@ -1,7 +1,7 @@
 /**
- * 四大文明·印度 (Civ India) — v3.0 引擎测试套件
+ * 四大文明·印度 (Civ Babylon) — v3.0 引擎测试套件
  *
- * 完全匹配 v3.0 统一子系统架构的公共 API。
+ * 完全重写，匹配 v3.0 统一子系统架构的公共 API。
  * 覆盖常量验证、引擎初始化、建筑系统、英雄系统、资源系统、
  * 时代系统、科技系统、声望系统、存档系统、渲染和输入处理。
  */
@@ -78,7 +78,7 @@ describe('常量验证', () => {
     expect(INVENTIONS).toHaveLength(9);
   });
 
-  it('RESOURCES 有 4 种资源（rice/spice/gem/gold）', () => {
+  it('RESOURCES 有 4 种资源', () => {
     expect(RESOURCES).toHaveLength(4);
     const ids = RESOURCES.map(r => r.id);
     expect(ids).toContain('rice');
@@ -138,14 +138,14 @@ describe('建筑系统', () => {
     engine = createEngine();
   });
 
-  it('初始解锁 rice_paddy', () => {
+  it('初始解锁 farm', () => {
     const bldg = (engine as any).bldg;
     expect(bldg.isUnlocked('rice_paddy')).toBe(true);
   });
 
   it('购买建筑成功（资源充足时）', () => {
     setResources(engine, { rice: 100 });
-    (engine as any).buyBuilding(); // selIdx=0 → rice_paddy, cost 10 rice
+    (engine as any).buyBuilding(); // selIdx=0 → farm, cost 10 rice
     const bldg = (engine as any).bldg;
     expect(bldg.getLevel('rice_paddy')).toBe(1);
   });
@@ -160,11 +160,14 @@ describe('建筑系统', () => {
   it('建筑升级后费用增加', () => {
     const bldg = (engine as any).bldg;
     setResources(engine, { rice: 100000 });
+    // Get cost at Lv.0
     const cost0 = bldg.getCost('rice_paddy');
+    // Upgrade rice_paddy several times (costMultiplier = 1.07)
     for (let i = 0; i < 5; i++) {
       bldg.purchase('rice_paddy', () => true, () => {});
     }
     const cost5 = bldg.getCost('rice_paddy');
+    // After 5 upgrades, cost should be noticeably higher
     // 10 * 1.07^5 ≈ 14.03 → floor = 14 > 10
     expect(cost5.rice).toBeGreaterThan(cost0.rice);
   });
@@ -182,13 +185,13 @@ describe('建筑系统', () => {
   it('建筑解锁条件（rice_paddy Lv.1 解锁 spice_garden）', () => {
     const bldg = (engine as any).bldg;
     expect(bldg.isUnlocked('spice_garden')).toBe(false);
-    // Upgrade rice_paddy 1 time
+    // Upgrade rice_paddy once
     bldg.purchase('rice_paddy', () => true, () => {});
     (engine as any).checkUnlocks();
     expect(bldg.isUnlocked('spice_garden')).toBe(true);
   });
 
-  it('获取建筑列表（初始解锁 1 个 rice_paddy）', () => {
+  it('获取建筑列表（初始解锁 1 个：farm）', () => {
     const bldg = (engine as any).bldg;
     const unlocked = bldg.getUnlockedBuildings();
     expect(unlocked.length).toBeGreaterThanOrEqual(1);
@@ -248,6 +251,7 @@ describe('英雄系统', () => {
       expect(typeof h.baseStats.military).toBe('number');
       expect(typeof h.baseStats.culture).toBe('number');
       expect(h.baseStats.administration).toBeGreaterThan(0);
+      expect(h.baseStats.military).toBeGreaterThan(0);
       expect(h.baseStats.culture).toBeGreaterThan(0);
     }
   });
@@ -290,17 +294,17 @@ describe('资源系统', () => {
   it('资源消耗（购买建筑扣除 rice）', () => {
     setResources(engine, { rice: 100 });
     const before = engine.getResources().rice;
-    (engine as any).buyBuilding(); // buy rice_paddy, cost 10 rice
+    (engine as any).buyBuilding(); // buy farm, cost 10 rice
     expect(engine.getResources().rice).toBeLessThan(before);
   });
 
   it('多种资源独立（rice_paddy 产出 rice，spice_garden 产出 spice）', () => {
     const bldg = (engine as any).bldg;
     setResources(engine, { rice: 100000 });
-    bldg.purchase('rice_paddy', () => true, () => {});
-    // Unlock spice_garden by purchasing rice_paddy
-    (engine as any).checkUnlocks();
-    bldg.purchase('spice_garden', () => true, () => {});
+    bldg.purchase('rice_paddy', () => true, () => {}); // rice_paddy → Lv.1
+    // Unlock and purchase spice_garden
+    bldg.forceUnlock('spice_garden');
+    bldg.purchase('spice_garden', () => true, () => {}); // spice_garden → Lv.1
     (engine as any).onUpdate(10000);
     const res = engine.getResources();
     expect(res.rice).toBeGreaterThan(0);
@@ -333,7 +337,7 @@ describe('时代系统', () => {
     expect(stage!.name).toBe('印度河');
   });
 
-  it('满足条件后时代升级（vedic 需要 rice >= 500, spice >= 200）', () => {
+  it('满足条件后时代升级（vedic 需要 rice>=500, spice>=200）', () => {
     setResources(engine, { rice: 1000, spice: 500 });
     (engine as any).checkStage();
     const stage = engine.getStageInfo();
@@ -352,7 +356,7 @@ describe('时代系统', () => {
     expect(stages.getMultiplier('production')).toBe(1.3);
   });
 
-  it('最终时代为现代（modern）', () => {
+  it('最终时代为现代（modern_india）', () => {
     const last = DYNASTIES[DYNASTIES.length - 1];
     expect(last.id).toBe('modern');
     expect(last.name).toBe('现代');
@@ -403,14 +407,14 @@ describe('科技系统', () => {
   });
 
   it('科技分支（agriculture/commerce/spirituality 各 3 级）', () => {
-    const agri = INVENTIONS.filter(t => t.branch === 'agriculture');
-    const comm = INVENTIONS.filter(t => t.branch === 'commerce');
-    const spir = INVENTIONS.filter(t => t.branch === 'spirituality');
-    expect(agri).toHaveLength(3);
-    expect(comm).toHaveLength(3);
-    expect(spir).toHaveLength(3);
+    const agriculture = INVENTIONS.filter(t => t.branch === 'agriculture');
+    const commerce = INVENTIONS.filter(t => t.branch === 'commerce');
+    const spirituality = INVENTIONS.filter(t => t.branch === 'spirituality');
+    expect(agriculture).toHaveLength(3);
+    expect(commerce).toHaveLength(3);
+    expect(spirituality).toHaveLength(3);
     // Each branch has tier 1, 2, 3
-    for (const branch of [agri, comm, spir]) {
+    for (const branch of [agriculture, commerce, spirituality]) {
       const tiers = branch.map(t => t.tier).sort();
       expect(tiers).toEqual([1, 2, 3]);
     }
@@ -571,11 +575,14 @@ describe('输入处理', () => {
     expect(engine.getResources().rice).toBe(before + CLICK_REWARD.rice);
   });
 
-  it('T 键切换科技面板，H 键切换英雄面板', () => {
+  it('T 键切换科技面板', () => {
     engine.handleKeyDown('t');
     expect(engine.getActivePanel()).toBe('tech');
     engine.handleKeyDown('t');
     expect(engine.getActivePanel()).toBe('none');
+  });
+
+  it('H 键切换英雄面板', () => {
     engine.handleKeyDown('h');
     expect(engine.getActivePanel()).toBe('heroes');
     engine.handleKeyDown('h');
@@ -691,7 +698,7 @@ describe('常量详细验证', () => {
     expect(PRESTIGE_CONFIG.retention).toBe(0.1);
   });
 
-  it('INITIALLY_UNLOCKED 包含 rice_paddy', () => {
+  it('INITIALLY_UNLOCKED 包含 farm', () => {
     expect(INITIALLY_UNLOCKED).toEqual(['rice_paddy']);
   });
 
