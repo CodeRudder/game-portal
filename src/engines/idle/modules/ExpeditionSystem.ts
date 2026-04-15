@@ -415,9 +415,14 @@ export class ExpeditionSystem<Def extends ExpeditionDef = ExpeditionDef> {
    * 5. 创建活跃远征记录并加入活跃列表
    * 6. 触发 expedition_started 事件
    *
+   * ⚠️ **副作用警告**：此方法会 **直接修改** 传入的 `resources` 对象，
+   * 从中扣除远征消耗的资源（即 `def.cost` 中定义的数量）。
+   * 调用方应意识到传入的 `resources` 对象在方法返回后会被改变。
+   * 如需保留原始资源数据，请在调用前自行深拷贝。
+   *
    * @param id        - 远征定义 ID
    * @param crew      - 参与船员 ID 列表
-   * @param resources - 当前可用资源（**将被扣除消耗量**）
+   * @param resources - 当前可用资源（**⚠️ 将被直接修改，扣除远征消耗量**）
    * @returns 活跃远征对象副本，不可开始时返回 null
    */
   start(id: string, crew: string[], resources: Record<string, number>): ActiveExpedition | null {

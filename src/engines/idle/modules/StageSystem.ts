@@ -440,18 +440,35 @@ export class StageSystem<Def extends StageDef = StageDef> {
    * 反序列化恢复状态
    *
    * 从存档数据恢复当前阶段。无效的阶段 ID 会被静默忽略。
+   * 对 state 参数本身及 currentStageId 字段均做严格的类型校验，
+   * 确保传入 null / undefined / 非对象等异常值时不会抛出运行时异常。
    *
    * @param state - 存档状态对象
    */
   loadState(state: { currentStageId: string }): void {
-    if (state.currentStageId && this.defsById.has(state.currentStageId)) {
-      // 解锁从初始阶段到目标阶段之间的所有阶段
-      const targetIndex = this.sortedDefs.findIndex((d) => d.id === state.currentStageId);
-      for (let i = 0; i <= targetIndex; i++) {
-        this.unlockedStages.add(this.sortedDefs[i].id);
-      }
-      this.currentStageId = state.currentStageId;
+    // ---- 第一层：state 本身必须是合法的非空对象 ----
+    if (state == null || typeof state !== 'object') {
+      return;
     }
+
+    // ---- 第二层：提取并校验 currentStageId 字段 ----
+    const { currentStageId } = state as Record<string, unknown>;
+
+    if (
+      typeof currentStageId !== 'string' ||
+      currentStageId.trim().length === 0 ||
+      !this.defsById.has(currentStageId)
+    ) {
+      // 非法值（null、undefined、非字符串、空白串、未注册 ID）静默忽略
+      return;
+    }
+
+    // ---- 第三层：安全恢复 — 解锁从初始阶段到目标阶段之间的所有阶段 ----
+    const targetIndex = this.sortedDefs.findIndex((d) => d.id === currentStageId);
+    for (let i = 0; i <= targetIndex; i++) {
+      this.unlockedStages.add(this.sortedDefs[i].id);
+    }
+    this.currentStageId = currentStageId;
   }
 
   /**

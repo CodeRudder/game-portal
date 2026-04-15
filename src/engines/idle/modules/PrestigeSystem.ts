@@ -319,14 +319,23 @@ export class PrestigeSystem {
    * @param state - 要恢复的状态字段（部分或全部）
    */
   loadState(state: Partial<PrestigeState>): void {
-    if (state.currency !== undefined) {
+    if (state.currency !== undefined && typeof state.currency === 'number' && Number.isFinite(state.currency) && state.currency >= 0) {
       this.state.currency = state.currency;
+    } else if (state.currency !== undefined) {
+      // 非法值回退到安全默认值
+      this.state.currency = 0;
     }
-    if (state.count !== undefined) {
+
+    if (state.count !== undefined && typeof state.count === 'number' && Number.isFinite(state.count) && state.count >= 0) {
       this.state.count = state.count;
+    } else if (state.count !== undefined) {
+      this.state.count = 0;
     }
-    if (state.bestGain !== undefined) {
+
+    if (state.bestGain !== undefined && typeof state.bestGain === 'number' && Number.isFinite(state.bestGain) && state.bestGain >= 0) {
       this.state.bestGain = state.bestGain;
+    } else if (state.bestGain !== undefined) {
+      this.state.bestGain = 0;
     }
 
     // multiplier 始终根据 currency 重新计算，确保一致性

@@ -240,6 +240,10 @@ export class UnlockChecker {
    * 根据条件类型从 context 中提取对应数据并进行判定。
    * 支持 AND / OR 复合条件的递归求值。
    *
+   * 递归深度保护：通过 depth 参数限制最大递归深度（默认 20），
+   * 防止恶意或错误配置的深层嵌套条件树导致栈溢出。
+   * 当 depth 降至 0 时，输出警告并安全降级为 false。
+   *
    * 评估规则：
    * - resource_amount: 检查资源数量 >= minAmount（资源不存在时视为 0）
    * - building_level:  检查建筑等级 >= minLevel（建筑不存在时视为 0）
@@ -252,9 +256,16 @@ export class UnlockChecker {
    *
    * @param condition - 待评估的解锁条件
    * @param ctx       - 当前游戏状态上下文
+   * @param depth     - 剩余递归深度，默认 20；depth <= 0 时安全降级为 false
    * @returns 条件是否满足
    */
-  private evaluateCondition(condition: UnlockCondition, ctx: UnlockContext): boolean {
+  private evaluateCondition(condition: UnlockCondition, ctx: UnlockContext, depth: number = 20): boolean {
+    // 递归深度保护：防止深层嵌套条件树导致栈溢出
+    if (depth <= 0) {
+      console.warn('UnlockChecker: 条件树深度超限，可能存在循环引用或过深嵌套');
+      return false;
+    }
+
     switch (condition.type) {
       case 'resource_amount': {
         const resource = ctx.resources.get(condition.resourceId);
@@ -290,7 +301,7 @@ export class UnlockChecker {
         if (condition.conditions.length === 0) {
           return true;
         }
-        return condition.conditions.every((sub) => this.evaluateCondition(sub, ctx));
+        return condition.conditions.every((sub) => this.evaluateCondition(sub, ctx, depth - 1));
       }
 
       case 'or': {
@@ -298,7 +309,7 @@ export class UnlockChecker {
         if (condition.conditions.length === 0) {
           return false;
         }
-        return condition.conditions.some((sub) => this.evaluateCondition(sub, ctx));
+        return condition.conditions.some((sub) => this.evaluateCondition(sub, ctx, depth - 1));
       }
 
       default: {

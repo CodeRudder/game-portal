@@ -500,12 +500,16 @@ export class UnitSystem<Def extends UnitDef = UnitDef> {
     exp: number;
     unlocked: boolean;
     evolutionBranch: string | null;
+    evolutionStartTime: number | null;
+    equippedIds: string[];
   }> {
     const result: Record<string, {
       level: number;
       exp: number;
       unlocked: boolean;
       evolutionBranch: string | null;
+      evolutionStartTime: number | null;
+      equippedIds: string[];
     }> = {};
 
     for (const [id, state] of this.states) {
@@ -514,6 +518,8 @@ export class UnitSystem<Def extends UnitDef = UnitDef> {
         exp: state.exp,
         unlocked: state.unlocked,
         evolutionBranch: state.currentEvolutionBranch,
+        evolutionStartTime: state.evolutionStartTime,
+        equippedIds: [...state.equippedIds],
       };
     }
 
@@ -534,14 +540,30 @@ export class UnitSystem<Def extends UnitDef = UnitDef> {
         continue;
       }
 
-      state.level = typeof saved.level === 'number' ? saved.level : 1;
-      state.exp = typeof saved.exp === 'number' ? saved.exp : 0;
-      state.unlocked = typeof saved.unlocked === 'boolean' ? saved.unlocked : false;
+      // 基本校验：saved 必须是非 null 对象
+      if (saved === null || typeof saved !== 'object') {
+        continue;
+      }
+
+      state.level = typeof saved.level === 'number' && saved.level >= 1
+        ? saved.level
+        : 1;
+      state.exp = typeof saved.exp === 'number' && saved.exp >= 0
+        ? saved.exp
+        : 0;
+      state.unlocked = typeof saved.unlocked === 'boolean'
+        ? saved.unlocked
+        : false;
       state.currentEvolutionBranch = typeof saved.evolutionBranch === 'string'
         ? saved.evolutionBranch
         : null;
-      state.evolutionStartTime = null;
+      // 恢复进化开始时间（向后兼容：旧存档无此字段时默认 null）
+      state.evolutionStartTime = typeof saved.evolutionStartTime === 'number'
+        ? saved.evolutionStartTime
+        : null;
+      // 恢复已装备物品列表（向后兼容：旧存档无此字段时默认 []）
       state.equippedIds = Array.isArray(saved.equippedIds)
+        && saved.equippedIds.every((item: unknown) => typeof item === 'string')
         ? [...saved.equippedIds]
         : [];
     }

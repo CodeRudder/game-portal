@@ -167,10 +167,16 @@ export class BuildingSystem<Def extends BuildingDef = BuildingDef> {
    * @param savedLevels - 存档中的等级数据：buildingId → level
    */
   loadState(savedLevels: Record<string, number>): void {
+    if (!savedLevels || typeof savedLevels !== 'object' || Array.isArray(savedLevels)) return;
+
     for (const [id, level] of Object.entries(savedLevels)) {
+      if (typeof id !== 'string') continue;
+      // 只接受 number 类型的等级值，且限制为非负整数
+      if (typeof level !== 'number' || !Number.isFinite(level)) continue;
+
       const state = this.states.get(id);
       if (state) {
-        state.level = level;
+        state.level = Math.max(0, Math.floor(level));
       }
     }
   }

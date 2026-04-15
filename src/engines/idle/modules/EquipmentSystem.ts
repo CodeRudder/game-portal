@@ -29,6 +29,14 @@ export type EquipSlot =
   | 'accessory1'
   | 'accessory2';
 
+/** 套装奖励阈值定义：件数 → 属性加成 */
+export interface SetBonusTier {
+  /** 激活所需件数 */
+  pieces: number;
+  /** 该阈值提供的属性加成 */
+  bonus: Record<string, number>;
+}
+
 /** 装备定义（基础接口） */
 export interface EquipDef {
   /** 装备唯一标识 */
@@ -47,6 +55,8 @@ export interface EquipDef {
   levelRequired: number;
   /** 套装 ID（可选） */
   setId?: string;
+  /** 套装奖励阈值列表（可选，与 setId 配合使用） */
+  setBonuses?: SetBonusTier[];
   /** 装备描述 */
   description: string;
   /** 图标标识 */
@@ -189,9 +199,10 @@ export class EquipmentSystem<Def extends EquipDef = EquipDef> {
    * 穿戴后自动重新计算套装加成。
    *
    * @param instanceId - 装备实例 ID
-   * @returns 是否穿戴成功（实例不存在或不在背包中则失败）
+   * @param characterLevel - 角色当前等级（用于等级校验，默认 Infinity 即不限制）
+   * @returns 是否穿戴成功（实例不存在、不在背包中或等级不足则失败）
    */
-  equip(instanceId: string): boolean {
+  equip(instanceId: string, characterLevel: number = Infinity): boolean {
     // 检查实例是否在背包中
     const invIndex = this.inventoryIds.indexOf(instanceId);
     if (invIndex === -1) {
@@ -205,6 +216,11 @@ export class EquipmentSystem<Def extends EquipDef = EquipDef> {
 
     const def = this.defs.get(instance.defId);
     if (!def) {
+      return false;
+    }
+
+    // 等级校验：角色等级必须 >= 装备需求等级
+    if (characterLevel < def.levelRequired) {
       return false;
     }
 
@@ -289,8 +305,10 @@ export class EquipmentSystem<Def extends EquipDef = EquipDef> {
   /**
    * 获取所有已装备装备的总加成
    *
-   * 汇总所有已装备装备的基础加成、强化加成和额外加成。
+   * 汇总所有已装备装备的基础加成、强化加成、额外加成和套装加成。
    * 强化加成 = 基础加成 × enhanceLevel × ENHANCE_BONUS_PER_LEVEL
+   * 套装加成：当同一套装件数达到 setBonuses 中某阈值的 pieces 时，
+   * 累加该阈值定义的 bonus。
    *
    * @returns 属性名 → 总加成值的映射
    */
@@ -329,7 +347,40 @@ export class EquipmentSystem<Def extends EquipDef = EquipDef> {
       }
     }
 
+    // 累加套装加成
+    for (const [setId, pieceCount] of Object.entries(this.activeSets)) {
+      // 查找该套装中任意一件装备的 setBonuses 定义
+      const setDef = this.findSetDef(setId);
+      if (!setDef?.setBonuses) continue;
+
+      // 累加所有已达成的阈值加成
+      for (const tier of setDef.setBonuses) {
+        if (pieceCount >= tier.pieces) {
+          for (const [key, value] of Object.entries(tier.bonus)) {
+            total[key] = (total[key] ?? 0) + value;
+          }
+        }
+      }
+    }
+
     return total;
+  }
+
+  /**
+   * 查找指定套装 ID 对应的任意一个装备定义
+   *
+   * 用于获取套装奖励阈值定义。
+   *
+   * @param setId - 套装 ID
+   * @returns 第一个匹配的装备定义，未找到则返回 undefined
+   */
+  private findSetDef(setId: string): Def | undefined {
+    for (const def of this.defs.values()) {
+      if (def.setId === setId) {
+        return def;
+      }
+    }
+    return undefined;
   }
 
   /**

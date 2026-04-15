@@ -244,19 +244,64 @@ export class BattleSystem<Def extends BattleDef = BattleDef> {
   }
 
   loadState(data: Record<string, unknown>): void {
-    this.currentWave = (data.currentWave as string | null) ?? null;
-    this.aliveEnemies = (data.aliveEnemies as BattleEnemy[]) || [];
-    this.killCount = (data.killCount as number) || 0;
-    this.waveStartTime = (data.waveStartTime as number) || 0;
-    this.pendingDrops = (data.pendingDrops as Record<string, number>) || {};
-    if (data.stats && typeof data.stats === 'object') {
+    if (!data || typeof data !== 'object') return;
+
+    // currentWave: string | null
+    this.currentWave = typeof data.currentWave === 'string' ? data.currentWave : null;
+
+    // aliveEnemies: BattleEnemy[] — 校验每个元素的基本结构
+    this.aliveEnemies = Array.isArray(data.aliveEnemies)
+      ? (data.aliveEnemies as unknown[]).filter(
+          (e): e is Record<string, unknown> =>
+            typeof e === 'object' && e !== null,
+        ).map((e) => ({
+          defId: typeof e.defId === 'string' ? e.defId : '',
+          instanceId: typeof e.instanceId === 'string' ? e.instanceId : '',
+          currentHp: typeof e.currentHp === 'number' ? Math.max(0, e.currentHp) : 0,
+          maxHp: typeof e.maxHp === 'number' ? Math.max(1, e.maxHp) : 1,
+          isAlive: typeof e.isAlive === 'boolean' ? e.isAlive : false,
+          buffs: Array.isArray(e.buffs)
+            ? (e.buffs as unknown[]).filter(
+                (b): b is Record<string, unknown> =>
+                  typeof b === 'object' && b !== null,
+              ).map((b) => ({
+                id: typeof b.id === 'string' ? b.id : '',
+                type: b.type === 'buff' || b.type === 'debuff' ? b.type : 'buff',
+                stat: typeof b.stat === 'string' ? b.stat : '',
+                value: typeof b.value === 'number' ? b.value : 0,
+                remainingMs: typeof b.remainingMs === 'number' ? b.remainingMs : 0,
+              }))
+            : [],
+        }))
+      : [];
+
+    // killCount: number (>= 0)
+    this.killCount = typeof data.killCount === 'number' ? Math.max(0, data.killCount) : 0;
+
+    // waveStartTime: number (>= 0)
+    this.waveStartTime = typeof data.waveStartTime === 'number' ? Math.max(0, data.waveStartTime) : 0;
+
+    // pendingDrops: Record<string, number>
+    this.pendingDrops =
+      typeof data.pendingDrops === 'object' && data.pendingDrops !== null && !Array.isArray(data.pendingDrops)
+        ? Object.fromEntries(
+            Object.entries(data.pendingDrops as Record<string, unknown>).filter(
+              ([, v]) => typeof v === 'number',
+            ) as [string, number][],
+          )
+        : {};
+
+    // stats: BattleStats
+    if (typeof data.stats === 'object' && data.stats !== null && !Array.isArray(data.stats)) {
       const s = data.stats as Record<string, unknown>;
       this.stats = {
-        totalDamageDealt: (s.totalDamageDealt as number) || 0,
-        totalDamageTaken: (s.totalDamageTaken as number) || 0,
-        wavesCleared: (s.wavesCleared as number) || 0,
-        bossesDefeated: (s.bossesDefeated as number) || 0,
+        totalDamageDealt: typeof s.totalDamageDealt === 'number' ? Math.max(0, s.totalDamageDealt) : 0,
+        totalDamageTaken: typeof s.totalDamageTaken === 'number' ? Math.max(0, s.totalDamageTaken) : 0,
+        wavesCleared: typeof s.wavesCleared === 'number' ? Math.max(0, s.wavesCleared) : 0,
+        bossesDefeated: typeof s.bossesDefeated === 'number' ? Math.max(0, s.bossesDefeated) : 0,
       };
+    } else {
+      this.stats = { totalDamageDealt: 0, totalDamageTaken: 0, wavesCleared: 0, bossesDefeated: 0 };
     }
   }
 
