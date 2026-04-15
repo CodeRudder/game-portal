@@ -190,6 +190,8 @@ export default function PixiGameCanvas({
 
   /** 是否已初始化 */
   const [ready, setReady] = useState(false);
+  /** 初始化错误信息 */
+  const [initError, setInitError] = useState<string | null>(null);
   /** 当前帧率 */
   const [fps, setFps] = useState(0);
   /** 当前方向 */
@@ -324,44 +326,51 @@ export default function PixiGameCanvas({
     let destroyed = false;
 
     const initRenderer = async () => {
-      const renderer = new GameRenderer();
+      try {
+        const renderer = new GameRenderer();
 
-      // 绑定事件
-      bindEvents(renderer);
+        // 绑定事件
+        bindEvents(renderer);
 
-      // 初始化
-      await renderer.init(container, config);
+        // 初始化（内部已包含防御性检查和日志）
+        await renderer.init(container, config);
 
-      if (destroyed) {
-        renderer.destroy();
-        return;
-      }
-
-      rendererRef.current = renderer;
-
-      // FPS 更新定时器
-      const fpsInterval = setInterval(() => {
-        if (rendererRef.current) {
-          setFps(rendererRef.current.getFPS());
+        if (destroyed) {
+          renderer.destroy();
+          return;
         }
-      }, 1000);
 
-      // ResizeObserver
-      const observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const { width, height } = entry.contentRect;
-          if (width > 0 && height > 0 && rendererRef.current) {
-            rendererRef.current.resize(width, height);
+        rendererRef.current = renderer;
+
+        // FPS 更新定时器
+        const fpsInterval = setInterval(() => {
+          if (rendererRef.current) {
+            setFps(rendererRef.current.getFPS());
           }
-        }
-      });
-      observer.observe(container);
+        }, 1000);
 
-      // Cleanup
-      return () => {
-        clearInterval(fpsInterval);
-        observer.disconnect();
-      };
+        // ResizeObserver
+        const observer = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const { width, height } = entry.contentRect;
+            if (width > 0 && height > 0 && rendererRef.current) {
+              rendererRef.current.resize(width, height);
+            }
+          }
+        });
+        observer.observe(container);
+
+        // Cleanup
+        return () => {
+          clearInterval(fpsInterval);
+          observer.disconnect();
+        };
+      } catch (err) {
+        console.error('[PixiGameCanvas] Renderer init failed:', err);
+        if (!destroyed) {
+          setInitError(err instanceof Error ? err.message : String(err));
+        }
+      }
     };
 
     const cleanupPromise = initRenderer();
@@ -423,20 +432,50 @@ export default function PixiGameCanvas({
         </div>
       )}
 
-      {/* 加载指示器 */}
+      {/* 加载指示器 / 错误提示 */}
       {!ready && (
         <div
           style={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#888',
+            color: initError ? '#e74c3c' : '#888',
             fontSize: 14,
+            gap: 8,
           }}
         >
-          正在初始化渲染器...
+          {initError ? (
+            <>
+              <div style={{ fontSize: 16, fontWeight: 'bold' }}>⚠️ 渲染器初始化失败</div>
+              <div style={{ fontSize: 12, maxWidth: 300, textAlign: 'center', wordBreak: 'break-word' }}>
+                {initError}
+              </div>
+              <button
+                onClick={() => {
+                  setInitError(null);
+                  // Force re-mount by toggling a key on the parent
+                  window.location.reload();
+                }}
+                style={{
+                  marginTop: 8,
+                  padding: '6px 16px',
+                  fontSize: 12,
+                  borderRadius: 4,
+                  border: '1px solid #e74c3c',
+                  background: 'transparent',
+                  color: '#e74c3c',
+                  cursor: 'pointer',
+                }}
+              >
+                重新加载
+              </button>
+            </>
+          ) : (
+            '正在初始化渲染器...'
+          )}
         </div>
       )}
     </div>

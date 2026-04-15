@@ -136,16 +136,51 @@ export class GameRenderer {
     // 合并配置
     this.config = { ...DEFAULT_RENDERER_CONFIG, ...config };
 
-    // 创建 PixiJS Application
-    this.app = new Application();
-    await this.app.init({
-      width: container.clientWidth,
-      height: container.clientHeight,
-      background: this.config.backgroundColor,
+    // ── 防御性检查：容器尺寸 ────────────────────────────────
+    let width = container.clientWidth;
+    let height = container.clientHeight;
+
+    if (width === 0 || height === 0) {
+      console.warn('[GameRenderer] Container has zero size, waiting for layout...');
+      // 等待容器获得尺寸（最多 2 秒）
+      const maxWait = 2000;
+      const interval = 50;
+      let waited = 0;
+      while ((width === 0 || height === 0) && waited < maxWait) {
+        await new Promise((r) => setTimeout(r, interval));
+        width = container.clientWidth;
+        height = container.clientHeight;
+        waited += interval;
+      }
+      // 如果仍然为 0，使用设计分辨率作为 fallback
+      if (width === 0 || height === 0) {
+        width = this.config.designWidth;
+        height = this.config.designHeight;
+        console.warn(`[GameRenderer] Container still zero-sized, using design resolution: ${width}×${height}`);
+      }
+    }
+
+    console.info('[GameRenderer] Initializing...', {
+      containerSize: `${width}×${height}`,
       resolution: this.config.resolution,
-      autoDensity: this.config.autoDensity ?? true,
-      antialias: this.config.antialias,
     });
+
+    // ── 创建 PixiJS Application ─────────────────────────────
+    try {
+      this.app = new Application();
+      await this.app.init({
+        width,
+        height,
+        background: this.config.backgroundColor,
+        resolution: this.config.resolution,
+        autoDensity: this.config.autoDensity ?? true,
+        antialias: this.config.antialias,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[GameRenderer] PixiJS Application.init() failed:', msg);
+      throw new Error(`PixiJS 初始化失败: ${msg}`);
+    }
 
     // 嵌入 Canvas 到 React DOM
     const canvas = this.app.canvas as HTMLCanvasElement;
@@ -163,8 +198,13 @@ export class GameRenderer {
     // 初始化摄像机管理器
     this.cameraManager.attach(this.sceneRoot);
 
-    // 注册场景
-    this.registerScenes();
+    // ── 注册场景（包裹 try-catch 防止单个场景失败阻塞整体初始化）──
+    try {
+      this.registerScenes();
+    } catch (err) {
+      console.error('[GameRenderer] registerScenes() failed:', err);
+      // 场景注册失败不应阻塞渲染器初始化，继续执行
+    }
 
     // 注册主循环
     this.app.ticker.add(this.onTick);
@@ -175,12 +215,13 @@ export class GameRenderer {
     });
 
     this.initialized = true;
-    this.emit('rendererReady');
-
-    console.info('[GameRenderer] Initialized', {
+    console.info('[GameRenderer] Initialized successfully', {
       resolution: this.config.resolution,
-      size: `${container.clientWidth}×${container.clientHeight}`,
+      size: `${width}×${height}`,
     });
+
+    // 触发 rendererReady 事件（让 PixiGameCanvas 隐藏加载指示器）
+    this.emit('rendererReady');
   }
 
   /**
@@ -433,6 +474,8 @@ export class GameRenderer {
 
   /**
    * 注册所有场景实例
+   *
+   * 每个场景的创建独立包裹 try-catch，单个场景创建失败不影响其他场景。
    */
   private registerScenes(): void {
     const sceneClasses: { type: SceneType; create: () => BaseScene }[] = [
@@ -463,8 +506,12 @@ export class GameRenderer {
     ];
 
     for (const { type, create } of sceneClasses) {
-      const scene = create();
-      this.scenes.set(type, scene);
+      try {
+        const scene = create();
+        this.scenes.set(type, scene);
+      } catch (err) {
+        console.error(`[GameRenderer] Failed to create scene "${type}":`, err);
+      }
     }
   }
 
