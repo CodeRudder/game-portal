@@ -41,3 +41,25 @@ export type {
   NPCRuntimeState,
   NPCSystemConfig,
 } from './NPCSystem';
+
+// ── 战斗关卡挑战系统 ──
+export { BattleChallengeSystem } from './BattleChallengeSystem';
+export type {
+  BattleObjective,
+  BattleDifficulty,
+  BattleEnemy,
+  BattleWave,
+  BattleRewards,
+  BattleChallenge,
+} from './BattleChallengeSystem';
+
+// ── 新手引导与剧情系统 ──
+export { TutorialStorySystem } from './TutorialStorySystem';
+export type {
+  TriggerType,
+  TutorialStep,
+  StoryEvent,
+} from './TutorialStorySystem';
+
+// ── 渲染状态适配器 ──
+export { ThreeKingdomsRenderStateAdapter } from './ThreeKingdomsRenderStateAdapter';

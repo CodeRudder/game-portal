@@ -19,6 +19,10 @@ import { ParticleSystem } from '@/engines/idle/modules/ParticleSystem';
 import { StatisticsTracker } from '@/engines/idle/modules/StatisticsTracker';
 import { UnlockChecker } from '@/engines/idle/modules/UnlockChecker';
 import { InputHandler } from '@/engines/idle/modules/InputHandler';
+import { BattleChallengeSystem } from './BattleChallengeSystem';
+import { TutorialStorySystem } from './TutorialStorySystem';
+import { MapGenerator } from './MapGenerator';
+import { NPCSystem } from './NPCSystem';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -66,6 +70,10 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private stats!: StatisticsTracker;
   private unlock!: UnlockChecker;
   private input!: InputHandler;
+  private battleChallenges!: BattleChallengeSystem;
+  private tutorialStory!: TutorialStorySystem;
+  private mapGen!: MapGenerator;
+  private npcSys!: NPCSystem;
 
   // 状态
   private res: Record<string, number> = {};
@@ -107,6 +115,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       ],
     });
     this.bindInput();
+
+    // ── Phase 6.1 新系统 ──
+    this.battleChallenges = new BattleChallengeSystem();
+    this.tutorialStory = new TutorialStorySystem();
+    this.mapGen = new MapGenerator(42);
+    this.npcSys = new NPCSystem();
 
     this.panel = 'none';
     this.selIdx = 0;
@@ -660,6 +674,47 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   public getActivePanel(): ActivePanel { return this.panel; }
   public getPrestigeState() { return this.prest.getState(); }
   public getStageInfo() { return this.stages.getCurrent(); }
+
+  // ─── Phase 6.1 子系统 getter（供渲染适配器使用） ─────────
+
+  /** 获取资源映射（直接引用，仅供内部读取） */
+  public getResourcesMap(): Readonly<Record<string, number>> { return this.res; }
+
+  /** 获取每秒产出缓存 */
+  public getProductionCache(): Readonly<Record<string, number>> { return this.psCache; }
+
+  /** 获取建筑子系统 */
+  public getBuildingSystem(): BuildingSystem<BuildingDef> { return this.bldg; }
+
+  /** 获取领土子系统 */
+  public getTerritorySystem(): TerritorySystem<TerritoryDef> { return this.terr; }
+
+  /** 获取战斗子系统 */
+  public getBattleSystem(): BattleSystem<BattleDef> { return this.battles; }
+
+  /** 获取武将子系统 */
+  public getUnitSystem(): UnitSystem { return this.units; }
+
+  /** 获取科技子系统 */
+  public getTechTreeSystem(): TechTreeSystem<TechDef> { return this.techs; }
+
+  /** 获取声望子系统 */
+  public getPrestigeSystem(): PrestigeSystem { return this.prest; }
+
+  /** 获取阶段子系统 */
+  public getStageSystem(): StageSystem<StageDef> { return this.stages; }
+
+  /** 获取战斗关卡挑战系统 */
+  public getBattleChallenges(): BattleChallengeSystem { return this.battleChallenges; }
+
+  /** 获取新手引导与剧情系统 */
+  public getTutorialStory(): TutorialStorySystem { return this.tutorialStory; }
+
+  /** 获取瓦片地图数据 */
+  public getMapData(): MapGenerator { return this.mapGen; }
+
+  /** 获取 NPC 活动系统 */
+  public getNPCSystem(): NPCSystem { return this.npcSys; }
 
   // ═══════════════════════════════════════════════════════════
   // 核心玩法公共 API

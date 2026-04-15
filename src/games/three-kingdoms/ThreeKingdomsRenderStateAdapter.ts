@@ -15,6 +15,8 @@
  * - 声望转生数据组装
  * - 建筑列表数据组装
  *
+ * Phase 6.1: 使用引擎公共 getter 方法替代 `(engine as any)` 访问私有字段。
+ *
  * @module games/three-kingdoms/ThreeKingdomsRenderStateAdapter
  */
 
@@ -95,7 +97,7 @@ const UNIT_START_Y = 150;
  * 三国霸业渲染状态适配器
  *
  * 将引擎内部子系统状态转换为渲染器可消费的 GameRenderState。
- * 通过 `(engine as any)` 访问引擎私有字段以读取子系统数据。
+ * 通过引擎公共 getter 方法访问子系统数据，确保类型安全。
  */
 export class ThreeKingdomsRenderStateAdapter {
   private engine: ThreeKingdomsEngine;
@@ -112,19 +114,18 @@ export class ThreeKingdomsRenderStateAdapter {
    * 根据当前面板状态决定激活哪个场景，并按需组装对应数据。
    */
   toRenderState(): GameRenderState {
-    const e = this.engine as any;
-    const activeScene = this.panelToScene(e.panel);
+    const activeScene = this.panelToScene(this.engine.getActivePanel());
 
     return {
       activeScene,
-      resources: this.toResourceBar(e),
-      currentStage: this.toStageData(e),
-      map: activeScene === 'map' ? this.toMapData(e) : undefined,
-      combat: activeScene === 'combat' ? this.toCombatData(e) : undefined,
-      techTree: activeScene === 'tech-tree' ? this.toTechTreeData(e) : undefined,
-      heroes: activeScene === 'hero-detail' ? this.toHeroList(e) : undefined,
-      prestige: activeScene === 'prestige' ? this.toPrestigeData(e) : undefined,
-      buildings: activeScene === 'building-detail' ? this.toBuildingList(e) : undefined,
+      resources: this.toResourceBar(),
+      currentStage: this.toStageData(),
+      map: activeScene === 'map' ? this.toMapData() : undefined,
+      combat: activeScene === 'combat' ? this.toCombatData() : undefined,
+      techTree: activeScene === 'tech-tree' ? this.toTechTreeData() : undefined,
+      heroes: activeScene === 'hero-detail' ? this.toHeroList() : undefined,
+      prestige: activeScene === 'prestige' ? this.toPrestigeData() : undefined,
+      buildings: activeScene === 'building-detail' ? this.toBuildingList() : undefined,
     };
   }
 
@@ -161,16 +162,19 @@ export class ThreeKingdomsRenderStateAdapter {
   /**
    * 组装资源栏渲染数据
    *
-   * 遍历 RESOURCES 常量，从引擎内部读取当前数量和每秒产出。
+   * 遍历 RESOURCES 常量，从引擎公共接口读取当前数量和每秒产出。
    * 三国霸业所有资源始终可见。
    */
-  private toResourceBar(e: any): ResourceBarRenderData {
+  private toResourceBar(): ResourceBarRenderData {
+    const res = this.engine.getResourcesMap();
+    const psCache = this.engine.getProductionCache();
+
     const resources: ResourceItemRenderData[] = RESOURCES.map((r) => ({
       id: r.id,
       name: r.name,
       icon: r.icon,
-      amount: e.res[r.id] || 0,
-      perSecond: e.psCache[r.id] || 0,
+      amount: res[r.id] || 0,
+      perSecond: psCache[r.id] || 0,
       unlocked: true, // 三国霸业所有资源始终可见
     }));
 
@@ -182,10 +186,10 @@ export class ThreeKingdomsRenderStateAdapter {
   /**
    * 组装当前阶段渲染数据
    *
-   * 从 stages 子系统获取当前阶段定义并映射为 StageRenderData。
+   * 从阶段子系统获取当前阶段定义并映射为 StageRenderData。
    */
-  private toStageData(e: any): StageRenderData | null {
-    const current = e.stages.getCurrent();
+  private toStageData(): StageRenderData | null {
+    const current = this.engine.getStageSystem().getCurrent();
     if (!current) return null;
 
     return {
@@ -208,10 +212,14 @@ export class ThreeKingdomsRenderStateAdapter {
    * 合并 TERRITORIES 常量与引擎领土子系统状态，构建完整的
    * 地图渲染数据包，包含领土节点、连接线、建筑和摄像机位置。
    */
-  private toMapData(e: any): MapRenderData {
+  private toMapData(): MapRenderData {
+    const terr = this.engine.getTerritorySystem();
+    const bldg = this.engine.getBuildingSystem();
+    const res = this.engine.getResourcesMap();
+
     // ── 领土节点 ──
     const territories: TerritoryRenderData[] = TERRITORIES.map((t) => {
-      const conquered = e.terr.isConquered(t.id);
+      const conquered = terr.isConquered(t.id);
       return {
         id: t.id,
         name: t.name,
@@ -244,9 +252,9 @@ export class ThreeKingdomsRenderStateAdapter {
     const buildings: BuildingRenderData[] = BUILDINGS.map((b, idx) => {
       const col = idx % BUILDING_COLS;
       const row = Math.floor(idx / BUILDING_COLS);
-      const level = e.bldg.getLevel(b.id);
-      const cost = e.bldg.getCost(b.id);
-      const unlocked = e.bldg.isUnlocked(b.id);
+      const level = bldg.getLevel(b.id);
+      const cost = bldg.getCost(b.id);
+      const unlocked = bldg.isUnlocked(b.id);
 
       // 建筑状态判定
       let state: BuildingRenderData['state'];
@@ -259,7 +267,7 @@ export class ThreeKingdomsRenderStateAdapter {
       }
 
       // 升级费用和可购买性
-      const canUpgrade = unlocked && this.canPayResources(e, cost);
+      const canUpgrade = unlocked && this.canPayResources(cost);
 
       return {
         id: b.id,
@@ -299,15 +307,17 @@ export class ThreeKingdomsRenderStateAdapter {
    * 将当前波次敌人构造为敌方角色。
    * 若无活跃战斗，构造默认首波战斗。
    */
-  private toCombatData(e: any): CombatRenderData {
-    const battleState = e.battles.getCurrentState();
+  private toCombatData(): CombatRenderData {
+    const battles = this.engine.getBattleSystem();
+    const units = this.engine.getUnitSystem();
+    const battleState = battles.getCurrentState();
 
     // ── 玩家角色：从已招募武将中取前6个 ──
     const playerUnits: CombatUnitRenderData[] = GENERALS
-      .filter((g) => e.units.isUnlocked(g.id))
+      .filter((g) => units.isUnlocked(g.id))
       .slice(0, 6)
       .map((g, idx) => {
-        const unitState = e.units.getState(g.id);
+        const unitState = units.getState(g.id);
         const level = unitState?.level || 1;
         const stats = g.baseStats;
 
@@ -426,14 +436,16 @@ export class ThreeKingdomsRenderStateAdapter {
    * 遍历 TECHS 常量，根据引擎科技子系统状态判定每个节点状态，
    * 按 3 个分支（military/economy/culture）垂直排列。
    */
-  private toTechTreeData(e: any): TechTreeRenderData {
-    const currentResearch = e.techs.getCurrentResearch();
+  private toTechTreeData(): TechTreeRenderData {
+    const techs = this.engine.getTechTreeSystem();
+    const res = this.engine.getResourcesMap();
+    const currentResearch = techs.getCurrentResearch();
 
     // ── 科技节点 ──
     const nodes: TechNodeRenderData[] = TECHS.map((t) => {
-      const isResearched = e.techs.isResearched(t.id);
+      const isResearched = techs.isResearched(t.id);
       const isActive = currentResearch?.techId === t.id;
-      const canResearch = !isResearched && !isActive && e.techs.canResearch(t.id, e.res);
+      const canResearch = !isResearched && !isActive && techs.canResearch(t.id, res);
 
       // 状态判定
       let state: TechNodeRenderData['state'];
@@ -497,10 +509,12 @@ export class ThreeKingdomsRenderStateAdapter {
    *
    * 遍历 GENERALS 常量，从武将子系统获取招募状态和等级信息。
    */
-  private toHeroList(e: any): HeroRenderData[] {
+  private toHeroList(): HeroRenderData[] {
+    const units = this.engine.getUnitSystem();
+
     return GENERALS.map((g) => {
-      const unlocked = e.units.isUnlocked(g.id);
-      const unitState = e.units.getState(g.id);
+      const unlocked = units.isUnlocked(g.id);
+      const unitState = units.getState(g.id);
       const level = unlocked && unitState ? unitState.level : 0;
       const exp = unlocked && unitState ? unitState.exp : 0;
 
@@ -508,7 +522,7 @@ export class ThreeKingdomsRenderStateAdapter {
       const maxExp = level > 0 ? level * 100 : 100;
 
       // 是否可招募
-      const canRecruit = !unlocked && this.canPayResources(e, g.recruitCost);
+      const canRecruit = !unlocked && this.canPayResources(g.recruitCost);
 
       return {
         id: g.id,
@@ -533,12 +547,14 @@ export class ThreeKingdomsRenderStateAdapter {
    *
    * 从声望子系统获取当前状态和转生预览。
    */
-  private toPrestigeData(e: any): PrestigeRenderData {
-    const state = e.prest.getState();
+  private toPrestigeData(): PrestigeRenderData {
+    const prest = this.engine.getPrestigeSystem();
+    const res = this.engine.getResourcesMap();
+    const state = prest.getState();
 
     // 计算总资源用于预览
-    const total = (e.res.grain || 0) + (e.res.gold || 0) + (e.res.troops || 0);
-    const preview = e.prest.getPreview(total);
+    const total = (res.grain || 0) + (res.gold || 0) + (res.troops || 0);
+    const preview = prest.getPreview(total);
 
     return {
       currency: state.currency,
@@ -559,13 +575,15 @@ export class ThreeKingdomsRenderStateAdapter {
    *
    * 遍历所有建筑定义，输出详细的建筑渲染数据。
    */
-  private toBuildingList(e: any): BuildingRenderData[] {
+  private toBuildingList(): BuildingRenderData[] {
+    const bldg = this.engine.getBuildingSystem();
+
     return BUILDINGS.map((b, idx) => {
       const col = idx % BUILDING_COLS;
       const row = Math.floor(idx / BUILDING_COLS);
-      const level = e.bldg.getLevel(b.id);
-      const cost = e.bldg.getCost(b.id);
-      const unlocked = e.bldg.isUnlocked(b.id);
+      const level = bldg.getLevel(b.id);
+      const cost = bldg.getCost(b.id);
+      const unlocked = bldg.isUnlocked(b.id);
 
       // 建筑状态判定
       let state: BuildingRenderData['state'];
@@ -577,7 +595,7 @@ export class ThreeKingdomsRenderStateAdapter {
         state = 'locked';
       }
 
-      const canUpgrade = unlocked && this.canPayResources(e, cost);
+      const canUpgrade = unlocked && this.canPayResources(cost);
 
       return {
         id: b.id,
@@ -605,13 +623,13 @@ export class ThreeKingdomsRenderStateAdapter {
   /**
    * 检查当前资源是否足以支付指定费用
    *
-   * @param e - 引擎实例（any）
    * @param cost - 费用映射：资源ID → 数量
    * @returns 是否足以支付
    */
-  private canPayResources(e: any, cost: Record<string, number>): boolean {
+  private canPayResources(cost: Record<string, number>): boolean {
+    const res = this.engine.getResourcesMap();
     return Object.entries(cost).every(
-      ([id, amount]) => (e.res[id] || 0) >= amount,
+      ([id, amount]) => (res[id] || 0) >= amount,
     );
   }
 }
