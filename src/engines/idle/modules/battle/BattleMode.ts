@@ -17,6 +17,8 @@ export interface BattleUnit {
   id: string;
   name: string;
   side: 'attacker' | 'defender';
+  currentHp: number;
+  maxHp: number;
   stats: {
     hp: number;
     maxHp: number;
@@ -99,10 +101,14 @@ export interface DamageOutput {
 /** 战斗模式事件类型 */
 export type BattleModeEvent =
   | { type: 'turn_started'; data: { turn: number; unitId: string; unitName: string } }
-  | { type: 'action_executed'; data: { unitId: string; action: string; targetIds: string[] } }
+  | { type: 'action_executed'; data: { unitId: string; action: string; targetIds?: string[] } }
   | { type: 'unit_damaged'; data: { targetId: string; damage: number; isCrit: boolean; isMiss: boolean } }
   | { type: 'unit_died'; data: { unitId: string; unitName: string; side: string } }
-  | { type: 'skill_used'; data: { unitId: string; skillName: string; targetIds: string[] } };
+  | { type: 'skill_used'; data: { unitId: string; skillName: string; targetIds?: string[] } }
+  | { type: 'combo_hit'; data: { attackerId: string; comboCount: number } }
+  | { type: 'ultimate_triggered'; data: { unitId: string; skillName: string } }
+  | { type: 'fighter_stunned'; data: { unitId: string; durationMs: number } }
+  | { type: 'ko'; data: { unitId: string; unitName: string; side: string } };
 
 // ============================================================
 // 战斗模式上下文

@@ -178,10 +178,10 @@ export class FreeRoamMode implements IBattleMode {
   private state: FreeRoamState;
 
   /** 地图宽度 */
-  private readonly mapWidth: number;
+  private readonly _mapWidth: number;
 
   /** 地图高度 */
-  private readonly mapHeight: number;
+  private readonly _mapHeight: number;
 
   /** 时间限制 */
   private readonly timeLimitMs: number;
@@ -204,8 +204,8 @@ export class FreeRoamMode implements IBattleMode {
     timeLimitMs?: number;
     actionIntervalMs?: number;
   }) {
-    this.mapWidth = options?.mapWidth ?? DEFAULT_MAP_WIDTH;
-    this.mapHeight = options?.mapHeight ?? DEFAULT_MAP_HEIGHT;
+    this._mapWidth = options?.mapWidth ?? DEFAULT_MAP_WIDTH;
+    this._mapHeight = options?.mapHeight ?? DEFAULT_MAP_HEIGHT;
     this.timeLimitMs = options?.timeLimitMs ?? DEFAULT_TIME_LIMIT_MS;
     this.actionIntervalMs = options?.actionIntervalMs ?? DEFAULT_ACTION_INTERVAL_MS;
     this.state = this.createInitialState();
@@ -439,8 +439,8 @@ export class FreeRoamMode implements IBattleMode {
     return {
       units: new Map(),
       aggroTable: new Map(),
-      mapWidth: this.mapWidth,
-      mapHeight: this.mapHeight,
+      mapWidth: this._mapWidth,
+      mapHeight: this._mapHeight,
       elapsedMs: 0,
       timeLimitMs: this.timeLimitMs,
       phase: 'running',
@@ -475,7 +475,7 @@ export class FreeRoamMode implements IBattleMode {
       // X 坐标在范围内随机
       const x = xMin + Math.random() * (xMax - xMin);
       // Y 坐标均匀分布，带一点随机偏移
-      const ySpacing = this.mapHeight / (units.length + 1);
+      const ySpacing = this._mapHeight / (units.length + 1);
       const y = ySpacing * (i + 1) + (Math.random() - 0.5) * ySpacing * 0.3;
 
       this.state.units.set(unit.id, {

@@ -34,6 +34,8 @@ import { GameCalendarSystem } from './GameCalendarSystem';
 import { CityMapSystem } from './CityMapSystem';
 import { ResourcePointSystem } from './ResourcePointSystem';
 import { OfflineRewardSystem } from './OfflineRewardSystem';
+import { TradeRouteSystem } from './TradeRouteSystem';
+import { EventEnrichmentSystem } from './EventEnrichmentSystem';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -62,6 +64,8 @@ export interface ThreeKingdomsSaveState {
   cityMaps?: object;
   resourcePoints?: object;
   offlineReward?: object;
+  tradeRoutes?: object;
+  eventEnrichment?: object;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -98,6 +102,8 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private cityMapSys!: CityMapSystem;
   private resourcePointSys!: ResourcePointSystem;
   private offlineRewardSys!: OfflineRewardSystem;
+  private tradeRouteSys!: TradeRouteSystem;
+  private eventEnrichSys!: EventEnrichmentSystem;
 
   // 状态
   private res: Record<string, number> = {};
@@ -183,6 +189,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     // ── 离线收益系统 ──
     this.offlineRewardSys = new OfflineRewardSystem();
+
+    // ── 贸易路线系统 ──
+    this.tradeRouteSys = new TradeRouteSystem();
+
+    // ── 丰富事件系统 ──
+    this.eventEnrichSys = new EventEnrichmentSystem();
 
     this.panel = 'none';
     this.selIdx = 0;
@@ -344,6 +356,24 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     // 通用引擎系统更新
     this.eventSys.updateEventStatuses(Date.now());
+
+    // ── 贸易路线系统更新 ──
+    const currentDate = this.calendar.getCurrentDate();
+    const currentMinute = Math.floor(currentDate.year * 525600 + currentDate.day * 1440 + currentDate.hour * 60 + currentDate.minute);
+    const tradeResult = this.tradeRouteSys.updateTrade(currentMinute, sec);
+    if (tradeResult.totalProfit > 0) {
+      this.giveRes('gold', Math.floor(tradeResult.totalProfit));
+    }
+
+    // ── 丰富事件系统触发检查 ──
+    this.eventEnrichSys.checkTriggers({
+      currentMinute,
+      season: currentDate.season,
+      ownedTerritories: this.terr.getConqueredIds(),
+      resources: this.res,
+      heroCount: this.units.getUnits().length,
+      armySize: Math.floor(this.res.troops || 0),
+    });
   }
 
   // ─── 渲染 ───────────────────────────────────────────────
@@ -418,6 +448,8 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       cityMaps: this.cityMapSys.serialize(),
       resourcePoints: this.resourcePointSys.serialize(),
       offlineReward: this.offlineRewardSys.serialize(),
+      tradeRoutes: this.tradeRouteSys.serialize(),
+      eventEnrichment: this.eventEnrichSys.serialize(),
     };
   }
 
@@ -440,6 +472,8 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (d.cityMaps) this.cityMapSys.deserialize(d.cityMaps);
     if (d.resourcePoints) this.resourcePointSys.deserialize(d.resourcePoints);
     if (d.offlineReward) this.offlineRewardSys.deserialize(d.offlineReward as Record<string, unknown>);
+    if (d.tradeRoutes) this.tradeRouteSys.deserialize(d.tradeRoutes);
+    if (d.eventEnrichment) this.eventEnrichSys.deserialize(d.eventEnrichment);
 
     this.emit('stateChange');
   }
@@ -887,6 +921,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 获取离线收益系统 */
   public getOfflineRewardSystem(): OfflineRewardSystem { return this.offlineRewardSys; }
+
+  /** 获取贸易路线系统 */
+  public getTradeRouteSystem(): TradeRouteSystem { return this.tradeRouteSys; }
+
+  /** 获取丰富事件系统 */
+  public getEventEnrichmentSystem(): EventEnrichmentSystem { return this.eventEnrichSys; }
 
   // ═══════════════════════════════════════════════════════════
   // 核心玩法公共 API

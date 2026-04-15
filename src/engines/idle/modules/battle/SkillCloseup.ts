@@ -180,10 +180,11 @@ export class SkillCloseup {
 
     // 循环处理阶段转换，确保大 dt 能正确推进所有阶段
     let maxIterations = 10;
-    while (this.state !== 'idle' && maxIterations-- > 0) {
-      const prevState = this.state;
+    let currentState = this.state as CloseupState;
+    while (currentState !== 'idle' && maxIterations-- > 0) {
+      const prevState: CloseupState = currentState;
 
-      switch (this.state) {
+      switch (currentState) {
         case 'zooming_in':
           this.updateZoomIn();
           break;
@@ -198,6 +199,7 @@ export class SkillCloseup {
       // 如果状态没有改变，说明还在当前阶段中，无需继续
       if (this.state === prevState) break;
       // 状态改变了，继续循环处理剩余时间
+      currentState = this.state;
     }
   }
 

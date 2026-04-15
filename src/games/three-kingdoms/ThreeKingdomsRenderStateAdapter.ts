@@ -136,6 +136,8 @@ export class ThreeKingdomsRenderStateAdapter {
       calendar: this.toCalendarData(),
       cities: this.toCityList(),
       resourcePoints: this.toResourcePointList(),
+      tradeRoutes: this.toTradeRouteList(),
+      activeEvents: this.toActiveEventList(),
     };
   }
 
@@ -794,5 +796,48 @@ export class ThreeKingdomsRenderStateAdapter {
     return Object.entries(cost).every(
       ([id, amount]) => (res[id] || 0) >= amount,
     );
+  }
+
+  // ─── 贸易路线数据 ───────────────────────────────────────
+
+  /**
+   * 组装贸易路线渲染数据
+   */
+  private toTradeRouteList(): Array<{
+    id: string; from: string; to: string; profit: number;
+    isActive: boolean; caravanCount: number;
+  }> {
+    try {
+      return this.engine.getTradeRouteSystem().getAllRoutes().map(r => ({
+        id: r.id,
+        from: r.fromCityId,
+        to: r.toCityId,
+        profit: r.profit,
+        isActive: r.isActive,
+        caravanCount: r.caravanCount,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // ─── 丰富事件数据 ───────────────────────────────────────
+
+  /**
+   * 组装活跃事件渲染数据
+   */
+  private toActiveEventList(): Array<{
+    id: string; name: string; category: string; description: string;
+  }> {
+    try {
+      return this.engine.getEventEnrichmentSystem().getActiveEvents().map(e => ({
+        id: e.id,
+        name: e.name,
+        category: e.category,
+        description: e.description,
+      }));
+    } catch {
+      return [];
+    }
   }
 }

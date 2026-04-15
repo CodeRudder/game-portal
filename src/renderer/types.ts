@@ -503,6 +503,22 @@ export interface GameRenderState {
     maxWorkers: number;
     level: number;
   }>;
+  /** 贸易路线列表（城市间贸易） */
+  tradeRoutes?: Array<{
+    id: string;
+    from: string;
+    to: string;
+    profit: number;
+    isActive: boolean;
+    caravanCount: number;
+  }>;
+  /** 活跃事件列表（丰富事件系统） */
+  activeEvents?: Array<{
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+  }>;
 }
 
 // ═══════════════════════════════════════════════════════════════
