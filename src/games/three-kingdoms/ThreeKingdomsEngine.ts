@@ -28,6 +28,8 @@ import { THREE_KINGDOMS_NPC_DEFS, THREE_KINGDOMS_SPAWN_CONFIG } from './ThreeKin
 import { QuestSystem, type QuestDef } from '@/engines/idle/modules/QuestSystem';
 import { EventSystem, type GameEvent } from '@/engines/idle/modules/EventSystem';
 import { RewardSystem } from '@/engines/idle/modules/RewardSystem';
+import { DayNightWeatherSystem } from './DayNightWeatherSystem';
+import { NPCActivitySystem } from './NPCActivitySystem';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -83,6 +85,8 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private questSys!: QuestSystem;
   private eventSys!: EventSystem;
   private rewardSys!: RewardSystem;
+  private dayNightWeather!: DayNightWeatherSystem;
+  private npcActivitySys!: NPCActivitySystem;
 
   // 状态
   private res: Record<string, number> = {};
@@ -150,6 +154,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.rewardSys = new RewardSystem();
     this.registerThreeKingdomsQuests();
     this.registerThreeKingdomsEvents();
+
+    // ── 昼夜天气系统 ──
+    this.dayNightWeather = new DayNightWeatherSystem();
+
+    // ── NPC 职业活动系统 ──
+    this.npcActivitySys = new NPCActivitySystem();
 
     this.panel = 'none';
     this.selIdx = 0;
@@ -225,6 +235,33 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     // 通用 NPC 引擎更新（以游戏内时间驱动）
     const gameHour = (this.playTime / 60) % 24; // 简化：60 秒 = 1 游戏小时
     this.npcManager.update(sec, gameHour);
+
+    // 昼夜天气系统更新
+    this.dayNightWeather.update(sec, gameHour);
+
+    // NPC 职业活动 — 资源产出/消耗接入引擎资源系统
+    const allNpcs = this.npcManager.getAllNPCs();
+    for (const npc of allNpcs) {
+      const profession = npc.profession as string;
+      const result = this.npcActivitySys.updateNPC(npc.id, profession, sec);
+      if (result.produced) {
+        const { type, amount } = result.produced;
+        // 将 NPC 产出资源映射到引擎资源 ID
+        if (type === 'food' || type === 'grain') this.giveRes('grain', amount);
+        else if (type === 'gold' || type === 'coins') this.giveRes('gold', amount);
+        else if (type === 'tech' || type === 'techPoints') this.giveRes('techPoints', amount);
+        else if (type === 'intel') this.giveRes('intel', amount);
+        else this.giveRes(type, amount); // 兜底：直接使用产出资源类型
+      }
+      if (result.consumed) {
+        const { type, amount } = result.consumed;
+        if (type === 'food' || type === 'grain') this.giveRes('grain', -amount);
+        else if (type === 'gold' || type === 'coins') this.giveRes('gold', -amount);
+        else if (type === 'tech' || type === 'techPoints') this.giveRes('techPoints', -amount);
+        else if (type === 'intel') this.giveRes('intel', -amount);
+        else this.giveRes(type, -amount);
+      }
+    }
 
     // 战斗结算
     const bState = this.battles.getCurrentState();
@@ -754,6 +791,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 获取通用 NPC 管理器（AI 状态机/对话/协作） */
   public getNPCManager(): NPCManager { return this.npcManager; }
+
+  /** 获取昼夜天气系统 */
+  public getDayNightWeather(): DayNightWeatherSystem { return this.dayNightWeather; }
+
+  /** 获取 NPC 职业活动系统 */
+  public getNPCActivitySystem(): NPCActivitySystem { return this.npcActivitySys; }
 
   // ═══════════════════════════════════════════════════════════
   // 核心玩法公共 API

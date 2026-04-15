@@ -415,6 +415,26 @@ export interface NPCRenderData {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 10.6 昼夜天气渲染数据
+// ═══════════════════════════════════════════════════════════════
+
+/** 昼夜天气渲染数据 */
+export interface DayNightRenderData {
+  /** 当前小时 0-24 */
+  hour: number;
+  /** 时段名称 */
+  timeOfDay: string;
+  /** 环境光颜色 (0xRRGGBB) */
+  ambientColor: number;
+  /** 环境光透明度 0-1 */
+  ambientAlpha: number;
+  /** 当前天气 */
+  weather: string;
+  /** 天气强度 0-1 */
+  weatherIntensity: number;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // 11. 全局游戏渲染状态（逻辑层 → 渲染层的完整数据包）
 // ═══════════════════════════════════════════════════════════════
 
@@ -442,6 +462,8 @@ export interface GameRenderState {
   npcs?: NPCRenderData[];
   /** 瓦片地图数据（由 MapGenerator 生成，注入到 MapScene） */
   tileMapData?: unknown;
+  /** 昼夜天气数据（始终填充） */
+  dayNight?: DayNightRenderData;
 }
 
 // ═══════════════════════════════════════════════════════════════

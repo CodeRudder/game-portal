@@ -34,6 +34,7 @@ import { CombatScene } from './scenes/CombatScene';
 import { TechTreeScene } from './scenes/TechTreeScene';
 import { HeroDetailScene } from './scenes/HeroDetailScene';
 import { StageInfoScene } from './scenes/StageInfoScene';
+import { PrestigeScene } from './scenes/PrestigeScene';
 
 // ═══════════════════════════════════════════════════════════════
 // 事件回调类型
@@ -561,6 +562,14 @@ export class GameRenderer {
       {
         type: 'stage-info',
         create: () => new StageInfoScene(
+          this.assetManager,
+          this.animationManager,
+          this.bridgeSceneEvent.bind(this),
+        ),
+      },
+      {
+        type: 'prestige',
+        create: () => new PrestigeScene(
           this.assetManager,
           this.animationManager,
           this.bridgeSceneEvent.bind(this),

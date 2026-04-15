@@ -50,17 +50,20 @@ function fmt(n: number): string {
 /**
  * 场景标签配置
  *
- * 每个标签有独立的 scene + subScene，用于区分同属 map 场景的建筑/领土视图。
- * subScene 通过 engine panel toggle 来控制地图内的聚焦层。
+ * 精简为 4 个核心 Tab：
+ * - 🗺️ 地图（默认）：包含建筑/领土子视图 + 声望浮层入口
+ * - ⚔️ 武将：武将详情
+ * - 📜 科技：科技树
+ * - 🏆 关卡：关卡信息 + 战斗入口
+ *
+ * 战斗场景由引擎事件自动触发切换，不作为独立 Tab。
+ * 声望功能通过地图场景的浮层按钮进入。
  */
 const SCENE_TABS: { scene: SceneType; label: string; icon: string; subScene?: string; key: string }[] = [
-  { scene: 'map',        label: '建筑', icon: '🏗️', subScene: 'building', key: 'Escape' },
+  { scene: 'map',        label: '地图', icon: '🗺️', subScene: 'building', key: 'Escape' },
   { scene: 'hero-detail', label: '武将', icon: '⚔️', key: 'u' },
-  { scene: 'map',        label: '领土', icon: '🗺️', subScene: 'territory', key: 'm' },
   { scene: 'tech-tree',  label: '科技', icon: '📜', key: 't' },
-  { scene: 'combat',     label: '战斗', icon: '🔥', key: 'b' },
-  { scene: 'stage-info', label: '关卡', icon: '⚔️', key: 's' },
-  { scene: 'prestige',   label: '声望', icon: '👑', key: 'r' },
+  { scene: 'stage-info', label: '关卡', icon: '🏆', key: 's' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -70,7 +73,7 @@ const SCENE_TABS: { scene: SceneType; label: string; icon: string; subScene?: st
 const GUIDE_STEPS = [
   { title: '欢迎来到三国霸业！', text: '建造农田开始你的征程。点击左侧"农田"建筑卡片来建造。', target: 'building' as const },
   { title: '招募武将', text: '有了资源后，在右侧面板招募武将为你效力！', target: 'hero' as const },
-  { title: '发起战斗', text: '准备好后，点击底部"战斗"按钮开始征战！', target: 'combat' as const },
+  { title: '发起战斗', text: '准备好后，点击底部"关卡"按钮，开始征战！', target: 'combat' as const },
 ];
 
 /** Toast 提示数据 */
@@ -165,6 +168,10 @@ export default function ThreeKingdomsPixiGame() {
 
   /** 声望数据 */
   const prestigeData = useMemo(() => renderState?.prestige, [renderState]);
+
+  /** 根据场景决定侧边栏显隐 */
+  const showBuildingPanel = scene === 'map';
+  const showHeroPanel = scene === 'map' || scene === 'hero-detail';
 
   // ─── 初始化引擎 ─────────────────────────────────────────
 
@@ -274,6 +281,47 @@ export default function ThreeKingdomsPixiGame() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // ─── 战斗自动切换（事件驱动） ────────────────────────────
+
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    /** 引擎发起战斗时，自动切换到战斗场景 */
+    const handleBattleStart = () => {
+      setScene('combat');
+    };
+
+    /** 引擎战斗结束时，自动切回地图场景 */
+    const handleBattleEnd = () => {
+      setScene('map');
+      setActiveTab('Escape');
+    };
+
+    engine.on('battleStarted', handleBattleStart);
+
+    // 监听 stateChange 检测战斗结束
+    const handleStateChange = () => {
+      const adapter = adapterRef.current;
+      if (!adapter) return;
+      const state = adapter.toRenderState();
+      if (state.combat && (state.combat.state === 'victory' || state.combat.state === 'defeat')) {
+        // 延迟切回地图，让玩家看到结果
+        setTimeout(() => {
+          setScene('map');
+          setActiveTab('Escape');
+        }, 2000);
+      }
+    };
+
+    engine.on('stateChange', handleStateChange);
+
+    return () => {
+      engine.off('battleStarted', handleBattleStart);
+      engine.off('stateChange', handleStateChange);
+    };
   }, []);
 
   // ─── 引擎操作 ───────────────────────────────────────────
@@ -569,7 +617,8 @@ export default function ThreeKingdomsPixiGame() {
       {/* ═══════════ 中间区域：左面板 + PixiJS Canvas + 右面板 ═══════════ */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
 
-        {/* ─── 左侧面板：建筑列表 ─── */}
+        {/* ─── 左侧面板：建筑列表（仅地图场景显示） ─── */}
+        {showBuildingPanel && (
         <aside style={{
           width: 220, flexShrink: 0,
           background: 'rgba(0,0,0,0.5)',
@@ -624,6 +673,7 @@ export default function ThreeKingdomsPixiGame() {
             </div>
           ))}
         </aside>
+        )}
 
         {/* ─── 中央：PixiJS 渲染区域 ─── */}
         <div style={{ flex: 1, position: 'relative' }}>
@@ -640,6 +690,24 @@ export default function ThreeKingdomsPixiGame() {
             onSceneChange={handleSceneChange}
             onRendererReady={() => console.log('[ThreeKingdomsPixiGame] PixiJS renderer ready')}
           />
+
+          {/* 声望入口按钮（仅地图场景显示） */}
+          {scene === 'map' && (
+            <button
+              onClick={() => setScene('prestige')}
+              style={{
+                position: 'absolute', top: 12, right: 12,
+                padding: '6px 14px', fontSize: 12, fontWeight: 'bold',
+                borderRadius: 6, border: 'none', cursor: 'pointer',
+                background: `linear-gradient(135deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
+                color: '#1a0a0a',
+                boxShadow: '0 2px 8px rgba(255,215,0,0.3)',
+                zIndex: 10,
+              }}
+            >
+              👑 声望
+            </button>
+          )}
 
           {/* 战斗日志浮层（仅战斗场景显示） */}
           {scene === 'combat' && combatLog.length > 0 && (
@@ -735,6 +803,19 @@ export default function ThreeKingdomsPixiGame() {
                 }}
               >
                 {prestigeData.canPrestige ? '执行转生' : '资源不足'}
+              </button>
+              <button
+                onClick={() => { setScene('map'); setActiveTab('Escape'); }}
+                style={{
+                  marginTop: 10, padding: '6px 20px',
+                  fontSize: 12, cursor: 'pointer',
+                  borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)',
+                  background: 'transparent',
+                  color: COLOR_THEME.textDim,
+                  display: 'block', marginLeft: 'auto', marginRight: 'auto',
+                }}
+              >
+                ← 返回地图
               </button>
             </div>
           )}
@@ -891,7 +972,8 @@ export default function ThreeKingdomsPixiGame() {
           )}
         </div>
 
-        {/* ─── 右侧面板：武将列表 ─── */}
+        {/* ─── 右侧面板：武将列表（地图/武将场景显示） ─── */}
+        {showHeroPanel && (
         <aside style={{
           width: 220, flexShrink: 0,
           background: 'rgba(0,0,0,0.5)',
@@ -995,6 +1077,7 @@ export default function ThreeKingdomsPixiGame() {
             );
           })}
         </aside>
+        )}
       </div>
 
       {/* ═══════════ 底部：操作按钮栏 ═══════════ */}
@@ -1033,7 +1116,7 @@ export default function ThreeKingdomsPixiGame() {
           marginLeft: 16, fontSize: 9,
           color: COLOR_THEME.textDim,
         }}>
-          [Space]点击 [Enter]购买 [R]声望 [T]科技 [M]领土 [B]战斗 [U]武将
+          [Space]点击 [Enter]购买 [T]科技 [U]武将 [S]关卡
         </span>
       </footer>
 

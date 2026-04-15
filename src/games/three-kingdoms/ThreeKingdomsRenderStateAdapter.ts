@@ -25,7 +25,7 @@ import type {
   BuildingRenderData, CombatRenderData, CombatUnitRenderData,
   ResourceBarRenderData, ResourceItemRenderData, StageRenderData,
   PrestigeRenderData, HeroRenderData, TechTreeRenderData, TechNodeRenderData,
-  NPCRenderData,
+  NPCRenderData, DayNightRenderData,
 } from '@/renderer/types';
 import type { ThreeKingdomsEngine } from './ThreeKingdomsEngine';
 import {
@@ -132,6 +132,7 @@ export class ThreeKingdomsRenderStateAdapter {
       buildings: activeScene === 'building-detail' ? this.toBuildingList() : undefined,
       npcs: this.toNPCList(),
       tileMapData: this.getTileMapData(),
+      dayNight: this.toDayNightData(),
     };
   }
 
@@ -671,6 +672,30 @@ export class ThreeKingdomsRenderStateAdapter {
   }
 
   // ─── 工具方法 ───────────────────────────────────────────
+
+  /**
+   * 组装昼夜天气渲染数据
+   *
+   * 从引擎 DayNightWeatherSystem 获取当前昼夜/天气状态，
+   * 转换为渲染层可消费的 DayNightRenderData。
+   */
+  private toDayNightData(): DayNightRenderData | undefined {
+    try {
+      const sys = this.engine.getDayNightWeather();
+      if (!sys) return undefined;
+      const state = sys.getState();
+      return {
+        hour: state.hour,
+        timeOfDay: state.timeOfDay,
+        ambientColor: state.ambientColor,
+        ambientAlpha: state.ambientAlpha,
+        weather: state.weather,
+        weatherIntensity: state.weatherIntensity,
+      };
+    } catch {
+      return undefined;
+    }
+  }
 
   /**
    * 检查当前资源是否足以支付指定费用
