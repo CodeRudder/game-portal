@@ -27,6 +27,10 @@
  * - InteractionSystem 互动系统（P3）
  * - MiniGameSystem    小游戏系统（P3）
  * - DecorationSystem  装饰系统（P3）
+ * - OfflineRewardCalculator 离线收益计算器（特性层）
+ * - SpeedManager      加速管理器（特性层）
+ * - AutoPlayController 自动操作控制器（特性层）
+ * - BatchOperationHandler 批量操作处理器（特性层）
  *
  * @module engines/idle/modules
  */
@@ -316,3 +320,64 @@ export type {
   DecorationEvent,
   DecorationEventListener,
 } from './DecorationSystem';
+
+// ============================================================
+// 模块集成协议（ModuleIntegrationProtocol）
+// ============================================================
+
+// ModuleRegistry — 模块注册中心
+export { ModuleRegistry } from './ModuleRegistry';
+export type {
+  ModuleDescriptor,
+  ModuleState,
+  RegistrySnapshot,
+  Initializable,
+  Updatable,
+  Resetable,
+  Serializable,
+} from './ModuleRegistry';
+
+// ModuleEventBus — 模块间事件总线
+export { ModuleEventBus } from './ModuleEventBus';
+export type {
+  BusEvent,
+  EventHandler,
+  EventMiddleware,
+} from './ModuleEventBus';
+
+// IdleIntegrationAdapter — 放置游戏引擎集成适配器
+export { IdleIntegrationAdapter } from './IdleIntegrationAdapter';
+
+// SpeedManager — 加速管理器（特性层）
+export { SpeedManager } from './SpeedManager';
+export type {
+  SpeedConfig,
+  SpeedState,
+  SpeedEvent,
+  SpeedEventListener,
+} from './SpeedManager';
+
+// AutoPlayController — 自动操作控制器（特性层）
+export { AutoPlayController } from './AutoPlayController';
+export type {
+  AutoPlayRule,
+  AutoPlayState,
+  AutoPlayEvent,
+  AutoPlayEventListener,
+} from './AutoPlayController';
+
+// BatchOperationHandler — 批量操作处理器（特性层）
+export { BatchOperationHandler } from './BatchOperationHandler';
+export type {
+  BatchResult,
+  BatchAction,
+} from './BatchOperationHandler';
+
+// OfflineRewardCalculator — 离线收益计算器（特性层）
+export { OfflineRewardCalculator } from './OfflineRewardCalculator';
+export type {
+  ProductionSource,
+  OfflineRewardConfig,
+  SourceBreakdown,
+  OfflineRewardResult,
+} from './OfflineRewardCalculator';
