@@ -23,6 +23,7 @@ import {
   INITIAL_RESOURCES,
   INITIALLY_UNLOCKED,
   CLICK_REWARD,
+  FREE_STARTER_HERO,
 } from '@/games/three-kingdoms/constants';
 
 // ═══════════════════════════════════════════════════════════════
@@ -390,11 +391,16 @@ describe('武将系统', () => {
     expect(rarities.filter(r => r === 'mythic')).toHaveLength(1);
   });
 
-  it('初始无武将招募', () => {
+  it('初始仅赠送一个 uncommon 武将，其余未解锁', () => {
     const engine = createEngine();
     const units = (engine as any).units;
+    const starterId = FREE_STARTER_HERO;
     for (const g of GENERALS) {
-      expect(units.isUnlocked(g.id)).toBe(false);
+      if (g.id === starterId) {
+        expect(units.isUnlocked(g.id)).toBe(true);
+      } else {
+        expect(units.isUnlocked(g.id)).toBe(false);
+      }
     }
   });
 
