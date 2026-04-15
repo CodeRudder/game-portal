@@ -24,6 +24,7 @@ import { ThreeKingdomsRenderStateAdapter } from '@/games/three-kingdoms/ThreeKin
 import {
   BUILDINGS,
   GENERALS,
+  BATTLES,
   COLOR_THEME,
   RARITY_COLORS,
   RESOURCES,
@@ -44,15 +45,37 @@ function fmt(n: number): string {
   return n < 10 ? n.toFixed(1) : Math.floor(n).toString();
 }
 
-/** 场景标签配置 */
-const SCENE_TABS: { scene: SceneType; label: string; icon: string }[] = [
-  { scene: 'map', label: '建筑', icon: '🏗️' },
-  { scene: 'hero-detail', label: '武将', icon: '⚔️' },
-  { scene: 'map', label: '领土', icon: '🗺️' },
-  { scene: 'tech-tree', label: '科技', icon: '📜' },
-  { scene: 'combat', label: '战斗', icon: '🔥' },
-  { scene: 'prestige', label: '声望', icon: '👑' },
+/**
+ * 场景标签配置
+ *
+ * 每个标签有独立的 scene + subScene，用于区分同属 map 场景的建筑/领土视图。
+ * subScene 通过 engine panel toggle 来控制地图内的聚焦层。
+ */
+const SCENE_TABS: { scene: SceneType; label: string; icon: string; subScene?: string; key: string }[] = [
+  { scene: 'map',        label: '建筑', icon: '🏗️', subScene: 'building', key: 'Escape' },
+  { scene: 'hero-detail', label: '武将', icon: '⚔️', key: 'u' },
+  { scene: 'map',        label: '领土', icon: '🗺️', subScene: 'territory', key: 'm' },
+  { scene: 'tech-tree',  label: '科技', icon: '📜', key: 't' },
+  { scene: 'combat',     label: '战斗', icon: '🔥', key: 'b' },
+  { scene: 'prestige',   label: '声望', icon: '👑', key: 'r' },
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// 新手引导步骤
+// ═══════════════════════════════════════════════════════════════
+
+const GUIDE_STEPS = [
+  { title: '欢迎来到三国霸业！', text: '建造农田开始你的征程。点击左侧"农田"建筑卡片来建造。', target: 'building' as const },
+  { title: '招募武将', text: '有了资源后，在右侧面板招募武将为你效力！', target: 'hero' as const },
+  { title: '发起战斗', text: '准备好后，点击底部"战斗"按钮开始征战！', target: 'combat' as const },
+];
+
+/** Toast 提示数据 */
+interface ToastData {
+  id: number;
+  text: string;
+  type: 'success' | 'error';
+}
 
 // ═══════════════════════════════════════════════════════════════
 // 组件
@@ -63,14 +86,31 @@ export default function ThreeKingdomsPixiGame() {
 
   const engineRef = useRef<ThreeKingdomsEngine | null>(null);
   const adapterRef = useRef<ThreeKingdomsRenderStateAdapter | null>(null);
+  const toastIdRef = useRef(0);
 
   // ─── State ────────────────────────────────────────────────
 
   const [renderState, setRenderState] = useState<GameRenderState | undefined>();
   const [scene, setScene] = useState<SceneType>('map');
+  const [activeTab, setActiveTab] = useState<string>('building'); // 跟踪当前激活的 tab key
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [combatLog, setCombatLog] = useState<string[]>([]);
+
+  // ─── 新手引导 + Toast ────────────────────────────────────
+
+  const [showGuide, setShowGuide] = useState(true);
+  const [guideStep, setGuideStep] = useState(0);
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  /** 添加 toast 提示，2 秒后自动消失 */
+  const addToast = useCallback((text: string, type: 'success' | 'error') => {
+    const id = ++toastIdRef.current;
+    setToasts(prev => [...prev, { id, text, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 2000);
+  }, []);
 
   // ─── 派生数据 ─────────────────────────────────────────────
 
@@ -167,35 +207,115 @@ export default function ThreeKingdomsPixiGame() {
 
   // ─── 引擎操作 ───────────────────────────────────────────
 
-  /** 触发引擎面板切换（通过键盘模拟） */
-  const triggerPanelSwitch = useCallback((panelKey: string) => {
+  /** 触发引擎面板切换 */
+  const triggerPanelSwitch = useCallback((tabKey: string) => {
     const engine = engineRef.current;
     if (!engine) return;
     // 利用引擎已有的键盘绑定来切换面板
-    engine.handleKeyDown(panelKey);
+    engine.handleKeyDown(tabKey);
   }, []);
+
+  /** 底部标签栏点击处理：切换场景 + 更新 activeTab */
+  const handleTabClick = useCallback((tab: typeof SCENE_TABS[number]) => {
+    setActiveTab(tab.key);
+    setScene(tab.scene);
+    triggerPanelSwitch(tab.key);
+  }, [triggerPanelSwitch]);
 
   // ─── 事件处理 ───────────────────────────────────────────
 
   const handleBuildingClick = useCallback((id: string) => {
     console.log('[ThreeKingdomsPixiGame] Building click:', id);
-    // 模拟购买建筑：按 Enter
     const engine = engineRef.current;
-    if (engine) {
-      engine.handleKeyDown('Enter');
+    if (!engine) return;
+
+    // 查找当前选中建筑
+    const res = engine.getResources();
+    const bs = (engine as any).bldg;
+    if (!bs) return;
+    const cost = bs.getCost(id);
+    const canAfford = Object.entries(cost || {}).every(([rid, amt]) => (res[rid] || 0) >= (amt as number));
+
+    if (canAfford) {
+      (engine as any).buyBuilding();
+      const bld = BUILDINGS.find(b => b.id === id);
+      addToast(`建造成功！${bld?.name ?? id} Lv.1`, 'success');
+    } else {
+      addToast('资源不足！', 'error');
     }
-  }, []);
+  }, [addToast]);
 
   const handleTerritoryClick = useCallback((id: string) => {
-    console.log('[ThreeKingdomsPixiGame] Territory click:', id);
-  }, []);
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    const terr = (engine as any).terr;
+    if (!terr) {
+      console.warn('[ThreeKingdomsPixiGame] Territory system not available');
+      return;
+    }
+
+    // 已征服的领土无需再次征服
+    if (terr.isConquered(id)) {
+      addToast('该领土已征服', 'success');
+      return;
+    }
+
+    // 检查是否可攻击（相邻已征服）
+    if (!terr.canAttack(id)) {
+      addToast('无法攻击：需要先征服相邻领土', 'error');
+      return;
+    }
+
+    // 尝试征服
+    const power = Object.values(engine.getResources()).reduce((s, v) => s + v, 0);
+    const result = terr.tryAttack(id, power);
+    if (result) {
+      // 攻击成功 → 征服
+      const conquerResult = terr.conquer(id);
+      for (const [r, a] of Object.entries(conquerResult.rewards || {})) {
+        (engine as any).giveRes?.(r, a);
+      }
+      addToast(`征服成功！获得领土`, 'success');
+      engine.handleKeyDown(' '); // 触发 stateChange
+    } else {
+      addToast('兵力不足，无法征服！', 'error');
+    }
+  }, [addToast]);
 
   const handleCombatAction = useCallback((action: string, targetId?: string) => {
-    console.log('[ThreeKingdomsPixiGame] Combat action:', action, targetId);
-    if (action === 'attack') {
-      setCombatLog(prev => [...prev, `⚔️ 发起攻击 → ${targetId ?? '敌人'}`].slice(-20));
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    if (action === 'attack' || action === 'start_battle') {
+      const battles = (engine as any).battles;
+      if (!battles) {
+        console.warn('[ThreeKingdomsPixiGame] Battle system not available');
+        return;
+      }
+
+      // 获取当前阶段的战斗
+      const stage = (engine as any).stages?.getCurrent();
+      const stageBattles = BATTLES.filter((b) => b.stageId === (stage?.id || 'yellow_turban'));
+
+      if (stageBattles.length === 0) {
+        addToast('当前阶段没有可用战斗', 'error');
+        return;
+      }
+
+      // 使用 targetId 或第一个可用战斗
+      const battleId = targetId || stageBattles[0]?.id;
+      if (!battleId) return;
+
+      const success = battles.startWave(battleId);
+      if (success) {
+        setCombatLog(prev => [...prev, `⚔️ 发起攻击 → ${targetId ?? '敌人'}`].slice(-20));
+        addToast('战斗开始！', 'success');
+      } else {
+        addToast('无法开始战斗', 'error');
+      }
     }
-  }, []);
+  }, [addToast]);
 
   const handleSceneChange = useCallback((newScene: SceneType) => {
     setScene(newScene);
@@ -468,6 +588,157 @@ export default function ThreeKingdomsPixiGame() {
               </button>
             </div>
           )}
+
+          {/* ═══════════ 科技研究浮层 ═══════════ */}
+          {scene === 'tech-tree' && renderState?.techTree && (
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(0,0,0,0.85)',
+              borderRadius: 12, padding: 20,
+              width: 500, maxHeight: '80vh',
+              overflowY: 'auto',
+              border: `1px solid ${COLOR_THEME.selectedBorder}`,
+            }}>
+              <h2 style={{
+                fontSize: 20, color: COLOR_THEME.accentGold,
+                marginBottom: 16, fontFamily: '"Noto Serif SC", serif',
+                textAlign: 'center',
+              }}>
+                📜 科技研究
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {renderState.techTree.nodes.map(node => {
+                  const isCompleted = node.state === 'completed';
+                  const isAvailable = node.state === 'available';
+                  const isResearching = node.state === 'researching';
+                  const isLocked = node.state === 'locked';
+
+                  return (
+                    <div
+                      key={node.id}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: 6,
+                        background: isCompleted
+                          ? 'rgba(76,175,80,0.15)'
+                          : isResearching
+                            ? 'rgba(255,215,0,0.1)'
+                            : isAvailable
+                              ? 'rgba(255,255,255,0.06)'
+                              : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${
+                          isCompleted ? 'rgba(76,175,80,0.3)'
+                            : isResearching ? 'rgba(255,215,0,0.3)'
+                              : isAvailable ? 'rgba(255,255,255,0.1)'
+                                : 'transparent'
+                        }`,
+                        opacity: isLocked ? 0.4 : 1,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <span style={{
+                            fontSize: 13, fontWeight: 'bold',
+                            color: isCompleted ? COLOR_THEME.accentGreen
+                              : isResearching ? COLOR_THEME.accentGold
+                                : COLOR_THEME.textPrimary,
+                          }}>
+                            {isCompleted ? '✅ ' : isResearching ? '🔬 ' : isLocked ? '🔒 ' : '📖 '}
+                            {node.name}
+                          </span>
+                          <span style={{
+                            fontSize: 10, color: COLOR_THEME.textDim, marginLeft: 8,
+                          }}>
+                            Tier {node.tier}
+                          </span>
+                        </div>
+                        {isAvailable && (
+                          <button
+                            onClick={() => {
+                              const engine = engineRef.current;
+                              if (!engine) return;
+                              const techs = (engine as any).techs;
+                              if (!techs) return;
+                              const res = engine.getResources();
+                              const success = techs.research(node.id, res);
+                              if (success) {
+                                // 扣除费用
+                                const payMethod = (engine as any).pay;
+                                if (payMethod) payMethod.call(engine, node.cost);
+                                addToast(`开始研究：${node.name}`, 'success');
+                                (engine as any).emit?.('stateChange');
+                              } else {
+                                addToast('研究失败：资源不足或前置未完成', 'error');
+                              }
+                            }}
+                            style={{
+                              padding: '3px 12px', fontSize: 10,
+                              borderRadius: 4, border: 'none', cursor: 'pointer',
+                              background: `linear-gradient(135deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
+                              color: '#1a0a0a', fontWeight: 'bold',
+                            }}
+                          >
+                            研究
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 10, color: COLOR_THEME.textSecondary, marginTop: 4 }}>
+                        {node.description}
+                      </div>
+                      {isResearching && (
+                        <div style={{ marginTop: 6 }}>
+                          <div style={{
+                            height: 4, borderRadius: 2,
+                            background: 'rgba(255,255,255,0.1)',
+                          }}>
+                            <div style={{
+                              width: `${(node.progress * 100).toFixed(0)}%`,
+                              height: '100%', borderRadius: 2,
+                              background: COLOR_THEME.accentGold,
+                              transition: 'width 0.3s',
+                            }} />
+                          </div>
+                          <span style={{ fontSize: 9, color: COLOR_THEME.accentGold }}>
+                            研究进度: {(node.progress * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      )}
+                      {isAvailable && Object.keys(node.cost).length > 0 && (
+                        <div style={{ fontSize: 9, color: COLOR_THEME.textDim, marginTop: 2 }}>
+                          费用: {Object.entries(node.cost).map(([k, v]) => `${v} ${k}`).join('  ')}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════ 战斗发起浮层 ═══════════ */}
+          {scene === 'combat' && combatData && combatData.state === 'preparing' && (
+            <div style={{
+              position: 'absolute', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+              display: 'flex', gap: 12, alignItems: 'center',
+            }}>
+              <button
+                onClick={() => handleCombatAction('start_battle', combatData.battleId)}
+                style={{
+                  padding: '10px 32px', fontSize: 15, fontWeight: 'bold',
+                  borderRadius: 8, border: 'none', cursor: 'pointer',
+                  background: `linear-gradient(135deg, #e74c3c, #c0392b)`,
+                  color: '#fff',
+                  boxShadow: '0 2px 12px rgba(231,76,60,0.4)',
+                  transition: 'transform 0.2s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+              >
+                ⚔️ 开始战斗
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ─── 右侧面板：武将列表 ─── */}
@@ -524,8 +795,40 @@ export default function ThreeKingdomsPixiGame() {
                 {!h.unlocked && h.canRecruit && (
                   <button
                     onClick={() => {
-                      // 模拟招募武将的键盘操作
-                      console.log('[ThreeKingdomsPixiGame] Recruit hero:', h.id);
+                      const engine = engineRef.current;
+                      if (!engine) return;
+
+                      // 尝试通过引擎的 UnitSystem 招募武将
+                      const units = (engine as any).units;
+                      if (!units) {
+                        console.warn('[ThreeKingdomsPixiGame] Unit system not available');
+                        addToast('招募系统未就绪', 'error');
+                        return;
+                      }
+
+                      // 检查资源是否足够
+                      const res = engine.getResources();
+                      const cost = h.recruitCost || {};
+                      const canAfford = Object.entries(cost).every(([rid, amt]: [string, number]) => (res[rid] || 0) >= amt);
+
+                      if (!canAfford) {
+                        addToast('招募失败：资源不足', 'error');
+                        return;
+                      }
+
+                      // 扣除资源并招募
+                      const payMethod = (engine as any).pay;
+                      if (payMethod) {
+                        payMethod.call(engine, cost);
+                      }
+                      const result = units.unlock(h.id);
+                      if (result.success) {
+                        addToast(`招募成功！${h.name} 加入麾下`, 'success');
+                        // 触发状态更新
+                        (engine as any).emit?.('stateChange');
+                      } else {
+                        addToast('招募失败：条件不满足', 'error');
+                      }
                     }}
                     style={{
                       marginTop: 4, padding: '2px 8px',
@@ -553,18 +856,11 @@ export default function ThreeKingdomsPixiGame() {
         zIndex: 10, flexShrink: 0,
       }}>
         {SCENE_TABS.map((tab, idx) => {
-          const isActive = scene === tab.scene;
+          const isActive = activeTab === tab.key;
           return (
             <button
-              key={idx}
-              onClick={() => triggerPanelSwitch(
-                idx === 0 ? 'Escape' :
-                idx === 1 ? 'u' :
-                idx === 2 ? 'm' :
-                idx === 3 ? 't' :
-                idx === 4 ? 'b' :
-                'r'
-              )}
+              key={tab.key}
+              onClick={() => handleTabClick(tab)}
               style={{
                 padding: '5px 16px', fontSize: 12,
                 borderRadius: 4, border: 'none', cursor: 'pointer',
@@ -590,6 +886,120 @@ export default function ThreeKingdomsPixiGame() {
           [Space]点击 [Enter]购买 [R]声望 [T]科技 [M]领土 [B]战斗 [U]武将
         </span>
       </footer>
+
+      {/* ═══════════ Toast 提示浮层 ═══════════ */}
+      <div style={{
+        position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+        zIndex: 100, pointerEvents: 'none',
+      }}>
+        {toasts.map(t => (
+          <div key={t.id} style={{
+            padding: '8px 20px', borderRadius: 6,
+            fontSize: 13, fontWeight: 'bold',
+            background: t.type === 'success' ? 'rgba(76,175,80,0.9)' : 'rgba(244,67,54,0.9)',
+            color: '#fff', whiteSpace: 'nowrap',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}>
+            {t.type === 'success' ? '✅ ' : '❌ '}{t.text}
+          </div>
+        ))}
+      </div>
+
+      {/* ═══════════ 新手引导浮层 ═══════════ */}
+      {showGuide && (() => {
+        const step = GUIDE_STEPS[guideStep];
+        const isLast = guideStep >= GUIDE_STEPS.length - 1;
+        const starterName = engineRef.current?.getStarterGeneralName();
+        return (
+          <div
+            style={{
+              position: 'absolute', inset: 0,
+              background: 'rgba(0,0,0,0.7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 200,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{
+              background: 'rgba(30,20,10,0.95)',
+              borderRadius: 12, padding: '32px 40px',
+              maxWidth: 420, width: '90%',
+              textAlign: 'center',
+              border: `1px solid ${COLOR_THEME.accentGold}`,
+              boxShadow: `0 0 30px rgba(255,215,0,0.15)`,
+            }}>
+              <h2 style={{
+                fontSize: 22, color: COLOR_THEME.accentGold,
+                marginBottom: 12, fontFamily: '"Noto Serif SC", serif',
+              }}>
+                {step.title}
+              </h2>
+              <p style={{
+                fontSize: 14, color: COLOR_THEME.textPrimary,
+                lineHeight: 1.8, marginBottom: 8,
+              }}>
+                {step.text}
+              </p>
+              {guideStep === 0 && starterName && (
+                <p style={{
+                  fontSize: 15, color: '#4caf50',
+                  fontWeight: 'bold', marginTop: 12, marginBottom: 4,
+                }}>
+                  🎉 恭喜获得武将 {starterName}！
+                </p>
+              )}
+              <div style={{
+                display: 'flex', justifyContent: 'center',
+                gap: 12, marginTop: 24,
+              }}>
+                <button
+                  onClick={() => setShowGuide(false)}
+                  style={{
+                    padding: '8px 20px', fontSize: 13,
+                    borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)',
+                    background: 'transparent', color: COLOR_THEME.textDim,
+                    cursor: 'pointer',
+                  }}
+                >
+                  跳过
+                </button>
+                <button
+                  onClick={() => {
+                    if (isLast) {
+                      setShowGuide(false);
+                    } else {
+                      setGuideStep(guideStep + 1);
+                    }
+                  }}
+                  style={{
+                    padding: '8px 28px', fontSize: 13, fontWeight: 'bold',
+                    borderRadius: 6, border: 'none',
+                    background: `linear-gradient(135deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
+                    color: '#1a0a0a', cursor: 'pointer',
+                  }}
+                >
+                  {isLast ? '开始游戏' : '下一步'}
+                </button>
+              </div>
+              {/* 步骤指示器 */}
+              <div style={{
+                display: 'flex', justifyContent: 'center',
+                gap: 6, marginTop: 16,
+              }}>
+                {GUIDE_STEPS.map((_, i) => (
+                  <div key={i} style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: i === guideStep
+                      ? COLOR_THEME.accentGold
+                      : 'rgba(255,255,255,0.2)',
+                  }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -581,9 +581,9 @@ export const RESOURCES = [
 // ═══════════════════════════════════════════════════════════════
 
 export const INITIAL_RESOURCES: Record<string, number> = {
-  grain: 50,
-  gold: 0,
-  troops: 0,
+  grain: 500,
+  gold: 300,
+  troops: 100,
   destiny: 0,
 };
 

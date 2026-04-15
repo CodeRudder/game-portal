@@ -113,7 +113,38 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.scroll = 0;
     this.playTime = 0;
     this.psCache = {};
+
+    // ── 新手福利：免费赠送一个 uncommon 武将 ──
+    this.grantFreeStarterGeneral();
+
     this.emit('stateChange');
+  }
+
+  /**
+   * 新手福利：随机赠送一个 uncommon 稀有度的武将（免费抽卡）。
+   * 不消耗任何资源，直接解锁招募。
+   */
+  private grantFreeStarterGeneral(): void {
+    const uncommons = GENERALS.filter(g => g.rarity === 'uncommon');
+    if (uncommons.length === 0) return;
+    const chosen = uncommons[Math.floor(Math.random() * uncommons.length)];
+    const result = this.units.unlock(chosen.id);
+    if (result.ok) {
+      this.stats.increment('totalGeneralsRecruited');
+      this.ftSys.add(`🎉 免费武将：${chosen.name}！`, 0.5, 0.3, {
+        style: { color: '#4caf50', fontSize: 20 },
+      });
+    }
+  }
+
+  /** 获取免费赠送的初始武将名称（供 UI 引导使用） */
+  public getStarterGeneralName(): string | null {
+    const uncommons = GENERALS.filter(g => g.rarity === 'uncommon');
+    if (uncommons.length === 0) return null;
+    for (const g of uncommons) {
+      if (this.units.isUnlocked(g.id)) return g.name;
+    }
+    return null;
   }
 
   // ─── 更新 ───────────────────────────────────────────────
@@ -633,6 +664,238 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   public getActivePanel(): ActivePanel { return this.panel; }
   public getPrestigeState() { return this.prest.getState(); }
   public getStageInfo() { return this.stages.getCurrent(); }
+
+  // ═══════════════════════════════════════════════════════════
+  // 核心玩法公共 API
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 招募武将
+   *
+   * 检查武将是否已招募、资源是否足够，扣除招募费用并解锁武将。
+   *
+   * @param id - 武将 ID（如 'liubei', 'guanyu'）
+   * @returns 是否招募成功
+   */
+  public recruitGeneral(id: string): boolean {
+    // 查找武将定义
+    const def = GENERALS.find(g => g.id === id);
+    if (!def) return false;
+
+    // 检查是否已招募
+    if (this.units.isUnlocked(id)) return false;
+
+    // 检查招募费用是否足够
+    const cost = def.recruitCost;
+    if (!this.canPay(cost)) return false;
+
+    // 扣除招募费用
+    this.pay(cost);
+
+    // 解锁武将
+    const result = this.units.unlock(id);
+    if (!result.ok) return false;
+
+    this.stats.increment('totalGeneralsRecruited');
+    this.emit('generalRecruited', { generalId: id, name: def.name });
+    this.emit('stateChange');
+    return true;
+  }
+
+  /**
+   * 征服领土
+   *
+   * 检查领土是否已征服、是否与已征服领土相邻、兵力是否足够。
+   * 消耗兵力后征服领土，获得奖励。
+   *
+   * @param id - 领土 ID（如 'chengdu', 'luoyang'）
+   * @returns 是否征服成功
+   */
+  public conquerTerritory(id: string): boolean {
+    // 查找领土定义
+    const def = TERRITORIES.find(t => t.id === id);
+    if (!def) return false;
+
+    // 检查是否已征服
+    if (this.terr.isConquered(id)) return false;
+
+    // 检查是否与已征服领土相邻（首块领土或已有相邻领土）
+    if (!this.terr.canAttack(id) && this.terr.getConqueredIds().length > 0) return false;
+
+    // 检查兵力是否足够
+    const troopsNeeded = def.powerRequired;
+    if ((this.res.troops || 0) < troopsNeeded) return false;
+
+    // 消耗兵力
+    this.res.troops = Math.max(0, (this.res.troops || 0) - troopsNeeded);
+
+    // 征服领土
+    const result = this.terr.conquer(id);
+
+    // 发放征服奖励
+    for (const [r, a] of Object.entries(result.rewards)) this.giveRes(r, a);
+    for (const [r, a] of Object.entries(result.bonus)) this.giveRes(r, a);
+
+    this.stats.increment('totalTerritoriesConquered');
+    this.emit('territoryConquered', { territoryId: id, name: def.name });
+    this.emit('stateChange');
+    return true;
+  }
+
+  /**
+   * 研究科技
+   *
+   * 检查科技是否已研究、前置科技是否完成、资源是否足够。
+   * 扣除研究费用并启动研究流程。
+   *
+   * @param id - 科技 ID（如 'mil_1', 'eco_2'）
+   * @returns 是否成功开始研究
+   */
+  public researchTech(id: string): boolean {
+    // 查找科技定义
+    const def = TECHS.find(t => t.id === id);
+    if (!def) return false;
+
+    // 检查是否已研究
+    if (this.techs.isResearched(id)) return false;
+
+    // 检查前置科技是否完成
+    if (!def.requires.every(r => this.techs.isResearched(r))) return false;
+
+    // 检查资源是否足够
+    if (!this.canPay(def.cost)) return false;
+
+    // 扣除资源并启动研究
+    this.pay(def.cost);
+    const ok = this.techs.research(id, this.res);
+    if (!ok) return false;
+
+    this.stats.increment('totalTechsResearched');
+    this.emit('techResearched', { techId: id, name: def.name });
+    this.emit('stateChange');
+    return true;
+  }
+
+  /**
+   * 开始战斗
+   *
+   * 检查战斗是否已解锁（属于当前阶段）、是否已完成，
+   * 以及是否有已招募武将参与。
+   *
+   * @param battleId - 战斗波次 ID（如 'yellow_1', 'chibi_3'）
+   * @returns 是否成功开始战斗
+   */
+  public startBattle(battleId: string): boolean {
+    // 查找战斗定义
+    const def = BATTLES.find(b => b.id === battleId);
+    if (!def) return false;
+
+    // 检查战斗是否属于当前阶段（是否已解锁）
+    const currentStage = this.stages.getCurrent();
+    if (!currentStage || def.stageId !== currentStage.id) return false;
+
+    // 检查是否有已招募武将
+    const hasGeneral = GENERALS.some(g => this.units.isUnlocked(g.id));
+    if (!hasGeneral) return false;
+
+    // 初始化战斗状态
+    const ok = this.battles.startWave(battleId);
+    if (!ok) return false;
+
+    this.emit('battleStarted', { battleId, stageId: def.stageId, wave: def.wave });
+    this.emit('stateChange');
+    return true;
+  }
+
+  /**
+   * 通过 ID 购买建筑
+   *
+   * 根据建筑 ID 找到建筑，检查是否已解锁、资源是否足够，
+   * 执行购买并升级建筑等级。
+   *
+   * @param id - 建筑 ID（如 'farm', 'market', 'barracks'）
+   * @returns 是否购买成功
+   */
+  public buyBuildingById(id: string): boolean {
+    // 检查建筑是否已注册
+    if (!this.bldg.isUnlocked(id)) return false;
+
+    // 检查资源是否足够
+    const cost = this.bldg.getCost(id);
+    if (!this.canPay(cost)) return false;
+
+    // 执行购买
+    const ok = this.bldg.purchase(id, (rId, amt) => this.has(rId, amt), () => {});
+    if (!ok) return false;
+
+    // 手动扣除资源（purchase 的 spendResource 回调为空，由 pay 统一处理）
+    this.pay(cost);
+
+    const def = BUILDINGS.find(b => b.id === id);
+    this.emit('buildingPurchased', { buildingId: id, name: def?.name || id });
+    this.emit('stateChange');
+    return true;
+  }
+
+  /**
+   * 升级建筑
+   *
+   * 检查建筑当前等级、资源是否足够，执行升级操作。
+   * 本质上与 buyBuildingById 相同（每次购买即升一级），
+   * 但提供语义化的升级接口。
+   *
+   * @param id - 建筑 ID
+   * @returns 是否升级成功
+   */
+  public upgradeBuilding(id: string): boolean {
+    // 检查建筑是否已解锁且已拥有（等级 >= 1 才能升级）
+    if (!this.bldg.isUnlocked(id)) return false;
+    if (this.bldg.getLevel(id) < 1) return false;
+
+    // 检查资源是否足够
+    const cost = this.bldg.getCost(id);
+    if (!this.canPay(cost)) return false;
+
+    // 执行升级
+    const ok = this.bldg.purchase(id, (rId, amt) => this.has(rId, amt), () => {});
+    if (!ok) return false;
+
+    // 扣除资源
+    this.pay(cost);
+
+    const newLevel = this.bldg.getLevel(id);
+    const def = BUILDINGS.find(b => b.id === id);
+    this.emit('buildingUpgraded', { buildingId: id, name: def?.name || id, level: newLevel });
+    this.emit('stateChange');
+    return true;
+  }
+
+  // ─── 公共 getter 方法 ───────────────────────────────────
+
+  /** 获取指定建筑的当前等级 */
+  public getBuildingLevel(id: string): number {
+    return this.bldg.getLevel(id);
+  }
+
+  /** 检查指定武将是否已招募 */
+  public isGeneralRecruited(id: string): boolean {
+    return this.units.isUnlocked(id);
+  }
+
+  /** 检查指定科技是否已研究完成 */
+  public isTechResearched(id: string): boolean {
+    return this.techs.isResearched(id);
+  }
+
+  /** 检查指定领土是否已征服 */
+  public isTerritoryConquered(id: string): boolean {
+    return this.terr.isConquered(id);
+  }
+
+  /** 获取指定类型资源的当前数量 */
+  public getResourceAmount(type: string): number {
+    return this.res[type] || 0;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════

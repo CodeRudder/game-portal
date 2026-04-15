@@ -138,9 +138,9 @@ describe('常量验证', () => {
   });
 
   it('INITIAL_RESOURCES 包含正确的初始值', () => {
-    expect(INITIAL_RESOURCES.grain).toBe(50);
-    expect(INITIAL_RESOURCES.gold).toBe(0);
-    expect(INITIAL_RESOURCES.troops).toBe(0);
+    expect(INITIAL_RESOURCES.grain).toBe(500);
+    expect(INITIAL_RESOURCES.gold).toBe(300);
+    expect(INITIAL_RESOURCES.troops).toBe(100);
     expect(INITIAL_RESOURCES.destiny).toBe(0);
   });
 
@@ -179,19 +179,19 @@ describe('引擎初始化', () => {
     expect(() => createEngine()).not.toThrow();
   });
 
-  it('初始 grain 为 50', () => {
+  it('初始 grain 为 500', () => {
     const engine = createEngine();
-    expect(engine.getResources().grain).toBe(50);
+    expect(engine.getResources().grain).toBe(500);
   });
 
-  it('初始 gold 为 0', () => {
+  it('初始 gold 为 300', () => {
     const engine = createEngine();
-    expect(engine.getResources().gold).toBe(0);
+    expect(engine.getResources().gold).toBe(300);
   });
 
-  it('初始 troops 为 0', () => {
+  it('初始 troops 为 100', () => {
     const engine = createEngine();
-    expect(engine.getResources().troops).toBe(0);
+    expect(engine.getResources().troops).toBe(100);
   });
 
   it('初始 destiny 为 0', () => {
@@ -226,9 +226,9 @@ describe('资源系统', () => {
   it('getResources 返回正确初始值', () => {
     const res = engine.getResources();
     expect(res).toEqual({
-      grain: 50,
-      gold: 0,
-      troops: 0,
+      grain: 500,
+      gold: 300,
+      troops: 100,
       destiny: 0,
     });
   });
@@ -236,7 +236,7 @@ describe('资源系统', () => {
   it('getResources 返回的是副本，修改不影响引擎内部', () => {
     const res = engine.getResources();
     res.grain = 9999;
-    expect(engine.getResources().grain).toBe(50);
+    expect(engine.getResources().grain).toBe(500);
   });
 
   it('update 产生建筑产出（farm 有产出）', () => {
@@ -266,7 +266,7 @@ describe('资源系统', () => {
     // farm is Lv.0, no production
     const before = engine.getResources().grain;
     engine.update(1000);
-    // grain should remain 50 (no production from Lv.0 building)
+    // grain should remain 500 (no production from Lv.0 building)
     expect(engine.getResources().grain).toBe(before);
   });
 
@@ -485,9 +485,9 @@ describe('存档系统', () => {
   it('serialize 包含正确的资源', () => {
     const data = engine.serialize();
     expect(data.resources).toBeDefined();
-    expect(data.resources.grain).toBe(50);
-    expect(data.resources.gold).toBe(0);
-    expect(data.resources.troops).toBe(0);
+    expect(data.resources.grain).toBe(500);
+    expect(data.resources.gold).toBe(300);
+    expect(data.resources.troops).toBe(100);
     expect(data.resources.destiny).toBe(0);
   });
 
