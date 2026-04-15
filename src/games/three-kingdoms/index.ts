@@ -22,3 +22,22 @@ export {
   CLICK_REWARD,
   RARITY_COLORS,
 } from './constants';
+
+// ── Tile 瓦片地图系统 ──
+export { MapGenerator } from './MapGenerator';
+export type {
+  TerrainType,
+  MapTile,
+  MapNPC,
+  MapLandmark,
+  GameMap,
+} from './MapGenerator';
+
+// ── NPC 活动系统 ──
+export { NPCSystem } from './NPCSystem';
+export type {
+  NPCMovementState,
+  NPCDirection,
+  NPCRuntimeState,
+  NPCSystemConfig,
+} from './NPCSystem';
