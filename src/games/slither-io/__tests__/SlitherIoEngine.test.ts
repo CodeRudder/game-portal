@@ -529,7 +529,8 @@ describe('SlitherIoEngine', () => {
     });
 
     it('虫子不应碰到自己的身体（跳过前几段）', () => {
-      // 玩家自身不会触发碰撞
+      // 玩家自身不会触发碰撞；先清空 AI 虫子避免意外碰撞
+      setAIWorms(engine, []);
       engine.checkWormCollisions();
       expect(player.alive).toBe(true);
     });

@@ -1,27 +1,27 @@
 /**
- * 家族风云 (Clan Saga) — 完整测试套件
+ * 家族传说 (Clan Saga) — 完整测试套件 v3.0
+ *
+ * 适配重构后的 ClanSagaEngine（基于 BuildingSystem + PrestigeSystem +
+ * UnitSystem + StageSystem + TechTreeSystem 架构）。
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClanSagaEngine } from '@/games/clan-saga/ClanSagaEngine';
-import type { ClanSagaState } from '@/games/clan-saga/ClanSagaEngine';
 import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
-  WEALTH_PER_CLICK,
-  RESOURCE_IDS,
-  BUILDING_IDS,
+  GAME_ID,
+  GAME_TITLE,
   BUILDINGS,
-  HEIR_TYPES,
-  HEIR_TYPE_DEFS,
-  MARRIAGE_FAMILIES,
-  PRESTIGE_MULTIPLIER,
-  MIN_PRESTIGE_WEALTH,
-  COLORS,
-  UPGRADE_PANEL,
-  RESOURCE_ICONS,
-  RESOURCE_NAMES,
-  FLOATING_TEXT_DURATION,
-  ANIMATION,
+  HEROES,
+  DYNASTIES,
+  INVENTIONS,
+  PRESTIGE_CONFIG,
+  RESOURCES,
+  INITIAL_RESOURCES,
+  INITIALLY_UNLOCKED,
+  CLICK_REWARD,
+  COLOR_THEME,
+  RARITY_COLORS,
 } from '@/games/clan-saga/constants';
 
 // ========== 测试辅助 ==========
@@ -41,31 +41,38 @@ function createEngine(): ClanSagaEngine {
 }
 
 /** 直接添加资源 */
-function addWealth(engine: ClanSagaEngine, amount: number): void {
-  (engine as any).addResource(RESOURCE_IDS.WEALTH, amount);
+function addResource(engine: ClanSagaEngine, id: string, amount: number): void {
+  (engine as any).giveRes(id, amount);
 }
 
-function addReputation(engine: ClanSagaEngine, amount: number): void {
-  (engine as any).addResource(RESOURCE_IDS.REPUTATION, amount);
+/** 给粮食 */
+function addGrain(engine: ClanSagaEngine, amount: number): void {
+  addResource(engine, 'grain', amount);
 }
 
-function addConnection(engine: ClanSagaEngine, amount: number): void {
-  (engine as any).addResource(RESOURCE_IDS.CONNECTION, amount);
+/** 给丝绸 */
+function addSilk(engine: ClanSagaEngine, amount: number): void {
+  addResource(engine, 'silk', amount);
+}
+
+/** 给灵石 */
+function addStone(engine: ClanSagaEngine, amount: number): void {
+  addResource(engine, 'stone', amount);
+}
+
+/** 给威望 */
+function addPrestige(engine: ClanSagaEngine, amount: number): void {
+  addResource(engine, 'prestige', amount);
 }
 
 /** 触发一次 update */
 function tick(engine: ClanSagaEngine, dt: number = 16): void {
-  (engine as any).update(dt);
+  (engine as any).onUpdate(dt);
 }
 
 /** 获取资源数量 */
 function getResourceAmount(engine: ClanSagaEngine, id: string): number {
-  return (engine as any).getResource(id)?.amount ?? 0;
-}
-
-/** 获取资源每秒产出 */
-function getResourcePerSecond(engine: ClanSagaEngine, id: string): number {
-  return (engine as any).getResource(id)?.perSecond ?? 0;
+  return (engine as any).res[id] ?? 0;
 }
 
 // ========== 测试套件 ==========
@@ -98,49 +105,38 @@ describe('ClanSagaEngine', () => {
       expect(canvas.height).toBe(CANVAS_HEIGHT);
     });
 
-    it('初始化后财富资源应为 0', () => {
-      expect(getResourceAmount(engine, RESOURCE_IDS.WEALTH)).toBe(0);
+    it('初始化后粮食资源应为 INITIAL_RESOURCES.grain', () => {
+      expect(getResourceAmount(engine, 'grain')).toBe(INITIAL_RESOURCES.grain);
     });
 
-    it('财富初始应已解锁', () => {
-      const wealth = (engine as any).getResource(RESOURCE_IDS.WEALTH);
-      expect(wealth.unlocked).toBe(true);
+    it('丝绸初始应为 0', () => {
+      expect(getResourceAmount(engine, 'silk')).toBe(0);
     });
 
-    it('声望初始应未解锁', () => {
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      expect(reputation.unlocked).toBe(false);
+    it('灵石初始应为 0', () => {
+      expect(getResourceAmount(engine, 'stone')).toBe(0);
     });
 
-    it('人脉初始应未解锁', () => {
-      const connection = (engine as any).getResource(RESOURCE_IDS.CONNECTION);
-      expect(connection.unlocked).toBe(false);
+    it('威望初始应为 0', () => {
+      expect(getResourceAmount(engine, 'prestige')).toBe(0);
     });
 
-    it('初始 totalWealthEarned 应为 0', () => {
-      expect(engine.totalWealthEarned).toBe(0);
+    it('灵田初始应已解锁', () => {
+      const bldg = (engine as any).bldg;
+      expect(bldg.isUnlocked('farm')).toBe(true);
     });
 
-    it('初始 totalClicks 应为 0', () => {
-      expect(engine.totalClicks).toBe(0);
+    it('织造坊初始应未解锁', () => {
+      const bldg = (engine as any).bldg;
+      expect(bldg.isUnlocked('workshop')).toBe(false);
     });
 
     it('初始 selectedBuildingIndex 应为 0', () => {
-      expect(engine.selectedBuildingIndex).toBe(0);
+      expect((engine as any).selIdx).toBe(0);
     });
 
-    it('初始 marriedFamilyIds 应为空数组', () => {
-      expect(engine.marriedFamilyIds).toEqual([]);
-    });
-
-    it('初始 stats 各字段应为 0', () => {
-      const stats = engine.stats;
-      expect(stats.totalWealthEarned).toBe(0);
-      expect(stats.totalClicks).toBe(0);
-      expect(stats.totalPrestigeCount).toBe(0);
-      expect(stats.totalHeirsTrained).toBe(0);
-      expect(stats.totalMarriages).toBe(0);
-      expect(stats.totalBuildingsBuilt).toBe(0);
+    it('初始 activePanel 应为 none', () => {
+      expect(engine.getActivePanel()).toBe('none');
     });
   });
 
@@ -155,792 +151,492 @@ describe('ClanSagaEngine', () => {
       expect(CANVAS_HEIGHT).toBe(640);
     });
 
-    it('WEALTH_PER_CLICK 应为 1', () => {
-      expect(WEALTH_PER_CLICK).toBe(1);
+    it('GAME_ID 应为 clan-saga', () => {
+      expect(GAME_ID).toBe('clan-saga');
     });
 
-    it('RESOURCE_IDS 应包含三个资源', () => {
-      expect(RESOURCE_IDS.WEALTH).toBe('wealth');
-      expect(RESOURCE_IDS.REPUTATION).toBe('reputation');
-      expect(RESOURCE_IDS.CONNECTION).toBe('connection');
+    it('GAME_TITLE 应为 家族传说', () => {
+      expect(GAME_TITLE).toBe('家族传说');
     });
 
-    it('BUILDING_IDS 应包含八个建筑', () => {
-      expect(BUILDING_IDS.SHOP).toBe('shop');
-      expect(BUILDING_IDS.ACADEMY).toBe('academy');
-      expect(BUILDING_IDS.DOJO).toBe('dojo');
-      expect(BUILDING_IDS.ANCESTRAL_HALL).toBe('ancestral-hall');
-      expect(BUILDING_IDS.TEA_HOUSE).toBe('tea-house');
-      expect(BUILDING_IDS.BANK).toBe('bank');
-      expect(BUILDING_IDS.EMBASSY).toBe('embassy');
-      expect(BUILDING_IDS.TREASURY).toBe('treasury');
-    });
-
-    it('HEIR_TYPES 应包含四种后代', () => {
-      expect(HEIR_TYPES.WARRIOR).toBe('warrior');
-      expect(HEIR_TYPES.SCHOLAR).toBe('scholar');
-      expect(HEIR_TYPES.MERCHANT).toBe('merchant');
-      expect(HEIR_TYPES.DIPLOMAT).toBe('diplomat');
+    it('RESOURCES 应包含四个资源', () => {
+      expect(RESOURCES.length).toBe(4);
+      const ids = RESOURCES.map(r => r.id);
+      expect(ids).toContain('grain');
+      expect(ids).toContain('silk');
+      expect(ids).toContain('stone');
+      expect(ids).toContain('prestige');
     });
 
     it('BUILDINGS 数组长度应为 8', () => {
       expect(BUILDINGS.length).toBe(8);
     });
 
-    it('HEIR_TYPE_DEFS 数组长度应为 4', () => {
-      expect(HEIR_TYPE_DEFS.length).toBe(4);
+    it('HEROES 数组长度应为 8', () => {
+      expect(HEROES.length).toBe(8);
     });
 
-    it('MARRIAGE_FAMILIES 数组长度应为 5', () => {
-      expect(MARRIAGE_FAMILIES.length).toBe(5);
+    it('DYNASTIES 数组长度应为 6', () => {
+      expect(DYNASTIES.length).toBe(6);
     });
 
-    it('PRESTIGE_MULTIPLIER 应为 0.04', () => {
-      expect(PRESTIGE_MULTIPLIER).toBe(0.04);
+    it('INVENTIONS 数组长度应为 9', () => {
+      expect(INVENTIONS.length).toBe(9);
     });
 
-    it('MIN_PRESTIGE_WEALTH 应为 50000', () => {
-      expect(MIN_PRESTIGE_WEALTH).toBe(50000);
+    it('INITIALLY_UNLOCKED 应包含 farm', () => {
+      expect(INITIALLY_UNLOCKED).toContain('farm');
     });
 
-    it('FLOATING_TEXT_DURATION 应为 1000', () => {
-      expect(FLOATING_TEXT_DURATION).toBe(1000);
+    it('CLICK_REWARD 应为 { grain: 1 }', () => {
+      expect(CLICK_REWARD).toEqual({ grain: 1 });
     });
 
-    it('COLORS 应包含必要颜色', () => {
-      expect(COLORS.wealthColor).toBeDefined();
-      expect(COLORS.reputationColor).toBeDefined();
-      expect(COLORS.connectionColor).toBeDefined();
-      expect(COLORS.goldPrimary).toBeDefined();
-      expect(COLORS.redPrimary).toBeDefined();
-      expect(COLORS.prestigeGlow).toBeDefined();
+    it('PRESTIGE_CONFIG 应包含必要字段', () => {
+      expect(PRESTIGE_CONFIG.currencyName).toBeDefined();
+      expect(PRESTIGE_CONFIG.base).toBeGreaterThan(0);
+      expect(PRESTIGE_CONFIG.threshold).toBeGreaterThan(0);
+      expect(PRESTIGE_CONFIG.bonusMultiplier).toBeGreaterThan(0);
+      expect(PRESTIGE_CONFIG.retention).toBeGreaterThanOrEqual(0);
+      expect(PRESTIGE_CONFIG.retention).toBeLessThanOrEqual(1);
     });
 
-    it('ANIMATION 应包含必要参数', () => {
-      expect(ANIMATION.lanternCount).toBeDefined();
-      expect(ANIMATION.leafCount).toBeDefined();
-      expect(ANIMATION.floatingTextDuration).toBeDefined();
-      expect(ANIMATION.prestigeDuration).toBeDefined();
+    it('COLOR_THEME 应包含必要颜色', () => {
+      expect(COLOR_THEME.bgGradient1).toBeDefined();
+      expect(COLOR_THEME.textPrimary).toBeDefined();
+      expect(COLOR_THEME.accentGold).toBeDefined();
+      expect(COLOR_THEME.accentGreen).toBeDefined();
+    });
+
+    it('RARITY_COLORS 应包含稀有度颜色', () => {
+      expect(RARITY_COLORS.rare).toBeDefined();
+      expect(RARITY_COLORS.epic).toBeDefined();
+      expect(RARITY_COLORS.legendary).toBeDefined();
+    });
+
+    it('INITIAL_RESOURCES 应包含 grain: 50', () => {
+      expect(INITIAL_RESOURCES.grain).toBe(50);
+    });
+
+    it('BUILDINGS 中 farm 应为第一个建筑', () => {
+      expect(BUILDINGS[0].id).toBe('farm');
+    });
+
+    it('DYNASTIES 中 small_clan 应为初始阶段', () => {
+      expect(DYNASTIES[0].id).toBe('small_clan');
     });
   });
 
   // ==================== 3. 点击系统 ====================
 
   describe('点击系统', () => {
-    it('点击应获得基础财富', () => {
-      const gained = engine.click();
-      expect(gained).toBe(WEALTH_PER_CLICK);
-      expect(getResourceAmount(engine, RESOURCE_IDS.WEALTH)).toBe(WEALTH_PER_CLICK);
+    it('点击应获得 CLICK_REWARD 数量的粮食', () => {
+      const before = getResourceAmount(engine, 'grain');
+      (engine as any).doClick();
+      const after = getResourceAmount(engine, 'grain');
+      expect(after - before).toBe(CLICK_REWARD.grain);
     });
 
-    it('点击应增加 totalClicks', () => {
-      engine.click();
-      engine.click();
-      expect(engine.totalClicks).toBe(2);
-    });
-
-    it('点击应增加 totalWealthEarned', () => {
-      engine.click();
-      expect(engine.totalWealthEarned).toBe(WEALTH_PER_CLICK);
-    });
-
-    it('连续点击应累积财富', () => {
+    it('连续点击应累积粮食', () => {
+      const before = getResourceAmount(engine, 'grain');
       for (let i = 0; i < 10; i++) {
-        engine.click();
+        (engine as any).doClick();
       }
-      expect(getResourceAmount(engine, RESOURCE_IDS.WEALTH)).toBe(10);
+      expect(getResourceAmount(engine, 'grain')).toBe(before + 10);
     });
 
-    it('getClickPower 基础值应为 WEALTH_PER_CLICK', () => {
-      expect(engine.getClickPower()).toBe(WEALTH_PER_CLICK);
-    });
-
-    it('非 playing 状态点击应返回 0', () => {
+    it('非 playing 状态点击应不增加资源', () => {
       (engine as any)._status = 'paused';
-      const gained = engine.click();
-      expect(gained).toBe(0);
+      const before = getResourceAmount(engine, 'grain');
+      (engine as any).doClick();
+      // doClick 内部检查状态，非 playing 直接返回
+      expect(getResourceAmount(engine, 'grain')).toBe(before);
     });
 
     it('点击应触发 stateChange 事件', () => {
       const listener = vi.fn();
       engine.on('stateChange', listener);
-      engine.click();
+      (engine as any).doClick();
       expect(listener).toHaveBeenCalled();
     });
 
-    it('点击应产生飘字效果', () => {
-      engine.click();
-      const floatingTexts = (engine as any)._floatingTexts;
-      expect(floatingTexts.length).toBeGreaterThan(0);
-    });
-
-    it('点击应触发缩放动画', () => {
-      engine.click();
-      expect((engine as any)._clickScale).toBeGreaterThan(1);
-    });
-
-    it('武馆等级应提升点击力量', () => {
-      // 购买武馆需要先解锁
-      addWealth(engine, 1000);
-      // 解锁武馆需要财富>=60
-      tick(engine, 100);
-      // 直接设置武馆等级
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.DOJO);
-      if (upgrade) {
-        upgrade.unlocked = true;
-        upgrade.level = 5;
-      }
-      const power = engine.getClickPower();
-      // 基础1 + 武馆5*0.3 = 2.5
-      expect(power).toBeCloseTo(2.5, 1);
+    it('点击应增加 totalClicks 统计', () => {
+      (engine as any).doClick();
+      (engine as any).doClick();
+      const stats = (engine as any).stats;
+      expect(stats.get('totalClicks')).toBe(2);
     });
   });
 
   // ==================== 4. 建筑系统 ====================
 
   describe('建筑系统', () => {
-    it('商铺初始应已解锁', () => {
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.SHOP);
-      expect(upgrade.unlocked).toBe(true);
+    it('灵田初始应已解锁', () => {
+      const bldg = (engine as any).bldg;
+      expect(bldg.isUnlocked('farm')).toBe(true);
     });
 
-    it('书院初始应未解锁（需要财富>=30）', () => {
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.ACADEMY);
-      expect(upgrade.unlocked).toBe(false);
+    it('织造坊初始应未解锁（需要灵田 Lv.1）', () => {
+      const bldg = (engine as any).bldg;
+      expect(bldg.isUnlocked('workshop')).toBe(false);
     });
 
-    it('购买商铺应成功', () => {
-      addWealth(engine, 100);
-      const result = engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      expect(result).toBe(true);
-    });
-
-    it('购买商铺应扣除财富', () => {
-      addWealth(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      expect(getResourceAmount(engine, RESOURCE_IDS.WEALTH)).toBeLessThan(100);
+    it('购买灵田应成功', () => {
+      addGrain(engine, 100);
+      const result = (engine as any).buyBuilding();
+      expect(result).not.toBe(false);
     });
 
     it('资源不足时购买应失败', () => {
-      const result = engine.purchaseBuilding(BUILDING_IDS.SHOP);
+      // 灵田基础费用 grain:10，初始 grain:50
+      // 但我们先消耗掉
+      (engine as any).res.grain = 0;
+      const bldg = (engine as any).bldg;
+      const cost = bldg.getCost('farm');
+      const result = bldg.canAfford('farm', (id: string, a: number) => (engine as any).res[id] >= a);
       expect(result).toBe(false);
     });
 
-    it('购买后建筑等级应为 1', () => {
-      addWealth(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      expect(engine.getBuildingLevel(BUILDING_IDS.SHOP)).toBe(1);
-    });
-
-    it('buyBuildingByIndex 应正常工作', () => {
-      addWealth(engine, 100);
-      const result = engine.buyBuildingByIndex(0);
-      expect(result).toBe(true);
-    });
-
-    it('buyBuildingByIndex 越界应返回 false', () => {
-      expect(engine.buyBuildingByIndex(-1)).toBe(false);
-      expect(engine.buyBuildingByIndex(999)).toBe(false);
-    });
-
-    it('购买建筑应增加 totalBuildingsBuilt', () => {
-      addWealth(engine, 1000);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      expect(engine.stats.totalBuildingsBuilt).toBe(1);
-    });
-
-    it('购买商铺后应增加财富每秒产出', () => {
-      addWealth(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      const perSec = getResourcePerSecond(engine, RESOURCE_IDS.WEALTH);
-      expect(perSec).toBeGreaterThan(0);
+    it('购买后灵田等级应为 1', () => {
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
+      const bldg = (engine as any).bldg;
+      expect(bldg.getLevel('farm')).toBe(1);
     });
 
     it('建筑费用应随等级递增', () => {
-      addWealth(engine, 10000);
-      const cost1 = engine.getBuildingCost(BUILDING_IDS.SHOP);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      const cost2 = engine.getBuildingCost(BUILDING_IDS.SHOP);
-      const cost1Val = cost1[RESOURCE_IDS.WEALTH] || 0;
-      const cost2Val = cost2[RESOURCE_IDS.WEALTH] || 0;
-      expect(cost2Val).toBeGreaterThan(cost1Val);
+      const bldg = (engine as any).bldg;
+      const cost1 = bldg.getCost('farm');
+      // 手动升级两次（farm costMultiplier=1.07，Math.floor(10*1.07)=10，
+      // Math.floor(10*1.07^2)=11）
+      bldg.purchase('farm',
+        (id: string, a: number) => true,
+        () => {},
+      );
+      bldg.purchase('farm',
+        (id: string, a: number) => true,
+        () => {},
+      );
+      const cost2 = bldg.getCost('farm');
+      expect(cost2.grain).toBeGreaterThan(cost1.grain);
     });
 
-    it('getBuildingLevel 未购买建筑应返回 0', () => {
-      expect(engine.getBuildingLevel(BUILDING_IDS.SHOP)).toBe(0);
-      expect(engine.getBuildingLevel(BUILDING_IDS.ACADEMY)).toBe(0);
+    it('getLevel 未购买建筑应返回 0', () => {
+      const bldg = (engine as any).bldg;
+      expect(bldg.getLevel('workshop')).toBe(0);
     });
 
-    it('getBuildingCost 应返回正确的费用结构', () => {
-      const cost = engine.getBuildingCost(BUILDING_IDS.SHOP);
-      expect(cost).toHaveProperty(RESOURCE_IDS.WEALTH);
-      expect(cost[RESOURCE_IDS.WEALTH]).toBeGreaterThan(0);
-    });
-
-    it('建筑达到最大等级后不应再购买', () => {
-      addWealth(engine, 1e9);
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.SHOP);
-      upgrade.level = upgrade.maxLevel;
-      const result = engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      expect(result).toBe(false);
-    });
-
-    it('未解锁建筑不应可购买', () => {
-      addWealth(engine, 1000);
-      const result = engine.purchaseBuilding(BUILDING_IDS.ACADEMY);
-      expect(result).toBe(false);
+    it('getCost 应返回正确的费用结构', () => {
+      const bldg = (engine as any).bldg;
+      const cost = bldg.getCost('farm');
+      expect(cost).toHaveProperty('grain');
+      expect(cost.grain).toBeGreaterThan(0);
     });
 
     it('建筑解锁应在满足条件时自动触发', () => {
-      addWealth(engine, 100);
-      // 触发 update 以检查解锁
+      // 购买灵田后，织造坊应解锁
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
+      // checkUnlocks 在 update 中调用
       tick(engine, 16);
-      const academy = (engine as any).upgrades.get(BUILDING_IDS.ACADEMY);
-      expect(academy.unlocked).toBe(true);
+      const bldg = (engine as any).bldg;
+      expect(bldg.isUnlocked('workshop')).toBe(true);
     });
 
-    it('祠堂加成应提升产出倍率', () => {
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.ANCESTRAL_HALL);
-      upgrade.unlocked = true;
-      upgrade.level = 5;
-      const mult = engine.getProductionMultiplier();
-      // 基础1 + 祠堂5*0.05 = 1.25
-      expect(mult).toBeCloseTo(1.25, 2);
-    });
-
-    it('宝库加成应提升产出倍率', () => {
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.TREASURY);
-      upgrade.unlocked = true;
-      upgrade.level = 3;
-      const mult = engine.getProductionMultiplier();
-      // 基础1 + 宝库3*0.08 = 1.24
-      expect(mult).toBeCloseTo(1.24, 2);
+    it('getUnlockedBuildings 初始应只包含灵田', () => {
+      const bldg = (engine as any).bldg;
+      const unlocked = bldg.getUnlockedBuildings();
+      expect(unlocked.length).toBe(1);
+      expect(unlocked[0].id).toBe('farm');
     });
   });
 
-  // ==================== 5. 家族成员（后代培养）系统 ====================
+  // ==================== 5. 族人（英雄）系统 ====================
 
-  describe('家族成员系统', () => {
-    it('初始后代等级应为 0', () => {
-      expect(engine.getHeirLevel(HEIR_TYPES.WARRIOR)).toBe(0);
-      expect(engine.getHeirLevel(HEIR_TYPES.SCHOLAR)).toBe(0);
-      expect(engine.getHeirLevel(HEIR_TYPES.MERCHANT)).toBe(0);
-      expect(engine.getHeirLevel(HEIR_TYPES.DIPLOMAT)).toBe(0);
+  describe('族人系统', () => {
+    it('HEROES 应包含 8 个英雄', () => {
+      expect(HEROES.length).toBe(8);
     });
 
-    it('getHeirTrainCost 应返回正确的费用', () => {
-      const cost = engine.getHeirTrainCost(HEIR_TYPES.WARRIOR);
-      expect(cost).toHaveProperty(RESOURCE_IDS.WEALTH);
-      expect(cost).toHaveProperty(RESOURCE_IDS.REPUTATION);
+    it('英雄应包含必要属性', () => {
+      for (const h of HEROES) {
+        expect(h.id).toBeDefined();
+        expect(h.name).toBeDefined();
+        expect(h.rarity).toBeDefined();
+        expect(h.baseStats).toBeDefined();
+        expect(h.growthRates).toBeDefined();
+        expect(h.recruitCost).toBeDefined();
+      }
     });
 
-    it('资源不足时培养应失败', () => {
-      const result = engine.trainHeir(HEIR_TYPES.WARRIOR);
-      expect(result).toBe(false);
-    });
-
-    it('资源充足时培养应成功', () => {
-      addWealth(engine, 1000);
-      addReputation(engine, 100);
-      const result = engine.trainHeir(HEIR_TYPES.WARRIOR);
-      expect(result).toBe(true);
-    });
-
-    it('培养后等级应增加', () => {
-      addWealth(engine, 1000);
-      addReputation(engine, 100);
-      engine.trainHeir(HEIR_TYPES.WARRIOR);
-      expect(engine.getHeirLevel(HEIR_TYPES.WARRIOR)).toBe(1);
-    });
-
-    it('培养应增加 totalHeirsTrained', () => {
-      addWealth(engine, 1000);
-      addReputation(engine, 100);
-      engine.trainHeir(HEIR_TYPES.WARRIOR);
-      expect(engine.stats.totalHeirsTrained).toBe(1);
-    });
-
-    it('培养费用应随等级递增', () => {
-      addWealth(engine, 1e6);
-      addReputation(engine, 1e6);
-      const cost1 = engine.getHeirTrainCost(HEIR_TYPES.WARRIOR);
-      engine.trainHeir(HEIR_TYPES.WARRIOR);
-      const cost2 = engine.getHeirTrainCost(HEIR_TYPES.WARRIOR);
-      expect(cost2[RESOURCE_IDS.WEALTH]).toBeGreaterThan(cost1[RESOURCE_IDS.WEALTH]);
-    });
-
-    it('达到最大等级后不应再培养', () => {
-      const heirDef = HEIR_TYPE_DEFS.find((h) => h.id === HEIR_TYPES.WARRIOR)!;
-      (engine as any)._heirs.set(HEIR_TYPES.WARRIOR, heirDef.maxLevel);
-      const result = engine.trainHeir(HEIR_TYPES.WARRIOR);
-      expect(result).toBe(false);
-    });
-
-    it('无效后代类型不应培养', () => {
-      addWealth(engine, 1e6);
-      const result = engine.trainHeir('invalid-type');
-      expect(result).toBe(false);
-    });
-
-    it('getHeirBonus 应返回正确加成', () => {
-      (engine as any)._heirs.set(HEIR_TYPES.WARRIOR, 3);
-      const bonus = engine.getHeirBonus(RESOURCE_IDS.WEALTH);
-      // 武将 bonusPerLevel=0.5, level=3 => 1.5
-      expect(bonus).toBeCloseTo(1.5, 2);
-    });
-
-    it('getHeirBonus 无匹配后代应返回 0', () => {
-      const bonus = engine.getHeirBonus(RESOURCE_IDS.CONNECTION);
-      expect(bonus).toBe(0);
-    });
-
-    it('后代加成应反映在有效产出中', () => {
-      (engine as any)._heirs.set(HEIR_TYPES.WARRIOR, 2);
-      // 武将 bonusTarget=wealth, bonusPerLevel=0.5 => 1.0
-      const production = engine.getEffectiveProduction(RESOURCE_IDS.WEALTH);
-      expect(production).toBeGreaterThanOrEqual(1.0);
+    it('英雄稀有度应为有效值', () => {
+      const valid = ['uncommon', 'rare', 'epic', 'legendary'];
+      for (const h of HEROES) {
+        expect(valid).toContain(h.rarity);
+      }
     });
   });
 
-  // ==================== 6. 联姻系统 ====================
+  // ==================== 6. 阶段系统 ====================
 
-  describe('联姻系统', () => {
-    it('初始不应与任何家族联姻', () => {
-      expect(engine.isMarried('family-zhang')).toBe(false);
-      expect(engine.isMarried('family-li')).toBe(false);
+  describe('阶段系统', () => {
+    it('初始阶段应为 small_clan', () => {
+      const stage = engine.getStageInfo();
+      expect(stage?.id).toBe('small_clan');
     });
 
-    it('canMarry 不满足后代要求应返回 false', () => {
-      addWealth(engine, 1e6);
-      addReputation(engine, 1e6);
-      // 张家需要文士>=1级
-      expect(engine.canMarry('family-zhang')).toBe(false);
+    it('DYNASTIES 应按顺序排列', () => {
+      for (let i = 0; i < DYNASTIES.length; i++) {
+        expect(DYNASTIES[i].order).toBe(i + 1);
+      }
     });
 
-    it('满足条件时 canMarry 应返回 true', () => {
-      addWealth(engine, 1e6);
-      addReputation(engine, 1e6);
-      // 解锁声望资源
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      reputation.unlocked = true;
-      // 满足张家要求：文士>=1级
-      (engine as any)._heirs.set(HEIR_TYPES.SCHOLAR, 1);
-      expect(engine.canMarry('family-zhang')).toBe(true);
+    it('阶段应包含必要属性', () => {
+      for (const d of DYNASTIES) {
+        expect(d.id).toBeDefined();
+        expect(d.name).toBeDefined();
+        expect(d.productionMultiplier).toBeGreaterThan(0);
+      }
     });
 
-    it('联姻后应标记为已联姻', () => {
-      addWealth(engine, 1e6);
-      addReputation(engine, 1e6);
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      reputation.unlocked = true;
-      (engine as any)._heirs.set(HEIR_TYPES.SCHOLAR, 1);
-      engine.marry('family-zhang');
-      expect(engine.isMarried('family-zhang')).toBe(true);
-    });
-
-    it('联姻应增加 totalMarriages', () => {
-      addWealth(engine, 1e6);
-      addReputation(engine, 1e6);
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      reputation.unlocked = true;
-      (engine as any)._heirs.set(HEIR_TYPES.SCHOLAR, 1);
-      engine.marry('family-zhang');
-      expect(engine.stats.totalMarriages).toBe(1);
-    });
-
-    it('已联姻家族不应重复联姻', () => {
-      addWealth(engine, 1e9);
-      addReputation(engine, 1e9);
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      reputation.unlocked = true;
-      (engine as any)._heirs.set(HEIR_TYPES.SCHOLAR, 1);
-      engine.marry('family-zhang');
-      // 第二次联姻同一家族
-      expect(engine.canMarry('family-zhang')).toBe(false);
-    });
-
-    it('getMarriageBonus 应返回正确加成', () => {
-      (engine as any)._marriedFamilies.add('family-zhang');
-      const bonus = engine.getMarriageBonus(RESOURCE_IDS.REPUTATION);
-      // 张家声望加成 0.5
-      expect(bonus).toBeCloseTo(0.5, 2);
-    });
-
-    it('getMarriageBonus 未联姻应返回 0', () => {
-      const bonus = engine.getMarriageBonus(RESOURCE_IDS.WEALTH);
-      expect(bonus).toBe(0);
-    });
-
-    it('marriedFamilyIds 应返回所有已联姻家族', () => {
-      (engine as any)._marriedFamilies.add('family-zhang');
-      (engine as any)._marriedFamilies.add('family-li');
-      const ids = engine.marriedFamilyIds;
-      expect(ids).toContain('family-zhang');
-      expect(ids).toContain('family-li');
-      expect(ids.length).toBe(2);
-    });
-
-    it('联姻应触发 marriageComplete 事件', () => {
-      addWealth(engine, 1e6);
-      addReputation(engine, 1e6);
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      reputation.unlocked = true;
-      (engine as any)._heirs.set(HEIR_TYPES.SCHOLAR, 1);
-      const listener = vi.fn();
-      engine.on('marriageComplete', listener);
-      engine.marry('family-zhang');
-      expect(listener).toHaveBeenCalledWith('family-zhang');
-    });
-
-    it('非 playing 状态联姻应失败', () => {
-      (engine as any)._status = 'paused';
-      const result = engine.marry('family-zhang');
-      expect(result).toBe(false);
+    it('getStageInfo 应返回当前阶段', () => {
+      const stage = engine.getStageInfo();
+      expect(stage).toBeDefined();
+      expect(stage?.name).toBe('小族');
     });
   });
 
   // ==================== 7. 声望/重置系统 ====================
 
   describe('声望/重置系统', () => {
-    it('财富不足时 calculatePrestigeHeritage 应返回 0', () => {
-      expect(engine.calculatePrestigeHeritage()).toBe(0);
+    it('初始声望货币应为 0', () => {
+      const ps = engine.getPrestigeState();
+      expect(ps.currency).toBe(0);
     });
 
-    it('财富刚达阈值时 calculatePrestigeHeritage 应返回 1', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH);
-      expect(engine.calculatePrestigeHeritage()).toBe(1);
+    it('初始声望次数应为 0', () => {
+      const ps = engine.getPrestigeState();
+      expect(ps.count).toBe(0);
     });
 
-    it('canPrestige 财富不足应返回 false', () => {
-      expect(engine.canPrestige()).toBe(false);
+    it('资源不足时 doPrestige 应不增加声望', () => {
+      engine.doPrestige();
+      const ps = engine.getPrestigeState();
+      expect(ps.count).toBe(0);
     });
 
-    it('canPrestige 财富充足应返回 true', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH);
-      expect(engine.canPrestige()).toBe(true);
-    });
-
-    it('doPrestige 财富不足应返回 false', () => {
-      expect(engine.doPrestige()).toBe(false);
-    });
-
-    it('doPrestige 成功应返回 true 并增加声望货币', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH * 4); // sqrt(4) = 2
-      const result = engine.doPrestige();
-      expect(result).toBe(true);
-      expect((engine as any).prestige.currency).toBe(2);
+    it('资源充足时 doPrestige 应增加声望货币', () => {
+      // 添加大量资源
+      addGrain(engine, PRESTIGE_CONFIG.threshold * 100);
+      addSilk(engine, PRESTIGE_CONFIG.threshold * 100);
+      addStone(engine, PRESTIGE_CONFIG.threshold * 100);
+      engine.doPrestige();
+      const ps = engine.getPrestigeState();
+      expect(ps.currency).toBeGreaterThan(0);
     });
 
     it('doPrestige 应增加声望次数', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH);
+      addGrain(engine, PRESTIGE_CONFIG.threshold * 100);
+      addSilk(engine, PRESTIGE_CONFIG.threshold * 100);
+      addStone(engine, PRESTIGE_CONFIG.threshold * 100);
       engine.doPrestige();
-      expect((engine as any).prestige.count).toBe(1);
+      const ps = engine.getPrestigeState();
+      expect(ps.count).toBe(1);
     });
 
-    it('doPrestige 应增加 totalPrestigeCount', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH);
+    it('doPrestige 应重置资源（保留比例）', () => {
+      const amount = PRESTIGE_CONFIG.threshold * 100;
+      addGrain(engine, amount);
+      addSilk(engine, amount);
+      addStone(engine, amount);
       engine.doPrestige();
-      expect(engine.stats.totalPrestigeCount).toBe(1);
+      // 资源应被重置（保留 10%），所以应远小于原始值
+      const grain = getResourceAmount(engine, 'grain');
+      const silk = getResourceAmount(engine, 'silk');
+      const stone = getResourceAmount(engine, 'stone');
+      // 保留后应为原始值的 10%
+      expect(grain).toBeLessThan(amount);
+      expect(silk).toBeLessThan(amount);
+      expect(stone).toBeLessThan(amount);
+      // 保留比例应大于 0
+      expect(grain).toBeGreaterThan(0);
     });
 
-    it('doPrestige 应重置资源和建筑', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH * 10);
-      engine.click();
+    it('doPrestige 应重置建筑等级', () => {
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
+      const bldg = (engine as any).bldg;
+      expect(bldg.getLevel('farm')).toBe(1);
+
+      addGrain(engine, PRESTIGE_CONFIG.threshold * 100);
+      addSilk(engine, PRESTIGE_CONFIG.threshold * 100);
+      addStone(engine, PRESTIGE_CONFIG.threshold * 100);
       engine.doPrestige();
-      expect(getResourceAmount(engine, RESOURCE_IDS.WEALTH)).toBe(0);
-      expect(engine.getBuildingLevel(BUILDING_IDS.SHOP)).toBe(0);
+      expect(bldg.getLevel('farm')).toBe(0);
     });
 
-    it('doPrestige 应触发 prestigeReset 事件', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH);
+    it('doPrestige 应触发 stateChange 事件', () => {
+      addGrain(engine, PRESTIGE_CONFIG.threshold * 100);
+      addSilk(engine, PRESTIGE_CONFIG.threshold * 100);
+      addStone(engine, PRESTIGE_CONFIG.threshold * 100);
       const listener = vi.fn();
-      engine.on('prestigeReset', listener);
+      engine.on('stateChange', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();
-    });
-
-    it('声望加成应提升产出倍率', () => {
-      (engine as any).prestige.currency = 5;
-      const mult = engine.getProductionMultiplier();
-      // 基础1 + 声望5*0.04 = 1.2
-      expect(mult).toBeCloseTo(1.2, 2);
-    });
-
-    it('声望加成应提升点击力量', () => {
-      (engine as any).prestige.currency = 5;
-      const power = engine.getClickPower();
-      // 基础1 * (1 + 5*0.04) = 1.2
-      expect(power).toBeCloseTo(1.2, 2);
-    });
-
-    it('doPrestige 应重置后代和联姻', () => {
-      addWealth(engine, 1e9);
-      (engine as any)._heirs.set(HEIR_TYPES.WARRIOR, 5);
-      (engine as any)._marriedFamilies.add('family-zhang');
-      engine.doPrestige();
-      expect(engine.getHeirLevel(HEIR_TYPES.WARRIOR)).toBe(0);
-      expect(engine.isMarried('family-zhang')).toBe(false);
     });
   });
 
   // ==================== 8. 产出计算 ====================
 
   describe('产出计算', () => {
-    it('getProductionMultiplier 基础应为 1', () => {
-      expect(engine.getProductionMultiplier()).toBe(1);
+    it('无建筑时总产出应为空', () => {
+      const bldg = (engine as any).bldg;
+      const prod = bldg.getTotalProduction();
+      // farm 未购买，等级为 0
+      const hasProduction = Object.values(prod).some((v: any) => v > 0);
+      expect(hasProduction).toBe(false);
     });
 
-    it('getEffectiveProduction 无建筑时应为 0', () => {
-      expect(engine.getEffectiveProduction(RESOURCE_IDS.WEALTH)).toBe(0);
+    it('购买灵田后粮食产出应大于 0', () => {
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
+      const bldg = (engine as any).bldg;
+      const prod = bldg.getTotalProduction();
+      expect(prod.grain).toBeGreaterThan(0);
     });
 
-    it('购买商铺后 getEffectiveProduction 应大于 0', () => {
-      addWealth(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      const prod = engine.getEffectiveProduction(RESOURCE_IDS.WEALTH);
-      expect(prod).toBeGreaterThan(0);
-    });
-
-    it('recalculateProduction 应正确计算基础产出', () => {
-      addWealth(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      const perSec = getResourcePerSecond(engine, RESOURCE_IDS.WEALTH);
-      // 商铺 baseProduction=0.5, level=1 => 0.5
-      expect(perSec).toBeCloseTo(0.5, 2);
+    it('灵田基础产出应匹配定义', () => {
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
+      const bldg = (engine as any).bldg;
+      const prod = bldg.getProduction('farm');
+      // baseProduction=0.1, level=1 => 0.1
+      expect(prod).toBeCloseTo(0.1, 5);
     });
 
     it('产出倍率应影响有效产出', () => {
-      addWealth(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      // 设置祠堂等级
-      const upgrade = (engine as any).upgrades.get(BUILDING_IDS.ANCESTRAL_HALL);
-      upgrade.unlocked = true;
-      upgrade.level = 2;
-      const prod = engine.getEffectiveProduction(RESOURCE_IDS.WEALTH);
-      // 0.5 * (1 + 2*0.05) = 0.5 * 1.1 = 0.55
-      expect(prod).toBeCloseTo(0.55, 2);
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
+      // 设置全局倍率
+      const bldg = (engine as any).bldg;
+      bldg.setGlobalMultiplier(2.0);
+      const prod = bldg.getProduction('farm');
+      // baseProduction=0.1, level=1, multiplier=2.0 => 0.2
+      expect(prod).toBeCloseTo(0.2, 5);
     });
   });
 
   // ==================== 9. 存档系统 ====================
 
   describe('存档系统', () => {
-    it('save 应返回有效的 SaveData', () => {
-      const data = engine.save();
+    it('serialize 应返回有效状态', () => {
+      const data = engine.serialize();
       expect(data).toBeDefined();
-      expect(data.statistics).toBeDefined();
+      expect(data.resources).toBeDefined();
+      expect(data.buildings).toBeDefined();
     });
 
-    it('save 应包含自定义统计', () => {
-      addWealth(engine, 100);
-      engine.click();
-      const data = engine.save();
-      expect(data.statistics.totalClicks).toBe(1);
+    it('serialize 应包含声望状态', () => {
+      const data = engine.serialize();
+      expect(data.prestigeState).toBeDefined();
+      expect(data.prestigeState.currency).toBe(0);
+      expect(data.prestigeState.count).toBe(0);
     });
 
-    it('load 应恢复资源状态', () => {
-      addWealth(engine, 500);
-      const data = engine.save();
-      // 创建新引擎并加载
+    it('serialize 应包含英雄状态', () => {
+      const data = engine.serialize();
+      expect(data.heroes).toBeDefined();
+    });
+
+    it('serialize 应包含科技状态', () => {
+      const data = engine.serialize();
+      expect(data.researchedTechs).toBeDefined();
+    });
+
+    it('serialize 应包含当前阶段', () => {
+      const data = engine.serialize();
+      expect(data.currentStage).toBe('small_clan');
+    });
+
+    it('deserialize 应恢复资源状态', () => {
+      addGrain(engine, 500);
+      const data = engine.serialize();
       const engine2 = createEngine();
-      engine2.load(data);
-      expect(getResourceAmount(engine2, RESOURCE_IDS.WEALTH)).toBe(500);
+      engine2.deserialize(data);
+      expect(getResourceAmount(engine2, 'grain')).toBe(550); // 50 initial + 500
     });
 
-    it('load 应恢复后代等级', () => {
-      addWealth(engine, 1e6);
-      addReputation(engine, 1e6);
-      engine.trainHeir(HEIR_TYPES.WARRIOR);
-      const data = engine.save();
+    it('deserialize 应恢复建筑等级', () => {
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
+      const data = engine.serialize();
       const engine2 = createEngine();
-      engine2.load(data);
-      expect(engine2.getHeirLevel(HEIR_TYPES.WARRIOR)).toBe(1);
+      engine2.deserialize(data);
+      const bldg = (engine2 as any).bldg;
+      expect(bldg.getLevel('farm')).toBe(1);
     });
 
-    it('load 应恢复联姻状态', () => {
-      addWealth(engine, 1e6);
-      addReputation(engine, 1e6);
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      reputation.unlocked = true;
-      (engine as any)._heirs.set(HEIR_TYPES.SCHOLAR, 1);
-      engine.marry('family-zhang');
-      const data = engine.save();
-      const engine2 = createEngine();
-      engine2.load(data);
-      expect(engine2.isMarried('family-zhang')).toBe(true);
-    });
-
-    it('getState 应返回完整状态', () => {
-      const state = engine.getState();
-      expect(state).toHaveProperty('resources');
-      expect(state).toHaveProperty('upgrades');
-      expect(state).toHaveProperty('prestige');
-      expect(state).toHaveProperty('statistics');
-      expect(state).toHaveProperty('heirs');
-      expect(state).toHaveProperty('marriedFamilies');
-      expect(state).toHaveProperty('selectedBuildingIndex');
-    });
-
-    it('loadState 应恢复状态', () => {
-      const state: ClanSagaState = {
-        resources: { wealth: { amount: 999, unlocked: true } },
-        upgrades: {},
-        prestige: { currency: 5, count: 2 },
-        statistics: {},
-        heirs: { warrior: 3 },
-        marriedFamilies: ['family-li'],
-        selectedBuildingIndex: 2,
-      };
-      engine.loadState(state);
-      expect(getResourceAmount(engine, RESOURCE_IDS.WEALTH)).toBe(999);
-      expect(engine.getHeirLevel(HEIR_TYPES.WARRIOR)).toBe(3);
-      expect(engine.isMarried('family-li')).toBe(true);
-      expect(engine.selectedBuildingIndex).toBe(2);
-    });
-
-    it('loadState 应恢复声望', () => {
-      const state: ClanSagaState = {
-        resources: {},
-        upgrades: {},
-        prestige: { currency: 10, count: 3 },
-        statistics: {},
-        heirs: {},
-        marriedFamilies: [],
-        selectedBuildingIndex: 0,
-      };
-      engine.loadState(state);
-      expect((engine as any).prestige.currency).toBe(10);
-      expect((engine as any).prestige.count).toBe(3);
+    it('getResources 应返回资源副本', () => {
+      const res1 = engine.getResources();
+      const res2 = engine.getResources();
+      expect(res1).toEqual(res2);
+      expect(res1).not.toBe(res2);
     });
   });
 
   // ==================== 10. 键盘输入 ====================
 
   describe('键盘输入', () => {
-    it('空格键应触发点击', () => {
-      engine.handleKeyDown(' ');
-      expect(getResourceAmount(engine, RESOURCE_IDS.WEALTH)).toBe(WEALTH_PER_CLICK);
-    });
-
-    it('P 键应触发声望重置（条件满足时）', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH);
-      engine.handleKeyDown('p');
-      expect((engine as any).prestige.count).toBe(1);
-    });
-
-    it('大写 P 键也应触发声望重置', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH);
-      engine.handleKeyDown('P');
-      expect((engine as any).prestige.count).toBe(1);
-    });
-
-    it('1 键应培养武将', () => {
-      addWealth(engine, 1000);
-      addReputation(engine, 100);
-      engine.handleKeyDown('1');
-      expect(engine.getHeirLevel(HEIR_TYPES.WARRIOR)).toBe(1);
-    });
-
-    it('2 键应培养文士', () => {
-      addWealth(engine, 1000);
-      addConnection(engine, 100);
-      engine.handleKeyDown('2');
-      expect(engine.getHeirLevel(HEIR_TYPES.SCHOLAR)).toBe(1);
-    });
-
-    it('3 键应培养商人', () => {
-      addWealth(engine, 1000);
-      addConnection(engine, 100);
-      engine.handleKeyDown('3');
-      expect(engine.getHeirLevel(HEIR_TYPES.MERCHANT)).toBe(1);
-    });
-
-    it('4 键应培养外交官', () => {
-      addWealth(engine, 1000);
-      addReputation(engine, 100);
-      engine.handleKeyDown('4');
-      expect(engine.getHeirLevel(HEIR_TYPES.DIPLOMAT)).toBe(1);
-    });
-
-    it('ArrowUp 应减少选中建筑索引', () => {
-      (engine as any)._selectedBuildingIndex = 2;
-      engine.handleKeyDown('ArrowUp');
-      expect(engine.selectedBuildingIndex).toBe(1);
-    });
-
-    it('ArrowUp 不应低于 0', () => {
-      (engine as any)._selectedBuildingIndex = 0;
-      engine.handleKeyDown('ArrowUp');
-      expect(engine.selectedBuildingIndex).toBe(0);
+    it('handleKeyDown 不应抛出错误', () => {
+      expect(() => engine.handleKeyDown(' ')).not.toThrow();
     });
 
     it('ArrowDown 应增加选中建筑索引', () => {
-      // 确保至少有2个可见建筑
-      addWealth(engine, 100);
+      // 确保至少有 2 个可见建筑
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
       tick(engine, 16);
       engine.handleKeyDown('ArrowDown');
-      expect(engine.selectedBuildingIndex).toBe(1);
+      expect((engine as any).selIdx).toBe(1);
     });
 
-    it('M 键应触发联姻', () => {
-      addWealth(engine, 1e6);
-      addReputation(engine, 1e6);
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      reputation.unlocked = true;
-      (engine as any)._heirs.set(HEIR_TYPES.SCHOLAR, 1);
-      engine.handleKeyDown('m');
-      expect(engine.isMarried('family-zhang')).toBe(true);
+    it('ArrowUp 应减少选中建筑索引', () => {
+      (engine as any).selIdx = 2;
+      engine.handleKeyDown('ArrowUp');
+      expect((engine as any).selIdx).toBe(1);
     });
 
-    it('Enter 键应购买当前选中建筑', () => {
-      addWealth(engine, 100);
-      engine.handleKeyDown('Enter');
-      expect(engine.getBuildingLevel(BUILDING_IDS.SHOP)).toBe(1);
+    it('ArrowUp 不应低于 0', () => {
+      (engine as any).selIdx = 0;
+      engine.handleKeyDown('ArrowUp');
+      expect((engine as any).selIdx).toBe(0);
     });
 
-    it('非 playing 状态键盘输入不应生效', () => {
-      (engine as any)._status = 'paused';
-      engine.handleKeyDown(' ');
-      expect(getResourceAmount(engine, RESOURCE_IDS.WEALTH)).toBe(0);
-    });
-
-    it('handleKeyUp 不应抛出错误', () => {
-      expect(() => engine.handleKeyUp(' ')).not.toThrow();
+    it('Escape 应重置面板', () => {
+      (engine as any).panel = 'tech';
+      engine.handleKeyDown('Escape');
+      expect(engine.getActivePanel()).toBe('none');
     });
   });
 
   // ==================== 11. 动画系统 ====================
 
   describe('动画系统', () => {
-    it('update 应更新动画计时器', () => {
-      const timerBefore = (engine as any)._animTimer;
-      tick(engine, 16);
-      const timerAfter = (engine as any)._animTimer;
-      expect(timerAfter).toBeGreaterThan(timerBefore);
+    it('update 应更新 playTime', () => {
+      const before = (engine as any).playTime;
+      tick(engine, 1000);
+      const after = (engine as any).playTime;
+      expect(after).toBeGreaterThan(before);
     });
 
-    it('点击动画应在超时后恢复', () => {
-      engine.click();
-      expect((engine as any)._clickScale).toBeGreaterThan(1);
-      // 快进到动画结束
-      tick(engine, 300);
-      expect((engine as any)._clickScale).toBe(1);
+    it('FloatingTextSystem 应正常工作', () => {
+      const ftSys = (engine as any).ftSys;
+      expect(ftSys).toBeDefined();
     });
 
-    it('飘字效果应在持续时间内消失', () => {
-      engine.click();
-      expect((engine as any)._floatingTexts.length).toBeGreaterThan(0);
-      // 快进超过 FLOATING_TEXT_DURATION
-      tick(engine, FLOATING_TEXT_DURATION + 100);
-      expect((engine as any)._floatingTexts.length).toBe(0);
-    });
-
-    it('转生光效应在超时后消失', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH);
-      engine.doPrestige();
-      expect((engine as any)._prestigeTimer).toBeGreaterThan(0);
-      tick(engine, 2000);
-      expect((engine as any)._prestigeTimer).toBe(0);
+    it('ParticleSystem 应正常工作', () => {
+      const ptSys = (engine as any).ptSys;
+      expect(ptSys).toBeDefined();
     });
   });
 
@@ -954,124 +650,103 @@ describe('ClanSagaEngine', () => {
     });
 
     it('onRender 有资源时不应抛出错误', () => {
-      addWealth(engine, 1000);
-      addReputation(engine, 100);
-      // 解锁声望
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      reputation.unlocked = true;
+      addGrain(engine, 1000);
+      addSilk(engine, 100);
       const canvas = createCanvas();
       const ctx = canvas.getContext('2d')!;
       expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
     });
 
-    it('onRender 有建筑和后代时不应抛出错误', () => {
-      addWealth(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      (engine as any)._heirs.set(HEIR_TYPES.WARRIOR, 2);
-      (engine as any)._marriedFamilies.add('family-zhang');
+    it('onRender 有建筑时不应抛出错误', () => {
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
       const canvas = createCanvas();
       const ctx = canvas.getContext('2d')!;
       expect(() => engine.onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)).not.toThrow();
     });
   });
 
-  // ==================== 13. 资源解锁 ====================
+  // ==================== 13. 科技系统 ====================
 
-  describe('资源解锁', () => {
-    it('书院解锁后声望资源应自动解锁', () => {
-      const academy = (engine as any).upgrades.get(BUILDING_IDS.ACADEMY);
-      academy.unlocked = true;
-      tick(engine, 16);
-      const reputation = (engine as any).getResource(RESOURCE_IDS.REPUTATION);
-      expect(reputation.unlocked).toBe(true);
+  describe('科技系统', () => {
+    it('INVENTIONS 应包含 9 项科技', () => {
+      expect(INVENTIONS.length).toBe(9);
     });
 
-    it('茶馆解锁后人脉资源应自动解锁', () => {
-      const teaHouse = (engine as any).upgrades.get(BUILDING_IDS.TEA_HOUSE);
-      teaHouse.unlocked = true;
-      tick(engine, 16);
-      const connection = (engine as any).getResource(RESOURCE_IDS.CONNECTION);
-      expect(connection.unlocked).toBe(true);
+    it('科技应包含必要属性', () => {
+      for (const t of INVENTIONS) {
+        expect(t.id).toBeDefined();
+        expect(t.name).toBeDefined();
+        expect(t.cost).toBeDefined();
+        expect(t.effects).toBeDefined();
+        expect(t.branch).toBeDefined();
+      }
     });
 
-    it('建筑解锁应触发 buildingUnlocked 事件', () => {
-      const listener = vi.fn();
-      engine.on('buildingUnlocked', listener);
-      addWealth(engine, 100);
-      tick(engine, 16);
-      expect(listener).toHaveBeenCalled();
+    it('科技分支应包含 agriculture、commerce、cultivation', () => {
+      const branches = [...new Set(INVENTIONS.map(t => t.branch))];
+      expect(branches).toContain('agriculture');
+      expect(branches).toContain('commerce');
+      expect(branches).toContain('cultivation');
     });
   });
 
   // ==================== 14. 边界与综合测试 ====================
 
   describe('边界与综合测试', () => {
-    it('getHeirTrainCost 无效类型应返回空对象', () => {
-      const cost = engine.getHeirTrainCost('nonexistent');
+    it('getLevel 无效建筑应返回 0', () => {
+      const bldg = (engine as any).bldg;
+      expect(bldg.getLevel('nonexistent')).toBe(0);
+    });
+
+    it('getCost 无效建筑应返回空对象', () => {
+      const bldg = (engine as any).bldg;
+      const cost = bldg.getCost('nonexistent');
       expect(cost).toEqual({});
     });
 
-    it('getBuildingLevel 无效建筑应返回 0', () => {
-      expect(engine.getBuildingLevel('nonexistent')).toBe(0);
-    });
-
-    it('getBuildingCost 无效建筑应返回空对象', () => {
-      const cost = engine.getBuildingCost('nonexistent');
-      expect(cost).toEqual({});
-    });
-
-    it('canMarry 无效家族应返回 false', () => {
-      expect(engine.canMarry('nonexistent')).toBe(false);
-    });
-
-    it('marry 无效家族应返回 false', () => {
-      expect(engine.marry('nonexistent')).toBe(false);
+    it('isUnlocked 无效建筑应返回 false', () => {
+      const bldg = (engine as any).bldg;
+      expect(bldg.isUnlocked('nonexistent')).toBe(false);
     });
 
     it('多次点击和购买建筑的综合测试', () => {
-      // 快速点击积累财富
+      // 快速点击积累粮食
       for (let i = 0; i < 50; i++) {
-        engine.click();
+        (engine as any).doClick();
       }
-      expect(getResourceAmount(engine, RESOURCE_IDS.WEALTH)).toBe(50);
+      expect(getResourceAmount(engine, 'grain')).toBeGreaterThan(50);
 
-      // 购买多个商铺
-      for (let i = 0; i < 5; i++) {
-        engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      }
-      expect(engine.getBuildingLevel(BUILDING_IDS.SHOP)).toBeGreaterThan(0);
+      // 购买灵田
+      (engine as any).buyBuilding();
+      const bldg = (engine as any).bldg;
+      expect(bldg.getLevel('farm')).toBe(1);
     });
 
-    it('stats getter 应返回副本', () => {
-      const stats1 = engine.stats;
-      const stats2 = engine.stats;
-      expect(stats1).toEqual(stats2);
-      expect(stats1).not.toBe(stats2);
+    it('getResources 应返回所有资源', () => {
+      const res = engine.getResources();
+      expect(res.grain).toBeDefined();
+      expect(res.silk).toBeDefined();
+      expect(res.stone).toBeDefined();
+      expect(res.prestige).toBeDefined();
     });
 
-    it('联姻加成应叠加', () => {
-      (engine as any)._marriedFamilies.add('family-zhang');
-      (engine as any)._marriedFamilies.add('family-li');
-      // 张家声望+0.5, 李家无声望加成
-      const bonus = engine.getMarriageBonus(RESOURCE_IDS.REPUTATION);
-      expect(bonus).toBeCloseTo(0.5, 2);
-      // 李家财富+1.0, 张家无财富加成
-      const wealthBonus = engine.getMarriageBonus(RESOURCE_IDS.WEALTH);
-      expect(wealthBonus).toBeCloseTo(1.0, 2);
-    });
-
-    it('calculatePrestigeHeritage 大额财富应正确计算', () => {
-      addWealth(engine, MIN_PRESTIGE_WEALTH * 100); // sqrt(100) = 10
-      expect(engine.calculatePrestigeHeritage()).toBe(10);
-    });
-
-    it('trackProduction 应在 update 中追踪产出', () => {
-      addWealth(engine, 100);
-      engine.purchaseBuilding(BUILDING_IDS.SHOP);
-      const before = engine.totalWealthEarned;
+    it('update 应追踪产出', () => {
+      addGrain(engine, 100);
+      (engine as any).buyBuilding();
       tick(engine, 1000);
-      const after = engine.totalWealthEarned;
-      expect(after).toBeGreaterThanOrEqual(before);
+      // 产出应增加粮食
+      const grain = getResourceAmount(engine, 'grain');
+      expect(grain).toBeGreaterThan(0);
+    });
+
+    it('连续 update 不应抛出错误', () => {
+      addGrain(engine, 1000);
+      (engine as any).buyBuilding();
+      for (let i = 0; i < 100; i++) {
+        tick(engine, 16);
+      }
+      expect(getResourceAmount(engine, 'grain')).toBeGreaterThan(0);
     });
   });
 });

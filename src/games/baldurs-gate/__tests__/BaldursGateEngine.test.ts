@@ -1217,7 +1217,7 @@ describe('BaldursGateEngine', () => {
 
     it('load 应恢复存档', () => {
       engine.start();
-      addGold(engine, 500);
+      addGold(engine, 1000);
       addXp(engine, 100);
       engine.unlockCompanion('gale');
 
