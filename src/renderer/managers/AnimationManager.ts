@@ -17,6 +17,46 @@ import type { SceneTransition, DamageNumberData } from '../types';
 import type { IAnimationManager } from '../types';
 
 // ═══════════════════════════════════════════════════════════════
+// 特效类型
+// ═══════════════════════════════════════════════════════════════
+
+/** 支持的特效类型 */
+export type EffectType =
+  | 'attack_slash'     // 三角形斩击弧线
+  | 'attack_pierce'    // 线性穿刺
+  | 'attack_blunt'     // 圆形冲击波
+  | 'magic_fire'       // 红橙色粒子向上扩散
+  | 'magic_ice'        // 蓝白色菱形粒子四散
+  | 'magic_lightning'  // 黄色锯齿线段闪烁
+  | 'magic_heal'       // 绿色光环从底部上升
+  | 'buff_shield'      // 蓝色半透明圆形护盾
+  | 'buff_speed'       // 绿色条纹向后流动
+  | 'debuff_poison'    // 紫色气泡上升
+  | 'debuff_slow'      // 灰色锁链环绕
+  | 'critical_hit'     // 大号伤害数字 + 白色闪光
+  | 'level_up'         // 金色光柱从底部升起
+  | 'death'            // 目标淡出 + 灰色粒子下沉
+  | 'explosion';       // 橙红色圆形扩散 + 碎片
+
+/** 特效配置 */
+export interface EffectConfig {
+  /** 特效类型 */
+  type: EffectType;
+  /** 特效位置 X */
+  x: number;
+  /** 特效位置 Y */
+  y: number;
+  /** 持续时间秒（默认根据特效类型） */
+  duration?: number;
+  /** 缩放（默认 1） */
+  scale?: number;
+  /** 自定义颜色覆盖 */
+  color?: string | number;
+  /** 完成回调 */
+  onComplete?: () => void;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // 粒子类型
 // ═══════════════════════════════════════════════════════════════
 
@@ -582,13 +622,806 @@ export class AnimationManager implements IAnimationManager {
         '-=0.15',
       );
 
-    // TODO: 根据 effectType 添加不同特效
-    // 'slash' → 剑气
-    // 'fire' → 火焰
-    // 'ice' → 冰霜
-    // 等
+    // 根据效果类型添加特效
+    if (this.particleContainer) {
+      this.createEffectInternal(
+        effectType,
+        target.x + (target.width ?? 0) / 2,
+        target.y + (target.height ?? 0) / 2,
+        tl,
+      );
+    }
 
     this.addTimeline(tl);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 特效系统
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 创建特效
+   *
+   * 根据特效类型在指定位置程序化渲染特效。
+   * 所有特效使用 PixiJS Graphics API 绘制，配合 GSAP 动画。
+   *
+   * @param config - 特效配置
+   * @returns 创建的 Timeline（可用于控制特效）
+   */
+  createEffect(config: EffectConfig): gsap.core.Timeline | null {
+    if (!this.particleContainer) return null;
+
+    const {
+      type,
+      x,
+      y,
+      scale = 1,
+      color,
+      onComplete,
+    } = config;
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        this.removeTimeline(tl);
+        onComplete?.();
+      },
+    });
+
+    this.createEffectInternal(type, x, y, tl, scale, color);
+    this.addTimeline(tl);
+    return tl;
+  }
+
+  /**
+   * 内部特效渲染分发
+   *
+   * 根据 effectType 调用对应的程序化绘制方法。
+   *
+   * @param effectType - 特效类型字符串
+   * @param x - 特效中心 X
+   * @param y - 特效中心 Y
+   * @param tl - 追加动画的 Timeline
+   * @param scale - 缩放
+   * @param color - 可选颜色覆盖
+   */
+  private createEffectInternal(
+    effectType: string,
+    x: number,
+    y: number,
+    tl: gsap.core.Timeline,
+    scale = 1,
+    color?: string | number,
+  ): void {
+    switch (effectType) {
+      case 'attack_slash':
+        this.renderAttackSlash(x, y, tl, scale, color);
+        break;
+      case 'attack_pierce':
+        this.renderAttackPierce(x, y, tl, scale, color);
+        break;
+      case 'attack_blunt':
+        this.renderAttackBlunt(x, y, tl, scale, color);
+        break;
+      case 'magic_fire':
+        this.renderMagicFire(x, y, tl, scale, color);
+        break;
+      case 'magic_ice':
+        this.renderMagicIce(x, y, tl, scale, color);
+        break;
+      case 'magic_lightning':
+        this.renderMagicLightning(x, y, tl, scale, color);
+        break;
+      case 'magic_heal':
+        this.renderMagicHeal(x, y, tl, scale, color);
+        break;
+      case 'buff_shield':
+        this.renderBuffShield(x, y, tl, scale, color);
+        break;
+      case 'buff_speed':
+        this.renderBuffSpeed(x, y, tl, scale, color);
+        break;
+      case 'debuff_poison':
+        this.renderDebuffPoison(x, y, tl, scale, color);
+        break;
+      case 'debuff_slow':
+        this.renderDebuffSlow(x, y, tl, scale, color);
+        break;
+      case 'critical_hit':
+        this.renderCriticalHit(x, y, tl, scale, color);
+        break;
+      case 'level_up':
+        this.renderLevelUp(x, y, tl, scale, color);
+        break;
+      case 'death':
+        this.renderDeath(x, y, tl, scale, color);
+        break;
+      case 'explosion':
+        this.renderExplosion(x, y, tl, scale, color);
+        break;
+      default:
+        // 未知类型 — 不渲染特效
+        break;
+    }
+  }
+
+  // ─── 攻击特效 ─────────────────────────────────────────────
+
+  /**
+   * 斩击弧线 — 三角形弧线快速出现→消失
+   */
+  private renderAttackSlash(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const gfx = new Graphics();
+    const slashColor = color ?? 0xcccccc;
+
+    // 绘制弧形斩击线
+    gfx.moveTo(0, 0);
+    gfx.arc(0, 0, 40 * scale, -Math.PI * 0.7, Math.PI * 0.2);
+    gfx.lineTo(0, 0);
+    gfx.closePath();
+    gfx.fill({ color: slashColor, alpha: 0.8 });
+
+    // 外发光
+    gfx.moveTo(0, 0);
+    gfx.arc(0, 0, 45 * scale, -Math.PI * 0.7, Math.PI * 0.2);
+    gfx.lineTo(0, 0);
+    gfx.closePath();
+    gfx.fill({ color: 0xffffff, alpha: 0.3 });
+
+    gfx.position.set(x, y);
+    gfx.alpha = 0;
+    gfx.scale.set(0.3);
+    this.particleContainer!.addChild(gfx);
+
+    tl.to(gfx, { alpha: 1, duration: 0.05, ease: 'power1.in' }, 0)
+      .to(gfx.scale, { x: 1.2 * scale, y: 1.2 * scale, duration: 0.1, ease: 'power2.out' }, 0)
+      .to(gfx, { alpha: 0, duration: 0.15, ease: 'power1.in' }, 0.1)
+      .call(() => {
+        gfx.removeFromParent();
+        gfx.destroy();
+      });
+  }
+
+  /**
+   * 线性穿刺 — 细长矩形快速穿过
+   */
+  private renderAttackPierce(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const gfx = new Graphics();
+    const pierceColor = color ?? 0xdddddd;
+
+    // 细长穿刺线
+    gfx.rect(-3 * scale, -30 * scale, 6 * scale, 60 * scale);
+    gfx.fill({ color: pierceColor, alpha: 0.9 });
+    // 尖端
+    gfx.moveTo(0, -30 * scale);
+    gfx.lineTo(5 * scale, -20 * scale);
+    gfx.lineTo(-5 * scale, -20 * scale);
+    gfx.closePath();
+    gfx.fill({ color: 0xffffff, alpha: 0.7 });
+
+    gfx.position.set(x - 40 * scale, y);
+    gfx.alpha = 0;
+    this.particleContainer!.addChild(gfx);
+
+    tl.to(gfx, { x: x + 40 * scale, alpha: 1, duration: 0.08, ease: 'power2.in' }, 0)
+      .to(gfx, { alpha: 0, duration: 0.1, ease: 'power1.in' }, 0.08)
+      .call(() => {
+        gfx.removeFromParent();
+        gfx.destroy();
+      });
+  }
+
+  /**
+   * 圆形冲击波 — 扩散环
+   */
+  private renderAttackBlunt(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const gfx = new Graphics();
+    const ringColor = color ?? 0xffaa44;
+
+    // 冲击波环
+    gfx.circle(0, 0, 10 * scale);
+    gfx.stroke({ color: ringColor, width: 4 * scale, alpha: 0.9 });
+
+    // 内部填充
+    gfx.circle(0, 0, 8 * scale);
+    gfx.fill({ color: ringColor, alpha: 0.3 });
+
+    gfx.position.set(x, y);
+    gfx.alpha = 1;
+    this.particleContainer!.addChild(gfx);
+
+    tl.to(gfx.scale, { x: 3 * scale, y: 3 * scale, duration: 0.3, ease: 'power2.out' }, 0)
+      .to(gfx, { alpha: 0, duration: 0.3, ease: 'power1.in' }, 0)
+      .call(() => {
+        gfx.removeFromParent();
+        gfx.destroy();
+      });
+  }
+
+  // ─── 魔法特效 ─────────────────────────────────────────────
+
+  /**
+   * 火焰 — 红橙色粒子向上扩散
+   */
+  private renderMagicFire(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const count = 12;
+    for (let i = 0; i < count; i++) {
+      const particle = this.acquireParticle();
+      if (!particle) continue;
+
+      const gfx = particle.gfx;
+      gfx.clear();
+      const offsetX = (Math.random() - 0.5) * 20 * scale;
+      const offsetY = (Math.random() - 0.5) * 10 * scale;
+      const size = (3 + Math.random() * 4) * scale;
+      const fireColor = color ?? (Math.random() > 0.5 ? 0xff4500 : 0xff8c00);
+
+      gfx.circle(0, 0, size);
+      gfx.fill(fireColor);
+      gfx.position.set(x + offsetX, y + offsetY);
+      gfx.alpha = 0.9;
+
+      tl.to(gfx, {
+        y: y - 40 * scale - Math.random() * 30 * scale,
+        x: x + offsetX + (Math.random() - 0.5) * 20 * scale,
+        alpha: 0,
+        duration: 0.4 + Math.random() * 0.3,
+        ease: 'power1.out',
+        onComplete: () => this.releaseParticle(particle),
+      }, Math.random() * 0.15);
+    }
+  }
+
+  /**
+   * 冰霜 — 蓝白色菱形粒子四散
+   */
+  private renderMagicIce(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const count = 10;
+    for (let i = 0; i < count; i++) {
+      const particle = this.acquireParticle();
+      if (!particle) continue;
+
+      const gfx = particle.gfx;
+      gfx.clear();
+      const size = (3 + Math.random() * 3) * scale;
+      const iceColor = color ?? (Math.random() > 0.5 ? 0x00bfff : 0xe0f0ff);
+
+      // 菱形
+      gfx.moveTo(0, -size);
+      gfx.lineTo(size * 0.7, 0);
+      gfx.lineTo(0, size);
+      gfx.lineTo(-size * 0.7, 0);
+      gfx.closePath();
+      gfx.fill(iceColor);
+
+      const angle = (Math.PI * 2 * i) / count;
+      const dist = (30 + Math.random() * 30) * scale;
+      gfx.position.set(x, y);
+      gfx.alpha = 0.9;
+      gfx.rotation = Math.random() * Math.PI;
+
+      tl.to(gfx, {
+        x: x + Math.cos(angle) * dist,
+        y: y + Math.sin(angle) * dist,
+        alpha: 0,
+        rotation: gfx.rotation + Math.PI * 0.5,
+        duration: 0.4 + Math.random() * 0.2,
+        ease: 'power2.out',
+        onComplete: () => this.releaseParticle(particle),
+      }, Math.random() * 0.1);
+    }
+  }
+
+  /**
+   * 闪电 — 黄色锯齿线段闪烁
+   */
+  private renderMagicLightning(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const boltColor = color ?? 0xffff00;
+
+    // 生成锯齿线段
+    const gfx = new Graphics();
+    const segments = 6;
+    const startX = x - 30 * scale;
+    const startY = y - 30 * scale;
+    const endX = x + 30 * scale;
+    const endY = y + 30 * scale;
+
+    gfx.moveTo(startX, startY);
+    for (let i = 1; i < segments; i++) {
+      const t = i / segments;
+      const px = startX + (endX - startX) * t + (Math.random() - 0.5) * 20 * scale;
+      const py = startY + (endY - startY) * t + (Math.random() - 0.5) * 20 * scale;
+      gfx.lineTo(px, py);
+    }
+    gfx.lineTo(endX, endY);
+    gfx.stroke({ color: boltColor, width: 3 * scale, alpha: 0.9 });
+
+    // 分支
+    const branch = new Graphics();
+    branch.moveTo(x, y - 10 * scale);
+    branch.lineTo(x + 20 * scale, y + 5 * scale);
+    branch.lineTo(x + 15 * scale, y + 20 * scale);
+    branch.stroke({ color: boltColor, width: 2 * scale, alpha: 0.7 });
+
+    gfx.alpha = 0;
+    branch.alpha = 0;
+    this.particleContainer!.addChild(gfx);
+    this.particleContainer!.addChild(branch);
+
+    // 闪烁效果
+    tl.to(gfx, { alpha: 1, duration: 0.03 }, 0)
+      .to(gfx, { alpha: 0.2, duration: 0.03 }, 0.03)
+      .to(gfx, { alpha: 1, duration: 0.03 }, 0.06)
+      .to(gfx, { alpha: 0, duration: 0.1, ease: 'power1.in' }, 0.09)
+      .to(branch, { alpha: 1, duration: 0.03 }, 0.02)
+      .to(branch, { alpha: 0, duration: 0.1, ease: 'power1.in' }, 0.08)
+      .call(() => {
+        gfx.removeFromParent();
+        gfx.destroy();
+        branch.removeFromParent();
+        branch.destroy();
+      });
+  }
+
+  /**
+   * 治疗 — 绿色光环从底部上升
+   */
+  private renderMagicHeal(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const healColor = color ?? 0x00ff7f;
+
+    // 上升的光环
+    for (let i = 0; i < 3; i++) {
+      const ring = new Graphics();
+      ring.circle(0, 0, 15 * scale);
+      ring.stroke({ color: healColor, width: 2 * scale, alpha: 0.7 });
+      ring.circle(0, 0, 8 * scale);
+      ring.fill({ color: healColor, alpha: 0.2 });
+      ring.position.set(x, y + 20 * scale);
+      ring.alpha = 0;
+      this.particleContainer!.addChild(ring);
+
+      tl.to(ring, { alpha: 0.8, duration: 0.1 }, i * 0.15)
+        .to(ring, {
+          y: y - 30 * scale,
+          alpha: 0,
+          duration: 0.5,
+          ease: 'power1.out',
+        }, i * 0.15)
+        .to(ring.scale, { x: 1.5 * scale, y: 1.5 * scale, duration: 0.5 }, i * 0.15)
+        .call(() => {
+          ring.removeFromParent();
+          ring.destroy();
+        });
+    }
+  }
+
+  // ─── 增益/减益特效 ─────────────────────────────────────────
+
+  /**
+   * 护盾 — 蓝色半透明圆形护盾
+   */
+  private renderBuffShield(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const shieldColor = color ?? 0x4488ff;
+    const gfx = new Graphics();
+
+    // 外圈
+    gfx.circle(0, 0, 30 * scale);
+    gfx.fill({ color: shieldColor, alpha: 0.2 });
+    gfx.circle(0, 0, 30 * scale);
+    gfx.stroke({ color: shieldColor, width: 3 * scale, alpha: 0.7 });
+
+    // 内部六边形纹理
+    const hexRadius = 15 * scale;
+    gfx.moveTo(0, -hexRadius);
+    for (let i = 1; i <= 6; i++) {
+      const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+      gfx.lineTo(Math.cos(angle) * hexRadius, Math.sin(angle) * hexRadius);
+    }
+    gfx.closePath();
+    gfx.stroke({ color: shieldColor, width: 1.5 * scale, alpha: 0.4 });
+
+    gfx.position.set(x, y);
+    gfx.alpha = 0;
+    gfx.scale.set(0.5);
+    this.particleContainer!.addChild(gfx);
+
+    tl.to(gfx, { alpha: 1, duration: 0.2, ease: 'power1.out' }, 0)
+      .to(gfx.scale, { x: scale, y: scale, duration: 0.3, ease: 'back.out(1.5)' }, 0)
+      .to(gfx, { alpha: 0, duration: 0.3, ease: 'power1.in' }, 0.5)
+      .call(() => {
+        gfx.removeFromParent();
+        gfx.destroy();
+      });
+  }
+
+  /**
+   * 加速 — 绿色条纹向后流动
+   */
+  private renderBuffSpeed(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const speedColor = color ?? 0x44ff88;
+    const stripeCount = 5;
+
+    for (let i = 0; i < stripeCount; i++) {
+      const stripe = new Graphics();
+      stripe.rect(-2 * scale, -15 * scale, 4 * scale, 30 * scale);
+      stripe.fill({ color: speedColor, alpha: 0.6 });
+      stripe.position.set(x + 20 * scale + i * 8 * scale, y + (i - 2) * 6 * scale);
+      stripe.alpha = 0;
+      this.particleContainer!.addChild(stripe);
+
+      tl.to(stripe, { alpha: 0.8, duration: 0.05 }, i * 0.04)
+        .to(stripe, {
+          x: x - 30 * scale,
+          alpha: 0,
+          duration: 0.3,
+          ease: 'power1.in',
+        }, i * 0.04)
+        .call(() => {
+          stripe.removeFromParent();
+          stripe.destroy();
+        });
+    }
+  }
+
+  /**
+   * 中毒 — 紫色气泡上升
+   */
+  private renderDebuffPoison(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const poisonColor = color ?? 0x9933cc;
+    const bubbleCount = 6;
+
+    for (let i = 0; i < bubbleCount; i++) {
+      const bubble = new Graphics();
+      const size = (3 + Math.random() * 4) * scale;
+      bubble.circle(0, 0, size);
+      bubble.fill({ color: poisonColor, alpha: 0.5 });
+      bubble.circle(-size * 0.3, -size * 0.3, size * 0.2);
+      bubble.fill({ color: 0xffffff, alpha: 0.4 });
+
+      const offsetX = (Math.random() - 0.5) * 30 * scale;
+      bubble.position.set(x + offsetX, y);
+      bubble.alpha = 0;
+      this.particleContainer!.addChild(bubble);
+
+      tl.to(bubble, { alpha: 0.7, duration: 0.1 }, i * 0.08)
+        .to(bubble, {
+          y: y - 40 * scale - Math.random() * 20 * scale,
+          x: x + offsetX + (Math.random() - 0.5) * 10 * scale,
+          alpha: 0,
+          duration: 0.5 + Math.random() * 0.2,
+          ease: 'power1.out',
+        }, i * 0.08)
+        .call(() => {
+          bubble.removeFromParent();
+          bubble.destroy();
+        });
+    }
+  }
+
+  /**
+   * 减速 — 灰色锁链环绕
+   */
+  private renderDebuffSlow(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const chainColor = color ?? 0x888899;
+    const gfx = new Graphics();
+
+    // 绘制锁链环
+    const linkCount = 6;
+    const chainRadius = 25 * scale;
+    for (let i = 0; i < linkCount; i++) {
+      const angle = (Math.PI * 2 * i) / linkCount;
+      const cx = Math.cos(angle) * chainRadius;
+      const cy = Math.sin(angle) * chainRadius;
+      gfx.ellipse(cx, cy, 6 * scale, 3 * scale);
+      gfx.stroke({ color: chainColor, width: 2 * scale, alpha: 0.8 });
+      gfx.rotation = angle;
+    }
+
+    gfx.position.set(x, y);
+    gfx.alpha = 0;
+    this.particleContainer!.addChild(gfx);
+
+    tl.to(gfx, { alpha: 1, duration: 0.2, ease: 'power1.out' }, 0)
+      .to(gfx, {
+        rotation: Math.PI * 2,
+        duration: 0.6,
+        ease: 'none',
+      }, 0)
+      .to(gfx, { alpha: 0, duration: 0.2, ease: 'power1.in' }, 0.4)
+      .call(() => {
+        gfx.removeFromParent();
+        gfx.destroy();
+      });
+  }
+
+  // ─── 特殊特效 ─────────────────────────────────────────────
+
+  /**
+   * 暴击 — 大号伤害数字 + 白色闪光
+   */
+  private renderCriticalHit(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    // 白色闪光
+    const flash = new Graphics();
+    flash.rect(-40 * scale, -40 * scale, 80 * scale, 80 * scale);
+    flash.fill({ color: color ?? 0xffffff, alpha: 0.6 });
+    flash.position.set(x, y);
+    flash.alpha = 0;
+    this.particleContainer!.addChild(flash);
+
+    tl.to(flash, { alpha: 0.8, duration: 0.05 }, 0)
+      .to(flash, { alpha: 0, duration: 0.15, ease: 'power1.in' }, 0.05)
+      .call(() => {
+        flash.removeFromParent();
+        flash.destroy();
+      });
+
+    // 冲击线条
+    for (let i = 0; i < 6; i++) {
+      const line = new Graphics();
+      const angle = (Math.PI * 2 * i) / 6;
+      line.moveTo(0, 0);
+      line.lineTo(Math.cos(angle) * 35 * scale, Math.sin(angle) * 35 * scale);
+      line.stroke({ color: 0xffdd44, width: 2 * scale, alpha: 0.8 });
+      line.position.set(x, y);
+      line.alpha = 0;
+      line.scale.set(0.3);
+      this.particleContainer!.addChild(line);
+
+      tl.to(line, { alpha: 1, duration: 0.05 }, 0.02)
+        .to(line.scale, { x: scale, y: scale, duration: 0.1, ease: 'power2.out' }, 0.02)
+        .to(line, { alpha: 0, duration: 0.15 }, 0.1)
+        .call(() => {
+          line.removeFromParent();
+          line.destroy();
+        });
+    }
+  }
+
+  /**
+   * 升级 — 金色光柱从底部升起
+   */
+  private renderLevelUp(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const goldColor = color ?? 0xffd700;
+
+    // 光柱
+    const pillar = new Graphics();
+    pillar.rect(-15 * scale, -80 * scale, 30 * scale, 80 * scale);
+    pillar.fill({ color: goldColor, alpha: 0.4 });
+    // 光柱边缘
+    pillar.rect(-15 * scale, -80 * scale, 5 * scale, 80 * scale);
+    pillar.fill({ color: goldColor, alpha: 0.6 });
+    pillar.rect(10 * scale, -80 * scale, 5 * scale, 80 * scale);
+    pillar.fill({ color: goldColor, alpha: 0.6 });
+    pillar.position.set(x, y + 40 * scale);
+    pillar.alpha = 0;
+    this.particleContainer!.addChild(pillar);
+
+    tl.to(pillar, { alpha: 1, duration: 0.2, ease: 'power1.out' }, 0)
+      .to(pillar, { y: y - 20 * scale, duration: 0.5, ease: 'power2.out' }, 0)
+      .to(pillar, { alpha: 0, duration: 0.3, ease: 'power1.in' }, 0.4)
+      .call(() => {
+        pillar.removeFromParent();
+        pillar.destroy();
+      });
+
+    // 金色粒子
+    for (let i = 0; i < 8; i++) {
+      const spark = this.acquireParticle();
+      if (!spark) continue;
+
+      const gfx = spark.gfx;
+      gfx.clear();
+      const size = (2 + Math.random() * 2) * scale;
+      gfx.circle(0, 0, size);
+      gfx.fill(goldColor);
+
+      const offsetX = (Math.random() - 0.5) * 30 * scale;
+      gfx.position.set(x + offsetX, y);
+      gfx.alpha = 0;
+
+      tl.to(gfx, { alpha: 0.9, duration: 0.1 }, i * 0.05)
+        .to(gfx, {
+          y: y - 50 * scale - Math.random() * 30 * scale,
+          alpha: 0,
+          duration: 0.5 + Math.random() * 0.2,
+          ease: 'power1.out',
+          onComplete: () => this.releaseParticle(spark),
+        }, i * 0.05);
+    }
+  }
+
+  /**
+   * 死亡 — 目标淡出 + 灰色粒子下沉
+   */
+  private renderDeath(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, _color?: string | number,
+  ): void {
+    // 灰色粒子下沉
+    const count = 10;
+    for (let i = 0; i < count; i++) {
+      const particle = this.acquireParticle();
+      if (!particle) continue;
+
+      const gfx = particle.gfx;
+      gfx.clear();
+      const size = (2 + Math.random() * 3) * scale;
+      const gray = 0.5 + Math.random() * 0.3;
+      const grayColor = Math.round(gray * 255) * 0x010101;
+
+      gfx.circle(0, 0, size);
+      gfx.fill(grayColor);
+
+      const offsetX = (Math.random() - 0.5) * 30 * scale;
+      const offsetY = (Math.random() - 0.5) * 20 * scale;
+      gfx.position.set(x + offsetX, y + offsetY);
+      gfx.alpha = 0.7;
+
+      tl.to(gfx, {
+        y: y + 30 * scale + Math.random() * 20 * scale,
+        alpha: 0,
+        duration: 0.6 + Math.random() * 0.3,
+        ease: 'power1.in',
+        onComplete: () => this.releaseParticle(particle),
+      }, Math.random() * 0.2);
+    }
+  }
+
+  /**
+   * 爆炸 — 橙红色圆形扩散 + 碎片
+   */
+  private renderExplosion(
+    x: number, y: number, tl: gsap.core.Timeline,
+    scale: number, color?: string | number,
+  ): void {
+    const explosionColor = color ?? 0xff4500;
+
+    // 扩散圆
+    const circle = new Graphics();
+    circle.circle(0, 0, 10 * scale);
+    circle.fill({ color: explosionColor, alpha: 0.6 });
+    circle.circle(0, 0, 10 * scale);
+    circle.stroke({ color: 0xff6600, width: 3 * scale, alpha: 0.8 });
+    circle.position.set(x, y);
+    circle.alpha = 1;
+    this.particleContainer!.addChild(circle);
+
+    tl.to(circle.scale, { x: 3 * scale, y: 3 * scale, duration: 0.3, ease: 'power2.out' }, 0)
+      .to(circle, { alpha: 0, duration: 0.3, ease: 'power1.in' }, 0)
+      .call(() => {
+        circle.removeFromParent();
+        circle.destroy();
+      });
+
+    // 碎片
+    const fragmentCount = 8;
+    for (let i = 0; i < fragmentCount; i++) {
+      const frag = new Graphics();
+      const fragSize = (3 + Math.random() * 4) * scale;
+      frag.rect(-fragSize / 2, -fragSize / 2, fragSize, fragSize * 0.6);
+      frag.fill(Math.random() > 0.5 ? explosionColor : 0xff8800);
+
+      const angle = (Math.PI * 2 * i) / fragmentCount + (Math.random() - 0.5) * 0.3;
+      const dist = (40 + Math.random() * 30) * scale;
+      frag.position.set(x, y);
+      frag.alpha = 1;
+      frag.rotation = Math.random() * Math.PI;
+      this.particleContainer!.addChild(frag);
+
+      tl.to(frag, {
+        x: x + Math.cos(angle) * dist,
+        y: y + Math.sin(angle) * dist,
+        alpha: 0,
+        rotation: frag.rotation + Math.PI,
+        duration: 0.4 + Math.random() * 0.2,
+        ease: 'power2.out',
+      }, 0);
+
+      tl.call(() => {
+        frag.removeFromParent();
+        frag.destroy();
+      }, undefined, 0.6);
+    }
+  }
+
+  // ─── 特效序列与组合 ────────────────────────────────────────
+
+  /**
+   * 按序列播放多个特效
+   *
+   * 特效按顺序依次播放，前一个完成后才开始下一个。
+   *
+   * @param effects - 特效配置数组
+   * @returns 包含所有特效的 Timeline
+   */
+  playEffectSequence(effects: EffectConfig[]): gsap.core.Timeline | null {
+    if (!this.particleContainer || effects.length === 0) return null;
+
+    const masterTl = gsap.timeline({
+      onComplete: () => this.removeTimeline(masterTl),
+    });
+
+    let offset = 0;
+    for (const config of effects) {
+      const effectTl = this.createEffect({
+        ...config,
+        onComplete: undefined, // 由 masterTl 管理
+      });
+      if (effectTl) {
+        masterTl.add(effectTl, offset);
+        offset += (config.duration ?? 0.5) + 0.1; // 间隔 0.1s
+      }
+    }
+
+    this.addTimeline(masterTl);
+    return masterTl;
+  }
+
+  /**
+   * 同时播放多个特效
+   *
+   * 所有特效同时开始播放。
+   *
+   * @param effects - 特效配置数组
+   * @returns 包含所有特效的 Timeline
+   */
+  playEffectCombo(effects: EffectConfig[]): gsap.core.Timeline | null {
+    if (!this.particleContainer || effects.length === 0) return null;
+
+    const masterTl = gsap.timeline({
+      onComplete: () => this.removeTimeline(masterTl),
+    });
+
+    for (const config of effects) {
+      const effectTl = this.createEffect({
+        ...config,
+        onComplete: undefined,
+      });
+      if (effectTl) {
+        masterTl.add(effectTl, 0); // 所有特效从时间 0 开始
+      }
+    }
+
+    this.addTimeline(masterTl);
+    return masterTl;
   }
 
   // ═══════════════════════════════════════════════════════════

@@ -19,7 +19,7 @@ import gsap from 'gsap';
 // ═══════════════════════════════════════════════════════════════
 
 /** 粒子形状 */
-export type ParticleShape = 'circle' | 'square' | 'triangle' | 'star';
+export type ParticleShape = 'circle' | 'square' | 'triangle' | 'star' | 'diamond';
 
 /** 粒子发射器配置 */
 export interface ParticleEmitterConfig {
@@ -65,6 +65,10 @@ export interface ParticleEmitterConfig {
   ease?: string;
   /** 是否在开始时缩放为 0（默认 false） */
   scaleIn?: boolean;
+  /** 初始旋转角度（弧度，默认 0） */
+  rotation?: number;
+  /** 旋转速度（弧度/秒，默认 0） */
+  rotationSpeed?: number;
 }
 
 /** 池中单个粒子对象 */
@@ -89,6 +93,8 @@ interface PooledParticle {
   windX: number;
   /** 风力 Y（像素/秒²） */
   windY: number;
+  /** 旋转速度（弧度/秒） */
+  rotationSpeed: number;
   /** 关联的 GSAP timeline */
   timeline: gsap.core.Timeline | null;
 }
@@ -194,6 +200,8 @@ export class ParticleSystem {
       alpha = 1,
       ease = 'power2.out',
       scaleIn = false,
+      rotation = 0,
+      rotationSpeed = 0,
     } = config;
 
     let emitted = 0;
@@ -232,6 +240,7 @@ export class ParticleSystem {
       particle.gravityY = gravityY;
       particle.windX = windX;
       particle.windY = windY;
+      particle.rotationSpeed = rotationSpeed;
       particle.lifetime = particleLifetime;
       particle.createdAt = performance.now() / 1000;
 
@@ -247,6 +256,8 @@ export class ParticleSystem {
       } else {
         gfx.scale.set(1);
       }
+
+      gfx.rotation = rotation;
 
       // 计算目标位置（考虑速度和重力/风力的近似）
       const targetX = x + particle.vx * particleLifetime + 0.5 * (gravityX + windX) * particleLifetime * particleLifetime;
@@ -264,6 +275,7 @@ export class ParticleSystem {
         x: targetX,
         y: targetY,
         alpha: 0,
+        rotation: rotation + rotationSpeed * particleLifetime,
         duration: particleLifetime,
         ease,
       }).to(gfx.scale, {
@@ -343,6 +355,17 @@ export class ParticleSystem {
         gfx.fill(color);
         break;
       }
+
+      case 'diamond': {
+        const half = size;
+        gfx.moveTo(0, -half);
+        gfx.lineTo(half * 0.7, 0);
+        gfx.lineTo(0, half);
+        gfx.lineTo(-half * 0.7, 0);
+        gfx.closePath();
+        gfx.fill(color);
+        break;
+      }
     }
   }
 
@@ -411,6 +434,7 @@ export class ParticleSystem {
         gravityY: 0,
         windX: 0,
         windY: 0,
+        rotationSpeed: 0,
         timeline: null,
       };
       this.pool.push(p);
