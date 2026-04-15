@@ -141,6 +141,16 @@ const IDLE_GAMES: IdleGameMeta[] = [
     tags: ['建造', '文明'],
   },
   {
+    id: 'three-kingdoms',
+    name: '三国霸业',
+    description: '招募武将，攻城略地，一统三国天下！魏蜀吴三足鼎立，谁主沉浮？',
+    icon: '⚔️',
+    color: 'text-red-500',
+    gradient: 'from-red-700/20 to-yellow-600/20',
+    series: '三国',
+    tags: ['策略', '战斗', '武将'],
+  },
+  {
     id: 'clan-saga',
     name: '氏族传说',
     description: '统领氏族，征战四方，书写属于你的传奇！',

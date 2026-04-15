@@ -6,6 +6,7 @@
  */
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
+import ThreeKingdomsPixiGame from '@/components/idle/ThreeKingdomsPixiGame';
 
 /** 放置游戏注册信息 */
 interface IdleGameConfig {
@@ -13,6 +14,7 @@ interface IdleGameConfig {
   icon: string;
   description: string;
   legacyRoute: string; // 当前指向原始 GameContainer 路由
+  pixiComponent?: boolean; // 使用独立 PixiJS 组件渲染
 }
 
 const IDLE_GAME_REGISTRY: Record<string, IdleGameConfig> = {
@@ -93,6 +95,13 @@ const IDLE_GAME_REGISTRY: Record<string, IdleGameConfig> = {
     icon: '🕉️',
     description: '种植香料，修建神庙，繁荣恒河流域！',
     legacyRoute: '/game/civ-india',
+  },
+  'three-kingdoms': {
+    name: '三国霸业',
+    icon: '⚔️',
+    description: '招募武将，攻城略地，一统三国天下！',
+    legacyRoute: '/games/three-kingdoms-pixi',
+    pixiComponent: true,
   },
   'clan-saga': {
     name: '氏族传说',
@@ -189,24 +198,28 @@ export default function IdleGamePage() {
         </div>
 
         {/* 游戏区域 */}
-        <div className="flex flex-col items-center justify-center gap-4 py-12">
-          <div className="text-5xl">{config.icon}</div>
-          <p className="text-center text-sm text-gray-400">
-            此游戏正在接入放置游戏专区，当前请通过原始入口游玩
-          </p>
-          <button
-            onClick={() => navigate(config.legacyRoute)}
-            className="rounded-xl bg-gradient-to-r from-gp-accent to-gp-neon px-6 py-3 text-sm font-bold text-white shadow-lg shadow-gp-accent/30 transition hover:shadow-gp-accent/50"
-          >
-            🎮 开始游戏
-          </button>
-          <button
-            onClick={() => navigate('/idle')}
-            className="text-sm text-gray-500 hover:text-gp-neon transition-colors"
-          >
-            ← 返回放置游戏专区
-          </button>
-        </div>
+        {config.pixiComponent && gameId === 'three-kingdoms' ? (
+          <ThreeKingdomsPixiGame />
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-4 py-12">
+            <div className="text-5xl">{config.icon}</div>
+            <p className="text-center text-sm text-gray-400">
+              此游戏正在接入放置游戏专区，当前请通过原始入口游玩
+            </p>
+            <button
+              onClick={() => navigate(config.legacyRoute)}
+              className="rounded-xl bg-gradient-to-r from-gp-accent to-gp-neon px-6 py-3 text-sm font-bold text-white shadow-lg shadow-gp-accent/30 transition hover:shadow-gp-accent/50"
+            >
+              🎮 开始游戏
+            </button>
+            <button
+              onClick={() => navigate('/idle')}
+              className="text-sm text-gray-500 hover:text-gp-neon transition-colors"
+            >
+              ← 返回放置游戏专区
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
