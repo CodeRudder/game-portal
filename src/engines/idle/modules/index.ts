@@ -20,6 +20,13 @@
  * - ExpeditionSystem  远征系统（P2）
  * - TechTreeSystem    科技树系统（P2）
  * - TerritorySystem   领土征服系统（P2）
+ * - QuestSystem       任务系统（P3）
+ * - StorySystem       剧情系统（P3）
+ * - EventSystem       活动系统（P3）
+ * - RewardSystem      奖励系统（P3）
+ * - InteractionSystem 互动系统（P3）
+ * - MiniGameSystem    小游戏系统（P3）
+ * - DecorationSystem  装饰系统（P3）
  *
  * @module engines/idle/modules
  */
@@ -215,3 +222,97 @@ export type {
   TerritoryState,
   TerritoryEvent,
 } from './TerritorySystem';
+
+// QuestSystem — 任务系统核心模块（P3）
+export { QuestSystem } from './QuestSystem';
+export type {
+  QuestType,
+  QuestConditionType,
+  QuestCondition,
+  QuestReward,
+  QuestDef,
+  QuestState,
+  QuestEvent,
+  QuestSystemConfig,
+  QuestEventListener,
+} from './QuestSystem';
+
+// StorySystem — 剧情系统核心模块（P3）
+export { StorySystem } from './StorySystem';
+export type {
+  DialogueCharacter,
+  DialogueLine,
+  DialogueChoice,
+  StoryTrigger,
+  ChapterDef,
+  ChapterState,
+  StoryEvent,
+  StoryEventListener,
+} from './StorySystem';
+
+// EventSystem — 活动系统核心模块（P3）
+export { EventSystem } from './EventSystem';
+export type {
+  EventStatus,
+  EventTier,
+  EventReward,
+  EventShopItem,
+  EventMilestone,
+  GameEvent,
+  EventSystemEvent,
+  EventSystemListener,
+} from './EventSystem';
+
+// RewardSystem — 奖励系统核心模块（P3）
+export { RewardSystem } from './RewardSystem';
+export type {
+  RewardType,
+  RewardItem,
+  Mail,
+  LoginBonusDef,
+  LevelRewardDef,
+  RewardEvent,
+  RewardEventListener,
+} from './RewardSystem';
+
+// InteractionSystem — 互动系统核心模块（P3）
+export { InteractionSystem } from './InteractionSystem';
+export type {
+  FriendStatus,
+  Friend,
+  ChatMessage,
+  GiftRecord,
+  VisitRecord,
+  Guild,
+  GuildMember,
+  InteractionEvent,
+  InteractionEventListener,
+} from './InteractionSystem';
+
+// MiniGameSystem — 小游戏系统核心模块（P3）
+export { MiniGameSystem } from './MiniGameSystem';
+export type {
+  MiniGameType,
+  MiniGameDef,
+  WheelPrize,
+  DrawPrize,
+  QuizQuestion,
+  MiniGameState,
+  MiniGameResult,
+  MiniGameEvent,
+  MiniGameEventListener,
+} from './MiniGameSystem';
+
+// DecorationSystem — 装饰系统核心模块（P3）
+export { DecorationSystem } from './DecorationSystem';
+export type {
+  SkinType,
+  Rarity,
+  SkinDef,
+  TitleDef,
+  AvatarFrameDef,
+  EffectDef,
+  DecorationState,
+  DecorationEvent,
+  DecorationEventListener,
+} from './DecorationSystem';

@@ -4,6 +4,7 @@ import GamePage from './pages/GamePage';
 import IdleGameZone from './pages/IdleGameZone';
 import IdleGamePage from './pages/IdleGamePage';
 import { PixiPOC } from './poc/pixi-poc';
+import { SpritePOC } from './poc/sprite-poc';
 import ThreeKingdomsPixiGame from './components/idle/ThreeKingdomsPixiGame';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route path="/idle" element={<IdleGameZone />} />
         <Route path="/idle/:gameId" element={<IdleGamePage />} />
         <Route path="/poc/pixi" element={<PixiPOC />} />
+        <Route path="/poc/sprite-demo" element={<SpritePOC />} />
         <Route path="/games/three-kingdoms-pixi" element={<ThreeKingdomsPixiGame />} />
       </Routes>
     </div>
