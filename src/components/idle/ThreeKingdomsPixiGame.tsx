@@ -122,6 +122,15 @@ export default function ThreeKingdomsPixiGame() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [combatLog, setCombatLog] = useState<string[]>([]);
 
+  // ─── 战斗自动切换 + 武将面板 + 响应式 ──────────────────
+
+  const [battleMode, setBattleMode] = useState(false);
+  const [previousTab, setPreviousTab] = useState<string>('building');
+  const [selectedHero, setSelectedHero] = useState<typeof heroes[number] | null>(null);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' && window.innerWidth < 768
+  );
+
   // ─── 新手引导 + Toast ────────────────────────────────────
 
   const [showGuide, setShowGuide] = useState(true);
@@ -290,6 +299,14 @@ export default function ThreeKingdomsPixiGame() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // ─── 响应式：监听窗口大小 ──────────────────────────────
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // ─── 战斗自动切换（事件驱动） ────────────────────────────
 
   useEffect(() => {
@@ -298,13 +315,16 @@ export default function ThreeKingdomsPixiGame() {
 
     /** 引擎发起战斗时，自动切换到战斗场景 */
     const handleBattleStart = () => {
+      setPreviousTab(activeTab);
+      setBattleMode(true);
       setScene('combat');
     };
 
     /** 引擎战斗结束时，自动切回地图场景 */
     const handleBattleEnd = () => {
+      setBattleMode(false);
       setScene('map');
-      setActiveTab('Escape');
+      setActiveTab(previousTab);
     };
 
     engine.on('battleStarted', handleBattleStart);
@@ -317,8 +337,9 @@ export default function ThreeKingdomsPixiGame() {
       if (state.combat && (state.combat.state === 'victory' || state.combat.state === 'defeat')) {
         // 延迟切回地图，让玩家看到结果
         setTimeout(() => {
+          setBattleMode(false);
           setScene('map');
-          setActiveTab('Escape');
+          setActiveTab(previousTab);
         }, 2000);
       }
     };
@@ -329,7 +350,7 @@ export default function ThreeKingdomsPixiGame() {
       engine.off('battleStarted', handleBattleStart);
       engine.off('stateChange', handleStateChange);
     };
-  }, []);
+  }, [activeTab, previousTab]);
 
   // ─── 引擎操作 ───────────────────────────────────────────
 
@@ -347,6 +368,20 @@ export default function ThreeKingdomsPixiGame() {
     setScene(tab.scene);
     triggerPanelSwitch(tab.key);
   }, [triggerPanelSwitch]);
+
+  /** 进入战斗模式（从关卡面板等触发） */
+  const enterBattle = useCallback(() => {
+    setPreviousTab(activeTab);
+    setBattleMode(true);
+  }, [activeTab]);
+
+  /** 退出战斗模式（撤退/战斗结束） */
+  const exitBattle = useCallback(() => {
+    setBattleMode(false);
+    setScene('map');
+    setActiveTab(previousTab);
+    triggerPanelSwitch(previousTab);
+  }, [previousTab, triggerPanelSwitch]);
 
   // ─── 事件处理 ───────────────────────────────────────────
 
@@ -436,6 +471,8 @@ export default function ThreeKingdomsPixiGame() {
       const success = battles.startWave(battleId);
       if (success) {
         setCombatLog(prev => [...prev, `⚔️ 发起攻击 → ${targetId ?? '敌人'}`].slice(-20));
+        enterBattle();
+        setScene('combat');
         addToast('战斗开始！', 'success');
       } else {
         addToast('无法开始战斗', 'error');
@@ -620,22 +657,25 @@ export default function ThreeKingdomsPixiGame() {
     }}>
       {/* ═══════════ 顶部：资源栏 + 当前阶段 ═══════════ */}
       <header style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '6px 16px',
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: isMobile ? '4px 8px' : '6px 16px',
         background: 'rgba(0,0,0,0.6)',
         borderBottom: `1px solid ${COLOR_THEME.selectedBorder}`,
         zIndex: 10, flexShrink: 0,
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
+        gap: isMobile ? 4 : 0,
       }}>
         {/* 游戏标题 + 阶段 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 12 }}>
           <span style={{
-            fontSize: 18, fontWeight: 'bold',
+            fontSize: isMobile ? 14 : 18, fontWeight: 'bold',
             color: COLOR_THEME.accentGold,
             fontFamily: '"Noto Serif SC", serif',
           }}>
             三国霸业
           </span>
-          {currentStage && (
+          {currentStage && !isMobile && (
             <span style={{
               fontSize: 12, color: currentStage.themeColor,
               background: 'rgba(255,255,255,0.08)',
@@ -647,7 +687,12 @@ export default function ThreeKingdomsPixiGame() {
         </div>
 
         {/* 资源栏 */}
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <div style={{
+          display: 'flex', gap: isMobile ? 8 : 16,
+          alignItems: 'center',
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          fontSize: isMobile ? 11 : 13,
+        }}>
           {resources.map(r => (
             <div key={r.id} style={{
               display: 'flex', alignItems: 'center', gap: 4,
@@ -722,8 +767,8 @@ export default function ThreeKingdomsPixiGame() {
       {/* ═══════════ 中间区域：左面板 + PixiJS Canvas + 右面板 ═══════════ */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
 
-        {/* ─── 左侧面板：建筑/城市/资源点（仅地图场景显示） ─── */}
-        {showBuildingPanel && (
+        {/* ─── 左侧面板：建筑/城市/资源点（仅地图场景显示，移动端隐藏） ─── */}
+        {showBuildingPanel && !isMobile && (
         <aside style={{
           width: 240, flexShrink: 0,
           background: 'rgba(0,0,0,0.5)',
@@ -1054,14 +1099,13 @@ export default function ThreeKingdomsPixiGame() {
             </div>
           )}
 
-          {/* 战斗状态浮层 */}
+          {/* 战斗状态浮层（含撤退按钮） */}
           {scene === 'combat' && combatData && (
             <div style={{
               position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
               background: 'rgba(0,0,0,0.7)', borderRadius: 8, padding: '6px 20px',
               display: 'flex', gap: 20, alignItems: 'center',
               border: `1px solid ${combatData.state === 'victory' ? 'rgba(76,175,80,0.5)' : 'rgba(255,215,0,0.3)'}`,
-              pointerEvents: 'none',
             }}>
               <span style={{ fontSize: 13, color: COLOR_THEME.accentGold, fontWeight: 'bold' }}>
                 {combatData.state === 'preparing' && '⚔️ 准备战斗'}
@@ -1072,6 +1116,19 @@ export default function ThreeKingdomsPixiGame() {
               <span style={{ fontSize: 11, color: COLOR_THEME.textSecondary }}>
                 波次 {combatData.currentWave}/{combatData.totalWaves}
               </span>
+              {(combatData.state === 'fighting' || combatData.state === 'preparing') && (
+                <button
+                  onClick={exitBattle}
+                  style={{
+                    padding: '3px 14px', fontSize: 11,
+                    borderRadius: 4, border: '1px solid #c9a96e',
+                    background: '#8B4513', color: '#fff',
+                    cursor: 'pointer', fontWeight: 'bold',
+                  }}
+                >
+                  🏳️ 撤退
+                </button>
+              )}
             </div>
           )}
 
@@ -1286,123 +1343,343 @@ export default function ThreeKingdomsPixiGame() {
               </button>
             </div>
           )}
+
+          {/* ═══════════ 战斗模式全屏遮罩 ═══════════ */}
+          {battleMode && scene === 'combat' && (
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 50,
+              background: 'rgba(0,0,0,0.85)',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              pointerEvents: combatData?.state === 'fighting' ? 'none' : 'auto',
+            }}>
+              <div style={{
+                color: '#c9a96e', fontSize: 28, marginBottom: 8,
+                fontFamily: '"Noto Serif SC", serif',
+                textShadow: '0 0 20px rgba(255,215,0,0.5)',
+              }}>
+                ⚔️ 战斗中
+              </div>
+              {combatData && (
+                <div style={{ color: '#aaa', fontSize: 14, marginBottom: 20 }}>
+                  波次 {combatData.currentWave}/{combatData.totalWaves}
+                  {combatData.state === 'victory' && ' — 🎉 胜利！'}
+                  {combatData.state === 'defeat' && ' — 💀 战败'}
+                </div>
+              )}
+              {(combatData?.state === 'preparing' || combatData?.state === 'fighting') && (
+                <button
+                  onClick={exitBattle}
+                  style={{
+                    background: '#8B4513', color: '#fff',
+                    padding: '10px 32px', fontSize: 16,
+                    border: '1px solid #c9a96e', cursor: 'pointer',
+                    borderRadius: 6, fontWeight: 'bold',
+                    transition: 'transform 0.2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+                  onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                >
+                  🏳️ 撤退
+                </button>
+              )}
+              {(combatData?.state === 'victory' || combatData?.state === 'defeat') && (
+                <button
+                  onClick={exitBattle}
+                  style={{
+                    background: `linear-gradient(135deg, #c9a96e, #ff8c00)`,
+                    color: '#1a0a0a',
+                    padding: '10px 32px', fontSize: 16,
+                    border: 'none', cursor: 'pointer',
+                    borderRadius: 6, fontWeight: 'bold',
+                  }}
+                >
+                  返回地图
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* ─── 右侧面板：武将列表（地图/武将场景显示） ─── */}
-        {showHeroPanel && (
+        {/* ─── 右侧面板：武将列表 + 详情面板 ─── */}
+        {showHeroPanel && !isMobile && (
         <aside style={{
-          width: 220, flexShrink: 0,
+          width: selectedHero ? 320 : 220, flexShrink: 0,
           background: 'rgba(0,0,0,0.5)',
           borderLeft: '1px solid rgba(255,255,255,0.08)',
           overflowY: 'auto', padding: 8,
           zIndex: 5,
+          display: 'flex', flexDirection: 'column',
+          transition: 'width 0.3s ease',
         }}>
-          <h3 style={{
-            fontSize: 14, fontWeight: 'bold',
-            color: COLOR_THEME.accentGold,
-            marginBottom: 8, paddingBottom: 4,
-            borderBottom: `1px solid ${COLOR_THEME.selectedBorder}`,
-          }}>
-            ⚔️ 武将
-          </h3>
-          {heroes.map(h => {
-            const rarityColor = RARITY_COLORS[h.rarity] || COLOR_THEME.textPrimary;
-            return (
-              <div
-                key={h.id}
-                style={{
-                  padding: '6px 8px', marginBottom: 4,
-                  borderRadius: 4,
-                  background: h.unlocked ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
-                  borderLeft: `3px solid ${rarityColor}`,
-                  opacity: h.unlocked ? 1 : 0.5,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, fontWeight: 'bold', color: rarityColor }}>
-                    {h.name}
-                  </span>
-                  {h.unlocked ? (
-                    <span style={{ fontSize: 10, color: COLOR_THEME.accentGold }}>
-                      Lv.{h.level}
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: 9, color: COLOR_THEME.textDim }}>
-                      [{h.rarity}]
-                    </span>
-                  )}
+          {/* 武将详情面板（选中时显示） */}
+          {selectedHero ? (
+            <div style={{ flex: 1 }}>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', marginBottom: 12,
+                paddingBottom: 8,
+                borderBottom: `1px solid ${COLOR_THEME.selectedBorder}`,
+              }}>
+                <h3 style={{
+                  fontSize: 16, fontWeight: 'bold', margin: 0,
+                  color: RARITY_COLORS[selectedHero.rarity] || COLOR_THEME.accentGold,
+                  fontFamily: '"Noto Serif SC", serif',
+                }}>
+                  {selectedHero.name}
+                </h3>
+                <button
+                  onClick={() => setSelectedHero(null)}
+                  style={{
+                    background: 'transparent', color: '#c9a96e',
+                    border: 'none', cursor: 'pointer', fontSize: 18,
+                    padding: '2px 6px',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* 基本信息 */}
+              <div style={{
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: 6, padding: 10, marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 12, color: COLOR_THEME.textSecondary, marginBottom: 6 }}>
+                  {selectedHero.faction.toUpperCase()} · {selectedHero.rarity} · Lv.{selectedHero.level}
                 </div>
-                <div style={{ fontSize: 10, color: COLOR_THEME.textDim, marginTop: 2 }}>
-                  {h.faction.toUpperCase()} · {h.rarity}
-                </div>
-                {h.unlocked && (
-                  <div style={{ fontSize: 9, color: COLOR_THEME.textSecondary, marginTop: 2 }}>
-                    攻{h.stats.attack} 防{h.stats.defense} 智{h.stats.intelligence} 统{h.stats.command}
+                {selectedHero.unlocked && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                    {[
+                      { label: '攻击', value: selectedHero.stats.attack, color: '#e74c3c' },
+                      { label: '防御', value: selectedHero.stats.defense, color: '#3498db' },
+                      { label: '智力', value: selectedHero.stats.intelligence, color: '#9b59b6' },
+                      { label: '统率', value: selectedHero.stats.command, color: '#e67e22' },
+                    ].map(stat => (
+                      <div key={stat.label} style={{
+                        background: 'rgba(0,0,0,0.3)', borderRadius: 4, padding: '4px 8px',
+                        display: 'flex', justifyContent: 'space-between',
+                      }}>
+                        <span style={{ fontSize: 10, color: COLOR_THEME.textDim }}>{stat.label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 'bold', color: stat.color }}>{stat.value}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
-                {!h.unlocked && h.canRecruit && (
-                  <button
-                    onClick={() => {
-                      const engine = engineRef.current;
-                      if (!engine) return;
-
-                      // 尝试通过引擎的 UnitSystem 招募武将
-                      const units = (engine as any).units;
-                      if (!units) {
-                        console.warn('[ThreeKingdomsPixiGame] Unit system not available');
-                        addToast('招募系统未就绪', 'error');
-                        return;
-                      }
-
-                      // 检查资源是否足够
-                      const res = engine.getResources();
-                      const cost = h.recruitCost || {};
-                      const canAfford = Object.entries(cost).every(([rid, amt]: [string, number]) => (res[rid] || 0) >= amt);
-
-                      if (!canAfford) {
-                        addToast('招募失败：资源不足', 'error');
-                        return;
-                      }
-
-                      // 扣除资源并招募
-                      const payMethod = (engine as any).pay;
-                      if (payMethod) {
-                        payMethod.call(engine, cost);
-                      }
-                      const result = units.unlock(h.id);
-                      if (result.success) {
-                        addToast(`招募成功！${h.name} 加入麾下`, 'success');
-                        // 触发状态更新
-                        (engine as any).emit?.('stateChange');
-                      } else {
-                        addToast('招募失败：条件不满足', 'error');
-                      }
-                    }}
-                    style={{
-                      marginTop: 4, padding: '2px 8px',
-                      fontSize: 9, cursor: 'pointer',
-                      borderRadius: 3, border: 'none',
-                      background: 'rgba(76,175,80,0.3)',
-                      color: COLOR_THEME.accentGreen,
-                    }}
-                  >
-                    招募
-                  </button>
-                )}
               </div>
-            );
-          })}
+
+              {/* 技能列表 */}
+              {'skills' in selectedHero && (selectedHero as any).skills?.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, color: COLOR_THEME.accentGold, marginBottom: 4, fontWeight: 'bold' }}>
+                    🎯 技能
+                  </div>
+                  {(selectedHero as any).skills.map((skill: any, i: number) => (
+                    <div key={i} style={{
+                      background: 'rgba(255,255,255,0.04)', borderRadius: 4,
+                      padding: '6px 8px', marginBottom: 3,
+                    }}>
+                      <span style={{ fontSize: 11, color: COLOR_THEME.textPrimary }}>{skill.name || `技能${i + 1}`}</span>
+                      {skill.description && (
+                        <div style={{ fontSize: 9, color: COLOR_THEME.textDim, marginTop: 2 }}>
+                          {skill.description}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 装备列表 */}
+              {'equipment' in selectedHero && (selectedHero as any).equipment && Object.keys((selectedHero as any).equipment).length > 0 && (
+                <div>
+                  <div style={{ fontSize: 11, color: COLOR_THEME.accentGold, marginBottom: 4, fontWeight: 'bold' }}>
+                    🛡️ 装备
+                  </div>
+                  {Object.entries((selectedHero as any).equipment).map(([slot, item]: [string, any]) => (
+                    <div key={slot} style={{
+                      fontSize: 10, color: COLOR_THEME.textSecondary,
+                      padding: '2px 0',
+                    }}>
+                      {slot}: {item?.name || item}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <h3 style={{
+                fontSize: 14, fontWeight: 'bold',
+                color: COLOR_THEME.accentGold,
+                marginBottom: 8, paddingBottom: 4,
+                borderBottom: `1px solid ${COLOR_THEME.selectedBorder}`,
+              }}>
+                ⚔️ 武将
+              </h3>
+              {heroes.map(h => {
+                const rarityColor = RARITY_COLORS[h.rarity] || COLOR_THEME.textPrimary;
+                return (
+                  <div
+                    key={h.id}
+                    onClick={() => h.unlocked && setSelectedHero(h)}
+                    style={{
+                      padding: '6px 8px', marginBottom: 4,
+                      borderRadius: 4,
+                      background: h.unlocked ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+                      borderLeft: `3px solid ${rarityColor}`,
+                      opacity: h.unlocked ? 1 : 0.5,
+                      cursor: h.unlocked ? 'pointer' : 'default',
+                      transition: 'background 0.2s',
+                    }}
+                    onMouseEnter={e => h.unlocked && (e.currentTarget.style.background = 'rgba(255,215,0,0.08)')}
+                    onMouseLeave={e => h.unlocked && (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, fontWeight: 'bold', color: rarityColor }}>
+                        {h.name}
+                      </span>
+                      {h.unlocked ? (
+                        <span style={{ fontSize: 10, color: COLOR_THEME.accentGold }}>
+                          Lv.{h.level}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 9, color: COLOR_THEME.textDim }}>
+                          [{h.rarity}]
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 10, color: COLOR_THEME.textDim, marginTop: 2 }}>
+                      {h.faction.toUpperCase()} · {h.rarity}
+                    </div>
+                    {h.unlocked && (
+                      <div style={{ fontSize: 9, color: COLOR_THEME.textSecondary, marginTop: 2 }}>
+                        攻{h.stats.attack} 防{h.stats.defense} 智{h.stats.intelligence} 统{h.stats.command}
+                      </div>
+                    )}
+                    {!h.unlocked && h.canRecruit && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const engine = engineRef.current;
+                          if (!engine) return;
+
+                          // 尝试通过引擎的 UnitSystem 招募武将
+                          const units = (engine as any).units;
+                          if (!units) {
+                            console.warn('[ThreeKingdomsPixiGame] Unit system not available');
+                            addToast('招募系统未就绪', 'error');
+                            return;
+                          }
+
+                          // 检查资源是否足够
+                          const res = engine.getResources();
+                          const cost = h.recruitCost || {};
+                          const canAfford = Object.entries(cost).every(([rid, amt]: [string, number]) => (res[rid] || 0) >= amt);
+
+                          if (!canAfford) {
+                            addToast('招募失败：资源不足', 'error');
+                            return;
+                          }
+
+                          // 扣除资源并招募
+                          const payMethod = (engine as any).pay;
+                          if (payMethod) {
+                            payMethod.call(engine, cost);
+                          }
+                          const result = units.unlock(h.id);
+                          if (result.success) {
+                            addToast(`招募成功！${h.name} 加入麾下`, 'success');
+                            // 触发状态更新
+                            (engine as any).emit?.('stateChange');
+                          } else {
+                            addToast('招募失败：条件不满足', 'error');
+                          }
+                        }}
+                        style={{
+                          marginTop: 4, padding: '2px 8px',
+                          fontSize: 9, cursor: 'pointer',
+                          borderRadius: 3, border: 'none',
+                          background: 'rgba(76,175,80,0.3)',
+                          color: COLOR_THEME.accentGreen,
+                        }}
+                      >
+                        招募
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
         </aside>
+        )}
+
+        {/* ─── 移动端武将详情面板（全宽浮层） ─── */}
+        {isMobile && selectedHero && (
+          <div style={{
+            position: 'absolute', right: 0, top: 0, bottom: 0,
+            width: '100%', background: 'rgba(30,20,10,0.97)',
+            borderLeft: '2px solid #8B7355',
+            overflow: 'auto', zIndex: 40, padding: 16,
+          }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between',
+              alignItems: 'center', marginBottom: 12,
+            }}>
+              <h3 style={{
+                fontSize: 18, margin: 0,
+                color: RARITY_COLORS[selectedHero.rarity] || '#c9a96e',
+                fontFamily: '"Noto Serif SC", serif',
+              }}>
+                {selectedHero.name}
+              </h3>
+              <button
+                onClick={() => setSelectedHero(null)}
+                style={{
+                  background: 'transparent', color: '#c9a96e',
+                  border: 'none', cursor: 'pointer', fontSize: 22,
+                  padding: '4px 8px',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>
+              {selectedHero.faction.toUpperCase()} · {selectedHero.rarity} · Lv.{selectedHero.level}
+            </div>
+            {selectedHero.unlocked && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {[
+                  { label: '攻击', value: selectedHero.stats.attack, color: '#e74c3c' },
+                  { label: '防御', value: selectedHero.stats.defense, color: '#3498db' },
+                  { label: '智力', value: selectedHero.stats.intelligence, color: '#9b59b6' },
+                  { label: '统率', value: selectedHero.stats.command, color: '#e67e22' },
+                ].map(stat => (
+                  <div key={stat.label} style={{
+                    background: 'rgba(0,0,0,0.3)', borderRadius: 4, padding: '6px 10px',
+                    display: 'flex', justifyContent: 'space-between',
+                  }}>
+                    <span style={{ fontSize: 11, color: '#888' }}>{stat.label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 'bold', color: stat.color }}>{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* ═══════════ 底部：操作按钮栏 ═══════════ */}
       <footer style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 8, padding: '6px 16px',
+        gap: isMobile ? 4 : 8,
+        padding: isMobile ? '4px 8px' : '6px 16px',
         background: 'rgba(0,0,0,0.6)',
         borderTop: `1px solid rgba(255,255,255,0.08)`,
         zIndex: 10, flexShrink: 0,
+        position: isMobile ? 'sticky' : 'static',
+        bottom: 0,
       }}>
         {SCENE_TABS.map((tab, idx) => {
           const isActive = activeTab === tab.key;
@@ -1411,7 +1688,8 @@ export default function ThreeKingdomsPixiGame() {
               key={tab.key}
               onClick={() => handleTabClick(tab)}
               style={{
-                padding: '5px 16px', fontSize: 12,
+                padding: isMobile ? '4px 10px' : '5px 16px',
+                fontSize: isMobile ? 10 : 12,
                 borderRadius: 4, border: 'none', cursor: 'pointer',
                 background: isActive
                   ? 'rgba(255,215,0,0.15)'
@@ -1427,13 +1705,15 @@ export default function ThreeKingdomsPixiGame() {
           );
         })}
 
-        {/* 快捷键提示 */}
+        {/* 快捷键提示（仅桌面端显示） */}
+        {!isMobile && (
         <span style={{
           marginLeft: 16, fontSize: 9,
           color: COLOR_THEME.textDim,
         }}>
           [Space]点击 [Enter]购买 [T]科技 [U]武将 [S]关卡
         </span>
+        )}
       </footer>
 
       {/* ═══════════ Toast 提示浮层 ═══════════ */}
