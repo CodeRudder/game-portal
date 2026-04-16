@@ -177,6 +177,12 @@ export default function ThreeKingdomsPixiGame() {
   const [showNPCDialogue, setShowNPCDialogue] = useState(false);
   const [npcDialogue, setNPCDialogue] = useState<NPCDialogue | null>(null);
 
+  // 自动存档 + 成就 + Tooltip
+  const [lastAutoSave, setLastAutoSave] = useState(0);
+  const [showSavePanel, setShowSavePanel] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [tooltip, setTooltip] = useState<{text:string;x:number;y:number}|null>(null);
+
   /** 添加 toast 提示，2 秒后自动消失 */
   const addToast = useCallback((text: string, type: 'success' | 'error') => {
     const id = ++toastIdRef.current;
@@ -333,6 +339,36 @@ export default function ThreeKingdomsPixiGame() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // ─── 自动存档（60秒间隔） ─────────────────────────────
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const engine = engineRef.current;
+      if (engine) {
+        try {
+          const data = engine.serialize();
+          localStorage.setItem('tk_autosave', JSON.stringify({ time: Date.now(), data }));
+          setLastAutoSave(Date.now());
+        } catch { /* ignore */ }
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ─── 启动时自动加载存档 ────────────────────────────────
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (engine) {
+      try {
+        const saved = localStorage.getItem('tk_autosave');
+        if (saved) {
+          const { data } = JSON.parse(saved);
+          engine.deserialize(data);
+        }
+      } catch { /* ignore */ }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading === false]);
 
   // ─── 战斗自动切换（事件驱动） ────────────────────────────
 
@@ -723,8 +759,11 @@ export default function ThreeKingdomsPixiGame() {
           {resources.map(r => (
             <div key={r.id} style={{
               display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 13, color: COLOR_THEME.textPrimary,
-            }}>
+              fontSize: 13, color: COLOR_THEME.textPrimary, cursor: 'default',
+            }}
+              onMouseEnter={e => setTooltip({text:`${r.icon} ${r.name}: ${fmt(r.amount)}${r.perSecond > 0 ? ` (+${fmt(r.perSecond)}/秒)` : ''}`,x:e.clientX,y:e.clientY})}
+              onMouseLeave={() => setTooltip(null)}
+            >
               <span>{r.icon}</span>
               <span style={{ fontWeight: 'bold' }}>{fmt(r.amount)}</span>
               {r.perSecond > 0 && (
@@ -788,6 +827,10 @@ export default function ThreeKingdomsPixiGame() {
               {renderState?.calendar?.isPaused ? '▶' : '⏸'}
             </button>
           </div>
+          {/* 存档 + 成就按钮 */}
+          <button onClick={() => setShowSavePanel(true)} title="存档管理" style={{background:'transparent',border:'none',cursor:'pointer',fontSize:14,color:COLOR_THEME.textSecondary}}>📜</button>
+          <button onClick={() => setShowAchievements(true)} title="成就" style={{background:'transparent',border:'none',cursor:'pointer',fontSize:14,color:COLOR_THEME.textSecondary}}>🏆</button>
+          {lastAutoSave > 0 && <span style={{fontSize:9,color:'#555'}}>已存档</span>}
         </div>
       </header>
 
@@ -1933,6 +1976,79 @@ export default function ThreeKingdomsPixiGame() {
           </div>
         );
       })()}
+
+      {/* ═══════════ 存档管理面板 ═══════════ */}
+      {showSavePanel && (
+        <div style={{position:'absolute',inset:0,zIndex:60,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'#2a1f14',border:'2px solid #8B7355',borderRadius:8,padding:24,minWidth:360,maxHeight:'80vh',overflow:'auto'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <h3 style={{color:'#c9a96e',margin:0}}>📜 存档管理</h3>
+              <button onClick={() => setShowSavePanel(false)} style={{background:'transparent',color:'#c9a96e',border:'none',cursor:'pointer',fontSize:18}}>✕</button>
+            </div>
+            <button onClick={() => {
+              const engine = engineRef.current;
+              if (engine) {
+                try {
+                  const data = engine.serialize();
+                  const saves = JSON.parse(localStorage.getItem('tk_saves') || '[]');
+                  saves.push({ id: Date.now().toString(), name: `存档 ${saves.length + 1}`, time: Date.now() });
+                  localStorage.setItem('tk_saves', JSON.stringify(saves));
+                  localStorage.setItem('tk_last_save_data', JSON.stringify(data));
+                  addToast('存档成功！', 'success');
+                } catch { addToast('存档失败', 'error'); }
+              }
+            }} style={{background:'#4a3520',color:'#c9a96e',border:'1px solid #8B7355',padding:'8px 16px',cursor:'pointer',width:'100%',marginTop:16,borderRadius:4,fontSize:13}}>💾 保存当前进度</button>
+            <div style={{marginTop:12,fontSize:12,color:'#8a7a6a'}}>
+              自动存档每60秒执行一次，关闭游戏后下次打开自动恢复。
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════ 成就面板 ═══════════ */}
+      {showAchievements && (() => {
+        const ACHS = [
+          { name:'初出茅庐', desc:'占领第一块领土', icon:'🏰', ok: ((renderState as any)?.conqueredTerritories?.length ?? (renderState as any)?.territories?.filter((t:any)=>t.conquered).length ?? 0) >= 1 },
+          { name:'小有成就', desc:'占领5块领土', icon:'⚔️', ok: ((renderState as any)?.conqueredTerritories?.length ?? (renderState as any)?.territories?.filter((t:any)=>t.conquered).length ?? 0) >= 5 },
+          { name:'一统天下', desc:'占领所有领土', icon:'👑', ok: ((renderState as any)?.conqueredTerritories?.length ?? (renderState as any)?.territories?.filter((t:any)=>t.conquered).length ?? 0) >= 15 },
+          { name:'招贤纳士', desc:'招募第一位武将', icon:'🦸', ok: (renderState?.heroes?.length ?? 0) >= 1 },
+          { name:'群英荟萃', desc:'招募所有武将', icon:'🌟', ok: (renderState?.heroes?.length ?? 0) >= 12 },
+          { name:'科技创新', desc:'研究第一项科技', icon:'🔬', ok: ((renderState?.techTree as any)?.researchedCount ?? 0) >= 1 },
+          { name:'富甲一方', desc:'铜钱达到1000', icon:'💰', ok: ((renderState?.resources?.resources?.find((r:any)=>r.id==='gold')?.amount) ?? 0) >= 1000 },
+          { name:'粮食满仓', desc:'粮草达到1000', icon:'🌾', ok: ((renderState?.resources?.resources?.find((r:any)=>r.id==='grain')?.amount) ?? 0) >= 1000 },
+          { name:'兵强马壮', desc:'兵力达到500', icon:'🗡️', ok: ((renderState?.resources?.resources?.find((r:any)=>r.id==='troops')?.amount) ?? 0) >= 500 },
+          { name:'声望初成', desc:'完成一次转生', icon:'✨', ok: (renderState?.prestige?.count ?? 0) >= 1 },
+          { name:'征战四方', desc:'完成第3个关卡', icon:'🏆', ok: ((renderState?.currentStage as any)?.order ?? 0) >= 3 },
+          { name:'天下霸业', desc:'完成最终关卡', icon:'🎯', ok: ((renderState?.currentStage as any)?.order ?? 0) >= 6 },
+        ];
+        const unlocked = ACHS.filter(a => a.ok).length;
+        return (
+          <div style={{position:'absolute',inset:0,zIndex:60,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <div style={{background:'#2a1f14',border:'2px solid #8B7355',borderRadius:8,padding:24,minWidth:440,maxHeight:'80vh',overflow:'auto'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <h3 style={{color:'#c9a96e',margin:0}}>🏆 成就 ({unlocked}/{ACHS.length})</h3>
+                <button onClick={() => setShowAchievements(false)} style={{background:'transparent',color:'#c9a96e',border:'none',cursor:'pointer',fontSize:18}}>✕</button>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginTop:16}}>
+                {ACHS.map((a,i) => (
+                  <div key={i} style={{background:a.ok?'#3a4a2a':'#2a2a2a',border:`1px solid ${a.ok?'#6a8a4a':'#4a4a4a'}`,padding:10,borderRadius:4,opacity:a.ok?1:0.6}}>
+                    <div style={{fontSize:20}}>{a.ok?a.icon:'🔒'}</div>
+                    <div style={{color:a.ok?'#c9a96e':'#666',fontWeight:'bold',fontSize:13}}>{a.name}</div>
+                    <div style={{color:'#8a7a6a',fontSize:11}}>{a.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ═══════════ Tooltip ═══════════ */}
+      {tooltip && (
+        <div style={{position:'fixed',left:tooltip.x+12,top:tooltip.y+12,background:'rgba(42,31,20,0.95)',border:'1px solid #8B7355',color:'#c9a96e',padding:'6px 10px',borderRadius:4,fontSize:12,zIndex:9999,pointerEvents:'none',maxWidth:220,boxShadow:'0 2px 8px rgba(0,0,0,0.5)'}}>
+          {tooltip.text}
+        </div>
+      )}
     </div>
   );
 }
