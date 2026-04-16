@@ -5,7 +5,7 @@
  * - 领土节点（可点击、可悬停）
  * - 领土间连接线
  * - 地图上的建筑图标
- * - 摄像机平移/缩放（含惯性拖拽、滚轮缩放）
+ * - 摄像机平移/缩放（含边缘滚动、滚轮缩放）
  * - 领土脉冲动画 & 建筑产出进度条
  * - 悬停 Tooltip 信息面板
  *
@@ -72,11 +72,14 @@ const PULSE_PERIOD = 2000;
 /** 脉冲缩放振幅（中心值 1.0，范围 ±0.05） */
 const PULSE_AMPLITUDE = 0.05;
 
-/** 惯性摩擦系数（每帧衰减，0~1，越小减速越快） */
-const INERTIA_FRICTION = 0.92;
+/** 边缘滚动区域宽度（像素） */
+const EDGE_SCROLL_ZONE = 60;
 
-/** 惯性速度阈值（低于此值停止） */
-const INERTIA_THRESHOLD = 0.5;
+/** 边缘滚动最大速度（像素/秒） */
+const EDGE_SCROLL_MAX_SPEED = 300;
+
+/** 边缘滚动最小速度（像素/秒） */
+const EDGE_SCROLL_MIN_SPEED = 30;
 
 /** 滚轮缩放步进 */
 const WHEEL_ZOOM_STEP = 0.1;
@@ -421,16 +424,19 @@ export class MapScene extends BaseScene {
   /** 摄像机管理器（地图场景独享） */
   private cameraManager: CameraManager;
 
-  // ─── 拖拽状态 ─────────────────────────────────────────────
+  // ─── 边缘滚动状态 ─────────────────────────────────────────
 
-  /** 是否正在拖拽地图 */
-  private dragging: boolean = false;
-  /** 拖拽起始点 */
-  private dragStart: { x: number; y: number } = { x: 0, y: 0 };
-  /** 拖拽惯性速度 */
-  private dragVelocity: { x: number; y: number } = { x: 0, y: 0 };
-  /** 上一帧指针位置（用于计算速度） */
-  private lastPointerPos: { x: number; y: number } = { x: 0, y: 0 };
+  /** 边缘检测区域宽度（像素） */
+  private readonly EDGE_SCROLL_ZONE = 60;
+  /** 最大滚动速度（像素/秒） */
+  private readonly MAX_SCROLL_SPEED = 300;
+  /** 最小滚动速度（像素/秒） */
+  private readonly MIN_SCROLL_SPEED = 30;
+
+  /** 当前边缘滚动速度（像素/帧，由 pointermove 更新） */
+  private edgeScrollVelocity: { x: number; y: number } = { x: 0, y: 0 };
+  /** 鼠标是否在容器内 */
+  private pointerInContainer: boolean = false;
 
   // ─── 触摸状态 ─────────────────────────────────────────────
 
@@ -440,6 +446,10 @@ export class MapScene extends BaseScene {
   private lastPinchDistance: number = 0;
   /** 上一次双指中心（用于平移） */
   private lastPinchCenter: { x: number; y: number } = { x: 0, y: 0 };
+  /** 触摸拖拽起始点 */
+  private touchDragStart: { x: number; y: number } = { x: 0, y: 0 };
+  /** 触摸拖拽速度 */
+  private touchDragVelocity: { x: number; y: number } = { x: 0, y: 0 };
 
   // ─── 悬停状态 ─────────────────────────────────────────────
 
@@ -498,6 +508,14 @@ export class MapScene extends BaseScene {
   private npcDots: Map<string, NPCDotView> = new Map();
   /** NPC 呼吸动画累计时间（秒） */
   private npcBreathTime: number = 0;
+  /** NPC 行走动画累计时间（秒） */
+  private npcWalkTime: number = 0;
+  /** 当前选中的 NPC ID（高亮显示） */
+  private selectedNPCId: string | null = null;
+  /** NPC 选中高亮图形 */
+  private npcSelectionRing: Graphics | null = null;
+  /** NPC 渲染数据缓存（用于位置更新） */
+  private npcRenderDataCache: Map<string, { x: number; y: number; direction?: string; state?: string }> = new Map();
   /** 地标渲染映射 */
   private landmarkViews: Map<string, LandmarkView> = new Map();
   /** 是否使用瓦片地图模式 */
@@ -569,16 +587,19 @@ export class MapScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
 
   protected async onCreate(): Promise<void> {
-    // 设置容器交互（用于地图拖拽和点击）
+    // 设置容器交互（用于地图点击和边缘滚动）
     this.container.eventMode = 'static';
-    this.container.cursor = 'grab';
+    this.container.cursor = 'default';
     // hitArea 稍后在 onEnter 中根据实际尺寸设置
 
-    // 绑定拖拽事件
-    this.container.on('pointerdown', this.onPointerDown);
+    // 绑定指针事件（仅用于 Tooltip 跟踪和点击，不再拖拽）
     this.container.on('pointermove', this.onPointerMove);
     this.container.on('pointerup', this.onPointerUp);
     this.container.on('pointerupoutside', this.onPointerUp);
+
+    // 鼠标进入/离开容器（用于边缘滚动启停）
+    this.container.on('pointerenter', this.onPointerEnter);
+    this.container.on('pointerleave', this.onPointerLeave);
 
     // 绑定滚轮缩放事件
     this.container.on('wheel', this.onWheel);
@@ -633,8 +654,8 @@ export class MapScene extends BaseScene {
     // ── 2. 更新建筑进度弧线 ──────────────────────────────────
     this.updateBuildingProgress();
 
-    // ── 3. 更新拖拽惯性 ──────────────────────────────────────
-    this.updateInertia();
+    // ── 3. 更新边缘滚动 ──────────────────────────────────────
+    this.updateEdgeScroll(deltaTime);
 
     // ── 4. 更新 Tooltip 位置 ─────────────────────────────────
     this.updateTooltip();
@@ -642,14 +663,17 @@ export class MapScene extends BaseScene {
     // ── 5. 更新新占领领土脉冲扩散动画 ───────────────────────
     this.updateCapturePulse(deltaTime);
 
-    // ── 6. 更新格子悬停高亮 ─────────────────────────────────
-    this.updateCellHighlight();
-
-    // ── 7. 更新右键选区 ─────────────────────────────────────
+    // ── 6. 更新右键选区 ─────────────────────────────────────
     this.updateSelection();
 
     // ── 8. 更新 NPC 呼吸动画 ────────────────────────────────
     this.updateNPCBreath(deltaTime);
+
+    // ── 9. 更新 NPC 行走动画（位置插值） ──────────────────
+    this.updateNPCWalk(deltaTime);
+
+    // ── 10. 更新 NPC 选中高亮 ──────────────────────────────
+    this.updateNPCSelection();
   }
 
   protected onSetData(data: unknown): void {
@@ -658,6 +682,18 @@ export class MapScene extends BaseScene {
     // 瓦片地图数据注入：首次检测到 tileMapData 时自动切换到瓦片地图模式
     if (state.tileMapData && !this.useTileMapMode) {
       this.setTileMapData(state.tileMapData as Parameters<typeof this.setTileMapData>[0]);
+    }
+
+    // 更新 NPC 渲染数据缓存（用于位置插值）
+    if (state.npcs && state.npcs.length > 0) {
+      for (const npc of state.npcs) {
+        this.npcRenderDataCache.set(npc.id, {
+          x: npc.x,
+          y: npc.y,
+          direction: npc.direction,
+          state: npc.state,
+        });
+      }
     }
 
     // 瓦片地图模式：直接使用瓦片渲染，跳过节点图
@@ -676,6 +712,8 @@ export class MapScene extends BaseScene {
     this.recentlyCaptured.clear();
     this.capturePulseGraphics.clear();
     this.destroyTooltip();
+    this.edgeScrollVelocity = { x: 0, y: 0 };
+    this.pointerInContainer = false;
     this.decorationLayer.destroy({ children: true });
     this.connectionLayer.destroy({ children: true });
     this.borderLayer.destroy({ children: true });
@@ -752,35 +790,35 @@ export class MapScene extends BaseScene {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 拖拽惯性
+  // 边缘滚动
   // ═══════════════════════════════════════════════════════════
 
   /**
-   * 更新拖拽惯性滑动
+   * 更新边缘滚动
    *
-   * 松手后以 friction=0.92 每帧衰减速度，产生惯性效果。
+   * 鼠标在容器边缘时，地图向反方向滚动：
+   * - 鼠标在左边缘 → 地图向右滚（显示左侧内容）
+   * - 鼠标在右边缘 → 地图向左滚（显示右侧内容）
+   * - 鼠标在上边缘 → 地图向下滚（显示上方内容）
+   * - 鼠标在下边缘 → 地图向上滚（显示下方内容）
+   *
+   * 越靠近边缘滚动越快（线性插值）。
    */
-  private updateInertia(): void {
-    // 正在拖拽时不应用惯性（由 onPointerMove 直接控制）
-    if (this.dragging) return;
+  private updateEdgeScroll(deltaTime: number): void {
+    // 鼠标不在容器内时，不滚动
+    if (!this.pointerInContainer) return;
 
-    // 速度低于阈值时停止
-    const speed = Math.abs(this.dragVelocity.x) + Math.abs(this.dragVelocity.y);
-    if (speed < INERTIA_THRESHOLD) {
-      this.dragVelocity.x = 0;
-      this.dragVelocity.y = 0;
-      return;
-    }
+    const vx = this.edgeScrollVelocity.x;
+    const vy = this.edgeScrollVelocity.y;
 
-    // 衰减速度
-    this.dragVelocity.x *= INERTIA_FRICTION;
-    this.dragVelocity.y *= INERTIA_FRICTION;
+    // 无速度时不操作
+    if (vx === 0 && vy === 0) return;
 
-    // 应用惯性位移
+    // deltaTime 为秒，计算本帧位移
     const camState = this.cameraManager.getState();
     this.cameraManager.panTo(
-      camState.x + this.dragVelocity.x,
-      camState.y + this.dragVelocity.y,
+      camState.x - vx * deltaTime,
+      camState.y - vy * deltaTime,
       false,
     );
   }
@@ -2188,9 +2226,10 @@ export class MapScene extends BaseScene {
       nameText.position.set(0, shapeRadius + 2);
       container.addChild(nameText);
 
-      // 点击事件
+      // 点击事件 — 选中 NPC 并高亮，触发 npcClick 交互事件
       container.on('pointerdown', () => {
-        this.bridgeEvent('heroClick', npc.id);
+        this.selectNPC(npc.id);
+        this.bridgeEvent('npcClick', npc.id);
       });
 
       npcLayer.addChild(container);
@@ -2217,6 +2256,92 @@ export class MapScene extends BaseScene {
       const breath = 0.85 + 0.15 * Math.sin(this.npcBreathTime * 2.0 + view.breathPhase);
       view.container.alpha = breath;
     }
+  }
+
+  /**
+   * 更新 NPC 行走动画（位置插值）
+   *
+   * 每帧从 npcRenderDataCache 读取 NPC 最新位置，
+   * 平滑插值移动 NPC 容器到目标位置。
+   * 行走中的 NPC 会有微小的上下弹跳动画。
+   */
+  private updateNPCWalk(deltaTime: number): void {
+    if (this.npcDots.size === 0) return;
+
+    this.npcWalkTime += deltaTime;
+
+    for (const [npcId, view] of this.npcDots) {
+      const cached = this.npcRenderDataCache.get(npcId);
+      if (!cached) continue;
+
+      const tileSize = this.tileMapData?.tileSize ?? 64;
+      const targetPixelX = cached.x * tileSize + tileSize / 2;
+      const targetPixelY = cached.y * tileSize + tileSize / 2;
+
+      const currentX = view.container.x;
+      const currentY = view.container.y;
+
+      // 平滑插值移动（lerp factor 0.1）
+      const lerpFactor = 0.1;
+      const newX = currentX + (targetPixelX - currentX) * lerpFactor;
+      const newY = currentY + (targetPixelY - currentY) * lerpFactor;
+
+      view.container.position.set(newX, newY);
+
+      // 行走弹跳动画：移动中的 NPC 有微小的 Y 偏移
+      const isMoving = Math.abs(targetPixelX - currentX) > 1 || Math.abs(targetPixelY - currentY) > 1;
+      if (isMoving) {
+        const bounce = Math.sin(this.npcWalkTime * 8 + view.breathPhase) * 2;
+        view.container.y = newY + bounce;
+      }
+    }
+  }
+
+  /**
+   * 选中 NPC（高亮显示）
+   *
+   * @param npcId - 要选中的 NPC ID
+   */
+  private selectNPC(npcId: string): void {
+    // 取消之前的选中
+    this.deselectNPC();
+
+    this.selectedNPCId = npcId;
+
+    // 创建选中高亮环
+    const view = this.npcDots.get(npcId);
+    if (!view) return;
+
+    const ring = new Graphics();
+    const ringRadius = NPC_DOT_RADIUS + 8;
+    ring.circle(0, 0, ringRadius);
+    ring.stroke({ color: 0xffeb3b, width: 2, alpha: 0.9 });
+    ring.circle(0, 0, ringRadius + 3);
+    ring.stroke({ color: 0xffeb3b, width: 1, alpha: 0.4 });
+    view.container.addChildAt(ring, 0);
+    this.npcSelectionRing = ring;
+  }
+
+  /**
+   * 取消选中 NPC
+   */
+  private deselectNPC(): void {
+    if (this.npcSelectionRing) {
+      this.npcSelectionRing.destroy();
+      this.npcSelectionRing = null;
+    }
+    this.selectedNPCId = null;
+  }
+
+  /**
+   * 更新 NPC 选中高亮动画（脉冲闪烁）
+   */
+  private updateNPCSelection(): void {
+    if (!this.npcSelectionRing || !this.selectedNPCId) return;
+
+    // 脉冲缩放动画
+    const pulse = 1 + 0.1 * Math.sin(this.npcWalkTime * 4);
+    this.npcSelectionRing.scale.set(pulse);
   }
 
   /**
@@ -2449,32 +2574,9 @@ export class MapScene extends BaseScene {
    * 将鼠标位置对齐到虚拟网格，显示半透明黄色覆盖。
    */
   private updateCellHighlight(): void {
-    if (this.dragging || this.selection.active) {
-      this.cellHighlight.graphics.visible = false;
-      this.cellHighlight.visible = false;
-      return;
-    }
-
-    // 将全局坐标转换为本地坐标
-    const camState = this.cameraManager.getState();
-    const localX = this.pointerGlobalPos.x + camState.x;
-    const localY = this.pointerGlobalPos.y + camState.y;
-
-    // 对齐到虚拟网格
-    const gridX = Math.floor(localX / CELL_HOVER_SIZE) * CELL_HOVER_SIZE;
-    const gridY = Math.floor(localY / CELL_HOVER_SIZE) * CELL_HOVER_SIZE;
-
-    if (gridX !== this.cellHighlight.gridX || gridY !== this.cellHighlight.gridY) {
-      this.cellHighlight.gridX = gridX;
-      this.cellHighlight.gridY = gridY;
-
-      const gfx = this.cellHighlight.graphics;
-      gfx.clear();
-      gfx.rect(gridX, gridY, CELL_HOVER_SIZE, CELL_HOVER_SIZE)
-        .fill({ color: CELL_HOVER_COLOR, alpha: CELL_HOVER_ALPHA });
-      gfx.visible = true;
-      this.cellHighlight.visible = true;
-    }
+    // 格子悬停高亮已禁用（取消鼠标移动时的色块）
+    this.cellHighlight.graphics.visible = false;
+    this.cellHighlight.visible = false;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -2556,20 +2658,34 @@ export class MapScene extends BaseScene {
   };
 
   // ═══════════════════════════════════════════════════════════
-  // 拖拽交互
+  // 边缘滚动交互
   // ═══════════════════════════════════════════════════════════
 
-  private onPointerDown = (e: import('pixi.js').FederatedPointerEvent): void => {
-    this.dragging = true;
-    this.container.cursor = 'grabbing';
-    this.dragStart = { x: e.globalX, y: e.globalY };
-    this.lastPointerPos = { x: e.globalX, y: e.globalY };
-
-    // 拖拽开始时清除惯性
-    this.dragVelocity.x = 0;
-    this.dragVelocity.y = 0;
+  /**
+   * 鼠标进入容器：启用边缘滚动检测
+   */
+  private onPointerEnter = (): void => {
+    this.pointerInContainer = true;
   };
 
+  /**
+   * 鼠标离开容器：停止边缘滚动
+   */
+  private onPointerLeave = (): void => {
+    this.pointerInContainer = false;
+    this.edgeScrollVelocity.x = 0;
+    this.edgeScrollVelocity.y = 0;
+  };
+
+  /**
+   * 指针移动：更新 Tooltip 位置 + 计算边缘滚动速度
+   *
+   * 边缘滚动逻辑：
+   * - 获取鼠标在容器中的位置
+   * - 计算到各边缘的距离
+   * - 在边缘检测区域内，根据距离比例计算滚动速度
+   * - 鼠标越靠近边缘，速度越快
+   */
   private onPointerMove = (e: import('pixi.js').FederatedPointerEvent): void => {
     // 记录鼠标位置（用于 Tooltip 跟随）
     this.pointerGlobalPos = { x: e.globalX, y: e.globalY };
@@ -2580,27 +2696,61 @@ export class MapScene extends BaseScene {
       return;
     }
 
-    if (!this.dragging) return;
-
-    const dx = e.globalX - this.dragStart.x;
-    const dy = e.globalY - this.dragStart.y;
-
-    // 计算本次移动速度（用于惯性）
-    this.dragVelocity.x = e.globalX - this.lastPointerPos.x;
-    this.dragVelocity.y = e.globalY - this.lastPointerPos.y;
-    this.lastPointerPos = { x: e.globalX, y: e.globalY };
-
-    // 平移地图容器（通过摄像机管理器，直接移动无平滑）
-    const camState = this.cameraManager.getState();
-    this.cameraManager.panTo(camState.x + dx, camState.y + dy, false);
-
-    this.dragStart = { x: e.globalX, y: e.globalY };
+    // ── 边缘滚动速度计算 ──────────────────────────────────
+    this.computeEdgeScrollVelocity(e.globalX, e.globalY);
   };
 
+  /**
+   * 根据鼠标位置计算边缘滚动速度
+   *
+   * @param globalX 鼠标全局 X 坐标
+   * @param globalY 鼠标全局 Y 坐标
+   */
+  private computeEdgeScrollVelocity(globalX: number, globalY: number): void {
+    // 获取容器实际尺寸（通过 renderer 或 DOM）
+    const renderer = this.container.parent;
+    if (!renderer) {
+      this.edgeScrollVelocity.x = 0;
+      this.edgeScrollVelocity.y = 0;
+      return;
+    }
+
+    // 使用 PixiJS 获取画布尺寸
+    const width = renderer.width;
+    const height = renderer.height;
+    const zone = this.EDGE_SCROLL_ZONE;
+
+    let vx = 0;
+    let vy = 0;
+
+    // 左边缘：鼠标在左边 zone 像素内 → 地图向右滚（正方向）
+    if (globalX < zone) {
+      const ratio = 1 - (globalX / zone); // 越靠近边缘 ratio 越大（0→1）
+      vx = EDGE_SCROLL_MIN_SPEED + ratio * (EDGE_SCROLL_MAX_SPEED - EDGE_SCROLL_MIN_SPEED);
+    }
+    // 右边缘：鼠标在右边 zone 像素内 → 地图向左滚（负方向）
+    else if (globalX > width - zone) {
+      const ratio = 1 - ((width - globalX) / zone);
+      vx = -(EDGE_SCROLL_MIN_SPEED + ratio * (EDGE_SCROLL_MAX_SPEED - EDGE_SCROLL_MIN_SPEED));
+    }
+
+    // 上边缘：鼠标在上边 zone 像素内 → 地图向下滚（正方向）
+    if (globalY < zone) {
+      const ratio = 1 - (globalY / zone);
+      vy = EDGE_SCROLL_MIN_SPEED + ratio * (EDGE_SCROLL_MAX_SPEED - EDGE_SCROLL_MIN_SPEED);
+    }
+    // 下边缘：鼠标在下边 zone 像素内 → 地图向上滚（负方向）
+    else if (globalY > height - zone) {
+      const ratio = 1 - ((height - globalY) / zone);
+      vy = -(EDGE_SCROLL_MIN_SPEED + ratio * (EDGE_SCROLL_MAX_SPEED - EDGE_SCROLL_MIN_SPEED));
+    }
+
+    this.edgeScrollVelocity.x = vx;
+    this.edgeScrollVelocity.y = vy;
+  }
+
   private onPointerUp = (): void => {
-    this.dragging = false;
-    this.container.cursor = 'grab';
-    // 惯性速度已由 onPointerMove 累积，松手后由 updateInertia 接管
+    // 无拖拽逻辑，保留空方法以防事件绑定报错
   };
 
   // ═══════════════════════════════════════════════════════════
@@ -2624,19 +2774,12 @@ export class MapScene extends BaseScene {
     this.touchPoints.set(e.pointerId, { x: e.globalX, y: e.globalY });
 
     if (this.touchPoints.size === 1) {
-      // 第一根手指：进入拖拽模式
-      this.dragging = true;
-      this.container.cursor = 'grabbing';
-      this.dragStart = { x: e.globalX, y: e.globalY };
-      this.lastPointerPos = { x: e.globalX, y: e.globalY };
-      this.dragVelocity.x = 0;
-      this.dragVelocity.y = 0;
+      // 第一根手指：进入平移模式
+      this.touchDragStart = { x: e.globalX, y: e.globalY };
+      this.touchDragVelocity = { x: 0, y: 0 };
     } else if (this.touchPoints.size === 2) {
-      // 第二根手指：退出拖拽，进入缩放模式
-      this.dragging = false;
-      this.container.cursor = 'grab';
-      this.dragVelocity.x = 0;
-      this.dragVelocity.y = 0;
+      // 第二根手指：退出平移，进入缩放模式
+      this.touchDragVelocity = { x: 0, y: 0 };
 
       // 计算两指初始距离和中心
       const pts = Array.from(this.touchPoints.values());
@@ -2663,18 +2806,19 @@ export class MapScene extends BaseScene {
     // 更新此触摸点位置
     this.touchPoints.set(e.pointerId, { x: e.globalX, y: e.globalY });
 
-    if (this.touchPoints.size === 1 && this.dragging) {
-      // 单指拖拽
-      const dx = e.globalX - this.dragStart.x;
-      const dy = e.globalY - this.dragStart.y;
+    if (this.touchPoints.size === 1) {
+      // 单指平移
+      const dx = e.globalX - this.touchDragStart.x;
+      const dy = e.globalY - this.touchDragStart.y;
 
-      this.dragVelocity.x = e.globalX - this.lastPointerPos.x;
-      this.dragVelocity.y = e.globalY - this.lastPointerPos.y;
-      this.lastPointerPos = { x: e.globalX, y: e.globalY };
+      this.touchDragVelocity = {
+        x: e.globalX - this.touchDragStart.x,
+        y: e.globalY - this.touchDragStart.y,
+      };
 
       const camState = this.cameraManager.getState();
       this.cameraManager.panTo(camState.x + dx, camState.y + dy, false);
-      this.dragStart = { x: e.globalX, y: e.globalY };
+      this.touchDragStart = { x: e.globalX, y: e.globalY };
     } else if (this.touchPoints.size >= 2) {
       // 双指缩放：取最新两个触摸点位置
       const pts = Array.from(this.touchPoints.values());
@@ -2714,20 +2858,14 @@ export class MapScene extends BaseScene {
     this.touchPoints.delete(e.pointerId);
 
     if (this.touchPoints.size === 0) {
-      // 全部手指离开：停止拖拽，恢复光标
-      this.dragging = false;
-      this.container.cursor = 'grab';
+      // 全部手指离开：停止平移
       this.lastPinchDistance = 0;
     } else if (this.touchPoints.size === 1) {
-      // 从双指切回单指：重新开始拖拽
+      // 从双指切回单指：重新开始平移
       const remaining = this.touchPoints.values().next().value;
       if (remaining) {
-        this.dragging = true;
-        this.container.cursor = 'grabbing';
-        this.dragStart = { x: remaining.x, y: remaining.y };
-        this.lastPointerPos = { x: remaining.x, y: remaining.y };
-        this.dragVelocity.x = 0;
-        this.dragVelocity.y = 0;
+        this.touchDragStart = { x: remaining.x, y: remaining.y };
+        this.touchDragVelocity = { x: 0, y: 0 };
       }
       this.lastPinchDistance = 0;
     }

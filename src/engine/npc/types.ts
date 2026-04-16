@@ -129,6 +129,10 @@ export interface NPCInstance {
   animFrame: number;
   /** 动画计时器 */
   animTimer: number;
+
+  // 巡逻/移动
+  /** 巡逻移动数据（由巡逻系统维护） */
+  movement?: NPCMovement;
 }
 
 // ---------------------------------------------------------------------------
@@ -242,6 +246,55 @@ export interface NPCTeam {
   /** 是否已组建完成 */
   formed: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// NPC 巡逻/移动数据（NPCMovement）
+// ---------------------------------------------------------------------------
+
+/** NPC 移动与巡逻数据，挂载到 NPCInstance 上 */
+export interface NPCMovement {
+  /** 移动目标 X 坐标 */
+  targetX: number;
+  /** 移动目标 Y 坐标 */
+  targetY: number;
+  /** 移动速度（格/秒） */
+  speed: number;
+  /** 当前移动状态 */
+  state: 'walking' | 'idle';
+  /** 停留计时器（秒），倒计时到 0 后选择新目标 */
+  idleTimer: number;
+  /** 巡逻半径（格） */
+  patrolRadius: number;
+  /** 出生点 X 坐标 */
+  homeX: number;
+  /** 出生点 Y 坐标 */
+  homeY: number;
+}
+
+// ---------------------------------------------------------------------------
+// 巡逻配置（按 NPC 类型）
+// ---------------------------------------------------------------------------
+
+/** NPC 巡逻行为配置 */
+export interface PatrolConfig {
+  /** 巡逻半径（格） */
+  patrolRadius: number;
+  /** 移动速度（格/秒） */
+  speed: number;
+  /** 停留时间范围 [min, max]（秒） */
+  idleDurationRange: [number, number];
+}
+
+/** 按职业定义的默认巡逻配置 */
+export const PATROL_CONFIGS: Record<string, PatrolConfig> = {
+  soldier:   { patrolRadius: 3,  speed: 2.0, idleDurationRange: [2, 4] },
+  merchant:  { patrolRadius: 5,  speed: 1.2, idleDurationRange: [3, 5] },
+  general:   { patrolRadius: 7,  speed: 1.8, idleDurationRange: [2, 4] },
+  farmer:    { patrolRadius: 4,  speed: 1.0, idleDurationRange: [3, 5] },
+  craftsman: { patrolRadius: 3,  speed: 1.0, idleDurationRange: [3, 6] },
+  scholar:   { patrolRadius: 4,  speed: 1.0, idleDurationRange: [3, 5] },
+  villager:  { patrolRadius: 6,  speed: 0.8, idleDurationRange: [2, 5] },
+};
 
 // ---------------------------------------------------------------------------
 // 寻路接口

@@ -20,6 +20,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ThreeKingdomsEngine } from '@/games/three-kingdoms/ThreeKingdomsEngine';
+import type { CampaignSystem } from '@/games/three-kingdoms/CampaignSystem';
 import { ThreeKingdomsRenderStateAdapter } from '@/games/three-kingdoms/ThreeKingdomsRenderStateAdapter';
 import { ThreeKingdomsEventSystem, type ActiveEvent, type EventChoice } from '@/games/three-kingdoms/ThreeKingdomsEventSystem';
 import { MapGenerator, type GameMap } from '@/games/three-kingdoms/MapGenerator';
@@ -102,6 +103,170 @@ interface NPCDialogue {
   currentLine: number;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// NPC 详细信息数据
+// ═══════════════════════════════════════════════════════════════
+
+/** NPC 属性数据（武将专属） */
+interface NPCAttributes {
+  force: number;      // 武力
+  intelligence: number; // 智力
+  command: number;    // 统帅
+  defense: number;    // 防御
+}
+
+/** NPC 可购买物品（商人专属） */
+interface NPCShopItem {
+  name: string;
+  price: number;
+  description: string;
+}
+
+/** NPC 详细信息 */
+interface NPCInfoData {
+  name: string;
+  title: string;
+  description: string;
+  profession: string;
+  /** 武将属性（仅武将） */
+  attributes?: NPCAttributes;
+  /** 可购买物品（仅商人） */
+  shopItems?: NPCShopItem[];
+  /** 士兵职责（仅士兵） */
+  duty?: string;
+}
+
+/**
+ * NPC 详细信息映射表
+ *
+ * 根据 NPC defId 或 NPC ID 前缀匹配，提供丰富的角色信息。
+ * 包含武将属性、商人商品、士兵职责等职业特有数据。
+ */
+const NPC_INFO_MAP: Record<string, NPCInfoData> = {
+  // ── 武将 ──────────────────────────────────────────────
+  general_guan: {
+    name: '关铁柱',
+    title: '忠义武将',
+    description: '自幼习武，忠心耿耿。传闻乃关羽后裔，使一口青龙偃月刀，威震四方。',
+    profession: 'general',
+    attributes: { force: 92, intelligence: 65, command: 78, defense: 80 },
+  },
+  general_zhang: {
+    name: '张豹胆',
+    title: '猛将先锋',
+    description: '天生神力，性格豪爽。据说一声怒吼可退千军，军中无人不知其勇。',
+    profession: 'general',
+    attributes: { force: 96, intelligence: 45, command: 60, defense: 72 },
+  },
+  // ── 士兵 ──────────────────────────────────────────────
+  soldier_wang: {
+    name: '王守义',
+    title: '城门守卫',
+    description: '忠于职守，保卫城池。十年如一日守卫城门，从未擅离职守。',
+    profession: 'soldier',
+    duty: '城门守卫 — 负责北城门安全，盘查来往行人',
+  },
+  soldier_li: {
+    name: '李铁枪',
+    title: '巡逻兵',
+    description: '巡逻城内各处，维护治安。百姓称赞其公正严明。',
+    profession: 'soldier',
+    duty: '城内巡逻 — 日夜轮值，维护城内治安',
+  },
+  // ── 商人 ──────────────────────────────────────────────
+  merchant_chen: {
+    name: '陈富贵',
+    title: '行商',
+    description: '四处行商，贩卖各地特产。从西域到东吴，无处不有其足迹。',
+    profession: 'merchant',
+    shopItems: [
+      { name: '精铁矿石', price: 50, description: '打造兵器的上好材料' },
+      { name: '蜀锦', price: 80, description: '益州特产，质地细腻' },
+      { name: '西域香料', price: 120, description: '稀有香料，可入药' },
+    ],
+  },
+  merchant_zhao: {
+    name: '赵聚宝',
+    title: '古董商',
+    description: '经营古玩珍宝，据说手中常有稀世之物。眼光独到，鲜有走眼。',
+    profession: 'merchant',
+    shopItems: [
+      { name: '青铜剑', price: 200, description: '上古名剑，锋利无比' },
+      { name: '玉佩', price: 150, description: '温润如脂，可辟邪' },
+      { name: '兵法残卷', price: 300, description: '疑似孙子兵法残篇' },
+    ],
+  },
+  // ── 学者 ──────────────────────────────────────────────
+  scholar_sun: {
+    name: '孙明理',
+    title: '大儒',
+    description: '饱读诗书，学富五车。常为官府出谋划策，深受百姓敬仰。',
+    profession: 'scholar',
+  },
+  scholar_zhou: {
+    name: '周文远',
+    title: '书生',
+    description: '年轻有为，才华横溢。正在研习经史子集，志在科举入仕。',
+    profession: 'scholar',
+  },
+  // ── 农民 ──────────────────────────────────────────────
+  farmer_liu: {
+    name: '刘老根',
+    title: '老农',
+    description: '种了一辈子地，经验丰富。今年收成不错，乐得合不拢嘴。',
+    profession: 'farmer',
+  },
+  farmer_zhang: {
+    name: '张稻穗',
+    title: '佃农',
+    description: '勤劳朴实，日出而作日落而息。是村里最勤快的庄稼人。',
+    profession: 'farmer',
+  },
+  // ── 工匠 ──────────────────────────────────────────────
+  craftsman_tie: {
+    name: '铁锤',
+    title: '铁匠',
+    description: '锻造技术精湛，打造过无数利器。军中许多兵器皆出自其手。',
+    profession: 'craftsman',
+  },
+  craftsman_mu: {
+    name: '木巧',
+    title: '木匠',
+    description: '擅长建筑与机关术，城中不少建筑由其设计建造。',
+    profession: 'craftsman',
+  },
+};
+
+/**
+ * 根据 NPC ID 获取 NPC 详细信息
+ *
+ * 先精确匹配 NPC ID，再尝试按 defId 匹配，
+ * 最后按职业前缀匹配兜底。
+ */
+function getNPCInfoById(npcId: string, npcType: string): NPCInfoData | null {
+  // 精确匹配
+  if (NPC_INFO_MAP[npcId]) return NPC_INFO_MAP[npcId];
+  // 按 defId 前缀匹配
+  const prefix = npcType || '';
+  for (const key of Object.keys(NPC_INFO_MAP)) {
+    if (npcId.startsWith(key) || key.startsWith(npcId)) return NPC_INFO_MAP[key];
+  }
+  // 按职业匹配兜底
+  const professionPrefixes: Record<string, string[]> = {
+    general: ['general_guan', 'general_zhang'],
+    soldier: ['soldier_wang', 'soldier_li'],
+    merchant: ['merchant_chen', 'merchant_zhao'],
+    scholar: ['scholar_sun', 'scholar_zhou'],
+    farmer: ['farmer_liu', 'farmer_zhang'],
+    craftsman: ['craftsman_tie', 'craftsman_mu'],
+  };
+  const fallbacks = professionPrefixes[prefix];
+  if (fallbacks && fallbacks.length > 0) {
+    return NPC_INFO_MAP[fallbacks[npcId.charCodeAt(0) % fallbacks.length]];
+  }
+  return null;
+}
+
 /** 存档槽位 */
 interface SaveSlot {
   id: string;
@@ -130,7 +295,409 @@ const ACHIEVEMENTS = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// 组件
+// 征战关卡面板组件
+// ═══════════════════════════════════════════════════════════════
+
+/** 关卡状态对应的显示文本和颜色 */
+const STAGE_STATUS_MAP: Record<string, { label: string; color: string }> = {
+  locked: { label: '🔒', color: '#666' },
+  available: { label: '⚔️', color: '#4ade80' },
+  in_progress: { label: '⚔️', color: '#facc15' },
+  victory: { label: '✅', color: '#60a5fa' },
+  defeated: { label: '💀', color: '#f87171' },
+};
+
+/** 难度对应的颜色和标签 */
+const DIFFICULTY_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  easy: { label: '简单', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' },
+  normal: { label: '普通', color: '#facc15', bg: 'rgba(250,204,21,0.15)' },
+  hard: { label: '困难', color: '#f97316', bg: 'rgba(249,115,22,0.15)' },
+  legendary: { label: '传奇', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' },
+};
+
+/** 兵种图标映射 */
+const TROOP_ICONS: Record<string, string> = {
+  infantry: '🗡️',
+  cavalry: '🐎',
+  archers: '🏹',
+};
+
+/** 城防星级显示（满星10） */
+function fortLevelStars(level: number): string {
+  return '★'.repeat(level) + '☆'.repeat(Math.max(0, 10 - level));
+}
+
+/**
+ * 关卡详情弹窗 —— 展示关卡完整信息（守将、兵力、城防、奖励）
+ * 点击关卡列表项时弹出此弹窗。
+ */
+function LevelDetailModal({
+  detail,
+  statusInfo,
+  canAttack,
+  onBattleStart,
+  onClose,
+  COLOR_THEME: CT,
+}: {
+  detail: NonNullable<ReturnType<CampaignSystem['getLevelDetail']>>;
+  statusInfo: { canAttack: boolean; reason?: string };
+  canAttack: boolean;
+  onBattleStart: () => void;
+  onClose: () => void;
+  COLOR_THEME: typeof COLOR_THEME;
+}) {
+  const diff = DIFFICULTY_CONFIG[detail.battleConfig.difficulty] ?? DIFFICULTY_CONFIG.normal;
+  const totalTroops = detail.defender.troops.infantry + detail.defender.troops.cavalry + detail.defender.troops.archers;
+
+  return (
+    <div style={{
+      position: 'absolute', top: '50%', left: '50%',
+      transform: 'translate(-50%, -50%)',
+      background: 'rgba(0,0,0,0.95)', borderRadius: 12, padding: 20,
+      width: 440, maxHeight: '85vh', overflowY: 'auto',
+      border: `1px solid ${CT.selectedBorder}`,
+      color: CT.textPrimary, zIndex: 110,
+    }}>
+      {/* 标题行 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h2 style={{ margin: 0, fontSize: 18, color: CT.accentGold }}>{detail.name}</h2>
+        <span style={{
+          fontSize: 12, padding: '2px 10px', borderRadius: 4,
+          color: diff.color, background: diff.bg, fontWeight: 'bold',
+        }}>{diff.label}</span>
+      </div>
+
+      {/* 描述 */}
+      <p style={{ margin: '0 0 12px', fontSize: 12, color: CT.textDim, lineHeight: 1.6,
+        padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6,
+      }}>
+        {detail.description}
+      </p>
+
+      {/* 守将信息 */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 'bold', color: CT.accentGold, marginBottom: 4 }}>🏴 守军</div>
+        <div style={{ fontSize: 12, lineHeight: 1.8 }}>
+          <div>主将：<span style={{ color: '#f87171', fontWeight: 'bold' }}>{detail.defender.lord}</span></div>
+          {detail.defender.officers.length > 0 && (
+            <div>副将：{detail.defender.officers.map((o, i) => (
+              <span key={i} style={{ color: CT.textDim }}>{o}{i < detail.defender.officers.length - 1 ? '、' : ''}</span>
+            ))}</div>
+          )}
+        </div>
+      </div>
+
+      {/* 兵力明细 */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 'bold', color: CT.accentGold, marginBottom: 4 }}>
+          ⚔️ 兵力 <span style={{ color: CT.textDim, fontWeight: 'normal' }}>(总计 {totalTroops})</span>
+        </div>
+        <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
+          <span>{TROOP_ICONS.infantry} 步兵 {detail.defender.troops.infantry}</span>
+          <span>{TROOP_ICONS.cavalry} 骑兵 {detail.defender.troops.cavalry}</span>
+          <span>{TROOP_ICONS.archers} 弓兵 {detail.defender.troops.archers}</span>
+        </div>
+      </div>
+
+      {/* 城防 */}
+      <div style={{ marginBottom: 10, fontSize: 12 }}>
+        <span style={{ color: CT.accentGold, fontWeight: 'bold' }}>🏰 城防：</span>
+        <span style={{ color: '#facc15' }}>{fortLevelStars(detail.defender.fortLevel)}</span>
+        <span style={{ color: CT.textDim, marginLeft: 6 }}>Lv.{detail.defender.fortLevel}</span>
+      </div>
+
+      {/* 奖励 */}
+      {detail.rewards && (
+        <div style={{
+          marginBottom: 12, padding: '10px 12px',
+          background: 'rgba(74,222,128,0.06)', borderRadius: 6,
+          border: '1px solid rgba(74,222,128,0.15)',
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 'bold', color: '#4ade80', marginBottom: 6 }}>🎁 攻克奖励</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: CT.textPrimary }}>
+            {detail.rewards.gold > 0 && <span>💰 金 {detail.rewards.gold}</span>}
+            {detail.rewards.food > 0 && <span>🌾 粮 {detail.rewards.food}</span>}
+            {detail.rewards.materials > 0 && <span>📦 材料 {detail.rewards.materials}</span>}
+            {detail.rewards.recruitHero && <span style={{ color: '#facc15' }}>🧑‍✈️ 可招募英雄</span>}
+            {detail.rewards.unlockBuilding && <span style={{ color: '#60a5fa' }}>🏗️ 解锁建筑</span>}
+          </div>
+        </div>
+      )}
+
+      {/* 无法攻打原因 */}
+      {!canAttack && statusInfo.reason && (
+        <div style={{ fontSize: 12, color: '#f87171', marginBottom: 10, textAlign: 'center' }}>
+          {statusInfo.reason}
+        </div>
+      )}
+
+      {/* 操作按钮 */}
+      <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+        <button onClick={onClose} style={{
+          flex: 1, padding: '10px 0', fontSize: 14, cursor: 'pointer',
+          borderRadius: 6, border: `1px solid ${CT.selectedBorder}`,
+          background: 'transparent', color: CT.textDim,
+        }}>返回</button>
+        {canAttack && (
+          <button onClick={onBattleStart} style={{
+            flex: 1, padding: '10px 0', fontSize: 14, fontWeight: 'bold',
+            cursor: 'pointer', borderRadius: 6, border: 'none',
+            background: `linear-gradient(135deg, ${CT.accentGold}, #b91c1c)`, color: '#fff',
+          }}>⚔️ 进攻</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** 征战关卡面板 */
+function CampaignPanel({
+  engine,
+  renderState,
+  onClose,
+  onBattleStart,
+  COLOR_THEME: CT,
+}: {
+  engine: ThreeKingdomsEngine | null;
+  renderState: GameRenderState | undefined;
+  onClose: () => void;
+  onBattleStart: (stageId: string) => void;
+  addToast: (text: string, type: 'success' | 'error') => void;
+  COLOR_THEME: typeof COLOR_THEME;
+}) {
+  const [detailStageId, setDetailStageId] = useState<string | null>(null);
+  const campaignData = renderState?.campaign;
+
+  // 获取关卡列表
+  const stages = useMemo(() => campaignData?.stageStatuses ?? [], [campaignData]);
+
+  // 获取详情弹窗所需数据
+  const detailData = useMemo(() => {
+    if (!detailStageId || !engine) return null;
+    const campaignSys = engine.getCampaignSystem();
+    const detail = campaignSys.getLevelDetail(detailStageId);
+    if (!detail) return null;
+    const statusInfo = campaignSys.getLevelStatus(detailStageId);
+    return { detail, statusInfo, canAttack: statusInfo.canAttack };
+  }, [detailStageId, engine]);
+
+  return (
+    <div style={{
+      position: 'absolute', top: '50%', left: '50%',
+      transform: 'translate(-50%, -50%)',
+      background: 'rgba(0,0,0,0.92)', borderRadius: 12, padding: 20,
+      width: 520, maxHeight: '80vh', overflowY: 'auto',
+      border: `1px solid ${CT.selectedBorder}`,
+      color: CT.textPrimary,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h2 style={{ margin: 0, fontSize: 18, color: CT.accentGold }}>🏆 征战天下</h2>
+        <button onClick={onClose} style={{
+          background: 'transparent', border: `1px solid ${CT.selectedBorder}`,
+          color: CT.textDim, borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12,
+        }}>✕ 关闭</button>
+      </div>
+
+      {/* 关卡进度 */}
+      <div style={{ fontSize: 12, color: CT.textDim, marginBottom: 12 }}>
+        进度：{campaignData?.completedStages?.length ?? 0} / {stages.length} 关卡
+        {campaignData?.totalStars != null && ` | ⭐ ${campaignData.totalStars} / ${campaignData.maxStars}`}
+      </div>
+
+      {/* 关卡列表 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {stages.map((stage) => {
+          const statusInfo = STAGE_STATUS_MAP[stage.status] ?? STAGE_STATUS_MAP.locked;
+          const isLocked = stage.status === 'locked';
+          const isVictory = stage.status === 'victory';
+
+          return (
+            <div key={stage.id}
+              onClick={() => !isLocked && setDetailStageId(stage.id)}
+              style={{
+                padding: '10px 14px', borderRadius: 8,
+                border: `1px solid ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)'}`,
+                background: isLocked ? 'rgba(255,255,255,0.01)' : isVictory ? 'rgba(96,165,250,0.06)' : 'rgba(255,255,255,0.03)',
+                cursor: isLocked ? 'not-allowed' : 'pointer',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                opacity: isLocked ? 0.5 : 1,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>{statusInfo.label}</span>
+                <span style={{ fontSize: 14, fontWeight: 'bold', color: isLocked ? CT.textDim : CT.textPrimary }}>
+                  {stage.name}
+                </span>
+                {stage.stars > 0 && (
+                  <span style={{ fontSize: 11, color: '#facc15' }}>{'⭐'.repeat(stage.stars)}</span>
+                )}
+              </div>
+              {!isLocked && stage.status !== 'victory' && (
+                <span style={{ fontSize: 11, color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)',
+                  padding: '1px 8px', borderRadius: 4,
+                }}>可攻</span>
+              )}
+              {isVictory && (
+                <span style={{ fontSize: 11, color: '#60a5fa' }}>已攻克</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 关卡详情弹窗 */}
+      {detailData && (
+        <LevelDetailModal
+          detail={detailData.detail}
+          statusInfo={detailData.statusInfo}
+          canAttack={detailData.canAttack}
+          onBattleStart={() => {
+            const id = detailStageId!;
+            setDetailStageId(null);
+            onBattleStart(id);
+          }}
+          onClose={() => setDetailStageId(null)}
+          COLOR_THEME={CT}
+        />
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 征战战斗报告弹窗组件
+// ═══════════════════════════════════════════════════════════════
+
+/** 征战战斗报告弹窗 */
+function CampaignBattleReport({
+  result,
+  onClose,
+  COLOR_THEME: CT,
+}: {
+  result: {
+    victory?: boolean;
+    stageId?: string;
+    summary?: string;
+    stars?: number;
+    totalAttackerLosses?: number;
+    totalDefenderLosses?: number;
+    troopsRemaining?: number;
+    troopsRemainingPercent?: number;
+    rewards?: { territory?: string; resources?: Record<string, number>; unlockHero?: string };
+    rounds?: Array<{ summary?: string }>;
+  };
+  onClose: () => void;
+  COLOR_THEME: typeof COLOR_THEME;
+}) {
+  const isVictory = result.victory === true;
+
+  return (
+    <div style={{
+      position: 'absolute', top: '50%', left: '50%',
+      transform: 'translate(-50%, -50%)',
+      background: 'rgba(0,0,0,0.95)', borderRadius: 12, padding: 24,
+      width: 420, maxHeight: '85vh', overflowY: 'auto',
+      border: `2px solid ${isVictory ? '#4ade80' : '#ef4444'}`,
+      color: CT.textPrimary, zIndex: 120,
+    }}>
+      {/* 标题 */}
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <div style={{ fontSize: 32, marginBottom: 6 }}>{isVictory ? '🎉' : '💀'}</div>
+        <h2 style={{ margin: 0, fontSize: 20, color: isVictory ? '#4ade80' : '#ef4444' }}>
+          {isVictory ? '大获全胜！' : '兵败如山倒'}
+        </h2>
+        {result.stars != null && result.stars > 0 && (
+          <div style={{ fontSize: 18, marginTop: 4, color: '#facc15' }}>{'⭐'.repeat(result.stars)}</div>
+        )}
+      </div>
+
+      {/* 战斗摘要 */}
+      {result.summary && (
+        <p style={{ textAlign: 'center', fontSize: 13, color: CT.textDim, margin: '0 0 14px' }}>
+          {result.summary}
+        </p>
+      )}
+
+      {/* 战斗日志 */}
+      {Array.isArray(result.rounds) && result.rounds.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 6, color: CT.accentGold }}>
+            📜 战斗经过
+          </div>
+          <div style={{
+            maxHeight: 140, overflowY: 'auto', fontSize: 11,
+            color: CT.textDim, lineHeight: 1.8,
+            padding: 8, borderRadius: 6, background: 'rgba(0,0,0,0.3)',
+          }}>
+            {result.rounds.map((round, i) => (
+              <div key={i}>第{i + 1}回合：{round.summary ?? '...'}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 双方损失 */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
+        padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)',
+        marginBottom: 14,
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: CT.textDim, marginBottom: 2 }}>我方损失</div>
+          <div style={{ fontSize: 18, fontWeight: 'bold', color: '#f87171' }}>
+            {result.totalAttackerLosses ?? 0}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: CT.textDim, marginBottom: 2 }}>敌方损失</div>
+          <div style={{ fontSize: 18, fontWeight: 'bold', color: '#4ade80' }}>
+            {result.totalDefenderLosses ?? 0}
+          </div>
+        </div>
+      </div>
+
+      {/* 剩余兵力 */}
+      {result.troopsRemaining != null && (
+        <div style={{ textAlign: 'center', fontSize: 12, color: CT.textDim, marginBottom: 14 }}>
+          剩余兵力：{result.troopsRemaining} ({((result.troopsRemainingPercent ?? 0) * 100).toFixed(0)}%)
+        </div>
+      )}
+
+      {/* 获得奖励 */}
+      {isVictory && result.rewards && (
+        <div style={{
+          padding: 10, borderRadius: 8, background: 'rgba(74,222,128,0.06)',
+          border: '1px solid rgba(74,222,128,0.15)', marginBottom: 14,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 'bold', color: '#4ade80', marginBottom: 6 }}>🎁 战利品</div>
+          <div style={{ fontSize: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {result.rewards.territory && <span>🏰 {result.rewards.territory}</span>}
+            {result.rewards.resources && Object.entries(result.rewards.resources).map(([key, val]) => (
+              <span key={key}>{key}: {val}</span>
+            ))}
+            {result.rewards.unlockHero && (
+              <span style={{ color: '#facc15' }}>🧑‍✈️ 解锁英雄</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 确认按钮 */}
+      <button onClick={onClose} style={{
+        display: 'block', margin: '0 auto',
+        padding: '10px 32px', fontSize: 14,
+        cursor: 'pointer', borderRadius: 8, border: 'none',
+        background: isVictory ? '#4ade80' : '#ef4444',
+        color: '#000', fontWeight: 'bold',
+      }}>
+        {isVictory ? '确认' : '返回'}
+      </button>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 主组件
 // ═══════════════════════════════════════════════════════════════
 
 export default function ThreeKingdomsPixiGame() {
@@ -176,12 +743,17 @@ export default function ThreeKingdomsPixiGame() {
   const [quests, setQuests] = useState<QuestData[]>([]);
   const [showNPCDialogue, setShowNPCDialogue] = useState(false);
   const [npcDialogue, setNPCDialogue] = useState<NPCDialogue | null>(null);
+  const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
 
   // 自动存档 + 成就 + Tooltip
   const [lastAutoSave, setLastAutoSave] = useState(0);
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [tooltip, setTooltip] = useState<{text:string;x:number;y:number}|null>(null);
+
+  // 征战关卡战斗报告
+  const [showCampaignBattleReport, setShowCampaignBattleReport] = useState(false);
+  const [campaignBattleResult, setCampaignBattleResult] = useState<any>(null);
 
   /** 添加 toast 提示，2 秒后自动消失 */
   const addToast = useCallback((text: string, type: 'success' | 'error') => {
@@ -583,29 +1155,46 @@ export default function ThreeKingdomsPixiGame() {
     engineRef.current?.handleKeyDown(' ');
   }, [currentEvent, addToast]);
 
-  /** 处理 NPC 点击 → 显示对话 */
+  /** 处理 NPC 点击 → 显示对话（从引擎获取真实 NPC 信息） */
   const handleNPCClick = useCallback((npcId: string) => {
-    // 模拟 NPC 对话内容
-    const dialogues: Record<string, string[]> = {
-      farmer: ['大人，今年的收成不错！', '需要更多农田才能养活百姓。'],
-      soldier: ['末将誓死守卫城池！', '请加强军备，敌军蠢蠢欲动。'],
-      merchant: ['大人，有些好货要不要看看？', '最近从西域运来了一批宝物。'],
-      scholar: ['书中自有黄金屋。', '大人应该多注重文教。'],
-      scout: ['前方发现敌军动向！', '需要加强斥候侦察。'],
-    };
+    const engine = engineRef.current;
+    if (!engine) return;
 
-    // 从 npcId 推断类型（简化处理）
-    const npcTypes = ['farmer', 'soldier', 'merchant', 'scholar', 'scout'];
-    const typeIndex = npcId.charCodeAt(0) % npcTypes.length;
-    const npcType = npcTypes[typeIndex];
-    const lines = dialogues[npcType] ?? ['你好，大人！'];
+    // 设置选中的 NPC ID（用于信息面板高亮）
+    setSelectedNpcId(npcId);
 
-    setNPCDialogue({
-      npcName: npcId,
-      npcType,
-      lines,
-      currentLine: 0,
-    });
+    // 从引擎获取 NPC 详细信息和对话
+    const npcInfo = engine.getNPCInfo(npcId);
+    const clickLines = engine.getNPCClickDialogue(npcId);
+
+    if (npcInfo) {
+      setNPCDialogue({
+        npcName: npcInfo.name,
+        npcType: npcInfo.profession,
+        lines: clickLines.map(l => l.text),
+        currentLine: 0,
+      });
+    } else {
+      // 兜底：使用默认对话
+      const dialogues: Record<string, string[]> = {
+        farmer: ['大人，今年的收成不错！', '需要更多农田才能养活百姓。'],
+        soldier: ['末将誓死守卫城池！', '请加强军备，敌军蠢蠢欲动。'],
+        merchant: ['大人，有些好货要不要看看？', '最近从西域运来了一批宝物。'],
+        scholar: ['书中自有黄金屋。', '大人应该多注重文教。'],
+        scout: ['前方发现敌军动向！', '需要加强斥候侦察。'],
+      };
+      const npcTypes = ['farmer', 'soldier', 'merchant', 'scholar', 'scout'];
+      const typeIndex = npcId.charCodeAt(0) % npcTypes.length;
+      const npcType = npcTypes[typeIndex];
+      const lines = dialogues[npcType] ?? ['你好，大人！'];
+
+      setNPCDialogue({
+        npcName: npcId,
+        npcType,
+        lines,
+        currentLine: 0,
+      });
+    }
     setShowNPCDialogue(true);
   }, []);
 
@@ -620,6 +1209,7 @@ export default function ThreeKingdomsPixiGame() {
     } else {
       setShowNPCDialogue(false);
       setNPCDialogue(null);
+      // 不立即清除 selectedNpcId，让信息面板保持显示
     }
   }, [npcDialogue]);
 
@@ -679,12 +1269,22 @@ export default function ThreeKingdomsPixiGame() {
   if (loading) {
     return (
       <div style={{
-        width: '100%', height: '100vh',
+        width: '100%',
+        maxWidth: 1280,
+        height: '100%',
+        maxHeight: 800,
+        minHeight: 480,
+        aspectRatio: '16 / 10',
+        margin: '0 auto',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         background: `linear-gradient(135deg, ${COLOR_THEME.bgGradient1}, ${COLOR_THEME.bgGradient2})`,
         color: COLOR_THEME.textPrimary,
         fontFamily: '"Noto Serif SC", serif',
+        overflow: 'hidden',
+        position: 'relative',
+        borderRadius: 8,
+        boxSizing: 'border-box',
       }}>
         <h1 style={{ fontSize: 36, color: COLOR_THEME.accentGold, marginBottom: 8 }}>
           三国霸业
@@ -711,12 +1311,21 @@ export default function ThreeKingdomsPixiGame() {
 
   return (
     <div style={{
-      width: '100%', height: '100vh',
+      width: '100%',
+      maxWidth: 1280,
+      height: '100%',
+      maxHeight: 800,
+      minHeight: 480,
+      aspectRatio: '16 / 10',
+      margin: '0 auto',
       display: 'flex', flexDirection: 'column',
       background: COLOR_THEME.bgGradient1,
       color: COLOR_THEME.textPrimary,
       fontFamily: '"Noto Serif SC", sans-serif',
       overflow: 'hidden',
+      position: 'relative',
+      borderRadius: 8,
+      boxSizing: 'border-box',
     }}>
       {/* ═══════════ 顶部：资源栏 + 当前阶段 ═══════════ */}
       <header style={{
@@ -1119,6 +1728,7 @@ export default function ThreeKingdomsPixiGame() {
             onTerritoryClick={handleTerritoryClick}
             onCombatAction={handleCombatAction}
             onSceneChange={handleSceneChange}
+            onNPCClick={handleNPCClick}
             onRendererReady={() => console.log('[ThreeKingdomsPixiGame] PixiJS renderer ready')}
           />
 
@@ -1265,79 +1875,29 @@ export default function ThreeKingdomsPixiGame() {
 
           {/* ═══════════ 征战关卡面板 ═══════════ */}
           {scene === 'stage-info' && (
-            <div style={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              background: 'rgba(20,15,10,0.95)',
-              borderRadius: 12, padding: 24,
-              width: 520, maxHeight: '80vh', overflow: 'auto',
-              border: `2px solid ${COLOR_THEME.selectedBorder}`,
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h2 style={{ fontSize: 20, color: COLOR_THEME.accentGold, margin: 0, fontFamily: '"Noto Serif SC", serif' }}>
-                  ⚔️ 征战天下
-                </h2>
-                <button onClick={() => setScene('map')} style={{ background: 'transparent', color: COLOR_THEME.textDim, border: 'none', cursor: 'pointer', fontSize: 18 }}>✕</button>
-              </div>
-              <div style={{ fontSize: 12, color: COLOR_THEME.textDim, marginBottom: 16 }}>
-                攻城略地，逐鹿中原。每攻克一城，天下大势便更进一步。
-              </div>
-              {(() => {
-                try {
-                  const { CAMPAIGN_STAGES } = require('../games/three-kingdoms/CampaignSystem');
-                  return CAMPAIGN_STAGES.map((stage: any, idx: number) => (
-                    <div key={stage.id} style={{
-                      background: idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent',
-                      border: '1px solid rgba(139,115,85,0.3)',
-                      borderRadius: 8, padding: 14, marginBottom: 10,
-                      cursor: 'pointer',
-                    }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = stage.themeColor)}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(139,115,85,0.3)')}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <span style={{ fontSize: 16, fontWeight: 'bold', color: stage.themeColor }}>
-                            {stage.iconAsset} {stage.name}
-                          </span>
-                          <span style={{ fontSize: 11, color: COLOR_THEME.textDim, marginLeft: 8 }}>
-                            {stage.subtitle}
-                          </span>
-                        </div>
-                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4,
-                          background: stage.difficulty === 'easy' ? '#4CAF50' : stage.difficulty === 'normal' ? '#FF9800' : '#F44336',
-                          color: '#fff', fontWeight: 'bold',
-                        }}>
-                          {stage.difficulty === 'easy' ? '简单' : stage.difficulty === 'normal' ? '普通' : '困难'}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 12, color: COLOR_THEME.textSecondary, marginTop: 6 }}>
-                        {stage.description.slice(0, 60)}...
-                      </div>
-                      <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: COLOR_THEME.textDim }}>
-                        <span>🎯 目标: {stage.targetCityName}</span>
-                        <span>👹 守将: {stage.enemyCommander.name}</span>
-                        <span>❤️ HP: {stage.enemyCommander.hp}</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                        <button onClick={() => { enterBattle(); setScene('combat'); }}
-                          style={{
-                            padding: '4px 16px', fontSize: 11, fontWeight: 'bold',
-                            borderRadius: 4, border: 'none', cursor: 'pointer',
-                            background: `linear-gradient(135deg, ${stage.themeColor}, ${stage.themeColor}88)`,
-                            color: '#fff',
-                          }}>
-                          ⚔️ 攻城
-                        </button>
-                        <span style={{ fontSize: 10, color: COLOR_THEME.textDim, alignSelf: 'center' }}>
-                          奖励: {Object.entries(stage.rewards.resources).map(([k,v]) => `${k}:${v}`).join(' ')}
-                        </span>
-                      </div>
-                    </div>
-                  ));
-                } catch { return <div style={{ color: '#888' }}>关卡数据加载中...</div>; }
-              })()}
-            </div>
+            <CampaignPanel
+              engine={engineRef.current}
+              renderState={renderState}
+              onClose={() => setScene('map')}
+              onBattleStart={(stageId: string) => {
+                const engine = engineRef.current;
+                if (!engine) return;
+                const result = engine.startCampaignBattle(stageId);
+                setCampaignBattleResult(result);
+                setShowCampaignBattleReport(true);
+              }}
+              addToast={addToast}
+              COLOR_THEME={COLOR_THEME}
+            />
+          )}
+
+          {/* ═══════════ 征战战斗报告弹窗 ═══════════ */}
+          {showCampaignBattleReport && campaignBattleResult && (
+            <CampaignBattleReport
+              result={campaignBattleResult}
+              onClose={() => { setShowCampaignBattleReport(false); setCampaignBattleResult(null); }}
+              COLOR_THEME={COLOR_THEME}
+            />
           )}
 
           {/* ═══════════ 科技研究浮层 ═══════════ */}
@@ -2047,6 +2607,326 @@ export default function ThreeKingdomsPixiGame() {
       {tooltip && (
         <div style={{position:'fixed',left:tooltip.x+12,top:tooltip.y+12,background:'rgba(42,31,20,0.95)',border:'1px solid #8B7355',color:'#c9a96e',padding:'6px 10px',borderRadius:4,fontSize:12,zIndex:9999,pointerEvents:'none',maxWidth:220,boxShadow:'0 2px 8px rgba(0,0,0,0.5)'}}>
           {tooltip.text}
+        </div>
+      )}
+
+      {/* ═══════════ NPC 信息面板（选中 NPC 时显示） ═══════════ */}
+      {selectedNpcId && !showNPCDialogue && (() => {
+        const engine = engineRef.current;
+        const npcInfo = engine?.getNPCInfo(selectedNpcId);
+        const npcType = npcInfo?.profession ?? '';
+        const infoData = getNPCInfoById(selectedNpcId, npcType);
+        if (!infoData) return null;
+
+        const professionEmoji = infoData.profession === 'farmer' ? '🌾' :
+          infoData.profession === 'soldier' ? '⚔️' :
+          infoData.profession === 'merchant' ? '💰' :
+          infoData.profession === 'scholar' ? '📚' :
+          infoData.profession === 'scout' ? '🔍' :
+          infoData.profession === 'general' ? '🗡️' :
+          infoData.profession === 'craftsman' ? '🔨' : '👤';
+        const professionLabel = infoData.profession === 'farmer' ? '农民' :
+          infoData.profession === 'soldier' ? '士兵' :
+          infoData.profession === 'merchant' ? '商人' :
+          infoData.profession === 'scholar' ? '学者' :
+          infoData.profession === 'scout' ? '斥候' :
+          infoData.profession === 'general' ? '武将' :
+          infoData.profession === 'craftsman' ? '工匠' : '村民';
+
+        return (
+          <div
+            style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(0,0,0,0.92)', borderRadius: 12, padding: 20,
+              width: 480, maxHeight: '80vh', overflowY: 'auto',
+              border: `1px solid ${COLOR_THEME.selectedBorder}`,
+              color: COLOR_THEME.textPrimary, zIndex: 60,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(139,115,85,0.15)',
+            }}
+          >
+            {/* 关闭按钮 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 18, color: COLOR_THEME.accentGold }}>📋 NPC 信息</h2>
+              <button
+                onClick={() => setSelectedNpcId(null)}
+                style={{
+                  background: 'transparent', border: `1px solid ${COLOR_THEME.selectedBorder}`,
+                  color: COLOR_THEME.textDim, borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12,
+                }}
+              >✕ 关闭</button>
+            </div>
+
+            {/* NPC 头部信息 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #4a3520, #6a5030)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 28, border: '2px solid #8B7355',
+                boxShadow: '0 0 12px rgba(201,169,110,0.3)',
+              }}>
+                {professionEmoji}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: '#c9a96e', fontWeight: 'bold', fontSize: 18 }}>
+                  {infoData.name}
+                </div>
+                <div style={{ color: '#8a7a6a', fontSize: 13, marginTop: 2 }}>
+                  {infoData.title} · {professionLabel}
+                </div>
+              </div>
+            </div>
+
+            {/* 描述 */}
+            <div style={{
+              background: 'rgba(0,0,0,0.3)',
+              borderRadius: 8,
+              padding: '12px 16px',
+              marginBottom: 14,
+            }}>
+              <div style={{ color: '#e0d0c0', fontSize: 13, lineHeight: 1.6 }}>
+                {infoData.description}
+              </div>
+            </div>
+
+            {/* 武将属性 */}
+            {infoData.attributes && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ color: '#c9a96e', fontSize: 13, fontWeight: 'bold', marginBottom: 8 }}>
+                  ⚔️ 武将属性
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  {[
+                    { label: '武力', value: infoData.attributes.force, color: '#ef4444', icon: '💪' },
+                    { label: '智力', value: infoData.attributes.intelligence, color: '#3b82f6', icon: '🧠' },
+                    { label: '统帅', value: infoData.attributes.command, color: '#f59e0b', icon: '🚩' },
+                    { label: '防御', value: infoData.attributes.defense, color: '#22c55e', icon: '🛡️' },
+                  ].map(attr => (
+                    <div key={attr.label} style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      borderRadius: 6, padding: '8px 12px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: '#a0a0a0' }}>{attr.icon} {attr.label}</span>
+                        <span style={{ fontSize: 14, fontWeight: 'bold', color: attr.color }}>{attr.value}</span>
+                      </div>
+                      <div style={{
+                        height: 4, borderRadius: 2,
+                        background: 'rgba(255,255,255,0.1)',
+                      }}>
+                        <div style={{
+                          height: '100%', borderRadius: 2,
+                          width: `${attr.value}%`,
+                          background: attr.color,
+                          transition: 'width 0.3s ease',
+                        }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 商人商品 */}
+            {infoData.shopItems && infoData.shopItems.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ color: '#c9a96e', fontSize: 13, fontWeight: 'bold', marginBottom: 8 }}>
+                  🛒 可购买物品
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {infoData.shopItems.map((item, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      background: 'rgba(255,255,255,0.04)',
+                      borderRadius: 6, padding: '8px 12px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}>
+                      <div>
+                        <span style={{ fontSize: 13, color: '#e0d0c0', fontWeight: 'bold' }}>{item.name}</span>
+                        <div style={{ fontSize: 11, color: '#8a7a6a', marginTop: 2 }}>{item.description}</div>
+                      </div>
+                      <span style={{ fontSize: 13, color: '#fbbf24', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                        💰 {item.price}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 士兵职责 */}
+            {infoData.duty && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ color: '#c9a96e', fontSize: 13, fontWeight: 'bold', marginBottom: 8 }}>
+                  📋 职责
+                </div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  borderRadius: 6, padding: '10px 14px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#e0d0c0', fontSize: 13,
+                }}>
+                  {infoData.duty}
+                </div>
+              </div>
+            )}
+
+            {/* 位置信息 */}
+            {npcInfo && (
+              <div style={{
+                fontSize: 11, color: '#6a6a6a', borderTop: '1px solid rgba(255,255,255,0.08)',
+                paddingTop: 10, marginTop: 4,
+              }}>
+                📍 位置：({npcInfo.x}, {npcInfo.y}) · 状态：{npcInfo.state === 'idle' ? '待命' :
+                  npcInfo.state === 'walking' ? '行走中' :
+                  npcInfo.state === 'working' ? '工作中' :
+                  npcInfo.state === 'patrolling' ? '巡逻中' :
+                  npcInfo.state === 'resting' ? '休息中' : npcInfo.state}
+              </div>
+            )}
+
+            {/* 操作按钮 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
+              <button
+                onClick={() => {
+                  // 重新打开对话
+                  handleNPCClick(selectedNpcId);
+                }}
+                style={{
+                  padding: '8px 20px', fontSize: 13, fontWeight: 'bold',
+                  borderRadius: 6, border: '1px solid #8B7355', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #4a3520, #6a5030)',
+                  color: '#c9a96e',
+                }}
+              >
+                💬 对话
+              </button>
+              <button
+                onClick={() => setSelectedNpcId(null)}
+                style={{
+                  padding: '8px 20px', fontSize: 13, fontWeight: 'bold',
+                  borderRadius: 6, border: `1px solid ${COLOR_THEME.selectedBorder}`,
+                  cursor: 'pointer',
+                  background: 'transparent',
+                  color: COLOR_THEME.textDim,
+                }}
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ═══════════ NPC 对话面板 ═══════════ */}
+      {showNPCDialogue && npcDialogue && (
+        <div
+          style={{
+            position: 'absolute', inset: 0, zIndex: 70,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+            paddingBottom: '15vh',
+          }}
+          onClick={() => { setShowNPCDialogue(false); setNPCDialogue(null); }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(180deg, #2a1f14 0%, #1a1410 100%)',
+              border: '2px solid #8B7355',
+              borderRadius: 12,
+              padding: '20px 28px',
+              minWidth: 420,
+              maxWidth: 560,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(139,115,85,0.15)',
+              cursor: 'default',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* NPC 头部信息 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #4a3520, #6a5030)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 24, border: '2px solid #8B7355',
+              }}>
+                {npcDialogue.npcType === 'farmer' ? '🌾' :
+                 npcDialogue.npcType === 'soldier' ? '⚔️' :
+                 npcDialogue.npcType === 'merchant' ? '💰' :
+                 npcDialogue.npcType === 'scholar' ? '📚' :
+                 npcDialogue.npcType === 'scout' ? '🔍' :
+                 npcDialogue.npcType === 'general' ? '🗡️' :
+                 npcDialogue.npcType === 'craftsman' ? '🔨' : '👤'}
+              </div>
+              <div>
+                <div style={{ color: '#c9a96e', fontWeight: 'bold', fontSize: 16 }}>
+                  {npcDialogue.npcName}
+                </div>
+                <div style={{ color: '#8a7a6a', fontSize: 12 }}>
+                  {npcDialogue.npcType === 'farmer' ? '农民' :
+                   npcDialogue.npcType === 'soldier' ? '士兵' :
+                   npcDialogue.npcType === 'merchant' ? '商人' :
+                   npcDialogue.npcType === 'scholar' ? '学者' :
+                   npcDialogue.npcType === 'scout' ? '斥候' :
+                   npcDialogue.npcType === 'general' ? '将军' :
+                   npcDialogue.npcType === 'craftsman' ? '工匠' : '村民'}
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowNPCDialogue(false); setNPCDialogue(null); }}
+                style={{
+                  marginLeft: 'auto', background: 'transparent', border: 'none',
+                  color: '#8a7a6a', cursor: 'pointer', fontSize: 18, padding: 4,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* 对话内容 */}
+            <div style={{
+              background: 'rgba(0,0,0,0.3)',
+              borderRadius: 8,
+              padding: '14px 18px',
+              marginBottom: 16,
+              minHeight: 60,
+            }}>
+              <div style={{ color: '#e0d0c0', fontSize: 14, lineHeight: 1.6 }}>
+                「{npcDialogue.lines[npcDialogue.currentLine]}」
+              </div>
+            </div>
+
+            {/* 操作按钮 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              {npcDialogue.currentLine < npcDialogue.lines.length - 1 ? (
+                <button
+                  onClick={handleNPCDialogueNext}
+                  style={{
+                    padding: '8px 20px', fontSize: 13, fontWeight: 'bold',
+                    borderRadius: 6, border: '1px solid #8B7355', cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #4a3520, #6a5030)',
+                    color: '#c9a96e',
+                  }}
+                >
+                  继续 ▶
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setShowNPCDialogue(false); setNPCDialogue(null); }}
+                  style={{
+                    padding: '8px 20px', fontSize: 13, fontWeight: 'bold',
+                    borderRadius: 6, border: '1px solid #8B7355', cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #4a3520, #6a5030)',
+                    color: '#c9a96e',
+                  }}
+                >
+                  告别
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

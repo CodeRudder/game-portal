@@ -103,6 +103,9 @@ export interface PixiGameCanvasProps {
   /** 执行声望转生 */
   onPrestigeExecute?: () => void;
 
+  /** 点击 NPC */
+  onNPCClick?: (npcId: string) => void;
+
   /** 横竖屏切换 */
   onOrientationChange?: (orientation: 'landscape' | 'portrait') => void;
 
@@ -173,6 +176,7 @@ export default function PixiGameCanvas({
   onTechResearch,
   onTerritoryConquer,
   onPrestigeExecute,
+  onNPCClick,
   onOrientationChange,
   onResize,
   config,
@@ -222,6 +226,7 @@ export default function PixiGameCanvas({
     onTechResearch,
     onTerritoryConquer,
     onPrestigeExecute,
+    onNPCClick,
     onOrientationChange,
     onResize,
   });
@@ -245,6 +250,7 @@ export default function PixiGameCanvas({
       onTechResearch,
       onTerritoryConquer,
       onPrestigeExecute,
+      onNPCClick,
       onOrientationChange,
       onResize,
     };
@@ -305,6 +311,9 @@ export default function PixiGameCanvas({
     });
     renderer.on('prestigeExecute', () => {
       callbacksRef.current.onPrestigeExecute?.();
+    });
+    renderer.on('npcClick', (...args) => {
+      callbacksRef.current.onNPCClick?.(...args);
     });
 
     renderer.on('orientationChange', (layout) => {

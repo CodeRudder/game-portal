@@ -37,6 +37,7 @@ import { OfflineRewardSystem } from './OfflineRewardSystem';
 import { TradeRouteSystem } from './TradeRouteSystem';
 import { EventEnrichmentSystem } from './EventEnrichmentSystem';
 import { CampaignSystem } from './CampaignSystem';
+import { CampaignBattleSystem, type AttackerArmy, type BattleResult } from './CampaignBattleSystem';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -68,6 +69,7 @@ export interface ThreeKingdomsSaveState {
   tradeRoutes?: object;
   eventEnrichment?: object;
   campaign?: object;
+  campaignBattle?: object;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -110,6 +112,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   /** 征战关卡系统 */
   private campaignSys!: CampaignSystem;
 
+  /** 征战关卡战斗系统 */
+  private campaignBattleSys!: CampaignBattleSystem;
+
   // 状态
   private res: Record<string, number> = {};
   private psCache: Record<string, number> = {};
@@ -117,6 +122,12 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private selIdx = 0;
   private scroll = 0;
   private playTime = 0;
+
+  /** 当前选中的 NPC ID */
+  private selectedNPC: string | null = null;
+
+  /** NPC 点击回调（由 UI 层设置） */
+  public onNPCClicked?: (npcId: string) => void;
 
   // ─── 生命周期 ───────────────────────────────────────────
 
@@ -203,6 +214,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     // ── 征战关卡系统 ──
     this.campaignSys = new CampaignSystem();
+    this.campaignBattleSys = new CampaignBattleSystem();
 
     this.panel = 'none';
     this.selIdx = 0;
@@ -459,6 +471,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       tradeRoutes: this.tradeRouteSys.serialize(),
       eventEnrichment: this.eventEnrichSys.serialize(),
       campaign: this.campaignSys.serialize(),
+      campaignBattle: this.campaignBattleSys.serialize(),
     };
   }
 
@@ -484,6 +497,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (d.tradeRoutes) this.tradeRouteSys.deserialize(d.tradeRoutes);
     if (d.eventEnrichment) this.eventEnrichSys.deserialize(d.eventEnrichment);
     if (d.campaign) this.campaignSys.deserialize(d.campaign);
+    if (d.campaignBattle) this.campaignBattleSys.deserialize(d.campaignBattle);
 
     this.emit('stateChange');
   }
@@ -941,6 +955,129 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   /** 获取征战关卡系统 */
   public getCampaignSystem(): CampaignSystem { return this.campaignSys; }
 
+  /** 获取征战关卡战斗系统 */
+  public getCampaignBattleSystem(): CampaignBattleSystem { return this.campaignBattleSys; }
+
+  /**
+   * 发起征战关卡攻城战斗
+   *
+   * @param stageId - 关卡 ID
+   * @returns 战斗结果
+   */
+  public startCampaignBattle(stageId: string): BattleResult {
+    // 检查关卡是否已解锁
+    if (!this.campaignSys.isStageUnlocked(stageId)) {
+      return {
+        victory: false, stageId, rounds: [],
+        totalAttackerLosses: 0, totalDefenderLosses: 0,
+        troopsRemaining: 0, troopsRemainingPercent: 0, stars: 0,
+        rewards: { territory: '', resources: {} },
+        summary: '关卡未解锁',
+      };
+    }
+
+    // 检查是否已通关（不允许重复攻打已通关关卡）
+    if (this.campaignSys.isStageCompleted(stageId)) {
+      return {
+        victory: false, stageId, rounds: [],
+        totalAttackerLosses: 0, totalDefenderLosses: 0,
+        troopsRemaining: 0, troopsRemainingPercent: 0, stars: 0,
+        rewards: { territory: '', resources: {} },
+        summary: '该关卡已攻克',
+      };
+    }
+
+    // 检查冷却
+    const cooldown = this.campaignBattleSys.getCooldown(stageId);
+    if (!cooldown.canFight) {
+      return {
+        victory: false, stageId, rounds: [],
+        totalAttackerLosses: 0, totalDefenderLosses: 0,
+        troopsRemaining: 0, troopsRemainingPercent: 0, stars: 0,
+        rewards: { territory: '', resources: {} },
+        summary: `冷却中，还需等待 ${cooldown.remainingSeconds} 秒`,
+      };
+    }
+
+    // 构建攻方兵力
+    const attackerArmy = this.buildAttackerArmy();
+
+    // 模拟战斗
+    const result = this.campaignBattleSys.simulateBattle(stageId, attackerArmy);
+
+    // 处理战斗结果
+    if (result.victory) {
+      // 扣除损失的兵力
+      if (result.totalAttackerLosses > 0) {
+        this.res.troops = Math.max(0, (this.res.troops || 0) - result.totalAttackerLosses);
+      }
+
+      // 发放奖励
+      for (const [resId, amount] of Object.entries(result.rewards.resources)) {
+        this.giveRes(resId, amount);
+      }
+
+      // 解锁武将
+      if (result.rewards.unlockHero) {
+        const genDef = GENERALS.find(g => g.id === result.rewards.unlockHero);
+        if (genDef && !this.units.isUnlocked(result.rewards.unlockHero)) {
+          this.units.unlock(result.rewards.unlockHero);
+          this.stats.increment('totalGeneralsRecruited');
+          this.ftSys.add(`🎉 获得武将：${genDef.name}！`, 0.5, 0.3, {
+            style: { color: '#4caf50', fontSize: 20 },
+          });
+        }
+      }
+
+      // 标记关卡完成
+      this.campaignSys.completeStage(stageId, result.troopsRemainingPercent);
+
+      this.ftSys.add(`⚔️ 攻克城池！`, 0.5, 0.4, {
+        style: { color: COLOR_THEME.accentGold, fontSize: 22 },
+      });
+    } else {
+      // 失败也损失部分兵力
+      const lossAmount = Math.floor(result.totalAttackerLosses * 0.5);
+      if (lossAmount > 0) {
+        this.res.troops = Math.max(0, (this.res.troops || 0) - lossAmount);
+      }
+    }
+
+    this.emit('stateChange');
+    return result;
+  }
+
+  /**
+   * 构建攻方兵力配置
+   *
+   * 从当前资源、已招募武将中提取战斗数据。
+   */
+  private buildAttackerArmy(): AttackerArmy {
+    const generals: AttackerArmy['generals'] = [];
+
+    for (const g of GENERALS) {
+      if (this.units.isUnlocked(g.id)) {
+        const state = this.units.getState(g.id);
+        const level = state?.level || 1;
+        generals.push({
+          id: g.id,
+          name: g.name,
+          level,
+          attack: g.baseStats.attack * level,
+          defense: g.baseStats.defense * level,
+          intelligence: g.baseStats.intelligence * level,
+          command: g.baseStats.command * level,
+        });
+      }
+    }
+
+    return {
+      generals,
+      totalTroops: Math.floor(this.res.troops || 0),
+      grain: Math.floor(this.res.grain || 0),
+    };
+  }
+
   // ═══════════════════════════════════════════════════════════
   // 核心玩法公共 API
   // ═══════════════════════════════════════════════════════════
@@ -1371,6 +1508,133 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     for (const ev of events) {
       this.eventSys.registerEvent(ev);
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // NPC 走动动画 & 点击交互
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 更新所有 NPC 的位置（走动动画）
+   *
+   * 由引擎 onUpdate 每帧调用，驱动 NPCManager 的 AI 和移动系统。
+   * NPC 会根据日程表在地图上巡逻/漫游，到达目标后短暂停留再选择新目标。
+   *
+   * 巡逻行为（无日程任务时）：
+   * - idle 状态：停留 2~5 秒后选择巡逻范围内的新目标
+   * - walking 状态：以配置速度向目标移动，到达后回到 idle
+   * - 不同职业有不同巡逻半径和速度
+   *
+   * @param dt - 帧间隔时间（毫秒）
+   */
+  public updateNPCPositions(dt: number): void {
+    const sec = dt / 1000;
+    const gameHour = (this.playTime / 60) % 24;
+    this.npcManager.update(sec, gameHour);
+  }
+
+  /**
+   * 获取指定 NPC 的详细信息（用于点击交互弹窗）
+   *
+   * @param npcId - NPC 实例 ID
+   * @returns NPC 详细信息，或 null
+   */
+  public getNPCInfo(npcId: string): {
+    id: string;
+    name: string;
+    type: string;
+    profession: string;
+    x: number;
+    y: number;
+    state: string;
+    direction: string;
+    iconEmoji: string;
+    dialogues: Array<{ id: string; trigger: string; lines: Array<{ speaker: string; text: string }> }>;
+  } | null {
+    const npc = this.npcManager.getNPC(npcId);
+    if (!npc) return null;
+
+    const def = this.npcManager.getDef(npc.defId);
+    const dialogues = def?.dialogues.map(d => ({
+      id: d.id,
+      trigger: d.trigger,
+      lines: d.lines.map(l => ({ speaker: l.speaker, text: l.text })),
+    })) ?? [];
+
+    return {
+      id: npc.id,
+      name: npc.name,
+      type: npc.defId,
+      profession: npc.profession as string,
+      x: npc.x,
+      y: npc.y,
+      state: npc.state,
+      direction: npc.direction,
+      iconEmoji: def?.iconEmoji ?? '👤',
+      dialogues,
+    };
+  }
+
+  /**
+   * 获取指定 NPC 的点击对话内容
+   *
+   * 根据 NPC 定义中的 click 触发对话返回对话行列表。
+   * 如果没有 click 触发的对话，返回默认问候语。
+   *
+   * @param npcId - NPC 实例 ID
+   * @returns 对话行列表
+   */
+  public getNPCClickDialogue(npcId: string): Array<{ speaker: string; text: string }> {
+    const npc = this.npcManager.getNPC(npcId);
+    if (!npc) return [{ speaker: 'system', text: '此人似乎不愿与你交谈。' }];
+
+    const def = this.npcManager.getDef(npc.defId);
+    if (!def) return [{ speaker: 'npc', text: '你好，大人！' }];
+
+    // 查找 click 触发的对话
+    const clickDialogue = def.dialogues.find(d => d.trigger === 'click');
+    if (clickDialogue && clickDialogue.lines.length > 0) {
+      return clickDialogue.lines.map(l => ({ speaker: l.speaker, text: l.text }));
+    }
+
+    // 兜底：使用第一个对话
+    const firstDialogue = def.dialogues[0];
+    if (firstDialogue && firstDialogue.lines.length > 0) {
+      return firstDialogue.lines.map(l => ({ speaker: l.speaker, text: l.text }));
+    }
+
+    return [{ speaker: 'npc', text: `${npc.name}向你点了点头。` }];
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // NPC 选中 / 交互
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * 选中指定 NPC
+   *
+   * @param npcId - NPC 实例 ID
+   */
+  public selectNPC(npcId: string): void {
+    const npc = this.npcManager.getNPC(npcId);
+    if (!npc) return;
+    this.selectedNPC = npcId;
+  }
+
+  /**
+   * 取消选中 NPC
+   */
+  public deselectNPC(): void {
+    this.selectedNPC = null;
+  }
+
+  /**
+   * 获取当前选中的 NPC ID
+   *
+   * @returns 选中的 NPC ID，或 null
+   */
+  public getSelectedNPC(): string | null {
+    return this.selectedNPC;
   }
 }
 

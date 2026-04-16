@@ -33,8 +33,9 @@ import {
   RESOURCES, PRESTIGE_CONFIG,
 } from './constants';
 import type { GameMap } from './MapGenerator';
-import { CAMPAIGN_STAGES } from './CampaignSystem';
+import { CAMPAIGN_STAGES, CAMPAIGN_CONNECTIONS } from './CampaignSystem';
 import type { CampaignStage, CampaignStageStatus } from './CampaignSystem';
+import type { AttackerArmy } from './CampaignBattleSystem';
 
 // ═══════════════════════════════════════════════════════════════
 // 领土类型映射
@@ -561,6 +562,7 @@ export class ThreeKingdomsRenderStateAdapter {
    * 组装 NPC 渲染数据列表
    *
    * 从引擎 NPCManager 获取所有 NPC 实例，转换为渲染层数据。
+   * 包含移动状态（方向、速度、目标位置）和交互信息（职业、图标）。
    * 使用 try-catch 防护，NPC 系统不可用时返回空数组。
    */
   private toNPCList(): NPCRenderData[] {
@@ -568,14 +570,26 @@ export class ThreeKingdomsRenderStateAdapter {
       const npcManager = this.engine.getNPCManager();
       if (!npcManager) return [];
       const allNpcs = npcManager.getAllNPCs();
-      return allNpcs.map(npc => ({
-        id: npc.id,
-        name: npc.defId,
-        type: npc.defId,
-        x: npc.x,
-        y: npc.y,
-        state: npc.state,
-      }));
+      return allNpcs.map(npc => {
+        const def = npcManager.getDef(npc.defId);
+        const task = npc.currentTask;
+        const mv = npc.movement;
+        return {
+          id: npc.id,
+          name: npc.name || npc.defId,
+          type: npc.defId,
+          x: npc.x,
+          y: npc.y,
+          state: npc.state,
+          direction: npc.direction,
+          speed: mv?.speed ?? def?.speed ?? 1,
+          targetX: mv?.state === 'walking' ? mv.targetX : (task?.targetX),
+          targetY: mv?.state === 'walking' ? mv.targetY : (task?.targetY),
+          profession: npc.profession as string,
+          iconEmoji: def?.iconEmoji,
+          selected: false,
+        };
+      });
     } catch {
       return [];
     }
@@ -857,12 +871,35 @@ export class ThreeKingdomsRenderStateAdapter {
       const campaign = this.engine.getCampaignSystem();
       if (!campaign) return undefined;
 
+      const battleSys = this.engine.getCampaignBattleSystem();
+
       const stageStatuses = CAMPAIGN_STAGES.map(stage => ({
         id: stage.id,
         name: stage.name,
         status: campaign.getStageStatus(stage.id) as CampaignStageStatus,
         stars: campaign.getCompletionRecord(stage.id)?.stars ?? 0,
       }));
+
+      // 关卡连接路线
+      const connections = CAMPAIGN_CONNECTIONS.map(c => ({
+        from: c.from,
+        to: c.to,
+        type: c.type,
+      }));
+
+      // 各关卡冷却信息
+      const cooldowns = CAMPAIGN_STAGES.map(stage =>
+        battleSys.getCooldown(stage.id),
+      );
+
+      // 当前关卡的战斗预览
+      let battlePreview: GameRenderState['campaign'] extends undefined ? never : NonNullable<GameRenderState['campaign']>['battlePreview'];
+      battlePreview = undefined;
+      const currentStage = campaign.getCurrentStage();
+      if (currentStage) {
+        const attackerArmy = this.buildAttackerArmyPreview();
+        battlePreview = battleSys.getBattlePreview(currentStage.id, attackerArmy);
+      }
 
       return {
         currentStageIndex: campaign.getCurrentStageIndex(),
@@ -872,9 +909,43 @@ export class ThreeKingdomsRenderStateAdapter {
         maxStars: campaign.getMaxStars(),
         isAllCompleted: campaign.isAllCompleted(),
         stageStatuses,
+        connections,
+        cooldowns,
+        battlePreview,
       };
     } catch {
       return undefined;
     }
+  }
+
+  /**
+   * 构建攻方兵力预览（用于战斗预览计算）
+   */
+  private buildAttackerArmyPreview(): AttackerArmy {
+    const units = this.engine.getUnitSystem();
+    const res = this.engine.getResourcesMap();
+    const generals: AttackerArmy['generals'] = [];
+
+    for (const g of GENERALS) {
+      if (units.isUnlocked(g.id)) {
+        const state = units.getState(g.id);
+        const level = state?.level || 1;
+        generals.push({
+          id: g.id,
+          name: g.name,
+          level,
+          attack: g.baseStats.attack * level,
+          defense: g.baseStats.defense * level,
+          intelligence: g.baseStats.intelligence * level,
+          command: g.baseStats.command * level,
+        });
+      }
+    }
+
+    return {
+      generals,
+      totalTroops: Math.floor(res.troops || 0),
+      grain: Math.floor(res.grain || 0),
+    };
   }
 }

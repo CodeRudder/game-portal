@@ -412,6 +412,20 @@ export interface NPCRenderData {
   y: number;
   /** 当前状态 */
   state?: string;
+  /** 朝向（用于行走动画朝向） */
+  direction?: 'up' | 'down' | 'left' | 'right';
+  /** 移动速度（格/秒），0 表示静止 */
+  speed?: number;
+  /** 目标 X 坐标（移动中时有效） */
+  targetX?: number;
+  /** 目标 Y 坐标（移动中时有效） */
+  targetY?: number;
+  /** 职业（用于区分 NPC 行为类型） */
+  profession?: string;
+  /** emoji 图标（用于渲染） */
+  iconEmoji?: string;
+  /** 是否被选中（高亮状态） */
+  selected?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -533,6 +547,28 @@ export interface GameRenderState {
       status: import('../games/three-kingdoms/CampaignSystem').CampaignStageStatus;
       stars: number;
     }>;
+    /** 关卡连接路线 */
+    connections: Array<{
+      from: string;
+      to: string;
+      type: string;
+    }>;
+    /** 战斗冷却信息 */
+    cooldowns: Array<{
+      stageId: string;
+      canFight: boolean;
+      remainingSeconds: number;
+    }>;
+    /** 战斗预览（当前选中关卡） */
+    battlePreview?: {
+      canFight: boolean;
+      reason?: string;
+      attackerPower: number;
+      defenderPower: number;
+      difficulty: string;
+      estimatedLosses: { min: number; max: number };
+      winProbability: number;
+    };
   };
 }
 
@@ -572,6 +608,8 @@ export interface RendererEventMap {
   territoryConquer: [id: string];
   /** 点击执行声望转生 */
   prestigeExecute: [];
+  /** 点击 NPC */
+  npcClick: [npcId: string];
   /** 渲染器初始化完成 */
   rendererReady: [];
   /** 渲染器销毁 */

@@ -18,8 +18,11 @@ import type {
   DialogueChoice,
   NPCTeam,
   PathFinder,
+  NPCMovement,
+  PatrolConfig,
 } from './types';
 import { NPCState as NPCStateEnum } from './types';
+import { PATROL_CONFIGS } from './types';
 import { NPCAI } from './NPCAI';
 import { NPCEventBus } from './NPCEventBus';
 
@@ -118,6 +121,7 @@ export class NPCManager {
       dialogueCooldown: 0,
       animFrame: 0,
       animTimer: 0,
+      movement: this.createMovement(x, y, def.profession as string, def.speed),
     };
 
     this.npcs.set(id, instance);
@@ -160,6 +164,9 @@ export class NPCManager {
         this.updateMovement(npc, deltaTime);
       }
     }
+
+    // 巡逻/走动系统（驱动无日程任务的 NPC 在巡逻范围内走动）
+    this.updatePatrol(deltaTime);
   }
 
   /** 更新 NPC 移动（沿路径或直线） */
@@ -221,6 +228,113 @@ export class NPCManager {
     } else {
       npc.direction = dy > 0 ? 'down' : 'up';
     }
+  }
+
+  // -----------------------------------------------------------------------
+  // 巡逻/走动系统
+  // -----------------------------------------------------------------------
+
+  /**
+   * 创建 NPCMovement 初始数据
+   *
+   * 根据职业查找对应的巡逻配置（PATROL_CONFIGS），
+   * 如果找不到则使用默认值。
+   *
+   * @param homeX - 出生点 X
+   * @param homeY - 出生点 Y
+   * @param profession - NPC 职业字符串
+   * @param speed - NPC 定义中的移动速度
+   */
+  createMovement(homeX: number, homeY: number, profession: string, speed: number): NPCMovement {
+    const config: PatrolConfig = PATROL_CONFIGS[profession] ?? PATROL_CONFIGS['villager'];
+    return {
+      targetX: homeX,
+      targetY: homeY,
+      speed: speed > 0 ? speed : config.speed,
+      state: 'idle',
+      idleTimer: this.randomIdleDuration(config),
+      patrolRadius: config.patrolRadius,
+      homeX,
+      homeY,
+    };
+  }
+
+  /**
+   * 更新所有 NPC 的巡逻位置
+   *
+   * 当 NPC 处于 IDLE 状态且没有日程任务时，驱动巡逻走动逻辑：
+   * - idle 状态：倒计时停留计时器，到 0 后选择新巡逻目标
+   * - walking 状态：向目标点移动，到达后切换为 idle
+   *
+   * @param deltaTime - 帧间隔（秒）
+   */
+  updatePatrol(deltaTime: number): void {
+    for (const npc of this.npcs.values()) {
+      // 有日程任务的 NPC 由 AI 系统控制移动，不走巡逻逻辑
+      if (npc.currentTask) continue;
+
+      const mv = npc.movement;
+      if (!mv) continue;
+
+      if (mv.state === 'idle') {
+        // 停留倒计时
+        mv.idleTimer -= deltaTime;
+        if (mv.idleTimer <= 0) {
+          // 选择新的巡逻目标
+          this.pickPatrolTarget(npc, mv);
+          mv.state = 'walking';
+          npc.state = NPCStateEnum.WALKING;
+        }
+      } else if (mv.state === 'walking') {
+        // 向目标移动
+        const dx = mv.targetX - npc.x;
+        const dy = mv.targetY - npc.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 0.15) {
+          // 到达目标
+          npc.x = mv.targetX;
+          npc.y = mv.targetY;
+          mv.state = 'idle';
+          const config = PATROL_CONFIGS[npc.profession as string] ?? PATROL_CONFIGS['villager'];
+          mv.idleTimer = this.randomIdleDuration(config);
+          npc.state = NPCStateEnum.IDLE;
+        } else {
+          const step = Math.min(mv.speed * deltaTime, dist);
+          npc.x += (dx / dist) * step;
+          npc.y += (dy / dist) * step;
+          // 更新朝向
+          this.updateDirection(npc, dx, dy);
+        }
+      }
+    }
+  }
+
+  /**
+   * 为 NPC 随机选择一个巡逻范围内的目标点
+   *
+   * 在以 homeX/homeY 为中心、patrolRadius 为半径的圆内随机取点，
+   * 然后取整为格子坐标。
+   *
+   * @param npc - NPC 实例（用于获取当前位置）
+   * @param mv - NPC 移动数据（就地修改 targetX/targetY）
+   */
+  pickPatrolTarget(npc: NPCInstance, mv: NPCMovement): void {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = Math.random() * mv.patrolRadius;
+    mv.targetX = Math.round(mv.homeX + Math.cos(angle) * radius);
+    mv.targetY = Math.round(mv.homeY + Math.sin(angle) * radius);
+  }
+
+  /**
+   * 生成随机的停留时长
+   *
+   * @param config - 巡逻配置
+   * @returns 停留秒数
+   */
+  private randomIdleDuration(config: PatrolConfig): number {
+    const [min, max] = config.idleDurationRange;
+    return min + Math.random() * (max - min);
   }
 
   // -----------------------------------------------------------------------

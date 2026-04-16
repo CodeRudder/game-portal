@@ -71,6 +71,24 @@ export interface CampaignMap {
   deploymentZone: { x: number; y: number; width: number; height: number };
 }
 
+/** 关卡在地图上的坐标位置 */
+export interface CampaignMapPosition {
+  /** 地图上的 X 坐标（归一化 0-1） */
+  x: number;
+  /** 地图上的 Y 坐标（归一化 0-1） */
+  y: number;
+}
+
+/** 关卡连接路线 */
+export interface CampaignConnection {
+  /** 起点关卡 ID */
+  from: string;
+  /** 终点关卡 ID */
+  to: string;
+  /** 路线类型 */
+  type: 'main_road' | 'mountain_pass' | 'river_crossing' | 'plain';
+}
+
 /** 关卡定义 */
 export interface CampaignStage {
   id: string;
@@ -95,8 +113,14 @@ export interface CampaignStage {
   enemyCommander: EnemyCommander;
   enemyUnits: EnemyUnit[];
 
+  // 城防等级（1-10）
+  fortificationLevel: number;
+
   // 地图
   mapLayout: CampaignMap;
+
+  // 地图坐标位置（用于关卡地图可视化）
+  mapPosition: CampaignMapPosition;
 
   // 奖励
   rewards: {
@@ -119,6 +143,273 @@ export interface CampaignStage {
   themeColor: string;
   backgroundImage?: string;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// 扩展关卡数据结构（战役详情）
+// ═══════════════════════════════════════════════════════════════
+
+/** 关卡详情难度（含 legendary） */
+export type CampaignDetailDifficulty = 'easy' | 'normal' | 'hard' | 'legendary';
+
+/** 兵力配置（步兵/骑兵/弓兵） */
+export interface TroopComposition {
+  infantry: number;
+  cavalry: number;
+  archers: number;
+}
+
+/** 关卡守军信息 */
+export interface LevelDefender {
+  /** 主将名称 */
+  lord: string;
+  /** 副将列表 */
+  officers: string[];
+  /** 兵力配置 */
+  troops: TroopComposition;
+  /** 城防等级 1-10 */
+  fortLevel: number;
+}
+
+/** 关卡奖励 */
+export interface CampaignLevelRewards {
+  gold: number;
+  food: number;
+  materials: number;
+  /** 可招募武将 ID */
+  recruitHero?: string;
+  /** 解锁建筑 ID */
+  unlockBuilding?: string;
+}
+
+/** 关卡战斗配置 */
+export interface LevelBattleConfig {
+  difficulty: CampaignDetailDifficulty;
+  /** 攻打冷却时间（秒） */
+  cooldownSeconds: number;
+  /** 最大尝试次数（0=无限） */
+  maxAttempts: number;
+}
+
+/**
+ * 关卡详情数据结构
+ *
+ * 在 CampaignStage 基础上提供更丰富的历史战役信息，
+ * 包含守军兵力、奖励明细、战斗配置等。
+ */
+export interface CampaignLevelDetail {
+  /** 关卡 ID（与 CampaignStage.id 一一对应） */
+  id: string;
+  /** 关卡名称 */
+  name: string;
+  /** 历史背景描述 */
+  description: string;
+  /** 在地图上的位置坐标（归一化 0-1） */
+  mapPosition: { x: number; y: number };
+
+  /** 守军信息 */
+  defender: LevelDefender;
+
+  /** 奖励 */
+  rewards: CampaignLevelRewards;
+
+  /** 关卡状态 */
+  status: CampaignStageStatus;
+  /** 前置关卡 ID */
+  prerequisite: string | null;
+
+  /** 战斗配置 */
+  battleConfig: LevelBattleConfig;
+}
+
+/** 战斗结果（简化版，用于 CampaignSystem 内部计算） */
+export interface CampaignBattleResult {
+  victory: boolean;
+  playerLosses: TroopComposition;
+  enemyLosses: TroopComposition;
+  /** 战斗回合数 */
+  rounds: number;
+  /** 战斗日志（每回合简报） */
+  battleLog: string[];
+  /** 胜利奖励（仅胜利时有） */
+  rewards?: CampaignLevelRewards;
+}
+
+/** 关卡状态查询结果 */
+export interface LevelStatusInfo {
+  status: CampaignStageStatus;
+  canAttack: boolean;
+  reason?: string;
+  cooldownRemaining: number;
+  attemptsRemaining: number;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 6 关卡详细数据（基于三国历史）
+// ═══════════════════════════════════════════════════════════════
+
+export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
+  // ── 第一章：涿郡起义 ──
+  {
+    id: 'campaign_zhuo',
+    name: '涿郡起义',
+    description: '东汉末年，黄巾之乱爆发，天下大乱。刘备在涿郡起兵，与关羽、张飞桃园结义，誓要匡扶汉室。首战涿郡，平定黄巾贼众，建立根据地。',
+    mapPosition: { x: 0.15, y: 0.30 },
+    defender: {
+      lord: '黄巾渠帅',
+      officers: ['黄巾力士头目', '黄巾弓手队长'],
+      troops: { infantry: 500, cavalry: 100, archers: 200 },
+      fortLevel: 2,
+    },
+    rewards: {
+      gold: 500,
+      food: 1000,
+      materials: 200,
+      recruitHero: 'liubei',
+    },
+    status: 'available',
+    prerequisite: null,
+    battleConfig: {
+      difficulty: 'easy',
+      cooldownSeconds: 10,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第二章：虎牢关 ──
+  {
+    id: 'campaign_hulao',
+    name: '虎牢关',
+    description: '十八路诸侯讨伐董卓，兵至虎牢关。天下第一猛将吕布率西凉铁骑镇守此关，刘关张三兄弟联手迎战，三英战吕布传为佳话。',
+    mapPosition: { x: 0.35, y: 0.25 },
+    defender: {
+      lord: '董卓',
+      officers: ['吕布', '李儒', '华雄'],
+      troops: { infantry: 5000, cavalry: 3000, archers: 2000 },
+      fortLevel: 5,
+    },
+    rewards: {
+      gold: 2000,
+      food: 3000,
+      materials: 800,
+      recruitHero: 'guanyu',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_zhuo',
+    battleConfig: {
+      difficulty: 'normal',
+      cooldownSeconds: 30,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第三章：官渡之战 ──
+  {
+    id: 'campaign_guandu',
+    name: '官渡之战',
+    description: '建安五年，袁绍与曹操决战于官渡。袁绍坐拥河北四州，兵多将广；曹操以少胜多，奇袭乌巢，火烧粮草，一举击溃袁军十万大军。',
+    mapPosition: { x: 0.50, y: 0.40 },
+    defender: {
+      lord: '袁绍',
+      officers: ['颜良', '文丑', '张郃'],
+      troops: { infantry: 8000, cavalry: 5000, archers: 4000 },
+      fortLevel: 6,
+    },
+    rewards: {
+      gold: 5000,
+      food: 8000,
+      materials: 2000,
+      recruitHero: 'caocao',
+      unlockBuilding: 'barracks',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_hulao',
+    battleConfig: {
+      difficulty: 'hard',
+      cooldownSeconds: 60,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第四章：赤壁之战 ──
+  {
+    id: 'campaign_chibi',
+    name: '赤壁之战',
+    description: '建安十三年，曹操率八十万大军南下，欲一统天下。孙刘联军以火攻大破曹军于赤壁，东风助势，火烧连营，奠定三分天下之格局。',
+    mapPosition: { x: 0.55, y: 0.65 },
+    defender: {
+      lord: '曹操',
+      officers: ['张辽', '许褚', '曹洪'],
+      troops: { infantry: 10000, cavalry: 2000, archers: 8000 },
+      fortLevel: 7,
+    },
+    rewards: {
+      gold: 8000,
+      food: 10000,
+      materials: 3000,
+      recruitHero: 'zhugeliang',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_guandu',
+    battleConfig: {
+      difficulty: 'hard',
+      cooldownSeconds: 60,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第五章：定军山 ──
+  {
+    id: 'campaign_dingjun',
+    name: '定军山',
+    description: '建安二十四年，刘备进取汉中。老将黄忠于定军山力斩曹魏名将夏侯渊，威震天下。此役夺取汉中要地，蜀汉基业由此奠定。',
+    mapPosition: { x: 0.40, y: 0.75 },
+    defender: {
+      lord: '夏侯渊',
+      officers: ['张郃', '郭淮', '曹真'],
+      troops: { infantry: 12000, cavalry: 8000, archers: 6000 },
+      fortLevel: 8,
+    },
+    rewards: {
+      gold: 15000,
+      food: 20000,
+      materials: 5000,
+      recruitHero: 'zhangfei',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_chibi',
+    battleConfig: {
+      difficulty: 'legendary',
+      cooldownSeconds: 120,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第六章：天下一统 ──
+  {
+    id: 'campaign_unification',
+    name: '天下一统',
+    description: '历经数十年征战，天下大势已定。最终决战于长安，司马懿率魏国精锐据守。攻克此城，天下一统，万民归心，三国归晋！',
+    mapPosition: { x: 0.50, y: 0.50 },
+    defender: {
+      lord: '司马懿',
+      officers: ['司马师', '司马昭', '邓艾', '钟会'],
+      troops: { infantry: 20000, cavalry: 15000, archers: 10000 },
+      fortLevel: 10,
+    },
+    rewards: {
+      gold: 50000,
+      food: 50000,
+      materials: 20000,
+    },
+    status: 'locked',
+    prerequisite: 'campaign_dingjun',
+    battleConfig: {
+      difficulty: 'legendary',
+      cooldownSeconds: 180,
+      maxAttempts: 0,
+    },
+  },
+];
 
 // ═══════════════════════════════════════════════════════════════
 // 关卡数据
@@ -172,6 +463,8 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     },
     starThresholds: { threeStar: 80, twoStar: 50 },
     iconAsset: '⚔️', themeColor: '#4CAF50',
+    fortificationLevel: 2,
+    mapPosition: { x: 0.15, y: 0.30 },
   },
 
   // ── 第二章：虎牢关之战 ──
@@ -228,6 +521,8 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     },
     starThresholds: { threeStar: 70, twoStar: 40 },
     iconAsset: '🗡️', themeColor: '#F44336',
+    fortificationLevel: 5,
+    mapPosition: { x: 0.35, y: 0.25 },
   },
 
   // ── 第三章：官渡之战 ──
@@ -277,6 +572,8 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     },
     starThresholds: { threeStar: 65, twoStar: 35 },
     iconAsset: '🏰', themeColor: '#FF9800',
+    fortificationLevel: 6,
+    mapPosition: { x: 0.50, y: 0.40 },
   },
 
   // ── 第四章：赤壁之战 ──
@@ -323,6 +620,8 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     },
     starThresholds: { threeStar: 60, twoStar: 30 },
     iconAsset: '🔥', themeColor: '#E91E63',
+    fortificationLevel: 7,
+    mapPosition: { x: 0.55, y: 0.65 },
   },
 
   // ── 第五章：定军山 ──
@@ -373,6 +672,8 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     },
     starThresholds: { threeStar: 70, twoStar: 40 },
     iconAsset: '⛰️', themeColor: '#795548',
+    fortificationLevel: 8,
+    mapPosition: { x: 0.40, y: 0.75 },
   },
 
   // ── 第六章：一统天下 ──
@@ -422,8 +723,43 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     },
     starThresholds: { threeStar: 60, twoStar: 30 },
     iconAsset: '👑', themeColor: '#FFD700',
+    fortificationLevel: 10,
+    mapPosition: { x: 0.50, y: 0.50 },
   },
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// 关卡连接路线
+// ═══════════════════════════════════════════════════════════════
+
+export const CAMPAIGN_CONNECTIONS: CampaignConnection[] = [
+  { from: 'campaign_zhuo', to: 'campaign_hulao', type: 'plain' },
+  { from: 'campaign_hulao', to: 'campaign_guandu', type: 'mountain_pass' },
+  { from: 'campaign_guandu', to: 'campaign_chibi', type: 'river_crossing' },
+  { from: 'campaign_chibi', to: 'campaign_dingjun', type: 'mountain_pass' },
+  { from: 'campaign_dingjun', to: 'campaign_unification', type: 'main_road' },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 兵种图标映射
+// ═══════════════════════════════════════════════════════════════
+
+export const UNIT_TYPE_ICONS: Record<string, string> = {
+  infantry: '🗡️',
+  cavalry: '🐎',
+  archer: '🏹',
+  siege: '💥',
+};
+
+/** 资源名称映射 */
+export const RESOURCE_NAMES: Record<string, string> = {
+  grain: '粮草',
+  gold: '铜钱',
+  troops: '兵力',
+  techPoints: '科技点',
+  intel: '情报',
+  gem: '宝石',
+};
 
 // ═══════════════════════════════════════════════════════════════
 // 关卡进度管理类
@@ -585,6 +921,384 @@ export class CampaignSystem {
     return this.currentStageIndex >= CAMPAIGN_STAGES.length;
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // 战斗计算方法
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 获取关卡详情数据
+   *
+   * @param levelId - 关卡 ID
+   * @returns 关卡详情，不存在则返回 undefined
+   */
+  getLevelDetail(levelId: string): CampaignLevelDetail | undefined {
+    return CAMPAIGN_LEVEL_DETAILS.find(l => l.id === levelId);
+  }
+
+  /**
+   * 获取所有关卡详情
+   */
+  getAllLevelDetails(): CampaignLevelDetail[] {
+    return [...CAMPAIGN_LEVEL_DETAILS];
+  }
+
+  /**
+   * 检查是否可以攻打指定关卡
+   *
+   * 综合判断：解锁状态、冷却时间、尝试次数。
+   *
+   * @param levelId - 关卡 ID
+   * @returns 是否可以攻打
+   */
+  canAttackLevel(levelId: string): boolean {
+    const info = this.getLevelStatus(levelId);
+    return info.canAttack;
+  }
+
+  /**
+   * 获取关卡完整状态信息
+   *
+   * @param levelId - 关卡 ID
+   * @returns 关卡状态详情
+   */
+  getLevelStatus(levelId: string): LevelStatusInfo {
+    const detail = CAMPAIGN_LEVEL_DETAILS.find(l => l.id === levelId);
+    if (!detail) {
+      return {
+        status: 'locked',
+        canAttack: false,
+        reason: '关卡不存在',
+        cooldownRemaining: 0,
+        attemptsRemaining: 0,
+      };
+    }
+
+    // 已通关的关卡不可再攻打
+    if (this.completedStages.has(levelId)) {
+      return {
+        status: 'victory',
+        canAttack: false,
+        reason: '该关卡已攻克',
+        cooldownRemaining: 0,
+        attemptsRemaining: 0,
+      };
+    }
+
+    // 检查前置关卡
+    if (detail.prerequisite !== null && !this.completedStages.has(detail.prerequisite)) {
+      return {
+        status: 'locked',
+        canAttack: false,
+        reason: `需要先攻克前置关卡`,
+        cooldownRemaining: 0,
+        attemptsRemaining: detail.battleConfig.maxAttempts || Infinity,
+      };
+    }
+
+    // 检查冷却
+    const cooldownRemaining = this.getCooldownRemaining(levelId);
+    if (cooldownRemaining > 0) {
+      return {
+        status: 'available',
+        canAttack: false,
+        reason: `冷却中，还需等待 ${cooldownRemaining} 秒`,
+        cooldownRemaining,
+        attemptsRemaining: this.getAttemptsRemaining(levelId),
+      };
+    }
+
+    // 检查尝试次数
+    const attemptsRemaining = this.getAttemptsRemaining(levelId);
+    if (attemptsRemaining <= 0 && detail.battleConfig.maxAttempts > 0) {
+      return {
+        status: 'available',
+        canAttack: false,
+        reason: '已达到最大尝试次数',
+        cooldownRemaining: 0,
+        attemptsRemaining: 0,
+      };
+    }
+
+    return {
+      status: 'available',
+      canAttack: true,
+      cooldownRemaining: 0,
+      attemptsRemaining,
+    };
+  }
+
+  /**
+   * 计算战斗结果
+   *
+   * 基于双方兵力对比自动计算战斗结果。算法：
+   * 1. 计算双方总兵力值（步兵×1 + 骑兵×1.5 + 弓兵×1.2）
+   * 2. 城防等级提供守方加成（每级 +5%）
+   * 3. 兵力比决定胜负概率
+   * 4. 回合制模拟，每回合双方互相造成伤害
+   * 5. 生成战斗日志
+   *
+   * @param playerTroops - 玩家兵力配置
+   * @param levelId - 关卡 ID
+   * @returns 战斗结果
+   */
+  calculateBattle(
+    playerTroops: TroopComposition,
+    levelId: string,
+  ): CampaignBattleResult {
+    const detail = CAMPAIGN_LEVEL_DETAILS.find(l => l.id === levelId);
+    if (!detail) {
+      return this.createDefaultBattleResult(false, ['关卡不存在']);
+    }
+
+    // 计算双方兵力值
+    const playerPower = this.calculateTroopPower(playerTroops);
+    const enemyPower = this.calculateTroopPower(detail.defender.troops);
+
+    // 城防加成：每级 +5%
+    const fortBonus = 1 + detail.defender.fortLevel * 0.05;
+    const effectiveEnemyPower = enemyPower * fortBonus;
+
+    // 兵力比
+    const ratio = playerPower / Math.max(1, effectiveEnemyPower);
+
+    // 模拟回合制战斗
+    const battleLog: string[] = [];
+    const maxRounds = 8;
+
+    let playerRemaining = { ...playerTroops };
+    let enemyRemaining = { ...detail.defender.troops };
+
+    let playerTotal = this.troopTotal(playerRemaining);
+    let enemyTotal = this.troopTotal(enemyRemaining);
+
+    battleLog.push(`⚔️ ${detail.name} 战斗开始！`);
+    battleLog.push(`我军兵力：步兵${playerTroops.infantry} 骑兵${playerTroops.cavalry} 弓兵${playerTroops.archers}`);
+    battleLog.push(`敌军兵力：步兵${detail.defender.troops.infantry} 骑兵${detail.defender.troops.cavalry} 弓兵${detail.defender.troops.archers}`);
+    battleLog.push(`守将：${detail.defender.lord}，城防等级：${detail.defender.fortLevel}`);
+    battleLog.push(`兵力比：${ratio.toFixed(2)}`);
+
+    let roundsFought = 0;
+
+    for (let round = 1; round <= maxRounds; round++) {
+      if (this.troopTotal(playerRemaining) <= 0 || this.troopTotal(enemyRemaining) <= 0) break;
+
+      roundsFought = round;
+
+      // 每回合伤害 = (己方兵力值 / maxRounds) × 随机波动
+      const variance = 0.85 + Math.random() * 0.3; // 0.85~1.15
+      const playerDamageBase = (playerPower / maxRounds) * variance;
+      const enemyDamageBase = (effectiveEnemyPower / maxRounds) * (1.1 - variance + 0.85);
+
+      // 攻方对守方造成伤害
+      const enemyLoss = this.applyDamage(enemyRemaining, playerDamageBase);
+      // 守方对攻方造成伤害
+      const playerLoss = this.applyDamage(playerRemaining, enemyDamageBase);
+
+      battleLog.push(
+        `第${round}回合：我军损失 步兵${playerLoss.infantry} 骑兵${playerLoss.cavalry} 弓兵${playerLoss.archers}，` +
+        `敌军损失 步兵${enemyLoss.infantry} 骑兵${enemyLoss.cavalry} 弓兵${enemyLoss.archers}`,
+      );
+    }
+
+    // 判定胜负
+    const finalPlayerTotal = this.troopTotal(playerRemaining);
+    const finalEnemyTotal = this.troopTotal(enemyRemaining);
+
+    let victory: boolean;
+    if (finalEnemyTotal <= 0) {
+      victory = true;
+    } else if (finalPlayerTotal <= 0) {
+      victory = false;
+    } else {
+      // 按兵力比判定
+      victory = ratio > 0.8;
+    }
+
+    // 计算总损失
+    const playerLosses: TroopComposition = {
+      infantry: playerTroops.infantry - playerRemaining.infantry,
+      cavalry: playerTroops.cavalry - playerRemaining.cavalry,
+      archers: playerTroops.archers - playerRemaining.archers,
+    };
+    const enemyLosses: TroopComposition = {
+      infantry: detail.defender.troops.infantry - enemyRemaining.infantry,
+      cavalry: detail.defender.troops.cavalry - enemyRemaining.cavalry,
+      archers: detail.defender.troops.archers - enemyRemaining.archers,
+    };
+
+    if (victory) {
+      battleLog.push(`🏆 战斗胜利！攻克${detail.name}！`);
+    } else {
+      battleLog.push(`💀 战斗失败，我军撤退。`);
+    }
+
+    return {
+      victory,
+      playerLosses,
+      enemyLosses,
+      rounds: roundsFought,
+      battleLog,
+      rewards: victory ? detail.rewards : undefined,
+    };
+  }
+
+  /**
+   * 执行攻城战斗
+   *
+   * 完整流程：检查条件 → 计算战斗 → 更新状态 → 返回结果。
+   *
+   * @param levelId - 关卡 ID
+   * @param playerTroops - 玩家兵力配置
+   * @returns 战斗结果
+   */
+  attackLevel(levelId: string, playerTroops: TroopComposition): CampaignBattleResult {
+    // 检查是否可以攻打
+    if (!this.canAttackLevel(levelId)) {
+      const info = this.getLevelStatus(levelId);
+      return this.createDefaultBattleResult(false, [info.reason || '无法攻打该关卡']);
+    }
+
+    // 检查最低兵力
+    const totalTroops = this.troopTotal(playerTroops);
+    if (totalTroops < 10) {
+      return this.createDefaultBattleResult(false, ['兵力不足，至少需要10名士兵']);
+    }
+
+    // 记录攻击尝试
+    this.recordAttempt(levelId);
+
+    // 计算战斗
+    const result = this.calculateBattle(playerTroops, levelId);
+
+    // 设置冷却
+    const detail = CAMPAIGN_LEVEL_DETAILS.find(l => l.id === levelId);
+    if (detail) {
+      this.setCooldown(levelId, detail.battleConfig.cooldownSeconds);
+    }
+
+    // 处理胜利
+    if (result.victory) {
+      this.completeStage(levelId, this.calculateTroopsRemainingPercent(playerTroops, result.playerLosses));
+    }
+
+    return result;
+  }
+
+  // ─── 战斗辅助方法 ─────────────────────────────────────────
+
+  /**
+   * 计算兵力值
+   *
+   * 步兵×1.0 + 骑兵×1.5 + 弓兵×1.2
+   */
+  private calculateTroopPower(troops: TroopComposition): number {
+    return troops.infantry * 1.0 + troops.cavalry * 1.5 + troops.archers * 1.2;
+  }
+
+  /**
+   * 计算总兵力数
+   */
+  private troopTotal(troops: TroopComposition): number {
+    return troops.infantry + troops.cavalry + troops.archers;
+  }
+
+  /**
+   * 对兵力配置施加伤害，返回损失明细
+   */
+  private applyDamage(troops: TroopComposition, damage: number): TroopComposition {
+    const total = this.troopTotal(troops);
+    if (total <= 0 || damage <= 0) {
+      return { infantry: 0, cavalry: 0, archers: 0 };
+    }
+
+    // 按兵种比例分摊伤害
+    const infantryRatio = troops.infantry / total;
+    const cavalryRatio = troops.cavalry / total;
+    const archerRatio = troops.archers / total;
+
+    const infantryLoss = Math.min(troops.infantry, Math.floor(damage * infantryRatio));
+    const cavalryLoss = Math.min(troops.cavalry, Math.floor(damage * cavalryRatio));
+    const archerLoss = Math.min(troops.archers, Math.floor(damage * archerRatio));
+
+    troops.infantry -= infantryLoss;
+    troops.cavalry -= cavalryLoss;
+    troops.archers -= archerLoss;
+
+    return { infantry: infantryLoss, cavalry: cavalryLoss, archers: archerLoss };
+  }
+
+  /**
+   * 计算剩余兵力百分比
+   */
+  private calculateTroopsRemainingPercent(
+    original: TroopComposition,
+    losses: TroopComposition,
+  ): number {
+    const totalOriginal = this.troopTotal(original);
+    const totalLosses = this.troopTotal(losses);
+    if (totalOriginal === 0) return 0;
+    return ((totalOriginal - totalLosses) / totalOriginal) * 100;
+  }
+
+  /**
+   * 创建默认战斗结果（用于错误情况）
+   */
+  private createDefaultBattleResult(victory: boolean, log: string[]): CampaignBattleResult {
+    return {
+      victory,
+      playerLosses: { infantry: 0, cavalry: 0, archers: 0 },
+      enemyLosses: { infantry: 0, cavalry: 0, archers: 0 },
+      rounds: 0,
+      battleLog: log,
+      rewards: undefined,
+    };
+  }
+
+  // ─── 冷却与尝试次数管理 ─────────────────────────────────────
+
+  /** 冷却记录：levelId → 冷却结束时间戳(ms) */
+  private cooldowns: Map<string, number> = new Map();
+
+  /** 尝试次数记录：levelId → 已尝试次数 */
+  private attemptCounts: Map<string, number> = new Map();
+
+  /**
+   * 设置关卡冷却
+   */
+  private setCooldown(levelId: string, seconds: number): void {
+    this.cooldowns.set(levelId, Date.now() + seconds * 1000);
+  }
+
+  /**
+   * 获取剩余冷却时间（秒）
+   */
+  private getCooldownRemaining(levelId: string): number {
+    const endTime = this.cooldowns.get(levelId);
+    if (!endTime) return 0;
+    return Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+  }
+
+  /**
+   * 记录一次攻击尝试
+   */
+  private recordAttempt(levelId: string): void {
+    const current = this.attemptCounts.get(levelId) || 0;
+    this.attemptCounts.set(levelId, current + 1);
+  }
+
+  /**
+   * 获取剩余尝试次数
+   */
+  private getAttemptsRemaining(levelId: number | string): number {
+    const detail = CAMPAIGN_LEVEL_DETAILS.find(l => l.id === levelId);
+    if (!detail) return 0;
+    if (detail.battleConfig.maxAttempts === 0) return Infinity;
+    const used = this.attemptCounts.get(String(levelId)) || 0;
+    return Math.max(0, detail.battleConfig.maxAttempts - used);
+  }
+
+  // ─── 序列化（扩展） ─────────────────────────────────────────
+
   /**
    * 序列化进度数据
    */
@@ -593,6 +1307,8 @@ export class CampaignSystem {
       completed: [...this.completedStages],
       currentIndex: this.currentStageIndex,
       records: [...this.completionRecords.entries()].map(([id, r]) => [id, r]),
+      cooldowns: [...this.cooldowns.entries()],
+      attemptCounts: [...this.attemptCounts.entries()],
     };
   }
 
@@ -605,5 +1321,7 @@ export class CampaignSystem {
     this.completionRecords = new Map(
       (data?.records ?? []).map(([id, r]: [string, any]) => [id, r as StageCompletionRecord]),
     );
+    this.cooldowns = new Map(data?.cooldowns ?? []);
+    this.attemptCounts = new Map(data?.attemptCounts ?? []);
   }
 }

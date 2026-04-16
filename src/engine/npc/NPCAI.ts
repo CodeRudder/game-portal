@@ -100,7 +100,11 @@ export class NPCAI {
     // 根据当前状态处理行为
     switch (this.npc.state) {
       case NPCState.IDLE:
-        this.handleIdle(deltaTime, nearbyNPCs);
+        // 当 NPC 有巡逻移动数据且无日程任务时，跳过 handleIdle，
+        // 由巡逻系统（NPCManager.updatePatrol）控制走动行为。
+        if (!(this.npc.movement && !this.npc.currentTask)) {
+          this.handleIdle(deltaTime, nearbyNPCs);
+        }
         break;
       case NPCState.WALKING:
       case NPCState.MOVING_TO_TARGET:
@@ -217,8 +221,8 @@ export class NPCAI {
   private checkSchedule(gameTime: number): NPCTask | null {
     const hour = Math.floor(gameTime) % 24;
 
-    // 找到当前时间对应的日程项
-    let bestItem = this.def.schedule[0] ?? null;
+    // 找到当前时间对应的日程项（不超过当前小时的最大项）
+    let bestItem: typeof this.def.schedule[0] | null = null;
     for (const item of this.def.schedule) {
       if (item.hour <= hour) {
         bestItem = item;
