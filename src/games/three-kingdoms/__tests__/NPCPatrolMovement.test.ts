@@ -279,8 +279,8 @@ describe('NPC 巡逻/走动逻辑', () => {
       npc.state = NPCState.WALKING;
       npc.currentTask = null;
 
-      // 用更大的 deltaTime 确保到达
-      singleMgr.update(5.0, 4);
+      // 直接调用 updatePatrol 避免AI系统干扰，用更大的 deltaTime 确保到达
+      singleMgr.updatePatrol(5.0);
 
       // 到达后应该变为 idle 或已重新开始 walking（因为 idle 计时器可能已过期）
       // 关键是确认 NPC 不再在原来的 walking 状态前往旧目标
@@ -425,10 +425,10 @@ describe('NPC 巡逻/走动逻辑', () => {
       const s2 = createSingleNPCManager('merchant_chen');
       const s3 = createSingleNPCManager('farmer_wang');
 
-      // s1 和 s3 的 idleTimer 设为极小值，确保立即开始走动
-      s1.npc.movement!.idleTimer = 0.01;
+      // s1 和 s3 的 idleTimer 设为 0，确保立即开始走动
+      s1.npc.movement!.idleTimer = 0;
       s2.npc.movement!.idleTimer = 100;  // 大值，确保不会触发走动
-      s3.npc.movement!.idleTimer = 0.01;
+      s3.npc.movement!.idleTimer = 0;
       s1.npc.currentTask = null;
       s2.npc.currentTask = null;
       s3.npc.currentTask = null;
@@ -439,9 +439,10 @@ describe('NPC 巡逻/走动逻辑', () => {
       s2.npc.movement!.state = 'idle';
       s3.npc.movement!.state = 'idle';
 
-      s1.mgr.update(0.1, 4);
-      s2.mgr.update(0.1, 4);
-      s3.mgr.update(0.1, 4);
+      // 直接调用 updatePatrol 而非 update，避免 AI 系统干扰
+      s1.mgr.updatePatrol(0.1);
+      s2.mgr.updatePatrol(0.1);
+      s3.mgr.updatePatrol(0.1);
 
       // s1 和 s3 应开始走动（idleTimer 已归零）
       expect(s1.npc.movement!.state).toBe('walking');

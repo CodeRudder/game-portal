@@ -153,8 +153,8 @@ export class NPCManager {
       const npc = this.npcs.get(id);
       if (!npc) continue;
 
-      // 获取附近 NPC
-      const nearby = this.getNearbyNPCs(npc.x, npc.y, 3);
+      // 获取附近 NPC（排除自身）
+      const nearby = this.getNearbyNPCs(npc.x, npc.y, 3, id);
 
       // 更新 AI
       ai.update(deltaTime, gameTime, nearby);
@@ -348,9 +348,10 @@ export class NPCManager {
    * @param range - 搜索半径（格）
    * @returns 范围内的 NPC 列表
    */
-  getNearbyNPCs(x: number, y: number, range: number): NPCInstance[] {
+  getNearbyNPCs(x: number, y: number, range: number, excludeId?: string): NPCInstance[] {
     const result: NPCInstance[] = [];
     for (const npc of this.npcs.values()) {
+      if (excludeId && npc.id === excludeId) continue;
       const dx = npc.x - x;
       const dy = npc.y - y;
       if (dx * dx + dy * dy <= range * range) {
