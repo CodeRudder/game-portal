@@ -258,9 +258,44 @@ const NPC_TYPE_EMOJI: Record<string, string> = {
   farmer: '🌾',
   soldier: '⚔️',
   merchant: '💰',
-  scholar: '📖',
+  scholar: '📚',
   scout: '🔍',
 };
+
+/** NPC 形状按职业区分 */
+const NPC_SHAPES: Record<string, 'circle' | 'square' | 'diamond' | 'triangle'> = {
+  farmer: 'triangle',
+  soldier: 'square',
+  merchant: 'diamond',
+  scholar: 'circle',
+  scout: 'triangle',
+};
+
+/** 建筑形状按类型区分（屋顶 + 主体 + 颜色） */
+const BUILDING_SHAPE_CONFIG: Record<string, { roof: 'triangle' | 'flat' | 'curved'; body: 'rect'; color: number; label: string }> = {
+  yamen:     { roof: 'triangle', body: 'rect', color: 0xFFD700, label: '衙门' },
+  residence: { roof: 'triangle', body: 'rect', color: 0xDEB887, label: '民居' },
+  shop:      { roof: 'triangle', body: 'rect', color: 0xFF8C00, label: '商铺' },
+  barracks:  { roof: 'flat',     body: 'rect', color: 0x4169E1, label: '兵营' },
+  market:    { roof: 'curved',   body: 'rect', color: 0xFF6347, label: '市场' },
+  smithy:    { roof: 'triangle', body: 'rect', color: 0x808080, label: '铁匠铺' },
+  tavern:    { roof: 'triangle', body: 'rect', color: 0x8B4513, label: '酒馆' },
+  academy:   { roof: 'curved',   body: 'rect', color: 0x800080, label: '书院' },
+  wall:      { roof: 'flat',     body: 'rect', color: 0xA0A0A0, label: '城墙' },
+};
+
+/**
+ * 将颜色按比例变暗（用于建筑屋顶/边框）
+ * @param color - 原始颜色（十六进制数字）
+ * @param factor - 亮度因子（0=全黑, 1=原色）
+ * @returns 变暗后的颜色
+ */
+function darkenColor(color: number, factor: number): number {
+  const r = Math.round(((color >> 16) & 0xff) * factor);
+  const g = Math.round(((color >> 8) & 0xff) * factor);
+  const b = Math.round((color & 0xff) * factor);
+  return (r << 16) | (g << 8) | b;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // 内部渲染对象接口
@@ -339,6 +374,8 @@ interface NPCDotView {
   id: string;
   container: Container;
   data: MapNPC | null;
+  /** 呼吸动画相位偏移（避免所有 NPC 同步） */
+  breathPhase: number;
 }
 
 /** 地标渲染对象 */
@@ -395,6 +432,15 @@ export class MapScene extends BaseScene {
   /** 上一帧指针位置（用于计算速度） */
   private lastPointerPos: { x: number; y: number } = { x: 0, y: 0 };
 
+  // ─── 触摸状态 ─────────────────────────────────────────────
+
+  /** 触摸点缓存（用于双指缩放） */
+  private touchPoints: Map<number, { x: number; y: number }> = new Map();
+  /** 上一次双指间距（用于计算缩放比例） */
+  private lastPinchDistance: number = 0;
+  /** 上一次双指中心（用于平移） */
+  private lastPinchCenter: { x: number; y: number } = { x: 0, y: 0 };
+
   // ─── 悬停状态 ─────────────────────────────────────────────
 
   /** 当前悬停的领土 ID */
@@ -450,6 +496,8 @@ export class MapScene extends BaseScene {
   private tileMapView: TileMapView | null = null;
   /** NPC 渲染点映射 */
   private npcDots: Map<string, NPCDotView> = new Map();
+  /** NPC 呼吸动画累计时间（秒） */
+  private npcBreathTime: number = 0;
   /** 地标渲染映射 */
   private landmarkViews: Map<string, LandmarkView> = new Map();
   /** 是否使用瓦片地图模式 */
@@ -535,6 +583,12 @@ export class MapScene extends BaseScene {
     // 绑定滚轮缩放事件
     this.container.on('wheel', this.onWheel);
 
+    // 触摸事件（单指拖拽 + 双指缩放）
+    this.container.on('touchstart', this.onTouchStart);
+    this.container.on('touchmove', this.onTouchMove);
+    this.container.on('touchend', this.onTouchEnd);
+    this.container.on('touchcancel', this.onTouchEnd);
+
     // 右键选区事件
     this.container.on('rightdown', this.onRightDown);
     this.container.on('rightup', this.onRightUp);
@@ -593,6 +647,9 @@ export class MapScene extends BaseScene {
 
     // ── 7. 更新右键选区 ─────────────────────────────────────
     this.updateSelection();
+
+    // ── 8. 更新 NPC 呼吸动画 ────────────────────────────────
+    this.updateNPCBreath(deltaTime);
   }
 
   protected onSetData(data: unknown): void {
@@ -1884,45 +1941,132 @@ export class MapScene extends BaseScene {
             }
           }
         } else {
-          // Fallback：使用 Graphics 绘制建筑形状
+          // Fallback：使用 Graphics 绘制程序化建筑形状
           const gfx = new Graphics();
           const halfSize = tileSize * 0.3;
 
-          switch (tile.terrain) {
-            case 'city':
-              gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
-                .fill({ color: 0xd4a574 });
-              gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
-                .stroke({ color: 0x8b6914, width: 2 });
-              gfx.rect(-halfSize, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
-              gfx.rect(halfSize - 8, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
-              break;
+          // 检查是否有建筑类型配置（yamen/barracks 等）
+          const buildingConfig = BUILDING_SHAPE_CONFIG[tile.buildingId];
 
-            case 'village':
-              gfx.rect(-halfSize * 0.7, -halfSize * 0.2, halfSize * 1.4, halfSize * 0.9)
-                .fill({ color: 0x8fbc8f });
-              gfx.moveTo(-halfSize * 0.8, -halfSize * 0.2)
-                .lineTo(0, -halfSize * 0.9)
-                .lineTo(halfSize * 0.8, -halfSize * 0.2)
-                .closePath()
-                .fill({ color: 0x8b4513 });
-              break;
+          if (buildingConfig) {
+            // ── 使用建筑类型配置绘制 ──
+            const bodyW = halfSize * 1.6;
+            const bodyH = halfSize * 1.2;
+            const bodyY = -bodyH * 0.1; // 主体稍偏下，给屋顶留空间
 
-            case 'fortress':
-              gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
-                .fill({ color: 0xa0522d });
-              gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
-                .stroke({ color: 0x5c3317, width: 2 });
-              gfx.rect(-halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
-                .fill({ color: 0x8b6914 });
-              gfx.rect(halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
-                .fill({ color: 0x8b6914 });
-              break;
+            // 1) 绘制主体（矩形）
+            gfx.roundRect(-bodyW / 2, bodyY, bodyW, bodyH, 1)
+              .fill({ color: buildingConfig.color, alpha: 0.85 });
+            gfx.roundRect(-bodyW / 2, bodyY, bodyW, bodyH, 1)
+              .stroke({ color: darkenColor(buildingConfig.color, 0.5), width: 1.5 });
 
-            default:
-              gfx.circle(0, 0, halfSize * 0.7).fill({ color: 0x95a5a6 });
-              gfx.circle(0, 0, halfSize * 0.7).stroke({ color: 0x7f8c8d, width: 1 });
-              break;
+            // 2) 绘制门（小矩形）
+            const doorW = bodyW * 0.25;
+            const doorH = bodyH * 0.45;
+            gfx.roundRect(-doorW / 2, bodyY + bodyH - doorH, doorW, doorH, 1)
+              .fill({ color: darkenColor(buildingConfig.color, 0.35) });
+
+            // 3) 绘制屋顶
+            const roofY = bodyY;
+            switch (buildingConfig.roof) {
+              case 'triangle': {
+                // 三角形屋顶
+                const roofOverhang = bodyW * 0.15;
+                gfx.moveTo(-bodyW / 2 - roofOverhang, roofY)
+                  .lineTo(0, roofY - halfSize * 0.8)
+                  .lineTo(bodyW / 2 + roofOverhang, roofY)
+                  .closePath()
+                  .fill({ color: darkenColor(buildingConfig.color, 0.65) });
+                gfx.moveTo(-bodyW / 2 - roofOverhang, roofY)
+                  .lineTo(0, roofY - halfSize * 0.8)
+                  .lineTo(bodyW / 2 + roofOverhang, roofY)
+                  .closePath()
+                  .stroke({ color: darkenColor(buildingConfig.color, 0.4), width: 1 });
+                break;
+              }
+              case 'flat': {
+                // 平顶（城墙/兵营）
+                const roofOverhang = bodyW * 0.1;
+                gfx.rect(-bodyW / 2 - roofOverhang, roofY - halfSize * 0.3, bodyW + roofOverhang * 2, halfSize * 0.3)
+                  .fill({ color: darkenColor(buildingConfig.color, 0.6) });
+                // 城垛效果
+                const crenelW = (bodyW + roofOverhang * 2) / 5;
+                for (let i = 0; i < 5; i += 2) {
+                  const cx2 = -bodyW / 2 - roofOverhang + i * crenelW;
+                  gfx.rect(cx2, roofY - halfSize * 0.3 - 3, crenelW, 3)
+                    .fill({ color: darkenColor(buildingConfig.color, 0.5) });
+                }
+                break;
+              }
+              case 'curved': {
+                // 弧形屋顶（市场/书院）
+                const roofOverhang = bodyW * 0.2;
+                gfx.moveTo(-bodyW / 2 - roofOverhang, roofY)
+                  .quadraticCurveTo(-bodyW / 4, roofY - halfSize * 1.0, 0, roofY - halfSize * 0.7)
+                  .quadraticCurveTo(bodyW / 4, roofY - halfSize * 1.0, bodyW / 2 + roofOverhang, roofY)
+                  .closePath()
+                  .fill({ color: darkenColor(buildingConfig.color, 0.65) });
+                gfx.moveTo(-bodyW / 2 - roofOverhang, roofY)
+                  .quadraticCurveTo(-bodyW / 4, roofY - halfSize * 1.0, 0, roofY - halfSize * 0.7)
+                  .quadraticCurveTo(bodyW / 4, roofY - halfSize * 1.0, bodyW / 2 + roofOverhang, roofY)
+                  .closePath()
+                  .stroke({ color: darkenColor(buildingConfig.color, 0.4), width: 1 });
+                break;
+              }
+            }
+
+            // 4) 建筑名称标签
+            const labelText = new Text({
+              text: buildingConfig.label,
+              style: new TextStyle({
+                fontSize: 8,
+                fill: '#ffffff',
+                fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+                stroke: { color: '#000000', width: 2 },
+              }),
+            });
+            labelText.anchor.set(0.5, 0);
+            labelText.position.set(0, bodyY + bodyH + 2);
+            container.addChild(labelText);
+
+          } else {
+            // ── 原有地形建筑 fallback ──
+            switch (tile.terrain) {
+              case 'city':
+                gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
+                  .fill({ color: 0xd4a574 });
+                gfx.rect(-halfSize, -halfSize, halfSize * 2, halfSize * 2)
+                  .stroke({ color: 0x8b6914, width: 2 });
+                gfx.rect(-halfSize, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
+                gfx.rect(halfSize - 8, -halfSize - 4, 8, 4).fill({ color: 0x8b6914 });
+                break;
+
+              case 'village':
+                gfx.rect(-halfSize * 0.7, -halfSize * 0.2, halfSize * 1.4, halfSize * 0.9)
+                  .fill({ color: 0x8fbc8f });
+                gfx.moveTo(-halfSize * 0.8, -halfSize * 0.2)
+                  .lineTo(0, -halfSize * 0.9)
+                  .lineTo(halfSize * 0.8, -halfSize * 0.2)
+                  .closePath()
+                  .fill({ color: 0x8b4513 });
+                break;
+
+              case 'fortress':
+                gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
+                  .fill({ color: 0xa0522d });
+                gfx.rect(-halfSize, -halfSize * 0.6, halfSize * 2, halfSize * 1.2)
+                  .stroke({ color: 0x5c3317, width: 2 });
+                gfx.rect(-halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
+                  .fill({ color: 0x8b6914 });
+                gfx.rect(halfSize - 4, -halfSize * 0.8, 8, halfSize * 1.4)
+                  .fill({ color: 0x8b6914 });
+                break;
+
+              default:
+                gfx.circle(0, 0, halfSize * 0.7).fill({ color: 0x95a5a6 });
+                gfx.circle(0, 0, halfSize * 0.7).stroke({ color: 0x7f8c8d, width: 1 });
+                break;
+            }
           }
 
           container.addChild(gfx);
@@ -1949,7 +2093,9 @@ export class MapScene extends BaseScene {
     this.npcDots.clear();
 
     const tileSize = map.tileSize;
+    const shapeRadius = NPC_DOT_RADIUS + 2; // 略大于原来的圆点
 
+    let npcIndex = 0;
     for (const npc of map.npcs) {
       const cx = npc.tileX * tileSize + tileSize / 2;
       const cy = npc.tileY * tileSize + tileSize / 2;
@@ -1961,21 +2107,72 @@ export class MapScene extends BaseScene {
 
       const gfx = new Graphics();
       const color = NPC_TYPE_COLORS[npc.type] ?? 0x9e9e9e;
+      const shape = NPC_SHAPES[npc.type] ?? 'circle';
 
-      // 底部彩色圆点
-      gfx.circle(0, 0, NPC_DOT_RADIUS).fill({ color });
-      gfx.circle(0, 0, NPC_DOT_RADIUS).stroke({ color: 0xffffff, width: 1 });
+      // 根据职业绘制不同形状
+      switch (shape) {
+        case 'triangle': {
+          // 三角形（草帽/斥候形状）
+          const h = shapeRadius * 1.8;
+          gfx.moveTo(0, -h * 0.6)
+            .lineTo(-shapeRadius, h * 0.4)
+            .lineTo(shapeRadius, h * 0.4)
+            .closePath()
+            .fill({ color });
+          gfx.moveTo(0, -h * 0.6)
+            .lineTo(-shapeRadius, h * 0.4)
+            .lineTo(shapeRadius, h * 0.4)
+            .closePath()
+            .stroke({ color: 0xffffff, width: 1 });
+          break;
+        }
+        case 'square': {
+          // 方形（盾牌形状）
+          const half = shapeRadius * 0.85;
+          gfx.roundRect(-half, -half, half * 2, half * 2, 2)
+            .fill({ color });
+          gfx.roundRect(-half, -half, half * 2, half * 2, 2)
+            .stroke({ color: 0xffffff, width: 1 });
+          break;
+        }
+        case 'diamond': {
+          // 菱形（铜钱形状）
+          gfx.moveTo(0, -shapeRadius)
+            .lineTo(shapeRadius, 0)
+            .lineTo(0, shapeRadius)
+            .lineTo(-shapeRadius, 0)
+            .closePath()
+            .fill({ color });
+          gfx.moveTo(0, -shapeRadius)
+            .lineTo(shapeRadius, 0)
+            .lineTo(0, shapeRadius)
+            .lineTo(-shapeRadius, 0)
+            .closePath()
+            .stroke({ color: 0xffffff, width: 1 });
+          // 菱形中心小圆（铜钱孔）
+          gfx.circle(0, 0, shapeRadius * 0.25)
+            .fill({ color: 0x000000, alpha: 0.3 });
+          break;
+        }
+        case 'circle':
+        default: {
+          // 圆形（书卷形状）
+          gfx.circle(0, 0, shapeRadius).fill({ color });
+          gfx.circle(0, 0, shapeRadius).stroke({ color: 0xffffff, width: 1 });
+          break;
+        }
+      }
 
       container.addChild(gfx);
 
-      // Emoji 标签
+      // 职业图标（Emoji）—— 放在形状上方
       const emoji = NPC_TYPE_EMOJI[npc.type] ?? '👤';
       const emojiText = new Text({
         text: emoji,
         style: new TextStyle({ fontSize: 10 }),
       });
       emojiText.anchor.set(0.5, 0.5);
-      emojiText.position.set(0, -NPC_DOT_RADIUS - 8);
+      emojiText.position.set(0, -shapeRadius - 8);
       container.addChild(emojiText);
 
       // NPC 名称
@@ -1988,7 +2185,7 @@ export class MapScene extends BaseScene {
         }),
       });
       nameText.anchor.set(0.5, 0);
-      nameText.position.set(0, NPC_DOT_RADIUS + 2);
+      nameText.position.set(0, shapeRadius + 2);
       container.addChild(nameText);
 
       // 点击事件
@@ -1997,7 +2194,28 @@ export class MapScene extends BaseScene {
       });
 
       npcLayer.addChild(container);
-      this.npcDots.set(npc.id, { id: npc.id, container, data: npc });
+      this.npcDots.set(npc.id, {
+        id: npc.id,
+        container,
+        data: npc,
+        breathPhase: npcIndex * 0.7, // 每个NPC相位错开
+      });
+      npcIndex++;
+    }
+  }
+
+  /**
+   * 更新 NPC 呼吸动画（alpha 微变）
+   */
+  private updateNPCBreath(deltaTime: number): void {
+    if (this.npcDots.size === 0) return;
+
+    this.npcBreathTime += deltaTime;
+
+    for (const [, view] of this.npcDots) {
+      // 正弦呼吸：alpha 在 0.7 ~ 1.0 之间波动
+      const breath = 0.85 + 0.15 * Math.sin(this.npcBreathTime * 2.0 + view.breathPhase);
+      view.container.alpha = breath;
     }
   }
 
@@ -2383,6 +2601,136 @@ export class MapScene extends BaseScene {
     this.dragging = false;
     this.container.cursor = 'grab';
     // 惯性速度已由 onPointerMove 累积，松手后由 updateInertia 接管
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  // 触摸交互（单指拖拽 + 双指缩放）
+  //
+  // PixiJS v8 为每个触摸点分发独立的 FederatedPointerEvent，
+  // 通过 pointerId 区分不同手指。
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 触摸开始：记录触摸点
+   *
+   * PixiJS v8 为每根手指分别触发 touchstart 事件，
+   * 通过 pointerId 和 touchPoints.size 判断当前触摸点数。
+   */
+  private onTouchStart = (e: import('pixi.js').FederatedPointerEvent): void => {
+    // 仅处理触摸类型事件
+    if (e.pointerType !== 'touch') return;
+
+    // 记录此触摸点
+    this.touchPoints.set(e.pointerId, { x: e.globalX, y: e.globalY });
+
+    if (this.touchPoints.size === 1) {
+      // 第一根手指：进入拖拽模式
+      this.dragging = true;
+      this.container.cursor = 'grabbing';
+      this.dragStart = { x: e.globalX, y: e.globalY };
+      this.lastPointerPos = { x: e.globalX, y: e.globalY };
+      this.dragVelocity.x = 0;
+      this.dragVelocity.y = 0;
+    } else if (this.touchPoints.size === 2) {
+      // 第二根手指：退出拖拽，进入缩放模式
+      this.dragging = false;
+      this.container.cursor = 'grab';
+      this.dragVelocity.x = 0;
+      this.dragVelocity.y = 0;
+
+      // 计算两指初始距离和中心
+      const pts = Array.from(this.touchPoints.values());
+      this.lastPinchDistance = Math.hypot(
+        pts[1].x - pts[0].x,
+        pts[1].y - pts[0].y,
+      );
+      this.lastPinchCenter = {
+        x: (pts[0].x + pts[1].x) / 2,
+        y: (pts[0].y + pts[1].y) / 2,
+      };
+    }
+  };
+
+  /**
+   * 触摸移动：
+   *
+   * - 单指（touchPoints.size === 1）：平移地图
+   * - 双指（touchPoints.size === 2）：根据距离变化缩放 + 中心平移
+   */
+  private onTouchMove = (e: import('pixi.js').FederatedPointerEvent): void => {
+    if (e.pointerType !== 'touch') return;
+
+    // 更新此触摸点位置
+    this.touchPoints.set(e.pointerId, { x: e.globalX, y: e.globalY });
+
+    if (this.touchPoints.size === 1 && this.dragging) {
+      // 单指拖拽
+      const dx = e.globalX - this.dragStart.x;
+      const dy = e.globalY - this.dragStart.y;
+
+      this.dragVelocity.x = e.globalX - this.lastPointerPos.x;
+      this.dragVelocity.y = e.globalY - this.lastPointerPos.y;
+      this.lastPointerPos = { x: e.globalX, y: e.globalY };
+
+      const camState = this.cameraManager.getState();
+      this.cameraManager.panTo(camState.x + dx, camState.y + dy, false);
+      this.dragStart = { x: e.globalX, y: e.globalY };
+    } else if (this.touchPoints.size >= 2) {
+      // 双指缩放：取最新两个触摸点位置
+      const pts = Array.from(this.touchPoints.values());
+      const p0 = pts[0];
+      const p1 = pts[1];
+      const dist = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+      const center = {
+        x: (p0.x + p1.x) / 2,
+        y: (p0.y + p1.y) / 2,
+      };
+
+      if (this.lastPinchDistance > 0) {
+        const scale = dist / this.lastPinchDistance;
+        const camState = this.cameraManager.getState();
+        this.cameraManager.zoomTo(camState.zoom * scale, false);
+
+        // 双指中心平移
+        const cdx = center.x - this.lastPinchCenter.x;
+        const cdy = center.y - this.lastPinchCenter.y;
+        this.cameraManager.panTo(camState.x + cdx, camState.y + cdy, false);
+      }
+
+      this.lastPinchDistance = dist;
+      this.lastPinchCenter = center;
+    }
+  };
+
+  /**
+   * 触摸结束：清理状态
+   *
+   * PixiJS v8 为每根手指分别触发 touchend 事件。
+   */
+  private onTouchEnd = (e: import('pixi.js').FederatedPointerEvent): void => {
+    if (e.pointerType !== 'touch') return;
+
+    // 移除已释放的触摸点
+    this.touchPoints.delete(e.pointerId);
+
+    if (this.touchPoints.size === 0) {
+      // 全部手指离开：停止拖拽，恢复光标
+      this.dragging = false;
+      this.container.cursor = 'grab';
+      this.lastPinchDistance = 0;
+    } else if (this.touchPoints.size === 1) {
+      // 从双指切回单指：重新开始拖拽
+      const remaining = this.touchPoints.values().next().value;
+      if (remaining) {
+        this.dragging = true;
+        this.container.cursor = 'grabbing';
+        this.dragStart = { x: remaining.x, y: remaining.y };
+        this.lastPointerPos = { x: remaining.x, y: remaining.y };
+        this.dragVelocity.x = 0;
+        this.dragVelocity.y = 0;
+      }
+      this.lastPinchDistance = 0;
+    }
   };
 
   // ═══════════════════════════════════════════════════════════
