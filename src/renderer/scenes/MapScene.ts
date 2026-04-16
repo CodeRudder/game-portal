@@ -35,6 +35,7 @@ import {
   TERRAIN_ASSETS,
   TERRAIN_SPRITE_NAMES,
   BUILDING_SPRITE_NAMES,
+  TERRAIN_VISUALS,
 } from '../../games/three-kingdoms/AssetConfig';
 
 // ═══════════════════════════════════════════════════════════════
@@ -531,6 +532,7 @@ export class MapScene extends BaseScene {
   protected async onCreate(): Promise<void> {
     // 设置容器交互（用于地图拖拽和点击）
     this.container.eventMode = 'static';
+    this.container.cursor = 'grab';
     // hitArea 稍后在 onEnter 中根据实际尺寸设置
 
     // 绑定拖拽事件
@@ -1473,8 +1475,8 @@ export class MapScene extends BaseScene {
 
     const graphics = new Graphics();
 
-    // ── 1. 绘制地形瓦片 ────────────────────────────────────
-    // 尝试使用精灵纹理渲染，找不到时 fallback 到色块
+    // ── 1. 绘制地形瓦片（程序化渲染） ─────────────────────
+    // 使用精心设计的色块 + 纹理图案，不再使用不合适的塔防素材
     for (let row = 0; row < map.height; row++) {
       for (let col = 0; col < map.width; col++) {
         const tile = map.tiles[row]?.[col];
@@ -1483,41 +1485,75 @@ export class MapScene extends BaseScene {
         const x = col * tileSize;
         const y = row * tileSize;
 
-        // 尝试获取精灵纹理
-        const terrainTexture = this.getTerrainTexture(tile.terrain);
+        // 获取地形视觉配置
+        const visual = TERRAIN_VISUALS[tile.terrain];
+        if (visual) {
+          // 基于 variant 产生颜色微变
+          const shift = (tile.variant % 3 - 1) * 0x080808;
+          const baseColor = visual.baseColor + shift;
 
-        if (terrainTexture) {
-          // 使用精灵纹理渲染地形瓦片
-          const tileSprite = new Sprite(terrainTexture);
-          tileSprite.position.set(x, y);
-          tileSprite.width = tileSize;
-          tileSprite.height = tileSize;
-          tileLayer.addChild(tileSprite);
+          // 基础填充
+          graphics.rect(x, y, tileSize, tileSize).fill({ color: baseColor });
 
-          // 海拔视觉变化：高海拔区域叠加半透明暗色
-          if (tile.elevation >= 3) {
-            const elevGfx = new Graphics();
-            elevGfx.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.15 });
-            tileLayer.addChild(elevGfx);
-          } else if (tile.elevation >= 2) {
-            const elevGfx = new Graphics();
-            elevGfx.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.07 });
-            tileLayer.addChild(elevGfx);
+          // 纹理图案
+          switch (visual.pattern) {
+            case 'checker': {
+              const half = tileSize / 2;
+              graphics.rect(x, y, half, half).fill({ color: visual.darkColor, alpha: 0.25 });
+              graphics.rect(x + half, y + half, half, half).fill({ color: visual.darkColor, alpha: 0.25 });
+              break;
+            }
+            case 'diagonal': {
+              for (let i = 0; i < tileSize; i += 8) {
+                graphics.rect(x + i, y, 2, tileSize).fill({ color: visual.lightColor, alpha: 0.15 });
+              }
+              break;
+            }
+            case 'dots': {
+              const seed = tile.x * 7 + tile.y * 13;
+              for (let i = 0; i < 5; i++) {
+                const dx = ((seed * (i + 1) * 17) % (tileSize - 10)) + 5;
+                const dy = ((seed * (i + 1) * 23) % (tileSize - 10)) + 5;
+                graphics.circle(x + dx, y + dy, 3).fill({ color: visual.lightColor, alpha: 0.5 });
+              }
+              break;
+            }
+            case 'waves': {
+              for (let wy = 8; wy < tileSize; wy += 14) {
+                graphics
+                  .moveTo(x + 2, y + wy)
+                  .bezierCurveTo(
+                    x + tileSize * 0.25, y + wy - 4,
+                    x + tileSize * 0.75, y + wy + 4,
+                    x + tileSize - 2, y + wy,
+                  )
+                  .stroke({ width: 1, color: visual.lightColor, alpha: 0.4 });
+              }
+              break;
+            }
+            case 'crosshatch': {
+              for (let i = 4; i < tileSize; i += 10) {
+                graphics.moveTo(x + i, y).lineTo(x + i, y + tileSize)
+                  .stroke({ width: 0.5, color: visual.lightColor, alpha: 0.2 });
+                graphics.moveTo(x, y + i).lineTo(x + tileSize, y + i)
+                  .stroke({ width: 0.5, color: visual.lightColor, alpha: 0.2 });
+              }
+              break;
+            }
           }
-        } else {
-          // Fallback：使用色块渲染（保留原有逻辑）
-          const color = TERRAIN_COLORS[tile.terrain] ?? TERRAIN_COLORS.plain;
-          graphics.rect(x, y, tileSize, tileSize).fill({ color });
 
-          // 海拔视觉变化
+          // 海拔效果
           if (tile.elevation >= 3) {
             graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.15 });
           } else if (tile.elevation >= 2) {
             graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.07 });
           }
+        } else {
+          // 未知地形 fallback
+          graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x888888 });
         }
 
-        // 瓦片网格线（始终绘制）
+        // 瓦片网格线
         graphics.rect(x, y, tileSize, tileSize).stroke({
           width: TILE_BORDER_WIDTH,
           color: TILE_BORDER_COLOR,
@@ -2091,6 +2127,7 @@ export class MapScene extends BaseScene {
 
   private onPointerDown = (e: import('pixi.js').FederatedPointerEvent): void => {
     this.dragging = true;
+    this.container.cursor = 'grabbing';
     this.dragStart = { x: e.globalX, y: e.globalY };
     this.lastPointerPos = { x: e.globalX, y: e.globalY };
 
@@ -2128,6 +2165,7 @@ export class MapScene extends BaseScene {
 
   private onPointerUp = (): void => {
     this.dragging = false;
+    this.container.cursor = 'grab';
     // 惯性速度已由 onPointerMove 累积，松手后由 updateInertia 接管
   };
 

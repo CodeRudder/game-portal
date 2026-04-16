@@ -1,11 +1,10 @@
 /**
  * 三国霸业 — 美术资源映射配置
  *
- * 将游戏逻辑层使用的地形/建筑/资源类型键映射到 Kenney Tower Defense
- * 瓦片资源路径。所有资源均为 64×64 PNG，CC0 协议。
+ * 地形渲染策略：使用精心设计的程序化色块 + 纹理图案替代不合适的塔防素材。
+ * 每种地形有独特的颜色方案和纹理模式，variant 字段产生视觉变化。
  *
- * 资源目录: public/assets/kenney-tower-defense/PNG/Default size/
- * 精灵图帧名来自 spritesheet.json。
+ * 建筑/NPC：保留 Kenney 资源作为可选精灵，fallback 到程序化渲染。
  *
  * @module games/three-kingdoms/AssetConfig
  */
@@ -13,29 +12,98 @@
 import type { TerrainType } from './MapGenerator';
 
 // ═══════════════════════════════════════════════════════════════
-// 资源基础路径
+// 地形视觉配置（程序化渲染）
 // ═══════════════════════════════════════════════════════════════
 
-/** Kenney 瓦片 PNG 基础路径 */
-const KENNEY_BASE = '/assets/kenney-tower-defense/PNG/Default size';
+export type TerrainPattern = 'solid' | 'checker' | 'diagonal' | 'dots' | 'waves' | 'crosshatch';
 
-// ═══════════════════════════════════════════════════════════════
-// 地形瓦片映射
-// ═══════════════════════════════════════════════════════════════
+export interface TerrainVisual {
+  baseColor: number;
+  lightColor: number;
+  darkColor: number;
+  pattern: TerrainPattern;
+  label: string;
+}
 
 /**
- * 地形类型 → Kenney 瓦片 PNG 路径
+ * 地形类型 → 程序化渲染参数
  *
- * 映射策略：
- * - plain   → terrain_grass (tile011, 绿色草地)
- * - mountain→ enemy_knight  (tile007, 骑士→山石质感)
- * - forest  → enemy_slime   (tile010, 史莱姆→绿色植被)
- * - water   → terrain_water (tile014, 水域)
- * - road    → terrain_road_straight (tile012, 直路)
- * - city    → tower_cannon  (tile003, 炮塔→城防建筑)
- * - village → tower_archer  (tile001, 弓箭塔→小型建筑)
- * - fortress→ tower_fire    (tile005, 火塔→坚固堡垒)
+ * 颜色设计遵循古风水墨画风格：
+ * - 平原：青绿色系（江南水乡感）
+ * - 山地：灰褐色系（秦岭蜀道感）
+ * - 森林：深绿色系（南蛮密林感）
+ * - 水域：靛蓝色系（长江天堑感）
+ * - 道路：土黄色系（黄土古道感）
+ * - 城市：金色调（繁华都市感）
+ * - 村庄：浅绿色系（田园牧歌感）
+ * - 关卡：灰石色系（雄关漫道感）
  */
+export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
+  plain: {
+    baseColor: 0x5a8c4f,
+    lightColor: 0x6a9c5f,
+    darkColor: 0x4a7c3f,
+    pattern: 'checker',
+    label: '平原',
+  },
+  mountain: {
+    baseColor: 0x7b6b5a,
+    lightColor: 0x9b8b7a,
+    darkColor: 0x5b4b3a,
+    pattern: 'diagonal',
+    label: '山地',
+  },
+  forest: {
+    baseColor: 0x2d5a1e,
+    lightColor: 0x4d7a3e,
+    darkColor: 0x1d4a0e,
+    pattern: 'dots',
+    label: '森林',
+  },
+  water: {
+    baseColor: 0x2980b9,
+    lightColor: 0x5dade2,
+    darkColor: 0x1a5276,
+    pattern: 'waves',
+    label: '水域',
+  },
+  road: {
+    baseColor: 0x8b7355,
+    lightColor: 0xa0896a,
+    darkColor: 0x6b5335,
+    pattern: 'solid',
+    label: '道路',
+  },
+  city: {
+    baseColor: 0xc9a96e,
+    lightColor: 0xd4b87a,
+    darkColor: 0xb89858,
+    pattern: 'crosshatch',
+    label: '城市',
+  },
+  village: {
+    baseColor: 0x8fbc8f,
+    lightColor: 0x9fcc9f,
+    darkColor: 0x7fac7f,
+    pattern: 'checker',
+    label: '村庄',
+  },
+  fortress: {
+    baseColor: 0x696969,
+    lightColor: 0x808080,
+    darkColor: 0x505050,
+    pattern: 'crosshatch',
+    label: '关卡',
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// Kenney 资源路径（保留，但仅用于建筑/NPC精灵）
+// ═══════════════════════════════════════════════════════════════
+
+const KENNEY_BASE = '/assets/kenney-tower-defense/PNG/Default size';
+
+/** 地形类型 → Kenney 瓦片路径（已弃用，保留向后兼容） */
 export const TERRAIN_ASSETS: Record<TerrainType, string> = {
   plain:    `${KENNEY_BASE}/towerDefense_tile011.png`,
   mountain: `${KENNEY_BASE}/towerDefense_tile007.png`,
@@ -47,23 +115,7 @@ export const TERRAIN_ASSETS: Record<TerrainType, string> = {
   fortress: `${KENNEY_BASE}/towerDefense_tile005.png`,
 };
 
-// ═══════════════════════════════════════════════════════════════
-// 建筑图标映射
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * 建筑类型 → Kenney 瓦片 PNG 路径
- *
- * 使用塔防塔楼图标表示不同建筑：
- * - city     → tower_cannon (tile003, 城池)
- * - village  → tower_archer (tile001, 村落)
- * - fortress → tower_fire   (tile005, 关卡)
- * - yamen    → tower_magic  (tile002, 衙门)
- * - barracks → tower_ice    (tile004, 兵营)
- * - market   → ui_coin      (tile019, 市场)
- * - shop     → ui_star      (tile020, 商铺)
- * - residence→ terrain_sand (tile015, 民居)
- */
+/** 建筑类型 → Kenney 瓦片路径 */
 export const BUILDING_ASSETS: Record<string, string> = {
   city:      `${KENNEY_BASE}/towerDefense_tile003.png`,
   village:   `${KENNEY_BASE}/towerDefense_tile001.png`,
@@ -75,30 +127,20 @@ export const BUILDING_ASSETS: Record<string, string> = {
   residence: `${KENNEY_BASE}/towerDefense_tile015.png`,
 };
 
-// ═══════════════════════════════════════════════════════════════
-// 资源点图标
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * 资源点类型 → Kenney 瓦片 PNG 路径
- */
+/** 资源点类型 → Kenney 瓦片路径 */
 export const RESOURCE_ASSETS: Record<string, string> = {
-  farm:    `${KENNEY_BASE}/towerDefense_tile011.png`,  // 草地→农田
-  mine:    `${KENNEY_BASE}/towerDefense_tile007.png`,  // 山石→矿场
-  lumber:  `${KENNEY_BASE}/towerDefense_tile010.png`,  // 绿色→伐木场
-  fishery: `${KENNEY_BASE}/towerDefense_tile014.png`,  // 水域→渔场
-  herb:    `${KENNEY_BASE}/towerDefense_tile026.png`,  // 治疗效果→药草
+  farm:    `${KENNEY_BASE}/towerDefense_tile011.png`,
+  mine:    `${KENNEY_BASE}/towerDefense_tile007.png`,
+  lumber:  `${KENNEY_BASE}/towerDefense_tile010.png`,
+  fishery: `${KENNEY_BASE}/towerDefense_tile014.png`,
+  herb:    `${KENNEY_BASE}/towerDefense_tile026.png`,
 };
 
 // ═══════════════════════════════════════════════════════════════
-// NPC 颜色配置（无精灵时用彩色圆形）
+// NPC 颜色配置
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * NPC 职业类型 → 颜色值（十六进制字符串）
- *
- * 用于在无精灵图时绘制彩色圆形 NPC。
- */
+/** NPC 职业类型 → 基础颜色 */
 export const NPC_COLORS: Record<string, string> = {
   farmer:   '#4CAF50',
   soldier:  '#F44336',
@@ -107,20 +149,33 @@ export const NPC_COLORS: Record<string, string> = {
   scout:    '#9C27B0',
 };
 
-// ═══════════════════════════════════════════════════════════════
-// 精灵图帧名映射（用于 spritesheet 加载方式）
-// ═══════════════════════════════════════════════════════════════
+/** NPC 职业类型 → 颜色渐变变体（同职业不同个体） */
+export const NPC_COLOR_VARIANTS: Record<string, string[]> = {
+  farmer:   ['#4CAF50', '#66BB6A', '#81C784', '#388E3C'],
+  soldier:  ['#F44336', '#EF5350', '#E57373', '#C62828'],
+  merchant: ['#FFC107', '#FFD54F', '#FFE082', '#FFA000'],
+  scholar:  ['#2196F3', '#42A5F5', '#64B5F6', '#1565C0'],
+  scout:    ['#9C27B0', '#AB47BC', '#BA68C8', '#6A1B9A'],
+};
 
 /**
- * 地形类型 → spritesheet 帧名
- *
- * 当使用 AssetManager.loadKenneySpritesheet() 加载精灵图时，
- * 通过帧名从 textureCache 获取纹理。
+ * 获取 NPC 变体颜色
+ * @param profession - 职业类型
+ * @param index - NPC 索引
  */
+export function getNPCVariantColor(profession: string, index: number): string {
+  const variants = NPC_COLOR_VARIANTS[profession] || ['#888888'];
+  return variants[index % variants.length];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 精灵图帧名映射（保留向后兼容）
+// ═══════════════════════════════════════════════════════════════
+
 export const TERRAIN_SPRITE_NAMES: Record<TerrainType, string> = {
   plain:    'terrain_grass',
-  mountain: 'enemy_knight',
-  forest:   'enemy_slime',
+  mountain: 'terrain_grass',   // 改为 grass，不再用 enemy_knight
+  forest:   'terrain_grass',   // 改为 grass，不再用 enemy_slime
   water:    'terrain_water',
   road:     'terrain_road_straight',
   city:     'tower_cannon',
@@ -128,9 +183,6 @@ export const TERRAIN_SPRITE_NAMES: Record<TerrainType, string> = {
   fortress: 'tower_fire',
 };
 
-/**
- * 建筑类型 → spritesheet 帧名
- */
 export const BUILDING_SPRITE_NAMES: Record<string, string> = {
   city:      'tower_cannon',
   village:   'tower_archer',
@@ -146,16 +198,6 @@ export const BUILDING_SPRITE_NAMES: Record<string, string> = {
 // 工具函数
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * 获取资源 URL，带 fallback
- *
- * 根据资源类型和键查找对应资源路径。
- * 找不到时返回 null，由调用方决定 fallback 策略。
- *
- * @param type - 资源类型：terrain / building / resource
- * @param key  - 资源键名（如 'plain', 'city', 'farm'）
- * @returns 资源 URL 字符串，未找到返回 null
- */
 export function getAssetUrl(
   type: 'terrain' | 'building' | 'resource',
   key: string,
@@ -172,13 +214,6 @@ export function getAssetUrl(
   }
 }
 
-/**
- * 获取精灵图帧名，带 fallback
- *
- * @param type - 资源类型：terrain / building
- * @param key  - 资源键名
- * @returns spritesheet 帧名，未找到返回 null
- */
 export function getSpriteName(
   type: 'terrain' | 'building',
   key: string,

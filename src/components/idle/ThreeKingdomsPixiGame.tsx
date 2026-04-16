@@ -102,6 +102,33 @@ interface NPCDialogue {
   currentLine: number;
 }
 
+/** 存档槽位 */
+interface SaveSlot {
+  id: string;
+  name: string;
+  time: number;
+  preview: string;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 成就定义
+// ═══════════════════════════════════════════════════════════════
+
+const ACHIEVEMENTS = [
+  { id: 'first_territory', name: '初出茅庐', desc: '占领第一块领土', check: (s: Record<string, number>) => s.territories >= 1, icon: '🏰' },
+  { id: 'five_territories', name: '小有成就', desc: '占领5块领土', check: (s: Record<string, number>) => s.territories >= 5, icon: '⚔️' },
+  { id: 'all_territories', name: '一统天下', desc: '占领所有领土', check: (s: Record<string, number>) => s.territories >= 15, icon: '👑' },
+  { id: 'first_hero', name: '招贤纳士', desc: '招募第一位武将', check: (s: Record<string, number>) => s.heroes >= 1, icon: '🦸' },
+  { id: 'all_heroes', name: '群英荟萃', desc: '招募所有武将', check: (s: Record<string, number>) => s.heroes >= 12, icon: '🌟' },
+  { id: 'first_tech', name: '科技创新', desc: '研究第一项科技', check: (s: Record<string, number>) => s.techs >= 1, icon: '🔬' },
+  { id: 'all_techs', name: '科技强国', desc: '研究所有科技', check: (s: Record<string, number>) => s.techs >= 12, icon: '📚' },
+  { id: 'first_battle', name: '初战告捷', desc: '完成第一场战斗', check: (s: Record<string, number>) => s.battles >= 1, icon: '🗡️' },
+  { id: 'veteran', name: '身经百战', desc: '完成10场战斗', check: (s: Record<string, number>) => s.battles >= 10, icon: '⚔️' },
+  { id: 'first_prestige', name: '声望初成', desc: '完成第一次声望转生', check: (s: Record<string, number>) => s.prestige >= 1, icon: '✨' },
+  { id: 'gold_10k', name: '富甲一方', desc: '累计获得10000铜钱', check: (s: Record<string, number>) => s.totalGold >= 10000, icon: '💰' },
+  { id: 'grain_10k', name: '粮食满仓', desc: '累计获得10000粮草', check: (s: Record<string, number>) => s.totalGrain >= 10000, icon: '🌾' },
+];
+
 // ═══════════════════════════════════════════════════════════════
 // 组件
 // ═══════════════════════════════════════════════════════════════
