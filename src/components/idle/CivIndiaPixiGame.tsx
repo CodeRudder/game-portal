@@ -7,14 +7,15 @@
  * @module components/idle/CivIndiaPixiGame
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { PixiGameAdapter } from '@/renderer/PixiGameAdapter';
 import { CIV_INDIA_STRATEGY } from '@/renderer/CivRenderStrategies';
 import type { IdleGameEngine } from '@/engines/idle/IdleGameEngine';
+import { CivIndiaEngine } from '@/games/civ-india/CivIndiaEngine';
 import type { IdleGameRenderState } from '@/renderer/types';
 
 export interface CivIndiaPixiGameProps {
-  engine: IdleGameEngine;
+  engine?: IdleGameEngine;
   onReady?: () => void;
   onSync?: (state: IdleGameRenderState) => void;
   onUpgradeClick?: (upgradeId: string) => void;
@@ -24,8 +25,9 @@ export interface CivIndiaPixiGameProps {
 }
 
 export default function CivIndiaPixiGame({
-  engine, onReady, onSync, onUpgradeClick, onError, className, style,
+  engine: engineProp, onReady, onSync, onUpgradeClick, onError, className, style,
 }: CivIndiaPixiGameProps) {
+  const engine = useMemo(() => engineProp ?? new CivIndiaEngine(), [engineProp]);
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<PixiGameAdapter | null>(null);
   const [loading, setLoading] = useState(true);

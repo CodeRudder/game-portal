@@ -7,9 +7,10 @@
  * @module components/idle/AgeOfEmpiresPixiGame
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { PixiGameAdapter } from '@/renderer/PixiGameAdapter';
 import type { IdleGameEngine } from '@/engines/idle/IdleGameEngine';
+import { AgeOfEmpiresEngine } from '@/games/age-of-empires/AgeOfEmpiresEngine';
 import type { RenderStrategy, PixiGameAdapterConfig, IdleGameRenderState } from '@/renderer/types';
 
 // ═══════════════════════════════════════════════════════════════
@@ -17,7 +18,7 @@ import type { RenderStrategy, PixiGameAdapterConfig, IdleGameRenderState } from 
 // ═══════════════════════════════════════════════════════════════
 
 export interface AgeOfEmpiresPixiGameProps {
-  engine: IdleGameEngine;
+  engine?: IdleGameEngine;
   strategy?: Partial<RenderStrategy>;
   config?: Omit<PixiGameAdapterConfig, 'strategy'>;
   onReady?: () => void;
@@ -33,7 +34,7 @@ export interface AgeOfEmpiresPixiGameProps {
 // ═══════════════════════════════════════════════════════════════
 
 export default function AgeOfEmpiresPixiGame({
-  engine,
+  engine: engineProp,
   strategy,
   config,
   onReady,
@@ -43,6 +44,7 @@ export default function AgeOfEmpiresPixiGame({
   className,
   style,
 }: AgeOfEmpiresPixiGameProps) {
+  const engine = useMemo(() => engineProp ?? new AgeOfEmpiresEngine(), [engineProp]);
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<PixiGameAdapter | null>(null);
 

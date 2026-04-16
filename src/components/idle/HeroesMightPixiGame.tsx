@@ -7,9 +7,10 @@
  * @module components/idle/HeroesMightPixiGame
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { PixiGameAdapter } from '@/renderer/PixiGameAdapter';
 import type { IdleGameEngine } from '@/engines/idle/IdleGameEngine';
+import { HeroesMightEngine } from '@/games/heroes-might/HeroesMightEngine';
 import type { RenderStrategy, PixiGameAdapterConfig, IdleGameRenderState } from '@/renderer/types';
 
 // ═══════════════════════════════════════════════════════════════
@@ -17,7 +18,7 @@ import type { RenderStrategy, PixiGameAdapterConfig, IdleGameRenderState } from 
 // ═══════════════════════════════════════════════════════════════
 
 export interface HeroesMightPixiGameProps {
-  engine: IdleGameEngine;
+  engine?: IdleGameEngine;
   strategy?: Partial<RenderStrategy>;
   config?: Omit<PixiGameAdapterConfig, 'strategy'>;
   onReady?: () => void;
@@ -33,7 +34,7 @@ export interface HeroesMightPixiGameProps {
 // ═══════════════════════════════════════════════════════════════
 
 export default function HeroesMightPixiGame({
-  engine,
+  engine: engineProp,
   strategy,
   config,
   onReady,
@@ -43,6 +44,7 @@ export default function HeroesMightPixiGame({
   className,
   style,
 }: HeroesMightPixiGameProps) {
+  const engine = useMemo(() => engineProp ?? new HeroesMightEngine(), [engineProp]);
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<PixiGameAdapter | null>(null);
 

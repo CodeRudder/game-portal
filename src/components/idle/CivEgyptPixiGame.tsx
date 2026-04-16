@@ -7,14 +7,15 @@
  * @module components/idle/CivEgyptPixiGame
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { PixiGameAdapter } from '@/renderer/PixiGameAdapter';
 import { CIV_EGYPT_STRATEGY } from '@/renderer/CivRenderStrategies';
 import type { IdleGameEngine } from '@/engines/idle/IdleGameEngine';
+import { CivEgyptEngine } from '@/games/civ-egypt/CivEgyptEngine';
 import type { IdleGameRenderState } from '@/renderer/types';
 
 export interface CivEgyptPixiGameProps {
-  engine: IdleGameEngine;
+  engine?: IdleGameEngine;
   onReady?: () => void;
   onSync?: (state: IdleGameRenderState) => void;
   onUpgradeClick?: (upgradeId: string) => void;
@@ -24,8 +25,9 @@ export interface CivEgyptPixiGameProps {
 }
 
 export default function CivEgyptPixiGame({
-  engine, onReady, onSync, onUpgradeClick, onError, className, style,
+  engine: engineProp, onReady, onSync, onUpgradeClick, onError, className, style,
 }: CivEgyptPixiGameProps) {
+  const engine = useMemo(() => engineProp ?? new CivEgyptEngine(), [engineProp]);
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<PixiGameAdapter | null>(null);
   const [loading, setLoading] = useState(true);

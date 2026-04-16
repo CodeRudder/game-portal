@@ -7,9 +7,10 @@
  * @module components/idle/TotalWarPixiGame
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { PixiGameAdapter } from '@/renderer/PixiGameAdapter';
 import type { IdleGameEngine } from '@/engines/idle/IdleGameEngine';
+import { TotalWarEngine } from '@/games/total-war/TotalWarEngine';
 import type { RenderStrategy, PixiGameAdapterConfig, IdleGameRenderState } from '@/renderer/types';
 
 // ═══════════════════════════════════════════════════════════════
@@ -17,7 +18,7 @@ import type { RenderStrategy, PixiGameAdapterConfig, IdleGameRenderState } from 
 // ═══════════════════════════════════════════════════════════════
 
 export interface TotalWarPixiGameProps {
-  engine: IdleGameEngine;
+  engine?: IdleGameEngine;
   strategy?: Partial<RenderStrategy>;
   config?: Omit<PixiGameAdapterConfig, 'strategy'>;
   onReady?: () => void;
@@ -33,7 +34,7 @@ export interface TotalWarPixiGameProps {
 // ═══════════════════════════════════════════════════════════════
 
 export default function TotalWarPixiGame({
-  engine,
+  engine: engineProp,
   strategy,
   config,
   onReady,
@@ -43,6 +44,7 @@ export default function TotalWarPixiGame({
   className,
   style,
 }: TotalWarPixiGameProps) {
+  const engine = useMemo(() => engineProp ?? new TotalWarEngine(), [engineProp]);
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<PixiGameAdapter | null>(null);
 

@@ -7,14 +7,15 @@
  * @module components/idle/CivBabylonPixiGame
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { PixiGameAdapter } from '@/renderer/PixiGameAdapter';
 import { CIV_BABYLON_STRATEGY } from '@/renderer/CivRenderStrategies';
 import type { IdleGameEngine } from '@/engines/idle/IdleGameEngine';
+import { CivBabylonEngine } from '@/games/civ-babylon/CivBabylonEngine';
 import type { IdleGameRenderState } from '@/renderer/types';
 
 export interface CivBabylonPixiGameProps {
-  engine: IdleGameEngine;
+  engine?: IdleGameEngine;
   onReady?: () => void;
   onSync?: (state: IdleGameRenderState) => void;
   onUpgradeClick?: (upgradeId: string) => void;
@@ -24,8 +25,9 @@ export interface CivBabylonPixiGameProps {
 }
 
 export default function CivBabylonPixiGame({
-  engine, onReady, onSync, onUpgradeClick, onError, className, style,
+  engine: engineProp, onReady, onSync, onUpgradeClick, onError, className, style,
 }: CivBabylonPixiGameProps) {
+  const engine = useMemo(() => engineProp ?? new CivBabylonEngine(), [engineProp]);
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<PixiGameAdapter | null>(null);
   const [loading, setLoading] = useState(true);

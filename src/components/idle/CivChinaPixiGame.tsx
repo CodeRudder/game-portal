@@ -7,10 +7,11 @@
  * @module components/idle/CivChinaPixiGame
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { PixiGameAdapter } from '@/renderer/PixiGameAdapter';
 import { CIV_CHINA_STRATEGY } from '@/renderer/CivRenderStrategies';
 import type { IdleGameEngine } from '@/engines/idle/IdleGameEngine';
+import { CivChinaEngine } from '@/games/civ-china/CivChinaEngine';
 import type { IdleGameRenderState } from '@/renderer/types';
 
 // ═══════════════════════════════════════════════════════════════
@@ -18,8 +19,8 @@ import type { IdleGameRenderState } from '@/renderer/types';
 // ═══════════════════════════════════════════════════════════════
 
 export interface CivChinaPixiGameProps {
-  /** 华夏文明引擎实例 */
-  engine: IdleGameEngine;
+  /** 华夏文明引擎实例（可选，未传入时自动创建） */
+  engine?: IdleGameEngine;
   /** 渲染器就绪回调 */
   onReady?: () => void;
   /** 状态同步回调 */
@@ -39,7 +40,7 @@ export interface CivChinaPixiGameProps {
 // ═══════════════════════════════════════════════════════════════
 
 export default function CivChinaPixiGame({
-  engine,
+  engine: engineProp,
   onReady,
   onSync,
   onUpgradeClick,
@@ -47,6 +48,7 @@ export default function CivChinaPixiGame({
   className,
   style,
 }: CivChinaPixiGameProps) {
+  const engine = useMemo(() => engineProp ?? new CivChinaEngine(), [engineProp]);
   const containerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<PixiGameAdapter | null>(null);
   const [loading, setLoading] = useState(true);
