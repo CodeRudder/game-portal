@@ -1220,6 +1220,83 @@ export default function ThreeKingdomsPixiGame() {
             </div>
           )}
 
+          {/* ═══════════ 征战关卡面板 ═══════════ */}
+          {scene === 'stage-info' && (
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(20,15,10,0.95)',
+              borderRadius: 12, padding: 24,
+              width: 520, maxHeight: '80vh', overflow: 'auto',
+              border: `2px solid ${COLOR_THEME.selectedBorder}`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h2 style={{ fontSize: 20, color: COLOR_THEME.accentGold, margin: 0, fontFamily: '"Noto Serif SC", serif' }}>
+                  ⚔️ 征战天下
+                </h2>
+                <button onClick={() => setScene('map')} style={{ background: 'transparent', color: COLOR_THEME.textDim, border: 'none', cursor: 'pointer', fontSize: 18 }}>✕</button>
+              </div>
+              <div style={{ fontSize: 12, color: COLOR_THEME.textDim, marginBottom: 16 }}>
+                攻城略地，逐鹿中原。每攻克一城，天下大势便更进一步。
+              </div>
+              {(() => {
+                try {
+                  const { CAMPAIGN_STAGES } = require('../games/three-kingdoms/CampaignSystem');
+                  return CAMPAIGN_STAGES.map((stage: any, idx: number) => (
+                    <div key={stage.id} style={{
+                      background: idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent',
+                      border: '1px solid rgba(139,115,85,0.3)',
+                      borderRadius: 8, padding: 14, marginBottom: 10,
+                      cursor: 'pointer',
+                    }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = stage.themeColor)}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(139,115,85,0.3)')}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <span style={{ fontSize: 16, fontWeight: 'bold', color: stage.themeColor }}>
+                            {stage.iconAsset} {stage.name}
+                          </span>
+                          <span style={{ fontSize: 11, color: COLOR_THEME.textDim, marginLeft: 8 }}>
+                            {stage.subtitle}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4,
+                          background: stage.difficulty === 'easy' ? '#4CAF50' : stage.difficulty === 'normal' ? '#FF9800' : '#F44336',
+                          color: '#fff', fontWeight: 'bold',
+                        }}>
+                          {stage.difficulty === 'easy' ? '简单' : stage.difficulty === 'normal' ? '普通' : '困难'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: COLOR_THEME.textSecondary, marginTop: 6 }}>
+                        {stage.description.slice(0, 60)}...
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: COLOR_THEME.textDim }}>
+                        <span>🎯 目标: {stage.targetCityName}</span>
+                        <span>👹 守将: {stage.enemyCommander.name}</span>
+                        <span>❤️ HP: {stage.enemyCommander.hp}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <button onClick={() => { enterBattle(); setScene('combat'); }}
+                          style={{
+                            padding: '4px 16px', fontSize: 11, fontWeight: 'bold',
+                            borderRadius: 4, border: 'none', cursor: 'pointer',
+                            background: `linear-gradient(135deg, ${stage.themeColor}, ${stage.themeColor}88)`,
+                            color: '#fff',
+                          }}>
+                          ⚔️ 攻城
+                        </button>
+                        <span style={{ fontSize: 10, color: COLOR_THEME.textDim, alignSelf: 'center' }}>
+                          奖励: {Object.entries(stage.rewards.resources).map(([k,v]) => `${k}:${v}`).join(' ')}
+                        </span>
+                      </div>
+                    </div>
+                  ));
+                } catch { return <div style={{ color: '#888' }}>关卡数据加载中...</div>; }
+              })()}
+            </div>
+          )}
+
           {/* ═══════════ 科技研究浮层 ═══════════ */}
           {scene === 'tech-tree' && renderState?.techTree && (
             <div style={{
