@@ -519,6 +519,21 @@ export interface GameRenderState {
     category: string;
     description: string;
   }>;
+  /** 征战关卡进度数据 */
+  campaign?: {
+    currentStageIndex: number;
+    completedStages: string[];
+    currentStage: import('../games/three-kingdoms/CampaignSystem').CampaignStage | undefined;
+    totalStars: number;
+    maxStars: number;
+    isAllCompleted: boolean;
+    stageStatuses: Array<{
+      id: string;
+      name: string;
+      status: import('../games/three-kingdoms/CampaignSystem').CampaignStageStatus;
+      stars: number;
+    }>;
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════

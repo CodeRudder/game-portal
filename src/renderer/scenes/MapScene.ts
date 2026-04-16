@@ -235,15 +235,6 @@ const TERRAIN_LABELS: Record<TerrainType, string> = {
   fortress: '关卡',
 };
 
-/** 瓦片边界线颜色 */
-const TILE_BORDER_COLOR = 0x2a2a4e;
-
-/** 瓦片边界线宽度 */
-const TILE_BORDER_WIDTH = 0.5;
-
-/** 瓦片边界线透明度 */
-const TILE_BORDER_ALPHA = 0.3;
-
 /** 地标标签字号 */
 const LANDMARK_FONT_SIZE = 11;
 
@@ -1446,7 +1437,13 @@ export class MapScene extends BaseScene {
   /**
    * 渲染完整瓦片地图
    *
-   * 按层级绘制：瓦片地形 → 领土边界 → 建筑 → NPC → 地标标签
+   * 按层级绘制：瓦片地形 → 过渡边缘 → 领土边界 → 建筑 → NPC → 地标标签
+   *
+   * 渲染策略（基于瓦片地图最佳实践）：
+   * 1. 先绘制所有基础地形色块
+   * 2. 再绘制高优先级地形向低优先级地形的过渡边缘（消除硬拼接）
+   * 3. 绘制地形纹理细节（草地、树木、波纹等）
+   * 4. 叠加海拔阴影和微妙的网格线
    */
   private renderTileMap(): void {
     if (!this.tileMapData) return;
@@ -1475,8 +1472,35 @@ export class MapScene extends BaseScene {
 
     const graphics = new Graphics();
 
-    // ── 1. 绘制地形瓦片（程序化渲染） ─────────────────────
-    // 使用精心设计的色块 + 纹理图案，不再使用不合适的塔防素材
+    // ── Pass 1: 绘制基础地形色块 ──────────────────────────
+    for (let row = 0; row < map.height; row++) {
+      for (let col = 0; col < map.width; col++) {
+        const tile = map.tiles[row]?.[col];
+        if (!tile) continue;
+
+        const x = col * tileSize;
+        const y = row * tileSize;
+        const visual = TERRAIN_VISUALS[tile.terrain];
+
+        if (visual) {
+          // 基于 variant 产生颜色微变，使相邻同类型瓦片有细微色差
+          const shift = (tile.variant % 3 - 1) * 0x060606;
+          const baseColor = visual.baseColor + shift;
+          graphics.rect(x, y, tileSize, tileSize).fill({ color: baseColor });
+        } else {
+          graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x888888 });
+        }
+      }
+    }
+
+    // ── Pass 2: 绘制地形过渡边缘 ──────────────────────────
+    // 高优先级地形向低优先级地形绘制渐变边缘，实现自然过渡
+    this.renderTerrainTransitions(graphics, map, tileSize);
+
+    // ── Pass 3: 绘制地形纹理细节 ──────────────────────────
+    this.renderTerrainPatterns(graphics, map, tileSize);
+
+    // ── Pass 4: 海拔阴影 + 极淡网格线 ─────────────────────
     for (let row = 0; row < map.height; row++) {
       for (let col = 0; col < map.width; col++) {
         const tile = map.tiles[row]?.[col];
@@ -1485,83 +1509,36 @@ export class MapScene extends BaseScene {
         const x = col * tileSize;
         const y = row * tileSize;
 
-        // 获取地形视觉配置
-        const visual = TERRAIN_VISUALS[tile.terrain];
-        if (visual) {
-          // 基于 variant 产生颜色微变
-          const shift = (tile.variant % 3 - 1) * 0x080808;
-          const baseColor = visual.baseColor + shift;
-
-          // 基础填充
-          graphics.rect(x, y, tileSize, tileSize).fill({ color: baseColor });
-
-          // 纹理图案
-          switch (visual.pattern) {
-            case 'checker': {
-              const half = tileSize / 2;
-              graphics.rect(x, y, half, half).fill({ color: visual.darkColor, alpha: 0.25 });
-              graphics.rect(x + half, y + half, half, half).fill({ color: visual.darkColor, alpha: 0.25 });
-              break;
-            }
-            case 'diagonal': {
-              for (let i = 0; i < tileSize; i += 8) {
-                graphics.rect(x + i, y, 2, tileSize).fill({ color: visual.lightColor, alpha: 0.15 });
-              }
-              break;
-            }
-            case 'dots': {
-              const seed = tile.x * 7 + tile.y * 13;
-              for (let i = 0; i < 5; i++) {
-                const dx = ((seed * (i + 1) * 17) % (tileSize - 10)) + 5;
-                const dy = ((seed * (i + 1) * 23) % (tileSize - 10)) + 5;
-                graphics.circle(x + dx, y + dy, 3).fill({ color: visual.lightColor, alpha: 0.5 });
-              }
-              break;
-            }
-            case 'waves': {
-              for (let wy = 8; wy < tileSize; wy += 14) {
-                graphics
-                  .moveTo(x + 2, y + wy)
-                  .bezierCurveTo(
-                    x + tileSize * 0.25, y + wy - 4,
-                    x + tileSize * 0.75, y + wy + 4,
-                    x + tileSize - 2, y + wy,
-                  )
-                  .stroke({ width: 1, color: visual.lightColor, alpha: 0.4 });
-              }
-              break;
-            }
-            case 'crosshatch': {
-              for (let i = 4; i < tileSize; i += 10) {
-                graphics.moveTo(x + i, y).lineTo(x + i, y + tileSize)
-                  .stroke({ width: 0.5, color: visual.lightColor, alpha: 0.2 });
-                graphics.moveTo(x, y + i).lineTo(x + tileSize, y + i)
-                  .stroke({ width: 0.5, color: visual.lightColor, alpha: 0.2 });
-              }
-              break;
-            }
-          }
-
-          // 海拔效果
-          if (tile.elevation >= 3) {
-            graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.15 });
-          } else if (tile.elevation >= 2) {
-            graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x000000, alpha: 0.07 });
-          }
-        } else {
-          // 未知地形 fallback
-          graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x888888 });
+        // 海拔阴影效果：高地顶部微亮，底部微暗
+        if (tile.elevation >= 3) {
+          // 山峰：顶部高光 + 整体暗化
+          graphics.rect(x, y, tileSize, 3).fill({ color: 0xffffff, alpha: 0.08 });
+          graphics.rect(x, y + 3, tileSize, tileSize - 3).fill({ color: 0x000000, alpha: 0.12 });
+        } else if (tile.elevation >= 2) {
+          // 丘陵：仅底部微暗
+          graphics.rect(x, y + tileSize * 0.7, tileSize, tileSize * 0.3)
+            .fill({ color: 0x000000, alpha: 0.06 });
         }
 
-        // 瓦片网格线
-        graphics.rect(x, y, tileSize, tileSize).stroke({
-          width: TILE_BORDER_WIDTH,
-          color: TILE_BORDER_COLOR,
-          alpha: TILE_BORDER_ALPHA,
-        });
+        // 极淡网格线（仅在相邻同地形时不画，不同地形时画细线）
+        const terrain = tile.terrain;
+        const rightTile = map.tiles[row]?.[col + 1];
+        const bottomTile = map.tiles[row + 1]?.[col];
+
+        // 右边线：仅在与右边不同地形时绘制
+        if (rightTile && rightTile.terrain !== terrain) {
+          graphics.moveTo(x + tileSize, y).lineTo(x + tileSize, y + tileSize)
+            .stroke({ width: 0.5, color: 0x1a1a2e, alpha: 0.15 });
+        }
+        // 下边线：仅在与下方不同地形时绘制
+        if (bottomTile && bottomTile.terrain !== terrain) {
+          graphics.moveTo(x, y + tileSize).lineTo(x + tileSize, y + tileSize)
+            .stroke({ width: 0.5, color: 0x1a1a2e, alpha: 0.15 });
+        }
       }
     }
-    // 将网格线和 fallback 色块图形添加到瓦片层
+
+    // 将地形图形添加到瓦片层
     tileLayer.addChild(graphics);
 
     // ── 2. 绘制领土边界（虚线） ────────────────────────────
@@ -1585,6 +1562,245 @@ export class MapScene extends BaseScene {
       landmarkLayer,
       graphics,
     };
+  }
+
+  /**
+   * 绘制地形过渡边缘
+   *
+   * 核心算法：对于每个瓦片，检查四个方向的邻居。
+   * 如果当前地形优先级高于邻居，则在朝向邻居的边缘绘制渐变过渡。
+   * 这消除了硬拼接，产生自然的色彩过渡效果。
+   */
+  private renderTerrainTransitions(graphics: Graphics, map: GameMap, tileSize: number): void {
+    // 四个方向偏移：上、下、左、右
+    const dirs = [
+      { dx: 0, dy: -1, edge: 'top' as const },
+      { dx: 0, dy: 1, edge: 'bottom' as const },
+      { dx: -1, dy: 0, edge: 'left' as const },
+      { dx: 1, dy: 0, edge: 'right' as const },
+    ];
+
+    for (let row = 0; row < map.height; row++) {
+      for (let col = 0; col < map.width; col++) {
+        const tile = map.tiles[row]?.[col];
+        if (!tile) continue;
+
+        const visual = TERRAIN_VISUALS[tile.terrain];
+        if (!visual) continue;
+
+        const x = col * tileSize;
+        const y = row * tileSize;
+        const tw = visual.transitionWidth;
+        const tc = visual.transitionColor;
+        const ta = visual.transitionAlpha;
+
+        for (const dir of dirs) {
+          const nr = row + dir.dy;
+          const nc = col + dir.dx;
+
+          // 边界外视为最低优先级（水域级别）
+          if (nr < 0 || nr >= map.height || nc < 0 || nc >= map.width) continue;
+
+          const neighbor = map.tiles[nr]?.[nc];
+          if (!neighbor) continue;
+
+          // 同类型地形不需要过渡
+          if (neighbor.terrain === tile.terrain) continue;
+
+          const neighborVisual = TERRAIN_VISUALS[neighbor.terrain];
+          if (!neighborVisual) continue;
+
+          // 仅高优先级地形向低优先级地形绘制过渡
+          if (visual.renderPriority <= neighborVisual.renderPriority) continue;
+
+          // 绘制过渡边缘（渐变条带）
+          switch (dir.edge) {
+            case 'top':
+              graphics.rect(x, y, tileSize, tw)
+                .fill({ color: tc, alpha: ta });
+              // 柔化：再叠加一层更窄更淡的
+              graphics.rect(x + 2, y, tileSize - 4, Math.floor(tw * 0.5))
+                .fill({ color: tc, alpha: ta * 0.5 });
+              break;
+            case 'bottom':
+              graphics.rect(x, y + tileSize - tw, tileSize, tw)
+                .fill({ color: tc, alpha: ta });
+              graphics.rect(x + 2, y + tileSize - Math.floor(tw * 0.5), tileSize - 4, Math.floor(tw * 0.5))
+                .fill({ color: tc, alpha: ta * 0.5 });
+              break;
+            case 'left':
+              graphics.rect(x, y, tw, tileSize)
+                .fill({ color: tc, alpha: ta });
+              graphics.rect(x, y + 2, Math.floor(tw * 0.5), tileSize - 4)
+                .fill({ color: tc, alpha: ta * 0.5 });
+              break;
+            case 'right':
+              graphics.rect(x + tileSize - tw, y, tw, tileSize)
+                .fill({ color: tc, alpha: ta });
+              graphics.rect(x + tileSize - Math.floor(tw * 0.5), y + 2, Math.floor(tw * 0.5), tileSize - 4)
+                .fill({ color: tc, alpha: ta * 0.5 });
+              break;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * 绘制地形纹理图案
+   *
+   * 增强版纹理：每种地形有独特的视觉纹理，
+   * 使用 variant 和坐标产生自然变化。
+   */
+  private renderTerrainPatterns(graphics: Graphics, map: GameMap, tileSize: number): void {
+    for (let row = 0; row < map.height; row++) {
+      for (let col = 0; col < map.width; col++) {
+        const tile = map.tiles[row]?.[col];
+        if (!tile) continue;
+
+        const x = col * tileSize;
+        const y = row * tileSize;
+        const visual = TERRAIN_VISUALS[tile.terrain];
+        if (!visual) continue;
+
+        // 简易伪随机种子（基于瓦片坐标，确保一致）
+        const seed = tile.x * 7 + tile.y * 13 + tile.variant * 31;
+        const prng = (i: number) => {
+          const s = ((seed * (i + 1) * 2654435761) >>> 0) % 1000;
+          return s / 1000;
+        };
+
+        switch (visual.pattern) {
+          // ── 草地纹理（平原）：散布小草叶 ──
+          case 'grass': {
+            for (let i = 0; i < 8; i++) {
+              const gx = x + 4 + prng(i) * (tileSize - 8);
+              const gy = y + 4 + prng(i + 10) * (tileSize - 8);
+              const gh = 4 + prng(i + 20) * 6;
+              graphics.moveTo(gx, gy + gh)
+                .lineTo(gx - 1, gy)
+                .stroke({ width: 1, color: visual.lightColor, alpha: 0.4 + prng(i + 30) * 0.2 });
+              graphics.moveTo(gx + 2, gy + gh)
+                .lineTo(gx + 3, gy + 1)
+                .stroke({ width: 1, color: visual.darkColor, alpha: 0.3 });
+            }
+            break;
+          }
+
+          // ── 岩石纹理（山地）：三角形山峰 ──
+          case 'rocks': {
+            for (let i = 0; i < 3; i++) {
+              const rx = x + 8 + prng(i) * (tileSize - 16);
+              const ry = y + tileSize * 0.5 + prng(i + 10) * (tileSize * 0.3);
+              const rh = 10 + prng(i + 20) * 14;
+              const rw = 8 + prng(i + 30) * 10;
+              graphics.moveTo(rx, ry - rh)
+                .lineTo(rx - rw / 2, ry)
+                .lineTo(rx + rw / 2, ry)
+                .closePath()
+                .fill({ color: visual.darkColor, alpha: 0.35 });
+              // 雪顶
+              graphics.moveTo(rx, ry - rh)
+                .lineTo(rx - rw * 0.15, ry - rh + 3)
+                .lineTo(rx + rw * 0.15, ry - rh + 3)
+                .closePath()
+                .fill({ color: 0xeeeeee, alpha: 0.3 });
+            }
+            break;
+          }
+
+          // ── 树木纹理（森林）：圆形树冠 ──
+          case 'trees': {
+            for (let i = 0; i < 5; i++) {
+              const tx = x + 6 + prng(i) * (tileSize - 12);
+              const ty = y + 6 + prng(i + 10) * (tileSize - 12);
+              const tr = 3 + prng(i + 20) * 4;
+              // 树冠阴影
+              graphics.circle(tx + 1, ty + 1, tr).fill({ color: 0x0a2a05, alpha: 0.2 });
+              // 树冠
+              graphics.circle(tx, ty, tr).fill({ color: visual.lightColor, alpha: 0.5 + prng(i + 30) * 0.2 });
+            }
+            break;
+          }
+
+          // ── 波纹纹理（水域）：曲线波纹 ──
+          case 'ripples': {
+            for (let wy = 6; wy < tileSize; wy += 12) {
+              const offset = prng(wy) * 4 - 2;
+              graphics.moveTo(x + 3, y + wy + offset)
+                .bezierCurveTo(
+                  x + tileSize * 0.25, y + wy - 3 + offset,
+                  x + tileSize * 0.75, y + wy + 3 + offset,
+                  x + tileSize - 3, y + wy + offset,
+                )
+                .stroke({ width: 1.2, color: visual.lightColor, alpha: 0.35 });
+            }
+            // 水面高光点
+            for (let i = 0; i < 3; i++) {
+              const sx = x + 8 + prng(i + 50) * (tileSize - 16);
+              const sy = y + 8 + prng(i + 60) * (tileSize - 16);
+              graphics.circle(sx, sy, 1.5).fill({ color: 0xffffff, alpha: 0.15 });
+            }
+            break;
+          }
+
+          // ── 棋盘纹理 ──
+          case 'checker': {
+            const half = tileSize / 2;
+            graphics.rect(x, y, half, half).fill({ color: visual.darkColor, alpha: 0.15 });
+            graphics.rect(x + half, y + half, half, half).fill({ color: visual.darkColor, alpha: 0.15 });
+            break;
+          }
+
+          // ── 对角线纹理 ──
+          case 'diagonal': {
+            for (let i = 0; i < tileSize; i += 8) {
+              graphics.rect(x + i, y, 1.5, tileSize).fill({ color: visual.lightColor, alpha: 0.12 });
+            }
+            break;
+          }
+
+          // ── 圆点纹理 ──
+          case 'dots': {
+            for (let i = 0; i < 5; i++) {
+              const dx = 5 + prng(i) * (tileSize - 10);
+              const dy = 5 + prng(i + 10) * (tileSize - 10);
+              graphics.circle(x + dx, y + dy, 2.5).fill({ color: visual.lightColor, alpha: 0.4 });
+            }
+            break;
+          }
+
+          // ── 波浪纹理（旧版水域兼容） ──
+          case 'waves': {
+            for (let wy = 8; wy < tileSize; wy += 14) {
+              graphics.moveTo(x + 2, y + wy)
+                .bezierCurveTo(
+                  x + tileSize * 0.25, y + wy - 4,
+                  x + tileSize * 0.75, y + wy + 4,
+                  x + tileSize - 2, y + wy,
+                )
+                .stroke({ width: 1, color: visual.lightColor, alpha: 0.3 });
+            }
+            break;
+          }
+
+          // ── 交叉线纹理 ──
+          case 'crosshatch': {
+            for (let i = 4; i < tileSize; i += 10) {
+              graphics.moveTo(x + i, y).lineTo(x + i, y + tileSize)
+                .stroke({ width: 0.5, color: visual.lightColor, alpha: 0.15 });
+              graphics.moveTo(x, y + i).lineTo(x + tileSize, y + i)
+                .stroke({ width: 0.5, color: visual.lightColor, alpha: 0.15 });
+            }
+            break;
+          }
+
+          // ── 纯色（道路等）：无额外纹理 ──
+          case 'solid':
+            break;
+        }
+      }
+    }
   }
 
   /**

@@ -15,7 +15,7 @@ import type { TerrainType } from './MapGenerator';
 // 地形视觉配置（程序化渲染）
 // ═══════════════════════════════════════════════════════════════
 
-export type TerrainPattern = 'solid' | 'checker' | 'diagonal' | 'dots' | 'waves' | 'crosshatch';
+export type TerrainPattern = 'solid' | 'checker' | 'diagonal' | 'dots' | 'waves' | 'crosshatch' | 'grass' | 'rocks' | 'trees' | 'ripples';
 
 export interface TerrainVisual {
   baseColor: number;
@@ -23,6 +23,14 @@ export interface TerrainVisual {
   darkColor: number;
   pattern: TerrainPattern;
   label: string;
+  /** 地形渲染优先级（高优先级地形会向低优先级地形绘制过渡边缘） */
+  renderPriority: number;
+  /** 过渡边缘宽度（像素） */
+  transitionWidth: number;
+  /** 过渡边缘颜色（用于向低优先级地形渐变） */
+  transitionColor: number;
+  /** 过渡边缘透明度 */
+  transitionAlpha: number;
 }
 
 /**
@@ -43,29 +51,45 @@ export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
     baseColor: 0x5a8c4f,
     lightColor: 0x6a9c5f,
     darkColor: 0x4a7c3f,
-    pattern: 'checker',
+    pattern: 'grass',
     label: '平原',
+    renderPriority: 3,
+    transitionWidth: 8,
+    transitionColor: 0x6a9c5f,
+    transitionAlpha: 0.3,
   },
   mountain: {
     baseColor: 0x7b6b5a,
     lightColor: 0x9b8b7a,
     darkColor: 0x5b4b3a,
-    pattern: 'diagonal',
+    pattern: 'rocks',
     label: '山地',
+    renderPriority: 6,
+    transitionWidth: 12,
+    transitionColor: 0x5b4b3a,
+    transitionAlpha: 0.5,
   },
   forest: {
     baseColor: 0x2d5a1e,
     lightColor: 0x4d7a3e,
     darkColor: 0x1d4a0e,
-    pattern: 'dots',
+    pattern: 'trees',
     label: '森林',
+    renderPriority: 5,
+    transitionWidth: 10,
+    transitionColor: 0x1d4a0e,
+    transitionAlpha: 0.4,
   },
   water: {
     baseColor: 0x2980b9,
     lightColor: 0x5dade2,
     darkColor: 0x1a5276,
-    pattern: 'waves',
+    pattern: 'ripples',
     label: '水域',
+    renderPriority: 1,
+    transitionWidth: 14,
+    transitionColor: 0x1a5276,
+    transitionAlpha: 0.5,
   },
   road: {
     baseColor: 0x8b7355,
@@ -73,6 +97,10 @@ export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
     darkColor: 0x6b5335,
     pattern: 'solid',
     label: '道路',
+    renderPriority: 4,
+    transitionWidth: 4,
+    transitionColor: 0x6b5335,
+    transitionAlpha: 0.3,
   },
   city: {
     baseColor: 0xc9a96e,
@@ -80,6 +108,10 @@ export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
     darkColor: 0xb89858,
     pattern: 'crosshatch',
     label: '城市',
+    renderPriority: 8,
+    transitionWidth: 6,
+    transitionColor: 0xb89858,
+    transitionAlpha: 0.3,
   },
   village: {
     baseColor: 0x8fbc8f,
@@ -87,6 +119,10 @@ export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
     darkColor: 0x7fac7f,
     pattern: 'checker',
     label: '村庄',
+    renderPriority: 7,
+    transitionWidth: 6,
+    transitionColor: 0x7fac7f,
+    transitionAlpha: 0.3,
   },
   fortress: {
     baseColor: 0x696969,
@@ -94,6 +130,10 @@ export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
     darkColor: 0x505050,
     pattern: 'crosshatch',
     label: '关卡',
+    renderPriority: 9,
+    transitionWidth: 8,
+    transitionColor: 0x505050,
+    transitionAlpha: 0.4,
   },
 };
 

@@ -36,6 +36,7 @@ import { ResourcePointSystem } from './ResourcePointSystem';
 import { OfflineRewardSystem } from './OfflineRewardSystem';
 import { TradeRouteSystem } from './TradeRouteSystem';
 import { EventEnrichmentSystem } from './EventEnrichmentSystem';
+import { CampaignSystem } from './CampaignSystem';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -66,6 +67,7 @@ export interface ThreeKingdomsSaveState {
   offlineReward?: object;
   tradeRoutes?: object;
   eventEnrichment?: object;
+  campaign?: object;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -104,6 +106,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private offlineRewardSys!: OfflineRewardSystem;
   private tradeRouteSys!: TradeRouteSystem;
   private eventEnrichSys!: EventEnrichmentSystem;
+
+  /** 征战关卡系统 */
+  private campaignSys!: CampaignSystem;
 
   // 状态
   private res: Record<string, number> = {};
@@ -195,6 +200,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     // ── 丰富事件系统 ──
     this.eventEnrichSys = new EventEnrichmentSystem();
+
+    // ── 征战关卡系统 ──
+    this.campaignSys = new CampaignSystem();
 
     this.panel = 'none';
     this.selIdx = 0;
@@ -450,6 +458,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       offlineReward: this.offlineRewardSys.serialize(),
       tradeRoutes: this.tradeRouteSys.serialize(),
       eventEnrichment: this.eventEnrichSys.serialize(),
+      campaign: this.campaignSys.serialize(),
     };
   }
 
@@ -474,6 +483,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (d.offlineReward) this.offlineRewardSys.deserialize(d.offlineReward as Record<string, unknown>);
     if (d.tradeRoutes) this.tradeRouteSys.deserialize(d.tradeRoutes);
     if (d.eventEnrichment) this.eventEnrichSys.deserialize(d.eventEnrichment);
+    if (d.campaign) this.campaignSys.deserialize(d.campaign);
 
     this.emit('stateChange');
   }
@@ -927,6 +937,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 获取丰富事件系统 */
   public getEventEnrichmentSystem(): EventEnrichmentSystem { return this.eventEnrichSys; }
+
+  /** 获取征战关卡系统 */
+  public getCampaignSystem(): CampaignSystem { return this.campaignSys; }
 
   // ═══════════════════════════════════════════════════════════
   // 核心玩法公共 API

@@ -33,6 +33,8 @@ import {
   RESOURCES, PRESTIGE_CONFIG,
 } from './constants';
 import type { GameMap } from './MapGenerator';
+import { CAMPAIGN_STAGES } from './CampaignSystem';
+import type { CampaignStage, CampaignStageStatus } from './CampaignSystem';
 
 // ═══════════════════════════════════════════════════════════════
 // 领土类型映射
@@ -138,6 +140,7 @@ export class ThreeKingdomsRenderStateAdapter {
       resourcePoints: this.toResourcePointList(),
       tradeRoutes: this.toTradeRouteList(),
       activeEvents: this.toActiveEventList(),
+      campaign: this.toCampaignData(),
     };
   }
 
@@ -838,6 +841,40 @@ export class ThreeKingdomsRenderStateAdapter {
       }));
     } catch {
       return [];
+    }
+  }
+
+  // ─── 征战关卡数据 ───────────────────────────────────────
+
+  /**
+   * 组装征战关卡进度数据
+   *
+   * 包含当前关卡、已完成关卡、星级评价、各关卡状态等，
+   * 供 CampaignPanel UI 渲染使用。
+   */
+  private toCampaignData(): GameRenderState['campaign'] {
+    try {
+      const campaign = this.engine.getCampaignSystem();
+      if (!campaign) return undefined;
+
+      const stageStatuses = CAMPAIGN_STAGES.map(stage => ({
+        id: stage.id,
+        name: stage.name,
+        status: campaign.getStageStatus(stage.id) as CampaignStageStatus,
+        stars: campaign.getCompletionRecord(stage.id)?.stars ?? 0,
+      }));
+
+      return {
+        currentStageIndex: campaign.getCurrentStageIndex(),
+        completedStages: campaign.getCompletedStages(),
+        currentStage: campaign.getCurrentStage() as CampaignStage | undefined,
+        totalStars: campaign.getTotalStars(),
+        maxStars: campaign.getMaxStars(),
+        isAllCompleted: campaign.isAllCompleted(),
+        stageStatuses,
+      };
+    } catch {
+      return undefined;
     }
   }
 }

@@ -424,3 +424,186 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     iconAsset: '👑', themeColor: '#FFD700',
   },
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// 关卡进度管理类
+// ═══════════════════════════════════════════════════════════════
+
+/** 关卡完成记录（含星级评价） */
+export interface StageCompletionRecord {
+  stageId: string;
+  stars: number;           // 1-3 星
+  completedAt: number;     // 时间戳
+  troopsRemaining: number; // 剩余兵力百分比
+}
+
+/**
+ * 征战关卡进度管理系统
+ *
+ * 管理关卡解锁、完成、星级评价和进度持久化。
+ * 与 ThreeKingdomsEngine 集成，通过 serialize/deserialize 支持存档。
+ */
+export class CampaignSystem {
+  /** 已完成的关卡 ID 集合 */
+  private completedStages: Set<string> = new Set();
+
+  /** 当前关卡索引（下一个待挑战的关卡） */
+  private currentStageIndex: number = 0;
+
+  /** 关卡完成记录（含星级等详细信息） */
+  private completionRecords: Map<string, StageCompletionRecord> = new Map();
+
+  /**
+   * 获取当前待挑战的关卡
+   * @returns 当前关卡定义，若全部完成则返回 undefined
+   */
+  getCurrentStage(): CampaignStage | undefined {
+    return CAMPAIGN_STAGES[this.currentStageIndex];
+  }
+
+  /**
+   * 获取当前关卡索引
+   */
+  getCurrentStageIndex(): number {
+    return this.currentStageIndex;
+  }
+
+  /**
+   * 获取所有已完成的关卡 ID
+   */
+  getCompletedStages(): string[] {
+    return [...this.completedStages];
+  }
+
+  /**
+   * 获取指定关卡的完成记录
+   */
+  getCompletionRecord(stageId: string): StageCompletionRecord | undefined {
+    return this.completionRecords.get(stageId);
+  }
+
+  /**
+   * 获取所有关卡的完成记录
+   */
+  getAllCompletionRecords(): StageCompletionRecord[] {
+    return [...this.completionRecords.values()];
+  }
+
+  /**
+   * 判断关卡是否已完成
+   */
+  isStageCompleted(stageId: string): boolean {
+    return this.completedStages.has(stageId);
+  }
+
+  /**
+   * 判断关卡是否已解锁（可挑战）
+   */
+  isStageUnlocked(stageId: string): boolean {
+    const stage = CAMPAIGN_STAGES.find(s => s.id === stageId);
+    if (!stage) return false;
+    // 第一章始终解锁
+    if (stage.prerequisiteStageId === null) return true;
+    // 后续章节需要前置关卡完成
+    return this.completedStages.has(stage.prerequisiteStageId);
+  }
+
+  /**
+   * 获取关卡状态
+   */
+  getStageStatus(stageId: string): CampaignStageStatus {
+    if (this.completedStages.has(stageId)) return 'victory';
+    if (this.isStageUnlocked(stageId)) return 'available';
+    return 'locked';
+  }
+
+  /**
+   * 完成关卡并推进进度
+   *
+   * @param stageId 关卡 ID
+   * @param troopsRemaining 剩余兵力百分比 (0-100)
+   * @returns 是否成功推进到下一关
+   */
+  completeStage(stageId: string, troopsRemaining: number = 100): boolean {
+    const idx = CAMPAIGN_STAGES.findIndex(s => s.id === stageId);
+    if (idx < 0) return false;
+
+    // 记录完成
+    this.completedStages.add(stageId);
+
+    // 计算星级
+    const stage = CAMPAIGN_STAGES[idx];
+    let stars = 1;
+    if (troopsRemaining >= stage.starThresholds.twoStar) stars = 2;
+    if (troopsRemaining >= stage.starThresholds.threeStar) stars = 3;
+
+    // 保存完成记录（如果已有记录，保留最高星级）
+    const existing = this.completionRecords.get(stageId);
+    if (!existing || stars > existing.stars) {
+      this.completionRecords.set(stageId, {
+        stageId,
+        stars,
+        completedAt: Date.now(),
+        troopsRemaining,
+      });
+    }
+
+    // 推进当前关卡索引
+    if (idx >= this.currentStageIndex && idx + 1 < CAMPAIGN_STAGES.length) {
+      this.currentStageIndex = idx + 1;
+      return true;
+    }
+    // 已是最后一关
+    if (idx === CAMPAIGN_STAGES.length - 1) {
+      this.currentStageIndex = CAMPAIGN_STAGES.length; // 越界表示全部完成
+    }
+    return false;
+  }
+
+  /**
+   * 获取总星数
+   */
+  getTotalStars(): number {
+    let total = 0;
+    for (const record of this.completionRecords.values()) {
+      total += record.stars;
+    }
+    return total;
+  }
+
+  /**
+   * 获取最大星数（3 × 关卡数）
+   */
+  getMaxStars(): number {
+    return CAMPAIGN_STAGES.length * 3;
+  }
+
+  /**
+   * 判断是否全部通关
+   */
+  isAllCompleted(): boolean {
+    return this.currentStageIndex >= CAMPAIGN_STAGES.length;
+  }
+
+  /**
+   * 序列化进度数据
+   */
+  serialize(): object {
+    return {
+      completed: [...this.completedStages],
+      currentIndex: this.currentStageIndex,
+      records: [...this.completionRecords.entries()].map(([id, r]) => [id, r]),
+    };
+  }
+
+  /**
+   * 反序列化进度数据
+   */
+  deserialize(data: any): void {
+    this.completedStages = new Set(data?.completed ?? []);
+    this.currentStageIndex = data?.currentIndex ?? 0;
+    this.completionRecords = new Map(
+      (data?.records ?? []).map(([id, r]: [string, any]) => [id, r as StageCompletionRecord]),
+    );
+  }
+}
