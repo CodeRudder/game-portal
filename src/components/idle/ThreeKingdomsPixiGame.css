@@ -1,10 +1,12 @@
-/* ============================================================
- * 三国霸业 v1.0「基业初立」— 严格按UI设计稿
- * 设计风格：水墨江山·铜纹霸业
- * 固定尺寸 1280×800，居中显示
- * ============================================================ */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 三国霸业 v1.0「基业初立」— 放置策略游戏 UI 样式
+ *
+ * 设计语言：古铜金 + 宣纸白 + 深墨蓝
+ * 主色调：#C9A84C（古铜金）  #F0E6D3（宣纸白）  #1A1A2E（深墨蓝）
+ * 功能色：#7EC850（翠绿）    #D4A017（琥珀橙）   #B8423A（赤焰红）
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
-/* === 全局容器 === */
+/* ─── 全局容器 ─── */
 .tk-container {
   width: 1280px;
   height: 800px;
@@ -12,62 +14,74 @@
   background: #1A1A2E;
   position: relative;
   overflow: hidden;
-  font-family: Arial, 'Microsoft YaHei', sans-serif;
-  color: #F0E6D3;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
   user-select: none;
+  color: #F0E6D3;
 }
 
-/* === 顶部资源栏 1280×56px === */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 顶部资源栏
+ * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-resource-bar {
-  width: 100%;
   height: 56px;
   background: rgba(13, 17, 23, 0.95);
   border-bottom: 2px solid #C9A84C;
   display: flex;
   align-items: center;
   padding: 0 20px;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 10;
 }
 
+/* 游戏标题 */
 .tk-game-title {
   font-size: 24px;
   color: #C9A84C;
   font-weight: bold;
   margin-right: 30px;
+  text-shadow: 0 0 10px rgba(201, 168, 76, 0.3);
   white-space: nowrap;
-  text-shadow: 0 0 8px rgba(201, 168, 76, 0.3);
 }
 
+/* 资源容器 */
 .tk-resources {
   display: flex;
-  gap: 24px;
-  flex: 1;
   align-items: center;
+  flex: 1;
 }
 
+/* 资源项 */
 .tk-resource-item {
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-right: 20px;
 }
 
+/* 资源图标 */
 .tk-resource-icon {
   font-size: 20px;
 }
 
+/* 资源数值 */
 .tk-resource-value {
   font-size: 18px;
+  color: #C9A84C;
   font-weight: bold;
-  font-family: Impact, 'Arial Narrow', sans-serif;
+  font-family: 'Impact', 'Arial', sans-serif;
 }
 
+/* 资源上限 */
 .tk-resource-cap {
   font-size: 14px;
   color: #A0A0A0;
 }
 
+/* 资源速率 */
+.tk-resource-rate {
+  font-size: 12px;
+  color: #7EC850;
+}
+
+/* 资源进度条轨道 */
 .tk-resource-bar-track {
   width: 80px;
   height: 6px;
@@ -76,52 +90,41 @@
   overflow: hidden;
 }
 
+/* 资源进度条填充 */
 .tk-resource-bar-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease, background 0.3s ease;
+  /* 颜色由 inline style 控制：正常 #7EC850 / 警告 #D4A017 / 危险 #B8423A */
+  transition: width 0.3s ease;
 }
 
-.tk-resource-rate {
-  font-size: 12px;
-  color: #7EC850;
-  white-space: nowrap;
-}
-
-/* === 导航Tab栏 1280×48px === */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 导航 Tab 栏
+ * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-nav-bar {
-  width: 100%;
   height: 48px;
   background: rgba(13, 17, 23, 0.95);
-  border-bottom: 1px solid rgba(201, 168, 76, 0.3);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  position: relative;
-  z-index: 10;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.3);
 }
 
+/* Tab 按钮 */
 .tk-tab {
   width: 80px;
   height: 48px;
   background: transparent;
-  border: none;
   color: #A0A0A0;
   font-size: 14px;
+  border: none;
   cursor: pointer;
-  transition: all 0.15s ease;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: all 150ms ease-out;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
 }
 
 .tk-tab:hover {
-  color: #E8D48B;
   background: rgba(201, 168, 76, 0.1);
 }
 
+/* 活跃 Tab */
 .tk-tab-active {
   background: #C9A84C;
   color: #F0E6D3;
@@ -130,266 +133,305 @@
 
 .tk-tab-active:hover {
   background: #C9A84C;
-  color: #F0E6D3;
 }
 
-/* Tab之间分割线 */
-.tk-tab + .tk-tab::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 25%;
-  height: 50%;
-  width: 1px;
-  background: rgba(201, 168, 76, 0.3);
-}
-
-.tk-tab-active + .tk-tab::before,
-.tk-tab + .tk-tab-active::before {
-  display: none;
-}
-
-/* === 中央场景区 1280×696px === */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 中央场景区
+ * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-scene {
-  width: 100%;
-  height: 696px;
+  height: calc(100% - 56px - 48px); /* 696px */
+  overflow-y: auto;
+  padding: 20px;
   position: relative;
-  overflow: hidden;
 }
 
-/* === 建筑场景 === */
-.tk-building-scene {
-  width: 100%;
-  height: 100%;
-  padding: 16px 24px;
-  box-sizing: border-box;
+/* 自定义滚动条 */
+.tk-scene::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tk-scene::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tk-scene::-webkit-scrollbar-thumb {
+  background: rgba(201, 168, 76, 0.3);
+  border-radius: 3px;
+}
+
+.tk-scene::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.5);
+}
+
+/* ─── 占位场景（非建筑 Tab） ─── */
+.tk-placeholder {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 180px;
 }
 
-/* 筛选栏 */
+.tk-placeholder-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.tk-placeholder-text {
+  font-size: 24px;
+  color: #A0A0A0;
+  margin-bottom: 8px;
+}
+
+.tk-placeholder-sub {
+  font-size: 14px;
+  color: rgba(160, 160, 160, 0.6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 建筑场景
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.tk-building-scene {
+  padding-bottom: 20px;
+}
+
+/* ─── 建筑筛选栏 ─── */
 .tk-building-filter {
   height: 36px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 16px;
-  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
-  padding-bottom: 8px;
+  padding: 0 4px;
 }
 
 .tk-filter-categories {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
 }
 
+/* 筛选按钮 */
 .tk-filter-btn {
-  background: transparent;
-  border: 1px solid rgba(201, 168, 76, 0.3);
-  color: #A0A0A0;
   padding: 4px 12px;
+  background: transparent;
+  color: #A0A0A0;
+  border: 1px solid rgba(201, 168, 76, 0.3);
   border-radius: 4px;
-  font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  font-size: 12px;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  transition: all 150ms ease-out;
 }
 
 .tk-filter-btn:hover {
-  color: #E8D48B;
-  border-color: #C9A84C;
+  color: #C9A84C;
 }
 
+.tk-filter-btn:active {
+  background: rgba(201, 168, 76, 0.15);
+}
+
+/* 活跃筛选 */
 .tk-filter-active {
   background: rgba(201, 168, 76, 0.2);
   color: #C9A84C;
   border-color: #C9A84C;
 }
 
+/* 可升级筛选复选框 */
 .tk-filter-upgrade {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 4px;
+  font-size: 12px;
   color: #A0A0A0;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.tk-filter-upgrade input {
+.tk-filter-upgrade input[type='checkbox'] {
   accent-color: #C9A84C;
 }
 
-/* 建筑网格 自适应列数 */
+/* ─── 建筑网格 ─── */
 .tk-building-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 14px;
-  padding: 8px 16px;
-  overflow-y: auto;
-  max-height: calc(100% - 44px);
+  grid-template-columns: repeat(4, 160px);
+  gap: 20px;
+  justify-content: center;
+  padding: 20px 0;
 }
 
-/* 滚动条样式 */
-.tk-building-grid::-webkit-scrollbar {
-  width: 6px;
-}
-.tk-building-grid::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.05);
-  border-radius: 3px;
-}
-.tk-building-grid::-webkit-scrollbar-thumb {
-  background: rgba(201,168,76,0.3);
-  border-radius: 3px;
-}
-
-/* 建筑卡片 */
+/* ─── 建筑卡片 ─── */
 .tk-building-card {
-  min-height: 170px;
+  width: 160px;
+  height: 180px;
   background: rgba(26, 26, 46, 0.8);
-  border: 1px solid #C9A84C;
+  border: 1px solid rgba(201, 168, 76, 0.4);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 12px 8px;
-  box-sizing: border-box;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 200ms ease-out;
   position: relative;
 }
 
 .tk-building-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(201, 168, 76, 0.2), 0 0 8px rgba(201, 168, 76, 0.15);
-  border-color: #E8D48B;
+  box-shadow: 0 4px 16px rgba(201, 168, 76, 0.2);
+  border-color: #C9A84C;
 }
 
 .tk-building-card:active {
   transform: scale(0.97);
 }
 
+/* 主城卡片（特殊样式，可按需添加 class） */
+
+/* 建筑图标区 */
+.tk-building-icon {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+}
+
+/* 建筑信息区 */
+.tk-building-info {
+  padding: 8px 12px;
+  flex: 1;
+}
+
+/* 建筑名称 */
+.tk-building-name {
+  font-size: 14px;
+  color: #F0E6D3;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 建筑等级徽章 */
+.tk-building-level {
+  font-size: 12px;
+  color: #C9A84C;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(201, 168, 76, 0.2);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* 建筑产出速率 */
+.tk-building-rate {
+  font-size: 12px;
+  color: #7EC850;
+  margin-top: 4px;
+}
+
+/* 建筑升级按钮（卡片内） */
+.tk-building-upgrade-btn {
+  margin: 8px 12px;
+  padding: 6px 0;
+  background: linear-gradient(135deg, #D4AF5E, #C8A45C);
+  color: #1A1A2E;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  transition: all 150ms ease-out;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
+
+.tk-building-upgrade-btn:hover {
+  box-shadow: 0 0 8px rgba(201, 168, 76, 0.4);
+}
+
+/* 禁用态按钮 */
+.tk-btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tk-btn-disabled:hover {
+  box-shadow: none;
+}
+
+/* ─── 锁定建筑 ─── */
 .tk-building-locked {
-  filter: grayscale(0.5);
-  opacity: 0.6;
+  filter: grayscale(0.7);
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .tk-building-locked:hover {
   transform: none;
   box-shadow: none;
+  border-color: rgba(201, 168, 76, 0.4);
 }
 
-.tk-building-icon {
-  font-size: 48px;
-  margin-bottom: 8px;
-  line-height: 1;
-}
-
-.tk-building-info {
-  text-align: center;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-}
-
-.tk-building-name {
-  font-size: 14px;
-  color: #F0E6D3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.tk-building-level {
-  font-size: 12px;
-  color: #C9A84C;
-  background: rgba(201, 168, 76, 0.15);
-  padding: 1px 6px;
-  border-radius: 8px;
-}
-
-.tk-building-rate {
-  font-size: 12px;
-  color: #7EC850;
-}
-
+/* 锁定信息文字 */
 .tk-building-lock-info {
   font-size: 11px;
   color: #A0A0A0;
-  margin-top: 4px;
+  text-align: center;
+  padding: 4px;
 }
 
-.tk-building-maxed {
-  font-size: 12px;
-  color: #C9A84C;
-  margin-top: 4px;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 升级确认弹窗
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
-/* 升级按钮 */
-.tk-building-upgrade-btn {
-  width: 100%;
-  padding: 6px 8px;
-  background: linear-gradient(135deg, #D4AF5E, #C8A45C);
-  border: none;
-  border-radius: 4px;
-  color: #1A1A2E;
-  font-size: 12px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  margin-top: 6px;
-}
-
-.tk-building-upgrade-btn:hover {
-  background: linear-gradient(135deg, #E8D48B, #D4AF5E);
-  box-shadow: 0 0 8px rgba(201, 168, 76, 0.4);
-}
-
-.tk-building-upgrade-btn:active {
-  transform: scale(0.96);
-}
-
-.tk-btn-disabled {
-  background: #555 !important;
-  color: #999 !important;
-  cursor: not-allowed !important;
-  box-shadow: none !important;
-}
-
-/* === 升级确认弹窗 420px宽 === */
+/* 弹窗遮罩 */
 .tk-modal-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
-  animation: tk-fade-in 0.2s ease;
 }
 
+/* 弹窗主体 */
 .tk-modal {
   width: 420px;
   background: rgba(13, 17, 23, 0.98);
   border: 2px solid #C9A84C;
   border-radius: 12px;
   padding: 24px;
+  max-height: 80vh;
+  overflow-y: auto;
   position: relative;
-  animation: tk-modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* 弹窗标题 */
+.tk-modal-title {
+  font-size: 18px;
+  color: #C9A84C;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+/* 弹窗关闭按钮 */
 .tk-modal-close {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: none;
-  border: none;
+  background: transparent;
   color: #A0A0A0;
-  font-size: 18px;
+  border: none;
+  font-size: 20px;
   cursor: pointer;
-  padding: 4px;
+  transition: color 150ms ease-out;
   line-height: 1;
 }
 
@@ -397,28 +439,25 @@
   color: #F0E6D3;
 }
 
-.tk-modal-title {
-  font-size: 18px;
-  color: #C9A84C;
-  margin: 0 0 16px;
-}
-
+/* 弹窗内容区 */
 .tk-modal-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* 等级行 */
 .tk-modal-level {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 20px;
-  justify-content: center;
+  font-size: 16px;
+  color: #F0E6D3;
 }
 
 .tk-modal-arrow {
   color: #C9A84C;
+  font-size: 18px;
 }
 
 .tk-modal-next {
@@ -426,15 +465,16 @@
   font-weight: bold;
 }
 
+/* 产出信息 */
 .tk-modal-rate {
   font-size: 14px;
-  text-align: center;
   color: #A0A0A0;
 }
 
+/* 费用区域 */
 .tk-modal-cost {
   background: rgba(26, 26, 46, 0.6);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 12px;
 }
 
@@ -446,73 +486,183 @@
 
 .tk-modal-cost-item {
   font-size: 14px;
-  padding: 4px 0;
+  color: #F0E6D3;
+  margin-bottom: 4px;
 }
 
+/* 弹窗操作按钮区 */
 .tk-modal-actions {
   display: flex;
+  justify-content: flex-end;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
-.tk-btn-cancel {
-  flex: 1;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  color: #A0A0A0;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.tk-btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #F0E6D3;
-}
-
+/* 确认按钮 */
 .tk-btn-confirm {
-  flex: 1;
-  padding: 10px;
+  padding: 8px 24px;
   background: linear-gradient(135deg, #D4AF5E, #C8A45C);
+  color: #1A1A2E;
   border: none;
   border-radius: 6px;
-  color: #1A1A2E;
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 150ms ease-out;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
 }
 
 .tk-btn-confirm:hover {
-  background: linear-gradient(135deg, #E8D48B, #D4AF5E);
+  box-shadow: 0 0 8px rgba(201, 168, 76, 0.4);
 }
 
 .tk-btn-confirm:disabled {
-  background: #555;
-  color: #999;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* === 任务面板 240×200px 右上角悬浮 === */
+.tk-btn-confirm:disabled:hover {
+  box-shadow: none;
+}
+
+/* 取消按钮 */
+.tk-btn-cancel {
+  padding: 8px 24px;
+  background: transparent;
+  color: #A0A0A0;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
+
+.tk-btn-cancel:hover {
+  color: #F0E6D3;
+  border-color: rgba(201, 168, 76, 0.6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 新手引导
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 引导遮罩 */
+.tk-guide-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 引导面板 */
+.tk-guide-panel {
+  width: 400px;
+  background: rgba(13, 17, 23, 0.98);
+  border: 2px solid #C9A84C;
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  position: relative;
+}
+
+/* 跳过按钮 */
+.tk-guide-skip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  color: #A0A0A0;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 150ms ease-out;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
+
+.tk-guide-skip:hover {
+  color: #F0E6D3;
+}
+
+/* 引导标题 */
+.tk-guide-title {
+  font-size: 20px;
+  color: #C9A84C;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+/* 引导描述 */
+.tk-guide-desc {
+  font-size: 14px;
+  color: #A0A0A0;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* 步骤指示点容器 */
+.tk-guide-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+/* 步骤指示点 */
+.tk-guide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(201, 168, 76, 0.3);
+  transition: all 200ms ease-out;
+}
+
+/* 活跃指示点 */
+.tk-guide-dot-active {
+  background: #C9A84C;
+  box-shadow: 0 0 6px rgba(201, 168, 76, 0.4);
+}
+
+/* 下一步按钮 */
+.tk-guide-next {
+  padding: 10px 32px;
+  background: linear-gradient(135deg, #D4AF5E, #C8A45C);
+  color: #1A1A2E;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
+
+.tk-guide-next:hover {
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 任务面板（右上角悬浮）
+ * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-task-panel {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 60px;
+  right: 20px;
   width: 240px;
   background: rgba(13, 17, 23, 0.95);
-  border: 1px solid #C9A84C;
+  border: 1px solid rgba(201, 168, 76, 0.4);
   border-radius: 8px;
   padding: 12px;
-  z-index: 20;
 }
 
 .tk-task-title {
   font-size: 14px;
   color: #C9A84C;
-  margin-bottom: 8px;
   font-weight: bold;
+  margin-bottom: 8px;
 }
 
 .tk-task-name {
@@ -521,26 +671,26 @@
   margin-bottom: 8px;
 }
 
+/* 任务进度条 */
 .tk-task-progress-bar {
   width: 100%;
   height: 8px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .tk-task-progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #7EC850, #C9A84C);
-  border-radius: 4px;
   transition: width 0.3s ease;
 }
 
 .tk-task-reward {
   font-size: 12px;
-  color: #E8D48B;
-  margin-bottom: 6px;
+  color: #7EC850;
+  margin-bottom: 4px;
 }
 
 .tk-task-done {
@@ -554,181 +704,76 @@
   font-size: 11px;
   color: #A0A0A0;
   text-align: right;
+  margin-top: 4px;
 }
 
-/* === 占位Tab === */
-.tk-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Toast 通知
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
-.tk-placeholder-icon {
-  font-size: 64px;
-}
-
-.tk-placeholder-text {
-  font-size: 20px;
-  color: #C9A84C;
-}
-
-.tk-placeholder-sub {
-  font-size: 14px;
-  color: #A0A0A0;
-}
-
-/* === 新手引导 === */
-.tk-guide-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.tk-guide-panel {
-  width: 360px;
-  background: rgba(13, 17, 23, 0.98);
-  border: 2px solid #C9A84C;
-  border-radius: 12px;
-  padding: 28px 24px;
-  text-align: center;
-  position: relative;
-}
-
-.tk-guide-skip {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  color: #A0A0A0;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 4px 8px;
-}
-
-.tk-guide-skip:hover {
-  color: #F0E6D3;
-}
-
-.tk-guide-title {
-  font-size: 20px;
-  color: #C9A84C;
-  margin: 0 0 12px;
-}
-
-.tk-guide-desc {
-  font-size: 14px;
-  color: #F0E6D3;
-  line-height: 1.6;
-  margin: 0 0 20px;
-}
-
-.tk-guide-dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.tk-guide-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(201, 168, 76, 0.3);
-}
-
-.tk-guide-dot-active {
-  background: #C9A84C;
-  box-shadow: 0 0 6px rgba(201, 168, 76, 0.5);
-}
-
-.tk-guide-next {
-  padding: 10px 32px;
-  background: linear-gradient(135deg, #D4AF5E, #C8A45C);
-  border: none;
-  border-radius: 6px;
-  color: #1A1A2E;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.tk-guide-next:hover {
-  background: linear-gradient(135deg, #E8D48B, #D4AF5E);
-}
-
-/* === Toast通知 右上角 === */
+/* Toast 容器 */
 .tk-toast-container {
-  position: absolute;
-  top: 64px;
-  right: 16px;
+  position: fixed;
+  top: 70px;
+  right: 20px;
   z-index: 300;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  pointer-events: none;
 }
 
+/* Toast 消息 */
 .tk-toast {
   background: #F5E6C8;
+  color: #1A1A2E;
   border: 1px solid #C9A84C;
   border-radius: 6px;
   padding: 10px 16px;
   font-size: 13px;
-  color: #1A1A2E;
-  min-width: 200px;
-  max-width: 320px;
-  animation: tk-toast-in 0.3s ease;
+  animation: toastIn 300ms ease-out;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
 }
 
+/* Toast 错误样式 */
 .tk-toast-error {
-  background: #F5D5C8;
+  background: rgba(184, 66, 58, 0.15);
+  color: #B8423A;
   border-color: #B8423A;
 }
 
-/* === 通用文本颜色 === */
-.tk-text-green { color: #7EC850; }
-.tk-text-red { color: #B8423A; }
-
-/* === 动画 === */
-@keyframes tk-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes tk-modal-in {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes tk-toast-in {
-  from { opacity: 0; transform: translateX(40px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-/* === prefers-reduced-motion === */
-@media (prefers-reduced-motion: reduce) {
-  .tk-building-card,
-  .tk-tab,
-  .tk-filter-btn,
-  .tk-building-upgrade-btn,
-  .tk-btn-cancel,
-  .tk-btn-confirm,
-  .tk-guide-next {
-    transition: none !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 动画关键帧
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes toastIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
   }
-  .tk-modal,
-  .tk-toast {
-    animation: none !important;
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 无障碍：减少动画偏好
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
