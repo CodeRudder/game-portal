@@ -1,131 +1,93 @@
 /* ═══════════════════════════════════════════════════════════════════════════
- * 三国霸业 v1.2「基业初立」— 放置策略游戏 UI 样式
+ * 三国霸业 v3.0 — 彻底重写 CSS
  *
- * 设计语言：古铜金 + 宣纸白 + 暖墨色
- * 主色调：#C9A84C（古铜金）  #F0E6D3（宣纸白）  #1C2333（深靛蓝）
- * 功能色：#7EC850（翠绿）    #D4A017（琥珀橙）   #B8423A（赤焰红）
+ * 布局规范：1280×800 固定容器
+ *   ├─ 资源栏：1280 × 56px (y=0)
+ *   ├─ 导航栏：1280 × 48px (y=56)
+ *   └─ 场景区：1280 × 696px (y=104)  overflow:hidden
+ *
+ * 色彩：
+ *   背景   #1A1A2E    古铜金 #C9A84C    宣纸白 #F0E6D3
+ *   翠绿   #7EC850    琥珀橙 #D4A017    赤焰红 #B8423A
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ─── 全局容器 — 深靛蓝底色 + 水墨纹理 ─── */
+/* ─── 全局容器 ─── */
 .tk-container {
   width: 1280px;
   height: 800px;
-  margin: 0 auto;
-  background: #1C2333;
   position: relative;
+  margin: 0 auto;
+  background: #1A1A2E;
   overflow: hidden;
   font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
   user-select: none;
   color: #F0E6D3;
-}
-
-/* 水墨纹理 + 竹简纹理背景层 */
-.tk-container::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    /* 竹简横纹效果 */
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 28px,
-      rgba(201,168,76,0.015) 28px,
-      rgba(201,168,76,0.015) 29px
-    ),
-    radial-gradient(ellipse 600px 300px at 15% 20%, rgba(50,60,85,0.4) 0%, transparent 70%),
-    radial-gradient(ellipse 500px 400px at 85% 75%, rgba(45,55,80,0.35) 0%, transparent 70%),
-    radial-gradient(ellipse 300px 200px at 50% 50%, rgba(40,50,70,0.25) 0%, transparent 70%),
-    radial-gradient(ellipse 200px 150px at 70% 15%, rgba(55,65,90,0.3) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* 水墨晕染装饰层 + 微妙蓝调 */
-.tk-container::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle 180px at 5% 95%, rgba(201,168,76,0.08) 0%, transparent 70%),
-    radial-gradient(circle 120px at 95% 5%, rgba(201,168,76,0.05) 0%, transparent 70%),
-    radial-gradient(circle 300px at 50% 0%, rgba(100,130,180,0.06) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* 所有直接子元素提升到纹理层之上 */
-.tk-container > * {
-  position: relative;
-  z-index: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * 顶部资源栏 — 卷轴横幅造型
+ * 资源栏 — 1280 × 56px，单行 flex 水平排列
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-resource-bar {
+  width: 100%;
   height: 56px;
-  background: linear-gradient(180deg, rgba(22,28,42,0.97) 0%, rgba(18,22,35,0.95) 100%);
-  border-bottom: 2px solid #C9A84C;
+  flex-shrink: 0;
+  background: rgba(26, 35, 50, 0.9);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.4);
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  position: relative;
+  padding: 0 16px;
+  gap: 6px;
+  box-sizing: border-box;
   z-index: 10;
 }
 
-/* 资源栏左侧卷轴卷曲装饰 */
-.tk-resource-bar::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 18px;
-  background: linear-gradient(90deg,
-    rgba(201,168,76,0.25) 0%,
-    rgba(201,168,76,0.12) 40%,
-    transparent 100%
-  );
-  border-radius: 0 8px 8px 0;
-  pointer-events: none;
-}
-
-/* 资源栏右侧卷轴卷曲装饰 */
-.tk-resource-bar::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 18px;
-  background: linear-gradient(-90deg,
-    rgba(201,168,76,0.25) 0%,
-    rgba(201,168,76,0.12) 40%,
-    transparent 100%
-  );
-  border-radius: 8px 0 0 8px;
-  pointer-events: none;
-}
-
-/* 资源栏底部古铜金分割线装饰 */
-.tk-resource-bar + .tk-nav-bar {
-  border-top: none;
-}
-
-/* 游戏标题 — 书法风格 */
+/* 游戏标题 */
 .tk-game-title {
-  font-size: 26px;
+  font-size: 18px;
   color: #C9A84C;
   font-weight: bold;
-  margin-right: 30px;
-  text-shadow:
-    0 0 12px rgba(201, 168, 76, 0.4),
-    0 0 4px rgba(201, 168, 76, 0.2),
-    0 1px 2px rgba(0,0,0,0.5);
   white-space: nowrap;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-  letter-spacing: 4px;
+  letter-spacing: 2px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+/* 主公等级 */
+.tk-lord-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.tk-lord-level {
+  font-size: 12px;
+  color: #C9A84C;
+  white-space: nowrap;
+}
+
+.tk-lord-bar-track {
+  width: 50px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tk-lord-bar-fill {
+  height: 100%;
+  background: #C9A84C;
+  transition: width 0.3s ease;
+}
+
+.tk-lord-progress-text {
+  font-size: 10px;
+  color: #A0A0A0;
+  white-space: nowrap;
 }
 
 /* 资源容器 */
@@ -133,97 +95,77 @@
   display: flex;
   align-items: center;
   flex: 1;
+  gap: 4px;
+  min-width: 0;
 }
 
-/* 资源项 */
+/* 单个资源项 — 横排 */
 .tk-resource-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-right: 20px;
+  gap: 4px;
+  margin-right: 10px;
+  white-space: nowrap;
 }
 
-/* 资源图标 */
 .tk-resource-icon {
-  font-size: 20px;
+  font-size: 16px;
+  flex-shrink: 0;
 }
 
-/* 资源数值 */
 .tk-resource-value {
-  font-size: 18px;
+  font-size: 14px;
   color: #C9A84C;
   font-weight: bold;
   font-family: 'Impact', 'Arial', sans-serif;
 }
 
-/* 资源上限 */
 .tk-resource-cap {
-  font-size: 14px;
+  font-size: 11px;
   color: #A0A0A0;
 }
 
-/* 资源速率 */
 .tk-resource-rate {
-  font-size: 12px;
+  font-size: 10px;
   color: #7EC850;
   font-weight: bold;
-  min-width: 48px;
+  min-width: 36px;
 }
 
-/* 资源速率为零时灰色显示 */
 .tk-resource-rate-zero {
   color: rgba(160, 160, 160, 0.5);
   font-weight: normal;
 }
 
-/* 资源进度条轨道 */
+/* 资源进度条 */
 .tk-resource-bar-track {
-  width: 80px;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 3px;
+  width: 50px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+  flex-shrink: 0;
 }
 
-/* 资源进度条填充 */
 .tk-resource-bar-fill {
   height: 100%;
   transition: width 0.3s ease;
-  box-shadow: 0 0 4px rgba(255,255,255,0.15);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * 导航 Tab 栏 — 古铜金分割
+ * 导航 Tab 栏 — 1280 × 48px，单行 flex
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-nav-bar {
+  width: 100%;
   height: 48px;
-  background: linear-gradient(180deg, rgba(20,26,40,0.97) 0%, rgba(18,22,35,0.95) 100%);
+  flex-shrink: 0;
+  background: rgba(26, 35, 50, 0.9);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.3);
   display: flex;
-  border-bottom: 2px solid rgba(201, 168, 76, 0.5);
-  position: relative;
+  align-items: stretch;
   z-index: 10;
 }
 
-/* Tab 栏底部装饰线 */
-.tk-nav-bar::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(201,168,76,0.3) 15%,
-    rgba(201,168,76,0.6) 50%,
-    rgba(201,168,76,0.3) 85%,
-    transparent 100%
-  );
-}
-
-/* Tab 按钮 */
 .tk-tab {
   width: 80px;
   height: 48px;
@@ -232,150 +174,119 @@
   font-size: 14px;
   border: none;
   cursor: pointer;
-  transition: all 200ms ease-out;
+  transition: background 200ms ease-out, color 200ms ease-out;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tk-tab:hover {
-  background: rgba(201, 168, 76, 0.12);
+  background: rgba(201, 168, 76, 0.1);
   color: #F0E6D3;
 }
 
-/* 活跃 Tab */
 .tk-tab-active {
-  background: linear-gradient(180deg, rgba(201,168,76,0.25) 0%, rgba(201,168,76,0.10) 100%);
-  color: #C9A84C;
+  background: rgba(201, 168, 76, 0.2);
+  color: #F0E6D3;
   font-weight: bold;
 }
 
-/* 活跃 Tab 底部金色指示线 — 加粗到3px */
 .tk-tab-active::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 8%;
-  right: 8%;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #C9A84C, transparent);
-  border-radius: 2px 2px 0 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: #C9A84C;
+  border-radius: 1px 1px 0 0;
 }
 
 .tk-tab-active:hover {
-  background: linear-gradient(180deg, rgba(201,168,76,0.30) 0%, rgba(201,168,76,0.15) 100%);
+  background: rgba(201, 168, 76, 0.25);
+  color: #F0E6D3;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * 中央场景区
+ * 场景区 — 1280 × 696px，从 y=104 开始
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-scene {
-  height: calc(100% - 56px - 48px); /* 696px */
-  overflow-y: auto;
-  padding: 20px;
+  flex: 1;
   position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-/* 自定义滚动条 — 古铜金风格 */
 .tk-scene::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .tk-scene::-webkit-scrollbar-track {
-  background: rgba(40, 50, 70, 0.3);
+  background: rgba(40, 50, 70, 0.2);
 }
 
 .tk-scene::-webkit-scrollbar-thumb {
-  background: rgba(201, 168, 76, 0.35);
+  background: rgba(201, 168, 76, 0.3);
   border-radius: 3px;
 }
 
-.tk-scene::-webkit-scrollbar-thumb:hover {
-  background: rgba(201, 168, 76, 0.55);
-}
-
-/* ─── 占位场景（非建筑 Tab） ─── */
-.tk-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 180px;
-}
-
-.tk-placeholder-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-  opacity: 0.8;
-}
-
-.tk-placeholder-text {
-  font-size: 24px;
-  color: #A0A0A0;
-  margin-bottom: 8px;
-  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-  letter-spacing: 3px;
-}
-
-.tk-placeholder-sub {
-  font-size: 14px;
-  color: rgba(160, 160, 160, 0.6);
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
- * 建筑场景
+ * 建筑场景 — 左侧建筑网格 + 右侧任务面板
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-building-scene {
-  padding-bottom: 20px;
+  display: flex;
+  gap: 16px;
+  padding: 12px 16px;
+  height: 100%;
+  box-sizing: border-box;
 }
 
-/* 古风横幅标题 "城池建设" */
-.tk-building-scene::before {
-  content: '━━  城池建设  ━━';
-  display: block;
-  text-align: center;
-  font-size: 18px;
+/* 左侧：筛选 + 建筑网格 */
+.tk-building-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tk-building-title {
+  font-size: 15px;
   color: #C9A84C;
+  font-weight: bold;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-  letter-spacing: 6px;
-  margin-bottom: 16px;
-  text-shadow: 0 0 10px rgba(201,168,76,0.3);
-  padding: 8px 0;
-  border-top: 1px solid rgba(201,168,76,0.25);
-  border-bottom: 1px solid rgba(201,168,76,0.25);
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(201,168,76,0.05) 20%,
-    rgba(201,168,76,0.08) 50%,
-    rgba(201,168,76,0.05) 80%,
-    transparent 100%
-  );
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 6px 0;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
 }
 
-/* ─── 建筑筛选栏 ─── */
+/* 筛选栏 */
 .tk-building-filter {
-  height: 36px;
+  height: 32px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 0 4px;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .tk-filter-categories {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex: 1;
 }
 
-/* 筛选按钮 */
 .tk-filter-btn {
-  padding: 4px 12px;
+  padding: 3px 8px;
   background: transparent;
   color: #A0A0A0;
-  border: 1px solid rgba(201, 168, 76, 0.3);
-  border-radius: 4px;
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  border-radius: 3px;
   cursor: pointer;
   font-size: 12px;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
@@ -385,21 +296,15 @@
 
 .tk-filter-btn:hover {
   color: #C9A84C;
-  border-color: rgba(201,168,76,0.5);
+  border-color: rgba(201, 168, 76, 0.5);
 }
 
-.tk-filter-btn:active {
-  background: rgba(201, 168, 76, 0.15);
-}
-
-/* 活跃筛选 */
 .tk-filter-active {
   background: rgba(201, 168, 76, 0.2);
   color: #C9A84C;
   border-color: #C9A84C;
 }
 
-/* 可升级筛选复选框 */
 .tk-filter-upgrade {
   display: flex;
   align-items: center;
@@ -414,124 +319,83 @@
   accent-color: #C9A84C;
 }
 
-/* ─── 建筑网格 ─── */
+/* ─── 建筑网格 — 4列 × 2行，grid 布局 ─── */
 .tk-building-grid {
   display: grid;
   grid-template-columns: repeat(4, 160px);
-  gap: 20px;
+  gap: 16px;
   justify-content: center;
-  padding: 20px 0;
+  padding: 8px 0;
 }
 
-/* ─── 建筑卡片 — 古铜金双线框 + 悬浮效果 ─── */
+/* ─── 建筑卡片 — 160 × 180px ─── */
 .tk-building-card {
   width: 160px;
   height: 180px;
-  background: linear-gradient(170deg, rgba(37,40,64,0.85) 0%, rgba(30,33,55,0.9) 100%);
-  border: 3px double rgba(201, 168, 76, 0.45);
+  background: rgba(26, 30, 48, 0.85);
+  border: 2px solid rgba(201, 168, 76, 0.3);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: all 250ms ease-out;
+  transition: border-color 200ms ease-out, transform 150ms ease-out;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-/* 卡片内部微妙纹理 */
-.tk-building-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 100px 60px at 30% 20%, rgba(201,168,76,0.05) 0%, transparent 70%);
-  pointer-events: none;
+  box-sizing: border-box;
 }
 
 .tk-building-card:hover {
+  border-color: rgba(201, 168, 76, 0.6);
   transform: translateY(-2px);
-  box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.4),
-    0 0 8px rgba(201, 168, 76, 0.2);
-  border-color: rgba(201, 168, 76, 0.8);
 }
 
 .tk-building-card:active {
   transform: scale(0.97);
 }
 
-/* ─── 建筑类别色调 ─── */
-
-/* 民生类 — 暖黄边框 */
+/* 建筑类别色调 */
 .tk-building-card[data-category="民生"] {
-  border-color: rgba(218, 185, 100, 0.5);
+  border-color: rgba(218, 185, 100, 0.45);
 }
-.tk-building-card[data-category="民生"]:hover {
-  border-color: #DAB964;
-  box-shadow: 0 10px 28px rgba(218,185,100,0.2), 0 0 12px rgba(218,185,100,0.3);
-}
-
-/* 军事类 — 赤红边框 */
 .tk-building-card[data-category="军事"] {
-  border-color: rgba(184, 66, 58, 0.5);
+  border-color: rgba(184, 66, 58, 0.45);
 }
-.tk-building-card[data-category="军事"]:hover {
-  border-color: #B8423A;
-  box-shadow: 0 10px 28px rgba(184,66,58,0.2), 0 0 12px rgba(184,66,58,0.3);
-}
-
-/* 文教类 — 青蓝边框 */
 .tk-building-card[data-category="文教"] {
-  border-color: rgba(100, 160, 200, 0.5);
+  border-color: rgba(100, 160, 200, 0.45);
 }
-.tk-building-card[data-category="文教"]:hover {
-  border-color: #64A0C8;
-  box-shadow: 0 10px 28px rgba(100,160,200,0.2), 0 0 12px rgba(100,160,200,0.3);
-}
-
-/* 防御类 — 灰白边框 */
 .tk-building-card[data-category="防御"] {
-  border-color: rgba(180, 175, 165, 0.5);
+  border-color: rgba(180, 175, 165, 0.45);
 }
-.tk-building-card[data-category="防御"]:hover {
-  border-color: #B4AFA5;
-  box-shadow: 0 10px 28px rgba(180,175,165,0.2), 0 0 12px rgba(180,175,165,0.3);
-}
-
-/* 核心类 — 金色边框 + 微光 */
 .tk-building-card[data-category="核心"] {
-  border-color: rgba(201, 168, 76, 0.6);
-  border-width: 3px;
-}
-.tk-building-card[data-category="核心"]:hover {
-  border-color: #C9A84C;
-  box-shadow: 0 10px 28px rgba(201,168,76,0.25), 0 0 16px rgba(201,168,76,0.35);
+  border-color: rgba(201, 168, 76, 0.5);
 }
 
 /* 建筑图标区 */
 .tk-building-icon {
-  height: 80px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
+  font-size: 42px;
+  flex-shrink: 0;
 }
 
-/* 图标背景按类别差异化 */
-.tk-building-icon[data-icon-cat="民生"] { background: rgba(126, 200, 80, 0.12); }
-.tk-building-icon[data-icon-cat="军事"] { background: rgba(184, 66, 58, 0.12); }
-.tk-building-icon[data-icon-cat="文教"] { background: rgba(100, 160, 200, 0.12); }
-.tk-building-icon[data-icon-cat="防御"] { background: rgba(212, 160, 23, 0.12); }
-.tk-building-icon[data-icon-cat="核心"] { background: rgba(201, 168, 76, 0.15); }
+.tk-building-icon[data-icon-cat="民生"] { background: rgba(126, 200, 80, 0.1); }
+.tk-building-icon[data-icon-cat="军事"] { background: rgba(184, 66, 58, 0.1); }
+.tk-building-icon[data-icon-cat="文教"] { background: rgba(100, 160, 200, 0.1); }
+.tk-building-icon[data-icon-cat="防御"] { background: rgba(212, 160, 23, 0.1); }
+.tk-building-icon[data-icon-cat="核心"] { background: rgba(201, 168, 76, 0.12); }
 
 /* 建筑信息区 */
 .tk-building-info {
-  padding: 8px 12px;
+  padding: 4px 10px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* 建筑名称 — 楷体 */
+/* 建筑名称 — 强制横排 */
 .tk-building-name {
   font-size: 14px;
   color: #F0E6D3;
@@ -541,549 +405,99 @@
   justify-content: space-between;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
   letter-spacing: 1px;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* 建筑等级徽章 — 右上角圆形Lv标记 */
+/* 建筑等级徽章 */
 .tk-building-level {
   font-size: 11px;
-  color: #1C2333;
-  position: absolute;
-  top: 8px;
-  right: 8px;
+  color: #1A1A2E;
   background: linear-gradient(135deg, #D4AF37, #C9A84C);
-  padding: 2px 8px;
-  border-radius: 10px;
-  border: none;
+  padding: 1px 6px;
+  border-radius: 8px;
   font-weight: bold;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3), 0 0 6px rgba(201,168,76,0.3);
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
 /* 建筑产出速率 */
 .tk-building-rate {
-  font-size: 12px;
+  font-size: 11px;
   color: #7EC850;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
-/* 建筑升级按钮（卡片内） — 金色渐变 */
+/* 建筑升级按钮 */
 .tk-building-upgrade-btn {
-  margin: 8px 12px;
-  padding: 6px 0;
-  background: linear-gradient(135deg, #C9A84C 0%, #A8872A 100%);
-  color: #1C2333;
+  margin: 4px 10px 6px;
+  padding: 4px 0;
+  background: linear-gradient(135deg, #C9A84C, #A8872A);
+  color: #1A1A2E;
   border: none;
   border-radius: 3px;
   cursor: pointer;
   font-size: 12px;
   font-weight: bold;
   text-align: center;
-  transition: all 200ms ease-out;
+  transition: background 200ms ease-out;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
   letter-spacing: 1px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(201, 168, 76, 0.2);
 }
 
 .tk-building-upgrade-btn:hover {
-  background: linear-gradient(135deg, #D4AF37, #E8C84A);
-  box-shadow: 0 2px 10px rgba(201, 168, 76, 0.4);
+  background: linear-gradient(135deg, #D4AF37, #C9A84C);
 }
 
-/* 禁用态按钮 */
+/* 禁用态 */
 .tk-btn-disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 .tk-btn-disabled:hover {
-  box-shadow: none;
-  background: linear-gradient(135deg, #C9A84C 0%, #A8872A 100%);
+  background: linear-gradient(135deg, #C9A84C, #A8872A);
 }
 
-/* ─── 锁定建筑 — 半透明+虚线边框 ─── */
+/* 锁定建筑 */
 .tk-building-locked {
   filter: grayscale(0.6);
   opacity: 0.45;
   cursor: not-allowed;
   border-style: dashed;
-  border-width: 2px;
 }
 
 .tk-building-locked:hover {
   transform: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  border-color: rgba(201, 168, 76, 0.3);
-  border-style: dashed;
 }
 
-/* 锁定信息文字 */
 .tk-building-lock-info {
   font-size: 11px;
   color: #A0A0A0;
   text-align: center;
-  padding: 4px;
+  padding: 2px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * 升级确认弹窗 — 古风装饰 + 动画
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* 弹窗遮罩 */
-.tk-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  animation: overlayFadeIn 250ms ease-out;
-}
-
-/* 弹窗主体 — 带入场动画 */
-.tk-modal {
-  width: 420px;
-  background: linear-gradient(170deg, rgba(28,35,51,0.98) 0%, rgba(22,28,42,0.98) 100%);
-  border: 3px double #C9A84C;
-  border-radius: 8px;
-  padding: 24px;
-  max-height: 80vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow:
-    0 0 40px rgba(201,168,76,0.2),
-    0 8px 32px rgba(0,0,0,0.5);
-  animation: modalSlideIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* 弹窗内角装饰 */
-.tk-modal::before,
-.tk-modal::after {
-  content: '◆';
-  position: absolute;
-  top: 8px;
-  font-size: 12px;
-  color: rgba(201,168,76,0.4);
-  pointer-events: none;
-}
-.tk-modal::before {
-  left: 12px;
-}
-.tk-modal::after {
-  right: 12px;
-}
-
-/* 弹窗标题 — 古风装饰 */
-.tk-modal-title {
-  font-size: 18px;
-  color: #C9A84C;
-  font-weight: bold;
-  margin-bottom: 16px;
-  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-  letter-spacing: 2px;
-  text-align: center;
-}
-
-/* 弹窗标题前装饰线 */
-.tk-modal-title::before {
-  content: '━━  ';
-  color: rgba(201,168,76,0.4);
-}
-.tk-modal-title::after {
-  content: '  ━━';
-  color: rgba(201,168,76,0.4);
-}
-
-/* 弹窗关闭按钮 */
-.tk-modal-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: transparent;
-  color: #C9A84C;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  transition: all 200ms ease-out;
-  line-height: 1;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tk-modal-close:hover {
-  color: #F0E6D3;
-  background: rgba(201,168,76,0.15);
-}
-
-/* 弹窗内容区 */
-.tk-modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* 等级行 */
-.tk-modal-level {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 16px;
-  color: #F0E6D3;
-}
-
-.tk-modal-arrow {
-  color: #C9A84C;
-  font-size: 18px;
-}
-
-.tk-modal-next {
-  color: #7EC850;
-  font-weight: bold;
-}
-
-/* 产出信息 */
-.tk-modal-rate {
-  font-size: 15px;
-  color: #F0E6D3;
-}
-
-/* 产出百分比增幅标注 — 金色醒目 */
-.tk-rate-pct {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 8px;
-  background: linear-gradient(135deg, rgba(201,168,76,0.25), rgba(201,168,76,0.12));
-  border: 1px solid rgba(201,168,76,0.5);
-  border-radius: 10px;
-  color: #C9A84C;
-  font-size: 13px;
-  font-weight: bold;
-  text-shadow: 0 0 6px rgba(201,168,76,0.3);
-}
-
-/* "新增"标签 — 翠绿色 */
-.tk-rate-new {
-  color: #7EC850;
-  border-color: rgba(126,200,80,0.5);
-  background: linear-gradient(135deg, rgba(126,200,80,0.2), rgba(126,200,80,0.08));
-  text-shadow: 0 0 6px rgba(126,200,80,0.3);
-}
-
-/* 费用区域 */
-.tk-modal-cost {
-  background: rgba(37, 40, 64, 0.7);
-  border: 1px solid rgba(201,168,76,0.2);
-  border-radius: 6px;
-  padding: 12px;
-}
-
-.tk-modal-cost-title {
-  font-size: 13px;
-  color: #A0A0A0;
-  margin-bottom: 8px;
-}
-
-.tk-modal-cost-item {
-  font-size: 14px;
-  color: #F0E6D3;
-  margin-bottom: 4px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background 150ms ease;
-}
-
-/* 费用足够 — 绿色背景提示 */
-.tk-modal-cost-item-enough {
-  background: rgba(126, 200, 80, 0.08);
-  border-left: 2px solid rgba(126, 200, 80, 0.4);
-}
-
-/* 费用不足 — 红色背景提示 */
-.tk-modal-cost-item-lacking {
-  background: rgba(184, 66, 58, 0.08);
-  border-left: 2px solid rgba(184, 66, 58, 0.4);
-}
-
-/* 弹窗操作按钮区 */
-.tk-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-/* 确认按钮 — 金色渐变 + 发光 */
-.tk-btn-confirm {
-  padding: 8px 24px;
-  background: linear-gradient(135deg, #C9A84C, #D4AF37);
-  color: #1C2333;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 200ms ease-out;
-  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-  letter-spacing: 2px;
-  box-shadow: 0 1px 6px rgba(201,168,76,0.3);
-}
-
-.tk-btn-confirm:hover {
-  box-shadow: 0 0 16px rgba(201, 168, 76, 0.5), 0 2px 8px rgba(201,168,76,0.3);
-  background: linear-gradient(135deg, #D4AF37, #DFC06E);
-  transform: translateY(-1px);
-}
-
-.tk-btn-confirm:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.tk-btn-confirm:disabled:hover {
-  box-shadow: 0 1px 6px rgba(201,168,76,0.3);
-  background: linear-gradient(135deg, #C9A84C, #D4AF37);
-}
-
-/* 取消按钮 */
-.tk-btn-cancel {
-  padding: 8px 24px;
-  background: transparent;
-  color: #A0A0A0;
-  border: 1px solid rgba(201, 168, 76, 0.3);
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 200ms ease-out;
-  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-  letter-spacing: 2px;
-}
-
-.tk-btn-cancel:hover {
-  color: #F0E6D3;
-  border-color: rgba(201, 168, 76, 0.6);
-  background: rgba(201,168,76,0.08);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 新手引导 — 古风装饰 + 高亮
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* 引导遮罩 */
-.tk-guide-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 引导面板 — 古风装饰 */
-.tk-guide-panel {
-  width: 420px;
-  background: linear-gradient(170deg, rgba(28,35,51,0.98) 0%, rgba(22,28,42,0.98) 100%);
-  border: 3px double #C9A84C;
-  border-radius: 8px;
-  padding: 32px;
-  text-align: center;
-  position: relative;
-  box-shadow:
-    0 0 40px rgba(201,168,76,0.2),
-    0 8px 32px rgba(0,0,0,0.5);
-  animation: guidePanelIn 400ms ease-out;
-}
-
-/* 引导面板四角装饰 */
-.tk-guide-panel::before {
-  content: '┏                        ┓';
-  position: absolute;
-  top: 4px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 14px;
-  color: rgba(201,168,76,0.25);
-  letter-spacing: 2px;
-  pointer-events: none;
-  font-family: monospace;
-}
-.tk-guide-panel::after {
-  content: '┗                        ┛';
-  position: absolute;
-  bottom: 4px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 14px;
-  color: rgba(201,168,76,0.25);
-  letter-spacing: 2px;
-  pointer-events: none;
-  font-family: monospace;
-}
-
-/* 跳过按钮 */
-.tk-guide-skip {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  background: transparent;
-  color: #A0A0A0;
-  border: none;
-  font-size: 13px;
-  cursor: pointer;
-  transition: color 150ms ease-out;
-  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-}
-
-.tk-guide-skip:hover {
-  color: #F0E6D3;
-}
-
-/* 引导标题 */
-.tk-guide-title {
-  font-size: 22px;
-  color: #C9A84C;
-  font-weight: bold;
-  margin-bottom: 12px;
-  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-  letter-spacing: 3px;
-  text-shadow: 0 0 10px rgba(201,168,76,0.3);
-}
-
-/* 引导描述 */
-.tk-guide-desc {
-  font-size: 14px;
-  color: #C0B8A8;
-  line-height: 1.8;
-  margin-bottom: 20px;
-}
-
-/* 步骤指示点容器 */
-.tk-guide-dots {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-/* 步骤指示点 */
-.tk-guide-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(201, 168, 76, 0.3);
-  transition: all 200ms ease-out;
-}
-
-/* 活跃指示点 */
-.tk-guide-dot-active {
-  background: #C9A84C;
-  box-shadow: 0 0 8px rgba(201, 168, 76, 0.5);
-  transform: scale(1.2);
-}
-
-/* 下一步按钮 */
-.tk-guide-next {
-  padding: 10px 36px;
-  background: linear-gradient(135deg, #C9A84C, #D4AF37);
-  color: #1C2333;
-  border: none;
-  border-radius: 6px;
-  font-size: 15px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 200ms ease-out;
-  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
-  letter-spacing: 3px;
-  box-shadow: 0 1px 6px rgba(201,168,76,0.3);
-}
-
-.tk-guide-next:hover {
-  box-shadow: 0 0 16px rgba(201, 168, 76, 0.5), 0 2px 8px rgba(201,168,76,0.3);
-  background: linear-gradient(135deg, #D4AF37, #DFC06E);
-}
-
-/* ─── 引导步骤高亮效果 ─── */
-
-/* 步骤0: 高亮建筑网格区域 */
-.tk-guide-overlay[data-step="0"] ~ .tk-scene .tk-building-grid,
-.tk-guide-step-0 .tk-building-grid {
-  position: relative;
-  z-index: 201;
-  box-shadow:
-    0 0 0 4px rgba(201,168,76,0.6),
-    0 0 30px rgba(201,168,76,0.3);
-  border-radius: 8px;
-}
-
-/* 步骤1: 高亮资源栏 */
-.tk-guide-overlay[data-step="1"] ~ .tk-scene .tk-resource-bar,
-.tk-guide-step-1 .tk-resource-bar {
-  position: relative;
-  z-index: 201;
-  box-shadow:
-    0 0 0 4px rgba(201,168,76,0.6),
-    0 0 30px rgba(201,168,76,0.3);
-}
-
-/* 步骤2: 高亮导航Tab */
-.tk-guide-overlay[data-step="2"] ~ .tk-scene .tk-nav-bar,
-.tk-guide-step-2 .tk-nav-bar {
-  position: relative;
-  z-index: 201;
-  box-shadow:
-    0 0 0 4px rgba(201,168,76,0.6),
-    0 0 30px rgba(201,168,76,0.3);
-}
-
-/* 引导手指指示器 */
-.tk-guide-pointer {
-  position: absolute;
-  font-size: 28px;
-  animation: guideBounce 1s ease-in-out infinite;
-  z-index: 202;
-  pointer-events: none;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 任务面板 — "军令"风格（右上角悬浮）
+ * 任务面板 — 固定在建筑场景右侧，不用 position:absolute
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-task-panel {
-  position: absolute;
-  top: 60px;
-  right: 20px;
-  width: 280px;
-  min-width: 280px;
-  background: linear-gradient(170deg, rgba(28,35,51,0.95) 0%, rgba(22,28,42,0.95) 100%);
-  border: 2px double rgba(201, 168, 76, 0.4);
+  width: 220px;
+  flex-shrink: 0;
+  background: rgba(13, 17, 23, 0.85);
+  border: 1px solid rgba(201, 168, 76, 0.3);
   border-radius: 6px;
-  padding: 12px;
-  z-index: 5;
-  max-height: calc(100% - 80px);
+  padding: 10px;
   overflow-y: auto;
+  max-height: 100%;
+  box-sizing: border-box;
 }
 
-/* 任务面板顶部装饰线 */
-.tk-task-panel::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: 10%;
-  right: 10%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent);
-}
-
-/* 任务面板滚动条 */
 .tk-task-panel::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 .tk-task-panel::-webkit-scrollbar-track {
   background: transparent;
@@ -1102,28 +516,44 @@
   letter-spacing: 2px;
 }
 
-/* 任务标题前军令装饰 */
-.tk-task-title::before {
-  content: '📜 ';
-  font-size: 12px;
+.tk-task-item {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+}
+
+.tk-task-item:last-of-type {
+  border-bottom: none;
+}
+
+.tk-task-item-done {
+  opacity: 0.6;
+}
+
+.tk-task-item-done .tk-task-name {
+  color: #7EC850;
+  text-decoration: line-through;
 }
 
 .tk-task-name {
-  font-size: 13px;
+  font-size: 12px;
   color: #F0E6D3;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
-/* 任务进度条 */
+.tk-task-progress-text {
+  font-size: 10px;
+  color: #A0A0A0;
+  text-align: right;
+  margin-bottom: 2px;
+}
+
 .tk-task-progress-bar {
   width: 100%;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
   overflow: hidden;
-  margin-bottom: 4px;
-  border: 1px solid rgba(201,168,76,0.2);
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+  margin-bottom: 3px;
 }
 
 .tk-task-progress-fill {
@@ -1134,68 +564,429 @@
 }
 
 .tk-task-reward {
-  font-size: 12px;
+  font-size: 11px;
   color: #D4A017;
-  margin-bottom: 2px;
 }
 
-.tk-task-done {
-  font-size: 13px;
+.tk-task-completed {
   color: #7EC850;
-  text-align: center;
-  padding: 8px 0;
+  font-size: 10px;
 }
 
 .tk-task-count {
   font-size: 11px;
   color: #A0A0A0;
   text-align: right;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
-/* 单个任务项 */
-.tk-task-item {
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 占位场景（天下/出征/武将/科技/声望/更多 Tab）
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.tk-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
 }
 
-.tk-task-item:last-of-type {
-  border-bottom: none;
+.tk-placeholder-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  opacity: 0.7;
 }
 
-/* 已完成任务 — 绿色✓ + 删除线 */
-.tk-task-item-done {
-  opacity: 0.65;
-}
-
-.tk-task-item-done .tk-task-name {
-  color: #7EC850;
-  text-decoration: line-through;
-}
-
-.tk-task-item-done .tk-task-progress-bar {
-  opacity: 0.5;
-}
-
-/* 已领取标签 */
-.tk-task-completed {
-  color: #7EC850;
-  font-size: 11px;
-}
-
-/* 任务进度百分比文字 */
-.tk-task-progress-text {
-  font-size: 10px;
+.tk-placeholder-text {
+  font-size: 22px;
   color: #A0A0A0;
-  text-align: right;
-  margin-bottom: 2px;
+  margin-bottom: 8px;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 2px;
+}
+
+.tk-placeholder-sub {
+  font-size: 14px;
+  color: rgba(160, 160, 160, 0.5);
+}
+
+/* ─── 天下 Tab — 世界地图场景 ─── */
+.tk-world-scene {
+  padding: 16px 20px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.tk-world-map-frame {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 30, 48, 0.4);
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  border-radius: 8px;
+}
+
+/* ─── 武将 Tab — 4×3 网格 ─── */
+.tk-generals-scene {
+  padding: 16px 20px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.tk-generals-title {
+  font-size: 16px;
+  color: #C9A84C;
+  font-weight: bold;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 3px;
+  text-align: center;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+}
+
+.tk-generals-filter {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.tk-generals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  flex: 1;
+}
+
+.tk-general-slot {
+  height: 120px;
+  background: rgba(26, 30, 48, 0.6);
+  border: 1px dashed rgba(201, 168, 76, 0.2);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #A0A0A0;
+  font-size: 13px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 升级确认弹窗 — 420px 宽居中
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 遮罩 */
+.tk-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+/* 弹窗主体 */
+.tk-modal {
+  width: 420px;
+  background: rgba(13, 17, 23, 0.95);
+  border: 2px solid #C9A84C;
+  border-radius: 8px;
+  padding: 24px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.tk-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  color: #C9A84C;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tk-modal-close:hover {
+  color: #F0E6D3;
+  background: rgba(201, 168, 76, 0.15);
+}
+
+.tk-modal-title {
+  font-size: 18px;
+  color: #C9A84C;
+  font-weight: bold;
+  margin-bottom: 16px;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.tk-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tk-modal-level {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  color: #F0E6D3;
+}
+
+.tk-modal-arrow {
+  color: #C9A84C;
+  font-size: 18px;
+}
+
+.tk-modal-next {
+  color: #7EC850;
+  font-weight: bold;
+}
+
+.tk-modal-rate {
+  font-size: 15px;
+  color: #F0E6D3;
+}
+
+.tk-rate-pct {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  background: rgba(201, 168, 76, 0.2);
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  border-radius: 10px;
+  color: #C9A84C;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* 费用区域 */
+.tk-modal-cost {
+  background: rgba(37, 40, 64, 0.6);
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.tk-modal-cost-title {
+  font-size: 13px;
+  color: #A0A0A0;
+  margin-bottom: 8px;
+}
+
+.tk-modal-cost-item {
+  font-size: 14px;
+  color: #F0E6D3;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.tk-modal-cost-item-enough {
+  background: rgba(126, 200, 80, 0.08);
+  border-left: 2px solid rgba(126, 200, 80, 0.4);
+}
+
+.tk-modal-cost-item-lacking {
+  background: rgba(184, 66, 58, 0.08);
+  border-left: 2px solid rgba(184, 66, 58, 0.4);
+}
+
+/* 弹窗操作按钮 */
+.tk-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.tk-btn-confirm {
+  padding: 8px 24px;
+  background: linear-gradient(135deg, #C9A84C, #D4AF37);
+  color: #1A1A2E;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 200ms ease-out;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 2px;
+}
+
+.tk-btn-confirm:hover {
+  background: linear-gradient(135deg, #D4AF37, #DFC06E);
+}
+
+.tk-btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tk-btn-confirm:disabled:hover {
+  background: linear-gradient(135deg, #C9A84C, #D4AF37);
+}
+
+.tk-btn-cancel {
+  padding: 8px 24px;
+  background: transparent;
+  color: #A0A0A0;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 200ms ease-out;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 2px;
+}
+
+.tk-btn-cancel:hover {
+  color: #F0E6D3;
+  border-color: rgba(201, 168, 76, 0.6);
+  background: rgba(201, 168, 76, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 新手引导
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 引导遮罩 */
+.tk-guide-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 引导面板 */
+.tk-guide-panel {
+  width: 420px;
+  background: rgba(13, 17, 23, 0.95);
+  border: 2px solid #C9A84C;
+  border-radius: 8px;
+  padding: 32px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.tk-guide-skip {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: transparent;
+  color: #A0A0A0;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+}
+
+.tk-guide-skip:hover {
+  color: #F0E6D3;
+}
+
+.tk-guide-title {
+  font-size: 22px;
+  color: #C9A84C;
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 3px;
+}
+
+.tk-guide-desc {
+  font-size: 14px;
+  color: #C0B8A8;
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.tk-guide-dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tk-guide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(201, 168, 76, 0.3);
+}
+
+.tk-guide-dot-active {
+  background: #C9A84C;
+  transform: scale(1.2);
+}
+
+.tk-guide-next {
+  padding: 10px 36px;
+  background: linear-gradient(135deg, #C9A84C, #D4AF37);
+  color: #1A1A2E;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 200ms ease-out;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 3px;
+}
+
+.tk-guide-next:hover {
+  background: linear-gradient(135deg, #D4AF37, #DFC06E);
+}
+
+/* 引导步骤高亮 */
+.tk-guide-step-0 .tk-building-grid {
+  position: relative;
+  z-index: 201;
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.6);
+  border-radius: 8px;
+}
+
+.tk-guide-step-1 .tk-resource-bar {
+  position: relative;
+  z-index: 201;
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.6);
+}
+
+.tk-guide-step-2 .tk-nav-bar {
+  position: relative;
+  z-index: 201;
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.6);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Toast 通知
  * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Toast 容器 */
 .tk-toast-container {
   position: fixed;
   top: 70px;
@@ -1206,23 +997,21 @@
   gap: 8px;
 }
 
-/* Toast 消息 — 古卷轴风格 */
 .tk-toast {
-  background: linear-gradient(135deg, #F5E6C8, #E8D5B0);
-  color: #1C2333;
+  background: rgba(13, 17, 23, 0.95);
+  color: #F0E6D3;
   border: 1px solid #C9A84C;
   border-left: 3px solid #C9A84C;
   border-radius: 4px;
   padding: 10px 16px;
   font-size: 13px;
-  animation: toastIn 300ms ease-out;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
   white-space: nowrap;
+  animation: toastIn 300ms ease-out;
 }
 
-/* Toast 错误样式 */
 .tk-toast-error {
-  background: linear-gradient(135deg, rgba(50,20,18,0.95), rgba(40,16,14,0.95));
+  background: rgba(50, 20, 18, 0.95);
   color: #E8A09C;
   border-color: #B8423A;
   border-left-color: #B8423A;
@@ -1242,92 +1031,6 @@
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-@keyframes guidePanelIn {
-  from {
-    transform: scale(0.9) translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes guideBounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes guideGlow {
-  0%, 100% {
-    box-shadow:
-      0 0 0 4px rgba(201,168,76,0.6),
-      0 0 30px rgba(201,168,76,0.3);
-  }
-  50% {
-    box-shadow:
-      0 0 0 6px rgba(201,168,76,0.8),
-      0 0 40px rgba(201,168,76,0.4);
-  }
-}
-
-/* 弹窗入场动画 */
-@keyframes modalSlideIn {
-  from {
-    transform: scale(0.92);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* 遮罩淡入 */
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* 引导高亮脉冲动画 */
-.tk-guide-highlight {
-  animation: guideGlow 1.5s ease-in-out infinite;
-  position: relative;
-  z-index: 201;
-  border-radius: 8px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 底部古风花纹分隔线（建筑场景底部）
- * ═══════════════════════════════════════════════════════════════════════════ */
-.tk-building-scene::after {
-  content: '❖ ━━━━━━━━━━━ ❖';
-  display: block;
-  text-align: center;
-  font-size: 10px;
-  color: rgba(201,168,76,0.25);
-  letter-spacing: 4px;
-  padding-top: 16px;
-  margin-top: 8px;
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
  * 无障碍：减少动画偏好
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -1336,7 +1039,7 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
+    animation-iter-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

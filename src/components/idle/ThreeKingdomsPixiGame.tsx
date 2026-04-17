@@ -1,8 +1,13 @@
 /**
- * 三国霸业 v1.0「基业初立」— 放置策略游戏 UI 组件
+ * 三国霸业 v2.0「基业初立」— 放置策略游戏 UI 组件
  *
  * 纯 React + CSS 实现（无 Canvas / PixiJS）。
  * 固定尺寸 1280×800，居中显示。
+ *
+ * 布局：
+ * - 顶部资源栏：1280 × 56px (y=0)
+ * - 导航Tab栏：1280 × 48px (y=56)
+ * - 中央场景区：1280 × 696px (y=104)
  *
  * 架构：
  * - ThreeKingdomsEngine 驱动游戏逻辑
@@ -20,9 +25,9 @@ import {
   type BuildingDef,
 } from '@/games/three-kingdoms/constants';
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 // 常量
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
 /** 资源显示配置：引擎资源ID → UI 展示信息 */
 const RESOURCE_UI: Record<string, { name: string; icon: string; color: string; hasCap: boolean; capId?: string }> = {
@@ -90,9 +95,12 @@ const INITIAL_TASKS = [
   { id: 4, title: '完成第一个关卡',     type: 'total' as const,    target: 'total',    targetLevel: 99, reward: '全资源+50' },
 ];
 
-// ═══════════════════════════════════════════════════════════════
+/** 武将阵营筛选 */
+type GeneralFaction = '全部' | '蜀' | '魏' | '吴';
+
+// ═══════════════════════════════════════════════════════════════════════════
 // 辅助函数
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
 /** 格式化大数 */
 function fmtNum(n: number): string {
@@ -105,11 +113,11 @@ function fmtNum(n: number): string {
   return n < 10 ? n.toFixed(1) : Math.floor(n).toString();
 }
 
-/** 进度条颜色 — 增强亮度确保对比度 */
+/** 进度条颜色 */
 function barColor(ratio: number): string {
-  if (ratio > 0.95) return '#E05545'; // 赤焰红（更亮）
-  if (ratio > 0.80) return '#E8B830'; // 琥珀金（更亮）
-  return '#8ED860';                   // 翠绿（更亮）
+  if (ratio > 0.95) return '#E05545';
+  if (ratio > 0.80) return '#E8B830';
+  return '#8ED860';
 }
 
 /** 获取建筑分类 */
@@ -118,9 +126,9 @@ function getCategory(def: BuildingDef): BuildingCategory {
   return CATEGORY_MAP[def.category ?? ''] ?? '核心';
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 // Toast 类型
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
 interface Toast {
   id: number;
@@ -128,9 +136,9 @@ interface Toast {
   type: 'success' | 'error' | 'info';
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 // 主组件
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
 const ThreeKingdomsPixiGame: React.FC = () => {
   // ─── 引擎 ───
@@ -248,7 +256,6 @@ const ThreeKingdomsPixiGame: React.FC = () => {
           const lv = levels[task.target] ?? 0;
           progress = Math.min(1, lv / task.targetLevel);
           if (lv >= task.targetLevel) {
-            // 发放奖励（通过引擎）
             addToast(`任务完成：${task.title} — ${task.reward}`, 'success');
             return { ...task, done: true, progress: 1 };
           }
@@ -288,10 +295,8 @@ const ThreeKingdomsPixiGame: React.FC = () => {
       let success: boolean;
 
       if (currentLevel < 1) {
-        // 首次建造（Lv.0 → Lv.1）
         success = engine.buyBuildingById(buildingId);
       } else {
-        // 升级（Lv.1+ → Lv.2+）
         success = engine.upgradeBuilding(buildingId);
       }
 
@@ -314,7 +319,6 @@ const ThreeKingdomsPixiGame: React.FC = () => {
 
   // ─── 筛选建筑（仅显示8个核心建筑） ───
   const filteredBuildings = BUILDINGS.filter(def => {
-    // 只显示核心建筑（4×2 网格）
     if (!CORE_BUILDING_IDS.includes(def.id)) return false;
     if (category !== '全部' && getCategory(def) !== category) return false;
     if (showUpgradeable && !unlocked[def.id]) return false;
@@ -325,51 +329,31 @@ const ThreeKingdomsPixiGame: React.FC = () => {
   const currentTask = tasks.find(t => !t.done);
   const completedTasks = tasks.filter(t => t.done).length;
 
-  // ─── 渲染 ───
+  // ─── 主公等级计算 ───
+  const totalLevel = Object.values(levels).reduce((s, v) => s + v, 0);
+  const lordLevel = Math.floor(totalLevel / 10);
+  const progressInLevel = totalLevel % 10;
+  const lordProgressPercent = Math.min(100, (progressInLevel / 10) * 100);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 渲染
+  // ═══════════════════════════════════════════════════════════════════════════
 
   return (
     <div className={`tk-container ${showGuide && guideStep < GUIDE_STEPS.length ? `tk-guide-step-${guideStep}` : ''}`}>
-      {/* ═══ 顶部资源栏 ═══ */}
+
+      {/* ═══════ 1. 顶部资源栏 (1280 × 56px) ═══════ */}
       <div className="tk-resource-bar">
-        <div style={{ display: 'flex', flexDirection: 'column', marginRight: 20, minWidth: 120 }}>
-          <span className="tk-game-title" style={{ marginRight: 0, fontSize: 20, lineHeight: '22px' }}>三国霸业</span>
-          {(() => {
-            // 主公等级进度条：基于所有核心建筑总等级
-            const totalLevel = Object.values(levels).reduce((s, v) => s + v, 0);
-            const maxLevel = 100; // 主公等级满级为100（总建筑等级）
-            const lordLevel = Math.floor(totalLevel / 10); // 每10级总建筑等级 = 1级主公等级
-            const progressInLevel = totalLevel % 10; // 当前主公等级内的进度
-            const progressPercent = Math.min(100, (progressInLevel / 10) * 100);
-            return (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                <span style={{ fontSize: 11, color: '#C9A84C', whiteSpace: 'nowrap' }}>
-                  Lv.{lordLevel}
-                </span>
-                <div
-                  style={{
-                    width: 60,
-                    height: 4,
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${progressPercent}%`,
-                      height: '100%',
-                      background: '#C9A84C',
-                      transition: 'width 0.3s ease',
-                    }}
-                  />
-                </div>
-                <span style={{ fontSize: 9, color: '#A0A0A0', whiteSpace: 'nowrap' }}>
-                  {progressInLevel}/10
-                </span>
-              </div>
-            );
-          })()}
+        <span className="tk-game-title">三国霸业</span>
+
+        <div className="tk-lord-info">
+          <span className="tk-lord-level">Lv.{lordLevel}</span>
+          <div className="tk-lord-bar-track">
+            <div className="tk-lord-bar-fill" style={{ width: `${lordProgressPercent}%` }} />
+          </div>
+          <span className="tk-lord-progress-text">{progressInLevel}/10</span>
         </div>
+
         <div className="tk-resources">
           {TOP_RESOURCES.map(id => {
             const ui = RESOURCE_UI[id];
@@ -386,9 +370,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                   {fmtNum(val)}
                 </span>
                 {ui.hasCap && (
-                  <span className="tk-resource-cap">
-                    / {fmtNum(cap)}
-                  </span>
+                  <span className="tk-resource-cap">/{fmtNum(cap)}</span>
                 )}
                 {ui.hasCap && (
                   <div className="tk-resource-bar-track">
@@ -410,7 +392,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
         </div>
       </div>
 
-      {/* ═══ 导航 Tab 栏 ═══ */}
+      {/* ═══════ 2. 导航 Tab 栏 (1280 × 48px) ═══════ */}
       <div className="tk-nav-bar">
         {TABS.map(tab => (
           <button
@@ -423,285 +405,341 @@ const ThreeKingdomsPixiGame: React.FC = () => {
         ))}
       </div>
 
-      {/* ═══ 中央场景区 ═══ */}
+      {/* ═══════ 3. 中央场景区 (1280 × 696px) ═══════ */}
       <div className="tk-scene">
-        {/* 建筑场景 */}
+
+        {/* ─── 建筑 Tab ─── */}
         {activeTab === 'buildings' && (
           <div className="tk-building-scene">
-            {/* 筛选栏 */}
-            <div className="tk-building-filter">
-              <div className="tk-filter-categories">
-                {(['全部', '民生', '军事', '文教', '防御', '核心'] as BuildingCategory[]).map(cat => (
-                  <button
-                    key={cat}
-                    className={`tk-filter-btn ${category === cat ? 'tk-filter-active' : ''}`}
-                    onClick={() => setCategory(cat)}
-                  >
-                    {cat}
-                  </button>
-                ))}
+            {/* 左侧：筛选 + 建筑网格 */}
+            <div className="tk-building-main">
+              <div className="tk-building-title">城 池 建 设</div>
+
+              <div className="tk-building-filter">
+                <div className="tk-filter-categories">
+                  {(['全部', '民生', '军事', '文教', '防御', '核心'] as BuildingCategory[]).map(cat => (
+                    <button
+                      key={cat}
+                      className={`tk-filter-btn ${category === cat ? 'tk-filter-active' : ''}`}
+                      onClick={() => setCategory(cat)}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+                <label className="tk-filter-upgrade">
+                  <input
+                    type="checkbox"
+                    checked={showUpgradeable}
+                    onChange={e => setShowUpgradeable(e.target.checked)}
+                  />
+                  可升级
+                </label>
               </div>
-              <label className="tk-filter-upgrade">
-                <input
-                  type="checkbox"
-                  checked={showUpgradeable}
-                  onChange={e => setShowUpgradeable(e.target.checked)}
-                />
-                可升级
-              </label>
-            </div>
 
-            {/* 建筑网格 */}
-            <div className="tk-building-grid">
-              {filteredBuildings.map(def => {
-                const lv = levels[def.id] ?? 0;
-                const isUnlocked = unlocked[def.id] ?? false;
-                const rate = lv > 0 ? rates[def.productionResource] ?? 0 : 0;
-                const bldg = engineRef.current?.getBuildingSystem();
-                const cost = bldg?.getCost(def.id) ?? {};
-                const canAfford = Object.entries(cost).every(
-                  ([rid, amt]) => (resources[rid] ?? 0) >= amt,
-                );
+              <div className="tk-building-grid">
+                {filteredBuildings.map(def => {
+                  const lv = levels[def.id] ?? 0;
+                  const isUnlocked = unlocked[def.id] ?? false;
+                  const rate = lv > 0 ? rates[def.productionResource] ?? 0 : 0;
+                  const bldg = engineRef.current?.getBuildingSystem();
+                  const cost = bldg?.getCost(def.id) ?? {};
+                  const canAfford = Object.entries(cost).every(
+                    ([rid, amt]) => (resources[rid] ?? 0) >= amt,
+                  );
 
-                return (
-                  <div
-                    key={def.id}
-                    className={`tk-building-card ${!isUnlocked ? 'tk-building-locked' : ''}`}
-                    data-category={getCategory(def)}
-                    onClick={() => isUnlocked && setUpgradeModal(def.id)}
-                  >
-                    <div className="tk-building-icon" data-icon-cat={getCategory(def)}>{def.icon}</div>
-                    <div className="tk-building-info">
-                      <div className="tk-building-name">
-                        {def.name}
-                        {lv > 0 && <span className="tk-building-level">Lv.{lv}</span>}
-                      </div>
-                      {isUnlocked ? (
-                        <>
-                          {lv > 0 && def.productionResource && (
-                            <div className="tk-building-rate">
-                              +{fmtNum(rate)}/s {RESOURCE_ICONS[def.productionResource] ?? ''}
-                            </div>
-                          )}
-                          {lv === 0 && (
-                            <div className="tk-building-rate" style={{ color: '#A0A0A0' }}>
-                              未建造
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <>
+                  return (
+                    <div
+                      key={def.id}
+                      className={`tk-building-card ${!isUnlocked ? 'tk-building-locked' : ''}`}
+                      data-category={getCategory(def)}
+                      onClick={() => isUnlocked && setUpgradeModal(def.id)}
+                    >
+                      <div className="tk-building-icon" data-icon-cat={getCategory(def)}>{def.icon}</div>
+                      <div className="tk-building-info">
+                        <div className="tk-building-name">
+                          {def.name}
+                          {lv > 0 && <span className="tk-building-level">Lv.{lv}</span>}
+                        </div>
+                        {isUnlocked ? (
+                          <>
+                            {lv > 0 && def.productionResource && (
+                              <div className="tk-building-rate">
+                                +{fmtNum(rate)}/s {RESOURCE_ICONS[def.productionResource] ?? ''}
+                              </div>
+                            )}
+                            {lv === 0 && (
+                              <div className="tk-building-rate" style={{ color: '#A0A0A0' }}>
+                                未建造
+                              </div>
+                            )}
+                          </>
+                        ) : (
                           <div className="tk-building-lock-info">
                             🔒 {def.unlockCondition ?? '条件未满足'}
                           </div>
-                        </>
+                        )}
+                      </div>
+                      {isUnlocked && (
+                        <button
+                          className={`tk-building-upgrade-btn ${!canAfford ? 'tk-btn-disabled' : ''}`}
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (canAfford) setUpgradeModal(def.id);
+                            else {
+                              const res = engineRef.current?.getResources() ?? {};
+                              const cost2 = bldg?.getCost(def.id) ?? {};
+                              const shortage = Object.entries(cost2).find(([rid, amt]) => (res[rid] ?? 0) < amt);
+                              const nameMap: Record<string, string> = { grain: '粮草', gold: '铜钱', troops: '兵力', iron: '铁矿', wood: '木材' };
+                              const tipMap: Record<string, string> = { grain: '升级屯田', gold: '升级商行', troops: '升级军营', iron: '升级铁匠铺', wood: '升级城墙' };
+                              addToast(`${nameMap[shortage?.[0] ?? ''] ?? '资源'}不足，${tipMap[shortage?.[0] ?? ''] ?? '升级产出建筑'}`, 'error');
+                            }
+                          }}
+                        >
+                          升级{' '}
+                          {Object.entries(cost)
+                            .map(([rid, amt]) => `${RESOURCE_ICONS[rid] ?? rid}${fmtNum(amt)}`)
+                            .join(' ')}
+                        </button>
                       )}
                     </div>
-                    {isUnlocked && (
-                      <button
-                        className={`tk-building-upgrade-btn ${!canAfford ? 'tk-btn-disabled' : ''}`}
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (canAfford) setUpgradeModal(def.id);
-                          else {
-                            const res = engineRef.current?.getResources() ?? {};
-                            const cost = bldg?.getCost(def.id) ?? {};
-                            const shortage = Object.entries(cost).find(([rid, amt]) => (res[rid] ?? 0) < amt);
-                            const nameMap: Record<string, string> = { grain: '粮草', gold: '铜钱', troops: '兵力', iron: '铁矿', wood: '木材' };
-                            const tipMap: Record<string, string> = { grain: '升级屯田', gold: '升级商行', troops: '升级军营', iron: '升级铁匠铺', wood: '升级城墙' };
-                            addToast(`${nameMap[shortage?.[0] ?? ''] ?? '资源'}不足，${tipMap[shortage?.[0] ?? ''] ?? '升级产出建筑'}`, 'error');
-                          }
-                        }}
-                      >
-                        升级{' '}
-                        {Object.entries(cost)
-                          .map(([rid, amt]) => `${RESOURCE_ICONS[rid] ?? rid}${fmtNum(amt)}`)
-                          .join(' ')}
-                      </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 右侧：任务面板 — flex 并排，不浮在建筑上方 */}
+            <div className="tk-task-panel">
+              <div className="tk-task-title">📜 新手任务</div>
+              {tasks.map(task => {
+                const progressText = task.type === 'building'
+                  ? `${Math.min(levels[task.target] ?? 0, task.targetLevel)}/${task.targetLevel}`
+                  : task.done ? '1/1' : '0/1';
+                return (
+                  <div key={task.id} className={`tk-task-item ${task.done ? 'tk-task-item-done' : ''}`}>
+                    <div className="tk-task-name">
+                      {task.done ? '✅' : '⬜'} {task.title} ({progressText})
+                    </div>
+                    {!task.done && task.progress > 0 && (
+                      <div className="tk-task-progress-text">{Math.round(task.progress * 100)}%</div>
                     )}
+                    <div className="tk-task-progress-bar">
+                      <div
+                        className="tk-task-progress-fill"
+                        style={{ width: `${Math.max(task.progress * 100, task.progress > 0 ? 2 : 0)}%` }}
+                      />
+                    </div>
+                    <div className="tk-task-reward">
+                      🎁 {task.reward}
+                      {task.done && <span className="tk-task-completed"> 已领取</span>}
+                    </div>
                   </div>
                 );
               })}
+              <div className="tk-task-count">
+                {completedTasks}/{tasks.length}
+              </div>
             </div>
           </div>
         )}
 
-        {/* 其他 Tab 占位 */}
-        {activeTab !== 'buildings' && (
-          <div className="tk-placeholder">
-            <div className="tk-placeholder-icon">
-              {activeTab === 'world' && '🗺️'}
-              {activeTab === 'campaign' && '⚔️'}
-              {activeTab === 'generals' && '🗡️'}
-              {activeTab === 'tech' && '📜'}
-              {activeTab === 'prestige' && '👑'}
-              {activeTab === 'more' && '⚙️'}
+        {/* ─── 天下 Tab — 世界地图占位，绝对不显示武将信息 ─── */}
+        {activeTab === 'world' && (
+          <div className="tk-world-scene">
+            <div className="tk-world-map-frame">
+              <div className="tk-placeholder-icon">🗺️</div>
+              <div className="tk-placeholder-text">天下大势系统</div>
+              <div className="tk-placeholder-sub">开发中，敬请期待</div>
             </div>
-            <div className="tk-placeholder-text">
-              {TABS.find(t => t.key === activeTab)?.label ?? ''}系统
-            </div>
-            <div className="tk-placeholder-sub">即将开放，敬请期待</div>
           </div>
         )}
 
-        {/* ═══ 任务面板（右上角悬浮） ═══ */}
-        <div className="tk-task-panel">
-          <div className="tk-task-title">新手任务</div>
-          {tasks.map(task => {
-            const progressText = task.type === 'building'
-              ? `${Math.min(levels[task.target] ?? 0, task.targetLevel)}/${task.targetLevel}`
-              : task.done ? '1/1' : '0/1';
-            return (
-            <div key={task.id} className={`tk-task-item ${task.done ? 'tk-task-item-done' : ''}`}>
-              <div className="tk-task-name">
-                {task.done ? '✅' : '⬜'} {task.title} ({progressText})
-              </div>
-              {!task.done && task.progress > 0 && (
-                <div className="tk-task-progress-text">{Math.round(task.progress * 100)}%</div>
-              )}
-              <div className="tk-task-progress-bar">
-                <div
-                  className="tk-task-progress-fill"
-                  style={{ width: `${Math.max(task.progress * 100, task.progress > 0 ? 2 : 0)}%` }}
-                />
-              </div>
-              <div className="tk-task-reward">
-                🎁 {task.reward}
-                {task.done && <span className="tk-task-completed"> 已领取</span>}
-              </div>
-            </div>
-          );
-          })}
-          <div className="tk-task-count">
-            {completedTasks}/{tasks.length}
-          </div>
-        </div>
-
-        {/* ═══ 升级确认弹窗 ═══ */}
-        {upgradeModal && (() => {
-          const engine = engineRef.current;
-          if (!engine) return null;
-          const bldg = engine.getBuildingSystem();
-          const def = bldg.getDef(upgradeModal);
-          if (!def) return null;
-
-          const lv = bldg.getLevel(upgradeModal);
-          const cost = bldg.getCost(upgradeModal);
-          const res = engine.getResources();
-          const canAfford = Object.entries(cost).every(
-            ([rid, amt]) => (res[rid] ?? 0) >= amt,
-          );
-          const currentRate = lv > 0 ? rates[def.productionResource] ?? 0 : 0;
-          const nextRate = (lv + 1) * def.baseProduction;
-          const pctIncrease = currentRate > 0 ? Math.round(((nextRate - currentRate) / currentRate) * 100) : 0;
-
-          return (
-            <div className="tk-modal-overlay" onClick={() => setUpgradeModal(null)}>
-              <div className="tk-modal" onClick={e => e.stopPropagation()}>
-                <button className="tk-modal-close" onClick={() => setUpgradeModal(null)}>
-                  ✕
+        {/* ─── 武将 Tab — 武将名册只在这里显示 ─── */}
+        {activeTab === 'generals' && (
+          <div className="tk-generals-scene">
+            <div className="tk-generals-title">武 将 名 册</div>
+            <div className="tk-generals-filter">
+              {(['全部', '蜀', '魏', '吴'] as GeneralFaction[]).map(faction => (
+                <button
+                  key={faction}
+                  className="tk-filter-btn tk-filter-active"
+                  style={faction !== '全部' ? { opacity: 0.6 } : {}}
+                >
+                  {faction}
                 </button>
-                <h3 className="tk-modal-title">升级 {def.name}</h3>
-                <div className="tk-modal-body">
-                  <div className="tk-modal-level">
-                    <span>Lv.{lv}</span>
-                    <span className="tk-modal-arrow">→</span>
-                    <span className="tk-modal-next">Lv.{lv + 1}</span>
-                  </div>
-                  <div className="tk-modal-rate">
-                    产出：{fmtNum(currentRate)}/s → <strong style={{ color: '#7EC850' }}>{fmtNum(nextRate)}/s</strong>
-                    {currentRate > 0 ? (
-                      <span className="tk-rate-pct">(+{pctIncrease}%)</span>
-                    ) : (
-                      <span className="tk-rate-pct">新增 (+100%)</span>
-                    )}
-                  </div>
-                  <div className="tk-modal-cost">
-                    <div className="tk-modal-cost-title">资源消耗</div>
-                    {Object.entries(cost).map(([rid, amt]) => {
-                      const have = res[rid] ?? 0;
-                      const enough = have >= amt;
-                      return (
-                        <div key={rid} className={`tk-modal-cost-item ${enough ? 'tk-modal-cost-item-enough' : 'tk-modal-cost-item-lacking'}`}>
-                          {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}{' '}
-                          <span style={{ color: enough ? '#7EC850' : '#B8423A' }}>
-                            {enough ? '✓' : '✗'} {fmtNum(have)}/{fmtNum(amt)}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="tk-modal-actions">
-                    <button className="tk-btn-cancel" onClick={() => setUpgradeModal(null)}>
-                      取消
-                    </button>
-                    <button
-                      className="tk-btn-confirm"
-                      disabled={!canAfford}
-                      onClick={() => handleUpgrade(upgradeModal)}
-                    >
-                      确认升级
-                    </button>
-                  </div>
+              ))}
+            </div>
+            <div className="tk-generals-grid">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="tk-general-slot">
+                  武将系统开发中
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ─── 出征 Tab ─── */}
+        {activeTab === 'campaign' && (
+          <div className="tk-placeholder">
+            <div className="tk-placeholder-icon">⚔️</div>
+            <div className="tk-placeholder-text">出征系统</div>
+            <div className="tk-placeholder-sub">开发中，敬请期待</div>
+          </div>
+        )}
+
+        {/* ─── 科技 Tab ─── */}
+        {activeTab === 'tech' && (
+          <div className="tk-placeholder">
+            <div className="tk-placeholder-icon">📜</div>
+            <div className="tk-placeholder-text">科技系统</div>
+            <div className="tk-placeholder-sub">开发中，敬请期待</div>
+          </div>
+        )}
+
+        {/* ─── 声望 Tab ─── */}
+        {activeTab === 'prestige' && (
+          <div className="tk-placeholder">
+            <div className="tk-placeholder-icon">👑</div>
+            <div className="tk-placeholder-text">声望系统</div>
+            <div className="tk-placeholder-sub">开发中，敬请期待</div>
+          </div>
+        )}
+
+        {/* ─── 更多 Tab ─── */}
+        {activeTab === 'more' && (
+          <div className="tk-placeholder">
+            <div className="tk-placeholder-icon">⚙️</div>
+            <div className="tk-placeholder-text">更多功能</div>
+            <div className="tk-placeholder-sub">开发中，敬请期待</div>
+          </div>
+        )}
+      </div>
+
+      {/* ═══════ 4. 升级确认弹窗（条件渲染） ═══════ */}
+      {upgradeModal && (() => {
+        const engine = engineRef.current;
+        if (!engine) return null;
+        const bldg = engine.getBuildingSystem();
+        const def = bldg.getDef(upgradeModal);
+        if (!def) return null;
+
+        const lv = bldg.getLevel(upgradeModal);
+        const cost = bldg.getCost(upgradeModal);
+        const res = engine.getResources();
+        const canAfford = Object.entries(cost).every(
+          ([rid, amt]) => (res[rid] ?? 0) >= amt,
+        );
+        const currentRate = lv > 0 ? rates[def.productionResource] ?? 0 : 0;
+        const nextRate = (lv + 1) * def.baseProduction;
+        const pctIncrease = currentRate > 0 ? Math.round(((nextRate - currentRate) / currentRate) * 100) : 0;
+
+        return (
+          <div className="tk-modal-overlay" onClick={() => setUpgradeModal(null)}>
+            <div className="tk-modal" onClick={e => e.stopPropagation()}>
+              <button className="tk-modal-close" onClick={() => setUpgradeModal(null)}>
+                ✕
+              </button>
+              <h3 className="tk-modal-title">升级 {def.name}</h3>
+              <div className="tk-modal-body">
+                <div className="tk-modal-level">
+                  <span>Lv.{lv}</span>
+                  <span className="tk-modal-arrow">→</span>
+                  <span className="tk-modal-next">Lv.{lv + 1}</span>
+                </div>
+                <div className="tk-modal-rate">
+                  产出：{fmtNum(currentRate)}/s → <strong style={{ color: '#7EC850' }}>{fmtNum(nextRate)}/s</strong>
+                  {currentRate > 0 ? (
+                    <span className="tk-rate-pct">(+{pctIncrease}%)</span>
+                  ) : (
+                    <span className="tk-rate-pct">新增 (+100%)</span>
+                  )}
+                </div>
+                <div className="tk-modal-cost">
+                  <div className="tk-modal-cost-title">资源消耗</div>
+                  {Object.entries(cost).map(([rid, amt]) => {
+                    const have = res[rid] ?? 0;
+                    const enough = have >= amt;
+                    return (
+                      <div key={rid} className={`tk-modal-cost-item ${enough ? 'tk-modal-cost-item-enough' : 'tk-modal-cost-item-lacking'}`}>
+                        {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}{' '}
+                        <span style={{ color: enough ? '#7EC850' : '#B8423A' }}>
+                          {enough ? '✓' : '✗'} {fmtNum(have)}/{fmtNum(amt)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="tk-modal-actions">
+                  <button className="tk-btn-cancel" onClick={() => setUpgradeModal(null)}>
+                    取消
+                  </button>
+                  <button
+                    className="tk-btn-confirm"
+                    disabled={!canAfford}
+                    onClick={() => handleUpgrade(upgradeModal)}
+                  >
+                    确认升级
+                  </button>
                 </div>
               </div>
             </div>
-          );
-        })()}
+          </div>
+        );
+      })()}
 
-        {/* ═══ 新手引导 ═══ */}
-        {showGuide && guideStep < GUIDE_STEPS.length && (
-          <div className="tk-guide-overlay" data-step={guideStep}>
-            <div className="tk-guide-panel">
-              <button
-                className="tk-guide-skip"
-                onClick={() => {
+      {/* ═══════ 5. 新手引导（条件渲染） ═══════ */}
+      {showGuide && guideStep < GUIDE_STEPS.length && (
+        <div className="tk-guide-overlay" data-step={guideStep}>
+          <div className="tk-guide-panel">
+            <button
+              className="tk-guide-skip"
+              onClick={() => {
+                setShowGuide(false);
+                localStorage.setItem('tk_guide_done', 'true');
+              }}
+            >
+              跳过
+            </button>
+            <div style={{ fontSize: '36px', marginBottom: '12px' }}>
+              {guideStep === 0 && '🏗️'}
+              {guideStep === 1 && '📊'}
+              {guideStep === 2 && '🗺️'}
+            </div>
+            <h3 className="tk-guide-title">{GUIDE_STEPS[guideStep].title}</h3>
+            <p className="tk-guide-desc">{GUIDE_STEPS[guideStep].desc}</p>
+            <div className="tk-guide-dots">
+              {GUIDE_STEPS.map((_, i) => (
+                <div
+                  key={i}
+                  className={`tk-guide-dot ${i === guideStep ? 'tk-guide-dot-active' : ''}`}
+                />
+              ))}
+            </div>
+            <button
+              className="tk-guide-next"
+              onClick={() => {
+                if (guideStep < GUIDE_STEPS.length - 1) {
+                  setGuideStep(guideStep + 1);
+                } else {
                   setShowGuide(false);
                   localStorage.setItem('tk_guide_done', 'true');
-                }}
-              >
-                跳过
-              </button>
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>
-                {guideStep === 0 && '🏗️'}
-                {guideStep === 1 && '📊'}
-                {guideStep === 2 && '🗺️'}
-              </div>
-              <h3 className="tk-guide-title">{GUIDE_STEPS[guideStep].title}</h3>
-              <p className="tk-guide-desc">{GUIDE_STEPS[guideStep].desc}</p>
-              <div className="tk-guide-dots">
-                {GUIDE_STEPS.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`tk-guide-dot ${i === guideStep ? 'tk-guide-dot-active' : ''}`}
-                  />
-                ))}
-              </div>
-              <button
-                className="tk-guide-next"
-                onClick={() => {
-                  if (guideStep < GUIDE_STEPS.length - 1) {
-                    setGuideStep(guideStep + 1);
-                  } else {
-                    setShowGuide(false);
-                    localStorage.setItem('tk_guide_done', 'true');
-                  }
-                }}
-              >
-                {guideStep < GUIDE_STEPS.length - 1 ? '下一步' : '开始游戏'}
-              </button>
-            </div>
+                }
+              }}
+            >
+              {guideStep < GUIDE_STEPS.length - 1 ? '下一步' : '开始游戏'}
+            </button>
           </div>
-        )}
-
-        {/* ═══ Toast 通知 ═══ */}
-        <div className="tk-toast-container">
-          {toasts.map(toast => (
-            <div key={toast.id} className={`tk-toast ${toast.type === 'error' ? 'tk-toast-error' : ''}`}>
-              {toast.msg}
-            </div>
-          ))}
         </div>
+      )}
+
+      {/* ═══════ 6. Toast 通知 ═══════ */}
+      <div className="tk-toast-container">
+        {toasts.map(toast => (
+          <div key={toast.id} className={`tk-toast ${toast.type === 'error' ? 'tk-toast-error' : ''}`}>
+            {toast.msg}
+          </div>
+        ))}
       </div>
     </div>
   );
