@@ -1721,6 +1721,17 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     return this.res[type] || 0;
   }
 
+  /**
+   * 增加指定资源（用于任务奖励等外部发放场景）
+   * @param id - 资源 ID
+   * @param amt - 增加数量（必须 > 0）
+   */
+  public addResource(id: string, amt: number): void {
+    if (amt <= 0) return;
+    this.giveRes(id, amt);
+    this.emit('stateChange');
+  }
+
   // ─── 通用引擎系统集成 ─────────────────────────────────────
 
   /** 获取任务系统实例 */

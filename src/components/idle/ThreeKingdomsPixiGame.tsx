@@ -84,9 +84,9 @@ const SCENE_TABS: { scene: SceneType; label: string; icon: string; subScene?: st
 // ═══════════════════════════════════════════════════════════════
 
 const GUIDE_STEPS = [
-  { title: '欢迎来到三国霸业！', text: '建造农田开始你的征程。点击左侧"农田"建筑卡片来建造。', target: 'building' as const },
-  { title: '招募武将', text: '有了资源后，在右侧面板招募武将为你效力！', target: 'hero' as const },
-  { title: '发起战斗', text: '准备好后，点击底部"关卡"按钮，开始征战！', target: 'combat' as const },
+  { title: '欢迎来到三国霸业！', text: '点击左侧建筑卡片进行升级，提升资源产出。先从"屯田"开始吧！', target: 'building' as const },
+  { title: '资源自动增长', text: '资源会自动增长，升级建筑可大幅提高产出速率。合理分配资源是关键！', target: 'resource' as const },
+  { title: '武将与科技', text: '后续可招募武将、研究科技，增强实力。点击下方"武将"和"科技"标签探索更多玩法！', target: 'hero' as const },
 ];
 
 /** Toast 提示数据 */
@@ -3041,7 +3041,13 @@ export default function ThreeKingdomsPixiGame() {
 
   // ─── 新手引导 + Toast ────────────────────────────────────
 
-  const [showGuide, setShowGuide] = useState(true);
+  const [showGuide, setShowGuide] = useState(() => {
+    try {
+      return localStorage.getItem('tk_guide_done') !== 'true';
+    } catch {
+      return true;
+    }
+  });
   const [guideStep, setGuideStep] = useState(0);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [activeMapSubTab, setActiveMapSubTab] = useState<'building' | 'cities' | 'resources'>('building');
@@ -3353,11 +3359,12 @@ export default function ThreeKingdomsPixiGame() {
       console.warn('[ThreeKingdomsPixiGame] MapGenerator not available:', err);
     }
 
-    // ── 初始化任务列表 ─────────────────────────────────────
+    // ── 初始化任务列表（按顺序完成） ──────────────────────
     setQuests([
-      { id: 'q1', title: '建造第一座农田', description: '建造一座农田开始资源生产', progress: 0, maxProgress: 1, isComplete: false, reward: { gold: 50 } },
-      { id: 'q2', title: '招募第一位武将', description: '招募一位武将加入麾下', progress: 0, maxProgress: 1, isComplete: false, reward: { gold: 100 } },
-      { id: 'q3', title: '征服第一块领土', description: '征服一块敌方领土', progress: 0, maxProgress: 1, isComplete: false, reward: { food: 200, gold: 200 } },
+      { id: 'q_farm3', title: '升级屯田到Lv.3', description: '将屯田建筑升级到3级', progress: 0, maxProgress: 3, isComplete: false, reward: { grain: 50 } },
+      { id: 'q_market', title: '建造商行', description: '建造一座商行开始产出铜钱', progress: 0, maxProgress: 1, isComplete: false, reward: { gold: 100 } },
+      { id: 'q_barracks2', title: '升级军营到Lv.2', description: '将军营升级到2级', progress: 0, maxProgress: 2, isComplete: false, reward: { troops: 30 } },
+      { id: 'q_total10', title: '总建筑等级达到Lv.10', description: '所有建筑等级之和达到10', progress: 0, maxProgress: 10, isComplete: false, reward: { grain: 50, gold: 50, wood: 50, iron: 50 } },
     ]);
 
     // ── 在启动游戏循环之前加载存档 ───────────────────────
@@ -3521,6 +3528,93 @@ export default function ThreeKingdomsPixiGame() {
   // 1. 引擎已启动游戏循环后，延迟加载旧存档覆盖当前状态
   // 2. 与 IdleGameEngine.onStart() 的 loadFromStorage() 双重加载冲突
   // 现已统一在引擎初始化 useEffect 中、engine.start() 之前加载存档。
+
+  // ─── 任务进度自动检测 ────────────────────────────────────
+
+  /** 已发放奖励的任务 ID 集合，防止重复发放 */
+  const questRewardGivenRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    const checkQuests = () => {
+      const farmLv = engine.getBuildingLevel('farm');
+      const marketLv = engine.getBuildingLevel('market');
+      const barracksLv = engine.getBuildingLevel('barracks');
+
+      // 计算总建筑等级
+      const allBuildingIds = BUILDINGS.map(b => b.id);
+      let totalBuildingLevel = 0;
+      for (const bid of allBuildingIds) {
+        totalBuildingLevel += engine.getBuildingLevel(bid);
+      }
+
+      setQuests(prev => {
+        // 找到第一个未完成的任务索引
+        const firstIncompleteIdx = prev.findIndex(q => !q.isComplete);
+        if (firstIncompleteIdx < 0) return prev; // 全部完成
+
+        return prev.map((q, idx) => {
+          // 只更新当前（第一个未完成）及之前的任务
+          if (idx > firstIncompleteIdx) return q;
+          if (q.isComplete) return q;
+
+          let newProgress = q.progress;
+
+          switch (q.id) {
+            case 'q_farm3':
+              newProgress = Math.min(farmLv, q.maxProgress);
+              break;
+            case 'q_market':
+              newProgress = Math.min(marketLv >= 1 ? 1 : 0, q.maxProgress);
+              break;
+            case 'q_barracks2':
+              newProgress = Math.min(barracksLv, q.maxProgress);
+              break;
+            case 'q_total10':
+              newProgress = Math.min(totalBuildingLevel, q.maxProgress);
+              break;
+          }
+
+          const isComplete = newProgress >= q.maxProgress;
+          const wasComplete = q.isComplete;
+
+          // 任务刚完成时发放奖励
+          if (isComplete && !wasComplete && !questRewardGivenRef.current.has(q.id)) {
+            questRewardGivenRef.current.add(q.id);
+            // 通过引擎接口发放奖励资源
+            const rewardEntries = Object.entries(q.reward);
+            if (rewardEntries.length > 0) {
+              try {
+                const resMap = engine.getResourcesMap();
+                for (const [rId, amt] of rewardEntries) {
+                  // 使用引擎公共方法增加资源
+                  if (rId in resMap) {
+                    engine.addResource(rId, amt);
+                  }
+                }
+              } catch { /* ignore */ }
+            }
+            // 显示完成提示
+            const rewardText = Object.entries(q.reward).map(([k, v]) => `${k === 'grain' ? '粮草' : k === 'gold' ? '铜钱' : k === 'troops' ? '兵力' : k === 'wood' ? '木材' : k === 'iron' ? '铁矿' : k}+${v}`).join(' ');
+            addToast(`✅ 任务完成：${q.title}！奖励：${rewardText}`, 'success');
+          }
+
+          if (newProgress === q.progress && !isComplete) return q;
+
+          return { ...q, progress: newProgress, isComplete };
+        });
+      });
+    };
+
+    // 初始检查一次
+    checkQuests();
+
+    // 每 2 秒检查一次任务进度
+    const interval = setInterval(checkQuests, 2000);
+    return () => clearInterval(interval);
+  }, [addToast]);
 
   // ─── 战斗自动切换（事件驱动） ────────────────────────────
 
@@ -4619,6 +4713,51 @@ export default function ThreeKingdomsPixiGame() {
 
         {/* ─── 中央：PixiJS 渲染区域 ─── */}
         <div style={{ flex: 1, position: 'relative' }}>
+          {/* ═══════════ 当前任务面板（顶部悬浮） ═══════════ */}
+          {quests.length > 0 && (() => {
+            const currentQuests = quests.filter(q => !q.isComplete);
+            const completedCount = quests.filter(q => q.isComplete).length;
+            const currentQuest = currentQuests[0]; // 按顺序完成，只显示第一个未完成
+            return (
+              <div className="tk-task-panel">
+                <div className="tk-task-panel-header">
+                  <span className="tk-task-panel-title">📜 当前任务</span>
+                  <span className="tk-task-panel-progress">{completedCount}/{quests.length} 已完成</span>
+                </div>
+                <div className="tk-task-panel-bar-bg">
+                  <div
+                    className="tk-task-panel-bar-fill"
+                    style={{ width: `${(completedCount / quests.length) * 100}%` }}
+                  />
+                </div>
+                {currentQuest ? (
+                  <div className="tk-task-panel-item">
+                    <div className="tk-task-panel-item-top">
+                      <span className="tk-task-panel-item-title">{currentQuest.title}</span>
+                      <span className="tk-task-panel-item-progress">
+                        {currentQuest.progress}/{currentQuest.maxProgress}
+                      </span>
+                    </div>
+                    <div className="tk-task-panel-item-bar-bg">
+                      <div
+                        className="tk-task-panel-item-bar-fill"
+                        style={{ width: `${(currentQuest.progress / currentQuest.maxProgress) * 100}%` }}
+                      />
+                    </div>
+                    <div className="tk-task-panel-item-reward">
+                      奖励：{Object.entries(currentQuest.reward).map(([k, v]) =>
+                        `${k === 'grain' ? '🌾粮草' : k === 'gold' ? '💰铜钱' : k === 'troops' ? '⚔️兵力' : k === 'wood' ? '🪵木材' : k === 'iron' ? '⛏️铁矿' : k}+${v}`
+                      ).join(' ')}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="tk-task-panel-complete">
+                    🎉 所有任务已完成！
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <PixiGameCanvas
             renderState={renderState}
             config={{
@@ -6193,15 +6332,20 @@ export default function ThreeKingdomsPixiGame() {
         ))}
       </div>
 
-      {/* ═══════════ 新手引导侧边面板 ═══════════ */}
+      {/* ═══════════ 新手引导遮罩面板 ═══════════ */}
       {showGuide && (() => {
         const step = GUIDE_STEPS[guideStep];
         const isLast = guideStep >= GUIDE_STEPS.length - 1;
         const starterName = engineRef.current?.getStarterGeneralName();
+        /** 关闭引导并持久化标记 */
+        const closeGuide = () => {
+          setShowGuide(false);
+          try { localStorage.setItem('tk_guide_done', 'true'); } catch { /* ignore */ }
+        };
         return (
-          <div className="tk-guide-overlay" onClick={() => setShowGuide(false)}>
+          <div className="tk-guide-overlay" onClick={closeGuide}>
             <div className="tk-guide-panel" onClick={e => e.stopPropagation()}>
-              <button className="tk-guide-panel-close" onClick={() => setShowGuide(false)}>✕</button>
+              <button className="tk-guide-panel-close" onClick={closeGuide}>✕ 跳过</button>
               <h2>◆ {step.title}</h2>
               <p>{step.text}</p>
               {guideStep === 0 && starterName && (
@@ -6210,7 +6354,7 @@ export default function ThreeKingdomsPixiGame() {
               <div className="tk-guide-actions">
                 <button
                   className="tk-guide-skip-btn"
-                  onClick={() => setShowGuide(false)}
+                  onClick={closeGuide}
                 >
                   跳过引导
                 </button>
@@ -6218,7 +6362,7 @@ export default function ThreeKingdomsPixiGame() {
                   className="tk-guide-next-btn"
                   onClick={() => {
                     if (isLast) {
-                      setShowGuide(false);
+                      closeGuide();
                     } else {
                       setGuideStep(guideStep + 1);
                     }
@@ -6233,9 +6377,6 @@ export default function ThreeKingdomsPixiGame() {
                   <div key={i} className={`tk-guide-dot ${i === guideStep ? 'tk-guide-dot--active' : ''}`} />
                 ))}
               </div>
-              <p style={{ fontSize: 11, color: '#8a7a6a', marginTop: 12, textAlign: 'center' }}>
-                点击外部区域或「✕」关闭引导
-              </p>
             </div>
           </div>
         );

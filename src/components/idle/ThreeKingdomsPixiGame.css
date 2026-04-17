@@ -10743,3 +10743,125 @@ button:active {
   }
 }
 .tk-r17-campaign-path { position: relative; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+
+/* ═══════════════════════════════════════════════════════════════
+ * 当前任务面板 — 顶部悬浮
+ * ═══════════════════════════════════════════════════════════════ */
+
+.tk-task-panel {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  min-width: 260px;
+  max-width: 360px;
+  background: linear-gradient(180deg, rgba(42, 31, 20, 0.92) 0%, rgba(26, 15, 10, 0.88) 100%);
+  border: 1.5px solid rgba(139, 115, 85, 0.6);
+  border-radius: 8px;
+  padding: 8px 12px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+}
+
+.tk-task-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.tk-task-panel-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #FFD700;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.tk-task-panel-progress {
+  font-size: 10px;
+  color: #8a7a6a;
+}
+
+.tk-task-panel-bar-bg {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.tk-task-panel-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFD700, #ff8c00);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.tk-task-panel-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tk-task-panel-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tk-task-panel-item-title {
+  font-size: 12px;
+  color: #e8d5b5;
+  font-weight: bold;
+}
+
+.tk-task-panel-item-progress {
+  font-size: 10px;
+  color: #d4a030;
+  font-weight: bold;
+}
+
+.tk-task-panel-item-bar-bg {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tk-task-panel-item-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6b8e5a, #8bc34a);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.tk-task-panel-item-reward {
+  font-size: 9px;
+  color: #8a7a6a;
+  margin-top: 1px;
+}
+
+.tk-task-panel-complete {
+  font-size: 12px;
+  color: #6b8e5a;
+  text-align: center;
+  padding: 4px 0;
+  font-weight: bold;
+}
+
+/* 任务完成动画 — 绿色勾号闪烁 */
+@keyframes tk-task-complete-flash {
+  0% { background: rgba(107, 142, 90, 0); }
+  30% { background: rgba(107, 142, 90, 0.2); }
+  100% { background: rgba(107, 142, 90, 0); }
+}
+
+.tk-task-panel--complete-flash {
+  animation: tk-task-complete-flash 1s ease-out;
+}

@@ -227,6 +227,10 @@ export class GameRenderer {
       console.error('[GameRenderer] Failed to activate default scene: map scene not found or sceneRoot missing');
     }
 
+    // 初始化 FPS 统计基准时间（避免首次 tick 时 lastFpsTime=0 导致 FPS 计算为 0）
+    this.lastFpsTime = performance.now();
+    this.frameCount = 0;
+
     // 注册主循环
     this.app.ticker.add(this.onTick);
 
