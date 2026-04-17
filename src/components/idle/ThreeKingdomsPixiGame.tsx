@@ -29,7 +29,7 @@ const RESOURCE_UI: Record<string, { name: string; icon: string; color: string; h
   grain:   { name: '粮草', icon: '🌾', color: '#7EC850', hasCap: true,  capId: 'grain_cap' },
   gold:    { name: '铜钱', icon: '💰', color: '#C9A84C', hasCap: false },
   troops:  { name: '兵力', icon: '⚔️', color: '#B8423A', hasCap: true,  capId: 'troops_cap' },
-  destiny: { name: '天命', icon: '👑', color: '#7B5EA7', hasCap: false },
+  destiny: { name: '天命', icon: '🏆', color: '#9B6FD0', hasCap: false },
 };
 
 /** 顶部栏显示的资源顺序 */
@@ -105,11 +105,11 @@ function fmtNum(n: number): string {
   return n < 10 ? n.toFixed(1) : Math.floor(n).toString();
 }
 
-/** 进度条颜色 */
+/** 进度条颜色 — 增强亮度确保对比度 */
 function barColor(ratio: number): string {
-  if (ratio > 0.95) return '#B8423A'; // 赤焰红
-  if (ratio > 0.80) return '#D4A017'; // 琥珀橙
-  return '#7EC850';                   // 翠绿
+  if (ratio > 0.95) return '#E05545'; // 赤焰红（更亮）
+  if (ratio > 0.80) return '#E8B830'; // 琥珀金（更亮）
+  return '#8ED860';                   // 翠绿（更亮）
 }
 
 /** 获取建筑分类 */
@@ -296,7 +296,14 @@ const ThreeKingdomsPixiGame: React.FC = () => {
         addToast(`${def.name} ${currentLevel < 1 ? '建造' : '升级'}成功！`, 'success');
         setUpgradeModal(null);
       } else {
-        addToast('资源不足，无法升级！', 'error');
+        const bldgSys = engine.getBuildingSystem();
+        const cost = bldgSys.getCost(buildingId);
+        const res = engine.getResources();
+        const shortage = Object.entries(cost).find(([rid, amt]) => (res[rid] ?? 0) < amt);
+        const tipMap: Record<string, string> = { grain: '升级屯田增加粮草产出', gold: '升级商行增加铜钱产出', troops: '升级军营增加兵力', iron: '升级铁匠铺增加铁矿产出', wood: '升级城墙增加木材产出' };
+        const tip = tipMap[shortage?.[0] ?? ''] ?? '升级对应产出建筑';
+        const nameMap: Record<string, string> = { grain: '粮草', gold: '铜钱', troops: '兵力', iron: '铁矿', wood: '木材' };
+        addToast(`${nameMap[shortage?.[0] ?? ''] ?? '资源'}不足，${tip}`, 'error');
       }
     },
     [addToast],
@@ -493,7 +500,14 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                         onClick={e => {
                           e.stopPropagation();
                           if (canAfford) setUpgradeModal(def.id);
-                          else addToast('资源不足！', 'error');
+                          else {
+                            const res = engineRef.current?.getResources() ?? {};
+                            const cost = bldg?.getCost(def.id) ?? {};
+                            const shortage = Object.entries(cost).find(([rid, amt]) => (res[rid] ?? 0) < amt);
+                            const nameMap: Record<string, string> = { grain: '粮草', gold: '铜钱', troops: '兵力', iron: '铁矿', wood: '木材' };
+                            const tipMap: Record<string, string> = { grain: '升级屯田', gold: '升级商行', troops: '升级军营', iron: '升级铁匠铺', wood: '升级城墙' };
+                            addToast(`${nameMap[shortage?.[0] ?? ''] ?? '资源'}不足，${tipMap[shortage?.[0] ?? ''] ?? '升级产出建筑'}`, 'error');
+                          }
                         }}
                       >
                         升级{' '}
@@ -529,12 +543,15 @@ const ThreeKingdomsPixiGame: React.FC = () => {
 
         {/* ═══ 任务面板（右上角悬浮） ═══ */}
         <div className="tk-task-panel">
-          <div className="tk-task-title">📋 新手任务</div>
+          <div className="tk-task-title">新手任务</div>
           {tasks.map(task => (
             <div key={task.id} className={`tk-task-item ${task.done ? 'tk-task-item-done' : ''}`}>
               <div className="tk-task-name">
                 {task.done ? '✅' : '⬜'} {task.title}
               </div>
+              {!task.done && task.progress > 0 && (
+                <div className="tk-task-progress-text">{Math.round(task.progress * 100)}%</div>
+              )}
               <div className="tk-task-progress-bar">
                 <div
                   className="tk-task-progress-fill"
@@ -542,7 +559,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                 />
               </div>
               <div className="tk-task-reward">
-                奖励：{task.reward}
+                🎁 {task.reward}
                 {task.done && <span className="tk-task-completed"> 已领取</span>}
               </div>
             </div>
@@ -568,6 +585,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
           );
           const currentRate = lv > 0 ? rates[def.productionResource] ?? 0 : 0;
           const nextRate = (lv + 1) * def.baseProduction;
+          const pctIncrease = currentRate > 0 ? Math.round(((nextRate - currentRate) / currentRate) * 100) : 0;
 
           return (
             <div className="tk-modal-overlay" onClick={() => setUpgradeModal(null)}>
@@ -583,7 +601,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                     <span className="tk-modal-next">Lv.{lv + 1}</span>
                   </div>
                   <div className="tk-modal-rate">
-                    产出：{fmtNum(currentRate)}/s → {fmtNum(nextRate)}/s
+                    产出：{fmtNum(currentRate)}/s → {fmtNum(nextRate)}/s {currentRate > 0 ? <span style={{ color: '#7EC850' }}>(+{pctIncrease}%)</span> : <span style={{ color: '#7EC850' }}>(新增)</span>}
                   </div>
                   <div className="tk-modal-cost">
                     <div className="tk-modal-cost-title">资源消耗</div>
@@ -591,7 +609,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                       const have = res[rid] ?? 0;
                       const enough = have >= amt;
                       return (
-                        <div key={rid} className="tk-modal-cost-item">
+                        <div key={rid} className={`tk-modal-cost-item ${enough ? 'tk-modal-cost-item-enough' : 'tk-modal-cost-item-lacking'}`}>
                           {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}{' '}
                           <span style={{ color: enough ? '#7EC850' : '#B8423A' }}>
                             ({fmtNum(have)} {enough ? '✓' : '✗'})
