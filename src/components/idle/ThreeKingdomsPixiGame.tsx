@@ -41,6 +41,18 @@ for (const r of RESOURCES) {
   RESOURCE_ICONS[r.id] = r.icon;
 }
 
+/** 8个核心建筑ID（设计稿要求 4×2 网格） */
+const CORE_BUILDING_IDS = [
+  'farm',         // 屯田
+  'market',       // 商行
+  'barracks',     // 军营
+  'smithy',       // 铁匠铺
+  'academy',      // 太学
+  'wall',         // 城墙（城防）
+  'beacon_tower', // 烽火台
+  'granary',      // 官府（粮仓）
+];
+
 /** 建筑分类筛选 */
 type BuildingCategory = '全部' | '民生' | '军事' | '文教' | '防御' | '核心';
 
@@ -70,12 +82,12 @@ const GUIDE_STEPS = [
   { title: '查看资源', desc: '顶部资源栏实时显示粮草、铜钱、兵力、天命四种资源。进度条会根据存储量变色预警。' },
 ];
 
-/** 新手任务定义 */
+/** 新手任务定义（设计稿要求的4个任务） */
 const INITIAL_TASKS = [
-  { id: 1, title: '升级屯田到 Lv.3',  type: 'building' as const, target: 'farm',    targetLevel: 3,  reward: '粮草+50' },
-  { id: 2, title: '建造商行',          type: 'building' as const, target: 'market',   targetLevel: 1,  reward: '铜钱+100' },
-  { id: 3, title: '升级军营到 Lv.2',   type: 'building' as const, target: 'barracks', targetLevel: 2,  reward: '兵力+30' },
-  { id: 4, title: '总建筑等级达到 10',  type: 'total' as const,    target: 'total',    targetLevel: 10, reward: '全资源+50' },
+  { id: 1, title: '建造第一座建筑',    type: 'building' as const, target: 'farm',    targetLevel: 1,  reward: '粮草+50' },
+  { id: 2, title: '升级建筑到2级',      type: 'building' as const, target: 'farm',    targetLevel: 2,  reward: '铜钱+100' },
+  { id: 3, title: '招募第一位武将',     type: 'total' as const,    target: 'total',    targetLevel: 99, reward: '天命+10' },
+  { id: 4, title: '完成第一个关卡',     type: 'total' as const,    target: 'total',    targetLevel: 99, reward: '全资源+50' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -290,8 +302,10 @@ const ThreeKingdomsPixiGame: React.FC = () => {
     [addToast],
   );
 
-  // ─── 筛选建筑 ───
+  // ─── 筛选建筑（仅显示8个核心建筑） ───
   const filteredBuildings = BUILDINGS.filter(def => {
+    // 只显示核心建筑（4×2 网格）
+    if (!CORE_BUILDING_IDS.includes(def.id)) return false;
     if (category !== '全部' && getCategory(def) !== category) return false;
     if (showUpgradeable && !unlocked[def.id]) return false;
     return true;
@@ -314,6 +328,8 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             if (!ui) return null;
             const val = resources[id] ?? 0;
             const rate = rates[id] ?? 0;
+            const cap = ui.hasCap ? (resources[ui.capId ?? ''] ?? 999) : 0;
+            const barRatio = ui.hasCap && cap > 0 ? Math.min(1, val / cap) : 0;
             return (
               <div key={id} className="tk-resource-item">
                 <span className="tk-resource-icon">{ui.icon}</span>
@@ -322,7 +338,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                 </span>
                 {ui.hasCap && (
                   <span className="tk-resource-cap">
-                    / {fmtNum(Math.max(val, 999))}
+                    / {fmtNum(cap)}
                   </span>
                 )}
                 {ui.hasCap && (
@@ -330,8 +346,8 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                     <div
                       className="tk-resource-bar-fill"
                       style={{
-                        width: `${Math.min(100, (val / Math.max(val, 999)) * 100)}%`,
-                        background: barColor(val / Math.max(val, 999)),
+                        width: `${barRatio * 100}%`,
+                        background: barColor(barRatio),
                       }}
                     />
                   </div>
@@ -475,20 +491,23 @@ const ThreeKingdomsPixiGame: React.FC = () => {
         {/* ═══ 任务面板（右上角悬浮） ═══ */}
         <div className="tk-task-panel">
           <div className="tk-task-title">📋 新手任务</div>
-          {currentTask ? (
-            <>
-              <div className="tk-task-name">{currentTask.title}</div>
+          {tasks.map(task => (
+            <div key={task.id} className={`tk-task-item ${task.done ? 'tk-task-item-done' : ''}`}>
+              <div className="tk-task-name">
+                {task.done ? '✅' : '⬜'} {task.title}
+              </div>
               <div className="tk-task-progress-bar">
                 <div
                   className="tk-task-progress-fill"
-                  style={{ width: `${currentTask.progress * 100}%` }}
+                  style={{ width: `${task.progress * 100}%` }}
                 />
               </div>
-              <div className="tk-task-reward">奖励：{currentTask.reward}</div>
-            </>
-          ) : (
-            <div className="tk-task-done">✅ 全部任务已完成！</div>
-          )}
+              <div className="tk-task-reward">
+                奖励：{task.reward}
+                {task.done && <span className="tk-task-completed"> 已领取</span>}
+              </div>
+            </div>
+          ))}
           <div className="tk-task-count">
             {completedTasks}/{tasks.length}
           </div>

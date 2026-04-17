@@ -969,6 +969,8 @@
   border-radius: 6px;
   padding: 12px;
   z-index: 5;
+  max-height: calc(100% - 80px);
+  overflow-y: auto;
 }
 
 /* 任务面板顶部装饰线 */
@@ -980,6 +982,18 @@
   right: 10%;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent);
+}
+
+/* 任务面板滚动条 */
+.tk-task-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.tk-task-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tk-task-panel::-webkit-scrollbar-thumb {
+  background: rgba(201, 168, 76, 0.3);
+  border-radius: 2px;
 }
 
 .tk-task-title {
@@ -1040,6 +1054,36 @@
   color: #A0A0A0;
   text-align: right;
   margin-top: 4px;
+}
+
+/* 单个任务项 */
+.tk-task-item {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+}
+
+.tk-task-item:last-of-type {
+  border-bottom: none;
+}
+
+/* 已完成任务 */
+.tk-task-item-done {
+  opacity: 0.6;
+}
+
+.tk-task-item-done .tk-task-name {
+  color: #7EC850;
+  text-decoration: line-through;
+}
+
+.tk-task-item-done .tk-task-progress-bar {
+  opacity: 0.5;
+}
+
+/* 已领取标签 */
+.tk-task-completed {
+  color: #7EC850;
+  font-size: 11px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
