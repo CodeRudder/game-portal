@@ -10,29 +10,30 @@
   --tk-bg: #2a1f10;
   --tk-bg-dark: #1a1410;
   --tk-bg-panel: rgba(50, 36, 20, 0.95);
-  --tk-gold: #e0b040;
-  --tk-gold-bright: #f0c860;
-  --tk-gold-dim: #a08a65;
-  --tk-border: #a08a65;
-  --tk-border-gold: rgba(212, 160, 48, 0.65);
-  --tk-text: #f5ecda;
-  --tk-text-dim: #a09070;
-  --tk-green: #5a9a4a;
-  --tk-red: #c06050;
+  --tk-gold: #f0c040;
+  --tk-gold-bright: #ffe070;
+  --tk-gold-dim: #b89850;
+  --tk-border: #b89850;
+  --tk-border-gold: rgba(240, 192, 64, 0.7);
+  --tk-text: #f8f0dc;
+  --tk-text-dim: #b89870;
+  --tk-green: #5aaa4a;
+  --tk-red: #d04040;
   --tk-font-title: 16px;
   --tk-font-body: 14px;
   --tk-font-small: 12px;
-  --tk-parchment: rgba(212, 165, 116, 0.12);
+  --tk-parchment: rgba(212, 165, 116, 0.15);
 
   /* 三国阵营色 — 饱和度提升 */
-  --tk-shu-red: #d43030;
-  --tk-wei-blue: #5a80b8;
-  --tk-wu-green: #3a9040;
+  --tk-shu-red: #e03535;
+  --tk-wei-blue: #5a88c8;
+  --tk-wu-green: #40a848;
   /* 古风装饰 */
   --tk-ink: #4a3828;
   --tk-paper: #ead8ba;
-  --tk-bronze: #c88340;
+  --tk-bronze: #d09048;
   --tk-jade: #8ab890;
+  --tk-vermillion: #c83030;
 }
 
 /* ─── 古风字体导入（使用系统衬线字体，无需网络加载） ─── */
@@ -2487,7 +2488,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
- * 季节系统样式
+* 季节系统样式
  * ═══════════════════════════════════════════════════════════════ */
 
 /* 季节指示器容器 */
@@ -3262,5 +3263,5 @@
   flex-direction: column;
   gap: 8px;
   position: relative;
-  padding-bottom: 8px;
+  padding-bottom: 8px; c48ec5b (feat: R7 - terrain enhancement + particle system + Chinese visual style)
 }

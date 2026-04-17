@@ -86,14 +86,14 @@ export type TerrainType =
 
 /** 地形瓦片颜色配置（程序化渲染用） */
 export const TERRAIN_COLORS: Record<TerrainType, number> = {
-  grass: 0x4a8c3f,
-  forest: 0x2d6a2e,
-  mountain: 0x8b8682,
-  water: 0x3a7bd5,
-  desert: 0xd4a853,
-  snow: 0xe8e8f0,
-  swamp: 0x5a7a50,
-  lava: 0xc44020,
+  grass: 0x5ec43e,
+  forest: 0x1e7a38,
+  mountain: 0xa07850,
+  water: 0x2a72b8,
+  desert: 0xe8c040,
+  snow: 0xe0ecf8,
+  swamp: 0x387058,
+  lava: 0xd84828,
 };
 
 /** 地形瓦片尺寸 */

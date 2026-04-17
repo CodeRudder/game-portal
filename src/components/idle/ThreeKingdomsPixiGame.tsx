@@ -36,6 +36,7 @@ import {
 import PixiGameCanvas from '@/renderer/components/PixiGameCanvas';
 import type { GameRenderState, SceneType, HeroRenderData } from '@/renderer/types';
 import { AudioManager } from '@/games/idle-subsystems/AudioManager';
+import { TKParticleSystem } from '@/games/three-kingdoms/ParticleSystem';
 import { BuildingIcon, ResourceIcon, BuildingProgressBar, TechIcon, TechLockedIcon, TechResearchingIcon, SkillIcon, EquipSlotIcon } from './ThreeKingdomsSVGIcons';
 import './ThreeKingdomsPixiGame.css';
 
@@ -1498,6 +1499,9 @@ export default function ThreeKingdomsPixiGame() {
   const adapterRef = useRef<ThreeKingdomsRenderStateAdapter | null>(null);
   const toastIdRef = useRef(0);
   const audioManagerRef = useRef<AudioManager | null>(null);
+  const particleSystemRef = useRef<TKParticleSystem | null>(null);
+  const particleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const particleAnimFrameRef = useRef<number>(0);
 
   // ─── State ────────────────────────────────────────────────
 
@@ -1783,6 +1787,49 @@ export default function ThreeKingdomsPixiGame() {
     // 启动游戏循环
     engine.start();
 
+    // ── 初始化粒子系统 ──────────────────────────────────────
+    const ps = new TKParticleSystem();
+    particleSystemRef.current = ps;
+
+    // 注册背景氛围自动发射器（花瓣飘落）
+    ps.registerAutoEmitter('bg-petal', 'petal', 1.5, 400, -10, 400);
+
+    // 粒子动画循环
+    let lastTime = performance.now();
+    const particleLoop = () => {
+      const canvas = particleCanvasRef.current;
+      if (!canvas || !particleSystemRef.current) return;
+
+      const now = performance.now();
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particleSystemRef.current.update(dt);
+        particleSystemRef.current.render(ctx);
+      }
+
+      particleAnimFrameRef.current = requestAnimationFrame(particleLoop);
+    };
+
+    // 等待粒子 canvas 挂载后启动
+    const waitForCanvas = setInterval(() => {
+      if (particleCanvasRef.current) {
+        clearInterval(waitForCanvas);
+        // 设置画布尺寸
+        const rect = particleCanvasRef.current.parentElement?.getBoundingClientRect();
+        if (rect) {
+          particleCanvasRef.current.width = rect.width;
+          particleCanvasRef.current.height = rect.height;
+          ps.setCanvasSize(rect.width, rect.height);
+        }
+        lastTime = performance.now();
+        particleAnimFrameRef.current = requestAnimationFrame(particleLoop);
+      }
+    }, 100);
+
     // ── 定期检查事件系统 ───────────────────────────────────
     const eventCheckTimer = setInterval(() => {
       if (!eventSystemRef.current) return;
@@ -1814,6 +1861,10 @@ export default function ThreeKingdomsPixiGame() {
     return () => {
       clearInterval(loadTimer);
       clearInterval(eventCheckTimer);
+      clearInterval(waitForCanvas);
+      if (particleAnimFrameRef.current) {
+        cancelAnimationFrame(particleAnimFrameRef.current);
+      }
       engine.pause();
       engine.destroy();
       audioManager.destroy();
@@ -1821,6 +1872,8 @@ export default function ThreeKingdomsPixiGame() {
       adapterRef.current = null;
       eventSystemRef.current = null;
       audioManagerRef.current = null;
+      particleSystemRef.current = null;
+      particleCanvasRef.current = null;
     };
   }, []);
 
@@ -1988,6 +2041,8 @@ export default function ThreeKingdomsPixiGame() {
       addToast(`建造成功！${bld?.name ?? id} Lv.1`, 'success');
       audioManagerRef.current?.playUpgrade();
       triggerBuildingFlash(id);
+      // 金色火花粒子效果
+      particleSystemRef.current?.emit(120, 200, 'spark', 12);
     } else {
       addToast('资源不足！', 'error');
       audioManagerRef.current?.playError();
@@ -2028,6 +2083,8 @@ export default function ThreeKingdomsPixiGame() {
       }
       addToast(`征服成功！获得领土`, 'success');
       audioManagerRef.current?.playConquer();
+      // 征服火花粒子效果
+      particleSystemRef.current?.emit(300, 200, 'spark', 20);
       engine.handleKeyDown(' '); // 触发 stateChange
     } else {
       addToast('兵力不足，无法征服！', 'error');
@@ -2300,23 +2357,22 @@ export default function ThreeKingdomsPixiGame() {
       boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5), 0 0 15px rgba(139,115,85,0.2)',
     }}>
       {/* ═══════════ 顶部：资源栏 + 当前阶段 ═══════════ */}
-      <header style={{
+      <header className="tk-header-ancient" style={{
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between',
         padding: isMobile ? '4px 8px' : '6px 16px',
-        background: 'linear-gradient(180deg, rgba(45,27,10,0.9) 0%, rgba(0,0,0,0.6) 100%)',
-        borderBottom: `2px solid ${COLOR_THEME.selectedBorder}`,
         zIndex: 10, flexShrink: 0,
         flexWrap: isMobile ? 'wrap' : 'nowrap',
         gap: isMobile ? 4 : 0,
       }}>
         {/* 游戏标题 + 阶段 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 12 }}>
-          <span style={{
+          <span className="tk-title-ancient" style={{
             fontSize: isMobile ? 14 : 18, fontWeight: 'bold',
             color: COLOR_THEME.accentGold,
             fontFamily: '"Noto Serif SC", serif',
             textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+            letterSpacing: 2,
           }}>
             ⚔ 三国霸业
           </span>
@@ -2340,11 +2396,12 @@ export default function ThreeKingdomsPixiGame() {
         </div>
 
         {/* 资源栏 */}
-        <div style={{
+        <div className="tk-resource-panel-gold" style={{
           display: 'flex', gap: isMobile ? 8 : 16,
           alignItems: 'center',
           flexWrap: isMobile ? 'wrap' : 'nowrap',
           fontSize: isMobile ? 11 : 13,
+          padding: isMobile ? '3px 8px' : '4px 12px',
         }}>
           {resources.map(r => (
             <div key={r.id} style={{
@@ -2513,14 +2570,16 @@ export default function ThreeKingdomsPixiGame() {
 
         {/* ─── 左侧面板：建筑/城市/资源点（仅地图场景显示，移动端隐藏） ─── */}
         {showBuildingPanel && !isMobile && (
-        <aside style={{
+        <aside className="tk-chinese-border" style={{
           width: 240, flexShrink: 0,
           background: 'linear-gradient(180deg, rgba(45,27,10,0.9) 0%, rgba(26,14,5,0.95) 100%)',
-          borderRight: '2px solid rgba(139,115,85,0.3)',
+          borderRight: '2px solid rgba(212,160,48,0.4)',
           overflowY: 'auto', padding: 8,
           zIndex: 5,
           display: 'flex', flexDirection: 'column',
         }}>
+          {/* 面板标题装饰 */}
+          <div className="tk-panel-title-ancient">城池建设</div>
           {/* 子标签栏 */}
           <div style={{ display: 'flex', gap: 2, marginBottom: 8, borderBottom: '1px solid rgba(139,115,85,0.2)', paddingBottom: 6 }}>
             {[
@@ -2843,6 +2902,19 @@ export default function ThreeKingdomsPixiGame() {
             onSceneChange={handleSceneChange}
             onNPCClick={handleNPCClick}
             onRendererReady={() => console.log('[ThreeKingdomsPixiGame] PixiJS renderer ready')}
+          />
+
+          {/* ═══════════ 粒子效果 Canvas 覆盖层 ═══════════ */}
+          <canvas
+            ref={particleCanvasRef}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+              zIndex: 3,
+            }}
           />
 
           {/* ═══════════ 城池场景背景（Canvas 上层，仅地图场景显示） ═══════════ */}
@@ -3736,15 +3808,15 @@ export default function ThreeKingdomsPixiGame() {
 
         {/* ─── 右侧面板：武将列表 + 详情面板 ─── */}
         {showHeroPanel && !isMobile && (
-        <aside style={{
+        <aside className="tk-scroll-hero-panel" style={{
           width: selectedHero ? 340 : 220, flexShrink: 0,
-          background: 'linear-gradient(180deg, rgba(45,27,10,0.9) 0%, rgba(26,14,5,0.95) 100%)',
-          borderLeft: '2px solid rgba(139,115,85,0.3)',
           overflowY: 'auto', padding: 8,
           zIndex: 5,
           display: 'flex', flexDirection: 'column',
           transition: 'width 0.3s ease',
         }}>
+          {/* 面板标题装饰 */}
+          <div className="tk-panel-title-ancient">武将名册</div>
           {/* 武将详情面板（选中时显示 — 卷轴风格） */}
           {selectedHero ? (
             <div style={{ flex: 1 }}>
@@ -3973,6 +4045,8 @@ export default function ThreeKingdomsPixiGame() {
                       const result = units.unlock(h.id);
                       if (result.success) {
                         addToast(`招募成功！${h.name} 加入麾下`, 'success');
+                        // 招募火花粒子效果
+                        particleSystemRef.current?.emit(350, 200, 'spark', 15);
                         // 触发状态更新
                         (engine as any).emit?.('stateChange');
                       } else {
@@ -4186,12 +4260,10 @@ export default function ThreeKingdomsPixiGame() {
       </div>
 
       {/* ═══════════ 底部：操作按钮栏 ═══════════ */}
-      <footer style={{
+      <footer className="tk-tab-bar-ancient" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         gap: isMobile ? 4 : 8,
         padding: isMobile ? '4px 8px' : '6px 16px',
-        background: 'linear-gradient(0deg, rgba(45,27,10,0.9) 0%, rgba(0,0,0,0.6) 100%)',
-        borderTop: `2px solid rgba(139,115,85,0.4)`,
         zIndex: 10, flexShrink: 0,
         position: isMobile ? 'sticky' : 'static',
         bottom: 0,
@@ -4202,6 +4274,7 @@ export default function ThreeKingdomsPixiGame() {
             <button
               key={tab.key}
               onClick={() => handleTabClick(tab)}
+              className={`tk-tab-btn-ancient ${isActive ? 'active' : ''}`}
               style={{
                 padding: isMobile ? '4px 10px' : '5px 16px',
                 fontSize: isMobile ? 10 : 12,
@@ -4216,6 +4289,7 @@ export default function ThreeKingdomsPixiGame() {
                 transition: 'all 0.2s',
                 position: 'relative',
                 boxShadow: isActive ? '0 0 8px rgba(201,169,110,0.15)' : 'none',
+                letterSpacing: 1,
               }}
             >
               {tab.icon} {tab.label}

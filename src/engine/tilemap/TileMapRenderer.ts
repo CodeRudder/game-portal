@@ -31,15 +31,15 @@ import type {
 
 /** 默认地形颜色映射 */
 const TERRAIN_COLORS: Record<string, string> = {
-  grass: '#4a7c3f',
-  dirt: '#8b7355',
-  water: '#3a7ecf',
-  mountain: '#6b6b6b',
-  forest: '#2d5a1e',
-  sand: '#d4b96a',
-  snow: '#e8e8f0',
-  road: '#a09070',
-  bridge: '#8b6914',
+  grass: '#5ec43e',
+  dirt: '#a08050',
+  water: '#2a72b8',
+  mountain: '#a07850',
+  forest: '#1e7a38',
+  sand: '#e8c040',
+  snow: '#e0ecf8',
+  road: '#d8a840',
+  bridge: '#b89020',
 };
 
 /** 装饰物颜色映射 */

@@ -605,17 +605,17 @@ export const PRESTIGE_CONFIG: PrestigeConfig = {
 // ═══════════════════════════════════════════════════════════════
 
 export const COLOR_THEME: UIColorScheme = {
-  bgGradient1: '#2a1a0a',         // 亮深棕 — 古卷底色
-  bgGradient2: '#3d2a15',         // 亮暗金棕 — 古风氛围
-  textPrimary: '#f5ecda',         // 亮米白 — 宣纸色
-  textSecondary: '#d4c5aa',       // 亮浅棕灰
-  textDim: '#a09070',             // 亮暗棕灰
-  accentGold: '#e0b040',          // 亮暗金 — 帝王金
-  accentGreen: '#5a9a4a',         // 亮墨绿
-  panelBg: 'rgba(70,50,25,0.6)',  // 半透明亮深棕
-  selectedBg: 'rgba(224,176,64,0.18)',  // 亮暗金选中
-  selectedBorder: 'rgba(224,176,64,0.6)',
-  affordable: '#5a9a4a',
+  bgGradient1: '#1a0f05',         // 深墨棕 — 古卷底色（更深沉）
+  bgGradient2: '#3a2010',         // 暗赤金 — 古风氛围（更浓烈）
+  textPrimary: '#f8f0dc',         // 米白 — 宣纸色（更亮）
+  textSecondary: '#d8c8a8',       // 浅棕灰（更暖）
+  textDim: '#b09060',             // 暗棕灰（更明显）
+  accentGold: '#f0c040',          // 赤金 — 帝王金（更鲜亮）
+  accentGreen: '#5aaa4a',         // 翠墨绿（更鲜明）
+  panelBg: 'rgba(60,35,15,0.75)', // 半透明深棕（更深沉）
+  selectedBg: 'rgba(240,192,64,0.22)',  // 金色选中（更明显）
+  selectedBorder: 'rgba(240,192,64,0.7)',
+  affordable: '#5aaa4a',
   unaffordable: '#6a5a4a',
 };
 
