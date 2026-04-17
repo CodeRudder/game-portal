@@ -38,6 +38,7 @@ import { TradeRouteSystem } from './TradeRouteSystem';
 import { EventEnrichmentSystem } from './EventEnrichmentSystem';
 import { CampaignSystem } from './CampaignSystem';
 import { CampaignBattleSystem, type AttackerArmy, type BattleResult } from './CampaignBattleSystem';
+import { AudioManager } from './AudioManager';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -70,6 +71,7 @@ export interface ThreeKingdomsSaveState {
   eventEnrichment?: object;
   campaign?: object;
   campaignBattle?: object;
+  audio?: { muted: boolean; volume: number };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -108,6 +110,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private offlineRewardSys!: OfflineRewardSystem;
   private tradeRouteSys!: TradeRouteSystem;
   private eventEnrichSys!: EventEnrichmentSystem;
+
+  /** 程序化音频管理器 */
+  public audioManager: AudioManager = new AudioManager();
 
   /** 征战关卡系统 */
   private campaignSys!: CampaignSystem;
@@ -230,6 +235,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     // ── 为地图生成资源点 ──
     this.generateResourcePointsFromMap();
+
+    // ── 程序化音频系统 ──
+    this.audioManager.init();
 
     this.emit('stateChange');
   }
@@ -472,6 +480,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       eventEnrichment: this.eventEnrichSys.serialize(),
       campaign: this.campaignSys.serialize(),
       campaignBattle: this.campaignBattleSys.serialize(),
+      audio: this.audioManager.serialize(),
     };
   }
 
@@ -498,6 +507,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (d.eventEnrichment) this.eventEnrichSys.deserialize(d.eventEnrichment);
     if (d.campaign) this.campaignSys.deserialize(d.campaign);
     if (d.campaignBattle) this.campaignBattleSys.deserialize(d.campaignBattle);
+    if (d.audio) this.audioManager.deserialize(d.audio);
 
     this.emit('stateChange');
   }
@@ -533,6 +543,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   private doClick(): void {
     if (this._status !== 'playing') return;
+    this.audioManager.playSFX('click');
     for (const [r, a] of Object.entries(CLICK_REWARD)) this.giveRes(r, a);
     for (const [r, rate] of Object.entries(this.psCache)) {
       if (rate > 0) this.giveRes(r, rate * 0.1);
@@ -549,6 +560,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (!this.canPay(cost)) return;
     this.pay(cost);
     this.bldg.purchase(b.id, (id, a) => this.has(id, a), () => {});
+    this.audioManager.playSFX('build');
     this.ftSys.add(`+1 ${b.name}`, 0.5, 0.5, { style: { color: COLOR_THEME.accentGreen, fontSize: 14 } });
     this.emit('stateChange');
   }
@@ -557,6 +569,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     const rewards = this.battles.settleWave();
     for (const [r, a] of Object.entries(rewards.rewards)) this.giveRes(r, a);
     this.stats.increment('totalBattlesWon');
+    this.audioManager.playSFX('battle');
     this.ftSys.add('战斗胜利！', 0.5, 0.5, { style: { color: COLOR_THEME.accentGreen, fontSize: 18 } });
   }
 
@@ -1111,6 +1124,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     this.stats.increment('totalGeneralsRecruited');
     this.emit('generalRecruited', { generalId: id, name: def.name });
+    this.audioManager.playSFX('recruit');
     this.emit('stateChange');
     return true;
   }
@@ -1251,6 +1265,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.pay(cost);
 
     const def = BUILDINGS.find(b => b.id === id);
+    this.audioManager.playSFX('build');
     this.emit('buildingPurchased', { buildingId: id, name: def?.name || id });
     this.emit('stateChange');
     return true;
@@ -1284,6 +1299,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     const newLevel = this.bldg.getLevel(id);
     const def = BUILDINGS.find(b => b.id === id);
+    this.audioManager.playSFX('levelup');
     this.emit('buildingUpgraded', { buildingId: id, name: def?.name || id, level: newLevel });
     this.emit('stateChange');
     return true;

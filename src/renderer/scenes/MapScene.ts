@@ -40,6 +40,8 @@ import {
   getFactionCityColors,
   type FactionCityColors,
 } from '../../games/three-kingdoms/AssetConfig';
+import { drawQCharacter, mapNPCTypeToQCharacter, type QCharacterType } from '../../games/three-kingdoms/QCharacterRenderer';
+import { drawChineseBuilding, getBuildingConfig } from '../../games/three-kingdoms/ChineseBuildingRenderer';
 
 // ═══════════════════════════════════════════════════════════════
 // 常量
@@ -1565,6 +1567,14 @@ export class MapScene extends BaseScene {
     const textureKey = BUILDING_LEVEL_TEXTURES[data.level] ?? BUILDING_LEVEL_TEXTURES[1];
     const texture = this.assetManager.getTexture(textureKey);
 
+    // 建筑名称标签
+    const buildingLabel = new Text({
+      text: data.name,
+      style: new TextStyle({ fontSize: 10, fill: 0xffffff, align: 'center' }),
+    });
+    buildingLabel.anchor.set(0.5, 0);
+    buildingLabel.position.set(0, BUILDING_SPRITE_SIZE / 2 + 5);
+
     if (texture) {
       // 使用真实精灵纹理
       const sprite = new Sprite(texture);
@@ -1573,29 +1583,20 @@ export class MapScene extends BaseScene {
       sprite.height = BUILDING_SPRITE_SIZE;
       container.addChild(sprite);
     } else {
-      // Fallback：使用 Graphics 绘制建筑矩形 + 屋顶
+      // Fallback：使用程序化中国风建筑绘制
       const fallbackGfx = new Graphics();
-      // 建筑主体
-      fallbackGfx
-        .rect(
-          -BUILDING_SPRITE_SIZE / 2,
-          -BUILDING_SPRITE_SIZE / 4,
-          BUILDING_SPRITE_SIZE,
-          BUILDING_SPRITE_SIZE * 0.6,
-        )
-        .fill({ color: this.getBuildingColor(data.level) });
-      // 屋顶（三角形）
-      fallbackGfx
-        .moveTo(-BUILDING_SPRITE_SIZE / 2 - 4, -BUILDING_SPRITE_SIZE / 4)
-        .lineTo(0, -BUILDING_SPRITE_SIZE / 2 - 4)
-        .lineTo(BUILDING_SPRITE_SIZE / 2 + 4, -BUILDING_SPRITE_SIZE / 4)
-        .closePath()
-        .fill({ color: 0xc62828 });
-      // 等级标记
-      fallbackGfx
-        .circle(BUILDING_SPRITE_SIZE / 3, -BUILDING_SPRITE_SIZE / 3, 6)
-        .fill({ color: 0xd4a030 });
+      const buildingLabel = drawChineseBuilding(
+        fallbackGfx,
+        0,
+        BUILDING_SPRITE_SIZE / 2,
+        data.type,
+        data.level,
+        BUILDING_SPRITE_SIZE,
+      );
       container.addChild(fallbackGfx);
+      if (buildingLabel) {
+        container.addChild(buildingLabel);
+      }
     }
 
     // 进度弧线（初始为空，在 updateBuildingProgress 中绘制）
@@ -1638,6 +1639,14 @@ export class MapScene extends BaseScene {
       const textureKey = BUILDING_LEVEL_TEXTURES[data.level] ?? BUILDING_LEVEL_TEXTURES[1];
       const texture = this.assetManager.getTexture(textureKey);
 
+      // 建筑名称标签
+      const buildingLabel = new Text({
+        text: data.name,
+        style: new TextStyle({ fontSize: 10, fill: 0xffffff, align: 'center' }),
+      });
+      buildingLabel.anchor.set(0.5, 0);
+      buildingLabel.position.set(0, BUILDING_SPRITE_SIZE / 2 + 5);
+
       if (texture) {
         const sprite = new Sprite(texture);
         sprite.anchor.set(0.5, 0.5);
@@ -1646,24 +1655,18 @@ export class MapScene extends BaseScene {
         icon.container.addChildAt(sprite, 0);
       } else {
         const fallbackGfx = new Graphics();
-        fallbackGfx
-          .rect(
-            -BUILDING_SPRITE_SIZE / 2,
-            -BUILDING_SPRITE_SIZE / 4,
-            BUILDING_SPRITE_SIZE,
-            BUILDING_SPRITE_SIZE * 0.6,
-          )
-          .fill({ color: this.getBuildingColor(data.level) });
-        fallbackGfx
-          .moveTo(-BUILDING_SPRITE_SIZE / 2 - 4, -BUILDING_SPRITE_SIZE / 4)
-          .lineTo(0, -BUILDING_SPRITE_SIZE / 2 - 4)
-          .lineTo(BUILDING_SPRITE_SIZE / 2 + 4, -BUILDING_SPRITE_SIZE / 4)
-          .closePath()
-          .fill({ color: 0xc0392b });
-        fallbackGfx
-          .circle(BUILDING_SPRITE_SIZE / 3, -BUILDING_SPRITE_SIZE / 3, 6)
-          .fill({ color: 0xd4a030 });
+        const buildingLabel = drawChineseBuilding(
+          fallbackGfx,
+          0,
+          BUILDING_SPRITE_SIZE / 2,
+          data.type,
+          data.level,
+          BUILDING_SPRITE_SIZE,
+        );
         icon.container.addChildAt(fallbackGfx, 0);
+        if (buildingLabel) {
+          icon.container.addChildAt(buildingLabel, 1);
+        }
       }
     }
     // 进度弧线由 updateBuildingProgress() 每帧绘制，此处不重复处理
@@ -2863,10 +2866,10 @@ export class MapScene extends BaseScene {
       container.eventMode = 'static';
       container.cursor = 'pointer';
 
+      // ── Q版角色绘制（替代纯色圆点+Emoji） ──
       const gfx = new Graphics();
       const color = NPC_TYPE_COLORS[npc.type] ?? 0x9e9e9e;
-
-      // 所有 NPC 使用方形基础 + 职业装饰
+// 所有 NPC 使用方形基础 + 职业装饰
       const half = Math.floor(shapeRadius * 0.85);
       // 方形主体
       gfx.roundRect(-half, -half, half * 2, half * 2, 2)
@@ -2878,16 +2881,6 @@ export class MapScene extends BaseScene {
       this.drawNPCDecoration(gfx, npc.type, half);
 
       container.addChild(gfx);
-
-      // 职业图标（Emoji）—— 放在形状上方
-      const emoji = NPC_TYPE_EMOJI[npc.type] ?? '👤';
-      const emojiText = new Text({
-        text: emoji,
-        style: new TextStyle({ fontSize: 10 }),
-      });
-      emojiText.anchor.set(0.5, 0.5);
-      emojiText.position.set(0, -shapeRadius - 8);
-      container.addChild(emojiText);
 
       // NPC 名称
       const nameText = new Text({

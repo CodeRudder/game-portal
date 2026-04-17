@@ -108,13 +108,16 @@ describe('常量验证', () => {
     expect(STAGES).toHaveLength(6);
   });
 
-  it('RESOURCES 有 4 种资源', () => {
-    expect(RESOURCES).toHaveLength(4);
+  it('RESOURCES 有 7 种资源', () => {
+    expect(RESOURCES).toHaveLength(7);
     const ids = RESOURCES.map(r => r.id);
     expect(ids).toContain('grain');
     expect(ids).toContain('gold');
     expect(ids).toContain('troops');
     expect(ids).toContain('destiny');
+    expect(ids).toContain('iron');
+    expect(ids).toContain('wood');
+    expect(ids).toContain('morale');
   });
 
   it('COLOR_THEME 包含必要颜色字段', () => {
@@ -229,8 +232,11 @@ describe('资源系统', () => {
     expect(res).toEqual({
       grain: 500,
       gold: 300,
+      iron: 100,
+      wood: 150,
       troops: 100,
       destiny: 0,
+      morale: 50,
     });
   });
 
