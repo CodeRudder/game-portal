@@ -73,13 +73,16 @@ const PULSE_PERIOD = 2000;
 const PULSE_AMPLITUDE = 0.05;
 
 /** 边缘滚动区域宽度（像素） */
-const EDGE_SCROLL_ZONE = 60;
+const EDGE_SCROLL_ZONE = 30;
 
 /** 边缘滚动最大速度（像素/秒） */
-const EDGE_SCROLL_MAX_SPEED = 300;
+const EDGE_SCROLL_MAX_SPEED = 250;
 
 /** 边缘滚动最小速度（像素/秒） */
-const EDGE_SCROLL_MIN_SPEED = 30;
+const EDGE_SCROLL_MIN_SPEED = 20;
+
+/** 边缘滚动平滑插值系数（0~1，越大跟随越快） */
+const EDGE_SCROLL_SMOOTH_FACTOR = 0.12;
 
 /** 滚轮缩放步进 */
 const WHEEL_ZOOM_STEP = 0.1;
@@ -427,14 +430,16 @@ export class MapScene extends BaseScene {
   // ─── 边缘滚动状态 ─────────────────────────────────────────
 
   /** 边缘检测区域宽度（像素） */
-  private readonly EDGE_SCROLL_ZONE = 60;
+  private readonly EDGE_SCROLL_ZONE = 30;
   /** 最大滚动速度（像素/秒） */
-  private readonly MAX_SCROLL_SPEED = 300;
+  private readonly MAX_SCROLL_SPEED = 250;
   /** 最小滚动速度（像素/秒） */
-  private readonly MIN_SCROLL_SPEED = 30;
+  private readonly MIN_SCROLL_SPEED = 20;
 
   /** 当前边缘滚动速度（像素/帧，由 pointermove 更新） */
   private edgeScrollVelocity: { x: number; y: number } = { x: 0, y: 0 };
+  /** 平滑插值后的实际滚动速度 */
+  private smoothEdgeScrollVelocity: { x: number; y: number } = { x: 0, y: 0 };
   /** 鼠标是否在容器内 */
   private pointerInContainer: boolean = false;
 
@@ -589,7 +594,7 @@ export class MapScene extends BaseScene {
   protected async onCreate(): Promise<void> {
     // 设置容器交互（用于地图点击和边缘滚动）
     this.container.eventMode = 'static';
-    this.container.cursor = 'default';
+    this.container.cursor = 'crosshair';
     // hitArea 稍后在 onEnter 中根据实际尺寸设置
 
     // 绑定指针事件（仅用于 Tooltip 跟踪和点击，不再拖拽）
@@ -630,13 +635,15 @@ export class MapScene extends BaseScene {
       }
     }
 
-    // 设置摄像机边界
-    this.cameraManager.setBounds({
-      minX: -500,
-      maxX: 2500,
-      minY: -500,
-      maxY: 1500,
-    });
+    // 设置摄像机边界（瓦片地图模式由 setTileMapData 管理）
+    if (!this.useTileMapMode) {
+      this.cameraManager.setBounds({
+        minX: -500,
+        maxX: 2500,
+        minY: -500,
+        maxY: 1500,
+      });
+    }
 
     // 重置动画计时
     this.pulseTime = 0;
@@ -713,6 +720,7 @@ export class MapScene extends BaseScene {
     this.capturePulseGraphics.clear();
     this.destroyTooltip();
     this.edgeScrollVelocity = { x: 0, y: 0 };
+    this.smoothEdgeScrollVelocity = { x: 0, y: 0 };
     this.pointerInContainer = false;
     this.decorationLayer.destroy({ children: true });
     this.connectionLayer.destroy({ children: true });
@@ -794,25 +802,33 @@ export class MapScene extends BaseScene {
   // ═══════════════════════════════════════════════════════════
 
   /**
-   * 更新边缘滚动
+   * 更新边缘滚动（带平滑插值）
    *
-   * 鼠标在容器边缘时，地图向反方向滚动：
+   * 鼠标在容器边缘 30px 区域时，地图平滑滚动：
    * - 鼠标在左边缘 → 地图向右滚（显示左侧内容）
    * - 鼠标在右边缘 → 地图向左滚（显示右侧内容）
    * - 鼠标在上边缘 → 地图向下滚（显示上方内容）
    * - 鼠标在下边缘 → 地图向上滚（显示下方内容）
    *
-   * 越靠近边缘滚动越快（线性插值）。
+   * 使用平滑插值避免突兀的速度跳变。
    */
   private updateEdgeScroll(deltaTime: number): void {
-    // 鼠标不在容器内时，不滚动
-    if (!this.pointerInContainer) return;
+    // 鼠标不在容器内时，目标速度归零
+    if (!this.pointerInContainer) {
+      this.edgeScrollVelocity.x = 0;
+      this.edgeScrollVelocity.y = 0;
+    }
 
-    const vx = this.edgeScrollVelocity.x;
-    const vy = this.edgeScrollVelocity.y;
+    // 平滑插值：实际速度逐渐趋近目标速度
+    const factor = EDGE_SCROLL_SMOOTH_FACTOR;
+    this.smoothEdgeScrollVelocity.x += (this.edgeScrollVelocity.x - this.smoothEdgeScrollVelocity.x) * factor;
+    this.smoothEdgeScrollVelocity.y += (this.edgeScrollVelocity.y - this.smoothEdgeScrollVelocity.y) * factor;
 
-    // 无速度时不操作
-    if (vx === 0 && vy === 0) return;
+    const vx = this.smoothEdgeScrollVelocity.x;
+    const vy = this.smoothEdgeScrollVelocity.y;
+
+    // 速度极小时跳过（避免浮点漂移）
+    if (Math.abs(vx) < 0.5 && Math.abs(vy) < 0.5) return;
 
     // deltaTime 为秒，计算本帧位移
     const camState = this.cameraManager.getState();
@@ -1509,21 +1525,30 @@ export class MapScene extends BaseScene {
    * 当 GameMap 数据可用时，优先使用瓦片地图渲染；
    * 否则 fallback 到原有节点图模式。
    *
+   * 摄像机边界：限制在地图范围内，不允许超出。
+   *
    * @param mapData - MapGenerator 生成的完整地图数据
    */
   setTileMapData(mapData: GameMap): void {
     this.tileMapData = mapData;
     this.useTileMapMode = true;
 
-    // 更新摄像机边界以适配瓦片地图
+    // 更新摄像机边界以适配瓦片地图（严格边界，不超出地图范围）
     const mapWidth = mapData.width * mapData.tileSize;
     const mapHeight = mapData.height * mapData.tileSize;
     this.cameraManager.setBounds({
-      minX: -200,
-      maxX: mapWidth + 200,
-      minY: -200,
-      maxY: mapHeight + 200,
+      minX: 0,
+      maxX: mapWidth,
+      minY: 0,
+      maxY: mapHeight,
     });
+
+    // 将摄像机初始位置设为地图中心
+    this.cameraManager.panTo(
+      Math.floor(mapWidth / 2),
+      Math.floor(mapHeight / 2),
+      false,
+    );
 
     // 渲染瓦片地图
     this.renderTileMap();
@@ -1567,23 +1592,25 @@ export class MapScene extends BaseScene {
 
     const graphics = new Graphics();
 
-    // ── Pass 1: 绘制基础地形色块 ──────────────────────────
+    // ── Pass 1: 绘制基础地形色块（整数坐标 + 1px 扩展防止缝隙） ──
     for (let row = 0; row < map.height; row++) {
       for (let col = 0; col < map.width; col++) {
         const tile = map.tiles[row]?.[col];
         if (!tile) continue;
 
-        const x = col * tileSize;
-        const y = row * tileSize;
+        // 使用 Math.floor 确保整数像素坐标，防止亚像素缝隙
+        const x = Math.floor(col * tileSize);
+        const y = Math.floor(row * tileSize);
         const visual = TERRAIN_VISUALS[tile.terrain];
 
         if (visual) {
           // 基于 variant 产生颜色微变，使相邻同类型瓦片有细微色差
           const shift = (tile.variant % 3 - 1) * 0x060606;
           const baseColor = visual.baseColor + shift;
-          graphics.rect(x, y, tileSize, tileSize).fill({ color: baseColor });
+          // 每个瓦片扩展 1px（向右和向下），消除相邻瓦片间的亚像素缝隙
+          graphics.rect(x, y, tileSize + 1, tileSize + 1).fill({ color: baseColor });
         } else {
-          graphics.rect(x, y, tileSize, tileSize).fill({ color: 0x888888 });
+          graphics.rect(x, y, tileSize + 1, tileSize + 1).fill({ color: 0x888888 });
         }
       }
     }
@@ -1595,23 +1622,23 @@ export class MapScene extends BaseScene {
     // ── Pass 3: 绘制地形纹理细节 ──────────────────────────
     this.renderTerrainPatterns(graphics, map, tileSize);
 
-    // ── Pass 4: 海拔阴影 + 极淡网格线 ─────────────────────
+    // ── Pass 4: 海拔阴影 + 极淡网格线（整数坐标） ─────────
     for (let row = 0; row < map.height; row++) {
       for (let col = 0; col < map.width; col++) {
         const tile = map.tiles[row]?.[col];
         if (!tile) continue;
 
-        const x = col * tileSize;
-        const y = row * tileSize;
+        const x = Math.floor(col * tileSize);
+        const y = Math.floor(row * tileSize);
 
         // 海拔阴影效果：高地顶部微亮，底部微暗
         if (tile.elevation >= 3) {
           // 山峰：顶部高光 + 整体暗化
-          graphics.rect(x, y, tileSize, 3).fill({ color: 0xffffff, alpha: 0.08 });
-          graphics.rect(x, y + 3, tileSize, tileSize - 3).fill({ color: 0x000000, alpha: 0.12 });
+          graphics.rect(x, y, tileSize + 1, 3).fill({ color: 0xffffff, alpha: 0.08 });
+          graphics.rect(x, y + 3, tileSize + 1, tileSize - 3).fill({ color: 0x000000, alpha: 0.12 });
         } else if (tile.elevation >= 2) {
           // 丘陵：仅底部微暗
-          graphics.rect(x, y + tileSize * 0.7, tileSize, tileSize * 0.3)
+          graphics.rect(x, Math.floor(y + tileSize * 0.7), tileSize + 1, Math.ceil(tileSize * 0.3) + 1)
             .fill({ color: 0x000000, alpha: 0.06 });
         }
 
@@ -1622,12 +1649,14 @@ export class MapScene extends BaseScene {
 
         // 右边线：仅在与右边不同地形时绘制
         if (rightTile && rightTile.terrain !== terrain) {
-          graphics.moveTo(x + tileSize, y).lineTo(x + tileSize, y + tileSize)
+          const lx = Math.floor(x + tileSize);
+          graphics.moveTo(lx, y).lineTo(lx, y + tileSize)
             .stroke({ width: 0.5, color: 0x1a1a2e, alpha: 0.15 });
         }
         // 下边线：仅在与下方不同地形时绘制
         if (bottomTile && bottomTile.terrain !== terrain) {
-          graphics.moveTo(x, y + tileSize).lineTo(x + tileSize, y + tileSize)
+          const ly = Math.floor(y + tileSize);
+          graphics.moveTo(x, ly).lineTo(x + tileSize, ly)
             .stroke({ width: 0.5, color: 0x1a1a2e, alpha: 0.15 });
         }
       }
@@ -1660,7 +1689,7 @@ export class MapScene extends BaseScene {
   }
 
   /**
-   * 绘制地形过渡边缘
+   * 绘制地形过渡边缘（整数坐标）
    *
    * 核心算法：对于每个瓦片，检查四个方向的邻居。
    * 如果当前地形优先级高于邻居，则在朝向邻居的边缘绘制渐变过渡。
@@ -1683,11 +1712,13 @@ export class MapScene extends BaseScene {
         const visual = TERRAIN_VISUALS[tile.terrain];
         if (!visual) continue;
 
-        const x = col * tileSize;
-        const y = row * tileSize;
+        // 整数坐标
+        const x = Math.floor(col * tileSize);
+        const y = Math.floor(row * tileSize);
         const tw = visual.transitionWidth;
         const tc = visual.transitionColor;
         const ta = visual.transitionAlpha;
+        const twHalf = Math.floor(tw * 0.5);
 
         for (const dir of dirs) {
           const nr = row + dir.dy;
@@ -1711,28 +1742,28 @@ export class MapScene extends BaseScene {
           // 绘制过渡边缘（渐变条带）
           switch (dir.edge) {
             case 'top':
-              graphics.rect(x, y, tileSize, tw)
+              graphics.rect(x, y, tileSize + 1, tw)
                 .fill({ color: tc, alpha: ta });
               // 柔化：再叠加一层更窄更淡的
-              graphics.rect(x + 2, y, tileSize - 4, Math.floor(tw * 0.5))
+              graphics.rect(x + 2, y, tileSize - 4, twHalf)
                 .fill({ color: tc, alpha: ta * 0.5 });
               break;
             case 'bottom':
-              graphics.rect(x, y + tileSize - tw, tileSize, tw)
+              graphics.rect(x, y + tileSize - tw, tileSize + 1, tw)
                 .fill({ color: tc, alpha: ta });
-              graphics.rect(x + 2, y + tileSize - Math.floor(tw * 0.5), tileSize - 4, Math.floor(tw * 0.5))
+              graphics.rect(x + 2, y + tileSize - twHalf, tileSize - 4, twHalf)
                 .fill({ color: tc, alpha: ta * 0.5 });
               break;
             case 'left':
-              graphics.rect(x, y, tw, tileSize)
+              graphics.rect(x, y, tw, tileSize + 1)
                 .fill({ color: tc, alpha: ta });
-              graphics.rect(x, y + 2, Math.floor(tw * 0.5), tileSize - 4)
+              graphics.rect(x, y + 2, twHalf, tileSize - 4)
                 .fill({ color: tc, alpha: ta * 0.5 });
               break;
             case 'right':
-              graphics.rect(x + tileSize - tw, y, tw, tileSize)
+              graphics.rect(x + tileSize - tw, y, tw, tileSize + 1)
                 .fill({ color: tc, alpha: ta });
-              graphics.rect(x + tileSize - Math.floor(tw * 0.5), y + 2, Math.floor(tw * 0.5), tileSize - 4)
+              graphics.rect(x + tileSize - twHalf, y + 2, twHalf, tileSize - 4)
                 .fill({ color: tc, alpha: ta * 0.5 });
               break;
           }
@@ -1742,7 +1773,7 @@ export class MapScene extends BaseScene {
   }
 
   /**
-   * 绘制地形纹理图案
+   * 绘制地形纹理图案（整数坐标）
    *
    * 增强版纹理：每种地形有独特的视觉纹理，
    * 使用 variant 和坐标产生自然变化。
@@ -1753,8 +1784,8 @@ export class MapScene extends BaseScene {
         const tile = map.tiles[row]?.[col];
         if (!tile) continue;
 
-        const x = col * tileSize;
-        const y = row * tileSize;
+        const x = Math.floor(col * tileSize);
+        const y = Math.floor(row * tileSize);
         const visual = TERRAIN_VISUALS[tile.terrain];
         if (!visual) continue;
 
@@ -1899,7 +1930,7 @@ export class MapScene extends BaseScene {
   }
 
   /**
-   * 绘制领土边界虚线
+   * 绘制领土边界虚线（整数坐标）
    *
    * 遍历所有瓦片，当相邻瓦片属于不同领土时绘制虚线边界。
    */
@@ -1915,19 +1946,19 @@ export class MapScene extends BaseScene {
         // 检查右邻瓦片
         const rightTile = map.tiles[row]?.[col + 1];
         if (rightTile && rightTile.territoryId && rightTile.territoryId !== tile.territoryId) {
-          const x = (col + 1) * tileSize;
-          const y1 = row * tileSize;
-          const y2 = (row + 1) * tileSize;
-          this.drawDashedLine(borderGfx, x, y1, x, y2, FACTION_COLORS[tile.territoryId.split('_')[0]] ?? 0xe94560);
+          const bx = Math.floor((col + 1) * tileSize);
+          const y1 = Math.floor(row * tileSize);
+          const y2 = Math.floor((row + 1) * tileSize);
+          this.drawDashedLine(borderGfx, bx, y1, bx, y2, FACTION_COLORS[tile.territoryId.split('_')[0]] ?? 0xe94560);
         }
 
         // 检查下邻瓦片
         const bottomTile = map.tiles[row + 1]?.[col];
         if (bottomTile && bottomTile.territoryId && bottomTile.territoryId !== tile.territoryId) {
-          const x1 = col * tileSize;
-          const x2 = (col + 1) * tileSize;
-          const y = (row + 1) * tileSize;
-          this.drawDashedLine(borderGfx, x1, y, x2, y, FACTION_COLORS[tile.territoryId.split('_')[0]] ?? 0xe94560);
+          const x1 = Math.floor(col * tileSize);
+          const x2 = Math.floor((col + 1) * tileSize);
+          const by = Math.floor((row + 1) * tileSize);
+          this.drawDashedLine(borderGfx, x1, by, x2, by, FACTION_COLORS[tile.territoryId.split('_')[0]] ?? 0xe94560);
         }
       }
     }
@@ -1936,7 +1967,7 @@ export class MapScene extends BaseScene {
   }
 
   /**
-   * 绘制建筑图标
+   * 绘制建筑图标（整数坐标）
    *
    * 优先使用精灵纹理（从 Kenney spritesheet 获取），
    * 找不到时 fallback 到 PixiJS Graphics 绘制简单形状。
@@ -1949,8 +1980,9 @@ export class MapScene extends BaseScene {
         const tile = map.tiles[row]?.[col];
         if (!tile?.buildingId) continue;
 
-        const cx = col * tileSize + tileSize / 2;
-        const cy = row * tileSize + tileSize / 2;
+        // 整数坐标：瓦片中心
+        const cx = Math.floor(col * tileSize + tileSize / 2);
+        const cy = Math.floor(row * tileSize + tileSize / 2);
         const container = new Container({ label: `tile-bldg-${tile.buildingId}` });
         container.position.set(cx, cy);
         container.eventMode = 'static';
@@ -2135,8 +2167,9 @@ export class MapScene extends BaseScene {
 
     let npcIndex = 0;
     for (const npc of map.npcs) {
-      const cx = npc.tileX * tileSize + tileSize / 2;
-      const cy = npc.tileY * tileSize + tileSize / 2;
+      // 整数坐标：瓦片中心
+      const cx = Math.floor(npc.tileX * tileSize + tileSize / 2);
+      const cy = Math.floor(npc.tileY * tileSize + tileSize / 2);
 
       const container = new Container({ label: `tile-npc-${npc.id}` });
       container.position.set(cx, cy);
@@ -2361,8 +2394,9 @@ export class MapScene extends BaseScene {
     const tileSize = map.tileSize;
 
     for (const lm of map.landmarks) {
-      const cx = lm.x * tileSize + tileSize / 2;
-      const cy = lm.y * tileSize + tileSize / 2;
+      // 整数坐标：瓦片中心
+      const cx = Math.floor(lm.x * tileSize + tileSize / 2);
+      const cy = Math.floor(lm.y * tileSize + tileSize / 2);
 
       const container = new Container({ label: `tile-landmark-${lm.name}` });
       container.position.set(cx, cy);
@@ -2669,7 +2703,7 @@ export class MapScene extends BaseScene {
   };
 
   /**
-   * 鼠标离开容器：停止边缘滚动
+   * 鼠标离开容器：目标速度归零（实际速度通过平滑插值逐渐衰减）
    */
   private onPointerLeave = (): void => {
     this.pointerInContainer = false;

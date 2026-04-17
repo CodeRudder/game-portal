@@ -18,7 +18,7 @@ import type { CameraBounds, ICameraManager } from '../types';
 // ═══════════════════════════════════════════════════════════════
 
 /** 默认平滑系数（0~1，越大越快） */
-const DEFAULT_SMOOTH_FACTOR = 0.1;
+const DEFAULT_SMOOTH_FACTOR = 0.15;
 
 /** 默认最小缩放 */
 const MIN_ZOOM = 0.3;
