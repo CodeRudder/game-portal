@@ -21,6 +21,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ThreeKingdomsEngine } from '@/games/three-kingdoms/ThreeKingdomsEngine';
 import type { CampaignSystem } from '@/games/three-kingdoms/CampaignSystem';
+import { CAMPAIGN_STAGE_DEFINITIONS, ERA_COLORS, DIFFICULTY_DISPLAY } from '@/games/three-kingdoms/ThreeKingdomsCampaign';
 import { ThreeKingdomsRenderStateAdapter } from '@/games/three-kingdoms/ThreeKingdomsRenderStateAdapter';
 import { ThreeKingdomsEventSystem, type ActiveEvent, type EventChoice } from '@/games/three-kingdoms/ThreeKingdomsEventSystem';
 import { MapGenerator, type GameMap } from '@/games/three-kingdoms/MapGenerator';
@@ -481,6 +482,26 @@ function CampaignPanel({
     return { detail, statusInfo, canAttack: statusInfo.canAttack };
   }, [detailStageId, engine]);
 
+  // 关卡元数据（时代、难度、战力）
+  const stageMeta = useMemo(() => {
+    const map = new Map<string, typeof CAMPAIGN_STAGE_DEFINITIONS[number]>();
+    for (const def of CAMPAIGN_STAGE_DEFINITIONS) {
+      map.set(def.id, def);
+    }
+    return map;
+  }, []);
+
+  // 关卡 ID 到元数据定义的映射（基于顺序）
+  const stageDefMap = useMemo(() => {
+    const map = new Map<string, typeof CAMPAIGN_STAGE_DEFINITIONS[number]>();
+    stages.forEach((stage, idx) => {
+      if (idx < CAMPAIGN_STAGE_DEFINITIONS.length) {
+        map.set(stage.id, CAMPAIGN_STAGE_DEFINITIONS[idx]);
+      }
+    });
+    return map;
+  }, [stages]);
+
   return (
     <div style={{
       position: 'absolute', top: '50%', left: '50%',
@@ -506,39 +527,68 @@ function CampaignPanel({
 
       {/* 关卡列表 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {stages.map((stage) => {
+        {stages.map((stage, idx) => {
           const statusInfo = STAGE_STATUS_MAP[stage.status] ?? STAGE_STATUS_MAP.locked;
           const isLocked = stage.status === 'locked';
           const isVictory = stage.status === 'victory';
+          const def = stageDefMap.get(stage.id);
+          const eraColor = def ? (ERA_COLORS[def.era] ?? '#888') : '#888';
+          const diffDisplay = def ? (DIFFICULTY_DISPLAY[def.difficulty] ?? DIFFICULTY_DISPLAY[1]) : null;
+          const powerStr = def ? Math.floor(def.requiredPower).toLocaleString() : '';
 
           return (
             <div key={stage.id}
               onClick={() => !isLocked && setDetailStageId(stage.id)}
               style={{
                 padding: '10px 14px', borderRadius: 8,
-                border: `1px solid ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)'}`,
+                border: `1px solid ${isLocked ? 'rgba(255,255,255,0.05)' : isVictory ? 'rgba(96,165,250,0.2)' : 'rgba(255,255,255,0.1)'}`,
                 background: isLocked ? 'rgba(255,255,255,0.01)' : isVictory ? 'rgba(96,165,250,0.06)' : 'rgba(255,255,255,0.03)',
                 cursor: isLocked ? 'not-allowed' : 'pointer',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 opacity: isLocked ? 0.5 : 1,
+                transition: 'background 0.15s',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>{statusInfo.label}</span>
-                <span style={{ fontSize: 14, fontWeight: 'bold', color: isLocked ? CT.textDim : CT.textPrimary }}>
-                  {stage.name}
-                </span>
-                {stage.stars > 0 && (
-                  <span style={{ fontSize: 11, color: '#facc15' }}>{'⭐'.repeat(stage.stars)}</span>
-                )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
+                {/* 第一行：状态图标 + 名称 + 星级 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>{statusInfo.label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 'bold', color: isLocked ? CT.textDim : CT.textPrimary }}>
+                    {stage.name}
+                  </span>
+                  {stage.stars > 0 && (
+                    <span style={{ fontSize: 11, color: '#facc15' }}>{'⭐'.repeat(stage.stars)}</span>
+                  )}
+                </div>
+                {/* 第二行：时代标签 + 难度 + 战力 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11 }}>
+                  {def && (
+                    <span style={{
+                      color: eraColor, background: `${eraColor}18`,
+                      padding: '1px 6px', borderRadius: 3, fontWeight: 'bold',
+                    }}>
+                      {def.era}
+                    </span>
+                  )}
+                  {diffDisplay && (
+                    <span style={{ color: diffDisplay.color, fontSize: 10 }}>
+                      {diffDisplay.stars}
+                    </span>
+                  )}
+                  {powerStr && (
+                    <span style={{ color: CT.textDim }}>
+                      ⚔️{powerStr}
+                    </span>
+                  )}
+                </div>
               </div>
               {!isLocked && stage.status !== 'victory' && (
                 <span style={{ fontSize: 11, color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)',
-                  padding: '1px 8px', borderRadius: 4,
+                  padding: '1px 8px', borderRadius: 4, whiteSpace: 'nowrap',
                 }}>可攻</span>
               )}
               {isVictory && (
-                <span style={{ fontSize: 11, color: '#60a5fa' }}>已攻克</span>
+                <span style={{ fontSize: 11, color: '#60a5fa', whiteSpace: 'nowrap' }}>已攻克</span>
               )}
             </div>
           );

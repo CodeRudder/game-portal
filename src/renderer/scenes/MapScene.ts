@@ -285,11 +285,15 @@ const SPARK_COLOR = 0xffd700;
 
 /** NPC 类型颜色映射 */
 const NPC_TYPE_COLORS: Record<string, number> = {
-  farmer: 0x4caf50,
-  soldier: 0xf44336,
-  merchant: 0xffc107,
-  scholar: 0x2196f3,
-  scout: 0x9c27b0,
+  farmer: 0x8d6e63,     // 棕色 — 农民
+  soldier: 0xf44336,    // 红色 — 士兵/武将
+  merchant: 0x4caf50,   // 绿色 — 商人
+  scholar: 0x2196f3,    // 蓝色 — 文臣/学者
+  scout: 0x9c27b0,      // 紫色 — 斥候
+  general: 0xe53935,    // 深红 — 武将
+  craftsman: 0xff9800,  // 橙色 — 工匠
+  villager: 0x78909c,   // 灰蓝 — 村民
+  sage: 0x7c4dff,       // 紫色 — 名士
 };
 
 /** NPC 类型 emoji 映射 */
@@ -299,15 +303,23 @@ const NPC_TYPE_EMOJI: Record<string, string> = {
   merchant: '💰',
   scholar: '📚',
   scout: '🔍',
+  general: '🗡️',
+  craftsman: '🔨',
+  villager: '🏘️',
+  sage: '⭐',
 };
 
-/** NPC 形状按职业区分 */
-const NPC_SHAPES: Record<string, 'circle' | 'square' | 'diamond' | 'triangle'> = {
-  farmer: 'triangle',
+/** NPC 形状按职业区分（全部使用方形 + 不同装饰） */
+const NPC_SHAPES: Record<string, 'square'> = {
+  farmer: 'square',
   soldier: 'square',
-  merchant: 'diamond',
-  scholar: 'circle',
-  scout: 'triangle',
+  merchant: 'square',
+  scholar: 'square',
+  scout: 'square',
+  general: 'square',
+  craftsman: 'square',
+  villager: 'square',
+  sage: 'square',
 };
 
 /** 建筑形状按类型区分（屋顶 + 主体 + 颜色） */
@@ -454,6 +466,21 @@ export class MapScene extends BaseScene {
   private territoryNodes: Map<string, TerritoryNode> = new Map();
   /** 建筑图标映射（ID → BuildingIcon） */
   private buildingIcons: Map<string, BuildingIcon> = new Map();
+  /** 建筑动画累计时间（秒） */
+  private buildingAnimTime: number = 0;
+  /** 建筑产出粒子（小圆点从建筑上方浮出） */
+  private buildingParticles: Array<{
+    x: number;
+    y: number;
+    vy: number;
+    alpha: number;
+    color: number;
+    life: number;
+    buildingId: string;
+    graphics: Graphics;
+  }> = [];
+  /** 建筑产出粒子发射计时器 */
+  private buildingParticleTimer: number = 0;
 
   // ─── 摄像机 ───────────────────────────────────────────────
 
@@ -728,6 +755,9 @@ export class MapScene extends BaseScene {
     // ── 2. 更新建筑进度弧线 ──────────────────────────────────
     this.updateBuildingProgress();
 
+    // ── 2.5. 更新建筑浮动和产出动画 ─────────────────────────
+    this.updateBuildingAnimation(deltaTime);
+
     // ── 3. 更新边缘滚动 ──────────────────────────────────────
     this.updateEdgeScroll(deltaTime);
 
@@ -787,6 +817,12 @@ export class MapScene extends BaseScene {
     this.destroyTileMapView();
     this.territoryNodes.clear();
     this.buildingIcons.clear();
+    // 清理建筑产出粒子
+    for (const p of this.buildingParticles) {
+      p.graphics.destroy();
+    }
+    this.buildingParticles = [];
+    this.buildingParticleTimer = 0;
     this.decorations = [];
     this.terrainPaths = [];
     this.recentlyCaptured.clear();
@@ -871,6 +907,76 @@ export class MapScene extends BaseScene {
       }
 
       icon.hasProgressArc = true;
+    }
+  }
+
+  /**
+   * 更新建筑浮动和产出动画
+   *
+   * - idle 状态：轻微上下浮动（sin 波，幅度 2px，周期 2s）
+   * - producing 状态：小圆点从建筑上方浮出（向上飘动 + 渐隐）
+   */
+  private updateBuildingAnimation(deltaTime: number): void {
+    this.buildingAnimTime += deltaTime;
+
+    // ── 1. 建筑浮动动画 ────────────────────────────────────
+    for (const icon of this.buildingIcons.values()) {
+      const state = icon.data?.state;
+      // 所有建筑都有轻微浮动，producing 状态幅度稍大
+      const amplitude = state === 'producing' ? 3 : 2;
+      const floatY = amplitude * Math.sin(this.buildingAnimTime * Math.PI); // 周期 2s
+      icon.container.y = Math.floor((icon.data?.position.y ?? 0) + floatY);
+    }
+
+    // ── 2. 产出粒子（仅 producing 状态的建筑） ──────────────
+    this.buildingParticleTimer += deltaTime;
+
+    // 每 0.5 秒发射一个粒子
+    if (this.buildingParticleTimer >= 0.5) {
+      this.buildingParticleTimer -= 0.5;
+
+      for (const icon of this.buildingIcons.values()) {
+        if (icon.data?.state !== 'producing') continue;
+
+        // 限制粒子总数
+        if (this.buildingParticles.length >= 20) break;
+
+        const gfx = new Graphics();
+        gfx.circle(0, 0, 3).fill({ color: 0xffd700, alpha: 0.8 });
+        const baseX = icon.container.x;
+        const baseY = icon.container.y;
+        gfx.position.set(baseX, baseY - 20);
+        this.container.addChild(gfx);
+
+        this.buildingParticles.push({
+          x: baseX,
+          y: baseY - 20,
+          vy: -30, // 向上飘动速度（像素/秒）
+          alpha: 0.8,
+          color: 0xffd700,
+          life: 1.5, // 1.5 秒后消失
+          buildingId: icon.id,
+          graphics: gfx,
+        });
+      }
+    }
+
+    // ── 3. 更新已有粒子 ─────────────────────────────────────
+    for (let i = this.buildingParticles.length - 1; i >= 0; i--) {
+      const p = this.buildingParticles[i];
+      p.life -= deltaTime;
+      p.y += p.vy * deltaTime;
+      p.alpha -= deltaTime * 0.6; // 渐隐
+
+      if (p.life <= 0 || p.alpha <= 0) {
+        // 移除粒子
+        this.container.removeChild(p.graphics);
+        p.graphics.destroy();
+        this.buildingParticles.splice(i, 1);
+      } else {
+        p.graphics.position.set(Math.floor(p.x), Math.floor(p.y));
+        p.graphics.alpha = Math.max(0, p.alpha);
+      }
     }
   }
 
@@ -2260,61 +2366,17 @@ export class MapScene extends BaseScene {
 
       const gfx = new Graphics();
       const color = NPC_TYPE_COLORS[npc.type] ?? 0x9e9e9e;
-      const shape = NPC_SHAPES[npc.type] ?? 'circle';
 
-      // 根据职业绘制不同形状
-      switch (shape) {
-        case 'triangle': {
-          // 三角形（草帽/斥候形状）
-          const h = shapeRadius * 1.8;
-          gfx.moveTo(0, -h * 0.6)
-            .lineTo(-shapeRadius, h * 0.4)
-            .lineTo(shapeRadius, h * 0.4)
-            .closePath()
-            .fill({ color });
-          gfx.moveTo(0, -h * 0.6)
-            .lineTo(-shapeRadius, h * 0.4)
-            .lineTo(shapeRadius, h * 0.4)
-            .closePath()
-            .stroke({ color: 0xffffff, width: 1 });
-          break;
-        }
-        case 'square': {
-          // 方形（盾牌形状）
-          const half = shapeRadius * 0.85;
-          gfx.roundRect(-half, -half, half * 2, half * 2, 2)
-            .fill({ color });
-          gfx.roundRect(-half, -half, half * 2, half * 2, 2)
-            .stroke({ color: 0xffffff, width: 1 });
-          break;
-        }
-        case 'diamond': {
-          // 菱形（铜钱形状）
-          gfx.moveTo(0, -shapeRadius)
-            .lineTo(shapeRadius, 0)
-            .lineTo(0, shapeRadius)
-            .lineTo(-shapeRadius, 0)
-            .closePath()
-            .fill({ color });
-          gfx.moveTo(0, -shapeRadius)
-            .lineTo(shapeRadius, 0)
-            .lineTo(0, shapeRadius)
-            .lineTo(-shapeRadius, 0)
-            .closePath()
-            .stroke({ color: 0xffffff, width: 1 });
-          // 菱形中心小圆（铜钱孔）
-          gfx.circle(0, 0, shapeRadius * 0.25)
-            .fill({ color: 0x000000, alpha: 0.3 });
-          break;
-        }
-        case 'circle':
-        default: {
-          // 圆形（书卷形状）
-          gfx.circle(0, 0, shapeRadius).fill({ color });
-          gfx.circle(0, 0, shapeRadius).stroke({ color: 0xffffff, width: 1 });
-          break;
-        }
-      }
+      // 所有 NPC 使用方形基础 + 职业装饰
+      const half = Math.floor(shapeRadius * 0.85);
+      // 方形主体
+      gfx.roundRect(-half, -half, half * 2, half * 2, 2)
+        .fill({ color });
+      gfx.roundRect(-half, -half, half * 2, half * 2, 2)
+        .stroke({ color: 0xffffff, width: 1 });
+
+      // 根据职业绘制装饰图标
+      this.drawNPCDecoration(gfx, npc.type, half);
 
       container.addChild(gfx);
 
@@ -2355,6 +2417,114 @@ export class MapScene extends BaseScene {
         breathPhase: npcIndex * 0.7, // 每个NPC相位错开
       });
       npcIndex++;
+    }
+  }
+
+  /**
+   * 绘制 NPC 职业装饰（在方形主体内部）
+   *
+   * 每种职业有独特的装饰图案：
+   * - scholar（文臣）：书卷 — 两条平行横线
+   * - soldier/general（武将）：剑 — 十字 + 竖线
+   * - merchant（商人）：钱币 — 中心圆环
+   * - farmer（农民）：麦穗 — V 形 + 竖线
+   * - craftsman（工匠）：锤子 — T 形
+   * - sage（名士）：星形 — 五角星
+   * - scout/villager：默认 — 中心小圆点
+   */
+  private drawNPCDecoration(gfx: Graphics, npcType: string, half: number): void {
+    const decoColor = 0xffffff;
+    const decoAlpha = 0.9;
+
+    switch (npcType) {
+      case 'scholar': {
+        // 书卷：两条平行横线
+        const lineW = Math.floor(half * 0.7);
+        gfx.moveTo(-lineW, -2)
+          .lineTo(lineW, -2)
+          .stroke({ color: decoColor, width: 1.5, alpha: decoAlpha });
+        gfx.moveTo(-lineW, 2)
+          .lineTo(lineW, 2)
+          .stroke({ color: decoColor, width: 1.5, alpha: decoAlpha });
+        break;
+      }
+      case 'soldier':
+      case 'general': {
+        // 剑：竖线 + 横线（十字形）
+        const bladeLen = Math.floor(half * 0.7);
+        // 剑身（竖线）
+        gfx.moveTo(0, -bladeLen)
+          .lineTo(0, bladeLen)
+          .stroke({ color: decoColor, width: 1.5, alpha: decoAlpha });
+        // 剑柄（横线）
+        gfx.moveTo(-Math.floor(bladeLen * 0.5), 0)
+          .lineTo(Math.floor(bladeLen * 0.5), 0)
+          .stroke({ color: decoColor, width: 1.5, alpha: decoAlpha });
+        break;
+      }
+      case 'merchant': {
+        // 钱币：中心圆环
+        const coinR = Math.floor(half * 0.35);
+        gfx.circle(0, 0, coinR)
+          .stroke({ color: decoColor, width: 1.5, alpha: decoAlpha });
+        // 钱币中心小点
+        gfx.circle(0, 0, Math.max(1, Math.floor(coinR * 0.3)))
+          .fill({ color: decoColor, alpha: decoAlpha });
+        break;
+      }
+      case 'farmer': {
+        // 麦穗：竖线 + 两侧 V 形
+        const stemLen = Math.floor(half * 0.6);
+        // 茎
+        gfx.moveTo(0, stemLen)
+          .lineTo(0, -stemLen)
+          .stroke({ color: decoColor, width: 1.5, alpha: decoAlpha });
+        // 左穗
+        gfx.moveTo(-Math.floor(half * 0.3), -Math.floor(stemLen * 0.3))
+          .lineTo(0, -stemLen)
+          .stroke({ color: decoColor, width: 1, alpha: decoAlpha });
+        // 右穗
+        gfx.moveTo(Math.floor(half * 0.3), -Math.floor(stemLen * 0.3))
+          .lineTo(0, -stemLen)
+          .stroke({ color: decoColor, width: 1, alpha: decoAlpha });
+        break;
+      }
+      case 'craftsman': {
+        // 锤子：T 形
+        const hammerH = Math.floor(half * 0.6);
+        // 锤柄（竖线）
+        gfx.moveTo(0, hammerH)
+          .lineTo(0, -Math.floor(hammerH * 0.2))
+          .stroke({ color: decoColor, width: 1.5, alpha: decoAlpha });
+        // 锤头（横线）
+        gfx.moveTo(-Math.floor(half * 0.5), -Math.floor(hammerH * 0.2))
+          .lineTo(Math.floor(half * 0.5), -Math.floor(hammerH * 0.2))
+          .stroke({ color: decoColor, width: 2, alpha: decoAlpha });
+        break;
+      }
+      case 'sage': {
+        // 星形：五角星
+        const starR = Math.floor(half * 0.5);
+        const innerR = Math.floor(starR * 0.4);
+        const points = 5;
+        gfx.moveTo(0, -starR);
+        for (let i = 0; i < points * 2; i++) {
+          const angle = (Math.PI * i) / points - Math.PI / 2;
+          const r = i % 2 === 0 ? starR : innerR;
+          const px = Math.floor(Math.cos(angle) * r);
+          const py = Math.floor(Math.sin(angle) * r);
+          gfx.lineTo(px, py);
+        }
+        gfx.closePath()
+          .fill({ color: decoColor, alpha: decoAlpha });
+        break;
+      }
+      default: {
+        // 默认装饰：中心小圆点
+        gfx.circle(0, 0, Math.max(1, Math.floor(half * 0.25)))
+          .fill({ color: decoColor, alpha: decoAlpha });
+        break;
+      }
     }
   }
 

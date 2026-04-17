@@ -61,6 +61,21 @@ export type {
   StoryEvent,
 } from './TutorialStorySystem';
 
+// ── 攻城略地关卡系统 ──
+export { ThreeKingdomsCampaignManager } from './ThreeKingdomsCampaignManager';
+export {
+  CAMPAIGN_STAGE_DEFINITIONS,
+  DIFFICULTY_DISPLAY,
+  ERA_COLORS,
+} from './ThreeKingdomsCampaign';
+export type {
+  CampaignStage as CampaignStageSimple,
+  CampaignEra,
+  CampaignRewards,
+  StarRating,
+  ChallengeResult,
+} from './ThreeKingdomsCampaign';
+
 // ── 渲染状态适配器 ──
 export { ThreeKingdomsRenderStateAdapter } from './ThreeKingdomsRenderStateAdapter';
 
