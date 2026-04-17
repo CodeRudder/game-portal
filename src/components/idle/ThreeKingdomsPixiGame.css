@@ -1793,17 +1793,35 @@
   z-index: 20;
 }
 
-/* 资源类型颜色变体 */
+/* 资源类型颜色变体 — 每种资源独立配色 */
 .tk-resource-float--grain {
-  color: #6b8e5a;
+  color: #d4a030;           /* 粮草: 金黄色 */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(212,160,48,0.4);
 }
 
 .tk-resource-float--gold {
-  color: #d4a030;
+  color: #b87333;           /* 铜钱: 古铜色 */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(184,115,51,0.4);
+}
+
+.tk-resource-float--iron {
+  color: #b0b8c8;           /* 铁锭: 银灰色 */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(176,184,200,0.4);
+}
+
+.tk-resource-float--wood {
+  color: #a0724a;           /* 木材: 棕色 */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(160,114,74,0.4);
 }
 
 .tk-resource-float--troops {
-  color: #c62828;
+  color: #e53935;           /* 兵力: 红色 */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(229,57,53,0.4);
+}
+
+.tk-resource-float--morale {
+  color: #66bb6a;           /* 民心: 绿色 */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(102,187,106,0.4);
 }
 
 .tk-resource-float--destiny {
@@ -1812,16 +1830,20 @@
 
 @keyframes tk-float-up-resource {
   0% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
   }
-  20% {
+  10% {
     opacity: 1;
-    transform: translateY(-8px) scale(1.1);
+    transform: translateY(-4px) scale(1.2);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(-12px) scale(1.05);
   }
   100% {
     opacity: 0;
-    transform: translateY(-40px) scale(0.9);
+    transform: translateY(-50px) scale(0.85);
   }
 }
 
@@ -1847,31 +1869,31 @@
 
 /* 云雾 1 — 大型缓慢 */
 .tk-cloud-mist--1 {
-  top: 3%;
-  width: 200px;
-  height: 50px;
-  background: radial-gradient(ellipse, rgba(139,115,85,0.10) 0%, rgba(139,115,85,0.04) 40%, transparent 70%);
-  animation-duration: 25s;
+  top: 2%;
+  width: 280px;
+  height: 70px;
+  background: radial-gradient(ellipse, rgba(139,115,85,0.18) 0%, rgba(139,115,85,0.08) 40%, transparent 70%);
+  animation-duration: 22s;
   animation-delay: 0s;
 }
 
 /* 云雾 2 — 中型 */
 .tk-cloud-mist--2 {
-  top: 10%;
-  width: 150px;
-  height: 40px;
-  background: radial-gradient(ellipse, rgba(139,115,85,0.08) 0%, rgba(139,115,85,0.03) 40%, transparent 70%);
-  animation-duration: 30s;
+  top: 8%;
+  width: 200px;
+  height: 55px;
+  background: radial-gradient(ellipse, rgba(139,115,85,0.14) 0%, rgba(139,115,85,0.06) 40%, transparent 70%);
+  animation-duration: 28s;
   animation-delay: -8s;
 }
 
 /* 云雾 3 — 小型快速 */
 .tk-cloud-mist--3 {
-  top: 6%;
-  width: 120px;
-  height: 35px;
-  background: radial-gradient(ellipse, rgba(139,115,85,0.07) 0%, rgba(139,115,85,0.02) 40%, transparent 70%);
-  animation-duration: 20s;
+  top: 5%;
+  width: 160px;
+  height: 45px;
+  background: radial-gradient(ellipse, rgba(139,115,85,0.12) 0%, rgba(139,115,85,0.05) 40%, transparent 70%);
+  animation-duration: 18s;
   animation-delay: -15s;
 }
 
@@ -1905,7 +1927,7 @@
     transform: translateX(-50%) scale(1);
   }
   50% {
-    transform: translateX(-50%) scale(1.02);
+    transform: translateX(-50%) scale(1.035);
   }
 }
 
@@ -1919,7 +1941,7 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.02);
+    transform: scale(1.04);
   }
 }
 
