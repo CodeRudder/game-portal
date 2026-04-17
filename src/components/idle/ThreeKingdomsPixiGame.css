@@ -8082,6 +8082,859 @@ button:active {
 }
 
 
+/* ═══════════════════════════════════════════════════════════════
+ * R16-动态效果系统 — 资源飘字 + 按钮反馈 + 升级光效 + 进度条 + 入场动画
+ * 提升放置游戏核心"成长感"的动态反馈
+ * 配色：暗金(#FFD700) / 深棕(#8B4513) / 朱红(#C83030)
+ * 所有动画使用 transform/opacity 保证 GPU 加速
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 1. 资源产出飘字动画 ─── */
+
+/* 资源增加时的飘字效果 "+1/秒" */
+.tk-resource-float-anim {
+  position: absolute;
+  animation: tk-float-up-v2 1.5s ease-out forwards;
+  color: #FFD700;
+  font-weight: bold;
+  font-size: 13px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(255, 215, 0, 0.3);
+  pointer-events: none;
+  z-index: 20;
+  white-space: nowrap;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+}
+
+@keyframes tk-float-up-v2 {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-12px) scale(1.15);
+  }
+  70% {
+    opacity: 0.8;
+    transform: translateY(-30px) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.85);
+  }
+}
+
+/* 资源图标脉动 — 产出时闪烁 */
+.tk-resource-pulse-anim {
+  animation: tk-res-pulse-v2 2s ease-in-out infinite;
+}
+
+@keyframes tk-res-pulse-v2 {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: brightness(1.25);
+  }
+}
+
+/* 资源值变化时弹跳 */
+.tk-resource-value-bounce {
+  animation: tk-res-value-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tk-res-value-bounce {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.25);
+    color: #FFD700;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ─── 2. 按钮交互反馈 ─── */
+
+/* 通用古风按钮 hover/active 效果 */
+.tk-btn-ancient {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.tk-btn-ancient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(240, 192, 64, 0.3), 0 0 6px rgba(240, 192, 64, 0.15);
+  filter: brightness(1.15);
+}
+
+.tk-btn-ancient:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 1px 4px rgba(240, 192, 64, 0.2);
+  transition-duration: 0.08s;
+}
+
+/* 按钮点击涟漪效果 */
+.tk-btn-ancient::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.25);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tk-btn-ancient:active::after {
+  width: 120%;
+  height: 300%;
+  opacity: 1;
+  transition: width 0s, height 0s, opacity 0s;
+}
+
+/* 金色按钮增强 */
+.tk-btn-gold-dynamic {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.tk-btn-gold-dynamic:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 4px 16px rgba(240, 192, 64, 0.35),
+    0 0 8px rgba(240, 192, 64, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  filter: brightness(1.12);
+}
+
+.tk-btn-gold-dynamic:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 4px rgba(240, 192, 64, 0.2);
+  transition-duration: 0.08s;
+}
+
+/* 危险按钮增强 */
+.tk-btn-danger-dynamic {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.tk-btn-danger-dynamic:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(208, 64, 64, 0.3);
+  filter: brightness(1.1);
+}
+
+.tk-btn-danger-dynamic:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* ─── 3. 建筑升级光效 ─── */
+
+/* 建筑升级时金色粒子光效 */
+.tk-building-upgrading-v2 {
+  animation: tk-upgrade-glow-v2 1.5s ease-in-out;
+  position: relative;
+}
+
+@keyframes tk-upgrade-glow-v2 {
+  0% {
+    box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+  }
+  30% {
+    box-shadow:
+      0 0 15px rgba(255, 215, 0, 0.5),
+      0 0 30px rgba(255, 215, 0, 0.25),
+      inset 0 0 10px rgba(255, 215, 0, 0.15);
+  }
+  60% {
+    box-shadow:
+      0 0 20px rgba(255, 215, 0, 0.6),
+      0 0 40px rgba(255, 215, 0, 0.3),
+      0 0 60px rgba(255, 215, 0, 0.1),
+      inset 0 0 15px rgba(255, 215, 0, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+  }
+}
+
+/* 建筑升级完成 — 金色爆发闪光 */
+.tk-building-upgrade-burst {
+  animation: tk-upgrade-burst 0.8s ease-out forwards;
+  position: relative;
+}
+
+@keyframes tk-upgrade-burst {
+  0% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+  }
+  25% {
+    filter: brightness(1.8);
+    box-shadow:
+      0 0 25px rgba(255, 215, 0, 0.7),
+      0 0 50px rgba(255, 215, 0, 0.4),
+      0 0 80px rgba(255, 215, 0, 0.15);
+  }
+  50% {
+    filter: brightness(1.4);
+    box-shadow:
+      0 0 15px rgba(255, 215, 0, 0.4),
+      0 0 30px rgba(255, 215, 0, 0.2);
+  }
+  100% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+  }
+}
+
+/* 建筑可升级提示 — 微弱金色呼吸 */
+.tk-building-can-upgrade {
+  animation: tk-can-upgrade-breathe 2.5s ease-in-out infinite;
+}
+
+@keyframes tk-can-upgrade-breathe {
+  0%, 100% {
+    border-color: rgba(212, 160, 48, 0.3);
+    box-shadow: 0 0 4px rgba(212, 160, 48, 0.1);
+  }
+  50% {
+    border-color: rgba(255, 215, 0, 0.6);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.25), 0 0 4px rgba(255, 215, 0, 0.15);
+  }
+}
+
+/* ─── 4. 武将卡片 hover 浮动 ─── */
+
+/* 武将卡片增强悬停 — 三维浮起效果 */
+.tk-general-card-hover-v2 {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.tk-general-card-hover-v2:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    0 0 12px rgba(212, 160, 48, 0.2);
+  z-index: 10;
+  border-color: rgba(255, 215, 0, 0.7);
+}
+
+.tk-general-card-hover-v2:active {
+  transform: translateY(-2px) scale(1.0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition-duration: 0.1s;
+}
+
+/* 武将招募时粒子特效 */
+.tk-recruit-particle-effect {
+  position: relative;
+  overflow: visible;
+}
+
+.tk-recruit-particle-effect::before {
+  content: '✦ ✧ ✦';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #FFD700;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+  animation: tk-recruit-particles 1.2s ease-out forwards;
+  pointer-events: none;
+  white-space: nowrap;
+  letter-spacing: 4px;
+}
+
+@keyframes tk-recruit-particles {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0) scale(0.5);
+  }
+  30% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-35px) scale(0.8);
+  }
+}
+
+/* ─── 5. 科技研究进度条动画 ─── */
+
+/* 科技进度条流动渐变 */
+.tk-tech-progress-flow {
+  background: linear-gradient(90deg, #8B4513, #DAA520, #FFD700, #DAA520, #8B4513);
+  background-size: 200% 100%;
+  animation: tk-progress-flow-v2 2s linear infinite;
+  border-radius: 2px;
+}
+
+@keyframes tk-progress-flow-v2 {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* 进度条闪光扫过效果 */
+.tk-progress-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.tk-progress-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: tk-shimmer-pass 2.5s ease-in-out infinite;
+}
+
+@keyframes tk-shimmer-pass {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* 研究完成进度条闪光 */
+.tk-progress-complete-flash {
+  animation: tk-progress-complete 0.6s ease-out;
+}
+
+@keyframes tk-progress-complete {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(2); box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+  100% { filter: brightness(1); }
+}
+
+/* ─── 6. 关卡按钮 hover 高亮 ─── */
+
+/* 关卡按钮动态交互 */
+.tk-campaign-btn-dynamic {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.tk-campaign-btn-dynamic:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: #FFD700;
+  filter: brightness(1.1);
+}
+
+.tk-campaign-btn-dynamic:active {
+  transform: scale(0.98);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  transition-duration: 0.08s;
+}
+
+/* 当前关卡特殊发光 */
+.tk-campaign-btn-current {
+  animation: tk-campaign-current-glow 2s ease-in-out infinite;
+}
+
+@keyframes tk-campaign-current-glow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.2);
+    border-color: rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2);
+    border-color: rgba(255, 215, 0, 0.8);
+  }
+}
+
+/* 已通关关卡勾选标记 */
+.tk-campaign-btn-cleared::after {
+  content: '✓';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5aaa4a, #3d8b35);
+  color: #fff;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  animation: tk-cleared-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tk-cleared-pop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+/* ─── 7. 面板内容入场动画 ─── */
+
+/* 面板切换内容淡入 */
+.tk-content-fade-in {
+  animation: tk-content-enter-v2 0.4s ease-out;
+}
+
+@keyframes tk-content-enter-v2 {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tab 切换内容滑入 */
+.tk-content-slide-in {
+  animation: tk-content-slide 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes tk-content-slide {
+  from {
+    opacity: 0;
+    transform: translateX(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 列表项逐个入场 — 需配合 JS 设置 animation-delay */
+.tk-stagger-item-v2 {
+  opacity: 0;
+  animation: tk-stagger-enter 0.35s ease-out forwards;
+}
+
+@keyframes tk-stagger-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 面板展开动画 */
+.tk-panel-expand {
+  animation: tk-panel-expand-anim 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top center;
+}
+
+@keyframes tk-panel-expand-anim {
+  from {
+    opacity: 0;
+    transform: scaleY(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* ─── 8. 通知/提示弹出动画 ─── */
+
+/* 通知从右侧滑入 */
+.tk-notification-slide {
+  animation: tk-notif-slide-v2 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes tk-notif-slide-v2 {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 通知消失 — 向右滑出 */
+.tk-notification-exit {
+  animation: tk-notif-exit 0.25s ease-in forwards;
+}
+
+@keyframes tk-notif-exit {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Toast 从顶部弹出 */
+.tk-toast-pop {
+  animation: tk-toast-pop-v2 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tk-toast-pop-v2 {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(4px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Toast 消失 */
+.tk-toast-fade-out {
+  animation: tk-toast-fade 0.3s ease-out forwards;
+}
+
+@keyframes tk-toast-fade {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+}
+
+/* ─── 9. 数字变化动画 ─── */
+
+/* 数值跳动 */
+.tk-number-pop {
+  animation: tk-num-pop-v2 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-block;
+}
+
+@keyframes tk-num-pop-v2 {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+    color: #FFD700;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 数值减少（红色闪烁） */
+.tk-number-decrease {
+  animation: tk-num-decrease 0.4s ease-out;
+  display: inline-block;
+}
+
+@keyframes tk-num-decrease {
+  0% {
+    transform: scale(1);
+    color: inherit;
+  }
+  30% {
+    transform: scale(1.2);
+    color: #e05050;
+    text-shadow: 0 0 6px rgba(224, 80, 80, 0.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 计数器滚动效果 */
+.tk-counter-roll {
+  display: inline-block;
+  transition: transform 0.3s ease-out;
+}
+
+.tk-counter-roll--up-v2 {
+  animation: tk-roll-up 0.3s ease-out;
+}
+
+@keyframes tk-roll-up {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.tk-counter-roll--down-v2 {
+  animation: tk-roll-down 0.3s ease-out;
+}
+
+@keyframes tk-roll-down {
+  0% { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ─── 10. 加载旋转动画 ─── */
+
+/* 古风加载旋转 — 太极风格 */
+.tk-loading-spin-v2 {
+  animation: tk-spin-v2 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes tk-spin-v2 {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 脉冲加载 */
+.tk-loading-pulse {
+  animation: tk-loading-pulse-anim 1.5s ease-in-out infinite;
+}
+
+@keyframes tk-loading-pulse-anim {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* 骨架屏闪烁 */
+.tk-skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(139, 115, 85, 0.08) 0%,
+    rgba(139, 115, 85, 0.18) 50%,
+    rgba(139, 115, 85, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: tk-skeleton-shimmer-anim 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes tk-skeleton-shimmer-anim {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── 11. 成就/解锁特效 ─── */
+
+/* 成就解锁金色边框动画 */
+.tk-achievement-unlock-v2 {
+  animation: tk-achieve-unlock 1s ease-out;
+  position: relative;
+}
+
+@keyframes tk-achieve-unlock {
+  0% {
+    border-color: transparent;
+    box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+    transform: scale(0.9);
+  }
+  40% {
+    border-color: #FFD700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.2);
+    transform: scale(1.05);
+  }
+  100% {
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+    transform: scale(1);
+  }
+}
+
+/* 等级提升特效 */
+.tk-level-up-effect {
+  animation: tk-level-up 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tk-level-up {
+  0% {
+    transform: scale(1);
+    text-shadow: none;
+  }
+  30% {
+    transform: scale(1.5);
+    color: #FFD700;
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.6), 0 0 24px rgba(255, 215, 0, 0.3);
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: none;
+  }
+}
+
+/* ─── 12. Tab 标签切换动画增强 ─── */
+
+/* Tab 切换指示器 */
+.tk-tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #FFD700, transparent);
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1px;
+}
+
+/* Tab hover 发光 */
+.tk-tab-btn-dynamic {
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.tk-tab-btn-dynamic:hover {
+  background: rgba(201, 169, 110, 0.15);
+  color: var(--tk-gold);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(212, 160, 48, 0.15);
+}
+
+.tk-tab-btn-dynamic:active {
+  transform: translateY(0);
+}
+
+/* ─── 13. 放置游戏核心"成长感"动效 ─── */
+
+/* 离线收益弹出 */
+.tk-offline-reward-appear {
+  animation: tk-offline-reward 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tk-offline-reward {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) translateY(20px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-3px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 资源满仓提示 — 脉冲边框 */
+.tk-resource-full-pulse {
+  animation: tk-resource-full 1.5s ease-in-out infinite;
+}
+
+@keyframes tk-resource-full {
+  0%, 100% {
+    border-color: rgba(208, 64, 64, 0.3);
+    box-shadow: 0 0 4px rgba(208, 64, 64, 0.1);
+  }
+  50% {
+    border-color: rgba(208, 64, 64, 0.7);
+    box-shadow: 0 0 12px rgba(208, 64, 64, 0.3), 0 0 4px rgba(208, 64, 64, 0.15);
+  }
+}
+
+/* 自动产出指示器 — 呼吸绿点 */
+.tk-auto-produce-indicator {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #5aaa4a;
+  animation: tk-auto-produce-blink 1.5s ease-in-out infinite;
+  box-shadow: 0 0 4px rgba(90, 170, 74, 0.5);
+}
+
+@keyframes tk-auto-produce-blink {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* 战力提升飞升效果 */
+.tk-power-up-fly {
+  animation: tk-power-fly 1.2s ease-out forwards;
+  position: absolute;
+  pointer-events: none;
+  z-index: 25;
+}
+
+@keyframes tk-power-fly {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateY(-25px) scale(1.3);
+    color: #FFD700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.9);
+  }
+}
+
+/* ─── 14. 微交互细节 ─── */
+
+/* 悬停时背景亮度微调 */
+.tk-hover-brighten {
+  transition: background 0.2s ease, filter 0.2s ease;
+}
+
+.tk-hover-brighten:hover {
+  filter: brightness(1.08);
+  background: rgba(212, 160, 48, 0.06);
+}
+
+/* 点击缩放反馈 */
+.tk-click-scale {
+  transition: transform 0.15s ease;
+  cursor: pointer;
+}
+
+.tk-click-scale:active {
+  transform: scale(0.95);
+}
+
+/* 焦点可见性（无障碍） */
+.tk-focus-visible:focus-visible {
+  outline: 2px solid var(--tk-gold);
+  outline-offset: 2px;
+  box-shadow: 0 0 8px rgba(240, 192, 64, 0.3);
+}
+
 /* ───────────────────────────────────────────────────────────
  * R16-8. 减弱动画偏好（无障碍）
  * ─────────────────────────────────────────────────────────── */
@@ -8118,7 +8971,50 @@ button:active {
   .tk-btn-success-flash,
   .tk-btn-error-shake,
   .tk-achievement-unlock,
-  .tk-badge-pulse::after {
+  .tk-badge-pulse::after,
+  /* R16 动态效果系统新增类 */
+  .tk-resource-float-anim,
+  .tk-resource-pulse-anim,
+  .tk-resource-value-bounce,
+  .tk-btn-ancient,
+  .tk-btn-ancient::after,
+  .tk-btn-gold-dynamic,
+  .tk-btn-danger-dynamic,
+  .tk-building-upgrading-v2,
+  .tk-building-upgrade-burst,
+  .tk-building-can-upgrade,
+  .tk-general-card-hover-v2,
+  .tk-recruit-particle-effect::before,
+  .tk-tech-progress-flow,
+  .tk-progress-shimmer::after,
+  .tk-progress-complete-flash,
+  .tk-campaign-btn-dynamic,
+  .tk-campaign-btn-current,
+  .tk-campaign-btn-cleared::after,
+  .tk-content-fade-in,
+  .tk-content-slide-in,
+  .tk-stagger-item-v2,
+  .tk-panel-expand,
+  .tk-notification-slide,
+  .tk-notification-exit,
+  .tk-toast-pop,
+  .tk-toast-fade-out,
+  .tk-number-pop,
+  .tk-number-decrease,
+  .tk-counter-roll--up-v2,
+  .tk-counter-roll--down-v2,
+  .tk-loading-spin-v2,
+  .tk-loading-pulse,
+  .tk-skeleton-shimmer,
+  .tk-achievement-unlock-v2,
+  .tk-level-up-effect,
+  .tk-tab-btn-dynamic,
+  .tk-offline-reward-appear,
+  .tk-resource-full-pulse,
+  .tk-auto-produce-indicator,
+  .tk-power-up-fly,
+  .tk-hover-brighten,
+  .tk-click-scale {
     animation: none !important;
     transition-duration: 0.01s !important;
   }
