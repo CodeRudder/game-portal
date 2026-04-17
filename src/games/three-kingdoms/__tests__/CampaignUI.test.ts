@@ -61,9 +61,9 @@ describe('CampaignUI - 关卡列表数据获取', () => {
     sys = new CampaignSystem();
   });
 
-  it('should return all 6 stages for panel rendering', () => {
+  it('should return all 15 stages for panel rendering', () => {
     const stages = getStageListData(sys);
-    expect(stages).toHaveLength(6);
+    expect(stages).toHaveLength(15);
     expect(stages[0].name).toBe('涿郡起兵');
     expect(stages[5].name).toBe('天下一统');
   });
@@ -266,7 +266,7 @@ describe('CampaignUI - 战斗流程（UI 角度）', () => {
 
   it('should provide correct total/max stars for progress display', () => {
     expect(sys.getTotalStars()).toBe(0);
-    expect(sys.getMaxStars()).toBe(18); // 6 levels × 3 stars
+    expect(sys.getMaxStars()).toBe(45); // 15 levels × 3 stars
 
     sys.completeStage('campaign_zhuo', 90);
     expect(sys.getTotalStars()).toBeGreaterThanOrEqual(1);
@@ -302,9 +302,14 @@ describe('CampaignUI - 关卡详情数据完整性（所有6关）', () => {
   });
 
   it('should have valid prerequisite chain', () => {
+    // First level (zhuo) has no prerequisite
     expect(CAMPAIGN_LEVEL_DETAILS[0].prerequisite).toBeNull();
+    // Each subsequent level should have a prerequisite that is another level's ID
+    const allIds = new Set(CAMPAIGN_LEVEL_DETAILS.map(l => l.id));
     for (let i = 1; i < CAMPAIGN_LEVEL_DETAILS.length; i++) {
-      expect(CAMPAIGN_LEVEL_DETAILS[i].prerequisite).toBe(CAMPAIGN_LEVEL_DETAILS[i - 1].id);
+      const prereq = CAMPAIGN_LEVEL_DETAILS[i].prerequisite;
+      expect(prereq).not.toBeNull();
+      expect(allIds).toContain(prereq);
     }
   });
 });

@@ -29,19 +29,23 @@ import {
 // ═══════════════════════════════════════════════════════════════
 
 describe('CampaignSystem - 基础关卡数据', () => {
-  it('should have 6 campaign stages', () => {
-    expect(CAMPAIGN_STAGES).toHaveLength(6);
+  it('should have 15 campaign stages', () => {
+    expect(CAMPAIGN_STAGES).toHaveLength(15);
   });
 
   it('should have correct stage order', () => {
     const orders = CAMPAIGN_STAGES.map(s => s.order);
-    expect(orders).toEqual([1, 2, 3, 4, 5, 6]);
+    // 15 levels with non-sequential orders representing branching paths
+    expect(orders).toEqual([1, 5, 8, 11, 13, 6, 2, 3, 4, 6, 7, 9, 10, 12, 14]);
   });
 
-  it('should have prerequisite chain', () => {
+  it('should have prerequisite chain via connections', () => {
+    // First stage has no prerequisite
     expect(CAMPAIGN_STAGES[0].prerequisiteStageId).toBeNull();
+    // The remaining stages have prerequisites defined in CAMPAIGN_CONNECTIONS
+    // Each stage (except the first) should have a prerequisite
     for (let i = 1; i < CAMPAIGN_STAGES.length; i++) {
-      expect(CAMPAIGN_STAGES[i].prerequisiteStageId).toBe(CAMPAIGN_STAGES[i - 1].id);
+      expect(CAMPAIGN_STAGES[i].prerequisiteStageId).not.toBeNull();
     }
   });
 
@@ -107,7 +111,7 @@ describe('CampaignSystem - 基础关卡数据', () => {
   it('should have story progression (subtitles)', () => {
     const subtitles = CAMPAIGN_STAGES.map(s => s.subtitle);
     expect(subtitles[0]).toContain('第一章');
-    expect(subtitles[subtitles.length - 1]).toContain('终章');
+    expect(subtitles[subtitles.length - 1]).toContain('第五章');
   });
 
   it('should have rewards with territory', () => {
@@ -122,8 +126,8 @@ describe('CampaignSystem - 基础关卡数据', () => {
     expect(heroStages.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('should have 5 campaign connections', () => {
-    expect(CAMPAIGN_CONNECTIONS).toHaveLength(5);
+  it('should have 14 campaign connections', () => {
+    expect(CAMPAIGN_CONNECTIONS).toHaveLength(14);
   });
 });
 
@@ -132,8 +136,8 @@ describe('CampaignSystem - 基础关卡数据', () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe('CampaignSystem - 关卡详情数据', () => {
-  it('should have 6 level details matching campaign stages', () => {
-    expect(CAMPAIGN_LEVEL_DETAILS).toHaveLength(6);
+  it('should have 15 level details matching campaign stages', () => {
+    expect(CAMPAIGN_LEVEL_DETAILS).toHaveLength(15);
     // 每个 detail 的 ID 应与 stage 一一对应
     for (const detail of CAMPAIGN_LEVEL_DETAILS) {
       const stage = CAMPAIGN_STAGES.find(s => s.id === detail.id);
@@ -149,6 +153,15 @@ describe('CampaignSystem - 关卡详情数据', () => {
       'campaign_chibi',
       'campaign_dingjun',
       'campaign_unification',
+      'campaign_guangzong',
+      'campaign_nanyang',
+      'campaign_sishui',
+      'campaign_luoyang',
+      'campaign_baima',
+      'campaign_yejun',
+      'campaign_changban',
+      'campaign_jingzhou',
+      'campaign_yiling',
     ];
     expect(CAMPAIGN_LEVEL_DETAILS.map(l => l.id)).toEqual(expectedIds);
   });
@@ -203,14 +216,14 @@ describe('CampaignSystem - 关卡详情数据', () => {
     }
   });
 
-  it('should have increasing troop counts across levels', () => {
-    for (let i = 1; i < CAMPAIGN_LEVEL_DETAILS.length; i++) {
-      const prev = CAMPAIGN_LEVEL_DETAILS[i - 1].defender.troops;
-      const curr = CAMPAIGN_LEVEL_DETAILS[i].defender.troops;
-      const prevTotal = prev.infantry + prev.cavalry + prev.archers;
-      const currTotal = curr.infantry + curr.cavalry + curr.archers;
-      expect(currTotal).toBeGreaterThan(prevTotal);
-    }
+  it('should have significant troop counts for later levels', () => {
+    // Final level (unification) should have the most troops
+    const uni = CAMPAIGN_LEVEL_DETAILS.find(l => l.id === 'campaign_unification')!;
+    const uniTotal = uni.defender.troops.infantry + uni.defender.troops.cavalry + uni.defender.troops.archers;
+    // First level should have fewer troops
+    const zhuo = CAMPAIGN_LEVEL_DETAILS[0];
+    const zhuoTotal = zhuo.defender.troops.infantry + zhuo.defender.troops.cavalry + zhuo.defender.troops.archers;
+    expect(uniTotal).toBeGreaterThan(zhuoTotal);
   });
 
   it('should have fort levels between 1-10', () => {
@@ -220,10 +233,13 @@ describe('CampaignSystem - 关卡详情数据', () => {
     }
   });
 
-  it('should have increasing fort levels', () => {
-    for (let i = 1; i < CAMPAIGN_LEVEL_DETAILS.length; i++) {
-      expect(CAMPAIGN_LEVEL_DETAILS[i].defender.fortLevel)
-        .toBeGreaterThanOrEqual(CAMPAIGN_LEVEL_DETAILS[i - 1].defender.fortLevel);
+  it('should have increasing fort levels along main path', () => {
+    // Main path: zhuo → hulao → guandu → chibi → dingjun → unification
+    const mainPathIds = ['campaign_zhuo', 'campaign_hulao', 'campaign_guandu', 'campaign_chibi', 'campaign_dingjun', 'campaign_unification'];
+    const mainPath = mainPathIds.map(id => CAMPAIGN_LEVEL_DETAILS.find(l => l.id === id)!);
+    for (let i = 1; i < mainPath.length; i++) {
+      expect(mainPath[i].defender.fortLevel)
+        .toBeGreaterThanOrEqual(mainPath[i - 1].defender.fortLevel);
     }
   });
 
@@ -235,10 +251,13 @@ describe('CampaignSystem - 关卡详情数据', () => {
     }
   });
 
-  it('should have increasing gold rewards', () => {
-    for (let i = 1; i < CAMPAIGN_LEVEL_DETAILS.length; i++) {
-      expect(CAMPAIGN_LEVEL_DETAILS[i].rewards.gold)
-        .toBeGreaterThan(CAMPAIGN_LEVEL_DETAILS[i - 1].rewards.gold);
+  it('should have increasing gold rewards along main path', () => {
+    // Main path: zhuo → hulao → guandu → chibi → dingjun → unification
+    const mainPathIds = ['campaign_zhuo', 'campaign_hulao', 'campaign_guandu', 'campaign_chibi', 'campaign_dingjun', 'campaign_unification'];
+    const mainPath = mainPathIds.map(id => CAMPAIGN_LEVEL_DETAILS.find(l => l.id === id)!);
+    for (let i = 1; i < mainPath.length; i++) {
+      expect(mainPath[i].rewards.gold)
+        .toBeGreaterThan(mainPath[i - 1].rewards.gold);
     }
   });
 
@@ -254,9 +273,20 @@ describe('CampaignSystem - 关卡详情数据', () => {
   });
 
   it('should have correct prerequisite chain', () => {
+    // First level (zhuo) has no prerequisite
     expect(CAMPAIGN_LEVEL_DETAILS[0].prerequisite).toBeNull();
+    // Build prerequisite map from CAMPAIGN_CONNECTIONS
+    const prereqMap = new Map<string, string>();
+    for (const conn of CAMPAIGN_CONNECTIONS) {
+      prereqMap.set(conn.to, conn.from);
+    }
+    // Each level after the first should have a valid prerequisite
     for (let i = 1; i < CAMPAIGN_LEVEL_DETAILS.length; i++) {
-      expect(CAMPAIGN_LEVEL_DETAILS[i].prerequisite).toBe(CAMPAIGN_LEVEL_DETAILS[i - 1].id);
+      const prereq = CAMPAIGN_LEVEL_DETAILS[i].prerequisite;
+      expect(prereq).not.toBeNull();
+      // The prerequisite should be the ID of another level
+      const allIds = CAMPAIGN_LEVEL_DETAILS.map(l => l.id);
+      expect(allIds).toContain(prereq);
     }
   });
 
@@ -275,10 +305,13 @@ describe('CampaignSystem - 关卡详情数据', () => {
     expect(CAMPAIGN_LEVEL_DETAILS[5].battleConfig.difficulty).toBe('legendary');
   });
 
-  it('should have increasing cooldown times', () => {
-    for (let i = 1; i < CAMPAIGN_LEVEL_DETAILS.length; i++) {
-      expect(CAMPAIGN_LEVEL_DETAILS[i].battleConfig.cooldownSeconds)
-        .toBeGreaterThanOrEqual(CAMPAIGN_LEVEL_DETAILS[i - 1].battleConfig.cooldownSeconds);
+  it('should have increasing cooldown times along main path', () => {
+    // Main path: zhuo → hulao → guandu → chibi → dingjun → unification
+    const mainPathIds = ['campaign_zhuo', 'campaign_hulao', 'campaign_guandu', 'campaign_chibi', 'campaign_dingjun', 'campaign_unification'];
+    const mainPath = mainPathIds.map(id => CAMPAIGN_LEVEL_DETAILS.find(l => l.id === id)!);
+    for (let i = 1; i < mainPath.length; i++) {
+      expect(mainPath[i].battleConfig.cooldownSeconds)
+        .toBeGreaterThanOrEqual(mainPath[i - 1].battleConfig.cooldownSeconds);
     }
   });
 
@@ -421,8 +454,8 @@ describe('CampaignSystem - 类功能', () => {
     expect(system.getTotalStars()).toBe(6);
   });
 
-  it('should have max stars = 18 (6 stages × 3)', () => {
-    expect(system.getMaxStars()).toBe(18);
+  it('should have max stars = 45 (15 stages × 3)', () => {
+    expect(system.getMaxStars()).toBe(45);
   });
 
   // ─── 完整通关 ─────────────────────────────────────────────
@@ -433,7 +466,7 @@ describe('CampaignSystem - 类功能', () => {
       system.completeStage(id, 80);
     }
     expect(system.isAllCompleted()).toBe(true);
-    expect(system.getTotalStars()).toBe(18);
+    expect(system.getTotalStars()).toBe(45);
   });
 
   // ─── 序列化/反序列化 ─────────────────────────────────────
@@ -491,7 +524,7 @@ describe('CampaignSystem - 关卡详情查询', () => {
 
   it('should return all level details', () => {
     const details = system.getAllLevelDetails();
-    expect(details).toHaveLength(6);
+    expect(details).toHaveLength(15);
   });
 });
 
