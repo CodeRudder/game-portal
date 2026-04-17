@@ -179,6 +179,9 @@ const ThreeKingdomsPixiGame: React.FC = () => {
     // 初始化引擎（不传 canvas，因为纯 React UI）
     engine.init();
 
+    // 手动设置状态为 playing（因 GameEngine.start() 需要 canvas，此处绕过）
+    (engine as any)._status = 'playing';
+
     // 手动启动游戏循环（因 GameEngine.start() 需要 canvas）
     // 直接通过 setInterval 驱动 update()
     const TICK_MS = 100; // 100ms 刷新一次
@@ -398,9 +401,9 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                     />
                   </div>
                 )}
-                {rate > 0 && (
-                  <span className="tk-resource-rate">+{fmtNum(rate)}/s</span>
-                )}
+                <span className={`tk-resource-rate ${rate <= 0 ? 'tk-resource-rate-zero' : ''}`}>
+                  +{fmtNum(rate)}/s
+                </span>
               </div>
             );
           })}
@@ -601,7 +604,12 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                     <span className="tk-modal-next">Lv.{lv + 1}</span>
                   </div>
                   <div className="tk-modal-rate">
-                    产出：{fmtNum(currentRate)}/s → {fmtNum(nextRate)}/s {currentRate > 0 ? <span style={{ color: '#7EC850' }}>(+{pctIncrease}%)</span> : <span style={{ color: '#7EC850' }}>(新增)</span>}
+                    产出：{fmtNum(currentRate)}/s → <strong style={{ color: '#7EC850' }}>{fmtNum(nextRate)}/s</strong>
+                    {currentRate > 0 ? (
+                      <span className="tk-rate-pct">(+{pctIncrease}%)</span>
+                    ) : (
+                      <span className="tk-rate-pct tk-rate-new">新增</span>
+                    )}
                   </div>
                   <div className="tk-modal-cost">
                     <div className="tk-modal-cost-title">资源消耗</div>
@@ -612,7 +620,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                         <div key={rid} className={`tk-modal-cost-item ${enough ? 'tk-modal-cost-item-enough' : 'tk-modal-cost-item-lacking'}`}>
                           {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}{' '}
                           <span style={{ color: enough ? '#7EC850' : '#B8423A' }}>
-                            ({fmtNum(have)} {enough ? '✓' : '✗'})
+                            拥有:{fmtNum(have)} {enough ? '✓' : '✗'}
                           </span>
                         </div>
                       );
