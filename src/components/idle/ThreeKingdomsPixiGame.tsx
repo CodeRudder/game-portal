@@ -943,6 +943,121 @@ function CampaignBattleReport({
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 武将立绘组件（SVG 简笔画风格）
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * GeneralPortrait — 武将简笔画头像
+ *
+ * 根据武将名字和势力生成确定性的 SVG 头像。
+ * 同名武将始终生成相同头像（基于字符码种子）。
+ *
+ * 特殊武将特征：
+ * - 曹操(wei): 文冠 + 无胡须
+ * - 刘备(shu): 武盔 + 长胡须
+ * - 孙权(wu): 王冠 + 短胡须
+ * - 关羽(shu): 武盔 + 长须（特殊标志）
+ * - 张飞(shu): 武盔 + 络腮胡
+ */
+const GeneralPortrait = ({ name, faction, size = 60 }: { name: string; faction: string; size?: number }) => {
+  const factionColors: Record<string, string> = {
+    wei: '#4a6fa5',
+    shu: '#c62828',
+    wu: '#2e7d32',
+    other: '#795548',
+  };
+  const color = factionColors[faction] || factionColors.other;
+
+  // 使用种子生成确定性特征
+  const seed = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+
+  // 特殊武将特征映射
+  const specialGenerals: Record<string, { helmet: number; beard: number; extra?: string }> = {
+    '曹操': { helmet: 2, beard: 0 },       // 文冠 + 无胡须
+    '刘备': { helmet: 1, beard: 2 },       // 武盔 + 长胡须
+    '孙权': { helmet: 2, beard: 1 },       // 王冠(文冠) + 短胡须
+    '关羽': { helmet: 1, beard: 2, extra: 'guanyu' }, // 武盔 + 长须(特殊)
+    '张飞': { helmet: 1, beard: 3 },       // 武盔 + 络腮胡
+    '诸葛亮': { helmet: 2, beard: 1 },     // 文冠 + 短胡须
+    '夏侯惇': { helmet: 1, beard: 1 },
+    '司马懿': { helmet: 2, beard: 1 },
+    '许褚': { helmet: 1, beard: 3 },
+    '周瑜': { helmet: 2, beard: 0 },
+    '甘宁': { helmet: 1, beard: 0 },
+    '陆逊': { helmet: 2, beard: 0 },
+  };
+
+  const special = specialGenerals[name];
+  const helmetType = special ? special.helmet : (seed % 3);
+  const beardType = special ? special.beard : (seed % 4);
+  const faceWidth = 28 + (seed % 8);
+
+  const h = Math.floor(size * 80 / 60);
+  const scale = size / 60;
+
+  return (
+    <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+      {/* 背景 */}
+      <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+      <rect width="60" height="80" rx="4" fill={color} opacity="0.12" />
+      {/* 头部 */}
+      <circle cx="30" cy="25" r={faceWidth / 2} fill="#f5deb3" stroke={color} strokeWidth="2" />
+      {/* 头盔/帽子 */}
+      {helmetType === 0 && (
+        <path d="M15,20 Q30,5 45,20" fill={color} opacity="0.9" />
+      )}
+      {helmetType === 1 && (
+        <>
+          <path d="M10,22 L30,8 L50,22" fill={color} stroke="#ffd700" strokeWidth="1" />
+          {/* 武盔顶饰 */}
+          <circle cx="30" cy="8" r="2.5" fill="#ffd700" />
+        </>
+      )}
+      {helmetType === 2 && (
+        <rect x="15" y="12" width="30" height="8" rx="2" fill={color} stroke="#ffd700" strokeWidth="0.5" />
+      )}
+      {/* 眼睛 */}
+      <circle cx="24" cy="24" r="2" fill="#1a1a1a" />
+      <circle cx="36" cy="24" r="2" fill="#1a1a1a" />
+      {/* 关羽特殊：丹凤眼 */}
+      {special?.extra === 'guanyu' && (
+        <>
+          <line x1="22" y1="22" x2="26" y2="22" stroke="#1a1a1a" strokeWidth="0.8" />
+          <line x1="34" y1="22" x2="38" y2="22" stroke="#1a1a1a" strokeWidth="0.8" />
+        </>
+      )}
+      {/* 胡须 */}
+      {beardType === 1 && (
+        <path d="M26,30 Q30,35 34,30" fill="none" stroke="#1a1a1a" strokeWidth="1" />
+      )}
+      {beardType === 2 && (
+        <>
+          <path d="M26,30 Q30,35 34,30" fill="none" stroke="#1a1a1a" strokeWidth="1" />
+          <path d="M28,31 Q30,40 32,31" fill="none" stroke="#1a1a1a" strokeWidth="0.8" />
+        </>
+      )}
+      {beardType === 3 && (
+        <>
+          <path d="M20,28 Q18,35 20,38" fill="none" stroke="#1a1a1a" strokeWidth="1" />
+          <path d="M40,28 Q42,35 40,38" fill="none" stroke="#1a1a1a" strokeWidth="1" />
+          <path d="M26,30 Q30,35 34,30" fill="none" stroke="#1a1a1a" strokeWidth="0.8" />
+        </>
+      )}
+      {/* 身体 */}
+      <rect x="15" y="38" width="30" height="30" rx="3" fill={color} />
+      {/* 腰带 */}
+      <rect x="15" y="52" width="30" height="4" fill="#ffd700" opacity="0.8" />
+      {/* 领口V字 */}
+      <path d="M25,38 L30,45 L35,38" fill="none" stroke="#ffd700" strokeWidth="0.8" opacity="0.6" />
+      {/* 名字 */}
+      <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">
+        {name.length > 3 ? name.slice(0, 3) : name}
+      </text>
+    </svg>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
 // 主组件
 // ═══════════════════════════════════════════════════════════════
 
@@ -2245,7 +2360,7 @@ export default function ThreeKingdomsPixiGame() {
                 <div className="tk-scene-hero-avatars">
                   {heroes.filter(h => h.unlocked).slice(0, 6).map(h => (
                     <div key={h.id} className="tk-scene-hero-avatar" title={h.name}>
-                      ⚔️
+                      <GeneralPortrait name={h.name} faction={h.faction} size={32} />
                     </div>
                   ))}
                 </div>
@@ -2844,13 +2959,22 @@ export default function ThreeKingdomsPixiGame() {
                 paddingBottom: 8,
                 borderBottom: `1px solid ${COLOR_THEME.selectedBorder}`,
               }}>
-                <h3 style={{
-                  fontSize: 16, fontWeight: 'bold', margin: 0,
-                  color: RARITY_COLORS[selectedHero.rarity] || COLOR_THEME.accentGold,
-                  fontFamily: '"Noto Serif SC", serif',
-                }}>
-                  {selectedHero.name}
-                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {/* 武将立绘头像 */}
+                  <GeneralPortrait name={selectedHero.name} faction={selectedHero.faction} size={50} />
+                  <div>
+                    <h3 style={{
+                      fontSize: 16, fontWeight: 'bold', margin: 0,
+                      color: RARITY_COLORS[selectedHero.rarity] || COLOR_THEME.accentGold,
+                      fontFamily: '"Noto Serif SC", serif',
+                    }}>
+                      {selectedHero.name}
+                    </h3>
+                    <div style={{ fontSize: 10, color: COLOR_THEME.textDim, marginTop: 2 }}>
+                      {selectedHero.faction.toUpperCase()} · {selectedHero.rarity} · Lv.{selectedHero.level}
+                    </div>
+                  </div>
+                </div>
                 <button
                   onClick={() => setSelectedHero(null)}
                   style={{
@@ -2868,9 +2992,6 @@ export default function ThreeKingdomsPixiGame() {
                 background: 'rgba(255,255,255,0.05)',
                 borderRadius: 6, padding: 10, marginBottom: 10,
               }}>
-                <div style={{ fontSize: 12, color: COLOR_THEME.textSecondary, marginBottom: 6 }}>
-                  {selectedHero.faction.toUpperCase()} · {selectedHero.rarity} · Lv.{selectedHero.level}
-                </div>
                 {selectedHero.unlocked && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                     {[
@@ -2956,18 +3077,24 @@ export default function ThreeKingdomsPixiGame() {
                       opacity: h.unlocked ? 1 : 0.5,
                       cursor: h.unlocked ? 'pointer' : 'default',
                       transition: 'background 0.2s',
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'center',
                     }}
                     onMouseEnter={e => h.unlocked && (e.currentTarget.style.background = 'rgba(255,215,0,0.08)')}
                     onMouseLeave={e => h.unlocked && (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, fontWeight: 'bold', color: rarityColor }}>
-                        {h.name}
-                      </span>
-                      {h.unlocked ? (
-                        <span style={{ fontSize: 10, color: COLOR_THEME.accentGold }}>
-                          Lv.{h.level}
+                    {/* 武将立绘头像 */}
+                    <GeneralPortrait name={h.name} faction={h.faction} size={44} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 12, fontWeight: 'bold', color: rarityColor }}>
+                          {h.name}
                         </span>
+                        {h.unlocked ? (
+                          <span style={{ fontSize: 10, color: COLOR_THEME.accentGold }}>
+                            Lv.{h.level}
+                          </span>
                       ) : (
                         <span style={{ fontSize: 9, color: COLOR_THEME.textDim }}>
                           [{h.rarity}]
@@ -3032,6 +3159,7 @@ export default function ThreeKingdomsPixiGame() {
                         招募
                       </button>
                     )}
+                    </div>{/* end flex:1 content wrapper */}
                   </div>
                 );
               })}
@@ -3052,13 +3180,22 @@ export default function ThreeKingdomsPixiGame() {
               display: 'flex', justifyContent: 'space-between',
               alignItems: 'center', marginBottom: 12,
             }}>
-              <h3 style={{
-                fontSize: 18, margin: 0,
-                color: RARITY_COLORS[selectedHero.rarity] || '#c9a96e',
-                fontFamily: '"Noto Serif SC", serif',
-              }}>
-                {selectedHero.name}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* 武将立绘头像 */}
+                <GeneralPortrait name={selectedHero.name} faction={selectedHero.faction} size={56} />
+                <div>
+                  <h3 style={{
+                    fontSize: 18, margin: 0,
+                    color: RARITY_COLORS[selectedHero.rarity] || '#c9a96e',
+                    fontFamily: '"Noto Serif SC", serif',
+                  }}>
+                    {selectedHero.name}
+                  </h3>
+                  <div style={{ fontSize: 11, color: '#8B7355', marginTop: 2 }}>
+                    {selectedHero.faction.toUpperCase()} · {selectedHero.rarity} · Lv.{selectedHero.level}
+                  </div>
+                </div>
+              </div>
               <button
                 onClick={() => setSelectedHero(null)}
                 style={{

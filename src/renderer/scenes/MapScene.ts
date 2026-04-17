@@ -732,6 +732,15 @@ export class MapScene extends BaseScene {
   /** 粒子动画累计时间 */
   private particleTime: number = 0;
 
+  // ─── 动画水面叠加层 ──────────────────────────────────────
+
+  /** 水面动画叠加图形（sine 曲线波纹，每帧更新） */
+  private waterAnimGraphics: Graphics | null = null;
+  /** 水面动画累计时间（秒） */
+  private waterAnimTime: number = 0;
+  /** 水面瓦片位置缓存（避免每帧遍历全地图） */
+  private waterTiles: Array<{ x: number; y: number; tileSize: number; variant: number }> = [];
+
   // ─── 装饰性面板边框 ─────────────────────────────────────────
 
   /** 古风装饰边框图形（回纹/云纹） */
@@ -787,6 +796,11 @@ export class MapScene extends BaseScene {
     // 初始化古风装饰边框
     this.decorBorderGraphics = new Graphics();
     this.container.addChild(this.decorBorderGraphics);
+
+    // 初始化水面动画叠加层
+    this.waterAnimGraphics = new Graphics();
+    this.waterAnimGraphics.visible = false;
+    this.container.addChild(this.waterAnimGraphics);
 
     // 初始化粒子数据
     this.particles = [];
@@ -913,6 +927,9 @@ export class MapScene extends BaseScene {
     // ── 11. 更新粒子效果（花瓣/烟雾） ──────────────────────
     this.updateParticles(deltaTime);
 
+    // ── 11.5. 更新水面动画叠加层 ──────────────────────────
+    this.updateWaterAnimation(deltaTime);
+
     // ── 12. 绘制古风装饰边框 ──────────────────────────────
     this.drawDecorativeBorder();
   }
@@ -974,6 +991,12 @@ export class MapScene extends BaseScene {
     this.particleGraphics.destroy();
     this.particleLayer.destroy({ children: true });
     this.decorBorderGraphics.destroy();
+    if (this.waterAnimGraphics) {
+      this.waterAnimGraphics.destroy();
+      this.waterAnimGraphics = null;
+    }
+    this.waterTiles = [];
+    this.waterAnimTime = 0;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -2006,6 +2029,22 @@ export class MapScene extends BaseScene {
     // ── 6. 绘制资源点图标 ────────────────────────────────
     this.renderTileResourcePoints(resourcePointLayer, labelLayer, map);
 
+    // ── 7. 缓存水面瓦片位置（用于动画叠加层） ────────────
+    this.waterTiles = [];
+    for (let row = 0; row < map.height; row++) {
+      for (let col = 0; col < map.width; col++) {
+        const tile = map.tiles[row]?.[col];
+        if (tile?.terrain === 'water') {
+          this.waterTiles.push({
+            x: Math.floor(col * tileSize),
+            y: Math.floor(row * tileSize),
+            tileSize,
+            variant: tile.variant,
+          });
+        }
+      }
+    }
+
     this.tileMapView = {
       tileLayer,
       labelLayer,
@@ -2151,94 +2190,159 @@ export class MapScene extends BaseScene {
             break;
           }
 
-          // ── 岩石纹理（山地）：三角形山峰 + 雪顶 + 岩缝 ──
+          // ── 岩石纹理（山地）：三角形山峰 + 雪顶 + 山体阴影 + 山脚碎石 ──
           case 'rocks': {
             // 绘制 2-3 个重叠三角形山峰
             const peakCount = 2 + Math.floor(prng(0) * 2);
             for (let i = 0; i < peakCount; i++) {
-              const rx = x + 6 + prng(i) * (tileSize - 12);
-              const ry = y + tileSize * 0.55 + prng(i + 10) * (tileSize * 0.25);
-              const rh = 12 + prng(i + 20) * 16;
-              const rw = 10 + prng(i + 30) * 12;
+              const rx = Math.floor(x + 6 + prng(i) * (tileSize - 12));
+              const ry = Math.floor(y + tileSize * 0.55 + prng(i + 10) * (tileSize * 0.25));
+              const rh = Math.floor(14 + prng(i + 20) * 18);
+              const rw = Math.floor(12 + prng(i + 30) * 14);
 
-              // 山体阴影（左侧暗面）
+              // 山脚碎石（先画，被山体覆盖）
+              for (let r = 0; r < 3; r++) {
+                const rbx = Math.floor(rx - rw / 2 + prng(i * 10 + r + 80) * rw);
+                const rby = Math.floor(ry + prng(i * 10 + r + 90) * 4);
+                const rbr = Math.floor(1 + prng(i * 10 + r + 95) * 2);
+                graphics.circle(rbx, rby, rbr)
+                  .fill({ color: 0x5a4a3a, alpha: 0.35 });
+              }
+
+              // 山体暗面（左侧阴影，更大面积）
               graphics.moveTo(rx, ry - rh)
                 .lineTo(rx - rw / 2, ry)
-                .lineTo(rx, ry)
+                .lineTo(rx - rw * 0.15, ry)
+                .lineTo(rx, ry - rh * 0.3)
                 .closePath()
-                .fill({ color: visual.darkColor, alpha: 0.4 });
+                .fill({ color: visual.darkColor, alpha: 0.5 });
+
+              // 山体中间色调
+              graphics.moveTo(rx, ry - rh)
+                .lineTo(rx - rw * 0.15, ry - rh * 0.3)
+                .lineTo(rx + rw * 0.1, ry - rh * 0.15)
+                .closePath()
+                .fill({ color: visual.baseColor, alpha: 0.35 });
 
               // 山体亮面（右侧）
               graphics.moveTo(rx, ry - rh)
                 .lineTo(rx + rw / 2, ry)
-                .lineTo(rx, ry)
+                .lineTo(rx + rw * 0.1, ry - rh * 0.15)
                 .closePath()
-                .fill({ color: visual.lightColor, alpha: 0.3 });
+                .fill({ color: visual.lightColor, alpha: 0.35 });
 
-              // 雪顶
+              // 雪顶（更明显的白色三角形区域）
+              const snowH = Math.floor(rh * 0.25);
               graphics.moveTo(rx, ry - rh)
-                .lineTo(rx - rw * 0.18, ry - rh + 4)
-                .lineTo(rx + rw * 0.18, ry - rh + 4)
+                .lineTo(rx - rw * 0.22, ry - rh + snowH)
+                .lineTo(rx + rw * 0.22, ry - rh + snowH)
                 .closePath()
-                .fill({ color: 0xeeeeee, alpha: 0.35 });
+                .fill({ color: 0xf0f0f0, alpha: 0.5 });
+              // 雪顶高光线
+              graphics.moveTo(rx - rw * 0.18, ry - rh + snowH - 1)
+                .lineTo(rx + rw * 0.18, ry - rh + snowH - 1)
+                .stroke({ width: 0.8, color: 0xffffff, alpha: 0.4 });
             }
-            // 岩缝纹理线
-            for (let i = 0; i < 2; i++) {
-              const lx = x + 4 + prng(i + 40) * (tileSize - 8);
-              const ly = y + tileSize * 0.3 + prng(i + 50) * (tileSize * 0.4);
+            // 岩缝纹理线（增加数量）
+            for (let i = 0; i < 3; i++) {
+              const lx = Math.floor(x + 4 + prng(i + 40) * (tileSize - 8));
+              const ly = Math.floor(y + tileSize * 0.3 + prng(i + 50) * (tileSize * 0.4));
               graphics.moveTo(lx, ly)
                 .lineTo(lx + 3 + prng(i + 60) * 6, ly + 4 + prng(i + 70) * 5)
-                .stroke({ width: 0.8, color: visual.darkColor, alpha: 0.25 });
+                .stroke({ width: 0.8, color: visual.darkColor, alpha: 0.3 });
             }
             break;
           }
 
-          // ── 树木纹理（森林）：圆形树冠 + 树干 + 层次感 ──
+          // ── 树木纹理（森林）：多层树冠 + 树干 + 树根 ──
           case 'trees': {
             const treeCount = 3 + Math.floor(prng(0) * 3);
             for (let i = 0; i < treeCount; i++) {
-              const tx = x + 6 + prng(i) * (tileSize - 12);
-              const ty = y + 8 + prng(i + 10) * (tileSize - 14);
-              const tr = 3 + prng(i + 20) * 5;
-              // 树干
-              graphics.rect(tx - 1, ty + tr * 0.5, 2, tr * 0.8)
-                .fill({ color: 0x5d3a1a, alpha: 0.4 });
-              // 树冠阴影
-              graphics.circle(tx + 1, ty + 1, tr).fill({ color: 0x0a2a05, alpha: 0.2 });
-              // 树冠
-              graphics.circle(tx, ty, tr).fill({ color: visual.lightColor, alpha: 0.5 + prng(i + 30) * 0.2 });
-              // 高光
-              graphics.circle(tx - tr * 0.2, ty - tr * 0.2, tr * 0.4)
-                .fill({ color: visual.lightColor, alpha: 0.15 });
+              const tx = Math.floor(x + 6 + prng(i) * (tileSize - 12));
+              const ty = Math.floor(y + 8 + prng(i + 10) * (tileSize - 14));
+              const tr = Math.floor(3 + prng(i + 20) * 5);
+
+              // 树干（棕色矩形，底部较宽）
+              const trunkW = Math.max(2, Math.floor(tr * 0.35));
+              const trunkH = Math.floor(tr * 1.2);
+              graphics.rect(tx - Math.floor(trunkW / 2), ty + Math.floor(tr * 0.3), trunkW, trunkH)
+                .fill({ color: 0x5d3a1a, alpha: 0.5 });
+              // 树干纹理线
+              graphics.moveTo(tx, ty + Math.floor(tr * 0.4))
+                .lineTo(tx, ty + Math.floor(tr * 0.4) + trunkH)
+                .stroke({ width: 0.5, color: 0x3d2a0a, alpha: 0.3 });
+
+              // 树根（2-3条小线从树干底部延伸）
+              for (let r = 0; r < 2 + Math.floor(prng(i + 70) * 2); r++) {
+                const rootAngle = (r === 0 ? -1 : 1) * (0.3 + prng(i * 5 + r + 75) * 0.5);
+                const rootLen = Math.floor(2 + prng(i * 5 + r + 85) * 3);
+                const rootY = ty + Math.floor(tr * 0.3) + trunkH;
+                graphics.moveTo(tx, rootY)
+                  .lineTo(Math.floor(tx + Math.sin(rootAngle) * rootLen), Math.floor(rootY + Math.abs(Math.cos(rootAngle)) * rootLen))
+                  .stroke({ width: 0.8, color: 0x4a2a0a, alpha: 0.35 });
+              }
+
+              // 树冠阴影（底层）
+              graphics.circle(tx + 1, ty + 1, tr + 1).fill({ color: 0x0a2a05, alpha: 0.25 });
+
+              // 多层树冠：底层（深色，最大）
+              graphics.circle(tx, ty, tr).fill({ color: visual.darkColor, alpha: 0.5 + prng(i + 30) * 0.15 });
+              // 中层（主色，偏移）
+              graphics.circle(tx - 1, ty - Math.floor(tr * 0.2), Math.floor(tr * 0.75))
+                .fill({ color: visual.lightColor, alpha: 0.45 });
+              // 顶层高光（小圆，偏上）
+              graphics.circle(tx - Math.floor(tr * 0.15), ty - Math.floor(tr * 0.35), Math.floor(tr * 0.4))
+                .fill({ color: visual.lightColor, alpha: 0.2 });
             }
             break;
           }
 
-          // ── 波纹纹理（水域）：曲线波纹 + 高光 + 水草 ──
+          // ── 波纹纹理（水域）：曲线波纹 + 高光 + 水草 + 河流动画效果 ──
           case 'ripples': {
-            for (let wy = 6; wy < tileSize; wy += 10) {
+            // 连续河流路径效果：sine 曲线边缘
+            const edgeAmplitude = 2 + prng(0) * 2;
+            // 上边缘 sine 曲线
+            graphics.moveTo(x, y + 2)
+              .bezierCurveTo(
+                x + tileSize * 0.33, y + 2 - edgeAmplitude,
+                x + tileSize * 0.66, y + 2 + edgeAmplitude,
+                x + tileSize, y + 2,
+              )
+              .stroke({ width: 1, color: visual.lightColor, alpha: 0.25 });
+            // 下边缘 sine 曲线
+            graphics.moveTo(x, y + tileSize - 2)
+              .bezierCurveTo(
+                x + tileSize * 0.33, y + tileSize - 2 + edgeAmplitude,
+                x + tileSize * 0.66, y + tileSize - 2 - edgeAmplitude,
+                x + tileSize, y + tileSize - 2,
+              )
+              .stroke({ width: 1, color: visual.lightColor, alpha: 0.25 });
+
+            // 波纹曲线（更丰富的水波）
+            for (let wy = 6; wy < tileSize; wy += 8) {
               const offset = prng(wy) * 4 - 2;
+              const amp = 2 + prng(wy + 200) * 3;
               graphics.moveTo(x + 3, y + wy + offset)
                 .bezierCurveTo(
-                  x + tileSize * 0.25, y + wy - 3 + offset,
-                  x + tileSize * 0.75, y + wy + 3 + offset,
+                  x + tileSize * 0.25, y + wy - amp + offset,
+                  x + tileSize * 0.75, y + wy + amp + offset,
                   x + tileSize - 3, y + wy + offset,
                 )
-                .stroke({ width: 1.2, color: visual.lightColor, alpha: 0.35 });
+                .stroke({ width: 1.2, color: visual.lightColor, alpha: 0.3 + prng(wy + 300) * 0.1 });
             }
-            // 水面高光点
-            for (let i = 0; i < 4; i++) {
-              const sx = x + 6 + prng(i + 50) * (tileSize - 12);
-              const sy = y + 6 + prng(i + 60) * (tileSize - 12);
-              graphics.circle(sx, sy, 1.5).fill({ color: 0xffffff, alpha: 0.18 });
+            // 水面高光点（增加数量）
+            for (let i = 0; i < 6; i++) {
+              const sx = Math.floor(x + 6 + prng(i + 50) * (tileSize - 12));
+              const sy = Math.floor(y + 6 + prng(i + 60) * (tileSize - 12));
+              graphics.circle(sx, sy, 1.5).fill({ color: 0xffffff, alpha: 0.2 });
             }
             // 偶尔水草
             if (prng(80) < 0.25) {
-              const gx = x + 4 + prng(81) * (tileSize - 8);
-              const gy = y + tileSize - 4;
+              const gx = Math.floor(x + 4 + prng(81) * (tileSize - 8));
+              const gy = Math.floor(y + tileSize - 4);
               for (let j = 0; j < 3; j++) {
                 const angle = -0.4 + prng(82 + j) * 0.8;
-                const glen = 6 + prng(85 + j) * 4;
+                const glen = Math.floor(6 + prng(85 + j) * 4);
                 graphics.moveTo(gx + j * 3, gy)
                   .lineTo(gx + j * 3 + Math.sin(angle) * glen, gy - Math.cos(angle) * glen)
                   .stroke({ width: 1, color: 0x2e7d32, alpha: 0.3 });
@@ -2292,7 +2396,7 @@ export class MapScene extends BaseScene {
             break;
           }
 
-          // ── 交叉线纹理（城池/关卡）：城墙砖纹 ──
+          // ── 交叉线纹理（城池/关卡）：城墙 + 城门 + 城楼 ──
           case 'crosshatch': {
             for (let i = 4; i < tileSize; i += 10) {
               graphics.moveTo(x + i, y).lineTo(x + i, y + tileSize)
@@ -2300,8 +2404,62 @@ export class MapScene extends BaseScene {
               graphics.moveTo(x, y + i).lineTo(x + tileSize, y + i)
                 .stroke({ width: 0.5, color: visual.lightColor, alpha: 0.15 });
             }
-            // 城池/关卡额外装饰：角落小方块
+
+            // 城池/关卡增强渲染
             if (tile.terrain === 'city' || tile.terrain === 'fortress') {
+              const wallInset = Math.floor(tileSize * 0.12);
+              const wallX = x + wallInset;
+              const wallY = y + wallInset;
+              const wallW = tileSize - wallInset * 2;
+              const wallH = tileSize - wallInset * 2;
+
+              // 城墙（矩形轮廓）
+              graphics.rect(wallX, wallY, wallW, wallH)
+                .stroke({ width: 1.5, color: visual.lightColor, alpha: 0.4 });
+
+              // 城垛（城墙顶部小方块）
+              const battlementSize = Math.max(2, Math.floor(tileSize * 0.08));
+              const battlementGap = Math.max(3, Math.floor(tileSize * 0.12));
+              for (let bx = wallX; bx < wallX + wallW; bx += battlementGap) {
+                graphics.rect(bx, wallY - battlementSize, battlementSize, battlementSize)
+                  .fill({ color: visual.lightColor, alpha: 0.35 });
+              }
+              // 底部城垛
+              for (let bx = wallX; bx < wallX + wallW; bx += battlementGap) {
+                graphics.rect(bx, wallY + wallH, battlementSize, battlementSize)
+                  .fill({ color: visual.lightColor, alpha: 0.25 });
+              }
+
+              // 城门（拱形 — 底部中央）
+              const gateW = Math.max(6, Math.floor(wallW * 0.3));
+              const gateH = Math.max(5, Math.floor(wallH * 0.35));
+              const gateX = Math.floor(wallX + (wallW - gateW) / 2);
+              const gateY = Math.floor(wallY + wallH - gateH);
+              // 拱形：矩形 + 顶部半圆
+              graphics.rect(gateX, gateY + Math.floor(gateH * 0.4), gateW, Math.floor(gateH * 0.6))
+                .fill({ color: 0x2a1a0a, alpha: 0.5 });
+              graphics.arc(Math.floor(gateX + gateW / 2), gateY + Math.floor(gateH * 0.4), Math.floor(gateW / 2), Math.PI, 0)
+                .fill({ color: 0x2a1a0a, alpha: 0.5 });
+
+              // 城楼（三角形屋顶 — 顶部中央）
+              const roofW = Math.max(8, Math.floor(wallW * 0.5));
+              const roofH = Math.max(4, Math.floor(wallH * 0.25));
+              const roofX = Math.floor(wallX + (wallW - roofW) / 2);
+              const roofY = wallY - battlementSize;
+              graphics.moveTo(Math.floor(roofX + roofW / 2), roofY - roofH)
+                .lineTo(roofX - 2, roofY)
+                .lineTo(roofX + roofW + 2, roofY)
+                .closePath()
+                .fill({ color: 0xb87333, alpha: 0.5 });
+              // 屋顶边线
+              graphics.moveTo(Math.floor(roofX + roofW / 2), roofY - roofH)
+                .lineTo(roofX - 2, roofY)
+                .stroke({ width: 0.8, color: 0x8a5a23, alpha: 0.4 });
+              graphics.moveTo(Math.floor(roofX + roofW / 2), roofY - roofH)
+                .lineTo(roofX + roofW + 2, roofY)
+                .stroke({ width: 0.8, color: 0x8a5a23, alpha: 0.4 });
+
+              // 角落小方块（保留原有装饰）
               const cs = 3;
               graphics.rect(x + 2, y + 2, cs, cs).fill({ color: visual.lightColor, alpha: 0.2 });
               graphics.rect(x + tileSize - cs - 2, y + 2, cs, cs).fill({ color: visual.lightColor, alpha: 0.2 });
@@ -2370,17 +2528,31 @@ export class MapScene extends BaseScene {
             break;
           }
 
-          // ── 纯色（道路等）：虚线中心线 ──
+          // ── 纯色（道路等）：路辙痕迹 + 路边小石子 ──
           case 'solid': {
-            // 道路特殊处理：绘制虚线中心线
+            // 道路特殊处理
             if (tile.terrain === 'road') {
               const cy = Math.floor(y + tileSize / 2);
-              // 水平虚线
+              // 路辙痕迹（两条平行线）
+              const rutOffset = Math.floor(tileSize * 0.18);
+              graphics.moveTo(x + 2, cy - rutOffset).lineTo(x + tileSize - 2, cy - rutOffset)
+                .stroke({ width: 1, color: visual.darkColor, alpha: 0.3 });
+              graphics.moveTo(x + 2, cy + rutOffset).lineTo(x + tileSize - 2, cy + rutOffset)
+                .stroke({ width: 1, color: visual.darkColor, alpha: 0.3 });
+              // 虚线中心线
               for (let dx = 0; dx < tileSize; dx += 8) {
                 if ((dx / 8) % 2 === 0) {
                   graphics.rect(x + dx, cy - 0.5, 5, 1)
                     .fill({ color: 0xffffff, alpha: 0.2 });
                 }
+              }
+              // 路边小石子
+              for (let s = 0; s < 4; s++) {
+                const sx = Math.floor(x + 3 + prng(s + 110) * (tileSize - 6));
+                const sy = Math.floor(s % 2 === 0 ? y + 2 : y + tileSize - 3);
+                const sr = Math.max(0.5, 0.8 + prng(s + 120) * 1.2);
+                graphics.circle(sx, sy, sr)
+                  .fill({ color: visual.darkColor, alpha: 0.3 + prng(s + 130) * 0.15 });
               }
               // 路面边缘线
               graphics.moveTo(x, y + 2).lineTo(x + tileSize, y + 2)
@@ -3281,6 +3453,52 @@ export class MapScene extends BaseScene {
   /**
    * 更新粒子位置和生命周期
    */
+  /**
+   * 更新水面动画叠加层
+   *
+   * 在水域瓦片上绘制动态 sine 曲线波纹，产生流动感。
+   * 使用预缓存的水面瓦片位置，避免每帧遍历全地图。
+   */
+  private updateWaterAnimation(deltaTime: number): void {
+    if (!this.waterAnimGraphics || this.waterTiles.length === 0) return;
+
+    this.waterAnimTime += deltaTime;
+    this.waterAnimGraphics.clear();
+    this.waterAnimGraphics.visible = true;
+
+    const t = this.waterAnimTime;
+
+    for (const wt of this.waterTiles) {
+      const { x, y, tileSize, variant } = wt;
+      // 每个瓦片的波纹有不同相位偏移
+      const phaseOffset = variant * 0.7;
+
+      // 动态波纹线（3条，不同振幅和速度）
+      for (let line = 0; line < 3; line++) {
+        const lineY = y + tileSize * 0.2 + line * (tileSize * 0.25);
+        const amp = 1.5 + line * 0.5;
+        const speed = 1.5 + line * 0.3;
+        const alpha = 0.12 + line * 0.03;
+
+        this.waterAnimGraphics!.moveTo(x + 2, lineY + Math.sin(t * speed + phaseOffset) * amp);
+        for (let px = 4; px <= tileSize - 2; px += 4) {
+          const py = lineY + Math.sin(t * speed + phaseOffset + px * 0.15) * amp;
+          this.waterAnimGraphics!.lineTo(Math.floor(x + px), Math.floor(py));
+        }
+        this.waterAnimGraphics!.stroke({ width: 0.8, color: 0x8ab4d0, alpha });
+      }
+
+      // 闪烁高光点（模拟阳光反射）
+      for (let i = 0; i < 2; i++) {
+        const sparkX = Math.floor(x + 6 + ((t * 15 + variant * 20 + i * 30) % (tileSize - 12)));
+        const sparkY = Math.floor(y + 6 + ((t * 10 + variant * 15 + i * 25) % (tileSize - 12)));
+        const sparkAlpha = 0.15 + 0.1 * Math.sin(t * 3 + i + variant);
+        this.waterAnimGraphics!.circle(sparkX, sparkY, 1.2)
+          .fill({ color: 0xffffff, alpha: Math.max(0, sparkAlpha) });
+      }
+    }
+  }
+
   private updateParticles(deltaTime: number): void {
     this.particleTime += deltaTime;
 
