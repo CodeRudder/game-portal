@@ -796,7 +796,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
- * 主界面场景面板（地图场景中央概览）
+ * 主界面场景面板（地图场景中央概览） — 缩小+毛玻璃
  * ═══════════════════════════════════════════════════════════════ */
 
 .tk-scene-panel {
@@ -804,15 +804,17 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 320px;
-  background: linear-gradient(180deg, rgba(55,35,15,0.92) 0%, rgba(36,22,10,0.95) 100%);
+  width: 280px;
+  background: rgba(55, 35, 15, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1.5px solid var(--tk-border);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 14px;
   z-index: 8;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 0 20px rgba(139,115,85,0.06);
   pointer-events: auto;
 }
@@ -1007,7 +1009,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
- * 主界面城池场景背景（Canvas 上层叠加）
+ * 主界面城池场景背景（Canvas 上层叠加） — 增强背景可见性
  * ═══════════════════════════════════════════════════════════════ */
 
 .tk-city-scene-bg {
@@ -1016,18 +1018,19 @@
   pointer-events: none;
   z-index: 1;
   overflow: hidden;
-  /* 大气渐变底色 */
+  /* 大气渐变底色 — 增强可见性 */
   background:
-    /* 顶部天空渐变 */
+    /* 顶部天空渐变 — 更明显的层次 */
     linear-gradient(180deg,
-      rgba(40, 30, 20, 0.0) 0%,
-      rgba(40, 30, 20, 0.0) 30%,
-      rgba(30, 20, 10, 0.15) 60%,
+      rgba(60, 45, 25, 0.05) 0%,
+      rgba(50, 35, 18, 0.08) 20%,
+      rgba(40, 28, 14, 0.12) 40%,
+      rgba(30, 20, 10, 0.18) 60%,
       rgba(20, 14, 8, 0.25) 100%
     );
 }
 
-/* 远山剪影 */
+/* 远山剪影 — 增强可见度 */
 .tk-city-scene-bg::before {
   content: '';
   position: absolute;
@@ -1036,11 +1039,14 @@
   right: 0;
   height: 35%;
   background:
-    /* 远山层1 */
-    linear-gradient(135deg, transparent 5%, rgba(60, 45, 30, 0.12) 15%, transparent 25%),
-    linear-gradient(160deg, transparent 35%, rgba(50, 38, 25, 0.10) 45%, transparent 55%),
-    linear-gradient(140deg, transparent 55%, rgba(55, 42, 28, 0.08) 70%, transparent 80%),
-    linear-gradient(150deg, transparent 75%, rgba(45, 35, 22, 0.10) 88%, transparent 95%);
+    /* 远山层1 — 增加不透明度 */
+    linear-gradient(135deg, transparent 5%, rgba(60, 45, 30, 0.18) 15%, transparent 25%),
+    linear-gradient(160deg, transparent 35%, rgba(50, 38, 25, 0.15) 45%, transparent 55%),
+    linear-gradient(140deg, transparent 55%, rgba(55, 42, 28, 0.12) 70%, transparent 80%),
+    linear-gradient(150deg, transparent 75%, rgba(45, 35, 22, 0.15) 88%, transparent 95%),
+    /* 近山层 — 更高不透明度 */
+    linear-gradient(120deg, transparent 10%, rgba(70, 55, 35, 0.10) 30%, transparent 50%),
+    linear-gradient(155deg, transparent 40%, rgba(60, 48, 30, 0.08) 60%, transparent 80%);
   mask-image:
     /* 山脉轮廓 */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 200'%3E%3Cpath d='M0,200 L0,120 Q50,60 100,90 Q140,40 180,70 Q220,20 260,55 Q300,30 340,60 Q380,15 420,50 Q460,25 500,55 Q540,35 580,65 Q620,40 660,70 Q700,50 740,80 Q770,65 800,85 L800,200 Z' fill='black'/%3E%3C/svg%3E");
@@ -1050,7 +1056,7 @@
   -webkit-mask-size: 100% 100%;
 }
 
-/* 城池 SVG 场景 */
+/* 城池 SVG 场景 — 增强可见度 */
 .tk-city-scene-svg {
   position: absolute;
   bottom: 0;
@@ -1059,7 +1065,7 @@
   width: 85%;
   max-width: 700px;
   height: 55%;
-  opacity: 0.18;
+  opacity: 0.25;
 }
 
 /* NPC 巡逻动画 */
@@ -1180,9 +1186,12 @@
 
 @media (max-width: 768px) {
   .tk-scene-panel {
-    width: 260px;
-    padding: 12px;
+    width: 240px;
+    padding: 10px;
     gap: 8px;
+    background: rgba(55, 35, 15, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   .tk-scene-city-icon {
