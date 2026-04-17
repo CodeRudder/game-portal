@@ -218,19 +218,32 @@
   accent-color: #C9A84C;
 }
 
-/* 建筑网格 4列×2行 */
+/* 建筑网格 自适应列数 */
 .tk-building-grid {
   display: grid;
-  grid-template-columns: repeat(4, 160px);
-  gap: 20px;
-  justify-content: center;
-  padding-top: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  padding: 8px 16px;
+  overflow-y: auto;
+  max-height: calc(100% - 44px);
 }
 
-/* 建筑卡片 160×180px */
+/* 滚动条样式 */
+.tk-building-grid::-webkit-scrollbar {
+  width: 6px;
+}
+.tk-building-grid::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+}
+.tk-building-grid::-webkit-scrollbar-thumb {
+  background: rgba(201,168,76,0.3);
+  border-radius: 3px;
+}
+
+/* 建筑卡片 */
 .tk-building-card {
-  width: 160px;
-  height: 180px;
+  min-height: 170px;
   background: rgba(26, 26, 46, 0.8);
   border: 1px solid #C9A84C;
   border-radius: 8px;

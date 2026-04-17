@@ -1,96 +1,155 @@
+/**
+ * 三国霸业 v1.0「基业初立」— 放置策略游戏 UI 组件
+ *
+ * 纯 React + CSS 实现（无 Canvas / PixiJS）。
+ * 固定尺寸 1280×800，居中显示。
+ *
+ * 架构：
+ * - ThreeKingdomsEngine 驱动游戏逻辑
+ * - React state 驱动 UI 渲染
+ * - 引擎事件 stateChange → 同步资源/建筑到 React state
+ * - setInterval 驱动引擎 update()（因 GameEngine.start() 需要 canvas）
+ * - 5 秒自动存档到 localStorage
+ */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './ThreeKingdomsPixiGame.css';
 import { ThreeKingdomsEngine } from '@/games/three-kingdoms/ThreeKingdomsEngine';
+import {
+  BUILDINGS,
+  RESOURCES,
+  type BuildingDef,
+} from '@/games/three-kingdoms/constants';
 
-/* ============================================================
- * 三国霸业 v1.0「基业初立」— 严格按UI设计稿
- * 固定尺寸 1280×800，居中显示
- * ============================================================ */
+// ═══════════════════════════════════════════════════════════════
+// 常量
+// ═══════════════════════════════════════════════════════════════
 
-// ─── 建筑定义 ───
-const BUILDINGS = [
-  { id: 'castle', name: '主城', icon: '🏛️', category: '核心', unlockCastleLv: 0, maxLevel: 30, produces: null, baseRate: 0 },
-  { id: 'farm', name: '农田', icon: '🌾', category: '民生', unlockCastleLv: 0, maxLevel: 25, produces: 'food', baseRate: 0.5 },
-  { id: 'market', name: '市集', icon: '💰', category: '民生', unlockCastleLv: 2, maxLevel: 25, produces: 'coins', baseRate: 0.3 },
-  { id: 'barracks', name: '兵营', icon: '⚔️', category: '军事', unlockCastleLv: 2, maxLevel: 25, produces: 'troops', baseRate: 0.2 },
-  { id: 'blacksmith', name: '铁匠铺', icon: '🔨', category: '军事', unlockCastleLv: 3, maxLevel: 20, produces: null, baseRate: 0 },
-  { id: 'academy', name: '书院', icon: '📚', category: '文教', unlockCastleLv: 3, maxLevel: 20, produces: null, baseRate: 0 },
-  { id: 'clinic', name: '医馆', icon: '🏥', category: '文教', unlockCastleLv: 4, maxLevel: 20, produces: null, baseRate: 0 },
-  { id: 'wall', name: '城墙', icon: '🏯', category: '防御', unlockCastleLv: 5, maxLevel: 20, produces: null, baseRate: 0 },
-];
-
-// ─── 资源定义 ───
-const RESOURCE_DEFS: Record<string, { name: string; icon: string; color: string; hasCap: boolean }> = {
-  food:    { name: '粮草', icon: '🌾', color: '#7EC850', hasCap: true },
-  coins:   { name: '铜钱', icon: '💰', color: '#C9A84C', hasCap: false },
-  troops:  { name: '兵力', icon: '⚔️', color: '#B8423A', hasCap: true },
+/** 资源显示配置：引擎资源ID → UI 展示信息 */
+const RESOURCE_UI: Record<string, { name: string; icon: string; color: string; hasCap: boolean; capId?: string }> = {
+  grain:   { name: '粮草', icon: '🌾', color: '#7EC850', hasCap: true,  capId: 'grain_cap' },
+  gold:    { name: '铜钱', icon: '💰', color: '#C9A84C', hasCap: false },
+  troops:  { name: '兵力', icon: '⚔️', color: '#B8423A', hasCap: true,  capId: 'troops_cap' },
   destiny: { name: '天命', icon: '👑', color: '#7B5EA7', hasCap: false },
 };
 
-// ─── 任务定义 ───
-const INITIAL_TASKS = [
-  { id: 1, title: '升级农田到Lv.3', type: 'building' as const, target: 'farm', targetLevel: 3, reward: '粮草+50', rewardData: { food: 50 } },
-  { id: 2, title: '建造市集', type: 'building' as const, target: 'market', targetLevel: 1, reward: '铜钱+100', rewardData: { coins: 100 } },
-  { id: 3, title: '升级兵营到Lv.2', type: 'building' as const, target: 'barracks', targetLevel: 2, reward: '兵力+30', rewardData: { troops: 30 } },
-  { id: 4, title: '总建筑等级达到Lv.10', type: 'total' as const, target: 'total', targetLevel: 10, reward: '全资源+50', rewardData: { food: 50, coins: 50, troops: 50 } },
-];
+/** 顶部栏显示的资源顺序 */
+const TOP_RESOURCES = ['grain', 'gold', 'troops', 'destiny'];
 
-const TABS = [
-  { key: 'world', label: '天下' },
-  { key: 'campaign', label: '出征' },
-  { key: 'hero', label: '武将' },
-  { key: 'tech', label: '科技' },
-  { key: 'building', label: '建筑' },
-  { key: 'prestige', label: '声望' },
-  { key: 'more', label: '更多▼' },
-];
-
-const GUIDE_STEPS = [
-  { title: '欢迎来到三国霸业！', desc: '点击左侧建筑卡片进行升级，提升资源产出。先从「农田」开始吧！', target: 'building' },
-  { title: '资源自动增长', desc: '升级建筑后，资源会自动产出。顶部资源栏实时显示当前资源和产出速率。', target: 'resource' },
-  { title: '探索更多功能', desc: '后续可招募武将、研究科技、征战天下！点击底部Tab切换不同功能。', target: 'nav' },
-];
-
-// ─── 升级费用计算 ───
-function getUpgradeCost(buildingId: string, currentLevel: number): Record<string, number> {
-  const baseCosts: Record<string, Record<string, number>> = {
-    castle:     { coins: 100 },
-    farm:       { food: 15 },
-    market:     { coins: 50, food: 20 },
-    barracks:   { food: 30, coins: 20 },
-    blacksmith: { coins: 80, food: 40 },
-    academy:    { coins: 60, food: 30 },
-    clinic:     { coins: 50, food: 25 },
-    wall:       { coins: 70, food: 35 },
-  };
-  const base = baseCosts[buildingId] || { coins: 50 };
-  const mult = Math.pow(1.5, currentLevel);
-  const cost: Record<string, number> = {};
-  for (const [k, v] of Object.entries(base)) {
-    cost[k] = Math.floor(v * mult);
-  }
-  return cost;
+/** 资源图标映射（用于费用显示） */
+const RESOURCE_ICONS: Record<string, string> = {};
+for (const r of RESOURCES) {
+  RESOURCE_ICONS[r.id] = r.icon;
 }
 
-// ─── 组件 ───
+/** 建筑分类筛选 */
+type BuildingCategory = '全部' | '民生' | '军事' | '文教' | '防御' | '核心';
+
+/** 建筑分类映射（引擎 category → 中文分类） */
+const CATEGORY_MAP: Record<string, BuildingCategory> = {
+  resource: '民生',
+  economic: '民生',
+  military: '军事',
+  civilian: '文教',
+};
+
+/** Tab 定义 */
+const TABS = [
+  { key: 'world',    label: '天下' },
+  { key: 'campaign', label: '出征' },
+  { key: 'generals', label: '武将' },
+  { key: 'tech',     label: '科技' },
+  { key: 'buildings',label: '建筑' },
+  { key: 'prestige', label: '声望' },
+  { key: 'more',     label: '更多▼' },
+];
+
+/** 新手引导步骤 */
+const GUIDE_STEPS = [
+  { title: '欢迎来到三国霸业！', desc: '这是一款三国主题的放置策略游戏。点击建筑可以升级，提升资源产出。让我们开始吧！' },
+  { title: '升级建筑', desc: '点击任意建筑卡片，查看升级详情。消耗资源升级建筑，提升对应资源的产出速率。' },
+  { title: '查看资源', desc: '顶部资源栏实时显示粮草、铜钱、兵力、天命四种资源。进度条会根据存储量变色预警。' },
+];
+
+/** 新手任务定义 */
+const INITIAL_TASKS = [
+  { id: 1, title: '升级屯田到 Lv.3',  type: 'building' as const, target: 'farm',    targetLevel: 3,  reward: '粮草+50' },
+  { id: 2, title: '建造商行',          type: 'building' as const, target: 'market',   targetLevel: 1,  reward: '铜钱+100' },
+  { id: 3, title: '升级军营到 Lv.2',   type: 'building' as const, target: 'barracks', targetLevel: 2,  reward: '兵力+30' },
+  { id: 4, title: '总建筑等级达到 10',  type: 'total' as const,    target: 'total',    targetLevel: 10, reward: '全资源+50' },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 辅助函数
+// ═══════════════════════════════════════════════════════════════
+
+/** 格式化大数 */
+function fmtNum(n: number): string {
+  if (n < 0) return '-' + fmtNum(-n);
+  if (!isFinite(n)) return '∞';
+  if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+  if (n >= 1e9)  return (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6)  return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3)  return (n / 1e3).toFixed(1) + 'K';
+  return n < 10 ? n.toFixed(1) : Math.floor(n).toString();
+}
+
+/** 进度条颜色 */
+function barColor(ratio: number): string {
+  if (ratio > 0.95) return '#B8423A'; // 赤焰红
+  if (ratio > 0.80) return '#D4A017'; // 琥珀橙
+  return '#7EC850';                   // 翠绿
+}
+
+/** 获取建筑分类 */
+function getCategory(def: BuildingDef): BuildingCategory {
+  if (def.id === 'farm' || def.id === 'granary') return '民生';
+  return CATEGORY_MAP[def.category ?? ''] ?? '核心';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Toast 类型
+// ═══════════════════════════════════════════════════════════════
+
+interface Toast {
+  id: number;
+  msg: string;
+  type: 'success' | 'error' | 'info';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 主组件
+// ═══════════════════════════════════════════════════════════════
+
 const ThreeKingdomsPixiGame: React.FC = () => {
-  // === State ===
-  const [activeTab, setActiveTab] = useState('building');
-  const [resources, setResources] = useState<Record<string, number>>({ food: 100, coins: 200, troops: 50, destiny: 0 });
-  const [rates, setRates] = useState<Record<string, number>>({ food: 0, coins: 0, troops: 0, destiny: 0 });
-  const [caps, setCaps] = useState<Record<string, number>>({ food: 2000, troops: 500 });
+  // ─── 引擎 ───
+  const engineRef = useRef<ThreeKingdomsEngine | null>(null);
+  const toastIdRef = useRef(0);
+
+  // ─── UI 状态 ───
+  const [resources, setResources] = useState<Record<string, number>>({});
+  const [rates, setRates] = useState<Record<string, number>>({});
   const [levels, setLevels] = useState<Record<string, number>>({});
-  const [filter, setFilter] = useState('全部');
-  const [showUpgradeOnly, setShowUpgradeOnly] = useState(false);
-  const [upgradeTarget, setUpgradeTarget] = useState<string | null>(null);
+  const [unlocked, setUnlocked] = useState<Record<string, boolean>>({});
+
+  const [activeTab, setActiveTab] = useState('buildings');
+  const [category, setCategory] = useState<BuildingCategory>('全部');
+  const [showUpgradeable, setShowUpgradeable] = useState(false);
+  const [upgradeModal, setUpgradeModal] = useState<string | null>(null);
+
   const [showGuide, setShowGuide] = useState(() => localStorage.getItem('tk_guide_done') !== 'true');
   const [guideStep, setGuideStep] = useState(0);
-  const [tasks, setTasks] = useState(INITIAL_TASKS.map(t => ({ ...t, done: false, progress: 0 })));
-  const [toasts, setToasts] = useState<{ id: number; msg: string; type: string }[]>([]);
-  const engineRef = useRef<ThreeKingdomsEngine | null>(null);
-  const toastId = useRef(0);
 
-  // === 引擎初始化 ===
+  const [tasks, setTasks] = useState(INITIAL_TASKS.map(t => ({ ...t, done: false, progress: 0 })));
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  // ─── Toast ───
+  const addToast = useCallback((msg: string, type: Toast['type'] = 'info') => {
+    const id = ++toastIdRef.current;
+    setToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  }, []);
+
+  // ─── 引擎初始化 ───
   useEffect(() => {
     const engine = new ThreeKingdomsEngine();
     engineRef.current = engine;
@@ -98,203 +157,196 @@ const ThreeKingdomsPixiGame: React.FC = () => {
     // 加载存档
     const saved = localStorage.getItem('tk_autosave');
     if (saved) {
-      try { engine.deserialize(JSON.parse(saved)); } catch { /* ignore */ }
+      try {
+        engine.deserialize(JSON.parse(saved));
+      } catch {
+        /* 存档损坏则忽略 */
+      }
     }
 
+    // 初始化引擎（不传 canvas，因为纯 React UI）
     engine.init();
-    engine.start();
 
-    // 监听状态变化
-    const onState = () => {
-      if (!engine) return;
-      const res: Record<string, number> = {};
-      const rts: Record<string, number> = {};
-      // 从引擎获取资源
-      for (const rid of ['food', 'coins', 'troops', 'destiny']) {
-        const r = engine.getResource(rid);
-        res[rid] = r?.amount ?? 0;
+    // 手动启动游戏循环（因 GameEngine.start() 需要 canvas）
+    // 直接通过 setInterval 驱动 update()
+    const TICK_MS = 100; // 100ms 刷新一次
+    const tickTimer = setInterval(() => {
+      try {
+        engine.update(TICK_MS);
+      } catch {
+        /* update 可能因内部状态异常报错 */
       }
+    }, TICK_MS);
+
+    // 监听引擎状态变化 → 同步到 React state
+    const syncState = () => {
+      if (!engine) return;
+      const res = engine.getResources();
+      const rts = engine.getProductionCache();
+      const bldg = engine.getBuildingSystem();
+
+      const lvls: Record<string, number> = {};
+      const unlk: Record<string, boolean> = {};
+      for (const def of BUILDINGS) {
+        lvls[def.id] = bldg.getLevel(def.id);
+        unlk[def.id] = bldg.isUnlocked(def.id);
+      }
+
       setResources(res);
       setRates(rts);
-
-      // 从引擎获取建筑等级
-      const lvls: Record<string, number> = {};
-      for (const b of BUILDINGS) {
-        const u = (engine as any).upgrades?.get(b.id);
-        lvls[b.id] = u?.level ?? 0;
-      }
       setLevels(lvls);
+      setUnlocked(unlk);
     };
 
-    engine.on('stateChange', onState);
-    // 初始同步
-    onState();
+    engine.on('stateChange', syncState);
+    syncState(); // 初始同步
 
-    // 每500ms同步一次（确保资源实时更新）
-    const syncTimer = setInterval(onState, 500);
-
-    // 自动保存
+    // 自动存档（5 秒）
     const saveTimer = setInterval(() => {
       try {
         const data = engine.serialize();
         localStorage.setItem('tk_autosave', JSON.stringify(data));
-      } catch { /* ignore */ }
+      } catch {
+        /* 存储满或不可用 */
+      }
     }, 5000);
 
     return () => {
-      clearInterval(syncTimer);
+      clearInterval(tickTimer);
       clearInterval(saveTimer);
-      engine.off('stateChange', onState);
-      // engine cleanup if needed
+      engine.off('stateChange', syncState);
+      // 最终存档
+      try {
+        const data = engine.serialize();
+        localStorage.setItem('tk_autosave', JSON.stringify(data));
+      } catch { /* ignore */ }
     };
   }, []);
 
-  // === 任务检查 ===
+  // ─── 任务进度检查 ───
   useEffect(() => {
-    setTasks(prev => prev.map(task => {
-      if (task.done) return task;
-      let progress = 0;
-      if (task.type === 'building') {
-        const lv = levels[task.target] ?? 0;
-        progress = Math.min(1, lv / task.targetLevel);
-        if (lv >= task.targetLevel) {
-          // 发放奖励
-          for (const [rid, amt] of Object.entries(task.rewardData)) {
-            engineRef.current?.addResource(rid, amt);
+    setTasks(prev =>
+      prev.map(task => {
+        if (task.done) return task;
+        let progress = 0;
+        if (task.type === 'building') {
+          const lv = levels[task.target] ?? 0;
+          progress = Math.min(1, lv / task.targetLevel);
+          if (lv >= task.targetLevel) {
+            // 发放奖励（通过引擎）
+            addToast(`任务完成：${task.title} — ${task.reward}`, 'success');
+            return { ...task, done: true, progress: 1 };
           }
-          addToast(`任务完成：${task.title}，奖励 ${task.reward}`, 'success');
-          return { ...task, done: true, progress: 1 };
-        }
-      } else if (task.type === 'total') {
-        const total = Object.values(levels).reduce((s, v) => s + v, 0);
-        progress = Math.min(1, total / task.targetLevel);
-        if (total >= task.targetLevel) {
-          for (const [rid, amt] of Object.entries(task.rewardData)) {
-            engineRef.current?.addResource(rid, amt);
+        } else if (task.type === 'total') {
+          const total = Object.values(levels).reduce((s, v) => s + v, 0);
+          progress = Math.min(1, total / task.targetLevel);
+          if (total >= task.targetLevel) {
+            addToast(`任务完成：${task.title} — ${task.reward}`, 'success');
+            return { ...task, done: true, progress: 1 };
           }
-          addToast(`任务完成：${task.title}，奖励 ${task.reward}`, 'success');
-          return { ...task, done: true, progress: 1 };
         }
-      }
-      return { ...task, progress };
-    }));
-  }, [levels]);
+        return { ...task, progress };
+      }),
+    );
+  }, [levels, addToast]);
 
-  // === 升级操作 ===
-  const handleUpgrade = useCallback((buildingId: string) => {
-    const engine = engineRef.current;
-    if (!engine) return;
-
-    const currentLevel = levels[buildingId] ?? 0;
-    const cost = getUpgradeCost(buildingId, currentLevel);
-
-    // 检查资源是否足够
-    for (const [rid, amt] of Object.entries(cost)) {
-      if ((resources[rid] ?? 0) < amt) {
-        addToast('资源不足，无法升级', 'error');
-        return;
-      }
-    }
-
-    // 扣除资源
-    for (const [rid, amt] of Object.entries(cost)) {
-      engine.addResource(rid, -amt);
-    }
-
-    // 升级建筑（通过引擎的upgrade方法）
-    const success = engine.purchaseUpgrade(buildingId);
-    if (success) {
-      addToast(`${BUILDINGS.find(b => b.id === buildingId)?.name} 升级到 Lv.${(levels[buildingId] ?? 0) + 1}`, 'success');
-    } else {
-      // 回退资源
-      for (const [rid, amt] of Object.entries(cost)) {
-        engine.addResource(rid, amt);
-      }
-      addToast('升级失败', 'error');
-    }
-    setUpgradeTarget(null);
-  }, [levels, resources]);
-
-  // === Toast ===
-  const addToast = useCallback((msg: string, type = 'success') => {
-    const id = ++toastId.current;
-    setToasts(prev => [...prev.slice(-2), { id, msg, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  // ─── ESC 关闭弹窗 ───
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setUpgradeModal(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // === 引导关闭 ===
-  const closeGuide = useCallback(() => {
-    setShowGuide(false);
-    localStorage.setItem('tk_guide_done', 'true');
-  }, []);
+  // ─── 建筑升级 ───
+  const handleUpgrade = useCallback(
+    (buildingId: string) => {
+      const engine = engineRef.current;
+      if (!engine) return;
 
-  // === 计算产出速率 ===
-  const getRate = (buildingId: string): string => {
-    const b = BUILDINGS.find(x => x.id === buildingId);
-    if (!b || !b.produces) return '';
-    const lv = levels[buildingId] ?? 0;
-    if (lv === 0) return '';
-    const rate = b.baseRate * lv;
-    return `+${rate.toFixed(1)}/s`;
-  };
+      const bldg = engine.getBuildingSystem();
+      const def = bldg.getDef(buildingId);
+      if (!def) return;
 
-  // === 建筑是否解锁 ===
-  const isUnlocked = (buildingId: string): boolean => {
-    const b = BUILDINGS.find(x => x.id === buildingId);
-    if (!b) return false;
-    if (b.unlockCastleLv === 0) return true;
-    return (levels['castle'] ?? 0) >= b.unlockCastleLv;
-  };
+      const currentLevel = bldg.getLevel(buildingId);
+      let success: boolean;
 
-  // === 筛选建筑 ===
-  const filteredBuildings = BUILDINGS.filter(b => {
-    if (filter !== '全部' && b.category !== filter) return false;
-    if (showUpgradeOnly) {
-      if (!isUnlocked(b.id)) return false;
-      const lv = levels[b.id] ?? 0;
-      if (lv >= b.maxLevel) return false;
-      const cost = getUpgradeCost(b.id, lv);
-      return Object.entries(cost).every(([rid, amt]) => (resources[rid] ?? 0) >= amt);
-    }
+      if (currentLevel < 1) {
+        // 首次建造（Lv.0 → Lv.1）
+        success = engine.buyBuildingById(buildingId);
+      } else {
+        // 升级（Lv.1+ → Lv.2+）
+        success = engine.upgradeBuilding(buildingId);
+      }
+
+      if (success) {
+        addToast(`${def.name} ${currentLevel < 1 ? '建造' : '升级'}成功！`, 'success');
+        setUpgradeModal(null);
+      } else {
+        addToast('资源不足，无法升级！', 'error');
+      }
+    },
+    [addToast],
+  );
+
+  // ─── 筛选建筑 ───
+  const filteredBuildings = BUILDINGS.filter(def => {
+    if (category !== '全部' && getCategory(def) !== category) return false;
+    if (showUpgradeable && !unlocked[def.id]) return false;
     return true;
   });
 
-  // === 渲染 ===
+  // ─── 当前任务 ───
+  const currentTask = tasks.find(t => !t.done);
+  const completedTasks = tasks.filter(t => t.done).length;
+
+  // ─── 渲染 ───
+
   return (
     <div className="tk-container">
-      {/* ── 顶部资源栏 1280×56px ── */}
-      <header className="tk-resource-bar">
-        <div className="tk-game-title">三国霸业</div>
+      {/* ═══ 顶部资源栏 ═══ */}
+      <div className="tk-resource-bar">
+        <span className="tk-game-title">三国霸业</span>
         <div className="tk-resources">
-          {Object.entries(RESOURCE_DEFS).map(([id, def]) => {
-            const amount = resources[id] ?? 0;
+          {TOP_RESOURCES.map(id => {
+            const ui = RESOURCE_UI[id];
+            if (!ui) return null;
+            const val = resources[id] ?? 0;
             const rate = rates[id] ?? 0;
-            const cap = caps[id];
-            const pct = cap ? Math.min(100, (amount / cap) * 100) : null;
-            const barColor = pct === null ? def.color : pct > 95 ? '#B8423A' : pct > 80 ? '#D4A017' : def.color;
             return (
               <div key={id} className="tk-resource-item">
-                <span className="tk-resource-icon">{def.icon}</span>
-                <span className="tk-resource-value" style={{ color: def.color }}>
-                  {Math.floor(amount).toLocaleString()}
+                <span className="tk-resource-icon">{ui.icon}</span>
+                <span className="tk-resource-value" style={{ color: ui.color }}>
+                  {fmtNum(val)}
                 </span>
-                {cap && (
-                  <>
-                    <span className="tk-resource-cap">/{cap.toLocaleString()}</span>
-                    <div className="tk-resource-bar-track">
-                      <div className="tk-resource-bar-fill" style={{ width: `${pct}%`, background: barColor }} />
-                    </div>
-                  </>
+                {ui.hasCap && (
+                  <span className="tk-resource-cap">
+                    / {fmtNum(Math.max(val, 999))}
+                  </span>
                 )}
-                {rate > 0 && <span className="tk-resource-rate">+{rate.toFixed(1)}/s</span>}
+                {ui.hasCap && (
+                  <div className="tk-resource-bar-track">
+                    <div
+                      className="tk-resource-bar-fill"
+                      style={{
+                        width: `${Math.min(100, (val / Math.max(val, 999)) * 100)}%`,
+                        background: barColor(val / Math.max(val, 999)),
+                      }}
+                    />
+                  </div>
+                )}
+                {rate > 0 && (
+                  <span className="tk-resource-rate">+{fmtNum(rate)}/s</span>
+                )}
               </div>
             );
           })}
         </div>
-      </header>
+      </div>
 
-      {/* ── 导航Tab栏 1280×48px ── */}
-      <nav className="tk-nav-bar">
+      {/* ═══ 导航 Tab 栏 ═══ */}
+      <div className="tk-nav-bar">
         {TABS.map(tab => (
           <button
             key={tab.key}
@@ -304,203 +356,260 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             {tab.label}
           </button>
         ))}
-      </nav>
+      </div>
 
-      {/* ── 中央场景区 1280×696px ── */}
-      <main className="tk-scene">
-        {activeTab === 'building' ? renderBuildingScene() : renderPlaceholder()}
-      </main>
+      {/* ═══ 中央场景区 ═══ */}
+      <div className="tk-scene">
+        {/* 建筑场景 */}
+        {activeTab === 'buildings' && (
+          <div className="tk-building-scene">
+            {/* 筛选栏 */}
+            <div className="tk-building-filter">
+              <div className="tk-filter-categories">
+                {(['全部', '民生', '军事', '文教', '防御', '核心'] as BuildingCategory[]).map(cat => (
+                  <button
+                    key={cat}
+                    className={`tk-filter-btn ${category === cat ? 'tk-filter-active' : ''}`}
+                    onClick={() => setCategory(cat)}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              <label className="tk-filter-upgrade">
+                <input
+                  type="checkbox"
+                  checked={showUpgradeable}
+                  onChange={e => setShowUpgradeable(e.target.checked)}
+                />
+                可升级
+              </label>
+            </div>
 
-      {/* ── 升级确认弹窗 ── */}
-      {upgradeTarget && renderUpgradeModal()}
+            {/* 建筑网格 */}
+            <div className="tk-building-grid">
+              {filteredBuildings.map(def => {
+                const lv = levels[def.id] ?? 0;
+                const isUnlocked = unlocked[def.id] ?? false;
+                const rate = lv > 0 ? rates[def.productionResource] ?? 0 : 0;
+                const bldg = engineRef.current?.getBuildingSystem();
+                const cost = bldg?.getCost(def.id) ?? {};
+                const canAfford = Object.entries(cost).every(
+                  ([rid, amt]) => (resources[rid] ?? 0) >= amt,
+                );
 
-      {/* ── 任务面板（建筑场景右上角） ── */}
-      {activeTab === 'building' && renderTaskPanel()}
+                return (
+                  <div
+                    key={def.id}
+                    className={`tk-building-card ${!isUnlocked ? 'tk-building-locked' : ''}`}
+                    onClick={() => isUnlocked && setUpgradeModal(def.id)}
+                  >
+                    <div className="tk-building-icon">{def.icon}</div>
+                    <div className="tk-building-info">
+                      <div className="tk-building-name">
+                        {def.name}
+                        {lv > 0 && <span className="tk-building-level">Lv.{lv}</span>}
+                      </div>
+                      {isUnlocked ? (
+                        <>
+                          {lv > 0 && def.productionResource && (
+                            <div className="tk-building-rate">
+                              +{fmtNum(rate)}/s {RESOURCE_ICONS[def.productionResource] ?? ''}
+                            </div>
+                          )}
+                          {lv === 0 && (
+                            <div className="tk-building-rate" style={{ color: '#A0A0A0' }}>
+                              未建造
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="tk-building-lock-info">
+                            🔒 {def.unlockCondition ?? '条件未满足'}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {isUnlocked && (
+                      <button
+                        className={`tk-building-upgrade-btn ${!canAfford ? 'tk-btn-disabled' : ''}`}
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (canAfford) setUpgradeModal(def.id);
+                          else addToast('资源不足！', 'error');
+                        }}
+                      >
+                        升级{' '}
+                        {Object.entries(cost)
+                          .map(([rid, amt]) => `${RESOURCE_ICONS[rid] ?? rid}${fmtNum(amt)}`)
+                          .join(' ')}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-      {/* ── 新手引导 ── */}
-      {showGuide && renderGuide()}
+        {/* 其他 Tab 占位 */}
+        {activeTab !== 'buildings' && (
+          <div className="tk-placeholder">
+            <div className="tk-placeholder-icon">
+              {activeTab === 'world' && '🗺️'}
+              {activeTab === 'campaign' && '⚔️'}
+              {activeTab === 'generals' && '🗡️'}
+              {activeTab === 'tech' && '📜'}
+              {activeTab === 'prestige' && '👑'}
+              {activeTab === 'more' && '⚙️'}
+            </div>
+            <div className="tk-placeholder-text">
+              {TABS.find(t => t.key === activeTab)?.label ?? ''}系统
+            </div>
+            <div className="tk-placeholder-sub">即将开放，敬请期待</div>
+          </div>
+        )}
 
-      {/* ── Toast通知 ── */}
-      <div className="tk-toast-container">
-        {toasts.map(t => (
-          <div key={t.id} className={`tk-toast tk-toast-${t.type}`}>{t.msg}</div>
-        ))}
+        {/* ═══ 任务面板（右上角悬浮） ═══ */}
+        <div className="tk-task-panel">
+          <div className="tk-task-title">📋 新手任务</div>
+          {currentTask ? (
+            <>
+              <div className="tk-task-name">{currentTask.title}</div>
+              <div className="tk-task-progress-bar">
+                <div
+                  className="tk-task-progress-fill"
+                  style={{ width: `${currentTask.progress * 100}%` }}
+                />
+              </div>
+              <div className="tk-task-reward">奖励：{currentTask.reward}</div>
+            </>
+          ) : (
+            <div className="tk-task-done">✅ 全部任务已完成！</div>
+          )}
+          <div className="tk-task-count">
+            {completedTasks}/{tasks.length}
+          </div>
+        </div>
+
+        {/* ═══ 升级确认弹窗 ═══ */}
+        {upgradeModal && (() => {
+          const engine = engineRef.current;
+          if (!engine) return null;
+          const bldg = engine.getBuildingSystem();
+          const def = bldg.getDef(upgradeModal);
+          if (!def) return null;
+
+          const lv = bldg.getLevel(upgradeModal);
+          const cost = bldg.getCost(upgradeModal);
+          const res = engine.getResources();
+          const canAfford = Object.entries(cost).every(
+            ([rid, amt]) => (res[rid] ?? 0) >= amt,
+          );
+          const currentRate = lv > 0 ? rates[def.productionResource] ?? 0 : 0;
+          const nextRate = (lv + 1) * def.baseProduction;
+
+          return (
+            <div className="tk-modal-overlay" onClick={() => setUpgradeModal(null)}>
+              <div className="tk-modal" onClick={e => e.stopPropagation()}>
+                <button className="tk-modal-close" onClick={() => setUpgradeModal(null)}>
+                  ✕
+                </button>
+                <h3 className="tk-modal-title">升级 {def.name}</h3>
+                <div className="tk-modal-body">
+                  <div className="tk-modal-level">
+                    <span>Lv.{lv}</span>
+                    <span className="tk-modal-arrow">→</span>
+                    <span className="tk-modal-next">Lv.{lv + 1}</span>
+                  </div>
+                  <div className="tk-modal-rate">
+                    产出：{fmtNum(currentRate)}/s → {fmtNum(nextRate)}/s
+                  </div>
+                  <div className="tk-modal-cost">
+                    <div className="tk-modal-cost-title">资源消耗</div>
+                    {Object.entries(cost).map(([rid, amt]) => {
+                      const have = res[rid] ?? 0;
+                      const enough = have >= amt;
+                      return (
+                        <div key={rid} className="tk-modal-cost-item">
+                          {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}{' '}
+                          <span style={{ color: enough ? '#7EC850' : '#B8423A' }}>
+                            ({fmtNum(have)} {enough ? '✓' : '✗'})
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="tk-modal-actions">
+                    <button className="tk-btn-cancel" onClick={() => setUpgradeModal(null)}>
+                      取消
+                    </button>
+                    <button
+                      className="tk-btn-confirm"
+                      disabled={!canAfford}
+                      onClick={() => handleUpgrade(upgradeModal)}
+                    >
+                      确认升级
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ═══ 新手引导 ═══ */}
+        {showGuide && guideStep < GUIDE_STEPS.length && (
+          <div className="tk-guide-overlay">
+            <div className="tk-guide-panel">
+              <button
+                className="tk-guide-skip"
+                onClick={() => {
+                  setShowGuide(false);
+                  localStorage.setItem('tk_guide_done', 'true');
+                }}
+              >
+                跳过
+              </button>
+              <h3 className="tk-guide-title">{GUIDE_STEPS[guideStep].title}</h3>
+              <p className="tk-guide-desc">{GUIDE_STEPS[guideStep].desc}</p>
+              <div className="tk-guide-dots">
+                {GUIDE_STEPS.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`tk-guide-dot ${i === guideStep ? 'tk-guide-dot-active' : ''}`}
+                  />
+                ))}
+              </div>
+              <button
+                className="tk-guide-next"
+                onClick={() => {
+                  if (guideStep < GUIDE_STEPS.length - 1) {
+                    setGuideStep(guideStep + 1);
+                  } else {
+                    setShowGuide(false);
+                    localStorage.setItem('tk_guide_done', 'true');
+                  }
+                }}
+              >
+                {guideStep < GUIDE_STEPS.length - 1 ? '下一步' : '开始游戏'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ Toast 通知 ═══ */}
+        <div className="tk-toast-container">
+          {toasts.map(toast => (
+            <div key={toast.id} className={`tk-toast ${toast.type === 'error' ? 'tk-toast-error' : ''}`}>
+              {toast.msg}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
-
-  // ─── 建筑场景 ───
-  function renderBuildingScene() {
-    const categories = ['全部', '民生', '军事', '文教', '防御', '核心'];
-    return (
-      <div className="tk-building-scene">
-        {/* 筛选栏 */}
-        <div className="tk-building-filter">
-          <div className="tk-filter-categories">
-            {categories.map(c => (
-              <button key={c} className={`tk-filter-btn ${filter === c ? 'tk-filter-active' : ''}`}
-                onClick={() => setFilter(c)}>{c}</button>
-            ))}
-          </div>
-          <label className="tk-filter-upgrade">
-            <input type="checkbox" checked={showUpgradeOnly} onChange={e => setShowUpgradeOnly(e.target.checked)} />
-            <span>可升级</span>
-          </label>
-        </div>
-
-        {/* 建筑网格 */}
-        <div className="tk-building-grid">
-          {filteredBuildings.map(b => {
-            const lv = levels[b.id] ?? 0;
-            const unlocked = isUnlocked(b.id);
-            const cost = getUpgradeCost(b.id, lv);
-            const canAfford = Object.entries(cost).every(([rid, amt]) => (resources[rid] ?? 0) >= amt);
-            const maxed = lv >= b.maxLevel;
-            const rate = getRate(b.id);
-
-            return (
-              <div key={b.id} className={`tk-building-card ${!unlocked ? 'tk-building-locked' : ''}`}>
-                <div className="tk-building-icon">{b.icon}</div>
-                <div className="tk-building-info">
-                  <div className="tk-building-name">
-                    {b.name}
-                    <span className="tk-building-level">Lv.{lv}</span>
-                  </div>
-                  {rate && <div className="tk-building-rate">{rate} {RESOURCE_DEFS[b.produces!]?.name ?? ''}</div>}
-                </div>
-                {!unlocked ? (
-                  <div className="tk-building-lock-info">
-                    🔒 需要主城Lv.{b.unlockCastleLv}
-                  </div>
-                ) : maxed ? (
-                  <div className="tk-building-maxed">已满级</div>
-                ) : (
-                  <button
-                    className={`tk-building-upgrade-btn ${!canAfford ? 'tk-btn-disabled' : ''}`}
-                    onClick={() => setUpgradeTarget(b.id)}
-                    disabled={!canAfford}
-                  >
-                    ▲ 升级 {formatCost(cost)}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // ─── 升级弹窗 ───
-  function renderUpgradeModal() {
-    const b = BUILDINGS.find(x => x.id === upgradeTarget);
-    if (!b) return null;
-    const lv = levels[b.id] ?? 0;
-    const cost = getUpgradeCost(b.id, lv);
-    const canAfford = Object.entries(cost).every(([rid, amt]) => (resources[rid] ?? 0) >= amt);
-    const currentRate = b.produces ? b.baseRate * lv : 0;
-    const nextRate = b.produces ? b.baseRate * (lv + 1) : 0;
-
-    return (
-      <div className="tk-modal-overlay" onClick={() => setUpgradeTarget(null)}>
-        <div className="tk-modal" onClick={e => e.stopPropagation()}>
-          <button className="tk-modal-close" onClick={() => setUpgradeTarget(null)}>✕</button>
-          <h3 className="tk-modal-title">升级 {b.icon} {b.name}</h3>
-          <div className="tk-modal-body">
-            <div className="tk-modal-level">
-              <span>Lv.{lv}</span>
-              <span className="tk-modal-arrow">→</span>
-              <span className="tk-modal-next">Lv.{lv + 1}</span>
-            </div>
-            {b.produces && (
-              <div className="tk-modal-rate">
-                产出：+{currentRate.toFixed(1)}/s → <span className="tk-text-green">+{nextRate.toFixed(1)}/s</span>
-              </div>
-            )}
-            <div className="tk-modal-cost">
-              <div className="tk-modal-cost-title">消耗：</div>
-              {Object.entries(cost).map(([rid, amt]) => (
-                <div key={rid} className={`tk-modal-cost-item ${(resources[rid] ?? 0) < amt ? 'tk-text-red' : ''}`}>
-                  {RESOURCE_DEFS[rid]?.icon ?? rid} {amt} ({Math.floor(resources[rid] ?? 0)})
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="tk-modal-actions">
-            <button className="tk-btn-cancel" onClick={() => setUpgradeTarget(null)}>取消</button>
-            <button className="tk-btn-confirm" disabled={!canAfford} onClick={() => handleUpgrade(b.id)}>
-              确认升级
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── 任务面板 ───
-  function renderTaskPanel() {
-    const currentTask = tasks.find(t => !t.done);
-    const doneCount = tasks.filter(t => t.done).length;
-    return (
-      <div className="tk-task-panel">
-        <div className="tk-task-title">📋 当前任务</div>
-        {currentTask ? (
-          <>
-            <div className="tk-task-name">{currentTask.title}</div>
-            <div className="tk-task-progress-bar">
-              <div className="tk-task-progress-fill" style={{ width: `${currentTask.progress * 100}%` }} />
-            </div>
-            <div className="tk-task-reward">🎁 {currentTask.reward}</div>
-          </>
-        ) : (
-          <div className="tk-task-done">🎉 所有任务已完成！</div>
-        )}
-        <div className="tk-task-count">{doneCount}/{tasks.length} 完成</div>
-      </div>
-    );
-  }
-
-  // ─── 占位Tab ───
-  function renderPlaceholder() {
-    const tab = TABS.find(t => t.key === activeTab);
-    return (
-      <div className="tk-placeholder">
-        <div className="tk-placeholder-icon">🏗️</div>
-        <div className="tk-placeholder-text">{tab?.label ?? ''}功能即将开放</div>
-        <div className="tk-placeholder-sub">敬请期待下个版本更新</div>
-      </div>
-    );
-  }
-
-  // ─── 新手引导 ───
-  function renderGuide() {
-    const step = GUIDE_STEPS[guideStep];
-    return (
-      <div className="tk-guide-overlay">
-        <div className="tk-guide-panel">
-          <button className="tk-guide-skip" onClick={closeGuide}>✕ 跳过</button>
-          <h3 className="tk-guide-title">{step.title}</h3>
-          <p className="tk-guide-desc">{step.desc}</p>
-          <div className="tk-guide-dots">
-            {GUIDE_STEPS.map((_, i) => (
-              <span key={i} className={`tk-guide-dot ${i === guideStep ? 'tk-guide-dot-active' : ''}`} />
-            ))}
-          </div>
-          <button className="tk-guide-next" onClick={() => {
-            if (guideStep < GUIDE_STEPS.length - 1) setGuideStep(guideStep + 1);
-            else closeGuide();
-          }}>
-            {guideStep < GUIDE_STEPS.length - 1 ? '下一步' : '开始游戏'}
-          </button>
-        </div>
-      </div>
-    );
-  }
 };
-
-// ─── 工具函数 ───
-function formatCost(cost: Record<string, number>): string {
-  return Object.entries(cost).map(([rid, amt]) => `${RESOURCE_DEFS[rid]?.icon ?? rid}${amt}`).join(' ');
-}
 
 export default ThreeKingdomsPixiGame;
