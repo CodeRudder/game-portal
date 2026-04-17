@@ -713,17 +713,20 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: transparent;
+  background: rgba(40, 50, 70, 0.6);
   color: #C9A84C;
-  border: none;
-  font-size: 20px;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  font-size: 18px;
+  font-weight: bold;
   cursor: pointer;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1;
+  transition: background 200ms ease-out, color 200ms ease-out;
 }
 
 .tk-modal-close:hover {
@@ -877,7 +880,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.75);
-  z-index: 200;
+  z-index: 250;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -892,6 +895,7 @@
   padding: 32px;
   text-align: center;
   position: relative;
+  z-index: 210;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
@@ -905,6 +909,8 @@
   font-size: 13px;
   cursor: pointer;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  z-index: 211;
+  padding: 4px 8px;
 }
 
 .tk-guide-skip:hover {
@@ -964,24 +970,24 @@
   background: linear-gradient(135deg, #D4AF37, #DFC06E);
 }
 
-/* 引导步骤高亮 */
+/* 引导步骤高亮 — 使用 outline + box-shadow 实现视觉高亮，不提升 z-index 避免拦截引导面板点击 */
 .tk-guide-step-0 .tk-building-grid {
   position: relative;
-  z-index: 201;
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.6);
+  outline: 2px solid rgba(201, 168, 76, 0.6);
+  outline-offset: 2px;
   border-radius: 8px;
 }
 
 .tk-guide-step-1 .tk-resource-bar {
   position: relative;
-  z-index: 201;
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.6);
+  outline: 2px solid rgba(201, 168, 76, 0.6);
+  outline-offset: 2px;
 }
 
 .tk-guide-step-2 .tk-nav-bar {
   position: relative;
-  z-index: 201;
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.6);
+  outline: 2px solid rgba(201, 168, 76, 0.6);
+  outline-offset: 2px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
