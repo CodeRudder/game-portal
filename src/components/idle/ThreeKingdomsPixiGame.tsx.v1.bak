@@ -145,7 +145,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
       clearInterval(syncTimer);
       clearInterval(saveTimer);
       engine.off('stateChange', onState);
-      // engine cleanup if needed
+      engine.stop();
     };
   }, []);
 
