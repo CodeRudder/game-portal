@@ -244,7 +244,94 @@ export interface LevelStatusInfo {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 6 关卡详细数据（基于三国历史）
+// 章节分组数据
+// ═══════════════════════════════════════════════════════════════
+
+/** 章节定义 */
+export interface CampaignChapter {
+  /** 章节唯一 ID */
+  id: string;
+  /** 章节序号（从1开始） */
+  chapterNumber: number;
+  /** 章节标题（如"黄巾之乱"） */
+  title: string;
+  /** 章节副标题 */
+  subtitle: string;
+  /** 章节描述 */
+  description: string;
+  /** 章节包含的关卡 ID 列表（按顺序） */
+  stageIds: string[];
+  /** 章节主题色 */
+  themeColor: string;
+  /** 章节图标 */
+  icon: string;
+}
+
+/**
+ * 五大章节定义
+ *
+ * 关卡按三国历史进程分为五章：
+ * - 第一章：黄巾之乱（3关） — 新手入门
+ * - 第二章：讨伐董卓（3关） — 初具规模
+ * - 第三章：群雄逐鹿（3关） — 中等难度
+ * - 第四章：赤壁烽火（3关） — 高难度
+ * - 第五章：天下一统（3关） — 终极挑战
+ */
+export const CAMPAIGN_CHAPTERS: CampaignChapter[] = [
+  {
+    id: 'chapter_1',
+    chapterNumber: 1,
+    title: '黄巾之乱',
+    subtitle: '乱世起始',
+    description: '东汉末年，张角以"苍天已死，黄天当立"号令天下，黄巾起义席卷九州。刘备、关羽、张飞桃园结义，起兵平乱，开启英雄征程。',
+    stageIds: ['campaign_zhuo', 'campaign_guangzong', 'campaign_nanyang'],
+    themeColor: '#facc15',
+    icon: '📜',
+  },
+  {
+    id: 'chapter_2',
+    chapterNumber: 2,
+    title: '讨伐董卓',
+    subtitle: '诸侯会盟',
+    description: '董卓进京，废帝专权，天下共愤。十八路诸侯歃血为盟，兵发洛阳。虎牢关前，三英战吕布，温酒斩华雄，留下千古佳话。',
+    stageIds: ['campaign_sishui', 'campaign_hulao', 'campaign_luoyang'],
+    themeColor: '#f97316',
+    icon: '⚔️',
+  },
+  {
+    id: 'chapter_3',
+    chapterNumber: 3,
+    title: '群雄逐鹿',
+    subtitle: '中原争霸',
+    description: '诸侯联盟瓦解，天下群雄并起。曹操挟天子以令诸侯，袁绍坐拥河北四州。官渡一战，以少胜多，北方一统。',
+    stageIds: ['campaign_baima', 'campaign_guandu', 'campaign_yejun'],
+    themeColor: '#a78bfa',
+    icon: '🏰',
+  },
+  {
+    id: 'chapter_4',
+    chapterNumber: 4,
+    title: '赤壁烽火',
+    subtitle: '三分天下',
+    description: '曹操率八十万大军南下，欲一统天下。孙刘联军以火攻大破曹军于赤壁，东风助势，火烧连营，奠定三分天下之格局。',
+    stageIds: ['campaign_changban', 'campaign_chibi', 'campaign_jingzhou'],
+    themeColor: '#ef4444',
+    icon: '🔥',
+  },
+  {
+    id: 'chapter_5',
+    chapterNumber: 5,
+    title: '天下一统',
+    subtitle: '龙御九天',
+    description: '三国鼎立，英雄辈出。定军山老将建功，夷陵之火焚营。历经数十年征战，天下大势分久必合，三国归晋。',
+    stageIds: ['campaign_dingjun', 'campaign_yiling', 'campaign_unification'],
+    themeColor: '#dc2626',
+    icon: '👑',
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// 15 关卡详细数据（基于三国历史）
 // ═══════════════════════════════════════════════════════════════
 
 export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
@@ -409,6 +496,248 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
       maxAttempts: 0,
     },
   },
+
+  // ── 第一章·补充：广宗之战 ──
+  {
+    id: 'campaign_guangzong',
+    name: '广宗之战',
+    description: '黄巾首领张角亲率主力据守广宗。此城乃黄巾军核心据点，张角施展太平道术，天降雷火。攻克广宗，黄巾之乱可定。',
+    mapPosition: { x: 0.20, y: 0.35 },
+    defender: {
+      lord: '张角',
+      officers: ['张宝', '张梁', '黄巾力士统领'],
+      troops: { infantry: 2000, cavalry: 300, archers: 800 },
+      fortLevel: 3,
+    },
+    rewards: {
+      gold: 1200,
+      food: 2000,
+      materials: 400,
+      recruitHero: 'guanyu',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_zhuo',
+    battleConfig: {
+      difficulty: 'easy',
+      cooldownSeconds: 15,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第一章·补充：南阳平定 ──
+  {
+    id: 'campaign_nanyang',
+    name: '南阳平定',
+    description: '黄巾余党占据南阳，祸乱百姓。南阳乃中原要地，物产丰饶，必须尽快收复。击败黄巾残部，彻底平定黄巾之乱。',
+    mapPosition: { x: 0.30, y: 0.40 },
+    defender: {
+      lord: '张曼成',
+      officers: ['赵弘', '韩忠', '孙夏'],
+      troops: { infantry: 1500, cavalry: 400, archers: 600 },
+      fortLevel: 3,
+    },
+    rewards: {
+      gold: 1500,
+      food: 2500,
+      materials: 500,
+      recruitHero: 'zhangfei',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_guangzong',
+    battleConfig: {
+      difficulty: 'normal',
+      cooldownSeconds: 20,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第二章·补充：汜水关 ──
+  {
+    id: 'campaign_sishui',
+    name: '汜水关',
+    description: '十八路诸侯讨伐董卓，先锋至汜水关。西凉猛将华雄据关而守，连斩数将。关羽温酒斩华雄，一战成名，诸侯士气大振。',
+    mapPosition: { x: 0.35, y: 0.20 },
+    defender: {
+      lord: '华雄',
+      officers: ['胡轸', '赵岑'],
+      troops: { infantry: 3000, cavalry: 1500, archers: 1000 },
+      fortLevel: 4,
+    },
+    rewards: {
+      gold: 2500,
+      food: 4000,
+      materials: 700,
+    },
+    status: 'locked',
+    prerequisite: 'campaign_nanyang',
+    battleConfig: {
+      difficulty: 'normal',
+      cooldownSeconds: 25,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第二章·补充：火烧洛阳 ──
+  {
+    id: 'campaign_luoyang',
+    name: '火烧洛阳',
+    description: '董卓兵败，火烧洛阳，挟天子迁都长安。千年古都化为焦土，百姓流离失所。追击董卓残部，解救天子，还都洛阳。',
+    mapPosition: { x: 0.40, y: 0.30 },
+    defender: {
+      lord: '董卓',
+      officers: ['李傕', '郭汜', '樊稠', '张济'],
+      troops: { infantry: 6000, cavalry: 4000, archers: 3000 },
+      fortLevel: 5,
+    },
+    rewards: {
+      gold: 4000,
+      food: 6000,
+      materials: 1500,
+      recruitHero: 'caocao',
+      unlockBuilding: 'barracks',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_hulao',
+    battleConfig: {
+      difficulty: 'normal',
+      cooldownSeconds: 40,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第三章·补充：白马之战 ──
+  {
+    id: 'campaign_baima',
+    name: '白马之战',
+    description: '袁绍遣大将颜良攻白马，曹操率军迎击。关羽于万军之中斩颜良，解白马之围。袁绍大怒，再遣文丑追击。',
+    mapPosition: { x: 0.45, y: 0.35 },
+    defender: {
+      lord: '颜良',
+      officers: ['文丑', '淳于琼'],
+      troops: { infantry: 5000, cavalry: 3000, archers: 2500 },
+      fortLevel: 5,
+    },
+    rewards: {
+      gold: 4000,
+      food: 5000,
+      materials: 1200,
+    },
+    status: 'locked',
+    prerequisite: 'campaign_luoyang',
+    battleConfig: {
+      difficulty: 'normal',
+      cooldownSeconds: 35,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第三章·补充：邺城攻略 ──
+  {
+    id: 'campaign_yejun',
+    name: '邺城攻略',
+    description: '官渡大捷后，曹操乘胜追击，进攻袁氏根基——邺城。此城城墙坚固，守军众多，乃是河北第一重镇。攻克邺城，北方可定。',
+    mapPosition: { x: 0.55, y: 0.30 },
+    defender: {
+      lord: '袁尚',
+      officers: ['审配', '逢纪', '高干'],
+      troops: { infantry: 8000, cavalry: 4000, archers: 3500 },
+      fortLevel: 7,
+    },
+    rewards: {
+      gold: 8000,
+      food: 12000,
+      materials: 2500,
+      recruitHero: 'zhaoyun',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_guandu',
+    battleConfig: {
+      difficulty: 'hard',
+      cooldownSeconds: 60,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第四章·补充：长坂坡 ──
+  {
+    id: 'campaign_changban',
+    name: '长坂坡',
+    description: '曹操率大军南下追击刘备，赵云于长坂坡七进七出，单骑救主。张飞据水断桥，一声怒吼吓退曹军百万。此战虽败犹荣。',
+    mapPosition: { x: 0.50, y: 0.55 },
+    defender: {
+      lord: '曹纯',
+      officers: ['张辽', '许褚', '曹洪'],
+      troops: { infantry: 8000, cavalry: 5000, archers: 4000 },
+      fortLevel: 6,
+    },
+    rewards: {
+      gold: 6000,
+      food: 8000,
+      materials: 2000,
+      recruitHero: 'zhaoyun',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_yejun',
+    battleConfig: {
+      difficulty: 'hard',
+      cooldownSeconds: 50,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第四章·补充：荆州争夺 ──
+  {
+    id: 'campaign_jingzhou',
+    name: '荆州争夺',
+    description: '赤壁战后，荆州成为三家必争之地。刘备借荆州，孙权索荆州，曹操窥荆州。三方势力明争暗斗，烽烟四起。',
+    mapPosition: { x: 0.55, y: 0.60 },
+    defender: {
+      lord: '曹仁',
+      officers: ['徐晃', '于禁', '庞德'],
+      troops: { infantry: 10000, cavalry: 5000, archers: 5000 },
+      fortLevel: 7,
+    },
+    rewards: {
+      gold: 12000,
+      food: 15000,
+      materials: 4000,
+      recruitHero: 'zhugeliang',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_chibi',
+    battleConfig: {
+      difficulty: 'hard',
+      cooldownSeconds: 70,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第五章·补充：夷陵之战 ──
+  {
+    id: 'campaign_yiling',
+    name: '夷陵之战',
+    description: '关羽败走麦城，刘备怒而兴兵伐吴。陆逊以逸待劳，火烧连营七百里，蜀军大败。此战之后，三国格局再变。',
+    mapPosition: { x: 0.45, y: 0.70 },
+    defender: {
+      lord: '陆逊',
+      officers: ['朱然', '潘璋', '韩当', '徐盛'],
+      troops: { infantry: 15000, cavalry: 6000, archers: 8000 },
+      fortLevel: 9,
+    },
+    rewards: {
+      gold: 20000,
+      food: 25000,
+      materials: 8000,
+      recruitHero: 'zhangfei',
+    },
+    status: 'locked',
+    prerequisite: 'campaign_dingjun',
+    battleConfig: {
+      difficulty: 'legendary',
+      cooldownSeconds: 120,
+      maxAttempts: 0,
+    },
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -473,7 +802,7 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     name: '虎牢关',
     subtitle: '第二章·三英战吕布',
     description: '诸侯联军讨伐董卓，兵至虎牢关。天下第一猛将吕布镇守此关，刘关张三兄弟联手迎战。',
-    order: 2,
+    order: 5,
     prerequisiteStageId: 'campaign_zhuo',
     targetTerritoryId: 'luoyang',
     targetCityName: '虎牢关',
@@ -531,7 +860,7 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     name: '官渡之战',
     subtitle: '第三章·以少胜多',
     description: '曹操与袁绍对峙于官渡。兵力悬殊十倍，唯有奇袭乌巢，烧其粮草，方能逆转战局。',
-    order: 3,
+    order: 8,
     prerequisiteStageId: 'campaign_hulao',
     targetTerritoryId: 'xuchang',
     targetCityName: '官渡',
@@ -582,7 +911,7 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     name: '赤壁之战',
     subtitle: '第四章·火烧连营',
     description: '曹操率八十万大军南下，孙刘联军以火攻大破曹军于赤壁。此战奠定三分天下之格局。',
-    order: 4,
+    order: 11,
     prerequisiteStageId: 'campaign_guandu',
     targetTerritoryId: 'chaisang',
     targetCityName: '赤壁',
@@ -630,7 +959,7 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     name: '定军山',
     subtitle: '第五章·老将建功',
     description: '刘备进取汉中，老将黄忠定军山斩夏侯渊，夺取汉中要地。蜀汉基业由此奠定。',
-    order: 5,
+    order: 13,
     prerequisiteStageId: 'campaign_chibi',
     targetTerritoryId: 'hanzhong',
     targetCityName: '定军山',
@@ -726,6 +1055,463 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     fortificationLevel: 10,
     mapPosition: { x: 0.50, y: 0.50 },
   },
+
+  // ── 第一章·补充：广宗之战 ──
+  {
+    id: 'campaign_guangzong',
+    name: '广宗之战',
+    subtitle: '第一章·天公将军',
+    description: '黄巾首领张角亲率主力据守广宗，施展太平道术，天降雷火。攻克广宗，黄巾之乱可定。',
+    order: 2,
+    prerequisiteStageId: 'campaign_zhuo',
+    targetTerritoryId: 'guangzong',
+    targetCityName: '广宗',
+    difficulty: 'easy',
+    victoryCondition: 'defeat_commander',
+    victoryParams: {},
+    enemyCommander: {
+      id: 'zhangjiao', name: '张角', title: '天公将军·太平道主',
+      hp: 400, attack: 25, defense: 12, intelligence: 30,
+      abilities: ['thunder_storm', 'heal', 'rally'],
+      dialogue: {
+        opening: '苍天已死，黄天当立！岁在甲子，天下大吉！',
+        mid: '太平道术，岂是尔等可破！',
+        defeat: '天命…不在吾…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '黄巾力士', count: 30, hpPerUnit: 35, attackPerUnit: 10, defensePerUnit: 5 },
+      { type: 'archer', name: '黄巾术士', count: 15, hpPerUnit: 25, attackPerUnit: 15, defensePerUnit: 3 },
+      { type: 'cavalry', name: '黄巾骑兵', count: 10, hpPerUnit: 40, attackPerUnit: 14, defensePerUnit: 8 },
+    ],
+    mapLayout: {
+      width: 14, height: 12,
+      walls: [
+        { x: 4, y: 2, hp: 120 }, { x: 5, y: 2, hp: 120 }, { x: 6, y: 2, hp: 120 }, { x: 7, y: 2, hp: 120 },
+        { x: 4, y: 9, hp: 120 }, { x: 5, y: 9, hp: 120 }, { x: 6, y: 9, hp: 120 }, { x: 7, y: 9, hp: 120 },
+        { x: 4, y: 3, hp: 120 }, { x: 4, y: 4, hp: 120 }, { x: 4, y: 5, hp: 120 },
+        { x: 7, y: 3, hp: 120 }, { x: 7, y: 4, hp: 120 }, { x: 7, y: 5, hp: 120 },
+      ],
+      gates: [{ x: 5, y: 6, hp: 200, direction: 'south' }, { x: 6, y: 6, hp: 200, direction: 'south' }],
+      towers: [{ x: 4, y: 2, attack: 12, range: 3 }, { x: 7, y: 2, attack: 12, range: 3 }],
+      flagPositions: [{ x: 6, y: 5 }],
+      deploymentZone: { x: 0, y: 4, width: 4, height: 4 },
+    },
+    rewards: {
+      territory: 'guangzong',
+      resources: { grain: 200, gold: 120 },
+      unlockHero: 'guanyu',
+    },
+    starThresholds: { threeStar: 75, twoStar: 45 },
+    iconAsset: '⚡', themeColor: '#FFEB3B',
+    fortificationLevel: 3,
+    mapPosition: { x: 0.20, y: 0.35 },
+  },
+
+  // ── 第一章·补充：南阳平定 ──
+  {
+    id: 'campaign_nanyang',
+    name: '南阳平定',
+    subtitle: '第一章·黄巾覆灭',
+    description: '黄巾余党占据南阳，祸乱百姓。南阳乃中原要地，物产丰饶。击败黄巾残部，彻底平定黄巾之乱。',
+    order: 3,
+    prerequisiteStageId: 'campaign_guangzong',
+    targetTerritoryId: 'nanyang',
+    targetCityName: '南阳',
+    difficulty: 'easy',
+    victoryCondition: 'eliminate_all',
+    victoryParams: {},
+    enemyCommander: {
+      id: 'zhangmancheng', name: '张曼成', title: '黄巾渠帅·南阳之主',
+      hp: 350, attack: 22, defense: 14, intelligence: 12,
+      abilities: ['rally', 'charge'],
+      dialogue: {
+        opening: '南阳乃我黄巾圣地！',
+        mid: '汝等休想踏入半步！',
+        defeat: '南阳…失守了…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '黄巾兵', count: 35, hpPerUnit: 32, attackPerUnit: 9, defensePerUnit: 5 },
+      { type: 'archer', name: '黄巾弓手', count: 20, hpPerUnit: 22, attackPerUnit: 13, defensePerUnit: 3 },
+      { type: 'cavalry', name: '黄巾骑', count: 8, hpPerUnit: 45, attackPerUnit: 16, defensePerUnit: 8 },
+    ],
+    mapLayout: {
+      width: 14, height: 12,
+      walls: [
+        { x: 5, y: 2, hp: 100 }, { x: 6, y: 2, hp: 100 }, { x: 7, y: 2, hp: 100 }, { x: 8, y: 2, hp: 100 },
+        { x: 5, y: 9, hp: 100 }, { x: 6, y: 9, hp: 100 }, { x: 7, y: 9, hp: 100 }, { x: 8, y: 9, hp: 100 },
+        { x: 5, y: 3, hp: 100 }, { x: 5, y: 4, hp: 100 },
+        { x: 8, y: 3, hp: 100 }, { x: 8, y: 4, hp: 100 },
+      ],
+      gates: [{ x: 6, y: 5, hp: 180, direction: 'south' }],
+      towers: [{ x: 5, y: 2, attack: 11, range: 3 }, { x: 8, y: 2, attack: 11, range: 3 }],
+      flagPositions: [{ x: 7, y: 5 }],
+      deploymentZone: { x: 0, y: 3, width: 5, height: 4 },
+    },
+    rewards: {
+      territory: 'nanyang',
+      resources: { grain: 250, gold: 150 },
+      unlockHero: 'zhangfei',
+    },
+    starThresholds: { threeStar: 75, twoStar: 45 },
+    iconAsset: '🏴', themeColor: '#8BC34A',
+    fortificationLevel: 3,
+    mapPosition: { x: 0.30, y: 0.40 },
+  },
+
+  // ── 第二章·补充：汜水关 ──
+  {
+    id: 'campaign_sishui',
+    name: '汜水关',
+    subtitle: '第二章·温酒斩华雄',
+    description: '十八路诸侯讨伐董卓，先锋至汜水关。西凉猛将华雄据关而守，连斩数将。关羽温酒斩华雄，一战成名。',
+    order: 4,
+    prerequisiteStageId: 'campaign_nanyang',
+    targetTerritoryId: 'sishui',
+    targetCityName: '汜水关',
+    difficulty: 'normal',
+    victoryCondition: 'defeat_commander',
+    victoryParams: {},
+    enemyCommander: {
+      id: 'huaxiong', name: '华雄', title: '西凉猛将·关前霸王',
+      hp: 600, attack: 45, defense: 20, intelligence: 8,
+      abilities: ['charge', 'sweep', 'roar'],
+      dialogue: {
+        opening: '吾乃华雄！谁敢与我一战！',
+        mid: '不过如此，再来！',
+        defeat: '好快的刀…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '西凉步兵', count: 30, hpPerUnit: 40, attackPerUnit: 14, defensePerUnit: 10 },
+      { type: 'cavalry', name: '西凉骑兵', count: 15, hpPerUnit: 50, attackPerUnit: 20, defensePerUnit: 12 },
+      { type: 'archer', name: '弓弩手', count: 20, hpPerUnit: 25, attackPerUnit: 16, defensePerUnit: 5 },
+    ],
+    mapLayout: {
+      width: 14, height: 12,
+      walls: [
+        { x: 3, y: 1, hp: 180 }, { x: 4, y: 1, hp: 180 }, { x: 5, y: 1, hp: 180 },
+        { x: 3, y: 10, hp: 180 }, { x: 4, y: 10, hp: 180 }, { x: 5, y: 10, hp: 180 },
+        { x: 3, y: 2, hp: 180 }, { x: 3, y: 3, hp: 180 }, { x: 3, y: 4, hp: 180 },
+        { x: 8, y: 1, hp: 180 }, { x: 9, y: 1, hp: 180 }, { x: 10, y: 1, hp: 180 },
+        { x: 8, y: 10, hp: 180 }, { x: 9, y: 10, hp: 180 }, { x: 10, y: 10, hp: 180 },
+        { x: 10, y: 2, hp: 180 }, { x: 10, y: 3, hp: 180 }, { x: 10, y: 4, hp: 180 },
+      ],
+      gates: [{ x: 6, y: 5, hp: 250, direction: 'south' }, { x: 7, y: 5, hp: 250, direction: 'south' }],
+      towers: [{ x: 3, y: 1, attack: 15, range: 4 }, { x: 10, y: 1, attack: 15, range: 4 }],
+      flagPositions: [{ x: 7, y: 6 }],
+      deploymentZone: { x: 0, y: 4, width: 3, height: 4 },
+    },
+    rewards: {
+      territory: 'sishui',
+      resources: { gold: 250, troops: 120 },
+    },
+    starThresholds: { threeStar: 70, twoStar: 40 },
+    iconAsset: '🗡️', themeColor: '#FF5722',
+    fortificationLevel: 4,
+    mapPosition: { x: 0.35, y: 0.20 },
+  },
+
+  // ── 第二章·补充：火烧洛阳 ──
+  {
+    id: 'campaign_luoyang',
+    name: '火烧洛阳',
+    subtitle: '第二章·还都洛阳',
+    description: '董卓兵败，火烧洛阳，挟天子迁都长安。千年古都化为焦土。追击董卓残部，解救天子。',
+    order: 6,
+    prerequisiteStageId: 'campaign_hulao',
+    targetTerritoryId: 'luoyang_city',
+    targetCityName: '洛阳',
+    difficulty: 'normal',
+    victoryCondition: 'capture_flag',
+    victoryParams: { flagsToCapture: 2 },
+    enemyCommander: {
+      id: 'dongzhuo', name: '董卓', title: '暴虐太师·祸乱朝纲',
+      hp: 900, attack: 50, defense: 28, intelligence: 20,
+      abilities: ['tyranny', 'reinforce', 'fortify'],
+      dialogue: {
+        opening: '洛阳是我的！谁也别想夺走！',
+        mid: '放火！烧掉一切！',
+        defeat: '可恶…天亡我也…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '西凉重甲兵', count: 40, hpPerUnit: 50, attackPerUnit: 18, defensePerUnit: 15 },
+      { type: 'cavalry', name: '飞熊军', count: 20, hpPerUnit: 60, attackPerUnit: 25, defensePerUnit: 14 },
+      { type: 'archer', name: '弩手营', count: 25, hpPerUnit: 30, attackPerUnit: 20, defensePerUnit: 6 },
+      { type: 'siege', name: '火油车', count: 5, hpPerUnit: 80, attackPerUnit: 45, defensePerUnit: 10 },
+    ],
+    mapLayout: {
+      width: 18, height: 16,
+      walls: [
+        { x: 5, y: 3, hp: 200 }, { x: 6, y: 3, hp: 200 }, { x: 7, y: 3, hp: 200 }, { x: 8, y: 3, hp: 200 }, { x: 9, y: 3, hp: 200 },
+        { x: 5, y: 12, hp: 200 }, { x: 6, y: 12, hp: 200 }, { x: 7, y: 12, hp: 200 }, { x: 8, y: 12, hp: 200 }, { x: 9, y: 12, hp: 200 },
+      ],
+      gates: [{ x: 7, y: 7, hp: 300, direction: 'south' }],
+      towers: [{ x: 5, y: 3, attack: 18, range: 5 }, { x: 9, y: 3, attack: 18, range: 5 }],
+      flagPositions: [{ x: 6, y: 8 }, { x: 8, y: 8 }],
+      deploymentZone: { x: 0, y: 6, width: 5, height: 4 },
+    },
+    rewards: {
+      territory: 'luoyang_city',
+      resources: { gold: 400, troops: 200, grain: 300 },
+      unlockHero: 'caocao',
+      unlockFeature: 'barracks',
+    },
+    starThresholds: { threeStar: 65, twoStar: 35 },
+    iconAsset: '🔥', themeColor: '#E65100',
+    fortificationLevel: 5,
+    mapPosition: { x: 0.40, y: 0.30 },
+  },
+
+  // ── 第三章·补充：白马之战 ──
+  {
+    id: 'campaign_baima',
+    name: '白马之战',
+    subtitle: '第三章·斩颜良',
+    description: '袁绍遣大将颜良攻白马。关羽于万军之中斩颜良，解白马之围。袁绍大怒，再遣文丑追击。',
+    order: 7,
+    prerequisiteStageId: 'campaign_luoyang',
+    targetTerritoryId: 'baima',
+    targetCityName: '白马',
+    difficulty: 'normal',
+    victoryCondition: 'defeat_commander',
+    victoryParams: {},
+    enemyCommander: {
+      id: 'yanliang', name: '颜良', title: '河北四庭柱·勇冠三军',
+      hp: 700, attack: 50, defense: 22, intelligence: 15,
+      abilities: ['charge', 'sweep'],
+      dialogue: {
+        opening: '白马已在吾掌中！',
+        mid: '来将通名！',
+        defeat: '好快…好快的刀法…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '河北精兵', count: 35, hpPerUnit: 42, attackPerUnit: 15, defensePerUnit: 11 },
+      { type: 'cavalry', name: '幽州突骑', count: 20, hpPerUnit: 55, attackPerUnit: 22, defensePerUnit: 13 },
+      { type: 'archer', name: '冀州弓弩', count: 25, hpPerUnit: 28, attackPerUnit: 17, defensePerUnit: 5 },
+    ],
+    mapLayout: {
+      width: 16, height: 14,
+      walls: [],
+      gates: [],
+      towers: [{ x: 10, y: 4, attack: 18, range: 4 }, { x: 14, y: 4, attack: 18, range: 4 }],
+      flagPositions: [{ x: 12, y: 7 }],
+      deploymentZone: { x: 0, y: 5, width: 5, height: 4 },
+    },
+    rewards: {
+      territory: 'baima',
+      resources: { grain: 400, gold: 300 },
+    },
+    starThresholds: { threeStar: 70, twoStar: 40 },
+    iconAsset: '🐎', themeColor: '#9C27B0',
+    fortificationLevel: 5,
+    mapPosition: { x: 0.45, y: 0.35 },
+  },
+
+  // ── 第三章·补充：邺城攻略 ──
+  {
+    id: 'campaign_yejun',
+    name: '邺城攻略',
+    subtitle: '第三章·北方一统',
+    description: '官渡大捷后，曹操进攻袁氏根基邺城。城墙坚固，守军众多，乃河北第一重镇。攻克邺城，北方可定。',
+    order: 9,
+    prerequisiteStageId: 'campaign_guandu',
+    targetTerritoryId: 'yejun',
+    targetCityName: '邺城',
+    difficulty: 'hard',
+    victoryCondition: 'destroy_gate',
+    victoryParams: { gatesToDestroy: 2 },
+    enemyCommander: {
+      id: 'yuanshang', name: '袁尚', title: '袁氏幼子·河北余孽',
+      hp: 1100, attack: 55, defense: 32, intelligence: 25,
+      abilities: ['fortify', 'reinforce', 'rally'],
+      dialogue: {
+        opening: '邺城城墙高厚，尔等休想攻破！',
+        mid: '审配先生，城防如何？',
+        defeat: '袁家…四世三公…竟败于此…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '邺城守军', count: 45, hpPerUnit: 48, attackPerUnit: 17, defensePerUnit: 14 },
+      { type: 'cavalry', name: '袁氏亲卫', count: 20, hpPerUnit: 58, attackPerUnit: 24, defensePerUnit: 16 },
+      { type: 'archer', name: '城头弩手', count: 30, hpPerUnit: 30, attackPerUnit: 20, defensePerUnit: 8 },
+      { type: 'siege', name: '投石车', count: 5, hpPerUnit: 90, attackPerUnit: 40, defensePerUnit: 12 },
+    ],
+    mapLayout: {
+      width: 18, height: 16,
+      walls: [
+        { x: 6, y: 3, hp: 250 }, { x: 7, y: 3, hp: 250 }, { x: 8, y: 3, hp: 250 }, { x: 9, y: 3, hp: 250 }, { x: 10, y: 3, hp: 250 },
+        { x: 6, y: 12, hp: 250 }, { x: 7, y: 12, hp: 250 }, { x: 8, y: 12, hp: 250 }, { x: 9, y: 12, hp: 250 }, { x: 10, y: 12, hp: 250 },
+        { x: 6, y: 4, hp: 250 }, { x: 6, y: 5, hp: 250 },
+        { x: 10, y: 4, hp: 250 }, { x: 10, y: 5, hp: 250 },
+      ],
+      gates: [{ x: 7, y: 7, hp: 400, direction: 'south' }, { x: 9, y: 7, hp: 400, direction: 'south' }],
+      towers: [{ x: 6, y: 3, attack: 22, range: 5 }, { x: 10, y: 3, attack: 22, range: 5 }, { x: 8, y: 8, attack: 20, range: 4 }],
+      flagPositions: [{ x: 8, y: 7 }],
+      deploymentZone: { x: 0, y: 6, width: 6, height: 4 },
+    },
+    rewards: {
+      territory: 'yejun',
+      resources: { grain: 600, gold: 500, troops: 300 },
+      unlockHero: 'zhaoyun',
+    },
+    starThresholds: { threeStar: 60, twoStar: 30 },
+    iconAsset: '🏰', themeColor: '#673AB7',
+    fortificationLevel: 7,
+    mapPosition: { x: 0.55, y: 0.30 },
+  },
+
+  // ── 第四章·补充：长坂坡 ──
+  {
+    id: 'campaign_changban',
+    name: '长坂坡',
+    subtitle: '第四章·单骑救主',
+    description: '曹操率大军追击刘备。赵云于长坂坡七进七出，单骑救主。张飞据水断桥，一声怒吼吓退曹军百万。',
+    order: 10,
+    prerequisiteStageId: 'campaign_yejun',
+    targetTerritoryId: 'changban',
+    targetCityName: '长坂坡',
+    difficulty: 'hard',
+    victoryCondition: 'survive_waves',
+    victoryParams: { waves: 4 },
+    enemyCommander: {
+      id: 'caochun', name: '曹纯', title: '虎豹骑统帅',
+      hp: 1200, attack: 60, defense: 30, intelligence: 35,
+      abilities: ['charge', 'pursuit', 'encircle'],
+      dialogue: {
+        opening: '虎豹骑，追！',
+        mid: '休走！留下刘备！',
+        defeat: '赵子龙…真乃神将也…',
+      },
+    },
+    enemyUnits: [
+      { type: 'cavalry', name: '虎豹骑', count: 30, hpPerUnit: 60, attackPerUnit: 25, defensePerUnit: 16 },
+      { type: 'infantry', name: '曹军精锐', count: 40, hpPerUnit: 50, attackPerUnit: 20, defensePerUnit: 14 },
+      { type: 'archer', name: '弓弩营', count: 25, hpPerUnit: 35, attackPerUnit: 22, defensePerUnit: 8 },
+    ],
+    mapLayout: {
+      width: 18, height: 16,
+      walls: [],
+      gates: [],
+      towers: [],
+      flagPositions: [{ x: 14, y: 8 }],
+      deploymentZone: { x: 0, y: 6, width: 4, height: 4 },
+    },
+    rewards: {
+      territory: 'changban',
+      resources: { gold: 500, troops: 350, grain: 300 },
+      unlockHero: 'zhaoyun',
+    },
+    starThresholds: { threeStar: 65, twoStar: 35 },
+    iconAsset: '🐴', themeColor: '#D32F2F',
+    fortificationLevel: 6,
+    mapPosition: { x: 0.50, y: 0.55 },
+  },
+
+  // ── 第四章·补充：荆州争夺 ──
+  {
+    id: 'campaign_jingzhou',
+    name: '荆州争夺',
+    subtitle: '第四章·三家争锋',
+    description: '赤壁战后，荆州成为三家必争之地。刘备借荆州，孙权索荆州，曹操窥荆州。三方势力明争暗斗。',
+    order: 12,
+    prerequisiteStageId: 'campaign_chibi',
+    targetTerritoryId: 'jingzhou',
+    targetCityName: '荆州',
+    difficulty: 'hard',
+    victoryCondition: 'capture_flag',
+    victoryParams: { flagsToCapture: 2 },
+    enemyCommander: {
+      id: 'caoren', name: '曹仁', title: '魏国名将·守城专家',
+      hp: 1600, attack: 65, defense: 45, intelligence: 40,
+      abilities: ['fortify', 'rally', 'counter_attack'],
+      dialogue: {
+        opening: '荆州城防坚固，尔等休想攻破！',
+        mid: '增援！快调增援！',
+        defeat: '荆州…守不住了…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '魏国重甲兵', count: 50, hpPerUnit: 55, attackPerUnit: 22, defensePerUnit: 18 },
+      { type: 'cavalry', name: '虎卫骑', count: 20, hpPerUnit: 65, attackPerUnit: 28, defensePerUnit: 16 },
+      { type: 'archer', name: '神射手', count: 30, hpPerUnit: 35, attackPerUnit: 25, defensePerUnit: 8 },
+      { type: 'siege', name: '床弩', count: 5, hpPerUnit: 100, attackPerUnit: 50, defensePerUnit: 15 },
+    ],
+    mapLayout: {
+      width: 18, height: 16,
+      walls: [
+        { x: 5, y: 3, hp: 280 }, { x: 6, y: 3, hp: 280 }, { x: 7, y: 3, hp: 280 }, { x: 8, y: 3, hp: 280 },
+        { x: 5, y: 12, hp: 280 }, { x: 6, y: 12, hp: 280 }, { x: 7, y: 12, hp: 280 }, { x: 8, y: 12, hp: 280 },
+      ],
+      gates: [{ x: 6, y: 7, hp: 350, direction: 'south' }, { x: 7, y: 7, hp: 350, direction: 'south' }],
+      towers: [{ x: 5, y: 3, attack: 24, range: 5 }, { x: 8, y: 3, attack: 24, range: 5 }],
+      flagPositions: [{ x: 6, y: 8 }, { x: 7, y: 8 }],
+      deploymentZone: { x: 0, y: 6, width: 5, height: 4 },
+    },
+    rewards: {
+      territory: 'jingzhou',
+      resources: { gold: 800, troops: 400, grain: 500 },
+      unlockHero: 'zhugeliang',
+    },
+    starThresholds: { threeStar: 60, twoStar: 30 },
+    iconAsset: '🏯', themeColor: '#C62828',
+    fortificationLevel: 7,
+    mapPosition: { x: 0.55, y: 0.60 },
+  },
+
+  // ── 第五章·补充：夷陵之战 ──
+  {
+    id: 'campaign_yiling',
+    name: '夷陵之战',
+    subtitle: '第五章·火烧连营',
+    description: '关羽败走麦城，刘备怒而兴兵伐吴。陆逊以逸待劳，火烧连营七百里，蜀军大败。三国格局再变。',
+    order: 14,
+    prerequisiteStageId: 'campaign_dingjun',
+    targetTerritoryId: 'yiling',
+    targetCityName: '夷陵',
+    difficulty: 'hard',
+    victoryCondition: 'survive_waves',
+    victoryParams: { waves: 6 },
+    enemyCommander: {
+      id: 'luxun', name: '陆逊', title: '吴国名将·火烧连营',
+      hp: 2000, attack: 75, defense: 40, intelligence: 85,
+      abilities: ['fire_attack', 'ambush', 'stratagem'],
+      dialogue: {
+        opening: '蜀军远来疲惫，正可一战！',
+        mid: '火攻准备就绪！',
+        defeat: '天意如此…东吴休矣…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '吴国精锐', count: 55, hpPerUnit: 58, attackPerUnit: 24, defensePerUnit: 16 },
+      { type: 'cavalry', name: '吴国骑兵', count: 25, hpPerUnit: 68, attackPerUnit: 30, defensePerUnit: 18 },
+      { type: 'archer', name: '火箭手', count: 35, hpPerUnit: 38, attackPerUnit: 28, defensePerUnit: 8 },
+      { type: 'siege', name: '火油车', count: 8, hpPerUnit: 100, attackPerUnit: 55, defensePerUnit: 12 },
+    ],
+    mapLayout: {
+      width: 20, height: 18,
+      walls: [],
+      gates: [],
+      towers: [
+        { x: 8, y: 4, attack: 25, range: 5 }, { x: 12, y: 4, attack: 25, range: 5 },
+        { x: 8, y: 13, attack: 25, range: 5 }, { x: 12, y: 13, attack: 25, range: 5 },
+      ],
+      flagPositions: [{ x: 10, y: 9 }],
+      deploymentZone: { x: 0, y: 7, width: 5, height: 4 },
+    },
+    rewards: {
+      territory: 'yiling',
+      resources: { gold: 1500, troops: 600, grain: 800 },
+      unlockHero: 'zhangfei',
+    },
+    starThresholds: { threeStar: 55, twoStar: 25 },
+    iconAsset: '🔥', themeColor: '#BF360C',
+    fortificationLevel: 9,
+    mapPosition: { x: 0.45, y: 0.70 },
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -733,11 +1519,25 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
 // ═══════════════════════════════════════════════════════════════
 
 export const CAMPAIGN_CONNECTIONS: CampaignConnection[] = [
-  { from: 'campaign_zhuo', to: 'campaign_hulao', type: 'plain' },
-  { from: 'campaign_hulao', to: 'campaign_guandu', type: 'mountain_pass' },
-  { from: 'campaign_guandu', to: 'campaign_chibi', type: 'river_crossing' },
-  { from: 'campaign_chibi', to: 'campaign_dingjun', type: 'mountain_pass' },
-  { from: 'campaign_dingjun', to: 'campaign_unification', type: 'main_road' },
+  // 第一章：黄巾之乱
+  { from: 'campaign_zhuo', to: 'campaign_guangzong', type: 'plain' },
+  { from: 'campaign_guangzong', to: 'campaign_nanyang', type: 'plain' },
+  // 第二章：讨伐董卓
+  { from: 'campaign_nanyang', to: 'campaign_sishui', type: 'mountain_pass' },
+  { from: 'campaign_sishui', to: 'campaign_hulao', type: 'mountain_pass' },
+  { from: 'campaign_hulao', to: 'campaign_luoyang', type: 'main_road' },
+  // 第三章：群雄逐鹿
+  { from: 'campaign_luoyang', to: 'campaign_baima', type: 'plain' },
+  { from: 'campaign_baima', to: 'campaign_guandu', type: 'plain' },
+  { from: 'campaign_guandu', to: 'campaign_yejun', type: 'main_road' },
+  // 第四章：赤壁烽火
+  { from: 'campaign_yejun', to: 'campaign_changban', type: 'river_crossing' },
+  { from: 'campaign_changban', to: 'campaign_chibi', type: 'river_crossing' },
+  { from: 'campaign_chibi', to: 'campaign_jingzhou', type: 'main_road' },
+  // 第五章：天下一统
+  { from: 'campaign_jingzhou', to: 'campaign_dingjun', type: 'mountain_pass' },
+  { from: 'campaign_dingjun', to: 'campaign_yiling', type: 'mountain_pass' },
+  { from: 'campaign_yiling', to: 'campaign_unification', type: 'main_road' },
 ];
 
 // ═══════════════════════════════════════════════════════════════

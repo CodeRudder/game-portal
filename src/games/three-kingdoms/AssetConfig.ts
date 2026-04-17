@@ -15,7 +15,7 @@ import type { TerrainType } from './MapGenerator';
 // 地形视觉配置（程序化渲染）
 // ═══════════════════════════════════════════════════════════════
 
-export type TerrainPattern = 'solid' | 'checker' | 'diagonal' | 'dots' | 'waves' | 'crosshatch' | 'grass' | 'rocks' | 'trees' | 'ripples';
+export type TerrainPattern = 'solid' | 'checker' | 'diagonal' | 'dots' | 'waves' | 'crosshatch' | 'grass' | 'rocks' | 'trees' | 'ripples' | 'dunes' | 'snowflakes';
 
 export interface TerrainVisual {
   baseColor: number;
@@ -138,6 +138,28 @@ export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
     transitionColor: 0x3a2a1a,
     transitionAlpha: 0.4,
   },
+  desert: {
+    baseColor: 0xc4a35a,       // 沙黄 — 大漠孤烟
+    lightColor: 0xd4b36a,
+    darkColor: 0xa4833a,
+    pattern: 'dunes',
+    label: '荒漠',
+    renderPriority: 2,
+    transitionWidth: 8,
+    transitionColor: 0xa4833a,
+    transitionAlpha: 0.3,
+  },
+  snow: {
+    baseColor: 0xd8dce6,       // 冷灰白 — 北国冰原
+    lightColor: 0xe8ecf6,
+    darkColor: 0xb8bcc6,
+    pattern: 'snowflakes',
+    label: '雪地',
+    renderPriority: 7,
+    transitionWidth: 8,
+    transitionColor: 0xb8bcc6,
+    transitionAlpha: 0.3,
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -156,6 +178,8 @@ export const TERRAIN_ASSETS: Record<TerrainType, string> = {
   city:     `${KENNEY_BASE}/towerDefense_tile003.png`,
   village:  `${KENNEY_BASE}/towerDefense_tile001.png`,
   fortress: `${KENNEY_BASE}/towerDefense_tile005.png`,
+  desert:   `${KENNEY_BASE}/towerDefense_tile011.png`,
+  snow:     `${KENNEY_BASE}/towerDefense_tile011.png`,
 };
 
 /** 建筑类型 → Kenney 瓦片路径 */
@@ -224,6 +248,8 @@ export const TERRAIN_SPRITE_NAMES: Record<TerrainType, string> = {
   city:     'tower_cannon',
   village:  'tower_archer',
   fortress: 'tower_fire',
+  desert:   'terrain_sand',
+  snow:     'terrain_grass',
 };
 
 export const BUILDING_SPRITE_NAMES: Record<string, string> = {

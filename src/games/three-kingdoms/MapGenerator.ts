@@ -26,7 +26,9 @@ export type TerrainType =
   | 'road'      // 道路
   | 'city'      // 城市
   | 'village'   // 村庄
-  | 'fortress'; // 关卡
+  | 'fortress'  // 关卡
+  | 'desert'    // 荒漠
+  | 'snow';     // 雪地
 
 /** 地图瓦片 */
 export interface MapTile {
@@ -375,43 +377,72 @@ export class MapGenerator {
   private pickTerrain(x: number, y: number): TerrainType {
     const r = this.rng.next();
 
+    // 地图边缘（顶行和底行）→ 雪地（北方/南方天然屏障）
+    if (y === 0) {
+      if (r < 0.50) return 'snow';
+      if (r < 0.80) return 'mountain';
+      return 'plain';
+    }
+    if (y === MAP_H - 1) {
+      if (r < 0.40) return 'snow';
+      if (r < 0.70) return 'mountain';
+      return 'plain';
+    }
+    // 左右边缘 → 山地 + 荒漠天然屏障
+    if (x === 0 || x === MAP_W - 1) {
+      if (r < 0.35) return 'mountain';
+      if (r < 0.55) return 'desert';
+      if (r < 0.80) return 'forest';
+      return 'plain';
+    }
+    // 第二行/倒数第二行 → 少量雪地/山地过渡
+    if (y === 1 || y === MAP_H - 2) {
+      if (r < 0.15) return 'snow';
+      if (r < 0.35) return 'mountain';
+    }
+
     // 魏国区域：平原为主
     if (this.inZone(x, y, WEI_ZONE)) {
-      if (r < 0.60) return 'plain';
-      if (r < 0.80) return 'forest';
-      if (r < 0.95) return 'mountain';
-      return 'village';
+      if (r < 0.50) return 'plain';
+      if (r < 0.70) return 'forest';
+      if (r < 0.88) return 'mountain';
+      if (r < 0.95) return 'village';
+      return 'desert';
     }
 
     // 蜀国区域：山地+森林
     if (this.inZone(x, y, SHU_ZONE)) {
-      if (r < 0.30) return 'plain';
-      if (r < 0.55) return 'forest';
-      if (r < 0.85) return 'mountain';
-      return 'village';
+      if (r < 0.25) return 'plain';
+      if (r < 0.50) return 'forest';
+      if (r < 0.78) return 'mountain';
+      if (r < 0.90) return 'village';
+      return 'desert';
     }
 
     // 吴国区域：水域+平原
     if (this.inZone(x, y, WU_ZONE)) {
-      if (r < 0.40) return 'plain';
-      if (r < 0.60) return 'water';
-      if (r < 0.80) return 'forest';
-      return 'village';
+      if (r < 0.35) return 'plain';
+      if (r < 0.55) return 'water';
+      if (r < 0.75) return 'forest';
+      if (r < 0.90) return 'village';
+      return 'desert';
     }
 
     // 中间战场区域
     if (this.inZone(x, y, CENTER_ZONE)) {
-      if (r < 0.25) return 'plain';
-      if (r < 0.45) return 'road';
-      if (r < 0.65) return 'mountain';
-      if (r < 0.80) return 'forest';
-      return 'fortress';
+      if (r < 0.20) return 'plain';
+      if (r < 0.40) return 'road';
+      if (r < 0.60) return 'mountain';
+      if (r < 0.78) return 'forest';
+      if (r < 0.90) return 'fortress';
+      return 'desert';
     }
 
     // 默认（边界过渡区域）
-    if (r < 0.50) return 'plain';
-    if (r < 0.75) return 'forest';
-    return 'mountain';
+    if (r < 0.40) return 'plain';
+    if (r < 0.65) return 'forest';
+    if (r < 0.85) return 'mountain';
+    return 'desert';
   }
 
   // ─── 瓦片构建 ───────────────────────────────────────────
@@ -452,6 +483,8 @@ export class MapGenerator {
       case 'city':    return 1;
       case 'fortress':return 2;
       case 'mountain':return 3;
+      case 'desert':  return 1;
+      case 'snow':    return 2;
       default:        return 1;
     }
   }

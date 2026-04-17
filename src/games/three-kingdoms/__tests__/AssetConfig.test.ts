@@ -25,6 +25,7 @@ import type { TerrainType } from '../MapGenerator';
 const ALL_TERRAINS: TerrainType[] = [
   'plain', 'mountain', 'forest', 'water',
   'road', 'city', 'village', 'fortress',
+  'desert', 'snow',
 ];
 
 // ═══════════════════════════════════════════════════════════════
