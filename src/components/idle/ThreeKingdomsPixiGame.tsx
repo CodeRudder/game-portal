@@ -1526,9 +1526,11 @@ export default function ThreeKingdomsPixiGame() {
 
   // ─── 资源飘字追踪 ─────────────────────────────────────────
   const prevResourcesRef = useRef<Record<string, number>>({});
+  const [changedResources, setChangedResources] = useState<Set<string>>(new Set());
   useEffect(() => {
     const prev = prevResourcesRef.current;
     const curr: Record<string, number> = {};
+    const changed = new Set<string>();
     for (const r of resources) {
       curr[r.id] = r.amount;
       const prevAmt = prev[r.id] ?? 0;
@@ -1536,9 +1538,15 @@ export default function ThreeKingdomsPixiGame() {
       if (diff > 0 && prevAmt > 0) {
         // 资源增加了，显示飘字（在资源栏对应位置附近）
         showFloatText(`${r.icon}+${fmt(diff)}`, 0, 0);
+        changed.add(r.id);
       }
     }
     prevResourcesRef.current = curr;
+    if (changed.size > 0) {
+      setChangedResources(changed);
+      // 600ms后清除动画class
+      setTimeout(() => setChangedResources(new Set()), 600);
+    }
   }, [resources, showFloatText]);
 
   /** 根据场景决定侧边栏显隐 */
@@ -2202,7 +2210,7 @@ export default function ThreeKingdomsPixiGame() {
               onMouseLeave={() => setTooltip(null)}
             >
               <ResourceIcon resourceId={r.id} size={18} />
-              <span className="tk-resource-value-pulse" style={{ fontWeight: 'bold' }}>{fmt(r.amount)}</span>
+              <span className={`tk-resource-value-pulse ${changedResources.has(r.id) ? 'tk-resource-value-updated' : ''}`} style={{ fontWeight: 'bold' }}>{fmt(r.amount)}</span>
               {r.perSecond > 0 && (
                 <span style={{ fontSize: 10, color: COLOR_THEME.accentGreen }}>
                   +{fmt(r.perSecond)}/s
@@ -2322,34 +2330,37 @@ export default function ThreeKingdomsPixiGame() {
         <div className="tk-atmosphere-layer">
           {/* 远山轮廓 */}
           <div className="tk-mountain-layer" />
-          {/* 炊烟效果 */}
+          {/* 炊烟效果（增强版 — 5个粒子） */}
           <div className="tk-smoke-layer">
-            {[0, 1, 2].map(i => (
+            {[0, 1, 2, 3, 4].map(i => (
               <div
                 key={i}
                 className="tk-smoke"
                 style={{
-                  left: `${20 + i * 30}%`,
-                  bottom: '15%',
-                  animationDuration: `${4 + i * 1.5}s`,
-                  animationDelay: `${i * 2}s`,
+                  left: `${12 + i * 20}%`,
+                  bottom: `${10 + (i % 3) * 5}%`,
+                  animationDuration: `${3.5 + i * 1.2}s`,
+                  animationDelay: `${i * 1.8}s`,
+                  width: 24 + (i % 3) * 6,
+                  height: 24 + (i % 3) * 6,
                 }}
               />
             ))}
           </div>
         </div>
-        {/* 飘落花瓣/落叶层 */}
+        {/* 飘落花瓣/落叶层（增强版 — 12个粒子） */}
         <div className="tk-petal-layer">
-          {Array.from({ length: 8 }, (_, i) => (
+          {Array.from({ length: 12 }, (_, i) => (
             <div
               key={i}
               className={`tk-petal tk-petal--${currentSeason}`}
               style={{
-                left: `${5 + i * 12}%`,
-                animationDuration: `${6 + (i % 3) * 2}s`,
-                animationDelay: `${i * 1.5}s`,
-                width: currentSeason === 'winter' ? 6 : 8,
-                height: currentSeason === 'winter' ? 6 : 8,
+                left: `${3 + i * 8}%`,
+                animationDuration: `${5 + (i % 4) * 2}s`,
+                animationDelay: `${i * 1.2}s`,
+                width: currentSeason === 'winter' ? (4 + (i % 3) * 2) : (6 + (i % 3) * 3),
+                height: currentSeason === 'winter' ? (4 + (i % 3) * 2) : (6 + (i % 3) * 3),
+                opacity: 0.6 + (i % 3) * 0.15,
               }}
             />
           ))}
