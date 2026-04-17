@@ -223,3 +223,119 @@ export const ERA_COLORS: Readonly<Record<CampaignEra, string>> = {
   '赤壁': '#ef4444',
   '三国': '#dc2626',
 };
+
+// ═══════════════════════════════════════════════════════════════
+// 关卡视觉增强数据
+// ═══════════════════════════════════════════════════════════════
+
+/** 势力徽标类型 */
+export type FactionId = 'shu' | 'wei' | 'wu' | 'yellow' | 'han' | 'coalition';
+
+/** 关卡视觉增强元数据 */
+export interface StageVisualMeta {
+  /** 关卡 ID（对应 CAMPAIGN_STAGE_DEFINITIONS.id） */
+  stageId: string;
+  /** 历史背景描述（1-2句，用于关卡卡片展示） */
+  historicalDesc: string;
+  /** 年份 */
+  year: string;
+  /** 攻击方势力 */
+  attackerFaction: FactionId;
+  /** 防守方势力 */
+  defenderFaction: FactionId;
+  /** 关联武将（展示在关卡卡片上） */
+  notableGenerals: Array<{ name: string; faction: FactionId; title: string }>;
+  /** 场景预览关键元素（用于 SVG 插画） */
+  sceneKey: string;
+}
+
+/** 势力显示信息 */
+export const FACTION_DISPLAY: Readonly<Record<FactionId, { name: string; color: string; bg: string; char: string }>> = {
+  shu:       { name: '蜀', color: '#c62828', bg: 'rgba(198,40,40,0.15)', char: '蜀' },
+  wei:       { name: '魏', color: '#4a6fa5', bg: 'rgba(74,111,165,0.15)', char: '魏' },
+  wu:        { name: '吴', color: '#2e7d32', bg: 'rgba(46,125,50,0.15)', char: '吴' },
+  yellow:    { name: '黄巾', color: '#facc15', bg: 'rgba(250,204,21,0.15)', char: '黄' },
+  han:       { name: '汉', color: '#b87333', bg: 'rgba(184,115,51,0.15)', char: '汉' },
+  coalition: { name: '联军', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)', char: '联' },
+};
+
+/**
+ * 关卡视觉增强元数据列表
+ *
+ * 每个关卡包含历史背景、对阵势力、关联武将、场景插画标识。
+ */
+export const STAGE_VISUAL_META: ReadonlyArray<StageVisualMeta> = [
+  {
+    stageId: 'stage_1',
+    historicalDesc: '中平元年，张角以"苍天已死，黄天当立"号令百万信徒起事，烽烟四起，天下震动。',
+    year: '公元184年',
+    attackerFaction: 'yellow',
+    defenderFaction: 'han',
+    notableGenerals: [
+      { name: '张角', faction: 'yellow', title: '天公将军' },
+      { name: '刘备', faction: 'shu', title: '义军首领' },
+    ],
+    sceneKey: 'yellow_turban',
+  },
+  {
+    stageId: 'stage_2',
+    historicalDesc: '初平元年，董卓乱政废帝。十八路诸侯歃血为盟，虎牢关前三英战吕布，留下千古佳话。',
+    year: '公元190年',
+    attackerFaction: 'coalition',
+    defenderFaction: 'han',
+    notableGenerals: [
+      { name: '吕布', faction: 'han', title: '飞将' },
+      { name: '关羽', faction: 'shu', title: '武圣' },
+    ],
+    sceneKey: 'dongzhuo',
+  },
+  {
+    stageId: 'stage_3',
+    historicalDesc: '群雄割据，曹操挟天子以令诸侯，袁绍坐拥河北四州。逐鹿中原，谁主沉浮。',
+    year: '公元194年',
+    attackerFaction: 'wei',
+    defenderFaction: 'han',
+    notableGenerals: [
+      { name: '曹操', faction: 'wei', title: '魏武帝' },
+      { name: '袁绍', faction: 'han', title: '河北霸主' },
+    ],
+    sceneKey: 'warlords',
+  },
+  {
+    stageId: 'stage_4',
+    historicalDesc: '建安五年，曹操奇袭乌巢，火烧袁绍粮草。以两万破十万，一战定北方。',
+    year: '公元200年',
+    attackerFaction: 'wei',
+    defenderFaction: 'han',
+    notableGenerals: [
+      { name: '曹操', faction: 'wei', title: '魏武帝' },
+      { name: '袁绍', faction: 'han', title: '大将军' },
+    ],
+    sceneKey: 'guandu',
+  },
+  {
+    stageId: 'stage_5',
+    historicalDesc: '建安十三年，曹操率大军南下。孙刘联军以火攻大破曹军于赤壁，三分天下之局由此奠定。',
+    year: '公元208年',
+    attackerFaction: 'coalition',
+    defenderFaction: 'wei',
+    notableGenerals: [
+      { name: '周瑜', faction: 'wu', title: '大都督' },
+      { name: '诸葛亮', faction: 'shu', title: '卧龙' },
+      { name: '曹操', faction: 'wei', title: '丞相' },
+    ],
+    sceneKey: 'chibi',
+  },
+  {
+    stageId: 'stage_6',
+    historicalDesc: '魏蜀吴三足鼎立，诸葛亮六出祁山，司马氏篡魏。天下大势，分久必合。',
+    year: '公元220-280年',
+    attackerFaction: 'wei',
+    defenderFaction: 'shu',
+    notableGenerals: [
+      { name: '司马懿', faction: 'wei', title: '晋宣帝' },
+      { name: '诸葛亮', faction: 'shu', title: '丞相' },
+    ],
+    sceneKey: 'three_kingdoms',
+  },
+];
