@@ -1311,21 +1311,27 @@
 /* 稀有度视觉区分 — 边框颜色 */
 .tk-general-card--rarity-common {
   border-color: rgba(187, 187, 187, 0.4);
+  --portrait-border-width: 1px;
 }
 .tk-general-card--rarity-uncommon {
   border-color: rgba(92, 191, 96, 0.5);
+  --portrait-border-width: 1px;
 }
 .tk-general-card--rarity-rare {
   border-color: rgba(66, 165, 245, 0.5);
+  --portrait-border-width: 2px;
 }
 .tk-general-card--rarity-epic {
   border-color: rgba(171, 71, 188, 0.5);
+  --portrait-border-width: 2px;
 }
 .tk-general-card--rarity-legendary {
   border-color: rgba(255, 167, 38, 0.6);
+  --portrait-border-width: 3px;
 }
 .tk-general-card--rarity-mythic {
   border-color: rgba(255, 82, 82, 0.6);
+  --portrait-border-width: 3px;
 }
 
 /* 传说武将卡片微弱发光动画 */
@@ -1456,26 +1462,20 @@
   overflow: hidden;
   margin: 0 auto 4px;
 }
-/* 头像圆形金色边框 + 外圈光晕 */
+/* 头像圆形势力色边框（蜀红/魏蓝/吴绿） */
 .tk-general-card-portrait::before {
   content: '';
   position: absolute;
-  inset: -2px;
+  inset: -3px;
   border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    #ffd700,
-    #b8860b,
-    #ffd700,
-    #daa520,
-    #ffd700
-  );
+  border: var(--portrait-border-width, 2px) solid var(--faction-color, #b8860b);
   z-index: 0;
-  opacity: 0.7;
-  transition: opacity 0.3s;
+  opacity: 0.8;
+  transition: opacity 0.3s, box-shadow 0.3s;
 }
 .tk-general-card:hover .tk-general-card-portrait::before {
   opacity: 1;
+  box-shadow: 0 0 6px var(--faction-color, rgba(212,160,48,0.25));
 }
 .tk-general-card-portrait::after {
   content: '';
@@ -2258,6 +2258,80 @@
   color: #e57373;
   border-color: rgba(229,115,115,0.3);
   background: rgba(229,115,115,0.08);
+}
+
+/* 科技效果预览区域 */
+.tk-tech-tooltip-effects {
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(139,115,85,0.15);
+}
+
+.tk-tech-tooltip-effects-title {
+  font-size: 9px;
+  color: #d4b36a;
+  margin-bottom: 3px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+
+.tk-tech-tooltip-effect-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  margin-bottom: 2px;
+}
+
+.tk-tech-tooltip-effect-icon {
+  flex-shrink: 0;
+  font-size: 10px;
+}
+
+.tk-tech-tooltip-effect-text {
+  color: #c9a96e;
+  font-weight: bold;
+}
+
+/* 研究完成闪光动画 — 增强版 */
+@keyframes tk-tech-complete-flash {
+  0%   { opacity: 0; transform: scale(0.5); box-shadow: 0 0 0 rgba(212,160,48,0); }
+  50%  { opacity: 1; transform: scale(1.2); box-shadow: 0 0 20px rgba(212,160,48,0.5); }
+  100% { opacity: 0; transform: scale(1.8); box-shadow: 0 0 40px rgba(212,160,48,0); }
+}
+
+.tk-tech-complete-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: radial-gradient(circle, rgba(212,160,48,0.4), transparent 70%);
+  animation: tk-tech-complete-flash 0.8s ease-out forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 研究中脉冲发光 — 增强版 */
+@keyframes tk-tech-researching-pulse {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(212,160,48,0.2), inset 0 0 4px rgba(212,160,48,0.05);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(212,160,48,0.4), 0 0 24px rgba(212,160,48,0.15), inset 0 0 8px rgba(212,160,48,0.1);
+  }
+}
+
+.tk-tech-node--researching {
+  animation: tk-tech-researching-pulse 1.5s ease-in-out infinite !important;
+}
+
+/* 科技节点三态变化动画 */
+@keyframes tk-tech-state-lock-to-available {
+  0%   { opacity: 0.3; transform: scale(0.95); }
+  60%  { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.tk-tech-node--state-change {
+  animation: tk-tech-state-lock-to-available 0.5s ease-out;
 }
 
 /* ─── 4. 连接线流动动画（分支颜色渐变） ─── */
@@ -3481,6 +3555,203 @@
   border: 1px solid rgba(139,115,85,0.2);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+ * 武将卡片悬停浮层详情卡（Tooltip 风格 — 古风边框 + 半透明背景）
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* 浮层容器 — 默认隐藏，悬停显示 */
+.tk-general-hover-tooltip {
+  display: none;
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  pointer-events: none;
+  animation: tk-general-tooltip-fadein 0.25s ease-out;
+}
+
+.tk-general-card:hover .tk-general-hover-tooltip {
+  display: block;
+}
+
+@keyframes tk-general-tooltip-fadein {
+  0%   { opacity: 0; transform: translateY(-50%) translateX(-4px); }
+  100% { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+/* 浮层内容 — 古风边框 + 半透明背景 */
+.tk-general-hover-tooltip-inner {
+  min-width: 200px;
+  max-width: 260px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: rgba(26, 14, 5, 0.96);
+  border: 1.5px solid rgba(212, 160, 48, 0.5);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.7),
+    0 0 12px rgba(212, 160, 48, 0.1),
+    inset 0 0 20px rgba(139, 115, 85, 0.08);
+  /* 古风装饰：四角花纹 */
+  background-image:
+    radial-gradient(circle at 4px 4px, rgba(212, 160, 48, 0.15) 2px, transparent 2px),
+    radial-gradient(circle at calc(100% - 4px) 4px, rgba(212, 160, 48, 0.15) 2px, transparent 2px),
+    radial-gradient(circle at 4px calc(100% - 4px), rgba(212, 160, 48, 0.15) 2px, transparent 2px),
+    radial-gradient(circle at calc(100% - 4px) calc(100% - 4px), rgba(212, 160, 48, 0.15) 2px, transparent 2px);
+}
+
+/* 浮层箭头（指向卡片） */
+.tk-general-hover-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -6px;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: rgba(212, 160, 48, 0.5);
+}
+
+/* 浮层标题 */
+.tk-general-tooltip-title {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.tk-general-tooltip-level {
+  font-size: 10px;
+  color: #c9a96e;
+  font-family: Georgia, serif;
+}
+
+.tk-general-tooltip-rarity {
+  font-size: 9px;
+}
+
+/* 浮层势力行 */
+.tk-general-tooltip-faction {
+  font-size: 10px;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+/* 浮层属性条 */
+.tk-general-tooltip-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.tk-tooltip-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+}
+
+.tk-tooltip-stat-label {
+  color: #b09060;
+  width: 28px;
+  flex-shrink: 0;
+  text-align: right;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+
+.tk-tooltip-stat-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2.5px;
+  overflow: hidden;
+}
+
+.tk-tooltip-stat-fill {
+  height: 100%;
+  border-radius: 2.5px;
+  transition: width 0.4s ease;
+}
+
+.tk-tooltip-stat-value {
+  color: #d4b36a;
+  font-size: 9px;
+  width: 20px;
+  flex-shrink: 0;
+  text-align: right;
+  font-family: Georgia, serif;
+  font-weight: bold;
+}
+
+/* 浮层技能列表 */
+.tk-general-tooltip-skills {
+  border-top: 1px solid rgba(139, 115, 85, 0.2);
+  padding-top: 6px;
+}
+
+.tk-general-tooltip-skills-title {
+  font-size: 9px;
+  color: #d4b36a;
+  margin-bottom: 4px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+
+.tk-general-tooltip-skill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  margin-bottom: 3px;
+}
+
+.tk-general-tooltip-skill-name {
+  color: #f0e0c0;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.tk-general-tooltip-skill-effect {
+  color: #a09070;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+/* ─── 武将卡片一句话简介 ─── */
+.tk-general-card-tagline {
+  font-size: 8px;
+  color: #a09070;
+  font-family: 'KaiTi', 'STKaiti', serif;
+  text-align: center;
+  margin-top: 1px;
+  opacity: 0.8;
+}
+
+/* ─── 武将出战状态标识 ─── */
+.tk-general-status-badge {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 7px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-weight: bold;
+  z-index: 3;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.tk-general-status-badge--standby {
+  background: rgba(139, 115, 85, 0.7);
+  color: #d4b36a;
+  border: 1px solid rgba(212, 160, 48, 0.3);
+}
+
 /* ─── 武将快速列表（左侧面板2列网格） ─── */
 .tk-hero-quick-list {
   display: grid;
@@ -3726,4 +3997,688 @@
 @keyframes tk-audio-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(1.15); }
+ * 优化1: 武将视觉升级 — 特征化头像 + 动态效果 + 势力色强化
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 武将卡片 hover 浮动效果 ─── */
+.tk-general-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+.tk-general-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ─── 武将卡片选中金色脉冲动画 ─── */
+@keyframes tk-hero-selected-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 6px rgba(255,215,0,0.35),
+      0 0 12px rgba(255,215,0,0.18),
+      0 0 18px rgba(255,215,0,0.08);
+    border-color: rgba(255,215,0,0.7);
+  }
+  50% {
+    box-shadow:
+      0 0 10px rgba(255,215,0,0.55),
+      0 0 20px rgba(255,215,0,0.3),
+      0 0 30px rgba(255,215,0,0.12),
+      0 0 40px rgba(255,215,0,0.05);
+    border-color: rgba(255,215,0,1);
+  }
+}
+.tk-general-card--selected {
+  animation: tk-hero-selected-pulse 2s ease-in-out infinite !important;
+}
+
+/* ─── 属性条增长动画 ─── */
+@keyframes tk-grow-bar {
+  from { width: 0%; }
+}
+.tk-hover-stat-fill,
+.tk-stat-fill {
+  animation: tk-grow-bar 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* ─── 蜀将卡片底部红色渐变条 ─── */
+.tk-general-card--faction-shu::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(198,40,40,0.6) 20%,
+    rgba(198,40,40,0.9) 50%,
+    rgba(198,40,40,0.6) 80%,
+    transparent 100%
+  );
+  border-radius: 0 0 6px 6px;
+}
+
+/* ─── 魏将卡片底部蓝色渐变条 ─── */
+.tk-general-card--faction-wei::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(74,111,165,0.6) 20%,
+    rgba(74,111,165,0.9) 50%,
+    rgba(74,111,165,0.6) 80%,
+    transparent 100%
+  );
+  border-radius: 0 0 6px 6px;
+}
+
+/* ─── 吴将卡片底部绿色渐变条 ─── */
+.tk-general-card--faction-wu::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(46,125,50,0.6) 20%,
+    rgba(46,125,50,0.9) 50%,
+    rgba(46,125,50,0.6) 80%,
+    transparent 100%
+  );
+  border-radius: 0 0 6px 6px;
+}
+
+/* ─── 武将头像特征化视觉标识 ─── */
+
+/* 关羽 — 红色边框 + 青龙纹样光晕 */
+.tk-general-card--hero-guanyu .tk-general-card-portrait::before {
+  background: conic-gradient(
+    from 0deg,
+    #c62828, #ffd700, #c62828, #b8860b, #c62828
+  ) !important;
+  opacity: 0.9 !important;
+}
+.tk-general-card--hero-guanyu:hover .tk-general-card-portrait::after {
+  background: radial-gradient(circle, rgba(198,40,40,0.4) 0%, rgba(212,160,48,0.15) 50%, transparent 70%) !important;
+  opacity: 1 !important;
+}
+
+/* 诸葛亮 — 蓝色边框 + 羽扇纹样光晕 */
+.tk-general-card--hero-zhugeliang .tk-general-card-portrait::before {
+  background: conic-gradient(
+    from 0deg,
+    #1565c0, #42a5f5, #1565c0, #90caf9, #1565c0
+  ) !important;
+  opacity: 0.9 !important;
+}
+.tk-general-card--hero-zhugeliang:hover .tk-general-card-portrait::after {
+  background: radial-gradient(circle, rgba(21,101,192,0.4) 0%, rgba(66,165,245,0.15) 50%, transparent 70%) !important;
+  opacity: 1 !important;
+}
+
+/* 曹操 — 深蓝边框 + 霸王纹样光晕 */
+.tk-general-card--hero-caocao .tk-general-card-portrait::before {
+  background: conic-gradient(
+    from 0deg,
+    #283593, #ffd700, #283593, #5c6bc0, #283593
+  ) !important;
+  opacity: 0.9 !important;
+}
+.tk-general-card--hero-caocao:hover .tk-general-card-portrait::after {
+  background: radial-gradient(circle, rgba(40,53,147,0.4) 0%, rgba(255,215,0,0.15) 50%, transparent 70%) !important;
+  opacity: 1 !important;
+}
+
+/* 刘备 — 金红边框 + 仁德纹样光晕 */
+.tk-general-card--hero-liubei .tk-general-card-portrait::before {
+  background: conic-gradient(
+    from 0deg,
+    #ffd700, #c62828, #ffd700, #ff8f00, #ffd700
+  ) !important;
+  opacity: 0.9 !important;
+}
+.tk-general-card--hero-liubei:hover .tk-general-card-portrait::after {
+  background: radial-gradient(circle, rgba(255,215,0,0.4) 0%, rgba(198,40,40,0.15) 50%, transparent 70%) !important;
+  opacity: 1 !important;
+}
+
+/* 张飞 — 暗红边框 + 猛将纹样光晕 */
+.tk-general-card--hero-zhangfei .tk-general-card-portrait::before {
+  background: conic-gradient(
+    from 0deg,
+    #b71c1c, #ff6f00, #b71c1c, #e65100, #b71c1c
+  ) !important;
+  opacity: 0.9 !important;
+}
+.tk-general-card--hero-zhangfei:hover .tk-general-card-portrait::after {
+  background: radial-gradient(circle, rgba(183,28,28,0.4) 0%, rgba(255,111,0,0.15) 50%, transparent 70%) !important;
+  opacity: 1 !important;
+}
+
+/* 孙权 — 绿金边框 + 王者纹样光晕 */
+.tk-general-card--hero-sunquan .tk-general-card-portrait::before {
+  background: conic-gradient(
+    from 0deg,
+    #2e7d32, #ffd700, #2e7d32, #66bb6a, #2e7d32
+  ) !important;
+  opacity: 0.9 !important;
+}
+.tk-general-card--hero-sunquan:hover .tk-general-card-portrait::after {
+  background: radial-gradient(circle, rgba(46,125,50,0.4) 0%, rgba(255,215,0,0.15) 50%, transparent 70%) !important;
+  opacity: 1 !important;
+}
+
+/* 赵云 — 银白边框 + 银龙纹样光晕 */
+.tk-general-card--hero-zhaoyun .tk-general-card-portrait::before {
+  background: conic-gradient(
+    from 0deg,
+    #cfd8dc, #ffffff, #cfd8dc, #b0bec5, #cfd8dc
+  ) !important;
+  opacity: 0.9 !important;
+}
+.tk-general-card--hero-zhaoyun:hover .tk-general-card-portrait::after {
+  background: radial-gradient(circle, rgba(207,216,220,0.4) 0%, rgba(255,255,255,0.15) 50%, transparent 70%) !important;
+  opacity: 1 !important;
+}
+
+/* 吕布 — 暗红金边框 + 战神纹样光晕 */
+.tk-general-card--hero-lvbu .tk-general-card-portrait::before {
+  background: conic-gradient(
+    from 0deg,
+    #880e4f, #ffd700, #880e4f, #ff6f00, #880e4f
+  ) !important;
+  opacity: 0.9 !important;
+}
+.tk-general-card--hero-lvbu:hover .tk-general-card-portrait::after {
+  background: radial-gradient(circle, rgba(136,14,79,0.4) 0%, rgba(255,215,0,0.15) 50%, transparent 70%) !important;
+  opacity: 1 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 优化2: 科技视觉动态化 — 节点动画 + 连接线 + 分支视觉区分
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 已研究科技：绿色发光脉冲 ─── */
+@keyframes tk-tech-green-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(76,175,80,0.3), 0 0 12px rgba(76,175,80,0.15);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(76,175,80,0.5), 0 0 20px rgba(76,175,80,0.25), 0 0 30px rgba(76,175,80,0.1);
+  }
+}
+.tk-tech-node--completed:not(.tk-tech-branch--military):not(.tk-tech-branch--economy):not(.tk-tech-branch--culture) {
+  animation: tk-tech-green-pulse 3s ease-in-out infinite;
+}
+
+/* ─── 可研究科技：金色呼吸动画 ─── */
+@keyframes tk-tech-golden-breathe {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(212,160,48,0.15);
+    border-color: rgba(212,160,48,0.4);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(212,160,48,0.35), 0 0 16px rgba(212,160,48,0.15);
+    border-color: rgba(212,160,48,0.7);
+  }
+}
+.tk-tech-node--available {
+  animation: tk-tech-golden-breathe 2.5s ease-in-out infinite;
+}
+
+/* ─── 锁定科技：灰色 + 锁图标 ─── */
+.tk-tech-node--locked {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+  position: relative;
+}
+.tk-tech-node--locked::after {
+  content: '🔒';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ─── 研究中科技：旋转加载动画 ─── */
+@keyframes tk-tech-research-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.tk-tech-node--researching {
+  position: relative;
+}
+.tk-tech-node--researching::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border: 2px solid transparent;
+  border-top-color: rgba(212,160,48,0.8);
+  border-right-color: rgba(212,160,48,0.3);
+  border-radius: 10px;
+  animation: tk-tech-research-rotate 1.5s linear infinite;
+  pointer-events: none;
+}
+
+/* ─── 科技连接线动画：已解锁路径金色流动 ─── */
+@keyframes tk-tech-connector-flow {
+  0% { stroke-dashoffset: 12; }
+  100% { stroke-dashoffset: 0; }
+}
+.tk-tech-connector--completed {
+  stroke-dasharray: 6,4;
+  animation: tk-tech-connector-flow 1.5s linear infinite;
+}
+
+/* ─── 未解锁路径：灰色虚线（通过 SVG 属性） ─── */
+
+/* ─── 科技分支视觉区分：节点背景色 ─── */
+
+/* 军事分支 — 红色调 */
+.tk-tech-branch--military.tk-tech-node--completed {
+  background: linear-gradient(135deg, rgba(168,82,65,0.12), rgba(229,57,53,0.06)) !important;
+}
+.tk-tech-branch--military.tk-tech-node--available {
+  background: linear-gradient(135deg, rgba(168,82,65,0.06), rgba(229,57,53,0.03)) !important;
+}
+.tk-tech-branch--military.tk-tech-node--researching {
+  background: linear-gradient(135deg, rgba(168,82,65,0.08), rgba(212,160,48,0.04)) !important;
+}
+
+/* 经济分支 — 绿色调 */
+.tk-tech-branch--economy.tk-tech-node--completed {
+  background: linear-gradient(135deg, rgba(74,122,58,0.12), rgba(102,187,106,0.06)) !important;
+}
+.tk-tech-branch--economy.tk-tech-node--available {
+  background: linear-gradient(135deg, rgba(74,122,58,0.06), rgba(102,187,106,0.03)) !important;
+}
+.tk-tech-branch--economy.tk-tech-node--researching {
+  background: linear-gradient(135deg, rgba(74,122,58,0.08), rgba(212,160,48,0.04)) !important;
+}
+
+/* 文化分支 — 蓝色调 */
+.tk-tech-branch--culture.tk-tech-node--completed {
+  background: linear-gradient(135deg, rgba(74,111,165,0.12), rgba(66,165,245,0.06)) !important;
+}
+.tk-tech-branch--culture.tk-tech-node--available {
+  background: linear-gradient(135deg, rgba(74,111,165,0.06), rgba(66,165,245,0.03)) !important;
+}
+.tk-tech-branch--culture.tk-tech-node--researching {
+  background: linear-gradient(135deg, rgba(74,111,165,0.08), rgba(212,160,48,0.04)) !important;
+}
+
+/* ─── 科技分支标记条（左侧竖条） ─── */
+.tk-tech-branch-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+  opacity: 0.6;
+}
+.tk-tech-branch-indicator--military {
+  background: linear-gradient(180deg, #e53935, #a85241);
+}
+.tk-tech-branch-indicator--economy {
+  background: linear-gradient(180deg, #66bb6a, #4a7a3a);
+}
+.tk-tech-branch-indicator--culture {
+  background: linear-gradient(180deg, #42a5f5, #4a6fa5);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * R14 优化：主界面沉浸感增强 + 武将展示深化
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 年号 · 季节 沉浸式显示 ─── */
+.tk-era-display {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(212,160,48,0.12), rgba(184,115,51,0.08));
+  border: 1px solid rgba(212,160,48,0.3);
+  box-shadow: 0 0 8px rgba(212,160,48,0.08), inset 0 0 4px rgba(212,160,48,0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.tk-era-display::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.1), transparent);
+  animation: tk-era-shimmer 4s ease-in-out infinite;
+}
+
+@keyframes tk-era-shimmer {
+  0%, 100% { left: -100%; }
+  50% { left: 140%; }
+}
+
+.tk-era-display-text {
+  font-size: 11px;
+  font-weight: bold;
+  font-family: "Noto Serif SC", "SimSun", "STSong", serif;
+  color: #e8c870;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 6px rgba(212,160,48,0.2);
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+/* ─── 城池旗帜飘动 ─── */
+.tk-flag-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.tk-flag {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+.tk-flag-pole {
+  width: 2px;
+  height: 30px;
+  background: linear-gradient(180deg, #b87333, #8b6914);
+  border-radius: 1px;
+  box-shadow: 0 0 3px rgba(184,115,51,0.3);
+}
+
+.tk-flag-cloth {
+  width: 18px;
+  height: 12px;
+  margin-left: 2px;
+  margin-top: -2px;
+  border-radius: 0 2px 2px 0;
+  animation: tk-flag-wave ease-in-out infinite;
+  transform-origin: left center;
+  opacity: 0.85;
+}
+
+.tk-flag--shu .tk-flag-cloth {
+  background: linear-gradient(90deg, #c62828, #e53935);
+  box-shadow: 0 0 4px rgba(198,40,40,0.3);
+}
+
+.tk-flag--wei .tk-flag-cloth {
+  background: linear-gradient(90deg, #1a5276, #2e86c1);
+  box-shadow: 0 0 4px rgba(46,134,193,0.3);
+}
+
+.tk-flag--wu .tk-flag-cloth {
+  background: linear-gradient(90deg, #1b5e20, #43a047);
+  box-shadow: 0 0 4px rgba(67,160,71,0.3);
+}
+
+@keyframes tk-flag-wave {
+  0%, 100% { transform: rotate(-3deg) scaleX(1); }
+  25% { transform: rotate(2deg) scaleX(0.95); }
+  50% { transform: rotate(-1deg) scaleX(1.02); }
+  75% { transform: rotate(3deg) scaleX(0.97); }
+}
+
+/* ─── 城池呼吸脉冲 ─── */
+.tk-city-pulse {
+  position: absolute;
+  width: 60px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,160,48,0.08) 0%, transparent 70%);
+  animation: tk-city-pulse-breathe 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes tk-city-pulse-breathe {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; }
+  50% { transform: translateX(-50%) scale(1.5); opacity: 0.15; }
+}
+
+/* ─── 资源飘字增强 — 发光 + 缩放弹出 ─── */
+.tk-resource-float {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: "Noto Serif SC", "SimSun", serif;
+  animation: tk-float-up-resource-enhanced 2s ease-out forwards;
+}
+
+@keyframes tk-float-up-resource-enhanced {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.3);
+  }
+  8% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.3);
+  }
+  15% {
+    transform: translateY(-10px) scale(1.05);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.8);
+  }
+}
+
+/* ─── 武将卡片增强 ─── */
+
+/* 卡片整体高度增加 */
+.tk-general-card {
+  min-height: 200px;
+  border-left: 3px solid var(--faction-color, rgba(139,115,85,0.2));
+  transition: all 0.3s ease, border-left-color 0.3s ease, min-height 0.3s ease;
+}
+
+/* 势力色左边框 — 蜀红/魏蓝/吴绿 */
+.tk-general-card--faction-shu {
+  border-left-color: #c62828;
+}
+.tk-general-card--faction-wei {
+  border-left-color: #2e86c1;
+}
+.tk-general-card--faction-wu {
+  border-left-color: #43a047;
+}
+
+/* 势力色标签 — 圆角药丸形 */
+.tk-general-card-faction-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: bold;
+  font-family: "Noto Serif SC", serif;
+  letter-spacing: 1px;
+  border: 1px solid;
+  margin-top: 2px;
+}
+
+/* 核心技能预览 — 小字号+图标前缀 */
+.tk-general-card-skill-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 8px;
+  color: #c9a96e;
+  background: rgba(212,160,48,0.08);
+  border: 1px solid rgba(212,160,48,0.2);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* 历史标签预览 */
+.tk-general-card-history-tag {
+  font-size: 7px;
+  color: #b89870;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(184,115,51,0.08);
+  border: 1px solid rgba(184,115,51,0.15);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* 悬停时卡片展开动画 — 显示更多信息 */
+.tk-general-card:hover {
+  min-height: 220px;
+  background: rgba(212, 165, 116, 0.12);
+  transform: translateY(-4px);
+  box-shadow:
+    0 6px 16px rgba(0,0,0,0.35),
+    0 0 8px var(--faction-color, transparent);
+  border-left-width: 4px;
+}
+
+/* ─── 传记增强 — 时间线 + 关系图 ─── */
+
+/* 生平大事时间线 */
+.tk-biography-events {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 16px,
+      rgba(139,115,85,0.04) 16px,
+      rgba(139,115,85,0.04) 17px
+    );
+  border-radius: 6px;
+  border-left: 2px solid rgba(184,115,51,0.3);
+}
+
+.tk-biography-events-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #5a3a1a;
+  font-family: "Noto Serif SC", serif;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(184,115,51,0.2);
+}
+
+.tk-biography-event-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  position: relative;
+}
+
+.tk-biography-event-item + .tk-biography-event-item {
+  border-top: 1px dashed rgba(139,115,85,0.15);
+}
+
+.tk-biography-event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b87333;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px rgba(184,115,51,0.3);
+}
+
+.tk-biography-event-text {
+  font-size: 10px;
+  color: #4a3020;
+  font-family: "Noto Serif SC", serif;
+  line-height: 1.5;
+}
+
+/* 人物关系区域 */
+.tk-biography-relations {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: rgba(139,115,85,0.04);
+  border-radius: 6px;
+  border-left: 2px solid rgba(184,115,51,0.25);
+}
+
+.tk-biography-relations-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #5a3a1a;
+  font-family: "Noto Serif SC", serif;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(184,115,51,0.2);
+}
+
+.tk-biography-relation-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: bold;
+  font-family: "Noto Serif SC", serif;
+  background: rgba(184,115,51,0.08);
+  color: #6b5a3a;
+  border: 1px solid rgba(184,115,51,0.25);
+  transition: all 0.2s;
+}
+
+.tk-biography-relation-tag:hover {
+  background: rgba(184,115,51,0.15);
+  border-color: rgba(184,115,51,0.4);
+  transform: translateY(-1px);
+}
+
+/* ─── 移动端适配 ─── */
+@media (max-width: 768px) {
+  .tk-era-display {
+    padding: 1px 6px;
+  }
+  .tk-era-display-text {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  .tk-flag-cloth {
+    width: 12px;
+    height: 8px;
+  }
+  .tk-flag-pole {
+    height: 20px;
+  }
+  .tk-general-card {
+    min-height: 180px;
+  }
+  .tk-general-card:hover {
+    min-height: 190px;
+  }
+  .tk-resource-float {
+    font-size: 11px;
+  }
 }

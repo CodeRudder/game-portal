@@ -222,20 +222,20 @@ const BUILDING_LEVEL_TEXTURES: Record<number, string> = {
 
 // ─── 瓦片地图渲染常量 ──────────────────────────────────────
 
-/** 地形颜色映射（三国古风高饱和度色系 — 增强区分度版） */
+/** 地形颜色映射（三国古风高饱和度色系 — R15亮度提升10-15%） */
 const TERRAIN_COLORS: Record<TerrainType, number> = {
-  plain: 0x5ec43e,      // 鲜翠绿平原
-  mountain: 0xa07850,   // 温暖赭石山地
-  forest: 0x1e7a38,     // 翠墨绿森林
-  water: 0x2a72b8,      // 明靛蓝水域
-  road: 0xd8a840,       // 亮土黄道路
-  city: 0xc8a050,       // 金石色城市
-  village: 0x98d84a,    // 嫩翠绿村庄
-  fortress: 0xc83838,   // 鲜朱红关卡
-  desert: 0xe8c040,     // 明琥珀金荒漠
-  snow: 0xe0ecf8,       // 冰蓝白雪
-  pass: 0x6a3518,       // 铁棕红关隘
-  swamp: 0x387058,      // 暗翠青绿沼泽
+  plain: 0x72d456,      // 鲜翠绿平原（提亮）
+  mountain: 0xb88a60,   // 温暖赭石山地（提亮）
+  forest: 0x28924a,     // 翠墨绿森林（提亮）
+  water: 0x3588d0,      // 明靛蓝水域（提亮）
+  road: 0xf0bc50,       // 亮土黄道路（提亮）
+  city: 0xe0b860,       // 金石色城市（提亮）
+  village: 0xa8ec5a,    // 嫩翠绿村庄（提亮）
+  fortress: 0xe04848,   // 鲜朱红关卡（提亮）
+  desert: 0xf0d050,     // 明琥珀金荒漠（提亮）
+  snow: 0xeaf0fa,       // 冰蓝白雪（提亮）
+  pass: 0x7a4020,       // 铁棕红关隘（提亮）
+  swamp: 0x488868,      // 暗翠青绿沼泽（提亮）
 };
 
 /** 地形文字标签 */
@@ -627,11 +627,11 @@ const HISTORICAL_LANDMARKS: HistoricalLandmark[] = [
 ];
 
 /** 历史地标星形大小 */
-const HISTORICAL_LANDMARK_STAR_SIZE = 8;
-/** 历史地标标签字号 */
-const HISTORICAL_LANDMARK_LABEL_FONT_SIZE = 10;
-/** 历史地标描述字号 */
-const HISTORICAL_LANDMARK_DESC_FONT_SIZE = 8;
+const HISTORICAL_LANDMARK_STAR_SIZE = 10;
+/** 历史地标标签字号（R15: 增大） */
+const HISTORICAL_LANDMARK_LABEL_FONT_SIZE = 13;
+/** 历史地标描述字号（R15: 增大） */
+const HISTORICAL_LANDMARK_DESC_FONT_SIZE = 10;
 
 /** NPC 信息面板宽度（复用已有常量） */
 const NPC_INFO_PANEL_HEIGHT = 80;
@@ -841,10 +841,31 @@ export class MapScene extends BaseScene {
 
   /** 水面动画叠加图形（sine 曲线波纹，每帧更新） */
   private waterAnimGraphics: Graphics | null = null;
+  private swampFogGraphics: Graphics | null = null;
+  private desertStormGraphics: Graphics | null = null;
   /** 水面动画累计时间（秒） */
   private waterAnimTime: number = 0;
   /** 水面瓦片位置缓存（避免每帧遍历全地图） */
   private waterTiles: Array<{ x: number; y: number; tileSize: number; variant: number }> = [];
+
+  // ─── 沼泽雾气效果层 ──────────────────────────────────────
+
+  /** 地形特效叠加图形（沼泽雾气 + 荒漠沙暴，每帧更新） */
+  private terrainEffectGraphics: Graphics | null = null;
+  /** 地形特效动画累计时间（秒） */
+  private terrainEffectTime: number = 0;
+  /** 沼泽瓦片位置缓存 */
+  private swampTiles: Array<{ x: number; y: number; tileSize: number; variant: number }> = [];
+
+  // ─── 荒漠沙暴效果层 ──────────────────────────────────────
+
+  /** 荒漠瓦片位置缓存 */
+  private desertTiles: Array<{ x: number; y: number; tileSize: number; variant: number }> = [];
+
+  // ─── R15: 河流波纹效果层 ──────────────────────────────────
+
+  /** 河流瓦片位置缓存（水域边缘瓦片） */
+  private riverTiles: Array<{ x: number; y: number; tileSize: number; variant: number }> = [];
 
   // ─── 装饰性面板边框 ─────────────────────────────────────────
 
@@ -906,6 +927,16 @@ export class MapScene extends BaseScene {
     this.waterAnimGraphics = new Graphics();
     this.waterAnimGraphics.visible = false;
     this.container.addChild(this.waterAnimGraphics);
+
+    // 初始化沼泽雾气叠加层
+    this.swampFogGraphics = new Graphics();
+    this.swampFogGraphics.visible = false;
+    this.container.addChild(this.swampFogGraphics);
+
+    // 初始化荒漠沙暴叠加层
+    this.desertStormGraphics = new Graphics();
+    this.desertStormGraphics.visible = false;
+    this.container.addChild(this.desertStormGraphics);
 
     // 初始化粒子数据
     this.particles = [];
@@ -1035,6 +1066,12 @@ export class MapScene extends BaseScene {
     // ── 11.5. 更新水面动画叠加层 ──────────────────────────
     this.updateWaterAnimation(deltaTime);
 
+    // ── 11.6. 更新沼泽雾气效果 ──────────────────────────
+    this.updateSwampFog(deltaTime);
+
+    // ── 11.7. 更新荒漠沙暴效果 ──────────────────────────
+    this.updateDesertStorm(deltaTime);
+
     // ── 12. 绘制古风装饰边框 ──────────────────────────────
     this.drawDecorativeBorder();
   }
@@ -1102,6 +1139,16 @@ export class MapScene extends BaseScene {
     }
     this.waterTiles = [];
     this.waterAnimTime = 0;
+    if (this.swampFogGraphics) {
+      this.swampFogGraphics.destroy();
+      this.swampFogGraphics = null;
+    }
+    this.swampTiles = [];
+    if (this.desertStormGraphics) {
+      this.desertStormGraphics.destroy();
+      this.desertStormGraphics = null;
+    }
+    this.desertTiles = [];
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -2147,16 +2194,38 @@ export class MapScene extends BaseScene {
 
     // ── 7. 缓存水面瓦片位置（用于动画叠加层） ────────────
     this.waterTiles = [];
+    this.swampTiles = [];
+    this.desertTiles = [];
+    this.riverTiles = [];
     for (let row = 0; row < map.height; row++) {
       for (let col = 0; col < map.width; col++) {
         const tile = map.tiles[row]?.[col];
-        if (tile?.terrain === 'water') {
-          this.waterTiles.push({
-            x: Math.floor(col * tileSize),
-            y: Math.floor(row * tileSize),
-            tileSize,
-            variant: tile.variant,
-          });
+        if (!tile) continue;
+        const tileInfo = {
+          x: Math.floor(col * tileSize),
+          y: Math.floor(row * tileSize),
+          tileSize,
+          variant: tile.variant,
+        };
+        if (tile.terrain === 'water') {
+          this.waterTiles.push(tileInfo);
+          // 河流瓦片（水域中靠近道路或非水域的边缘区域）
+          const neighbors = [
+            map.tiles[row]?.[col - 1],
+            map.tiles[row]?.[col + 1],
+            map.tiles[row - 1]?.[col],
+            map.tiles[row + 1]?.[col],
+          ];
+          const hasNonWaterNeighbor = neighbors.some(n => n && n.terrain !== 'water');
+          if (hasNonWaterNeighbor) {
+            this.riverTiles.push(tileInfo);
+          }
+        }
+        if (tile.terrain === 'swamp') {
+          this.swampTiles.push(tileInfo);
+        }
+        if (tile.terrain === 'desert') {
+          this.desertTiles.push(tileInfo);
         }
       }
     }
@@ -4193,6 +4262,103 @@ export class MapScene extends BaseScene {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // R15: 动态地形特效 — 沼泽雾气 / 荒漠沙暴 / 河流波纹
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 更新沼泽雾气效果
+   *
+   * 在沼泽瓦片上绘制缓慢移动的半透明白色圆形雾气，
+   * 营造阴森潮湿的氛围。
+   */
+  private updateSwampFog(deltaTime: number): void {
+    if (!this.swampFogGraphics || this.swampTiles.length === 0) return;
+
+    this.swampFogGraphics.clear();
+    this.swampFogGraphics.visible = true;
+
+    const t = performance.now() / 1000;
+
+    for (const sw of this.swampTiles) {
+      const { x, y, tileSize, variant } = sw;
+      const phase = variant * 1.3;
+
+      // 雾气层1：大范围半透明白色椭圆，缓慢飘动
+      const fog1X = x + tileSize * 0.5 + Math.sin(t * 0.3 + phase) * tileSize * 0.15;
+      const fog1Y = y + tileSize * 0.4 + Math.cos(t * 0.2 + phase * 0.7) * tileSize * 0.1;
+      const fog1Alpha = 0.06 + 0.03 * Math.sin(t * 0.5 + phase);
+      this.swampFogGraphics!.ellipse(
+        Math.floor(fog1X), Math.floor(fog1Y),
+        Math.max(1, tileSize * 0.4), Math.max(1, tileSize * 0.2),
+      ).fill({ color: 0xd0e8d8, alpha: Math.max(0, fog1Alpha) });
+
+      // 雾气层2：偏移的第二个椭圆，交错运动
+      const fog2X = x + tileSize * 0.3 + Math.cos(t * 0.25 + phase + 1.5) * tileSize * 0.2;
+      const fog2Y = y + tileSize * 0.6 + Math.sin(t * 0.35 + phase + 0.8) * tileSize * 0.12;
+      const fog2Alpha = 0.04 + 0.025 * Math.sin(t * 0.4 + phase + 2);
+      this.swampFogGraphics!.ellipse(
+        Math.floor(fog2X), Math.floor(fog2Y),
+        Math.max(1, tileSize * 0.35), Math.max(1, tileSize * 0.15),
+      ).fill({ color: 0xc8e0d0, alpha: Math.max(0, fog2Alpha) });
+
+      // 雾气层3：小范围亮斑（模拟雾中光点）
+      const fog3X = x + tileSize * 0.6 + Math.sin(t * 0.4 + phase * 1.5) * tileSize * 0.1;
+      const fog3Y = y + tileSize * 0.3 + Math.cos(t * 0.3 + phase * 1.2) * tileSize * 0.08;
+      const fog3Alpha = 0.05 + 0.04 * Math.sin(t * 0.6 + phase + 3);
+      this.swampFogGraphics!.circle(
+        Math.floor(fog3X), Math.floor(fog3Y),
+        Math.max(1, tileSize * 0.12),
+      ).fill({ color: 0xe0f0e8, alpha: Math.max(0, fog3Alpha) });
+    }
+  }
+
+  /**
+   * 更新荒漠沙暴效果
+   *
+   * 在荒漠瓦片上绘制黄色小粒子飘动，
+   * 营造风沙弥漫的氛围。
+   */
+  private updateDesertStorm(deltaTime: number): void {
+    if (!this.desertStormGraphics || this.desertTiles.length === 0) return;
+
+    this.desertStormGraphics.clear();
+    this.desertStormGraphics.visible = true;
+
+    const t = performance.now() / 1000;
+
+    for (const ds of this.desertTiles) {
+      const { x, y, tileSize, variant } = ds;
+      const phase = variant * 0.9;
+
+      // 沙暴粒子1-4：黄色小点，从左向右飘动
+      for (let i = 0; i < 4; i++) {
+        const particlePhase = phase + i * 1.7;
+        // 粒子从左向右循环飘动
+        const progress = ((t * 0.5 + particlePhase) % 2) / 2; // 0→1 循环
+        const px = x + progress * tileSize * 1.2 - tileSize * 0.1;
+        const py = y + tileSize * (0.2 + i * 0.18) + Math.sin(t * 2 + particlePhase) * 3;
+        const pAlpha = 0.15 + 0.1 * Math.sin(t * 1.5 + particlePhase);
+        const pSize = 1.5 + Math.sin(t * 1.2 + i) * 0.8;
+
+        this.desertStormGraphics!.circle(
+          Math.floor(px), Math.floor(py),
+          Math.max(0.5, pSize),
+        ).fill({ color: 0xf0d060, alpha: Math.max(0, pAlpha) });
+      }
+
+      // 沙尘线：水平飘动的细线
+      const lineY = y + tileSize * 0.5 + Math.sin(t * 0.6 + phase) * tileSize * 0.15;
+      const lineAlpha = 0.06 + 0.04 * Math.sin(t * 0.8 + phase);
+      const lineStartX = x + ((t * 20 + variant * 30) % tileSize);
+      this.desertStormGraphics!.moveTo(
+        Math.floor(lineStartX), Math.floor(lineY),
+      ).lineTo(
+        Math.floor(lineStartX + tileSize * 0.3), Math.floor(lineY + Math.sin(t + phase) * 2),
+      ).stroke({ width: 0.8, color: 0xe8c840, alpha: Math.max(0, lineAlpha) });
+    }
+  }
+
   private updateParticles(deltaTime: number): void {
     this.particleTime += deltaTime;
 
@@ -4624,12 +4790,18 @@ export class MapScene extends BaseScene {
 
       const container = new Container({ label: `historical-${hl.name}` });
       container.position.set(cx, cy);
+      container.eventMode = 'static';
+      container.cursor = 'pointer';
 
       // 绘制金色五角星
       const star = new Graphics();
       const outerR = HISTORICAL_LANDMARK_STAR_SIZE;
       const innerR = Math.floor(outerR * 0.4);
       const points = 5;
+
+      // R15: 外圈发光效果（更大范围的光晕）
+      star.circle(0, 0, outerR + 8).fill({ color: hl.starColor, alpha: 0.08 });
+      star.circle(0, 0, outerR + 5).fill({ color: hl.starColor, alpha: 0.12 });
 
       // 五角星路径
       star.moveTo(0, -outerR);
@@ -4641,44 +4813,65 @@ export class MapScene extends BaseScene {
         if (i === 0) star.moveTo(px, py);
         else star.lineTo(px, py);
       }
-      star.closePath().fill({ color: hl.starColor, alpha: 0.85 });
-      star.closePath().stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
+      star.closePath().fill({ color: hl.starColor, alpha: 0.9 });
+      star.closePath().stroke({ width: 1.5, color: 0xffffff, alpha: 0.5 });
 
-      // 外圈光晕
-      star.circle(0, 0, outerR + 3).stroke({ width: 1.5, color: hl.starColor, alpha: 0.4 });
+      // 外圈光晕（增强）
+      star.circle(0, 0, outerR + 3).stroke({ width: 2, color: hl.starColor, alpha: 0.5 });
       container.addChild(star);
 
       landmarkLayer.addChild(container);
 
-      // 名称标签（金色粗体）
+      // 名称标签（R15: 金色粗体 + 更大字号 + 金色描边）
       const nameLabel = new Text({
         text: hl.name,
         style: new TextStyle({
           fontSize: HISTORICAL_LANDMARK_LABEL_FONT_SIZE,
-          fill: hl.starColor,
-          fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+          fill: '#ffd700',
+          fontFamily: '"Noto Serif SC", "Microsoft YaHei", serif',
           fontWeight: 'bold',
-          stroke: { color: '#000000', width: 2 },
+          stroke: { color: '#8b6914', width: 3 },
+          dropShadow: {
+            alpha: 0.4,
+            angle: Math.PI / 4,
+            blur: 4,
+            color: '#000000',
+            distance: 1,
+          },
         }),
       });
       nameLabel.anchor.set(0.5, 0);
-      nameLabel.position.set(cx, cy + outerR + 4);
+      nameLabel.position.set(cx, cy + outerR + 6);
       labelLayer.addChild(nameLabel);
 
-      // 事件描述（小字，半透明）
+      // 事件描述（R15: 增大字号 + 金色描边 + 更高可见度）
       const descLabel = new Text({
         text: hl.description,
         style: new TextStyle({
           fontSize: HISTORICAL_LANDMARK_DESC_FONT_SIZE,
-          fill: '#cccccc',
-          fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
-          stroke: { color: '#000000', width: 1 },
+          fill: '#f0e0c0',
+          fontFamily: '"Noto Serif SC", "Microsoft YaHei", serif',
+          stroke: { color: '#000000', width: 2 },
+          dropShadow: {
+            alpha: 0.3,
+            angle: Math.PI / 4,
+            blur: 3,
+            color: '#000000',
+            distance: 1,
+          },
         }),
       });
       descLabel.anchor.set(0.5, 0);
-      descLabel.position.set(cx, cy + outerR + 16);
-      descLabel.alpha = 0.7;
+      descLabel.position.set(cx, cy + outerR + 20);
+      descLabel.alpha = 0.85;
       labelLayer.addChild(descLabel);
+
+      // R15: 地标下方装饰线（金色横线）
+      const decorLine = new Graphics();
+      decorLine.moveTo(cx - 16, cy + outerR + 18)
+        .lineTo(cx + 16, cy + outerR + 18)
+        .stroke({ width: 1, color: 0xffd700, alpha: 0.4 });
+      labelLayer.addChild(decorLine);
     }
   }
 

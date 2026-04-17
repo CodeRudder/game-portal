@@ -373,10 +373,28 @@ export const TECHS: TechDef[] = [
     effects: [{ type: 'modifier', target: 'battle_damage', value: 0.2, description: '战斗伤害 +20%' }],
   },
   {
+    id: 'mil_2b', name: '连弩术', description: '攻击速度 +25%，连射破甲',
+    requires: ['mil_1'], cost: { gold: 2500, iron: 300 }, researchTime: 50000,
+    tier: 2, icon: '🏹', branch: 'military',
+    effects: [{ type: 'modifier', target: 'attack_speed', value: 0.25, description: '攻击速度 +25%' }],
+  },
+  {
     id: 'mil_3', name: '神兵利器', description: '兵力产出 ×2.0',
     requires: ['mil_2'], cost: { gold: 8000 }, researchTime: 120000,
     tier: 3, icon: '🗡️', branch: 'military',
     effects: [{ type: 'multiplier', target: 'troops', value: 2.0, description: '兵力产出 ×2.0' }],
+  },
+  {
+    id: 'mil_3b', name: '铁骑冲锋', description: '骑兵伤害 +35%，冲锋破阵',
+    requires: ['mil_2', 'mil_2b'], cost: { gold: 6000, iron: 500 }, researchTime: 90000,
+    tier: 3, icon: '🐎', branch: 'military',
+    effects: [{ type: 'modifier', target: 'cavalry_damage', value: 0.35, description: '骑兵伤害 +35%' }],
+  },
+  {
+    id: 'mil_3c', name: '火攻计策', description: '火攻伤害 +40%，范围灼烧',
+    requires: ['mil_2b'], cost: { gold: 7000, grain: 1000 }, researchTime: 100000,
+    tier: 3, icon: '🔥', branch: 'military',
+    effects: [{ type: 'modifier', target: 'fire_damage', value: 0.4, description: '火攻伤害 +40%' }],
   },
   {
     id: 'mil_4', name: '百战百胜', description: '全部军事加成 ×1.5',
@@ -398,10 +416,28 @@ export const TECHS: TechDef[] = [
     effects: [{ type: 'multiplier', target: 'gold', value: 1.5, description: '铜钱产出 ×1.5' }],
   },
   {
+    id: 'eco_2b', name: '屯田制', description: '粮草产出 +30%，兵农合一',
+    requires: ['eco_1'], cost: { gold: 1200, grain: 500 }, researchTime: 45000,
+    tier: 2, icon: '🏘️', branch: 'economy',
+    effects: [{ type: 'multiplier', target: 'grain', value: 1.3, description: '粮草产出 +30%' }],
+  },
+  {
     id: 'eco_3', name: '治国安邦', description: '全部资源产出 ×1.3',
     requires: ['eco_2'], cost: { gold: 6000 }, researchTime: 120000,
     tier: 3, icon: '📜', branch: 'economy',
     effects: [{ type: 'multiplier', target: 'all_resources', value: 1.3, description: '全部资源产出 ×1.3' }],
+  },
+  {
+    id: 'eco_3b', name: '丝绸之路', description: '铜钱产出 +50%，商队往来',
+    requires: ['eco_2', 'eco_2b'], cost: { gold: 5000, grain: 800 }, researchTime: 90000,
+    tier: 3, icon: '🐪', branch: 'economy',
+    effects: [{ type: 'multiplier', target: 'gold', value: 1.5, description: '铜钱产出 +50%' }],
+  },
+  {
+    id: 'eco_3c', name: '铜钱铸造', description: '铜钱产出 +40%，钱币标准化',
+    requires: ['eco_2b'], cost: { gold: 4000, iron: 300 }, researchTime: 80000,
+    tier: 3, icon: '🪙', branch: 'economy',
+    effects: [{ type: 'multiplier', target: 'gold', value: 1.4, description: '铜钱产出 +40%' }],
   },
   {
     id: 'eco_4', name: '富国强兵', description: '全部产出 ×2.0',
@@ -423,10 +459,28 @@ export const TECHS: TechDef[] = [
     effects: [{ type: 'multiplier', target: 'general_exp', value: 1.25, description: '武将经验 +25%' }],
   },
   {
+    id: 'cul_2b', name: '招贤令', description: '解锁高级武将招募，招募费用 -10%',
+    requires: ['cul_1'], cost: { gold: 2000, grain: 500 }, researchTime: 45000,
+    tier: 2, icon: '📜', branch: 'culture',
+    effects: [{ type: 'modifier', target: 'recruit_cost', value: -0.1, description: '招募费用 -10%' }],
+  },
+  {
     id: 'cul_3', name: '王道仁政', description: '声望收益 +30%',
     requires: ['cul_2'], cost: { gold: 10000 }, researchTime: 120000,
     tier: 3, icon: '🏛️', branch: 'culture',
     effects: [{ type: 'multiplier', target: 'prestige_gain', value: 1.3, description: '声望收益 +30%' }],
+  },
+  {
+    id: 'cul_3b', name: '礼贤下士·贰', description: '武将经验 +40%，广纳天下英才',
+    requires: ['cul_2', 'cul_2b'], cost: { gold: 8000, grain: 1000 }, researchTime: 90000,
+    tier: 3, icon: '🤝', branch: 'culture',
+    effects: [{ type: 'multiplier', target: 'general_exp', value: 1.4, description: '武将经验 +40%' }],
+  },
+  {
+    id: 'cul_3c', name: '王道仁政·贰', description: '民心恢复 +50%，仁政安民',
+    requires: ['cul_2b'], cost: { gold: 7000, grain: 800 }, researchTime: 80000,
+    tier: 3, icon: '🕊️', branch: 'culture',
+    effects: [{ type: 'multiplier', target: 'morale_recovery', value: 1.5, description: '民心恢复 +50%' }],
   },
   {
     id: 'cul_4', name: '天下归心', description: '全部加成 ×1.5',

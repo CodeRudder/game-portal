@@ -32,6 +32,7 @@ import {
   COLOR_THEME,
   RARITY_COLORS,
   RESOURCES,
+  TECHS,
 } from '@/games/three-kingdoms/constants';
 import PixiGameCanvas from '@/renderer/components/PixiGameCanvas';
 import type { GameRenderState, SceneType, HeroRenderData } from '@/renderer/types';
@@ -1563,7 +1564,7 @@ function getGeneralEnhanced(id: string): GeneralEnhancedData {
   };
 }
 
-/** 武将卡片组件 — 卡片化展示武将信息（含技能图标 + 稀有度视觉区分 + 悬停展开） */
+/** 武将卡片组件 — 卡片化展示武将信息（含技能图标 + 稀有度视觉区分 + 悬停浮层详情卡） */
 const GeneralCard = ({
   general,
   isSelected,
@@ -1586,15 +1587,31 @@ const GeneralCard = ({
     common: '普通', uncommon: '精良', rare: '稀有', epic: '史诗', legendary: '传说', mythic: '神话',
   };
 
-  // 稀有度对应星数
-  const rarityStars: Record<string, number> = {
-    common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6,
+  // 稀有度对应的边框粗细（普通1px/稀有2px/传说3px+发光）
+  const rarityBorderWidth: Record<string, number> = {
+    common: 1, uncommon: 1, rare: 2, epic: 2, legendary: 3, mythic: 3,
   };
-  const starCount = rarityStars[general.rarity] || 1;
+  const portraitBorderWidth = rarityBorderWidth[general.rarity] ?? 1;
+
+  // 一句话简介映射
+  const generalTagline: Record<string, string> = {
+    liubei: '蜀汉开国皇帝',
+    guanyu: '蜀汉五虎上将',
+    zhangfei: '蜀汉五虎上将',
+    zhugeliang: '卧龙先生',
+    caocao: '魏武帝',
+    xiahoudun: '独目将军',
+    simayi: '冢虎',
+    xuchu: '虎痴',
+    sunquan: '东吴大帝',
+    zhouyu: '美周郎',
+    ganning: '锦帆贼',
+    luxun: '火烧连营',
+  };
 
   return (
     <div
-      className={`tk-general-card ${!general.unlocked ? 'tk-general-card-locked' : ''} ${isSelected ? 'tk-general-card--selected' : ''} ${general.unlocked ? `tk-general-card--rarity-${general.rarity}` : ''}`}
+      className={`tk-general-card ${!general.unlocked ? 'tk-general-card-locked' : ''} ${isSelected ? 'tk-general-card--selected' : ''} ${general.unlocked ? `tk-general-card--rarity-${general.rarity}` : ''} ${general.unlocked ? `tk-general-card--faction-${general.faction}` : ''} ${general.unlocked ? `tk-general-card--hero-${general.id.replace(/[^a-z0-9]/gi, '').toLowerCase()}` : ''}`}
       style={{ borderColor: general.unlocked ? color : 'rgba(139,115,85,0.2)', '--faction-color': color } as React.CSSProperties}
       onClick={() => general.unlocked && onSelect()}
     >
@@ -1611,9 +1628,19 @@ const GeneralCard = ({
           {rarityLabels[general.rarity] || general.rarity}
         </span>
       )}
-      {/* 头像 — 势力颜色圆形 + 首字 */}
-      <div className="tk-general-avatar" style={{ background: general.unlocked ? color : '#555' }}>
-        {general.name.charAt(0)}
+      {/* 头像 — 势力色圆形边框 + 外圈光晕 */}
+      <div
+        className="tk-general-card-portrait"
+        style={{
+          '--portrait-border-width': `${portraitBorderWidth}px`,
+          '--faction-color': color,
+        } as React.CSSProperties}
+      >
+        <GeneralPortrait name={general.name} faction={general.faction} size={48} />
+        {/* 出战状态标识 */}
+        {general.unlocked && (
+          <span className="tk-general-status-badge tk-general-status-badge--standby">待命</span>
+        )}
       </div>
       {/* 名称 */}
       <div className="tk-general-card-info">
@@ -1627,16 +1654,40 @@ const GeneralCard = ({
             <span className="tk-general-card-rarity">[{rarityLabels[general.rarity] || general.rarity}]</span>
           )}
         </div>
-        {/* 势力标签 */}
-        <span className="tk-general-faction-tag" style={{ background: general.unlocked ? color : '#555' }}>
-          {factionLabels[general.faction] || general.faction.toUpperCase()}
-        </span>
-        {/* 星级 */}
-        <div className="tk-general-stars">
-          {'★'.repeat(starCount)}
-        </div>
+        {/* 势力色标签 — 直接显示 */}
+        {general.unlocked && (
+          <div className="tk-general-card-faction-badge" style={{
+            background: `${color}20`,
+            color: color,
+            borderColor: `${color}50`,
+          }}>
+            {factionLabels[general.faction] || general.faction.toUpperCase()}
+          </div>
+        )}
+        {!general.unlocked && (
+          <div className="tk-general-card-faction" style={{ color: '#666' }}>
+            {factionLabels[general.faction] || general.faction.toUpperCase()}·武将
+          </div>
+        )}
+        {/* 一句话简介 */}
+        {general.unlocked && generalTagline[general.id] && (
+          <div className="tk-general-card-tagline">{generalTagline[general.id]}</div>
+        )}
+        {/* 核心技能名称 — 卡片上直接显示 */}
+        {general.unlocked && enhanced.skills.length > 0 && (
+          <div className="tk-general-card-skill-preview">
+            <SkillIcon skillType={enhanced.skills[0].type} size={10} />
+            <span>{enhanced.skills[0].name}</span>
+          </div>
+        )}
+        {/* 历史标签 — 卡片上直接显示第一个 */}
+        {general.unlocked && enhanced.historyEvents && enhanced.historyEvents.length > 0 && (
+          <div className="tk-general-card-history-tag">
+            📜 {enhanced.historyEvents[0]}
+          </div>
+        )}
 
-        {/* 悬停展开详情区域 */}
+        {/* 悬停展开详情区域（卡片内） */}
         {general.unlocked && (
           <div className="tk-general-card-hover-info">
             {/* 关键属性条 */}
@@ -1671,6 +1722,70 @@ const GeneralCard = ({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── 悬停浮层详情卡（Tooltip 风格，古风边框 + 半透明背景） ── */}
+        {general.unlocked && (
+          <div className="tk-general-hover-tooltip">
+            <div className="tk-general-hover-tooltip-inner">
+              {/* 浮层标题 */}
+              <div className="tk-general-tooltip-title" style={{ color: rarityColor }}>
+                {general.name}
+                <span className="tk-general-tooltip-level">Lv.{general.level}</span>
+                <span className="tk-general-tooltip-rarity" style={{ color: rarityColor }}>
+                  [{rarityLabels[general.rarity] || general.rarity}]
+                </span>
+              </div>
+              {/* 势力 + 简介 */}
+              <div className="tk-general-tooltip-faction" style={{ color }}>
+                {factionLabels[general.faction] || general.faction.toUpperCase()} · {generalTagline[general.id] || '武将'}
+              </div>
+              {/* 属性数值条（武力/智力/统帅/政治） */}
+              <div className="tk-general-tooltip-stats">
+                <div className="tk-tooltip-stat-row">
+                  <span className="tk-tooltip-stat-label">武力</span>
+                  <div className="tk-tooltip-stat-track">
+                    <div className="tk-tooltip-stat-fill" style={{ width: `${general.stats.attack}%`, background: 'linear-gradient(90deg, #b71c1c, #e53935)' }} />
+                  </div>
+                  <span className="tk-tooltip-stat-value">{general.stats.attack}</span>
+                </div>
+                <div className="tk-tooltip-stat-row">
+                  <span className="tk-tooltip-stat-label">智力</span>
+                  <div className="tk-tooltip-stat-track">
+                    <div className="tk-tooltip-stat-fill" style={{ width: `${general.stats.intelligence}%`, background: 'linear-gradient(90deg, #0d47a1, #1e88e5)' }} />
+                  </div>
+                  <span className="tk-tooltip-stat-value">{general.stats.intelligence}</span>
+                </div>
+                <div className="tk-tooltip-stat-row">
+                  <span className="tk-tooltip-stat-label">统帅</span>
+                  <div className="tk-tooltip-stat-track">
+                    <div className="tk-tooltip-stat-fill" style={{ width: `${general.stats.command}%`, background: 'linear-gradient(90deg, #1b5e20, #43a047)' }} />
+                  </div>
+                  <span className="tk-tooltip-stat-value">{general.stats.command}</span>
+                </div>
+                <div className="tk-tooltip-stat-row">
+                  <span className="tk-tooltip-stat-label">政治</span>
+                  <div className="tk-tooltip-stat-track">
+                    <div className="tk-tooltip-stat-fill" style={{ width: `${general.stats.defense}%`, background: 'linear-gradient(90deg, #e65100, #ff9800)' }} />
+                  </div>
+                  <span className="tk-tooltip-stat-value">{general.stats.defense}</span>
+                </div>
+              </div>
+              {/* 主要技能 */}
+              {enhanced.skills.length > 0 && (
+                <div className="tk-general-tooltip-skills">
+                  <div className="tk-general-tooltip-skills-title">◆ 技能</div>
+                  {enhanced.skills.slice(0, 2).map((skill, i) => (
+                    <div key={i} className="tk-general-tooltip-skill">
+                      <SkillIcon skillType={skill.type} size={14} />
+                      <span className="tk-general-tooltip-skill-name">{skill.name}</span>
+                      <span className="tk-general-tooltip-skill-effect">{skill.effect || skill.description}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -2573,6 +2688,12 @@ export default function ThreeKingdomsPixiGame() {
           }}>
             ⚔ 三国霸业
           </span>
+          {/* 年号 · 季节 沉浸式显示 */}
+          <span className="tk-era-display">
+            <span className="tk-era-display-text">
+              {renderState?.calendar?.dateStr || '建安元年'} · {currentSeason === 'spring' ? '春' : currentSeason === 'summer' ? '夏' : currentSeason === 'autumn' ? '秋' : '冬'}
+            </span>
+          </span>
           {/* 季节指示器 */}
           <span className={`tk-season-indicator tk-season-indicator--${currentSeason}`}>
             <span className="tk-season-icon">
@@ -2750,11 +2871,11 @@ export default function ThreeKingdomsPixiGame() {
       {/* ═══════════ 中间区域：左面板 + PixiJS Canvas + 右面板 ═══════════ */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
 
-        {/* ─── 环境氛围层：远山 + 花瓣/落叶 + 炊烟 ─── */}
+        {/* ─── 环境氛围层：远山 + 花瓣/落叶 + 炊烟 + 旗帜 ─── */}
         <div className="tk-atmosphere-layer">
           {/* 远山轮廓 */}
           <div className="tk-mountain-layer" />
-          {/* 炊烟效果（增强版 — 5个粒子） */}
+          {/* 炊烟效果（增强版 — 5个粒子 + 更大更明显） */}
           <div className="tk-smoke-layer">
             {[0, 1, 2, 3, 4].map(i => (
               <div
@@ -2771,20 +2892,40 @@ export default function ThreeKingdomsPixiGame() {
               />
             ))}
           </div>
+          {/* 城池旗帜飘动 */}
+          <div className="tk-flag-layer">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className={`tk-flag tk-flag--${['shu', 'wei', 'wu'][i]}`}
+                style={{
+                  left: `${20 + i * 30}%`,
+                  bottom: `${15 + i * 8}%`,
+                  animationDelay: `${i * 0.7}s`,
+                  animationDuration: `${2.5 + i * 0.3}s`,
+                }}
+              >
+                <div className="tk-flag-pole" />
+                <div className="tk-flag-cloth" />
+              </div>
+            ))}
+          </div>
+          {/* 城池呼吸脉冲 */}
+          <div className="tk-city-pulse" style={{ left: '50%', bottom: '12%', transform: 'translateX(-50%)' }} />
         </div>
-        {/* 飘落花瓣/落叶层（增强版 — 12个粒子） */}
+        {/* 飘落花瓣/落叶层（增强版 — 18个粒子更密集） */}
         <div className="tk-petal-layer">
-          {Array.from({ length: 12 }, (_, i) => (
+          {Array.from({ length: 18 }, (_, i) => (
             <div
               key={i}
               className={`tk-petal tk-petal--${currentSeason}`}
               style={{
-                left: `${3 + i * 8}%`,
-                animationDuration: `${5 + (i % 4) * 2}s`,
-                animationDelay: `${i * 1.2}s`,
+                left: `${2 + i * 5.5}%`,
+                animationDuration: `${4 + (i % 5) * 1.5}s`,
+                animationDelay: `${i * 0.8}s`,
                 width: currentSeason === 'winter' ? (4 + (i % 3) * 2) : (6 + (i % 3) * 3),
                 height: currentSeason === 'winter' ? (4 + (i % 3) * 2) : (6 + (i % 3) * 3),
-                opacity: 0.6 + (i % 3) * 0.15,
+                opacity: 0.5 + (i % 4) * 0.12,
               }}
             />
           ))}
@@ -3927,11 +4068,32 @@ export default function ThreeKingdomsPixiGame() {
                                   </div>
                                 )}
 
-                                {/* ── 加成预览 Tooltip（悬停显示） ── */}
+                                {/* ── 加成预览 Tooltip（悬停显示 — 增强版含数值加成） ── */}
                                 {hoveredTechNode === node.id && (
                                   <div className="tk-tech-tooltip">
                                     <div className="tk-tech-tooltip-name">{node.name}</div>
                                     <div className="tk-tech-tooltip-desc">{node.description}</div>
+                                    {/* 数值加成预览 */}
+                                    {(() => {
+                                      // 从 TECHS 常量中获取具体效果
+                                      const techDef = TECHS.find(t => t.id === node.id);
+                                      if (techDef && techDef.effects.length > 0) {
+                                        return (
+                                          <div className="tk-tech-tooltip-effects">
+                                            <div className="tk-tech-tooltip-effects-title">◆ 效果预览</div>
+                                            {techDef.effects.map((eff, ei) => (
+                                              <div key={ei} className="tk-tech-tooltip-effect-item">
+                                                <span className="tk-tech-tooltip-effect-icon">
+                                                  {eff.type === 'multiplier' ? '📈' : eff.type === 'modifier' ? '⚡' : eff.type === 'unlock' ? '🔓' : '✨'}
+                                                </span>
+                                                <span className="tk-tech-tooltip-effect-text">{eff.description}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
                                     {node.prerequisites.length > 0 && (
                                       <div className="tk-tech-tooltip-prereqs">
                                         前置：{node.prerequisites.map(pid => {
@@ -4251,9 +4413,37 @@ export default function ThreeKingdomsPixiGame() {
                     )}
                   </>
                 ) : (
-                  /* 传记 Tab 内容 */
-                  <div className="tk-biography-text" style={{ marginTop: 4 }}>
-                    {getGeneralEnhanced(selectedHero.id).biography || '此人传记尚在编撰之中……'}
+                  /* 传记 Tab 内容 — 增强版 */
+                  <div style={{ marginTop: 4 }}>
+                    {/* 传记正文 — 古风卷轴样式 */}
+                    <div className="tk-biography-text">
+                      {getGeneralEnhanced(selectedHero.id).biography || '此人传记尚在编撰之中……'}
+                    </div>
+                    {/* 历史事件时间线 */}
+                    {getGeneralEnhanced(selectedHero.id).historyEvents && getGeneralEnhanced(selectedHero.id).historyEvents!.length > 0 && (
+                      <div className="tk-biography-events">
+                        <div className="tk-biography-events-title">◆ 生平大事</div>
+                        {getGeneralEnhanced(selectedHero.id).historyEvents!.map((evt, i) => (
+                          <div key={i} className="tk-biography-event-item">
+                            <span className="tk-biography-event-dot" />
+                            <span className="tk-biography-event-text">{evt}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* 关联武将 */}
+                    {getGeneralEnhanced(selectedHero.id).relatedGenerals && getGeneralEnhanced(selectedHero.id).relatedGenerals!.length > 0 && (
+                      <div className="tk-biography-relations">
+                        <div className="tk-biography-relations-title">◆ 人物关系</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {getGeneralEnhanced(selectedHero.id).relatedGenerals!.map((rel, i) => (
+                            <span key={i} className="tk-biography-relation-tag">
+                              {rel.name} <span style={{ color: '#b87333', fontSize: 8 }}>「{rel.relation}」</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -4508,9 +4698,22 @@ export default function ThreeKingdomsPixiGame() {
               )}
             </>
               ) : (
-                /* 传记 Tab 内容 */
-                <div className="tk-biography-text" style={{ marginTop: 4 }}>
-                  {getGeneralEnhanced(selectedHero.id).biography || '此人传记尚在编撰之中……'}
+                /* 传记 Tab 内容 — 增强版 */
+                <div style={{ marginTop: 4 }}>
+                  <div className="tk-biography-text">
+                    {getGeneralEnhanced(selectedHero.id).biography || '此人传记尚在编撰之中……'}
+                  </div>
+                  {getGeneralEnhanced(selectedHero.id).historyEvents && getGeneralEnhanced(selectedHero.id).historyEvents!.length > 0 && (
+                    <div className="tk-biography-events">
+                      <div className="tk-biography-events-title">◆ 生平大事</div>
+                      {getGeneralEnhanced(selectedHero.id).historyEvents!.map((evt, i) => (
+                        <div key={i} className="tk-biography-event-item">
+                          <span className="tk-biography-event-dot" />
+                          <span className="tk-biography-event-text">{evt}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
