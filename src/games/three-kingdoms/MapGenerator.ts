@@ -78,6 +78,23 @@ export interface MapLandmark {
   type: 'capital' | 'city' | 'fortress' | 'bridge';
 }
 
+/** 资源点类型 */
+export type ResourcePointType = 'farm' | 'mine' | 'lumber' | 'fishery' | 'stable';
+
+/** 资源点定义 */
+export interface MapResourcePoint {
+  /** 资源点 X 瓦片坐标 */
+  x: number;
+  /** 资源点 Y 瓦片坐标 */
+  y: number;
+  /** 资源点类型 */
+  type: ResourcePointType;
+  /** 资源点名称 */
+  name: string;
+  /** 所属领土 ID */
+  territoryId?: string;
+}
+
 /** 完整地图数据 */
 export interface GameMap {
   /** 地图宽度（瓦片数） */
@@ -92,6 +109,8 @@ export interface GameMap {
   npcs: MapNPC[];
   /** 地标列表 */
   landmarks: MapLandmark[];
+  /** 资源点列表 */
+  resourcePoints: MapResourcePoint[];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -241,6 +260,7 @@ export class MapGenerator {
   private tiles: MapTile[][];
   private npcs: MapNPC[];
   private landmarks: MapLandmark[];
+  private resourcePoints: MapResourcePoint[];
 
   /** 水域坐标集合（用于快速查找） */
   private waterSet: Set<string>;
@@ -254,6 +274,7 @@ export class MapGenerator {
     this.tiles = [];
     this.npcs = [];
     this.landmarks = [];
+    this.resourcePoints = [];
     this.waterSet = new Set(RIVER_TILES.map(([x, y]) => `${x},${y}`));
     this.roadSet = new Set(ROAD_TILES.map(([x, y]) => `${x},${y}`));
     this.territoryMap = new Map(
@@ -287,6 +308,9 @@ export class MapGenerator {
     // 6. 添加地标
     this.addLandmarks();
 
+    // 7. 生成资源点
+    this.resourcePoints = this.generateResourcePoints();
+
     return {
       width: MAP_W,
       height: MAP_H,
@@ -294,6 +318,7 @@ export class MapGenerator {
       tiles: this.tiles,
       npcs: this.npcs,
       landmarks: this.landmarks,
+      resourcePoints: this.resourcePoints,
     };
   }
 
@@ -647,6 +672,57 @@ export class MapGenerator {
       { x: 11, y: 6,  name: '襄阳', type: 'fortress' },
       { x: 4,  y: 8,  name: '汉中', type: 'fortress' },
     ];
+  }
+
+  // ─── 资源点生成 ────────────────────────────────────────
+
+  /**
+   * 在地图上生成资源点
+   *
+   * 根据地形类型放置不同资源：
+   * - 农田(farm)：平原区域，绿色方块
+   * - 矿场(mine)：山地附近，棕色三角
+   * - 伐木场(lumber)：森林区域，深绿菱形
+   * - 渔场(fishery)：水域附近，蓝色波浪
+   * - 牧场(stable)：平原开阔区域，橙色圆形
+   */
+  private generateResourcePoints(): MapResourcePoint[] {
+    const points: MapResourcePoint[] = [];
+
+    // 手动放置关键资源点（确保位置合理且不重叠）
+    const manualPoints: Array<{ x: number; y: number; type: ResourcePointType; name: string; territoryId: string }> = [
+      // 魏国区域 — 农田、牧场
+      { x: 2, y: 2, type: 'farm', name: '许田', territoryId: 'beiping' },
+      { x: 4, y: 1, type: 'stable', name: '幽州牧场', territoryId: 'beiping' },
+      { x: 7, y: 3, type: 'farm', name: '邺郊农庄', territoryId: 'ye' },
+      { x: 9, y: 3, type: 'mine', name: '许昌铁矿', territoryId: 'xuchang' },
+      // 中间区域 — 伐木、矿场
+      { x: 7, y: 7, type: 'lumber', name: '终南山林场', territoryId: 'changan' },
+      { x: 11, y: 7, type: 'mine', name: '襄阳铜矿', territoryId: 'xiangyang' },
+      // 蜀国区域 — 伐木、农田
+      { x: 1, y: 9, type: 'lumber', name: '剑阁林场', territoryId: 'hanzhong' },
+      { x: 4, y: 10, type: 'farm', name: '成都平原', territoryId: 'chengdu' },
+      { x: 1, y: 12, type: 'mine', name: '南中银矿', territoryId: 'nanzhong' },
+      // 吴国区域 — 渔场、农田
+      { x: 17, y: 9, type: 'fishery', name: '建业渔港', territoryId: 'jianye' },
+      { x: 15, y: 10, type: 'farm', name: '柴桑稻田', territoryId: 'chaisang' },
+      { x: 14, y: 6, type: 'stable', name: '合肥马场', territoryId: 'hefei' },
+    ];
+
+    for (const mp of manualPoints) {
+      // 确保坐标有效且不在水域上
+      if (this.isValid(mp.x, mp.y) && !this.waterSet.has(`${mp.x},${mp.y}`)) {
+        points.push({
+          x: mp.x,
+          y: mp.y,
+          type: mp.type,
+          name: mp.name,
+          territoryId: mp.territoryId,
+        });
+      }
+    }
+
+    return points;
   }
 
   // ─── 工具方法 ───────────────────────────────────────────

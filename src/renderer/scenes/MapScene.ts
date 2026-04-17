@@ -29,6 +29,7 @@ import type {
   MapTile,
   MapNPC,
   MapLandmark,
+  MapResourcePoint,
   TerrainType,
 } from '../../games/three-kingdoms/MapGenerator';
 import {
@@ -250,6 +251,32 @@ const LANDMARK_LABEL_COLOR = 0xffd700;
 /** NPC 点半径 */
 const NPC_DOT_RADIUS = 6;
 
+// ─── 资源点渲染常量 ──────────────────────────────────────
+
+/** 资源点类型颜色映射 */
+const RESOURCE_POINT_COLORS: Record<string, number> = {
+  farm: 0x4caf50,      // 绿色 — 农田
+  mine: 0x8d6e63,      // 棕色 — 矿场
+  lumber: 0x2e7d32,    // 深绿 — 伐木场
+  fishery: 0x42a5f5,   // 蓝色 — 渔场
+  stable: 0xff9800,    // 橙色 — 牧场
+};
+
+/** 资源点类型图标映射 */
+const RESOURCE_POINT_ICONS: Record<string, string> = {
+  farm: '🌾',
+  mine: '⛏️',
+  lumber: '🪵',
+  fishery: '🐟',
+  stable: '🐎',
+};
+
+/** 资源点标签字号 */
+const RESOURCE_LABEL_FONT_SIZE = 9;
+
+/** 资源点标记尺寸 */
+const RESOURCE_POINT_SIZE = 8;
+
 // ─── 粒子效果常量 ──────────────────────────────────────────
 
 /** 粒子类型 */
@@ -417,6 +444,7 @@ interface TileMapView {
   npcLayer: Container;
   borderLayer: Container;
   landmarkLayer: Container;
+  resourcePointLayer: Container;
   graphics: Graphics;
 }
 
@@ -1763,15 +1791,17 @@ export class MapScene extends BaseScene {
     const buildingLayer = new Container({ label: 'tile-buildings' });
     const npcLayer = new Container({ label: 'tile-npcs' });
     const landmarkLayer = new Container({ label: 'tile-landmarks' });
+    const resourcePointLayer = new Container({ label: 'tile-resources' });
     const labelLayer = new Container({ label: 'tile-labels' });
 
-    // 按层级添加到容器（地形 → 边界 → 建筑 → NPC → 标签）
+    // 按层级添加到容器（地形 → 边界 → 建筑 → 资源点 → NPC → 地标 → 标签）
     this.container.addChildAt(tileLayer, 0);
     this.container.addChildAt(borderLayer, 1);
     this.container.addChildAt(buildingLayer, 2);
-    this.container.addChildAt(npcLayer, 3);
-    this.container.addChildAt(landmarkLayer, 4);
-    this.container.addChildAt(labelLayer, 5);
+    this.container.addChildAt(resourcePointLayer, 3);
+    this.container.addChildAt(npcLayer, 4);
+    this.container.addChildAt(landmarkLayer, 5);
+    this.container.addChildAt(labelLayer, 6);
 
     const graphics = new Graphics();
 
@@ -1865,6 +1895,9 @@ export class MapScene extends BaseScene {
     // ── 5. 绘制地标文字标签 ────────────────────────────────
     this.renderTileLandmarks(landmarkLayer, labelLayer, map);
 
+    // ── 6. 绘制资源点图标 ────────────────────────────────
+    this.renderTileResourcePoints(resourcePointLayer, labelLayer, map);
+
     this.tileMapView = {
       tileLayer,
       labelLayer,
@@ -1872,6 +1905,7 @@ export class MapScene extends BaseScene {
       npcLayer,
       borderLayer,
       landmarkLayer,
+      resourcePointLayer,
       graphics,
     };
   }
@@ -2977,6 +3011,129 @@ export class MapScene extends BaseScene {
   }
 
   /**
+   * 绘制资源点图标（农田/矿场/伐木场/渔场/牧场）
+   *
+   * 每种资源点使用独特的图形标记：
+   * - 农田：绿色方块
+   * - 矿场：棕色三角
+   * - 伐木场：深绿菱形
+   * - 渔场：蓝色波浪线
+   * - 牧场：橙色圆形
+   */
+  private renderTileResourcePoints(
+    resourcePointLayer: Container,
+    labelLayer: Container,
+    map: GameMap,
+  ): void {
+    const tileSize = map.tileSize;
+
+    for (const rp of map.resourcePoints) {
+      const cx = Math.floor(rp.x * tileSize + tileSize / 2);
+      const cy = Math.floor(rp.y * tileSize + tileSize / 2);
+
+      const container = new Container({ label: `tile-resource-${rp.name}` });
+      container.position.set(cx, cy);
+      container.eventMode = 'static';
+      container.cursor = 'pointer';
+
+      const color = RESOURCE_POINT_COLORS[rp.type] ?? 0x9e9e9e;
+      const gfx = new Graphics();
+      const half = RESOURCE_POINT_SIZE;
+
+      // 根据类型绘制不同形状
+      switch (rp.type) {
+        case 'farm': {
+          // 绿色方块（田地）
+          gfx.rect(-half, -half, half * 2, half * 2)
+            .fill({ color, alpha: 0.7 });
+          gfx.rect(-half, -half, half * 2, half * 2)
+            .stroke({ color: 0x2e7d32, width: 1 });
+          // 田地纹理（十字线）
+          gfx.moveTo(-half, 0).lineTo(half, 0)
+            .stroke({ width: 0.5, color: 0x1b5e20, alpha: 0.5 });
+          gfx.moveTo(0, -half).lineTo(0, half)
+            .stroke({ width: 0.5, color: 0x1b5e20, alpha: 0.5 });
+          break;
+        }
+        case 'mine': {
+          // 棕色三角（矿山）
+          gfx.moveTo(0, -half - 2)
+            .lineTo(-half, half)
+            .lineTo(half, half)
+            .closePath()
+            .fill({ color, alpha: 0.7 });
+          gfx.moveTo(0, -half - 2)
+            .lineTo(-half, half)
+            .lineTo(half, half)
+            .closePath()
+            .stroke({ color: 0x5d4037, width: 1 });
+          break;
+        }
+        case 'lumber': {
+          // 深绿菱形（伐木场）
+          gfx.moveTo(0, -half - 1)
+            .lineTo(half + 1, 0)
+            .lineTo(0, half + 1)
+            .lineTo(-half - 1, 0)
+            .closePath()
+            .fill({ color, alpha: 0.7 });
+          gfx.moveTo(0, -half - 1)
+            .lineTo(half + 1, 0)
+            .lineTo(0, half + 1)
+            .lineTo(-half - 1, 0)
+            .closePath()
+            .stroke({ color: 0x1b5e20, width: 1 });
+          break;
+        }
+        case 'fishery': {
+          // 蓝色波浪线（渔场）
+          gfx.circle(0, 0, half).fill({ color, alpha: 0.5 });
+          gfx.circle(0, 0, half).stroke({ color: 0x1565c0, width: 1 });
+          // 波浪纹
+          gfx.moveTo(-half + 2, 0)
+            .bezierCurveTo(-half / 2, -3, half / 2, 3, half - 2, 0)
+            .stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
+          break;
+        }
+        case 'stable': {
+          // 橙色圆形（牧场）
+          gfx.circle(0, 0, half).fill({ color, alpha: 0.7 });
+          gfx.circle(0, 0, half).stroke({ color: 0xe65100, width: 1 });
+          break;
+        }
+      }
+
+      container.addChild(gfx);
+
+      // 资源类型 emoji 图标
+      const emoji = RESOURCE_POINT_ICONS[rp.type] ?? '📦';
+      const emojiText = new Text({
+        text: emoji,
+        style: new TextStyle({ fontSize: 8 }),
+      });
+      emojiText.anchor.set(0.5, 0.5);
+      emojiText.position.set(0, -half - 7);
+      container.addChild(emojiText);
+
+      resourcePointLayer.addChild(container);
+
+      // 资源点名称标签
+      const nameLabel = new Text({
+        text: rp.name,
+        style: new TextStyle({
+          fontSize: RESOURCE_LABEL_FONT_SIZE,
+          fill: '#c0c0c0',
+          fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+          stroke: { color: '#000000', width: 1.5 },
+        }),
+      });
+      nameLabel.anchor.set(0.5, 0);
+      nameLabel.position.set(cx, cy + half + 2);
+      labelLayer.addChild(nameLabel);
+    }
+  }
+
+  /**
    * 销毁瓦片地图渲染对象
    */
   private destroyTileMapView(): void {
@@ -2986,6 +3143,7 @@ export class MapScene extends BaseScene {
       this.tileMapView.tileLayer,
       this.tileMapView.borderLayer,
       this.tileMapView.buildingLayer,
+      this.tileMapView.resourcePointLayer,
       this.tileMapView.npcLayer,
       this.tileMapView.landmarkLayer,
       this.tileMapView.labelLayer,
