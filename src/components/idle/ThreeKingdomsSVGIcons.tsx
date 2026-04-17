@@ -5,14 +5,19 @@
  * 使用古风色彩体系：深棕/暗金/青铜/朱红/翠绿
  *
  * 建筑图标 (40x40)：
- * - 农田(farm)    → 麦穗+犁 (绿色)
- * - 市集(market)  → 天平+钱袋 (金色)
- * - 兵营(barracks)→ 盾牌+剑 (红色)
- * - 铁匠铺(smithy)→ 镐+铁砧 (灰色)
- * - 书院(academy) → 竹简+毛笔 (蓝色)
- * - 医馆(clinic)  → 药葫芦+草叶 (青色)
- * - 城墙(wall)    → 城垛+盾牌 (深灰)
- * - 招贤馆(tavern)→ 旗帜+卷轴 (紫色)
+ * - 农田(farm)       → 麦穗+犁 (绿色)
+ * - 市集(market)     → 天平+钱袋 (金色)
+ * - 兵营(barracks)   → 盾牌+剑 (红色)
+ * - 铁匠铺(smithy)   → 镐+铁砧 (灰色)
+ * - 书院(academy)    → 竹简+毛笔 (蓝色)
+ * - 医馆(clinic)     → 药葫芦+草叶 (青色)
+ * - 城墙(wall)       → 城垛+盾牌 (深灰)
+ * - 招贤馆(tavern)   → 旗帜+卷轴 (紫色)
+ * - 烽火台(beacon_tower) → 塔形+火焰 (橙红)
+ * - 钱庄(mint)       → 金库门+铜钱堆 (金色)
+ * - 锻兵坊(forge)    → 铁砧+锤子+火花 (深红橙)
+ * - 茶馆(teahouse)   → 两层楼阁+茶幌子+茶壶 (翠绿)
+ * - 粮仓(granary)    → 圆顶仓廪+粮袋堆+斗量 (棕黄)
  *
  * 资源图标 (20x20)：
  * - 粮草(grain)   → 稻穗 (金色)
@@ -364,6 +369,247 @@ const TavernIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
   </svg>
 );
 
+/** 烽火台 — 梯形塔身+顶部火焰+底部石基（橙红色系） */
+const BeaconTowerIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="tk-beacon-fire" cx="0.5" cy="0.7" r="0.5">
+        <stop offset="0%" stopColor="#ffeb3b" />
+        <stop offset="40%" stopColor="#ff6600" />
+        <stop offset="100%" stopColor="#bf360c" stopOpacity="0.3" />
+      </radialGradient>
+      <linearGradient id="tk-beacon-stone" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#7a7a7a" />
+        <stop offset="100%" stopColor="#4a4a4a" />
+      </linearGradient>
+    </defs>
+    {/* 石基 */}
+    <rect x="8" y="32" width="24" height="5" rx="1" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.8" />
+    <line x1="10" y1="34" x2="30" y2="34" stroke="#4a4a4a" strokeWidth="0.4" />
+    {/* 梯形塔身 */}
+    <path d="M12,32 L14,12 L26,12 L28,32 Z" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="1" />
+    {/* 塔身石砖纹理 */}
+    <line x1="13" y1="18" x2="27" y2="18" stroke="#5a5a5a" strokeWidth="0.4" />
+    <line x1="13" y1="24" x2="27" y2="24" stroke="#5a5a5a" strokeWidth="0.4" />
+    <line x1="20" y1="12" x2="20" y2="32" stroke="#5a5a5a" strokeWidth="0.3" />
+    {/* 塔顶平台 */}
+    <rect x="12" y="10" width="16" height="3" rx="0.5" fill="#6a6a6a" stroke="#4a4a4a" strokeWidth="0.6" />
+    {/* 垛口 */}
+    <rect x="12" y="7" width="3" height="4" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.4" />
+    <rect x="18.5" y="7" width="3" height="4" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.4" />
+    <rect x="25" y="7" width="3" height="4" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.4" />
+    {/* 火焰 — 顶部 */}
+    <path d="M20,2 Q24,4 23,8 Q22,6 20,7 Q18,6 17,8 Q16,4 20,2 Z" fill="url(#tk-beacon-fire)" />
+    <path d="M20,3 Q22,5 21.5,7 Q21,6 20,6.5 Q19,6 18.5,7 Q18,5 20,3 Z" fill="#ff9800" opacity="0.8" />
+    <path d="M20,4.5 Q21,5.5 20.5,7 Q20,6.5 19.5,7 Q19,5.5 20,4.5 Z" fill="#ffeb3b" opacity="0.7" />
+    {/* 火星 */}
+    <circle cx="16" cy="3" r="0.6" fill="#ff6600" opacity="0.6" />
+    <circle cx="24" cy="4" r="0.5" fill="#ff9800" opacity="0.5" />
+    <circle cx="20" cy="1" r="0.4" fill="#ffaa00" opacity="0.4" />
+    {/* 塔门 */}
+    <path d="M17,32 L17,26 Q20,23 23,26 L23,32" fill="#2a1a0a" stroke="#1a0a00" strokeWidth="0.5" />
+    {/* 烟雾 */}
+    <path d="M18,6 Q17,3 19,1" stroke="#8a7a60" strokeWidth="0.4" fill="none" opacity="0.4" />
+    <path d="M22,5 Q23,2 21,0.5" stroke="#8a7a60" strokeWidth="0.3" fill="none" opacity="0.3" />
+  </svg>
+);
+
+/** 钱庄 — 方形建筑+大门+屋顶铜钱装饰（金色系） */
+const MintIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tk-mint-gold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#e8b84a" />
+        <stop offset="100%" stopColor="#b8860b" />
+      </linearGradient>
+    </defs>
+    {/* 建筑主体 */}
+    <rect x="6" y="16" width="28" height="18" rx="1" fill="#8B6914" stroke="#6b5a14" strokeWidth="1" />
+    {/* 飞檐屋顶 */}
+    <path d="M2,18 L20,6 L38,18 Z" fill="url(#tk-mint-gold)" stroke="#8B6914" strokeWidth="0.8" />
+    {/* 飞檐翘角 */}
+    <path d="M0,18 Q2,15 5,18" stroke="#d4a030" strokeWidth="1" fill="none" />
+    <path d="M35,18 Q38,15 40,18" stroke="#d4a030" strokeWidth="1" fill="none" />
+    {/* 屋脊装饰 */}
+    <circle cx="20" cy="6" r="1.5" fill="#d4a030" />
+    {/* 屋顶铜钱装饰 — 左右 */}
+    <circle cx="12" cy="11" r="2.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="11" y="10" width="2" height="2" fill="#6b5a14" rx="0.2" />
+    <circle cx="28" cy="11" r="2.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="27" y="10" width="2" height="2" fill="#6b5a14" rx="0.2" />
+    {/* 大门 */}
+    <path d="M14,34 L14,22 Q20,17 26,22 L26,34" fill="#3a2a1a" stroke="#6b5a14" strokeWidth="0.8" />
+    {/* 门钉 */}
+    <circle cx="18" cy="26" r="0.8" fill="#d4a030" />
+    <circle cx="22" cy="26" r="0.8" fill="#d4a030" />
+    <circle cx="18" cy="30" r="0.8" fill="#d4a030" />
+    <circle cx="22" cy="30" r="0.8" fill="#d4a030" />
+    {/* 门环 */}
+    <circle cx="17" cy="28" r="1" fill="none" stroke="#d4a030" strokeWidth="0.6" />
+    <circle cx="23" cy="28" r="1" fill="none" stroke="#d4a030" strokeWidth="0.6" />
+    {/* 匾额 — 钱庄 */}
+    <rect x="14" y="18" width="12" height="4" rx="0.5" fill="#3a2a1a" stroke="#d4a030" strokeWidth="0.5" />
+    <text x="20" y="21.2" textAnchor="middle" fontSize="3" fill="#d4a030" fontFamily="serif" fontWeight="bold">錢莊</text>
+    {/* 窗户 */}
+    <rect x="8" y="22" width="4" height="4" rx="0.5" fill="#d4a030" opacity="0.3" />
+    <line x1="10" y1="22" x2="10" y2="26" stroke="#8B6914" strokeWidth="0.4" />
+    <rect x="28" y="22" width="4" height="4" rx="0.5" fill="#d4a030" opacity="0.3" />
+    <line x1="30" y1="22" x2="30" y2="26" stroke="#8B6914" strokeWidth="0.4" />
+    {/* 铜钱堆 — 门前 */}
+    <circle cx="16" cy="36" r="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.3" />
+    <rect x="15.2" y="35.2" width="1.2" height="1.2" fill="#6b5a14" rx="0.1" />
+    <circle cx="20" cy="37" r="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.3" />
+    <rect x="19.2" y="36.2" width="1.2" height="1.2" fill="#6b5a14" rx="0.1" />
+    <circle cx="24" cy="36" r="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.3" />
+    <rect x="23.2" y="35.2" width="1.2" height="1.2" fill="#6b5a14" rx="0.1" />
+    {/* 台阶 */}
+    <rect x="12" y="34" width="16" height="2" rx="0.5" fill="#6b5a14" stroke="#5a4a14" strokeWidth="0.4" />
+  </svg>
+);
+
+/** 锻兵坊 — 简易棚屋+铁砧+锤子+火花（深红橙色系） */
+const ForgeIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="tk-forge-spark" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0%" stopColor="#ffeb3b" />
+        <stop offset="50%" stopColor="#ff6600" />
+        <stop offset="100%" stopColor="#bf360c" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    {/* 简易棚屋 — 斜顶 */}
+    <path d="M4,22 L20,8 L36,22 Z" fill="#6b4226" stroke="#4a2a16" strokeWidth="1" />
+    {/* 棚屋支柱 */}
+    <line x1="6" y1="22" x2="6" y2="36" stroke="#6b4226" strokeWidth="1.5" />
+    <line x1="34" y1="22" x2="34" y2="36" stroke="#6b4226" strokeWidth="1.5" />
+    {/* 棚顶茅草纹理 */}
+    <line x1="10" y1="16" x2="30" y2="16" stroke="#8B6914" strokeWidth="0.4" opacity="0.5" />
+    <line x1="7" y1="19" x2="33" y2="19" stroke="#8B6914" strokeWidth="0.4" opacity="0.5" />
+    {/* 铁砧 */}
+    <path d="M14,28 L26,28 L24,34 L16,34 Z" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.8" />
+    <path d="M15,25 L25,25 L26,28 L14,28 Z" fill="#6a6a6a" stroke="#4a4a4a" strokeWidth="0.6" />
+    <rect x="17" y="23" width="6" height="3" rx="0.8" fill="#7a7a7a" />
+    {/* 被锻造的兵器 */}
+    <path d="M19,22 L20,12 L21,22" fill="#8a8a8a" stroke="#6a6a6a" strokeWidth="0.4" opacity="0.7" />
+    <polygon points="20,10 21,12 19,12" fill="#c0c0c0" opacity="0.7" />
+    {/* 锤子 */}
+    <line x1="26" y1="10" x2="22" y2="22" stroke="#6b4226" strokeWidth="2" strokeLinecap="round" />
+    <rect x="24" y="7" width="5" height="4.5" rx="1" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.5" transform="rotate(-15 26.5 9.2)" />
+    {/* 火花效果 */}
+    <circle cx="12" cy="20" r="1.2" fill="url(#tk-forge-spark)" />
+    <circle cx="10" cy="16" r="0.8" fill="#ff6600" opacity="0.7" />
+    <circle cx="14" cy="14" r="0.6" fill="#ffaa00" opacity="0.5" />
+    <circle cx="8" cy="18" r="0.5" fill="#ff4400" opacity="0.6" />
+    <circle cx="16" cy="12" r="0.4" fill="#ffeb3b" opacity="0.4" />
+    {/* 炉火 — 左侧 */}
+    <path d="M6,30 Q6,24 8,22 Q7,26 10,25 Q8,28 10,28 L10,30 Z" fill="#ff6600" opacity="0.6" />
+    <path d="M7,28 Q7,25 8,24 Q8,27 9,26 L9,28 Z" fill="#ff9800" opacity="0.5" />
+    {/* 地面 */}
+    <path d="M2,36 Q20,34 38,36" stroke="#5a4a2a" strokeWidth="0.6" fill="none" opacity="0.4" />
+  </svg>
+);
+
+/** 茶馆 — 两层楼阁+茶幌子+茶壶（翠绿色系） */
+const TeahouseIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tk-tea-roof" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#5a8a4a" />
+        <stop offset="100%" stopColor="#3a6a3a" />
+      </linearGradient>
+    </defs>
+    {/* 二层楼阁主体 */}
+    <rect x="8" y="14" width="24" height="10" rx="0.5" fill="#d4b896" stroke="#8B7355" strokeWidth="0.8" />
+    {/* 二层飞檐屋顶 */}
+    <path d="M4,16 L20,6 L36,16 Z" fill="url(#tk-tea-roof)" stroke="#2e5d2e" strokeWidth="0.8" />
+    {/* 飞檐翘角 */}
+    <path d="M2,16 Q4,13 7,16" stroke="#5a8a4a" strokeWidth="0.8" fill="none" />
+    <path d="M33,16 Q36,13 38,16" stroke="#5a8a4a" strokeWidth="0.8" fill="none" />
+    {/* 二层窗户 */}
+    <rect x="12" y="16" width="4" height="4" rx="0.5" fill="#3a6a3a" opacity="0.4" />
+    <line x1="14" y1="16" x2="14" y2="20" stroke="#2e5d2e" strokeWidth="0.3" />
+    <rect x="24" y="16" width="4" height="4" rx="0.5" fill="#3a6a3a" opacity="0.4" />
+    <line x1="26" y1="16" x2="26" y2="20" stroke="#2e5d2e" strokeWidth="0.3" />
+    {/* 二层匾额 */}
+    <rect x="15" y="10" width="10" height="4" rx="0.5" fill="#3a2a1a" stroke="#d4a030" strokeWidth="0.4" />
+    <text x="20" y="13.2" textAnchor="middle" fontSize="2.8" fill="#d4a030" fontFamily="serif" fontWeight="bold">茶</text>
+    {/* 一层主体 */}
+    <rect x="6" y="24" width="28" height="10" rx="0.5" fill="#d4b896" stroke="#8B7355" strokeWidth="0.8" />
+    {/* 一层屋顶/挑檐 */}
+    <path d="M4,26 L20,20 L36,26 Z" fill="url(#tk-tea-roof)" stroke="#2e5d2e" strokeWidth="0.6" opacity="0.7" />
+    {/* 一层大门 */}
+    <path d="M15,34 L15,27 Q20,24 25,27 L25,34" fill="#3a2a1a" stroke="#6b5a14" strokeWidth="0.5" />
+    {/* 茶幌子 — 右侧悬挂 */}
+    <line x1="34" y1="10" x2="34" y2="20" stroke="#6b4226" strokeWidth="0.8" />
+    <rect x="32" y="12" width="5" height="8" rx="0.5" fill="#5a8a4a" stroke="#3a6a3a" strokeWidth="0.4" />
+    <text x="34.5" y="17.5" textAnchor="middle" fontSize="3.5" fill="#d4a030" fontFamily="serif" fontWeight="bold">茶</text>
+    {/* 茶壶 — 左下 */}
+    <ellipse cx="10" cy="32" rx="3.5" ry="2" fill="#8a6a4a" stroke="#6b4a2a" strokeWidth="0.5" />
+    <path d="M10,29 L10,27" stroke="#6b4a2a" strokeWidth="0.6" />
+    <ellipse cx="10" cy="27" rx="1.5" ry="0.8" fill="#6b4a2a" />
+    {/* 壶嘴 */}
+    <path d="M13.5,31 Q15,30 15,28" stroke="#6b4a2a" strokeWidth="0.6" fill="none" />
+    {/* 壶把 */}
+    <path d="M6.5,30 Q5,30 5,32 Q5,34 6.5,34" stroke="#6b4a2a" strokeWidth="0.6" fill="none" />
+    {/* 茶碗 */}
+    <path d="M28,30 L32,30 L31.5,34 L28.5,34 Z" fill="#d4b896" stroke="#8B7355" strokeWidth="0.4" />
+    {/* 蒸汽 */}
+    <path d="M29,28 Q28,26 30,25" stroke="#8a7a60" strokeWidth="0.4" fill="none" opacity="0.5" />
+    <path d="M31,27 Q32,25 30,24" stroke="#8a7a60" strokeWidth="0.3" fill="none" opacity="0.4" />
+    {/* 地面 */}
+    <path d="M2,36 Q20,34 38,36" stroke="#5a4a2a" strokeWidth="0.6" fill="none" opacity="0.4" />
+  </svg>
+);
+
+/** 粮仓 — 圆顶仓廪+粮袋堆+斗量（棕黄色系） */
+const GranaryIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tk-granary-body" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#c49a28" />
+        <stop offset="100%" stopColor="#8B6914" />
+      </linearGradient>
+    </defs>
+    {/* 圆顶仓廪主体 */}
+    <rect x="8" y="16" width="20" height="16" rx="1" fill="url(#tk-granary-body)" stroke="#6b5a14" strokeWidth="1" />
+    {/* 圆顶 */}
+    <path d="M6,18 L18,6 L30,18 Z" fill="#b8860b" stroke="#8B6914" strokeWidth="0.8" />
+    {/* 飞檐 */}
+    <path d="M4,18 Q6,15 9,18" stroke="#d4a030" strokeWidth="0.6" fill="none" />
+    <path d="M27,18 Q30,15 32,18" stroke="#d4a030" strokeWidth="0.6" fill="none" />
+    {/* 仓门 */}
+    <rect x="14" y="24" width="8" height="8" rx="0.5" fill="#3a2a1a" stroke="#6b5a14" strokeWidth="0.6" />
+    <line x1="18" y1="24" x2="18" y2="32" stroke="#6b5a14" strokeWidth="0.4" />
+    <circle cx="17" cy="28" r="0.6" fill="#d4a030" />
+    <circle cx="19" cy="28" r="0.6" fill="#d4a030" />
+    {/* 仓廪横纹 */}
+    <line x1="8" y1="20" x2="28" y2="20" stroke="#a08a65" strokeWidth="0.4" opacity="0.5" />
+    <line x1="8" y1="24" x2="14" y2="24" stroke="#a08a65" strokeWidth="0.4" opacity="0.5" />
+    <line x1="22" y1="24" x2="28" y2="24" stroke="#a08a65" strokeWidth="0.4" opacity="0.5" />
+    {/* 仓顶装饰 */}
+    <circle cx="18" cy="7" r="1.5" fill="#d4a030" />
+    {/* 粮袋堆 — 右侧 */}
+    <path d="M30,34 Q30,28 33,26 Q36,28 36,34 Z" fill="#d4b896" stroke="#8B7355" strokeWidth="0.6" />
+    <line x1="33" y1="27" x2="33" y2="34" stroke="#8B7355" strokeWidth="0.3" />
+    <path d="M32,34 Q32,30 34,28.5 Q36,30 36,34 Z" fill="#c49a28" opacity="0.4" />
+    {/* 小粮袋 — 右下 */}
+    <rect x="28" y="30" width="4" height="4" rx="1" fill="#d4b896" stroke="#8B7355" strokeWidth="0.4" />
+    <line x1="28" y1="32" x2="32" y2="32" stroke="#8B7355" strokeWidth="0.3" />
+    {/* 斗量 — 左下 */}
+    <path d="M4,30 L8,28 L12,30 L10,36 L6,36 Z" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
+    <line x1="4" y1="30" x2="12" y2="30" stroke="#6b5a14" strokeWidth="0.4" />
+    {/* 斗内粮食 */}
+    <ellipse cx="8" cy="30" rx="3" ry="1" fill="#d4a030" opacity="0.6" />
+    {/* 麦穗装饰 — 仓顶 */}
+    <line x1="12" y1="8" x2="12" y2="4" stroke="#6b8e5a" strokeWidth="0.8" />
+    <ellipse cx="12" cy="3.5" rx="1.2" ry="2" fill="#8aaa5a" />
+    <line x1="24" y1="8" x2="24" y2="5" stroke="#6b8e5a" strokeWidth="0.8" />
+    <ellipse cx="24" cy="4.5" rx="1" ry="1.8" fill="#8aaa5a" />
+    {/* 地面 */}
+    <path d="M2,36 Q20,34 38,36" stroke="#5a4a2a" strokeWidth="0.6" fill="none" opacity="0.4" />
+  </svg>
+);
+
 /** 建筑图标映射 — 根据建筑 ID 返回对应的 SVG 组件 */
 const BUILDING_ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
   farm: FarmIcon,
@@ -374,6 +620,11 @@ const BUILDING_ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
   clinic: ClinicIcon,
   wall: WallIcon,
   tavern: TavernIcon,
+  beacon_tower: BeaconTowerIcon,
+  mint: MintIcon,
+  forge: ForgeIcon,
+  teahouse: TeahouseIcon,
+  granary: GranaryIcon,
 };
 
 /** 建筑图标组件 — 根据建筑 ID 渲染对应的 SVG */

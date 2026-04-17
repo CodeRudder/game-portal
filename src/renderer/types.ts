@@ -114,6 +114,8 @@ export interface BuildingRenderData {
   iconAsset?: string;
   /** 建造进度（0~1） */
   buildProgress?: number;
+  /** 建筑分类 */
+  category?: 'military' | 'economic' | 'civilian' | 'resource';
 }
 
 // ═══════════════════════════════════════════════════════════════

@@ -69,8 +69,8 @@ describe('常量验证', () => {
     expect(GAME_TITLE).toBe('三国霸业');
   });
 
-  it('BUILDINGS 有 8 个建筑', () => {
-    expect(BUILDINGS).toHaveLength(8);
+  it('BUILDINGS 有 13 个建筑', () => {
+    expect(BUILDINGS).toHaveLength(13);
   });
 
   it('BUILDINGS 所有建筑有唯一 ID', () => {

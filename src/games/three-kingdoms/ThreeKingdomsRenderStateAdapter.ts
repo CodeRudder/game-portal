@@ -302,6 +302,7 @@ export class ThreeKingdomsRenderStateAdapter {
         upgradeCost: cost,
         canUpgrade,
         iconAsset: b.icon,
+        category: b.category,
       };
     });
 

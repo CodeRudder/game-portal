@@ -6,11 +6,15 @@
 // 内联类型定义
 // ═══════════════════════════════════════════════════════════════
 
+/** 建筑分类 */
+export type BuildingCategory = 'military' | 'economic' | 'civilian' | 'resource';
+
 /** 建筑定义 */
 export interface BuildingDef {
   id: string;
   name: string;
   icon: string;
+  category?: BuildingCategory;
   baseCost: Record<string, number>;
   costMultiplier: number;
   maxLevel: number;
@@ -158,7 +162,7 @@ export const GAME_ID = 'three-kingdoms';
 export const GAME_TITLE = '三国霸业';
 
 // ═══════════════════════════════════════════════════════════════
-// 建筑系统 (8个)
+// 建筑系统 (13个)
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -176,59 +180,100 @@ export const BUILDING_DESCRIPTIONS: Record<string, string> = {
   clinic: '悬壶济世，妙手回春，保百姓安居乐业',
   wall: '高城深池，箭塔林立，固若金汤守四方',
   tavern: '天下英雄尽入吾彀中，招贤纳士聚英才',
+  beacon_tower: '烽火连天，预警四方，敌军来袭早知晓',
+  mint: '天下财富汇聚于此，铜钱滚滚而来',
+  forge: '千锤百炼出精钢，神兵利器由此来',
+  teahouse: '品茗论天下，坊间传闻皆可知',
+  granary: '仓廪实而知礼节，粮草丰足军心稳',
 };
 
 export const BUILDINGS: BuildingDef[] = [
   {
-    id: 'farm', name: '屯田', icon: '🌾',
+    id: 'farm', name: '屯田', icon: '🌾', category: 'resource',
     baseCost: { grain: 10 }, costMultiplier: 1.07, maxLevel: 0,
     productionResource: 'grain', baseProduction: 0.1,
     unlockCondition: '初始解锁',
   },
   {
-    id: 'market', name: '商行', icon: '💰',
+    id: 'market', name: '商行', icon: '💰', category: 'economic',
     baseCost: { grain: 50 }, costMultiplier: 1.08, maxLevel: 0,
     productionResource: 'gold', baseProduction: 0.08,
     unlockCondition: '初始解锁',
   },
   {
-    id: 'barracks', name: '军营', icon: '⚔️',
+    id: 'barracks', name: '军营', icon: '⚔️', category: 'military',
     baseCost: { grain: 30, gold: 20 }, costMultiplier: 1.09, maxLevel: 0,
     productionResource: 'troops', baseProduction: 0.05,
     unlockCondition: '累计 100 粮草',
   },
   {
-    id: 'smithy', name: '铁匠铺', icon: '🔨',
+    id: 'smithy', name: '铁匠铺', icon: '🔨', category: 'military',
     baseCost: { gold: 100, wood: 30 }, costMultiplier: 1.10, maxLevel: 0,
     productionResource: 'iron', baseProduction: 0.08,
     requires: ['barracks'],
     unlockCondition: '军营 Lv.3',
   },
   {
-    id: 'academy', name: '太学', icon: '📚',
+    id: 'academy', name: '太学', icon: '📚', category: 'civilian',
     baseCost: { gold: 200 }, costMultiplier: 1.12, maxLevel: 0,
     productionResource: 'gold', baseProduction: 0.15,
     unlockCondition: '累计 500 铜钱',
   },
   {
-    id: 'clinic', name: '药庐', icon: '💊',
+    id: 'clinic', name: '药庐', icon: '💊', category: 'civilian',
     baseCost: { gold: 80, grain: 60 }, costMultiplier: 1.08, maxLevel: 0,
     productionResource: 'morale', baseProduction: 0.12,
     unlockCondition: '累计 300 粮草',
   },
   {
-    id: 'wall', name: '城防', icon: '🏰',
+    id: 'wall', name: '城防', icon: '🏰', category: 'military',
     baseCost: { gold: 150, iron: 50 }, costMultiplier: 1.15, maxLevel: 0,
     productionResource: 'wood', baseProduction: 0.06,
     requires: ['barracks'],
     unlockCondition: '军营 Lv.5',
   },
   {
-    id: 'tavern', name: '招贤馆', icon: '🏯',
+    id: 'tavern', name: '招贤馆', icon: '🏯', category: 'civilian',
     baseCost: { gold: 500 }, costMultiplier: 1.18, maxLevel: 0,
     productionResource: 'gold', baseProduction: 0.2,
     requires: ['academy'],
     unlockCondition: '太学 Lv.3',
+  },
+  // ── 新增特色建筑 ──
+  {
+    id: 'beacon_tower', name: '烽火台', icon: '🔥', category: 'military',
+    baseCost: { gold: 200, wood: 80 }, costMultiplier: 1.12, maxLevel: 0,
+    productionResource: 'troops', baseProduction: 0.03,
+    requires: ['wall'],
+    unlockCondition: '城防 Lv.3',
+  },
+  {
+    id: 'mint', name: '钱庄', icon: '🏛️', category: 'economic',
+    baseCost: { gold: 400, grain: 200 }, costMultiplier: 1.14, maxLevel: 0,
+    productionResource: 'gold', baseProduction: 0.18,
+    requires: ['market'],
+    unlockCondition: '商行 Lv.5',
+  },
+  {
+    id: 'forge', name: '锻兵坊', icon: '⚒️', category: 'military',
+    baseCost: { gold: 300, iron: 100 }, costMultiplier: 1.11, maxLevel: 0,
+    productionResource: 'iron', baseProduction: 0.12,
+    requires: ['smithy'],
+    unlockCondition: '铁匠铺 Lv.4',
+  },
+  {
+    id: 'teahouse', name: '茶馆', icon: '🍵', category: 'civilian',
+    baseCost: { gold: 150, grain: 100 }, costMultiplier: 1.09, maxLevel: 0,
+    productionResource: 'morale', baseProduction: 0.15,
+    requires: ['clinic'],
+    unlockCondition: '药庐 Lv.3',
+  },
+  {
+    id: 'granary', name: '粮仓', icon: '🏚️', category: 'resource',
+    baseCost: { grain: 200, wood: 100 }, costMultiplier: 1.10, maxLevel: 0,
+    productionResource: 'grain', baseProduction: 0.15,
+    requires: ['farm'],
+    unlockCondition: '屯田 Lv.5',
   },
 ];
 

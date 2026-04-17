@@ -2433,3 +2433,54 @@
 .tk-general-card[data-faction="wu"] {
   --faction-color: #33aa55;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+ * 建筑分类标签样式
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* 分类标签基础样式 */
+.tk-building-category-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: bold;
+  font-family: "Noto Serif SC", "SimSun", serif;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* 军事类 — 红色标签底色 */
+.tk-building-category-tag--military {
+  background: rgba(198, 40, 40, 0.18);
+  color: #e57373;
+  border: 1px solid rgba(198, 40, 40, 0.35);
+  text-shadow: 0 0 4px rgba(198, 40, 40, 0.2);
+}
+
+/* 经济类 — 金色标签底色 */
+.tk-building-category-tag--economic {
+  background: rgba(212, 160, 48, 0.15);
+  color: #d4a030;
+  border: 1px solid rgba(212, 160, 48, 0.35);
+  text-shadow: 0 0 4px rgba(212, 160, 48, 0.2);
+}
+
+/* 民生类 — 绿色标签底色 */
+.tk-building-category-tag--civilian {
+  background: rgba(67, 160, 71, 0.12);
+  color: #81c784;
+  border: 1px solid rgba(67, 160, 71, 0.3);
+  text-shadow: 0 0 4px rgba(67, 160, 71, 0.2);
+}
+
+/* 资源类 — 棕色标签底色 */
+.tk-building-category-tag--resource {
+  background: rgba(139, 115, 85, 0.18);
+  color: #c9a96e;
+  border: 1px solid rgba(139, 115, 85, 0.35);
+  text-shadow: 0 0 4px rgba(139, 115, 85, 0.2);
+}
