@@ -541,6 +541,15 @@ export class ThreeKingdomsRenderStateAdapter {
       // 是否可招募
       const canRecruit = !unlocked && this.canPayResources(g.recruitCost);
 
+      // 实际属性（含等级成长）
+      const actualStats = this.engine.getGeneralStats(g.id);
+      const stats = actualStats
+        ? { attack: actualStats.attack, defense: actualStats.defense, intelligence: actualStats.intelligence, command: actualStats.command }
+        : { ...g.baseStats };
+
+      // 派遣状态
+      const assignedBuilding = this.engine.getGeneralAssignment(g.id);
+
       return {
         id: g.id,
         name: g.name,
@@ -550,9 +559,10 @@ export class ThreeKingdomsRenderStateAdapter {
         exp,
         maxExp,
         unlocked,
-        stats: { ...g.baseStats },
+        stats,
         recruitCost: { ...g.recruitCost },
         canRecruit,
+        assignedBuilding: assignedBuilding ?? undefined,
       };
     });
   }

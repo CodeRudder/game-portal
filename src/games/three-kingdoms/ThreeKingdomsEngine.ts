@@ -98,6 +98,8 @@ export interface ThreeKingdomsSaveState {
   bondSystem?: { activatedBonds: string[]; requestCounter: number };
   storyEvents?: { triggeredEvents: string[] };
   battlesWonCount?: number;
+  /** 武将派遣分配：generalId → buildingId */
+  generalAssignments?: Record<string, string>;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -195,6 +197,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private selIdx = 0;
   private scroll = 0;
   private playTime = 0;
+
+  /** 武将派遣分配：generalId → buildingId */
+  private generalAssignments: Record<string, string> = {};
 
   /** 当前选中的 NPC ID */
   private selectedNPC: string | null = null;
@@ -572,6 +577,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       bondSystem: this.bondSystem.serialize(),
       storyEvents: this.storyEventSystem.serialize(),
       battlesWonCount: this.battlesWonCount,
+      generalAssignments: { ...this.generalAssignments },
     };
   }
 
@@ -603,6 +609,11 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (d.bondSystem) this.bondSystem.deserialize(d.bondSystem);
     if (d.storyEvents) this.storyEventSystem.deserialize(d.storyEvents);
     this.battlesWonCount = d.battlesWonCount ?? 0;
+
+    // 反序列化武将派遣数据
+    if (d.generalAssignments) {
+      this.generalAssignments = { ...d.generalAssignments };
+    }
 
     // 重新检查已激活羁绊
     const recruitedIds = this.getRecruitedGeneralIds();
@@ -1730,6 +1741,217 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (amt <= 0) return;
     this.giveRes(id, amt);
     this.emit('stateChange');
+  }
+
+  // ─── v2.0 武将系统：升级 / 派遣 / 加成 ─────────────────────
+
+  /**
+   * 升级武将
+   *
+   * 消耗铜钱 + 粮草提升武将等级，属性随等级线性成长。
+   * 升级费用 = baseCost * (1 + level * 0.3)
+   *
+   * @param id - 武将 ID
+   * @returns 是否升级成功
+   */
+  public levelUpGeneral(id: string): boolean {
+    const def = GENERALS.find(g => g.id === id);
+    if (!def) return false;
+
+    // 检查是否已招募
+    if (!this.units.isUnlocked(id)) return false;
+
+    const state = this.units.getState(id);
+    if (!state) return false;
+
+    // 计算升级费用：铜钱 + 粮草，随等级递增
+    const level = state.level;
+    const cost = {
+      gold: Math.floor(100 * (1 + level * 0.3)),
+      grain: Math.floor(80 * (1 + level * 0.25)),
+    };
+
+    if (!this.canPay(cost)) return false;
+
+    // 扣除资源
+    this.pay(cost);
+
+    // 增加经验值触发升级（给足够经验升一级）
+    const expNeeded = level * 100;
+    this.units.addExp(id, expNeeded);
+
+    this.audioManager.playSFX('levelup');
+    this.ftSys.add(`⬆ ${def.name} 升级！`, 0.5, 0.35, {
+      style: { color: COLOR_THEME.accentGold, fontSize: 16 },
+    });
+    this.emit('stateChange');
+    return true;
+  }
+
+  /**
+   * 获取武将升级费用预览
+   */
+  public getGeneralLevelUpCost(id: string): { gold: number; grain: number } | null {
+    const def = GENERALS.find(g => g.id === id);
+    if (!def) return null;
+    const state = this.units.getState(id);
+    if (!state) return null;
+    const level = state.level;
+    return {
+      gold: Math.floor(100 * (1 + level * 0.3)),
+      grain: Math.floor(80 * (1 + level * 0.25)),
+    };
+  }
+
+  /**
+   * 获取武将当前实际属性（含等级成长）
+   * 公式：baseStat + growthRate * (level - 1)
+   */
+  public getGeneralStats(id: string): { attack: number; defense: number; intelligence: number; command: number; charisma: number } | null {
+    const def = GENERALS.find(g => g.id === id);
+    if (!def) return null;
+    const state = this.units.getState(id);
+    const level = state?.level ?? 1;
+    const g = def.growthRates;
+    return {
+      attack: Math.floor(def.baseStats.attack + g.attack * (level - 1)),
+      defense: Math.floor(def.baseStats.defense + g.defense * (level - 1)),
+      intelligence: Math.floor(def.baseStats.intelligence + g.intelligence * (level - 1)),
+      command: Math.floor(def.baseStats.command + g.command * (level - 1)),
+      charisma: Math.floor((def.baseStats.attack + def.baseStats.defense + def.baseStats.intelligence + def.baseStats.command) / 4),
+    };
+  }
+
+  /**
+   * 派遣武将到建筑
+   *
+   * 每个建筑最多1位武将，每位武将同时只能派遣到1个建筑。
+   *
+   * @param generalId - 武将 ID
+   * @param buildingId - 建筑 ID
+   * @returns 是否派遣成功
+   */
+  public assignGeneral(generalId: string, buildingId: string): boolean {
+    // 检查武将是否已招募
+    if (!this.units.isUnlocked(generalId)) return false;
+
+    // 检查建筑是否已解锁
+    if (!this.bldg.isUnlocked(buildingId)) return false;
+
+    // 检查建筑是否已建造（等级 > 0）
+    if (this.bldg.getLevel(buildingId) <= 0) return false;
+
+    // 检查该建筑是否已有其他武将
+    for (const [gid, bid] of Object.entries(this.generalAssignments)) {
+      if (bid === buildingId && gid !== generalId) return false;
+    }
+
+    // 检查该武将是否已派遣到其他建筑（先取消旧派遣）
+    if (this.generalAssignments[generalId] && this.generalAssignments[generalId] !== buildingId) {
+      delete this.generalAssignments[generalId];
+    }
+
+    this.generalAssignments[generalId] = buildingId;
+
+    const def = GENERALS.find(g => g.id === generalId);
+    const bld = BUILDINGS.find(b => b.id === buildingId);
+    this.ftSys.add(`${def?.name ?? '武将'} → ${bld?.name ?? '建筑'}`, 0.5, 0.4, {
+      style: { color: COLOR_THEME.accentGreen, fontSize: 14 },
+    });
+    this.emit('stateChange');
+    return true;
+  }
+
+  /**
+   * 取消武将派遣
+   */
+  public unassignGeneral(generalId: string): boolean {
+    if (!this.generalAssignments[generalId]) return false;
+    delete this.generalAssignments[generalId];
+    this.emit('stateChange');
+    return true;
+  }
+
+  /**
+   * 获取建筑的武将加成
+   *
+   * 根据派遣到该建筑的武将属性，计算产出加成倍率。
+   * 加成规则：
+   * - 统率 → 兵营/烽火台 +兵力产出
+   * - 智谋 → 太学/书院 +铜钱/科技产出
+   * - 攻击 → 铁匠铺/锻兵坊 +铁矿产出
+   * - 防御 → 城防 +木材产出
+   * - 其他建筑 → 综合属性 * 0.005
+   *
+   * @param buildingId - 建筑 ID
+   * @returns 加成倍率（1.0 = 无加成）
+   */
+  public getGeneralBonus(buildingId: string): number {
+    // 查找派遣到该建筑的武将
+    let assignedGeneralId: string | null = null;
+    for (const [gid, bid] of Object.entries(this.generalAssignments)) {
+      if (bid === buildingId) {
+        assignedGeneralId = gid;
+        break;
+      }
+    }
+    if (!assignedGeneralId) return 1.0;
+
+    const stats = this.getGeneralStats(assignedGeneralId);
+    if (!stats) return 1.0;
+
+    // 根据建筑类型匹配主属性
+    const statBonusMap: Record<string, keyof typeof stats> = {
+      barracks: 'command',       // 兵营 → 统率
+      beacon_tower: 'command',   // 烽火台 → 统率
+      academy: 'intelligence',   // 太学 → 智谋
+      tavern: 'intelligence',    // 招贤馆 → 智谋
+      smithy: 'attack',          // 铁匠铺 → 攻击
+      forge: 'attack',           // 锻兵坊 → 攻击
+      wall: 'defense',           // 城防 → 防御
+      farm: 'command',           // 屯田 → 统率
+      granary: 'command',        // 粮仓 → 统率
+      market: 'charisma',        // 商行 → 魅力
+      mint: 'charisma',          // 钱庄 → 魅力
+      clinic: 'intelligence',    // 药庐 → 智谋
+      teahouse: 'charisma',      // 茶馆 → 魅力
+    };
+
+    const mainStat = statBonusMap[buildingId];
+    if (mainStat) {
+      // 主属性加成：属性值 * 0.01 → 即 80点属性 = +80% = 1.8倍
+      return 1.0 + (stats[mainStat] ?? 0) * 0.01;
+    }
+
+    // 无匹配的建筑，使用综合属性
+    const total = stats.attack + stats.defense + stats.intelligence + stats.command;
+    return 1.0 + total * 0.005;
+  }
+
+  /**
+   * 获取武将当前派遣状态
+   * @returns 派遣到的建筑 ID，未派遣返回 null
+   */
+  public getGeneralAssignment(generalId: string): string | null {
+    return this.generalAssignments[generalId] ?? null;
+  }
+
+  /**
+   * 获取建筑当前派遣的武将 ID
+   * @returns 武将 ID，无派遣返回 null
+   */
+  public getBuildingAssignedGeneral(buildingId: string): string | null {
+    for (const [gid, bid] of Object.entries(this.generalAssignments)) {
+      if (bid === buildingId) return gid;
+    }
+    return null;
+  }
+
+  /**
+   * 获取所有武将派遣映射
+   */
+  public getAllGeneralAssignments(): Record<string, string> {
+    return { ...this.generalAssignments };
   }
 
   // ─── 通用引擎系统集成 ─────────────────────────────────────

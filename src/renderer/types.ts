@@ -318,6 +318,8 @@ export interface HeroRenderData {
   recruitCost?: Record<string, number>;
   /** 是否可招募 */
   canRecruit?: boolean;
+  /** 派遣到的建筑 ID（未派遣为 undefined） */
+  assignedBuilding?: string;
   /** 精灵资源 key */
   portraitAsset?: string;
 }

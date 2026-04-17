@@ -46,6 +46,7 @@ import type { GeneralRequest } from '@/games/three-kingdoms/GeneralBondSystem';
 import { BuildingIcon, ResourceIcon, BuildingProgressBar, TechIcon, TechLockedIcon, TechResearchingIcon, SkillIcon, EquipSlotIcon } from './ThreeKingdomsSVGIcons';
 import './ThreeKingdomsPixiGame.css';
 import './ThreeKingdomsPixiGame-r16.css';
+import './ThreeKingdomsPixiGame-hero-v2.css';
 
 // ═══════════════════════════════════════════════════════════════
 // 工具函数
@@ -3095,6 +3096,18 @@ export default function ThreeKingdomsPixiGame() {
   const [generalRarityFilter, setGeneralRarityFilter] = useState<string>('all');
   const [generalSortKey, setGeneralSortKey] = useState<'level' | 'attack' | 'defense'>('level');
 
+  // ─── v2.0 武将系统状态 ──────────────────────────────────────
+  /** 招募确认弹窗：待招募的武将数据 */
+  const [recruitConfirmHero, setRecruitConfirmHero] = useState<typeof heroes[number] | null>(null);
+  /** 招募动画：正在播放翻转动画的武将 ID */
+  const [recruitAnimatingId, setRecruitAnimatingId] = useState<string | null>(null);
+  /** 派遣选择弹窗：待派遣的武将 ID */
+  const [assignSelectGeneralId, setAssignSelectGeneralId] = useState<string | null>(null);
+  /** 武将升级动画：正在播放升级动画的武将 ID */
+  const [levelUpAnimatingId, setLevelUpAnimatingId] = useState<string | null>(null);
+  /** 属性变化提示 */
+  const [statChangeTooltip, setStatChangeTooltip] = useState<{ generalId: string; stats: { attack: number; defense: number; intelligence: number; command: number } } | null>(null);
+
   // ─── 日夜循环 ──────────────────────────────────────────────
   const [isNight, setIsNight] = useState(false);
 
@@ -4554,6 +4567,25 @@ export default function ThreeKingdomsPixiGame() {
                         />
                       </div>
                     )}
+                    {/* v2.0: 已派遣武将小头像 */}
+                    {b.level > 0 && (() => {
+                      const engine = engineRef.current;
+                      if (!engine) return null;
+                      const assignedGenId = engine.getBuildingAssignedGeneral(b.id);
+                      if (!assignedGenId) return null;
+                      const genDef = GENERALS.find(g => g.id === assignedGenId);
+                      if (!genDef) return null;
+                      const bonus = engine.getGeneralBonus(b.id);
+                      return (
+                        <div className="tk-hero-v2-building-assigned" onClick={(e) => { e.stopPropagation(); }}>
+                          <div className="tk-hero-v2-building-assigned-avatar">
+                            <GeneralCanvasPortrait generalId={assignedGenId} size={20} />
+                          </div>
+                          <span className="tk-hero-v2-building-assigned-name">{genDef.name}</span>
+                          <span className="tk-hero-v2-building-assigned-bonus">×{bonus.toFixed(1)}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
@@ -5217,6 +5249,456 @@ export default function ThreeKingdomsPixiGame() {
               COLOR_THEME={COLOR_THEME}
             />
           )}
+
+          {/* ═══════════ v2.0 武将管理面板（全屏覆盖中间区域） ═══════════ */}
+          {scene === 'hero-detail' && (() => {
+            const factionLabels: Record<string, string> = { all: '全部', wei: '魏', shu: '蜀', wu: '吴', other: '群' };
+            const factionColors: Record<string, string> = { all: '#c9a96e', wei: '#1E6FBE', shu: '#C41E3A', wu: '#2E8B57', other: '#8B7355' };
+            const rarityLabels: Record<string, string> = { all: '全部品质', uncommon: '精良', rare: '稀有', epic: '史诗', legendary: '传说', mythic: '神话' };
+            const rarityColors: Record<string, string> = { all: '#c9a96e', uncommon: '#5cbf60', rare: '#42a5f5', epic: '#ab47bc', legendary: '#ffa726', mythic: '#ff5252' };
+
+            const filteredHeroes = heroes
+              .filter(h => generalFactionFilter === 'all' || h.faction === generalFactionFilter)
+              .filter(h => generalRarityFilter === 'all' || h.rarity === generalRarityFilter)
+              .sort((a, b) => {
+                if (!a.unlocked && b.unlocked) return 1;
+                if (a.unlocked && !b.unlocked) return -1;
+                if (generalSortKey === 'attack') return b.stats.attack - a.stats.attack;
+                if (generalSortKey === 'defense') return b.stats.defense - a.stats.defense;
+                return b.level - a.level;
+              });
+
+            /** 招募武将 */
+            const handleRecruit = (hero: typeof heroes[number]) => {
+              setRecruitConfirmHero(hero);
+            };
+
+            /** 确认招募 */
+            const confirmRecruit = () => {
+              if (!recruitConfirmHero) return;
+              const engine = engineRef.current;
+              if (!engine) return;
+              const success = engine.recruitGeneral(recruitConfirmHero.id);
+              if (success) {
+                setRecruitAnimatingId(recruitConfirmHero.id);
+                setTimeout(() => setRecruitAnimatingId(null), 800);
+                addToast(`🎉 ${recruitConfirmHero.name} 加入麾下！`, 'success');
+                particleSystemRef.current?.emit(350, 200, 'spark', 15);
+              } else {
+                addToast('招募失败：资源不足', 'error');
+              }
+              setRecruitConfirmHero(null);
+            };
+
+            /** 升级武将 */
+            const handleLevelUp = (heroId: string) => {
+              const engine = engineRef.current;
+              if (!engine) return;
+              const oldStats = engine.getGeneralStats(heroId);
+              const success = engine.levelUpGeneral(heroId);
+              if (success) {
+                const newStats = engine.getGeneralStats(heroId);
+                if (oldStats && newStats) {
+                  setStatChangeTooltip({
+                    generalId: heroId,
+                    stats: {
+                      attack: newStats.attack - oldStats.attack,
+                      defense: newStats.defense - oldStats.defense,
+                      intelligence: newStats.intelligence - oldStats.intelligence,
+                      command: newStats.command - oldStats.command,
+                    },
+                  });
+                  setTimeout(() => setStatChangeTooltip(null), 2000);
+                }
+                setLevelUpAnimatingId(heroId);
+                setTimeout(() => setLevelUpAnimatingId(null), 800);
+                const hero = heroes.find(h => h.id === heroId);
+                addToast(`⬆ ${hero?.name ?? '武将'} 升级成功！`, 'success');
+              } else {
+                addToast('升级失败：资源不足', 'error');
+              }
+            };
+
+            /** 派遣武将到建筑 */
+            const handleAssign = (generalId: string, buildingId: string) => {
+              const engine = engineRef.current;
+              if (!engine) return;
+              const success = engine.assignGeneral(generalId, buildingId);
+              if (success) {
+                const hero = heroes.find(h => h.id === generalId);
+                const bld = BUILDINGS.find(b => b.id === buildingId);
+                addToast(`${hero?.name} → ${bld?.name} 派遣成功`, 'success');
+              } else {
+                addToast('派遣失败', 'error');
+              }
+              setAssignSelectGeneralId(null);
+            };
+
+            /** 取消派遣 */
+            const handleUnassign = (generalId: string) => {
+              const engine = engineRef.current;
+              if (!engine) return;
+              const success = engine.unassignGeneral(generalId);
+              if (success) {
+                addToast('已取消派遣', 'success');
+              }
+            };
+
+            // 获取可派遣的建筑列表（已建造、等级>0）
+            const availableBuildings = buildings.filter(b => b.level > 0);
+
+            return (
+              <div className="tk-hero-panel-animate-in" key="panel-hero-detail-v2">
+                <div className="tk-hero-v2-container">
+                  {/* 标题栏 */}
+                  <div className="tk-hero-v2-header">
+                    <h2 className="tk-hero-v2-title">⚔️ 招贤纳士</h2>
+                    <div className="tk-hero-v2-stats">
+                      已招募 <span className="tk-hero-v2-count">{heroes.filter(h => h.unlocked).length}</span>/{heroes.length}
+                    </div>
+                  </div>
+
+                  {/* 筛选栏 */}
+                  <div className="tk-hero-v2-filters">
+                    {/* 阵营筛选 */}
+                    <div className="tk-hero-v2-filter-row">
+                      {(['all', 'shu', 'wei', 'wu'] as const).map(f => {
+                        const isActive = generalFactionFilter === f;
+                        return (
+                          <button
+                            key={f}
+                            className={`tk-hero-v2-filter-btn ${isActive ? 'tk-hero-v2-filter-btn--active' : ''}`}
+                            style={{
+                              borderColor: isActive ? factionColors[f] : 'rgba(139,115,85,0.3)',
+                              color: isActive ? factionColors[f] : '#8b7355',
+                              background: isActive ? `${factionColors[f]}18` : 'transparent',
+                            }}
+                            onClick={() => setGeneralFactionFilter(f)}
+                          >
+                            {factionLabels[f]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* 品质筛选 */}
+                    <div className="tk-hero-v2-filter-row">
+                      {(['all', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'] as const).map(r => {
+                        const isActive = generalRarityFilter === r;
+                        return (
+                          <button
+                            key={r}
+                            className={`tk-hero-v2-filter-btn tk-hero-v2-filter-btn--sm ${isActive ? 'tk-hero-v2-filter-btn--active' : ''}`}
+                            style={{
+                              borderColor: isActive ? rarityColors[r] : 'rgba(139,115,85,0.2)',
+                              color: isActive ? rarityColors[r] : '#8b7355',
+                              background: isActive ? `${rarityColors[r]}15` : 'transparent',
+                            }}
+                            onClick={() => setGeneralRarityFilter(r)}
+                          >
+                            {rarityLabels[r]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 武将卡片网格（3列4行） */}
+                  <div className="tk-hero-v2-grid">
+                    {filteredHeroes.map((h, idx) => {
+                      const enhanced = getGeneralEnhanced(h.id);
+                      const assignedBuilding = h.assignedBuilding
+                        ? BUILDINGS.find(b => b.id === h.assignedBuilding)
+                        : null;
+                      const rarityColor = RARITY_COLORS[h.rarity] || '#c9a96e';
+                      const isRecruiting = recruitAnimatingId === h.id;
+                      const isLevelingUp = levelUpAnimatingId === h.id;
+
+                      return (
+                        <div
+                          key={h.id}
+                          className={`tk-hero-v2-card ${!h.unlocked ? 'tk-hero-v2-card--locked' : ''} ${isRecruiting ? 'tk-hero-v2-card--recruiting' : ''} ${isLevelingUp ? 'tk-hero-v2-card--levelup' : ''} tk-hero-v2-card--rarity-${h.rarity}`}
+                          style={{ '--card-enter-delay': `${idx * 50}ms`, '--rarity-color': rarityColor } as React.CSSProperties}
+                          onClick={() => {
+                            if (h.unlocked) {
+                              setSelectedHero(h);
+                            } else if (h.canRecruit) {
+                              handleRecruit(h);
+                            }
+                          }}
+                        >
+                          {/* 品质边框光效 */}
+                          {h.unlocked && <div className="tk-hero-v2-card-glow" style={{ borderColor: rarityColor }} />}
+
+                          {/* 头像 */}
+                          <div className="tk-hero-v2-card-portrait">
+                            <GeneralCanvasPortrait generalId={h.id} size={56} />
+                            {!h.unlocked && (
+                              <div className="tk-hero-v2-card-lock">
+                                <span>🔒</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 信息区 */}
+                          <div className="tk-hero-v2-card-info">
+                            <div className="tk-hero-v2-card-name" style={{ color: h.unlocked ? rarityColor : '#666' }}>
+                              {h.name}
+                            </div>
+                            <div className="tk-hero-v2-card-meta">
+                              {h.unlocked ? (
+                                <>
+                                  <span className="tk-hero-v2-card-level">Lv.{h.level}</span>
+                                  {assignedBuilding && (
+                                    <span className="tk-hero-v2-card-assigned" title={`派遣中：${assignedBuilding.name}`}>
+                                      🏗️ {assignedBuilding.name}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="tk-hero-v2-card-rarity-label" style={{ color: rarityColor }}>
+                                  [{rarityLabels[h.rarity] || h.rarity}]
+                                </span>
+                              )}
+                            </div>
+
+                            {/* 阵营色条 */}
+                            <div
+                              className="tk-hero-v2-card-faction-bar"
+                              style={{ background: h.unlocked ? (factionColors[h.faction] || '#8B7355') : '#444' }}
+                            />
+
+                            {/* 已招募武将：属性简览 + 操作按钮 */}
+                            {h.unlocked && (
+                              <div className="tk-hero-v2-card-actions">
+                                <button
+                                  className="tk-hero-v2-btn tk-hero-v2-btn--levelup"
+                                  onClick={(e) => { e.stopPropagation(); handleLevelUp(h.id); }}
+                                  title="升级武将"
+                                >
+                                  ⬆ 升级
+                                </button>
+                                <button
+                                  className="tk-hero-v2-btn tk-hero-v2-btn--assign"
+                                  onClick={(e) => { e.stopPropagation(); setAssignSelectGeneralId(h.id); }}
+                                  title="派遣到建筑"
+                                >
+                                  🏗️ 派遣
+                                </button>
+                              </div>
+                            )}
+
+                            {/* 未招募武将：招募按钮 */}
+                            {!h.unlocked && h.canRecruit && (
+                              <button
+                                className="tk-hero-v2-btn tk-hero-v2-btn--recruit"
+                                onClick={(e) => { e.stopPropagation(); handleRecruit(h); }}
+                              >
+                                招募 {h.recruitCost?.gold ? `${h.recruitCost.gold}💰` : ''}
+                              </button>
+                            )}
+                            {!h.unlocked && !h.canRecruit && (
+                              <div className="tk-hero-v2-btn tk-hero-v2-btn--disabled">
+                                资源不足
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 升级属性变化提示 */}
+                          {statChangeTooltip?.generalId === h.id && (
+                            <div className="tk-hero-v2-stat-tooltip">
+                              {statChangeTooltip.stats.attack > 0 && <span style={{ color: '#e53935' }}>武+{statChangeTooltip.stats.attack}</span>}
+                              {statChangeTooltip.stats.defense > 0 && <span style={{ color: '#ff9800' }}>防+{statChangeTooltip.stats.defense}</span>}
+                              {statChangeTooltip.stats.intelligence > 0 && <span style={{ color: '#1e88e5' }}>智+{statChangeTooltip.stats.intelligence}</span>}
+                              {statChangeTooltip.stats.command > 0 && <span style={{ color: '#43a047' }}>统+{statChangeTooltip.stats.command}</span>}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ═══ 招募确认弹窗 ═══ */}
+                {recruitConfirmHero && (
+                  <div className="tk-hero-v2-modal-overlay" onClick={() => setRecruitConfirmHero(null)}>
+                    <div className="tk-hero-v2-modal" onClick={e => e.stopPropagation()}>
+                      <div className="tk-hero-v2-modal-title">⚔️ 招募武将</div>
+                      <div className="tk-hero-v2-modal-portrait">
+                        <GeneralCanvasPortrait generalId={recruitConfirmHero.id} size={80} />
+                      </div>
+                      <div className="tk-hero-v2-modal-name" style={{ color: RARITY_COLORS[recruitConfirmHero.rarity] || '#c9a96e' }}>
+                        {recruitConfirmHero.name}
+                      </div>
+                      <div className="tk-hero-v2-modal-meta">
+                        <span style={{ color: factionColors[recruitConfirmHero.faction] || '#8B7355' }}>
+                          {recruitConfirmHero.faction === 'wei' ? '魏' : recruitConfirmHero.faction === 'shu' ? '蜀' : recruitConfirmHero.faction === 'wu' ? '吴' : '群'}
+                        </span>
+                        {' · '}
+                        <span style={{ color: RARITY_COLORS[recruitConfirmHero.rarity] }}>
+                          {rarityLabels[recruitConfirmHero.rarity] || recruitConfirmHero.rarity}
+                        </span>
+                      </div>
+
+                      {/* 属性预览 */}
+                      <div className="tk-hero-v2-modal-stats">
+                        <div className="tk-hero-v2-modal-stat"><span>攻击</span><span style={{ color: '#e53935' }}>{recruitConfirmHero.stats.attack}</span></div>
+                        <div className="tk-hero-v2-modal-stat"><span>防御</span><span style={{ color: '#ff9800' }}>{recruitConfirmHero.stats.defense}</span></div>
+                        <div className="tk-hero-v2-modal-stat"><span>智谋</span><span style={{ color: '#1e88e5' }}>{recruitConfirmHero.stats.intelligence}</span></div>
+                        <div className="tk-hero-v2-modal-stat"><span>统率</span><span style={{ color: '#43a047' }}>{recruitConfirmHero.stats.command}</span></div>
+                      </div>
+
+                      {/* 技能预览 */}
+                      {getGeneralEnhanced(recruitConfirmHero.id).skills.length > 0 && (
+                        <div className="tk-hero-v2-modal-skills">
+                          {getGeneralEnhanced(recruitConfirmHero.id).skills.map((skill, i) => (
+                            <div key={i} className="tk-hero-v2-modal-skill">
+                              <SkillIcon skillType={skill.type} size={14} />
+                              <span>{skill.name}</span>
+                              <span className="tk-hero-v2-modal-skill-desc">{skill.description}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 传记简介 */}
+                      <div className="tk-hero-v2-modal-bio">
+                        {getGeneralEnhanced(recruitConfirmHero.id).bio}
+                      </div>
+
+                      {/* 招募费用 */}
+                      <div className="tk-hero-v2-modal-cost">
+                        <span className="tk-hero-v2-modal-cost-title">招募费用：</span>
+                        {recruitConfirmHero.recruitCost && Object.entries(recruitConfirmHero.recruitCost).map(([rid, amt]) => {
+                          const res = RESOURCES.find(r => r.id === rid);
+                          const have = resources.find(r => r.id === rid)?.amount ?? 0;
+                          const enough = have >= amt;
+                          return (
+                            <span key={rid} className={`tk-hero-v2-modal-cost-item ${enough ? '' : 'tk-hero-v2-modal-cost-item--lack'}`}>
+                              {res?.icon ?? rid} {fmt(amt)}
+                              {!enough && <span className="tk-hero-v2-modal-cost-lack">({fmt(have)})</span>}
+                            </span>
+                          );
+                        })}
+                      </div>
+
+                      {/* 操作按钮 */}
+                      <div className="tk-hero-v2-modal-actions">
+                        <button className="tk-hero-v2-modal-btn tk-hero-v2-modal-btn--cancel" onClick={() => setRecruitConfirmHero(null)}>
+                          取消
+                        </button>
+                        <button className="tk-hero-v2-modal-btn tk-hero-v2-modal-btn--confirm" onClick={confirmRecruit}>
+                          确认招募
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ═══ 派遣选择弹窗 ═══ */}
+                {assignSelectGeneralId && (
+                  <div className="tk-hero-v2-modal-overlay" onClick={() => setAssignSelectGeneralId(null)}>
+                    <div className="tk-hero-v2-modal tk-hero-v2-modal--assign" onClick={e => e.stopPropagation()}>
+                      <div className="tk-hero-v2-modal-title">🏗️ 派遣武将</div>
+                      <div className="tk-hero-v2-modal-subtitle">
+                        选择要派遣到的建筑
+                        {(() => {
+                          const hero = heroes.find(h => h.id === assignSelectGeneralId);
+                          return hero ? `（${hero.name}）` : '';
+                        })()}
+                      </div>
+
+                      {/* 当前派遣状态 */}
+                      {(() => {
+                        const engine = engineRef.current;
+                        const currentAssignment = engine?.getGeneralAssignment(assignSelectGeneralId);
+                        if (currentAssignment) {
+                          const bld = BUILDINGS.find(b => b.id === currentAssignment);
+                          return (
+                            <div className="tk-hero-v2-assign-current">
+                              当前派遣：{bld?.icon} {bld?.name}
+                              <button
+                                className="tk-hero-v2-btn tk-hero-v2-btn--unassign"
+                                onClick={() => handleUnassign(assignSelectGeneralId)}
+                              >
+                                取消派遣
+                              </button>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+
+                      {/* 建筑列表 */}
+                      <div className="tk-hero-v2-assign-list">
+                        {availableBuildings.map(bld => {
+                          const engine = engineRef.current;
+                          const assignedGen = engine?.getBuildingAssignedGeneral(bld.id);
+                          const isAssignedToThis = assignedGen === assignSelectGeneralId;
+                          const isAssignedToOther = assignedGen && assignedGen !== assignSelectGeneralId;
+                          const otherGenName = isAssignedToOther
+                            ? heroes.find(h => h.id === assignedGen)?.name
+                            : null;
+
+                          // 计算派遣加成预览
+                          const bonus = engine?.getGeneralBonus(bld.id) ?? 1.0;
+                          const newBonus = (() => {
+                            if (!engine) return 1.0;
+                            const stats = engine.getGeneralStats(assignSelectGeneralId);
+                            if (!stats) return 1.0;
+                            const statBonusMap: Record<string, string> = {
+                              barracks: 'command', beacon_tower: 'command',
+                              academy: 'intelligence', tavern: 'intelligence',
+                              smithy: 'attack', forge: 'attack',
+                              wall: 'defense', farm: 'command', granary: 'command',
+                              market: 'charisma', mint: 'charisma',
+                              clinic: 'intelligence', teahouse: 'charisma',
+                            };
+                            const mainStat = statBonusMap[bld.id];
+                            if (mainStat && mainStat in stats) {
+                              return 1.0 + (stats[mainStat as keyof typeof stats] ?? 0) * 0.01;
+                            }
+                            const total = stats.attack + stats.defense + stats.intelligence + stats.command;
+                            return 1.0 + total * 0.005;
+                          })();
+
+                          return (
+                            <div
+                              key={bld.id}
+                              className={`tk-hero-v2-assign-item ${isAssignedToThis ? 'tk-hero-v2-assign-item--current' : ''} ${isAssignedToOther ? 'tk-hero-v2-assign-item--occupied' : ''}`}
+                              onClick={() => {
+                                if (!isAssignedToOther) {
+                                  handleAssign(assignSelectGeneralId, bld.id);
+                                }
+                              }}
+                            >
+                              <span className="tk-hero-v2-assign-icon">{BUILDINGS.find(bd => bd.id === bld.id)?.icon ?? '🏗️'}</span>
+                              <div className="tk-hero-v2-assign-info">
+                                <span className="tk-hero-v2-assign-name">{bld.name} Lv.{bld.level}</span>
+                                <span className="tk-hero-v2-assign-bonus">
+                                  加成：×{newBonus.toFixed(2)}
+                                  {newBonus > bonus && <span style={{ color: '#4caf50' }}> ↑</span>}
+                                </span>
+                              </div>
+                              {isAssignedToThis && <span className="tk-hero-v2-assign-badge">已派遣</span>}
+                              {isAssignedToOther && (
+                                <span className="tk-hero-v2-assign-badge tk-hero-v2-assign-badge--occupied">
+                                  {otherGenName}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <button className="tk-hero-v2-modal-btn tk-hero-v2-modal-btn--cancel" onClick={() => setAssignSelectGeneralId(null)}>
+                        关闭
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ═══════════ 科技研究浮层（树形可视化 — 视觉增强版） ═══════════ */}
           {scene === 'tech-tree' && renderState?.techTree && (() => {

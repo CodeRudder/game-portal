@@ -1,0 +1,683 @@
+/* ═══════════════════════════════════════════════════════════════
+   v2.0 武将系统样式 — .tk-hero-v2- 前缀
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 面板入场动画 */
+.tk-hero-panel-animate-in {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow-y: auto;
+  animation: tk-hero-v2-fade-in 0.3s ease-out;
+}
+
+@keyframes tk-hero-v2-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 主容器 */
+.tk-hero-v2-container {
+  padding: 12px 16px;
+  min-height: 100%;
+  background: linear-gradient(180deg, rgba(26,14,5,0.95) 0%, rgba(45,27,10,0.92) 100%);
+}
+
+/* 标题栏 */
+.tk-hero-v2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(212,160,48,0.3);
+}
+
+.tk-hero-v2-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #f0c040;
+  margin: 0;
+  font-family: "Noto Serif SC", serif;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  letter-spacing: 2;
+}
+
+.tk-hero-v2-stats {
+  font-size: 12px;
+  color: #d8c8a8;
+}
+
+.tk-hero-v2-count {
+  color: #f0c040;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* 筛选栏 */
+.tk-hero-v2-filters {
+  margin-bottom: 12px;
+}
+
+.tk-hero-v2-filter-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.tk-hero-v2-filter-btn {
+  padding: 3px 10px;
+  font-size: 11px;
+  border-radius: 3px;
+  border: 1px solid rgba(139,115,85,0.3);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.tk-hero-v2-filter-btn:hover {
+  background: rgba(139,115,85,0.1);
+}
+
+.tk-hero-v2-filter-btn--sm {
+  padding: 2px 8px;
+  font-size: 10px;
+}
+
+/* 武将卡片网格（3列4行） */
+.tk-hero-v2-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 4px;
+}
+
+/* 单张武将卡片 */
+.tk-hero-v2-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(60,35,15,0.8) 0%, rgba(40,22,8,0.9) 100%);
+  border: 1px solid rgba(139,115,85,0.3);
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  animation: tk-hero-v2-card-enter 0.4s ease-out backwards;
+  animation-delay: var(--card-enter-delay, 0ms);
+  overflow: hidden;
+}
+
+@keyframes tk-hero-v2-card-enter {
+  from { opacity: 0; transform: scale(0.9) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.tk-hero-v2-card:hover {
+  border-color: var(--rarity-color, #c9a96e);
+  box-shadow: 0 0 12px rgba(201,169,110,0.15);
+  transform: translateY(-2px);
+}
+
+/* 品质边框光效 */
+.tk-hero-v2-card-glow {
+  position: absolute;
+  inset: -1px;
+  border-radius: 8px;
+  border: 2px solid var(--rarity-color, transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.tk-hero-v2-card:hover .tk-hero-v2-card-glow {
+  opacity: 0.6;
+}
+
+/* 品质边框变体 */
+.tk-hero-v2-card--rarity-uncommon { border-left: 3px solid #5cbf60; }
+.tk-hero-v2-card--rarity-rare { border-left: 3px solid #42a5f5; }
+.tk-hero-v2-card--rarity-epic { border-left: 3px solid #ab47bc; }
+.tk-hero-v2-card--rarity-legendary { border-left: 3px solid #ffa726; }
+.tk-hero-v2-card--rarity-mythic { border-left: 3px solid #ff5252; }
+
+/* 锁定状态 */
+.tk-hero-v2-card--locked {
+  opacity: 0.6;
+  filter: saturate(0.3);
+}
+
+.tk-hero-v2-card--locked:hover {
+  opacity: 0.8;
+  filter: saturate(0.5);
+}
+
+/* 招募动画（卡片翻转） */
+.tk-hero-v2-card--recruiting {
+  animation: tk-hero-v2-flip 0.8s ease-in-out;
+}
+
+@keyframes tk-hero-v2-flip {
+  0% { transform: perspective(600px) rotateY(0deg); }
+  50% { transform: perspective(600px) rotateY(90deg); }
+  100% { transform: perspective(600px) rotateY(0deg); }
+}
+
+/* 升级动画 */
+.tk-hero-v2-card--levelup {
+  animation: tk-hero-v2-levelup 0.8s ease-out;
+}
+
+@keyframes tk-hero-v2-levelup {
+  0% { box-shadow: 0 0 0 rgba(240,192,64,0); }
+  30% { box-shadow: 0 0 20px rgba(240,192,64,0.5); }
+  100% { box-shadow: 0 0 0 rgba(240,192,64,0); }
+}
+
+/* 头像区 */
+.tk-hero-v2-card-portrait {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.tk-hero-v2-card-lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+  border-radius: 50%;
+  font-size: 20px;
+}
+
+/* 信息区 */
+.tk-hero-v2-card-info {
+  text-align: center;
+}
+
+.tk-hero-v2-card-name {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.tk-hero-v2-card-meta {
+  font-size: 10px;
+  color: #b09060;
+  margin-bottom: 4px;
+}
+
+.tk-hero-v2-card-level {
+  color: #f0c040;
+  font-weight: bold;
+}
+
+.tk-hero-v2-card-assigned {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 4px;
+  font-size: 9px;
+  background: rgba(76,175,80,0.15);
+  color: #5aaa4a;
+  border-radius: 2px;
+}
+
+.tk-hero-v2-card-rarity-label {
+  font-size: 10px;
+}
+
+/* 阵营色条 */
+.tk-hero-v2-card-faction-bar {
+  height: 2px;
+  border-radius: 1px;
+  margin: 4px 0;
+}
+
+/* 操作按钮 */
+.tk-hero-v2-card-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.tk-hero-v2-btn {
+  flex: 1;
+  padding: 3px 6px;
+  font-size: 10px;
+  border-radius: 3px;
+  border: 1px solid rgba(139,115,85,0.3);
+  background: rgba(139,115,85,0.1);
+  color: #d8c8a8;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.tk-hero-v2-btn:hover {
+  background: rgba(139,115,85,0.2);
+  border-color: rgba(139,115,85,0.5);
+}
+
+.tk-hero-v2-btn--levelup:hover {
+  border-color: #f0c040;
+  color: #f0c040;
+}
+
+.tk-hero-v2-btn--assign:hover {
+  border-color: #5aaa4a;
+  color: #5aaa4a;
+}
+
+.tk-hero-v2-btn--recruit {
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: rgba(240,192,64,0.15);
+  border-color: rgba(240,192,64,0.4);
+  color: #f0c040;
+  font-weight: bold;
+}
+
+.tk-hero-v2-btn--recruit:hover {
+  background: rgba(240,192,64,0.25);
+}
+
+.tk-hero-v2-btn--disabled {
+  margin-top: 6px;
+  padding: 4px 8px;
+  color: #6a5a4a;
+  cursor: not-allowed;
+}
+
+.tk-hero-v2-btn--unassign {
+  padding: 2px 8px;
+  font-size: 10px;
+  border-color: rgba(198,40,40,0.4);
+  color: #ef5350;
+  background: rgba(198,40,40,0.1);
+  flex: none;
+}
+
+.tk-hero-v2-btn--unassign:hover {
+  background: rgba(198,40,40,0.2);
+}
+
+/* 属性变化提示 */
+.tk-hero-v2-stat-tooltip {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 10px;
+  font-weight: bold;
+  animation: tk-hero-v2-stat-float 2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes tk-hero-v2-stat-float {
+  0% { opacity: 1; transform: translateY(0); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+
+/* ═══ 弹窗样式 ═══ */
+
+/* 遮罩层 */
+.tk-hero-v2-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: tk-hero-v2-overlay-in 0.2s ease-out;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+@keyframes tk-hero-v2-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 弹窗主体 */
+.tk-hero-v2-modal {
+  background: linear-gradient(180deg, #2a1a0a 0%, #1a0f05 100%);
+  border: 2px solid rgba(212,160,48,0.5);
+  border-radius: 12px;
+  padding: 20px;
+  width: 360px;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: tk-hero-v2-modal-in 0.3s ease-out;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(212,160,48,0.1);
+}
+
+.tk-hero-v2-modal--assign {
+  width: 400px;
+}
+
+@keyframes tk-hero-v2-modal-in {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.tk-hero-v2-modal-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #f0c040;
+  text-align: center;
+  margin-bottom: 12px;
+  font-family: "Noto Serif SC", serif;
+}
+
+.tk-hero-v2-modal-subtitle {
+  font-size: 12px;
+  color: #d8c8a8;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* 招募弹窗头像 */
+.tk-hero-v2-modal-portrait {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.tk-hero-v2-modal-name {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.tk-hero-v2-modal-meta {
+  font-size: 12px;
+  text-align: center;
+  color: #b09060;
+  margin-bottom: 10px;
+}
+
+/* 属性预览 */
+.tk-hero-v2-modal-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tk-hero-v2-modal-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: rgba(139,115,85,0.1);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+/* 技能预览 */
+.tk-hero-v2-modal-skills {
+  margin-bottom: 10px;
+}
+
+.tk-hero-v2-modal-skill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 12px;
+  color: #d8c8a8;
+}
+
+.tk-hero-v2-modal-skill-desc {
+  font-size: 10px;
+  color: #b09060;
+  flex: 1;
+}
+
+/* 传记 */
+.tk-hero-v2-modal-bio {
+  font-size: 11px;
+  color: #b09060;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: rgba(139,115,85,0.06);
+  border-radius: 4px;
+  border-left: 2px solid rgba(212,160,48,0.3);
+}
+
+/* 费用 */
+.tk-hero-v2-modal-cost {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 8px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
+
+.tk-hero-v2-modal-cost-title {
+  font-size: 11px;
+  color: #b09060;
+}
+
+.tk-hero-v2-modal-cost-item {
+  font-size: 12px;
+  color: #d8c8a8;
+}
+
+.tk-hero-v2-modal-cost-item--lack {
+  color: #ef5350;
+}
+
+.tk-hero-v2-modal-cost-lack {
+  font-size: 10px;
+  color: #ef5350;
+  margin-left: 2px;
+}
+
+/* 操作按钮 */
+.tk-hero-v2-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.tk-hero-v2-modal-btn {
+  padding: 8px 24px;
+  font-size: 13px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.tk-hero-v2-modal-btn--cancel {
+  background: transparent;
+  border: 1px solid rgba(139,115,85,0.4);
+  color: #b09060;
+}
+
+.tk-hero-v2-modal-btn--cancel:hover {
+  border-color: rgba(139,115,85,0.7);
+  color: #d8c8a8;
+}
+
+.tk-hero-v2-modal-btn--confirm {
+  background: linear-gradient(135deg, #f0c040, #d4a030);
+  border: none;
+  color: #1a0a0a;
+}
+
+.tk-hero-v2-modal-btn--confirm:hover {
+  background: linear-gradient(135deg, #ffd54f, #f0c040);
+  box-shadow: 0 0 12px rgba(240,192,64,0.3);
+}
+
+/* ═══ 派遣弹窗 ═══ */
+
+.tk-hero-v2-assign-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
+  background: rgba(76,175,80,0.1);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #5aaa4a;
+}
+
+.tk-hero-v2-assign-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tk-hero-v2-assign-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: rgba(139,115,85,0.08);
+  border: 1px solid rgba(139,115,85,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tk-hero-v2-assign-item:hover {
+  background: rgba(139,115,85,0.15);
+  border-color: rgba(139,115,85,0.4);
+}
+
+.tk-hero-v2-assign-item--current {
+  border-color: rgba(76,175,80,0.4);
+  background: rgba(76,175,80,0.08);
+}
+
+.tk-hero-v2-assign-item--occupied {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tk-hero-v2-assign-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.tk-hero-v2-assign-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tk-hero-v2-assign-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: #d8c8a8;
+}
+
+.tk-hero-v2-assign-bonus {
+  font-size: 10px;
+  color: #b09060;
+}
+
+.tk-hero-v2-assign-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(76,175,80,0.15);
+  color: #5aaa4a;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.tk-hero-v2-assign-badge--occupied {
+  background: rgba(239,83,80,0.1);
+  color: #ef5350;
+}
+
+/* ═══ 建筑卡片上的已派遣武将标记 ═══ */
+
+.tk-hero-v2-building-assigned {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 6px;
+  background: rgba(76,175,80,0.08);
+  border-radius: 3px;
+  border: 1px solid rgba(76,175,80,0.2);
+}
+
+.tk-hero-v2-building-assigned-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid rgba(76,175,80,0.4);
+  flex-shrink: 0;
+}
+
+.tk-hero-v2-building-assigned-name {
+  font-size: 10px;
+  color: #5aaa4a;
+  font-weight: 500;
+}
+
+.tk-hero-v2-building-assigned-bonus {
+  font-size: 9px;
+  color: #f0c040;
+  margin-left: auto;
+}
+
+/* ═══ 响应式 ═══ */
+
+@media (max-width: 768px) {
+  .tk-hero-v2-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .tk-hero-v2-modal {
+    width: 90vw;
+    padding: 14px;
+  }
+
+  .tk-hero-v2-modal--assign {
+    width: 95vw;
+  }
+}
+
+/* ═══ prefers-reduced-motion ═══ */
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-hero-panel-animate-in,
+  .tk-hero-v2-card,
+  .tk-hero-v2-card--recruiting,
+  .tk-hero-v2-card--levelup,
+  .tk-hero-v2-modal-overlay,
+  .tk-hero-v2-modal,
+  .tk-hero-v2-stat-tooltip {
+    animation: none !important;
+  }
+
+  .tk-hero-v2-card {
+    transition: none !important;
+  }
+}
