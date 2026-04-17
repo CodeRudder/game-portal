@@ -4116,7 +4116,7 @@ export default function ThreeKingdomsPixiGame() {
           )}
         </div>
 
-        {/* 资源栏 */}
+        {/* 资源栏 — V3增强版 */}
         <div className="tk-resource-panel-gold" style={{
           display: 'flex', gap: isMobile ? 8 : 16,
           alignItems: 'center',
@@ -4125,19 +4125,21 @@ export default function ThreeKingdomsPixiGame() {
           padding: isMobile ? '3px 8px' : '4px 12px',
         }}>
           {resources.map(r => (
-            <div key={r.id} style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 13, color: COLOR_THEME.textPrimary, cursor: 'default',
-            }}
+            <div key={r.id}
+              className={r.perSecond > 0 ? 'tk-v2-resource-producing' : 'tk-v2-resource-idle'}
+              style={{ cursor: 'default' }}
               onMouseEnter={e => setTooltip({text:`${r.name}: ${fmt(r.amount)}${r.perSecond > 0 ? ` (+${fmt(r.perSecond)}/秒)` : ''}`,x:e.clientX,y:e.clientY})}
               onMouseLeave={() => setTooltip(null)}
             >
               <span className={r.perSecond > 0 ? 'tk-r16-resource-icon-active' : undefined}>
                 <ResourceIcon resourceId={r.id} size={18} />
               </span>
-              <span className={`tk-resource-value-pulse ${changedResources.has(r.id) ? 'tk-resource-value-updated tk-r16-value-updated' : ''}`} style={{ fontWeight: 'bold', fontSize: 14, color: '#FFD700' }}>{fmt(r.amount)}</span>
+              <span className={`tk-resource-value-pulse ${changedResources.has(r.id) ? 'tk-resource-value-updated tk-r16-value-updated' : ''}`} style={{
+                fontWeight: 'bold', fontSize: 14,
+                color: r.perSecond > 0 ? '#FFD700' : '#8a7a6a',
+              }}>{fmt(r.amount)}</span>
               {r.perSecond > 0 && (
-                <span style={{ fontSize: 10, color: COLOR_THEME.accentGreen }}>
+                <span className="tk-v2-resource-rate">
                   +{fmt(r.perSecond)}/s
                 </span>
               )}
@@ -4385,6 +4387,35 @@ export default function ThreeKingdomsPixiGame() {
         }}>
           {/* 面板标题装饰 */}
           <div className="tk-panel-title-ancient">城池建设</div>
+          {/* V3: 主城信息 — 势力标识 + 繁荣度 */}
+          {(() => {
+            const totalLevel = buildings.reduce((sum, b) => sum + b.level, 0);
+            const unlockedCount = buildings.filter(b => b.state !== 'locked').length;
+            // 根据建筑偏好决定势力
+            const farmLv = buildings.find(b => b.id === 'farm')?.level ?? 0;
+            const marketLv = buildings.find(b => b.id === 'market')?.level ?? 0;
+            const barracksLv = buildings.find(b => b.id === 'barracks')?.level ?? 0;
+            const faction = barracksLv >= farmLv && barracksLv >= marketLv ? 'wei'
+              : farmLv >= marketLv ? 'shu' : 'wu';
+            const factionInfo: Record<string, { name: string; icon: string; cls: string }> = {
+              wei: { name: '魏', icon: '🔵', cls: 'tk-v2-faction-badge--wei' },
+              shu: { name: '蜀', icon: '🔴', cls: 'tk-v2-faction-badge--shu' },
+              wu: { name: '吴', icon: '🟢', cls: 'tk-v2-faction-badge--wu' },
+            };
+            const fi = factionInfo[faction];
+            return (
+              <div className="tk-v2-city-info">
+                <div className={`tk-v2-faction-badge ${fi.cls}`}>
+                  {fi.icon} {fi.name}
+                </div>
+                <div className="tk-v2-city-prosperity">
+                  <span>🏛️ 繁荣</span>
+                  <span className="tk-v2-city-prosperity-value">Lv.{totalLevel}</span>
+                  <span style={{ fontSize: 9, color: '#8a7a6a' }}>({unlockedCount}/{buildings.length})</span>
+                </div>
+              </div>
+            );
+          })()}
           {/* 子标签栏 */}
           <div style={{ display: 'flex', gap: 2, marginBottom: 8, borderBottom: '1px solid rgba(139,115,85,0.2)', paddingBottom: 6 }}>
             {[
@@ -4425,7 +4456,7 @@ export default function ThreeKingdomsPixiGame() {
                 return (
                   <div
                     key={b.id}
-                    className={`tk-r16-building-card tk-building-card-dynamic ${b.canUpgrade ? 'tk-building-can-upgrade' : ''} ${flashBuildingId === b.id ? 'tk-r16-building-upgrading tk-r16-building-levelup tk-upgrade-scale-pop' : ''} ${showGuide && guideStep === 0 ? (b.id === 'farm' ? 'tk-guide-highlight-target' : 'tk-guide-dimmed') : ''}`}
+                    className={`tk-r16-building-card tk-building-card-dynamic ${b.canUpgrade ? 'tk-building-can-upgrade' : ''} ${flashBuildingId === b.id ? 'tk-r16-building-upgrading tk-r16-building-levelup tk-upgrade-scale-pop' : ''} ${showGuide && guideStep === 0 ? (b.id === 'farm' ? 'tk-guide-highlight-target' : 'tk-guide-dimmed') : ''} ${b.state !== 'locked' && b.level > 0 ? 'tk-v2-building-unlocked' : ''} ${b.state === 'locked' ? 'tk-v2-building-locked' : ''}`}
                     onClick={() => handleBuildingClick(b.id)}
                     style={{
                       padding: '8px 10px', marginBottom: 6,
@@ -4745,54 +4776,99 @@ export default function ThreeKingdomsPixiGame() {
 
         {/* ─── 中央：PixiJS 渲染区域 ─── */}
         <div style={{ flex: 1, position: 'relative' }}>
-          {/* ═══════════ 当前任务面板（顶部悬浮） ═══════════ */}
+          {/* ═══════════ 当前任务面板（顶部悬浮 — V3增强版） ═══════════ */}
           {quests.length > 0 && (() => {
             const currentQuests = quests.filter(q => !q.isComplete);
             const completedCount = quests.filter(q => q.isComplete).length;
             const currentQuest = currentQuests[0]; // 按顺序完成，只显示第一个未完成
             const overallProgress = (completedCount / quests.length) * 100;
+            // 根据任务标题选择图标
+            const questIcon = currentQuest?.title.includes('屯田') ? '🌾'
+              : currentQuest?.title.includes('商行') ? '💰'
+              : currentQuest?.title.includes('军营') ? '⚔️'
+              : currentQuest?.title.includes('总建筑') ? '🏗️'
+              : currentQuest?.title.includes('铁匠') ? '🔨'
+              : currentQuest?.title.includes('太学') ? '📚'
+              : '🎯';
             return (
-              <div className={`tk-task-panel ${questCompleteFlash ? 'tk-task-panel--quest-complete' : ''}`}>
-                <div className="tk-task-panel-header">
-                  <span className="tk-task-panel-title">📜 当前任务</span>
-                  <span className="tk-task-panel-progress">{completedCount}/{quests.length} 已完成</span>
+              <div className={`tk-v2-task-panel ${questCompleteFlash ? 'tk-task-panel--quest-complete' : ''}`}>
+                <div className="tk-v2-task-header">
+                  <span className="tk-v2-task-title">📜 当前任务</span>
+                  <span className="tk-v2-task-overall">{completedCount}/{quests.length} 已完成</span>
                 </div>
-                <div className="tk-task-panel-bar-bg">
+                <div className="tk-v2-task-bar-bg">
                   <div
-                    className="tk-task-panel-bar-fill tk-task-bar-gradient"
-                    style={{ width: `${overallProgress}%`, backgroundPosition: `${100 - overallProgress}% 0` }}
+                    className="tk-v2-task-bar-fill"
+                    style={{ width: `${overallProgress}%` }}
                   />
                 </div>
                 {currentQuest ? (
-                  <div className={`tk-task-panel-item ${questCompleteFlash === currentQuest.id ? 'tk-task-item--just-completed' : ''}`}>
-                    <div className="tk-task-panel-item-top">
-                      <span className="tk-task-panel-item-title">{currentQuest.title}</span>
-                      <span className="tk-task-panel-item-progress">
+                  <div className={`tk-v2-task-item ${questCompleteFlash === currentQuest.id ? 'tk-task-item--just-completed' : ''}`}>
+                    <div className="tk-v2-task-item-top">
+                      <span className="tk-v2-task-item-title">
+                        <span className="tk-v2-task-icon">{questIcon}</span>
+                        {currentQuest.title}
+                      </span>
+                      <span className="tk-v2-task-progress-num">
                         {currentQuest.progress}/{currentQuest.maxProgress}
                       </span>
                     </div>
-                    <div className="tk-task-panel-item-bar-bg">
+                    <div className="tk-v2-task-item-bar-bg">
                       <div
-                        className="tk-task-panel-item-bar-fill tk-task-item-bar-gradient"
+                        className="tk-v2-task-item-bar-fill"
                         style={{
                           width: `${(currentQuest.progress / currentQuest.maxProgress) * 100}%`,
-                          backgroundPosition: `${100 - (currentQuest.progress / currentQuest.maxProgress) * 100}% 0`,
                         }}
                       />
                     </div>
-                    <div className="tk-task-panel-item-reward tk-task-reward-gold">
-                      奖励：{Object.entries(currentQuest.reward).map(([k, v]) =>
+                    <div className="tk-v2-reward-box">
+                      {Object.entries(currentQuest.reward).map(([k, v]) =>
                         `${k === 'grain' ? '🌾粮草' : k === 'gold' ? '💰铜钱' : k === 'troops' ? '⚔️兵力' : k === 'wood' ? '🪵木材' : k === 'iron' ? '⛏️铁矿' : k}+${v}`
-                      ).join(' ')}
+                      ).join('  ')}
                     </div>
                   </div>
                 ) : (
-                  <div className="tk-task-panel-complete tk-task-complete-bounce">
+                  <div className="tk-v2-task-complete tk-task-complete-bounce">
                     🎉 所有任务已完成！
                   </div>
                 )}
               </div>
             );
+          })()}
+
+          {/* ═══════════ 动态提示气泡 ═══════════ */}
+          {(() => {
+            const farmLevel = buildings.find(b => b.id === 'farm')?.level ?? 0;
+            const marketLevel = buildings.find(b => b.id === 'market')?.level ?? 0;
+            const barracksLevel = buildings.find(b => b.id === 'barracks')?.level ?? 0;
+            const allDone = quests.length > 0 && quests.every(q => q.isComplete);
+            let hintText = '';
+            let hintIcon = '💡';
+            if (allDone) {
+              hintText = '所有任务已完成！继续升级建筑壮大势力吧！';
+              hintIcon = '🏆';
+            } else if (farmLevel < 3) {
+              hintText = '点击左侧「屯田」升级，开始你的三国霸业！';
+              hintIcon = '👆';
+            } else if (marketLevel < 1) {
+              hintText = '很好！现在试试升级「商行」赚取铜钱';
+              hintIcon = '💰';
+            } else if (barracksLevel < 1) {
+              hintText = '升级「军营」训练士兵，准备征战天下！';
+              hintIcon = '⚔️';
+            } else if (farmLevel < 5) {
+              hintText = '继续发展内政，升级屯田和商行提升资源产出';
+              hintIcon = '📈';
+            } else {
+              hintText = '势力蒸蒸日上！试试解锁更多高级建筑';
+              hintIcon = '🏰';
+            }
+            return hintText ? (
+              <div className="tk-v2-hint-bubble">
+                <span className="tk-v2-hint-icon">{hintIcon}</span>
+                <span className="tk-v2-hint-text">{hintText}</span>
+              </div>
+            ) : null;
           })()}
           <PixiGameCanvas
             renderState={renderState}

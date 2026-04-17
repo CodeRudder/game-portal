@@ -11206,7 +11206,19 @@ button:active {
   .tk-task-item--just-completed::before,
   .tk-building-card-dynamic:hover,
   .tk-guide-dimmed,
-  .tk-production-flash {
+  .tk-production-flash,
+  .tk-v2-task-panel,
+  .tk-v2-task-icon,
+  .tk-v2-task-progress-num,
+  .tk-v2-reward-box,
+  .tk-v2-hint-bubble,
+  .tk-v2-hint-bubble::after,
+  .tk-v2-faction-badge,
+  .tk-v2-city-prosperity,
+  .tk-v2-resource-producing,
+  .tk-v2-resource-rate,
+  .tk-v2-building-unlocked,
+  .tk-v2-building-locked {
     animation: none !important;
     transition: none !important;
   }
@@ -11223,4 +11235,403 @@ button:active {
   .tk-building-card-dynamic:hover {
     transform: translateY(-2px) !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * V3 综合优化：任务面板增强 + 提示气泡 + 主城信息 + 资源栏增强
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────────────────────────────────────────────
+ * V3-1. 任务面板视觉全面增强
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 增强版任务面板容器 */
+.tk-v2-task-panel {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  min-width: 300px;
+  max-width: 400px;
+  background: linear-gradient(180deg, rgba(50, 35, 18, 0.95) 0%, rgba(30, 18, 8, 0.92) 100%);
+  border: 2px solid rgba(212, 160, 48, 0.7);
+  border-radius: 10px;
+  padding: 10px 14px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    0 0 16px rgba(212, 160, 48, 0.12),
+    inset 0 1px 0 rgba(255, 215, 0, 0.08);
+  pointer-events: auto;
+}
+
+/* 任务标题行 — 大字金色 */
+.tk-v2-task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.tk-v2-task-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #FFD700;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6), 0 0 8px rgba(255, 215, 0, 0.15);
+  letter-spacing: 1px;
+}
+
+.tk-v2-task-overall {
+  font-size: 11px;
+  color: #b8a080;
+  background: rgba(139, 115, 85, 0.12);
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(139, 115, 85, 0.2);
+}
+
+/* 总进度条 — 加粗到 10px */
+.tk-v2-task-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 5px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tk-v2-task-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFD700, #ff8c00, #ff6347);
+  border-radius: 5px;
+  transition: width 0.6s ease;
+  position: relative;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.tk-v2-task-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 0 5px 5px 0;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+}
+
+/* 任务图标 */
+.tk-v2-task-icon {
+  font-size: 18px;
+  margin-right: 6px;
+  animation: tk-v2-task-icon-bounce 2s ease-in-out infinite;
+  display: inline-block;
+}
+
+@keyframes tk-v2-task-icon-bounce {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.1) rotate(-5deg); }
+  75% { transform: scale(1.05) rotate(3deg); }
+}
+
+/* 当前任务项 */
+.tk-v2-task-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 8px;
+  border: 1px solid rgba(139, 115, 85, 0.15);
+}
+
+.tk-v2-task-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tk-v2-task-item-title {
+  font-size: 13px;
+  color: #f0d8a8;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* 进度数字 — 大号醒目 */
+.tk-v2-task-progress-num {
+  font-size: 16px;
+  color: #FFD700;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.25);
+  font-family: 'Georgia', serif;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* 单任务进度条 — 加粗到 8px */
+.tk-v2-task-item-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tk-v2-task-item-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #8bc34a, #cddc39);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+  position: relative;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.3);
+}
+
+.tk-v2-task-item-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+}
+
+/* 奖励区域 — 金色边框+背景 */
+.tk-v2-reward-box {
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(212, 160, 48, 0.12) 0%, rgba(255, 215, 0, 0.06) 100%);
+  border: 1px solid rgba(212, 160, 48, 0.4);
+  font-size: 11px;
+  color: #d4a030;
+  font-weight: bold;
+  text-shadow: 0 0 4px rgba(212, 160, 48, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tk-v2-reward-box::before {
+  content: '🎁';
+  font-size: 13px;
+  margin-right: 2px;
+}
+
+/* 全部完成 */
+.tk-v2-task-complete {
+  font-size: 14px;
+  color: #FFD700;
+  text-align: center;
+  padding: 8px 0;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * V3-2. 提示气泡
+ * ─────────────────────────────────────────────────────────────── */
+
+.tk-v2-hint-bubble {
+  position: absolute;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 14;
+  max-width: 320px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(255, 248, 220, 0.92) 0%, rgba(255, 235, 180, 0.88) 100%);
+  border: 1.5px solid rgba(212, 160, 48, 0.5);
+  border-radius: 10px;
+  color: #5a3e1b;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  animation: tk-v2-hint-appear 0.6s ease-out;
+}
+
+.tk-v2-hint-bubble::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid rgba(212, 160, 48, 0.5);
+}
+
+@keyframes tk-v2-hint-appear {
+  0% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.tk-v2-hint-icon {
+  font-size: 14px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.tk-v2-hint-text {
+  vertical-align: middle;
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * V3-3. 主城区域增强 — 势力标识 + 繁荣度
+ * ─────────────────────────────────────────────────────────────── */
+
+.tk-v2-city-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, rgba(212, 160, 48, 0.08) 0%, rgba(139, 115, 85, 0.06) 100%);
+  border-radius: 6px;
+  border: 1px solid rgba(212, 160, 48, 0.2);
+}
+
+.tk-v2-faction-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  animation: tk-v2-faction-glow 3s ease-in-out infinite;
+}
+
+.tk-v2-faction-badge--shu {
+  background: linear-gradient(135deg, rgba(196, 30, 58, 0.2), rgba(196, 30, 58, 0.08));
+  border: 1px solid rgba(196, 30, 58, 0.4);
+  color: #e85050;
+  text-shadow: 0 0 4px rgba(196, 30, 58, 0.2);
+}
+
+.tk-v2-faction-badge--wei {
+  background: linear-gradient(135deg, rgba(30, 111, 190, 0.2), rgba(30, 111, 190, 0.08));
+  border: 1px solid rgba(30, 111, 190, 0.4);
+  color: #5090e8;
+  text-shadow: 0 0 4px rgba(30, 111, 190, 0.2);
+}
+
+.tk-v2-faction-badge--wu {
+  background: linear-gradient(135deg, rgba(46, 139, 87, 0.2), rgba(46, 139, 87, 0.08));
+  border: 1px solid rgba(46, 139, 87, 0.4);
+  color: #50c878;
+  text-shadow: 0 0 4px rgba(46, 139, 87, 0.2);
+}
+
+@keyframes tk-v2-faction-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(212, 160, 48, 0.1); }
+  50% { box-shadow: 0 0 10px rgba(212, 160, 48, 0.2); }
+}
+
+.tk-v2-city-prosperity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #d4a030;
+}
+
+.tk-v2-city-prosperity-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.2);
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * V3-4. 资源栏视觉增强
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 有产出的资源项 */
+.tk-v2-resource-producing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(212, 160, 48, 0.04) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  transition: background 0.3s ease;
+}
+
+/* 无产出的资源项 */
+.tk-v2-resource-idle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  opacity: 0.65;
+  transition: opacity 0.3s ease;
+}
+
+/* 产出速率绿色醒目 */
+.tk-v2-resource-rate {
+  font-size: 10px;
+  color: #4caf50;
+  font-weight: bold;
+  text-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * V3-5. 建筑卡片增强 — 解锁/锁定状态
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 已解锁建筑 — 绿色边框 */
+.tk-v2-building-unlocked {
+  border-left: 3px solid rgba(76, 175, 80, 0.6) !important;
+  padding-left: 9px !important;
+}
+
+/* 未解锁建筑 — 灰色+锁图标 */
+.tk-v2-building-locked {
+  border-left: 3px solid rgba(100, 100, 100, 0.3) !important;
+  padding-left: 9px !important;
+  position: relative;
+}
+
+/* 升级消耗显示 */
+.tk-v2-building-cost {
+  font-size: 9px;
+  margin-top: 3px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tk-v2-building-cost-affordable {
+  color: #4caf50;
+  font-weight: 500;
+}
+
+.tk-v2-building-cost-unaffordable {
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+/* 产出速率醒目 */
+.tk-v2-production-rate {
+  font-size: 10px;
+  color: #4caf50;
+  font-weight: bold;
+  margin-top: 2px;
+  text-shadow: 0 0 4px rgba(76, 175, 80, 0.2);
 }
