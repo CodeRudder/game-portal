@@ -411,12 +411,22 @@ export const CAMPAIGN_CHAPTERS: CampaignChapter[] = [
   {
     id: 'chapter_5',
     chapterNumber: 5,
-    title: '天下一统',
-    subtitle: '龙御九天',
-    description: '三国鼎立，英雄辈出。定军山老将建功，夷陵之火焚营。历经数十年征战，天下大势分久必合，三国归晋。',
-    stageIds: ['campaign_dingjun', 'campaign_yiling', 'campaign_unification'],
+    title: '三国鼎立',
+    subtitle: '英雄暮年',
+    description: '三国鼎立，英雄辈出。荆州之争、夷陵之火、五丈原星落，一代英雄相继谢幕。',
+    stageIds: ['campaign_dingjun', 'campaign_yiling', 'campaign_wuzhangyuan'],
     themeColor: '#dc2626',
     icon: '👑',
+  },
+  {
+    id: 'chapter_6',
+    chapterNumber: 6,
+    title: '一统天下',
+    subtitle: '龙御九天',
+    description: '历经数十年征战，天下大势分久必合。合肥之战、街亭之失，最终天下归晋，一统山河。',
+    stageIds: ['campaign_hefei', 'campaign_jieting', 'campaign_unification'],
+    themeColor: '#FFD700',
+    icon: '🏆',
   },
 ];
 
@@ -954,6 +964,110 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
       maxAttempts: 0,
     },
   },
+
+  // ── 第五章·补充：五丈原 ──
+  {
+    id: 'campaign_wuzhangyuan',
+    name: '五丈原',
+    description: '诸葛亮六出祁山，星落五丈原。司马懿坚守不出，以逸待劳。一代名相鞠躬尽瘁，死而后已。',
+    mapPosition: { x: 0.40, y: 0.55 },
+    type: 'battle',
+    objectives: [
+      { description: '击败司马懿', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+      { description: '攻破五丈原防线', type: 'destroy', targetValue: 3, currentProgress: 0, unit: '座' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[0], // 山地：防御+20%
+      TERRAIN_STRATEGY_EFFECTS[2], // 关隘：防御+40%
+    ],
+    defender: {
+      lord: '司马懿',
+      officers: ['张郃', '郭淮', '曹真'],
+      troops: { infantry: 18000, cavalry: 8000, archers: 10000 },
+      fortLevel: 9,
+    },
+    rewards: {
+      gold: 25000,
+      food: 30000,
+      materials: 10000,
+    },
+    status: 'locked',
+    prerequisite: 'campaign_yiling',
+    battleConfig: {
+      difficulty: 'legendary',
+      cooldownSeconds: 120,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第六章·补充：合肥之战 ──
+  {
+    id: 'campaign_hefei',
+    name: '合肥之战',
+    description: '孙权率十万大军攻合肥，张辽率八百勇士夜袭吴营，威震逍遥津。以少胜多，名垂青史。',
+    mapPosition: { x: 0.55, y: 0.40 },
+    type: 'battle',
+    objectives: [
+      { description: '击败张辽', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+      { description: '歼灭合肥守军', type: 'kill', targetValue: 5000, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[1], // 河流：骑兵-30%
+    ],
+    defender: {
+      lord: '张辽',
+      officers: ['乐进', '李典'],
+      troops: { infantry: 20000, cavalry: 10000, archers: 12000 },
+      fortLevel: 10,
+    },
+    rewards: {
+      gold: 30000,
+      food: 35000,
+      materials: 12000,
+    },
+    status: 'locked',
+    prerequisite: 'campaign_wuzhangyuan',
+    battleConfig: {
+      difficulty: 'legendary',
+      cooldownSeconds: 120,
+      maxAttempts: 0,
+    },
+  },
+
+  // ── 第六章·补充：街亭之战 ──
+  {
+    id: 'campaign_jieting',
+    name: '街亭之战',
+    description: '诸葛亮北伐，马谡违令失街亭，蜀军粮道被断。张郃乘胜追击，北伐功亏一篑。诸葛亮挥泪斩马谡。',
+    mapPosition: { x: 0.45, y: 0.35 },
+    type: 'defense',
+    objectives: [
+      { description: '坚守街亭7回合', type: 'survive', targetValue: 7, currentProgress: 0, unit: '回合' },
+      { description: '击败张郃', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[2], // 关隘：防御+40%
+      TERRAIN_STRATEGY_EFFECTS[0], // 山地：防御+20%
+    ],
+    defender: {
+      lord: '张郃',
+      officers: ['曹真', '郭淮', '费曜'],
+      troops: { infantry: 22000, cavalry: 12000, archers: 10000 },
+      fortLevel: 10,
+    },
+    rewards: {
+      gold: 35000,
+      food: 40000,
+      materials: 15000,
+    },
+    status: 'locked',
+    prerequisite: 'campaign_hefei',
+    battleConfig: {
+      difficulty: 'legendary',
+      cooldownSeconds: 120,
+      maxAttempts: 0,
+    },
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -1228,11 +1342,11 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
   // ── 第六章：一统天下 ──
   {
     id: 'campaign_unification',
-    name: '天下一统',
+    name: '天下归一',
     subtitle: '终章·龙御九天',
     description: '历经千辛万苦，终于兵临天下最后一座城池。攻克此城，天下一统，万民归心！',
-    order: 6,
-    prerequisiteStageId: 'campaign_dingjun',
+    order: 18,
+    prerequisiteStageId: 'campaign_jieting',
     targetTerritoryId: 'changan',
     targetCityName: '长安',
     difficulty: 'hard',
@@ -1268,7 +1382,7 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     },
     rewards: {
       territory: 'changan',
-      resources: { gold: 2000, troops: 1000, grain: 1500 },
+      resources: { gold: 25000, grain: 30000, iron: 10000 },
     },
     starThresholds: { threeStar: 60, twoStar: 30 },
     iconAsset: '👑', themeColor: '#FFD700',
@@ -1732,6 +1846,157 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     fortificationLevel: 9,
     mapPosition: { x: 0.45, y: 0.70 },
   },
+
+  // ── 第五章·补充：五丈原 ──
+  {
+    id: 'campaign_wuzhangyuan',
+    name: '五丈原',
+    subtitle: '第五章·鞠躬尽瘁',
+    description: '诸葛亮六出祁山，星落五丈原。司马懿坚守不出，蜀军粮尽退兵。一代名相，鞠躬尽瘁死而后已。',
+    order: 15,
+    prerequisiteStageId: 'campaign_yiling',
+    targetTerritoryId: 'wuzhangyuan',
+    targetCityName: '五丈原',
+    difficulty: 'hard',
+    type: 'battle',
+    victoryCondition: 'defeat_commander',
+    victoryParams: {},
+    enemyCommander: {
+      id: 'simayi_wzy', name: '司马懿', title: '冢虎·魏国大都督',
+      hp: 2800, attack: 85, defense: 50, intelligence: 95,
+      abilities: ['stratagem', 'endurance', 'ambush', 'fortify'],
+      dialogue: {
+        opening: '诸葛村夫，又能奈我何？',
+        mid: '坚守不出，待其自乱！',
+        defeat: '诸葛孔明…真乃天下奇才…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '魏军精锐', count: 50, hpPerUnit: 65, attackPerUnit: 26, defensePerUnit: 18 },
+      { type: 'cavalry', name: '铁甲军', count: 25, hpPerUnit: 75, attackPerUnit: 32, defensePerUnit: 20 },
+      { type: 'archer', name: '精锐弓弩', count: 30, hpPerUnit: 45, attackPerUnit: 28, defensePerUnit: 10 },
+    ],
+    mapLayout: {
+      width: 16, height: 14,
+      walls: [
+        { x: 5, y: 2, hp: 300 }, { x: 6, y: 2, hp: 300 }, { x: 7, y: 2, hp: 300 }, { x: 8, y: 2, hp: 300 },
+        { x: 5, y: 11, hp: 300 }, { x: 6, y: 11, hp: 300 }, { x: 7, y: 11, hp: 300 }, { x: 8, y: 11, hp: 300 },
+      ],
+      gates: [{ x: 7, y: 6, hp: 400, direction: 'south' }],
+      towers: [{ x: 5, y: 2, attack: 28, range: 5 }, { x: 8, y: 2, attack: 28, range: 5 }],
+      flagPositions: [{ x: 7, y: 7 }],
+      deploymentZone: { x: 0, y: 5, width: 5, height: 4 },
+    },
+    rewards: {
+      territory: 'wuzhangyuan',
+      resources: { grain: 10000, gold: 8000, iron: 3000 },
+    },
+    starThresholds: { threeStar: 65, twoStar: 35 },
+    iconAsset: '⛰️', themeColor: '#5D4037',
+    fortificationLevel: 9,
+    mapPosition: { x: 0.40, y: 0.55 },
+  },
+
+  // ── 第六章·补充：合肥之战 ──
+  {
+    id: 'campaign_hefei',
+    name: '合肥之战',
+    subtitle: '第六章·张辽威震逍遥津',
+    description: '孙权率十万大军攻合肥，张辽率八百勇士夜袭吴营，威震逍遥津。以少胜多，名垂青史。',
+    order: 16,
+    prerequisiteStageId: 'campaign_wuzhangyuan',
+    targetTerritoryId: 'hefei',
+    targetCityName: '合肥',
+    difficulty: 'hard',
+    type: 'battle',
+    victoryCondition: 'eliminate_all',
+    victoryParams: {},
+    enemyCommander: {
+      id: 'zhangliao', name: '张辽', title: '威震逍遥津·魏国名将',
+      hp: 3200, attack: 95, defense: 55, intelligence: 60,
+      abilities: ['charge', 'sweep', 'rally'],
+      dialogue: {
+        opening: '八百破十万，有何不可！',
+        mid: '孙仲谋，且看张某手段！',
+        defeat: '张文远…真乃虎将也…',
+      },
+    },
+    enemyUnits: [
+      { type: 'infantry', name: '合肥守军', count: 40, hpPerUnit: 70, attackPerUnit: 28, defensePerUnit: 20 },
+      { type: 'cavalry', name: '乐进骑兵', count: 20, hpPerUnit: 80, attackPerUnit: 35, defensePerUnit: 22 },
+      { type: 'archer', name: '李典弓弩', count: 25, hpPerUnit: 50, attackPerUnit: 30, defensePerUnit: 12 },
+      { type: 'infantry', name: '合肥精兵', count: 30, hpPerUnit: 75, attackPerUnit: 30, defensePerUnit: 22 },
+    ],
+    mapLayout: {
+      width: 18, height: 16,
+      walls: [],
+      gates: [],
+      towers: [
+        { x: 6, y: 4, attack: 30, range: 5 }, { x: 12, y: 4, attack: 30, range: 5 },
+        { x: 6, y: 11, attack: 30, range: 5 }, { x: 12, y: 11, attack: 30, range: 5 },
+      ],
+      flagPositions: [{ x: 9, y: 8 }],
+      deploymentZone: { x: 0, y: 6, width: 5, height: 4 },
+    },
+    rewards: {
+      territory: 'hefei',
+      resources: { grain: 12000, gold: 10000, iron: 4000 },
+    },
+    starThresholds: { threeStar: 60, twoStar: 30 },
+    iconAsset: '⚔️', themeColor: '#1565C0',
+    fortificationLevel: 10,
+    mapPosition: { x: 0.55, y: 0.40 },
+  },
+
+  // ── 第六章·补充：街亭之战 ──
+  {
+    id: 'campaign_jieting',
+    name: '街亭之战',
+    subtitle: '第六章·挥泪斩马谡',
+    description: '诸葛亮北伐，马谡违令失街亭，蜀军粮道被断。张郃乘胜追击，北伐功亏一篑。',
+    order: 17,
+    prerequisiteStageId: 'campaign_hefei',
+    targetTerritoryId: 'jieting',
+    targetCityName: '街亭',
+    difficulty: 'hard',
+    type: 'defense',
+    victoryCondition: 'survive_waves',
+    victoryParams: { waves: 7 },
+    enemyCommander: {
+      id: 'zhanghe', name: '张郃', title: '魏国五子良将·街亭之战',
+      hp: 3500, attack: 90, defense: 55, intelligence: 50,
+      abilities: ['charge', 'ambush', 'flank'],
+      dialogue: {
+        opening: '街亭要地，已在吾手！',
+        mid: '蜀军不过如此！',
+        defeat: '张郃…竟败于此…',
+      },
+    },
+    enemyUnits: [
+      { type: 'cavalry', name: '魏军铁骑', count: 35, hpPerUnit: 80, attackPerUnit: 35, defensePerUnit: 22 },
+      { type: 'infantry', name: '精锐步兵', count: 40, hpPerUnit: 70, attackPerUnit: 30, defensePerUnit: 20 },
+      { type: 'archer', name: '精锐弓弩', count: 30, hpPerUnit: 50, attackPerUnit: 32, defensePerUnit: 12 },
+    ],
+    mapLayout: {
+      width: 16, height: 14,
+      walls: [
+        { x: 4, y: 3, hp: 350 }, { x: 5, y: 3, hp: 350 }, { x: 6, y: 3, hp: 350 },
+        { x: 4, y: 10, hp: 350 }, { x: 5, y: 10, hp: 350 }, { x: 6, y: 10, hp: 350 },
+      ],
+      gates: [{ x: 5, y: 6, hp: 450, direction: 'south' }],
+      towers: [{ x: 4, y: 3, attack: 32, range: 5 }, { x: 6, y: 3, attack: 32, range: 5 }],
+      flagPositions: [{ x: 5, y: 7 }],
+      deploymentZone: { x: 0, y: 5, width: 4, height: 4 },
+    },
+    rewards: {
+      territory: 'jieting',
+      resources: { grain: 15000, gold: 12000, iron: 5000 },
+    },
+    starThresholds: { threeStar: 55, twoStar: 25 },
+    iconAsset: '🏰', themeColor: '#4E342E',
+    fortificationLevel: 10,
+    mapPosition: { x: 0.45, y: 0.35 },
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -1754,10 +2019,14 @@ export const CAMPAIGN_CONNECTIONS: CampaignConnection[] = [
   { from: 'campaign_yejun', to: 'campaign_changban', type: 'river_crossing' },
   { from: 'campaign_changban', to: 'campaign_chibi', type: 'river_crossing' },
   { from: 'campaign_chibi', to: 'campaign_jingzhou', type: 'main_road' },
-  // 第五章：天下一统
+  // 第五章：三国鼎立
   { from: 'campaign_jingzhou', to: 'campaign_dingjun', type: 'mountain_pass' },
   { from: 'campaign_dingjun', to: 'campaign_yiling', type: 'mountain_pass' },
-  { from: 'campaign_yiling', to: 'campaign_unification', type: 'main_road' },
+  { from: 'campaign_yiling', to: 'campaign_wuzhangyuan', type: 'mountain_pass' },
+  // 第六章：一统天下
+  { from: 'campaign_wuzhangyuan', to: 'campaign_hefei', type: 'main_road' },
+  { from: 'campaign_hefei', to: 'campaign_jieting', type: 'mountain_pass' },
+  { from: 'campaign_jieting', to: 'campaign_unification', type: 'main_road' },
 ];
 
 // ═══════════════════════════════════════════════════════════════

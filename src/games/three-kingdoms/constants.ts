@@ -732,3 +732,56 @@ export const CLICK_REWARD = { grain: 1 };
 
 /** 新手免费赠送的武将 ID（取第一个 uncommon 武将） */
 export const FREE_STARTER_HERO = GENERALS.find(g => g.rarity === 'uncommon')?.id ?? 'xuchu';
+
+// ═══════════════════════════════════════════════════════════════
+// v3.0 关卡系统 (6章 × 3关 = 18个关卡)
+// ═══════════════════════════════════════════════════════════════
+
+/** 关卡敌人定义 */
+export interface LevelStageEnemy {
+  name: string;
+  attack: number;
+  defense: number;
+  hp: number;
+}
+
+/** 关卡定义 */
+export interface LevelStageData {
+  id: string;
+  chapter: number;
+  chapterName: string;
+  name: string;
+  description: string;
+  recommendedPower: number;
+  enemies: LevelStageEnemy[];
+  rewards: { resource: string; amount: number }[];
+  prevStageId?: string;
+}
+
+/** 18个关卡数据（6章 × 3关） */
+export const LEVEL_STAGES: LevelStageData[] = [
+  // 第一章 黄巾之乱
+  { id: 's1_1', chapter: 1, chapterName: '黄巾之乱', name: '黄巾前哨', description: '黄巾贼四处劫掠，前方发现敌军前哨', recommendedPower: 50, enemies: [{ name: '黄巾兵', attack: 8, defense: 3, hp: 30 }], rewards: [{ resource: 'grain', amount: 30 }, { resource: 'copper', amount: 50 }], prevStageId: undefined },
+  { id: 's1_2', chapter: 1, chapterName: '黄巾之乱', name: '广宗之战', description: '张角主力盘踞广宗，需正面突破', recommendedPower: 80, enemies: [{ name: '黄巾力士', attack: 12, defense: 5, hp: 50 }, { name: '黄巾术士', attack: 10, defense: 3, hp: 35 }], rewards: [{ resource: 'grain', amount: 50 }, { resource: 'copper', amount: 80 }, { resource: 'iron', amount: 20 }], prevStageId: 's1_1' },
+  { id: 's1_3', chapter: 1, chapterName: '黄巾之乱', name: '黄巾大营', description: '黄巾首领张角在此坐镇', recommendedPower: 120, enemies: [{ name: '张角', attack: 18, defense: 8, hp: 80 }, { name: '黄巾精锐', attack: 14, defense: 6, hp: 45 }], rewards: [{ resource: 'grain', amount: 100 }, { resource: 'copper', amount: 150 }, { resource: 'iron', amount: 50 }], prevStageId: 's1_2' },
+  // 第二章 群雄割据
+  { id: 's2_1', chapter: 2, chapterName: '群雄割据', name: '汜水关', description: '诸侯联军攻打汜水关', recommendedPower: 160, enemies: [{ name: '华雄', attack: 22, defense: 10, hp: 100 }], rewards: [{ resource: 'grain', amount: 80 }, { resource: 'copper', amount: 120 }], prevStageId: 's1_3' },
+  { id: 's2_2', chapter: 2, chapterName: '群雄割据', name: '虎牢关', description: '吕布镇守虎牢关，天下第一猛将', recommendedPower: 220, enemies: [{ name: '吕布', attack: 30, defense: 15, hp: 150 }], rewards: [{ resource: 'grain', amount: 120 }, { resource: 'copper', amount: 200 }, { resource: 'iron', amount: 80 }], prevStageId: 's2_1' },
+  { id: 's2_3', chapter: 2, chapterName: '群雄割据', name: '董卓之乱', description: '董卓祸乱朝纲，需一举歼灭', recommendedPower: 280, enemies: [{ name: '董卓', attack: 25, defense: 20, hp: 180 }, { name: '李傕', attack: 18, defense: 10, hp: 80 }], rewards: [{ resource: 'grain', amount: 200 }, { resource: 'copper', amount: 300 }], prevStageId: 's2_2' },
+  // 第三章 官渡之战
+  { id: 's3_1', chapter: 3, chapterName: '官渡之战', name: '延津', description: '袁绍大军南下，延津首当其冲', recommendedPower: 350, enemies: [{ name: '袁绍先锋', attack: 28, defense: 15, hp: 130 }], rewards: [{ resource: 'grain', amount: 150 }, { resource: 'copper', amount: 250 }], prevStageId: 's2_3' },
+  { id: 's3_2', chapter: 3, chapterName: '官渡之战', name: '白马', description: '颜良文丑率精兵驻守白马', recommendedPower: 420, enemies: [{ name: '颜良', attack: 35, defense: 18, hp: 160 }, { name: '文丑', attack: 32, defense: 16, hp: 150 }], rewards: [{ resource: 'grain', amount: 200 }, { resource: 'copper', amount: 350 }, { resource: 'iron', amount: 100 }], prevStageId: 's3_1' },
+  { id: 's3_3', chapter: 3, chapterName: '官渡之战', name: '官渡决战', description: '决定北方霸主的关键之战', recommendedPower: 500, enemies: [{ name: '袁绍', attack: 40, defense: 25, hp: 250 }, { name: '张郃', attack: 35, defense: 20, hp: 180 }], rewards: [{ resource: 'grain', amount: 300 }, { resource: 'copper', amount: 500 }, { resource: 'iron', amount: 150 }], prevStageId: 's3_2' },
+  // 第四章 赤壁之战
+  { id: 's4_1', chapter: 4, chapterName: '赤壁之战', name: '借东风', description: '诸葛亮借东风，火烧连环船', recommendedPower: 600, enemies: [{ name: '曹军水师', attack: 38, defense: 20, hp: 200 }], rewards: [{ resource: 'grain', amount: 250 }, { resource: 'copper', amount: 400 }], prevStageId: 's3_3' },
+  { id: 's4_2', chapter: 4, chapterName: '赤壁之战', name: '草船借箭', description: '大雾弥漫，草船趁势借箭十万', recommendedPower: 700, enemies: [{ name: '曹操', attack: 50, defense: 30, hp: 300 }], rewards: [{ resource: 'grain', amount: 350 }, { resource: 'copper', amount: 550 }, { resource: 'iron', amount: 200 }], prevStageId: 's4_1' },
+  { id: 's4_3', chapter: 4, chapterName: '赤壁之战', name: '赤壁大战', description: '孙刘联军火烧赤壁，大败曹军', recommendedPower: 850, enemies: [{ name: '曹操主力', attack: 55, defense: 35, hp: 400 }, { name: '许褚', attack: 45, defense: 30, hp: 280 }], rewards: [{ resource: 'grain', amount: 500 }, { resource: 'copper', amount: 800 }, { resource: 'iron', amount: 300 }], prevStageId: 's4_2' },
+  // 第五章 三国鼎立
+  { id: 's5_1', chapter: 5, chapterName: '三国鼎立', name: '荆州之争', description: '荆州战略要地，三方争夺', recommendedPower: 1000, enemies: [{ name: '吕蒙', attack: 60, defense: 35, hp: 350 }], rewards: [{ resource: 'grain', amount: 400 }, { resource: 'copper', amount: 600 }], prevStageId: 's4_3' },
+  { id: 's5_2', chapter: 5, chapterName: '三国鼎立', name: '夷陵之战', description: '刘备为关羽报仇，亲征东吴', recommendedPower: 1200, enemies: [{ name: '陆逊', attack: 70, defense: 40, hp: 450 }], rewards: [{ resource: 'grain', amount: 500 }, { resource: 'copper', amount: 800 }, { resource: 'iron', amount: 250 }], prevStageId: 's5_1' },
+  { id: 's5_3', chapter: 5, chapterName: '三国鼎立', name: '五丈原', description: '诸葛亮最后一次北伐', recommendedPower: 1400, enemies: [{ name: '司马懿', attack: 80, defense: 50, hp: 500 }, { name: '司马昭', attack: 65, defense: 40, hp: 380 }], rewards: [{ resource: 'grain', amount: 600 }, { resource: 'copper', amount: 1000 }, { resource: 'iron', amount: 400 }], prevStageId: 's5_2' },
+  // 第六章 一统天下
+  { id: 's6_1', chapter: 6, chapterName: '一统天下', name: '合肥之战', description: '张辽威震逍遥津', recommendedPower: 1600, enemies: [{ name: '张辽', attack: 85, defense: 45, hp: 500 }], rewards: [{ resource: 'grain', amount: 600 }, { resource: 'copper', amount: 1000 }], prevStageId: 's5_3' },
+  { id: 's6_2', chapter: 6, chapterName: '一统天下', name: '街亭之战', description: '马谡失街亭，北伐功亏一篑', recommendedPower: 1800, enemies: [{ name: '张郃', attack: 90, defense: 50, hp: 550 }], rewards: [{ resource: 'grain', amount: 800 }, { resource: 'copper', amount: 1200 }, { resource: 'iron', amount: 500 }], prevStageId: 's6_1' },
+  { id: 's6_3', chapter: 6, chapterName: '一统天下', name: '天下归一', description: '最终决战，统一天下！', recommendedPower: 2000, enemies: [{ name: '最终BOSS', attack: 100, defense: 60, hp: 800 }, { name: '精英护卫', attack: 75, defense: 45, hp: 400 }], rewards: [{ resource: 'grain', amount: 1000 }, { resource: 'copper', amount: 2000 }, { resource: 'iron', amount: 800 }], prevStageId: 's6_2' },
+];

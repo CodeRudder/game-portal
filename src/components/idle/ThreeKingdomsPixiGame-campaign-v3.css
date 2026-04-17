@@ -1,0 +1,1094 @@
+/* ═══════════════════════════════════════════════════════════════
+ * v3.0 攻城略地 — 关卡和战斗系统样式
+ *
+ * 前缀：.tk-campaign-
+ * 特征：6章15关线性地图 + 战斗准备 + 自动战斗动画 + 战利品弹窗
+ *
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ── 关卡地图容器 ── */
+.tk-campaign-map {
+  position: relative;
+  padding: 16px 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,169,110,0.3) transparent;
+}
+.tk-campaign-map::-webkit-scrollbar { width: 4px; }
+.tk-campaign-map::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.3); border-radius: 2px; }
+
+/* ── 章节分组 ── */
+.tk-campaign-chapter {
+  margin-bottom: 8px;
+  position: relative;
+}
+
+/* ── 章节标题横幅 ── */
+.tk-campaign-chapter-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(90,74,48,0.4) 0%, rgba(60,50,35,0.6) 100%);
+  border: 1px solid rgba(201,169,110,0.15);
+  position: relative;
+  overflow: hidden;
+}
+.tk-campaign-chapter-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(201,169,110,0.05), transparent);
+  pointer-events: none;
+}
+.tk-campaign-chapter-number {
+  font-size: 11px;
+  font-weight: bold;
+  color: #c9a96e;
+  background: rgba(201,169,110,0.15);
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid rgba(201,169,110,0.2);
+  white-space: nowrap;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+}
+.tk-campaign-chapter-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #e8d5a3;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.tk-campaign-chapter-progress {
+  margin-left: auto;
+  font-size: 10px;
+  color: #8a7a6a;
+}
+
+/* ── 关卡节点线性布局 ── */
+.tk-campaign-stages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0 8px;
+}
+
+/* ── 关卡节点 ── */
+.tk-campaign-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,0.03);
+}
+.tk-campaign-node:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(201,169,110,0.2);
+  transform: translateX(2px);
+}
+
+/* ── 关卡状态：已完成 ── */
+.tk-campaign-node--completed {
+  border-color: rgba(212,160,48,0.2);
+  background: rgba(212,160,48,0.05);
+}
+.tk-campaign-node--completed:hover {
+  border-color: rgba(212,160,48,0.4);
+  background: rgba(212,160,48,0.1);
+}
+
+/* ── 关卡状态：当前（脉冲发光） ── */
+.tk-campaign-node--current {
+  border-color: rgba(76,175,80,0.5);
+  background: rgba(76,175,80,0.06);
+  animation: tk-campaign-pulse 2s ease-in-out infinite;
+}
+@keyframes tk-campaign-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(76,175,80,0.15); }
+  50% { box-shadow: 0 0 20px rgba(76,175,80,0.35), 0 0 40px rgba(76,175,80,0.1); }
+}
+
+/* ── 关卡状态：锁定 ── */
+.tk-campaign-node--locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+.tk-campaign-node--locked:hover {
+  transform: none;
+  background: rgba(255,255,255,0.03);
+  border-color: transparent;
+}
+
+/* ── 节点圆章图标 ── */
+.tk-campaign-node-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  position: relative;
+  border: 2px solid;
+  transition: all 0.2s;
+}
+.tk-campaign-node--completed .tk-campaign-node-icon {
+  background: linear-gradient(135deg, #d4a030, #b8860b);
+  border-color: #f0c040;
+  color: #fff;
+  font-weight: bold;
+  font-size: 20px;
+  box-shadow: 0 0 8px rgba(212,160,48,0.3);
+}
+.tk-campaign-node--current .tk-campaign-node-icon {
+  background: linear-gradient(135deg, #2e7d32, #1b5e20);
+  border-color: #4caf50;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(76,175,80,0.4);
+}
+.tk-campaign-node--locked .tk-campaign-node-icon {
+  background: #3a3a3a;
+  border-color: #555;
+  color: #777;
+}
+
+/* ── 节点星级（完成状态） ── */
+.tk-campaign-node-stars {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  color: #f0c040;
+  text-shadow: 0 0 4px rgba(240,192,64,0.5);
+  white-space: nowrap;
+  background: rgba(0,0,0,0.6);
+  padding: 0 4px;
+  border-radius: 3px;
+  line-height: 1.3;
+}
+
+/* ── 节点信息 ── */
+.tk-campaign-node-info {
+  flex: 1;
+  min-width: 0;
+}
+.tk-campaign-node-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #e8d5a3;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  margin-bottom: 2px;
+}
+.tk-campaign-node--locked .tk-campaign-node-name {
+  color: #777;
+}
+.tk-campaign-node-power {
+  font-size: 10px;
+  color: #8a7a6a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tk-campaign-node--current .tk-campaign-node-power {
+  color: #66bb6a;
+}
+
+/* ── 节点右侧状态标签 ── */
+.tk-campaign-node-status {
+  flex-shrink: 0;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.tk-campaign-node-status--completed {
+  background: rgba(212,160,48,0.15);
+  color: #d4a030;
+  border: 1px solid rgba(212,160,48,0.2);
+}
+.tk-campaign-node-status--current {
+  background: rgba(76,175,80,0.15);
+  color: #66bb6a;
+  border: 1px solid rgba(76,175,80,0.3);
+  animation: tk-campaign-status-glow 2s ease-in-out infinite;
+}
+@keyframes tk-campaign-status-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(76,175,80,0.1); }
+  50% { box-shadow: 0 0 10px rgba(76,175,80,0.3); }
+}
+.tk-campaign-node-status--locked {
+  background: rgba(100,100,100,0.1);
+  color: #666;
+  border: 1px solid rgba(100,100,100,0.2);
+}
+
+/* ── 连接线 ── */
+.tk-campaign-connector {
+  width: 2px;
+  height: 16px;
+  margin: 0 auto;
+  position: relative;
+}
+.tk-campaign-connector--active {
+  background: linear-gradient(180deg, #d4a030, #c9a96e);
+  box-shadow: 0 0 4px rgba(212,160,48,0.2);
+}
+.tk-campaign-connector--inactive {
+  background: #444;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 关卡详情弹窗
+ * ═══════════════════════════════════════════════════════════════ */
+.tk-campaign-detail-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: tk-campaign-fade-in 0.2s ease-out;
+}
+@keyframes tk-campaign-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tk-campaign-detail-modal {
+  width: 380px;
+  max-width: 95%;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #2a2218 0%, #1a1610 100%);
+  border: 2px solid rgba(201,169,110,0.3);
+  border-radius: 12px;
+  padding: 20px;
+  color: #e8d5a3;
+  position: relative;
+  animation: tk-campaign-modal-in 0.3s ease-out;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,169,110,0.3) transparent;
+}
+@keyframes tk-campaign-modal-in {
+  from { transform: scale(0.9) translateY(20px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.tk-campaign-detail-modal::-webkit-scrollbar { width: 4px; }
+.tk-campaign-detail-modal::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.3); border-radius: 2px; }
+
+/* ── 详情头部 ── */
+.tk-campaign-detail-header {
+  text-align: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+.tk-campaign-detail-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #f0d080;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  margin: 0 0 4px;
+}
+.tk-campaign-detail-desc {
+  font-size: 12px;
+  color: #a09080;
+  line-height: 1.5;
+  margin: 0;
+}
+.tk-campaign-detail-stars {
+  font-size: 16px;
+  color: #f0c040;
+  margin-top: 6px;
+  text-shadow: 0 0 8px rgba(240,192,64,0.4);
+}
+
+/* ── 详情信息行 ── */
+.tk-campaign-detail-section {
+  margin-bottom: 14px;
+  padding: 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.tk-campaign-detail-section-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #c9a96e;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── 敌方阵容 ── */
+.tk-campaign-enemy-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tk-campaign-enemy-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(168,82,65,0.15);
+  color: #d4876a;
+  border: 1px solid rgba(168,82,65,0.2);
+}
+
+/* ── 奖励预览 ── */
+.tk-campaign-rewards-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tk-campaign-reward-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(212,160,48,0.1);
+  color: #d4a030;
+  border: 1px solid rgba(212,160,48,0.2);
+}
+
+/* ── 详情按钮 ── */
+.tk-campaign-detail-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: 2px solid;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  text-align: center;
+}
+.tk-campaign-detail-btn--fight {
+  background: linear-gradient(180deg, rgba(201,169,110,0.2) 0%, rgba(139,115,85,0.1) 100%);
+  border-color: #c9a96e;
+  color: #f0d080;
+}
+.tk-campaign-detail-btn--fight:hover {
+  background: linear-gradient(180deg, rgba(201,169,110,0.35) 0%, rgba(139,115,85,0.2) 100%);
+  box-shadow: 0 0 12px rgba(201,169,110,0.3);
+}
+.tk-campaign-detail-btn--sweep {
+  background: rgba(76,175,80,0.1);
+  border-color: #4caf50;
+  color: #81c784;
+}
+.tk-campaign-detail-btn--sweep:hover {
+  background: rgba(76,175,80,0.2);
+  box-shadow: 0 0 12px rgba(76,175,80,0.3);
+}
+.tk-campaign-detail-btn--disabled {
+  background: rgba(100,100,100,0.1);
+  border-color: #555;
+  color: #777;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 战斗准备面板
+ * ═══════════════════════════════════════════════════════════════ */
+.tk-campaign-battle-prep {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: tk-campaign-fade-in 0.2s ease-out;
+}
+
+.tk-campaign-prep-panel {
+  width: 400px;
+  max-width: 95%;
+  background: linear-gradient(180deg, #2a2218 0%, #1a1610 100%);
+  border: 2px solid rgba(201,169,110,0.3);
+  border-radius: 12px;
+  padding: 20px;
+  color: #e8d5a3;
+  animation: tk-campaign-modal-in 0.3s ease-out;
+}
+
+/* ── 战力对比条 ── */
+.tk-campaign-power-compare {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.tk-campaign-power-bar {
+  flex: 1;
+  height: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  background: #333;
+  position: relative;
+}
+.tk-campaign-power-bar__ally {
+  height: 100%;
+  background: linear-gradient(90deg, #2e7d32, #66bb6a);
+  transition: width 0.5s ease;
+  border-radius: 4px 0 0 4px;
+}
+.tk-campaign-power-bar__enemy {
+  height: 100%;
+  background: linear-gradient(90deg, #c62828, #ef5350);
+  transition: width 0.5s ease;
+  border-radius: 0 4px 4px 0;
+}
+.tk-campaign-power-label {
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.tk-campaign-power-label--ally { color: #66bb6a; }
+.tk-campaign-power-label--enemy { color: #ef5350; }
+
+/* ── 武将选择 ── */
+.tk-campaign-general-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,169,110,0.3) transparent;
+}
+.tk-campaign-general-select::-webkit-scrollbar { width: 4px; }
+.tk-campaign-general-select::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.3); border-radius: 2px; }
+
+.tk-campaign-general-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tk-campaign-general-item:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(201,169,110,0.2);
+}
+.tk-campaign-general-item--selected {
+  border-color: rgba(201,169,110,0.5);
+  background: rgba(201,169,110,0.1);
+  box-shadow: 0 0 8px rgba(201,169,110,0.15);
+}
+.tk-campaign-general-item--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tk-campaign-general-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 2px solid #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.tk-campaign-general-item--selected .tk-campaign-general-check {
+  border-color: #c9a96e;
+  background: rgba(201,169,110,0.2);
+  color: #f0d080;
+}
+.tk-campaign-general-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: #e8d5a3;
+}
+.tk-campaign-general-stats {
+  font-size: 10px;
+  color: #8a7a6a;
+  margin-left: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 战斗动画面板
+ * ═══════════════════════════════════════════════════════════════ */
+.tk-campaign-battle-anim {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: tk-campaign-fade-in 0.3s ease-out;
+}
+
+.tk-campaign-battle-stage {
+  width: 420px;
+  max-width: 95%;
+  text-align: center;
+  color: #e8d5a3;
+}
+
+/* ── 战斗双方展示 ── */
+.tk-campaign-battle-field {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin: 16px 0;
+  padding: 16px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.tk-campaign-battle-side {
+  flex: 1;
+  text-align: center;
+}
+.tk-campaign-battle-side__label {
+  font-size: 11px;
+  color: #8a7a6a;
+  margin-bottom: 4px;
+}
+.tk-campaign-battle-side__name {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  margin-bottom: 8px;
+}
+
+/* ── 血条 ── */
+.tk-campaign-hp-bar {
+  width: 100%;
+  height: 14px;
+  background: #333;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-bottom: 4px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.tk-campaign-hp-bar__fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 0.5s ease;
+}
+.tk-campaign-hp-bar__fill--ally {
+  background: linear-gradient(90deg, #2e7d32, #66bb6a);
+}
+.tk-campaign-hp-bar__fill--enemy {
+  background: linear-gradient(90deg, #c62828, #ef5350);
+}
+.tk-campaign-hp-text {
+  font-size: 10px;
+  color: #8a7a6a;
+}
+
+/* ── VS 标志 ── */
+.tk-campaign-battle-vs {
+  font-size: 22px;
+  font-weight: bold;
+  color: #d4a030;
+  text-shadow: 0 0 12px rgba(212,160,48,0.4);
+  flex-shrink: 0;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+}
+
+/* ── 伤害数字弹出 ── */
+.tk-campaign-damage-popup {
+  position: absolute;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff6b6b;
+  text-shadow: 0 0 8px rgba(255,107,107,0.5), 0 2px 4px rgba(0,0,0,0.5);
+  animation: tk-campaign-damage-fly 1s ease-out forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+@keyframes tk-campaign-damage-fly {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  50% { opacity: 1; transform: translateY(-30px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+}
+
+/* ── 战斗回合日志 ── */
+.tk-campaign-battle-log {
+  max-height: 100px;
+  overflow-y: auto;
+  padding: 8px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 6px;
+  font-size: 11px;
+  color: #8a7a6a;
+  line-height: 1.6;
+  text-align: left;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,169,110,0.2) transparent;
+}
+.tk-campaign-battle-log::-webkit-scrollbar { width: 3px; }
+.tk-campaign-battle-log::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.2); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════
+ * 战斗结果弹窗
+ * ═══════════════════════════════════════════════════════════════ */
+.tk-campaign-result-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: tk-campaign-fade-in 0.3s ease-out;
+}
+
+.tk-campaign-result-panel {
+  width: 380px;
+  max-width: 95%;
+  background: linear-gradient(180deg, #2a2218 0%, #1a1610 100%);
+  border: 2px solid;
+  border-radius: 12px;
+  padding: 24px;
+  color: #e8d5a3;
+  text-align: center;
+  animation: tk-campaign-modal-in 0.4s ease-out;
+}
+.tk-campaign-result-panel--victory {
+  border-color: rgba(212,160,48,0.4);
+}
+.tk-campaign-result-panel--defeat {
+  border-color: rgba(168,82,65,0.4);
+}
+
+.tk-campaign-result-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+.tk-campaign-result-title {
+  font-size: 20px;
+  font-weight: bold;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  margin: 0 0 4px;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+.tk-campaign-result-title--victory { color: #f0d080; }
+.tk-campaign-result-title--defeat { color: #d4876a; }
+
+.tk-campaign-result-stars {
+  font-size: 24px;
+  color: #f0c040;
+  margin: 8px 0;
+  text-shadow: 0 0 12px rgba(240,192,64,0.5);
+}
+
+/* ── 战利品 ── */
+.tk-campaign-loot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(212,160,48,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(212,160,48,0.15);
+}
+.tk-campaign-loot-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  min-width: 60px;
+}
+.tk-campaign-loot-item__icon {
+  font-size: 20px;
+}
+.tk-campaign-loot-item__amount {
+  font-size: 13px;
+  font-weight: bold;
+  color: #f0d080;
+}
+.tk-campaign-loot-item__label {
+  font-size: 9px;
+  color: #8a7a6a;
+}
+
+/* ── 结果按钮 ── */
+.tk-campaign-result-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.tk-campaign-result-actions .tk-campaign-detail-btn {
+  flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 关卡进度条（头部）
+ * ═══════════════════════════════════════════════════════════════ */
+.tk-campaign-progress {
+  margin: 8px 12px 12px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  border: 1px solid rgba(201,169,110,0.1);
+}
+.tk-campaign-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.tk-campaign-progress-bar__fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d4a030, #f0c040);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.tk-campaign-progress-text {
+  font-size: 10px;
+  color: #8a7a6a;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 关闭按钮
+ * ═══════════════════════════════════════════════════════════════ */
+.tk-campaign-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.4);
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 5;
+}
+.tk-campaign-close-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * prefers-reduced-motion
+ * ═══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .tk-campaign-node--current,
+  .tk-campaign-node-status--current {
+    animation: none !important;
+  }
+  .tk-campaign-detail-overlay,
+  .tk-campaign-detail-modal,
+  .tk-campaign-battle-prep,
+  .tk-campaign-battle-anim,
+  .tk-campaign-result-overlay,
+  .tk-campaign-result-panel {
+    animation: none !important;
+  }
+  .tk-campaign-damage-popup {
+    animation: none !important;
+    opacity: 0;
+  }
+  .tk-campaign-hp-bar__fill,
+  .tk-campaign-power-bar__ally,
+  .tk-campaign-power-bar__enemy,
+  .tk-campaign-progress-bar__fill {
+    transition: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * v3.0 增强样式 — 战斗动画特效
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ── 战斗背景装饰 ── */
+.tk-campaign-battle-anim::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(198,40,40,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 60%, rgba(46,125,50,0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.tk-campaign-battle-stage {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── 战斗胜利特效 ── */
+@keyframes tk-campaign-victory-glow {
+  0% { text-shadow: 0 0 8px rgba(240,208,128,0.3); }
+  50% { text-shadow: 0 0 20px rgba(240,208,128,0.6), 0 0 40px rgba(240,192,64,0.3); }
+  100% { text-shadow: 0 0 8px rgba(240,208,128,0.3); }
+}
+
+/* ── 战斗失败特效 ── */
+@keyframes tk-campaign-defeat-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+/* ── 血条低血量闪烁 ── */
+@keyframes tk-campaign-hp-low {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.tk-campaign-hp-bar__fill--low {
+  animation: tk-campaign-hp-low 0.8s ease-in-out infinite;
+}
+
+/* ── 战斗回合指示器 ── */
+@keyframes tk-campaign-round-flash {
+  0% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── 战利品弹窗金色边框动画 ── */
+@keyframes tk-campaign-loot-border {
+  0% { border-color: rgba(212,160,48,0.4); }
+  50% { border-color: rgba(240,192,64,0.7); }
+  100% { border-color: rgba(212,160,48,0.4); }
+}
+.tk-campaign-result-panel--victory {
+  animation: tk-campaign-modal-in 0.4s ease-out, tk-campaign-loot-border 2s ease-in-out infinite;
+}
+
+/* ── 关卡节点悬浮时的光效 ── */
+.tk-campaign-node--current:hover {
+  box-shadow: 0 0 16px rgba(76,175,80,0.3), 0 0 32px rgba(76,175,80,0.1);
+}
+
+/* ── 章节横幅左侧装饰线 ── */
+.tk-campaign-chapter-banner::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+}
+
+/* ── 战斗准备面板中的武将悬浮效果 ── */
+.tk-campaign-general-item--selected:hover {
+  box-shadow: 0 0 12px rgba(201,169,110,0.25);
+}
+
+/* ── 战力对比条中间分隔线 ── */
+.tk-campaign-power-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  background: rgba(255,255,255,0.3);
+  transform: translateX(-50%);
+}
+
+/* ── 滚动条全局样式 ── */
+.tk-campaign-map {
+  scroll-behavior: smooth;
+}
+
+/* ── 关卡详情弹窗装饰角 ── */
+.tk-campaign-detail-modal::before,
+.tk-campaign-detail-modal::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: rgba(201,169,110,0.3);
+  border-style: solid;
+  pointer-events: none;
+}
+.tk-campaign-detail-modal::before {
+  top: 6px; left: 6px;
+  border-width: 2px 0 0 2px;
+  border-radius: 4px 0 0 0;
+}
+.tk-campaign-detail-modal::after {
+  bottom: 6px; right: 6px;
+  border-width: 0 2px 2px 0;
+  border-radius: 0 0 4px 0;
+}
+
+/* ── 扫荡按钮脉冲提示 ── */
+@keyframes tk-campaign-sweep-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(76,175,80,0.2); }
+  50% { box-shadow: 0 0 12px rgba(76,175,80,0.4); }
+}
+.tk-campaign-detail-btn--sweep:hover {
+  animation: tk-campaign-sweep-pulse 1.5s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * v3.0 战斗统计（战利品弹窗内）
+ * ═══════════════════════════════════════════════════════════════ */
+.tk-campaign-battle-stats {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 10px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.tk-campaign-battle-stats__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 60px;
+}
+.tk-campaign-battle-stats__label {
+  font-size: 10px;
+  color: #8a7a6a;
+  white-space: nowrap;
+}
+.tk-campaign-battle-stats__value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #e8d5a3;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * v3.0 战斗日志（可展开）
+ * ═══════════════════════════════════════════════════════════════ */
+.tk-campaign-result-log-section {
+  margin: 10px 0;
+}
+.tk-campaign-result-log-toggle {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: #c9a96e;
+  font-size: 11px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+}
+.tk-campaign-result-log-toggle:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(201,169,110,0.2);
+}
+.tk-campaign-result-log {
+  max-height: 120px;
+  overflow-y: auto;
+  padding: 8px;
+  margin-top: 6px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.05);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,169,110,0.2) transparent;
+}
+.tk-campaign-result-log::-webkit-scrollbar { width: 3px; }
+.tk-campaign-result-log::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.2); border-radius: 2px; }
+.tk-campaign-result-log__line {
+  font-size: 11px;
+  color: #8a7a6a;
+  line-height: 1.6;
+  padding: 1px 0;
+}
+
+/* ── prefers-reduced-motion: 新增动画也要禁用 ── */
+@media (prefers-reduced-motion: reduce) {
+  .tk-campaign-hp-bar__fill--low,
+  .tk-campaign-result-panel--victory,
+  .tk-campaign-detail-btn--sweep:hover {
+    animation: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 移动端适配
+ * ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .tk-campaign-detail-modal,
+  .tk-campaign-prep-panel,
+  .tk-campaign-result-panel {
+    width: 95%;
+    padding: 14px;
+  }
+  .tk-campaign-battle-field {
+    gap: 10px;
+    padding: 10px;
+  }
+  .tk-campaign-node {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .tk-campaign-node-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+  }
+  .tk-campaign-node-name {
+    font-size: 12px;
+  }
+}

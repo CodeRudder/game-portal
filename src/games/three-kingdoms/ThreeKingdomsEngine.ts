@@ -37,7 +37,7 @@ import { ResourcePointSystem } from './ResourcePointSystem';
 import { OfflineRewardSystem } from './OfflineRewardSystem';
 import { TradeRouteSystem } from './TradeRouteSystem';
 import { EventEnrichmentSystem } from './EventEnrichmentSystem';
-import { CampaignSystem } from './CampaignSystem';
+import { CampaignSystem, CAMPAIGN_STAGES } from './CampaignSystem';
 import { CampaignBattleSystem, type AttackerArmy, type BattleResult } from './CampaignBattleSystem';
 import { AudioManager } from './AudioManager';
 import { GeneralDialogueSystem, type DialogueScene, type DialogueMode, type DialogueResult } from './GeneralDialogueSystem';
@@ -47,8 +47,9 @@ import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
   INITIAL_RESOURCES, INITIALLY_UNLOCKED, CLICK_REWARD, FREE_STARTER_HERO,
+  LEVEL_STAGES,
   type BuildingDef, type GeneralDef, type TerritoryDef, type TechDef,
-  type BattleDef, type StageDef,
+  type BattleDef, type StageDef, type LevelStageData, type LevelStageEnemy,
 } from './constants';
 
 // ═══════════════════════════════════════════════════════════════
@@ -56,6 +57,26 @@ import {
 // ═══════════════════════════════════════════════════════════════
 
 type ActivePanel = 'none' | 'prestige' | 'tech' | 'territory' | 'battle' | 'generals';
+
+/** v3.0 关卡战斗结果 */
+export interface LevelBattleResult {
+  /** 是否胜利 */
+  victory: boolean;
+  /** 星级评价（1-3） */
+  stars: number;
+  /** 战斗回合数 */
+  rounds: number;
+  /** 总伤害 */
+  totalDamage: number;
+  /** 攻方剩余总 HP */
+  remainingHp: number;
+  /** 攻方最大总 HP */
+  maxHp: number;
+  /** 获得的奖励 */
+  rewards: { resource: string; amount: number }[];
+  /** 战斗日志 */
+  log: string[];
+}
 
 /** 对话事件（用于 UI 显示对话气泡） */
 export interface DialogueEvent {
@@ -100,6 +121,8 @@ export interface ThreeKingdomsSaveState {
   battlesWonCount?: number;
   /** 武将派遣分配：generalId → buildingId */
   generalAssignments?: Record<string, string>;
+  /** v3.0 关卡系统：已完成的关卡记录 */
+  completedLevelStages?: Record<string, { stars: number; bestTime: number }>;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -200,6 +223,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 武将派遣分配：generalId → buildingId */
   private generalAssignments: Record<string, string> = {};
+
+  /** v3.0 关卡系统：已完成的关卡记录 Map<stageId, {stars, bestTime}> */
+  private completedLevelStages: Map<string, { stars: number; bestTime: number }> = new Map();
 
   /** 当前选中的 NPC ID */
   private selectedNPC: string | null = null;
@@ -578,6 +604,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       storyEvents: this.storyEventSystem.serialize(),
       battlesWonCount: this.battlesWonCount,
       generalAssignments: { ...this.generalAssignments },
+      completedLevelStages: Object.fromEntries(this.completedLevelStages),
     };
   }
 
@@ -613,6 +640,11 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     // 反序列化武将派遣数据
     if (d.generalAssignments) {
       this.generalAssignments = { ...d.generalAssignments };
+    }
+
+    // 反序列化 v3.0 关卡系统
+    if (d.completedLevelStages) {
+      this.completedLevelStages = new Map(Object.entries(d.completedLevelStages));
     }
 
     // 重新检查已激活羁绊
@@ -1480,6 +1512,382 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       totalTroops: Math.floor(this.res.troops || 0),
       grain: Math.floor(this.res.grain || 0),
     };
+  }
+
+  /**
+   * 扫荡已通关关卡
+   *
+   * 对已通关关卡进行快速扫荡，直接获得奖励（按最低星级计算）。
+   * 不消耗兵力，但有冷却时间限制。
+   *
+   * @param stageId - 关卡 ID
+   * @returns 扫荡结果（包含奖励），失败返回 null
+   */
+  public sweepStage(stageId: string): BattleResult | null {
+    // 检查关卡是否已通关
+    if (!this.campaignSys.isStageCompleted(stageId)) {
+      return null;
+    }
+
+    // 检查冷却
+    const cooldown = this.campaignBattleSys.getCooldown(stageId);
+    if (!cooldown.canFight) {
+      return null;
+    }
+
+    // 获取关卡数据
+    const stageData = CAMPAIGN_STAGES.find(s => s.id === stageId);
+    if (!stageData) return null;
+
+    // 获取历史最佳星级
+    const record = this.campaignSys.getCompletionRecord(stageId);
+    const stars = record?.stars ?? 1;
+
+    // 按星级比例发放奖励（扫荡奖励 = 通关奖励 × 星级/3）
+    const rewardMultiplier = stars / 3;
+    const resources: Record<string, number> = {};
+    if (stageData.rewards.resources) {
+      for (const [res, amount] of Object.entries(stageData.rewards.resources)) {
+        resources[res] = Math.floor(amount * rewardMultiplier);
+      }
+    }
+
+    // 发放奖励
+    for (const [resId, amount] of Object.entries(resources)) {
+      this.giveRes(resId, amount);
+    }
+
+    // 设置冷却
+    this.campaignBattleSys.simulateBattle(stageId, this.buildAttackerArmy());
+
+    this.ftSys.add(`🧹 扫荡完成：${stageData.name}`, 0.5, 0.4, {
+      style: { color: COLOR_THEME.accentGold, fontSize: 16 },
+    });
+
+    this.emit('stateChange');
+
+    return {
+      victory: true,
+      stageId,
+      rounds: [],
+      totalAttackerLosses: 0,
+      totalDefenderLosses: 0,
+      troopsRemaining: 0,
+      troopsRemainingPercent: 100,
+      stars,
+      rewards: {
+        territory: stageData.rewards.territory,
+        resources,
+      },
+      summary: `扫荡${stageData.name}完成，获得${stars}星奖励！`,
+    };
+  }
+
+  /**
+   * 获取指定关卡的推荐战力（简化版，用于 UI 显示）
+   *
+   * @param stageId - 关卡 ID
+   * @returns 推荐战力值
+   */
+  public getStageRecommendedPower(stageId: string): number {
+    const stage = CAMPAIGN_STAGES.find(s => s.id === stageId);
+    if (!stage) return 0;
+    // 基于敌方守将和兵力计算推荐战力
+    const commanderPower = stage.enemyCommander.hp + stage.enemyCommander.attack * 5 + stage.enemyCommander.defense * 3;
+    const troopPower = stage.enemyUnits.reduce((sum, u) => sum + u.count * (u.hpPerUnit + u.attackPerUnit * 2 + u.defensePerUnit), 0);
+    return Math.floor((commanderPower + troopPower) * 0.8);
+  }
+
+  /**
+   * 获取我方当前总战力（用于战力对比）
+   */
+  public getPlayerPower(): number {
+    const army = this.buildAttackerArmy();
+    let power = army.totalTroops * 3;
+    for (const gen of army.generals) {
+      power += gen.attack * gen.level * 10;
+      power += gen.defense * gen.level * 5;
+      power += gen.intelligence * gen.level * 3;
+      power += gen.command * gen.level * 4;
+    }
+    return Math.floor(power);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // v3.0 关卡系统
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 获取所有关卡列表及其状态
+   *
+   * 返回关卡定义 + 完成状态 + 解锁状态
+   */
+  public getLevelStages(): Array<LevelStageData & {
+    completed: boolean;
+    stars: number;
+    unlocked: boolean;
+  }> {
+    return LEVEL_STAGES.map(s => ({
+      ...s,
+      completed: this.completedLevelStages.has(s.id),
+      stars: this.completedLevelStages.get(s.id)?.stars ?? 0,
+      unlocked: !s.prevStageId || this.completedLevelStages.has(s.prevStageId),
+    }));
+  }
+
+  /**
+   * 模拟回合制战斗
+   *
+   * 简化回合制规则：
+   * - 每回合攻击方全体打防御方全体
+   * - 伤害公式：max(1, attack - defense/2) * (0.8 + random * 0.4)
+   * - 交换攻防直到一方全灭
+   * - 星级：剩余HP% > 70% → 3星, > 40% → 2星, > 0% → 1星
+   *
+   * @param attackers - 攻方战斗单位
+   * @param defenders - 守方战斗单位
+   * @returns 战斗结果
+   */
+  public simulateLevelBattle(
+    attackers: { attack: number; defense: number; hp: number }[],
+    defenders: { attack: number; defense: number; hp: number }[],
+  ): LevelBattleResult {
+    const log: string[] = [];
+    let rounds = 0;
+    let totalDamage = 0;
+
+    // 深拷贝战斗单位，避免修改原始数据
+    const atkUnits = attackers.map(a => ({ ...a, currentHp: a.hp }));
+    const defUnits = defenders.map(d => ({ ...d, currentHp: d.hp }));
+    const maxHp = atkUnits.reduce((sum, a) => sum + a.hp, 0);
+
+    log.push(`⚔️ 战斗开始！攻方 ${atkUnits.length} 人 vs 守方 ${defUnits.length} 人`);
+
+    const MAX_ROUNDS = 50;
+
+    while (rounds < MAX_ROUNDS) {
+      rounds++;
+
+      // 攻方回合：攻方存活单位攻击守方存活单位
+      const aliveAttackers = atkUnits.filter(a => a.currentHp > 0);
+      const aliveDefenders = defUnits.filter(d => d.currentHp > 0);
+
+      if (aliveAttackers.length === 0 || aliveDefenders.length === 0) break;
+
+      // 攻方攻击守方
+      for (const atk of aliveAttackers) {
+        const targets = defUnits.filter(d => d.currentHp > 0);
+        if (targets.length === 0) break;
+
+        // 随机选择一个目标
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        const rawDmg = Math.max(1, atk.attack - target.defense / 2);
+        const dmg = Math.floor(rawDmg * (0.8 + Math.random() * 0.4));
+        target.currentHp = Math.max(0, target.currentHp - dmg);
+        totalDamage += dmg;
+
+        if (target.currentHp <= 0) {
+          log.push(`  回合${rounds}: 攻方(攻${atk.attack}) → ${target.attack > 0 ? '敌方' : '目标'} 击杀！造成 ${dmg} 伤害`);
+        }
+      }
+
+      // 守方回合：守方存活单位反击攻方
+      const survivingDefenders = defUnits.filter(d => d.currentHp > 0);
+      const survivingAttackers = atkUnits.filter(a => a.currentHp > 0);
+
+      if (survivingDefenders.length === 0 || survivingAttackers.length === 0) break;
+
+      for (const def of survivingDefenders) {
+        const targets = atkUnits.filter(a => a.currentHp > 0);
+        if (targets.length === 0) break;
+
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        const rawDmg = Math.max(1, def.attack - target.defense / 2);
+        const dmg = Math.floor(rawDmg * (0.8 + Math.random() * 0.4));
+        target.currentHp = Math.max(0, target.currentHp - dmg);
+        totalDamage += dmg;
+
+        if (target.currentHp <= 0) {
+          log.push(`  回合${rounds}: 守方(攻${def.attack}) → 反击击杀！造成 ${dmg} 伤害`);
+        }
+      }
+    }
+
+    const remainingHp = atkUnits.reduce((sum, a) => sum + Math.max(0, a.currentHp), 0);
+    const victory = defUnits.every(d => d.currentHp <= 0);
+
+    // 星级计算
+    let stars = 0;
+    if (victory) {
+      const hpPercent = maxHp > 0 ? remainingHp / maxHp : 0;
+      stars = hpPercent > 0.7 ? 3 : hpPercent > 0.4 ? 2 : 1;
+    }
+
+    log.push(victory
+      ? `🎉 战斗胜利！${rounds} 回合，${stars} 星评价`
+      : `💀 战斗失败...坚持了 ${rounds} 回合`);
+
+    return {
+      victory,
+      stars,
+      rounds,
+      totalDamage,
+      remainingHp,
+      maxHp,
+      rewards: [],
+      log,
+    };
+  }
+
+  /**
+   * 发起关卡战斗
+   *
+   * 从武将列表获取攻方属性，调用 simulateLevelBattle 进行战斗模拟。
+   * 胜利后自动完成关卡并发放奖励。
+   *
+   * @param stageId - 关卡 ID（如 's1_1'）
+   * @param generalIds - 参战武将 ID 列表
+   * @returns 战斗结果
+   */
+  public startLevelBattle(stageId: string, generalIds: string[]): LevelBattleResult {
+    // 获取关卡数据
+    const stageData = LEVEL_STAGES.find(s => s.id === stageId);
+    if (!stageData) {
+      return {
+        victory: false, stars: 0, rounds: 0, totalDamage: 0,
+        remainingHp: 0, maxHp: 0, rewards: [],
+        log: ['❌ 关卡不存在'],
+      };
+    }
+
+    // 检查关卡是否已解锁
+    const unlocked = !stageData.prevStageId || this.completedLevelStages.has(stageData.prevStageId);
+    if (!unlocked) {
+      return {
+        victory: false, stars: 0, rounds: 0, totalDamage: 0,
+        remainingHp: 0, maxHp: 0, rewards: [],
+        log: ['❌ 关卡未解锁，需先通关前置关卡'],
+      };
+    }
+
+    // 检查是否已通关（不允许重复打已通关关卡，请用 sweepLevelStage）
+    if (this.completedLevelStages.has(stageId)) {
+      return {
+        victory: false, stars: 0, rounds: 0, totalDamage: 0,
+        remainingHp: 0, maxHp: 0, rewards: [],
+        log: ['❌ 关卡已通关，请使用扫荡功能'],
+      };
+    }
+
+    // 从武将获取攻方属性
+    const attackers: { attack: number; defense: number; hp: number }[] = [];
+    for (const gid of generalIds) {
+      const stats = this.getGeneralStats(gid);
+      if (stats) {
+        attackers.push({
+          attack: stats.attack,
+          defense: stats.defense,
+          hp: 100 + stats.command * 5, // 统率影响兵力/HP
+        });
+      }
+    }
+
+    if (attackers.length === 0) {
+      return {
+        victory: false, stars: 0, rounds: 0, totalDamage: 0,
+        remainingHp: 0, maxHp: 0, rewards: [],
+        log: ['❌ 没有可用武将参战'],
+      };
+    }
+
+    // 守方数据
+    const defenders = stageData.enemies.map(e => ({
+      attack: e.attack,
+      defense: e.defense,
+      hp: e.hp,
+    }));
+
+    // 执行战斗
+    const result = this.simulateLevelBattle(attackers, defenders);
+
+    // 如果胜利：完成关卡 + 发放奖励
+    if (result.victory) {
+      this.completeLevelStage(stageId, result.stars);
+
+      // 发放奖励（copper → gold 映射）
+      const rewards = stageData.rewards.map(r => ({
+        resource: r.resource === 'copper' ? 'gold' : r.resource,
+        amount: r.amount,
+      }));
+      for (const r of rewards) {
+        this.giveRes(r.resource, r.amount);
+      }
+
+      result.rewards = rewards;
+
+      this.ftSys.add(`🏆 通关：${stageData.name}（${result.stars}星）`, 0.5, 0.35, {
+        style: { color: COLOR_THEME.accentGold, fontSize: 18 },
+      });
+
+      this.emit('stateChange');
+    }
+
+    return result;
+  }
+
+  /**
+   * 完成关卡（内部方法）
+   *
+   * 记录关卡完成状态和星级，如果已有记录则保留最高星级。
+   *
+   * @param stageId - 关卡 ID
+   * @param stars - 星级评价
+   */
+  private completeLevelStage(stageId: string, stars: number): void {
+    const existing = this.completedLevelStages.get(stageId);
+    const bestStars = existing ? Math.max(existing.stars, stars) : stars;
+    this.completedLevelStages.set(stageId, {
+      stars: bestStars,
+      bestTime: Date.now(),
+    });
+  }
+
+  /**
+   * 扫荡已通关关卡
+   *
+   * 只有已通关的关卡才能扫荡，直接发放奖励（按星级比例）。
+   *
+   * @param stageId - 关卡 ID
+   * @returns 扫荡结果（包含奖励），失败返回 null
+   */
+  public sweepLevelStage(stageId: string): { rewards: { resource: string; amount: number }[]; stars: number } | null {
+    // 只有已通关关卡可扫荡
+    const record = this.completedLevelStages.get(stageId);
+    if (!record) return null;
+
+    // 获取关卡数据
+    const stageData = LEVEL_STAGES.find(s => s.id === stageId);
+    if (!stageData) return null;
+
+    // 按星级比例发放奖励（扫荡奖励 = 通关奖励 × 星级/3，copper → gold 映射）
+    const multiplier = record.stars / 3;
+    const rewards = stageData.rewards.map(r => ({
+      resource: r.resource === 'copper' ? 'gold' : r.resource,
+      amount: Math.floor(r.amount * multiplier),
+    }));
+
+    // 发放奖励
+    for (const r of rewards) {
+      this.giveRes(r.resource, r.amount);
+    }
+
+    this.ftSys.add(`🧹 扫荡：${stageData.name}`, 0.5, 0.4, {
+      style: { color: COLOR_THEME.accentGold, fontSize: 14 },
+    });
+
+    this.emit('stateChange');
+
+    return { rewards, stars: record.stars };
   }
 
   // ═══════════════════════════════════════════════════════════

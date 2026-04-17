@@ -29,14 +29,14 @@ import {
 // ═══════════════════════════════════════════════════════════════
 
 describe('CampaignSystem - 基础关卡数据', () => {
-  it('should have 15 campaign stages', () => {
-    expect(CAMPAIGN_STAGES).toHaveLength(15);
+  it('should have 18 campaign stages', () => {
+    expect(CAMPAIGN_STAGES).toHaveLength(18);
   });
 
   it('should have correct stage order', () => {
     const orders = CAMPAIGN_STAGES.map(s => s.order);
-    // 15 levels with non-sequential orders representing branching paths
-    expect(orders).toEqual([1, 5, 8, 11, 13, 6, 2, 3, 4, 6, 7, 9, 10, 12, 14]);
+    // 18 levels with non-sequential orders representing branching paths
+    expect(orders).toEqual([1, 5, 8, 11, 13, 18, 2, 3, 4, 6, 7, 9, 10, 14, 15, 16, 17, 6]);
   });
 
   it('should have prerequisite chain via connections', () => {
@@ -111,7 +111,7 @@ describe('CampaignSystem - 基础关卡数据', () => {
   it('should have story progression (subtitles)', () => {
     const subtitles = CAMPAIGN_STAGES.map(s => s.subtitle);
     expect(subtitles[0]).toContain('第一章');
-    expect(subtitles[subtitles.length - 1]).toContain('第五章');
+    expect(subtitles[subtitles.length - 1]).toContain('终章');
   });
 
   it('should have rewards with territory', () => {
@@ -126,8 +126,8 @@ describe('CampaignSystem - 基础关卡数据', () => {
     expect(heroStages.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('should have 14 campaign connections', () => {
-    expect(CAMPAIGN_CONNECTIONS).toHaveLength(14);
+  it('should have 17 campaign connections', () => {
+    expect(CAMPAIGN_CONNECTIONS).toHaveLength(17);
   });
 });
 
@@ -136,8 +136,8 @@ describe('CampaignSystem - 基础关卡数据', () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe('CampaignSystem - 关卡详情数据', () => {
-  it('should have 15 level details matching campaign stages', () => {
-    expect(CAMPAIGN_LEVEL_DETAILS).toHaveLength(15);
+  it('should have 18 level details matching campaign stages', () => {
+    expect(CAMPAIGN_LEVEL_DETAILS).toHaveLength(18);
     // 每个 detail 的 ID 应与 stage 一一对应
     for (const detail of CAMPAIGN_LEVEL_DETAILS) {
       const stage = CAMPAIGN_STAGES.find(s => s.id === detail.id);

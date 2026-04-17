@@ -61,11 +61,11 @@ describe('CampaignUI - 关卡列表数据获取', () => {
     sys = new CampaignSystem();
   });
 
-  it('should return all 15 stages for panel rendering', () => {
+  it('should return all 18 stages for panel rendering', () => {
     const stages = getStageListData(sys);
-    expect(stages).toHaveLength(15);
+    expect(stages).toHaveLength(18);
     expect(stages[0].name).toBe('涿郡起兵');
-    expect(stages[5].name).toBe('天下一统');
+    expect(stages[5].name).toBe('天下归一');
   });
 
   it('should show first stage as available and rest as locked', () => {
@@ -266,7 +266,7 @@ describe('CampaignUI - 战斗流程（UI 角度）', () => {
 
   it('should provide correct total/max stars for progress display', () => {
     expect(sys.getTotalStars()).toBe(0);
-    expect(sys.getMaxStars()).toBe(45); // 15 levels × 3 stars
+    expect(sys.getMaxStars()).toBe(54); // 18 levels × 3 stars
 
     sys.completeStage('campaign_zhuo', 90);
     expect(sys.getTotalStars()).toBeGreaterThanOrEqual(1);
