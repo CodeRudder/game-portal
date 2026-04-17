@@ -578,14 +578,16 @@ function LevelDetailModal({
     <div style={{
       position: 'absolute', top: '50%', left: '50%',
       transform: 'translate(-50%, -50%)',
-      background: 'rgba(0,0,0,0.95)', borderRadius: 12, padding: 20,
-      width: 440, maxHeight: '85vh', overflowY: 'auto',
+      background: 'rgba(0,0,0,0.80)', borderRadius: 12, padding: 16,
+      width: 400, maxHeight: '80vh', overflowY: 'auto',
       border: `1px solid ${CT.selectedBorder}`,
       color: CT.textPrimary, zIndex: 110,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
     }}>
       {/* 标题行 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 18, color: CT.accentGold, fontFamily: '"Noto Serif SC", serif', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>◆ {detail.name}</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 16, color: CT.accentGold, fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif", textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>◆ {detail.name}</h2>
         <span style={{
           fontSize: 12, padding: '2px 10px', borderRadius: 4,
           color: diff.color, background: diff.bg, fontWeight: 'bold',
@@ -741,7 +743,7 @@ function CampaignPanel({
       WebkitBackdropFilter: 'blur(8px)',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 18, color: CT.accentGold, fontFamily: '"Noto Serif SC", serif', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>◆ 🏆 征战天下</h2>
+        <h2 style={{ margin: 0, fontSize: 16, color: CT.accentGold, fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif", textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>◆ 🏆 征战天下</h2>
         <button onClick={onClose} style={{
           background: 'transparent', border: `1px solid ${CT.selectedBorder}`,
           color: CT.textDim, borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12,
@@ -990,15 +992,17 @@ function CampaignBattleReport({
     <div style={{
       position: 'absolute', top: '50%', left: '50%',
       transform: 'translate(-50%, -50%)',
-      background: 'rgba(0,0,0,0.95)', borderRadius: 12, padding: 24,
-      width: 420, maxHeight: '85vh', overflowY: 'auto',
+      background: 'rgba(0,0,0,0.80)', borderRadius: 12, padding: 20,
+      width: 380, maxHeight: '80vh', overflowY: 'auto',
       border: `2px solid ${isVictory ? '#6b8e5a' : '#a85241'}`,
       color: CT.textPrimary, zIndex: 120,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
     }}>
       {/* 标题 */}
-      <div style={{ textAlign: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 32, marginBottom: 6 }}>{isVictory ? '🎉' : '💀'}</div>
-        <h2 style={{ margin: 0, fontSize: 20, color: isVictory ? '#6b8e5a' : '#a85241', fontFamily: '"Noto Serif SC", serif', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+      <div style={{ textAlign: 'center', marginBottom: 14 }}>
+        <div style={{ fontSize: 28, marginBottom: 4 }}>{isVictory ? '🎉' : '💀'}</div>
+        <h2 style={{ margin: 0, fontSize: 18, color: isVictory ? '#6b8e5a' : '#a85241', fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif", textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
           {isVictory ? '◆ 大获全胜！' : '◆ 兵败如山倒'}
         </h2>
         {result.stars != null && result.stars > 0 && (
@@ -3219,14 +3223,16 @@ export default function ThreeKingdomsPixiGame() {
             <div style={{
               position: 'absolute', top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
-              background: 'rgba(0,0,0,0.85)',
-              borderRadius: 12, padding: 24,
-              width: 340, textAlign: 'center',
+              background: 'rgba(0,0,0,0.75)',
+              borderRadius: 12, padding: 20,
+              width: 320, textAlign: 'center',
               border: `1px solid ${COLOR_THEME.selectedBorder}`,
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
             }}>
               <h2 style={{
-                fontSize: 22, color: COLOR_THEME.accentGold,
-                marginBottom: 16, fontFamily: '"Noto Serif SC", serif',
+                fontSize: 20, color: COLOR_THEME.accentGold,
+                marginBottom: 14, fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif",
                 textShadow: '0 1px 4px rgba(0,0,0,0.5)',
               }}>
                 ◆ 👑 声望转生
@@ -3341,19 +3347,20 @@ export default function ThreeKingdomsPixiGame() {
               <div className="tk-tech-overlay" style={{
                 position: 'absolute', top: '50%', left: '50%',
                 transform: 'translate(-50%, -50%)',
-                background: 'rgba(35, 22, 10, 0.92)',
+                background: 'rgba(35, 22, 10, 0.75)',
                 backdropFilter: 'blur(8px)',
-                borderRadius: 12, padding: 20,
-                width: 680, maxHeight: '88vh',
+                WebkitBackdropFilter: 'blur(8px)',
+                borderRadius: 12, padding: 16,
+                width: 620, maxHeight: '82vh',
                 overflowY: 'auto',
                 border: `1px solid ${COLOR_THEME.selectedBorder}`,
                 boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 60px rgba(212,160,48,0.08)',
               }}>
                 {/* 标题 + 进度 */}
-                <div style={{ textAlign: 'center', marginBottom: 14 }}>
+                <div style={{ textAlign: 'center', marginBottom: 12 }}>
                   <h2 style={{
-                    fontSize: 20, color: COLOR_THEME.accentGold,
-                    margin: '0 0 4px', fontFamily: '"Noto Serif SC", serif',
+                    fontSize: 18, color: COLOR_THEME.accentGold,
+                    margin: '0 0 4px', fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif",
                     textShadow: '0 0 12px rgba(212,160,48,0.3)',
                     letterSpacing: 4,
                   }}>
@@ -4083,7 +4090,7 @@ export default function ThreeKingdomsPixiGame() {
                   <GeneralCard
                     key={h.id}
                     general={h}
-                    isSelected={selectedHero?.id === h.id}
+                    isSelected={(selectedHero as typeof heroes[number] | null)?.id === h.id}
                     onSelect={() => setSelectedHero(h)}
                     onRecruit={h.canRecruit && !h.unlocked ? () => {
                       const engine = engineRef.current;
@@ -4427,8 +4434,8 @@ export default function ThreeKingdomsPixiGame() {
               boxShadow: `0 0 30px rgba(255,215,0,0.15)`,
             }}>
               <h2 style={{
-                fontSize: 22, color: COLOR_THEME.accentGold,
-                marginBottom: 12, fontFamily: '"Noto Serif SC", serif',
+                fontSize: 20, color: COLOR_THEME.accentGold,
+                marginBottom: 10, fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif",
                 textShadow: '0 1px 4px rgba(0,0,0,0.5)',
               }}>
                 ◆ {step.title}
@@ -4501,10 +4508,10 @@ export default function ThreeKingdomsPixiGame() {
 
       {/* ═══════════ 存档管理面板 ═══════════ */}
       {showSavePanel && (
-        <div style={{position:'absolute',inset:0,zIndex:60,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div style={{background:'#2a1f14',border:'2px solid #8B7355',borderRadius:8,padding:24,minWidth:360,maxHeight:'80vh',overflow:'auto'}}>
+        <div style={{position:'absolute',inset:0,zIndex:60,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(4px)',WebkitBackdropFilter:'blur(4px)'}}>
+          <div style={{background:'rgba(42,31,20,0.85)',border:'2px solid #8B7355',borderRadius:12,padding:20,minWidth:340,maxHeight:'75vh',overflow:'auto',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <h3 style={{color:'#c9a96e',margin:0,fontFamily:'"Noto Serif SC", serif',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}>◆ 📜 存档管理</h3>
+              <h3 style={{color:'#c9a96e',margin:0,fontFamily:"'KaiTi','STKaiti','Noto Serif SC', serif",textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}>◆ 📜 存档管理</h3>
               <button onClick={() => setShowSavePanel(false)} style={{background:'transparent',color:'#c9a96e',border:'none',cursor:'pointer',fontSize:18}}>✕</button>
             </div>
             <button onClick={() => {
@@ -4545,10 +4552,10 @@ export default function ThreeKingdomsPixiGame() {
         ];
         const unlocked = ACHS.filter(a => a.ok).length;
         return (
-          <div style={{position:'absolute',inset:0,zIndex:60,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <div style={{background:'#2a1f14',border:'2px solid #8B7355',borderRadius:8,padding:24,minWidth:440,maxHeight:'80vh',overflow:'auto'}}>
+          <div style={{position:'absolute',inset:0,zIndex:60,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(4px)',WebkitBackdropFilter:'blur(4px)'}}>
+            <div style={{background:'rgba(42,31,20,0.85)',border:'2px solid #8B7355',borderRadius:12,padding:20,minWidth:400,maxHeight:'75vh',overflow:'auto',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <h3 style={{color:'#c9a96e',margin:0,fontFamily:'"Noto Serif SC", serif',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}>◆ 🏆 成就 ({unlocked}/{ACHS.length})</h3>
+                <h3 style={{color:'#c9a96e',margin:0,fontFamily:"'KaiTi','STKaiti','Noto Serif SC', serif",textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}>◆ 🏆 成就 ({unlocked}/{ACHS.length})</h3>
                 <button onClick={() => setShowAchievements(false)} style={{background:'transparent',color:'#c9a96e',border:'none',cursor:'pointer',fontSize:18}}>✕</button>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginTop:16}}>
@@ -4600,16 +4607,18 @@ export default function ThreeKingdomsPixiGame() {
             style={{
               position: 'absolute', top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
-              background: 'rgba(0,0,0,0.92)', borderRadius: 12, padding: 20,
-              width: 480, maxHeight: '80vh', overflowY: 'auto',
+              background: 'rgba(0,0,0,0.75)', borderRadius: 12, padding: 16,
+              width: 420, maxHeight: '75vh', overflowY: 'auto',
               border: `1px solid ${COLOR_THEME.selectedBorder}`,
               color: COLOR_THEME.textPrimary, zIndex: 60,
               boxShadow: '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(139,115,85,0.15)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
             }}
           >
             {/* 关闭按钮 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontSize: 18, color: COLOR_THEME.accentGold, fontFamily: '"Noto Serif SC", serif', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>◆ 📋 NPC 信息</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h2 style={{ margin: 0, fontSize: 16, color: COLOR_THEME.accentGold, fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif", textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>◆ 📋 NPC 信息</h2>
               <button
                 onClick={() => setSelectedNpcId(null)}
                 style={{
