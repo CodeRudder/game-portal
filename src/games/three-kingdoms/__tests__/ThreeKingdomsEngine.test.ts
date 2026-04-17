@@ -148,8 +148,10 @@ describe('常量验证', () => {
     expect(INITIAL_RESOURCES.destiny).toBe(0);
   });
 
-  it('INITIALLY_UNLOCKED 包含 farm 和 market', () => {
-    expect(INITIALLY_UNLOCKED).toEqual(['farm', 'market']);
+  it('INITIALLY_UNLOCKED 包含所有核心建筑', () => {
+    expect(INITIALLY_UNLOCKED).toEqual([
+      'farm', 'market', 'barracks', 'smithy', 'academy', 'wall', 'beacon_tower', 'granary',
+    ]);
   });
 
   it('CLICK_REWARD 给 grain +1', () => {
@@ -296,13 +298,16 @@ describe('建筑系统', () => {
     engine = createEngine();
   });
 
-  it('初始 farm 和 market 已解锁', () => {
+  it('初始核心建筑已解锁', () => {
     const bldg = (engine as any).bldg;
-    expect(bldg.isUnlocked('farm')).toBe(true);
-    expect(bldg.isUnlocked('market')).toBe(true);
-    // 其他建筑未解锁
+    // 所有 INITIALLY_UNLOCKED 中的建筑应已解锁
+    for (const id of INITIALLY_UNLOCKED) {
+      expect(bldg.isUnlocked(id)).toBe(true);
+    }
+    // 非核心建筑未解锁
+    const unlockedSet = new Set(INITIALLY_UNLOCKED);
     for (const b of BUILDINGS) {
-      if (b.id !== 'farm' && b.id !== 'market') {
+      if (!unlockedSet.has(b.id)) {
         expect(bldg.isUnlocked(b.id)).toBe(false);
       }
     }
@@ -354,9 +359,9 @@ describe('建筑系统', () => {
     setResources(engine, { grain: 10000, gold: 10000 });
     const bldg = (engine as any).bldg;
     const hasFn = (id: string, a: number) => true; // pretend we have everything
-    // barracks is not initially unlocked (requires resource threshold)
-    expect(bldg.isUnlocked('barracks')).toBe(false);
-    expect(bldg.canAfford('barracks', hasFn)).toBe(false);
+    // tavern is not initially unlocked (requires academy Lv.3)
+    expect(bldg.isUnlocked('tavern')).toBe(false);
+    expect(bldg.canAfford('tavern', hasFn)).toBe(false);
   });
 });
 

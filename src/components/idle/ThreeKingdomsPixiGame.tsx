@@ -321,7 +321,45 @@ const ThreeKingdomsPixiGame: React.FC = () => {
     <div className={`tk-container ${showGuide && guideStep < GUIDE_STEPS.length ? `tk-guide-step-${guideStep}` : ''}`}>
       {/* ═══ 顶部资源栏 ═══ */}
       <div className="tk-resource-bar">
-        <span className="tk-game-title">三国霸业</span>
+        <div style={{ display: 'flex', flexDirection: 'column', marginRight: 20, minWidth: 120 }}>
+          <span className="tk-game-title" style={{ marginRight: 0, fontSize: 20, lineHeight: '22px' }}>三国霸业</span>
+          {(() => {
+            // 主公等级进度条：基于所有核心建筑总等级
+            const totalLevel = Object.values(levels).reduce((s, v) => s + v, 0);
+            const maxLevel = 100; // 主公等级满级为100（总建筑等级）
+            const lordLevel = Math.floor(totalLevel / 10); // 每10级总建筑等级 = 1级主公等级
+            const progressInLevel = totalLevel % 10; // 当前主公等级内的进度
+            const progressPercent = Math.min(100, (progressInLevel / 10) * 100);
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                <span style={{ fontSize: 11, color: '#C9A84C', whiteSpace: 'nowrap' }}>
+                  Lv.{lordLevel}
+                </span>
+                <div
+                  style={{
+                    width: 60,
+                    height: 4,
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${progressPercent}%`,
+                      height: '100%',
+                      background: '#C9A84C',
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: 9, color: '#A0A0A0', whiteSpace: 'nowrap' }}>
+                  {progressInLevel}/10
+                </span>
+              </div>
+            );
+          })()}
+        </div>
         <div className="tk-resources">
           {TOP_RESOURCES.map(id => {
             const ui = RESOURCE_UI[id];
@@ -329,7 +367,8 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             const val = resources[id] ?? 0;
             const rate = rates[id] ?? 0;
             const cap = ui.hasCap ? (resources[ui.capId ?? ''] ?? 999) : 0;
-            const barRatio = ui.hasCap && cap > 0 ? Math.min(1, val / cap) : 0;
+            const rawRatio = ui.hasCap && cap > 0 ? Math.min(1, val / cap) : 0;
+            const barRatio = ui.hasCap ? Math.max(rawRatio, val > 0 ? 0.02 : 0) : 0;
             return (
               <div key={id} className="tk-resource-item">
                 <span className="tk-resource-icon">{ui.icon}</span>
@@ -499,7 +538,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
               <div className="tk-task-progress-bar">
                 <div
                   className="tk-task-progress-fill"
-                  style={{ width: `${task.progress * 100}%` }}
+                  style={{ width: `${Math.max(task.progress * 100, task.progress > 0 ? 2 : 0)}%` }}
                 />
               </div>
               <div className="tk-task-reward">

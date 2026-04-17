@@ -718,7 +718,16 @@ export const INITIAL_RESOURCES: Record<string, number> = {
 // 初始解锁建筑
 // ═══════════════════════════════════════════════════════════════
 
-export const INITIALLY_UNLOCKED: string[] = ['farm', 'market'];
+export const INITIALLY_UNLOCKED: string[] = [
+  'farm',         // 屯田
+  'market',       // 商行
+  'barracks',     // 军营
+  'smithy',       // 铁匠铺
+  'academy',      // 太学
+  'wall',         // 城防
+  'beacon_tower', // 烽火台
+  'granary',      // 粮仓
+];
 
 // ═══════════════════════════════════════════════════════════════
 // 点击产出
