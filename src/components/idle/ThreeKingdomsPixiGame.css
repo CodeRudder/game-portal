@@ -10337,3 +10337,408 @@ button:active {
     animation: none !important;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+ * R17 优化: 关卡面板全面重做 + 武将动态增强 + 科技进度优化
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ─── R17-1: 关卡路径图样式 ─── */
+.tk-r17-campaign-path {
+  position: relative;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tk-r17-campaign-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.tk-r17-campaign-node::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: -8px;
+  width: 2px;
+  height: 8px;
+  background: linear-gradient(to bottom, rgba(139,115,85,0.3), rgba(139,115,85,0.6));
+}
+.tk-r17-campaign-node:first-child::before {
+  display: none;
+}
+.tk-r17-campaign-node-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+/* 已通关节点 */
+.tk-r17-node-completed .tk-r17-campaign-node-dot {
+  background: linear-gradient(135deg, #D4A843, #B8922E);
+  color: #FFF;
+  box-shadow: 0 0 8px rgba(212,168,67,0.4);
+}
+.tk-r17-node-completed {
+  background: rgba(212,168,67,0.08);
+  border: 1px solid rgba(212,168,67,0.2);
+}
+
+/* 当前可挑战节点 */
+.tk-r17-node-current .tk-r17-campaign-node-dot {
+  background: linear-gradient(135deg, #4CAF50, #388E3C);
+  color: #FFF;
+  animation: tk-r17-current-pulse 2s ease-in-out infinite;
+}
+.tk-r17-node-current {
+  background: rgba(76,175,80,0.08);
+  border: 1px solid rgba(76,175,80,0.3);
+}
+@keyframes tk-r17-current-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(76,175,80,0.4); transform: scale(1); }
+  50% { box-shadow: 0 0 14px rgba(76,175,80,0.7); transform: scale(1.08); }
+}
+
+/* 锁定节点 */
+.tk-r17-node-locked .tk-r17-campaign-node-dot {
+  background: rgba(100,100,100,0.4);
+  color: #888;
+}
+.tk-r17-node-locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 关卡hover效果 */
+.tk-r17-campaign-node:not(.tk-r17-node-locked):hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.tk-r17-node-current:hover {
+  background: rgba(76,175,80,0.15);
+  border-color: rgba(76,175,80,0.5);
+}
+
+/* 关卡信息区 */
+.tk-r17-campaign-info {
+  flex: 1;
+  min-width: 0;
+}
+.tk-r17-campaign-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #E8D5B5;
+  margin-bottom: 2px;
+}
+.tk-r17-campaign-desc {
+  font-size: 11px;
+  color: #A89070;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tk-r17-campaign-stars {
+  display: flex;
+  gap: 2px;
+  color: #D4A843;
+  font-size: 12px;
+}
+
+/* ─── R17-2: 战场背景氛围 ─── */
+.tk-r17-battlefield-bg {
+  position: relative;
+  overflow: hidden;
+}
+.tk-r17-battlefield-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse at 20% 80%, rgba(204,51,51,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(51,102,204,0.06) 0%, transparent 50%),
+    linear-gradient(to bottom, rgba(60,40,20,0.1), transparent 30%, rgba(60,40,20,0.15));
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 远山剪影 */
+.tk-r17-mountain-silhouette {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: 
+    linear-gradient(135deg at 15% 100%, transparent 40%, rgba(80,60,40,0.15) 40%, rgba(80,60,40,0.15) 42%, transparent 42%),
+    linear-gradient(150deg at 35% 100%, transparent 35%, rgba(90,70,50,0.12) 35%, rgba(90,70,50,0.12) 37%, transparent 37%),
+    linear-gradient(140deg at 55% 100%, transparent 30%, rgba(85,65,45,0.1) 30%, rgba(85,65,45,0.1) 32%, transparent 32%),
+    linear-gradient(155deg at 75% 100%, transparent 38%, rgba(95,75,55,0.13) 38%, rgba(95,75,55,0.13) 40%, transparent 40%),
+    linear-gradient(145deg at 90% 100%, transparent 42%, rgba(80,60,40,0.11) 42%, rgba(80,60,40,0.11) 44%, transparent 44%);
+  pointer-events: none;
+}
+
+/* 烽火效果 */
+@keyframes tk-r17-beacon-flicker {
+  0%, 100% { opacity: 0.3; transform: scaleY(1); }
+  25% { opacity: 0.6; transform: scaleY(1.1); }
+  50% { opacity: 0.4; transform: scaleY(0.95); }
+  75% { opacity: 0.7; transform: scaleY(1.05); }
+}
+.tk-r17-beacon {
+  position: absolute;
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(to top, rgba(255,120,30,0.6), rgba(255,80,20,0.2), transparent);
+  border-radius: 2px;
+  animation: tk-r17-beacon-flicker 3s ease-in-out infinite;
+}
+
+/* ─── R17-3: 战力对比条 ─── */
+.tk-r17-power-compare {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.tk-r17-power-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.tk-r17-power-bar-ally {
+  background: rgba(76,175,80,0.2);
+}
+.tk-r17-power-bar-ally-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #66BB6A);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.tk-r17-power-bar-enemy {
+  background: rgba(204,51,51,0.2);
+}
+.tk-r17-power-bar-enemy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #CC3333, #E53935);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.tk-r17-power-label {
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 40px;
+  text-align: center;
+}
+.tk-r17-power-label-ally { color: #66BB6A; }
+.tk-r17-power-label-enemy { color: #E53935; }
+
+/* ─── R17-4: 关卡弹窗增强 ─── */
+.tk-r17-campaign-modal {
+  animation: tk-r17-modal-slide-up 0.35s ease-out;
+}
+@keyframes tk-r17-modal-slide-up {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.tk-r17-campaign-history {
+  padding: 10px 14px;
+  background: rgba(139,115,85,0.08);
+  border-radius: 6px;
+  border-left: 3px solid #D4A843;
+  margin: 8px 0;
+}
+.tk-r17-campaign-history-text {
+  font-size: 12px;
+  color: #C8B090;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ─── R17-5: 武将卡片入场动画 ─── */
+.tk-r17-general-card-enter {
+  animation: tk-r17-card-pop-in 0.4s ease-out both;
+}
+@keyframes tk-r17-card-pop-in {
+  from { transform: scale(0.85) translateY(10px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.tk-r17-general-card-enter:nth-child(1) { animation-delay: 0.05s; }
+.tk-r17-general-card-enter:nth-child(2) { animation-delay: 0.1s; }
+.tk-r17-general-card-enter:nth-child(3) { animation-delay: 0.15s; }
+.tk-r17-general-card-enter:nth-child(4) { animation-delay: 0.2s; }
+.tk-r17-general-card-enter:nth-child(5) { animation-delay: 0.25s; }
+.tk-r17-general-card-enter:nth-child(6) { animation-delay: 0.3s; }
+
+/* 武将hover增强 */
+.tk-r17-general-hover {
+  transition: all 0.25s ease;
+}
+.tk-r17-general-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* 蜀国红色发光 */
+.tk-r17-faction-shu:hover, .tk-r17-faction-shu.tk-r17-selected {
+  box-shadow: 0 0 10px rgba(196,30,58,0.4), 0 4px 12px rgba(0,0,0,0.2);
+  border-color: rgba(196,30,58,0.6);
+}
+/* 魏国蓝色发光 */
+.tk-r17-faction-wei:hover, .tk-r17-faction-wei.tk-r17-selected {
+  box-shadow: 0 0 10px rgba(30,144,255,0.4), 0 4px 12px rgba(0,0,0,0.2);
+  border-color: rgba(30,144,255,0.6);
+}
+/* 吴国绿色发光 */
+.tk-r17-faction-wu:hover, .tk-r17-faction-wu.tk-r17-selected {
+  box-shadow: 0 0 10px rgba(50,205,50,0.4), 0 4px 12px rgba(0,0,0,0.2);
+  border-color: rgba(50,205,50,0.6);
+}
+/* 群雄灰色发光 */
+.tk-r17-faction-qun:hover, .tk-r17-faction-qun.tk-r17-selected {
+  box-shadow: 0 0 10px rgba(160,160,160,0.4), 0 4px 12px rgba(0,0,0,0.2);
+  border-color: rgba(160,160,160,0.6);
+}
+
+/* 品质边框发光 */
+.tk-r17-quality-legendary {
+  border: 2px solid #D4A843;
+  box-shadow: 0 0 8px rgba(212,168,67,0.3), inset 0 0 4px rgba(212,168,67,0.1);
+}
+.tk-r17-quality-epic {
+  border: 2px solid #9B59B6;
+  box-shadow: 0 0 8px rgba(155,89,182,0.3), inset 0 0 4px rgba(155,89,182,0.1);
+}
+.tk-r17-quality-rare {
+  border: 2px solid #3498DB;
+  box-shadow: 0 0 6px rgba(52,152,219,0.25);
+}
+
+/* 属性条加载动画 */
+.tk-r17-attr-bar-fill {
+  animation: tk-r17-attr-fill 0.6s ease-out both;
+}
+@keyframes tk-r17-attr-fill {
+  from { width: 0 !important; }
+}
+.tk-r17-attr-bar-fill:nth-child(1) { animation-delay: 0.1s; }
+.tk-r17-attr-bar-fill:nth-child(2) { animation-delay: 0.2s; }
+.tk-r17-attr-bar-fill:nth-child(3) { animation-delay: 0.3s; }
+
+/* ─── R17-6: 科技进度条增强 ─── */
+.tk-r17-tech-progress {
+  position: relative;
+  height: 6px;
+  background: rgba(139,115,85,0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tk-r17-tech-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #D4A843, #E8C86A, #D4A843);
+  background-size: 200% 100%;
+  animation: tk-r17-tech-flow 2s linear infinite;
+}
+@keyframes tk-r17-tech-flow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* 科技节点hover发光 */
+.tk-r17-tech-node {
+  transition: all 0.25s ease;
+  border: 1px solid rgba(139,115,85,0.2);
+  border-radius: 6px;
+}
+.tk-r17-tech-node:hover {
+  border-color: rgba(212,168,67,0.5);
+  box-shadow: 0 0 8px rgba(212,168,67,0.2);
+  transform: translateY(-1px);
+}
+
+/* 科技完成闪烁 */
+.tk-r17-tech-complete {
+  border-color: rgba(212,168,67,0.6);
+  animation: tk-r17-tech-complete-flash 0.8s ease-out;
+}
+@keyframes tk-r17-tech-complete-flash {
+  0% { box-shadow: 0 0 0 rgba(212,168,67,0); }
+  50% { box-shadow: 0 0 16px rgba(212,168,67,0.5); }
+  100% { box-shadow: 0 0 4px rgba(212,168,67,0.2); }
+}
+
+/* ─── R17-7: 全局色彩提亮 ─── */
+.tk-r17-panel-brighter {
+  background: rgba(45,35,25,0.92) !important;
+}
+
+/* 关卡面板专用提亮 */
+.tk-r17-campaign-brighter .tk-r17-campaign-name {
+  color: #F0DCC0;
+}
+.tk-r17-campaign-brighter .tk-r17-campaign-desc {
+  color: #B8A080;
+}
+
+/* 朱红/靛蓝点缀 */
+.tk-r17-accent-red { color: #CC3333; }
+.tk-r17-accent-blue { color: #3366CC; }
+.tk-r17-accent-gold { color: #D4A843; }
+
+/* ─── R17-8: 通关庆祝粒子 ─── */
+@keyframes tk-r17-celebrate-particle {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-60px) scale(0.3); opacity: 0; }
+}
+.tk-r17-celebrate-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: tk-r17-celebrate-particle 1s ease-out forwards;
+}
+
+/* ─── R17-9: 移动端适配 ─── */
+@media (max-width: 768px) {
+  .tk-r17-campaign-node {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+  .tk-r17-campaign-node-dot {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+  .tk-r17-general-card-enter:nth-child(n) {
+    animation-delay: 0s !important;
+  }
+}
+
+/* ─── R17-10: 无障碍 ─── */
+@media (prefers-reduced-motion: reduce) {
+  .tk-r17-campaign-node,
+  .tk-r17-general-hover,
+  .tk-r17-tech-node,
+  .tk-r17-campaign-modal {
+    animation: none !important;
+    transition: none !important;
+  }
+}
