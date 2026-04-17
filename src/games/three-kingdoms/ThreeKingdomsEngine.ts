@@ -29,6 +29,7 @@ import { QuestSystem, type QuestDef } from '@/engines/idle/modules/QuestSystem';
 import { EventSystem, type GameEvent } from '@/engines/idle/modules/EventSystem';
 import { RewardSystem } from '@/engines/idle/modules/RewardSystem';
 import { DayNightWeatherSystem } from './DayNightWeatherSystem';
+import { WeatherSystem } from './WeatherSystem';
 import { NPCActivitySystem } from './NPCActivitySystem';
 import { GameCalendarSystem } from './GameCalendarSystem';
 import { CityMapSystem } from './CityMapSystem';
@@ -72,6 +73,7 @@ export interface ThreeKingdomsSaveState {
   campaign?: object;
   campaignBattle?: object;
   audio?: { muted: boolean; volume: number };
+  weather?: any;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -113,6 +115,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 程序化音频管理器 */
   public audioManager: AudioManager = new AudioManager();
+
+  /** 天气系统 */
+  public weatherSystem = new WeatherSystem();
 
   /** 征战关卡系统 */
   private campaignSys!: CampaignSystem;
@@ -348,6 +353,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     // 昼夜天气系统更新
     this.dayNightWeather.update(sec, gameHour);
 
+    // 天气系统更新
+    this.weatherSystem.update(sec);
+
     // NPC 职业活动 — 资源产出/消耗接入引擎资源系统
     const allNpcs = this.npcManager.getAllNPCs();
     for (const npc of allNpcs) {
@@ -481,6 +489,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       campaign: this.campaignSys.serialize(),
       campaignBattle: this.campaignBattleSys.serialize(),
       audio: this.audioManager.serialize(),
+      weather: this.weatherSystem.serialize(),
     };
   }
 
@@ -508,6 +517,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (d.campaign) this.campaignSys.deserialize(d.campaign);
     if (d.campaignBattle) this.campaignBattleSys.deserialize(d.campaignBattle);
     if (d.audio) this.audioManager.deserialize(d.audio);
+    if (d.weather) this.weatherSystem.deserialize(d.weather);
 
     this.emit('stateChange');
   }

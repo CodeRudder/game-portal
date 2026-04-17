@@ -302,8 +302,8 @@ const LANDMARK_FONT_SIZE = 11;
 /** 地标标签颜色（暗金） */
 const LANDMARK_LABEL_COLOR = 0xd4a030;
 
-/** NPC 点半径 */
-const NPC_DOT_RADIUS = 6;
+/** NPC 点半径（增大以确保地图上清晰可见） */
+const NPC_DOT_RADIUS = 12;
 
 // ─── 资源点渲染常量 ──────────────────────────────────────
 
@@ -656,8 +656,8 @@ const NPC_BUBBLE_TAIL_SIZE = 6;
 const NPC_BUBBLE_DISPLAY_DURATION = 4.0; // 秒
 
 /** NPC 选中发光效果配置 */
-const NPC_GLOW_INNER_RADIUS = NPC_DOT_RADIUS + 4;
-const NPC_GLOW_OUTER_RADIUS = NPC_DOT_RADIUS + 12;
+const NPC_GLOW_INNER_RADIUS = NPC_DOT_RADIUS + 6;
+const NPC_GLOW_OUTER_RADIUS = NPC_DOT_RADIUS + 18;
 const NPC_GLOW_COLOR = 0xd4a030;
 const NPC_GLOW_ALPHA = 0.6;
 const NPC_GLOW_PULSE_SPEED = 3.0; // 脉冲速度
@@ -3483,33 +3483,58 @@ export class MapScene extends BaseScene {
       container.eventMode = 'static';
       container.cursor = 'pointer';
 
+      // ── 脚下阴影（椭圆投影） ──
+      const shadow = new Graphics();
+      shadow.ellipse(0, shapeRadius + 2, shapeRadius * 1.2, shapeRadius * 0.4)
+        .fill({ color: 0x000000, alpha: 0.35 });
+      container.addChild(shadow);
+
+      // ── 外发光环（职业颜色光晕，增强可见性） ──
+      const glowColor = NPC_TYPE_COLORS[npc.type] ?? 0x9e9e9e;
+      const glow = new Graphics();
+      glow.circle(0, 0, shapeRadius + 6)
+        .fill({ color: glowColor, alpha: 0.18 });
+      glow.circle(0, 0, shapeRadius + 6)
+        .stroke({ color: glowColor, width: 1.5, alpha: 0.4 });
+      container.addChild(glow);
+
       // ── Q版角色绘制（替代纯色圆点+Emoji） ──
       const gfx = new Graphics();
       const color = NPC_TYPE_COLORS[npc.type] ?? 0x9e9e9e;
 // 所有 NPC 使用方形基础 + 职业装饰
       const half = Math.floor(shapeRadius * 0.85);
       // 方形主体
-      gfx.roundRect(-half, -half, half * 2, half * 2, 2)
+      gfx.roundRect(-half, -half, half * 2, half * 2, 3)
         .fill({ color });
-      gfx.roundRect(-half, -half, half * 2, half * 2, 2)
-        .stroke({ color: 0xffffff, width: 1 });
+      gfx.roundRect(-half, -half, half * 2, half * 2, 3)
+        .stroke({ color: 0xffffff, width: 1.5 });
 
       // 根据职业绘制装饰图标
       this.drawNPCDecoration(gfx, npc.type, half);
 
       container.addChild(gfx);
 
-      // NPC 名称
+      // ── 头顶职业标识点（小圆点 + 类型颜色） ──
+      const indicator = new Graphics();
+      indicator.circle(0, -(half + 8), 3.5)
+        .fill({ color: 0xffffff });
+      indicator.circle(0, -(half + 8), 2.5)
+        .fill({ color: glowColor });
+      container.addChild(indicator);
+
+      // NPC 名称（增大字号和描边，确保可见）
       const nameText = new Text({
         text: npc.name,
         style: new TextStyle({
-          fontSize: 9,
-          fill: '#e0e0e0',
+          fontSize: 11,
+          fill: '#ffffff',
           fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+          fontWeight: 'bold',
+          stroke: { color: '#000000', width: 2 },
         }),
       });
       nameText.anchor.set(0.5, 0);
-      nameText.position.set(0, shapeRadius + 2);
+      nameText.position.set(0, shapeRadius + 6);
       container.addChild(nameText);
 
       // 点击事件 — 选中 NPC 并高亮，触发 npcClick 交互事件

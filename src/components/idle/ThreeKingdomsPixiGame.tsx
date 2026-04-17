@@ -597,6 +597,55 @@ function LevelDetailModal({
       {/* 场景插画 */}
       <StageSceneIllustration era={era ?? ''} name={detail.name} />
 
+      {/* ── 守将头像 + 兵力对比可视化 ── */}
+      <div style={{
+        margin: '10px 0', padding: '10px', borderRadius: 8,
+        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* 守将头像 SVG */}
+          <div style={{
+            width: 48, height: 48, borderRadius: 6, overflow: 'hidden',
+            border: '2px solid #c62828', flexShrink: 0,
+            background: 'linear-gradient(135deg, #3a1a1a, #5a2a2a)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="14" r="7" fill="#deb887" />
+              <path d="M13,12 Q20,4 27,12" fill="#333" />
+              <rect x="14" y="21" width="12" height="14" rx="2" fill="#8b1a1a" />
+              <line x1="20" y1="21" x2="20" y2="35" stroke="#d4a030" strokeWidth="1" />
+              <text x="20" y="30" textAnchor="middle" fontSize="6" fill="#d4a030">将</text>
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 'bold', color: '#c62828', marginBottom: 4 }}>
+              🏴 {detail.defender.lord}
+            </div>
+            {/* 兵力条 */}
+            <div style={{ fontSize: 10, color: CT.textDim, marginBottom: 2 }}>
+              总兵力：<span style={{ color: '#d4a030', fontWeight: 'bold' }}>{totalTroops}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 2, height: 8, borderRadius: 4, overflow: 'hidden' }}>
+              {detail.defender.troops.infantry > 0 && (
+                <div style={{ flex: detail.defender.troops.infantry, background: '#4a6fa5', borderRadius: totalTroops === detail.defender.troops.infantry ? 4 : 0 }} title={`步兵 ${detail.defender.troops.infantry}`} />
+              )}
+              {detail.defender.troops.cavalry > 0 && (
+                <div style={{ flex: detail.defender.troops.cavalry, background: '#c62828', borderRadius: totalTroops === detail.defender.troops.cavalry ? 4 : 0 }} title={`骑兵 ${detail.defender.troops.cavalry}`} />
+              )}
+              {detail.defender.troops.archers > 0 && (
+                <div style={{ flex: detail.defender.troops.archers, background: '#2e7d32', borderRadius: totalTroops === detail.defender.troops.archers ? 4 : 0 }} title={`弓兵 ${detail.defender.troops.archers}`} />
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, fontSize: 9, marginTop: 3, color: CT.textDim }}>
+              <span><span style={{ color: '#4a6fa5' }}>■</span> 步 {detail.defender.troops.infantry}</span>
+              <span><span style={{ color: '#c62828' }}>■</span> 骑 {detail.defender.troops.cavalry}</span>
+              <span><span style={{ color: '#2e7d32' }}>■</span> 弓 {detail.defender.troops.archers}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 描述 */}
       <p style={{ margin: '0 0 12px', fontSize: 12, color: CT.textDim, lineHeight: 1.6,
         padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6,
@@ -987,20 +1036,25 @@ function CampaignBattleReport({
   COLOR_THEME: typeof COLOR_THEME;
 }) {
   const isVictory = result.victory === true;
+  const attackerLosses = result.totalAttackerLosses ?? 0;
+  const defenderLosses = result.totalDefenderLosses ?? 0;
+  const totalLosses = attackerLosses + defenderLosses || 1;
+  const attackerRatio = attackerLosses / totalLosses;
+  const troopsPct = Math.round((result.troopsRemainingPercent ?? 0) * 100);
 
   return (
     <div style={{
       position: 'absolute', top: '50%', left: '50%',
       transform: 'translate(-50%, -50%)',
       background: 'rgba(0,0,0,0.80)', borderRadius: 12, padding: 20,
-      width: 380, maxHeight: '80vh', overflowY: 'auto',
+      width: 420, maxHeight: '85vh', overflowY: 'auto',
       border: `2px solid ${isVictory ? '#6b8e5a' : '#a85241'}`,
       color: CT.textPrimary, zIndex: 120,
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
     }}>
       {/* 标题 */}
-      <div style={{ textAlign: 'center', marginBottom: 14 }}>
+      <div style={{ textAlign: 'center', marginBottom: 10 }}>
         <div style={{ fontSize: 28, marginBottom: 4 }}>{isVictory ? '🎉' : '💀'}</div>
         <h2 style={{ margin: 0, fontSize: 18, color: isVictory ? '#6b8e5a' : '#a85241', fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif", textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
           {isVictory ? '◆ 大获全胜！' : '◆ 兵败如山倒'}
@@ -1010,36 +1064,129 @@ function CampaignBattleReport({
         )}
       </div>
 
+      {/* ── 战斗场景图示（两军对峙） ── */}
+      <div style={{
+        borderRadius: 8, overflow: 'hidden', marginBottom: 12,
+        border: `1px solid ${isVictory ? 'rgba(107,142,90,0.3)' : 'rgba(168,82,65,0.3)'}`,
+      }}>
+        <svg viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', width: '100%' }}>
+          <defs>
+            <linearGradient id="battle-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={isVictory ? '#2a3a1a' : '#3a1a1a'} />
+              <stop offset="100%" stopColor={isVictory ? '#4a5a2a' : '#5a2a1a'} />
+            </linearGradient>
+          </defs>
+          <rect width="400" height="140" fill="url(#battle-sky)" />
+          <rect x="0" y="100" width="400" height="40" fill="#3a2a1a" opacity="0.8" />
+          <line x1="0" y1="100" x2="400" y2="100" stroke="#5a4a3a" strokeWidth="1" />
+          {[0,1,2,3,4].map(i => (
+            <g key={`a${i}`} opacity={i < 3 || isVictory ? 0.9 : 0.4}>
+              <rect x={30 + i * 18} y={75 - (i % 2) * 5} width="12" height="20" rx="2" fill="#4a6fa5" />
+              <circle cx={36 + i * 18} cy={70 - (i % 2) * 5} r="5" fill="#deb887" />
+              <path d={`M${31 + i * 18},${67 - (i % 2) * 5} L${36 + i * 18},${60 - (i % 2) * 5} L${41 + i * 18},${67 - (i % 2) * 5}`} fill="#d4a030" />
+              <line x1={44 + i * 18} y1={78 - (i % 2) * 5} x2={44 + i * 18} y2={62 - (i % 2) * 5} stroke="#c0c0c0" strokeWidth="1.5" />
+            </g>
+          ))}
+          <line x1="60" y1="95" x2="60" y2="40" stroke="#8B7355" strokeWidth="2" />
+          <polygon points="60,40 85,47 60,54" fill="#d4a030" opacity="0.9" />
+          <text x="65" y="50" fontSize="8" fill="#3a2a1a" fontWeight="bold">我军</text>
+          {[0,1,2,3,4].map(i => (
+            <g key={`e${i}`} opacity={isVictory ? 0.4 : (i < 3 ? 0.9 : 0.7)}>
+              <rect x={310 + i * 18} y={75 - (i % 2) * 5} width="12" height="20" rx="2" fill="#8b1a1a" />
+              <circle cx={316 + i * 18} cy={70 - (i % 2) * 5} r="5" fill="#deb887" />
+              <path d={`M${311 + i * 18},${67 - (i % 2) * 5} L${316 + i * 18},${60 - (i % 2) * 5} L${321 + i * 18},${67 - (i % 2) * 5}`} fill="#333" />
+              <line x1={308 + i * 18} y1={78 - (i % 2) * 5} x2={308 + i * 18} y2={62 - (i % 2) * 5} stroke="#c0c0c0" strokeWidth="1.5" />
+            </g>
+          ))}
+          <line x1="340" y1="95" x2="340" y2="40" stroke="#8B7355" strokeWidth="2" />
+          <polygon points="340,40 365,47 340,54" fill="#8b1a1a" opacity="0.9" />
+          <text x="345" y="50" fontSize="8" fill="#fff" fontWeight="bold">敌军</text>
+          {isVictory ? (
+            <><circle cx="200" cy="50" r="25" fill="#d4a030" opacity="0.15" /><text x="200" y="55" textAnchor="middle" fontSize="16" fill="#d4a030" opacity="0.9">⚔️ 胜</text></>
+          ) : (
+            <><circle cx="200" cy="60" r="30" fill="#333" opacity="0.2" /><text x="200" y="65" textAnchor="middle" fontSize="16" fill="#a85241" opacity="0.9">⚔️ 败</text></>
+          )}
+          <ellipse cx="200" cy="95" rx="60" ry="8" fill="#8a8a7a" opacity="0.25" />
+        </svg>
+      </div>
+
       {/* 战斗摘要 */}
       {result.summary && (
-        <p style={{ textAlign: 'center', fontSize: 13, color: CT.textDim, margin: '0 0 14px' }}>
+        <p style={{ textAlign: 'center', fontSize: 13, color: CT.textDim, margin: '0 0 12px' }}>
           {result.summary}
         </p>
       )}
 
+      {/* ── 兵力损失对比条 ── */}
+      <div style={{
+        padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)',
+        marginBottom: 12, border: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 'bold', color: CT.accentGold, marginBottom: 8, textAlign: 'center' }}>
+          ⚔️ 兵力损失对比
+        </div>
+        <div style={{ marginBottom: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: CT.textDim, marginBottom: 2 }}>
+            <span>🗡️ 我方损失</span>
+            <span style={{ color: '#a85241', fontWeight: 'bold' }}>{attackerLosses}</span>
+          </div>
+          <div style={{ height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 5, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${attackerRatio * 100}%`, background: 'linear-gradient(90deg, #a85241, #c62828)', borderRadius: 5 }} />
+          </div>
+        </div>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: CT.textDim, marginBottom: 2 }}>
+            <span>🗡️ 敌方损失</span>
+            <span style={{ color: '#6b8e5a', fontWeight: 'bold' }}>{defenderLosses}</span>
+          </div>
+          <div style={{ height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 5, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${(1 - attackerRatio) * 100}%`, background: 'linear-gradient(90deg, #6b8e5a, #4caf50)', borderRadius: 5 }} />
+          </div>
+        </div>
+      </div>
+
+      {/* 剩余兵力（增强版） */}
+      {result.troopsRemaining != null && (
+        <div style={{
+          textAlign: 'center', fontSize: 12, color: CT.textDim, marginBottom: 12,
+          padding: '8px', borderRadius: 6, background: 'rgba(255,255,255,0.03)',
+        }}>
+          <span style={{ color: CT.accentGold, fontWeight: 'bold' }}>🏰 剩余兵力：</span>
+          <span style={{ color: troopsPct > 50 ? '#6b8e5a' : troopsPct > 25 ? '#d4a030' : '#a85241', fontWeight: 'bold' }}>
+            {result.troopsRemaining}
+          </span>
+          <span> ({troopsPct}%)</span>
+          <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden', marginTop: 6 }}>
+            <div style={{ height: '100%', width: `${troopsPct}%`, background: troopsPct > 50 ? 'linear-gradient(90deg, #4caf50, #6b8e5a)' : troopsPct > 25 ? 'linear-gradient(90deg, #d4a030, #f9a825)' : 'linear-gradient(90deg, #a85241, #c62828)', borderRadius: 3 }} />
+          </div>
+        </div>
+      )}
+
       {/* 战斗日志 */}
       {Array.isArray(result.rounds) && result.rounds.length > 0 && (
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 6, color: CT.accentGold }}>
             📜 战斗经过
           </div>
           <div style={{
-            maxHeight: 140, overflowY: 'auto', fontSize: 11,
+            maxHeight: 120, overflowY: 'auto', fontSize: 11,
             color: CT.textDim, lineHeight: 1.8,
             padding: 8, borderRadius: 6, background: 'rgba(0,0,0,0.3)',
           }}>
             {result.rounds.map((round, i) => (
-              <div key={i}>第{i + 1}回合：{round.summary ?? '...'}</div>
+              <div key={i} style={{ padding: '2px 6px', background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent', borderRadius: 3 }}>
+                <span style={{ color: CT.accentGold, fontWeight: 'bold' }}>第{i + 1}回合</span>：{round.summary ?? '...'}
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* 双方损失 */}
+      {/* 双方损失概览 */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
         padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)',
-        marginBottom: 14,
+        marginBottom: 12,
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: CT.textDim, marginBottom: 2 }}>我方损失</div>
@@ -1054,13 +1201,6 @@ function CampaignBattleReport({
           </div>
         </div>
       </div>
-
-      {/* 剩余兵力 */}
-      {result.troopsRemaining != null && (
-        <div style={{ textAlign: 'center', fontSize: 12, color: CT.textDim, marginBottom: 14 }}>
-          剩余兵力：{result.troopsRemaining} ({((result.troopsRemainingPercent ?? 0) * 100).toFixed(0)}%)
-        </div>
-      )}
 
       {/* 获得奖励 */}
       {isVictory && result.rewards && (
@@ -1436,8 +1576,8 @@ const GeneralCard = ({
   onRecruit?: () => void;
 }) => {
   const factionLabels: Record<string, string> = { wei: '魏', shu: '蜀', wu: '吴' };
-  const factionColors: Record<string, string> = { wei: '#4a6fa5', shu: '#c62828', wu: '#2e7d32' };
-  const color = factionColors[general.faction] || '#795548';
+  const factionColors: Record<string, string> = { wei: '#1565C0', shu: '#C62828', wu: '#2E7D32', other: '#616161' };
+  const color = factionColors[general.faction] || factionColors.other;
   const rarityColor = RARITY_COLORS[general.rarity] || '#c9a96e';
   const enhanced = getGeneralEnhanced(general.id);
 
@@ -1445,6 +1585,12 @@ const GeneralCard = ({
   const rarityLabels: Record<string, string> = {
     common: '普通', uncommon: '精良', rare: '稀有', epic: '史诗', legendary: '传说', mythic: '神话',
   };
+
+  // 稀有度对应星数
+  const rarityStars: Record<string, number> = {
+    common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6,
+  };
+  const starCount = rarityStars[general.rarity] || 1;
 
   return (
     <div
@@ -1465,11 +1611,11 @@ const GeneralCard = ({
           {rarityLabels[general.rarity] || general.rarity}
         </span>
       )}
-      {/* 头像 */}
-      <div className="tk-general-card-portrait">
-        <GeneralPortrait name={general.name} faction={general.faction} size={48} />
+      {/* 头像 — 势力颜色圆形 + 首字 */}
+      <div className="tk-general-avatar" style={{ background: general.unlocked ? color : '#555' }}>
+        {general.name.charAt(0)}
       </div>
-      {/* 信息 */}
+      {/* 名称 */}
       <div className="tk-general-card-info">
         <div className="tk-general-card-header">
           <span className="tk-general-card-name" style={{ color: general.unlocked ? rarityColor : '#888' }}>
@@ -1481,8 +1627,13 @@ const GeneralCard = ({
             <span className="tk-general-card-rarity">[{rarityLabels[general.rarity] || general.rarity}]</span>
           )}
         </div>
-        <div className="tk-general-card-faction" style={{ color: general.unlocked ? color : '#666' }}>
-          {factionLabels[general.faction] || general.faction.toUpperCase()}·武将
+        {/* 势力标签 */}
+        <span className="tk-general-faction-tag" style={{ background: general.unlocked ? color : '#555' }}>
+          {factionLabels[general.faction] || general.faction.toUpperCase()}
+        </span>
+        {/* 星级 */}
+        <div className="tk-general-stars">
+          {'★'.repeat(starCount)}
         </div>
 
         {/* 悬停展开详情区域 */}
@@ -2524,6 +2675,7 @@ export default function ThreeKingdomsPixiGame() {
           {/* 存档 + 成就 + 音频按钮 */}
           <button onClick={() => setShowSavePanel(true)} title="存档管理" style={{background:'transparent',border:'none',cursor:'pointer',fontSize:14,color:COLOR_THEME.textSecondary}}>📜</button>
           <button onClick={() => setShowAchievements(true)} title="成就" style={{background:'transparent',border:'none',cursor:'pointer',fontSize:14,color:COLOR_THEME.textSecondary}}>🏆</button>
+          {/* ── 音频控制按钮（增强可见性） ── */}
           <button
             onClick={() => {
               const am = audioManagerRef.current;
@@ -2536,16 +2688,23 @@ export default function ThreeKingdomsPixiGame() {
               const newMuted = am.toggleMute();
               setAudioMuted(newMuted);
             }}
-            title={audioMuted ? '取消静音' : '静音'}
+            title={audioMuted ? '取消静音 - 点击开启音效' : '静音 - 点击关闭音效'}
             style={{
-              background: 'transparent',
-              border: 'none',
+              background: audioMuted ? 'rgba(231,76,60,0.15)' : 'rgba(212,160,48,0.12)',
+              border: `1.5px solid ${audioMuted ? '#e74c3c' : 'rgba(212,160,48,0.4)'}`,
               cursor: 'pointer',
-              fontSize: 14,
-              color: audioMuted ? '#e74c3c' : COLOR_THEME.textSecondary,
+              fontSize: 15,
+              color: audioMuted ? '#e74c3c' : '#d4a030',
+              borderRadius: 6,
+              padding: '3px 8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              transition: 'all 0.2s ease',
             }}
           >
             {audioMuted ? '🔇' : '🔊'}
+            <span style={{ fontSize: 10, fontWeight: 'bold' }}>{audioMuted ? '静音' : '音效'}</span>
           </button>
           {lastAutoSave > 0 && <span style={{fontSize:9,color:'#555'}}>已存档</span>}
         </div>
@@ -2569,6 +2728,23 @@ export default function ThreeKingdomsPixiGame() {
             </div>
           ))}
         </div>
+
+        {/* ── 音频状态指示器（左下角常驻显示） ── */}
+        {!audioMuted && (
+          <div style={{
+            position: 'absolute', bottom: 8, left: 8,
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '3px 8px', borderRadius: 12,
+            background: 'rgba(0,0,0,0.5)',
+            border: '1px solid rgba(212,160,48,0.3)',
+            fontSize: 10, color: '#d4a030',
+            pointerEvents: 'none',
+            zIndex: 50,
+          }}>
+            <span style={{ animation: 'tk-audio-pulse 1.5s infinite' }}>🎵</span>
+            <span>♪ BGM播放中</span>
+          </div>
+        )}
       </header>
 
       {/* ═══════════ 中间区域：左面板 + PixiJS Canvas + 右面板 ═══════════ */}
@@ -4410,66 +4586,29 @@ export default function ThreeKingdomsPixiGame() {
         ))}
       </div>
 
-      {/* ═══════════ 新手引导浮层 ═══════════ */}
+      {/* ═══════════ 新手引导侧边面板 ═══════════ */}
       {showGuide && (() => {
         const step = GUIDE_STEPS[guideStep];
         const isLast = guideStep >= GUIDE_STEPS.length - 1;
         const starterName = engineRef.current?.getStarterGeneralName();
         return (
-          <div
-            style={{
-              position: 'absolute', inset: 0,
-              background: 'rgba(0,0,0,0.8)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              zIndex: 200,
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{
-              background: 'rgba(30,20,10,0.95)',
-              borderRadius: 12, padding: '32px 40px',
-              maxWidth: 420, width: '90%',
-              textAlign: 'center',
-              border: `1px solid ${COLOR_THEME.accentGold}`,
-              boxShadow: `0 0 30px rgba(255,215,0,0.15)`,
-            }}>
-              <h2 style={{
-                fontSize: 20, color: COLOR_THEME.accentGold,
-                marginBottom: 10, fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif",
-                textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-              }}>
-                ◆ {step.title}
-              </h2>
-              <p style={{
-                fontSize: 14, color: COLOR_THEME.textPrimary,
-                lineHeight: 1.8, marginBottom: 8,
-              }}>
-                {step.text}
-              </p>
+          <div className="tk-guide-overlay" onClick={() => setShowGuide(false)}>
+            <div className="tk-guide-panel" onClick={e => e.stopPropagation()}>
+              <button className="tk-guide-panel-close" onClick={() => setShowGuide(false)}>✕</button>
+              <h2>◆ {step.title}</h2>
+              <p>{step.text}</p>
               {guideStep === 0 && starterName && (
-                <p style={{
-                  fontSize: 15, color: '#4caf50',
-                  fontWeight: 'bold', marginTop: 12, marginBottom: 4,
-                }}>
-                  🎉 恭喜获得武将 {starterName}！
-                </p>
+                <p className="tk-guide-starter">🎉 恭喜获得武将 {starterName}！</p>
               )}
-              <div style={{
-                display: 'flex', justifyContent: 'center',
-                gap: 12, marginTop: 24,
-              }}>
+              <div className="tk-guide-actions">
                 <button
+                  className="tk-guide-skip-btn"
                   onClick={() => setShowGuide(false)}
-                  style={{
-                    padding: '8px 20px', fontSize: 13,
-                    borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)',
-                    background: 'transparent', color: COLOR_THEME.textDim,
-                    cursor: 'pointer',
-                  }}
                 >
                   跳过
                 </button>
                 <button
+                  className="tk-guide-next-btn"
                   onClick={() => {
                     if (isLast) {
                       setShowGuide(false);
@@ -4477,28 +4616,14 @@ export default function ThreeKingdomsPixiGame() {
                       setGuideStep(guideStep + 1);
                     }
                   }}
-                  style={{
-                    padding: '8px 28px', fontSize: 13, fontWeight: 'bold',
-                    borderRadius: 6, border: 'none',
-                    background: `linear-gradient(135deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
-                    color: '#1a0a0a', cursor: 'pointer',
-                  }}
                 >
                   {isLast ? '开始游戏' : '下一步'}
                 </button>
               </div>
               {/* 步骤指示器 */}
-              <div style={{
-                display: 'flex', justifyContent: 'center',
-                gap: 6, marginTop: 16,
-              }}>
+              <div className="tk-guide-dots">
                 {GUIDE_STEPS.map((_, i) => (
-                  <div key={i} style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: i === guideStep
-                      ? COLOR_THEME.accentGold
-                      : 'rgba(255,255,255,0.2)',
-                  }} />
+                  <div key={i} className={`tk-guide-dot ${i === guideStep ? 'tk-guide-dot--active' : ''}`} />
                 ))}
               </div>
             </div>

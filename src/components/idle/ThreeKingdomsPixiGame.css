@@ -1283,29 +1283,29 @@
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
-/* 武将卡片网格 — 3列/4列自适应 */
+/* 武将卡片网格 — 固定3列布局 */
 .tk-general-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
-  padding: 4px 0;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px;
 }
 
-/* 武将卡片 — 垂直卡片布局 120x160 */
+/* 武将卡片 — 紧凑卡片布局 */
 .tk-general-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 8px 8px;
-  background: rgba(212, 165, 116, 0.06);
-  border: 2px solid rgba(183, 115, 51, 0.3);
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  gap: 4px;
+  padding: 8px;
+  background: linear-gradient(135deg, #2a1810 0%, #3d2817 100%);
+  border: 1px solid #8B7355;
+  border-radius: 6px;
+  transition: transform 0.15s;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  min-height: 160px;
+  min-height: auto;
 }
 
 /* 稀有度视觉区分 — 边框颜色 */
@@ -1367,11 +1367,8 @@
 }
 
 .tk-general-card:hover {
-  background: rgba(212, 165, 116, 0.12);
-  transform: translateY(-4px);
-  box-shadow:
-    0 6px 16px rgba(0,0,0,0.35),
-    0 0 8px var(--faction-color, transparent);
+  transform: translateY(-2px);
+  border-color: #FFD700;
 }
 
 /* 悬停展开详情区域 */
@@ -1446,13 +1443,18 @@
   box-shadow: none;
 }
 
-/* 卡片头像 — 居中显示 */
+/* 卡片头像 — 40px圆形头像 */
 .tk-general-card-portrait {
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 4px;
 }
 /* 头像圆形金色边框 + 外圈光晕 */
 .tk-general-card-portrait::before {
@@ -1522,7 +1524,9 @@
 .tk-general-card-name {
   font-size: 12px;
   font-weight: bold;
+  color: #FFD700;
   font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  text-align: center;
 }
 .tk-general-card-level {
   font-size: 10px;
@@ -1534,10 +1538,14 @@
   color: #666;
 }
 
-/* 势力标签 */
+/* 势力标签 — 小标签样式 */
 .tk-general-card-faction {
-  font-size: 10px;
+  font-size: 11px;
   margin-top: 1px;
+  text-align: center;
+  border-radius: 3px;
+  padding: 1px 6px;
+  display: inline-block;
 }
 
 /* 属性条容器 */
@@ -3559,4 +3567,163 @@
   width: 320px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   武将卡片 — 星级显示
+   ═══════════════════════════════════════════════════════════════ */
+.tk-general-stars {
+  text-align: center;
+  color: #FFD700;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* 武将头像圆形 — 势力颜色背景 + 首字 */
+.tk-general-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  margin: 0 auto 4px;
+}
+
+/* 势力颜色小标签 */
+.tk-general-faction-tag {
+  font-size: 11px;
+  text-align: center;
+  border-radius: 3px;
+  padding: 1px 6px;
+  display: inline-block;
+  color: white;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   新手引导 — 右侧滑出面板
+   ═══════════════════════════════════════════════════════════════ */
+.tk-guide-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 200;
+}
+
+.tk-guide-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 320px;
+  background: linear-gradient(180deg, #2a1810 0%, #1a0f0a 100%);
+  border-left: 2px solid #8B7355;
+  padding: 16px;
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.tk-guide-panel-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #c9a96e;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 4px;
+  padding: 2px 8px;
+  transition: background 0.2s;
+}
+.tk-guide-panel-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tk-guide-panel h2 {
+  font-size: 20px;
+  color: #FFD700;
+  margin-bottom: 10px;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.tk-guide-panel p {
+  font-size: 14px;
+  color: #e8d5b5;
+  line-height: 1.8;
+  margin-bottom: 8px;
+}
+
+.tk-guide-panel .tk-guide-starter {
+  font-size: 15px;
+  color: #4caf50;
+  font-weight: bold;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.tk-guide-panel .tk-guide-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.tk-guide-panel .tk-guide-skip-btn {
+  padding: 8px 20px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #8a7a6a;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tk-guide-panel .tk-guide-skip-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tk-guide-panel .tk-guide-next-btn {
+  padding: 8px 28px;
+  font-size: 13px;
+  font-weight: bold;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg, #FFD700, #ff8c00);
+  color: #1a0a0a;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.tk-guide-panel .tk-guide-next-btn:hover {
+  opacity: 0.9;
+}
+
+.tk-guide-panel .tk-guide-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.tk-guide-panel .tk-guide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+.tk-guide-panel .tk-guide-dot--active {
+  background: #FFD700;
+}
+
+/* ═══ 音频状态指示器动画 ═══ */
+@keyframes tk-audio-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
 }

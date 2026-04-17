@@ -7,13 +7,24 @@
  * @module games/three-kingdoms/__tests__/NPCInteraction.test
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NPCManager } from '../../../engine/npc/NPCManager';
 import { NPCProfession, NPCState } from '../../../engine/npc/types';
 import {
   THREE_KINGDOMS_NPC_DEFS,
   THREE_KINGDOMS_SPAWN_CONFIG,
 } from '../ThreeKingdomsNPCDefs';
+import {
+  GeneralDialogueSystem,
+  createGeneralDialogueSystem,
+  GENERAL_DIALOGUES,
+} from '../GeneralDialogueSystem';
+import {
+  GENERAL_PORTRAITS,
+  ALL_GENERAL_IDS,
+  drawGeneralPortrait,
+  type DrawContext,
+} from '../GeneralPortraitRenderer';
 
 // ---------------------------------------------------------------------------
 // 辅助：创建已注册所有三国 NPC 定义的 NPCManager
@@ -400,6 +411,136 @@ describe('NPC 点击交互', () => {
         expect(npc.state).toBeTruthy();
         expect(npc.direction).toBeTruthy();
       }
+    });
+  });
+
+  // ── 7. 武将对话系统集成 ────────────────────────────
+
+  describe('武将对话系统集成', () => {
+    let dialogueSystem: GeneralDialogueSystem;
+
+    beforeEach(() => {
+      dialogueSystem = createGeneralDialogueSystem();
+    });
+
+    it('对话系统应能正常创建', () => {
+      expect(dialogueSystem).toBeDefined();
+      expect(dialogueSystem.getRegisteredGeneralIds().length).toBe(12);
+    });
+
+    it('12位武将均有对话数据', () => {
+      const expectedIds = [
+        'liubei', 'guanyu', 'zhangfei', 'caocao', 'zhugeliang',
+        'zhaoyun', 'sunquan', 'lvbu', 'zhouyu', 'huangzhong',
+        'machao', 'xuchu',
+      ];
+      for (const id of expectedIds) {
+        expect(dialogueSystem.hasDialogue(id)).toBe(true);
+        const set = dialogueSystem.getDialogueSet(id);
+        expect(set).toBeDefined();
+        expect(set!.idle.length).toBeGreaterThanOrEqual(5);
+        expect(set!.battle.length).toBeGreaterThanOrEqual(3);
+        expect(set!.recruit.length).toBeGreaterThanOrEqual(3);
+        expect(set!.quest.length).toBeGreaterThanOrEqual(2);
+      }
+    });
+
+    it('对话根据场景正确切换', () => {
+      const idleResult = dialogueSystem.getDialogue('liubei', 'idle', 'chat');
+      expect(idleResult.scene).toBe('idle');
+      expect(GENERAL_DIALOGUES.liubei.idle).toContain(idleResult.text);
+
+      const battleResult = dialogueSystem.getDialogue('liubei', 'battle', 'chat');
+      expect(battleResult.scene).toBe('battle');
+      expect(GENERAL_DIALOGUES.liubei.battle).toContain(battleResult.text);
+
+      const recruitResult = dialogueSystem.getDialogue('liubei', 'recruit', 'chat');
+      expect(recruitResult.scene).toBe('recruit');
+      expect(GENERAL_DIALOGUES.liubei.recruit).toContain(recruitResult.text);
+    });
+
+    it('任务模式返回任务对话', () => {
+      const questResult = dialogueSystem.getDialogue('guanyu', 'idle', 'quest');
+      expect(questResult.mode).toBe('quest');
+      expect(GENERAL_DIALOGUES.guanyu.quest).toContain(questResult.text);
+    });
+
+    it('12位武将立绘数据完整', () => {
+      expect(ALL_GENERAL_IDS.length).toBe(12);
+      for (const id of ALL_GENERAL_IDS) {
+        const portrait = GENERAL_PORTRAITS[id];
+        expect(portrait).toBeDefined();
+        expect(portrait.name).toBeTruthy();
+        expect(portrait.faceColor).toBeTruthy();
+        expect(portrait.primaryColor).toBeTruthy();
+      }
+    });
+
+    it('立绘绘制不报错（使用 mock canvas）', () => {
+      const gradientMock = { addColorStop: () => {} };
+      const mockCtx = {
+        save: () => {},
+        restore: () => {},
+        translate: () => {},
+        rotate: () => {},
+        scale: () => {},
+        fillStyle: '',
+        strokeStyle: '',
+        lineWidth: 1,
+        lineCap: 'butt',
+        lineJoin: 'miter',
+        globalAlpha: 1,
+        font: '',
+        textAlign: 'start',
+        textBaseline: 'alphabetic',
+        beginPath: () => {},
+        closePath: () => {},
+        moveTo: () => {},
+        lineTo: () => {},
+        quadraticCurveTo: () => {},
+        bezierCurveTo: () => {},
+        arcTo: () => {},
+        arc: () => {},
+        ellipse: () => {},
+        rect: () => {},
+        roundRect: () => {},
+        fill: () => {},
+        stroke: () => {},
+        clip: () => {},
+        fillRect: () => {},
+        strokeRect: () => {},
+        clearRect: () => {},
+        fillText: () => {},
+        strokeText: () => {},
+        measureText: () => ({ width: 50 }),
+        drawImage: () => {},
+        createLinearGradient: () => gradientMock,
+        createRadialGradient: () => gradientMock,
+        createPattern: () => null,
+        setTransform: () => {},
+        resetTransform: () => {},
+        setLineDash: () => {},
+        getImageData: () => ({ data: new Uint8ClampedArray(0) }),
+        putImageData: () => {},
+        canvas: { width: 200, height: 200 },
+      } as unknown as CanvasRenderingContext2D;
+
+      const dc: DrawContext = { ctx: mockCtx, x: 0, y: 0, width: 200, height: 200 };
+      for (const id of ALL_GENERAL_IDS) {
+        expect(() => drawGeneralPortrait(dc, id)).not.toThrow();
+      }
+    });
+
+    it('NPC 对话与武将对话可联动', () => {
+      // 模拟：点击 NPC 后获取关联武将的对话
+      const generalId = 'liubei';
+      const dialogue = dialogueSystem.getDialogue(generalId, 'idle', 'chat');
+      expect(dialogue.text.length).toBeGreaterThan(0);
+
+      // 切换到战斗场景
+      const battleDialogue = dialogueSystem.getDialogue(generalId, 'battle', 'chat');
+      expect(battleDialogue.text).not.toBe(dialogue.text);
+      expect(GENERAL_DIALOGUES.liubei.battle).toContain(battleDialogue.text);
     });
   });
 });
