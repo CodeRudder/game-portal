@@ -34,8 +34,9 @@ import {
   RESOURCES,
 } from '@/games/three-kingdoms/constants';
 import PixiGameCanvas from '@/renderer/components/PixiGameCanvas';
-import type { GameRenderState, SceneType } from '@/renderer/types';
+import type { GameRenderState, SceneType, HeroRenderData } from '@/renderer/types';
 import { AudioManager } from '@/games/idle-subsystems/AudioManager';
+import { BuildingIcon, ResourceIcon, BuildingProgressBar } from './ThreeKingdomsSVGIcons';
 import './ThreeKingdomsPixiGame.css';
 
 // ═══════════════════════════════════════════════════════════════
@@ -1058,6 +1059,80 @@ const GeneralPortrait = ({ name, faction, size = 60 }: { name: string; faction: 
 };
 
 // ═══════════════════════════════════════════════════════════════
+// 武将卡片组件
+// ═══════════════════════════════════════════════════════════════
+
+/** 属性条组件 — 可视化武将属性 */
+const StatBar = ({ label, value, max, color }: { label: string; value: number; max: number; color: string }) => (
+  <div className="tk-stat-bar">
+    <span className="tk-stat-label">{label}</span>
+    <div className="tk-stat-track">
+      <div className="tk-stat-fill" style={{ width: `${(value / max) * 100}%`, background: color }} />
+    </div>
+    <span className="tk-stat-value">{value}</span>
+  </div>
+);
+
+/** 武将卡片组件 — 卡片化展示武将信息 */
+const GeneralCard = ({
+  general,
+  onSelect,
+  onRecruit,
+}: {
+  general: HeroRenderData;
+  onSelect: () => void;
+  onRecruit?: () => void;
+}) => {
+  const factionLabels: Record<string, string> = { wei: '魏', shu: '蜀', wu: '吴' };
+  const factionColors: Record<string, string> = { wei: '#4a6fa5', shu: '#c62828', wu: '#2e7d32' };
+  const color = factionColors[general.faction] || '#795548';
+  const rarityColor = RARITY_COLORS[general.rarity] || '#c9a96e';
+
+  return (
+    <div
+      className={`tk-general-card ${!general.unlocked ? 'tk-general-card-locked' : ''}`}
+      style={{ borderColor: general.unlocked ? color : 'rgba(139,115,85,0.2)' }}
+      onClick={() => general.unlocked && onSelect()}
+    >
+      {/* 头像 */}
+      <div className="tk-general-card-portrait">
+        <GeneralPortrait name={general.name} faction={general.faction} size={44} />
+      </div>
+      {/* 信息 */}
+      <div className="tk-general-card-info">
+        <div className="tk-general-card-header">
+          <span className="tk-general-card-name" style={{ color: general.unlocked ? rarityColor : '#888' }}>
+            {general.name}
+          </span>
+          {general.unlocked ? (
+            <span className="tk-general-card-level">Lv.{general.level}</span>
+          ) : (
+            <span className="tk-general-card-rarity">[{general.rarity}]</span>
+          )}
+        </div>
+        <div className="tk-general-card-faction" style={{ color: general.unlocked ? color : '#666' }}>
+          {factionLabels[general.faction] || general.faction.toUpperCase()}·武将
+        </div>
+        {/* 属性条 */}
+        {general.unlocked && (
+          <div className="tk-general-card-stats">
+            <StatBar label="武力" value={general.stats.attack} max={100} color="#e53935" />
+            <StatBar label="智力" value={general.stats.intelligence} max={100} color="#1e88e5" />
+            <StatBar label="统率" value={general.stats.command} max={100} color="#43a047" />
+          </div>
+        )}
+        {/* 招募按钮 */}
+        {!general.unlocked && general.canRecruit && onRecruit && (
+          <button className="tk-general-card-recruit-btn" onClick={(e) => { e.stopPropagation(); onRecruit(); }}>
+            招募
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
 // 主组件
 // ═══════════════════════════════════════════════════════════════
 
@@ -1819,10 +1894,10 @@ export default function ThreeKingdomsPixiGame() {
               display: 'flex', alignItems: 'center', gap: 4,
               fontSize: 13, color: COLOR_THEME.textPrimary, cursor: 'default',
             }}
-              onMouseEnter={e => setTooltip({text:`${r.icon} ${r.name}: ${fmt(r.amount)}${r.perSecond > 0 ? ` (+${fmt(r.perSecond)}/秒)` : ''}`,x:e.clientX,y:e.clientY})}
+              onMouseEnter={e => setTooltip({text:`${r.name}: ${fmt(r.amount)}${r.perSecond > 0 ? ` (+${fmt(r.perSecond)}/秒)` : ''}`,x:e.clientX,y:e.clientY})}
               onMouseLeave={() => setTooltip(null)}
             >
-              <span>{r.icon}</span>
+              <ResourceIcon resourceId={r.id} size={18} />
               <span style={{ fontWeight: 'bold' }}>{fmt(r.amount)}</span>
               {r.perSecond > 0 && (
                 <span style={{ fontSize: 10, color: COLOR_THEME.accentGreen }}>
@@ -1967,48 +2042,92 @@ export default function ThreeKingdomsPixiGame() {
             ))}
           </div>
 
-          {/* ── 建筑列表 ── */}
+          {/* ── 建筑列表（卡片式布局） ── */}
           {activeMapSubTab === 'building' && (
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              {buildings.map(b => (
-                <div
-                  key={b.id}
-                  className={flashBuildingId === b.id ? 'tk-building-flash' : undefined}
-                  onClick={() => handleBuildingClick(b.id)}
-                  style={{
-                    padding: '6px 8px', marginBottom: 4,
-                    borderRadius: 4, cursor: 'pointer',
-                    background: b.state === 'locked'
-                      ? 'rgba(255,255,255,0.03)'
-                      : 'rgba(255,255,255,0.06)',
-                    border: `1px solid ${b.state === 'producing' ? 'rgba(76,175,80,0.3)' : 'transparent'}`,
-                    opacity: b.state === 'locked' ? 0.5 : 1,
-                    transition: 'background 0.2s',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 'bold' }}>
-                      {b.iconAsset} {b.name}
-                    </span>
-                    <span style={{
-                      fontSize: 10,
-                      color: b.level > 0 ? COLOR_THEME.accentGold : COLOR_THEME.textDim,
-                    }}>
-                      Lv.{b.level}
-                    </span>
+              {buildings.map(b => {
+                // 计算升级进度（简化：使用等级%10作为进度模拟）
+                const levelProgress = b.level > 0 ? Math.min(1, (b.level % 10) / 10) : 0;
+                return (
+                  <div
+                    key={b.id}
+                    className={flashBuildingId === b.id ? 'tk-building-flash' : undefined}
+                    onClick={() => handleBuildingClick(b.id)}
+                    style={{
+                      padding: '8px 10px', marginBottom: 6,
+                      borderRadius: 6, cursor: 'pointer',
+                      background: b.state === 'locked'
+                        ? 'rgba(255,255,255,0.02)'
+                        : 'linear-gradient(135deg, rgba(212,165,116,0.08) 0%, rgba(139,115,85,0.06) 100%)',
+                      border: `1px solid ${
+                        b.canUpgrade
+                          ? 'rgba(212,160,48,0.6)'
+                          : b.state === 'producing'
+                            ? 'rgba(76,175,80,0.3)'
+                            : b.state === 'locked'
+                              ? 'rgba(255,255,255,0.03)'
+                              : 'rgba(139,115,85,0.2)'
+                      }`,
+                      opacity: b.state === 'locked' ? 0.5 : 1,
+                      transition: 'background 0.2s, border-color 0.3s',
+                      boxShadow: b.canUpgrade ? '0 0 8px rgba(212,160,48,0.15)' : 'none',
+                      animation: b.canUpgrade ? 'tk-gold-pulse 2s ease-in-out infinite' : 'none',
+                    }}
+                  >
+                    {/* 卡片上部：图标 + 名称/等级 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {/* SVG 建筑图标 */}
+                      <div style={{
+                        width: 40, height: 40, flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(0,0,0,0.2)', borderRadius: 4,
+                        border: '1px solid rgba(139,115,85,0.15)',
+                      }}>
+                        <BuildingIcon buildingId={b.id} size={36} />
+                      </div>
+                      {/* 名称 + 等级 + 产出 */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{
+                            fontSize: 12, fontWeight: 'bold',
+                            color: b.state === 'locked' ? COLOR_THEME.textDim : COLOR_THEME.textPrimary,
+                          }}>
+                            {b.name}
+                          </span>
+                          <span style={{
+                            fontSize: 10,
+                            color: b.level > 0 ? COLOR_THEME.accentGold : COLOR_THEME.textDim,
+                            fontWeight: b.level > 0 ? 'bold' : 'normal',
+                          }}>
+                            Lv.{b.level}
+                          </span>
+                        </div>
+                        {b.level > 0 && (b.productionRate ?? 0) > 0 && (
+                          <div style={{ fontSize: 10, color: COLOR_THEME.accentGreen, marginTop: 2 }}>
+                            +{fmt(b.productionRate ?? 0)}/s {b.productionResource}
+                          </div>
+                        )}
+                        {b.canUpgrade && (
+                          <div style={{ fontSize: 9, color: COLOR_THEME.affordable, marginTop: 2 }}>
+                            ▲ 可升级
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* 升级进度条 */}
+                    {b.level > 0 && (
+                      <div style={{ marginTop: 6, paddingLeft: 48 }}>
+                        <BuildingProgressBar
+                          currentLevel={b.level}
+                          progress={levelProgress}
+                          width={120}
+                          height={3}
+                        />
+                      </div>
+                    )}
                   </div>
-                  {b.level > 0 && (b.productionRate ?? 0) > 0 && (
-                    <div style={{ fontSize: 10, color: COLOR_THEME.accentGreen, marginTop: 2 }}>
-                      +{fmt(b.productionRate ?? 0)}/s {b.productionResource}
-                    </div>
-                  )}
-                  {b.canUpgrade && (
-                    <div style={{ fontSize: 9, color: COLOR_THEME.affordable, marginTop: 2 }}>
-                      ▲ 可升级
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -2327,7 +2446,7 @@ export default function ThreeKingdomsPixiGame() {
                 <div className="tk-scene-section-title">◆ 资源产出</div>
                 {resources.map(r => (
                   <div key={r.id} className="tk-scene-prod-row">
-                    <span className="tk-scene-prod-icon">{r.icon}</span>
+                    <span className="tk-scene-prod-icon"><ResourceIcon resourceId={r.id} size={16} /></span>
                     <span className="tk-scene-prod-name">{r.name}</span>
                     <span className="tk-scene-prod-rate">+{fmt(r.perSecond)}/秒</span>
                   </div>
@@ -3053,116 +3172,52 @@ export default function ThreeKingdomsPixiGame() {
             </div>
           ) : (
             <>
-              <h3 style={{
-                fontSize: 14, fontWeight: 'bold',
-                color: COLOR_THEME.accentGold,
-                marginBottom: 8, paddingBottom: 4,
-                borderBottom: `1px solid ${COLOR_THEME.selectedBorder}`,
-                fontFamily: '"Noto Serif SC", serif',
-                textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-              }}>
-                ◆ ⚔️ 武将
-              </h3>
-              {heroes.map(h => {
-                const rarityColor = RARITY_COLORS[h.rarity] || COLOR_THEME.textPrimary;
-                return (
-                  <div
+              <h3 className="tk-general-cards-title">◆ ⚔️ 武将</h3>
+              <div className="tk-general-cards">
+                {heroes.map(h => (
+                  <GeneralCard
                     key={h.id}
-                    onClick={() => h.unlocked && setSelectedHero(h)}
-                    style={{
-                      padding: '6px 8px', marginBottom: 4,
-                      borderRadius: 4,
-                      background: h.unlocked ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
-                      borderLeft: `3px solid ${rarityColor}`,
-                      opacity: h.unlocked ? 1 : 0.5,
-                      cursor: h.unlocked ? 'pointer' : 'default',
-                      transition: 'background 0.2s',
-                      display: 'flex',
-                      gap: 8,
-                      alignItems: 'center',
-                    }}
-                    onMouseEnter={e => h.unlocked && (e.currentTarget.style.background = 'rgba(255,215,0,0.08)')}
-                    onMouseLeave={e => h.unlocked && (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
-                  >
-                    {/* 武将立绘头像 */}
-                    <GeneralPortrait name={h.name} faction={h.faction} size={44} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, fontWeight: 'bold', color: rarityColor }}>
-                          {h.name}
-                        </span>
-                        {h.unlocked ? (
-                          <span style={{ fontSize: 10, color: COLOR_THEME.accentGold }}>
-                            Lv.{h.level}
-                          </span>
-                      ) : (
-                        <span style={{ fontSize: 9, color: COLOR_THEME.textDim }}>
-                          [{h.rarity}]
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 10, color: COLOR_THEME.textDim, marginTop: 2 }}>
-                      {h.faction.toUpperCase()} · {h.rarity}
-                    </div>
-                    {h.unlocked && (
-                      <div style={{ fontSize: 9, color: COLOR_THEME.textSecondary, marginTop: 2 }}>
-                        攻{h.stats.attack} 防{h.stats.defense} 智{h.stats.intelligence} 统{h.stats.command}
-                      </div>
-                    )}
-                    {!h.unlocked && h.canRecruit && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const engine = engineRef.current;
-                          if (!engine) return;
+                    general={h}
+                    onSelect={() => setSelectedHero(h)}
+                    onRecruit={h.canRecruit && !h.unlocked ? () => {
+                      const engine = engineRef.current;
+                      if (!engine) return;
 
-                          // 尝试通过引擎的 UnitSystem 招募武将
-                          const units = (engine as any).units;
-                          if (!units) {
-                            console.warn('[ThreeKingdomsPixiGame] Unit system not available');
-                            addToast('招募系统未就绪', 'error');
-                            return;
-                          }
+                      // 尝试通过引擎的 UnitSystem 招募武将
+                      const units = (engine as any).units;
+                      if (!units) {
+                        console.warn('[ThreeKingdomsPixiGame] Unit system not available');
+                        addToast('招募系统未就绪', 'error');
+                        return;
+                      }
 
-                          // 检查资源是否足够
-                          const res = engine.getResources();
-                          const cost = h.recruitCost || {};
-                          const canAfford = Object.entries(cost).every(([rid, amt]: [string, number]) => (res[rid] || 0) >= amt);
+                      // 检查资源是否足够
+                      const res = engine.getResources();
+                      const cost = h.recruitCost || {};
+                      const canAfford = Object.entries(cost).every(([rid, amt]: [string, number]) => (res[rid] || 0) >= amt);
 
-                          if (!canAfford) {
-                            addToast('招募失败：资源不足', 'error');
-                            return;
-                          }
+                      if (!canAfford) {
+                        addToast('招募失败：资源不足', 'error');
+                        return;
+                      }
 
-                          // 扣除资源并招募
-                          const payMethod = (engine as any).pay;
-                          if (payMethod) {
-                            payMethod.call(engine, cost);
-                          }
-                          const result = units.unlock(h.id);
-                          if (result.success) {
-                            addToast(`招募成功！${h.name} 加入麾下`, 'success');
-                            // 触发状态更新
-                            (engine as any).emit?.('stateChange');
-                          } else {
-                            addToast('招募失败：条件不满足', 'error');
-                          }
-                        }}
-                        style={{
-                          marginTop: 4, padding: '2px 8px',
-                          fontSize: 9, cursor: 'pointer',
-                          borderRadius: 3, border: 'none',
-                          background: 'rgba(76,175,80,0.3)',
-                          color: COLOR_THEME.accentGreen,
-                        }}
-                      >
-                        招募
-                      </button>
-                    )}
-                    </div>{/* end flex:1 content wrapper */}
-                  </div>
-                );
-              })}
+                      // 扣除资源并招募
+                      const payMethod = (engine as any).pay;
+                      if (payMethod) {
+                        payMethod.call(engine, cost);
+                      }
+                      const result = units.unlock(h.id);
+                      if (result.success) {
+                        addToast(`招募成功！${h.name} 加入麾下`, 'success');
+                        // 触发状态更新
+                        (engine as any).emit?.('stateChange');
+                      } else {
+                        addToast('招募失败：条件不满足', 'error');
+                      }
+                    } : undefined}
+                  />
+                ))}
+              </div>
             </>
           )}
         </aside>

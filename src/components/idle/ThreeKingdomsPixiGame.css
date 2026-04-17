@@ -1224,6 +1224,15 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+ * 可升级建筑金色脉冲边框
+ * ═══════════════════════════════════════════════════════════════ */
+
+@keyframes tk-gold-pulse {
+  0%, 100% { border-color: rgba(212,160,48,0.4); box-shadow: 0 0 4px rgba(212,160,48,0.1); }
+  50% { border-color: rgba(212,160,48,0.8); box-shadow: 0 0 12px rgba(212,160,48,0.3); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
  * 关卡场景插画
  * ═══════════════════════════════════════════════════════════════ */
 
@@ -1240,4 +1249,155 @@
 .tk-stage-scene svg {
   width: 100%;
   height: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 武将卡片化展示
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* 武将卡片标题 */
+.tk-general-cards-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #c9a96e;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(139,115,85,0.3);
+  font-family: "Noto Serif SC", serif;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* 武将卡片网格 */
+.tk-general-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  padding: 4px 0;
+}
+
+/* 武将卡片 */
+.tk-general-card {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(212, 165, 116, 0.06);
+  border: 1px solid rgba(183, 115, 51, 0.3);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.tk-general-card:hover {
+  background: rgba(212, 165, 116, 0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* 未解锁卡片 */
+.tk-general-card-locked {
+  opacity: 0.5;
+  cursor: default;
+}
+.tk-general-card-locked:hover {
+  background: rgba(212, 165, 116, 0.06);
+  transform: none;
+  box-shadow: none;
+}
+
+/* 卡片头像 */
+.tk-general-card-portrait {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* 卡片信息区 */
+.tk-general-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 卡片头部（名字+等级） */
+.tk-general-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tk-general-card-name {
+  font-size: 12px;
+  font-weight: bold;
+}
+.tk-general-card-level {
+  font-size: 10px;
+  color: #c9a96e;
+}
+.tk-general-card-rarity {
+  font-size: 9px;
+  color: #666;
+}
+
+/* 势力标签 */
+.tk-general-card-faction {
+  font-size: 10px;
+  margin-top: 1px;
+}
+
+/* 属性条容器 */
+.tk-general-card-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+/* 属性条 */
+.tk-stat-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+.tk-stat-label {
+  color: #a09080;
+  width: 22px;
+  flex-shrink: 0;
+  text-align: right;
+}
+.tk-stat-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tk-stat-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.tk-stat-value {
+  color: #c9a96e;
+  font-size: 9px;
+  width: 18px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+/* 招募按钮 */
+.tk-general-card-recruit-btn {
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-size: 9px;
+  cursor: pointer;
+  border-radius: 3px;
+  border: none;
+  background: rgba(76, 175, 80, 0.3);
+  color: #66bb6a;
+  transition: background 0.2s;
+  align-self: flex-start;
+}
+.tk-general-card-recruit-btn:hover {
+  background: rgba(76, 175, 80, 0.5);
 }
