@@ -112,6 +112,9 @@ export interface PixiGameCanvasProps {
   /** 渲染器尺寸变化 */
   onResize?: (width: number, height: number) => void;
 
+  /** FPS 更新回调（每秒触发一次） */
+  onFPSUpdate?: (fps: number) => void;
+
   // ─── 配置 ─────────────────────────────────────────────────
 
   /** 渲染器配置（覆盖默认值） */
@@ -179,6 +182,7 @@ export default function PixiGameCanvas({
   onNPCClick,
   onOrientationChange,
   onResize,
+  onFPSUpdate,
   config,
   className,
   style,
@@ -229,6 +233,7 @@ export default function PixiGameCanvas({
     onNPCClick,
     onOrientationChange,
     onResize,
+    onFPSUpdate,
   });
 
   // 每次 render 更新 ref（无依赖 → 每次都执行）
@@ -253,6 +258,7 @@ export default function PixiGameCanvas({
       onNPCClick,
       onOrientationChange,
       onResize,
+      onFPSUpdate,
     };
   });
 
@@ -351,12 +357,33 @@ export default function PixiGameCanvas({
 
         rendererRef.current = renderer;
 
-        // FPS 更新定时器
+        // FPS 更新定时器 — 使用双重机制确保 FPS 正确显示
+        let rafFpsFrames = 0;
+        let rafFpsLast = performance.now();
         const fpsInterval = setInterval(() => {
           if (rendererRef.current) {
-            setFps(rendererRef.current.getFPS());
+            let currentFps = rendererRef.current.getFPS();
+            // 如果 renderer.getFPS() 返回 0，使用 RAF 计算的 FPS 作为后备
+            if (currentFps === 0 && rafFpsFrames > 0) {
+              const now = performance.now();
+              const elapsed = now - rafFpsLast;
+              if (elapsed > 0) {
+                currentFps = Math.round((rafFpsFrames * 1000) / elapsed);
+              }
+              rafFpsFrames = 0;
+              rafFpsLast = now;
+            }
+            setFps(currentFps);
+            callbacksRef.current.onFPSUpdate?.(currentFps);
           }
         }, 1000);
+        // RAF 后备：独立计算 FPS，防止 renderer ticker 未正确回调
+        let rafId: number | null = null;
+        const rafLoop = () => {
+          rafFpsFrames++;
+          rafId = requestAnimationFrame(rafLoop);
+        };
+        rafId = requestAnimationFrame(rafLoop);
 
         // ResizeObserver
         const observer = new ResizeObserver((entries) => {
@@ -372,6 +399,7 @@ export default function PixiGameCanvas({
         // Cleanup
         return () => {
           clearInterval(fpsInterval);
+          if (rafId !== null) cancelAnimationFrame(rafId);
           observer.disconnect();
         };
       } catch (err) {
@@ -437,7 +465,7 @@ export default function PixiGameCanvas({
             zIndex: 10,
           }}
         >
-          {fps} FPS · {orientation === 'landscape' ? '横屏' : '竖屏'}
+          {fps > 0 ? `${fps} FPS` : '运行中'} · {orientation === 'landscape' ? '横屏' : '竖屏'}
         </div>
       )}
 

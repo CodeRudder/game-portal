@@ -3106,6 +3106,9 @@ export default function ThreeKingdomsPixiGame() {
   const floatIdRef = useRef(0);
   const [floatTexts, setFloatTexts] = useState<Array<{ id: number; text: string; x: number; y: number }>>([]);
   const [flashBuildingId, setFlashBuildingId] = useState<string | null>(null);
+  /** 建筑产出率高亮闪烁 ID（升级后产出变化用绿色闪烁标记） */
+  const [productionFlashId, setProductionFlashId] = useState<string | null>(null);
+  const [fps, setFps] = useState(0);
 
   /** 显示资源飘字 */
   const showFloatText = useCallback((text: string, x: number, y: number) => {
@@ -3116,10 +3119,12 @@ export default function ThreeKingdomsPixiGame() {
     }, 1200);
   }, []);
 
-  /** 触发建筑升级闪光 */
+  /** 触发建筑升级闪光 + 产出率高亮 */
   const triggerBuildingFlash = useCallback((buildingId: string) => {
     setFlashBuildingId(buildingId);
+    setProductionFlashId(buildingId);
     setTimeout(() => setFlashBuildingId(null), 500);
+    setTimeout(() => setProductionFlashId(null), 1500);
   }, []);
 
   /** 添加 toast 提示，2 秒后自动消失 */
@@ -3533,6 +3538,8 @@ export default function ThreeKingdomsPixiGame() {
 
   /** 已发放奖励的任务 ID 集合，防止重复发放 */
   const questRewardGivenRef = useRef<Set<string>>(new Set());
+  /** 最近完成的任务 ID（用于触发完成动画） */
+  const [questCompleteFlash, setQuestCompleteFlash] = useState<string | null>(null);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -3599,6 +3606,9 @@ export default function ThreeKingdomsPixiGame() {
             // 显示完成提示
             const rewardText = Object.entries(q.reward).map(([k, v]) => `${k === 'grain' ? '粮草' : k === 'gold' ? '铜钱' : k === 'troops' ? '兵力' : k === 'wood' ? '木材' : k === 'iron' ? '铁矿' : k}+${v}`).join(' ');
             addToast(`✅ 任务完成：${q.title}！奖励：${rewardText}`, 'success');
+            // 触发任务完成闪光动画
+            setQuestCompleteFlash(q.id);
+            setTimeout(() => setQuestCompleteFlash(null), 2000);
           }
 
           if (newProgress === q.progress && !isComplete) return q;
@@ -3724,6 +3734,18 @@ export default function ThreeKingdomsPixiGame() {
       audioManagerRef.current?.playUpgrade();
       triggerBuildingFlash(id);
       particleSystemRef.current?.emit(120, 200, 'spark', 12);
+
+      // 显示升级消耗飘字动画
+      const bs = (engine as any).bldg;
+      const cost = bs?.getCost(id) || {};
+      const costEntries = Object.entries(cost).filter(([, amt]) => (amt as number) > 0) as [string, number][];
+      if (costEntries.length > 0) {
+        const costText = costEntries.map(([rid, amt]) => {
+          const resDef = RESOURCES.find(r => r.id === rid);
+          return `-${fmt(amt)}${resDef?.icon ?? ''}`;
+        }).join(' ');
+        showFloatText(costText, 100, 30);
+      }
     } else {
       // 构建详细错误信息
       const res = engine.getResources();
@@ -4216,6 +4238,16 @@ export default function ThreeKingdomsPixiGame() {
             <span style={{ fontSize: 10, fontWeight: 'bold' }}>{audioMuted ? '静音' : '音效'}</span>
           </button>
           {lastAutoSave > 0 && <span style={{fontSize:9,color:'#555'}}>已存档</span>}
+          {/* FPS 指示器 */}
+          <span style={{
+            fontSize: 10, fontFamily: 'monospace',
+            color: fps >= 55 ? '#4caf50' : fps >= 30 ? '#ff9800' : fps > 0 ? '#e74c3c' : '#8a7a6a',
+            background: 'rgba(0,0,0,0.3)',
+            padding: '1px 6px', borderRadius: 4,
+            border: '1px solid rgba(255,255,255,0.05)',
+          }}>
+            {fps > 0 ? `${fps} FPS` : '● 运行中'}
+          </span>
         </div>
 
         {/* 资源飘字动画 */}
@@ -4393,7 +4425,7 @@ export default function ThreeKingdomsPixiGame() {
                 return (
                   <div
                     key={b.id}
-                    className={`${flashBuildingId === b.id ? 'tk-r16-building-upgrading tk-r16-building-levelup' : ''} tk-r16-building-card tk-building-card-dynamic ${b.canUpgrade ? 'tk-building-can-upgrade' : ''}`}
+                    className={`tk-r16-building-card tk-building-card-dynamic ${b.canUpgrade ? 'tk-building-can-upgrade' : ''} ${flashBuildingId === b.id ? 'tk-r16-building-upgrading tk-r16-building-levelup tk-upgrade-scale-pop' : ''} ${showGuide && guideStep === 0 ? (b.id === 'farm' ? 'tk-guide-highlight-target' : 'tk-guide-dimmed') : ''}`}
                     onClick={() => handleBuildingClick(b.id)}
                     style={{
                       padding: '8px 10px', marginBottom: 6,
@@ -4445,7 +4477,7 @@ export default function ThreeKingdomsPixiGame() {
                           </span>
                         </div>
                         {b.level > 0 && (b.productionRate ?? 0) > 0 && (
-                          <div style={{ fontSize: 10, color: COLOR_THEME.accentGreen, marginTop: 2 }}>
+                          <div className={productionFlashId === b.id ? 'tk-production-flash' : ''} style={{ fontSize: 10, color: COLOR_THEME.accentGreen, marginTop: 2 }}>
                             +{fmt(b.productionRate ?? 0)}/s {RESOURCES.find(r => r.id === b.productionResource)?.name ?? b.productionResource}
                           </div>
                         )}
@@ -4718,20 +4750,21 @@ export default function ThreeKingdomsPixiGame() {
             const currentQuests = quests.filter(q => !q.isComplete);
             const completedCount = quests.filter(q => q.isComplete).length;
             const currentQuest = currentQuests[0]; // 按顺序完成，只显示第一个未完成
+            const overallProgress = (completedCount / quests.length) * 100;
             return (
-              <div className="tk-task-panel">
+              <div className={`tk-task-panel ${questCompleteFlash ? 'tk-task-panel--quest-complete' : ''}`}>
                 <div className="tk-task-panel-header">
                   <span className="tk-task-panel-title">📜 当前任务</span>
                   <span className="tk-task-panel-progress">{completedCount}/{quests.length} 已完成</span>
                 </div>
                 <div className="tk-task-panel-bar-bg">
                   <div
-                    className="tk-task-panel-bar-fill"
-                    style={{ width: `${(completedCount / quests.length) * 100}%` }}
+                    className="tk-task-panel-bar-fill tk-task-bar-gradient"
+                    style={{ width: `${overallProgress}%`, backgroundPosition: `${100 - overallProgress}% 0` }}
                   />
                 </div>
                 {currentQuest ? (
-                  <div className="tk-task-panel-item">
+                  <div className={`tk-task-panel-item ${questCompleteFlash === currentQuest.id ? 'tk-task-item--just-completed' : ''}`}>
                     <div className="tk-task-panel-item-top">
                       <span className="tk-task-panel-item-title">{currentQuest.title}</span>
                       <span className="tk-task-panel-item-progress">
@@ -4740,18 +4773,21 @@ export default function ThreeKingdomsPixiGame() {
                     </div>
                     <div className="tk-task-panel-item-bar-bg">
                       <div
-                        className="tk-task-panel-item-bar-fill"
-                        style={{ width: `${(currentQuest.progress / currentQuest.maxProgress) * 100}%` }}
+                        className="tk-task-panel-item-bar-fill tk-task-item-bar-gradient"
+                        style={{
+                          width: `${(currentQuest.progress / currentQuest.maxProgress) * 100}%`,
+                          backgroundPosition: `${100 - (currentQuest.progress / currentQuest.maxProgress) * 100}% 0`,
+                        }}
                       />
                     </div>
-                    <div className="tk-task-panel-item-reward">
+                    <div className="tk-task-panel-item-reward tk-task-reward-gold">
                       奖励：{Object.entries(currentQuest.reward).map(([k, v]) =>
                         `${k === 'grain' ? '🌾粮草' : k === 'gold' ? '💰铜钱' : k === 'troops' ? '⚔️兵力' : k === 'wood' ? '🪵木材' : k === 'iron' ? '⛏️铁矿' : k}+${v}`
                       ).join(' ')}
                     </div>
                   </div>
                 ) : (
-                  <div className="tk-task-panel-complete">
+                  <div className="tk-task-panel-complete tk-task-complete-bounce">
                     🎉 所有任务已完成！
                   </div>
                 )}
@@ -4771,6 +4807,7 @@ export default function ThreeKingdomsPixiGame() {
             onSceneChange={handleSceneChange}
             onNPCClick={handleNPCClick}
             onRendererReady={() => console.log('[ThreeKingdomsPixiGame] PixiJS renderer ready')}
+            onFPSUpdate={(newFps) => setFps(newFps)}
           />
 
           {/* ═══════════ 粒子效果 Canvas 覆盖层 ═══════════ */}
@@ -6343,7 +6380,13 @@ export default function ThreeKingdomsPixiGame() {
           try { localStorage.setItem('tk_guide_done', 'true'); } catch { /* ignore */ }
         };
         return (
-          <div className="tk-guide-overlay" onClick={closeGuide}>
+          <div className={`tk-guide-overlay ${guideStep === 0 ? 'tk-guide-overlay--highlight-building' : ''}`} onClick={closeGuide}>
+            {guideStep === 0 && (
+              <div className="tk-guide-arrow-hint">
+                <span className="tk-guide-arrow-icon">👈</span>
+                <span className="tk-guide-arrow-text">点击升级屯田</span>
+              </div>
+            )}
             <div className="tk-guide-panel" onClick={e => e.stopPropagation()}>
               <button className="tk-guide-panel-close" onClick={closeGuide}>✕ 跳过</button>
               <h2>◆ {step.title}</h2>
