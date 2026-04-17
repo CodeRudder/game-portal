@@ -49,17 +49,17 @@ const TERRITORY_RADIUS = 40;
 /** 连接线宽度 */
 const CONNECTION_WIDTH = 2;
 
-/** 连接线颜色 */
-const CONNECTION_COLOR = 0x555577;
+/** 连接线颜色（水墨灰） */
+const CONNECTION_COLOR = 0x5a4a3a;
 
-/** 已征服领土颜色 */
-const CONQUERED_COLOR = 0x4ecdc4;
+/** 已征服领土颜色（暗金） */
+const CONQUERED_COLOR = 0xb8860b;
 
-/** 未征服领土颜色 */
-const UNCONQUERED_COLOR = 0xe74c3c;
+/** 未征服领土颜色（朱砂红） */
+const UNCONQUERED_COLOR = 0xc62828;
 
-/** 锁定领土颜色 */
-const LOCKED_COLOR = 0x636e72;
+/** 锁定领土颜色（墨灰） */
+const LOCKED_COLOR = 0x4a4a3a;
 
 /** 领土节点悬停放大倍率 */
 const HOVER_SCALE = 1.15;
@@ -94,20 +94,20 @@ const PROGRESS_ARC_RADIUS = 18;
 /** 建筑进度弧线宽度 */
 const PROGRESS_ARC_WIDTH = 3;
 
-/** 建筑进度弧线颜色 */
-const PROGRESS_ARC_COLOR = 0x00ff88;
+/** 建筑进度弧线颜色（暗金） */
+const PROGRESS_ARC_COLOR = 0xb8860b;
 
-/** 建筑进度背景弧线颜色 */
-const PROGRESS_ARC_BG_COLOR = 0x333344;
+/** 建筑进度背景弧线颜色（深棕） */
+const PROGRESS_ARC_BG_COLOR = 0x3a2a1a;
 
-/** Tooltip 背景色 */
+/** Tooltip 背景色（墨黑） */
 const TOOLTIP_BG_COLOR = 0x1a1a2e;
 
 /** Tooltip 背景透明度 */
 const TOOLTIP_BG_ALPHA = 0.92;
 
-/** Tooltip 边框颜色 */
-const TOOLTIP_BORDER_COLOR = 0x4ecdc4;
+/** Tooltip 边框颜色（暗金） */
+const TOOLTIP_BORDER_COLOR = 0xb8860b;
 
 /** Tooltip 圆角 */
 const TOOLTIP_CORNER_RADIUS = 8;
@@ -135,12 +135,12 @@ const TERRITORY_TYPE_LABELS: Record<string, string> = {
 
 // ─── 增强渲染常量 ──────────────────────────────────────────
 
-/** 势力颜色映射（红/蓝/绿/黄） */
+/** 势力颜色映射（古风版：魏蓝/蜀红/吴绿/群黄） */
 const FACTION_COLORS: Record<string, number> = {
-  wei: 0x4a90d9,    // 蓝 — 魏
-  shu: 0xe74c3c,    // 红 — 蜀
-  wu: 0x2ecc71,     // 绿 — 吴
-  qun: 0xf1c40f,    // 黄 — 群
+  wei: 0x4a6fa5,    // 魏蓝 — 沉稳靛蓝
+  shu: 0xc62828,    // 蜀红 — 赤焰朱红
+  wu: 0x2e7d32,     // 吴绿 — 翠墨深绿
+  qun: 0xb8860b,    // 群黄 — 暗金铜色
 };
 
 /** 领土边界虚线段长 */
@@ -161,17 +161,17 @@ const CAPTURE_PULSE_MAX_RADIUS = 80;
 /** 新占领领土脉冲透明度 */
 const CAPTURE_PULSE_ALPHA = 0.4;
 
-/** 格子悬停高亮颜色（半透明黄色） */
-const CELL_HOVER_COLOR = 0xffeb3b;
+/** 格子悬停高亮颜色（半透明暗金） */
+const CELL_HOVER_COLOR = 0xd4a030;
 
 /** 格子悬停高亮透明度 */
-const CELL_HOVER_ALPHA = 0.25;
+const CELL_HOVER_ALPHA = 0.2;
 
 /** 格子悬停高亮尺寸 */
 const CELL_HOVER_SIZE = 20;
 
-/** 选区边框颜色 */
-const SELECTION_BORDER_COLOR = 0x00ff88;
+/** 选区边框颜色（暗金） */
+const SELECTION_BORDER_COLOR = 0xb8860b;
 
 /** 选区边框宽度 */
 const SELECTION_BORDER_WIDTH = 2;
@@ -185,21 +185,21 @@ const DECORATION_COUNT = 30;
 /** 装饰物随机种子区域范围 */
 const DECORATION_AREA = { minX: -400, maxX: 2400, minY: -400, maxY: 1400 };
 
-/** 树木颜色 */
-const TREE_TRUNK_COLOR = 0x8b5e3c;
-const TREE_LEAF_COLOR = 0x27ae60;
+/** 树木颜色（古风版） */
+const TREE_TRUNK_COLOR = 0x6d4c41;
+const TREE_LEAF_COLOR = 0x33691e;
 
-/** 石头颜色 */
-const ROCK_COLOR = 0x7f8c8d;
+/** 石头颜色（水墨灰） */
+const ROCK_COLOR = 0x6b6b5a;
 
-/** 河流颜色 */
-const RIVER_COLOR = 0x3498db;
+/** 河流颜色（水墨蓝灰） */
+const RIVER_COLOR = 0x546e7a;
 
 /** 河流宽度 */
 const RIVER_WIDTH = 6;
 
-/** 道路颜色 */
-const ROAD_COLOR = 0xd4a574;
+/** 道路颜色（古纸色） */
+const ROAD_COLOR = 0xc4a35a;
 
 /** 道路宽度 */
 const ROAD_WIDTH = 4;
@@ -218,18 +218,18 @@ const BUILDING_LEVEL_TEXTURES: Record<number, string> = {
 
 // ─── 瓦片地图渲染常量 ──────────────────────────────────────
 
-/** 地形颜色映射 */
+/** 地形颜色映射（古风水墨色系） */
 const TERRAIN_COLORS: Record<TerrainType, number> = {
-  plain: 0x4a7c4f,
-  mountain: 0x8b7355,
-  forest: 0x2d5a2d,
-  water: 0x4a8db7,
-  road: 0xc4a35a,
-  city: 0xd4a574,
-  village: 0x8fbc8f,
-  fortress: 0xa0522d,
-  desert: 0xd4b36a,
-  snow: 0xd8dce6,
+  plain: 0x5a7a4a,      // 墨绿平原
+  mountain: 0x6d4c41,    // 山地棕 — 赭石色
+  forest: 0x33691e,      // 深林绿 — 松墨
+  water: 0x546e7a,       // 水墨蓝灰 — 淡墨
+  road: 0xc4a35a,        // 土黄道路
+  city: 0xd4a574,        // 古纸色 — 城市
+  village: 0x6b8e5a,     // 墨绿村庄
+  fortress: 0xa0522d,    // 赭棕关卡
+  desert: 0xd4b36a,      // 沙黄荒漠
+  snow: 0xd8dce6,        // 淡墨雪地
 };
 
 /** 地形文字标签 */
@@ -249,21 +249,21 @@ const TERRAIN_LABELS: Record<TerrainType, string> = {
 /** 地标标签字号 */
 const LANDMARK_FONT_SIZE = 11;
 
-/** 地标标签颜色 */
-const LANDMARK_LABEL_COLOR = 0xffd700;
+/** 地标标签颜色（暗金） */
+const LANDMARK_LABEL_COLOR = 0xd4a030;
 
 /** NPC 点半径 */
 const NPC_DOT_RADIUS = 6;
 
 // ─── 资源点渲染常量 ──────────────────────────────────────
 
-/** 资源点类型颜色映射 */
+/** 资源点类型颜色映射（古风色系） */
 const RESOURCE_POINT_COLORS: Record<string, number> = {
-  farm: 0x4caf50,      // 绿色 — 农田
+  farm: 0x6b8e5a,      // 墨绿 — 农田
   mine: 0x8d6e63,      // 棕色 — 矿场
   lumber: 0x2e7d32,    // 深绿 — 伐木场
-  fishery: 0x42a5f5,   // 蓝色 — 渔场
-  stable: 0xff9800,    // 橙色 — 牧场
+  fishery: 0x546e7a,   // 水墨蓝灰 — 渔场
+  stable: 0xb8860b,    // 暗金 — 牧场
 };
 
 /** 资源点类型图标映射 */
@@ -305,25 +305,25 @@ interface MapParticle {
 /** 粒子数量上限 */
 const MAX_PARTICLES = 40;
 
-/** 花瓣颜色池 */
-const PETAL_COLORS = [0xffb7c5, 0xff8fa3, 0xffc8d6, 0xf8a4b8];
+/** 花瓣颜色池（桃花色系：淡粉/桃红） */
+const PETAL_COLORS = [0xffb7c5, 0xff8fa3, 0xe8a0b4, 0xd4839a];
 
-/** 烟雾颜色 */
-const SMOKE_COLOR = 0xaaaaaa;
+/** 烟雾颜色（水墨灰） */
+const SMOKE_COLOR = 0x8a8a7a;
 
-/** 火花颜色 */
-const SPARK_COLOR = 0xffd700;
+/** 火花颜色（暗金/铜色） */
+const SPARK_COLOR = 0xb87333;
 
-/** NPC 类型颜色映射 */
+/** NPC 类型颜色映射（古风色系） */
 const NPC_TYPE_COLORS: Record<string, number> = {
   farmer: 0x8d6e63,     // 棕色 — 农民
-  soldier: 0xf44336,    // 红色 — 士兵/武将
-  merchant: 0x4caf50,   // 绿色 — 商人
-  scholar: 0x2196f3,    // 蓝色 — 文臣/学者
-  scout: 0x9c27b0,      // 紫色 — 斥候
-  general: 0xe53935,    // 深红 — 武将
-  craftsman: 0xff9800,  // 橙色 — 工匠
-  villager: 0x78909c,   // 灰蓝 — 村民
+  soldier: 0xc62828,    // 朱红 — 士兵/武将
+  merchant: 0x2e7d32,   // 墨绿 — 商人
+  scholar: 0x4a6fa5,    // 魏蓝 — 文臣/学者
+  scout: 0x7c4dff,      // 紫色 — 斥候
+  general: 0xb71c1c,    // 深赤 — 武将
+  craftsman: 0xb8860b,  // 暗金 — 工匠
+  villager: 0x5a6a5a,   // 灰绿 — 村民
   sage: 0x7c4dff,       // 紫色 — 名士
 };
 
@@ -355,15 +355,15 @@ const NPC_SHAPES: Record<string, 'square'> = {
 
 /** 建筑形状按类型区分（屋顶 + 主体 + 颜色） */
 const BUILDING_SHAPE_CONFIG: Record<string, { roof: 'triangle' | 'flat' | 'curved'; body: 'rect'; color: number; label: string }> = {
-  yamen:     { roof: 'triangle', body: 'rect', color: 0xFFD700, label: '衙门' },
-  residence: { roof: 'triangle', body: 'rect', color: 0xDEB887, label: '民居' },
-  shop:      { roof: 'triangle', body: 'rect', color: 0xFF8C00, label: '商铺' },
-  barracks:  { roof: 'flat',     body: 'rect', color: 0x4169E1, label: '兵营' },
-  market:    { roof: 'curved',   body: 'rect', color: 0xFF6347, label: '市场' },
-  smithy:    { roof: 'triangle', body: 'rect', color: 0x808080, label: '铁匠铺' },
-  tavern:    { roof: 'triangle', body: 'rect', color: 0x8B4513, label: '酒馆' },
-  academy:   { roof: 'curved',   body: 'rect', color: 0x800080, label: '书院' },
-  wall:      { roof: 'flat',     body: 'rect', color: 0xA0A0A0, label: '城墙' },
+  yamen:     { roof: 'triangle', body: 'rect', color: 0xd4a030, label: '衙门' },
+  residence: { roof: 'triangle', body: 'rect', color: 0xc4a574, label: '民居' },
+  shop:      { roof: 'triangle', body: 'rect', color: 0xb8860b, label: '商铺' },
+  barracks:  { roof: 'flat',     body: 'rect', color: 0x4a6fa5, label: '兵营' },
+  market:    { roof: 'curved',   body: 'rect', color: 0xc62828, label: '市场' },
+  smithy:    { roof: 'triangle', body: 'rect', color: 0x6d4c41, label: '铁匠铺' },
+  tavern:    { roof: 'triangle', body: 'rect', color: 0x8b4513, label: '酒馆' },
+  academy:   { roof: 'curved',   body: 'rect', color: 0x5d4037, label: '书院' },
+  wall:      { roof: 'flat',     body: 'rect', color: 0x8a8a7a, label: '城墙' },
 };
 
 /**
@@ -533,7 +533,7 @@ const NPC_INFO_PANEL_HEIGHT = 80;
 const NPC_INFO_PANEL_CORNER_RADIUS = 6;
 const NPC_INFO_PANEL_BG_COLOR = 0x1a1a2e;
 const NPC_INFO_PANEL_BG_ALPHA = 0.92;
-const NPC_INFO_PANEL_BORDER_COLOR = 0xffeb3b;
+const NPC_INFO_PANEL_BORDER_COLOR = 0xd4a030;
 const NPC_INFO_PANEL_TEXT_COLOR = '#e0e0e0';
 const NPC_INFO_PANEL_FONT_SIZE = 11;
 const NPC_INFO_PANEL_LINE_HEIGHT = 16;
@@ -542,9 +542,9 @@ const NPC_INFO_PANEL_LINE_HEIGHT = 16;
 const NPC_BUBBLE_MAX_WIDTH = 140;
 const NPC_BUBBLE_PADDING = 8;
 const NPC_BUBBLE_CORNER_RADIUS = 8;
-const NPC_BUBBLE_BG_COLOR = 0x2a2a4a;
+const NPC_BUBBLE_BG_COLOR = 0x2a2a3a;
 const NPC_BUBBLE_BG_ALPHA = 0.95;
-const NPC_BUBBLE_BORDER_COLOR = 0xffd700;
+const NPC_BUBBLE_BORDER_COLOR = 0xb8860b;
 const NPC_BUBBLE_TEXT_COLOR = '#ffffff';
 const NPC_BUBBLE_FONT_SIZE = 11;
 const NPC_BUBBLE_TAIL_SIZE = 6;
@@ -553,7 +553,7 @@ const NPC_BUBBLE_DISPLAY_DURATION = 4.0; // 秒
 /** NPC 选中发光效果配置 */
 const NPC_GLOW_INNER_RADIUS = NPC_DOT_RADIUS + 4;
 const NPC_GLOW_OUTER_RADIUS = NPC_DOT_RADIUS + 12;
-const NPC_GLOW_COLOR = 0xffeb3b;
+const NPC_GLOW_COLOR = 0xd4a030;
 const NPC_GLOW_ALPHA = 0.6;
 const NPC_GLOW_PULSE_SPEED = 3.0; // 脉冲速度
 
@@ -1073,7 +1073,7 @@ export class MapScene extends BaseScene {
         if (this.buildingParticles.length >= 20) break;
 
         const gfx = new Graphics();
-        gfx.circle(0, 0, 3).fill({ color: 0xffd700, alpha: 0.8 });
+        gfx.circle(0, 0, 3).fill({ color: 0xb8860b, alpha: 0.8 });
         const baseX = icon.container.x;
         const baseY = icon.container.y;
         gfx.position.set(baseX, baseY - 20);
@@ -1084,7 +1084,7 @@ export class MapScene extends BaseScene {
           y: baseY - 20,
           vy: -30, // 向上飘动速度（像素/秒）
           alpha: 0.8,
-          color: 0xffd700,
+          color: 0xb8860b,
           life: 1.5, // 1.5 秒后消失
           buildingId: icon.id,
           graphics: gfx,
@@ -1525,11 +1525,11 @@ export class MapScene extends BaseScene {
         .lineTo(0, -BUILDING_SPRITE_SIZE / 2 - 4)
         .lineTo(BUILDING_SPRITE_SIZE / 2 + 4, -BUILDING_SPRITE_SIZE / 4)
         .closePath()
-        .fill({ color: 0xc0392b });
+        .fill({ color: 0xc62828 });
       // 等级标记
       fallbackGfx
         .circle(BUILDING_SPRITE_SIZE / 3, -BUILDING_SPRITE_SIZE / 3, 6)
-        .fill({ color: 0xf39c12 });
+        .fill({ color: 0xd4a030 });
       container.addChild(fallbackGfx);
     }
 
@@ -1597,7 +1597,7 @@ export class MapScene extends BaseScene {
           .fill({ color: 0xc0392b });
         fallbackGfx
           .circle(BUILDING_SPRITE_SIZE / 3, -BUILDING_SPRITE_SIZE / 3, 6)
-          .fill({ color: 0xf39c12 });
+          .fill({ color: 0xd4a030 });
         icon.container.addChildAt(fallbackGfx, 0);
       }
     }
@@ -1612,7 +1612,7 @@ export class MapScene extends BaseScene {
    * 根据建筑等级返回颜色
    */
   private getBuildingColor(level: number): number {
-    const colors = [0x95a5a6, 0x2ecc71, 0x3498db, 0x9b59b6, 0xf39c12];
+    const colors = [0x8a7a60, 0x6b8e5a, 0x4a6fa5, 0x7c4dff, 0xd4a030];
     return colors[Math.min(level, colors.length) - 1] ?? colors[0];
   }
 
@@ -1897,14 +1897,19 @@ export class MapScene extends BaseScene {
     const resourcePointLayer = new Container({ label: 'tile-resources' });
     const labelLayer = new Container({ label: 'tile-labels' });
 
-    // 按层级添加到容器（地形 → 边界 → 建筑 → 资源点 → NPC → 地标 → 标签）
-    this.container.addChildAt(tileLayer, 0);
-    this.container.addChildAt(borderLayer, 1);
-    this.container.addChildAt(buildingLayer, 2);
-    this.container.addChildAt(resourcePointLayer, 3);
-    this.container.addChildAt(npcLayer, 4);
-    this.container.addChildAt(landmarkLayer, 5);
-    this.container.addChildAt(labelLayer, 6);
+    // 按层级添加到容器（水墨背景 → 地形 → 边界 → 建筑 → 资源点 → NPC → 地标 → 标签）
+    // ── 水墨宣纸背景纹理 ──
+    const inkWashBg = new Graphics();
+    this.drawInkWashBackground(inkWashBg, map);
+    this.container.addChildAt(inkWashBg, 0);
+
+    this.container.addChildAt(tileLayer, 1);
+    this.container.addChildAt(borderLayer, 2);
+    this.container.addChildAt(buildingLayer, 3);
+    this.container.addChildAt(resourcePointLayer, 4);
+    this.container.addChildAt(npcLayer, 5);
+    this.container.addChildAt(landmarkLayer, 6);
+    this.container.addChildAt(labelLayer, 7);
 
     const graphics = new Graphics();
 
@@ -3364,6 +3369,67 @@ export class MapScene extends BaseScene {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // 水墨宣纸背景纹理
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 绘制水墨宣纸背景纹理
+   *
+   * 使用 Graphics API 模拟宣纸质感：
+   * - 淡墨色渐变底色
+   * - 随机纹理线条（模拟宣纸纤维）
+   * - 淡色墨点（模拟纸张颗粒感）
+   */
+  private drawInkWashBackground(gfx: Graphics, map: GameMap): void {
+    const mapW = Math.floor(map.width * map.tileSize);
+    const mapH = Math.floor(map.height * map.tileSize);
+
+    // ── 1. 古纸底色渐变（深棕→暗金） ──
+    // 使用矩形模拟渐变（从上到下，深棕到暗金棕）
+    const gradientSteps = 8;
+    for (let i = 0; i < gradientSteps; i++) {
+      const t = i / gradientSteps;
+      const y = Math.floor(mapH * t);
+      const h = Math.ceil(mapH / gradientSteps) + 1;
+      // 从深墨棕(0x1a1410)到暗金棕(0x2d1b0a)
+      const r = Math.floor(0x1a + (0x2d - 0x1a) * t);
+      const g = Math.floor(0x14 + (0x1b - 0x14) * t);
+      const b = Math.floor(0x10 + (0x0a - 0x10) * t);
+      const color = (r << 16) | (g << 8) | b;
+      gfx.rect(0, y, mapW, h).fill({ color, alpha: 0.35 });
+    }
+
+    // ── 2. 宣纸纤维纹理（随机淡色线条） ──
+    // 使用伪随机种子生成固定纹理，避免每帧变化
+    const fiberCount = 60;
+    for (let i = 0; i < fiberCount; i++) {
+      // 简单伪随机：使用索引生成固定位置
+      const seed1 = (i * 7919 + 104729) % mapW;
+      const seed2 = (i * 6271 + 87383) % mapH;
+      const seed3 = (i * 3571 + 51439) % 100;
+      const x1 = Math.floor(seed1);
+      const y1 = Math.floor(seed2);
+      const len = Math.floor(20 + seed3 * 0.6);
+      const angle = ((i * 3) % 360) * Math.PI / 180;
+      const x2 = Math.floor(x1 + Math.cos(angle) * len);
+      const y2 = Math.floor(y1 + Math.sin(angle) * len);
+      const fiberAlpha = 0.02 + (seed3 % 5) * 0.008;
+      gfx.moveTo(x1, y1).lineTo(x2, y2)
+        .stroke({ width: 0.5, color: 0xd4a574, alpha: fiberAlpha });
+    }
+
+    // ── 3. 淡墨点（纸张颗粒感） ──
+    const dotCount = 40;
+    for (let i = 0; i < dotCount; i++) {
+      const dx = Math.floor((i * 8737 + 54321) % mapW);
+      const dy = Math.floor((i * 4261 + 98765) % mapH);
+      const size = 1 + (i % 3);
+      const dotAlpha = 0.015 + (i % 4) * 0.005;
+      gfx.circle(dx, dy, size).fill({ color: 0x8a7a60, alpha: dotAlpha });
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // 古风装饰边框（回纹/云纹）
   // ═══════════════════════════════════════════════════════════
 
@@ -3392,8 +3458,8 @@ export class MapScene extends BaseScene {
     const camW = viewW / camState.zoom;
     const camH = viewH / camState.zoom;
 
-    const borderAlpha = 0.15;
-    const gold = 0xd4a030;
+    const borderAlpha = 0.2;
+    const gold = 0xb8860b; // 暗金 — 青铜色
 
     // ── 顶部回纹装饰 ──
     const topY = camY + 4;
