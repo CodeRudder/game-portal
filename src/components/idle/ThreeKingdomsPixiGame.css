@@ -450,12 +450,11 @@
 }
 
 .tk-building-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-2px);
   box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.4),
-    0 0 12px rgba(201, 168, 76, 0.25),
-    0 0 2px rgba(201,168,76,0.5);
-  border-color: #C9A84C;
+    0 8px 20px rgba(0, 0, 0, 0.4),
+    0 0 8px rgba(201, 168, 76, 0.2);
+  border-color: rgba(201, 168, 76, 0.8);
 }
 
 .tk-building-card:active {
@@ -519,6 +518,13 @@
   font-size: 48px;
 }
 
+/* 图标背景按类别差异化 */
+.tk-building-icon[data-icon-cat="民生"] { background: rgba(126, 200, 80, 0.12); }
+.tk-building-icon[data-icon-cat="军事"] { background: rgba(184, 66, 58, 0.12); }
+.tk-building-icon[data-icon-cat="文教"] { background: rgba(100, 160, 200, 0.12); }
+.tk-building-icon[data-icon-cat="防御"] { background: rgba(212, 160, 23, 0.12); }
+.tk-building-icon[data-icon-cat="核心"] { background: rgba(201, 168, 76, 0.15); }
+
 /* 建筑信息区 */
 .tk-building-info {
   padding: 8px 12px;
@@ -563,7 +569,7 @@
 .tk-building-upgrade-btn {
   margin: 8px 12px;
   padding: 6px 0;
-  background: linear-gradient(135deg, #C9A84C, #D4AF37);
+  background: linear-gradient(135deg, #C9A84C 0%, #A8872A 100%);
   color: #1C2333;
   border: none;
   border-radius: 3px;
@@ -574,12 +580,12 @@
   transition: all 200ms ease-out;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
   letter-spacing: 1px;
-  box-shadow: 0 1px 4px rgba(201,168,76,0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(201, 168, 76, 0.2);
 }
 
 .tk-building-upgrade-btn:hover {
-  box-shadow: 0 0 14px rgba(201, 168, 76, 0.5), 0 2px 8px rgba(201,168,76,0.3);
-  background: linear-gradient(135deg, #D4AF37, #DFC06E);
+  background: linear-gradient(135deg, #D4AF37, #E8C84A);
+  box-shadow: 0 2px 10px rgba(201, 168, 76, 0.4);
 }
 
 /* 禁用态按钮 */
@@ -590,7 +596,7 @@
 
 .tk-btn-disabled:hover {
   box-shadow: none;
-  background: linear-gradient(135deg, #C9A84C, #D4AF37);
+  background: linear-gradient(135deg, #C9A84C 0%, #A8872A 100%);
 }
 
 /* ─── 锁定建筑 — 半透明+虚线边框 ─── */
@@ -626,6 +632,8 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -690,17 +698,17 @@
 /* 弹窗关闭按钮 */
 .tk-modal-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
   background: transparent;
-  color: #A0A0A0;
+  color: #C9A84C;
   border: none;
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
   transition: all 200ms ease-out;
   line-height: 1;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -709,7 +717,7 @@
 
 .tk-modal-close:hover {
   color: #F0E6D3;
-  background: rgba(255,255,255,0.1);
+  background: rgba(201,168,76,0.15);
 }
 
 /* 弹窗内容区 */
@@ -740,8 +748,8 @@
 
 /* 产出信息 */
 .tk-modal-rate {
-  font-size: 14px;
-  color: #A0A0A0;
+  font-size: 15px;
+  color: #F0E6D3;
 }
 
 /* 产出百分比增幅标注 — 金色醒目 */

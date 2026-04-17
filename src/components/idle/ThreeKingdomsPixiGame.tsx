@@ -66,12 +66,12 @@ const CATEGORY_MAP: Record<string, BuildingCategory> = {
 
 /** Tab 定义 */
 const TABS = [
-  { key: 'world',    label: '天下' },
-  { key: 'campaign', label: '出征' },
-  { key: 'generals', label: '武将' },
-  { key: 'tech',     label: '科技' },
-  { key: 'buildings',label: '建筑' },
-  { key: 'prestige', label: '声望' },
+  { key: 'world',    label: '🌍 天下' },
+  { key: 'campaign', label: '⚔️ 出征' },
+  { key: 'generals', label: '🗡️ 武将' },
+  { key: 'tech',     label: '📖 科技' },
+  { key: 'buildings',label: '🏗️ 建筑' },
+  { key: 'prestige', label: '🏆 声望' },
   { key: 'more',     label: '更多▼' },
 ];
 
@@ -470,7 +470,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                     data-category={getCategory(def)}
                     onClick={() => isUnlocked && setUpgradeModal(def.id)}
                   >
-                    <div className="tk-building-icon">{def.icon}</div>
+                    <div className="tk-building-icon" data-icon-cat={getCategory(def)}>{def.icon}</div>
                     <div className="tk-building-info">
                       <div className="tk-building-name">
                         {def.name}
@@ -547,10 +547,14 @@ const ThreeKingdomsPixiGame: React.FC = () => {
         {/* ═══ 任务面板（右上角悬浮） ═══ */}
         <div className="tk-task-panel">
           <div className="tk-task-title">新手任务</div>
-          {tasks.map(task => (
+          {tasks.map(task => {
+            const progressText = task.type === 'building'
+              ? `${Math.min(levels[task.target] ?? 0, task.targetLevel)}/${task.targetLevel}`
+              : task.done ? '1/1' : '0/1';
+            return (
             <div key={task.id} className={`tk-task-item ${task.done ? 'tk-task-item-done' : ''}`}>
               <div className="tk-task-name">
-                {task.done ? '✅' : '⬜'} {task.title}
+                {task.done ? '✅' : '⬜'} {task.title} ({progressText})
               </div>
               {!task.done && task.progress > 0 && (
                 <div className="tk-task-progress-text">{Math.round(task.progress * 100)}%</div>
@@ -566,7 +570,8 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                 {task.done && <span className="tk-task-completed"> 已领取</span>}
               </div>
             </div>
-          ))}
+          );
+          })}
           <div className="tk-task-count">
             {completedTasks}/{tasks.length}
           </div>
@@ -608,7 +613,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                     {currentRate > 0 ? (
                       <span className="tk-rate-pct">(+{pctIncrease}%)</span>
                     ) : (
-                      <span className="tk-rate-pct tk-rate-new">新增</span>
+                      <span className="tk-rate-pct">新增 (+100%)</span>
                     )}
                   </div>
                   <div className="tk-modal-cost">
@@ -620,7 +625,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                         <div key={rid} className={`tk-modal-cost-item ${enough ? 'tk-modal-cost-item-enough' : 'tk-modal-cost-item-lacking'}`}>
                           {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}{' '}
                           <span style={{ color: enough ? '#7EC850' : '#B8423A' }}>
-                            拥有:{fmtNum(have)} {enough ? '✓' : '✗'}
+                            {enough ? '✓' : '✗'} {fmtNum(have)}/{fmtNum(amt)}
                           </span>
                         </div>
                       );
