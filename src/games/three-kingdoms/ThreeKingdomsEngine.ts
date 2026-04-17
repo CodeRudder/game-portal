@@ -884,8 +884,10 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     const b = bs[this.selIdx];
     const cost = this.bldg.getCost(b.id);
     if (!this.canPay(cost)) return;
+    // purchase() 内部检查 canAfford，必须在 pay() 之前调用，否则资源扣除后检查会失败
+    const ok = this.bldg.purchase(b.id, (id, a) => this.has(id, a), () => {});
+    if (!ok) return;
     this.pay(cost);
-    this.bldg.purchase(b.id, (id, a) => this.has(id, a), () => {});
     this.audioManager.playSFX('build');
     this.ftSys.add(`+1 ${b.name}`, 0.5, 0.5, { style: { color: COLOR_THEME.accentGreen, fontSize: 14 } });
     this.emit('stateChange');
