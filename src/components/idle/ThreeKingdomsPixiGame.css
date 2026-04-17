@@ -9021,3 +9021,769 @@ button:active {
     transition-duration: 0.01s !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+ * R17 武将面板深度升级 — 筛选/排序/增强卡片
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ── 筛选按钮行 ── */
+.tk-general-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+  padding: 0 8px;
+}
+
+/* 筛选按钮 */
+.tk-general-filter-btn {
+  padding: 2px 8px;
+  font-size: 9px;
+  border-radius: 4px;
+  border: 1px solid rgba(139,115,85,0.3);
+  background: transparent;
+  cursor: pointer;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.tk-general-filter-btn:hover {
+  background: rgba(201,169,110,0.1);
+}
+.tk-general-filter-btn--active {
+  font-weight: bold;
+}
+.tk-general-filter-btn--sm {
+  padding: 1px 6px;
+  font-size: 8px;
+}
+
+/* 排序下拉 */
+.tk-general-sort-select {
+  margin-left: auto;
+  padding: 1px 4px;
+  font-size: 8px;
+  border-radius: 3px;
+  border: 1px solid rgba(139,115,85,0.3);
+  background: rgba(30,20,10,0.8);
+  color: #c9a96e;
+  font-family: 'KaiTi', 'STKaiti', serif;
+  cursor: pointer;
+  outline: none;
+}
+.tk-general-sort-select:focus {
+  border-color: #c9a96e;
+}
+
+/* ── 阵营色竖条 ── */
+.tk-general-card-faction-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+  z-index: 2;
+}
+
+/* ── 卡片阵营行（标签+星级） ── */
+.tk-general-card-faction-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+/* ── 星级显示 ── */
+.tk-general-card-stars {
+  font-size: 8px;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+/* ── 属性简览（小进度条） ── */
+.tk-general-card-attr-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 0 4px;
+  margin-top: 2px;
+}
+.tk-attr-mini {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.tk-attr-mini-label {
+  font-size: 8px;
+  width: 10px;
+  text-align: center;
+  font-weight: bold;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+.tk-attr-mini-bar {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tk-attr-mini-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+.tk-attr-mini-val {
+  font-size: 7px;
+  color: #a09080;
+  width: 16px;
+  text-align: right;
+  font-family: Georgia, serif;
+}
+
+/* ── 一句话简介 ── */
+.tk-general-card-tagline {
+  font-size: 7px;
+  color: #b89870;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+}
+
+/* ── 技能预览芯片 ── */
+.tk-general-card-skills-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+  margin-top: 2px;
+}
+.tk-general-card-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 7px;
+  color: #c9a96e;
+  background: rgba(201,169,110,0.08);
+  border-left: 2px solid #c9a96e;
+  white-space: nowrap;
+}
+.tk-skill-chip-icon {
+  display: inline-flex;
+  align-items: center;
+}
+.tk-skill-chip-cd {
+  font-size: 6px;
+  color: #888;
+  margin-left: 1px;
+}
+
+/* ── 历史标签 ── */
+.tk-general-card-history-tag {
+  font-size: 7px;
+  color: #b89870;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(184,115,51,0.08);
+  border: 1px solid rgba(184,115,51,0.15);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+}
+
+/* ── 出战状态标识 ── */
+.tk-general-status-badge {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 6px;
+  padding: 0 3px;
+  border-radius: 2px;
+  white-space: nowrap;
+  z-index: 3;
+}
+.tk-general-status-badge--standby {
+  background: rgba(139,115,85,0.6);
+  color: #d4b36a;
+}
+
+/* ── 底部阵营色渐变 ── */
+.tk-general-card-bottom-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  pointer-events: none;
+  border-radius: 0 0 8px 8px;
+  z-index: 0;
+}
+
+/* ── 武将详情弹窗（Modal） ── */
+.tk-general-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: tk-modal-fade-in 0.2s ease;
+}
+@keyframes tk-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tk-general-modal {
+  width: 420px;
+  max-width: 95vw;
+  max-height: 90vh;
+  background: linear-gradient(180deg, #2a1810 0%, #3d2817 100%);
+  border: 2px solid #8B7355;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 16px rgba(139,115,85,0.2);
+  animation: tk-modal-slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes tk-modal-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* 弹窗头部 */
+.tk-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  position: relative;
+  border-bottom: 1px solid rgba(139,115,85,0.3);
+}
+.tk-modal-header-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px 8px 0 0;
+  pointer-events: none;
+}
+.tk-modal-header-pattern {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 10% 20%, var(--faction-color, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 90% 80%, var(--faction-color, transparent) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.15;
+  pointer-events: none;
+  border-radius: 8px 8px 0 0;
+}
+.tk-modal-portrait {
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--faction-color, #8B7355);
+  z-index: 1;
+}
+.tk-modal-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+}
+.tk-modal-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.tk-modal-rarity-text {
+  font-size: 11px;
+  font-weight: bold;
+}
+.tk-modal-level-text {
+  font-size: 10px;
+  color: #c9a96e;
+}
+.tk-modal-stars {
+  font-size: 10px;
+  margin-top: 2px;
+  letter-spacing: -1px;
+}
+.tk-modal-faction-desc {
+  font-size: 9px;
+  color: #a09080;
+  margin-top: 2px;
+  font-style: italic;
+}
+.tk-modal-power {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.tk-modal-power-label {
+  font-size: 10px;
+  color: #a09080;
+}
+.tk-modal-power-value {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: Georgia, serif;
+}
+.tk-modal-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: 1px solid rgba(139,115,85,0.3);
+  color: #c9a96e;
+  cursor: pointer;
+  font-size: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background 0.2s;
+}
+.tk-modal-close:hover {
+  background: rgba(139,115,85,0.2);
+}
+
+/* 弹窗内容区 */
+.tk-modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+.tk-modal-section-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #d4b36a;
+  margin-bottom: 8px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+.tk-modal-divider {
+  border: none;
+  border-top: 1px solid rgba(139,115,85,0.2);
+  margin: 10px 0;
+}
+
+/* 属性网格 */
+.tk-modal-stats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tk-modal-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tk-modal-stat-icon {
+  font-size: 12px;
+  width: 18px;
+  text-align: center;
+}
+.tk-modal-stat-label {
+  font-size: 10px;
+  color: #a09080;
+  width: 28px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+.tk-modal-stat-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tk-modal-stat-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.tk-modal-stat-value {
+  font-size: 11px;
+  font-weight: bold;
+  width: 24px;
+  text-align: right;
+  font-family: Georgia, serif;
+}
+
+/* 技能卡片 */
+.tk-modal-skill-card {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(139,115,85,0.08);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(139,115,85,0.15);
+}
+.tk-modal-skill-icon-wrap {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139,115,85,0.1);
+  border-radius: 6px;
+}
+.tk-modal-skill-info {
+  flex: 1;
+  min-width: 0;
+}
+.tk-modal-skill-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: #d4b36a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tk-modal-skill-desc {
+  font-size: 10px;
+  color: #a09080;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+/* 技能类型标签 */
+.tk-skill-type-badge {
+  font-size: 8px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-weight: normal;
+  line-height: 1.4;
+}
+.tk-skill-type-badge--physical {
+  background: rgba(229,57,53,0.15);
+  color: #e53935;
+  border: 1px solid rgba(229,57,53,0.3);
+}
+.tk-skill-type-badge--magic {
+  background: rgba(124,77,255,0.15);
+  color: #7c4dff;
+  border: 1px solid rgba(124,77,255,0.3);
+}
+.tk-skill-type-badge--support {
+  background: rgba(67,160,71,0.15);
+  color: #43a047;
+  border: 1px solid rgba(67,160,71,0.3);
+}
+.tk-skill-cooldown {
+  font-size: 8px;
+  color: #888;
+}
+
+/* 装备槽位 */
+.tk-modal-equip-slots {
+  display: flex;
+  gap: 8px;
+}
+.tk-modal-equip-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  background: rgba(139,115,85,0.06);
+  border: 1px dashed rgba(139,115,85,0.2);
+  border-radius: 6px;
+  text-align: center;
+}
+.tk-modal-equip-slot--filled {
+  border-style: solid;
+  border-color: rgba(201,169,110,0.3);
+  background: rgba(201,169,110,0.08);
+}
+.tk-modal-equip-slot-name {
+  font-size: 9px;
+  color: #d4b36a;
+  font-weight: bold;
+}
+.tk-modal-equip-slot-label {
+  font-size: 8px;
+  color: #8b7355;
+}
+.tk-modal-equip-slot-empty {
+  font-size: 7px;
+  color: #666;
+}
+
+/* 传记 */
+.tk-modal-bio {
+  font-size: 11px;
+  color: #c9a96e;
+  line-height: 1.6;
+  font-style: italic;
+  padding: 6px 0;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+
+/* 时间线 */
+.tk-modal-timeline {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(139,115,85,0.2);
+}
+.tk-modal-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.tk-modal-timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: #2a1810;
+  flex-shrink: 0;
+  margin-left: -17px;
+}
+.tk-modal-timeline-text {
+  font-size: 10px;
+  color: #a09080;
+}
+
+/* 羁绊卡片 */
+.tk-modal-bonds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tk-modal-bond-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(139,115,85,0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(139,115,85,0.15);
+}
+.tk-modal-bond-avatar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.tk-modal-bond-info {
+  display: flex;
+  flex-direction: column;
+}
+.tk-modal-bond-name {
+  font-size: 10px;
+  color: #d4b36a;
+  font-weight: bold;
+}
+.tk-modal-bond-relation {
+  font-size: 8px;
+  color: #8b7355;
+}
+
+/* ── 悬停浮层（Tooltip） ── */
+.tk-general-hover-tooltip {
+  display: none;
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+.tk-general-card:hover .tk-general-hover-tooltip {
+  display: block;
+}
+.tk-general-hover-tooltip-inner {
+  width: 240px;
+  background: rgba(30,20,10,0.96);
+  border: 1px solid rgba(139,115,85,0.4);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.tk-general-tooltip-title {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+.tk-general-tooltip-level {
+  font-size: 10px;
+  color: #c9a96e;
+  margin-left: 6px;
+}
+.tk-general-tooltip-rarity {
+  font-size: 9px;
+  margin-left: 4px;
+}
+.tk-general-tooltip-faction {
+  font-size: 10px;
+  margin-top: 2px;
+}
+.tk-tooltip-stars {
+  font-size: 9px;
+  margin-top: 2px;
+  letter-spacing: -1px;
+}
+.tk-general-tooltip-stats {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tk-tooltip-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tk-tooltip-stat-label {
+  font-size: 9px;
+  color: #a09080;
+  width: 24px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+.tk-tooltip-stat-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tk-tooltip-stat-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+.tk-tooltip-stat-value {
+  font-size: 9px;
+  color: #c9a96e;
+  width: 20px;
+  text-align: right;
+  font-family: Georgia, serif;
+}
+.tk-tooltip-power {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(139,115,85,0.15);
+}
+.tk-tooltip-power-label {
+  font-size: 10px;
+  color: #a09080;
+}
+.tk-tooltip-power-value {
+  font-size: 13px;
+  font-weight: bold;
+  font-family: Georgia, serif;
+}
+.tk-general-tooltip-skills {
+  margin-top: 6px;
+}
+.tk-general-tooltip-skills-title {
+  font-size: 9px;
+  color: #d4b36a;
+  margin-bottom: 3px;
+}
+.tk-general-tooltip-skill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+.tk-general-tooltip-skill-name {
+  font-size: 9px;
+  color: #c9a96e;
+}
+.tk-general-tooltip-skill-effect {
+  font-size: 8px;
+  color: #888;
+  margin-left: auto;
+}
+.tk-tooltip-equip-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.tk-tooltip-equip-item {
+  font-size: 8px;
+  color: #d4b36a;
+  padding: 1px 4px;
+  background: rgba(201,169,110,0.08);
+  border-radius: 3px;
+}
+.tk-tooltip-bonds-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+.tk-tooltip-bond-chip {
+  font-size: 7px;
+  color: #8b7355;
+  padding: 1px 4px;
+  background: rgba(139,115,85,0.08);
+  border-radius: 3px;
+}
+.tk-tooltip-bio-one {
+  font-size: 8px;
+  color: #666;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ── 悬停展开的5维属性+战力 ── */
+.tk-hover-power-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 1px solid rgba(139,115,85,0.1);
+}
+.tk-hover-power-label {
+  font-size: 9px;
+  color: #a09080;
+}
+.tk-hover-power-value {
+  font-size: 11px;
+  font-weight: bold;
+  font-family: Georgia, serif;
+}
+.tk-hover-skills {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+.tk-hover-skill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: rgba(139,115,85,0.1);
+  border-radius: 4px;
+}
