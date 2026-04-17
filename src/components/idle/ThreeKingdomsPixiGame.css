@@ -3041,3 +3041,226 @@
   align-items: center;
   gap: 2px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+ * 关卡视觉增强 — R13 场景预览 + 类型图标 + 进度可视化 + 悬停效果
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* 关卡卡片容器 */
+.tk-stage-card {
+  position: relative;
+  padding: 10px 14px;
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s ease;
+}
+
+.tk-stage-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 8px rgba(212,160,48,0.15);
+}
+
+.tk-stage-card--locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.tk-stage-card--locked:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.tk-stage-card--victory {
+  border-color: rgba(96,165,250,0.2) !important;
+  background: rgba(96,165,250,0.06) !important;
+}
+
+.tk-stage-card--available {
+  border-color: rgba(107,142,90,0.3) !important;
+  background: rgba(107,142,90,0.06) !important;
+}
+
+.tk-stage-card--current {
+  border-color: var(--tk-gold) !important;
+  background: rgba(212,160,48,0.08) !important;
+  animation: tk-stage-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tk-stage-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(212,160,48,0.2); }
+  50% { box-shadow: 0 0 12px rgba(212,160,48,0.4), 0 0 20px rgba(212,160,48,0.15); }
+}
+
+/* 场景预览缩略图 80x60 */
+.tk-stage-preview {
+  width: 80px;
+  height: 60px;
+  min-width: 80px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(139,115,85,0.3);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tk-stage-preview svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 场景预览渐变背景（用于无 SVG 的关卡） */
+.tk-stage-preview--fire {
+  background: linear-gradient(180deg, #5c1a0a, #a83210);
+}
+
+.tk-stage-preview--city {
+  background: linear-gradient(180deg, #4a3a2a, #6b5a48);
+}
+
+.tk-stage-preview--battle {
+  background: linear-gradient(180deg, #3a2a3a, #5a4a5a);
+}
+
+.tk-stage-preview--river {
+  background: linear-gradient(180deg, #3a4a5a, #5a6a7a);
+}
+
+.tk-stage-preview--naval {
+  background: linear-gradient(180deg, #1a2040, #3a2050);
+}
+
+.tk-stage-preview--throne {
+  background: linear-gradient(180deg, #3a2a10, #6a5a30);
+}
+
+/* 关卡信息区域 */
+.tk-stage-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 第一行：状态图标 + 类型图标 + 名称 + 星级 */
+.tk-stage-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tk-stage-name {
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tk-stage-stars {
+  font-size: 11px;
+  color: #d4a030;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* 类型图标 */
+.tk-stage-type-icon {
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* 第二行：时代标签 + 难度 + 战力 */
+.tk-stage-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+/* 进度状态图标 */
+.tk-stage-progress-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.tk-stage-progress-icon--victory {
+  color: #4ade80;
+}
+
+.tk-stage-progress-icon--current {
+  color: var(--tk-gold);
+  animation: tk-progress-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes tk-progress-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* 悬停策略提示 */
+.tk-stage-tooltip {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.9);
+  color: var(--tk-gold);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 20;
+  border: 1px solid rgba(212,160,48,0.3);
+}
+
+.tk-stage-card:hover .tk-stage-tooltip {
+  opacity: 1;
+}
+
+/* 关卡右侧状态标签 */
+.tk-stage-status-tag {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tk-stage-status-tag--attack {
+  color: #6b8e5a;
+  border: 1px solid rgba(107,142,90,0.3);
+}
+
+.tk-stage-status-tag--victory {
+  color: #4a6fa5;
+}
+
+/* 金色星级评定 */
+.tk-stage-star-rating {
+  color: #d4a030;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+/* 关卡列表滚动区域增强 */
+.tk-stage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  padding-bottom: 8px;
+}

@@ -326,6 +326,36 @@ const TROOP_ICONS: Record<string, string> = {
   archers: '🏹',
 };
 
+/** 关卡类型图标映射 */
+const STAGE_TYPE_ICONS: Record<string, { icon: string; label: string }> = {
+  '黄巾之乱': { icon: '⚔️', label: '战斗' },
+  '讨伐董卓': { icon: '⚔️', label: '战斗' },
+  '群雄割据': { icon: '🤝', label: '外交' },
+  '官渡之战': { icon: '⚔️', label: '战斗' },
+  '赤壁之战': { icon: '🛡️', label: '防守' },
+  '三分天下': { icon: '🌾', label: '资源' },
+};
+
+/** 关卡悬停策略提示 */
+const STAGE_STRATEGY_TIPS: Record<string, string> = {
+  '黄巾之乱': '🔥 火攻克制黄巾军 +20%',
+  '讨伐董卓': '🏰 虎牢关城防 +15%',
+  '群雄割据': '🤝 外交联盟兵力 +25%',
+  '官渡之战': '⚔️ 奇袭乌巢伤害 +30%',
+  '赤壁之战': '🌊 水战火攻 +35%',
+  '三分天下': '🌾 终局资源产出 +50%',
+};
+
+/** 关卡场景预览渐变映射 */
+const STAGE_PREVIEW_GRADIENTS: Record<string, string> = {
+  '黄巾': 'linear-gradient(180deg, #5c1a0a 0%, #a83210 60%, #ff6600 100%)',
+  '董卓': 'linear-gradient(180deg, #4a3a2a 0%, #6b5a48 60%, #8a7a6a 100%)',
+  '群雄': 'linear-gradient(180deg, #3a2a3a 0%, #5a4a5a 60%, #7a6a7a 100%)',
+  '官渡': 'linear-gradient(180deg, #3a4a5a 0%, #5a6a7a 60%, #3a5a7a 100%)',
+  '赤壁': 'linear-gradient(180deg, #1a2040 0%, #3a2050 60%, #ff4400 100%)',
+  '三国': 'linear-gradient(180deg, #3a2a10 0%, #6a5a30 60%, #d4a030 100%)',
+};
+
 /** 城防星级显示（满星10） */
 function fortLevelStars(level: number): string {
   return '★'.repeat(level) + '☆'.repeat(Math.max(0, 10 - level));
@@ -722,42 +752,149 @@ function CampaignPanel({
       </div>
 
       {/* 关卡列表 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div className="tk-stage-list">
         {stages.map((stage, idx) => {
           const statusInfo = STAGE_STATUS_MAP[stage.status] ?? STAGE_STATUS_MAP.locked;
           const isLocked = stage.status === 'locked';
           const isVictory = stage.status === 'victory';
+          const isAvailable = stage.status === 'available' || stage.status === 'in_progress';
+          const isCurrent = stage.status === 'available' || stage.status === 'in_progress';
           const def = stageDefMap.get(stage.id);
           const eraColor = def ? (ERA_COLORS[def.era] ?? '#888') : '#888';
           const diffDisplay = def ? (DIFFICULTY_DISPLAY[def.difficulty] ?? DIFFICULTY_DISPLAY[1]) : null;
           const powerStr = def ? Math.floor(def.requiredPower).toLocaleString() : '';
+          const typeInfo = STAGE_TYPE_ICONS[stage.name] ?? { icon: '⚔️', label: '战斗' };
+          const strategyTip = STAGE_STRATEGY_TIPS[stage.name] ?? '⚔️ 提升战力再进攻';
+          const previewGradient = def ? (STAGE_PREVIEW_GRADIENTS[def.era] ?? 'linear-gradient(180deg, #3a2a1a, #5a4a3a)') : 'linear-gradient(180deg, #3a2a1a, #5a4a3a)';
+
+          // 进度状态图标
+          let progressIcon: React.ReactNode;
+          if (isVictory) {
+            progressIcon = <span className="tk-stage-progress-icon tk-stage-progress-icon--victory">✅</span>;
+          } else if (isCurrent) {
+            progressIcon = <span className="tk-stage-progress-icon tk-stage-progress-icon--current">⚔️</span>;
+          } else if (isLocked) {
+            progressIcon = <span className="tk-stage-progress-icon">🔒</span>;
+          } else {
+            progressIcon = <span className="tk-stage-progress-icon">{statusInfo.label}</span>;
+          }
+
+          // 星级评定（金色 ★）
+          const starRating = isVictory && stage.stars > 0
+            ? <span className="tk-stage-star-rating">{'★'.repeat(stage.stars)}{'☆'.repeat(3 - stage.stars)}</span>
+            : null;
+
+          // CSS 类名
+          const cardClass = [
+            'tk-stage-card',
+            isLocked ? 'tk-stage-card--locked' : '',
+            isVictory ? 'tk-stage-card--victory' : '',
+            isAvailable ? 'tk-stage-card--available' : '',
+            isCurrent && !isVictory ? 'tk-stage-card--current' : '',
+          ].filter(Boolean).join(' ');
 
           return (
             <div key={stage.id}
+              className={cardClass}
               onClick={() => !isLocked && setDetailStageId(stage.id)}
               style={{
-                padding: '10px 14px', borderRadius: 8,
-                border: `1px solid ${isLocked ? 'rgba(255,255,255,0.05)' : isVictory ? 'rgba(96,165,250,0.2)' : 'rgba(255,255,255,0.1)'}`,
-                background: isLocked ? 'rgba(255,255,255,0.01)' : isVictory ? 'rgba(96,165,250,0.06)' : 'rgba(255,255,255,0.03)',
-                cursor: isLocked ? 'not-allowed' : 'pointer',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                opacity: isLocked ? 0.5 : 1,
-                transition: 'background 0.15s',
+                border: `1px solid ${isLocked ? 'rgba(255,255,255,0.05)' : isVictory ? 'rgba(96,165,250,0.2)' : isCurrent ? 'rgba(212,160,48,0.3)' : 'rgba(255,255,255,0.1)'}`,
               }}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
-                {/* 第一行：状态图标 + 名称 + 星级 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>{statusInfo.label}</span>
-                  <span style={{ fontSize: 14, fontWeight: 'bold', color: isLocked ? CT.textDim : CT.textPrimary }}>
+              {/* 场景预览缩略图 80x60 */}
+              <div className="tk-stage-preview" style={{ background: previewGradient }}>
+                <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                  {/* 简化场景元素 */}
+                  <rect width="80" height="60" fill="none" />
+                  {def?.era === '黄巾' && (
+                    <>
+                      <circle cx="20" cy="15" r="6" fill="#ff6600" opacity="0.6" />
+                      <circle cx="60" cy="12" r="5" fill="#ff4400" opacity="0.5" />
+                      <path d="M15,40 Q20,25 25,38 Q30,22 35,36" fill="#ff6600" opacity="0.5" />
+                      <path d="M50,35 Q55,20 60,33 Q63,18 67,32" fill="#ff4400" opacity="0.5" />
+                      <rect x="0" y="48" width="80" height="12" fill="#3a2010" opacity="0.7" />
+                    </>
+                  )}
+                  {def?.era === '董卓' && (
+                    <>
+                      <rect x="25" y="20" width="30" height="22" fill="#7a6a5a" opacity="0.8" />
+                      <rect x="22" y="17" width="36" height="5" fill="#8a7a6a" opacity="0.8" />
+                      <path d="M38,42 L38,32 Q40,28 42,32 L42,42" fill="#3a2a1a" opacity="0.7" />
+                      <rect x="0" y="48" width="80" height="12" fill="#4a3a2a" opacity="0.5" />
+                    </>
+                  )}
+                  {def?.era === '群雄' && (
+                    <>
+                      {[10, 25, 40, 55, 70].map((x, i) => (
+                        <g key={i}>
+                          <line x1={x} y1="42" x2={x} y2={20 + i * 2} stroke="#8B7355" strokeWidth="0.8" opacity="0.6" />
+                          <polygon points={`${x},${20 + i * 2} ${x + 8},${22 + i * 2} ${x},${25 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32','#d4a030','#8a2be2'][i]} opacity="0.6" />
+                        </g>
+                      ))}
+                      <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.5" />
+                    </>
+                  )}
+                  {def?.era === '官渡' && (
+                    <>
+                      <path d="M0,30 Q20,25 40,30 Q60,35 80,28" fill="#3a5a7a" opacity="0.5" />
+                      <path d="M0,32 Q20,28 40,33 Q60,38 80,30" stroke="#5a8aaa" strokeWidth="0.5" fill="none" opacity="0.4" />
+                      {[10, 18, 26].map((x, i) => (
+                        <g key={`n${i}`}>
+                          <circle cx={x} cy={22 - i} r="1.5" fill="#1a1a2a" />
+                          <rect x={x - 1} y={23.5 - i} width="2" height="3" fill="#1a1a2a" />
+                        </g>
+                      ))}
+                      {[54, 62, 70].map((x, i) => (
+                        <g key={`s${i}`}>
+                          <circle cx={x} cy={38 - i} r="1.5" fill="#2a1a1a" />
+                          <rect x={x - 1} y={39.5 - i} width="2" height="3" fill="#2a1a1a" />
+                        </g>
+                      ))}
+                      <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.4" />
+                    </>
+                  )}
+                  {def?.era === '赤壁' && (
+                    <>
+                      <rect x="0" y="28" width="80" height="20" fill="#2a3a5a" opacity="0.4" />
+                      <ellipse cx="40" cy="35" rx="30" ry="10" fill="#ff4400" opacity="0.3" />
+                      {[20, 35, 50, 65].map((x, i) => (
+                        <g key={i}>
+                          <ellipse cx={x} cy={34 + (i % 2) * 3} rx="4" ry="1.5" fill="#5a3a1a" opacity="0.7" />
+                          <path d={`M${x - 1.5},${32 + (i % 2) * 3} Q${x},${24 + i} ${x + 1.5},${32 + (i % 2) * 3}`} fill="#ff4400" opacity="0.6" />
+                        </g>
+                      ))}
+                      <rect x="0" y="48" width="80" height="12" fill="#1a1020" opacity="0.5" />
+                    </>
+                  )}
+                  {def?.era === '三国' && (
+                    <>
+                      <path d="M35,38 L33,45 L47,45 L45,38 Z" fill="#b87333" opacity="0.8" />
+                      <rect x="34" y="35" width="12" height="4" rx="1" fill="#d4a030" opacity="0.8" />
+                      {[15, 40, 65].map((x, i) => (
+                        <g key={i}>
+                          <line x1={x} y1="40" x2={x} y2={18 + i * 2} stroke="#8B7355" strokeWidth="1" opacity="0.6" />
+                          <polygon points={`${x},${18 + i * 2} ${x + 8},${20 + i * 2} ${x},${23 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32'][i]} opacity="0.7" />
+                        </g>
+                      ))}
+                      <rect x="0" y="48" width="80" height="12" fill="#3a2a10" opacity="0.5" />
+                    </>
+                  )}
+                </svg>
+              </div>
+
+              {/* 关卡信息 */}
+              <div className="tk-stage-info">
+                {/* 第一行：进度图标 + 类型图标 + 名称 + 星级 */}
+                <div className="tk-stage-title-row">
+                  {progressIcon}
+                  <span className="tk-stage-type-icon">{typeInfo.icon}</span>
+                  <span className="tk-stage-name" style={{ color: isLocked ? CT.textDim : CT.textPrimary }}>
                     {stage.name}
                   </span>
-                  {stage.stars > 0 && (
-                    <span style={{ fontSize: 11, color: '#d4a030' }}>{'⭐'.repeat(stage.stars)}</span>
-                  )}
+                  {starRating}
                 </div>
                 {/* 第二行：时代标签 + 难度 + 战力 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11 }}>
+                <div className="tk-stage-meta-row">
                   {def && (
                     <span style={{
                       color: eraColor, background: `${eraColor}18`,
@@ -776,15 +913,23 @@ function CampaignPanel({
                       ⚔️{powerStr}
                     </span>
                   )}
+                  <span style={{ color: CT.textDim, fontSize: 10 }}>
+                    {typeInfo.label}
+                  </span>
                 </div>
               </div>
-              {!isLocked && stage.status !== 'victory' && (
-                <span style={{ fontSize: 11, color: '#6b8e5a', border: '1px solid rgba(107,142,90,0.3)',
-                  padding: '1px 8px', borderRadius: 4, whiteSpace: 'nowrap',
-                }}>可攻</span>
+
+              {/* 右侧状态 */}
+              {!isLocked && !isVictory && (
+                <span className="tk-stage-status-tag tk-stage-status-tag--attack">可攻</span>
               )}
               {isVictory && (
-                <span style={{ fontSize: 11, color: '#4a6fa5', whiteSpace: 'nowrap' }}>已攻克</span>
+                <span className="tk-stage-status-tag tk-stage-status-tag--victory">已攻克</span>
+              )}
+
+              {/* 悬停策略提示 */}
+              {!isLocked && (
+                <span className="tk-stage-tooltip">{strategyTip}</span>
               )}
             </div>
           );
