@@ -35,6 +35,7 @@ import {
 } from '@/games/three-kingdoms/constants';
 import PixiGameCanvas from '@/renderer/components/PixiGameCanvas';
 import type { GameRenderState, SceneType } from '@/renderer/types';
+import { AudioManager } from '@/games/idle-subsystems/AudioManager';
 import './ThreeKingdomsPixiGame.css';
 
 // ═══════════════════════════════════════════════════════════════
@@ -330,6 +331,194 @@ function fortLevelStars(level: number): string {
 }
 
 /**
+
+/**
+ * 关卡场景插画 —— 根据时代名称返回对应的 SVG 场景
+ * 使用 CSS 渐变 + SVG 简笔画实现，不需要外部图片
+ */
+function StageSceneIllustration({ era, name }: { era: string; name: string }) {
+  const scenes: Record<string, () => React.ReactElement> = {
+    '黄巾': () => (
+      <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky-hj" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#5c1a0a" />
+            <stop offset="100%" stopColor="#a83210" />
+          </linearGradient>
+          <radialGradient id="fire-hj" cx="50%" cy="80%" r="40%">
+            <stop offset="0%" stopColor="#ff6600" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#ff3300" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <rect width="200" height="120" fill="url(#sky-hj)" />
+        <ellipse cx="60" cy="90" rx="50" ry="30" fill="url(#fire-hj)" />
+        <ellipse cx="150" cy="85" rx="40" ry="25" fill="url(#fire-hj)" />
+        <path d="M50,75 Q55,55 60,70 Q65,50 70,68 Q72,52 75,72 Q78,58 80,75" fill="#ff6600" opacity="0.7" />
+        <path d="M140,70 Q145,50 150,65 Q155,45 160,63 Q162,48 165,70" fill="#ff4400" opacity="0.7" />
+        <ellipse cx="100" cy="40" rx="60" ry="15" fill="#8B7355" opacity="0.3" />
+        <ellipse cx="80" cy="30" rx="40" ry="10" fill="#8B7355" opacity="0.2" />
+        <rect x="0" y="95" width="200" height="25" fill="#3a2010" opacity="0.8" />
+        <circle cx="90" cy="88" r="3" fill="#1a0a00" />
+        <rect x="88" y="91" width="4" height="6" fill="#1a0a00" />
+        <circle cx="110" cy="86" r="3" fill="#1a0a00" />
+        <rect x="108" y="89" width="4" height="6" fill="#1a0a00" />
+      </svg>
+    ),
+    '董卓': () => (
+      <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky-dz" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#4a3a2a" />
+            <stop offset="100%" stopColor="#6b5a48" />
+          </linearGradient>
+        </defs>
+        <rect width="200" height="120" fill="url(#sky-dz)" />
+        <rect x="60" y="40" width="80" height="55" fill="#7a6a5a" />
+        <rect x="55" y="35" width="90" height="10" fill="#8a7a6a" />
+        <path d="M88,95 L88,70 Q100,60 112,70 L112,95" fill="#3a2a1a" />
+        {[62,72,82,92,102,112,122,132].map((x,i) => (
+          <rect key={i} x={x} y="28" width="6" height="10" fill="#8a7a6a" />
+        ))}
+        <line x1="70" y1="28" x2="70" y2="15" stroke="#6b5a48" strokeWidth="1" />
+        <polygon points="70,15 85,18 70,22" fill="#c62828" opacity="0.8" />
+        {[30,38,46,150,158,166].map((x,i) => (
+          <g key={i}>
+            <circle cx={x} cy="88" r="2.5" fill="#2a1a0a" />
+            <rect x={x-2} y="90.5" width="4" height="5" fill="#2a1a0a" />
+          </g>
+        ))}
+        <rect x="0" y="95" width="200" height="25" fill="#4a3a2a" opacity="0.6" />
+      </svg>
+    ),
+    '群雄': () => (
+      <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky-qx" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3a2a3a" />
+            <stop offset="100%" stopColor="#5a4a5a" />
+          </linearGradient>
+        </defs>
+        <rect width="200" height="120" fill="url(#sky-qx)" />
+        <path d="M0,90 Q30,65 60,80 Q90,60 120,75 Q150,55 180,70 Q200,65 200,90 L200,120 L0,120" fill="#4a3a2a" opacity="0.5" />
+        {[
+          { x: 30, color: '#c62828' }, { x: 70, color: '#4a6fa5' }, { x: 110, color: '#2e7d32' },
+          { x: 150, color: '#d4a030' }, { x: 180, color: '#8a2be2' },
+        ].map((f, i) => (
+          <g key={i}>
+            <line x1={f.x} y1={85} x2={f.x} y2={55 + i * 3} stroke="#8B7355" strokeWidth="1" />
+            <polygon points={`${f.x},${55 + i * 3} ${f.x + 15},${58 + i * 3} ${f.x},${62 + i * 3}`} fill={f.color} opacity="0.7" />
+          </g>
+        ))}
+        <rect x="0" y="95" width="200" height="25" fill="#3a2a1a" opacity="0.6" />
+      </svg>
+    ),
+    '官渡': () => (
+      <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky-gd" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3a4a5a" />
+            <stop offset="100%" stopColor="#5a6a7a" />
+          </linearGradient>
+        </defs>
+        <rect width="200" height="120" fill="url(#sky-gd)" />
+        <path d="M0,65 Q50,55 100,65 Q150,75 200,60 L200,80 Q150,90 100,80 Q50,70 0,80 Z" fill="#3a5a7a" opacity="0.6" />
+        <path d="M20,70 Q40,67 60,72" stroke="#5a8aaa" strokeWidth="0.5" fill="none" opacity="0.5" />
+        <path d="M120,68 Q140,65 160,70" stroke="#5a8aaa" strokeWidth="0.5" fill="none" opacity="0.5" />
+        {[30,40,50,60,70,80].map((x,i) => (
+          <g key={`n${i}`}>
+            <circle cx={x} cy={50 - (i % 2) * 2} r="2" fill="#1a1a2a" />
+            <rect x={x-1.5} y={52 - (i % 2) * 2} width="3" height="4" fill="#1a1a2a" />
+          </g>
+        ))}
+        {[120,130,140,150,160,170].map((x,i) => (
+          <g key={`s${i}`}>
+            <circle cx={x} cy={85 - (i % 2) * 2} r="2" fill="#2a1a1a" />
+            <rect x={x-1.5} y={87 - (i % 2) * 2} width="3" height="4" fill="#2a1a1a" />
+          </g>
+        ))}
+        <path d="M0,55 Q50,48 100,55 Q150,62 200,52 L200,60 Q150,70 100,62 Q50,55 0,65 Z" fill="#5a4a3a" opacity="0.4" />
+        <rect x="0" y="95" width="200" height="25" fill="#3a2a1a" opacity="0.4" />
+      </svg>
+    ),
+    '赤壁': () => (
+      <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky-cb" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#1a2040" />
+            <stop offset="100%" stopColor="#3a2050" />
+          </linearGradient>
+          <radialGradient id="fire-cb" cx="50%" cy="60%" r="35%">
+            <stop offset="0%" stopColor="#ff4400" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#ff2200" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <rect width="200" height="120" fill="url(#sky-cb)" />
+        <rect x="0" y="55" width="200" height="40" fill="#2a3a5a" opacity="0.5" />
+        <ellipse cx="100" cy="70" rx="70" ry="20" fill="url(#fire-cb)" />
+        {[50, 80, 120, 150].map((x, i) => (
+          <g key={i}>
+            <ellipse cx={x} cy={68 + (i % 2) * 4} rx="8" ry="3" fill="#5a3a1a" />
+            <path d={`M${x-3},${65 + (i % 2) * 4} Q${x},${50 + i * 2} ${x+3},${65 + (i % 2) * 4}`} fill="#ff4400" opacity="0.8" />
+            <path d={`M${x-1},${63 + (i % 2) * 4} Q${x},${48 + i * 2} ${x+1},${63 + (i % 2) * 4}`} fill="#ffaa00" opacity="0.6" />
+          </g>
+        ))}
+        <path d="M0,75 Q25,72 50,76 Q75,73 100,77 Q125,74 150,78 Q175,75 200,76" stroke="#5a7aaa" strokeWidth="0.5" fill="none" opacity="0.3" />
+        <rect x="0" y="95" width="200" height="25" fill="#1a1020" opacity="0.5" />
+      </svg>
+    ),
+    '三国': () => (
+      <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky-sg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3a2a10" />
+            <stop offset="100%" stopColor="#6a5a30" />
+          </linearGradient>
+        </defs>
+        <rect width="200" height="120" fill="url(#sky-sg)" />
+        <path d="M85,75 L80,90 L120,90 L115,75 Z" fill="#b87333" />
+        <rect x="82" y="70" width="36" height="8" rx="2" fill="#d4a030" />
+        <rect x="90" y="90" width="4" height="10" fill="#b87333" />
+        <rect x="106" y="90" width="4" height="10" fill="#b87333" />
+        <g>
+          <line x1="40" y1="85" x2="40" y2="40" stroke="#8B7355" strokeWidth="1.5" />
+          <polygon points="40,40 60,45 40,52" fill="#c62828" opacity="0.8" />
+          <text x="44" y="48" fontSize="6" fill="#fff" opacity="0.8">蜀</text>
+        </g>
+        <g>
+          <line x1="100" y1="65" x2="100" y2="20" stroke="#8B7355" strokeWidth="1.5" />
+          <polygon points="100,20 120,25 100,32" fill="#4a6fa5" opacity="0.8" />
+          <text x="104" y="28" fontSize="6" fill="#fff" opacity="0.8">魏</text>
+        </g>
+        <g>
+          <line x1="160" y1="85" x2="160" y2="40" stroke="#8B7355" strokeWidth="1.5" />
+          <polygon points="160,40 180,45 160,52" fill="#2e7d32" opacity="0.8" />
+          <text x="164" y="48" fontSize="6" fill="#fff" opacity="0.8">吴</text>
+        </g>
+        <rect x="0" y="100" width="200" height="20" fill="#3a2a10" opacity="0.5" />
+      </svg>
+    ),
+  };
+
+  const SceneFn = scenes[era];
+  if (!SceneFn) {
+    return (
+      <div className="tk-stage-scene" style={{ background: 'linear-gradient(180deg, #3a2a1a, #5a4a3a)' }}>
+        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+          <rect width="200" height="120" fill="#3a2a1a" />
+          <text x="100" y="65" textAnchor="middle" fontSize="14" fill="#8B7355">{name}</text>
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div className="tk-stage-scene">
+      <SceneFn />
+    </div>
+  );
+}
+
+/**
  * 关卡详情弹窗 —— 展示关卡完整信息（守将、兵力、城防、奖励）
  * 点击关卡列表项时弹出此弹窗。
  */
@@ -337,6 +526,7 @@ function LevelDetailModal({
   detail,
   statusInfo,
   canAttack,
+  era,
   onBattleStart,
   onClose,
   COLOR_THEME: CT,
@@ -344,6 +534,7 @@ function LevelDetailModal({
   detail: NonNullable<ReturnType<CampaignSystem['getLevelDetail']>>;
   statusInfo: { canAttack: boolean; reason?: string };
   canAttack: boolean;
+  era?: string;
   onBattleStart: () => void;
   onClose: () => void;
   COLOR_THEME: typeof COLOR_THEME;
@@ -368,6 +559,9 @@ function LevelDetailModal({
           color: diff.color, background: diff.bg, fontWeight: 'bold',
         }}>{diff.label}</span>
       </div>
+
+      {/* 场景插画 */}
+      <StageSceneIllustration era={era ?? ''} name={detail.name} />
 
       {/* 描述 */}
       <p style={{ margin: '0 0 12px', fontSize: 12, color: CT.textDim, lineHeight: 1.6,
@@ -602,6 +796,7 @@ function CampaignPanel({
           detail={detailData.detail}
           statusInfo={detailData.statusInfo}
           canAttack={detailData.canAttack}
+          era={stageDefMap.get(detailStageId!)?.era}
           onBattleStart={() => {
             const id = detailStageId!;
             setDetailStageId(null);
@@ -757,6 +952,7 @@ export default function ThreeKingdomsPixiGame() {
   const engineRef = useRef<ThreeKingdomsEngine | null>(null);
   const adapterRef = useRef<ThreeKingdomsRenderStateAdapter | null>(null);
   const toastIdRef = useRef(0);
+  const audioManagerRef = useRef<AudioManager | null>(null);
 
   // ─── State ────────────────────────────────────────────────
 
@@ -801,10 +997,31 @@ export default function ThreeKingdomsPixiGame() {
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [tooltip, setTooltip] = useState<{text:string;x:number;y:number}|null>(null);
+  const [audioMuted, setAudioMuted] = useState(false);
 
   // 征战关卡战斗报告
   const [showCampaignBattleReport, setShowCampaignBattleReport] = useState(false);
   const [campaignBattleResult, setCampaignBattleResult] = useState<any>(null);
+
+  // ─── 资源飘字 + 建筑闪光动画 ──────────────────────────────
+  const floatIdRef = useRef(0);
+  const [floatTexts, setFloatTexts] = useState<Array<{ id: number; text: string; x: number; y: number }>>([]);
+  const [flashBuildingId, setFlashBuildingId] = useState<string | null>(null);
+
+  /** 显示资源飘字 */
+  const showFloatText = useCallback((text: string, x: number, y: number) => {
+    const id = ++floatIdRef.current;
+    setFloatTexts(prev => [...prev, { id, text, x, y }]);
+    setTimeout(() => {
+      setFloatTexts(prev => prev.filter(f => f.id !== id));
+    }, 1200);
+  }, []);
+
+  /** 触发建筑升级闪光 */
+  const triggerBuildingFlash = useCallback((buildingId: string) => {
+    setFlashBuildingId(buildingId);
+    setTimeout(() => setFlashBuildingId(null), 500);
+  }, []);
 
   /** 添加 toast 提示，2 秒后自动消失 */
   const addToast = useCallback((text: string, type: 'success' | 'error') => {
@@ -840,6 +1057,23 @@ export default function ThreeKingdomsPixiGame() {
 
   /** 资源点列表 */
   const resourcePoints = useMemo(() => renderState?.resourcePoints ?? [], [renderState]);
+
+  // ─── 资源飘字追踪 ─────────────────────────────────────────
+  const prevResourcesRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    const prev = prevResourcesRef.current;
+    const curr: Record<string, number> = {};
+    for (const r of resources) {
+      curr[r.id] = r.amount;
+      const prevAmt = prev[r.id] ?? 0;
+      const diff = r.amount - prevAmt;
+      if (diff > 0 && prevAmt > 0) {
+        // 资源增加了，显示飘字（在资源栏对应位置附近）
+        showFloatText(`${r.icon}+${fmt(diff)}`, 0, 0);
+      }
+    }
+    prevResourcesRef.current = curr;
+  }, [resources, showFloatText]);
 
   /** 根据场景决定侧边栏显隐 */
   const showBuildingPanel = scene === 'map';
@@ -883,6 +1117,30 @@ export default function ThreeKingdomsPixiGame() {
 
     // 初始渲染
     setRenderState(adapterRef.current.toRenderState());
+
+    // ── 初始化音频管理器 ──────────────────────────────────
+    const audioManager = new AudioManager();
+    audioManagerRef.current = audioManager;
+
+    // 监听引擎事件，播放对应音效
+    engine.on('buildingPurchased', () => {
+      audioManager.playUpgrade();
+    });
+    engine.on('buildingUpgraded', () => {
+      audioManager.playUpgrade();
+    });
+    engine.on('generalRecruited', () => {
+      audioManager.playRecruit();
+    });
+    engine.on('battleStarted', () => {
+      audioManager.playBattle();
+    });
+    engine.on('territoryConquered', () => {
+      audioManager.playConquer();
+    });
+    engine.on('techResearched', () => {
+      audioManager.playTechResearch();
+    });
 
     // ── 初始化事件系统 ─────────────────────────────────────
     const eventSystem = new ThreeKingdomsEventSystem();
@@ -939,9 +1197,11 @@ export default function ThreeKingdomsPixiGame() {
       clearInterval(eventCheckTimer);
       engine.pause();
       engine.destroy();
+      audioManager.destroy();
       engineRef.current = null;
       adapterRef.current = null;
       eventSystemRef.current = null;
+      audioManagerRef.current = null;
     };
   }, []);
 
@@ -1050,6 +1310,7 @@ export default function ThreeKingdomsPixiGame() {
 
   /** 底部标签栏点击处理：切换场景 + 更新 activeTab */
   const handleTabClick = useCallback((tab: typeof SCENE_TABS[number]) => {
+    audioManagerRef.current?.playClick();
     setActiveTab(tab.key);
     setScene(tab.scene);
     triggerPanelSwitch(tab.key);
@@ -1087,10 +1348,13 @@ export default function ThreeKingdomsPixiGame() {
       (engine as any).buyBuilding();
       const bld = BUILDINGS.find(b => b.id === id);
       addToast(`建造成功！${bld?.name ?? id} Lv.1`, 'success');
+      audioManagerRef.current?.playUpgrade();
+      triggerBuildingFlash(id);
     } else {
       addToast('资源不足！', 'error');
+      audioManagerRef.current?.playError();
     }
-  }, [addToast]);
+  }, [addToast, triggerBuildingFlash]);
 
   const handleTerritoryClick = useCallback((id: string) => {
     const engine = engineRef.current;
@@ -1111,6 +1375,7 @@ export default function ThreeKingdomsPixiGame() {
     // 检查是否可攻击（相邻已征服）
     if (!terr.canAttack(id)) {
       addToast('无法攻击：需要先征服相邻领土', 'error');
+      audioManagerRef.current?.playError();
       return;
     }
 
@@ -1124,9 +1389,11 @@ export default function ThreeKingdomsPixiGame() {
         (engine as any).giveRes?.(r, a);
       }
       addToast(`征服成功！获得领土`, 'success');
+      audioManagerRef.current?.playConquer();
       engine.handleKeyDown(' '); // 触发 stateChange
     } else {
       addToast('兵力不足，无法征服！', 'error');
+      audioManagerRef.current?.playError();
     }
   }, [addToast]);
 
@@ -1160,8 +1427,10 @@ export default function ThreeKingdomsPixiGame() {
         enterBattle();
         setScene('combat');
         addToast('战斗开始！', 'success');
+        audioManagerRef.current?.playBattle();
       } else {
         addToast('无法开始战斗', 'error');
+        audioManagerRef.current?.playError();
       }
     }
   }, [addToast]);
@@ -1189,11 +1458,13 @@ export default function ThreeKingdomsPixiGame() {
       }
       const rewardStr = Object.entries(choice.reward).map(([k, v]) => `${k}+${v}`).join(' ');
       addToast(`事件奖励：${rewardStr}`, 'success');
+      audioManagerRef.current?.playReward();
     }
 
     if (choice.penalty) {
       const penaltyStr = Object.entries(choice.penalty).map(([k, v]) => `${k}${v}`).join(' ');
       addToast(`事件惩罚：${penaltyStr}`, 'error');
+      audioManagerRef.current?.playError();
     }
 
     // 标记事件已解决
@@ -1283,9 +1554,11 @@ export default function ThreeKingdomsPixiGame() {
     const ok = rpSys.occupyResourcePoint(rpId, 'player');
     if (ok) {
       addToast(`占领成功：${rp.name}`, 'success');
+      audioManagerRef.current?.playReward();
       engine.handleKeyDown(' ');
     } else {
       addToast('占领失败', 'error');
+      audioManagerRef.current?.playError();
     }
   }, [addToast]);
 
@@ -1297,6 +1570,7 @@ export default function ThreeKingdomsPixiGame() {
     const ok = rpSys.assignWorkers(rpId, count);
     if (ok) {
       addToast(`已分配 ${count} 名工人`, 'success');
+      audioManagerRef.current?.playClick();
       engine.handleKeyDown(' ');
     } else {
       addToast('分配工人失败', 'error');
@@ -1311,9 +1585,11 @@ export default function ThreeKingdomsPixiGame() {
     const ok = rpSys.upgradeResourcePoint(rpId);
     if (ok) {
       addToast('资源点升级成功！', 'success');
+      audioManagerRef.current?.playUpgrade();
       engine.handleKeyDown(' ');
     } else {
       addToast('升级失败（可能已达上限）', 'error');
+      audioManagerRef.current?.playError();
     }
   }, [addToast]);
 
@@ -1495,11 +1771,41 @@ export default function ThreeKingdomsPixiGame() {
               {renderState?.calendar?.isPaused ? '▶' : '⏸'}
             </button>
           </div>
-          {/* 存档 + 成就按钮 */}
+          {/* 存档 + 成就 + 音频按钮 */}
           <button onClick={() => setShowSavePanel(true)} title="存档管理" style={{background:'transparent',border:'none',cursor:'pointer',fontSize:14,color:COLOR_THEME.textSecondary}}>📜</button>
           <button onClick={() => setShowAchievements(true)} title="成就" style={{background:'transparent',border:'none',cursor:'pointer',fontSize:14,color:COLOR_THEME.textSecondary}}>🏆</button>
+          <button
+            onClick={() => {
+              const am = audioManagerRef.current;
+              if (!am) return;
+              // 首次点击时初始化（需要用户交互触发 AudioContext）
+              if (!am.isInitialized()) {
+                am.init();
+                am.playBGM();
+              }
+              const newMuted = am.toggleMute();
+              setAudioMuted(newMuted);
+            }}
+            title={audioMuted ? '取消静音' : '静音'}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              color: audioMuted ? '#e74c3c' : COLOR_THEME.textSecondary,
+            }}
+          >
+            {audioMuted ? '🔇' : '🔊'}
+          </button>
           {lastAutoSave > 0 && <span style={{fontSize:9,color:'#555'}}>已存档</span>}
         </div>
+
+        {/* 资源飘字动画 */}
+        {floatTexts.map(ft => (
+          <div key={ft.id} className="tk-float-text" style={{ left: ft.x, top: ft.y }}>
+            {ft.text}
+          </div>
+        ))}
       </header>
 
       {/* ═══════════ 中间区域：左面板 + PixiJS Canvas + 右面板 ═══════════ */}
@@ -1552,6 +1858,7 @@ export default function ThreeKingdomsPixiGame() {
               {buildings.map(b => (
                 <div
                   key={b.id}
+                  className={flashBuildingId === b.id ? 'tk-building-flash' : undefined}
                   onClick={() => handleBuildingClick(b.id)}
                   style={{
                     padding: '6px 8px', marginBottom: 4,
