@@ -15,7 +15,7 @@ import type { TerrainType } from './MapGenerator';
 // 地形视觉配置（程序化渲染）
 // ═══════════════════════════════════════════════════════════════
 
-export type TerrainPattern = 'solid' | 'checker' | 'diagonal' | 'dots' | 'waves' | 'crosshatch' | 'grass' | 'rocks' | 'trees' | 'ripples' | 'dunes' | 'snowflakes';
+export type TerrainPattern = 'solid' | 'checker' | 'diagonal' | 'dots' | 'waves' | 'crosshatch' | 'grass' | 'rocks' | 'trees' | 'ripples' | 'dunes' | 'snowflakes' | 'wall' | 'bubbles';
 
 export interface TerrainVisual {
   baseColor: number;
@@ -162,6 +162,28 @@ export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
     transitionColor: 0xc8cce0,
     transitionAlpha: 0.3,
   },
+  pass: {
+    baseColor: 0x6b4a2a,       // 深棕 — 关隘城墙（沉稳深棕，区别于山地灰褐）
+    lightColor: 0x8b6a4a,
+    darkColor: 0x4b2a1a,
+    pattern: 'wall',
+    label: '关隘',
+    renderPriority: 10,
+    transitionWidth: 10,
+    transitionColor: 0x4b2a1a,
+    transitionAlpha: 0.5,
+  },
+  swamp: {
+    baseColor: 0x2a5a4a,       // 暗蓝绿 — 沼泽湿地（深暗色调，区别于水域蓝和森林绿）
+    lightColor: 0x3a7a6a,
+    darkColor: 0x1a3a2a,
+    pattern: 'bubbles',
+    label: '沼泽',
+    renderPriority: 2,
+    transitionWidth: 10,
+    transitionColor: 0x1a3a2a,
+    transitionAlpha: 0.4,
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -245,6 +267,8 @@ export const TERRAIN_ASSETS: Record<TerrainType, string> = {
   fortress: `${KENNEY_BASE}/towerDefense_tile005.png`,
   desert:   `${KENNEY_BASE}/towerDefense_tile011.png`,
   snow:     `${KENNEY_BASE}/towerDefense_tile011.png`,
+  pass:     `${KENNEY_BASE}/towerDefense_tile005.png`,
+  swamp:    `${KENNEY_BASE}/towerDefense_tile014.png`,
 };
 
 /** 建筑类型 → Kenney 瓦片路径 */
@@ -306,8 +330,8 @@ export function getNPCVariantColor(profession: string, index: number): string {
 
 export const TERRAIN_SPRITE_NAMES: Record<TerrainType, string> = {
   plain:    'terrain_grass',
-  mountain: 'terrain_grass',   // 改为 grass，不再用 enemy_knight
-  forest:   'terrain_grass',   // 改为 grass，不再用 enemy_slime
+  mountain: 'terrain_grass',
+  forest:   'terrain_grass',
   water:    'terrain_water',
   road:     'terrain_road_straight',
   city:     'tower_cannon',
@@ -315,6 +339,8 @@ export const TERRAIN_SPRITE_NAMES: Record<TerrainType, string> = {
   fortress: 'tower_fire',
   desert:   'terrain_sand',
   snow:     'terrain_grass',
+  pass:     'tower_fire',
+  swamp:    'terrain_water',
 };
 
 export const BUILDING_SPRITE_NAMES: Record<string, string> = {

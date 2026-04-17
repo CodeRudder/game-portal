@@ -28,7 +28,9 @@ export type TerrainType =
   | 'village'   // 村庄
   | 'fortress'  // 关卡
   | 'desert'    // 荒漠
-  | 'snow';     // 雪地
+  | 'snow'      // 雪地
+  | 'pass'      // 关隘（狭窄通道）
+  | 'swamp';    // 沼泽
 
 /** 地图瓦片 */
 export interface MapTile {
@@ -366,6 +368,32 @@ export class MapGenerator {
       }
     }
 
+    // ── 关隘固定位置（战略通道） ──
+    const PASS_TILES: [number, number][] = [
+      [7, 5],   // 虎牢关位置（洛阳东）
+      [5, 7],   // 长安西通道
+      [12, 7],  // 襄阳南通道
+      [3, 9],   // 蜀道关隘
+    ];
+    for (const [px, py] of PASS_TILES) {
+      if (py >= 0 && py < MAP_H && px >= 0 && px < MAP_W && grid[py][px] !== 'water') {
+        grid[py][px] = 'pass';
+      }
+    }
+
+    // ── 沼泽固定位置（湿地） ──
+    const SWAMP_TILES: [number, number][] = [
+      [1, 11],  // 南中沼泽
+      [13, 11], // 江陵南沼泽
+      [8, 10],  // 云梦泽区域
+      [17, 11], // 吴地沼泽
+    ];
+    for (const [sx, sy] of SWAMP_TILES) {
+      if (sy >= 0 && sy < MAP_H && sx >= 0 && sx < MAP_W && grid[sy][sx] !== 'water') {
+        grid[sy][sx] = 'swamp';
+      }
+    }
+
     return grid;
   }
 
@@ -430,12 +458,15 @@ export class MapGenerator {
 
     // 中间战场区域
     if (this.inZone(x, y, CENTER_ZONE)) {
-      if (r < 0.20) return 'plain';
-      if (r < 0.40) return 'road';
-      if (r < 0.60) return 'mountain';
-      if (r < 0.78) return 'forest';
-      if (r < 0.90) return 'fortress';
-      return 'desert';
+      if (r < 0.15) return 'plain';
+      if (r < 0.30) return 'road';
+      if (r < 0.45) return 'mountain';
+      if (r < 0.58) return 'forest';
+      if (r < 0.68) return 'fortress';
+      if (r < 0.76) return 'pass';       // 关隘：狭窄通道
+      if (r < 0.84) return 'swamp';      // 沼泽：湿地
+      if (r < 0.92) return 'desert';
+      return 'village';
     }
 
     // 默认（边界过渡区域）
@@ -476,6 +507,7 @@ export class MapGenerator {
   private calcElevation(terrain: TerrainType): number {
     switch (terrain) {
       case 'water':   return 0;
+      case 'swamp':   return 0;
       case 'plain':   return 1;
       case 'road':    return 1;
       case 'village': return 1;
@@ -485,6 +517,7 @@ export class MapGenerator {
       case 'mountain':return 3;
       case 'desert':  return 1;
       case 'snow':    return 2;
+      case 'pass':    return 2;
       default:        return 1;
     }
   }
@@ -696,6 +729,7 @@ export class MapGenerator {
    */
   private addLandmarks(): void {
     this.landmarks = [
+      // ── 核心城市地标 ──
       { x: 10, y: 7,  name: '洛阳', type: 'capital' },
       { x: 6,  y: 6,  name: '长安', type: 'city' },
       { x: 16, y: 10, name: '建业', type: 'city' },
@@ -704,6 +738,13 @@ export class MapGenerator {
       { x: 8,  y: 4,  name: '许昌', type: 'city' },
       { x: 11, y: 6,  name: '襄阳', type: 'fortress' },
       { x: 4,  y: 8,  name: '汉中', type: 'fortress' },
+      // ── 历史著名地标 ──
+      { x: 7,  y: 5,  name: '虎牢关', type: 'fortress' },   // 虎牢关：三英战吕布
+      { x: 13, y: 9,  name: '赤壁',   type: 'fortress' },   // 赤壁：火烧赤壁
+      { x: 9,  y: 5,  name: '官渡',   type: 'fortress' },   // 官渡：官渡之战
+      { x: 12, y: 8,  name: '长坂坡', type: 'fortress' },   // 长坂坡：赵云救阿斗
+      { x: 5,  y: 7,  name: '五丈原', type: 'fortress' },   // 五丈原：诸葛亮陨落
+      { x: 12, y: 9,  name: '夷陵',   type: 'fortress' },   // 夷陵：夷陵之战
     ];
   }
 

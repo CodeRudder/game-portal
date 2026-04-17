@@ -224,16 +224,18 @@ const BUILDING_LEVEL_TEXTURES: Record<number, string> = {
 
 /** 地形颜色映射（高区分度色系） */
 const TERRAIN_COLORS: Record<TerrainType, number> = {
-  plain: 0x90c695,      // 浅绿平原
+  plain: 0x7ab648,      // 明亮浅绿平原
   mountain: 0x8b7355,   // 灰褐山地
-  forest: 0x2d5a27,     // 深绿森林
-  water: 0x4a90d9,      // 亮蓝水域
+  forest: 0x3d6b2e,     // 深绿森林
+  water: 0x4a90d9,      // 蓝色水域
   road: 0xc4a35a,       // 土黄道路
-  city: 0xa0a0a0,       // 灰色城市
+  city: 0x9a9a8a,       // 灰色城市
   village: 0x50a0a0,    // 青绿村庄
   fortress: 0x8a5a7a,   // 紫褐关卡
-  desert: 0xe0c070,     // 亮沙黄荒漠
+  desert: 0xc4a55a,     // 黄褐色荒漠
   snow: 0xe8ecf6,       // 冷白雪地
+  pass: 0x6b4a2a,       // 深棕关隘
+  swamp: 0x2a5a4a,      // 暗蓝绿沼泽
 };
 
 /** 地形文字标签 */
@@ -248,6 +250,8 @@ const TERRAIN_LABELS: Record<TerrainType, string> = {
   fortress: '关卡',
   desert: '荒漠',
   snow: '雪地',
+  pass: '关隘',
+  swamp: '沼泽',
 };
 
 // ─── 增强地形视觉常量 ──────────────────────────────────────
@@ -264,6 +268,8 @@ const TERRAIN_DETAIL_DENSITY: Record<string, number> = {
   fortress: 1.0,  // 关卡：标准城墙
   desert: 1.0,    // 荒漠：标准沙丘
   snow: 1.0,      // 雪地：标准雪花
+  pass: 1.2,      // 关隘：较高密度城墙
+  swamp: 1.3,     // 沼泽：较高密度气泡
 };
 
 /** 旗帜尺寸（像素） */
@@ -573,6 +579,61 @@ const NPC_DIALOG_POOL: Record<string, string[]> = {
 
 /** NPC 信息面板配置 */
 const NPC_INFO_PANEL_WIDTH = 160;
+
+// ─── 地形战略提示配置 ──────────────────────────────────────
+
+/** 地形战略效果提示文字 */
+const TERRAIN_STRATEGIC_HINTS: Record<string, string> = {
+  mountain: '防御+20%',
+  water: '骑兵-30%',
+  pass: '防御+50%，通道狭窄',
+  forest: '可伏兵',
+  swamp: '移动-50%',
+  desert: '粮耗+20%',
+  snow: '移动-30%',
+  fortress: '防御+30%',
+};
+
+/** 战略提示文字样式配置 */
+const STRATEGIC_HINT_FONT_SIZE = 8;
+const STRATEGIC_HINT_ALPHA = 0.45;
+const STRATEGIC_HINT_COLOR = 0xffffff;
+const STRATEGIC_HINT_BG_COLOR = 0x000000;
+const STRATEGIC_HINT_BG_ALPHA = 0.35;
+
+// ─── 历史地标配置（三国著名战场） ──────────────────────────
+
+/** 历史著名地标定义（瓦片坐标，基于 20×15 地图） */
+interface HistoricalLandmark {
+  /** 瓦片 X 坐标 */
+  tileX: number;
+  /** 瓦片 Y 坐标 */
+  tileY: number;
+  /** 地标名称 */
+  name: string;
+  /** 历史事件描述 */
+  description: string;
+  /** 图标颜色（金色星形） */
+  starColor: number;
+}
+
+const HISTORICAL_LANDMARKS: HistoricalLandmark[] = [
+  { tileX: 7,  tileY: 5,  name: '虎牢关', description: '三英战吕布', starColor: 0xffd700 },
+  { tileX: 13, tileY: 9,  name: '赤壁',   description: '火烧赤壁',   starColor: 0xff4500 },
+  { tileX: 9,  tileY: 5,  name: '官渡',   description: '官渡之战',   starColor: 0xffd700 },
+  { tileX: 12, tileY: 8,  name: '长坂坡', description: '赵云救阿斗', starColor: 0xffd700 },
+  { tileX: 5,  tileY: 7,  name: '五丈原', description: '星落秋风',   starColor: 0xc0c0c0 },
+  { tileX: 12, tileY: 9,  name: '夷陵',   description: '火烧连营',   starColor: 0xff4500 },
+];
+
+/** 历史地标星形大小 */
+const HISTORICAL_LANDMARK_STAR_SIZE = 8;
+/** 历史地标标签字号 */
+const HISTORICAL_LANDMARK_LABEL_FONT_SIZE = 10;
+/** 历史地标描述字号 */
+const HISTORICAL_LANDMARK_DESC_FONT_SIZE = 8;
+
+/** NPC 信息面板宽度（复用已有常量） */
 const NPC_INFO_PANEL_HEIGHT = 80;
 const NPC_INFO_PANEL_CORNER_RADIUS = 6;
 const NPC_INFO_PANEL_BG_COLOR = 0x1a1a2e;
@@ -2090,6 +2151,15 @@ export class MapScene extends BaseScene {
       }
     }
 
+    // ── 8. 绘制地形战略提示文字（Text 对象，半透明叠加） ──
+    this.renderStrategicHints(labelLayer, map);
+
+    // ── 9. 绘制地形类型标记文字（关/泽/漠） ──
+    this.renderTerrainMarkerLabels(labelLayer, map);
+
+    // ── 10. 绘制历史著名地标（金色星形 + 名称标签） ──
+    this.renderHistoricalLandmarks(landmarkLayer, labelLayer, map);
+
     this.tileMapView = {
       tileLayer,
       labelLayer,
@@ -2614,6 +2684,234 @@ export class MapScene extends BaseScene {
             }
             break;
           }
+
+          // ── 城墙纹理（关隘）：石墙砖块 + 城门拱形 + 城垛 ──
+          case 'wall': {
+            const wallInset = Math.floor(tileSize * 0.1);
+            const wallX = x + wallInset;
+            const wallY = y + wallInset;
+            const wallW = tileSize - wallInset * 2;
+            const wallH = tileSize - wallInset * 2;
+
+            // 石墙砖块纹理（水平+垂直砖缝，错位排列）
+            const brickH = Math.max(4, Math.floor(tileSize * 0.15));
+            for (let by = wallY; by < wallY + wallH; by += brickH) {
+              graphics.moveTo(wallX, by).lineTo(wallX + wallW, by)
+                .stroke({ width: 0.6, color: visual.darkColor, alpha: 0.4 });
+              const rowIdx = Math.floor((by - wallY) / brickH);
+              const offset = rowIdx % 2 === 0 ? 0 : Math.floor(tileSize * 0.2);
+              for (let bx = wallX + offset; bx < wallX + wallW; bx += Math.floor(tileSize * 0.4)) {
+                graphics.moveTo(bx, by).lineTo(bx, Math.min(by + brickH, wallY + wallH))
+                  .stroke({ width: 0.5, color: visual.darkColor, alpha: 0.3 });
+              }
+            }
+
+            // 城门拱形（底部中央）
+            const gateW = Math.max(8, Math.floor(wallW * 0.35));
+            const gateH = Math.max(6, Math.floor(wallH * 0.4));
+            const gateX = Math.floor(wallX + (wallW - gateW) / 2);
+            const gateY = Math.floor(wallY + wallH - gateH);
+            graphics.rect(gateX, gateY + Math.floor(gateH * 0.35), gateW, Math.ceil(gateH * 0.65))
+              .fill({ color: 0x1a0a00, alpha: 0.6 });
+            graphics.arc(Math.floor(gateX + gateW / 2), gateY + Math.floor(gateH * 0.35), Math.floor(gateW / 2), Math.PI, 0)
+              .fill({ color: 0x1a0a00, alpha: 0.6 });
+
+            // 城垛（顶部锯齿）
+            const crenelW = Math.max(3, Math.floor(tileSize * 0.1));
+            const crenelH = Math.max(3, Math.floor(tileSize * 0.08));
+            for (let cx = wallX; cx < wallX + wallW; cx += crenelW * 2) {
+              graphics.rect(cx, wallY - crenelH, crenelW, crenelH)
+                .fill({ color: visual.lightColor, alpha: 0.5 });
+            }
+
+            // 城门上方横梁装饰
+            graphics.moveTo(gateX - 2, gateY + Math.floor(gateH * 0.3))
+              .lineTo(gateX + gateW + 2, gateY + Math.floor(gateH * 0.3))
+              .stroke({ width: 1.5, color: 0x8b6914, alpha: 0.5 });
+
+            // 角落加固石块
+            const cs = 4;
+            graphics.rect(wallX - 1, wallY - 1, cs, cs).fill({ color: visual.lightColor, alpha: 0.4 });
+            graphics.rect(wallX + wallW - cs + 1, wallY - 1, cs, cs).fill({ color: visual.lightColor, alpha: 0.4 });
+            graphics.rect(wallX - 1, wallY + wallH - cs + 1, cs, cs).fill({ color: visual.lightColor, alpha: 0.3 });
+            graphics.rect(wallX + wallW - cs + 1, wallY + wallH - cs + 1, cs, cs).fill({ color: visual.lightColor, alpha: 0.3 });
+
+            // 石墙纹理点缀
+            for (let i = 0; i < 5; i++) {
+              const sx = wallX + 2 + prng(i + 200) * (wallW - 4);
+              const sy = wallY + 2 + prng(i + 210) * (wallH - 4);
+              const sr = 1 + prng(i + 220) * 2;
+              graphics.circle(sx, sy, sr).fill({ color: visual.lightColor, alpha: 0.15 });
+            }
+            break;
+          }
+
+          // ── 气泡纹理（沼泽）：水面气泡 + 水草 + 水面反光 ──
+          case 'bubbles': {
+            // 水面波纹底纹
+            for (let wy = 4; wy < tileSize; wy += 10) {
+              const woff = prng(wy + 300) * 3 - 1.5;
+              graphics.moveTo(x + 2, y + wy + woff)
+                .bezierCurveTo(
+                  x + tileSize * 0.3, y + wy - 1.5 + woff,
+                  x + tileSize * 0.7, y + wy + 1.5 + woff,
+                  x + tileSize - 2, y + wy + woff,
+                )
+                .stroke({ width: 0.6, color: visual.lightColor, alpha: 0.2 });
+            }
+
+            // 气泡（大小不一，部分有高光）
+            for (let i = 0; i < 7; i++) {
+              const bx = 4 + prng(i + 50) * (tileSize - 8);
+              const by = 4 + prng(i + 60) * (tileSize - 8);
+              const br = 2 + prng(i + 70) * 4;
+              graphics.circle(x + bx, y + by, br)
+                .stroke({ width: 0.8, color: visual.lightColor, alpha: 0.35 });
+              if (prng(i + 80) > 0.4) {
+                graphics.circle(x + bx - br * 0.3, y + by - br * 0.3, Math.max(0.5, br * 0.25))
+                  .fill({ color: 0xffffff, alpha: 0.2 });
+              }
+            }
+
+            // 水草（从底部生长）
+            for (let g = 0; g < 3; g++) {
+              if (prng(g + 100) < 0.6) {
+                const gx = 6 + prng(g + 110) * (tileSize - 12);
+                const gy = y + tileSize - 3;
+                const gLen = 6 + prng(g + 120) * 8;
+                const gAngle = -0.3 + prng(g + 130) * 0.6;
+                graphics.moveTo(x + gx, gy)
+                  .lineTo(x + gx + Math.sin(gAngle) * gLen, gy - Math.cos(gAngle) * gLen)
+                  .stroke({ width: 1, color: 0x2e5a27, alpha: 0.4 });
+                graphics.moveTo(x + gx + 2, gy)
+                  .lineTo(x + gx + 2 + Math.sin(gAngle + 0.5) * gLen * 0.7, gy - Math.cos(gAngle + 0.5) * gLen * 0.7)
+                  .stroke({ width: 0.8, color: 0x3a6a30, alpha: 0.3 });
+              }
+            }
+
+            // 水面反光（不规则亮斑）
+            if (prng(150) < 0.4) {
+              const hx = x + 5 + prng(151) * (tileSize - 10);
+              const hy = y + 5 + prng(152) * (tileSize - 10);
+              graphics.ellipse(hx, hy, 4 + prng(153) * 5, 2 + prng(154) * 3)
+                .fill({ color: 0x8ab8a0, alpha: 0.12 });
+            }
+
+            // 偶尔枯木
+            if (prng(160) < 0.2) {
+              const tx = x + 8 + prng(161) * (tileSize - 16);
+              const ty = y + 6 + prng(162) * (tileSize - 12);
+              graphics.moveTo(tx, ty + 8).lineTo(tx, ty)
+                .stroke({ width: 1.2, color: 0x5a4a3a, alpha: 0.3 });
+              graphics.moveTo(tx, ty).lineTo(tx - 4, ty - 3)
+                .stroke({ width: 0.8, color: 0x5a4a3a, alpha: 0.25 });
+              graphics.moveTo(tx, ty + 2).lineTo(tx + 3, ty - 1)
+                .stroke({ width: 0.8, color: 0x5a4a3a, alpha: 0.25 });
+            }
+            break;
+          }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // 特殊地形覆盖渲染（关隘/沼泽/荒漠标记 + 战略提示）
+        // ═══════════════════════════════════════════════════════
+
+        // ── 关隘特殊渲染：城墙图案 + "关"字标记 ──
+        if (tile.terrain === 'pass') {
+          const passVisual = TERRAIN_VISUALS['pass'];
+          if (passVisual) {
+            // 城墙纹理（深棕色砖块图案）
+            const brickW = Math.floor(tileSize / 4);
+            const brickH = Math.floor(tileSize / 6);
+            for (let by = 0; by < tileSize; by += brickH) {
+              const offset = (Math.floor(by / brickH) % 2) * Math.floor(brickW / 2);
+              for (let bx = offset; bx < tileSize; bx += brickW) {
+                graphics.rect(x + bx, y + by, brickW - 1, brickH - 1)
+                  .stroke({ width: 0.5, color: passVisual.lightColor, alpha: 0.3 });
+              }
+            }
+            // 城门拱形
+            const gateW = Math.floor(tileSize * 0.35);
+            const gateH = Math.floor(tileSize * 0.45);
+            const gateX = Math.floor(x + (tileSize - gateW) / 2);
+            const gateY = Math.floor(y + tileSize - gateH);
+            graphics.rect(gateX, gateY + Math.floor(gateH * 0.4), gateW, Math.ceil(gateH * 0.6))
+              .fill({ color: 0x1a0a00, alpha: 0.6 });
+            graphics.arc(Math.floor(gateX + gateW / 2), gateY + Math.floor(gateH * 0.4), Math.floor(gateW / 2), Math.PI, 0)
+              .fill({ color: 0x1a0a00, alpha: 0.6 });
+            // "关"字标记（居中显示）
+            graphics.circle(Math.floor(x + tileSize / 2), Math.floor(y + tileSize * 0.3), 7)
+              .fill({ color: 0x4b2a1a, alpha: 0.7 });
+            graphics.circle(Math.floor(x + tileSize / 2), Math.floor(y + tileSize * 0.3), 7)
+              .stroke({ width: 1, color: 0xffd700, alpha: 0.6 });
+          }
+        }
+
+        // ── 沼泽特殊渲染：气泡纹理 + "泽"字标记 ──
+        if (tile.terrain === 'swamp') {
+          const swampVisual = TERRAIN_VISUALS['swamp'];
+          if (swampVisual) {
+            // 气泡纹理（大小不一的半透明圆）
+            for (let i = 0; i < 8; i++) {
+              const bx = x + 4 + prng(i + 200) * (tileSize - 8);
+              const by = y + 4 + prng(i + 210) * (tileSize - 8);
+              const br = 1.5 + prng(i + 220) * 3;
+              graphics.circle(Math.floor(bx), Math.floor(by), br)
+                .fill({ color: 0x5a9a8a, alpha: 0.25 + prng(i + 230) * 0.15 });
+              // 气泡高光
+              graphics.circle(Math.floor(bx - br * 0.3), Math.floor(by - br * 0.3), Math.max(0.5, br * 0.3))
+                .fill({ color: 0x8abaaa, alpha: 0.3 });
+            }
+            // 枯枝/水草装饰
+            for (let i = 0; i < 3; i++) {
+              const rx = Math.floor(x + 6 + prng(i + 240) * (tileSize - 12));
+              const ry = Math.floor(y + tileSize - 4);
+              const angle = -0.5 + prng(i + 250) * 1.0;
+              const len = Math.floor(5 + prng(i + 260) * 6);
+              graphics.moveTo(rx, ry)
+                .lineTo(Math.floor(rx + Math.sin(angle) * len), Math.floor(ry - Math.cos(angle) * len))
+                .stroke({ width: 0.8, color: 0x3a5a3a, alpha: 0.35 });
+            }
+            // "泽"字标记
+            graphics.circle(Math.floor(x + tileSize / 2), Math.floor(y + tileSize * 0.3), 7)
+              .fill({ color: 0x1a3a2a, alpha: 0.7 });
+            graphics.circle(Math.floor(x + tileSize / 2), Math.floor(y + tileSize * 0.3), 7)
+              .stroke({ width: 1, color: 0x6abaaa, alpha: 0.6 });
+          }
+        }
+
+        // ── 荒漠增强渲染：沙丘纹理 + "漠"字标记 ──
+        if (tile.terrain === 'desert') {
+          // 额外沙丘曲线（更明显）
+          for (let i = 0; i < 2; i++) {
+            const duneY = y + 10 + prng(i + 300) * (tileSize - 20);
+            const amp = 3 + prng(i + 310) * 4;
+            graphics.moveTo(x + 2, duneY)
+              .bezierCurveTo(
+                x + tileSize * 0.3, duneY - amp,
+                x + tileSize * 0.7, duneY + amp,
+                x + tileSize - 2, duneY,
+              )
+              .stroke({ width: 1.2, color: 0xa08030, alpha: 0.25 });
+          }
+          // "漠"字标记（半透明）
+          graphics.circle(Math.floor(x + tileSize / 2), Math.floor(y + tileSize * 0.3), 7)
+            .fill({ color: 0xa08030, alpha: 0.5 });
+          graphics.circle(Math.floor(x + tileSize / 2), Math.floor(y + tileSize * 0.3), 7)
+            .stroke({ width: 1, color: 0xd4a55a, alpha: 0.5 });
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // 地形战略提示（半透明文字叠加）
+        // ═══════════════════════════════════════════════════════
+        const hint = TERRAIN_STRATEGIC_HINTS[tile.terrain];
+        if (hint) {
+          const hintX = Math.floor(x + tileSize / 2);
+          const hintY = Math.floor(y + tileSize - 6);
+          // 提示背景条
+          const hintBgW = Math.floor(hint.length * STRATEGIC_HINT_FONT_SIZE * 0.6 + 6);
+          graphics.rect(Math.floor(hintX - hintBgW / 2), hintY - 5, hintBgW, 10)
+            .fill({ color: STRATEGIC_HINT_BG_COLOR, alpha: STRATEGIC_HINT_BG_ALPHA });
         }
       }
     }
@@ -3797,6 +4095,176 @@ export class MapScene extends BaseScene {
   /**
    * 绘制地标文字标签
    */
+  /**
+   * 绘制地形战略提示文字
+   *
+   * 在有战略效果的地形瓦片上方显示半透明提示文字。
+   * 使用 Text 对象确保中文文字清晰渲染。
+   */
+  private renderStrategicHints(labelLayer: Container, map: GameMap): void {
+    const tileSize = map.tileSize;
+    const hintStyle = new TextStyle({
+      fontSize: STRATEGIC_HINT_FONT_SIZE,
+      fill: STRATEGIC_HINT_COLOR,
+      fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+    });
+
+    for (let row = 0; row < map.height; row++) {
+      for (let col = 0; col < map.width; col++) {
+        const tile = map.tiles[row]?.[col];
+        if (!tile) continue;
+
+        const hint = TERRAIN_STRATEGIC_HINTS[tile.terrain];
+        if (!hint) continue;
+
+        const hintX = Math.floor(col * tileSize + tileSize / 2);
+        const hintY = Math.floor(row * tileSize + tileSize - 8);
+
+        const text = new Text({ text: hint, style: hintStyle });
+        text.anchor.set(0.5, 0.5);
+        text.position.set(hintX, hintY);
+        text.alpha = STRATEGIC_HINT_ALPHA;
+        labelLayer.addChild(text);
+      }
+    }
+  }
+
+  /**
+   * 绘制地形类型标记文字（关/泽/漠）
+   *
+   * 在特殊地形瓦片上显示中文标记文字。
+   */
+  private renderTerrainMarkerLabels(labelLayer: Container, map: GameMap): void {
+    const tileSize = map.tileSize;
+
+    /** 特殊地形标记配置 */
+    const TERRAIN_MARKERS: Record<string, { char: string; color: number; strokeColor: string }> = {
+      pass:   { char: '关', color: 0xffd700, strokeColor: '#3a1a00' },
+      swamp:  { char: '泽', color: 0x8abaaa, strokeColor: '#0a2a1a' },
+      desert: { char: '漠', color: 0xd4a55a, strokeColor: '#5a3a10' },
+    };
+
+    const markerStyle = new TextStyle({
+      fontSize: 10,
+      fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+      fontWeight: 'bold',
+      fill: '#ffffff',
+      stroke: { color: '#000000', width: 2 },
+    });
+
+    for (let row = 0; row < map.height; row++) {
+      for (let col = 0; col < map.width; col++) {
+        const tile = map.tiles[row]?.[col];
+        if (!tile) continue;
+
+        const marker = TERRAIN_MARKERS[tile.terrain];
+        if (!marker) continue;
+
+        const cx = Math.floor(col * tileSize + tileSize / 2);
+        const cy = Math.floor(row * tileSize * 1 + tileSize * 0.3);
+
+        const text = new Text({
+          text: marker.char,
+          style: new TextStyle({
+            fontSize: 10,
+            fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+            fontWeight: 'bold',
+            fill: marker.color,
+            stroke: { color: marker.strokeColor, width: 2 },
+          }),
+        });
+        text.anchor.set(0.5, 0.5);
+        text.position.set(cx, cy);
+        labelLayer.addChild(text);
+      }
+    }
+  }
+
+  /**
+   * 绘制历史著名地标（金色星形 + 名称标签 + 事件描述）
+   *
+   * 在地图上标注三国历史著名地点：
+   * 虎牢关、赤壁、官渡、长坂坡、五丈原、夷陵
+   */
+  private renderHistoricalLandmarks(
+    landmarkLayer: Container,
+    labelLayer: Container,
+    map: GameMap,
+  ): void {
+    const tileSize = map.tileSize;
+
+    for (const hl of HISTORICAL_LANDMARKS) {
+      // 检查坐标是否在地图范围内
+      if (hl.tileX < 0 || hl.tileX >= map.width || hl.tileY < 0 || hl.tileY >= map.height) continue;
+
+      const cx = Math.floor(hl.tileX * tileSize + tileSize / 2);
+      const cy = Math.floor(hl.tileY * tileSize + tileSize / 2);
+
+      const container = new Container({ label: `historical-${hl.name}` });
+      container.position.set(cx, cy);
+
+      // 绘制金色五角星
+      const star = new Graphics();
+      const outerR = HISTORICAL_LANDMARK_STAR_SIZE;
+      const innerR = Math.floor(outerR * 0.4);
+      const points = 5;
+
+      // 五角星路径
+      star.moveTo(0, -outerR);
+      for (let i = 0; i < points * 2; i++) {
+        const r = i % 2 === 0 ? outerR : innerR;
+        const angle = (i * Math.PI) / points - Math.PI / 2;
+        const px = Math.cos(angle) * r;
+        const py = Math.sin(angle) * r;
+        if (i === 0) star.moveTo(px, py);
+        else star.lineTo(px, py);
+      }
+      star.closePath().fill({ color: hl.starColor, alpha: 0.85 });
+      star.closePath().stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
+
+      // 外圈光晕
+      star.circle(0, 0, outerR + 3).stroke({ width: 1.5, color: hl.starColor, alpha: 0.4 });
+      container.addChild(star);
+
+      landmarkLayer.addChild(container);
+
+      // 名称标签（金色粗体）
+      const nameLabel = new Text({
+        text: hl.name,
+        style: new TextStyle({
+          fontSize: HISTORICAL_LANDMARK_LABEL_FONT_SIZE,
+          fill: hl.starColor,
+          fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+          fontWeight: 'bold',
+          stroke: { color: '#000000', width: 2 },
+        }),
+      });
+      nameLabel.anchor.set(0.5, 0);
+      nameLabel.position.set(cx, cy + outerR + 4);
+      labelLayer.addChild(nameLabel);
+
+      // 事件描述（小字，半透明）
+      const descLabel = new Text({
+        text: hl.description,
+        style: new TextStyle({
+          fontSize: HISTORICAL_LANDMARK_DESC_FONT_SIZE,
+          fill: '#cccccc',
+          fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+          stroke: { color: '#000000', width: 1 },
+        }),
+      });
+      descLabel.anchor.set(0.5, 0);
+      descLabel.position.set(cx, cy + outerR + 16);
+      descLabel.alpha = 0.7;
+      labelLayer.addChild(descLabel);
+    }
+  }
+
+  /**
+   * 绘制地标文字标签（整数坐标）
+   *
+   * 为地图上的城市/关卡/桥梁等地标绘制文字标签。
+   */
   private renderTileLandmarks(
     landmarkLayer: Container,
     labelLayer: Container,
@@ -3842,19 +4310,32 @@ export class MapScene extends BaseScene {
       landmarkLayer.addChild(container);
 
       // 文字标签（单独一层，在最高层显示）
+      // ── R12: 历史地标标注使用金色文字+下划线样式 ──
+      const isHistorical = lm.name.length >= 3 && !['洛阳', '长安', '建业', '邺城', '成都', '许昌', '襄阳', '汉中'].includes(lm.name);
+      const labelStyle = new TextStyle({
+        fontSize: isHistorical ? LANDMARK_FONT_SIZE + 1 : LANDMARK_FONT_SIZE,
+        fill: isHistorical ? 0xffd700 : LANDMARK_LABEL_COLOR,  // 历史地标用更亮的金色
+        fontFamily: '"Noto Serif SC", "Microsoft YaHei", serif',
+        fontWeight: 'bold',
+        stroke: { color: '#000000', width: 2 },
+      });
       const label = new Text({
         text: lm.name,
-        style: new TextStyle({
-          fontSize: LANDMARK_FONT_SIZE,
-          fill: LANDMARK_LABEL_COLOR,
-          fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
-          fontWeight: 'bold',
-          stroke: { color: '#000000', width: 2 },
-        }),
+        style: labelStyle,
       });
       label.anchor.set(0.5, 0);
       label.position.set(cx, cy + 18);
       labelLayer.addChild(label);
+
+      // 历史地标添加下划线装饰
+      if (isHistorical) {
+        const underline = new Graphics();
+        const labelWidth = label.width;
+        underline.moveTo(cx - labelWidth / 2, cy + 18 + label.height + 1)
+          .lineTo(cx + labelWidth / 2, cy + 18 + label.height + 1)
+          .stroke({ width: 1.5, color: 0xffd700, alpha: 0.7 });
+        labelLayer.addChild(underline);
+      }
 
       this.landmarkViews.set(lm.name, { id: lm.name, container, data: lm });
     }
