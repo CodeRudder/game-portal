@@ -2871,6 +2871,11 @@ export default function ThreeKingdomsPixiGame() {
           <span style={{ color: COLOR_THEME.accentGold, fontFamily: '"Noto Serif SC", serif' }}>
             {renderState?.calendar?.dateStr}
           </span>
+          {/* R15 — 日夜时间指示器 */}
+          <div className={`tk-time-indicator ${isNight ? 'tk-time-indicator--night' : 'tk-time-indicator--day'}`}>
+            <span className="tk-time-indicator-icon">{isNight ? '🌙' : '☀️'}</span>
+            <span className="tk-time-indicator-label">{isNight ? '夜' : '昼'}</span>
+          </div>
           <span style={{
             color: COLOR_THEME.accentGold,
             background: 'rgba(139,115,85,0.12)',
@@ -3038,6 +3043,12 @@ export default function ThreeKingdomsPixiGame() {
           </div>
           {/* 城池呼吸脉冲 */}
           <div className="tk-city-pulse" style={{ left: '50%', bottom: '12%', transform: 'translateX(-50%)' }} />
+        </div>
+        {/* R15 — 飘动云雾氛围层 */}
+        <div className="tk-ambience-clouds">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className={`tk-ambience-cloud tk-ambience-cloud--${i}`} />
+          ))}
         </div>
         {/* 飘落花瓣/落叶层（增强版 — 18个粒子更密集） */}
         <div className="tk-petal-layer">
@@ -3530,7 +3541,7 @@ export default function ThreeKingdomsPixiGame() {
 
           {/* ═══════════ 主界面场景面板（地图场景中央概览） ═══════════ */}
           {scene === 'map' && (
-            <div className="tk-scene-panel">
+            <div className="tk-scene-panel tk-panel-animate-in" key={`panel-map-${activeTab}`}>
               {/* 城池概览（带呼吸动画） */}
               <div className="tk-scene-city tk-scene-city--breathe">
                 <div className="tk-scene-city-icon">🏰</div>
@@ -3663,7 +3674,7 @@ export default function ThreeKingdomsPixiGame() {
 
           {/* 声望转生浮层 */}
           {scene === 'prestige' && prestigeData && (
-            <div style={{
+            <div className="tk-panel-animate-in" key="panel-prestige" style={{
               position: 'absolute', top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
               background: 'rgba(0,0,0,0.75)',
@@ -3727,6 +3738,7 @@ export default function ThreeKingdomsPixiGame() {
 
           {/* ═══════════ 征战关卡面板 ═══════════ */}
           {scene === 'stage-info' && (
+            <div className="tk-panel-animate-in" key="panel-stage-info">
             <CampaignPanel
               engine={engineRef.current}
               renderState={renderState}
@@ -3741,9 +3753,8 @@ export default function ThreeKingdomsPixiGame() {
               addToast={addToast}
               COLOR_THEME={COLOR_THEME}
             />
+            </div>
           )}
-
-          {/* ═══════════ 征战战斗报告弹窗 ═══════════ */}
           {showCampaignBattleReport && campaignBattleResult && (
             <CampaignBattleReport
               result={campaignBattleResult}
@@ -3787,7 +3798,7 @@ export default function ThreeKingdomsPixiGame() {
             const totalNodes = nodes.length;
 
             return (
-              <div className="tk-tech-overlay" style={{
+              <div className="tk-tech-overlay tk-panel-animate-in" key="panel-tech-tree" style={{
                 position: 'absolute', top: '50%', left: '50%',
                 transform: 'translate(-50%, -50%)',
                 background: 'rgba(35, 22, 10, 0.75)',

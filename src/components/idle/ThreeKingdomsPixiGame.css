@@ -3999,7 +3999,9 @@
   50% { opacity: 0.6; transform: scale(1.15); }
 }
 
-/* ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+ * 优化1: 武将视觉升级 — 特征化头像 + 动态效果 + 势力色强化
+ * ═══════════════════════════════════════════════════════════════ */
 
 /* ─── 武将卡片 hover 浮动效果 ─── */
 .tk-general-card {
@@ -4681,5 +4683,627 @@
   }
   .tk-resource-float {
     font-size: 11px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * R15 — 主界面沉浸感增强
+ * 流光标题 + 云雾背景 + Tab升级 + 面板过渡 + 日夜指示器
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────
+ * 1. 主标题动态光效 — 金色流光动画（shimmer）
+ *    模拟古代卷轴光泽，从左到右流光扫过
+ * ────────────────────────────────────────────────────────────── */
+
+/* 流光扫过动画 — 金色高光从左到右移动 */
+@keyframes tk-shimmer-sweep {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* 标题文字发光呼吸 */
+@keyframes tk-title-glow-breathe {
+  0%, 100% {
+    text-shadow:
+      0 0 4px rgba(240, 192, 64, 0.3),
+      0 1px 4px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    text-shadow:
+      0 0 12px rgba(240, 192, 64, 0.6),
+      0 0 24px rgba(240, 192, 64, 0.25),
+      0 0 48px rgba(212, 160, 48, 0.12),
+      0 1px 4px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* 主标题 shimmer 效果叠加 */
+.tk-title-ancient {
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(
+    90deg,
+    #f0c040 0%,
+    #f0c040 35%,
+    #fff8e0 50%,
+    #f0c040 65%,
+    #f0c040 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation:
+    tk-shimmer-sweep 4s ease-in-out infinite,
+    tk-title-glow-breathe 3s ease-in-out infinite;
+  /* fallback: 如果 background-clip 不支持，文字仍可见 */
+}
+
+/* 标题下方装饰线 — 古风卷轴纹样 */
+.tk-title-ancient::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(240, 192, 64, 0.6) 20%,
+    rgba(255, 248, 224, 0.8) 50%,
+    rgba(240, 192, 64, 0.6) 80%,
+    transparent 100%
+  );
+  border-radius: 1px;
+  animation: tk-title-underline-pulse 3s ease-in-out infinite;
+}
+
+@keyframes tk-title-underline-pulse {
+  0%, 100% { opacity: 0.5; transform: scaleX(0.8); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * 2. 背景氛围层 — 缓慢飘动的云雾 + 远山剪影
+ *    纯 CSS 实现，多层叠加营造深度感
+ * ────────────────────────────────────────────────────────────── */
+
+/* 云雾飘动关键帧 — 缓慢水平移动 + 轻微上下浮动 */
+@keyframes tk-ambience-cloud-drift-1 {
+  0% {
+    transform: translateX(-10%) translateY(0);
+    opacity: 0.08;
+  }
+  25% {
+    transform: translateX(15%) translateY(-8px);
+    opacity: 0.14;
+  }
+  50% {
+    transform: translateX(40%) translateY(-3px);
+    opacity: 0.10;
+  }
+  75% {
+    transform: translateX(65%) translateY(-10px);
+    opacity: 0.12;
+  }
+  100% {
+    transform: translateX(110%) translateY(0);
+    opacity: 0.08;
+  }
+}
+
+@keyframes tk-ambience-cloud-drift-2 {
+  0% {
+    transform: translateX(110%) translateY(0);
+    opacity: 0.06;
+  }
+  30% {
+    transform: translateX(70%) translateY(-12px);
+    opacity: 0.12;
+  }
+  60% {
+    transform: translateX(30%) translateY(-5px);
+    opacity: 0.09;
+  }
+  100% {
+    transform: translateX(-15%) translateY(-8px);
+    opacity: 0.06;
+  }
+}
+
+@keyframes tk-ambience-cloud-drift-3 {
+  0% {
+    transform: translateX(5%) translateY(0);
+    opacity: 0.10;
+  }
+  50% {
+    transform: translateX(50%) translateY(-15px);
+    opacity: 0.06;
+  }
+  100% {
+    transform: translateX(95%) translateY(0);
+    opacity: 0.10;
+  }
+}
+
+/* 远山剪影缓慢呼吸 — 微妙的明暗变化 */
+@keyframes tk-ambience-mountain-breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.8; }
+}
+
+/* 主氛围背景层 — 在游戏根容器上叠加 */
+.tk-game-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    /* 云雾层1 — 高处薄雾 */
+    radial-gradient(ellipse 300px 60px at 20% 25%, rgba(200, 180, 150, 0.10), transparent),
+    radial-gradient(ellipse 250px 50px at 60% 20%, rgba(200, 180, 150, 0.08), transparent),
+    radial-gradient(ellipse 350px 70px at 80% 30%, rgba(200, 180, 150, 0.09), transparent),
+    /* 云雾层2 — 中层浓雾 */
+    radial-gradient(ellipse 280px 55px at 40% 45%, rgba(180, 165, 140, 0.07), transparent),
+    radial-gradient(ellipse 320px 65px at 15% 55%, rgba(180, 165, 140, 0.06), transparent),
+    /* 底部雾气 */
+    radial-gradient(ellipse 400px 80px at 50% 85%, rgba(160, 140, 110, 0.08), transparent),
+    /* 顶部暗角 — 增加纵深感 */
+    radial-gradient(ellipse 100% 40% at 50% 0%, rgba(0, 0, 0, 0.15), transparent);
+  animation: tk-ambience-mountain-breathe 8s ease-in-out infinite;
+  transition: opacity 2s ease;
+}
+
+/* 夜间氛围层变暗变蓝 */
+.tk-game-root--night::before {
+  background:
+    radial-gradient(ellipse 300px 60px at 20% 25%, rgba(100, 120, 160, 0.08), transparent),
+    radial-gradient(ellipse 250px 50px at 60% 20%, rgba(100, 120, 160, 0.06), transparent),
+    radial-gradient(ellipse 350px 70px at 80% 30%, rgba(80, 100, 140, 0.07), transparent),
+    radial-gradient(ellipse 280px 55px at 40% 45%, rgba(60, 80, 120, 0.05), transparent),
+    radial-gradient(ellipse 320px 65px at 15% 55%, rgba(60, 80, 120, 0.04), transparent),
+    radial-gradient(ellipse 400px 80px at 50% 85%, rgba(40, 60, 100, 0.06), transparent),
+    radial-gradient(ellipse 100% 40% at 50% 0%, rgba(0, 0, 20, 0.25), transparent);
+}
+
+/* 飘动云雾容器 */
+.tk-ambience-clouds {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* 单朵飘动云雾 */
+.tk-ambience-cloud {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(20px);
+}
+
+.tk-ambience-cloud--1 {
+  top: 15%;
+  width: 200px;
+  height: 40px;
+  background: radial-gradient(ellipse, rgba(200, 180, 150, 0.12), transparent 70%);
+  animation: tk-ambience-cloud-drift-1 25s linear infinite;
+}
+
+.tk-ambience-cloud--2 {
+  top: 35%;
+  width: 280px;
+  height: 50px;
+  background: radial-gradient(ellipse, rgba(180, 165, 140, 0.10), transparent 70%);
+  animation: tk-ambience-cloud-drift-2 35s linear infinite;
+  animation-delay: -8s;
+}
+
+.tk-ambience-cloud--3 {
+  top: 55%;
+  width: 160px;
+  height: 35px;
+  background: radial-gradient(ellipse, rgba(190, 175, 150, 0.09), transparent 70%);
+  animation: tk-ambience-cloud-drift-3 30s linear infinite;
+  animation-delay: -15s;
+}
+
+.tk-ambience-cloud--4 {
+  top: 25%;
+  width: 240px;
+  height: 45px;
+  background: radial-gradient(ellipse, rgba(170, 155, 130, 0.08), transparent 70%);
+  animation: tk-ambience-cloud-drift-1 40s linear infinite;
+  animation-delay: -20s;
+}
+
+.tk-ambience-cloud--5 {
+  top: 65%;
+  width: 220px;
+  height: 38px;
+  background: radial-gradient(ellipse, rgba(185, 170, 145, 0.07), transparent 70%);
+  animation: tk-ambience-cloud-drift-2 28s linear infinite;
+  animation-delay: -5s;
+}
+
+/* 夜间云雾变蓝变淡 */
+.tk-game-root--night .tk-ambience-cloud {
+  background: radial-gradient(ellipse, rgba(80, 100, 150, 0.10), transparent 70%) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * 3. Tab栏升级 — 选中发光条 + 微弹动效果
+ * ────────────────────────────────────────────────────────────── */
+
+/* Tab 选中底部发光条 */
+@keyframes tk-tab-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 2px 6px rgba(240, 192, 64, 0.3);
+    opacity: 0.8;
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(240, 192, 64, 0.6), 0 2px 20px rgba(240, 192, 64, 0.2);
+    opacity: 1;
+  }
+}
+
+/* Tab 点击弹动动画 */
+@keyframes tk-tab-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); }
+  50% { transform: scale(0.95); }
+  70% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+/* Tab 按钮 hover 浮起效果 */
+.tk-tab-btn-ancient {
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tk-tab-btn-ancient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 115, 85, 0.2);
+}
+
+.tk-tab-btn-ancient:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* 选中态 — 底部发光条 */
+.tk-tab-btn-ancient.active {
+  animation: tk-tab-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 发光条伪元素 */
+.tk-tab-btn-ancient.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(240, 192, 64, 0.8) 20%,
+    rgba(255, 248, 224, 1) 50%,
+    rgba(240, 192, 64, 0.8) 80%,
+    transparent 100%
+  );
+  border-radius: 2px;
+  animation: tk-tab-glow-pulse 2s ease-in-out infinite;
+}
+
+/* Tab 栏底部装饰线 */
+.tk-tab-bar-ancient {
+  position: relative;
+}
+
+.tk-tab-bar-ancient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 5%;
+  right: 5%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(139, 115, 85, 0.3) 15%,
+    rgba(212, 160, 48, 0.4) 50%,
+    rgba(139, 115, 85, 0.3) 85%,
+    transparent 100%
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * 4. 面板切换过渡 — 淡入淡出 + 轻微上移
+ * ────────────────────────────────────────────────────────────── */
+
+@keyframes tk-panel-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tk-panel-exit {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* 面板内容入场动画类 */
+.tk-panel-animate-in {
+  animation: tk-panel-enter 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* 面板内容出场动画类 */
+.tk-panel-animate-out {
+  animation: tk-panel-exit 0.2s ease-in forwards;
+}
+
+/* 左侧面板入场 */
+.tk-chinese-border {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease;
+}
+
+/* 场景面板通用过渡 */
+.tk-scene-panel,
+.tk-stage-scene {
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * 5. 时间指示器 — 日/夜渐变色变化视觉提示
+ *    在 header 区域显示一个渐变色条，反映当前时间段
+ * ────────────────────────────────────────────────────────────── */
+
+/* 时间指示器容器 */
+.tk-time-indicator {
+  position: relative;
+  width: 60px;
+  height: 18px;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid rgba(139, 115, 85, 0.4);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+/* 时间渐变背景 — 白天（暖金色） */
+.tk-time-indicator--day {
+  background: linear-gradient(
+    90deg,
+    #f0c040 0%,
+    #ff8c00 30%,
+    #f0c040 60%,
+    #daa520 100%
+  );
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.2),
+    0 0 8px rgba(240, 192, 64, 0.3);
+}
+
+/* 时间渐变背景 — 夜晚（深蓝靛色） */
+.tk-time-indicator--night {
+  background: linear-gradient(
+    90deg,
+    #1a1a3e 0%,
+    #2c3e6b 30%,
+    #1a1a3e 60%,
+    #0d1b2a 100%
+  );
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.4),
+    0 0 8px rgba(100, 120, 180, 0.2);
+}
+
+/* 日/夜图标 — 太阳/月亮 */
+.tk-time-indicator-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  line-height: 1;
+  transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+}
+
+/* 白天太阳在左侧 */
+.tk-time-indicator--day .tk-time-indicator-icon {
+  left: 4px;
+}
+
+/* 夜晚月亮在右侧 */
+.tk-time-indicator--night .tk-time-indicator-icon {
+  right: 4px;
+  left: auto;
+}
+
+/* 日夜过渡动画 — 渐变背景平滑切换 */
+.tk-time-indicator--day,
+.tk-time-indicator--night {
+  transition: background 1.5s ease-in-out, box-shadow 1.5s ease-in-out;
+}
+
+/* 时间指示器标签 */
+.tk-time-indicator-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+  font-weight: bold;
+  font-family: '"Noto Serif SC", serif';
+  letter-spacing: 1px;
+  pointer-events: none;
+  transition: all 0.8s ease;
+}
+
+.tk-time-indicator--day .tk-time-indicator-label {
+  right: 5px;
+  color: rgba(26, 14, 5, 0.7);
+}
+
+.tk-time-indicator--night .tk-time-indicator-label {
+  left: 5px;
+  color: rgba(200, 210, 240, 0.7);
+}
+
+/* 时间指示器光晕动画 */
+@keyframes tk-time-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.tk-time-indicator--day::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 11px;
+  background: radial-gradient(ellipse at 20% 50%, rgba(240, 192, 64, 0.3), transparent 60%);
+  animation: tk-time-glow 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.tk-time-indicator--night::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 11px;
+  background: radial-gradient(ellipse at 80% 50%, rgba(100, 120, 200, 0.2), transparent 60%);
+  animation: tk-time-glow 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * 附加增强 — Header 古风装饰 + 整体氛围微调
+ * ────────────────────────────────────────────────────────────── */
+
+/* Header 顶部渐变装饰 */
+.tk-header-ancient {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(60, 40, 20, 0.6) 0%,
+    rgba(40, 25, 10, 0.4) 100%
+  );
+  backdrop-filter: blur(2px);
+}
+
+.tk-header-ancient::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 160, 48, 0.3) 15%,
+    rgba(240, 192, 64, 0.5) 50%,
+    rgba(212, 160, 48, 0.3) 85%,
+    transparent 100%
+  );
+}
+
+/* 面板标题装饰增强 */
+.tk-panel-title-ancient {
+  position: relative;
+  text-align: center;
+  font-size: 13px;
+  font-weight: bold;
+  color: #f0c040;
+  letter-spacing: 3px;
+  padding: 6px 0 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(212, 160, 48, 0.25);
+}
+
+.tk-panel-title-ancient::before,
+.tk-panel-title-ancient::after {
+  content: '◆';
+  font-size: 8px;
+  color: rgba(212, 160, 48, 0.5);
+  margin: 0 6px;
+  vertical-align: middle;
+}
+
+/* 资源栏金色面板增强 */
+.tk-resource-panel-gold {
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    rgba(60, 40, 15, 0.5) 0%,
+    rgba(80, 55, 20, 0.3) 50%,
+    rgba(60, 40, 15, 0.5) 100%
+  );
+  border: 1px solid rgba(212, 160, 48, 0.2);
+  border-radius: 6px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * 移动端适配 — 沉浸感增强的响应式调整
+ * ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* 移动端标题 shimmer 保持但缩小 */
+  .tk-title-ancient::after {
+    bottom: -2px;
+    left: 5%;
+    right: 5%;
+    height: 1px;
+  }
+
+  /* 移动端隐藏飘动云雾（性能优化） */
+  .tk-ambience-cloud {
+    display: none;
+  }
+
+  /* 移动端 Tab 发光条缩短 */
+  .tk-tab-btn-ancient.active::after {
+    left: 15%;
+    right: 15%;
+    height: 2px;
+  }
+
+  /* 移动端时间指示器缩小 */
+  .tk-time-indicator {
+    width: 48px;
+    height: 14px;
+  }
+
+  .tk-time-indicator-icon {
+    font-size: 9px;
+  }
+
+  .tk-time-indicator-label {
+    font-size: 7px;
   }
 }
