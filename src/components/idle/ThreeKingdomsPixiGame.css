@@ -5307,3 +5307,1015 @@
     font-size: 7px;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+ * R15 — 武将展示系统深化
+ * ─ 势力色边框渐变 / 技能图标展示 / 详情面板动画
+ * ─ 品质金框区分 / 势力筛选 / 排序指示器
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────────────────────────────────────────
+ * 1. 武将卡片势力色边框渐变 + hover光晕扩散
+ * ─────────────────────────────────────────────────────────── */
+
+/* 势力色渐变边框 — 使用 conic-gradient 营造旋转光效 */
+.tk-general-card--faction-wei {
+  border-image: linear-gradient(
+    135deg,
+    #1565C0 0%,
+    #42A5F5 30%,
+    #0D47A1 60%,
+    #1E88E5 100%
+  ) 1;
+  border-image-slice: 1;
+}
+.tk-general-card--faction-shu {
+  border-image: linear-gradient(
+    135deg,
+    #C62828 0%,
+    #EF5350 30%,
+    #B71C1C 60%,
+    #E53935 100%
+  ) 1;
+  border-image-slice: 1;
+}
+.tk-general-card--faction-wu {
+  border-image: linear-gradient(
+    135deg,
+    #2E7D32 0%,
+    #66BB6A 30%,
+    #1B5E20 60%,
+    #43A047 100%
+  ) 1;
+  border-image-slice: 1;
+}
+.tk-general-card--faction-other {
+  border-image: linear-gradient(
+    135deg,
+    #616161 0%,
+    #9E9E9E 30%,
+    #424242 60%,
+    #757575 100%
+  ) 1;
+  border-image-slice: 1;
+}
+
+/* 势力色光晕 — hover时扩散 */
+.tk-general-card--faction-wei:hover {
+  box-shadow:
+    0 0 12px rgba(21, 101, 192, 0.35),
+    0 0 24px rgba(30, 136, 229, 0.2),
+    0 0 40px rgba(13, 71, 161, 0.1);
+}
+.tk-general-card--faction-shu:hover {
+  box-shadow:
+    0 0 12px rgba(198, 40, 40, 0.35),
+    0 0 24px rgba(229, 57, 53, 0.2),
+    0 0 40px rgba(183, 28, 28, 0.1);
+}
+.tk-general-card--faction-wu:hover {
+  box-shadow:
+    0 0 12px rgba(46, 125, 50, 0.35),
+    0 0 24px rgba(67, 160, 71, 0.2),
+    0 0 40px rgba(27, 94, 32, 0.1);
+}
+.tk-general-card--faction-other:hover {
+  box-shadow:
+    0 0 12px rgba(97, 97, 97, 0.3),
+    0 0 24px rgba(158, 158, 158, 0.15),
+    0 0 40px rgba(66, 66, 66, 0.08);
+}
+
+/* 势力色呼吸动画 — 卡片底部光带 */
+@keyframes tk-faction-glow-wei {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+@keyframes tk-faction-glow-shu {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+@keyframes tk-faction-glow-wu {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* 势力色底部光带 */
+.tk-general-card--faction-wei::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #1E88E5, transparent);
+  animation: tk-faction-glow-wei 3s ease-in-out infinite;
+  pointer-events: none;
+}
+.tk-general-card--faction-shu::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #E53935, transparent);
+  animation: tk-faction-glow-shu 3s ease-in-out infinite;
+  pointer-events: none;
+}
+.tk-general-card--faction-wu::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #43A047, transparent);
+  animation: tk-faction-glow-wu 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ───────────────────────────────────────────────────────────
+ * 2. 技能图标展示 — 圆形图标 + 技能等级指示器
+ * ─────────────────────────────────────────────────────────── */
+
+/* 技能图标圆形容器 — 增强版 */
+.tk-skill-icon-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, rgba(212, 160, 48, 0.2), rgba(139, 115, 85, 0.1));
+  border: 2px solid rgba(184, 115, 51, 0.4);
+  position: relative;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* 技能图标 hover 光效 */
+.tk-skill-icon-circle:hover {
+  border-color: #FFD700;
+  box-shadow:
+    0 0 8px rgba(255, 215, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.4);
+  transform: scale(1.1);
+}
+
+/* 技能类型颜色 — 边框色区分物理/法术/辅助 */
+.tk-skill-icon-circle--physical {
+  border-color: rgba(229, 57, 53, 0.5);
+  background: radial-gradient(circle at 40% 35%, rgba(229, 57, 53, 0.15), rgba(139, 115, 85, 0.05));
+}
+.tk-skill-icon-circle--magic {
+  border-color: rgba(171, 71, 188, 0.5);
+  background: radial-gradient(circle at 40% 35%, rgba(171, 71, 188, 0.15), rgba(139, 115, 85, 0.05));
+}
+.tk-skill-icon-circle--support {
+  border-color: rgba(66, 165, 245, 0.5);
+  background: radial-gradient(circle at 40% 35%, rgba(66, 165, 245, 0.15), rgba(139, 115, 85, 0.05));
+}
+
+/* 技能等级指示器 — 圆点排列 */
+.tk-skill-level-dots {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.tk-skill-level-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(139, 115, 85, 0.3);
+  transition: background 0.2s;
+}
+.tk-skill-level-dot--active {
+  background: #FFD700;
+  box-shadow: 0 0 3px rgba(255, 215, 0, 0.5);
+}
+
+/* 技能图标行 — 水平排列 */
+.tk-general-skills-row {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  padding: 4px 0;
+}
+
+/* 技能图标 + 名称 + 等级行 */
+.tk-skill-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.tk-skill-entry-name {
+  font-size: 8px;
+  color: #c9a96e;
+  font-family: 'KaiTi', 'STKaiti', serif;
+  white-space: nowrap;
+  max-width: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 技能冷却覆盖层 */
+.tk-skill-cooldown-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #FFD700;
+  font-weight: bold;
+  font-family: Georgia, serif;
+}
+
+/* ───────────────────────────────────────────────────────────
+ * 3. 武将详情面板 — 展开过渡动画 + 属性雷达图占位
+ * ─────────────────────────────────────────────────────────── */
+
+/* 详情面板展开动画 */
+.tk-detail-panel-enter {
+  animation: tk-detail-panel-slide-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes tk-detail-panel-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 详情面板关闭动画 */
+.tk-detail-panel-exit {
+  animation: tk-detail-panel-slide-out 0.25s ease-in forwards;
+}
+@keyframes tk-detail-panel-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* 属性雷达图占位容器 */
+.tk-stat-radar {
+  width: 140px;
+  height: 140px;
+  margin: 8px auto;
+  position: relative;
+}
+
+/* 雷达图背景网格 — 五边形 */
+.tk-stat-radar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* 五边形网格线由CSS绘制 */
+    conic-gradient(
+      from 90deg at 50% 50%,
+      transparent 0deg,
+      transparent 72deg,
+      rgba(139, 115, 85, 0.15) 72deg,
+      transparent 72deg,
+      transparent 144deg,
+      rgba(139, 115, 85, 0.15) 144deg,
+      transparent 144deg,
+      transparent 216deg,
+      rgba(139, 115, 85, 0.15) 216deg,
+      transparent 216deg,
+      transparent 288deg,
+      rgba(139, 115, 85, 0.15) 288deg,
+      transparent 288deg,
+      transparent 360deg,
+      rgba(139, 115, 85, 0.15) 360deg
+    );
+  clip-path: polygon(50% 0%, 97.6% 34.5%, 79.4% 90.5%, 20.6% 90.5%, 2.4% 34.5%);
+  pointer-events: none;
+}
+
+/* 雷达图属性标签位置 */
+.tk-stat-radar-label {
+  position: absolute;
+  font-size: 9px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+  color: #c9a96e;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.tk-stat-radar-label--top {
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.tk-stat-radar-label--top-right {
+  top: 8px;
+  right: -20px;
+}
+.tk-stat-radar-label--bottom-right {
+  bottom: 8px;
+  right: -20px;
+}
+.tk-stat-radar-label--bottom-left {
+  bottom: 8px;
+  left: -20px;
+}
+.tk-stat-radar-label--top-left {
+  top: 8px;
+  left: -20px;
+}
+
+/* 雷达图数值标签 */
+.tk-stat-radar-value {
+  position: absolute;
+  font-size: 10px;
+  font-family: Georgia, serif;
+  color: #FFD700;
+  font-weight: bold;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* 属性六角形高亮区域 — SVG风格占位 */
+.tk-stat-radar-fill {
+  position: absolute;
+  inset: 10%;
+  clip-path: polygon(50% 0%, 97.6% 34.5%, 79.4% 90.5%, 20.6% 90.5%, 2.4% 34.5%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 215, 0, 0.15),
+    rgba(184, 115, 51, 0.1)
+  );
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  transition: all 0.5s ease;
+}
+
+/* 详情面板分割线 — 古风装饰 */
+.tk-detail-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(139, 115, 85, 0.4) 20%,
+    rgba(212, 160, 48, 0.3) 50%,
+    rgba(139, 115, 85, 0.4) 80%,
+    transparent
+  );
+  margin: 8px 0;
+  position: relative;
+}
+.tk-detail-divider::after {
+  content: '◆';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 8px;
+  color: rgba(212, 160, 48, 0.5);
+  background: #2a1810;
+  padding: 0 6px;
+}
+
+/* 详情面板属性卡片 */
+.tk-detail-stat-card {
+  background: linear-gradient(135deg, rgba(139, 115, 85, 0.08), rgba(139, 115, 85, 0.03));
+  border: 1px solid rgba(139, 115, 85, 0.15);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.tk-detail-stat-card:hover {
+  border-color: rgba(212, 160, 48, 0.3);
+  background: linear-gradient(135deg, rgba(139, 115, 85, 0.12), rgba(139, 115, 85, 0.06));
+}
+
+/* 属性图标 */
+.tk-detail-stat-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  flex-shrink: 0;
+}
+.tk-detail-stat-icon--atk {
+  background: linear-gradient(135deg, #c62828, #e53935);
+}
+.tk-detail-stat-icon--def {
+  background: linear-gradient(135deg, #2e4a7a, #42A5F5);
+}
+.tk-detail-stat-icon--int {
+  background: linear-gradient(135deg, #6a1b9a, #AB47BC);
+}
+.tk-detail-stat-icon--cmd {
+  background: linear-gradient(135deg, #e65100, #FF9800);
+}
+.tk-detail-stat-icon--pol {
+  background: linear-gradient(135deg, #00695c, #26A69A);
+}
+
+/* 属性进度条 — 详情面板用 */
+.tk-detail-stat-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(139, 115, 85, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tk-detail-stat-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ───────────────────────────────────────────────────────────
+ * 4. 武将品质区分 — 铜→银→金→彩金 边框样式
+ * ─────────────────────────────────────────────────────────── */
+
+/* 品质边框 — 使用 border + box-shadow 分层 */
+.tk-quality-common {
+  border: 1px solid #8B7355;
+  box-shadow: inset 0 0 0 1px rgba(139, 115, 85, 0.1);
+}
+.tk-quality-uncommon {
+  border: 1px solid #A8A8A8;
+  box-shadow: inset 0 0 0 1px rgba(168, 168, 168, 0.15);
+}
+.tk-quality-rare {
+  border: 1px solid #B8860B;
+  box-shadow:
+    inset 0 0 0 1px rgba(184, 134, 11, 0.15),
+    0 0 6px rgba(184, 134, 11, 0.15);
+}
+.tk-quality-epic {
+  border: 2px solid #DAA520;
+  box-shadow:
+    inset 0 0 0 1px rgba(218, 165, 32, 0.2),
+    0 0 8px rgba(218, 165, 32, 0.2),
+    0 0 16px rgba(218, 165, 32, 0.08);
+}
+.tk-quality-legendary {
+  border: 2px solid #FFD700;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 215, 0, 0.25),
+    0 0 10px rgba(255, 215, 0, 0.25),
+    0 0 20px rgba(255, 215, 0, 0.1),
+    0 0 30px rgba(255, 215, 0, 0.05);
+  animation: tk-quality-legendary-pulse 2.5s ease-in-out infinite;
+}
+.tk-quality-mythic {
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 82, 82, 0.2),
+    0 0 12px rgba(255, 82, 82, 0.25),
+    0 0 24px rgba(255, 167, 38, 0.15),
+    0 0 36px rgba(255, 215, 0, 0.08);
+  animation: tk-quality-mythic-rainbow 3s linear infinite;
+}
+
+/* 传说品质脉冲动画 */
+@keyframes tk-quality-legendary-pulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 215, 0, 0.25),
+      0 0 8px rgba(255, 215, 0, 0.2),
+      0 0 16px rgba(255, 215, 0, 0.08);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 215, 0, 0.35),
+      0 0 14px rgba(255, 215, 0, 0.35),
+      0 0 28px rgba(255, 215, 0, 0.15),
+      0 0 40px rgba(255, 215, 0, 0.06);
+  }
+}
+
+/* 神话品质彩金渐变动画 */
+@keyframes tk-quality-mythic-rainbow {
+  0% {
+    border-image: linear-gradient(
+      0deg,
+      #FF5252, #FFD740, #FF6E40, #FF5252
+    ) 1;
+  }
+  25% {
+    border-image: linear-gradient(
+      90deg,
+      #FF5252, #FFD740, #FF6E40, #FF5252
+    ) 1;
+  }
+  50% {
+    border-image: linear-gradient(
+      180deg,
+      #FF5252, #FFD740, #FF6E40, #FF5252
+    ) 1;
+  }
+  75% {
+    border-image: linear-gradient(
+      270deg,
+      #FF5252, #FFD740, #FF6E40, #FF5252
+    ) 1;
+  }
+  100% {
+    border-image: linear-gradient(
+      360deg,
+      #FF5252, #FFD740, #FF6E40, #FF5252
+    ) 1;
+  }
+}
+
+/* 品质角标 — 左上角装饰 */
+.tk-quality-crown {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+.tk-quality-crown--common { color: #8B7355; }
+.tk-quality-crown--uncommon { color: #A8A8A8; }
+.tk-quality-crown--rare { color: #B8860B; }
+.tk-quality-crown--epic { color: #DAA520; }
+.tk-quality-crown--legendary { color: #FFD700; }
+.tk-quality-crown--mythic { color: #FF5252; }
+
+/* 品质名称底色条 */
+.tk-quality-name-bar {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+.tk-quality-name-bar--common {
+  background: linear-gradient(90deg, rgba(139, 115, 85, 0.15), rgba(139, 115, 85, 0.05));
+  color: #8B7355;
+  border: 1px solid rgba(139, 115, 85, 0.3);
+}
+.tk-quality-name-bar--uncommon {
+  background: linear-gradient(90deg, rgba(168, 168, 168, 0.15), rgba(168, 168, 168, 0.05));
+  color: #A8A8A8;
+  border: 1px solid rgba(168, 168, 168, 0.3);
+}
+.tk-quality-name-bar--rare {
+  background: linear-gradient(90deg, rgba(184, 134, 11, 0.15), rgba(184, 134, 11, 0.05));
+  color: #DAA520;
+  border: 1px solid rgba(184, 134, 11, 0.3);
+}
+.tk-quality-name-bar--epic {
+  background: linear-gradient(90deg, rgba(218, 165, 32, 0.2), rgba(218, 165, 32, 0.05));
+  color: #DAA520;
+  border: 1px solid rgba(218, 165, 32, 0.4);
+}
+.tk-quality-name-bar--legendary {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
+  color: #FFD700;
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);
+}
+.tk-quality-name-bar--mythic {
+  background: linear-gradient(90deg, rgba(255, 82, 82, 0.2), rgba(255, 167, 38, 0.1));
+  color: #FF5252;
+  border: 1px solid rgba(255, 82, 82, 0.5);
+  text-shadow: 0 0 4px rgba(255, 82, 82, 0.3);
+}
+
+/* ───────────────────────────────────────────────────────────
+ * 5. 武将列表筛选 — 势力筛选按钮 + 排序指示器
+ * ─────────────────────────────────────────────────────────── */
+
+/* 筛选栏容器 */
+.tk-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: linear-gradient(135deg, rgba(42, 24, 16, 0.9), rgba(61, 40, 23, 0.8));
+  border: 1px solid rgba(139, 115, 85, 0.2);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+/* 筛选栏标签 */
+.tk-filter-label {
+  font-size: 10px;
+  color: #8B7355;
+  font-family: 'KaiTi', 'STKaiti', serif;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+
+/* 筛选栏分隔线 */
+.tk-filter-separator {
+  width: 1px;
+  height: 16px;
+  background: rgba(139, 115, 85, 0.25);
+  margin: 0 4px;
+}
+
+/* 势力筛选按钮 */
+.tk-faction-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 115, 85, 0.25);
+  background: rgba(139, 115, 85, 0.06);
+  color: #8B7355;
+  font-size: 10px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+.tk-faction-filter-btn:hover {
+  background: rgba(139, 115, 85, 0.12);
+  border-color: rgba(139, 115, 85, 0.4);
+  color: #c9a96e;
+}
+.tk-faction-filter-btn--active {
+  border-color: var(--faction-filter-color, #FFD700);
+  background: var(--faction-filter-bg, rgba(255, 215, 0, 0.1));
+  color: var(--faction-filter-color, #FFD700);
+  box-shadow: 0 0 6px var(--faction-filter-shadow, rgba(255, 215, 0, 0.15));
+}
+
+/* 势力筛选按钮 — 各势力颜色 */
+.tk-faction-filter-btn--all {
+  --faction-filter-color: #c9a96e;
+  --faction-filter-bg: rgba(201, 169, 110, 0.1);
+  --faction-filter-shadow: rgba(201, 169, 110, 0.15);
+}
+.tk-faction-filter-btn--wei {
+  --faction-filter-color: #1E88E5;
+  --faction-filter-bg: rgba(30, 136, 229, 0.1);
+  --faction-filter-shadow: rgba(30, 136, 229, 0.15);
+}
+.tk-faction-filter-btn--shu {
+  --faction-filter-color: #E53935;
+  --faction-filter-bg: rgba(229, 57, 53, 0.1);
+  --faction-filter-shadow: rgba(229, 57, 53, 0.15);
+}
+.tk-faction-filter-btn--wu {
+  --faction-filter-color: #43A047;
+  --faction-filter-bg: rgba(67, 160, 71, 0.1);
+  --faction-filter-shadow: rgba(67, 160, 71, 0.15);
+}
+.tk-faction-filter-btn--other {
+  --faction-filter-color: #9E9E9E;
+  --faction-filter-bg: rgba(158, 158, 158, 0.1);
+  --faction-filter-shadow: rgba(158, 158, 158, 0.1);
+}
+
+/* 势力色小圆点指示器 */
+.tk-faction-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.tk-faction-dot--wei { background: #1E88E5; }
+.tk-faction-dot--shu { background: #E53935; }
+.tk-faction-dot--wu { background: #43A047; }
+.tk-faction-dot--other { background: #9E9E9E; }
+.tk-faction-dot--all { background: #c9a96e; }
+
+/* 排序按钮 */
+.tk-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(139, 115, 85, 0.2);
+  background: rgba(139, 115, 85, 0.05);
+  color: #8B7355;
+  font-size: 10px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+.tk-sort-btn:hover {
+  background: rgba(139, 115, 85, 0.1);
+  border-color: rgba(139, 115, 85, 0.35);
+  color: #c9a96e;
+}
+.tk-sort-btn--active {
+  border-color: rgba(212, 160, 48, 0.4);
+  background: rgba(212, 160, 48, 0.08);
+  color: #DAA520;
+}
+
+/* 排序方向指示箭头 */
+.tk-sort-arrow {
+  font-size: 8px;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+.tk-sort-arrow--asc {
+  transform: rotate(0deg);
+}
+.tk-sort-arrow--desc {
+  transform: rotate(180deg);
+}
+
+/* 品质筛选按钮 */
+.tk-quality-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  border: 1px solid rgba(139, 115, 85, 0.2);
+  background: rgba(139, 115, 85, 0.04);
+  color: #8B7355;
+  font-size: 9px;
+  font-family: 'KaiTi', 'STKaiti', serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+.tk-quality-filter-btn:hover {
+  background: rgba(139, 115, 85, 0.08);
+}
+.tk-quality-filter-btn--active {
+  border-color: var(--quality-color, #c9a96e);
+  background: var(--quality-bg, rgba(201, 169, 110, 0.1));
+  color: var(--quality-color, #c9a96e);
+}
+.tk-quality-filter-btn--common {
+  --quality-color: #8B7355;
+  --quality-bg: rgba(139, 115, 85, 0.1);
+}
+.tk-quality-filter-btn--uncommon {
+  --quality-color: #A8A8A8;
+  --quality-bg: rgba(168, 168, 168, 0.1);
+}
+.tk-quality-filter-btn--rare {
+  --quality-color: #DAA520;
+  --quality-bg: rgba(184, 134, 11, 0.1);
+}
+.tk-quality-filter-btn--epic {
+  --quality-color: #DAA520;
+  --quality-bg: rgba(218, 165, 32, 0.1);
+}
+.tk-quality-filter-btn--legendary {
+  --quality-color: #FFD700;
+  --quality-bg: rgba(255, 215, 0, 0.1);
+}
+.tk-quality-filter-btn--mythic {
+  --quality-color: #FF5252;
+  --quality-bg: rgba(255, 82, 82, 0.1);
+}
+
+/* 筛选结果计数 */
+.tk-filter-count {
+  font-size: 9px;
+  color: #6b5a3a;
+  font-family: Georgia, serif;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ───────────────────────────────────────────────────────────
+ * 6. 武将卡片增强 — 信息丰富化
+ * ─────────────────────────────────────────────────────────── */
+
+/* 武将卡片势力色内衬渐变 */
+.tk-general-card--faction-wei .tk-general-card-info {
+  background: linear-gradient(180deg, rgba(21, 101, 192, 0.03), transparent);
+}
+.tk-general-card--faction-shu .tk-general-card-info {
+  background: linear-gradient(180deg, rgba(198, 40, 40, 0.03), transparent);
+}
+.tk-general-card--faction-wu .tk-general-card-info {
+  background: linear-gradient(180deg, rgba(46, 125, 50, 0.03), transparent);
+}
+
+/* 武将卡片品质光效叠加 */
+.tk-general-card--quality-common {
+  background: linear-gradient(135deg, #2a1810 0%, #3d2817 100%);
+}
+.tk-general-card--quality-uncommon {
+  background: linear-gradient(135deg, #2a1810 0%, #3d2817 40%, #3a3530 100%);
+}
+.tk-general-card--quality-rare {
+  background: linear-gradient(135deg, #2a1810 0%, #3d2817 40%, #3a3020 100%);
+}
+.tk-general-card--quality-epic {
+  background: linear-gradient(135deg, #2a1810 0%, #3d2817 30%, #3d3018 70%, #3a2810 100%);
+}
+.tk-general-card--quality-legendary {
+  background: linear-gradient(135deg, #2a1810 0%, #3d2817 30%, #3d3018 60%, #352810 100%);
+  border-top-color: rgba(255, 215, 0, 0.3);
+}
+.tk-general-card--quality-mythic {
+  background: linear-gradient(135deg, #2a1810 0%, #3d2817 30%, #3a2018 60%, #351810 100%);
+  border-top-color: rgba(255, 82, 82, 0.3);
+}
+
+/* 武将卡片状态标签增强 */
+.tk-general-status-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 7px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  z-index: 2;
+}
+.tk-general-status-badge--standby {
+  background: rgba(139, 115, 85, 0.8);
+  color: #e8d5b5;
+  border: 1px solid rgba(139, 115, 85, 0.4);
+}
+.tk-general-status-badge--combat {
+  background: rgba(198, 40, 40, 0.8);
+  color: #ffcdd2;
+  border: 1px solid rgba(229, 57, 53, 0.5);
+  animation: tk-status-combat-pulse 1.5s ease-in-out infinite;
+}
+@keyframes tk-status-combat-pulse {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; box-shadow: 0 0 4px rgba(229, 57, 53, 0.4); }
+}
+
+/* 武将卡片装备指示器 */
+.tk-equip-indicator {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.tk-equip-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(139, 115, 85, 0.3);
+  background: rgba(139, 115, 85, 0.1);
+}
+.tk-equip-dot--filled {
+  background: #DAA520;
+  border-color: #DAA520;
+  box-shadow: 0 0 3px rgba(218, 165, 32, 0.4);
+}
+
+/* ───────────────────────────────────────────────────────────
+ * 7. 详情面板技能卡片增强
+ * ─────────────────────────────────────────────────────────── */
+
+/* 技能卡片 — 详情面板用 */
+.tk-detail-skill-card {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  background: linear-gradient(135deg, rgba(139, 115, 85, 0.06), rgba(139, 115, 85, 0.02));
+  border: 1px solid rgba(139, 115, 85, 0.12);
+  border-radius: 6px;
+  margin-bottom: 4px;
+  transition: all 0.2s;
+}
+.tk-detail-skill-card:hover {
+  border-color: rgba(212, 160, 48, 0.25);
+  background: linear-gradient(135deg, rgba(139, 115, 85, 0.1), rgba(139, 115, 85, 0.04));
+}
+
+/* 技能卡片图标区 */
+.tk-detail-skill-icon-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* 技能卡片信息区 */
+.tk-detail-skill-info {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 技能名称行 */
+.tk-detail-skill-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.tk-detail-skill-name {
+  font-size: 11px;
+  font-weight: bold;
+  color: #d4b36a;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+
+/* 技能效果描述 */
+.tk-detail-skill-effect {
+  font-size: 9px;
+  color: #8B7355;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+/* 技能冷却条 */
+.tk-detail-skill-cooldown-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+}
+.tk-detail-skill-cooldown-track {
+  flex: 1;
+  height: 2px;
+  background: rgba(139, 115, 85, 0.15);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.tk-detail-skill-cooldown-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #DAA520, #FFD700);
+  border-radius: 1px;
+  transition: width 0.3s;
+}
+.tk-detail-skill-cooldown-text {
+  font-size: 8px;
+  color: #6b5a3a;
+  font-family: Georgia, serif;
+  white-space: nowrap;
+}
+
+/* ───────────────────────────────────────────────────────────
+ * 8. 移动端适配 — R15新增
+ * ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .tk-filter-bar {
+    gap: 3px;
+    padding: 4px 6px;
+  }
+  .tk-faction-filter-btn {
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+  .tk-sort-btn {
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+  .tk-quality-filter-btn {
+    padding: 2px 5px;
+    font-size: 8px;
+  }
+  .tk-stat-radar {
+    width: 120px;
+    height: 120px;
+  }
+  .tk-detail-skill-card {
+    padding: 4px 6px;
+    gap: 6px;
+  }
+  .tk-skill-icon-circle {
+    width: 28px;
+    height: 28px;
+  }
+}
