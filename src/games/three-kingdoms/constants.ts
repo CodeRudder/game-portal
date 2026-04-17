@@ -560,18 +560,18 @@ export const PRESTIGE_CONFIG: PrestigeConfig = {
 // ═══════════════════════════════════════════════════════════════
 
 export const COLOR_THEME: UIColorScheme = {
-  bgGradient1: '#1a0e05',         // 深棕 — 古卷底色
-  bgGradient2: '#2d1b0a',         // 暗金棕 — 古风氛围
-  textPrimary: '#f0e6d3',         // 米白 — 宣纸色
-  textSecondary: '#c4b59a',       // 浅棕灰
-  textDim: '#8a7a60',             // 暗棕灰
-  accentGold: '#d4a030',          // 暗金 — 帝王金
-  accentGreen: '#4a7a3a',         // 墨绿
-  panelBg: 'rgba(60,40,20,0.6)',  // 半透明深棕
-  selectedBg: 'rgba(212,160,48,0.15)',  // 暗金选中
-  selectedBorder: 'rgba(212,160,48,0.5)',
-  affordable: '#4a7a3a',
-  unaffordable: '#5a4a3a',
+  bgGradient1: '#2a1a0a',         // 亮深棕 — 古卷底色
+  bgGradient2: '#3d2a15',         // 亮暗金棕 — 古风氛围
+  textPrimary: '#f5ecda',         // 亮米白 — 宣纸色
+  textSecondary: '#d4c5aa',       // 亮浅棕灰
+  textDim: '#a09070',             // 亮暗棕灰
+  accentGold: '#e0b040',          // 亮暗金 — 帝王金
+  accentGreen: '#5a9a4a',         // 亮墨绿
+  panelBg: 'rgba(70,50,25,0.6)',  // 半透明亮深棕
+  selectedBg: 'rgba(224,176,64,0.18)',  // 亮暗金选中
+  selectedBorder: 'rgba(224,176,64,0.6)',
+  affordable: '#5a9a4a',
+  unaffordable: '#6a5a4a',
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -579,12 +579,12 @@ export const COLOR_THEME: UIColorScheme = {
 // ═══════════════════════════════════════════════════════════════
 
 export const RARITY_COLORS: Record<string, string> = {
-  common: '#aaaaaa',
-  uncommon: '#4caf50',
-  rare: '#2196f3',
-  epic: '#9c27b0',
-  legendary: '#ff9800',
-  mythic: '#ff4444',
+  common: '#bbbbbb',
+  uncommon: '#5cbf60',
+  rare: '#42a5f5',
+  epic: '#ab47bc',
+  legendary: '#ffa726',
+  mythic: '#ff5252',
 };
 
 // ═══════════════════════════════════════════════════════════════
