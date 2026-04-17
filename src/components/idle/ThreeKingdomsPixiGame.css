@@ -6319,3 +6319,1807 @@
     height: 28px;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+ * ═══════════════════════════════════════════════════════════════
+ *  R16 — 全面动态效果增强系统
+ *  涵盖：飘字、按钮反馈、建筑光效、武将卡片、科技进度、
+ *        面板切换、资源脉动、关卡发光
+ * ═══════════════════════════════════════════════════════════════
+ * ═══════════════════════════════════════════════════════════════ */
+
+
+/* ───────────────────────────────────────────────────────────────
+ * D1. 资源产出飘字动画 — 增强版
+ *     资源数值变化时显示 "+N" 飘字，从图标位置向上飘出并渐隐
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 资源飘字增强 — 弹出 + 飘升 + 渐隐三段式 */
+@keyframes tk-r16-resource-pop-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.15);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-14px) scale(1.0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-48px) scale(0.8);
+  }
+}
+
+/* 资源飘字 — 用于资源变化时精确飘字 */
+.tk-r16-resource-float-text {
+  position: absolute;
+  pointer-events: none;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: "Noto Serif SC", "SimSun", serif;
+  white-space: nowrap;
+  z-index: 25;
+  animation: tk-r16-resource-pop-float 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* 各资源类型颜色 */
+.tk-r16-resource-float-text--gold {
+  color: #ffd700;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(255,215,0,0.5);
+}
+.tk-r16-resource-float-text--grain {
+  color: #8bc34a;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(139,195,74,0.5);
+}
+.tk-r16-resource-float-text--troops {
+  color: #ef5350;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(239,83,80,0.5);
+}
+.tk-r16-resource-float-text--iron {
+  color: #b0bec5;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(176,190,197,0.4);
+}
+.tk-r16-resource-float-text--wood {
+  color: #a1887f;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(161,136,127,0.4);
+}
+.tk-r16-resource-float-text--morale {
+  color: #66bb6a;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(102,187,106,0.5);
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+ * D2. 按钮通用 hover / active 反馈
+ *     所有可点击按钮统一 hover 变亮 + active 缩放
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 建筑卡片 hover 增强 */
+.tk-r16-building-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+.tk-r16-building-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3), 0 0 6px rgba(212,160,48,0.12);
+}
+.tk-r16-building-card:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.08s;
+}
+
+/* 武将快速列表项 hover 增强 */
+.tk-hero-quick-item {
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.tk-hero-quick-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+  background: rgba(212, 165, 116, 0.14);
+  border-color: rgba(212,160,48,0.5);
+}
+.tk-hero-quick-item:active {
+  transform: translateY(0) scale(0.96);
+  transition-duration: 0.08s;
+}
+
+/* 科技节点 hover 增强 */
+.tk-tech-node {
+  transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+}
+.tk-tech-node:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+.tk-tech-node:active {
+  transform: scale(0.98);
+  transition-duration: 0.08s;
+}
+
+/* 关卡卡片 hover 增强 */
+.tk-stage-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s ease;
+}
+.tk-stage-card--available:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 12px rgba(107,142,90,0.25);
+}
+.tk-stage-card--current:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 16px rgba(212,160,48,0.35);
+}
+
+/* 通用按钮 hover 反馈 — 覆盖内联样式的按钮 */
+.tk-r16-btn-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.tk-r16-btn-hover:hover {
+  filter: brightness(1.12);
+  transform: scale(1.03);
+}
+.tk-r16-btn-hover:active {
+  transform: scale(0.95);
+  filter: brightness(0.95);
+  transition-duration: 0.06s;
+}
+
+/* Tab 按钮 hover 增强（在已有基础上增加亮度） */
+.tk-tab-btn-ancient:hover {
+  filter: brightness(1.1);
+  background: rgba(201,169,110,0.12) !important;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+ * D3. 建筑升级光效 — 金光脉冲 + 等级提升边框闪烁
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 升级时金光脉冲（覆盖旧版，更醒目） */
+@keyframes tk-r16-upgrade-gold-burst {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255,215,0,0);
+  }
+  25% {
+    box-shadow: 0 0 16px 4px rgba(255,215,0,0.6), 0 0 30px 8px rgba(255,200,80,0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(255,215,0,0.4), 0 0 20px 4px rgba(255,200,80,0.15);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255,215,0,0);
+  }
+}
+
+/* 升级完成边框闪烁 */
+@keyframes tk-r16-level-up-border-flash {
+  0%   { border-color: rgba(255,215,0,0); }
+  15%  { border-color: rgba(255,215,0,0.9); }
+  30%  { border-color: rgba(255,215,0,0.3); }
+  45%  { border-color: rgba(255,215,0,0.8); }
+  60%  { border-color: rgba(255,215,0,0.2); }
+  75%  { border-color: rgba(255,215,0,0.6); }
+  100% { border-color: rgba(255,215,0,0); }
+}
+
+/* 升级闪光 class — 替代旧版 tk-building-flash */
+.tk-r16-building-upgrading {
+  animation: tk-r16-upgrade-gold-burst 0.8s ease-out forwards;
+  position: relative;
+}
+
+/* 升级完成边框闪烁 class */
+.tk-r16-building-levelup {
+  animation: tk-r16-level-up-border-flash 1.2s ease-out forwards;
+}
+
+/* 升级时内部光晕叠加层 */
+.tk-r16-building-upgrading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(255,215,0,0.15) 0%, transparent 70%);
+  pointer-events: none;
+  animation: tk-r16-upgrade-inner-glow 0.8s ease-out forwards;
+}
+@keyframes tk-r16-upgrade-inner-glow {
+  0%   { opacity: 0; }
+  30%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+ * D4. 武将卡片 hover 浮动 + 选中金色脉冲边框
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 武将卡片 hover 增强 — 上移 + 阴影加深 */
+.tk-general-card {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease,
+              border-color 0.2s ease;
+}
+.tk-general-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 0 8px rgba(139,115,85,0.15);
+}
+.tk-general-card:active {
+  transform: translateY(-1px) scale(0.97);
+  transition-duration: 0.08s;
+}
+
+/* 选中武将金色脉冲边框 — 增强版 */
+@keyframes tk-r16-selected-gold-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 6px rgba(255,215,0,0.3),
+      0 0 12px rgba(255,215,0,0.15);
+    border-color: rgba(255,215,0,0.65);
+  }
+  50% {
+    box-shadow:
+      0 0 10px rgba(255,215,0,0.5),
+      0 0 22px rgba(255,215,0,0.25),
+      0 0 36px rgba(255,215,0,0.08);
+    border-color: rgba(255,215,0,0.95);
+  }
+}
+.tk-general-card--selected {
+  animation: tk-r16-selected-gold-pulse 2s ease-in-out infinite !important;
+}
+
+/* 选中时内部金色渐变叠加 */
+.tk-general-card--selected::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,215,0,0.06) 0%, transparent 50%, rgba(255,215,0,0.03) 100%);
+  pointer-events: none;
+  animation: tk-r16-selected-inner-shimmer 3s ease-in-out infinite;
+}
+@keyframes tk-r16-selected-inner-shimmer {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+ * D5. 科技研究进度动画 — 流动进度条 + 完成特效
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 研究中进度条 — 流动渐变（增强版） */
+@keyframes tk-r16-tech-progress-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.tk-r16-tech-progress-researching {
+  background: linear-gradient(
+    90deg,
+    rgba(212,160,48,0.5) 0%,
+    rgba(255,224,130,0.95) 25%,
+    rgba(212,160,48,0.5) 50%,
+    rgba(255,224,130,0.95) 75%,
+    rgba(212,160,48,0.5) 100%
+  );
+  background-size: 200% 100%;
+  animation: tk-r16-tech-progress-flow 2.5s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+/* 科技完成闪光特效 */
+@keyframes tk-r16-tech-complete-burst {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255,215,0,0);
+    transform: scale(1);
+  }
+  20% {
+    box-shadow: 0 0 18px 6px rgba(255,215,0,0.5), 0 0 30px 10px rgba(255,200,80,0.2);
+    transform: scale(1.04);
+  }
+  40% {
+    box-shadow: 0 0 8px 2px rgba(255,215,0,0.3);
+    transform: scale(1.0);
+  }
+  60% {
+    box-shadow: 0 0 14px 4px rgba(255,215,0,0.35), 0 0 24px 8px rgba(255,200,80,0.15);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255,215,0,0);
+    transform: scale(1.0);
+  }
+}
+
+.tk-r16-tech-just-completed {
+  animation: tk-r16-tech-complete-burst 1.2s ease-out forwards;
+}
+
+/* 科技完成金色边框闪烁 */
+@keyframes tk-r16-tech-complete-border {
+  0%   { border-color: rgba(255,215,0,0); }
+  20%  { border-color: rgba(255,215,0,0.9); }
+  40%  { border-color: rgba(255,215,0,0.3); }
+  60%  { border-color: rgba(255,215,0,0.7); }
+  80%  { border-color: rgba(255,215,0,0.2); }
+  100% { border-color: rgba(212,160,48,0.6); }
+}
+.tk-r16-tech-just-completed {
+  animation:
+    tk-r16-tech-complete-burst 1.2s ease-out forwards,
+    tk-r16-tech-complete-border 1.5s ease-out forwards;
+}
+
+/* 研究中节点呼吸发光（替代旧版） */
+@keyframes tk-r16-tech-researching-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(212,160,48,0.15);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(212,160,48,0.3), 0 0 18px rgba(212,160,48,0.1);
+  }
+}
+.tk-tech-node--researching {
+  animation: tk-r16-tech-researching-glow 1.8s ease-in-out infinite;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+ * D6. 面板切换过渡动画 — 增强版淡入淡出
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 面板入场 — 从下方轻微滑入 + 淡入 */
+@keyframes tk-r16-panel-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 面板出场 — 向上轻微滑出 + 淡出 */
+@keyframes tk-r16-panel-slide-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+}
+
+/* 增强版面板动画 class */
+.tk-r16-panel-enter {
+  animation: tk-r16-panel-slide-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+.tk-r16-panel-exit {
+  animation: tk-r16-panel-slide-out 0.2s ease-in forwards;
+}
+
+/* 左侧面板切换过渡增强 */
+.tk-chinese-border {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.3s ease;
+}
+
+/* 场景面板通用过渡增强 */
+.tk-scene-panel {
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+ * D7. 资源图标脉动 — 正在产出的资源轻微脉动
+ * ─────────────────────────────────────────────────────────────── */
+
+@keyframes tk-r16-resource-icon-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* 资源图标脉动 class — 需要在有产出的资源图标上添加 */
+.tk-r16-resource-icon-active {
+  display: inline-flex;
+  animation: tk-r16-resource-icon-pulse 2s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+/* 资源数值更新时的弹跳效果（增强旧版） */
+@keyframes tk-r16-value-bounce {
+  0%   { transform: scale(1); }
+  20%  { transform: scale(1.15); }
+  40%  { transform: scale(0.95); }
+  60%  { transform: scale(1.06); }
+  80%  { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+.tk-r16-value-updated {
+  animation: tk-r16-value-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+ * D8. 关卡按钮 hover 发光
+ *     可攻击关卡 hover 发光，锁定关卡 hover 显示锁定提示
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 可攻击关卡 hover 发光 */
+@keyframes tk-r16-stage-available-glow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(107,142,90,0.2);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(107,142,90,0.4), 0 0 24px rgba(107,142,90,0.15);
+  }
+}
+.tk-stage-card--available:hover {
+  animation: tk-r16-stage-available-glow 1.5s ease-in-out infinite;
+}
+
+/* 当前关卡 hover 发光增强 */
+@keyframes tk-r16-stage-current-glow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(212,160,48,0.25);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(212,160,48,0.45), 0 0 28px rgba(212,160,48,0.18);
+  }
+}
+.tk-stage-card--current:hover {
+  animation: tk-r16-stage-current-glow 1.5s ease-in-out infinite;
+}
+
+/* 锁定关卡 hover 显示锁定图标 */
+.tk-stage-card--locked {
+  position: relative;
+}
+.tk-stage-card--locked::after {
+  content: '🔒';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-size: 20px;
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 5;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+}
+.tk-stage-card--locked:hover::after {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 0.7;
+}
+
+/* 已胜利关卡 hover 微光 */
+.tk-stage-card--victory:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 0 8px rgba(96,165,250,0.15);
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+ * D9. 通用微交互增强
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 资源面板整体微动画 — 新资源出现时 */
+@keyframes tk-r16-resource-appear {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.tk-r16-resource-appear {
+  animation: tk-r16-resource-appear 0.3s ease-out;
+}
+
+/* 科技节点出现动画（增强旧版） */
+@keyframes tk-r16-node-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.tk-r16-node-pop-in {
+  animation: tk-r16-node-pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Toast 通知入场增强 */
+@keyframes tk-r16-toast-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes tk-r16-toast-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.9);
+  }
+}
+
+/* 速度按钮 hover 增强 */
+button:hover {
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+button:active {
+  transform: scale(0.95);
+  transition-duration: 0.06s;
+}
+
+/* 滚动条美化 — 增强古风感 */
+.tk-r16-scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+.tk-r16-scrollable::-webkit-scrollbar-track {
+  background: rgba(139,115,85,0.08);
+  border-radius: 3px;
+}
+.tk-r16-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(139,115,85,0.25);
+  border-radius: 3px;
+}
+.tk-r16-scrollable::-webkit-scrollbar-thumb:hover {
+  background: rgba(139,115,85,0.4);
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * D10. 移动端适配 — 动态效果
+ * ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* 移动端减弱动画幅度 */
+  .tk-general-card:hover {
+    transform: translateY(-1px);
+  }
+  .tk-hero-quick-item:hover {
+    transform: translateY(-1px);
+  }
+  .tk-tech-node:hover {
+    transform: translateY(-1px) scale(1.01);
+  }
+  /* 移动端资源飘字缩小 */
+  .tk-r16-resource-float-text {
+    font-size: 11px;
+  }
+  /* 移动端减少阴影 */
+  .tk-r16-building-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * D11. prefers-reduced-motion 无障碍支持
+ * ─────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-r16-resource-float-text,
+  .tk-r16-building-upgrading,
+  .tk-r16-building-levelup,
+  .tk-r16-tech-just-completed,
+  .tk-r16-panel-enter,
+  .tk-r16-panel-exit,
+  .tk-r16-resource-icon-active,
+  .tk-r16-value-updated,
+  .tk-r16-node-pop-in {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .tk-general-card,
+  .tk-hero-quick-item,
+  .tk-tech-node,
+  .tk-stage-card,
+  .tk-r16-building-card,
+  .tk-tab-btn-ancient {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * R16 — 动态效果系统全面实现
+ * 包含: 资源飘字 · 按钮交互动效 · 建筑升级光效 · 武将招募特效
+ *       科技研究进度动画 · 通用微交互
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────────────────────────────────────────
+ * R16-1. 资源产出飘字动画 (.tk-float-number)
+ * ─────────────────────────────────────────────────────────── */
+
+/* 飘字容器 — 绝对定位在触发元素附近 */
+.tk-float-number {
+  position: absolute;
+  pointer-events: none;
+  z-index: 100;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: Georgia, 'Times New Roman', serif;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 8px currentColor;
+  white-space: nowrap;
+  animation: tk-float-number-rise 1.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* 金色 — 铜钱 */
+.tk-float-number--gold {
+  color: #f0c040;
+}
+
+/* 绿色 — 粮草 */
+.tk-float-number--grain {
+  color: #5aaa4a;
+}
+
+/* 银色 — 铁矿 */
+.tk-float-number--iron {
+  color: #c0c8d4;
+}
+
+/* 棕色 — 木材 */
+.tk-float-number--wood {
+  color: #c89a5a;
+}
+
+/* 朱红 — 兵力 */
+.tk-float-number--troops {
+  color: #e05555;
+}
+
+/* 暖橙 — 民心 */
+.tk-float-number--morale {
+  color: #e8a040;
+}
+
+/* 批量飘字时的错开延迟 */
+.tk-float-number--delay-1 { animation-delay: 0.08s; }
+.tk-float-number--delay-2 { animation-delay: 0.16s; }
+.tk-float-number--delay-3 { animation-delay: 0.24s; }
+
+/* 大号飘字（产出>50时使用） */
+.tk-float-number--large {
+  font-size: 18px;
+  animation-name: tk-float-number-rise-large;
+}
+
+/* 超大号飘字（产出>200时使用） */
+.tk-float-number--epic {
+  font-size: 22px;
+  animation-name: tk-float-number-rise-epic;
+}
+
+@keyframes tk-float-number-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  8% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.15);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-14px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-56px) scale(0.8);
+  }
+}
+
+@keyframes tk-float-number-rise-large {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  8% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.3);
+  }
+  15% {
+    transform: translateY(-12px) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-70px) scale(0.75);
+  }
+}
+
+@keyframes tk-float-number-rise-epic {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.3);
+  }
+  6% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.5);
+  }
+  14% {
+    transform: translateY(-16px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-90px) scale(0.6);
+  }
+}
+
+/* 飘字持续产出指示器 — 每秒产率标签 */
+.tk-resource-rate-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--tk-gold);
+  opacity: 0.85;
+  animation: tk-rate-indicator-breathe 2.5s ease-in-out infinite;
+}
+
+@keyframes tk-rate-indicator-breathe {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* 资源图标产出脉冲 — 资源增加时图标闪烁 */
+.tk-resource-icon-pulse {
+  animation: tk-resource-icon-flash 0.4s ease-out;
+}
+
+@keyframes tk-resource-icon-flash {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.25); filter: brightness(1.4); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+
+/* ───────────────────────────────────────────────────────────
+ * R16-2. 按钮交互动效 (.tk-btn-dynamic)
+ * ─────────────────────────────────────────────────────────── */
+
+/* 动态按钮基础类 — 可叠加到已有按钮 */
+.tk-btn-dynamic {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease,
+              filter 0.2s ease;
+  will-change: transform, box-shadow;
+}
+
+/* hover: 上浮 + 阴影扩散 + 渐变位移 */
+.tk-btn-dynamic:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(240, 192, 64, 0.35);
+  filter: brightness(1.1);
+}
+
+/* active: 按下缩放 + 阴影收缩 */
+.tk-btn-dynamic:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 1px 4px rgba(240, 192, 64, 0.2);
+  transition-duration: 0.08s;
+}
+
+/* 涟漪效果容器 */
+.tk-btn-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 70%);
+  transform: scale(0);
+  animation: tk-ripple-expand 0.6s ease-out forwards;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+@keyframes tk-ripple-expand {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* 金色按钮涟漪 */
+.tk-btn-ripple--gold {
+  background: radial-gradient(circle, rgba(240, 192, 64, 0.5) 0%, rgba(240, 192, 64, 0) 70%);
+}
+
+/* 红色按钮涟漪 */
+.tk-btn-ripple--red {
+  background: radial-gradient(circle, rgba(208, 64, 64, 0.5) 0%, rgba(208, 64, 64, 0) 70%);
+}
+
+/* 按钮成功反馈 — 点击后短暂绿色脉冲 */
+.tk-btn-success-flash {
+  animation: tk-btn-success 0.5s ease-out;
+}
+
+@keyframes tk-btn-success {
+  0% { box-shadow: 0 0 0 0 rgba(90, 170, 74, 0.6); }
+  50% { box-shadow: 0 0 12px 4px rgba(90, 170, 74, 0.3); }
+  100% { box-shadow: none; }
+}
+
+/* 按钮错误反馈 — 点击后短暂红色抖动 */
+.tk-btn-error-shake {
+  animation: tk-btn-shake 0.4s ease-out;
+}
+
+@keyframes tk-btn-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* 按钮呼吸发光 — 引导用户点击 */
+.tk-btn-glow-guide {
+  animation: tk-btn-guide-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tk-btn-guide-pulse {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(240, 192, 64, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(240, 192, 64, 0.5), 0 0 4px rgba(240, 192, 64, 0.3);
+  }
+}
+
+
+/* ───────────────────────────────────────────────────────────
+ * R16-3. 建筑升级光效 (.tk-building-upgrade-effect)
+ * ─────────────────────────────────────────────────────────── */
+
+/* 升级中 — 金色脉冲边框 */
+.tk-building-upgrading {
+  position: relative;
+  border-color: var(--tk-gold) !important;
+  animation: tk-building-upgrade-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes tk-building-upgrade-pulse {
+  0%, 100% {
+    border-color: rgba(240, 192, 64, 0.4);
+    box-shadow: 0 0 6px rgba(240, 192, 64, 0.15);
+  }
+  50% {
+    border-color: rgba(240, 192, 64, 0.9);
+    box-shadow: 0 0 20px rgba(240, 192, 64, 0.4), 0 0 40px rgba(240, 192, 64, 0.15);
+  }
+}
+
+/* 升级完成 — 光柱扫过效果 */
+.tk-building-upgrade-complete {
+  position: relative;
+  overflow: hidden;
+  animation: tk-building-complete-flash 0.8s ease-out;
+}
+
+.tk-building-upgrade-complete::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(240, 192, 64, 0.6) 30%,
+    rgba(255, 224, 112, 0.8) 50%,
+    rgba(240, 192, 64, 0.6) 70%,
+    transparent 100%
+  );
+  transform: translateX(-50%) scaleY(0);
+  animation: tk-light-pillar 1s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes tk-light-pillar {
+  0% {
+    transform: translateX(-50%) scaleY(0);
+    opacity: 1;
+  }
+  40% {
+    transform: translateX(-50%) scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) scaleY(1);
+    opacity: 0;
+  }
+}
+
+@keyframes tk-building-complete-flash {
+  0% { filter: brightness(1); }
+  30% { filter: brightness(1.8); }
+  100% { filter: brightness(1); }
+}
+
+/* 升级完成粒子爆发 */
+.tk-building-particles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.tk-building-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--tk-gold);
+  animation: tk-particle-burst 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.tk-building-particle:nth-child(1) { --angle: 0deg; --dist: 30px; animation-delay: 0s; }
+.tk-building-particle:nth-child(2) { --angle: 45deg; --dist: 35px; animation-delay: 0.03s; }
+.tk-building-particle:nth-child(3) { --angle: 90deg; --dist: 28px; animation-delay: 0.06s; }
+.tk-building-particle:nth-child(4) { --angle: 135deg; --dist: 32px; animation-delay: 0.02s; }
+.tk-building-particle:nth-child(5) { --angle: 180deg; --dist: 36px; animation-delay: 0.05s; }
+.tk-building-particle:nth-child(6) { --angle: 225deg; --dist: 30px; animation-delay: 0.04s; }
+.tk-building-particle:nth-child(7) { --angle: 270deg; --dist: 34px; animation-delay: 0.07s; }
+.tk-building-particle:nth-child(8) { --angle: 315deg; --dist: 28px; animation-delay: 0.01s; }
+
+@keyframes tk-particle-burst {
+  0% {
+    transform: rotate(var(--angle)) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--angle)) translateY(calc(-1 * var(--dist)));
+    opacity: 0;
+  }
+}
+
+/* 可升级标识 — 右上角闪烁箭头 */
+.tk-building-can-upgrade {
+  position: relative;
+}
+
+.tk-building-can-upgrade::after {
+  content: '▲';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  font-size: 10px;
+  color: var(--tk-gold);
+  text-shadow: 0 0 6px rgba(240, 192, 64, 0.8);
+  animation: tk-upgrade-arrow-blink 1.5s ease-in-out infinite;
+  z-index: 5;
+}
+
+@keyframes tk-upgrade-arrow-blink {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* 建筑升级进度条（嵌在卡片底部） */
+.tk-building-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  border-radius: 0 0 4px 4px;
+}
+
+.tk-building-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tk-gold-dim), var(--tk-gold), var(--tk-gold-bright));
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.tk-building-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: tk-progress-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes tk-progress-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+
+/* ───────────────────────────────────────────────────────────
+ * R16-4. 武将招募特效 (.tk-recruit-effect)
+ * ─────────────────────────────────────────────────────────── */
+
+/* 招募弹出动画 — spring 弹性效果 */
+.tk-recruit-spring-in {
+  animation: tk-recruit-spring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes tk-recruit-spring {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(20px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08) translateY(-4px);
+  }
+  75% {
+    transform: scale(0.97) translateY(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 品质揭示 — 中心光芒扩散 */
+.tk-recruit-reveal {
+  position: relative;
+  overflow: hidden;
+}
+
+.tk-recruit-reveal::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%);
+  transform: translate(-50%, -50%) scale(0);
+  animation: tk-reveal-burst 0.8s 0.2s ease-out forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes tk-reveal-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(30);
+    opacity: 0;
+  }
+}
+
+/* 传说品质 — 金色脉冲边框 */
+.tk-recruit-legendary {
+  position: relative;
+  border: 2px solid var(--tk-gold);
+  animation: tk-legendary-border-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tk-legendary-border-pulse {
+  0%, 100% {
+    border-color: rgba(240, 192, 64, 0.6);
+    box-shadow: 0 0 8px rgba(240, 192, 64, 0.2);
+  }
+  50% {
+    border-color: rgba(255, 224, 112, 1);
+    box-shadow: 0 0 20px rgba(240, 192, 64, 0.5), 0 0 40px rgba(240, 192, 64, 0.2);
+  }
+}
+
+/* 传说品质 — 星芒闪烁 */
+.tk-recruit-legendary::after {
+  content: '✦';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 14px;
+  color: var(--tk-gold-bright);
+  text-shadow: 0 0 8px rgba(240, 192, 64, 0.8);
+  animation: tk-star-twinkle 1.2s ease-in-out infinite;
+  z-index: 5;
+}
+
+@keyframes tk-star-twinkle {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(20deg);
+  }
+}
+
+/* 神话品质 — 彩虹色旋转边框 */
+.tk-recruit-mythic {
+  position: relative;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.tk-recruit-mythic::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    #ff6060,
+    #ffaa40,
+    #f0e040,
+    #60e060,
+    #4080ff,
+    #a040ff,
+    #ff60a0,
+    #ff6060
+  );
+  z-index: -1;
+  animation: tk-mythic-rainbow-spin 3s linear infinite;
+  border-radius: inherit;
+}
+
+@keyframes tk-mythic-rainbow-spin {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* 神话品质 — 多星芒闪烁 */
+.tk-recruit-mythic::after {
+  content: '✧ ✦ ✧';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #fff;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.8), 0 0 12px rgba(160, 64, 255, 0.6);
+  animation: tk-mythic-stars 1.5s ease-in-out infinite;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+@keyframes tk-mythic-stars {
+  0%, 100% {
+    opacity: 0.5;
+    letter-spacing: 2px;
+  }
+  50% {
+    opacity: 1;
+    letter-spacing: 6px;
+  }
+}
+
+/* 招募按钮特效 */
+.tk-recruit-btn-effect {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tk-recruit-btn-effect:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.4);
+}
+
+.tk-recruit-btn-effect:active {
+  transform: scale(0.92);
+  transition-duration: 0.1s;
+}
+
+/* 招募按钮光芒扫过 */
+.tk-recruit-btn-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: none;
+}
+
+.tk-recruit-btn-effect:hover::after {
+  animation: tk-btn-sweep-light 0.6s ease-out;
+}
+
+@keyframes tk-btn-sweep-light {
+  0% { left: -100%; }
+  100% { left: 150%; }
+}
+
+
+/* ───────────────────────────────────────────────────────────
+ * R16-5. 科技研究进度动画 (.tk-research-progress)
+ * ─────────────────────────────────────────────────────────── */
+
+/* 研究中进度条 — 流光动画 */
+.tk-research-progress-bar {
+  position: relative;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tk-research-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--tk-gold-dim), var(--tk-gold));
+  position: relative;
+  transition: width 0.4s ease;
+}
+
+/* 流光效果 */
+.tk-research-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 40%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.5) 60%,
+    transparent 100%
+  );
+  animation: tk-research-flow-light 1.8s ease-in-out infinite;
+}
+
+@keyframes tk-research-flow-light {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(150%); }
+}
+
+/* 研究完成 — 闪光弹跳 */
+.tk-research-complete {
+  animation: tk-research-complete-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tk-research-complete-bounce {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  30% {
+    transform: scale(1.15);
+    filter: brightness(2);
+  }
+  60% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* 研究完成进度条全亮 */
+.tk-research-progress-fill--complete {
+  background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-bright), var(--tk-gold));
+  animation: tk-progress-complete-glow 1s ease-out;
+}
+
+@keyframes tk-progress-complete-glow {
+  0% {
+    box-shadow: 0 0 4px rgba(240, 192, 64, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(240, 192, 64, 0.8), 0 0 32px rgba(240, 192, 64, 0.4);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+/* 科技树节点解锁 — 连线延伸动画 */
+.tk-tech-connector-unlock {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: tk-tech-line-draw 0.6s ease-out forwards;
+}
+
+@keyframes tk-tech-line-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 科技节点解锁弹出 */
+.tk-tech-node-unlock {
+  animation: tk-tech-node-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tk-tech-node-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 科技节点解锁光芒 */
+.tk-tech-node-unlock::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 192, 64, 0.5) 0%, transparent 70%);
+  animation: tk-tech-node-glow 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes tk-tech-node-glow {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* 科技研究中的旋转齿轮指示 */
+.tk-research-spinning-icon {
+  animation: tk-research-spin 2s linear infinite;
+  display: inline-block;
+}
+
+@keyframes tk-research-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+/* ───────────────────────────────────────────────────────────
+ * R16-6. 通用微交互
+ * ─────────────────────────────────────────────────────────── */
+
+/* 6a. 卡片 hover 浮起 */
+.tk-card-hover {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease;
+  will-change: transform, box-shadow;
+}
+
+.tk-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 8px rgba(240, 192, 64, 0.15);
+}
+
+/* 6b. 数字变化 — 计数器滚动动画 */
+.tk-counter-roll {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.tk-counter-roll--up {
+  animation: tk-counter-up 0.35s ease-out;
+}
+
+.tk-counter-roll--down {
+  animation: tk-counter-down 0.35s ease-out;
+}
+
+@keyframes tk-counter-up {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes tk-counter-down {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 数字增长时的短暂放大 */
+.tk-number-bump {
+  animation: tk-number-bump 0.3s ease-out;
+}
+
+@keyframes tk-number-bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); color: var(--tk-gold); }
+  100% { transform: scale(1); }
+}
+
+/* 6c. Tab 切换滑动指示器 */
+.tk-tab-slider {
+  position: relative;
+}
+
+.tk-tab-slider::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: var(--tk-gold);
+  border-radius: 1px;
+  transition: left 0.3s cubic-bezier(0.23, 1, 0.32, 1),
+              width 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 0 6px rgba(240, 192, 64, 0.5);
+}
+
+/* 6d. 面板出现 — 从下方滑入 + 淡入 */
+.tk-panel-enter {
+  animation: tk-panel-slide-in 0.35s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes tk-panel-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 面板退出 */
+.tk-panel-exit {
+  animation: tk-panel-slide-out 0.25s ease-in forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes tk-panel-slide-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+/* 6e. 内容切换淡入 */
+.tk-fade-in {
+  animation: tk-fade-in 0.3s ease-out forwards;
+}
+
+@keyframes tk-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* 6f. 元素出现 — 缩放弹入 */
+.tk-pop-in {
+  animation: tk-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes tk-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 6g. 列表项逐个出现 */
+.tk-stagger-item {
+  opacity: 0;
+  animation: tk-stagger-appear 0.4s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.tk-stagger-item:nth-child(1) { animation-delay: 0.03s; }
+.tk-stagger-item:nth-child(2) { animation-delay: 0.06s; }
+.tk-stagger-item:nth-child(3) { animation-delay: 0.09s; }
+.tk-stagger-item:nth-child(4) { animation-delay: 0.12s; }
+.tk-stagger-item:nth-child(5) { animation-delay: 0.15s; }
+.tk-stagger-item:nth-child(6) { animation-delay: 0.18s; }
+.tk-stagger-item:nth-child(7) { animation-delay: 0.21s; }
+.tk-stagger-item:nth-child(8) { animation-delay: 0.24s; }
+.tk-stagger-item:nth-child(9) { animation-delay: 0.27s; }
+.tk-stagger-item:nth-child(10) { animation-delay: 0.30s; }
+
+@keyframes tk-stagger-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 6h. 闪光扫过效果（通用） */
+.tk-shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.tk-shimmer-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  animation: tk-shimmer-pass 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes tk-shimmer-pass {
+  0%, 100% { left: -100%; }
+  50% { left: 150%; }
+}
+
+/* 6i. 通知徽标脉冲 */
+.tk-badge-pulse {
+  position: relative;
+}
+
+.tk-badge-pulse::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tk-red);
+  animation: tk-badge-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes tk-badge-blink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.3);
+  }
+}
+
+/* 6j. 加载骨架屏动画 */
+.tk-skeleton-loading {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: tk-skeleton-wave 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes tk-skeleton-wave {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 6k. 成就达成 — 金色光芒扩散 */
+.tk-achievement-unlock {
+  animation: tk-achieve-ring 0.8s ease-out;
+  position: relative;
+}
+
+.tk-achievement-unlock::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--tk-gold);
+  border-radius: inherit;
+  animation: tk-achieve-border-expand 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes tk-achieve-ring {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes tk-achieve-border-expand {
+  0% {
+    opacity: 1;
+    inset: -4px;
+  }
+  100% {
+    opacity: 0;
+    inset: -16px;
+  }
+}
+
+
+/* ───────────────────────────────────────────────────────────
+ * R16-7. 增强已有元素的动态效果（通过组合类）
+ * ─────────────────────────────────────────────────────────── */
+
+/* 资源栏动态效果 */
+.tk-resource-bar-dynamic .tk-resource-item {
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.tk-resource-bar-dynamic .tk-resource-item:hover {
+  transform: scale(1.08);
+  filter: brightness(1.2);
+}
+
+/* 建筑卡片增强 hover */
+.tk-building-card-dynamic {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease;
+}
+
+.tk-building-card-dynamic:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(240, 192, 64, 0.5);
+}
+
+/* 武将卡片增强 hover */
+.tk-general-card-dynamic {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease;
+}
+
+.tk-general-card-dynamic:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 12px rgba(240, 192, 64, 0.2);
+}
+
+/* 科技节点增强 hover */
+.tk-tech-node-dynamic {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.tk-tech-node-dynamic:hover {
+  transform: scale(1.12);
+  filter: brightness(1.2);
+  box-shadow: 0 0 16px rgba(240, 192, 64, 0.4);
+}
+
+
+/* ───────────────────────────────────────────────────────────
+ * R16-8. 减弱动画偏好（无障碍）
+ * ─────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-float-number,
+  .tk-btn-dynamic,
+  .tk-btn-ripple,
+  .tk-building-upgrading,
+  .tk-building-upgrade-complete,
+  .tk-building-particle,
+  .tk-recruit-spring-in,
+  .tk-recruit-legendary,
+  .tk-recruit-mythic,
+  .tk-research-complete,
+  .tk-tech-connector-unlock,
+  .tk-tech-node-unlock,
+  .tk-counter-roll--up,
+  .tk-counter-roll--down,
+  .tk-number-bump,
+  .tk-panel-enter,
+  .tk-panel-exit,
+  .tk-pop-in,
+  .tk-stagger-item,
+  .tk-card-hover,
+  .tk-building-card-dynamic,
+  .tk-general-card-dynamic,
+  .tk-tech-node-dynamic,
+  .tk-shimmer-sweep::after,
+  .tk-recruit-btn-effect::after,
+  .tk-research-spinning-icon,
+  .tk-resource-rate-indicator,
+  .tk-resource-icon-pulse,
+  .tk-btn-success-flash,
+  .tk-btn-error-shake,
+  .tk-achievement-unlock,
+  .tk-badge-pulse::after {
+    animation: none !important;
+    transition-duration: 0.01s !important;
+  }
+}

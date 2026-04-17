@@ -45,6 +45,7 @@ import type { ActiveStoryEvent, StoryLine } from '@/games/three-kingdoms/General
 import type { GeneralRequest } from '@/games/three-kingdoms/GeneralBondSystem';
 import { BuildingIcon, ResourceIcon, BuildingProgressBar, TechIcon, TechLockedIcon, TechResearchingIcon, SkillIcon, EquipSlotIcon } from './ThreeKingdomsSVGIcons';
 import './ThreeKingdomsPixiGame.css';
+import './ThreeKingdomsPixiGame-r16.css';
 
 // ═══════════════════════════════════════════════════════════════
 // 工具函数
@@ -735,6 +736,209 @@ function LevelDetailModal({
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// R16 关卡视觉增强 — 古风圆章序号 + 战斗预览面板 + 路径连接
+// ═══════════════════════════════════════════════════════════════
+
+/** 古风圆章序号 SVG —— 关卡序号用印章样式 */
+function StageSealNumber({ number, status }: { number: number; status: string }) {
+  const isLocked = status === 'locked';
+  const isVictory = status === 'victory';
+  const isActive = status === 'available' || status === 'in_progress';
+  const sealColor = isLocked ? '#555' : isVictory ? '#d4a030' : isActive ? '#c62828' : '#8a7a6a';
+  const bgColor = isLocked ? 'rgba(40,40,40,0.8)' : isVictory ? 'rgba(50,40,20,0.9)' : isActive ? 'rgba(60,20,20,0.9)' : 'rgba(50,40,30,0.8)';
+
+  return (
+    <div className="tk-stage-seal" style={{ background: bgColor, borderColor: sealColor }}>
+      <svg viewBox="0 0 36 36" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="15" fill="none" stroke={sealColor} strokeWidth="1.5" opacity="0.6" />
+        <circle cx="18" cy="18" r="12" fill="none" stroke={sealColor} strokeWidth="0.5" opacity="0.4" />
+        <text x="18" y="22" textAnchor="middle" fontSize="14" fill={sealColor}
+          fontFamily="'KaiTi','STKaiti','Noto Serif SC',serif" fontWeight="bold">
+          {number}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+/** 关卡路径连接线 SVG —— 关卡之间的古道连接 */
+function StagePathConnector({ fromVictory, isLast }: { fromVictory: boolean; isLast: boolean }) {
+  if (isLast) return null;
+  return (
+    <div className={`tk-stage-path-connector ${fromVictory ? 'tk-stage-path-connector--victory' : ''}`}>
+      <svg viewBox="0 0 24 20" width="24" height="20" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="0" x2="12" y2="14" stroke={fromVictory ? '#d4a030' : '#5a4a3a'} strokeWidth="1.5" strokeDasharray="3,2" />
+        {fromVictory && <polygon points="8,12 12,18 16,12" fill="#d4a030" opacity="0.7" />}
+        {!fromVictory && <polygon points="9,13 12,17 15,13" fill="#5a4a3a" opacity="0.5" />}
+      </svg>
+    </div>
+  );
+}
+
+/** 章节横幅标题 —— 古风横幅样式 */
+function ChapterBanner({ title, subtitle, color }: { title: string; subtitle: string; color: string }) {
+  return (
+    <div className="tk-chapter-banner" style={{ '--banner-color': color } as React.CSSProperties}>
+      <div className="tk-chapter-banner__bg">
+        <svg viewBox="0 0 400 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,8 L15,0 L385,0 L400,8 L400,32 L385,40 L15,40 L0,32 Z" fill="currentColor" opacity="0.12" />
+          <path d="M0,8 L15,0 L385,0 L400,8" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+          <path d="M0,32 L15,40 L385,40 L400,32" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+          {/* 横幅两端装饰 */}
+          <circle cx="20" cy="20" r="4" fill="currentColor" opacity="0.2" />
+          <circle cx="380" cy="20" r="4" fill="currentColor" opacity="0.2" />
+          <path d="M8,12 L12,20 L8,28" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
+          <path d="M392,12 L388,20 L392,28" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
+        </svg>
+      </div>
+      <div className="tk-chapter-banner__content">
+        <span className="tk-chapter-banner__title">{title}</span>
+        {subtitle && <span className="tk-chapter-banner__subtitle">{subtitle}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** 战斗预览面板 —— 攻击前显示战力对比 */
+function BattlePreviewPanel({
+  battlePreview,
+  defenderPower,
+  defenderLord,
+  CT,
+}: {
+  battlePreview: NonNullable<GameRenderState['campaign']>['battlePreview'];
+  defenderPower: number;
+  defenderLord: string;
+  CT: typeof COLOR_THEME;
+}) {
+  if (!battlePreview) return null;
+
+  const { attackerPower, defenderPower: previewDefenderPower, winProbability } = battlePreview;
+  const totalPower = attackerPower + (previewDefenderPower || defenderPower);
+  const attackerRatio = totalPower > 0 ? attackerPower / totalPower : 0.5;
+
+  // 胜率等级
+  let winLevel: 'high' | 'medium' | 'low';
+  let winColor: string;
+  let winLabel: string;
+  if (winProbability >= 0.7) {
+    winLevel = 'high'; winColor = '#4ade80'; winLabel = '高';
+  } else if (winProbability >= 0.4) {
+    winLevel = 'medium'; winColor = '#facc15'; winLabel = '中';
+  } else {
+    winLevel = 'low'; winColor = '#ef4444'; winLabel = '低';
+  }
+
+  return (
+    <div className="tk-battle-preview">
+      <div className="tk-battle-preview__title">⚔️ 战力对比</div>
+      {/* 战力对比条 */}
+      <div className="tk-battle-preview__bar">
+        <div className="tk-battle-preview__bar-fill tk-battle-preview__bar-fill--ally" style={{ width: `${attackerRatio * 100}%` }}>
+          <span className="tk-battle-preview__bar-label">{Math.floor(attackerPower).toLocaleString()}</span>
+        </div>
+        <div className="tk-battle-preview__bar-fill tk-battle-preview__bar-fill--enemy" style={{ width: `${(1 - attackerRatio) * 100}%` }}>
+          <span className="tk-battle-preview__bar-label">{Math.floor(previewDefenderPower || defenderPower).toLocaleString()}</span>
+        </div>
+      </div>
+      <div className="tk-battle-preview__labels">
+        <span className="tk-battle-preview__ally">我方</span>
+        <span className="tk-battle-preview__enemy">🏴 {defenderLord}</span>
+      </div>
+      {/* 胜率预估 */}
+      <div className="tk-battle-preview__winrate">
+        <span className="tk-battle-preview__winrate-label">胜率预估</span>
+        <span className={`tk-battle-preview__winrate-badge tk-battle-preview__winrate-badge--${winLevel}`}>
+          {winLabel} {Math.round(winProbability * 100)}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** 推荐武将提示 */
+function RecommendedGeneralsTip({ stageName, CT }: { stageName: string; CT: typeof COLOR_THEME }) {
+  const recommendations: Record<string, Array<{ name: string; reason: string; icon: string }>> = {
+    '黄巾之乱': [
+      { name: '刘备', reason: '仁德克制暴乱', icon: '🟢' },
+      { name: '关羽', reason: '武圣斩将', icon: '🔴' },
+      { name: '张飞', reason: '猛将冲锋', icon: '🟡' },
+    ],
+    '讨伐董卓': [
+      { name: '吕布', reason: '虎牢关破阵', icon: '🔴' },
+      { name: '关羽', reason: '温酒斩华雄', icon: '🟢' },
+      { name: '张飞', reason: '三英战吕布', icon: '🟡' },
+    ],
+    '群雄割据': [
+      { name: '曹操', reason: '挟天子令诸侯', icon: '🔵' },
+      { name: '荀彧', reason: '王佐之才', icon: '🟣' },
+      { name: '郭嘉', reason: '奇谋制胜', icon: '🟢' },
+    ],
+    '官渡之战': [
+      { name: '曹操', reason: '奇袭乌巢', icon: '🔵' },
+      { name: '许攸', reason: '献计破袁', icon: '🟡' },
+      { name: '张辽', reason: '突袭先锋', icon: '🔴' },
+    ],
+    '赤壁之战': [
+      { name: '诸葛亮', reason: '借东风火攻', icon: '🟢' },
+      { name: '周瑜', reason: '大都督统军', icon: '🔴' },
+      { name: '黄盖', reason: '苦肉计诈降', icon: '🟡' },
+    ],
+    '三分天下': [
+      { name: '诸葛亮', reason: '六出祁山', icon: '🟢' },
+      { name: '司马懿', reason: '深谋远虑', icon: '🔵' },
+      { name: '姜维', reason: '九伐中原', icon: '🔴' },
+    ],
+  };
+
+  const recs = recommendations[stageName];
+  if (!recs) return null;
+
+  return (
+    <div className="tk-recommended-generals">
+      <div className="tk-recommended-generals__title">💡 推荐武将</div>
+      <div className="tk-recommended-generals__list">
+        {recs.map((rec, i) => (
+          <div key={i} className="tk-recommended-generals__item">
+            <span className="tk-recommended-generals__icon">{rec.icon}</span>
+            <span className="tk-recommended-generals__name">{rec.name}</span>
+            <span className="tk-recommended-generals__reason">{rec.reason}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** 战利品预览 —— 可能获得的资源/武将 */
+function LootPreview({ rewards }: { rewards: { gold?: number; food?: number; materials?: number; recruitHero?: string; unlockBuilding?: string } }) {
+  if (!rewards) return null;
+  const items: Array<{ icon: string; label: string; value: string; rare?: boolean }> = [];
+  if (rewards.gold && rewards.gold > 0) items.push({ icon: '💰', label: '金', value: fmt(rewards.gold) });
+  if (rewards.food && rewards.food > 0) items.push({ icon: '🌾', label: '粮', value: fmt(rewards.food) });
+  if (rewards.materials && rewards.materials > 0) items.push({ icon: '📦', label: '材', value: fmt(rewards.materials) });
+  if (rewards.recruitHero) items.push({ icon: '🧑‍✈️', label: '武将', value: rewards.recruitHero, rare: true });
+  if (rewards.unlockBuilding) items.push({ icon: '🏗️', label: '建筑', value: rewards.unlockBuilding, rare: true });
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="tk-loot-preview">
+      <div className="tk-loot-preview__title">🎁 战利品预览</div>
+      <div className="tk-loot-preview__grid">
+        {items.map((item, i) => (
+          <div key={i} className={`tk-loot-preview__item ${item.rare ? 'tk-loot-preview__item--rare' : ''}`}>
+            <span className="tk-loot-preview__item-icon">{item.icon}</span>
+            <span className="tk-loot-preview__item-value">{item.value}</span>
+            <span className="tk-loot-preview__item-label">{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** 征战关卡面板 */
 function CampaignPanel({
   engine,
@@ -786,214 +990,243 @@ function CampaignPanel({
     return map;
   }, [stages]);
 
+  // 按章节分组关卡
+  const chapterGroups = useMemo(() => {
+    const chapters: Array<{ era: string; stages: typeof stages; color: string }> = [];
+    let currentEra = '';
+    for (let i = 0; i < stages.length; i++) {
+      const def = stageDefMap.get(stages[i].id);
+      const era = def?.era ?? '未知';
+      if (era !== currentEra) {
+        chapters.push({ era, stages: [stages[i]], color: ERA_COLORS[era] ?? '#888' });
+        currentEra = era;
+      } else {
+        chapters[chapters.length - 1].stages.push(stages[i]);
+      }
+    }
+    return chapters;
+  }, [stages, stageDefMap]);
+
   return (
-    <div style={{
-      position: 'absolute', top: '50%', left: '50%',
-      transform: 'translate(-50%, -50%)',
-      background: 'rgba(0,0,0,0.75)', borderRadius: 12, padding: 16,
-      width: 440, maxHeight: '75vh', overflowY: 'auto',
-      border: `1px solid ${CT.selectedBorder}`,
-      color: CT.textPrimary,
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 16, color: CT.accentGold, fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif", textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>◆ 🏆 征战天下</h2>
-        <button onClick={onClose} style={{
-          background: 'transparent', border: `1px solid ${CT.selectedBorder}`,
-          color: CT.textDim, borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12,
-        }}>✕ 关闭</button>
+    <div className="tk-r16-campaign-panel">
+      {/* 卷轴顶部装饰 */}
+      <div className="tk-r16-scroll-top">
+        <svg viewBox="0 0 440 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="8" width="440" height="16" rx="2" fill="#5a4a30" opacity="0.6" />
+          <ellipse cx="0" cy="16" rx="12" ry="12" fill="#8B7355" opacity="0.5" />
+          <ellipse cx="440" cy="16" rx="12" ry="12" fill="#8B7355" opacity="0.5" />
+          <rect x="10" y="12" width="420" height="2" fill="#d4a030" opacity="0.3" />
+        </svg>
       </div>
 
-      {/* 关卡进度 */}
-      <div style={{ fontSize: 12, color: CT.textDim, marginBottom: 12 }}>
-        进度：{campaignData?.completedStages?.length ?? 0} / {stages.length} 关卡
-        {campaignData?.totalStars != null && ` | ⭐ ${campaignData.totalStars} / ${campaignData.maxStars}`}
+      {/* 标题栏 */}
+      <div className="tk-r16-campaign-header">
+        <h2 className="tk-r16-campaign-title">🏆 征战天下</h2>
+        <button onClick={onClose} className="tk-r16-close-btn">✕</button>
       </div>
 
-      {/* 关卡列表 */}
-      <div className="tk-stage-list">
-        {stages.map((stage, idx) => {
-          const statusInfo = STAGE_STATUS_MAP[stage.status] ?? STAGE_STATUS_MAP.locked;
-          const isLocked = stage.status === 'locked';
-          const isVictory = stage.status === 'victory';
-          const isAvailable = stage.status === 'available' || stage.status === 'in_progress';
-          const isCurrent = stage.status === 'available' || stage.status === 'in_progress';
-          const def = stageDefMap.get(stage.id);
-          const eraColor = def ? (ERA_COLORS[def.era] ?? '#888') : '#888';
-          const diffDisplay = def ? (DIFFICULTY_DISPLAY[def.difficulty] ?? DIFFICULTY_DISPLAY[1]) : null;
-          const powerStr = def ? Math.floor(def.requiredPower).toLocaleString() : '';
-          const typeInfo = STAGE_TYPE_ICONS[stage.name] ?? { icon: '⚔️', label: '战斗' };
-          const strategyTip = STAGE_STRATEGY_TIPS[stage.name] ?? '⚔️ 提升战力再进攻';
-          const previewGradient = def ? (STAGE_PREVIEW_GRADIENTS[def.era] ?? 'linear-gradient(180deg, #3a2a1a, #5a4a3a)') : 'linear-gradient(180deg, #3a2a1a, #5a4a3a)';
+      {/* 关卡进度条 */}
+      <div className="tk-r16-progress-bar">
+        <div className="tk-r16-progress-bar__fill" style={{
+          width: `${stages.length > 0 ? ((campaignData?.completedStages?.length ?? 0) / stages.length) * 100 : 0}%`,
+        }} />
+        <span className="tk-r16-progress-bar__text">
+          {campaignData?.completedStages?.length ?? 0} / {stages.length}
+          {campaignData?.totalStars != null && ` · ⭐${campaignData.totalStars}/${campaignData.maxStars}`}
+        </span>
+      </div>
 
-          // 进度状态图标
-          let progressIcon: React.ReactNode;
-          if (isVictory) {
-            progressIcon = <span className="tk-stage-progress-icon tk-stage-progress-icon--victory">✅</span>;
-          } else if (isCurrent) {
-            progressIcon = <span className="tk-stage-progress-icon tk-stage-progress-icon--current">⚔️</span>;
-          } else if (isLocked) {
-            progressIcon = <span className="tk-stage-progress-icon">🔒</span>;
-          } else {
-            progressIcon = <span className="tk-stage-progress-icon">{statusInfo.label}</span>;
-          }
+      {/* 章节分组关卡列表 */}
+      <div className="tk-r16-stage-list">
+        {chapterGroups.map((chapter, chapterIdx) => (
+          <div key={chapter.era} className="tk-r16-chapter-group">
+            {/* 章节横幅 */}
+            <ChapterBanner
+              title={chapter.era === '黄巾' ? '第一章' : chapter.era === '董卓' ? '第二章' : chapter.era === '群雄' ? '第三章' : chapter.era === '官渡' ? '第四章' : chapter.era === '赤壁' ? '第五章' : '终章'}
+              subtitle={chapter.era}
+              color={chapter.color}
+            />
 
-          // 星级评定（金色 ★）
-          const starRating = isVictory && stage.stars > 0
-            ? <span className="tk-stage-star-rating">{'★'.repeat(stage.stars)}{'☆'.repeat(3 - stage.stars)}</span>
-            : null;
+            {/* 关卡卡片 */}
+            {chapter.stages.map((stage, idx) => {
+              const globalIdx = stages.indexOf(stage);
+              const statusInfo = STAGE_STATUS_MAP[stage.status] ?? STAGE_STATUS_MAP.locked;
+              const isLocked = stage.status === 'locked';
+              const isVictory = stage.status === 'victory';
+              const isAvailable = stage.status === 'available' || stage.status === 'in_progress';
+              const isCurrent = stage.status === 'available' || stage.status === 'in_progress';
+              const def = stageDefMap.get(stage.id);
+              const eraColor = def ? (ERA_COLORS[def.era] ?? '#888') : '#888';
+              const diffDisplay = def ? (DIFFICULTY_DISPLAY[def.difficulty] ?? DIFFICULTY_DISPLAY[1]) : null;
+              const powerStr = def ? Math.floor(def.requiredPower).toLocaleString() : '';
+              const typeInfo = STAGE_TYPE_ICONS[stage.name] ?? { icon: '⚔️', label: '战斗' };
+              const strategyTip = STAGE_STRATEGY_TIPS[stage.name] ?? '⚔️ 提升战力再进攻';
+              const previewGradient = def ? (STAGE_PREVIEW_GRADIENTS[def.era] ?? 'linear-gradient(180deg, #3a2a1a, #5a4a3a)') : 'linear-gradient(180deg, #3a2a1a, #5a4a3a)';
+              const prevStage = globalIdx > 0 ? stages[globalIdx - 1] : null;
+              const prevVictory = prevStage?.status === 'victory';
 
-          // CSS 类名
-          const cardClass = [
-            'tk-stage-card',
-            isLocked ? 'tk-stage-card--locked' : '',
-            isVictory ? 'tk-stage-card--victory' : '',
-            isAvailable ? 'tk-stage-card--available' : '',
-            isCurrent && !isVictory ? 'tk-stage-card--current' : '',
-          ].filter(Boolean).join(' ');
+              // 星级评定（金色 ★）
+              const starRating = isVictory && stage.stars > 0
+                ? <span className="tk-stage-star-rating">{'★'.repeat(stage.stars)}{'☆'.repeat(3 - stage.stars)}</span>
+                : null;
 
-          return (
-            <div key={stage.id}
-              className={cardClass}
-              onClick={() => !isLocked && setDetailStageId(stage.id)}
-              style={{
-                border: `1px solid ${isLocked ? 'rgba(255,255,255,0.05)' : isVictory ? 'rgba(96,165,250,0.2)' : isCurrent ? 'rgba(212,160,48,0.3)' : 'rgba(255,255,255,0.1)'}`,
-              }}
-            >
-              {/* 场景预览缩略图 80x60 */}
-              <div className="tk-stage-preview" style={{ background: previewGradient }}>
-                <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-                  {/* 简化场景元素 */}
-                  <rect width="80" height="60" fill="none" />
-                  {def?.era === '黄巾' && (
-                    <>
-                      <circle cx="20" cy="15" r="6" fill="#ff6600" opacity="0.6" />
-                      <circle cx="60" cy="12" r="5" fill="#ff4400" opacity="0.5" />
-                      <path d="M15,40 Q20,25 25,38 Q30,22 35,36" fill="#ff6600" opacity="0.5" />
-                      <path d="M50,35 Q55,20 60,33 Q63,18 67,32" fill="#ff4400" opacity="0.5" />
-                      <rect x="0" y="48" width="80" height="12" fill="#3a2010" opacity="0.7" />
-                    </>
-                  )}
-                  {def?.era === '董卓' && (
-                    <>
-                      <rect x="25" y="20" width="30" height="22" fill="#7a6a5a" opacity="0.8" />
-                      <rect x="22" y="17" width="36" height="5" fill="#8a7a6a" opacity="0.8" />
-                      <path d="M38,42 L38,32 Q40,28 42,32 L42,42" fill="#3a2a1a" opacity="0.7" />
-                      <rect x="0" y="48" width="80" height="12" fill="#4a3a2a" opacity="0.5" />
-                    </>
-                  )}
-                  {def?.era === '群雄' && (
-                    <>
-                      {[10, 25, 40, 55, 70].map((x, i) => (
-                        <g key={i}>
-                          <line x1={x} y1="42" x2={x} y2={20 + i * 2} stroke="#8B7355" strokeWidth="0.8" opacity="0.6" />
-                          <polygon points={`${x},${20 + i * 2} ${x + 8},${22 + i * 2} ${x},${25 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32','#d4a030','#8a2be2'][i]} opacity="0.6" />
-                        </g>
-                      ))}
-                      <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.5" />
-                    </>
-                  )}
-                  {def?.era === '官渡' && (
-                    <>
-                      <path d="M0,30 Q20,25 40,30 Q60,35 80,28" fill="#3a5a7a" opacity="0.5" />
-                      <path d="M0,32 Q20,28 40,33 Q60,38 80,30" stroke="#5a8aaa" strokeWidth="0.5" fill="none" opacity="0.4" />
-                      {[10, 18, 26].map((x, i) => (
-                        <g key={`n${i}`}>
-                          <circle cx={x} cy={22 - i} r="1.5" fill="#1a1a2a" />
-                          <rect x={x - 1} y={23.5 - i} width="2" height="3" fill="#1a1a2a" />
-                        </g>
-                      ))}
-                      {[54, 62, 70].map((x, i) => (
-                        <g key={`s${i}`}>
-                          <circle cx={x} cy={38 - i} r="1.5" fill="#2a1a1a" />
-                          <rect x={x - 1} y={39.5 - i} width="2" height="3" fill="#2a1a1a" />
-                        </g>
-                      ))}
-                      <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.4" />
-                    </>
-                  )}
-                  {def?.era === '赤壁' && (
-                    <>
-                      <rect x="0" y="28" width="80" height="20" fill="#2a3a5a" opacity="0.4" />
-                      <ellipse cx="40" cy="35" rx="30" ry="10" fill="#ff4400" opacity="0.3" />
-                      {[20, 35, 50, 65].map((x, i) => (
-                        <g key={i}>
-                          <ellipse cx={x} cy={34 + (i % 2) * 3} rx="4" ry="1.5" fill="#5a3a1a" opacity="0.7" />
-                          <path d={`M${x - 1.5},${32 + (i % 2) * 3} Q${x},${24 + i} ${x + 1.5},${32 + (i % 2) * 3}`} fill="#ff4400" opacity="0.6" />
-                        </g>
-                      ))}
-                      <rect x="0" y="48" width="80" height="12" fill="#1a1020" opacity="0.5" />
-                    </>
-                  )}
-                  {def?.era === '三国' && (
-                    <>
-                      <path d="M35,38 L33,45 L47,45 L45,38 Z" fill="#b87333" opacity="0.8" />
-                      <rect x="34" y="35" width="12" height="4" rx="1" fill="#d4a030" opacity="0.8" />
-                      {[15, 40, 65].map((x, i) => (
-                        <g key={i}>
-                          <line x1={x} y1="40" x2={x} y2={18 + i * 2} stroke="#8B7355" strokeWidth="1" opacity="0.6" />
-                          <polygon points={`${x},${18 + i * 2} ${x + 8},${20 + i * 2} ${x},${23 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32'][i]} opacity="0.7" />
-                        </g>
-                      ))}
-                      <rect x="0" y="48" width="80" height="12" fill="#3a2a10" opacity="0.5" />
-                    </>
-                  )}
-                </svg>
-              </div>
+              // CSS 类名
+              const cardClass = [
+                'tk-stage-card',
+                'tk-r16-stage-card',
+                isLocked ? 'tk-stage-card--locked' : '',
+                isVictory ? 'tk-stage-card--victory tk-r16-stage-card--victory' : '',
+                isAvailable ? 'tk-stage-card--available tk-r16-stage-card--available' : '',
+                isCurrent && !isVictory ? 'tk-stage-card--current tk-r16-stage-card--current' : '',
+              ].filter(Boolean).join(' ');
 
-              {/* 关卡信息 */}
-              <div className="tk-stage-info">
-                {/* 第一行：进度图标 + 类型图标 + 名称 + 星级 */}
-                <div className="tk-stage-title-row">
-                  {progressIcon}
-                  <span className="tk-stage-type-icon">{typeInfo.icon}</span>
-                  <span className="tk-stage-name" style={{ color: isLocked ? CT.textDim : CT.textPrimary }}>
-                    {stage.name}
-                  </span>
-                  {starRating}
+              return (
+                <div key={stage.id} className="tk-r16-stage-wrapper">
+                  {/* 路径连接线 */}
+                  {globalIdx > 0 && <StagePathConnector fromVictory={prevVictory} isLast={false} />}
+
+                  <div
+                    className={cardClass}
+                    onClick={() => !isLocked && setDetailStageId(stage.id)}
+                  >
+                    {/* 古风圆章序号 */}
+                    <StageSealNumber number={globalIdx + 1} status={stage.status} />
+
+                    {/* 场景预览缩略图 80x60 */}
+                    <div className="tk-stage-preview tk-r16-stage-preview" style={{ background: previewGradient }}>
+                      <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                        <rect width="80" height="60" fill="none" />
+                        {def?.era === '黄巾' && (
+                          <>
+                            <circle cx="20" cy="15" r="6" fill="#ff6600" opacity="0.6" />
+                            <circle cx="60" cy="12" r="5" fill="#ff4400" opacity="0.5" />
+                            <path d="M15,40 Q20,25 25,38 Q30,22 35,36" fill="#ff6600" opacity="0.5" />
+                            <path d="M50,35 Q55,20 60,33 Q63,18 67,32" fill="#ff4400" opacity="0.5" />
+                            <rect x="0" y="48" width="80" height="12" fill="#3a2010" opacity="0.7" />
+                          </>
+                        )}
+                        {def?.era === '董卓' && (
+                          <>
+                            <rect x="25" y="20" width="30" height="22" fill="#7a6a5a" opacity="0.8" />
+                            <rect x="22" y="17" width="36" height="5" fill="#8a7a6a" opacity="0.8" />
+                            <path d="M38,42 L38,32 Q40,28 42,32 L42,42" fill="#3a2a1a" opacity="0.7" />
+                            <rect x="0" y="48" width="80" height="12" fill="#4a3a2a" opacity="0.5" />
+                          </>
+                        )}
+                        {def?.era === '群雄' && (
+                          <>
+                            {[10, 25, 40, 55, 70].map((x, i) => (
+                              <g key={i}>
+                                <line x1={x} y1="42" x2={x} y2={20 + i * 2} stroke="#8B7355" strokeWidth="0.8" opacity="0.6" />
+                                <polygon points={`${x},${20 + i * 2} ${x + 8},${22 + i * 2} ${x},${25 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32','#d4a030','#8a2be2'][i]} opacity="0.6" />
+                              </g>
+                            ))}
+                            <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.5" />
+                          </>
+                        )}
+                        {def?.era === '官渡' && (
+                          <>
+                            <path d="M0,30 Q20,25 40,30 Q60,35 80,28" fill="#3a5a7a" opacity="0.5" />
+                            <path d="M0,32 Q20,28 40,33 Q60,38 80,30" stroke="#5a8aaa" strokeWidth="0.5" fill="none" opacity="0.4" />
+                            {[10, 18, 26].map((x, i) => (
+                              <g key={`n${i}`}>
+                                <circle cx={x} cy={22 - i} r="1.5" fill="#1a1a2a" />
+                                <rect x={x - 1} y={23.5 - i} width="2" height="3" fill="#1a1a2a" />
+                              </g>
+                            ))}
+                            {[54, 62, 70].map((x, i) => (
+                              <g key={`s${i}`}>
+                                <circle cx={x} cy={38 - i} r="1.5" fill="#2a1a1a" />
+                                <rect x={x - 1} y={39.5 - i} width="2" height="3" fill="#2a1a1a" />
+                              </g>
+                            ))}
+                            <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.4" />
+                          </>
+                        )}
+                        {def?.era === '赤壁' && (
+                          <>
+                            <rect x="0" y="28" width="80" height="20" fill="#2a3a5a" opacity="0.4" />
+                            <ellipse cx="40" cy="35" rx="30" ry="10" fill="#ff4400" opacity="0.3" />
+                            {[20, 35, 50, 65].map((x, i) => (
+                              <g key={i}>
+                                <ellipse cx={x} cy={34 + (i % 2) * 3} rx="4" ry="1.5" fill="#5a3a1a" opacity="0.7" />
+                                <path d={`M${x - 1.5},${32 + (i % 2) * 3} Q${x},${24 + i} ${x + 1.5},${32 + (i % 2) * 3}`} fill="#ff4400" opacity="0.6" />
+                              </g>
+                            ))}
+                            <rect x="0" y="48" width="80" height="12" fill="#1a1020" opacity="0.5" />
+                          </>
+                        )}
+                        {def?.era === '三国' && (
+                          <>
+                            <path d="M35,38 L33,45 L47,45 L45,38 Z" fill="#b87333" opacity="0.8" />
+                            <rect x="34" y="35" width="12" height="4" rx="1" fill="#d4a030" opacity="0.8" />
+                            {[15, 40, 65].map((x, i) => (
+                              <g key={i}>
+                                <line x1={x} y1="40" x2={x} y2={18 + i * 2} stroke="#8B7355" strokeWidth="1" opacity="0.6" />
+                                <polygon points={`${x},${18 + i * 2} ${x + 8},${20 + i * 2} ${x},${23 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32'][i]} opacity="0.7" />
+                              </g>
+                            ))}
+                            <rect x="0" y="48" width="80" height="12" fill="#3a2a10" opacity="0.5" />
+                          </>
+                        )}
+                      </svg>
+                      {/* 锁定蒙版 */}
+                      {isLocked && <div className="tk-r16-stage-lock-overlay"><span>🔒</span></div>}
+                      {/* 可攻击脉冲指引 */}
+                      {isAvailable && <div className="tk-r16-stage-available-indicator"><span>▸</span></div>}
+                    </div>
+
+                    {/* 关卡信息 */}
+                    <div className="tk-stage-info tk-r16-stage-info">
+                      <div className="tk-stage-title-row">
+                        <span className="tk-stage-type-icon">{typeInfo.icon}</span>
+                        <span className="tk-stage-name" style={{ color: isLocked ? CT.textDim : CT.textPrimary }}>
+                          {stage.name}
+                        </span>
+                        {starRating}
+                      </div>
+                      <div className="tk-stage-meta-row">
+                        {def && (
+                          <span className="tk-r16-era-tag" style={{ color: eraColor, borderColor: eraColor }}>
+                            {def.era}
+                          </span>
+                        )}
+                        {diffDisplay && (
+                          <span style={{ color: diffDisplay.color, fontSize: 10 }}>
+                            {diffDisplay.stars}
+                          </span>
+                        )}
+                        {powerStr && (
+                          <span style={{ color: CT.textDim }}>
+                            ⚔️{powerStr}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 右侧状态标签 */}
+                    <div className="tk-r16-status-area">
+                      {!isLocked && !isVictory && (
+                        <span className="tk-stage-status-tag tk-stage-status-tag--attack tk-r16-attack-btn">⚔️ 可攻</span>
+                      )}
+                      {isVictory && (
+                        <span className="tk-stage-status-tag tk-stage-status-tag--victory tk-r16-victory-badge">
+                          <span className="tk-r16-victory-stars">{'★'.repeat(stage.stars || 3)}</span>
+                          已攻克
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 悬停策略提示 */}
+                    {!isLocked && (
+                      <span className="tk-stage-tooltip tk-r16-tooltip">{strategyTip}</span>
+                    )}
+                  </div>
                 </div>
-                {/* 第二行：时代标签 + 难度 + 战力 */}
-                <div className="tk-stage-meta-row">
-                  {def && (
-                    <span style={{
-                      color: eraColor, background: `${eraColor}18`,
-                      padding: '1px 6px', borderRadius: 3, fontWeight: 'bold',
-                    }}>
-                      {def.era}
-                    </span>
-                  )}
-                  {diffDisplay && (
-                    <span style={{ color: diffDisplay.color, fontSize: 10 }}>
-                      {diffDisplay.stars}
-                    </span>
-                  )}
-                  {powerStr && (
-                    <span style={{ color: CT.textDim }}>
-                      ⚔️{powerStr}
-                    </span>
-                  )}
-                  <span style={{ color: CT.textDim, fontSize: 10 }}>
-                    {typeInfo.label}
-                  </span>
-                </div>
-              </div>
-
-              {/* 右侧状态 */}
-              {!isLocked && !isVictory && (
-                <span className="tk-stage-status-tag tk-stage-status-tag--attack">可攻</span>
-              )}
-              {isVictory && (
-                <span className="tk-stage-status-tag tk-stage-status-tag--victory">已攻克</span>
-              )}
-
-              {/* 悬停策略提示 */}
-              {!isLocked && (
-                <span className="tk-stage-tooltip">{strategyTip}</span>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* 关卡详情弹窗 */}
@@ -1242,119 +1475,325 @@ function CampaignBattleReport({
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 武将立绘组件（SVG 简笔画风格）
+// 武将立绘组件（SVG 简笔画风格 — R16 特征化升级版）
 // ═══════════════════════════════════════════════════════════════
 
+/** 阵营色映射（R16 统一） */
+const FACTION_COLORS_R16: Record<string, string> = {
+  wei: '#1E6FBE',
+  shu: '#C41E3A',
+  wu: '#2E8B57',
+  other: '#8B7355',
+};
+
+/** 稀有度 → 星级映射（1-5星） */
+const RARITY_STARS: Record<string, number> = {
+  common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 5,
+};
+
 /**
- * GeneralPortrait — 武将简笔画头像
+ * GeneralPortrait — 武将特征化 SVG 头像（R16 深度升级）
  *
- * 根据武将名字和势力生成确定性的 SVG 头像。
- * 同名武将始终生成相同头像（基于字符码种子）。
- *
- * 特殊武将特征：
- * - 曹操(wei): 文冠 + 无胡须
- * - 刘备(shu): 武盔 + 长胡须
- * - 孙权(wu): 王冠 + 短胡须
- * - 关羽(shu): 武盔 + 长须（特殊标志）
- * - 张飞(shu): 武盔 + 络腮胡
+ * 为6+核心武将创建高度特征化的 SVG 头像：
+ * - 刘备: 双耳垂肩 + 仁者风范 + 双剑
+ * - 关羽: 红脸 + 长须 + 青龙偃月刀
+ * - 张飞: 黑脸 + 虎须 + 丈八蛇矛
+ * - 诸葛亮: 羽扇纶巾 + 仙风道骨
+ * - 赵云: 白马银枪 + 英姿飒爽
+ * - 曹操: 挟天子霸气 + 倚天剑
+ * 其他武将回退到确定性种子生成。
  */
 const GeneralPortrait = ({ name, faction, size = 60 }: { name: string; faction: string; size?: number }) => {
-  const factionColors: Record<string, string> = {
-    wei: '#4a6fa5',
-    shu: '#c62828',
-    wu: '#2e7d32',
-    other: '#795548',
-  };
-  const color = factionColors[faction] || factionColors.other;
+  const color = FACTION_COLORS_R16[faction] || FACTION_COLORS_R16.other;
+  const h = Math.floor(size * 80 / 60);
 
-  // 使用种子生成确定性特征
+  // ── 特征化武将 SVG ──
+  if (name === '刘备') return <LiuBeiPortrait color={color} size={size} h={h} />;
+  if (name === '关羽') return <GuanYuPortrait color={color} size={size} h={h} />;
+  if (name === '张飞') return <ZhangFeiPortrait color={color} size={size} h={h} />;
+  if (name === '诸葛亮') return <ZhuGeLiangPortrait color={color} size={size} h={h} />;
+  if (name === '赵云') return <ZhaoYunPortrait color={color} size={size} h={h} />;
+  if (name === '曹操') return <CaoCaoPortrait color={color} size={size} h={h} />;
+
+  // ── 通用确定性头像（回退） ──
   const seed = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-
-  // 特殊武将特征映射
   const specialGenerals: Record<string, { helmet: number; beard: number; extra?: string }> = {
-    '曹操': { helmet: 2, beard: 0 },       // 文冠 + 无胡须
-    '刘备': { helmet: 1, beard: 2 },       // 武盔 + 长胡须
-    '孙权': { helmet: 2, beard: 1 },       // 王冠(文冠) + 短胡须
-    '关羽': { helmet: 1, beard: 2, extra: 'guanyu' }, // 武盔 + 长须(特殊)
-    '张飞': { helmet: 1, beard: 3 },       // 武盔 + 络腮胡
-    '诸葛亮': { helmet: 2, beard: 1 },     // 文冠 + 短胡须
     '夏侯惇': { helmet: 1, beard: 1 },
     '司马懿': { helmet: 2, beard: 1 },
     '许褚': { helmet: 1, beard: 3 },
     '周瑜': { helmet: 2, beard: 0 },
     '甘宁': { helmet: 1, beard: 0 },
     '陆逊': { helmet: 2, beard: 0 },
+    '孙权': { helmet: 2, beard: 1 },
   };
-
   const special = specialGenerals[name];
   const helmetType = special ? special.helmet : (seed % 3);
   const beardType = special ? special.beard : (seed % 4);
   const faceWidth = 28 + (seed % 8);
 
-  const h = Math.floor(size * 80 / 60);
-  const scale = size / 60;
-
   return (
     <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
-      {/* 背景 */}
       <rect width="60" height="80" rx="4" fill="#2a1f0e" />
       <rect width="60" height="80" rx="4" fill={color} opacity="0.12" />
-      {/* 头部 */}
       <circle cx="30" cy="25" r={faceWidth / 2} fill="#f5deb3" stroke={color} strokeWidth="2" />
-      {/* 头盔/帽子 */}
-      {helmetType === 0 && (
-        <path d="M15,20 Q30,5 45,20" fill={color} opacity="0.9" />
-      )}
-      {helmetType === 1 && (
-        <>
-          <path d="M10,22 L30,8 L50,22" fill={color} stroke="#ffd700" strokeWidth="1" />
-          {/* 武盔顶饰 */}
-          <circle cx="30" cy="8" r="2.5" fill="#ffd700" />
-        </>
-      )}
-      {helmetType === 2 && (
-        <rect x="15" y="12" width="30" height="8" rx="2" fill={color} stroke="#ffd700" strokeWidth="0.5" />
-      )}
-      {/* 眼睛 */}
+      {helmetType === 0 && <path d="M15,20 Q30,5 45,20" fill={color} opacity="0.9" />}
+      {helmetType === 1 && (<><path d="M10,22 L30,8 L50,22" fill={color} stroke="#ffd700" strokeWidth="1" /><circle cx="30" cy="8" r="2.5" fill="#ffd700" /></>)}
+      {helmetType === 2 && <rect x="15" y="12" width="30" height="8" rx="2" fill={color} stroke="#ffd700" strokeWidth="0.5" />}
       <circle cx="24" cy="24" r="2" fill="#1a1a1a" />
       <circle cx="36" cy="24" r="2" fill="#1a1a1a" />
-      {/* 关羽特殊：丹凤眼 */}
-      {special?.extra === 'guanyu' && (
-        <>
-          <line x1="22" y1="22" x2="26" y2="22" stroke="#1a1a1a" strokeWidth="0.8" />
-          <line x1="34" y1="22" x2="38" y2="22" stroke="#1a1a1a" strokeWidth="0.8" />
-        </>
-      )}
-      {/* 胡须 */}
-      {beardType === 1 && (
-        <path d="M26,30 Q30,35 34,30" fill="none" stroke="#1a1a1a" strokeWidth="1" />
-      )}
-      {beardType === 2 && (
-        <>
-          <path d="M26,30 Q30,35 34,30" fill="none" stroke="#1a1a1a" strokeWidth="1" />
-          <path d="M28,31 Q30,40 32,31" fill="none" stroke="#1a1a1a" strokeWidth="0.8" />
-        </>
-      )}
-      {beardType === 3 && (
-        <>
-          <path d="M20,28 Q18,35 20,38" fill="none" stroke="#1a1a1a" strokeWidth="1" />
-          <path d="M40,28 Q42,35 40,38" fill="none" stroke="#1a1a1a" strokeWidth="1" />
-          <path d="M26,30 Q30,35 34,30" fill="none" stroke="#1a1a1a" strokeWidth="0.8" />
-        </>
-      )}
-      {/* 身体 */}
+      {beardType === 1 && <path d="M26,30 Q30,35 34,30" fill="none" stroke="#1a1a1a" strokeWidth="1" />}
+      {beardType === 2 && (<><path d="M26,30 Q30,35 34,30" fill="none" stroke="#1a1a1a" strokeWidth="1" /><path d="M28,31 Q30,40 32,31" fill="none" stroke="#1a1a1a" strokeWidth="0.8" /></>)}
+      {beardType === 3 && (<><path d="M20,28 Q18,35 20,38" fill="none" stroke="#1a1a1a" strokeWidth="1" /><path d="M40,28 Q42,35 40,38" fill="none" stroke="#1a1a1a" strokeWidth="1" /><path d="M26,30 Q30,35 34,30" fill="none" stroke="#1a1a1a" strokeWidth="0.8" /></>)}
       <rect x="15" y="38" width="30" height="30" rx="3" fill={color} />
-      {/* 腰带 */}
       <rect x="15" y="52" width="30" height="4" fill="#ffd700" opacity="0.8" />
-      {/* 领口V字 */}
       <path d="M25,38 L30,45 L35,38" fill="none" stroke="#ffd700" strokeWidth="0.8" opacity="0.6" />
-      {/* 名字 */}
-      <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">
-        {name.length > 3 ? name.slice(0, 3) : name}
-      </text>
+      <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">{name.length > 3 ? name.slice(0, 3) : name}</text>
     </svg>
   );
 };
+
+// ═══════════════════════════════════════════════════════════════
+// R16 特征化武将 SVG 头像（6位核心武将）
+// ═══════════════════════════════════════════════════════════════
+
+/** 刘备 — 双耳垂肩 + 仁者风范 + 双剑 */
+const LiuBeiPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill={color} opacity="0.1" />
+    {/* 双耳垂肩 — 大耳 */}
+    <ellipse cx="12" cy="24" rx="6" ry="9" fill="#f5deb3" stroke="#d4a96a" strokeWidth="0.5" />
+    <ellipse cx="48" cy="24" rx="6" ry="9" fill="#f5deb3" stroke="#d4a96a" strokeWidth="0.5" />
+    {/* 头部 — 仁者面容 */}
+    <circle cx="30" cy="22" r="14" fill="#f5deb3" stroke={color} strokeWidth="1.5" />
+    {/* 皇帝冠 */}
+    <rect x="18" y="8" width="24" height="6" rx="2" fill="#ffd700" stroke="#b8860b" strokeWidth="0.5" />
+    <rect x="22" y="5" width="4" height="5" rx="1" fill="#ffd700" />
+    <rect x="28" y="4" width="4" height="6" rx="1" fill="#ffd700" />
+    <rect x="34" y="5" width="4" height="5" rx="1" fill="#ffd700" />
+    {/* 慈眉善目 */}
+    <path d="M22,20 Q25,18 28,20" fill="none" stroke="#3d2b1f" strokeWidth="1" />
+    <path d="M32,20 Q35,18 38,20" fill="none" stroke="#3d2b1f" strokeWidth="1" />
+    <circle cx="25" cy="22" r="1.5" fill="#3d2b1f" />
+    <circle cx="35" cy="22" r="1.5" fill="#3d2b1f" />
+    {/* 仁和微笑 */}
+    <path d="M26,28 Q30,31 34,28" fill="none" stroke="#8b4513" strokeWidth="0.8" />
+    {/* 短须 */}
+    <path d="M27,29 Q30,33 33,29" fill="none" stroke="#3d2b1f" strokeWidth="0.6" />
+    {/* 身体 — 皇袍 */}
+    <rect x="14" y="36" width="32" height="32" rx="3" fill={color} opacity="0.9" />
+    <path d="M24,36 L30,44 L36,36" fill="none" stroke="#ffd700" strokeWidth="1" />
+    <rect x="14" y="52" width="32" height="3" fill="#ffd700" opacity="0.7" />
+    {/* 双剑 — 左右手各一把 */}
+    <line x1="10" y1="42" x2="6" y2="58" stroke="#c0c0c0" strokeWidth="1.5" />
+    <line x1="8" y1="42" x2="12" y2="58" stroke="#c0c0c0" strokeWidth="1.5" />
+    <rect x="5" y="41" width="8" height="2" rx="1" fill="#8b4513" />
+    <line x1="50" y1="42" x2="54" y2="58" stroke="#c0c0c0" strokeWidth="1.5" />
+    <line x1="52" y1="42" x2="48" y2="58" stroke="#c0c0c0" strokeWidth="1.5" />
+    <rect x="47" y="41" width="8" height="2" rx="1" fill="#8b4513" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">刘备</text>
+  </svg>
+);
+
+/** 关羽 — 红脸 + 长须 + 青龙偃月刀 */
+const GuanYuPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill={color} opacity="0.1" />
+    {/* 头部 — 红脸 */}
+    <circle cx="30" cy="22" r="14" fill="#c0392b" stroke="#8b0000" strokeWidth="1" />
+    <circle cx="30" cy="22" r="14" fill="#e74c3c" opacity="0.5" />
+    {/* 绿色头巾 */}
+    <path d="M16,18 Q30,8 44,18" fill="#228b22" stroke="#006400" strokeWidth="0.5" />
+    <rect x="18" y="12" width="24" height="6" rx="2" fill="#228b22" />
+    {/* 丹凤眼 — 半闭细长 */}
+    <line x1="20" y1="21" x2="28" y2="20" stroke="#1a1a1a" strokeWidth="1.5" />
+    <line x1="32" y1="20" x2="40" y2="21" stroke="#1a1a1a" strokeWidth="1.5" />
+    <circle cx="24" cy="21" r="1" fill="#1a1a1a" />
+    <circle cx="36" cy="21" r="1" fill="#1a1a1a" />
+    {/* 卧蚕眉 */}
+    <path d="M19,17 Q24,14 29,17" fill="none" stroke="#1a1a1a" strokeWidth="1.2" />
+    <path d="M31,17 Q36,14 41,17" fill="none" stroke="#1a1a1a" strokeWidth="1.2" />
+    {/* 长须飘逸 — 二尺美髯 */}
+    <path d="M24,28 Q22,40 20,50" fill="none" stroke="#1a1a1a" strokeWidth="0.8" />
+    <path d="M27,29 Q26,42 25,52" fill="none" stroke="#1a1a1a" strokeWidth="0.8" />
+    <path d="M30,30 Q30,44 30,55" fill="none" stroke="#1a1a1a" strokeWidth="0.8" />
+    <path d="M33,29 Q34,42 35,52" fill="none" stroke="#1a1a1a" strokeWidth="0.8" />
+    <path d="M36,28 Q38,40 40,50" fill="none" stroke="#1a1a1a" strokeWidth="0.8" />
+    {/* 身体 — 绿战袍 */}
+    <rect x="14" y="36" width="32" height="32" rx="3" fill="#228b22" />
+    <rect x="14" y="52" width="32" height="3" fill="#ffd700" opacity="0.7" />
+    <path d="M24,36 L30,44 L36,36" fill="none" stroke="#ffd700" strokeWidth="0.8" />
+    {/* 青龙偃月刀 — 右侧 */}
+    <line x1="50" y1="20" x2="52" y2="65" stroke="#8b8682" strokeWidth="2" />
+    <path d="M48,20 Q52,14 56,18 Q54,22 50,22" fill="#4682b4" stroke="#2c5f8a" strokeWidth="0.5" />
+    <circle cx="52" cy="20" r="1.5" fill="#ffd700" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">关羽</text>
+  </svg>
+);
+
+/** 张飞 — 黑脸 + 虎须 + 丈八蛇矛 */
+const ZhangFeiPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill={color} opacity="0.1" />
+    {/* 头部 — 黑脸 */}
+    <circle cx="30" cy="22" r="14" fill="#3d3d3d" stroke="#1a1a1a" strokeWidth="1" />
+    <circle cx="30" cy="22" r="14" fill="#4a4a4a" opacity="0.4" />
+    {/* 铁盔 */}
+    <path d="M14,20 L30,6 L46,20" fill="#2f4f4f" stroke="#696969" strokeWidth="0.8" />
+    <circle cx="30" cy="6" r="2" fill="#c0392b" />
+    {/* 豹头环眼 — 大圆眼 */}
+    <circle cx="24" cy="20" r="3" fill="#fff" stroke="#1a1a1a" strokeWidth="0.5" />
+    <circle cx="36" cy="20" r="3" fill="#fff" stroke="#1a1a1a" strokeWidth="0.5" />
+    <circle cx="24" cy="20" r="1.5" fill="#1a1a1a" />
+    <circle cx="36" cy="20" r="1.5" fill="#1a1a1a" />
+    {/* 粗眉 */}
+    <rect x="20" y="15" width="10" height="2.5" rx="1" fill="#1a1a1a" />
+    <rect x="32" y="15" width="10" height="2.5" rx="1" fill="#1a1a1a" />
+    {/* 大嘴 */}
+    <path d="M24,28 Q30,32 36,28" fill="none" stroke="#1a1a1a" strokeWidth="1" />
+    {/* 虎须 — 向两侧炸开 */}
+    <line x1="16" y1="24" x2="10" y2="20" stroke="#1a1a1a" strokeWidth="0.7" />
+    <line x1="16" y1="26" x2="9" y2="25" stroke="#1a1a1a" strokeWidth="0.7" />
+    <line x1="16" y1="28" x2="10" y2="30" stroke="#1a1a1a" strokeWidth="0.7" />
+    <line x1="44" y1="24" x2="50" y2="20" stroke="#1a1a1a" strokeWidth="0.7" />
+    <line x1="44" y1="26" x2="51" y2="25" stroke="#1a1a1a" strokeWidth="0.7" />
+    <line x1="44" y1="28" x2="50" y2="30" stroke="#1a1a1a" strokeWidth="0.7" />
+    {/* 身体 — 黑甲 */}
+    <rect x="14" y="36" width="32" height="32" rx="3" fill="#2f4f4f" />
+    <rect x="14" y="52" width="32" height="3" fill="#ffd700" opacity="0.6" />
+    {/* 丈八蛇矛 — 左侧 */}
+    <line x1="10" y1="18" x2="8" y2="65" stroke="#8b8682" strokeWidth="2" />
+    <path d="M8,16 L10,10 L12,16" fill="#c0392b" stroke="#8b0000" strokeWidth="0.5" />
+    <path d="M7,16 Q10,12 13,16" fill="none" stroke="#ffd700" strokeWidth="0.5" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">张飞</text>
+  </svg>
+);
+
+/** 诸葛亮 — 羽扇纶巾 + 仙风道骨 */
+const ZhuGeLiangPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill="#4169e1" opacity="0.08" />
+    {/* 头部 — 清秀面容 */}
+    <circle cx="30" cy="22" r="13" fill="#ffe0bd" stroke="#4169e1" strokeWidth="1.5" />
+    {/* 纶巾（头巾） */}
+    <path d="M17,16 Q30,6 43,16" fill="#f5f5dc" stroke="#8b7355" strokeWidth="0.8" />
+    <rect x="20" y="10" width="20" height="6" rx="2" fill="#f5f5dc" stroke="#8b7355" strokeWidth="0.5" />
+    {/* 纶巾飘带 */}
+    <path d="M17,16 Q14,20 16,24" fill="none" stroke="#f5f5dc" strokeWidth="1" />
+    <path d="M43,16 Q46,20 44,24" fill="none" stroke="#f5f5dc" strokeWidth="1" />
+    {/* 智慧之眼 — 明亮有神 */}
+    <path d="M22,20 Q25,18 28,20" fill="none" stroke="#2c1810" strokeWidth="0.8" />
+    <path d="M32,20 Q35,18 38,20" fill="none" stroke="#2c1810" strokeWidth="0.8" />
+    <circle cx="25" cy="20.5" r="1.5" fill="#2c1810" />
+    <circle cx="35" cy="20.5" r="1.5" fill="#2c1810" />
+    {/* 仙风微笑 */}
+    <path d="M27,27 Q30,29 33,27" fill="none" stroke="#8b4513" strokeWidth="0.6" />
+    {/* 飘逸短须 */}
+    <path d="M28,28 Q30,32 32,28" fill="none" stroke="#2c1810" strokeWidth="0.5" />
+    {/* 智慧光环 */}
+    <circle cx="30" cy="22" r="16" fill="none" stroke="#ffd700" strokeWidth="0.3" strokeDasharray="2,2" opacity="0.5" />
+    {/* 身体 — 鹤氅 */}
+    <rect x="14" y="35" width="32" height="34" rx="4" fill="#f5f5dc" opacity="0.9" />
+    <rect x="14" y="35" width="32" height="34" rx="4" fill="#4169e1" opacity="0.15" />
+    <path d="M24,35 L30,43 L36,35" fill="none" stroke="#4169e1" strokeWidth="0.8" />
+    <rect x="14" y="52" width="32" height="3" fill="#4169e1" opacity="0.4" />
+    {/* 羽扇 — 右手持 */}
+    <ellipse cx="50" cy="48" rx="7" ry="10" fill="#fff8dc" stroke="#8b7355" strokeWidth="0.5" opacity="0.9" />
+    <line x1="50" y1="38" x2="50" y2="58" stroke="#8b7355" strokeWidth="0.8" />
+    <line x1="46" y1="42" x2="54" y2="42" stroke="#8b7355" strokeWidth="0.4" />
+    <line x1="45" y1="46" x2="55" y2="46" stroke="#8b7355" strokeWidth="0.4" />
+    <line x1="46" y1="50" x2="54" y2="50" stroke="#8b7355" strokeWidth="0.4" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">诸葛亮</text>
+  </svg>
+);
+
+/** 赵云 — 白马银枪 + 英姿飒爽 */
+const ZhaoYunPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill="#4169e1" opacity="0.08" />
+    {/* 头部 — 英俊面庞 */}
+    <circle cx="30" cy="22" r="13" fill="#ffdbac" stroke="#c0c0c0" strokeWidth="1.5" />
+    {/* 银盔 */}
+    <path d="M15,20 L30,7 L45,20" fill="#c0c0c0" stroke="#808080" strokeWidth="0.8" />
+    <circle cx="30" cy="7" r="2" fill="#4169e1" />
+    <line x1="30" y1="7" x2="30" y2="4" stroke="#ffd700" strokeWidth="0.8" />
+    <circle cx="30" cy="3.5" r="1" fill="#ffd700" />
+    {/* 英气剑眉 */}
+    <path d="M19,17 Q24,13 29,17" fill="none" stroke="#1a1a1a" strokeWidth="1.2" />
+    <path d="M31,17 Q36,13 41,17" fill="none" stroke="#1a1a1a" strokeWidth="1.2" />
+    {/* 星目 */}
+    <circle cx="24" cy="20" r="1.8" fill="#1a1a1a" />
+    <circle cx="36" cy="20" r="1.8" fill="#1a1a1a" />
+    <circle cx="24.5" cy="19.5" r="0.5" fill="#fff" />
+    <circle cx="36.5" cy="19.5" r="0.5" fill="#fff" />
+    {/* 坚毅嘴角 */}
+    <line x1="26" y1="28" x2="34" y2="28" stroke="#8b4513" strokeWidth="0.8" />
+    {/* 身体 — 银甲 */}
+    <rect x="14" y="35" width="32" height="34" rx="3" fill="#c0c0c0" />
+    <rect x="14" y="35" width="32" height="34" rx="3" fill="#4169e1" opacity="0.1" />
+    <path d="M24,35 L30,43 L36,35" fill="none" stroke="#4169e1" strokeWidth="0.8" />
+    <rect x="14" y="52" width="32" height="3" fill="#ffd700" opacity="0.6" />
+    {/* 龙胆枪 — 右手 */}
+    <line x1="52" y1="12" x2="52" y2="68" stroke="#b8860b" strokeWidth="2" />
+    <path d="M49,12 L52,6 L55,12" fill="#c0c0c0" stroke="#808080" strokeWidth="0.5" />
+    <circle cx="52" cy="6" r="1.5" fill="#ffd700" />
+    {/* 白马暗示 — 底部白色弧形 */}
+    <path d="M10,68 Q30,62 50,68" fill="none" stroke="#f0f0f0" strokeWidth="1.5" opacity="0.4" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">赵云</text>
+  </svg>
+);
+
+/** 曹操 — 挟天子霸气 + 倚天剑 */
+const CaoCaoPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill={color} opacity="0.1" />
+    {/* 头部 — 白净面容 */}
+    <circle cx="30" cy="22" r="13" fill="#fff8dc" stroke={color} strokeWidth="1.5" />
+    {/* 丞相冠/冕旒 */}
+    <rect x="17" y="8" width="26" height="7" rx="2" fill="#191970" stroke="#ffd700" strokeWidth="0.8" />
+    <rect x="20" y="5" width="3" height="5" fill="#ffd700" />
+    <rect x="25" y="4" width="3" height="6" fill="#ffd700" />
+    <rect x="30" y="3" width="3" height="7" fill="#ffd700" />
+    <rect x="35" y="4" width="3" height="6" fill="#ffd700" />
+    <rect x="40" y="5" width="3" height="5" fill="#ffd700" />
+    {/* 冕旒珠帘 */}
+    <circle cx="22" cy="13" r="0.8" fill="#ffd700" opacity="0.6" />
+    <circle cx="27" cy="13" r="0.8" fill="#ffd700" opacity="0.6" />
+    <circle cx="33" cy="13" r="0.8" fill="#ffd700" opacity="0.6" />
+    <circle cx="38" cy="13" r="0.8" fill="#ffd700" opacity="0.6" />
+    {/* 锐利眼神 — 枭雄之目 */}
+    <path d="M20,20 Q24,18 28,21" fill="none" stroke="#1a1a1a" strokeWidth="1" />
+    <path d="M32,21 Q36,18 40,20" fill="none" stroke="#1a1a1a" strokeWidth="1" />
+    <circle cx="24" cy="21" r="1.8" fill="#1a1a1a" />
+    <circle cx="36" cy="21" r="1.8" fill="#1a1a1a" />
+    {/* 威严嘴角 — 似笑非笑 */}
+    <path d="M25,28 Q30,30 35,28" fill="none" stroke="#5d4037" strokeWidth="0.8" />
+    {/* 短须 */}
+    <path d="M27,29 Q30,32 33,29" fill="none" stroke="#1a1a1a" strokeWidth="0.5" />
+    {/* 身体 — 深蓝紫袍 */}
+    <rect x="14" y="35" width="32" height="34" rx="3" fill="#191970" />
+    <path d="M24,35 L30,43 L36,35" fill="none" stroke="#ffd700" strokeWidth="1" />
+    <rect x="14" y="52" width="32" height="3" fill="#ffd700" opacity="0.7" />
+    {/* 倚天剑 — 右侧 */}
+    <line x1="50" y1="25" x2="50" y2="65" stroke="#c0c0c0" strokeWidth="1.8" />
+    <path d="M48,25 L50,18 L52,25" fill="#ffd700" stroke="#b8860b" strokeWidth="0.5" />
+    <rect x="46" y="24" width="8" height="2" rx="1" fill="#8b4513" />
+    {/* 霸气气场 */}
+    <circle cx="30" cy="22" r="17" fill="none" stroke="#ffd700" strokeWidth="0.3" strokeDasharray="3,3" opacity="0.4" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">曹操</text>
+  </svg>
+);
 
 // ═══════════════════════════════════════════════════════════════
 // 武将程序化立绘组件（基于 Canvas）
@@ -1666,7 +2105,7 @@ function getGeneralEnhanced(id: string): GeneralEnhancedData {
   };
 }
 
-/** 武将卡片组件 — 卡片化展示武将信息（含技能图标 + 稀有度视觉区分 + 悬停浮层详情卡） */
+/** 武将卡片组件 — R16 深度升级：星级 + 阵营色条 + 属性简览 + 技能 + 详情弹窗 */
 const GeneralCard = ({
   general,
   isSelected,
@@ -1678,8 +2117,8 @@ const GeneralCard = ({
   onSelect: () => void;
   onRecruit?: () => void;
 }) => {
-  const factionLabels: Record<string, string> = { wei: '魏', shu: '蜀', wu: '吴' };
-  const factionColors: Record<string, string> = { wei: '#1565C0', shu: '#C62828', wu: '#2E7D32', other: '#616161' };
+  const factionLabels: Record<string, string> = { wei: '魏', shu: '蜀', wu: '吴', other: '群' };
+  const factionColors: Record<string, string> = { wei: '#1E6FBE', shu: '#C41E3A', wu: '#2E8B57', other: '#8B7355' };
   const color = factionColors[general.faction] || factionColors.other;
   const rarityColor = RARITY_COLORS[general.rarity] || '#c9a96e';
   const enhanced = getGeneralEnhanced(general.id);
@@ -1689,11 +2128,14 @@ const GeneralCard = ({
     common: '普通', uncommon: '精良', rare: '稀有', epic: '史诗', legendary: '传说', mythic: '神话',
   };
 
-  // 稀有度对应的边框粗细（普通1px/稀有2px/传说3px+发光）
+  // 稀有度对应的边框粗细
   const rarityBorderWidth: Record<string, number> = {
     common: 1, uncommon: 1, rare: 2, epic: 2, legendary: 3, mythic: 3,
   };
   const portraitBorderWidth = rarityBorderWidth[general.rarity] ?? 1;
+
+  // 星级（1-5星，基于稀有度）
+  const stars = RARITY_STARS[general.rarity] ?? 1;
 
   // 一句话简介映射
   const generalTagline: Record<string, string> = {
@@ -1717,6 +2159,9 @@ const GeneralCard = ({
       style={{ borderColor: general.unlocked ? color : 'rgba(139,115,85,0.2)', '--faction-color': color } as React.CSSProperties}
       onClick={() => general.unlocked && onSelect()}
     >
+      {/* R16: 左侧阵营色竖条 */}
+      <div className="tk-general-card-faction-stripe" style={{ background: general.unlocked ? `linear-gradient(180deg, ${color}, ${color}88)` : 'rgba(139,115,85,0.15)' }} />
+
       {/* 稀有度标签 — 右上角 */}
       {general.unlocked && (
         <span
@@ -1730,6 +2175,7 @@ const GeneralCard = ({
           {rarityLabels[general.rarity] || general.rarity}
         </span>
       )}
+
       {/* 头像 — 势力色圆形边框 + 外圈光晕 */}
       <div
         className="tk-general-card-portrait"
@@ -1744,7 +2190,8 @@ const GeneralCard = ({
           <span className="tk-general-status-badge tk-general-status-badge--standby">待命</span>
         )}
       </div>
-      {/* 名称 */}
+
+      {/* 名称 + 信息区 */}
       <div className="tk-general-card-info">
         <div className="tk-general-card-header">
           <span className="tk-general-card-name" style={{ color: general.unlocked ? rarityColor : '#888' }}>
@@ -1756,14 +2203,20 @@ const GeneralCard = ({
             <span className="tk-general-card-rarity">[{rarityLabels[general.rarity] || general.rarity}]</span>
           )}
         </div>
-        {/* 势力色标签 — 直接显示 */}
+
+        {/* R16: 阵营标签 + 星级显示 */}
         {general.unlocked && (
-          <div className="tk-general-card-faction-badge" style={{
-            background: `${color}20`,
-            color: color,
-            borderColor: `${color}50`,
-          }}>
-            {factionLabels[general.faction] || general.faction.toUpperCase()}
+          <div className="tk-general-card-faction-row">
+            <div className="tk-general-card-faction-badge" style={{
+              background: `${color}20`,
+              color: color,
+              borderColor: `${color}50`,
+            }}>
+              {factionLabels[general.faction] || general.faction.toUpperCase()}
+            </div>
+            <span className="tk-general-card-stars" style={{ color: rarityColor }}>
+              {'★'.repeat(stars)}{'☆'.repeat(5 - stars)}
+            </span>
           </div>
         )}
         {!general.unlocked && (
@@ -1771,18 +2224,52 @@ const GeneralCard = ({
             {factionLabels[general.faction] || general.faction.toUpperCase()}·武将
           </div>
         )}
+
+        {/* R16: 核心属性简览（武力/智力/统帅 — 小数字+颜色条） */}
+        {general.unlocked && (
+          <div className="tk-general-card-attr-preview">
+            <div className="tk-attr-mini" title="武力">
+              <span className="tk-attr-mini-label">武</span>
+              <div className="tk-attr-mini-bar">
+                <div className="tk-attr-mini-fill" style={{ width: `${general.stats.attack}%`, background: `linear-gradient(90deg, #b71c1c, #e53935)` }} />
+              </div>
+              <span className="tk-attr-mini-val">{general.stats.attack}</span>
+            </div>
+            <div className="tk-attr-mini" title="智力">
+              <span className="tk-attr-mini-label">智</span>
+              <div className="tk-attr-mini-bar">
+                <div className="tk-attr-mini-fill" style={{ width: `${general.stats.intelligence}%`, background: `linear-gradient(90deg, #0d47a1, #1e88e5)` }} />
+              </div>
+              <span className="tk-attr-mini-val">{general.stats.intelligence}</span>
+            </div>
+            <div className="tk-attr-mini" title="统帅">
+              <span className="tk-attr-mini-label">统</span>
+              <div className="tk-attr-mini-bar">
+                <div className="tk-attr-mini-fill" style={{ width: `${general.stats.command}%`, background: `linear-gradient(90deg, #1b5e20, #43a047)` }} />
+              </div>
+              <span className="tk-attr-mini-val">{general.stats.command}</span>
+            </div>
+          </div>
+        )}
+
         {/* 一句话简介 */}
         {general.unlocked && generalTagline[general.id] && (
           <div className="tk-general-card-tagline">{generalTagline[general.id]}</div>
         )}
-        {/* 核心技能名称 — 卡片上直接显示 */}
+
+        {/* R16: 核心技能名称（显示1-2个） */}
         {general.unlocked && enhanced.skills.length > 0 && (
-          <div className="tk-general-card-skill-preview">
-            <SkillIcon skillType={enhanced.skills[0].type} size={10} />
-            <span>{enhanced.skills[0].name}</span>
+          <div className="tk-general-card-skills-preview">
+            {enhanced.skills.slice(0, 2).map((skill, i) => (
+              <span key={i} className="tk-general-card-skill-chip">
+                <SkillIcon skillType={skill.type} size={9} />
+                {skill.name}
+              </span>
+            ))}
           </div>
         )}
-        {/* 历史标签 — 卡片上直接显示第一个 */}
+
+        {/* 历史标签 */}
         {general.unlocked && enhanced.historyEvents && enhanced.historyEvents.length > 0 && (
           <div className="tk-general-card-history-tag">
             📜 {enhanced.historyEvents[0]}
@@ -1792,7 +2279,6 @@ const GeneralCard = ({
         {/* 悬停展开详情区域（卡片内） */}
         {general.unlocked && (
           <div className="tk-general-card-hover-info">
-            {/* 关键属性条 */}
             <div className="tk-hover-stat-row">
               <span className="tk-hover-stat-label">武</span>
               <div className="tk-hover-stat-track">
@@ -1814,7 +2300,6 @@ const GeneralCard = ({
               </div>
               <span className="tk-hover-stat-value">{general.stats.command}</span>
             </div>
-            {/* 技能图标列表 */}
             {enhanced.skills.length > 0 && (
               <div className="tk-hover-skills">
                 {enhanced.skills.map((skill, i) => (
@@ -1827,11 +2312,10 @@ const GeneralCard = ({
           </div>
         )}
 
-        {/* ── 悬停浮层详情卡（Tooltip 风格，古风边框 + 半透明背景） ── */}
+        {/* ── 悬停浮层详情卡（Tooltip 风格 — R16 增强：含魅力属性 + 装备概览） ── */}
         {general.unlocked && (
           <div className="tk-general-hover-tooltip">
             <div className="tk-general-hover-tooltip-inner">
-              {/* 浮层标题 */}
               <div className="tk-general-tooltip-title" style={{ color: rarityColor }}>
                 {general.name}
                 <span className="tk-general-tooltip-level">Lv.{general.level}</span>
@@ -1839,11 +2323,13 @@ const GeneralCard = ({
                   [{rarityLabels[general.rarity] || general.rarity}]
                 </span>
               </div>
-              {/* 势力 + 简介 */}
               <div className="tk-general-tooltip-faction" style={{ color }}>
                 {factionLabels[general.faction] || general.faction.toUpperCase()} · {generalTagline[general.id] || '武将'}
               </div>
-              {/* 属性数值条（武力/智力/统帅/政治） */}
+              {/* R16: 星级显示 */}
+              <div className="tk-tooltip-stars" style={{ color: rarityColor }}>
+                {'★'.repeat(stars)}{'☆'.repeat(5 - stars)}
+              </div>
               <div className="tk-general-tooltip-stats">
                 <div className="tk-tooltip-stat-row">
                   <span className="tk-tooltip-stat-label">武力</span>
@@ -1874,7 +2360,6 @@ const GeneralCard = ({
                   <span className="tk-tooltip-stat-value">{general.stats.defense}</span>
                 </div>
               </div>
-              {/* 主要技能 */}
               {enhanced.skills.length > 0 && (
                 <div className="tk-general-tooltip-skills">
                   <div className="tk-general-tooltip-skills-title">◆ 技能</div>
@@ -1887,6 +2372,23 @@ const GeneralCard = ({
                   ))}
                 </div>
               )}
+              {/* R16: 装备概览 */}
+              {(() => {
+                const eq = enhanced.equipment;
+                const hasEquip = eq.weapon || eq.armor || eq.mount;
+                if (!hasEquip) return null;
+                return (
+                  <div className="tk-tooltip-equip-preview">
+                    {eq.weapon && <span className="tk-tooltip-equip-item">⚔️{eq.weapon}</span>}
+                    {eq.armor && <span className="tk-tooltip-equip-item">🛡️{eq.armor}</span>}
+                    {eq.mount && <span className="tk-tooltip-equip-item">🐎{eq.mount}</span>}
+                  </div>
+                );
+              })()}
+              {/* R16: 历史典故一句话 */}
+              {enhanced.bio && (
+                <div className="tk-tooltip-bio-one">{enhanced.bio.slice(0, 30)}…</div>
+              )}
             </div>
           </div>
         )}
@@ -1898,6 +2400,11 @@ const GeneralCard = ({
           </button>
         )}
       </div>
+
+      {/* R16: 底部阵营色渐变 */}
+      {general.unlocked && (
+        <div className="tk-general-card-bottom-gradient" style={{ background: `linear-gradient(0deg, ${color}30, transparent)` }} />
+      )}
     </div>
   );
 };
@@ -2099,6 +2606,21 @@ export default function ThreeKingdomsPixiGame() {
   // ─── 资源飘字追踪 ─────────────────────────────────────────
   const prevResourcesRef = useRef<Record<string, number>>({});
   const [changedResources, setChangedResources] = useState<Set<string>>(new Set());
+  const [resourceFloats, setResourceFloats] = useState<Array<{
+    id: number; text: string; colorClass: string; resourceIndex: number;
+  }>>([]);
+  const resourceFloatIdRef = useRef(0);
+
+  /** 资源类型 → 飘字颜色 class 映射 */
+  const RESOURCE_FLOAT_COLOR_MAP: Record<string, string> = {
+    gold: 'tk-r16-resource-float-text--gold',
+    grain: 'tk-r16-resource-float-text--grain',
+    troops: 'tk-r16-resource-float-text--troops',
+    iron: 'tk-r16-resource-float-text--iron',
+    wood: 'tk-r16-resource-float-text--wood',
+    morale: 'tk-r16-resource-float-text--morale',
+  };
+
   useEffect(() => {
     const prev = prevResourcesRef.current;
     const curr: Record<string, number> = {};
@@ -2111,6 +2633,20 @@ export default function ThreeKingdomsPixiGame() {
         // 资源增加了，显示飘字（在资源栏对应位置附近）
         showFloatText(`${r.icon}+${fmt(diff)}`, 0, 0);
         changed.add(r.id);
+
+        // R16: 资源专属飘字动画
+        const rIndex = resources.indexOf(r);
+        const floatId = ++resourceFloatIdRef.current;
+        const colorClass = RESOURCE_FLOAT_COLOR_MAP[r.id] || 'tk-r16-resource-float-text--gold';
+        setResourceFloats(prev => [...prev, {
+          id: floatId,
+          text: `+${fmt(diff)}`,
+          colorClass,
+          resourceIndex: rIndex,
+        }]);
+        setTimeout(() => {
+          setResourceFloats(prev => prev.filter(f => f.id !== floatId));
+        }, 1800);
       }
     }
     prevResourcesRef.current = curr;
@@ -2855,8 +3391,10 @@ export default function ThreeKingdomsPixiGame() {
               onMouseEnter={e => setTooltip({text:`${r.name}: ${fmt(r.amount)}${r.perSecond > 0 ? ` (+${fmt(r.perSecond)}/秒)` : ''}`,x:e.clientX,y:e.clientY})}
               onMouseLeave={() => setTooltip(null)}
             >
-              <ResourceIcon resourceId={r.id} size={18} />
-              <span className={`tk-resource-value-pulse ${changedResources.has(r.id) ? 'tk-resource-value-updated' : ''}`} style={{ fontWeight: 'bold' }}>{fmt(r.amount)}</span>
+              <span className={r.perSecond > 0 ? 'tk-r16-resource-icon-active' : undefined}>
+                <ResourceIcon resourceId={r.id} size={18} />
+              </span>
+              <span className={`tk-resource-value-pulse ${changedResources.has(r.id) ? 'tk-resource-value-updated tk-r16-value-updated' : ''}`} style={{ fontWeight: 'bold' }}>{fmt(r.amount)}</span>
               {r.perSecond > 0 && (
                 <span style={{ fontSize: 10, color: COLOR_THEME.accentGreen }}>
                   +{fmt(r.perSecond)}/s
@@ -2967,6 +3505,22 @@ export default function ThreeKingdomsPixiGame() {
             {ft.text}
           </div>
         ))}
+
+        {/* R16: 资源专属飘字 — 资源变化时在对应图标上方显示 */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 25 }}>
+          {resourceFloats.map(rf => (
+            <div
+              key={rf.id}
+              className={`tk-r16-resource-float-text ${rf.colorClass}`}
+              style={{
+                left: `${Math.min(10 + rf.resourceIndex * 80, 85)}%`,
+                top: '28px',
+              }}
+            >
+              {rf.text}
+            </div>
+          ))}
+        </div>
 
         {/* 定时资源飘字动画（每隔3-5秒随机显示） */}
         <div className="tk-resource-float-container">
@@ -3120,7 +3674,7 @@ export default function ThreeKingdomsPixiGame() {
                 return (
                   <div
                     key={b.id}
-                    className={flashBuildingId === b.id ? 'tk-building-flash' : undefined}
+                    className={`${flashBuildingId === b.id ? 'tk-r16-building-upgrading tk-r16-building-levelup' : ''} tk-r16-building-card`}
                     onClick={() => handleBuildingClick(b.id)}
                     style={{
                       padding: '8px 10px', marginBottom: 6,
@@ -3541,7 +4095,7 @@ export default function ThreeKingdomsPixiGame() {
 
           {/* ═══════════ 主界面场景面板（地图场景中央概览） ═══════════ */}
           {scene === 'map' && (
-            <div className="tk-scene-panel tk-panel-animate-in" key={`panel-map-${activeTab}`}>
+            <div className="tk-scene-panel tk-panel-animate-in tk-r16-panel-enter" key={`panel-map-${activeTab}`}>
               {/* 城池概览（带呼吸动画） */}
               <div className="tk-scene-city tk-scene-city--breathe">
                 <div className="tk-scene-city-icon">🏰</div>
@@ -3674,7 +4228,7 @@ export default function ThreeKingdomsPixiGame() {
 
           {/* 声望转生浮层 */}
           {scene === 'prestige' && prestigeData && (
-            <div className="tk-panel-animate-in" key="panel-prestige" style={{
+            <div className="tk-panel-animate-in tk-r16-panel-enter" key="panel-prestige" style={{
               position: 'absolute', top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
               background: 'rgba(0,0,0,0.75)',
@@ -3738,7 +4292,7 @@ export default function ThreeKingdomsPixiGame() {
 
           {/* ═══════════ 征战关卡面板 ═══════════ */}
           {scene === 'stage-info' && (
-            <div className="tk-panel-animate-in" key="panel-stage-info">
+            <div className="tk-panel-animate-in tk-r16-panel-enter" key="panel-stage-info">
             <CampaignPanel
               engine={engineRef.current}
               renderState={renderState}
@@ -3798,7 +4352,7 @@ export default function ThreeKingdomsPixiGame() {
             const totalNodes = nodes.length;
 
             return (
-              <div className="tk-tech-overlay tk-panel-animate-in" key="panel-tech-tree" style={{
+              <div className="tk-tech-overlay tk-panel-animate-in tk-r16-panel-enter" key="panel-tech-tree" style={{
                 position: 'absolute', top: '50%', left: '50%',
                 transform: 'translate(-50%, -50%)',
                 background: 'rgba(35, 22, 10, 0.75)',
@@ -4183,7 +4737,7 @@ export default function ThreeKingdomsPixiGame() {
                                         boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
                                       }}>
                                         <div
-                                          className="tk-tech-progress-bar--researching tk-tech-progress-fill"
+                                          className="tk-r16-tech-progress-researching"
                                           style={{
                                             width: `${(node.progress * 100).toFixed(0)}%`,
                                             height: '100%', borderRadius: 2,
