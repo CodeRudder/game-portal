@@ -48,116 +48,118 @@ export interface TerrainVisual {
  */
 export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
   // ── 三国古风色彩体系 ──────────────────────────────────────
-  // 色彩灵感来自水墨画与古典配色：
-  // 墨绿（草地）、深褐（山地）、靛蓝（水域）、暗金（城池）
+  // 色彩设计确保10种地形在视觉上有明显区分：
+  // 浅绿（平原）、灰褐（山地）、深绿（森林）、亮蓝（水域）
+  // 土黄（道路）、灰色（城池）、黄绿（村庄）、深灰蓝（关卡）
+  // 沙黄（荒漠）、冷白（雪地）
   plain: {
-    baseColor: 0x4a6b3a,       // 墨绿 — 江南水乡
-    lightColor: 0x5a7b4a,
-    darkColor: 0x3a5b2a,
+    baseColor: 0x90c695,       // 浅绿 — 江南水乡（高亮度，明显区分于森林深绿）
+    lightColor: 0xa0d6a5,
+    darkColor: 0x70a675,
     pattern: 'grass',
     label: '平原',
     renderPriority: 3,
     transitionWidth: 8,
-    transitionColor: 0x5a7b4a,
+    transitionColor: 0x70a675,
     transitionAlpha: 0.3,
   },
   mountain: {
-    baseColor: 0x6b5a4a,       // 深褐 — 秦岭蜀道
-    lightColor: 0x8b7a6a,
-    darkColor: 0x4b3a2a,
+    baseColor: 0x8b7355,       // 灰褐 — 秦岭蜀道（明显偏灰，区别于道路土黄）
+    lightColor: 0xa08b6a,
+    darkColor: 0x6b5335,
     pattern: 'rocks',
     label: '山地',
     renderPriority: 6,
     transitionWidth: 12,
-    transitionColor: 0x4b3a2a,
+    transitionColor: 0x6b5335,
     transitionAlpha: 0.5,
   },
   forest: {
-    baseColor: 0x2a4a1e,       // 浓墨绿 — 南蛮密林
-    lightColor: 0x3a6a2e,
-    darkColor: 0x1a3a0e,
+    baseColor: 0x2d5a27,       // 深绿 — 南蛮密林（与平原浅绿形成强烈对比）
+    lightColor: 0x3d7a37,
+    darkColor: 0x1d3a17,
     pattern: 'trees',
     label: '森林',
     renderPriority: 5,
     transitionWidth: 10,
-    transitionColor: 0x1a3a0e,
+    transitionColor: 0x1d3a17,
     transitionAlpha: 0.4,
   },
   water: {
-    baseColor: 0x2a5070,       // 深靛蓝 — 长江天堑
-    lightColor: 0x4a7090,
-    darkColor: 0x1a3050,
+    baseColor: 0x4a90d9,       // 亮蓝 — 长江天堑（高饱和度蓝色，一目了然）
+    lightColor: 0x6ab0f9,
+    darkColor: 0x2a70b9,
     pattern: 'ripples',
     label: '水域',
     renderPriority: 1,
     transitionWidth: 14,
-    transitionColor: 0x1a3050,
+    transitionColor: 0x2a70b9,
     transitionAlpha: 0.5,
   },
   road: {
-    baseColor: 0x7a6345,       // 土黄 — 黄土古道
-    lightColor: 0x8a7355,
-    darkColor: 0x5a4325,
+    baseColor: 0xc4a35a,       // 土黄 — 黄土古道（高亮度暖色，明显区分于山地灰褐）
+    lightColor: 0xd4b36a,
+    darkColor: 0xa4833a,
     pattern: 'solid',
     label: '道路',
     renderPriority: 4,
     transitionWidth: 4,
-    transitionColor: 0x5a4325,
+    transitionColor: 0xa4833a,
     transitionAlpha: 0.3,
   },
   city: {
-    baseColor: 0xb8952e,       // 暗金 — 繁华都城
-    lightColor: 0xc8a53e,
-    darkColor: 0x8b7020,
+    baseColor: 0xa0a0a0,       // 灰色 — 繁华都城（中性灰，与其他暖色/冷色形成对比）
+    lightColor: 0xb8b8b8,
+    darkColor: 0x787878,
     pattern: 'crosshatch',
     label: '城市',
     renderPriority: 8,
     transitionWidth: 6,
-    transitionColor: 0x8b7020,
+    transitionColor: 0x787878,
     transitionAlpha: 0.3,
   },
   village: {
-    baseColor: 0x5a7a4a,       // 浅墨绿 — 田园牧歌
-    lightColor: 0x6a8a5a,
-    darkColor: 0x4a6a3a,
+    baseColor: 0x50a0a0,       // 青绿 — 田园牧歌（青蓝色调，与水域蓝、平原绿均不同）
+    lightColor: 0x70b0b0,
+    darkColor: 0x308080,
     pattern: 'checker',
     label: '村庄',
     renderPriority: 7,
     transitionWidth: 6,
-    transitionColor: 0x4a6a3a,
+    transitionColor: 0x308080,
     transitionAlpha: 0.3,
   },
   fortress: {
-    baseColor: 0x5a4a3a,       // 灰石褐 — 雄关漫道
-    lightColor: 0x6a5a4a,
-    darkColor: 0x3a2a1a,
+    baseColor: 0x8a5a7a,       // 紫褐 — 雄关漫道（带明显紫调，与山地灰褐、城池灰色区分）
+    lightColor: 0xaa7a9a,
+    darkColor: 0x6a3a5a,
     pattern: 'crosshatch',
     label: '关卡',
     renderPriority: 9,
     transitionWidth: 8,
-    transitionColor: 0x3a2a1a,
+    transitionColor: 0x6a3a5a,
     transitionAlpha: 0.4,
   },
   desert: {
-    baseColor: 0xc4a35a,       // 沙黄 — 大漠孤烟
-    lightColor: 0xd4b36a,
-    darkColor: 0xa4833a,
+    baseColor: 0xe0c070,       // 亮沙黄 — 大漠孤烟（高亮度，与道路土黄区分：更亮更暖）
+    lightColor: 0xf0d080,
+    darkColor: 0xc0a050,
     pattern: 'dunes',
     label: '荒漠',
     renderPriority: 2,
     transitionWidth: 8,
-    transitionColor: 0xa4833a,
+    transitionColor: 0xc0a050,
     transitionAlpha: 0.3,
   },
   snow: {
-    baseColor: 0xd8dce6,       // 冷灰白 — 北国冰原
-    lightColor: 0xe8ecf6,
-    darkColor: 0xb8bcc6,
+    baseColor: 0xe8ecf6,       // 冷白 — 北国冰原（最亮色，一眼可辨）
+    lightColor: 0xf0f4ff,
+    darkColor: 0xc8cce0,
     pattern: 'snowflakes',
     label: '雪地',
     renderPriority: 7,
     transitionWidth: 8,
-    transitionColor: 0xb8bcc6,
+    transitionColor: 0xc8cce0,
     transitionAlpha: 0.3,
   },
 };

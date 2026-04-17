@@ -1763,6 +1763,224 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+ * 科技树动画反馈增强 — 分支脉冲 / 研究旋转 / Tooltip / 流动线
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 1. 分支专属脉冲发光（军事红/经济绿/文化蓝） ─── */
+
+/* 军事分支 — 红色脉冲 */
+@keyframes tk-tech-pulse-military {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(168,82,65,0.3), 0 0 12px rgba(168,82,65,0.15);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(168,82,65,0.55), 0 0 22px rgba(168,82,65,0.3), 0 0 34px rgba(168,82,65,0.12);
+  }
+}
+
+/* 经济分支 — 绿色脉冲 */
+@keyframes tk-tech-pulse-economy {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(74,122,58,0.3), 0 0 12px rgba(74,122,58,0.15);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(74,122,58,0.55), 0 0 22px rgba(74,122,58,0.3), 0 0 34px rgba(74,122,58,0.12);
+  }
+}
+
+/* 文化分支 — 蓝色脉冲 */
+@keyframes tk-tech-pulse-culture {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(74,111,165,0.3), 0 0 12px rgba(74,111,165,0.15);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(74,111,165,0.55), 0 0 22px rgba(74,111,165,0.3), 0 0 34px rgba(74,111,165,0.12);
+  }
+}
+
+/* 已解锁科技 — 分支颜色脉冲发光（覆盖通用金色脉冲） */
+.tk-tech-node--completed.tk-tech-branch--military {
+  animation: tk-tech-pulse-military 2s ease-in-out infinite;
+}
+.tk-tech-node--completed.tk-tech-branch--economy {
+  animation: tk-tech-pulse-economy 2s ease-in-out infinite;
+}
+.tk-tech-node--completed.tk-tech-branch--culture {
+  animation: tk-tech-pulse-culture 2s ease-in-out infinite;
+}
+
+/* ─── 2. 研究进度旋转指示器 ─── */
+
+/* 旋转圆环 */
+@keyframes tk-tech-spin-ring {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.tk-tech-research-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  animation: tk-tech-spin-ring 1.5s linear infinite;
+}
+
+.tk-tech-research-spinner svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 进度条平滑填充（从左到右） */
+.tk-tech-progress-fill {
+  transition: width 1s ease-out;
+}
+
+/* ─── 3. 加成预览 Tooltip ─── */
+
+/* Tooltip 容器 */
+.tk-tech-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 180px;
+  max-width: 240px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(26, 14, 5, 0.96);
+  border: 1px solid var(--tk-border);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6), 0 0 12px rgba(139,115,85,0.1);
+  z-index: 80;
+  pointer-events: none;
+  animation: tk-tech-tooltip-fadein 0.3s ease-out forwards;
+  white-space: normal;
+}
+
+/* Tooltip 箭头 */
+.tk-tech-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--tk-border);
+}
+
+/* Tooltip 淡入动画 */
+@keyframes tk-tech-tooltip-fadein {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Tooltip 内容样式 */
+.tk-tech-tooltip-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--tk-gold);
+  margin-bottom: 4px;
+  font-family: "Noto Serif SC", "SimSun", serif;
+}
+
+.tk-tech-tooltip-desc {
+  font-size: 10px;
+  color: var(--tk-text);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.tk-tech-tooltip-prereqs {
+  font-size: 9px;
+  color: var(--tk-text-dim);
+  border-top: 1px solid rgba(139,115,85,0.2);
+  padding-top: 4px;
+}
+
+.tk-tech-tooltip-prereqs span {
+  display: inline-block;
+  padding: 1px 4px;
+  border-radius: 2px;
+  margin: 1px 2px;
+  background: rgba(139,115,85,0.1);
+  border: 1px solid rgba(139,115,85,0.15);
+}
+
+.tk-tech-tooltip-prereqs .tk-prereq-met {
+  color: #66bb6a;
+  border-color: rgba(102,187,106,0.3);
+  background: rgba(102,187,106,0.08);
+}
+
+.tk-tech-tooltip-prereqs .tk-prereq-unmet {
+  color: #e57373;
+  border-color: rgba(229,115,115,0.3);
+  background: rgba(229,115,115,0.08);
+}
+
+/* ─── 4. 连接线流动动画（分支颜色渐变） ─── */
+
+/* 军事连接线 — 红色流动 */
+@keyframes tk-tech-flow-military {
+  0%   { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* 经济连接线 — 绿色流动 */
+@keyframes tk-tech-flow-economy {
+  0%   { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* 文化连接线 — 蓝色流动 */
+@keyframes tk-tech-flow-culture {
+  0%   { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* 分支内连接线 — 已完成时流动（覆盖通用 tk-tech-connector--completed） */
+.tk-tech-connector--completed.tk-tech-connector--military {
+  stroke: #a85241;
+  animation: tk-tech-flow-military 1.5s linear infinite;
+}
+
+.tk-tech-connector--completed.tk-tech-connector--economy {
+  stroke: #4a7a3a;
+  animation: tk-tech-flow-economy 1.5s linear infinite;
+}
+
+.tk-tech-connector--completed.tk-tech-connector--culture {
+  stroke: #4a6fa5;
+  animation: tk-tech-flow-culture 1.5s linear infinite;
+}
+
+/* 跨分支连接线 — 颜色渐变从深到浅 */
+.tk-tech-cross-connector--active {
+  animation: tk-tech-cross-flow 2s linear infinite;
+}
+
+/* 研究中节点 — 呼吸边框 */
+@keyframes tk-tech-researching-breathe {
+  0%, 100% { border-color: rgba(212,160,48,0.4); }
+  50%      { border-color: rgba(212,160,48,0.8); }
+}
+
+.tk-tech-node--researching {
+  animation: tk-tech-researching-breathe 1.5s ease-in-out infinite;
+}
+
+/* ─── 移动端 Tooltip 适配 ─── */
+@media (max-width: 768px) {
+  .tk-tech-tooltip {
+    min-width: 150px;
+    max-width: 200px;
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
  * 主界面动态效果 — 资源飘字 / 云雾飘动 / 城池呼吸
  * ═══════════════════════════════════════════════════════════════ */
 

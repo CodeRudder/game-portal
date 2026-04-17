@@ -220,18 +220,18 @@ const BUILDING_LEVEL_TEXTURES: Record<number, string> = {
 
 // ─── 瓦片地图渲染常量 ──────────────────────────────────────
 
-/** 地形颜色映射（古风水墨色系） */
+/** 地形颜色映射（高区分度色系） */
 const TERRAIN_COLORS: Record<TerrainType, number> = {
-  plain: 0x5a7a4a,      // 墨绿平原
-  mountain: 0x6d4c41,    // 山地棕 — 赭石色
-  forest: 0x33691e,      // 深林绿 — 松墨
-  water: 0x546e7a,       // 水墨蓝灰 — 淡墨
-  road: 0xc4a35a,        // 土黄道路
-  city: 0xd4a574,        // 古纸色 — 城市
-  village: 0x6b8e5a,     // 墨绿村庄
-  fortress: 0xa0522d,    // 赭棕关卡
-  desert: 0xd4b36a,      // 沙黄荒漠
-  snow: 0xd8dce6,        // 淡墨雪地
+  plain: 0x90c695,      // 浅绿平原
+  mountain: 0x8b7355,   // 灰褐山地
+  forest: 0x2d5a27,     // 深绿森林
+  water: 0x4a90d9,      // 亮蓝水域
+  road: 0xc4a35a,       // 土黄道路
+  city: 0xa0a0a0,       // 灰色城市
+  village: 0x50a0a0,    // 青绿村庄
+  fortress: 0x8a5a7a,   // 紫褐关卡
+  desert: 0xe0c070,     // 亮沙黄荒漠
+  snow: 0xe8ecf6,       // 冷白雪地
 };
 
 /** 地形文字标签 */
@@ -256,6 +256,10 @@ const TERRAIN_DETAIL_DENSITY: Record<string, number> = {
   mountain: 1.0,  // 山地：标准山峰
   forest: 1.4,    // 森林：密集树木
   water: 1.0,     // 水域：标准波纹
+  road: 1.0,      // 道路：标准车辙
+  city: 1.0,      // 城市：标准城墙
+  village: 1.0,   // 村庄：标准田垄
+  fortress: 1.0,  // 关卡：标准城墙
   desert: 1.0,    // 荒漠：标准沙丘
   snow: 1.0,      // 雪地：标准雪花
 };

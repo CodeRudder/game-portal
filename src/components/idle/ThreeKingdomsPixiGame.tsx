@@ -1340,6 +1340,9 @@ export default function ThreeKingdomsPixiGame() {
   const [tooltip, setTooltip] = useState<{text:string;x:number;y:number}|null>(null);
   const [audioMuted, setAudioMuted] = useState(false);
 
+  // ─── 科技树 Tooltip 悬停状态 ──────────────────────────────
+  const [hoveredTechNode, setHoveredTechNode] = useState<string | null>(null);
+
   // 征战关卡战斗报告
   const [showCampaignBattleReport, setShowCampaignBattleReport] = useState(false);
   const [campaignBattleResult, setCampaignBattleResult] = useState<any>(null);
@@ -3088,8 +3091,8 @@ export default function ThreeKingdomsPixiGame() {
                                           ? colors.border
                                           : 'rgba(255,255,255,0.12)'}
                                       strokeWidth={isCompleted ? 2.5 : 2}
-                                      strokeDasharray={isCompleted ? undefined : '3,3'}
-                                      className={isCompleted ? 'tk-tech-connector--completed' : undefined}
+                                      strokeDasharray={isCompleted ? '6,4' : '3,3'}
+                                      className={isCompleted ? `tk-tech-connector--completed tk-tech-connector--${getBranch(node.id)}` : undefined}
                                       opacity={isCompleted ? 0.8 : 0.5}
                                     />
                                     {/* 流动粒子点 */}
@@ -3115,7 +3118,9 @@ export default function ThreeKingdomsPixiGame() {
 
                               {/* 科技节点 — 增强版 */}
                               <div
-                                className={`tk-tech-node ${isCompleted ? 'tk-tech-node--completed' : ''} ${isAvailable ? 'tk-tech-node--available' : ''}`}
+                                className={`tk-tech-node ${isCompleted ? 'tk-tech-node--completed' : ''} ${isAvailable ? 'tk-tech-node--available' : ''} ${isResearching ? 'tk-tech-node--researching' : ''} tk-tech-branch--${getBranch(node.id)}`}
+                                onMouseEnter={() => setHoveredTechNode(node.id)}
+                                onMouseLeave={() => setHoveredTechNode(null)}
                                 style={{
                                   padding: '8px 10px',
                                   borderRadius: 8,
@@ -3269,11 +3274,15 @@ export default function ThreeKingdomsPixiGame() {
                                   )}
                                 </div>
 
-                                {/* 研究中 — 增强进度条 + 旋转图标 */}
+                                {/* 研究中 — 旋转进度指示器 + 平滑进度条 */}
                                 {isResearching && (
                                   <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <div style={{ flexShrink: 0, width: 16, height: 16 }}>
-                                      <TechResearchingIcon size={16} />
+                                    <div className="tk-tech-research-spinner">
+                                      <svg viewBox="0 0 16 16" fill="none">
+                                        <circle cx="8" cy="8" r="6" stroke="rgba(212,160,48,0.25)" strokeWidth="2" />
+                                        <circle cx="8" cy="8" r="6" stroke={colors.accent} strokeWidth="2" strokeLinecap="round"
+                                          strokeDasharray="28 10" transform="rotate(-90 8 8)" />
+                                      </svg>
                                     </div>
                                     <div style={{ flex: 1 }}>
                                       <div style={{
@@ -3283,11 +3292,10 @@ export default function ThreeKingdomsPixiGame() {
                                         boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
                                       }}>
                                         <div
-                                          className="tk-tech-progress-bar--researching"
+                                          className="tk-tech-progress-bar--researching tk-tech-progress-fill"
                                           style={{
                                             width: `${(node.progress * 100).toFixed(0)}%`,
                                             height: '100%', borderRadius: 2,
-                                            transition: 'width 0.3s',
                                           }}
                                         />
                                       </div>
@@ -3303,6 +3311,27 @@ export default function ThreeKingdomsPixiGame() {
                                 {isAvailable && Object.keys(node.cost).length > 0 && (
                                   <div style={{ fontSize: 8, color: COLOR_THEME.textDim, marginTop: 2 }}>
                                     费用: {Object.entries(node.cost).map(([k, v]) => `${v} ${k}`).join('  ')}
+                                  </div>
+                                )}
+
+                                {/* ── 加成预览 Tooltip（悬停显示） ── */}
+                                {hoveredTechNode === node.id && (
+                                  <div className="tk-tech-tooltip">
+                                    <div className="tk-tech-tooltip-name">{node.name}</div>
+                                    <div className="tk-tech-tooltip-desc">{node.description}</div>
+                                    {node.prerequisites.length > 0 && (
+                                      <div className="tk-tech-tooltip-prereqs">
+                                        前置：{node.prerequisites.map(pid => {
+                                          const pn = nodeMap.get(pid);
+                                          const met = pn?.state === 'completed';
+                                          return (
+                                            <span key={pid} className={met ? 'tk-prereq-met' : 'tk-prereq-unmet'}>
+                                              {pn?.name ?? pid} {met ? '✓' : '✗'}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
