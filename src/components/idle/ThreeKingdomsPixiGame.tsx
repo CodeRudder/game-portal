@@ -304,7 +304,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
   // ─── 渲染 ───
 
   return (
-    <div className="tk-container">
+    <div className={`tk-container ${showGuide && guideStep < GUIDE_STEPS.length ? `tk-guide-step-${guideStep}` : ''}`}>
       {/* ═══ 顶部资源栏 ═══ */}
       <div className="tk-resource-bar">
         <span className="tk-game-title">三国霸业</span>
@@ -402,6 +402,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                   <div
                     key={def.id}
                     className={`tk-building-card ${!isUnlocked ? 'tk-building-locked' : ''}`}
+                    data-category={getCategory(def)}
                     onClick={() => isUnlocked && setUpgradeModal(def.id)}
                   >
                     <div className="tk-building-icon">{def.icon}</div>
@@ -561,7 +562,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
 
         {/* ═══ 新手引导 ═══ */}
         {showGuide && guideStep < GUIDE_STEPS.length && (
-          <div className="tk-guide-overlay">
+          <div className="tk-guide-overlay" data-step={guideStep}>
             <div className="tk-guide-panel">
               <button
                 className="tk-guide-skip"
@@ -572,6 +573,11 @@ const ThreeKingdomsPixiGame: React.FC = () => {
               >
                 跳过
               </button>
+              <div style={{ fontSize: '36px', marginBottom: '12px' }}>
+                {guideStep === 0 && '🏗️'}
+                {guideStep === 1 && '📊'}
+                {guideStep === 2 && '🗺️'}
+              </div>
               <h3 className="tk-guide-title">{GUIDE_STEPS[guideStep].title}</h3>
               <p className="tk-guide-desc">{GUIDE_STEPS[guideStep].desc}</p>
               <div className="tk-guide-dots">
