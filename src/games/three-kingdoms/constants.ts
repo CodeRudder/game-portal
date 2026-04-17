@@ -182,8 +182,8 @@ export const BUILDINGS: BuildingDef[] = [
   },
   {
     id: 'smithy', name: '铁匠铺', icon: '🔨',
-    baseCost: { gold: 100, troops: 30 }, costMultiplier: 1.10, maxLevel: 0,
-    productionResource: 'troops', baseProduction: 0.08,
+    baseCost: { gold: 100, wood: 30 }, costMultiplier: 1.10, maxLevel: 0,
+    productionResource: 'iron', baseProduction: 0.08,
     requires: ['barracks'],
     unlockCondition: '兵营 Lv.3',
   },
@@ -196,13 +196,13 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'clinic', name: '医馆', icon: '💊',
     baseCost: { gold: 80, grain: 60 }, costMultiplier: 1.08, maxLevel: 0,
-    productionResource: 'grain', baseProduction: 0.12,
+    productionResource: 'morale', baseProduction: 0.12,
     unlockCondition: '累计 300 粮草',
   },
   {
     id: 'wall', name: '城墙', icon: '🏰',
-    baseCost: { gold: 150, troops: 50 }, costMultiplier: 1.15, maxLevel: 0,
-    productionResource: 'troops', baseProduction: 0.03,
+    baseCost: { gold: 150, iron: 50 }, costMultiplier: 1.15, maxLevel: 0,
+    productionResource: 'wood', baseProduction: 0.06,
     requires: ['barracks'],
     unlockCondition: '兵营 Lv.5',
   },
@@ -577,8 +577,11 @@ export const RARITY_COLORS: Record<string, string> = {
 export const RESOURCES = [
   { id: 'grain', name: '粮草', icon: '🌾' },
   { id: 'gold', name: '铜钱', icon: '💰' },
+  { id: 'iron', name: '铁矿', icon: '⛏️' },
+  { id: 'wood', name: '木材', icon: '🪵' },
   { id: 'troops', name: '兵力', icon: '⚔️' },
   { id: 'destiny', name: '天命', icon: '👑' },
+  { id: 'morale', name: '民心', icon: '🏮' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -588,8 +591,11 @@ export const RESOURCES = [
 export const INITIAL_RESOURCES: Record<string, number> = {
   grain: 500,
   gold: 300,
+  iron: 100,
+  wood: 150,
   troops: 100,
   destiny: 0,
+  morale: 50,
 };
 
 // ═══════════════════════════════════════════════════════════════

@@ -1403,6 +1403,208 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+ * 卷轴/竹简风格武将详情面板
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* 卷轴容器 */
+.tk-scroll-panel {
+  position: relative;
+  background:
+    /* 仿古纸纹理 — 细微噪点 */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(139,115,85,0.02) 2px,
+      rgba(139,115,85,0.02) 4px
+    ),
+    /* 仿古纸底色 */
+    linear-gradient(180deg, #e8d5b7 0%, #dcc9a5 50%, #d4c098 100%);
+  border-radius: 4px;
+  padding: 16px 14px;
+  color: #3a2a1a;
+  box-shadow:
+    0 2px 12px rgba(0,0,0,0.4),
+    inset 0 0 20px rgba(139,115,85,0.15);
+}
+
+/* 卷轴上轴头 */
+.tk-scroll-panel::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -4px;
+  right: -4px;
+  height: 12px;
+  background: linear-gradient(180deg, #b87333, #8B6914, #b87333);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* 卷轴下轴头 */
+.tk-scroll-panel::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: -4px;
+  right: -4px;
+  height: 12px;
+  background: linear-gradient(180deg, #b87333, #8B6914, #b87333);
+  border-radius: 6px;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.3);
+}
+
+/* 卷轴轴头端部装饰 */
+.tk-scroll-endcap-left,
+.tk-scroll-endcap-right {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #d4a030, #8B6914);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  z-index: 1;
+}
+.tk-scroll-endcap-left { left: -7px; }
+.tk-scroll-endcap-right { right: -7px; }
+.tk-scroll-endcap-top { top: -9px; }
+.tk-scroll-endcap-bottom { bottom: -9px; }
+
+/* 卷轴内部分割线 — 竹简纹理 */
+.tk-scroll-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #b87333 20%, #d4a030 50%, #b87333 80%, transparent 100%);
+  opacity: 0.4;
+  margin: 8px 0;
+}
+
+/* 卷轴内文字颜色 */
+.tk-scroll-text {
+  color: #3a2a1a;
+  font-family: "Noto Serif SC", "SimSun", serif;
+}
+
+.tk-scroll-text-dim {
+  color: #6b5a3a;
+  font-family: "Noto Serif SC", "SimSun", serif;
+}
+
+/* 卷轴标题 */
+.tk-scroll-title {
+  color: #8b1a1a;
+  font-family: "Noto Serif SC", "SimSun", serif;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  font-weight: bold;
+}
+
+/* 势力标识色块 */
+.tk-faction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: "Noto Serif SC", serif;
+}
+.tk-faction-badge--wei {
+  background: rgba(74,111,165,0.15);
+  color: #4a6fa5;
+  border: 1px solid rgba(74,111,165,0.3);
+}
+.tk-faction-badge--shu {
+  background: rgba(198,40,40,0.12);
+  color: #c62828;
+  border: 1px solid rgba(198,40,40,0.3);
+}
+.tk-faction-badge--wu {
+  background: rgba(46,125,50,0.12);
+  color: #2e7d32;
+  border: 1px solid rgba(46,125,50,0.3);
+}
+
+/* 装备槽位 */
+.tk-equip-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border: 1.5px dashed rgba(139,115,85,0.4);
+  border-radius: 4px;
+  background: rgba(139,115,85,0.04);
+  min-width: 56px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.tk-equip-slot:hover {
+  border-color: rgba(139,115,85,0.6);
+  background: rgba(139,115,85,0.08);
+}
+.tk-equip-slot--equipped {
+  border-style: solid;
+  border-color: rgba(212,160,48,0.4);
+  background: rgba(212,160,48,0.06);
+}
+.tk-equip-slot-label {
+  font-size: 9px;
+  color: #6b5a3a;
+  font-family: "Noto Serif SC", serif;
+}
+.tk-equip-slot-name {
+  font-size: 9px;
+  color: #8b1a1a;
+  font-weight: bold;
+  font-family: "Noto Serif SC", serif;
+}
+
+/* 技能标签 */
+.tk-skill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(139,115,85,0.08);
+  border: 1px solid rgba(139,115,85,0.2);
+  font-size: 10px;
+  color: #5a4a3a;
+  font-family: "Noto Serif SC", serif;
+}
+
+/* 武将卡片底部技能区域 */
+.tk-general-card-skills {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+.tk-general-card-skill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: rgba(139,115,85,0.08);
+  border: 1px solid rgba(139,115,85,0.15);
+  font-size: 9px;
+  color: #8B7355;
+}
+
+/* 背景故事文本 */
+.tk-bio-text {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #5a4a3a;
+  font-style: italic;
+  padding: 6px 8px;
+  background: rgba(139,115,85,0.06);
+  border-radius: 4px;
+  border-left: 2px solid rgba(184,115,51,0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════
  * 科技树视觉增强 — 发光 / 粒子 / 流动线 / 研究动画
  * ═══════════════════════════════════════════════════════════════ */
 
@@ -1558,4 +1760,188 @@
   background: linear-gradient(90deg, transparent, #d4a030, transparent);
   background-size: 200% 100%;
   animation: tk-tech-title-shine 3s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 主界面动态效果 — 资源飘字 / 云雾飘动 / 城池呼吸
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 1. 资源飘字动画（增强版） ─── */
+
+/* 资源飘字容器 — 定位在资源栏上方 */
+.tk-resource-float-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 20;
+}
+
+/* 资源飘字元素 */
+.tk-resource-float {
+  position: absolute;
+  pointer-events: none;
+  font-size: 13px;
+  font-weight: bold;
+  font-family: "Noto Serif SC", "SimSun", serif;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5);
+  animation: tk-float-up-resource 1.5s ease-out forwards;
+  white-space: nowrap;
+  z-index: 20;
+}
+
+/* 资源类型颜色变体 */
+.tk-resource-float--grain {
+  color: #6b8e5a;
+}
+
+.tk-resource-float--gold {
+  color: #d4a030;
+}
+
+.tk-resource-float--troops {
+  color: #c62828;
+}
+
+.tk-resource-float--destiny {
+  color: #4a8a5a;
+}
+
+@keyframes tk-float-up-resource {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.9);
+  }
+}
+
+/* ─── 2. 云雾飘动效果（增强版） ─── */
+
+/* 云雾层容器 */
+.tk-cloud-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+/* 单朵云雾 */
+.tk-cloud-mist {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(12px);
+  opacity: 0;
+  animation: tk-cloud-float linear infinite;
+}
+
+/* 云雾 1 — 大型缓慢 */
+.tk-cloud-mist--1 {
+  top: 3%;
+  width: 200px;
+  height: 50px;
+  background: radial-gradient(ellipse, rgba(139,115,85,0.10) 0%, rgba(139,115,85,0.04) 40%, transparent 70%);
+  animation-duration: 25s;
+  animation-delay: 0s;
+}
+
+/* 云雾 2 — 中型 */
+.tk-cloud-mist--2 {
+  top: 10%;
+  width: 150px;
+  height: 40px;
+  background: radial-gradient(ellipse, rgba(139,115,85,0.08) 0%, rgba(139,115,85,0.03) 40%, transparent 70%);
+  animation-duration: 30s;
+  animation-delay: -8s;
+}
+
+/* 云雾 3 — 小型快速 */
+.tk-cloud-mist--3 {
+  top: 6%;
+  width: 120px;
+  height: 35px;
+  background: radial-gradient(ellipse, rgba(139,115,85,0.07) 0%, rgba(139,115,85,0.02) 40%, transparent 70%);
+  animation-duration: 20s;
+  animation-delay: -15s;
+}
+
+@keyframes tk-cloud-float {
+  0% {
+    left: -15%;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: 110%;
+    opacity: 0;
+  }
+}
+
+/* ─── 3. 城池呼吸动画 ─── */
+
+/* 城池 SVG 呼吸效果 */
+.tk-city-breathe {
+  animation: tk-breathe 4s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@keyframes tk-breathe {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.02);
+  }
+}
+
+/* 场景面板城池区域呼吸 */
+.tk-scene-city--breathe {
+  animation: tk-city-icon-breathe 4s ease-in-out infinite;
+}
+
+@keyframes tk-city-icon-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+/* ─── 移动端动态效果适配 ─── */
+
+@media (max-width: 768px) {
+  .tk-cloud-mist--1 {
+    width: 120px;
+    height: 30px;
+  }
+
+  .tk-cloud-mist--2 {
+    width: 90px;
+    height: 25px;
+  }
+
+  .tk-cloud-mist--3 {
+    width: 70px;
+    height: 20px;
+  }
+
+  .tk-resource-float {
+    font-size: 11px;
+  }
 }
