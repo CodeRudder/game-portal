@@ -4,20 +4,20 @@
  * 为建筑和资源提供古风风格的内联 SVG 图标。
  * 使用古风色彩体系：深棕/暗金/青铜/朱红/翠绿
  *
- * 建筑图标 (40x40)：
- * - 农田(farm)       → 麦穗+犁 (绿色)
- * - 市集(market)     → 天平+钱袋 (金色)
- * - 兵营(barracks)   → 盾牌+剑 (红色)
- * - 铁匠铺(smithy)   → 镐+铁砧 (灰色)
- * - 书院(academy)    → 竹简+毛笔 (蓝色)
- * - 医馆(clinic)     → 药葫芦+草叶 (青色)
- * - 城墙(wall)       → 城垛+盾牌 (深灰)
- * - 招贤馆(tavern)   → 旗帜+卷轴 (紫色)
- * - 烽火台(beacon_tower) → 塔形+火焰 (橙红)
- * - 钱庄(mint)       → 金库门+铜钱堆 (金色)
- * - 锻兵坊(forge)    → 铁砧+锤子+火花 (深红橙)
- * - 茶馆(teahouse)   → 两层楼阁+茶幌子+茶壶 (翠绿)
- * - 粮仓(granary)    → 圆顶仓廪+粮袋堆+斗量 (棕黄)
+ * 建筑图标 (64×64 viewBox，可缩放)：
+ * - 屯田(farm)           → 稻田梯田+农夫牵牛+谷仓轮廓 (绿色)
+ * - 商行(market)         → 古代商铺招牌+柜台+铜钱串 (金色)
+ * - 军营(barracks)       → 军帐+战旗+兵器架 (红色)
+ * - 铁匠铺(smithy)       → 铁砧+锤子+火花+炉火 (灰色)
+ * - 太学(academy)        → 竹简卷轴+书案+孔子讲学剪影 (蓝色)
+ * - 药庐(clinic)         → 药柜+捣药罐+草药 (青色)
+ * - 城防(wall)           → 城墙+箭塔+烽火台 (深灰)
+ * - 招贤馆(tavern)       → 旗帜+卷轴 (紫色)
+ * - 烽火台(beacon_tower) → 高塔+火焰+浓烟 (橙红)
+ * - 钱庄(mint)           → 金库大门+铜钱堆+算盘 (金色)
+ * - 锻兵坊(forge)        → 铁砧+锤子+火花+炉火 (深红橙)
+ * - 茶馆(teahouse)       → 两层楼阁+茶幌子+茶壶 (翠绿)
+ * - 粮仓(granary)        → 圆顶仓廪+粮袋堆+斗量 (棕黄)
  *
  * 资源图标 (20x20)：
  * - 粮草(grain)   → 稻穗 (金色)
@@ -34,269 +34,364 @@ import React from 'react';
 // 建筑图标 SVG 组件 (40×40)
 // ═══════════════════════════════════════════════════════════════
 
-/** 屯田 — 稻田+农夫+牛车轮廓（绿色系） */
+/** 屯田 — 稻田梯田+农夫牵牛+远处谷仓轮廓（绿色系，64×64） */
 const FarmIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-farm-field" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#4a7a3a" />
-        <stop offset="100%" stopColor="#2e5d2e" />
+        <stop offset="0%" stopColor="#5a8a4a" />
+        <stop offset="100%" stopColor="#3a6a2a" />
+      </linearGradient>
+      <linearGradient id="tk-farm-water" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="#5a9a7a" />
+        <stop offset="100%" stopColor="#4a8a6a" />
       </linearGradient>
     </defs>
-    {/* 田埂分隔 — 三块梯田 */}
-    <path d="M4,22 L36,22 L36,36 L4,36 Z" fill="url(#tk-farm-field)" stroke="#3a5a2a" strokeWidth="0.6" />
-    <line x1="4" y1="27" x2="36" y2="27" stroke="#5a8a4a" strokeWidth="0.8" opacity="0.6" />
-    <line x1="4" y1="32" x2="36" y2="32" stroke="#5a8a4a" strokeWidth="0.8" opacity="0.6" />
-    <line x1="20" y1="22" x2="20" y2="36" stroke="#5a8a4a" strokeWidth="0.6" opacity="0.4" />
-    {/* 稻穗 — 左侧 */}
-    <line x1="10" y1="20" x2="10" y2="6" stroke="#6b8e5a" strokeWidth="1.2" />
-    <ellipse cx="10" cy="5" rx="2" ry="3.5" fill="#8aaa5a" />
-    <ellipse cx="7.5" cy="9" rx="2" ry="3" fill="#8aaa5a" transform="rotate(-25 7.5 9)" />
-    <ellipse cx="12.5" cy="9" rx="2" ry="3" fill="#8aaa5a" transform="rotate(25 12.5 9)" />
-    <ellipse cx="8" cy="14" rx="1.5" ry="2.5" fill="#6b8e5a" transform="rotate(-15 8 14)" />
-    <ellipse cx="12" cy="14" rx="1.5" ry="2.5" fill="#6b8e5a" transform="rotate(15 12 14)" />
-    {/* 稻穗 — 右侧 */}
-    <line x1="30" y1="20" x2="30" y2="8" stroke="#6b8e5a" strokeWidth="1.2" />
-    <ellipse cx="30" cy="7" rx="1.8" ry="3" fill="#8aaa5a" />
-    <ellipse cx="28" cy="11" rx="1.5" ry="2.5" fill="#8aaa5a" transform="rotate(-20 28 11)" />
-    <ellipse cx="32" cy="11" rx="1.5" ry="2.5" fill="#8aaa5a" transform="rotate(20 32 11)" />
-    {/* 牛车 — 右下方 */}
-    <rect x="22" y="28" width="10" height="4" rx="1" fill="#8B6914" stroke="#5a3a0a" strokeWidth="0.5" />
-    <line x1="24" y1="28" x2="24" y2="24" stroke="#6b4226" strokeWidth="0.8" />
-    <line x1="30" y1="28" x2="30" y2="24" stroke="#6b4226" strokeWidth="0.8" />
-    <rect x="23" y="23" width="8" height="2" rx="0.5" fill="#b87333" />
-    <circle cx="24" cy="33" r="1.5" fill="#5a4a3a" stroke="#3a2a1a" strokeWidth="0.4" />
-    <circle cx="30" cy="33" r="1.5" fill="#5a4a3a" stroke="#3a2a1a" strokeWidth="0.4" />
-    {/* 牛 — 左侧拉车 */}
-    <ellipse cx="16" cy="30" rx="4" ry="2.5" fill="#5a4a3a" opacity="0.7" />
-    <circle cx="13" cy="29" r="2" fill="#5a4a3a" opacity="0.7" />
-    <path d="M11.5,27 Q10.5,25 12,25.5" stroke="#5a4a3a" strokeWidth="0.6" fill="none" opacity="0.7" />
-    <path d="M14,27 Q15,25 13.5,25.5" stroke="#5a4a3a" strokeWidth="0.6" fill="none" opacity="0.7" />
-    <line x1="16" y1="32" x2="15" y2="35" stroke="#5a4a3a" strokeWidth="0.6" opacity="0.5" />
-    <line x1="18" y1="32" x2="17" y2="35" stroke="#5a4a3a" strokeWidth="0.6" opacity="0.5" />
-    <line x1="14" y1="32" x2="13" y2="35" stroke="#5a4a3a" strokeWidth="0.6" opacity="0.5" />
+    {/* 远处谷仓轮廓 */}
+    <rect x="42" y="14" width="16" height="14" rx="1" fill="#8B6914" opacity="0.5" />
+    <path d="M40,14 L50,6 L60,14 Z" fill="#6b5a14" opacity="0.5" />
+    <rect x="48" y="22" width="5" height="6" rx="0.5" fill="#3a2a1a" opacity="0.4" />
+    {/* 梯田 — 三层 */}
+    <path d="M4,36 L60,36 L60,58 L4,58 Z" fill="url(#tk-farm-field)" stroke="#3a5a2a" strokeWidth="0.8" />
+    <path d="M8,30 L56,30 L58,36 L6,36 Z" fill="#4a7a3a" stroke="#3a5a2a" strokeWidth="0.6" />
+    <path d="M12,25 L52,25 L54,30 L10,30 Z" fill="#5a8a4a" stroke="#3a5a2a" strokeWidth="0.5" opacity="0.7" />
+    {/* 田埂分隔线 */}
+    <line x1="4" y1="43" x2="60" y2="43" stroke="#6a9a5a" strokeWidth="1" opacity="0.5" />
+    <line x1="4" y1="50" x2="60" y2="50" stroke="#6a9a5a" strokeWidth="1" opacity="0.5" />
+    <line x1="32" y1="36" x2="32" y2="58" stroke="#6a9a5a" strokeWidth="0.8" opacity="0.3" />
+    {/* 水面反光 — 梯田 */}
+    <ellipse cx="18" cy="40" rx="8" ry="1.2" fill="url(#tk-farm-water)" opacity="0.2" />
+    <ellipse cx="44" cy="47" rx="10" ry="1" fill="url(#tk-farm-water)" opacity="0.15" />
+    {/* 稻穗群 — 左侧 */}
+    <line x1="14" y1="34" x2="14" y2="10" stroke="#6b8e5a" strokeWidth="1.5" />
+    <ellipse cx="14" cy="8" rx="3" ry="5" fill="#8aaa5a" />
+    <ellipse cx="10" cy="14" rx="2.5" ry="4" fill="#8aaa5a" transform="rotate(-25 10 14)" />
+    <ellipse cx="18" cy="14" rx="2.5" ry="4" fill="#8aaa5a" transform="rotate(25 18 14)" />
+    <ellipse cx="11" cy="21" rx="2" ry="3.5" fill="#6b8e5a" transform="rotate(-15 11 21)" />
+    <ellipse cx="17" cy="21" rx="2" ry="3.5" fill="#6b8e5a" transform="rotate(15 17 21)" />
+    {/* 稻穗群 — 中间 */}
+    <line x1="34" y1="34" x2="34" y2="14" stroke="#6b8e5a" strokeWidth="1.3" />
+    <ellipse cx="34" cy="12" rx="2.5" ry="4" fill="#8aaa5a" />
+    <ellipse cx="31" cy="18" rx="2" ry="3" fill="#8aaa5a" transform="rotate(-20 31 18)" />
+    <ellipse cx="37" cy="18" rx="2" ry="3" fill="#8aaa5a" transform="rotate(20 37 18)" />
+    {/* 牛 — 中下方 */}
+    <ellipse cx="26" cy="48" rx="7" ry="4" fill="#6a5a4a" />
+    <circle cx="20" cy="46" r="3.5" fill="#6a5a4a" />
+    {/* 牛角 */}
+    <path d="M18,43 Q16,40 17.5,39" stroke="#b8a880" strokeWidth="1" fill="none" />
+    <path d="M22,43 Q24,40 22.5,39" stroke="#b8a880" strokeWidth="1" fill="none" />
+    {/* 牛腿 */}
+    <line x1="22" y1="52" x2="21" y2="57" stroke="#6a5a4a" strokeWidth="1.2" />
+    <line x1="28" y1="52" x2="27" y2="57" stroke="#6a5a4a" strokeWidth="1.2" />
+    <line x1="30" y1="52" x2="31" y2="57" stroke="#6a5a4a" strokeWidth="1.2" />
+    <line x1="24" y1="52" x2="23" y2="57" stroke="#6a5a4a" strokeWidth="1.2" />
     {/* 缰绳 */}
-    <path d="M18,29 Q20,28 22,29" stroke="#8B6914" strokeWidth="0.4" fill="none" opacity="0.6" />
-    {/* 田中水面反光 */}
-    <ellipse cx="8" cy="25" rx="3" ry="0.8" fill="#6aaa8a" opacity="0.15" />
+    <path d="M28,46 Q32,44 36,46" stroke="#8B6914" strokeWidth="0.8" fill="none" opacity="0.7" />
+    {/* 农夫 — 右侧牵牛 */}
+    <circle cx="38" cy="42" r="3" fill="#d4b896" stroke="#8B7355" strokeWidth="0.6" />
+    {/* 斗笠 */}
+    <path d="M34,40 Q38,37 42,40" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    {/* 身体 */}
+    <path d="M36,45 L35,54 L41,54 L40,45" fill="#5a7a4a" stroke="#3a5a2a" strokeWidth="0.5" />
+    {/* 手臂牵绳 */}
+    <line x1="36" y1="47" x2="32" y2="45" stroke="#d4b896" strokeWidth="1" />
+    {/* 锄头 */}
+    <line x1="42" y1="44" x2="46" y2="54" stroke="#6b4226" strokeWidth="1.5" />
+    <path d="M44,42 L48,41 L47,45 Z" fill="#8a8a8a" stroke="#6a6a6a" strokeWidth="0.5" />
   </svg>
 );
 
-/** 商行 — 柜台+货郎+铜钱（金色系） */
+/** 商行 — 古代商铺招牌+柜台+铜钱串（金色系，64×64） */
 const MarketIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-market-gold" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0%" stopColor="#e8b84a" />
         <stop offset="100%" stopColor="#b8860b" />
       </linearGradient>
+      <linearGradient id="tk-market-wood" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#8B6914" />
+        <stop offset="100%" stopColor="#6b5a14" />
+      </linearGradient>
     </defs>
     {/* 集市牌楼 — 飞檐屋顶 */}
-    <path d="M4,14 L20,4 L36,14 Z" fill="url(#tk-market-gold)" stroke="#8B6914" strokeWidth="0.8" />
+    <path d="M6,22 L32,8 L58,22 Z" fill="url(#tk-market-gold)" stroke="#8B6914" strokeWidth="1.2" />
     {/* 飞檐翘角 */}
-    <path d="M2,14 Q4,12 6,14" stroke="#d4a030" strokeWidth="1" fill="none" />
-    <path d="M34,14 Q36,12 38,14" stroke="#d4a030" strokeWidth="1" fill="none" />
+    <path d="M3,22 Q6,18 10,22" stroke="#d4a030" strokeWidth="1.5" fill="none" />
+    <path d="M54,22 Q58,18 61,22" stroke="#d4a030" strokeWidth="1.5" fill="none" />
+    {/* 屋脊装饰 */}
+    <circle cx="32" cy="8" r="2" fill="#d4a030" />
     {/* 牌楼立柱 */}
-    <rect x="8" y="14" width="3" height="18" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
-    <rect x="29" y="14" width="3" height="18" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
+    <rect x="12" y="22" width="4" height="30" fill="url(#tk-market-wood)" stroke="#5a4a14" strokeWidth="0.8" />
+    <rect x="48" y="22" width="4" height="30" fill="url(#tk-market-wood)" stroke="#5a4a14" strokeWidth="0.8" />
     {/* 牌楼横梁 */}
-    <rect x="7" y="13" width="26" height="3" rx="0.5" fill="#d4a030" stroke="#8B6914" strokeWidth="0.5" />
-    {/* 牌楼匾额 — 商行 */}
-    <rect x="14" y="7" width="12" height="5" rx="1" fill="#3a2a1a" stroke="#d4a030" strokeWidth="0.6" />
-    <text x="20" y="11" textAnchor="middle" fontSize="3.5" fill="#d4a030" fontFamily="serif" fontWeight="bold">商</text>
-    {/* 货郎柜台 */}
-    <rect x="10" y="24" width="20" height="5" rx="1" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="10" y="20" width="44" height="5" rx="1" fill="#d4a030" stroke="#8B6914" strokeWidth="0.8" />
+    {/* 匾额 — 商行 */}
+    <rect x="22" y="11" width="20" height="8" rx="1.5" fill="#3a2a1a" stroke="#d4a030" strokeWidth="1" />
+    <text x="32" y="18" textAnchor="middle" fontSize="6" fill="#d4a030" fontFamily="serif" fontWeight="bold">商行</text>
+    {/* 柜台 */}
+    <rect x="16" y="38" width="32" height="8" rx="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="1" />
+    <rect x="14" y="36" width="36" height="3" rx="1" fill="#d4a030" opacity="0.4" />
     {/* 货郎人物 — 柜台后 */}
-    <circle cx="20" cy="20" r="2.5" fill="#d4b896" stroke="#8B7355" strokeWidth="0.4" />
-    <path d="M18,22 L17,26 L23,26 L22,22" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.3" />
+    <circle cx="32" cy="32" r="4" fill="#d4b896" stroke="#8B7355" strokeWidth="0.6" />
     {/* 斗笠 */}
-    <path d="M16.5,18.5 Q20,16 23.5,18.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.4" />
+    <path d="M26,30 Q32,26 38,30" fill="#b87333" stroke="#8B6914" strokeWidth="0.6" />
+    {/* 身体 */}
+    <path d="M29,36 L28,42 L36,42 L35,36" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.4" />
     {/* 柜台上的货物 */}
-    <rect x="12" y="23" width="3" height="2" rx="0.5" fill="#d4a030" opacity="0.6" />
-    <rect x="16" y="23" width="2.5" height="2" rx="0.5" fill="#4a7a3a" opacity="0.5" />
-    <rect x="25" y="23" width="3" height="2" rx="0.5" fill="#c62828" opacity="0.4" />
-    {/* 铜钱装饰 — 左下 */}
-    <circle cx="8" cy="32" r="2.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
-    <rect x="7" y="31" width="2" height="2" fill="#3a2a1a" rx="0.2" />
-    {/* 铜钱装饰 — 右下 */}
-    <circle cx="32" cy="32" r="2.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
-    <rect x="31" y="31" width="2" height="2" fill="#3a2a1a" rx="0.2" />
-    {/* 串铜钱 — 柜台前 */}
-    <line x1="14" y1="30" x2="26" y2="30" stroke="#8B6914" strokeWidth="0.5" />
-    <circle cx="16" cy="31" r="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.3" />
-    <circle cx="20" cy="31.5" r="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.3" />
-    <circle cx="24" cy="31" r="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.3" />
+    <rect x="18" y="36" width="5" height="3" rx="1" fill="#d4a030" opacity="0.5" />
+    <rect x="25" y="36" width="4" height="3" rx="1" fill="#4a7a3a" opacity="0.4" />
+    <rect x="40" y="36" width="5" height="3" rx="1" fill="#c62828" opacity="0.3" />
+    <circle cx="36" cy="37" r="2" fill="#b87333" opacity="0.4" />
+    {/* 招幌 — 左侧 */}
+    <line x1="8" y1="6" x2="8" y2="20" stroke="#6b4226" strokeWidth="1" />
+    <rect x="5" y="8" width="6" height="12" rx="1" fill="#c62828" opacity="0.6" stroke="#8b1a1a" strokeWidth="0.4" />
+    <text x="8" y="17" textAnchor="middle" fontSize="5" fill="#d4a030" fontFamily="serif">買</text>
+    {/* 招幌 — 右侧 */}
+    <line x1="56" y1="6" x2="56" y2="20" stroke="#6b4226" strokeWidth="1" />
+    <rect x="53" y="8" width="6" height="12" rx="1" fill="#c62828" opacity="0.6" stroke="#8b1a1a" strokeWidth="0.4" />
+    <text x="56" y="17" textAnchor="middle" fontSize="5" fill="#d4a030" fontFamily="serif">賣</text>
+    {/* 铜钱串 — 柜台前 */}
+    <line x1="22" y1="48" x2="42" y2="48" stroke="#8B6914" strokeWidth="0.8" />
+    <circle cx="26" cy="50" r="3" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="24.8" y="48.8" width="2.4" height="2.4" fill="#3a2a1a" rx="0.3" />
+    <circle cx="32" cy="51" r="3" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="30.8" y="49.8" width="2.4" height="2.4" fill="#3a2a1a" rx="0.3" />
+    <circle cx="38" cy="50" r="3" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="36.8" y="48.8" width="2.4" height="2.4" fill="#3a2a1a" rx="0.3" />
     {/* 地面 */}
-    <path d="M4,36 Q20,34 36,36" stroke="#5a4a2a" strokeWidth="0.6" fill="none" opacity="0.4" />
+    <path d="M4,58 Q32,55 60,58" stroke="#5a4a2a" strokeWidth="0.8" fill="none" opacity="0.4" />
   </svg>
 );
 
-/** 军营 — 帐篷+战旗+兵器架（红色系） */
+/** 军营 — 军帐+战旗+兵器架（红色系，64×64） */
 const BarracksIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-barracks-tent" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#c62828" />
         <stop offset="100%" stopColor="#8b1a1a" />
       </linearGradient>
+      <linearGradient id="tk-barracks-tent2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#a82020" />
+        <stop offset="100%" stopColor="#701515" />
+      </linearGradient>
     </defs>
-    {/* 军帐主体 */}
-    <path d="M6,34 L20,10 L34,34 Z" fill="url(#tk-barracks-tent)" stroke="#6b1010" strokeWidth="1" />
+    {/* 主军帐 */}
+    <path d="M10,54 L32,18 L54,54 Z" fill="url(#tk-barracks-tent)" stroke="#6b1010" strokeWidth="1.5" />
     {/* 帐篷纹理 */}
-    <path d="M13,22 L20,10 L27,22" fill="none" stroke="#d4a030" strokeWidth="0.6" opacity="0.5" />
-    <line x1="20" y1="10" x2="20" y2="34" stroke="#d4a030" strokeWidth="0.4" opacity="0.3" />
+    <path d="M21,36 L32,18 L43,36" fill="none" stroke="#d4a030" strokeWidth="0.8" opacity="0.5" />
+    <line x1="32" y1="18" x2="32" y2="54" stroke="#d4a030" strokeWidth="0.6" opacity="0.3" />
     {/* 帐篷门帘 */}
-    <path d="M15,34 L15,24 Q20,20 25,24 L25,34" fill="#3a1a0a" stroke="#6b1010" strokeWidth="0.5" />
-    {/* 帐顶装饰 */}
-    <circle cx="20" cy="9" r="1.5" fill="#d4a030" />
+    <path d="M22,54 L22,42 Q32,36 42,42 L42,54" fill="#3a1a0a" stroke="#6b1010" strokeWidth="0.8" />
+    {/* 帐顶装饰球 */}
+    <circle cx="32" cy="16" r="2.5" fill="#d4a030" />
+    {/* 副军帐 — 左后 */}
+    <path d="M2,54 L14,32 L26,54 Z" fill="url(#tk-barracks-tent2)" stroke="#5a0e0e" strokeWidth="0.8" />
+    <circle cx="14" cy="30.5" r="1.5" fill="#d4a030" opacity="0.7" />
     {/* 主战旗 — 右侧 */}
-    <line x1="32" y1="2" x2="32" y2="28" stroke="#6b4226" strokeWidth="1.5" />
-    <path d="M32,2 L39,5 L37,9 L39,13 L32,11 Z" fill="#c62828" stroke="#8b1a1a" strokeWidth="0.5" />
-    <text x="35.5" y="9" textAnchor="middle" fontSize="4" fill="#d4a030" fontFamily="serif" fontWeight="bold">軍</text>
-    <circle cx="32" cy="1.5" r="1.2" fill="#d4a030" />
+    <line x1="50" y1="2" x2="50" y2="44" stroke="#6b4226" strokeWidth="2.5" />
+    <path d="M50,2 L62,6 L60,12 L62,18 L50,16 Z" fill="#c62828" stroke="#8b1a1a" strokeWidth="0.8" />
+    <text x="56" y="12" textAnchor="middle" fontSize="7" fill="#d4a030" fontFamily="serif" fontWeight="bold">軍</text>
+    <circle cx="50" cy="1.5" r="2" fill="#d4a030" />
     {/* 副战旗 — 左侧 */}
-    <line x1="6" y1="6" x2="6" y2="24" stroke="#6b4226" strokeWidth="1" />
-    <path d="M6,6 L12,8 L11,11 L12,14 L6,12 Z" fill="#c62828" stroke="#8b1a1a" strokeWidth="0.4" />
-    <text x="9" y="11.5" textAnchor="middle" fontSize="3" fill="#d4a030" fontFamily="serif" fontWeight="bold">漢</text>
+    <line x1="8" y1="8" x2="8" y2="36" stroke="#6b4226" strokeWidth="1.5" />
+    <path d="M8,8 L18,11 L17,16 L18,21 L8,18 Z" fill="#c62828" stroke="#8b1a1a" strokeWidth="0.6" />
+    <text x="13" y="16" textAnchor="middle" fontSize="5" fill="#d4a030" fontFamily="serif" fontWeight="bold">漢</text>
+    <circle cx="8" cy="7" r="1.5" fill="#d4a030" />
     {/* 兵器架 — 帐篷前 */}
-    <line x1="27" y1="20" x2="27" y2="34" stroke="#6b4226" strokeWidth="1" />
-    <line x1="25" y1="20" x2="29" y2="20" stroke="#6b4226" strokeWidth="0.8" />
+    <line x1="44" y1="32" x2="44" y2="54" stroke="#6b4226" strokeWidth="1.5" />
+    <line x1="40" y1="32" x2="48" y2="32" stroke="#6b4226" strokeWidth="1.2" />
     {/* 架上长枪 */}
-    <line x1="26" y1="12" x2="26" y2="20" stroke="#c0c0c0" strokeWidth="0.8" />
-    <polygon points="26,10.5 27,12 25,12" fill="#c0c0c0" />
-    <line x1="28" y1="14" x2="28" y2="20" stroke="#c0c0c0" strokeWidth="0.8" />
-    <polygon points="28,12.5 29,14 27,14" fill="#c0c0c0" />
+    <line x1="42" y1="20" x2="42" y2="32" stroke="#c0c0c0" strokeWidth="1.2" />
+    <polygon points="42,18 43.5,20 40.5,20" fill="#c0c0c0" />
+    <line x1="45" y1="22" x2="45" y2="32" stroke="#c0c0c0" strokeWidth="1.2" />
+    <polygon points="45,20 46.5,22 43.5,22" fill="#c0c0c0" />
     {/* 大刀 */}
-    <line x1="30" y1="16" x2="30" y2="20" stroke="#c0c0c0" strokeWidth="0.8" />
-    <path d="M28.5,16 Q30,13 31.5,16" fill="#c0c0c0" opacity="0.6" />
+    <line x1="48" y1="26" x2="48" y2="32" stroke="#c0c0c0" strokeWidth="1" />
+    <path d="M45.5,26 Q48,22 50.5,26" fill="#c0c0c0" opacity="0.6" />
+    {/* 弓 */}
+    <path d="M38,20 Q35,26 38,32" fill="none" stroke="#8b4513" strokeWidth="1" />
+    <line x1="38" y1="20" x2="38" y2="32" stroke="#d4a030" strokeWidth="0.5" />
     {/* 地面 */}
-    <path d="M2,36 Q20,34 38,36" stroke="#5a4a2a" strokeWidth="0.6" fill="none" opacity="0.4" />
+    <path d="M2,58 Q32,55 62,58" stroke="#5a4a2a" strokeWidth="0.8" fill="none" opacity="0.4" />
   </svg>
 );
 
-/** 铁匠铺 — 铁砧+炉火+锤子（橙色系） */
+/** 铁匠铺 — 铁砧+锤子+火花+炉火（橙色系，64×64） */
 const SmithyIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="tk-smithy-fire" cx="0.5" cy="0.8" r="0.5">
         <stop offset="0%" stopColor="#ff6600" />
         <stop offset="60%" stopColor="#e65100" />
         <stop offset="100%" stopColor="#bf360c" stopOpacity="0" />
       </radialGradient>
+      <radialGradient id="tk-smithy-spark" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0%" stopColor="#ffeb3b" />
+        <stop offset="50%" stopColor="#ff6600" />
+        <stop offset="100%" stopColor="#bf360c" stopOpacity="0" />
+      </radialGradient>
     </defs>
+    {/* 简易棚屋 — 斜顶 */}
+    <path d="M4,34 L32,14 L60,34 Z" fill="#6b4226" stroke="#4a2a16" strokeWidth="1.5" />
+    <line x1="6" y1="34" x2="6" y2="58" stroke="#6b4226" strokeWidth="2" />
+    <line x1="58" y1="34" x2="58" y2="58" stroke="#6b4226" strokeWidth="2" />
+    {/* 棚顶茅草纹理 */}
+    <line x1="14" y1="26" x2="50" y2="26" stroke="#8B6914" strokeWidth="0.5" opacity="0.5" />
+    <line x1="10" y1="30" x2="54" y2="30" stroke="#8B6914" strokeWidth="0.5" opacity="0.5" />
     {/* 铁砧 */}
-    <path d="M12,26 L28,26 L26,32 L14,32 Z" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="1" />
-    <path d="M14,22 L26,22 L28,26 L12,26 Z" fill="#6a6a6a" stroke="#4a4a4a" strokeWidth="0.8" />
-    <rect x="16" y="20" width="8" height="3" rx="1" fill="#7a7a7a" />
+    <path d="M20,44 L44,44 L42,52 L22,52 Z" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="1.2" />
+    <path d="M22,40 L42,40 L44,44 L20,44 Z" fill="#6a6a6a" stroke="#4a4a4a" strokeWidth="1" />
+    <rect x="26" y="37" width="12" height="4" rx="1.5" fill="#7a7a7a" />
     {/* 铁砧底部 */}
-    <rect x="14" y="32" width="12" height="2" rx="1" fill="#4a4a4a" />
+    <rect x="22" y="52" width="20" height="3" rx="1" fill="#4a4a4a" />
     {/* 炉火 — 左侧 */}
-    <path d="M6,28 Q6,18 10,14 Q8,20 12,18 Q10,24 14,22 L14,28 Z" fill="url(#tk-smithy-fire)" />
-    <path d="M8,26 Q8,20 10,17 Q9,22 12,20 Q10,24 12,23 L12,26 Z" fill="#ff9800" opacity="0.7" />
-    <path d="M9,24 Q9,21 10,19 Q10,23 11,22 L11,24 Z" fill="#ffeb3b" opacity="0.5" />
-    {/* 火星 */}
-    <circle cx="7" cy="14" r="0.8" fill="#ff6600" opacity="0.7" />
-    <circle cx="9" cy="12" r="0.6" fill="#ffaa00" opacity="0.5" />
-    <circle cx="11" cy="13" r="0.5" fill="#ff4400" opacity="0.6" />
+    <path d="M8,46 Q8,32 14,26 Q12,34 18,30 Q15,38 20,36 L20,46 Z" fill="url(#tk-smithy-fire)" />
+    <path d="M10,42 Q10,34 14,30 Q12,36 16,34 Q14,38 18,38 L18,42 Z" fill="#ff9800" opacity="0.7" />
+    <path d="M12,38 Q12,34 14,32 Q13,36 15,35 L15,38 Z" fill="#ffeb3b" opacity="0.5" />
+    {/* 火星飞溅 */}
+    <circle cx="10" cy="22" r="1.5" fill="url(#tk-smithy-spark)" />
+    <circle cx="14" cy="18" r="1" fill="#ff6600" opacity="0.7" />
+    <circle cx="18" cy="20" r="0.8" fill="#ffaa00" opacity="0.5" />
+    <circle cx="8" cy="26" r="0.7" fill="#ff4400" opacity="0.6" />
+    <circle cx="22" cy="16" r="0.6" fill="#ffeb3b" opacity="0.4" />
+    <circle cx="16" cy="14" r="0.5" fill="#ff6600" opacity="0.3" />
     {/* 锤子 */}
-    <line x1="28" y1="8" x2="22" y2="20" stroke="#6b4226" strokeWidth="2" strokeLinecap="round" />
-    <rect x="26" y="5" width="6" height="5" rx="1" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.6" transform="rotate(-20 29 7.5)" />
+    <line x1="46" y1="14" x2="38" y2="36" stroke="#6b4226" strokeWidth="3" strokeLinecap="round" />
+    <rect x="42" y="10" width="9" height="7" rx="1.5" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.8" transform="rotate(-20 46.5 13.5)" />
     {/* 被锻造的兵器 */}
-    <path d="M18,18 L20,8 L22,18" fill="#8a8a8a" stroke="#6a6a6a" strokeWidth="0.5" opacity="0.6" />
-    <polygon points="20,6 21,8 19,8" fill="#c0c0c0" opacity="0.6" />
+    <path d="M28,34 L32,16 L36,34" fill="#8a8a8a" stroke="#6a6a6a" strokeWidth="0.6" opacity="0.7" />
+    <polygon points="32,12 34,16 30,16" fill="#c0c0c0" opacity="0.7" />
+    {/* 火花效果 — 右上 */}
+    <path d="M36,18 L38,14" stroke="#ff6600" strokeWidth="0.8" opacity="0.6" />
+    <path d="M34,16 L36,12" stroke="#ffaa00" strokeWidth="0.6" opacity="0.5" />
+    <circle cx="40" cy="14" r="1" fill="#ff6600" opacity="0.4" />
+    {/* 地面 */}
+    <path d="M2,58 Q32,55 62,58" stroke="#5a4a2a" strokeWidth="0.8" fill="none" opacity="0.4" />
   </svg>
 );
 
-/** 太学 — 书卷+竹简+讲台（蓝色系） */
+/** 太学 — 竹简卷轴+书案+孔子讲学剪影（蓝色系，64×64） */
 const AcademyIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-academy-desk" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#6b4226" />
         <stop offset="100%" stopColor="#4a2a16" />
       </linearGradient>
+      <linearGradient id="tk-academy-night" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#1a2a4a" />
+        <stop offset="100%" stopColor="#0a1428" />
+      </linearGradient>
     </defs>
-    {/* 讲台（高台） */}
-    <rect x="4" y="26" width="32" height="4" rx="1" fill="url(#tk-academy-desk)" stroke="#3a1a0a" strokeWidth="0.8" />
-    <rect x="6" y="30" width="2" height="6" fill="#4a2a16" />
-    <rect x="32" y="30" width="2" height="6" fill="#4a2a16" />
-    {/* 竹简 — 摊开在讲台上 */}
-    <rect x="6" y="16" width="18" height="10" rx="1" fill="#d4b896" stroke="#8B7355" strokeWidth="0.8" />
+    {/* 书案（高台） */}
+    <rect x="6" y="42" width="52" height="6" rx="1.5" fill="url(#tk-academy-desk)" stroke="#3a1a0a" strokeWidth="1.2" />
+    <rect x="10" y="48" width="3" height="10" fill="#4a2a16" />
+    <rect x="51" y="48" width="3" height="10" fill="#4a2a16" />
+    {/* 竹简 — 摊开在书案上 */}
+    <rect x="10" y="28" width="28" height="14" rx="1.5" fill="#d4b896" stroke="#8B7355" strokeWidth="1.2" />
     {/* 竹简编绳 */}
-    <line x1="6" y1="19" x2="24" y2="19" stroke="#d4a030" strokeWidth="0.6" opacity="0.6" />
-    <line x1="6" y1="23" x2="24" y2="23" stroke="#d4a030" strokeWidth="0.6" opacity="0.6" />
+    <line x1="10" y1="33" x2="38" y2="33" stroke="#d4a030" strokeWidth="0.8" opacity="0.6" />
+    <line x1="10" y1="38" x2="38" y2="38" stroke="#d4a030" strokeWidth="0.8" opacity="0.6" />
     {/* 竹简文字 */}
-    <text x="10" y="18.5" fontSize="3" fill="#3a2a1a" opacity="0.7">子曰</text>
-    <text x="10" y="22.5" fontSize="3" fill="#3a2a1a" opacity="0.7">学而</text>
+    <text x="16" y="32" fontSize="4.5" fill="#3a2a1a" opacity="0.7">子曰</text>
+    <text x="16" y="37" fontSize="4.5" fill="#3a2a1a" opacity="0.7">学而</text>
+    <text x="16" y="42" fontSize="4.5" fill="#3a2a1a" opacity="0.7">时习</text>
     {/* 竹简卷轴端 */}
-    <rect x="5" y="15" width="2" height="12" rx="1" fill="#b87333" />
-    <rect x="23" y="15" width="2" height="12" rx="1" fill="#b87333" />
+    <rect x="8" y="27" width="3" height="16" rx="1.5" fill="#b87333" />
+    <rect x="37" y="27" width="3" height="16" rx="1.5" fill="#b87333" />
     {/* 成卷竹简 — 左上 */}
-    <rect x="2" y="6" width="4" height="14" rx="2" fill="#d4b896" stroke="#8B7355" strokeWidth="0.5" />
-    <line x1="3" y1="8" x2="5" y2="8" stroke="#d4a030" strokeWidth="0.3" />
-    <line x1="3" y1="11" x2="5" y2="11" stroke="#d4a030" strokeWidth="0.3" />
-    <line x1="3" y1="14" x2="5" y2="14" stroke="#d4a030" strokeWidth="0.3" />
-    <line x1="3" y1="17" x2="5" y2="17" stroke="#d4a030" strokeWidth="0.3" />
+    <rect x="3" y="10" width="6" height="22" rx="3" fill="#d4b896" stroke="#8B7355" strokeWidth="0.8" />
+    <line x1="4" y1="14" x2="8" y2="14" stroke="#d4a030" strokeWidth="0.4" />
+    <line x1="4" y1="18" x2="8" y2="18" stroke="#d4a030" strokeWidth="0.4" />
+    <line x1="4" y1="22" x2="8" y2="22" stroke="#d4a030" strokeWidth="0.4" />
+    <line x1="4" y1="26" x2="8" y2="26" stroke="#d4a030" strokeWidth="0.4" />
+    {/* 孔子讲学剪影 — 右上 */}
+    <circle cx="50" cy="16" r="5" fill="#3a2a1a" opacity="0.35" />
+    <path d="M45,22 L44,36 L56,36 L55,22" fill="#3a2a1a" opacity="0.25" />
+    {/* 冠帽 */}
+    <rect x="46" y="10" width="8" height="3" rx="1" fill="#3a2a1a" opacity="0.3" />
+    {/* 手持竹简 */}
+    <rect x="42" y="24" width="4" height="10" rx="1" fill="#d4b896" opacity="0.3" />
     {/* 油灯 — 右侧 */}
-    <ellipse cx="32" cy="24" rx="3" ry="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
-    <rect x="31" y="20" width="2" height="4" rx="0.5" fill="#d4b896" />
+    <ellipse cx="52" cy="40" rx="4" ry="2" fill="#b87333" stroke="#8B6914" strokeWidth="0.8" />
+    <rect x="50" y="34" width="3" height="6" rx="1" fill="#d4b896" />
     {/* 灯焰 */}
-    <path d="M32,16 Q33,18 32,20 Q31,18 32,16 Z" fill="#ff9800" opacity="0.8" />
-    <path d="M32,17 Q32.5,18 32,19.5 Q31.5,18 32,17 Z" fill="#ffeb3b" opacity="0.6" />
+    <path d="M51.5,26 Q53,30 51.5,34 Q50,30 51.5,26 Z" fill="#ff9800" opacity="0.8" />
+    <path d="M51.5,28 Q52.5,30 51.5,33 Q50.5,30 51.5,28 Z" fill="#ffeb3b" opacity="0.6" />
     {/* 灯光光晕 */}
-    <circle cx="32" cy="17" r="4" fill="#ff9800" opacity="0.06" />
+    <circle cx="51.5" cy="28" r="8" fill="#ff9800" opacity="0.05" />
     {/* 毛笔 — 斜靠 */}
-    <line x1="26" y1="8" x2="30" y2="24" stroke="#6b4226" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M29.5,22 L30.5,26 L29,26 Z" fill="#1a1a1a" />
-    {/* 讲台台面装饰 */}
-    <path d="M8,26 L32,26" stroke="#d4a030" strokeWidth="0.3" opacity="0.3" />
+    <line x1="40" y1="12" x2="48" y2="38" stroke="#6b4226" strokeWidth="2" strokeLinecap="round" />
+    <path d="M47,36 L48.5,42 L46.5,42 Z" fill="#1a1a1a" />
+    {/* 墨迹点 */}
+    <circle cx="48" cy="42" r="1.5" fill="#1a1a1a" opacity="0.3" />
   </svg>
 );
 
-/** 药庐 — 药罐+草药+药柜（青色系） */
+/** 药庐 — 药柜+捣药罐+草药（青色系，64×64） */
 const ClinicIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-    {/* 药葫芦 */}
-    <ellipse cx="14" cy="22" rx="6" ry="8" fill="#5a8a6a" stroke="#3a6a4a" strokeWidth="1.2" />
-    <ellipse cx="14" cy="15" rx="3.5" ry="3.5" fill="#5a8a6a" stroke="#3a6a4a" strokeWidth="1" />
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tk-clinic-cab" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#6b4226" />
+        <stop offset="100%" stopColor="#4a2a16" />
+      </linearGradient>
+    </defs>
+    {/* 药柜 — 右侧背景 */}
+    <rect x="38" y="10" width="22" height="38" rx="1.5" fill="url(#tk-clinic-cab)" stroke="#3a1a0a" strokeWidth="1" />
+    {/* 药柜抽屉 */}
+    <rect x="40" y="12" width="8" height="7" rx="0.5" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
+    <circle cx="44" cy="15.5" r="0.8" fill="#d4a030" />
+    <rect x="50" y="12" width="8" height="7" rx="0.5" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
+    <circle cx="54" cy="15.5" r="0.8" fill="#d4a030" />
+    <rect x="40" y="21" width="8" height="7" rx="0.5" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
+    <circle cx="44" cy="24.5" r="0.8" fill="#d4a030" />
+    <rect x="50" y="21" width="8" height="7" rx="0.5" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
+    <circle cx="54" cy="24.5" r="0.8" fill="#d4a030" />
+    <rect x="40" y="30" width="8" height="7" rx="0.5" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
+    <circle cx="44" cy="33.5" r="0.8" fill="#d4a030" />
+    <rect x="50" y="30" width="8" height="7" rx="0.5" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
+    <circle cx="54" cy="33.5" r="0.8" fill="#d4a030" />
+    <rect x="40" y="39" width="18" height="7" rx="0.5" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.5" />
+    <circle cx="49" cy="42.5" r="0.8" fill="#d4a030" />
+    {/* 药葫芦 — 左侧 */}
+    <ellipse cx="22" cy="34" rx="10" ry="13" fill="#5a8a6a" stroke="#3a6a4a" strokeWidth="1.5" />
+    <ellipse cx="22" cy="22" rx="6" ry="6" fill="#5a8a6a" stroke="#3a6a4a" strokeWidth="1.2" />
     {/* 葫芦腰 */}
-    <path d="M10.5,18 Q14,15.5 17.5,18" stroke="#3a6a4a" strokeWidth="0.8" fill="none" />
+    <path d="M15,26 Q22,22.5 29,26" stroke="#3a6a4a" strokeWidth="1.2" fill="none" />
     {/* 葫芦口 */}
-    <rect x="12.5" y="9.5" width="3" height="2.5" rx="0.8" fill="#6b4226" />
+    <rect x="19" y="13" width="6" height="4" rx="1.2" fill="#6b4226" />
     {/* 葫芦带子 */}
-    <path d="M11,11 Q14,13 17,11" stroke="#d4a030" strokeWidth="0.6" fill="none" />
+    <path d="M16,16 Q22,20 28,16" stroke="#d4a030" strokeWidth="0.8" fill="none" />
     {/* 葫芦十字标记 */}
-    <line x1="14" y1="18" x2="14" y2="27" stroke="#d4a030" strokeWidth="1.2" opacity="0.6" />
-    <line x1="10" y1="22.5" x2="18" y2="22.5" stroke="#d4a030" strokeWidth="1.2" opacity="0.6" />
+    <line x1="22" y1="28" x2="22" y2="42" stroke="#d4a030" strokeWidth="1.5" opacity="0.6" />
+    <line x1="15" y1="35" x2="29" y2="35" stroke="#d4a030" strokeWidth="1.5" opacity="0.6" />
     {/* 葫芦高光 */}
-    <ellipse cx="11.5" cy="20" rx="1.5" ry="3.5" fill="white" opacity="0.08" />
-    {/* 药罐 — 中间 */}
-    <path d="M22,18 L22,30 Q22,33 25,33 L29,33 Q32,33 32,30 L32,18 Z" fill="#8a6a4a" stroke="#6b4a2a" strokeWidth="0.8" />
-    <ellipse cx="27" cy="18" rx="5.5" ry="2" fill="#9a7a5a" stroke="#6b4a2a" strokeWidth="0.5" />
-    {/* 药罐盖子 */}
-    <rect x="23" y="15" width="8" height="3" rx="1" fill="#6b4226" stroke="#4a2a16" strokeWidth="0.5" />
-    {/* 药罐把手 */}
-    <path d="M22,20 Q20,20 20,22 Q20,24 22,24" stroke="#6b4a2a" strokeWidth="0.8" fill="none" />
-    <path d="M32,20 Q34,20 34,22 Q34,24 32,24" stroke="#6b4a2a" strokeWidth="0.8" fill="none" />
-    {/* 药罐冒烟 */}
-    <path d="M25,14 Q24,11 26,10" stroke="#8a7a60" strokeWidth="0.5" fill="none" opacity="0.5" />
-    <path d="M28,13 Q29,10 27,9" stroke="#8a7a60" strokeWidth="0.5" fill="none" opacity="0.4" />
-    <path d="M26.5,12 Q26,9 27.5,8" stroke="#8a7a60" strokeWidth="0.4" fill="none" opacity="0.3" />
-    {/* 草药叶 — 右上 */}
-    <path d="M34,14 Q36,10 34,6" stroke="#4a7a3a" strokeWidth="1" fill="none" />
-    <path d="M34,6 Q32,8 34,12" stroke="#4a7a3a" strokeWidth="0.6" fill="#5a8a4a" opacity="0.6" />
-    <path d="M34,10 Q36,8 38,10" stroke="#4a7a3a" strokeWidth="0.6" fill="#5a8a4a" opacity="0.6" />
-    {/* 药柜 — 底部 */}
-    <rect x="22" y="34" width="10" height="4" rx="0.5" fill="#6b4226" stroke="#4a2a16" strokeWidth="0.5" />
-    <line x1="27" y1="34" x2="27" y2="38" stroke="#4a2a16" strokeWidth="0.3" />
-    <circle cx="25" cy="36" r="0.5" fill="#d4a030" />
-    <circle cx="29" cy="36" r="0.5" fill="#d4a030" />
+    <ellipse cx="18" cy="31" rx="2.5" ry="6" fill="white" opacity="0.08" />
+    {/* 捣药罐 — 中下 */}
+    <path d="M6,42 L6,56 Q6,60 10,60 L18,60 Q22,60 22,56 L22,42 Z" fill="#8a6a4a" stroke="#6b4a2a" strokeWidth="1.2" />
+    <ellipse cx="14" cy="42" rx="8.5" ry="3" fill="#9a7a5a" stroke="#6b4a2a" stroke-width="0.8" />
+    {/* 捣药杵 */}
+    <line x1="14" y1="30" x2="14" y2="42" stroke="#6b4226" strokeWidth="2.5" strokeLinecap="round" />
+    <circle cx="14" cy="29" r="2.5" fill="#6b4226" />
+    {/* 草药 — 右上 */}
+    <path d="M56,6 Q58,2 56,0" stroke="#4a7a3a" strokeWidth="1.5" fill="none" />
+    <path d="M56,0 Q54,3 56,7" stroke="#4a7a3a" strokeWidth="1" fill="#5a8a4a" opacity="0.6" />
+    <path d="M56,4 Q58,2 60,4" stroke="#4a7a3a" strokeWidth="1" fill="#5a8a4a" opacity="0.6" />
+    <path d="M56,8 Q54,6 52,8" stroke="#4a7a3a" strokeWidth="0.8" fill="#5a8a4a" opacity="0.5" />
+    {/* 草药叶 — 左上 */}
+    <path d="M8,8 Q6,4 8,2" stroke="#4a7a3a" strokeWidth="1.2" fill="none" />
+    <path d="M8,2 Q10,5 8,8" fill="#5a8a4a" opacity="0.5" />
+    {/* 地面 */}
+    <path d="M2,58 Q32,55 62,58" stroke="#5a4a2a" strokeWidth="0.8" fill="none" opacity="0.4" />
   </svg>
 );
 
-/** 城防 — 城墙+箭塔+烽火台（灰色系） */
+/** 城防 — 城墙+箭塔+烽火台（灰色系，64×64） */
 const WallIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-wall-stone" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#6a6a6a" />
@@ -304,47 +399,51 @@ const WallIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
       </linearGradient>
     </defs>
     {/* 城墙主体 */}
-    <rect x="4" y="18" width="32" height="16" fill="url(#tk-wall-stone)" stroke="#3a3a3a" strokeWidth="1" />
+    <rect x="6" y="28" width="52" height="26" fill="url(#tk-wall-stone)" stroke="#3a3a3a" strokeWidth="1.5" />
     {/* 城垛（锯齿形） */}
-    {[6, 13, 20, 27, 34].map((x, i) => (
-      <rect key={i} x={x - 2} y="12" width="5" height="7" fill="url(#tk-wall-stone)" stroke="#3a3a3a" strokeWidth="0.6" />
+    {[10, 20, 30, 40, 50].map((x, i) => (
+      <rect key={i} x={x - 3} y="18" width="8" height="12" fill="url(#tk-wall-stone)" stroke="#3a3a3a" strokeWidth="0.8" />
     ))}
     {/* 城门 */}
-    <path d="M15,34 L15,24 Q20,18 25,24 L25,34" fill="#2a1a0a" stroke="#1a0a00" strokeWidth="0.8" />
+    <path d="M24,54 L24,40 Q32,32 40,40 L40,54" fill="#2a1a0a" stroke="#1a0a00" strokeWidth="1.2" />
     {/* 城门钉 */}
-    <circle cx="23" cy="28" r="0.8" fill="#b87333" />
+    <circle cx="36" cy="46" r="1.2" fill="#b87333" />
+    <circle cx="36" cy="50" r="1.2" fill="#b87333" />
     {/* 城楼 — 中间上方 */}
-    <path d="M12,12 L20,6 L28,12 Z" fill="#8b2020" stroke="#6b1010" strokeWidth="0.6" />
+    <path d="M18,18 L32,8 L46,18 Z" fill="#8b2020" stroke="#6b1010" strokeWidth="1" />
     {/* 飞檐 */}
-    <path d="M10,12 Q12,10 14,12" stroke="#d4a030" strokeWidth="0.6" fill="none" />
-    <path d="M26,12 Q28,10 30,12" stroke="#d4a030" strokeWidth="0.6" fill="none" />
+    <path d="M15,18 Q18,15 22,18" stroke="#d4a030" strokeWidth="1" fill="none" />
+    <path d="M42,18 Q46,15 49,18" stroke="#d4a030" strokeWidth="1" fill="none" />
     {/* 城楼窗户 */}
-    <rect x="17" y="7.5" width="2" height="2.5" rx="0.5" fill="#d4a030" opacity="0.4" />
-    <rect x="21" y="7.5" width="2" height="2.5" rx="0.5" fill="#d4a030" opacity="0.4" />
+    <rect x="26" y="10" width="3" height="4" rx="0.8" fill="#d4a030" opacity="0.4" />
+    <rect x="34" y="10" width="3" height="4" rx="0.8" fill="#d4a030" opacity="0.4" />
     {/* 箭塔 — 左侧 */}
-    <rect x="2" y="6" width="5" height="14" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.6" />
-    <path d="M1,6 L4.5,2 L8,6 Z" fill="#8b2020" stroke="#6b1010" strokeWidth="0.4" />
+    <rect x="2" y="8" width="8" height="22" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="1" />
+    <path d="M0,8 L6,2 L12,8 Z" fill="#8b2020" stroke="#6b1010" strokeWidth="0.6" />
     {/* 箭塔射孔 */}
-    <rect x="3" y="8" width="1.5" height="3" rx="0.3" fill="#1a1a1a" opacity="0.5" />
-    <rect x="3" y="13" width="1.5" height="3" rx="0.3" fill="#1a1a1a" opacity="0.5" />
+    <rect x="4" y="12" width="2.5" height="5" rx="0.5" fill="#1a1a1a" opacity="0.5" />
+    <rect x="4" y="20" width="2.5" height="5" rx="0.5" fill="#1a1a1a" opacity="0.5" />
     {/* 烽火台 — 右侧 */}
-    <rect x="33" y="2" width="5" height="12" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.6" />
-    <path d="M32,2 L35.5,0 L39,2 Z" fill="#8b2020" stroke="#6b1010" strokeWidth="0.4" />
+    <rect x="54" y="2" width="8" height="18" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="1" />
+    <path d="M52,2 L58,0 L64,2 Z" fill="#8b2020" stroke="#6b1010" strokeWidth="0.6" />
     {/* 烽火台上的火焰 */}
-    <path d="M35.5,1 Q36,2 35.5,3 Q35,2 35.5,1 Z" fill="#ff6600" opacity="0.8" />
-    <path d="M35.5,1.5 Q36,2.5 35.5,3.5 Q35,2.5 35.5,1.5 Z" fill="#ff9800" opacity="0.5" />
+    <path d="M58,1 Q59,3 58,5 Q57,3 58,1 Z" fill="#ff6600" opacity="0.8" />
+    <path d="M58,2 Q58.5,3 58,4.5 Q57.5,3 58,2 Z" fill="#ff9800" opacity="0.5" />
+    {/* 浓烟 */}
+    <path d="M56,0 Q55,-2 57,-3" stroke="#8a7a60" strokeWidth="0.6" fill="none" opacity="0.4" />
+    <path d="M60,0 Q61,-2 59,-3" stroke="#8a7a60" strokeWidth="0.5" fill="none" opacity="0.3" />
     {/* 瞭望窗 */}
-    <rect x="34" y="4" width="3" height="2" rx="0.3" fill="#d4a030" opacity="0.3" />
+    <rect x="56" y="6" width="4" height="3" rx="0.5" fill="#d4a030" opacity="0.3" />
     {/* 石砖纹理 */}
-    {[20, 26, 32].map(y => (
+    {[34, 42, 50].map(y => (
       <React.Fragment key={y}>
-        <line x1="5" y1={y} x2="14" y2={y} stroke="#4a4a4a" strokeWidth="0.3" />
-        <line x1="26" y1={y} x2="35" y2={y} stroke="#4a4a4a" strokeWidth="0.3" />
+        <line x1="8" y1={y} x2="22" y2={y} stroke="#4a4a4a" strokeWidth="0.4" />
+        <line x1="42" y1={y} x2="56" y2={y} stroke="#4a4a4a" strokeWidth="0.4" />
       </React.Fragment>
     ))}
     {/* 旗帜 — 城楼上 */}
-    <line x1="20" y1="0" x2="20" y2="6" stroke="#6b4226" strokeWidth="0.8" />
-    <path d="M20,0 L24,1.5 L20,3 Z" fill="#c62828" />
+    <line x1="32" y1="0" x2="32" y2="8" stroke="#6b4226" strokeWidth="1.2" />
+    <path d="M32,0 L38,2 L32,4 Z" fill="#c62828" />
   </svg>
 );
 
@@ -369,9 +468,9 @@ const TavernIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
   </svg>
 );
 
-/** 烽火台 — 梯形塔身+顶部火焰+底部石基（橙红色系） */
+/** 烽火台 — 高塔+火焰+浓烟（橙红色系，64×64） */
 const BeaconTowerIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="tk-beacon-fire" cx="0.5" cy="0.7" r="0.5">
         <stop offset="0%" stopColor="#ffeb3b" />
@@ -384,39 +483,48 @@ const BeaconTowerIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
       </linearGradient>
     </defs>
     {/* 石基 */}
-    <rect x="8" y="32" width="24" height="5" rx="1" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.8" />
-    <line x1="10" y1="34" x2="30" y2="34" stroke="#4a4a4a" strokeWidth="0.4" />
+    <rect x="12" y="52" width="40" height="8" rx="1.5" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="1.2" />
+    <line x1="16" y1="55" x2="48" y2="55" stroke="#4a4a4a" strokeWidth="0.5" />
     {/* 梯形塔身 */}
-    <path d="M12,32 L14,12 L26,12 L28,32 Z" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="1" />
+    <path d="M18,52 L22,18 L42,18 L46,52 Z" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="1.5" />
     {/* 塔身石砖纹理 */}
-    <line x1="13" y1="18" x2="27" y2="18" stroke="#5a5a5a" strokeWidth="0.4" />
-    <line x1="13" y1="24" x2="27" y2="24" stroke="#5a5a5a" strokeWidth="0.4" />
-    <line x1="20" y1="12" x2="20" y2="32" stroke="#5a5a5a" strokeWidth="0.3" />
+    <line x1="20" y1="28" x2="44" y2="28" stroke="#5a5a5a" strokeWidth="0.6" />
+    <line x1="21" y1="38" x2="43" y2="38" stroke="#5a5a5a" strokeWidth="0.6" />
+    <line x1="32" y1="18" x2="32" y2="52" stroke="#5a5a5a" strokeWidth="0.5" />
+    {/* 塔身横纹 */}
+    <line x1="19" y1="33" x2="44" y2="33" stroke="#5a5a5a" strokeWidth="0.3" opacity="0.5" />
+    <line x1="20" y1="43" x2="45" y2="43" stroke="#5a5a5a" strokeWidth="0.3" opacity="0.5" />
     {/* 塔顶平台 */}
-    <rect x="12" y="10" width="16" height="3" rx="0.5" fill="#6a6a6a" stroke="#4a4a4a" strokeWidth="0.6" />
+    <rect x="18" y="15" width="28" height="4" rx="1" fill="#6a6a6a" stroke="#4a4a4a" strokeWidth="1" />
     {/* 垛口 */}
-    <rect x="12" y="7" width="3" height="4" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.4" />
-    <rect x="18.5" y="7" width="3" height="4" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.4" />
-    <rect x="25" y="7" width="3" height="4" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.4" />
+    <rect x="18" y="10" width="5" height="6" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.6" />
+    <rect x="27" y="10" width="5" height="6" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.6" />
+    <rect x="36" y="10" width="5" height="6" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.6" />
+    <rect x="45" y="10" width="5" height="6" fill="url(#tk-beacon-stone)" stroke="#3a3a3a" strokeWidth="0.6" />
     {/* 火焰 — 顶部 */}
-    <path d="M20,2 Q24,4 23,8 Q22,6 20,7 Q18,6 17,8 Q16,4 20,2 Z" fill="url(#tk-beacon-fire)" />
-    <path d="M20,3 Q22,5 21.5,7 Q21,6 20,6.5 Q19,6 18.5,7 Q18,5 20,3 Z" fill="#ff9800" opacity="0.8" />
-    <path d="M20,4.5 Q21,5.5 20.5,7 Q20,6.5 19.5,7 Q19,5.5 20,4.5 Z" fill="#ffeb3b" opacity="0.7" />
+    <path d="M32,2 Q38,6 36,12 Q34,9 32,11 Q30,9 28,12 Q26,6 32,2 Z" fill="url(#tk-beacon-fire)" />
+    <path d="M32,4 Q35,7 34,11 Q33,9 32,10 Q31,9 30,11 Q29,7 32,4 Z" fill="#ff9800" opacity="0.8" />
+    <path d="M32,6 Q33,8 32.5,10 Q32,9 31.5,10 Q31,8 32,6 Z" fill="#ffeb3b" opacity="0.7" />
     {/* 火星 */}
-    <circle cx="16" cy="3" r="0.6" fill="#ff6600" opacity="0.6" />
-    <circle cx="24" cy="4" r="0.5" fill="#ff9800" opacity="0.5" />
-    <circle cx="20" cy="1" r="0.4" fill="#ffaa00" opacity="0.4" />
+    <circle cx="26" cy="4" r="1" fill="#ff6600" opacity="0.6" />
+    <circle cx="38" cy="6" r="0.8" fill="#ff9800" opacity="0.5" />
+    <circle cx="32" cy="0" r="0.6" fill="#ffaa00" opacity="0.4" />
+    <circle cx="24" cy="8" r="0.5" fill="#ff4400" opacity="0.4" />
+    <circle cx="40" cy="3" r="0.7" fill="#ffeb3b" opacity="0.3" />
     {/* 塔门 */}
-    <path d="M17,32 L17,26 Q20,23 23,26 L23,32" fill="#2a1a0a" stroke="#1a0a00" strokeWidth="0.5" />
-    {/* 烟雾 */}
-    <path d="M18,6 Q17,3 19,1" stroke="#8a7a60" strokeWidth="0.4" fill="none" opacity="0.4" />
-    <path d="M22,5 Q23,2 21,0.5" stroke="#8a7a60" strokeWidth="0.3" fill="none" opacity="0.3" />
+    <path d="M26,52 L26,42 Q32,37 38,42 L38,52" fill="#2a1a0a" stroke="#1a0a00" strokeWidth="0.8" />
+    {/* 浓烟 */}
+    <path d="M28,9 Q26,4 29,1" stroke="#8a7a60" strokeWidth="0.8" fill="none" opacity="0.4" />
+    <path d="M36,8 Q38,3 35,0" stroke="#8a7a60" strokeWidth="0.6" fill="none" opacity="0.3" />
+    <path d="M32,7 Q30,2 33,-1" stroke="#8a7a60" strokeWidth="0.5" fill="none" opacity="0.25" />
+    {/* 台阶 */}
+    <rect x="24" y="52" width="16" height="3" rx="0.5" fill="#6b5a14" stroke="#5a4a14" strokeWidth="0.5" />
   </svg>
 );
 
-/** 钱庄 — 方形建筑+大门+屋顶铜钱装饰（金色系） */
+/** 钱庄 — 金库大门+铜钱堆+算盘（金色系，64×64） */
 const MintIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-mint-gold" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#e8b84a" />
@@ -424,52 +532,64 @@ const MintIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
       </linearGradient>
     </defs>
     {/* 建筑主体 */}
-    <rect x="6" y="16" width="28" height="18" rx="1" fill="#8B6914" stroke="#6b5a14" strokeWidth="1" />
+    <rect x="10" y="24" width="44" height="28" rx="1.5" fill="#8B6914" stroke="#6b5a14" strokeWidth="1.5" />
     {/* 飞檐屋顶 */}
-    <path d="M2,18 L20,6 L38,18 Z" fill="url(#tk-mint-gold)" stroke="#8B6914" strokeWidth="0.8" />
+    <path d="M4,26 L32,10 L60,26 Z" fill="url(#tk-mint-gold)" stroke="#8B6914" strokeWidth="1.2" />
     {/* 飞檐翘角 */}
-    <path d="M0,18 Q2,15 5,18" stroke="#d4a030" strokeWidth="1" fill="none" />
-    <path d="M35,18 Q38,15 40,18" stroke="#d4a030" strokeWidth="1" fill="none" />
+    <path d="M0,26 Q4,21 8,26" stroke="#d4a030" strokeWidth="1.5" fill="none" />
+    <path d="M56,26 Q60,21 64,26" stroke="#d4a030" strokeWidth="1.5" fill="none" />
     {/* 屋脊装饰 */}
-    <circle cx="20" cy="6" r="1.5" fill="#d4a030" />
+    <circle cx="32" cy="10" r="2.5" fill="#d4a030" />
     {/* 屋顶铜钱装饰 — 左右 */}
-    <circle cx="12" cy="11" r="2.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
-    <rect x="11" y="10" width="2" height="2" fill="#6b5a14" rx="0.2" />
-    <circle cx="28" cy="11" r="2.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
-    <rect x="27" y="10" width="2" height="2" fill="#6b5a14" rx="0.2" />
+    <circle cx="20" cy="17" r="4" fill="#b87333" stroke="#8B6914" strokeWidth="0.8" />
+    <rect x="18.5" y="15.5" width="3" height="3" fill="#6b5a14" rx="0.3" />
+    <circle cx="44" cy="17" r="4" fill="#b87333" stroke="#8B6914" strokeWidth="0.8" />
+    <rect x="42.5" y="15.5" width="3" height="3" fill="#6b5a14" rx="0.3" />
     {/* 大门 */}
-    <path d="M14,34 L14,22 Q20,17 26,22 L26,34" fill="#3a2a1a" stroke="#6b5a14" strokeWidth="0.8" />
+    <path d="M22,52 L22,34 Q32,27 42,34 L42,52" fill="#3a2a1a" stroke="#6b5a14" strokeWidth="1.2" />
     {/* 门钉 */}
-    <circle cx="18" cy="26" r="0.8" fill="#d4a030" />
-    <circle cx="22" cy="26" r="0.8" fill="#d4a030" />
-    <circle cx="18" cy="30" r="0.8" fill="#d4a030" />
-    <circle cx="22" cy="30" r="0.8" fill="#d4a030" />
+    <circle cx="29" cy="40" r="1.2" fill="#d4a030" />
+    <circle cx="35" cy="40" r="1.2" fill="#d4a030" />
+    <circle cx="29" cy="46" r="1.2" fill="#d4a030" />
+    <circle cx="35" cy="46" r="1.2" fill="#d4a030" />
     {/* 门环 */}
-    <circle cx="17" cy="28" r="1" fill="none" stroke="#d4a030" strokeWidth="0.6" />
-    <circle cx="23" cy="28" r="1" fill="none" stroke="#d4a030" strokeWidth="0.6" />
+    <circle cx="28" cy="43" r="1.5" fill="none" stroke="#d4a030" strokeWidth="0.8" />
+    <circle cx="36" cy="43" r="1.5" fill="none" stroke="#d4a030" strokeWidth="0.8" />
     {/* 匾额 — 钱庄 */}
-    <rect x="14" y="18" width="12" height="4" rx="0.5" fill="#3a2a1a" stroke="#d4a030" strokeWidth="0.5" />
-    <text x="20" y="21.2" textAnchor="middle" fontSize="3" fill="#d4a030" fontFamily="serif" fontWeight="bold">錢莊</text>
+    <rect x="22" y="26" width="20" height="6" rx="1" fill="#3a2a1a" stroke="#d4a030" strokeWidth="0.8" />
+    <text x="32" y="31" textAnchor="middle" fontSize="5" fill="#d4a030" fontFamily="serif" fontWeight="bold">錢莊</text>
     {/* 窗户 */}
-    <rect x="8" y="22" width="4" height="4" rx="0.5" fill="#d4a030" opacity="0.3" />
-    <line x1="10" y1="22" x2="10" y2="26" stroke="#8B6914" strokeWidth="0.4" />
-    <rect x="28" y="22" width="4" height="4" rx="0.5" fill="#d4a030" opacity="0.3" />
-    <line x1="30" y1="22" x2="30" y2="26" stroke="#8B6914" strokeWidth="0.4" />
-    {/* 铜钱堆 — 门前 */}
-    <circle cx="16" cy="36" r="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.3" />
-    <rect x="15.2" y="35.2" width="1.2" height="1.2" fill="#6b5a14" rx="0.1" />
-    <circle cx="20" cy="37" r="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.3" />
-    <rect x="19.2" y="36.2" width="1.2" height="1.2" fill="#6b5a14" rx="0.1" />
-    <circle cx="24" cy="36" r="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="0.3" />
-    <rect x="23.2" y="35.2" width="1.2" height="1.2" fill="#6b5a14" rx="0.1" />
+    <rect x="12" y="34" width="6" height="6" rx="1" fill="#d4a030" opacity="0.3" />
+    <line x1="15" y1="34" x2="15" y2="40" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="46" y="34" width="6" height="6" rx="1" fill="#d4a030" opacity="0.3" />
+    <line x1="49" y1="34" x2="49" y2="40" stroke="#8B6914" strokeWidth="0.5" />
+    {/* 算盘 — 门前左侧 */}
+    <rect x="6" y="44" width="12" height="8" rx="1" fill="#8B6914" stroke="#6b5a14" strokeWidth="0.6" />
+    <line x1="6" y1="47" x2="18" y2="47" stroke="#d4a030" strokeWidth="0.5" />
+    <line x1="6" y1="50" x2="18" y2="50" stroke="#d4a030" strokeWidth="0.5" />
+    {/* 算盘珠子 */}
+    <circle cx="9" cy="46" r="1" fill="#b87333" />
+    <circle cx="12" cy="46" r="1" fill="#b87333" />
+    <circle cx="15" cy="46" r="1" fill="#b87333" />
+    <circle cx="8" cy="49" r="1" fill="#b87333" />
+    <circle cx="11" cy="49" r="1" fill="#b87333" />
+    <circle cx="14" cy="49" r="1" fill="#b87333" />
+    <circle cx="17" cy="49" r="1" fill="#b87333" />
+    {/* 铜钱堆 — 门前右侧 */}
+    <circle cx="52" cy="50" r="3" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="50.8" y="48.8" width="2.4" height="2.4" fill="#6b5a14" rx="0.2" />
+    <circle cx="56" cy="52" r="3" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="54.8" y="50.8" width="2.4" height="2.4" fill="#6b5a14" rx="0.2" />
+    <circle cx="54" cy="48" r="3" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
+    <rect x="52.8" y="46.8" width="2.4" height="2.4" fill="#6b5a14" rx="0.2" />
     {/* 台阶 */}
-    <rect x="12" y="34" width="16" height="2" rx="0.5" fill="#6b5a14" stroke="#5a4a14" strokeWidth="0.4" />
+    <rect x="18" y="52" width="28" height="3" rx="0.8" fill="#6b5a14" stroke="#5a4a14" strokeWidth="0.6" />
   </svg>
 );
 
-/** 锻兵坊 — 简易棚屋+铁砧+锤子+火花（深红橙色系） */
+/** 锻兵坊 — 铁砧+锤子+火花+炉火（深红橙色系，64×64） */
 const ForgeIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="tk-forge-spark" cx="0.5" cy="0.5" r="0.5">
         <stop offset="0%" stopColor="#ffeb3b" />
@@ -478,40 +598,41 @@ const ForgeIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
       </radialGradient>
     </defs>
     {/* 简易棚屋 — 斜顶 */}
-    <path d="M4,22 L20,8 L36,22 Z" fill="#6b4226" stroke="#4a2a16" strokeWidth="1" />
-    {/* 棚屋支柱 */}
-    <line x1="6" y1="22" x2="6" y2="36" stroke="#6b4226" strokeWidth="1.5" />
-    <line x1="34" y1="22" x2="34" y2="36" stroke="#6b4226" strokeWidth="1.5" />
+    <path d="M4,34 L32,14 L60,34 Z" fill="#6b4226" stroke="#4a2a16" strokeWidth="1.5" />
+    <line x1="6" y1="34" x2="6" y2="58" stroke="#6b4226" strokeWidth="2" />
+    <line x1="58" y1="34" x2="58" y2="58" stroke="#6b4226" strokeWidth="2" />
     {/* 棚顶茅草纹理 */}
-    <line x1="10" y1="16" x2="30" y2="16" stroke="#8B6914" strokeWidth="0.4" opacity="0.5" />
-    <line x1="7" y1="19" x2="33" y2="19" stroke="#8B6914" strokeWidth="0.4" opacity="0.5" />
+    <line x1="14" y1="26" x2="50" y2="26" stroke="#8B6914" strokeWidth="0.5" opacity="0.5" />
+    <line x1="10" y1="30" x2="54" y2="30" stroke="#8B6914" strokeWidth="0.5" opacity="0.5" />
     {/* 铁砧 */}
-    <path d="M14,28 L26,28 L24,34 L16,34 Z" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.8" />
-    <path d="M15,25 L25,25 L26,28 L14,28 Z" fill="#6a6a6a" stroke="#4a4a4a" strokeWidth="0.6" />
-    <rect x="17" y="23" width="6" height="3" rx="0.8" fill="#7a7a7a" />
+    <path d="M22,44 L42,44 L40,52 L24,52 Z" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="1.2" />
+    <path d="M24,40 L40,40 L42,44 L22,44 Z" fill="#6a6a6a" stroke="#4a4a4a" strokeWidth="1" />
+    <rect x="27" y="37" width="10" height="4" rx="1.2" fill="#7a7a7a" />
     {/* 被锻造的兵器 */}
-    <path d="M19,22 L20,12 L21,22" fill="#8a8a8a" stroke="#6a6a6a" strokeWidth="0.4" opacity="0.7" />
-    <polygon points="20,10 21,12 19,12" fill="#c0c0c0" opacity="0.7" />
+    <path d="M30,36 L32,18 L34,36" fill="#8a8a8a" stroke="#6a6a6a" strokeWidth="0.6" opacity="0.7" />
+    <polygon points="32,14 34,18 30,18" fill="#c0c0c0" opacity="0.7" />
     {/* 锤子 */}
-    <line x1="26" y1="10" x2="22" y2="22" stroke="#6b4226" strokeWidth="2" strokeLinecap="round" />
-    <rect x="24" y="7" width="5" height="4.5" rx="1" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.5" transform="rotate(-15 26.5 9.2)" />
+    <line x1="44" y1="16" x2="38" y2="36" stroke="#6b4226" strokeWidth="3" strokeLinecap="round" />
+    <rect x="40" y="12" width="8" height="7" rx="1.5" fill="#5a5a5a" stroke="#3a3a3a" strokeWidth="0.8" transform="rotate(-15 44 15.5)" />
     {/* 火花效果 */}
-    <circle cx="12" cy="20" r="1.2" fill="url(#tk-forge-spark)" />
-    <circle cx="10" cy="16" r="0.8" fill="#ff6600" opacity="0.7" />
-    <circle cx="14" cy="14" r="0.6" fill="#ffaa00" opacity="0.5" />
-    <circle cx="8" cy="18" r="0.5" fill="#ff4400" opacity="0.6" />
-    <circle cx="16" cy="12" r="0.4" fill="#ffeb3b" opacity="0.4" />
+    <circle cx="18" cy="30" r="2" fill="url(#tk-forge-spark)" />
+    <circle cx="14" cy="24" r="1.2" fill="#ff6600" opacity="0.7" />
+    <circle cx="20" cy="20" r="1" fill="#ffaa00" opacity="0.5" />
+    <circle cx="12" cy="28" r="0.8" fill="#ff4400" opacity="0.6" />
+    <circle cx="24" cy="18" r="0.7" fill="#ffeb3b" opacity="0.4" />
+    <circle cx="16" cy="16" r="0.6" fill="#ff6600" opacity="0.3" />
     {/* 炉火 — 左侧 */}
-    <path d="M6,30 Q6,24 8,22 Q7,26 10,25 Q8,28 10,28 L10,30 Z" fill="#ff6600" opacity="0.6" />
-    <path d="M7,28 Q7,25 8,24 Q8,27 9,26 L9,28 Z" fill="#ff9800" opacity="0.5" />
+    <path d="M8,46 Q8,36 12,30 Q10,38 16,34 Q14,40 18,38 L18,46 Z" fill="#ff6600" opacity="0.6" />
+    <path d="M10,42 Q10,36 12,32 Q11,38 14,36 Q12,40 14,40 L14,42 Z" fill="#ff9800" opacity="0.5" />
+    <path d="M11,38 Q11,35 12,33 Q12,37 13,36 L13,38 Z" fill="#ffeb3b" opacity="0.4" />
     {/* 地面 */}
-    <path d="M2,36 Q20,34 38,36" stroke="#5a4a2a" strokeWidth="0.6" fill="none" opacity="0.4" />
+    <path d="M2,58 Q32,55 62,58" stroke="#5a4a2a" strokeWidth="0.8" fill="none" opacity="0.4" />
   </svg>
 );
 
-/** 茶馆 — 两层楼阁+茶幌子+茶壶（翠绿色系） */
+/** 茶馆 — 两层楼阁+茶幌子+茶壶（翠绿色系，64×64） */
 const TeahouseIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-tea-roof" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#5a8a4a" />
@@ -519,45 +640,53 @@ const TeahouseIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
       </linearGradient>
     </defs>
     {/* 二层楼阁主体 */}
-    <rect x="8" y="14" width="24" height="10" rx="0.5" fill="#d4b896" stroke="#8B7355" strokeWidth="0.8" />
+    <rect x="12" y="20" width="36" height="16" rx="1" fill="#d4b896" stroke="#8B7355" strokeWidth="1.2" />
     {/* 二层飞檐屋顶 */}
-    <path d="M4,16 L20,6 L36,16 Z" fill="url(#tk-tea-roof)" stroke="#2e5d2e" strokeWidth="0.8" />
+    <path d="M6,22 L30,8 L54,22 Z" fill="url(#tk-tea-roof)" stroke="#2e5d2e" strokeWidth="1.2" />
     {/* 飞檐翘角 */}
-    <path d="M2,16 Q4,13 7,16" stroke="#5a8a4a" strokeWidth="0.8" fill="none" />
-    <path d="M33,16 Q36,13 38,16" stroke="#5a8a4a" strokeWidth="0.8" fill="none" />
+    <path d="M3,22 Q6,18 10,22" stroke="#5a8a4a" strokeWidth="1.2" fill="none" />
+    <path d="M50,22 Q54,18 57,22" stroke="#5a8a4a" strokeWidth="1.2" fill="none" />
     {/* 二层窗户 */}
-    <rect x="12" y="16" width="4" height="4" rx="0.5" fill="#3a6a3a" opacity="0.4" />
-    <line x1="14" y1="16" x2="14" y2="20" stroke="#2e5d2e" strokeWidth="0.3" />
-    <rect x="24" y="16" width="4" height="4" rx="0.5" fill="#3a6a3a" opacity="0.4" />
-    <line x1="26" y1="16" x2="26" y2="20" stroke="#2e5d2e" strokeWidth="0.3" />
+    <rect x="18" y="23" width="6" height="6" rx="1" fill="#3a6a3a" opacity="0.4" />
+    <line x1="21" y1="23" x2="21" y2="29" stroke="#2e5d2e" strokeWidth="0.4" />
+    <rect x="36" y="23" width="6" height="6" rx="1" fill="#3a6a3a" opacity="0.4" />
+    <line x1="39" y1="23" x2="39" y2="29" stroke="#2e5d2e" strokeWidth="0.4" />
     {/* 二层匾额 */}
-    <rect x="15" y="10" width="10" height="4" rx="0.5" fill="#3a2a1a" stroke="#d4a030" strokeWidth="0.4" />
-    <text x="20" y="13.2" textAnchor="middle" fontSize="2.8" fill="#d4a030" fontFamily="serif" fontWeight="bold">茶</text>
+    <rect x="22" y="14" width="16" height="6" rx="1" fill="#3a2a1a" stroke="#d4a030" strokeWidth="0.6" />
+    <text x="30" y="19" textAnchor="middle" fontSize="4.5" fill="#d4a030" fontFamily="serif" fontWeight="bold">茶館</text>
     {/* 一层主体 */}
-    <rect x="6" y="24" width="28" height="10" rx="0.5" fill="#d4b896" stroke="#8B7355" strokeWidth="0.8" />
+    <rect x="10" y="36" width="40" height="16" rx="1" fill="#d4b896" stroke="#8B7355" strokeWidth="1.2" />
     {/* 一层屋顶/挑檐 */}
-    <path d="M4,26 L20,20 L36,26 Z" fill="url(#tk-tea-roof)" stroke="#2e5d2e" strokeWidth="0.6" opacity="0.7" />
+    <path d="M6,38 L30,30 L54,38 Z" fill="url(#tk-tea-roof)" stroke="#2e5d2e" strokeWidth="0.8" opacity="0.7" />
     {/* 一层大门 */}
-    <path d="M15,34 L15,27 Q20,24 25,27 L25,34" fill="#3a2a1a" stroke="#6b5a14" strokeWidth="0.5" />
+    <path d="M22,52 L22,42 Q30,37 38,42 L38,52" fill="#3a2a1a" stroke="#6b5a14" strokeWidth="0.8" />
     {/* 茶幌子 — 右侧悬挂 */}
-    <line x1="34" y1="10" x2="34" y2="20" stroke="#6b4226" strokeWidth="0.8" />
-    <rect x="32" y="12" width="5" height="8" rx="0.5" fill="#5a8a4a" stroke="#3a6a3a" strokeWidth="0.4" />
-    <text x="34.5" y="17.5" textAnchor="middle" fontSize="3.5" fill="#d4a030" fontFamily="serif" fontWeight="bold">茶</text>
+    <line x1="52" y1="14" x2="52" y2="32" stroke="#6b4226" strokeWidth="1.2" />
+    <rect x="49" y="16" width="7" height="14" rx="1" fill="#5a8a4a" stroke="#3a6a3a" strokeWidth="0.6" />
+    <text x="52.5" y="26" textAnchor="middle" fontSize="5.5" fill="#d4a030" fontFamily="serif" fontWeight="bold">茶</text>
+    {/* 茶幌子 — 左侧 */}
+    <line x1="8" y1="18" x2="8" y2="32" stroke="#6b4226" strokeWidth="1" />
+    <rect x="5" y="20" width="6" height="10" rx="0.8" fill="#5a8a4a" stroke="#3a6a3a" strokeWidth="0.5" />
+    <text x="8" y="28" textAnchor="middle" fontSize="4.5" fill="#d4a030" fontFamily="serif" fontWeight="bold">茗</text>
     {/* 茶壶 — 左下 */}
-    <ellipse cx="10" cy="32" rx="3.5" ry="2" fill="#8a6a4a" stroke="#6b4a2a" strokeWidth="0.5" />
-    <path d="M10,29 L10,27" stroke="#6b4a2a" strokeWidth="0.6" />
-    <ellipse cx="10" cy="27" rx="1.5" ry="0.8" fill="#6b4a2a" />
+    <ellipse cx="16" cy="50" rx="5" ry="3" fill="#8a6a4a" stroke="#6b4a2a" strokeWidth="0.8" />
+    <path d="M16,46 L16,43" stroke="#6b4a2a" strokeWidth="1" />
+    <ellipse cx="16" cy="43" rx="2.5" ry="1.2" fill="#6b4a2a" />
     {/* 壶嘴 */}
-    <path d="M13.5,31 Q15,30 15,28" stroke="#6b4a2a" strokeWidth="0.6" fill="none" />
+    <path d="M21,48 Q24,46 24,44" stroke="#6b4a2a" strokeWidth="1" fill="none" />
     {/* 壶把 */}
-    <path d="M6.5,30 Q5,30 5,32 Q5,34 6.5,34" stroke="#6b4a2a" strokeWidth="0.6" fill="none" />
-    {/* 茶碗 */}
-    <path d="M28,30 L32,30 L31.5,34 L28.5,34 Z" fill="#d4b896" stroke="#8B7355" strokeWidth="0.4" />
+    <path d="M11,47 Q8,47 8,50 Q8,53 11,53" stroke="#6b4a2a" strokeWidth="1" fill="none" />
     {/* 蒸汽 */}
-    <path d="M29,28 Q28,26 30,25" stroke="#8a7a60" strokeWidth="0.4" fill="none" opacity="0.5" />
-    <path d="M31,27 Q32,25 30,24" stroke="#8a7a60" strokeWidth="0.3" fill="none" opacity="0.4" />
+    <path d="M14,41 Q13,38 15,36" stroke="#8a7a60" strokeWidth="0.6" fill="none" opacity="0.5" />
+    <path d="M17,40 Q18,37 16,35" stroke="#8a7a60" strokeWidth="0.5" fill="none" opacity="0.4" />
+    {/* 茶碗 — 右下 */}
+    <path d="M42,46 L50,46 L49,52 L43,52 Z" fill="#d4b896" stroke="#8B7355" strokeWidth="0.6" />
+    <ellipse cx="46" cy="46" rx="4.5" ry="1.5" fill="#c4a886" stroke="#8B7355" strokeWidth="0.4" />
+    {/* 蒸汽 — 茶碗 */}
+    <path d="M44,44 Q43,41 45,39" stroke="#8a7a60" strokeWidth="0.5" fill="none" opacity="0.5" />
+    <path d="M48,43 Q49,40 47,38" stroke="#8a7a60" strokeWidth="0.4" fill="none" opacity="0.4" />
     {/* 地面 */}
-    <path d="M2,36 Q20,34 38,36" stroke="#5a4a2a" strokeWidth="0.6" fill="none" opacity="0.4" />
+    <path d="M2,58 Q32,55 62,58" stroke="#5a4a2a" strokeWidth="0.8" fill="none" opacity="0.4" />
   </svg>
 );
 
