@@ -190,13 +190,13 @@ export const BUILDING_DESCRIPTIONS: Record<string, string> = {
 export const BUILDINGS: BuildingDef[] = [
   {
     id: 'farm', name: '屯田', icon: '🌾', category: 'resource',
-    baseCost: { grain: 10 }, costMultiplier: 1.07, maxLevel: 0,
+    baseCost: { grain: 15 }, costMultiplier: 1.15, maxLevel: 0,
     productionResource: 'grain', baseProduction: 0.1,
     unlockCondition: '初始解锁',
   },
   {
     id: 'market', name: '商行', icon: '💰', category: 'economic',
-    baseCost: { grain: 50 }, costMultiplier: 1.08, maxLevel: 0,
+    baseCost: { grain: 80, gold: 30 }, costMultiplier: 1.15, maxLevel: 0,
     productionResource: 'gold', baseProduction: 0.08,
     unlockCondition: '初始解锁',
   },
@@ -204,7 +204,7 @@ export const BUILDINGS: BuildingDef[] = [
     id: 'barracks', name: '军营', icon: '⚔️', category: 'military',
     baseCost: { grain: 30, gold: 20 }, costMultiplier: 1.09, maxLevel: 0,
     productionResource: 'troops', baseProduction: 0.05,
-    unlockCondition: '累计 100 粮草',
+    unlockCondition: '累计 200 粮草',
   },
   {
     id: 'smithy', name: '铁匠铺', icon: '🔨', category: 'military',
@@ -217,13 +217,13 @@ export const BUILDINGS: BuildingDef[] = [
     id: 'academy', name: '太学', icon: '📚', category: 'civilian',
     baseCost: { gold: 200 }, costMultiplier: 1.12, maxLevel: 0,
     productionResource: 'gold', baseProduction: 0.15,
-    unlockCondition: '累计 500 铜钱',
+    unlockCondition: '累计 1000 铜钱',
   },
   {
     id: 'clinic', name: '药庐', icon: '💊', category: 'civilian',
     baseCost: { gold: 80, grain: 60 }, costMultiplier: 1.08, maxLevel: 0,
     productionResource: 'morale', baseProduction: 0.12,
-    unlockCondition: '累计 300 粮草',
+    unlockCondition: '累计 500 粮草',
   },
   {
     id: 'wall', name: '城防', icon: '🏰', category: 'military',
@@ -705,11 +705,11 @@ export const RESOURCES = [
 // ═══════════════════════════════════════════════════════════════
 
 export const INITIAL_RESOURCES: Record<string, number> = {
-  grain: 500,
-  gold: 300,
-  iron: 100,
-  wood: 150,
-  troops: 100,
+  grain: 100,
+  gold: 200,
+  iron: 0,
+  wood: 0,
+  troops: 50,
   destiny: 0,
   morale: 50,
 };

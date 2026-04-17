@@ -3360,6 +3360,17 @@ export default function ThreeKingdomsPixiGame() {
       { id: 'q3', title: '征服第一块领土', description: '征服一块敌方领土', progress: 0, maxProgress: 1, isComplete: false, reward: { food: 200, gold: 200 } },
     ]);
 
+    // ── 在启动游戏循环之前加载存档 ───────────────────────
+    // 存档必须在 start() 之前加载，否则游戏循环启动后状态会被覆盖。
+    // 使用 tk_autosave 作为唯一存档源（不再使用 IdleGameEngine 的 loadFromStorage）。
+    try {
+      const saved = localStorage.getItem('tk_autosave');
+      if (saved) {
+        const { data } = JSON.parse(saved);
+        engine.deserialize(data);
+      }
+    } catch { /* ignore */ }
+
     // 启动游戏循环
     engine.start();
 
@@ -3505,20 +3516,11 @@ export default function ThreeKingdomsPixiGame() {
     return () => clearInterval(interval);
   }, []);
 
-  // ─── 启动时自动加载存档 ────────────────────────────────
-  useEffect(() => {
-    const engine = engineRef.current;
-    if (engine) {
-      try {
-        const saved = localStorage.getItem('tk_autosave');
-        if (saved) {
-          const { data } = JSON.parse(saved);
-          engine.deserialize(data);
-        }
-      } catch { /* ignore */ }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading === false]);
+  // ─── 启动时自动加载存档（已移至引擎初始化 useEffect 中，在 engine.start() 之前执行） ──
+  // 原先在此处根据 loading === false 触发 deserialize，会导致：
+  // 1. 引擎已启动游戏循环后，延迟加载旧存档覆盖当前状态
+  // 2. 与 IdleGameEngine.onStart() 的 loadFromStorage() 双重加载冲突
+  // 现已统一在引擎初始化 useEffect 中、engine.start() 之前加载存档。
 
   // ─── 战斗自动切换（事件驱动） ────────────────────────────
 
@@ -4017,7 +4019,7 @@ export default function ThreeKingdomsPixiGame() {
               <span className={r.perSecond > 0 ? 'tk-r16-resource-icon-active' : undefined}>
                 <ResourceIcon resourceId={r.id} size={18} />
               </span>
-              <span className={`tk-resource-value-pulse ${changedResources.has(r.id) ? 'tk-resource-value-updated tk-r16-value-updated' : ''}`} style={{ fontWeight: 'bold' }}>{fmt(r.amount)}</span>
+              <span className={`tk-resource-value-pulse ${changedResources.has(r.id) ? 'tk-resource-value-updated tk-r16-value-updated' : ''}`} style={{ fontWeight: 'bold', fontSize: 14, color: '#FFD700' }}>{fmt(r.amount)}</span>
               {r.perSecond > 0 && (
                 <span style={{ fontSize: 10, color: COLOR_THEME.accentGreen }}>
                   +{fmt(r.perSecond)}/s
@@ -4350,7 +4352,7 @@ export default function ThreeKingdomsPixiGame() {
                         </div>
                         {b.level > 0 && (b.productionRate ?? 0) > 0 && (
                           <div style={{ fontSize: 10, color: COLOR_THEME.accentGreen, marginTop: 2 }}>
-                            +{fmt(b.productionRate ?? 0)}/s {b.productionResource}
+                            +{fmt(b.productionRate ?? 0)}/s {RESOURCES.find(r => r.id === b.productionResource)?.name ?? b.productionResource}
                           </div>
                         )}
                         {b.canUpgrade && (
@@ -4358,6 +4360,30 @@ export default function ThreeKingdomsPixiGame() {
                             ▲ 可升级
                           </div>
                         )}
+                        {/* 升级费用显示 */}
+                        {b.state !== 'locked' && b.upgradeCost && Object.keys(b.upgradeCost).length > 0 && (
+                          <div style={{ fontSize: 9, color: COLOR_THEME.textDim, marginTop: 2, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {Object.entries(b.upgradeCost).map(([rid, amt]) => {
+                              const resItem = resources.find(r => r.id === rid);
+                              const have = resItem?.amount ?? 0;
+                              const enough = have >= (amt as number);
+                              return (
+                                <span key={rid} style={{ color: enough ? COLOR_THEME.accentGreen : COLOR_THEME.unaffordable }}>
+                                  {resItem?.icon ?? rid}{fmt(amt as number)}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {/* 解锁条件显示 */}
+                        {b.state === 'locked' && (() => {
+                          const bDef = BUILDINGS.find(bd => bd.id === b.id);
+                          return bDef?.unlockCondition ? (
+                            <div style={{ fontSize: 9, color: COLOR_THEME.textDim, marginTop: 2 }}>
+                              🔒 {bDef.unlockCondition}
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
                     {/* 升级进度条 */}
@@ -6186,7 +6212,7 @@ export default function ThreeKingdomsPixiGame() {
                   className="tk-guide-skip-btn"
                   onClick={() => setShowGuide(false)}
                 >
-                  跳过
+                  跳过引导
                 </button>
                 <button
                   className="tk-guide-next-btn"
@@ -6207,6 +6233,9 @@ export default function ThreeKingdomsPixiGame() {
                   <div key={i} className={`tk-guide-dot ${i === guideStep ? 'tk-guide-dot--active' : ''}`} />
                 ))}
               </div>
+              <p style={{ fontSize: 11, color: '#8a7a6a', marginTop: 12, textAlign: 'center' }}>
+                点击外部区域或「✕」关闭引导
+              </p>
             </div>
           </div>
         );

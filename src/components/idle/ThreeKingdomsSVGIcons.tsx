@@ -128,7 +128,7 @@ const MarketIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
     <rect x="10" y="20" width="44" height="5" rx="1" fill="#d4a030" stroke="#8B6914" strokeWidth="0.8" />
     {/* 匾额 — 商行 */}
     <rect x="22" y="11" width="20" height="8" rx="1.5" fill="#3a2a1a" stroke="#d4a030" strokeWidth="1" />
-    <text x="32" y="18" textAnchor="middle" fontSize="6" fill="#d4a030" fontFamily="serif" fontWeight="bold">商行</text>
+    {/* 匾额留空 — 名称由卡片显示 */}
     {/* 柜台 */}
     <rect x="16" y="38" width="32" height="8" rx="1.5" fill="#b87333" stroke="#8B6914" strokeWidth="1" />
     <rect x="14" y="36" width="36" height="3" rx="1" fill="#d4a030" opacity="0.4" />
@@ -146,11 +146,11 @@ const MarketIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
     {/* 招幌 — 左侧 */}
     <line x1="8" y1="6" x2="8" y2="20" stroke="#6b4226" strokeWidth="1" />
     <rect x="5" y="8" width="6" height="12" rx="1" fill="#c62828" opacity="0.6" stroke="#8b1a1a" strokeWidth="0.4" />
-    <text x="8" y="17" textAnchor="middle" fontSize="5" fill="#d4a030" fontFamily="serif">買</text>
+    {/* 招幌留空 */}
     {/* 招幌 — 右侧 */}
     <line x1="56" y1="6" x2="56" y2="20" stroke="#6b4226" strokeWidth="1" />
     <rect x="53" y="8" width="6" height="12" rx="1" fill="#c62828" opacity="0.6" stroke="#8b1a1a" strokeWidth="0.4" />
-    <text x="56" y="17" textAnchor="middle" fontSize="5" fill="#d4a030" fontFamily="serif">賣</text>
+    {/* 招幌留空 */}
     {/* 铜钱串 — 柜台前 */}
     <line x1="22" y1="48" x2="42" y2="48" stroke="#8B6914" strokeWidth="0.8" />
     <circle cx="26" cy="50" r="3" fill="#b87333" stroke="#8B6914" strokeWidth="0.5" />
@@ -192,12 +192,12 @@ const BarracksIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
     {/* 主战旗 — 右侧 */}
     <line x1="50" y1="2" x2="50" y2="44" stroke="#6b4226" strokeWidth="2.5" />
     <path d="M50,2 L62,6 L60,12 L62,18 L50,16 Z" fill="#c62828" stroke="#8b1a1a" strokeWidth="0.8" />
-    <text x="56" y="12" textAnchor="middle" fontSize="7" fill="#d4a030" fontFamily="serif" fontWeight="bold">軍</text>
+    {/* 战旗留空 */}
     <circle cx="50" cy="1.5" r="2" fill="#d4a030" />
     {/* 副战旗 — 左侧 */}
     <line x1="8" y1="8" x2="8" y2="36" stroke="#6b4226" strokeWidth="1.5" />
     <path d="M8,8 L18,11 L17,16 L18,21 L8,18 Z" fill="#c62828" stroke="#8b1a1a" strokeWidth="0.6" />
-    <text x="13" y="16" textAnchor="middle" fontSize="5" fill="#d4a030" fontFamily="serif" fontWeight="bold">漢</text>
+    {/* 战旗留空 */}
     <circle cx="8" cy="7" r="1.5" fill="#d4a030" />
     {/* 兵器架 — 帐篷前 */}
     <line x1="44" y1="32" x2="44" y2="54" stroke="#6b4226" strokeWidth="1.5" />
@@ -455,7 +455,7 @@ const TavernIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
     {/* 旗帜 */}
     <path d="M10,6 L28,8 L26,16 L28,24 L10,22 Z" fill="#6a3d7a" stroke="#8a5d9a" strokeWidth="0.8" />
     {/* 旗帜上的贤字 */}
-    <text x="18" y="17" textAnchor="middle" fontSize="8" fill="#d4a030" fontFamily="serif" fontWeight="bold">賢</text>
+    {/* 旗帜留空 */}
     {/* 旗帜顶部装饰 */}
     <circle cx="10" cy="4" r="2" fill="#d4a030" />
     {/* 卷轴 */}
@@ -557,7 +557,7 @@ const MintIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
     <circle cx="36" cy="43" r="1.5" fill="none" stroke="#d4a030" strokeWidth="0.8" />
     {/* 匾额 — 钱庄 */}
     <rect x="22" y="26" width="20" height="6" rx="1" fill="#3a2a1a" stroke="#d4a030" strokeWidth="0.8" />
-    <text x="32" y="31" textAnchor="middle" fontSize="5" fill="#d4a030" fontFamily="serif" fontWeight="bold">錢莊</text>
+    {/* 匾额留空 */}
     {/* 窗户 */}
     <rect x="12" y="34" width="6" height="6" rx="1" fill="#d4a030" opacity="0.3" />
     <line x1="15" y1="34" x2="15" y2="40" stroke="#8B6914" strokeWidth="0.5" />
@@ -653,7 +653,7 @@ const TeahouseIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
     <line x1="39" y1="23" x2="39" y2="29" stroke="#2e5d2e" strokeWidth="0.4" />
     {/* 二层匾额 */}
     <rect x="22" y="14" width="16" height="6" rx="1" fill="#3a2a1a" stroke="#d4a030" strokeWidth="0.6" />
-    <text x="30" y="19" textAnchor="middle" fontSize="4.5" fill="#d4a030" fontFamily="serif" fontWeight="bold">茶館</text>
+    {/* 匾额留空 */}
     {/* 一层主体 */}
     <rect x="10" y="36" width="40" height="16" rx="1" fill="#d4b896" stroke="#8B7355" strokeWidth="1.2" />
     {/* 一层屋顶/挑檐 */}
@@ -663,11 +663,11 @@ const TeahouseIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
     {/* 茶幌子 — 右侧悬挂 */}
     <line x1="52" y1="14" x2="52" y2="32" stroke="#6b4226" strokeWidth="1.2" />
     <rect x="49" y="16" width="7" height="14" rx="1" fill="#5a8a4a" stroke="#3a6a3a" strokeWidth="0.6" />
-    <text x="52.5" y="26" textAnchor="middle" fontSize="5.5" fill="#d4a030" fontFamily="serif" fontWeight="bold">茶</text>
+    {/* 茶幌留空 */}
     {/* 茶幌子 — 左侧 */}
     <line x1="8" y1="18" x2="8" y2="32" stroke="#6b4226" strokeWidth="1" />
     <rect x="5" y="20" width="6" height="10" rx="0.8" fill="#5a8a4a" stroke="#3a6a3a" strokeWidth="0.5" />
-    <text x="8" y="28" textAnchor="middle" fontSize="4.5" fill="#d4a030" fontFamily="serif" fontWeight="bold">茗</text>
+    {/* 茶幌留空 */}
     {/* 茶壶 — 左下 */}
     <ellipse cx="16" cy="50" rx="5" ry="3" fill="#8a6a4a" stroke="#6b4a2a" strokeWidth="0.8" />
     <path d="M16,46 L16,43" stroke="#6b4a2a" strokeWidth="1" />

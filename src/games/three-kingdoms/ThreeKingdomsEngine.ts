@@ -311,6 +311,19 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   }
 
   /**
+   * 覆盖基类 onStart，禁用 IdleGameEngine 的 loadFromStorage()。
+   * 
+   * 存档加载由 React 组件（ThreeKingdomsPixiGame）统一管理，
+   * 避免基类在 onStart 中加载旧存档覆盖刚初始化的状态。
+   * 
+   * 同时禁用基类的 autoSave 定时器（React 组件使用自己的 60 秒自动存档）。
+   */
+  protected onStart(): void {
+    // 不调用 super.onStart()，避免 loadFromStorage() 覆盖当前状态
+    // React 组件会在 engine.start() 之后、游戏循环开始之前加载 tk_autosave
+  }
+
+  /**
    * 新手福利：赠送 FREE_STARTER_HERO 指定的 uncommon 武将（免费抽卡）。
    * 不消耗任何资源，直接解锁招募。
    */
@@ -956,9 +969,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 资源阈值解锁配置：建筑ID → 所需资源阈值 */
   private static readonly RESOURCE_UNLOCK_THRESHOLDS: Record<string, Record<string, number>> = {
-    barracks: { grain: 100 },    // 累计 100 粮草
-    academy: { gold: 500 },      // 累计 500 铜钱
-    clinic: { grain: 300 },      // 累计 300 粮草
+    barracks: { grain: 200 },    // 累计 200 粮草
+    academy: { gold: 1000 },     // 累计 1000 铜钱
+    clinic: { grain: 500 },      // 累计 500 粮草
   };
 
   private checkUnlocks(): void {
