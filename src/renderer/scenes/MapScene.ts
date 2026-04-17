@@ -2484,21 +2484,42 @@ export class MapScene extends BaseScene {
                 .lineTo(rx + rw * 0.05, ry - rh * 0.5)
                 .stroke({ width: 0.8, color: 0xffffff, alpha: 0.15 });
 
-              // 雪顶（更明显的白色三角形区域）
-              const snowH = Math.floor(rh * 0.32);
+              // ── 雪顶（增强：更明亮、更宽的白色三角形 + 渐变层次） ──
+              const snowH = Math.floor(rh * 0.38);
+              // 雪顶底层阴影（微蓝，增加立体感）
               graphics.moveTo(rx, ry - rh)
-                .lineTo(rx - rw * 0.25, ry - rh + snowH)
-                .lineTo(rx + rw * 0.25, ry - rh + snowH)
+                .lineTo(rx - rw * 0.3, ry - rh + snowH + 2)
+                .lineTo(rx + rw * 0.3, ry - rh + snowH + 2)
                 .closePath()
-                .fill({ color: 0xf0f0f0, alpha: 0.65 });
-              // 雪顶高光线
-              graphics.moveTo(rx - rw * 0.2, ry - rh + snowH - 1)
-                .lineTo(rx + rw * 0.2, ry - rh + snowH - 1)
-                .stroke({ width: 1, color: 0xffffff, alpha: 0.55 });
+                .fill({ color: 0xc8ddf0, alpha: 0.25 });
+              // 雪顶主体（纯白三角形，更宽更明显）
+              graphics.moveTo(rx, ry - rh)
+                .lineTo(rx - rw * 0.28, ry - rh + snowH)
+                .lineTo(rx + rw * 0.28, ry - rh + snowH)
+                .closePath()
+                .fill({ color: 0xf8f8ff, alpha: 0.82 });
+              // 雪顶高光（更小更亮的白色三角，偏左受光面）
+              const hlSnowH = Math.floor(snowH * 0.5);
+              graphics.moveTo(rx - 1, ry - rh + 1)
+                .lineTo(rx - rw * 0.18, ry - rh + hlSnowH)
+                .lineTo(rx + rw * 0.08, ry - rh + hlSnowH)
+                .closePath()
+                .fill({ color: 0xffffff, alpha: 0.5 });
+              // 雪顶底部高光线（明亮的白色横线）
+              graphics.moveTo(rx - rw * 0.25, ry - rh + snowH)
+                .lineTo(rx + rw * 0.25, ry - rh + snowH)
+                .stroke({ width: 1.5, color: 0xffffff, alpha: 0.7 });
               // 雪顶边缘渐变（微蓝阴影）
-              graphics.moveTo(rx - rw * 0.22, ry - rh + snowH)
-                .lineTo(rx + rw * 0.22, ry - rh + snowH)
-                .stroke({ width: 1.5, color: 0xc0d8f0, alpha: 0.2 });
+              graphics.moveTo(rx - rw * 0.28, ry - rh + snowH)
+                .lineTo(rx + rw * 0.28, ry - rh + snowH)
+                .stroke({ width: 1.8, color: 0xb0c8e8, alpha: 0.25 });
+              // 雪顶散落雪花点（增加质感）
+              for (let si = 0; si < 3; si++) {
+                const sx = rx - rw * 0.15 + prng(i * 10 + si + 90) * rw * 0.3;
+                const sy = ry - rh + snowH * 0.3 + prng(i * 10 + si + 95) * snowH * 0.5;
+                graphics.circle(Math.floor(sx), Math.floor(sy), 1 + prng(i * 10 + si + 97) * 1)
+                  .fill({ color: 0xffffff, alpha: 0.5 });
+              }
 
               // 山腰云雾（半透明白色弧线）
               if (prng(i + 60) > 0.35) {
@@ -2576,17 +2597,23 @@ export class MapScene extends BaseScene {
                   .stroke({ width: 0.8, color: 0x4a2a0a, alpha: 0.35 });
               }
 
-              // 树冠阴影（底层）
-              graphics.circle(tx + 1, ty + 1, tr + 1).fill({ color: 0x0a2a05, alpha: 0.3 });
-
-              // 多层树冠：底层（深色，最大）
-              graphics.circle(tx, ty, tr).fill({ color: visual.darkColor, alpha: 0.6 + prng(i + 30) * 0.15 });
-              // 中层（主色，偏移）
-              graphics.circle(tx - 1, ty - Math.floor(tr * 0.2), Math.floor(tr * 0.75))
-                .fill({ color: visual.lightColor, alpha: 0.55 });
-              // 顶层高光（小圆，偏上）
-              graphics.circle(tx - Math.floor(tr * 0.15), ty - Math.floor(tr * 0.35), Math.floor(tr * 0.4))
-                .fill({ color: 0x4aba4a, alpha: 0.25 });
+              // ── 增强多层树冠：4层渐变绿色圆（从暗到亮，从大到小） ──
+              // 第1层：最底层阴影（深暗绿，最大）
+              graphics.circle(tx + 1, ty + 1, tr + 2).fill({ color: 0x0a2a05, alpha: 0.35 });
+              // 第2层：底层树冠（深绿，最大可见层）
+              graphics.circle(tx, ty, tr + 1).fill({ color: visual.darkColor, alpha: 0.7 });
+              // 第3层：中间层树冠（主色，偏移产生体积感）
+              graphics.circle(tx - 1, ty - Math.floor(tr * 0.2), Math.floor(tr * 0.8))
+                .fill({ color: visual.baseColor, alpha: 0.65 });
+              // 第4层：亮色层（浅绿，增加层次）
+              graphics.circle(tx - Math.floor(tr * 0.1), ty - Math.floor(tr * 0.3), Math.floor(tr * 0.55))
+                .fill({ color: visual.lightColor, alpha: 0.5 });
+              // 第5层：高光层（最亮绿，最小，顶部偏左）
+              graphics.circle(tx - Math.floor(tr * 0.2), ty - Math.floor(tr * 0.4), Math.floor(tr * 0.3))
+                .fill({ color: 0x6aee6a, alpha: 0.35 });
+              // 树冠边缘描边（增加轮廓清晰度）
+              graphics.circle(tx, ty, tr + 1)
+                .stroke({ width: 0.6, color: visual.darkColor, alpha: 0.3 });
 
               // 偶尔添加小果实/花朵
               if (prng(i + 90) > 0.7) {
@@ -2657,16 +2684,27 @@ export class MapScene extends BaseScene {
                   x + tileSize - 3, y + wy + offset,
                 )
                 .stroke({ width: 1.2, color: visual.lightColor, alpha: 0.3 + prng(wy + 300) * 0.12 });
-              // 白色波纹高光线（偏移半行）
-              if (prng(wy + 400) > 0.5) {
+              // ── 增强白色波纹曲线（更醒目的白色水波纹） ──
+              if (prng(wy + 400) > 0.35) {
                 const whiteOffset = 2 + prng(wy + 401) * 2;
-                graphics.moveTo(x + 5, y + wy + offset + whiteOffset)
+                graphics.moveTo(x + 4, y + wy + offset + whiteOffset)
                   .bezierCurveTo(
-                    x + tileSize * 0.3, y + wy - amp * 0.5 + offset + whiteOffset,
-                    x + tileSize * 0.7, y + wy + amp * 0.5 + offset + whiteOffset,
-                    x + tileSize - 5, y + wy + offset + whiteOffset,
+                    x + tileSize * 0.25, y + wy - amp * 0.6 + offset + whiteOffset,
+                    x + tileSize * 0.75, y + wy + amp * 0.6 + offset + whiteOffset,
+                    x + tileSize - 4, y + wy + offset + whiteOffset,
                   )
-                  .stroke({ width: 0.8, color: 0xffffff, alpha: 0.18 + prng(wy + 402) * 0.08 });
+                  .stroke({ width: 1.2, color: 0xffffff, alpha: 0.28 + prng(wy + 402) * 0.12 });
+              }
+              // 额外白色细波纹（增加水面层次感）
+              if (prng(wy + 500) > 0.55) {
+                const thinOffset = 4 + prng(wy + 501) * 3;
+                graphics.moveTo(x + 6, y + wy + offset + thinOffset)
+                  .bezierCurveTo(
+                    x + tileSize * 0.35, y + wy - amp * 0.3 + offset + thinOffset,
+                    x + tileSize * 0.65, y + wy + amp * 0.3 + offset + thinOffset,
+                    x + tileSize - 6, y + wy + offset + thinOffset,
+                  )
+                  .stroke({ width: 0.7, color: 0xe0f0ff, alpha: 0.2 });
               }
             }
             // 水面高光点（增加数量和亮度）
@@ -2718,25 +2756,37 @@ export class MapScene extends BaseScene {
             // 棋盘底色
             graphics.rect(x, y, half, half).fill({ color: visual.darkColor, alpha: 0.18 });
             graphics.rect(x + half, y + half, half, half).fill({ color: visual.darkColor, alpha: 0.18 });
-            // 田垄竖线（更密）
+            // 田垄竖线
             for (let i = 0; i < tileSize; i += 6) {
               graphics.moveTo(x + i, y).lineTo(x + i, y + tileSize)
                 .stroke({ width: 0.5, color: visual.darkColor, alpha: 0.15 });
             }
-            // 田垄横线
-            for (let i = 0; i < tileSize; i += 6) {
+            // ── 增强田垄横线（更明显的水平作物行纹理） ──
+            for (let i = 0; i < tileSize; i += 5) {
               graphics.moveTo(x, y + i).lineTo(x + tileSize, y + i)
-                .stroke({ width: 0.5, color: visual.darkColor, alpha: 0.12 });
+                .stroke({ width: 0.7, color: visual.darkColor, alpha: 0.18 });
             }
-            // 作物行（小绿点表示作物）
-            for (let row = 3; row < tileSize; row += 6) {
-              for (let col = 3; col < tileSize; col += 6) {
-                if (prng(row * 100 + col) > 0.4) {
-                  const cropX = x + col + prng(row * 100 + col + 1) * 3;
-                  const cropY = y + row + prng(row * 100 + col + 2) * 3;
-                  graphics.circle(cropX, cropY, 1 + prng(row * 100 + col + 3) * 0.8)
-                    .fill({ color: visual.lightColor, alpha: 0.35 + prng(row * 100 + col + 4) * 0.15 });
+            // 作物行（小绿点表示作物，增加密度和层次）
+            for (let row = 3; row < tileSize; row += 5) {
+              for (let col = 3; col < tileSize; col += 5) {
+                if (prng(row * 100 + col) > 0.3) {
+                  const cropX = x + col + prng(row * 100 + col + 1) * 2;
+                  const cropY = y + row + prng(row * 100 + col + 2) * 2;
+                  // 作物茎
+                  graphics.moveTo(cropX, cropY + 2)
+                    .lineTo(cropX, cropY - 1)
+                    .stroke({ width: 0.5, color: visual.darkColor, alpha: 0.25 });
+                  // 作物叶（小绿点）
+                  graphics.circle(cropX, cropY - 1, 1 + prng(row * 100 + col + 3) * 0.8)
+                    .fill({ color: visual.lightColor, alpha: 0.4 + prng(row * 100 + col + 4) * 0.15 });
                 }
+              }
+            }
+            // ── 增强农田色带（交替明暗条带，模拟不同作物行） ──
+            for (let row = 0; row < tileSize; row += 10) {
+              if (Math.floor(row / 10) % 2 === 0) {
+                graphics.rect(x, y + row, tileSize, 5)
+                  .fill({ color: visual.lightColor, alpha: 0.06 });
               }
             }
             // 偶尔添加小稻草人/篱笆
@@ -2869,6 +2919,35 @@ export class MapScene extends BaseScene {
               graphics.rect(x + tileSize - cs - 2, y + 2, cs, cs).fill({ color: visual.lightColor, alpha: 0.25 });
               graphics.rect(x + 2, y + tileSize - cs - 2, cs, cs).fill({ color: visual.lightColor, alpha: 0.25 });
               graphics.rect(x + tileSize - cs - 2, y + tileSize - cs - 2, cs, cs).fill({ color: visual.lightColor, alpha: 0.25 });
+
+              // ── 红色旗帜（城楼顶部飘扬旗帜，增强辨识度） ──
+              const flagX = Math.floor(roofX + roofW / 2);
+              const flagY = roofY - roofH;
+              // 旗杆
+              graphics.moveTo(flagX, flagY + 2)
+                .lineTo(flagX, flagY - FLAG_POLE_HEIGHT)
+                .stroke({ width: 1.2, color: 0x8a6a3a, alpha: 0.7 });
+              // 旗杆顶部圆球
+              graphics.circle(flagX, flagY - FLAG_POLE_HEIGHT, 1.2)
+                .fill({ color: 0xd4a55a, alpha: 0.6 });
+              // 旗帜主体（红色飘扬三角旗）
+              const flagColor = tile.terrain === 'fortress' ? 0xe83838 : 0xcc2222;
+              graphics.moveTo(flagX, flagY - FLAG_POLE_HEIGHT + 1)
+                .lineTo(flagX + FLAG_WIDTH, flagY - FLAG_POLE_HEIGHT + Math.floor(FLAG_HEIGHT * 0.3))
+                .lineTo(flagX + FLAG_WIDTH - 1, flagY - FLAG_POLE_HEIGHT + FLAG_HEIGHT + 1)
+                .lineTo(flagX, flagY - FLAG_POLE_HEIGHT + FLAG_HEIGHT - 1)
+                .closePath()
+                .fill({ color: flagColor, alpha: 0.75 });
+              // 旗帜边缘描边
+              graphics.moveTo(flagX, flagY - FLAG_POLE_HEIGHT + 1)
+                .lineTo(flagX + FLAG_WIDTH, flagY - FLAG_POLE_HEIGHT + Math.floor(FLAG_HEIGHT * 0.3))
+                .lineTo(flagX + FLAG_WIDTH - 1, flagY - FLAG_POLE_HEIGHT + FLAG_HEIGHT + 1)
+                .lineTo(flagX, flagY - FLAG_POLE_HEIGHT + FLAG_HEIGHT - 1)
+                .closePath()
+                .stroke({ width: 0.6, color: 0xaa1111, alpha: 0.5 });
+              // 旗帜上的文字装饰（小金色方块代表"魏"/"蜀"/"吴"）
+              graphics.rect(flagX + 2, flagY - FLAG_POLE_HEIGHT + 3, 3, 3)
+                .fill({ color: 0xffd700, alpha: 0.45 });
             }
             break;
           }

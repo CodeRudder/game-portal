@@ -38,6 +38,8 @@ import PixiGameCanvas from '@/renderer/components/PixiGameCanvas';
 import type { GameRenderState, SceneType, HeroRenderData } from '@/renderer/types';
 import { AudioManager } from '@/games/idle-subsystems/AudioManager';
 import { TKParticleSystem } from '@/games/three-kingdoms/ParticleSystem';
+import { drawGeneralPortrait, GENERAL_PORTRAITS } from '@/games/three-kingdoms/GeneralPortraitRenderer';
+import { getGeneralById } from '@/games/three-kingdoms/GeneralData';
 import { BuildingIcon, ResourceIcon, BuildingProgressBar, TechIcon, TechLockedIcon, TechResearchingIcon, SkillIcon, EquipSlotIcon } from './ThreeKingdomsSVGIcons';
 import './ThreeKingdomsPixiGame.css';
 
@@ -1352,6 +1354,103 @@ const GeneralPortrait = ({ name, faction, size = 60 }: { name: string; faction: 
 };
 
 // ═══════════════════════════════════════════════════════════════
+// 武将程序化立绘组件（基于 Canvas）
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * GeneralCanvasPortrait — 使用 GeneralPortraitRenderer 的程序化立绘
+ *
+ * 通过 canvas 元素渲染高质量的武将全身立绘。
+ * 如果武将 ID 在 GENERAL_PORTRAITS 中有定义，则渲染程序化立绘；
+ * 否则回退到简单的 SVG 占位图。
+ *
+ * @param generalId 武将 ID（如 'liubei', 'guanyu'）
+ * @param size 渲染尺寸（正方形边长），默认 60
+ * @param showName 是否显示名字标签，默认 false
+ */
+const GeneralCanvasPortrait = ({
+  generalId,
+  size = 60,
+  showName = false,
+}: {
+  generalId: string;
+  size?: number;
+  showName?: boolean;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // 设置高 DPI 渲染
+    const dpr = window.devicePixelRatio || 1;
+    const w = size;
+    const h = Math.floor(size * 1.33); // 3:4 比例（全身立绘）
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.scale(dpr, dpr);
+
+    // 清空画布
+    ctx.clearRect(0, 0, w, h);
+
+    // 绘制程序化立绘
+    drawGeneralPortrait({ ctx, x: 0, y: 0, width: w, height: h }, generalId);
+  }, [generalId, size]);
+
+  // 如果没有对应的立绘定义，回退到 SVG 简笔头像
+  if (!GENERAL_PORTRAITS[generalId]) {
+    const general = getGeneralById(generalId);
+    return (
+      <GeneralPortrait
+        name={general?.name ?? generalId}
+        faction={general?.faction ?? 'other'}
+        size={size}
+      />
+    );
+  }
+
+  const h = Math.floor(size * 1.33);
+
+  return (
+    <div style={{ position: 'relative', width: size, height: h, flexShrink: 0 }}>
+      <canvas
+        ref={canvasRef}
+        style={{
+          width: size,
+          height: h,
+          borderRadius: 4,
+          imageRendering: 'auto',
+        }}
+      />
+      {showName && (
+        <div style={{
+          position: 'absolute',
+          bottom: 0, left: 0, right: 0,
+          textAlign: 'center',
+          fontSize: Math.max(8, size * 0.14),
+          color: '#ffd700',
+          fontFamily: "'KaiTi', 'STKaiti', serif",
+          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+          padding: '2px 0',
+          background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+          borderBottomLeftRadius: 4,
+          borderBottomRightRadius: 4,
+        }}>
+          {getGeneralById(generalId)?.name ?? generalId}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
 // 武将卡片组件
 // ═══════════════════════════════════════════════════════════════
 
@@ -1636,7 +1735,7 @@ const GeneralCard = ({
           '--faction-color': color,
         } as React.CSSProperties}
       >
-        <GeneralPortrait name={general.name} faction={general.faction} size={48} />
+        <GeneralCanvasPortrait generalId={general.id} size={48} />
         {/* 出战状态标识 */}
         {general.unlocked && (
           <span className="tk-general-status-badge tk-general-status-badge--standby">待命</span>
@@ -3260,7 +3359,7 @@ export default function ThreeKingdomsPixiGame() {
                   className="tk-hero-quick-item"
                   onClick={() => { setScene('hero-detail'); setSelectedHero(h); }}
                 >
-                  <GeneralPortrait name={h.name} faction={h.faction} size={24} />
+                  <GeneralCanvasPortrait generalId={h.id} size={24} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                     <span className="tk-hero-quick-name">{h.name}</span>
                     <span className="tk-hero-quick-level">Lv.{h.level}</span>
@@ -3457,7 +3556,7 @@ export default function ThreeKingdomsPixiGame() {
                 <div className="tk-scene-hero-avatars">
                   {heroes.filter(h => h.unlocked).slice(0, 6).map(h => (
                     <div key={h.id} className="tk-scene-hero-avatar" title={h.name}>
-                      <GeneralPortrait name={h.name} faction={h.faction} size={32} />
+                      <GeneralCanvasPortrait generalId={h.id} size={32} showName />
                     </div>
                   ))}
                 </div>
@@ -4258,7 +4357,7 @@ export default function ThreeKingdomsPixiGame() {
 
                 {/* 头像 + 名称 + 势力标识 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <GeneralPortrait name={selectedHero.name} faction={selectedHero.faction} size={56} />
+                  <GeneralCanvasPortrait generalId={selectedHero.id} size={56} />
                   <div style={{ flex: 1 }}>
                     <h3 className="tk-scroll-title" style={{ fontSize: 16, margin: 0 }}>
                       {selectedHero.name}
@@ -4542,7 +4641,7 @@ export default function ThreeKingdomsPixiGame() {
 
               {/* 头像 + 名称 + 势力标识 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                <GeneralPortrait name={selectedHero.name} faction={selectedHero.faction} size={56} />
+                <GeneralCanvasPortrait generalId={selectedHero.id} size={56} />
                 <div>
                   <h3 className="tk-scroll-title" style={{ fontSize: 18, margin: 0 }}>
                     {selectedHero.name}
@@ -5145,20 +5244,44 @@ export default function ThreeKingdomsPixiGame() {
           >
             {/* NPC 头部信息 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: '50%',
-                background: 'linear-gradient(135deg, #4a3520, #6a5030)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 24, border: '2px solid #8B7355',
-              }}>
-                {npcDialogue.npcType === 'farmer' ? '🌾' :
-                 npcDialogue.npcType === 'soldier' ? '⚔️' :
-                 npcDialogue.npcType === 'merchant' ? '💰' :
-                 npcDialogue.npcType === 'scholar' ? '📚' :
-                 npcDialogue.npcType === 'scout' ? '🔍' :
-                 npcDialogue.npcType === 'general' ? '🗡️' :
-                 npcDialogue.npcType === 'craftsman' ? '🔨' : '👤'}
-              </div>
+              {(() => {
+                // 武将类 NPC：尝试通过名字匹配武将立绘
+                const generalNameToId: Record<string, string> = {
+                  '刘备': 'liubei', '关羽': 'guanyu', '张飞': 'zhangfei',
+                  '诸葛亮': 'zhugeliang', '赵云': 'zhaoyun', '黄忠': 'huangzhong',
+                  '马超': 'machao', '曹操': 'caocao', '许褚': 'xuchu',
+                  '孙权': 'sunquan', '周瑜': 'zhouyu', '吕布': 'lvbu',
+                };
+                const matchedGeneralId = generalNameToId[npcDialogue.npcName];
+                if (npcDialogue.npcType === 'general' && matchedGeneralId) {
+                  return (
+                    <div style={{
+                      borderRadius: 6, overflow: 'hidden',
+                      border: '2px solid #8B7355',
+                      boxShadow: '0 0 12px rgba(139,115,85,0.3)',
+                    }}>
+                      <GeneralCanvasPortrait generalId={matchedGeneralId} size={48} />
+                    </div>
+                  );
+                }
+                // 非 武将 NPC：显示职业 emoji 头像
+                return (
+                  <div style={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #4a3520, #6a5030)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 24, border: '2px solid #8B7355',
+                  }}>
+                    {npcDialogue.npcType === 'farmer' ? '🌾' :
+                     npcDialogue.npcType === 'soldier' ? '⚔️' :
+                     npcDialogue.npcType === 'merchant' ? '💰' :
+                     npcDialogue.npcType === 'scholar' ? '📚' :
+                     npcDialogue.npcType === 'scout' ? '🔍' :
+                     npcDialogue.npcType === 'general' ? '🗡️' :
+                     npcDialogue.npcType === 'craftsman' ? '🔨' : '👤'}
+                  </div>
+                );
+              })()}
               <div>
                 <div style={{ color: '#c9a96e', fontWeight: 'bold', fontSize: 16 }}>
                   {npcDialogue.npcName}

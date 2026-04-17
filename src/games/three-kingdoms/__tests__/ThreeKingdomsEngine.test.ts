@@ -91,8 +91,8 @@ describe('常量验证', () => {
     expect(TERRITORIES).toHaveLength(15);
   });
 
-  it('TECHS 有 12 项科技', () => {
-    expect(TECHS).toHaveLength(12);
+  it('TECHS 有 21 项科技', () => {
+    expect(TECHS).toHaveLength(21);
   });
 
   it('BATTLES 有 15 个战斗（5关卡×3波）', () => {
@@ -803,13 +803,13 @@ describe('战斗系统常量', () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe('科技系统常量', () => {
-  it('三条分支各 4 级', () => {
+  it('三条分支各 7 级', () => {
     const mil = TECHS.filter(t => t.branch === 'military');
     const eco = TECHS.filter(t => t.branch === 'economy');
     const cul = TECHS.filter(t => t.branch === 'culture');
-    expect(mil).toHaveLength(4);
-    expect(eco).toHaveLength(4);
-    expect(cul).toHaveLength(4);
+    expect(mil).toHaveLength(7);
+    expect(eco).toHaveLength(7);
+    expect(cul).toHaveLength(7);
   });
 
   it('tier 1 无前置要求', () => {
