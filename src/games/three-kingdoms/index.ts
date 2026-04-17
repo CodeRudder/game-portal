@@ -79,6 +79,18 @@ export type {
 // ── 渲染状态适配器 ──
 export { ThreeKingdomsRenderStateAdapter } from './ThreeKingdomsRenderStateAdapter';
 
+// ── 武将对话系统 ──
+export { GeneralDialogueSystem, createGeneralDialogueSystem, GENERAL_DIALOGUES, ALL_DIALOGUE_GENERAL_IDS } from './GeneralDialogueSystem';
+export type { DialogueScene, DialogueMode, DialogueLine, GeneralDialogueSet, DialogueResult } from './GeneralDialogueSystem';
+
+// ── 武将羁绊系统 ──
+export { GeneralBondSystem, createGeneralBondSystem, BOND_DEFINITIONS, GENERAL_REQUEST_TEMPLATES } from './GeneralBondSystem';
+export type { BondTier, BondDef, BondDialogue, BondActivationResult, GeneralRequest } from './GeneralBondSystem';
+
+// ── 武将剧情事件系统 ──
+export { GeneralStoryEventSystem, createGeneralStoryEventSystem, STORY_EVENT_DEFINITIONS } from './GeneralStoryEventSystem';
+export type { StoryTrigger, StoryLine, StoryEventDef, ActiveStoryEvent } from './GeneralStoryEventSystem';
+
 // ── 通用引擎系统集成 ──
 export { QuestSystem } from '@/engines/idle/modules/QuestSystem';
 export type { QuestDef, QuestType, QuestCondition, QuestReward, QuestState } from '@/engines/idle/modules/QuestSystem';

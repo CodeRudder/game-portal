@@ -40,6 +40,9 @@ import { AudioManager } from '@/games/idle-subsystems/AudioManager';
 import { TKParticleSystem } from '@/games/three-kingdoms/ParticleSystem';
 import { drawGeneralPortrait, GENERAL_PORTRAITS } from '@/games/three-kingdoms/GeneralPortraitRenderer';
 import { getGeneralById } from '@/games/three-kingdoms/GeneralData';
+import type { DialogueEvent } from '@/games/three-kingdoms/ThreeKingdomsEngine';
+import type { ActiveStoryEvent, StoryLine } from '@/games/three-kingdoms/GeneralStoryEventSystem';
+import type { GeneralRequest } from '@/games/three-kingdoms/GeneralBondSystem';
 import { BuildingIcon, ResourceIcon, BuildingProgressBar, TechIcon, TechLockedIcon, TechResearchingIcon, SkillIcon, EquipSlotIcon } from './ThreeKingdomsSVGIcons';
 import './ThreeKingdomsPixiGame.css';
 
@@ -1952,6 +1955,15 @@ export default function ThreeKingdomsPixiGame() {
   const [npcDialogue, setNPCDialogue] = useState<NPCDialogue | null>(null);
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
 
+  // ─── 武将对话气泡 / 剧情事件 / 羁绊 ──────────────────────
+  const [dialogueBubble, setDialogueBubble] = useState<DialogueEvent | null>(null);
+  const [dialogueBubbleQueue, setDialogueBubbleQueue] = useState<DialogueEvent[]>([]);
+  const [showStoryEvent, setShowStoryEvent] = useState(false);
+  const [activeStoryEvent, setActiveStoryEvent] = useState<ActiveStoryEvent | null>(null);
+  const [showBondPanel, setShowBondPanel] = useState(false);
+  const [generalRequest, setGeneralRequest] = useState<GeneralRequest | null>(null);
+  const [showGeneralRequest, setShowGeneralRequest] = useState(false);
+
   // 自动存档 + 成就 + Tooltip
   const [lastAutoSave, setLastAutoSave] = useState(0);
   const [showSavePanel, setShowSavePanel] = useState(false);
@@ -2175,6 +2187,21 @@ export default function ThreeKingdomsPixiGame() {
     engine.on('techResearched', () => {
       audioManager.playTechResearch();
     });
+
+    // ── 武将对话事件处理 ──────────────────────────────────
+    engine.onDialogueEvent = (event: DialogueEvent) => {
+      setDialogueBubbleQueue(prev => [...prev, event]);
+    };
+
+    engine.onStoryEvent = (event: ActiveStoryEvent) => {
+      setActiveStoryEvent(event);
+      setShowStoryEvent(true);
+    };
+
+    engine.onGeneralRequest = (request: GeneralRequest) => {
+      setGeneralRequest(request);
+      setShowGeneralRequest(true);
+    };
 
     // ── 初始化事件系统 ─────────────────────────────────────
     const eventSystem = new ThreeKingdomsEventSystem();

@@ -40,6 +40,9 @@ import { EventEnrichmentSystem } from './EventEnrichmentSystem';
 import { CampaignSystem } from './CampaignSystem';
 import { CampaignBattleSystem, type AttackerArmy, type BattleResult } from './CampaignBattleSystem';
 import { AudioManager } from './AudioManager';
+import { GeneralDialogueSystem, type DialogueScene, type DialogueMode, type DialogueResult } from './GeneralDialogueSystem';
+import { GeneralBondSystem, type BondActivationResult, type GeneralRequest, type BondDialogue } from './GeneralBondSystem';
+import { GeneralStoryEventSystem, type ActiveStoryEvent, type StoryLine } from './GeneralStoryEventSystem';
 import {
   GAME_ID, GAME_TITLE, BUILDINGS, GENERALS, TERRITORIES, TECHS, BATTLES,
   STAGES, PRESTIGE_CONFIG, COLOR_THEME, RARITY_COLORS, RESOURCES,
@@ -53,6 +56,24 @@ import {
 // ═══════════════════════════════════════════════════════════════
 
 type ActivePanel = 'none' | 'prestige' | 'tech' | 'territory' | 'battle' | 'generals';
+
+/** 对话事件（用于 UI 显示对话气泡） */
+export interface DialogueEvent {
+  /** 事件类型 */
+  type: 'idle_chat' | 'battle_dialogue' | 'recruit_dialogue' | 'bond_chat' | 'bond_activate' | 'general_request';
+  /** 发言者名称 */
+  speaker: string;
+  /** 对话文本 */
+  text: string;
+  /** 关联武将 ID */
+  generalId?: string;
+  /** 羁绊名称（如果是羁绊对话） */
+  bondName?: string;
+  /** 是否有多行对话 */
+  multiLine?: Array<{ speaker: string; text: string }>;
+  /** 时间戳 */
+  timestamp: number;
+}
 
 export interface ThreeKingdomsSaveState {
   resources: Record<string, number>;
@@ -74,6 +95,9 @@ export interface ThreeKingdomsSaveState {
   campaignBattle?: object;
   audio?: { muted: boolean; volume: number };
   weather?: any;
+  bondSystem?: { activatedBonds: string[]; requestCounter: number };
+  storyEvents?: { triggeredEvents: string[] };
+  battlesWonCount?: number;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -118,6 +142,45 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 天气系统 */
   public weatherSystem = new WeatherSystem();
+
+  /** 武将对话系统 */
+  public dialogueSystem = new GeneralDialogueSystem();
+
+  /** 武将羁绊系统 */
+  public bondSystem = new GeneralBondSystem();
+
+  /** 武将剧情事件系统 */
+  public storyEventSystem = new GeneralStoryEventSystem();
+
+  /** 对话事件回调（由 UI 层设置，用于显示对话气泡） */
+  public onDialogueEvent?: (event: DialogueEvent) => void;
+
+  /** 剧情事件回调（由 UI 层设置，用于显示剧情面板） */
+  public onStoryEvent?: (event: ActiveStoryEvent) => void;
+
+  /** 武将请求回调 */
+  public onGeneralRequest?: (request: GeneralRequest) => void;
+
+  /** 对话自动触发计时器（秒） */
+  private dialogueTimer: number = 0;
+
+  /** 对话自动触发间隔（30-60秒随机） */
+  private dialogueInterval: number = 45;
+
+  /** 武将请求触发计时器 */
+  private requestTimer: number = 0;
+
+  /** 武将请求触发间隔（90-180秒随机） */
+  private requestInterval: number = 120;
+
+  /** 羁绊闲聊计时器 */
+  private bondChatTimer: number = 0;
+
+  /** 羁绊闲聊间隔（60-120秒随机） */
+  private bondChatInterval: number = 90;
+
+  /** 已完成的战斗数（用于触发剧情） */
+  private battlesWonCount: number = 0;
 
   /** 征战关卡系统 */
   private campaignSys!: CampaignSystem;
@@ -410,6 +473,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       heroCount: this.units.getUnits().length,
       armySize: Math.floor(this.res.troops || 0),
     });
+
+    // ── 武将对话自动触发 ──
+    this.updateDialogueTriggers(sec);
   }
 
   // ─── 渲染 ───────────────────────────────────────────────
@@ -490,6 +556,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       campaignBattle: this.campaignBattleSys.serialize(),
       audio: this.audioManager.serialize(),
       weather: this.weatherSystem.serialize(),
+      bondSystem: this.bondSystem.serialize(),
+      storyEvents: this.storyEventSystem.serialize(),
+      battlesWonCount: this.battlesWonCount,
     };
   }
 
@@ -518,8 +587,255 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (d.campaignBattle) this.campaignBattleSys.deserialize(d.campaignBattle);
     if (d.audio) this.audioManager.deserialize(d.audio);
     if (d.weather) this.weatherSystem.deserialize(d.weather);
+    if (d.bondSystem) this.bondSystem.deserialize(d.bondSystem);
+    if (d.storyEvents) this.storyEventSystem.deserialize(d.storyEvents);
+    this.battlesWonCount = d.battlesWonCount ?? 0;
+
+    // 重新检查已激活羁绊
+    const recruitedIds = this.getRecruitedGeneralIds();
+    this.bondSystem.checkAndActivateBonds(recruitedIds);
 
     this.emit('stateChange');
+  }
+
+  // ─── 武将对话触发系统 ─────────────────────────────────
+
+  /**
+   * 更新对话触发计时器，自动触发闲聊/羁绊/请求
+   */
+  private updateDialogueTriggers(sec: number): void {
+    const recruitedIds = this.getRecruitedGeneralIds();
+    if (recruitedIds.length === 0) return;
+
+    // ── 随机闲聊触发 ──
+    this.dialogueTimer += sec;
+    if (this.dialogueTimer >= this.dialogueInterval) {
+      this.dialogueTimer = 0;
+      this.dialogueInterval = 30 + Math.random() * 30; // 30-60秒
+      this.triggerRandomIdleChat(recruitedIds);
+    }
+
+    // ── 羁绊闲聊触发 ──
+    this.bondChatTimer += sec;
+    if (this.bondChatTimer >= this.bondChatInterval) {
+      this.bondChatTimer = 0;
+      this.bondChatInterval = 60 + Math.random() * 60; // 60-120秒
+      this.triggerBondChat(recruitedIds);
+    }
+
+    // ── 武将请求触发 ──
+    this.requestTimer += sec;
+    if (this.requestTimer >= this.requestInterval) {
+      this.requestTimer = 0;
+      this.requestInterval = 90 + Math.random() * 90; // 90-180秒
+      this.triggerGeneralRequest(recruitedIds);
+    }
+  }
+
+  /**
+   * 触发随机武将闲聊
+   */
+  private triggerRandomIdleChat(recruitedIds: string[]): void {
+    const generalId = recruitedIds[Math.floor(Math.random() * recruitedIds.length)];
+    const dialogue = this.dialogueSystem.getDialogue(generalId, 'idle', 'chat');
+    const name = this.dialogueSystem.getGeneralName(generalId);
+
+    this.onDialogueEvent?.({
+      type: 'idle_chat',
+      speaker: name,
+      text: dialogue.text,
+      generalId,
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * 触发羁绊闲聊
+   */
+  private triggerBondChat(recruitedIds: string[]): void {
+    const dialogue = this.bondSystem.getBondChatDialogue(recruitedIds, this.playTime, 60);
+    if (!dialogue) return;
+
+    this.onDialogueEvent?.({
+      type: 'bond_chat',
+      speaker: dialogue.lines[0]?.speaker ?? '众将',
+      text: dialogue.lines[0]?.text ?? '',
+      multiLine: dialogue.lines,
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * 触发武将请求
+   */
+  private triggerGeneralRequest(recruitedIds: string[]): void {
+    const request = this.bondSystem.generateRandomRequest(recruitedIds);
+    if (!request) return;
+
+    this.onGeneralRequest?.(request);
+
+    this.onDialogueEvent?.({
+      type: 'general_request',
+      speaker: request.generalName,
+      text: request.content,
+      generalId: request.generalId,
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * 触发战斗对话（战斗开始时调用）
+   */
+  public triggerBattleDialogue(): void {
+    const recruitedIds = this.getRecruitedGeneralIds();
+    if (recruitedIds.length === 0) return;
+
+    // 先检查羁绊战斗对话
+    const bondDialogue = this.bondSystem.getBattleDialogue(recruitedIds);
+    if (bondDialogue) {
+      this.onDialogueEvent?.({
+        type: 'battle_dialogue',
+        speaker: bondDialogue.lines[0]?.speaker ?? '武将',
+        text: bondDialogue.lines[0]?.text ?? '',
+        multiLine: bondDialogue.lines,
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
+    // 否则使用普通战斗对话
+    const generalId = recruitedIds[Math.floor(Math.random() * recruitedIds.length)];
+    const dialogue = this.dialogueSystem.getDialogue(generalId, 'battle', 'chat');
+    const name = this.dialogueSystem.getGeneralName(generalId);
+
+    this.onDialogueEvent?.({
+      type: 'battle_dialogue',
+      speaker: name,
+      text: dialogue.text,
+      generalId,
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * 触发招募对话
+   */
+  public triggerRecruitDialogue(generalId: string): void {
+    const dialogue = this.dialogueSystem.getDialogue(generalId, 'recruit', 'chat');
+    const name = this.dialogueSystem.getGeneralName(generalId);
+
+    this.onDialogueEvent?.({
+      type: 'recruit_dialogue',
+      speaker: name,
+      text: dialogue.text,
+      generalId,
+      timestamp: Date.now(),
+    });
+
+    // 检查羁绊激活
+    const recruitedIds = this.getRecruitedGeneralIds();
+    const activations = this.bondSystem.checkAndActivateBonds(recruitedIds);
+    for (const activation of activations) {
+      if (activation.newlyActivated && activation.dialogue) {
+        this.onDialogueEvent?.({
+          type: 'bond_activate',
+          speaker: activation.dialogue.lines[0]?.speaker ?? '众将',
+          text: activation.dialogue.lines[0]?.text ?? '',
+          bondName: activation.bondName,
+          multiLine: activation.dialogue.lines,
+          timestamp: Date.now(),
+        });
+      }
+    }
+
+    // 检查剧情事件
+    this.storyEventSystem.checkTriggers({ type: 'recruit', targetId: generalId });
+    this.checkAndShowStoryEvent();
+  }
+
+  /**
+   * 获取已招募武将 ID 列表
+   */
+  public getRecruitedGeneralIds(): string[] {
+    const ids: string[] = [];
+    for (const g of GENERALS) {
+      if (this.units.isUnlocked(g.id)) {
+        ids.push(g.id);
+      }
+    }
+    return ids;
+  }
+
+  /**
+   * 获取武将对话（供 UI 调用）
+   */
+  public getGeneralDialogue(generalId: string, scene: DialogueScene, mode: DialogueMode = 'chat'): DialogueResult {
+    return this.dialogueSystem.getDialogue(generalId, scene, mode);
+  }
+
+  /**
+   * 获取武将羁绊信息（供 UI 调用）
+   */
+  public getGeneralBonds(generalId: string) {
+    return this.bondSystem.getBondsForGeneral(generalId);
+  }
+
+  /**
+   * 获取所有已激活羁绊（供 UI 调用）
+   */
+  public getActivatedBonds() {
+    return this.bondSystem.getActivatedBonds();
+  }
+
+  /**
+   * 获取羁绊总加成（供 UI 调用）
+   */
+  public getBondBonus() {
+    return this.bondSystem.getTotalBondBonus();
+  }
+
+  /**
+   * 获取当前剧情事件（供 UI 调用）
+   */
+  public getCurrentStoryEvent(): ActiveStoryEvent | null {
+    return this.storyEventSystem.getNextEvent();
+  }
+
+  /**
+   * 推进剧情事件（供 UI 调用）
+   */
+  public advanceStoryEvent(): boolean {
+    return this.storyEventSystem.advanceLine();
+  }
+
+  /**
+   * 完成当前剧情事件并获取奖励
+   */
+  public completeStoryEvent(): Record<string, number> | null {
+    const reward = this.storyEventSystem.completeCurrentEvent();
+    if (reward) {
+      for (const [key, value] of Object.entries(reward)) {
+        this.giveRes(key, value);
+      }
+    }
+    return reward;
+  }
+
+  /**
+   * 跳过当前剧情事件
+   */
+  public skipStoryEvent(): void {
+    this.storyEventSystem.skipCurrentEvent();
+  }
+
+  /**
+   * 检查并显示剧情事件
+   */
+  private checkAndShowStoryEvent(): void {
+    const event = this.storyEventSystem.getNextEvent();
+    if (event) {
+      this.onStoryEvent?.(event);
+    }
   }
 
   // ─── 声望转生 ───────────────────────────────────────────
@@ -579,8 +895,16 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     const rewards = this.battles.settleWave();
     for (const [r, a] of Object.entries(rewards.rewards)) this.giveRes(r, a);
     this.stats.increment('totalBattlesWon');
+    this.battlesWonCount++;
     this.audioManager.playSFX('battle');
     this.ftSys.add('战斗胜利！', 0.5, 0.5, { style: { color: COLOR_THEME.accentGreen, fontSize: 18 } });
+
+    // 触发战斗胜利对话
+    this.triggerBattleDialogue();
+
+    // 检查战斗胜利剧情事件
+    this.storyEventSystem.checkTriggers({ type: 'battle_win' }, this.battlesWonCount);
+    this.checkAndShowStoryEvent();
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1136,6 +1460,10 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.emit('generalRecruited', { generalId: id, name: def.name });
     this.audioManager.playSFX('recruit');
     this.emit('stateChange');
+
+    // 触发招募对话和羁绊/剧情检查
+    this.triggerRecruitDialogue(id);
+
     return true;
   }
 
@@ -1180,6 +1508,11 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (!this.cityMapSys.getCityMap(id)) {
       this.cityMapSys.generateCityMap(id, def.name, def.type);
     }
+
+    // 检查领土剧情事件
+    const conqueredCount = this.terr.getConqueredIds().length;
+    this.storyEventSystem.checkTriggers({ type: 'territory' }, conqueredCount);
+    this.checkAndShowStoryEvent();
 
     this.emit('stateChange');
     return true;

@@ -52,6 +52,22 @@ export interface GeneralDialogues {
   recruit: string[];
 }
 
+/** 武将技能定义 */
+export interface GeneralSkill {
+  /** 技能名称 */
+  name: string;
+  /** 技能类型：attack/buff/debuff/heal */
+  type: 'attack' | 'buff' | 'debuff' | 'heal';
+  /** 技能目标：enemy_all/enemy_single/ally_all/ally_single */
+  target: 'enemy_all' | 'enemy_single' | 'ally_all' | 'ally_single';
+  /** 威力倍率 */
+  power: number;
+  /** 冷却回合数 */
+  cooldown: number;
+  /** 技能描述 */
+  description: string;
+}
+
 /** 武将完整信息 */
 export interface GeneralInfo {
   /** 唯一标识符 */
@@ -70,6 +86,8 @@ export interface GeneralInfo {
   stats: GeneralStats;
   /** 对话集合 */
   dialogues: GeneralDialogues;
+  /** 武将技能列表 */
+  skills: GeneralSkill[];
 }
 
 /** 12位经典三国武将数据 */
@@ -100,6 +118,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['兄弟们，随我冲锋！', '为了汉室，杀！', '贼军休走！'],
       recruit: ['久仰大名，愿与君共谋天下。', '备三顾茅庐，只为求得贤才。'],
     },
+    skills: [
+      { name: '仁德鼓舞', type: 'buff', target: 'ally_all', power: 1.2, cooldown: 3, description: '以仁德之心鼓舞全军，提升我方全体战力' },
+      { name: '桃园结义', type: 'heal', target: 'ally_all', power: 0.8, cooldown: 4, description: '兄弟同心，恢复全军兵力' },
+    ],
   },
   {
     id: 'guanyu',
@@ -126,6 +148,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['匹夫休走，关某来也！', '青龙偃月，所向披靡！', '尔等鼠辈，安敢挡我！'],
       recruit: ['关某忠义之人，不事二主。', '若主公仁德，关某愿效死力。'],
     },
+    skills: [
+      { name: '青龙斩', type: 'attack', target: 'enemy_single', power: 2.0, cooldown: 3, description: '青龙偃月刀蓄力一斩，对单体造成巨额伤害' },
+      { name: '武圣之威', type: 'debuff', target: 'enemy_all', power: 0.8, cooldown: 4, description: '武圣之威震慑敌军，降低敌方全体战力' },
+    ],
   },
   {
     id: 'zhangfei',
@@ -152,6 +178,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['哇呀呀呀！吃俺一矛！', '来将通名，俺张飞不杀无名之辈！', '谁敢上前！'],
       recruit: ['哼，看你还有几分胆色，俺老张认了！', '跟着大哥干，准没错！'],
     },
+    skills: [
+      { name: '横扫千军', type: 'attack', target: 'enemy_all', power: 1.5, cooldown: 3, description: '丈八蛇矛横扫，对敌方全体造成伤害' },
+      { name: '怒吼', type: 'debuff', target: 'enemy_all', power: 1.0, cooldown: 2, description: '怒吼震慑敌军，降低敌方战力' },
+    ],
   },
   {
     id: 'zhugeliang',
@@ -178,6 +208,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['八阵图已成，敌军必败！', '火攻之计已备，只待东风。', '运筹帷幄之中，决胜千里之外。'],
       recruit: ['亮久居隆中，蒙主公三顾之恩，愿效犬马之劳。', '得明主而事之，此生无憾。'],
     },
+    skills: [
+      { name: '火攻', type: 'attack', target: 'enemy_all', power: 1.8, cooldown: 4, description: '火烧连营，对敌方全体造成大量伤害' },
+      { name: '八阵图', type: 'buff', target: 'ally_all', power: 1.5, cooldown: 3, description: '布下八阵图，大幅提升我方全体战力' },
+    ],
   },
   {
     id: 'zhaoyun',
@@ -204,6 +238,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['吾乃常山赵子龙！', '枪出如龙，谁敢迎战！', '主公莫慌，子龙来也！'],
       recruit: ['若遇明主，云愿肝脑涂地。', '赵云不才，愿为前锋。'],
     },
+    skills: [
+      { name: '龙胆突袭', type: 'attack', target: 'enemy_single', power: 2.2, cooldown: 3, description: '龙胆枪突袭，对单体造成致命伤害' },
+      { name: '一身是胆', type: 'buff', target: 'ally_single', power: 1.8, cooldown: 2, description: '激发胆气，大幅提升自身战力' },
+    ],
   },
   {
     id: 'huangzhong',
