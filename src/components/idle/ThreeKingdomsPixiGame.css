@@ -787,3 +787,246 @@
     width: 360px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+ * 主界面场景面板（地图场景中央概览）
+ * ═══════════════════════════════════════════════════════════════ */
+
+.tk-scene-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  background: linear-gradient(180deg, rgba(45,27,10,0.92) 0%, rgba(26,14,5,0.95) 100%);
+  border: 1.5px solid var(--tk-border);
+  border-radius: 10px;
+  padding: 16px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 0 20px rgba(139,115,85,0.06);
+  pointer-events: auto;
+}
+
+/* 城池概览 */
+.tk-scene-city {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--tk-parchment);
+  border-radius: 8px;
+  border: 1px solid rgba(139,115,85,0.2);
+}
+
+.tk-scene-city-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.tk-scene-city-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-scene-city-name {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--tk-gold);
+  font-family: "Noto Serif SC", "SimSun", serif;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.tk-scene-city-level {
+  font-size: 11px;
+  color: var(--tk-text-dim);
+  margin-left: 6px;
+  font-weight: normal;
+}
+
+.tk-scene-city-stats {
+  font-size: 11px;
+  color: var(--tk-text-dim);
+}
+
+/* 资源产出 */
+.tk-scene-production {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-scene-section-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--tk-gold);
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(139,115,85,0.2);
+  margin-bottom: 2px;
+}
+
+.tk-scene-prod-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.tk-scene-prod-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+}
+
+.tk-scene-prod-name {
+  color: var(--tk-text);
+  flex: 1;
+}
+
+.tk-scene-prod-rate {
+  color: var(--tk-green);
+  font-weight: bold;
+  animation: tk-rate-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tk-rate-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* 任务进度 */
+.tk-scene-quests {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tk-scene-quest-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tk-scene-quest-title {
+  font-size: 11px;
+  color: var(--tk-text);
+}
+
+.tk-scene-quest-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+.tk-scene-quest-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-bright));
+  transition: width 0.5s ease;
+}
+
+.tk-scene-quest-progress {
+  font-size: 9px;
+  color: var(--tk-text-dim);
+  text-align: right;
+}
+
+.tk-scene-quest-empty {
+  font-size: 11px;
+  color: var(--tk-text-dim);
+  font-style: italic;
+}
+
+/* 武将概览 */
+.tk-scene-heroes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-scene-hero-count {
+  font-size: 11px;
+  color: var(--tk-text);
+}
+
+.tk-scene-hero-num {
+  color: var(--tk-gold);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.tk-scene-hero-avatars {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tk-scene-hero-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: rgba(139,115,85,0.15);
+  border: 1px solid var(--tk-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* 声望按钮 */
+.tk-scene-prestige-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 6px;
+  border: 1px solid rgba(201,169,110,0.5);
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--tk-gold), #ff8c00);
+  color: #1a0a0a;
+  box-shadow: 0 2px 8px rgba(255,215,0,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  font-family: inherit;
+  transition: filter 0.2s;
+  align-self: center;
+}
+
+.tk-scene-prestige-btn:hover {
+  filter: brightness(1.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 科技树节点样式
+ * ═══════════════════════════════════════════════════════════════ */
+
+.tk-tech-node {
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.tk-tech-node:hover {
+  filter: brightness(1.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 场景面板 + 科技树 响应式适配
+ * ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .tk-scene-panel {
+    width: 260px;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .tk-scene-city-icon {
+    font-size: 22px;
+  }
+
+  .tk-scene-city-name {
+    font-size: 13px;
+  }
+}

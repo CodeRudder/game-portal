@@ -35,6 +35,7 @@ import {
 } from '@/games/three-kingdoms/constants';
 import PixiGameCanvas from '@/renderer/components/PixiGameCanvas';
 import type { GameRenderState, SceneType } from '@/renderer/types';
+import './ThreeKingdomsPixiGame.css';
 
 // ═══════════════════════════════════════════════════════════════
 // 工具函数
@@ -1793,23 +1794,75 @@ export default function ThreeKingdomsPixiGame() {
             onRendererReady={() => console.log('[ThreeKingdomsPixiGame] PixiJS renderer ready')}
           />
 
-          {/* 声望入口按钮（仅地图场景显示） */}
+          {/* ═══════════ 主界面场景面板（地图场景中央概览） ═══════════ */}
           {scene === 'map' && (
-            <button
-              onClick={() => setScene('prestige')}
-              style={{
-                position: 'absolute', top: 12, right: 12,
-                padding: '6px 14px', fontSize: 12, fontWeight: 'bold',
-                borderRadius: 6, border: '1px solid rgba(201,169,110,0.5)', cursor: 'pointer',
-                background: `linear-gradient(135deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
-                color: '#1a0a0a',
-                boxShadow: '0 2px 8px rgba(255,215,0,0.3)',
-                zIndex: 10,
-                textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-              }}
-            >
-              ◆ 声望
-            </button>
+            <div className="tk-scene-panel">
+              {/* 城池概览 */}
+              <div className="tk-scene-city">
+                <div className="tk-scene-city-icon">🏰</div>
+                <div className="tk-scene-city-info">
+                  <div className="tk-scene-city-name">
+                    {cities.length > 0 ? cities[0].cityName : '主城'}
+                    <span className="tk-scene-city-level">Lv.{cities.length > 0 ? Math.max(1, Math.floor(cities[0].prosperity / 100)) : 1}</span>
+                  </div>
+                  <div className="tk-scene-city-stats">
+                    领地 {cities.length} · 繁荣 {cities.length > 0 ? Math.floor(cities[0].prosperity) : 0}
+                  </div>
+                </div>
+              </div>
+
+              {/* 资源产出动画 */}
+              <div className="tk-scene-production">
+                <div className="tk-scene-section-title">◆ 资源产出</div>
+                {resources.map(r => (
+                  <div key={r.id} className="tk-scene-prod-row">
+                    <span className="tk-scene-prod-icon">{r.icon}</span>
+                    <span className="tk-scene-prod-name">{r.name}</span>
+                    <span className="tk-scene-prod-rate">+{fmt(r.perSecond)}/秒</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 当前任务进度 */}
+              <div className="tk-scene-quests">
+                <div className="tk-scene-section-title">◆ 当前任务</div>
+                {quests.filter(q => !q.isComplete).slice(0, 3).map(q => (
+                  <div key={q.id} className="tk-scene-quest-item">
+                    <div className="tk-scene-quest-title">{q.title}</div>
+                    <div className="tk-scene-quest-bar">
+                      <div className="tk-scene-quest-fill" style={{ width: `${(q.progress / q.maxProgress) * 100}%` }} />
+                    </div>
+                    <div className="tk-scene-quest-progress">{q.progress}/{q.maxProgress}</div>
+                  </div>
+                ))}
+                {quests.filter(q => !q.isComplete).length === 0 && (
+                  <div className="tk-scene-quest-empty">暂无进行中的任务</div>
+                )}
+              </div>
+
+              {/* 武将概览 */}
+              <div className="tk-scene-heroes">
+                <div className="tk-scene-section-title">◆ 武将</div>
+                <div className="tk-scene-hero-count">
+                  已招募 <span className="tk-scene-hero-num">{heroes.filter(h => h.unlocked).length}</span> / {heroes.length}
+                </div>
+                <div className="tk-scene-hero-avatars">
+                  {heroes.filter(h => h.unlocked).slice(0, 6).map(h => (
+                    <div key={h.id} className="tk-scene-hero-avatar" title={h.name}>
+                      ⚔️
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 声望入口按钮 */}
+              <button
+                onClick={() => setScene('prestige')}
+                className="tk-scene-prestige-btn"
+              >
+                ◆ 声望
+              </button>
+            </div>
           )}
 
           {/* 战斗日志浮层（仅战斗场景显示） */}
@@ -1963,133 +2016,220 @@ export default function ThreeKingdomsPixiGame() {
             />
           )}
 
-          {/* ═══════════ 科技研究浮层 ═══════════ */}
-          {scene === 'tech-tree' && renderState?.techTree && (
-            <div style={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              background: 'rgba(0,0,0,0.85)',
-              borderRadius: 12, padding: 20,
-              width: 500, maxHeight: '80vh',
-              overflowY: 'auto',
-              border: `1px solid ${COLOR_THEME.selectedBorder}`,
-            }}>
-              <h2 style={{
-                fontSize: 20, color: COLOR_THEME.accentGold,
-                marginBottom: 16, fontFamily: '"Noto Serif SC", serif',
-                textAlign: 'center',
-                textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-              }}>
-                ◆ 📜 科技研究
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {renderState.techTree.nodes.map(node => {
-                  const isCompleted = node.state === 'completed';
-                  const isAvailable = node.state === 'available';
-                  const isResearching = node.state === 'researching';
-                  const isLocked = node.state === 'locked';
+          {/* ═══════════ 科技研究浮层（树形可视化） ═══════════ */}
+          {scene === 'tech-tree' && renderState?.techTree && (() => {
+            const nodes = renderState.techTree.nodes;
+            const connections = renderState.techTree.connections;
 
-                  return (
-                    <div
-                      key={node.id}
-                      style={{
-                        padding: '10px 12px',
-                        borderRadius: 6,
-                        background: isCompleted
-                          ? 'rgba(76,175,80,0.15)'
-                          : isResearching
-                            ? 'rgba(255,215,0,0.1)'
-                            : isAvailable
-                              ? 'rgba(255,255,255,0.06)'
-                              : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${
-                          isCompleted ? 'rgba(76,175,80,0.3)'
-                            : isResearching ? 'rgba(255,215,0,0.3)'
-                              : isAvailable ? 'rgba(255,255,255,0.1)'
-                                : 'transparent'
-                        }`,
-                        opacity: isLocked ? 0.4 : 1,
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <span style={{
-                            fontSize: 13, fontWeight: 'bold',
-                            color: isCompleted ? COLOR_THEME.accentGreen
-                              : isResearching ? COLOR_THEME.accentGold
-                                : COLOR_THEME.textPrimary,
-                          }}>
-                            {isCompleted ? '✅ ' : isResearching ? '🔬 ' : isLocked ? '🔒 ' : '📖 '}
-                            {node.name}
-                          </span>
-                          <span style={{
-                            fontSize: 10, color: COLOR_THEME.textDim, marginLeft: 8,
-                          }}>
-                            Tier {node.tier}
-                          </span>
+            // 按分支分组
+            const branchOrder = ['military', 'economy', 'culture'] as const;
+            const branchLabels: Record<string, string> = { military: '⚔️ 军事', economy: '💰 经济', culture: '📜 文化' };
+            const branchColors: Record<string, { border: string; bg: string; text: string }> = {
+              military: { border: '#a85241', bg: 'rgba(168,82,65,0.08)', text: '#c62828' },
+              economy:  { border: '#4a7a3a', bg: 'rgba(74,122,58,0.08)', text: '#2e7d32' },
+              culture:  { border: '#4a6fa5', bg: 'rgba(74,111,165,0.08)', text: '#1565c0' },
+            };
+
+            function getBranch(nodeId: string): string {
+              if (nodeId.startsWith('mil_')) return 'military';
+              if (nodeId.startsWith('eco_')) return 'economy';
+              if (nodeId.startsWith('cul_')) return 'culture';
+              return 'military';
+            }
+
+            const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+            return (
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: 'rgba(0,0,0,0.9)',
+                borderRadius: 12, padding: 20,
+                width: 580, maxHeight: '82vh',
+                overflowY: 'auto',
+                border: `1px solid ${COLOR_THEME.selectedBorder}`,
+              }}>
+                <h2 style={{
+                  fontSize: 20, color: COLOR_THEME.accentGold,
+                  marginBottom: 16, fontFamily: '"Noto Serif SC", serif',
+                  textAlign: 'center',
+                  textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+                }}>
+                  ◆ 📜 科技研究
+                </h2>
+
+                {/* 三列树形布局 */}
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {branchOrder.map(branch => {
+                    const branchNodes = nodes.filter(n => getBranch(n.id) === branch).sort((a, b) => a.tier - b.tier);
+                    const colors = branchColors[branch];
+
+                    return (
+                      <div key={branch} style={{
+                        flex: 1, display: 'flex', flexDirection: 'column', gap: 0,
+                      }}>
+                        {/* 分支标题 */}
+                        <div style={{
+                          textAlign: 'center', fontSize: 13, fontWeight: 'bold',
+                          color: colors.text, marginBottom: 8,
+                          padding: '4px 0',
+                          borderBottom: `2px solid ${colors.border}`,
+                        }}>
+                          {branchLabels[branch]}
                         </div>
-                        {isAvailable && (
-                          <button
-                            onClick={() => {
-                              const engine = engineRef.current;
-                              if (!engine) return;
-                              const techs = (engine as any).techs;
-                              if (!techs) return;
-                              const res = engine.getResources();
-                              const success = techs.research(node.id, res);
-                              if (success) {
-                                // 扣除费用
-                                const payMethod = (engine as any).pay;
-                                if (payMethod) payMethod.call(engine, node.cost);
-                                addToast(`开始研究：${node.name}`, 'success');
-                                (engine as any).emit?.('stateChange');
-                              } else {
-                                addToast('研究失败：资源不足或前置未完成', 'error');
-                              }
-                            }}
-                            style={{
-                              padding: '3px 12px', fontSize: 10,
-                              borderRadius: 4, border: 'none', cursor: 'pointer',
-                              background: `linear-gradient(135deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
-                              color: '#1a0a0a', fontWeight: 'bold',
-                            }}
-                          >
-                            研究
-                          </button>
-                        )}
+
+                        {/* 科技节点（层级排列 + 连接线） */}
+                        {branchNodes.map((node, idx) => {
+                          const isCompleted = node.state === 'completed';
+                          const isAvailable = node.state === 'available';
+                          const isResearching = node.state === 'researching';
+                          const isLocked = node.state === 'locked';
+                          const hasConnector = idx > 0;
+
+                          return (
+                            <div key={node.id}>
+                              {/* 层级连接线 */}
+                              {hasConnector && (
+                                <div style={{
+                                  display: 'flex', justifyContent: 'center',
+                                  height: 16, position: 'relative',
+                                }}>
+                                  <div style={{
+                                    width: 2, height: '100%',
+                                    background: isCompleted
+                                      ? 'linear-gradient(180deg, rgba(212,160,48,0.6), rgba(212,160,48,0.6))'
+                                      : 'rgba(255,255,255,0.12)',
+                                  }} />
+                                  {/* 已解锁的金色连接线标记 */}
+                                  {isCompleted && (
+                                    <div style={{
+                                      position: 'absolute', top: '50%', left: '50%',
+                                      transform: 'translate(-50%, -50%)',
+                                      width: 6, height: 6, borderRadius: '50%',
+                                      background: COLOR_THEME.accentGold,
+                                    }} />
+                                  )}
+                                </div>
+                              )}
+
+                              {/* 科技节点 */}
+                              <div
+                                className="tk-tech-node"
+                                style={{
+                                  padding: '8px 10px',
+                                  borderRadius: 6,
+                                  background: isCompleted
+                                    ? 'rgba(212,160,48,0.12)'
+                                    : isResearching
+                                      ? `${colors.bg}`
+                                      : isAvailable
+                                        ? 'rgba(255,255,255,0.04)'
+                                        : 'rgba(255,255,255,0.01)',
+                                  border: `1.5px solid ${
+                                    isCompleted ? COLOR_THEME.accentGold
+                                      : isResearching ? colors.border
+                                        : isAvailable ? `${colors.border}88`
+                                          : 'rgba(255,255,255,0.06)'
+                                  }`,
+                                  opacity: isLocked ? 0.4 : 1,
+                                  position: 'relative',
+                                }}
+                              >
+                                {/* 已解锁金色标记 */}
+                                {isCompleted && (
+                                  <div style={{
+                                    position: 'absolute', top: -4, right: -4,
+                                    width: 14, height: 14, borderRadius: '50%',
+                                    background: COLOR_THEME.accentGold,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: 8, color: '#1a0a0a', fontWeight: 'bold',
+                                    boxShadow: '0 0 6px rgba(212,160,48,0.5)',
+                                  }}>✓</div>
+                                )}
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div>
+                                    <span style={{
+                                      fontSize: 12, fontWeight: 'bold',
+                                      color: isCompleted ? COLOR_THEME.accentGold
+                                        : isResearching ? colors.text
+                                          : COLOR_THEME.textPrimary,
+                                    }}>
+                                      {isCompleted ? '✅ ' : isResearching ? '🔬 ' : isLocked ? '🔒 ' : '📖 '}
+                                      {node.name}
+                                    </span>
+                                    <span style={{
+                                      fontSize: 9, color: COLOR_THEME.textDim, marginLeft: 4,
+                                    }}>
+                                      T{node.tier}
+                                    </span>
+                                  </div>
+                                  {isAvailable && (
+                                    <button
+                                      onClick={() => {
+                                        const engine = engineRef.current;
+                                        if (!engine) return;
+                                        const techs = (engine as any).techs;
+                                        if (!techs) return;
+                                        const res = engine.getResources();
+                                        const success = techs.research(node.id, res);
+                                        if (success) {
+                                          const payMethod = (engine as any).pay;
+                                          if (payMethod) payMethod.call(engine, node.cost);
+                                          addToast(`开始研究：${node.name}`, 'success');
+                                          (engine as any).emit?.('stateChange');
+                                        } else {
+                                          addToast('研究失败：资源不足或前置未完成', 'error');
+                                        }
+                                      }}
+                                      style={{
+                                        padding: '2px 10px', fontSize: 9,
+                                        borderRadius: 4, border: 'none', cursor: 'pointer',
+                                        background: `linear-gradient(135deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
+                                        color: '#1a0a0a', fontWeight: 'bold',
+                                      }}
+                                    >
+                                      研究
+                                    </button>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: 9, color: COLOR_THEME.textSecondary, marginTop: 3 }}>
+                                  {node.description}
+                                </div>
+                                {isResearching && (
+                                  <div style={{ marginTop: 4 }}>
+                                    <div style={{
+                                      height: 3, borderRadius: 2,
+                                      background: 'rgba(255,255,255,0.1)',
+                                    }}>
+                                      <div style={{
+                                        width: `${(node.progress * 100).toFixed(0)}%`,
+                                        height: '100%', borderRadius: 2,
+                                        background: colors.border,
+                                        transition: 'width 0.3s',
+                                      }} />
+                                    </div>
+                                    <span style={{ fontSize: 8, color: colors.text }}>
+                                      {(node.progress * 100).toFixed(1)}%
+                                    </span>
+                                  </div>
+                                )}
+                                {isAvailable && Object.keys(node.cost).length > 0 && (
+                                  <div style={{ fontSize: 8, color: COLOR_THEME.textDim, marginTop: 2 }}>
+                                    费用: {Object.entries(node.cost).map(([k, v]) => `${v} ${k}`).join('  ')}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div style={{ fontSize: 10, color: COLOR_THEME.textSecondary, marginTop: 4 }}>
-                        {node.description}
-                      </div>
-                      {isResearching && (
-                        <div style={{ marginTop: 6 }}>
-                          <div style={{
-                            height: 4, borderRadius: 2,
-                            background: 'rgba(255,255,255,0.1)',
-                          }}>
-                            <div style={{
-                              width: `${(node.progress * 100).toFixed(0)}%`,
-                              height: '100%', borderRadius: 2,
-                              background: COLOR_THEME.accentGold,
-                              transition: 'width 0.3s',
-                            }} />
-                          </div>
-                          <span style={{ fontSize: 9, color: COLOR_THEME.accentGold }}>
-                            研究进度: {(node.progress * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                      )}
-                      {isAvailable && Object.keys(node.cost).length > 0 && (
-                        <div style={{ fontSize: 9, color: COLOR_THEME.textDim, marginTop: 2 }}>
-                          费用: {Object.entries(node.cost).map(([k, v]) => `${v} ${k}`).join('  ')}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ═══════════ 战斗发起浮层 ═══════════ */}
           {scene === 'combat' && combatData && combatData.state === 'preparing' && (
