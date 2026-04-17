@@ -455,7 +455,103 @@ interface NPCDotView {
   data: MapNPC | null;
   /** 呼吸动画相位偏移（避免所有 NPC 同步） */
   breathPhase: number;
+  /** 对话气泡容器（点击时显示，自动消失） */
+  dialogBubble: Container | null;
+  /** 对话气泡显示计时器（秒），倒计时到 0 自动隐藏 */
+  dialogTimer: number;
+  /** NPC 信息面板容器（选中时显示） */
+  infoPanel: Container | null;
 }
+
+/** NPC 对话文本库（按职业分类，随机选取） */
+const NPC_DIALOG_POOL: Record<string, string[]> = {
+  farmer: [
+    '大人，今年收成不错！',
+    '田里的庄稼长势喜人啊。',
+    '最近雨水充沛，粮食充足。',
+    '希望能加强巡逻，防盗匪骚扰。',
+    '农忙时节，人手有些不够啊。',
+  ],
+  soldier: [
+    '报告大人，一切正常！',
+    '边境有些小动静，需注意。',
+    '属下正在巡逻，请放心。',
+    '兵器略有磨损，需找工匠修整。',
+    '夜间巡逻要小心，大人注意脚下。',
+  ],
+  merchant: [
+    '大人好！新到一批上等丝绸！',
+    '走过路过不要错过！',
+    '商路畅通，生意兴隆！',
+    '听说西凉那边有稀有马匹。',
+    '这批货从蜀地运来，品质上乘！',
+  ],
+  scholar: [
+    '学而时习之，不亦说乎。',
+    '大人有何赐教？',
+    '依我之见，应当以守为主。',
+    '这段经文颇有深意。',
+    '近日研读兵法，颇有感悟。',
+  ],
+  scout: [
+    '前方侦察未发现异常。',
+    '大人，属下刚从边境回来。',
+    '发现了一些可疑的脚印。',
+    '敌军探子在附近活动。',
+    '南边有一条隐蔽的小路。',
+  ],
+  general: [
+    '军务繁忙，请简明扼要。',
+    '兵马未动，粮草先行。',
+    '士气高昂，随时可以出征！',
+    '练兵不可松懈！再来一组！',
+    '属下定当日夜坚守岗位！',
+  ],
+  craftsman: [
+    '叮叮当当……需要打造什么吗？',
+    '好铁配好匠，这把刀快成了！',
+    '攻城云梯和投石车都在赶制中。',
+    '放这儿吧，明天就能修好。',
+    '这根梁柱得刨平才行。',
+  ],
+  villager: [
+    '大人来了！快进来坐坐。',
+    '今天天气真好啊。',
+    '村里最近挺好的。',
+    '老朽身子骨还硬朗着呢！',
+    '东边有个温泉，是好地方。',
+  ],
+};
+
+/** NPC 信息面板配置 */
+const NPC_INFO_PANEL_WIDTH = 160;
+const NPC_INFO_PANEL_HEIGHT = 80;
+const NPC_INFO_PANEL_CORNER_RADIUS = 6;
+const NPC_INFO_PANEL_BG_COLOR = 0x1a1a2e;
+const NPC_INFO_PANEL_BG_ALPHA = 0.92;
+const NPC_INFO_PANEL_BORDER_COLOR = 0xffeb3b;
+const NPC_INFO_PANEL_TEXT_COLOR = '#e0e0e0';
+const NPC_INFO_PANEL_FONT_SIZE = 11;
+const NPC_INFO_PANEL_LINE_HEIGHT = 16;
+
+/** NPC 对话气泡配置 */
+const NPC_BUBBLE_MAX_WIDTH = 140;
+const NPC_BUBBLE_PADDING = 8;
+const NPC_BUBBLE_CORNER_RADIUS = 8;
+const NPC_BUBBLE_BG_COLOR = 0x2a2a4a;
+const NPC_BUBBLE_BG_ALPHA = 0.95;
+const NPC_BUBBLE_BORDER_COLOR = 0xffd700;
+const NPC_BUBBLE_TEXT_COLOR = '#ffffff';
+const NPC_BUBBLE_FONT_SIZE = 11;
+const NPC_BUBBLE_TAIL_SIZE = 6;
+const NPC_BUBBLE_DISPLAY_DURATION = 4.0; // 秒
+
+/** NPC 选中发光效果配置 */
+const NPC_GLOW_INNER_RADIUS = NPC_DOT_RADIUS + 4;
+const NPC_GLOW_OUTER_RADIUS = NPC_DOT_RADIUS + 12;
+const NPC_GLOW_COLOR = 0xffeb3b;
+const NPC_GLOW_ALPHA = 0.6;
+const NPC_GLOW_PULSE_SPEED = 3.0; // 脉冲速度
 
 /** 地标渲染对象 */
 interface LandmarkView {
@@ -806,6 +902,9 @@ export class MapScene extends BaseScene {
 
     // ── 10. 更新 NPC 选中高亮 ──────────────────────────────
     this.updateNPCSelection();
+
+    // ── 10.5. 更新 NPC 对话气泡倒计时 ──────────────────────
+    this.updateNPCDialogTimers(deltaTime);
 
     // ── 11. 更新粒子效果（花瓣/烟雾） ──────────────────────
     this.updateParticles(deltaTime);
@@ -2449,6 +2548,9 @@ export class MapScene extends BaseScene {
         container,
         data: npc,
         breathPhase: npcIndex * 0.7, // 每个NPC相位错开
+        dialogBubble: null,
+        dialogTimer: 0,
+        infoPanel: null,
       });
       npcIndex++;
     }
@@ -2578,11 +2680,11 @@ export class MapScene extends BaseScene {
   }
 
   /**
-   * 更新 NPC 行走动画（位置插值）
+   * 更新 NPC 行走动画（位置插值 + 方向指示器）
    *
    * 每帧从 npcRenderDataCache 读取 NPC 最新位置，
    * 平滑插值移动 NPC 容器到目标位置。
-   * 行走中的 NPC 会有微小的上下弹跳动画。
+   * 行走中的 NPC 会有微小的上下弹跳动画和方向指示器。
    */
   private updateNPCWalk(deltaTime: number): void {
     if (this.npcDots.size === 0) return;
@@ -2612,12 +2714,62 @@ export class MapScene extends BaseScene {
       if (isMoving) {
         const bounce = Math.sin(this.npcWalkTime * 8 + view.breathPhase) * 2;
         view.container.y = newY + bounce;
+
+        // 方向指示器：移动中的 NPC 显示小箭头指示移动方向
+        const direction = cached.direction;
+        if (direction && direction !== 'idle') {
+          // 确保方向指示器存在
+          let dirIndicator = view.container.getChildByLabel('dir-indicator') as Graphics | null;
+          if (!dirIndicator) {
+            dirIndicator = new Graphics();
+            dirIndicator.label = 'dir-indicator';
+            view.container.addChild(dirIndicator);
+          }
+
+          dirIndicator.clear();
+          const arrowSize = 4;
+          const arrowDist = NPC_DOT_RADIUS + 6;
+          dirIndicator.fill({ color: 0xffffff, alpha: 0.7 });
+
+          switch (direction) {
+            case 'up':
+              dirIndicator.moveTo(0, -arrowDist - arrowSize)
+                .lineTo(-arrowSize, -arrowDist + arrowSize)
+                .lineTo(arrowSize, -arrowDist + arrowSize)
+                .closePath();
+              break;
+            case 'down':
+              dirIndicator.moveTo(0, arrowDist + arrowSize)
+                .lineTo(-arrowSize, arrowDist - arrowSize)
+                .lineTo(arrowSize, arrowDist - arrowSize)
+                .closePath();
+              break;
+            case 'left':
+              dirIndicator.moveTo(-arrowDist - arrowSize, 0)
+                .lineTo(-arrowDist + arrowSize, -arrowSize)
+                .lineTo(-arrowDist + arrowSize, arrowSize)
+                .closePath();
+              break;
+            case 'right':
+              dirIndicator.moveTo(arrowDist + arrowSize, 0)
+                .lineTo(arrowDist - arrowSize, -arrowSize)
+                .lineTo(arrowDist - arrowSize, arrowSize)
+                .closePath();
+              break;
+          }
+        }
+      } else {
+        // 不在移动时移除方向指示器
+        const dirIndicator = view.container.getChildByLabel('dir-indicator') as Graphics | null;
+        if (dirIndicator) {
+          dirIndicator.clear();
+        }
       }
     }
   }
 
   /**
-   * 选中 NPC（高亮显示）
+   * 选中 NPC（高亮显示 + 信息面板 + 对话气泡）
    *
    * @param npcId - 要选中的 NPC ID
    */
@@ -2627,7 +2779,7 @@ export class MapScene extends BaseScene {
 
     this.selectedNPCId = npcId;
 
-    // 创建选中高亮环
+    // 创建选中高亮环（发光效果）
     const view = this.npcDots.get(npcId);
     if (!view) return;
 
@@ -2639,6 +2791,193 @@ export class MapScene extends BaseScene {
     ring.stroke({ color: 0xffeb3b, width: 1, alpha: 0.4 });
     view.container.addChildAt(ring, 0);
     this.npcSelectionRing = ring;
+
+    // 显示 NPC 信息面板
+    this.showNPCInfoPanel(view);
+
+    // 显示对话气泡
+    this.showNPCDialogBubble(view);
+  }
+
+  /**
+   * 显示 NPC 信息面板（名称、职业、状态）
+   */
+  private showNPCInfoPanel(view: NPCDotView): void {
+    // 清理旧面板
+    if (view.infoPanel) {
+      view.container.removeChild(view.infoPanel);
+      view.infoPanel.destroy({ children: true });
+      view.infoPanel = null;
+    }
+
+    const npc = view.data;
+    if (!npc) return;
+
+    const panel = new Container({ label: `npc-info-${npc.id}` });
+    panel.eventMode = 'none';
+
+    const gfx = new Graphics();
+
+    // 面板位置：NPC 上方偏右
+    const panelX = NPC_DOT_RADIUS + 12;
+    const panelY = -(NPC_DOT_RADIUS + NPC_INFO_PANEL_HEIGHT + 10);
+
+    // 背景
+    gfx.roundRect(panelX, panelY, NPC_INFO_PANEL_WIDTH, NPC_INFO_PANEL_HEIGHT, NPC_INFO_PANEL_CORNER_RADIUS)
+      .fill({ color: NPC_INFO_PANEL_BG_COLOR, alpha: NPC_INFO_PANEL_BG_ALPHA });
+    gfx.roundRect(panelX, panelY, NPC_INFO_PANEL_WIDTH, NPC_INFO_PANEL_HEIGHT, NPC_INFO_PANEL_CORNER_RADIUS)
+      .stroke({ color: NPC_INFO_PANEL_BORDER_COLOR, width: 1.5 });
+    panel.addChild(gfx);
+
+    // 文本信息
+    const textStyle = new TextStyle({
+      fontSize: NPC_INFO_PANEL_FONT_SIZE,
+      fill: NPC_INFO_PANEL_TEXT_COLOR,
+      fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+      lineHeight: NPC_INFO_PANEL_LINE_HEIGHT,
+    });
+
+    const nameStyle = new TextStyle({
+      fontSize: NPC_INFO_PANEL_FONT_SIZE + 1,
+      fill: '#ffd700',
+      fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+      fontWeight: 'bold',
+      lineHeight: NPC_INFO_PANEL_LINE_HEIGHT,
+    });
+
+    // NPC 名称
+    const nameText = new Text({ text: `👤 ${npc.name}`, style: nameStyle });
+    nameText.position.set(panelX + 8, panelY + 6);
+    panel.addChild(nameText);
+
+    // NPC 职业
+    const professionLabels: Record<string, string> = {
+      farmer: '🌾 农民',
+      soldier: '⚔️ 士兵',
+      merchant: '💰 商人',
+      scholar: '📚 学者',
+      scout: '🔍 斥候',
+      general: '🗡️ 武将',
+      craftsman: '🔨 工匠',
+      villager: '🏘️ 村民',
+    };
+    const professionText = new Text({
+      text: `职业: ${professionLabels[npc.type] ?? npc.type}`,
+      style: textStyle,
+    });
+    professionText.position.set(panelX + 8, panelY + 24);
+    panel.addChild(professionText);
+
+    // NPC 状态
+    const activityLabels: Record<string, string> = {
+      farming: '🟢 耕种中',
+      patrolling: '🔵 巡逻中',
+      trading: '🟡 交易中',
+      studying: '🟣 研习中',
+      scouting: '🔴 侦察中',
+      idle: '⏸️ 空闲',
+      moving: '🚶 移动中',
+      resting: '💤 休息中',
+    };
+    const stateStr = activityLabels[npc.activity] ?? npc.activity;
+    const stateText = new Text({ text: `状态: ${stateStr}`, style: textStyle });
+    stateText.position.set(panelX + 8, panelY + 42);
+    panel.addChild(stateText);
+
+    // 位置信息
+    const posText = new Text({
+      text: `📍 (${npc.tileX}, ${npc.tileY})`,
+      style: new TextStyle({
+        fontSize: NPC_INFO_PANEL_FONT_SIZE - 1,
+        fill: '#888888',
+        fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+      }),
+    });
+    posText.position.set(panelX + 8, panelY + 60);
+    panel.addChild(posText);
+
+    view.container.addChild(panel);
+    view.infoPanel = panel;
+  }
+
+  /**
+   * 显示 NPC 对话气泡（随机选取对话文本）
+   */
+  private showNPCDialogBubble(view: NPCDotView): void {
+    // 清理旧气泡
+    this.removeNPCDialogBubble(view);
+
+    const npc = view.data;
+    if (!npc) return;
+
+    // 从对话池中随机选取
+    const pool = NPC_DIALOG_POOL[npc.type] ?? NPC_DIALOG_POOL['villager'] ?? ['……'];
+    const dialogText = pool[Math.floor(Math.random() * pool.length)];
+
+    const bubble = new Container({ label: `npc-bubble-${npc.id}` });
+    bubble.eventMode = 'none';
+
+    // 创建文本对象（先创建文本，再根据文本尺寸绘制背景）
+    const textStyle = new TextStyle({
+      fontSize: NPC_BUBBLE_FONT_SIZE,
+      fill: NPC_BUBBLE_TEXT_COLOR,
+      fontFamily: 'Arial, "Microsoft YaHei", sans-serif',
+      wordWrap: true,
+      wordWrapWidth: NPC_BUBBLE_MAX_WIDTH - NPC_BUBBLE_PADDING * 2,
+      lineHeight: 16,
+    });
+
+    const textObj = new Text({ text: dialogText, style: textStyle });
+
+    // 计算气泡背景尺寸
+    const bgWidth = Math.min(textObj.width + NPC_BUBBLE_PADDING * 2, NPC_BUBBLE_MAX_WIDTH);
+    const bgHeight = textObj.height + NPC_BUBBLE_PADDING * 2;
+
+    // 气泡位置：NPC 上方居中
+    const bubbleX = -bgWidth / 2;
+    const bubbleY = -(NPC_DOT_RADIUS + bgHeight + 16);
+
+    const gfx = new Graphics();
+
+    // 气泡背景（圆角矩形）
+    gfx.roundRect(bubbleX, bubbleY, bgWidth, bgHeight, NPC_BUBBLE_CORNER_RADIUS)
+      .fill({ color: NPC_BUBBLE_BG_COLOR, alpha: NPC_BUBBLE_BG_ALPHA });
+    gfx.roundRect(bubbleX, bubbleY, bgWidth, bgHeight, NPC_BUBBLE_CORNER_RADIUS)
+      .stroke({ color: NPC_BUBBLE_BORDER_COLOR, width: 1 });
+
+    // 气泡尾巴（小三角形指向 NPC）
+    const tailX = 0;
+    const tailTopY = bubbleY + bgHeight;
+    gfx.moveTo(tailX - NPC_BUBBLE_TAIL_SIZE, tailTopY)
+      .lineTo(tailX, tailTopY + NPC_BUBBLE_TAIL_SIZE)
+      .lineTo(tailX + NPC_BUBBLE_TAIL_SIZE, tailTopY)
+      .closePath()
+      .fill({ color: NPC_BUBBLE_BG_COLOR, alpha: NPC_BUBBLE_BG_ALPHA });
+
+    bubble.addChild(gfx);
+
+    // 文本
+    textObj.position.set(bubbleX + NPC_BUBBLE_PADDING, bubbleY + NPC_BUBBLE_PADDING);
+    bubble.addChild(textObj);
+
+    // 初始透明度动画（淡入）
+    bubble.alpha = 0;
+
+    view.container.addChild(bubble);
+    view.dialogBubble = bubble;
+    view.dialogTimer = NPC_BUBBLE_DISPLAY_DURATION;
+  }
+
+  /**
+   * 移除 NPC 对话气泡
+   */
+  private removeNPCDialogBubble(view: NPCDotView): void {
+    if (view.dialogBubble) {
+      view.container.removeChild(view.dialogBubble);
+      view.dialogBubble.destroy({ children: true });
+      view.dialogBubble = null;
+      view.dialogTimer = 0;
+    }
   }
 
   /**
@@ -2649,18 +2988,63 @@ export class MapScene extends BaseScene {
       this.npcSelectionRing.destroy();
       this.npcSelectionRing = null;
     }
+    // 清理选中 NPC 的信息面板和对话气泡
+    if (this.selectedNPCId) {
+      const view = this.npcDots.get(this.selectedNPCId);
+      if (view) {
+        if (view.infoPanel) {
+          view.container.removeChild(view.infoPanel);
+          view.infoPanel.destroy({ children: true });
+          view.infoPanel = null;
+        }
+        this.removeNPCDialogBubble(view);
+      }
+    }
     this.selectedNPCId = null;
   }
 
   /**
-   * 更新 NPC 选中高亮动画（脉冲闪烁）
+   * 更新 NPC 选中高亮动画（脉冲闪烁 + 发光效果）及对话气泡倒计时
    */
   private updateNPCSelection(): void {
     if (!this.npcSelectionRing || !this.selectedNPCId) return;
 
     // 脉冲缩放动画
-    const pulse = 1 + 0.1 * Math.sin(this.npcWalkTime * 4);
+    const pulse = 1 + 0.1 * Math.sin(this.npcWalkTime * NPC_GLOW_PULSE_SPEED);
     this.npcSelectionRing.scale.set(pulse);
+
+    // 发光效果（透明度脉冲）
+    const glowAlpha = NPC_GLOW_ALPHA * (0.5 + 0.5 * Math.sin(this.npcWalkTime * NPC_GLOW_PULSE_SPEED));
+    this.npcSelectionRing.alpha = glowAlpha;
+
+    // 更新对话气泡倒计时
+    const view = this.npcDots.get(this.selectedNPCId);
+    if (view && view.dialogBubble && view.dialogTimer > 0) {
+      // 淡入动画（前 0.3 秒）
+      const elapsed = NPC_BUBBLE_DISPLAY_DURATION - view.dialogTimer;
+      if (elapsed < 0.3) {
+        view.dialogBubble.alpha = elapsed / 0.3;
+      } else if (view.dialogTimer < 1.0) {
+        // 淡出动画（最后 1 秒）
+        view.dialogBubble.alpha = view.dialogTimer;
+      } else {
+        view.dialogBubble.alpha = 1.0;
+      }
+    }
+  }
+
+  /**
+   * 更新所有 NPC 的对话气泡计时器
+   */
+  private updateNPCDialogTimers(deltaTime: number): void {
+    for (const [, view] of this.npcDots) {
+      if (view.dialogTimer > 0) {
+        view.dialogTimer -= deltaTime;
+        if (view.dialogTimer <= 0) {
+          this.removeNPCDialogBubble(view);
+        }
+      }
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
