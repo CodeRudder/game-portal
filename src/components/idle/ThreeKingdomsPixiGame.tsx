@@ -1123,7 +1123,7 @@ function CampaignPanel({
               ].filter(Boolean).join(' ');
 
               return (
-                <div key={stage.id} className="tk-r16-stage-wrapper">
+                <div key={stage.id} className="tk-r17-stage-wrapper">
                   {/* 路径连接线 */}
                   {globalIdx > 0 && <StagePathConnector fromVictory={prevVictory} isLast={false} />}
 
@@ -1134,92 +1134,98 @@ function CampaignPanel({
                     {/* 古风圆章序号 */}
                     <StageSealNumber number={globalIdx + 1} status={stage.status} />
 
-                    {/* 场景预览缩略图 80x60 */}
-                    <div className="tk-stage-preview tk-r16-stage-preview" style={{ background: previewGradient }}>
-                      <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-                        <rect width="80" height="60" fill="none" />
-                        {def?.era === '黄巾' && (
-                          <>
-                            <circle cx="20" cy="15" r="6" fill="#ff6600" opacity="0.6" />
-                            <circle cx="60" cy="12" r="5" fill="#ff4400" opacity="0.5" />
-                            <path d="M15,40 Q20,25 25,38 Q30,22 35,36" fill="#ff6600" opacity="0.5" />
-                            <path d="M50,35 Q55,20 60,33 Q63,18 67,32" fill="#ff4400" opacity="0.5" />
-                            <rect x="0" y="48" width="80" height="12" fill="#3a2010" opacity="0.7" />
-                          </>
-                        )}
-                        {def?.era === '董卓' && (
-                          <>
-                            <rect x="25" y="20" width="30" height="22" fill="#7a6a5a" opacity="0.8" />
-                            <rect x="22" y="17" width="36" height="5" fill="#8a7a6a" opacity="0.8" />
-                            <path d="M38,42 L38,32 Q40,28 42,32 L42,42" fill="#3a2a1a" opacity="0.7" />
-                            <rect x="0" y="48" width="80" height="12" fill="#4a3a2a" opacity="0.5" />
-                          </>
-                        )}
-                        {def?.era === '群雄' && (
-                          <>
-                            {[10, 25, 40, 55, 70].map((x, i) => (
-                              <g key={i}>
-                                <line x1={x} y1="42" x2={x} y2={20 + i * 2} stroke="#8B7355" strokeWidth="0.8" opacity="0.6" />
-                                <polygon points={`${x},${20 + i * 2} ${x + 8},${22 + i * 2} ${x},${25 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32','#d4a030','#8a2be2'][i]} opacity="0.6" />
-                              </g>
-                            ))}
-                            <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.5" />
-                          </>
-                        )}
-                        {def?.era === '官渡' && (
-                          <>
-                            <path d="M0,30 Q20,25 40,30 Q60,35 80,28" fill="#3a5a7a" opacity="0.5" />
-                            <path d="M0,32 Q20,28 40,33 Q60,38 80,30" stroke="#5a8aaa" strokeWidth="0.5" fill="none" opacity="0.4" />
-                            {[10, 18, 26].map((x, i) => (
-                              <g key={`n${i}`}>
-                                <circle cx={x} cy={22 - i} r="1.5" fill="#1a1a2a" />
-                                <rect x={x - 1} y={23.5 - i} width="2" height="3" fill="#1a1a2a" />
-                              </g>
-                            ))}
-                            {[54, 62, 70].map((x, i) => (
-                              <g key={`s${i}`}>
-                                <circle cx={x} cy={38 - i} r="1.5" fill="#2a1a1a" />
-                                <rect x={x - 1} y={39.5 - i} width="2" height="3" fill="#2a1a1a" />
-                              </g>
-                            ))}
-                            <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.4" />
-                          </>
-                        )}
-                        {def?.era === '赤壁' && (
-                          <>
-                            <rect x="0" y="28" width="80" height="20" fill="#2a3a5a" opacity="0.4" />
-                            <ellipse cx="40" cy="35" rx="30" ry="10" fill="#ff4400" opacity="0.3" />
-                            {[20, 35, 50, 65].map((x, i) => (
-                              <g key={i}>
-                                <ellipse cx={x} cy={34 + (i % 2) * 3} rx="4" ry="1.5" fill="#5a3a1a" opacity="0.7" />
-                                <path d={`M${x - 1.5},${32 + (i % 2) * 3} Q${x},${24 + i} ${x + 1.5},${32 + (i % 2) * 3}`} fill="#ff4400" opacity="0.6" />
-                              </g>
-                            ))}
-                            <rect x="0" y="48" width="80" height="12" fill="#1a1020" opacity="0.5" />
-                          </>
-                        )}
-                        {def?.era === '三国' && (
-                          <>
-                            <path d="M35,38 L33,45 L47,45 L45,38 Z" fill="#b87333" opacity="0.8" />
-                            <rect x="34" y="35" width="12" height="4" rx="1" fill="#d4a030" opacity="0.8" />
-                            {[15, 40, 65].map((x, i) => (
-                              <g key={i}>
-                                <line x1={x} y1="40" x2={x} y2={18 + i * 2} stroke="#8B7355" strokeWidth="1" opacity="0.6" />
-                                <polygon points={`${x},${18 + i * 2} ${x + 8},${20 + i * 2} ${x},${23 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32'][i]} opacity="0.7" />
-                              </g>
-                            ))}
-                            <rect x="0" y="48" width="80" height="12" fill="#3a2a10" opacity="0.5" />
-                          </>
-                        )}
-                      </svg>
-                      {/* 锁定蒙版 */}
-                      {isLocked && <div className="tk-r16-stage-lock-overlay"><span>🔒</span></div>}
-                      {/* 可攻击脉冲指引 */}
-                      {isAvailable && <div className="tk-r16-stage-available-indicator"><span>▸</span></div>}
+                    {/* 场景预览缩略图 80x60 — 增强版 */}
+                    <div className="tk-r17-stage-preview-wrap">
+                      <div className="tk-stage-preview tk-r16-stage-preview" style={{ background: previewGradient }}>
+                        <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                          <rect width="80" height="60" fill="none" />
+                          {def?.era === '黄巾' && (
+                            <>
+                              <circle cx="20" cy="15" r="6" fill="#ff6600" opacity="0.6" />
+                              <circle cx="60" cy="12" r="5" fill="#ff4400" opacity="0.5" />
+                              <path d="M15,40 Q20,25 25,38 Q30,22 35,36" fill="#ff6600" opacity="0.5" />
+                              <path d="M50,35 Q55,20 60,33 Q63,18 67,32" fill="#ff4400" opacity="0.5" />
+                              <rect x="0" y="48" width="80" height="12" fill="#3a2010" opacity="0.7" />
+                            </>
+                          )}
+                          {def?.era === '董卓' && (
+                            <>
+                              <rect x="25" y="20" width="30" height="22" fill="#7a6a5a" opacity="0.8" />
+                              <rect x="22" y="17" width="36" height="5" fill="#8a7a6a" opacity="0.8" />
+                              <path d="M38,42 L38,32 Q40,28 42,32 L42,42" fill="#3a2a1a" opacity="0.7" />
+                              <rect x="0" y="48" width="80" height="12" fill="#4a3a2a" opacity="0.5" />
+                            </>
+                          )}
+                          {def?.era === '群雄' && (
+                            <>
+                              {[10, 25, 40, 55, 70].map((x, i) => (
+                                <g key={i}>
+                                  <line x1={x} y1="42" x2={x} y2={20 + i * 2} stroke="#8B7355" strokeWidth="0.8" opacity="0.6" />
+                                  <polygon points={`${x},${20 + i * 2} ${x + 8},${22 + i * 2} ${x},${25 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32','#d4a030','#8a2be2'][i]} opacity="0.6" />
+                                </g>
+                              ))}
+                              <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.5" />
+                            </>
+                          )}
+                          {def?.era === '官渡' && (
+                            <>
+                              <path d="M0,30 Q20,25 40,30 Q60,35 80,28" fill="#3a5a7a" opacity="0.5" />
+                              <path d="M0,32 Q20,28 40,33 Q60,38 80,30" stroke="#5a8aaa" strokeWidth="0.5" fill="none" opacity="0.4" />
+                              {[10, 18, 26].map((x, i) => (
+                                <g key={`n${i}`}>
+                                  <circle cx={x} cy={22 - i} r="1.5" fill="#1a1a2a" />
+                                  <rect x={x - 1} y={23.5 - i} width="2" height="3" fill="#1a1a2a" />
+                                </g>
+                              ))}
+                              {[54, 62, 70].map((x, i) => (
+                                <g key={`s${i}`}>
+                                  <circle cx={x} cy={38 - i} r="1.5" fill="#2a1a1a" />
+                                  <rect x={x - 1} y={39.5 - i} width="2" height="3" fill="#2a1a1a" />
+                                </g>
+                              ))}
+                              <rect x="0" y="48" width="80" height="12" fill="#3a2a1a" opacity="0.4" />
+                            </>
+                          )}
+                          {def?.era === '赤壁' && (
+                            <>
+                              <rect x="0" y="28" width="80" height="20" fill="#2a3a5a" opacity="0.4" />
+                              <ellipse cx="40" cy="35" rx="30" ry="10" fill="#ff4400" opacity="0.3" />
+                              {[20, 35, 50, 65].map((x, i) => (
+                                <g key={i}>
+                                  <ellipse cx={x} cy={34 + (i % 2) * 3} rx="4" ry="1.5" fill="#5a3a1a" opacity="0.7" />
+                                  <path d={`M${x - 1.5},${32 + (i % 2) * 3} Q${x},${24 + i} ${x + 1.5},${32 + (i % 2) * 3}`} fill="#ff4400" opacity="0.6" />
+                                </g>
+                              ))}
+                              <rect x="0" y="48" width="80" height="12" fill="#1a1020" opacity="0.5" />
+                            </>
+                          )}
+                          {def?.era === '三国' && (
+                            <>
+                              <path d="M35,38 L33,45 L47,45 L45,38 Z" fill="#b87333" opacity="0.8" />
+                              <rect x="34" y="35" width="12" height="4" rx="1" fill="#d4a030" opacity="0.8" />
+                              {[15, 40, 65].map((x, i) => (
+                                <g key={i}>
+                                  <line x1={x} y1="40" x2={x} y2={18 + i * 2} stroke="#8B7355" strokeWidth="1" opacity="0.6" />
+                                  <polygon points={`${x},${18 + i * 2} ${x + 8},${20 + i * 2} ${x},${23 + i * 2}`} fill={['#c62828','#4a6fa5','#2e7d32'][i]} opacity="0.7" />
+                                </g>
+                              ))}
+                              <rect x="0" y="48" width="80" height="12" fill="#3a2a10" opacity="0.5" />
+                            </>
+                          )}
+                        </svg>
+                        {/* 锁定蒙版 */}
+                        {isLocked && <div className="tk-r16-stage-lock-overlay"><span>🔒</span></div>}
+                        {/* 可攻击脉冲指引 */}
+                        {isAvailable && <div className="tk-r16-stage-available-indicator"><span>▸</span></div>}
+                      </div>
+                      {/* 历史场景名称标签 */}
+                      <div className="tk-r17-scene-name" style={{ color: eraColor }}>
+                        {STAGE_HISTORICAL_NAMES[stage.name] ?? stage.name}
+                      </div>
                     </div>
 
-                    {/* 关卡信息 */}
-                    <div className="tk-stage-info tk-r16-stage-info">
+                    {/* 关卡信息 — 增强版 */}
+                    <div className="tk-stage-info tk-r17-stage-info">
                       <div className="tk-stage-title-row">
                         <span className="tk-stage-type-icon">{typeInfo.icon}</span>
                         <span className="tk-stage-name" style={{ color: isLocked ? CT.textDim : CT.textPrimary }}>
@@ -1234,28 +1240,50 @@ function CampaignPanel({
                           </span>
                         )}
                         {diffDisplay && (
-                          <span style={{ color: diffDisplay.color, fontSize: 10 }}>
+                          <span className="tk-r17-diff-stars" style={{ color: diffDisplay.color }}>
                             {diffDisplay.stars}
                           </span>
                         )}
                         {powerStr && (
-                          <span style={{ color: CT.textDim }}>
+                          <span className="tk-r17-power-text" style={{ color: CT.textDim }}>
                             ⚔️{powerStr}
                           </span>
                         )}
                       </div>
+                      {/* 战力对比条（我方vs敌方） */}
+                      {isAvailable && def && (
+                        <div className="tk-r17-power-compare-mini">
+                          <div className="tk-r17-power-compare-mini__bar">
+                            <div className="tk-r17-power-compare-mini__ally" style={{ width: '55%', background: `linear-gradient(90deg, #2e7d32, #66bb6a)` }} />
+                            <div className="tk-r17-power-compare-mini__enemy" style={{ width: '45%', background: `linear-gradient(90deg, #c62828, #ef5350)` }} />
+                          </div>
+                          <div className="tk-r17-power-compare-mini__labels">
+                            <span>我方</span>
+                            <span>敌方</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* 右侧状态标签 */}
-                    <div className="tk-r16-status-area">
+                    {/* 右侧状态标签 — 增强版 */}
+                    <div className="tk-r17-status-area">
                       {!isLocked && !isVictory && (
-                        <span className="tk-stage-status-tag tk-stage-status-tag--attack tk-r16-attack-btn">⚔️ 可攻</span>
+                        <button className="tk-r17-attack-btn tk-r17-attack-btn--pulse">
+                          <span className="tk-r17-attack-btn__icon">⚔️</span>
+                          <span className="tk-r17-attack-btn__text">可攻</span>
+                        </button>
                       )}
                       {isVictory && (
-                        <span className="tk-stage-status-tag tk-stage-status-tag--victory tk-r16-victory-badge">
-                          <span className="tk-r16-victory-stars">{'★'.repeat(stage.stars || 3)}</span>
-                          已攻克
-                        </span>
+                        <div className="tk-r17-victory-badge">
+                          <span className="tk-r17-victory-stars">{'★'.repeat(stage.stars || 3)}</span>
+                          <span className="tk-r17-victory-label">已攻克</span>
+                        </div>
+                      )}
+                      {isLocked && (
+                        <div className="tk-r17-locked-badge">
+                          <span className="tk-r17-locked-icon">🔒</span>
+                          <span className="tk-r17-locked-text">未解锁</span>
+                        </div>
                       )}
                     </div>
 
@@ -1557,6 +1585,12 @@ const GeneralPortrait = ({ name, faction, size = 60 }: { name: string; faction: 
   if (name === '诸葛亮') return <ZhuGeLiangPortrait color={color} size={size} h={h} />;
   if (name === '赵云') return <ZhaoYunPortrait color={color} size={size} h={h} />;
   if (name === '曹操') return <CaoCaoPortrait color={color} size={size} h={h} />;
+  if (name === '孙权') return <SunQuanPortrait color={color} size={size} h={h} />;
+  if (name === '周瑜') return <ZhouYuPortrait color={color} size={size} h={h} />;
+  if (name === '吕布') return <LuBuPortrait color={color} size={size} h={h} />;
+  if (name === '貂蝉') return <DiaoChanPortrait color={color} size={size} h={h} />;
+  if (name === '许褚') return <XuChuPortrait color={color} size={size} h={h} />;
+  if (name === '司马懿') return <SiMaYiPortrait color={color} size={size} h={h} />;
 
   // ── 通用确定性头像（回退） ──
   const seed = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -1835,6 +1869,247 @@ const CaoCaoPortrait = ({ color, size, h }: { color: string; size: number; h: nu
     <circle cx="30" cy="22" r="17" fill="none" stroke="#ffd700" strokeWidth="0.3" strokeDasharray="3,3" opacity="0.4" />
     {/* 名字 */}
     <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">曹操</text>
+  </svg>
+);
+
+/** 孙权 — 碧眼紫髯 + 吴钩 */
+const SunQuanPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill={color} opacity="0.1" />
+    {/* 头部 — 方正面庞 */}
+    <circle cx="30" cy="22" r="13" fill="#ffe0bd" stroke={color} strokeWidth="1.5" />
+    {/* 紫髯 */}
+    <path d="M22,28 Q26,34 30,32 Q34,34 38,28" fill="none" stroke="#6a1b9a" strokeWidth="1" />
+    <path d="M24,30 Q27,36 30,34 Q33,36 36,30" fill="none" stroke="#6a1b9a" strokeWidth="0.7" />
+    {/* 碧眼 — 绿色瞳孔 */}
+    <circle cx="24" cy="21" r="2.5" fill="#1b5e20" />
+    <circle cx="36" cy="21" r="2.5" fill="#1b5e20" />
+    <circle cx="24" cy="21" r="1.2" fill="#000" />
+    <circle cx="36" cy="21" r="1.2" fill="#000" />
+    {/* 皇冠 */}
+    <path d="M16,16 Q30,4 44,16" fill="#ffd700" stroke="#b8860b" strokeWidth="0.8" />
+    <rect x="22" y="8" width="4" height="6" rx="1" fill="#ffd700" />
+    <rect x="28" y="6" width="4" height="8" rx="1" fill="#ffd700" />
+    <rect x="34" y="8" width="4" height="6" rx="1" fill="#ffd700" />
+    {/* 紫色发髻 */}
+    <ellipse cx="30" cy="12" rx="10" ry="5" fill="#4a148c" opacity="0.6" />
+    {/* 身体 — 绿袍 */}
+    <rect x="14" y="35" width="32" height="34" rx="3" fill={color} />
+    <path d="M24,35 L30,43 L36,35" fill="none" stroke="#ffd700" strokeWidth="1" />
+    <rect x="14" y="52" width="32" height="3" fill="#ffd700" opacity="0.7" />
+    {/* 吴钩 — 右侧 */}
+    <path d="M48,30 Q52,40 50,55" fill="none" stroke="#c0c0c0" strokeWidth="2" />
+    <path d="M48,28 Q54,32 52,38" fill="none" stroke="#c0c0c0" strokeWidth="1.5" />
+    <circle cx="49" cy="28" r="1.5" fill="#ffd700" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">孙权</text>
+  </svg>
+);
+
+/** 周瑜 — 英俊儒雅 + 古琴 */
+const ZhouYuPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill={color} opacity="0.08" />
+    {/* 头部 — 英俊面庞 */}
+    <circle cx="30" cy="22" r="13" fill="#ffdbac" stroke={color} strokeWidth="1.5" />
+    {/* 束发冠 */}
+    <path d="M17,16 Q30,6 43,16" fill="#f5f5dc" stroke="#8b7355" strokeWidth="0.6" />
+    <rect x="22" y="9" width="16" height="5" rx="2" fill="#f5f5dc" stroke="#8b7355" strokeWidth="0.4" />
+    {/* 英俊剑眉 */}
+    <path d="M20,18 Q24,15 28,18" fill="none" stroke="#2c1810" strokeWidth="1" />
+    <path d="M32,18 Q36,15 40,18" fill="none" stroke="#2c1810" strokeWidth="1" />
+    {/* 明亮双目 */}
+    <circle cx="24" cy="21" r="2" fill="#2c1810" />
+    <circle cx="36" cy="21" r="2" fill="#2c1810" />
+    <circle cx="24.5" cy="20.5" r="0.6" fill="#fff" />
+    <circle cx="36.5" cy="20.5" r="0.6" fill="#fff" />
+    {/* 微笑 */}
+    <path d="M26,27 Q30,30 34,27" fill="none" stroke="#8b4513" strokeWidth="0.7" />
+    {/* 身体 — 白衣儒袍 */}
+    <rect x="14" y="35" width="32" height="34" rx="3" fill="#f5f5f0" opacity="0.9" />
+    <rect x="14" y="35" width="32" height="34" rx="3" fill={color} opacity="0.15" />
+    <path d="M24,35 L30,43 L36,35" fill="none" stroke={color} strokeWidth="0.8" />
+    <rect x="14" y="52" width="32" height="3" fill={color} opacity="0.4" />
+    {/* 古琴 — 右侧 */}
+    <rect x="46" y="38" width="8" height="20" rx="3" fill="#8B6914" stroke="#6b4226" strokeWidth="0.5" />
+    <line x1="48" y1="40" x2="48" y2="56" stroke="#d4a96a" strokeWidth="0.3" />
+    <line x1="50" y1="40" x2="50" y2="56" stroke="#d4a96a" strokeWidth="0.3" />
+    <line x1="52" y1="40" x2="52" y2="56" stroke="#d4a96a" strokeWidth="0.3" />
+    {/* 火焰暗示 */}
+    <path d="M42,36 Q44,30 42,26" fill="none" stroke="#ff6600" strokeWidth="0.8" opacity="0.5" />
+    <path d="M44,34 Q46,28 44,24" fill="none" stroke="#ff4400" strokeWidth="0.6" opacity="0.4" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">周瑜</text>
+  </svg>
+);
+
+/** 吕布 — 方天画戟 + 赤兔马 */
+const LuBuPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill="#8B0000" opacity="0.08" />
+    {/* 头部 — 威猛面庞 */}
+    <circle cx="30" cy="22" r="13" fill="#ffe0bd" stroke="#8B0000" strokeWidth="1.5" />
+    {/* 双翎盔 */}
+    <path d="M14,18 L30,6 L46,18" fill="#8B0000" stroke="#ffd700" strokeWidth="0.8" />
+    <circle cx="30" cy="6" r="2" fill="#ffd700" />
+    {/* 双翎 */}
+    <path d="M18,10 Q12,2 8,6" fill="none" stroke="#ff4444" strokeWidth="1.5" />
+    <path d="M42,10 Q48,2 52,6" fill="none" stroke="#ff4444" strokeWidth="1.5" />
+    {/* 虎目 */}
+    <circle cx="24" cy="20" r="2.5" fill="#fff" stroke="#1a1a1a" strokeWidth="0.5" />
+    <circle cx="36" cy="20" r="2.5" fill="#fff" stroke="#1a1a1a" strokeWidth="0.5" />
+    <circle cx="24" cy="20" r="1.2" fill="#8B0000" />
+    <circle cx="36" cy="20" r="1.2" fill="#8B0000" />
+    {/* 粗眉 */}
+    <rect x="19" y="15" width="11" height="2.5" rx="1" fill="#1a1a1a" />
+    <rect x="31" y="15" width="11" height="2.5" rx="1" fill="#1a1a1a" />
+    {/* 威严嘴角 */}
+    <line x1="25" y1="28" x2="35" y2="28" stroke="#5d4037" strokeWidth="1" />
+    {/* 身体 — 暗红战甲 */}
+    <rect x="14" y="35" width="32" height="34" rx="3" fill="#8B0000" />
+    <path d="M24,35 L30,43 L36,35" fill="none" stroke="#ffd700" strokeWidth="1" />
+    <rect x="14" y="52" width="32" height="3" fill="#ffd700" opacity="0.7" />
+    {/* 方天画戟 — 右侧 */}
+    <line x1="52" y1="10" x2="52" y2="65" stroke="#8b8682" strokeWidth="2.5" />
+    <path d="M48,10 L52,4 L56,10" fill="#c0c0c0" stroke="#808080" strokeWidth="0.5" />
+    <path d="M48,10 Q44,8 46,14" fill="#c0c0c0" stroke="#808080" strokeWidth="0.5" />
+    <path d="M56,10 Q60,8 58,14" fill="#c0c0c0" stroke="#808080" strokeWidth="0.5" />
+    <circle cx="52" cy="4" r="1.5" fill="#ffd700" />
+    {/* 赤兔马暗示 — 底部红色弧形 */}
+    <path d="M8,68 Q30,60 52,68" fill="none" stroke="#ff4444" strokeWidth="2" opacity="0.4" />
+    <path d="M12,70 Q30,64 48,70" fill="none" stroke="#ff2200" strokeWidth="1.5" opacity="0.3" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">吕布</text>
+  </svg>
+);
+
+/** 貂蝉 — 闭月之容 + 团扇 */
+const DiaoChanPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill="#ff69b4" opacity="0.06" />
+    {/* 头部 — 绝美面容 */}
+    <circle cx="30" cy="22" r="12" fill="#fff0e6" stroke="#ff69b4" strokeWidth="1" />
+    {/* 发髻 — 高髻 */}
+    <ellipse cx="30" cy="12" rx="10" ry="7" fill="#1a1a1a" />
+    <path d="M20,16 Q30,8 40,16" fill="#1a1a1a" />
+    {/* 金钗 */}
+    <line x1="26" y1="8" x2="34" y2="8" stroke="#ffd700" strokeWidth="1" />
+    <circle cx="30" cy="7" r="2" fill="#ffd700" />
+    <circle cx="26" cy="8" r="1" fill="#ff69b4" />
+    <circle cx="34" cy="8" r="1" fill="#ff69b4" />
+    {/* 柳眉杏眼 */}
+    <path d="M22,19 Q25,17 28,19" fill="none" stroke="#2c1810" strokeWidth="0.8" />
+    <path d="M32,19 Q35,17 38,19" fill="none" stroke="#2c1810" strokeWidth="0.8" />
+    <ellipse cx="25" cy="20.5" rx="2" ry="1.5" fill="#2c1810" />
+    <ellipse cx="35" cy="20.5" rx="2" ry="1.5" fill="#2c1810" />
+    {/* 樱唇 */}
+    <path d="M27,26 Q30,28 33,26" fill="#e57373" stroke="#c62828" strokeWidth="0.3" />
+    {/* 腮红 */}
+    <circle cx="21" cy="23" r="2.5" fill="#ff8a80" opacity="0.2" />
+    <circle cx="39" cy="23" r="2.5" fill="#ff8a80" opacity="0.2" />
+    {/* 身体 — 粉色罗裙 */}
+    <rect x="16" y="34" width="28" height="35" rx="4" fill="#ff69b4" opacity="0.7" />
+    <path d="M24,34 L30,42 L36,34" fill="none" stroke="#ffd700" strokeWidth="0.6" />
+    <rect x="16" y="52" width="28" height="3" fill="#ffd700" opacity="0.5" />
+    {/* 团扇 — 右手 */}
+    <circle cx="50" cy="42" r="8" fill="#fff8dc" stroke="#ff69b4" strokeWidth="0.8" opacity="0.9" />
+    <line x1="50" y1="50" x2="50" y2="60" stroke="#8B6914" strokeWidth="1.5" />
+    {/* 团扇花纹 */}
+    <path d="M46,38 Q50,36 54,38" fill="none" stroke="#ff69b4" strokeWidth="0.4" />
+    <path d="M45,42 Q50,40 55,42" fill="none" stroke="#ff69b4" strokeWidth="0.4" />
+    <circle cx="50" cy="42" r="2" fill="#ff69b4" opacity="0.3" />
+    {/* 月亮暗示 */}
+    <circle cx="12" cy="14" r="4" fill="#fff8dc" opacity="0.15" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">貂蝉</text>
+  </svg>
+);
+
+/** 许褚 — 虎痴 + 铁锤 */
+const XuChuPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill={color} opacity="0.1" />
+    {/* 头部 — 粗犷面庞 */}
+    <circle cx="30" cy="22" r="14" fill="#d4a96a" stroke={color} strokeWidth="1.5" />
+    {/* 光头 */}
+    <ellipse cx="30" cy="14" rx="13" ry="6" fill="#d4a96a" />
+    <path d="M17,18 Q30,8 43,18" fill="#d4a96a" stroke="#b8860b" strokeWidth="0.5" />
+    {/* 虎纹额带 */}
+    <rect x="17" y="13" width="26" height="4" rx="1" fill="#ff8f00" stroke="#e65100" strokeWidth="0.5" />
+    <line x1="22" y1="13" x2="24" y2="17" stroke="#1a1a1a" strokeWidth="0.6" />
+    <line x1="28" y1="13" x2="30" y2="17" stroke="#1a1a1a" strokeWidth="0.6" />
+    <line x1="34" y1="13" x2="36" y2="17" stroke="#1a1a1a" strokeWidth="0.6" />
+    {/* 圆瞪虎目 */}
+    <circle cx="24" cy="21" r="3" fill="#fff" stroke="#1a1a1a" strokeWidth="0.8" />
+    <circle cx="36" cy="21" r="3" fill="#fff" stroke="#1a1a1a" strokeWidth="0.8" />
+    <circle cx="24" cy="21" r="1.5" fill="#1a1a1a" />
+    <circle cx="36" cy="21" r="1.5" fill="#1a1a1a" />
+    {/* 大鼻 */}
+    <circle cx="30" cy="26" r="2" fill="#c49a6c" stroke="#8b6914" strokeWidth="0.4" />
+    {/* 厚唇 */}
+    <path d="M25,29 Q30,31 35,29" fill="none" stroke="#5d4037" strokeWidth="1" />
+    {/* 虎须 */}
+    <line x1="16" y1="24" x2="12" y2="22" stroke="#1a1a1a" strokeWidth="0.6" />
+    <line x1="16" y1="26" x2="11" y2="26" stroke="#1a1a1a" strokeWidth="0.6" />
+    <line x1="44" y1="24" x2="48" y2="22" stroke="#1a1a1a" strokeWidth="0.6" />
+    <line x1="44" y1="26" x2="49" y2="26" stroke="#1a1a1a" strokeWidth="0.6" />
+    {/* 身体 — 褐色甲 */}
+    <rect x="14" y="36" width="32" height="32" rx="3" fill="#6d4c41" />
+    <rect x="14" y="52" width="32" height="3" fill="#ffd700" opacity="0.6" />
+    {/* 铁锤 — 右侧 */}
+    <line x1="50" y1="28" x2="50" y2="55" stroke="#6d4c41" strokeWidth="2.5" />
+    <rect x="44" y="22" width="12" height="10" rx="2" fill="#757575" stroke="#424242" strokeWidth="1" />
+    <rect x="45" y="23" width="10" height="3" rx="1" fill="#9e9e9e" opacity="0.5" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">许褚</text>
+  </svg>
+);
+
+/** 司马懿 — 鹰视狼顾 + 黑扇 */
+const SiMaYiPortrait = ({ color, size, h }: { color: string; size: number; h: number }) => (
+  <svg width={size} height={h} viewBox="0 0 60 80" style={{ flexShrink: 0 }}>
+    <rect width="60" height="80" rx="4" fill="#2a1f0e" />
+    <rect width="60" height="80" rx="4" fill={color} opacity="0.1" />
+    {/* 头部 — 阴沉面庞 */}
+    <circle cx="30" cy="22" r="13" fill="#ffe0c0" stroke={color} strokeWidth="1.5" />
+    {/* 黑冠 */}
+    <rect x="18" y="8" width="24" height="8" rx="2" fill="#1a1a1a" stroke="#333" strokeWidth="0.5" />
+    <rect x="22" y="5" width="4" height="5" rx="1" fill="#333" />
+    <rect x="28" y="4" width="4" height="6" rx="1" fill="#333" />
+    <rect x="34" y="5" width="4" height="5" rx="1" fill="#333" />
+    {/* 鹰眼 — 锐利狭长 */}
+    <path d="M20,20 Q24,18 28,21" fill="none" stroke="#1a1a1a" strokeWidth="1.2" />
+    <path d="M32,21 Q36,18 40,20" fill="none" stroke="#1a1a1a" strokeWidth="1.2" />
+    <ellipse cx="24" cy="21" rx="2" ry="1.5" fill="#1a1a1a" />
+    <ellipse cx="36" cy="21" rx="2" ry="1.5" fill="#1a1a1a" />
+    <circle cx="24" cy="21" r="0.8" fill="#c62828" />
+    <circle cx="36" cy="21" r="0.8" fill="#c62828" />
+    {/* 狼顾之相 — 侧目 */}
+    <path d="M22,24 Q24,25 26,24" fill="none" stroke="#5d4037" strokeWidth="0.5" />
+    <path d="M34,24 Q36,25 38,24" fill="none" stroke="#5d4037" strokeWidth="0.5" />
+    {/* 阴沉嘴角 */}
+    <path d="M26,28 Q30,27 34,28" fill="none" stroke="#3d2b1f" strokeWidth="0.8" />
+    {/* 短须 */}
+    <path d="M27,29 Q30,32 33,29" fill="none" stroke="#1a1a1a" strokeWidth="0.5" />
+    {/* 身体 — 深紫袍 */}
+    <rect x="14" y="35" width="32" height="34" rx="3" fill="#1a1a2e" />
+    <rect x="14" y="35" width="32" height="34" rx="3" fill={color} opacity="0.2" />
+    <path d="M24,35 L30,43 L36,35" fill="none" stroke="#ffd700" strokeWidth="0.8" />
+    <rect x="14" y="52" width="32" height="3" fill="#ffd700" opacity="0.5" />
+    {/* 黑扇 — 右手 */}
+    <path d="M46,36 Q52,32 54,40 Q52,48 46,50" fill="#1a1a1a" stroke="#333" strokeWidth="0.5" />
+    <line x1="46" y1="36" x2="46" y2="50" stroke="#8b6914" strokeWidth="1" />
+    <line x1="48" y1="38" x2="52" y2="40" stroke="#333" strokeWidth="0.3" />
+    <line x1="48" y1="42" x2="53" y2="44" stroke="#333" strokeWidth="0.3" />
+    {/* 鹰暗示 */}
+    <path d="M10,14 Q12,10 14,14 Q12,12 10,14" fill="#424242" opacity="0.3" />
+    {/* 名字 */}
+    <text x="30" y="78" textAnchor="middle" fill="#ffd700" fontSize="8" fontFamily="'Noto Serif SC', serif">司马懿</text>
   </svg>
 );
 
@@ -2808,6 +3083,11 @@ export default function ThreeKingdomsPixiGame() {
 
   // ─── 武将详情 Tab ──────────────────────────────────────────
   const [heroDetailTab, setHeroDetailTab] = useState<'info' | 'biography'>('info');
+
+  // ─── 武将面板筛选/排序 ─────────────────────────────────────
+  const [generalFactionFilter, setGeneralFactionFilter] = useState<string>('all');
+  const [generalRarityFilter, setGeneralRarityFilter] = useState<string>('all');
+  const [generalSortKey, setGeneralSortKey] = useState<'level' | 'attack' | 'defense'>('level');
 
   // ─── 日夜循环 ──────────────────────────────────────────────
   const [isNight, setIsNight] = useState(false);
@@ -5465,8 +5745,69 @@ export default function ThreeKingdomsPixiGame() {
           ) : (
             <>
               <h3 className="tk-general-cards-title">◆ ⚔️ 武将</h3>
+              {/* ── 阵营筛选按钮 ── */}
+              <div className="tk-general-filter-row">
+                {(['all', 'shu', 'wei', 'wu', 'other'] as const).map(f => {
+                  const factionLabels: Record<string, string> = { all: '全部', wei: '魏', shu: '蜀', wu: '吴', other: '群' };
+                  const factionColors: Record<string, string> = { all: '#c9a96e', wei: '#1E6FBE', shu: '#C41E3A', wu: '#2E8B57', other: '#8B7355' };
+                  const isActive = generalFactionFilter === f;
+                  return (
+                    <button
+                      key={f}
+                      className={`tk-general-filter-btn ${isActive ? 'tk-general-filter-btn--active' : ''}`}
+                      style={{
+                        borderColor: isActive ? factionColors[f] : 'rgba(139,115,85,0.3)',
+                        color: isActive ? factionColors[f] : '#8b7355',
+                        background: isActive ? `${factionColors[f]}18` : 'transparent',
+                      }}
+                      onClick={() => setGeneralFactionFilter(f)}
+                    >
+                      {factionLabels[f]}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* ── 品质筛选 + 排序 ── */}
+              <div className="tk-general-filter-row">
+                {(['all', 'legendary', 'epic', 'rare', 'uncommon'] as const).map(r => {
+                  const rarityLabels: Record<string, string> = { all: '全部品质', legendary: '传说', epic: '史诗', rare: '稀有', uncommon: '精良' };
+                  const rarityColors: Record<string, string> = { all: '#c9a96e', legendary: '#ffa726', epic: '#ab47bc', rare: '#42a5f5', uncommon: '#5cbf60' };
+                  const isActive = generalRarityFilter === r;
+                  return (
+                    <button
+                      key={r}
+                      className={`tk-general-filter-btn tk-general-filter-btn--sm ${isActive ? 'tk-general-filter-btn--active' : ''}`}
+                      style={{
+                        borderColor: isActive ? rarityColors[r] : 'rgba(139,115,85,0.2)',
+                        color: isActive ? rarityColors[r] : '#8b7355',
+                        background: isActive ? `${rarityColors[r]}15` : 'transparent',
+                      }}
+                      onClick={() => setGeneralRarityFilter(r)}
+                    >
+                      {rarityLabels[r]}
+                    </button>
+                  );
+                })}
+                <select
+                  className="tk-general-sort-select"
+                  value={generalSortKey}
+                  onChange={e => setGeneralSortKey(e.target.value as 'level' | 'attack' | 'defense')}
+                >
+                  <option value="level">按等级</option>
+                  <option value="attack">按攻击</option>
+                  <option value="defense">按防御</option>
+                </select>
+              </div>
               <div className="tk-general-cards">
-                {heroes.map((h, idx) => (
+                {heroes
+                  .filter(h => generalFactionFilter === 'all' || h.faction === generalFactionFilter)
+                  .filter(h => generalRarityFilter === 'all' || h.rarity === generalRarityFilter)
+                  .sort((a, b) => {
+                    if (generalSortKey === 'attack') return b.stats.attack - a.stats.attack;
+                    if (generalSortKey === 'defense') return b.stats.defense - a.stats.defense;
+                    return b.level - a.level;
+                  })
+                  .map((h, idx) => (
                   <GeneralCard
                     key={h.id}
                     general={h}
@@ -6267,6 +6608,14 @@ export default function ThreeKingdomsPixiGame() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── 武将详情弹窗 ── */}
+      {detailModalHero && (
+        <GeneralDetailModal
+          general={detailModalHero}
+          onClose={() => setDetailModalHero(null)}
+        />
       )}
     </div>
   );

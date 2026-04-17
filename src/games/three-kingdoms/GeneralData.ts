@@ -268,6 +268,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['看老夫神射！', '箭无虚发，百发百中！', '老将出马，一个顶俩！'],
       recruit: ['老朽虽年迈，尚能杀敌。', '若得明主，黄忠愿效死力。'],
     },
+    skills: [
+      { name: '百步穿杨', type: 'attack', target: 'enemy_single', power: 2.5, cooldown: 3, description: '神射之术，对单体造成巨额伤害' },
+      { name: '老当益壮', type: 'buff', target: 'ally_single', power: 1.6, cooldown: 2, description: '老将雄风，提升自身攻击力' },
+    ],
   },
   {
     id: 'machao',
@@ -294,6 +298,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['西凉铁骑，冲锋！', '马超在此，尔等受死！', '虎头湛金枪，所向无敌！'],
       recruit: ['若能为父报仇，超愿归顺。', '久仰皇叔仁德，超愿效犬马之劳。'],
     },
+    skills: [
+      { name: '铁骑冲锋', type: 'attack', target: 'enemy_all', power: 1.8, cooldown: 4, description: '西凉铁骑冲锋，对全体造成伤害' },
+      { name: '锦马超', type: 'buff', target: 'ally_single', power: 1.5, cooldown: 2, description: '锦衣怒马，提升自身速度和攻击' },
+    ],
   },
 
   // ==================== 魏国 ====================
@@ -322,6 +330,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['全军出击！一统天下！', '胜败乃兵家常事，此战必胜！', '顺我者昌，逆我者亡！'],
       recruit: ['天下英雄，唯使君与操耳。', '吾爱才如命，愿与君共谋大业。'],
     },
+    skills: [
+      { name: '奸雄之略', type: 'buff', target: 'ally_all', power: 2.0, cooldown: 3, description: '雄才大略，提升全军属性' },
+      { name: '挟天子', type: 'attack', target: 'enemy_single', power: 2.2, cooldown: 3, description: '挟天子以令诸侯，对单体造成策略伤害' },
+    ],
   },
   {
     id: 'xuchu',
@@ -348,6 +360,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['吃俺一锤！', '虎痴来也，尔等受死！', '谁敢动主公，先过俺这关！'],
       recruit: ['哼，你要是主公的朋友，就是俺的朋友。', '跟着主公走，准没错！'],
     },
+    skills: [
+      { name: '裸衣斗', type: 'attack', target: 'enemy_single', power: 2.3, cooldown: 3, description: '裸衣酣战，对单体造成暴击伤害' },
+      { name: '虎痴', type: 'buff', target: 'ally_single', power: 1.7, cooldown: 2, description: '虎痴之力，大幅提升防御' },
+    ],
   },
 
   // ==================== 吴国 ====================
@@ -376,6 +392,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['江东儿郎，随我出战！', '保家卫国，寸土不让！', '东吴水军，天下无敌！'],
       recruit: ['江东多才俊，愿与君共图大业。', '若肯归顺，权必以礼相待。'],
     },
+    skills: [
+      { name: '制衡', type: 'buff', target: 'ally_all', power: 1.6, cooldown: 3, description: '权衡利弊，提升全军统率和防御' },
+      { name: '江东之主', type: 'buff', target: 'ally_single', power: 1.8, cooldown: 2, description: '江东霸主威严，大幅提升单体战力' },
+    ],
   },
   {
     id: 'zhouyu',
@@ -402,6 +422,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['火攻赤壁，大破曹军！', '运筹帷幄，谈笑间樯橹灰飞烟灭。', '都督令下，全军出击！'],
       recruit: ['瑜不才，愿为江东效力。', '得遇明主，瑜三生有幸。'],
     },
+    skills: [
+      { name: '火烧赤壁', type: 'attack', target: 'enemy_all', power: 2.8, cooldown: 5, description: '赤壁烈焰，对全体造成巨额火伤' },
+      { name: '英姿焕发', type: 'buff', target: 'ally_all', power: 1.5, cooldown: 3, description: '周郎妙计，提升全军智力' },
+    ],
   },
 
   // ==================== 其他 ====================
@@ -430,6 +454,10 @@ export const GENERALS: GeneralInfo[] = [
       battle: ['天下第一武将，谁敢来战！', '方天画戟，鬼神皆泣！', '吕布在此，尔等速速受死！'],
       recruit: ['若以诚意相待，布愿归顺。', '天下诸侯，谁能容我？'],
     },
+    skills: [
+      { name: '天下无双', type: 'attack', target: 'enemy_single', power: 3.0, cooldown: 4, description: '飞将之勇，对单体造成极致伤害' },
+      { name: '辕门射戟', type: 'attack', target: 'enemy_single', power: 2.5, cooldown: 3, description: '神射之术，精准打击单体目标' },
+    ],
   },
 ];
 
