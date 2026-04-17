@@ -161,21 +161,38 @@ export const GAME_TITLE = '三国霸业';
 // 建筑系统 (8个)
 // ═══════════════════════════════════════════════════════════════
 
+/**
+ * 建筑三国特色描述
+ *
+ * 每种建筑附带一段三国历史背景描述，
+ * 增强游戏的三国主题沉浸感。
+ */
+export const BUILDING_DESCRIPTIONS: Record<string, string> = {
+  farm: '曹操推行屯田制，兵农合一，粮草源源不断',
+  market: '天下商贾汇聚，互通有无，富国强兵',
+  barracks: '练兵千日，用兵一时，铁血铸就精锐之师',
+  smithy: '千锤百炼，铸造神兵利器，武装三军将士',
+  academy: '太学兴教，传承经典，培育经天纬地之才',
+  clinic: '悬壶济世，妙手回春，保百姓安居乐业',
+  wall: '高城深池，箭塔林立，固若金汤守四方',
+  tavern: '天下英雄尽入吾彀中，招贤纳士聚英才',
+};
+
 export const BUILDINGS: BuildingDef[] = [
   {
-    id: 'farm', name: '农田', icon: '🌾',
+    id: 'farm', name: '屯田', icon: '🌾',
     baseCost: { grain: 10 }, costMultiplier: 1.07, maxLevel: 0,
     productionResource: 'grain', baseProduction: 0.1,
     unlockCondition: '初始解锁',
   },
   {
-    id: 'market', name: '市集', icon: '💰',
+    id: 'market', name: '商行', icon: '💰',
     baseCost: { grain: 50 }, costMultiplier: 1.08, maxLevel: 0,
     productionResource: 'gold', baseProduction: 0.08,
     unlockCondition: '初始解锁',
   },
   {
-    id: 'barracks', name: '兵营', icon: '⚔️',
+    id: 'barracks', name: '军营', icon: '⚔️',
     baseCost: { grain: 30, gold: 20 }, costMultiplier: 1.09, maxLevel: 0,
     productionResource: 'troops', baseProduction: 0.05,
     unlockCondition: '累计 100 粮草',
@@ -185,33 +202,33 @@ export const BUILDINGS: BuildingDef[] = [
     baseCost: { gold: 100, wood: 30 }, costMultiplier: 1.10, maxLevel: 0,
     productionResource: 'iron', baseProduction: 0.08,
     requires: ['barracks'],
-    unlockCondition: '兵营 Lv.3',
+    unlockCondition: '军营 Lv.3',
   },
   {
-    id: 'academy', name: '书院', icon: '📚',
+    id: 'academy', name: '太学', icon: '📚',
     baseCost: { gold: 200 }, costMultiplier: 1.12, maxLevel: 0,
     productionResource: 'gold', baseProduction: 0.15,
     unlockCondition: '累计 500 铜钱',
   },
   {
-    id: 'clinic', name: '医馆', icon: '💊',
+    id: 'clinic', name: '药庐', icon: '💊',
     baseCost: { gold: 80, grain: 60 }, costMultiplier: 1.08, maxLevel: 0,
     productionResource: 'morale', baseProduction: 0.12,
     unlockCondition: '累计 300 粮草',
   },
   {
-    id: 'wall', name: '城墙', icon: '🏰',
+    id: 'wall', name: '城防', icon: '🏰',
     baseCost: { gold: 150, iron: 50 }, costMultiplier: 1.15, maxLevel: 0,
     productionResource: 'wood', baseProduction: 0.06,
     requires: ['barracks'],
-    unlockCondition: '兵营 Lv.5',
+    unlockCondition: '军营 Lv.5',
   },
   {
     id: 'tavern', name: '招贤馆', icon: '🏯',
     baseCost: { gold: 500 }, costMultiplier: 1.18, maxLevel: 0,
     productionResource: 'gold', baseProduction: 0.2,
     requires: ['academy'],
-    unlockCondition: '书院 Lv.3',
+    unlockCondition: '太学 Lv.3',
   },
 ];
 
