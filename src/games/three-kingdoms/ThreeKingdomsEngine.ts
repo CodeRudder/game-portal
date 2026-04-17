@@ -952,10 +952,41 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     }
   }
 
+  /** 资源阈值解锁配置：建筑ID → 所需资源阈值 */
+  private static readonly RESOURCE_UNLOCK_THRESHOLDS: Record<string, Record<string, number>> = {
+    barracks: { grain: 100 },    // 累计 100 粮草
+    academy: { gold: 500 },      // 累计 500 铜钱
+    clinic: { grain: 300 },      // 累计 300 粮草
+  };
+
   private checkUnlocks(): void {
     for (const b of BUILDINGS) {
-      if (this.bldg.isUnlocked(b.id) || !b.requires?.length) continue;
-      if (b.requires.every(r => this.bldg.getLevel(r) > 0)) this.bldg.forceUnlock(b.id);
+      if (this.bldg.isUnlocked(b.id)) continue;
+
+      // 1. 前置建筑解锁（requires）
+      if (b.requires?.length) {
+        if (b.requires.every(r => this.bldg.getLevel(r) > 0)) {
+          this.bldg.forceUnlock(b.id);
+          this.ftSys.add(`🔓 解锁建筑：${b.name}`, 0.5, 0.35, {
+            style: { color: COLOR_THEME.accentGold, fontSize: 16 },
+          });
+        }
+        continue;
+      }
+
+      // 2. 资源阈值解锁（无 requires 的非初始建筑）
+      const threshold = ThreeKingdomsEngine.RESOURCE_UNLOCK_THRESHOLDS[b.id];
+      if (threshold) {
+        const met = Object.entries(threshold).every(
+          ([resId, amount]) => (this.res[resId] || 0) >= amount,
+        );
+        if (met) {
+          this.bldg.forceUnlock(b.id);
+          this.ftSys.add(`🔓 解锁建筑：${b.name}`, 0.5, 0.35, {
+            style: { color: COLOR_THEME.accentGold, fontSize: 16 },
+          });
+        }
+      }
     }
   }
 

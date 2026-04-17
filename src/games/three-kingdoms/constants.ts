@@ -718,7 +718,7 @@ export const INITIAL_RESOURCES: Record<string, number> = {
 // 初始解锁建筑
 // ═══════════════════════════════════════════════════════════════
 
-export const INITIALLY_UNLOCKED: string[] = ['farm'];
+export const INITIALLY_UNLOCKED: string[] = ['farm', 'market'];
 
 // ═══════════════════════════════════════════════════════════════
 // 点击产出
