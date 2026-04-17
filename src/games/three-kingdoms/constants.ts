@@ -537,19 +537,24 @@ export const PRESTIGE_CONFIG: PrestigeConfig = {
 // UI 色彩主题
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// UI 色彩主题 — 三国古风配色
+// 从纯黑背景升级为深棕/暗金渐变，加入三国经典色调
+// ═══════════════════════════════════════════════════════════════
+
 export const COLOR_THEME: UIColorScheme = {
-  bgGradient1: '#1a0a0a',
-  bgGradient2: '#2d1b1b',
-  textPrimary: '#ffffff',
-  textSecondary: '#cccccc',
-  textDim: '#888888',
-  accentGold: '#ffd700',
-  accentGreen: '#4caf50',
-  panelBg: 'rgba(255,255,255,0.05)',
-  selectedBg: 'rgba(255,215,0,0.1)',
-  selectedBorder: 'rgba(255,215,0,0.4)',
-  affordable: '#4caf50',
-  unaffordable: '#666666',
+  bgGradient1: '#1a0e05',         // 深棕 — 古卷底色
+  bgGradient2: '#2d1b0a',         // 暗金棕 — 古风氛围
+  textPrimary: '#f0e6d3',         // 米白 — 宣纸色
+  textSecondary: '#c4b59a',       // 浅棕灰
+  textDim: '#8a7a60',             // 暗棕灰
+  accentGold: '#d4a030',          // 暗金 — 帝王金
+  accentGreen: '#4a7a3a',         // 墨绿
+  panelBg: 'rgba(60,40,20,0.6)',  // 半透明深棕
+  selectedBg: 'rgba(212,160,48,0.15)',  // 暗金选中
+  selectedBorder: 'rgba(212,160,48,0.5)',
+  affordable: '#4a7a3a',
+  unaffordable: '#5a4a3a',
 };
 
 // ═══════════════════════════════════════════════════════════════

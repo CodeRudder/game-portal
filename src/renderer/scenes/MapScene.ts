@@ -250,6 +250,39 @@ const LANDMARK_LABEL_COLOR = 0xffd700;
 /** NPC 点半径 */
 const NPC_DOT_RADIUS = 6;
 
+// ─── 粒子效果常量 ──────────────────────────────────────────
+
+/** 粒子类型 */
+type ParticleType = 'petal' | 'smoke' | 'spark';
+
+/** 粒子数据 */
+interface MapParticle {
+  type: ParticleType;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  alpha: number;
+  rotation: number;
+  rotationSpeed: number;
+  life: number;
+  maxLife: number;
+  color: number;
+}
+
+/** 粒子数量上限 */
+const MAX_PARTICLES = 40;
+
+/** 花瓣颜色池 */
+const PETAL_COLORS = [0xffb7c5, 0xff8fa3, 0xffc8d6, 0xf8a4b8];
+
+/** 烟雾颜色 */
+const SMOKE_COLOR = 0xaaaaaa;
+
+/** 火花颜色 */
+const SPARK_COLOR = 0xffd700;
+
 /** NPC 类型颜色映射 */
 const NPC_TYPE_COLORS: Record<string, number> = {
   farmer: 0x4caf50,
@@ -533,6 +566,22 @@ export class MapScene extends BaseScene {
   /** 精灵图是否已加载 */
   private kenneySpritesLoaded: boolean = false;
 
+  // ─── 粒子效果（烟雾/花瓣） ─────────────────────────────────
+
+  /** 粒子容器层（最顶层，半透明装饰） */
+  private particleLayer: Container;
+  /** 粒子图形对象（复用单个 Graphics 批量绘制） */
+  private particleGraphics: Graphics;
+  /** 粒子数据列表 */
+  private particles: MapParticle[] = [];
+  /** 粒子动画累计时间 */
+  private particleTime: number = 0;
+
+  // ─── 装饰性面板边框 ─────────────────────────────────────────
+
+  /** 古风装饰边框图形（回纹/云纹） */
+  private decorBorderGraphics: Graphics;
+
   // ═══════════════════════════════════════════════════════════
   // 构造函数
   // ═══════════════════════════════════════════════════════════
@@ -574,6 +623,19 @@ export class MapScene extends BaseScene {
       gridY: 0,
     };
 
+    // 初始化粒子效果层（烟雾/花瓣，半透明装饰）
+    this.particleLayer = new Container({ label: 'particles' });
+    this.particleGraphics = new Graphics();
+    this.particleLayer.addChild(this.particleGraphics);
+    this.container.addChild(this.particleLayer);
+
+    // 初始化古风装饰边框
+    this.decorBorderGraphics = new Graphics();
+    this.container.addChild(this.decorBorderGraphics);
+
+    // 初始化粒子数据
+    this.particles = [];
+
     // 初始化右键选区
     const selectionGfx = new Graphics();
     selectionGfx.visible = false;
@@ -594,8 +656,7 @@ export class MapScene extends BaseScene {
   protected async onCreate(): Promise<void> {
     // 设置容器交互（用于地图点击和边缘滚动）
     this.container.eventMode = 'static';
-    this.container.cursor = 'crosshair';
-    // hitArea 稍后在 onEnter 中根据实际尺寸设置
+    this.container.cursor = 'default'; // 使用默认鼠标光标（非方块十字线）
 
     // 绑定指针事件（仅用于 Tooltip 跟踪和点击，不再拖拽）
     this.container.on('pointermove', this.onPointerMove);
@@ -647,6 +708,12 @@ export class MapScene extends BaseScene {
 
     // 重置动画计时
     this.pulseTime = 0;
+
+    // 初始化粒子效果（花瓣飘落 + 烟雾）
+    this.initParticles();
+
+    // 绘制古风装饰边框
+    this.drawDecorativeBorder();
   }
 
   protected async onExit(): Promise<void> {
@@ -681,6 +748,12 @@ export class MapScene extends BaseScene {
 
     // ── 10. 更新 NPC 选中高亮 ──────────────────────────────
     this.updateNPCSelection();
+
+    // ── 11. 更新粒子效果（花瓣/烟雾） ──────────────────────
+    this.updateParticles(deltaTime);
+
+    // ── 12. 绘制古风装饰边框 ──────────────────────────────
+    this.drawDecorativeBorder();
   }
 
   protected onSetData(data: unknown): void {
@@ -730,6 +803,10 @@ export class MapScene extends BaseScene {
     this.tooltipLayer.destroy({ children: true });
     this.cellHighlight.graphics.destroy();
     this.selection.graphics.destroy();
+    this.particles = [];
+    this.particleGraphics.destroy();
+    this.particleLayer.destroy({ children: true });
+    this.decorBorderGraphics.destroy();
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1605,9 +1682,14 @@ export class MapScene extends BaseScene {
 
         if (visual) {
           // 基于 variant 产生颜色微变，使相邻同类型瓦片有细微色差
-          const shift = (tile.variant % 3 - 1) * 0x060606;
-          const baseColor = visual.baseColor + shift;
+          // 使用位运算安全地调整 RGB 各通道，避免溢出
+          const shift = (tile.variant % 3 - 1) * 6; // ±6 per channel
+          const r = Math.max(0, Math.min(255, ((visual.baseColor >> 16) & 0xff) + shift));
+          const g = Math.max(0, Math.min(255, ((visual.baseColor >> 8) & 0xff) + shift));
+          const b = Math.max(0, Math.min(255, (visual.baseColor & 0xff) + shift));
+          const baseColor = (r << 16) | (g << 8) | b;
           // 每个瓦片扩展 1px（向右和向下），消除相邻瓦片间的亚像素缝隙
+          // 使用整数坐标 + 1px overlap 是瓦片地图无缝拼接的标准方案
           graphics.rect(x, y, tileSize + 1, tileSize + 1).fill({ color: baseColor });
         } else {
           graphics.rect(x, y, tileSize + 1, tileSize + 1).fill({ color: 0x888888 });
@@ -2375,6 +2457,287 @@ export class MapScene extends BaseScene {
     // 脉冲缩放动画
     const pulse = 1 + 0.1 * Math.sin(this.npcWalkTime * 4);
     this.npcSelectionRing.scale.set(pulse);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 粒子效果系统（花瓣飘落 / 烟雾 / 火花）
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 初始化粒子效果
+   *
+   * 生成初始粒子池，花瓣从顶部飘落，烟雾从底部升起。
+   * 粒子数量控制在 MAX_PARTICLES 以内，确保性能。
+   */
+  private initParticles(): void {
+    this.particles = [];
+
+    // 花瓣粒子（从顶部飘落）
+    for (let i = 0; i < 15; i++) {
+      this.particles.push(this.createParticle('petal'));
+    }
+
+    // 烟雾粒子（从底部缓慢升起）
+    for (let i = 0; i < 8; i++) {
+      this.particles.push(this.createParticle('smoke'));
+    }
+
+    // 火花粒子（随机闪烁）
+    for (let i = 0; i < 5; i++) {
+      this.particles.push(this.createParticle('spark'));
+    }
+  }
+
+  /**
+   * 创建单个粒子
+   */
+  private createParticle(type: ParticleType): MapParticle {
+    // 地图范围（用于粒子活动区域）
+    const mapW = this.tileMapData ? this.tileMapData.width * this.tileMapData.tileSize : 1280;
+    const mapH = this.tileMapData ? this.tileMapData.height * this.tileMapData.tileSize : 960;
+
+    switch (type) {
+      case 'petal':
+        return {
+          type,
+          x: Math.random() * mapW,
+          y: Math.random() * mapH - mapH * 0.1,
+          vx: 8 + Math.random() * 15,
+          vy: 10 + Math.random() * 20,
+          size: 2 + Math.random() * 3,
+          alpha: 0.3 + Math.random() * 0.4,
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 2,
+          life: Math.random() * 8,
+          maxLife: 6 + Math.random() * 6,
+          color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+        };
+      case 'smoke':
+        return {
+          type,
+          x: Math.random() * mapW,
+          y: mapH * (0.7 + Math.random() * 0.3),
+          vx: (Math.random() - 0.5) * 5,
+          vy: -(3 + Math.random() * 8),
+          size: 6 + Math.random() * 10,
+          alpha: 0.05 + Math.random() * 0.1,
+          rotation: 0,
+          rotationSpeed: 0,
+          life: Math.random() * 10,
+          maxLife: 8 + Math.random() * 8,
+          color: SMOKE_COLOR,
+        };
+      case 'spark':
+        return {
+          type,
+          x: Math.random() * mapW,
+          y: Math.random() * mapH,
+          vx: 0,
+          vy: 0,
+          size: 1 + Math.random() * 2,
+          alpha: 0,
+          rotation: 0,
+          rotationSpeed: 0,
+          life: Math.random() * 4,
+          maxLife: 2 + Math.random() * 3,
+          color: SPARK_COLOR,
+        };
+    }
+  }
+
+  /**
+   * 更新粒子位置和生命周期
+   */
+  private updateParticles(deltaTime: number): void {
+    this.particleTime += deltaTime;
+
+    const mapW = this.tileMapData ? this.tileMapData.width * this.tileMapData.tileSize : 1280;
+    const mapH = this.tileMapData ? this.tileMapData.height * this.tileMapData.tileSize : 960;
+
+    this.particleGraphics.clear();
+
+    for (let i = 0; i < this.particles.length; i++) {
+      const p = this.particles[i];
+
+      // 更新生命周期
+      p.life += deltaTime;
+
+      // 生命周期结束 → 重生
+      if (p.life >= p.maxLife) {
+        this.particles[i] = this.createParticle(p.type);
+        continue;
+      }
+
+      // 更新位置
+      p.x += p.vx * deltaTime;
+      p.y += p.vy * deltaTime;
+      p.rotation += p.rotationSpeed * deltaTime;
+
+      // 计算生命周期进度（0→1）
+      const progress = p.life / p.maxLife;
+
+      // 根据类型计算透明度
+      let alpha: number;
+      switch (p.type) {
+        case 'petal':
+          // 花瓣：淡入 → 稳定 → 淡出
+          alpha = progress < 0.1 ? p.alpha * (progress / 0.1)
+            : progress > 0.8 ? p.alpha * (1 - (progress - 0.8) / 0.2)
+            : p.alpha;
+          break;
+        case 'smoke':
+          // 烟雾：缓慢淡入后淡出
+          alpha = p.alpha * (1 - progress * progress);
+          break;
+        case 'spark':
+          // 火花：闪烁效果
+          alpha = p.alpha * Math.max(0, Math.sin(progress * Math.PI * 4));
+          break;
+        default:
+          alpha = p.alpha;
+      }
+
+      if (alpha < 0.01) continue;
+
+      // 绘制粒子
+      switch (p.type) {
+        case 'petal': {
+          // 花瓣：椭圆形
+          this.particleGraphics
+            .ellipse(p.x, p.y, p.size, p.size * 0.6)
+            .fill({ color: p.color, alpha });
+          break;
+        }
+        case 'smoke': {
+          // 烟雾：大圆形，极低透明度
+          this.particleGraphics
+            .circle(p.x, p.y, p.size * (1 + progress * 0.5))
+            .fill({ color: p.color, alpha });
+          break;
+        }
+        case 'spark': {
+          // 火花：小亮点
+          this.particleGraphics
+            .circle(p.x, p.y, p.size)
+            .fill({ color: p.color, alpha });
+          break;
+        }
+      }
+
+      // 边界循环（花瓣从右侧消失后从左侧出现）
+      if (p.type === 'petal') {
+        if (p.x > mapW + 20) p.x = -20;
+        if (p.y > mapH + 20) { p.y = -20; p.x = Math.random() * mapW; }
+      }
+      if (p.type === 'smoke') {
+        if (p.y < -20) { p.y = mapH + 20; p.x = Math.random() * mapW; }
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 古风装饰边框（回纹/云纹）
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * 绘制古风装饰边框
+   *
+   * 使用 Graphics API 在地图边缘绘制回纹和云纹装饰。
+   * 边框跟随摄像机移动，始终显示在视口边缘。
+   */
+  private drawDecorativeBorder(): void {
+    this.decorBorderGraphics.clear();
+
+    // 获取视口尺寸（使用画布尺寸作为参考）
+    const parent = this.container.parent;
+    if (!parent) return;
+
+    const viewW = parent.width;
+    const viewH = parent.height;
+
+    if (viewW === 0 || viewH === 0) return;
+
+    // 获取摄像机偏移，将边框固定在视口上
+    const camState = this.cameraManager.getState();
+    const camX = camState.x - viewW / (2 * camState.zoom);
+    const camY = camState.y - viewH / (2 * camState.zoom);
+    const camW = viewW / camState.zoom;
+    const camH = viewH / camState.zoom;
+
+    const borderAlpha = 0.15;
+    const gold = 0xd4a030;
+
+    // ── 顶部回纹装饰 ──
+    const topY = camY + 4;
+    const segmentW = 30;
+    for (let x = camX; x < camX + camW; x += segmentW * 2) {
+      // 回纹单元：方折线
+      this.decorBorderGraphics
+        .moveTo(x, topY)
+        .lineTo(x + segmentW * 0.5, topY)
+        .lineTo(x + segmentW * 0.5, topY + 6)
+        .lineTo(x + segmentW, topY + 6)
+        .lineTo(x + segmentW, topY)
+        .stroke({ width: 1, color: gold, alpha: borderAlpha });
+    }
+
+    // ── 底部回纹装饰 ──
+    const botY = camY + camH - 10;
+    for (let x = camX; x < camX + camW; x += segmentW * 2) {
+      this.decorBorderGraphics
+        .moveTo(x, botY + 6)
+        .lineTo(x + segmentW * 0.5, botY + 6)
+        .lineTo(x + segmentW * 0.5, botY)
+        .lineTo(x + segmentW, botY)
+        .lineTo(x + segmentW, botY + 6)
+        .stroke({ width: 1, color: gold, alpha: borderAlpha });
+    }
+
+    // ── 左侧云纹装饰 ──
+    const leftX = camX + 4;
+    const segmentH = 40;
+    for (let y = camY + 20; y < camY + camH - 20; y += segmentH) {
+      // 简易云纹：螺旋弧线
+      this.decorBorderGraphics
+        .moveTo(leftX, y)
+        .quadraticCurveTo(leftX + 8, y + segmentH * 0.25, leftX + 4, y + segmentH * 0.5)
+        .stroke({ width: 1, color: gold, alpha: borderAlpha * 0.8 });
+      this.decorBorderGraphics
+        .moveTo(leftX + 4, y + segmentH * 0.5)
+        .quadraticCurveTo(leftX - 2, y + segmentH * 0.75, leftX, y + segmentH)
+        .stroke({ width: 1, color: gold, alpha: borderAlpha * 0.8 });
+    }
+
+    // ── 右侧云纹装饰 ──
+    const rightX = camX + camW - 4;
+    for (let y = camY + 20; y < camY + camH - 20; y += segmentH) {
+      this.decorBorderGraphics
+        .moveTo(rightX, y)
+        .quadraticCurveTo(rightX - 8, y + segmentH * 0.25, rightX - 4, y + segmentH * 0.5)
+        .stroke({ width: 1, color: gold, alpha: borderAlpha * 0.8 });
+      this.decorBorderGraphics
+        .moveTo(rightX - 4, y + segmentH * 0.5)
+        .quadraticCurveTo(rightX + 2, y + segmentH * 0.75, rightX, y + segmentH)
+        .stroke({ width: 1, color: gold, alpha: borderAlpha * 0.8 });
+    }
+
+    // ── 四角装饰（简化回纹方角） ──
+    const cornerSize = 16;
+    const corners = [
+      { x: camX + 2, y: camY + 2 },
+      { x: camX + camW - 2, y: camY + 2 },
+      { x: camX + 2, y: camY + camH - 2 },
+      { x: camX + camW - 2, y: camY + camH - 2 },
+    ];
+    for (const corner of corners) {
+      const dx = corner.x < camX + camW / 2 ? 1 : -1;
+      const dy = corner.y < camY + camH / 2 ? 1 : -1;
+      this.decorBorderGraphics
+        .moveTo(corner.x, corner.y + dy * cornerSize)
+        .lineTo(corner.x, corner.y)
+        .lineTo(corner.x + dx * cornerSize, corner.y)
+        .stroke({ width: 1.5, color: gold, alpha: borderAlpha * 1.5 });
+    }
   }
 
   /**

@@ -414,7 +414,7 @@ export default function PixiGameCanvas({
         height: '100%',
         position: 'relative',
         overflow: 'hidden',
-        background: '#1a1a2e',
+        background: '#1a0e05',
         ...style,
       }}
     >

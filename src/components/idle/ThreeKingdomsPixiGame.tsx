@@ -1450,8 +1450,8 @@ export default function ThreeKingdomsPixiGame() {
         {showBuildingPanel && !isMobile && (
         <aside style={{
           width: 240, flexShrink: 0,
-          background: 'rgba(0,0,0,0.5)',
-          borderRight: '1px solid rgba(255,255,255,0.08)',
+          background: 'linear-gradient(180deg, rgba(45,27,10,0.85), rgba(26,14,5,0.9))',
+          borderRight: '1px solid rgba(212,160,48,0.15)',
           overflowY: 'auto', padding: 8,
           zIndex: 5,
           display: 'flex', flexDirection: 'column',
@@ -1720,7 +1720,7 @@ export default function ThreeKingdomsPixiGame() {
           <PixiGameCanvas
             renderState={renderState}
             config={{
-              backgroundColor: '#1a0a0a',
+              backgroundColor: '#1a0e05',
               designWidth: 1920,
               designHeight: 1080,
             }}
@@ -2112,8 +2112,8 @@ export default function ThreeKingdomsPixiGame() {
         {showHeroPanel && !isMobile && (
         <aside style={{
           width: selectedHero ? 320 : 220, flexShrink: 0,
-          background: 'rgba(0,0,0,0.5)',
-          borderLeft: '1px solid rgba(255,255,255,0.08)',
+          background: 'linear-gradient(180deg, rgba(45,27,10,0.85), rgba(26,14,5,0.9))',
+          borderLeft: '1px solid rgba(212,160,48,0.15)',
           overflowY: 'auto', padding: 8,
           zIndex: 5,
           display: 'flex', flexDirection: 'column',
