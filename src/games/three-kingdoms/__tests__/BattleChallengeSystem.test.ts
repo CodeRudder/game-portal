@@ -99,14 +99,26 @@ describe('BattleChallengeSystem', () => {
     system.startChallenge('ch01', makeHeroes(1));
     const enemies = system.getActiveChallenge()!.waves[0].enemies;
     const target = enemies[0];
-    const result = system.playerAttack(target.id);
-    expect(result.isMiss).toBe(false);
-    if (!result.isCrit) {
-      expect(result.damage).toBeGreaterThan(0);
-      expect(result.damage).toBeLessThan(target.maxHp);
-    } else {
-      expect(result.isCrit).toBe(true);
-      expect(result.damage).toBeGreaterThan(0);
+    // Mock Math.random to avoid 5% miss chance (ensure first call > 0.05)
+    const origRandom = Math.random;
+    let callCount = 0;
+    Math.random = () => {
+      callCount++;
+      // Return values that avoid miss (>=0.05) and avoid crit (<0.1) for deterministic test
+      return callCount === 1 ? 0.5 : origRandom();
+    };
+    try {
+      const result = system.playerAttack(target.id);
+      expect(result.isMiss).toBe(false);
+      if (!result.isCrit) {
+        expect(result.damage).toBeGreaterThan(0);
+        expect(result.damage).toBeLessThan(target.maxHp);
+      } else {
+        expect(result.isCrit).toBe(true);
+        expect(result.damage).toBeGreaterThan(0);
+      }
+    } finally {
+      Math.random = origRandom;
     }
   });
 

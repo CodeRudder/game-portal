@@ -1628,14 +1628,6 @@ export class MapScene extends BaseScene {
     const textureKey = BUILDING_LEVEL_TEXTURES[data.level] ?? BUILDING_LEVEL_TEXTURES[1];
     const texture = this.assetManager.getTexture(textureKey);
 
-    // 建筑名称标签
-    const buildingLabel = new Text({
-      text: data.name,
-      style: new TextStyle({ fontSize: 10, fill: 0xffffff, align: 'center' }),
-    });
-    buildingLabel.anchor.set(0.5, 0);
-    buildingLabel.position.set(0, BUILDING_SPRITE_SIZE / 2 + 5);
-
     if (texture) {
       // 使用真实精灵纹理
       const sprite = new Sprite(texture);
@@ -1643,6 +1635,15 @@ export class MapScene extends BaseScene {
       sprite.width = BUILDING_SPRITE_SIZE;
       sprite.height = BUILDING_SPRITE_SIZE;
       container.addChild(sprite);
+
+      // 建筑名称标签（纹理模式下手动创建）
+      const buildingLabel = new Text({
+        text: data.name,
+        style: new TextStyle({ fontSize: 10, fill: 0xffffff, align: 'center' }),
+      });
+      buildingLabel.anchor.set(0.5, 0);
+      buildingLabel.position.set(0, BUILDING_SPRITE_SIZE / 2 + 5);
+      container.addChild(buildingLabel);
     } else {
       // Fallback：使用程序化中国风建筑绘制
       const fallbackGfx = new Graphics();
@@ -1700,20 +1701,21 @@ export class MapScene extends BaseScene {
       const textureKey = BUILDING_LEVEL_TEXTURES[data.level] ?? BUILDING_LEVEL_TEXTURES[1];
       const texture = this.assetManager.getTexture(textureKey);
 
-      // 建筑名称标签
-      const buildingLabel = new Text({
-        text: data.name,
-        style: new TextStyle({ fontSize: 10, fill: 0xffffff, align: 'center' }),
-      });
-      buildingLabel.anchor.set(0.5, 0);
-      buildingLabel.position.set(0, BUILDING_SPRITE_SIZE / 2 + 5);
-
       if (texture) {
         const sprite = new Sprite(texture);
         sprite.anchor.set(0.5, 0.5);
         sprite.width = BUILDING_SPRITE_SIZE;
         sprite.height = BUILDING_SPRITE_SIZE;
         icon.container.addChildAt(sprite, 0);
+
+        // 建筑名称标签（纹理模式下手动创建）
+        const buildingLabel = new Text({
+          text: data.name,
+          style: new TextStyle({ fontSize: 10, fill: 0xffffff, align: 'center' }),
+        });
+        buildingLabel.anchor.set(0.5, 0);
+        buildingLabel.position.set(0, BUILDING_SPRITE_SIZE / 2 + 5);
+        icon.container.addChildAt(buildingLabel, 1);
       } else {
         const fallbackGfx = new Graphics();
         const buildingLabel = drawChineseBuilding(
