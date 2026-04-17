@@ -22,13 +22,85 @@
 /** 关卡难度 */
 export type CampaignDifficulty = 'easy' | 'normal' | 'hard';
 
+/** 关卡类型（多样化玩法） */
+export type CampaignLevelType =
+  | 'battle'      // 战斗型：标准战斗关卡
+  | 'defense'     // 防守型：布置防御抵挡敌军
+  | 'diplomacy'   // 外交型：选择正确选项招募武将
+  | 'resource';   // 资源型：限定回合收集资源
+
 /** 胜利条件类型 */
 export type VictoryCondition =
   | 'defeat_commander'    // 击败守将
   | 'destroy_gate'       // 攻破城门
   | 'eliminate_all'      // 全歼敌军
   | 'survive_waves'      // 坚守N波
-  | 'capture_flag';      // 占领旗帜
+  | 'capture_flag'       // 占领旗帜
+  | 'collect_resource'   // 收集指定数量资源
+  | 'make_choice';       // 做出正确选择（外交型）
+
+/** 关卡目标定义 */
+export interface CampaignObjective {
+  /** 目标描述（如"击败敌军5000人"） */
+  description: string;
+  /** 目标类型 */
+  type: 'kill' | 'survive' | 'collect' | 'choice' | 'destroy';
+  /** 目标值 */
+  targetValue: number;
+  /** 当前进度 */
+  currentProgress: number;
+  /** 目标单位（如"人"、"回合"、"粮草"） */
+  unit: string;
+}
+
+/** 地形策略效果 */
+export interface TerrainStrategyEffect {
+  /** 地形名称 */
+  terrainName: string;
+  /** 效果描述（如"山地：防御+20%"） */
+  description: string;
+  /** 效果类型 */
+  effectType: 'defense_bonus' | 'attack_bonus' | 'speed_penalty' | 'cavalry_penalty' | 'resource_double';
+  /** 效果数值（百分比，如 0.2 表示 20%） */
+  value: number;
+  /** 图标 */
+  icon: string;
+}
+
+/** 兵种克制关系提示 */
+export interface CounterTip {
+  /** 克制方 */
+  attacker: string;
+  /** 被克制方 */
+  defender: string;
+  /** 图标 */
+  icon: string;
+}
+
+/** 关卡类型显示配置 */
+export const CAMPAIGN_TYPE_DISPLAY: Record<CampaignLevelType, { label: string; icon: string; color: string; desc: string }> = {
+  battle:    { label: '战斗', icon: '⚔️', color: '#ef4444', desc: '标准战斗关卡' },
+  defense:   { label: '防守', icon: '🛡️', color: '#3b82f6', desc: '布置防御抵挡敌军' },
+  diplomacy: { label: '外交', icon: '🤝', color: '#a78bfa', desc: '选择正确选项招募武将' },
+  resource:  { label: '资源', icon: '📦', color: '#22c55e', desc: '限定回合收集资源' },
+};
+
+/** 地形策略效果配置 */
+export const TERRAIN_STRATEGY_EFFECTS: TerrainStrategyEffect[] = [
+  { terrainName: '山地', description: '防御+20%', effectType: 'defense_bonus', value: 0.2, icon: '⛰️' },
+  { terrainName: '河流', description: '骑兵-30%', effectType: 'cavalry_penalty', value: -0.3, icon: '🌊' },
+  { terrainName: '关隘', description: '防御+40%', effectType: 'defense_bonus', value: 0.4, icon: '🏰' },
+  { terrainName: '森林', description: '伏兵伤害+25%', effectType: 'attack_bonus', value: 0.25, icon: '🌲' },
+  { terrainName: '荒漠', description: '行军消耗×2', effectType: 'resource_double', value: 2.0, icon: '🏜️' },
+  { terrainName: '沼泽', description: '移速-50%', effectType: 'speed_penalty', value: -0.5, icon: '🌿' },
+];
+
+/** 兵种克制关系 */
+export const COUNTER_TIPS: CounterTip[] = [
+  { attacker: '步兵', defender: '骑兵', icon: '🛡️' },
+  { attacker: '骑兵', defender: '弓兵', icon: '🐎' },
+  { attacker: '弓兵', defender: '步兵', icon: '🏹' },
+];
 
 /** 关卡状态 */
 export type CampaignStageStatus = 'locked' | 'available' | 'in_progress' | 'victory' | 'defeated';
@@ -105,9 +177,18 @@ export interface CampaignStage {
   // 难度
   difficulty: CampaignDifficulty;
 
+  // 关卡类型（R12 优化：多样化关卡类型）
+  type?: CampaignLevelType;
+
   // 胜利条件
   victoryCondition: VictoryCondition;
   victoryParams: Record<string, number>;  // 如 waves: 5
+
+  // 关卡目标（R12 优化：具体目标与进度）
+  objectives?: CampaignObjective[];
+
+  // 地形策略效果（R12 优化：地形影响）
+  terrainEffects?: TerrainStrategyEffect[];
 
   // 敌方配置
   enemyCommander: EnemyCommander;
@@ -205,6 +286,15 @@ export interface CampaignLevelDetail {
   description: string;
   /** 在地图上的位置坐标（归一化 0-1） */
   mapPosition: { x: number; y: number };
+
+  /** 关卡类型（R12 优化：battle/defense/diplomacy/resource） */
+  type?: CampaignLevelType;
+
+  /** 关卡目标（R12 优化：具体目标与进度） */
+  objectives?: CampaignObjective[];
+
+  /** 地形策略效果（R12 优化：地形影响战斗） */
+  terrainEffects?: TerrainStrategyEffect[];
 
   /** 守军信息 */
   defender: LevelDefender;
@@ -341,6 +431,14 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '涿郡起义',
     description: '东汉末年，黄巾之乱爆发，天下大乱。刘备在涿郡起兵，与关羽、张飞桃园结义，誓要匡扶汉室。首战涿郡，平定黄巾贼众，建立根据地。',
     mapPosition: { x: 0.15, y: 0.30 },
+    type: 'battle',
+    objectives: [
+      { description: '击败黄巾贼众500人', type: 'kill', targetValue: 500, currentProgress: 0, unit: '人' },
+      { description: '攻占涿郡城门', type: 'destroy', targetValue: 1, currentProgress: 0, unit: '座' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[0], // 山地：防御+20%
+    ],
     defender: {
       lord: '黄巾渠帅',
       officers: ['黄巾力士头目', '黄巾弓手队长'],
@@ -368,6 +466,15 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '虎牢关',
     description: '十八路诸侯讨伐董卓，兵至虎牢关。天下第一猛将吕布率西凉铁骑镇守此关，刘关张三兄弟联手迎战，三英战吕布传为佳话。',
     mapPosition: { x: 0.35, y: 0.25 },
+    type: 'defense',
+    objectives: [
+      { description: '守住虎牢关5回合', type: 'survive', targetValue: 5, currentProgress: 0, unit: '回合' },
+      { description: '击败吕布', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[2], // 关隘：防御+40%
+      TERRAIN_STRATEGY_EFFECTS[1], // 河流：骑兵-30%
+    ],
     defender: {
       lord: '董卓',
       officers: ['吕布', '李儒', '华雄'],
@@ -395,6 +502,14 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '官渡之战',
     description: '建安五年，袁绍与曹操决战于官渡。袁绍坐拥河北四州，兵多将广；曹操以少胜多，奇袭乌巢，火烧粮草，一举击溃袁军十万大军。',
     mapPosition: { x: 0.50, y: 0.40 },
+    type: 'resource',
+    objectives: [
+      { description: '收集粮草10000', type: 'collect', targetValue: 10000, currentProgress: 0, unit: '粮草' },
+      { description: '烧毁乌巢粮仓', type: 'destroy', targetValue: 1, currentProgress: 0, unit: '座' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[0], // 山地：防御+20%
+    ],
     defender: {
       lord: '袁绍',
       officers: ['颜良', '文丑', '张郃'],
@@ -423,6 +538,15 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '赤壁之战',
     description: '建安十三年，曹操率八十万大军南下，欲一统天下。孙刘联军以火攻大破曹军于赤壁，东风助势，火烧连营，奠定三分天下之格局。',
     mapPosition: { x: 0.55, y: 0.65 },
+    type: 'battle',
+    objectives: [
+      { description: '击败曹军5000人', type: 'kill', targetValue: 5000, currentProgress: 0, unit: '人' },
+      { description: '火烧连营', type: 'destroy', targetValue: 3, currentProgress: 0, unit: '座' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[1], // 河流：骑兵-30%
+      TERRAIN_STRATEGY_EFFECTS[3], // 森林：伏兵伤害+25%
+    ],
     defender: {
       lord: '曹操',
       officers: ['张辽', '许褚', '曹洪'],
@@ -450,6 +574,15 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '定军山',
     description: '建安二十四年，刘备进取汉中。老将黄忠于定军山力斩曹魏名将夏侯渊，威震天下。此役夺取汉中要地，蜀汉基业由此奠定。',
     mapPosition: { x: 0.40, y: 0.75 },
+    type: 'battle',
+    objectives: [
+      { description: '击败夏侯渊', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+      { description: '歼灭魏军12000人', type: 'kill', targetValue: 12000, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[0], // 山地：防御+20%
+      TERRAIN_STRATEGY_EFFECTS[3], // 森林：伏兵伤害+25%
+    ],
     defender: {
       lord: '夏侯渊',
       officers: ['张郃', '郭淮', '曹真'],
@@ -477,6 +610,15 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '天下一统',
     description: '历经数十年征战，天下大势已定。最终决战于长安，司马懿率魏国精锐据守。攻克此城，天下一统，万民归心，三国归晋！',
     mapPosition: { x: 0.50, y: 0.50 },
+    type: 'battle',
+    objectives: [
+      { description: '击败司马懿', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+      { description: '歼灭禁卫军20000人', type: 'kill', targetValue: 20000, currentProgress: 0, unit: '人' },
+      { description: '占领3座旗帜', type: 'destroy', targetValue: 3, currentProgress: 0, unit: '座' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[0], // 山地：防御+20%
+    ],
     defender: {
       lord: '司马懿',
       officers: ['司马师', '司马昭', '邓艾', '钟会'],
@@ -503,6 +645,14 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '广宗之战',
     description: '黄巾首领张角亲率主力据守广宗。此城乃黄巾军核心据点，张角施展太平道术，天降雷火。攻克广宗，黄巾之乱可定。',
     mapPosition: { x: 0.20, y: 0.35 },
+    type: 'resource',
+    objectives: [
+      { description: '收集粮草2000', type: 'collect', targetValue: 2000, currentProgress: 0, unit: '粮草' },
+      { description: '击败张角', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[0], // 山地：防御+20%
+    ],
     defender: {
       lord: '张角',
       officers: ['张宝', '张梁', '黄巾力士统领'],
@@ -530,6 +680,14 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '南阳平定',
     description: '黄巾余党占据南阳，祸乱百姓。南阳乃中原要地，物产丰饶，必须尽快收复。击败黄巾残部，彻底平定黄巾之乱。',
     mapPosition: { x: 0.30, y: 0.40 },
+    type: 'diplomacy',
+    objectives: [
+      { description: '选择正确策略招募武将', type: 'choice', targetValue: 3, currentProgress: 0, unit: '次' },
+      { description: '击败黄巾残部1500人', type: 'kill', targetValue: 1500, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[5], // 沼泽：移速-50%
+    ],
     defender: {
       lord: '张曼成',
       officers: ['赵弘', '韩忠', '孙夏'],
@@ -557,6 +715,14 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '汜水关',
     description: '十八路诸侯讨伐董卓，先锋至汜水关。西凉猛将华雄据关而守，连斩数将。关羽温酒斩华雄，一战成名，诸侯士气大振。',
     mapPosition: { x: 0.35, y: 0.20 },
+    type: 'battle',
+    objectives: [
+      { description: '击败华雄', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+      { description: '歼灭西凉军3000人', type: 'kill', targetValue: 3000, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[2], // 关隘：防御+40%
+    ],
     defender: {
       lord: '华雄',
       officers: ['胡轸', '赵岑'],
@@ -583,6 +749,14 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '火烧洛阳',
     description: '董卓兵败，火烧洛阳，挟天子迁都长安。千年古都化为焦土，百姓流离失所。追击董卓残部，解救天子，还都洛阳。',
     mapPosition: { x: 0.40, y: 0.30 },
+    type: 'defense',
+    objectives: [
+      { description: '守住洛阳3回合', type: 'survive', targetValue: 3, currentProgress: 0, unit: '回合' },
+      { description: '击败董卓', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[4], // 荒漠：行军消耗×2
+    ],
     defender: {
       lord: '董卓',
       officers: ['李傕', '郭汜', '樊稠', '张济'],
@@ -611,6 +785,14 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '白马之战',
     description: '袁绍遣大将颜良攻白马，曹操率军迎击。关羽于万军之中斩颜良，解白马之围。袁绍大怒，再遣文丑追击。',
     mapPosition: { x: 0.45, y: 0.35 },
+    type: 'battle',
+    objectives: [
+      { description: '击败颜良', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+      { description: '歼灭袁军5000人', type: 'kill', targetValue: 5000, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[0], // 山地：防御+20%
+    ],
     defender: {
       lord: '颜良',
       officers: ['文丑', '淳于琼'],
@@ -637,6 +819,14 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '邺城攻略',
     description: '官渡大捷后，曹操乘胜追击，进攻袁氏根基——邺城。此城城墙坚固，守军众多，乃是河北第一重镇。攻克邺城，北方可定。',
     mapPosition: { x: 0.55, y: 0.30 },
+    type: 'defense',
+    objectives: [
+      { description: '攻破邺城城门', type: 'destroy', targetValue: 2, currentProgress: 0, unit: '座' },
+      { description: '歼灭守军8000人', type: 'kill', targetValue: 8000, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[2], // 关隘：防御+40%
+    ],
     defender: {
       lord: '袁尚',
       officers: ['审配', '逢纪', '高干'],
@@ -664,6 +854,14 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '长坂坡',
     description: '曹操率大军南下追击刘备，赵云于长坂坡七进七出，单骑救主。张飞据水断桥，一声怒吼吓退曹军百万。此战虽败犹荣。',
     mapPosition: { x: 0.50, y: 0.55 },
+    type: 'defense',
+    objectives: [
+      { description: '守住长坂坡4回合', type: 'survive', targetValue: 4, currentProgress: 0, unit: '回合' },
+      { description: '保护刘备撤退', type: 'survive', targetValue: 1, currentProgress: 0, unit: '次' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[1], // 河流：骑兵-30%
+    ],
     defender: {
       lord: '曹纯',
       officers: ['张辽', '许褚', '曹洪'],
@@ -691,6 +889,15 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '荆州争夺',
     description: '赤壁战后，荆州成为三家必争之地。刘备借荆州，孙权索荆州，曹操窥荆州。三方势力明争暗斗，烽烟四起。',
     mapPosition: { x: 0.55, y: 0.60 },
+    type: 'diplomacy',
+    objectives: [
+      { description: '选择正确策略稳固荆州', type: 'choice', targetValue: 3, currentProgress: 0, unit: '次' },
+      { description: '击败曹仁', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[3], // 森林：伏兵伤害+25%
+      TERRAIN_STRATEGY_EFFECTS[1], // 河流：骑兵-30%
+    ],
     defender: {
       lord: '曹仁',
       officers: ['徐晃', '于禁', '庞德'],
@@ -718,6 +925,15 @@ export const CAMPAIGN_LEVEL_DETAILS: CampaignLevelDetail[] = [
     name: '夷陵之战',
     description: '关羽败走麦城，刘备怒而兴兵伐吴。陆逊以逸待劳，火烧连营七百里，蜀军大败。此战之后，三国格局再变。',
     mapPosition: { x: 0.45, y: 0.70 },
+    type: 'resource',
+    objectives: [
+      { description: '收集粮草25000', type: 'collect', targetValue: 25000, currentProgress: 0, unit: '粮草' },
+      { description: '击败陆逊', type: 'kill', targetValue: 1, currentProgress: 0, unit: '人' },
+    ],
+    terrainEffects: [
+      TERRAIN_STRATEGY_EFFECTS[5], // 沼泽：移速-50%
+      TERRAIN_STRATEGY_EFFECTS[3], // 森林：伏兵伤害+25%
+    ],
     defender: {
       lord: '陆逊',
       officers: ['朱然', '潘璋', '韩当', '徐盛'],
@@ -756,6 +972,7 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     targetTerritoryId: 'beiping',
     targetCityName: '涿郡',
     difficulty: 'easy',
+    type: 'battle',
     victoryCondition: 'eliminate_all',
     victoryParams: {},
     enemyCommander: {
@@ -807,6 +1024,7 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     targetTerritoryId: 'luoyang',
     targetCityName: '虎牢关',
     difficulty: 'normal',
+    type: 'defense',
     victoryCondition: 'defeat_commander',
     victoryParams: {},
     enemyCommander: {
@@ -865,6 +1083,7 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     targetTerritoryId: 'xuchang',
     targetCityName: '官渡',
     difficulty: 'hard',
+    type: 'resource',
     victoryCondition: 'destroy_gate',
     victoryParams: { gatesToDestroy: 1 },
     enemyCommander: {
@@ -916,6 +1135,7 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     targetTerritoryId: 'chaisang',
     targetCityName: '赤壁',
     difficulty: 'hard',
+    type: 'battle',
     victoryCondition: 'survive_waves',
     victoryParams: { waves: 5 },
     enemyCommander: {
