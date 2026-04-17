@@ -1794,6 +1794,95 @@ export default function ThreeKingdomsPixiGame() {
             onRendererReady={() => console.log('[ThreeKingdomsPixiGame] PixiJS renderer ready')}
           />
 
+          {/* ═══════════ 城池场景背景（Canvas 上层，仅地图场景显示） ═══════════ */}
+          {scene === 'map' && (
+            <div className="tk-city-scene-bg">
+              {/* 云朵 */}
+              <div className="tk-scene-cloud" />
+              <div className="tk-scene-cloud" />
+              <div className="tk-scene-cloud" />
+              {/* NPC 巡逻小人 */}
+              <div className="tk-scene-npc" />
+              <div className="tk-scene-npc" />
+              <div className="tk-scene-npc" />
+              {/* 城池 SVG 场景 */}
+              <svg className="tk-city-scene-svg" viewBox="0 0 700 300" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+                {/* 农田（左侧绿色方块网格） */}
+                <g fill="#3a5a2a" opacity="0.7">
+                  <rect x="30" y="230" width="22" height="16" rx="1" />
+                  <rect x="56" y="230" width="22" height="16" rx="1" />
+                  <rect x="82" y="230" width="22" height="16" rx="1" />
+                  <rect x="30" y="250" width="22" height="16" rx="1" />
+                  <rect x="56" y="250" width="22" height="16" rx="1" />
+                  <rect x="82" y="250" width="22" height="16" rx="1" />
+                  <rect x="30" y="270" width="22" height="16" rx="1" />
+                  <rect x="56" y="270" width="22" height="16" rx="1" />
+                  <rect x="82" y="270" width="22" height="16" rx="1" />
+                </g>
+                {/* 森林（右侧三角形树） */}
+                <g fill="#2e5a1e" opacity="0.6">
+                  {/* 树1 */}
+                  <polygon points="560,265 570,230 580,265" />
+                  <rect x="567" y="265" width="6" height="8" fill="#5a3a20" />
+                  {/* 树2 */}
+                  <polygon points="590,265 602,220 614,265" />
+                  <rect x="599" y="265" width="6" height="8" fill="#5a3a20" />
+                  {/* 树3 */}
+                  <polygon points="625,265 634,235 643,265" />
+                  <rect x="631" y="265" width="6" height="8" fill="#5a3a20" />
+                  {/* 树4 */}
+                  <polygon points="650,265 660,228 670,265" />
+                  <rect x="656" y="265" width="6" height="8" fill="#5a3a20" />
+                </g>
+                {/* 城墙主体 */}
+                <g fill="#8a7a5a" stroke="#6a5a3a" strokeWidth="1">
+                  {/* 左城墙 */}
+                  <rect x="200" y="200" width="80" height="60" rx="2" />
+                  {/* 右城墙 */}
+                  <rect x="420" y="200" width="80" height="60" rx="2" />
+                  {/* 中间主墙体 */}
+                  <rect x="275" y="190" width="150" height="70" rx="2" />
+                  {/* 城墙垛口 */}
+                  <g fill="#9a8a6a">
+                    <rect x="205" y="193" width="8" height="10" rx="1" />
+                    <rect x="218" y="193" width="8" height="10" rx="1" />
+                    <rect x="231" y="193" width="8" height="10" rx="1" />
+                    <rect x="244" y="193" width="8" height="10" rx="1" />
+                    <rect x="257" y="193" width="8" height="10" rx="1" />
+                    <rect x="425" y="193" width="8" height="10" rx="1" />
+                    <rect x="438" y="193" width="8" height="10" rx="1" />
+                    <rect x="451" y="193" width="8" height="10" rx="1" />
+                    <rect x="464" y="193" width="8" height="10" rx="1" />
+                    <rect x="477" y="193" width="8" height="10" rx="1" />
+                  </g>
+                </g>
+                {/* 城门（拱形） */}
+                <path d="M320,260 L320,230 A30,30 0 0,1 380,230 L380,260 Z" fill="#4a3a20" stroke="#6a5a3a" strokeWidth="1" />
+                <circle cx="372" cy="245" r="3" fill="#b8860b" opacity="0.6" />
+                {/* 城楼（中间主楼） */}
+                <rect x="310" y="165" width="80" height="28" rx="2" fill="#7a6a4a" stroke="#5a4a2a" strokeWidth="1" />
+                {/* 城楼屋顶（三角形） */}
+                <polygon points="300,167 350,130 400,167" fill="#a85241" stroke="#8a3a2a" strokeWidth="1" />
+                {/* 屋顶装饰 */}
+                <line x1="350" y1="130" x2="350" y2="122" stroke="#d4a030" strokeWidth="2" />
+                <circle cx="350" cy="120" r="3" fill="#d4a030" opacity="0.5" />
+                {/* 左城楼 */}
+                <rect x="215" y="180" width="50" height="22" rx="2" fill="#7a6a4a" stroke="#5a4a2a" strokeWidth="1" />
+                <polygon points="210,182 240,155 270,182" fill="#a85241" stroke="#8a3a2a" strokeWidth="1" />
+                {/* 右城楼 */}
+                <rect x="435" y="180" width="50" height="22" rx="2" fill="#7a6a4a" stroke="#5a4a2a" strokeWidth="1" />
+                <polygon points="430,182 460,155 490,182" fill="#a85241" stroke="#8a3a2a" strokeWidth="1" />
+                {/* 旗帜 */}
+                <line x1="350" y1="130" x2="350" y2="100" stroke="#8a7a5a" strokeWidth="1.5" />
+                <polygon points="350,100 370,108 350,116" fill="#c62828" opacity="0.5">
+                  <animateTransform attributeName="transform" type="rotate" values="-2,350,108;2,350,108;-2,350,108" dur="3s" repeatCount="indefinite" />
+                </polygon>
+                {/* 地面 */}
+                <rect x="0" y="275" width="700" height="25" fill="#3a2a18" opacity="0.3" rx="0" />
+              </svg>
+            </div>
+          )}
+
           {/* ═══════════ 主界面场景面板（地图场景中央概览） ═══════════ */}
           {scene === 'map' && (
             <div className="tk-scene-panel">
@@ -2016,7 +2105,7 @@ export default function ThreeKingdomsPixiGame() {
             />
           )}
 
-          {/* ═══════════ 科技研究浮层（树形可视化） ═══════════ */}
+          {/* ═══════════ 科技研究浮层（树形可视化 — 增强版） ═══════════ */}
           {scene === 'tech-tree' && renderState?.techTree && (() => {
             const nodes = renderState.techTree.nodes;
             const connections = renderState.techTree.connections;
@@ -2024,10 +2113,10 @@ export default function ThreeKingdomsPixiGame() {
             // 按分支分组
             const branchOrder = ['military', 'economy', 'culture'] as const;
             const branchLabels: Record<string, string> = { military: '⚔️ 军事', economy: '💰 经济', culture: '📜 文化' };
-            const branchColors: Record<string, { border: string; bg: string; text: string }> = {
-              military: { border: '#a85241', bg: 'rgba(168,82,65,0.08)', text: '#c62828' },
-              economy:  { border: '#4a7a3a', bg: 'rgba(74,122,58,0.08)', text: '#2e7d32' },
-              culture:  { border: '#4a6fa5', bg: 'rgba(74,111,165,0.08)', text: '#1565c0' },
+            const branchColors: Record<string, { border: string; bg: string; text: string; glow: string }> = {
+              military: { border: '#a85241', bg: 'rgba(168,82,65,0.08)', text: '#c62828', glow: 'rgba(168,82,65,0.25)' },
+              economy:  { border: '#4a7a3a', bg: 'rgba(74,122,58,0.08)', text: '#2e7d32', glow: 'rgba(74,122,58,0.25)' },
+              culture:  { border: '#4a6fa5', bg: 'rgba(74,111,165,0.08)', text: '#1565c0', glow: 'rgba(74,111,165,0.25)' },
             };
 
             function getBranch(nodeId: string): string {
@@ -2039,27 +2128,101 @@ export default function ThreeKingdomsPixiGame() {
 
             const nodeMap = new Map(nodes.map(n => [n.id, n]));
 
+            // 跨分支连接定义（某些科技需要跨路线前置）
+            const crossBranchConnections: Array<{ from: string; to: string; label: string }> = [
+              { from: 'mil_2', to: 'eco_3', label: '军→经' },
+              { from: 'eco_2', to: 'cul_3', label: '经→文' },
+              { from: 'cul_2', to: 'mil_3', label: '文→军' },
+            ];
+
+            // 统计已研究/可研究数量
+            const researchedCount = nodes.filter(n => n.state === 'completed').length;
+            const totalNodes = nodes.length;
+
             return (
               <div style={{
                 position: 'absolute', top: '50%', left: '50%',
                 transform: 'translate(-50%, -50%)',
-                background: 'rgba(0,0,0,0.9)',
+                background: 'rgba(0,0,0,0.92)',
                 borderRadius: 12, padding: 20,
-                width: 580, maxHeight: '82vh',
+                width: 640, maxHeight: '85vh',
                 overflowY: 'auto',
                 border: `1px solid ${COLOR_THEME.selectedBorder}`,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
               }}>
-                <h2 style={{
-                  fontSize: 20, color: COLOR_THEME.accentGold,
-                  marginBottom: 16, fontFamily: '"Noto Serif SC", serif',
-                  textAlign: 'center',
-                  textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-                }}>
-                  ◆ 📜 科技研究
-                </h2>
+                {/* 标题 + 进度 */}
+                <div style={{ textAlign: 'center', marginBottom: 14 }}>
+                  <h2 style={{
+                    fontSize: 20, color: COLOR_THEME.accentGold,
+                    margin: '0 0 6px', fontFamily: '"Noto Serif SC", serif',
+                    textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+                  }}>
+                    ◆ 📜 科技研究
+                  </h2>
+                  {/* 总进度条 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                    <div style={{
+                      width: 200, height: 4, borderRadius: 2,
+                      background: 'rgba(255,255,255,0.08)', overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        width: `${totalNodes > 0 ? (researchedCount / totalNodes * 100) : 0}%`,
+                        height: '100%', borderRadius: 2,
+                        background: `linear-gradient(90deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
+                        transition: 'width 0.5s ease',
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: COLOR_THEME.textDim }}>
+                      {researchedCount}/{totalNodes}
+                    </span>
+                  </div>
+                </div>
 
-                {/* 三列树形布局 */}
-                <div style={{ display: 'flex', gap: 12 }}>
+                {/* 三列树形布局 + 跨分支连接 */}
+                <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+                  {/* 跨分支连接线（SVG 叠加层） */}
+                  <svg style={{
+                    position: 'absolute', inset: 0,
+                    width: '100%', height: '100%',
+                    pointerEvents: 'none', zIndex: 0,
+                  }}>
+                    <defs>
+                      <marker id="arrowCross" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                        <polygon points="0,0 6,2 0,4" fill="rgba(212,160,48,0.3)" />
+                      </marker>
+                    </defs>
+                    {crossBranchConnections.map((conn, ci) => {
+                      const fromBranch = getBranch(conn.from);
+                      const toBranch = getBranch(conn.to);
+                      const fromBranchIdx = branchOrder.indexOf(fromBranch as any);
+                      const toBranchIdx = branchOrder.indexOf(toBranch as any);
+                      const fromNode = nodeMap.get(conn.from);
+                      const toNode = nodeMap.get(conn.to);
+                      if (!fromNode || !toNode) return null;
+                      // 计算近似位置
+                      const colWidth = 100 / 3;
+                      const fromX = `${colWidth * fromBranchIdx + colWidth / 2}%`;
+                      const fromTier = fromNode.tier;
+                      const toTier = toNode.tier;
+                      const tierStartY = 70; // px from top of content area
+                      const tierSpacing = 80;
+                      const fromY = tierStartY + (fromTier - 1) * tierSpacing + 20;
+                      const toY = tierStartY + (toTier - 1) * tierSpacing + 20;
+                      const fromCompleted = fromNode.state === 'completed';
+                      const toCompleted = toNode.state === 'completed';
+                      const active = fromCompleted;
+                      return (
+                        <line key={ci}
+                          x1={fromX} y1={fromY} x2={`${colWidth * toBranchIdx + colWidth / 2}%`} y2={toY}
+                          stroke={active ? 'rgba(212,160,48,0.35)' : 'rgba(255,255,255,0.06)'}
+                          strokeWidth={active ? 1.5 : 1}
+                          strokeDasharray={active ? '4,3' : '3,4'}
+                          markerEnd="url(#arrowCross)"
+                        />
+                      );
+                    })}
+                  </svg>
+
                   {branchOrder.map(branch => {
                     const branchNodes = nodes.filter(n => getBranch(n.id) === branch).sort((a, b) => a.tier - b.tier);
                     const colors = branchColors[branch];
@@ -2067,13 +2230,23 @@ export default function ThreeKingdomsPixiGame() {
                     return (
                       <div key={branch} style={{
                         flex: 1, display: 'flex', flexDirection: 'column', gap: 0,
+                        position: 'relative', zIndex: 1,
                       }}>
+                        {/* 分支颜色标记条 */}
+                        <div style={{
+                          position: 'absolute', top: 0, bottom: 0, left: 0,
+                          width: 3, borderRadius: 2,
+                          background: `linear-gradient(180deg, ${colors.border}, transparent)`,
+                          opacity: 0.4,
+                        }} />
+
                         {/* 分支标题 */}
                         <div style={{
                           textAlign: 'center', fontSize: 13, fontWeight: 'bold',
                           color: colors.text, marginBottom: 8,
                           padding: '4px 0',
                           borderBottom: `2px solid ${colors.border}`,
+                          textShadow: `0 0 8px ${colors.glow}`,
                         }}>
                           {branchLabels[branch]}
                         </div>
@@ -2086,6 +2259,13 @@ export default function ThreeKingdomsPixiGame() {
                           const isLocked = node.state === 'locked';
                           const hasConnector = idx > 0;
 
+                          // 跨分支前置检查
+                          const crossPrereqs = node.prerequisites.filter(pid => getBranch(pid) !== branch);
+                          const crossPrereqMet = crossPrereqs.every(pid => {
+                            const pn = nodeMap.get(pid);
+                            return pn && pn.state === 'completed';
+                          });
+
                           return (
                             <div key={node.id}>
                               {/* 层级连接线 */}
@@ -2097,16 +2277,16 @@ export default function ThreeKingdomsPixiGame() {
                                   <div style={{
                                     width: 2, height: '100%',
                                     background: isCompleted
-                                      ? 'linear-gradient(180deg, rgba(212,160,48,0.6), rgba(212,160,48,0.6))'
+                                      ? `linear-gradient(180deg, ${colors.border}aa, ${colors.border}66)`
                                       : 'rgba(255,255,255,0.12)',
                                   }} />
-                                  {/* 已解锁的金色连接线标记 */}
                                   {isCompleted && (
                                     <div style={{
                                       position: 'absolute', top: '50%', left: '50%',
                                       transform: 'translate(-50%, -50%)',
                                       width: 6, height: 6, borderRadius: '50%',
-                                      background: COLOR_THEME.accentGold,
+                                      background: colors.border,
+                                      boxShadow: `0 0 4px ${colors.glow}`,
                                     }} />
                                   )}
                                 </div>
@@ -2119,7 +2299,7 @@ export default function ThreeKingdomsPixiGame() {
                                   padding: '8px 10px',
                                   borderRadius: 6,
                                   background: isCompleted
-                                    ? 'rgba(212,160,48,0.12)'
+                                    ? `linear-gradient(135deg, rgba(212,160,48,0.12), ${colors.bg})`
                                     : isResearching
                                       ? `${colors.bg}`
                                       : isAvailable
@@ -2133,6 +2313,7 @@ export default function ThreeKingdomsPixiGame() {
                                   }`,
                                   opacity: isLocked ? 0.4 : 1,
                                   position: 'relative',
+                                  boxShadow: isCompleted ? `0 0 8px ${colors.glow}` : 'none',
                                 }}
                               >
                                 {/* 已解锁金色标记 */}
@@ -2145,6 +2326,18 @@ export default function ThreeKingdomsPixiGame() {
                                     fontSize: 8, color: '#1a0a0a', fontWeight: 'bold',
                                     boxShadow: '0 0 6px rgba(212,160,48,0.5)',
                                   }}>✓</div>
+                                )}
+
+                                {/* 跨分支前置标记 */}
+                                {crossPrereqs.length > 0 && !isCompleted && (
+                                  <div style={{
+                                    position: 'absolute', top: -4, left: -4,
+                                    width: 10, height: 10, borderRadius: '50%',
+                                    background: crossPrereqMet ? '#4a7a3a' : '#666',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    fontSize: 6, color: '#fff', display: 'flex',
+                                    alignItems: 'center', justifyContent: 'center',
+                                  }}>↗</div>
                                 )}
 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2226,6 +2419,18 @@ export default function ThreeKingdomsPixiGame() {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* 跨分支连接说明 */}
+                <div style={{
+                  marginTop: 12, paddingTop: 8,
+                  borderTop: '1px solid rgba(255,255,255,0.06)',
+                  display: 'flex', justifyContent: 'center', gap: 16,
+                  fontSize: 10, color: COLOR_THEME.textDim,
+                }}>
+                  <span>↗ = 跨路线前置</span>
+                  <span>--- = 跨路线加成</span>
+                  <span style={{ color: COLOR_THEME.accentGold }}>✓ = 已研究</span>
                 </div>
               </div>
             );

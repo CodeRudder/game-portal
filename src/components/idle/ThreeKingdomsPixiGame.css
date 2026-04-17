@@ -1000,6 +1000,145 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+ * 主界面城池场景背景（Canvas 上层叠加）
+ * ═══════════════════════════════════════════════════════════════ */
+
+.tk-city-scene-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  /* 大气渐变底色 */
+  background:
+    /* 顶部天空渐变 */
+    linear-gradient(180deg,
+      rgba(40, 30, 20, 0.0) 0%,
+      rgba(40, 30, 20, 0.0) 30%,
+      rgba(30, 20, 10, 0.15) 60%,
+      rgba(20, 14, 8, 0.25) 100%
+    );
+}
+
+/* 远山剪影 */
+.tk-city-scene-bg::before {
+  content: '';
+  position: absolute;
+  bottom: 18%;
+  left: 0;
+  right: 0;
+  height: 35%;
+  background:
+    /* 远山层1 */
+    linear-gradient(135deg, transparent 5%, rgba(60, 45, 30, 0.12) 15%, transparent 25%),
+    linear-gradient(160deg, transparent 35%, rgba(50, 38, 25, 0.10) 45%, transparent 55%),
+    linear-gradient(140deg, transparent 55%, rgba(55, 42, 28, 0.08) 70%, transparent 80%),
+    linear-gradient(150deg, transparent 75%, rgba(45, 35, 22, 0.10) 88%, transparent 95%);
+  mask-image:
+    /* 山脉轮廓 */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 200'%3E%3Cpath d='M0,200 L0,120 Q50,60 100,90 Q140,40 180,70 Q220,20 260,55 Q300,30 340,60 Q380,15 420,50 Q460,25 500,55 Q540,35 580,65 Q620,40 660,70 Q700,50 740,80 Q770,65 800,85 L800,200 Z' fill='black'/%3E%3C/svg%3E");
+  -webkit-mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 200'%3E%3Cpath d='M0,200 L0,120 Q50,60 100,90 Q140,40 180,70 Q220,20 260,55 Q300,30 340,60 Q380,15 420,50 Q460,25 500,55 Q540,35 580,65 Q620,40 660,70 Q700,50 740,80 Q770,65 800,85 L800,200 Z' fill='black'/%3E%3C/svg%3E");
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+}
+
+/* 城池 SVG 场景 */
+.tk-city-scene-svg {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 85%;
+  max-width: 700px;
+  height: 55%;
+  opacity: 0.18;
+}
+
+/* NPC 巡逻动画 */
+.tk-scene-npc {
+  position: absolute;
+  bottom: 12%;
+  width: 8px;
+  height: 14px;
+  opacity: 0.25;
+  animation: tk-npc-patrol 12s ease-in-out infinite;
+}
+
+.tk-scene-npc::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tk-gold-dim);
+  margin: 0 auto;
+}
+
+.tk-scene-npc::after {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  background: var(--tk-text-dim);
+  border-radius: 2px;
+  margin-top: 1px;
+}
+
+.tk-scene-npc:nth-child(2) {
+  bottom: 15%;
+  animation-delay: -4s;
+  animation-duration: 15s;
+}
+
+.tk-scene-npc:nth-child(3) {
+  bottom: 10%;
+  animation-delay: -8s;
+  animation-duration: 18s;
+  opacity: 0.18;
+}
+
+@keyframes tk-npc-patrol {
+  0%   { left: 15%; }
+  25%  { left: 35%; }
+  50%  { left: 55%; }
+  75%  { left: 40%; }
+  100% { left: 15%; }
+}
+
+/* 云朵飘动 */
+.tk-scene-cloud {
+  position: absolute;
+  top: 8%;
+  width: 60px;
+  height: 20px;
+  background: radial-gradient(ellipse, rgba(139,115,85,0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: tk-cloud-drift 30s linear infinite;
+}
+
+.tk-scene-cloud:nth-child(4) {
+  top: 14%;
+  width: 80px;
+  height: 25px;
+  animation-delay: -10s;
+  animation-duration: 40s;
+}
+
+.tk-scene-cloud:nth-child(5) {
+  top: 5%;
+  width: 50px;
+  height: 16px;
+  animation-delay: -20s;
+  animation-duration: 35s;
+}
+
+@keyframes tk-cloud-drift {
+  0%   { left: -10%; }
+  100% { left: 110%; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
  * 科技树节点样式
  * ═══════════════════════════════════════════════════════════════ */
 
@@ -1009,6 +1148,23 @@
 
 .tk-tech-node:hover {
   filter: brightness(1.08);
+}
+
+/* 科技树跨分支连接线 */
+.tk-tech-cross-conn {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 科技树分支颜色标记条 */
+.tk-tech-branch-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 2px;
+  opacity: 0.4;
 }
 
 /* ═══════════════════════════════════════════════════════════════
