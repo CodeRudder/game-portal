@@ -1286,26 +1286,27 @@
 /* 武将卡片网格 — 固定3列布局 */
 .tk-general-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
   padding: 8px;
 }
 
-/* 武将卡片 — 紧凑卡片布局 */
+/* 武将卡片 — 紧凑卡片布局（R16 v2 增强） */
 .tk-general-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 8px;
+  padding: 10px 8px 8px;
   background: linear-gradient(135deg, #2a1810 0%, #3d2817 100%);
   border: 1px solid #8B7355;
-  border-radius: 6px;
-  transition: transform 0.15s;
+  border-radius: 8px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
   min-height: auto;
+  will-change: transform;
 }
 
 /* 稀有度视觉区分 — 边框颜色 */
@@ -1373,8 +1374,9 @@
 }
 
 .tk-general-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.02);
   border-color: #FFD700;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.15), 0 0 8px rgba(255, 215, 0, 0.1);
 }
 
 /* 悬停展开详情区域 */

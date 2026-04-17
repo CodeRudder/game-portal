@@ -582,155 +582,133 @@ function LevelDetailModal({
   const totalTroops = detail.defender.troops.infantry + detail.defender.troops.cavalry + detail.defender.troops.archers;
 
   return (
-    <div style={{
-      position: 'absolute', top: '50%', left: '50%',
-      transform: 'translate(-50%, -50%)',
-      background: 'rgba(0,0,0,0.80)', borderRadius: 12, padding: 16,
-      width: 400, maxHeight: '80vh', overflowY: 'auto',
-      border: `1px solid ${CT.selectedBorder}`,
-      color: CT.textPrimary, zIndex: 110,
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
-    }}>
-      {/* 标题行 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 16, color: CT.accentGold, fontFamily: "'KaiTi', 'STKaiti', 'Noto Serif SC', serif", textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>◆ {detail.name}</h2>
-        <span style={{
-          fontSize: 12, padding: '2px 10px', borderRadius: 4,
-          color: diff.color, background: diff.bg, fontWeight: 'bold',
-        }}>{diff.label}</span>
-      </div>
+    <div className="tk-r16-modal-overlay">
+      <div className="tk-r16-modal-scroll">
+        {/* 上卷轴装饰 */}
+        <div className="tk-r16-scroll-decor tk-r16-scroll-decor--top">
+          <svg viewBox="0 0 400 20" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="0" cy="10" rx="16" ry="10" fill="#8B7355" />
+            <ellipse cx="400" cy="10" rx="16" ry="10" fill="#8B7355" />
+            <rect x="14" y="6" width="372" height="8" rx="2" fill="#6a5a3a" />
+            <rect x="14" y="8" width="372" height="1" fill="#d4a030" opacity="0.4" />
+          </svg>
+        </div>
 
-      {/* 场景插画 */}
-      <StageSceneIllustration era={era ?? ''} name={detail.name} />
+        {/* 标题行 */}
+        <div className="tk-r16-modal-header">
+          <h2 className="tk-r16-modal-title">◆ {detail.name}</h2>
+          <span className="tk-r16-modal-diff" style={{ color: diff.color, background: diff.bg }}>{diff.label}</span>
+          <button className="tk-r16-modal-close" onClick={onClose}>✕</button>
+        </div>
 
-      {/* ── 守将头像 + 兵力对比可视化 ── */}
-      <div style={{
-        margin: '10px 0', padding: '10px', borderRadius: 8,
-        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* 守将头像 SVG */}
-          <div style={{
-            width: 48, height: 48, borderRadius: 6, overflow: 'hidden',
-            border: '2px solid #c62828', flexShrink: 0,
-            background: 'linear-gradient(135deg, #3a1a1a, #5a2a2a)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="20" cy="14" r="7" fill="#deb887" />
-              <path d="M13,12 Q20,4 27,12" fill="#333" />
-              <rect x="14" y="21" width="12" height="14" rx="2" fill="#8b1a1a" />
-              <line x1="20" y1="21" x2="20" y2="35" stroke="#d4a030" strokeWidth="1" />
-              <text x="20" y="30" textAnchor="middle" fontSize="6" fill="#d4a030">将</text>
+        {/* 场景插画 */}
+        <StageSceneIllustration era={era ?? ''} name={detail.name} />
+
+        {/* ── 战力对比条（红蓝对比） ── */}
+        <div className="tk-r16-power-compare">
+          <div className="tk-r16-power-compare__title">⚔️ 兵力对比</div>
+          <div className="tk-r16-power-compare__bar-wrap">
+            <div className="tk-r16-power-compare__ally">
+              <span className="tk-r16-power-compare__label">我方</span>
+            </div>
+            <div className="tk-r16-power-compare__bar">
+              <div className="tk-r16-power-compare__bar-ally" style={{ width: '55%' }} />
+              <div className="tk-r16-power-compare__bar-enemy" style={{ width: '45%' }} />
+            </div>
+            <div className="tk-r16-power-compare__enemy">
+              <span className="tk-r16-power-compare__label">敌方</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 守将头像 + 兵力可视化 ── */}
+        <div className="tk-r16-defender-card">
+          <div className="tk-r16-defender-avatar">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id={`def-bg-${detail.id}`} x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#3a1a1a" />
+                  <stop offset="100%" stopColor="#5a2a2a" />
+                </linearGradient>
+              </defs>
+              <rect width="48" height="48" rx="6" fill={`url(#def-bg-${detail.id})`} />
+              <circle cx="24" cy="16" r="8" fill="#deb887" />
+              <path d="M16,14 Q24,4 32,14" fill="#333" />
+              <rect x="16" y="24" width="16" height="18" rx="3" fill="#8b1a1a" />
+              <line x1="24" y1="24" x2="24" y2="42" stroke="#d4a030" strokeWidth="1" />
+              <text x="24" y="35" textAnchor="middle" fontSize="8" fill="#d4a030">将</text>
             </svg>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 'bold', color: '#c62828', marginBottom: 4 }}>
-              🏴 {detail.defender.lord}
+          <div className="tk-r16-defender-info">
+            <div className="tk-r16-defender-lord">🏴 {detail.defender.lord}</div>
+            <div className="tk-r16-troop-bar-wrap">
+              <div className="tk-r16-troop-bar">
+                {detail.defender.troops.infantry > 0 && (
+                  <div className="tk-r16-troop-seg tk-r16-troop-seg--infantry"
+                    style={{ flex: detail.defender.troops.infantry }}
+                    title={`步兵 ${detail.defender.troops.infantry}`} />
+                )}
+                {detail.defender.troops.cavalry > 0 && (
+                  <div className="tk-r16-troop-seg tk-r16-troop-seg--cavalry"
+                    style={{ flex: detail.defender.troops.cavalry }}
+                    title={`骑兵 ${detail.defender.troops.cavalry}`} />
+                )}
+                {detail.defender.troops.archers > 0 && (
+                  <div className="tk-r16-troop-seg tk-r16-troop-seg--archers"
+                    style={{ flex: detail.defender.troops.archers }}
+                    title={`弓兵 ${detail.defender.troops.archers}`} />
+                )}
+              </div>
+              <div className="tk-r16-troop-legend">
+                <span><span style={{ color: '#4a6fa5' }}>■</span> 步{detail.defender.troops.infantry}</span>
+                <span><span style={{ color: '#c62828' }}>■</span> 骑{detail.defender.troops.cavalry}</span>
+                <span><span style={{ color: '#2e7d32' }}>■</span> 弓{detail.defender.troops.archers}</span>
+              </div>
             </div>
-            {/* 兵力条 */}
-            <div style={{ fontSize: 10, color: CT.textDim, marginBottom: 2 }}>
-              总兵力：<span style={{ color: '#d4a030', fontWeight: 'bold' }}>{totalTroops}</span>
-            </div>
-            <div style={{ display: 'flex', gap: 2, height: 8, borderRadius: 4, overflow: 'hidden' }}>
-              {detail.defender.troops.infantry > 0 && (
-                <div style={{ flex: detail.defender.troops.infantry, background: '#4a6fa5', borderRadius: totalTroops === detail.defender.troops.infantry ? 4 : 0 }} title={`步兵 ${detail.defender.troops.infantry}`} />
-              )}
-              {detail.defender.troops.cavalry > 0 && (
-                <div style={{ flex: detail.defender.troops.cavalry, background: '#c62828', borderRadius: totalTroops === detail.defender.troops.cavalry ? 4 : 0 }} title={`骑兵 ${detail.defender.troops.cavalry}`} />
-              )}
-              {detail.defender.troops.archers > 0 && (
-                <div style={{ flex: detail.defender.troops.archers, background: '#2e7d32', borderRadius: totalTroops === detail.defender.troops.archers ? 4 : 0 }} title={`弓兵 ${detail.defender.troops.archers}`} />
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 8, fontSize: 9, marginTop: 3, color: CT.textDim }}>
-              <span><span style={{ color: '#4a6fa5' }}>■</span> 步 {detail.defender.troops.infantry}</span>
-              <span><span style={{ color: '#c62828' }}>■</span> 骑 {detail.defender.troops.cavalry}</span>
-              <span><span style={{ color: '#2e7d32' }}>■</span> 弓 {detail.defender.troops.archers}</span>
-            </div>
+            <div className="tk-r16-troop-total">总兵力：<strong>{totalTroops}</strong></div>
           </div>
         </div>
-      </div>
 
-      {/* 描述 */}
-      <p style={{ margin: '0 0 12px', fontSize: 12, color: CT.textDim, lineHeight: 1.6,
-        padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6,
-      }}>
-        {detail.description}
-      </p>
+        {/* 历史叙事描述 */}
+        <div className="tk-r16-modal-desc">
+          <p>{detail.description}</p>
+        </div>
 
-      {/* 守将信息 */}
-      <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 'bold', color: CT.accentGold, marginBottom: 4 }}>🏴 守军</div>
-        <div style={{ fontSize: 12, lineHeight: 1.8 }}>
-          <div>主将：<span style={{ color: '#c62828', fontWeight: 'bold' }}>{detail.defender.lord}</span></div>
-          {detail.defender.officers.length > 0 && (
-            <div>副将：{detail.defender.officers.map((o, i) => (
-              <span key={i} style={{ color: CT.textDim }}>{o}{i < detail.defender.officers.length - 1 ? '、' : ''}</span>
-            ))}</div>
+        {/* 推荐武将提示 */}
+        <RecommendedGeneralsTip stageName={detail.name} CT={CT} />
+
+        {/* 城防 */}
+        <div className="tk-r16-fort-info">
+          <span className="tk-r16-fort-label">🏰 城防</span>
+          <span className="tk-r16-fort-stars">{fortLevelStars(detail.defender.fortLevel)}</span>
+          <span className="tk-r16-fort-level">Lv.{detail.defender.fortLevel}</span>
+        </div>
+
+        {/* 战利品预览 */}
+        {detail.rewards && <LootPreview rewards={detail.rewards} />}
+
+        {/* 无法攻打原因 */}
+        {!canAttack && statusInfo.reason && (
+          <div className="tk-r16-cannot-attack">{statusInfo.reason}</div>
+        )}
+
+        {/* 操作按钮 */}
+        <div className="tk-r16-modal-actions">
+          <button className="tk-r16-btn tk-r16-btn--back" onClick={onClose}>返回</button>
+          {canAttack && (
+            <button className="tk-r16-btn tk-r16-btn--attack" onClick={onBattleStart}>⚔️ 进攻</button>
           )}
         </div>
-      </div>
 
-      {/* 兵力明细 */}
-      <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 'bold', color: CT.accentGold, marginBottom: 4 }}>
-          ⚔️ 兵力 <span style={{ color: CT.textDim, fontWeight: 'normal' }}>(总计 {totalTroops})</span>
+        {/* 下卷轴装饰 */}
+        <div className="tk-r16-scroll-decor tk-r16-scroll-decor--bottom">
+          <svg viewBox="0 0 400 20" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="0" cy="10" rx="16" ry="10" fill="#8B7355" />
+            <ellipse cx="400" cy="10" rx="16" ry="10" fill="#8B7355" />
+            <rect x="14" y="6" width="372" height="8" rx="2" fill="#6a5a3a" />
+            <rect x="14" y="11" width="372" height="1" fill="#d4a030" opacity="0.4" />
+          </svg>
         </div>
-        <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
-          <span>{TROOP_ICONS.infantry} 步兵 {detail.defender.troops.infantry}</span>
-          <span>{TROOP_ICONS.cavalry} 骑兵 {detail.defender.troops.cavalry}</span>
-          <span>{TROOP_ICONS.archers} 弓兵 {detail.defender.troops.archers}</span>
-        </div>
-      </div>
-
-      {/* 城防 */}
-      <div style={{ marginBottom: 10, fontSize: 12 }}>
-        <span style={{ color: CT.accentGold, fontWeight: 'bold' }}>🏰 城防：</span>
-        <span style={{ color: '#d4a030' }}>{fortLevelStars(detail.defender.fortLevel)}</span>
-        <span style={{ color: CT.textDim, marginLeft: 6 }}>Lv.{detail.defender.fortLevel}</span>
-      </div>
-
-      {/* 奖励 */}
-      {detail.rewards && (
-        <div style={{
-          marginBottom: 12, padding: '10px 12px',
-          background: 'rgba(74,222,128,0.06)', borderRadius: 6,
-          border: '1px solid rgba(74,222,128,0.15)',
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 'bold', color: '#6b8e5a', marginBottom: 6 }}>🎁 攻克奖励</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: CT.textPrimary }}>
-            {detail.rewards.gold > 0 && <span>💰 金 {detail.rewards.gold}</span>}
-            {detail.rewards.food > 0 && <span>🌾 粮 {detail.rewards.food}</span>}
-            {detail.rewards.materials > 0 && <span>📦 材料 {detail.rewards.materials}</span>}
-            {detail.rewards.recruitHero && <span style={{ color: '#d4a030' }}>🧑‍✈️ 可招募英雄</span>}
-            {detail.rewards.unlockBuilding && <span style={{ color: '#4a6fa5' }}>🏗️ 解锁建筑</span>}
-          </div>
-        </div>
-      )}
-
-      {/* 无法攻打原因 */}
-      {!canAttack && statusInfo.reason && (
-        <div style={{ fontSize: 12, color: '#a85241', marginBottom: 10, textAlign: 'center' }}>
-          {statusInfo.reason}
-        </div>
-      )}
-
-      {/* 操作按钮 */}
-      <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-        <button onClick={onClose} style={{
-          flex: 1, padding: '10px 0', fontSize: 14, cursor: 'pointer',
-          borderRadius: 6, border: `1px solid ${CT.selectedBorder}`,
-          background: 'transparent', color: CT.textDim,
-        }}>返回</button>
-        {canAttack && (
-          <button onClick={onBattleStart} style={{
-            flex: 1, padding: '10px 0', fontSize: 14, fontWeight: 'bold',
-            cursor: 'pointer', borderRadius: 6, border: 'none',
-            background: `linear-gradient(135deg, ${CT.accentGold}, #b91c1c)`, color: '#fff',
-          }}>⚔️ 进攻</button>
-        )}
       </div>
     </div>
   );
@@ -939,7 +917,71 @@ function LootPreview({ rewards }: { rewards: { gold?: number; food?: number; mat
   );
 }
 
-/** 征战关卡面板 */
+/** 关卡历史场景名称映射 */
+const STAGE_HISTORICAL_NAMES: Record<string, string> = {
+  '黄巾之乱': '黄巾之乱',
+  '讨伐董卓': '虎牢关之战',
+  '群雄割据': '群雄割据',
+  '官渡之战': '官渡之战',
+  '赤壁之战': '赤壁之战',
+  '三分天下': '三分天下',
+};
+
+/** 关卡背景故事 */
+const STAGE_LORE: Record<string, string> = {
+  '黄巾之乱': '东汉末年，张角率黄巾军起义，天下大乱。刘备、关羽、张飞桃园结义，共讨黄巾。',
+  '讨伐董卓': '董卓把持朝政，残暴不仁。十八路诸侯联合讨伐，虎牢关前三英战吕布。',
+  '群雄割据': '董卓伏诛后，群雄并起。曹操迎天子，袁绍据河北，天下纷争不断。',
+  '官渡之战': '曹操与袁绍决战于官渡，以少胜多，奇袭乌巢，奠定北方霸业。',
+  '赤壁之战': '孙刘联军以火攻大破曹军于赤壁，天下三分之势初成。',
+  '三分天下': '魏蜀吴三足鼎立，诸葛亮六出祁山，司马懿深谋远虑，天下归一之势渐显。',
+};
+
+/** 关卡敌方武将展示 */
+const STAGE_ENEMY_GENERALS: Record<string, Array<{ name: string; title: string; icon: string }>> = {
+  '黄巾之乱': [
+    { name: '张角', title: '天公将军', icon: '🧙' },
+    { name: '张宝', title: '地公将军', icon: '🧙' },
+    { name: '张梁', title: '人公将军', icon: '🧙' },
+  ],
+  '讨伐董卓': [
+    { name: '董卓', title: '太师', icon: '👹' },
+    { name: '吕布', title: '飞将', icon: '⚔️' },
+    { name: '华雄', title: '骁将', icon: '🗡️' },
+  ],
+  '群雄割据': [
+    { name: '袁绍', title: '大将军', icon: '👑' },
+    { name: '袁术', title: '仲家帝', icon: '👑' },
+    { name: '刘表', title: '荆州牧', icon: '🏰' },
+  ],
+  '官渡之战': [
+    { name: '袁绍', title: '河北霸主', icon: '👑' },
+    { name: '颜良', title: '河北名将', icon: '⚔️' },
+    { name: '文丑', title: '河北名将', icon: '⚔️' },
+  ],
+  '赤壁之战': [
+    { name: '曹操', title: '丞相', icon: '🐉' },
+    { name: '张辽', title: '合肥战神', icon: '⚔️' },
+    { name: '蔡瑁', title: '水军都督', icon: '⚓' },
+  ],
+  '三分天下': [
+    { name: '司马懿', title: '冢虎', icon: '🐅' },
+    { name: '曹丕', title: '魏文帝', icon: '👑' },
+    { name: '孙权', title: '吴大帝', icon: '🐉' },
+  ],
+};
+
+/** 关卡推荐战力 */
+const STAGE_RECOMMENDED_POWER: Record<string, string> = {
+  '黄巾之乱': '500+',
+  '讨伐董卓': '1,500+',
+  '群雄割据': '3,000+',
+  '官渡之战': '6,000+',
+  '赤壁之战': '12,000+',
+  '三分天下': '25,000+',
+};
+
+/** 征战关卡面板 — 增强版（R17: 关卡图标升级+弹窗优化） */
 function CampaignPanel({
   engine,
   renderState,
@@ -998,7 +1040,7 @@ function CampaignPanel({
       const def = stageDefMap.get(stages[i].id);
       const era = def?.era ?? '未知';
       if (era !== currentEra) {
-        chapters.push({ era, stages: [stages[i]], color: ERA_COLORS[era] ?? '#888' });
+        chapters.push({ era, stages: [stages[i]], color: ERA_COLORS[era as keyof typeof ERA_COLORS] ?? '#888' });
         currentEra = era;
       } else {
         chapters[chapters.length - 1].stages.push(stages[i]);
@@ -1245,6 +1287,7 @@ function CampaignPanel({
           COLOR_THEME={CT}
         />
       )}
+
     </div>
   );
 }
@@ -2105,17 +2148,22 @@ function getGeneralEnhanced(id: string): GeneralEnhancedData {
   };
 }
 
-/** 武将卡片组件 — R16 深度升级：星级 + 阵营色条 + 属性简览 + 技能 + 详情弹窗 */
+/** 武将卡片组件 — R16 深度升级 v2：星级 + 阵营色条 + 属性简览 + 技能 + 状态 + 详情弹窗 */
 const GeneralCard = ({
   general,
   isSelected,
   onSelect,
   onRecruit,
+  onDoubleClick,
+  index = 0,
 }: {
   general: HeroRenderData;
   isSelected?: boolean;
   onSelect: () => void;
   onRecruit?: () => void;
+  onDoubleClick?: () => void;
+  /** 卡片在列表中的索引，用于交错动画 */
+  index?: number;
 }) => {
   const factionLabels: Record<string, string> = { wei: '魏', shu: '蜀', wu: '吴', other: '群' };
   const factionColors: Record<string, string> = { wei: '#1E6FBE', shu: '#C41E3A', wu: '#2E8B57', other: '#8B7355' };
@@ -2137,6 +2185,12 @@ const GeneralCard = ({
   // 星级（1-5星，基于稀有度）
   const stars = RARITY_STARS[general.rarity] ?? 1;
 
+  // 计算魅力值（四维均值）
+  const charisma = Math.round((general.stats.attack + general.stats.intelligence + general.stats.command + general.stats.defense) / 4);
+
+  // 综合战力
+  const power = general.stats.attack + general.stats.intelligence + general.stats.command + general.stats.defense + charisma;
+
   // 一句话简介映射
   const generalTagline: Record<string, string> = {
     liubei: '蜀汉开国皇帝',
@@ -2153,13 +2207,26 @@ const GeneralCard = ({
     luxun: '火烧连营',
   };
 
+  // 技能伤害类型颜色
+  const damageTypeColors: Record<string, string> = {
+    physical: '#e53935',
+    magic: '#7c4dff',
+    support: '#43a047',
+  };
+
   return (
     <div
-      className={`tk-general-card ${!general.unlocked ? 'tk-general-card-locked' : ''} ${isSelected ? 'tk-general-card--selected' : ''} ${general.unlocked ? `tk-general-card--rarity-${general.rarity}` : ''} ${general.unlocked ? `tk-general-card--faction-${general.faction}` : ''} ${general.unlocked ? `tk-general-card--hero-${general.id.replace(/[^a-z0-9]/gi, '').toLowerCase()}` : ''}`}
-      style={{ borderColor: general.unlocked ? color : 'rgba(139,115,85,0.2)', '--faction-color': color } as React.CSSProperties}
+      className={`tk-general-card ${!general.unlocked ? 'tk-general-card-locked' : ''} ${isSelected ? 'tk-general-card--selected' : ''} ${general.unlocked ? `tk-general-card--rarity-${general.rarity}` : ''} ${general.unlocked ? `tk-general-card--faction-${general.faction}` : ''}`}
+      style={{
+        borderColor: general.unlocked ? color : 'rgba(139,115,85,0.2)',
+        '--faction-color': color,
+        '--rarity-color': rarityColor,
+        '--card-enter-delay': `${index * 60}ms`,
+      } as React.CSSProperties}
       onClick={() => general.unlocked && onSelect()}
+      onDoubleClick={() => general.unlocked && onDoubleClick?.()}
     >
-      {/* R16: 左侧阵营色竖条 */}
+      {/* 左侧阵营色竖条 */}
       <div className="tk-general-card-faction-stripe" style={{ background: general.unlocked ? `linear-gradient(180deg, ${color}, ${color}88)` : 'rgba(139,115,85,0.15)' }} />
 
       {/* 稀有度标签 — 右上角 */}
@@ -2204,7 +2271,7 @@ const GeneralCard = ({
           )}
         </div>
 
-        {/* R16: 阵营标签 + 星级显示 */}
+        {/* 阵营标签 + 星级显示 */}
         {general.unlocked && (
           <div className="tk-general-card-faction-row">
             <div className="tk-general-card-faction-badge" style={{
@@ -2225,25 +2292,25 @@ const GeneralCard = ({
           </div>
         )}
 
-        {/* R16: 核心属性简览（武力/智力/统帅 — 小数字+颜色条） */}
+        {/* 核心属性简览（武力/智力/统率 — 彩色进度条） */}
         {general.unlocked && (
           <div className="tk-general-card-attr-preview">
             <div className="tk-attr-mini" title="武力">
-              <span className="tk-attr-mini-label">武</span>
+              <span className="tk-attr-mini-label" style={{ color: '#e53935' }}>武</span>
               <div className="tk-attr-mini-bar">
                 <div className="tk-attr-mini-fill" style={{ width: `${general.stats.attack}%`, background: `linear-gradient(90deg, #b71c1c, #e53935)` }} />
               </div>
               <span className="tk-attr-mini-val">{general.stats.attack}</span>
             </div>
             <div className="tk-attr-mini" title="智力">
-              <span className="tk-attr-mini-label">智</span>
+              <span className="tk-attr-mini-label" style={{ color: '#1e88e5' }}>智</span>
               <div className="tk-attr-mini-bar">
                 <div className="tk-attr-mini-fill" style={{ width: `${general.stats.intelligence}%`, background: `linear-gradient(90deg, #0d47a1, #1e88e5)` }} />
               </div>
               <span className="tk-attr-mini-val">{general.stats.intelligence}</span>
             </div>
-            <div className="tk-attr-mini" title="统帅">
-              <span className="tk-attr-mini-label">统</span>
+            <div className="tk-attr-mini" title="统率">
+              <span className="tk-attr-mini-label" style={{ color: '#43a047' }}>统</span>
               <div className="tk-attr-mini-bar">
                 <div className="tk-attr-mini-fill" style={{ width: `${general.stats.command}%`, background: `linear-gradient(90deg, #1b5e20, #43a047)` }} />
               </div>
@@ -2257,13 +2324,24 @@ const GeneralCard = ({
           <div className="tk-general-card-tagline">{generalTagline[general.id]}</div>
         )}
 
-        {/* R16: 核心技能名称（显示1-2个） */}
+        {/* 核心技能名称（显示1-2个，含伤害类型色标） */}
         {general.unlocked && enhanced.skills.length > 0 && (
           <div className="tk-general-card-skills-preview">
             {enhanced.skills.slice(0, 2).map((skill, i) => (
-              <span key={i} className="tk-general-card-skill-chip">
-                <SkillIcon skillType={skill.type} size={9} />
+              <span
+                key={i}
+                className="tk-general-card-skill-chip"
+                style={{
+                  borderLeftColor: damageTypeColors[skill.damageType ?? 'physical'] || '#c9a96e',
+                }}
+              >
+                <span className="tk-skill-chip-icon">
+                  <SkillIcon skillType={skill.type} size={9} />
+                </span>
                 {skill.name}
+                {skill.cooldown && (
+                  <span className="tk-skill-chip-cd">{skill.cooldown}s</span>
+                )}
               </span>
             ))}
           </div>
@@ -2276,7 +2354,7 @@ const GeneralCard = ({
           </div>
         )}
 
-        {/* 悬停展开详情区域（卡片内） */}
+        {/* 悬停展开详情区域（卡片内 — 5维属性 + 战力） */}
         {general.unlocked && (
           <div className="tk-general-card-hover-info">
             <div className="tk-hover-stat-row">
@@ -2300,6 +2378,25 @@ const GeneralCard = ({
               </div>
               <span className="tk-hover-stat-value">{general.stats.command}</span>
             </div>
+            <div className="tk-hover-stat-row">
+              <span className="tk-hover-stat-label">政</span>
+              <div className="tk-hover-stat-track">
+                <div className="tk-hover-stat-fill" style={{ width: `${general.stats.defense}%`, background: '#ff9800' }} />
+              </div>
+              <span className="tk-hover-stat-value">{general.stats.defense}</span>
+            </div>
+            <div className="tk-hover-stat-row">
+              <span className="tk-hover-stat-label">魅</span>
+              <div className="tk-hover-stat-track">
+                <div className="tk-hover-stat-fill" style={{ width: `${charisma}%`, background: '#ab47bc' }} />
+              </div>
+              <span className="tk-hover-stat-value">{charisma}</span>
+            </div>
+            {/* 战力值 */}
+            <div className="tk-hover-power-row">
+              <span className="tk-hover-power-label">⚔️ 战力</span>
+              <span className="tk-hover-power-value" style={{ color: rarityColor }}>{power}</span>
+            </div>
             {enhanced.skills.length > 0 && (
               <div className="tk-hover-skills">
                 {enhanced.skills.map((skill, i) => (
@@ -2312,7 +2409,7 @@ const GeneralCard = ({
           </div>
         )}
 
-        {/* ── 悬停浮层详情卡（Tooltip 风格 — R16 增强：含魅力属性 + 装备概览） ── */}
+        {/* ── 悬停浮层详情卡（Tooltip 风格 — R16 v2：含魅力属性 + 装备概览 + 羁绊） ── */}
         {general.unlocked && (
           <div className="tk-general-hover-tooltip">
             <div className="tk-general-hover-tooltip-inner">
@@ -2326,7 +2423,7 @@ const GeneralCard = ({
               <div className="tk-general-tooltip-faction" style={{ color }}>
                 {factionLabels[general.faction] || general.faction.toUpperCase()} · {generalTagline[general.id] || '武将'}
               </div>
-              {/* R16: 星级显示 */}
+              {/* 星级显示 */}
               <div className="tk-tooltip-stars" style={{ color: rarityColor }}>
                 {'★'.repeat(stars)}{'☆'.repeat(5 - stars)}
               </div>
@@ -2346,7 +2443,7 @@ const GeneralCard = ({
                   <span className="tk-tooltip-stat-value">{general.stats.intelligence}</span>
                 </div>
                 <div className="tk-tooltip-stat-row">
-                  <span className="tk-tooltip-stat-label">统帅</span>
+                  <span className="tk-tooltip-stat-label">统率</span>
                   <div className="tk-tooltip-stat-track">
                     <div className="tk-tooltip-stat-fill" style={{ width: `${general.stats.command}%`, background: 'linear-gradient(90deg, #1b5e20, #43a047)' }} />
                   </div>
@@ -2359,6 +2456,18 @@ const GeneralCard = ({
                   </div>
                   <span className="tk-tooltip-stat-value">{general.stats.defense}</span>
                 </div>
+                <div className="tk-tooltip-stat-row">
+                  <span className="tk-tooltip-stat-label">魅力</span>
+                  <div className="tk-tooltip-stat-track">
+                    <div className="tk-tooltip-stat-fill" style={{ width: `${charisma}%`, background: 'linear-gradient(90deg, #6a1b9a, #ab47bc)' }} />
+                  </div>
+                  <span className="tk-tooltip-stat-value">{charisma}</span>
+                </div>
+              </div>
+              {/* 战力值 */}
+              <div className="tk-tooltip-power">
+                <span className="tk-tooltip-power-label">⚔️ 综合战力</span>
+                <span className="tk-tooltip-power-value" style={{ color: rarityColor }}>{power}</span>
               </div>
               {enhanced.skills.length > 0 && (
                 <div className="tk-general-tooltip-skills">
@@ -2372,7 +2481,7 @@ const GeneralCard = ({
                   ))}
                 </div>
               )}
-              {/* R16: 装备概览 */}
+              {/* 装备概览 */}
               {(() => {
                 const eq = enhanced.equipment;
                 const hasEquip = eq.weapon || eq.armor || eq.mount;
@@ -2385,7 +2494,17 @@ const GeneralCard = ({
                   </div>
                 );
               })()}
-              {/* R16: 历史典故一句话 */}
+              {/* 羁绊关系预览 */}
+              {enhanced.relatedGenerals && enhanced.relatedGenerals.length > 0 && (
+                <div className="tk-tooltip-bonds-preview">
+                  {enhanced.relatedGenerals.slice(0, 3).map((rel, i) => (
+                    <span key={i} className="tk-tooltip-bond-chip">
+                      {rel.name}·{rel.relation}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* 历史典故一句话 */}
               {enhanced.bio && (
                 <div className="tk-tooltip-bio-one">{enhanced.bio.slice(0, 30)}…</div>
               )}
@@ -2395,16 +2514,218 @@ const GeneralCard = ({
 
         {/* 招募按钮 */}
         {!general.unlocked && general.canRecruit && onRecruit && (
-          <button className="tk-general-card-recruit-btn" onClick={(e) => { e.stopPropagation(); onRecruit(); }}>
+          <button className="tk-general-card-recruit-btn tk-recruit-btn-effect" onClick={(e) => { e.stopPropagation(); onRecruit(); }}>
             招募
           </button>
         )}
       </div>
 
-      {/* R16: 底部阵营色渐变 */}
+      {/* 底部阵营色渐变 */}
       {general.unlocked && (
         <div className="tk-general-card-bottom-gradient" style={{ background: `linear-gradient(0deg, ${color}30, transparent)` }} />
       )}
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// R16 v2: 武将详情弹窗组件（Modal）— 深度升级版
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * GeneralDetailModal — 武将详情弹窗（R16 v2 深度升级）
+ *
+ * 点击武将卡片展开的详情弹窗，包含：
+ * - 大头像 + 阵营背景 + 势力装饰纹样
+ * - 完整属性面板（武力/智力/统帅/政治/魅力）+ 综合战力
+ * - 技能列表 + 伤害类型 + 冷却 + 效果描述
+ * - 装备槽位展示
+ * - 历史典故 + 生平大事时间线
+ * - 羁绊/人物关系（带势力色标识）
+ */
+const GeneralDetailModal = ({
+  general,
+  onClose,
+}: {
+  general: HeroRenderData;
+  onClose: () => void;
+}) => {
+  const factionLabels: Record<string, string> = { wei: '魏', shu: '蜀', wu: '吴', other: '群' };
+  const factionColors: Record<string, string> = { wei: '#1E6FBE', shu: '#C41E3A', wu: '#2E8B57', other: '#8B7355' };
+  const color = factionColors[general.faction] || factionColors.other;
+  const rarityColor = RARITY_COLORS[general.rarity] || '#c9a96e';
+  const enhanced = getGeneralEnhanced(general.id);
+  const stars = RARITY_STARS[general.rarity] ?? 1;
+
+  const rarityLabels: Record<string, string> = {
+    common: '普通', uncommon: '精良', rare: '稀有', epic: '史诗', legendary: '传说', mythic: '神话',
+  };
+
+  // 完整5维属性
+  const charisma = Math.round((general.stats.attack + general.stats.intelligence + general.stats.command + general.stats.defense) / 4);
+  const power = general.stats.attack + general.stats.intelligence + general.stats.command + general.stats.defense + charisma;
+
+  const allStats = [
+    { label: '武力', value: general.stats.attack, color: '#e53935', icon: '⚔️', desc: '影响物理攻击伤害' },
+    { label: '智力', value: general.stats.intelligence, color: '#1e88e5', icon: '📖', desc: '影响法术攻击效果' },
+    { label: '统帅', value: general.stats.command, color: '#43a047', icon: '🚩', desc: '影响部队整体战力' },
+    { label: '政治', value: general.stats.defense, color: '#ff9800', icon: '📜', desc: '影响内政与防御' },
+    { label: '魅力', value: charisma, color: '#ab47bc', icon: '✨', desc: '影响招募与外交' },
+  ];
+
+  // 羁绊关系分组（按关系类型）
+  const bonds = enhanced.relatedGenerals ?? [];
+
+  return (
+    <div className="tk-general-modal-overlay" onClick={onClose}>
+      <div className="tk-general-modal" onClick={(e) => e.stopPropagation()}>
+        {/* 头部 — 阵营色背景 + 大头像 + 装饰纹样 */}
+        <div className="tk-modal-header" style={{ '--faction-color': color } as React.CSSProperties}>
+          {/* 阵营色背景层 */}
+          <div className="tk-modal-header-bg" style={{ background: `linear-gradient(135deg, ${color}18, ${color}08, transparent)`, position: 'absolute', inset: 0, borderRadius: '8px 8px 0 0', pointerEvents: 'none' } as React.CSSProperties} />
+          {/* 势力装饰纹样 */}
+          <div className="tk-modal-header-pattern" style={{ '--faction-color': color } as React.CSSProperties} />
+          <div className="tk-modal-portrait">
+            <GeneralCanvasPortrait generalId={general.id} size={80} />
+          </div>
+          <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
+            <h3 className="tk-modal-name" style={{ color: rarityColor }}>{general.name}</h3>
+            <div className="tk-modal-subtitle">
+              <span className={`tk-faction-badge tk-faction-badge--${general.faction}`}>
+                {factionLabels[general.faction] || '群'}
+              </span>
+              <span className="tk-modal-rarity-text" style={{ color: rarityColor }}>
+                {rarityLabels[general.rarity] || general.rarity}
+              </span>
+              <span className="tk-modal-level-text">Lv.{general.level}</span>
+            </div>
+            {/* 星级 */}
+            <div className="tk-modal-stars" style={{ color: rarityColor }}>
+              {'★'.repeat(stars)}{'☆'.repeat(5 - stars)}
+            </div>
+            {enhanced.factionDesc && (
+              <div className="tk-modal-faction-desc">{enhanced.factionDesc}</div>
+            )}
+            {/* 综合战力 */}
+            <div className="tk-modal-power">
+              <span className="tk-modal-power-label">⚔️ 战力</span>
+              <span className="tk-modal-power-value" style={{ color: rarityColor }}>{power}</span>
+            </div>
+          </div>
+          <button className="tk-modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* 内容区 */}
+        <div className="tk-modal-body">
+          {/* 完整属性面板 — 5维雷达风格 */}
+          <div className="tk-modal-section-title">◆ 属性面板</div>
+          <div className="tk-modal-stats-grid">
+            {allStats.map((stat) => (
+              <div key={stat.label} className="tk-modal-stat-item" title={stat.desc}>
+                <span className="tk-modal-stat-icon">{stat.icon}</span>
+                <span className="tk-modal-stat-label">{stat.label}</span>
+                <div className="tk-modal-stat-bar">
+                  <div className="tk-modal-stat-bar-fill" style={{ width: `${stat.value}%`, background: `linear-gradient(90deg, ${stat.color}88, ${stat.color})` }} />
+                </div>
+                <span className="tk-modal-stat-value" style={{ color: stat.color }}>{stat.value}</span>
+              </div>
+            ))}
+          </div>
+
+          <hr className="tk-modal-divider" />
+
+          {/* 技能列表 — 增强版 */}
+          {enhanced.skills.length > 0 && (
+            <>
+              <div className="tk-modal-section-title">◆ 技能</div>
+              {enhanced.skills.map((skill, i) => (
+                <div key={i} className="tk-modal-skill-card">
+                  <div className="tk-modal-skill-icon-wrap">
+                    <SkillIcon skillType={skill.type} size={20} />
+                  </div>
+                  <div className="tk-modal-skill-info">
+                    <div className="tk-modal-skill-name">
+                      {skill.name}
+                      {skill.damageType && (
+                        <span className={`tk-skill-type-badge tk-skill-type-badge--${skill.damageType}`}>
+                          {skill.damageType === 'physical' ? '物理' : skill.damageType === 'magic' ? '法术' : '辅助'}
+                        </span>
+                      )}
+                      {skill.cooldown && <span className="tk-skill-cooldown">⏱ {skill.cooldown}s</span>}
+                    </div>
+                    <div className="tk-modal-skill-desc">{skill.effect || skill.description}</div>
+                  </div>
+                </div>
+              ))}
+              <hr className="tk-modal-divider" />
+            </>
+          )}
+
+          {/* 装备槽位 */}
+          <div className="tk-modal-section-title">◆ 装备</div>
+          <div className="tk-modal-equip-slots">
+            {(['weapon', 'armor', 'mount'] as const).map((slot) => {
+              const equipped = enhanced.equipment[slot];
+              const slotLabels: Record<string, { label: string; icon: string }> = {
+                weapon: { label: '武器', icon: '⚔️' },
+                armor: { label: '防具', icon: '🛡️' },
+                mount: { label: '坐骑', icon: '🐎' },
+              };
+              return (
+                <div key={slot} className={`tk-modal-equip-slot ${equipped ? 'tk-modal-equip-slot--filled' : ''}`}>
+                  <span style={{ fontSize: 18 }}>{slotLabels[slot].icon}</span>
+                  {equipped ? (
+                    <span className="tk-modal-equip-slot-name">{equipped}</span>
+                  ) : (
+                    <>
+                      <span className="tk-modal-equip-slot-label">{slotLabels[slot].label}</span>
+                      <span className="tk-modal-equip-slot-empty">未装备</span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <hr className="tk-modal-divider" />
+
+          {/* 历史典故 */}
+          <div className="tk-modal-section-title">◆ 典故</div>
+          <div className="tk-modal-bio">「{enhanced.bio}」</div>
+
+          {/* 历史事件 — 时间线风格 */}
+          {enhanced.historyEvents && enhanced.historyEvents.length > 0 && (
+            <div className="tk-modal-timeline">
+              {enhanced.historyEvents.map((evt, i) => (
+                <div key={i} className="tk-modal-timeline-item">
+                  <span className="tk-modal-timeline-dot" style={{ borderColor: color }} />
+                  <span className="tk-modal-timeline-text">📜 {evt}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 羁绊/人物关系 — 增强版 */}
+          {bonds.length > 0 && (
+            <>
+              <div className="tk-modal-section-title" style={{ marginTop: 12 }}>◆ 羁绊</div>
+              <div className="tk-modal-bonds">
+                {bonds.map((rel, i) => (
+                  <div key={i} className="tk-modal-bond-card">
+                    <span className="tk-modal-bond-avatar">
+                      <GeneralCanvasPortrait generalId={rel.name === '关羽' ? 'guanyu' : rel.name === '张飞' ? 'zhangfei' : rel.name === '刘备' ? 'liubei' : rel.name === '诸葛亮' ? 'zhugeliang' : rel.name === '曹操' ? 'caocao' : rel.name === '夏侯惇' ? 'xiahoudun' : rel.name === '许褚' ? 'xuchu' : rel.name === '司马懿' ? 'simayi' : rel.name === '孙权' ? 'sunquan' : rel.name === '周瑜' ? 'zhouyu' : rel.name === '甘宁' ? 'ganning' : rel.name === '陆逊' ? 'luxun' : 'unknown'} size={28} />
+                    </span>
+                    <div className="tk-modal-bond-info">
+                      <span className="tk-modal-bond-name">{rel.name}</span>
+                      <span className="tk-modal-bond-relation">{rel.relation}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -2438,6 +2759,7 @@ export default function ThreeKingdomsPixiGame() {
   const [battleMode, setBattleMode] = useState(false);
   const [previousTab, setPreviousTab] = useState<string>('building');
   const [selectedHero, setSelectedHero] = useState<typeof heroes[number] | null>(null);
+  const [detailModalHero, setDetailModalHero] = useState<typeof heroes[number] | null>(null);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' && window.innerWidth < 768
   );
@@ -3674,7 +3996,7 @@ export default function ThreeKingdomsPixiGame() {
                 return (
                   <div
                     key={b.id}
-                    className={`${flashBuildingId === b.id ? 'tk-r16-building-upgrading tk-r16-building-levelup' : ''} tk-r16-building-card`}
+                    className={`${flashBuildingId === b.id ? 'tk-r16-building-upgrading tk-r16-building-levelup' : ''} tk-r16-building-card tk-building-card-dynamic ${b.canUpgrade ? 'tk-building-can-upgrade' : ''}`}
                     onClick={() => handleBuildingClick(b.id)}
                     style={{
                       padding: '8px 10px', marginBottom: 6,
@@ -4696,6 +5018,7 @@ export default function ThreeKingdomsPixiGame() {
                                           addToast('研究失败：资源不足或前置未完成', 'error');
                                         }
                                       }}
+                                      className="tk-btn-dynamic"
                                       style={{
                                         padding: '3px 12px', fontSize: 9,
                                         borderRadius: 4, border: 'none', cursor: 'pointer',
@@ -4706,7 +5029,7 @@ export default function ThreeKingdomsPixiGame() {
                                         transition: 'transform 0.15s, box-shadow 0.15s',
                                       }}
                                       onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'scale(1.05)';
+                                        e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
                                         e.currentTarget.style.boxShadow = '0 3px 10px rgba(212,160,48,0.5)';
                                       }}
                                       onMouseLeave={(e) => {
@@ -5143,12 +5466,14 @@ export default function ThreeKingdomsPixiGame() {
             <>
               <h3 className="tk-general-cards-title">◆ ⚔️ 武将</h3>
               <div className="tk-general-cards">
-                {heroes.map(h => (
+                {heroes.map((h, idx) => (
                   <GeneralCard
                     key={h.id}
                     general={h}
+                    index={idx}
                     isSelected={(selectedHero as typeof heroes[number] | null)?.id === h.id}
                     onSelect={() => setSelectedHero(h)}
+                    onDoubleClick={() => setDetailModalHero(h)}
                     onRecruit={h.canRecruit && !h.unlocked ? () => {
                       const engine = engineRef.current;
                       if (!engine) return;

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
- * R16 — 武将面板深度升级样式
- * 特征：阵营色系统 + 星级 + 属性简览 + 技能预览 + 详情弹窗
+ * R16 v2 — 武将面板深度升级样式
+ * 特征：阵营色系统 + 星级 + 属性简览 + 技能预览 + 详情弹窗 + 羁绊 + 战力
  * ═══════════════════════════════════════════════════════════════ */
 
 /* ── R16: 左侧阵营色竖条 ── */
@@ -12,7 +12,7 @@
   width: 4px;
   border-radius: 6px 0 0 6px;
   z-index: 2;
-  transition: width 0.2s ease;
+  transition: width 0.2s ease, opacity 0.2s ease;
 }
 .tk-general-card:hover .tk-general-card-faction-stripe {
   width: 5px;
@@ -46,9 +46,14 @@
   line-height: 1;
   text-shadow: 0 0 4px currentColor;
   white-space: nowrap;
+  animation: tk-stars-shimmer 2s ease-in-out infinite alternate;
+}
+@keyframes tk-stars-shimmer {
+  0% { text-shadow: 0 0 3px currentColor; }
+  100% { text-shadow: 0 0 6px currentColor, 0 0 10px currentColor; }
 }
 
-/* ── R16: 核心属性简览（武力/智力/统帅） ── */
+/* ── R16: 核心属性简览（武力/智力/统率 — 彩色进度条） ── */
 .tk-general-card-attr-preview {
   display: flex;
   flex-direction: column;
@@ -72,20 +77,22 @@
   flex-shrink: 0;
   text-align: center;
   font-family: 'KaiTi', 'STKaiti', serif;
-  font-size: 8px;
+  font-size: 9px;
+  font-weight: bold;
 }
 
 .tk-attr-mini-bar {
   flex: 1;
-  height: 3px;
+  height: 4px;
   background: rgba(255, 255, 255, 0.06);
-  border-radius: 1.5px;
+  border-radius: 2px;
   overflow: hidden;
+  position: relative;
 }
 
 .tk-attr-mini-fill {
   height: 100%;
-  border-radius: 1.5px;
+  border-radius: 2px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
@@ -98,44 +105,79 @@
   left: 0;
   right: 0;
   height: 50%;
-  border-radius: 1.5px 1.5px 0 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, transparent 100%);
+}
+
+/* 属性条闪光动画 */
+.tk-attr-mini-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: tk-attr-shimmer 3s ease-in-out infinite;
+}
+@keyframes tk-attr-shimmer {
+  0%, 100% { left: -30%; }
+  50% { left: 100%; }
 }
 
 .tk-attr-mini-val {
   color: #d4b36a;
-  font-size: 8px;
-  width: 16px;
+  font-size: 9px;
+  width: 18px;
   flex-shrink: 0;
   text-align: right;
   font-family: Georgia, serif;
   font-weight: bold;
 }
 
-/* ── R16: 技能预览（1-2个技能 chip） ── */
+/* ── R16: 技能预览（1-2个技能 chip — 增强版） ── */
 .tk-general-card-skills-preview {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
   justify-content: center;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .tk-general-card-skill-chip {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 1px 5px;
+  gap: 3px;
+  padding: 1px 6px 1px 4px;
   border-radius: 3px;
   font-size: 7px;
   color: #c9a96e;
-  background: rgba(212, 160, 48, 0.08);
-  border: 1px solid rgba(212, 160, 48, 0.18);
+  background: rgba(212, 160, 48, 0.06);
+  border: 1px solid rgba(212, 160, 48, 0.15);
+  border-left: 2px solid #c9a96e;
   white-space: nowrap;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
 }
 .tk-general-card-skill-chip:hover {
   background: rgba(212, 160, 48, 0.18);
+  border-color: rgba(212, 160, 48, 0.4);
+}
+
+.tk-skill-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(212, 160, 48, 0.1);
+  flex-shrink: 0;
+}
+
+.tk-skill-chip-cd {
+  font-size: 6px;
+  color: #888;
+  margin-left: 2px;
 }
 
 /* ── R16: 悬停浮层内星级 ── */
@@ -144,6 +186,28 @@
   margin-bottom: 4px;
   letter-spacing: 1px;
   text-shadow: 0 0 4px currentColor;
+}
+
+/* ── R16: 悬停浮层内战力 ── */
+.tk-tooltip-power {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(212, 160, 48, 0.08);
+  border: 1px solid rgba(212, 160, 48, 0.15);
+}
+.tk-tooltip-power-label {
+  font-size: 9px;
+  color: #b09060;
+}
+.tk-tooltip-power-value {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: Georgia, serif;
+  text-shadow: 0 0 6px currentColor;
 }
 
 /* ── R16: 悬停浮层内装备概览 ── */
@@ -159,9 +223,29 @@
 .tk-tooltip-equip-item {
   font-size: 8px;
   color: #b09060;
-  padding: 1px 4px;
+  padding: 1px 5px;
   border-radius: 3px;
   background: rgba(139, 115, 85, 0.08);
+  border: 1px solid rgba(139, 115, 85, 0.12);
+  white-space: nowrap;
+}
+
+/* ── R16: 悬停浮层内羁绊预览 ── */
+.tk-tooltip-bonds-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 5px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(139, 115, 85, 0.12);
+}
+.tk-tooltip-bond-chip {
+  font-size: 7px;
+  color: #c9a96e;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(201, 169, 110, 0.06);
+  border: 1px solid rgba(201, 169, 110, 0.12);
   white-space: nowrap;
 }
 
@@ -176,20 +260,42 @@
   padding-top: 4px;
 }
 
+/* ── R16: 悬停展开区战力行 ── */
+.tk-hover-power-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 3px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: rgba(212, 160, 48, 0.06);
+}
+.tk-hover-power-label {
+  font-size: 8px;
+  color: #b09060;
+}
+.tk-hover-power-value {
+  font-size: 11px;
+  font-weight: bold;
+  font-family: Georgia, serif;
+  text-shadow: 0 0 4px currentColor;
+}
+
 /* ═══════════════════════════════════════════════════════════════
- * R16: 武将详情弹窗（Modal）
+ * R16 v2: 武将详情弹窗（Modal）— 深度升级
  * ═══════════════════════════════════════════════════════════════ */
 
 /* 弹窗遮罩 */
 .tk-general-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: tk-modal-overlay-in 0.25s ease-out;
+  backdrop-filter: blur(2px);
 }
 @keyframes tk-modal-overlay-in {
   from { opacity: 0; }
@@ -199,10 +305,11 @@
 /* 弹窗主体 — 古风卷轴 */
 .tk-general-modal {
   position: relative;
-  width: 420px;
+  width: 440px;
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   background:
     repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139,115,85,0.02) 2px, rgba(139,115,85,0.02) 4px),
     linear-gradient(135deg, #2a1810 0%, #3d2817 50%, #2a1810 100%);
@@ -212,16 +319,33 @@
     0 8px 40px rgba(0, 0, 0, 0.8),
     0 0 20px rgba(212, 160, 48, 0.15),
     inset 0 0 30px rgba(139, 115, 85, 0.1);
-  animation: tk-modal-slide-in 0.3s ease-out;
+  animation: tk-modal-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  /* 四角装饰 */
   background-image:
-    radial-gradient(circle at 6px 6px, rgba(212,160,48,0.2) 3px, transparent 3px),
-    radial-gradient(circle at calc(100% - 6px) 6px, rgba(212,160,48,0.2) 3px, transparent 3px),
-    radial-gradient(circle at 6px calc(100% - 6px), rgba(212,160,48,0.2) 3px, transparent 3px),
-    radial-gradient(circle at calc(100% - 6px) calc(100% - 6px), rgba(212,160,48,0.2) 3px, transparent 3px);
+    radial-gradient(circle at 6px 6px, rgba(212,160,48,0.25) 3px, transparent 3px),
+    radial-gradient(circle at calc(100% - 6px) 6px, rgba(212,160,48,0.25) 3px, transparent 3px),
+    radial-gradient(circle at 6px calc(100% - 6px), rgba(212,160,48,0.25) 3px, transparent 3px),
+    radial-gradient(circle at calc(100% - 6px) calc(100% - 6px), rgba(212,160,48,0.25) 3px, transparent 3px);
 }
 @keyframes tk-modal-slide-in {
-  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  from { opacity: 0; transform: translateY(30px) scale(0.94); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 自定义滚动条 */
+.tk-general-modal::-webkit-scrollbar {
+  width: 6px;
+}
+.tk-general-modal::-webkit-scrollbar-track {
+  background: rgba(139, 115, 85, 0.1);
+  border-radius: 3px;
+}
+.tk-general-modal::-webkit-scrollbar-thumb {
+  background: rgba(139, 115, 85, 0.3);
+  border-radius: 3px;
+}
+.tk-general-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 115, 85, 0.5);
 }
 
 /* 弹窗头部 — 阵营色背景 + 大头像 */
@@ -232,6 +356,7 @@
   gap: 16px;
   padding: 20px 20px 16px;
   border-bottom: 1px solid rgba(139, 115, 85, 0.3);
+  overflow: hidden;
 }
 .tk-modal-header::before {
   content: '';
@@ -240,6 +365,27 @@
   border-radius: 8px 8px 0 0;
   opacity: 0.12;
   pointer-events: none;
+}
+
+/* 头部背景层 */
+.tk-modal-header-bg {
+  pointer-events: none;
+}
+
+/* 头部势力装饰纹样 */
+.tk-modal-header-pattern {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  opacity: 0.06;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, var(--faction-color, #8b7355) 0%, transparent 70%),
+    repeating-conic-gradient(var(--faction-color, #8b7355) 0deg, transparent 30deg, var(--faction-color, #8b7355) 60deg);
+  mask-image: radial-gradient(circle, rgba(0,0,0,0.5) 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,0.5) 30%, transparent 70%);
 }
 
 /* 弹窗大头像 */
@@ -252,6 +398,7 @@
   box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
   flex-shrink: 0;
   position: relative;
+  z-index: 1;
 }
 .tk-modal-portrait::after {
   content: '';
@@ -282,12 +429,61 @@
   flex-wrap: wrap;
 }
 
+/* 稀有度文字 */
+.tk-modal-rarity-text {
+  font-size: 11px;
+  font-weight: bold;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 等级文字 */
+.tk-modal-level-text {
+  font-size: 11px;
+  color: #c9a96e;
+  font-family: Georgia, serif;
+}
+
 /* 弹窗星级 */
 .tk-modal-stars {
   font-size: 14px;
   letter-spacing: 2px;
   text-shadow: 0 0 6px currentColor;
   line-height: 1;
+  margin-top: 3px;
+  animation: tk-stars-shimmer 2.5s ease-in-out infinite alternate;
+}
+
+/* 势力归属说明 */
+.tk-modal-faction-desc {
+  font-size: 10px;
+  color: #a09070;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+/* 弹窗头部战力 */
+.tk-modal-power {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: rgba(212, 160, 48, 0.08);
+  border: 1px solid rgba(212, 160, 48, 0.15);
+}
+.tk-modal-power-label {
+  font-size: 10px;
+  color: #b09060;
+}
+.tk-modal-power-value {
+  font-size: 16px;
+  font-weight: bold;
+  font-family: Georgia, serif;
+  text-shadow: 0 0 8px currentColor;
 }
 
 /* 弹窗关闭按钮 */
@@ -326,41 +522,67 @@
   gap: 6px;
   margin-bottom: 12px;
 }
+/* 魅力属性跨两列 */
+.tk-modal-stats-grid .tk-modal-stat-item:last-child {
+  grid-column: 1 / -1;
+}
 .tk-modal-stat-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 4px;
   padding: 6px 10px;
   border-radius: 4px;
   background: rgba(139, 115, 85, 0.08);
   border: 1px solid rgba(139, 115, 85, 0.1);
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
 }
 .tk-modal-stat-item:hover {
   background: rgba(139, 115, 85, 0.15);
+  border-color: rgba(139, 115, 85, 0.2);
+}
+.tk-modal-stat-icon {
+  font-size: 12px;
+  flex-shrink: 0;
 }
 .tk-modal-stat-label {
   font-size: 11px;
   color: #b09060;
   font-family: 'KaiTi', 'STKaiti', serif;
+  width: 28px;
+  flex-shrink: 0;
 }
 .tk-modal-stat-value {
   font-size: 16px;
   font-weight: bold;
   font-family: Georgia, serif;
+  width: 28px;
+  flex-shrink: 0;
+  text-align: right;
 }
 .tk-modal-stat-bar {
   flex: 1;
-  height: 4px;
-  margin: 0 8px;
+  height: 5px;
+  margin: 0 4px;
   background: rgba(255, 255, 255, 0.06);
-  border-radius: 2px;
+  border-radius: 2.5px;
   overflow: hidden;
 }
 .tk-modal-stat-bar-fill {
   height: 100%;
-  border-radius: 2px;
+  border-radius: 2.5px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+/* 属性条高光 */
+.tk-modal-stat-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  border-radius: 2.5px 2.5px 0 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%);
 }
 
 /* 弹窗分隔线 */
@@ -391,10 +613,11 @@
   border-radius: 6px;
   background: rgba(139, 115, 85, 0.06);
   border: 1px solid rgba(139, 115, 85, 0.1);
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
 }
 .tk-modal-skill-card:hover {
   background: rgba(139, 115, 85, 0.12);
+  border-color: rgba(139, 115, 85, 0.2);
 }
 .tk-modal-skill-icon-wrap {
   width: 32px;
@@ -406,6 +629,7 @@
   flex-shrink: 0;
   border: 1px solid rgba(212, 160, 48, 0.3);
   background: rgba(212, 160, 48, 0.08);
+  box-shadow: 0 0 6px rgba(212, 160, 48, 0.1);
 }
 .tk-modal-skill-info {
   flex: 1;
@@ -441,7 +665,7 @@
   border-radius: 6px;
   background: rgba(139, 115, 85, 0.06);
   border: 1px solid rgba(139, 115, 85, 0.12);
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
   min-height: 60px;
 }
 .tk-modal-equip-slot:hover {
@@ -451,6 +675,10 @@
 .tk-modal-equip-slot--filled {
   border-color: rgba(212, 160, 48, 0.3);
   background: rgba(212, 160, 48, 0.06);
+  box-shadow: 0 0 8px rgba(212, 160, 48, 0.08);
+}
+.tk-modal-equip-slot--filled:hover {
+  box-shadow: 0 0 12px rgba(212, 160, 48, 0.15);
 }
 .tk-modal-equip-slot-label {
   font-size: 9px;
@@ -463,6 +691,7 @@
   font-weight: bold;
   text-align: center;
   line-height: 1.2;
+  text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);
 }
 .tk-modal-equip-slot-empty {
   font-size: 9px;
@@ -482,47 +711,104 @@
   font-style: italic;
 }
 
-/* 弹窗历史事件标签 */
-.tk-modal-events {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 8px;
+/* 弹窗历史事件 — 时间线风格 */
+.tk-modal-timeline {
+  margin-top: 10px;
+  padding-left: 16px;
+  position: relative;
 }
-.tk-modal-event-tag {
-  font-size: 9px;
-  color: #b89870;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: rgba(184, 115, 51, 0.08);
-  border: 1px solid rgba(184, 115, 51, 0.15);
+.tk-modal-timeline::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: rgba(139, 115, 85, 0.25);
+}
+.tk-modal-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  position: relative;
+}
+.tk-modal-timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid #8b7355;
+  background: #2a1810;
+  flex-shrink: 0;
+  position: absolute;
+  left: -16px;
   transition: background 0.2s;
 }
-.tk-modal-event-tag:hover {
-  background: rgba(184, 115, 51, 0.18);
+.tk-modal-timeline-item:hover .tk-modal-timeline-dot {
+  background: var(--faction-color, #8b7355);
+}
+.tk-modal-timeline-text {
+  font-size: 9px;
+  color: #b89870;
+  transition: color 0.2s;
+}
+.tk-modal-timeline-item:hover .tk-modal-timeline-text {
+  color: #d4b36a;
 }
 
-/* 弹窗关联武将 */
-.tk-modal-relations {
+/* 弹窗羁绊/人物关系 — 卡片风格 */
+.tk-modal-bonds {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   margin-top: 8px;
 }
-.tk-modal-relation-tag {
-  font-size: 9px;
-  color: #c9a96e;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: rgba(201, 169, 110, 0.08);
-  border: 1px solid rgba(201, 169, 110, 0.15);
+.tk-modal-bond-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(139, 115, 85, 0.06);
+  border: 1px solid rgba(139, 115, 85, 0.12);
+  transition: background 0.2s, border-color 0.2s;
+  cursor: default;
 }
-.tk-modal-relation-label {
-  color: #b87333;
+.tk-modal-bond-card:hover {
+  background: rgba(139, 115, 85, 0.12);
+  border-color: rgba(201, 169, 110, 0.3);
+}
+.tk-modal-bond-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid rgba(212, 160, 48, 0.3);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tk-modal-bond-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.tk-modal-bond-name {
+  font-size: 10px;
+  color: #f0e0c0;
+  font-weight: bold;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+.tk-modal-bond-relation {
   font-size: 8px;
+  color: #b87333;
+  font-style: italic;
 }
 
-/* ── R16: 阵营色卡片背景微调 ── */
+/* ═══════════════════════════════════════════════════════════════
+ * R16 v2: 阵营色卡片背景
+ * ═══════════════════════════════════════════════════════════════ */
 .tk-general-card--faction-wei {
   background: linear-gradient(135deg, #2a1810 0%, #1a2a3d 100%);
 }
@@ -536,7 +822,27 @@
   background: linear-gradient(135deg, #2a1810 0%, #2a2518 100%);
 }
 
-/* ── R16: 响应式适配 ── */
+/* ═══════════════════════════════════════════════════════════════
+ * R16 v2: 卡片入场动画（交错延迟）
+ * ═══════════════════════════════════════════════════════════════ */
+.tk-general-card {
+  animation: tk-card-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: var(--card-enter-delay, 0ms);
+}
+@keyframes tk-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * R16 v2: 响应式适配
+ * ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .tk-general-modal {
     width: 95vw;
@@ -564,5 +870,11 @@
   }
   .tk-modal-stat-value {
     font-size: 14px;
+  }
+  .tk-modal-bonds {
+    gap: 4px;
+  }
+  .tk-modal-bond-card {
+    padding: 3px 6px;
   }
 }
