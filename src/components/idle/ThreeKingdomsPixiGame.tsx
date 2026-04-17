@@ -1082,6 +1082,9 @@ interface GeneralSkillData {
   name: string;
   type: string;   // SVG 图标类型 key
   description: string;
+  effect?: string;       // 技能效果文字说明
+  cooldown?: number;     // 冷却时间（秒）
+  damageType?: 'physical' | 'magic' | 'support';  // 伤害类型
 }
 
 /** 武将装备数据 */
@@ -1096,6 +1099,10 @@ interface GeneralEnhancedData {
   bio: string;
   skills: GeneralSkillData[];
   equipment: GeneralEquipmentData;
+  historyEvents?: string[];         // 历史事件标签
+  relatedGenerals?: Array<{ name: string; relation: string }>;  // 关联武将
+  factionDesc?: string;             // 势力归属说明
+  biography?: string;               // 历史传记（2-3句话）
 }
 
 /**
@@ -1108,98 +1115,146 @@ const GENERAL_ENHANCED_DATA: Record<string, GeneralEnhancedData> = {
   liubei: {
     bio: '蜀汉开国皇帝，汉室宗亲。仁德布四方，以德服人，桃园三结义传颂千古。',
     skills: [
-      { name: '仁德', type: 'heal', description: '治疗己方全体，恢复兵力' },
-      { name: '激励', type: 'buff', description: '提升全军攻击力，鼓舞士气' },
+      { name: '仁德', type: 'heal', description: '治疗己方全体，恢复兵力', effect: '仁德：恢复己方全体30%最大兵力', cooldown: 8, damageType: 'support' },
+      { name: '激励', type: 'buff', description: '提升全军攻击力，鼓舞士气', effect: '激励：提升全军攻击力25%，持续10秒', cooldown: 12, damageType: 'support' },
     ],
     equipment: { weapon: null, armor: null, mount: null },
+    historyEvents: ['桃园结义', '三顾茅庐', '白帝城托孤'],
+    relatedGenerals: [{ name: '关羽', relation: '桃园兄弟' }, { name: '张飞', relation: '桃园兄弟' }, { name: '诸葛亮', relation: '君臣' }],
+    factionDesc: '蜀汉开国皇帝，汉室宗亲，仁德之主',
+    biography: '刘备，字玄德，涿郡涿县人，西汉中山靖王刘胜之后。以仁德著称，桃园三结义、三顾茅庐传为佳话。历经数十年征战，终成帝业，建立蜀汉政权。',
   },
   guanyu: {
     bio: '蜀汉五虎上将之首，义薄云天。温酒斩华雄，过五关斩六将，忠义千秋。',
     skills: [
-      { name: '武圣', type: 'sword', description: '暴击攻击，造成巨额伤害' },
-      { name: '青龙斩', type: 'charge', description: '范围横扫，攻击前方多排敌军' },
+      { name: '武圣', type: 'sword', description: '暴击攻击，造成巨额伤害', effect: '武圣：暴击攻击，对单体造成200%伤害', cooldown: 6, damageType: 'physical' },
+      { name: '青龙斩', type: 'charge', description: '范围横扫，攻击前方多排敌军', effect: '青龙斩：横扫千军，对前方3格敌人造成150%伤害', cooldown: 10, damageType: 'physical' },
     ],
     equipment: { weapon: '青龙偃月刀', armor: null, mount: '赤兔马' },
+    historyEvents: ['桃园结义', '温酒斩华雄', '过五关斩六将', '水淹七军', '败走麦城'],
+    relatedGenerals: [{ name: '刘备', relation: '桃园兄弟' }, { name: '张飞', relation: '桃园兄弟' }],
+    factionDesc: '蜀汉五虎上将之首，忠义武圣',
+    biography: '关羽，字云长，河东解良人。与刘备、张飞桃园结义，情同手足。温酒斩华雄、过五关斩六将、水淹七军，威震华夏。后世尊为"武圣"，与文圣孔子齐名。',
   },
   zhangfei: {
     bio: '蜀汉猛将，万人敌。长坂坡一声怒吼，吓退曹操百万大军，威震天下。',
     skills: [
-      { name: '怒吼', type: 'roar', description: '震慑敌军，降低敌方防御力' },
-      { name: '猛进', type: 'charge', description: '勇猛冲锋，突破敌阵' },
+      { name: '怒吼', type: 'roar', description: '震慑敌军，降低敌方防御力', effect: '怒吼：震慑前方5格内敌军，降低防御40%', cooldown: 8, damageType: 'physical' },
+      { name: '猛进', type: 'charge', description: '勇猛冲锋，突破敌阵', effect: '猛进：冲锋突破，对路径上敌人造成180%伤害', cooldown: 10, damageType: 'physical' },
     ],
     equipment: { weapon: '丈八蛇矛', armor: null, mount: null },
+    historyEvents: ['桃园结义', '长坂坡断后', '义释严颜'],
+    relatedGenerals: [{ name: '刘备', relation: '桃园兄弟' }, { name: '关羽', relation: '桃园兄弟' }],
+    factionDesc: '蜀汉五虎上将之一，万人敌',
+    biography: '张飞，字翼德，涿郡人。与刘备、关羽桃园结义，勇猛无双。长坂坡一声怒吼，吓退曹军百万，义释严颜传为美谈。虽性烈如火，却粗中有细。',
   },
   zhugeliang: {
     bio: '蜀汉丞相，号卧龙。未出茅庐已知三分天下，草船借箭、空城退敌，千古智者。',
     skills: [
-      { name: '火计', type: 'fire', description: '范围火攻，灼烧大片敌军' },
-      { name: '八阵图', type: 'shield', description: '布阵防御，大幅提升己方防御' },
+      { name: '火计', type: 'fire', description: '范围火攻，灼烧大片敌军', effect: '火计：对3x3范围敌军造成160%法术灼烧伤害', cooldown: 12, damageType: 'magic' },
+      { name: '八阵图', type: 'shield', description: '布阵防御，大幅提升己方防御', effect: '八阵图：布下奇阵，提升己方全体防御50%', cooldown: 15, damageType: 'support' },
     ],
     equipment: { weapon: null, armor: '鹤氅', mount: null },
+    historyEvents: ['三顾茅庐', '草船借箭', '借东风', '空城计', '七擒孟获'],
+    relatedGenerals: [{ name: '刘备', relation: '君臣' }, { name: '周瑜', relation: '亦敌亦友' }],
+    factionDesc: '蜀汉丞相，卧龙先生，千古智者',
+    biography: '诸葛亮，字孔明，号卧龙，琅琊阳都人。未出茅庐已知三分天下，辅佐刘备建立蜀汉。草船借箭、空城退敌、七擒孟获，被誉为"千古智者"。',
   },
   caocao: {
     bio: '魏武帝，乱世枭雄。挟天子以令诸侯，统一北方，文武兼备的一代霸主。',
     skills: [
-      { name: '奸雄', type: 'drain', description: '吸血攻击，将伤害转化为兵力' },
-      { name: '号令', type: 'roar', description: '全军出击，提升全体武将属性' },
+      { name: '奸雄', type: 'drain', description: '吸血攻击，将伤害转化为兵力', effect: '奸雄：攻击并吸取50%伤害值恢复自身兵力', cooldown: 8, damageType: 'physical' },
+      { name: '号令', type: 'roar', description: '全军出击，提升全体武将属性', effect: '号令：提升全体武将攻击和防御各20%', cooldown: 15, damageType: 'support' },
     ],
     equipment: { weapon: '倚天剑', armor: null, mount: '绝影' },
+    historyEvents: ['挟天子以令诸侯', '官渡之战', '赤壁之战', '煮酒论英雄'],
+    relatedGenerals: [{ name: '夏侯惇', relation: '宗族' }, { name: '许褚', relation: '亲卫' }, { name: '司马懿', relation: '谋臣' }],
+    factionDesc: '魏武帝，乱世枭雄，统一北方',
+    biography: '曹操，字孟德，沛国谯县人。挟天子以令诸侯，统一北方。文武兼备，治世之能臣，乱世之枭雄。官渡以少胜多，赤壁虽败，仍不失一代雄主。',
   },
   xiahoudun: {
     bio: '曹魏名将，独目将军。拔矢啖睛，忠勇无双，为曹操最信赖的将领之一。',
     skills: [
-      { name: '刚烈', type: 'sword', description: '以伤换伤，受击时反弹伤害' },
-      { name: '冲锋', type: 'charge', description: '率先进攻，突破敌军防线' },
+      { name: '刚烈', type: 'sword', description: '以伤换伤，受击时反弹伤害', effect: '刚烈：受击时反弹80%伤害给攻击者', cooldown: 6, damageType: 'physical' },
+      { name: '冲锋', type: 'charge', description: '率先进攻，突破敌军防线', effect: '冲锋：率先突击，对前方敌人造成170%伤害', cooldown: 8, damageType: 'physical' },
     ],
     equipment: { weapon: null, armor: '铁甲', mount: null },
+    historyEvents: ['拔矢啖睛', '濮阳之战'],
+    relatedGenerals: [{ name: '曹操', relation: '宗族' }, { name: '许褚', relation: '同僚' }],
+    factionDesc: '曹魏宗族名将，独目将军',
+    biography: '夏侯惇，字元让，沛国谯县人，曹操从弟。拔矢啖睛，忠勇无双。随曹操征战四方，为曹魏基业立下赫赫战功。',
   },
   simayi: {
     bio: '魏国谋臣，号冢虎。隐忍数十年，最终司马代魏，奠定晋朝基业。',
     skills: [
-      { name: '隐忍', type: 'chargeup', description: '蓄力待发，积蓄力量后爆发' },
-      { name: '鬼谋', type: 'scroll', description: '奇策妙计，随机削弱敌军' },
+      { name: '隐忍', type: 'chargeup', description: '蓄力待发，积蓄力量后爆发', effect: '隐忍：蓄力5秒后爆发，造成250%法术伤害', cooldown: 15, damageType: 'magic' },
+      { name: '鬼谋', type: 'scroll', description: '奇策妙计，随机削弱敌军', effect: '鬼谋：随机降低敌方2名武将30%攻击力', cooldown: 10, damageType: 'magic' },
     ],
     equipment: { weapon: null, armor: null, mount: null },
+    historyEvents: ['空城计对峙', '高平陵之变'],
+    relatedGenerals: [{ name: '曹操', relation: '谋臣' }, { name: '诸葛亮', relation: '宿敌' }],
+    factionDesc: '魏国冢虎，隐忍谋臣，晋朝奠基者',
+    biography: '司马懿，字仲达，河内温县人。号冢虎，隐忍数十年。与诸葛亮多次交锋，最终发动高平陵之变，奠定司马氏代魏基础。',
   },
   xuchu: {
     bio: '曹魏虎将，号虎痴。裸衣斗马超，力大无穷，忠心护主，勇冠三军。',
     skills: [
-      { name: '虎威', type: 'sword', description: '猛力一击，造成高额伤害' },
-      { name: '铁壁', type: 'shield', description: '坚守不动，提升自身防御' },
+      { name: '虎威', type: 'sword', description: '猛力一击，造成高额伤害', effect: '虎威：猛力一击，对单体造成190%物理伤害', cooldown: 7, damageType: 'physical' },
+      { name: '铁壁', type: 'shield', description: '坚守不动，提升自身防御', effect: '铁壁：坚守不动，提升自身防御60%持续8秒', cooldown: 10, damageType: 'support' },
     ],
     equipment: { weapon: '大锤', armor: null, mount: null },
+    historyEvents: ['裸衣斗马超', '渭桥护主'],
+    relatedGenerals: [{ name: '曹操', relation: '亲卫' }, { name: '夏侯惇', relation: '同僚' }],
+    factionDesc: '曹魏虎痴，忠心护主之猛将',
+    biography: '许褚，字仲康，谯国谯人。号虎痴，力大无穷。裸衣斗马超，渭桥六战护曹操，忠心耿耿，勇冠三军。',
   },
   sunquan: {
     bio: '东吴大帝，据守江东六郡。知人善任，联刘抗曹，赤壁一战奠定三国鼎立。',
     skills: [
-      { name: '制衡', type: 'buff', description: '平衡势力，提升全属性' },
-      { name: '坚守', type: 'shield', description: '固守城池，大幅提升防御' },
+      { name: '制衡', type: 'buff', description: '平衡势力，提升全属性', effect: '制衡：提升己方全体全属性15%', cooldown: 12, damageType: 'support' },
+      { name: '坚守', type: 'shield', description: '固守城池，大幅提升防御', effect: '坚守：固守城池，提升己方全体防御45%', cooldown: 10, damageType: 'support' },
     ],
     equipment: { weapon: null, armor: '金甲', mount: null },
+    historyEvents: ['赤壁联刘', '夷陵之战', '称帝建吴'],
+    relatedGenerals: [{ name: '周瑜', relation: '君臣' }, { name: '陆逊', relation: '君臣' }],
+    factionDesc: '东吴大帝，据守江东六郡',
+    biography: '孙权，字仲谋，吴郡富春人。继承父兄基业，据守江东六郡。知人善任，联刘抗曹，赤壁一战奠定三国鼎立之势，后称帝建立东吴。',
   },
   zhouyu: {
     bio: '东吴大都督，号美周郎。赤壁火攻破曹军百万，文武双全，雅量高致。',
     skills: [
-      { name: '火攻', type: 'fire', description: '烈焰焚天，范围灼烧敌军' },
-      { name: '反间', type: 'charm', description: '离间敌将，使其混乱自攻' },
+      { name: '火攻', type: 'fire', description: '烈焰焚天，范围灼烧敌军', effect: '火攻：烈焰焚天，对4x3范围造成170%法术灼烧', cooldown: 12, damageType: 'magic' },
+      { name: '反间', type: 'charm', description: '离间敌将，使其混乱自攻', effect: '反间：离间1名敌将，使其攻击友军持续6秒', cooldown: 15, damageType: 'magic' },
     ],
     equipment: { weapon: null, armor: null, mount: null },
+    historyEvents: ['赤壁火攻', '群英会', '苦肉计'],
+    relatedGenerals: [{ name: '孙权', relation: '君臣' }, { name: '诸葛亮', relation: '亦敌亦友' }],
+    factionDesc: '东吴大都督，美周郎',
+    biography: '周瑜，字公瑾，庐江舒城人。号美周郎，文武双全。赤壁一战，火攻破曹军百万，奠定三国鼎立之局。雅量高致，曲有误周郎顾。',
   },
   ganning: {
     bio: '东吴名将，号锦帆贼。百骑劫魏营，不折一人一骑，勇悍无比。',
     skills: [
-      { name: '锦帆', type: 'charge', description: '水上突袭，快速切入敌阵' },
-      { name: '夜袭', type: 'sword', description: '暗夜偷袭，暴击伤害' },
+      { name: '锦帆', type: 'charge', description: '水上突袭，快速切入敌阵', effect: '锦帆：水上突袭，瞬间切入后排造成160%伤害', cooldown: 8, damageType: 'physical' },
+      { name: '夜袭', type: 'sword', description: '暗夜偷袭，暴击伤害', effect: '夜袭：暗夜偷袭，必定暴击造成220%伤害', cooldown: 10, damageType: 'physical' },
     ],
     equipment: { weapon: '铁锁', armor: null, mount: null },
+    historyEvents: ['百骑劫魏营', '夷陵之战'],
+    relatedGenerals: [{ name: '孙权', relation: '君臣' }, { name: '周瑜', relation: '同僚' }],
+    factionDesc: '东吴名将，锦帆贼',
+    biography: '甘宁，字兴霸，巴郡临江人。号锦帆贼，少为游侠。百骑劫魏营，不折一人一骑，孙权赞曰"孟德有张辽，孤有甘兴霸"。',
   },
   luxun: {
     bio: '东吴名将，火烧连营七百里，大破蜀军。年轻有为，智谋过人。',
     skills: [
-      { name: '火攻', type: 'fire', description: '火烧连营，范围持续灼烧' },
-      { name: '韬略', type: 'scroll', description: '运筹帷幄，提升全队智力' },
+      { name: '火攻', type: 'fire', description: '火烧连营，范围持续灼烧', effect: '火攻：火烧连营，对5格范围造成持续灼烧伤害', cooldown: 14, damageType: 'magic' },
+      { name: '韬略', type: 'scroll', description: '运筹帷幄，提升全队智力', effect: '韬略：运筹帷幄，提升己方全体智力35%', cooldown: 10, damageType: 'support' },
     ],
     equipment: { weapon: null, armor: null, mount: null },
+    historyEvents: ['火烧连营', '石亭之战'],
+    relatedGenerals: [{ name: '孙权', relation: '君臣' }, { name: '周瑜', relation: '后继者' }],
+    factionDesc: '东吴名将，火烧连营七百里',
+    biography: '陆逊，字伯言，吴郡吴县人。年轻有为，智谋过人。夷陵之战火烧连营七百里，大破蜀军，一战成名。后任丞相，为东吴栋梁。',
   },
 };
 
@@ -1207,8 +1262,12 @@ const GENERAL_ENHANCED_DATA: Record<string, GeneralEnhancedData> = {
 function getGeneralEnhanced(id: string): GeneralEnhancedData {
   return GENERAL_ENHANCED_DATA[id] ?? {
     bio: '此人身世成谜，据传有非凡之能。',
-    skills: [{ name: '本能', type: 'sword', description: '普通攻击' }],
+    skills: [{ name: '本能', type: 'sword', description: '普通攻击', effect: '本能：普通攻击造成100%伤害', cooldown: 3, damageType: 'physical' as const }],
     equipment: { weapon: null, armor: null, mount: null },
+    historyEvents: [],
+    relatedGenerals: [],
+    factionDesc: '身份不详',
+    biography: '此人身世成谜，据传有非凡之能，来历不明，却有一身好武艺。',
   };
 }
 
@@ -1342,6 +1401,15 @@ export default function ThreeKingdomsPixiGame() {
 
   // ─── 科技树 Tooltip 悬停状态 ──────────────────────────────
   const [hoveredTechNode, setHoveredTechNode] = useState<string | null>(null);
+
+  // ─── 季节系统 ──────────────────────────────────────────────
+  const [currentSeason, setCurrentSeason] = useState<'spring' | 'summer' | 'autumn' | 'winter'>('spring');
+
+  // ─── 武将详情 Tab ──────────────────────────────────────────
+  const [heroDetailTab, setHeroDetailTab] = useState<'info' | 'biography'>('info');
+
+  // ─── 日夜循环 ──────────────────────────────────────────────
+  const [isNight, setIsNight] = useState(false);
 
   // 征战关卡战斗报告
   const [showCampaignBattleReport, setShowCampaignBattleReport] = useState(false);
@@ -1619,6 +1687,25 @@ export default function ThreeKingdomsPixiGame() {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // ─── 季节系统（60秒自动切换） ──────────────────────────
+  useEffect(() => {
+    const seasons: Array<'spring' | 'summer' | 'autumn' | 'winter'> = ['spring', 'summer', 'autumn', 'winter'];
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx = (idx + 1) % seasons.length;
+      setCurrentSeason(seasons[idx]);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ─── 日夜循环（30秒切换一次） ──────────────────────────
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsNight(prev => !prev);
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // ─── 自动存档（60秒间隔） ─────────────────────────────
@@ -2038,7 +2125,9 @@ export default function ThreeKingdomsPixiGame() {
   }
 
   return (
-    <div style={{
+    <div
+      className={`tk-game-root tk-game-root--season-${currentSeason} ${isNight ? 'tk-game-root--night' : 'tk-game-root--day'}`}
+      style={{
       width: '100%',
       maxWidth: 1280,
       height: '100%',
@@ -2078,6 +2167,13 @@ export default function ThreeKingdomsPixiGame() {
           }}>
             ⚔ 三国霸业
           </span>
+          {/* 季节指示器 */}
+          <span className={`tk-season-indicator tk-season-indicator--${currentSeason}`}>
+            <span className="tk-season-icon">
+              {currentSeason === 'spring' ? '🌸' : currentSeason === 'summer' ? '☀️' : currentSeason === 'autumn' ? '🍂' : '❄️'}
+            </span>
+            {currentSeason === 'spring' ? '春季' : currentSeason === 'summer' ? '夏季' : currentSeason === 'autumn' ? '秋季' : '冬季'}
+          </span>
           {currentStage && !isMobile && (
             <span style={{
               fontSize: 12, color: currentStage.themeColor,
@@ -2106,7 +2202,7 @@ export default function ThreeKingdomsPixiGame() {
               onMouseLeave={() => setTooltip(null)}
             >
               <ResourceIcon resourceId={r.id} size={18} />
-              <span style={{ fontWeight: 'bold' }}>{fmt(r.amount)}</span>
+              <span className="tk-resource-value-pulse" style={{ fontWeight: 'bold' }}>{fmt(r.amount)}</span>
               {r.perSecond > 0 && (
                 <span style={{ fontSize: 10, color: COLOR_THEME.accentGreen }}>
                   +{fmt(r.perSecond)}/s
@@ -2221,6 +2317,43 @@ export default function ThreeKingdomsPixiGame() {
 
       {/* ═══════════ 中间区域：左面板 + PixiJS Canvas + 右面板 ═══════════ */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+
+        {/* ─── 环境氛围层：远山 + 花瓣/落叶 + 炊烟 ─── */}
+        <div className="tk-atmosphere-layer">
+          {/* 远山轮廓 */}
+          <div className="tk-mountain-layer" />
+          {/* 炊烟效果 */}
+          <div className="tk-smoke-layer">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="tk-smoke"
+                style={{
+                  left: `${20 + i * 30}%`,
+                  bottom: '15%',
+                  animationDuration: `${4 + i * 1.5}s`,
+                  animationDelay: `${i * 2}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+        {/* 飘落花瓣/落叶层 */}
+        <div className="tk-petal-layer">
+          {Array.from({ length: 8 }, (_, i) => (
+            <div
+              key={i}
+              className={`tk-petal tk-petal--${currentSeason}`}
+              style={{
+                left: `${5 + i * 12}%`,
+                animationDuration: `${6 + (i % 3) * 2}s`,
+                animationDelay: `${i * 1.5}s`,
+                width: currentSeason === 'winter' ? 6 : 8,
+                height: currentSeason === 'winter' ? 6 : 8,
+              }}
+            />
+          ))}
+        </div>
 
         {/* ─── 左侧面板：建筑/城市/资源点（仅地图场景显示，移动端隐藏） ─── */}
         {showBuildingPanel && !isMobile && (
@@ -3477,7 +3610,7 @@ export default function ThreeKingdomsPixiGame() {
               <div className="tk-scroll-panel" style={{ marginTop: 8 }}>
                 {/* 卷轴轴头端部装饰 */}
                 <div className="tk-scroll-endcap-left tk-scroll-endcap-top" />
-                <div className="tk-scroll-endcap-right tk-scroll-endcap-top" />
+                <div className="tk-scroll-endcap-right tk-scroll-scroll-top" />
                 <div className="tk-scroll-endcap-left tk-scroll-endcap-bottom" />
                 <div className="tk-scroll-endcap-right tk-scroll-endcap-bottom" />
 
@@ -3496,8 +3629,34 @@ export default function ThreeKingdomsPixiGame() {
                         {selectedHero.rarity} · Lv.{selectedHero.level}
                       </span>
                     </div>
+                    {/* 势力归属说明 */}
+                    {getGeneralEnhanced(selectedHero.id).factionDesc && (
+                      <div className="tk-faction-desc" style={{ marginTop: 4 }}>
+                        {getGeneralEnhanced(selectedHero.id).factionDesc}
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* 历史事件标签 */}
+                {getGeneralEnhanced(selectedHero.id).historyEvents && getGeneralEnhanced(selectedHero.id).historyEvents!.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                    {getGeneralEnhanced(selectedHero.id).historyEvents!.map((evt, i) => (
+                      <span key={i} className="tk-history-tag">📜 {evt}</span>
+                    ))}
+                  </div>
+                )}
+
+                {/* 关联武将提示 */}
+                {getGeneralEnhanced(selectedHero.id).relatedGenerals && getGeneralEnhanced(selectedHero.id).relatedGenerals!.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                    {getGeneralEnhanced(selectedHero.id).relatedGenerals!.map((rel, i) => (
+                      <span key={i} className="tk-related-general-tag">
+                        {rel.name} <span style={{ color: '#b87333', fontSize: 8 }}>「{rel.relation}」</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* 背景故事 */}
                 <div className="tk-bio-text" style={{ marginBottom: 8 }}>
@@ -3506,80 +3665,115 @@ export default function ThreeKingdomsPixiGame() {
 
                 <hr className="tk-scroll-divider" />
 
-                {/* 属性面板 */}
-                {selectedHero.unlocked && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
-                    {[
-                      { label: '攻击', value: selectedHero.stats.attack, color: '#c62828' },
-                      { label: '防御', value: selectedHero.stats.defense, color: '#2e4a7a' },
-                      { label: '智力', value: selectedHero.stats.intelligence, color: '#7b1fa2' },
-                      { label: '统率', value: selectedHero.stats.command, color: '#e65100' },
-                    ].map(stat => (
-                      <div key={stat.label} style={{
-                        background: 'rgba(139,115,85,0.1)', borderRadius: 4, padding: '4px 8px',
-                        display: 'flex', justifyContent: 'space-between',
-                      }}>
-                        <span className="tk-scroll-text-dim" style={{ fontSize: 10 }}>{stat.label}</span>
-                        <span style={{ fontSize: 12, fontWeight: 'bold', color: stat.color }}>{stat.value}</span>
+                {/* 详情 Tab 切换 */}
+                <div className="tk-detail-tabs">
+                  <button
+                    className={`tk-detail-tab-btn ${heroDetailTab === 'info' ? 'tk-detail-tab-btn--active' : ''}`}
+                    onClick={() => setHeroDetailTab('info')}
+                  >
+                    ◆ 属性
+                  </button>
+                  <button
+                    className={`tk-detail-tab-btn ${heroDetailTab === 'biography' ? 'tk-detail-tab-btn--active' : ''}`}
+                    onClick={() => setHeroDetailTab('biography')}
+                  >
+                    ◆ 传记
+                  </button>
+                </div>
+
+                {heroDetailTab === 'info' ? (
+                  <>
+                    {/* 属性面板 */}
+                    {selectedHero.unlocked && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
+                        {[
+                          { label: '攻击', value: selectedHero.stats.attack, color: '#c62828' },
+                          { label: '防御', value: selectedHero.stats.defense, color: '#2e4a7a' },
+                          { label: '智力', value: selectedHero.stats.intelligence, color: '#7b1fa2' },
+                          { label: '统率', value: selectedHero.stats.command, color: '#e65100' },
+                        ].map(stat => (
+                          <div key={stat.label} style={{
+                            background: 'rgba(139,115,85,0.1)', borderRadius: 4, padding: '4px 8px',
+                            display: 'flex', justifyContent: 'space-between',
+                          }}>
+                            <span className="tk-scroll-text-dim" style={{ fontSize: 10 }}>{stat.label}</span>
+                            <span style={{ fontSize: 12, fontWeight: 'bold', color: stat.color }}>{stat.value}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )}
 
-                <hr className="tk-scroll-divider" />
+                    <hr className="tk-scroll-divider" />
 
-                {/* 技能列表（带图标） */}
-                {selectedHero.unlocked && (
-                  <div style={{ marginBottom: 8 }}>
-                    <div className="tk-scroll-title" style={{ fontSize: 11, marginBottom: 4 }}>
-                      ◆ 技能
-                    </div>
-                    {getGeneralEnhanced(selectedHero.id).skills.map((skill, i) => (
-                      <div key={i} className="tk-skill-tag" style={{ marginBottom: 3, display: 'flex', alignItems: 'flex-start', gap: 4, padding: '4px 6px' }}>
-                        <SkillIcon skillType={skill.type} size={16} />
-                        <div>
-                          <div className="tk-scroll-text" style={{ fontSize: 11, fontWeight: 'bold' }}>{skill.name}</div>
-                          <div className="tk-scroll-text-dim" style={{ fontSize: 9, marginTop: 1 }}>{skill.description}</div>
+                    {/* 技能列表（增强：效果说明 + 冷却 + 伤害类型） */}
+                    {selectedHero.unlocked && (
+                      <div style={{ marginBottom: 8 }}>
+                        <div className="tk-scroll-title" style={{ fontSize: 11, marginBottom: 4 }}>
+                          ◆ 技能
+                        </div>
+                        {getGeneralEnhanced(selectedHero.id).skills.map((skill, i) => (
+                          <div key={i} className="tk-skill-detail">
+                            <div className="tk-skill-detail-name">
+                              <SkillIcon skillType={skill.type} size={16} />
+                              {skill.name}
+                              {skill.damageType && (
+                                <span className={`tk-skill-type-badge tk-skill-type-badge--${skill.damageType}`}>
+                                  {skill.damageType === 'physical' ? '物理' : skill.damageType === 'magic' ? '法术' : '辅助'}
+                                </span>
+                              )}
+                              {skill.cooldown && (
+                                <span className="tk-skill-cooldown">⏱ {skill.cooldown}s</span>
+                              )}
+                            </div>
+                            <div className="tk-skill-detail-desc">
+                              {skill.effect || skill.description}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <hr className="tk-scroll-divider" />
+
+                    {/* 装备槽位 */}
+                    {selectedHero.unlocked && (
+                      <div>
+                        <div className="tk-scroll-title" style={{ fontSize: 11, marginBottom: 6 }}>
+                          ◆ 装备
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          {(['weapon', 'armor', 'mount'] as const).map(slot => {
+                            const equipData = getGeneralEnhanced(selectedHero.id).equipment;
+                            const equipped = equipData[slot];
+                            const slotLabels: Record<string, string> = { weapon: '武器', armor: '防具', mount: '坐骑' };
+                            return (
+                              <div
+                                key={slot}
+                                className={`tk-equip-slot ${equipped ? 'tk-equip-slot--equipped' : ''}`}
+                              >
+                                {equipped ? (
+                                  <>
+                                    <EquipSlotIcon slotType={slot} size={18} />
+                                    <span className="tk-equip-slot-name">{equipped}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <EquipSlotIcon slotType={slot} size={18} />
+                                    <span className="tk-equip-slot-label">{slotLabels[slot]}</span>
+                                    <span className="tk-equip-slot-label" style={{ color: '#aaa', fontSize: 8 }}>未装备</span>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                <hr className="tk-scroll-divider" />
-
-                {/* 装备槽位 */}
-                {selectedHero.unlocked && (
-                  <div>
-                    <div className="tk-scroll-title" style={{ fontSize: 11, marginBottom: 6 }}>
-                      ◆ 装备
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {(['weapon', 'armor', 'mount'] as const).map(slot => {
-                        const equipData = getGeneralEnhanced(selectedHero.id).equipment;
-                        const equipped = equipData[slot];
-                        const slotLabels: Record<string, string> = { weapon: '武器', armor: '防具', mount: '坐骑' };
-                        return (
-                          <div
-                            key={slot}
-                            className={`tk-equip-slot ${equipped ? 'tk-equip-slot--equipped' : ''}`}
-                          >
-                            {equipped ? (
-                              <>
-                                <EquipSlotIcon slotType={slot} size={18} />
-                                <span className="tk-equip-slot-name">{equipped}</span>
-                              </>
-                            ) : (
-                              <>
-                                <EquipSlotIcon slotType={slot} size={18} />
-                                <span className="tk-equip-slot-label">{slotLabels[slot]}</span>
-                                <span className="tk-equip-slot-label" style={{ color: '#aaa', fontSize: 8 }}>未装备</span>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                    )}
+                  </>
+                ) : (
+                  /* 传记 Tab 内容 */
+                  <div className="tk-biography-text" style={{ marginTop: 4 }}>
+                    {getGeneralEnhanced(selectedHero.id).biography || '此人传记尚在编撰之中……'}
                   </div>
                 )}
               </div>
@@ -3682,8 +3876,34 @@ export default function ThreeKingdomsPixiGame() {
                       {selectedHero.rarity} · Lv.{selectedHero.level}
                     </span>
                   </div>
+                  {/* 势力归属说明 */}
+                  {getGeneralEnhanced(selectedHero.id).factionDesc && (
+                    <div className="tk-faction-desc" style={{ marginTop: 4 }}>
+                      {getGeneralEnhanced(selectedHero.id).factionDesc}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* 历史事件标签 */}
+              {getGeneralEnhanced(selectedHero.id).historyEvents && getGeneralEnhanced(selectedHero.id).historyEvents!.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                  {getGeneralEnhanced(selectedHero.id).historyEvents!.map((evt, i) => (
+                    <span key={i} className="tk-history-tag">📜 {evt}</span>
+                  ))}
+                </div>
+              )}
+
+              {/* 关联武将提示 */}
+              {getGeneralEnhanced(selectedHero.id).relatedGenerals && getGeneralEnhanced(selectedHero.id).relatedGenerals!.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                  {getGeneralEnhanced(selectedHero.id).relatedGenerals!.map((rel, i) => (
+                    <span key={i} className="tk-related-general-tag">
+                      {rel.name} <span style={{ color: '#b87333', fontSize: 8 }}>「{rel.relation}」</span>
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* 背景故事 */}
               <div className="tk-bio-text" style={{ marginBottom: 10 }}>
@@ -3692,81 +3912,116 @@ export default function ThreeKingdomsPixiGame() {
 
               <hr className="tk-scroll-divider" />
 
-              {/* 属性面板 */}
-              {selectedHero.unlocked && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
-                  {[
-                    { label: '攻击', value: selectedHero.stats.attack, color: '#c62828' },
-                    { label: '防御', value: selectedHero.stats.defense, color: '#2e4a7a' },
-                    { label: '智力', value: selectedHero.stats.intelligence, color: '#7b1fa2' },
-                    { label: '统率', value: selectedHero.stats.command, color: '#e65100' },
-                  ].map(stat => (
-                    <div key={stat.label} style={{
-                      background: 'rgba(139,115,85,0.1)', borderRadius: 4, padding: '6px 10px',
-                      display: 'flex', justifyContent: 'space-between',
-                    }}>
-                      <span className="tk-scroll-text-dim" style={{ fontSize: 11 }}>{stat.label}</span>
-                      <span style={{ fontSize: 14, fontWeight: 'bold', color: stat.color }}>{stat.value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* 详情 Tab 切换 */}
+              <div className="tk-detail-tabs">
+                <button
+                  className={`tk-detail-tab-btn ${heroDetailTab === 'info' ? 'tk-detail-tab-btn--active' : ''}`}
+                  onClick={() => setHeroDetailTab('info')}
+                >
+                  ◆ 属性
+                </button>
+                <button
+                  className={`tk-detail-tab-btn ${heroDetailTab === 'biography' ? 'tk-detail-tab-btn--active' : ''}`}
+                  onClick={() => setHeroDetailTab('biography')}
+                >
+                  ◆ 传记
+                </button>
+              </div>
 
-              <hr className="tk-scroll-divider" />
-
-              {/* 技能列表 */}
-              {selectedHero.unlocked && (
-                <div style={{ marginBottom: 10 }}>
-                  <div className="tk-scroll-title" style={{ fontSize: 12, marginBottom: 6 }}>
-                    ◆ 技能
-                  </div>
-                  {getGeneralEnhanced(selectedHero.id).skills.map((skill, i) => (
-                    <div key={i} className="tk-skill-tag" style={{ marginBottom: 4, display: 'flex', alignItems: 'flex-start', gap: 6, padding: '6px 8px' }}>
-                      <SkillIcon skillType={skill.type} size={18} />
-                      <div>
-                        <div className="tk-scroll-text" style={{ fontSize: 12, fontWeight: 'bold' }}>{skill.name}</div>
-                        <div className="tk-scroll-text-dim" style={{ fontSize: 10, marginTop: 2 }}>{skill.description}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <hr className="tk-scroll-divider" />
-
-              {/* 装备槽位 */}
-              {selectedHero.unlocked && (
-                <div>
-                  <div className="tk-scroll-title" style={{ fontSize: 12, marginBottom: 8 }}>
-                    ◆ 装备
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {(['weapon', 'armor', 'mount'] as const).map(slot => {
-                      const equipData = getGeneralEnhanced(selectedHero.id).equipment;
-                      const equipped = equipData[slot];
-                      const slotLabels: Record<string, string> = { weapon: '武器', armor: '防具', mount: '坐骑' };
-                      return (
-                        <div
-                          key={slot}
-                          className={`tk-equip-slot ${equipped ? 'tk-equip-slot--equipped' : ''}`}
-                          style={{ minWidth: 70, padding: '8px 6px' }}
-                        >
-                          {equipped ? (
-                            <>
-                              <EquipSlotIcon slotType={slot} size={20} />
-                              <span className="tk-equip-slot-name" style={{ fontSize: 10 }}>{equipped}</span>
-                            </>
-                          ) : (
-                            <>
-                              <EquipSlotIcon slotType={slot} size={20} />
-                              <span className="tk-equip-slot-label">{slotLabels[slot]}</span>
-                              <span className="tk-equip-slot-label" style={{ color: '#aaa', fontSize: 8 }}>未装备</span>
-                            </>
-                          )}
+              {heroDetailTab === 'info' ? (
+                <>
+                  {/* 属性面板 */}
+                  {selectedHero.unlocked && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+                      {[
+                        { label: '攻击', value: selectedHero.stats.attack, color: '#c62828' },
+                        { label: '防御', value: selectedHero.stats.defense, color: '#2e4a7a' },
+                        { label: '智力', value: selectedHero.stats.intelligence, color: '#7b1fa2' },
+                        { label: '统率', value: selectedHero.stats.command, color: '#e65100' },
+                      ].map(stat => (
+                        <div key={stat.label} style={{
+                          background: 'rgba(139,115,85,0.1)', borderRadius: 4, padding: '6px 10px',
+                          display: 'flex', justifyContent: 'space-between',
+                        }}>
+                          <span className="tk-scroll-text-dim" style={{ fontSize: 11 }}>{stat.label}</span>
+                          <span style={{ fontSize: 14, fontWeight: 'bold', color: stat.color }}>{stat.value}</span>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
+                  )}
+
+                  <hr className="tk-scroll-divider" />
+
+                  {/* 技能列表（增强） */}
+                  {selectedHero.unlocked && (
+                    <div style={{ marginBottom: 10 }}>
+                      <div className="tk-scroll-title" style={{ fontSize: 12, marginBottom: 6 }}>
+                        ◆ 技能
+                      </div>
+                      {getGeneralEnhanced(selectedHero.id).skills.map((skill, i) => (
+                        <div key={i} className="tk-skill-detail">
+                          <div className="tk-skill-detail-name">
+                            <SkillIcon skillType={skill.type} size={18} />
+                            {skill.name}
+                            {skill.damageType && (
+                              <span className={`tk-skill-type-badge tk-skill-type-badge--${skill.damageType}`}>
+                                {skill.damageType === 'physical' ? '物理' : skill.damageType === 'magic' ? '法术' : '辅助'}
+                              </span>
+                            )}
+                            {skill.cooldown && (
+                              <span className="tk-skill-cooldown">⏱ {skill.cooldown}s</span>
+                            )}
+                          </div>
+                          <div className="tk-skill-detail-desc">
+                            {skill.effect || skill.description}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <hr className="tk-scroll-divider" />
+
+                  {/* 装备槽位 */}
+                  {selectedHero.unlocked && (
+                    <div>
+                      <div className="tk-scroll-title" style={{ fontSize: 12, marginBottom: 8 }}>
+                        ◆ 装备
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {(['weapon', 'armor', 'mount'] as const).map(slot => {
+                          const equipData = getGeneralEnhanced(selectedHero.id).equipment;
+                          const equipped = equipData[slot];
+                          const slotLabels: Record<string, string> = { weapon: '武器', armor: '防具', mount: '坐骑' };
+                          return (
+                            <div
+                              key={slot}
+                              className={`tk-equip-slot ${equipped ? 'tk-equip-slot--equipped' : ''}`}
+                              style={{ minWidth: 70, padding: '8px 6px' }}
+                            >
+                              {equipped ? (
+                                <>
+                                  <EquipSlotIcon slotType={slot} size={20} />
+                                  <span className="tk-equip-slot-name" style={{ fontSize: 10 }}>{equipped}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EquipSlotIcon slotType={slot} size={20} />
+                                  <span className="tk-equip-slot-label">{slotLabels[slot]}</span>
+                                  <span className="tk-equip-slot-label" style={{ color: '#aaa', fontSize: 8 }}>未装备</span>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
                   </div>
+                </div>
+              )}
+            </>
+              ) : (
+                /* 传记 Tab 内容 */
+                <div className="tk-biography-text" style={{ marginTop: 4 }}>
+                  {getGeneralEnhanced(selectedHero.id).biography || '此人传记尚在编撰之中……'}
                 </div>
               )}
             </div>
