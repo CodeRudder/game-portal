@@ -302,18 +302,18 @@ const ACHIEVEMENTS = [
 /** 关卡状态对应的显示文本和颜色 */
 const STAGE_STATUS_MAP: Record<string, { label: string; color: string }> = {
   locked: { label: '🔒', color: '#666' },
-  available: { label: '⚔️', color: '#4ade80' },
-  in_progress: { label: '⚔️', color: '#facc15' },
-  victory: { label: '✅', color: '#60a5fa' },
-  defeated: { label: '💀', color: '#f87171' },
+  available: { label: '⚔️', color: '#6b8e5a' },
+  in_progress: { label: '⚔️', color: '#d4a030' },
+  victory: { label: '✅', color: '#4a6fa5' },
+  defeated: { label: '💀', color: '#a85241' },
 };
 
 /** 难度对应的颜色和标签 */
 const DIFFICULTY_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  easy: { label: '简单', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' },
-  normal: { label: '普通', color: '#facc15', bg: 'rgba(250,204,21,0.15)' },
-  hard: { label: '困难', color: '#f97316', bg: 'rgba(249,115,22,0.15)' },
-  legendary: { label: '传奇', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' },
+  easy: { label: '简单', color: '#6b8e5a', bg: 'rgba(107,142,90,0.15)' },
+  normal: { label: '普通', color: '#d4a030', bg: 'rgba(212,160,48,0.15)' },
+  hard: { label: '困难', color: '#b87333', bg: 'rgba(184,115,51,0.15)' },
+  legendary: { label: '传奇', color: '#c62828', bg: 'rgba(198,40,40,0.15)' },
 };
 
 /** 兵种图标映射 */
@@ -361,7 +361,7 @@ function LevelDetailModal({
     }}>
       {/* 标题行 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 18, color: CT.accentGold }}>{detail.name}</h2>
+        <h2 style={{ margin: 0, fontSize: 18, color: CT.accentGold, fontFamily: '"Noto Serif SC", serif', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>◆ {detail.name}</h2>
         <span style={{
           fontSize: 12, padding: '2px 10px', borderRadius: 4,
           color: diff.color, background: diff.bg, fontWeight: 'bold',
@@ -379,7 +379,7 @@ function LevelDetailModal({
       <div style={{ marginBottom: 10 }}>
         <div style={{ fontSize: 13, fontWeight: 'bold', color: CT.accentGold, marginBottom: 4 }}>🏴 守军</div>
         <div style={{ fontSize: 12, lineHeight: 1.8 }}>
-          <div>主将：<span style={{ color: '#f87171', fontWeight: 'bold' }}>{detail.defender.lord}</span></div>
+          <div>主将：<span style={{ color: '#c62828', fontWeight: 'bold' }}>{detail.defender.lord}</span></div>
           {detail.defender.officers.length > 0 && (
             <div>副将：{detail.defender.officers.map((o, i) => (
               <span key={i} style={{ color: CT.textDim }}>{o}{i < detail.defender.officers.length - 1 ? '、' : ''}</span>
@@ -403,7 +403,7 @@ function LevelDetailModal({
       {/* 城防 */}
       <div style={{ marginBottom: 10, fontSize: 12 }}>
         <span style={{ color: CT.accentGold, fontWeight: 'bold' }}>🏰 城防：</span>
-        <span style={{ color: '#facc15' }}>{fortLevelStars(detail.defender.fortLevel)}</span>
+        <span style={{ color: '#d4a030' }}>{fortLevelStars(detail.defender.fortLevel)}</span>
         <span style={{ color: CT.textDim, marginLeft: 6 }}>Lv.{detail.defender.fortLevel}</span>
       </div>
 
@@ -414,20 +414,20 @@ function LevelDetailModal({
           background: 'rgba(74,222,128,0.06)', borderRadius: 6,
           border: '1px solid rgba(74,222,128,0.15)',
         }}>
-          <div style={{ fontSize: 13, fontWeight: 'bold', color: '#4ade80', marginBottom: 6 }}>🎁 攻克奖励</div>
+          <div style={{ fontSize: 13, fontWeight: 'bold', color: '#6b8e5a', marginBottom: 6 }}>🎁 攻克奖励</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: CT.textPrimary }}>
             {detail.rewards.gold > 0 && <span>💰 金 {detail.rewards.gold}</span>}
             {detail.rewards.food > 0 && <span>🌾 粮 {detail.rewards.food}</span>}
             {detail.rewards.materials > 0 && <span>📦 材料 {detail.rewards.materials}</span>}
-            {detail.rewards.recruitHero && <span style={{ color: '#facc15' }}>🧑‍✈️ 可招募英雄</span>}
-            {detail.rewards.unlockBuilding && <span style={{ color: '#60a5fa' }}>🏗️ 解锁建筑</span>}
+            {detail.rewards.recruitHero && <span style={{ color: '#d4a030' }}>🧑‍✈️ 可招募英雄</span>}
+            {detail.rewards.unlockBuilding && <span style={{ color: '#4a6fa5' }}>🏗️ 解锁建筑</span>}
           </div>
         </div>
       )}
 
       {/* 无法攻打原因 */}
       {!canAttack && statusInfo.reason && (
-        <div style={{ fontSize: 12, color: '#f87171', marginBottom: 10, textAlign: 'center' }}>
+        <div style={{ fontSize: 12, color: '#a85241', marginBottom: 10, textAlign: 'center' }}>
           {statusInfo.reason}
         </div>
       )}
@@ -512,7 +512,7 @@ function CampaignPanel({
       color: CT.textPrimary,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h2 style={{ margin: 0, fontSize: 18, color: CT.accentGold }}>🏆 征战天下</h2>
+        <h2 style={{ margin: 0, fontSize: 18, color: CT.accentGold, fontFamily: '"Noto Serif SC", serif', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>◆ 🏆 征战天下</h2>
         <button onClick={onClose} style={{
           background: 'transparent', border: `1px solid ${CT.selectedBorder}`,
           color: CT.textDim, borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12,
@@ -557,7 +557,7 @@ function CampaignPanel({
                     {stage.name}
                   </span>
                   {stage.stars > 0 && (
-                    <span style={{ fontSize: 11, color: '#facc15' }}>{'⭐'.repeat(stage.stars)}</span>
+                    <span style={{ fontSize: 11, color: '#d4a030' }}>{'⭐'.repeat(stage.stars)}</span>
                   )}
                 </div>
                 {/* 第二行：时代标签 + 难度 + 战力 */}
@@ -583,12 +583,12 @@ function CampaignPanel({
                 </div>
               </div>
               {!isLocked && stage.status !== 'victory' && (
-                <span style={{ fontSize: 11, color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)',
+                <span style={{ fontSize: 11, color: '#6b8e5a', border: '1px solid rgba(107,142,90,0.3)',
                   padding: '1px 8px', borderRadius: 4, whiteSpace: 'nowrap',
                 }}>可攻</span>
               )}
               {isVictory && (
-                <span style={{ fontSize: 11, color: '#60a5fa', whiteSpace: 'nowrap' }}>已攻克</span>
+                <span style={{ fontSize: 11, color: '#4a6fa5', whiteSpace: 'nowrap' }}>已攻克</span>
               )}
             </div>
           );
@@ -647,17 +647,17 @@ function CampaignBattleReport({
       transform: 'translate(-50%, -50%)',
       background: 'rgba(0,0,0,0.95)', borderRadius: 12, padding: 24,
       width: 420, maxHeight: '85vh', overflowY: 'auto',
-      border: `2px solid ${isVictory ? '#4ade80' : '#ef4444'}`,
+      border: `2px solid ${isVictory ? '#6b8e5a' : '#a85241'}`,
       color: CT.textPrimary, zIndex: 120,
     }}>
       {/* 标题 */}
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div style={{ fontSize: 32, marginBottom: 6 }}>{isVictory ? '🎉' : '💀'}</div>
-        <h2 style={{ margin: 0, fontSize: 20, color: isVictory ? '#4ade80' : '#ef4444' }}>
-          {isVictory ? '大获全胜！' : '兵败如山倒'}
+        <h2 style={{ margin: 0, fontSize: 20, color: isVictory ? '#6b8e5a' : '#a85241', fontFamily: '"Noto Serif SC", serif', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+          {isVictory ? '◆ 大获全胜！' : '◆ 兵败如山倒'}
         </h2>
         {result.stars != null && result.stars > 0 && (
-          <div style={{ fontSize: 18, marginTop: 4, color: '#facc15' }}>{'⭐'.repeat(result.stars)}</div>
+          <div style={{ fontSize: 18, marginTop: 4, color: '#d4a030' }}>{'⭐'.repeat(result.stars)}</div>
         )}
       </div>
 
@@ -694,13 +694,13 @@ function CampaignBattleReport({
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: CT.textDim, marginBottom: 2 }}>我方损失</div>
-          <div style={{ fontSize: 18, fontWeight: 'bold', color: '#f87171' }}>
+          <div style={{ fontSize: 18, fontWeight: 'bold', color: '#a85241' }}>
             {result.totalAttackerLosses ?? 0}
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: CT.textDim, marginBottom: 2 }}>敌方损失</div>
-          <div style={{ fontSize: 18, fontWeight: 'bold', color: '#4ade80' }}>
+          <div style={{ fontSize: 18, fontWeight: 'bold', color: '#6b8e5a' }}>
             {result.totalDefenderLosses ?? 0}
           </div>
         </div>
@@ -719,14 +719,14 @@ function CampaignBattleReport({
           padding: 10, borderRadius: 8, background: 'rgba(74,222,128,0.06)',
           border: '1px solid rgba(74,222,128,0.15)', marginBottom: 14,
         }}>
-          <div style={{ fontSize: 13, fontWeight: 'bold', color: '#4ade80', marginBottom: 6 }}>🎁 战利品</div>
+          <div style={{ fontSize: 13, fontWeight: 'bold', color: '#6b8e5a', marginBottom: 6 }}>🎁 战利品</div>
           <div style={{ fontSize: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {result.rewards.territory && <span>🏰 {result.rewards.territory}</span>}
             {result.rewards.resources && Object.entries(result.rewards.resources).map(([key, val]) => (
               <span key={key}>{key}: {val}</span>
             ))}
             {result.rewards.unlockHero && (
-              <span style={{ color: '#facc15' }}>🧑‍✈️ 解锁英雄</span>
+              <span style={{ color: '#d4a030' }}>🧑‍✈️ 解锁英雄</span>
             )}
           </div>
         </div>
@@ -737,7 +737,7 @@ function CampaignBattleReport({
         display: 'block', margin: '0 auto',
         padding: '10px 32px', fontSize: 14,
         cursor: 'pointer', borderRadius: 8, border: 'none',
-        background: isVictory ? '#4ade80' : '#ef4444',
+        background: isVictory ? '#6b8e5a' : '#a85241',
         color: '#000', fontWeight: 'bold',
       }}>
         {isVictory ? '确认' : '返回'}
@@ -1336,9 +1336,12 @@ export default function ThreeKingdomsPixiGame() {
         borderRadius: 8,
         boxSizing: 'border-box',
       }}>
-        <h1 style={{ fontSize: 36, color: COLOR_THEME.accentGold, marginBottom: 8 }}>
+        <h1 style={{ fontSize: 36, color: COLOR_THEME.accentGold, marginBottom: 4 }}>
           三国霸业
         </h1>
+        <p style={{ color: COLOR_THEME.accentGold, marginBottom: 2, fontSize: 14, opacity: 0.6, letterSpacing: 8 }}>
+          ◆ 魏 · 蜀 · 吳 ◆
+        </p>
         <p style={{ color: COLOR_THEME.textSecondary, marginBottom: 24, fontSize: 14 }}>
           加载资源中...
         </p>
@@ -1371,19 +1374,21 @@ export default function ThreeKingdomsPixiGame() {
       display: 'flex', flexDirection: 'column',
       background: COLOR_THEME.bgGradient1,
       color: COLOR_THEME.textPrimary,
-      fontFamily: '"Noto Serif SC", sans-serif',
+      fontFamily: '"Noto Serif SC", serif',
       overflow: 'hidden',
       position: 'relative',
       borderRadius: 8,
       boxSizing: 'border-box',
+      border: '2px solid #8B7355',
+      boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5), 0 0 15px rgba(139,115,85,0.2)',
     }}>
       {/* ═══════════ 顶部：资源栏 + 当前阶段 ═══════════ */}
       <header style={{
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between',
         padding: isMobile ? '4px 8px' : '6px 16px',
-        background: 'rgba(0,0,0,0.6)',
-        borderBottom: `1px solid ${COLOR_THEME.selectedBorder}`,
+        background: 'linear-gradient(180deg, rgba(45,27,10,0.9) 0%, rgba(0,0,0,0.6) 100%)',
+        borderBottom: `2px solid ${COLOR_THEME.selectedBorder}`,
         zIndex: 10, flexShrink: 0,
         flexWrap: isMobile ? 'wrap' : 'nowrap',
         gap: isMobile ? 4 : 0,
@@ -1394,14 +1399,16 @@ export default function ThreeKingdomsPixiGame() {
             fontSize: isMobile ? 14 : 18, fontWeight: 'bold',
             color: COLOR_THEME.accentGold,
             fontFamily: '"Noto Serif SC", serif',
+            textShadow: '0 1px 4px rgba(0,0,0,0.5)',
           }}>
-            三国霸业
+            ⚔ 三国霸业
           </span>
           {currentStage && !isMobile && (
             <span style={{
               fontSize: 12, color: currentStage.themeColor,
-              background: 'rgba(255,255,255,0.08)',
+              background: 'rgba(139,115,85,0.12)',
               padding: '2px 10px', borderRadius: 10,
+              border: '1px solid rgba(139,115,85,0.25)',
             }}>
               {currentStage.name} — {currentStage.description}
             </span>
@@ -1441,9 +1448,10 @@ export default function ThreeKingdomsPixiGame() {
           </span>
           <span style={{
             color: COLOR_THEME.accentGold,
-            background: 'rgba(255,215,0,0.1)',
+            background: 'rgba(139,115,85,0.12)',
             padding: '1px 8px', borderRadius: 8,
             fontSize: 11,
+            border: '1px solid rgba(139,115,85,0.2)',
           }}>
             {renderState?.calendar?.season}季 · {renderState?.calendar?.shichen}时
           </span>
@@ -1500,14 +1508,14 @@ export default function ThreeKingdomsPixiGame() {
         {showBuildingPanel && !isMobile && (
         <aside style={{
           width: 240, flexShrink: 0,
-          background: 'linear-gradient(180deg, rgba(45,27,10,0.85), rgba(26,14,5,0.9))',
-          borderRight: '1px solid rgba(212,160,48,0.15)',
+          background: 'linear-gradient(180deg, rgba(45,27,10,0.9) 0%, rgba(26,14,5,0.95) 100%)',
+          borderRight: '2px solid rgba(139,115,85,0.3)',
           overflowY: 'auto', padding: 8,
           zIndex: 5,
           display: 'flex', flexDirection: 'column',
         }}>
           {/* 子标签栏 */}
-          <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 2, marginBottom: 8, borderBottom: '1px solid rgba(139,115,85,0.2)', paddingBottom: 6 }}>
             {[
               { key: 'building' as const, label: '🏗️建筑' },
               { key: 'cities' as const, label: '🏰城市' },
@@ -1518,15 +1526,18 @@ export default function ThreeKingdomsPixiGame() {
                 onClick={() => setActiveMapSubTab(tab.key)}
                 style={{
                   flex: 1, padding: '4px 6px', fontSize: 10,
-                  borderRadius: 4, border: 'none', cursor: 'pointer',
+                  borderRadius: 4, border: '1px solid transparent', cursor: 'pointer',
                   background: activeMapSubTab === tab.key
-                    ? 'rgba(255,215,0,0.15)'
-                    : 'rgba(255,255,255,0.05)',
+                    ? 'rgba(201,169,110,0.18)'
+                    : 'rgba(139,115,85,0.06)',
                   color: activeMapSubTab === tab.key
                     ? COLOR_THEME.accentGold
                     : COLOR_THEME.textSecondary,
                   fontWeight: activeMapSubTab === tab.key ? 'bold' : 'normal',
                   transition: 'all 0.2s',
+                  borderBottom: activeMapSubTab === tab.key
+                    ? '2px solid #c9a96e'
+                    : '2px solid transparent',
                 }}
               >
                 {tab.label}
@@ -1789,14 +1800,15 @@ export default function ThreeKingdomsPixiGame() {
               style={{
                 position: 'absolute', top: 12, right: 12,
                 padding: '6px 14px', fontSize: 12, fontWeight: 'bold',
-                borderRadius: 6, border: 'none', cursor: 'pointer',
+                borderRadius: 6, border: '1px solid rgba(201,169,110,0.5)', cursor: 'pointer',
                 background: `linear-gradient(135deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
                 color: '#1a0a0a',
                 boxShadow: '0 2px 8px rgba(255,215,0,0.3)',
                 zIndex: 10,
+                textShadow: '0 1px 2px rgba(0,0,0,0.2)',
               }}
             >
-              👑 声望
+              ◆ 声望
             </button>
           )}
 
@@ -1875,8 +1887,9 @@ export default function ThreeKingdomsPixiGame() {
               <h2 style={{
                 fontSize: 22, color: COLOR_THEME.accentGold,
                 marginBottom: 16, fontFamily: '"Noto Serif SC", serif',
+                textShadow: '0 1px 4px rgba(0,0,0,0.5)',
               }}>
-                👑 声望转生
+                ◆ 👑 声望转生
               </h2>
               <div style={{ fontSize: 13, lineHeight: 2, color: COLOR_THEME.textPrimary }}>
                 <div>天命: <b style={{ color: COLOR_THEME.accentGold }}>{fmt(prestigeData.currency)}</b> | 转生: {prestigeData.count}次</div>
@@ -1965,8 +1978,9 @@ export default function ThreeKingdomsPixiGame() {
                 fontSize: 20, color: COLOR_THEME.accentGold,
                 marginBottom: 16, fontFamily: '"Noto Serif SC", serif',
                 textAlign: 'center',
+                textShadow: '0 1px 4px rgba(0,0,0,0.5)',
               }}>
-                📜 科技研究
+                ◆ 📜 科技研究
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {renderState.techTree.nodes.map(node => {
@@ -2113,9 +2127,9 @@ export default function ThreeKingdomsPixiGame() {
               <div style={{
                 color: '#c9a96e', fontSize: 28, marginBottom: 8,
                 fontFamily: '"Noto Serif SC", serif',
-                textShadow: '0 0 20px rgba(255,215,0,0.5)',
+                textShadow: '0 0 20px rgba(255,215,0,0.5), 0 2px 4px rgba(0,0,0,0.5)',
               }}>
-                ⚔️ 战斗中
+                ⚔️ 战 斗 中 ⚔️
               </div>
               {combatData && (
                 <div style={{ color: '#aaa', fontSize: 14, marginBottom: 20 }}>
@@ -2162,8 +2176,8 @@ export default function ThreeKingdomsPixiGame() {
         {showHeroPanel && !isMobile && (
         <aside style={{
           width: selectedHero ? 320 : 220, flexShrink: 0,
-          background: 'linear-gradient(180deg, rgba(45,27,10,0.85), rgba(26,14,5,0.9))',
-          borderLeft: '1px solid rgba(212,160,48,0.15)',
+          background: 'linear-gradient(180deg, rgba(45,27,10,0.9) 0%, rgba(26,14,5,0.95) 100%)',
+          borderLeft: '2px solid rgba(139,115,85,0.3)',
           overflowY: 'auto', padding: 8,
           zIndex: 5,
           display: 'flex', flexDirection: 'column',
@@ -2271,8 +2285,10 @@ export default function ThreeKingdomsPixiGame() {
                 color: COLOR_THEME.accentGold,
                 marginBottom: 8, paddingBottom: 4,
                 borderBottom: `1px solid ${COLOR_THEME.selectedBorder}`,
+                fontFamily: '"Noto Serif SC", serif',
+                textShadow: '0 1px 3px rgba(0,0,0,0.5)',
               }}>
-                ⚔️ 武将
+                ◆ ⚔️ 武将
               </h3>
               {heroes.map(h => {
                 const rarityColor = RARITY_COLORS[h.rarity] || COLOR_THEME.textPrimary;
@@ -2432,8 +2448,8 @@ export default function ThreeKingdomsPixiGame() {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         gap: isMobile ? 4 : 8,
         padding: isMobile ? '4px 8px' : '6px 16px',
-        background: 'rgba(0,0,0,0.6)',
-        borderTop: `1px solid rgba(255,255,255,0.08)`,
+        background: 'linear-gradient(0deg, rgba(45,27,10,0.9) 0%, rgba(0,0,0,0.6) 100%)',
+        borderTop: `2px solid rgba(139,115,85,0.4)`,
         zIndex: 10, flexShrink: 0,
         position: isMobile ? 'sticky' : 'static',
         bottom: 0,
@@ -2447,14 +2463,17 @@ export default function ThreeKingdomsPixiGame() {
               style={{
                 padding: isMobile ? '4px 10px' : '5px 16px',
                 fontSize: isMobile ? 10 : 12,
-                borderRadius: 4, border: 'none', cursor: 'pointer',
+                borderRadius: 4,
+                border: isActive ? '1px solid #c9a96e' : '1px solid transparent',
+                cursor: 'pointer',
                 background: isActive
-                  ? 'rgba(255,215,0,0.15)'
-                  : 'rgba(255,255,255,0.05)',
+                  ? 'linear-gradient(180deg, rgba(201,169,110,0.2) 0%, rgba(139,115,85,0.1) 100%)'
+                  : 'rgba(139,115,85,0.06)',
                 color: isActive ? COLOR_THEME.accentGold : COLOR_THEME.textSecondary,
-                borderLeft: isActive ? `2px solid ${COLOR_THEME.accentGold}` : '2px solid transparent',
                 fontWeight: isActive ? 'bold' : 'normal',
                 transition: 'all 0.2s',
+                position: 'relative',
+                boxShadow: isActive ? '0 0 8px rgba(201,169,110,0.15)' : 'none',
               }}
             >
               {tab.icon} {tab.label}
@@ -2518,8 +2537,9 @@ export default function ThreeKingdomsPixiGame() {
               <h2 style={{
                 fontSize: 22, color: COLOR_THEME.accentGold,
                 marginBottom: 12, fontFamily: '"Noto Serif SC", serif',
+                textShadow: '0 1px 4px rgba(0,0,0,0.5)',
               }}>
-                {step.title}
+                ◆ {step.title}
               </h2>
               <p style={{
                 fontSize: 14, color: COLOR_THEME.textPrimary,
@@ -2592,7 +2612,7 @@ export default function ThreeKingdomsPixiGame() {
         <div style={{position:'absolute',inset:0,zIndex:60,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'center',justifyContent:'center'}}>
           <div style={{background:'#2a1f14',border:'2px solid #8B7355',borderRadius:8,padding:24,minWidth:360,maxHeight:'80vh',overflow:'auto'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <h3 style={{color:'#c9a96e',margin:0}}>📜 存档管理</h3>
+              <h3 style={{color:'#c9a96e',margin:0,fontFamily:'"Noto Serif SC", serif',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}>◆ 📜 存档管理</h3>
               <button onClick={() => setShowSavePanel(false)} style={{background:'transparent',color:'#c9a96e',border:'none',cursor:'pointer',fontSize:18}}>✕</button>
             </div>
             <button onClick={() => {
@@ -2636,7 +2656,7 @@ export default function ThreeKingdomsPixiGame() {
           <div style={{position:'absolute',inset:0,zIndex:60,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'center',justifyContent:'center'}}>
             <div style={{background:'#2a1f14',border:'2px solid #8B7355',borderRadius:8,padding:24,minWidth:440,maxHeight:'80vh',overflow:'auto'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <h3 style={{color:'#c9a96e',margin:0}}>🏆 成就 ({unlocked}/{ACHS.length})</h3>
+                <h3 style={{color:'#c9a96e',margin:0,fontFamily:'"Noto Serif SC", serif',textShadow:'0 1px 3px rgba(0,0,0,0.5)'}}>◆ 🏆 成就 ({unlocked}/{ACHS.length})</h3>
                 <button onClick={() => setShowAchievements(false)} style={{background:'transparent',color:'#c9a96e',border:'none',cursor:'pointer',fontSize:18}}>✕</button>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginTop:16}}>
@@ -2697,7 +2717,7 @@ export default function ThreeKingdomsPixiGame() {
           >
             {/* 关闭按钮 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontSize: 18, color: COLOR_THEME.accentGold }}>📋 NPC 信息</h2>
+              <h2 style={{ margin: 0, fontSize: 18, color: COLOR_THEME.accentGold, fontFamily: '"Noto Serif SC", serif', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>◆ 📋 NPC 信息</h2>
               <button
                 onClick={() => setSelectedNpcId(null)}
                 style={{
