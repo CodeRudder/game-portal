@@ -32,3 +32,7 @@ coverage/
 
 # Misc
 *.tsbuildinfo
+
+screenshots*
+
+
