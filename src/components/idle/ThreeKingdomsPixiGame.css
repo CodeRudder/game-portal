@@ -1268,10 +1268,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
- * 武将卡片化展示
+ * 武将卡片化展示 — 网格布局 + 稀有度视觉区分 + 悬停效果
  * ═══════════════════════════════════════════════════════════════ */
 
-/* 武将卡片标题 */
+/* 武将卡片标题 — 古风字体 */
 .tk-general-cards-title {
   font-size: 14px;
   font-weight: bold;
@@ -1279,37 +1279,113 @@
   margin-bottom: 8px;
   padding-bottom: 4px;
   border-bottom: 1px solid rgba(139,115,85,0.3);
-  font-family: "Noto Serif SC", serif;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
-/* 武将卡片网格 */
+/* 武将卡片网格 — 3列/4列自适应 */
 .tk-general-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
   padding: 4px 0;
 }
 
-/* 武将卡片 */
+/* 武将卡片 — 垂直卡片布局 120x160 */
 .tk-general-card {
   display: flex;
-  gap: 8px;
-  padding: 8px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px 8px;
   background: rgba(212, 165, 116, 0.06);
-  border: 1px solid rgba(183, 115, 51, 0.3);
-  border-radius: 6px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(183, 115, 51, 0.3);
+  border-radius: 8px;
+  transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  min-height: 160px;
 }
+
+/* 稀有度视觉区分 — 边框颜色 */
+.tk-general-card--rarity-common {
+  border-color: rgba(187, 187, 187, 0.4);
+}
+.tk-general-card--rarity-uncommon {
+  border-color: rgba(92, 191, 96, 0.5);
+}
+.tk-general-card--rarity-rare {
+  border-color: rgba(66, 165, 245, 0.5);
+}
+.tk-general-card--rarity-epic {
+  border-color: rgba(171, 71, 188, 0.5);
+}
+.tk-general-card--rarity-legendary {
+  border-color: rgba(255, 167, 38, 0.6);
+}
+.tk-general-card--rarity-mythic {
+  border-color: rgba(255, 82, 82, 0.6);
+}
+
+/* 传说武将卡片微弱发光动画 */
+@keyframes tk-legendary-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(255,167,38,0.15), 0 0 8px rgba(255,167,38,0.08);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(255,167,38,0.3), 0 0 16px rgba(255,167,38,0.15), 0 0 24px rgba(255,167,38,0.06);
+  }
+}
+.tk-general-card--rarity-legendary {
+  animation: tk-legendary-glow 2.5s ease-in-out infinite;
+}
+
+/* 神话武将发光动画 */
+@keyframes tk-mythic-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(255,82,82,0.15), 0 0 8px rgba(255,82,82,0.08);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(255,82,82,0.3), 0 0 16px rgba(255,82,82,0.15), 0 0 24px rgba(255,82,82,0.06);
+  }
+}
+.tk-general-card--rarity-mythic {
+  animation: tk-mythic-glow 2s ease-in-out infinite;
+}
+
+/* 稀有度标签 — 右上角 */
+.tk-general-card-rarity-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
 .tk-general-card:hover {
   background: rgba(212, 165, 116, 0.12);
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   box-shadow:
-    0 4px 12px rgba(0,0,0,0.35),
+    0 6px 16px rgba(0,0,0,0.35),
     0 0 8px var(--faction-color, transparent);
+}
+
+/* 悬停展开详情区域 */
+.tk-general-card-hover-info {
+  display: none;
+  width: 100%;
+  padding-top: 4px;
+  border-top: 1px solid rgba(139,115,85,0.15);
+  margin-top: 2px;
+}
+.tk-general-card:hover .tk-general-card-hover-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 /* 武将卡片 — 势力色发光边框效果 */
@@ -1336,21 +1412,26 @@
   opacity: 0.8;
 }
 
-/* 武将卡片 — 选中状态呼吸发光 */
+/* 武将卡片 — 选中状态金色边框+发光 */
 .tk-general-card--selected {
+  border-color: #ffd700 !important;
+  box-shadow:
+    0 0 8px rgba(255, 215, 0, 0.4),
+    0 0 16px rgba(255, 215, 0, 0.2),
+    0 0 24px rgba(255, 215, 0, 0.1) !important;
   animation: tk-general-breathe 2.5s ease-in-out infinite;
 }
 @keyframes tk-general-breathe {
   0%, 100% {
     box-shadow:
-      0 0 4px var(--faction-color, rgba(212,160,48,0.3)),
-      0 0 8px rgba(212,160,48,0.15);
+      0 0 4px rgba(255,215,0,0.3),
+      0 0 8px rgba(255,215,0,0.15);
   }
   50% {
     box-shadow:
-      0 0 8px var(--faction-color, rgba(212,160,48,0.5)),
-      0 0 16px rgba(212,160,48,0.25),
-      0 0 24px rgba(212,160,48,0.1);
+      0 0 8px rgba(255,215,0,0.5),
+      0 0 16px rgba(255,215,0,0.25),
+      0 0 24px rgba(255,215,0,0.1);
   }
 }
 
@@ -1365,11 +1446,12 @@
   box-shadow: none;
 }
 
-/* 卡片头像 */
+/* 卡片头像 — 居中显示 */
 .tk-general-card-portrait {
   flex-shrink: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   position: relative;
 }
 /* 头像圆形金色边框 + 外圈光晕 */
@@ -1419,28 +1501,33 @@
   z-index: 1;
 }
 
-/* 卡片信息区 */
+/* 卡片信息区 — 居中对齐 */
 .tk-general-card-info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  align-items: center;
+  text-align: center;
 }
 
 /* 卡片头部（名字+等级） */
 .tk-general-card-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  gap: 1px;
 }
 .tk-general-card-name {
   font-size: 12px;
   font-weight: bold;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
 }
 .tk-general-card-level {
   font-size: 10px;
   color: #c9a96e;
+  font-family: Georgia, 'Times New Roman', serif;
 }
 .tk-general-card-rarity {
   font-size: 9px;
@@ -1528,6 +1615,7 @@
   width: 18px;
   flex-shrink: 0;
   text-align: right;
+  font-family: Georgia, 'Times New Roman', serif;
 }
 
 /* 招募按钮 */
@@ -1541,7 +1629,7 @@
   background: rgba(76, 175, 80, 0.3);
   color: #66bb6a;
   transition: background 0.2s;
-  align-self: flex-start;
+  align-self: center;
 }
 .tk-general-card-recruit-btn:hover {
   background: rgba(76, 175, 80, 0.5);
@@ -3276,5 +3364,199 @@
   flex-direction: column;
   gap: 8px;
   position: relative;
-  padding-bottom: 8px; c48ec5b (feat: R7 - terrain enhancement + particle system + Chinese visual style)
+  padding-bottom: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * R14 优化：主界面布局 + 武将卡片化增强
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 古风字体全局应用 ─── */
+.tk-game-root h1,
+.tk-game-root h2,
+.tk-game-root h3,
+.tk-game-root .tk-panel-title {
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', 'SimSun', serif;
+}
+
+/* 关键数字使用 serif 字体增加古风感 */
+.tk-game-root .tk-resource-value,
+.tk-game-root .tk-scene-hero-num,
+.tk-game-root .tk-scene-prod-rate {
+  font-family: Georgia, 'Times New Roman', 'Noto Serif SC', serif;
+}
+
+/* ─── 弹窗/面板毛玻璃效果 ─── */
+.tk-npc-dialogue-box,
+.tk-event-box,
+.tk-guide-box {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ─── 弹窗圆角优化 ─── */
+.tk-npc-dialogue-box {
+  border-radius: 12px;
+}
+.tk-event-box {
+  border-radius: 12px;
+}
+.tk-guide-box {
+  border-radius: 12px;
+}
+
+/* ─── 武将选择提示区域 ─── */
+.tk-hero-select-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+  color: var(--tk-text-dim);
+  font-size: 13px;
+  font-style: italic;
+  font-family: 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  text-align: center;
+  opacity: 0.7;
+}
+
+/* ─── 武将卡片悬停展开的属性条 ─── */
+.tk-hover-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  width: 100%;
+}
+.tk-hover-stat-label {
+  color: #a09080;
+  width: 20px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 8px;
+}
+.tk-hover-stat-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1.5px;
+  overflow: hidden;
+}
+.tk-hover-stat-fill {
+  height: 100%;
+  border-radius: 1.5px;
+  transition: width 0.4s ease;
+}
+.tk-hover-stat-value {
+  color: #c9a96e;
+  font-size: 8px;
+  width: 16px;
+  flex-shrink: 0;
+  text-align: right;
+  font-family: Georgia, serif;
+}
+
+/* ─── 武将卡片悬停技能图标列表 ─── */
+.tk-hover-skills {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.tk-hover-skill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(139,115,85,0.1);
+  border: 1px solid rgba(139,115,85,0.2);
+}
+
+/* ─── 武将快速列表（左侧面板2列网格） ─── */
+.tk-hero-quick-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 4px 0;
+}
+.tk-hero-quick-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: rgba(212, 165, 116, 0.06);
+  border: 1px solid rgba(139,115,85,0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tk-hero-quick-item:hover {
+  background: rgba(212, 165, 116, 0.12);
+  border-color: rgba(139,115,85,0.4);
+}
+.tk-hero-quick-name {
+  font-size: 10px;
+  color: var(--tk-text);
+  font-family: 'KaiTi', 'STKaiti', serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tk-hero-quick-level {
+  font-size: 9px;
+  color: var(--tk-gold-dim);
+  font-family: Georgia, serif;
+}
+
+/* ─── 右侧任务/事件面板 ─── */
+.tk-side-quests-panel {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tk-side-quest-item {
+  padding: 6px 8px;
+  background: rgba(212, 165, 116, 0.04);
+  border: 1px solid rgba(139,115,85,0.15);
+  border-radius: 6px;
+  font-size: 11px;
+}
+.tk-side-quest-title {
+  color: var(--tk-gold);
+  font-size: 11px;
+  font-weight: bold;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+.tk-side-quest-progress {
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.tk-side-quest-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-bright));
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+.tk-side-quest-text {
+  font-size: 9px;
+  color: var(--tk-text-dim);
+  margin-top: 2px;
+  text-align: right;
+}
+
+/* ─── 弹窗缩小 — 全局弹窗尺寸限制 ─── */
+.tk-game-root .tk-tech-panel {
+  width: 380px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.tk-game-root .tk-prestige-panel {
+  width: 320px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }

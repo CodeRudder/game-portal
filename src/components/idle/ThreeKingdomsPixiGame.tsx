@@ -733,10 +733,12 @@ function CampaignPanel({
     <div style={{
       position: 'absolute', top: '50%', left: '50%',
       transform: 'translate(-50%, -50%)',
-      background: 'rgba(0,0,0,0.92)', borderRadius: 12, padding: 20,
-      width: 520, maxHeight: '80vh', overflowY: 'auto',
+      background: 'rgba(0,0,0,0.75)', borderRadius: 12, padding: 16,
+      width: 440, maxHeight: '75vh', overflowY: 'auto',
       border: `1px solid ${CT.selectedBorder}`,
       color: CT.textPrimary,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h2 style={{ margin: 0, fontSize: 18, color: CT.accentGold, fontFamily: '"Noto Serif SC", serif', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>◆ 🏆 征战天下</h2>
@@ -1417,13 +1419,15 @@ function getGeneralEnhanced(id: string): GeneralEnhancedData {
   };
 }
 
-/** 武将卡片组件 — 卡片化展示武将信息（含技能图标） */
+/** 武将卡片组件 — 卡片化展示武将信息（含技能图标 + 稀有度视觉区分 + 悬停展开） */
 const GeneralCard = ({
   general,
+  isSelected,
   onSelect,
   onRecruit,
 }: {
   general: HeroRenderData;
+  isSelected?: boolean;
   onSelect: () => void;
   onRecruit?: () => void;
 }) => {
@@ -1433,15 +1437,33 @@ const GeneralCard = ({
   const rarityColor = RARITY_COLORS[general.rarity] || '#c9a96e';
   const enhanced = getGeneralEnhanced(general.id);
 
+  // 稀有度中文标签
+  const rarityLabels: Record<string, string> = {
+    common: '普通', uncommon: '精良', rare: '稀有', epic: '史诗', legendary: '传说', mythic: '神话',
+  };
+
   return (
     <div
-      className={`tk-general-card ${!general.unlocked ? 'tk-general-card-locked' : ''}`}
-      style={{ borderColor: general.unlocked ? color : 'rgba(139,115,85,0.2)' }}
+      className={`tk-general-card ${!general.unlocked ? 'tk-general-card-locked' : ''} ${isSelected ? 'tk-general-card--selected' : ''} ${general.unlocked ? `tk-general-card--rarity-${general.rarity}` : ''}`}
+      style={{ borderColor: general.unlocked ? color : 'rgba(139,115,85,0.2)', '--faction-color': color } as React.CSSProperties}
       onClick={() => general.unlocked && onSelect()}
     >
+      {/* 稀有度标签 — 右上角 */}
+      {general.unlocked && (
+        <span
+          className="tk-general-card-rarity-badge"
+          style={{
+            color: rarityColor,
+            background: `${rarityColor}18`,
+            border: `1px solid ${rarityColor}40`,
+          }}
+        >
+          {rarityLabels[general.rarity] || general.rarity}
+        </span>
+      )}
       {/* 头像 */}
       <div className="tk-general-card-portrait">
-        <GeneralPortrait name={general.name} faction={general.faction} size={44} />
+        <GeneralPortrait name={general.name} faction={general.faction} size={48} />
       </div>
       {/* 信息 */}
       <div className="tk-general-card-info">
@@ -1452,31 +1474,51 @@ const GeneralCard = ({
           {general.unlocked ? (
             <span className="tk-general-card-level">Lv.{general.level}</span>
           ) : (
-            <span className="tk-general-card-rarity">[{general.rarity}]</span>
+            <span className="tk-general-card-rarity">[{rarityLabels[general.rarity] || general.rarity}]</span>
           )}
         </div>
         <div className="tk-general-card-faction" style={{ color: general.unlocked ? color : '#666' }}>
           {factionLabels[general.faction] || general.faction.toUpperCase()}·武将
         </div>
-        {/* 属性条 */}
+
+        {/* 悬停展开详情区域 */}
         {general.unlocked && (
-          <div className="tk-general-card-stats">
-            <StatBar label="武力" value={general.stats.attack} max={100} color="#e53935" />
-            <StatBar label="智力" value={general.stats.intelligence} max={100} color="#1e88e5" />
-            <StatBar label="统率" value={general.stats.command} max={100} color="#43a047" />
+          <div className="tk-general-card-hover-info">
+            {/* 关键属性条 */}
+            <div className="tk-hover-stat-row">
+              <span className="tk-hover-stat-label">武</span>
+              <div className="tk-hover-stat-track">
+                <div className="tk-hover-stat-fill" style={{ width: `${general.stats.attack}%`, background: '#e53935' }} />
+              </div>
+              <span className="tk-hover-stat-value">{general.stats.attack}</span>
+            </div>
+            <div className="tk-hover-stat-row">
+              <span className="tk-hover-stat-label">智</span>
+              <div className="tk-hover-stat-track">
+                <div className="tk-hover-stat-fill" style={{ width: `${general.stats.intelligence}%`, background: '#1e88e5' }} />
+              </div>
+              <span className="tk-hover-stat-value">{general.stats.intelligence}</span>
+            </div>
+            <div className="tk-hover-stat-row">
+              <span className="tk-hover-stat-label">统</span>
+              <div className="tk-hover-stat-track">
+                <div className="tk-hover-stat-fill" style={{ width: `${general.stats.command}%`, background: '#43a047' }} />
+              </div>
+              <span className="tk-hover-stat-value">{general.stats.command}</span>
+            </div>
+            {/* 技能图标列表 */}
+            {enhanced.skills.length > 0 && (
+              <div className="tk-hover-skills">
+                {enhanced.skills.map((skill, i) => (
+                  <span key={i} className="tk-hover-skill-icon" title={skill.name}>
+                    <SkillIcon skillType={skill.type} size={12} />
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
-        {/* 技能标签 */}
-        {general.unlocked && enhanced.skills.length > 0 && (
-          <div className="tk-general-card-skills">
-            {enhanced.skills.map((skill, i) => (
-              <span key={i} className="tk-general-card-skill">
-                <SkillIcon skillType={skill.type} size={12} />
-                {skill.name}
-              </span>
-            ))}
-          </div>
-        )}
+
         {/* 招募按钮 */}
         {!general.unlocked && general.canRecruit && onRecruit && (
           <button className="tk-general-card-recruit-btn" onClick={(e) => { e.stopPropagation(); onRecruit(); }}>
@@ -2884,6 +2926,33 @@ export default function ThreeKingdomsPixiGame() {
               )}
             </div>
           )}
+
+          {/* ─── 武将快速列表（左侧面板2列网格） ─── */}
+          <div style={{ marginTop: 8, borderTop: '1px solid rgba(139,115,85,0.2)', paddingTop: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 'bold', color: '#d4b36a', marginBottom: 6, fontFamily: "'KaiTi', 'STKaiti', serif" }}>
+              ◆ 武将
+            </div>
+            <div className="tk-hero-quick-list">
+              {heroes.filter(h => h.unlocked).slice(0, 6).map(h => (
+                <div
+                  key={h.id}
+                  className="tk-hero-quick-item"
+                  onClick={() => { setScene('hero-detail'); setSelectedHero(h); }}
+                >
+                  <GeneralPortrait name={h.name} faction={h.faction} size={24} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                    <span className="tk-hero-quick-name">{h.name}</span>
+                    <span className="tk-hero-quick-level">Lv.{h.level}</span>
+                  </div>
+                </div>
+              ))}
+              {heroes.filter(h => h.unlocked).length === 0 && (
+                <div style={{ fontSize: 10, color: '#888', gridColumn: '1 / -1', textAlign: 'center', padding: 8 }}>
+                  尚未招募武将
+                </div>
+              )}
+            </div>
+          </div>
         </aside>
         )}
 
@@ -4014,6 +4083,7 @@ export default function ThreeKingdomsPixiGame() {
                   <GeneralCard
                     key={h.id}
                     general={h}
+                    isSelected={selectedHero?.id === h.id}
                     onSelect={() => setSelectedHero(h)}
                     onRecruit={h.canRecruit && !h.unlocked ? () => {
                       const engine = engineRef.current;
@@ -4056,6 +4126,12 @@ export default function ThreeKingdomsPixiGame() {
                   />
                 ))}
               </div>
+              {/* 选中武将提示 */}
+              {!selectedHero && (
+                <div className="tk-hero-select-hint">
+                  点击武将卡片查看详细信息
+                </div>
+              )}
             </>
           )}
         </aside>
