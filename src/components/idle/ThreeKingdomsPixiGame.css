@@ -9787,3 +9787,553 @@ button:active {
   background: rgba(139,115,85,0.1);
   border-radius: 4px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+ * R17: 武将面板动态效果增强
+ * 入场动画 + 选中脉冲 + 属性条填充 + 品质光效 + 技能图标交互 + 弹窗增强
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. 武将卡片入场动画 — 依次弹入 ── */
+.tk-general-card-enter {
+  animation: tk-card-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: var(--card-enter-delay, 0ms);
+}
+.tk-general-card-enter:nth-child(1) { --card-enter-delay: 0ms; }
+.tk-general-card-enter:nth-child(2) { --card-enter-delay: 50ms; }
+.tk-general-card-enter:nth-child(3) { --card-enter-delay: 100ms; }
+.tk-general-card-enter:nth-child(4) { --card-enter-delay: 150ms; }
+.tk-general-card-enter:nth-child(5) { --card-enter-delay: 200ms; }
+.tk-general-card-enter:nth-child(6) { --card-enter-delay: 250ms; }
+.tk-general-card-enter:nth-child(7) { --card-enter-delay: 300ms; }
+.tk-general-card-enter:nth-child(8) { --card-enter-delay: 350ms; }
+.tk-general-card-enter:nth-child(9) { --card-enter-delay: 400ms; }
+.tk-general-card-enter:nth-child(10) { --card-enter-delay: 450ms; }
+.tk-general-card-enter:nth-child(11) { --card-enter-delay: 500ms; }
+.tk-general-card-enter:nth-child(12) { --card-enter-delay: 550ms; }
+
+@keyframes tk-card-pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── 2. 选中武将金色脉冲边框 — 增强版 ── */
+.tk-general-card--selected {
+  border-color: #FFD700 !important;
+  animation: tk-selected-pulse 1.5s ease-in-out infinite !important;
+}
+@keyframes tk-selected-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 4px rgba(255, 215, 0, 0.3),
+      0 0 8px rgba(255, 215, 0, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 8px rgba(255, 215, 0, 0.6),
+      0 0 16px rgba(255, 215, 0, 0.3),
+      0 0 32px rgba(255, 215, 0, 0.15),
+      inset 0 0 8px rgba(255, 215, 0, 0.08);
+  }
+}
+
+/* 选中卡片内部光晕扫过效果 */
+.tk-general-card--selected::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 40%,
+    rgba(255, 215, 0, 0.06) 45%,
+    rgba(255, 215, 0, 0.12) 50%,
+    rgba(255, 215, 0, 0.06) 55%,
+    transparent 60%
+  );
+  animation: tk-selected-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+@keyframes tk-selected-shimmer {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* ── 3. 属性条填充动画 — scaleX 方式 ── */
+.tk-stat-bar-fill {
+  animation: tk-bar-fill 0.8s ease-out both;
+  transform-origin: left;
+}
+@keyframes tk-bar-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* 卡片内迷你属性条填充动画 */
+.tk-attr-mini-fill {
+  animation: tk-attr-fill 0.6s ease-out both;
+  transform-origin: left;
+}
+@keyframes tk-attr-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* 悬停详情属性条填充动画 */
+.tk-hover-stat-fill {
+  animation: tk-hover-fill 0.5s ease-out both;
+  transform-origin: left;
+}
+@keyframes tk-hover-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Tooltip 属性条填充动画 */
+.tk-tooltip-stat-fill {
+  animation: tk-tooltip-fill 0.6s ease-out both;
+  transform-origin: left;
+}
+@keyframes tk-tooltip-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* 弹窗属性条填充动画 — 增强版带闪光 */
+.tk-modal-stat-bar-fill {
+  animation: tk-modal-bar-fill 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  transform-origin: left;
+  position: relative;
+}
+@keyframes tk-modal-bar-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+/* 弹窗属性条闪光效果 */
+.tk-modal-stat-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: tk-bar-shine 1.5s ease-out 0.8s both;
+  transform-origin: left;
+}
+@keyframes tk-bar-shine {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(200%); }
+}
+
+/* ── 4. 武将头像品质光效 — 不同稀有度不同光效 ── */
+
+/* 精良 — 银色微光 */
+.tk-general-card--rarity-uncommon .tk-general-card-portrait::before {
+  box-shadow: 0 0 4px rgba(192, 192, 192, 0.2);
+  animation: tk-rarity-uncommon-glow 3s ease-in-out infinite;
+}
+@keyframes tk-rarity-uncommon-glow {
+  0%, 100% { box-shadow: 0 0 3px rgba(192, 192, 192, 0.15); }
+  50% { box-shadow: 0 0 8px rgba(192, 192, 192, 0.35), 0 0 16px rgba(192, 192, 192, 0.1); }
+}
+
+/* 稀有 — 蓝色流光 */
+.tk-general-card--rarity-rare .tk-general-card-portrait::before {
+  animation: tk-rarity-rare-glow 2.5s ease-in-out infinite;
+}
+@keyframes tk-rarity-rare-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(66, 165, 245, 0.2); }
+  50% { box-shadow: 0 0 10px rgba(66, 165, 245, 0.45), 0 0 20px rgba(66, 165, 245, 0.15); }
+}
+
+/* 史诗 — 紫色脉冲 */
+.tk-general-card--rarity-epic .tk-general-card-portrait::before {
+  animation: tk-rarity-epic-glow 2s ease-in-out infinite;
+}
+@keyframes tk-rarity-epic-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(171, 71, 188, 0.25); }
+  50% { box-shadow: 0 0 12px rgba(171, 71, 188, 0.5), 0 0 24px rgba(171, 71, 188, 0.2), 0 0 36px rgba(171, 71, 188, 0.08); }
+}
+
+/* 传说 — 金色脉冲 + 光环旋转 */
+.tk-general-card--rarity-legendary .tk-general-card-portrait::before {
+  animation: tk-rarity-legendary-glow 2s ease-in-out infinite;
+}
+@keyframes tk-rarity-legendary-glow {
+  0%, 100% { box-shadow: 0 0 6px rgba(255, 167, 38, 0.3), 0 0 12px rgba(255, 167, 38, 0.1); }
+  50% { box-shadow: 0 0 12px rgba(255, 167, 38, 0.6), 0 0 24px rgba(255, 167, 38, 0.3), 0 0 40px rgba(255, 167, 38, 0.12); }
+}
+/* 传说头像外圈旋转光点 */
+.tk-general-card--rarity-legendary .tk-general-card-portrait::after {
+  animation: tk-legendary-rotate 4s linear infinite;
+  opacity: 0.7 !important;
+}
+@keyframes tk-legendary-rotate {
+  from {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgba(255, 167, 38, 0.5) 30deg,
+      transparent 60deg,
+      transparent 180deg,
+      rgba(255, 215, 0, 0.4) 210deg,
+      transparent 240deg,
+      transparent 360deg
+    );
+  }
+  to {
+    background: conic-gradient(
+      from 360deg,
+      transparent 0deg,
+      rgba(255, 167, 38, 0.5) 30deg,
+      transparent 60deg,
+      transparent 180deg,
+      rgba(255, 215, 0, 0.4) 210deg,
+      transparent 240deg,
+      transparent 360deg
+    );
+  }
+}
+
+/* 神话 — 彩虹旋转边框 */
+.tk-general-card--rarity-mythic .tk-general-card-portrait::before {
+  animation: tk-rarity-mythic-rainbow 3s linear infinite;
+  border: none !important;
+  background-size: 200% 200%;
+}
+@keyframes tk-rarity-mythic-rainbow {
+  0% {
+    box-shadow:
+      0 0 8px rgba(255, 82, 82, 0.4),
+      0 0 16px rgba(255, 82, 82, 0.2);
+    border-color: #ff5252;
+  }
+  25% {
+    box-shadow:
+      0 0 8px rgba(255, 215, 0, 0.4),
+      0 0 16px rgba(255, 215, 0, 0.2);
+    border-color: #ffd700;
+  }
+  50% {
+    box-shadow:
+      0 0 8px rgba(66, 165, 245, 0.4),
+      0 0 16px rgba(66, 165, 245, 0.2);
+    border-color: #42a5f5;
+  }
+  75% {
+    box-shadow:
+      0 0 8px rgba(171, 71, 188, 0.4),
+      0 0 16px rgba(171, 71, 188, 0.2);
+    border-color: #ab47bc;
+  }
+  100% {
+    box-shadow:
+      0 0 8px rgba(255, 82, 82, 0.4),
+      0 0 16px rgba(255, 82, 82, 0.2);
+    border-color: #ff5252;
+  }
+}
+/* 神话头像外圈彩虹光环 */
+.tk-general-card--rarity-mythic .tk-general-card-portrait::after {
+  animation: tk-mythic-rainbow-ring 3s linear infinite;
+  opacity: 0.8 !important;
+}
+@keyframes tk-mythic-rainbow-ring {
+  from {
+    background: conic-gradient(
+      from 0deg,
+      rgba(255, 82, 82, 0.6) 0deg,
+      rgba(255, 167, 38, 0.6) 60deg,
+      rgba(255, 215, 0, 0.6) 120deg,
+      rgba(76, 175, 80, 0.6) 180deg,
+      rgba(66, 165, 245, 0.6) 240deg,
+      rgba(171, 71, 188, 0.6) 300deg,
+      rgba(255, 82, 82, 0.6) 360deg
+    );
+  }
+  to {
+    background: conic-gradient(
+      from 360deg,
+      rgba(255, 82, 82, 0.6) 0deg,
+      rgba(255, 167, 38, 0.6) 60deg,
+      rgba(255, 215, 0, 0.6) 120deg,
+      rgba(76, 175, 80, 0.6) 180deg,
+      rgba(66, 165, 245, 0.6) 240deg,
+      rgba(171, 71, 188, 0.6) 300deg,
+      rgba(255, 82, 82, 0.6) 360deg
+    );
+  }
+}
+
+/* ── 5. 技能图标 hover 放大 + 光效 ── */
+.tk-general-card-skill-chip {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.2s ease;
+}
+.tk-general-card-skill-chip:hover {
+  transform: scale(1.15) translateY(-1px);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  background: rgba(201, 169, 110, 0.15);
+}
+
+/* 技能图标区域 hover 效果 */
+.tk-modal-skill-icon-wrap {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+.tk-modal-skill-icon-wrap:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+  background: rgba(255, 215, 0, 0.1);
+}
+
+/* 悬停技能图标放大 */
+.tk-hover-skill-icon {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.tk-hover-skill-icon:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+/* ── 6. 武将详情弹窗滑入动画增强 ── */
+.tk-general-modal-overlay {
+  animation: tk-modal-overlay-enhanced 0.3s ease-out;
+}
+@keyframes tk-modal-overlay-enhanced {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(4px); }
+}
+
+.tk-general-modal {
+  animation: tk-modal-slide-up-enhanced 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes tk-modal-slide-up-enhanced {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 弹窗关闭按钮 hover 增强 */
+.tk-modal-close {
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.tk-modal-close:hover {
+  background: rgba(255, 82, 82, 0.2);
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 0 8px rgba(255, 82, 82, 0.3);
+}
+
+/* 弹窗技能卡片 hover 浮起 */
+.tk-modal-skill-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.tk-modal-skill-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+/* ── 7. 武将卡片 hover 增强效果 ── */
+.tk-general-card {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.tk-general-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.3),
+    0 0 12px rgba(255, 215, 0, 0.12),
+    0 0 6px rgba(255, 215, 0, 0.08);
+}
+
+/* 卡片 hover 时头像放大效果 */
+.tk-general-card:hover .tk-general-card-portrait {
+  transform: scale(1.08);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.tk-general-card-portrait {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 卡片 hover 时名字发光 */
+.tk-general-card:hover .tk-general-card-name {
+  text-shadow: 0 0 6px currentColor;
+  transition: text-shadow 0.3s ease;
+}
+.tk-general-card-name {
+  transition: text-shadow 0.3s ease;
+}
+
+/* ── 8. 武将名称呼吸灯效果（传说/神话） ── */
+.tk-general-card--rarity-legendary .tk-general-card-name {
+  animation: tk-name-breathe-gold 2.5s ease-in-out infinite;
+}
+@keyframes tk-name-breathe-gold {
+  0%, 100% { text-shadow: 0 0 2px rgba(255, 167, 38, 0.3); }
+  50% { text-shadow: 0 0 8px rgba(255, 167, 38, 0.6), 0 0 16px rgba(255, 167, 38, 0.2); }
+}
+
+.tk-general-card--rarity-mythic .tk-general-card-name {
+  animation: tk-name-breathe-rainbow 3s ease-in-out infinite;
+}
+@keyframes tk-name-breathe-rainbow {
+  0%, 100% { text-shadow: 0 0 4px rgba(255, 82, 82, 0.4); }
+  33% { text-shadow: 0 0 8px rgba(255, 215, 0, 0.5), 0 0 16px rgba(255, 215, 0, 0.2); }
+  66% { text-shadow: 0 0 8px rgba(66, 165, 245, 0.5), 0 0 16px rgba(66, 165, 245, 0.2); }
+}
+
+/* ── 9. 稀有度标签微动画 ── */
+.tk-general-card-rarity-badge {
+  animation: tk-badge-fade-in 0.5s ease-out both;
+  animation-delay: var(--card-enter-delay, 0ms);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+@keyframes tk-badge-fade-in {
+  from { opacity: 0; transform: scale(0.5) translateY(-8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.tk-general-card:hover .tk-general-card-rarity-badge {
+  transform: scale(1.1);
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* ── 10. 星级闪烁效果（传说/神话） ── */
+.tk-general-card--rarity-legendary .tk-general-card-stars {
+  animation: tk-stars-twinkle-gold 2s ease-in-out infinite;
+}
+@keyframes tk-stars-twinkle-gold {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; text-shadow: 0 0 4px rgba(255, 167, 38, 0.5); }
+}
+
+.tk-general-card--rarity-mythic .tk-general-card-stars {
+  animation: tk-stars-twinkle-rainbow 2.5s ease-in-out infinite;
+}
+@keyframes tk-stars-twinkle-rainbow {
+  0%, 100% { opacity: 0.85; text-shadow: 0 0 3px rgba(255, 82, 82, 0.4); }
+  33% { opacity: 1; text-shadow: 0 0 6px rgba(255, 215, 0, 0.6); }
+  66% { opacity: 1; text-shadow: 0 0 6px rgba(171, 71, 188, 0.6); }
+}
+
+/* ── 11. 武将卡片点击涟漪效果 ── */
+.tk-general-card:active {
+  transform: translateY(-1px) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+/* ── 12. 悬停 Tooltip 入场动画增强 ── */
+.tk-general-hover-tooltip {
+  animation: tk-tooltip-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes tk-tooltip-pop {
+  from { opacity: 0; transform: scale(0.9) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── 13. 阵营筛选按钮交互增强 ── */
+.tk-general-filter-btn {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.tk-general-filter-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.tk-general-filter-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* ── 14. 招募按钮脉冲动画 ── */
+.tk-general-card-recruit-btn {
+  animation: tk-recruit-pulse 2s ease-in-out infinite;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+@keyframes tk-recruit-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(76, 175, 80, 0); }
+}
+.tk-general-card-recruit-btn:hover {
+  transform: scale(1.08);
+  background: rgba(76, 175, 80, 0.5);
+}
+
+/* ── 15. 弹窗头部装饰纹样动态 ── */
+.tk-modal-header-pattern {
+  animation: tk-pattern-drift 8s linear infinite;
+}
+@keyframes tk-pattern-drift {
+  from { background-position: 0 0; }
+  to { background-position: 20px 20px; }
+}
+
+/* ── 16. 弹窗综合战力数字跳动效果 ── */
+.tk-modal-power-value {
+  animation: tk-power-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.3s;
+}
+@keyframes tk-power-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── 17. 卡片底部渐变流动效果 ── */
+.tk-general-card-bottom-gradient {
+  transition: opacity 0.3s ease;
+}
+.tk-general-card:hover .tk-general-card-bottom-gradient {
+  opacity: 0.8;
+}
+
+/* ── 18. 响应式：减弱动画偏好 ── */
+@media (prefers-reduced-motion: reduce) {
+  .tk-general-card-enter,
+  .tk-general-card--selected,
+  .tk-stat-bar-fill,
+  .tk-attr-mini-fill,
+  .tk-hover-stat-fill,
+  .tk-tooltip-stat-fill,
+  .tk-modal-stat-bar-fill,
+  .tk-general-modal,
+  .tk-general-modal-overlay,
+  .tk-general-card--rarity-uncommon .tk-general-card-portrait::before,
+  .tk-general-card--rarity-rare .tk-general-card-portrait::before,
+  .tk-general-card--rarity-epic .tk-general-card-portrait::before,
+  .tk-general-card--rarity-legendary .tk-general-card-portrait::before,
+  .tk-general-card--rarity-legendary .tk-general-card-portrait::after,
+  .tk-general-card--rarity-mythic .tk-general-card-portrait::before,
+  .tk-general-card--rarity-mythic .tk-general-card-portrait::after,
+  .tk-general-card--rarity-legendary .tk-general-card-name,
+  .tk-general-card--rarity-mythic .tk-general-card-name,
+  .tk-general-card--rarity-legendary .tk-general-card-stars,
+  .tk-general-card--rarity-mythic .tk-general-card-stars,
+  .tk-general-card-rarity-badge,
+  .tk-general-card-recruit-btn,
+  .tk-modal-power-value,
+  .tk-general-hover-tooltip {
+    animation: none !important;
+  }
+}

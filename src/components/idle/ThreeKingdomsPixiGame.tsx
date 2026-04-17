@@ -2491,7 +2491,7 @@ const GeneralCard = ({
 
   return (
     <div
-      className={`tk-general-card ${!general.unlocked ? 'tk-general-card-locked' : ''} ${isSelected ? 'tk-general-card--selected' : ''} ${general.unlocked ? `tk-general-card--rarity-${general.rarity}` : ''} ${general.unlocked ? `tk-general-card--faction-${general.faction}` : ''}`}
+      className={`tk-general-card tk-general-card-enter ${!general.unlocked ? 'tk-general-card-locked' : ''} ${isSelected ? 'tk-general-card--selected' : ''} ${general.unlocked ? `tk-general-card--rarity-${general.rarity}` : ''} ${general.unlocked ? `tk-general-card--faction-${general.faction}` : ''}`}
       style={{
         borderColor: general.unlocked ? color : 'rgba(139,115,85,0.2)',
         '--faction-color': color,
@@ -3604,23 +3604,44 @@ export default function ThreeKingdomsPixiGame() {
     const engine = engineRef.current;
     if (!engine) return;
 
-    // 查找当前选中建筑
-    const res = engine.getResources();
-    const bs = (engine as any).bldg;
-    if (!bs) return;
-    const cost = bs.getCost(id);
-    const canAfford = Object.entries(cost || {}).every(([rid, amt]) => (res[rid] || 0) >= (amt as number));
+    const currentLevel = engine.getBuildingLevel(id);
+    let success = false;
 
-    if (canAfford) {
-      (engine as any).buyBuilding();
-      const bld = BUILDINGS.find(b => b.id === id);
-      addToast(`建造成功！${bld?.name ?? id} Lv.1`, 'success');
+    if (currentLevel < 1) {
+      // 建造（等级0→1）
+      success = engine.buyBuildingById(id);
+      if (success) {
+        const bld = BUILDINGS.find(b => b.id === id);
+        addToast(`建造成功！${bld?.name ?? id} Lv.1`, 'success');
+      }
+    } else {
+      // 升级（等级1→2→...）
+      success = engine.upgradeBuilding(id);
+      if (success) {
+        const bld = BUILDINGS.find(b => b.id === id);
+        const newLevel = engine.getBuildingLevel(id);
+        addToast(`升级成功！${bld?.name ?? id} Lv.${newLevel}`, 'success');
+      }
+    }
+
+    if (success) {
       audioManagerRef.current?.playUpgrade();
       triggerBuildingFlash(id);
-      // 金色火花粒子效果
       particleSystemRef.current?.emit(120, 200, 'spark', 12);
     } else {
-      addToast('资源不足！', 'error');
+      // 构建详细错误信息
+      const res = engine.getResources();
+      const bs = (engine as any).bldg;
+      const cost = bs?.getCost(id) || {};
+      const missing = Object.entries(cost)
+        .filter(([, amt]) => amt as number > 0)
+        .map(([rid, amt]) => {
+          const have = res[rid] || 0;
+          return have < (amt as number) ? `${rid}: ${have}/${amt}` : null;
+        })
+        .filter(Boolean)
+        .join(', ');
+      addToast(missing ? `资源不足！缺少: ${missing}` : '无法建造/升级', 'error');
       audioManagerRef.current?.playError();
     }
   }, [addToast, triggerBuildingFlash]);
