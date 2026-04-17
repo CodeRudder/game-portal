@@ -36,3 +36,5 @@ coverage/
 screenshots*
 
 
+.next/
+test-results/
