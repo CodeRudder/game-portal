@@ -37,6 +37,8 @@ import {
   TERRAIN_SPRITE_NAMES,
   BUILDING_SPRITE_NAMES,
   TERRAIN_VISUALS,
+  getFactionCityColors,
+  type FactionCityColors,
 } from '../../games/three-kingdoms/AssetConfig';
 
 // ═══════════════════════════════════════════════════════════════
@@ -245,6 +247,42 @@ const TERRAIN_LABELS: Record<TerrainType, string> = {
   desert: '荒漠',
   snow: '雪地',
 };
+
+// ─── 增强地形视觉常量 ──────────────────────────────────────
+
+/** 地形纹理密度系数（控制每种地形纹理细节的数量） */
+const TERRAIN_DETAIL_DENSITY: Record<string, number> = {
+  plain: 1.2,     // 平原：中密度草地
+  mountain: 1.0,  // 山地：标准山峰
+  forest: 1.4,    // 森林：密集树木
+  water: 1.0,     // 水域：标准波纹
+  desert: 1.0,    // 荒漠：标准沙丘
+  snow: 1.0,      // 雪地：标准雪花
+};
+
+/** 旗帜尺寸（像素） */
+const FLAG_WIDTH = 10;
+const FLAG_HEIGHT = 7;
+const FLAG_POLE_HEIGHT = 12;
+
+/** 道路连接虚线样式 */
+const ROAD_DASH_LENGTH = 6;
+const ROAD_DASH_GAP = 4;
+const ROAD_DASH_WIDTH = 2.5;
+const ROAD_DASH_COLOR = 0xc4a35a;
+const ROAD_DASH_ALPHA = 0.6;
+
+/** 地形过渡渐变步数（越大过渡越柔和） */
+const TRANSITION_GRADIENT_STEPS = 4;
+
+/** 装饰灌木概率（0~1，基于伪随机） */
+const BUSH_PROBABILITY = 0.15;
+
+/** 装饰石头概率 */
+const STONE_PROBABILITY = 0.1;
+
+/** 装饰小路概率 */
+const PATH_PROBABILITY = 0.08;
 
 /** 地标标签字号 */
 const LANDMARK_FONT_SIZE = 11;
@@ -2060,9 +2098,9 @@ export class MapScene extends BaseScene {
   /**
    * 绘制地形过渡边缘（整数坐标）
    *
+   * 增强版：使用多步渐变实现柔和过渡，而非单色条带。
    * 核心算法：对于每个瓦片，检查四个方向的邻居。
-   * 如果当前地形优先级高于邻居，则在朝向邻居的边缘绘制渐变过渡。
-   * 这消除了硬拼接，产生自然的色彩过渡效果。
+   * 如果当前地形优先级高于邻居，则在朝向邻居的边缘绘制多步渐变过渡。
    */
   private renderTerrainTransitions(graphics: Graphics, map: GameMap, tileSize: number): void {
     // 四个方向偏移：上、下、左、右
@@ -2087,7 +2125,6 @@ export class MapScene extends BaseScene {
         const tw = visual.transitionWidth;
         const tc = visual.transitionColor;
         const ta = visual.transitionAlpha;
-        const twHalf = Math.floor(tw * 0.5);
 
         for (const dir of dirs) {
           const nr = row + dir.dy;
@@ -2108,33 +2145,41 @@ export class MapScene extends BaseScene {
           // 仅高优先级地形向低优先级地形绘制过渡
           if (visual.renderPriority <= neighborVisual.renderPriority) continue;
 
-          // 绘制过渡边缘（渐变条带）
-          switch (dir.edge) {
-            case 'top':
-              graphics.rect(x, y, tileSize + 1, tw)
-                .fill({ color: tc, alpha: ta });
-              // 柔化：再叠加一层更窄更淡的
-              graphics.rect(x + 2, y, tileSize - 4, twHalf)
-                .fill({ color: tc, alpha: ta * 0.5 });
-              break;
-            case 'bottom':
-              graphics.rect(x, y + tileSize - tw, tileSize + 1, tw)
-                .fill({ color: tc, alpha: ta });
-              graphics.rect(x + 2, y + tileSize - twHalf, tileSize - 4, twHalf)
-                .fill({ color: tc, alpha: ta * 0.5 });
-              break;
-            case 'left':
-              graphics.rect(x, y, tw, tileSize + 1)
-                .fill({ color: tc, alpha: ta });
-              graphics.rect(x, y + 2, twHalf, tileSize - 4)
-                .fill({ color: tc, alpha: ta * 0.5 });
-              break;
-            case 'right':
-              graphics.rect(x + tileSize - tw, y, tw, tileSize + 1)
-                .fill({ color: tc, alpha: ta });
-              graphics.rect(x + tileSize - twHalf, y + 2, twHalf, tileSize - 4)
-                .fill({ color: tc, alpha: ta * 0.5 });
-              break;
+          // ── 增强版：多步渐变过渡（由内到外，透明度递减） ──
+          const steps = TRANSITION_GRADIENT_STEPS;
+          const stepWidth = Math.max(1, Math.floor(tw / steps));
+
+          for (let s = 0; s < steps; s++) {
+            const progress = s / steps; // 0=最靠近自身, 1=最靠近邻居
+            const alpha = ta * (1 - progress * 0.7); // 透明度从内到外递减
+            const sw = stepWidth + (s === steps - 1 ? 1 : 0); // 最后一步扩展1px防缝隙
+
+            switch (dir.edge) {
+              case 'top': {
+                const sy = y + s * stepWidth;
+                graphics.rect(x, sy, tileSize + 1, sw)
+                  .fill({ color: tc, alpha });
+                break;
+              }
+              case 'bottom': {
+                const sy = y + tileSize - tw + s * stepWidth;
+                graphics.rect(x, sy, tileSize + 1, sw)
+                  .fill({ color: tc, alpha });
+                break;
+              }
+              case 'left': {
+                const sx = x + s * stepWidth;
+                graphics.rect(sx, y, sw, tileSize + 1)
+                  .fill({ color: tc, alpha });
+                break;
+              }
+              case 'right': {
+                const sx = x + tileSize - tw + s * stepWidth;
+                graphics.rect(sx, y, sw, tileSize + 1)
+                  .fill({ color: tc, alpha });
+                break;
+              }
+            }
           }
         }
       }

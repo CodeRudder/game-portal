@@ -1401,3 +1401,161 @@
 .tk-general-card-recruit-btn:hover {
   background: rgba(76, 175, 80, 0.5);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+ * 科技树视觉增强 — 发光 / 粒子 / 流动线 / 研究动画
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* 已解锁科技 — 金色脉冲发光 */
+@keyframes tk-tech-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(212,160,48,0.3), 0 0 12px rgba(212,160,48,0.15);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(212,160,48,0.5), 0 0 20px rgba(212,160,48,0.25), 0 0 30px rgba(212,160,48,0.1);
+  }
+}
+
+.tk-tech-node--completed {
+  animation: tk-tech-glow-pulse 3s ease-in-out infinite;
+}
+
+/* 已解锁科技 — 粒子环绕效果 */
+@keyframes tk-tech-particle-orbit {
+  0% {
+    transform: rotate(0deg) translateX(28px) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(360deg) translateX(28px) rotate(-360deg);
+    opacity: 0.8;
+  }
+}
+
+.tk-tech-particles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.tk-tech-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #d4a030;
+  animation: tk-tech-particle-orbit 4s linear infinite;
+}
+
+.tk-tech-particle:nth-child(1) { animation-delay: 0s; }
+.tk-tech-particle:nth-child(2) { animation-delay: -1.3s; width: 2px; height: 2px; background: #ff8c00; }
+.tk-tech-particle:nth-child(3) { animation-delay: -2.6s; width: 2.5px; height: 2.5px; background: #c49a28; }
+
+/* 研究中旋转动画 */
+@keyframes tk-tech-research-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.tk-tech-research-spin {
+  animation: tk-tech-research-spin 4s linear infinite;
+}
+
+/* 研究中进度条 — 流光效果 */
+@keyframes tk-tech-progress-shimmer {
+  0% { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.tk-tech-progress-bar--researching {
+  background: linear-gradient(
+    90deg,
+    rgba(212,160,48,0.6) 0%,
+    rgba(255,200,80,0.9) 50%,
+    rgba(212,160,48,0.6) 100%
+  );
+  background-size: 200% 100%;
+  animation: tk-tech-progress-shimmer 2s linear infinite;
+}
+
+/* 连接线 — 渐变流动动画 */
+@keyframes tk-tech-line-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.tk-tech-connector--completed {
+  animation: tk-tech-line-flow 1.5s linear infinite;
+}
+
+/* 跨分支连接线 — 流动动画 */
+@keyframes tk-tech-cross-flow {
+  0% { stroke-dashoffset: 16; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.tk-tech-cross-connector--active {
+  animation: tk-tech-cross-flow 2s linear infinite;
+}
+
+/* 科技节点 hover 增强效果 */
+.tk-tech-node--available:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* 科技节点入场动画 */
+@keyframes tk-tech-node-appear {
+  0% { opacity: 0; transform: scale(0.9) translateY(8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.tk-tech-node--appear {
+  animation: tk-tech-node-appear 0.3s ease-out;
+}
+
+/* 研究完成闪光 */
+@keyframes tk-tech-flash {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+.tk-tech-flash {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,160,48,0.6), transparent);
+  animation: tk-tech-flash 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* 科技树面板背景 — 中等亮度（替代过暗背景） */
+.tk-tech-overlay {
+  background: rgba(35, 22, 10, 0.92) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* 科技树标题装饰线 */
+@keyframes tk-tech-title-shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.tk-tech-title-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d4a030, transparent);
+  background-size: 200% 100%;
+  animation: tk-tech-title-shine 3s linear infinite;
+}

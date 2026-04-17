@@ -36,7 +36,7 @@ import {
 import PixiGameCanvas from '@/renderer/components/PixiGameCanvas';
 import type { GameRenderState, SceneType, HeroRenderData } from '@/renderer/types';
 import { AudioManager } from '@/games/idle-subsystems/AudioManager';
-import { BuildingIcon, ResourceIcon, BuildingProgressBar } from './ThreeKingdomsSVGIcons';
+import { BuildingIcon, ResourceIcon, BuildingProgressBar, TechIcon, TechLockedIcon, TechResearchingIcon } from './ThreeKingdomsSVGIcons';
 import './ThreeKingdomsPixiGame.css';
 
 // ═══════════════════════════════════════════════════════════════
@@ -2646,7 +2646,7 @@ export default function ThreeKingdomsPixiGame() {
             />
           )}
 
-          {/* ═══════════ 科技研究浮层（树形可视化 — 增强版） ═══════════ */}
+          {/* ═══════════ 科技研究浮层（树形可视化 — 视觉增强版） ═══════════ */}
           {scene === 'tech-tree' && renderState?.techTree && (() => {
             const nodes = renderState.techTree.nodes;
             const connections = renderState.techTree.connections;
@@ -2654,10 +2654,10 @@ export default function ThreeKingdomsPixiGame() {
             // 按分支分组
             const branchOrder = ['military', 'economy', 'culture'] as const;
             const branchLabels: Record<string, string> = { military: '⚔️ 军事', economy: '💰 经济', culture: '📜 文化' };
-            const branchColors: Record<string, { border: string; bg: string; text: string; glow: string }> = {
-              military: { border: '#a85241', bg: 'rgba(168,82,65,0.08)', text: '#c62828', glow: 'rgba(168,82,65,0.25)' },
-              economy:  { border: '#4a7a3a', bg: 'rgba(74,122,58,0.08)', text: '#2e7d32', glow: 'rgba(74,122,58,0.25)' },
-              culture:  { border: '#4a6fa5', bg: 'rgba(74,111,165,0.08)', text: '#1565c0', glow: 'rgba(74,111,165,0.25)' },
+            const branchColors: Record<string, { border: string; bg: string; text: string; glow: string; accent: string }> = {
+              military: { border: '#a85241', bg: 'rgba(168,82,65,0.08)', text: '#c62828', glow: 'rgba(168,82,65,0.25)', accent: '#e53935' },
+              economy:  { border: '#4a7a3a', bg: 'rgba(74,122,58,0.08)', text: '#2e7d32', glow: 'rgba(74,122,58,0.25)', accent: '#66bb6a' },
+              culture:  { border: '#4a6fa5', bg: 'rgba(74,111,165,0.08)', text: '#1565c0', glow: 'rgba(74,111,165,0.25)', accent: '#42a5f5' },
             };
 
             function getBranch(nodeId: string): string {
@@ -2681,56 +2681,83 @@ export default function ThreeKingdomsPixiGame() {
             const totalNodes = nodes.length;
 
             return (
-              <div style={{
+              <div className="tk-tech-overlay" style={{
                 position: 'absolute', top: '50%', left: '50%',
                 transform: 'translate(-50%, -50%)',
-                background: 'rgba(0,0,0,0.92)',
+                background: 'rgba(35, 22, 10, 0.92)',
+                backdropFilter: 'blur(8px)',
                 borderRadius: 12, padding: 20,
-                width: 640, maxHeight: '85vh',
+                width: 680, maxHeight: '88vh',
                 overflowY: 'auto',
                 border: `1px solid ${COLOR_THEME.selectedBorder}`,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 60px rgba(212,160,48,0.08)',
               }}>
                 {/* 标题 + 进度 */}
                 <div style={{ textAlign: 'center', marginBottom: 14 }}>
                   <h2 style={{
                     fontSize: 20, color: COLOR_THEME.accentGold,
-                    margin: '0 0 6px', fontFamily: '"Noto Serif SC", serif',
-                    textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+                    margin: '0 0 4px', fontFamily: '"Noto Serif SC", serif',
+                    textShadow: '0 0 12px rgba(212,160,48,0.3)',
+                    letterSpacing: 4,
                   }}>
-                    ◆ 📜 科技研究
+                    ◆ 科技研究 ◆
                   </h2>
+                  {/* 装饰线 */}
+                  <div className="tk-tech-title-line" style={{ margin: '6px auto', width: '60%' }} />
                   {/* 总进度条 */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 8 }}>
                     <div style={{
-                      width: 200, height: 4, borderRadius: 2,
+                      width: 240, height: 6, borderRadius: 3,
                       background: 'rgba(255,255,255,0.08)', overflow: 'hidden',
+                      boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
                     }}>
                       <div style={{
                         width: `${totalNodes > 0 ? (researchedCount / totalNodes * 100) : 0}%`,
-                        height: '100%', borderRadius: 2,
-                        background: `linear-gradient(90deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
+                        height: '100%', borderRadius: 3,
+                        background: `linear-gradient(90deg, ${COLOR_THEME.accentGold}, #ff8c00, ${COLOR_THEME.accentGold})`,
+                        backgroundSize: '200% 100%',
                         transition: 'width 0.5s ease',
+                        boxShadow: '0 0 8px rgba(212,160,48,0.4)',
                       }} />
                     </div>
-                    <span style={{ fontSize: 11, color: COLOR_THEME.textDim }}>
+                    <span style={{ fontSize: 12, color: COLOR_THEME.accentGold, fontWeight: 'bold' }}>
                       {researchedCount}/{totalNodes}
                     </span>
                   </div>
                 </div>
 
                 {/* 三列树形布局 + 跨分支连接 */}
-                <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
-                  {/* 跨分支连接线（SVG 叠加层） */}
+                <div style={{ display: 'flex', gap: 10, position: 'relative' }}>
+                  {/* 跨分支连接线（SVG 叠加层 — 增强版） */}
                   <svg style={{
                     position: 'absolute', inset: 0,
                     width: '100%', height: '100%',
                     pointerEvents: 'none', zIndex: 0,
                   }}>
                     <defs>
-                      <marker id="arrowCross" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
-                        <polygon points="0,0 6,2 0,4" fill="rgba(212,160,48,0.3)" />
+                      {/* 渐变箭头标记 */}
+                      <marker id="arrowCrossGold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                        <polygon points="0,0 8,3 0,6" fill="rgba(212,160,48,0.5)" />
                       </marker>
+                      <marker id="arrowCrossDim" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                        <polygon points="0,0 8,3 0,6" fill="rgba(255,255,255,0.08)" />
+                      </marker>
+                      {/* 流动渐变 */}
+                      <linearGradient id="flowGradMilEco" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#a85241" stopOpacity="0.6" />
+                        <stop offset="50%" stopColor="#d4a030" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#4a7a3a" stopOpacity="0.6" />
+                      </linearGradient>
+                      <linearGradient id="flowGradEcoCul" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#4a7a3a" stopOpacity="0.6" />
+                        <stop offset="50%" stopColor="#d4a030" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#4a6fa5" stopOpacity="0.6" />
+                      </linearGradient>
+                      <linearGradient id="flowGradCulMil" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#4a6fa5" stopOpacity="0.6" />
+                        <stop offset="50%" stopColor="#d4a030" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#a85241" stopOpacity="0.6" />
+                      </linearGradient>
                     </defs>
                     {crossBranchConnections.map((conn, ci) => {
                       const fromBranch = getBranch(conn.from);
@@ -2746,19 +2773,23 @@ export default function ThreeKingdomsPixiGame() {
                       const fromTier = fromNode.tier;
                       const toTier = toNode.tier;
                       const tierStartY = 70; // px from top of content area
-                      const tierSpacing = 80;
+                      const tierSpacing = 92;
                       const fromY = tierStartY + (fromTier - 1) * tierSpacing + 20;
                       const toY = tierStartY + (toTier - 1) * tierSpacing + 20;
                       const fromCompleted = fromNode.state === 'completed';
                       const toCompleted = toNode.state === 'completed';
                       const active = fromCompleted;
+                      // 选择渐变
+                      const gradId = ci === 0 ? 'flowGradMilEco' : ci === 1 ? 'flowGradEcoCul' : 'flowGradCulMil';
                       return (
                         <line key={ci}
                           x1={fromX} y1={fromY} x2={`${colWidth * toBranchIdx + colWidth / 2}%`} y2={toY}
-                          stroke={active ? 'rgba(212,160,48,0.35)' : 'rgba(255,255,255,0.06)'}
-                          strokeWidth={active ? 1.5 : 1}
-                          strokeDasharray={active ? '4,3' : '3,4'}
-                          markerEnd="url(#arrowCross)"
+                          stroke={active ? `url(#${gradId})` : 'rgba(255,255,255,0.06)'}
+                          strokeWidth={active ? 1.8 : 1}
+                          strokeDasharray={active ? '6,4' : '3,4'}
+                          markerEnd={active ? 'url(#arrowCrossGold)' : 'url(#arrowCrossDim)'}
+                          className={active ? 'tk-tech-cross-connector--active' : undefined}
+                          opacity={active ? 1 : 0.5}
                         />
                       );
                     })}
@@ -2767,32 +2798,41 @@ export default function ThreeKingdomsPixiGame() {
                   {branchOrder.map(branch => {
                     const branchNodes = nodes.filter(n => getBranch(n.id) === branch).sort((a, b) => a.tier - b.tier);
                     const colors = branchColors[branch];
+                    const branchCompleted = branchNodes.filter(n => n.state === 'completed').length;
 
                     return (
                       <div key={branch} style={{
                         flex: 1, display: 'flex', flexDirection: 'column', gap: 0,
                         position: 'relative', zIndex: 1,
                       }}>
-                        {/* 分支颜色标记条 */}
+                        {/* 分支颜色标记条 — 渐变增强 */}
                         <div style={{
                           position: 'absolute', top: 0, bottom: 0, left: 0,
                           width: 3, borderRadius: 2,
-                          background: `linear-gradient(180deg, ${colors.border}, transparent)`,
-                          opacity: 0.4,
+                          background: `linear-gradient(180deg, ${colors.accent}, ${colors.border}, transparent)`,
+                          opacity: 0.6,
+                          boxShadow: `0 0 6px ${colors.glow}`,
                         }} />
 
-                        {/* 分支标题 */}
+                        {/* 分支标题 — 增强版 */}
                         <div style={{
                           textAlign: 'center', fontSize: 13, fontWeight: 'bold',
                           color: colors.text, marginBottom: 8,
-                          padding: '4px 0',
+                          padding: '6px 0',
                           borderBottom: `2px solid ${colors.border}`,
-                          textShadow: `0 0 8px ${colors.glow}`,
+                          textShadow: `0 0 10px ${colors.glow}`,
+                          position: 'relative',
                         }}>
                           {branchLabels[branch]}
+                          <span style={{
+                            fontSize: 9, color: COLOR_THEME.textDim,
+                            marginLeft: 6, fontWeight: 'normal',
+                          }}>
+                            {branchCompleted}/{branchNodes.length}
+                          </span>
                         </div>
 
-                        {/* 科技节点（层级排列 + 连接线） */}
+                        {/* 科技节点（层级排列 + 增强连接线） */}
                         {branchNodes.map((node, idx) => {
                           const isCompleted = node.state === 'completed';
                           const isAvailable = node.state === 'available';
@@ -2808,41 +2848,57 @@ export default function ThreeKingdomsPixiGame() {
                           });
 
                           return (
-                            <div key={node.id}>
-                              {/* 层级连接线 */}
+                            <div key={node.id} className="tk-tech-node--appear" style={{ animationDelay: `${idx * 0.05}s` }}>
+                              {/* 层级连接线 — 渐变 + 流动 */}
                               {hasConnector && (
                                 <div style={{
                                   display: 'flex', justifyContent: 'center',
                                   height: 16, position: 'relative',
                                 }}>
-                                  <div style={{
-                                    width: 2, height: '100%',
-                                    background: isCompleted
-                                      ? `linear-gradient(180deg, ${colors.border}aa, ${colors.border}66)`
-                                      : 'rgba(255,255,255,0.12)',
-                                  }} />
+                                  <svg width="40" height="16" style={{ overflow: 'visible' }}>
+                                    <line
+                                      x1="20" y1="0" x2="20" y2="16"
+                                      stroke={isCompleted
+                                        ? colors.accent
+                                        : isResearching
+                                          ? colors.border
+                                          : 'rgba(255,255,255,0.12)'}
+                                      strokeWidth={isCompleted ? 2.5 : 2}
+                                      strokeDasharray={isCompleted ? undefined : '3,3'}
+                                      className={isCompleted ? 'tk-tech-connector--completed' : undefined}
+                                      opacity={isCompleted ? 0.8 : 0.5}
+                                    />
+                                    {/* 流动粒子点 */}
+                                    {isCompleted && (
+                                      <>
+                                        <circle r="2" fill={colors.accent} opacity="0.8">
+                                          <animateMotion dur="1.5s" repeatCount="indefinite" path="M20,0 L20,16" />
+                                        </circle>
+                                      </>
+                                    )}
+                                  </svg>
                                   {isCompleted && (
                                     <div style={{
                                       position: 'absolute', top: '50%', left: '50%',
                                       transform: 'translate(-50%, -50%)',
-                                      width: 6, height: 6, borderRadius: '50%',
-                                      background: colors.border,
-                                      boxShadow: `0 0 4px ${colors.glow}`,
+                                      width: 8, height: 8, borderRadius: '50%',
+                                      background: `radial-gradient(circle, ${colors.accent}, ${colors.border})`,
+                                      boxShadow: `0 0 6px ${colors.glow}, 0 0 12px ${colors.glow}`,
                                     }} />
                                   )}
                                 </div>
                               )}
 
-                              {/* 科技节点 */}
+                              {/* 科技节点 — 增强版 */}
                               <div
-                                className="tk-tech-node"
+                                className={`tk-tech-node ${isCompleted ? 'tk-tech-node--completed' : ''} ${isAvailable ? 'tk-tech-node--available' : ''}`}
                                 style={{
                                   padding: '8px 10px',
-                                  borderRadius: 6,
+                                  borderRadius: 8,
                                   background: isCompleted
-                                    ? `linear-gradient(135deg, rgba(212,160,48,0.12), ${colors.bg})`
+                                    ? `linear-gradient(135deg, rgba(212,160,48,0.15), ${colors.bg}, rgba(212,160,48,0.08))`
                                     : isResearching
-                                      ? `${colors.bg}`
+                                      ? `linear-gradient(135deg, ${colors.bg}, rgba(212,160,48,0.05))`
                                       : isAvailable
                                         ? 'rgba(255,255,255,0.04)'
                                         : 'rgba(255,255,255,0.01)',
@@ -2852,51 +2908,101 @@ export default function ThreeKingdomsPixiGame() {
                                         : isAvailable ? `${colors.border}88`
                                           : 'rgba(255,255,255,0.06)'
                                   }`,
-                                  opacity: isLocked ? 0.4 : 1,
+                                  opacity: isLocked ? 0.45 : 1,
                                   position: 'relative',
-                                  boxShadow: isCompleted ? `0 0 8px ${colors.glow}` : 'none',
+                                  overflow: 'hidden',
+                                  boxShadow: isCompleted
+                                    ? `0 0 8px ${colors.glow}, inset 0 0 8px rgba(212,160,48,0.05)`
+                                    : isResearching
+                                      ? `0 0 6px rgba(212,160,48,0.15)`
+                                      : 'none',
+                                  transition: 'box-shadow 0.3s, border-color 0.3s',
                                 }}
                               >
-                                {/* 已解锁金色标记 */}
+                                {/* 已解锁 — 金色标记 + 粒子环绕 */}
                                 {isCompleted && (
-                                  <div style={{
-                                    position: 'absolute', top: -4, right: -4,
-                                    width: 14, height: 14, borderRadius: '50%',
-                                    background: COLOR_THEME.accentGold,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: 8, color: '#1a0a0a', fontWeight: 'bold',
-                                    boxShadow: '0 0 6px rgba(212,160,48,0.5)',
-                                  }}>✓</div>
+                                  <>
+                                    <div style={{
+                                      position: 'absolute', top: -4, right: -4,
+                                      width: 16, height: 16, borderRadius: '50%',
+                                      background: `radial-gradient(circle, ${COLOR_THEME.accentGold}, #b8943e)`,
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      fontSize: 9, color: '#1a0a0a', fontWeight: 'bold',
+                                      boxShadow: '0 0 8px rgba(212,160,48,0.6)',
+                                      zIndex: 2,
+                                    }}>✓</div>
+                                    {/* 粒子环绕 */}
+                                    <div className="tk-tech-particles">
+                                      <div className="tk-tech-particle" />
+                                      <div className="tk-tech-particle" />
+                                      <div className="tk-tech-particle" />
+                                    </div>
+                                  </>
                                 )}
 
                                 {/* 跨分支前置标记 */}
                                 {crossPrereqs.length > 0 && !isCompleted && (
                                   <div style={{
                                     position: 'absolute', top: -4, left: -4,
-                                    width: 10, height: 10, borderRadius: '50%',
+                                    width: 12, height: 12, borderRadius: '50%',
                                     background: crossPrereqMet ? '#4a7a3a' : '#666',
                                     border: '1px solid rgba(255,255,255,0.2)',
-                                    fontSize: 6, color: '#fff', display: 'flex',
+                                    fontSize: 7, color: '#fff', display: 'flex',
                                     alignItems: 'center', justifyContent: 'center',
+                                    zIndex: 2,
                                   }}>↗</div>
                                 )}
 
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <div>
-                                    <span style={{
-                                      fontSize: 12, fontWeight: 'bold',
-                                      color: isCompleted ? COLOR_THEME.accentGold
-                                        : isResearching ? colors.text
-                                          : COLOR_THEME.textPrimary,
+                                {/* 科技图标 + 名称行 */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                                    {/* 分支专属 SVG 图标替代通用 emoji */}
+                                    <div style={{
+                                      flexShrink: 0,
+                                      width: 28, height: 28,
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      opacity: isLocked ? 0.5 : 1,
+                                      filter: isLocked ? 'grayscale(0.8)' : 'none',
                                     }}>
-                                      {isCompleted ? '✅ ' : isResearching ? '🔬 ' : isLocked ? '🔒 ' : '📖 '}
-                                      {node.name}
-                                    </span>
-                                    <span style={{
-                                      fontSize: 9, color: COLOR_THEME.textDim, marginLeft: 4,
-                                    }}>
-                                      T{node.tier}
-                                    </span>
+                                      {isLocked
+                                        ? <TechLockedIcon size={24} />
+                                        : isResearching
+                                          ? <TechIcon techId={node.id} size={24} />
+                                          : <TechIcon techId={node.id} size={24} />
+                                      }
+                                    </div>
+                                    <div style={{ minWidth: 0 }}>
+                                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                                        <span style={{
+                                          fontSize: 12, fontWeight: 'bold',
+                                          color: isCompleted ? COLOR_THEME.accentGold
+                                            : isResearching ? colors.text
+                                              : isAvailable ? COLOR_THEME.textPrimary
+                                                : COLOR_THEME.textDim,
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap',
+                                        }}>
+                                          {node.name}
+                                        </span>
+                                        <span style={{
+                                          fontSize: 9, color: isCompleted ? 'rgba(212,160,48,0.6)' : COLOR_THEME.textDim,
+                                        }}>
+                                          T{node.tier}
+                                        </span>
+                                      </div>
+                                      <div style={{
+                                        fontSize: 9, color: isCompleted
+                                          ? 'rgba(240,230,211,0.6)'
+                                          : COLOR_THEME.textSecondary,
+                                        marginTop: 1,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                      }}>
+                                        {node.description}
+                                      </div>
+                                    </div>
                                   </div>
                                   {isAvailable && (
                                     <button
@@ -2917,33 +3023,55 @@ export default function ThreeKingdomsPixiGame() {
                                         }
                                       }}
                                       style={{
-                                        padding: '2px 10px', fontSize: 9,
+                                        padding: '3px 12px', fontSize: 9,
                                         borderRadius: 4, border: 'none', cursor: 'pointer',
                                         background: `linear-gradient(135deg, ${COLOR_THEME.accentGold}, #ff8c00)`,
                                         color: '#1a0a0a', fontWeight: 'bold',
+                                        boxShadow: '0 2px 6px rgba(212,160,48,0.3)',
+                                        flexShrink: 0,
+                                        transition: 'transform 0.15s, box-shadow 0.15s',
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'scale(1.05)';
+                                        e.currentTarget.style.boxShadow = '0 3px 10px rgba(212,160,48,0.5)';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                        e.currentTarget.style.boxShadow = '0 2px 6px rgba(212,160,48,0.3)';
                                       }}
                                     >
                                       研究
                                     </button>
                                   )}
                                 </div>
-                                <div style={{ fontSize: 9, color: COLOR_THEME.textSecondary, marginTop: 3 }}>
-                                  {node.description}
-                                </div>
+
+                                {/* 研究中 — 增强进度条 + 旋转图标 */}
                                 {isResearching && (
-                                  <div style={{ marginTop: 4 }}>
-                                    <div style={{
-                                      height: 3, borderRadius: 2,
-                                      background: 'rgba(255,255,255,0.1)',
-                                    }}>
-                                      <div style={{
-                                        width: `${(node.progress * 100).toFixed(0)}%`,
-                                        height: '100%', borderRadius: 2,
-                                        background: colors.border,
-                                        transition: 'width 0.3s',
-                                      }} />
+                                  <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <div style={{ flexShrink: 0, width: 16, height: 16 }}>
+                                      <TechResearchingIcon size={16} />
                                     </div>
-                                    <span style={{ fontSize: 8, color: colors.text }}>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{
+                                        height: 4, borderRadius: 2,
+                                        background: 'rgba(255,255,255,0.08)',
+                                        overflow: 'hidden',
+                                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
+                                      }}>
+                                        <div
+                                          className="tk-tech-progress-bar--researching"
+                                          style={{
+                                            width: `${(node.progress * 100).toFixed(0)}%`,
+                                            height: '100%', borderRadius: 2,
+                                            transition: 'width 0.3s',
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                    <span style={{
+                                      fontSize: 9, color: colors.text,
+                                      fontWeight: 'bold', minWidth: 32, textAlign: 'right',
+                                    }}>
                                       {(node.progress * 100).toFixed(1)}%
                                     </span>
                                   </div>
@@ -2964,14 +3092,20 @@ export default function ThreeKingdomsPixiGame() {
 
                 {/* 跨分支连接说明 */}
                 <div style={{
-                  marginTop: 12, paddingTop: 8,
+                  marginTop: 14, paddingTop: 10,
                   borderTop: '1px solid rgba(255,255,255,0.06)',
                   display: 'flex', justifyContent: 'center', gap: 16,
                   fontSize: 10, color: COLOR_THEME.textDim,
+                  flexWrap: 'wrap',
                 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: COLOR_THEME.accentGold, display: 'inline-block', boxShadow: '0 0 4px rgba(212,160,48,0.5)' }} />
+                    已研究
+                  </span>
                   <span>↗ = 跨路线前置</span>
-                  <span>--- = 跨路线加成</span>
-                  <span style={{ color: COLOR_THEME.accentGold }}>✓ = 已研究</span>
+                  <span style={{ color: 'rgba(212,160,48,0.6)' }}>--- = 跨路线加成</span>
+                  <span>🔬 = 研究中</span>
+                  <span style={{ opacity: 0.5 }}>🔒 = 未解锁</span>
                 </div>
               </div>
             );

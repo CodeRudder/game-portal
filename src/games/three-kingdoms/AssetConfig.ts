@@ -163,6 +163,69 @@ export const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// 势力城市颜色配置（城池/关卡按势力区分外观）
+// ═══════════════════════════════════════════════════════════════
+
+/** 势力城市颜色 */
+export interface FactionCityColors {
+  /** 旗帜颜色 */
+  flagColor: number;
+  /** 城墙装饰颜色 */
+  wallAccent: number;
+  /** 城墙主体颜色 */
+  wallColor: number;
+  /** 屋顶颜色 */
+  roofColor: number;
+}
+
+/** 势力 → 城市颜色映射 */
+export const FACTION_CITY_COLORS: Record<string, FactionCityColors> = {
+  wei: {
+    flagColor: 0x4a6fa5,      // 魏蓝 — 沉稳靛蓝
+    wallAccent: 0x3a5f95,
+    wallColor: 0x7a8a9a,
+    roofColor: 0x5a7a9a,
+  },
+  shu: {
+    flagColor: 0xc62828,      // 蜀红 — 赤焰朱红
+    wallAccent: 0xb62020,
+    wallColor: 0x9a7a6a,
+    roofColor: 0xa04040,
+  },
+  wu: {
+    flagColor: 0x2e7d32,      // 吴绿 — 翠墨深绿
+    wallAccent: 0x1e6d22,
+    wallColor: 0x7a9a7a,
+    roofColor: 0x4a7a4a,
+  },
+  qun: {
+    flagColor: 0xb8860b,      // 群黄 — 暗金铜色
+    wallAccent: 0xa87600,
+    wallColor: 0x8a8a7a,
+    roofColor: 0x9a8a5a,
+  },
+};
+
+/** 中立城市颜色（无势力领土） */
+export const NEUTRAL_CITY_COLORS: FactionCityColors = {
+  flagColor: 0x8a8a7a,       // 中立灰
+  wallAccent: 0x6a6a6a,
+  wallColor: 0x7a7a7a,
+  roofColor: 0x6a6a6a,
+};
+
+/**
+ * 根据领土 ID 获取势力城市颜色
+ * @param territoryId - 领土 ID（如 'shu_chengdu'、'wei_xuchang'）
+ * @returns 势力城市颜色配置
+ */
+export function getFactionCityColors(territoryId: string | undefined): FactionCityColors {
+  if (!territoryId) return NEUTRAL_CITY_COLORS;
+  const factionKey = territoryId.split('_')[0];
+  return FACTION_CITY_COLORS[factionKey] ?? NEUTRAL_CITY_COLORS;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Kenney 资源路径（保留，但仅用于建筑/NPC精灵）
 // ═══════════════════════════════════════════════════════════════
 
