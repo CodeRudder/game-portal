@@ -1,275 +1,309 @@
 # 三国霸业游戏引擎改进计划
 
-> 版本：v1.0 | 最后更新：2025-07-11
-> 关联文档：`00-ARCHITECTURE-REFACTOR.md` · `00-TEST-SYSTEM-DESIGN.md`
+> **创建日期**: 2026-04-19
+> **目标**: 将游戏引擎从扁平架构升级为4层架构，添加测试子系统，支撑20版本迭代开发
+> **关联文档**: [架构调整方案](./00-ARCHITECTURE-REFACTOR.md) | [测试子系统方案](./00-TEST-SUBSYSTEM.md) | [版本路线图](./00-VERSION-ROADMAP.md)
 
 ---
 
 ## 一、改进总览
 
-### 1.1 现状基线
+### 1.1 现状
 
-| 指标 | 当前值 |
-|------|--------|
-| 源文件数 | 38 个 TS |
-| 代码行数 | 22,565 行 |
-| 子系统数 | 44 个 |
-| 架构分层 | L1 内核 / L2 逻辑 / L3 UI / L4 渲染 |
+| 维度 | 现状 | 问题 |
+|------|------|------|
+| 架构 | 39文件扁平结构 | 无分层，耦合严重 |
+| 核心引擎 | ThreeKingdomsEngine.ts 2,902行 | God Object，持有35个子系统 |
+| UI组件 | ThreeKingdomsPixiGame.tsx 6,077行 | 巨型组件，247个函数 |
+| CSS | 单文件 5,054行 | 无模块化 |
+| 测试 | 27个测试文件，12模块无测试 | 覆盖率~69% |
+| 渲染 | PixiJS内嵌在UI组件中 | 无法独立测试 |
 
-### 1.2 改进目标
+### 1.2 目标
 
-- **v1~v4**：夯实核心循环，建立测试与持久化基础设施
-- **v5~v7**：开放世界地图，引入 NPC 生态与领地扩张
-- **v8~v10**：完善经济循环，离线收益与贸易网络
-- **v11~v14**：社交竞技层，PVP / 排行榜 / 联盟
-- **v15~v16**：长线养成，羁绊 / 对话 / 故事事件
-- **v17~v20**：体验打磨，渲染升级 / 音效 / 教程 / 数据统计
-
-### 1.3 改进原则
-
-1. **增量交付**：每版只新增/改动 ≤5 个子系统，控制回归风险
-2. **测试先行**：新增子系统必须附带 ≥80% 覆盖率的单元测试
-3. **接口隔离**：跨层调用通过 `EngineFacade` 统一收口，禁止 L3/L4 直接依赖 L1
-4. **配置外置**：所有数值参数抽入 `constants.ts` 或独立 Config 文件
+| 维度 | 目标 | 指标 |
+|------|------|------|
+| 架构 | 4层分层架构 | L1/L2/L3/L4 各层独立 |
+| 核心引擎 | Facade模式，<500行 | 单文件<500行 |
+| UI组件 | ~15个子组件 | 每个组件<400行 |
+| 测试 | 覆盖率>90% | 含RuntimeValidator+UITreeExtractor |
+| 渲染 | 独立渲染层 | 可替换渲染器 |
 
 ---
 
-## 二、Phase 1 (v1~v4) 核心框架阶段
+## 二、架构调整计划
 
-| 版本 | 新增子系统 | 改进子系统 | 基础设施 |
-|------|-----------|-----------|---------|
-| **v1.0** | `ResourceTickSystem` · `BuildingUpgradeSystem` | `BuildingSystem`（升级链路）· `constants`（资源/建筑数据表） | `EngineFacade` · `EventBus` · `SaveManager` |
-| **v2.0** | `HeroRecruitSystem` · `HeroDispatchSystem` | `UnitSystem`（招募/派遣接口） | `IGameLogic` 接口 · `MockGameLogic` 测试替身 |
-| **v3.0** | `BattleCalculatorSystem` · `StageMapSystem` | `StageSystem`（关卡地图加载）· `BattleSystem`（自动战斗公式） | `UITreeExtractor`（UI 组件树提取） |
-| **v4.0** | `StarRatingSystem` · `SweepSystem` | `BattleSystem`（扫荡模式）· `UnitSystem`（升星计算） | `TestDataProvider`（测试数据工厂） |
+> 详细方案见 [00-ARCHITECTURE-REFACTOR.md](./00-ARCHITECTURE-REFACTOR.md)
 
-**Phase 1 完成标志**：玩家可完成「建造 → 招募 → 战斗 → 扫荡」完整闭环，数据可存取。
+### 2.1 四层架构
 
----
+```
+┌─────────────────────────────────────┐
+│  L3 游戏UI层 (ui/)                  │  React组件，通过mock测试
+├─────────────────────────────────────┤
+│  L4 游戏渲染层 (rendering/)         │  PixiJS渲染，独立可测
+├─────────────────────────────────────┤
+│  L2 游戏逻辑层 (systems/)           │  6领域分组，独立可测
+├─────────────────────────────────────┤
+│  L1 内核/子系统/基础设施 (core/)     │  Facade+通用子系统
+└─────────────────────────────────────┘
+```
 
-## 三、Phase 2 (v5~v7) 世界探索阶段
+### 2.2 迁移6阶段
 
-| 版本 | 新增子系统 | 改进子系统 | 基础设施 |
-|------|-----------|-----------|---------|
-| **v5.0** | `WorldMapSystem` · `MapChunkLoader` | `MapGenerator`（分块生成）· `CityMapSystem`（城池接入世界） | `ChunkPool`（地图块对象池） |
-| **v6.0** | `TerritoryExpandSystem` · `ResourcePointSystem` | `TerritorySystem`（扩张规则）· `ResourcePointSystem`（采集逻辑） | `PathfindingAStar`（A* 寻路） |
-| **v7.0** | `NPCBehaviorTree` · `NPCTraitSystem` | `NPCSystem`（行为树驱动）· `NPCManager`（调度优化） | `BehaviorTreeBuilder`（可视化编辑器预留接口） |
-
-**Phase 2 完成标志**：世界地图可自由探索，NPC 自主活动，领地可扩张。
-
----
-
-## 四、Phase 3 (v8~v10) 经济体系阶段
-
-| 版本 | 新增子系统 | 改进子系统 | 基础设施 |
-|------|-----------|-----------|---------|
-| **v8.0** | `MarketSystem` · `PriceFluctuationEngine` | `TradeRouteSystem`（动态定价） | `EconomicSimulator`（经济模拟沙盒） |
-| **v9.0** | `OfflineRewardCalculator` · `ResourceCapSystem` | `OfflineRewardSystem`（收益公式）· `constants`（容量上限） | `TimeWarpUtil`（时间压缩工具） |
-| **v10.0** | `AchievementSystem` · `DailyQuestEngine` | `QuestSystem`（日常/成就）· `RewardSystem`（多渠道奖励归并） | `ProgressionTracker`（进度追踪器） |
-
-**Phase 3 完成标志**：经济系统自洽运转，离线收益准确，玩家有长期追求目标。
+| 阶段 | 内容 | 预估 |
+|------|------|------|
+| M1 | 创建目录结构+类型定义+接口 | 1天 |
+| M2 | 拆分L2子系统（从Engine.ts提取） | 2天 |
+| M3 | 拆分L4渲染器 | 1天 |
+| M4 | 重构L1内核（Engine→Facade） | 2天 |
+| M5 | 拆分L3 UI组件（从PixiGame.tsx提取） | 2天 |
+| M6 | 更新import+测试+验证 | 2天 |
 
 ---
 
-## 五、Phase 4 (v11~v14) 社交竞技阶段
+## 三、测试子系统计划
 
-| 版本 | 新增子系统 | 改进子系统 | 基础设施 |
-|------|-----------|-----------|---------|
-| **v11.0** | `PvpMatchSystem` · `BattleReplaySystem` | `BattleSystem`（PVP 战斗结算） | `MatchmakingQueue`（匹配队列） |
-| **v12.0** | `LeaderboardSystem` · `SeasonSystem` | `StatisticsTracker`（赛季统计） | `RankCalculator`（段位计算器） |
-| **v13.0** | `AllianceSystem` · `AllianceWarSystem` | `CampaignSystem`（联盟战接入） | `ChatRelay`（聊天中继预留接口） |
-| **v14.0** | `BattleChallengeSystem`（重构）· `ArenaSystem` | `BattleChallengeSystem`（竞技场模式）· `BattleStrategy`（AI 策略） | `ReplaySerializer`（回放序列化） |
+> 详细方案见 [00-TEST-SUBSYSTEM.md](./00-TEST-SUBSYSTEM.md)
 
-**Phase 4 完成标志**：PVP 匹配可用，排行榜实时更新，联盟战可发起。
+### 3.1 三大测试能力
 
----
+| 能力 | 组件 | 用途 |
+|------|------|------|
+| 单元测试 | Jest + 自定义Matchers | 每层独立测试，L3可mock L2 |
+| 运行时测试 | RuntimeValidator | 检测资源非负/建筑合法/战斗合理等12+规则 |
+| UI组件树 | UITreeExtractor | 提取组件层级树，供自测和评测使用 |
 
-## 六、Phase 5 (v15~v16) 长线养成阶段
+### 3.2 UITreeExtractor 输出示例
 
-| 版本 | 新增子系统 | 改进子系统 | 基础设施 |
-|------|-----------|-----------|---------|
-| **v15.0** | `BondLevelSystem` · `DialogueTriggerEngine` | `GeneralBondSystem`（羁绊等级）· `GeneralDialogueSystem`（条件触发） | `StoryScriptParser`（剧情脚本解析器） |
-| **v16.0** | `StoryEventScheduler` · `CharacterArcSystem` | `GeneralStoryEventSystem`（事件调度）· `TutorialStorySystem`（剧情教程） | `TimelineDirector`（时间线编排器） |
-
-**Phase 5 完成标志**：武将羁绊深度可培养，剧情事件按条件自动触发，角色弧线完整。
-
----
-
-## 七、Phase 6 (v17~v20) 体验优化阶段
-
-| 版本 | 新增子系统 | 改进子系统 | 基础设施 |
-|------|-----------|-----------|---------|
-| **v17.0** | `RenderPipeline` · `SpriteAtlasManager` | `ThreeKingdomsRenderStateAdapter`（渲染管线重构）· `ParticleSystem`（特效池化） | `AssetPreloader`（资源预加载） |
-| **v18.0** | `AudioMixerSystem` · `AmbientSoundEngine` | `AudioManager`（混音/分层）· `DayNightWeatherSystem`（环境音） | `SoundBank`（音效资源库） |
-| **v19.0** | `TutorialFlowEngine` · `TooltipSystem` | `TutorialStorySystem`（流程化教程）· `InputHandler`（新手引导拦截） | `GuideOverlay`（引导遮罩组件） |
-| **v20.0** | `TelemetrySystem` · `ABTestEngine` | `StatisticsTracker`（埋点上报）· `UnlockChecker`（AB 门控） | `DataPipeline`（数据管道预留接口） |
-
-**Phase 6 完成标志**：渲染帧率稳定 60fps，音效沉浸感强，新手引导流畅，数据可分析。
-
----
-
-## 八、子系统依赖图
-
-```mermaid
-graph TB
-    subgraph L1["L1 内核 core/"]
-        EngineFacade["EngineFacade"]
-        EventBus["EventBus"]
-        SaveManager["SaveManager"]
-        Constants["constants / Config"]
-    end
-
-    subgraph L2a["L2 核心循环 systems/core"]
-        ResourceTick["ResourceTickSystem"]
-        BuildingUpgrade["BuildingUpgradeSystem"]
-        HeroRecruit["HeroRecruitSystem"]
-        BattleCalc["BattleCalculatorSystem"]
-    end
-
-    subgraph L2b["L2 世界探索 systems/world"]
-        WorldMap["WorldMapSystem"]
-        Territory["TerritoryExpandSystem"]
-        NPCBT["NPCBehaviorTree"]
-        Pathfinding["PathfindingAStar"]
-    end
-
-    subgraph L2c["L2 经济 systems/economy"]
-        Market["MarketSystem"]
-        OfflineReward["OfflineRewardCalculator"]
-        Achievement["AchievementSystem"]
-    end
-
-    subgraph L2d["L2 社交 systems/social"]
-        PvpMatch["PvpMatchSystem"]
-        Leaderboard["LeaderboardSystem"]
-        Alliance["AllianceSystem"]
-    end
-
-    subgraph L2e["L2 养成 systems/progression"]
-        BondLevel["BondLevelSystem"]
-        StoryScheduler["StoryEventScheduler"]
-    end
-
-    subgraph L4["L4 渲染 rendering/"]
-        RenderPipeline["RenderPipeline"]
-        AudioMixer["AudioMixerSystem"]
-        Telemetry["TelemetrySystem"]
-    end
-
-    EngineFacade --> EventBus
-    EngineFacade --> SaveManager
-
-    ResourceTick --> EventBus
-    BuildingUpgrade --> ResourceTick
-    HeroRecruit --> EventBus
-
-    WorldMap --> Pathfinding
-    Territory --> WorldMap
-    NPCBT --> WorldMap
-
-    Market --> ResourceTick
-    OfflineReward --> ResourceTick
-
-    PvpMatch --> BattleCalc
-    Leaderboard --> PvpMatch
-    Alliance --> Leaderboard
-
-    BondLevel --> HeroRecruit
-    StoryScheduler --> BondLevel
-
-    RenderPipeline --> EventBus
-    AudioMixer --> EventBus
-    Telemetry --> EventBus
-
-    style L1 fill:#2d5016,stroke:#4a8c1c,color:#fff
-    style L2a fill:#1a3a5c,stroke:#2d6aa0,color:#fff
-    style L2b fill:#1a3a5c,stroke:#2d6aa0,color:#fff
-    style L2c fill:#1a3a5c,stroke:#2d6aa0,color:#fff
-    style L2d fill:#1a3a5c,stroke:#2d6aa0,color:#fff
-    style L2e fill:#1a3a5c,stroke:#2d6aa0,color:#fff
-    style L4 fill:#5c1a3a,stroke:#a02d6a,color:#fff
+```json
+{
+  "id": "game-root",
+  "type": "GameContainer",
+  "position": { "x": 0, "y": 0 },
+  "size": { "width": 1280, "height": 696 },
+  "state": { "activeTab": "map" },
+  "children": [
+    {
+      "id": "resource-bar",
+      "type": "ResourceBar",
+      "position": { "x": 0, "y": 0 },
+      "size": { "width": 1280, "height": 48 },
+      "state": { "food": 1500, "gold": 800, "troops": 200, "destiny": 50 },
+      "children": []
+    }
+  ]
+}
 ```
 
 ---
 
-## 九、改进优先级与风险
+## 四、各Phase引擎能力需求
 
-### 9.1 优先级矩阵
+### 4.1 Phase 1 — 核心框架 (v1.0~v4.0)
 
-| 优先级 | 子系统 | 理由 |
-|--------|--------|------|
-| **P0 阻塞** | `EngineFacade` · `EventBus` · `SaveManager` | 所有后续子系统依赖 |
-| **P0 阻塞** | `ResourceTickSystem` · `BuildingUpgradeSystem` | 核心循环入口 |
-| **P1 高** | `BattleCalculatorSystem` · `HeroRecruitSystem` | 核心玩法闭环 |
-| **P1 高** | `WorldMapSystem` · `PathfindingAStar` | 世界探索基础 |
-| **P2 中** | `MarketSystem` · `OfflineRewardCalculator` | 经济循环 |
-| **P2 中** | `PvpMatchSystem` · `LeaderboardSystem` | 社交竞技 |
-| **P3 低** | `BondLevelSystem` · `StoryEventScheduler` | 长线养成 |
-| **P3 低** | `RenderPipeline` · `AudioMixerSystem` | 体验优化 |
+| 子系统 | 版本 | 职责 | 依赖 | 状态 |
+|--------|------|------|------|------|
+| ResourceEngine | v1.0 | 4资源产出/消耗/上限管理 | L1 Core | 改进 |
+| BuildingEngine | v1.0 | 8建筑升级/产出/解锁 | ResourceEngine | 改进 |
+| SaveEngine | v1.0 | localStorage序列化/反序列化 | L1 Core | 新增 |
+| TickEngine | v1.0 | 游戏主循环tick，离线时间计算 | L1 Core | 改进 |
+| GeneralEngine | v2.0 | 武将招募/升级/属性/技能 | ResourceEngine | 改进 |
+| AssignmentEngine | v2.0 | 武将派遣到建筑的加成计算 | GeneralEngine, BuildingEngine | 新增 |
+| BattleEngine | v3.0 | 自动战斗/属性对比/伤害计算 | GeneralEngine | 改进 |
+| CampaignEngine | v3.0 | 关卡地图/解锁/星级评定 | BattleEngine | 改进 |
+| FormationEngine | v3.0 | 武将编队/阵位/站位加成 | GeneralEngine, BattleEngine | 新增 |
+| StarRatingEngine | v3.0 | 1~3星评定/扫荡 | CampaignEngine, BattleEngine | 新增 |
+| TechEngine | v4.0 | 3路线科技树/研究/互斥分支 | ResourceEngine | 改进 |
+| TechEffectEngine | v4.0 | 科技效果应用/全局加成 | TechEngine | 新增 |
+| GeneralStarUpEngine | v4.0 | 武将升星/碎片收集 | GeneralEngine | 新增 |
 
-### 9.2 风险清单
+### 4.2 Phase 2 — 世界探索 (v5.0~v7.0)
 
-| 风险 | 影响 | 缓解措施 |
-|------|------|---------|
-| `EventBus` 事件风暴导致性能劣化 | 全局卡顿 | 事件分级（同步/异步），高频事件改轮询 |
-| `SaveManager` 存档体积膨胀 | 加载超时 | 增量存档 + 数据压缩，上限 2MB |
-| `WorldMapSystem` 分块加载卡帧 | 探索体验差 | 异步分块加载 + 对象池复用 |
-| `BattleCalculatorSystem` 公式复杂度 | 调试困难 | 公式可配置化，战斗日志可回放 |
-| `NPCBehaviorTree` 行为爆炸 | CPU 峰值 | 行为频率限制 + LOD 策略（远处 NPC 降频） |
-| 跨版本子系统接口变更 | 回归缺陷 | 接口版本化 + 废弃标记 + 迁移指南 |
+| 子系统 | 版本 | 职责 | 依赖 | 状态 |
+|--------|------|------|------|------|
+| MapEngine | v5.0 | 世界地图渲染/缩放/拖拽/城池 | L4 Rendering | 改进 |
+| TerritoryEngine | v5.0 | 领土占领/势力范围/产出 | MapEngine, ResourceEngine | 改进 |
+| NPCEngine | v6.0 | NPC巡逻/交互/日程/对话 | MapEngine | 改进 |
+| EventEngine | v6.0 | 随机事件/触发条件/奖励 | L1 Core | 改进 |
+| QuestEngine | v7.0 | 任务系统/日常/成就型任务 | EventEngine | 改进 |
+| ChainEventEngine | v7.0 | 连锁事件/事件链触发 | EventEngine | 新增 |
 
-### 9.3 技术债务清理计划
+### 4.3 Phase 3 — 经济体系 (v8.0~v10.0)
 
-| 版本 | 清理内容 |
-|------|---------|
-| v4.0 | 统一 `constants.ts` 数据格式，消除硬编码魔法数字 |
-| v7.0 | `NPCSystem` 系列合并为统一 NPC 模块，减少类间耦合 |
-| v10.0 | `EventSystem` + `ThreeKingdomsEventSystem` + `EventEnrichmentSystem` 合并为事件总线统一层 |
-| v14.0 | `CampaignSystem` + `CampaignBattleSystem` + `BattleChallengeSystem` 统一战役接口 |
-| v20.0 | 全局 TypeScript strict 模式开启，消除 `any` 类型 |
+| 子系统 | 版本 | 职责 | 依赖 | 状态 |
+|--------|------|------|------|------|
+| ShopEngine | v8.0 | 商品列表/购买/刷新/限时 | ResourceEngine | 新增 |
+| CurrencyEngine | v8.0 | 多货币体系/汇率/转换 | ResourceEngine | 新增 |
+| TradeEngine | v8.0 | 商路派遣/自动往返/获利 | MapEngine, CurrencyEngine | 改进 |
+| OfflineEngine | v9.0 | 离线收益计算/回归奖励 | ResourceEngine, TickEngine | 改进 |
+| MailEngine | v9.0 | 邮件系统/系统通知/奖励领取 | L1 Core | 新增 |
+| ResourceProtectEngine | v9.0 | 资源保护/存储上限 | ResourceEngine | 新增 |
+| EquipmentEngine | v10.0 | 装备穿戴/卸下/属性加成 | GeneralEngine | 新增 |
+| ForgeEngine | v10.0 | 铁匠铺强化/材料消耗/成功率 | EquipmentEngine, ResourceEngine | 新增 |
+| SetEffectEngine | v10.0 | 套装效果/集齐判定 | EquipmentEngine | 新增 |
 
----
+### 4.4 Phase 4 — 社交竞技 (v11.0~v14.0)
 
-## 十、验收标准
+| 子系统 | 版本 | 职责 | 依赖 | 状态 |
+|--------|------|------|------|------|
+| PVPEngine | v11.0 | 竞技场匹配/战斗/排名 | BattleEngine | 新增 |
+| LeaderboardEngine | v11.0 | 排行榜/赛季刷新/奖励 | L1 Core | 新增 |
+| SocialEngine | v12.0 | 好友/聊天/赠送 | L1 Core | 新增 |
+| ExpeditionEngine | v12.0 | 远征派遣/自动探索/奖励 | GeneralEngine, MapEngine | 新增 |
+| AllianceEngine | v13.0 | 联盟创建/加入/加成/捐献 | SocialEngine | 新增 |
+| SeasonEngine | v13.0 | 赛季系统/重置/奖励 | LeaderboardEngine | 新增 |
+| ActivityEngine | v13.0 | 限时活动/签到/累计奖励 | L1 Core | 新增 |
+| PrestigeEngine | v14.0 | 声望转生/永久加成/重置 | L1 Core | 改进 |
+| AchievementEngine | v14.0 | 成就定义/进度/奖励 | L1 Core | 新增 |
 
-### 10.1 质量门禁
+### 4.5 Phase 5~6 — 长线养成+体验优化 (v15.0~v20.0)
 
-| 指标 | 目标值 | 检测方式 |
-|------|--------|---------|
-| 引擎内核（L1+L2）测试覆盖率 | **>90%** | Jest --coverage |
-| 单次 update + render 耗时 | **<16ms** | Performance profiling |
-| 存档读写延迟 | **<100ms** | Benchmark |
-| 内存峰值 | **<100MB** | Chrome DevTools Memory |
-| TypeScript strict 合规 | **0 error** | tsc --strict |
-| `any` 类型使用 | **0 处** | ESLint @typescript-eslint/no-explicit-any |
-
-### 10.2 功能验收
-
-- [ ] v1~v4：建造→招募→战斗→扫荡完整闭环可运行
-- [ ] v5~v7：世界地图可探索，NPC 自主行为，领地可扩张
-- [ ] v8~v10：经济系统自洽，离线收益准确，日常/成就可完成
-- [ ] v11~v14：PVP 匹配成功，排行榜实时更新，联盟战可发起
-- [ ] v15~v16：羁绊可培养，剧情事件按条件触发
-- [ ] v17~v20：60fps 稳定渲染，新手引导流畅，埋点数据可上报
-
-### 10.3 架构验收
-
-- [ ] L3/L4 层无直接 import L1 层模块（通过 `EngineFacade` 间接访问）
-- [ ] 所有子系统通过 `EventBus` 解耦，无直接方法调用跨系统
-- [ ] UI 组件树可通过 `UITreeExtractor` 完整提取
-- [ ] 新增子系统均附 `__tests__/` 目录，覆盖率 ≥80%
-- [ ] 100% 符合本改进计划所列交付物
-
-### 10.4 交付物清单
-
-每个版本交付时必须包含：
-
-1. **源码**：新增/改动的 `.ts` 文件
-2. **测试**：对应 `__tests__/*.test.ts`，覆盖率达标
-3. **配置**：`constants.ts` 或独立 Config 文件中的数值表
-4. **文档**：子系统接口说明（JSDoc + README 片段）
-5. **变更日志**：`CHANGELOG.md` 版本条目
+| 子系统 | 版本 | 职责 | 依赖 | 状态 |
+|--------|------|------|------|------|
+| StoryEventEngine | v15.0 | 武将剧情事件/触发/分支 | GeneralEngine, EventEngine | 改进 |
+| BondEngine | v16.0 | 武将羁绊/组合加成 | GeneralEngine | 改进 |
+| InheritEngine | v16.0 | 传承系统/属性继承 | PrestigeEngine, GeneralEngine | 新增 |
+| ResponsiveEngine | v17.0 | 响应式布局/断点适配 | L3 UI, L4 Rendering | 新增 |
+| TouchEngine | v17.0 | 触控优化/手势识别 | L3 UI | 新增 |
+| TutorialEngine | v18.0 | 引导状态机/步骤管理/高亮遮罩 | L1 Core | 改进 |
+| AudioEngine | v19.0 | BGM/音效/程序化音频 | L1 Core | 改进 |
+| SettingsEngine | v19.0 | 设置持久化/导入导出 | SaveEngine | 新增 |
+| BalanceEngine | v20.0 | 数值平衡/经济校验 | ResourceEngine, all | 新增 |
+| PerformanceEngine | v20.0 | 性能监控/帧率优化/内存管理 | L1 Core | 新增 |
 
 ---
 
-> **下一步行动**：按 Phase 1 v1.0 启动 `EngineFacade` + `EventBus` + `SaveManager` 基础设施搭建。
+## 五、子系统汇总统计
+
+| 分类 | 新增 | 改进 | 合计 |
+|------|------|------|------|
+| Phase 1 核心框架 | 6 | 7 | 13 |
+| Phase 2 世界探索 | 2 | 4 | 6 |
+| Phase 3 经济体系 | 7 | 2 | 9 |
+| Phase 4 社交竞技 | 8 | 1 | 9 |
+| Phase 5~6 长线优化 | 6 | 4 | 10 |
+| **合计** | **29** | **18** | **47** |
+
+---
+
+## 六、执行计划
+
+### 6.1 阶段A：架构调整+测试子系统（先于版本开发）
+
+```
+Week 1: M1 目录结构+接口定义 + M2 L2子系统拆分
+Week 2: M3 L4渲染器拆分 + M4 L1内核重构
+Week 3: M5 L3 UI组件拆分 + M6 验证+测试
+```
+
+**阶段A验收**：
+- [ ] 4层目录结构创建完成
+- [ ] Engine.ts < 500行（Facade模式）
+- [ ] PixiGame.tsx < 500行（拆分为~15子组件）
+- [ ] 所有现有测试通过
+- [ ] RuntimeValidator可运行
+- [ ] UITreeExtractor可提取组件树
+
+### 6.2 阶段B：v1.0~v4.0 引擎能力开发（与版本开发同步）
+
+每个版本开发时同步添加/改进对应的子系统。
+
+### 6.3 阶段C：后续版本按需迭代
+
+v5.0起每个版本的"游戏引擎需求"部分明确列出需要的子系统，开发时同步实现。
+
+---
+
+## 七、验收标准
+
+### 7.1 架构验收
+- [ ] 4层目录结构完整（core/systems/ui/rendering）
+- [ ] 单文件 < 500行
+- [ ] 层间依赖方向正确（L3→L2→L1，L4→L1，L3↔L4通过接口）
+- [ ] 每层可独立编译
+
+### 7.2 测试验收
+- [ ] 游戏引擎内核及基础设施测试覆盖率 > 90%
+- [ ] 每个子系统有独立单元测试
+- [ ] L3 UI层可通过mock进行单元测试
+- [ ] RuntimeValidator可检测12+种异常状态
+- [ ] UITreeExtractor可提取完整组件层级树
+
+### 7.3 CSS模块化方案
+
+现有CSS单文件5,054行需按组件拆分：
+
+```
+src/games/three-kingdoms/
+├── ui/
+│   ├── styles/
+│   │   ├── variables.css          — 全局变量（颜色/字号/间距/动画）
+│   │   ├── base.css               — 基础重置+通用样式
+│   │   ├── resource-bar.css       — 资源栏组件样式
+│   │   ├── building-panel.css     — 建筑面板样式
+│   │   ├── hero-panel.css         — 武将面板样式
+│   │   ├── tech-panel.css         — 科技面板样式
+│   │   ├── campaign-panel.css     — 关卡面板样式
+│   │   ├── map-view.css           — 地图视图样式
+│   │   ├── combat-view.css        — 战斗视图样式
+│   │   ├── dialog.css             — 弹窗/对话框样式
+│   │   ├── tutorial.css           — 新手引导样式
+│   │   └── mobile.css             — 手机端适配样式
+```
+
+拆分原则：
+- 每个L3 UI组件对应一个CSS文件
+- 全局变量（颜色/字号/间距）提取到 variables.css
+- 手机端适配规则统一在 mobile.css 中用媒体查询
+- 目标：每个CSS文件 < 400行
+
+### 7.4 L3↔L4接口契约
+
+```typescript
+/** L3 UI层 → L4渲染层的渲染请求接口 */
+interface IRenderRequest {
+  type: 'sprite' | 'text' | 'shape' | 'container';
+  id: string;
+  props: Record<string, unknown>;
+  children?: IRenderRequest[];
+}
+
+/** L4渲染层 → L3 UI层的事件回调接口 */
+interface IRenderEvent {
+  type: 'click' | 'hover' | 'drag' | 'animation-end';
+  targetId: string;
+  data: Record<string, unknown>;
+}
+
+/** L3↔L4双向交互接口 */
+interface IUIRendererBridge {
+  /** L3→L4: 提交渲染请求 */
+  submitRender(request: IRenderRequest): void;
+  /** L3→L4: 更新渲染元素 */
+  updateRender(id: string, props: Partial<IRenderRequest>): void;
+  /** L3→L4: 移除渲染元素 */
+  removeRender(id: string): void;
+  /** L4→L3: 注册事件监听 */
+  onRenderEvent(callback: (event: IRenderEvent) => void): void;
+}
+```
+
+### 7.5 功能验收
+- [ ] 100%符合游戏引擎改进计划文档的要求
+- [ ] 满足单元测试及运行时测试提取UI组件层级树
+- [ ] 真正能投入评测游戏使用
+- [ ] 所有现有功能不丢失
+
+---
+
+## 附录：文件清单
+
+| 文件 | 说明 |
+|------|------|
+| [00-ARCHITECTURE-ANALYSIS.md](./00-ARCHITECTURE-ANALYSIS.md) | 架构调研报告 |
+| [00-ARCHITECTURE-REFACTOR.md](./00-ARCHITECTURE-REFACTOR.md) | 4层架构调整方案 |
+| [00-TEST-SUBSYSTEM.md](./00-TEST-SUBSYSTEM.md) | 测试子系统方案 |
+| [00-FEATURE-INVENTORY.md](./00-FEATURE-INVENTORY.md) | 功能清单 |
+| [00-VERSION-ROADMAP.md](./00-VERSION-ROADMAP.md) | 20版本路线图 |
+| [00-ENGINE-IMPROVEMENT.md](./00-ENGINE-IMPROVEMENT.md) | 本文件 |
