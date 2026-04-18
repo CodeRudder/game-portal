@@ -1265,6 +1265,25 @@
   animation: tk-built-pulse 4s ease-in-out infinite;
 }
 
+/* ─── 1c. 未建造建筑 — 降低视觉权重，灰色遮罩 ─── */
+.tk-building-card:not(.tk-building-locked):not([data-built="true"]) {
+  opacity: 0.55;
+  filter: saturate(0.3) brightness(0.75);
+  border-color: rgba(120, 120, 120, 0.25);
+}
+.tk-building-card:not(.tk-building-locked):not([data-built="true"]):hover {
+  opacity: 0.8;
+  filter: saturate(0.6) brightness(0.9);
+  border-color: rgba(201, 168, 76, 0.45);
+}
+.tk-building-card:not(.tk-building-locked):not([data-built="true"]) .tk-building-icon {
+  background: rgba(80, 80, 90, 0.25) !important;
+}
+/* 已建造建筑 — 更鲜明的图标背景 */
+.tk-building-card:not(.tk-building-locked)[data-built="true"] .tk-building-icon {
+  background: rgba(201, 168, 76, 0.08);
+}
+
 /* ─── 2. 资源图标圆形背景 + 文字阴影 ─── */
 .tk-resource-icon {
   width: 32px;

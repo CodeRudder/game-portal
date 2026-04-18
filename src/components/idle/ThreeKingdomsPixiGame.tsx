@@ -265,6 +265,9 @@ const ThreeKingdomsPixiGame: React.FC = () => {
   }, []);
 
   // ─── 任务进度检查 ───
+  // 用 ref 记录已触发 Toast 的任务 ID，避免与 handleUpgrade 的建造成功 Toast 重复
+  const toastedTaskIdsRef = useRef<Set<number>>(new Set());
+
   useEffect(() => {
     setTasks(prev =>
       prev.map(task => {
@@ -274,14 +277,20 @@ const ThreeKingdomsPixiGame: React.FC = () => {
           const lv = levels[task.target] ?? 0;
           progress = Math.min(1, lv / task.targetLevel);
           if (lv >= task.targetLevel) {
-            addToast(`任务完成：${task.title} — ${task.reward}`, 'success');
+            if (!toastedTaskIdsRef.current.has(task.id)) {
+              toastedTaskIdsRef.current.add(task.id);
+              addToast(`任务完成：${task.title} — ${task.reward}`, 'success');
+            }
             return { ...task, done: true, progress: 1 };
           }
         } else if (task.type === 'total') {
           const total = Object.values(levels).reduce((s, v) => s + v, 0);
           progress = Math.min(1, total / task.targetLevel);
           if (total >= task.targetLevel) {
-            addToast(`任务完成：${task.title} — ${task.reward}`, 'success');
+            if (!toastedTaskIdsRef.current.has(task.id)) {
+              toastedTaskIdsRef.current.add(task.id);
+              addToast(`任务完成：${task.title} — ${task.reward}`, 'success');
+            }
             return { ...task, done: true, progress: 1 };
           }
         }
