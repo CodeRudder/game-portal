@@ -1021,9 +1021,14 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     for (const b of BUILDINGS) {
       if (this.bldg.isUnlocked(b.id)) continue;
 
-      // 1. 前置建筑解锁（requires）
+      // 1. 前置建筑解锁（requires）— 需要满足 unlockCondition 中指定的等级
       if (b.requires?.length) {
-        if (b.requires.every(r => this.bldg.getLevel(r) > 0)) {
+        const allMet = b.requires.every(reqId => {
+          // 从 unlockCondition 字符串中解析所需等级
+          const requiredLevel = this.parseRequiredLevel(b.unlockCondition, reqId);
+          return this.bldg.getLevel(reqId) >= requiredLevel;
+        });
+        if (allMet) {
           this.bldg.forceUnlock(b.id);
           this.ftSys.add(`🔓 解锁建筑：${b.name}`, 0.5, 0.35, {
             style: { color: COLOR_THEME.accentGold, fontSize: 16 },
@@ -1046,6 +1051,31 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
         }
       }
     }
+  }
+
+  /**
+   * 从 unlockCondition 字符串中解析前置建筑所需等级。
+   *
+   * 格式示例："军营Lv.3" → 3, "太学 Lv.3" → 3, "城防Lv.3" → 3
+   * 如果无法解析数字，默认要求 level >= 1。
+   *
+   * @param condition - unlockCondition 字符串
+   * @param reqBuildingId - 前置建筑的 ID
+   */
+  private parseRequiredLevel(condition: string | undefined, _reqBuildingId: string): number {
+    if (!condition) return 1;
+    // 匹配 "Lv.X"、"Lv.X"、"Level X" 等格式中的数字
+    const match = condition.match(/Lv\.?\s*(\d+)/i) || condition.match(/Level\s*(\d+)/i);
+    if (match) {
+      return parseInt(match[1], 10);
+    }
+    // 尝试匹配字符串中的任意数字（容错）
+    const numMatch = condition.match(/(\d+)/);
+    if (numMatch) {
+      return parseInt(numMatch[1], 10);
+    }
+    // 没有数字则默认要求 level > 0
+    return 1;
   }
 
   private toggle(p: ActivePanel): void {
@@ -1319,6 +1349,34 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   public getActivePanel(): ActivePanel { return this.panel; }
   public getPrestigeState() { return this.prest.getState(); }
   public getStageInfo() { return this.stages.getCurrent(); }
+
+  /**
+   * 获取指定建筑的解锁条件详情（供 UI 显示）。
+   * 返回每个前置建筑的所需等级和当前等级。
+   */
+  public getUnlockConditionDetails(buildingId: string): Array<{
+    buildingId: string;
+    buildingName: string;
+    requiredLevel: number;
+    currentLevel: number;
+    met: boolean;
+  }> {
+    const def = BUILDINGS.find(b => b.id === buildingId);
+    if (!def?.requires?.length) return [];
+
+    return def.requires.map(reqId => {
+      const reqDef = BUILDINGS.find(b => b.id === reqId);
+      const requiredLevel = this.parseRequiredLevel(def.unlockCondition, reqId);
+      const currentLevel = this.bldg.getLevel(reqId);
+      return {
+        buildingId: reqId,
+        buildingName: reqDef?.name ?? reqId,
+        requiredLevel,
+        currentLevel,
+        met: currentLevel >= requiredLevel,
+      };
+    });
+  }
 
   // ─── Phase 6.1 子系统 getter（供渲染适配器使用） ─────────
 

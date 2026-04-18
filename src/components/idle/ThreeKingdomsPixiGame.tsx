@@ -145,6 +145,29 @@ function getCategory(def: BuildingDef): BuildingCategory {
   return CATEGORY_MAP[def.category ?? ''] ?? '核心';
 }
 
+/** 获取缺失资源的获取途径提示 */
+function getResourceTip(resourceId: string): string {
+  switch (resourceId) {
+    case 'grain': return '升级屯田增加粮草产出';
+    case 'gold': return '升级商行增加铜钱产出';
+    case 'troops': return '升级军营增加兵力产出';
+    case 'iron': return '升级铁匠铺增加铁矿产出（需先建军营）';
+    case 'wood': return '升级城防增加木材产出（需先建军营）';
+    case 'destiny': return '升级太学增加天命产出';
+    case 'morale': return '升级药庐增加民心产出';
+    default: return '';
+  }
+}
+
+/** 资源中文名映射 */
+const RESOURCE_NAMES: Record<string, string> = {
+  grain: '粮草', gold: '铜钱', iron: '铁矿', wood: '木材',
+  troops: '兵力', destiny: '天命', morale: '民心', copper: '铜币',
+};
+for (const r of RESOURCES) {
+  RESOURCE_NAMES[r.id] = r.name;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Toast 类型
 // ═══════════════════════════════════════════════════════════════════════════
@@ -186,6 +209,10 @@ const ThreeKingdomsPixiGame: React.FC = () => {
 
   const [tasks, setTasks] = useState(INITIAL_TASKS.map(t => ({ ...t, done: false, progress: 0 })));
   const [toasts, setToasts] = useState<Toast[]>([]);
+
+  // ─── 资源飘字 ───
+  const prevResourcesRef = useRef<Record<string, number>>({});
+  const [floatTexts, setFloatTexts] = useState<{ id: number; text: string; color: string }[]>([]);
 
   // ─── Toast ───
   const addToast = useCallback((msg: string, type: Toast['type'] = 'info') => {
@@ -306,6 +333,38 @@ const ThreeKingdomsPixiGame: React.FC = () => {
     );
   }, [levels, addToast]);
 
+  // ─── 资源飘字动效 ───
+  const floatColorsRef = useRef<Record<string, string>>({
+    grain: '#7EC850', gold: '#C9A84C', troops: '#B8423A', destiny: '#9B6FD0',
+  });
+
+  useEffect(() => {
+    const prev = prevResourcesRef.current;
+    const floats: { id: number; text: string; color: string }[] = [];
+
+    TOP_RESOURCES.forEach(key => {
+      const val = resources[key] ?? 0;
+      const prevVal = prev[key];
+      if (prevVal !== undefined && val > prevVal) {
+        const diff = Math.floor(val - prevVal);
+        if (diff > 0) {
+          floats.push({
+            id: Date.now() + Math.random(),
+            text: `+${diff}`,
+            color: floatColorsRef.current[key] ?? '#C9A84C',
+          });
+        }
+      }
+    });
+
+    prevResourcesRef.current = { ...resources };
+
+    if (floats.length > 0) {
+      setFloatTexts(floats);
+      setTimeout(() => setFloatTexts([]), 1200);
+    }
+  }, [resources]);
+
   // ─── ESC 关闭弹窗 ───
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -413,7 +472,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             const rawRatio = ui.hasCap && cap > 0 ? Math.min(1, val / cap) : 0;
             const barRatio = ui.hasCap ? Math.max(rawRatio, val > 0 ? 0.02 : 0) : 0;
             return (
-              <div key={id} className="tk-resource-item">
+              <div key={id} className="tk-resource-item" style={{ position: 'relative' }}>
                 <span className="tk-resource-icon">{ui.icon}</span>
                 <span className="tk-resource-value" style={{ color: ui.color }}>
                   {fmtNum(val)}
@@ -435,6 +494,16 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                 <span className={`tk-resource-rate ${rate <= 0 ? 'tk-resource-rate-zero' : ''}`}>
                   +{fmtNum(rate)}/s
                 </span>
+                {/* 资源飘字 */}
+                {floatTexts.filter(f => f.color === ui.color).map(f => (
+                  <span
+                    key={f.id}
+                    className="tk-float-text"
+                    style={{ color: f.color, top: -4, left: 10 }}
+                  >
+                    {f.text}
+                  </span>
+                ))}
               </div>
             );
           })}
@@ -502,12 +571,17 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                       key={def.id}
                       className={`tk-building-card ${!isUnlocked ? 'tk-building-locked' : ''}`}
                       data-category={getCategory(def)}
+                      data-type={def.id}
                       data-built={lv > 0 ? 'true' : undefined}
                       data-building-id={def.id}
-                      data-level={lv > 0 ? lv : undefined}
+                      data-level={lv > 0 ? String(lv) : undefined}
                       onClick={() => isUnlocked && setUpgradeModal(def.id)}
                     >
-                      <div className="tk-building-icon" data-icon-cat={getCategory(def)}>{def.icon}</div>
+                      <div className="tk-building-icon" data-icon-cat={getCategory(def)}>
+                        {def.icon}
+                        {lv >= 3 && <span className="tk-star">✨</span>}
+                        {lv >= 6 && <span className="tk-star">🌟</span>}
+                      </div>
                       <div className="tk-building-info">
                         <div className="tk-building-name">
                           {def.name}
@@ -521,6 +595,17 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                                 +{fmtNum(rate)}/s {RESOURCE_ICONS[def.productionResource] ?? ''}
                               </div>
                             )}
+                            {lv > 0 && lv < 10 && (() => {
+                              /* 等级进度条：以当前等级在当前段的进度表示 */
+                              const tierStart = lv <= 2 ? 1 : lv <= 5 ? 3 : 6;
+                              const tierEnd = lv <= 2 ? 2 : lv <= 5 ? 5 : 10;
+                              const progress = Math.min(100, ((lv - tierStart) / Math.max(1, tierEnd - tierStart)) * 100);
+                              return (
+                                <div className="tk-building-progress">
+                                  <div className="tk-building-progress-bar" style={{ width: `${progress}%` }} />
+                                </div>
+                              );
+                            })()}
                             {lv === 0 && (
                               <div className="tk-building-unbuilt">
                                 <span className="tk-building-unbuilt-icon">🏗️</span>
@@ -530,7 +615,33 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                           </>
                         ) : (
                           <div className="tk-building-lock-info">
-                            🔒 {def.unlockCondition ?? '条件未满足'}
+                            {(() => {
+                              const engine = engineRef.current;
+                              if (!engine) return <>🔒 {def.unlockCondition ?? '条件未满足'}</>;
+                              const details = engine.getUnlockConditionDetails(def.id);
+                              if (details.length === 0) {
+                                return <>🔒 {def.unlockCondition ?? '条件未满足'}</>;
+                              }
+                              return (
+                                <div className="tk-unlock-condition">
+                                  <div className="tk-unlock-title">🔒 解锁条件</div>
+                                  {details.map(d => (
+                                    <div key={d.buildingId} className={d.met ? 'tk-condition-met' : 'tk-condition-unmet'}>
+                                      {d.met ? '✅' : '❌'} {d.buildingName} Lv.{d.requiredLevel}
+                                      {!d.met && d.currentLevel > 0 && (
+                                        <span className="tk-condition-detail"> (当前 Lv.{d.currentLevel}，还需升级{d.requiredLevel - d.currentLevel}级)</span>
+                                      )}
+                                      {!d.met && d.currentLevel === 0 && (
+                                        <span className="tk-condition-detail"> (未建造)</span>
+                                      )}
+                                      {d.met && d.currentLevel > d.requiredLevel && (
+                                        <span className="tk-condition-detail"> (当前 Lv.{d.currentLevel})</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>
@@ -746,12 +857,27 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                   {Object.entries(cost).map(([rid, amt]) => {
                     const have = res[rid] ?? 0;
                     const enough = have >= amt;
+                    const tip = getResourceTip(rid);
                     return (
-                      <div key={rid} className={`tk-modal-cost-item ${enough ? 'tk-modal-cost-item-enough' : 'tk-modal-cost-item-lacking'}`}>
-                        {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}{' '}
-                        <span style={{ color: enough ? '#7EC850' : '#B8423A' }}>
-                          {enough ? '✓' : '✗'} {fmtNum(have)}/{fmtNum(amt)}
-                        </span>
+                      <div key={rid}>
+                        <div className={`tk-modal-cost-item ${enough ? 'tk-modal-cost-item-enough' : 'tk-modal-cost-item-lacking'}`}>
+                          <span className={enough ? 'tk-cost-enough' : 'tk-cost-lacking'}>
+                            {enough ? '✅' : '❌'} {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}
+                          </span>
+                          {!enough && (
+                            <span className="tk-cost-lacking">
+                              {' '}(拥有 {fmtNum(have)}/{fmtNum(amt)})
+                            </span>
+                          )}
+                          {enough && (
+                            <span className="tk-cost-enough">
+                              {' '}✓ {fmtNum(have)}/{fmtNum(amt)}
+                            </span>
+                          )}
+                        </div>
+                        {!enough && tip && (
+                          <div className="tk-cost-tip">💡 {tip}</div>
+                        )}
                       </div>
                     );
                   })}

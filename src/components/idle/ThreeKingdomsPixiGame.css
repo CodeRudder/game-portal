@@ -17,11 +17,14 @@
   height: 800px;
   position: relative;
   margin: 0 auto;
-  background:
+  background: #1A1A2E;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(201, 168, 76, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(201, 168, 76, 0.02) 0%, transparent 50%),
     repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(201,168,76,0.012) 3px, rgba(201,168,76,0.012) 4px),
-    #1A1A2E;
+    linear-gradient(180deg, #1A1A2E 0%, #161628 100%);
   overflow: hidden;
-  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-family: "STKaiti", "KaiTi", "MaShanZheng", "SimSun", serif;
   user-select: none;
   color: #F0E6D3;
   display: flex;
@@ -35,8 +38,8 @@
   width: 100%;
   height: 56px;
   flex-shrink: 0;
-  background: rgba(26, 35, 50, 0.9);
-  border-bottom: 1px solid rgba(201, 168, 76, 0.4);
+  background: linear-gradient(180deg, rgba(30, 25, 20, 0.95) 0%, rgba(40, 32, 24, 0.9) 50%, rgba(30, 25, 20, 0.95) 100%);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.3);
   display: flex;
   align-items: center;
   padding: 0 16px;
@@ -124,7 +127,7 @@
   font-size: 14px;
   color: #C9A84C;
   font-weight: bold;
-  font-family: 'Impact', 'Arial', sans-serif;
+  font-family: "DIN Alternate", "Roboto Mono", "Courier New", monospace;
 }
 
 .tk-resource-cap {
@@ -169,8 +172,8 @@
   width: 100%;
   height: 48px;
   flex-shrink: 0;
-  background: rgba(26, 35, 50, 0.9);
-  border-bottom: 1px solid rgba(201, 168, 76, 0.3);
+  background: linear-gradient(180deg, rgba(26, 35, 50, 0.95) 0%, rgba(20, 28, 40, 0.98) 100%);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.25);
   display: flex;
   align-items: stretch;
   justify-content: center;
@@ -346,9 +349,9 @@
 .tk-building-card {
   width: 160px;
   height: 180px;
-  background: rgba(26, 30, 48, 0.85);
-  border: 1px solid rgba(201, 168, 76, 0.2);
-  border-radius: 6px;
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(26, 35, 50, 0.9) 0%, rgba(20, 28, 40, 0.95) 100%);
   display: flex;
   flex-direction: column;
   cursor: pointer;
@@ -356,6 +359,26 @@
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+/* 四角装饰 */
+.tk-building-card::after {
+  content: '◆';
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  color: rgba(201, 168, 76, 0.3);
+  font-size: 8px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 建筑等级星星装饰 */
+.tk-star {
+  font-size: 14px;
+  margin-left: 2px;
+  vertical-align: middle;
 }
 
 .tk-building-card:hover {
@@ -437,6 +460,7 @@
   font-weight: bold;
   flex-shrink: 0;
   margin-left: 4px;
+  font-family: "DIN Alternate", "Roboto Mono", "Courier New", monospace;
 }
 
 /* 建筑产出速率 */
@@ -724,17 +748,20 @@
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
+  animation: overlayFadeIn 0.2s ease-out;
 }
 
 /* 弹窗主体 */
 .tk-modal {
   width: 420px;
   max-width: 90vw;
-  background: rgba(13, 17, 23, 0.95);
+  background: linear-gradient(135deg, rgba(13, 17, 23, 0.97) 0%, rgba(20, 25, 35, 0.97) 100%);
   border: 2px solid #C9A84C;
   border-radius: 8px;
   padding: 24px;
@@ -802,7 +829,7 @@
   color: #C9A84C;
   font-weight: bold;
   margin-bottom: 16px;
-  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  font-family: "STKaiti", "KaiTi", serif;
   letter-spacing: 2px;
   text-align: center;
 }
@@ -1244,7 +1271,7 @@
 
 /* ─── 优化7: 弹窗动画 ─── */
 .tk-modal {
-  animation: modalScaleIn 0.2s ease-out;
+  animation: modalSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tk-modal-title::after {
@@ -1271,6 +1298,22 @@
 @keyframes modalScaleIn {
   from { transform: scale(0.95); opacity: 0.8; }
   to   { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes upgradeFlash {
@@ -1324,6 +1367,16 @@
 .tk-building-card[data-category="防御"]::before { background: #2E5090; }
 .tk-building-card[data-category="核心"]::before { background: #C9A84C; }
 
+/* ─── P0-2: 建筑类型强调色 — 左侧色条 ─── */
+.tk-building-card[data-type="farm"]         { border-left: 3px solid #7EC850; }
+.tk-building-card[data-type="market"]       { border-left: 3px solid #C9A84C; }
+.tk-building-card[data-type="barracks"]     { border-left: 3px solid #B8423A; }
+.tk-building-card[data-type="smithy"]       { border-left: 3px solid #8B7355; }
+.tk-building-card[data-type="academy"]      { border-left: 3px solid #7B5EA7; }
+.tk-building-card[data-type="wall"]         { border-left: 3px solid #6B8E9B; }
+.tk-building-card[data-type="beacon_tower"] { border-left: 3px solid #CD853F; }
+.tk-building-card[data-type="granary"]      { border-left: 3px solid #A0522D; }
+
 /* ─── 1b. 已建造建筑 — 微弱金色脉冲边框 ─── */
 @keyframes tk-built-pulse {
   0%, 100% { border-color: rgba(201, 168, 76, 0.2); }
@@ -1333,17 +1386,40 @@
   animation: tk-built-pulse 4s ease-in-out infinite;
 }
 
-/* ─── 1b-2. 建筑等级视觉层次 — 高等级更亮边框 ─── */
-.tk-building-card[data-level="1"] { border-color: rgba(201, 168, 76, 0.4); }
-.tk-building-card[data-level="2"] { border-color: rgba(201, 168, 76, 0.55); }
-.tk-building-card[data-level="3"] { border-color: rgba(201, 168, 76, 0.65); }
-.tk-building-card[data-level="4"] { border-color: rgba(201, 168, 76, 0.75); }
-.tk-building-card[data-level="5"] { border-color: rgba(201, 168, 76, 0.85); }
-.tk-building-card[data-level="6"] { border-color: rgba(212, 175, 55, 0.9); }
-.tk-building-card[data-level="7"] { border-color: rgba(218, 165, 32, 0.95); }
-.tk-building-card[data-level="8"] { border-color: rgba(255, 215, 0, 1); }
-.tk-building-card[data-level="9"] { border-color: rgba(255, 215, 0, 1); }
-.tk-building-card[data-level="10"] { border-color: rgba(255, 215, 0, 1); }
+/* ─── 1b-2. 建筑等级视觉层次 — 分段式等级区分 ─── */
+/* Lv.0 未建造：降低视觉权重（下方单独处理） */
+/* Lv.1-2：基础金色 */
+.tk-building-card[data-level="1"] { border-color: rgba(201, 168, 76, 0.3); }
+.tk-building-card[data-level="2"] { border-color: rgba(201, 168, 76, 0.3); }
+/* Lv.3-5：翠绿色调 + 微弱阴影 */
+.tk-building-card[data-level="3"],
+.tk-building-card[data-level="4"],
+.tk-building-card[data-level="5"] {
+  border-color: rgba(126, 200, 80, 0.5);
+  box-shadow: 0 0 8px rgba(126, 200, 80, 0.15);
+}
+/* Lv.6-10：琥珀色调 + 明显阴影 */
+.tk-building-card[data-level="6"],
+.tk-building-card[data-level="7"],
+.tk-building-card[data-level="8"],
+.tk-building-card[data-level="9"],
+.tk-building-card[data-level="10"] {
+  border-color: rgba(255, 165, 0, 0.5);
+  box-shadow: 0 0 12px rgba(255, 165, 0, 0.2);
+}
+/* 等级徽章底色随等级段变化 */
+.tk-building-card[data-level="3"] .tk-building-level,
+.tk-building-card[data-level="4"] .tk-building-level,
+.tk-building-card[data-level="5"] .tk-building-level {
+  background: linear-gradient(135deg, #7EC850, #5DA832);
+}
+.tk-building-card[data-level="6"] .tk-building-level,
+.tk-building-card[data-level="7"] .tk-building-level,
+.tk-building-card[data-level="8"] .tk-building-level,
+.tk-building-card[data-level="9"] .tk-building-level,
+.tk-building-card[data-level="10"] .tk-building-level {
+  background: linear-gradient(135deg, #FFA500, #E8922A);
+}
 
 /* ─── 1c. 未建造建筑 — 降低视觉权重，灰色遮罩 ─── */
 .tk-building-card:not(.tk-building-locked):not([data-built="true"]) {
@@ -1374,10 +1450,10 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
-.tk-resource-item:nth-child(1) .tk-resource-icon { background: rgba(126, 200, 80, 0.15); }
-.tk-resource-item:nth-child(2) .tk-resource-icon { background: rgba(201, 168, 76, 0.15); }
-.tk-resource-item:nth-child(3) .tk-resource-icon { background: rgba(184, 66, 58, 0.15); }
-.tk-resource-item:nth-child(4) .tk-resource-icon { background: rgba(123, 94, 167, 0.15); }
+.tk-resource-item:nth-child(1) .tk-resource-icon { background: rgba(126, 200, 80, 0.15); color: #7EC850; }
+.tk-resource-item:nth-child(2) .tk-resource-icon { background: rgba(201, 168, 76, 0.15); color: #C9A84C; }
+.tk-resource-item:nth-child(3) .tk-resource-icon { background: rgba(184, 66, 58, 0.15); color: #B8423A; }
+.tk-resource-item:nth-child(4) .tk-resource-icon { background: rgba(123, 94, 167, 0.15); color: #7B5EA7; }
 
 .tk-resource-value {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
@@ -1423,8 +1499,91 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+ * P1-2: 资源飘字动效
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-28px); }
+}
+
+.tk-float-text {
+  position: absolute;
+  animation: floatUp 1.2s ease-out forwards;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * P1-3: 建筑升级进度条
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.tk-building-progress {
+  height: 3px;
+  background: rgba(201, 168, 76, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.tk-building-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #C9A84C, #E8C96A);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
  * 无障碍：减少动画偏好
  * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 资源获取提示样式 ─── */
+.tk-cost-enough {
+  color: #7EC850;
+  font-weight: bold;
+}
+
+.tk-cost-lacking {
+  color: #B8423A;
+  font-weight: bold;
+}
+
+.tk-cost-tip {
+  font-size: 11px;
+  color: #A0A0A0;
+  padding: 2px 8px 4px 28px;
+  margin-top: -2px;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+/* ─── 解锁条件显示样式 ─── */
+.tk-unlock-condition {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.tk-unlock-title {
+  color: #A0A0A0;
+  margin-bottom: 2px;
+  font-weight: bold;
+}
+
+.tk-condition-met {
+  color: #7EC850;
+  font-size: 10px;
+}
+
+.tk-condition-unmet {
+  color: #B8423A;
+  font-size: 10px;
+}
+
+.tk-condition-detail {
+  color: #A0A0A0;
+  font-size: 9px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1432,5 +1591,9 @@
     animation-duration: 0.01ms !important;
     animation-iter-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .tk-modal-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }

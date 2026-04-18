@@ -190,7 +190,7 @@ export const BUILDING_DESCRIPTIONS: Record<string, string> = {
 export const BUILDINGS: BuildingDef[] = [
   {
     id: 'farm', name: '屯田', icon: '🌾', category: 'resource',
-    baseCost: { grain: 15 }, costMultiplier: 1.15, maxLevel: 0,
+    baseCost: { grain: 12, gold: 5 }, costMultiplier: 1.15, maxLevel: 0,
     productionResource: 'grain', baseProduction: 1.0,
     unlockCondition: '初始解锁',
   },
@@ -208,7 +208,7 @@ export const BUILDINGS: BuildingDef[] = [
   },
   {
     id: 'smithy', name: '铁匠铺', icon: '🔨', category: 'military',
-    baseCost: { gold: 80, grain: 40 }, costMultiplier: 1.10, maxLevel: 0,
+    baseCost: { gold: 50, grain: 30 }, costMultiplier: 1.10, maxLevel: 0,
     productionResource: 'iron', baseProduction: 0.8,
     requires: ['barracks'],
     unlockCondition: '军营 Lv.3',
@@ -227,7 +227,7 @@ export const BUILDINGS: BuildingDef[] = [
   },
   {
     id: 'wall', name: '城防', icon: '🏰', category: 'military',
-    baseCost: { gold: 120, grain: 60, troops: 30 }, costMultiplier: 1.15, maxLevel: 0,
+    baseCost: { gold: 150, grain: 60, troops: 15 }, costMultiplier: 1.15, maxLevel: 0,
     productionResource: 'wood', baseProduction: 1.0,
     requires: ['barracks'],
     unlockCondition: '军营 Lv.5',
@@ -242,7 +242,7 @@ export const BUILDINGS: BuildingDef[] = [
   // ── 新增特色建筑 ──
   {
     id: 'beacon_tower', name: '烽火台', icon: '🔥', category: 'military',
-    baseCost: { gold: 150, iron: 40, troops: 50 }, costMultiplier: 1.12, maxLevel: 0,
+    baseCost: { gold: 150, iron: 20, troops: 30, wood: 30 }, costMultiplier: 1.12, maxLevel: 0,
     productionResource: 'troops', baseProduction: 0.3,
     requires: ['wall'],
     unlockCondition: '城防 Lv.3',
@@ -706,7 +706,7 @@ export const RESOURCES = [
 
 export const INITIAL_RESOURCES: Record<string, number> = {
   grain: 500,
-  gold: 300,
+  gold: 400,
   iron: 30,
   wood: 20,
   troops: 200,
