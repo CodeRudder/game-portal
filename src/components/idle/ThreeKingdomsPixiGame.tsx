@@ -40,8 +40,15 @@ const RESOURCE_UI: Record<string, { name: string; icon: string; color: string; h
 /** 顶部栏显示的资源顺序 */
 const TOP_RESOURCES = ['grain', 'gold', 'troops', 'destiny'];
 
-/** 资源图标映射（用于费用显示） */
-const RESOURCE_ICONS: Record<string, string> = {};
+/**
+ * 资源图标映射（用于费用显示）
+ * 优先从 RESOURCES 常量构建，同时提供硬编码 fallback 确保不遗漏
+ */
+const RESOURCE_ICONS: Record<string, string> = {
+  grain: '🌾', gold: '💰', iron: '⛏️', wood: '🪵',
+  troops: '⚔️', destiny: '👑', morale: '🏮',
+  copper: '🪙',
+};
 for (const r of RESOURCES) {
   RESOURCE_ICONS[r.id] = r.icon;
 }

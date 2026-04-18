@@ -216,7 +216,7 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'academy', name: '太学', icon: '📚', category: 'civilian',
     baseCost: { gold: 200 }, costMultiplier: 1.12, maxLevel: 0,
-    productionResource: 'gold', baseProduction: 1.5,
+    productionResource: 'destiny', baseProduction: 0.5,
     unlockCondition: '累计 1000 铜钱',
   },
   {
