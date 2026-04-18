@@ -471,6 +471,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                       key={def.id}
                       className={`tk-building-card ${!isUnlocked ? 'tk-building-locked' : ''}`}
                       data-category={getCategory(def)}
+                      data-built={lv > 0 ? 'true' : undefined}
                       onClick={() => isUnlocked && setUpgradeModal(def.id)}
                     >
                       <div className="tk-building-icon" data-icon-cat={getCategory(def)}>{def.icon}</div>
@@ -764,7 +765,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
       {/* ═══════ 6. Toast 通知 ═══════ */}
       <div className="tk-toast-container">
         {toasts.map(toast => (
-          <div key={toast.id} className={`tk-toast ${toast.type === 'error' ? 'tk-toast-error' : ''}`}>
+          <div key={toast.id} className={`tk-toast ${toast.type === 'error' ? 'tk-toast-error' : ''} ${toast.type === 'success' ? 'tk-toast-success' : ''}`}>
             {toast.msg}
           </div>
         ))}

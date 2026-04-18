@@ -1235,6 +1235,95 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+ * v3.1 视觉层次提升 (+1.0)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. 建筑卡片顶部色条 — 类别区分 ─── */
+.tk-building-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  border-radius: 6px 6px 0 0;
+  z-index: 1;
+}
+.tk-building-card[data-category="民生"]::before { background: #7EC850; }
+.tk-building-card[data-category="军事"]::before { background: #B8423A; }
+.tk-building-card[data-category="文教"]::before { background: #7B5EA7; }
+.tk-building-card[data-category="防御"]::before { background: #2E5090; }
+.tk-building-card[data-category="核心"]::before { background: #C9A84C; }
+
+/* ─── 1b. 已建造建筑 — 微弱金色脉冲边框 ─── */
+@keyframes tk-built-pulse {
+  0%, 100% { border-color: rgba(201, 168, 76, 0.2); }
+  50% { border-color: rgba(201, 168, 76, 0.35); }
+}
+.tk-building-card:not(.tk-building-locked)[data-built="true"] {
+  animation: tk-built-pulse 4s ease-in-out infinite;
+}
+
+/* ─── 2. 资源图标圆形背景 + 文字阴影 ─── */
+.tk-resource-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tk-resource-item:nth-child(1) .tk-resource-icon { background: rgba(126, 200, 80, 0.15); }
+.tk-resource-item:nth-child(2) .tk-resource-icon { background: rgba(201, 168, 76, 0.15); }
+.tk-resource-item:nth-child(3) .tk-resource-icon { background: rgba(184, 66, 58, 0.15); }
+.tk-resource-item:nth-child(4) .tk-resource-icon { background: rgba(123, 94, 167, 0.15); }
+
+.tk-resource-value {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── 3. Toast 通知升级 ─── */
+.tk-toast {
+  background: linear-gradient(135deg, rgba(13, 17, 23, 0.97), rgba(26, 35, 50, 0.95));
+}
+.tk-toast-success {
+  border-left: 3px solid #7EC850;
+  border-color: rgba(126, 200, 80, 0.4);
+  border-left-color: #7EC850;
+  background: linear-gradient(135deg, rgba(13, 17, 23, 0.97), rgba(20, 30, 20, 0.95));
+}
+.tk-toast-error {
+  background: linear-gradient(135deg, rgba(13, 17, 23, 0.97), rgba(35, 20, 18, 0.95));
+}
+
+/* ─── 4. 建筑场景标题装饰线 ─── */
+.tk-building-title {
+  position: relative;
+  color: #C9A84C;
+}
+.tk-building-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.6), transparent);
+  margin: 6px auto 0;
+}
+
+/* ─── 5. 筛选栏活跃态 + hover ─── */
+.tk-filter-active {
+  background: rgba(201, 168, 76, 0.18);
+  color: #C9A84C;
+  border-color: rgba(201, 168, 76, 0.6);
+  box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.1);
+}
+.tk-filter-btn:hover {
+  background: rgba(201, 168, 76, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
  * 无障碍：减少动画偏好
  * ═══════════════════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
