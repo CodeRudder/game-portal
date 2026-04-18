@@ -862,18 +862,11 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                       <div key={rid}>
                         <div className={`tk-modal-cost-item ${enough ? 'tk-modal-cost-item-enough' : 'tk-modal-cost-item-lacking'}`}>
                           <span className={enough ? 'tk-cost-enough' : 'tk-cost-lacking'}>
-                            {enough ? '✅' : '❌'} {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}
+                            {enough ? '✓' : '✗'} {RESOURCE_ICONS[rid] ?? rid} {fmtNum(amt)}
                           </span>
-                          {!enough && (
-                            <span className="tk-cost-lacking">
-                              {' '}(拥有 {fmtNum(have)}/{fmtNum(amt)})
-                            </span>
-                          )}
-                          {enough && (
-                            <span className="tk-cost-enough">
-                              {' '}✓ {fmtNum(have)}/{fmtNum(amt)}
-                            </span>
-                          )}
+                          <span className={enough ? 'tk-cost-enough' : 'tk-cost-lacking'}>
+                            {' '}(拥有 {fmtNum(have)})
+                          </span>
                         </div>
                         {!enough && tip && (
                           <div className="tk-cost-tip">💡 {tip}</div>

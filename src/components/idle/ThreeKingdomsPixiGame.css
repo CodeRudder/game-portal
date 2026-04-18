@@ -235,6 +235,11 @@
   overflow-y: auto;
   overflow-x: hidden;
   border-top: 1px solid rgba(201, 168, 76, 0.25);
+  background:
+    radial-gradient(ellipse at 15% 85%, rgba(201, 168, 76, 0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 85% 15%, rgba(201, 168, 76, 0.03) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(139, 115, 85, 0.02) 0%, transparent 60%),
+    linear-gradient(180deg, #0D1117 0%, #141B24 50%, #0D1117 100%);
 }
 
 .tk-scene::-webkit-scrollbar {
@@ -350,7 +355,7 @@
   width: 160px;
   height: 180px;
   border: 1px solid rgba(201, 168, 76, 0.25);
-  border-radius: 4px;
+  border-radius: 6px;
   background: linear-gradient(135deg, rgba(26, 35, 50, 0.9) 0%, rgba(20, 28, 40, 0.95) 100%);
   display: flex;
   flex-direction: column;
@@ -359,6 +364,7 @@
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* 四角装饰 */
@@ -477,14 +483,15 @@
   background: linear-gradient(135deg, #C9A84C, #A8872A);
   color: #1A1A2E;
   border: none;
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
   font-weight: bold;
   text-align: center;
-  transition: background 200ms ease-out;
+  transition: background 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
   letter-spacing: 1px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .tk-building-upgrade-btn:hover {
@@ -769,7 +776,7 @@
   overflow-y: auto;
   position: relative;
   box-sizing: border-box;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(232, 201, 106, 0.3);
 }
 
 /* 弹窗四角装饰 */
@@ -829,8 +836,8 @@
   color: #C9A84C;
   font-weight: bold;
   margin-bottom: 16px;
-  font-family: "STKaiti", "KaiTi", serif;
-  letter-spacing: 2px;
+  font-family: "STKaiti", "KaiTi", "MaShanZheng", "SimSun", serif;
+  letter-spacing: 3px;
   text-align: center;
 }
 
@@ -1139,14 +1146,14 @@
 /* ─── 优化3: 升级按钮hover增强 ─── */
 .tk-building-upgrade-btn:hover:not(.tk-btn-disabled) {
   background: linear-gradient(135deg, #DFC06E, #C9A84C);
-  transform: scale(1.05);
-  box-shadow: 0 0 12px rgba(201, 168, 76, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(201, 168, 76, 0.3);
   transition: all 0.15s ease;
 }
 
 .tk-building-upgrade-btn:active:not(.tk-btn-disabled) {
-  transform: scale(0.95);
-  box-shadow: none;
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* ─── 优化6: 占位页面增强 ─── */
