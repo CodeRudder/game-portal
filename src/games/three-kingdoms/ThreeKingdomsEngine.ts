@@ -1010,20 +1010,13 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     }
   }
 
-  /** 资源阈值解锁配置：建筑ID → 所需资源阈值 */
-  private static readonly RESOURCE_UNLOCK_THRESHOLDS: Record<string, Record<string, number>> = {
-    academy: { gold: 1000 },     // 累计 1000 铜钱
-    clinic: { grain: 500 },      // 累计 500 粮草
-  };
-
   private checkUnlocks(): void {
     for (const b of BUILDINGS) {
       if (this.bldg.isUnlocked(b.id)) continue;
 
-      // 1. 前置建筑解锁（requires）— 需要满足 unlockCondition 中指定的等级
+      // 情况1：有前置建筑（requires）的建筑
       if (b.requires?.length) {
         const allMet = b.requires.every(reqId => {
-          // 从 unlockCondition 字符串中解析所需等级
           const requiredLevel = this.parseRequiredLevel(b.unlockCondition, reqId);
           return this.bldg.getLevel(reqId) >= requiredLevel;
         });
@@ -1036,17 +1029,18 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
         continue;
       }
 
-      // 2. 资源阈值解锁（无 requires 的非初始建筑）
-      const threshold = ThreeKingdomsEngine.RESOURCE_UNLOCK_THRESHOLDS[b.id];
-      if (threshold) {
-        const met = Object.entries(threshold).every(
-          ([resId, amount]) => (this.res[resId] || 0) >= amount,
-        );
-        if (met) {
-          this.bldg.forceUnlock(b.id);
-          this.ftSys.add(`🔓 解锁建筑：${b.name}`, 0.5, 0.35, {
-            style: { color: COLOR_THEME.accentGold, fontSize: 16 },
-          });
+      // 情况2：累计资源类解锁条件（如 "累计 500 粮草"）
+      if (b.unlockCondition && !b.unlockCondition.includes('初始解锁')) {
+        const totalCondition = this.parseTotalResourceCondition(b.unlockCondition);
+        if (totalCondition) {
+          const { resource, amount } = totalCondition;
+          const currentAmount = this.res[resource] ?? 0;
+          if (currentAmount >= amount) {
+            this.bldg.forceUnlock(b.id);
+            this.ftSys.add(`🔓 解锁建筑：${b.name}`, 0.5, 0.35, {
+              style: { color: COLOR_THEME.accentGold, fontSize: 16 },
+            });
+          }
         }
       }
     }
@@ -1075,6 +1069,35 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     }
     // 没有数字则默认要求 level > 0
     return 1;
+  }
+
+  /**
+   * 解析"累计 X 资源"格式的解锁条件。
+   *
+   * 示例: "累计 500 粮草" → { resource: 'grain', amount: 500 }
+   *       "累计 1000 铜钱" → { resource: 'gold', amount: 1000 }
+   */
+  private parseTotalResourceCondition(condition: string): { resource: string; amount: number } | null {
+    const match = condition.match(/累计\s*(\d+)\s*(粮草|铜钱|铁矿|木材|兵力|天命|民心)/);
+    if (!match) return null;
+
+    const amount = parseInt(match[1], 10);
+    const resourceName = match[2];
+
+    const nameToId: Record<string, string> = {
+      '粮草': 'grain',
+      '铜钱': 'gold',
+      '铁矿': 'iron',
+      '木材': 'wood',
+      '兵力': 'troops',
+      '天命': 'destiny',
+      '民心': 'morale',
+    };
+
+    const resource = nameToId[resourceName];
+    if (!resource) return null;
+
+    return { resource, amount };
   }
 
   private toggle(p: ActivePanel): void {

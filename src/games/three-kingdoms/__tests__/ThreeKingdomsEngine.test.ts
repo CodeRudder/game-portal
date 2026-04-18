@@ -69,8 +69,8 @@ describe('常量验证', () => {
     expect(GAME_TITLE).toBe('三国霸业');
   });
 
-  it('BUILDINGS 有 14 个建筑', () => {
-    expect(BUILDINGS).toHaveLength(14);
+  it('BUILDINGS 有 15 个建筑', () => {
+    expect(BUILDINGS).toHaveLength(15);
   });
 
   it('BUILDINGS 所有建筑有唯一 ID', () => {
@@ -108,8 +108,8 @@ describe('常量验证', () => {
     expect(STAGES).toHaveLength(6);
   });
 
-  it('RESOURCES 有 7 种资源', () => {
-    expect(RESOURCES).toHaveLength(7);
+  it('RESOURCES 有 8 种资源', () => {
+    expect(RESOURCES).toHaveLength(8);
     const ids = RESOURCES.map(r => r.id);
     expect(ids).toContain('grain');
     expect(ids).toContain('gold');
@@ -117,6 +117,7 @@ describe('常量验证', () => {
     expect(ids).toContain('destiny');
     expect(ids).toContain('iron');
     expect(ids).toContain('wood');
+    expect(ids).toContain('defense');
     expect(ids).toContain('morale');
   });
 
@@ -147,6 +148,7 @@ describe('常量验证', () => {
     expect(INITIAL_RESOURCES.iron).toBe(10);
     expect(INITIAL_RESOURCES.wood).toBe(10);
     expect(INITIAL_RESOURCES.troops).toBe(100);
+    expect(INITIAL_RESOURCES.defense).toBe(0);
     expect(INITIAL_RESOURCES.destiny).toBe(50);
   });
 
@@ -192,19 +194,19 @@ describe('引擎初始化', () => {
     expect(engine.getResources().grain).toBe(500);
   });
 
-  it('初始 gold 为 400', () => {
+  it('初始 gold 为 300', () => {
     const engine = createEngine();
-    expect(engine.getResources().gold).toBe(400);
+    expect(engine.getResources().gold).toBe(300);
   });
 
-  it('初始 troops 为 200', () => {
+  it('初始 troops 为 100', () => {
     const engine = createEngine();
-    expect(engine.getResources().troops).toBe(200);
+    expect(engine.getResources().troops).toBe(100);
   });
 
-  it('初始 destiny 为 100', () => {
+  it('初始 destiny 为 50', () => {
     const engine = createEngine();
-    expect(engine.getResources().destiny).toBe(100);
+    expect(engine.getResources().destiny).toBe(50);
   });
 
   it('初始面板为 "none"', () => {
@@ -235,11 +237,12 @@ describe('资源系统', () => {
     const res = engine.getResources();
     expect(res).toEqual({
       grain: 500,
-      gold: 400,
-      iron: 30,
-      wood: 50,
-      troops: 200,
-      destiny: 100,
+      gold: 300,
+      iron: 10,
+      wood: 10,
+      troops: 100,
+      defense: 0,
+      destiny: 50,
       morale: 50,
     });
   });
@@ -507,11 +510,12 @@ describe('存档系统', () => {
     const data = engine.serialize();
     expect(data.resources).toBeDefined();
     expect(data.resources.grain).toBe(500);
-    expect(data.resources.gold).toBe(400);
-    expect(data.resources.iron).toBe(30);
-    expect(data.resources.wood).toBe(50);
-    expect(data.resources.troops).toBe(200);
-    expect(data.resources.destiny).toBe(100);
+    expect(data.resources.gold).toBe(300);
+    expect(data.resources.iron).toBe(10);
+    expect(data.resources.wood).toBe(10);
+    expect(data.resources.troops).toBe(100);
+    expect(data.resources.defense).toBe(0);
+    expect(data.resources.destiny).toBe(50);
   });
 
   it('serialize 包含当前阶段', () => {
