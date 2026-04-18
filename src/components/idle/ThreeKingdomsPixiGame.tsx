@@ -498,8 +498,9 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                               </div>
                             )}
                             {lv === 0 && (
-                              <div className="tk-building-rate" style={{ color: '#A0A0A0' }}>
-                                未建造
+                              <div className="tk-building-unbuilt">
+                                <span className="tk-building-unbuilt-icon">🏗️</span>
+                                <span>未建造</span>
                               </div>
                             )}
                           </>
@@ -578,8 +579,14 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             <div className="tk-world-map-frame">
               <div className="tk-placeholder-icon-lg">🗺️</div>
               <div className="tk-placeholder-title">天下大势系统</div>
-              <div className="tk-placeholder-subtitle">群雄逐鹿，谁主沉浮</div>
+              <div className="tk-placeholder-subtitle">查看三国地图，征战天下，群雄逐鹿</div>
               <div className="tk-placeholder-badge">即将开放</div>
+              <button
+                className="tk-placeholder-nav-btn"
+                onClick={() => switchTab('buildings')}
+              >
+                前往建筑Tab开始建设 →
+              </button>
             </div>
           </div>
         )}
@@ -592,8 +599,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
               {(['全部', '蜀', '魏', '吴'] as GeneralFaction[]).map(faction => (
                 <button
                   key={faction}
-                  className="tk-filter-btn tk-filter-active"
-                  style={faction !== '全部' ? { opacity: 0.6 } : {}}
+                  className={`tk-filter-btn ${faction === '全部' ? 'tk-filter-active' : ''}`}
                 >
                   {faction}
                 </button>
@@ -615,8 +621,14 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             <div className="tk-placeholder-deco">⚔️</div>
             <div className="tk-placeholder-icon-lg">🗡️</div>
             <div className="tk-placeholder-title">出征系统</div>
-            <div className="tk-placeholder-subtitle">率军征战四方，开疆拓土</div>
+            <div className="tk-placeholder-subtitle">率军征战四方，开疆拓土，攻城略地</div>
             <div className="tk-placeholder-badge">即将开放</div>
+            <button
+              className="tk-placeholder-nav-btn"
+              onClick={() => switchTab('buildings')}
+            >
+              前往建筑Tab开始建设 →
+            </button>
           </div>
         )}
 
@@ -626,8 +638,14 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             <div className="tk-placeholder-deco">📜</div>
             <div className="tk-placeholder-icon-lg">🔬</div>
             <div className="tk-placeholder-title">科技系统</div>
-            <div className="tk-placeholder-subtitle">研习兵法，提升国力</div>
+            <div className="tk-placeholder-subtitle">研习兵法，提升国力，解锁奇术</div>
             <div className="tk-placeholder-badge">即将开放</div>
+            <button
+              className="tk-placeholder-nav-btn"
+              onClick={() => switchTab('buildings')}
+            >
+              前往建筑Tab开始建设 →
+            </button>
           </div>
         )}
 
@@ -637,8 +655,14 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             <div className="tk-placeholder-deco">👑</div>
             <div className="tk-placeholder-icon-lg">🏆</div>
             <div className="tk-placeholder-title">声望系统</div>
-            <div className="tk-placeholder-subtitle">威震天下，名扬四海</div>
+            <div className="tk-placeholder-subtitle">威震天下，名扬四海，成就霸业</div>
             <div className="tk-placeholder-badge">即将开放</div>
+            <button
+              className="tk-placeholder-nav-btn"
+              onClick={() => switchTab('buildings')}
+            >
+              前往建筑Tab开始建设 →
+            </button>
           </div>
         )}
 

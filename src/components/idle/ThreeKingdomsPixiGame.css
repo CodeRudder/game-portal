@@ -140,8 +140,9 @@
 }
 
 .tk-resource-rate-zero {
-  color: rgba(160, 160, 160, 0.5);
+  color: #666;
   font-weight: normal;
+  opacity: 0.7;
 }
 
 /* 资源进度条 */
@@ -157,7 +158,7 @@
 .tk-resource-bar-fill {
   height: 100%;
   border-radius: 4px;
-  background: linear-gradient(90deg, #4A8C3F, #7EC850);
+  background: linear-gradient(90deg, #6ABF40, #9AE668);
   transition: width 0.3s ease;
 }
 
@@ -510,7 +511,7 @@
  * 任务面板 — 固定在建筑场景右侧，不用 position:absolute
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-task-panel {
-  width: 240px;
+  width: 250px;
   flex-shrink: 0;
   background: rgba(13, 17, 23, 0.85);
   border: 1px solid rgba(201, 168, 76, 0.3);
@@ -587,7 +588,7 @@
 
 .tk-task-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7EC850, #C9A84C);
+  background: linear-gradient(90deg, #9AE668, #E8C84A);
   transition: width 0.3s ease;
   border-radius: 3px;
 }
@@ -785,12 +786,14 @@
   align-items: center;
   justify-content: center;
   z-index: 1;
-  transition: background 200ms ease-out, color 200ms ease-out;
+  transition: background 200ms ease-out, color 200ms ease-out, transform 200ms ease-out, border-color 200ms ease-out;
 }
 
 .tk-modal-close:hover {
   color: #F0E6D3;
-  background: rgba(201, 168, 76, 0.15);
+  background: rgba(201, 168, 76, 0.25);
+  border-color: rgba(201, 168, 76, 0.6);
+  transform: scale(1.1);
 }
 
 .tk-modal-title {
@@ -886,7 +889,7 @@
 
 .tk-btn-confirm {
   padding: 8px 24px;
-  background: linear-gradient(135deg, #C9A84C, #D4AF37);
+  background: linear-gradient(135deg, #E8922A, #F0A840);
   color: #1A1A2E;
   border: none;
   border-radius: 6px;
@@ -899,7 +902,7 @@
 }
 
 .tk-btn-confirm:hover {
-  background: linear-gradient(135deg, #D4AF37, #DFC06E);
+  background: linear-gradient(135deg, #F0A840, #F5C060);
   filter: brightness(1.08);
 }
 
@@ -909,7 +912,7 @@
 }
 
 .tk-btn-confirm:disabled:hover {
-  background: linear-gradient(135deg, #C9A84C, #D4AF37);
+  background: linear-gradient(135deg, #E8922A, #F0A840);
 }
 
 .tk-btn-cancel {
@@ -1198,6 +1201,39 @@
   letter-spacing: 2px;
 }
 
+/* ─── 占位页面导航按钮 ─── */
+.tk-placeholder-nav-btn {
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: transparent;
+  color: #C9A84C;
+  border: 1px solid rgba(201, 168, 76, 0.5);
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 1px;
+  transition: all 200ms ease-out;
+}
+.tk-placeholder-nav-btn:hover {
+  background: rgba(201, 168, 76, 0.15);
+  border-color: #C9A84C;
+  color: #F0E6D3;
+}
+
+/* ─── 建筑卡片未建造状态 ─── */
+.tk-building-unbuilt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #A0A0A0;
+  margin-top: 2px;
+}
+.tk-building-unbuilt-icon {
+  font-size: 15px;
+}
+
 /* ─── 优化7: 弹窗动画 ─── */
 .tk-modal {
   animation: modalScaleIn 0.2s ease-out;
@@ -1213,7 +1249,7 @@
 }
 
 .tk-btn-confirm:hover:not(:disabled) {
-  background: linear-gradient(135deg, #DFC06E, #E5CC7A);
+  background: linear-gradient(135deg, #F5C060, #F8D478);
   filter: brightness(1.12);
   transform: translateY(-1px);
 }
