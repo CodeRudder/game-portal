@@ -82,6 +82,18 @@ const RESOURCE_HINTS: Record<string, string> = {
 /** 建筑分类筛选 */
 type BuildingCategory = '全部' | '民生' | '军事' | '文教' | '防御' | '核心';
 
+/** 核心建筑ID（默认显示的8个建筑） */
+const CORE_BUILDING_IDS = [
+  'farm',         // 屯田
+  'market',       // 商行
+  'barracks',     // 军营
+  'lumber_mill',  // 伐木场
+  'mine',         // 矿场
+  'smithy',       // 铁匠铺
+  'wall',         // 城防
+  'academy',      // 太学
+];
+
 /** 建筑分类映射（引擎 category → 中文分类） */
 const CATEGORY_MAP: Record<string, BuildingCategory> = {
   resource: '民生',
@@ -143,6 +155,7 @@ function barColor(ratio: number): string {
 
 /** 获取建筑分类 */
 function getCategory(def: BuildingDef): BuildingCategory {
+  if (CORE_BUILDING_IDS.includes(def.id)) return '核心';
   if (def.id === 'farm' || def.id === 'granary') return '民生';
   return CATEGORY_MAP[def.category ?? ''] ?? '核心';
 }
@@ -216,7 +229,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
     setTabFade(true);
     setTimeout(() => { setActiveTab(key); setTabFade(false); }, 150);
   }, [activeTab]);
-  const [category, setCategory] = useState<BuildingCategory>('全部');
+  const [category, setCategory] = useState<BuildingCategory>('核心');
   const [showUpgradeable, setShowUpgradeable] = useState(false);
 
   // 升级提示：资源不足时在卡片下方显示红色提示
@@ -230,7 +243,14 @@ const ThreeKingdomsPixiGame: React.FC = () => {
 
   // ─── 资源飘字 ───
   const prevResourcesRef = useRef<Record<string, number>>({});
-  const [floatTexts, setFloatTexts] = useState<{ id: number; text: string; color: string }[]>([]);
+  const [floatTexts, setFloatTexts] = useState<{ id: number; text: string; color: string; resourceId: string }[]>([]);
+
+  // ─── 资源值变色反馈 ───
+  const [valueFlashKeys, setValueFlashKeys] = useState<Set<string>>(new Set());
+
+  // ─── 等级提升动画 ───
+  const [levelUpKeys, setLevelUpKeys] = useState<Set<string>>(new Set());
+  const prevLevelsRef = useRef<Record<string, number>>({});
 
   // ─── Toast ───
   const addToast = useCallback((msg: string, type: Toast['type'] = 'info') => {
@@ -359,7 +379,8 @@ const ThreeKingdomsPixiGame: React.FC = () => {
 
   useEffect(() => {
     const prev = prevResourcesRef.current;
-    const floats: { id: number; text: string; color: string }[] = [];
+    const floats: { id: number; text: string; color: string; resourceId: string }[] = [];
+    const flashKeys = new Set<string>();
 
     TOP_RESOURCES.forEach(key => {
       const val = resources[key] ?? 0;
@@ -371,7 +392,9 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             id: Date.now() + Math.random(),
             text: `+${diff}`,
             color: floatColorsRef.current[key] ?? '#C9A84C',
+            resourceId: key,
           });
+          flashKeys.add(key);
         }
       }
     });
@@ -380,9 +403,31 @@ const ThreeKingdomsPixiGame: React.FC = () => {
 
     if (floats.length > 0) {
       setFloatTexts(floats);
-      setTimeout(() => setFloatTexts([]), 1200);
+      setValueFlashKeys(flashKeys);
+      setTimeout(() => {
+        setFloatTexts([]);
+        setValueFlashKeys(new Set());
+      }, 1000);
     }
   }, [resources]);
+
+  // ─── 等级提升动画 ───
+  useEffect(() => {
+    const prev = prevLevelsRef.current;
+    const upKeys = new Set<string>();
+    for (const def of BUILDINGS) {
+      const curr = levels[def.id] ?? 0;
+      const old = prev[def.id] ?? 0;
+      if (curr > old && old >= 0) {
+        upKeys.add(def.id);
+      }
+    }
+    prevLevelsRef.current = { ...levels };
+    if (upKeys.size > 0) {
+      setLevelUpKeys(upKeys);
+      setTimeout(() => setLevelUpKeys(new Set()), 600);
+    }
+  }, [levels]);
 
   // ─── 建筑升级（直接升级，无弹窗） ───
   const handleUpgrade = useCallback(
@@ -449,7 +494,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
           const card = document.querySelector(`[data-building-id="${buildingId}"]`);
           if (card) {
             card.classList.add('tk-upgrade-flash');
-            setTimeout(() => card.classList.remove('tk-upgrade-flash'), 600);
+            setTimeout(() => card.classList.remove('tk-upgrade-flash'), 800);
           }
         }, 50);
       }
@@ -457,7 +502,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
     [addToast],
   );
 
-  // ─── 筛选建筑（显示全部15个建筑） ───
+  // ─── 筛选建筑（默认显示核心8个，可切换全部15个） ───
   const filteredBuildings = BUILDINGS.filter(def => {
     if (category !== '全部' && getCategory(def) !== category) return false;
     if (showUpgradeable && !unlocked[def.id]) return false;
@@ -504,7 +549,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             return (
               <div key={id} className="tk-resource-item" style={{ position: 'relative' }}>
                 <span className="tk-resource-icon">{ui.icon}</span>
-                <span className="tk-resource-value" style={{ color: ui.color }}>
+                <span className={`tk-resource-value ${valueFlashKeys.has(id) ? 'tk-value-up' : ''}`} style={{ color: ui.color }}>
                   {fmtNum(val)}
                 </span>
                 {ui.hasCap && (
@@ -525,7 +570,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                   +{fmtNum(rate)}/s
                 </span>
                 {/* 资源飘字 */}
-                {floatTexts.filter(f => f.color === ui.color).map(f => (
+                {floatTexts.filter(f => f.resourceId === id).map(f => (
                   <span
                     key={f.id}
                     className="tk-float-text"
@@ -594,10 +639,11 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                   const canAfford = Object.entries(cost).every(
                     ([rid, amt]) => (resources[rid] ?? 0) >= amt,
                   );
-                  // 计算产出速率：已解锁建筑用实际等级，未解锁显示预期Lv.1产出
-                  const productionRate = isUnlocked
-                    ? def.baseProduction * Math.max(lv, 0)
-                    : def.baseProduction * 1; // 预期产出
+                  // 计算产出速率：
+                  // - 已解锁且已建造(lv>0)：显示实际产出
+                  // - 已解锁但未建造(lv=0)：显示建造后预期Lv.1产出
+                  // - 未解锁：显示预期Lv.1产出
+                  const productionRate = def.baseProduction * Math.max(lv, 1);
                   const productionResourceName = RESOURCE_NAMES[def.productionResource] ?? '';
                   const productionResourceIcon = RESOURCE_ICONS[def.productionResource] ?? '';
 
@@ -619,7 +665,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                         <span className="tk-building-icon">{def.icon}</span>
                         <span className="tk-building-name">{def.name}</span>
                         {isUnlocked ? (
-                          <span className="tk-building-level">Lv.{lv}</span>
+                          <span className={`tk-building-level ${levelUpKeys.has(def.id) ? 'tk-level-up' : ''}`}>Lv.{lv}</span>
                         ) : (
                           <span className="tk-building-level tk-level-locked">🔒 未解锁</span>
                         )}
@@ -628,7 +674,6 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                       {/* 第二行：产出资源类型和速率 */}
                       <div className="tk-building-production">
                         <span className="tk-production-label">产出:</span>
-                        <span className="tk-production-icon">{productionResourceIcon}</span>
                         <span className="tk-production-resource">{productionResourceName}</span>
                         <span className="tk-production-rate">
                           +{productionRate.toFixed(1)}/s
@@ -699,12 +744,16 @@ const ThreeKingdomsPixiGame: React.FC = () => {
             {/* 右侧：任务面板 — flex 并排，不浮在建筑上方 */}
             <div className="tk-task-panel">
               <div className="tk-task-title">📜 新手任务</div>
-              {tasks.map(task => {
+              {tasks.some(t => !t.done) && (
+                <div className="tk-task-guide">👆 完成任务获得奖励</div>
+              )}
+              {tasks.map((task, idx) => {
                 const progressText = task.type === 'building'
                   ? `${Math.min(levels[task.target] ?? 0, task.targetLevel)}/${task.targetLevel}`
                   : task.done ? '1/1' : '0/1';
+                const isFirstUndone = !task.done && !tasks.slice(0, idx).some(t => !t.done);
                 return (
-                  <div key={task.id} className={`tk-task-item ${task.done ? 'tk-task-item-done' : ''}`}>
+                  <div key={task.id} className={`tk-task-item ${task.done ? 'tk-task-item-done' : ''} ${isFirstUndone ? 'tk-task-active' : ''}`}>
                     <div className="tk-task-name">
                       {task.done ? '✅' : '⬜'} {task.title} ({progressText})
                     </div>

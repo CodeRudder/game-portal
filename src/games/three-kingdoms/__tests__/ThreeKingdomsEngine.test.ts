@@ -154,7 +154,7 @@ describe('常量验证', () => {
 
   it('INITIALLY_UNLOCKED 包含所有核心建筑', () => {
     expect(INITIALLY_UNLOCKED).toEqual([
-      'farm', 'market', 'barracks', 'lumber_mill', 'mine',
+      'farm', 'market', 'barracks', 'clinic', 'academy',
     ]);
   });
 

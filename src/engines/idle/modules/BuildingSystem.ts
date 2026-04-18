@@ -402,7 +402,12 @@ export class BuildingSystem<Def extends BuildingDef = BuildingDef> {
       if (def && def.requires && def.requires.length > 0) {
         const allRequiresMet = def.requires.every((reqId) => {
           const reqState = this.states.get(reqId);
-          return reqState && reqState.level > 0;
+          if (!reqState) return false;
+
+          const reqDef = this.defs.get(reqId);
+          const requiredLevel = this.parseRequiredLevel(def.unlockCondition || '', reqDef?.name || reqId);
+
+          return reqState.level >= requiredLevel;
         });
 
         if (allRequiresMet) {
@@ -513,10 +518,16 @@ export class BuildingSystem<Def extends BuildingDef = BuildingDef> {
         continue;
       }
 
-      // 检查所有前置条件是否满足
+      // 检查所有前置条件是否满足（需达到指定等级）
       const allRequiresMet = def.requires.every((reqId) => {
         const reqState = this.states.get(reqId);
-        return reqState && reqState.level > 0;
+        if (!reqState) return false;
+
+        // 从 unlockCondition 解析前置建筑所需等级
+        const reqDef = this.defs.get(reqId);
+        const requiredLevel = this.parseRequiredLevel(def.unlockCondition || '', reqDef?.name || reqId);
+
+        return reqState.level >= requiredLevel;
       });
 
       if (allRequiresMet) {
@@ -604,6 +615,24 @@ export class BuildingSystem<Def extends BuildingDef = BuildingDef> {
   // ============================================================
   // 内部工具
   // ============================================================
+
+  /**
+   * 从 unlockCondition 字符串中解析指定建筑的所需等级
+   *
+   * 支持格式如 "屯田 Lv.3"、"商行 Lv.5"。
+   * 如果格式不匹配（如 "初始解锁"、"累计 150 粮草"），默认返回 1。
+   *
+   * @param condition - unlockCondition 字符串
+   * @param buildingName - 前置建筑的中文名称
+   * @returns 所需等级，默认为 1
+   */
+  private parseRequiredLevel(condition: string, buildingName: string): number {
+    // 转义建筑名中可能包含的正则特殊字符
+    const escaped = buildingName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`${escaped}\\s*Lv\\.(\\d+)`, 'i');
+    const match = condition.match(regex);
+    return match ? parseInt(match[1], 10) : 1;
+  }
 
   /**
    * 向所有监听器派发事件

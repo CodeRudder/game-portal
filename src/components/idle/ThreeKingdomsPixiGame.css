@@ -36,16 +36,30 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-resource-bar {
   width: 100%;
-  height: 56px;
+  height: auto;
+  min-height: 56px;
   flex-shrink: 0;
   background: linear-gradient(180deg, rgba(30, 25, 20, 0.95) 0%, rgba(40, 32, 24, 0.9) 50%, rgba(30, 25, 20, 0.95) 100%);
   border-bottom: 1px solid rgba(201, 168, 76, 0.3);
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 12px;
+  gap: 0 6px;
   box-sizing: border-box;
   z-index: 10;
+  position: relative;
+}
+/* 资源栏底部装饰线 */
+.tk-resource-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 5%;
+  right: 5%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.15), transparent);
+  pointer-events: none;
 }
 
 /* 游戏标题 */
@@ -135,6 +149,16 @@
   font-weight: bold;
   font-family: "DIN Alternate", "Roboto Mono", "Courier New", monospace;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: color 0.3s ease;
+  min-width: 40px;
+  text-align: right;
+  display: inline-block;
+}
+
+/* 资源值增加时短暂变色 + 弹跳 */
+.tk-resource-value.tk-value-up {
+  color: #7EC850 !important;
+  animation: valueBounce 0.3s ease-out;
 }
 
 .tk-resource-cap {
@@ -211,6 +235,10 @@
   transition: background 0.15s ease, color 0.15s ease;
 }
 
+.tk-tab:active {
+  transform: scale(0.96);
+}
+
 .tk-tab-active {
   background: rgba(201, 168, 76, 0.2);
   color: #F0E6D3;
@@ -221,11 +249,11 @@
   content: '';
   position: absolute;
   bottom: 0;
-  left: 10%;
-  right: 10%;
+  left: 20%;
+  right: 20%;
   height: 2px;
   background: #C9A84C;
-  border-radius: 1px 1px 0 0;
+  border-radius: 1px;
 }
 
 .tk-tab-active:hover {
@@ -267,8 +295,8 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-building-scene {
   display: flex;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 16px;
+  padding: 12px 14px;
   height: 100%;
   box-sizing: border-box;
 }
@@ -339,6 +367,10 @@
   background: rgba(201, 168, 76, 0.08);
 }
 
+.tk-filter-btn:active {
+  transform: scale(0.95);
+}
+
 .tk-filter-active {
   background: rgba(201, 168, 76, 0.18);
   color: #C9A84C;
@@ -360,55 +392,66 @@
   accent-color: #C9A84C;
 }
 
-/* ─── 建筑网格 — 5列布局，适配15个建筑 ─── */
+/* ─── 建筑网格 — 4列布局，优化间距 ─── */
 .tk-building-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  padding: 4px 0;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 6px 4px;
 }
 
 /* ─── 建筑卡片 — 新布局 ─── */
 .tk-building-card {
-  border: 1px solid rgba(201, 168, 76, 0.25);
+  border: 1px solid rgba(201, 168, 76, 0.2);
   border-radius: 6px;
   background: linear-gradient(135deg, rgba(26, 35, 50, 0.9) 0%, rgba(20, 28, 40, 0.95) 100%);
   display: flex;
   flex-direction: column;
   cursor: default;
-  transition: border-color 200ms ease-out, transform 200ms ease-out, box-shadow 200ms ease-out, opacity 200ms ease-out;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
   padding: 8px 8px 6px;
 }
-
-/* 四角装饰 */
-.tk-building-card::after {
-  content: '◆';
+/* 微妙的顶部高光线 */
+.tk-building-card::before {
+  content: '';
   position: absolute;
-  bottom: 4px;
-  right: 4px;
-  color: rgba(201, 168, 76, 0.3);
-  font-size: 8px;
-  line-height: 1;
-  pointer-events: none;
-  z-index: 2;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.3), transparent);
+  z-index: 1;
 }
-
 .tk-building-card:hover {
   border-color: rgba(201, 168, 76, 0.6);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(201, 168, 76, 0.15);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(201, 168, 76, 0.3);
 }
 
-/* 未解锁建筑 — 半透明（0.65），不是黑色遮罩 */
+/* 未解锁建筑 — 虚线边框 + 降低不透明度，明显区分 */
 .tk-building-card.tk-locked {
-  opacity: 0.65;
+  opacity: 0.5;
+  border-style: dashed;
+  border-color: rgba(150, 130, 100, 0.3) !important;
+  filter: saturate(0.2) brightness(0.6);
+  background: linear-gradient(135deg, rgba(20, 20, 30, 0.9) 0%, rgba(18, 18, 28, 0.95) 100%);
 }
 .tk-building-card.tk-locked:hover {
-  opacity: 0.8;
+  opacity: 0.7;
+  border-color: rgba(150, 130, 100, 0.5) !important;
+  filter: saturate(0.4) brightness(0.75);
+}
+/* 未解锁建筑 — 移除类别色条（虚线已足够区分） */
+.tk-building-card.tk-locked::before {
+  background: rgba(150, 130, 100, 0.15) !important;
+}
+/* 未解锁建筑 — 移除左侧色条 */
+.tk-building-card.tk-locked[data-type] {
+  border-left: 1px dashed rgba(150, 130, 100, 0.3);
 }
 
 /* 建筑头部：图标+名称+等级 */
@@ -450,6 +493,18 @@
   flex-shrink: 0;
   font-family: "DIN Alternate", "Roboto Mono", "Courier New", monospace;
   white-space: nowrap;
+  transition: transform 0.15s ease;
+}
+
+/* 等级提升弹跳动画 */
+@keyframes tk-level-bump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); color: #f0c040; }
+  100% { transform: scale(1); }
+}
+
+.tk-building-level.tk-level-up {
+  animation: tk-level-bump 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 未解锁等级徽章 — 灰色 */
@@ -539,16 +594,22 @@
   color: #c44;
 }
 
-/* 资源不足提示 */
+/* 资源不足提示 — 带展开动画 */
 .tk-insufficient-hint {
   background: rgba(180, 50, 50, 0.15);
   border: 1px solid rgba(180, 50, 50, 0.3);
   border-radius: 4px;
-  padding: 4px 6px;
+  padding: 6px 8px;
   font-size: 10px;
   color: #e88;
   margin-top: 3px;
   line-height: 1.5;
+  animation: hintSlideIn 0.25s ease-out;
+  overflow: hidden;
+}
+@keyframes hintSlideIn {
+  from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; }
+  to   { opacity: 1; max-height: 80px; padding-top: 6px; padding-bottom: 6px; margin-top: 3px; }
 }
 
 .tk-hint-tip {
@@ -608,6 +669,39 @@
   animation: tk-built-pulse 4s ease-in-out infinite;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 可升级建筑 — 绿色强调标识（资源充足时高亮）
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.tk-building-card.tk-affordable {
+  border-color: rgba(126, 200, 80, 0.45) !important;
+  border-style: solid;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 6px rgba(126, 200, 80, 0.15);
+}
+.tk-building-card.tk-affordable:hover {
+  border-color: rgba(126, 200, 80, 0.65) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 10px rgba(126, 200, 80, 0.25);
+}
+/* 可升级建筑 — 顶部色条变绿 */
+.tk-building-card.tk-affordable::before {
+  background: rgba(126, 200, 80, 0.7) !important;
+}
+/* 可升级建筑 — 升级按钮绿色强调 */
+.tk-building-card.tk-affordable .tk-building-upgrade-btn {
+  background: linear-gradient(135deg, rgba(126, 200, 80, 0.25), rgba(126, 200, 80, 0.15));
+  color: #7EC850;
+  border: 1px solid rgba(126, 200, 80, 0.35);
+}
+.tk-building-card.tk-affordable .tk-building-upgrade-btn:hover:not(.tk-btn-disabled) {
+  background: linear-gradient(180deg, rgba(126, 200, 80, 0.4), rgba(126, 200, 80, 0.25));
+  color: #9AE668;
+  box-shadow: 0 2px 8px rgba(126, 200, 80, 0.2);
+}
+
+/* 资源不足但已建造的建筑 — 微弱红色边框提示 */
+.tk-building-card.tk-expensive:not(.tk-affordable) {
+  border-color: rgba(180, 130, 100, 0.3);
+}
+
 /* 建筑等级视觉层次 */
 .tk-building-card[data-level="1"] { border-color: rgba(201, 168, 76, 0.3); }
 .tk-building-card[data-level="2"] { border-color: rgba(201, 168, 76, 0.3); }
@@ -664,21 +758,45 @@
   font-size: 11px;
   font-weight: bold;
   text-align: center;
-  transition: background 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out;
+  transition: background 200ms ease-out, box-shadow 200ms ease-out, transform 150ms ease-out;
   font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
   letter-spacing: 1px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
 }
 
 .tk-building-upgrade-btn:hover:not(.tk-btn-disabled) {
-  background: linear-gradient(135deg, #DFC06E, #C9A84C);
+  background: linear-gradient(180deg, rgba(240, 192, 64, 0.35), rgba(240, 192, 64, 0.2));
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(201, 168, 76, 0.3);
+  box-shadow: 0 2px 8px rgba(240, 192, 64, 0.2);
 }
 
 .tk-building-upgrade-btn:active:not(.tk-btn-disabled) {
-  transform: translateY(0);
+  transform: translateY(1px) scale(0.97);
+  background: linear-gradient(180deg, rgba(240, 192, 64, 0.5), rgba(240, 192, 64, 0.3));
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* 升级按钮点击波纹效果 */
+.tk-building-upgrade-btn:active:not(.tk-btn-disabled)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  animation: tk-btn-ripple 0.4s ease-out;
+}
+
+@keyframes tk-btn-ripple {
+  to {
+    transform: translate(-50%, -50%) scale(2.5);
+    opacity: 0;
+  }
 }
 
 /* 禁用态 — 灰色半透明 */
@@ -686,18 +804,21 @@
   background: rgba(80, 80, 80, 0.5) !important;
   color: #888;
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.5;
 }
 
 .tk-btn-disabled:hover {
   background: rgba(80, 80, 80, 0.5) !important;
+  transform: none;
+  box-shadow: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * 任务面板 — 固定在建筑场景右侧
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-task-panel {
-  width: 220px;
+  width: 240px;
+  min-width: 220px;
   flex-shrink: 0;
   background: rgba(13, 17, 23, 0.85);
   border: 1px solid rgba(201, 168, 76, 0.3);
@@ -794,6 +915,23 @@
   color: #A0A0A0;
   text-align: right;
   margin-top: 4px;
+}
+
+/* 新手任务 — 当前活跃任务高亮 */
+.tk-task-item.tk-task-active {
+  border: 1px solid rgba(240, 192, 64, 0.5);
+  background: rgba(240, 192, 64, 0.08);
+  border-radius: 4px;
+  padding: 5px 4px;
+}
+
+/* 新手任务引导文字 */
+.tk-task-guide {
+  font-size: 11px;
+  color: #C9A84C;
+  text-align: center;
+  padding: 2px 0 4px;
+  opacity: 0.8;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1156,30 +1294,47 @@
   color: #F0E6D3;
 }
 
-/* 升级闪光动画 */
+/* 升级闪光动画 — 金色脉冲 + 边框高亮 + 弹跳 */
 @keyframes upgradeFlash {
-  0%   { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.8); }
-  50%  { box-shadow: 0 0 20px 5px rgba(201, 168, 76, 0.6); }
-  100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(240, 192, 64, 0.6); border-color: rgba(240, 192, 64, 0.8); transform: scale(1); }
+  25%  { box-shadow: 0 0 20px 4px rgba(240, 192, 64, 0.35); border-color: rgba(240, 192, 64, 1); transform: scale(1.04); }
+  50%  { box-shadow: 0 0 12px 2px rgba(126, 200, 80, 0.25); border-color: rgba(126, 200, 80, 0.7); transform: scale(1.02); }
+  100% { box-shadow: 0 0 0 0 rgba(240, 192, 64, 0); border-color: rgba(201, 168, 76, 0.2); transform: scale(1); }
 }
 .tk-upgrade-flash {
-  animation: upgradeFlash 0.6s ease-out !important;
+  animation: upgradeFlash 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  z-index: 5;
 }
 
-/* 资源飘字动效 */
+/* 资源飘字动效 — 上飘 + 淡出 */
 @keyframes floatUp {
   0%   { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-28px); }
+  100% { opacity: 0; transform: translateY(-20px); }
 }
 
 .tk-float-text {
   position: absolute;
-  animation: floatUp 1.2s ease-out forwards;
+  animation: floatUp 1s ease-out forwards;
   font-size: 12px;
   font-weight: bold;
+  font-family: "DIN Alternate", "Roboto Mono", monospace;
   pointer-events: none;
   z-index: 100;
   white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* 资源项飘字定位 */
+.tk-resource-float {
+  position: absolute;
+  top: -5px;
+  right: 0;
+  font-size: 12px;
+  font-weight: bold;
+  font-family: "DIN Alternate", "Roboto Mono", monospace;
+  animation: floatUp 1s ease-out forwards;
+  pointer-events: none;
+  z-index: 10;
 }
 
 /* Toast 入场动画 */
@@ -1192,6 +1347,13 @@
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* 资源值变化弹跳（由 tk-value-up 引用） */
+@keyframes valueBounce {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 /* 资源图标圆形背景 — 按索引 */

@@ -213,13 +213,15 @@ export const BUILDINGS: BuildingDef[] = [
     id: 'lumber_mill', name: '伐木场', icon: '🪓', category: 'resource',
     baseCost: { grain: 25, gold: 15 }, costMultiplier: 1.12, maxLevel: 0,
     productionResource: 'wood', baseProduction: 0.8,
-    unlockCondition: '累计 150 粮草',
+    requires: ['farm'],
+    unlockCondition: '屯田 Lv.3',
   },
   {
     id: 'mine', name: '矿场', icon: '⛏️', category: 'resource',
     baseCost: { grain: 30, gold: 20 }, costMultiplier: 1.12, maxLevel: 0,
     productionResource: 'iron', baseProduction: 0.6,
-    unlockCondition: '累计 200 铜钱',
+    requires: ['market'],
+    unlockCondition: '商行 Lv.3',
   },
   {
     id: 'clinic', name: '药庐', icon: '💊', category: 'civilian',
@@ -251,7 +253,7 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'tavern', name: '招贤馆', icon: '🏯', category: 'civilian',
     baseCost: { gold: 500 }, costMultiplier: 1.18, maxLevel: 0,
-    productionResource: 'destiny', baseProduction: 1.5,
+    productionResource: 'gold', baseProduction: 1.5,
     requires: ['academy'],
     unlockCondition: '太学 Lv.3',
   },
@@ -259,7 +261,7 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'wall', name: '城防', icon: '🏰', category: 'military',
     baseCost: { gold: 100, wood: 30, grain: 40 }, costMultiplier: 1.15, maxLevel: 0,
-    productionResource: 'morale', baseProduction: 0.5,
+    productionResource: 'defense', baseProduction: 0.5,
     requires: ['lumber_mill'],
     unlockCondition: '伐木场 Lv.3',
   },
@@ -740,8 +742,8 @@ export const INITIALLY_UNLOCKED: string[] = [
   'farm',
   'market',
   'barracks',
-  'lumber_mill',
-  'mine',
+  'clinic',
+  'academy',
 ];
 
 // ═══════════════════════════════════════════════════════════════
