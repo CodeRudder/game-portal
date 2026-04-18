@@ -109,7 +109,7 @@
 }
 
 .tk-resource-icon {
-  font-size: 16px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
@@ -452,14 +452,16 @@
   background: linear-gradient(135deg, #D4AF37, #C9A84C);
 }
 
-/* 禁用态 */
+/* 禁用态 — 灰色半透明 */
 .tk-btn-disabled {
-  opacity: 0.5;
+  background: rgba(80, 80, 80, 0.5) !important;
+  color: #888;
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .tk-btn-disabled:hover {
-  background: linear-gradient(135deg, #C9A84C, #A8872A);
+  background: rgba(80, 80, 80, 0.5) !important;
 }
 
 /* 锁定建筑 */
@@ -485,7 +487,7 @@
  * 任务面板 — 固定在建筑场景右侧，不用 position:absolute
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-task-panel {
-  width: 220px;
+  width: 240px;
   flex-shrink: 0;
   background: rgba(13, 17, 23, 0.85);
   border: 1px solid rgba(201, 168, 76, 0.3);
@@ -526,7 +528,7 @@
 }
 
 .tk-task-item-done {
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .tk-task-item-done .tk-task-name {
@@ -558,7 +560,7 @@
 
 .tk-task-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7EC850, #C9A84C);
+  background: linear-gradient(90deg, #5DAE3B, #C9A84C);
   transition: width 0.3s ease;
   border-radius: 3px;
 }
@@ -1031,6 +1033,142 @@
 /* ═══════════════════════════════════════════════════════════════════════════
  * 动画关键帧
  * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 优化1: 建筑描述文字 ─── */
+.tk-building-desc {
+  font-size: 12px;
+  color: #A0A0A0;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── 优化2: Tab切换淡入 ─── */
+.tk-scene {
+  transition: opacity 0.15s ease-out;
+}
+.tk-scene-fade {
+  opacity: 0;
+}
+
+/* ─── 优化3: 升级按钮hover增强 ─── */
+.tk-building-upgrade-btn:hover:not(.tk-btn-disabled) {
+  background: linear-gradient(135deg, #DFC06E, #C9A84C);
+  transform: brightness(1.1);
+}
+
+/* ─── 优化6: 占位页面增强 ─── */
+.tk-placeholder-enhanced {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tk-placeholder-enhanced::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(201, 168, 76, 0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.tk-placeholder-icon-lg {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.tk-placeholder-title {
+  font-size: 22px;
+  color: #C9A84C;
+  margin-bottom: 8px;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 3px;
+  font-weight: bold;
+}
+
+.tk-placeholder-subtitle {
+  font-size: 14px;
+  color: #A0A0A0;
+  margin-bottom: 20px;
+}
+
+.tk-placeholder-badge {
+  display: inline-block;
+  padding: 4px 16px;
+  background: rgba(201, 168, 76, 0.15);
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  border-radius: 12px;
+  color: #C9A84C;
+  font-size: 12px;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 2px;
+}
+
+.tk-placeholder-deco {
+  position: absolute;
+  top: 15%;
+  font-size: 120px;
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* 天下Tab也用增强样式 */
+.tk-world-map-frame .tk-placeholder-icon-lg { font-size: 48px; margin-bottom: 16px; }
+.tk-world-map-frame .tk-placeholder-title {
+  font-size: 22px;
+  color: #C9A84C;
+  margin-bottom: 8px;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 3px;
+  font-weight: bold;
+}
+.tk-world-map-frame .tk-placeholder-subtitle {
+  font-size: 14px;
+  color: #A0A0A0;
+  margin-bottom: 20px;
+}
+.tk-world-map-frame .tk-placeholder-badge {
+  display: inline-block;
+  padding: 4px 16px;
+  background: rgba(201, 168, 76, 0.15);
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  border-radius: 12px;
+  color: #C9A84C;
+  font-size: 12px;
+  font-family: 'KaiTi', 'STKaiti', 'Kaiti SC', serif;
+  letter-spacing: 2px;
+}
+
+/* ─── 优化7: 弹窗动画 ─── */
+.tk-modal {
+  animation: modalScaleIn 0.2s ease-out;
+}
+
+.tk-modal-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #C9A84C, transparent);
+  margin: 8px auto 0;
+}
+
+.tk-btn-confirm:hover:not(:disabled) {
+  background: linear-gradient(135deg, #DFC06E, #E5CC7A);
+  transform: translateY(-1px);
+}
+
+@keyframes modalScaleIn {
+  from { transform: scale(0.95); opacity: 0.8; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
 @keyframes toastIn {
   from {
     transform: translateX(100%);

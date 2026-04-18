@@ -58,6 +58,18 @@ const CORE_BUILDING_IDS = [
   'granary',      // 官府（粮仓）
 ];
 
+/** 建筑功能描述（卡片小字） */
+const BUILDING_DESC: Record<string, string> = {
+  farm: '生产粮草',
+  market: '赚取铜钱',
+  barracks: '训练兵力',
+  smithy: '锻造装备',
+  academy: '研究科技',
+  wall: '防御城池',
+  beacon_tower: '预警侦察',
+  granary: '储存粮草',
+};
+
 /** 建筑分类筛选 */
 type BuildingCategory = '全部' | '民生' | '军事' | '文教' | '防御' | '核心';
 
@@ -152,6 +164,12 @@ const ThreeKingdomsPixiGame: React.FC = () => {
   const [unlocked, setUnlocked] = useState<Record<string, boolean>>({});
 
   const [activeTab, setActiveTab] = useState('buildings');
+  const [tabFade, setTabFade] = useState(false);
+  const switchTab = useCallback((key: string) => {
+    if (key === activeTab) return;
+    setTabFade(true);
+    setTimeout(() => { setActiveTab(key); setTabFade(false); }, 150);
+  }, [activeTab]);
   const [category, setCategory] = useState<BuildingCategory>('全部');
   const [showUpgradeable, setShowUpgradeable] = useState(false);
   const [upgradeModal, setUpgradeModal] = useState<string | null>(null);
@@ -378,7 +396,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                       className="tk-resource-bar-fill"
                       style={{
                         width: `${barRatio * 100}%`,
-                        background: barColor(barRatio),
+                        background: `linear-gradient(90deg, ${barColor(barRatio)}aa, ${barColor(barRatio)})`,
                       }}
                     />
                   </div>
@@ -398,7 +416,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
           <button
             key={tab.key}
             className={`tk-tab ${activeTab === tab.key ? 'tk-tab-active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => switchTab(tab.key)}
           >
             {tab.label}
           </button>
@@ -406,7 +424,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
       </div>
 
       {/* ═══════ 3. 中央场景区 (1280 × 696px) ═══════ */}
-      <div className="tk-scene">
+      <div className={`tk-scene${tabFade ? ' tk-scene-fade' : ''}`}>
 
         {/* ─── 建筑 Tab ─── */}
         {activeTab === 'buildings' && (
@@ -461,6 +479,7 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                           {def.name}
                           {lv > 0 && <span className="tk-building-level">Lv.{lv}</span>}
                         </div>
+                        <div className="tk-building-desc">{BUILDING_DESC[def.id] ?? ''}</div>
                         {isUnlocked ? (
                           <>
                             {lv > 0 && def.productionResource && (
@@ -547,9 +566,10 @@ const ThreeKingdomsPixiGame: React.FC = () => {
         {activeTab === 'world' && (
           <div className="tk-world-scene">
             <div className="tk-world-map-frame">
-              <div className="tk-placeholder-icon">🗺️</div>
-              <div className="tk-placeholder-text">天下大势系统</div>
-              <div className="tk-placeholder-sub">开发中，敬请期待</div>
+              <div className="tk-placeholder-icon-lg">🗺️</div>
+              <div className="tk-placeholder-title">天下大势系统</div>
+              <div className="tk-placeholder-subtitle">群雄逐鹿，谁主沉浮</div>
+              <div className="tk-placeholder-badge">即将开放</div>
             </div>
           </div>
         )}
@@ -581,37 +601,45 @@ const ThreeKingdomsPixiGame: React.FC = () => {
 
         {/* ─── 出征 Tab ─── */}
         {activeTab === 'campaign' && (
-          <div className="tk-placeholder">
-            <div className="tk-placeholder-icon">⚔️</div>
-            <div className="tk-placeholder-text">出征系统</div>
-            <div className="tk-placeholder-sub">开发中，敬请期待</div>
+          <div className="tk-placeholder-enhanced">
+            <div className="tk-placeholder-deco">⚔️</div>
+            <div className="tk-placeholder-icon-lg">🗡️</div>
+            <div className="tk-placeholder-title">出征系统</div>
+            <div className="tk-placeholder-subtitle">率军征战四方，开疆拓土</div>
+            <div className="tk-placeholder-badge">即将开放</div>
           </div>
         )}
 
         {/* ─── 科技 Tab ─── */}
         {activeTab === 'tech' && (
-          <div className="tk-placeholder">
-            <div className="tk-placeholder-icon">📜</div>
-            <div className="tk-placeholder-text">科技系统</div>
-            <div className="tk-placeholder-sub">开发中，敬请期待</div>
+          <div className="tk-placeholder-enhanced">
+            <div className="tk-placeholder-deco">📜</div>
+            <div className="tk-placeholder-icon-lg">🔬</div>
+            <div className="tk-placeholder-title">科技系统</div>
+            <div className="tk-placeholder-subtitle">研习兵法，提升国力</div>
+            <div className="tk-placeholder-badge">即将开放</div>
           </div>
         )}
 
         {/* ─── 声望 Tab ─── */}
         {activeTab === 'prestige' && (
-          <div className="tk-placeholder">
-            <div className="tk-placeholder-icon">👑</div>
-            <div className="tk-placeholder-text">声望系统</div>
-            <div className="tk-placeholder-sub">开发中，敬请期待</div>
+          <div className="tk-placeholder-enhanced">
+            <div className="tk-placeholder-deco">👑</div>
+            <div className="tk-placeholder-icon-lg">🏆</div>
+            <div className="tk-placeholder-title">声望系统</div>
+            <div className="tk-placeholder-subtitle">威震天下，名扬四海</div>
+            <div className="tk-placeholder-badge">即将开放</div>
           </div>
         )}
 
         {/* ─── 更多 Tab ─── */}
         {activeTab === 'more' && (
-          <div className="tk-placeholder">
-            <div className="tk-placeholder-icon">⚙️</div>
-            <div className="tk-placeholder-text">更多功能</div>
-            <div className="tk-placeholder-sub">开发中，敬请期待</div>
+          <div className="tk-placeholder-enhanced">
+            <div className="tk-placeholder-deco">⚙️</div>
+            <div className="tk-placeholder-icon-lg">🔧</div>
+            <div className="tk-placeholder-title">更多功能</div>
+            <div className="tk-placeholder-subtitle">持续更新中</div>
+            <div className="tk-placeholder-badge">即将开放</div>
           </div>
         )}
       </div>
