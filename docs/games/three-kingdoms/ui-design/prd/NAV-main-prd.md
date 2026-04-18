@@ -39,7 +39,7 @@
 | 科技点 📚 | 📚 | 无上限 | 书院产出 | — |
 | 天命 👑 | 👑 | 无上限 | 充值 + 活动 + 首通奖励 | — |
 
-> 🎨 → [UI: 资源栏布局](../ui-layout/NAV-main.md#top-resource-bar)
+> 🎨 → [UI: 资源栏布局](../ui-layout/NAV-main.md#nav-1)
 
 ---
 
@@ -80,7 +80,7 @@
 | ⚔️ 远征 | 远征有空位/归来 | "!" |
 | 🎁 签到 | 每日未签到 | — |
 
-> 🎨 → [UI: 导航 Tab 栏](../ui-layout/NAV-main.md#nav-tab-bar)
+> 🎨 → [UI: 导航 Tab 栏](../ui-layout/NAV-main.md#nav-1)
 
 ---
 
@@ -123,7 +123,7 @@ PC 端点击「更多▼」展开下拉菜单，分为 **4 个功能区**：
 | 💬 公告 | — | 有未读公告 |
 | ❓ 帮助 | — | — |
 
-> 🎨 → [UI: 更多下拉菜单](../ui-layout/NAV-main.md#more-dropdown)
+> 🎨 → [UI: 更多下拉菜单](../ui-layout/NAV-main.md#nav-2)
 
 ---
 
@@ -158,7 +158,7 @@ PC 端点击「更多▼」展开下拉菜单，分为 **4 个功能区**：
 
 **显示规则**：取评分最高的 **3 条** + 离线收益入口（固定），每条可点击跳转对应功能。
 
-> 🎨 → [UI: 军师建议面板](../ui-layout/NAV-main.md#advisor-panel)
+> 🎨 → [UI: 军师建议面板](../ui-layout/NAV-main.md#nav-1)
 
 ---
 
@@ -230,8 +230,8 @@ PC 端点击「更多▼」展开下拉菜单，分为 **4 个功能区**：
 | 任务图标 | 有可领取奖励 | 可领取数量 |
 | 邮件图标 | 有未读邮件 | 未读数量 |
 
-> 🎨 → [UI: 离线收益弹窗](../ui-layout/NAV-main.md#offline-reward)
-> 🎨 → [UI: 回归欢迎面板](../ui-layout/NAV-main.md#return-welcome)
+> 🎨 → [UI: 离线收益弹窗](../ui-layout/NAV-main.md#nav-5)
+> 🎨 → [UI: 回归欢迎面板](../ui-layout/NAV-main.md#nav-5)
 > 📏 → [SPEC: 离线收益规范](./SPEC-offline.md)
 
 ---

@@ -215,7 +215,7 @@
 
 > 🎨 → [UI: 战斗场景](../ui-layout/CBT-combat.md#cbt-3)
 
-> 关联: [HER-3 武将养成](../prd/HER-heroes-prd.md#her-3)
+> 关联: [HER-3 武将养成](./HER-heroes-prd.md#her-3)
 
 ---
 

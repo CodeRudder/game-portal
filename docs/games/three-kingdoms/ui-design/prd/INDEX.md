@@ -1,7 +1,8 @@
 # 三国霸业 PRD 文档索引
 
-> **版本**: v2.1 (25模块完整同步) | **日期**: 2026-04-20
+> **版本**: v2.1 (统一版本) | **日期**: 2026-04-20
 > **文档定位**: 玩法设计（PRD）— 仅包含功能描述、数值表、规则逻辑，不含 UI 布局。
+> **文档体系**: UI布局 25个模块文件（SPEC合并为1个 SPEC-global.md） | PRD 26个条目（SPEC拆为 ITR/RSP/ANI/CUR/OFR 5个规范文件）
 
 ---
 
@@ -20,7 +21,7 @@
 | # | 模块代码 | 模块名 | PRD文件 | UI布局文件 | 需求编号范围 | 状态 |
 |---|---------|--------|---------|-----------|:----------:|:----:|
 | 4 | CBT | 战斗系统 | [CBT-combat-prd.md](CBT-combat-prd.md) | [CBT-combat.md](../ui-layout/CBT-combat.md) | CBT-1 ~ CBT-8 | ✅ |
-| 5 | PVP | PVP竞技 | [PVP-arena-prd.md](PVP-arena-prd.md) | [PVP-arena.md](../ui-layout/PVP-arena.md) | PVP-1 ~ PVP-4 | ✅ |
+| 5 | PVP | PVP竞技 | [PVP-arena-prd.md](PVP-arena-prd.md) | [PVP-arena.md](../ui-layout/PVP-arena.md) | PVP-1 ~ PVP-5 | ✅ |
 | 6 | EXP | 远征系统 | [EXP-expedition-prd.md](EXP-expedition-prd.md) | [EXP-expedition.md](../ui-layout/EXP-expedition.md) | EXP-1 ~ EXP-4 | ✅ |
 
 ### 养成系统
@@ -108,8 +109,8 @@
 
 ### 跨文档引用
 ```
-> 🎨 → [UI: 对应布局](../ui-layout/XXX.md#xxx-1)   — UI 布局文档
-> 📖 → [PRD: 关联需求](./XXX.md#xxx-1)              — PRD 交叉引用
+> 🎨 → [UI: 主界面导航](../ui-layout/NAV-main.md#nav-1) — UI 布局文档（示例）
+> 📖 → [PRD: 关联需求](./NAV-main-prd.md#nav-1)      — PRD 交叉引用（示例）
 > 📏 → [SPEC: 规范](./SPEC-xxx.md)                   — 规范文档
 ```
 
