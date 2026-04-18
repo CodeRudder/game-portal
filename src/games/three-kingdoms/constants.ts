@@ -208,7 +208,7 @@ export const BUILDINGS: BuildingDef[] = [
   },
   {
     id: 'smithy', name: '铁匠铺', icon: '🔨', category: 'military',
-    baseCost: { gold: 100, wood: 30 }, costMultiplier: 1.10, maxLevel: 0,
+    baseCost: { gold: 80, grain: 40 }, costMultiplier: 1.10, maxLevel: 0,
     productionResource: 'iron', baseProduction: 0.8,
     requires: ['barracks'],
     unlockCondition: '军营 Lv.3',
@@ -227,8 +227,8 @@ export const BUILDINGS: BuildingDef[] = [
   },
   {
     id: 'wall', name: '城防', icon: '🏰', category: 'military',
-    baseCost: { gold: 150, iron: 50 }, costMultiplier: 1.15, maxLevel: 0,
-    productionResource: 'wood', baseProduction: 0.6,
+    baseCost: { gold: 120, grain: 60, troops: 30 }, costMultiplier: 1.15, maxLevel: 0,
+    productionResource: 'wood', baseProduction: 1.0,
     requires: ['barracks'],
     unlockCondition: '军营 Lv.5',
   },
@@ -242,7 +242,7 @@ export const BUILDINGS: BuildingDef[] = [
   // ── 新增特色建筑 ──
   {
     id: 'beacon_tower', name: '烽火台', icon: '🔥', category: 'military',
-    baseCost: { gold: 200, wood: 80 }, costMultiplier: 1.12, maxLevel: 0,
+    baseCost: { gold: 150, iron: 40, troops: 50 }, costMultiplier: 1.12, maxLevel: 0,
     productionResource: 'troops', baseProduction: 0.3,
     requires: ['wall'],
     unlockCondition: '城防 Lv.3',
@@ -270,7 +270,7 @@ export const BUILDINGS: BuildingDef[] = [
   },
   {
     id: 'granary', name: '粮仓', icon: '🏚️', category: 'resource',
-    baseCost: { grain: 200, wood: 100 }, costMultiplier: 1.10, maxLevel: 0,
+    baseCost: { grain: 200, gold: 100 }, costMultiplier: 1.10, maxLevel: 0,
     productionResource: 'grain', baseProduction: 1.5,
     requires: ['farm'],
     unlockCondition: '屯田 Lv.5',
@@ -707,8 +707,8 @@ export const RESOURCES = [
 export const INITIAL_RESOURCES: Record<string, number> = {
   grain: 500,
   gold: 300,
-  iron: 0,
-  wood: 0,
+  iron: 30,
+  wood: 20,
   troops: 200,
   destiny: 100,
   morale: 50,
@@ -719,14 +719,11 @@ export const INITIAL_RESOURCES: Record<string, number> = {
 // ═══════════════════════════════════════════════════════════════
 
 export const INITIALLY_UNLOCKED: string[] = [
-  'farm',         // 屯田
-  'market',       // 商行
-  'barracks',     // 军营
-  'smithy',       // 铁匠铺
-  'academy',      // 太学
-  'wall',         // 城防
-  'beacon_tower', // 烽火台
-  'granary',      // 粮仓
+  'farm',     // 屯田
+  'market',   // 商行
+  'barracks', // 军营
+  'clinic',   // 药庐
+  'academy',  // 太学
 ];
 
 // ═══════════════════════════════════════════════════════════════

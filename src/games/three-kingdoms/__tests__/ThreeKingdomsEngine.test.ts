@@ -144,13 +144,15 @@ describe('常量验证', () => {
   it('INITIAL_RESOURCES 包含正确的初始值', () => {
     expect(INITIAL_RESOURCES.grain).toBe(500);
     expect(INITIAL_RESOURCES.gold).toBe(300);
-    expect(INITIAL_RESOURCES.troops).toBe(100);
-    expect(INITIAL_RESOURCES.destiny).toBe(0);
+    expect(INITIAL_RESOURCES.iron).toBe(30);
+    expect(INITIAL_RESOURCES.wood).toBe(20);
+    expect(INITIAL_RESOURCES.troops).toBe(200);
+    expect(INITIAL_RESOURCES.destiny).toBe(100);
   });
 
   it('INITIALLY_UNLOCKED 包含所有核心建筑', () => {
     expect(INITIALLY_UNLOCKED).toEqual([
-      'farm', 'market', 'barracks', 'smithy', 'academy', 'wall', 'beacon_tower', 'granary',
+      'farm', 'market', 'barracks', 'clinic', 'academy',
     ]);
   });
 
@@ -195,14 +197,14 @@ describe('引擎初始化', () => {
     expect(engine.getResources().gold).toBe(300);
   });
 
-  it('初始 troops 为 100', () => {
+  it('初始 troops 为 200', () => {
     const engine = createEngine();
-    expect(engine.getResources().troops).toBe(100);
+    expect(engine.getResources().troops).toBe(200);
   });
 
-  it('初始 destiny 为 0', () => {
+  it('初始 destiny 为 100', () => {
     const engine = createEngine();
-    expect(engine.getResources().destiny).toBe(0);
+    expect(engine.getResources().destiny).toBe(100);
   });
 
   it('初始面板为 "none"', () => {
@@ -234,10 +236,10 @@ describe('资源系统', () => {
     expect(res).toEqual({
       grain: 500,
       gold: 300,
-      iron: 100,
-      wood: 150,
-      troops: 100,
-      destiny: 0,
+      iron: 30,
+      wood: 20,
+      troops: 200,
+      destiny: 100,
       morale: 50,
     });
   });
@@ -506,8 +508,10 @@ describe('存档系统', () => {
     expect(data.resources).toBeDefined();
     expect(data.resources.grain).toBe(500);
     expect(data.resources.gold).toBe(300);
-    expect(data.resources.troops).toBe(100);
-    expect(data.resources.destiny).toBe(0);
+    expect(data.resources.iron).toBe(30);
+    expect(data.resources.wood).toBe(20);
+    expect(data.resources.troops).toBe(200);
+    expect(data.resources.destiny).toBe(100);
   });
 
   it('serialize 包含当前阶段', () => {
