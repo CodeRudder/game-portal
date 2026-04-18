@@ -93,7 +93,7 @@ const TABS = [
   { key: 'world',    label: '🌍 天下' },
   { key: 'campaign', label: '⚔️ 出征' },
   { key: 'generals', label: '🗡️ 武将' },
-  { key: 'tech',     label: '📖 科技' },
+  { key: 'tech',     label: '📜 科技' },
   { key: 'buildings',label: '🏗️ 建筑' },
   { key: 'prestige', label: '🏆 声望' },
   { key: 'more',     label: '更多▼' },
@@ -335,8 +335,23 @@ const ThreeKingdomsPixiGame: React.FC = () => {
       }
 
       if (success) {
-        addToast(`${def.name} ${currentLevel < 1 ? '建造' : '升级'}成功！`, 'success');
+        // 更醒目的Toast消息，包含产出提升信息
+        const nextLevel = currentLevel + 1;
+        const nextRate = nextLevel * def.baseProduction;
+        const currentRate = currentLevel * def.baseProduction;
+        const pctIncrease = currentRate > 0 ? Math.round(((nextRate - currentRate) / currentRate) * 100) : 100;
+        const resourceName = RESOURCE_UI[def.productionResource]?.name ?? '';
+        addToast(`🎉 ${def.name}升级到Lv.${nextLevel}！${resourceName}产出+${pctIncrease}%`, 'success');
         setUpgradeModal(null);
+
+        // 升级成功后给对应建筑卡片添加闪烁动画
+        setTimeout(() => {
+          const card = document.querySelector(`[data-building-id="${buildingId}"]`);
+          if (card) {
+            card.classList.add('tk-upgrade-flash');
+            setTimeout(() => card.classList.remove('tk-upgrade-flash'), 600);
+          }
+        }, 50);
       } else {
         const bldgSys = engine.getBuildingSystem();
         const cost = bldgSys.getCost(buildingId);
@@ -488,6 +503,8 @@ const ThreeKingdomsPixiGame: React.FC = () => {
                       className={`tk-building-card ${!isUnlocked ? 'tk-building-locked' : ''}`}
                       data-category={getCategory(def)}
                       data-built={lv > 0 ? 'true' : undefined}
+                      data-building-id={def.id}
+                      data-level={lv > 0 ? lv : undefined}
                       onClick={() => isUnlocked && setUpgradeModal(def.id)}
                     >
                       <div className="tk-building-icon" data-icon-cat={getCategory(def)}>{def.icon}</div>

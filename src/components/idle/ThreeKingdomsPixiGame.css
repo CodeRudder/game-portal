@@ -196,8 +196,9 @@
 }
 
 .tk-tab:hover {
-  background: rgba(201, 168, 76, 0.1);
+  background: rgba(201, 168, 76, 0.15);
   color: #F0E6D3;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .tk-tab-active {
@@ -511,7 +512,7 @@
  * 任务面板 — 固定在建筑场景右侧，不用 position:absolute
  * ═══════════════════════════════════════════════════════════════════════════ */
 .tk-task-panel {
-  width: 250px;
+  width: 260px;
   flex-shrink: 0;
   background: rgba(13, 17, 23, 0.85);
   border: 1px solid rgba(201, 168, 76, 0.3);
@@ -1111,7 +1112,14 @@
 /* ─── 优化3: 升级按钮hover增强 ─── */
 .tk-building-upgrade-btn:hover:not(.tk-btn-disabled) {
   background: linear-gradient(135deg, #DFC06E, #C9A84C);
-  transform: brightness(1.1);
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.4);
+  transition: all 0.15s ease;
+}
+
+.tk-building-upgrade-btn:active:not(.tk-btn-disabled) {
+  transform: scale(0.95);
+  box-shadow: none;
 }
 
 /* ─── 优化6: 占位页面增强 ─── */
@@ -1251,12 +1259,36 @@
 .tk-btn-confirm:hover:not(:disabled) {
   background: linear-gradient(135deg, #F5C060, #F8D478);
   filter: brightness(1.12);
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.5);
+}
+
+.tk-btn-confirm:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  box-shadow: none;
 }
 
 @keyframes modalScaleIn {
   from { transform: scale(0.95); opacity: 0.8; }
   to   { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes upgradeFlash {
+  0%   { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.8); }
+  50%  { box-shadow: 0 0 20px 5px rgba(201, 168, 76, 0.6); }
+  100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
+}
+.tk-upgrade-flash {
+  animation: upgradeFlash 0.6s ease-out !important;
+}
+
+@keyframes resourceBump {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.tk-resource-bump {
+  animation: resourceBump 0.3s ease;
 }
 
 @keyframes toastIn {
@@ -1300,6 +1332,18 @@
 .tk-building-card:not(.tk-building-locked)[data-built="true"] {
   animation: tk-built-pulse 4s ease-in-out infinite;
 }
+
+/* ─── 1b-2. 建筑等级视觉层次 — 高等级更亮边框 ─── */
+.tk-building-card[data-level="1"] { border-color: rgba(201, 168, 76, 0.4); }
+.tk-building-card[data-level="2"] { border-color: rgba(201, 168, 76, 0.55); }
+.tk-building-card[data-level="3"] { border-color: rgba(201, 168, 76, 0.65); }
+.tk-building-card[data-level="4"] { border-color: rgba(201, 168, 76, 0.75); }
+.tk-building-card[data-level="5"] { border-color: rgba(201, 168, 76, 0.85); }
+.tk-building-card[data-level="6"] { border-color: rgba(212, 175, 55, 0.9); }
+.tk-building-card[data-level="7"] { border-color: rgba(218, 165, 32, 0.95); }
+.tk-building-card[data-level="8"] { border-color: rgba(255, 215, 0, 1); }
+.tk-building-card[data-level="9"] { border-color: rgba(255, 215, 0, 1); }
+.tk-building-card[data-level="10"] { border-color: rgba(255, 215, 0, 1); }
 
 /* ─── 1c. 未建造建筑 — 降低视觉权重，灰色遮罩 ─── */
 .tk-building-card:not(.tk-building-locked):not([data-built="true"]) {
