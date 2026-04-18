@@ -96,6 +96,17 @@ export interface DialogueEvent {
   timestamp: number;
 }
 
+/** 地图动态事件类型 */
+export interface MapEvent {
+  id: string;
+  type: 'discovery' | 'bandit' | 'merchant' | 'treasure' | 'recruit';
+  title: string;
+  description: string;
+  position: { x: number; y: number };
+  rewards?: Record<string, number>;
+  resolved: boolean;
+}
+
 export interface ThreeKingdomsSaveState {
   resources: Record<string, number>;
   buildings: Record<string, number>;
@@ -176,6 +187,18 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 武将剧情事件系统 */
   public storyEventSystem = new GeneralStoryEventSystem();
+
+  /** 地图动态事件列表 */
+  public mapEvents: MapEvent[] = [];
+
+  /** 地图事件回调（由 UI 层设置，用于显示事件弹窗） */
+  public onMapEvent?: (event: MapEvent) => void;
+
+  /** 地图事件触发计时器（秒） */
+  private mapEventTimer: number = 0;
+
+  /** 地图事件触发间隔（30-60秒随机） */
+  private mapEventInterval: number = 45;
 
   /** 对话事件回调（由 UI 层设置，用于显示对话气泡） */
   public onDialogueEvent?: (event: DialogueEvent) => void;
@@ -520,6 +543,9 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
     // ── 武将对话自动触发 ──
     this.updateDialogueTriggers(sec);
+
+    // ── 地图动态事件触发 ──
+    this.updateMapEventTriggers(sec);
   }
 
   // ─── 渲染 ───────────────────────────────────────────────
@@ -737,6 +763,95 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       generalId: request.generalId,
       timestamp: Date.now(),
     });
+  }
+
+  // ─── 地图动态事件 ──────────────────────────────────────────
+
+  /**
+   * 地图动态事件触发检查（每帧调用）
+   */
+  private updateMapEventTriggers(sec: number): void {
+    this.mapEventTimer += sec;
+    if (this.mapEventTimer >= this.mapEventInterval) {
+      this.mapEventTimer = 0;
+      this.mapEventInterval = 30 + Math.random() * 30; // 30-60秒
+      this.generateMapEvent();
+    }
+  }
+
+  /**
+   * 生成一个随机地图事件
+   */
+  private generateMapEvent(): void {
+    const types: MapEvent['type'][] = ['discovery', 'bandit', 'merchant', 'treasure', 'recruit'];
+    const titles: Record<string, string> = {
+      discovery: '🗺️ 发现遗迹',
+      bandit: '⚔️ 山贼出没',
+      merchant: '🏪 商队经过',
+      treasure: '💰 宝箱发现',
+      recruit: '👤 流浪武将',
+    };
+    const descriptions: Record<string, string> = {
+      discovery: '发现了一处古代遗迹，可能有宝物！',
+      bandit: '前方出现山贼，是否出战？',
+      merchant: '商队经过，可以购买物资。',
+      treasure: '发现了一个宝箱！',
+      recruit: '一位武将正在寻找明主。',
+    };
+    const rewardsMap: Record<string, Record<string, number> | undefined> = {
+      discovery: { fame: 10 },
+      bandit: { gold: 50 },
+      merchant: { gold: 30, grain: 50 },
+      treasure: { gold: 100 },
+      recruit: { fame: 5 },
+    };
+
+    const type = types[Math.floor(Math.random() * types.length)];
+    const event: MapEvent = {
+      id: `event_${Date.now()}`,
+      type,
+      title: titles[type],
+      description: descriptions[type],
+      position: { x: Math.random() * 800, y: Math.random() * 600 },
+      rewards: rewardsMap[type],
+      resolved: false,
+    };
+    this.mapEvents.push(event);
+    this.onMapEvent?.(event);
+  }
+
+  /**
+   * 解决地图事件（发放奖励）
+   */
+  public resolveMapEvent(eventId: string): void {
+    const event = this.mapEvents.find(e => e.id === eventId);
+    if (!event || event.resolved) return;
+
+    event.resolved = true;
+
+    // 发放奖励
+    if (event.rewards) {
+      for (const [key, value] of Object.entries(event.rewards)) {
+        this.giveRes(key, value);
+      }
+    }
+
+    // 添加飘字提示
+    const rewardText = event.rewards
+      ? Object.entries(event.rewards).map(([k, v]) => `${k}: +${v}`).join(', ')
+      : '无奖励';
+    this.ftSys.add(`${event.title} — ${rewardText}`, 0.5, 0.3, {
+      style: { color: '#f0c060', fontSize: 16 },
+    });
+
+    this.emit('stateChange');
+  }
+
+  /**
+   * 获取未解决的地图事件列表
+   */
+  public getActiveMapEvents(): MapEvent[] {
+    return this.mapEvents.filter(e => !e.resolved);
   }
 
   /**

@@ -867,6 +867,25 @@ export class MapScene extends BaseScene {
   /** 河流瓦片位置缓存（水域边缘瓦片） */
   private riverTiles: Array<{ x: number; y: number; tileSize: number; variant: number }> = [];
 
+  // ─── R16: 城池旗帜飘动 + 道路行军粒子 + 水域波光 ──────────
+
+  /** 旗帜飘动动画图形（每帧更新旗帜偏移） */
+  private flagWaveGraphics: Graphics | null = null;
+  /** 旗帜位置缓存（城池/关隘瓦片） */
+  private flagTiles: Array<{ x: number; y: number; tileSize: number; variant: number; terrain: string }> = [];
+  /** 道路行军粒子图形 */
+  private marchParticleGraphics: Graphics | null = null;
+  /** 道路瓦片位置缓存 */
+  private roadTiles: Array<{ x: number; y: number; tileSize: number; variant: number }> = [];
+  /** 行军粒子数据 */
+  private marchParticles: Array<{ x: number; y: number; vx: number; vy: number; life: number; alpha: number }> = [];
+  /** 行军粒子发射计时器 */
+  private marchParticleTimer: number = 0;
+  /** 水域波光增强图形 */
+  private waterSparkleGraphics: Graphics | null = null;
+  /** 动态元素累计时间 */
+  private dynamicAnimTime: number = 0;
+
   // ─── 装饰性面板边框 ─────────────────────────────────────────
 
   /** 古风装饰边框图形（回纹/云纹） */
@@ -937,6 +956,21 @@ export class MapScene extends BaseScene {
     this.desertStormGraphics = new Graphics();
     this.desertStormGraphics.visible = false;
     this.container.addChild(this.desertStormGraphics);
+
+    // R16: 初始化旗帜飘动动画层
+    this.flagWaveGraphics = new Graphics();
+    this.flagWaveGraphics.visible = false;
+    this.container.addChild(this.flagWaveGraphics);
+
+    // R16: 初始化道路行军粒子层
+    this.marchParticleGraphics = new Graphics();
+    this.marchParticleGraphics.visible = false;
+    this.container.addChild(this.marchParticleGraphics);
+
+    // R16: 初始化水域波光增强层
+    this.waterSparkleGraphics = new Graphics();
+    this.waterSparkleGraphics.visible = false;
+    this.container.addChild(this.waterSparkleGraphics);
 
     // 初始化粒子数据
     this.particles = [];
@@ -1072,6 +1106,15 @@ export class MapScene extends BaseScene {
     // ── 11.7. 更新荒漠沙暴效果 ──────────────────────────
     this.updateDesertStorm(deltaTime);
 
+    // ── 11.8. R16: 更新旗帜飘动动画 ──────────────────────
+    this.updateFlagWave(deltaTime);
+
+    // ── 11.9. R16: 更新道路行军粒子 ──────────────────────
+    this.updateMarchParticles(deltaTime);
+
+    // ── 11.10. R16: 更新水域波光增强 ──────────────────────
+    this.updateWaterSparkle(deltaTime);
+
     // ── 12. 绘制古风装饰边框 ──────────────────────────────
     this.drawDecorativeBorder();
   }
@@ -1149,6 +1192,24 @@ export class MapScene extends BaseScene {
       this.desertStormGraphics = null;
     }
     this.desertTiles = [];
+    // R16: 清理旗帜飘动、行军粒子、水域波光
+    if (this.flagWaveGraphics) {
+      this.flagWaveGraphics.destroy();
+      this.flagWaveGraphics = null;
+    }
+    this.flagTiles = [];
+    if (this.marchParticleGraphics) {
+      this.marchParticleGraphics.destroy();
+      this.marchParticleGraphics = null;
+    }
+    this.roadTiles = [];
+    this.marchParticles = [];
+    this.marchParticleTimer = 0;
+    if (this.waterSparkleGraphics) {
+      this.waterSparkleGraphics.destroy();
+      this.waterSparkleGraphics = null;
+    }
+    this.dynamicAnimTime = 0;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -2197,6 +2258,9 @@ export class MapScene extends BaseScene {
     this.swampTiles = [];
     this.desertTiles = [];
     this.riverTiles = [];
+    // R16: 缓存旗帜和道路瓦片位置
+    this.flagTiles = [];
+    this.roadTiles = [];
     for (let row = 0; row < map.height; row++) {
       for (let col = 0; col < map.width; col++) {
         const tile = map.tiles[row]?.[col];
@@ -2226,6 +2290,14 @@ export class MapScene extends BaseScene {
         }
         if (tile.terrain === 'desert') {
           this.desertTiles.push(tileInfo);
+        }
+        // R16: 缓存城池/关隘旗帜位置
+        if (tile.terrain === 'city' || tile.terrain === 'fortress') {
+          this.flagTiles.push({ ...tileInfo, terrain: tile.terrain });
+        }
+        // R16: 缓存道路瓦片位置
+        if (tile.terrain === 'road') {
+          this.roadTiles.push(tileInfo);
         }
       }
     }
@@ -4617,6 +4689,157 @@ export class MapScene extends BaseScene {
       }
       gfx.lineTo(mapW, Math.floor(mapH)).lineTo(0, Math.floor(mapH)).closePath()
         .fill({ color: 0x4a3a2a, alpha: mountainAlpha });
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // R16: 城池旗帜飘动 / 道路行军粒子 / 水域波光增强
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * R16: 更新城池旗帜飘动动画
+   *
+   * 在城池/关隘瓦片上方绘制飘动的旗帜，使用 sin 波产生飘扬效果。
+   * 旗帜颜色根据地形类型区分（关隘更红，城池暗红）。
+   */
+  private updateFlagWave(deltaTime: number): void {
+    if (!this.flagWaveGraphics || this.flagTiles.length === 0) return;
+
+    this.dynamicAnimTime += deltaTime;
+    this.flagWaveGraphics.clear();
+    this.flagWaveGraphics.visible = true;
+
+    const t = this.dynamicAnimTime;
+
+    for (const ft of this.flagTiles) {
+      const { x, y, tileSize, variant, terrain } = ft;
+      const phase = variant * 1.1;
+
+      // 旗杆位置（城楼顶部中央）
+      const poleX = Math.floor(x + tileSize * 0.5);
+      const poleTopY = Math.floor(y + tileSize * 0.15);
+
+      // 旗帜飘扬偏移（sin 波模拟风吹）
+      const waveOffset = Math.sin(t * 3.0 + phase) * 2.5;
+      const waveOffset2 = Math.sin(t * 2.3 + phase + 1.0) * 1.5;
+
+      // 旗杆
+      this.flagWaveGraphics!.moveTo(poleX, poleTopY + 4)
+        .lineTo(poleX, poleTopY - FLAG_POLE_HEIGHT)
+        .stroke({ width: 1.2, color: 0x8a6a3a, alpha: 0.7 });
+
+      // 旗杆顶部圆球
+      this.flagWaveGraphics!.circle(poleX, poleTopY - FLAG_POLE_HEIGHT, 1.2)
+        .fill({ color: 0xd4a55a, alpha: 0.6 });
+
+      // 飘扬旗帜主体（四边形，带波浪偏移）
+      const flagColor = terrain === 'fortress' ? 0xe83838 : 0xcc2222;
+      const fy = poleTopY - FLAG_POLE_HEIGHT + 1;
+      this.flagWaveGraphics!.moveTo(poleX, fy)
+        .lineTo(poleX + FLAG_WIDTH + waveOffset, fy + Math.floor(FLAG_HEIGHT * 0.3) + waveOffset2)
+        .lineTo(poleX + FLAG_WIDTH - 1 + waveOffset * 0.7, fy + FLAG_HEIGHT + 1 + waveOffset2 * 0.5)
+        .lineTo(poleX, fy + FLAG_HEIGHT - 1)
+        .closePath()
+        .fill({ color: flagColor, alpha: 0.75 });
+
+      // 旗帜描边
+      this.flagWaveGraphics!.moveTo(poleX, fy)
+        .lineTo(poleX + FLAG_WIDTH + waveOffset, fy + Math.floor(FLAG_HEIGHT * 0.3) + waveOffset2)
+        .lineTo(poleX + FLAG_WIDTH - 1 + waveOffset * 0.7, fy + FLAG_HEIGHT + 1 + waveOffset2 * 0.5)
+        .lineTo(poleX, fy + FLAG_HEIGHT - 1)
+        .closePath()
+        .stroke({ width: 0.6, color: 0xaa1111, alpha: 0.5 });
+    }
+  }
+
+  /**
+   * R16: 更新道路行军粒子
+   *
+   * 在道路瓦片上生成小圆点粒子，模拟行军队伍移动。
+   * 粒子沿道路方向移动，带有渐隐效果。
+   */
+  private updateMarchParticles(deltaTime: number): void {
+    if (!this.marchParticleGraphics || this.roadTiles.length === 0) return;
+
+    this.marchParticleGraphics.clear();
+    this.marchParticleGraphics.visible = true;
+
+    // 发射新粒子
+    this.marchParticleTimer += deltaTime;
+    if (this.marchParticleTimer >= 0.8 && this.marchParticles.length < 30) {
+      this.marchParticleTimer -= 0.8;
+      // 随机选一条道路瓦片
+      const roadTile = this.roadTiles[Math.floor(Math.random() * this.roadTiles.length)];
+      if (roadTile) {
+        const direction = Math.random() > 0.5 ? 1 : -1;
+        this.marchParticles.push({
+          x: direction > 0 ? roadTile.x : roadTile.x + roadTile.tileSize,
+          y: roadTile.y + roadTile.tileSize * (0.3 + Math.random() * 0.4),
+          vx: direction * (15 + Math.random() * 20),
+          vy: (Math.random() - 0.5) * 3,
+          life: 2.0 + Math.random(),
+          alpha: 0.6 + Math.random() * 0.3,
+        });
+      }
+    }
+
+    // 更新和绘制粒子
+    for (let i = this.marchParticles.length - 1; i >= 0; i--) {
+      const p = this.marchParticles[i];
+      p.life -= deltaTime;
+      p.x += p.vx * deltaTime;
+      p.y += p.vy * deltaTime;
+      p.alpha -= deltaTime * 0.25;
+
+      if (p.life <= 0 || p.alpha <= 0) {
+        this.marchParticles.splice(i, 1);
+        continue;
+      }
+
+      // 绘制行军小圆点（模拟士兵）
+      this.marchParticleGraphics!.circle(Math.floor(p.x), Math.floor(p.y), 1.5)
+        .fill({ color: 0xd4a030, alpha: Math.max(0, p.alpha) });
+    }
+  }
+
+  /**
+   * R16: 更新水域波光增强效果
+   *
+   * 在水域瓦片上绘制额外的闪烁光斑，模拟阳光在水面的反射。
+   * 使用不同频率的 sin 波产生自然的闪烁节奏。
+   */
+  private updateWaterSparkle(deltaTime: number): void {
+    if (!this.waterSparkleGraphics || this.waterTiles.length === 0) return;
+
+    this.waterSparkleGraphics.clear();
+    this.waterSparkleGraphics.visible = true;
+
+    const t = this.dynamicAnimTime;
+
+    for (const wt of this.waterTiles) {
+      const { x, y, tileSize, variant } = wt;
+      const phase = variant * 0.9;
+
+      // 大型闪烁光斑（模拟强烈阳光反射）
+      for (let i = 0; i < 2; i++) {
+        const sparkleX = Math.floor(x + tileSize * 0.2 + ((t * 8 + variant * 25 + i * 40) % (tileSize * 0.6)));
+        const sparkleY = Math.floor(y + tileSize * 0.2 + ((t * 6 + variant * 18 + i * 35) % (tileSize * 0.6)));
+        const sparkleAlpha = 0.15 + 0.2 * Math.sin(t * 4.0 + i * 1.5 + phase);
+        const sparkleR = 1.0 + Math.sin(t * 2.5 + i + phase) * 0.8;
+        this.waterSparkleGraphics!.circle(sparkleX, sparkleY, Math.max(0.5, sparkleR))
+          .fill({ color: 0xffffff, alpha: Math.max(0, sparkleAlpha) });
+      }
+
+      // 波光涟漪（缓慢扩散的圆环）
+      if (variant % 4 === 0) {
+        const ripplePhase = (t * 0.8 + variant) % 3.0;
+        const rippleR = 2 + ripplePhase * 4;
+        const rippleAlpha = 0.12 * (1 - ripplePhase / 3.0);
+        const rippleX = Math.floor(x + tileSize * 0.5);
+        const rippleY = Math.floor(y + tileSize * 0.5);
+        this.waterSparkleGraphics!.circle(rippleX, rippleY, Math.max(1, rippleR))
+          .stroke({ width: 0.6, color: 0xc8ddf0, alpha: Math.max(0, rippleAlpha) });
+      }
     }
   }
 
