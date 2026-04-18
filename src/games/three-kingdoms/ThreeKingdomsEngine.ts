@@ -1012,7 +1012,6 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
 
   /** 资源阈值解锁配置：建筑ID → 所需资源阈值 */
   private static readonly RESOURCE_UNLOCK_THRESHOLDS: Record<string, Record<string, number>> = {
-    barracks: { grain: 200 },    // 累计 200 粮草
     academy: { gold: 1000 },     // 累计 1000 铜钱
     clinic: { grain: 500 },      // 累计 500 粮草
   };
@@ -2375,6 +2374,7 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       smithy: 'attack',          // 铁匠铺 → 攻击
       forge: 'attack',           // 锻兵坊 → 攻击
       wall: 'defense',           // 城防 → 防御
+      lumber_mill: 'command',    // 伐木场 → 统率
       farm: 'command',           // 屯田 → 统率
       granary: 'command',        // 粮仓 → 统率
       market: 'charisma',        // 商行 → 魅力

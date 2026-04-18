@@ -162,7 +162,7 @@ export const GAME_ID = 'three-kingdoms';
 export const GAME_TITLE = '三国霸业';
 
 // ═══════════════════════════════════════════════════════════════
-// 建筑系统 (13个)
+// 建筑系统 (15个)
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -178,9 +178,11 @@ export const BUILDING_DESCRIPTIONS: Record<string, string> = {
   smithy: '千锤百炼，铸造神兵利器，武装三军将士',
   academy: '太学兴教，传承经典，培育经天纬地之才',
   clinic: '悬壶济世，妙手回春，保百姓安居乐业',
-  wall: '高城深池，箭塔林立，固若金汤守四方',
+  lumber_mill: '伐木为业，大兴土木，建设城池根基',
+  mine: '开山采矿，百炼成钢，铸造强国之基',
+  wall: '高城深池，驻军守备，固若金汤守四方',
   tavern: '天下英雄尽入吾彀中，招贤纳士聚英才',
-  beacon_tower: '烽火连天，预警四方，敌军来袭早知晓',
+  beacon_tower: '烽火连天，预警四方，配军械库备战',
   mint: '天下财富汇聚于此，铜钱滚滚而来',
   forge: '千锤百炼出精钢，神兵利器由此来',
   teahouse: '品茗论天下，坊间传闻皆可知',
@@ -204,14 +206,14 @@ export const BUILDINGS: BuildingDef[] = [
     id: 'barracks', name: '军营', icon: '⚔️', category: 'military',
     baseCost: { grain: 30, gold: 20 }, costMultiplier: 1.09, maxLevel: 0,
     productionResource: 'troops', baseProduction: 0.5,
-    unlockCondition: '累计 200 粮草',
+    unlockCondition: '初始解锁',
   },
   {
     id: 'smithy', name: '铁匠铺', icon: '🔨', category: 'military',
-    baseCost: { gold: 50, grain: 30 }, costMultiplier: 1.10, maxLevel: 0,
-    productionResource: 'iron', baseProduction: 0.8,
-    requires: ['barracks'],
-    unlockCondition: '军营 Lv.3',
+    baseCost: { gold: 50, grain: 30, iron: 10 }, costMultiplier: 1.10, maxLevel: 0,
+    productionResource: 'iron', baseProduction: 1.2,
+    requires: ['mine'],
+    unlockCondition: '矿场 Lv.2',
   },
   {
     id: 'academy', name: '太学', icon: '📚', category: 'civilian',
@@ -226,26 +228,38 @@ export const BUILDINGS: BuildingDef[] = [
     unlockCondition: '累计 500 粮草',
   },
   {
+    id: 'lumber_mill', name: '伐木场', icon: '🪓', category: 'resource',
+    baseCost: { grain: 25, gold: 15 }, costMultiplier: 1.12, maxLevel: 0,
+    productionResource: 'wood', baseProduction: 0.8,
+    unlockCondition: '初始解锁',
+  },
+  {
+    id: 'mine', name: '矿场', icon: '⛏️', category: 'resource',
+    baseCost: { grain: 30, gold: 20 }, costMultiplier: 1.12, maxLevel: 0,
+    productionResource: 'iron', baseProduction: 0.6,
+    unlockCondition: '初始解锁',
+  },
+  {
     id: 'wall', name: '城防', icon: '🏰', category: 'military',
-    baseCost: { gold: 150, grain: 60, troops: 15 }, costMultiplier: 1.15, maxLevel: 0,
-    productionResource: 'wood', baseProduction: 1.0,
-    requires: ['barracks'],
-    unlockCondition: '军营 Lv.5',
+    baseCost: { gold: 100, wood: 30, grain: 40 }, costMultiplier: 1.15, maxLevel: 0,
+    productionResource: 'morale', baseProduction: 0.5,
+    requires: ['lumber_mill'],
+    unlockCondition: '伐木场 Lv.3',
   },
   {
     id: 'tavern', name: '招贤馆', icon: '🏯', category: 'civilian',
     baseCost: { gold: 500 }, costMultiplier: 1.18, maxLevel: 0,
-    productionResource: 'gold', baseProduction: 2.0,
+    productionResource: 'destiny', baseProduction: 1.5,
     requires: ['academy'],
     unlockCondition: '太学 Lv.3',
   },
   // ── 新增特色建筑 ──
   {
     id: 'beacon_tower', name: '烽火台', icon: '🔥', category: 'military',
-    baseCost: { gold: 150, iron: 20, troops: 30, wood: 30 }, costMultiplier: 1.12, maxLevel: 0,
-    productionResource: 'troops', baseProduction: 0.3,
+    baseCost: { gold: 120, wood: 40, iron: 20 }, costMultiplier: 1.12, maxLevel: 0,
+    productionResource: 'troops', baseProduction: 0.4,
     requires: ['wall'],
-    unlockCondition: '城防 Lv.3',
+    unlockCondition: '城防 Lv.2',
   },
   {
     id: 'mint', name: '钱庄', icon: '🏛️', category: 'economic',
@@ -706,11 +720,11 @@ export const RESOURCES = [
 
 export const INITIAL_RESOURCES: Record<string, number> = {
   grain: 500,
-  gold: 400,
-  iron: 30,
-  wood: 20,
-  troops: 200,
-  destiny: 100,
+  gold: 300,
+  iron: 10,
+  wood: 10,
+  troops: 100,
+  destiny: 50,
   morale: 50,
 };
 
@@ -719,11 +733,11 @@ export const INITIAL_RESOURCES: Record<string, number> = {
 // ═══════════════════════════════════════════════════════════════
 
 export const INITIALLY_UNLOCKED: string[] = [
-  'farm',     // 屯田
-  'market',   // 商行
-  'barracks', // 军营
-  'clinic',   // 药庐
-  'academy',  // 太学
+  'farm',        // 屯田
+  'market',      // 商行
+  'barracks',    // 军营
+  'lumber_mill', // 伐木场
+  'mine',        // 矿场
 ];
 
 // ═══════════════════════════════════════════════════════════════

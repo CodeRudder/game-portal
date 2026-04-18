@@ -36,7 +36,7 @@ describe('CampaignSystem - 基础关卡数据', () => {
   it('should have correct stage order', () => {
     const orders = CAMPAIGN_STAGES.map(s => s.order);
     // 18 levels with non-sequential orders representing branching paths
-    expect(orders).toEqual([1, 5, 8, 11, 13, 18, 2, 3, 4, 6, 7, 9, 10, 14, 15, 16, 17, 6]);
+    expect(orders).toEqual([1, 5, 8, 11, 13, 18, 2, 3, 4, 6, 7, 9, 10, 12, 14, 15, 16, 17]);
   });
 
   it('should have prerequisite chain via connections', () => {
@@ -111,7 +111,9 @@ describe('CampaignSystem - 基础关卡数据', () => {
   it('should have story progression (subtitles)', () => {
     const subtitles = CAMPAIGN_STAGES.map(s => s.subtitle);
     expect(subtitles[0]).toContain('第一章');
-    expect(subtitles[subtitles.length - 1]).toContain('终章');
+    // 主线关卡（前6个）最后一个应该包含'终章'
+    const mainPathSubtitles = subtitles.slice(0, 6);
+    expect(mainPathSubtitles[mainPathSubtitles.length - 1]).toContain('终章');
   });
 
   it('should have rewards with territory', () => {
@@ -162,6 +164,9 @@ describe('CampaignSystem - 关卡详情数据', () => {
       'campaign_changban',
       'campaign_jingzhou',
       'campaign_yiling',
+      'campaign_wuzhangyuan',
+      'campaign_hefei',
+      'campaign_jieting',
     ];
     expect(CAMPAIGN_LEVEL_DETAILS.map(l => l.id)).toEqual(expectedIds);
   });
@@ -454,8 +459,8 @@ describe('CampaignSystem - 类功能', () => {
     expect(system.getTotalStars()).toBe(6);
   });
 
-  it('should have max stars = 45 (15 stages × 3)', () => {
-    expect(system.getMaxStars()).toBe(45);
+  it('should have max stars = 54 (18 stages × 3)', () => {
+    expect(system.getMaxStars()).toBe(54);
   });
 
   // ─── 完整通关 ─────────────────────────────────────────────
@@ -466,7 +471,7 @@ describe('CampaignSystem - 类功能', () => {
       system.completeStage(id, 80);
     }
     expect(system.isAllCompleted()).toBe(true);
-    expect(system.getTotalStars()).toBe(45);
+    expect(system.getTotalStars()).toBe(54);
   });
 
   // ─── 序列化/反序列化 ─────────────────────────────────────
@@ -524,7 +529,7 @@ describe('CampaignSystem - 关卡详情查询', () => {
 
   it('should return all level details', () => {
     const details = system.getAllLevelDetails();
-    expect(details).toHaveLength(15);
+    expect(details).toHaveLength(18);
   });
 });
 
