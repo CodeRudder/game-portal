@@ -13,17 +13,39 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import BuildingUpgradeModal from '../BuildingUpgradeModal';
-import type { BuildingType, Resources } from '@/games/three-kingdoms/engine';
-import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 
 // ── Mock CSS ──
 vi.mock('../BuildingUpgradeModal.css', () => ({}));
+
+// ── Mock 引擎模块 ──
+type BuildingType = 'castle' | 'farmland' | 'market' | 'barracks' | 'smithy' | 'academy' | 'clinic' | 'wall';
 
 const BUILDING_LABELS: Record<BuildingType, string> = {
   castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
   smithy: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
 };
+
+const BUILDING_ICONS: Record<BuildingType, string> = {
+  castle: '🏛️', farmland: '🌾', market: '💰', barracks: '⚔️',
+  smithy: '🔨', academy: '📚', clinic: '🏥', wall: '🏯',
+};
+
+const BUILDING_ZONES: Record<BuildingType, string> = {
+  castle: 'core', farmland: 'civilian', market: 'civilian', barracks: 'military',
+  smithy: 'military', academy: 'cultural', clinic: 'cultural', wall: 'defense',
+};
+
+vi.mock('@/games/three-kingdoms/engine', () => ({
+  BUILDING_TYPES: ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'],
+  BUILDING_LABELS,
+  BUILDING_ICONS,
+  BUILDING_ZONES,
+}));
+
+vi.mock('@/games/three-kingdoms/engine/ThreeKingdomsEngine', () => ({}));
+
+// ── 导入被测组件（在 mock 之后）──
+import BuildingUpgradeModal from '../BuildingUpgradeModal';
 
 // ── 创建 mock engine ──
 function createMockEngine(overrides?: {
@@ -32,12 +54,9 @@ function createMockEngine(overrides?: {
   cost?: { grain: number; gold: number; troops: number; timeSeconds: number };
   level?: number;
   status?: string;
-}): ThreeKingdomsEngine {
+}) {
   const buildings: Record<string, any> = {};
-  const types: BuildingType[] = [
-    'castle', 'farmland', 'market', 'barracks',
-    'smithy', 'academy', 'clinic', 'wall',
-  ];
+  const types: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
   for (const t of types) {
     buildings[t] = {
       type: t,
@@ -63,11 +82,11 @@ function createMockEngine(overrides?: {
       caps: { grain: 5000, gold: 3000, troops: 1000, mandate: null },
       onlineSeconds: 0,
     }),
-  } as unknown as ThreeKingdomsEngine;
+  };
 }
 
-const defaultResources: Resources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
-const poorResources: Resources = { grain: 50, gold: 10, troops: 0, mandate: 0 };
+const defaultResources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
+const poorResources = { grain: 50, gold: 10, troops: 0, mandate: 0 };
 
 describe('BuildingUpgradeModal', () => {
   beforeEach(() => {
@@ -80,7 +99,7 @@ describe('BuildingUpgradeModal', () => {
     render(
       <BuildingUpgradeModal
         buildingType="farmland"
-        engine={engine}
+        engine={engine as any}
         resources={defaultResources}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
@@ -103,7 +122,7 @@ describe('BuildingUpgradeModal', () => {
     render(
       <BuildingUpgradeModal
         buildingType="farmland"
-        engine={engine}
+        engine={engine as any}
         resources={defaultResources}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
@@ -122,7 +141,7 @@ describe('BuildingUpgradeModal', () => {
     render(
       <BuildingUpgradeModal
         buildingType="farmland"
-        engine={engine}
+        engine={engine as any}
         resources={defaultResources}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
@@ -137,7 +156,7 @@ describe('BuildingUpgradeModal', () => {
     expect(screen.getByText('💰')).toBeInTheDocument();
     expect(screen.getByText('⚔️')).toBeInTheDocument();
 
-    // 显示时间
+    // 显示时间图标
     expect(screen.getByText('⏱️')).toBeInTheDocument();
   });
 
@@ -151,7 +170,7 @@ describe('BuildingUpgradeModal', () => {
     render(
       <BuildingUpgradeModal
         buildingType="farmland"
-        engine={engine}
+        engine={engine as any}
         resources={poorResources}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
@@ -177,7 +196,7 @@ describe('BuildingUpgradeModal', () => {
     render(
       <BuildingUpgradeModal
         buildingType="farmland"
-        engine={engine}
+        engine={engine as any}
         resources={defaultResources}
         onConfirm={onConfirm}
         onCancel={vi.fn()}
@@ -199,7 +218,7 @@ describe('BuildingUpgradeModal', () => {
     render(
       <BuildingUpgradeModal
         buildingType="farmland"
-        engine={engine}
+        engine={engine as any}
         resources={defaultResources}
         onConfirm={vi.fn()}
         onCancel={onCancel}
@@ -220,7 +239,7 @@ describe('BuildingUpgradeModal', () => {
     render(
       <BuildingUpgradeModal
         buildingType="farmland"
-        engine={engine}
+        engine={engine as any}
         resources={defaultResources}
         onConfirm={vi.fn()}
         onCancel={onCancel}
@@ -241,7 +260,7 @@ describe('BuildingUpgradeModal', () => {
     render(
       <BuildingUpgradeModal
         buildingType="farmland"
-        engine={engine}
+        engine={engine as any}
         resources={defaultResources}
         onConfirm={vi.fn()}
         onCancel={onCancel}
