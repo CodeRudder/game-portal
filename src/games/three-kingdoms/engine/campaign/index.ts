@@ -8,7 +8,7 @@
 export type {
   StageType,
   StageStatus,
-  StarCount,
+  StarRating,
   EnemyUnitDef,
   EnemyFormation,
   DropItemType,

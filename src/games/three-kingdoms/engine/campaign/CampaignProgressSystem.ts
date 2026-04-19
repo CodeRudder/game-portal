@@ -22,7 +22,7 @@ import type {
   Stage,
   StageState,
   StageStatus,
-  StarCount,
+  StarRating,
 } from './campaign.types';
 import { MAX_STARS } from './campaign.types';
 
@@ -41,7 +41,7 @@ const SAVE_VERSION = 1;
 function createInitialStageState(stageId: string): StageState {
   return {
     stageId,
-    stars: 0 as StarCount,
+    stars: 0 as StarRating,
     firstCleared: false,
     clearCount: 0,
   };
@@ -294,7 +294,7 @@ export class CampaignProgressSystem implements ISubsystem {
     const state = this.progress.stageStates[stageId];
 
     // 更新星级（取历史最高）
-    const clampedStars = Math.max(0, Math.min(MAX_STARS, Math.floor(stars))) as StarCount;
+    const clampedStars = Math.max(0, Math.min(MAX_STARS, Math.floor(stars))) as StarRating;
     if (clampedStars > state.stars) {
       state.stars = clampedStars;
     }

@@ -9,7 +9,7 @@
 
 import type { ResourceType, Resources } from '../../shared/types';
 import type { Faction } from '../hero/hero.types';
-import type { TroopType } from '../battle/battle.types';
+import { type StarRating, TroopType } from '../battle/battle.types';
 
 // ─────────────────────────────────────────────
 // 1. 关卡类型枚举
@@ -60,12 +60,12 @@ export const STAGE_STATUS_LABELS: Record<StageStatus, string> = {
 /**
  * 星级评定（0-3）
  *
- * 0 — 未通关
- * 1 — 通关（任意我方HP > 0）
- * 2 — 通关 + 我方存活 ≥ 4人
- * 3 — 通关 + 我方存活 ≥ 4人 + 回合数 ≤ 6
+ * 统一使用 battle 域的 StarRating enum，消除双轨制。
+ * ★☆☆：通关（任意HP > 0）
+ * ★★☆：通关 + 我方存活 ≥ 4人
+ * ★★★：通关 + 我方存活 ≥ 4人 + 回合数 ≤ 6
  */
-export type StarCount = 0 | 1 | 2 | 3;
+export type { StarRating };
 
 /** 最大星级 */
 export const MAX_STARS = 3 as const;
@@ -254,7 +254,7 @@ export interface StageState {
   /** 关卡ID */
   stageId: string;
   /** 当前星级（0-3） */
-  stars: StarCount;
+  stars: StarRating;
   /** 是否已首通 */
   firstCleared: boolean;
   /** 通关次数 */

@@ -149,7 +149,6 @@ export {
 export type {
   StageType,
   StageStatus,
-  StarCount,
   EnemyUnitDef,
   EnemyFormation,
   StageReward,

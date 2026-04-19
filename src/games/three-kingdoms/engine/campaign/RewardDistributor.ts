@@ -17,9 +17,8 @@ import type {
   ICampaignDataProvider,
   RewardDistributorDeps,
   StageReward,
-  StarCount,
 } from './campaign.types';
-import { MAX_STARS } from './campaign.types';
+import { type StarRating, MAX_STARS } from './campaign.types';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -137,7 +136,7 @@ export class RewardDistributor {
     }
 
     // 限制星级范围
-    const clampedStars = Math.max(0, Math.min(MAX_STARS, Math.floor(stars))) as StarCount;
+    const clampedStars = Math.max(0, Math.min(MAX_STARS, Math.floor(stars))) as StarRating;
 
     // 计算星级加成倍率
     const starMultiplier = getStarMultiplier(clampedStars, stage.threeStarBonusMultiplier);
@@ -153,11 +152,13 @@ export class RewardDistributor {
       this.mergeResources(resources, stage.firstClearRewards);
     }
 
-    // 4. 首通额外经验
-    const totalExp = isFirstClear ? exp + stage.firstClearExp : exp;
+    // 4. 掉落物品
+    const { fragments, bonusExp } = this.rollDropTable(stage.dropTable, resources);
 
-    // 5. 掉落物品
-    const fragments = this.rollDropTable(stage.dropTable, resources);
+    // 5. 总经验 = 基础经验 × 倍率 + 首通额外经验 + 掉落经验
+    const totalExp = isFirstClear
+      ? exp + stage.firstClearExp + bonusExp
+      : exp + bonusExp;
 
     return {
       resources,
@@ -196,10 +197,14 @@ export class RewardDistributor {
    * @param reward - 奖励数据
    */
   distribute(reward: StageReward): void {
-    // 分发资源
-    for (const [type, amount] of Object.entries(reward.resources)) {
+    // 分发资源（类型安全遍历 Partial<Resources>）
+    const resourceKeys: (keyof import('../../shared/types').Resources)[] = [
+      'grain', 'gold', 'troops', 'mandate',
+    ];
+    for (const key of resourceKeys) {
+      const amount = reward.resources[key];
       if (amount && amount > 0) {
-        this.deps.addResource(type as any, amount);
+        this.deps.addResource(key, amount);
       }
     }
 
@@ -298,17 +303,19 @@ export class RewardDistributor {
    * 掉落表随机抽取
    *
    * 遍历掉落表，按概率随机决定是否掉落。
-   * 资源类掉落合并到 resources，碎片类掉落返回 fragments Map。
+   * 资源类掉落合并到 resources，碎片类掉落返回 fragments Map，
+   * 经验类掉落返回额外经验值。
    *
    * @param dropTable - 掉落表
    * @param resources - 资源累加目标（就地修改）
-   * @returns 碎片掉落 Map<generalId, count>
+   * @returns 碎片掉落和额外经验 { fragments, bonusExp }
    */
   private rollDropTable(
     dropTable: DropTableEntry[],
     resources: Partial<Record<string, number>>,
-  ): Record<string, number> {
+  ): { fragments: Record<string, number>; bonusExp: number } {
     const fragments: Record<string, number> = {};
+    let bonusExp = 0;
 
     for (const entry of dropTable) {
       // 概率判定
@@ -332,13 +339,12 @@ export class RewardDistributor {
           break;
 
         case 'exp':
-          // 经验掉落合并到 resources 中的 exp 字段（通过特殊key）
-          // 实际经验通过 addExp 回调分发
-          resources['_exp_drop'] = (resources['_exp_drop'] ?? 0) + amount;
+          // 经验掉落直接累加，通过 addExp 回调分发
+          bonusExp += amount;
           break;
       }
     }
 
-    return fragments;
+    return { fragments, bonusExp };
   }
 }
