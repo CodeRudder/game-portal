@@ -34,7 +34,7 @@
 .tk-bld-queue-title {
   font-size: 13px;
   font-weight: 600;
-  color: #e8d48b;
+  color: var(--tk-gold-light);
   margin-bottom: 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid rgba(200, 168, 76, 0.15);
@@ -45,12 +45,12 @@
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
   padding: 3px 0;
 }
 
 .tk-bld-queue-time {
-  color: #7EC850;
+  color: var(--tk-green);
   font-variant-numeric: tabular-nums;
 }
 
@@ -125,8 +125,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #c9a84c;
-  color: #1a1a2e;
+  background: var(--tk-gold);
+  color: var(--tk-bg);
   font-size: 10px;
   font-weight: 700;
   display: flex;
@@ -158,17 +158,17 @@
 .tk-bld-card-name {
   font-size: 13px;
   font-weight: 600;
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
 }
 
 .tk-bld-card-production {
   font-size: 11px;
-  color: #7EC850;
+  color: var(--tk-green);
 }
 
 .tk-bld-card-locked-text {
   font-size: 11px;
-  color: #666;
+  color: var(--tk-text-muted);
 }
 
 /* 升级进度条 */
@@ -184,7 +184,7 @@
 
 .tk-bld-card-progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #c9a84c, #e8d48b);
+  background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-light));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -195,7 +195,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 10px;
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
   white-space: nowrap;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -207,7 +207,7 @@
   border: 1px solid rgba(200, 168, 76, 0.5);
   border-radius: 4px;
   background: transparent;
-  color: #c9a84c;
+  color: var(--tk-gold);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -218,7 +218,7 @@
 
 .tk-bld-card-btn--active {
   background: rgba(200, 168, 76, 0.15);
-  color: #e8d48b;
+  color: var(--tk-gold-light);
 }
 
 .tk-bld-card-btn--active:hover {
@@ -226,8 +226,8 @@
 }
 
 .tk-bld-card-btn--disabled {
-  border-color: #4a4a5a;
-  color: #4a4a5a;
+  border-color: var(--tk-disabled);
+  color: var(--tk-disabled);
   cursor: not-allowed;
 }
 
@@ -236,14 +236,14 @@
   display: flex;
   gap: 6px;
   font-size: 10px;
-  color: #888;
+  color: var(--tk-text-dim);
   margin-top: 2px;
 }
 
 /* 升级中标识 */
 .tk-bld-card-upgrading-badge {
   font-size: 11px;
-  color: #7EC850;
+  color: var(--tk-green);
   margin-top: 4px;
 }
 
@@ -319,17 +319,17 @@
   .tk-bld-list-name {
     font-size: 14px;
     font-weight: 600;
-    color: #f0e6d3;
+    color: var(--tk-text-primary);
   }
 
   .tk-bld-list-detail {
     font-size: 12px;
-    color: #a0a0a0;
+    color: var(--tk-text-secondary);
   }
 
   .tk-bld-list-cost {
     font-size: 11px;
-    color: #888;
+    color: var(--tk-text-dim);
     display: flex;
     gap: 6px;
   }
@@ -340,7 +340,7 @@
     border: 1px solid rgba(200, 168, 76, 0.4);
     border-radius: 6px;
     background: transparent;
-    color: #c9a84c;
+    color: var(--tk-gold);
     font-size: 16px;
     cursor: pointer;
     flex-shrink: 0;
@@ -353,12 +353,12 @@
 
   .tk-bld-list-btn--active {
     background: rgba(200, 168, 76, 0.15);
-    color: #e8d48b;
+    color: var(--tk-gold-light);
   }
 
   .tk-bld-list-btn:disabled {
-    border-color: #4a4a5a;
-    color: #4a4a5a;
+    border-color: var(--tk-disabled);
+    color: var(--tk-disabled);
     cursor: not-allowed;
   }
 }

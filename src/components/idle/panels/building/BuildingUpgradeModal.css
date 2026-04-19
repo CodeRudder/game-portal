@@ -48,7 +48,7 @@
   height: 28px;
   border: none;
   background: transparent;
-  color: #a0a0a0;
+  color: var(--tk-text-secondary);
   font-size: 16px;
   cursor: pointer;
   border-radius: 4px;
@@ -59,7 +59,7 @@
 }
 
 .tk-upgrade-close:hover {
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -93,12 +93,12 @@
 .tk-upgrade-name {
   font-size: 16px;
   font-weight: 600;
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
 }
 
 .tk-upgrade-level {
   font-size: 14px;
-  color: #c8a96e;
+  color: var(--tk-gold-soft);
 }
 
 /* ═══════════════════════════════════════════
@@ -111,7 +111,7 @@
 .tk-upgrade-section-title {
   font-size: 13px;
   font-weight: 600;
-  color: #c8a96e;
+  color: var(--tk-gold-soft);
   margin-bottom: 8px;
   padding-bottom: 4px;
   border-bottom: 1px solid rgba(200, 169, 110, 0.15);
@@ -120,7 +120,7 @@
 .tk-upgrade-level-change {
   font-size: 18px;
   font-weight: 700;
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
   text-align: center;
   padding: 4px 0;
 }
@@ -145,16 +145,16 @@
 }
 
 .tk-upgrade-cost--enough {
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
 }
 
 .tk-upgrade-cost--short {
-  color: #e74c3c;
+  color: var(--tk-danger);
   background: rgba(231, 76, 60, 0.06);
 }
 
 .tk-upgrade-cost-time {
-  color: #a0a0a0;
+  color: var(--tk-text-secondary);
 }
 
 .tk-upgrade-cost-icon {
@@ -169,7 +169,7 @@
 }
 
 .tk-upgrade-cost-current {
-  color: #888;
+  color: var(--tk-text-dim);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -191,7 +191,7 @@
 
 .tk-upgrade-reason {
   font-size: 12px;
-  color: #e74c3c;
+  color: var(--tk-danger);
   padding: 2px 0;
 }
 
@@ -218,8 +218,8 @@
 
 .tk-upgrade-btn--confirm {
   background: rgba(200, 169, 110, 0.2);
-  color: #e8c468;
-  border: 1px solid #c8a96e;
+  color: var(--tk-gold-bright);
+  border: 1px solid var(--tk-gold-soft);
 }
 
 .tk-upgrade-btn--confirm:hover:not(:disabled) {
@@ -228,20 +228,20 @@
 
 .tk-upgrade-btn--disabled {
   background: rgba(102, 102, 102, 0.15);
-  color: #666;
-  border-color: #555;
+  color: var(--tk-text-muted);
+  border-color: var(--tk-border-dark);
   cursor: not-allowed;
 }
 
 .tk-upgrade-btn--cancel {
   background: transparent;
-  color: #a0a0a0;
+  color: var(--tk-text-secondary);
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .tk-upgrade-btn--cancel:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
 }
 
 /* ═══════════════════════════════════════════

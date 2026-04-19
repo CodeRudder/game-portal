@@ -25,7 +25,7 @@
 .tk-res-title {
   font-size: 16px;
   font-weight: 700;
-  color: #c8a96e;
+  color: var(--tk-gold-soft);
   margin-right: 16px;
   white-space: nowrap;
   letter-spacing: 2px;
@@ -74,22 +74,22 @@
 
 .tk-res-cap {
   font-size: 11px;
-  color: #666;
+  color: var(--tk-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
 .tk-res-rate {
   font-size: 11px;
-  color: #a0a0a0;
+  color: var(--tk-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
 .tk-res-rate--positive {
-  color: #27ae60;
+  color: var(--tk-success);
 }
 
 .tk-res-rate--negative {
-  color: #e74c3c;
+  color: var(--tk-danger);
 }
 
 /* ═══════════════════════════════════════════
