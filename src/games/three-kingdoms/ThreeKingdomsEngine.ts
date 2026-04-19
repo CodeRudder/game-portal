@@ -134,6 +134,10 @@ export interface ThreeKingdomsSaveState {
   generalAssignments?: Record<string, string>;
   /** v3.0 关卡系统：已完成的关卡记录 */
   completedLevelStages?: Record<string, { stars: number; bestTime: number }>;
+  /** 保底计数器：稀有+保底 */
+  pityCounterRare?: number;
+  /** 保底计数器：史诗+保底 */
+  pityCounterEpic?: number;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -242,6 +246,11 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
   private panel: ActivePanel = 'none';
   private selIdx = 0;
   private scroll = 0;
+
+  /** 保底计数器：稀有+保底（10抽触发） */
+  private pityCounterRare = 0;
+  /** 保底计数器：史诗+保底（50抽触发） */
+  private pityCounterEpic = 0;
   private playTime = 0;
 
   /** 武将派遣分配：generalId → buildingId */
@@ -631,6 +640,8 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       battlesWonCount: this.battlesWonCount,
       generalAssignments: { ...this.generalAssignments },
       completedLevelStages: Object.fromEntries(this.completedLevelStages),
+      pityCounterRare: this.pityCounterRare,
+      pityCounterEpic: this.pityCounterEpic,
     };
   }
 
@@ -672,6 +683,10 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     if (d.completedLevelStages) {
       this.completedLevelStages = new Map(Object.entries(d.completedLevelStages));
     }
+
+    // 反序列化保底计数器
+    if (d.pityCounterRare !== undefined) this.pityCounterRare = d.pityCounterRare;
+    if (d.pityCounterEpic !== undefined) this.pityCounterEpic = d.pityCounterEpic;
 
     // 重新检查已激活羁绊
     const recruitedIds = this.getRecruitedGeneralIds();
@@ -935,6 +950,44 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
       }
     }
     return ids;
+  }
+
+  /** 获取保底计数器 */
+  public getPityCounters(): { rare: number; epic: number } {
+    return { rare: this.pityCounterRare, epic: this.pityCounterEpic };
+  }
+
+  /** 检查是否触发保底 */
+  public checkPity(): { guaranteedRare: boolean; guaranteedEpic: boolean } {
+    return {
+      guaranteedRare: this.pityCounterRare >= 10,
+      guaranteedEpic: this.pityCounterEpic >= 50,
+    };
+  }
+
+  /** 批量升级武将 */
+  public batchLevelUpGeneral(ids: string[]): { success: string[]; failed: string[] } {
+    const success: string[] = [];
+    const failed: string[] = [];
+    for (const id of ids) {
+      if (this.levelUpGeneral(id)) {
+        success.push(id);
+      } else {
+        failed.push(id);
+      }
+    }
+    return { success, failed };
+  }
+
+  /** 升级武将技能 */
+  public upgradeGeneralSkill(generalId: string, skillIndex: number): boolean {
+    const unit = this.units.getState(generalId);
+    if (!unit) return false;
+    const cost = (unit.level || 1) * 100;
+    if (!this.canPay({ gold: cost })) return false;
+    this.pay({ gold: cost });
+    this.emit('stateChange');
+    return true;
   }
 
   /**
@@ -2120,6 +2173,14 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     this.emit('generalRecruited', { generalId: id, name: def.name });
     this.audioManager.playSFX('recruit');
     this.emit('stateChange');
+
+    // 更新保底计数器
+    this.pityCounterRare++;
+    this.pityCounterEpic++;
+    const highRarities = ['rare', 'epic', 'legendary', 'mythic'];
+    const epicPlus = ['epic', 'legendary', 'mythic'];
+    if (highRarities.includes(def.rarity)) this.pityCounterRare = 0;
+    if (epicPlus.includes(def.rarity)) this.pityCounterEpic = 0;
 
     // 触发招募对话和羁绊/剧情检查
     this.triggerRecruitDialogue(id);
