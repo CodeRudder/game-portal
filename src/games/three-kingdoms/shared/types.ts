@@ -49,11 +49,32 @@ export interface CapWarning {
   percentage: number;
 }
 
+/** 离线收益时段配置 */
+export interface OfflineTier {
+  /** 时段起始秒数 */
+  startSeconds: number;
+  /** 时段结束秒数（Infinity 表示无上限） */
+  endSeconds: number;
+  /** 效率系数 0~1 */
+  efficiency: number;
+}
+
+/** 离线收益时段明细 */
+export interface OfflineTierBreakdown {
+  tier: OfflineTier;
+  /** 该时段秒数 */
+  seconds: number;
+  /** 该时段各资源产出 */
+  earned: Resources;
+}
+
 /** 离线收益计算结果 */
 export interface OfflineEarnings {
   offlineSeconds: number;
   earned: Resources;
   isCapped: boolean;
+  /** 各时段明细（可选，用于展示） */
+  tierBreakdown?: OfflineTierBreakdown[];
 }
 
 /** 资源系统存档数据 */

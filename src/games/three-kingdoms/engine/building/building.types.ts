@@ -2,24 +2,30 @@
  * 建筑域 — 类型定义
  *
  * 规则：只有 interface/type，零逻辑
+ *
+ * 基础类型（BuildingType, BuildingStatus, BuildingState, UpgradeCost,
+ * UpgradeCheckResult, BuildingSaveData）定义在 shared/types.ts，
+ * 本文件通过 re-export 保持向后兼容。
  */
 
-import type { ResourceType, Resources } from '../resource/resource.types';
+// ─────────────────────────────────────────────
+// 0. 从 shared 层 re-export 基础类型
+// ─────────────────────────────────────────────
+export type {
+  BuildingType,
+  BuildingStatus,
+  BuildingState,
+  UpgradeCost,
+  UpgradeCheckResult,
+  BuildingSaveData,
+} from '../../shared/types';
+
+import type { ResourceType, Resources } from '../../shared/types';
+import type { BuildingType, UpgradeCost } from '../../shared/types';
 
 // ─────────────────────────────────────────────
-// 1. 建筑枚举 & 基础类型
+// 1. 建筑枚举 & 常量（引擎域专属）
 // ─────────────────────────────────────────────
-
-/** 8 种建筑类型标识 */
-export type BuildingType =
-  | 'castle'    // 🏛️ 主城
-  | 'farmland'  // 🌾 农田
-  | 'market'    // 💰 市集
-  | 'barracks'  // ⚔️ 兵营
-  | 'smithy'    // 🔨 铁匠铺
-  | 'academy'   // 📚 书院
-  | 'clinic'    // 🏥 医馆
-  | 'wall';     // 🏯 城墙
 
 /** 所有建筑类型的只读数组，便于遍历 */
 export const BUILDING_TYPES: readonly BuildingType[] = [
@@ -90,20 +96,8 @@ export const APPEARANCE_LABELS: Record<AppearanceStage, string> = {
 /** 根据等级获取外观阶段（逻辑已移至 BuildingSystem.ts） */
 
 // ─────────────────────────────────────────────
-// 3. 升级费用
+// 3. 升级费用 — UpgradeCost 已移至 shared/types.ts
 // ─────────────────────────────────────────────
-
-/** 单级升级费用 */
-export interface UpgradeCost {
-  /** 升级所需粮草 */
-  grain: number;
-  /** 升级所需铜钱 */
-  gold: number;
-  /** 升级所需兵力（0 表示不需要） */
-  troops: number;
-  /** 升级所需时间（秒） */
-  timeSeconds: number;
-}
 
 // ─────────────────────────────────────────────
 // 4. 建筑产出配置
@@ -160,37 +154,12 @@ export interface BuildingDef {
 }
 
 // ─────────────────────────────────────────────
-// 6. 建筑状态（运行时）
+// 6. 建筑状态（运行时）— BuildingStatus, BuildingState 已移至 shared/types.ts
 // ─────────────────────────────────────────────
 
-/** 建筑升级状态 */
-export type BuildingStatus = 'locked' | 'idle' | 'upgrading';
-
-/** 单座建筑的运行时状态 */
-export interface BuildingState {
-  /** 建筑类型 */
-  type: BuildingType;
-  /** 当前等级 */
-  level: number;
-  /** 建筑状态 */
-  status: BuildingStatus;
-  /** 升级开始时间戳（ms），仅 upgrading 时有值 */
-  upgradeStartTime: number | null;
-  /** 升级预计完成时间戳（ms），仅 upgrading 时有值 */
-  upgradeEndTime: number | null;
-}
-
 // ─────────────────────────────────────────────
-// 7. 升级前置条件检查
+// 7. 升级前置条件检查 — UpgradeCheckResult 已移至 shared/types.ts
 // ─────────────────────────────────────────────
-
-/** 升级检查结果 */
-export interface UpgradeCheckResult {
-  /** 是否可以升级 */
-  canUpgrade: boolean;
-  /** 失败原因列表 */
-  reasons: string[];
-}
 
 // ─────────────────────────────────────────────
 // 8. 建筑队列
@@ -217,13 +186,5 @@ export interface QueueConfig {
 }
 
 // ─────────────────────────────────────────────
-// 9. 序列化
+// 9. 序列化 — BuildingSaveData 已移至 shared/types.ts
 // ─────────────────────────────────────────────
-
-/** 建筑系统存档数据 */
-export interface BuildingSaveData {
-  /** 各建筑状态 */
-  buildings: Record<BuildingType, BuildingState>;
-  /** 存档版本 */
-  version: number;
-}

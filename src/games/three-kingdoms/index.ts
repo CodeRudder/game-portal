@@ -35,4 +35,5 @@ export type {
   EventListener,
   GameSaveData,
   EngineSnapshot,
+  OfflineTier,
 } from './shared/types';
