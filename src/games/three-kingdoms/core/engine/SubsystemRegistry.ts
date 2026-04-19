@@ -72,14 +72,14 @@ export class SubsystemRegistry implements ISubsystemRegistry {
    * @param subsystem - 子系统实例
    * @throws {EngineError} 当 name 已被注册时
    */
-  register(name: string, subsystem: ISubsystem): void {
+  register(name: string, subsystem: ISubsystem | object): void {
     if (this.systems.has(name)) {
       throw new EngineError(
         `Subsystem "${name}" is already registered. ` +
           `Use unregister() first if you intend to replace it.`,
       );
     }
-    this.systems.set(name, subsystem);
+    this.systems.set(name, subsystem as ISubsystem);
     this.initOrder.push(name);
   }
 

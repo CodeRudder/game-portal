@@ -36,13 +36,11 @@
   flex-shrink: 0;
   z-index: 10;
 }
-
 .tk-bs-stage-info {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .tk-bs-stage-type {
   font-size: 10px;
   padding: 2px 6px;
@@ -51,7 +49,6 @@
   color: var(--tk-gold-light);
   font-weight: 500;
 }
-
 .tk-bs-stage-name {
   font-size: 14px;
   font-weight: 600;
@@ -59,7 +56,6 @@
   font-family: var(--tk-font-title);
   letter-spacing: 1px;
 }
-
 .tk-bs-turn-display {
   font-size: 13px;
   color: var(--tk-gold);
@@ -67,13 +63,11 @@
   font-family: var(--tk-font-title);
   letter-spacing: 1px;
 }
-
 .tk-bs-controls {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .tk-bs-speed-btn {
   padding: 3px 10px;
   border: 1px solid rgba(200, 168, 76, 0.3);
@@ -85,18 +79,15 @@
   transition: all 0.15s;
   font-family: var(--tk-font-num);
 }
-
 .tk-bs-speed-btn:hover {
   border-color: var(--tk-gold);
   color: var(--tk-gold-light);
 }
-
 .tk-bs-speed-btn--active {
   background: rgba(200, 168, 76, 0.2);
   border-color: var(--tk-gold);
   color: var(--tk-gold-light);
 }
-
 .tk-bs-skip-btn {
   padding: 3px 10px;
   border: 1px solid rgba(200, 50, 50, 0.3);
@@ -108,7 +99,6 @@
   transition: all 0.15s;
   font-family: inherit;
 }
-
 .tk-bs-skip-btn:hover {
   border-color: rgba(200, 50, 50, 0.6);
   color: #e88;
@@ -125,7 +115,6 @@
   position: relative;
   min-height: 0;
 }
-
 .tk-bs-battlefield::before {
   content: '';
   position: absolute;
@@ -135,7 +124,6 @@
     radial-gradient(ellipse at 80% 50%, rgba(200, 50, 50, 0.03) 0%, transparent 50%);
   pointer-events: none;
 }
-
 .tk-bs-vs-divider {
   position: absolute;
   left: 50%;
@@ -163,17 +151,14 @@
   position: relative;
   z-index: 1;
 }
-
 .tk-bs-side--ally {
   align-items: flex-end;
   padding-right: 40px;
 }
-
 .tk-bs-side--enemy {
   align-items: flex-start;
   padding-left: 40px;
 }
-
 .tk-bs-row-label {
   font-size: 10px;
   color: var(--tk-text-muted);
@@ -183,13 +168,11 @@
   padding: 2px 0;
   opacity: 0.7;
 }
-
 .tk-bs-units-row {
   display: flex;
   gap: 8px;
   width: 100%;
 }
-
 .tk-bs-side--ally .tk-bs-units-row { justify-content: flex-end; }
 .tk-bs-side--enemy .tk-bs-units-row { justify-content: flex-start; }
 
@@ -209,18 +192,15 @@
   transition: all 0.3s;
   position: relative;
 }
-
 .tk-bs-unit--dead {
   opacity: 0.35;
   filter: grayscale(0.8);
 }
-
 .tk-bs-unit--acting {
   border-color: var(--tk-gold);
   box-shadow: 0 0 12px rgba(200, 168, 76, 0.3);
   transform: scale(1.05);
 }
-
 .tk-bs-unit-avatar {
   width: 40px;
   height: 40px;
@@ -233,17 +213,14 @@
   color: var(--tk-text-primary);
   border: 2px solid rgba(200, 168, 76, 0.3);
 }
-
 .tk-bs-side--ally .tk-bs-unit-avatar {
   background: rgba(126, 200, 80, 0.12);
   border-color: rgba(126, 200, 80, 0.3);
 }
-
 .tk-bs-side--enemy .tk-bs-unit-avatar {
   background: rgba(200, 50, 50, 0.12);
   border-color: rgba(200, 50, 50, 0.3);
 }
-
 .tk-bs-unit-name {
   font-size: 10px;
   color: var(--tk-text-primary);
@@ -265,18 +242,15 @@
   border-radius: 3px;
   overflow: hidden;
 }
-
 .tk-bs-hp-fill {
   height: 100%;
   border-radius: 3px;
   transition: width 0.4s ease-out;
 }
-
 .tk-bs-hp-fill--high { background: linear-gradient(90deg, #4a8c3f, #7ec850); }
 .tk-bs-hp-fill--mid { background: linear-gradient(90deg, #c49a1a, #d4a017); }
 .tk-bs-hp-fill--low { background: linear-gradient(90deg, #a93226, #e74c3c); }
 .tk-bs-hp-fill--dead { background: #444; }
-
 .tk-bs-hp-text {
   font-size: 9px;
   color: var(--tk-text-muted);
@@ -295,7 +269,6 @@
   border-radius: 1.5px;
   overflow: hidden;
 }
-
 .tk-bs-rage-fill {
   height: 100%;
   border-radius: 1.5px;
@@ -304,29 +277,61 @@
 }
 
 /* ═══════════════════════════════════════════
-   战斗播报区域
+   战斗播报区域（可折叠）
    ═══════════════════════════════════════════ */
 .tk-bs-log-area {
   height: 100px;
   flex-shrink: 0;
   background: rgba(0, 0, 0, 0.5);
   border-top: 1px solid rgba(200, 168, 76, 0.1);
-  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  transition: height 0.3s ease;
+}
+.tk-bs-log-area--expanded {
+  height: 220px;
+}
+.tk-bs-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.08);
+  flex-shrink: 0;
+}
+.tk-bs-log-title {
+  font-size: 11px;
+  color: var(--tk-text-secondary);
+  font-weight: 500;
+}
+.tk-bs-log-toggle {
+  font-size: 10px;
+  color: var(--tk-gold);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+.tk-bs-log-toggle:hover {
+  opacity: 0.8;
+}
+.tk-bs-log-content {
+  flex: 1;
+  padding: 4px 12px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-
-.tk-bs-log-area::-webkit-scrollbar { width: 3px; }
-.tk-bs-log-area::-webkit-scrollbar-thumb { background: rgba(200, 168, 76, 0.15); border-radius: 1.5px; }
-
+.tk-bs-log-content::-webkit-scrollbar { width: 3px; }
+.tk-bs-log-content::-webkit-scrollbar-thumb { background: rgba(200, 168, 76, 0.15); border-radius: 1.5px; }
 .tk-bs-log-entry {
   font-size: 11px;
   line-height: 1.4;
   color: var(--tk-text-secondary);
 }
-
 .tk-bs-log-entry--ally { color: #8bc34a; }
 .tk-bs-log-entry--enemy { color: #e88; }
 .tk-bs-log-entry--critical { color: var(--tk-gold); font-weight: 600; }
@@ -337,7 +342,6 @@
   padding-top: 3px;
   margin-top: 2px;
 }
-
 .tk-bs-log-actor { font-weight: 600; }
 .tk-bs-log-skill { color: var(--tk-gold); }
 .tk-bs-log-damage { color: #e85555; font-family: var(--tk-font-num); font-weight: 600; }
@@ -354,24 +358,87 @@
 }
 
 /* ═══════════════════════════════════════════
-   手机端适配（375×507）
+   移动端适配（≤480px）
    ═══════════════════════════════════════════ */
 @media (max-width: 480px) {
-  .tk-bs-top-bar { padding: 6px 10px; }
+  .tk-bs-overlay {
+    /* 小屏全屏，无多余间距 */
+  }
+  .tk-bs-top-bar {
+    padding: 6px 10px;
+  }
   .tk-bs-stage-name { font-size: 12px; }
   .tk-bs-turn-display { font-size: 11px; }
-  .tk-bs-side { padding: 8px 8px; gap: 4px; }
-  .tk-bs-side--ally { padding-right: 24px; }
-  .tk-bs-side--enemy { padding-left: 24px; }
-  .tk-bs-unit { width: 56px; padding: 4px 2px; gap: 2px; }
-  .tk-bs-unit-avatar { width: 30px; height: 30px; font-size: 12px; }
+  .tk-bs-battlefield {
+    /* 纵向排列：我方在上，敌方在下 */
+    flex-direction: column;
+  }
+  .tk-bs-side {
+    padding: 6px 8px;
+    gap: 3px;
+  }
+  .tk-bs-side--ally {
+    align-items: center;
+    padding-right: 8px;
+    padding-top: 8px;
+  }
+  .tk-bs-side--enemy {
+    align-items: center;
+    padding-left: 8px;
+    padding-bottom: 8px;
+  }
+  .tk-bs-side--ally .tk-bs-units-row,
+  .tk-bs-side--enemy .tk-bs-units-row {
+    justify-content: center;
+  }
+  .tk-bs-unit {
+    width: 56px;
+    padding: 4px 2px;
+    gap: 2px;
+  }
+  .tk-bs-unit-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
   .tk-bs-unit-name { font-size: 8px; }
   .tk-bs-hp-bar { height: 4px; }
   .tk-bs-hp-text { font-size: 8px; }
   .tk-bs-rage-bar { height: 2px; }
   .tk-bs-units-row { gap: 4px; }
-  .tk-bs-vs-divider { font-size: 14px; }
-  .tk-bs-log-area { height: 70px; padding: 4px 8px; }
+  .tk-bs-vs-divider {
+    font-size: 14px;
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    text-align: center;
+    padding: 2px 0;
+  }
+  .tk-bs-row-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  .tk-bs-log-area {
+    height: 70px;
+  }
+  .tk-bs-log-area--expanded {
+    height: 160px;
+  }
   .tk-bs-log-entry { font-size: 10px; }
-  .tk-bs-unit-empty { width: 56px; height: 56px; }
+  .tk-bs-unit-empty {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   平板适配（481px~768px）
+   ═══════════════════════════════════════════ */
+@media (min-width: 481px) and (max-width: 768px) {
+  .tk-bs-side--ally { padding-right: 24px; }
+  .tk-bs-side--enemy { padding-left: 24px; }
+  .tk-bs-unit { width: 68px; padding: 5px 3px; }
+  .tk-bs-unit-avatar { width: 34px; height: 34px; font-size: 14px; }
+  .tk-bs-unit-name { font-size: 9px; }
 }

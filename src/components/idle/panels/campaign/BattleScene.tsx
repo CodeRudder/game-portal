@@ -7,13 +7,14 @@
  * - 每个武将显示：头像/名称/血条/怒气条
  * - 回合数显示、战斗速度控制（1x/2x）、跳过按钮
  * - 战斗结束自动关闭，触发结算
+ * - 完整战斗动画：攻击前冲、受击闪烁、伤害飘字、暴击震动、死亡倒下、技能发光
  *
  * 动画逻辑拆分至 BattleAnimation.tsx（useBattleAnimation hook）。
  *
  * @module components/idle/panels/campaign/BattleScene
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type {
   BattleResult,
@@ -25,6 +26,7 @@ import type { Stage } from '@/games/three-kingdoms/engine/campaign/campaign.type
 import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine/campaign/campaign.types';
 import { buildAllyTeam, buildEnemyTeam } from '@/games/three-kingdoms/engine/engine-campaign-deps';
 import { useBattleAnimation } from './BattleAnimation';
+import type { LogEntry } from './BattleAnimation';
 import './BattleScene.css';
 
 // ─────────────────────────────────────────────
@@ -62,23 +64,31 @@ function formatHp(hp: number, maxHp: number): string {
 
 interface UnitCardProps {
   unit: BattleUnit;
+  side: 'ally' | 'enemy';
   isActing: boolean;
   isHit: boolean;
+  isDying: boolean;
+  isSkill: boolean;
 }
 
-const UnitCard: React.FC<UnitCardProps> = React.memo(({ unit, isActing, isHit }) => {
+const UnitCard: React.FC<UnitCardProps> = React.memo(({ unit, side, isActing, isHit, isDying, isSkill }) => {
   const hpLevel = getHpLevel(unit.hp, unit.maxHp);
   const hpPct = Math.max(0, (unit.hp / unit.maxHp) * 100);
   const ragePct = Math.max(0, (unit.rage / unit.maxRage) * 100);
   const rageFull = unit.rage >= unit.maxRage;
 
+  // 组合 CSS 类名
+  const classNames = [
+    'tk-bs-unit',
+    !unit.isAlive && !isDying ? 'tk-bs-unit--dead' : '',
+    isActing && !isSkill ? (side === 'ally' ? 'tk-bs-unit--attacking-ally' : 'tk-bs-unit--attacking-enemy') : '',
+    isHit ? 'tk-bs-unit--hit' : '',
+    isDying ? 'tk-bs-unit--dying' : '',
+    isSkill ? 'tk-bs-unit--skill' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className={[
-      'tk-bs-unit',
-      !unit.isAlive ? 'tk-bs-unit--dead' : '',
-      isActing ? 'tk-bs-unit--acting' : '',
-      isHit ? 'tk-bs-unit--hit' : '',
-    ].filter(Boolean).join(' ')}>
+    <div className={classNames}>
       <div className="tk-bs-unit-avatar">{unit.name.charAt(0)}</div>
       <div className="tk-bs-unit-name">{unit.name}</div>
       <div className="tk-bs-hp-bar">
@@ -94,6 +104,41 @@ const UnitCard: React.FC<UnitCardProps> = React.memo(({ unit, isActing, isHit })
 UnitCard.displayName = 'UnitCard';
 
 // ─────────────────────────────────────────────
+// 战斗日志组件（可折叠）
+// ─────────────────────────────────────────────
+
+interface BattleLogProps {
+  logs: LogEntry[];
+  logAreaRef: React.RefObject<HTMLDivElement>;
+}
+
+const BattleLog: React.FC<BattleLogProps> = React.memo(({ logs, logAreaRef }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className={`tk-bs-log-area ${expanded ? 'tk-bs-log-area--expanded' : ''}`}>
+      <div className="tk-bs-log-header">
+        <span className="tk-bs-log-title">📜 战斗播报</span>
+        <button
+          className="tk-bs-log-toggle"
+          onClick={() => setExpanded((p) => !p)}
+          aria-label={expanded ? '收起日志' : '展开日志'}
+        >
+          {expanded ? '▼ 收起' : '▲ 展开'}
+        </button>
+      </div>
+      <div className="tk-bs-log-content" ref={logAreaRef}>
+        {logs.map((log) => (
+          <div key={log.id} className={`tk-bs-log-entry tk-bs-log-entry--${log.type}`}
+            dangerouslySetInnerHTML={{ __html: log.html }} />
+        ))}
+      </div>
+    </div>
+  );
+});
+BattleLog.displayName = 'BattleLog';
+
+// ─────────────────────────────────────────────
 // 主组件
 // ─────────────────────────────────────────────
 
@@ -104,20 +149,28 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
 
   const {
     battleState, battleResult, isFinished,
-    actingUnitId, hitUnitIds, damageFloats,
+    actingUnitId, actingUnitSide, hitUnitIds, dyingUnitIds,
+    skillActiveUnitId, critShake, damageFloats,
     logs, logAreaRef, speed, toggleSpeed, skip,
   } = useBattleAnimation(battleEngine, allyTeam, enemyTeam, onBattleEnd);
 
   // ── 渲染武将行 ──
-  const renderUnitRow = (units: BattleUnit[]) => {
+  const renderUnitRow = (units: BattleUnit[], side: 'ally' | 'enemy') => {
     const padded = [...units];
-    while (padded.length < 3) padded.push(null as any);
+    while (padded.length < 3) padded.push(null as unknown as BattleUnit);
     return padded.map((unit, idx) => {
       if (!unit) return <div key={`e${idx}`} className="tk-bs-unit-empty" />;
       const floats = damageFloats.filter((f) => f.unitId === unit.id);
       return (
         <div key={unit.id} style={{ position: 'relative' }}>
-          <UnitCard unit={unit} isActing={actingUnitId === unit.id} isHit={hitUnitIds.has(unit.id)} />
+          <UnitCard
+            unit={unit}
+            side={side}
+            isActing={actingUnitId === unit.id}
+            isHit={hitUnitIds.has(unit.id)}
+            isDying={dyingUnitIds.has(unit.id)}
+            isSkill={skillActiveUnitId === unit.id}
+          />
           {floats.map((f) => (
             <div key={f.id} className={[
               'tk-bs-damage-float',
@@ -136,9 +189,9 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   const renderSide = (team: BattleTeam, side: 'ally' | 'enemy') => (
     <div className={`tk-bs-side tk-bs-side--${side}`}>
       <div className="tk-bs-row-label">后排</div>
-      <div className="tk-bs-units-row">{renderUnitRow(team.units.filter((u) => u.position === 'back'))}</div>
+      <div className="tk-bs-units-row">{renderUnitRow(team.units.filter((u) => u.position === 'back'), side)}</div>
       <div className="tk-bs-row-label">前排</div>
-      <div className="tk-bs-units-row">{renderUnitRow(team.units.filter((u) => u.position === 'front'))}</div>
+      <div className="tk-bs-units-row">{renderUnitRow(team.units.filter((u) => u.position === 'front'), side)}</div>
     </div>
   );
 
@@ -179,7 +232,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
       </div>
 
       {/* 战场主区域 */}
-      <div className="tk-bs-battlefield">
+      <div className={`tk-bs-battlefield ${critShake ? 'tk-bs-battlefield--crit-shake' : ''}`}>
         {renderSide(battleState.allyTeam, 'ally')}
         <div className="tk-bs-vs-divider">VS</div>
         {renderSide(battleState.enemyTeam, 'enemy')}
@@ -198,12 +251,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
       </div>
 
       {/* 战斗播报 */}
-      <div className="tk-bs-log-area" ref={logAreaRef}>
-        {logs.map((log) => (
-          <div key={log.id} className={`tk-bs-log-entry tk-bs-log-entry--${log.type}`}
-            dangerouslySetInnerHTML={{ __html: log.html }} />
-        ))}
-      </div>
+      <BattleLog logs={logs} logAreaRef={logAreaRef} />
     </div>
   );
 };

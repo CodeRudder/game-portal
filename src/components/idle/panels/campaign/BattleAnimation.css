@@ -3,8 +3,13 @@
  *
  * 包含：
  * - 动画关键帧（@keyframes）
- * - 伤害飘字样式
- * - 受击抖动效果
+ * - 武将攻击动画（前冲+回弹）
+ * - 受击闪烁效果
+ * - 伤害数字飘出动画（向上飘出+渐隐）
+ * - 治疗效果（绿色数字上飘）
+ * - 暴击效果（大号红色数字+屏幕微震）
+ * - 死亡效果（变灰+倒下）
+ * - 技能释放特效（发光/闪光）
  * - 怒气脉动效果
  * - 战斗结束弹出效果
  * - 日志滑入效果
@@ -22,13 +27,155 @@
   to { opacity: 1; }
 }
 
+/** 武将攻击前冲（我方→右冲，敌方→左冲） */
+@keyframes tk-bs-attack-ally {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(20px) scale(1.08); }
+  50% { transform: translateX(25px) scale(1.1); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes tk-bs-attack-enemy {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(-20px) scale(1.08); }
+  50% { transform: translateX(-25px) scale(1.1); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+/** 受击闪烁 */
+@keyframes tk-bs-hit-flash {
+  0% { filter: brightness(1); }
+  15% { filter: brightness(3); }
+  30% { filter: brightness(1); }
+  45% { filter: brightness(2.5); }
+  60% { filter: brightness(1); }
+  75% { filter: brightness(2); }
+  100% { filter: brightness(1); }
+}
+
 /** 受击抖动 */
 @keyframes tk-bs-shake {
   0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-3px); }
-  40% { transform: translateX(3px); }
-  60% { transform: translateX(-2px); }
-  80% { transform: translateX(2px); }
+  15% { transform: translateX(-4px); }
+  30% { transform: translateX(4px); }
+  45% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  75% { transform: translateX(-2px); }
+  90% { transform: translateX(2px); }
+}
+
+/** 暴击屏幕震动 */
+@keyframes tk-bs-screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-3px, 1px); }
+  20% { transform: translate(3px, -1px); }
+  30% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, -2px); }
+  50% { transform: translate(-1px, 1px); }
+  60% { transform: translate(1px, -1px); }
+  70% { transform: translate(-1px, 0); }
+  80% { transform: translate(1px, 0); }
+  90% { transform: translate(0, -1px); }
+}
+
+/** 伤害飘字上浮 */
+@keyframes tk-bs-float-up {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-40px) scale(0.9);
+  }
+}
+
+/** 暴击数字弹出 */
+@keyframes tk-bs-critical-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0) scale(0.3);
+  }
+  25% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-8px) scale(1.6);
+  }
+  40% {
+    transform: translateX(-50%) translateY(-12px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-50px) scale(0.8);
+  }
+}
+
+/** 治疗数字上飘 */
+@keyframes tk-bs-heal-float {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-8px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-35px) scale(0.9);
+  }
+}
+
+/** 死亡倒下 */
+@keyframes tk-bs-death {
+  0% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+    filter: grayscale(0) brightness(1);
+  }
+  30% {
+    opacity: 0.8;
+    transform: rotate(-5deg) scale(0.95);
+    filter: grayscale(0.3) brightness(0.8);
+  }
+  60% {
+    opacity: 0.5;
+    transform: rotate(-12deg) scale(0.9);
+    filter: grayscale(0.6) brightness(0.6);
+  }
+  100% {
+    opacity: 0.25;
+    transform: rotate(-15deg) scale(0.85);
+    filter: grayscale(0.9) brightness(0.4);
+  }
+}
+
+/** 技能释放发光 */
+@keyframes tk-bs-skill-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(200, 168, 76, 0);
+  }
+  30% {
+    box-shadow: 0 0 20px rgba(200, 168, 76, 0.6), 0 0 40px rgba(200, 168, 76, 0.3);
+  }
+  60% {
+    box-shadow: 0 0 30px rgba(200, 168, 76, 0.8), 0 0 60px rgba(200, 168, 76, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(200, 168, 76, 0);
+  }
+}
+
+/** 技能释放闪光（叠加层） */
+@keyframes tk-bs-skill-flash {
+  0% { opacity: 0; }
+  20% { opacity: 0.6; }
+  40% { opacity: 0.3; }
+  60% { opacity: 0.5; }
+  100% { opacity: 0; }
 }
 
 /** 怒气脉动 */
@@ -43,12 +190,6 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/** 伤害飘字上浮 */
-@keyframes tk-bs-float-up {
-  0% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-30px); }
-}
-
 /** 战斗结束弹出 */
 @keyframes tk-bs-end-pop {
   0% { transform: scale(0.3); opacity: 0; }
@@ -57,11 +198,61 @@
 }
 
 /* ═══════════════════════════════════════════
-   受击状态
+   攻击状态 — 前冲动画
+   ═══════════════════════════════════════════ */
+
+.tk-bs-unit--attacking-ally {
+  animation: tk-bs-attack-ally 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 15;
+}
+
+.tk-bs-unit--attacking-enemy {
+  animation: tk-bs-attack-enemy 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 15;
+}
+
+/* ═══════════════════════════════════════════
+   受击状态 — 闪烁+抖动
    ═══════════════════════════════════════════ */
 
 .tk-bs-unit--hit {
-  animation: tk-bs-shake 0.3s ease-out;
+  animation: tk-bs-hit-flash 0.35s ease-out, tk-bs-shake 0.35s ease-out;
+}
+
+/* ═══════════════════════════════════════════
+   死亡状态 — 变灰+倒下
+   ═══════════════════════════════════════════ */
+
+.tk-bs-unit--dying {
+  animation: tk-bs-death 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════
+   技能释放状态 — 发光特效
+   ═══════════════════════════════════════════ */
+
+.tk-bs-unit--skill {
+  animation: tk-bs-skill-glow 0.6s ease-out;
+  z-index: 15;
+}
+
+.tk-bs-unit--skill::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 10px;
+  background: radial-gradient(circle, rgba(200, 168, 76, 0.3) 0%, transparent 70%);
+  animation: tk-bs-skill-flash 0.6s ease-out;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════
+   暴击屏幕震动（施加在 battlefield 上）
+   ═══════════════════════════════════════════ */
+
+.tk-bs-battlefield--crit-shake {
+  animation: tk-bs-screen-shake 0.4s ease-out;
 }
 
 /* ═══════════════════════════════════════════
@@ -86,22 +277,32 @@
   font-weight: 700;
   font-family: var(--tk-font-num);
   pointer-events: none;
-  animation: tk-bs-float-up 0.8s ease-out forwards;
   z-index: 20;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .tk-bs-damage-float--normal {
   color: #e85555;
+  animation: tk-bs-float-up 0.9s ease-out forwards;
 }
 
 .tk-bs-damage-float--critical {
-  color: var(--tk-gold-bright);
-  font-size: 16px;
-  text-shadow: 0 0 8px rgba(200, 168, 76, 0.6);
+  color: #ff4444;
+  font-size: 20px;
+  font-weight: 900;
+  text-shadow:
+    0 0 8px rgba(255, 68, 68, 0.8),
+    0 0 16px rgba(200, 168, 76, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.9);
+  animation: tk-bs-critical-pop 1s ease-out forwards;
 }
 
 .tk-bs-damage-float--heal {
   color: #7ec850;
+  text-shadow:
+    0 0 6px rgba(126, 200, 80, 0.5),
+    0 1px 3px rgba(0, 0, 0, 0.8);
+  animation: tk-bs-heal-float 0.9s ease-out forwards;
 }
 
 /* ═══════════════════════════════════════════
@@ -157,5 +358,40 @@
   .tk-bs-end-text {
     font-size: 24px;
     letter-spacing: 4px;
+  }
+
+  .tk-bs-damage-float--normal {
+    font-size: 12px;
+  }
+
+  .tk-bs-damage-float--critical {
+    font-size: 16px;
+  }
+
+  /* 手机端攻击动画幅度减小 */
+  @keyframes tk-bs-attack-ally {
+    0% { transform: translateX(0); }
+    30% { transform: translateX(12px) scale(1.05); }
+    50% { transform: translateX(15px) scale(1.06); }
+    100% { transform: translateX(0) scale(1); }
+  }
+
+  @keyframes tk-bs-attack-enemy {
+    0% { transform: translateX(0); }
+    30% { transform: translateX(-12px) scale(1.05); }
+    50% { transform: translateX(-15px) scale(1.06); }
+    100% { transform: translateX(0) scale(1); }
+  }
+
+  /* 手机端屏幕震动幅度减小 */
+  @keyframes tk-bs-screen-shake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-2px, 1px); }
+    20% { transform: translate(2px, -1px); }
+    30% { transform: translate(-1px, 1px); }
+    40% { transform: translate(1px, -1px); }
+    50% { transform: translate(-1px, 0); }
+    60% { transform: translate(1px, 0); }
+    100% { transform: translate(0, 0); }
   }
 }

@@ -20,6 +20,8 @@ import type { ConfigRegistry } from '../core/config/ConfigRegistry';
 import type {
   GameSaveData,
   OfflineEarnings,
+  ResourceSaveData,
+  BuildingSaveData,
 } from '../shared/types';
 import type { CalendarSaveData } from './calendar/calendar.types';
 import type { HeroSaveData } from './hero/hero.types';
@@ -93,16 +95,17 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
 
 /** 从 IGameState 提取 GameSaveData */
 export function fromIGameState(state: IGameState): GameSaveData {
+  const s = state.subsystems;
   return {
     version: Number(state.version),
     saveTime: state.timestamp,
-    resource: state.subsystems.resource as any,
-    building: state.subsystems.building as any,
-    calendar: state.subsystems.calendar as CalendarSaveData | undefined,
-    hero: state.subsystems.hero as HeroSaveData | undefined,
-    recruit: state.subsystems.recruit as RecruitSaveData | undefined,
-    formation: state.subsystems.formation as FormationSaveData | undefined,
-    campaign: state.subsystems.campaign as import('./campaign/campaign.types').CampaignSaveData | undefined,
+    resource: s.resource as ResourceSaveData,
+    building: s.building as BuildingSaveData,
+    calendar: s.calendar as CalendarSaveData | undefined,
+    hero: s.hero as HeroSaveData | undefined,
+    recruit: s.recruit as RecruitSaveData | undefined,
+    formation: s.formation as FormationSaveData | undefined,
+    campaign: s.campaign as import('./campaign/campaign.types').CampaignSaveData | undefined,
   };
 }
 

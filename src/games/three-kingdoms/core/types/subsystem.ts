@@ -152,7 +152,7 @@ export interface ISubsystemRegistry {
    * @param subsystem - 子系统实例
    * @throws {Error} 当 name 已被注册时（推荐行为）
    */
-  register(name: string, subsystem: ISubsystem): void;
+  register(name: string, subsystem: ISubsystem | object): void;
 
   /**
    * 获取子系统

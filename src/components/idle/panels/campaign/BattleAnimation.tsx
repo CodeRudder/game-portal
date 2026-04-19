@@ -1,7 +1,7 @@
 /**
  * BattleAnimation — 战斗动画控制
  *
- * 封装战斗回放循环、伤害飘字、受击动画等动画逻辑。
+ * 封装战斗回放循环、伤害飘字、受击动画、攻击动画、死亡动画、技能特效等动画逻辑。
  * @module components/idle/panels/campaign/BattleAnimation
  */
 
@@ -19,7 +19,11 @@ export interface BattleAnimationState {
   battleResult: BattleResult | null;
   isFinished: boolean;
   actingUnitId: string | null;
+  actingUnitSide: 'ally' | 'enemy' | null;
   hitUnitIds: Set<string>;
+  dyingUnitIds: Set<string>;
+  skillActiveUnitId: string | null;
+  critShake: boolean;
   damageFloats: DamageFloat[];
   logs: LogEntry[];
   logAreaRef: React.RefObject<HTMLDivElement>;
@@ -69,12 +73,19 @@ export function useBattleAnimation(
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const logIdRef = useRef(0);
   const [actingUnitId, setActingUnitId] = useState<string | null>(null);
+  const [actingUnitSide, setActingUnitSide] = useState<'ally' | 'enemy' | null>(null);
   const [hitUnitIds, setHitUnitIds] = useState<Set<string>>(new Set());
+  const [dyingUnitIds, setDyingUnitIds] = useState<Set<string>>(new Set());
+  const [skillActiveUnitId, setSkillActiveUnitId] = useState<string | null>(null);
+  const [critShake, setCritShake] = useState(false);
   const [damageFloats, setDamageFloats] = useState<DamageFloat[]>([]);
   const floatIdRef = useRef(0);
   const skipRef = useRef(false);
   const cancelledRef = useRef(false);
   const logAreaRef = useRef<HTMLDivElement>(null!) as React.RefObject<HTMLDivElement>;
+
+  // 跟踪已死亡的单位（避免重复触发死亡动画）
+  const deadUnitsRef = useRef<Set<string>>(new Set());
 
   const addLog = useCallback((html: string, type: LogEntry['type']) => {
     const id = ++logIdRef.current;
@@ -84,7 +95,7 @@ export function useBattleAnimation(
   const addDamageFloat = useCallback((unitId: string, value: number, isCritical: boolean, isHeal: boolean) => {
     const id = ++floatIdRef.current;
     setDamageFloats((prev) => [...prev, { id, unitId, value, isCritical, isHeal }]);
-    setTimeout(() => setDamageFloats((prev) => prev.filter((f) => f.id !== id)), 900);
+    setTimeout(() => setDamageFloats((prev) => prev.filter((f) => f.id !== id)), 1000);
   }, []);
 
   useEffect(() => { if (logAreaRef.current) logAreaRef.current.scrollTop = logAreaRef.current.scrollHeight; }, [logs]);
@@ -93,9 +104,10 @@ export function useBattleAnimation(
   useEffect(() => {
     cancelledRef.current = false;
     skipRef.current = false;
+    deadUnitsRef.current = new Set();
     const state = battleEngine.initBattle(
-      { units: allyTeam.units, side: 'ally' } as any,
-      { units: enemyTeam.units, side: 'enemy' } as any,
+      { units: allyTeam.units, side: 'ally' as const },
+      { units: enemyTeam.units, side: 'enemy' as const },
     );
     setBattleState({ ...state });
 
@@ -109,23 +121,71 @@ export function useBattleAnimation(
 
         for (const action of actions) {
           if (cancelledRef.current) break;
+
+          // ── 攻击动画：设置行动者 + 技能发光 ──
           setActingUnitId(action.actorId);
+          setActingUnitSide(action.actorSide);
+
+          // 判断是否为技能（非普攻且有怒气消耗）
+          const isSkill = action.skill && !action.isNormalAttack && action.skill.rageCost > 0;
+          if (isSkill) {
+            setSkillActiveUnitId(action.actorId);
+          }
+
           await sleep(skipRef.current ? 30 : ACTION_DELAY / speed);
           if (cancelledRef.current) break;
+
+          // 清除技能发光
+          setSkillActiveUnitId(null);
+
           const logInfo = buildActionLog(action);
           addLog(logInfo.html, logInfo.type);
 
+          // ── 处理伤害 + 受击 + 死亡 + 暴击震动 ──
+          let hasCrit = false;
+          const newHitIds: string[] = [];
+          const newDeadIds: string[] = [];
+
           for (const [targetId, dmg] of Object.entries(action.damageResults)) {
             const target = findUnitInState(cur, targetId);
-            if (target) { target.hp = Math.max(0, target.hp - dmg.damage); if (target.hp <= 0) target.isAlive = false; }
+            if (target) {
+              target.hp = Math.max(0, target.hp - dmg.damage);
+              if (target.hp <= 0) target.isAlive = false;
+            }
+
             addDamageFloat(targetId, dmg.damage, dmg.isCritical, false);
-            setHitUnitIds(new Set([targetId]));
-            setTimeout(() => setHitUnitIds(new Set()), 350);
+            newHitIds.push(targetId);
+
+            if (dmg.isCritical) hasCrit = true;
+
+            // 检测死亡
+            if (target && target.hp <= 0 && !deadUnitsRef.current.has(targetId)) {
+              deadUnitsRef.current.add(targetId);
+              newDeadIds.push(targetId);
+            }
           }
+
+          // 受击闪烁
+          setHitUnitIds(new Set(newHitIds));
+          setTimeout(() => setHitUnitIds(new Set()), 400);
+
+          // 暴击屏幕震动
+          if (hasCrit) {
+            setCritShake(true);
+            setTimeout(() => setCritShake(false), 450);
+          }
+
+          // 死亡动画
+          if (newDeadIds.length > 0) {
+            setDyingUnitIds(new Set(newDeadIds));
+            setTimeout(() => setDyingUnitIds(new Set()), 900);
+          }
+
           setBattleState({ ...cur });
         }
 
         setActingUnitId(null);
+        setActingUnitSide(null);
         if (cancelledRef.current) break;
         if (battleEngine.isBattleOver(cur)) { cur.phase = BattlePhase.FINISHED; break; }
         await sleep(skipRef.current ? 50 : BASE_TURN_DELAY / speed);
@@ -153,7 +213,8 @@ export function useBattleAnimation(
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
-    battleState, battleResult, isFinished, actingUnitId, hitUnitIds, damageFloats,
+    battleState, battleResult, isFinished, actingUnitId, actingUnitSide,
+    hitUnitIds, dyingUnitIds, skillActiveUnitId, critShake, damageFloats,
     logs, logAreaRef, speed, toggleSpeed: useCallback(() => setSpeed((p) => (p === 1 ? 2 : 1)), []),
     skip: useCallback(() => { skipRef.current = true; }, []),
   };

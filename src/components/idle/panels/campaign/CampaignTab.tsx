@@ -22,7 +22,10 @@ import {
   STAGE_TYPE_LABELS,
   MAX_STARS,
 } from '@/games/three-kingdoms/engine/campaign/campaign.types';
+import type { BattleResult } from '@/games/three-kingdoms/engine/battle/battle.types';
+import { BattleOutcome } from '@/games/three-kingdoms/engine/battle/battle.types';
 import BattleFormationModal from './BattleFormationModal';
+import BattleResultModal from './BattleResultModal';
 import './CampaignTab.css';
 
 // ─────────────────────────────────────────────
@@ -63,6 +66,10 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
 
   // ── 战前布阵弹窗 ──
   const [battleSetupStage, setBattleSetupStage] = useState<Stage | null>(null);
+
+  // ── 扫荡结算弹窗 ──
+  const [sweepResult, setSweepResult] = useState<BattleResult | null>(null);
+  const [sweepStage, setSweepStage] = useState<Stage | null>(null);
 
   // ── 地图滚动容器 ──
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -120,6 +127,25 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
     },
     [getStageStatus],
   );
+
+  // ── 扫荡三星关卡 ──
+  const handleSweep = useCallback(
+    (stage: Stage) => {
+      const result = engine.startBattle(stage.id);
+      if (result.outcome === BattleOutcome.VICTORY) {
+        engine.completeBattle(stage.id, result.stars as number);
+      }
+      setSweepResult(result);
+      setSweepStage(stage);
+    },
+    [engine],
+  );
+
+  // ── 扫荡结算确认 ──
+  const handleSweepResultConfirm = useCallback(() => {
+    setSweepResult(null);
+    setSweepStage(null);
+  }, []);
 
   // ── 章节切换 ──
   const handleChapterChange = useCallback(
@@ -203,6 +229,17 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
         {/* 星级显示（已通关） */}
         {status !== 'locked' && status !== 'available' && (
           <div className="tk-stage-node-stars">{renderStars(stars)}</div>
+        )}
+
+        {/* 扫荡按钮（三星通关） */}
+        {status === 'threeStar' && (
+          <button
+            className="tk-stage-sweep-btn"
+            onClick={(e) => { e.stopPropagation(); handleSweep(stage); }}
+            aria-label={`扫荡 ${stage.name}`}
+          >
+            ⚡ 扫荡
+          </button>
         )}
 
         {/* 未解锁遮罩 */}
@@ -311,6 +348,15 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
           stage={battleSetupStage}
           onClose={handleCloseBattleSetup}
           snapshotVersion={snapshotVersion}
+        />
+      )}
+
+      {/* 扫荡结算弹窗 */}
+      {sweepResult && sweepStage && (
+        <BattleResultModal
+          result={sweepResult}
+          stage={sweepStage}
+          onConfirm={handleSweepResultConfirm}
         />
       )}
     </div>

@@ -12,18 +12,24 @@ import type { HeroSystem } from './hero/HeroSystem';
 import type { HeroRecruitSystem } from './hero/HeroRecruitSystem';
 import type { HeroLevelSystem } from './hero/HeroLevelSystem';
 import type { ISystemDeps } from '../core/types';
+import type { ResourceType } from '../shared/types';
 
 // ─────────────────────────────────────────────
 // 资源安全操作（供武将系统回调）
 // ─────────────────────────────────────────────
 
-const VALID_RESOURCE_TYPES = ['grain', 'gold', 'troops', 'mandate'] as const;
+const VALID_RESOURCE_TYPES: readonly ResourceType[] = ['grain', 'gold', 'troops', 'mandate'];
+
+/** 类型守卫：检查字符串是否为合法 ResourceType */
+function isResourceType(type: string): type is ResourceType {
+  return (VALID_RESOURCE_TYPES as readonly string[]).includes(type);
+}
 
 /** 安全消耗资源（武将系统回调用） */
 export function safeSpendResource(resource: ResourceSystem, type: string, amount: number): boolean {
-  if (!VALID_RESOURCE_TYPES.includes(type as any)) return false;
+  if (!isResourceType(type)) return false;
   try {
-    resource.consumeResource(type as any, amount);
+    resource.consumeResource(type, amount);
     return true;
   } catch {
     return false;
@@ -32,8 +38,8 @@ export function safeSpendResource(resource: ResourceSystem, type: string, amount
 
 /** 安全检查资源是否充足（武将系统回调用） */
 export function safeCanAfford(resource: ResourceSystem, type: string, amount: number): boolean {
-  if (!VALID_RESOURCE_TYPES.includes(type as any)) return false;
-  const current = resource.getAmount(type as any);
+  if (!isResourceType(type)) return false;
+  const current = resource.getAmount(type);
   // 粮草需要扣除保留量（MIN_GRAIN_RESERVE = 10）
   if (type === 'grain') {
     return Math.max(0, current - 10) >= amount;
@@ -43,8 +49,8 @@ export function safeCanAfford(resource: ResourceSystem, type: string, amount: nu
 
 /** 安全获取资源数量（武将系统回调用） */
 export function safeGetAmount(resource: ResourceSystem, type: string): number {
-  if (!VALID_RESOURCE_TYPES.includes(type as any)) return 0;
-  return resource.getAmount(type as any);
+  if (!isResourceType(type)) return 0;
+  return resource.getAmount(type);
 }
 
 // ─────────────────────────────────────────────

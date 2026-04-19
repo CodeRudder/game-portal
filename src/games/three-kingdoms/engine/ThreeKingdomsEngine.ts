@@ -99,16 +99,16 @@ export class ThreeKingdomsEngine {
 
   private registerSubsystems(): void {
     const r = this.registry;
-    r.register('resource', this.resource as any);
-    r.register('building', this.building as any);
-    r.register('calendar', this.calendar as any);
-    r.register('hero', this.hero as any);
-    r.register('heroRecruit', this.heroRecruit as any);
-    r.register('heroLevel', this.heroLevel as any);
-    r.register('heroFormation', this.heroFormation as any);
-    r.register('battleEngine', this.campaignSystems.battleEngine as any);
-    r.register('campaignSystem', this.campaignSystems.campaignSystem as any);
-    r.register('rewardDistributor', this.campaignSystems.rewardDistributor as any);
+    r.register('resource', this.resource);
+    r.register('building', this.building);
+    r.register('calendar', this.calendar);
+    r.register('hero', this.hero);
+    r.register('heroRecruit', this.heroRecruit);
+    r.register('heroLevel', this.heroLevel);
+    r.register('heroFormation', this.heroFormation);
+    r.register('battleEngine', this.campaignSystems.battleEngine);
+    r.register('campaignSystem', this.campaignSystems.campaignSystem);
+    r.register('rewardDistributor', this.campaignSystems.rewardDistributor);
   }
 
   // ── 初始化 ──

@@ -437,11 +437,27 @@
 }
 
 /* ═══════════════════════════════════════════
-   手机端适配（375×507）
+   手机端适配（≤480px）— 底部滑入
    ═══════════════════════════════════════════ */
 @media (max-width: 480px) {
-  .tk-bfm-overlay { align-items: flex-end; }
-  .tk-bfm-modal { width: 100%; max-width: 100%; max-height: 95vh; border-radius: 12px 12px 0 0; }
+  .tk-bfm-overlay {
+    align-items: flex-end;
+    animation: tk-bfm-fade-in 0.2s ease-out;
+  }
+
+  .tk-bfm-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+    animation: tk-bfm-slide-up-mobile 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes tk-bfm-slide-up-mobile {
+    from { transform: translateY(100%); opacity: 0.5; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
   .tk-bfm-header { padding: 12px 14px 10px; }
   .tk-bfm-stage-name { font-size: 14px; }
   .tk-bfm-section { padding: 10px 14px; }
@@ -456,4 +472,13 @@
   .tk-bfm-ally-name { font-size: 10px; }
   .tk-bfm-actions { padding: 12px 14px; gap: 6px; }
   .tk-bfm-btn { padding: 8px 10px; font-size: 12px; }
+}
+
+/* ═══════════════════════════════════════════
+   平板适配（481px~768px）
+   ═══════════════════════════════════════════ */
+@media (min-width: 481px) and (max-width: 768px) {
+  .tk-bfm-modal {
+    width: 480px;
+  }
 }
