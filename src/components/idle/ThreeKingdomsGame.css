@@ -216,6 +216,12 @@
   border-radius: var(--tk-radius-sm);
 }
 
+.tk-calendar-date {
+  padding: 2px 6px;
+  background: rgba(100, 149, 237, 0.1);
+  border-radius: var(--tk-radius-sm);
+}
+
 /* ═══════════════════════════════════════════
    C区：场景区 — 1280×696px
    ═══════════════════════════════════════════ */

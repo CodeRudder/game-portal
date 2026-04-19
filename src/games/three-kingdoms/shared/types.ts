@@ -181,6 +181,8 @@ export interface GameSaveData {
   resource: ResourceSaveData;
   /** 建筑系统数据 */
   building: BuildingSaveData;
+  /** 日历系统数据（可选，向后兼容旧存档） */
+  calendar?: import('../engine/calendar/calendar.types').CalendarSaveData;
 }
 
 // ─────────────────────────────────────────────
@@ -199,4 +201,6 @@ export interface EngineSnapshot {
   buildings: Readonly<Record<BuildingType, BuildingState>>;
   /** 游戏在线时长（秒） */
   onlineSeconds: number;
+  /** 日历状态 */
+  calendar: import('../engine/calendar/calendar.types').CalendarState;
 }

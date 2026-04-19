@@ -31,6 +31,8 @@ import type {
   ResourceCap,
   BuildingState,
 } from '@/games/three-kingdoms/shared/types';
+import type { Season, WeatherType } from '@/games/three-kingdoms/engine/calendar/calendar.types';
+import { SEASON_LABELS, WEATHER_LABELS } from '@/games/three-kingdoms/engine/calendar/calendar.types';
 import { Toast } from '@/components/idle/common/Toast';
 import ResourceBar from '@/components/idle/panels/resource/ResourceBar';
 import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
@@ -45,6 +47,22 @@ const TICK_INTERVAL = 500;
 
 /** UI 刷新间隔（ms），控制资源栏等 UI 更新频率 */
 const UI_REFRESH_INTERVAL = 1000;
+
+/** 天气图标映射 */
+const WEATHER_ICONS: Record<WeatherType, string> = {
+  clear: '☀️',
+  rain: '🌧️',
+  snow: '❄️',
+  wind: '🌬️',
+};
+
+/** 季节图标映射 */
+const SEASON_ICONS: Record<Season, string> = {
+  spring: '🌸',
+  summer: '🌞',
+  autumn: '🍂',
+  winter: '❄️',
+};
 
 /** Tab 类型定义 */
 type TabId = 'building' | 'hero' | 'tech' | 'campaign';
@@ -63,6 +81,41 @@ const TABS: TabConfig[] = [
   { id: 'tech', icon: '📜', label: '科技', available: false },
   { id: 'campaign', icon: '🗺️', label: '关卡', available: false },
 ];
+
+// ─────────────────────────────────────────────
+// 日历格式化工具
+// ─────────────────────────────────────────────
+
+const CN_DIGITS = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'] as const;
+
+/** 数字转中文（1-99） */
+function toChineseNumber(n: number): string {
+  if (n <= 10) return CN_DIGITS[n];
+  if (n < 20) return `十${n % 10 === 0 ? '' : CN_DIGITS[n % 10]}`;
+  if (n < 100 && n % 10 === 0) return `${CN_DIGITS[Math.floor(n / 10)]}十`;
+  return `${CN_DIGITS[Math.floor(n / 10)]}十${CN_DIGITS[n % 10]}`;
+}
+
+/** 年号内年数转中文 */
+function toChineseYear(n: number): string {
+  return toChineseNumber(n);
+}
+
+/** 日期转中文（带"初"前缀） */
+function toChineseDay(day: number): string {
+  if (day <= 10) return `初${CN_DIGITS[day]}`;
+  if (day === 20) return '二十';
+  if (day === 30) return '三十';
+  if (day < 20) return `十${CN_DIGITS[day % 10]}`;
+  return `二十${CN_DIGITS[day % 10]}`;
+}
+
+/** 格式化游戏日期为中文显示 */
+function formatGameDate(date: { month: number; day: number }): string {
+  const monthStr = date.month === 1 ? '正月' : `${toChineseNumber(date.month)}月`;
+  const dayStr = toChineseDay(date.day);
+  return `${monthStr}${dayStr}`;
+}
 
 // ─────────────────────────────────────────────
 // 主组件
@@ -147,7 +200,7 @@ const ThreeKingdomsGame: React.FC = () => {
     return engine.getSnapshot();
   }, [engine, snapshotVersion]);
 
-  const { resources, productionRates, caps, buildings } = snapshot;
+  const { resources, productionRates, caps, buildings, calendar } = snapshot;
 
   // ── 建筑升级完成回调 ──
   const handleUpgradeComplete = useCallback((type: BuildingType) => {
@@ -180,6 +233,7 @@ const ThreeKingdomsGame: React.FC = () => {
             rates={productionRates}
             caps={caps}
             engine={engine}
+            snapshotVersion={snapshotVersion}
             onUpgradeComplete={handleUpgradeComplete}
           />
         );
@@ -234,11 +288,26 @@ const ThreeKingdomsGame: React.FC = () => {
             </button>
           ))}
 
-          {/* 日历信息（右侧） */}
+          {/* 日历信息（右侧） — 接入 CalendarSystem 实时数据 */}
           <div className="tk-calendar">
-            <span className="tk-calendar-era">建安元年</span>
-            <span className="tk-calendar-season">春</span>
-            <span className="tk-calendar-weather">☀️ 晴</span>
+            <span className="tk-calendar-era">
+              {calendar?.date
+                ? `${calendar.date.eraName}${calendar.date.yearInEra === 1 ? '元年' : `${toChineseYear(calendar.date.yearInEra)}年`}`
+                : '建安元年'}
+            </span>
+            <span className="tk-calendar-season">
+              {calendar?.date
+                ? `${SEASON_ICONS[calendar.date.season]} ${SEASON_LABELS[calendar.date.season]}`
+                : '🌸 春'}
+            </span>
+            <span className="tk-calendar-weather">
+              {calendar
+                ? `${WEATHER_ICONS[calendar.weather]} ${WEATHER_LABELS[calendar.weather]}`
+                : '☀️ 晴'}
+            </span>
+            <span className="tk-calendar-date">
+              {calendar?.date ? formatGameDate(calendar.date) : '正月初一'}
+            </span>
           </div>
         </div>
 

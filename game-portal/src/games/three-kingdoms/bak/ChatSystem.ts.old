@@ -1,0 +1,565 @@
+/**
+ * ChatSystem — 三国霸业 v11.0 群雄逐鹿 · 聊天系统引擎模块
+ *
+ * 提供多频道聊天（世界/公会/私聊/系统）、禁言与举报、消息管理等社交通讯功能。
+ *
+ * 设计原则：
+ * - 零外部依赖，纯 TypeScript 实现
+ * - 事件驱动，支持 UI 层监听聊天状态变化
+ * - 完整的存档/读档支持（序列化 / 反序列化）
+ * - 三级禁言机制：1级30min / 2级24h / 3级7天
+ *
+ * @module games/three-kingdoms/ChatSystem
+ */
+
+// ============================================================
+// 类型定义
+// ============================================================
+
+/** 聊天频道 ID */
+export type ChannelId = 'world' | 'guild' | 'private' | 'system';
+
+/** 消息类型 */
+export type MessageType = 'normal' | 'system' | 'emoji';
+
+/** 聊天消息 */
+export interface ChatMessage {
+  /** 消息唯一标识 */
+  id: string;
+  /** 所属频道 */
+  channel: ChannelId;
+  /** 发送者 ID */
+  senderId: string;
+  /** 发送者名称 */
+  senderName: string;
+  /** 消息内容 */
+  content: string;
+  /** 发送时间戳 */
+  timestamp: number;
+  /** 消息类型 */
+  type: MessageType;
+}
+
+/** 频道信息 */
+export interface ChannelInfo {
+  /** 频道 ID */
+  id: ChannelId;
+  /** 频道名称 */
+  name: string;
+  /** 未读消息数 */
+  unread: number;
+  /** 频道成员数 */
+  memberCount: number;
+}
+
+/** 禁言等级 */
+export type MuteLevel = 0 | 1 | 2 | 3;
+
+/** 禁言状态 */
+export interface MuteStatus {
+  /** 是否被禁言 */
+  muted: boolean;
+  /** 禁言等级 */
+  level: MuteLevel;
+  /** 禁言到期时间戳 */
+  expireTime: number;
+}
+
+/** 举报记录 */
+export interface ReportRecord {
+  /** 举报唯一标识 */
+  id: string;
+  /** 被举报用户 ID */
+  targetUserId: string;
+  /** 举报原因 */
+  reason: string;
+  /** 举报时间戳 */
+  reportedAt: number;
+}
+
+/** 聊天系统事件 */
+export type ChatEvent =
+  | { type: 'message_sent'; messageId: string; channel: ChannelId }
+  | { type: 'message_received'; messageId: string; channel: ChannelId }
+  | { type: 'user_muted'; userId: string; level: MuteLevel; duration: number }
+  | { type: 'user_unmuted'; userId: string }
+  | { type: 'user_reported'; reportId: string; targetUserId: string };
+
+/** 事件监听器函数类型 */
+export type ChatEventListener = (event: ChatEvent) => void;
+
+// ============================================================
+// 常量
+// ============================================================
+
+/** 频道配置 */
+const CHANNEL_CONFIG: Record<ChannelId, { name: string; defaultMembers: number }> = {
+  world: { name: '世界频道', defaultMembers: 9999 },
+  guild: { name: '公会频道', defaultMembers: 50 },
+  private: { name: '私聊', defaultMembers: 2 },
+  system: { name: '系统公告', defaultMembers: 9999 },
+};
+
+/** 各频道消息保留上限 */
+const CHANNEL_MESSAGE_LIMIT: Record<ChannelId, number> = {
+  world: 200,
+  guild: 100,
+  private: 100,
+  system: 50,
+};
+
+/** 禁言等级配置：等级 → 持续时间（毫秒） */
+const MUTE_DURATIONS: Record<MuteLevel, number> = {
+  0: 0,
+  1: 30 * 60 * 1000,        // 30 分钟
+  2: 24 * 3600 * 1000,      // 24 小时
+  3: 7 * 24 * 3600 * 1000,  // 7 天
+};
+
+/** 禁言等级中文描述 */
+const MUTE_LEVEL_NAMES: Record<MuteLevel, string> = {
+  0: '未禁言',
+  1: '轻度禁言（30分钟）',
+  2: '中度禁言（24小时）',
+  3: '重度禁言（7天）',
+};
+
+/** 消息发送冷却时间（毫秒），默认 5 秒 */
+const MESSAGE_COOLDOWN_MS = 5000;
+
+/** 消息最大长度 */
+const MAX_MESSAGE_LENGTH = 500;
+
+/** 玩家自身 ID */
+const SELF_ID = 'player';
+
+// ============================================================
+// ChatSystem 实现
+// ============================================================
+
+/**
+ * 聊天系统 — 管理多频道聊天、禁言与举报
+ *
+ * @example
+ * ```typescript
+ * const chat = new ChatSystem();
+ * chat.sendMessage('world', '各位主公好！');
+ * chat.getMessages('world', 20);
+ * chat.reportUser('user123', '发送不良信息');
+ * ```
+ */
+export class ChatSystem {
+
+  // ========== 内部数据 ==========
+
+  /** 各频道消息列表：channelId → ChatMessage[] */
+  private channelMessages: Map<ChannelId, ChatMessage[]> = new Map();
+
+  /** 各频道未读消息数：channelId → number */
+  private unreadCounts: Map<ChannelId, number> = new Map();
+
+  /** 用户禁言记录：userId → MuteStatus */
+  private muteStatuses: Map<string, MuteStatus> = new Map();
+
+  /** 举报记录列表 */
+  private reports: ReportRecord[] = [];
+
+  /** 上次发送消息时间戳（全局冷却） */
+  private lastMessageSentAt: number = 0;
+
+  /** 事件监听器 */
+  private eventListeners: Map<string, ChatEventListener[]> = new Map();
+
+  // ============================================================
+  // 初始化
+  // ============================================================
+
+  constructor() {
+    // 初始化各频道消息列表和未读计数
+    for (const channelId of Object.keys(CHANNEL_CONFIG) as ChannelId[]) {
+      this.channelMessages.set(channelId, []);
+      this.unreadCounts.set(channelId, 0);
+    }
+  }
+
+  // ============================================================
+  // 多频道聊天
+  // ============================================================
+
+  /**
+   * 发送消息到指定频道
+   *
+   * @param channel - 频道 ID：world / guild / private / system
+   * @param content - 消息内容
+   * @returns 是否发送成功
+   */
+  sendMessage(channel: ChannelId, content: string): boolean {
+    // 验证频道
+    if (!CHANNEL_CONFIG[channel]) {
+      return false;
+    }
+
+    // 系统频道不允许玩家发送
+    if (channel === 'system') {
+      return false;
+    }
+
+    // 检查自身禁言状态
+    const selfMute = this.getMuteStatus(SELF_ID);
+    if (selfMute.muted) {
+      return false;
+    }
+
+    // 消息内容校验
+    if (!content.trim() || content.length > MAX_MESSAGE_LENGTH) {
+      return false;
+    }
+
+    // 发送冷却检查
+    if (this.lastMessageSentAt > 0 && (Date.now() - this.lastMessageSentAt) < MESSAGE_COOLDOWN_MS) {
+      return false;
+    }
+
+    const now = Date.now();
+    const messageId = `msg_${now}_${Math.random().toString(36).slice(2, 8)}`;
+
+    const message: ChatMessage = {
+      id: messageId,
+      channel,
+      senderId: SELF_ID,
+      senderName: '主公',
+      content: content.trim(),
+      timestamp: now,
+      type: 'normal',
+    };
+
+    // 添加到频道消息列表
+    const messages = this.channelMessages.get(channel) ?? [];
+    messages.push(message);
+
+    // 超出上限则裁剪旧消息
+    const limit = CHANNEL_MESSAGE_LIMIT[channel];
+    if (messages.length > limit) {
+      messages.splice(0, messages.length - limit);
+    }
+
+    this.channelMessages.set(channel, messages);
+    this.lastMessageSentAt = now;
+
+    this.emit({ type: 'message_sent', messageId, channel });
+    return true;
+  }
+
+  /**
+   * 获取指定频道的最近消息
+   *
+   * @param channel - 频道 ID
+   * @param limit - 返回消息数量上限
+   * @returns 消息列表（按时间正序）
+   */
+  getMessages(channel: ChannelId, limit: number): ChatMessage[] {
+    const messages = this.channelMessages.get(channel) ?? [];
+    // 获取最新 limit 条消息（保持时间正序）
+    const start = Math.max(0, messages.length - limit);
+    const result = messages.slice(start);
+
+    // 读取后清除该频道未读计数
+    this.unreadCounts.set(channel, 0);
+
+    return result;
+  }
+
+  /**
+   * 获取所有频道列表信息
+   *
+   * @returns 频道信息数组
+   */
+  getChannelList(): ChannelInfo[] {
+    return (Object.keys(CHANNEL_CONFIG) as ChannelId[]).map((id) => ({
+      id,
+      name: CHANNEL_CONFIG[id].name,
+      unread: this.unreadCounts.get(id) ?? 0,
+      memberCount: CHANNEL_CONFIG[id].defaultMembers,
+    }));
+  }
+
+  // ============================================================
+  // 禁言与举报
+  // ============================================================
+
+  /**
+   * 举报用户
+   *
+   * 举报会触发禁言判定：同一用户被多次举报后禁言等级递增。
+   * 简化实现：每次举报后立即检查并升级禁言等级。
+   *
+   * @param userId - 被举报用户 ID
+   * @param reason - 举报原因
+   * @returns 是否举报成功
+   */
+  reportUser(userId: string, reason: string): boolean {
+    if (!userId.trim() || !reason.trim()) {
+      return false;
+    }
+
+    // 不能举报自己
+    if (userId === SELF_ID) {
+      return false;
+    }
+
+    const now = Date.now();
+    const reportId = `report_${now}_${Math.random().toString(36).slice(2, 8)}`;
+
+    this.reports.push({
+      id: reportId,
+      targetUserId: userId,
+      reason: reason.trim(),
+      reportedAt: now,
+    });
+
+    // 统计该用户被举报次数（最近 24 小时内）
+    const recentReports = this.reports.filter(
+      (r) =>
+        r.targetUserId === userId &&
+        (now - r.reportedAt) < 24 * 3600_000,
+    );
+
+    // 根据举报次数升级禁言等级
+    const reportCount = recentReports.length;
+    let newLevel: MuteLevel = 0;
+    if (reportCount >= 5) {
+      newLevel = 3; // 7 天
+    } else if (reportCount >= 3) {
+      newLevel = 2; // 24 小时
+    } else if (reportCount >= 1) {
+      newLevel = 1; // 30 分钟
+    }
+
+    if (newLevel > 0) {
+      const duration = MUTE_DURATIONS[newLevel];
+      this.muteStatuses.set(userId, {
+        muted: true,
+        level: newLevel,
+        expireTime: now + duration,
+      });
+      this.emit({ type: 'user_muted', userId, level: newLevel, duration });
+    }
+
+    this.emit({ type: 'user_reported', reportId, targetUserId: userId });
+    return true;
+  }
+
+  /**
+   * 获取用户禁言状态
+   *
+   * 自动检查到期时间，已过期则解除禁言。
+   *
+   * @param userId - 用户 ID
+   * @returns 禁言状态
+   */
+  getMuteStatus(userId: string): MuteStatus {
+    const status = this.muteStatuses.get(userId);
+    if (!status) {
+      return { muted: false, level: 0, expireTime: 0 };
+    }
+
+    // 检查是否已到期
+    if (status.muted && Date.now() >= status.expireTime) {
+      status.muted = false;
+      status.level = 0;
+      status.expireTime = 0;
+      this.emit({ type: 'user_unmuted', userId });
+    }
+
+    return { ...status };
+  }
+
+  // ============================================================
+  // 内部辅助方法
+  // ============================================================
+
+  /**
+   * 添加系统消息（内部方法，用于系统通知）
+   *
+   * @param content - 系统消息内容
+   */
+  addSystemMessage(content: string): void {
+    const now = Date.now();
+    const messageId = `sys_${now}_${Math.random().toString(36).slice(2, 8)}`;
+
+    const message: ChatMessage = {
+      id: messageId,
+      channel: 'system',
+      senderId: 'system',
+      senderName: '系统',
+      content,
+      timestamp: now,
+      type: 'system',
+    };
+
+    const messages = this.channelMessages.get('system') ?? [];
+    messages.push(message);
+
+    const limit = CHANNEL_MESSAGE_LIMIT.system;
+    if (messages.length > limit) {
+      messages.splice(0, messages.length - limit);
+    }
+
+    this.channelMessages.set('system', messages);
+
+    // 系统消息增加未读计数
+    const currentUnread = this.unreadCounts.get('system') ?? 0;
+    this.unreadCounts.set('system', currentUnread + 1);
+  }
+
+  /**
+   * 接收外部消息（模拟其他玩家发送的消息）
+   *
+   * @param channel - 频道 ID
+   * @param senderId - 发送者 ID
+   * @param senderName - 发送者名称
+   * @param content - 消息内容
+   * @param type - 消息类型
+   * @returns 生成的消息对象
+   */
+  receiveMessage(
+    channel: ChannelId,
+    senderId: string,
+    senderName: string,
+    content: string,
+    type: MessageType = 'normal',
+  ): ChatMessage | null {
+    if (!CHANNEL_CONFIG[channel]) {
+      return null;
+    }
+
+    const now = Date.now();
+    const messageId = `msg_${now}_${Math.random().toString(36).slice(2, 8)}`;
+
+    const message: ChatMessage = {
+      id: messageId,
+      channel,
+      senderId,
+      senderName,
+      content: content.trim(),
+      timestamp: now,
+      type,
+    };
+
+    const messages = this.channelMessages.get(channel) ?? [];
+    messages.push(message);
+
+    const limit = CHANNEL_MESSAGE_LIMIT[channel];
+    if (messages.length > limit) {
+      messages.splice(0, messages.length - limit);
+    }
+
+    this.channelMessages.set(channel, messages);
+
+    // 增加未读计数
+    const currentUnread = this.unreadCounts.get(channel) ?? 0;
+    this.unreadCounts.set(channel, currentUnread + 1);
+
+    this.emit({ type: 'message_received', messageId, channel });
+    return message;
+  }
+
+  // ============================================================
+  // 事件系统
+  // ============================================================
+
+  /**
+   * 注册事件监听器
+   *
+   * @param event - 事件名称
+   * @param callback - 回调函数
+   */
+  on(event: string, callback: ChatEventListener): void {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, []);
+    }
+    this.eventListeners.get(event)!.push(callback);
+  }
+
+  /**
+   * 触发事件
+   */
+  private emit(data: ChatEvent): void {
+    const listeners = this.eventListeners.get(data.type);
+    if (listeners) {
+      for (const cb of listeners) {
+        cb(data);
+      }
+    }
+  }
+
+  // ============================================================
+  // 序列化 / 反序列化
+  // ============================================================
+
+  /**
+   * 序列化当前状态为可存储对象
+   */
+  serialize(): object {
+    const serializedChannels: Record<string, ChatMessage[]> = {};
+    this.channelMessages.forEach((messages, channel) => {
+      serializedChannels[channel] = messages.map((m) => ({ ...m }));
+    });
+
+    const serializedUnread: Record<string, number> = {};
+    this.unreadCounts.forEach((count, channel) => {
+      serializedUnread[channel] = count;
+    });
+
+    const serializedMutes: Record<string, MuteStatus> = {};
+    this.muteStatuses.forEach((status, userId) => {
+      serializedMutes[userId] = { ...status };
+    });
+
+    return {
+      channelMessages: serializedChannels,
+      unreadCounts: serializedUnread,
+      muteStatuses: serializedMutes,
+      reports: this.reports.map((r) => ({ ...r })),
+      lastMessageSentAt: this.lastMessageSentAt,
+    };
+  }
+
+  /**
+   * 从序列化数据恢复状态
+   *
+   * @param data - serialize() 输出的数据
+   */
+  deserialize(data: Record<string, unknown>): void {
+    // 恢复频道消息
+    const channelData = data.channelMessages as Record<string, ChatMessage[]> | undefined;
+    if (channelData) {
+      for (const channelId of Object.keys(CHANNEL_CONFIG) as ChannelId[]) {
+        this.channelMessages.set(channelId, channelData[channelId] ?? []);
+      }
+    } else {
+      for (const channelId of Object.keys(CHANNEL_CONFIG) as ChannelId[]) {
+        this.channelMessages.set(channelId, []);
+      }
+    }
+
+    // 恢复未读计数
+    const unreadData = data.unreadCounts as Record<string, number> | undefined;
+    if (unreadData) {
+      for (const channelId of Object.keys(CHANNEL_CONFIG) as ChannelId[]) {
+        this.unreadCounts.set(channelId, unreadData[channelId] ?? 0);
+      }
+    }
+
+    // 恢复禁言状态
+    const muteData = data.muteStatuses as Record<string, MuteStatus> | undefined;
+    this.muteStatuses = muteData ? new Map(Object.entries(muteData)) : new Map();
+
+    // 恢复举报记录
+    const reportData = data.reports as ReportRecord[] | undefined;
+    this.reports = reportData ? [...reportData] : [];
+
+    // 恢复上次发送时间
+    this.lastMessageSentAt = (data.lastMessageSentAt as number) ?? 0;
+  }
+}

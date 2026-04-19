@@ -23,7 +23,6 @@ import {
   INITIAL_RESOURCES,
   INITIAL_PRODUCTION_RATES,
   INITIAL_CAPS,
-  BUILDING_PRODUCTION,
   MIN_GRAIN_RESERVE,
   SAVE_VERSION,
 } from './resource-config';
@@ -236,10 +235,15 @@ export class ResourceSystem implements ISubsystem {
   // ── 5. 产出速率管理 ──
 
   /**
-   * 根据建筑等级重新计算产出速率
-   * @param buildingLevels 各建筑的当前等级 { farmland: 1, market: 1, barracks: 1, ... }
+   * 根据建筑产出数据重新计算产出速率
+   *
+   * 统一使用 building-config 的 levelTable 数据源，
+   * 由 BuildingSystem.calculateTotalProduction() 提供。
+   *
+   * @param buildingProductions 各建筑的资源产出映射 { resourceType: totalRate }
+   *        来源：BuildingSystem.calculateTotalProduction()
    */
-  recalculateProduction(buildingLevels: Record<string, number>): void {
+  recalculateProduction(buildingProductions: Record<string, number>): void {
     // 重置为 0
     const newRates: ProductionRate = {
       grain: 0,
@@ -248,12 +252,12 @@ export class ResourceSystem implements ISubsystem {
       mandate: 0,
     };
 
-    // 累加各建筑产出
-    for (const [buildingId, level] of Object.entries(buildingLevels)) {
-      const config = BUILDING_PRODUCTION[buildingId];
-      if (!config || level <= 0) continue;
-
-      newRates[config.resourceType] += config.baseRate + config.levelFactor * level;
+    // 累加各资源类型的产出值（已由 BuildingSystem 从 levelTable 查表计算）
+    for (const [resourceType, rate] of Object.entries(buildingProductions)) {
+      if (resourceType === 'grain' || resourceType === 'gold' ||
+          resourceType === 'troops' || resourceType === 'mandate') {
+        newRates[resourceType as ResourceType] += rate;
+      }
     }
 
     this.productionRates = newRates;

@@ -12,18 +12,22 @@
 
 import { ResourceSystem } from './resource/ResourceSystem';
 import { BuildingSystem } from './building/BuildingSystem';
+import { CalendarSystem } from './calendar/CalendarSystem';
 import type { Bonuses, CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type {
   EngineEventType, EngineEventMap, EventListener, GameSaveData, EngineSnapshot,
 } from '../shared/types';
+import type { CalendarSaveData, CalendarState } from './calendar/calendar.types';
 import { AUTO_SAVE_INTERVAL_SECONDS, SAVE_KEY, ENGINE_SAVE_VERSION } from '../shared/constants';
 
 import type { IGameState } from '../core/types/state';
+import type { ISystemDeps } from '../core/types/subsystem';
 import { EventBus } from '../core/events/EventBus';
 import { SubsystemRegistry } from '../core/engine/SubsystemRegistry';
 import { SaveManager } from '../core/save/SaveManager';
 import { ConfigRegistry } from '../core/config/ConfigRegistry';
+import { SocialEvents, MapEvents } from '../core/events/EventTypes';
 
 // ─────────────────────────────────────────────
 // ThreeKingdomsEngine
@@ -33,6 +37,7 @@ export class ThreeKingdomsEngine {
   // ── 子系统 ──
   readonly resource: ResourceSystem;
   readonly building: BuildingSystem;
+  readonly calendar: CalendarSystem;
 
   // ── core/ 基础设施 ──
   private readonly bus: EventBus;
@@ -53,6 +58,7 @@ export class ThreeKingdomsEngine {
   constructor() {
     this.resource = new ResourceSystem();
     this.building = new BuildingSystem();
+    this.calendar = new CalendarSystem();
 
     // 初始化 core/ 基础设施
     this.bus = new EventBus();
@@ -68,6 +74,7 @@ export class ThreeKingdomsEngine {
     // 注册子系统到 Registry
     this.registry.register('resource', this.resource as any);
     this.registry.register('building', this.building as any);
+    this.registry.register('calendar', this.calendar as any);
   }
 
   // ═══════════════════════════════════════════
@@ -79,6 +86,14 @@ export class ThreeKingdomsEngine {
     if (this.initialized) return;
 
     this.syncBuildingToResource();
+
+    // 初始化日历子系统，注入 EventBus 等依赖
+    const calendarDeps: ISystemDeps = {
+      eventBus: this.bus,
+      config: this.configRegistry,
+      registry: this.registry,
+    };
+    this.calendar.init(calendarDeps);
 
     this.initialized = true;
     this.lastTickTime = Date.now();
@@ -100,10 +115,13 @@ export class ThreeKingdomsEngine {
     const dt = deltaMs ?? (now - this.lastTickTime);
     this.lastTickTime = now;
 
-    // 2a. 建筑升级计时 → 返回本帧完成的建筑
+    // 2a. 日历推进（现实秒 → 游戏天数）
+    this.calendar.update(dt / 1000);
+
+    // 2b. 建筑升级计时 → 返回本帧完成的建筑
     const completed = this.building.tick();
 
-    // 2b. 处理升级完成的建筑（联动更新产出/上限）
+    // 2c. 处理升级完成的建筑（联动更新产出/上限）
     if (completed.length > 0) {
       this.syncBuildingToResource();
       for (const type of completed) {
@@ -112,7 +130,7 @@ export class ThreeKingdomsEngine {
       }
     }
 
-    // 2c. 资源产出（含各类加成）
+    // 2d. 资源产出（含各类加成）
     // ── 加成框架 v5.0 ──
     // 当前仅 castle 加成实际生效，其余预留为 0，待后续版本接入
     const castleMultiplier = this.building.getCastleBonusMultiplier();
@@ -125,17 +143,17 @@ export class ThreeKingdomsEngine {
     };
     this.resource.tick(dt, bonuses);
 
-    // 2d. 变化检测 → 发出事件
+    // 2e. 变化检测 → 发出事件
     this.detectAndEmitChanges();
 
-    // 2e. 自动保存累加
+    // 2f. 自动保存累加
     this.autoSaveAccumulator += dt / 1000;
     if (this.autoSaveAccumulator >= AUTO_SAVE_INTERVAL_SECONDS) {
       this.autoSaveAccumulator = 0;
       this.save();
     }
 
-    // 2f. 在线时长
+    // 2g. 在线时长
     this.onlineSeconds += dt / 1000;
   }
 
@@ -205,6 +223,7 @@ export class ThreeKingdomsEngine {
       saveTime: Date.now(),
       resource: this.resource.serialize(),
       building: this.building.serialize(),
+      calendar: this.calendar.serialize(),
     };
 
     // 转换为 IGameState 格式，委托给 SaveManager
@@ -244,6 +263,7 @@ export class ThreeKingdomsEngine {
       saveTime: Date.now(),
       resource: this.resource.serialize(),
       building: this.building.serialize(),
+      calendar: this.calendar.serialize(),
     };
     return JSON.stringify(data);
   }
@@ -253,6 +273,9 @@ export class ThreeKingdomsEngine {
     const data: GameSaveData = JSON.parse(json);
     this.building.deserialize(data.building);
     this.resource.deserialize(data.resource);
+    if (data.calendar) {
+      this.calendar.deserialize(data.calendar);
+    }
     this.syncBuildingToResource();
     this.initialized = true;
     this.lastTickTime = Date.now();
@@ -267,6 +290,7 @@ export class ThreeKingdomsEngine {
   reset(): void {
     this.resource.reset();
     this.building.reset();
+    this.calendar.reset();
     this.initialized = false;
     this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0;
@@ -319,6 +343,7 @@ export class ThreeKingdomsEngine {
       caps: this.resource.getCaps(),
       buildings: this.building.getAllBuildings(),
       onlineSeconds: this.onlineSeconds,
+      calendar: this.calendar.getState(),
     };
   }
 
@@ -340,6 +365,7 @@ export class ThreeKingdomsEngine {
       subsystems: {
         resource: data.resource,
         building: data.building,
+        calendar: data.calendar,
       },
       metadata: {
         totalPlayTime: this.onlineSeconds,
@@ -356,6 +382,7 @@ export class ThreeKingdomsEngine {
       saveTime: state.timestamp,
       resource: state.subsystems.resource as any,
       building: state.subsystems.building as any,
+      calendar: state.subsystems.calendar as CalendarSaveData | undefined,
     };
   }
 
@@ -372,6 +399,9 @@ export class ThreeKingdomsEngine {
 
       this.building.deserialize(data.building);
       this.resource.deserialize(data.resource);
+      if (data.calendar) {
+        this.calendar.deserialize(data.calendar);
+      }
       this.syncBuildingToResource();
 
       return this.computeOfflineAndFinalize();
@@ -411,6 +441,9 @@ export class ThreeKingdomsEngine {
     try {
       this.building.deserialize(data.building);
       this.resource.deserialize(data.resource);
+      if (data.calendar) {
+        this.calendar.deserialize(data.calendar);
+      }
       this.syncBuildingToResource();
 
       return this.computeOfflineAndFinalize();
@@ -438,6 +471,14 @@ export class ThreeKingdomsEngine {
       }
     }
 
+    // 初始化日历子系统依赖（确保 load 后 calendar 也能发出事件）
+    const calendarDeps: ISystemDeps = {
+      eventBus: this.bus,
+      config: this.configRegistry,
+      registry: this.registry,
+    };
+    this.calendar.init(calendarDeps);
+
     this.initialized = true;
     this.lastTickTime = Date.now();
     this.onlineSeconds = 0;
@@ -449,8 +490,12 @@ export class ThreeKingdomsEngine {
 
   /** 将建筑系统状态同步到资源系统（产出速率 + 资源上限） */
   private syncBuildingToResource(): void {
+    // 从 BuildingSystem 的 levelTable 查表获取各资源产出值（统一数据源）
+    const productions = this.building.calculateTotalProduction();
+    this.resource.recalculateProduction(productions);
+
+    // 上限仍由建筑等级决定
     const levels = this.building.getProductionBuildingLevels();
-    this.resource.recalculateProduction(levels);
     this.resource.updateCaps(
       levels['farmland'] ?? 0,  // PRD: 粮仓容量由农田等级决定（06-building-system）
       levels['barracks'] ?? 0,

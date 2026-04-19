@@ -4,6 +4,30 @@
 
 ---
 
+## DDD架构设计规范
+
+> 领域驱动设计（Domain-Driven Design），按职责分层，每层独立可测试。
+
+### 核心分层（从上到下依赖方向单向）
+
+- **UI层（表现层）**：ThreeKingdomsGame.tsx 主组件编排 + panels/ 面板子组件
+- **引擎层（应用服务层）**：ThreeKingdomsEngine.ts 编排各子系统
+- **子系统层（领域层）**：ResourceSystem.ts / BuildingSystem.ts 等，每个子系统 = 一个领域聚合根
+- **配置层（基础设施层）**：config/*.ts 纯数据零逻辑 + types.ts 共享类型定义
+
+### 文件行数限制
+- **所有代码文件 ≤ 500行**，硬性限制
+- 核心文件（引擎/组件）严格遵守单一职责原则
+- 超过500行必须拆分
+
+### 单一职责原则
+- 引擎文件只负责逻辑编排，不包含数值定义和具体业务逻辑
+- 每个子系统文件 = 一个领域聚合根（如 ResourceSystem、BuildingSystem）
+- 数值/常量拆分为独立的配置文件（如 `building-config.ts`、`resource-config.ts`）
+- 类型定义拆分为 `types.ts`
+- UI主组件只负责编排面板，每个面板一个独立文件
+
+
 ## 一、架构分层
 
 | 层 | 职责 | 依赖方向 |

@@ -35,6 +35,7 @@ interface BuildingPanelProps {
   rates: ProductionRate;
   caps: ResourceCap;
   engine: ThreeKingdomsEngine;
+  snapshotVersion: number;
   onUpgradeComplete?: (type: BuildingType) => void;
 }
 
@@ -96,6 +97,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
   rates,
   caps,
   engine,
+  snapshotVersion,
   onUpgradeComplete,
 }) => {
   // 升级弹窗状态
@@ -135,7 +137,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
     }
 
     return info;
-  }, [buildings, resources, engine]);
+  }, [buildings, snapshotVersion]);
 
   // 升级中的建筑列表
   const upgradingBuildings = useMemo(

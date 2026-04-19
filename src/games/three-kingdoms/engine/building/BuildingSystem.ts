@@ -348,7 +348,7 @@ export class BuildingSystem implements ISubsystem {
     return result;
   }
 
-  /** 获取产出建筑等级映射（兼容 ResourceSystem.recalculateProduction） */
+  /** 获取产出建筑等级映射（用于资源上限计算等场景） */
   getProductionBuildingLevels(): Record<string, number> {
     const levels: Record<string, number> = {};
     for (const t of BUILDING_TYPES) {

@@ -72,8 +72,9 @@ describe('ResourceSystem', () => {
       expect(rs.getAmount('grain')).toBe(INITIAL_CAPS.grain);
     });
     it('产出速率受建筑等级影响', () => {
-      rs.recalculateProduction({ farmland: 3 });
-      expect(rs.getProductionRates().grain).toBeCloseTo(1.0 + 0.5 * 3);
+      // 使用 levelTable 查表值：farmland Lv3 → production=1.5 (来自 FARMLAND_LEVEL_TABLE)
+      rs.recalculateProduction({ grain: 1.5 });
+      expect(rs.getProductionRates().grain).toBeCloseTo(1.5);
     });
     it('bonus 加成正确应用', () => {
       rs.setProductionRate('grain', 10);
@@ -377,18 +378,20 @@ describe('ResourceSystem', () => {
 
   describe('产出速率管理', () => {
     it('recalculateProduction 累加多建筑产出', () => {
-      rs.recalculateProduction({ farmland: 2, market: 3 });
-      expect(rs.getProductionRates().grain).toBeCloseTo(2.0);
-      expect(rs.getProductionRates().gold).toBeCloseTo(2.0);
+      // 使用 levelTable 查表值：farmland Lv2 → 1.0, market Lv3 → 1.2
+      rs.recalculateProduction({ grain: 1.0, gold: 1.2 });
+      expect(rs.getProductionRates().grain).toBeCloseTo(1.0);
+      expect(rs.getProductionRates().gold).toBeCloseTo(1.2);
     });
     it('recalculateProduction 空对象重置为0', () => {
       rs.setProductionRate('grain', 99);
       rs.recalculateProduction({});
       expect(rs.getProductionRates().grain).toBe(0);
     });
-    it('recalculateProduction 忽略等级<=0的建筑', () => {
-      rs.recalculateProduction({ farmland: 0 });
+    it('recalculateProduction 忽略未知资源类型', () => {
+      rs.recalculateProduction({ unknownResource: 5 });
       expect(rs.getProductionRates().grain).toBe(0);
+      expect(rs.getProductionRates().gold).toBe(0);
     });
   });
 

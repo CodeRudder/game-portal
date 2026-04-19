@@ -1,0 +1,274 @@
+/**
+ * 三国霸业 v1.0 — 建筑升级弹窗样式
+ *
+ * 设计稿：[BLD-2] 建筑详情面板 → [NAV-1-5] 居中弹窗区
+ * 尺寸：320~600×200~500px，居中
+ * 遮罩：rgba(0,0,0,0.5)
+ * 配色：[SPEC-1] 水墨江山·铜纹霸业
+ */
+
+/* ═══════════════════════════════════════════
+   遮罩层
+   ═══════════════════════════════════════════ */
+.tk-upgrade-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+
+/* ═══════════════════════════════════════════
+   弹窗主体
+   ═══════════════════════════════════════════ */
+.tk-upgrade-modal {
+  width: 420px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: rgba(30, 35, 48, 0.96);
+  border: 1px solid rgba(200, 169, 110, 0.3);
+  border-radius: 10px;
+  padding: 20px 24px;
+  position: relative;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* 关闭按钮 */
+.tk-upgrade-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--tk-text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.tk-upgrade-close:hover {
+  color: var(--tk-text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ═══════════════════════════════════════════
+   建筑头部
+   ═══════════════════════════════════════════ */
+.tk-upgrade-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tk-upgrade-icon {
+  font-size: 36px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(200, 169, 110, 0.08);
+  border-radius: 8px;
+}
+
+.tk-upgrade-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-upgrade-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+}
+
+.tk-upgrade-level {
+  font-size: 14px;
+  color: var(--tk-gold-soft);
+}
+
+/* ═══════════════════════════════════════════
+   内容区块
+   ═══════════════════════════════════════════ */
+.tk-upgrade-section {
+  margin-bottom: 14px;
+}
+
+.tk-upgrade-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-gold-soft);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(200, 169, 110, 0.15);
+}
+
+.tk-upgrade-level-change {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tk-text-primary);
+  text-align: center;
+  padding: 4px 0;
+}
+
+/* ═══════════════════════════════════════════
+   升级消耗列表
+   ═══════════════════════════════════════════ */
+.tk-upgrade-costs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tk-upgrade-cost-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+}
+
+.tk-upgrade-cost--enough {
+  color: var(--tk-text-primary);
+}
+
+.tk-upgrade-cost--short {
+  color: var(--tk-danger);
+  background: rgba(231, 76, 60, 0.06);
+}
+
+.tk-upgrade-cost-time {
+  color: var(--tk-text-secondary);
+}
+
+.tk-upgrade-cost-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.tk-upgrade-cost-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-upgrade-cost-current {
+  color: var(--tk-text-dim);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-upgrade-cost-status {
+  margin-left: auto;
+  font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════
+   失败原因
+   ═══════════════════════════════════════════ */
+.tk-upgrade-reasons {
+  padding: 8px 12px;
+  background: rgba(231, 76, 60, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+.tk-upgrade-reason {
+  font-size: 12px;
+  color: var(--tk-danger);
+  padding: 2px 0;
+}
+
+/* ═══════════════════════════════════════════
+   操作按钮
+   ═══════════════════════════════════════════ */
+.tk-upgrade-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.tk-upgrade-btn {
+  flex: 1;
+  height: 40px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tk-upgrade-btn--confirm {
+  background: rgba(200, 169, 110, 0.2);
+  color: var(--tk-gold-bright);
+  border: 1px solid var(--tk-gold-soft);
+}
+
+.tk-upgrade-btn--confirm:hover:not(:disabled) {
+  background: rgba(200, 169, 110, 0.3);
+}
+
+.tk-upgrade-btn--disabled {
+  background: rgba(102, 102, 102, 0.15);
+  color: var(--tk-text-muted);
+  border-color: var(--tk-border-dark);
+  cursor: not-allowed;
+}
+
+.tk-upgrade-btn--cancel {
+  background: transparent;
+  color: var(--tk-text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.tk-upgrade-btn--cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--tk-text-primary);
+}
+
+/* ═══════════════════════════════════════════
+   响应式 — 手机端
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-upgrade-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 60vh;
+    border-radius: 10px 10px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .tk-upgrade-overlay {
+    align-items: flex-end;
+  }
+
+  .tk-upgrade-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .tk-upgrade-btn {
+    height: 44px;
+  }
+}

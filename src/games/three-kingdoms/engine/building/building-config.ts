@@ -414,6 +414,7 @@ export const BUILDING_DEFS: Record<BuildingType, BuildingDef> = {
     type: 'academy',
     maxLevel: 20,
     unlockCastleLevel: 3,
+    production: { resourceType: 'mandate', baseValue: 0.1, perLevel: 0 },
     levelTable: ACADEMY_LEVEL_TABLE,
   },
   clinic: {

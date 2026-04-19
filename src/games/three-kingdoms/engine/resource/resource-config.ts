@@ -53,17 +53,20 @@ export const INITIAL_CAPS: Readonly<ResourceCap> = {
 // ─────────────────────────────────────────────
 
 /**
- * 各建筑对资源的产出公式参数
- * 产出 = baseRate + levelFactor × 建筑等级（每秒）
+ * @deprecated 已废弃。产出计算已统一使用 building-config 的 levelTable 数据源。
+ * 保留此定义仅供参考，实际产出由 BuildingSystem.calculateTotalProduction() 提供。
+ *
+ * 旧逻辑：产出 = baseRate + levelFactor × 建筑等级（每秒）
+ * 新逻辑：产出 = levelTable[level - 1].production（精确查表）
  */
 export const BUILDING_PRODUCTION: Readonly<
   Record<string, { resourceType: 'grain' | 'gold' | 'troops'; baseRate: number; levelFactor: number }>
 > = {
-  /** 农田：粮草 1.0 + 0.5×等级/s */
+  /** 农田：粮草 1.0 + 0.5×等级/s（已废弃，实际值见 building-config.ts FARMLAND_LEVEL_TABLE） */
   farmland: { resourceType: 'grain', baseRate: 1.0, levelFactor: 0.5 },
-  /** 市集：铜钱 0.8 + 0.4×等级/s */
+  /** 市集：铜钱 0.8 + 0.4×等级/s（已废弃，实际值见 building-config.ts MARKET_LEVEL_TABLE） */
   market: { resourceType: 'gold', baseRate: 0.8, levelFactor: 0.4 },
-  /** 兵营：兵力 0.5 + 0.3×等级/s */
+  /** 兵营：兵力 0.5 + 0.3×等级/s（已废弃，实际值见 building-config.ts BARRACKS_LEVEL_TABLE） */
   barracks: { resourceType: 'troops', baseRate: 0.5, levelFactor: 0.3 },
 } as const;
 

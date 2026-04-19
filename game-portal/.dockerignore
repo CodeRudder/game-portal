@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.gitignore
+*.md
+.env
+.env.*
+.vscode
+.idea
+docker-compose.yml
+Dockerfile
+nginx.conf
+build.sh
+build-and-run.sh
