@@ -20,6 +20,7 @@ import { CalendarSystem } from './calendar/CalendarSystem';
 import { HeroSystem } from './hero/HeroSystem';
 import { HeroRecruitSystem, type RecruitOutput } from './hero/HeroRecruitSystem';
 import { HeroLevelSystem, type LevelUpResult, type BatchEnhanceResult, type EnhancePreview } from './hero/HeroLevelSystem';
+import { HeroFormation, type FormationData, type FormationSaveData } from './hero/HeroFormation';
 import type { Bonuses, CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type {
@@ -57,6 +58,7 @@ export class ThreeKingdomsEngine {
   readonly hero: HeroSystem;
   readonly heroRecruit: HeroRecruitSystem;
   readonly heroLevel: HeroLevelSystem;
+  private readonly heroFormation: HeroFormation;
 
   // ── core/ 基础设施 ──
   private readonly bus: EventBus;
@@ -81,6 +83,7 @@ export class ThreeKingdomsEngine {
     this.hero = new HeroSystem();
     this.heroRecruit = new HeroRecruitSystem();
     this.heroLevel = new HeroLevelSystem();
+    this.heroFormation = new HeroFormation();
 
     // 初始化 core/ 基础设施
     this.bus = new EventBus();
@@ -99,13 +102,12 @@ export class ThreeKingdomsEngine {
     this.registry.register('hero', this.hero as any);
     this.registry.register('heroRecruit', this.heroRecruit as any);
     this.registry.register('heroLevel', this.heroLevel as any);
+    this.registry.register('heroFormation', this.heroFormation as any);
   }
 
-  // ═══════════════════════════════════════════
-  // 1. 初始化
-  // ═══════════════════════════════════════════
+  // ── 初始化 ──
 
-  /** 初始化引擎（新游戏）：建立联动、发出初始化事件 */
+  /** 初始化引擎（新游戏） */
   init(): void {
     if (this.initialized) return;
 
@@ -130,11 +132,9 @@ export class ThreeKingdomsEngine {
     this.bus.emit('game:initialized', { isNewGame: true });
   }
 
-  // ═══════════════════════════════════════════
-  // 2. 游戏循环
-  // ═══════════════════════════════════════════
+  // ── 游戏循环 ──
 
-  /** 驱动所有子系统更新，建议以 100ms 间隔调用 */
+  /** 驱动所有子系统更新 */
   tick(deltaMs?: number): void {
     if (!this.initialized) return;
 
@@ -159,11 +159,9 @@ export class ThreeKingdomsEngine {
     this.onlineSeconds += dtSec;
   }
 
-  // ═══════════════════════════════════════════
-  // 3. 建筑升级（编排流程）
-  // ═══════════════════════════════════════════
+  // ── 建筑升级 ──
 
-  /** 检查建筑是否可升级（不消耗资源） */
+  /** 检查建筑是否可升级 */
   checkUpgrade(type: BuildingType): UpgradeCheckResult {
     return this.building.checkUpgrade(type, this.resource.getResources());
   }
@@ -173,7 +171,7 @@ export class ThreeKingdomsEngine {
     return this.building.getUpgradeCost(type);
   }
 
-  /** 执行建筑升级：前置检查 → 扣除资源 → 开始升级 → 发出事件 */
+  /** 执行建筑升级 */
   upgradeBuilding(type: BuildingType): void {
     const resources = this.resource.getResources();
     const check = this.building.checkUpgrade(type, resources);
@@ -194,7 +192,7 @@ export class ThreeKingdomsEngine {
     this.bus.emit('resource:changed', { resources: this.resource.getResources() });
   }
 
-  /** 取消建筑升级，返还资源费用（80%），null 表示该建筑未在升级 */
+  /** 取消建筑升级，返还80%费用 */
   cancelUpgrade(type: BuildingType): UpgradeCost | null {
     const refund = this.building.cancelUpgrade(type);
     if (!refund) return null;
@@ -207,9 +205,7 @@ export class ThreeKingdomsEngine {
     return refund;
   }
 
-  // ═══════════════════════════════════════════
-  // 4. 存档 / 读档
-  // ═══════════════════════════════════════════
+  // ── 存档 / 读档 ──
 
   /** 保存游戏 */
   save(): void {
@@ -225,7 +221,7 @@ export class ThreeKingdomsEngine {
     }
   }
 
-  /** 从存档加载，自动计算离线收益。无存档返回 null */
+  /** 从存档加载，计算离线收益 */
   load(): OfflineEarnings | null {
     const ctx = this.buildSaveCtx();
 
@@ -279,6 +275,7 @@ export class ThreeKingdomsEngine {
     this.hero.reset();
     this.heroRecruit.reset();
     this.heroLevel.reset();
+    this.heroFormation.reset();
     this.initialized = false;
     this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0;
@@ -288,9 +285,7 @@ export class ThreeKingdomsEngine {
     this.bus.removeAllListeners();
   }
 
-  // ═══════════════════════════════════════════
-  // 5. 事件系统
-  // ═══════════════════════════════════════════
+  // ── 事件系统 ──
 
   on<T extends EngineEventType>(event: T, listener: EventListener<EngineEventMap[T]>): void;
   on(event: string, listener: (...args: any[]) => void): void;
@@ -306,9 +301,7 @@ export class ThreeKingdomsEngine {
     this.bus.off(event, listener);
   }
 
-  // ═══════════════════════════════════════════
-  // 6. 状态查询
-  // ═══════════════════════════════════════════
+  // ── 状态查询 ──
 
   /** 获取引擎状态快照 */
   getSnapshot(): EngineSnapshot {
@@ -322,6 +315,8 @@ export class ThreeKingdomsEngine {
       heroes: this.hero.getAllGenerals(),
       heroFragments: this.hero.getAllFragments(),
       totalPower: this.hero.calculateTotalPower(),
+      formations: this.heroFormation.getAllFormations(),
+      activeFormationId: this.heroFormation.getActiveFormationId(),
     };
   }
 
@@ -331,18 +326,39 @@ export class ThreeKingdomsEngine {
   getUpgradeProgress(type: BuildingType): number { return this.building.getUpgradeProgress(type); }
   getUpgradeRemainingTime(type: BuildingType): number { return this.building.getUpgradeRemainingTime(type); }
 
-  // ═══════════════════════════════════════════
-  // 7. 武将系统 API
-  // ═══════════════════════════════════════════
+  // ── 武将系统 API ──
 
   /** 获取武将系统实例 */
   getHeroSystem(): HeroSystem { return this.hero; }
 
   /** 获取招募系统实例 */
   getRecruitSystem(): HeroRecruitSystem { return this.heroRecruit; }
-
   /** 获取升级系统实例 */
   getLevelSystem(): HeroLevelSystem { return this.heroLevel; }
+  /** 获取编队系统实例 */
+  getFormationSystem(): HeroFormation { return this.heroFormation; }
+
+  /** 获取所有编队 */
+  getFormations(): FormationData[] { return this.heroFormation.getAllFormations(); }
+  /** 获取当前激活编队 */
+  getActiveFormation(): FormationData | null { return this.heroFormation.getActiveFormation(); }
+  /** 创建新编队 */
+  createFormation(id?: string): FormationData | null { return this.heroFormation.createFormation(id); }
+
+  /** 设置编队武将列表 */
+  setFormation(id: string, generalIds: string[]): FormationData | null {
+    return this.heroFormation.setFormation(id, generalIds);
+  }
+
+  /** 向编队添加武将 */
+  addToFormation(formationId: string, generalId: string): FormationData | null {
+    return this.heroFormation.addToFormation(formationId, generalId);
+  }
+
+  /** 从编队移除武将 */
+  removeFromFormation(formationId: string, generalId: string): FormationData | null {
+    return this.heroFormation.removeFromFormation(formationId, generalId);
+  }
 
   /**
    * 招募武将
@@ -373,6 +389,16 @@ export class ThreeKingdomsEngine {
   /** 获取单个武将 */
   getGeneral(id: string): Readonly<GeneralData> | undefined {
     return this.hero.getGeneral(id);
+  }
+
+  /** 获取招募历史记录 */
+  getRecruitHistory() {
+    return this.heroRecruit.getRecruitHistory();
+  }
+
+  /** 获取碎片合成进度 */
+  getSynthesizeProgress(generalId: string): { current: number; required: number } {
+    return this.hero.getSynthesizeProgress(generalId);
   }
 
   /** 获取强化预览 */
@@ -421,6 +447,7 @@ export class ThreeKingdomsEngine {
       calendar: this.calendar,
       hero: this.hero,
       recruit: this.heroRecruit,
+      formation: this.heroFormation,
       bus: this.bus,
       registry: this.registry,
       configRegistry: this.configRegistry,

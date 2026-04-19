@@ -1,0 +1,279 @@
+/**
+ * FormationPanel — 编队管理面板样式
+ */
+
+/* ═══════════════════════════════════════════
+   面板容器
+   ═══════════════════════════════════════════ */
+.tk-formation-panel {
+  width: 100%;
+  padding: 12px 0;
+}
+
+.tk-formation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.tk-formation-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+}
+
+.tk-formation-create-btn {
+  padding: 5px 14px;
+  background: rgba(200, 168, 76, 0.15);
+  border: 1px solid var(--tk-gold);
+  border-radius: 4px;
+  color: var(--tk-gold-light);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tk-formation-create-btn:hover:not(:disabled) {
+  background: rgba(200, 168, 76, 0.3);
+}
+
+.tk-formation-create-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════
+   空状态
+   ═══════════════════════════════════════════ */
+.tk-formation-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--tk-text-muted);
+  font-size: 13px;
+}
+
+/* ═══════════════════════════════════════════
+   编队卡片列表
+   ═══════════════════════════════════════════ */
+.tk-formation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tk-formation-card {
+  background: rgba(240, 230, 211, 0.04);
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  transition: border-color 0.15s;
+}
+
+.tk-formation-card--active {
+  border-color: var(--tk-gold);
+  box-shadow: 0 0 8px rgba(200, 168, 76, 0.15);
+}
+
+/* 卡片头部 */
+.tk-formation-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.tk-formation-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.tk-formation-name:hover {
+  color: var(--tk-gold-light);
+}
+
+.tk-formation-rename-input {
+  padding: 3px 8px;
+  background: rgba(240, 230, 211, 0.08);
+  border: 1px solid var(--tk-gold);
+  border-radius: 4px;
+  color: var(--tk-text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  width: 120px;
+}
+
+/* 操作按钮 */
+.tk-formation-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tk-formation-activate-btn,
+.tk-formation-edit-btn,
+.tk-formation-delete-btn {
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tk-formation-activate-btn:hover,
+.tk-formation-edit-btn:hover {
+  border-color: var(--tk-gold);
+  color: var(--tk-gold-light);
+}
+
+.tk-formation-delete-btn {
+  color: #E53935;
+  border-color: rgba(229, 57, 53, 0.2);
+}
+
+.tk-formation-delete-btn:hover {
+  border-color: #E53935;
+  background: rgba(229, 57, 53, 0.1);
+}
+
+.tk-formation-active-badge {
+  padding: 3px 10px;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 4px;
+  color: var(--tk-green);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 战力 */
+.tk-formation-power {
+  font-size: 12px;
+  color: var(--tk-green);
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   编队槽位
+   ═══════════════════════════════════════════ */
+.tk-formation-slots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tk-formation-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  height: 36px;
+  padding: 0 10px;
+  background: rgba(240, 230, 211, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--tk-text-primary);
+  transition: border-color 0.15s;
+}
+
+.tk-formation-slot--empty {
+  color: var(--tk-text-muted);
+  border-style: dashed;
+  font-size: 14px;
+}
+
+.tk-formation-slot-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.tk-formation-slot-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  background: #E53935;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════
+   添加武将区域
+   ═══════════════════════════════════════════ */
+.tk-formation-add-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(200, 168, 76, 0.1);
+}
+
+.tk-formation-add-label {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  margin-bottom: 6px;
+}
+
+.tk-formation-add-list {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tk-formation-add-hero {
+  padding: 4px 10px;
+  background: rgba(240, 230, 211, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-primary);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tk-formation-add-hero:hover {
+  background: rgba(200, 168, 76, 0.15);
+  border-color: var(--tk-gold);
+}
+
+.tk-formation-add-empty {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-formation-card {
+    padding: 8px 10px;
+  }
+
+  .tk-formation-slot {
+    min-width: 50px;
+    height: 30px;
+    font-size: 11px;
+  }
+}

@@ -31,6 +31,36 @@
   flex-wrap: wrap;
 }
 
+/* 子Tab切换 */
+.tk-hero-sub-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.tk-hero-sub-tab {
+  padding: 5px 14px;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 4px;
+  color: var(--tk-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tk-hero-sub-tab:hover {
+  border-color: rgba(200, 168, 76, 0.4);
+  color: var(--tk-text-primary);
+}
+
+.tk-hero-sub-tab--active {
+  background: rgba(200, 168, 76, 0.15);
+  border-color: var(--tk-gold);
+  color: var(--tk-gold-light);
+  font-weight: 600;
+}
+
 /* 阵营筛选按钮组 */
 .tk-hero-filter-group {
   display: flex;
@@ -120,6 +150,25 @@
 .tk-hero-recruit-btn:hover {
   background: rgba(200, 168, 76, 0.3);
   box-shadow: 0 0 12px rgba(200, 168, 76, 0.2);
+}
+
+/* 对比按钮 */
+.tk-hero-compare-btn {
+  padding: 6px 14px;
+  background: rgba(76, 175, 80, 0.12);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 6px;
+  color: var(--tk-green);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.tk-hero-compare-btn:hover {
+  background: rgba(76, 175, 80, 0.25);
 }
 
 /* ═══════════════════════════════════════════

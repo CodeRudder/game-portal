@@ -26,6 +26,9 @@ vi.mock('../HeroTab.css', () => ({}));
 vi.mock('../HeroCard.css', () => ({}));
 vi.mock('../HeroDetailModal.css', () => ({}));
 vi.mock('../RecruitModal.css', () => ({}));
+vi.mock('../GuideOverlay.css', () => ({}));
+vi.mock('../HeroCompareModal.css', () => ({}));
+vi.mock('../FormationPanel.css', () => ({}));
 vi.mock('@/components/idle/common/Toast', () => ({
   Toast: {
     show: vi.fn(),
@@ -87,6 +90,7 @@ function makeMockEngine(generalList: GeneralData[] = generals) {
       getSynthesizeProgress: vi.fn(() => ({ current: 0, required: 80 })),
       canSynthesize: vi.fn(() => false),
       fragmentSynthesize: vi.fn(() => null),
+      getGeneralDef: vi.fn(() => ({ biography: '测试传记' })),
     })),
     getLevelSystem: vi.fn(() => ({
       getExpProgress: vi.fn(() => ({ current: 500, required: 1000, percentage: 50 })),
@@ -146,14 +150,14 @@ describe('HeroTab', () => {
     const emptyEngine = makeMockEngine([]);
     render(<HeroTab engine={emptyEngine} snapshotVersion={1} />);
 
-    expect(screen.getByText('暂无武将')).toBeInTheDocument();
-    expect(screen.getByText('招募天下英才，共图霸业')).toBeInTheDocument();
+    expect(screen.getByText('尚无武将入麾下')).toBeInTheDocument();
+    expect(screen.getByText('点击「前往招募」招揽天下英才')).toBeInTheDocument();
     expect(screen.getByText('前往招募')).toBeInTheDocument();
   });
 
   it('有武将时不应显示空列表引导', () => {
     render(<HeroTab {...defaultProps} />);
-    expect(screen.queryByText('暂无武将')).not.toBeInTheDocument();
+    expect(screen.queryByText('尚无武将入麾下')).not.toBeInTheDocument();
   });
 
   // ═══════════════════════════════════════════
@@ -274,10 +278,10 @@ describe('HeroTab', () => {
     )!;
     await userEvent.click(guanyuCard);
 
-    // 应显示详情弹窗
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    // 弹窗 aria-label 应包含关羽
-    expect(screen.getByRole('dialog').getAttribute('aria-label')).toContain('关羽');
+    // 应显示详情弹窗（可能有多个dialog：GuideOverlay + HeroDetailModal）
+    const dialogs = screen.getAllByRole('dialog');
+    const detailDialog = dialogs.find((d) => d.getAttribute('aria-label')?.includes('关羽'));
+    expect(detailDialog).toBeTruthy();
   });
 
   // ═══════════════════════════════════════════

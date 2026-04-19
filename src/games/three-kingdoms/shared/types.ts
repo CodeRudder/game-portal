@@ -187,6 +187,8 @@ export interface GameSaveData {
   hero?: import('../engine/hero/hero.types').HeroSaveData;
   /** 招募系统数据（可选，向后兼容旧存档） */
   recruit?: import('../engine/hero/HeroRecruitSystem').RecruitSaveData;
+  /** 编队系统数据（可选，向后兼容旧存档） */
+  formation?: import('../engine/hero/HeroFormation').FormationSaveData;
 }
 
 // ─────────────────────────────────────────────
@@ -213,4 +215,8 @@ export interface EngineSnapshot {
   heroFragments: Readonly<Record<string, number>>;
   /** 全体武将总战力 */
   totalPower: number;
+  /** 所有编队 */
+  formations: import('../engine/hero/HeroFormation').FormationData[];
+  /** 当前激活编队ID */
+  activeFormationId: string | null;
 }

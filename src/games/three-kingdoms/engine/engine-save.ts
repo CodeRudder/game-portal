@@ -12,6 +12,7 @@ import type { BuildingSystem } from './building/BuildingSystem';
 import type { CalendarSystem } from './calendar/CalendarSystem';
 import type { HeroSystem } from './hero/HeroSystem';
 import type { HeroRecruitSystem } from './hero/HeroRecruitSystem';
+import type { HeroFormation } from './hero/HeroFormation';
 import type { EventBus } from '../core/events/EventBus';
 import type { SubsystemRegistry } from '../core/engine/SubsystemRegistry';
 import type { ConfigRegistry } from '../core/config/ConfigRegistry';
@@ -22,6 +23,7 @@ import type {
 import type { CalendarSaveData } from './calendar/calendar.types';
 import type { HeroSaveData } from './hero/hero.types';
 import type { RecruitSaveData } from './hero/HeroRecruitSystem';
+import type { FormationSaveData } from './hero/HeroFormation';
 import type { IGameState } from '../core/types/state';
 import type { ISystemDeps } from '../core/types/subsystem';
 import { ENGINE_SAVE_VERSION, SAVE_KEY } from '../shared/constants';
@@ -38,6 +40,7 @@ export interface SaveContext {
   readonly calendar: CalendarSystem;
   readonly hero: HeroSystem;
   readonly recruit: HeroRecruitSystem;
+  readonly formation: HeroFormation;
   readonly bus: EventBus;
   readonly registry: SubsystemRegistry;
   readonly configRegistry: ConfigRegistry;
@@ -59,6 +62,7 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     calendar: ctx.calendar.serialize(),
     hero: ctx.hero.serialize(),
     recruit: ctx.recruit.serialize(),
+    formation: ctx.formation.serialize(),
   };
 }
 
@@ -73,6 +77,7 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
       calendar: data.calendar,
       hero: data.hero,
       recruit: data.recruit,
+      formation: data.formation,
     },
     metadata: {
       totalPlayTime: onlineSeconds,
@@ -92,6 +97,7 @@ export function fromIGameState(state: IGameState): GameSaveData {
     calendar: state.subsystems.calendar as CalendarSaveData | undefined,
     hero: state.subsystems.hero as HeroSaveData | undefined,
     recruit: state.subsystems.recruit as RecruitSaveData | undefined,
+    formation: state.subsystems.formation as FormationSaveData | undefined,
   };
 }
 
@@ -187,6 +193,11 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.recruit.deserialize(data.recruit);
   } else {
     console.info('[Save] v1.0 存档迁移：无招募数据，保底计数器从 0 开始');
+  }
+
+  // ── 编队系统 v2.0 ──
+  if (data.formation) {
+    ctx.formation.deserialize(data.formation);
   }
 
   syncBuildingToResource({
