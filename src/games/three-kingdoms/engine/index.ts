@@ -7,6 +7,8 @@ export { ThreeKingdomsEngine } from './ThreeKingdomsEngine';
 // 资源域
 export { ResourceSystem } from './resource/ResourceSystem';
 export type {
+  BonusType,
+  Bonus,
   ResourceType,
   Resources,
   ProductionRate,
@@ -43,3 +45,21 @@ export {
   BUILDING_ICONS,
   BUILDING_ZONES,
 } from './building/building.types';
+
+// 日历域
+export { CalendarSystem } from './calendar/CalendarSystem';
+export type {
+  Season,
+  WeatherType,
+  EraEntry,
+  GameDate,
+  SeasonBonus,
+  CalendarState,
+  CalendarSaveData,
+} from './calendar/calendar.types';
+export {
+  SEASONS,
+  SEASON_LABELS,
+  WEATHERS,
+  WEATHER_LABELS,
+} from './calendar/calendar.types';

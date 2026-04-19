@@ -6,6 +6,8 @@
 export { ThreeKingdomsEngine } from './engine';
 export type {
   ResourceSystem,
+  BonusType,
+  Bonus,
   ResourceType,
   Resources,
   ProductionRate,

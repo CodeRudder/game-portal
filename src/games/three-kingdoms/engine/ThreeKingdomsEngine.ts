@@ -12,7 +12,7 @@
 
 import { ResourceSystem } from './resource/ResourceSystem';
 import { BuildingSystem } from './building/BuildingSystem';
-import type { CapWarning, OfflineEarnings } from './resource/resource.types';
+import type { Bonuses, CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type {
   EngineEventType, EngineEventMap, EventListener, GameSaveData, EngineSnapshot,
@@ -112,9 +112,17 @@ export class ThreeKingdomsEngine {
       }
     }
 
-    // 2c. 资源产出（含主城加成）
+    // 2c. 资源产出（含各类加成）
+    // ── 加成框架 v5.0 ──
+    // 当前仅 castle 加成实际生效，其余预留为 0，待后续版本接入
     const castleMultiplier = this.building.getCastleBonusMultiplier();
-    const bonuses = { castle: castleMultiplier - 1 };
+    const bonuses: Bonuses = {
+      castle: castleMultiplier - 1, // v5.0 主城加成 — 来源: BuildingSystem.getCastleBonusMultiplier()
+      tech:   0,                    // v5.1 科技加成 — 来源: TechSystem（预留）
+      hero:   0,                    // v5.2 武将加成 — 来源: HeroSystem（预留）
+      rebirth: 0,                   // v5.3 转生加成 — 来源: RebirthSystem（预留）
+      vip:    0,                    // v5.4 VIP加成  — 来源: VipSystem（预留）
+    };
     this.resource.tick(dt, bonuses);
 
     // 2d. 变化检测 → 发出事件

@@ -133,7 +133,19 @@ export class ResourceSystem implements ISubsystem {
     }
   }
 
-  /** 计算加成乘数：Π(1 + 各类加成)，乘法叠加 */
+  /**
+   * 计算加成乘数：Π(1 + 各类加成)，乘法叠加
+   *
+   * 支持的加成类型（BonusType）：
+   *   - castle  : 主城加成 — v5.0 已接入
+   *   - tech    : 科技加成 — v5.1 预留（值始终为 0）
+   *   - hero    : 武将加成 — v5.2 预留（值始终为 0）
+   *   - rebirth : 转生加成 — v5.3 预留（值始终为 0）
+   *   - vip     : VIP加成  — v5.4 预留（值始终为 0）
+   *
+   * 扩展方式：在 ThreeKingdomsEngine.tick() 中组装 Bonuses 对象，
+   * 将对应类型的值从 0 改为实际加成百分比即可，本方法无需修改。
+   */
   private calculateBonusMultiplier(bonuses?: Bonuses): number {
     if (!bonuses) return 1;
     let multiplier = 1;
