@@ -1,17 +1,10 @@
 /**
  * 三国霸业 v1.0 — 建筑升级弹窗组件
  *
- * 设计稿：[BLD-2] 建筑详情面板 (D区 420×696px)
- * v1.0 简化为居中弹窗，显示：
- *   - 建筑头部（图标+名称+分类+等级+状态）
- *   - 产出信息
- *   - 升级预览（等级变化+产出对比+消耗+时间）
- *   - 操作按钮（确认升级/取消）
- *
- * 遮罩 rgba(0,0,0,0.5)，居中弹窗 320~600×200~500px
+ * 设计稿：06-building-system.md 建筑详情面板
+ * 居中弹窗，显示升级预览 + 费用 + 操作按钮
  * 关闭方式：[×] / 点击遮罩 / ESC
  */
-
 import React, { useMemo, useEffect, useCallback } from 'react';
 import type { BuildingType, Resources } from '@/games/three-kingdoms/engine';
 import {
@@ -41,8 +34,8 @@ const ZONE_LABELS: Record<string, string> = {
 
 /** 格式化数值 */
 function formatNum(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(2)}M`;
-  if (n >= 10000) return `${(n / 1000).toFixed(1)}k`;
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 10000) return `${(n / 1000).toFixed(1)}K`;
   return n.toLocaleString('zh-CN');
 }
 
@@ -55,13 +48,13 @@ function formatTime(seconds: number): string {
   return `${secs}秒`;
 }
 
-export default function BuildingUpgradeModal({
+const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
   buildingType,
   engine,
   resources,
   onConfirm,
   onCancel,
-}: BuildingUpgradeModalProps) {
+}) => {
   const icon = BUILDING_ICONS[buildingType];
   const name = BUILDING_LABELS[buildingType];
   const zone = ZONE_LABELS[BUILDING_ZONES[buildingType]] || '';
@@ -71,7 +64,6 @@ export default function BuildingUpgradeModal({
     const snapshot = engine.getSnapshot();
     const state = snapshot.buildings[buildingType];
     const level = state.level;
-
     const check = engine.checkUpgrade(buildingType);
     const cost = engine.getUpgradeCost(buildingType);
 
@@ -81,7 +73,6 @@ export default function BuildingUpgradeModal({
       canUpgrade: check.canUpgrade,
       reasons: check.reasons,
       cost,
-      resources: snapshot.resources,
     };
   }, [engine, buildingType, resources]);
 
@@ -105,9 +96,12 @@ export default function BuildingUpgradeModal({
   }, [onCancel]);
 
   // 遮罩点击关闭
-  const handleOverlayClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onCancel();
-  }, [onCancel]);
+  const handleOverlayClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) onCancel();
+    },
+    [onCancel],
+  );
 
   const canAfford = affordability.grain && affordability.gold && affordability.troops;
 
@@ -139,53 +133,29 @@ export default function BuildingUpgradeModal({
           <div className="tk-upgrade-section">
             <div className="tk-upgrade-section-title">升级消耗</div>
             <div className="tk-upgrade-costs">
-              {/* 粮草 */}
               <div className={`tk-upgrade-cost-item ${affordability.grain ? 'tk-upgrade-cost--enough' : 'tk-upgrade-cost--short'}`}>
                 <span className="tk-upgrade-cost-icon">🌾</span>
-                <span className="tk-upgrade-cost-value">
-                  {formatNum(info.cost.grain)}
-                </span>
-                <span className="tk-upgrade-cost-current">
-                  / {formatNum(resources.grain)}
-                </span>
-                <span className="tk-upgrade-cost-status">
-                  {affordability.grain ? '✅' : '❌'}
-                </span>
+                <span className="tk-upgrade-cost-value">{formatNum(info.cost.grain)}</span>
+                <span className="tk-upgrade-cost-current">/ {formatNum(resources.grain)}</span>
+                <span className="tk-upgrade-cost-status">{affordability.grain ? '✅' : '❌'}</span>
               </div>
-              {/* 铜钱 */}
               <div className={`tk-upgrade-cost-item ${affordability.gold ? 'tk-upgrade-cost--enough' : 'tk-upgrade-cost--short'}`}>
                 <span className="tk-upgrade-cost-icon">💰</span>
-                <span className="tk-upgrade-cost-value">
-                  {formatNum(info.cost.gold)}
-                </span>
-                <span className="tk-upgrade-cost-current">
-                  / {formatNum(resources.gold)}
-                </span>
-                <span className="tk-upgrade-cost-status">
-                  {affordability.gold ? '✅' : '❌'}
-                </span>
+                <span className="tk-upgrade-cost-value">{formatNum(info.cost.gold)}</span>
+                <span className="tk-upgrade-cost-current">/ {formatNum(resources.gold)}</span>
+                <span className="tk-upgrade-cost-status">{affordability.gold ? '✅' : '❌'}</span>
               </div>
-              {/* 兵力（如果需要） */}
               {info.cost.troops > 0 && (
                 <div className={`tk-upgrade-cost-item ${affordability.troops ? 'tk-upgrade-cost--enough' : 'tk-upgrade-cost--short'}`}>
                   <span className="tk-upgrade-cost-icon">⚔️</span>
-                  <span className="tk-upgrade-cost-value">
-                    {formatNum(info.cost.troops)}
-                  </span>
-                  <span className="tk-upgrade-cost-current">
-                    / {formatNum(resources.troops)}
-                  </span>
-                  <span className="tk-upgrade-cost-status">
-                    {affordability.troops ? '✅' : '❌'}
-                  </span>
+                  <span className="tk-upgrade-cost-value">{formatNum(info.cost.troops)}</span>
+                  <span className="tk-upgrade-cost-current">/ {formatNum(resources.troops)}</span>
+                  <span className="tk-upgrade-cost-status">{affordability.troops ? '✅' : '❌'}</span>
                 </div>
               )}
-              {/* 升级时间 */}
               <div className="tk-upgrade-cost-item tk-upgrade-cost-time">
                 <span className="tk-upgrade-cost-icon">⏱️</span>
-                <span className="tk-upgrade-cost-value">
-                  {formatTime(info.cost.timeSeconds)}
-                </span>
+                <span className="tk-upgrade-cost-value">{formatTime(info.cost.timeSeconds)}</span>
               </div>
             </div>
           </div>
@@ -202,21 +172,22 @@ export default function BuildingUpgradeModal({
 
         {/* 操作按钮 */}
         <div className="tk-upgrade-actions">
+          <button className="tk-upgrade-btn tk-upgrade-btn--cancel" onClick={onCancel}>
+            取消
+          </button>
           <button
             className={`tk-upgrade-btn tk-upgrade-btn--confirm ${!canAfford ? 'tk-upgrade-btn--disabled' : ''}`}
             onClick={() => canAfford && onConfirm(buildingType)}
             disabled={!canAfford}
           >
-            {canAfford ? `升级 ${icon}` : '资源不足'}
-          </button>
-          <button
-            className="tk-upgrade-btn tk-upgrade-btn--cancel"
-            onClick={onCancel}
-          >
-            取消
+            {canAfford ? `▲ 升级` : '资源不足'}
           </button>
         </div>
       </div>
     </div>
   );
-}
+};
+
+BuildingUpgradeModal.displayName = 'BuildingUpgradeModal';
+
+export default BuildingUpgradeModal;

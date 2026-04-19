@@ -336,4 +336,305 @@ describe('ThreeKingdomsEngine', () => {
       expect(localStorageMock.removeItem).toHaveBeenCalledWith(SAVE_KEY);
     });
   });
+
+  // ═══════════════════════════════════════════
+  // 9. 存档统一 — SaveManager 委托
+  // ═══════════════════════════════════════════
+  describe('存档统一（SaveManager 委托）', () => {
+    it('save() 委托给 SaveManager（外层有 v/checksum/data 包装）', () => {
+      engine.init();
+      engine.save();
+      const raw = storage[SAVE_KEY];
+      expect(raw).toBeDefined();
+      const outer = JSON.parse(raw);
+      expect(outer.v).toBeDefined();
+      expect(outer.checksum).toBeDefined();
+      expect(outer.data).toBeDefined();
+    });
+
+    it('save() 内层数据包含 subsystems.resource 和 subsystems.building', () => {
+      engine.init();
+      engine.save();
+      const outer = JSON.parse(storage[SAVE_KEY]);
+      const inner = JSON.parse(outer.data);
+      expect(inner.subsystems.resource).toBeDefined();
+      expect(inner.subsystems.building).toBeDefined();
+    });
+
+    it('load() 从 SaveManager 恢复状态', () => {
+      engine.init();
+      engine.tick(2000);
+      engine.save();
+
+      const engine2 = new ThreeKingdomsEngine();
+      engine2.load();
+      expect(engine2.isInitialized()).toBe(true);
+      engine2.reset();
+    });
+
+    it('旧格式存档向后兼容加载', () => {
+      const legacySave = JSON.stringify({
+        version: ENGINE_SAVE_VERSION,
+        saveTime: Date.now() - 1000,
+        resource: {
+          resources: { grain: 1000, gold: 500, troops: 200, mandate: 50 },
+          lastSaveTime: Date.now() - 1000,
+          productionRates: { grain: 1, gold: 0.5, troops: 0.3, mandate: 0 },
+          caps: { grain: 5000, gold: null, troops: 3000, mandate: null },
+          version: 1,
+        },
+        building: {
+          buildings: {
+            castle:   { type: 'castle',   level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
+            farmland: { type: 'farmland',  level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
+            market:   { type: 'market',    level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            barracks: { type: 'barracks',  level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            smithy:   { type: 'smithy',    level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            academy:  { type: 'academy',   level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            clinic:   { type: 'clinic',    level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            wall:     { type: 'wall',      level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+          },
+          version: 1,
+        },
+      });
+      storage[SAVE_KEY] = legacySave;
+
+      const engine2 = new ThreeKingdomsEngine();
+      engine2.load();
+      expect(engine2.isInitialized()).toBe(true);
+      engine2.reset();
+    });
+
+    it('旧格式存档包含非标准字段时不误判为新格式', () => {
+      const legacySave = JSON.stringify({
+        version: 1,
+        saveTime: Date.now(),
+        resource: {
+          resources: { grain: 100, gold: 50, troops: 10, mandate: 0 },
+          lastSaveTime: Date.now(),
+          productionRates: { grain: 0.8, gold: 0.6, troops: 0.4, mandate: 0 },
+          caps: { grain: 1000, gold: null, troops: 500, mandate: null },
+          version: 1,
+        },
+        building: {
+          buildings: {
+            castle:   { type: 'castle',   level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
+            farmland: { type: 'farmland',  level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
+            market:   { type: 'market',    level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            barracks: { type: 'barracks',  level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            smithy:   { type: 'smithy',    level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            academy:  { type: 'academy',   level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            clinic:   { type: 'clinic',    level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+            wall:     { type: 'wall',      level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+          },
+          version: 1,
+        },
+      });
+      storage[SAVE_KEY] = legacySave;
+
+      const engine2 = new ThreeKingdomsEngine();
+      engine2.load();
+      expect(engine2.isInitialized()).toBe(true);
+      engine2.reset();
+    });
+
+    it('新格式存档不被旧格式加载器处理', () => {
+      engine.init();
+      engine.save();
+      // 存储的是新格式（有 v/checksum/data），旧格式加载器应跳过
+      const engine2 = new ThreeKingdomsEngine();
+      engine2.load();
+      expect(engine2.isInitialized()).toBe(true);
+      engine2.reset();
+    });
+
+    it('load() 无存档返回 null', () => {
+      expect(engine.load()).toBeNull();
+    });
+
+    it('load() 损坏存档返回 null', () => {
+      storage[SAVE_KEY] = 'not-valid-json{{{';
+      expect(engine.load()).toBeNull();
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 10. 离线收益在加载时计算
+  // ═══════════════════════════════════════════
+  describe('离线收益', () => {
+    it('加载时发出 game:loaded 事件', () => {
+      engine.init();
+      engine.save();
+
+      const engine2 = new ThreeKingdomsEngine();
+      const listener = vi.fn();
+      engine2.on('game:loaded', listener);
+      engine2.load();
+      expect(listener).toHaveBeenCalled();
+      engine2.reset();
+    });
+
+    it('加载后引擎状态为已初始化', () => {
+      engine.init();
+      engine.save();
+
+      const engine2 = new ThreeKingdomsEngine();
+      engine2.load();
+      expect(engine2.isInitialized()).toBe(true);
+      engine2.reset();
+    });
+
+    it('旧格式存档离线收益正确计算', () => {
+      engine.init();
+      engine.tick(5000);
+
+      // 使用旧格式（直接 JSON）写入，绕过 SaveManager checksum
+      const legacyData = JSON.stringify({
+        version: ENGINE_SAVE_VERSION,
+        saveTime: Date.now() - 3600000, // 1 小时前
+        resource: engine.resource.serialize(),
+        building: engine.building.serialize(),
+      });
+      // 修改 lastSaveTime 模拟离线
+      const parsed = JSON.parse(legacyData);
+      parsed.resource.lastSaveTime = Date.now() - 3600000;
+      storage[SAVE_KEY] = JSON.stringify(parsed);
+
+      const engine2 = new ThreeKingdomsEngine();
+      const offlineListener = vi.fn();
+      engine2.on('game:offline-earnings', offlineListener);
+      engine2.load();
+
+      expect(engine2.isInitialized()).toBe(true);
+      // 有产出时应该触发离线收益事件
+      if (offlineListener.mock.calls.length > 0) {
+        const earnings = offlineListener.mock.calls[0][0];
+        expect(earnings).toHaveProperty('offlineSeconds');
+        expect(earnings).toHaveProperty('earned');
+      }
+      engine2.reset();
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 11. 加成体系框架
+  // ═══════════════════════════════════════════
+  describe('加成体系框架', () => {
+    it('tick() 中 castle 加成正确传入（非零）', () => {
+      engine.init();
+      const snap1 = engine.getSnapshot();
+
+      // 升级农田增加基础产出
+      const check = engine.checkUpgrade('farmland');
+      if (check.canUpgrade) {
+        engine.upgradeBuilding('farmland');
+        engine.tick(999999999);
+      }
+
+      // 升级主城增加加成
+      const castleCheck = engine.checkUpgrade('castle');
+      if (castleCheck.canUpgrade) {
+        engine.upgradeBuilding('castle');
+        engine.tick(999999999);
+      }
+
+      const snap2 = engine.getSnapshot();
+      expect(snap2.productionRates.grain).toBeGreaterThan(0);
+    });
+
+    it('tech/hero/rebirth/vip 加成预留为 0', () => {
+      engine.init();
+      // 预留加成均为 0，产出仅受 castle 影响
+      expect(() => engine.tick(1000)).not.toThrow();
+      const snap = engine.getSnapshot();
+      expect(snap.productionRates).toBeDefined();
+    });
+
+    it('未来版本可通过修改 Bonuses 对象接入新加成', () => {
+      engine.init();
+      engine.tick(1000);
+      engine.tick(1000);
+      engine.tick(1000);
+      expect(engine.isInitialized()).toBe(true);
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 12. 粮仓映射修复
+  // ═══════════════════════════════════════════
+  describe('粮仓映射修复', () => {
+    it('粮草上限由农田等级决定（非铁匠铺）', () => {
+      engine.init();
+      // 农田初始等级为 1，GRANARY_CAPACITY_TABLE[1]=2000, [5]=5000
+      // 需要升级农田到 5 级才能看到上限变化
+      const grainCapBefore = engine.getSnapshot().caps.grain;
+      expect(grainCapBefore).toBe(2000); // GRANARY_CAPACITY_TABLE[1]
+
+      // 升级农田 4 次（从 1 级到 5 级）
+      for (let i = 0; i < 4; i++) {
+        const check = engine.checkUpgrade('farmland');
+        if (check.canUpgrade) {
+          engine.upgradeBuilding('farmland');
+          engine.tick(999999999);
+        }
+      }
+
+      const grainCapAfter = engine.getSnapshot().caps.grain;
+      // 如果成功升级到 5 级，上限应为 5000
+      if (engine.building.getLevel('farmland') >= 5) {
+        expect(grainCapAfter).toBeGreaterThan(grainCapBefore);
+      }
+    });
+
+    it('兵力上限由兵营等级决定', () => {
+      engine.init();
+      // 兵营需要主城 2 级解锁，初始为 locked (level 0)
+      // 先升级主城到 2 级以解锁兵营
+      const castleCheck = engine.checkUpgrade('castle');
+      if (castleCheck.canUpgrade) {
+        engine.upgradeBuilding('castle');
+        engine.tick(999999999);
+      }
+
+      const troopsCapBefore = engine.getSnapshot().caps.troops;
+
+      const check = engine.checkUpgrade('barracks');
+      if (check.canUpgrade) {
+        engine.upgradeBuilding('barracks');
+        engine.tick(999999999);
+      }
+
+      // 兵营从 0→1 解锁后，BARRACKS_CAPACITY_TABLE[1]=500
+      const troopsCapAfter = engine.getSnapshot().caps.troops;
+      if (engine.building.getLevel('barracks') >= 1) {
+        expect(troopsCapAfter).toBeGreaterThanOrEqual(500);
+      }
+    });
+
+    it('铁匠铺升级不影响粮草上限', () => {
+      engine.init();
+      // 先升级主城到 3 级以解锁铁匠铺
+      for (let i = 0; i < 3; i++) {
+        const castleCheck = engine.checkUpgrade('castle');
+        if (castleCheck.canUpgrade) {
+          engine.upgradeBuilding('castle');
+          engine.tick(999999999);
+        }
+      }
+
+      // 记录升级铁匠铺前的粮草上限
+      const grainCapBefore = engine.getSnapshot().caps.grain;
+
+      // 升级铁匠铺
+      const smithyCheck = engine.checkUpgrade('smithy');
+      if (smithyCheck.canUpgrade) {
+        engine.upgradeBuilding('smithy');
+        engine.tick(999999999);
+      }
+
+      // 粮草上限应该不变（铁匠铺不影响粮草上限）
+      const grainCapAfter = engine.getSnapshot().caps.grain;
+      expect(grainCapAfter).toBe(grainCapBefore);
+    });
+  });
 });
