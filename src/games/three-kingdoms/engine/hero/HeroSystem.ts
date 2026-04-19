@@ -364,6 +364,24 @@ export class HeroSystem implements ISubsystem {
    * @param exp - 增加的经验值
    * @returns 升级后的武将数据和升级次数，或 null（武将不存在/已满级）
    */
+  /**
+   * 直接设置武将等级和经验（跳过自动升级逻辑）
+   *
+   * 供 HeroLevelSystem 同步状态使用，外部不应直接调用。
+   *
+   * @param generalId - 武将ID
+   * @param level - 目标等级
+   * @param exp - 目标经验
+   * @returns 更新后的武将数据，或 undefined（武将不存在）
+   */
+  setLevelAndExp(generalId: string, level: number, exp: number): Readonly<GeneralData> | undefined {
+    const general = this.state.generals[generalId];
+    if (!general) return undefined;
+    general.level = level;
+    general.exp = exp;
+    return cloneGeneral(general);
+  }
+
   addExp(generalId: string, exp: number): { general: GeneralData; levelsGained: number } | null {
     const general = this.state.generals[generalId];
     if (!general) return null;

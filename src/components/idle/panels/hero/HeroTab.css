@@ -1,0 +1,264 @@
+/**
+ * HeroTab — 武将Tab主面板样式
+ *
+ * PC端：4列卡片网格 + 筛选/排序工具栏
+ * 手机端：2列网格 + 紧凑工具栏
+ */
+
+/* ═══════════════════════════════════════════
+   面板容器
+   ═══════════════════════════════════════════ */
+.tk-hero-tab {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   顶部工具栏
+   ═══════════════════════════════════════════ */
+.tk-hero-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* 阵营筛选按钮组 */
+.tk-hero-filter-group {
+  display: flex;
+  gap: 2px;
+}
+
+.tk-hero-filter-btn {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 4px;
+  color: var(--tk-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.tk-hero-filter-btn:hover {
+  border-color: rgba(200, 168, 76, 0.4);
+  color: var(--tk-text-primary);
+}
+
+.tk-hero-filter-btn--active {
+  background: rgba(200, 168, 76, 0.15);
+  border-color: var(--tk-gold);
+  color: var(--tk-gold-light);
+  font-weight: 600;
+}
+
+/* 下拉选择器 */
+.tk-hero-select {
+  padding: 5px 10px;
+  background: rgba(240, 230, 211, 0.05);
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  outline: none;
+  appearance: auto;
+}
+
+.tk-hero-select:focus {
+  border-color: var(--tk-gold);
+}
+
+.tk-hero-select option {
+  background: #1A2332;
+  color: var(--tk-text-primary);
+}
+
+/* 右侧区域 */
+.tk-hero-toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 总战力 */
+.tk-hero-total-power {
+  font-size: 13px;
+  color: var(--tk-green);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 招募按钮 */
+.tk-hero-recruit-btn {
+  padding: 6px 16px;
+  background: rgba(200, 168, 76, 0.15);
+  border: 1px solid var(--tk-gold);
+  border-radius: 6px;
+  color: var(--tk-gold-light);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.tk-hero-recruit-btn:hover {
+  background: rgba(200, 168, 76, 0.3);
+}
+
+/* ═══════════════════════════════════════════
+   武将网格 — PC端 4列
+   ═══════════════════════════════════════════ */
+.tk-hero-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 160px);
+  gap: 16px;
+  justify-content: center;
+  align-content: start;
+  padding-top: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 滚动条 */
+.tk-hero-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tk-hero-grid::-webkit-scrollbar-track {
+  background: rgba(20, 25, 35, 0.5);
+}
+
+.tk-hero-grid::-webkit-scrollbar-thumb {
+  background: rgba(200, 169, 110, 0.3);
+  border-radius: 3px;
+}
+
+/* ═══════════════════════════════════════════
+   空列表引导
+   ═══════════════════════════════════════════ */
+.tk-hero-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.tk-hero-empty-icon {
+  font-size: 56px;
+  opacity: 0.4;
+}
+
+.tk-hero-empty-text {
+  font-size: 16px;
+  color: var(--tk-text-muted);
+  letter-spacing: 2px;
+}
+
+.tk-hero-empty-sub {
+  font-size: 13px;
+  color: var(--tk-text-muted);
+}
+
+.tk-hero-empty-btn {
+  margin-top: 8px;
+  padding: 10px 28px;
+  background: rgba(200, 168, 76, 0.2);
+  border: 2px solid var(--tk-gold);
+  border-radius: 8px;
+  color: var(--tk-gold-light);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.tk-hero-empty-btn:hover {
+  background: rgba(200, 168, 76, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════
+   底部信息栏
+   ═══════════════════════════════════════════ */
+.tk-hero-footer {
+  padding-top: 8px;
+  border-top: 1px solid rgba(200, 168, 76, 0.1);
+  flex-shrink: 0;
+}
+
+.tk-hero-count {
+  font-size: 12px;
+  color: var(--tk-text-muted);
+}
+
+/* ═══════════════════════════════════════════
+   手机端
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-hero-tab {
+    padding: 8px;
+  }
+
+  .tk-hero-toolbar {
+    gap: 6px;
+    padding-bottom: 8px;
+  }
+
+  .tk-hero-filter-group {
+    gap: 1px;
+    order: 1;
+  }
+
+  .tk-hero-filter-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .tk-hero-select {
+    padding: 4px 6px;
+    font-size: 11px;
+    order: 2;
+  }
+
+  .tk-hero-toolbar-right {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+
+  .tk-hero-total-power {
+    font-size: 12px;
+  }
+
+  .tk-hero-recruit-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+
+  /* 手机端 2列网格 */
+  .tk-hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding-top: 10px;
+  }
+}

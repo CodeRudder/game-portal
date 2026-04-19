@@ -6,7 +6,7 @@
  * 手机端：纵向列表
  */
 /* ═══════════════════════════════════════════
-   面板容器
+   面板容器 — 城池地图背景
    ═══════════════════════════════════════════ */
 .tk-building-panel {
   position: relative;
@@ -14,6 +14,12 @@
   height: 100%;
   padding: 24px;
   box-sizing: border-box;
+  background:
+    /* 城池地图背景 — 水墨风格渐变 */
+    radial-gradient(ellipse 80% 60% at 50% 45%, rgba(34, 60, 44, 0.25) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 25% 35%, rgba(42, 82, 68, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 35% 25% at 75% 55%, rgba(42, 82, 68, 0.12) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(20, 28, 38, 0.95) 0%, rgba(26, 35, 50, 1) 100%);
 }
 
 /* ═══════════════════════════════════════════

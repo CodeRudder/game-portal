@@ -36,6 +36,7 @@ import { SEASON_LABELS, WEATHER_LABELS } from '@/games/three-kingdoms/engine/cal
 import { Toast } from '@/components/idle/common/Toast';
 import ResourceBar from '@/components/idle/panels/resource/ResourceBar';
 import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
+import HeroTab from '@/components/idle/panels/hero/HeroTab';
 import './ThreeKingdomsGame.css';
 
 // ─────────────────────────────────────────────
@@ -77,7 +78,7 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
   { id: 'building', icon: '🏗️', label: '建筑', available: true },
-  { id: 'hero', icon: '⚔️', label: '武将', available: false },
+  { id: 'hero', icon: '⚔️', label: '武将', available: true },
   { id: 'tech', icon: '📜', label: '科技', available: false },
   { id: 'campaign', icon: '🗺️', label: '关卡', available: false },
 ];
@@ -240,6 +241,13 @@ const ThreeKingdomsGame: React.FC = () => {
         );
 
       case 'hero':
+        return (
+          <HeroTab
+            engine={engine}
+            snapshotVersion={snapshotVersion}
+          />
+        );
+
       case 'tech':
       case 'campaign':
         return (

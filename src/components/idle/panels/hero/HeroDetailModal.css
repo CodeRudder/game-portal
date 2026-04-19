@@ -1,0 +1,359 @@
+/**
+ * HeroDetailModal — 武将详情弹窗样式
+ *
+ * PC端：800×700 弹窗，左右分栏
+ * 手机端：全屏
+ */
+
+/* ═══════════════════════════════════════════
+   遮罩层
+   ═══════════════════════════════════════════ */
+.tk-hero-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  animation: tk-detail-fade-in 200ms ease-out;
+}
+
+@keyframes tk-detail-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   弹窗主体
+   ═══════════════════════════════════════════ */
+.tk-hero-detail-modal {
+  position: relative;
+  width: 800px;
+  max-width: 95vw;
+  max-height: 90vh;
+  background: rgba(20, 28, 40, 0.98);
+  border: 2px solid rgba(200, 168, 76, 0.5);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  animation: tk-detail-enter 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+
+@keyframes tk-detail-enter {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 关闭按钮 */
+.tk-hero-detail-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #a0a0a0;
+  font-size: 16px;
+  border-radius: 4px;
+  z-index: 10;
+  transition: color 0.15s, background 0.15s;
+}
+
+.tk-hero-detail-close:hover {
+  color: #f0e6d3;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ═══════════════════════════════════════════
+   标题栏
+   ═══════════════════════════════════════════ */
+.tk-hero-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 2px solid rgba(200, 168, 76, 0.3);
+}
+
+.tk-hero-detail-title-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tk-text-primary);
+  font-family: 'STXingkai', '华文行楷', 'KaiTi', serif;
+}
+
+.tk-hero-detail-title-faction {
+  font-size: 14px;
+  color: var(--tk-text-secondary);
+}
+
+.tk-hero-detail-title-quality {
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ═══════════════════════════════════════════
+   主体：左右分栏
+   ═══════════════════════════════════════════ */
+.tk-hero-detail-body {
+  flex: 1;
+  display: flex;
+  gap: 24px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* ── 左侧：画像 + 等级 ── */
+.tk-hero-detail-left {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.tk-hero-detail-portrait {
+  width: 160px;
+  height: 180px;
+  border-radius: 12px;
+  border: 3px solid rgba(200, 168, 76, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.tk-hero-detail-portrait-char {
+  font-size: 56px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  font-family: 'STXingkai', '华文行楷', 'KaiTi', serif;
+  line-height: 1.2;
+  text-align: center;
+  word-break: break-all;
+}
+
+.tk-hero-detail-level-badge {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tk-gold-light);
+  padding: 4px 16px;
+  border: 2px solid var(--tk-gold);
+  border-radius: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 经验条 */
+.tk-hero-detail-exp-section {
+  width: 100%;
+}
+
+.tk-hero-detail-exp-label {
+  font-size: 11px;
+  color: var(--tk-text-secondary);
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-hero-detail-exp-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(240, 230, 211, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tk-hero-detail-exp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tk-blue), var(--tk-green));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* 战力 */
+.tk-hero-detail-power {
+  font-size: 16px;
+  color: var(--tk-green);
+}
+
+.tk-hero-detail-power strong {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 碎片 */
+.tk-hero-detail-fragments {
+  font-size: 13px;
+  color: var(--tk-text-secondary);
+}
+
+/* ── 右侧：属性 + 技能 ── */
+.tk-hero-detail-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 区块标题 */
+.tk-hero-detail-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+}
+
+/* ═══════════════════════════════════════════
+   属性条
+   ═══════════════════════════════════════════ */
+.tk-hero-detail-stats {
+  /* section */
+}
+
+.tk-hero-detail-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.tk-hero-detail-stat-label {
+  width: 36px;
+  font-size: 13px;
+  color: var(--tk-text-secondary);
+  flex-shrink: 0;
+}
+
+.tk-hero-detail-stat-bar {
+  flex: 1;
+  height: 16px;
+  background: rgba(240, 230, 211, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tk-hero-detail-stat-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  opacity: 0.85;
+}
+
+.tk-hero-detail-stat-value {
+  width: 36px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   技能列表
+   ═══════════════════════════════════════════ */
+.tk-hero-detail-skills {
+  /* section */
+}
+
+.tk-hero-detail-skill-empty {
+  font-size: 13px;
+  color: var(--tk-text-muted);
+  padding: 8px 0;
+}
+
+.tk-hero-detail-skill-item {
+  background: rgba(240, 230, 211, 0.04);
+  border: 1px solid rgba(200, 168, 76, 0.1);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.tk-hero-detail-skill-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.tk-hero-detail-skill-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+}
+
+.tk-hero-detail-skill-type {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(200, 168, 76, 0.15);
+  color: var(--tk-gold-light);
+}
+
+.tk-hero-detail-skill-level {
+  font-size: 11px;
+  color: var(--tk-text-secondary);
+  margin-left: auto;
+}
+
+.tk-hero-detail-skill-desc {
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════
+   手机端
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-hero-detail-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    height: 100vh;
+  }
+
+  .tk-hero-detail-body {
+    flex-direction: column;
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .tk-hero-detail-left {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .tk-hero-detail-portrait {
+    width: 100px;
+    height: 120px;
+  }
+
+  .tk-hero-detail-portrait-char {
+    font-size: 36px;
+  }
+
+  .tk-hero-detail-right {
+    gap: 14px;
+  }
+
+  .tk-hero-detail-stat-row {
+    gap: 8px;
+  }
+}

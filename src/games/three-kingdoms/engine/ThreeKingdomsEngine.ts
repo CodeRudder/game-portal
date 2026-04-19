@@ -43,6 +43,7 @@ import {
   tryLoadLegacyFormat, applyLegacyState, applyDeserialize,
   type SaveContext,
 } from './engine-save';
+import { initHeroSystems, type HeroSystems } from './engine-hero-deps';
 
 // ─────────────────────────────────────────────
 // ThreeKingdomsEngine
@@ -383,62 +384,14 @@ export class ThreeKingdomsEngine {
   // 私有方法
   // ═══════════════════════════════════════════
 
-  /**
-   * 安全消耗资源（武将系统回调用）
-   *
-   * 武将系统使用 string 类型资源名，此方法映射到 ResourceSystem 的具体方法。
-   */
-  private safeSpendResource(type: string, amount: number): boolean {
-    const validTypes = ['grain', 'gold', 'troops', 'mandate'];
-    if (!validTypes.includes(type)) return false;
-    try {
-      this.resource.consumeResource(type as any, amount);
-      return true;
-    } catch {
-      return false;
-    }
+  /** 获取武将子系统集合 */
+  private get heroSystems(): HeroSystems {
+    return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel };
   }
 
-  /** 安全检查资源是否充足（武将系统回调用） */
-  private safeCanAfford(type: string, amount: number): boolean {
-    const validTypes = ['grain', 'gold', 'troops', 'mandate'];
-    if (!validTypes.includes(type)) return false;
-    const current = this.resource.getAmount(type as any);
-    // 粮草需要扣除保留量（MIN_GRAIN_RESERVE = 10）
-    if (type === 'grain') {
-      return Math.max(0, current - 10) >= amount;
-    }
-    return current >= amount;
-  }
-
-  /** 安全获取资源数量（武将系统回调用） */
-  private safeGetAmount(type: string): number {
-    const validTypes = ['grain', 'gold', 'troops', 'mandate'];
-    if (!validTypes.includes(type)) return 0;
-    return this.resource.getAmount(type as any);
-  }
-
-  /** 初始化武将子系统（注入依赖和回调） */
+  /** 初始化武将子系统（委托给 engine-hero-deps） */
   private initHeroSystems(deps: ISystemDeps): void {
-    // HeroSystem
-    this.hero.init(deps);
-
-    // 招募系统 — 注入资源消耗回调
-    this.heroRecruit.init(deps);
-    this.heroRecruit.setRecruitDeps({
-      heroSystem: this.hero,
-      spendResource: (type, amount) => this.safeSpendResource(type, amount),
-      canAffordResource: (type, amount) => this.safeCanAfford(type, amount),
-    });
-
-    // 升级系统 — 注入资源查询/消耗回调
-    this.heroLevel.init(deps);
-    this.heroLevel.setLevelDeps({
-      heroSystem: this.hero,
-      spendResource: (type, amount) => this.safeSpendResource(type, amount),
-      canAffordResource: (type, amount) => this.safeCanAfford(type, amount),
-      getResourceAmount: (type) => this.safeGetAmount(type),
-    });
+    initHeroSystems(this.heroSystems, this.resource, deps);
   }
 
   /** 构建 tick 上下文 */

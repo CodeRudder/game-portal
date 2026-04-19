@@ -102,6 +102,8 @@
 .tk-game-frame {
   width: 1280px;
   height: 800px;
+  max-width: 100vw;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--tk-bg);

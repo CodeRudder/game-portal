@@ -1,0 +1,180 @@
+/**
+ * HeroCard — 武将卡片样式
+ *
+ * 品质边框色：普通灰 / 精良蓝 / 稀有紫 / 史诗赤 / 传说金
+ * PC端：160×200 卡片
+ * 手机端：紧凑卡片
+ */
+
+/* ═══════════════════════════════════════════
+   卡片容器
+   ═══════════════════════════════════════════ */
+.tk-hero-card {
+  width: 160px;
+  height: 200px;
+  background: rgba(26, 35, 50, 0.85);
+  border: 2px solid rgba(200, 168, 76, 0.3);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 8px 10px;
+  position: relative;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+}
+
+.tk-hero-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* 品质变体 — 悬停发光 */
+.tk-hero-card--legendary:hover {
+  box-shadow: 0 0 20px rgba(201, 168, 76, 0.4), 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.tk-hero-card--epic:hover {
+  box-shadow: 0 0 16px rgba(212, 85, 58, 0.35), 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.tk-hero-card--rare:hover {
+  box-shadow: 0 0 16px rgba(155, 109, 191, 0.35), 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* ═══════════════════════════════════════════
+   品质标签 — 左上角
+   ═══════════════════════════════════════════ */
+.tk-hero-card-quality {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  border-radius: 0 0 6px 0;
+  z-index: 2;
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════════
+   头像区
+   ═══════════════════════════════════════════ */
+.tk-hero-card-portrait {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.tk-hero-card-portrait-char {
+  font-size: 28px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  font-family: 'STXingkai', '华文行楷', 'KaiTi', serif;
+}
+
+/* ═══════════════════════════════════════════
+   名字
+   ═══════════════════════════════════════════ */
+.tk-hero-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  text-align: center;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ═══════════════════════════════════════════
+   阵营 + 等级
+   ═══════════════════════════════════════════ */
+.tk-hero-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.tk-hero-card-faction {
+  color: var(--tk-text-secondary);
+}
+
+.tk-hero-card-level {
+  color: var(--tk-gold-light);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   战力
+   ═══════════════════════════════════════════ */
+.tk-hero-card-power {
+  font-size: 12px;
+  color: var(--tk-green);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   手机端
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-hero-card {
+    width: 100%;
+    height: auto;
+    min-height: 80px;
+    flex-direction: row;
+    padding: 8px 10px;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .tk-hero-card-portrait {
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .tk-hero-card-portrait-char {
+    font-size: 22px;
+  }
+
+  .tk-hero-card-quality {
+    top: 0;
+    left: 0;
+    padding: 1px 6px;
+    font-size: 9px;
+    border-radius: 0 0 4px 0;
+  }
+
+  .tk-hero-card-name {
+    font-size: 13px;
+    margin-bottom: 1px;
+  }
+
+  .tk-hero-card-meta {
+    margin-bottom: 1px;
+    font-size: 10px;
+    gap: 6px;
+  }
+
+  .tk-hero-card-power {
+    font-size: 11px;
+  }
+}

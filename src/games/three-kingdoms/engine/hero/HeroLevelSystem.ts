@@ -418,15 +418,13 @@ export class HeroLevelSystem implements ISubsystem {
 
   // ── 8. 内部方法 ──
 
-  /** 将等级和经验同步到 HeroSystem（通过注入经验触发升级） */
+  /** 将等级和经验同步到 HeroSystem */
   private syncToHeroSystem(hs: HeroSystem, id: string, newLv: number, newExp: number): void {
     const g = hs.getGeneral(id);
     if (!g) return;
     if (newLv <= g.level && newExp === g.exp) return;
 
-    // 注入总经验 = 各级升级经验 + 最终剩余经验 - 当前已有经验
-    let inject = newExp - g.exp;
-    for (let lv = g.level; lv < newLv; lv++) inject += lookupExpRequired(lv);
-    if (inject > 0) hs.addExp(id, inject);
+    // 直接设置等级和经验，避免 addExp 的自动升级逻辑导致经验计算偏差
+    hs.setLevelAndExp(id, newLv, newExp);
   }
 }
