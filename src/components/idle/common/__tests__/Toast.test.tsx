@@ -11,10 +11,16 @@
  * 注意：Toast 使用命令式 API（Toast.show / Toast.success 等），
  * 通过 createRoot 直接渲染到 DOM，不使用 React 组件树。
  * createRoot.render() 是异步的，需要用 act() + await setTimeout 刷新。
- * 不能使用 vi.useFakeTimers()，因为它会阻止 React 的微任务刷新。
+ * 
+ * 关键设计决策：
+ * - 不使用 vi.useFakeTimers()，因为它阻止 React 微任务刷新
+ * - 不在测试间移除 DOM 容器，因为 Toast 模块的 containerEl/root 是模块级变量
+ * - activeToasts 是模块级状态，测试间会累积（模拟真实使用场景）
+ * - 使用长 duration 避免测试中途 toast 自动消失
+ * - "最大堆叠3条"测试在所有其他测试之后运行，验证堆叠逻辑
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { screen, act } from '@testing-library/react';
 import { Toast, ToastType } from '../Toast';
 
@@ -32,7 +38,7 @@ async function showToast(fn: () => void) {
   });
 }
 
-// Helper: advance time and flush React renders
+// Helper: advance real time and flush React renders
 async function advanceTime(ms: number) {
   await act(async () => {
     await new Promise(r => setTimeout(r, ms));
@@ -40,122 +46,120 @@ async function advanceTime(ms: number) {
 }
 
 describe('Toast', () => {
-  beforeEach(() => {
-    // 清理 DOM 中可能残留的 toast 容器
-    const existing = globalThis.document?.querySelector('.tk-toast-portal');
-    if (existing) existing.remove();
-  });
-
-  afterEach(() => {
-    // 清理
-    const existing = globalThis.document?.querySelector('.tk-toast-portal');
-    if (existing) existing.remove();
-  });
-
   it('应显示消息文本', async () => {
     await showToast(() => {
-      Toast.show({ message: '测试消息' });
+      Toast.show({ message: '测试消息_hello', duration: 300000 });
     });
 
-    expect(screen.getByText('测试消息')).toBeInTheDocument();
-  });
-
-  it('4种类型应有不同的CSS类名', async () => {
-    const types: ToastType[] = ['success', 'warning', 'danger', 'info'];
-
-    for (const type of types) {
-      await showToast(() => {
-        Toast.show({ message: `${type}消息`, type });
-      });
-    }
-
-    // 验证每种类型的 CSS 类名
-    for (const type of types) {
-      const toastEl = screen.getByText(`${type}消息`).closest('.tk-toast');
-      expect(toastEl?.classList.contains(`tk-toast--${type}`)).toBe(true);
-    }
+    expect(screen.getByText('测试消息_hello')).toBeInTheDocument();
   });
 
   it('success类型应显示✅图标', async () => {
     await showToast(() => {
-      Toast.success('操作成功');
+      Toast.success('操作成功_ok', 300000);
     });
 
-    expect(screen.getByText('操作成功')).toBeInTheDocument();
+    expect(screen.getByText('操作成功_ok')).toBeInTheDocument();
     expect(screen.getByText('✅')).toBeInTheDocument();
   });
 
   it('warning类型应显示⚠️图标', async () => {
     await showToast(() => {
-      Toast.warning('注意警告');
+      Toast.warning('注意警告_warn', 300000);
     });
 
-    expect(screen.getByText('注意警告')).toBeInTheDocument();
+    expect(screen.getByText('注意警告_warn')).toBeInTheDocument();
     expect(screen.getByText('⚠️')).toBeInTheDocument();
   });
 
   it('danger类型应显示❌图标', async () => {
     await showToast(() => {
-      Toast.danger('危险操作');
+      Toast.danger('危险操作_err', 300000);
     });
 
-    expect(screen.getByText('危险操作')).toBeInTheDocument();
+    expect(screen.getByText('危险操作_err')).toBeInTheDocument();
     expect(screen.getByText('❌')).toBeInTheDocument();
   });
 
   it('info类型应显示ℹ️图标', async () => {
     await showToast(() => {
-      Toast.info('提示信息');
+      Toast.info('提示信息_tip', 300000);
     });
 
-    expect(screen.getByText('提示信息')).toBeInTheDocument();
+    expect(screen.getByText('提示信息_tip')).toBeInTheDocument();
     expect(screen.getByText('ℹ️')).toBeInTheDocument();
-  });
-
-  it('应在指定时间后自动消失', async () => {
-    await showToast(() => {
-      Toast.show({ message: '自动消失测试', duration: 2000 });
-    });
-
-    // 消息应该存在
-    expect(screen.getByText('自动消失测试')).toBeInTheDocument();
-
-    // 等待 2000ms 触发消失动画 + 200ms 让移除动画完成
-    await advanceTime(2200);
-
-    // 消息应该已消失
-    expect(screen.queryByText('自动消失测试')).not.toBeInTheDocument();
   });
 
   it('默认类型应为 info', async () => {
     await showToast(() => {
-      Toast.show({ message: '默认类型' });
+      Toast.show({ message: '默认类型_msg', duration: 300000 });
     });
 
-    const toastEl = screen.getByText('默认类型').closest('.tk-toast');
+    const toastEl = screen.getByText('默认类型_msg').closest('.tk-toast');
     expect(toastEl?.classList.contains('tk-toast--info')).toBe(true);
+  });
+
+  it('4种类型应有不同的CSS类名', async () => {
+    // 注意：activeToasts 可能有之前测试残留的 toast，
+    // 但只要我们添加的 toast 不超过 MAX_STACK(3)，它们应该都存在
+    const types: ToastType[] = ['success', 'warning', 'danger'];
+
+    for (const type of types) {
+      await showToast(() => {
+        Toast.show({ message: `type_${type}_test`, type, duration: 300000 });
+      });
+    }
+
+    // 验证这 3 种类型的 CSS 类名
+    for (const type of types) {
+      const toastEl = screen.getByText(`type_${type}_test`).closest('.tk-toast');
+      expect(toastEl?.classList.contains(`tk-toast--${type}`)).toBe(true);
+    }
+
+    // 再验证 info 类型
+    await showToast(() => {
+      Toast.show({ message: 'type_info_test', type: 'info', duration: 300000 });
+    });
+    // info 会挤掉之前最早的一条，但 info 本身应该存在
+    const infoEl = screen.getByText('type_info_test').closest('.tk-toast');
+    expect(infoEl?.classList.contains('tk-toast--info')).toBe(true);
+  });
+
+  it('应在指定时间后自动消失', async () => {
+    await showToast(() => {
+      Toast.show({ message: '自动消失_vanish', duration: 100 });
+    });
+
+    // 消息应该存在
+    expect(screen.getByText('自动消失_vanish')).toBeInTheDocument();
+
+    // 等待 duration(100ms) + exit animation(200ms) + buffer
+    await advanceTime(500);
+
+    // 消息应该已消失
+    expect(screen.queryByText('自动消失_vanish')).not.toBeInTheDocument();
   });
 
   it('最大堆叠3条，第4条应挤掉第1条', async () => {
     await showToast(() => {
-      Toast.show({ message: '消息1' });
+      Toast.show({ message: 'stack_AAA', duration: 300000 });
     });
     await showToast(() => {
-      Toast.show({ message: '消息2' });
+      Toast.show({ message: 'stack_BBB', duration: 300000 });
     });
     await showToast(() => {
-      Toast.show({ message: '消息3' });
+      Toast.show({ message: 'stack_CCC', duration: 300000 });
     });
     await showToast(() => {
-      Toast.show({ message: '消息4' });
+      Toast.show({ message: 'stack_DDD', duration: 300000 });
     });
 
-    // 消息1 应被移除（超过 MAX_STACK=3）
-    expect(screen.queryByText('消息1')).not.toBeInTheDocument();
+    // stack_AAA 应被移除（超过 MAX_STACK=3）
+    expect(screen.queryByText('stack_AAA')).not.toBeInTheDocument();
 
-    // 消息 2、3、4 应存在
-    expect(screen.getByText('消息2')).toBeInTheDocument();
-    expect(screen.getByText('消息3')).toBeInTheDocument();
-    expect(screen.getByText('消息4')).toBeInTheDocument();
+    // stack_BBB、CCC、DDD 应存在
+    expect(screen.getByText('stack_BBB')).toBeInTheDocument();
+    expect(screen.getByText('stack_CCC')).toBeInTheDocument();
+    expect(screen.getByText('stack_DDD')).toBeInTheDocument();
   });
 });
