@@ -120,7 +120,7 @@ import { GreekGodsEngine } from '@/games/greek-gods/GreekGodsEngine';
 import { HeroesMightEngine } from '@/games/heroes-might/HeroesMightEngine';
 import { NorseValkyrieEngine } from '@/games/norse-valkyrie/NorseValkyrieEngine';
 import { RedAlertEngine } from '@/games/red-alert/RedAlertEngine';
-import { ThreeKingdomsEngine } from '@/games/three-kingdoms/ThreeKingdomsEngine';
+import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { TotalWarEngine } from '@/games/total-war/TotalWarEngine';
 import { YokaiNightEngine } from '@/games/yokai-night/YokaiNightEngine';
 import { MemoryMatchEngine } from '@/games/memory-match/MemoryMatchEngine';

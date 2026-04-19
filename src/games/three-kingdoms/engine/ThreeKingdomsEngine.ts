@@ -384,12 +384,15 @@ export class ThreeKingdomsEngine {
   // 5. 事件系统
   // ═══════════════════════════════════════════
 
-  /** 订阅事件 */
+  /** 订阅事件（强类型） */
   on<T extends EngineEventType>(
     event: T,
     listener: EventListener<EngineEventMap[T]>,
-  ): void {
-    this.bus.on(event, listener);
+  ): void;
+  /** 订阅事件（兼容 IGameEngine 字符串事件名） */
+  on(event: string, listener: (...args: any[]) => void): void;
+  on(event: string, listener: (...args: any[]) => void): void {
+    (this.bus as any).on(event, listener);
   }
 
   /** 订阅事件（仅触发一次） */
@@ -486,4 +489,69 @@ export class ThreeKingdomsEngine {
       this.bus.emit('resource:rate-changed', { rates });
     }
   }
+
+  // ═══════════════════════════════════════════
+  // IGameEngine 兼容存根（供 GameContainer 统一调度）
+  // ═══════════════════════════════════════════
+
+  /** 兼容 IGameEngine.score — 三国引擎不使用分数系统 */
+  get score(): number { return 0; }
+
+  /** 兼容 IGameEngine.level — 三国引擎不使用关卡系统 */
+  get level(): number { return 1; }
+
+  /** 兼容 IGameEngine.elapsedTime */
+  get elapsedTime(): number { return this.onlineSeconds; }
+
+  /** 兼容 IGameEngine.status */
+  get status(): string { return this.initialized ? 'playing' : 'idle'; }
+
+  /** 兼容 IGameEngine.setCanvas — 三国引擎使用 PIXI，不依赖 canvas 元素 */
+  setCanvas(_canvas: HTMLCanvasElement): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.getState */
+  getState(): Record<string, unknown> {
+    return this.getSnapshot() as unknown as Record<string, unknown>;
+  }
+
+  /** 兼容 IGameEngine.start */
+  start(): void { this.init(); }
+
+  /** 兼容 IGameEngine.pause */
+  pause(): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.resume */
+  resume(): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.reset — 实际实现在上方 reset() 方法 */
+  // reset() 已有实现
+
+  /** 兼容 IGameEngine.destroy */
+  destroy(): void {
+    this.reset();
+  }
+
+  /** 兼容 IGameEngine.handleKeyDown */
+  handleKeyDown(_key: string): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.handleKeyUp */
+  handleKeyUp(_key: string): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.handleClick */
+  handleClick(_canvasX: number, _canvasY: number): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.handleMouseDown */
+  handleMouseDown(_canvasX: number, _canvasY: number): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.handleMouseUp */
+  handleMouseUp(_canvasX: number, _canvasY: number): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.handleMouseMove */
+  handleMouseMove(_canvasX: number, _canvasY: number): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.handleRightClick */
+  handleRightClick(_canvasX: number, _canvasY: number): void { /* no-op */ }
+
+  /** 兼容 IGameEngine.handleDoubleClick */
+  handleDoubleClick(_canvasX: number, _canvasY: number): void { /* no-op */ }
 }

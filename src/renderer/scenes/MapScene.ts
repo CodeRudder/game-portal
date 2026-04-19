@@ -24,24 +24,129 @@ import { BaseScene, type SceneEventBridge } from './BaseScene';
 import type { AssetManager } from '../managers/AssetManager';
 import type { AnimationManager } from '../managers/AnimationManager';
 import type { CameraManager } from '../managers/CameraManager';
-import type {
-  GameMap,
-  MapTile,
-  MapNPC,
-  MapLandmark,
-  MapResourcePoint,
-  TerrainType,
-} from '../../games/three-kingdoms/MapGenerator';
-import {
-  TERRAIN_ASSETS,
-  TERRAIN_SPRITE_NAMES,
-  BUILDING_SPRITE_NAMES,
-  TERRAIN_VISUALS,
-  getFactionCityColors,
-  type FactionCityColors,
-} from '../../games/three-kingdoms/AssetConfig';
-import { drawQCharacter, mapNPCTypeToQCharacter, type QCharacterType } from '../../games/three-kingdoms/QCharacterRenderer';
-import { drawChineseBuilding, getBuildingConfig } from '../../games/three-kingdoms/ChineseBuildingRenderer';
+// [FIX] 以下类型和常量原本从已删除模块导入，现改为内联定义
+// 原始导入：
+//   import type { GameMap, MapTile, MapNPC, MapLandmark, MapResourcePoint, TerrainType } from '../../games/three-kingdoms/MapGenerator';
+//   import { TERRAIN_ASSETS, TERRAIN_SPRITE_NAMES, BUILDING_SPRITE_NAMES, TERRAIN_VISUALS, getFactionCityColors, type FactionCityColors } from '../../games/three-kingdoms/AssetConfig';
+//   import { drawQCharacter, mapNPCTypeToQCharacter, type QCharacterType } from '../../games/three-kingdoms/QCharacterRenderer';
+//   import { drawChineseBuilding, getBuildingConfig } from '../../games/three-kingdoms/ChineseBuildingRenderer';
+
+/** 地形类型 */
+type TerrainType =
+  | 'plain' | 'mountain' | 'forest' | 'water' | 'road'
+  | 'city' | 'village' | 'fortress' | 'desert' | 'snow'
+  | 'pass' | 'swamp';
+
+interface MapTile {
+  x: number;
+  y: number;
+  terrain: TerrainType;
+  territoryId?: string;
+  buildingId?: string;
+  npcId?: string;
+  elevation: number;
+  variant: number;
+}
+
+interface MapNPC {
+  id: string;
+  name: string;
+  type: 'farmer' | 'soldier' | 'merchant' | 'scholar' | 'scout';
+  tileX: number;
+  tileY: number;
+  activity: 'farming' | 'patrolling' | 'trading' | 'studying' | 'scouting';
+  schedule: { hour: number; targetX: number; targetY: number }[];
+}
+
+interface MapLandmark {
+  x: number;
+  y: number;
+  name: string;
+  type: 'capital' | 'city' | 'fortress' | 'bridge';
+}
+
+type ResourcePointType = 'farm' | 'mine' | 'lumber' | 'fishery' | 'stable';
+
+interface MapResourcePoint {
+  x: number;
+  y: number;
+  type: ResourcePointType;
+  name: string;
+  territoryId?: string;
+}
+
+interface GameMap {
+  width: number;
+  height: number;
+  tileSize: number;
+  tiles: MapTile[][];
+  npcs: MapNPC[];
+  landmarks: MapLandmark[];
+  resourcePoints: MapResourcePoint[];
+}
+
+type TerrainPattern = 'solid' | 'checker' | 'diagonal' | 'dots' | 'waves' | 'crosshatch' | 'grass' | 'rocks' | 'trees' | 'ripples' | 'dunes' | 'snowflakes' | 'wall' | 'bubbles';
+
+interface TerrainVisual {
+  baseColor: number;
+  lightColor: number;
+  darkColor: number;
+  pattern: TerrainPattern;
+  label: string;
+  renderPriority: number;
+  transitionWidth: number;
+  transitionColor: number;
+  transitionAlpha: number;
+}
+
+const TERRAIN_SPRITE_NAMES: Record<TerrainType, string> = {
+  plain: 'terrain_grass', mountain: 'terrain_grass', forest: 'terrain_grass',
+  water: 'terrain_water', road: 'terrain_road_straight', city: 'tower_cannon',
+  village: 'tower_archer', fortress: 'tower_fire', desert: 'terrain_sand',
+  snow: 'terrain_grass', pass: 'tower_fire', swamp: 'terrain_water',
+};
+
+const BUILDING_SPRITE_NAMES: Record<string, string> = {
+  city: 'tower_cannon', village: 'tower_archer', fortress: 'tower_fire',
+  yamen: 'tower_magic', barracks: 'tower_ice', market: 'ui_coin',
+  shop: 'ui_star', residence: 'terrain_sand',
+};
+
+const TERRAIN_VISUALS: Record<TerrainType, TerrainVisual> = {
+  plain: { baseColor: 0x5ec43e, lightColor: 0x8aee58, darkColor: 0x3a8a1a, pattern: 'grass', label: '平原', renderPriority: 3, transitionWidth: 8, transitionColor: 0x3a8a1a, transitionAlpha: 0.35 },
+  mountain: { baseColor: 0xa07850, lightColor: 0xcaa070, darkColor: 0x6a4a28, pattern: 'rocks', label: '山地', renderPriority: 6, transitionWidth: 12, transitionColor: 0x6a4a28, transitionAlpha: 0.55 },
+  forest: { baseColor: 0x1e7a38, lightColor: 0x38a855, darkColor: 0x0c4a15, pattern: 'trees', label: '森林', renderPriority: 5, transitionWidth: 10, transitionColor: 0x0c4a15, transitionAlpha: 0.45 },
+  water: { baseColor: 0x2a72b8, lightColor: 0x50a0e8, darkColor: 0x144a80, pattern: 'ripples', label: '水域', renderPriority: 1, transitionWidth: 14, transitionColor: 0x144a80, transitionAlpha: 0.55 },
+  road: { baseColor: 0xd8a840, lightColor: 0xf0c858, darkColor: 0xa88028, pattern: 'solid', label: '道路', renderPriority: 4, transitionWidth: 4, transitionColor: 0xa88028, transitionAlpha: 0.35 },
+  city: { baseColor: 0xc8a050, lightColor: 0xe8c878, darkColor: 0x8a7030, pattern: 'crosshatch', label: '城市', renderPriority: 8, transitionWidth: 6, transitionColor: 0x8a7030, transitionAlpha: 0.35 },
+  village: { baseColor: 0x98d84a, lightColor: 0xb8f068, darkColor: 0x68a028, pattern: 'checker', label: '村庄', renderPriority: 7, transitionWidth: 6, transitionColor: 0x68a028, transitionAlpha: 0.35 },
+  fortress: { baseColor: 0xc83838, lightColor: 0xe85858, darkColor: 0x881818, pattern: 'crosshatch', label: '关卡', renderPriority: 9, transitionWidth: 8, transitionColor: 0x881818, transitionAlpha: 0.45 },
+  desert: { baseColor: 0xe8c040, lightColor: 0xf8dc68, darkColor: 0xb89020, pattern: 'dunes', label: '荒漠', renderPriority: 2, transitionWidth: 10, transitionColor: 0xb89020, transitionAlpha: 0.45 },
+  snow: { baseColor: 0xdce8f0, lightColor: 0xf0f4f8, darkColor: 0xb0c0d0, pattern: 'snowflakes', label: '雪地', renderPriority: 2, transitionWidth: 6, transitionColor: 0xb0c0d0, transitionAlpha: 0.3 },
+  pass: { baseColor: 0x7a4020, lightColor: 0x9a6040, darkColor: 0x4a2010, pattern: 'wall', label: '关隘', renderPriority: 10, transitionWidth: 10, transitionColor: 0x4a2010, transitionAlpha: 0.55 },
+  swamp: { baseColor: 0x488868, lightColor: 0x68a888, darkColor: 0x285840, pattern: 'bubbles', label: '沼泽', renderPriority: 3, transitionWidth: 8, transitionColor: 0x285840, transitionAlpha: 0.45 },
+};
+
+// TERRAIN_ASSETS 保留为空 Record（已弃用，仅向后兼容）
+const TERRAIN_ASSETS: Record<TerrainType, string> = {
+  plain: '', mountain: '', forest: '', water: '', road: '',
+  city: '', village: '', fortress: '', desert: '', snow: '', pass: '', swamp: '',
+};
+
+// getFactionCityColors 和 FactionCityColors 保留存根（未在文件中实际使用）
+interface FactionCityColors { flagColor: number; wallAccent: number; wallColor: number; }
+function getFactionCityColors(_territoryId: string | undefined): FactionCityColors {
+  return { flagColor: 0xffffff, wallAccent: 0xffffff, wallColor: 0xffffff };
+}
+
+// drawQCharacter / mapNPCTypeToQCharacter / QCharacterType 存根（未在文件中实际使用）
+type QCharacterType = string;
+function drawQCharacter(..._args: unknown[]): unknown { return null; }
+function mapNPCTypeToQCharacter(..._args: unknown[]): QCharacterType { return ''; }
+
+// drawChineseBuilding / getBuildingConfig 存根
+function drawChineseBuilding(..._args: unknown[]): import('pixi.js').Container | null { return null; }
+// function getBuildingConfig(..._args: unknown[]): unknown { return null; }
 
 // ═══════════════════════════════════════════════════════════════
 // 常量

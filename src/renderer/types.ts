@@ -541,14 +541,26 @@ export interface GameRenderState {
   campaign?: {
     currentStageIndex: number;
     completedStages: string[];
-    currentStage: import('../games/three-kingdoms/CampaignSystem').CampaignStage | undefined;
+    currentStage: /* import('../games/three-kingdoms/CampaignSystem').CampaignStage */ {
+      id: string;
+      name: string;
+      subtitle: string;
+      description: string;
+      order: number;
+      prerequisiteStageId: string | null;
+      targetTerritoryId: string;
+      targetCityName: string;
+      difficulty: string;
+      victoryCondition: string;
+      victoryParams: Record<string, number>;
+    } | undefined;
     totalStars: number;
     maxStars: number;
     isAllCompleted: boolean;
     stageStatuses: Array<{
       id: string;
       name: string;
-      status: import('../games/three-kingdoms/CampaignSystem').CampaignStageStatus;
+      status: /* import('../games/three-kingdoms/CampaignSystem').CampaignStageStatus */ 'locked' | 'available' | 'in_progress' | 'victory' | 'defeated';
       stars: number;
     }>;
     /** 关卡连接路线 */
