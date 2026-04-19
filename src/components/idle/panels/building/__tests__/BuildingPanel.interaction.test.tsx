@@ -173,19 +173,19 @@ function renderBuildingPanel(options: RenderOptions = {}) {
 }
 
 /**
- * 辅助：获取 PC 端网格中的建筑卡片
- * 建筑卡片有 role="button" 和 aria-label="建筑名 Lv.N"
+ * 辅助：获取 PC 端地图中的建筑标记
+ * 建筑标记有 role="button" 和 aria-label="建筑名 Lv.N"
  */
-function getGridCard(buildingName: string) {
+function getMapPin(buildingName: string) {
   return screen.getByRole('button', { name: new RegExp(buildingName) });
 }
 
 /**
- * 辅助：打开升级弹窗（点击网格卡片）
+ * 辅助：打开升级弹窗（点击地图建筑标记）
  */
 async function openUpgradeModal(user: ReturnType<typeof userEvent.setup>, buildingName: string) {
-  const card = getGridCard(buildingName);
-  await user.click(card);
+  const pin = getMapPin(buildingName);
+  await user.click(pin);
   // 等待弹窗出现
   return await screen.findByRole('dialog');
 }
@@ -219,11 +219,11 @@ describe('BuildingPanel 核心交互测试', () => {
 
   // 1. 渲染测试
   describe('1. 渲染测试', () => {
-    it('应正确渲染8座建筑卡片', () => {
+    it('应正确渲染8座建筑标记', () => {
       renderBuildingPanel();
-      // PC端网格中的卡片 — 8个建筑类型都有 role="button"
-      const cards = document.querySelectorAll('.tk-bld-card');
-      expect(cards.length).toBe(8);
+      // PC端地图中的标记 — 8个建筑类型都有 role="button"
+      const pins = document.querySelectorAll('.tk-bld-pin');
+      expect(pins.length).toBe(8);
     });
 
     it('每个卡片应显示建筑名称和等级', () => {
@@ -237,8 +237,8 @@ describe('BuildingPanel 核心交互测试', () => {
       }
 
       // 检查等级 — castle 是 level 3
-      const castleCard = getGridCard('主城');
-      expect(castleCard).toHaveAttribute('aria-label', '主城 Lv.3');
+      const castlePin = getMapPin('主城');
+      expect(castlePin).toHaveAttribute('aria-label', '主城 Lv.3');
     });
 
     it('锁定建筑应显示锁定状态', () => {
@@ -406,7 +406,7 @@ describe('BuildingPanel 核心交互测试', () => {
       });
 
       // 进度条应存在
-      const progressBar = document.querySelector('.tk-bld-card-progress-bar');
+      const progressBar = document.querySelector('.tk-bld-pin-progress-bar');
       expect(progressBar).toBeTruthy();
       expect((progressBar as HTMLElement).style.width).toBe('60%');
     });
@@ -420,14 +420,14 @@ describe('BuildingPanel 核心交互测试', () => {
         engineOptions: { progress: 0.3, remaining: 60 },
       });
 
-      // 升级中的卡片不应有升级按钮
-      const farmlandCard = getGridCard('农田');
-      const upgradeBtns = within(farmlandCard).queryAllByRole('button', { name: /升级/ });
+      // 升级中的标记不应有升级按钮
+      const farmlandPin = getMapPin('农田');
+      const upgradeBtns = within(farmlandPin).queryAllByRole('button', { name: /升级/ });
       expect(upgradeBtns.length).toBe(0);
 
-      // 应显示"升级中"标识
-      const upgradingBadge = within(farmlandCard).queryByText(/升级中/);
-      expect(upgradingBadge).toBeTruthy();
+      // 应显示升级中的进度时间
+      const upgradingTime = within(farmlandPin).queryByText(/01:00/);
+      expect(upgradingTime).toBeTruthy();
     });
 
     it('升级队列应显示升级中建筑的数量', () => {
@@ -452,12 +452,12 @@ describe('BuildingPanel 核心交互测试', () => {
       });
       renderBuildingPanel({ buildings });
 
-      // 锁定卡片没有 role="button"，用 DOM query
-      const lockedCard = document.querySelector('.tk-bld-card--locked');
-      expect(lockedCard).toBeTruthy();
+      // 锁定标记没有 role="button"（tabIndex=-1），用 DOM query
+      const lockedPin = document.querySelector('.tk-bld-pin--locked');
+      expect(lockedPin).toBeTruthy();
 
-      // 点击锁定卡片
-      await user.click(lockedCard!);
+      // 点击锁定标记
+      await user.click(lockedPin!);
 
       // 不应出现弹窗
       expect(screen.queryByRole('dialog')).toBeNull();

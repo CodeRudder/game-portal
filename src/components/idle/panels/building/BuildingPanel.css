@@ -2,9 +2,10 @@
  * 三国霸业 v1.0 — 建筑面板样式（城池地图版）
  *
  * 设计稿：BLD-buildings.md [BLD-1] 建筑网格场景
- * PC端：6×5网格地图，卡片 180×160px
+ * PC端：地图式布局，建筑图标按位置错落放置（绝对定位）
  * 手机端：纵向列表
  */
+
 /* ═══════════════════════════════════════════
    面板容器 — 城池地图背景
    ═══════════════════════════════════════════ */
@@ -15,7 +16,6 @@
   padding: 24px;
   box-sizing: border-box;
   background:
-    /* 城池地图背景 — 水墨风格渐变 */
     radial-gradient(ellipse 80% 60% at 50% 45%, rgba(34, 60, 44, 0.25) 0%, transparent 70%),
     radial-gradient(ellipse 40% 30% at 25% 35%, rgba(42, 82, 68, 0.15) 0%, transparent 60%),
     radial-gradient(ellipse 35% 25% at 75% 55%, rgba(42, 82, 68, 0.12) 0%, transparent 60%),
@@ -61,111 +61,90 @@
 }
 
 /* ═══════════════════════════════════════════
-   PC端：城池地图网格 — 6列×5行
+   PC端：城池地图 — 绝对定位布局
    ═══════════════════════════════════════════ */
 .tk-bld-map {
-  display: grid;
-  grid-template-columns: repeat(6, 180px);
-  grid-template-rows: repeat(5, 130px);
-  gap: 12px;
-  justify-content: center;
-  align-content: center;
+  position: relative;
+  width: 100%;
   height: 100%;
+  min-height: 480px;
 }
 
-/* 手机端隐藏网格 */
+/* 地面装饰层 */
+.tk-bld-map-ground {
+  position: absolute;
+  inset: 0;
+  background:
+    /* 中心城池光晕 */
+    radial-gradient(ellipse 30% 25% at 50% 35%, rgba(200, 168, 76, 0.06) 0%, transparent 70%),
+    /* 地面纹理 */
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(34, 60, 44, 0.12) 0%, transparent 80%);
+  pointer-events: none;
+  border-radius: 8px;
+  border: 1px solid rgba(200, 169, 110, 0.08);
+}
+
+/* 手机端隐藏地图 */
 .tk-bld-list {
   display: none;
 }
 
 /* ═══════════════════════════════════════════
-   空地块 — 虚线占位
+   建筑图标（地图上的标记点）
    ═══════════════════════════════════════════ */
-.tk-bld-slot-empty {
-  width: 180px;
-  height: 130px;
-  border: 2px dashed rgba(200, 169, 110, 0.2);
-  border-radius: 8px;
-  background: rgba(200, 169, 110, 0.02);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.tk-bld-slot-empty:hover {
-  border-color: rgba(200, 169, 110, 0.35);
-  background: rgba(200, 169, 110, 0.05);
-}
-
-.tk-bld-slot-plus {
-  font-size: 24px;
-  color: rgba(200, 169, 110, 0.3);
-  user-select: none;
-}
-
-/* ═══════════════════════════════════════════
-   建筑卡片 — 180×130px
-   ═══════════════════════════════════════════ */
-.tk-bld-card {
-  width: 180px;
-  height: 130px;
-  background: rgba(30, 35, 48, 0.9);
-  border: 2px solid rgba(200, 168, 76, 0.4);
-  border-radius: 8px;
+.tk-bld-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 8px 6px;
-  position: relative;
   cursor: pointer;
-  box-sizing: border-box;
-  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  z-index: 10;
 }
 
-.tk-bld-card:hover:not(.tk-bld-card--locked) {
-  border-color: rgba(200, 168, 76, 0.7);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+.tk-bld-pin:hover:not(.tk-bld-pin--locked) {
+  transform: translate(-50%, -50%) scale(1.12);
+  filter: brightness(1.15);
+  z-index: 20;
 }
 
-/* 状态变体 */
-.tk-bld-card--normal {
-  border-color: rgba(200, 168, 76, 0.3);
+/* ── 建筑图标区域 ── */
+.tk-bld-pin-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: rgba(30, 35, 48, 0.92);
+  border: 2px solid rgba(200, 168, 76, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.tk-bld-card--upgrading {
-  border-color: rgba(52, 152, 219, 0.5);
-  background: rgba(52, 152, 219, 0.06);
-  animation: tk-bld-pulse 2s ease-in-out infinite;
+/* ── 建筑名称 ── */
+.tk-bld-pin-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  margin-top: 4px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
 }
 
-@keyframes tk-bld-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
-  50% { box-shadow: 0 0 12px 2px rgba(52, 152, 219, 0.2); }
-}
-
-.tk-bld-card--upgradable {
-  border-color: rgba(39, 174, 96, 0.6);
-  background: rgba(39, 174, 96, 0.06);
-}
-
-.tk-bld-card--locked {
-  border-color: rgba(102, 102, 102, 0.3);
-  background: rgba(102, 102, 102, 0.1);
-  cursor: default;
-  opacity: 0.6;
-}
-
-/* 等级徽章 — 右上角 */
-.tk-bld-card-badge {
+/* ── 等级徽章 ── */
+.tk-bld-pin-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  top: -4px;
+  right: -4px;
+  min-width: 32px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
   background: var(--tk-gold);
   color: var(--tk-bg);
   font-size: 10px;
@@ -173,120 +152,121 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 5;
 }
 
-/* 卡片图标区 */
-.tk-bld-card-icon {
-  font-size: 36px;
-  line-height: 1;
-  margin-bottom: 4px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 卡片信息区 */
-.tk-bld-card-info {
-  text-align: center;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-}
-
-.tk-bld-card-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--tk-text-primary);
-}
-
-.tk-bld-card-production {
-  font-size: 11px;
+/* ── 状态文字 ── */
+.tk-bld-pin-status {
+  font-size: 10px;
   color: var(--tk-green);
+  margin-top: 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
 }
 
-.tk-bld-card-locked-text {
-  font-size: 11px;
+.tk-bld-pin-status--locked {
   color: var(--tk-text-muted);
 }
 
-/* 升级进度条 */
-.tk-bld-card-progress {
-  width: calc(100% - 16px);
-  height: 14px;
-  background: rgba(240, 230, 211, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-  margin-top: 2px;
+.tk-bld-pin-status--upgrading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--tk-text-secondary);
+  font-size: 9px;
 }
 
-.tk-bld-card-progress-bar {
+/* ── 升级进度条（地图上小型） ── */
+.tk-bld-pin-progress {
+  width: 56px;
+  height: 4px;
+  background: rgba(240, 230, 211, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tk-bld-pin-progress-bar {
   height: 100%;
   background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-light));
-  border-radius: 4px;
+  border-radius: 2px;
   transition: width 0.3s ease;
 }
 
-.tk-bld-card-progress-text {
+/* ── 可升级指示器 ── */
+.tk-bld-pin-upgrade-indicator {
   position: absolute;
-  top: 50%;
+  top: -6px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #27ae60;
+  color: #fff;
   font-size: 9px;
-  color: var(--tk-text-primary);
-  white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-/* 操作按钮 */
-.tk-bld-card-btn {
-  width: calc(100% - 16px);
-  height: 24px;
-  border: 1px solid rgba(200, 168, 76, 0.5);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--tk-gold);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-top: 2px;
-  font-family: inherit;
-  transition: background 0.15s, color 0.15s;
-}
-
-.tk-bld-card-btn--active {
-  background: rgba(39, 174, 96, 0.15);
-  border-color: rgba(39, 174, 96, 0.6);
-  color: #5dde8e;
-}
-
-.tk-bld-card-btn--active:hover {
-  background: rgba(39, 174, 96, 0.25);
-}
-
-.tk-bld-card-btn--disabled {
-  border-color: var(--tk-disabled);
-  color: var(--tk-disabled);
-  cursor: not-allowed;
-}
-
-/* 升级费用 */
-.tk-bld-card-cost {
+  font-weight: 700;
   display: flex;
-  gap: 6px;
-  font-size: 10px;
-  color: var(--tk-text-dim);
-  margin-top: 1px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(39, 174, 96, 0.4);
+  animation: tk-bld-bounce 1.5s ease-in-out infinite;
+  z-index: 5;
 }
 
-/* 升级中标识 */
-.tk-bld-card-upgrading-badge {
-  font-size: 10px;
-  color: var(--tk-green);
-  margin-top: 2px;
+@keyframes tk-bld-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-4px); }
+}
+
+/* ═══════════════════════════════════════════
+   建筑状态变体
+   ═══════════════════════════════════════════ */
+
+/* 正常状态 */
+.tk-bld-pin--normal .tk-bld-pin-icon {
+  border-color: rgba(200, 168, 76, 0.4);
+}
+
+.tk-bld-pin--normal:hover .tk-bld-pin-icon {
+  border-color: rgba(200, 168, 76, 0.7);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 12px rgba(200, 168, 76, 0.15);
+}
+
+/* 可升级状态 */
+.tk-bld-pin--upgradable .tk-bld-pin-icon {
+  border-color: rgba(39, 174, 96, 0.6);
+  background: rgba(39, 174, 96, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 8px rgba(39, 174, 96, 0.15);
+}
+
+.tk-bld-pin--upgradable:hover .tk-bld-pin-icon {
+  border-color: rgba(39, 174, 96, 0.85);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 16px rgba(39, 174, 96, 0.25);
+}
+
+/* 升级中状态 */
+.tk-bld-pin--upgrading .tk-bld-pin-icon {
+  border-color: rgba(52, 152, 219, 0.6);
+  background: rgba(52, 152, 219, 0.08);
+  animation: tk-bld-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tk-bld-pulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(52, 152, 219, 0); }
+  50% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 16px 4px rgba(52, 152, 219, 0.2); }
+}
+
+/* 锁定状态 */
+.tk-bld-pin--locked {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.tk-bld-pin--locked .tk-bld-pin-icon {
+  border-color: rgba(102, 102, 102, 0.3);
+  background: rgba(102, 102, 102, 0.15);
 }
 
 /* ═══════════════════════════════════════════

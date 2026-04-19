@@ -2,13 +2,13 @@
  * BuildingPanel 单元测试
  *
  * 测试场景：
- * - 渲染8个建筑卡片（地图网格）
- * - 每个卡片显示名称+等级
- * - 升级按钮点击触发回调
- * - 资源不足时按钮灰显
+ * - 渲染8个建筑标记（地图布局）
+ * - 每个标记显示名称+等级
+ * - 点击建筑打开升级弹窗
+ * - 资源不足时升级指示器状态
  * - 升级中显示进度条
  * - 建筑状态显示（空闲/升级中/锁定）
- * - 空地块显示虚线占位
+ * - 升级队列显示
  */
 
 import React from 'react';
@@ -143,7 +143,7 @@ describe('BuildingPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('应渲染8个建筑卡片（地图网格）', () => {
+  it('应渲染8个建筑标记（地图布局）', () => {
     const engine = createMockEngine();
     const buildings = createMockBuildings();
 
@@ -164,7 +164,7 @@ describe('BuildingPanel', () => {
     }
   });
 
-  it('应渲染空地块占位符', () => {
+  it('应渲染地图容器（tk-bld-map）', () => {
     const engine = createMockEngine();
     const buildings = createMockBuildings();
 
@@ -178,12 +178,16 @@ describe('BuildingPanel', () => {
       />,
     );
 
-    // 地图是6×5=30格，8建筑+22空地，空地显示＋号
-    const plusSigns = screen.getAllByText('＋');
-    expect(plusSigns.length).toBe(22); // 30 - 8 = 22 空地
+    // 地图容器应存在
+    const map = document.querySelector('.tk-bld-map');
+    expect(map).toBeTruthy();
+
+    // 地图内应有8个建筑标记
+    const pins = document.querySelectorAll('.tk-bld-pin');
+    expect(pins.length).toBe(8);
   });
 
-  it('每个卡片应显示建筑名称和等级', () => {
+  it('每个建筑标记应显示名称和等级', () => {
     const engine = createMockEngine();
     const buildings = createMockBuildings();
 
@@ -197,19 +201,19 @@ describe('BuildingPanel', () => {
       />,
     );
 
-    // 检查等级徽章（每个非锁定建筑都有一个等级badge）
-    const badges = screen.getAllByText('1');
+    // 检查等级徽章（每个非锁定建筑都有等级badge显示 "Lv.1"）
+    const badges = screen.getAllByText('Lv.1');
     expect(badges.length).toBe(8); // 8个建筑都是 Lv.1
 
     // 检查 aria-label 包含名称和等级
-    const cards = screen.getAllByRole('button', { hidden: true });
-    const cardWithLabels = cards.filter(card =>
-      card.getAttribute('aria-label')?.includes('Lv.1'),
+    const pins = screen.getAllByRole('button', { hidden: true });
+    const pinsWithLabels = pins.filter(pin =>
+      pin.getAttribute('aria-label')?.includes('Lv.1'),
     );
-    expect(cardWithLabels.length).toBe(8);
+    expect(pinsWithLabels.length).toBe(8);
   });
 
-  it('升级按钮点击应打开弹窗', () => {
+  it('点击建筑标记应打开升级弹窗', () => {
     const engine = createMockEngine({ canUpgrade: true });
     const buildings = createMockBuildings();
 
@@ -223,18 +227,19 @@ describe('BuildingPanel', () => {
       />,
     );
 
-    // 找到所有升级按钮
-    const upgradeButtons = screen.getAllByText('▲ 升级');
-    expect(upgradeButtons.length).toBeGreaterThan(0);
+    // 点击第一个可点击的建筑标记
+    const clickablePins = screen.getAllByRole('button', { hidden: true }).filter(
+      el => el.getAttribute('aria-label')?.includes('Lv.'),
+    );
+    expect(clickablePins.length).toBeGreaterThan(0);
 
-    // 点击第一个升级按钮
-    fireEvent.click(upgradeButtons[0]);
+    fireEvent.click(clickablePins[0]);
 
     // 应该出现升级弹窗
     expect(screen.getByTestId('upgrade-modal')).toBeInTheDocument();
   });
 
-  it('资源不足时升级按钮应灰显（disabled）', () => {
+  it('资源不足时建筑标记无升级指示器', () => {
     const engine = createMockEngine({ canUpgrade: false });
     const buildings = createMockBuildings();
 
@@ -248,15 +253,9 @@ describe('BuildingPanel', () => {
       />,
     );
 
-    // 找到所有升级按钮
-    const allButtons = screen.getAllByRole('button', { hidden: true });
-    // 筛选出升级按钮（非卡片按钮）
-    const upgradeButtons = allButtons.filter(btn =>
-      btn.textContent?.includes('升级') && !btn.getAttribute('aria-label'),
-    );
-    // 所有升级按钮都应该是 disabled 的
-    const disabledBtns = upgradeButtons.filter(btn => btn.disabled);
-    expect(disabledBtns.length).toBeGreaterThan(0);
+    // 可升级指示器不应存在
+    const indicators = document.querySelectorAll('.tk-bld-pin-upgrade-indicator');
+    expect(indicators.length).toBe(0);
   });
 
   it('升级中应显示进度条', () => {
@@ -279,11 +278,10 @@ describe('BuildingPanel', () => {
       />,
     );
 
-    // 进度条应显示 45%
-    expect(screen.getAllByText(/45%/).length).toBeGreaterThanOrEqual(1);
-
-    // 应显示升级中标识
-    expect(screen.getAllByText(/升级中/).length).toBeGreaterThan(0);
+    // 进度条应存在
+    const progressBar = document.querySelector('.tk-bld-pin-progress-bar');
+    expect(progressBar).toBeTruthy();
+    expect((progressBar as HTMLElement).style.width).toBe('45%');
   });
 
   it('应正确显示建筑状态（空闲/升级中/锁定）', () => {
@@ -307,12 +305,13 @@ describe('BuildingPanel', () => {
     // 锁定的建筑显示 "未解锁"
     expect(screen.getAllByText('未解锁').length).toBeGreaterThan(0);
 
-    // 升级中的建筑显示进度信息
-    expect(screen.getAllByText(/升级中/).length).toBeGreaterThan(0);
+    // 锁定建筑显示🔒图标
+    const lockedIcons = screen.getAllByText('🔒');
+    expect(lockedIcons.length).toBeGreaterThanOrEqual(1);
 
-    // 空闲建筑应有升级按钮（可升级时显示 "▲ 升级"）
-    const upgradeButtons = screen.getAllByText('▲ 升级');
-    expect(upgradeButtons.length).toBeGreaterThan(0);
+    // 可升级建筑应有升级指示器
+    const indicators = document.querySelectorAll('.tk-bld-pin-upgrade-indicator');
+    expect(indicators.length).toBeGreaterThan(0);
   });
 
   it('升级队列应显示升级中的建筑数量', () => {
@@ -338,5 +337,35 @@ describe('BuildingPanel', () => {
 
     // 升级队列应显示 2 个升级中的建筑
     expect(screen.getByText(/升级中 \(2\)/)).toBeInTheDocument();
+  });
+
+  it('建筑标记应使用绝对定位', () => {
+    const engine = createMockEngine();
+    const buildings = createMockBuildings();
+
+    render(
+      <BuildingPanel
+        buildings={buildings}
+        resources={defaultResources}
+        rates={defaultRates}
+        caps={defaultCaps}
+        engine={engine as any}
+      />,
+    );
+
+    // 检查地图容器使用相对定位
+    const map = document.querySelector('.tk-bld-map');
+    expect(map).toBeTruthy();
+
+    // 检查建筑标记使用绝对定位
+    const pins = document.querySelectorAll('.tk-bld-pin');
+    expect(pins.length).toBe(8);
+
+    // 每个标记应有 top 和 left 内联样式
+    pins.forEach(pin => {
+      const style = (pin as HTMLElement).style;
+      expect(style.top).toBeTruthy();
+      expect(style.left).toBeTruthy();
+    });
   });
 });
