@@ -17,7 +17,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { EngineSnapshot } from '@/games/three-kingdoms/shared/types';
-import type { OfflineEarnings } from '@/games/three-kingdoms/engine/resource/resource.types';
+import type { OfflineEarnings } from '@/games/three-kingdoms/shared/types';
 
 // ─────────────────────────────────────────────
 // 常量

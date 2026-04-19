@@ -1,6 +1,7 @@
 /**
- * ThreeKingdomsEngine 编排层单元测试
- * 目标：≥90% 分支覆盖
+ * ThreeKingdomsEngine 编排层单元测试 — 核心域
+ * 覆盖：初始化、tick 循环、存档/读档、事件系统、状态查询、重置、
+ *       SaveManager 委托、离线收益、加成体系框架
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -106,75 +107,7 @@ describe('ThreeKingdomsEngine', () => {
   });
 
   // ═══════════════════════════════════════════
-  // 3. 建筑升级
-  // ═══════════════════════════════════════════
-  describe('upgradeBuilding()', () => {
-    it('成功升级建筑', () => {
-      engine.init();
-      const check = engine.checkUpgrade('farmland');
-      if (check.canUpgrade) {
-        const goldBefore = engine.resource.getAmount('gold');
-        engine.upgradeBuilding('farmland');
-        expect(engine.resource.getAmount('gold')).toBeLessThan(goldBefore);
-      }
-    });
-
-    it('资源不足时抛出错误', () => {
-      engine.init();
-      // 消耗所有gold和grain（grain有保留量保护，用setResource直接置0）
-      const res = engine.resource.getResources();
-      engine.resource.setResource('gold', 0);
-      engine.resource.setResource('grain', 0);
-      expect(() => engine.upgradeBuilding('farmland')).toThrow();
-    });
-
-    it('发出 building:upgrade-start 事件', () => {
-      engine.init();
-      const listener = vi.fn();
-      engine.on('building:upgrade-start', listener);
-      const check = engine.checkUpgrade('farmland');
-      if (check.canUpgrade) {
-        engine.upgradeBuilding('farmland');
-        expect(listener).toHaveBeenCalledWith(
-          expect.objectContaining({ type: 'farmland' }),
-        );
-      }
-    });
-
-    it('checkUpgrade 返回不可升级原因', () => {
-      engine.init();
-      engine.resource.setResource('gold', 0);
-      engine.resource.setResource('grain', 0);
-      const check = engine.checkUpgrade('farmland');
-      expect(check.canUpgrade).toBe(false);
-      expect(check.reasons.length).toBeGreaterThan(0);
-    });
-  });
-
-  // ═══════════════════════════════════════════
-  // 4. 取消升级
-  // ═══════════════════════════════════════════
-  describe('cancelUpgrade()', () => {
-    it('成功取消并返还资源', () => {
-      engine.init();
-      const check = engine.checkUpgrade('farmland');
-      if (check.canUpgrade) {
-        const goldBefore = engine.resource.getAmount('gold');
-        engine.upgradeBuilding('farmland');
-        const refund = engine.cancelUpgrade('farmland');
-        expect(refund).not.toBeNull();
-        expect(engine.resource.getAmount('gold')).toBe(goldBefore);
-      }
-    });
-
-    it('建筑未升级时返回 null', () => {
-      engine.init();
-      expect(engine.cancelUpgrade('farmland')).toBeNull();
-    });
-  });
-
-  // ═══════════════════════════════════════════
-  // 5. 存档 / 读档
+  // 3. 存档 / 读档
   // ═══════════════════════════════════════════
   describe('save() / load()', () => {
     it('保存到 localStorage', () => {
@@ -244,7 +177,7 @@ describe('ThreeKingdomsEngine', () => {
   });
 
   // ═══════════════════════════════════════════
-  // 6. 事件系统
+  // 4. 事件系统
   // ═══════════════════════════════════════════
   describe('事件系统', () => {
     it('on() 注册并触发回调', () => {
@@ -275,7 +208,7 @@ describe('ThreeKingdomsEngine', () => {
   });
 
   // ═══════════════════════════════════════════
-  // 7. 状态查询
+  // 5. 状态查询
   // ═══════════════════════════════════════════
   describe('状态查询', () => {
     it('getSnapshot 返回完整快照', () => {
@@ -318,7 +251,7 @@ describe('ThreeKingdomsEngine', () => {
   });
 
   // ═══════════════════════════════════════════
-  // 8. 重置
+  // 6. 重置
   // ═══════════════════════════════════════════
   describe('reset()', () => {
     it('清除所有状态', () => {
@@ -338,7 +271,7 @@ describe('ThreeKingdomsEngine', () => {
   });
 
   // ═══════════════════════════════════════════
-  // 9. 存档统一 — SaveManager 委托
+  // 7. 存档统一 — SaveManager 委托
   // ═══════════════════════════════════════════
   describe('存档统一（SaveManager 委托）', () => {
     it('save() 委托给 SaveManager（外层有 v/checksum/data 包装）', () => {
@@ -459,7 +392,7 @@ describe('ThreeKingdomsEngine', () => {
   });
 
   // ═══════════════════════════════════════════
-  // 10. 离线收益在加载时计算
+  // 8. 离线收益在加载时计算
   // ═══════════════════════════════════════════
   describe('离线收益', () => {
     it('加载时发出 game:loaded 事件', () => {
@@ -517,7 +450,7 @@ describe('ThreeKingdomsEngine', () => {
   });
 
   // ═══════════════════════════════════════════
-  // 11. 加成体系框架
+  // 9. 加成体系框架
   // ═══════════════════════════════════════════
   describe('加成体系框架', () => {
     it('tick() 中 castle 加成正确传入（非零）', () => {
@@ -556,85 +489,6 @@ describe('ThreeKingdomsEngine', () => {
       engine.tick(1000);
       engine.tick(1000);
       expect(engine.isInitialized()).toBe(true);
-    });
-  });
-
-  // ═══════════════════════════════════════════
-  // 12. 粮仓映射修复
-  // ═══════════════════════════════════════════
-  describe('粮仓映射修复', () => {
-    it('粮草上限由农田等级决定（非铁匠铺）', () => {
-      engine.init();
-      // 农田初始等级为 1，GRANARY_CAPACITY_TABLE[1]=2000, [5]=5000
-      // 需要升级农田到 5 级才能看到上限变化
-      const grainCapBefore = engine.getSnapshot().caps.grain;
-      expect(grainCapBefore).toBe(2000); // GRANARY_CAPACITY_TABLE[1]
-
-      // 升级农田 4 次（从 1 级到 5 级）
-      for (let i = 0; i < 4; i++) {
-        const check = engine.checkUpgrade('farmland');
-        if (check.canUpgrade) {
-          engine.upgradeBuilding('farmland');
-          engine.tick(999999999);
-        }
-      }
-
-      const grainCapAfter = engine.getSnapshot().caps.grain;
-      // 如果成功升级到 5 级，上限应为 5000
-      if (engine.building.getLevel('farmland') >= 5) {
-        expect(grainCapAfter).toBeGreaterThan(grainCapBefore);
-      }
-    });
-
-    it('兵力上限由兵营等级决定', () => {
-      engine.init();
-      // 兵营需要主城 2 级解锁，初始为 locked (level 0)
-      // 先升级主城到 2 级以解锁兵营
-      const castleCheck = engine.checkUpgrade('castle');
-      if (castleCheck.canUpgrade) {
-        engine.upgradeBuilding('castle');
-        engine.tick(999999999);
-      }
-
-      const troopsCapBefore = engine.getSnapshot().caps.troops;
-
-      const check = engine.checkUpgrade('barracks');
-      if (check.canUpgrade) {
-        engine.upgradeBuilding('barracks');
-        engine.tick(999999999);
-      }
-
-      // 兵营从 0→1 解锁后，BARRACKS_CAPACITY_TABLE[1]=500
-      const troopsCapAfter = engine.getSnapshot().caps.troops;
-      if (engine.building.getLevel('barracks') >= 1) {
-        expect(troopsCapAfter).toBeGreaterThanOrEqual(500);
-      }
-    });
-
-    it('铁匠铺升级不影响粮草上限', () => {
-      engine.init();
-      // 先升级主城到 3 级以解锁铁匠铺
-      for (let i = 0; i < 3; i++) {
-        const castleCheck = engine.checkUpgrade('castle');
-        if (castleCheck.canUpgrade) {
-          engine.upgradeBuilding('castle');
-          engine.tick(999999999);
-        }
-      }
-
-      // 记录升级铁匠铺前的粮草上限
-      const grainCapBefore = engine.getSnapshot().caps.grain;
-
-      // 升级铁匠铺
-      const smithyCheck = engine.checkUpgrade('smithy');
-      if (smithyCheck.canUpgrade) {
-        engine.upgradeBuilding('smithy');
-        engine.tick(999999999);
-      }
-
-      // 粮草上限应该不变（铁匠铺不影响粮草上限）
-      const grainCapAfter = engine.getSnapshot().caps.grain;
-      expect(grainCapAfter).toBe(grainCapBefore);
     });
   });
 });
