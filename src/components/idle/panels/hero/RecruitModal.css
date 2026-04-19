@@ -12,43 +12,24 @@
  * - 传说 → 金色光芒
  */
 
-/* ═══════════════════════════════════════════
-   遮罩层
-   ═══════════════════════════════════════════ */
 .tk-recruit-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 400;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.65);
-  animation: tk-recruit-fade-in 200ms ease-out;
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.65); animation: tk-recruit-fade-in 200ms ease-out;
 }
-
-@keyframes tk-recruit-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+@keyframes tk-recruit-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* ═══════════════════════════════════════════
    弹窗主体
    ═══════════════════════════════════════════ */
 .tk-recruit-modal {
-  position: relative;
-  width: 560px;
-  max-width: 95vw;
-  max-height: 85vh;
+  position: relative; width: 560px; max-width: 95vw; max-height: 85vh;
   background: rgba(20, 28, 40, 0.98);
-  border: 2px solid rgba(200, 168, 76, 0.5);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
+  border: 2px solid rgba(200, 168, 76, 0.5); border-radius: 12px;
+  display: flex; flex-direction: column;
   animation: tk-recruit-enter 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.7);
-  overflow: hidden;
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.7); overflow: hidden;
 }
-
 @keyframes tk-recruit-enter {
   from { opacity: 0; transform: scale(0.85); }
   to { opacity: 1; transform: scale(1); }
@@ -56,211 +37,98 @@
 
 /* 关闭按钮 */
 .tk-recruit-close {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px 8px;
-  color: #a0a0a0;
-  font-size: 16px;
-  border-radius: 4px;
-  z-index: 10;
-  transition: color 0.15s, background 0.15s;
+  position: absolute; top: 10px; right: 12px;
+  background: none; border: none; cursor: pointer;
+  padding: 4px 8px; color: #a0a0a0; font-size: 16px;
+  border-radius: 4px; z-index: 10; transition: color 0.15s, background 0.15s;
 }
-.tk-recruit-close:hover {
-  color: #f0e6d3;
-  background: rgba(255, 255, 255, 0.08);
-}
+.tk-recruit-close:hover { color: #f0e6d3; background: rgba(255, 255, 255, 0.08); }
 
 /* ═══════════════════════════════════════════
    标题
    ═══════════════════════════════════════════ */
-.tk-recruit-header {
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
-}
+.tk-recruit-header { padding: 16px 20px 12px; border-bottom: 1px solid rgba(200, 168, 76, 0.15); }
 .tk-recruit-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--tk-gold-light);
-  font-family: 'STXingkai', '华文行楷', 'KaiTi', serif;
+  margin: 0; font-size: 18px; font-weight: 700;
+  color: var(--tk-gold-light); font-family: 'STXingkai', '华文行楷', 'KaiTi', serif;
 }
 
 /* ═══════════════════════════════════════════
    招募类型选择
    ═══════════════════════════════════════════ */
-.tk-recruit-types {
-  display: flex;
-  gap: 12px;
-  padding: 16px 20px 8px;
-}
+.tk-recruit-types { display: flex; gap: 12px; padding: 16px 20px 8px; }
 .tk-recruit-type-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px;
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 4px; padding: 12px;
   background: rgba(240, 230, 211, 0.04);
-  border: 2px solid rgba(200, 168, 76, 0.15);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-  font-family: inherit;
-  color: var(--tk-text-primary);
+  border: 2px solid rgba(200, 168, 76, 0.15); border-radius: 8px;
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  font-family: inherit; color: var(--tk-text-primary);
 }
-.tk-recruit-type-btn:hover {
-  border-color: rgba(200, 168, 76, 0.4);
-  background: rgba(200, 168, 76, 0.06);
-}
-.tk-recruit-type-btn--active {
-  border-color: var(--tk-gold);
-  background: rgba(200, 168, 76, 0.12);
-}
-.tk-recruit-type-icon {
-  font-size: 28px;
-}
-.tk-recruit-type-label {
-  font-size: 14px;
-  font-weight: 600;
-}
-.tk-recruit-type-desc {
-  font-size: 11px;
-  color: var(--tk-text-secondary);
-}
+.tk-recruit-type-btn:hover { border-color: rgba(200, 168, 76, 0.4); background: rgba(200, 168, 76, 0.06); }
+.tk-recruit-type-btn--active { border-color: var(--tk-gold); background: rgba(200, 168, 76, 0.12); }
+.tk-recruit-type-icon { font-size: 28px; }
+.tk-recruit-type-label { font-size: 14px; font-weight: 600; }
+.tk-recruit-type-desc { font-size: 11px; color: var(--tk-text-secondary); }
 
 /* ═══════════════════════════════════════════
    保底进度
    ═══════════════════════════════════════════ */
-.tk-recruit-pity {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px 20px 12px;
-}
-.tk-recruit-pity-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.tk-recruit-pity-label {
-  width: 130px;
-  font-size: 12px;
-  color: var(--tk-text-secondary);
-  flex-shrink: 0;
-}
+.tk-recruit-pity { display: flex; flex-direction: column; gap: 8px; padding: 8px 20px 12px; }
+.tk-recruit-pity-item { display: flex; align-items: center; gap: 8px; }
+.tk-recruit-pity-label { width: 130px; font-size: 12px; color: var(--tk-text-secondary); flex-shrink: 0; }
 .tk-recruit-pity-bar {
-  flex: 1;
-  height: 10px;
-  background: rgba(240, 230, 211, 0.08);
-  border-radius: 5px;
-  overflow: hidden;
+  flex: 1; height: 10px;
+  background: rgba(240, 230, 211, 0.08); border-radius: 5px; overflow: hidden;
 }
 .tk-recruit-pity-fill--ten {
   height: 100%;
-  background: linear-gradient(90deg, #3498DB, #5DADE2);
-  border-radius: 5px;
+  background: linear-gradient(90deg, #3498DB, #5DADE2); border-radius: 5px;
   transition: width 0.3s ease;
 }
 .tk-recruit-pity-fill--hard {
   height: 100%;
-  background: linear-gradient(90deg, #C9A84C, #E8D48B);
-  border-radius: 5px;
+  background: linear-gradient(90deg, #C9A84C, #E8D48B); border-radius: 5px;
   transition: width 0.3s ease;
 }
 .tk-recruit-pity-count {
-  width: 50px;
-  text-align: right;
-  font-size: 11px;
-  color: var(--tk-text-secondary);
-  font-variant-numeric: tabular-nums;
+  width: 50px; text-align: right; font-size: 11px;
+  color: var(--tk-text-secondary); font-variant-numeric: tabular-nums;
 }
 
-/* ═══════════════════════════════════════════
-   消耗 + 按钮
-   ═══════════════════════════════════════════ */
-.tk-recruit-actions {
-  display: flex;
-  gap: 16px;
-  padding: 8px 20px 16px;
-}
-.tk-recruit-action-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-.tk-recruit-cost {
-  font-size: 13px;
-  color: var(--tk-text-secondary);
-}
+.tk-recruit-actions { display: flex; gap: 16px; padding: 8px 20px 16px; }
+.tk-recruit-action-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.tk-recruit-cost { font-size: 13px; color: var(--tk-text-secondary); }
 .tk-recruit-btn {
-  width: 100%;
-  padding: 10px 16px;
-  background: rgba(200, 168, 76, 0.15);
-  border: 1px solid var(--tk-gold);
-  border-radius: 8px;
-  color: var(--tk-gold-light);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.15s;
+  width: 100%; padding: 10px 16px;
+  background: rgba(200, 168, 76, 0.15); border: 1px solid var(--tk-gold);
+  border-radius: 8px; color: var(--tk-gold-light);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: background 0.15s;
 }
-.tk-recruit-btn:hover:not(:disabled) {
-  background: rgba(200, 168, 76, 0.3);
-}
-.tk-recruit-btn--ten {
-  background: rgba(200, 168, 76, 0.25);
-  border-width: 2px;
-}
-.tk-recruit-btn--ten:hover:not(:disabled) {
-  background: rgba(200, 168, 76, 0.4);
-}
-.tk-recruit-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.tk-recruit-btn:hover:not(:disabled) { background: rgba(200, 168, 76, 0.3); }
+.tk-recruit-btn--ten { background: rgba(200, 168, 76, 0.25); border-width: 2px; }
+.tk-recruit-btn--ten:hover:not(:disabled) { background: rgba(200, 168, 76, 0.4); }
+.tk-recruit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ═══════════════════════════════════════════
-   招募结果
-   ═══════════════════════════════════════════ */
-.tk-recruit-results {
-  border-top: 1px solid rgba(200, 168, 76, 0.15);
-  padding: 12px 20px 16px;
+.tk-recruit-results { border-top: 1px solid rgba(200, 168, 76, 0.15); padding: 12px 20px 16px; }
+.tk-recruit-results-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 8px; max-height: 280px; overflow-y: auto;
 }
 .tk-recruit-results-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--tk-gold-light);
-  margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 14px; font-weight: 600; color: var(--tk-gold-light); margin-bottom: 10px;
 }
 .tk-recruit-results-total-cost {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--tk-text-secondary);
-  margin-left: auto;
-  margin-right: 8px;
+  font-size: 12px; font-weight: 400; color: var(--tk-text-secondary);
+  margin-left: auto; margin-right: 8px;
 }
 .tk-recruit-results-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #a0a0a0;
-  font-size: 14px;
-  padding: 2px 6px;
-  border-radius: 3px;
+  background: none; border: none; cursor: pointer;
+  color: #a0a0a0; font-size: 14px; padding: 2px 6px; border-radius: 3px;
 }
-.tk-recruit-results-close:hover {
-  color: #f0e6d3;
-}
+.tk-recruit-results-close:hover { color: #f0e6d3; }
 .tk-recruit-results-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -271,34 +139,15 @@
 
 /* 结果卡片 */
 .tk-recruit-result-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: flex; flex-direction: column; align-items: center;
   padding: 8px 4px;
   background: rgba(240, 230, 211, 0.04);
   border: 2px solid rgba(200, 168, 76, 0.2);
-  border-radius: 6px;
-  position: relative;
-  min-height: 80px;
-  opacity: 0;
-  transform: scale(0.8);
-  overflow: hidden;
+  border-radius: 6px; position: relative;
+  min-height: 80px; opacity: 0; transform: scale(0.8); overflow: hidden;
 }
-
-/* 品质揭示光效层 */
-.tk-recruit-result-glow {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-/* 揭示状态：可见 */
-.tk-recruit-result-card--revealed {
-  opacity: 1;
-  transform: scale(1);
-}
+.tk-recruit-result-glow { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.tk-recruit-result-card--revealed { opacity: 1; transform: scale(1); }
 
 /* ═══════════════════════════════════════════
    品质揭示动画
@@ -392,33 +241,139 @@
   50% { opacity: 0.1; }
 }
 .tk-recruit-result-quality {
-  position: absolute;
-  top: 0;
-  left: 0;
-  padding: 1px 6px;
-  font-size: 9px;
-  font-weight: 600;
-  color: #fff;
-  border-radius: 0 0 4px 0;
-  z-index: 2;
+  position: absolute; top: 0; left: 0; padding: 1px 6px;
+  font-size: 9px; font-weight: 600; color: #fff;
+  border-radius: 0 0 4px 0; z-index: 2;
 }
 .tk-recruit-result-name {
+  font-size: 13px; font-weight: 600; color: var(--tk-text-primary);
+  margin-top: 16px; margin-bottom: 4px; z-index: 2;
+}
+.tk-recruit-result-new { font-size: 10px; color: var(--tk-green); z-index: 2; }
+.tk-recruit-result-dup { font-size: 10px; color: var(--tk-text-secondary); z-index: 2; }
+
+/* ═══════════════════════════════════════════
+   招募历史记录
+   ═══════════════════════════════════════════ */
+.tk-recruit-history {
+  border-top: 1px solid rgba(200, 168, 76, 0.15);
+  padding: 0 20px 16px;
+}
+
+.tk-recruit-history-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--tk-text-secondary);
+  transition: color 0.15s;
+}
+
+.tk-recruit-history-toggle:hover {
+  color: var(--tk-gold-light);
+}
+
+.tk-recruit-history-toggle-text {
   font-size: 13px;
   font-weight: 600;
-  color: var(--tk-text-primary);
-  margin-top: 16px;
-  margin-bottom: 4px;
-  z-index: 2;
 }
-.tk-recruit-result-new {
+
+.tk-recruit-history-toggle-arrow {
   font-size: 10px;
-  color: var(--tk-green);
-  z-index: 2;
+  transition: transform 0.2s ease;
+  display: inline-block;
 }
-.tk-recruit-result-dup {
+
+.tk-recruit-history-toggle-arrow--expanded {
+  transform: rotate(180deg);
+}
+
+.tk-recruit-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-bottom: 4px;
+}
+
+.tk-recruit-history-empty {
+  font-size: 12px;
+  color: var(--tk-text-muted);
+  text-align: center;
+  padding: 12px 0;
+}
+
+.tk-recruit-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(240, 230, 211, 0.03);
+  border: 1px solid rgba(200, 168, 76, 0.08);
+  border-radius: 6px;
+}
+
+.tk-recruit-history-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tk-recruit-history-time {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-recruit-history-type {
   font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.tk-recruit-history-type--normal {
+  background: rgba(240, 230, 211, 0.08);
   color: var(--tk-text-secondary);
-  z-index: 2;
+}
+
+.tk-recruit-history-type--advanced {
+  background: rgba(200, 168, 76, 0.15);
+  color: var(--tk-gold-light);
+}
+
+.tk-recruit-history-item-right {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.tk-recruit-history-hero {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--tk-text-primary);
+  padding: 1px 6px;
+  border-left: 2px solid;
+  border-radius: 2px;
+  background: rgba(240, 230, 211, 0.04);
+}
+
+.tk-recruit-history-hero-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 /* ═══════════════════════════════════════════

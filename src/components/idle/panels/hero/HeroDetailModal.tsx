@@ -35,17 +35,10 @@ interface HeroDetailModalProps {
 // 属性条标签映射
 // ─────────────────────────────────────────────
 const STAT_LABELS: Record<string, string> = {
-  attack: '武力',
-  defense: '统率',
-  intelligence: '智力',
-  speed: '政治',
+  attack: '武力', defense: '统率', intelligence: '智力', speed: '政治',
 };
-
 const STAT_COLORS: Record<string, string> = {
-  attack: '#E53935',
-  defense: '#1E88E5',
-  intelligence: '#AB47BC',
-  speed: '#43A047',
+  attack: '#E53935', defense: '#1E88E5', intelligence: '#AB47BC', speed: '#43A047',
 };
 // ─────────────────────────────────────────────
 // 品质对应的头像背景渐变
@@ -57,22 +50,14 @@ const QUALITY_BG: Record<Quality, string> = {
   EPIC: 'linear-gradient(135deg, #b71c1c 0%, #D4553A 100%)',
   LEGENDARY: 'linear-gradient(135deg, #8B6914 0%, #C9A84C 100%)',
 };
-
-/** 品质对应的雷达图填充色 */
 const QUALITY_RADAR_FILL: Record<Quality, string> = {
-  COMMON: 'rgba(139, 154, 107, 0.35)',
-  FINE: 'rgba(91, 139, 212, 0.35)',
-  RARE: 'rgba(155, 109, 191, 0.35)',
-  EPIC: 'rgba(212, 85, 58, 0.35)',
+  COMMON: 'rgba(139, 154, 107, 0.35)', FINE: 'rgba(91, 139, 212, 0.35)',
+  RARE: 'rgba(155, 109, 191, 0.35)', EPIC: 'rgba(212, 85, 58, 0.35)',
   LEGENDARY: 'rgba(201, 168, 76, 0.35)',
 };
-
-/** 品质对应的雷达图边框色 */
 const QUALITY_RADAR_STROKE: Record<Quality, string> = {
-  COMMON: 'rgba(139, 154, 107, 0.8)',
-  FINE: 'rgba(91, 139, 212, 0.8)',
-  RARE: 'rgba(155, 109, 191, 0.8)',
-  EPIC: 'rgba(212, 85, 58, 0.8)',
+  COMMON: 'rgba(139, 154, 107, 0.8)', FINE: 'rgba(91, 139, 212, 0.8)',
+  RARE: 'rgba(155, 109, 191, 0.8)', EPIC: 'rgba(212, 85, 58, 0.8)',
   LEGENDARY: 'rgba(201, 168, 76, 0.8)',
 };
 
@@ -171,18 +156,11 @@ const RadarChart: React.FC<RadarChartProps> = ({ stats, quality, statMax }) => {
       {/* 轴线 */}
       {stats.map((_, i) => {
         const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
-        const x = RADAR_CX + RADAR_R * Math.cos(angle);
-        const y = RADAR_CY + RADAR_R * Math.sin(angle);
         return (
-          <line
-            key={i}
-            x1={RADAR_CX}
-            y1={RADAR_CY}
-            x2={x}
-            y2={y}
-            stroke="rgba(240, 230, 211, 0.08)"
-            strokeWidth={1}
-          />
+          <line key={i} x1={RADAR_CX} y1={RADAR_CY}
+            x2={RADAR_CX + RADAR_R * Math.cos(angle)}
+            y2={RADAR_CY + RADAR_R * Math.sin(angle)}
+            stroke="rgba(240, 230, 211, 0.08)" strokeWidth={1} />
         );
       })}
 
@@ -198,20 +176,12 @@ const RadarChart: React.FC<RadarChartProps> = ({ stats, quality, statMax }) => {
       {/* 数据顶点圆点 */}
       {stats.map((stat, i) => {
         const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
-        const ratio = Math.min(1, stat.value / statMax);
-        const r = RADAR_R * ratio;
-        const x = RADAR_CX + r * Math.cos(angle);
-        const y = RADAR_CY + r * Math.sin(angle);
+        const r = RADAR_R * Math.min(1, stat.value / statMax);
         return (
-          <circle
-            key={stat.key}
-            cx={x}
-            cy={y}
-            r={3}
-            fill={stat.color}
-            stroke="#fff"
-            strokeWidth={1}
-          />
+          <circle key={stat.key}
+            cx={RADAR_CX + r * Math.cos(angle)}
+            cy={RADAR_CY + r * Math.sin(angle)}
+            r={3} fill={stat.color} stroke="#fff" strokeWidth={1} />
         );
       })}
 
@@ -220,25 +190,12 @@ const RadarChart: React.FC<RadarChartProps> = ({ stats, quality, statMax }) => {
         const pos = getLabelPos(i, count);
         return (
           <g key={`label-${stat.key}`}>
-            <text
-              x={pos.x}
-              y={pos.y - 6}
-              textAnchor="middle"
-              fill="rgba(240, 230, 211, 0.7)"
-              fontSize={11}
-              fontWeight={500}
-            >
+            <text x={pos.x} y={pos.y - 6} textAnchor="middle"
+              fill="rgba(240, 230, 211, 0.7)" fontSize={11} fontWeight={500}>
               {stat.label}
             </text>
-            <text
-              x={pos.x}
-              y={pos.y + 8}
-              textAnchor="middle"
-              fill={stat.color}
-              fontSize={12}
-              fontWeight={700}
-              fontFamily="inherit"
-            >
+            <text x={pos.x} y={pos.y + 8} textAnchor="middle"
+              fill={stat.color} fontSize={12} fontWeight={700} fontFamily="inherit">
               {stat.value}
             </text>
           </g>
@@ -263,6 +220,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
   // 升级目标等级（默认+1）
   const [targetLevel, setTargetLevel] = useState(general.level + 1);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [isSynthesizing, setIsSynthesizing] = useState(false);
 
   const power = useMemo(
     () => heroSystem.calculatePower(general),
@@ -276,6 +234,16 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
 
   const fragments = useMemo(
     () => heroSystem.getFragments(general.id),
+    [heroSystem, general.id],
+  );
+
+  const synthesizeProgress = useMemo(
+    () => heroSystem.getSynthesizeProgress(general.id),
+    [heroSystem, general.id],
+  );
+
+  const canSynth = useMemo(
+    () => heroSystem.canSynthesize(general.id),
     [heroSystem, general.id],
   );
 
@@ -329,6 +297,24 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
     setTargetLevel(maxTarget);
   }, [general.level]);
 
+  // 碎片合成
+  const handleSynthesize = useCallback(() => {
+    setIsSynthesizing(true);
+    try {
+      const result = heroSystem.fragmentSynthesize(general.id);
+      if (result) {
+        Toast.success(`🎉 ${general.name} 合成成功！`);
+        onEnhanceComplete?.();
+      } else {
+        Toast.danger('合成失败：碎片不足或已拥有该武将');
+      }
+    } catch (e: any) {
+      Toast.danger(e?.message || '合成失败');
+    } finally {
+      setIsSynthesizing(false);
+    }
+  }, [heroSystem, general.id, general.name, onEnhanceComplete]);
+
   return (
     <div className="tk-hero-detail-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="tk-hero-detail-modal" role="dialog" aria-modal="true" aria-label={`${general.name} 详情`}>
@@ -381,9 +367,24 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
               ⚔️ 战力 <strong>{power.toLocaleString('zh-CN')}</strong>
             </div>
 
-            {/* 碎片 */}
+            {/* 碎片 + 合成 */}
             <div className="tk-hero-detail-fragments">
-              💎 碎片 {fragments}
+              <div className="tk-hero-detail-fragments-header">
+                <span>💎 碎片 {fragments}/{synthesizeProgress.required}</span>
+              </div>
+              <div className="tk-hero-detail-fragments-bar">
+                <div
+                  className="tk-hero-detail-fragments-fill"
+                  style={{ width: `${Math.min(100, (synthesizeProgress.current / synthesizeProgress.required) * 100)}%` }}
+                />
+              </div>
+              <button
+                className={`tk-hero-detail-synthesize-btn ${canSynth ? 'tk-hero-detail-synthesize-btn--active' : ''}`}
+                disabled={!canSynth || isSynthesizing}
+                onClick={handleSynthesize}
+              >
+                {isSynthesizing ? '合成中...' : canSynth ? '✨ 碎片合成' : `碎片合成 (${synthesizeProgress.current}/${synthesizeProgress.required})`}
+              </button>
             </div>
 
             {/* 升级操作区 */}

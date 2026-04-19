@@ -14,7 +14,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import type { RecruitType, RecruitOutput, RecruitResult, Quality } from '@/games/three-kingdoms/engine';
+import type { RecruitType, RecruitOutput, RecruitResult, Quality, RecruitHistoryEntry } from '@/games/three-kingdoms/engine';
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { Toast } from '@/components/idle/common/Toast';
@@ -62,6 +62,20 @@ const QUALITY_REVEAL_ANIM: Record<Quality, string> = {
 };
 
 // ─────────────────────────────────────────────
+// 工具函数
+// ─────────────────────────────────────────────
+
+/** 格式化时间戳为 MM-DD HH:mm */
+function formatTimestamp(ts: number): string {
+  const d = new Date(ts);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${mm}-${dd} ${hh}:${mi}`;
+}
+
+// ─────────────────────────────────────────────
 // 主组件
 // ─────────────────────────────────────────────
 const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitComplete }) => {
@@ -69,6 +83,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
   const [results, setResults] = useState<RecruitOutput | null>(null);
   const [isRecruiting, setIsRecruiting] = useState(false);
   const [revealPhase, setRevealPhase] = useState(false);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   const recruitSystem = engine.getRecruitSystem();
 
@@ -91,6 +106,12 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
       hardPity: { current: hardPity, max: 50 },
     };
   }, [recruitSystem, recruitType]);
+
+  // 招募历史（最近10条）
+  const recruitHistory = useMemo<RecruitHistoryEntry[]>(
+    () => recruitSystem.getRecruitHistory().slice(0, 10),
+    [recruitSystem],
+  );
 
   // 执行招募
   const handleRecruit = useCallback((count: 1 | 10) => {
@@ -231,6 +252,58 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
             </div>
           </div>
         )}
+
+        {/* 招募历史记录 */}
+        <div className="tk-recruit-history">
+          <button
+            className="tk-recruit-history-toggle"
+            onClick={() => setHistoryExpanded((prev) => !prev)}
+            aria-expanded={historyExpanded}
+          >
+            <span className="tk-recruit-history-toggle-text">
+              📋 招募记录 ({recruitHistory.length})
+            </span>
+            <span className={`tk-recruit-history-toggle-arrow ${historyExpanded ? 'tk-recruit-history-toggle-arrow--expanded' : ''}`}>
+              ▼
+            </span>
+          </button>
+
+          {historyExpanded && (
+            <div className="tk-recruit-history-list">
+              {recruitHistory.length === 0 ? (
+                <div className="tk-recruit-history-empty">暂无招募记录</div>
+              ) : (
+                recruitHistory.map((entry, idx) => (
+                  <div key={`${entry.timestamp}-${idx}`} className="tk-recruit-history-item">
+                    <div className="tk-recruit-history-item-left">
+                      <span className="tk-recruit-history-time">
+                        {formatTimestamp(entry.timestamp)}
+                      </span>
+                      <span className={`tk-recruit-history-type tk-recruit-history-type--${entry.type}`}>
+                        {RECRUIT_TYPE_LABELS[entry.type]}
+                      </span>
+                    </div>
+                    <div className="tk-recruit-history-item-right">
+                      {entry.results.map((r, rIdx) => (
+                        <span
+                          key={`${r.general?.id ?? rIdx}-${rIdx}`}
+                          className="tk-recruit-history-hero"
+                          style={{ borderColor: QUALITY_BORDER_COLORS[r.quality] }}
+                        >
+                          <span
+                            className="tk-recruit-history-hero-dot"
+                            style={{ background: QUALITY_BORDER_COLORS[r.quality] }}
+                          />
+                          {r.general?.name ?? '???'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

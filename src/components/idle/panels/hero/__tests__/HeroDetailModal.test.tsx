@@ -73,16 +73,22 @@ function makeMockEngine(options: {
   general?: GeneralData;
   affordable?: boolean;
   enhanceResult?: any;
+  canSynthesize?: boolean;
 } = {}) {
   const general = options.general ?? baseGeneral;
   const affordable = options.affordable ?? true;
   const preview = { ...enhancePreview, affordable };
 
+  const heroSystem = {
+    calculatePower: vi.fn(() => 1082),
+    getFragments: vi.fn(() => 30),
+    getSynthesizeProgress: vi.fn(() => ({ current: 30, required: 80 })),
+    canSynthesize: vi.fn(() => options.canSynthesize ?? false),
+    fragmentSynthesize: vi.fn(() => null),
+  };
+
   return {
-    getHeroSystem: vi.fn(() => ({
-      calculatePower: vi.fn(() => 1082),
-      getFragments: vi.fn(() => 30),
-    })),
+    getHeroSystem: vi.fn(() => heroSystem),
     getLevelSystem: vi.fn(() => ({
       getExpProgress: vi.fn(() => ({ current: 500, required: 1000, percentage: 50 })),
     })),
@@ -257,7 +263,8 @@ describe('HeroDetailModal', () => {
 
   it('应显示碎片数量', () => {
     render(<HeroDetailModal {...defaultProps} />);
-    expect(screen.getByText(/碎片/)).toBeInTheDocument();
+    // 碎片区域包含进度和合成按钮，使用 getAllByText
+    expect(screen.getAllByText(/碎片/).length).toBeGreaterThanOrEqual(1);
   });
 
   // ═══════════════════════════════════════════
@@ -272,5 +279,38 @@ describe('HeroDetailModal', () => {
 
     // 目标等级应变为 Lv.15 (10+5)
     expect(screen.getByText(/目标等级: Lv\.15/)).toBeInTheDocument();
+  });
+
+  // ═══════════════════════════════════════════
+  // 8. 碎片合成
+  // ═══════════════════════════════════════════
+
+  it('应渲染碎片合成按钮', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    expect(screen.getByText(/碎片合成/)).toBeInTheDocument();
+  });
+
+  it('碎片不足时合成按钮应被禁用', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    const synthBtn = screen.getByText(/碎片合成/);
+    expect(synthBtn).toBeDisabled();
+  });
+
+  it('碎片充足时合成按钮应可点击', () => {
+    const engine = makeMockEngine({ canSynthesize: true });
+    render(<HeroDetailModal {...defaultProps} engine={engine} />);
+    const synthBtn = screen.getByText('✨ 碎片合成');
+    expect(synthBtn).not.toBeDisabled();
+  });
+
+  it('点击合成按钮应调用 fragmentSynthesize', async () => {
+    const engine = makeMockEngine({ canSynthesize: true });
+    render(<HeroDetailModal {...defaultProps} engine={engine} />);
+
+    const synthBtn = screen.getByText('✨ 碎片合成');
+    await userEvent.click(synthBtn);
+
+    const heroSystem = engine.getHeroSystem();
+    expect(heroSystem.fragmentSynthesize).toHaveBeenCalledWith('guanyu');
   });
 });

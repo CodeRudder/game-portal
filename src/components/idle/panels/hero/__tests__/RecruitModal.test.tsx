@@ -70,6 +70,7 @@ function makeMockRecruitSystem(canAfford = true) {
       normalHardPity: 10,
       advancedHardPity: 20,
     })),
+    getRecruitHistory: vi.fn(() => []),
   } as unknown as HeroRecruitSystem;
 }
 
@@ -314,5 +315,67 @@ describe('RecruitModal', () => {
     await userEvent.click(singleBtn);
 
     expect(onRecruitComplete).toHaveBeenCalledTimes(1);
+  });
+
+  // ═══════════════════════════════════════════
+  // 8. 招募历史记录
+  // ═══════════════════════════════════════════
+
+  it('应渲染招募记录折叠按钮', () => {
+    render(<RecruitModal {...defaultProps} />);
+    expect(screen.getByText(/招募记录/)).toBeInTheDocument();
+  });
+
+  it('默认应不展开招募记录列表', () => {
+    render(<RecruitModal {...defaultProps} />);
+    expect(screen.queryByText('暂无招募记录')).not.toBeInTheDocument();
+  });
+
+  it('点击招募记录按钮应展开列表', async () => {
+    render(<RecruitModal {...defaultProps} />);
+    const toggleBtn = screen.getByText(/招募记录/).closest('button')!;
+    await userEvent.click(toggleBtn);
+    expect(screen.getByText('暂无招募记录')).toBeInTheDocument();
+  });
+
+  it('展开后再点击应折叠列表', async () => {
+    render(<RecruitModal {...defaultProps} />);
+    const toggleBtn = screen.getByText(/招募记录/).closest('button')!;
+
+    // 展开
+    await userEvent.click(toggleBtn);
+    expect(screen.getByText('暂无招募记录')).toBeInTheDocument();
+
+    // 折叠
+    await userEvent.click(toggleBtn);
+    expect(screen.queryByText('暂无招募记录')).not.toBeInTheDocument();
+  });
+
+  it('有历史记录时应显示记录条目', async () => {
+    const historyEntry = {
+      timestamp: Date.now(),
+      type: 'normal' as const,
+      results: [makeRecruitResult()],
+      cost: { resourceType: 'gold', amount: 100 },
+    };
+    const recruitSystem = makeMockRecruitSystem();
+    (recruitSystem.getRecruitHistory as ReturnType<typeof vi.fn>).mockReturnValue([historyEntry]);
+
+    const engine = {
+      getRecruitSystem: vi.fn(() => recruitSystem),
+      recruit: vi.fn(() => makeRecruitOutput(1)),
+      getHeroSystem: vi.fn(),
+      getLevelSystem: vi.fn(),
+    } as unknown as ThreeKingdomsEngine;
+
+    render(<RecruitModal {...defaultProps} engine={engine} />);
+    const toggleBtn = screen.getByText(/招募记录/).closest('button')!;
+    await userEvent.click(toggleBtn);
+
+    // 历史记录中应显示武将名和招募类型
+    expect(screen.getAllByText('关羽').length).toBeGreaterThanOrEqual(1);
+    // 普通招贤标签在历史区域中也有一个
+    const normalLabels = screen.getAllByText('普通招贤');
+    expect(normalLabels.length).toBeGreaterThanOrEqual(2); // 类型选择 + 历史记录
   });
 });

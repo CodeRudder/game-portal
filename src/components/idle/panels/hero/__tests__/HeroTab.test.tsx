@@ -84,6 +84,9 @@ function makeMockEngine(generalList: GeneralData[] = generals) {
       calculatePower: vi.fn((g: GeneralData) => powerMap[g.id] ?? 0),
       calculateTotalPower: vi.fn(() => totalPower),
       getFragments: vi.fn(() => 0),
+      getSynthesizeProgress: vi.fn(() => ({ current: 0, required: 80 })),
+      canSynthesize: vi.fn(() => false),
+      fragmentSynthesize: vi.fn(() => null),
     })),
     getLevelSystem: vi.fn(() => ({
       getExpProgress: vi.fn(() => ({ current: 500, required: 1000, percentage: 50 })),
@@ -106,6 +109,7 @@ function makeMockEngine(generalList: GeneralData[] = generals) {
       getRecruitCost: vi.fn(() => ({ resourceType: 'gold', amount: 100 })),
       canRecruit: vi.fn(() => true),
       getGachaState: vi.fn(() => ({ normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 })),
+      getRecruitHistory: vi.fn(() => []),
     })),
   } as unknown as ThreeKingdomsEngine;
 }
