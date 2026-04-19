@@ -183,6 +183,10 @@ export interface GameSaveData {
   building: BuildingSaveData;
   /** 日历系统数据（可选，向后兼容旧存档） */
   calendar?: import('../engine/calendar/calendar.types').CalendarSaveData;
+  /** 武将系统数据（可选，向后兼容旧存档） */
+  hero?: import('../engine/hero/hero.types').HeroSaveData;
+  /** 招募系统数据（可选，向后兼容旧存档） */
+  recruit?: import('../engine/hero/HeroRecruitSystem').RecruitSaveData;
 }
 
 // ─────────────────────────────────────────────
@@ -203,4 +207,10 @@ export interface EngineSnapshot {
   onlineSeconds: number;
   /** 日历状态 */
   calendar: import('../engine/calendar/calendar.types').CalendarState;
+  /** 武将列表 */
+  heroes: Readonly<import('../engine/hero/hero.types').GeneralData>[];
+  /** 武将碎片 */
+  heroFragments: Readonly<Record<string, number>>;
+  /** 全体武将总战力 */
+  totalPower: number;
 }

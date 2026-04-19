@@ -63,3 +63,31 @@ export {
   WEATHERS,
   WEATHER_LABELS,
 } from './calendar/calendar.types';
+
+// 武将域
+export { HeroSystem } from './hero/HeroSystem';
+export { HeroRecruitSystem } from './hero/HeroRecruitSystem';
+export type {
+  Quality,
+  GeneralStats,
+  GeneralData,
+  HeroState,
+  HeroSaveData,
+  SkillData,
+  Faction,
+} from './hero/hero.types';
+export {
+  QUALITY_ORDER,
+  QUALITY_TIERS,
+  QUALITY_LABELS,
+  QUALITY_BORDER_COLORS,
+} from './hero/hero.types';
+export type {
+  RecruitResult,
+  RecruitOutput,
+  PityState,
+  RecruitSaveData,
+  ResourceSpendFn,
+  ResourceCheckFn,
+  RecruitDeps,
+} from './hero/HeroRecruitSystem';

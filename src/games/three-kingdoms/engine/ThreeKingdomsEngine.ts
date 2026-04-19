@@ -8,17 +8,25 @@
  *   - EventBus：事件总线，替代内嵌实现
  *   - SubsystemRegistry：子系统注册/查找
  *   - SaveManager：存档管理器
+ *
+ * 拆分：
+ *   - engine-tick.ts — tick 内部逻辑
+ *   - engine-save.ts — 存档相关逻辑
  */
 
 import { ResourceSystem } from './resource/ResourceSystem';
 import { BuildingSystem } from './building/BuildingSystem';
 import { CalendarSystem } from './calendar/CalendarSystem';
+import { HeroSystem } from './hero/HeroSystem';
+import { HeroRecruitSystem, type RecruitOutput } from './hero/HeroRecruitSystem';
+import { HeroLevelSystem, type LevelUpResult, type BatchEnhanceResult, type EnhancePreview } from './hero/HeroLevelSystem';
 import type { Bonuses, CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type {
   EngineEventType, EngineEventMap, EventListener, GameSaveData, EngineSnapshot,
 } from '../shared/types';
-import type { CalendarSaveData, CalendarState } from './calendar/calendar.types';
+import type { GeneralData } from './hero/hero.types';
+import type { RecruitType } from './hero/hero-recruit-config';
 import { AUTO_SAVE_INTERVAL_SECONDS, SAVE_KEY, ENGINE_SAVE_VERSION } from '../shared/constants';
 
 import type { IGameState } from '../core/types/state';
@@ -27,7 +35,14 @@ import { EventBus } from '../core/events/EventBus';
 import { SubsystemRegistry } from '../core/engine/SubsystemRegistry';
 import { SaveManager } from '../core/save/SaveManager';
 import { ConfigRegistry } from '../core/config/ConfigRegistry';
-import { SocialEvents, MapEvents } from '../core/events/EventTypes';
+
+// 拆分模块
+import { executeTick, syncBuildingToResource, type TickContext } from './engine-tick';
+import {
+  buildSaveData, toIGameState, applyLoadedState,
+  tryLoadLegacyFormat, applyLegacyState, applyDeserialize,
+  type SaveContext,
+} from './engine-save';
 
 // ─────────────────────────────────────────────
 // ThreeKingdomsEngine
@@ -38,6 +53,9 @@ export class ThreeKingdomsEngine {
   readonly resource: ResourceSystem;
   readonly building: BuildingSystem;
   readonly calendar: CalendarSystem;
+  readonly hero: HeroSystem;
+  readonly heroRecruit: HeroRecruitSystem;
+  readonly heroLevel: HeroLevelSystem;
 
   // ── core/ 基础设施 ──
   private readonly bus: EventBus;
@@ -51,7 +69,7 @@ export class ThreeKingdomsEngine {
   private lastTickTime = 0;
   private autoSaveAccumulator = 0;
 
-  // ── 上次快照（用于变化检测，避免无变化时频繁 emit） ──
+  // ── 变化检测缓存 ──
   private prevResourcesJson = '';
   private prevRatesJson = '';
 
@@ -59,22 +77,27 @@ export class ThreeKingdomsEngine {
     this.resource = new ResourceSystem();
     this.building = new BuildingSystem();
     this.calendar = new CalendarSystem();
+    this.hero = new HeroSystem();
+    this.heroRecruit = new HeroRecruitSystem();
+    this.heroLevel = new HeroLevelSystem();
 
     // 初始化 core/ 基础设施
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
 
-    // 将 Engine 常量注入 ConfigRegistry，供 SaveManager 使用
     this.configRegistry.set('SAVE_KEY', SAVE_KEY);
     this.configRegistry.set('SAVE_VERSION', String(ENGINE_SAVE_VERSION));
 
     this.saveManager = new SaveManager(this.configRegistry);
 
-    // 注册子系统到 Registry
+    // 注册子系统
     this.registry.register('resource', this.resource as any);
     this.registry.register('building', this.building as any);
     this.registry.register('calendar', this.calendar as any);
+    this.registry.register('hero', this.hero as any);
+    this.registry.register('heroRecruit', this.heroRecruit as any);
+    this.registry.register('heroLevel', this.heroLevel as any);
   }
 
   // ═══════════════════════════════════════════
@@ -85,15 +108,18 @@ export class ThreeKingdomsEngine {
   init(): void {
     if (this.initialized) return;
 
-    this.syncBuildingToResource();
+    syncBuildingToResource(this.buildTickCtx());
 
-    // 初始化日历子系统，注入 EventBus 等依赖
-    const calendarDeps: ISystemDeps = {
+    // 初始化子系统依赖
+    const deps: ISystemDeps = {
       eventBus: this.bus,
       config: this.configRegistry,
       registry: this.registry,
     };
-    this.calendar.init(calendarDeps);
+    this.calendar.init(deps);
+
+    // 初始化武将子系统（含资源回调注入）
+    this.initHeroSystems(deps);
 
     this.initialized = true;
     this.lastTickTime = Date.now();
@@ -114,47 +140,22 @@ export class ThreeKingdomsEngine {
     const now = Date.now();
     const dt = deltaMs ?? (now - this.lastTickTime);
     this.lastTickTime = now;
+    const dtSec = dt / 1000;
 
-    // 2a. 日历推进（现实秒 → 游戏天数）
-    this.calendar.update(dt / 1000);
+    // 委托给 engine-tick
+    const ctx = this.buildTickCtx();
+    executeTick(ctx, dtSec);
+    this.syncTickCtx(ctx);
 
-    // 2b. 建筑升级计时 → 返回本帧完成的建筑
-    const completed = this.building.tick();
-
-    // 2c. 处理升级完成的建筑（联动更新产出/上限）
-    if (completed.length > 0) {
-      this.syncBuildingToResource();
-      for (const type of completed) {
-        const level = this.building.getLevel(type);
-        this.bus.emit('building:upgraded', { type, level });
-      }
-    }
-
-    // 2d. 资源产出（含各类加成）
-    // ── 加成框架 v5.0 ──
-    // 当前仅 castle 加成实际生效，其余预留为 0，待后续版本接入
-    const castleMultiplier = this.building.getCastleBonusMultiplier();
-    const bonuses: Bonuses = {
-      castle: castleMultiplier - 1, // v5.0 主城加成 — 来源: BuildingSystem.getCastleBonusMultiplier()
-      tech:   0,                    // v5.1 科技加成 — 来源: TechSystem（预留）
-      hero:   0,                    // v5.2 武将加成 — 来源: HeroSystem（预留）
-      rebirth: 0,                   // v5.3 转生加成 — 来源: RebirthSystem（预留）
-      vip:    0,                    // v5.4 VIP加成  — 来源: VipSystem（预留）
-    };
-    this.resource.tick(dt, bonuses);
-
-    // 2e. 变化检测 → 发出事件
-    this.detectAndEmitChanges();
-
-    // 2f. 自动保存累加
-    this.autoSaveAccumulator += dt / 1000;
+    // 自动保存累加
+    this.autoSaveAccumulator += dtSec;
     if (this.autoSaveAccumulator >= AUTO_SAVE_INTERVAL_SECONDS) {
       this.autoSaveAccumulator = 0;
       this.save();
     }
 
-    // 2g. 在线时长
-    this.onlineSeconds += dt / 1000;
+    // 在线时长
+    this.onlineSeconds += dtSec;
   }
 
   // ═══════════════════════════════════════════
@@ -171,19 +172,13 @@ export class ThreeKingdomsEngine {
     return this.building.getUpgradeCost(type);
   }
 
-  /**
-   * 执行建筑升级
-   * 编排流程：前置检查 → 扣除资源 → 开始升级 → 发出事件
-   * @throws 资源不足或条件不满足时抛错
-   */
+  /** 执行建筑升级：前置检查 → 扣除资源 → 开始升级 → 发出事件 */
   upgradeBuilding(type: BuildingType): void {
     const resources = this.resource.getResources();
-
     const check = this.building.checkUpgrade(type, resources);
     if (!check.canUpgrade) {
       throw new Error(`无法升级 ${type}：${check.reasons.join('；')}`);
     }
-
     const cost = this.building.getUpgradeCost(type);
     if (!cost) throw new Error(`无法获取 ${type} 的升级费用`);
 
@@ -192,7 +187,6 @@ export class ThreeKingdomsEngine {
       gold: cost.gold,
       troops: cost.troops,
     });
-
     this.building.startUpgrade(type, resources);
 
     this.bus.emit('building:upgrade-start', { type, cost });
@@ -216,18 +210,10 @@ export class ThreeKingdomsEngine {
   // 4. 存档 / 读档
   // ═══════════════════════════════════════════
 
-  /** 保存游戏（委托给 SaveManager，保持 GameSaveData 格式兼容） */
+  /** 保存游戏 */
   save(): void {
-    const data: GameSaveData = {
-      version: ENGINE_SAVE_VERSION,
-      saveTime: Date.now(),
-      resource: this.resource.serialize(),
-      building: this.building.serialize(),
-      calendar: this.calendar.serialize(),
-    };
-
-    // 转换为 IGameState 格式，委托给 SaveManager
-    const state: IGameState = this.toIGameState(data);
+    const data = buildSaveData(this.buildSaveCtx());
+    const state: IGameState = toIGameState(data, this.onlineSeconds);
     const ok = this.saveManager.save(state);
 
     if (ok) {
@@ -238,19 +224,24 @@ export class ThreeKingdomsEngine {
     }
   }
 
-  /** 从 SaveManager 加载存档，自动计算并应用离线收益。无存档返回 null */
+  /** 从存档加载，自动计算离线收益。无存档返回 null */
   load(): OfflineEarnings | null {
+    const ctx = this.buildSaveCtx();
+
     // 优先尝试 SaveManager 新格式
     const state = this.saveManager.load();
-
     if (state) {
-      return this.applyLoadedState(state);
+      const result = applyLoadedState(ctx, state);
+      this.finalizeLoad();
+      return result;
     }
 
-    // 向后兼容：尝试加载旧格式（直接 JSON，无 checksum 包装）
-    const legacyData = this.tryLoadLegacyFormat();
+    // 向后兼容旧格式
+    const legacyData = tryLoadLegacyFormat();
     if (legacyData) {
-      return this.applyLegacyState(legacyData);
+      const result = applyLegacyState(ctx, legacyData);
+      this.finalizeLoad();
+      return result;
     }
 
     return null;
@@ -258,25 +249,18 @@ export class ThreeKingdomsEngine {
 
   /** 序列化为 JSON 字符串（不写入 localStorage） */
   serialize(): string {
-    const data: GameSaveData = {
-      version: ENGINE_SAVE_VERSION,
-      saveTime: Date.now(),
-      resource: this.resource.serialize(),
-      building: this.building.serialize(),
-      calendar: this.calendar.serialize(),
-    };
-    return JSON.stringify(data);
+    return JSON.stringify(buildSaveData(this.buildSaveCtx()));
   }
 
-  /** 从 JSON 字符串反序列化（不从 localStorage 读取） */
+  /** 从 JSON 字符串反序列化 */
   deserialize(json: string): void {
-    const data: GameSaveData = JSON.parse(json);
-    this.building.deserialize(data.building);
-    this.resource.deserialize(data.resource);
-    if (data.calendar) {
-      this.calendar.deserialize(data.calendar);
-    }
-    this.syncBuildingToResource();
+    applyDeserialize(this.buildSaveCtx(), json);
+    const deps: ISystemDeps = {
+      eventBus: this.bus,
+      config: this.configRegistry,
+      registry: this.registry,
+    };
+    this.initHeroSystems(deps);
     this.initialized = true;
     this.lastTickTime = Date.now();
   }
@@ -291,6 +275,9 @@ export class ThreeKingdomsEngine {
     this.resource.reset();
     this.building.reset();
     this.calendar.reset();
+    this.hero.reset();
+    this.heroRecruit.reset();
+    this.heroLevel.reset();
     this.initialized = false;
     this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0;
@@ -304,35 +291,22 @@ export class ThreeKingdomsEngine {
   // 5. 事件系统
   // ═══════════════════════════════════════════
 
-  /** 订阅事件（强类型） */
-  on<T extends EngineEventType>(
-    event: T,
-    listener: EventListener<EngineEventMap[T]>,
-  ): void;
-  /** 订阅事件（兼容 IGameEngine 字符串事件名） */
+  on<T extends EngineEventType>(event: T, listener: EventListener<EngineEventMap[T]>): void;
   on(event: string, listener: (...args: any[]) => void): void;
   on(event: string, listener: (...args: any[]) => void): void {
     this.bus.on(event, listener);
   }
 
-  /** 订阅事件（仅触发一次） */
-  once<T extends EngineEventType>(
-    event: T,
-    listener: EventListener<EngineEventMap[T]>,
-  ): void {
+  once<T extends EngineEventType>(event: T, listener: EventListener<EngineEventMap[T]>): void {
     this.bus.once(event, listener);
   }
 
-  /** 取消订阅事件 */
-  off<T extends EngineEventType>(
-    event: T,
-    listener: EventListener<EngineEventMap[T]>,
-  ): void {
+  off<T extends EngineEventType>(event: T, listener: EventListener<EngineEventMap[T]>): void {
     this.bus.off(event, listener);
   }
 
   // ═══════════════════════════════════════════
-  // 6. 状态查询（供 UI 消费）
+  // 6. 状态查询
   // ═══════════════════════════════════════════
 
   /** 获取引擎状态快照 */
@@ -344,6 +318,9 @@ export class ThreeKingdomsEngine {
       buildings: this.building.getAllBuildings(),
       onlineSeconds: this.onlineSeconds,
       calendar: this.calendar.getState(),
+      heroes: this.hero.getAllGenerals(),
+      heroFragments: this.hero.getAllFragments(),
+      totalPower: this.hero.calculateTotalPower(),
     };
   }
 
@@ -354,174 +331,167 @@ export class ThreeKingdomsEngine {
   getUpgradeRemainingTime(type: BuildingType): number { return this.building.getUpgradeRemainingTime(type); }
 
   // ═══════════════════════════════════════════
+  // 7. 武将系统 API
+  // ═══════════════════════════════════════════
+
+  /** 获取武将系统实例 */
+  getHeroSystem(): HeroSystem { return this.hero; }
+
+  /** 获取招募系统实例 */
+  getRecruitSystem(): HeroRecruitSystem { return this.heroRecruit; }
+
+  /** 获取升级系统实例 */
+  getLevelSystem(): HeroLevelSystem { return this.heroLevel; }
+
+  /**
+   * 招募武将
+   * @param type  - 招募类型 ('normal' | 'advanced')
+   * @param count - 招募次数（1 或 10）
+   */
+  recruit(type: RecruitType, count: 1 | 10 = 1): RecruitOutput | null {
+    return count === 10
+      ? this.heroRecruit.recruitTen(type)
+      : this.heroRecruit.recruitSingle(type);
+  }
+
+  /** 一键强化武将到目标等级 */
+  enhanceHero(generalId: string, targetLevel?: number): LevelUpResult | null {
+    return this.heroLevel.quickEnhance(generalId, targetLevel);
+  }
+
+  /** 一键强化全部武将 */
+  enhanceAllHeroes(targetLevel?: number): BatchEnhanceResult {
+    return this.heroLevel.quickEnhanceAll(targetLevel);
+  }
+
+  /** 获取所有已拥有武将 */
+  getGenerals(): Readonly<GeneralData>[] {
+    return this.hero.getAllGenerals();
+  }
+
+  /** 获取单个武将 */
+  getGeneral(id: string): Readonly<GeneralData> | undefined {
+    return this.hero.getGeneral(id);
+  }
+
+  /** 获取强化预览 */
+  getEnhancePreview(generalId: string, targetLevel: number): EnhancePreview | null {
+    return this.heroLevel.getEnhancePreview(generalId, targetLevel);
+  }
+
+  // ═══════════════════════════════════════════
   // 私有方法
   // ═══════════════════════════════════════════
 
-  /** 将 GameSaveData 转换为 IGameState 格式 */
-  private toIGameState(data: GameSaveData): IGameState {
-    return {
-      version: String(data.version),
-      timestamp: data.saveTime,
-      subsystems: {
-        resource: data.resource,
-        building: data.building,
-        calendar: data.calendar,
-      },
-      metadata: {
-        totalPlayTime: this.onlineSeconds,
-        saveCount: 0,
-        lastVersion: String(data.version),
-      },
-    };
-  }
-
-  /** 从 IGameState 提取 GameSaveData */
-  private fromIGameState(state: IGameState): GameSaveData {
-    return {
-      version: Number(state.version),
-      saveTime: state.timestamp,
-      resource: state.subsystems.resource as any,
-      building: state.subsystems.building as any,
-      calendar: state.subsystems.calendar as CalendarSaveData | undefined,
-    };
-  }
-
-  /** 应用从 SaveManager 加载的 IGameState */
-  private applyLoadedState(state: IGameState): OfflineEarnings | null {
+  /**
+   * 安全消耗资源（武将系统回调用）
+   *
+   * 武将系统使用 string 类型资源名，此方法映射到 ResourceSystem 的具体方法。
+   */
+  private safeSpendResource(type: string, amount: number): boolean {
+    const validTypes = ['grain', 'gold', 'troops', 'mandate'];
+    if (!validTypes.includes(type)) return false;
     try {
-      const data = this.fromIGameState(state);
-
-      if (data.version !== ENGINE_SAVE_VERSION) {
-        console.warn(
-          `Engine: 存档版本不匹配 (期望 ${ENGINE_SAVE_VERSION}，实际 ${data.version})，尝试兼容加载`,
-        );
-      }
-
-      this.building.deserialize(data.building);
-      this.resource.deserialize(data.resource);
-      if (data.calendar) {
-        this.calendar.deserialize(data.calendar);
-      }
-      this.syncBuildingToResource();
-
-      return this.computeOfflineAndFinalize();
-    } catch (e) {
-      console.error('ThreeKingdomsEngine.load 失败:', e);
-      return null;
-    }
-  }
-
-  /** 尝试加载旧格式存档（直接 JSON，无 checksum 包装） */
-  private tryLoadLegacyFormat(): GameSaveData | null {
-    try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (!raw) return null;
-
-      const parsed = JSON.parse(raw);
-
-      // 旧格式特征：直接是 GameSaveData（有 version/saveTime/resource/building）
-      // 新格式特征：外层有 v/checksum/data 字段（StateSerializer 包装）
-      if (parsed.v !== undefined && parsed.checksum !== undefined && parsed.data !== undefined) {
-        return null; // 这是新格式，不应在这里处理
-      }
-
-      // 校验旧格式基本结构
-      if (typeof parsed.version === 'number' && parsed.resource && parsed.building) {
-        return parsed as GameSaveData;
-      }
-
-      return null;
+      this.resource.consumeResource(type as any, amount);
+      return true;
     } catch {
-      return null;
+      return false;
     }
   }
 
-  /** 应用旧格式存档 */
-  private applyLegacyState(data: GameSaveData): OfflineEarnings | null {
-    try {
-      this.building.deserialize(data.building);
-      this.resource.deserialize(data.resource);
-      if (data.calendar) {
-        this.calendar.deserialize(data.calendar);
-      }
-      this.syncBuildingToResource();
-
-      return this.computeOfflineAndFinalize();
-    } catch (e) {
-      console.error('ThreeKingdomsEngine.load 旧格式加载失败:', e);
-      return null;
+  /** 安全检查资源是否充足（武将系统回调用） */
+  private safeCanAfford(type: string, amount: number): boolean {
+    const validTypes = ['grain', 'gold', 'troops', 'mandate'];
+    if (!validTypes.includes(type)) return false;
+    const current = this.resource.getAmount(type as any);
+    // 粮草需要扣除保留量（MIN_GRAIN_RESERVE = 10）
+    if (type === 'grain') {
+      return Math.max(0, current - 10) >= amount;
     }
+    return current >= amount;
   }
 
-  /** 计算离线收益并完成加载 */
-  private computeOfflineAndFinalize(): OfflineEarnings | null {
-    const lastSaveTime = this.resource.getLastSaveTime();
-    const offlineMs = Date.now() - lastSaveTime;
-    let offlineEarnings: OfflineEarnings | undefined;
+  /** 安全获取资源数量（武将系统回调用） */
+  private safeGetAmount(type: string): number {
+    const validTypes = ['grain', 'gold', 'troops', 'mandate'];
+    if (!validTypes.includes(type)) return 0;
+    return this.resource.getAmount(type as any);
+  }
 
-    if (offlineMs > 0) {
-      const offlineSeconds = offlineMs / 1000;
-      offlineEarnings = this.resource.applyOfflineEarnings(offlineSeconds);
+  /** 初始化武将子系统（注入依赖和回调） */
+  private initHeroSystems(deps: ISystemDeps): void {
+    // HeroSystem
+    this.hero.init(deps);
 
-      if (offlineEarnings.earned.grain > 0 ||
-          offlineEarnings.earned.gold > 0 ||
-          offlineEarnings.earned.troops > 0 ||
-          offlineEarnings.earned.mandate > 0) {
-        this.bus.emit('game:offline-earnings', offlineEarnings);
-      }
-    }
+    // 招募系统 — 注入资源消耗回调
+    this.heroRecruit.init(deps);
+    this.heroRecruit.setRecruitDeps({
+      heroSystem: this.hero,
+      spendResource: (type, amount) => this.safeSpendResource(type, amount),
+      canAffordResource: (type, amount) => this.safeCanAfford(type, amount),
+    });
 
-    // 初始化日历子系统依赖（确保 load 后 calendar 也能发出事件）
-    const calendarDeps: ISystemDeps = {
+    // 升级系统 — 注入资源查询/消耗回调
+    this.heroLevel.init(deps);
+    this.heroLevel.setLevelDeps({
+      heroSystem: this.hero,
+      spendResource: (type, amount) => this.safeSpendResource(type, amount),
+      canAffordResource: (type, amount) => this.safeCanAfford(type, amount),
+      getResourceAmount: (type) => this.safeGetAmount(type),
+    });
+  }
+
+  /** 构建 tick 上下文 */
+  private buildTickCtx(): TickContext {
+    return {
+      resource: this.resource,
+      building: this.building,
+      calendar: this.calendar,
+      hero: this.hero,
+      bus: this.bus,
+      prevResourcesJson: this.prevResourcesJson,
+      prevRatesJson: this.prevRatesJson,
+    };
+  }
+
+  /** 从 tick 上下文同步回缓存字段 */
+  private syncTickCtx(ctx: TickContext): void {
+    this.prevResourcesJson = ctx.prevResourcesJson;
+    this.prevRatesJson = ctx.prevRatesJson;
+  }
+
+  /** 构建存档上下文 */
+  private buildSaveCtx(): SaveContext {
+    return {
+      resource: this.resource,
+      building: this.building,
+      calendar: this.calendar,
+      hero: this.hero,
+      recruit: this.heroRecruit,
+      bus: this.bus,
+      registry: this.registry,
+      configRegistry: this.configRegistry,
+      onlineSeconds: this.onlineSeconds,
+    };
+  }
+
+  /** 加载完成后的公共收尾逻辑 */
+  private finalizeLoad(): void {
+    const deps: ISystemDeps = {
       eventBus: this.bus,
       config: this.configRegistry,
       registry: this.registry,
     };
-    this.calendar.init(calendarDeps);
+    this.initHeroSystems(deps);
 
     this.initialized = true;
     this.lastTickTime = Date.now();
     this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0;
-
-    this.bus.emit('game:loaded', { offlineEarnings });
-    return offlineEarnings ?? null;
-  }
-
-  /** 将建筑系统状态同步到资源系统（产出速率 + 资源上限） */
-  private syncBuildingToResource(): void {
-    // 从 BuildingSystem 的 levelTable 查表获取各资源产出值（统一数据源）
-    const productions = this.building.calculateTotalProduction();
-    this.resource.recalculateProduction(productions);
-
-    // 上限仍由建筑等级决定
-    const levels = this.building.getProductionBuildingLevels();
-    this.resource.updateCaps(
-      levels['farmland'] ?? 0,  // PRD: 粮仓容量由农田等级决定（06-building-system）
-      levels['barracks'] ?? 0,
-    );
-  }
-
-  /** 检测资源和产出速率变化，发出对应事件（JSON 浅比较避免无变化时频繁 emit） */
-  private detectAndEmitChanges(): void {
-    const resources = this.resource.getResources();
-    const rates = this.resource.getProductionRates();
-
-    const resJson = JSON.stringify(resources);
-    if (resJson !== this.prevResourcesJson) {
-      this.prevResourcesJson = resJson;
-      this.bus.emit('resource:changed', { resources });
-    }
-
-    const ratesJson = JSON.stringify(rates);
-    if (ratesJson !== this.prevRatesJson) {
-      this.prevRatesJson = ratesJson;
-      this.bus.emit('resource:rate-changed', { rates });
-    }
   }
 
   // ═══════════════════════════════════════════
-  // IGameEngine 兼容存根（供 GameContainer 统一调度）
+  // IGameEngine 兼容存根
   // ═══════════════════════════════════════════
 
   get score(): number { return 0; }
