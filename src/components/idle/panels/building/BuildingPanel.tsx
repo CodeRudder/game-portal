@@ -1,17 +1,15 @@
 /**
- * 三国霸业 v1.0 — 建筑面板组件
+ * 三国霸业 v1.0 — 建筑面板组件（城池地图版）
  *
- * 设计稿：06-building-system.md
- * PC端：4列建筑网格，卡片 160×180px
+ * 设计稿：BLD-buildings.md [BLD-1] 建筑网格场景
+ * PC端：6×5 网格地图，卡片 180×160px
  * 手机端：纵向列表
  *
  * 功能：
- * - 8座建筑列表（图标+名称+等级+状态）
- * - 升级按钮（资源不足灰显）
- * - 升级进度条（升级中显示）
- * - 升级费用显示
- * - 升级队列悬浮面板
- * - 点击卡片打开升级弹窗
+ * - 8座建筑按固定位置放置在城池地图上
+ * - 空地块显示虚线占位
+ * - 升级队列悬浮面板（右上角）
+ * - 点击建筑打开升级弹窗
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -37,9 +35,34 @@ interface BuildingPanelProps {
   engine: ThreeKingdomsEngine;
   snapshotVersion: number;
   onUpgradeComplete?: (type: BuildingType) => void;
-  /** 升级失败回调，用于统一错误提示 */
   onUpgradeError?: (error: Error) => void;
 }
+
+// ─────────────────────────────────────────────
+// 建筑地图位置规划（6列×5行，0-indexed）
+// 参考 BLD-buildings.md [BLD-1]
+// ─────────────────────────────────────────────
+interface MapSlot {
+  row: number;
+  col: number;
+  buildingType?: BuildingType;
+}
+
+/** 建筑在地图上的固定位置 */
+const BUILDING_MAP_POSITIONS: Record<BuildingType, { row: number; col: number }> = {
+  wall:     { row: 0, col: 0 },  // 第1行第1列 — 上方防御
+  farmland: { row: 1, col: 0 },  // 第2行第1列 — 左侧民生
+  market:   { row: 1, col: 1 },  // 第2行第2列 — 左侧民生
+  academy:  { row: 1, col: 3 },  // 第2行第4列 — 右侧文教
+  clinic:   { row: 1, col: 4 },  // 第2行第5列 — 右侧文教
+  barracks: { row: 2, col: 1 },  // 第3行第2列 — 中央军事
+  castle:   { row: 2, col: 2 },  // 第3行第3列 — 核心中央
+  smithy:   { row: 2, col: 3 },  // 第3行第4列 — 中央军事
+};
+
+/** 6列×5行网格，共30格 */
+const GRID_COLS = 6;
+const GRID_ROWS = 5;
 
 // ─────────────────────────────────────────────
 // 建筑核心效果描述
@@ -53,15 +76,6 @@ const BUILDING_EFFECTS: Record<BuildingType, string> = {
   academy: '科技点/秒',
   clinic: '伤兵恢复',
   wall: '城防值',
-};
-
-/** 分区标签 */
-const ZONE_LABELS: Record<string, string> = {
-  core: '核心',
-  civilian: '民生',
-  military: '军事',
-  cultural: '文教',
-  defense: '防御',
 };
 
 // ─────────────────────────────────────────────
@@ -154,11 +168,9 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
       engine.upgradeBuilding(type);
       setSelectedBuilding(null);
       if (onUpgradeComplete) {
-        // 等待下一个 tick 让引擎更新
         setTimeout(() => onUpgradeComplete(type), 100);
       }
     } catch (e: any) {
-      // 通过回调统一使用 Toast.danger 显示错误
       if (onUpgradeError) {
         onUpgradeError(e instanceof Error ? e : new Error(e?.message || '升级失败'));
       }
@@ -171,6 +183,25 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
     if (state?.status === 'locked') return;
     setSelectedBuilding(type);
   }, [buildings]);
+
+  // 构建地图网格数据（6列×5行）
+  const gridSlots = useMemo(() => {
+    // 构建位置查找表
+    const posMap = new Map<string, BuildingType>();
+    for (const [type, pos] of Object.entries(BUILDING_MAP_POSITIONS)) {
+      posMap.set(`${pos.row}-${pos.col}`, type as BuildingType);
+    }
+
+    const slots: (MapSlot | null)[] = [];
+    for (let row = 0; row < GRID_ROWS; row++) {
+      for (let col = 0; col < GRID_COLS; col++) {
+        const key = `${row}-${col}`;
+        const buildingType = posMap.get(key);
+        slots.push({ row, col, buildingType });
+      }
+    }
+    return slots;
+  }, []);
 
   return (
     <div className="tk-building-panel">
@@ -187,11 +218,21 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
         </div>
       )}
 
-      {/* PC端：建筑网格 */}
-      <div className="tk-bld-grid">
-        {BUILDING_TYPES.map(type => {
+      {/* PC端：城池地图网格（6×5） */}
+      <div className="tk-bld-map">
+        {gridSlots.map((slot, idx) => {
+          if (!slot || !slot.buildingType) {
+            // 空地块
+            return (
+              <div key={`empty-${idx}`} className="tk-bld-slot-empty">
+                <span className="tk-bld-slot-plus">＋</span>
+              </div>
+            );
+          }
+
+          const type = slot.buildingType;
           const state = buildings[type];
-          if (!state) return null;
+          if (!state) return <div key={type} className="tk-bld-slot-empty" />;
 
           const info = buildingInfo[type];
           const isLocked = state.status === 'locked';
@@ -232,11 +273,9 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
                 {isLocked ? (
                   <div className="tk-bld-card-locked-text">未解锁</div>
                 ) : (
-                  <>
-                    <div className="tk-bld-card-production">
-                      {getProductionText(type, rates)}
-                    </div>
-                  </>
+                  <div className="tk-bld-card-production">
+                    {getProductionText(type, rates)}
+                  </div>
                 )}
               </div>
 

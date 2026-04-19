@@ -110,6 +110,7 @@
   position: relative;
   overflow: hidden;
   transform-origin: center center;
+  box-sizing: border-box;
 }
 
 /* ═══════════════════════════════════════════
@@ -194,34 +195,40 @@
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  font-size: 12px;
+  gap: 6px;
+  padding: 0 8px;
+  font-size: 11px;
   color: var(--tk-text-secondary);
   white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .tk-calendar-era {
   color: var(--tk-gold);
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .tk-calendar-season {
-  padding: 2px 6px;
+  padding: 2px 5px;
   background: rgba(200, 168, 76, 0.1);
   border-radius: var(--tk-radius-sm);
+  flex-shrink: 0;
 }
 
 .tk-calendar-weather {
-  padding: 2px 6px;
+  padding: 2px 5px;
   background: rgba(126, 200, 80, 0.1);
   border-radius: var(--tk-radius-sm);
+  flex-shrink: 0;
 }
 
 .tk-calendar-date {
-  padding: 2px 6px;
+  padding: 2px 5px;
   background: rgba(100, 149, 237, 0.1);
   border-radius: var(--tk-radius-sm);
+  flex-shrink: 0;
 }
 
 /* ═══════════════════════════════════════════

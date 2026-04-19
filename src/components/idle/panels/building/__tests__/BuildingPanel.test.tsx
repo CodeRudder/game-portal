@@ -2,12 +2,13 @@
  * BuildingPanel 单元测试
  *
  * 测试场景：
- * - 渲染8个建筑卡片
+ * - 渲染8个建筑卡片（地图网格）
  * - 每个卡片显示名称+等级
  * - 升级按钮点击触发回调
  * - 资源不足时按钮灰显
  * - 升级中显示进度条
  * - 建筑状态显示（空闲/升级中/锁定）
+ * - 空地块显示虚线占位
  */
 
 import React from 'react';
@@ -142,7 +143,7 @@ describe('BuildingPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('应渲染8个建筑卡片（PC网格）', () => {
+  it('应渲染8个建筑卡片（地图网格）', () => {
     const engine = createMockEngine();
     const buildings = createMockBuildings();
 
@@ -161,6 +162,25 @@ describe('BuildingPanel', () => {
       const label = mockBuildingLabels[type as keyof typeof mockBuildingLabels];
       expect(screen.getAllByText(label).length).toBeGreaterThanOrEqual(1);
     }
+  });
+
+  it('应渲染空地块占位符', () => {
+    const engine = createMockEngine();
+    const buildings = createMockBuildings();
+
+    render(
+      <BuildingPanel
+        buildings={buildings}
+        resources={defaultResources}
+        rates={defaultRates}
+        caps={defaultCaps}
+        engine={engine as any}
+      />,
+    );
+
+    // 地图是6×5=30格，8建筑+22空地，空地显示＋号
+    const plusSigns = screen.getAllByText('＋');
+    expect(plusSigns.length).toBe(22); // 30 - 8 = 22 空地
   });
 
   it('每个卡片应显示建筑名称和等级', () => {
@@ -203,7 +223,7 @@ describe('BuildingPanel', () => {
       />,
     );
 
-    // 找到所有升级按钮（PC网格中的按钮显示 "▲ 升级"）
+    // 找到所有升级按钮
     const upgradeButtons = screen.getAllByText('▲ 升级');
     expect(upgradeButtons.length).toBeGreaterThan(0);
 
@@ -259,7 +279,7 @@ describe('BuildingPanel', () => {
       />,
     );
 
-    // 进度条应显示 45%（PC网格和手机列表都有）
+    // 进度条应显示 45%
     expect(screen.getAllByText(/45%/).length).toBeGreaterThanOrEqual(1);
 
     // 应显示升级中标识
