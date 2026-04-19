@@ -214,6 +214,114 @@ v1.0 存档 (无 hero/recruit) → load()
 
 ---
 
+## 7. 存档迁移测试用例（v1.0 → v2.0）
+
+### 7.1 迁移测试场景
+
+| # | 测试场景 | 输入 | 预期结果 | 优先级 |
+|---|---------|------|---------|--------|
+| T1 | v1.0 纯净存档加载 | 无 hero/recruit 字段 | 武将系统空初始化，保底计数器归零 | P0 |
+| T2 | v2.0 完整存档加载 | 含 hero + recruit 完整数据 | 正常反序列化，武将/碎片/保底状态完整恢复 | P0 |
+| T3 | v1.0→v2.0 迁移后首次存档 | 迁移后的引擎 save() | 存档包含 hero + recruit 字段，后续加载无需迁移 | P0 |
+| T4 | v1.0 存档 + 已有资源 | 旧存档有 gold=10000 | 迁移后资源不丢失，武将系统为空 | P1 |
+| T5 | v2.0 存档缺失 recruit 子字段 | hero 有数据，recruit 缺失 | hero 正常加载，recruit 保底计数器归零 | P1 |
+| T6 | 空 generals 反序列化 | hero.state.generals = {} | 武将列表为空，总战力为 0 | P1 |
+| T7 | 碎片数据迁移 | hero.state.fragments 有值 | 碎片数量正确恢复 | P2 |
+| T8 | 存档版本号向后兼容 | ENGINE_SAVE_VERSION=1 | v1.0/v2.0 共用版本号，通过可选字段区分 | P2 |
+
+### 7.2 迁移测试代码示例
+
+```typescript
+describe('v1.0 → v2.0 存档迁移', () => {
+  it('T1: v1.0 纯净存档加载后武将系统为空', () => {
+    const v1Save = {
+      version: 1,
+      resources: { gold: 5000, ... },
+      buildings: { ... },
+      // 无 hero/recruit 字段
+    };
+    engine.load(v1Save);
+    expect(engine.getGenerals()).toHaveLength(0);
+    expect(engine.getHeroSystem().calculateTotalPower()).toBe(0);
+  });
+
+  it('T2: v2.0 完整存档正常加载', () => {
+    const v2Save = {
+      version: 1,
+      resources: { ... },
+      buildings: { ... },
+      hero: { version: 1, state: { generals: { guanyu: {...} }, fragments: { guanyu: 10 } } },
+      recruit: { version: 1, state: { normalPity: 3, advancedPity: 5, ... } },
+    };
+    engine.load(v2Save);
+    expect(engine.getGenerals()).toHaveLength(1);
+    expect(engine.getHeroSystem().getFragments('guanyu')).toBe(10);
+  });
+});
+```
+
+---
+
+## 8. 存档版本号规范
+
+### 8.1 版本号策略
+
+采用**语义化版本 + 可选字段**双重兼容策略：
+
+| 字段 | 类型 | 当前值 | 说明 |
+|------|------|--------|------|
+| `version` (引擎顶层) | `number` | `1` | 引擎整体存档版本，重大破坏性变更时递增 |
+| `hero.version` | `number` | `1` | 武将子系统版本，武将结构变更时递增 |
+| `recruit.version` | `number` | `1` | 招募子系统版本，招募机制变更时递增 |
+
+### 8.2 版本递增规则
+
+| 变更类型 | 版本递增 | 迁移策略 |
+|---------|---------|---------|
+| 新增可选字段（如新增子系统） | 不递增 | 通过字段存在性检测自动兼容 |
+| 修改现有字段结构 | 子系统版本递增 | 编写迁移函数 `migrateHeroV1toV2()` |
+| 删除/重命名字段 | 引擎顶层版本递增 | 必须提供完整迁移路径 |
+| 新增子系统（如兵法系统） | 不递增 | 通过可选字段检测，缺失时使用默认值 |
+
+### 8.3 版本检测伪代码
+
+```typescript
+function applySaveData(data: SaveData): void {
+  // 引擎版本检查
+  if (data.version > ENGINE_SAVE_VERSION) {
+    throw new Error(`不支持的存档版本: ${data.version}`);
+  }
+
+  // 武将系统：可选字段兼容
+  if (data.hero) {
+    if (data.hero.version < HERO_SAVE_VERSION) {
+      data.hero = migrateHero(data.hero);
+    }
+    ctx.hero.deserialize(data.hero);
+  } else {
+    // v1.0 存档：自动初始化空武将系统
+    console.info('[Save] 旧版存档迁移：初始化空武将系统');
+  }
+
+  // 招募系统：可选字段兼容
+  if (data.recruit) {
+    if (data.recruit.version < RECRUIT_SAVE_VERSION) {
+      data.recruit = migrateRecruit(data.recruit);
+    }
+    ctx.recruit.deserialize(data.recruit);
+  }
+}
+```
+
+### 8.4 未来版本规划
+
+| 版本 | 计划变更 | 预计迁移方式 |
+|------|---------|-------------|
+| v2.1 | 新增兵法子系统 | 可选字段，无需迁移 |
+| v3.0 | 武将觉醒机制（扩展 GeneralData） | hero.version→2，编写迁移函数 |
+
+---
+
 ## 附录：配置常量速查
 
 ```typescript

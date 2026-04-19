@@ -2,12 +2,12 @@
  * 三国霸业 v1.0 — 建筑面板组件（城池地图版）
  *
  * 设计稿：BLD-buildings.md [BLD-1] 建筑网格场景
- * PC端：6×5 网格地图，卡片 180×160px
+ * PC端：地图式布局，建筑图标按位置错落放置
  * 手机端：纵向列表
  *
  * 功能：
  * - 8座建筑按固定位置放置在城池地图上
- * - 空地块显示虚线占位
+ * - 未解锁建筑灰色显示
  * - 升级队列悬浮面板（右上角）
  * - 点击建筑打开升级弹窗
  */
@@ -39,30 +39,30 @@ interface BuildingPanelProps {
 }
 
 // ─────────────────────────────────────────────
-// 建筑地图位置规划（6列×5行，0-indexed）
-// 参考 BLD-buildings.md [BLD-1]
+// 建筑地图位置规划（百分比定位，相对地图容器）
+//
+// 布局参考：
+//        [铁匠铺]
+//  [农田]  [主城]  [伐木场(市集)]
+//  [兵营] [仓库(书院)] [瞭望塔(城墙)]
+//         [医馆]
 // ─────────────────────────────────────────────
-interface MapSlot {
-  row: number;
-  col: number;
-  buildingType?: BuildingType;
+interface MapPosition {
+  top: number; // 百分比
+  left: number; // 百分比
 }
 
-/** 建筑在地图上的固定位置 */
-const BUILDING_MAP_POSITIONS: Record<BuildingType, { row: number; col: number }> = {
-  wall:     { row: 0, col: 0 },  // 第1行第1列 — 上方防御
-  farmland: { row: 1, col: 0 },  // 第2行第1列 — 左侧民生
-  market:   { row: 1, col: 1 },  // 第2行第2列 — 左侧民生
-  academy:  { row: 1, col: 3 },  // 第2行第4列 — 右侧文教
-  clinic:   { row: 1, col: 4 },  // 第2行第5列 — 右侧文教
-  barracks: { row: 2, col: 1 },  // 第3行第2列 — 中央军事
-  castle:   { row: 2, col: 2 },  // 第3行第3列 — 核心中央
-  smithy:   { row: 2, col: 3 },  // 第3行第4列 — 中央军事
+/** 建筑在地图上的固定位置（百分比） */
+const BUILDING_MAP_POSITIONS: Record<BuildingType, MapPosition> = {
+  smithy:   { top: 5,  left: 42 },  // 顶部中央
+  farmland: { top: 28, left: 10 },  // 左侧
+  castle:   { top: 30, left: 42 },  // 核心中央
+  market:   { top: 28, left: 74 },  // 右侧
+  barracks: { top: 55, left: 10 },  // 左下
+  academy:  { top: 55, left: 42 },  // 中下
+  wall:     { top: 55, left: 74 },  // 右下
+  clinic:   { top: 78, left: 42 },  // 底部中央
 };
-
-/** 6列×5行网格，共30格 */
-const GRID_COLS = 6;
-const GRID_ROWS = 5;
 
 // ─────────────────────────────────────────────
 // 建筑核心效果描述
@@ -177,31 +177,12 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
     }
   }, [engine, onUpgradeComplete, onUpgradeError]);
 
-  // 处理卡片点击
-  const handleCardClick = useCallback((type: BuildingType) => {
+  // 处理建筑点击
+  const handleBuildingClick = useCallback((type: BuildingType) => {
     const state = buildings[type];
     if (state?.status === 'locked') return;
     setSelectedBuilding(type);
   }, [buildings]);
-
-  // 构建地图网格数据（6列×5行）
-  const gridSlots = useMemo(() => {
-    // 构建位置查找表
-    const posMap = new Map<string, BuildingType>();
-    for (const [type, pos] of Object.entries(BUILDING_MAP_POSITIONS)) {
-      posMap.set(`${pos.row}-${pos.col}`, type as BuildingType);
-    }
-
-    const slots: (MapSlot | null)[] = [];
-    for (let row = 0; row < GRID_ROWS; row++) {
-      for (let col = 0; col < GRID_COLS; col++) {
-        const key = `${row}-${col}`;
-        const buildingType = posMap.get(key);
-        slots.push({ row, col, buildingType });
-      }
-    }
-    return slots;
-  }, []);
 
   return (
     <div className="tk-building-panel">
@@ -218,104 +199,75 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
         </div>
       )}
 
-      {/* PC端：城池地图网格（6×5） */}
+      {/* PC端：城池地图（绝对定位） */}
       <div className="tk-bld-map">
-        {gridSlots.map((slot, idx) => {
-          if (!slot || !slot.buildingType) {
-            // 空地块
-            return (
-              <div key={`empty-${idx}`} className="tk-bld-slot-empty">
-                <span className="tk-bld-slot-plus">＋</span>
-              </div>
-            );
-          }
+        {/* 地图背景装饰 */}
+        <div className="tk-bld-map-ground" />
 
-          const type = slot.buildingType;
+        {BUILDING_TYPES.map(type => {
           const state = buildings[type];
-          if (!state) return <div key={type} className="tk-bld-slot-empty" />;
+          if (!state) return null;
 
           const info = buildingInfo[type];
           const isLocked = state.status === 'locked';
           const isUpgrading = state.status === 'upgrading';
           const canUpgrade = info.canUpgrade;
+          const pos = BUILDING_MAP_POSITIONS[type];
 
-          // 卡片状态 class
-          const cardClass = isLocked
-            ? 'tk-bld-card tk-bld-card--locked'
+          // 建筑状态 class
+          const buildingClass = isLocked
+            ? 'tk-bld-pin tk-bld-pin--locked'
             : isUpgrading
-              ? 'tk-bld-card tk-bld-card--upgrading'
+              ? 'tk-bld-pin tk-bld-pin--upgrading'
               : canUpgrade
-                ? 'tk-bld-card tk-bld-card--upgradable'
-                : 'tk-bld-card tk-bld-card--normal';
+                ? 'tk-bld-pin tk-bld-pin--upgradable'
+                : 'tk-bld-pin tk-bld-pin--normal';
 
           return (
             <div
               key={type}
-              className={cardClass}
-              onClick={() => handleCardClick(type)}
+              className={buildingClass}
+              style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
+              onClick={() => handleBuildingClick(type)}
               role="button"
               tabIndex={isLocked ? -1 : 0}
               aria-label={`${BUILDING_LABELS[type]} Lv.${state.level}`}
             >
               {/* 等级徽章 */}
               {!isLocked && (
-                <div className="tk-bld-card-badge">{state.level}</div>
+                <div className="tk-bld-pin-badge">Lv.{state.level}</div>
               )}
 
               {/* 图标 */}
-              <div className="tk-bld-card-icon">
+              <div className="tk-bld-pin-icon">
                 {isLocked ? '🔒' : BUILDING_ICONS[type]}
               </div>
 
-              {/* 信息区 */}
-              <div className="tk-bld-card-info">
-                <div className="tk-bld-card-name">{BUILDING_LABELS[type]}</div>
-                {isLocked ? (
-                  <div className="tk-bld-card-locked-text">未解锁</div>
-                ) : (
-                  <div className="tk-bld-card-production">
-                    {getProductionText(type, rates)}
+              {/* 名称 */}
+              <div className="tk-bld-pin-name">{BUILDING_LABELS[type]}</div>
+
+              {/* 产出/状态 */}
+              {isLocked ? (
+                <div className="tk-bld-pin-status tk-bld-pin-status--locked">未解锁</div>
+              ) : isUpgrading ? (
+                <div className="tk-bld-pin-status tk-bld-pin-status--upgrading">
+                  <div className="tk-bld-pin-progress">
+                    <div
+                      className="tk-bld-pin-progress-bar"
+                      style={{ width: `${Math.min(info.progress * 100, 100)}%` }}
+                    />
                   </div>
-                )}
-              </div>
-
-              {/* 升级进度条 */}
-              {isUpgrading && (
-                <div className="tk-bld-card-progress">
-                  <div
-                    className="tk-bld-card-progress-bar"
-                    style={{ width: `${Math.min(info.progress * 100, 100)}%` }}
-                  />
-                  <span className="tk-bld-card-progress-text">
-                    {Math.floor(info.progress * 100)}% {formatTime(info.remaining)}
-                  </span>
+                  <span>{formatTime(info.remaining)}</span>
+                </div>
+              ) : (
+                <div className="tk-bld-pin-status">
+                  {getProductionText(type, rates)}
                 </div>
               )}
 
-              {/* 升级按钮 */}
-              {!isLocked && !isUpgrading && (
-                <button
-                  className={`tk-bld-card-btn ${canUpgrade ? 'tk-bld-card-btn--active' : 'tk-bld-card-btn--disabled'}`}
-                  disabled={!canUpgrade}
-                  onClick={e => {
-                    e.stopPropagation();
-                    if (canUpgrade) setSelectedBuilding(type);
-                  }}
-                >
-                  {canUpgrade ? '▲ 升级' : '升级'}
-                </button>
-              )}
-
-              {/* 升级费用 */}
-              {!isLocked && !isUpgrading && info.costText && (
-                <div className="tk-bld-card-cost">{info.costText}</div>
-              )}
-
-              {/* 升级中标识 */}
-              {isUpgrading && (
-                <div className="tk-bld-card-upgrading-badge">
-                  升级中 {formatTime(info.remaining)}
-                </div>
+              {/* 可升级指示器 */}
+              {canUpgrade && !isUpgrading && (
+                <div className="tk-bld-pin-upgrade-indicator">▲</div>
               )}
             </div>
           );
@@ -337,7 +289,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
             <div
               key={type}
               className={`tk-bld-list-item ${isLocked ? 'tk-bld-list-item--locked' : ''}`}
-              onClick={() => handleCardClick(type)}
+              onClick={() => handleBuildingClick(type)}
             >
               <div className="tk-bld-list-icon">
                 {isLocked ? '🔒' : BUILDING_ICONS[type]}

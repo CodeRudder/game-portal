@@ -149,17 +149,16 @@ describe('RecruitModal', () => {
     const advancedBtn = screen.getByText('高级招贤').closest('button')!;
     await userEvent.click(advancedBtn);
 
-    // 验证消耗显示包含求贤令（消耗区域出现）
-    const costElements = screen.getAllByText(/求贤令/);
-    // 切换后至少有消耗显示的求贤令
-    expect(costElements.length).toBeGreaterThanOrEqual(1);
+    // 验证消耗区域包含求贤令（精确匹配消耗显示，排除描述文本）
+    const costElements = screen.getAllByText(/求贤令 ×\d+/);
+    expect(costElements).toHaveLength(2);
   });
 
   it('默认选中普通招贤，显示铜钱消耗', () => {
     render(<RecruitModal {...defaultProps} />);
-    // 消耗区域应包含铜钱（单抽和十连各一个）
-    const costElements = screen.getAllByText(/铜钱/);
-    expect(costElements.length).toBeGreaterThanOrEqual(1);
+    // 消耗区域应包含铜钱（单抽和十连各一个，共2处）
+    const costElements = screen.getAllByText(/铜钱 ×\d+/);
+    expect(costElements).toHaveLength(2);
   });
 
   // ═══════════════════════════════════════════
