@@ -173,7 +173,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
 
         {/* 保底进度 */}
         <div className="tk-recruit-pity">
-          <div className="tk-recruit-pity-item">
+          <div className="tk-recruit-pity-item" title="每10次招募必出稀有或更高品质武将">
             <span className="tk-recruit-pity-label">十连保底（稀有+）</span>
             <div className="tk-recruit-pity-bar">
               <div
@@ -185,7 +185,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
               {pityInfo.tenPull.current}/{pityInfo.tenPull.max}
             </span>
           </div>
-          <div className="tk-recruit-pity-item">
+          <div className="tk-recruit-pity-item" title="每50次招募必出史诗或更高品质武将">
             <span className="tk-recruit-pity-label">硬保底（史诗+）</span>
             <div className="tk-recruit-pity-bar">
               <div

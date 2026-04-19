@@ -91,6 +91,17 @@
   color: #fff;
 }
 
+/* 武将传记 */
+.tk-hero-detail-biography {
+  margin: 0;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--tk-text-secondary);
+  line-height: 1.6;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+}
+
 /* 主体：左右分栏 */
 .tk-hero-detail-body {
   flex: 1;

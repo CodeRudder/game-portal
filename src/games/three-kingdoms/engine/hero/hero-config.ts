@@ -178,6 +178,8 @@ export interface GeneralDef {
   baseStats: GeneralStats;
   /** 武将技能列表 */
   skills: SkillData[];
+  /** 武将传记（简短描述，30-50字） */
+  biography?: string;
 }
 
 /**
@@ -196,6 +198,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
     skills: [
       { id: 'minbingduizhang_01', name: '冲锋', type: 'active', level: 1, description: '对单体造成攻击力120%的物理伤害' },
     ],
+    biography: '乡间义勇之首，虽无显赫身世，却以忠义聚众，守护一方百姓安宁。',
   },
   {
     id: 'liubei',
@@ -207,6 +210,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'liubei_01', name: '仁德', type: 'active', level: 1, description: '恢复己方全体生命值，回复量为刘备智力的120%' },
       { id: 'liubei_02', name: '蜀汉之主', type: 'faction', level: 1, description: '蜀国武将攻击+5%' },
     ],
+    biography: '中山靖王之后，蜀汉开国皇帝。仁德布四方，三顾茅庐请诸葛亮出山，建立蜀汉基业。',
   },
   {
     id: 'guanyu',
@@ -218,6 +222,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'guanyu_01', name: '青龙偃月', type: 'active', level: 1, description: '对单体造成攻击力200%的物理伤害，无视30%防御' },
       { id: 'guanyu_02', name: '武圣', type: 'passive', level: 1, description: '暴击率+15%，暴击伤害+30%' },
     ],
+    biography: '字云长，武圣关公。温酒斩华雄，过五关斩六将，忠义无双，威震华夏。',
   },
   {
     id: 'zhangfei',
@@ -229,6 +234,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'zhangfei_01', name: '怒吼长坂', type: 'active', level: 1, description: '对敌方前排造成攻击力160%的物理伤害，50%概率眩晕1回合' },
       { id: 'zhangfei_02', name: '万人敌', type: 'passive', level: 1, description: '生命值低于50%时攻击力+25%' },
     ],
+    biography: '字翼德，万人敌。长坂桥一声怒吼，吓退曹军百万，勇猛无双。',
   },
   {
     id: 'zhugeliang',
@@ -240,6 +246,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'zhugeliang_01', name: '空城计', type: 'active', level: 1, description: '对敌方全体造成智力150%的策略伤害，降低敌方攻击力20%持续2回合' },
       { id: 'zhugeliang_02', name: '卧龙', type: 'passive', level: 1, description: '每回合开始时为己方随机2人附加护盾，吸收智力50%的伤害' },
     ],
+    biography: '字孔明，号卧龙。三顾茅庐出山，草船借箭，七擒孟获，鞠躬尽瘁。',
   },
   {
     id: 'zhaoyun',
@@ -251,6 +258,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'zhaoyun_01', name: '龙胆', type: 'active', level: 1, description: '对单体造成攻击力180%的物理伤害，并回复自身生命值' },
       { id: 'zhaoyun_02', name: '一身是胆', type: 'passive', level: 1, description: '受到致命伤害时有30%概率免疫并恢复20%生命值' },
     ],
+    biography: '字子龙，常山赵子龙。长坂坡七进七出，单骑救主，一身是胆。',
   },
 
   // ── 魏国 ──
@@ -264,6 +272,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'junshou_01', name: '守城', type: 'active', level: 1, description: '提升己方前排防御力20%，持续2回合' },
       { id: 'junshou_02', name: '治理', type: 'passive', level: 1, description: '战斗开始时为己方全体附加防御力10%的护盾' },
     ],
+    biography: '地方郡县长官，文武兼备，守土有责，治下百姓安居乐业。',
   },
   {
     id: 'caocao',
@@ -275,6 +284,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'caocao_01', name: '奸雄', type: 'active', level: 1, description: '对敌方全体造成智力130%的策略伤害，偷取敌方10%攻击力持续2回合' },
       { id: 'caocao_02', name: '魏武挥鞭', type: 'faction', level: 1, description: '魏国武将防御+8%' },
     ],
+    biography: '字孟德，魏武帝。挟天子以令诸侯，统一北方，文武兼备的一代枭雄。',
   },
   {
     id: 'dianwei',
@@ -286,6 +296,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'dianwei_01', name: '古之恶来', type: 'active', level: 1, description: '对单体造成攻击力170%的物理伤害' },
       { id: 'dianwei_02', name: '死战', type: 'passive', level: 1, description: '生命值越低攻击力越高，最高+40%' },
     ],
+    biography: '古之恶来。宛城之战独挡叛军，力战而亡，忠勇无双。',
   },
   {
     id: 'simayi',
@@ -297,6 +308,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'simayi_01', name: '鹰视狼顾', type: 'active', level: 1, description: '对敌方单体造成智力180%的策略伤害，附加灼烧效果持续2回合' },
       { id: 'simayi_02', name: '隐忍', type: 'passive', level: 1, description: '受到攻击时20%概率反弹50%伤害' },
     ],
+    biography: '字仲达，隐忍谋略家。与诸葛亮多次交锋，最终发动高平陵之变。',
   },
 
   // ── 吴国 ──
@@ -309,6 +321,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
     skills: [
       { id: 'xiangyongtoumu_01', name: '游击', type: 'active', level: 1, description: '对单体造成攻击力130%的物理伤害' },
     ],
+    biography: '江东乡勇之头目，聚众自保，虽非名将，亦有保家卫国之心。',
   },
   {
     id: 'zhouyu',
@@ -320,6 +333,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'zhouyu_01', name: '火烧赤壁', type: 'active', level: 1, description: '对敌方全体造成智力140%的策略伤害，附加灼烧效果' },
       { id: 'zhouyu_02', name: '雅量高致', type: 'passive', level: 1, description: '己方吴国武将智力+10%' },
     ],
+    biography: '字公瑾，东吴大都督。赤壁之战火烧连环船，奠定三分天下格局。',
   },
 
   // ── 群雄 ──
@@ -333,6 +347,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'xiaowei_01', name: '突袭', type: 'active', level: 1, description: '对单体造成攻击力150%的物理伤害，10%概率眩晕1回合' },
       { id: 'xiaowei_02', name: '操练', type: 'passive', level: 1, description: '自身攻击力+5%' },
     ],
+    biography: '军中基层将领，勤于操练，以身作则，为麾下士卒所敬重。',
   },
   {
     id: 'lvbu',
@@ -344,6 +359,7 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
       { id: 'lvbu_01', name: '天下无双', type: 'active', level: 1, description: '对单体造成攻击力220%的物理伤害，无视50%防御' },
       { id: 'lvbu_02', name: '飞将', type: 'passive', level: 1, description: '攻击时额外造成目标当前生命值8%的真实伤害' },
     ],
+    biography: '字奉先，天下第一猛将。辕门射戟，三英战吕布，勇冠三军。',
   },
 ] as const;
 
