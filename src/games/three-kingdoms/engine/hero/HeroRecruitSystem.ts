@@ -79,7 +79,7 @@ export interface RecruitHistoryEntry {
 }
 
 /** 最大历史记录数 */
-const MAX_HISTORY_SIZE = 10;
+const MAX_HISTORY_SIZE = 20;
 
 /** 招募系统业务依赖（通过回调解耦 ResourceSystem） */
 export interface RecruitDeps {

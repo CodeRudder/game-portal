@@ -91,20 +91,20 @@ describe('HeroRecruitSystem — 招募历史', () => {
       expect(history[1].type).toBe('normal');
     });
 
-    it('历史记录最多保留 10 条', () => {
-      for (let i = 0; i < 15; i++) {
+    it('历史记录最多保留 20 条', () => {
+      for (let i = 0; i < 25; i++) {
         recruit.recruitSingle('normal');
       }
-      expect(recruit.getRecruitHistoryCount()).toBe(10);
+      expect(recruit.getRecruitHistoryCount()).toBe(20);
     });
 
-    it('超过 10 条后保留最近的记录', () => {
-      for (let i = 0; i < 12; i++) {
+    it('超过 20 条后保留最近的记录', () => {
+      for (let i = 0; i < 22; i++) {
         recruit.recruitSingle('normal');
       }
       const history = recruit.getRecruitHistory();
-      // 最新在前，应该看到最近 10 条
-      expect(history.length).toBe(10);
+      // 最新在前，应该看到最近 20 条
+      expect(history.length).toBe(20);
     });
   });
 
