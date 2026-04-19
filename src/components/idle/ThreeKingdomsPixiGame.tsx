@@ -1076,236 +1076,6 @@ function CampaignPanel({
         />
       )}
 
-      {/* ─── 羁绊总览面板弹窗 ─── */}
-      {showBondPanel && (
-        <div
-          style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)', zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-          onClick={() => setShowBondPanel(false)}
-        >
-          <div
-            style={{
-              width: isMobile ? '90%' : 460, maxHeight: 420, overflowY: 'auto',
-              background: 'linear-gradient(135deg, #2c1810 0%, #4a2c17 100%)',
-              border: '2px solid #d4a574', borderRadius: 12,
-              padding: 20, color: '#e8d5b7',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(139,115,85,0.15)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, color: '#f0c060', fontSize: 16 }}>🤝 武将羁绊</h3>
-              <button onClick={() => setShowBondPanel(false)} style={{
-                background: 'none', border: '1px solid #8b6914', color: '#d4a574',
-                cursor: 'pointer', padding: '4px 12px', borderRadius: 4, fontSize: 12,
-              }}>关闭</button>
-            </div>
-            {(() => {
-              const engine = engineRef.current;
-              if (!engine) return <div style={{ color: '#8b6914' }}>引擎未初始化</div>;
-              const bonds = engine.getActivatedBonds();
-              const bonus = engine.getBondBonus();
-              return (
-                <>
-                  {bonus && Object.keys(bonus).length > 0 && (
-                    <div style={{
-                      padding: '8px 12px', marginBottom: 12,
-                      background: 'rgba(240, 192, 96, 0.08)',
-                      border: '1px solid rgba(240, 192, 96, 0.2)',
-                      borderRadius: 8, fontSize: 11, color: '#f0c060',
-                    }}>
-                      📊 羁绊总加成：{Object.entries(bonus).map(([k, v]) => `${k} +${v}`).join('  ')}
-                    </div>
-                  )}
-                  {bonds.length > 0 ? bonds.map((bond: any) => (
-                    <div key={bond.id} style={{
-                      padding: 10, marginBottom: 8,
-                      background: 'rgba(212, 165, 116, 0.1)',
-                      border: '1px solid rgba(212, 165, 116, 0.3)',
-                      borderRadius: 8,
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                        <span style={{ color: '#f0c060', fontWeight: 'bold', fontSize: 13 }}>
-                          🤝 {bond.name}
-                        </span>
-                        {bond.tier && (
-                          <span style={{ fontSize: 9, color: '#b87333', border: '1px solid #b87333', borderRadius: 3, padding: '0 4px' }}>
-                            {bond.tier === 'legendary' ? '传说' : bond.tier === 'epic' ? '史诗' : '稀有'}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#b8a080', marginBottom: 2 }}>
-                        {bond.generalIds?.map((gid: string) => {
-                          const g = heroes.find((h: any) => h.id === gid);
-                          return g?.name || gid;
-                        }).join(' + ')}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#a08060' }}>{bond.description}</div>
-                      {bond.bonus && Object.keys(bond.bonus).length > 0 && (
-                        <div style={{ fontSize: 10, color: '#6aaf6a', marginTop: 4 }}>
-                          {Object.entries(bond.bonus).map(([k, v]) => `${k}: +${v}`).join('  ')}
-                        </div>
-                      )}
-                    </div>
-                  )) : <div style={{ color: '#8b6914', textAlign: 'center', padding: 20 }}>暂无激活的羁绊关系</div>}
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* ─── 故事事件弹窗 ─── */}
-      {showStoryEvent && activeStoryEvent && (() => {
-        const def = activeStoryEvent.def;
-        const lines = def?.lines ?? [];
-        const currentLine = activeStoryEvent.currentLine ?? 0;
-        const line = lines[currentLine];
-        const isLastLine = currentLine >= lines.length - 1;
-        return (
-          <div
-            style={{
-              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(0,0,0,0.6)', zIndex: 1001,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-            onClick={() => { setShowStoryEvent(false); }}
-          >
-            <div
-              style={{
-                width: isMobile ? '92%' : 480,
-                background: 'linear-gradient(135deg, #1a0f0a 0%, #3d2010 100%)',
-                border: '2px solid #c09050', borderRadius: 12,
-                padding: 24, color: '#e8d5b7',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.7), 0 0 60px rgba(192,144,80,0.1)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* 标题 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ color: '#f0c060', margin: 0, fontSize: 16 }}>
-                  📜 {def?.title || '历史事件'}
-                </h3>
-                <span style={{ fontSize: 10, color: '#8a7a6a' }}>
-                  {currentLine + 1} / {lines.length}
-                </span>
-              </div>
-
-              {/* 进度条 */}
-              <div style={{
-                height: 2, background: 'rgba(139,115,85,0.3)', borderRadius: 1,
-                marginBottom: 16, overflow: 'hidden',
-              }}>
-                <div style={{
-                  height: '100%', background: '#c09050',
-                  width: `${lines.length > 0 ? ((currentLine + 1) / lines.length) * 100 : 0}%`,
-                  transition: 'width 0.3s ease',
-                }} />
-              </div>
-
-              {/* 旁白/场景描述 */}
-              {line?.narration && (
-                <div style={{
-                  fontSize: 11, color: '#8a7a6a', fontStyle: 'italic',
-                  marginBottom: 8, padding: '6px 10px',
-                  background: 'rgba(0,0,0,0.2)', borderRadius: 4,
-                }}>
-                  {line.narration}
-                </div>
-              )}
-
-              {/* 对话内容 */}
-              {line && (
-                <div style={{
-                  background: 'rgba(0,0,0,0.3)', borderRadius: 8,
-                  padding: '14px 18px', marginBottom: 16, minHeight: 60,
-                }}>
-                  {line.speaker && line.speaker !== '旁白' && (
-                    <div style={{ color: '#f0c060', fontSize: 12, fontWeight: 'bold', marginBottom: 6 }}>
-                      {line.speaker}
-                    </div>
-                  )}
-                  <div style={{ color: '#e0d0c0', fontSize: 14, lineHeight: 1.7 }}>
-                    「{line.text}」
-                  </div>
-                </div>
-              )}
-
-              {/* 奖励预览 */}
-              {isLastLine && def?.reward && Object.keys(def.reward).length > 0 && (
-                <div style={{
-                  padding: '8px 12px', marginBottom: 12,
-                  background: 'rgba(106, 175, 106, 0.1)',
-                  border: '1px solid rgba(106, 175, 106, 0.3)',
-                  borderRadius: 8, fontSize: 11, color: '#6aaf6a',
-                }}>
-                  🎁 完成奖励：{Object.entries(def.reward).map(([k, v]) => `${k} +${v}`).join('  ')}
-                </div>
-              )}
-
-              {/* 操作按钮 */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                {!isLastLine ? (
-                  <button onClick={() => {
-                    const engine = engineRef.current;
-                    if (engine) {
-                      const advanced = engine.advanceStoryEvent();
-                      if (advanced) {
-                        const nextEvent = engine.getCurrentStoryEvent();
-                        if (nextEvent) {
-                          setActiveStoryEvent(nextEvent);
-                        } else {
-                          setShowStoryEvent(false);
-                          setActiveStoryEvent(null);
-                        }
-                      }
-                    }
-                  }} style={{
-                    padding: '8px 20px', fontSize: 13, fontWeight: 'bold',
-                    background: 'linear-gradient(135deg, #4a2c17, #6b3a1f)',
-                    border: '1px solid #8b6914', borderRadius: 6,
-                    color: '#f0c060', cursor: 'pointer',
-                  }}>
-                    继续 ▶
-                  </button>
-                ) : (
-                  <button onClick={() => {
-                    const engine = engineRef.current;
-                    if (engine) {
-                      engine.completeStoryEvent();
-                    }
-                    setShowStoryEvent(false);
-                    setActiveStoryEvent(null);
-                  }} style={{
-                    padding: '8px 20px', fontSize: 13, fontWeight: 'bold',
-                    background: 'linear-gradient(135deg, #4a2c17, #6b3a1f)',
-                    border: '1px solid #8b6914', borderRadius: 6,
-                    color: '#f0c060', cursor: 'pointer',
-                  }}>
-                    完成 ✓
-                  </button>
-                )}
-                <button onClick={() => {
-                  const engine = engineRef.current;
-                  if (engine) engine.skipStoryEvent();
-                  setShowStoryEvent(false);
-                  setActiveStoryEvent(null);
-                }} style={{
-                  padding: '8px 20px', fontSize: 12,
-                  background: 'transparent',
-                  border: '1px solid #8b6914', borderRadius: 6,
-                  color: '#a08060', cursor: 'pointer',
-                }}>
-                  跳过
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
@@ -5399,11 +5169,243 @@ export default function ThreeKingdomsPixiGame() {
                     );
                   })()}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         )}
       </div>
+
+
+      {/* ─── 羁绊总览面板弹窗 ─── */}
+      {showBondPanel && (
+        <div
+          style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          onClick={() => setShowBondPanel(false)}
+        >
+          <div
+            style={{
+              width: isMobile ? '90%' : 460, maxHeight: 420, overflowY: 'auto',
+              background: 'linear-gradient(135deg, #2c1810 0%, #4a2c17 100%)',
+              border: '2px solid #d4a574', borderRadius: 12,
+              padding: 20, color: '#e8d5b7',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(139,115,85,0.15)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ margin: 0, color: '#f0c060', fontSize: 16 }}>🤝 武将羁绊</h3>
+              <button onClick={() => setShowBondPanel(false)} style={{
+                background: 'none', border: '1px solid #8b6914', color: '#d4a574',
+                cursor: 'pointer', padding: '4px 12px', borderRadius: 4, fontSize: 12,
+              }}>关闭</button>
+            </div>
+            {(() => {
+              const engine = engineRef.current;
+              if (!engine) return <div style={{ color: '#8b6914' }}>引擎未初始化</div>;
+              const bonds = engine.getActivatedBonds();
+              const bonus = engine.getBondBonus();
+              return (
+                <>
+                  {bonus && Object.keys(bonus).length > 0 && (
+                    <div style={{
+                      padding: '8px 12px', marginBottom: 12,
+                      background: 'rgba(240, 192, 96, 0.08)',
+                      border: '1px solid rgba(240, 192, 96, 0.2)',
+                      borderRadius: 8, fontSize: 11, color: '#f0c060',
+                    }}>
+                      📊 羁绊总加成：{Object.entries(bonus).map(([k, v]) => `${k} +${v}`).join('  ')}
+                    </div>
+                  )}
+                  {bonds.length > 0 ? bonds.map((bond: any) => (
+                    <div key={bond.id} style={{
+                      padding: 10, marginBottom: 8,
+                      background: 'rgba(212, 165, 116, 0.1)',
+                      border: '1px solid rgba(212, 165, 116, 0.3)',
+                      borderRadius: 8,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ color: '#f0c060', fontWeight: 'bold', fontSize: 13 }}>
+                          🤝 {bond.name}
+                        </span>
+                        {bond.tier && (
+                          <span style={{ fontSize: 9, color: '#b87333', border: '1px solid #b87333', borderRadius: 3, padding: '0 4px' }}>
+                            {bond.tier === 'legendary' ? '传说' : bond.tier === 'epic' ? '史诗' : '稀有'}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#b8a080', marginBottom: 2 }}>
+                        {bond.generalIds?.map((gid: string) => {
+                          const g = heroes.find((h: any) => h.id === gid);
+                          return g?.name || gid;
+                        }).join(' + ')}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#a08060' }}>{bond.description}</div>
+                      {bond.bonus && Object.keys(bond.bonus).length > 0 && (
+                        <div style={{ fontSize: 10, color: '#6aaf6a', marginTop: 4 }}>
+                          {Object.entries(bond.bonus).map(([k, v]) => `${k}: +${v}`).join('  ')}
+                        </div>
+                      )}
+                    </div>
+                  )) : <div style={{ color: '#8b6914', textAlign: 'center', padding: 20 }}>暂无激活的羁绊关系</div>}
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ─── 故事事件弹窗 ─── */}
+      {showStoryEvent && activeStoryEvent && (() => {
+        const def = activeStoryEvent.def;
+        const lines = def?.lines ?? [];
+        const currentLine = activeStoryEvent.currentLine ?? 0;
+        const line = lines[currentLine];
+        const isLastLine = currentLine >= lines.length - 1;
+        return (
+          <div
+            style={{
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.6)', zIndex: 1001,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            onClick={() => { setShowStoryEvent(false); }}
+          >
+            <div
+              style={{
+                width: isMobile ? '92%' : 480,
+                background: 'linear-gradient(135deg, #1a0f0a 0%, #3d2010 100%)',
+                border: '2px solid #c09050', borderRadius: 12,
+                padding: 24, color: '#e8d5b7',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.7), 0 0 60px rgba(192,144,80,0.1)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 标题 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h3 style={{ color: '#f0c060', margin: 0, fontSize: 16 }}>
+                  📜 {def?.title || '历史事件'}
+                </h3>
+                <span style={{ fontSize: 10, color: '#8a7a6a' }}>
+                  {currentLine + 1} / {lines.length}
+                </span>
+              </div>
+
+              {/* 进度条 */}
+              <div style={{
+                height: 2, background: 'rgba(139,115,85,0.3)', borderRadius: 1,
+                marginBottom: 16, overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%', background: '#c09050',
+                  width: `${lines.length > 0 ? ((currentLine + 1) / lines.length) * 100 : 0}%`,
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+
+              {/* 旁白/场景描述 */}
+              {line?.narration && (
+                <div style={{
+                  fontSize: 11, color: '#8a7a6a', fontStyle: 'italic',
+                  marginBottom: 8, padding: '6px 10px',
+                  background: 'rgba(0,0,0,0.2)', borderRadius: 4,
+                }}>
+                  {line.narration}
+                </div>
+              )}
+
+              {/* 对话内容 */}
+              {line && (
+                <div style={{
+                  background: 'rgba(0,0,0,0.3)', borderRadius: 8,
+                  padding: '14px 18px', marginBottom: 16, minHeight: 60,
+                }}>
+                  {line.speaker && line.speaker !== '旁白' && (
+                    <div style={{ color: '#f0c060', fontSize: 12, fontWeight: 'bold', marginBottom: 6 }}>
+                      {line.speaker}
+                    </div>
+                  )}
+                  <div style={{ color: '#e0d0c0', fontSize: 14, lineHeight: 1.7 }}>
+                    「{line.text}」
+                  </div>
+                </div>
+              )}
+
+              {/* 奖励预览 */}
+              {isLastLine && def?.reward && Object.keys(def.reward).length > 0 && (
+                <div style={{
+                  padding: '8px 12px', marginBottom: 12,
+                  background: 'rgba(106, 175, 106, 0.1)',
+                  border: '1px solid rgba(106, 175, 106, 0.3)',
+                  borderRadius: 8, fontSize: 11, color: '#6aaf6a',
+                }}>
+                  🎁 完成奖励：{Object.entries(def.reward).map(([k, v]) => `${k} +${v}`).join('  ')}
+                </div>
+              )}
+
+              {/* 操作按钮 */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                {!isLastLine ? (
+                  <button onClick={() => {
+                    const engine = engineRef.current;
+                    if (engine) {
+                      const advanced = engine.advanceStoryEvent();
+                      if (advanced) {
+                        const nextEvent = engine.getCurrentStoryEvent();
+                        if (nextEvent) {
+                          setActiveStoryEvent(nextEvent);
+                        } else {
+                          setShowStoryEvent(false);
+                          setActiveStoryEvent(null);
+                        }
+                      }
+                    }
+                  }} style={{
+                    padding: '8px 20px', fontSize: 13, fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #4a2c17, #6b3a1f)',
+                    border: '1px solid #8b6914', borderRadius: 6,
+                    color: '#f0c060', cursor: 'pointer',
+                  }}>
+                    继续 ▶
+                  </button>
+                ) : (
+                  <button onClick={() => {
+                    const engine = engineRef.current;
+                    if (engine) {
+                      engine.completeStoryEvent();
+                    }
+                    setShowStoryEvent(false);
+                    setActiveStoryEvent(null);
+                  }} style={{
+                    padding: '8px 20px', fontSize: 13, fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #4a2c17, #6b3a1f)',
+                    border: '1px solid #8b6914', borderRadius: 6,
+                    color: '#f0c060', cursor: 'pointer',
+                  }}>
+                    完成 ✓
+                  </button>
+                )}
+                <button onClick={() => {
+                  const engine = engineRef.current;
+                  if (engine) engine.skipStoryEvent();
+                  setShowStoryEvent(false);
+                  setActiveStoryEvent(null);
+                }} style={{
+                  padding: '8px 20px', fontSize: 12,
+                  background: 'transparent',
+                  border: '1px solid #8b6914', borderRadius: 6,
+                  color: '#a08060', cursor: 'pointer',
+                }}>
+                  跳过
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ═══════════ 底部：操作按钮栏 ═══════════ */}
       <footer className="tk-tab-bar-ancient" style={{
