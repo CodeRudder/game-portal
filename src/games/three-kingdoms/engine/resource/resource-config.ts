@@ -18,8 +18,8 @@ import type {
 
 /** 新游戏初始资源量 */
 export const INITIAL_RESOURCES: Readonly<Resources> = {
-  grain: 200,
-  gold: 100,
+  grain: 500,
+  gold: 300,
   troops: 50,
   mandate: 0,
 };
@@ -28,9 +28,14 @@ export const INITIAL_RESOURCES: Readonly<Resources> = {
 // 2. 初始产出速率
 // ─────────────────────────────────────────────
 
-/** 新游戏初始产出速率（每秒），无建筑时仅基础值 */
+/**
+ * 新游戏初始产出速率（每秒）
+ * 注意：此处为基础值，实际产出由 syncBuildingToResource() 从建筑等级表同步。
+ * 初始状态下农田 Lv1 产出 0.8 粮草/秒，因此基础值设为 0.8。
+ * 其他资源在对应建筑解锁前无产出。
+ */
 export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
-  grain: 0,
+  grain: 0.8,
   gold: 0,
   troops: 0,
   mandate: 0,

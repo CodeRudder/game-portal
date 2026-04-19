@@ -8,6 +8,7 @@ import { ResourceSystem } from '../ResourceSystem';
 import type { ResourceSaveData } from '../../shared/types';
 import {
   INITIAL_RESOURCES,
+  INITIAL_PRODUCTION_RATES,
   INITIAL_CAPS,
   GRANARY_CAPACITY_TABLE,
   BARRACKS_CAPACITY_TABLE,
@@ -36,9 +37,12 @@ describe('ResourceSystem', () => {
       const r = rs.getResources();
       expect(r).toEqual(INITIAL_RESOURCES);
     });
-    it('初始产出速率全为0', () => {
+    it('初始产出速率与配置一致', () => {
       const rates = rs.getProductionRates();
-      expect(rates.grain + rates.gold + rates.troops + rates.mandate).toBe(0);
+      expect(rates.grain).toBe(INITIAL_PRODUCTION_RATES.grain);
+      expect(rates.gold).toBe(INITIAL_PRODUCTION_RATES.gold);
+      expect(rates.troops).toBe(INITIAL_PRODUCTION_RATES.troops);
+      expect(rates.mandate).toBe(INITIAL_PRODUCTION_RATES.mandate);
     });
     it('初始上限正确', () => {
       const caps = rs.getCaps();
@@ -63,6 +67,7 @@ describe('ResourceSystem', () => {
       expect(rs.getAmount('grain')).toBe(INITIAL_RESOURCES.grain + 10);
     });
     it('产出速率为0时不增加', () => {
+      rs.recalculateProduction({}); // 重置所有产出为0
       rs.tick(5000);
       expect(rs.getAmount('grain')).toBe(INITIAL_RESOURCES.grain);
     });
@@ -354,7 +359,7 @@ describe('ResourceSystem', () => {
       rs.reset();
       expect(rs.getAmount('grain')).toBe(INITIAL_RESOURCES.grain);
       expect(rs.getAmount('gold')).toBe(INITIAL_RESOURCES.gold);
-      expect(rs.getProductionRates().grain).toBe(0);
+      expect(rs.getProductionRates().grain).toBe(INITIAL_PRODUCTION_RATES.grain);
     });
     it('reset 后上限恢复默认', () => {
       rs.updateCaps(10, 10);
