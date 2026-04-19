@@ -6,7 +6,7 @@
  */
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
-import ThreeKingdomsPixiGame from '@/components/idle/ThreeKingdomsPixiGame';
+import ThreeKingdomsGame from '@/components/idle/ThreeKingdomsGame';
 
 /** 放置游戏注册信息 */
 interface IdleGameConfig {
@@ -260,7 +260,7 @@ export default function IdleGamePage() {
         {/* 游戏区域 — PixiJS 游戏不使用 max-w 限制，由组件自身控制尺寸 */}
         {config.pixiComponent && gameId === 'three-kingdoms' ? (
           <div className="flex justify-center overflow-hidden">
-            <ThreeKingdomsPixiGame />
+            <ThreeKingdomsGame />
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-4 py-12">

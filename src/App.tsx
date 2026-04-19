@@ -6,7 +6,7 @@ import IdleGameZone from './pages/IdleGameZone';
 import IdleGamePage from './pages/IdleGamePage';
 import { PixiPOC } from './poc/pixi-poc';
 import { SpritePOC } from './poc/sprite-poc';
-import ThreeKingdomsPixiGame from './components/idle/ThreeKingdomsPixiGame';
+import ThreeKingdomsGame from './components/idle/ThreeKingdomsGame';
 
 // ═══════════════════════════════════════════════════════════════
 // Lazy-loaded PixiJS 游戏组件 — 减小首屏 bundle 体积
@@ -42,7 +42,7 @@ function App() {
         <Route path="/idle/:gameId" element={<IdleGamePage />} />
         <Route path="/poc/pixi" element={<PixiPOC />} />
         <Route path="/poc/sprite-demo" element={<SpritePOC />} />
-        <Route path="/games/three-kingdoms-pixi" element={<ThreeKingdomsPixiGame />} />
+        <Route path="/games/three-kingdoms-pixi" element={<ThreeKingdomsGame />} />
 
         {/* PixiJS 文明 & 策略游戏路由 — lazy loaded */}
         <Route
