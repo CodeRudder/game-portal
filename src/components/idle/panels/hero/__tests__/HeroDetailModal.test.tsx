@@ -16,6 +16,7 @@ import HeroDetailModal from '../HeroDetailModal';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { GeneralData, EnhancePreview } from '@/games/three-kingdoms/engine';
 import { Quality } from '@/games/three-kingdoms/engine';
+import * as EngineModule from '@/games/three-kingdoms/engine';
 
 // ─────────────────────────────────────────────
 // Mock CSS imports
@@ -30,6 +31,11 @@ vi.mock('@/components/idle/common/Toast', () => ({
     info: vi.fn(),
   },
 }));
+
+// ─────────────────────────────────────────────
+// Mock GENERAL_DEF_MAP for biography tests
+// ─────────────────────────────────────────────
+const ORIGINAL_GENERAL_DEF_MAP = EngineModule.GENERAL_DEF_MAP;
 
 // ─────────────────────────────────────────────
 // Test Data
@@ -312,5 +318,65 @@ describe('HeroDetailModal', () => {
 
     const heroSystem = engine.getHeroSystem();
     expect(heroSystem.fragmentSynthesize).toHaveBeenCalledWith('guanyu');
+  });
+
+  // ═══════════════════════════════════════════
+  // 9. 武将传记
+  // ═══════════════════════════════════════════
+
+  it('有传记时应渲染传记文本', () => {
+    // guanyu 在 GENERAL_DEF_MAP 中存在传记
+    render(<HeroDetailModal {...defaultProps} />);
+    const bioEl = document.querySelector('.tk-hero-detail-biography');
+    expect(bioEl).toBeInTheDocument();
+    expect(bioEl?.tagName).toBe('P');
+  });
+
+  it('无传记时不渲染传记区域', () => {
+    // 使用一个不存在于 GENERAL_DEF_MAP 中的武将 ID
+    const unknownGeneral: GeneralData = {
+      ...baseGeneral,
+      id: 'unknown_hero_no_bio',
+    };
+    const engine = makeMockEngine({ general: unknownGeneral });
+    render(
+      <HeroDetailModal
+        general={unknownGeneral}
+        engine={engine}
+        onClose={vi.fn()}
+        onEnhanceComplete={vi.fn()}
+      />,
+    );
+    const bioEl = document.querySelector('.tk-hero-detail-biography');
+    expect(bioEl).not.toBeInTheDocument();
+  });
+
+  it('传记文本内容应与 GENERAL_DEF_MAP 中的数据一致', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    const expectedBio = EngineModule.GENERAL_DEF_MAP.get('guanyu')?.biography;
+    expect(expectedBio).toBeTruthy();
+    const bioEl = document.querySelector('.tk-hero-detail-biography');
+    expect(bioEl?.textContent).toBe(expectedBio);
+  });
+
+  it('传记元素应有正确的样式类名 tk-hero-detail-biography', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    const bioEl = document.querySelector('p.tk-hero-detail-biography');
+    expect(bioEl).toBeInTheDocument();
+  });
+
+  it('传记文本为空字符串时不显示传记区域', () => {
+    // 模拟 GENERAL_DEF_MAP 返回空字符串传记
+    const mockMap = new Map(ORIGINAL_GENERAL_DEF_MAP);
+    mockMap.set('guanyu', { ...mockMap.get('guanyu')!, biography: '' });
+
+    vi.spyOn(EngineModule, 'GENERAL_DEF_MAP', 'get').mockReturnValue(mockMap as any);
+
+    render(<HeroDetailModal {...defaultProps} />);
+    // biography='' 是 falsy，所以不应渲染
+    const bioEl = document.querySelector('.tk-hero-detail-biography');
+    expect(bioEl).not.toBeInTheDocument();
+
+    vi.restoreAllMocks();
   });
 });
