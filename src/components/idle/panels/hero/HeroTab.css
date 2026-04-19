@@ -2,7 +2,7 @@
  * HeroTab — 武将Tab主面板样式
  *
  * PC端：4列卡片网格 + 筛选/排序工具栏
- * 手机端：2列网格 + 紧凑工具栏
+ * 手机端：2列紧凑网格 + 紧凑工具栏
  */
 
 /* ═══════════════════════════════════════════
@@ -96,9 +96,10 @@
 .tk-hero-total-power {
   font-size: 13px;
   color: var(--tk-green);
-  font-weight: 500;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  text-shadow: 0 0 8px rgba(76, 175, 80, 0.2);
 }
 
 /* 招募按钮 */
@@ -112,12 +113,13 @@
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: background 0.15s, box-shadow 0.15s;
   white-space: nowrap;
 }
 
 .tk-hero-recruit-btn:hover {
   background: rgba(200, 168, 76, 0.3);
+  box-shadow: 0 0 12px rgba(200, 168, 76, 0.2);
 }
 
 /* ═══════════════════════════════════════════
@@ -211,7 +213,7 @@
 }
 
 /* ═══════════════════════════════════════════
-   手机端
+   手机端 — 2列紧凑布局
    ═══════════════════════════════════════════ */
 @media (max-width: 767px) {
   .tk-hero-tab {
@@ -255,10 +257,10 @@
     font-size: 12px;
   }
 
-  /* 手机端 2列网格 */
+  /* 手机端 2列紧凑网格 */
   .tk-hero-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 6px;
     padding-top: 10px;
   }
 }

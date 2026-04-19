@@ -16,8 +16,8 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import HeroTab from '../HeroTab';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import type { GeneralData } from '@/games/three-kingdoms/engine/hero/hero.types';
-import { Quality } from '@/games/three-kingdoms/engine/hero/hero.types';
+import type { GeneralData } from '@/games/three-kingdoms/engine';
+import { Quality } from '@/games/three-kingdoms/engine';
 
 // ─────────────────────────────────────────────
 // Mock CSS imports

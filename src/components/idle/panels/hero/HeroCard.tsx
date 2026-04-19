@@ -8,8 +8,7 @@
 
 import React, { useMemo } from 'react';
 import type { GeneralData, Quality, Faction } from '@/games/three-kingdoms/engine';
-import { QUALITY_LABELS, QUALITY_BORDER_COLORS } from '@/games/three-kingdoms/engine';
-import { FACTION_LABELS } from '@/games/three-kingdoms/engine/hero/hero.types';
+import { QUALITY_LABELS, QUALITY_BORDER_COLORS, FACTION_LABELS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import './HeroCard.css';
 

@@ -16,8 +16,9 @@ import {
   QUALITY_LABELS,
   QUALITY_ORDER,
   QUALITY_TIERS,
+  FACTION_LABELS,
+  FACTIONS,
 } from '@/games/three-kingdoms/engine';
-import { FACTION_LABELS, FACTIONS } from '@/games/three-kingdoms/engine/hero/hero.types';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import HeroCard from './HeroCard';
 import HeroDetailModal from './HeroDetailModal';

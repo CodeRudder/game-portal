@@ -1,13 +1,9 @@
 /**
  * HeroDetailModal — 武将详情弹窗样式
- *
- * PC端：800×700 弹窗，左右分栏
- * 手机端：全屏
+ * PC端：800×700 弹窗，左右分栏，含雷达图 | 手机端：全屏从右侧滑入
  */
 
-/* ═══════════════════════════════════════════
-   遮罩层
-   ═══════════════════════════════════════════ */
+/* 遮罩层 */
 .tk-hero-detail-overlay {
   position: fixed;
   inset: 0;
@@ -24,9 +20,7 @@
   to { opacity: 1; }
 }
 
-/* ═══════════════════════════════════════════
-   弹窗主体
-   ═══════════════════════════════════════════ */
+/* 弹窗主体 */
 .tk-hero-detail-modal {
   position: relative;
   width: 800px;
@@ -68,9 +62,7 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ═══════════════════════════════════════════
-   标题栏
-   ═══════════════════════════════════════════ */
+/* 标题栏 */
 .tk-hero-detail-header {
   display: flex;
   align-items: center;
@@ -99,9 +91,7 @@
   color: #fff;
 }
 
-/* ═══════════════════════════════════════════
-   主体：左右分栏
-   ═══════════════════════════════════════════ */
+/* 主体：左右分栏 */
 .tk-hero-detail-body {
   flex: 1;
   display: flex;
@@ -110,7 +100,7 @@
   overflow-y: auto;
 }
 
-/* ── 左侧：画像 + 等级 ── */
+/* 左侧：画像 + 等级 */
 .tk-hero-detail-left {
   width: 220px;
   flex-shrink: 0;
@@ -128,7 +118,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
 }
 
 .tk-hero-detail-portrait-char {
@@ -150,12 +139,12 @@
   border: 2px solid var(--tk-gold);
   border-radius: 20px;
   font-variant-numeric: tabular-nums;
+  background: rgba(200, 168, 76, 0.1);
+  box-shadow: 0 0 8px rgba(200, 168, 76, 0.2);
 }
 
 /* 经验条 */
-.tk-hero-detail-exp-section {
-  width: 100%;
-}
+.tk-hero-detail-exp-section { width: 100%; }
 
 .tk-hero-detail-exp-label {
   font-size: 11px;
@@ -186,8 +175,9 @@
 }
 
 .tk-hero-detail-power strong {
-  font-size: 20px;
+  font-size: 22px;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
 }
 
 /* 碎片 */
@@ -196,9 +186,7 @@
   color: var(--tk-text-secondary);
 }
 
-/* ═══════════════════════════════════════════
-   升级操作区
-   ═══════════════════════════════════════════ */
+/* 升级操作区 */
 .tk-hero-detail-enhance {
   width: 100%;
   background: rgba(240, 230, 211, 0.04);
@@ -256,10 +244,7 @@
   padding: 6px 0;
 }
 
-.tk-hero-detail-enhance-cost {
-  font-size: 12px;
-  color: var(--tk-text-primary);
-}
+.tk-hero-detail-enhance-cost { font-size: 12px; color: var(--tk-text-primary); }
 
 .tk-hero-detail-enhance-power-diff {
   font-size: 11px;
@@ -267,14 +252,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tk-hero-detail-enhance-power-gain {
-  color: var(--tk-green);
-  font-weight: 600;
-}
-
-.tk-hero-detail-enhance-affordable {
-  font-size: 11px;
-}
+.tk-hero-detail-enhance-power-gain { color: var(--tk-green); font-weight: 600; }
+.tk-hero-detail-enhance-affordable { font-size: 11px; }
 
 .tk-hero-detail-enhance-btn {
   width: 100%;
@@ -290,16 +269,10 @@
   transition: background 0.15s;
 }
 
-.tk-hero-detail-enhance-btn:hover:not(:disabled) {
-  background: rgba(200, 168, 76, 0.35);
-}
+.tk-hero-detail-enhance-btn:hover:not(:disabled) { background: rgba(200, 168, 76, 0.35); }
+.tk-hero-detail-enhance-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.tk-hero-detail-enhance-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* ── 右侧：属性 + 技能 ── */
+/* 右侧：雷达图 + 属性 + 技能 */
 .tk-hero-detail-right {
   flex: 1;
   min-width: 0;
@@ -308,7 +281,6 @@
   gap: 20px;
 }
 
-/* 区块标题 */
 .tk-hero-detail-section-title {
   font-size: 14px;
   font-weight: 600;
@@ -318,13 +290,29 @@
   border-bottom: 1px solid rgba(200, 168, 76, 0.15);
 }
 
-/* ═══════════════════════════════════════════
-   属性条
-   ═══════════════════════════════════════════ */
-.tk-hero-detail-stats {
-  /* section */
+/* 雷达图 */
+.tk-hero-detail-radar-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
 }
 
+.tk-hero-radar {
+  display: block;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.tk-hero-radar-data {
+  animation: tk-radar-grow 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+}
+
+@keyframes tk-radar-grow {
+  from { opacity: 0; transform: scale(0.3); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 属性条 */
 .tk-hero-detail-stat-row {
   display: flex;
   align-items: center;
@@ -363,18 +351,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ═══════════════════════════════════════════
-   技能列表
-   ═══════════════════════════════════════════ */
-.tk-hero-detail-skills {
-  /* section */
-}
-
-.tk-hero-detail-skill-empty {
-  font-size: 13px;
-  color: var(--tk-text-muted);
-  padding: 8px 0;
-}
+/* 技能列表 */
+.tk-hero-detail-skill-empty { font-size: 13px; color: var(--tk-text-muted); padding: 8px 0; }
 
 .tk-hero-detail-skill-item {
   background: rgba(240, 230, 211, 0.04);
@@ -391,11 +369,7 @@
   margin-bottom: 4px;
 }
 
-.tk-hero-detail-skill-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--tk-text-primary);
-}
+.tk-hero-detail-skill-name { font-size: 14px; font-weight: 600; color: var(--tk-text-primary); }
 
 .tk-hero-detail-skill-type {
   font-size: 10px;
@@ -405,35 +379,28 @@
   color: var(--tk-gold-light);
 }
 
-.tk-hero-detail-skill-level {
-  font-size: 11px;
-  color: var(--tk-text-secondary);
-  margin-left: auto;
-}
+.tk-hero-detail-skill-level { font-size: 11px; color: var(--tk-text-secondary); margin-left: auto; }
+.tk-hero-detail-skill-desc { font-size: 12px; color: var(--tk-text-secondary); line-height: 1.5; }
 
-.tk-hero-detail-skill-desc {
-  font-size: 12px;
-  color: var(--tk-text-secondary);
-  line-height: 1.5;
-}
-
-/* ═══════════════════════════════════════════
-   手机端
-   ═══════════════════════════════════════════ */
+/* 手机端 — 全屏从右侧滑入 */
 @media (max-width: 767px) {
+  .tk-hero-detail-overlay { align-items: stretch; justify-content: stretch; }
+
   .tk-hero-detail-modal {
     width: 100%;
     max-width: 100%;
     max-height: 100%;
     border-radius: 0;
     height: 100vh;
+    animation: tk-detail-slide-in 300ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .tk-hero-detail-body {
-    flex-direction: column;
-    padding: 12px;
-    gap: 16px;
+  @keyframes tk-detail-slide-in {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
   }
+
+  .tk-hero-detail-body { flex-direction: column; padding: 12px; gap: 16px; }
 
   .tk-hero-detail-left {
     width: 100%;
@@ -443,20 +410,10 @@
     gap: 12px;
   }
 
-  .tk-hero-detail-portrait {
-    width: 100px;
-    height: 120px;
-  }
-
-  .tk-hero-detail-portrait-char {
-    font-size: 36px;
-  }
-
-  .tk-hero-detail-right {
-    gap: 14px;
-  }
-
-  .tk-hero-detail-stat-row {
-    gap: 8px;
-  }
+  .tk-hero-detail-portrait { width: 100px; height: 120px; }
+  .tk-hero-detail-portrait-char { font-size: 36px; }
+  .tk-hero-detail-right { gap: 14px; }
+  .tk-hero-detail-stat-row { gap: 8px; }
+  .tk-hero-detail-radar-wrap { padding: 0; }
+  .tk-hero-radar { width: 160px; height: 160px; }
 }

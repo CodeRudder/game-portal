@@ -14,9 +14,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import HeroDetailModal from '../HeroDetailModal';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import type { GeneralData } from '@/games/three-kingdoms/engine/hero/hero.types';
-import { Quality } from '@/games/three-kingdoms/engine/hero/hero.types';
-import type { EnhancePreview } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
+import type { GeneralData, EnhancePreview } from '@/games/three-kingdoms/engine';
+import { Quality } from '@/games/three-kingdoms/engine';
 
 // ─────────────────────────────────────────────
 // Mock CSS imports
@@ -145,18 +144,20 @@ describe('HeroDetailModal', () => {
 
   it('应渲染四维属性标签', () => {
     render(<HeroDetailModal {...defaultProps} />);
-    expect(screen.getByText('武力')).toBeInTheDocument();
-    expect(screen.getByText('统率')).toBeInTheDocument();
-    expect(screen.getByText('智力')).toBeInTheDocument();
-    expect(screen.getByText('政治')).toBeInTheDocument();
+    // 雷达图和属性条都渲染标签，使用 getAllByText
+    expect(screen.getAllByText('武力').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('统率').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('智力').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('政治').length).toBeGreaterThanOrEqual(1);
   });
 
   it('应渲染属性数值', () => {
     render(<HeroDetailModal {...defaultProps} />);
-    expect(screen.getByText('115')).toBeInTheDocument(); // attack
-    expect(screen.getByText('90')).toBeInTheDocument();  // defense
-    expect(screen.getByText('65')).toBeInTheDocument();  // intelligence
-    expect(screen.getByText('78')).toBeInTheDocument();  // speed
+    // 雷达图和属性条都渲染数值，使用 getAllByText
+    expect(screen.getAllByText('115').length).toBeGreaterThanOrEqual(1); // attack
+    expect(screen.getAllByText('90').length).toBeGreaterThanOrEqual(1);  // defense
+    expect(screen.getAllByText('65').length).toBeGreaterThanOrEqual(1);  // intelligence
+    expect(screen.getAllByText('78').length).toBeGreaterThanOrEqual(1);  // speed
   });
 
   // ═══════════════════════════════════════════

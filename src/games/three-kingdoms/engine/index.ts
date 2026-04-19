@@ -68,7 +68,6 @@ export {
 export { HeroSystem } from './hero/HeroSystem';
 export { HeroRecruitSystem } from './hero/HeroRecruitSystem';
 export type {
-  Quality,
   GeneralStats,
   GeneralData,
   HeroState,
@@ -77,11 +76,22 @@ export type {
   Faction,
 } from './hero/hero.types';
 export {
+  Quality,
   QUALITY_ORDER,
   QUALITY_TIERS,
   QUALITY_LABELS,
   QUALITY_BORDER_COLORS,
+  FACTION_LABELS,
+  FACTIONS,
 } from './hero/hero.types';
+export { HERO_MAX_LEVEL } from './hero/hero-config';
+export type { RecruitType } from './hero/hero-recruit-config';
+export type {
+  EnhancePreview,
+  LevelUpResult,
+  BatchEnhanceResult,
+  LevelSaveData,
+} from './hero/HeroLevelSystem';
 export type {
   RecruitResult,
   RecruitOutput,

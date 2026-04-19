@@ -2,8 +2,8 @@
  * HeroCard — 武将卡片样式
  *
  * 品质边框色：普通灰 / 精良蓝 / 稀有紫 / 史诗赤 / 传说金
- * PC端：160×200 卡片
- * 手机端：紧凑卡片
+ * PC端：160×200 卡片，品质发光边框
+ * 手机端：2列紧凑网格卡片
  */
 
 /* ═══════════════════════════════════════════
@@ -31,17 +31,62 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* 品质变体 — 悬停发光 */
+/* ═══════════════════════════════════════════
+   品质发光效果 — 默认状态微光 + 悬停增强
+   ═══════════════════════════════════════════ */
+
+/* 传说 — 金色光芒 */
+.tk-hero-card--legendary {
+  border-color: rgba(201, 168, 76, 0.5);
+  box-shadow: 0 0 8px rgba(201, 168, 76, 0.15);
+}
+
 .tk-hero-card--legendary:hover {
-  box-shadow: 0 0 20px rgba(201, 168, 76, 0.4), 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 24px rgba(201, 168, 76, 0.5), 0 0 48px rgba(201, 168, 76, 0.15), 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-color: rgba(201, 168, 76, 0.8);
+}
+
+/* 史诗 — 赤色光芒 */
+.tk-hero-card--epic {
+  border-color: rgba(212, 85, 58, 0.45);
+  box-shadow: 0 0 6px rgba(212, 85, 58, 0.12);
 }
 
 .tk-hero-card--epic:hover {
-  box-shadow: 0 0 16px rgba(212, 85, 58, 0.35), 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 20px rgba(212, 85, 58, 0.45), 0 0 40px rgba(212, 85, 58, 0.12), 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-color: rgba(212, 85, 58, 0.7);
+}
+
+/* 稀有 — 紫色光芒 */
+.tk-hero-card--rare {
+  border-color: rgba(155, 109, 191, 0.4);
+  box-shadow: 0 0 5px rgba(155, 109, 191, 0.1);
 }
 
 .tk-hero-card--rare:hover {
-  box-shadow: 0 0 16px rgba(155, 109, 191, 0.35), 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 16px rgba(155, 109, 191, 0.4), 0 8px 20px rgba(0, 0, 0, 0.4);
+  border-color: rgba(155, 109, 191, 0.65);
+}
+
+/* 精良 — 蓝色微光 */
+.tk-hero-card--fine {
+  border-color: rgba(91, 139, 212, 0.35);
+  box-shadow: 0 0 4px rgba(91, 139, 212, 0.08);
+}
+
+.tk-hero-card--fine:hover {
+  box-shadow: 0 0 14px rgba(91, 139, 212, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
+  border-color: rgba(91, 139, 212, 0.6);
+}
+
+/* 普通 — 灰色 */
+.tk-hero-card--common {
+  border-color: rgba(139, 154, 107, 0.3);
+}
+
+.tk-hero-card--common:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  border-color: rgba(139, 154, 107, 0.5);
 }
 
 /* ═══════════════════════════════════════════
@@ -116,65 +161,76 @@
 
 .tk-hero-card-level {
   color: var(--tk-gold-light);
-  font-weight: 500;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  background: rgba(200, 168, 76, 0.12);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(200, 168, 76, 0.2);
 }
 
 /* ═══════════════════════════════════════════
-   战力
+   战力 — 突出显示
    ═══════════════════════════════════════════ */
 .tk-hero-card-power {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--tk-green);
-  font-weight: 500;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 8px rgba(76, 175, 80, 0.25);
 }
 
 /* ═══════════════════════════════════════════
-   手机端
+   手机端 — 2列紧凑卡片
    ═══════════════════════════════════════════ */
 @media (max-width: 767px) {
   .tk-hero-card {
     width: 100%;
     height: auto;
-    min-height: 80px;
-    flex-direction: row;
-    padding: 8px 10px;
-    gap: 10px;
+    min-height: 72px;
+    flex-direction: column;
+    padding: 6px 6px 8px;
+    gap: 2px;
     align-items: center;
+    border-radius: 6px;
   }
 
   .tk-hero-card-portrait {
-    width: 48px;
-    height: 48px;
-    margin: 0;
+    width: 40px;
+    height: 40px;
+    margin: 8px 0 2px;
     flex-shrink: 0;
   }
 
   .tk-hero-card-portrait-char {
-    font-size: 22px;
+    font-size: 18px;
   }
 
   .tk-hero-card-quality {
     top: 0;
     left: 0;
-    padding: 1px 6px;
-    font-size: 9px;
+    padding: 1px 5px;
+    font-size: 8px;
     border-radius: 0 0 4px 0;
   }
 
   .tk-hero-card-name {
-    font-size: 13px;
+    font-size: 12px;
     margin-bottom: 1px;
   }
 
   .tk-hero-card-meta {
     margin-bottom: 1px;
-    font-size: 10px;
-    gap: 6px;
+    font-size: 9px;
+    gap: 4px;
+  }
+
+  .tk-hero-card-level {
+    font-size: 9px;
+    padding: 0 4px;
   }
 
   .tk-hero-card-power {
-    font-size: 11px;
+    font-size: 10px;
   }
 }

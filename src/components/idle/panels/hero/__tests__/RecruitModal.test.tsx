@@ -16,9 +16,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RecruitModal from '../RecruitModal';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import type { RecruitOutput, RecruitResult } from '@/games/three-kingdoms/engine/hero/HeroRecruitSystem';
-import type { HeroRecruitSystem } from '@/games/three-kingdoms/engine/hero/HeroRecruitSystem';
-import { Quality } from '@/games/three-kingdoms/engine/hero/hero.types';
+import type { RecruitOutput, RecruitResult, HeroRecruitSystem } from '@/games/three-kingdoms/engine';
+import { Quality } from '@/games/three-kingdoms/engine';
 
 // ─────────────────────────────────────────────
 // Mock helpers

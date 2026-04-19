@@ -5,12 +5,16 @@
  * - 选择普通/高级招募
  * - 选择单抽/十连
  * - 消耗显示
- * - 结果展示（新武将/重复碎片）
+ * - 结果展示（品质揭示动画）
+ *   - 普通 → 淡入
+ *   - 精良 → 蓝色闪光
+ *   - 稀有 → 紫色脉冲
+ *   - 史诗 → 红色爆发
+ *   - 传说 → 金色光芒
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import type { RecruitType } from '@/games/three-kingdoms/engine/hero/hero-recruit-config';
-import type { RecruitOutput, RecruitResult } from '@/games/three-kingdoms/engine';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import type { RecruitType, RecruitOutput, RecruitResult, Quality } from '@/games/three-kingdoms/engine';
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { Toast } from '@/components/idle/common/Toast';
@@ -47,12 +51,24 @@ const RECRUIT_TYPE_ICONS: Record<RecruitType, string> = {
 };
 
 // ─────────────────────────────────────────────
+// 品质揭示动画 CSS class 映射
+// ─────────────────────────────────────────────
+const QUALITY_REVEAL_ANIM: Record<Quality, string> = {
+  COMMON: 'tk-reveal-common',
+  FINE: 'tk-reveal-fine',
+  RARE: 'tk-reveal-rare',
+  EPIC: 'tk-reveal-epic',
+  LEGENDARY: 'tk-reveal-legendary',
+};
+
+// ─────────────────────────────────────────────
 // 主组件
 // ─────────────────────────────────────────────
 const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitComplete }) => {
   const [recruitType, setRecruitType] = useState<RecruitType>('normal');
   const [results, setResults] = useState<RecruitOutput | null>(null);
   const [isRecruiting, setIsRecruiting] = useState(false);
+  const [revealPhase, setRevealPhase] = useState(false);
 
   const recruitSystem = engine.getRecruitSystem();
 
@@ -79,10 +95,12 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
   // 执行招募
   const handleRecruit = useCallback((count: 1 | 10) => {
     setIsRecruiting(true);
+    setRevealPhase(false);
     try {
       const output = engine.recruit(recruitType, count);
       if (output) {
         setResults(output);
+        setRevealPhase(true);
         onRecruitComplete?.();
       } else {
         Toast.danger('资源不足，无法招募');
@@ -97,6 +115,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
   // 关闭结果面板
   const handleCloseResults = useCallback(() => {
     setResults(null);
+    setRevealPhase(false);
   }, []);
 
   // 资源名称映射
@@ -122,7 +141,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
             <button
               key={type}
               className={`tk-recruit-type-btn ${recruitType === type ? 'tk-recruit-type-btn--active' : ''}`}
-              onClick={() => { setRecruitType(type); setResults(null); }}
+              onClick={() => { setRecruitType(type); setResults(null); setRevealPhase(false); }}
             >
               <span className="tk-recruit-type-icon">{RECRUIT_TYPE_ICONS[type]}</span>
               <span className="tk-recruit-type-label">{RECRUIT_TYPE_LABELS[type]}</span>
@@ -199,7 +218,12 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
             </div>
             <div className="tk-recruit-results-grid">
               {results.results.map((result, idx) => (
-                <RecruitResultCard key={`${result.general?.id ?? idx}-${idx}`} result={result} />
+                <RecruitResultCard
+                  key={`${result.general?.id ?? idx}-${idx}`}
+                  result={result}
+                  reveal={revealPhase}
+                  delay={idx * 80}
+                />
               ))}
             </div>
           </div>
@@ -210,17 +234,30 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
 };
 
 // ─────────────────────────────────────────────
-// 招募结果卡片子组件
+// 招募结果卡片子组件（含品质揭示动画）
 // ─────────────────────────────────────────────
-const RecruitResultCard: React.FC<{ result: RecruitResult }> = ({ result }) => {
+interface RecruitResultCardProps {
+  result: RecruitResult;
+  reveal: boolean;
+  delay: number;
+}
+
+const RecruitResultCard: React.FC<RecruitResultCardProps> = ({ result, reveal, delay }) => {
   const qualityLabel = QUALITY_LABELS[result.quality];
   const borderColor = QUALITY_BORDER_COLORS[result.quality];
+  const animClass = QUALITY_REVEAL_ANIM[result.quality];
 
   return (
     <div
-      className={`tk-recruit-result-card tk-recruit-result-card--${result.quality.toLowerCase()}`}
-      style={{ borderColor }}
+      className={`tk-recruit-result-card ${animClass} ${reveal ? 'tk-recruit-result-card--revealed' : ''}`}
+      style={{
+        borderColor,
+        animationDelay: reveal ? `${delay}ms` : undefined,
+      }}
     >
+      {/* 品质揭示光效层 */}
+      <div className="tk-recruit-result-glow" style={{ background: borderColor }} />
+
       <div className="tk-recruit-result-quality" style={{ background: borderColor }}>
         {qualityLabel}
       </div>

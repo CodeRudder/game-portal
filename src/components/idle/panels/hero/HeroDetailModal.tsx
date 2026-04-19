@@ -1,16 +1,7 @@
 /**
  * HeroDetailModal — 武将详情弹窗
- *
- * 布局：左侧画像+品质+等级，右侧属性条+技能列表
- * PC端：800×700 弹窗
- * 手机端：全屏详情
- *
- * 功能：
- * - 展示武将四维属性条
- * - 展示技能列表
- * - 经验进度条
- * - 升级按钮（消耗铜钱/碎片提升等级）
- * - 一键强化预览
+ * PC端：800×700 弹窗，含SVG雷达图 | 手机端：全屏滑入面板
+ * 功能：雷达图、属性条、技能列表、升级操作
  */
 
 import React, { useMemo, useState, useCallback } from 'react';
@@ -18,11 +9,11 @@ import type { GeneralData, Quality } from '@/games/three-kingdoms/engine';
 import {
   QUALITY_LABELS,
   QUALITY_BORDER_COLORS,
+  FACTION_LABELS,
+  HERO_MAX_LEVEL,
 } from '@/games/three-kingdoms/engine';
-import { FACTION_LABELS } from '@/games/three-kingdoms/engine/hero/hero.types';
-import { HERO_MAX_LEVEL } from '@/games/three-kingdoms/engine/hero/hero-config';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import type { EnhancePreview } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
+import type { EnhancePreview } from '@/games/three-kingdoms/engine';
 import { Toast } from '@/components/idle/common/Toast';
 import './HeroDetailModal.css';
 
@@ -68,6 +59,24 @@ const QUALITY_BG: Record<Quality, string> = {
   LEGENDARY: 'linear-gradient(135deg, #8B6914 0%, #C9A84C 100%)',
 };
 
+/** 品质对应的雷达图填充色 */
+const QUALITY_RADAR_FILL: Record<Quality, string> = {
+  COMMON: 'rgba(139, 154, 107, 0.35)',
+  FINE: 'rgba(91, 139, 212, 0.35)',
+  RARE: 'rgba(155, 109, 191, 0.35)',
+  EPIC: 'rgba(212, 85, 58, 0.35)',
+  LEGENDARY: 'rgba(201, 168, 76, 0.35)',
+};
+
+/** 品质对应的雷达图边框色 */
+const QUALITY_RADAR_STROKE: Record<Quality, string> = {
+  COMMON: 'rgba(139, 154, 107, 0.8)',
+  FINE: 'rgba(91, 139, 212, 0.8)',
+  RARE: 'rgba(155, 109, 191, 0.8)',
+  EPIC: 'rgba(212, 85, 58, 0.8)',
+  LEGENDARY: 'rgba(201, 168, 76, 0.8)',
+};
+
 /** 属性条最大值（用于百分比计算） */
 const STAT_MAX = 150;
 
@@ -77,6 +86,163 @@ function formatNum(n: number): string {
   if (n >= 10000) return `${(n / 1000).toFixed(1)}K`;
   return n.toLocaleString('zh-CN');
 }
+
+// ─────────────────────────────────────────────
+// SVG 雷达图组件
+// ─────────────────────────────────────────────
+const RADAR_SIZE = 200;
+const RADAR_CX = 100;
+const RADAR_CY = 100;
+const RADAR_R = 80;
+
+/** 计算雷达图各顶点坐标 */
+function getRadarPoints(stats: { key: string; value: number }[]): string {
+  const count = stats.length;
+  return stats
+    .map((stat, i) => {
+      const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+      const ratio = Math.min(1, stat.value / STAT_MAX);
+      const r = RADAR_R * ratio;
+      const x = RADAR_CX + r * Math.cos(angle);
+      const y = RADAR_CY + r * Math.sin(angle);
+      return `${x},${y}`;
+    })
+    .join(' ');
+}
+
+/** 计算网格顶点（用于绘制同心多边形） */
+function getGridPoints(level: number, count: number): string {
+  return Array.from({ length: count })
+    .map((_, i) => {
+      const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+      const r = RADAR_R * level;
+      const x = RADAR_CX + r * Math.cos(angle);
+      const y = RADAR_CY + r * Math.sin(angle);
+      return `${x},${y}`;
+    })
+    .join(' ');
+}
+
+/** 计算标签位置 */
+function getLabelPos(index: number, count: number): { x: number; y: number } {
+  const angle = (Math.PI * 2 * index) / count - Math.PI / 2;
+  const labelR = RADAR_R + 20;
+  return {
+    x: RADAR_CX + labelR * Math.cos(angle),
+    y: RADAR_CY + labelR * Math.sin(angle),
+  };
+}
+
+interface RadarChartProps {
+  stats: { key: string; label: string; value: number; color: string }[];
+  quality: Quality;
+}
+
+const RadarChart: React.FC<RadarChartProps> = ({ stats, quality }) => {
+  const dataPoints = getRadarPoints(stats);
+  const fillColor = QUALITY_RADAR_FILL[quality];
+  const strokeColor = QUALITY_RADAR_STROKE[quality];
+  const count = stats.length;
+
+  return (
+    <svg
+      className="tk-hero-radar"
+      width={RADAR_SIZE}
+      height={RADAR_SIZE}
+      viewBox={`0 0 ${RADAR_SIZE} ${RADAR_SIZE}`}
+      role="img"
+      aria-label="属性雷达图"
+    >
+      {/* 同心网格 */}
+      {[0.25, 0.5, 0.75, 1].map((level) => (
+        <polygon
+          key={level}
+          points={getGridPoints(level, count)}
+          fill="none"
+          stroke="rgba(240, 230, 211, 0.12)"
+          strokeWidth={1}
+        />
+      ))}
+
+      {/* 轴线 */}
+      {stats.map((_, i) => {
+        const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+        const x = RADAR_CX + RADAR_R * Math.cos(angle);
+        const y = RADAR_CY + RADAR_R * Math.sin(angle);
+        return (
+          <line
+            key={i}
+            x1={RADAR_CX}
+            y1={RADAR_CY}
+            x2={x}
+            y2={y}
+            stroke="rgba(240, 230, 211, 0.08)"
+            strokeWidth={1}
+          />
+        );
+      })}
+
+      {/* 数据区域 */}
+      <polygon
+        className="tk-hero-radar-data"
+        points={dataPoints}
+        fill={fillColor}
+        stroke={strokeColor}
+        strokeWidth={2}
+      />
+
+      {/* 数据顶点圆点 */}
+      {stats.map((stat, i) => {
+        const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+        const ratio = Math.min(1, stat.value / STAT_MAX);
+        const r = RADAR_R * ratio;
+        const x = RADAR_CX + r * Math.cos(angle);
+        const y = RADAR_CY + r * Math.sin(angle);
+        return (
+          <circle
+            key={stat.key}
+            cx={x}
+            cy={y}
+            r={3}
+            fill={stat.color}
+            stroke="#fff"
+            strokeWidth={1}
+          />
+        );
+      })}
+
+      {/* 标签 + 数值 */}
+      {stats.map((stat, i) => {
+        const pos = getLabelPos(i, count);
+        return (
+          <g key={`label-${stat.key}`}>
+            <text
+              x={pos.x}
+              y={pos.y - 6}
+              textAnchor="middle"
+              fill="rgba(240, 230, 211, 0.7)"
+              fontSize={11}
+              fontWeight={500}
+            >
+              {stat.label}
+            </text>
+            <text
+              x={pos.x}
+              y={pos.y + 8}
+              textAnchor="middle"
+              fill={stat.color}
+              fontSize={12}
+              fontWeight={700}
+              fontFamily="inherit"
+            >
+              {stat.value}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
 
 // ─────────────────────────────────────────────
 // 主组件
@@ -154,7 +320,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
 
   // 一键满级（升5级）
   const handleEnhanceMax = useCallback(() => {
-    const maxTarget = Math.min(general.level + 5, HERO_MAX_LEVEL); // 最多升5级
+    const maxTarget = Math.min(general.level + 5, HERO_MAX_LEVEL);
     setTargetLevel(maxTarget);
   }, [general.level]);
 
@@ -263,8 +429,16 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
             </div>
           </div>
 
-          {/* 右侧：属性条 + 技能列表 */}
+          {/* 右侧：雷达图 + 属性条 + 技能列表 */}
           <div className="tk-hero-detail-right">
+            {/* 雷达图 */}
+            <div className="tk-hero-detail-radar-section">
+              <h4 className="tk-hero-detail-section-title">属性总览</h4>
+              <div className="tk-hero-detail-radar-wrap">
+                <RadarChart stats={stats} quality={general.quality} />
+              </div>
+            </div>
+
             {/* 属性条 */}
             <div className="tk-hero-detail-stats">
               <h4 className="tk-hero-detail-section-title">四维属性</h4>

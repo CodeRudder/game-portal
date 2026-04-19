@@ -160,7 +160,7 @@ describe('HeroSystem — 高级测试', () => {
         const result = sys.addGeneral(id);
         expect(result).not.toBeNull();
       }
-      expect(sys.getGeneralCount()).toBe(14);
+      expect(sys.getGeneralCount()).toBe(GENERAL_DEFS.length);
     });
 
     it('should handle exp required for out-of-range levels', () => {

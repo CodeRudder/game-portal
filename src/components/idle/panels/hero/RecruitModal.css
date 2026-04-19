@@ -2,7 +2,14 @@
  * RecruitModal — 招募弹窗样式
  *
  * PC端：560×auto 弹窗
- * 手机端：全屏
+ * 手机端：底部滑入面板
+ *
+ * 品质揭示动画：
+ * - 普通 → 淡入
+ * - 精良 → 蓝色闪光
+ * - 稀有 → 紫色脉冲
+ * - 史诗 → 红色爆发
+ * - 传说 → 金色光芒
  */
 
 /* ═══════════════════════════════════════════
@@ -291,6 +298,116 @@
   border-radius: 6px;
   position: relative;
   min-height: 80px;
+  opacity: 0;
+  transform: scale(0.8);
+  overflow: hidden;
+}
+
+/* 品质揭示光效层 */
+.tk-recruit-result-glow {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+/* 揭示状态：可见 */
+.tk-recruit-result-card--revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ═══════════════════════════════════════════
+   品质揭示动画
+   ═══════════════════════════════════════════ */
+
+/* 普通 → 淡入 */
+.tk-reveal-common.tk-recruit-result-card--revealed {
+  animation: tk-reveal-common-anim 400ms ease-out forwards;
+}
+
+@keyframes tk-reveal-common-anim {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 精良 → 蓝色闪光 */
+.tk-reveal-fine.tk-recruit-result-card--revealed {
+  animation: tk-reveal-fine-anim 600ms ease-out forwards;
+}
+
+@keyframes tk-reveal-fine-anim {
+  0% { opacity: 0; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1.05); box-shadow: 0 0 20px rgba(91, 139, 212, 0.6); }
+  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(91, 139, 212, 0.2); }
+}
+
+/* 稀有 → 紫色脉冲 */
+.tk-reveal-rare.tk-recruit-result-card--revealed {
+  animation: tk-reveal-rare-anim 700ms ease-out forwards;
+}
+
+@keyframes tk-reveal-rare-anim {
+  0% { opacity: 0; transform: scale(0.5); }
+  40% { opacity: 1; transform: scale(1.08); box-shadow: 0 0 24px rgba(155, 109, 191, 0.7); }
+  70% { transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 12px rgba(155, 109, 191, 0.3); }
+}
+
+/* 史诗 → 红色爆发 */
+.tk-reveal-epic.tk-recruit-result-card--revealed {
+  animation: tk-reveal-epic-anim 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes tk-reveal-epic-anim {
+  0% { opacity: 0; transform: scale(0.3); }
+  30% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 30px rgba(212, 85, 58, 0.8), 0 0 60px rgba(212, 85, 58, 0.3); }
+  60% { transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 16px rgba(212, 85, 58, 0.4); }
+}
+
+/* 传说 → 金色光芒 */
+.tk-reveal-legendary.tk-recruit-result-card--revealed {
+  animation: tk-reveal-legendary-anim 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes tk-reveal-legendary-anim {
+  0% { opacity: 0; transform: scale(0.2); }
+  25% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 40px rgba(201, 168, 76, 0.9), 0 0 80px rgba(201, 168, 76, 0.4); }
+  50% { transform: scale(0.92); box-shadow: 0 0 30px rgba(201, 168, 76, 0.6); }
+  75% { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 20px rgba(201, 168, 76, 0.5), 0 0 40px rgba(201, 168, 76, 0.15); }
+}
+
+/* 传说持续金色脉冲 */
+.tk-reveal-legendary.tk-recruit-result-card--revealed .tk-recruit-result-glow {
+  animation: tk-legendary-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tk-legendary-glow-pulse {
+  0%, 100% { opacity: 0.08; }
+  50% { opacity: 0.2; }
+}
+
+/* 史诗持续红色微光 */
+.tk-reveal-epic.tk-recruit-result-card--revealed .tk-recruit-result-glow {
+  animation: tk-epic-glow-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes tk-epic-glow-pulse {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.15; }
+}
+
+/* 稀有持续紫色微光 */
+.tk-reveal-rare.tk-recruit-result-card--revealed .tk-recruit-result-glow {
+  animation: tk-rare-glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes tk-rare-glow-pulse {
+  0%, 100% { opacity: 0.04; }
+  50% { opacity: 0.1; }
 }
 
 .tk-recruit-result-quality {
@@ -302,6 +419,7 @@
   font-weight: 600;
   color: #fff;
   border-radius: 0 0 4px 0;
+  z-index: 2;
 }
 
 .tk-recruit-result-name {
@@ -310,28 +428,41 @@
   color: var(--tk-text-primary);
   margin-top: 16px;
   margin-bottom: 4px;
+  z-index: 2;
 }
 
 .tk-recruit-result-new {
   font-size: 10px;
   color: var(--tk-green);
+  z-index: 2;
 }
 
 .tk-recruit-result-dup {
   font-size: 10px;
   color: var(--tk-text-secondary);
+  z-index: 2;
 }
 
 /* ═══════════════════════════════════════════
-   手机端
+   手机端 — 底部滑入
    ═══════════════════════════════════════════ */
 @media (max-width: 767px) {
+  .tk-recruit-overlay {
+    align-items: flex-end;
+    justify-content: stretch;
+  }
+
   .tk-recruit-modal {
     width: 100%;
     max-width: 100%;
-    max-height: 100%;
-    border-radius: 0;
-    height: 100vh;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+    animation: tk-recruit-slide-up 350ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes tk-recruit-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
   }
 
   .tk-recruit-types {
