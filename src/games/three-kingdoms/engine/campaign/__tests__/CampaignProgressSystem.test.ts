@@ -4,7 +4,7 @@
  * 覆盖：初始化、状态查询、通关处理、解锁逻辑、序列化、ISubsystem接口。
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CampaignProgressSystem } from '../CampaignProgressSystem';
 import type { ICampaignDataProvider, CampaignSaveData } from '../campaign.types';
 import { getChapters, getChapter, getStage, getStagesByChapter } from '../campaign-config';

@@ -3,7 +3,7 @@
  * 覆盖：大量武将序列化、空对象处理、属性完整保留、版本兼容、undefined 字段
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   createEmptyState,
   cloneGeneral,
