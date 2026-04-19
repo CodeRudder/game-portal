@@ -12,8 +12,8 @@
 
 | 项目 | 内容 |
 |------|------|
-| **评测文档** | `00-ARCHITECTURE-REFACTOR.md` · `00-TEST-SYSTEM-DESIGN.md` · `00-ENGINE-IMPROVEMENT.md` |
-| **交叉引用** | `00-VERSION-ROADMAP.md` · `00-ARCHITECTURE-ANALYSIS.md` · `00-FEATURE-INVENTORY.md` |
+| **评测文档** | `refactor.md` · `test-system-design.md` · `engine-improvement.md` |
+| **交叉引用** | `version-roadmap.md` · `analysis.md` · `feature-inventory.md` |
 | **源码基线** | 39个TS源文件 / 22,565行 / 27个测试文件 / 8,069行测试代码 |
 | **评测目标** | 验证阶段二引擎改进方案的架构合理性、可测试性、可执行性、代码质量保障、文档一致性 |
 
@@ -71,7 +71,7 @@ L1 内核层 ──→ 无上层依赖（完全自包含）
 |:----:|:----:|------|------|
 | **P1** | ARCH-1 | **`visual/` 子系统归属模糊**：架构文档在 L2 中列出了 `visual/` 子目录（FloatingTextSystem、ParticleSystem、StatisticsTracker、InputHandler、AudioManager），但 L4 渲染层也有 `ParticleRenderer`。ParticleSystem 同时出现在 L2 和 L4，职责划分不清。 | 明确规则：L2 `visual/` 负责逻辑计算（粒子数量、生命周期、碰撞检测），L4 `rendering/` 负责绘制执行（Canvas/WebGL 渲染）。建议在架构文档中增加 `visual/` 子系统的归属说明段落。 |
 | **P1** | ARCH-2 | **L3↔L2 交互方式存在歧义**：文档 §1.2 层间依赖规则表中写"L3 → L2 (接口)"，但 §4.5 Mock 接口示例中 `BuildingPanel` 直接接收 `system={new MockBuildingSystem()}` 作为 props。如果 L3 始终通过接口访问 L2，那 L3 的 `useGameEngine` hook 是通过 `EngineFacade.getSystem()` 还是 Context 注入？ | 建议明确 L3 获取 L2 接口的唯一路径：`GameContext → EngineFacade.getSystem<IBuildingSystem>('building')`，并在 hooks 中封装这一调用。文档应增加"L3 访问 L2 的标准流程"示意图。 |
-| **P2** | ARCH-3 | **架构文档的4层 vs 分析文档的4层编号不一致**：`00-ARCHITECTURE-ANALYSIS.md` 将数据层定义为 L4（纯数据、无依赖），而 `00-ARCHITECTURE-REFACTOR.md` 将渲染层定义为 L4、数据层合并到 L1 的 ConfigRegistry。两份文档的层级编号体系不同，容易造成混淆。 | 建议在 `00-ARCHITECTURE-REFACTOR.md` 开头增加"与本项目之前的分析文档层级定义差异说明"，明确本次采用 L1 内核 / L2 逻辑 / L3 UI / L4 渲染 的编号体系，数据层不再独立为层。 |
+| **P2** | ARCH-3 | **架构文档的4层 vs 分析文档的4层编号不一致**：`analysis.md` 将数据层定义为 L4（纯数据、无依赖），而 `refactor.md` 将渲染层定义为 L4、数据层合并到 L1 的 ConfigRegistry。两份文档的层级编号体系不同，容易造成混淆。 | 建议在 `refactor.md` 开头增加"与本项目之前的分析文档层级定义差异说明"，明确本次采用 L1 内核 / L2 逻辑 / L3 UI / L4 渲染 的编号体系，数据层不再独立为层。 |
 
 ---
 
@@ -109,9 +109,9 @@ L1 内核层 ──→ 无上层依赖（完全自包含）
 
 | 级别 | 编号 | 问题 | 建议 |
 |:----:|:----:|------|------|
-| **P1** | TEST-1 | **>90% 覆盖率目标在渲染层偏激进**：`00-ENGINE-IMPROVEMENT.md` §10.1 要求"引擎内核（L1+L2）测试覆盖率 >90%"，而 `00-TEST-SYSTEM-DESIGN.md` §8.3 的配置中 `rendering/` 行覆盖率目标仅 70%。两处目标不一致，且 PixiJS/Canvas 渲染代码难以达到 90% 行覆盖。 | 建议统一为分层目标：`core/ >90%`、`systems/ >85%`、`ui/ >75%`、`rendering/ >70%`。在 `00-ENGINE-IMPROVEMENT.md` 验收标准中明确"引擎内核 = core/ + systems/"，不包含 rendering/。 |
+| **P1** | TEST-1 | **>90% 覆盖率目标在渲染层偏激进**：`engine-improvement.md` §10.1 要求"引擎内核（L1+L2）测试覆盖率 >90%"，而 `test-system-design.md` §8.3 的配置中 `rendering/` 行覆盖率目标仅 70%。两处目标不一致，且 PixiJS/Canvas 渲染代码难以达到 90% 行覆盖。 | 建议统一为分层目标：`core/ >90%`、`systems/ >85%`、`ui/ >75%`、`rendering/ >70%`。在 `engine-improvement.md` 验收标准中明确"引擎内核 = core/ + systems/"，不包含 rendering/。 |
 | **P1** | TEST-2 | **UITreeExtractor 依赖 React 内部 API**：`__reactFiber$` 是 React 的未文档化内部属性，React 18/19 版本间可能变化。如果 React 升级，此机制可能失效。 | 建议增加降级策略：优先使用 `data-testid` 属性定位，`__reactFiber$` 作为增强手段。在 `UITreeExtractor` 中增加版本检测和 graceful degradation。同时建议在组件中统一添加 `data-testid` 属性。 |
-| **P2** | TEST-3 | **GameTestRunner 与 Vitest 关系未明确**：`00-TEST-SYSTEM-DESIGN.md` 定义了自定义的 `GameTestRunner`，但测试工具栈选择的是 Vitest。两者是替代关系还是互补关系？GameTestRunner 是 Vitest 的自定义 runner 还是独立框架？ | 建议在文档中明确：GameTestRunner 是对 Vitest 的封装层，内部调用 `vitest.run()` 执行用例。或者明确 GameTestRunner 仅用于 E2E 测试，单元测试直接使用 Vitest。 |
+| **P2** | TEST-3 | **GameTestRunner 与 Vitest 关系未明确**：`test-system-design.md` 定义了自定义的 `GameTestRunner`，但测试工具栈选择的是 Vitest。两者是替代关系还是互补关系？GameTestRunner 是 Vitest 的自定义 runner 还是独立框架？ | 建议在文档中明确：GameTestRunner 是对 Vitest 的封装层，内部调用 `vitest.run()` 执行用例。或者明确 GameTestRunner 仅用于 E2E 测试，单元测试直接使用 Vitest。 |
 | **P2** | TEST-4 | **180 个单元测试用例估算缺乏依据**：§1.1 规划 L1 单元 ~180 用例，但未给出按子系统的分解。六大领域子系统差异大（BattleSystem 30 个 vs DiplomacySystem 20 个），需要更细粒度的规划。 | 建议按子系统列出用例规划表，类似 §3.1 的格式但扩展到所有子系统，包括 L1 基础设施的用例分配。 |
 
 ---
@@ -134,7 +134,7 @@ L1 内核层 ──→ 无上层依赖（完全自包含）
 
 **② 引擎改进计划与版本路线图对齐**
 
-`00-ENGINE-IMPROVEMENT.md` 的 6 个 Phase 与 `00-VERSION-ROADMAP.md` 的 6 个 Phase 完全对应：
+`engine-improvement.md` 的 6 个 Phase 与 `version-roadmap.md` 的 6 个 Phase 完全对应：
 - Phase 1 (v1~v4) 核心框架 → 基础设施 + 核心循环
 - Phase 2 (v5~v7) 世界探索 → 地图 + NPC + 领地
 - Phase 3 (v8~v10) 经济体系 → 商店 + 离线 + 装备
@@ -152,8 +152,8 @@ L1 内核层 ──→ 无上层依赖（完全自包含）
 
 | 级别 | 编号 | 问题 | 建议 |
 |:----:|:----:|------|------|
-| **P1** | EXEC-1 | **迁移计划与版本计划的时间线未对齐**：架构重构的 6 阶段计划（28天/4周）是独立于 v1~v20 版本迭代的。但实际开发中，重构和功能开发需要并行。文档未说明重构在哪个版本区间执行，以及重构期间是否暂停新功能开发。 | 建议在 `00-ENGINE-IMPROVEMENT.md` 中增加"重构时间窗"章节，明确：方案 A（重构优先，暂停新功能 4 周）；方案 B（重构与 v1.0 并行，每个版本完成后执行一个重构阶段）。推荐方案 B，风险更低。 |
-| **P1** | EXEC-2 | **子系统数量不一致**：`00-ARCHITECTURE-REFACTOR.md` 提到"38 个子系统"，`00-ENGINE-IMPROVEMENT.md` 提到"44 个子系统"，`00-ARCHITECTURE-ANALYSIS.md` 提到"30+ 子系统"。三份数据不一致，影响迁移范围评估。 | 建议统一子系统计数口径。经核实源码，当前 39 个源文件中约有 25 个 System 类（排除数据定义、渲染器、配置文件）。建议以 `00-ARCHITECTURE-ANALYSIS.md` 的精确清单为准，在所有文档中统一引用。 |
+| **P1** | EXEC-1 | **迁移计划与版本计划的时间线未对齐**：架构重构的 6 阶段计划（28天/4周）是独立于 v1~v20 版本迭代的。但实际开发中，重构和功能开发需要并行。文档未说明重构在哪个版本区间执行，以及重构期间是否暂停新功能开发。 | 建议在 `engine-improvement.md` 中增加"重构时间窗"章节，明确：方案 A（重构优先，暂停新功能 4 周）；方案 B（重构与 v1.0 并行，每个版本完成后执行一个重构阶段）。推荐方案 B，风险更低。 |
+| **P1** | EXEC-2 | **子系统数量不一致**：`refactor.md` 提到"38 个子系统"，`engine-improvement.md` 提到"44 个子系统"，`analysis.md` 提到"30+ 子系统"。三份数据不一致，影响迁移范围评估。 | 建议统一子系统计数口径。经核实源码，当前 39 个源文件中约有 25 个 System 类（排除数据定义、渲染器、配置文件）。建议以 `analysis.md` 的精确清单为准，在所有文档中统一引用。 |
 | **P2** | EXEC-3 | **CampaignSystem 拆分风险被识别但缓解不足**：2616 行的 CampaignSystem 拆分为 4 个文件（CampaignManager 300行 + CampaignProgress 250行 + CampaignRewards 200行 + CampaignTypes 150行 = 900行），仅覆盖原文件 34% 的代码。剩余 1716 行的去向未说明。 | 建议补充 CampaignSystem 的完整拆分映射表，类似 §2.3 Engine.ts 拆分策略的格式，列出原文件的每个职责段 → 目标文件的映射关系。 |
 
 ---
@@ -175,7 +175,7 @@ L1 内核层 ──→ 无上层依赖（完全自包含）
 
 **② 技术债务清理计划分版本落实**
 
-`00-ENGINE-IMPROVEMENT.md` §9.3 的技术债务清理计划按版本排期：
+`engine-improvement.md` §9.3 的技术债务清理计划按版本排期：
 - v4.0：统一 constants.ts 格式，消除魔法数字
 - v7.0：NPC 系列合并为统一模块
 - v10.0：事件系统合并为统一层
@@ -235,14 +235,14 @@ L1 内核层 ──→ 无上层依赖（完全自包含）
 
 **③ 版本路线图与引擎改进计划的双向对齐**
 
-`00-ENGINE-IMPROVEMENT.md` 的 Phase 1~6 与 `00-VERSION-ROADMAP.md` 的 Phase 1~6 完全对应，每个版本的新增子系统清单可相互印证。
+`engine-improvement.md` 的 Phase 1~6 与 `version-roadmap.md` 的 Phase 1~6 完全对应，每个版本的新增子系统清单可相互印证。
 
 ### 5.3 问题与建议
 
 | 级别 | 编号 | 问题 | 建议 |
 |:----:|:----:|------|------|
-| **P1** | DOC-1 | **测试工具栈不一致**：`00-ARCHITECTURE-REFACTOR.md` §7.1 测试框架列写"Jest"，`00-TEST-SYSTEM-DESIGN.md` §1.1 选择"Vitest 1.x"，`00-ENGINE-IMPROVEMENT.md` §10.1 验收标准写"Jest --coverage"。三处不一致。 | 建议统一为 Vitest（与项目现代工具链更匹配），在所有文档中全局替换 Jest → Vitest。`00-ENGINE-IMPROVEMENT.md` 验收标准改为 `vitest run --coverage`。 |
-| **P1** | DOC-2 | **ENGINE-IMPROVEMENT 子系统名称与 ARCHITECTURE-REFACTOR 不匹配**：例如 ENGINE-IMPROVEMENT 使用 `HeroSystem`、`ArmySystem`、`DiplomacySystem`、`EconomySystem`，而 ARCHITECTURE-REFACTOR 使用 `BuildingSystem`、`UnitSystem`、`CampaignSystem`、`TradeRouteSystem`。测试文档中 `IGameLogic` 接口的方法名（`getHero`、`getArmy`、`formAlliance`）与架构文档的领域接口（`IGeneralSystem`、`IBuildingSystem`）也不一致。 | 建议建立统一的"子系统命名规范表"，在 `00-ARCHITECTURE-REFACTOR.md` 附录中列出所有子系统的标准名称、别名和对应的源码文件。所有文档统一使用标准名称。 |
+| **P1** | DOC-1 | **测试工具栈不一致**：`refactor.md` §7.1 测试框架列写"Jest"，`test-system-design.md` §1.1 选择"Vitest 1.x"，`engine-improvement.md` §10.1 验收标准写"Jest --coverage"。三处不一致。 | 建议统一为 Vitest（与项目现代工具链更匹配），在所有文档中全局替换 Jest → Vitest。`engine-improvement.md` 验收标准改为 `vitest run --coverage`。 |
+| **P1** | DOC-2 | **ENGINE-IMPROVEMENT 子系统名称与 ARCHITECTURE-REFACTOR 不匹配**：例如 ENGINE-IMPROVEMENT 使用 `HeroSystem`、`ArmySystem`、`DiplomacySystem`、`EconomySystem`，而 ARCHITECTURE-REFACTOR 使用 `BuildingSystem`、`UnitSystem`、`CampaignSystem`、`TradeRouteSystem`。测试文档中 `IGameLogic` 接口的方法名（`getHero`、`getArmy`、`formAlliance`）与架构文档的领域接口（`IGeneralSystem`、`IBuildingSystem`）也不一致。 | 建议建立统一的"子系统命名规范表"，在 `refactor.md` 附录中列出所有子系统的标准名称、别名和对应的源码文件。所有文档统一使用标准名称。 |
 | **P2** | DOC-3 | **ENGINE-IMPROVEMENT Phase 4 跨度异常**：Phase 4 覆盖 v11~v14（4个版本），而其他 Phase 均为 3 个版本（Phase 1: v1~4 为 4 个版本，但 Phase 2~3/5~6 均为 3 个版本）。Phase 4 包含 PVP + 排行 + 联盟 + 竞技场 + 回放 5 个大系统，工作量明显大于其他 Phase。 | 建议将 Phase 4 拆为 Phase 4a (v11~v12) 和 Phase 4b (v13~v14)，或者将 v14 的内容（BattleChallenge 重构 + ArenaSystem）移入 Phase 5。这更符合"每版 ≤5 个子系统"的增量交付原则。 |
 | **P2** | DOC-4 | **测试文档的 L2 子系统列表与架构文档不完全对应**：测试文档 §3.1 列出 MapSystem、HeroSystem、ArmySystem、DiplomacySystem、EconomySystem、BattleSystem 六大子系统，而架构文档 §3.1 列出建筑、武将、战役、地图、经济、社交事件六大领域。两者分类维度不同（功能维度 vs 领域维度），容易造成理解混淆。 | 建议测试文档直接引用架构文档的六大领域分组，在每个领域下列出对应的测试用例规划，保持分类体系统一。 |
 
@@ -292,7 +292,7 @@ L1 内核层 ──→ 无上层依赖（完全自包含）
 
 ### 立即行动（本次评审后）
 
-1. **统一命名体系**：创建 `00-NAMING-CONVENTION.md`，定义所有子系统的标准名称、接口名、Mock 类名
+1. **统一命名体系**：创建 `naming-convention.md`，定义所有子系统的标准名称、接口名、Mock 类名
 2. **统一工具栈**：全局确认 Vitest 为测试框架，更新所有文档中的 Jest 引用
 3. **补充 Engine.ts 行号级拆分映射表**：标注 2902 行中每段代码的迁移目标
 

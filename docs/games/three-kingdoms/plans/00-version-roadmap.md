@@ -162,58 +162,7 @@ graph TD
 
 ## 五、开发流程规范
 
-### 每个版本的标准流程（4层架构 + 测试子系统）
-
-```
-1. 开发实现（子任务：game-developer）
-   ├── 读取设计文档(PRD+UI)和现有代码
-   ├── 实现功能逻辑（数据连通+交互逻辑）
-   │   ├── Layer 1: Engine（游戏引擎层）— 纯逻辑，无UI依赖
-   │   ├── Layer 2: UI State（UI状态层）— 状态管理，连接引擎和UI
-   │   ├── Layer 3: UI Component（UI组件层）— 渲染和交互
-   │   └── Layer 4: CSS（样式层）— 布局和动画
-   ├── 更新UI组件
-   └── 确保编译通过
-
-2. 测试子系统（子任务：game-developer）
-   ├── 编写游戏逻辑层单元测试（Layer 1）
-   ├── 编写UI状态层测试（Layer 2）
-   ├── 确保分支覆盖率 100%
-   └── 确保所有测试通过
-
-3. 构建验证（子任务：devops）
-   ├── pnpm run build
-   ├── 修复构建错误
-   └── 确认Vercel部署成功
-
-4. 游戏评测（子任务：game-reviewer）
-   ├── 截图（Playwright 6个Tab）
-   ├── glm-vision视觉评测
-   ├── 功能验收（点击交互、数据连通、可玩性）
-   └── 生成评测报告
-
-5. 问题修复（子任务：game-developer）
-   ├── 修复评测发现的问题
-   ├── 提交推送
-   └── 重新构建验证
-
-6. 重新评测（子任务：game-reviewer）
-   ├── 重新截图评测
-   └── 确认问题已修复
-
-7. 封版判定
-   ├── 完成度评分 > 9分 → 封版，进入下一版本
-   └── 完成度评分 ≤ 9分 → 回到步骤5继续迭代
-```
-
-### 评测维度（每项1-10分）
-1. **功能完整性** — 规划功能是否全部实现
-2. **数据连通性** — 核心循环是否打通
-3. **交互可用性** — 点击操作是否有实际效果
-4. **视觉表现** — UI布局、色彩、图标品质
-5. **可玩性** — 玩家是否能真实发展游戏
-6. **稳定性** — 无崩溃、无数据异常
-7. **构建成功** — pnpm run build + Vercel部署
+> 已剥离为独立文档：[开发流程规范](../process/development-workflow.md)
 
 ---
 
@@ -267,9 +216,9 @@ graph TD
 ## 七、文件结构
 
 ```
-docs/games/three-kingdoms/plans/
-├── 00-VERSION-ROADMAP.md          # 本文件 - 20版本总路线图
-├── 00-FEATURE-INVENTORY.md        # 功能清单总览
+docs/games/three-kingdoms/architecture/
+├── version-roadmap.md             # 本文件 - 20版本总路线图
+├── feature-inventory.md           # 功能清单总览
 │
 ├── # Phase 1: 核心框架
 ├── v1.0-基业初立.md               # v1.0 资源+建筑

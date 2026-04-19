@@ -2,7 +2,7 @@
 
 > **创建日期**: 2026-04-19
 > **目标**: 将游戏引擎从扁平架构升级为4层架构，添加测试子系统，支撑20版本迭代开发
-> **关联文档**: [架构调整方案](./00-ARCHITECTURE-REFACTOR.md) | [测试子系统方案](./00-TEST-SUBSYSTEM.md) | [版本路线图](./00-VERSION-ROADMAP.md)
+> **关联文档**: [架构调整方案](./refactor.md) | [测试子系统方案](./test-subsystem.md) | [版本路线图](../plans/00-version-roadmap.md)
 
 ---
 
@@ -33,7 +33,7 @@
 
 ## 二、架构调整计划
 
-> 详细方案见 [00-ARCHITECTURE-REFACTOR.md](./00-ARCHITECTURE-REFACTOR.md)
+> 详细方案见 [refactor.md](./refactor.md)
 
 ### 2.1 四层架构
 
@@ -64,7 +64,7 @@
 
 ## 三、测试子系统计划
 
-> 详细方案见 [00-TEST-SUBSYSTEM.md](./00-TEST-SUBSYSTEM.md)
+> 详细方案见 [test-subsystem.md](./test-subsystem.md)
 
 ### 3.1 三大测试能力
 
@@ -301,9 +301,9 @@ interface IUIRendererBridge {
 
 | 文件 | 说明 |
 |------|------|
-| [00-ARCHITECTURE-ANALYSIS.md](./00-ARCHITECTURE-ANALYSIS.md) | 架构调研报告 |
-| [00-ARCHITECTURE-REFACTOR.md](./00-ARCHITECTURE-REFACTOR.md) | 4层架构调整方案 |
-| [00-TEST-SUBSYSTEM.md](./00-TEST-SUBSYSTEM.md) | 测试子系统方案 |
-| [00-FEATURE-INVENTORY.md](./00-FEATURE-INVENTORY.md) | 功能清单 |
-| [00-VERSION-ROADMAP.md](./00-VERSION-ROADMAP.md) | 20版本路线图 |
-| [00-ENGINE-IMPROVEMENT.md](./00-ENGINE-IMPROVEMENT.md) | 本文件 |
+| [analysis.md](./analysis.md) | 架构调研报告 |
+| [refactor.md](./refactor.md) | 4层架构调整方案 |
+| [test-subsystem.md](./test-subsystem.md) | 测试子系统方案 |
+| [feature-inventory.md](./feature-inventory.md) | 功能清单 |
+| [00-version-roadmap.md](../plans/00-version-roadmap.md) | 20版本路线图 |
+| [engine-improvement.md](./engine-improvement.md) | 本文件 |
