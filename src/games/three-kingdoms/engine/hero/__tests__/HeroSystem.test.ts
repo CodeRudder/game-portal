@@ -55,9 +55,9 @@ describe('HeroSystem', () => {
       expect(save.version).toBe(HERO_SAVE_VERSION);
     });
 
-    it('should load 14 general definitions', () => {
+    it(`should load ${GENERAL_DEFS.length} general definitions`, () => {
       const defs = sys.getAllGeneralDefs();
-      expect(defs).toHaveLength(14);
+      expect(defs).toHaveLength(GENERAL_DEFS.length);
     });
   });
 
