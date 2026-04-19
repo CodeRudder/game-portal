@@ -115,6 +115,9 @@ export const STAR_UP_FRAGMENT_COST: readonly number[] = [
 /** 最大星级 */
 export const MAX_STAR_LEVEL = 6;
 
+/** 碎片合成武将所需碎片数量 */
+export const SYNTHESIZE_REQUIRED_FRAGMENTS = 80;
+
 // ─────────────────────────────────────────────
 // 6. 战力计算系数
 // ─────────────────────────────────────────────

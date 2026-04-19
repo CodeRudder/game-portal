@@ -100,4 +100,5 @@ export type {
   ResourceSpendFn,
   ResourceCheckFn,
   RecruitDeps,
+  RecruitHistoryEntry,
 } from './hero/HeroRecruitSystem';

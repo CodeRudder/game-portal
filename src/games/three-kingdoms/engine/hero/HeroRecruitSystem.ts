@@ -57,12 +57,29 @@ export interface PityState {
 export interface RecruitSaveData {
   version: number;
   pity: PityState;
+  /** 招募历史记录（最近20条） */
+  history?: RecruitHistoryEntry[];
 }
 
 /** 资源消耗回调 */
 export type ResourceSpendFn = (resourceType: string, amount: number) => boolean;
 /** 资源检查回调 */
 export type ResourceCheckFn = (resourceType: string, amount: number) => boolean;
+
+/** 招募历史条目 */
+export interface RecruitHistoryEntry {
+  /** 招募时间戳 */
+  timestamp: number;
+  /** 招募类型 */
+  type: RecruitType;
+  /** 招募结果 */
+  results: RecruitResult[];
+  /** 消耗 */
+  cost: { resourceType: string; amount: number };
+}
+
+/** 最大历史记录数 */
+const MAX_HISTORY_SIZE = 10;
 
 /** 招募系统业务依赖（通过回调解耦 ResourceSystem） */
 export interface RecruitDeps {
@@ -149,10 +166,12 @@ export class HeroRecruitSystem implements ISubsystem {
   private recruitDeps: RecruitDeps | null = null;
   private pity: PityState;
   private rng: () => number;
+  private history: RecruitHistoryEntry[];
 
   constructor(rng: () => number = Math.random) {
     this.pity = createEmptyPity();
     this.rng = rng;
+    this.history = [];
   }
 
   // ── ISubsystem 适配层 ──
@@ -160,7 +179,7 @@ export class HeroRecruitSystem implements ISubsystem {
   init(deps: ISystemDeps): void { this.deps = deps; }
   update(_dt: number): void { /* 预留：每日免费次数重置等 */ }
   getState(): unknown { return this.serialize(); }
-  reset(): void { this.pity = createEmptyPity(); }
+  reset(): void { this.pity = createEmptyPity(); this.history = []; }
 
   // ─────────────────────────────────────────
   // 1. 依赖注入
@@ -212,6 +231,21 @@ export class HeroRecruitSystem implements ISubsystem {
     return Math.max(0, config.hardPityThreshold - count);
   }
 
+  /** 获取招募历史记录（最近10条，最新在前） */
+  getRecruitHistory(): Readonly<RecruitHistoryEntry[]> {
+    return [...this.history].reverse();
+  }
+
+  /** 获取招募历史记录数量 */
+  getRecruitHistoryCount(): number {
+    return this.history.length;
+  }
+
+  /** 清空招募历史 */
+  clearRecruitHistory(): void {
+    this.history = [];
+  }
+
   // ─────────────────────────────────────────
   // 4. 核心招募逻辑
   // ─────────────────────────────────────────
@@ -242,12 +276,16 @@ export class HeroRecruitSystem implements ISubsystem {
   // 5. 序列化/反序列化
   // ─────────────────────────────────────────
 
-  /** 序列化（仅保存保底计数器，武将/碎片由 HeroSystem 管理） */
+  /** 序列化（保存保底计数器和招募历史） */
   serialize(): RecruitSaveData {
-    return { version: RECRUIT_SAVE_VERSION, pity: { ...this.pity } };
+    return {
+      version: RECRUIT_SAVE_VERSION,
+      pity: { ...this.pity },
+      history: [...this.history],
+    };
   }
 
-  /** 反序列化恢复保底计数器 */
+  /** 反序列化恢复保底计数器和招募历史 */
   deserialize(data: RecruitSaveData): void {
     if (data.version !== RECRUIT_SAVE_VERSION) {
       console.warn(
@@ -260,6 +298,12 @@ export class HeroRecruitSystem implements ISubsystem {
       normalHardPity: data.pity.normalHardPity ?? 0,
       advancedHardPity: data.pity.advancedHardPity ?? 0,
     };
+    // 恢复招募历史（兼容无 history 字段的旧存档）
+    if (Array.isArray(data.history)) {
+      this.history = data.history.slice(-MAX_HISTORY_SIZE);
+    } else {
+      this.history = [];
+    }
   }
 
   // ─────────────────────────────────────────
@@ -279,7 +323,21 @@ export class HeroRecruitSystem implements ISubsystem {
       results.push(this.executeSinglePull(type));
     }
 
-    return { type, results, cost };
+    const output: RecruitOutput = { type, results, cost };
+
+    // 记录到招募历史
+    this.history.push({
+      timestamp: Date.now(),
+      type,
+      results: output.results,
+      cost: output.cost,
+    });
+    // 保留最近 MAX_HISTORY_SIZE 条
+    if (this.history.length > MAX_HISTORY_SIZE) {
+      this.history = this.history.slice(-MAX_HISTORY_SIZE);
+    }
+
+    return output;
   }
 
   /** 执行单次抽卡：概率抽取 → 保底修正 → 选武将 → 处理重复 → 更新计数器 */

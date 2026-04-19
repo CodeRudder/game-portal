@@ -47,7 +47,6 @@ const STAT_COLORS: Record<string, string> = {
   intelligence: '#AB47BC',
   speed: '#43A047',
 };
-
 // ─────────────────────────────────────────────
 // 品质对应的头像背景渐变
 // ─────────────────────────────────────────────
@@ -77,8 +76,11 @@ const QUALITY_RADAR_STROKE: Record<Quality, string> = {
   LEGENDARY: 'rgba(201, 168, 76, 0.8)',
 };
 
-/** 属性条最大值（用于百分比计算） */
-const STAT_MAX = 150;
+/** 计算动态属性上限（当前武将最大属性值 × 1.2，向上取整到10的倍数） */
+function computeStatMax(stats: { attack: number; defense: number; intelligence: number; speed: number }): number {
+  const maxVal = Math.max(stats.attack, stats.defense, stats.intelligence, stats.speed);
+  return Math.ceil(maxVal * 1.2 / 10) * 10;
+}
 
 /** 格式化数值 */
 function formatNum(n: number): string {
@@ -96,12 +98,12 @@ const RADAR_CY = 100;
 const RADAR_R = 80;
 
 /** 计算雷达图各顶点坐标 */
-function getRadarPoints(stats: { key: string; value: number }[]): string {
+function getRadarPoints(stats: { key: string; value: number }[], statMax: number): string {
   const count = stats.length;
   return stats
     .map((stat, i) => {
       const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
-      const ratio = Math.min(1, stat.value / STAT_MAX);
+      const ratio = Math.min(1, stat.value / statMax);
       const r = RADAR_R * ratio;
       const x = RADAR_CX + r * Math.cos(angle);
       const y = RADAR_CY + r * Math.sin(angle);
@@ -136,10 +138,12 @@ function getLabelPos(index: number, count: number): { x: number; y: number } {
 interface RadarChartProps {
   stats: { key: string; label: string; value: number; color: string }[];
   quality: Quality;
+  /** 动态属性上限 */
+  statMax: number;
 }
 
-const RadarChart: React.FC<RadarChartProps> = ({ stats, quality }) => {
-  const dataPoints = getRadarPoints(stats);
+const RadarChart: React.FC<RadarChartProps> = ({ stats, quality, statMax }) => {
+  const dataPoints = getRadarPoints(stats, statMax);
   const fillColor = QUALITY_RADAR_FILL[quality];
   const strokeColor = QUALITY_RADAR_STROKE[quality];
   const count = stats.length;
@@ -194,7 +198,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ stats, quality }) => {
       {/* 数据顶点圆点 */}
       {stats.map((stat, i) => {
         const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
-        const ratio = Math.min(1, stat.value / STAT_MAX);
+        const ratio = Math.min(1, stat.value / statMax);
         const r = RADAR_R * ratio;
         const x = RADAR_CX + r * Math.cos(angle);
         const y = RADAR_CY + r * Math.sin(angle);
@@ -292,12 +296,13 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
   // 属性列表
   const stats = useMemo(() => {
     const { baseStats } = general;
+    const statMax = computeStatMax(baseStats);
     return (['attack', 'defense', 'intelligence', 'speed'] as const).map((key) => ({
       key,
       label: STAT_LABELS[key],
       value: baseStats[key],
       color: STAT_COLORS[key],
-      percentage: Math.min(100, Math.floor((baseStats[key] / STAT_MAX) * 100)),
+      percentage: Math.min(100, Math.floor((baseStats[key] / statMax) * 100)),
     }));
   }, [general]);
 
@@ -435,7 +440,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
             <div className="tk-hero-detail-radar-section">
               <h4 className="tk-hero-detail-section-title">属性总览</h4>
               <div className="tk-hero-detail-radar-wrap">
-                <RadarChart stats={stats} quality={general.quality} />
+                <RadarChart stats={stats} quality={general.quality} statMax={computeStatMax(general.baseStats)} />
               </div>
             </div>
 

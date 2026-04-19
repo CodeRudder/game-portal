@@ -214,6 +214,9 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
           <div className="tk-recruit-results">
             <div className="tk-recruit-results-header">
               <span>招募结果</span>
+              <div className="tk-recruit-results-total-cost">
+                总计消耗: {resourceNameMap[results.cost.resourceType] || results.cost.resourceType} ×{results.cost.amount}
+              </div>
               <button className="tk-recruit-results-close" onClick={handleCloseResults}>✕</button>
             </div>
             <div className="tk-recruit-results-grid">

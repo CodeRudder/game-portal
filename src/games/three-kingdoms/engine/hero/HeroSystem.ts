@@ -24,6 +24,8 @@ import {
   HERO_MAX_LEVEL,
   LEVEL_EXP_TABLE,
   DUPLICATE_FRAGMENT_COUNT,
+  STAR_UP_FRAGMENT_COST,
+  SYNTHESIZE_REQUIRED_FRAGMENTS,
 } from './hero-config';
 import { createEmptyState, cloneGeneral, serializeHeroState, deserializeHeroState } from './HeroSerializer';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
@@ -177,6 +179,61 @@ export class HeroSystem implements ISubsystem {
     const fragments = DUPLICATE_FRAGMENT_COUNT[quality];
     this.addFragment(generalId, fragments);
     return fragments;
+  }
+
+  /**
+   * 碎片合成武将
+   *
+   * 当指定武将的碎片数量达到合成所需数量时，消耗碎片并添加武将。
+   * 合成所需碎片数量 = SYNTHESIZE_REQUIRED_FRAGMENTS（80）
+   *
+   * @returns 合成后的武将数据，或 null（碎片不足/已拥有/未找到定义）
+   */
+  fragmentSynthesize(generalId: string): GeneralData | null {
+    // 已拥有则不能合成
+    if (this.state.generals[generalId]) return null;
+
+    // 检查武将定义是否存在
+    const def = GENERAL_DEF_MAP.get(generalId);
+    if (!def) return null;
+
+    // 检查碎片数量
+    const required = SYNTHESIZE_REQUIRED_FRAGMENTS;
+    const current = this.state.fragments[generalId] ?? 0;
+    if (current < required) return null;
+
+    // 消耗碎片
+    this.state.fragments[generalId] = current - required;
+    if (this.state.fragments[generalId] === 0) {
+      delete this.state.fragments[generalId];
+    }
+
+    // 添加武将
+    return this.addGeneral(generalId);
+  }
+
+  /** 获取碎片合成所需数量 */
+  getSynthesizeCost(): number {
+    return SYNTHESIZE_REQUIRED_FRAGMENTS;
+  }
+
+  /** 检查指定武将是否可合成 */
+  canSynthesize(generalId: string): boolean {
+    if (this.state.generals[generalId]) return false;
+    if (!GENERAL_DEF_MAP.has(generalId)) return false;
+    return (this.state.fragments[generalId] ?? 0) >= SYNTHESIZE_REQUIRED_FRAGMENTS;
+  }
+
+  /**
+   * 获取碎片合成进度
+   *
+   * @returns { current: number, required: number } 当前碎片数和所需碎片数
+   */
+  getSynthesizeProgress(generalId: string): { current: number; required: number } {
+    return {
+      current: this.state.fragments[generalId] ?? 0,
+      required: SYNTHESIZE_REQUIRED_FRAGMENTS,
+    };
   }
 
   // ── 4. 升级经验 ──
