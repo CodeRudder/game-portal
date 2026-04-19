@@ -11,5 +11,11 @@ export {
   BuildingEvents,
   SaveEvents,
   GameEvents,
+  GeneralEvents,
+  CampaignEvents,
+  MapEvents,
+  EconomyEvents,
+  SocialEvents,
+  VisualEvents,
 } from './EventTypes';
 export type { EventPayloadMap } from './EventTypes';

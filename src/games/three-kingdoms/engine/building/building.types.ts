@@ -87,13 +87,7 @@ export const APPEARANCE_LABELS: Record<AppearanceStage, string> = {
   glorious: '宫殿/铜门（辉煌）',
 };
 
-/** 根据等级获取外观阶段 */
-export function getAppearanceStage(level: number): AppearanceStage {
-  if (level <= 5) return 'humble';
-  if (level <= 12) return 'orderly';
-  if (level <= 20) return 'refined';
-  return 'glorious';
-}
+/** 根据等级获取外观阶段（逻辑已移至 BuildingSystem.ts） */
 
 // ─────────────────────────────────────────────
 // 3. 升级费用

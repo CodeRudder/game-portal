@@ -14,8 +14,9 @@ import type {
   UpgradeCheckResult,
   QueueSlot,
   BuildingSaveData,
+  AppearanceStage,
 } from './building.types';
-import { BUILDING_TYPES, getAppearanceStage } from './building.types';
+import { BUILDING_TYPES } from './building.types';
 import {
   BUILDING_DEFS,
   BUILDING_MAX_LEVELS,
@@ -25,10 +26,19 @@ import {
   CANCEL_REFUND_RATIO,
 } from './building-config';
 import type { Resources } from '../resource/resource.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 辅助
 // ─────────────────────────────────────────────
+
+/** 根据等级获取外观阶段 */
+function getAppearanceStage(level: number): AppearanceStage {
+  if (level <= 5) return 'humble';
+  if (level <= 12) return 'orderly';
+  if (level <= 20) return 'refined';
+  return 'glorious';
+}
 
 function createInitialState(type: BuildingType): BuildingState {
   const unlocked = BUILDING_UNLOCK_LEVELS[type] === 0;
@@ -51,13 +61,34 @@ function createAllStates(): Record<BuildingType, BuildingState> {
 // BuildingSystem
 // ─────────────────────────────────────────────
 
-export class BuildingSystem {
+export class BuildingSystem implements ISubsystem {
+  // ── ISubsystem 接口 ──
+  readonly name = 'building' as const;
+  private deps: ISystemDeps | null = null;
+
   private buildings: Record<BuildingType, BuildingState>;
   private upgradeQueue: QueueSlot[];
 
   constructor() {
     this.buildings = createAllStates();
     this.upgradeQueue = [];
+  }
+
+  // ── ISubsystem 适配层 ──
+
+  /** 注入依赖（事件总线、配置注册表等） */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** ISubsystem.update — 适配 tick()，建筑系统基于实时时间戳 */
+  update(_dt: number): void {
+    this.tick();
+  }
+
+  /** ISubsystem.getState — 适配 serialize() */
+  getState(): unknown {
+    return this.serialize();
   }
 
   // ── 1. 状态读取 ──

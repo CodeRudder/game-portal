@@ -2,15 +2,115 @@
  * 基础设施层 — 全局共享类型
  *
  * 跨域通用类型定义，供 Engine 编排层和 UI 层使用
+ *
+ * 规则：零 engine/ 依赖，所有基础类型在本文件中定义
  */
 
-import type { ResourceType, Resources, ProductionRate, ResourceCap } from '../engine/resource/resource.types';
-import type {
-  BuildingType,
-  BuildingState,
-  UpgradeCost,
-  UpgradeCheckResult,
-} from '../engine/building/building.types';
+// ─────────────────────────────────────────────
+// 0. 资源域基础类型（与 engine/resource/resource.types.ts 保持同步）
+// ─────────────────────────────────────────────
+
+/** 四种核心资源类型 */
+export type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate';
+
+/** 资源数量集合 */
+export interface Resources {
+  grain: number;
+  gold: number;
+  troops: number;
+  mandate: number;
+}
+
+/** 资源产出速率（每秒） */
+export interface ProductionRate {
+  grain: number;
+  gold: number;
+  troops: number;
+  mandate: number;
+}
+
+/** 资源上限（null 表示无上限） */
+export interface ResourceCap {
+  grain: number;
+  gold: null;
+  troops: number;
+  mandate: null;
+}
+
+/** 容量警告等级 */
+export type CapWarningLevel = 'safe' | 'notice' | 'warning' | 'urgent' | 'full';
+
+/** 容量警告信息 */
+export interface CapWarning {
+  resourceType: ResourceType;
+  level: CapWarningLevel;
+  current: number;
+  cap: number | null;
+  percentage: number;
+}
+
+/** 离线收益计算结果 */
+export interface OfflineEarnings {
+  offlineSeconds: number;
+  earned: Resources;
+  isCapped: boolean;
+}
+
+/** 资源系统存档数据 */
+export interface ResourceSaveData {
+  resources: Resources;
+  lastSaveTime: number;
+  productionRates: ProductionRate;
+  caps: ResourceCap;
+  version: number;
+}
+
+// ─────────────────────────────────────────────
+// 0. 建筑域基础类型（与 engine/building/building.types.ts 保持同步）
+// ─────────────────────────────────────────────
+
+/** 8 种建筑类型标识 */
+export type BuildingType =
+  | 'castle'
+  | 'farmland'
+  | 'market'
+  | 'barracks'
+  | 'smithy'
+  | 'academy'
+  | 'clinic'
+  | 'wall';
+
+/** 建筑升级状态 */
+export type BuildingStatus = 'locked' | 'idle' | 'upgrading';
+
+/** 单座建筑的运行时状态 */
+export interface BuildingState {
+  type: BuildingType;
+  level: number;
+  status: BuildingStatus;
+  upgradeStartTime: number | null;
+  upgradeEndTime: number | null;
+}
+
+/** 单级升级费用 */
+export interface UpgradeCost {
+  grain: number;
+  gold: number;
+  troops: number;
+  timeSeconds: number;
+}
+
+/** 升级检查结果 */
+export interface UpgradeCheckResult {
+  canUpgrade: boolean;
+  reasons: string[];
+}
+
+/** 建筑系统存档数据 */
+export interface BuildingSaveData {
+  buildings: Record<BuildingType, BuildingState>;
+  version: number;
+}
 
 // ─────────────────────────────────────────────
 // 1. 事件系统
@@ -33,14 +133,14 @@ export type EngineEventType =
 export interface EngineEventMap {
   'resource:changed': { resources: Readonly<Resources> };
   'resource:rate-changed': { rates: Readonly<ProductionRate> };
-  'resource:cap-warning': { warnings: import('../engine/resource/resource.types').CapWarning[] };
+  'resource:cap-warning': { warnings: CapWarning[] };
   'building:upgraded': { type: BuildingType; level: number };
   'building:upgrade-start': { type: BuildingType; cost: UpgradeCost };
   'building:unlocked': { types: BuildingType[] };
   'game:initialized': { isNewGame: boolean };
-  'game:loaded': { offlineEarnings?: import('../engine/resource/resource.types').OfflineEarnings };
+  'game:loaded': { offlineEarnings?: OfflineEarnings };
   'game:saved': { timestamp: number };
-  'game:offline-earnings': import('../engine/resource/resource.types').OfflineEarnings;
+  'game:offline-earnings': OfflineEarnings;
 }
 
 /** 通用事件监听器 */
@@ -57,9 +157,9 @@ export interface GameSaveData {
   /** 保存时间戳（ms） */
   saveTime: number;
   /** 资源系统数据 */
-  resource: import('../engine/resource/resource.types').ResourceSaveData;
+  resource: ResourceSaveData;
   /** 建筑系统数据 */
-  building: import('../engine/building/building.types').BuildingSaveData;
+  building: BuildingSaveData;
 }
 
 // ─────────────────────────────────────────────
