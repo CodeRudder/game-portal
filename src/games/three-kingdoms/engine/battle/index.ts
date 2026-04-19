@@ -20,6 +20,13 @@ export type {
   BattleSide,
   IDamageCalculator,
   IBattleEngine,
+  // v4.0 新增类型
+  UltimateTimeStopEvent,
+  IUltimateTimeStopHandler,
+  UltimateReadyResult,
+  BattleSpeedState,
+  SpeedChangeEvent,
+  IBattleEngineV4,
 } from './battle.types';
 
 export {
@@ -30,6 +37,10 @@ export {
   BattlePhase,
   BattleOutcome,
   StarRating,
+  // v4.0 新增枚举
+  TimeStopState,
+  BattleSpeed,
+  BattleMode,
 } from './battle.types';
 
 // 伤害计算器
@@ -59,3 +70,10 @@ export {
   findUnitInTeam,
   findUnit,
 } from './BattleTurnExecutor';
+
+// v4.0：大招时停系统
+export { UltimateSkillSystem } from './UltimateSkillSystem';
+
+// v4.0：战斗加速控制器
+export { BattleSpeedController } from './BattleSpeedController';
+export type { ISpeedChangeListener } from './BattleSpeedController';

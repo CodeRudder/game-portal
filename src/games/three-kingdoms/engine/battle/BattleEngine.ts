@@ -2,11 +2,13 @@
  * 战斗系统 — 战斗引擎核心
  *
  * 职责：回合制战斗流程控制、胜负判定、星级评定、战斗统计
- * 来源：CBT-3 战斗机制
+ * v4.0 新增：大招时停机制、战斗加速系统
+ * 来源：CBT-3 战斗机制 + v4.0 CBT-3/CBT-6
  *
  * 回合流程：
  * 1. 按速度排序所有存活单位 → turnOrder
  * 2. 依次执行每个单位的行动（委托给 BattleTurnExecutor）
+ *    - v4.0：半自动模式下，大招就绪时暂停等待玩家确认
  * 3. 回合结束：减少Buff持续时间，检查胜负
  *
  * @module engine/battle/BattleEngine
@@ -18,12 +20,16 @@ import type {
   BattleState,
   BattleTeam,
   BattleUnit,
+  BattleSpeedState,
   IDamageCalculator,
   IBattleEngine,
+  IUltimateTimeStopHandler,
 } from './battle.types';
 import {
+  BattleMode,
   BattleOutcome,
   BattlePhase,
+  BattleSpeed,
   StarRating,
 } from './battle.types';
 import { BATTLE_CONFIG } from './battle-config';
@@ -33,6 +39,8 @@ import {
   findUnit,
   getAliveUnits,
 } from './BattleTurnExecutor';
+import { UltimateSkillSystem } from './UltimateSkillSystem';
+import { BattleSpeedController } from './BattleSpeedController';
 
 // ─────────────────────────────────────────────
 // 工具函数
@@ -54,6 +62,7 @@ function generateBattleId(): string {
  *
  * 纯逻辑层，不依赖UI。通过依赖注入解耦伤害计算器。
  * 回合内行动执行委托给 BattleTurnExecutor。
+ * v4.0：集成大招时停和战斗加速。
  *
  * @example
  * ```ts
@@ -67,13 +76,24 @@ export class BattleEngine implements IBattleEngine {
   private readonly damageCalculator: IDamageCalculator;
   private readonly turnExecutor: BattleTurnExecutor;
 
+  /** v4.0：大招时停系统 */
+  private readonly ultimateSystem: UltimateSkillSystem;
+
+  /** v4.0：战斗加速控制器 */
+  private readonly speedController: BattleSpeedController;
+
+  /** v4.0：当前战斗模式 */
+  private battleMode: BattleMode = BattleMode.AUTO;
+
   constructor(damageCalculator?: IDamageCalculator) {
     this.damageCalculator = damageCalculator ?? new DamageCalculator();
     this.turnExecutor = new BattleTurnExecutor(this.damageCalculator);
+    this.ultimateSystem = new UltimateSkillSystem();
+    this.speedController = new BattleSpeedController();
   }
 
   // ─────────────────────────────────────────
-  // 公共API
+  // 公共API（v3.0 兼容）
   // ─────────────────────────────────────────
 
   /**
@@ -131,6 +151,21 @@ export class BattleEngine implements IBattleEngine {
 
       // 单位可能在本回合中已死亡
       if (!actor || !actor.isAlive) continue;
+
+      // v4.0：半自动模式下检测大招时停
+      if (this.battleMode === BattleMode.SEMI_AUTO) {
+        const ultimateReady = this.ultimateSystem.checkUltimateReady(actor);
+        if (ultimateReady.isReady) {
+          // 触发时停
+          const skill = ultimateReady.readyUnits[0].skills[0];
+          this.ultimateSystem.pauseForUltimate(actor, skill);
+
+          // 暂停执行，等待玩家确认
+          // 在单步执行模式中，由外部调用 confirmUltimate 后再继续
+          // 在全自动 runFullBattle 中，自动确认
+          this.ultimateSystem.confirmUltimateWithInfo(actor, skill);
+        }
+      }
 
       // 执行单位行动
       const action = this.turnExecutor.executeUnitAction(state, actor);
@@ -227,6 +262,113 @@ export class BattleEngine implements IBattleEngine {
     state.result = result;
 
     return result;
+  }
+
+  // ─────────────────────────────────────────
+  // v4.0 新增API — 战斗模式
+  // ─────────────────────────────────────────
+
+  /**
+   * 设置战斗模式
+   *
+   * @param mode - 战斗模式（AUTO/SEMI_AUTO/MANUAL）
+   */
+  setBattleMode(mode: BattleMode): void {
+    this.battleMode = mode;
+    // 半自动模式启用时停
+    this.ultimateSystem.setEnabled(mode === BattleMode.SEMI_AUTO);
+  }
+
+  /**
+   * 获取当前战斗模式
+   */
+  getBattleMode(): BattleMode {
+    return this.battleMode;
+  }
+
+  // ─────────────────────────────────────────
+  // v4.0 新增API — 大招时停
+  // ─────────────────────────────────────────
+
+  /**
+   * 确认释放大招（半自动模式）
+   *
+   * @param unitId - 释放单位ID
+   * @param skillId - 释放技能ID
+   */
+  confirmUltimate(unitId: string, skillId: string): void {
+    this.ultimateSystem.confirmUltimate(unitId, skillId);
+  }
+
+  /**
+   * 取消大招释放（半自动模式）
+   */
+  cancelUltimate(): void {
+    this.ultimateSystem.cancelUltimate();
+  }
+
+  /**
+   * 注册大招时停事件处理器
+   *
+   * @param handler - 事件处理器
+   */
+  registerTimeStopHandler(handler: IUltimateTimeStopHandler): void {
+    this.ultimateSystem.registerHandler(handler);
+  }
+
+  /**
+   * 获取大招时停系统（用于高级用法）
+   */
+  getUltimateSystem(): UltimateSkillSystem {
+    return this.ultimateSystem;
+  }
+
+  /**
+   * 检查大招时停是否暂停中
+   */
+  isTimeStopPaused(): boolean {
+    return this.ultimateSystem.isPaused();
+  }
+
+  // ─────────────────────────────────────────
+  // v4.0 新增API — 战斗加速
+  // ─────────────────────────────────────────
+
+  /**
+   * 设置战斗速度
+   *
+   * @param speed - 速度档位（1x/2x/4x）
+   */
+  setSpeed(speed: BattleSpeed): void {
+    this.speedController.setSpeed(speed);
+  }
+
+  /**
+   * 获取当前战斗速度状态
+   */
+  getSpeedState(): BattleSpeedState {
+    return this.speedController.getSpeedState();
+  }
+
+  /**
+   * 获取战斗加速控制器（用于高级用法）
+   */
+  getSpeedController(): BattleSpeedController {
+    return this.speedController;
+  }
+
+  /**
+   * 获取调整后的回合间隔（ms）
+   */
+  getAdjustedTurnInterval(): number {
+    return this.speedController.getAdjustedTurnInterval();
+  }
+
+  /**
+   * 获取动画速度缩放系数
+   */
+  getAnimationSpeedScale(): number {
+    return this.speedController.getAnimationSpeedScale();
   }
 
   // ─────────────────────────────────────────

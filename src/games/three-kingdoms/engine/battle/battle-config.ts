@@ -67,4 +67,22 @@ export const BATTLE_CONFIG = {
   STAR2_MIN_SURVIVORS: 4,
   /** 三星要求最大回合数 */
   STAR3_MAX_TURNS: 6,
+
+  // ── 大招时停（v4.0） ──
+  /** 大招怒气阈值（≥此值视为大招就绪） */
+  ULTIMATE_RAGE_THRESHOLD: 100,
+  /** 时停超时时间（ms），超时后自动释放大招 */
+  TIME_STOP_TIMEOUT_MS: 30_000,
+  /** 半自动模式默认启用时停 */
+  TIME_STOP_ENABLED_BY_DEFAULT: true,
+
+  // ── 战斗加速（v4.0） ──
+  /** 默认战斗速度档位 */
+  DEFAULT_BATTLE_SPEED: 1 as const,
+  /** 可用速度档位列表 */
+  AVAILABLE_SPEEDS: [1, 2, 4] as const,
+  /** 基础回合间隔（ms），实际间隔 = 基础间隔 / 速度 */
+  BASE_TURN_INTERVAL_MS: 1000,
+  /** 4x速度时是否简化特效 */
+  SIMPLIFY_EFFECTS_AT_X4: true,
 } as const;

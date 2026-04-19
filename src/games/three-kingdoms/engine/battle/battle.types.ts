@@ -455,3 +455,22 @@ export interface CreateUnitParams {
   /** 技能列表（来自GeneralDef） */
   skills: SkillData[];
 }
+
+// ─────────────────────────────────────────────
+// 14~16. v4.0 扩展类型（从 battle-v4.types 导入）
+// ─────────────────────────────────────────────
+
+export {
+  TimeStopState,
+  BattleSpeed,
+  BattleMode,
+} from './battle-v4.types';
+
+export type {
+  UltimateTimeStopEvent,
+  IUltimateTimeStopHandler,
+  UltimateReadyResult,
+  BattleSpeedState,
+  SpeedChangeEvent,
+  IBattleEngineV4,
+} from './battle-v4.types';
