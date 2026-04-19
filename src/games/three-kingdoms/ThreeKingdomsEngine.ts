@@ -990,6 +990,29 @@ export class ThreeKingdomsEngine extends IdleGameEngine {
     return true;
   }
 
+  /** 一键布阵：自动选择战力最高的6名武将组成编队 */
+  public autoFormation(): string[] {
+    const recruited = this.getRecruitedGeneralIds();
+    if (recruited.length === 0) return [];
+    // 按战力排序，取前6名
+    const sorted = recruited
+      .map(id => ({ id, power: this.getUnitPower(id) }))
+      .sort((a, b) => b.power - a.power)
+      .slice(0, 6);
+    return sorted.map(s => s.id);
+  }
+
+  /** 获取单个武将战力 */
+  private getUnitPower(id: string): number {
+    const state = this.units.getState(id);
+    if (!state) return 0;
+    const def = GENERALS.find(g => g.id === id);
+    if (!def) return 0;
+    const level = state.level || 1;
+    const base = def.baseStats.attack + def.baseStats.defense + def.baseStats.intelligence + def.baseStats.command;
+    return Math.floor(base * (1 + level * 0.1));
+  }
+
   /**
    * 获取武将对话（供 UI 调用）
    */
