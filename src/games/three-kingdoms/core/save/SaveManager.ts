@@ -139,6 +139,9 @@ export class SaveManager implements ISaveManager {
    * 从 localStorage 读取并反序列化游戏状态。
    * 自动处理版本迁移和数据校验。
    *
+   * 通过预判存档格式，区分新格式（v2 序列化）和旧格式（直接 JSON），
+   * 避免旧格式触发不必要的 SerializationError 日志噪音。
+   *
    * @returns 游戏状态，如果没有存档则返回 null
    */
   load(): IGameState | null {
@@ -146,16 +149,50 @@ export class SaveManager implements ISaveManager {
       const raw = localStorage.getItem(this.saveKey);
       if (raw === null) return null;
 
-      const state = this.serializer.deserialize(raw);
+      // 预判存档格式：新格式必须有 v + checksum + data 三个字段
+      if (this.isNewFormat(raw)) {
+        const state = this.serializer.deserialize(raw);
 
-      // 恢复存档计数
-      this.saveCount = state.metadata.saveCount;
-      this.lastSaveTime = state.timestamp;
+        // 恢复存档计数
+        this.saveCount = state.metadata.saveCount;
+        this.lastSaveTime = state.timestamp;
 
-      return state;
+        return state;
+      }
+
+      // 旧格式或非标准格式 — 不属于 SaveManager 管辖范围，返回 null
+      // 由 ThreeKingdomsEngine.tryLoadLegacyFormat() 处理
+      return null;
     } catch (err) {
       console.error('[SaveManager] Load failed:', err);
       return null;
+    }
+  }
+
+  /**
+   * 预判存档是否为新序列化格式
+   *
+   * 新格式（StateSerializer 输出）特征：
+   *   { v: string, checksum: number, data: string }
+   *
+   * 仅当三个字段同时存在且类型正确时才判定为新格式，
+   * 避免旧格式数据被误传入 deserialize() 触发 SerializationError。
+   *
+   * @param raw - localStorage 中的原始字符串
+   * @returns 是否为新格式
+   */
+  private isNewFormat(raw: string): boolean {
+    try {
+      const parsed = JSON.parse(raw);
+      return (
+        parsed !== null &&
+        typeof parsed === 'object' &&
+        typeof parsed.v === 'string' &&
+        typeof parsed.checksum === 'number' &&
+        typeof parsed.data === 'string'
+      );
+    } catch {
+      return false;
     }
   }
 

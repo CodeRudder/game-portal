@@ -61,19 +61,11 @@ export const RESOURCE_COLORS: Record<ResourceType, string> = {
 // 3. 产出配置
 // ─────────────────────────────────────────────
 
-/** 单个来源的产出配置 */
-export interface ProductionSource {
-  /** 来源标识 */
-  id: string;
-  /** 产出资源类型 */
-  resourceType: ResourceType;
-  /** 基础产出值（每秒） */
-  baseRate: number;
-  /** 等级系数（每级增加的产出） */
-  levelFactor: number;
-  /** 来源描述 */
-  description: string;
-}
+/**
+ * ProductionSource 接口已删除（v1.0 废弃清理）
+ * 产出计算已统一使用 building-config 的 levelTable 数据源，
+ * 不再使用 baseRate + levelFactor 的线性公式。
+ */
 
 /** 加成类型 */
 export type BonusType = 'tech' | 'castle' | 'hero' | 'rebirth' | 'vip';

@@ -1,0 +1,490 @@
+/**
+ * FriendSystem — 三国霸业 v11.0 群雄逐鹿 · 好友系统引擎模块
+ *
+ * 提供好友管理、好友互动（赠送兵力/拜访主城/切磋）、借将系统、友情点数等社交功能。
+ *
+ * 设计原则：
+ * - 零外部依赖，纯 TypeScript 实现
+ * - 事件驱动，支持 UI 层监听好友状态变化
+ * - 完整的存档/读档支持（序列化 / 反序列化）
+ * - 借将系统：每日 3 次上限，战力 80% 折算
+ *
+ * @module games/three-kingdoms/FriendSystem
+ */
+
+// ============================================================
+// 类型定义
+// ============================================================
+
+/** 好友信息 */
+export interface FriendInfo {
+  /** 好友唯一标识 */
+  id: string;
+  /** 好友显示名称 */
+  name: string;
+  /** 好友等级 */
+  level: number;
+  /** 好友战力 */
+  power: number;
+  /** 上次在线时间戳 */
+  lastOnline: number;
+  /** 友情等级 */
+  friendshipLevel: number;
+}
+
+/** 借将信息 */
+export interface BorrowedGeneral {
+  /** 借将唯一标识 */
+  id: string;
+  /** 武将 ID */
+  generalId: string;
+  /** 来源好友 ID */
+  fromFriendId: string;
+  /** 武将名称 */
+  name: string;
+  /** 武将战力（已折算） */
+  power: number;
+  /** 借将时间戳 */
+  borrowedAt: number;
+  /** 到期时间戳 */
+  expiresAt: number;
+  /** 战力折算比例 */
+  powerRatio: 0.8;
+}
+
+/** 赠送礼物类型 */
+export type GiftType = 'troops' | 'visit' | 'sparring';
+
+/** 借将配额信息 */
+export interface BorrowQuota {
+  /** 已使用次数 */
+  used: number;
+  /** 最大次数 */
+  max: 3;
+}
+
+/** 好友系统事件 */
+export type FriendEvent =
+  | { type: 'friend_added'; friendId: string }
+  | { type: 'friend_removed'; friendId: string }
+  | { type: 'gift_sent'; friendId: string; giftType: GiftType }
+  | { type: 'general_borrowed'; borrowId: string; generalId: string; fromFriendId: string }
+  | { type: 'general_returned'; borrowId: string }
+  | { type: 'friendship_level_up'; friendId: string; newLevel: number };
+
+/** 事件监听器函数类型 */
+export type FriendEventListener = (event: FriendEvent) => void;
+
+// ============================================================
+// 常量
+// ============================================================
+
+/** 好友上限 */
+const MAX_FRIENDS = 50;
+
+/** 每日借将上限 */
+const MAX_DAILY_BORROW = 3;
+
+/** 借将战力折算比例 */
+const BORROW_POWER_RATIO = 0.8;
+
+/** 借将持续时间（毫秒），默认 24 小时 */
+const BORROW_DURATION_MS = 24 * 3600_000;
+
+/** 赠送礼物冷却时间（毫秒），默认 1 小时 */
+const GIFT_COOLDOWN_MS = 3600_000;
+
+/** 友情点数升级阈值（每级所需累计点数） */
+const FRIENDSHIP_LEVEL_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500];
+
+/** 各礼物类型对应的友情点数增量 */
+const GIFT_FRIENDSHIP_POINTS: Record<GiftType, number> = {
+  troops: 10,
+  visit: 15,
+  sparring: 20,
+};
+
+/** 玩家自身 ID */
+const SELF_ID = 'player';
+
+// ============================================================
+// 内部辅助数据结构
+// ============================================================
+
+/** 好友扩展数据（内部使用，包含赠送冷却等） */
+interface FriendData extends FriendInfo {
+  /** 上次赠送礼物时间戳 */
+  lastGiftSentAt: number;
+  /** 累计友情点数 */
+  friendshipPoints: number;
+}
+
+// ============================================================
+// FriendSystem 实现
+// ============================================================
+
+/**
+ * 好友系统 — 管理好友关系、互动、借将等社交功能
+ *
+ * @example
+ * ```typescript
+ * const friendSys = new FriendSystem();
+ * friendSys.addFriend('f001');
+ * friendSys.sendGift('f001', 'troops');
+ * friendSys.borrowGeneral('f001', 'guanyu');
+ * ```
+ */
+export class FriendSystem {
+
+  // ========== 内部数据 ==========
+
+  /** 好友列表：friendId → FriendData */
+  private friends: Map<string, FriendData> = new Map();
+
+  /** 已借武将列表 */
+  private borrowedGenerals: BorrowedGeneral[] = [];
+
+  /** 每日借将计数（基于日期重置） */
+  private dailyBorrowCount: number = 0;
+
+  /** 上次借将计数重置日期（YYYY-MM-DD） */
+  private dailyBorrowResetDate: string = '';
+
+  /** 累计友情点数 */
+  private totalFriendshipPoints: number = 0;
+
+  /** 事件监听器 */
+  private eventListeners: Map<string, FriendEventListener[]> = new Map();
+
+  // ============================================================
+  // 初始化
+  // ============================================================
+
+  constructor() {
+    // 纯内存结构，无需额外初始化
+  }
+
+  // ============================================================
+  // 好友管理
+  // ============================================================
+
+  /**
+   * 添加好友
+   *
+   * 好友上限 50 人，超出或已存在则返回 false。
+   * 好友初始数据由模拟数据填充（实际项目中应从服务器获取）。
+   *
+   * @param friendId - 好友唯一标识
+   * @returns 是否添加成功
+   */
+  addFriend(friendId: string): boolean {
+    if (this.friends.has(friendId)) {
+      return false;
+    }
+    if (this.friends.size >= MAX_FRIENDS) {
+      return false;
+    }
+    this.friends.set(friendId, {
+      id: friendId,
+      name: `玩家_${friendId.slice(-4)}`,
+      level: 1,
+      power: 1000,
+      lastOnline: Date.now(),
+      friendshipLevel: 1,
+      lastGiftSentAt: 0,
+      friendshipPoints: 0,
+    });
+    this.emit({ type: 'friend_added', friendId });
+    return true;
+  }
+
+  /**
+   * 删除好友
+   *
+   * @param friendId - 好友 ID
+   * @returns 是否删除成功
+   */
+  removeFriend(friendId: string): boolean {
+    if (!this.friends.has(friendId)) {
+      return false;
+    }
+    this.friends.delete(friendId);
+    this.emit({ type: 'friend_removed', friendId });
+    return true;
+  }
+
+  /**
+   * 获取好友列表
+   *
+   * @returns 好友信息数组（按友情等级降序排列）
+   */
+  getFriendList(): FriendInfo[] {
+    return Array.from(this.friends.values())
+      .sort((a, b) => b.friendshipLevel - a.friendshipLevel)
+      .map(({ lastGiftSentAt, friendshipPoints, ...info }) => info);
+  }
+
+  /**
+   * 搜索好友（按名称或 ID 模糊匹配）
+   *
+   * @param keyword - 搜索关键词
+   * @returns 匹配的好友列表
+   */
+  searchFriend(keyword: string): FriendInfo[] {
+    if (!keyword.trim()) {
+      return [];
+    }
+    const lowerKeyword = keyword.toLowerCase();
+    return Array.from(this.friends.values())
+      .filter(
+        (f) =>
+          f.name.toLowerCase().includes(lowerKeyword) ||
+          f.id.toLowerCase().includes(lowerKeyword),
+      )
+      .map(({ lastGiftSentAt, friendshipPoints, ...info }) => info);
+  }
+
+  // ============================================================
+  // 好友互动
+  // ============================================================
+
+  /**
+   * 向好友赠送礼物（兵力 / 拜访主城 / 切磋）
+   *
+   * 每个好友有独立的赠送冷却时间（1 小时）。
+   * 赠送礼物可增加友情点数。
+   *
+   * @param friendId - 好友 ID
+   * @param giftType - 礼物类型：troops=赠送兵力, visit=拜访主城, sparring=切磋
+   * @returns 是否赠送成功
+   */
+  sendGift(friendId: string, giftType: GiftType): boolean {
+    const friend = this.friends.get(friendId);
+    if (!friend) {
+      return false;
+    }
+    // 冷却时间检查
+    if (friend.lastGiftSentAt > 0 && (Date.now() - friend.lastGiftSentAt) < GIFT_COOLDOWN_MS) {
+      return false;
+    }
+    friend.lastGiftSentAt = Date.now();
+
+    // 增加友情点数
+    const points = GIFT_FRIENDSHIP_POINTS[giftType];
+    friend.friendshipPoints += points;
+    this.totalFriendshipPoints += points;
+
+    // 检查友情等级升级
+    const oldLevel = friend.friendshipLevel;
+    friend.friendshipLevel = this.calcFriendshipLevel(friend.friendshipPoints);
+    if (friend.friendshipLevel > oldLevel) {
+      this.emit({ type: 'friendship_level_up', friendId, newLevel: friend.friendshipLevel });
+    }
+
+    this.emit({ type: 'gift_sent', friendId, giftType });
+    return true;
+  }
+
+  /**
+   * 向好友借将
+   *
+   * 每日最多借 3 次，借来的武将战力按 80% 折算。
+   * 借将持续 24 小时后自动到期。
+   *
+   * @param friendId - 好友 ID
+   * @param generalId - 武将 ID
+   * @returns 借将信息，失败返回 null
+   */
+  borrowGeneral(friendId: string, generalId: string): BorrowedGeneral | null {
+    const friend = this.friends.get(friendId);
+    if (!friend) {
+      return null;
+    }
+
+    // 每日借将次数检查
+    this.checkDailyBorrowReset();
+    if (this.dailyBorrowCount >= MAX_DAILY_BORROW) {
+      return null;
+    }
+
+    // 检查是否已借同名武将
+    const alreadyBorrowed = this.borrowedGenerals.find(
+      (bg) => bg.generalId === generalId && bg.fromFriendId === friendId,
+    );
+    if (alreadyBorrowed) {
+      return null;
+    }
+
+    const now = Date.now();
+    const borrowId = `borrow_${now}_${Math.random().toString(36).slice(2, 8)}`;
+
+    // 模拟武将数据（实际项目中应从武将配置表获取）
+    const basePower = friend.power * 0.15 + 500; // 基于好友战力推算武将战力
+    const effectivePower = Math.floor(basePower * BORROW_POWER_RATIO);
+
+    const borrowed: BorrowedGeneral = {
+      id: borrowId,
+      generalId,
+      fromFriendId: friendId,
+      name: `武将_${generalId.slice(-3)}`,
+      power: effectivePower,
+      borrowedAt: now,
+      expiresAt: now + BORROW_DURATION_MS,
+      powerRatio: BORROW_POWER_RATIO as 0.8,
+    };
+
+    this.borrowedGenerals.push(borrowed);
+    this.dailyBorrowCount++;
+
+    this.emit({
+      type: 'general_borrowed',
+      borrowId,
+      generalId,
+      fromFriendId: friendId,
+    });
+
+    return borrowed;
+  }
+
+  /**
+   * 获取当前友情点数（累计总数）
+   */
+  getFriendshipPoints(): number {
+    return this.totalFriendshipPoints;
+  }
+
+  // ============================================================
+  // 借将系统
+  // ============================================================
+
+  /**
+   * 获取当前已借武将列表（自动过滤已过期的）
+   *
+   * 过期武将不会从内部列表移除，需调用 returnBorrowed 清理。
+   */
+  getBorrowedGenerals(): BorrowedGeneral[] {
+    const now = Date.now();
+    return this.borrowedGenerals.filter((bg) => bg.expiresAt > now);
+  }
+
+  /**
+   * 归还借来的武将
+   *
+   * @param borrowId - 借将记录 ID
+   */
+  returnBorrowed(borrowId: string): void {
+    const index = this.borrowedGenerals.findIndex((bg) => bg.id === borrowId);
+    if (index !== -1) {
+      this.borrowedGenerals.splice(index, 1);
+      this.emit({ type: 'general_returned', borrowId });
+    }
+  }
+
+  /**
+   * 获取今日借将配额使用情况
+   */
+  getBorrowQuota(): BorrowQuota {
+    this.checkDailyBorrowReset();
+    return { used: this.dailyBorrowCount, max: MAX_DAILY_BORROW };
+  }
+
+  // ============================================================
+  // 事件系统
+  // ============================================================
+
+  /**
+   * 注册事件监听器
+   *
+   * @param event - 事件名称
+   * @param callback - 回调函数
+   */
+  on(event: string, callback: FriendEventListener): void {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, []);
+    }
+    this.eventListeners.get(event)!.push(callback);
+  }
+
+  /**
+   * 触发事件
+   */
+  private emit(data: FriendEvent): void {
+    const listeners = this.eventListeners.get(data.type);
+    if (listeners) {
+      for (const cb of listeners) {
+        cb(data);
+      }
+    }
+  }
+
+  // ============================================================
+  // 内部辅助方法
+  // ============================================================
+
+  /**
+   * 根据累计友情点数计算友情等级
+   */
+  private calcFriendshipLevel(points: number): number {
+    let level = 1;
+    for (let i = 1; i < FRIENDSHIP_LEVEL_THRESHOLDS.length; i++) {
+      if (points >= FRIENDSHIP_LEVEL_THRESHOLDS[i]) {
+        level = i + 1;
+      } else {
+        break;
+      }
+    }
+    return level;
+  }
+
+  /**
+   * 检查并重置每日借将计数
+   */
+  private checkDailyBorrowReset(): void {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    if (this.dailyBorrowResetDate !== today) {
+      this.dailyBorrowCount = 0;
+      this.dailyBorrowResetDate = today;
+    }
+  }
+
+  // ============================================================
+  // 序列化 / 反序列化
+  // ============================================================
+
+  /**
+   * 序列化当前状态为可存储对象
+   */
+  serialize(): object {
+    return {
+      friends: Array.from(this.friends.entries()).map(
+        ([key, val]) => [key, { ...val }],
+      ),
+      borrowedGenerals: this.borrowedGenerals.map((bg) => ({ ...bg })),
+      dailyBorrowCount: this.dailyBorrowCount,
+      dailyBorrowResetDate: this.dailyBorrowResetDate,
+      totalFriendshipPoints: this.totalFriendshipPoints,
+    };
+  }
+
+  /**
+   * 从序列化数据恢复状态
+   *
+   * @param data - serialize() 输出的数据
+   */
+  deserialize(data: Record<string, unknown>): void {
+    // 恢复好友列表
+    const friendsData = data.friends as [string, FriendData][] | undefined;
+    this.friends = friendsData ? new Map(friendsData) : new Map();
+
+    // 恢复借将列表
+    const borrowedData = data.borrowedGenerals as BorrowedGeneral[] | undefined;
+    this.borrowedGenerals = borrowedData ? [...borrowedData] : [];
+
+    // 恢复每日借将计数
+    this.dailyBorrowCount = (data.dailyBorrowCount as number) ?? 0;
+    this.dailyBorrowResetDate = (data.dailyBorrowResetDate as string) ?? '';
+
+    // 恢复友情点数
+    this.totalFriendshipPoints = (data.totalFriendshipPoints as number) ?? 0;
+  }
+}

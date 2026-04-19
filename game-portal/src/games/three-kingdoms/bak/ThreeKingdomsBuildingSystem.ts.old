@@ -1,0 +1,652 @@
+/**
+ * 三国霸业 v1.0 — 建筑系统 (Part2: 基于 PRD BLD)
+ *
+ * 职责：
+ *   1. 8 座建筑的全生命周期管理（解锁、升级、产出）
+ *   2. 严格按照 PRD BLD-2 数值表的升级费用曲线
+ *   3. 主城等级前置依赖 & 等级上限约束
+ *   4. 升级计时器（isUpgrading / upgradeStartTime / upgradeDuration）
+ *   5. 建筑产出计算（含主城全资源加成）
+ *   6. 序列化/反序列化支持
+ *
+ * 数值来源：
+ *   PRD: docs/games/three-kingdoms/ui-design/prd/BLD-buildings-prd.md
+ */
+
+// ═══════════════════════════════════════════════════════════════
+// 类型定义
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * 建筑类型枚举 — PRD BLD-1 八座建筑
+ *
+ * | 类型     | 分区     | 核心产出         |
+ * |----------|----------|-----------------|
+ * | castle   | 核心中央 | 全资源加成       |
+ * | farm     | 左侧民生 | 粮草/秒         |
+ * | market   | 左侧民生 | 铜钱/秒         |
+ * | barracks | 中央军事 | 兵力/秒         |
+ * | smithy   | 中央军事 | 装备强化材料     |
+ * | academy  | 右侧文教 | 科技点/秒       |
+ * | clinic   | 右侧文教 | 伤兵恢复速率     |
+ * | wall     | 上方防御 | 城防值/防御加成  |
+ */
+export type BuildingType =
+  | 'castle'
+  | 'farm'
+  | 'market'
+  | 'barracks'
+  | 'smithy'
+  | 'academy'
+  | 'clinic'
+  | 'wall';
+
+/** 资源类型（与引擎一致） */
+export type ResourceType = 'food' | 'wood' | 'iron' | 'gold';
+
+/** 资源数量映射 */
+export interface Resources {
+  food: number;
+  wood: number;
+  iron: number;
+  gold: number;
+}
+
+/** 建筑运行时状态 */
+export interface BuildingState {
+  /** 建筑类型 */
+  type: BuildingType;
+  /** 当前等级 (0=未建造, 1=已建造) */
+  level: number;
+  /** 是否正在升级 */
+  isUpgrading: boolean;
+  /** 升级开始时间戳（毫秒），未升级时为 0 */
+  upgradeStartTime: number;
+  /** 升级持续时长（秒），未升级时为 0 */
+  upgradeDuration: number;
+}
+
+/** 升级费用 */
+export interface UpgradeCost {
+  food: number;
+  gold: number;
+  /** 兵力消耗（v1.0 映射为 iron） */
+  troops: number;
+}
+
+/** 升级结果 */
+export interface UpgradeResult {
+  success: boolean;
+  reason?: string;
+}
+
+/** 序列化数据结构 */
+export interface BuildingSaveData {
+  buildings: Record<string, BuildingState>;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 常量 — PRD BLD-1 / BLD-2
+// ═══════════════════════════════════════════════════════════════
+
+/** 所有建筑类型列表 */
+const BUILDING_TYPES: BuildingType[] = [
+  'castle', 'farm', 'market', 'barracks',
+  'smithy', 'academy', 'clinic', 'wall',
+];
+
+/**
+ * 建筑等级上限 — PRD BLD-1
+ * 主城 30 级，农田/市集/兵营 25 级，其余 20 级
+ */
+const BUILDING_MAX_LEVEL: Record<BuildingType, number> = {
+  castle: 30,
+  farm: 25, market: 25, barracks: 25,
+  smithy: 20, academy: 20, clinic: 20, wall: 20,
+};
+
+/**
+ * 建筑解锁所需主城等级 — PRD BLD-4 前置关系
+ *
+ * | 建筑           | 解锁条件   |
+ * |----------------|-----------|
+ * | castle / farm  | 初始 Lv1  |
+ * | market / barracks | 主城 Lv2 |
+ * | smithy / academy  | 主城 Lv3 |
+ * | clinic            | 主城 Lv4 |
+ * | wall              | 主城 Lv5 |
+ */
+const BUILDING_UNLOCK_CASTLE_LEVEL: Record<BuildingType, number> = {
+  castle: 1, farm: 1,
+  market: 2, barracks: 2,
+  smithy: 3, academy: 3,
+  clinic: 4,
+  wall: 5,
+};
+
+// ─── 费用表条目 ─────────────────────────────────────────
+
+interface CostTableEntry {
+  toLevel: number;
+  cost: UpgradeCost;
+  time: number;
+}
+
+/**
+ * 主城升级费用 — PRD BLD-2 主城等级数据
+ * Lv1→2 ~ Lv9→10 精确值，Lv10+ 动态乘数
+ */
+const CASTLE_COST_TABLE: CostTableEntry[] = [
+  { toLevel: 2,  cost: { food: 200,   gold: 150,   troops: 0 },    time: 10 },
+  { toLevel: 3,  cost: { food: 500,   gold: 400,   troops: 50 },   time: 30 },
+  { toLevel: 4,  cost: { food: 1200,  gold: 900,   troops: 150 },  time: 60 },
+  { toLevel: 5,  cost: { food: 2500,  gold: 2000,  troops: 400 },  time: 180 },
+  { toLevel: 6,  cost: { food: 5000,  gold: 4000,  troops: 800 },  time: 480 },
+  { toLevel: 7,  cost: { food: 9000,  gold: 7500,  troops: 1500 }, time: 900 },
+  { toLevel: 8,  cost: { food: 15000, gold: 12000, troops: 3000 }, time: 1800 },
+  { toLevel: 9,  cost: { food: 25000, gold: 20000, troops: 5000 }, time: 3600 },
+  { toLevel: 10, cost: { food: 40000, gold: 32000, troops: 8000 }, time: 7200 },
+];
+
+/** 农田升级费用 — PRD BLD-2 */
+const FARM_COST_TABLE: CostTableEntry[] = [
+  { toLevel: 2, cost: { food: 100, gold: 50, troops: 0 },   time: 5 },
+  { toLevel: 3, cost: { food: 250, gold: 120, troops: 0 },  time: 15 },
+  { toLevel: 4, cost: { food: 500, gold: 250, troops: 0 },  time: 30 },
+  { toLevel: 5, cost: { food: 1000, gold: 500, troops: 0 }, time: 60 },
+];
+
+/** 市集升级费用 — PRD BLD-2 */
+const MARKET_COST_TABLE: CostTableEntry[] = [
+  { toLevel: 2, cost: { food: 80, gold: 100, troops: 0 },   time: 5 },
+  { toLevel: 3, cost: { food: 200, gold: 250, troops: 0 },  time: 15 },
+  { toLevel: 4, cost: { food: 400, gold: 500, troops: 0 },  time: 30 },
+  { toLevel: 5, cost: { food: 800, gold: 1000, troops: 0 }, time: 60 },
+];
+
+/** 兵营升级费用 — PRD BLD-2 */
+const BARRACKS_COST_TABLE: CostTableEntry[] = [
+  { toLevel: 2, cost: { food: 120, gold: 80, troops: 0 },    time: 8 },
+  { toLevel: 3, cost: { food: 300, gold: 200, troops: 30 },  time: 20 },
+  { toLevel: 4, cost: { food: 600, gold: 400, troops: 80 },  time: 45 },
+  { toLevel: 5, cost: { food: 1200, gold: 800, troops: 200 }, time: 90 },
+];
+
+/** 铁匠铺升级费用 — PRD BLD-2 */
+const SMITHY_COST_TABLE: CostTableEntry[] = [
+  { toLevel: 2, cost: { food: 200, gold: 300, troops: 0 }, time: 30 },
+  { toLevel: 3, cost: { food: 500, gold: 800, troops: 0 }, time: 60 },
+];
+
+/** 书院升级费用 — PRD BLD-2 */
+const ACADEMY_COST_TABLE: CostTableEntry[] = [
+  { toLevel: 2, cost: { food: 150, gold: 200, troops: 0 }, time: 20 },
+  { toLevel: 3, cost: { food: 400, gold: 500, troops: 0 }, time: 45 },
+];
+
+/** 医馆升级费用 — PRD BLD-2 */
+const CLINIC_COST_TABLE: CostTableEntry[] = [
+  { toLevel: 2, cost: { food: 100, gold: 150, troops: 0 }, time: 15 },
+];
+
+/** 城墙升级费用 — PRD BLD-2 */
+const WALL_COST_TABLE: CostTableEntry[] = [
+  { toLevel: 2, cost: { food: 300, gold: 200, troops: 100 }, time: 30 },
+  { toLevel: 3, cost: { food: 800, gold: 500, troops: 250 }, time: 60 },
+];
+
+/** 建筑费用表映射 */
+const COST_TABLES: Record<BuildingType, CostTableEntry[]> = {
+  castle: CASTLE_COST_TABLE,
+  farm: FARM_COST_TABLE,
+  market: MARKET_COST_TABLE,
+  barracks: BARRACKS_COST_TABLE,
+  smithy: SMITHY_COST_TABLE,
+  academy: ACADEMY_COST_TABLE,
+  clinic: CLINIC_COST_TABLE,
+  wall: WALL_COST_TABLE,
+};
+
+// ─── 乘数区间 ───────────────────────────────────────────
+
+interface MultiplierTier {
+  fromLevel: number;
+  toLevel: number;
+  resource: number;
+  troops: number;
+  time: number;
+}
+
+/** 通用乘数区间（农田/市集/兵营 Lv5+） */
+const DEFAULT_TIERS: MultiplierTier[] = [
+  { fromLevel: 5,  toLevel: 10, resource: 1.8, troops: 1.8, time: 1.6 },
+  { fromLevel: 10, toLevel: 15, resource: 1.6, troops: 1.6, time: 1.5 },
+  { fromLevel: 15, toLevel: 20, resource: 1.5, troops: 1.5, time: 1.4 },
+  { fromLevel: 20, toLevel: 25, resource: 1.4, troops: 1.4, time: 1.3 },
+];
+
+/** 主城 Lv10+ 乘数区间 */
+const CASTLE_TIERS: MultiplierTier[] = [
+  { fromLevel: 10, toLevel: 15, resource: 1.8, troops: 1.8, time: 2.0 },
+  { fromLevel: 15, toLevel: 20, resource: 1.6, troops: 1.6, time: 1.8 },
+  { fromLevel: 20, toLevel: 25, resource: 1.5, troops: 1.5, time: 1.5 },
+  { fromLevel: 25, toLevel: 30, resource: 1.4, troops: 1.4, time: 1.3 },
+];
+
+/** 铁匠铺/城墙 Lv3+ 乘数区间 */
+const SMITHY_WALL_TIERS: MultiplierTier[] = [
+  { fromLevel: 3,  toLevel: 5,  resource: 2.0, troops: 2.0, time: 1.8 },
+  { fromLevel: 5,  toLevel: 10, resource: 1.7, troops: 1.7, time: 1.5 },
+  { fromLevel: 10, toLevel: 20, resource: 1.5, troops: 1.5, time: 1.3 },
+];
+
+/** 书院 Lv3+ 乘数区间 */
+const ACADEMY_TIERS: MultiplierTier[] = [
+  { fromLevel: 3,  toLevel: 5,  resource: 1.8, troops: 1.8, time: 1.6 },
+  { fromLevel: 5,  toLevel: 10, resource: 1.6, troops: 1.6, time: 1.4 },
+  { fromLevel: 10, toLevel: 20, resource: 1.5, troops: 1.5, time: 1.3 },
+];
+
+/** 医馆 Lv2+ 乘数区间 */
+const CLINIC_TIERS: MultiplierTier[] = [
+  { fromLevel: 2,  toLevel: 5,  resource: 1.8, troops: 1.8, time: 1.6 },
+  { fromLevel: 5,  toLevel: 10, resource: 1.6, troops: 1.6, time: 1.4 },
+  { fromLevel: 10, toLevel: 20, resource: 1.5, troops: 1.5, time: 1.3 },
+];
+
+const COST_TIERS: Record<BuildingType, MultiplierTier[]> = {
+  castle: CASTLE_TIERS,
+  farm: DEFAULT_TIERS,
+  market: DEFAULT_TIERS,
+  barracks: DEFAULT_TIERS,
+  smithy: SMITHY_WALL_TIERS,
+  academy: ACADEMY_TIERS,
+  clinic: CLINIC_TIERS,
+  wall: SMITHY_WALL_TIERS,
+};
+
+// ─── 产出定义 — PRD BLD-3 ──────────────────────────────
+
+interface ProductionDef {
+  base: number;
+  perLevel: number;
+  resource: ResourceType | null;
+}
+
+/**
+ * 建筑产出定义 — PRD BLD-3 各建筑产出汇总
+ *
+ * v1.0 仅 farm (food) 和 market (gold) 产出资源；
+ * 其余建筑（兵力/科技点/材料/恢复/城防）留待后续版本接入。
+ */
+const PRODUCTION_DEFS: Record<BuildingType, ProductionDef> = {
+  castle:   { base: 0,   perLevel: 0,    resource: null },
+  farm:     { base: 0.8, perLevel: 1.76, resource: 'food' },
+  market:   { base: 0.6, perLevel: 1.36, resource: 'gold' },
+  barracks: { base: 0,   perLevel: 0,    resource: null },
+  smithy:   { base: 0,   perLevel: 0,    resource: null },
+  academy:  { base: 0,   perLevel: 0,    resource: null },
+  clinic:   { base: 0,   perLevel: 0,    resource: null },
+  wall:     { base: 0,   perLevel: 0,    resource: null },
+};
+
+/** 资源类型列表 */
+const RESOURCE_TYPES: ResourceType[] = ['food', 'wood', 'iron', 'gold'];
+
+// ═══════════════════════════════════════════════════════════════
+// 辅助函数
+// ═══════════════════════════════════════════════════════════════
+
+/** 创建初始建筑状态：主城和农田 Lv1，其余 Lv0 */
+function createInitialBuildings(): Map<BuildingType, BuildingState> {
+  const map = new Map<BuildingType, BuildingState>();
+  for (const type of BUILDING_TYPES) {
+    const startLevel = (type === 'castle' || type === 'farm') ? 1 : 0;
+    map.set(type, {
+      type,
+      level: startLevel,
+      isUpgrading: false,
+      upgradeStartTime: 0,
+      upgradeDuration: 0,
+    });
+  }
+  return map;
+}
+
+/**
+ * 主城全资源加成百分比 — PRD BLD-2
+ * Lv1=0%, Lv2=2%, Lv3=4%, ..., Lv10=18%, Lv11=20%, ..., Lv30=58%
+ */
+function getCastleBonusPercent(castleLevel: number): number {
+  if (castleLevel <= 1) return 0;
+  if (castleLevel <= 10) return (castleLevel - 1) * 2;
+  return 18 + (castleLevel - 10) * 2;
+}
+
+/** 深拷贝 Resources */
+function cloneResources(r: Resources): Resources {
+  return { food: r.food, wood: r.wood, iron: r.iron, gold: r.gold };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ThreeKingdomsBuildingSystem — 建筑系统主类
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * 三国霸业建筑系统 — PRD BLD 全部功能
+ *
+ * 核心职责：
+ *   - 8 座建筑的等级管理 & 升级计时器
+ *   - 严格按照 PRD 数值表的费用计算
+ *   - 主城等级前置依赖 & 等级上限约束
+ *   - 建筑产出计算（含主城全资源加成）
+ *   - 序列化/反序列化支持
+ */
+export class ThreeKingdomsBuildingSystem {
+
+  /** 所有建筑运行时状态 */
+  private buildings: Map<BuildingType, BuildingState>;
+
+  constructor() {
+    this.buildings = createInitialBuildings();
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // 读取接口
+  // ═════════════════════════════════════════════════════════
+
+  /** 获取指定建筑的状态（返回副本） */
+  getBuilding(type: BuildingType): BuildingState {
+    const s = this.buildings.get(type);
+    if (!s) return { type, level: 0, isUpgrading: false, upgradeStartTime: 0, upgradeDuration: 0 };
+    return { ...s };
+  }
+
+  /** 获取所有建筑状态 */
+  getAllBuildings(): BuildingState[] {
+    return BUILDING_TYPES.map(t => this.getBuilding(t));
+  }
+
+  /** 获取建筑等级上限 */
+  getMaxLevel(type: BuildingType): number {
+    return BUILDING_MAX_LEVEL[type];
+  }
+
+  /** 获取建筑解锁所需主城等级 */
+  getUnlockCastleLevel(type: BuildingType): number {
+    return BUILDING_UNLOCK_CASTLE_LEVEL[type];
+  }
+
+  /** 获取主城当前等级 */
+  getCastleLevel(): number {
+    return this.buildings.get('castle')?.level ?? 0;
+  }
+
+  /** 获取主城全资源加成百分比 */
+  getCastleBonusPercent(): number {
+    return getCastleBonusPercent(this.getCastleLevel());
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // 费用 & 产出查询
+  // ═════════════════════════════════════════════════════════
+
+  /**
+   * 获取升级费用 — PRD BLD-2
+   *
+   * 先查精确值表，超出范围则按乘数区间动态计算。
+   * troops 映射为 iron（v1.0 兵力消耗暂用铁矿代替）。
+   */
+  getUpgradeCost(type: BuildingType, toLevel: number): Partial<Resources> {
+    const table = COST_TABLES[type];
+    const exact = table.find(e => e.toLevel === toLevel);
+    if (exact) {
+      const cost: Partial<Resources> = {};
+      if (exact.cost.food > 0) cost.food = exact.cost.food;
+      if (exact.cost.gold > 0) cost.gold = exact.cost.gold;
+      if (exact.cost.troops > 0) cost.iron = exact.cost.troops;
+      return cost;
+    }
+    // 动态计算
+    const last = table[table.length - 1];
+    if (!last || toLevel <= last.toLevel) return {};
+    return this.dynamicCost(type, last, toLevel);
+  }
+
+  /**
+   * 获取升级时间（秒） — PRD BLD-2
+   */
+  getUpgradeTime(type: BuildingType, toLevel: number): number {
+    const table = COST_TABLES[type];
+    const exact = table.find(e => e.toLevel === toLevel);
+    if (exact) return exact.time;
+    const last = table[table.length - 1];
+    if (!last || toLevel <= last.toLevel) return 0;
+    return this.dynamicTime(type, last, toLevel);
+  }
+
+  /**
+   * 获取建筑在指定等级的产出 — PRD BLD-3
+   * 产出 = (base + (level-1) * perLevel) × (1 + 主城加成%)
+   */
+  getBuildingProduction(type: BuildingType, level: number): Partial<Resources> {
+    const def = PRODUCTION_DEFS[type];
+    if (level <= 0 || !def.resource) return {};
+    const baseOutput = def.base + (level - 1) * def.perLevel;
+    const bonus = 1 + this.getCastleBonusPercent() / 100;
+    return { [def.resource]: baseOutput * bonus };
+  }
+
+  /**
+   * 计算所有建筑的总产出速率（每秒）
+   */
+  getTotalProduction(): Resources {
+    const total: Resources = { food: 0, wood: 0, iron: 0, gold: 0 };
+    for (const type of BUILDING_TYPES) {
+      const state = this.buildings.get(type);
+      if (!state || state.level <= 0) continue;
+      const prod = this.getBuildingProduction(type, state.level);
+      for (const rt of RESOURCE_TYPES) {
+        if (prod[rt] !== undefined) total[rt] += prod[rt];
+      }
+    }
+    return total;
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // 升级操作
+  // ═════════════════════════════════════════════════════════
+
+  /**
+   * 发起建筑升级 — PRD BLD-2
+   *
+   * 校验链：等级上限 → 主城解锁 → 主城等级限制 → 是否已在升级 → 资源检查
+   * 资源扣减由外部调用方执行（通过 getUpgradeCost 获取费用后自行扣减）。
+   *
+   * @param type       建筑类型
+   * @param canAfford  外部资源充足检查回调（传入费用，返回是否支付得起）
+   * @returns UpgradeResult
+   */
+  upgradeBuilding(
+    type: BuildingType,
+    canAfford: (cost: Partial<Resources>) => boolean,
+  ): UpgradeResult {
+    const state = this.buildings.get(type);
+    if (!state) return { success: false, reason: '未知建筑类型' };
+
+    const toLevel = state.level + 1;
+
+    // 1. 等级上限
+    if (toLevel > BUILDING_MAX_LEVEL[type]) {
+      return { success: false, reason: '已达最高等级' };
+    }
+
+    // 2. 主城解锁校验
+    const castleLevel = this.getCastleLevel();
+    const unlockRequired = BUILDING_UNLOCK_CASTLE_LEVEL[type];
+    if (castleLevel < unlockRequired) {
+      return { success: false, reason: `需要主城 Lv${unlockRequired}` };
+    }
+
+    // 3. 其他建筑等级 ≤ 主城等级 — PRD BLD-4
+    if (type !== 'castle' && toLevel > castleLevel) {
+      return { success: false, reason: '建筑等级不能超过主城' };
+    }
+
+    // 4. 是否已在升级
+    if (state.isUpgrading) {
+      return { success: false, reason: '该建筑正在升级中' };
+    }
+
+    // 5. 资源检查（委托外部）
+    const cost = this.getUpgradeCost(type, toLevel);
+    if (!canAfford(cost)) {
+      return { success: false, reason: '资源不足' };
+    }
+
+    // 6. 开始升级
+    const time = this.getUpgradeTime(type, toLevel);
+    state.isUpgrading = true;
+    state.upgradeStartTime = Date.now();
+    state.upgradeDuration = time;
+
+    return { success: true };
+  }
+
+  /**
+   * 完成建筑升级
+   * 由 tick() 检测升级到期后自动调用，或手动调用（如加速完成）。
+   * 也支持在非升级状态下直接提升等级（用于测试/加速/GM命令）。
+   */
+  completeUpgrade(type: BuildingType): void {
+    const state = this.buildings.get(type);
+    if (!state) return;
+    state.level += 1;
+    state.isUpgrading = false;
+    state.upgradeStartTime = 0;
+    state.upgradeDuration = 0;
+  }
+
+  /**
+   * 检查所有建筑的升级是否到期 — 在 tick 中调用
+   * @returns 已完成的建筑类型列表
+   */
+  checkUpgradeCompletion(): BuildingType[] {
+    const now = Date.now();
+    const completed: BuildingType[] = [];
+    for (const type of BUILDING_TYPES) {
+      const state = this.buildings.get(type);
+      if (!state || !state.isUpgrading) continue;
+      const elapsed = (now - state.upgradeStartTime) / 1000;
+      if (elapsed >= state.upgradeDuration) {
+        this.completeUpgrade(type);
+        completed.push(type);
+      }
+    }
+    return completed;
+  }
+
+  /**
+   * 获取指定建筑的升级剩余时间（秒）
+   * 未在升级时返回 0
+   */
+  getUpgradeRemainingTime(type: BuildingType): number {
+    const state = this.buildings.get(type);
+    if (!state || !state.isUpgrading) return 0;
+    const elapsed = (Date.now() - state.upgradeStartTime) / 1000;
+    return Math.max(0, state.upgradeDuration - elapsed);
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // 序列化 / 反序列化
+  // ═════════════════════════════════════════════════════════
+
+  /** 序列化建筑数据 */
+  serialize(): BuildingSaveData {
+    const buildings: Record<string, BuildingState> = {};
+    for (const type of BUILDING_TYPES) {
+      buildings[type] = this.getBuilding(type);
+    }
+    return { buildings };
+  }
+
+  /**
+   * 反序列化建筑数据
+   * 容错：缺失建筑使用默认初始值
+   */
+  deserialize(data: any): void {
+    if (!data?.buildings || typeof data.buildings !== 'object') {
+      this.buildings = createInitialBuildings();
+      return;
+    }
+    this.buildings = createInitialBuildings();
+    for (const type of BUILDING_TYPES) {
+      const saved = data.buildings[type];
+      if (!saved || typeof saved !== 'object') continue;
+      const state = this.buildings.get(type)!;
+      state.level = (typeof saved.level === 'number' && saved.level >= 0)
+        ? Math.floor(saved.level) : state.level;
+      state.isUpgrading = !!saved.isUpgrading;
+      state.upgradeStartTime = (typeof saved.upgradeStartTime === 'number' && saved.upgradeStartTime > 0)
+        ? saved.upgradeStartTime : 0;
+      state.upgradeDuration = (typeof saved.upgradeDuration === 'number' && saved.upgradeDuration > 0)
+        ? saved.upgradeDuration : 0;
+    }
+  }
+
+  /** 重置到初始状态 */
+  reset(): void {
+    this.buildings = createInitialBuildings();
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // 内部方法
+  // ═════════════════════════════════════════════════════════
+
+  /**
+   * 动态计算超出费用表的升级费用
+   * 从表中最后一个条目开始，逐级按区间乘数累乘
+   */
+  private dynamicCost(
+    type: BuildingType,
+    last: CostTableEntry,
+    targetLevel: number,
+  ): Partial<Resources> {
+    const tiers = COST_TIERS[type];
+    let food = last.cost.food;
+    let gold = last.cost.gold;
+    let troops = last.cost.troops;
+
+    for (let lv = last.toLevel + 1; lv <= targetLevel; lv++) {
+      const tier = tiers.find(t => lv >= t.fromLevel && lv <= t.toLevel);
+      if (!tier) break;
+      food = Math.ceil(food * tier.resource);
+      gold = Math.ceil(gold * tier.resource);
+      troops = Math.ceil(troops * tier.troops);
+    }
+
+    const cost: Partial<Resources> = {};
+    if (food > 0) cost.food = food;
+    if (gold > 0) cost.gold = gold;
+    if (troops > 0) cost.iron = troops;
+    return cost;
+  }
+
+  /**
+   * 动态计算超出费用表的升级时间
+   */
+  private dynamicTime(
+    type: BuildingType,
+    last: CostTableEntry,
+    targetLevel: number,
+  ): number {
+    const tiers = COST_TIERS[type];
+    let time = last.time;
+    for (let lv = last.toLevel + 1; lv <= targetLevel; lv++) {
+      const tier = tiers.find(t => lv >= t.fromLevel && lv <= t.toLevel);
+      if (!tier) break;
+      time = Math.ceil(time * tier.time);
+    }
+    return time;
+  }
+}

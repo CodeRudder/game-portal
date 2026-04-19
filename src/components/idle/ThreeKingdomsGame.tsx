@@ -235,6 +235,7 @@ const ThreeKingdomsGame: React.FC = () => {
             engine={engine}
             snapshotVersion={snapshotVersion}
             onUpgradeComplete={handleUpgradeComplete}
+            onUpgradeError={handleUpgradeError}
           />
         );
 

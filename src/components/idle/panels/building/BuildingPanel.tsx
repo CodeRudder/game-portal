@@ -37,6 +37,8 @@ interface BuildingPanelProps {
   engine: ThreeKingdomsEngine;
   snapshotVersion: number;
   onUpgradeComplete?: (type: BuildingType) => void;
+  /** 升级失败回调，用于统一错误提示 */
+  onUpgradeError?: (error: Error) => void;
 }
 
 // ─────────────────────────────────────────────
@@ -99,6 +101,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
   engine,
   snapshotVersion,
   onUpgradeComplete,
+  onUpgradeError,
 }) => {
   // 升级弹窗状态
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingType | null>(null);
@@ -155,10 +158,12 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
         setTimeout(() => onUpgradeComplete(type), 100);
       }
     } catch (e: any) {
-      // 错误由 Toast 在上层处理
-      console.error('升级失败:', e.message);
+      // 通过回调统一使用 Toast.danger 显示错误
+      if (onUpgradeError) {
+        onUpgradeError(e instanceof Error ? e : new Error(e?.message || '升级失败'));
+      }
     }
-  }, [engine, onUpgradeComplete]);
+  }, [engine, onUpgradeComplete, onUpgradeError]);
 
   // 处理卡片点击
   const handleCardClick = useCallback((type: BuildingType) => {

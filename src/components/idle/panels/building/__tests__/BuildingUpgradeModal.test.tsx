@@ -8,6 +8,7 @@
  * - 资源不足时确认按钮灰显+提示
  * - 点击确认触发onUpgrade回调
  * - 点击取消/遮罩关闭弹窗
+ * - ESC键关闭弹窗
  */
 
 import React from 'react';
@@ -17,35 +18,43 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ── Mock CSS ──
 vi.mock('../BuildingUpgradeModal.css', () => ({}));
 
-// ── Mock 引擎模块 ──
-type BuildingType = 'castle' | 'farmland' | 'market' | 'barracks' | 'smithy' | 'academy' | 'clinic' | 'wall';
-
-const BUILDING_LABELS: Record<BuildingType, string> = {
-  castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
-  smithy: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
-};
-
-const BUILDING_ICONS: Record<BuildingType, string> = {
-  castle: '🏛️', farmland: '🌾', market: '💰', barracks: '⚔️',
-  smithy: '🔨', academy: '📚', clinic: '🏥', wall: '🏯',
-};
-
-const BUILDING_ZONES: Record<BuildingType, string> = {
-  castle: 'core', farmland: 'civilian', market: 'civilian', barracks: 'military',
-  smithy: 'military', academy: 'cultural', clinic: 'cultural', wall: 'defense',
-};
+// ── Mock 引擎模块 — 使用 vi.hoisted 避免提升时变量引用问题 ──
+const { mockBuildingLabels, mockBuildingIcons, mockBuildingZones, mockBuildingTypes } = vi.hoisted(() => {
+  const BUILDING_TYPES = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'] as const;
+  const BUILDING_LABELS = {
+    castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
+    smithy: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
+  };
+  const BUILDING_ICONS = {
+    castle: '🏛️', farmland: '🌾', market: '💰', barracks: '⚔️',
+    smithy: '🔨', academy: '📚', clinic: '🏥', wall: '🏯',
+  };
+  const BUILDING_ZONES = {
+    castle: 'core', farmland: 'civilian', market: 'civilian', barracks: 'military',
+    smithy: 'military', academy: 'cultural', clinic: 'cultural', wall: 'defense',
+  };
+  return {
+    mockBuildingTypes: BUILDING_TYPES,
+    mockBuildingLabels: BUILDING_LABELS,
+    mockBuildingIcons: BUILDING_ICONS,
+    mockBuildingZones: BUILDING_ZONES,
+  };
+});
 
 vi.mock('@/games/three-kingdoms/engine', () => ({
-  BUILDING_TYPES: ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'],
-  BUILDING_LABELS,
-  BUILDING_ICONS,
-  BUILDING_ZONES,
+  BUILDING_TYPES: mockBuildingTypes,
+  BUILDING_LABELS: mockBuildingLabels,
+  BUILDING_ICONS: mockBuildingIcons,
+  BUILDING_ZONES: mockBuildingZones,
 }));
 
 vi.mock('@/games/three-kingdoms/engine/ThreeKingdomsEngine', () => ({}));
 
 // ── 导入被测组件（在 mock 之后）──
 import BuildingUpgradeModal from '../BuildingUpgradeModal';
+
+// ── 类型 ──
+type BuildingType = 'castle' | 'farmland' | 'market' | 'barracks' | 'smithy' | 'academy' | 'clinic' | 'wall';
 
 // ── 创建 mock engine ──
 function createMockEngine(overrides?: {
@@ -151,13 +160,18 @@ describe('BuildingUpgradeModal', () => {
     // 显示升级消耗标题
     expect(screen.getByText('升级消耗')).toBeInTheDocument();
 
-    // 费用明细包含粮草、铜钱、兵力图标
-    expect(screen.getByText('🌾')).toBeInTheDocument();
-    expect(screen.getByText('💰')).toBeInTheDocument();
-    expect(screen.getByText('⚔️')).toBeInTheDocument();
+    // 费用明细区域应存在
+    const costsSection = screen.getByText('升级消耗').closest('.tk-upgrade-section');
+    expect(costsSection).toBeTruthy();
 
-    // 显示时间图标
-    expect(screen.getByText('⏱️')).toBeInTheDocument();
+    // 费用图标应存在于明细中（通过 .tk-upgrade-cost-icon 查找）
+    const costIcons = costsSection!.querySelectorAll('.tk-upgrade-cost-icon');
+    expect(costIcons.length).toBe(4); // grain, gold, troops, time
+
+    // 显示具体费用数值
+    expect(screen.getByText('200')).toBeInTheDocument(); // grain cost
+    expect(screen.getByText('100')).toBeInTheDocument(); // gold cost
+    expect(screen.getByText('10')).toBeInTheDocument();  // troops cost
   });
 
   it('资源不足时确认按钮应灰显并显示提示', () => {
@@ -236,7 +250,7 @@ describe('BuildingUpgradeModal', () => {
     const onCancel = vi.fn();
     const engine = createMockEngine();
 
-    render(
+    const { container } = render(
       <BuildingUpgradeModal
         buildingType="farmland"
         engine={engine as any}
@@ -246,8 +260,8 @@ describe('BuildingUpgradeModal', () => {
       />,
     );
 
-    // 点击遮罩层（overlay）
-    const overlay = screen.getByRole('dialog').parentElement!;
+    // 点击遮罩层（overlay = 外层 div）
+    const overlay = container.querySelector('.tk-upgrade-overlay')!;
     fireEvent.click(overlay);
 
     expect(onCancel).toHaveBeenCalledTimes(1);

@@ -7,7 +7,7 @@
  * - 升级按钮点击触发回调
  * - 资源不足时按钮灰显
  * - 升级中显示进度条
- * - 建筑状态显示（空闲/升级中/满级）
+ * - 建筑状态显示（空闲/升级中/锁定）
  */
 
 import React from 'react';
@@ -18,30 +18,34 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../BuildingPanel.css', () => ({}));
 vi.mock('../BuildingUpgradeModal.css', () => ({}));
 
-// ── Mock 引擎模块（避免 @ alias 解析问题）──
-const BUILDING_TYPES = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'] as const;
-type BuildingType = typeof BUILDING_TYPES[number];
-
-const BUILDING_LABELS: Record<BuildingType, string> = {
-  castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
-  smithy: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
-};
-
-const BUILDING_ICONS: Record<BuildingType, string> = {
-  castle: '🏛️', farmland: '🌾', market: '💰', barracks: '⚔️',
-  smithy: '🔨', academy: '📚', clinic: '🏥', wall: '🏯',
-};
-
-const BUILDING_ZONES: Record<BuildingType, string> = {
-  castle: 'core', farmland: 'civilian', market: 'civilian', barracks: 'military',
-  smithy: 'military', academy: 'cultural', clinic: 'cultural', wall: 'defense',
-};
+// ── Mock 引擎模块 — 使用 vi.hoisted 避免提升时变量引用问题 ──
+const { mockBuildingTypes, mockBuildingLabels, mockBuildingIcons, mockBuildingZones } = vi.hoisted(() => {
+  const BUILDING_TYPES = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'] as const;
+  const BUILDING_LABELS = {
+    castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
+    smithy: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
+  };
+  const BUILDING_ICONS = {
+    castle: '🏛️', farmland: '🌾', market: '💰', barracks: '⚔️',
+    smithy: '🔨', academy: '📚', clinic: '🏥', wall: '🏯',
+  };
+  const BUILDING_ZONES = {
+    castle: 'core', farmland: 'civilian', market: 'civilian', barracks: 'military',
+    smithy: 'military', academy: 'cultural', clinic: 'cultural', wall: 'defense',
+  };
+  return {
+    mockBuildingTypes: BUILDING_TYPES,
+    mockBuildingLabels: BUILDING_LABELS,
+    mockBuildingIcons: BUILDING_ICONS,
+    mockBuildingZones: BUILDING_ZONES,
+  };
+});
 
 vi.mock('@/games/three-kingdoms/engine', () => ({
-  BUILDING_TYPES,
-  BUILDING_LABELS,
-  BUILDING_ICONS,
-  BUILDING_ZONES,
+  BUILDING_TYPES: mockBuildingTypes,
+  BUILDING_LABELS: mockBuildingLabels,
+  BUILDING_ICONS: mockBuildingIcons,
+  BUILDING_ZONES: mockBuildingZones,
   RESOURCE_LABELS: { grain: '粮草', gold: '铜钱', troops: '兵力', mandate: '天命' },
 }));
 
@@ -62,6 +66,8 @@ vi.mock('../BuildingUpgradeModal', () => ({
 import BuildingPanel from '../BuildingPanel';
 
 // ── 类型 ──
+type BuildingType = 'castle' | 'farmland' | 'market' | 'barracks' | 'smithy' | 'academy' | 'clinic' | 'wall';
+
 interface BuildingState {
   type: BuildingType;
   level: number;
@@ -84,14 +90,14 @@ function createMockBuildings(
   overrides?: Partial<Record<BuildingType, Partial<BuildingState>>>,
 ): Record<BuildingType, BuildingState> {
   const buildings = {} as Record<BuildingType, BuildingState>;
-  for (const type of BUILDING_TYPES) {
-    buildings[type] = {
-      type,
+  for (const type of mockBuildingTypes) {
+    buildings[type as BuildingType] = {
+      type: type as BuildingType,
       level: 1,
       status: 'idle',
       upgradeStartTime: null,
       upgradeEndTime: null,
-      ...overrides?.[type],
+      ...overrides?.[type as BuildingType],
     };
   }
   return buildings;
@@ -151,8 +157,9 @@ describe('BuildingPanel', () => {
     );
 
     // 验证所有建筑名称都出现在文档中
-    for (const type of BUILDING_TYPES) {
-      expect(screen.getAllByText(BUILDING_LABELS[type]).length).toBeGreaterThanOrEqual(1);
+    for (const type of mockBuildingTypes) {
+      const label = mockBuildingLabels[type as keyof typeof mockBuildingLabels];
+      expect(screen.getAllByText(label).length).toBeGreaterThanOrEqual(1);
     }
   });
 
@@ -252,11 +259,11 @@ describe('BuildingPanel', () => {
       />,
     );
 
-    // 进度条应显示 45%
-    expect(screen.getByText(/45%/)).toBeInTheDocument();
+    // 进度条应显示 45%（PC网格和手机列表都有）
+    expect(screen.getAllByText(/45%/).length).toBeGreaterThanOrEqual(1);
 
     // 应显示升级中标识
-    expect(screen.getByText(/升级中/)).toBeInTheDocument();
+    expect(screen.getAllByText(/升级中/).length).toBeGreaterThan(0);
   });
 
   it('应正确显示建筑状态（空闲/升级中/锁定）', () => {
@@ -281,7 +288,7 @@ describe('BuildingPanel', () => {
     expect(screen.getAllByText('未解锁').length).toBeGreaterThan(0);
 
     // 升级中的建筑显示进度信息
-    expect(screen.getByText(/升级中/)).toBeInTheDocument();
+    expect(screen.getAllByText(/升级中/).length).toBeGreaterThan(0);
 
     // 空闲建筑应有升级按钮（可升级时显示 "▲ 升级"）
     const upgradeButtons = screen.getAllByText('▲ 升级');
