@@ -2,11 +2,14 @@
  * HeroRecruitSystem 单元测试 — 核心部分
  * 覆盖：初始化、单抽/十连、概率分布、重复武将处理、资源不足、消耗计算、reset、ISubsystem 接口
  *
- * 重要：GENERAL_DEFS 中没有 COMMON 和 FINE 品质的武将定义。
- * 当 rollQuality 抽到 COMMON/FINE 时，fallbackPick 会降级到 RARE（dianwei）。
- * 因此实际所有抽卡结果都是 RARE+ 品质，保底计数器总是被重置。
+ * GENERAL_DEFS 中品质分布：
+ * - COMMON: minbingduizhang, xiangyongtoumu (2个)
+ * - FINE: junshou, xiaowei (2个)
+ * - RARE: dianwei (1个)
+ * - EPIC: liubei, zhangfei, simayi, zhouyu (4个)
+ * - LEGENDARY: guanyu, zhugeliang, zhaoyun, caocao, lvbu (5个)
  *
- * 测试保底和计数器时使用 EPIC rng 值（有多个武将可选）来验证计数逻辑。
+ * 所有品质均有武将定义，不再有降级逻辑。
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -63,15 +66,13 @@ function makeSequenceRng(values: number[]): () => number {
 
 /**
  * GENERAL_DEFS 中品质分布：
- * - LEGENDARY: guanyu, zhugeliang, zhaoyun, caocao, lvbu (5个)
- * - EPIC: liubei, zhangfei, simayi, zhouyu (4个)
- * - RARE: dianwei (1个)
- * - COMMON: 无
- * - FINE: 无
+ * - COMMON: minbingduizhang(shu), xiangyongtoumu(wu) (2个)
+ * - FINE: junshou(wei), xiaowei(qun) (2个)
+ * - RARE: dianwei(wei) (1个)
+ * - EPIC: liubei(shu), zhangfei(shu), simayi(wei), zhouyu(wu) (4个)
+ * - LEGENDARY: guanyu(shu), zhugeliang(shu), zhaoyun(shu), caocao(wei), lvbu(qun) (5个)
  *
- * 由于 COMMON/FINE 没有武将，fallbackPick 降级到 RARE。
- * 所以 rollQuality(COMMON) → fallback → RARE → 实际品质 RARE
- * rollQuality(FINE) → fallback → RARE → 实际品质 RARE
+ * 所有品质均有武将，COMMON/FINE 不再降级。
  */
 
 // ═══════════════════════════════════════════════════════════════
@@ -174,12 +175,12 @@ describe('HeroRecruitSystem', () => {
       expect(sum).toBeCloseTo(1.0, 10);
     });
 
-    it('确定性 RNG 抽到 RARE 品质（普通招募）', () => {
-      // COMMON/FINE 无武将，降级到 RARE
+    it('确定性 RNG 抽到 COMMON 品质（普通招募）', () => {
+      // COMMON 有武将，不再降级
       const rng = makeConstantRng(0.3);
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
-      expect(result.results[0].quality).toBe(Quality.RARE);
+      expect(result.results[0].quality).toBe(Quality.COMMON);
     });
 
     it('确定性 RNG 抽到 EPIC 品质（普通招募）', () => {
@@ -206,12 +207,12 @@ describe('HeroRecruitSystem', () => {
       expect(result.results[0].quality).toBe(Quality.RARE);
     });
 
-    it('高级招募 COMMON rng 降级到 RARE', () => {
+    it('高级招募 COMMON rng 抽到 COMMON 品质', () => {
       const rng = makeConstantRng(0.1); // COMMON in advanced
       recruit.setRng(rng);
       const result = recruit.recruitSingle('advanced')!;
-      // COMMON → fallback → RARE
-      expect(result.results[0].quality).toBe(Quality.RARE);
+      // COMMON 有武将，不再降级
+      expect(result.results[0].quality).toBe(Quality.COMMON);
     });
   });
 

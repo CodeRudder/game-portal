@@ -20,6 +20,7 @@ import {
   QUALITY_BORDER_COLORS,
 } from '@/games/three-kingdoms/engine';
 import { FACTION_LABELS } from '@/games/three-kingdoms/engine/hero/hero.types';
+import { HERO_MAX_LEVEL } from '@/games/three-kingdoms/engine/hero/hero-config';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { EnhancePreview } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 import { Toast } from '@/components/idle/common/Toast';
@@ -153,7 +154,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
 
   // 一键满级（升5级）
   const handleEnhanceMax = useCallback(() => {
-    const maxTarget = Math.min(general.level + 5, 100); // 最多升5级
+    const maxTarget = Math.min(general.level + 5, HERO_MAX_LEVEL); // 最多升5级
     setTargetLevel(maxTarget);
   }, [general.level]);
 

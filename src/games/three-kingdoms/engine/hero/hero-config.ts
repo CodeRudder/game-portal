@@ -185,6 +185,16 @@ export interface GeneralDef {
 export const GENERAL_DEFS: readonly GeneralDef[] = [
   // ── 蜀国 ──
   {
+    id: 'minbingduizhang',
+    name: '民兵队长',
+    quality: Q.COMMON,
+    faction: 'shu',
+    baseStats: { attack: 62, defense: 60, intelligence: 45, speed: 50 },
+    skills: [
+      { id: 'minbingduizhang_01', name: '冲锋', type: 'active', level: 1, description: '对单体造成攻击力120%的物理伤害' },
+    ],
+  },
+  {
     id: 'liubei',
     name: '刘备',
     quality: Q.EPIC,
@@ -242,6 +252,17 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
 
   // ── 魏国 ──
   {
+    id: 'junshou',
+    name: '郡守',
+    quality: Q.FINE,
+    faction: 'wei',
+    baseStats: { attack: 68, defense: 78, intelligence: 72, speed: 58 },
+    skills: [
+      { id: 'junshou_01', name: '守城', type: 'active', level: 1, description: '提升己方前排防御力20%，持续2回合' },
+      { id: 'junshou_02', name: '治理', type: 'passive', level: 1, description: '战斗开始时为己方全体附加防御力10%的护盾' },
+    ],
+  },
+  {
     id: 'caocao',
     name: '曹操',
     quality: Q.LEGENDARY,
@@ -277,6 +298,16 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
 
   // ── 吴国 ──
   {
+    id: 'xiangyongtoumu',
+    name: '乡勇头目',
+    quality: Q.COMMON,
+    faction: 'wu',
+    baseStats: { attack: 70, defense: 55, intelligence: 40, speed: 60 },
+    skills: [
+      { id: 'xiangyongtoumu_01', name: '游击', type: 'active', level: 1, description: '对单体造成攻击力130%的物理伤害' },
+    ],
+  },
+  {
     id: 'zhouyu',
     name: '周瑜',
     quality: Q.EPIC,
@@ -289,6 +320,17 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
   },
 
   // ── 群雄 ──
+  {
+    id: 'xiaowei',
+    name: '校尉',
+    quality: Q.FINE,
+    faction: 'qun',
+    baseStats: { attack: 75, defense: 70, intelligence: 50, speed: 65 },
+    skills: [
+      { id: 'xiaowei_01', name: '突袭', type: 'active', level: 1, description: '对单体造成攻击力150%的物理伤害，10%概率眩晕1回合' },
+      { id: 'xiaowei_02', name: '操练', type: 'passive', level: 1, description: '自身攻击力+5%' },
+    ],
+  },
   {
     id: 'lvbu',
     name: '吕布',

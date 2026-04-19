@@ -154,13 +154,13 @@ describe('HeroSystem — 高级测试', () => {
       expect(sys.getFragments('invalid')).toBe(0);
     });
 
-    it('should handle adding all 10 generals', () => {
+    it('should handle adding all 14 generals', () => {
       const ids = GENERAL_DEFS.map((d) => d.id);
       for (const id of ids) {
         const result = sys.addGeneral(id);
         expect(result).not.toBeNull();
       }
-      expect(sys.getGeneralCount()).toBe(10);
+      expect(sys.getGeneralCount()).toBe(14);
     });
 
     it('should handle exp required for out-of-range levels', () => {

@@ -48,7 +48,7 @@ export const RECRUIT_COSTS: Record<RecruitType, { resourceType: string; amount: 
 } as const;
 
 /** 十连招募折扣（1.0 = 无折扣，0.9 = 九折） */
-export const TEN_PULL_DISCOUNT = 1.0;
+export const TEN_PULL_DISCOUNT = 0.9;
 
 // ─────────────────────────────────────────────
 // 3. 概率表
