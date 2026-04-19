@@ -1,0 +1,10 @@
+/**
+ * 三国霸业 v1.0 — 渲染状态适配器（空壳）
+ *
+ * v1.0 使用 React 组件直接渲染，不需要此适配器。
+ * 后续版本（v3.0+）重新实现渲染器时恢复此文件。
+ */
+
+export class ThreeKingdomsRenderStateAdapter {
+  // v1.0 placeholder — 后续版本实现
+}

@@ -578,9 +578,11 @@ const PixiCanvas: React.FC<{ renderer: IMapRenderer }> = ({ renderer }) => {
 - [ ] 创建 core/, systems/, ui/, rendering/ 目录结构
 - [ ] 实现 EventBus + SubsystemRegistry + ConfigRegistry
 - [ ] 实现 GameEngineFacade 骨架
+- [ ] 实现测试子系统： [./test-system-design.md]
 - [ ] 编写 L1 单元测试（EventBus、Registry）
 - [ ] 验证：所有 L1 测试通过
 ```
+
 
 ### 阶段 2：拆分常量 + 迁移子系统骨架（5天）
 

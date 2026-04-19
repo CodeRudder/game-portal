@@ -1,0 +1,170 @@
+/**
+ * 三国霸业 v1.0 — 主游戏框架样式
+ *
+ * 设计稿：[NAV-1] 主界面框架 (1280×800)
+ * 配色：[SPEC-1] 水墨江山·铜纹霸业
+ * 响应式：PC 1280×800 / 手机 375×667
+ */
+
+/* ═══════════════════════════════════════════
+   根容器 — 全屏居中
+   ═══════════════════════════════════════════ */
+.tk-game-root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0d0a06;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   游戏画框 — PC 1280×800 固定尺寸
+   ═══════════════════════════════════════════ */
+.tk-game-frame {
+  width: 1280px;
+  height: 800px;
+  display: flex;
+  flex-direction: column;
+  background: #1a1208;
+  position: relative;
+  overflow: hidden;
+  /* 自适应缩放：当视口小于1280×800时等比缩小 */
+  transform-origin: center center;
+}
+
+/* ═══════════════════════════════════════════
+   B区：导航Tab栏 — 1280×48px
+   ═══════════════════════════════════════════ */
+.tk-tab-bar {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: stretch;
+  background: rgba(20, 25, 35, 0.95);
+  border-bottom: 1px solid rgba(200, 169, 110, 0.15);
+  z-index: 90;
+  flex-shrink: 0;
+  padding: 0 8px;
+}
+
+.tk-tab-btn {
+  flex: 1;
+  max-width: 140px;
+  border: none;
+  background: transparent;
+  color: #a0a0a0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.tk-tab-btn:hover {
+  color: #f0e6d3;
+}
+
+.tk-tab-btn--active {
+  color: #c8a96e;
+  font-weight: 600;
+}
+
+.tk-tab-btn--active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: #c8a96e;
+}
+
+/* ═══════════════════════════════════════════
+   C区：场景区 — 1280×696px
+   ═══════════════════════════════════════════ */
+.tk-scene-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+.tk-scene-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 16px;
+}
+
+/* ═══════════════════════════════════════════
+   响应式 — PC端自适应缩放
+   ═══════════════════════════════════════════ */
+@media (max-width: 1280px) or (max-height: 800px) {
+  .tk-game-frame {
+    transform: scale(var(--tk-scale, 1));
+  }
+}
+
+/* ═══════════════════════════════════════════
+   响应式 — 手机端 375×667
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-game-root {
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .tk-game-frame {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    transform: none;
+  }
+
+  .tk-tab-bar {
+    height: 40px;
+    padding: 0 4px;
+    order: 3; /* 底部Tab栏 */
+    border-top: 1px solid rgba(200, 169, 110, 0.15);
+    border-bottom: none;
+  }
+
+  .tk-tab-btn {
+    font-size: 12px;
+    max-width: none;
+  }
+
+  .tk-scene-area {
+    order: 2;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   滚动条样式
+   ═══════════════════════════════════════════ */
+.tk-scene-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tk-scene-area::-webkit-scrollbar-track {
+  background: rgba(20, 25, 35, 0.5);
+}
+
+.tk-scene-area::-webkit-scrollbar-thumb {
+  background: rgba(200, 169, 110, 0.3);
+  border-radius: 3px;
+}
+
+.tk-scene-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(200, 169, 110, 0.5);
+}

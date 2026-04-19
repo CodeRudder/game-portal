@@ -316,7 +316,7 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
           level: eng.level,
           duration: Math.round(eng.elapsedTime),
           isWin: win,
-          metadata: eng.getState(),
+          metadata: eng.getState() as Record<string, unknown>,
         });
         HighScoreService.update(gameType, eng.score);
       }
