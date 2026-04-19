@@ -86,6 +86,12 @@ export {
 } from './hero/hero.types';
 export { HERO_MAX_LEVEL } from './hero/hero-config';
 export type { RecruitType } from './hero/hero-recruit-config';
+export { HeroFormation, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './hero/HeroFormation';
+export type {
+  FormationData,
+  FormationState,
+  FormationSaveData,
+} from './hero/HeroFormation';
 export type {
   EnhancePreview,
   LevelUpResult,

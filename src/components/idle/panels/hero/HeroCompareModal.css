@@ -1,0 +1,97 @@
+.tk-compare-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.tk-compare-modal {
+  position: relative;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  color: rgba(240, 230, 211, 0.9);
+}
+.tk-compare-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(240, 230, 211, 0.5);
+  font-size: 18px;
+  cursor: pointer;
+}
+.tk-compare-close:hover { color: rgba(240, 230, 211, 0.9); }
+.tk-compare-title {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+.tk-compare-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.tk-compare-selector-label { font-size: 13px; color: rgba(240, 230, 211, 0.6); }
+.tk-compare-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid rgba(240, 230, 211, 0.15);
+  border-radius: 6px;
+  background: rgba(240, 230, 211, 0.05);
+  color: rgba(240, 230, 211, 0.9);
+  font-size: 13px;
+}
+.tk-compare-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.tk-compare-hero { flex: 1; text-align: center; padding: 12px; border: 1px solid rgba(240, 230, 211, 0.08); border-radius: 8px; background: rgba(240, 230, 211, 0.03); }
+.tk-compare-hero-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.tk-compare-hero-meta { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 6px; }
+.tk-compare-quality-badge { padding: 1px 6px; border-radius: 4px; font-size: 11px; color: #fff; }
+.tk-compare-hero-faction { font-size: 12px; color: rgba(240, 230, 211, 0.5); }
+.tk-compare-hero-level { font-size: 12px; color: rgba(240, 230, 211, 0.5); }
+.tk-compare-hero-power { font-size: 14px; color: #C9A84C; font-weight: 600; }
+.tk-compare-hero-empty { font-size: 14px; color: rgba(240, 230, 211, 0.3); padding: 20px 0; }
+.tk-compare-vs { font-size: 20px; font-weight: 800; color: rgba(201, 168, 76, 0.6); }
+.tk-compare-stats { border-top: 1px solid rgba(240, 230, 211, 0.08); padding-top: 16px; }
+.tk-compare-stats-title { font-size: 14px; font-weight: 600; margin: 0 0 12px; color: rgba(240, 230, 211, 0.7); }
+.tk-compare-stat-row { margin-bottom: 12px; }
+.tk-compare-stat-label { font-size: 12px; color: rgba(240, 230, 211, 0.5); margin-bottom: 4px; text-align: center; }
+.tk-compare-stat-bars { display: flex; align-items: center; gap: 4px; }
+.tk-compare-stat-side { display: flex; align-items: center; gap: 6px; flex: 1; }
+.tk-compare-stat-side--base { flex-direction: row-reverse; }
+.tk-compare-stat-bar { flex: 1; height: 8px; background: rgba(240, 230, 211, 0.06); border-radius: 4px; overflow: hidden; }
+.tk-compare-stat-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+.tk-compare-stat-value { font-size: 13px; font-weight: 600; min-width: 32px; text-align: center; }
+.tk-compare-stat-value--win { color: #4CAF50; }
+.tk-compare-stat-diff { font-size: 11px; font-weight: 700; min-width: 36px; text-align: center; }
+.tk-compare-stat-diff--win { color: #4CAF50; }
+.tk-compare-stat-diff--lose { color: #E53935; }
+.tk-compare-power-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  margin-top: 12px;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 8px;
+  background: rgba(201, 168, 76, 0.05);
+}
+.tk-compare-power-label { font-size: 13px; color: rgba(240, 230, 211, 0.6); }
+.tk-compare-power-value { font-size: 16px; font-weight: 700; color: #C9A84C; }
+.tk-compare-power-vs { font-size: 14px; color: rgba(240, 230, 211, 0.4); }

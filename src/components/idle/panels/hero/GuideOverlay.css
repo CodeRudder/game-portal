@@ -1,0 +1,127 @@
+/* GuideOverlay — Tutorial step-by-step overlay */
+
+.tk-guide-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tk-guide-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.tk-guide-tooltip {
+  position: relative;
+  z-index: 1;
+  background: #1a1a2e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 20px 24px;
+  max-width: 360px;
+  width: 90%;
+  color: #e0e0e0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Position variants */
+.tk-guide-tooltip--center {
+  margin: auto;
+}
+
+.tk-guide-tooltip--top {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tk-guide-tooltip--bottom {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tk-guide-tooltip--left {
+  position: absolute;
+  right: 10%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tk-guide-tooltip--right {
+  position: absolute;
+  left: 10%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tk-guide-tooltip__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.tk-guide-tooltip__desc {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  color: #b0b0b0;
+}
+
+.tk-guide-tooltip__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.tk-guide-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tk-guide-btn--skip {
+  background: transparent;
+  color: #888;
+  border: 1px solid #444;
+}
+
+.tk-guide-btn--skip:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+}
+
+.tk-guide-btn--prev {
+  background: #333;
+  color: #ddd;
+}
+
+.tk-guide-btn--prev:hover {
+  background: #444;
+}
+
+.tk-guide-btn--next {
+  background: #4a6cf7;
+  color: #fff;
+}
+
+.tk-guide-btn--next:hover {
+  background: #3b5de7;
+}
+
+.tk-guide-tooltip__progress {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 11px;
+  color: #666;
+}
