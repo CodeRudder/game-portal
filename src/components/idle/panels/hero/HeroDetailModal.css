@@ -196,6 +196,109 @@
   color: var(--tk-text-secondary);
 }
 
+/* ═══════════════════════════════════════════
+   升级操作区
+   ═══════════════════════════════════════════ */
+.tk-hero-detail-enhance {
+  width: 100%;
+  background: rgba(240, 230, 211, 0.04);
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tk-hero-detail-enhance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tk-hero-detail-enhance-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+}
+
+.tk-hero-detail-enhance-max-btn {
+  padding: 2px 8px;
+  background: rgba(200, 168, 76, 0.12);
+  border: 1px solid rgba(200, 168, 76, 0.3);
+  border-radius: 4px;
+  color: var(--tk-gold-light);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tk-hero-detail-enhance-max-btn:hover {
+  background: rgba(200, 168, 76, 0.25);
+}
+
+.tk-hero-detail-enhance-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tk-hero-detail-enhance-label {
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+}
+
+.tk-hero-detail-enhance-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+}
+
+.tk-hero-detail-enhance-cost {
+  font-size: 12px;
+  color: var(--tk-text-primary);
+}
+
+.tk-hero-detail-enhance-power-diff {
+  font-size: 11px;
+  color: var(--tk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-hero-detail-enhance-power-gain {
+  color: var(--tk-green);
+  font-weight: 600;
+}
+
+.tk-hero-detail-enhance-affordable {
+  font-size: 11px;
+}
+
+.tk-hero-detail-enhance-btn {
+  width: 100%;
+  padding: 8px 16px;
+  background: rgba(200, 168, 76, 0.2);
+  border: 2px solid var(--tk-gold);
+  border-radius: 6px;
+  color: var(--tk-gold-light);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tk-hero-detail-enhance-btn:hover:not(:disabled) {
+  background: rgba(200, 168, 76, 0.35);
+}
+
+.tk-hero-detail-enhance-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ── 右侧：属性 + 技能 ── */
 .tk-hero-detail-right {
   flex: 1;

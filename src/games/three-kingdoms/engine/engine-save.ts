@@ -110,6 +110,8 @@ export function applyLoadedState(ctx: SaveContext, state: IGameState): OfflineEa
       );
     }
 
+    // v1.0 → v2.0 迁移：检测到旧版本存档时确保武将系统字段存在
+    // applySaveData 内部已对 hero/recruit 缺失做兼容处理
     applySaveData(ctx, data);
     return computeOfflineAndFinalize(ctx);
   } catch (e) {
@@ -170,14 +172,23 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   if (data.calendar) {
     ctx.calendar.deserialize(data.calendar);
   }
-  // 武将系统反序列化（向后兼容：旧存档可能无 hero 字段）
+
+  // ── 武将系统 v1.0 → v2.0 迁移 ──
+  // v1.0 存档无 hero/recruit 字段，HeroSystem/HeroRecruitSystem 保持构造函数创建的空状态，
+  // 后续由 finalizeLoad() → initHeroSystems() 注入资源回调即可正常工作。
   if (data.hero) {
     ctx.hero.deserialize(data.hero);
+  } else {
+    console.info('[Save] v1.0 存档迁移：无武将数据，自动初始化空武将系统');
   }
-  // 招募系统反序列化（向后兼容）
+
+  // ── 招募系统 v1.0 → v2.0 迁移 ──
   if (data.recruit) {
     ctx.recruit.deserialize(data.recruit);
+  } else {
+    console.info('[Save] v1.0 存档迁移：无招募数据，保底计数器从 0 开始');
   }
+
   syncBuildingToResource({
     resource: ctx.resource,
     building: ctx.building,

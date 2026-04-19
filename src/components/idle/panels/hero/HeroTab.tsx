@@ -124,6 +124,17 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
     setSelectedGeneral(null);
   }, []);
 
+  /** 武将升级完成后刷新列表 */
+  const handleEnhanceComplete = useCallback(() => {
+    // 刷新 selectedGeneral 数据
+    if (selectedGeneral) {
+      const updated = engine.getGeneral(selectedGeneral.id);
+      if (updated) {
+        setSelectedGeneral({ ...updated } as any);
+      }
+    }
+  }, [engine, selectedGeneral]);
+
   const handleRecruitOpen = useCallback(() => {
     setShowRecruitModal(true);
   }, []);
@@ -226,6 +237,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
           general={selectedGeneral}
           engine={engine}
           onClose={handleDetailClose}
+          onEnhanceComplete={handleEnhanceComplete}
         />
       )}
 

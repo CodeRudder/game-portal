@@ -4,9 +4,16 @@
  * 布局：左侧画像+品质+等级，右侧属性条+技能列表
  * PC端：800×700 弹窗
  * 手机端：全屏详情
+ *
+ * 功能：
+ * - 展示武将四维属性条
+ * - 展示技能列表
+ * - 经验进度条
+ * - 升级按钮（消耗铜钱/碎片提升等级）
+ * - 一键强化预览
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import type { GeneralData, Quality } from '@/games/three-kingdoms/engine';
 import {
   QUALITY_LABELS,
@@ -14,6 +21,8 @@ import {
 } from '@/games/three-kingdoms/engine';
 import { FACTION_LABELS } from '@/games/three-kingdoms/engine/hero/hero.types';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import type { EnhancePreview } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
+import { Toast } from '@/components/idle/common/Toast';
 import './HeroDetailModal.css';
 
 // ─────────────────────────────────────────────
@@ -26,6 +35,8 @@ interface HeroDetailModalProps {
   engine: ThreeKingdomsEngine;
   /** 关闭回调 */
   onClose: () => void;
+  /** 升级完成回调（触发外部重渲染） */
+  onEnhanceComplete?: () => void;
 }
 
 // ─────────────────────────────────────────────
@@ -59,12 +70,28 @@ const QUALITY_BG: Record<Quality, string> = {
 /** 属性条最大值（用于百分比计算） */
 const STAT_MAX = 150;
 
+/** 格式化数值 */
+function formatNum(n: number): string {
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 10000) return `${(n / 1000).toFixed(1)}K`;
+  return n.toLocaleString('zh-CN');
+}
+
 // ─────────────────────────────────────────────
 // 主组件
 // ─────────────────────────────────────────────
-const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ general, engine, onClose }) => {
+const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
+  general,
+  engine,
+  onClose,
+  onEnhanceComplete,
+}) => {
   const heroSystem = engine.getHeroSystem();
   const levelSystem = engine.getLevelSystem();
+
+  // 升级目标等级（默认+1）
+  const [targetLevel, setTargetLevel] = useState(general.level + 1);
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
   const power = useMemo(
     () => heroSystem.calculatePower(general),
@@ -85,6 +112,16 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ general, engine, onCl
   const qualityLabel = QUALITY_LABELS[general.quality];
   const factionLabel = FACTION_LABELS[general.faction];
 
+  // 升级预览
+  const enhancePreview: EnhancePreview | null = useMemo(() => {
+    if (targetLevel <= general.level) return null;
+    try {
+      return engine.getEnhancePreview(general.id, targetLevel);
+    } catch {
+      return null;
+    }
+  }, [engine, general.id, targetLevel, general.level]);
+
   // 属性列表
   const stats = useMemo(() => {
     const { baseStats } = general;
@@ -96,6 +133,29 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ general, engine, onCl
       percentage: Math.min(100, Math.floor((baseStats[key] / STAT_MAX) * 100)),
     }));
   }, [general]);
+
+  // 升级操作
+  const handleEnhance = useCallback(() => {
+    if (targetLevel <= general.level) return;
+    setIsEnhancing(true);
+    try {
+      const result = engine.enhanceHero(general.id, targetLevel);
+      if (result) {
+        Toast.success(`${general.name} 升级至 Lv.${result.levelsGained > 1 ? targetLevel : general.level + 1}，战力 +${result.levelsGained}`);
+        onEnhanceComplete?.();
+      }
+    } catch (e: any) {
+      Toast.danger(e?.message || '升级失败');
+    } finally {
+      setIsEnhancing(false);
+    }
+  }, [engine, general.id, general.level, general.name, targetLevel, onEnhanceComplete]);
+
+  // 一键满级（升5级）
+  const handleEnhanceMax = useCallback(() => {
+    const maxTarget = Math.min(general.level + 5, 100); // 最多升5级
+    setTargetLevel(maxTarget);
+  }, [general.level]);
 
   return (
     <div className="tk-hero-detail-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -152,6 +212,53 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ general, engine, onCl
             {/* 碎片 */}
             <div className="tk-hero-detail-fragments">
               💎 碎片 {fragments}
+            </div>
+
+            {/* 升级操作区 */}
+            <div className="tk-hero-detail-enhance">
+              <div className="tk-hero-detail-enhance-header">
+                <span className="tk-hero-detail-enhance-title">强化升级</span>
+                <button
+                  className="tk-hero-detail-enhance-max-btn"
+                  onClick={handleEnhanceMax}
+                >
+                  +5级
+                </button>
+              </div>
+
+              {/* 目标等级选择 */}
+              <div className="tk-hero-detail-enhance-target">
+                <span className="tk-hero-detail-enhance-label">
+                  目标等级: Lv.{targetLevel}
+                </span>
+              </div>
+
+              {/* 升级预览 */}
+              {enhancePreview && (
+                <div className="tk-hero-detail-enhance-preview">
+                  <div className="tk-hero-detail-enhance-cost">
+                    💰 {formatNum(enhancePreview.totalGold)} 铜钱
+                  </div>
+                  <div className="tk-hero-detail-enhance-power-diff">
+                    战力: {formatNum(enhancePreview.powerBefore)} → {formatNum(enhancePreview.powerAfter)}
+                    <span className="tk-hero-detail-enhance-power-gain">
+                      (+{formatNum(enhancePreview.powerAfter - enhancePreview.powerBefore)})
+                    </span>
+                  </div>
+                  <div className="tk-hero-detail-enhance-affordable">
+                    {enhancePreview.affordable ? '✅ 资源充足' : '❌ 资源不足'}
+                  </div>
+                </div>
+              )}
+
+              {/* 升级按钮 */}
+              <button
+                className="tk-hero-detail-enhance-btn"
+                disabled={!enhancePreview?.affordable || isEnhancing || targetLevel <= general.level}
+                onClick={handleEnhance}
+              >
+                {isEnhancing ? '升级中...' : `升级至 Lv.${targetLevel}`}
+              </button>
             </div>
           </div>
 
