@@ -11,6 +11,7 @@ import type { ResourceSystem } from './resource/ResourceSystem';
 import type { BuildingSystem } from './building/BuildingSystem';
 import type { CalendarSystem } from './calendar/CalendarSystem';
 import type { HeroSystem } from './hero/HeroSystem';
+import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
 import type { EventBus } from '../core/events/EventBus';
 import type { Bonuses } from './resource/resource.types';
 import type { BuildingType } from './building/building.types';
@@ -29,6 +30,7 @@ export interface TickContext {
   readonly building: BuildingSystem;
   readonly calendar: CalendarSystem;
   readonly hero: HeroSystem;
+  readonly campaign: CampaignProgressSystem;
   readonly bus: EventBus;
   /** 变化检测用的缓存 JSON */
   prevResourcesJson: string;
@@ -83,6 +85,9 @@ export function executeTick(ctx: TickContext, dtSec: number): void {
 
   // 5. 武将系统更新
   ctx.hero.update(dtSec);
+
+  // 5.5 关卡进度系统更新（事件驱动，通常为空操作）
+  ctx.campaign.update(dtSec);
 
   // 6. 变化检测 → 发出事件
   detectAndEmitChanges(ctx);

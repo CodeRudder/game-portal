@@ -1,0 +1,476 @@
+/**
+ * BattleSetupModal — 战前布阵弹窗样式
+ *
+ * PC端：居中弹窗 560×auto
+ * 手机端：底部弹出 Bottom Sheet
+ *
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* ═══════════════════════════════════════════
+   遮罩层
+   ═══════════════════════════════════════════ */
+.tk-battle-setup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: tk-fade-in 0.2s ease-out;
+}
+
+/* ═══════════════════════════════════════════
+   弹窗主体
+   ═══════════════════════════════════════════ */
+.tk-battle-setup-modal {
+  width: 560px;
+  max-width: 95vw;
+  max-height: 90vh;
+  background: var(--tk-panel-bg);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: var(--tk-radius-lg);
+  box-shadow: var(--tk-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: tk-slide-up 0.25s var(--tk-ease-out);
+}
+
+/* ═══════════════════════════════════════════
+   标题栏
+   ═══════════════════════════════════════════ */
+.tk-battle-setup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+  background: rgba(200, 168, 76, 0.05);
+}
+
+.tk-battle-setup-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tk-battle-setup-stage-type {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(200, 168, 76, 0.15);
+  color: var(--tk-gold-light);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+}
+
+.tk-battle-setup-stage-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  font-family: var(--tk-font-title);
+}
+
+.tk-battle-setup-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--tk-text-secondary);
+  font-size: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.tk-battle-setup-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--tk-text-primary);
+}
+
+/* ═══════════════════════════════════════════
+   关卡描述
+   ═══════════════════════════════════════════ */
+.tk-battle-setup-desc {
+  padding: 8px 20px;
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+  border-bottom: 1px solid rgba(200, 168, 76, 0.08);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════
+   内容区段
+   ═══════════════════════════════════════════ */
+.tk-battle-section {
+  padding: 12px 20px;
+}
+
+.tk-battle-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tk-text-primary);
+  margin-bottom: 10px;
+}
+
+.tk-battle-section-icon {
+  font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════
+   敌方阵容
+   ═══════════════════════════════════════════ */
+.tk-enemy-units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tk-enemy-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(184, 66, 58, 0.08);
+  border: 1px solid rgba(184, 66, 58, 0.2);
+  border-radius: var(--tk-radius-md);
+  min-width: 120px;
+}
+
+.tk-enemy-unit-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(184, 66, 58, 0.15);
+  border: 1px solid rgba(184, 66, 58, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tk-enemy-unit-level {
+  font-size: 8px;
+  color: var(--tk-red);
+  font-weight: 600;
+}
+
+.tk-enemy-unit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tk-enemy-unit-name {
+  font-size: 12px;
+  color: var(--tk-text-primary);
+  font-weight: 500;
+}
+
+.tk-enemy-unit-position {
+  font-size: 9px;
+  color: var(--tk-text-muted);
+}
+
+/* ═══════════════════════════════════════════
+   战力对比
+   ═══════════════════════════════════════════ */
+.tk-power-compare {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(200, 168, 76, 0.08);
+  border-bottom: 1px solid rgba(200, 168, 76, 0.08);
+}
+
+.tk-power-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 80px;
+}
+
+.tk-power-label {
+  font-size: 10px;
+  color: var(--tk-text-muted);
+}
+
+.tk-power-value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--tk-font-num);
+}
+
+.tk-power-ally .tk-power-value {
+  color: var(--tk-green);
+}
+
+.tk-power-enemy .tk-power-value {
+  color: var(--tk-red);
+}
+
+.tk-power-vs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.tk-power-vs-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tk-text-muted);
+  font-family: var(--tk-font-num);
+}
+
+.tk-power-ratio {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.tk-power--crush {
+  color: var(--tk-gold-light);
+  background: rgba(201, 168, 76, 0.15);
+}
+
+.tk-power--advantage {
+  color: var(--tk-green);
+  background: rgba(126, 200, 80, 0.12);
+}
+
+.tk-power--even {
+  color: var(--tk-orange);
+  background: rgba(212, 160, 23, 0.12);
+}
+
+.tk-power--danger {
+  color: var(--tk-red);
+  background: rgba(184, 66, 58, 0.12);
+}
+
+/* ═══════════════════════════════════════════
+   我方编队
+   ═══════════════════════════════════════════ */
+.tk-ally-row-label {
+  font-size: 10px;
+  color: var(--tk-text-muted);
+  margin-bottom: 4px;
+  padding-left: 4px;
+}
+
+.tk-ally-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tk-ally-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border-radius: var(--tk-radius-md);
+  min-height: 80px;
+  transition: all 0.15s;
+}
+
+.tk-ally-slot--filled {
+  background: rgba(126, 200, 80, 0.06);
+  border: 1px solid rgba(126, 200, 80, 0.2);
+}
+
+.tk-ally-slot--empty {
+  background: rgba(100, 100, 100, 0.06);
+  border: 1px dashed rgba(100, 100, 100, 0.25);
+}
+
+.tk-ally-slot-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--tk-gold);
+  background: rgba(26, 35, 50, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tk-ally-slot-avatar-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+}
+
+.tk-ally-slot-name {
+  font-size: 11px;
+  color: var(--tk-text-primary);
+  font-weight: 500;
+}
+
+.tk-ally-slot-quality {
+  font-size: 9px;
+  color: var(--tk-text-secondary);
+}
+
+.tk-ally-slot-power {
+  font-size: 9px;
+  color: var(--tk-gold);
+  font-family: var(--tk-font-num);
+}
+
+.tk-ally-slot-placeholder {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  margin-top: 20px;
+}
+
+/* ═══════════════════════════════════════════
+   操作按钮
+   ═══════════════════════════════════════════ */
+.tk-battle-actions {
+  display: flex;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid rgba(200, 168, 76, 0.12);
+}
+
+.tk-battle-btn {
+  flex: 1;
+  height: 40px;
+  border: none;
+  border-radius: var(--tk-radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tk-battle-btn--auto {
+  background: rgba(200, 168, 76, 0.12);
+  color: var(--tk-gold-light);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+}
+
+.tk-battle-btn--auto:hover {
+  background: rgba(200, 168, 76, 0.22);
+}
+
+.tk-battle-btn--fight {
+  background: linear-gradient(135deg, var(--tk-red), #8B2500);
+  color: #fff;
+  border: 1px solid rgba(184, 66, 58, 0.5);
+}
+
+.tk-battle-btn--fight:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.tk-battle-btn--fight:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════
+   动画
+   ═══════════════════════════════════════════ */
+@keyframes tk-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tk-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配（375×507）
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .tk-battle-setup-overlay {
+    align-items: flex-end;
+  }
+
+  .tk-battle-setup-modal {
+    width: 100%;
+    max-width: 100vw;
+    max-height: 85vh;
+    border-radius: var(--tk-radius-lg) var(--tk-radius-lg) 0 0;
+  }
+
+  .tk-battle-setup-header {
+    padding: 12px 16px;
+  }
+
+  .tk-battle-setup-stage-name {
+    font-size: 14px;
+  }
+
+  .tk-battle-section {
+    padding: 10px 16px;
+  }
+
+  .tk-enemy-units {
+    gap: 6px;
+  }
+
+  .tk-enemy-unit {
+    min-width: 100px;
+    padding: 4px 8px;
+  }
+
+  .tk-power-compare {
+    padding: 8px 16px;
+    gap: 10px;
+  }
+
+  .tk-power-value {
+    font-size: 15px;
+  }
+
+  .tk-ally-row {
+    gap: 4px;
+  }
+
+  .tk-ally-slot {
+    padding: 6px 2px;
+    min-height: 70px;
+  }
+
+  .tk-ally-slot-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  .tk-battle-actions {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+
+  .tk-battle-btn {
+    height: 36px;
+    font-size: 13px;
+  }
+}

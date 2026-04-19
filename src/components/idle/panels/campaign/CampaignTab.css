@@ -1,0 +1,464 @@
+/**
+ * CampaignTab — 关卡Tab主面板样式
+ *
+ * PC端(1280×696)：地图区域占满，左右箭头滚动
+ * 手机端(375×507)：纵向滚动，紧凑节点
+ *
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* ═══════════════════════════════════════════
+   面板容器
+   ═══════════════════════════════════════════ */
+.tk-campaign-tab {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(26, 35, 50, 0.95) 0%, rgba(20, 25, 35, 0.98) 100%);
+}
+
+/* ═══════════════════════════════════════════
+   章节选择器
+   ═══════════════════════════════════════════ */
+.tk-chapter-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 0 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+}
+
+.tk-chapter-arrow {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 50%;
+  background: rgba(200, 168, 76, 0.08);
+  color: var(--tk-gold-light);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.tk-chapter-arrow:hover:not(:disabled) {
+  background: rgba(200, 168, 76, 0.2);
+  border-color: var(--tk-gold);
+}
+
+.tk-chapter-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.tk-chapter-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 200px;
+}
+
+.tk-chapter-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+  font-family: var(--tk-font-title);
+  letter-spacing: 2px;
+}
+
+.tk-chapter-subtitle {
+  font-size: 11px;
+  color: var(--tk-text-secondary);
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════════
+   关卡地图区域
+   ═══════════════════════════════════════════ */
+.tk-campaign-map-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 滚动按钮 */
+.tk-map-scroll-btn {
+  width: 28px;
+  height: 48px;
+  border: none;
+  background: rgba(200, 168, 76, 0.12);
+  color: var(--tk-gold-light);
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition: background 0.15s;
+  z-index: 5;
+  font-family: inherit;
+}
+
+.tk-map-scroll-btn:hover {
+  background: rgba(200, 168, 76, 0.25);
+}
+
+.tk-map-scroll-btn--left {
+  margin-right: 4px;
+}
+
+.tk-map-scroll-btn--right {
+  margin-left: 4px;
+}
+
+/* 地图滚动容器 */
+.tk-campaign-map {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 0;
+}
+
+.tk-campaign-map::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tk-campaign-map::-webkit-scrollbar-track {
+  background: rgba(200, 168, 76, 0.05);
+  border-radius: 2px;
+}
+
+.tk-campaign-map::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 76, 0.2);
+  border-radius: 2px;
+}
+
+/* 轨道（横向排列节点） */
+.tk-campaign-map-track {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0 24px;
+  min-width: max-content;
+}
+
+/* ═══════════════════════════════════════════
+   关卡节点
+   ═══════════════════════════════════════════ */
+.tk-stage-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100px;
+  padding: 8px 4px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.tk-stage-node:hover {
+  transform: translateY(-2px);
+}
+
+.tk-stage-node--locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.tk-stage-node--locked:hover {
+  transform: none;
+}
+
+/* 连接线 */
+.tk-stage-connector {
+  position: absolute;
+  left: -24px;
+  top: 36px;
+  width: 48px;
+  height: 2px;
+  background: rgba(200, 168, 76, 0.25);
+}
+
+.tk-stage-node--locked .tk-stage-connector {
+  background: rgba(100, 100, 100, 0.2);
+}
+
+.tk-stage-node--cleared .tk-stage-connector {
+  background: rgba(126, 200, 80, 0.5);
+}
+
+.tk-stage-node--three-star .tk-stage-connector {
+  background: linear-gradient(90deg, rgba(201, 168, 76, 0.6), rgba(201, 168, 76, 0.3));
+}
+
+/* 节点圆形 */
+.tk-stage-node-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(200, 168, 76, 0.3);
+  background: rgba(26, 35, 50, 0.9);
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* 各状态节点样式 */
+.tk-stage-node--available .tk-stage-node-circle {
+  border-color: var(--tk-gold);
+  box-shadow: 0 0 12px rgba(200, 168, 76, 0.4), inset 0 0 8px rgba(200, 168, 76, 0.1);
+  animation: tk-pulse-available 2s ease-in-out infinite;
+}
+
+.tk-stage-node--cleared .tk-stage-node-circle {
+  border-color: var(--tk-green);
+  background: rgba(126, 200, 80, 0.15);
+  box-shadow: 0 0 8px rgba(126, 200, 80, 0.3);
+}
+
+.tk-stage-node--three-star .tk-stage-node-circle {
+  border-color: var(--tk-gold-light);
+  background: rgba(201, 168, 76, 0.2);
+  box-shadow: 0 0 16px rgba(201, 168, 76, 0.5), 0 0 4px rgba(201, 168, 76, 0.3);
+}
+
+.tk-stage-node--locked .tk-stage-node-circle {
+  border-color: rgba(100, 100, 100, 0.3);
+  background: rgba(40, 40, 50, 0.8);
+}
+
+/* 节点图标 */
+.tk-stage-node-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* 节点序号 */
+.tk-stage-node-order {
+  font-size: 9px;
+  color: var(--tk-text-secondary);
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* 节点名称 */
+.tk-stage-node-name {
+  font-size: 11px;
+  color: var(--tk-text-primary);
+  margin-top: 6px;
+  text-align: center;
+  line-height: 1.3;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tk-stage-node--locked .tk-stage-node-name {
+  color: var(--tk-text-muted);
+}
+
+/* 关卡类型标签 */
+.tk-stage-node-type {
+  font-size: 9px;
+  color: var(--tk-text-secondary);
+  margin-top: 2px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: rgba(200, 168, 76, 0.08);
+}
+
+/* 推荐战力 */
+.tk-stage-node-power {
+  font-size: 9px;
+  color: var(--tk-text-muted);
+  margin-top: 2px;
+}
+
+/* 星级显示 */
+.tk-stage-node-stars {
+  display: flex;
+  gap: 1px;
+  margin-top: 3px;
+}
+
+.tk-stage-star {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.tk-stage-star--filled {
+  color: var(--tk-gold);
+}
+
+.tk-stage-star--empty {
+  color: rgba(100, 100, 100, 0.3);
+}
+
+/* 锁定遮罩 */
+.tk-stage-node-lock {
+  position: absolute;
+  top: 12px;
+  font-size: 12px;
+}
+
+/* ═══════════════════════════════════════════
+   底部进度
+   ═══════════════════════════════════════════ */
+.tk-campaign-progress {
+  flex-shrink: 0;
+  padding: 10px 0 4px;
+  border-top: 1px solid rgba(200, 168, 76, 0.12);
+}
+
+.tk-campaign-progress-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+  margin-bottom: 6px;
+}
+
+.tk-campaign-progress-stars {
+  color: var(--tk-gold);
+  font-weight: 500;
+}
+
+.tk-campaign-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(200, 168, 76, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tk-campaign-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tk-green), var(--tk-gold));
+  border-radius: 3px;
+  transition: width 0.4s var(--tk-ease-out);
+}
+
+/* ═══════════════════════════════════════════
+   动画
+   ═══════════════════════════════════════════ */
+@keyframes tk-pulse-available {
+  0%, 100% { box-shadow: 0 0 12px rgba(200, 168, 76, 0.4), inset 0 0 8px rgba(200, 168, 76, 0.1); }
+  50% { box-shadow: 0 0 20px rgba(200, 168, 76, 0.6), inset 0 0 12px rgba(200, 168, 76, 0.2); }
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配（375×507）
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .tk-campaign-tab {
+    padding: 8px 10px;
+  }
+
+  .tk-chapter-selector {
+    gap: 10px;
+    padding: 6px 0 8px;
+  }
+
+  .tk-chapter-arrow {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .tk-chapter-info {
+    min-width: 140px;
+  }
+
+  .tk-chapter-title {
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .tk-chapter-subtitle {
+    font-size: 10px;
+  }
+
+  /* 手机端纵向滚动 */
+  .tk-campaign-map-wrapper {
+    flex-direction: column;
+  }
+
+  .tk-map-scroll-btn {
+    display: none;
+  }
+
+  .tk-campaign-map {
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .tk-campaign-map-track {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 0 16px;
+    min-width: unset;
+  }
+
+  /* 手机端连接线改为竖向 */
+  .tk-stage-connector {
+    left: 50%;
+    transform: translateX(-50%);
+    top: auto;
+    bottom: -12px;
+    width: 2px;
+    height: 24px;
+  }
+
+  .tk-stage-node {
+    width: 80px;
+    padding: 6px 4px;
+    margin-bottom: 24px;
+  }
+
+  .tk-stage-node-circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .tk-stage-node-name {
+    font-size: 10px;
+    max-width: 76px;
+  }
+
+  .tk-stage-node-power {
+    font-size: 8px;
+  }
+
+  .tk-campaign-progress {
+    padding: 8px 0 2px;
+  }
+
+  .tk-campaign-progress-text {
+    font-size: 11px;
+  }
+}

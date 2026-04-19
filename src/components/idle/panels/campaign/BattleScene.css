@@ -1,0 +1,377 @@
+/**
+ * BattleScene — 战斗场景布局和组件样式
+ *
+ * 全屏战斗画面覆盖层：PC端1280×696，我方左/敌方右
+ * 设计风格：水墨江山·铜纹霸业
+ *
+ * 动画关键帧和特效样式见 BattleAnimation.css
+ */
+
+@import './BattleAnimation.css';
+
+/* ═══════════════════════════════════════════
+   全屏遮罩
+   ═══════════════════════════════════════════ */
+.tk-bs-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  background: linear-gradient(180deg, #0a0e14 0%, #111820 40%, #0d1117 100%);
+  display: flex;
+  flex-direction: column;
+  animation: tk-bs-fade-in 0.3s ease-out;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   顶部信息栏
+   ═══════════════════════════════════════════ */
+.tk-bs-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.tk-bs-stage-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tk-bs-stage-type {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(200, 168, 76, 0.15);
+  color: var(--tk-gold-light);
+  font-weight: 500;
+}
+
+.tk-bs-stage-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  font-family: var(--tk-font-title);
+  letter-spacing: 1px;
+}
+
+.tk-bs-turn-display {
+  font-size: 13px;
+  color: var(--tk-gold);
+  font-weight: 600;
+  font-family: var(--tk-font-title);
+  letter-spacing: 1px;
+}
+
+.tk-bs-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tk-bs-speed-btn {
+  padding: 3px 10px;
+  border: 1px solid rgba(200, 168, 76, 0.3);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--tk-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--tk-font-num);
+}
+
+.tk-bs-speed-btn:hover {
+  border-color: var(--tk-gold);
+  color: var(--tk-gold-light);
+}
+
+.tk-bs-speed-btn--active {
+  background: rgba(200, 168, 76, 0.2);
+  border-color: var(--tk-gold);
+  color: var(--tk-gold-light);
+}
+
+.tk-bs-skip-btn {
+  padding: 3px 10px;
+  border: 1px solid rgba(200, 50, 50, 0.3);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--tk-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.tk-bs-skip-btn:hover {
+  border-color: rgba(200, 50, 50, 0.6);
+  color: #e88;
+  background: rgba(200, 50, 50, 0.1);
+}
+
+/* ═══════════════════════════════════════════
+   战场主区域
+   ═══════════════════════════════════════════ */
+.tk-bs-battlefield {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  min-height: 0;
+}
+
+.tk-bs-battlefield::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(126, 200, 80, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(200, 50, 50, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.tk-bs-vs-divider {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: 700;
+  color: rgba(200, 168, 76, 0.25);
+  font-family: var(--tk-font-title);
+  letter-spacing: 2px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════
+   阵营面板
+   ═══════════════════════════════════════════ */
+.tk-bs-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 16px;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.tk-bs-side--ally {
+  align-items: flex-end;
+  padding-right: 40px;
+}
+
+.tk-bs-side--enemy {
+  align-items: flex-start;
+  padding-left: 40px;
+}
+
+.tk-bs-row-label {
+  font-size: 10px;
+  color: var(--tk-text-muted);
+  letter-spacing: 2px;
+  text-align: center;
+  width: 100%;
+  padding: 2px 0;
+  opacity: 0.7;
+}
+
+.tk-bs-units-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.tk-bs-side--ally .tk-bs-units-row { justify-content: flex-end; }
+.tk-bs-side--enemy .tk-bs-units-row { justify-content: flex-start; }
+
+/* ═══════════════════════════════════════════
+   武将卡片
+   ═══════════════════════════════════════════ */
+.tk-bs-unit {
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  background: rgba(26, 35, 50, 0.7);
+  border: 1px solid rgba(200, 168, 76, 0.12);
+  transition: all 0.3s;
+  position: relative;
+}
+
+.tk-bs-unit--dead {
+  opacity: 0.35;
+  filter: grayscale(0.8);
+}
+
+.tk-bs-unit--acting {
+  border-color: var(--tk-gold);
+  box-shadow: 0 0 12px rgba(200, 168, 76, 0.3);
+  transform: scale(1.05);
+}
+
+.tk-bs-unit-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  border: 2px solid rgba(200, 168, 76, 0.3);
+}
+
+.tk-bs-side--ally .tk-bs-unit-avatar {
+  background: rgba(126, 200, 80, 0.12);
+  border-color: rgba(126, 200, 80, 0.3);
+}
+
+.tk-bs-side--enemy .tk-bs-unit-avatar {
+  background: rgba(200, 50, 50, 0.12);
+  border-color: rgba(200, 50, 50, 0.3);
+}
+
+.tk-bs-unit-name {
+  font-size: 10px;
+  color: var(--tk-text-primary);
+  font-weight: 500;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════
+   血条
+   ═══════════════════════════════════════════ */
+.tk-bs-hp-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tk-bs-hp-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease-out;
+}
+
+.tk-bs-hp-fill--high { background: linear-gradient(90deg, #4a8c3f, #7ec850); }
+.tk-bs-hp-fill--mid { background: linear-gradient(90deg, #c49a1a, #d4a017); }
+.tk-bs-hp-fill--low { background: linear-gradient(90deg, #a93226, #e74c3c); }
+.tk-bs-hp-fill--dead { background: #444; }
+
+.tk-bs-hp-text {
+  font-size: 9px;
+  color: var(--tk-text-muted);
+  font-family: var(--tk-font-num);
+  text-align: center;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════
+   怒气条
+   ═══════════════════════════════════════════ */
+.tk-bs-rage-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 1.5px;
+  overflow: hidden;
+}
+
+.tk-bs-rage-fill {
+  height: 100%;
+  border-radius: 1.5px;
+  background: linear-gradient(90deg, #3498db, #5dade2);
+  transition: width 0.3s ease-out;
+}
+
+/* ═══════════════════════════════════════════
+   战斗播报区域
+   ═══════════════════════════════════════════ */
+.tk-bs-log-area {
+  height: 100px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border-top: 1px solid rgba(200, 168, 76, 0.1);
+  padding: 6px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-bs-log-area::-webkit-scrollbar { width: 3px; }
+.tk-bs-log-area::-webkit-scrollbar-thumb { background: rgba(200, 168, 76, 0.15); border-radius: 1.5px; }
+
+.tk-bs-log-entry {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--tk-text-secondary);
+}
+
+.tk-bs-log-entry--ally { color: #8bc34a; }
+.tk-bs-log-entry--enemy { color: #e88; }
+.tk-bs-log-entry--critical { color: var(--tk-gold); font-weight: 600; }
+.tk-bs-log-entry--turn {
+  color: var(--tk-gold-light);
+  font-weight: 600;
+  border-top: 1px solid rgba(200, 168, 76, 0.08);
+  padding-top: 3px;
+  margin-top: 2px;
+}
+
+.tk-bs-log-actor { font-weight: 600; }
+.tk-bs-log-skill { color: var(--tk-gold); }
+.tk-bs-log-damage { color: #e85555; font-family: var(--tk-font-num); font-weight: 600; }
+.tk-bs-log-crit { color: var(--tk-gold-bright); font-weight: 700; }
+
+/* ═══════════════════════════════════════════
+   空位占位
+   ═══════════════════════════════════════════ */
+.tk-bs-unit-empty {
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
+  border: 1px dashed rgba(100, 100, 100, 0.15);
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配（375×507）
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .tk-bs-top-bar { padding: 6px 10px; }
+  .tk-bs-stage-name { font-size: 12px; }
+  .tk-bs-turn-display { font-size: 11px; }
+  .tk-bs-side { padding: 8px 8px; gap: 4px; }
+  .tk-bs-side--ally { padding-right: 24px; }
+  .tk-bs-side--enemy { padding-left: 24px; }
+  .tk-bs-unit { width: 56px; padding: 4px 2px; gap: 2px; }
+  .tk-bs-unit-avatar { width: 30px; height: 30px; font-size: 12px; }
+  .tk-bs-unit-name { font-size: 8px; }
+  .tk-bs-hp-bar { height: 4px; }
+  .tk-bs-hp-text { font-size: 8px; }
+  .tk-bs-rage-bar { height: 2px; }
+  .tk-bs-units-row { gap: 4px; }
+  .tk-bs-vs-divider { font-size: 14px; }
+  .tk-bs-log-area { height: 70px; padding: 4px 8px; }
+  .tk-bs-log-entry { font-size: 10px; }
+  .tk-bs-unit-empty { width: 56px; height: 56px; }
+}

@@ -13,6 +13,7 @@ import type { CalendarSystem } from './calendar/CalendarSystem';
 import type { HeroSystem } from './hero/HeroSystem';
 import type { HeroRecruitSystem } from './hero/HeroRecruitSystem';
 import type { HeroFormation } from './hero/HeroFormation';
+import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
 import type { EventBus } from '../core/events/EventBus';
 import type { SubsystemRegistry } from '../core/engine/SubsystemRegistry';
 import type { ConfigRegistry } from '../core/config/ConfigRegistry';
@@ -41,6 +42,7 @@ export interface SaveContext {
   readonly hero: HeroSystem;
   readonly recruit: HeroRecruitSystem;
   readonly formation: HeroFormation;
+  readonly campaign: CampaignProgressSystem;
   readonly bus: EventBus;
   readonly registry: SubsystemRegistry;
   readonly configRegistry: ConfigRegistry;
@@ -63,6 +65,7 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     hero: ctx.hero.serialize(),
     recruit: ctx.recruit.serialize(),
     formation: ctx.formation.serialize(),
+    campaign: ctx.campaign.serialize(),
   };
 }
 
@@ -78,6 +81,7 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
       hero: data.hero,
       recruit: data.recruit,
       formation: data.formation,
+      campaign: data.campaign,
     },
     metadata: {
       totalPlayTime: onlineSeconds,
@@ -98,6 +102,7 @@ export function fromIGameState(state: IGameState): GameSaveData {
     hero: state.subsystems.hero as HeroSaveData | undefined,
     recruit: state.subsystems.recruit as RecruitSaveData | undefined,
     formation: state.subsystems.formation as FormationSaveData | undefined,
+    campaign: state.subsystems.campaign as import('./campaign/campaign.types').CampaignSaveData | undefined,
   };
 }
 
@@ -200,11 +205,19 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.formation.deserialize(data.formation);
   }
 
+  // ── 关卡系统 v3.0 ──
+  if (data.campaign) {
+    ctx.campaign.deserialize(data.campaign);
+  } else {
+    console.info('[Save] v2.0 存档迁移：无关卡数据，自动初始化空关卡进度');
+  }
+
   syncBuildingToResource({
     resource: ctx.resource,
     building: ctx.building,
     calendar: ctx.calendar,
     hero: ctx.hero,
+    campaign: ctx.campaign,
     bus: ctx.bus,
     prevResourcesJson: '',
     prevRatesJson: '',

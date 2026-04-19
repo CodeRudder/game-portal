@@ -189,6 +189,8 @@ export interface GameSaveData {
   recruit?: import('../engine/hero/HeroRecruitSystem').RecruitSaveData;
   /** 编队系统数据（可选，向后兼容旧存档） */
   formation?: import('../engine/hero/HeroFormation').FormationSaveData;
+  /** 关卡进度数据（可选，向后兼容旧存档） */
+  campaign?: import('../engine/campaign/campaign.types').CampaignSaveData;
 }
 
 // ─────────────────────────────────────────────
@@ -219,4 +221,6 @@ export interface EngineSnapshot {
   formations: import('../engine/hero/HeroFormation').FormationData[];
   /** 当前激活编队ID */
   activeFormationId: string | null;
+  /** 关卡进度 */
+  campaignProgress: import('../engine/campaign/campaign.types').CampaignProgress;
 }

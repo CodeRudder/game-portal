@@ -108,3 +108,57 @@ export type {
   RecruitDeps,
   RecruitHistoryEntry,
 } from './hero/HeroRecruitSystem';
+
+// 战斗域
+export { BattleEngine } from './battle/BattleEngine';
+export { DamageCalculator } from './battle/DamageCalculator';
+export type {
+  BattleUnit,
+  BattleTeam,
+  BattleAction,
+  BattleState,
+  BattleResult,
+  DamageResult,
+  BuffEffect,
+  BattleSkill,
+  CreateUnitParams,
+  Position,
+  BattleSide,
+  IDamageCalculator,
+  IBattleEngine,
+} from './battle/battle.types';
+export {
+  TroopType,
+  TROOP_TYPE_LABELS,
+  BuffType,
+  SkillTargetType,
+  BattlePhase,
+  BattleOutcome,
+  StarRating,
+} from './battle/battle.types';
+export { BATTLE_CONFIG } from './battle/battle-config';
+
+// 关卡域
+export { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
+export { RewardDistributor } from './campaign/RewardDistributor';
+export {
+  campaignDataProvider,
+  getChapters as getCampaignChapters,
+  getStage as getCampaignStage,
+} from './campaign/campaign-config';
+export type {
+  StageType,
+  StageStatus,
+  StarCount,
+  EnemyUnitDef,
+  EnemyFormation,
+  StageReward,
+  Stage,
+  Chapter,
+  StageState,
+  CampaignProgress,
+  CampaignSaveData,
+  RewardDistributorDeps,
+  ICampaignDataProvider,
+} from './campaign/campaign.types';
+export { MAX_STARS } from './campaign/campaign.types';

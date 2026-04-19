@@ -1,0 +1,459 @@
+/**
+ * BattleFormationModal — 战前布阵弹窗样式
+ *
+ * 设计风格：水墨江山·铜纹霸业
+ * PC端：居中弹窗，宽度 540px
+ * 手机端：全屏弹窗，紧凑布局
+ */
+
+/* ═══════════════════════════════════════════
+   遮罩层
+   ═══════════════════════════════════════════ */
+.tk-bfm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: tk-bfm-fade-in 0.2s ease-out;
+}
+
+@keyframes tk-bfm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   弹窗主体
+   ═══════════════════════════════════════════ */
+.tk-bfm-modal {
+  width: 540px;
+  max-width: 95vw;
+  max-height: 90vh;
+  background: linear-gradient(180deg, #1a2332 0%, #141a24 100%);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 12px;
+  overflow-y: auto;
+  animation: tk-bfm-slide-up 0.25s ease-out;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 1px rgba(200, 168, 76, 0.3);
+}
+
+@keyframes tk-bfm-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.tk-bfm-modal::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tk-bfm-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tk-bfm-modal::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 76, 0.2);
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   标题栏
+   ═══════════════════════════════════════════ */
+.tk-bfm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+}
+
+.tk-bfm-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tk-bfm-stage-type {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(200, 168, 76, 0.15);
+  color: var(--tk-gold-light);
+  font-weight: 500;
+}
+
+.tk-bfm-stage-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  font-family: var(--tk-font-title);
+  letter-spacing: 1px;
+}
+
+.tk-bfm-close {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tk-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.tk-bfm-close:hover {
+  background: rgba(200, 168, 76, 0.15);
+  color: var(--tk-gold-light);
+}
+
+/* ═══════════════════════════════════════════
+   关卡描述
+   ═══════════════════════════════════════════ */
+.tk-bfm-desc {
+  padding: 8px 20px;
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+  line-height: 1.5;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.06);
+}
+
+/* ═══════════════════════════════════════════
+   区块
+   ═══════════════════════════════════════════ */
+.tk-bfm-section {
+  padding: 12px 20px;
+}
+
+.tk-bfm-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tk-bfm-section-icon {
+  font-size: 14px;
+}
+
+.tk-bfm-formation-count {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   敌方阵容
+   ═══════════════════════════════════════════ */
+.tk-bfm-enemy-units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tk-bfm-enemy-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(200, 50, 50, 0.08);
+  border: 1px solid rgba(200, 50, 50, 0.15);
+  border-radius: 6px;
+  min-width: 120px;
+}
+
+.tk-bfm-enemy-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(200, 50, 50, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.tk-bfm-enemy-level {
+  font-size: 9px;
+  color: #e88;
+  font-weight: 500;
+}
+
+.tk-bfm-enemy-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tk-bfm-enemy-name {
+  font-size: 12px;
+  color: var(--tk-text-primary);
+  font-weight: 500;
+}
+
+.tk-bfm-enemy-pos {
+  font-size: 10px;
+  color: var(--tk-text-muted);
+}
+
+/* ═══════════════════════════════════════════
+   战力对比
+   ═══════════════════════════════════════════ */
+.tk-bfm-power-compare {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(200, 168, 76, 0.04);
+  border-top: 1px solid rgba(200, 168, 76, 0.08);
+  border-bottom: 1px solid rgba(200, 168, 76, 0.08);
+}
+
+.tk-bfm-power-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.tk-bfm-power-label {
+  font-size: 10px;
+  color: var(--tk-text-muted);
+}
+
+.tk-bfm-power-value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--tk-font-title);
+}
+
+.tk-bfm-power-ally .tk-bfm-power-value {
+  color: #7ec850;
+}
+
+.tk-bfm-power-enemy .tk-bfm-power-value {
+  color: #e85555;
+}
+
+.tk-bfm-power-vs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 16px;
+}
+
+.tk-bfm-power-ratio {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.tk-bfm-power--crush {
+  color: #7ec850;
+  background: rgba(126, 200, 80, 0.12);
+}
+
+.tk-bfm-power--advantage {
+  color: #8bc34a;
+  background: rgba(139, 195, 74, 0.1);
+}
+
+.tk-bfm-power--even {
+  color: var(--tk-gold);
+  background: rgba(200, 168, 76, 0.1);
+}
+
+.tk-bfm-power--danger {
+  color: #e85555;
+  background: rgba(232, 85, 85, 0.1);
+}
+
+.tk-bfm-power-vs-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tk-text-muted);
+  letter-spacing: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   我方编队
+   ═══════════════════════════════════════════ */
+.tk-bfm-row-label {
+  font-size: 10px;
+  color: var(--tk-text-muted);
+  margin-bottom: 4px;
+  padding-left: 4px;
+  letter-spacing: 1px;
+}
+
+.tk-bfm-ally-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tk-bfm-ally-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(200, 168, 76, 0.12);
+  background: rgba(26, 35, 50, 0.6);
+  min-height: 80px;
+  transition: border-color 0.15s;
+}
+
+.tk-bfm-ally-slot--filled {
+  border-color: rgba(200, 168, 76, 0.25);
+  background: rgba(26, 35, 50, 0.9);
+}
+
+.tk-bfm-ally-slot--empty {
+  border-style: dashed;
+  border-color: rgba(100, 100, 100, 0.2);
+}
+
+.tk-bfm-ally-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 35, 50, 0.8);
+}
+
+.tk-bfm-ally-avatar-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+}
+
+.tk-bfm-ally-name {
+  font-size: 11px;
+  color: var(--tk-text-primary);
+  font-weight: 500;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tk-bfm-ally-quality {
+  font-size: 9px;
+  color: var(--tk-text-muted);
+}
+
+.tk-bfm-ally-power {
+  font-size: 10px;
+  color: var(--tk-gold);
+  font-weight: 500;
+}
+
+.tk-bfm-ally-placeholder {
+  font-size: 12px;
+  color: var(--tk-text-muted);
+  margin: auto;
+}
+
+/* ═══════════════════════════════════════════
+   操作按钮
+   ═══════════════════════════════════════════ */
+.tk-bfm-actions {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(200, 168, 76, 0.12);
+}
+
+.tk-bfm-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  letter-spacing: 1px;
+}
+
+.tk-bfm-btn--cancel {
+  background: rgba(100, 100, 100, 0.15);
+  color: var(--tk-text-secondary);
+  border: 1px solid rgba(100, 100, 100, 0.2);
+}
+
+.tk-bfm-btn--cancel:hover {
+  background: rgba(100, 100, 100, 0.25);
+}
+
+.tk-bfm-btn--auto {
+  background: rgba(200, 168, 76, 0.12);
+  color: var(--tk-gold-light);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+}
+
+.tk-bfm-btn--auto:hover {
+  background: rgba(200, 168, 76, 0.22);
+}
+
+.tk-bfm-btn--fight {
+  background: linear-gradient(135deg, #c0392b, #e74c3c);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  flex: 1.3;
+}
+
+.tk-bfm-btn--fight:hover:not(:disabled) {
+  background: linear-gradient(135deg, #a93226, #c0392b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4);
+}
+
+.tk-bfm-btn--fight:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配（375×507）
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .tk-bfm-overlay { align-items: flex-end; }
+  .tk-bfm-modal { width: 100%; max-width: 100%; max-height: 95vh; border-radius: 12px 12px 0 0; }
+  .tk-bfm-header { padding: 12px 14px 10px; }
+  .tk-bfm-stage-name { font-size: 14px; }
+  .tk-bfm-section { padding: 10px 14px; }
+  .tk-bfm-enemy-units { gap: 6px; }
+  .tk-bfm-enemy-unit { min-width: 100px; padding: 4px 8px; }
+  .tk-bfm-power-compare { padding: 10px 14px; }
+  .tk-bfm-power-value { font-size: 15px; }
+  .tk-bfm-ally-row { gap: 4px; }
+  .tk-bfm-ally-slot { padding: 6px 2px; min-height: 68px; }
+  .tk-bfm-ally-avatar { width: 30px; height: 30px; }
+  .tk-bfm-ally-avatar-text { font-size: 12px; }
+  .tk-bfm-ally-name { font-size: 10px; }
+  .tk-bfm-actions { padding: 12px 14px; gap: 6px; }
+  .tk-bfm-btn { padding: 8px 10px; font-size: 12px; }
+}

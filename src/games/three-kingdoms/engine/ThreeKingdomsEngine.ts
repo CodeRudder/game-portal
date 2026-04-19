@@ -4,14 +4,14 @@
  * 职责：编排各子系统，协调业务流程
  * 规则：不包含具体业务逻辑，只做编排
  *
- * 基础设施依赖（core/ 层）：
- *   - EventBus：事件总线，替代内嵌实现
- *   - SubsystemRegistry：子系统注册/查找
- *   - SaveManager：存档管理器
+ * 基础设施依赖（core/ 层）：EventBus / SubsystemRegistry / SaveManager
  *
  * 拆分：
  *   - engine-tick.ts — tick 内部逻辑
  *   - engine-save.ts — 存档相关逻辑
+ *   - engine-hero-deps.ts — 武将系统依赖注入
+ *   - engine-campaign-deps.ts — 关卡/战斗系统依赖注入
+ *   - engine-building-ops.ts — 建筑升级操作
  */
 
 import { ResourceSystem } from './resource/ResourceSystem';
@@ -20,24 +20,23 @@ import { CalendarSystem } from './calendar/CalendarSystem';
 import { HeroSystem } from './hero/HeroSystem';
 import { HeroRecruitSystem, type RecruitOutput } from './hero/HeroRecruitSystem';
 import { HeroLevelSystem, type LevelUpResult, type BatchEnhanceResult, type EnhancePreview } from './hero/HeroLevelSystem';
-import { HeroFormation, type FormationData, type FormationSaveData } from './hero/HeroFormation';
-import type { Bonuses, CapWarning, OfflineEarnings } from './resource/resource.types';
+import { HeroFormation, type FormationData } from './hero/HeroFormation';
+import type { CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type {
-  EngineEventType, EngineEventMap, EventListener, GameSaveData, EngineSnapshot,
+  EngineEventType, EngineEventMap, EventListener, EngineSnapshot,
 } from '../shared/types';
 import type { GeneralData } from './hero/hero.types';
 import type { RecruitType } from './hero/hero-recruit-config';
+import type { BattleResult } from './battle/battle.types';
+import type { Stage, Chapter, CampaignProgress } from './campaign/campaign.types';
 import { AUTO_SAVE_INTERVAL_SECONDS, SAVE_KEY, ENGINE_SAVE_VERSION } from '../shared/constants';
-
 import type { IGameState } from '../core/types/state';
 import type { ISystemDeps } from '../core/types/subsystem';
 import { EventBus } from '../core/events/EventBus';
 import { SubsystemRegistry } from '../core/engine/SubsystemRegistry';
 import { SaveManager } from '../core/save/SaveManager';
 import { ConfigRegistry } from '../core/config/ConfigRegistry';
-
-// 拆分模块
 import { executeTick, syncBuildingToResource, type TickContext } from './engine-tick';
 import {
   buildSaveData, toIGameState, applyLoadedState,
@@ -45,13 +44,22 @@ import {
   type SaveContext,
 } from './engine-save';
 import { initHeroSystems, type HeroSystems } from './engine-hero-deps';
+import {
+  createCampaignSystems, initCampaignSystems, buildAllyTeam, buildEnemyTeam,
+  type CampaignSystems,
+} from './engine-campaign-deps';
+import { campaignDataProvider } from './campaign/campaign-config';
+import {
+  checkBuildingUpgrade, getBuildingUpgradeCost,
+  executeBuildingUpgrade, cancelBuildingUpgrade,
+  type BuildingOpsContext,
+} from './engine-building-ops';
 
 // ─────────────────────────────────────────────
 // ThreeKingdomsEngine
 // ─────────────────────────────────────────────
 
 export class ThreeKingdomsEngine {
-  // ── 子系统 ──
   readonly resource: ResourceSystem;
   readonly building: BuildingSystem;
   readonly calendar: CalendarSystem;
@@ -59,20 +67,15 @@ export class ThreeKingdomsEngine {
   readonly heroRecruit: HeroRecruitSystem;
   readonly heroLevel: HeroLevelSystem;
   private readonly heroFormation: HeroFormation;
-
-  // ── core/ 基础设施 ──
+  private readonly campaignSystems: CampaignSystems;
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
   private readonly configRegistry: ConfigRegistry;
-
-  // ── 时间管理 ──
   private initialized = false;
   private onlineSeconds = 0;
   private lastTickTime = 0;
   private autoSaveAccumulator = 0;
-
-  // ── 变化检测缓存 ──
   private prevResourcesJson = '';
   private prevRatesJson = '';
 
@@ -84,226 +87,133 @@ export class ThreeKingdomsEngine {
     this.heroRecruit = new HeroRecruitSystem();
     this.heroLevel = new HeroLevelSystem();
     this.heroFormation = new HeroFormation();
-
-    // 初始化 core/ 基础设施
+    this.campaignSystems = createCampaignSystems(this.resource, this.hero);
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
-
     this.configRegistry.set('SAVE_KEY', SAVE_KEY);
     this.configRegistry.set('SAVE_VERSION', String(ENGINE_SAVE_VERSION));
-
     this.saveManager = new SaveManager(this.configRegistry);
+    this.registerSubsystems();
+  }
 
-    // 注册子系统
-    this.registry.register('resource', this.resource as any);
-    this.registry.register('building', this.building as any);
-    this.registry.register('calendar', this.calendar as any);
-    this.registry.register('hero', this.hero as any);
-    this.registry.register('heroRecruit', this.heroRecruit as any);
-    this.registry.register('heroLevel', this.heroLevel as any);
-    this.registry.register('heroFormation', this.heroFormation as any);
+  private registerSubsystems(): void {
+    const r = this.registry;
+    r.register('resource', this.resource as any);
+    r.register('building', this.building as any);
+    r.register('calendar', this.calendar as any);
+    r.register('hero', this.hero as any);
+    r.register('heroRecruit', this.heroRecruit as any);
+    r.register('heroLevel', this.heroLevel as any);
+    r.register('heroFormation', this.heroFormation as any);
+    r.register('battleEngine', this.campaignSystems.battleEngine as any);
+    r.register('campaignSystem', this.campaignSystems.campaignSystem as any);
+    r.register('rewardDistributor', this.campaignSystems.rewardDistributor as any);
   }
 
   // ── 初始化 ──
 
-  /** 初始化引擎（新游戏） */
   init(): void {
     if (this.initialized) return;
-
     syncBuildingToResource(this.buildTickCtx());
-
-    // 初始化子系统依赖
-    const deps: ISystemDeps = {
-      eventBus: this.bus,
-      config: this.configRegistry,
-      registry: this.registry,
-    };
+    const deps = this.buildDeps();
     this.calendar.init(deps);
-
-    // 初始化武将子系统（含资源回调注入）
     this.initHeroSystems(deps);
-
+    initCampaignSystems(this.campaignSystems, deps);
     this.initialized = true;
     this.lastTickTime = Date.now();
     this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0;
-
     this.bus.emit('game:initialized', { isNewGame: true });
   }
 
   // ── 游戏循环 ──
 
-  /** 驱动所有子系统更新 */
   tick(deltaMs?: number): void {
     if (!this.initialized) return;
-
     const now = Date.now();
     const dt = deltaMs ?? (now - this.lastTickTime);
     this.lastTickTime = now;
     const dtSec = dt / 1000;
-
-    // 委托给 engine-tick
     const ctx = this.buildTickCtx();
     executeTick(ctx, dtSec);
     this.syncTickCtx(ctx);
-
-    // 自动保存累加
     this.autoSaveAccumulator += dtSec;
     if (this.autoSaveAccumulator >= AUTO_SAVE_INTERVAL_SECONDS) {
       this.autoSaveAccumulator = 0;
       this.save();
     }
-
-    // 在线时长
     this.onlineSeconds += dtSec;
   }
 
   // ── 建筑升级 ──
 
-  /** 检查建筑是否可升级 */
   checkUpgrade(type: BuildingType): UpgradeCheckResult {
-    return this.building.checkUpgrade(type, this.resource.getResources());
+    return checkBuildingUpgrade(this.buildingCtx(), type);
   }
-
-  /** 获取升级费用 */
   getUpgradeCost(type: BuildingType): UpgradeCost | null {
-    return this.building.getUpgradeCost(type);
+    return getBuildingUpgradeCost(this.buildingCtx(), type);
   }
-
-  /** 执行建筑升级 */
   upgradeBuilding(type: BuildingType): void {
-    const resources = this.resource.getResources();
-    const check = this.building.checkUpgrade(type, resources);
-    if (!check.canUpgrade) {
-      throw new Error(`无法升级 ${type}：${check.reasons.join('；')}`);
-    }
-    const cost = this.building.getUpgradeCost(type);
-    if (!cost) throw new Error(`无法获取 ${type} 的升级费用`);
-
-    this.resource.consumeBatch({
-      grain: cost.grain,
-      gold: cost.gold,
-      troops: cost.troops,
-    });
-    this.building.startUpgrade(type, resources);
-
-    this.bus.emit('building:upgrade-start', { type, cost });
-    this.bus.emit('resource:changed', { resources: this.resource.getResources() });
+    executeBuildingUpgrade(this.buildingCtx(), type);
   }
-
-  /** 取消建筑升级，返还80%费用 */
   cancelUpgrade(type: BuildingType): UpgradeCost | null {
-    const refund = this.building.cancelUpgrade(type);
-    if (!refund) return null;
-
-    if (refund.grain > 0) this.resource.addResource('grain', refund.grain);
-    if (refund.gold > 0) this.resource.addResource('gold', refund.gold);
-    if (refund.troops > 0) this.resource.addResource('troops', refund.troops);
-
-    this.bus.emit('resource:changed', { resources: this.resource.getResources() });
-    return refund;
+    return cancelBuildingUpgrade(this.buildingCtx(), type);
   }
 
   // ── 存档 / 读档 ──
 
-  /** 保存游戏 */
   save(): void {
     const data = buildSaveData(this.buildSaveCtx());
     const state: IGameState = toIGameState(data, this.onlineSeconds);
     const ok = this.saveManager.save(state);
-
     if (ok) {
       this.resource.touchSaveTime();
       this.bus.emit('game:saved', { timestamp: data.saveTime });
     } else {
-      console.error('ThreeKingdomsEngine.save 失败: SaveManager.save 返回 false');
+      console.error('ThreeKingdomsEngine.save 失败');
     }
   }
 
-  /** 从存档加载，计算离线收益 */
   load(): OfflineEarnings | null {
     const ctx = this.buildSaveCtx();
-
-    // 优先尝试 SaveManager 新格式
     const state = this.saveManager.load();
-    if (state) {
-      const result = applyLoadedState(ctx, state);
-      this.finalizeLoad();
-      return result;
-    }
-
-    // 向后兼容旧格式
-    const legacyData = tryLoadLegacyFormat();
-    if (legacyData) {
-      const result = applyLegacyState(ctx, legacyData);
-      this.finalizeLoad();
-      return result;
-    }
-
+    if (state) { const r = applyLoadedState(ctx, state); this.finalizeLoad(); return r; }
+    const legacy = tryLoadLegacyFormat();
+    if (legacy) { const r = applyLegacyState(ctx, legacy); this.finalizeLoad(); return r; }
     return null;
   }
 
-  /** 序列化为 JSON 字符串（不写入 localStorage） */
-  serialize(): string {
-    return JSON.stringify(buildSaveData(this.buildSaveCtx()));
-  }
+  serialize(): string { return JSON.stringify(buildSaveData(this.buildSaveCtx())); }
 
-  /** 从 JSON 字符串反序列化 */
   deserialize(json: string): void {
     applyDeserialize(this.buildSaveCtx(), json);
-    const deps: ISystemDeps = {
-      eventBus: this.bus,
-      config: this.configRegistry,
-      registry: this.registry,
-    };
-    this.initHeroSystems(deps);
+    this.initHeroSystems(this.buildDeps());
     this.initialized = true;
     this.lastTickTime = Date.now();
   }
 
-  /** 检查是否存在存档 */
-  hasSaveData(): boolean {
-    return this.saveManager.hasSaveData();
-  }
+  hasSaveData(): boolean { return this.saveManager.hasSaveData(); }
 
-  /** 清除存档并重置引擎 */
   reset(): void {
-    this.resource.reset();
-    this.building.reset();
-    this.calendar.reset();
-    this.hero.reset();
-    this.heroRecruit.reset();
-    this.heroLevel.reset();
-    this.heroFormation.reset();
-    this.initialized = false;
-    this.onlineSeconds = 0;
-    this.autoSaveAccumulator = 0;
-    this.prevResourcesJson = '';
-    this.prevRatesJson = '';
-    this.saveManager.deleteSave();
-    this.bus.removeAllListeners();
+    this.resource.reset(); this.building.reset(); this.calendar.reset();
+    this.hero.reset(); this.heroRecruit.reset(); this.heroLevel.reset();
+    this.heroFormation.reset(); this.campaignSystems.campaignSystem.reset();
+    this.initialized = false; this.onlineSeconds = 0;
+    this.autoSaveAccumulator = 0; this.prevResourcesJson = ''; this.prevRatesJson = '';
+    this.saveManager.deleteSave(); this.bus.removeAllListeners();
   }
 
   // ── 事件系统 ──
 
   on<T extends EngineEventType>(event: T, listener: EventListener<EngineEventMap[T]>): void;
   on(event: string, listener: (...args: any[]) => void): void;
-  on(event: string, listener: (...args: any[]) => void): void {
-    this.bus.on(event, listener);
-  }
-
-  once<T extends EngineEventType>(event: T, listener: EventListener<EngineEventMap[T]>): void {
-    this.bus.once(event, listener);
-  }
-
-  off<T extends EngineEventType>(event: T, listener: EventListener<EngineEventMap[T]>): void {
-    this.bus.off(event, listener);
-  }
+  on(event: string, listener: (...args: any[]) => void): void { this.bus.on(event, listener); }
+  once<T extends EngineEventType>(event: T, listener: EventListener<EngineEventMap[T]>): void { this.bus.once(event, listener); }
+  off<T extends EngineEventType>(event: T, listener: EventListener<EngineEventMap[T]>): void { this.bus.off(event, listener); }
 
   // ── 状态查询 ──
 
-  /** 获取引擎状态快照 */
   getSnapshot(): EngineSnapshot {
     return {
       resources: this.resource.getResources(),
@@ -317,6 +227,7 @@ export class ThreeKingdomsEngine {
       totalPower: this.hero.calculateTotalPower(),
       formations: this.heroFormation.getAllFormations(),
       activeFormationId: this.heroFormation.getActiveFormationId(),
+      campaignProgress: this.campaignSystems.campaignSystem.getProgress(),
     };
   }
 
@@ -328,164 +239,90 @@ export class ThreeKingdomsEngine {
 
   // ── 武将系统 API ──
 
-  /** 获取武将系统实例 */
   getHeroSystem(): HeroSystem { return this.hero; }
-
-  /** 获取招募系统实例 */
   getRecruitSystem(): HeroRecruitSystem { return this.heroRecruit; }
-  /** 获取升级系统实例 */
   getLevelSystem(): HeroLevelSystem { return this.heroLevel; }
-  /** 获取编队系统实例 */
   getFormationSystem(): HeroFormation { return this.heroFormation; }
-
-  /** 获取所有编队 */
   getFormations(): FormationData[] { return this.heroFormation.getAllFormations(); }
-  /** 获取当前激活编队 */
   getActiveFormation(): FormationData | null { return this.heroFormation.getActiveFormation(); }
-  /** 创建新编队 */
   createFormation(id?: string): FormationData | null { return this.heroFormation.createFormation(id); }
+  setFormation(id: string, generalIds: string[]): FormationData | null { return this.heroFormation.setFormation(id, generalIds); }
+  addToFormation(formationId: string, generalId: string): FormationData | null { return this.heroFormation.addToFormation(formationId, generalId); }
+  removeFromFormation(formationId: string, generalId: string): FormationData | null { return this.heroFormation.removeFromFormation(formationId, generalId); }
+  recruit(type: RecruitType, count: 1 | 10 = 1): RecruitOutput | null { return count === 10 ? this.heroRecruit.recruitTen(type) : this.heroRecruit.recruitSingle(type); }
+  enhanceHero(id: string, lvl?: number): LevelUpResult | null { return this.heroLevel.quickEnhance(id, lvl); }
+  enhanceAllHeroes(lvl?: number): BatchEnhanceResult { return this.heroLevel.quickEnhanceAll(lvl); }
+  getGenerals(): Readonly<GeneralData>[] { return this.hero.getAllGenerals(); }
+  getGeneral(id: string): Readonly<GeneralData> | undefined { return this.hero.getGeneral(id); }
+  getRecruitHistory() { return this.heroRecruit.getRecruitHistory(); }
+  getSynthesizeProgress(id: string) { return this.hero.getSynthesizeProgress(id); }
+  getEnhancePreview(id: string, lvl: number): EnhancePreview | null { return this.heroLevel.getEnhancePreview(id, lvl); }
 
-  /** 设置编队武将列表 */
-  setFormation(id: string, generalIds: string[]): FormationData | null {
-    return this.heroFormation.setFormation(id, generalIds);
+  // ── 战斗/关卡系统 API ──
+
+  getBattleEngine() { return this.campaignSystems.battleEngine; }
+  getCampaignSystem() { return this.campaignSystems.campaignSystem; }
+  getRewardDistributor() { return this.campaignSystems.rewardDistributor; }
+
+  /** 发起战斗：布阵→战斗→返回结果（胜利时由UI调用 completeBattle 发放奖励） */
+  startBattle(stageId: string): BattleResult {
+    const stage = campaignDataProvider.getStage(stageId);
+    if (!stage) throw new Error(`关卡不存在: ${stageId}`);
+    if (!this.campaignSystems.campaignSystem.canChallenge(stageId)) throw new Error(`关卡未解锁: ${stageId}`);
+    const allyTeam = buildAllyTeam(this.heroFormation, this.hero);
+    const enemyTeam = buildEnemyTeam(stage);
+    return this.campaignSystems.battleEngine.runFullBattle(allyTeam, enemyTeam);
   }
 
-  /** 向编队添加武将 */
-  addToFormation(formationId: string, generalId: string): FormationData | null {
-    return this.heroFormation.addToFormation(formationId, generalId);
+  /** 通关处理：奖励发放 + 进度更新 */
+  completeBattle(stageId: string, stars: number): void {
+    const isFirst = !this.campaignSystems.campaignSystem.isFirstCleared(stageId);
+    this.campaignSystems.rewardDistributor.calculateAndDistribute(stageId, stars, isFirst);
+    this.campaignSystems.campaignSystem.completeStage(stageId, stars);
   }
 
-  /** 从编队移除武将 */
-  removeFromFormation(formationId: string, generalId: string): FormationData | null {
-    return this.heroFormation.removeFromFormation(formationId, generalId);
-  }
-
-  /**
-   * 招募武将
-   * @param type  - 招募类型 ('normal' | 'advanced')
-   * @param count - 招募次数（1 或 10）
-   */
-  recruit(type: RecruitType, count: 1 | 10 = 1): RecruitOutput | null {
-    return count === 10
-      ? this.heroRecruit.recruitTen(type)
-      : this.heroRecruit.recruitSingle(type);
-  }
-
-  /** 一键强化武将到目标等级 */
-  enhanceHero(generalId: string, targetLevel?: number): LevelUpResult | null {
-    return this.heroLevel.quickEnhance(generalId, targetLevel);
-  }
-
-  /** 一键强化全部武将 */
-  enhanceAllHeroes(targetLevel?: number): BatchEnhanceResult {
-    return this.heroLevel.quickEnhanceAll(targetLevel);
-  }
-
-  /** 获取所有已拥有武将 */
-  getGenerals(): Readonly<GeneralData>[] {
-    return this.hero.getAllGenerals();
-  }
-
-  /** 获取单个武将 */
-  getGeneral(id: string): Readonly<GeneralData> | undefined {
-    return this.hero.getGeneral(id);
-  }
-
-  /** 获取招募历史记录 */
-  getRecruitHistory() {
-    return this.heroRecruit.getRecruitHistory();
-  }
-
-  /** 获取碎片合成进度 */
-  getSynthesizeProgress(generalId: string): { current: number; required: number } {
-    return this.hero.getSynthesizeProgress(generalId);
-  }
-
-  /** 获取强化预览 */
-  getEnhancePreview(generalId: string, targetLevel: number): EnhancePreview | null {
-    return this.heroLevel.getEnhancePreview(generalId, targetLevel);
-  }
+  getStageList(): Stage[] { return campaignDataProvider.getChapters().flatMap(c => c.stages); }
+  getStageInfo(stageId: string): Stage | undefined { return campaignDataProvider.getStage(stageId); }
+  getChapters(): Chapter[] { return campaignDataProvider.getChapters(); }
+  getCampaignProgress(): CampaignProgress { return this.campaignSystems.campaignSystem.getProgress(); }
 
   // ═══════════════════════════════════════════
   // 私有方法
   // ═══════════════════════════════════════════
 
-  /** 获取武将子系统集合 */
   private get heroSystems(): HeroSystems {
     return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel };
   }
-
-  /** 初始化武将子系统（委托给 engine-hero-deps） */
-  private initHeroSystems(deps: ISystemDeps): void {
-    initHeroSystems(this.heroSystems, this.resource, deps);
-  }
-
-  /** 构建 tick 上下文 */
+  private initHeroSystems(deps: ISystemDeps): void { initHeroSystems(this.heroSystems, this.resource, deps); }
+  private buildDeps(): ISystemDeps { return { eventBus: this.bus, config: this.configRegistry, registry: this.registry }; }
   private buildTickCtx(): TickContext {
-    return {
-      resource: this.resource,
-      building: this.building,
-      calendar: this.calendar,
-      hero: this.hero,
-      bus: this.bus,
-      prevResourcesJson: this.prevResourcesJson,
-      prevRatesJson: this.prevRatesJson,
-    };
+    return { resource: this.resource, building: this.building, calendar: this.calendar, hero: this.hero, campaign: this.campaignSystems.campaignSystem, bus: this.bus, prevResourcesJson: this.prevResourcesJson, prevRatesJson: this.prevRatesJson };
   }
-
-  /** 从 tick 上下文同步回缓存字段 */
-  private syncTickCtx(ctx: TickContext): void {
-    this.prevResourcesJson = ctx.prevResourcesJson;
-    this.prevRatesJson = ctx.prevRatesJson;
-  }
-
-  /** 构建存档上下文 */
+  private syncTickCtx(ctx: TickContext): void { this.prevResourcesJson = ctx.prevResourcesJson; this.prevRatesJson = ctx.prevRatesJson; }
+  private buildingCtx(): BuildingOpsContext { return { resource: this.resource, building: this.building, bus: this.bus }; }
   private buildSaveCtx(): SaveContext {
-    return {
-      resource: this.resource,
-      building: this.building,
-      calendar: this.calendar,
-      hero: this.hero,
-      recruit: this.heroRecruit,
-      formation: this.heroFormation,
-      bus: this.bus,
-      registry: this.registry,
-      configRegistry: this.configRegistry,
-      onlineSeconds: this.onlineSeconds,
-    };
+    return { resource: this.resource, building: this.building, calendar: this.calendar, hero: this.hero, recruit: this.heroRecruit, formation: this.heroFormation, campaign: this.campaignSystems.campaignSystem, bus: this.bus, registry: this.registry, configRegistry: this.configRegistry, onlineSeconds: this.onlineSeconds };
   }
-
-  /** 加载完成后的公共收尾逻辑 */
   private finalizeLoad(): void {
-    const deps: ISystemDeps = {
-      eventBus: this.bus,
-      config: this.configRegistry,
-      registry: this.registry,
-    };
+    const deps = this.buildDeps();
     this.initHeroSystems(deps);
-
-    this.initialized = true;
-    this.lastTickTime = Date.now();
-    this.onlineSeconds = 0;
-    this.autoSaveAccumulator = 0;
+    initCampaignSystems(this.campaignSystems, deps);
+    this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
   }
 
-  // ═══════════════════════════════════════════
-  // IGameEngine 兼容存根
-  // ═══════════════════════════════════════════
-
+  // ── IGameEngine 兼容存根 ──
   get score(): number { return 0; }
   get level(): number { return 1; }
   get elapsedTime(): number { return this.onlineSeconds; }
   get status(): string { return this.initialized ? 'playing' : 'idle'; }
-  setCanvas(_canvas: HTMLCanvasElement): void { /* no-op */ }
+  setCanvas(_c: HTMLCanvasElement): void { /* no-op */ }
   getState(): Record<string, unknown> { return this.getSnapshot() as unknown as Record<string, unknown>; }
   start(): void { this.init(); }
   pause(): void { /* no-op */ }
   resume(): void { /* no-op */ }
   destroy(): void { this.reset(); }
-  handleKeyDown(_key: string): void { /* no-op */ }
-  handleKeyUp(_key: string): void { /* no-op */ }
+  handleKeyDown(_k: string): void { /* no-op */ }
+  handleKeyUp(_k: string): void { /* no-op */ }
   handleClick(_x: number, _y: number): void { /* no-op */ }
   handleMouseDown(_x: number, _y: number): void { /* no-op */ }
   handleMouseUp(_x: number, _y: number): void { /* no-op */ }

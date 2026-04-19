@@ -37,6 +37,7 @@ import { Toast } from '@/components/idle/common/Toast';
 import ResourceBar from '@/components/idle/panels/resource/ResourceBar';
 import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
 import HeroTab from '@/components/idle/panels/hero/HeroTab';
+import CampaignTab from '@/components/idle/panels/campaign/CampaignTab';
 import './ThreeKingdomsGame.css';
 
 // ─────────────────────────────────────────────
@@ -80,7 +81,7 @@ const TABS: TabConfig[] = [
   { id: 'building', icon: '🏗️', label: '建筑', available: true },
   { id: 'hero', icon: '⚔️', label: '武将', available: true },
   { id: 'tech', icon: '📜', label: '科技', available: false },
-  { id: 'campaign', icon: '🗺️', label: '关卡', available: false },
+  { id: 'campaign', icon: '🗺️', label: '关卡', available: true },
 ];
 
 // ─────────────────────────────────────────────
@@ -249,7 +250,6 @@ const ThreeKingdomsGame: React.FC = () => {
         );
 
       case 'tech':
-      case 'campaign':
         return (
           <div className="tk-scene-placeholder">
             <div className="tk-placeholder-content">
@@ -262,6 +262,14 @@ const ThreeKingdomsGame: React.FC = () => {
               </span>
             </div>
           </div>
+        );
+
+      case 'campaign':
+        return (
+          <CampaignTab
+            engine={engine}
+            snapshotVersion={snapshotVersion}
+          />
         );
 
       default:
