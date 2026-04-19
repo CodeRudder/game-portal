@@ -181,10 +181,16 @@ describe('ThreeKingdomsEngine', () => {
       engine.init();
       engine.save();
       expect(storage[SAVE_KEY]).toBeDefined();
-      const data = JSON.parse(storage[SAVE_KEY]);
-      expect(data.version).toBe(ENGINE_SAVE_VERSION);
-      expect(data.resource).toBeDefined();
-      expect(data.building).toBeDefined();
+      // SaveManager 使用 StateSerializer 包装：外层 {v, checksum, data}
+      const outer = JSON.parse(storage[SAVE_KEY]);
+      expect(outer.v).toBeDefined();
+      expect(outer.checksum).toBeDefined();
+      expect(outer.data).toBeDefined();
+      // 内层是 IGameState 格式，subsystems 包含 resource/building
+      const inner = JSON.parse(outer.data);
+      expect(inner.version).toBe(String(ENGINE_SAVE_VERSION));
+      expect(inner.subsystems.resource).toBeDefined();
+      expect(inner.subsystems.building).toBeDefined();
     });
 
     it('发出 game:saved 事件', () => {
