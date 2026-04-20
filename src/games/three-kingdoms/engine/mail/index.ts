@@ -11,6 +11,16 @@ export {
   STATUS_LABELS,
   MAILS_PER_PAGE,
 } from './MailSystem';
+
+// 从 MailPersistence.ts 导出
+export {
+  buildTemplateMail,
+  buildSaveData,
+  restoreSaveData,
+  loadFromStorage,
+  persistToStorage,
+  clearStorage,
+} from './MailPersistence';
 export type {
   MailCategory as MailCategoryV2,
   MailStatus as MailStatusV2,
