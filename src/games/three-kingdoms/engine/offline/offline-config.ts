@@ -21,22 +21,22 @@ import type {
 // ─────────────────────────────────────────────
 
 /**
- * 6档衰减表
+ * 6档衰减表（v9.0 PLAN 规范）
  *
  * 0~2h:   100% 完整效率
- * 2~4h:    85% 高效
- * 4~8h:    70% 中效
- * 8~24h:   50% 低效
- * 24~48h:  30% 衰退
+ * 2~4h:    80% 高效
+ * 4~8h:    60% 中效
+ * 8~24h:   40% 低效
+ * 24~48h:  25% 衰退
  * 48~72h:  15% 极低
  * >72h:     0% 无收益
  */
 export const DECAY_TIERS: readonly DecayTier[] = [
   { id: 'tier1', startHours: 0, endHours: 2, efficiency: 1.0, label: '完整' },
-  { id: 'tier2', startHours: 2, endHours: 4, efficiency: 0.85, label: '高效' },
-  { id: 'tier3', startHours: 4, endHours: 8, efficiency: 0.70, label: '中效' },
-  { id: 'tier4', startHours: 8, endHours: 24, efficiency: 0.50, label: '低效' },
-  { id: 'tier5', startHours: 24, endHours: 48, efficiency: 0.30, label: '衰退' },
+  { id: 'tier2', startHours: 2, endHours: 4, efficiency: 0.80, label: '高效' },
+  { id: 'tier3', startHours: 4, endHours: 8, efficiency: 0.60, label: '中效' },
+  { id: 'tier4', startHours: 8, endHours: 24, efficiency: 0.40, label: '低效' },
+  { id: 'tier5', startHours: 24, endHours: 48, efficiency: 0.25, label: '衰退' },
   { id: 'tier6', startHours: 48, endHours: 72, efficiency: 0.15, label: '极低' },
 ] as const;
 
@@ -90,19 +90,17 @@ export const VIP_OFFLINE_BONUSES: readonly VipOfflineBonus[] = [
 // ─────────────────────────────────────────────
 
 /**
- * 各系统离线效率修正系数
+ * 各系统离线效率修正系数（v9.0 PLAN 规范）
  *
- * 不同系统在离线时的表现不同：
- * - 建筑产出：100%（完全在线产出）
- * - 贸易路线：80%（离线贸易效率略低）
- * - 科技研究：60%（离线研究速度较慢）
- * - 武将训练：50%（离线训练效果减半）
- * - 关卡扫荡：40%（离线自动扫荡效率低）
+ * 资源×1.0 / 建筑×1.2 / 科技×1.0 / 远征×0.85
+ * 不同系统在离线时的表现不同
  */
 export const SYSTEM_EFFICIENCY_MODIFIERS: readonly SystemEfficiencyModifier[] = [
-  { systemId: 'building', systemName: '建筑产出', modifier: 1.0, description: '建筑离线产出效率100%' },
+  { systemId: 'resource', systemName: '资源产出', modifier: 1.0, description: '资源离线产出效率100%' },
+  { systemId: 'building', systemName: '建筑产出', modifier: 1.2, description: '建筑离线产出效率120%' },
+  { systemId: 'tech', systemName: '科技研究', modifier: 1.0, description: '科技离线研究效率100%' },
+  { systemId: 'expedition', systemName: '远征系统', modifier: 0.85, description: '远征离线效率85%' },
   { systemId: 'trade', systemName: '贸易路线', modifier: 0.8, description: '离线贸易效率80%' },
-  { systemId: 'tech', systemName: '科技研究', modifier: 0.6, description: '离线研究效率60%' },
   { systemId: 'hero', systemName: '武将训练', modifier: 0.5, description: '离线训练效率50%' },
   { systemId: 'campaign', systemName: '关卡扫荡', modifier: 0.4, description: '离线扫荡效率40%' },
 ] as const;
