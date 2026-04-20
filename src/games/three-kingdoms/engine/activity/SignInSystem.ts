@@ -121,7 +121,7 @@ export class SignInSystem {
     reward: SignInReward;
     bonusPercent: number;
   } {
-    if (data.todaySigned) {
+    if (data.todaySigned && isSameDay(data.lastSignInTime, now)) {
       throw new Error('今日已签到');
     }
 
@@ -175,8 +175,8 @@ export class SignInSystem {
     data: SignInData;
     goldCost: number;
   } {
-    // 检查是否需要补签（昨天没签）
-    if (data.todaySigned) {
+    // 检查是否需要补签（今天已签到则无需补签）
+    if (data.todaySigned && isSameDay(data.lastSignInTime, now)) {
       throw new Error('今日已签到，无需补签');
     }
 
@@ -219,7 +219,7 @@ export class SignInSystem {
    */
   getReward(day: number): SignInReward {
     const idx = Math.max(0, Math.min(day - 1, this.rewards.length - 1));
-    return { ...this.rewards[idx] };
+    return { ...this.rewards[idx], rewards: { ...this.rewards[idx].rewards } };
   }
 
   /**

@@ -138,7 +138,10 @@ export class AllianceBossSystem {
 
     // 检查挑战次数
     const member = alliance.members[playerId];
-    if (member.dailyBossChallenges >= this.config.dailyChallengeLimit) {
+    if (
+      member.dailyBossChallenges >= this.config.dailyChallengeLimit ||
+      playerState.dailyBossChallenges >= this.config.dailyChallengeLimit
+    ) {
       throw new Error('今日挑战次数已用完');
     }
 
