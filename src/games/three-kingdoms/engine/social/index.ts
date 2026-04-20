@@ -46,3 +46,19 @@ export {
   DEFAULT_CHANNEL_CONFIGS,
   MUTE_DURATIONS,
 } from './ChatSystem';
+
+// LeaderboardSystem
+export {
+  LeaderboardSystem,
+  LEADERBOARD_TYPE_LABELS,
+  createDefaultLeaderboardState,
+} from './LeaderboardSystem';
+export type {
+  LeaderboardType as LeaderboardTypeEnum,
+  LeaderboardEntry,
+  LeaderboardSeason,
+  LeaderboardRewardConfig,
+  LeaderboardQuery,
+  LeaderboardPageResult,
+  LeaderboardState,
+} from './LeaderboardSystem';
