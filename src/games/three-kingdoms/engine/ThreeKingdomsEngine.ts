@@ -55,6 +55,7 @@ import {
   type BuildingOpsContext,
 } from './engine-building-ops';
 import { createTechSystems, initTechSystems, type TechSystems } from './engine-tech-deps';
+import { createMapSystems, initMapSystems, type MapSystems } from './engine-map-deps';
 
 // ─────────────────────────────────────────────
 // ThreeKingdomsEngine
@@ -70,6 +71,7 @@ export class ThreeKingdomsEngine {
   private readonly heroFormation: HeroFormation;
   private readonly campaignSystems: CampaignSystems;
   private readonly techSystems: TechSystems;
+  private readonly mapSystems: MapSystems;
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
@@ -91,6 +93,7 @@ export class ThreeKingdomsEngine {
     this.heroFormation = new HeroFormation();
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
     this.techSystems = createTechSystems(this.building);
+    this.mapSystems = createMapSystems();
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
@@ -115,6 +118,16 @@ export class ThreeKingdomsEngine {
     r.register('techTree', this.techSystems.treeSystem);
     r.register('techPoint', this.techSystems.pointSystem);
     r.register('techResearch', this.techSystems.researchSystem);
+    // v5.0: 科技新子系统
+    r.register('fusionTech', this.techSystems.fusionSystem);
+    r.register('techLink', this.techSystems.linkSystem);
+    r.register('techOffline', this.techSystems.offlineSystem);
+    // v5.0: 地图子系统
+    r.register('worldMap', this.mapSystems.worldMap);
+    r.register('territory', this.mapSystems.territory);
+    r.register('siege', this.mapSystems.siege);
+    r.register('garrison', this.mapSystems.garrison);
+    r.register('siegeEnhancer', this.mapSystems.siegeEnhancer);
   }
 
   // ── 初始化 ──
@@ -127,6 +140,7 @@ export class ThreeKingdomsEngine {
     this.initHeroSystems(deps);
     initCampaignSystems(this.campaignSystems, deps);
     initTechSystems(this.techSystems, deps);
+    initMapSystems(this.mapSystems, deps);
     this.initialized = true;
     this.lastTickTime = Date.now();
     this.onlineSeconds = 0;
@@ -208,6 +222,11 @@ export class ThreeKingdomsEngine {
     this.heroFormation.reset(); this.campaignSystems.campaignSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
     this.techSystems.researchSystem.reset();
+    this.techSystems.fusionSystem.reset(); this.techSystems.linkSystem.reset();
+    this.techSystems.offlineSystem.reset();
+    this.mapSystems.worldMap.reset(); this.mapSystems.territory.reset();
+    this.mapSystems.siege.reset(); this.mapSystems.garrison.reset();
+    this.mapSystems.siegeEnhancer.reset();
     this.initialized = false; this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0; this.prevResourcesJson = ''; this.prevRatesJson = '';
     this.saveManager.deleteSave(); this.bus.removeAllListeners();
@@ -238,6 +257,9 @@ export class ThreeKingdomsEngine {
       activeFormationId: this.heroFormation.getActiveFormationId(),
       campaignProgress: this.campaignSystems.campaignSystem.getProgress(),
       techState: this.getTechState(),
+      mapState: this.mapSystems.worldMap.getState(),
+      territoryState: this.mapSystems.territory.getState(),
+      siegeState: this.mapSystems.siege.getState(),
     };
   }
 
@@ -329,6 +351,23 @@ export class ThreeKingdomsEngine {
     return this.techSystems.researchSystem.speedUp(techId, method, amount);
   }
 
+  // ── 地图系统 API ──
+
+  getWorldMapSystem() { return this.mapSystems.worldMap; }
+  getTerritorySystem() { return this.mapSystems.territory; }
+  getSiegeSystem() { return this.mapSystems.siege; }
+  getGarrisonSystem() { return this.mapSystems.garrison; }
+  getSiegeEnhancer() { return this.mapSystems.siegeEnhancer; }
+
+  /** 获取融合科技系统 */
+  getFusionTechSystem() { return this.techSystems.fusionSystem; }
+  /** 获取科技联动系统 */
+  getTechLinkSystem() { return this.techSystems.linkSystem; }
+  /** 获取离线研究系统 */
+  getTechOfflineSystem() { return this.techSystems.offlineSystem; }
+  /** 获取科技详情数据提供者 */
+  getTechDetailProvider() { return this.techSystems.detailProvider; }
+
   // ═══════════════════════════════════════════
   // 私有方法
   // ═══════════════════════════════════════════
@@ -365,6 +404,7 @@ export class ThreeKingdomsEngine {
     this.initHeroSystems(deps);
     initCampaignSystems(this.campaignSystems, deps);
     initTechSystems(this.techSystems, deps);
+    initMapSystems(this.mapSystems, deps);
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
   }
 

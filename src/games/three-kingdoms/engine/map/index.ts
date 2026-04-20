@@ -9,6 +9,9 @@ export { MapDataRenderer } from './MapDataRenderer';
 export { MapFilterSystem } from './MapFilterSystem';
 export { TerritorySystem } from './TerritorySystem';
 export { SiegeSystem } from './SiegeSystem';
+export { GarrisonSystem } from './GarrisonSystem';
+export { SiegeEnhancer } from './SiegeEnhancer';
+
 export type {
   SiegeErrorCode,
   SiegeConditionResult,

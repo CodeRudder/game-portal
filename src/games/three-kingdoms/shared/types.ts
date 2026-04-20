@@ -227,4 +227,10 @@ export interface EngineSnapshot {
   campaignProgress: import('../engine/campaign/campaign.types').CampaignProgress;
   /** 科技系统状态 */
   techState: import('../engine/tech/tech.types').TechState;
+  /** 地图状态（v5.0） */
+  mapState?: import('../core/map/world-map.types').WorldMapState;
+  /** 领土状态（v5.0） */
+  territoryState?: import('../core/map/territory.types').TerritoryState;
+  /** 攻城状态（v5.0） */
+  siegeState?: import('../engine/map/SiegeSystem').SiegeState;
 }

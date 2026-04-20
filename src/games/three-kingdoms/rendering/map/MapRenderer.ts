@@ -15,8 +15,8 @@
 
 import { Container } from 'pixi.js';
 import type { IRenderer } from '../adapters/RenderStateBridge';
-import type { TileRenderer } from './TileRenderer';
-import type { TerritoryRenderer } from './TerritoryRenderer';
+import { TileRenderer } from './TileRenderer';
+import { TerritoryRenderer } from './TerritoryRenderer';
 import type { TextureManager } from '../core/TextureManager';
 
 // ─────────────────────────────────────────────
@@ -92,11 +92,11 @@ export class MapRenderer implements IRenderer {
   init(container: Container): void {
     if (this._initialized) return;
 
-    // TODO: 创建并初始化 TileRenderer 和 TerritoryRenderer
-    // this.tileRenderer = new TileRenderer(this.textureManager, this.config);
-    // this.tileRenderer.init(this.root);
-    // this.territoryRenderer = new TerritoryRenderer(this.config);
-    // this.territoryRenderer.init(this.root);
+    // 创建并初始化 TileRenderer 和 TerritoryRenderer
+    this.tileRenderer = new TileRenderer(this.textureManager, this.config);
+    this.tileRenderer.init(this.root);
+    this.territoryRenderer = new TerritoryRenderer(this.config);
+    this.territoryRenderer.init(this.root);
 
     container.addChild(this.root);
     this._initialized = true;
@@ -117,11 +117,9 @@ export class MapRenderer implements IRenderer {
     this.root.y = this.viewport.y;
     this.root.scale.set(this.viewport.zoom);
 
-    // TODO: 更新子渲染器
-    // this.tileRenderer?.update(dt);
-    // this.territoryRenderer?.update(dt);
-
-    void dt; // 占位，避免未使用参数警告
+    // 更新子渲染器
+    this.tileRenderer?.update(dt);
+    this.territoryRenderer?.update(dt);
   }
 
   /**
@@ -130,9 +128,8 @@ export class MapRenderer implements IRenderer {
    * 释放所有子渲染器和容器资源。
    */
   destroy(): void {
-    // TODO: 销毁子渲染器
-    // this.tileRenderer?.destroy();
-    // this.territoryRenderer?.destroy();
+    this.tileRenderer?.destroy();
+    this.territoryRenderer?.destroy();
 
     this.root.destroy({ children: true });
     this._initialized = false;

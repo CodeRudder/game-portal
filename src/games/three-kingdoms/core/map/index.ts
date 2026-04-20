@@ -71,3 +71,37 @@ export {
   generateTerritoryData,
   TERRITORY_SAVE_VERSION,
 } from './territory-config';
+
+// 驻防系统类型与配置
+export type {
+  GarrisonAssignment,
+  GarrisonBonus,
+  GarrisonErrorCode,
+  GarrisonResult,
+  UngarrisonResult,
+  GarrisonState,
+  GarrisonSaveData,
+} from './garrison.types';
+
+export {
+  QUALITY_PRODUCTION_BONUS,
+  DEFENSE_BONUS_FACTOR,
+  GARRISON_SAVE_VERSION,
+} from './garrison.types';
+
+// 攻城增强类型与配置
+export type {
+  WinRateEstimate,
+  BattleRating,
+  SiegeReward,
+  SiegeRewardItem,
+  ConquestPhase,
+  ConquestResult,
+  SiegeEnhancerSaveData,
+} from './siege-enhancer.types';
+
+export {
+  BATTLE_RATING_THRESHOLDS,
+  SIEGE_REWARD_CONFIG,
+  SIEGE_ENHANCER_SAVE_VERSION,
+} from './siege-enhancer.types';
