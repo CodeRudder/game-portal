@@ -24,6 +24,7 @@ import type {
 } from '@/games/three-kingdoms/engine/hero/star-up.types';
 import { MAX_STAR_LEVEL } from '@/games/three-kingdoms/engine/hero/star-up-config';
 import './HeroStarUpModal.css';
+import './HeroStarUpModal.mobile.css';
 
 // ─────────────────────────────────────────────
 // Props
@@ -200,8 +201,8 @@ const HeroStarUpModal: React.FC<HeroStarUpModalProps> = ({
         </div>
         <div className="tk-starup-stats-grid">
           {statKeys.map((key) => {
-            const before = (statsDiff.before as Record<string, number>)[key] ?? 0;
-            const after = (statsDiff.after as Record<string, number>)[key] ?? 0;
+            const before = statsDiff.before[key] ?? 0;
+            const after = statsDiff.after[key] ?? 0;
             const diff = after - before;
             return (
               <div key={key} className="tk-starup-stat-row">

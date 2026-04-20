@@ -155,11 +155,11 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   } = useBattleAnimation(battleEngine, allyTeam, enemyTeam, onBattleEnd);
 
   // ── 渲染武将行 ──
-  const renderUnitRow = (units: BattleUnit[], side: 'ally' | 'enemy') => {
+  const renderUnitRow = (units: BattleUnit[], side: 'ally' | 'enemy', position: 'front' | 'back') => {
     const padded = [...units];
     while (padded.length < 3) padded.push(null as unknown as BattleUnit);
     return padded.map((unit, idx) => {
-      if (!unit) return <div key={`e${idx}`} className="tk-bs-unit-empty" />;
+      if (!unit) return <div key={`empty-${side}-${position}-${idx}`} className="tk-bs-unit-empty" />;
       const floats = damageFloats.filter((f) => f.unitId === unit.id);
       return (
         <div key={unit.id} style={{ position: 'relative' }}>
@@ -189,9 +189,9 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   const renderSide = (team: BattleTeam, side: 'ally' | 'enemy') => (
     <div className={`tk-bs-side tk-bs-side--${side}`}>
       <div className="tk-bs-row-label">后排</div>
-      <div className="tk-bs-units-row">{renderUnitRow(team.units.filter((u) => u.position === 'back'), side)}</div>
+      <div className="tk-bs-units-row">{renderUnitRow(team.units.filter((u) => u.position === 'back'), side, 'back')}</div>
       <div className="tk-bs-row-label">前排</div>
-      <div className="tk-bs-units-row">{renderUnitRow(team.units.filter((u) => u.position === 'front'), side)}</div>
+      <div className="tk-bs-units-row">{renderUnitRow(team.units.filter((u) => u.position === 'front'), side, 'front')}</div>
     </div>
   );
 

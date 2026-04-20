@@ -6,6 +6,9 @@ export { TechTreeSystem } from './TechTreeSystem';
 export { TechResearchSystem } from './TechResearchSystem';
 export { TechPointSystem } from './TechPointSystem';
 export { TechEffectSystem } from './TechEffectSystem';
+export { FusionTechSystem } from './FusionTechSystem';
+export { TechLinkSystem } from './TechLinkSystem';
+export { TechDetailProvider } from './TechDetailProvider';
 
 export type {
   EffectCategory,
@@ -54,3 +57,40 @@ export {
   getQueueSizeForAcademyLevel,
   getTechPointProduction,
 } from './tech-config';
+
+// ── 融合科技类型 ──
+export type {
+  FusionPathPair,
+  FusionTechStatus,
+  FusionPrerequisite,
+  FusionTechDef,
+  FusionTechState,
+  FusionTechSystemState,
+  FusionTechSaveData,
+} from './fusion-tech.types';
+
+// ── 融合科技配置 ──
+export {
+  FUSION_TECH_DEFS,
+  FUSION_TECH_MAP,
+} from './fusion-tech.types';
+
+// ── 联动系统类型 ──
+export type {
+  LinkTarget,
+  TechLinkEffect,
+  BuildingLinkBonus,
+  HeroLinkBonus,
+  ResourceLinkBonus,
+  TechLinkSystemState,
+} from './TechLinkSystem';
+
+// ── 详情数据类型 ──
+export type {
+  EffectDisplay,
+  PrerequisiteDisplay,
+  CostDisplay,
+  TimeDisplay,
+  LinkEffectDisplay,
+  TechDetail,
+} from './TechDetailProvider';

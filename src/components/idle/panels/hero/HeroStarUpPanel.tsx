@@ -196,11 +196,11 @@ const HeroStarUpPanel: React.FC<HeroStarUpPanelProps> = ({
     if (!starUpPreview || isMaxStar) return null;
 
     const { statsDiff, currentStar: from, targetStar } = starUpPreview;
-    const stats = [
-      { key: 'attack', ...statsDiff },
-      { key: 'defense', ...statsDiff },
-      { key: 'intelligence', ...statsDiff },
-      { key: 'speed', ...statsDiff },
+    const statEntries: Array<{ key: string; label: string; before: number; after: number }> = [
+      { key: 'attack', label: STAT_LABELS.attack, before: statsDiff.before.attack, after: statsDiff.after.attack },
+      { key: 'defense', label: STAT_LABELS.defense, before: statsDiff.before.defense, after: statsDiff.after.defense },
+      { key: 'intelligence', label: STAT_LABELS.intelligence, before: statsDiff.before.intelligence, after: statsDiff.after.intelligence },
+      { key: 'speed', label: STAT_LABELS.speed, before: statsDiff.before.speed, after: statsDiff.after.speed },
     ];
 
     return (
@@ -209,15 +209,15 @@ const HeroStarUpPanel: React.FC<HeroStarUpPanelProps> = ({
           ⭐ {from}星 <span className="tk-star-preview-title-arrow">→</span> {targetStar}星 属性预览
         </div>
         <div className="tk-star-stats-grid">
-          {stats.map(({ key, before, after }) => {
-            const diff = (after as unknown as Record<string, number>)[key] - (before as unknown as Record<string, number>)[key];
+          {statEntries.map(({ key, label, before, after }) => {
+            const diff = after - before;
             return (
               <div key={key} className="tk-star-stat-row">
-                <span className="tk-star-stat-name">{STAT_LABELS[key]}</span>
+                <span className="tk-star-stat-name">{label}</span>
                 <div className="tk-star-stat-values">
-                  <span className="tk-star-stat-before">{(before as unknown as Record<string, number>)[key]}</span>
+                  <span className="tk-star-stat-before">{before}</span>
                   <span className="tk-star-stat-arrow">→</span>
-                  <span className="tk-star-stat-after">{(after as unknown as Record<string, number>)[key]}</span>
+                  <span className="tk-star-stat-after">{after}</span>
                   {diff > 0 && <span className="tk-star-stat-diff">(+{diff})</span>}
                 </div>
               </div>
