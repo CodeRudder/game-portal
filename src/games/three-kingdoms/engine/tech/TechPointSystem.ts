@@ -1,0 +1,158 @@
+/**
+ * 科技域 — 科技点系统
+ *
+ * 职责：科技点的产出（书院）、消耗、存储管理
+ * 规则：可引用 tech-config 和 tech.types，禁止引用其他域的 System
+ *
+ * @module engine/tech/TechPointSystem
+ */
+
+import type { ISubsystem, ISystemDeps } from '../../core/types';
+import type { TechPointState, TechSaveData } from './tech.types';
+import { getTechPointProduction } from './tech-config';
+
+// ─────────────────────────────────────────────
+// TechPointSystem
+// ─────────────────────────────────────────────
+
+export class TechPointSystem implements ISubsystem {
+  readonly name = 'tech-point' as const;
+  private deps: ISystemDeps | null = null;
+
+  /** 科技点状态 */
+  private techPoints: TechPointState;
+  /** 当前书院等级（由外部同步） */
+  private academyLevel: number;
+  /** 研究速度加成百分比（来自文化路线科技） */
+  private researchSpeedBonus: number;
+
+  constructor() {
+    this.techPoints = { current: 0, totalEarned: 0, totalSpent: 0 };
+    this.academyLevel = 0;
+    this.researchSpeedBonus = 0;
+  }
+
+  // ── ISubsystem 接口 ──
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(dt: number): void {
+    if (this.academyLevel <= 0) return;
+    const production = getTechPointProduction(this.academyLevel);
+    if (production <= 0) return;
+
+    const gain = production * dt;
+    this.techPoints.current += gain;
+    this.techPoints.totalEarned += gain;
+  }
+
+  getState(): TechPointState {
+    return { ...this.techPoints };
+  }
+
+  reset(): void {
+    this.techPoints = { current: 0, totalEarned: 0, totalSpent: 0 };
+    this.academyLevel = 0;
+    this.researchSpeedBonus = 0;
+  }
+
+  // ─────────────────────────────────────────
+  // 科技点产出
+  // ─────────────────────────────────────────
+
+  /** 同步书院等级（由引擎 tick 调用） */
+  syncAcademyLevel(level: number): void {
+    this.academyLevel = level;
+  }
+
+  /** 获取当前每秒科技点产出 */
+  getProductionRate(): number {
+    if (this.academyLevel <= 0) return 0;
+    return getTechPointProduction(this.academyLevel);
+  }
+
+  /** 同步研究速度加成（来自文化路线科技） */
+  syncResearchSpeedBonus(bonus: number): void {
+    this.researchSpeedBonus = bonus;
+  }
+
+  /** 获取研究速度加成倍率（1.0 = 无加成） */
+  getResearchSpeedMultiplier(): number {
+    return 1 + this.researchSpeedBonus / 100;
+  }
+
+  // ─────────────────────────────────────────
+  // 科技点消耗
+  // ─────────────────────────────────────────
+
+  /** 检查是否有足够的科技点 */
+  canAfford(points: number): boolean {
+    return this.techPoints.current >= points;
+  }
+
+  /** 消耗科技点（不检查，直接扣除） */
+  spend(points: number): void {
+    this.techPoints.current -= points;
+    this.techPoints.totalSpent += points;
+  }
+
+  /** 尝试消耗科技点（检查后扣除） */
+  trySpend(points: number): { success: boolean; reason?: string } {
+    if (!this.canAfford(points)) {
+      return {
+        success: false,
+        reason: `科技点不足：需要 ${points}，当前 ${Math.floor(this.techPoints.current)}`,
+      };
+    }
+    this.spend(points);
+    return { success: true };
+  }
+
+  // ─────────────────────────────────────────
+  // 查询
+  // ─────────────────────────────────────────
+
+  /** 获取当前科技点数 */
+  getCurrentPoints(): number {
+    return this.techPoints.current;
+  }
+
+  /** 获取累计获得的科技点 */
+  getTotalEarned(): number {
+    return this.techPoints.totalEarned;
+  }
+
+  /** 获取累计消耗的科技点 */
+  getTotalSpent(): number {
+    return this.techPoints.totalSpent;
+  }
+
+  /** 获取完整科技点状态 */
+  getTechPointState(): TechPointState {
+    return { ...this.techPoints };
+  }
+
+  // ─────────────────────────────────────────
+  // 序列化
+  // ─────────────────────────────────────────
+
+  /** 序列化 */
+  serialize(): Pick<TechSaveData, 'techPoints'> {
+    return {
+      techPoints: { ...this.techPoints },
+    };
+  }
+
+  /** 反序列化 */
+  deserialize(data: Pick<TechSaveData, 'techPoints'>): void {
+    if (data.techPoints) {
+      this.techPoints = {
+        current: data.techPoints.current,
+        totalEarned: data.techPoints.totalEarned,
+        totalSpent: data.techPoints.totalSpent,
+      };
+    }
+  }
+}

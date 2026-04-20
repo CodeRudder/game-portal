@@ -12,6 +12,9 @@ import type { BuildingSystem } from './building/BuildingSystem';
 import type { CalendarSystem } from './calendar/CalendarSystem';
 import type { HeroSystem } from './hero/HeroSystem';
 import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
+import type { TechTreeSystem } from './tech/TechTreeSystem';
+import type { TechPointSystem } from './tech/TechPointSystem';
+import type { TechResearchSystem } from './tech/TechResearchSystem';
 import type { EventBus } from '../core/events/EventBus';
 import type { Bonuses } from './resource/resource.types';
 import type { BuildingType } from './building/building.types';
@@ -31,6 +34,9 @@ export interface TickContext {
   readonly calendar: CalendarSystem;
   readonly hero: HeroSystem;
   readonly campaign: CampaignProgressSystem;
+  readonly techTree: TechTreeSystem;
+  readonly techPoint: TechPointSystem;
+  readonly techResearch: TechResearchSystem;
   readonly bus: EventBus;
   /** 变化检测用的缓存 JSON */
   prevResourcesJson: string;
@@ -74,9 +80,22 @@ export function executeTick(ctx: TickContext, dtSec: number): void {
   // 4. 资源产出（含各类加成）
   // ── 加成框架 v5.0 ──
   const castleMultiplier = ctx.building.getCastleBonusMultiplier();
+
+  // 科技加成：同步书院等级到科技点系统，并获取科技加成
+  const academyLevel = ctx.building.getLevel('academy');
+  ctx.techPoint.syncAcademyLevel(academyLevel);
+  ctx.techPoint.update(dtSec);
+  ctx.techResearch.update(dtSec);
+
+  // 同步研究速度加成（来自文化路线科技）
+  const researchSpeedBonus = ctx.techTree.getEffectValue('research_speed', 'all');
+  ctx.techPoint.syncResearchSpeedBonus(researchSpeedBonus);
+
+  const techBonus = ctx.techTree.getTechBonusMultiplier();
+
   const bonuses: Bonuses = {
     castle: castleMultiplier - 1, // v5.0 主城加成
-    tech:   0,                    // v5.1 科技加成（预留）
+    tech:   techBonus,            // v5.1 科技加成
     hero:   0,                    // v5.2 武将加成（预留）
     rebirth: 0,                   // v5.3 转生加成（预留）
     vip:    0,                    // v5.4 VIP加成（预留）

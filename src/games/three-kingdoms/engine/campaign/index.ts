@@ -32,6 +32,22 @@ export {
   MAX_STARS,
 } from './campaign.types';
 
+// 扫荡类型
+export type {
+  SweepTicketSource,
+  SweepTicketGainRecord,
+  SweepTicketCostRecord,
+  SweepConfig,
+  SweepResult,
+  SweepBatchResult,
+  AutoPushProgress,
+  AutoPushResult,
+  SweepDeps,
+  SweepSaveData,
+} from './sweep.types';
+
+export { DEFAULT_SWEEP_CONFIG } from './sweep.types';
+
 // 配置数据
 export {
   CHAPTER_1,
@@ -50,3 +66,7 @@ export { CampaignProgressSystem } from './CampaignProgressSystem';
 
 // 奖励分发器
 export { RewardDistributor } from './RewardDistributor';
+
+// 扫荡系统
+export { SweepSystem } from './SweepSystem';
+export { AutoPushExecutor } from './AutoPushExecutor';

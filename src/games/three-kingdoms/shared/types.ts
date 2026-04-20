@@ -191,6 +191,8 @@ export interface GameSaveData {
   formation?: import('../engine/hero/HeroFormation').FormationSaveData;
   /** 关卡进度数据（可选，向后兼容旧存档） */
   campaign?: import('../engine/campaign/campaign.types').CampaignSaveData;
+  /** 科技系统数据（可选，向后兼容旧存档） */
+  tech?: import('../engine/tech/tech.types').TechSaveData;
 }
 
 // ─────────────────────────────────────────────
@@ -223,4 +225,6 @@ export interface EngineSnapshot {
   activeFormationId: string | null;
   /** 关卡进度 */
   campaignProgress: import('../engine/campaign/campaign.types').CampaignProgress;
+  /** 科技系统状态 */
+  techState: import('../engine/tech/tech.types').TechState;
 }

@@ -54,6 +54,7 @@ import {
   executeBuildingUpgrade, cancelBuildingUpgrade,
   type BuildingOpsContext,
 } from './engine-building-ops';
+import { createTechSystems, initTechSystems, type TechSystems } from './engine-tech-deps';
 
 // ─────────────────────────────────────────────
 // ThreeKingdomsEngine
@@ -68,6 +69,7 @@ export class ThreeKingdomsEngine {
   readonly heroLevel: HeroLevelSystem;
   private readonly heroFormation: HeroFormation;
   private readonly campaignSystems: CampaignSystems;
+  private readonly techSystems: TechSystems;
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
@@ -88,6 +90,7 @@ export class ThreeKingdomsEngine {
     this.heroLevel = new HeroLevelSystem();
     this.heroFormation = new HeroFormation();
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
+    this.techSystems = createTechSystems(this.building);
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
@@ -109,6 +112,9 @@ export class ThreeKingdomsEngine {
     r.register('battleEngine', this.campaignSystems.battleEngine);
     r.register('campaignSystem', this.campaignSystems.campaignSystem);
     r.register('rewardDistributor', this.campaignSystems.rewardDistributor);
+    r.register('techTree', this.techSystems.treeSystem);
+    r.register('techPoint', this.techSystems.pointSystem);
+    r.register('techResearch', this.techSystems.researchSystem);
   }
 
   // ── 初始化 ──
@@ -120,6 +126,7 @@ export class ThreeKingdomsEngine {
     this.calendar.init(deps);
     this.initHeroSystems(deps);
     initCampaignSystems(this.campaignSystems, deps);
+    initTechSystems(this.techSystems, deps);
     this.initialized = true;
     this.lastTickTime = Date.now();
     this.onlineSeconds = 0;
@@ -199,6 +206,8 @@ export class ThreeKingdomsEngine {
     this.resource.reset(); this.building.reset(); this.calendar.reset();
     this.hero.reset(); this.heroRecruit.reset(); this.heroLevel.reset();
     this.heroFormation.reset(); this.campaignSystems.campaignSystem.reset();
+    this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
+    this.techSystems.researchSystem.reset();
     this.initialized = false; this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0; this.prevResourcesJson = ''; this.prevRatesJson = '';
     this.saveManager.deleteSave(); this.bus.removeAllListeners();
@@ -228,6 +237,7 @@ export class ThreeKingdomsEngine {
       formations: this.heroFormation.getAllFormations(),
       activeFormationId: this.heroFormation.getActiveFormationId(),
       campaignProgress: this.campaignSystems.campaignSystem.getProgress(),
+      techState: this.getTechState(),
     };
   }
 
@@ -286,6 +296,39 @@ export class ThreeKingdomsEngine {
   getChapters(): Chapter[] { return campaignDataProvider.getChapters(); }
   getCampaignProgress(): CampaignProgress { return this.campaignSystems.campaignSystem.getProgress(); }
 
+  // ── 科技系统 API ──
+
+  getTechTreeSystem() { return this.techSystems.treeSystem; }
+  getTechPointSystem() { return this.techSystems.pointSystem; }
+  getTechResearchSystem() { return this.techSystems.researchSystem; }
+
+  /** 获取科技系统完整状态 */
+  getTechState() {
+    const tree = this.techSystems.treeSystem;
+    const point = this.techSystems.pointSystem;
+    const research = this.techSystems.researchSystem;
+    return {
+      ...tree.getState(),
+      researchQueue: research.getQueue(),
+      techPoints: point.getTechPointState(),
+    };
+  }
+
+  /** 开始科技研究 */
+  startTechResearch(techId: string) {
+    return this.techSystems.researchSystem.startResearch(techId);
+  }
+
+  /** 取消科技研究 */
+  cancelTechResearch(techId: string) {
+    return this.techSystems.researchSystem.cancelResearch(techId);
+  }
+
+  /** 加速科技研究 */
+  speedUpTechResearch(techId: string, method: 'mandate' | 'ingot', amount: number) {
+    return this.techSystems.researchSystem.speedUp(techId, method, amount);
+  }
+
   // ═══════════════════════════════════════════
   // 私有方法
   // ═══════════════════════════════════════════
@@ -296,17 +339,32 @@ export class ThreeKingdomsEngine {
   private initHeroSystems(deps: ISystemDeps): void { initHeroSystems(this.heroSystems, this.resource, deps); }
   private buildDeps(): ISystemDeps { return { eventBus: this.bus, config: this.configRegistry, registry: this.registry }; }
   private buildTickCtx(): TickContext {
-    return { resource: this.resource, building: this.building, calendar: this.calendar, hero: this.hero, campaign: this.campaignSystems.campaignSystem, bus: this.bus, prevResourcesJson: this.prevResourcesJson, prevRatesJson: this.prevRatesJson };
+    return {
+      resource: this.resource, building: this.building, calendar: this.calendar,
+      hero: this.hero, campaign: this.campaignSystems.campaignSystem,
+      techTree: this.techSystems.treeSystem, techPoint: this.techSystems.pointSystem,
+      techResearch: this.techSystems.researchSystem,
+      bus: this.bus, prevResourcesJson: this.prevResourcesJson, prevRatesJson: this.prevRatesJson,
+    };
   }
   private syncTickCtx(ctx: TickContext): void { this.prevResourcesJson = ctx.prevResourcesJson; this.prevRatesJson = ctx.prevRatesJson; }
   private buildingCtx(): BuildingOpsContext { return { resource: this.resource, building: this.building, bus: this.bus }; }
   private buildSaveCtx(): SaveContext {
-    return { resource: this.resource, building: this.building, calendar: this.calendar, hero: this.hero, recruit: this.heroRecruit, formation: this.heroFormation, campaign: this.campaignSystems.campaignSystem, bus: this.bus, registry: this.registry, configRegistry: this.configRegistry, onlineSeconds: this.onlineSeconds };
+    return {
+      resource: this.resource, building: this.building, calendar: this.calendar,
+      hero: this.hero, recruit: this.heroRecruit, formation: this.heroFormation,
+      campaign: this.campaignSystems.campaignSystem,
+      techTree: this.techSystems.treeSystem, techPoint: this.techSystems.pointSystem,
+      techResearch: this.techSystems.researchSystem,
+      bus: this.bus, registry: this.registry, configRegistry: this.configRegistry,
+      onlineSeconds: this.onlineSeconds,
+    };
   }
   private finalizeLoad(): void {
     const deps = this.buildDeps();
     this.initHeroSystems(deps);
     initCampaignSystems(this.campaignSystems, deps);
+    initTechSystems(this.techSystems, deps);
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
   }
 

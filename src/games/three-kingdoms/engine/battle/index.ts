@@ -77,3 +77,22 @@ export { UltimateSkillSystem } from './UltimateSkillSystem';
 // v4.0：战斗加速控制器
 export { BattleSpeedController } from './BattleSpeedController';
 export type { ISpeedChangeListener } from './BattleSpeedController';
+
+// v4.0：科技效果应用器
+export { BattleEffectApplier } from './BattleEffectApplier';
+export type {
+  EffectElement,
+  EffectTrigger,
+  SkillEffectConfig,
+  EnhancedBattleStats,
+  EnhancedDamageResult,
+} from './BattleEffectApplier';
+
+// v4.0：伤害数字动画系统
+export { DamageNumberSystem, DamageNumberType, TrajectoryType } from './DamageNumberSystem';
+export type {
+  TrajectoryConfig,
+  DamageNumber,
+  MergedDamageNumber,
+  DamageNumberConfig,
+} from './DamageNumberSystem';

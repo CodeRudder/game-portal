@@ -14,6 +14,9 @@ import type { HeroSystem } from './hero/HeroSystem';
 import type { HeroRecruitSystem } from './hero/HeroRecruitSystem';
 import type { HeroFormation } from './hero/HeroFormation';
 import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
+import type { TechTreeSystem } from './tech/TechTreeSystem';
+import type { TechPointSystem } from './tech/TechPointSystem';
+import type { TechResearchSystem } from './tech/TechResearchSystem';
 import type { EventBus } from '../core/events/EventBus';
 import type { SubsystemRegistry } from '../core/engine/SubsystemRegistry';
 import type { ConfigRegistry } from '../core/config/ConfigRegistry';
@@ -27,6 +30,7 @@ import type { CalendarSaveData } from './calendar/calendar.types';
 import type { HeroSaveData } from './hero/hero.types';
 import type { RecruitSaveData } from './hero/HeroRecruitSystem';
 import type { FormationSaveData } from './hero/HeroFormation';
+import type { TechSaveData } from './tech/tech.types';
 import type { IGameState } from '../core/types/state';
 import type { ISystemDeps } from '../core/types/subsystem';
 import { ENGINE_SAVE_VERSION, SAVE_KEY } from '../shared/constants';
@@ -45,6 +49,9 @@ export interface SaveContext {
   readonly recruit: HeroRecruitSystem;
   readonly formation: HeroFormation;
   readonly campaign: CampaignProgressSystem;
+  readonly techTree: TechTreeSystem;
+  readonly techPoint: TechPointSystem;
+  readonly techResearch: TechResearchSystem;
   readonly bus: EventBus;
   readonly registry: SubsystemRegistry;
   readonly configRegistry: ConfigRegistry;
@@ -58,6 +65,18 @@ export interface SaveContext {
 
 /** 构建完整的 GameSaveData */
 export function buildSaveData(ctx: SaveContext): GameSaveData {
+  // 序列化科技系统
+  const treeData = ctx.techTree.serialize();
+  const researchData = ctx.techResearch.serialize();
+  const pointData = ctx.techPoint.serialize();
+  const techSaveData: TechSaveData = {
+    version: 1,
+    completedTechIds: treeData.completedTechIds,
+    activeResearch: researchData.activeResearch,
+    techPoints: pointData.techPoints,
+    chosenMutexNodes: treeData.chosenMutexNodes,
+  };
+
   return {
     version: ENGINE_SAVE_VERSION,
     saveTime: Date.now(),
@@ -68,6 +87,7 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     recruit: ctx.recruit.serialize(),
     formation: ctx.formation.serialize(),
     campaign: ctx.campaign.serialize(),
+    tech: techSaveData,
   };
 }
 
@@ -84,6 +104,7 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
       recruit: data.recruit,
       formation: data.formation,
       campaign: data.campaign,
+      tech: data.tech,
     },
     metadata: {
       totalPlayTime: onlineSeconds,
@@ -106,6 +127,7 @@ export function fromIGameState(state: IGameState): GameSaveData {
     recruit: s.recruit as RecruitSaveData | undefined,
     formation: s.formation as FormationSaveData | undefined,
     campaign: s.campaign as import('./campaign/campaign.types').CampaignSaveData | undefined,
+    tech: s.tech as TechSaveData | undefined,
   };
 }
 
@@ -215,12 +237,31 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     console.info('[Save] v2.0 存档迁移：无关卡数据，自动初始化空关卡进度');
   }
 
+  // ── 科技系统 v4.0 ──
+  if (data.tech) {
+    ctx.techTree.deserialize({
+      completedTechIds: data.tech.completedTechIds,
+      chosenMutexNodes: data.tech.chosenMutexNodes,
+    });
+    ctx.techResearch.deserialize({
+      activeResearch: data.tech.activeResearch,
+    });
+    ctx.techPoint.deserialize({
+      techPoints: data.tech.techPoints,
+    });
+  } else {
+    console.info('[Save] v3.0 存档迁移：无科技数据，自动初始化空科技系统');
+  }
+
   syncBuildingToResource({
     resource: ctx.resource,
     building: ctx.building,
     calendar: ctx.calendar,
     hero: ctx.hero,
     campaign: ctx.campaign,
+    techTree: ctx.techTree,
+    techPoint: ctx.techPoint,
+    techResearch: ctx.techResearch,
     bus: ctx.bus,
     prevResourcesJson: '',
     prevRatesJson: '',

@@ -138,6 +138,24 @@ export {
 } from './battle/battle.types';
 export { BATTLE_CONFIG } from './battle/battle-config';
 
+// 战斗域 v4.0
+export { BattleEffectApplier } from './battle/BattleEffectApplier';
+export type {
+  SkillEffectConfig,
+  EnhancedBattleStats,
+  EnhancedDamageResult,
+} from './battle/BattleEffectApplier';
+export {
+  DamageNumberSystem,
+  DamageNumberType,
+  TrajectoryType,
+} from './battle/DamageNumberSystem';
+export type {
+  TrajectoryConfig,
+  DamageNumber,
+  DamageNumberConfig,
+} from './battle/DamageNumberSystem';
+
 // 关卡域
 export { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
 export { RewardDistributor } from './campaign/RewardDistributor';
@@ -161,3 +179,42 @@ export type {
   ICampaignDataProvider,
 } from './campaign/campaign.types';
 export { MAX_STARS } from './campaign/campaign.types';
+
+// 科技域
+export { TechTreeSystem } from './tech/TechTreeSystem';
+export { TechResearchSystem } from './tech/TechResearchSystem';
+export { TechPointSystem } from './tech/TechPointSystem';
+export { TechEffectSystem } from './tech/TechEffectSystem';
+export type {
+  TechPath,
+  TechNodeStatus,
+  TechNodeDef,
+  TechEffect,
+  TechEffectType,
+  TechEdge,
+  TechNodeState,
+  ResearchSlot,
+  TechPointState,
+  SpeedUpMethod,
+  SpeedUpResult,
+  StartResearchResult,
+  TechState,
+  TechSaveData,
+} from './tech/tech.types';
+export {
+  TECH_PATHS,
+  TECH_PATH_LABELS,
+  TECH_PATH_COLORS,
+  TECH_PATH_ICONS,
+} from './tech/tech.types';
+export {
+  TECH_NODE_DEFS,
+  TECH_NODE_MAP,
+  TECH_EDGES,
+  TECH_SAVE_VERSION,
+  getNodesByPath,
+  getNodesByTier,
+  getMutexGroups,
+  getQueueSizeForAcademyLevel,
+  getTechPointProduction,
+} from './tech/tech-config';
