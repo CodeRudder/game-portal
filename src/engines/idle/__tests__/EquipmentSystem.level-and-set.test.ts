@@ -7,7 +7,6 @@
  * 3. 套装加成在 getBonus() 中正确计算
  * 4. 向后兼容：不传 characterLevel 时行为不变
  */
-import { describe, it, expect, beforeEach } from 'vitest';
 import {
   EquipmentSystem,
   type EquipDef,

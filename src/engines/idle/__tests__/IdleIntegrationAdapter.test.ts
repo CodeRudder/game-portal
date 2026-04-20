@@ -13,7 +13,6 @@
  * - 集成场景测试
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ModuleRegistry } from '../modules/ModuleRegistry';
 import { ModuleEventBus } from '../modules/ModuleEventBus';
 import { IdleIntegrationAdapter } from '../modules/IdleIntegrationAdapter';
@@ -26,23 +25,23 @@ import type { RegistrySnapshot } from '../modules/ModuleRegistry';
 /** 创建模拟的建筑系统 */
 function createMockBuildingSystem() {
   return {
-    init: vi.fn(),
-    update: vi.fn(),
-    reset: vi.fn(),
-    getState: vi.fn(() => ({ buildings: [] })),
-    setState: vi.fn(),
+    init: jest.fn(),
+    update: jest.fn(),
+    reset: jest.fn(),
+    getState: jest.fn(() => ({ buildings: [] })),
+    setState: jest.fn(),
   };
 }
 
 /** 创建模拟的统计追踪器 */
 function createMockStatisticsTracker() {
   const stats = {
-    init: vi.fn(),
-    update: vi.fn(),
-    reset: vi.fn(),
-    getState: vi.fn(() => ({ stats: {} })),
-    setState: vi.fn(),
-    increment: vi.fn(),
+    init: jest.fn(),
+    update: jest.fn(),
+    reset: jest.fn(),
+    getState: jest.fn(() => ({ stats: {} })),
+    setState: jest.fn(),
+    increment: jest.fn(),
   };
   return stats;
 }
@@ -50,32 +49,32 @@ function createMockStatisticsTracker() {
 /** 创建模拟的单位系统 */
 function createMockUnitSystem() {
   return {
-    init: vi.fn(),
-    update: vi.fn(),
-    reset: vi.fn(),
-    getState: vi.fn(() => ({ units: [] })),
-    setState: vi.fn(),
+    init: jest.fn(),
+    update: jest.fn(),
+    reset: jest.fn(),
+    getState: jest.fn(() => ({ units: [] })),
+    setState: jest.fn(),
   };
 }
 
 /** 创建模拟的声望系统 */
 function createMockPrestigeSystem() {
   return {
-    init: vi.fn(),
-    reset: vi.fn(),
-    getState: vi.fn(() => ({ currency: 0, count: 0 })),
-    setState: vi.fn(),
+    init: jest.fn(),
+    reset: jest.fn(),
+    getState: jest.fn(() => ({ currency: 0, count: 0 })),
+    setState: jest.fn(),
   };
 }
 
 /** 创建模拟的战斗系统 */
 function createMockBattleSystem() {
   return {
-    init: vi.fn(),
-    update: vi.fn(),
-    reset: vi.fn(),
-    getState: vi.fn(() => ({ battles: [] })),
-    setState: vi.fn(),
+    init: jest.fn(),
+    update: jest.fn(),
+    reset: jest.fn(),
+    getState: jest.fn(() => ({ battles: [] })),
+    setState: jest.fn(),
   };
 }
 
@@ -110,7 +109,7 @@ describe('IdleIntegrationAdapter', () => {
 
   describe('initialize()', () => {
     it('应成功初始化无依赖的模块', () => {
-      const mod = { init: vi.fn() };
+      const mod = { init: jest.fn() };
       registry.register({ id: 'simple', name: '简单模块', version: '1.0.0', module: mod });
 
       adapter.initialize();
@@ -125,15 +124,15 @@ describe('IdleIntegrationAdapter', () => {
         name: '依赖模块',
         version: '1.0.0',
         dependencies: ['missing-module'],
-        module: { init: vi.fn() },
+        module: { init: jest.fn() },
       });
 
       expect(() => adapter.initialize()).toThrow('依赖未满足');
     });
 
     it('应在依赖满足时正常初始化', () => {
-      const modA = { init: vi.fn() };
-      const modB = { init: vi.fn() };
+      const modA = { init: jest.fn() };
+      const modB = { init: jest.fn() };
 
       registry.register({ id: 'a', name: '模块A', version: '1.0.0', module: modA });
       registry.register({
@@ -162,8 +161,8 @@ describe('IdleIntegrationAdapter', () => {
 
   describe('update()', () => {
     it('应调用所有支持 update 的模块', () => {
-      const modA = { update: vi.fn() };
-      const modB = { update: vi.fn() };
+      const modA = { update: jest.fn() };
+      const modB = { update: jest.fn() };
 
       registry.register({ id: 'a', name: '模块A', version: '1.0.0', module: modA });
       registry.register({ id: 'b', name: '模块B', version: '1.0.0', module: modB });
@@ -238,7 +237,7 @@ describe('IdleIntegrationAdapter', () => {
 
   describe('reset()', () => {
     it('应重置所有模块', () => {
-      const mod = { reset: vi.fn() };
+      const mod = { reset: jest.fn() };
       registry.register({ id: 'mod', name: '模块', version: '1.0.0', module: mod });
 
       adapter.reset();

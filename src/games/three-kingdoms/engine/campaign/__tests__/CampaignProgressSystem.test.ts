@@ -4,7 +4,6 @@
  * 覆盖：初始化、状态查询、通关处理、解锁逻辑、序列化、ISubsystem接口。
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CampaignProgressSystem } from '../CampaignProgressSystem';
 import type { ICampaignDataProvider, CampaignSaveData } from '../campaign.types';
 import { getChapters, getChapter, getStage, getStagesByChapter } from '../campaign-config';
@@ -627,7 +626,7 @@ describe('CampaignProgressSystem ISubsystem', () => {
   });
 
   it('init 注入依赖不报错', () => {
-    const mockDeps = { eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() } } as any;
+    const mockDeps = { eventBus: { on: jest.fn(), off: jest.fn(), emit: jest.fn() } } as any;
     expect(() => system.init(mockDeps)).not.toThrow();
   });
 

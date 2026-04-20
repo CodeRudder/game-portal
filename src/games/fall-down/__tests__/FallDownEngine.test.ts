@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { FallDownEngine } from '@/games/fall-down/FallDownEngine';
 import {
   CANVAS_WIDTH,

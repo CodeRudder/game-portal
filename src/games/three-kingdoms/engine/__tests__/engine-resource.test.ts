@@ -3,18 +3,17 @@
  * 覆盖：资源上限映射（粮仓、兵营、铁匠铺对上限的影响）
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
 
 // ── localStorage mock ──
 const storage: Record<string, string> = {};
 const localStorageMock = {
-  getItem: vi.fn((k: string) => storage[k] ?? null),
-  setItem: vi.fn((k: string, v: string) => { storage[k] = v; }),
-  removeItem: vi.fn((k: string) => { delete storage[k]; }),
-  clear: vi.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
+  getItem: jest.fn((k: string) => storage[k] ?? null),
+  setItem: jest.fn((k: string, v: string) => { storage[k] = v; }),
+  removeItem: jest.fn((k: string) => { delete storage[k]; }),
+  clear: jest.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
   get length() { return Object.keys(storage).length; },
-  key: vi.fn(() => null),
+  key: jest.fn(() => null),
 };
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
 
@@ -23,7 +22,7 @@ describe('ThreeKingdomsEngine — 资源域', () => {
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     engine = new ThreeKingdomsEngine();
   });
 

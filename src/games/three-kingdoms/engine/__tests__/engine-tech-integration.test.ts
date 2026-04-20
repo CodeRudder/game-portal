@@ -12,7 +12,6 @@
  * 8. reset 清理科技系统
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
 import type { TechPath, TechState } from '../tech/tech.types';
 import { TECH_PATHS } from '../tech/tech.types';
@@ -20,15 +19,15 @@ import { TECH_PATHS } from '../tech/tech.types';
 // ── localStorage mock ──
 const storage: Record<string, string> = {};
 const localStorageMock = {
-  getItem: vi.fn((key: string) => storage[key] ?? null),
-  setItem: vi.fn((key: string, val: string) => { storage[key] = val; }),
-  removeItem: vi.fn((key: string) => { delete storage[key]; }),
-  clear: vi.fn(() => { Object.keys(storage).forEach(k => delete storage[k]); }),
+  getItem: jest.fn((key: string) => storage[key] ?? null),
+  setItem: jest.fn((key: string, val: string) => { storage[key] = val; }),
+  removeItem: jest.fn((key: string) => { delete storage[key]; }),
+  clear: jest.fn(() => { Object.keys(storage).forEach(k => delete storage[k]); }),
   get length() { return Object.keys(storage).length; },
-  key: vi.fn((_: number) => null),
+  key: jest.fn((_: number) => null),
 };
 
-vi.stubGlobal('localStorage', localStorageMock);
+Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true, configurable: true });
 
 describe('科技系统引擎集成', () => {
   let engine: ThreeKingdomsEngine;
@@ -37,19 +36,19 @@ describe('科技系统引擎集成', () => {
   beforeEach(() => {
     engine = new ThreeKingdomsEngine();
     localStorageMock.clear();
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     baseTime = 1_000_000_000_000;
-    vi.spyOn(Date, 'now').mockReturnValue(baseTime);
+    jest.spyOn(Date, 'now').mockReturnValue(baseTime);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     engine.destroy();
   });
 
   // 辅助：推进时间
   function advanceTime(ms: number): void {
-    vi.spyOn(Date, 'now').mockReturnValue(baseTime + ms);
+    jest.spyOn(Date, 'now').mockReturnValue(baseTime + ms);
   }
 
   // ═══════════════════════════════════════════

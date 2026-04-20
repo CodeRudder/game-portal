@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { Pong2PEngine } from '../Pong2PEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT, HUD_HEIGHT,
@@ -17,15 +16,15 @@ const rafCallbacks: Map<number, FrameRequestCallback> = new Map();
 beforeEach(() => {
   fakeNow = 1000; // 固定起始时间
   rafCallbacks.clear();
-  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+  (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => {
     const id = ++rafId;
     rafCallbacks.set(id, cb);
     return id;
   });
-  vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+  (globalThis as any).cancelAnimationFrame = (id: number) => {
     rafCallbacks.delete(id);
   });
-  vi.stubGlobal('performance', { now: () => fakeNow });
+  (globalThis as any).performance = { now: () => fakeNow });
 });
 
 afterEach(() => {
@@ -169,7 +168,7 @@ describe('Pong2PEngine', () => {
 
     it('启动后应触发 statusChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');
@@ -807,7 +806,7 @@ describe('Pong2PEngine', () => {
     it('获胜后应触发 statusChange gameover 事件', () => {
       const engine = createEngine();
       startAndWaitForServe(engine);
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       (engine as any)._p1Score = 10;
       (engine as any)._p2Score = 9;
@@ -1016,7 +1015,7 @@ describe('Pong2PEngine', () => {
     it('重置后应触发 statusChange idle', () => {
       const engine = createEngine();
       startAndWaitForServe(engine);
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.reset();
       expect(handler).toHaveBeenCalledWith('idle');
@@ -1088,7 +1087,7 @@ describe('Pong2PEngine', () => {
     it('应能监听 scoreChange 事件', () => {
       const engine = createEngine();
       startAndWaitForServe(engine);
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       setBall(engine, CANVAS_WIDTH + BALL_RADIUS + 1, CANVAS_HEIGHT / 2, BALL_INITIAL_SPEED, 0);
       tick(engine);
@@ -1098,7 +1097,7 @@ describe('Pong2PEngine', () => {
     it('应能取消事件监听', () => {
       const engine = createEngine();
       startAndWaitForServe(engine);
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       engine.off('scoreChange', handler);
       setBall(engine, CANVAS_WIDTH + BALL_RADIUS + 1, CANVAS_HEIGHT / 2, BALL_INITIAL_SPEED, 0);
@@ -1108,7 +1107,7 @@ describe('Pong2PEngine', () => {
 
     it('应能监听 levelChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('levelChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(1);

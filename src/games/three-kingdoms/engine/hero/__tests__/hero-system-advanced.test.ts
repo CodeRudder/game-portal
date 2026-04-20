@@ -3,7 +3,6 @@
  * 覆盖：战力计算、序列化/反序列化、边界情况
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HeroSystem } from '../HeroSystem';
 import { Quality as Q } from '../hero.types';
 import {
@@ -20,9 +19,9 @@ import {
 // ── 辅助：创建 mock ISystemDeps ──
 function makeMockDeps() {
   return {
-    eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
-    config: { get: vi.fn(), set: vi.fn(), has: vi.fn() },
-    registry: { get: vi.fn(), register: vi.fn(), has: vi.fn(), getAll: vi.fn(), unregister: vi.fn() },
+    eventBus: { on: jest.fn(), off: jest.fn(), emit: jest.fn() },
+    config: { get: jest.fn(), set: jest.fn(), has: jest.fn() },
+    registry: { get: jest.fn(), register: jest.fn(), has: jest.fn(), getAll: jest.fn(), unregister: jest.fn() },
   };
 }
 
@@ -30,7 +29,7 @@ describe('HeroSystem — 高级测试', () => {
   let sys: HeroSystem;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     sys = new HeroSystem();
     sys.init(makeMockDeps());
   });
@@ -115,7 +114,7 @@ describe('HeroSystem — 高级测试', () => {
     });
 
     it('should handle version mismatch gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       sys.deserialize({ version: 999, state: { generals: {}, fragments: {} } });
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();

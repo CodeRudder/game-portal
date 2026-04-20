@@ -15,7 +15,6 @@
  * - 边界条件与错误处理
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   CanvasUIRenderer,
   type ResourceDisplayItem,
@@ -40,7 +39,7 @@ function createMockCtx() {
   }
 
   const gradientMock = {
-    addColorStop: vi.fn(),
+    addColorStop: jest.fn(),
   };
 
   const ctx = {

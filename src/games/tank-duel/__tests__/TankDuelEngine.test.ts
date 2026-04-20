@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TankDuelEngine } from '../TankDuelEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -1138,7 +1137,7 @@ describe('Tank Duel - 事件', () => {
   });
 
   it('start 触发 statusChange', () => {
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     engine.start();
     expect(cb).toHaveBeenCalledWith('playing');
@@ -1146,7 +1145,7 @@ describe('Tank Duel - 事件', () => {
 
   it('pause 触发 statusChange', () => {
     engine.start();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     engine.pause();
     expect(cb).toHaveBeenCalledWith('paused');
@@ -1154,14 +1153,14 @@ describe('Tank Duel - 事件', () => {
 
   it('reset 触发 statusChange', () => {
     engine.start();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     engine.reset();
     expect(cb).toHaveBeenCalledWith('idle');
   });
 
   it('off 取消监听', () => {
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     engine.off('statusChange', cb);
     engine.start();
@@ -1170,7 +1169,7 @@ describe('Tank Duel - 事件', () => {
 
   it('gameover 触发 statusChange', () => {
     engine.start();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     // 模拟比赛结束
     (engine as any)._p1Wins = 2;

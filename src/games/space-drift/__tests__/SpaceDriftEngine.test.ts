@@ -1,7 +1,6 @@
 /**
  * Space Drift（太空漂流）放置类游戏 — 完整测试套件
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SpaceDriftEngine } from '@/games/space-drift/SpaceDriftEngine';
 import {
   CANVAS_WIDTH,
@@ -393,7 +392,7 @@ describe('SpaceDriftEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -522,7 +521,7 @@ describe('SpaceDriftEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addOre(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -673,7 +672,7 @@ describe('SpaceDriftEngine', () => {
     it('解锁星系触发 galaxyUnlocked 事件', () => {
       engine.start();
       addOre(engine, 1000);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('galaxyUnlocked', listener);
       engine.unlockGalaxy('alpha_centauri');
       expect(listener).toHaveBeenCalledWith('alpha_centauri');
@@ -731,7 +730,7 @@ describe('SpaceDriftEngine', () => {
       engine.start();
       addEnergy(engine, 100);
       addData(engine, 50);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('shipUpgraded', listener);
       engine.upgradeShip('sol');
       expect(listener).toHaveBeenCalledWith('sol', 1);
@@ -900,7 +899,7 @@ describe('SpaceDriftEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalOreEarned = MIN_PRESTIGE_ORE * 4;
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();
@@ -1336,7 +1335,7 @@ describe('SpaceDriftEngine', () => {
     it('upgradePurchased 事件传递正确参数', () => {
       engine.start();
       addOre(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalledWith('miner_drone', 1);
@@ -1344,7 +1343,7 @@ describe('SpaceDriftEngine', () => {
 
     it('stateChange 事件在多种操作后触发', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
 
       engine.click();
@@ -1358,7 +1357,7 @@ describe('SpaceDriftEngine', () => {
     it('galaxyUnlocked 事件传递星系 ID', () => {
       engine.start();
       addOre(engine, 1000);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('galaxyUnlocked', listener);
       engine.unlockGalaxy('alpha_centauri');
       expect(listener).toHaveBeenCalledWith('alpha_centauri');
@@ -1368,7 +1367,7 @@ describe('SpaceDriftEngine', () => {
       engine.start();
       addEnergy(engine, 100);
       addData(engine, 50);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('shipUpgraded', listener);
       engine.upgradeShip('sol');
       expect(listener).toHaveBeenCalledWith('sol', 1);

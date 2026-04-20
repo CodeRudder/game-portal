@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { StageSystem, type StageDef } from '../../../../src/engines/idle/modules/StageSystem';
 
 // ============================================================

@@ -14,7 +14,6 @@
  * @module engines/idle/modules/__tests__/EventSystem.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import {
   EventSystem,
   type GameEvent,

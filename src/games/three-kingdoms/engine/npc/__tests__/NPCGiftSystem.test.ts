@@ -13,7 +13,6 @@
  * - 序列化/反序列化
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NPCGiftSystem } from '../NPCGiftSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type { ItemDef, NPCPreference, GiftRequest } from '../../../core/npc';
@@ -25,17 +24,17 @@ import type { ItemDef, NPCPreference, GiftRequest } from '../../../core/npc';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
     registry: {
-      register: vi.fn(),
-      get: vi.fn().mockReturnValue({
-        getNPCById: vi.fn().mockReturnValue({
+      register: jest.fn(),
+      get: jest.fn().mockReturnValue({
+        getNPCById: jest.fn().mockReturnValue({
           id: 'npc-merchant-01',
           name: '商人张三',
           profession: 'merchant',
@@ -47,11 +46,11 @@ function mockDeps(): ISystemDeps {
           createdAt: 0,
           lastInteractedAt: 0,
         }),
-        changeAffinity: vi.fn().mockReturnValue(55),
+        changeAffinity: jest.fn().mockReturnValue(55),
       }),
-      getAll: vi.fn(),
-      has: vi.fn(),
-      unregister: vi.fn(),
+      getAll: jest.fn(),
+      has: jest.fn(),
+      unregister: jest.fn(),
     },
   } as unknown as ISystemDeps;
 }

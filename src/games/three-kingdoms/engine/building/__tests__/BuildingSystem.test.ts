@@ -3,7 +3,6 @@
  * 覆盖：初始化、升级检查、升级执行、取消升级、解锁系统、队列管理、产出计算、特殊属性、序列化/反序列化、reset
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BuildingSystem } from '../BuildingSystem';
 import type { BuildingType, BuildingState, BuildingSaveData, Resources } from '../../../shared/types';
 import { BUILDING_TYPES } from '../building.types';
@@ -13,7 +12,7 @@ const RICH: Resources = { grain: 1e9, gold: 1e9, troops: 1e9, mandate: 0 };
 const ZERO: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0 };
 
 function mockNow(base: number, offset: number) {
-  vi.spyOn(Date, 'now').mockReturnValue(base + offset);
+  jest.spyOn(Date, 'now').mockReturnValue(base + offset);
 }
 
 function makeSave(overrides: Partial<Record<BuildingType, Partial<BuildingState>>> = {}): BuildingSaveData {
@@ -29,13 +28,13 @@ describe('BuildingSystem', () => {
   let base: number;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     base = 1_000_000_000_000;
-    vi.spyOn(Date, 'now').mockReturnValue(base);
+    jest.spyOn(Date, 'now').mockReturnValue(base);
     sys = new BuildingSystem();
   });
 
-  afterEach(() => { vi.restoreAllMocks(); });
+  afterEach(() => { jest.restoreAllMocks(); });
 
   // ═══════════════════════════════════════════
   // 1. 初始化
@@ -385,7 +384,7 @@ describe('BuildingSystem', () => {
     });
 
     it('版本不匹配时仍能加载（打印警告）', () => {
-      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       sys.deserialize({ version: 999, buildings: makeSave().buildings });
       expect(spy).toHaveBeenCalled();
       spy.mockRestore();

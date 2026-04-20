@@ -2,7 +2,6 @@
  * PinballEngine 全面测试
  * 覆盖：初始化、物理、碰撞、挡板、发射器、计分、生命、等级、粒子、状态管理
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PinballEngine } from '@/games/pinball/PinballEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -727,7 +726,7 @@ describe('PinballEngine - 计分', () => {
   });
 
   it('addScore 触发 scoreChange 事件', () => {
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('scoreChange', listener);
     (engine as any).registerHit(100);
     expect(listener).toHaveBeenCalled();
@@ -795,7 +794,7 @@ describe('PinballEngine - 生命系统', () => {
   });
 
   it('gameOver 触发 statusChange 事件', () => {
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('statusChange', listener);
     (engine as any)._lives = 1;
     engine.balls.length = 0;
@@ -850,7 +849,7 @@ describe('PinballEngine - 等级提升', () => {
   });
 
   it('升级触发 levelChange 事件', () => {
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('levelChange', listener);
     (engine as any).addScore(LEVEL_SCORE_THRESHOLD);
     callUpdate(engine, 16);
@@ -1340,7 +1339,7 @@ describe('PinballEngine - spawnBall', () => {
 describe('PinballEngine - 事件系统', () => {
   it('on/off 正常工作', () => {
     const engine = createEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('test', listener);
     (engine as any).emit('test');
     expect(listener).toHaveBeenCalledTimes(1);
@@ -1353,7 +1352,7 @@ describe('PinballEngine - 事件系统', () => {
     const engine = new PinballEngine();
     const canvas = document.createElement('canvas');
     engine.init(canvas);
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('statusChange', listener);
     engine.start();
     expect(listener).toHaveBeenCalledWith('playing');
@@ -1361,7 +1360,7 @@ describe('PinballEngine - 事件系统', () => {
 
   it('pause 触发 statusChange(paused)', () => {
     const engine = createAndStartEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('statusChange', listener);
     engine.pause();
     expect(listener).toHaveBeenCalledWith('paused');
@@ -1369,7 +1368,7 @@ describe('PinballEngine - 事件系统', () => {
 
   it('reset 触发 statusChange(idle)', () => {
     const engine = createAndStartEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('statusChange', listener);
     engine.reset();
     expect(listener).toHaveBeenCalledWith('idle');

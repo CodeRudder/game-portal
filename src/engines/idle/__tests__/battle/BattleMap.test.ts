@@ -6,7 +6,6 @@
  * 寻路（A*）、距离计算、地形效果、边界条件。
  */
 
-import { describe, it, expect } from 'vitest';
 import { BattleMap } from '../../modules/battle/BattleMap';
 import type { MapDef } from '../../modules/battle/BattleMap';
 

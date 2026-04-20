@@ -3,7 +3,6 @@
  *
  * 覆盖所有公开方法和私有条件评估逻辑（通过公开方法间接测试）。
  */
-import { describe, it, expect } from 'vitest';
 import {
   UnlockChecker,
   type Unlockable,

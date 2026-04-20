@@ -3,7 +3,6 @@
  * 覆盖：初始化、tick产出、消耗、上限管理、容量警告、离线收益、序列化/反序列化
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ResourceSystem } from '../ResourceSystem';
 import type { ResourceSaveData } from '../../shared/types';
 import {
@@ -19,15 +18,15 @@ import {
 
 function createMockDeps() {
   return {
-    eventBus: { on: vi.fn(), once: vi.fn(), emit: vi.fn(), off: vi.fn(), removeAllListeners: vi.fn() },
-    config: { get: vi.fn(), set: vi.fn(), has: vi.fn(() => false) },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(() => new Map()), has: vi.fn(() => false), unregister: vi.fn() },
+    eventBus: { on: jest.fn(), once: jest.fn(), emit: jest.fn(), off: jest.fn(), removeAllListeners: jest.fn() },
+    config: { get: jest.fn(), set: jest.fn(), has: jest.fn(() => false) },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(() => new Map()), has: jest.fn(() => false), unregister: jest.fn() },
   };
 }
 
 describe('ResourceSystem', () => {
   let rs: ResourceSystem;
-  beforeEach(() => { vi.restoreAllMocks(); rs = new ResourceSystem(); rs.init(createMockDeps()); });
+  beforeEach(() => { jest.restoreAllMocks(); rs = new ResourceSystem(); rs.init(createMockDeps()); });
 
   // ═══════════════════════════════════════════
   // 1. 初始化
@@ -305,7 +304,7 @@ describe('ResourceSystem', () => {
       expect(rs.getAmount('grain')).toBeLessThanOrEqual(2000);
     });
     it('deserialize 版本不匹配时仍加载', () => {
-      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       rs.deserialize({
         resources: { grain: 100, gold: 50, troops: 25, mandate: 0 },
         lastSaveTime: Date.now(),

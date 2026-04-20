@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { MiniGoEngine } from '../MiniGoEngine';
 import {
   BOARD_SIZE, EMPTY, BLACK, WHITE,

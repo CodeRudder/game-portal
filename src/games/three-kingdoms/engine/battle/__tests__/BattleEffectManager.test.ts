@@ -11,7 +11,6 @@
  * @module engine/battle/__tests__/BattleEffectManager.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BattleEffectManager } from '../BattleEffectManager';
 import type {
   SkillEffectData,

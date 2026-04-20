@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { PrestigeSystem, type PrestigeConfig } from '../../../../src/engines/idle/modules/PrestigeSystem';
 
 // ============================================================

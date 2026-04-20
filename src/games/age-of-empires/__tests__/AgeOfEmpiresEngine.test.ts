@@ -15,7 +15,6 @@
  * - Canvas 渲染
  * - 边界与异常情况
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   AgeOfEmpiresEngine,
   type AgeOfEmpiresState,
@@ -52,44 +51,44 @@ function createMockCtx(): CanvasRenderingContext2D {
     textAlign: '' as CanvasTextAlign,
     textBaseline: '' as CanvasTextBaseline,
     globalAlpha: 1,
-    fillRect: vi.fn(),
-    strokeRect: vi.fn(),
-    clearRect: vi.fn(),
-    fillText: vi.fn(),
-    strokeText: vi.fn(),
-    measureText: vi.fn(() => ({ width: 10 })),
-    beginPath: vi.fn(),
-    closePath: vi.fn(),
-    fill: vi.fn(),
-    stroke: vi.fn(),
-    moveTo: vi.fn(),
-    lineTo: vi.fn(),
-    arc: vi.fn(),
-    arcTo: vi.fn(),
-    ellipse: vi.fn(),
-    quadraticCurveTo: vi.fn(),
-    bezierCurveTo: vi.fn(),
-    rect: vi.fn(),
-    save: vi.fn(),
-    restore: vi.fn(),
-    translate: vi.fn(),
-    rotate: vi.fn(),
-    scale: vi.fn(),
-    clip: vi.fn(),
-    drawImage: vi.fn(),
-    createLinearGradient: vi.fn(() => ({
-      addColorStop: vi.fn(),
+    fillRect: jest.fn(),
+    strokeRect: jest.fn(),
+    clearRect: jest.fn(),
+    fillText: jest.fn(),
+    strokeText: jest.fn(),
+    measureText: jest.fn(() => ({ width: 10 })),
+    beginPath: jest.fn(),
+    closePath: jest.fn(),
+    fill: jest.fn(),
+    stroke: jest.fn(),
+    moveTo: jest.fn(),
+    lineTo: jest.fn(),
+    arc: jest.fn(),
+    arcTo: jest.fn(),
+    ellipse: jest.fn(),
+    quadraticCurveTo: jest.fn(),
+    bezierCurveTo: jest.fn(),
+    rect: jest.fn(),
+    save: jest.fn(),
+    restore: jest.fn(),
+    translate: jest.fn(),
+    rotate: jest.fn(),
+    scale: jest.fn(),
+    clip: jest.fn(),
+    drawImage: jest.fn(),
+    createLinearGradient: jest.fn(() => ({
+      addColorStop: jest.fn(),
     })),
-    createRadialGradient: vi.fn(() => ({
-      addColorStop: vi.fn(),
+    createRadialGradient: jest.fn(() => ({
+      addColorStop: jest.fn(),
     })),
-    createPattern: vi.fn(),
-    setTransform: vi.fn(),
-    resetTransform: vi.fn(),
-    getImageData: vi.fn(),
-    putImageData: vi.fn(),
-    isPointInPath: vi.fn(),
-    isPointInStroke: vi.fn(),
+    createPattern: jest.fn(),
+    setTransform: jest.fn(),
+    resetTransform: jest.fn(),
+    getImageData: jest.fn(),
+    putImageData: jest.fn(),
+    isPointInPath: jest.fn(),
+    isPointInStroke: jest.fn(),
   } as unknown as CanvasRenderingContext2D;
   return ctx;
 }
@@ -127,7 +126,7 @@ function tick(engine: AgeOfEmpiresEngine, dt: number = 16): void {
 
 describe('AgeOfEmpiresEngine', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   // ==================== 初始化 ====================
@@ -325,7 +324,7 @@ describe('AgeOfEmpiresEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       const engine = startEngine();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -416,7 +415,7 @@ describe('AgeOfEmpiresEngine', () => {
     it('购买建筑触发 upgradePurchased 事件', () => {
       const engine = startEngine();
       addResources(engine, { food: 15 });
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalledWith('farm', 1);
@@ -540,7 +539,7 @@ describe('AgeOfEmpiresEngine', () => {
     it('advanceAge 触发 ageAdvanced 事件', () => {
       const engine = startEngine();
       addResources(engine, { food: 500, wood: 200 });
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('ageAdvanced', listener);
       engine.advanceAge();
       expect(listener).toHaveBeenCalledWith('feudal_age');
@@ -695,7 +694,7 @@ describe('AgeOfEmpiresEngine', () => {
     it('购买触发 civUpgradePurchased 事件', () => {
       const engine = startEngine();
       addResources(engine, { food: 200 });
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('civUpgradePurchased', listener);
       engine.purchaseCivUpgrade('wheelbarrow');
       expect(listener).toHaveBeenCalledWith('wheelbarrow');
@@ -888,7 +887,7 @@ describe('AgeOfEmpiresEngine', () => {
     it('doPrestige 触发 prestige 事件', () => {
       const engine = startEngine();
       (engine as any)._stats.totalFoodEarned = MIN_PRESTIGE_FOOD;
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();
@@ -970,7 +969,7 @@ describe('AgeOfEmpiresEngine', () => {
       addResources(engine, { food: 15 });
       engine.purchaseBuilding(0);
       tick(engine, 16);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('resourceUnlocked', listener);
       addResources(engine, { food: 100 });
       engine.purchaseBuilding(1);
@@ -1305,7 +1304,7 @@ describe('AgeOfEmpiresEngine', () => {
 
     it('loadState 触发 stateChange 事件', () => {
       const engine = startEngine();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       const state = engine.getState();
       engine.loadState(state);
@@ -1559,7 +1558,7 @@ describe('AgeOfEmpiresEngine', () => {
 
     it('事件监听 on/off 正常工作', () => {
       const engine = startEngine();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();

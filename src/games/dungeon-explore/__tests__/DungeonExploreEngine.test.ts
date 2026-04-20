@@ -1,7 +1,6 @@
 /**
  * 地下城探险（Dungeon Explore）放置类游戏 — 完整测试套件
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DungeonExploreEngine } from '@/games/dungeon-explore/DungeonExploreEngine';
 import {
   CANVAS_WIDTH,
@@ -398,7 +397,7 @@ describe('DungeonExploreEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -523,7 +522,7 @@ describe('DungeonExploreEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addGold(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -677,7 +676,7 @@ describe('DungeonExploreEngine', () => {
     it('购买装备触发 equipmentPurchased 事件', () => {
       engine.start();
       addGold(engine, 50);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('equipmentPurchased', listener);
       engine.purchaseEquipment('wooden_sword');
       expect(listener).toHaveBeenCalledWith('wooden_sword');
@@ -759,7 +758,7 @@ describe('DungeonExploreEngine', () => {
       engine.start();
       const needed = engine.getExpNeededForNextLevel();
       addExp(engine, needed);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('levelUp', listener);
       engine.levelUp();
       expect(listener).toHaveBeenCalledWith(2);
@@ -890,7 +889,7 @@ describe('DungeonExploreEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalGoldEarned = MIN_PRESTIGE_GOLD * 4;
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

@@ -2,7 +2,6 @@
  * BatchOperationHandler 单元测试
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   BatchOperationHandler,
   type BatchResult,
@@ -311,14 +310,14 @@ describe('BatchOperationHandler', () => {
       expect(condCount).toBe(3);
     });
 
-    it('BatchAction 使用 vi.fn 应正确追踪调用次数', () => {
-      const action = vi.fn(() => ({ success: true, cost: {}, gain: {} }));
+    it('BatchAction 使用 jest.fn 应正确追踪调用次数', () => {
+      const action = jest.fn(() => ({ success: true, cost: {}, gain: {} }));
       handler.executeBatch(action, 5);
       expect(action).toHaveBeenCalledTimes(5);
     });
 
-    it('executeBatchWhile 中 condition 使用 vi.fn 应正确追踪', () => {
-      const condition = vi.fn(() => true);
+    it('executeBatchWhile 中 condition 使用 jest.fn 应正确追踪', () => {
+      const condition = jest.fn(() => true);
       handler.executeBatchWhile(
         () => ({ success: true, cost: {}, gain: {} }),
         condition,

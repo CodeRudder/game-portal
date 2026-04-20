@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeAll } from 'vitest';
 import { ChessEngine } from '../ChessEngine';
 import { BOARD_SIZE, PieceType, Color } from '../constants';
 

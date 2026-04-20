@@ -4,7 +4,6 @@
  * 覆盖：粒子下落、水流动、火蔓延、材质交互、画笔操作、网格边界、清空、画笔大小
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { SandSimulationEngine } from '../SandSimulationEngine';
 import {
   MaterialType,

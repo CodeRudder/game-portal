@@ -13,7 +13,6 @@
  * - 状态序列化/反序列化
  * - 边界情况
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   CookieClickerEngine,
   formatNumber,
@@ -65,7 +64,7 @@ function tick(engine: CookieClickerEngine, dt: number = 16): void {
 
 describe('CookieClickerEngine', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   // ==================== 初始化 ====================
@@ -245,7 +244,7 @@ describe('CookieClickerEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       const engine = startEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('stateChange', handler);
       engine.click();
       expect(handler).toHaveBeenCalled();
@@ -253,7 +252,7 @@ describe('CookieClickerEngine', () => {
 
     it('点击触发 scoreChange 事件', () => {
       const engine = startEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       engine.click();
       expect(handler).toHaveBeenCalled();
@@ -371,7 +370,7 @@ describe('CookieClickerEngine', () => {
 
     it('购买触发 stateChange 事件', () => {
       const engine = startEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('stateChange', handler);
       addCookies(engine, 100);
       engine.buyUpgrade(0);
@@ -380,7 +379,7 @@ describe('CookieClickerEngine', () => {
 
     it('购买失败不触发 stateChange', () => {
       const engine = startEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('stateChange', handler);
       engine.buyUpgrade(0); // 买不起
       expect(handler).not.toHaveBeenCalled();
@@ -627,7 +626,7 @@ describe('CookieClickerEngine', () => {
       const engine = startEngine();
       addCookies(engine, 100);
       engine.buyUpgrade(1);
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       tick(engine, PRODUCTION_TICK_MS);
       expect(handler).toHaveBeenCalled();
@@ -892,7 +891,7 @@ describe('CookieClickerEngine', () => {
 
     it('loadState 触发 stateChange', () => {
       const engine = startEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('stateChange', handler);
       engine.loadState({
         cookies: 100,

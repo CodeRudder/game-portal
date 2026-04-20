@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
 import { DoodleGodEngine } from '../DoodleGodEngine';
 import {
   ALL_ELEMENTS,
@@ -421,14 +420,14 @@ describe('元素发现', () => {
   });
 
   it('discoverElement 触发 discovery 事件', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('discovery', handler);
     engine.discoverElement('steam');
     expect(handler).toHaveBeenCalledWith('steam');
   });
 
   it('discoverElement 触发 stateChange 事件', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('stateChange', handler);
     engine.discoverElement('steam');
     expect(handler).toHaveBeenCalled();
@@ -494,7 +493,7 @@ describe('组合逻辑', () => {
     engine.clearSelection();
     engine.selectElement('water');
     // 第二次选择
-    const spy = vi.spyOn(engine, 'attemptCombination');
+    const spy = jest.spyOn(engine, 'attemptCombination');
     engine.selectElement('fire');
     expect(spy).toHaveBeenCalled();
   });
@@ -653,7 +652,7 @@ describe('胜利条件', () => {
 
   it('发现所有元素后触发 win 事件', () => {
     const engine = startEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('win', handler);
     discoverAllElements(engine);
     expect(handler).toHaveBeenCalled();
@@ -864,14 +863,14 @@ describe('事件系统', () => {
   });
 
   it('discovery 事件在发现新元素时触发', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('discovery', handler);
     engine.discoverElement('steam');
     expect(handler).toHaveBeenCalledWith('steam');
   });
 
   it('discovery 事件不重复触发已发现元素', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.discoverElement('steam');
     engine.on('discovery', handler);
     engine.discoverElement('steam'); // 重复
@@ -879,28 +878,28 @@ describe('事件系统', () => {
   });
 
   it('stateChange 事件在选择元素时触发', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('stateChange', handler);
     engine.selectElement('water');
     expect(handler).toHaveBeenCalled();
   });
 
   it('stateChange 事件在切换槽位时触发', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('stateChange', handler);
     engine.toggleSlot();
     expect(handler).toHaveBeenCalled();
   });
 
   it('stateChange 事件在清除选择时触发', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('stateChange', handler);
     engine.clearSelection();
     expect(handler).toHaveBeenCalled();
   });
 
   it('off 取消事件监听', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('discovery', handler);
     engine.off('discovery', handler);
     engine.discoverElement('steam');
@@ -908,7 +907,7 @@ describe('事件系统', () => {
   });
 
   it('statusChange 事件在 start 时触发', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     const engine2 = createEngine();
     engine2.on('statusChange', handler);
     engine2.start();

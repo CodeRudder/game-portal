@@ -3,7 +3,6 @@
  * 覆盖：普通科技详情、融合科技详情、效果展示、前置条件、消耗、时间、联动
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TechDetailProvider } from '../TechDetailProvider';
 import { TechTreeSystem } from '../TechTreeSystem';
 import { FusionTechSystem } from '../FusionTechSystem';
@@ -13,14 +12,14 @@ import type { ISystemDeps } from '../../../../core/types';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
   } as unknown as ISystemDeps;
 }
 

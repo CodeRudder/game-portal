@@ -16,7 +16,6 @@
  * - 边界条件
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { BattleModeContext, BattleUnit, BattleSkill } from '../../modules/battle/BattleMode';
 import { TacticalMode } from '../../modules/battle/TacticalMode';
 import type { TacticalConfig, TacticalUnitConfig } from '../../modules/battle/TacticalMode';
@@ -56,20 +55,20 @@ function createMockContext(overrides?: {
   speed?: number;
 }): BattleModeContext {
   const units = overrides?.units ?? [];
-  const dealDamageMock = vi.fn().mockReturnValue({ damage: 20, isCrit: false, isMiss: false });
-  const healMock = vi.fn();
-  const addBuffMock = vi.fn();
-  const removeBuffMock = vi.fn();
-  const emitMock = vi.fn();
+  const dealDamageMock = jest.fn().mockReturnValue({ damage: 20, isCrit: false, isMiss: false });
+  const healMock = jest.fn();
+  const addBuffMock = jest.fn();
+  const removeBuffMock = jest.fn();
+  const emitMock = jest.fn();
 
   return {
     units,
-    getUnit: vi.fn((id: string) => units.find((u) => u.id === id)),
+    getUnit: jest.fn((id: string) => units.find((u) => u.id === id)),
     dealDamage: dealDamageMock,
     heal: healMock,
     addBuff: addBuffMock,
     removeBuff: removeBuffMock,
-    getAliveUnits: vi.fn((side?: 'attacker' | 'defender') => {
+    getAliveUnits: jest.fn((side?: 'attacker' | 'defender') => {
       if (side) return units.filter((u) => u.isAlive && u.side === side);
       return units.filter((u) => u.isAlive);
     }),
@@ -494,7 +493,7 @@ describe('TacticalMode', () => {
       const { mode, ctx, defender } = create1v1Tactical();
       mode.init(ctx);
       defender.isAlive = false;
-      ctx.getAliveUnits = vi.fn((side?: string) => {
+      ctx.getAliveUnits = jest.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -511,7 +510,7 @@ describe('TacticalMode', () => {
       const { mode, ctx, attacker } = create1v1Tactical();
       mode.init(ctx);
       attacker.isAlive = false;
-      ctx.getAliveUnits = vi.fn((side?: string) => {
+      ctx.getAliveUnits = jest.fn((side?: string) => {
         if (side === 'attacker') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -530,7 +529,7 @@ describe('TacticalMode', () => {
       });
       mode.init(ctx);
       defender.isAlive = false;
-      ctx.getAliveUnits = vi.fn((side?: string) => {
+      ctx.getAliveUnits = jest.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -544,7 +543,7 @@ describe('TacticalMode', () => {
       });
       mode.init(ctx);
       attacker.isAlive = false;
-      ctx.getAliveUnits = vi.fn((side?: string) => {
+      ctx.getAliveUnits = jest.fn((side?: string) => {
         if (side === 'attacker') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -561,7 +560,7 @@ describe('TacticalMode', () => {
     it('胜利时应返回 won=true', () => {
       const { mode, ctx } = create1v1Tactical();
       mode.init(ctx);
-      ctx.getAliveUnits = vi.fn((side?: string) => {
+      ctx.getAliveUnits = jest.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -572,7 +571,7 @@ describe('TacticalMode', () => {
     it('失败时应返回 won=false', () => {
       const { mode, ctx } = create1v1Tactical();
       mode.init(ctx);
-      ctx.getAliveUnits = vi.fn((side?: string) => {
+      ctx.getAliveUnits = jest.fn((side?: string) => {
         if (side === 'attacker') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -598,7 +597,7 @@ describe('TacticalMode', () => {
     it('应计算 MVP', () => {
       const { mode, ctx } = create1v1Tactical();
       mode.init(ctx);
-      ctx.getAliveUnits = vi.fn((side?: string) => {
+      ctx.getAliveUnits = jest.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -711,7 +710,7 @@ describe('TacticalMode', () => {
       });
       mode.init(ctx);
       attacker.isAlive = false;
-      ctx.getAliveUnits = vi.fn((side?: string) => {
+      ctx.getAliveUnits = jest.fn((side?: string) => {
         const units = ctx.units.filter((u) => u.isAlive);
         if (side) return units.filter((u) => u.side === side);
         return units;

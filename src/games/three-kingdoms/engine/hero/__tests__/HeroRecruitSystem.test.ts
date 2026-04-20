@@ -12,7 +12,6 @@
  * 所有品质均有武将定义，不再有降级逻辑。
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HeroRecruitSystem } from '../HeroRecruitSystem';
 import type { RecruitOutput, RecruitDeps, PityState } from '../HeroRecruitSystem';
 import { HeroSystem } from '../HeroSystem';
@@ -35,8 +34,8 @@ import { DUPLICATE_FRAGMENT_COUNT } from '../hero-config';
 function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: vi.fn().mockReturnValue(true),
-    canAffordResource: vi.fn().mockReturnValue(true),
+    spendResource: jest.fn().mockReturnValue(true),
+    canAffordResource: jest.fn().mockReturnValue(true),
   };
 }
 
@@ -44,8 +43,8 @@ function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
 function makePoorDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: vi.fn().mockReturnValue(false),
-    canAffordResource: vi.fn().mockReturnValue(false),
+    spendResource: jest.fn().mockReturnValue(false),
+    canAffordResource: jest.fn().mockReturnValue(false),
   };
 }
 
@@ -292,7 +291,7 @@ describe('HeroRecruitSystem', () => {
 
     it('spendResource 失败时招募返回 null', () => {
       const deps = makeRichDeps(heroSystem);
-      deps.spendResource = vi.fn().mockReturnValue(false);
+      deps.spendResource = jest.fn().mockReturnValue(false);
       recruit.setRecruitDeps(deps);
       expect(recruit.recruitSingle('normal')).toBeNull();
     });

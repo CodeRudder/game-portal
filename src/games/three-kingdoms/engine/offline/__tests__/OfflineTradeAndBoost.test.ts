@@ -7,7 +7,6 @@
  *   - 离线贸易模拟
  */
 
-import { describe, it, expect } from 'vitest';
 import { getBoostItemList, useBoostItem, simulateOfflineTrade } from '../OfflineTradeAndBoost';
 
 const RATES = { grain: 10, gold: 5, troops: 2, mandate: 1 };

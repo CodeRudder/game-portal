@@ -15,7 +15,6 @@
  * - 边界条件和错误处理
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   StatisticsTracker,
   type StatDefinition,
@@ -516,9 +515,9 @@ describe('StatisticsTracker', () => {
     it('应支持 since 参数过滤时间范围', () => {
       const baseTime = Date.now();
 
-      // 使用 vi.spyOn 控制 Date.now 以测试时间过滤
+      // 使用 jest.spyOn 控制 Date.now 以测试时间过滤
       let mockTime = baseTime;
-      vi.spyOn(Date, 'now').mockImplementation(() => mockTime);
+      jest.spyOn(Date, 'now').mockImplementation(() => mockTime);
 
       mockTime = baseTime;
       tracker.update('total_kills', 10);
@@ -535,7 +534,7 @@ describe('StatisticsTracker', () => {
       expect(filtered[0].value).toBe(30);  // baseTime + 1000 的聚合结果
       expect(filtered[1].value).toBe(60);  // baseTime + 2000 的聚合结果
 
-      vi.restoreAllMocks();
+      jest.restoreAllMocks();
     });
 
     it('应返回数据点副本', () => {
@@ -626,7 +625,7 @@ describe('StatisticsTracker', () => {
 
   describe('onProgress() — 成就进度回调', () => {
     it('应在更新有关联成就的统计项时触发回调', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       tracker.onProgress(callback);
 
       tracker.update('total_kills', 10);
@@ -640,7 +639,7 @@ describe('StatisticsTracker', () => {
     });
 
     it('无关联成就的统计项不应触发回调', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       tracker.onProgress(callback);
 
       tracker.update('min_health', 50); // linkedAchievementIds 为空
@@ -649,8 +648,8 @@ describe('StatisticsTracker', () => {
     });
 
     it('应支持多个回调同时注册', () => {
-      const cb1 = vi.fn();
-      const cb2 = vi.fn();
+      const cb1 = jest.fn();
+      const cb2 = jest.fn();
       tracker.onProgress(cb1);
       tracker.onProgress(cb2);
 
@@ -661,7 +660,7 @@ describe('StatisticsTracker', () => {
     });
 
     it('取消注册后不应再触发该回调', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       const unsubscribe = tracker.onProgress(callback);
 
       tracker.update('total_kills', 1);
@@ -674,10 +673,10 @@ describe('StatisticsTracker', () => {
     });
 
     it('回调抛出异常不应影响统计更新流程', () => {
-      const errorCallback = vi.fn(() => {
+      const errorCallback = jest.fn(() => {
         throw new Error('回调异常');
       });
-      const normalCallback = vi.fn();
+      const normalCallback = jest.fn();
       tracker.onProgress(errorCallback);
       tracker.onProgress(normalCallback);
 
@@ -689,7 +688,7 @@ describe('StatisticsTracker', () => {
     });
 
     it('多次取消注册不应报错', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       const unsubscribe = tracker.onProgress(callback);
 
       unsubscribe();
@@ -937,7 +936,7 @@ describe('StatisticsTracker', () => {
     });
 
     it('应保留已注册的回调', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       tracker.onProgress(callback);
 
       tracker.reset();
@@ -1023,7 +1022,7 @@ describe('StatisticsTracker', () => {
 
     it('Date.now 被模拟时 lastUpdated 应使用模拟时间', () => {
       const fixedTime = 1700000000000;
-      vi.spyOn(Date, 'now').mockReturnValue(fixedTime);
+      jest.spyOn(Date, 'now').mockReturnValue(fixedTime);
 
       const t = new StatisticsTracker([createSimpleDefinition('test_stat')]);
       t.update('test_stat', 42);
@@ -1031,18 +1030,18 @@ describe('StatisticsTracker', () => {
       const record = t.getRecord('test_stat')!;
       expect(record.lastUpdated).toBe(fixedTime);
 
-      vi.restoreAllMocks();
+      jest.restoreAllMocks();
     });
 
     it('构造函数中初始化的 lastUpdated 应使用构造时的时间', () => {
       const fixedTime = 1700000000000;
-      vi.spyOn(Date, 'now').mockReturnValue(fixedTime);
+      jest.spyOn(Date, 'now').mockReturnValue(fixedTime);
 
       const t = new StatisticsTracker([createSimpleDefinition('test_stat')]);
       const record = t.getRecord('test_stat')!;
       expect(record.lastUpdated).toBe(fixedTime);
 
-      vi.restoreAllMocks();
+      jest.restoreAllMocks();
     });
 
     it('count 聚合从非 number 初始值开始时应正确递增', () => {

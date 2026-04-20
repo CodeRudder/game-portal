@@ -15,7 +15,6 @@
  * - Canvas 渲染
  * - 边界情况
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DoggoHomeEngine } from '../DoggoHomeEngine';
 import {
   CANVAS_WIDTH,
@@ -55,7 +54,7 @@ function addTreats(engine: DoggoHomeEngine, amount: number): void {
 
 describe('DoggoHomeEngine', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   // ========== 初始化测试 ==========

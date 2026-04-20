@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameOfLifeEngine } from '@/games/game-of-life/GameOfLifeEngine';
 import {
   GRID_COLS,
@@ -438,7 +437,7 @@ describe('GameOfLifeEngine', () => {
 
     it('scoreChange 事件在 step 时触发', () => {
       const e = createCleanPausedEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       e.on('scoreChange', handler);
       e.handleKeyDown('n');
       expect(handler).toHaveBeenCalledWith(1);
@@ -515,7 +514,7 @@ describe('GameOfLifeEngine', () => {
 
     it('levelChange 事件在调速时触发', () => {
       const e = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       e.on('levelChange', handler);
       e.handleKeyDown('=');
       expect(handler).toHaveBeenCalledWith(3);
@@ -752,7 +751,7 @@ describe('GameOfLifeEngine', () => {
     });
 
     it('statusChange 事件在状态变化时触发', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');

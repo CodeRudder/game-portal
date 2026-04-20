@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DonkeyKongEngine } from '../DonkeyKongEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -867,7 +866,7 @@ describe('DonkeyKongEngine - 事件', () => {
   });
 
   it('start 触发 statusChange 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -875,7 +874,7 @@ describe('DonkeyKongEngine - 事件', () => {
 
   it('pause 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.pause();
     expect(callback).toHaveBeenCalledWith('paused');
@@ -884,7 +883,7 @@ describe('DonkeyKongEngine - 事件', () => {
   it('resume 触发 statusChange 事件', () => {
     engine.start();
     engine.pause();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.resume();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -892,7 +891,7 @@ describe('DonkeyKongEngine - 事件', () => {
 
   it('reset 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.reset();
     expect(callback).toHaveBeenCalledWith('idle');
@@ -900,7 +899,7 @@ describe('DonkeyKongEngine - 事件', () => {
 
   it('gameOver 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     (engine as any).gameOver();
     expect(callback).toHaveBeenCalledWith('gameover');
@@ -908,7 +907,7 @@ describe('DonkeyKongEngine - 事件', () => {
 
   it('得分变化触发 scoreChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('scoreChange', callback);
     (engine as any).addScore(100);
     expect(callback).toHaveBeenCalledWith(100);
@@ -916,7 +915,7 @@ describe('DonkeyKongEngine - 事件', () => {
 
   it('失去生命触发 loseLife 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('loseLife', callback);
     (engine as any)._barrels = [{
       x: engine.playerX + PLAYER_WIDTH / 2,
@@ -932,7 +931,7 @@ describe('DonkeyKongEngine - 事件', () => {
 
   it('过关触发 levelComplete 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('levelComplete', callback);
     (engine as any)._player.x = engine.hostageX;
     (engine as any)._player.y = engine.hostageY;
@@ -941,7 +940,7 @@ describe('DonkeyKongEngine - 事件', () => {
   });
 
   it('off 可以取消事件监听', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();

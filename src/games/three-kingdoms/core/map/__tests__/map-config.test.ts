@@ -4,7 +4,6 @@
  * 测试地图基础参数、区域划分、地形类型、特殊地标配置和辅助函数。
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   MAP_SIZE,
   GRID_CONFIG,

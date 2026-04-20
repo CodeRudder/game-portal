@@ -14,7 +14,6 @@
  * @module engines/idle/modules/__tests__/StorySystem.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import {
   StorySystem,
   type ChapterDef,

@@ -11,7 +11,6 @@
  * - 边界条件与异常处理
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   ParticleSystem,
   type EmitterConfig,
@@ -43,17 +42,17 @@ function createDefaultConfig(overrides?: Partial<EmitterConfig>): EmitterConfig 
 }
 
 /** 创建一个 mock Canvas 2D 上下文 */
-function createMockCtx(): Record<string, ReturnType<typeof vi.fn>> {
+function createMockCtx(): Record<string, ReturnType<typeof jest.fn>> {
   return {
-    save: vi.fn(),
-    restore: vi.fn(),
-    translate: vi.fn(),
-    rotate: vi.fn(),
-    beginPath: vi.fn(),
-    arc: vi.fn(),
-    fill: vi.fn(),
-    fillStyle: vi.fn(),
-    globalAlpha: vi.fn(),
+    save: jest.fn(),
+    restore: jest.fn(),
+    translate: jest.fn(),
+    rotate: jest.fn(),
+    beginPath: jest.fn(),
+    arc: jest.fn(),
+    fill: jest.fn(),
+    fillStyle: jest.fn(),
+    globalAlpha: jest.fn(),
   };
 }
 

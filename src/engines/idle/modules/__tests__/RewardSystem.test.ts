@@ -15,7 +15,6 @@
  * @module engines/idle/modules/__tests__/RewardSystem.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import {
   RewardSystem,
   type RewardItem,

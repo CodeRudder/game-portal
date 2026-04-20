@@ -4,7 +4,6 @@
  * 验证 v3.0 阶段1C：战斗系统和关卡系统接入引擎编排层
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
 import { BattleOutcome, StarRating } from '../battle/battle.types';
 import { SAVE_KEY } from '../../shared/constants';
@@ -12,12 +11,12 @@ import { SAVE_KEY } from '../../shared/constants';
 // ── localStorage mock ──
 const storage: Record<string, string> = {};
 const localStorageMock = {
-  getItem: vi.fn((k: string) => storage[k] ?? null),
-  setItem: vi.fn((k: string, v: string) => { storage[k] = v; }),
-  removeItem: vi.fn((k: string) => { delete storage[k]; }),
-  clear: vi.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
+  getItem: jest.fn((k: string) => storage[k] ?? null),
+  setItem: jest.fn((k: string, v: string) => { storage[k] = v; }),
+  removeItem: jest.fn((k: string) => { delete storage[k]; }),
+  clear: jest.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
   get length() { return Object.keys(storage).length; },
-  key: vi.fn(() => null),
+  key: jest.fn(() => null),
 };
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
 
@@ -26,7 +25,7 @@ describe('ThreeKingdomsEngine — 战斗/关卡系统集成', () => {
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     engine = new ThreeKingdomsEngine();
   });
 

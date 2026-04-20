@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { SkiFreeEngine } from '../SkiFreeEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -607,7 +606,7 @@ describe('SkiFreeEngine - 碰撞检测', () => {
   });
 
   it('碰撞后触发 crash 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('crash', callback);
     (engine as any)._obstacles = [{
       x: engine.skierX,
@@ -713,7 +712,7 @@ describe('SkiFreeEngine - 跳跃', () => {
   });
 
   it('跳跃时触发 jumpStart 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('jumpStart', callback);
     (engine as any)._obstacles = [{
       x: engine.skierX,
@@ -800,7 +799,7 @@ describe('SkiFreeEngine - 雪怪', () => {
   });
 
   it('雪怪抓住后触发 yetiCatch 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('yetiCatch', callback);
     (engine as any).spawnYeti();
     (engine as any)._yetiX = engine.skierX;
@@ -821,7 +820,7 @@ describe('SkiFreeEngine - 雪怪', () => {
   });
 
   it('雪怪出现时触发 yetiAppear 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('yetiAppear', callback);
     (engine as any).spawnYeti();
     expect(callback).toHaveBeenCalled();
@@ -980,7 +979,7 @@ describe('SkiFreeEngine - 事件', () => {
   });
 
   it('start 触发 statusChange 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -988,7 +987,7 @@ describe('SkiFreeEngine - 事件', () => {
 
   it('pause 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.pause();
     expect(callback).toHaveBeenCalledWith('paused');
@@ -997,7 +996,7 @@ describe('SkiFreeEngine - 事件', () => {
   it('resume 触发 statusChange 事件', () => {
     engine.start();
     engine.pause();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.resume();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1005,7 +1004,7 @@ describe('SkiFreeEngine - 事件', () => {
 
   it('reset 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.reset();
     expect(callback).toHaveBeenCalledWith('idle');
@@ -1013,14 +1012,14 @@ describe('SkiFreeEngine - 事件', () => {
 
   it('gameOver 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     (engine as any).gameOver();
     expect(callback).toHaveBeenCalledWith('gameover');
   });
 
   it('off 可以取消事件监听', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();

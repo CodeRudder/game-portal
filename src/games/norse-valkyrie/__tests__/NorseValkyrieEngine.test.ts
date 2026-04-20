@@ -1,7 +1,6 @@
 /**
  * 北欧英灵 (Norse Valkyrie) 放置类游戏 — 完整测试套件
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NorseValkyrieEngine } from '@/games/norse-valkyrie/NorseValkyrieEngine';
 import {
   CANVAS_WIDTH,
@@ -405,7 +404,7 @@ describe('NorseValkyrieEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -520,7 +519,7 @@ describe('NorseValkyrieEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addIron(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -529,7 +528,7 @@ describe('NorseValkyrieEngine', () => {
     it('购买建筑触发 upgradePurchased 事件', () => {
       engine.start();
       addIron(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalledWith('mining_pit', 1);
@@ -664,7 +663,7 @@ describe('NorseValkyrieEngine', () => {
     it('解锁战士触发 einherjarUnlocked 事件', () => {
       engine.start();
       addIron(engine, 800);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('einherjarUnlocked', listener);
       engine.unlockEinherjar('shieldmaiden');
       expect(listener).toHaveBeenCalledWith('shieldmaiden');
@@ -722,7 +721,7 @@ describe('NorseValkyrieEngine', () => {
       engine.start();
       addGlory(engine, 100);
       addRune(engine, 50);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('einherjarEvolved', listener);
       engine.evolveEinherjar('berserker');
       expect(listener).toHaveBeenCalledWith('berserker', 1);
@@ -783,7 +782,7 @@ describe('NorseValkyrieEngine', () => {
     it('镶嵌符文触发 runeInscribed 事件', () => {
       engine.start();
       addRune(engine, 50);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('runeInscribed', listener);
       engine.inscribeRune('fehu');
       expect(listener).toHaveBeenCalledWith('fehu');
@@ -974,7 +973,7 @@ describe('NorseValkyrieEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalIronEarned = MIN_PRESTIGE_IRON * 4;
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

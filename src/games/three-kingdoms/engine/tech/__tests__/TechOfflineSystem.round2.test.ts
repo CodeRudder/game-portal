@@ -4,7 +4,6 @@
  * 测试离线研究回归面板的完整数据展示和领土离线产出集成。
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TechTreeSystem } from '../TechTreeSystem';
 import { TechPointSystem } from '../TechPointSystem';
 import { TechResearchSystem } from '../TechResearchSystem';
@@ -19,14 +18,14 @@ import type { OfflineResearchPanel } from '../../../../core/tech/offline-researc
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -64,13 +63,13 @@ describe('TechOfflineSystem Round2 增强', () => {
   let baseTime: number;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     baseTime = 1_000_000_000_000;
-    vi.spyOn(Date, 'now').mockReturnValue(baseTime);
+    jest.spyOn(Date, 'now').mockReturnValue(baseTime);
     env = createTestEnv();
   });
 
-  afterEach(() => { vi.restoreAllMocks(); });
+  afterEach(() => { jest.restoreAllMocks(); });
 
   // ═══════════════════════════════════════════
   // 1. 回归面板数据完整性验证

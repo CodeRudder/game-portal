@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { HeadSoccerEngine } from '../HeadSoccerEngine';
 import * as C from '../constants';
 

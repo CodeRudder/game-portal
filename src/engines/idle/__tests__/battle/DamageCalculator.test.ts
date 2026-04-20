@@ -10,7 +10,6 @@
  * - 边界值
  */
 
-import { describe, it, expect, vi } from 'vitest';
 import {
   calculateDamage,
   getElementEffectiveness,
@@ -168,7 +167,7 @@ describe('DamageCalculator', () => {
   describe('calculateDamage — 暴击', () => {
     it('100% 暴击率应触发暴击', () => {
       // Mock Math.random to return 0 for crit check (always crit)
-      const randomSpy = vi.spyOn(Math, 'random');
+      const randomSpy = jest.spyOn(Math, 'random');
       // 闪避检查: random() >= 0 → 不闪避
       // 暴击检查: random() < 1.0 → 暴击
       randomSpy.mockReturnValue(0.5);
@@ -186,7 +185,7 @@ describe('DamageCalculator', () => {
     });
 
     it('暴击倍率应正确应用', () => {
-      const randomSpy = vi.spyOn(Math, 'random');
+      const randomSpy = jest.spyOn(Math, 'random');
       randomSpy.mockReturnValue(0.5); // 不闪避，触发暴击
       const ctx = createContext({
         attackerAttack: 100,
@@ -206,7 +205,7 @@ describe('DamageCalculator', () => {
 
   describe('calculateDamage — 闪避', () => {
     it('100% 闪避率应完全闪避', () => {
-      const randomSpy = vi.spyOn(Math, 'random');
+      const randomSpy = jest.spyOn(Math, 'random');
       randomSpy.mockReturnValue(0); // < 1.0 → 闪避
       const ctx = createContext({ defenderEvasion: 1.0 });
       const result = calculateDamage(ctx);
@@ -222,7 +221,7 @@ describe('DamageCalculator', () => {
     });
 
     it('闪避时不应触发暴击', () => {
-      const randomSpy = vi.spyOn(Math, 'random');
+      const randomSpy = jest.spyOn(Math, 'random');
       randomSpy.mockReturnValue(0); // 闪避
       const ctx = createContext({ defenderEvasion: 1.0, attackerCritRate: 1.0 });
       const result = calculateDamage(ctx);
@@ -238,7 +237,7 @@ describe('DamageCalculator', () => {
 
   describe('calculateDamage — 元素克制', () => {
     it('克制时应造成 1.5 倍伤害', () => {
-      const randomSpy = vi.spyOn(Math, 'random');
+      const randomSpy = jest.spyOn(Math, 'random');
       randomSpy.mockReturnValue(0.5); // 不闪避，不暴击
       const ctx = createContext({
         attackerAttack: 100,
@@ -253,7 +252,7 @@ describe('DamageCalculator', () => {
     });
 
     it('被克制时应造成 0.5 倍伤害', () => {
-      const randomSpy = vi.spyOn(Math, 'random');
+      const randomSpy = jest.spyOn(Math, 'random');
       randomSpy.mockReturnValue(0.5);
       const ctx = createContext({
         attackerAttack: 100,
@@ -305,7 +304,7 @@ describe('DamageCalculator', () => {
     });
 
     it('克制 + 暴击应叠加', () => {
-      const randomSpy = vi.spyOn(Math, 'random');
+      const randomSpy = jest.spyOn(Math, 'random');
       randomSpy.mockReturnValue(0.5); // 不闪避，触发暴击
       const ctx = createContext({
         attackerAttack: 100,
@@ -324,7 +323,7 @@ describe('DamageCalculator', () => {
     });
 
     it('被克制 + 高防御应产生低伤害', () => {
-      const randomSpy = vi.spyOn(Math, 'random');
+      const randomSpy = jest.spyOn(Math, 'random');
       randomSpy.mockReturnValue(0.5);
       const ctx = createContext({
         attackerAttack: 10,

@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LunarLanderEngine } from '../LunarLanderEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -716,7 +715,7 @@ describe('LunarLanderEngine - 着陆判定', () => {
   });
 
   it('成功着陆触发 landingSuccess 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('landingSuccess', callback);
     const lz = engine.landingZone!;
     const centerX = (lz.leftX + lz.rightX) / 2;
@@ -797,7 +796,7 @@ describe('LunarLanderEngine - 坠毁', () => {
   });
 
   it('坠毁触发 landingCrash 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('landingCrash', callback);
     const lz = engine.landingZone!;
     const centerX = (lz.leftX + lz.rightX) / 2;
@@ -1418,7 +1417,7 @@ describe('LunarLanderEngine - 事件', () => {
   });
 
   it('start 触发 statusChange 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1426,7 +1425,7 @@ describe('LunarLanderEngine - 事件', () => {
 
   it('pause 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.pause();
     expect(callback).toHaveBeenCalledWith('paused');
@@ -1435,7 +1434,7 @@ describe('LunarLanderEngine - 事件', () => {
   it('resume 触发 statusChange 事件', () => {
     engine.start();
     engine.pause();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.resume();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1443,7 +1442,7 @@ describe('LunarLanderEngine - 事件', () => {
 
   it('reset 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.reset();
     expect(callback).toHaveBeenCalledWith('idle');
@@ -1451,14 +1450,14 @@ describe('LunarLanderEngine - 事件', () => {
 
   it('gameOver 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     (engine as any).gameOver();
     expect(callback).toHaveBeenCalledWith('gameover');
   });
 
   it('off 可以取消事件监听', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();
@@ -1467,7 +1466,7 @@ describe('LunarLanderEngine - 事件', () => {
 
   it('成功着陆触发 landingSuccess 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('landingSuccess', callback);
     const lz = engine.landingZone!;
     const centerX = (lz.leftX + lz.rightX) / 2;
@@ -1480,7 +1479,7 @@ describe('LunarLanderEngine - 事件', () => {
 
   it('坠毁触发 landingCrash 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('landingCrash', callback);
     const lz = engine.landingZone!;
     const centerX = (lz.leftX + lz.rightX) / 2;
@@ -1500,7 +1499,7 @@ describe('LunarLanderEngine - 事件', () => {
     setLanderAngle(engine, 0);
     tick(engine, 1);
 
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.nextLevel();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1508,7 +1507,7 @@ describe('LunarLanderEngine - 事件', () => {
 
   it('addScore 触发 scoreChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('scoreChange', callback);
     (engine as any).addScore(500);
     expect(callback).toHaveBeenCalledWith(500);
@@ -1576,7 +1575,7 @@ describe('LunarLanderEngine - 边界与异常', () => {
 
   it('destroy 后事件监听被清除', () => {
     const engine = createEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     // destroy 内部调用 reset，reset 触发 statusChange('idle')
     // 所以 callback 会被调用一次（destroy 过程中）

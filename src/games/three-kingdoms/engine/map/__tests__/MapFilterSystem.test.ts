@@ -4,7 +4,6 @@
  * 覆盖：区域筛选、地形筛选、占领状态筛选、地标类型筛选、组合筛选、统计
  */
 
-import { describe, it, expect } from 'vitest';
 import { MapFilterSystem } from '../MapFilterSystem';
 import { generateAllTiles, DEFAULT_LANDMARKS } from '../../../core/map';
 import type { TileData, LandmarkData } from '../../../core/map';

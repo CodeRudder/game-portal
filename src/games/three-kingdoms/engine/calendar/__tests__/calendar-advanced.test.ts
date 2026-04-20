@@ -5,7 +5,6 @@
  *       pause/resume、setTimeScale、季节加成、formatDate、getState 快照。
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CalendarSystem } from '../CalendarSystem';
 import type { CalendarSaveData } from '../calendar.types';
 import { CALENDAR_SAVE_VERSION } from '../calendar-config';
@@ -16,16 +15,16 @@ import { SocialEvents, MapEvents } from '../../../core/events/EventTypes';
 function createMockDeps() {
   return {
     eventBus: {
-      on: vi.fn(),
-      once: vi.fn(),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn(),
+      once: jest.fn(),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn(), has: vi.fn(() => false) },
+    config: { get: jest.fn(), set: jest.fn(), has: jest.fn(() => false) },
     registry: {
-      register: vi.fn(), get: vi.fn(), getAll: vi.fn(() => new Map()),
-      has: vi.fn(() => false), unregister: vi.fn(),
+      register: jest.fn(), get: jest.fn(), getAll: jest.fn(() => new Map()),
+      has: jest.fn(() => false), unregister: jest.fn(),
     },
   };
 }
@@ -35,7 +34,7 @@ describe('CalendarSystem', () => {
   let deps: ReturnType<typeof createMockDeps>;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     calendar = new CalendarSystem();
     deps = createMockDeps();
   });
@@ -67,7 +66,7 @@ describe('CalendarSystem', () => {
 
     it('天气计时器到期后自动变化', () => {
       // weatherDuration ∈ [3, 10], 15 days guarantees timer expiry
-      const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
       calendar.update(15);
       // Verify weather timer was processed (totalDays advanced)
       expect(calendar.getTotalDays()).toBe(15);
@@ -173,7 +172,7 @@ describe('CalendarSystem', () => {
     });
 
     it('deserialize 版本不匹配时仍加载并 warn', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       calendar.deserialize({
         version: 999, totalDays: 50, weather: 'snow', weatherTimer: 2, paused: true,
       });

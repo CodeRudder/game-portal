@@ -1,4 +1,26 @@
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+
+// ── jest → vi compatibility shim ──
+// Many test files use `jest.fn()`, `jest.spyOn()`, etc. but the project
+// runs on Vitest (which provides `vi.*`).  Expose `jest` as an alias so
+// those references resolve at runtime.
+const jestShim = {
+  fn: vi.fn.bind(vi),
+  spyOn: vi.spyOn.bind(vi),
+  mock: vi.mock ? vi.mock.bind(vi) : () => {},
+  clearAllMocks: vi.clearAllMocks.bind(vi),
+  restoreAllMocks: vi.restoreAllMocks.bind(vi),
+  resetAllMocks: vi.resetAllMocks.bind(vi),
+  useFakeTimers: vi.useFakeTimers ? vi.useFakeTimers.bind(vi) : () => {},
+  useRealTimers: vi.useRealTimers ? vi.useRealTimers.bind(vi) : () => {},
+  advanceTimersByTime: vi.advanceTimersByTime ? vi.advanceTimersByTime.bind(vi) : () => {},
+  runAllTimers: vi.runAllTimers ? vi.runAllTimers.bind(vi) : () => {},
+  setSystemTime: vi.setSystemTime ? vi.setSystemTime.bind(vi) : () => {},
+} as unknown as jest.Jest;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).jest = jestShim;
 
 // Mock localStorage
 const localStorageMock = (() => {

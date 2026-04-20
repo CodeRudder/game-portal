@@ -8,7 +8,6 @@
  * 4. 融合科技联动效果同步到 TechLinkSystem
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TechTreeSystem } from '../TechTreeSystem';
 import { TechLinkSystem } from '../TechLinkSystem';
 import { FusionTechSystem } from '../FusionTechSystem';
@@ -18,14 +17,14 @@ import type { ISystemDeps } from '../../../../core/types';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -460,10 +459,10 @@ describe('科技联动 + 融合科技 集成测试', () => {
     it('重复添加已完成科技不重复触发', () => {
       const { deps, linkSystem } = fixture;
       linkSystem.addCompletedTech('eco_t1_farming');
-      const emitCount = (deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.length;
+      const emitCount = (deps.eventBus.emit as ReturnType<typeof jest.fn>).mock.calls.length;
       linkSystem.addCompletedTech('eco_t1_farming'); // 重复
       // 不应新增 emit（因为 addCompletedTech 内部有去重检查）
-      expect((deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.length).toBe(emitCount);
+      expect((deps.eventBus.emit as ReturnType<typeof jest.fn>).mock.calls.length).toBe(emitCount);
     });
 
     it('移除不存在的科技不报错', () => {

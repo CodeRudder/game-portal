@@ -1,7 +1,6 @@
 /**
  * Heroes Might（英雄无敌）放置类游戏 — 完整测试套件
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HeroesMightEngine } from '@/games/heroes-might/HeroesMightEngine';
 import {
   CANVAS_WIDTH,
@@ -368,7 +367,7 @@ describe('HeroesMightEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -483,7 +482,7 @@ describe('HeroesMightEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addGold(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -492,7 +491,7 @@ describe('HeroesMightEngine', () => {
     it('购买建筑触发 upgradePurchased 事件', () => {
       engine.start();
       addGold(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalledWith('gold_mine', 1);
@@ -629,7 +628,7 @@ describe('HeroesMightEngine', () => {
     it('招募英雄触发 heroRecruited 事件', () => {
       engine.start();
       addGold(engine, 500);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('heroRecruited', listener);
       engine.recruitHero('ranger');
       expect(listener).toHaveBeenCalledWith('ranger');
@@ -702,7 +701,7 @@ describe('HeroesMightEngine', () => {
       engine.start();
       addGem(engine, 100);
       addCrystal(engine, 50);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('heroEvolved', listener);
       engine.evolveHero('knight');
       expect(listener).toHaveBeenCalledWith('knight', 1);
@@ -827,7 +826,7 @@ describe('HeroesMightEngine', () => {
     it('施放魔法触发 spellCast 事件', () => {
       engine.start();
       addCrystal(engine, 10);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('spellCast', listener);
       engine.castSpell('gold_rush');
       expect(listener).toHaveBeenCalledWith('gold_rush');
@@ -1048,7 +1047,7 @@ describe('HeroesMightEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalGoldEarned = MIN_PRESTIGE_GOLD * 4;
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

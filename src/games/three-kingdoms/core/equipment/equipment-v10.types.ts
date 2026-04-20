@@ -76,6 +76,8 @@ export interface ForgePityState {
 /** 炼制系统存档 */
 export interface ForgeSaveData {
   pityState: ForgePityState;
+  /** 别名，兼容旧接口 */
+  pity?: ForgePityState;
   totalForgeCount: number;
 }
 

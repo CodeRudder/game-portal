@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   WordleEngine,
   calculateFeedback,
@@ -379,14 +378,14 @@ describe('inputLetter', () => {
   });
 
   it('输入触发 inputChange 事件', () => {
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('inputChange', spy);
     engine.inputLetter('H');
     expect(spy).toHaveBeenCalledWith(['H']);
   });
 
   it('连续输入触发多次 inputChange', () => {
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('inputChange', spy);
     engine.inputLetter('H');
     engine.inputLetter('E');
@@ -394,7 +393,7 @@ describe('inputLetter', () => {
   });
 
   it('输入被拒绝时不触发事件', () => {
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('inputChange', spy);
     // Fill up input
     for (let i = 0; i < WORD_LENGTH; i++) {
@@ -444,7 +443,7 @@ describe('deleteLetter', () => {
 
   it('删除触发 inputChange 事件', () => {
     engine.inputLetter('A');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('inputChange', spy);
     engine.deleteLetter();
     expect(spy).toHaveBeenCalledWith([]);
@@ -527,14 +526,14 @@ describe('submitGuess', () => {
   });
 
   it('提交触发 scoreChange 事件', () => {
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('scoreChange', spy);
     submitWord(engine, 'WORLD');
     expect(spy).toHaveBeenCalled();
   });
 
   it('提交触发 guessSubmitted 事件（非终局）', () => {
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('guessSubmitted', spy);
     submitWord(engine, 'WORLD');
     expect(spy).toHaveBeenCalledWith(
@@ -543,7 +542,7 @@ describe('submitGuess', () => {
   });
 
   it('获胜时触发 win 事件', () => {
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('win', spy);
     submitWord(engine, 'APPLE');
     expect(spy).toHaveBeenCalledWith(
@@ -725,7 +724,7 @@ describe('胜利判定', () => {
 
   it('获胜时触发 statusChange 为 gameover', () => {
     const engine = createEngineWithAnswer('APPLE');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('statusChange', spy);
     submitWord(engine, 'APPLE');
     expect(spy).toHaveBeenCalledWith('gameover');
@@ -753,7 +752,7 @@ describe('失败判定', () => {
 
   it('失败时触发 lose 事件', () => {
     const engine = createEngineWithAnswer('APPLE');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('lose', spy);
     const wrongWords = ['WORLD', 'HOUSE', 'WATER', 'MUSIC', 'LIGHT', 'NIGHT'];
     for (const word of wrongWords) {
@@ -1341,7 +1340,7 @@ describe('事件系统', () => {
 
   it('scoreChange 事件在每次分数变化时触发', () => {
     const engine = createEngineWithAnswer('APPLE');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('scoreChange', spy);
     submitWord(engine, 'WORLD');
     expect(spy).toHaveBeenCalled();
@@ -1351,7 +1350,7 @@ describe('事件系统', () => {
 
   it('win 事件包含猜测次数', () => {
     const engine = createEngineWithAnswer('APPLE');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('win', spy);
     submitWord(engine, 'WORLD');
     submitWord(engine, 'APPLE');
@@ -1360,7 +1359,7 @@ describe('事件系统', () => {
 
   it('lose 事件包含答案', () => {
     const engine = createEngineWithAnswer('APPLE');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('lose', spy);
     const wrongWords = ['WORLD', 'HOUSE', 'WATER', 'MUSIC', 'LIGHT', 'NIGHT'];
     for (const word of wrongWords) {
@@ -1371,7 +1370,7 @@ describe('事件系统', () => {
 
   it('error 事件在无效输入时触发', () => {
     const engine = createEngine();
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('error', spy);
     engine.inputLetter('A');
     engine.submitGuess(); // Not enough letters
@@ -1380,7 +1379,7 @@ describe('事件系统', () => {
 
   it('off 取消事件监听', () => {
     const engine = createEngineWithAnswer('APPLE');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('scoreChange', spy);
     engine.off('scoreChange', spy);
     submitWord(engine, 'WORLD');
@@ -1389,7 +1388,7 @@ describe('事件系统', () => {
 
   it('guessSubmitted 事件包含反馈信息', () => {
     const engine = createEngineWithAnswer('APPLE');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('guessSubmitted', spy);
     submitWord(engine, 'WORLD');
     expect(spy).toHaveBeenCalledWith(
@@ -1403,7 +1402,7 @@ describe('事件系统', () => {
 
   it('statusChange 事件在获胜时触发', () => {
     const engine = createEngineWithAnswer('APPLE');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('statusChange', spy);
     submitWord(engine, 'APPLE');
     expect(spy).toHaveBeenCalledWith('gameover');
@@ -1411,7 +1410,7 @@ describe('事件系统', () => {
 
   it('statusChange 事件在失败时触发', () => {
     const engine = createEngineWithAnswer('APPLE');
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('statusChange', spy);
     const wrongWords = ['WORLD', 'HOUSE', 'WATER', 'MUSIC', 'LIGHT', 'NIGHT'];
     for (const word of wrongWords) {

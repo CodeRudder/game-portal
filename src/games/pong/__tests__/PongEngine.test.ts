@@ -3,7 +3,6 @@
  * 覆盖：初始化、挡板移动、球运动反弹、得分、AI行为、
  *       胜利条件(先到11分)、等级系统、状态管理、handleKeyDown/Up、getState
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PongEngine } from '../PongEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT, HUD_HEIGHT,
@@ -185,7 +184,7 @@ describe('PongEngine - 启动', () => {
 
   it('start 发出 statusChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -193,7 +192,7 @@ describe('PongEngine - 启动', () => {
 
   it('start 发出 scoreChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(0);
@@ -201,7 +200,7 @@ describe('PongEngine - 启动', () => {
 
   it('start 发出 levelChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('levelChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(1);
@@ -240,14 +239,14 @@ describe('PongEngine - 发球', () => {
   });
 
   it('发球方向随机（dx 可正可负）', () => {
-    vi.spyOn(Math, 'random');
+    jest.spyOn(Math, 'random');
     const engine = createAndStartEngine();
     advancePastServe(engine);
     // 只要能正常发球即可（方向由 Math.random 决定）
     const ball = getBall(engine)!;
     expect(typeof ball.dx).toBe('number');
     expect(typeof ball.dy).toBe('number');
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('发球角度在 ±45° 以内', () => {
@@ -621,7 +620,7 @@ describe('PongEngine - 胜利条件', () => {
 
   it('游戏结束后发出 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     setPrivate(engine, '_playerScore', WIN_SCORE - 1);
     advancePastServe(engine);
@@ -774,7 +773,7 @@ describe('PongEngine - 等级系统', () => {
 
   it('setLevel 触发 levelChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('levelChange', handler);
     // setLevel 是 protected，通过 start 间接触发
     engine.start();
@@ -876,7 +875,7 @@ describe('PongEngine - 状态管理', () => {
 
   it('destroy 清除所有事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.destroy();
     // destroy 内部调用 reset() 会触发一次 statusChange('idle')
@@ -888,7 +887,7 @@ describe('PongEngine - 状态管理', () => {
 
   it('pause/resume 发出 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.pause();
     expect(handler).toHaveBeenCalledWith('paused');
@@ -898,7 +897,7 @@ describe('PongEngine - 状态管理', () => {
 
   it('reset 发出 statusChange idle 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.reset();
     expect(handler).toHaveBeenCalledWith('idle');
@@ -1094,7 +1093,7 @@ describe('PongEngine - getState', () => {
 describe('PongEngine - 事件系统', () => {
   it('on 注册事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test');
     expect(handler).toHaveBeenCalled();
@@ -1102,7 +1101,7 @@ describe('PongEngine - 事件系统', () => {
 
   it('off 取消事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.off('test', handler);
     engine.emit('test');
@@ -1111,7 +1110,7 @@ describe('PongEngine - 事件系统', () => {
 
   it('emit 传递参数', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test', 'arg1', 42);
     expect(handler).toHaveBeenCalledWith('arg1', 42);
@@ -1119,8 +1118,8 @@ describe('PongEngine - 事件系统', () => {
 
   it('多次 on 同一事件注册多个监听', () => {
     const engine = createEngine();
-    const h1 = vi.fn();
-    const h2 = vi.fn();
+    const h1 = jest.fn();
+    const h2 = jest.fn();
     engine.on('test', h1);
     engine.on('test', h2);
     engine.emit('test');

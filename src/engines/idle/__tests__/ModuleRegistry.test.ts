@@ -19,7 +19,6 @@
  * - 边界条件和错误处理
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   ModuleRegistry,
   type ModuleDescriptor,

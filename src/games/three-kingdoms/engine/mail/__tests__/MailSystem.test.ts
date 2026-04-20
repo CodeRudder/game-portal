@@ -12,7 +12,6 @@
  *   - 存档序列化
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   MailSystem,
   CATEGORY_LABELS,
@@ -31,12 +30,12 @@ import {
 function createMockStorage(): Storage {
   const store: Record<string, string> = {};
   return {
-    getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-    removeItem: vi.fn((key: string) => { delete store[key]; }),
-    clear: vi.fn(() => Object.keys(store).forEach(k => delete store[k])),
+    getItem: jest.fn((key: string) => store[key] ?? null),
+    setItem: jest.fn((key: string, value: string) => { store[key] = value; }),
+    removeItem: jest.fn((key: string) => { delete store[key]; }),
+    clear: jest.fn(() => Object.keys(store).forEach(k => delete store[k])),
     get length() { return Object.keys(store).length; },
-    key: vi.fn(() => null),
+    key: jest.fn(() => null),
   };
 }
 

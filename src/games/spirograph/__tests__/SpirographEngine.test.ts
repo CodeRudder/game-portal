@@ -5,7 +5,6 @@
  *
  * 不依赖 DOM/Canvas，通过 engine.init() 不传 canvas 来测试纯逻辑。
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SpirographEngine } from '../SpirographEngine';
 import {
   CANVAS_WIDTH,
@@ -1415,7 +1414,7 @@ describe('exportParams', () => {
 describe('事件系统', () => {
   it('start 触发 statusChange 事件', () => {
     const e = createIdleEngineWithCanvas();
-    const handler = vi.fn();
+    const handler = jest.fn();
     e.on('statusChange', handler);
     e.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -1423,7 +1422,7 @@ describe('事件系统', () => {
 
   it('pause 触发 statusChange 事件', () => {
     const e = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     e.on('statusChange', handler);
     e.pause();
     expect(handler).toHaveBeenCalledWith('paused');
@@ -1432,7 +1431,7 @@ describe('事件系统', () => {
   it('resume 触发 statusChange 事件', () => {
     const e = createEngine();
     e.pause();
-    const handler = vi.fn();
+    const handler = jest.fn();
     e.on('statusChange', handler);
     e.resume();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -1440,7 +1439,7 @@ describe('事件系统', () => {
 
   it('reset 触发 statusChange 事件', () => {
     const e = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     e.on('statusChange', handler);
     e.reset();
     expect(handler).toHaveBeenCalledWith('idle');
@@ -1448,7 +1447,7 @@ describe('事件系统', () => {
 
   it('update 触发 scoreChange 事件', () => {
     const e = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     e.on('scoreChange', handler);
     tick(e, 1);
     expect(handler).toHaveBeenCalled();
@@ -1456,7 +1455,7 @@ describe('事件系统', () => {
 
   it('off 取消事件监听', () => {
     const e = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     e.on('scoreChange', handler);
     e.off('scoreChange', handler);
     tick(e, 1);
@@ -1465,7 +1464,7 @@ describe('事件系统', () => {
 
   it('destroy 清除所有监听', () => {
     const e = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     e.on('statusChange', handler);
     e.destroy();
     // destroy 后触发不了了

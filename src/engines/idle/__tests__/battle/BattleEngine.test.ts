@@ -15,7 +15,6 @@
  * - 边界条件
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   BattleEngine,
   type BattleConfig,
@@ -207,7 +206,7 @@ describe('BattleEngine', () => {
     });
 
     it('应触发 battle_started 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       engine.init(createBattleConfig());
       expect(handler).toHaveBeenCalledWith(
@@ -283,7 +282,7 @@ describe('BattleEngine', () => {
         attackerUnits: [createStrongAttacker()],
         defenderUnits: [createWeakDefender()],
       }));
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       // 推进 1000ms（一个回合间隔）
       engine.update(1000);
@@ -303,7 +302,7 @@ describe('BattleEngine', () => {
 
     it('应移除过期 Buff', () => {
       engine.init(createBattleConfig());
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       const units = (engine as any).units as any[];
       units[0].buffs = [{ id: 'b1', type: 'buff', stat: 'attack', value: 5, remainingMs: 100, sourceUnitId: '' }];
@@ -319,7 +318,7 @@ describe('BattleEngine', () => {
         attackerUnits: [createStrongAttacker()],
         defenderUnits: [createWeakDefender()],
       }));
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       // 多次推进直到战斗结束
       for (let i = 0; i < 100; i++) {
@@ -334,7 +333,7 @@ describe('BattleEngine', () => {
     it('paused 状态下 update 应无操作', () => {
       engine.init(createBattleConfig());
       engine.pause();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       engine.update(1000);
       // 不应触发 turn_started
@@ -363,7 +362,7 @@ describe('BattleEngine', () => {
 
     it('pause 应触发 battle_paused 事件', () => {
       engine.init(createBattleConfig());
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       engine.pause();
       expect(handler).toHaveBeenCalledWith(
@@ -381,7 +380,7 @@ describe('BattleEngine', () => {
     it('resume 应触发 battle_resumed 事件', () => {
       engine.init(createBattleConfig());
       engine.pause();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       engine.resume();
       expect(handler).toHaveBeenCalledWith(
@@ -482,7 +481,7 @@ describe('BattleEngine', () => {
 
     it('应触发 battle_finished 事件', () => {
       engine.init(createBattleConfig());
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       engine.quickSettle();
       expect(handler).toHaveBeenCalledWith(
@@ -609,14 +608,14 @@ describe('BattleEngine', () => {
 
   describe('事件发射', () => {
     it('on 应注册事件监听器', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       engine.init(createBattleConfig());
       expect(handler).toHaveBeenCalled();
     });
 
     it('off 应注销事件监听器', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       engine.off(handler);
       engine.init(createBattleConfig());
@@ -624,13 +623,13 @@ describe('BattleEngine', () => {
     });
 
     it('注销未注册的监听器应安全无操作', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       expect(() => engine.off(handler)).not.toThrow();
     });
 
     it('应支持多个监听器', () => {
-      const handler1 = vi.fn();
-      const handler2 = vi.fn();
+      const handler1 = jest.fn();
+      const handler2 = jest.fn();
       engine.on(handler1);
       engine.on(handler2);
       engine.init(createBattleConfig());
@@ -643,7 +642,7 @@ describe('BattleEngine', () => {
         attackerUnits: [createStrongAttacker()],
         defenderUnits: [createWeakDefender()],
       }));
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on(handler);
       for (let i = 0; i < 100; i++) {
         engine.update(1000);

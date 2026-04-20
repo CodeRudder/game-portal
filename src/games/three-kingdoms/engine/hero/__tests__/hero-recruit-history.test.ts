@@ -3,7 +3,6 @@
  * 覆盖：getRecruitHistory、getRecruitHistoryCount、clearRecruitHistory
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HeroRecruitSystem } from '../HeroRecruitSystem';
 import type { RecruitDeps } from '../HeroRecruitSystem';
 import { HeroSystem } from '../HeroSystem';
@@ -14,8 +13,8 @@ import { Quality } from '../hero.types';
 function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: vi.fn().mockReturnValue(true),
-    canAffordResource: vi.fn().mockReturnValue(true),
+    spendResource: jest.fn().mockReturnValue(true),
+    canAffordResource: jest.fn().mockReturnValue(true),
   };
 }
 
@@ -142,8 +141,8 @@ describe('HeroRecruitSystem — 招募历史', () => {
     it('资源不足时不记录历史', () => {
       const poorDeps: RecruitDeps = {
         heroSystem,
-        spendResource: vi.fn().mockReturnValue(false),
-        canAffordResource: vi.fn().mockReturnValue(false),
+        spendResource: jest.fn().mockReturnValue(false),
+        canAffordResource: jest.fn().mockReturnValue(false),
       };
       recruit.setRecruitDeps(poorDeps);
       recruit.recruitSingle('normal');

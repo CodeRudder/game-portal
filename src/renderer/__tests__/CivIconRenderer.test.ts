@@ -11,13 +11,11 @@
  * - 销毁和清理
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 // ---------------------------------------------------------------------------
 // Mock PixiJS v8
 // ---------------------------------------------------------------------------
 
-vi.mock('pixi.js', () => {
+jest.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0;
@@ -25,10 +23,10 @@ vi.mock('pixi.js', () => {
     visible = true;
     children: any[] = [];
     parent: any = null;
-    position = { set: vi.fn() };
-    emit = vi.fn();
-    on = vi.fn();
-    off = vi.fn();
+    position = { set: jest.fn() };
+    emit = jest.fn();
+    on = jest.fn();
+    off = jest.fn();
 
     constructor(opts?: { label?: string }) { this.label = opts?.label ?? ''; }
 

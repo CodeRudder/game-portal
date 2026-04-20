@@ -11,7 +11,6 @@
  * @module engine/map/__tests__/SiegeEnhancer.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SiegeEnhancer } from '../SiegeEnhancer';
 import { SiegeSystem } from '../SiegeSystem';
 import { TerritorySystem } from '../TerritorySystem';
@@ -56,16 +55,16 @@ function createSystems() {
 
   const deps: ISystemDeps = {
     eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
     registry: {
-      register: vi.fn(),
-      get: vi.fn().mockImplementation((name: string) => {
+      register: jest.fn(),
+      get: jest.fn().mockImplementation((name: string) => {
         if (name === 'territory') return territory;
         if (name === 'siege') return siege;
         if (name === 'garrison') return garrison;
@@ -74,10 +73,10 @@ function createSystems() {
         if (name === 'formation') return { isGeneralInAnyFormation: () => false };
         throw new Error(`Subsystem ${name} not found`);
       }),
-      getAll: vi.fn().mockReturnValue(new Map()),
-      has: vi.fn().mockImplementation((name: string) =>
+      getAll: jest.fn().mockReturnValue(new Map()),
+      has: jest.fn().mockImplementation((name: string) =>
         ['territory', 'siege', 'garrison', 'siegeEnhancer', 'hero', 'formation'].includes(name)),
-      unregister: vi.fn(),
+      unregister: jest.fn(),
     } as unknown as ISubsystemRegistry,
   };
 

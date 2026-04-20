@@ -562,7 +562,7 @@ describe('FlappyBirdEngine', () => {
 
     it('start 触发 statusChange 事件为 playing', () => {
       const engine = createEngine();
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('statusChange', cb);
       engine.start();
       expect(cb).toHaveBeenCalledWith('playing');
@@ -570,7 +570,7 @@ describe('FlappyBirdEngine', () => {
 
     it('gameover 触发 statusChange 事件', () => {
       const engine = startEngine();
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('statusChange', cb);
 
       // 撞地面

@@ -4,7 +4,6 @@
  * 覆盖：网格初始化、折叠操作（水平/垂直）、目标匹配检测、关卡系统、撤销、步数计数、键盘、getState
  */
 
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
 import { FoldPuzzleEngine } from '../FoldPuzzleEngine';
 import {
   GRID_SIZE,
@@ -1166,7 +1165,7 @@ describe('Fold Puzzle — 重置', () => {
 describe('Fold Puzzle — 事件系统', () => {
   it('stateChange 事件应在折叠时触发', () => {
     const engine = startEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('stateChange', listener);
     engine.handleKeyDown(' ');
     expect(listener).toHaveBeenCalled();
@@ -1175,7 +1174,7 @@ describe('Fold Puzzle — 事件系统', () => {
   it('stateChange 事件应在撤销时触发', () => {
     const engine = startEngine();
     engine.handleKeyDown(' ');
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('stateChange', listener);
     engine.handleKeyDown('u');
     expect(listener).toHaveBeenCalled();
@@ -1183,7 +1182,7 @@ describe('Fold Puzzle — 事件系统', () => {
 
   it('stateChange 事件应在重置关卡时触发', () => {
     const engine = startEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('stateChange', listener);
     engine.resetLevel();
     expect(listener).toHaveBeenCalled();
@@ -1191,7 +1190,7 @@ describe('Fold Puzzle — 事件系统', () => {
 
   it('off 应移除事件监听', () => {
     const engine = startEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('stateChange', listener);
     engine.off('stateChange', listener);
     engine.handleKeyDown(' ');
@@ -1288,7 +1287,7 @@ describe('Fold Puzzle — 综合场景', () => {
 
   it('destroy 后不再响应事件', () => {
     const engine = startEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('stateChange', listener);
     engine.destroy();
     // destroy 后 listeners 被清空，不应再触发

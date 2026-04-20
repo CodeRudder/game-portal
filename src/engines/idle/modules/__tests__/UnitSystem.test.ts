@@ -14,7 +14,6 @@
  * @module engines/idle/modules/__tests__/UnitSystem.test
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   UnitSystem,
   UnitRarity,
@@ -210,7 +209,7 @@ describe('UnitSystem', () => {
       system.unlock('warrior');
       system.evolve('warrior', 'warrior_knight');
 
-      // 模拟时间流逝：使用 vi.advanceTimersByTime 不适用于 Date.now
+      // 模拟时间流逝：使用 jest.advanceTimersByTime 不适用于 Date.now
       // 直接修改内部状态来模拟
       const state = system.getState('warrior')!;
       // 手动将开始时间设为 10 秒前（evolveTime 是 5000ms）

@@ -13,7 +13,6 @@
  * @module engines/idle/modules/__tests__/DecorationSystem.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import {
   DecorationSystem,
   type SkinDef,

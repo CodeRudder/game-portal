@@ -3,7 +3,6 @@
  * 覆盖：初始化、武将管理、碎片管理、升级经验、查询工具、update()
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HeroSystem } from '../HeroSystem';
 import type { GeneralData, Quality, Faction } from '../hero.types';
 import { Quality as Q } from '../hero.types';
@@ -21,9 +20,9 @@ import {
 // ── 辅助：创建 mock ISystemDeps ──
 function makeMockDeps() {
   return {
-    eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
-    config: { get: vi.fn(), set: vi.fn(), has: vi.fn() },
-    registry: { get: vi.fn(), register: vi.fn(), has: vi.fn(), getAll: vi.fn(), unregister: vi.fn() },
+    eventBus: { on: jest.fn(), off: jest.fn(), emit: jest.fn() },
+    config: { get: jest.fn(), set: jest.fn(), has: jest.fn() },
+    registry: { get: jest.fn(), register: jest.fn(), has: jest.fn(), getAll: jest.fn(), unregister: jest.fn() },
   };
 }
 
@@ -31,7 +30,7 @@ describe('HeroSystem', () => {
   let sys: HeroSystem;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     sys = new HeroSystem();
     sys.init(makeMockDeps());
   });

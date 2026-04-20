@@ -4,19 +4,18 @@
  *       SaveManager 委托、离线收益、加成体系框架
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
 import { SAVE_KEY, ENGINE_SAVE_VERSION } from '../../shared/constants';
 
 // ── localStorage mock ──
 const storage: Record<string, string> = {};
 const localStorageMock = {
-  getItem: vi.fn((k: string) => storage[k] ?? null),
-  setItem: vi.fn((k: string, v: string) => { storage[k] = v; }),
-  removeItem: vi.fn((k: string) => { delete storage[k]; }),
-  clear: vi.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
+  getItem: jest.fn((k: string) => storage[k] ?? null),
+  setItem: jest.fn((k: string, v: string) => { storage[k] = v; }),
+  removeItem: jest.fn((k: string) => { delete storage[k]; }),
+  clear: jest.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
   get length() { return Object.keys(storage).length; },
-  key: vi.fn(() => null),
+  key: jest.fn(() => null),
 };
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
 
@@ -25,7 +24,7 @@ describe('ThreeKingdomsEngine', () => {
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     engine = new ThreeKingdomsEngine();
   });
 
@@ -38,7 +37,7 @@ describe('ThreeKingdomsEngine', () => {
   // ═══════════════════════════════════════════
   describe('init()', () => {
     it('初始化新游戏并发出 game:initialized 事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('game:initialized', listener);
       engine.init();
       expect(engine.isInitialized()).toBe(true);
@@ -47,7 +46,7 @@ describe('ThreeKingdomsEngine', () => {
 
     it('重复调用 init() 为空操作', () => {
       engine.init();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('game:initialized', listener);
       engine.init();
       expect(listener).not.toHaveBeenCalled();
@@ -72,7 +71,7 @@ describe('ThreeKingdomsEngine', () => {
 
     it('驱动资源产出并发出 resource:changed 事件', () => {
       engine.init();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('resource:changed', listener);
       engine.tick(1000);
       expect(listener).toHaveBeenCalled();
@@ -98,7 +97,7 @@ describe('ThreeKingdomsEngine', () => {
       const check = engine.checkUpgrade('farmland');
       if (check.canUpgrade) {
         engine.upgradeBuilding('farmland');
-        const upgradedListener = vi.fn();
+        const upgradedListener = jest.fn();
         engine.on('building:upgraded', upgradedListener);
         engine.tick(999999999);
         expect(upgradedListener).toHaveBeenCalled();
@@ -128,7 +127,7 @@ describe('ThreeKingdomsEngine', () => {
 
     it('发出 game:saved 事件', () => {
       engine.init();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('game:saved', listener);
       engine.save();
       expect(listener).toHaveBeenCalledWith(
@@ -140,7 +139,7 @@ describe('ThreeKingdomsEngine', () => {
       engine.init();
       engine.save();
       const engine2 = new ThreeKingdomsEngine();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine2.on('game:loaded', listener);
       const result = engine2.load();
       expect(engine2.isInitialized()).toBe(true);
@@ -182,7 +181,7 @@ describe('ThreeKingdomsEngine', () => {
   describe('事件系统', () => {
     it('on() 注册并触发回调', () => {
       engine.init();
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('game:saved', cb);
       engine.save();
       expect(cb).toHaveBeenCalledTimes(1);
@@ -190,7 +189,7 @@ describe('ThreeKingdomsEngine', () => {
 
     it('once() 仅触发一次', () => {
       engine.init();
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.once('game:saved', cb);
       engine.save();
       engine.save();
@@ -199,7 +198,7 @@ describe('ThreeKingdomsEngine', () => {
 
     it('off() 取消订阅', () => {
       engine.init();
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('game:saved', cb);
       engine.off('game:saved', cb);
       engine.save();
@@ -400,7 +399,7 @@ describe('ThreeKingdomsEngine', () => {
       engine.save();
 
       const engine2 = new ThreeKingdomsEngine();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine2.on('game:loaded', listener);
       engine2.load();
       expect(listener).toHaveBeenCalled();
@@ -434,7 +433,7 @@ describe('ThreeKingdomsEngine', () => {
       storage[SAVE_KEY] = JSON.stringify(parsed);
 
       const engine2 = new ThreeKingdomsEngine();
-      const offlineListener = vi.fn();
+      const offlineListener = jest.fn();
       engine2.on('game:offline-earnings', offlineListener);
       engine2.load();
 

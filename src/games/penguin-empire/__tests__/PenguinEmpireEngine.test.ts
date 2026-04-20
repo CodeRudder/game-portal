@@ -1,7 +1,6 @@
 /**
  * Penguin Empire（企鹅帝国）放置类游戏 — 完整测试套件
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PenguinEmpireEngine } from '@/games/penguin-empire/PenguinEmpireEngine';
 import {
   CANVAS_WIDTH,
@@ -297,7 +296,7 @@ describe('PenguinEmpireEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -419,7 +418,7 @@ describe('PenguinEmpireEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addIce(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(BUILDING_IDS.IGLOO);
       expect(listener).toHaveBeenCalled();
@@ -583,7 +582,7 @@ describe('PenguinEmpireEngine', () => {
     it('声望重置触发 prestigeReset 事件', () => {
       engine.start();
       addIce(engine, MIN_PRESTIGE_ICE * 4);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('prestigeReset', listener);
       engine.prestigeReset();
       expect(listener).toHaveBeenCalled();

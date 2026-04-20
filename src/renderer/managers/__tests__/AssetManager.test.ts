@@ -11,15 +11,13 @@
  * - 销毁清理
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
 // ═══════════════════════════════════════════════════════════════
 // Mock PixiJS v8
 // ═══════════════════════════════════════════════════════════════
 
-const mockTextureDestroy = vi.fn();
+const mockTextureDestroy = jest.fn();
 
-vi.mock('pixi.js', () => {
+jest.mock('pixi.js', () => {
   const textureCache = new Map<string, any>();
 
   class MockTextureSource {
@@ -50,7 +48,7 @@ vi.mock('pixi.js', () => {
   }
 
   const MockAssets = {
-    load: vi.fn(async (src: string) => {
+    load: jest.fn(async (src: string) => {
       if (src.includes('spritesheet') || src.endsWith('.json')) {
         // 模拟 spritesheet 加载失败（触发程序化生成）
         throw new Error('File not found');
@@ -58,16 +56,16 @@ vi.mock('pixi.js', () => {
       // 模拟普通纹理加载
       return new MockTexture();
     }),
-    reset: vi.fn(),
+    reset: jest.fn(),
   };
 
   const MockCache = {
     _store: new Map<string, any>(),
-    has: vi.fn((key: string) => MockCache._store.has(key)),
-    get: vi.fn((key: string) => MockCache._store.get(key)),
-    set: vi.fn((key: string, value: any) => MockCache._store.set(key, value)),
-    remove: vi.fn((key: string) => MockCache._store.delete(key)),
-    clear: vi.fn(() => MockCache._store.clear()),
+    has: jest.fn((key: string) => MockCache._store.has(key)),
+    get: jest.fn((key: string) => MockCache._store.get(key)),
+    set: jest.fn((key: string, value: any) => MockCache._store.set(key, value)),
+    remove: jest.fn((key: string) => MockCache._store.delete(key)),
+    clear: jest.fn(() => MockCache._store.clear()),
   };
 
   class MockSpritesheet {
@@ -483,7 +481,7 @@ describe('AssetManager', () => {
   let assetManager: AssetManager;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     assetManager = new AssetManager();
   });
 
@@ -517,7 +515,7 @@ describe('AssetManager', () => {
       expect(assetManager.isBundleLoaded('map')).toBe(true);
 
       // Second load should be a no-op
-      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, 'info').mockImplementation(() => {});
       await assetManager.loadBundle('map');
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('already loaded'),
@@ -526,7 +524,7 @@ describe('AssetManager', () => {
     });
 
     it('should warn for unknown bundles', async () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       await assetManager.loadBundle('nonexistent');
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('Unknown bundle'),
@@ -536,7 +534,7 @@ describe('AssetManager', () => {
     });
 
     it('should call progress callback during loading', async () => {
-      const onProgress = vi.fn();
+      const onProgress = jest.fn();
       await assetManager.loadBundle('map', onProgress);
       // Should be called at least once (before and after each asset)
       expect(onProgress).toHaveBeenCalled();
@@ -696,7 +694,7 @@ describe('AssetManager', () => {
     });
 
     it('should call progress callback', async () => {
-      const onProgress = vi.fn();
+      const onProgress = jest.fn();
       await assetManager.preloadAssets(
         [{ id: 'test', src: '/test.png', type: 'texture' }],
         onProgress,
@@ -706,7 +704,7 @@ describe('AssetManager', () => {
 
     it('should handle texture loading failure gracefully', async () => {
       const { Assets } = await import('pixi.js');
-      (Assets.load as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('fail'));
+      (Assets.load as ReturnType<typeof jest.fn>).mockRejectedValueOnce(new Error('fail'));
 
       const ids = await assetManager.preloadAssets([
         { id: 'fail', src: '/fail.png', type: 'texture' },
@@ -737,7 +735,7 @@ describe('AssetManager', () => {
     });
 
     it('should warn for unknown procedural config', async () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       await assetManager.generateProceduralSpritesheet('unknown-type');
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('No procedural config'),

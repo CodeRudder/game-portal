@@ -6,7 +6,6 @@
  * @module engine/tilemap/__tests__/BuildingPlacementManager.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { BuildingPlacementManager, getLevelVisual, LEVEL_VISUALS } from '../BuildingPlacementManager';
 import { BiomeType, BIOME_CONFIGS } from '../BiomeConfig';
 import { TerrainType } from '../types';

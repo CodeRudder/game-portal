@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FlappyPlaneEngine } from '../FlappyPlaneEngine';
 import {
   CANVAS_WIDTH,
@@ -430,14 +429,14 @@ describe('FlappyPlaneEngine', () => {
     });
 
     it('分数变化时触发 scoreChange 事件', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       engine.on('scoreChange', callback);
       (engine as any).addScore(5);
       expect(callback).toHaveBeenCalledWith(5);
     });
 
     it('等级变化时触发 levelChange 事件', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       engine.on('levelChange', callback);
       (engine as any).setLevel(3);
       expect(callback).toHaveBeenCalledWith(3);
@@ -516,7 +515,7 @@ describe('FlappyPlaneEngine', () => {
     });
 
     it('收集星星时触发 scoreChange', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       engine.on('scoreChange', callback);
       (engine as any).addScore(STAR_POINTS);
       expect(callback).toHaveBeenCalled();
@@ -537,7 +536,7 @@ describe('FlappyPlaneEngine', () => {
     });
 
     it('游戏结束时触发 statusChange 事件', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       engine.on('statusChange', callback);
       engine.handleKeyDown('ArrowUp');
       tickFrames(engine, 300);
@@ -811,7 +810,7 @@ describe('FlappyPlaneEngine', () => {
   describe('事件系统', () => {
     it('scoreChange 事件正确触发', () => {
       startEngine(engine);
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('scoreChange', cb);
       (engine as any).addScore(3);
       expect(cb).toHaveBeenCalledWith(3);
@@ -819,14 +818,14 @@ describe('FlappyPlaneEngine', () => {
 
     it('levelChange 事件正确触发', () => {
       startEngine(engine);
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('levelChange', cb);
       (engine as any).setLevel(2);
       expect(cb).toHaveBeenCalledWith(2);
     });
 
     it('statusChange 事件在 start 时触发', () => {
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('statusChange', cb);
       startEngine(engine);
       expect(cb).toHaveBeenCalledWith('playing');
@@ -834,7 +833,7 @@ describe('FlappyPlaneEngine', () => {
 
     it('off 取消事件监听', () => {
       startEngine(engine);
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('scoreChange', cb);
       engine.off('scoreChange', cb);
       (engine as any).addScore(5);

@@ -19,7 +19,6 @@
  * - 自动生产
  * - 边界与异常
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RedAlertEngine } from '@/games/red-alert/RedAlertEngine';
 import {
   CANVAS_WIDTH,
@@ -344,7 +343,7 @@ describe('RedAlertEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('stateChange', cb);
       engine.click();
       expect(cb).toHaveBeenCalled();
@@ -451,7 +450,7 @@ describe('RedAlertEngine', () => {
     it('购买触发 upgradePurchased 事件', () => {
       engine.start();
       addOre(engine, 100);
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('upgradePurchased', cb);
       engine.purchaseBuilding(0);
       expect(cb).toHaveBeenCalledWith(BUILDING_IDS.ORE_REFINERY, 1);
@@ -460,7 +459,7 @@ describe('RedAlertEngine', () => {
     it('购买触发 stateChange 事件', () => {
       engine.start();
       addOre(engine, 100);
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('stateChange', cb);
       engine.purchaseBuilding(0);
       expect(cb).toHaveBeenCalled();
@@ -600,7 +599,7 @@ describe('RedAlertEngine', () => {
     it('解锁触发 unitUnlocked 事件', () => {
       engine.start();
       addOre(engine, 500);
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('unitUnlocked', cb);
       engine.unlockUnit('rocketeer');
       expect(cb).toHaveBeenCalledWith('rocketeer');
@@ -669,7 +668,7 @@ describe('RedAlertEngine', () => {
       engine.start();
       addOre(engine, 1000);
       addPower(engine, 100);
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('unitEvolved', cb);
       engine.evolveUnit('gi');
       expect(cb).toHaveBeenCalledWith('gi', 1);
@@ -755,7 +754,7 @@ describe('RedAlertEngine', () => {
     it('研究触发 techResearched 事件', () => {
       engine.start();
       addTech(engine, 10);
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('techResearched', cb);
       engine.researchTech('rapid_mining');
       expect(cb).toHaveBeenCalledWith('rapid_mining', 1);
@@ -921,7 +920,7 @@ describe('RedAlertEngine', () => {
     it('声望触发 prestige 事件并增加统计', () => {
       engine.start();
       (engine as any)._stats.totalOreEarned = MIN_PRESTIGE_ORE * 4;
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('prestige', cb);
       engine.doPrestige();
       expect(cb).toHaveBeenCalled();

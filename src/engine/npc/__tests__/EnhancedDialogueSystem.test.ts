@@ -7,7 +7,6 @@
  * @module engine/npc/__tests__/EnhancedDialogueSystem.test
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NPCEventBus } from '../NPCEventBus';
 import { EnhancedDialogueSystem } from '../EnhancedDialogueSystem';
 import type {

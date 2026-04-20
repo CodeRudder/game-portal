@@ -4,7 +4,6 @@
  * 覆盖：初始化默认状态、update() 时间流逝、季节切换、年号切换。
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CalendarSystem } from '../CalendarSystem';
 import { DAYS_PER_MONTH, DAYS_PER_YEAR, ERA_TABLE, DEFAULT_TIME_SCALE } from '../calendar-config';
 import { SocialEvents } from '../../../core/events/EventTypes';
@@ -13,16 +12,16 @@ import { SocialEvents } from '../../../core/events/EventTypes';
 function createMockDeps() {
   return {
     eventBus: {
-      on: vi.fn(),
-      once: vi.fn(),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn(),
+      once: jest.fn(),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn(), has: vi.fn(() => false) },
+    config: { get: jest.fn(), set: jest.fn(), has: jest.fn(() => false) },
     registry: {
-      register: vi.fn(), get: vi.fn(), getAll: vi.fn(() => new Map()),
-      has: vi.fn(() => false), unregister: vi.fn(),
+      register: jest.fn(), get: jest.fn(), getAll: jest.fn(() => new Map()),
+      has: jest.fn(() => false), unregister: jest.fn(),
     },
   };
 }
@@ -32,7 +31,7 @@ describe('CalendarSystem', () => {
   let deps: ReturnType<typeof createMockDeps>;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
     calendar = new CalendarSystem();
     deps = createMockDeps();
   });

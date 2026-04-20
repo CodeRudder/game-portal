@@ -8,22 +8,20 @@
  * - 建筑产出粒子生命周期
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 // ─── Mock PixiJS ──────────────────────────────────────────
 
-vi.mock('pixi.js', () => {
+jest.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0; y = 0; visible = true; alpha = 1;
-    scale = { set: vi.fn(), x: 1, y: 1 };
-    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    scale = { set: jest.fn(), x: 1, y: 1 };
+    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
     children: any[] = [];
     parent: any = null;
-    emit = vi.fn();
-    on = vi.fn().mockReturnThis();
-    off = vi.fn();
-    once = vi.fn();
+    emit = jest.fn();
+    on = jest.fn().mockReturnThis();
+    off = jest.fn();
+    once = jest.fn();
     eventMode: string = 'passive';
     cursor: string = 'default';
 
@@ -60,8 +58,8 @@ vi.mock('pixi.js', () => {
 
   class MockText {
     text: string;
-    anchor = { set: vi.fn(), x: 0, y: 0 };
-    position = { set: vi.fn() };
+    anchor = { set: jest.fn(), x: 0, y: 0 };
+    position = { set: jest.fn() };
     x = 0; y = 0; visible = true; alpha = 1;
     style: any;
     parent: any = null;
@@ -74,7 +72,7 @@ vi.mock('pixi.js', () => {
   }
 
   class MockSprite {
-    anchor = { set: vi.fn(), x: 0, y: 0 };
+    anchor = { set: jest.fn(), x: 0, y: 0 };
     width = 0; height = 0; visible = true;
     parent: any = null;
     constructor(_texture?: any) {}

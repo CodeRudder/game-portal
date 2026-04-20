@@ -11,7 +11,6 @@
  * - TimeSource 注入与时间戳
  * - 边界条件和错误处理
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   InputHandler,
   type InputAction,
@@ -281,8 +280,8 @@ describe('InputHandler', () => {
         h.on(action, collect);
         h.handleKeyDown(key);
 
-        expect(events.length, `按键 "${key}" 应触发 "${action}"`).toBe(1);
-        expect(events[0].action, `按键 "${key}" 的动作应为 "${action}"`).toBe(action);
+        expect(events.length).toBe(1);
+        expect(events[0].action).toBe(action);
       }
     });
   });
@@ -659,7 +658,7 @@ describe('InputHandler', () => {
     });
 
     it('某个回调抛出异常不应影响后续回调', () => {
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const order: string[] = [];
 
       handler.on('click', () => order.push('before'));
@@ -678,7 +677,7 @@ describe('InputHandler', () => {
     });
 
     it('回调异常应输出错误信息到控制台', () => {
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       handler.on('click', () => {
         throw new Error('回调错误');
@@ -736,7 +735,7 @@ describe('InputHandler', () => {
     });
 
     it('custom 动作回调异常不应影响 custom:actionId 回调', () => {
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const { collect, events } = createCollector();
 
       handler.on('custom', () => {
@@ -754,7 +753,7 @@ describe('InputHandler', () => {
     });
 
     it('custom:actionId 回调异常不应影响 custom 回调', () => {
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const { collect, events } = createCollector();
 
       handler.on('custom', collect);

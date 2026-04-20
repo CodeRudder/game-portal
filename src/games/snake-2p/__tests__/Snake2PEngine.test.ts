@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Snake2PEngine } from '../Snake2PEngine';
 import {
   COLS, ROWS, INITIAL_LENGTH, SNAKE_SPEED, SPEED_INCREMENT, MIN_SPEED,
@@ -860,7 +859,7 @@ describe('Snake2PEngine - Space Key', () => {
 describe('Snake2PEngine - Events', () => {
   it('start 触发 statusChange 事件', () => {
     const engine = createEngine();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     engine.start();
     expect(cb).toHaveBeenCalledWith('playing');
@@ -868,7 +867,7 @@ describe('Snake2PEngine - Events', () => {
 
   it('pause 触发 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     engine.pause();
     expect(cb).toHaveBeenCalledWith('paused');
@@ -876,7 +875,7 @@ describe('Snake2PEngine - Events', () => {
 
   it('reset 触发 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     engine.reset();
     expect(cb).toHaveBeenCalledWith('idle');
@@ -884,7 +883,7 @@ describe('Snake2PEngine - Events', () => {
 
   it('gameOver 触发 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     advanceSteps(engine, COLS);
     expect(cb).toHaveBeenCalledWith('gameover');
@@ -892,7 +891,7 @@ describe('Snake2PEngine - Events', () => {
 
   it('off 取消事件监听', () => {
     const engine = createEngine();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     engine.off('statusChange', cb);
     engine.start();
@@ -986,7 +985,7 @@ describe('Snake2PEngine - Destroy', () => {
 
   it('destroy 后事件监听清空', () => {
     const engine = createAndStartEngine();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('statusChange', cb);
     engine.destroy();
     // destroy 后状态为 idle，监听已清空

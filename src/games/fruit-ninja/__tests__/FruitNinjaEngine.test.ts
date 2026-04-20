@@ -8,7 +8,6 @@
  * - start() 需要 canvas → 手动设置 _status 绕过，或通过 handleKeyDown(' ') 触发
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   FruitNinjaEngine,
   FruitItem,
@@ -245,7 +244,7 @@ describe('初始化与生命周期', () => {
 
   it('destroy() 清除所有事件监听', () => {
     const engine = createEngine();
-    const cb = vi.fn();
+    const cb = jest.fn();
     engine.on('test', cb);
 
     engine.destroy();
@@ -526,7 +525,7 @@ describe('水果生成与运动', () => {
 
   it('missed 水果触发 fruitMissed 事件', () => {
     const engine = createPlayingEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('fruitMissed', listener);
 
     const fruit = injectFruit(engine, {
@@ -770,7 +769,7 @@ describe('Combo 连击系统', () => {
     engine.handleKeyDown(' ');
 
     // 模拟时间超过 COMBO_WINDOW
-    const nowSpy = vi.spyOn(performance, 'now');
+    const nowSpy = jest.spyOn(performance, 'now');
     const baseTime = 10000;
     nowSpy.mockReturnValue(baseTime);
 
@@ -879,7 +878,7 @@ describe('炸弹切割', () => {
 
   it('切割炸弹触发 bombSliced 事件', () => {
     const engine = createPlayingEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('bombSliced', listener);
 
     injectBomb(engine, { x: engine.cursorX, y: engine.cursorY });
@@ -1110,7 +1109,7 @@ describe('等级系统', () => {
 
   it('升级触发 levelChange 事件', () => {
     const engine = createPlayingEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('levelChange', listener);
 
     // 切足够多的水果升级
@@ -1144,7 +1143,7 @@ describe('分数系统', () => {
 
   it('分数变化触发 scoreChange 事件', () => {
     const engine = createPlayingEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('scoreChange', listener);
 
     injectFruit(engine, { x: engine.cursorX, y: engine.cursorY, type: 'apple' });
@@ -1343,7 +1342,7 @@ describe('暂停与恢复', () => {
 
   it('暂停状态触发 statusChange 事件', () => {
     const engine = createPlayingEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('statusChange', listener);
 
     engine.handleKeyDown('p');
@@ -1362,7 +1361,7 @@ describe('暂停与恢复', () => {
 
     engine.handleKeyDown('p'); // 暂停
 
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('statusChange', listener);
     engine.handleKeyDown('p'); // 恢复
 
@@ -1383,7 +1382,7 @@ describe('暂停与恢复', () => {
 describe('事件系统', () => {
   it('fruitSliced 事件包含水果、分数和 combo', () => {
     const engine = createPlayingEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('fruitSliced', listener);
 
     const fruit = injectFruit(engine, { x: engine.cursorX, y: engine.cursorY, type: 'apple' });
@@ -1394,7 +1393,7 @@ describe('事件系统', () => {
 
   it('on/off 正确注册和注销事件', () => {
     const engine = createEngine();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('test', listener);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (engine as any).emit('test');
@@ -1408,8 +1407,8 @@ describe('事件系统', () => {
 
   it('多个监听器都能收到事件', () => {
     const engine = createEngine();
-    const listener1 = vi.fn();
-    const listener2 = vi.fn();
+    const listener1 = jest.fn();
+    const listener2 = jest.fn();
 
     engine.on('test', listener1);
     engine.on('test', listener2);

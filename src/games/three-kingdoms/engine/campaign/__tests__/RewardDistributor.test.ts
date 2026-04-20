@@ -4,7 +4,6 @@
  * 覆盖：基础奖励、首通奖励、星级加成、掉落表、分发回调、预览。
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { RewardDistributor } from '../RewardDistributor';
 import type { ICampaignDataProvider, RewardDistributorDeps, StageReward } from '../campaign.types';
 import { getChapters, getChapter, getStage, getStagesByChapter } from '../campaign-config';

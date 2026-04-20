@@ -2,7 +2,6 @@
  * SpeedManager 单元测试
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   SpeedManager,
   type SpeedConfig,
@@ -81,7 +80,7 @@ describe('SpeedManager', () => {
     });
 
     it('设置相同速度应成功但不触发 speed_changed 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       manager.on(handler);
       manager.setSpeed(1);
       expect(handler).not.toHaveBeenCalled();
@@ -186,7 +185,7 @@ describe('SpeedManager', () => {
 
   describe('事件系统', () => {
     it('setSpeed 应触发 speed_changed 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       manager.on(handler);
       manager.setSpeed(2);
       expect(handler).toHaveBeenCalledWith({
@@ -196,7 +195,7 @@ describe('SpeedManager', () => {
     });
 
     it('activateBoost 应触发 boost_activated 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       manager.on(handler);
       manager.activateBoost(3, 5000);
       expect(handler).toHaveBeenCalledWith({
@@ -206,7 +205,7 @@ describe('SpeedManager', () => {
     });
 
     it('update 导致过期应触发 boost_expired 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       manager.on(handler);
       manager.activateBoost(2, 5000);
       manager.update(5000);
@@ -217,7 +216,7 @@ describe('SpeedManager', () => {
     });
 
     it('update 未过期应触发 boost_updated 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       manager.on(handler);
       manager.activateBoost(2, 10000);
       manager.update(3000);
@@ -228,7 +227,7 @@ describe('SpeedManager', () => {
     });
 
     it('off 应正确注销监听器', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       manager.on(handler);
       manager.off(handler);
       manager.setSpeed(2);
@@ -236,7 +235,7 @@ describe('SpeedManager', () => {
     });
 
     it('注销未注册的监听器应安全无操作', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       expect(() => manager.off(handler)).not.toThrow();
     });
   });

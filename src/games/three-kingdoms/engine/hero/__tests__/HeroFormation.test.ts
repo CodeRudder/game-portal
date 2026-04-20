@@ -10,7 +10,6 @@
  * - 边界情况（最大编队数、最大武将数、重复武将）
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { HeroFormation, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from '../HeroFormation';
 import type { FormationData } from '../HeroFormation';
 import type { GeneralData } from '../hero.types';

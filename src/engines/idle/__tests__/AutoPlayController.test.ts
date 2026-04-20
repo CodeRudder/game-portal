@@ -2,7 +2,6 @@
  * AutoPlayController 单元测试
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   AutoPlayController,
   type AutoPlayState,
@@ -151,7 +150,7 @@ describe('AutoPlayController', () => {
         condition: () => true,
         action: () => {},
       });
-      const handler = vi.fn();
+      const handler = jest.fn();
       controller.on(handler);
       controller.enableRule('r1');
       expect(handler).not.toHaveBeenCalled();
@@ -166,7 +165,7 @@ describe('AutoPlayController', () => {
         condition: () => true,
         action: () => {},
       });
-      const handler = vi.fn();
+      const handler = jest.fn();
       controller.on(handler);
       controller.disableRule('r1');
       expect(handler).not.toHaveBeenCalled();
@@ -184,14 +183,14 @@ describe('AutoPlayController', () => {
     });
 
     it('设置相同值不应触发事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       controller.on(handler);
       controller.setGlobalEnabled(false);
       expect(handler).not.toHaveBeenCalled();
     });
 
     it('切换值应触发 global_toggled 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       controller.on(handler);
       controller.setGlobalEnabled(true);
       expect(handler).toHaveBeenCalledWith({
@@ -207,7 +206,7 @@ describe('AutoPlayController', () => {
 
   describe('update', () => {
     it('全局关闭时不应执行任何规则', () => {
-      const action = vi.fn();
+      const action = jest.fn();
       controller.addRule({
         id: 'r1',
         name: '规则1',
@@ -221,7 +220,7 @@ describe('AutoPlayController', () => {
     });
 
     it('应执行满足条件的规则', () => {
-      const action = vi.fn();
+      const action = jest.fn();
       controller.addRule({
         id: 'r1',
         name: '规则1',
@@ -236,7 +235,7 @@ describe('AutoPlayController', () => {
     });
 
     it('应跳过禁用的规则', () => {
-      const action = vi.fn();
+      const action = jest.fn();
       controller.addRule({
         id: 'r1',
         name: '规则1',
@@ -251,7 +250,7 @@ describe('AutoPlayController', () => {
     });
 
     it('应遵守冷却时间', () => {
-      const action = vi.fn();
+      const action = jest.fn();
       controller.addRule({
         id: 'r1',
         name: '规则1',
@@ -272,7 +271,7 @@ describe('AutoPlayController', () => {
     });
 
     it('condition 返回 false 时不应执行', () => {
-      const action = vi.fn();
+      const action = jest.fn();
       controller.addRule({
         id: 'r1',
         name: '规则1',
@@ -287,7 +286,7 @@ describe('AutoPlayController', () => {
     });
 
     it('应触发 rule_executed 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       controller.addRule({
         id: 'r1',
         name: '规则1',
@@ -335,7 +334,7 @@ describe('AutoPlayController', () => {
 
   describe('事件系统', () => {
     it('enableRule 应触发 rule_enabled 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       controller.addRule({
         id: 'r1',
         name: '规则1',
@@ -353,7 +352,7 @@ describe('AutoPlayController', () => {
     });
 
     it('disableRule 应触发 rule_disabled 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       controller.addRule({
         id: 'r1',
         name: '规则1',
@@ -371,7 +370,7 @@ describe('AutoPlayController', () => {
     });
 
     it('off 应正确注销监听器', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       controller.on(handler);
       controller.off(handler);
       controller.setGlobalEnabled(true);
@@ -379,7 +378,7 @@ describe('AutoPlayController', () => {
     });
 
     it('注销未注册的监听器应安全无操作', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       expect(() => controller.off(handler)).not.toThrow();
     });
   });

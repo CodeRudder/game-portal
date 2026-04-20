@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { SudokuEngine } from '../SudokuEngine';
 import { Difficulty } from '../constants';
 

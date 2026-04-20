@@ -14,7 +14,6 @@
  * @module engine/battle/__tests__/BattleEngine.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BattleEngine } from '../BattleEngine';
 import type {
   BattleTeam,
@@ -534,7 +533,7 @@ describe('BattleEngine', () => {
   describe('依赖注入', () => {
     it('应支持注入自定义伤害计算器', () => {
       const customCalculator = {
-        calculateDamage: vi.fn().mockReturnValue({
+        calculateDamage: jest.fn().mockReturnValue({
           damage: 999,
           baseDamage: 999,
           skillMultiplier: 1.0,
@@ -544,9 +543,9 @@ describe('BattleEngine', () => {
           randomFactor: 1.0,
           isMinDamage: false,
         }),
-        applyDamage: vi.fn().mockReturnValue(999),
-        calculateDotDamage: vi.fn().mockReturnValue(0),
-        isControlled: vi.fn().mockReturnValue(false),
+        applyDamage: jest.fn().mockReturnValue(999),
+        calculateDotDamage: jest.fn().mockReturnValue(0),
+        isControlled: jest.fn().mockReturnValue(false),
       };
 
       const customEngine = new BattleEngine(customCalculator);

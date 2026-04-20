@@ -11,7 +11,6 @@
  *   - 过期时间计算
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { MailTemplateSystem } from '../MailTemplateSystem';
 import type { MailTemplate, MailCategory } from '../mail.types';
 

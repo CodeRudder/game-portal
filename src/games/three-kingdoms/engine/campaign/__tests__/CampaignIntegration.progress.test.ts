@@ -11,7 +11,6 @@
  * @module engine/campaign/__tests__/CampaignIntegration.progress.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CampaignProgressSystem } from '../CampaignProgressSystem';
 import { campaignDataProvider } from '../campaign-config';
 import type {

@@ -12,7 +12,6 @@
  * @module engine/battle/__tests__/BattleTurnExecutor.combat.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BattleTurnExecutor } from '../BattleTurnExecutor';
 import type {
   BattleState,
@@ -74,19 +73,19 @@ function createState(overrides: Partial<BattleState> = {}): BattleState {
 
 function createMockCalculator(overrides: Partial<IDamageCalculator> = {}): IDamageCalculator {
   return {
-    calculateDamage: vi.fn((_a, _d, m) => ({
+    calculateDamage: jest.fn((_a, _d, m) => ({
       damage: 100, baseDamage: 100, skillMultiplier: m,
       isCritical: false, criticalMultiplier: 1.0,
       restraintMultiplier: 1.0, randomFactor: 1.0, isMinDamage: false,
     })),
-    applyDamage: vi.fn((defender, damage) => {
+    applyDamage: jest.fn((defender, damage) => {
       const actual = Math.min(damage, defender.hp);
       defender.hp -= actual;
       if (defender.hp <= 0) { defender.hp = 0; defender.isAlive = false; }
       return actual;
     }),
-    calculateDotDamage: vi.fn(() => 0),
-    isControlled: vi.fn(() => false),
+    calculateDotDamage: jest.fn(() => 0),
+    isControlled: jest.fn(() => false),
     ...overrides,
   };
 }
@@ -395,7 +394,7 @@ describe('BattleTurnExecutor DOT伤害', () => {
 
   beforeEach(() => {
     const calc = createMockCalculator({
-      calculateDotDamage: vi.fn((unit) => {
+      calculateDotDamage: jest.fn((unit) => {
         if (unit.buffs.some(b => b.type === BuffType.BURN)) return Math.floor(unit.maxHp * 0.05);
         return 0;
       }),
@@ -443,7 +442,7 @@ describe('BattleTurnExecutor 控制状态', () => {
 
   beforeEach(() => {
     const calc = createMockCalculator({
-      isControlled: vi.fn((unit) =>
+      isControlled: jest.fn((unit) =>
         unit.buffs.some(b => b.type === BuffType.STUN || b.type === BuffType.FREEZE),
       ),
     });

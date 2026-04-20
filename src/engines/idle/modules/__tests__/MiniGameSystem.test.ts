@@ -15,7 +15,6 @@
  * @module engines/idle/modules/__tests__/MiniGameSystem.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import {
   MiniGameSystem,
   type MiniGameDef,

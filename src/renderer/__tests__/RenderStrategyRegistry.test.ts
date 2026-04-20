@@ -8,7 +8,6 @@
  * - 策略列表和查询
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { RenderStrategyRegistry } from '../RenderStrategyRegistry';
 import type { RenderStrategy } from '../types';
 

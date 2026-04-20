@@ -4,7 +4,6 @@
  * 验证测试基础设施的核心功能是否正常工作。
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import {
   GameTestRunner,
   MockGameLogic,

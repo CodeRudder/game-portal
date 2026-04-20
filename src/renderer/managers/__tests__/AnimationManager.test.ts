@@ -14,18 +14,16 @@
  * - 管理和销毁
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
 // ═══════════════════════════════════════════════════════════════
 // Mock PixiJS v8
 // ═══════════════════════════════════════════════════════════════
 
-const mockRemoveFromParent = vi.fn();
-const mockDestroy = vi.fn();
-const mockAddChild = vi.fn();
-const mockRemoveChild = vi.fn();
+const mockRemoveFromParent = jest.fn();
+const mockDestroy = jest.fn();
+const mockAddChild = jest.fn();
+const mockRemoveChild = jest.fn();
 
-vi.mock('pixi.js', () => {
+jest.mock('pixi.js', () => {
   class MockGraphics {
     x = 0;
     y = 0;
@@ -106,18 +104,18 @@ vi.mock('pixi.js', () => {
 // Mock GSAP
 // ═══════════════════════════════════════════════════════════════
 
-const mockTimelineKill = vi.fn();
-const mockTimelineAdd = vi.fn();
+const mockTimelineKill = jest.fn();
+const mockTimelineAdd = jest.fn();
 
 function createMockTimeline(): any {
   const tl: any = {
     _children: [],
     kill: mockTimelineKill,
     add: mockTimelineAdd,
-    to: vi.fn(function (this: any) { return this; }),
-    from: vi.fn(function (this: any) { return this; }),
-    fromTo: vi.fn(function (this: any) { return this; }),
-    call: vi.fn(function (this: any, cb: Function) {
+    to: jest.fn(function (this: any) { return this; }),
+    from: jest.fn(function (this: any) { return this; }),
+    fromTo: jest.fn(function (this: any) { return this; }),
+    call: jest.fn(function (this: any, cb: Function) {
       // Store callback for later invocation in tests
       this._lastCallback = cb;
       return this;
@@ -127,14 +125,14 @@ function createMockTimeline(): any {
   return tl;
 }
 
-vi.mock('gsap', () => {
+jest.mock('gsap', () => {
   const mockGlobalTimeline = {
-    timeScale: vi.fn(() => 1),
+    timeScale: jest.fn(() => 1),
   };
 
   return {
     default: {
-      timeline: vi.fn((opts?: any) => {
+      timeline: jest.fn((opts?: any) => {
         const tl = createMockTimeline();
         // Auto-fire onComplete if provided
         if (opts?.onComplete) {
@@ -142,11 +140,11 @@ vi.mock('gsap', () => {
         }
         return tl;
       }),
-      to: vi.fn(() => createMockTimeline()),
-      from: vi.fn(() => createMockTimeline()),
-      fromTo: vi.fn(() => createMockTimeline()),
-      delayedCall: vi.fn(),
-      killTweensOf: vi.fn(),
+      to: jest.fn(() => createMockTimeline()),
+      from: jest.fn(() => createMockTimeline()),
+      fromTo: jest.fn(() => createMockTimeline()),
+      delayedCall: jest.fn(),
+      killTweensOf: jest.fn(),
       globalTimeline: mockGlobalTimeline,
     },
   };
@@ -169,7 +167,7 @@ describe('AnimationManager', () => {
   let manager: AnimationManager;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     manager = new AnimationManager();
   });
 
@@ -359,7 +357,7 @@ describe('AnimationManager', () => {
     });
 
     it('应该调用 onComplete 回调', () => {
-      const onComplete = vi.fn();
+      const onComplete = jest.fn();
       manager.createEffect({
         type: 'attack_slash',
         x: 100,
@@ -528,7 +526,7 @@ describe('AnimationManager', () => {
     });
 
     it('playCombatAnimation 应该调用 onComplete', () => {
-      const onComplete = vi.fn();
+      const onComplete = jest.fn();
       const attacker = new Container();
       const target = new Container();
       manager.playCombatAnimation(attacker, target, 'slash', 10, onComplete);

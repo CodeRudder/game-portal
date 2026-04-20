@@ -13,17 +13,15 @@
  * - 销毁清理
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
 // ═══════════════════════════════════════════════════════════════
 // Mock PixiJS v8
 // ═══════════════════════════════════════════════════════════════
 
-const mockRemoveFromParent = vi.fn();
-const mockDestroy = vi.fn();
-const mockAddChild = vi.fn();
+const mockRemoveFromParent = jest.fn();
+const mockDestroy = jest.fn();
+const mockAddChild = jest.fn();
 
-vi.mock('pixi.js', () => {
+jest.mock('pixi.js', () => {
   class MockGraphics {
     x = 0;
     y = 0;
@@ -74,20 +72,20 @@ vi.mock('pixi.js', () => {
 // Mock GSAP
 // ═══════════════════════════════════════════════════════════════
 
-const mockTimelineKill = vi.fn();
+const mockTimelineKill = jest.fn();
 
 function createMockTimeline(): any {
   return {
     kill: mockTimelineKill,
-    to: vi.fn(function (this: any) { return this; }),
-    from: vi.fn(function (this: any) { return this; }),
+    to: jest.fn(function (this: any) { return this; }),
+    from: jest.fn(function (this: any) { return this; }),
   };
 }
 
-vi.mock('gsap', () => {
+jest.mock('gsap', () => {
   return {
     default: {
-      timeline: vi.fn((opts?: any) => {
+      timeline: jest.fn((opts?: any) => {
         const tl = createMockTimeline();
         if (opts?.onComplete) {
           // Store for manual trigger in tests
@@ -95,7 +93,7 @@ vi.mock('gsap', () => {
         }
         return tl;
       }),
-      to: vi.fn(() => createMockTimeline()),
+      to: jest.fn(() => createMockTimeline()),
     },
   };
 });
@@ -118,7 +116,7 @@ describe('ParticleSystem', () => {
   let container: Container;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     ps = new ParticleSystem(50); // 小池便于测试
     container = new Container();
   });
@@ -508,7 +506,7 @@ describe('ParticleSystem', () => {
       expect(ps.getActiveCount()).toBe(3);
 
       // 模拟 timeline 完成 — 通过获取 timeline 的 onComplete
-      const tl = (gsap.timeline as ReturnType<typeof vi.fn>).mock.results[0].value;
+      const tl = (gsap.timeline as ReturnType<typeof jest.fn>).mock.results[0].value;
       if (tl._onComplete) {
         tl._onComplete();
       }
@@ -522,7 +520,7 @@ describe('ParticleSystem', () => {
       expect(ps.getPoolSize()).toBe(3);
 
       // 模拟释放所有粒子
-      const results = (gsap.timeline as ReturnType<typeof vi.fn>).mock.results;
+      const results = (gsap.timeline as ReturnType<typeof jest.fn>).mock.results;
       for (const result of results) {
         if (result.value?._onComplete) {
           result.value._onComplete();

@@ -8,7 +8,6 @@
  * - 序列化/反序列化
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SweepSystem } from '../SweepSystem';
 import type { ICampaignDataProvider, RewardDistributorDeps } from '../campaign.types';
 import type { SweepDeps, SweepConfig } from '../sweep.types';
@@ -54,16 +53,16 @@ function createSweepDeps(starMap: StarMap = {}, options?: {
   const battleResults = options?.battleResults ?? {};
   const farthestStageId = options?.farthestStageId ?? null;
   return {
-    simulateBattle: vi.fn((stageId: string) => {
+    simulateBattle: jest.fn((stageId: string) => {
       if (battleResults[stageId]) return battleResults[stageId];
       return { victory: true, stars: 3 };
     }),
-    getStageStars: vi.fn((stageId: string) => starMap[stageId] ?? 0),
-    canChallenge: vi.fn((stageId: string) => {
+    getStageStars: jest.fn((stageId: string) => starMap[stageId] ?? 0),
+    canChallenge: jest.fn((stageId: string) => {
       return (starMap[stageId] ?? 0) > 0 || stageId === farthestStageId;
     }),
-    getFarthestStageId: vi.fn(() => farthestStageId),
-    completeStage: vi.fn(),
+    getFarthestStageId: jest.fn(() => farthestStageId),
+    completeStage: jest.fn(),
   } satisfies SweepDeps;
 }
 

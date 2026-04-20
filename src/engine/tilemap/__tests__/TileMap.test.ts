@@ -10,7 +10,6 @@
  * @module engine/tilemap/__tests__/TileMap.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { TerrainType } from '../types';
 import type { TerrainDef, TileMapData, PlacedBuilding, Viewport } from '../types';
 import { MapGenerator } from '../MapGenerator';

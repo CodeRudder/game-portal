@@ -1,7 +1,6 @@
 /**
  * 日本妖怪 (Yokai Night) 放置类游戏 — 完整测试套件
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { YokaiNightEngine } from '@/games/yokai-night/YokaiNightEngine';
 import {
   CANVAS_WIDTH,
@@ -400,7 +399,7 @@ describe('YokaiNightEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -529,7 +528,7 @@ describe('YokaiNightEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addSpirit(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -538,7 +537,7 @@ describe('YokaiNightEngine', () => {
     it('购买建筑触发 upgradePurchased 事件', () => {
       engine.start();
       addSpirit(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalledWith('torii_gate', 1);
@@ -656,7 +655,7 @@ describe('YokaiNightEngine', () => {
     it('解锁妖怪触发 yokaiUnlocked 事件', () => {
       engine.start();
       addSpirit(engine, 800);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('yokaiUnlocked', listener);
       engine.unlockYokai('tengu');
       expect(listener).toHaveBeenCalledWith('tengu');
@@ -742,7 +741,7 @@ describe('YokaiNightEngine', () => {
       engine.start();
       addCoins(engine, 100);
       addOmamori(engine, 50);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('yokaiEvolved', listener);
       engine.evolveYokai('kitsune');
       expect(listener).toHaveBeenCalledWith('kitsune', 1);
@@ -907,7 +906,7 @@ describe('YokaiNightEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalSpiritEarned = MIN_PRESTIGE_SPIRIT * 4;
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

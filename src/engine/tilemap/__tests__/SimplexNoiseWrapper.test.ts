@@ -6,7 +6,6 @@
  * @module engine/tilemap/__tests__/SimplexNoiseWrapper.test
  */
 
-import { describe, it, expect } from 'vitest';
 import { NoiseGenerator, createSeededRandom, DEFAULT_NOISE_CONFIG } from '../SimplexNoiseWrapper';
 
 // ---------------------------------------------------------------------------

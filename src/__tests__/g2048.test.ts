@@ -2,7 +2,6 @@
  * 2048 游戏引擎测试
  * 覆盖：初始化、滑动合并、方块生成、计分、游戏结束、胜利条件、键盘控制、生命周期、渲染
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { G2048Engine } from '@/games/g2048/G2048Engine';
 import { GameType } from '@/types';
 import { GRID_SIZE } from '@/games/g2048/constants';
@@ -57,7 +56,7 @@ function sumGrid(grid: number[][]): number {
 
 describe('G2048Engine', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   // ========== 1. 初始化 ==========
@@ -336,7 +335,7 @@ describe('G2048Engine', () => {
 
     it('scoreChange 事件在合并时触发', () => {
       const engine = startEngine();
-      const onScoreChange = vi.fn();
+      const onScoreChange = jest.fn();
       engine.on('scoreChange', onScoreChange);
 
       setGrid(engine, [
@@ -351,7 +350,7 @@ describe('G2048Engine', () => {
 
     it('连续移动计分正确', () => {
       const engine = startEngine();
-      const onScoreChange = vi.fn();
+      const onScoreChange = jest.fn();
       engine.on('scoreChange', onScoreChange);
 
       // 第一次合并
@@ -417,7 +416,7 @@ describe('G2048Engine', () => {
 
     it('gameover 后 statusChange 事件触发', () => {
       const engine = startEngine();
-      const onStatusChange = vi.fn();
+      const onStatusChange = jest.fn();
       engine.on('statusChange', onStatusChange);
 
       // 设置满网格无法移动，然后手动触发 gameOver
@@ -439,7 +438,7 @@ describe('G2048Engine', () => {
   describe('胜利条件', () => {
     it('达到 2048 方块触发 win 事件', () => {
       const engine = startEngine();
-      const onWin = vi.fn();
+      const onWin = jest.fn();
       engine.on('win', onWin);
 
       setGrid(engine, [
@@ -481,7 +480,7 @@ describe('G2048Engine', () => {
 
     it('win 事件只触发一次', () => {
       const engine = startEngine();
-      const onWin = vi.fn();
+      const onWin = jest.fn();
       engine.on('win', onWin);
 
       // 第一次达到 2048
@@ -615,7 +614,7 @@ describe('G2048Engine', () => {
 
     it('statusChange 事件正确触发', () => {
       const engine = createEngine();
-      const onStatusChange = vi.fn();
+      const onStatusChange = jest.fn();
       engine.on('statusChange', onStatusChange);
 
       engine.start();

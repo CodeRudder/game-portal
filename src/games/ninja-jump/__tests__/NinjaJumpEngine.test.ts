@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NinjaJumpEngine } from '../NinjaJumpEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -625,7 +624,7 @@ describe('NinjaJumpEngine - 道具系统', () => {
   });
 
   it('收集道具时触发事件', () => {
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('powerUpActivated', spy);
     (engine as any).activatePowerUp('shield');
     expect(spy).toHaveBeenCalledWith('shield');
@@ -930,7 +929,7 @@ describe('NinjaJumpEngine - 事件系统', () => {
   });
 
   it('start 时触发 statusChange 事件', () => {
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('statusChange', spy);
     engine.start();
     expect(spy).toHaveBeenCalledWith('playing');
@@ -938,7 +937,7 @@ describe('NinjaJumpEngine - 事件系统', () => {
 
   it('pause 时触发 statusChange 事件', () => {
     engine.start();
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('statusChange', spy);
     engine.pause();
     expect(spy).toHaveBeenCalledWith('paused');
@@ -947,7 +946,7 @@ describe('NinjaJumpEngine - 事件系统', () => {
   it('resume 时触发 statusChange 事件', () => {
     engine.start();
     engine.pause();
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('statusChange', spy);
     engine.resume();
     expect(spy).toHaveBeenCalledWith('playing');
@@ -955,7 +954,7 @@ describe('NinjaJumpEngine - 事件系统', () => {
 
   it('reset 时触发 statusChange 事件', () => {
     engine.start();
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('statusChange', spy);
     engine.reset();
     expect(spy).toHaveBeenCalledWith('idle');
@@ -963,7 +962,7 @@ describe('NinjaJumpEngine - 事件系统', () => {
 
   it('gameOver 时触发 statusChange 事件', () => {
     engine.start();
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('statusChange', spy);
     (engine as any).gameOver();
     expect(spy).toHaveBeenCalledWith('gameover');
@@ -971,7 +970,7 @@ describe('NinjaJumpEngine - 事件系统', () => {
 
   it('失去生命时触发 loseLife 事件', () => {
     engine.start();
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('loseLife', spy);
     (engine as any)._enemies = [{
       x: engine.playerX, y: engine.playerY,
@@ -982,7 +981,7 @@ describe('NinjaJumpEngine - 事件系统', () => {
   });
 
   it('off 取消事件监听', () => {
-    const spy = vi.fn();
+    const spy = jest.fn();
     engine.on('statusChange', spy);
     engine.off('statusChange', spy);
     engine.start();

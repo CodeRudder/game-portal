@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   RecordService,
   HighScoreService,
@@ -11,7 +10,7 @@ import {
 // localStorage mock — Vitest 在 jsdom 环境中自动提供，我们只需清理
 beforeEach(() => {
   localStorage.clear();
-  vi.clearAllMocks();
+  jest.clearAllMocks();
 });
 
 // ========== RecordService ==========

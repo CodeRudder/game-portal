@@ -10,30 +10,28 @@
  * - 渲染各区域
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 // ---------------------------------------------------------------------------
 // Mock PixiJS v8 — IdleScene 使用 Container / Graphics / Text，
 // 测试环境没有 Canvas / WebGL，需要完整 mock。
 // ---------------------------------------------------------------------------
 
-vi.mock('pixi.js', () => {
+jest.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0;
     y = 0;
     rotation = 0;
     visible = true;
-    scale = { set: vi.fn(), x: 1, y: 1 };
-    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    scale = { set: jest.fn(), x: 1, y: 1 };
+    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
     children: any[] = [];
     parent: any = null;
     // 事件
-    emit = vi.fn();
-    on = vi.fn().mockReturnThis();
-    off = vi.fn();
-    once = vi.fn();
-    removeAllListeners = vi.fn();
+    emit = jest.fn();
+    on = jest.fn().mockReturnThis();
+    off = jest.fn();
+    once = jest.fn();
+    removeAllListeners = jest.fn();
     eventMode: string = 'passive';
     cursor: string = 'default';
 
@@ -69,12 +67,12 @@ vi.mock('pixi.js', () => {
     y = 0;
     visible = true;
     parent: any = null;
-    position = { set: vi.fn() };
-    emit = vi.fn();
-    on = vi.fn();
-    off = vi.fn();
-    once = vi.fn();
-    removeAllListeners = vi.fn();
+    position = { set: jest.fn() };
+    emit = jest.fn();
+    on = jest.fn();
+    off = jest.fn();
+    once = jest.fn();
+    removeAllListeners = jest.fn();
 
     clear() { return this; }
     circle(_x: number, _y: number, _r: number) { return this; }
@@ -92,19 +90,19 @@ vi.mock('pixi.js', () => {
   class MockText {
     label = '';
     text: string;
-    anchor = { set: vi.fn(), x: 0, y: 0 };
+    anchor = { set: jest.fn(), x: 0, y: 0 };
     x = 0;
     y = 0;
     width = 50;
     height = 14;
     visible = true;
     parent: any = null;
-    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
-    emit = vi.fn();
-    on = vi.fn();
-    off = vi.fn();
-    once = vi.fn();
-    removeAllListeners = vi.fn();
+    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    emit = jest.fn();
+    on = jest.fn();
+    off = jest.fn();
+    once = jest.fn();
+    removeAllListeners = jest.fn();
 
     constructor(opts?: any) { this.text = opts?.text ?? ''; }
     destroy() {}
@@ -260,7 +258,7 @@ describe('IdleScene', () => {
     });
 
     it('destroy should clear listeners', async () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       scene.on('upgradeClick', callback);
       scene.destroy();
       // After destroy, listeners are cleared
@@ -419,28 +417,28 @@ describe('IdleScene', () => {
 
   describe('events', () => {
     it('should register event listeners', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       scene.on('upgradeClick', callback);
       expect((scene as any).listeners.has('upgradeClick')).toBe(true);
     });
 
     it('should unregister event listeners', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       scene.on('upgradeClick', callback);
       scene.off('upgradeClick', callback);
       expect((scene as any).listeners.get('upgradeClick')?.size).toBe(0);
     });
 
     it('should call event listeners when emitted', () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       scene.on('upgradeClick', callback);
       (scene as any).emit('upgradeClick', 'upgrade-1');
       expect(callback).toHaveBeenCalledWith('upgrade-1');
     });
 
     it('should support multiple listeners', () => {
-      const cb1 = vi.fn();
-      const cb2 = vi.fn();
+      const cb1 = jest.fn();
+      const cb2 = jest.fn();
       scene.on('upgradeClick', cb1);
       scene.on('upgradeClick', cb2);
       (scene as any).emit('upgradeClick', 'upgrade-1');
@@ -453,7 +451,7 @@ describe('IdleScene', () => {
     });
 
     it('should catch errors in listeners', () => {
-      const badCallback = vi.fn(() => { throw new Error('test'); });
+      const badCallback = jest.fn(() => { throw new Error('test'); });
       scene.on('upgradeClick', badCallback);
       expect(() => (scene as any).emit('upgradeClick', 'id')).not.toThrow();
     });

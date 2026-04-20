@@ -16,7 +16,6 @@
  * - 边界条件
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { BattleModeContext, BattleUnit } from '../../modules/battle/BattleMode';
 import {
   NavalMode,
@@ -59,20 +58,20 @@ function createMockContext(overrides?: {
   speed?: number;
 }): BattleModeContext {
   const units = overrides?.units ?? [];
-  const dealDamageMock = vi.fn().mockReturnValue({ damage: 15, isCrit: false, isMiss: false });
-  const healMock = vi.fn();
-  const addBuffMock = vi.fn();
-  const removeBuffMock = vi.fn();
-  const emitMock = vi.fn();
+  const dealDamageMock = jest.fn().mockReturnValue({ damage: 15, isCrit: false, isMiss: false });
+  const healMock = jest.fn();
+  const addBuffMock = jest.fn();
+  const removeBuffMock = jest.fn();
+  const emitMock = jest.fn();
 
   return {
     units,
-    getUnit: vi.fn((id: string) => units.find((u) => u.id === id)),
+    getUnit: jest.fn((id: string) => units.find((u) => u.id === id)),
     dealDamage: dealDamageMock,
     heal: healMock,
     addBuff: addBuffMock,
     removeBuff: removeBuffMock,
-    getAliveUnits: vi.fn((side?: 'attacker' | 'defender') => {
+    getAliveUnits: jest.fn((side?: 'attacker' | 'defender') => {
       if (side) return units.filter((u) => u.isAlive && u.side === side);
       return units.filter((u) => u.isAlive);
     }),

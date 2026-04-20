@@ -13,7 +13,6 @@
  * - 序列化 / 反序列化
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
 import {
   FloatingTextSystem,
   type FloatingTextInstance,

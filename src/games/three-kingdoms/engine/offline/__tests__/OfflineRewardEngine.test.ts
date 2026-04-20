@@ -14,7 +14,6 @@
  *   - 回归面板数据
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   calculateTierDetails,
   calculateOverallEfficiency,

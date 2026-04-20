@@ -10,7 +10,6 @@
  * 因此升级顺序必须为：主城先行 → 其他建筑跟进
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
 import { INITIAL_RESOURCES, INITIAL_PRODUCTION_RATES } from '../resource/resource-config';
 import { BUILDING_DEFS, BUILDING_UNLOCK_LEVELS } from '../building/building-config';
@@ -18,18 +17,18 @@ import { BUILDING_DEFS, BUILDING_UNLOCK_LEVELS } from '../building/building-conf
 // ── localStorage mock ──
 const storage: Record<string, string> = {};
 const localStorageMock = {
-  getItem: vi.fn((k: string) => storage[k] ?? null),
-  setItem: vi.fn((k: string, v: string) => { storage[k] = v; }),
-  removeItem: vi.fn((k: string) => { delete storage[k]; }),
-  clear: vi.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
+  getItem: jest.fn((k: string) => storage[k] ?? null),
+  setItem: jest.fn((k: string, v: string) => { storage[k] = v; }),
+  removeItem: jest.fn((k: string) => { delete storage[k]; }),
+  clear: jest.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
   get length() { return Object.keys(storage).length; },
-  key: vi.fn(() => null),
+  key: jest.fn(() => null),
 };
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
 
 /** 辅助函数：推进真实时间以完成建筑升级 */
 function advanceTimeAndTick(engine: ThreeKingdomsEngine, ms: number): void {
-  vi.advanceTimersByTime(ms);
+  jest.advanceTimersByTime(ms);
   engine.tick(ms);
 }
 
@@ -38,14 +37,14 @@ describe('BUG-01 建筑升级死锁预防', () => {
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
-    vi.restoreAllMocks();
-    vi.useFakeTimers();
+    jest.restoreAllMocks();
+    jest.useFakeTimers();
     engine = new ThreeKingdomsEngine();
   });
 
   afterEach(() => {
     engine.reset();
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   // ═══════════════════════════════════════════

@@ -8,7 +8,6 @@
  * - 类型完整性验证
  */
 
-import { describe, it, expect } from 'vitest';
 import type {
   IdleGameRenderState,
   RenderStrategy,

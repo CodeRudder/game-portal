@@ -6,7 +6,6 @@
  * 仙友系统、科技系统(功法)、声望系统(飞升转生)、
  * 资源系统、序列化、渲染和输入处理。
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { IdleXianxiaEngine, type IdleXianxiaSaveState } from '@/games/idle-xianxia/IdleXianxiaEngine';
 import {
   GAME_ID,
@@ -567,7 +566,7 @@ describe('渲染', () => {
   it('render 调用 Canvas API（fillRect 被调用）', () => {
     const canvas = (engine as any).canvas as HTMLCanvasElement;
     const ctx = canvas.getContext('2d')!;
-    const fillRectSpy = vi.spyOn(ctx, 'fillRect');
+    const fillRectSpy = jest.spyOn(ctx, 'fillRect');
     (engine as any).onRender(ctx, canvas.width, canvas.height);
     expect(fillRectSpy).toHaveBeenCalled();
     fillRectSpy.mockRestore();

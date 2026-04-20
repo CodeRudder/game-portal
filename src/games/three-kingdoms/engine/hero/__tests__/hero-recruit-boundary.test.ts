@@ -3,7 +3,6 @@
  * 覆盖：极端场景、保底计数器边界、资源不足、序列化边界
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HeroRecruitSystem } from '../HeroRecruitSystem';
 import type { RecruitDeps, PityState } from '../HeroRecruitSystem';
 import { HeroSystem } from '../HeroSystem';
@@ -20,16 +19,16 @@ import { DUPLICATE_FRAGMENT_COUNT } from '../hero-config';
 function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: vi.fn().mockReturnValue(true),
-    canAffordResource: vi.fn().mockReturnValue(true),
+    spendResource: jest.fn().mockReturnValue(true),
+    canAffordResource: jest.fn().mockReturnValue(true),
   };
 }
 
 function makePoorDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: vi.fn().mockReturnValue(false),
-    canAffordResource: vi.fn().mockReturnValue(false),
+    spendResource: jest.fn().mockReturnValue(false),
+    canAffordResource: jest.fn().mockReturnValue(false),
   };
 }
 
@@ -120,8 +119,8 @@ describe('HeroRecruitSystem — 边界测试', () => {
 
     it('canAfford 返回 true 但 spend 返回 false 时招募失败', () => {
       const deps = makeRichDeps(heroSystem);
-      deps.spendResource = vi.fn().mockReturnValue(false);
-      deps.canAffordResource = vi.fn().mockReturnValue(true);
+      deps.spendResource = jest.fn().mockReturnValue(false);
+      deps.canAffordResource = jest.fn().mockReturnValue(true);
       recruit.setRecruitDeps(deps);
       expect(recruit.recruitSingle('normal')).toBeNull();
     });

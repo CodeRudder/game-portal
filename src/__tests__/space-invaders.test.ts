@@ -1,4 +1,3 @@
-import { describe, it, expect, vi } from 'vitest';
 import { SpaceInvadersEngine } from '@/games/space-invaders/SpaceInvadersEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT, HUD_HEIGHT,
@@ -11,14 +10,14 @@ import {
 } from '@/games/space-invaders/constants';
 
 const mockCtx = {
-  fillRect: vi.fn(), clearRect: vi.fn(), fillText: vi.fn(),
-  beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn(),
-  strokeRect: vi.fn(), stroke: vi.fn(), measureText: vi.fn(() => ({ width: 50 })),
+  fillRect: jest.fn(), clearRect: jest.fn(), fillText: jest.fn(),
+  beginPath: jest.fn(), arc: jest.fn(), fill: jest.fn(),
+  strokeRect: jest.fn(), stroke: jest.fn(), measureText: jest.fn(() => ({ width: 50 })),
 };
 
 const mockCanvas = {
   width: CANVAS_WIDTH, height: CANVAS_HEIGHT,
-  getContext: vi.fn(() => mockCtx),
+  getContext: jest.fn(() => mockCtx),
 } as unknown as HTMLCanvasElement;
 
 function createEngine(): SpaceInvadersEngine {
@@ -240,13 +239,13 @@ describe('SpaceInvadersEngine', () => {
   describe('事件', () => {
     it('start 触发 statusChange', () => {
       const e = createEngine();
-      const h = vi.fn(); e.on('statusChange', h);
+      const h = jest.fn(); e.on('statusChange', h);
       e.start();
       expect(h).toHaveBeenCalledWith('playing');
     });
     it('失去生命触发 loseLife', () => {
       const e = createEngine(); e.start();
-      const h = vi.fn(); e.on('loseLife', h);
+      const h = jest.fn(); e.on('loseLife', h);
       (e as any)._bullets.push({
         x: e.shipX + SHIP_WIDTH / 2, y: SHIP_Y - 5,
         dy: BULLET_SPEED * 0.7, isAlien: true, alive: true,

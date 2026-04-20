@@ -4,7 +4,6 @@
  * 验证 campaign-config.ts 中的关卡数据完整性。
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   ALL_CHAPTERS,
   CHAPTER_1,

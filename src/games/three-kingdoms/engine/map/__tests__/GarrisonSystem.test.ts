@@ -10,7 +10,6 @@
  * @module engine/map/__tests__/GarrisonSystem.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GarrisonSystem } from '../GarrisonSystem';
 import { TerritorySystem } from '../TerritorySystem';
 import type { ISystemDeps } from '../../../core/types';
@@ -56,16 +55,16 @@ function createMockDeps(
 
   const deps: ISystemDeps = {
     eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
     registry: {
-      register: vi.fn(),
-      get: vi.fn().mockImplementation((name: string) => {
+      register: jest.fn(),
+      get: jest.fn().mockImplementation((name: string) => {
         if (name === 'territory') return territorySys;
         if (name === 'hero') return { getGeneral: (id: string) => generals[id] };
         if (name === 'heroFormation') return {
@@ -73,10 +72,10 @@ function createMockDeps(
         };
         throw new Error(`Subsystem ${name} not found`);
       }),
-      getAll: vi.fn().mockReturnValue(new Map()),
-      has: vi.fn().mockImplementation((name: string) =>
+      getAll: jest.fn().mockReturnValue(new Map()),
+      has: jest.fn().mockImplementation((name: string) =>
         ['territory', 'hero', 'heroFormation'].includes(name)),
-      unregister: vi.fn(),
+      unregister: jest.fn(),
     } as unknown as ISubsystemRegistry,
   };
 
@@ -243,7 +242,7 @@ describe('GarrisonSystem', () => {
       captureTerritory(deps, 'city-luoyang');
       garrison.assignGarrison('city-luoyang', 'guanyu');
 
-      (deps.eventBus.emit as ReturnType<typeof vi.fn>).mockClear();
+      (deps.eventBus.emit as ReturnType<typeof jest.fn>).mockClear();
       garrison.withdrawGarrison('city-luoyang');
 
       expect(deps.eventBus.emit).toHaveBeenCalledWith(

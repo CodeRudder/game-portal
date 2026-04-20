@@ -4,7 +4,6 @@
  * 适配重构后的 ClanSagaEngine（基于 BuildingSystem + PrestigeSystem +
  * UnitSystem + StageSystem + TechTreeSystem 架构）。
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClanSagaEngine } from '@/games/clan-saga/ClanSagaEngine';
 import {
   CANVAS_WIDTH,
@@ -254,7 +253,7 @@ describe('ClanSagaEngine', () => {
     });
 
     it('点击应触发 stateChange 事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       (engine as any).doClick();
       expect(listener).toHaveBeenCalled();
@@ -479,7 +478,7 @@ describe('ClanSagaEngine', () => {
       addGrain(engine, PRESTIGE_CONFIG.threshold * 100);
       addSilk(engine, PRESTIGE_CONFIG.threshold * 100);
       addStone(engine, PRESTIGE_CONFIG.threshold * 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

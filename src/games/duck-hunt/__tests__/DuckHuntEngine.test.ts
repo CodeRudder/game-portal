@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DuckHuntEngine } from '../DuckHuntEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -945,7 +944,7 @@ describe('DuckHuntEngine - 事件', () => {
   });
 
   it('start 触发 statusChange 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -953,7 +952,7 @@ describe('DuckHuntEngine - 事件', () => {
 
   it('pause 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.pause();
     expect(callback).toHaveBeenCalledWith('paused');
@@ -962,7 +961,7 @@ describe('DuckHuntEngine - 事件', () => {
   it('resume 触发 statusChange 事件', () => {
     engine.start();
     engine.pause();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.resume();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -970,7 +969,7 @@ describe('DuckHuntEngine - 事件', () => {
 
   it('reset 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.reset();
     expect(callback).toHaveBeenCalledWith('idle');
@@ -978,7 +977,7 @@ describe('DuckHuntEngine - 事件', () => {
 
   it('gameOver 触发 statusChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     (engine as any).gameOver();
     expect(callback).toHaveBeenCalledWith('gameover');
@@ -986,7 +985,7 @@ describe('DuckHuntEngine - 事件', () => {
 
   it('得分变化触发 scoreChange 事件', () => {
     engine.start();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('scoreChange', callback);
     (engine as any).addScore(100);
     expect(callback).toHaveBeenCalledWith(100);
@@ -995,7 +994,7 @@ describe('DuckHuntEngine - 事件', () => {
   it('射击触发 miss 事件（未命中时）', () => {
     engine.start();
     skipToPlaying(engine);
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('miss', callback);
     engine.handleKeyDown(' ');
     expect(callback).toHaveBeenCalled();
@@ -1012,14 +1011,14 @@ describe('DuckHuntEngine - 事件', () => {
       fallSpeed: 0, spawnTime: 0,
     }];
     (engine as any)._ducksAlive = 1;
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('hit', callback);
     engine.handleKeyDown(' ');
     expect(callback).toHaveBeenCalled();
   });
 
   it('off 可以取消事件监听', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();

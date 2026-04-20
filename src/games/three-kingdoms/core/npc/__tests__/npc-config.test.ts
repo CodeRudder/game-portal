@@ -4,7 +4,6 @@
  * 覆盖：类型定义完整性、配置数据正确性、辅助函数
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   AFFINITY_THRESHOLDS,
   NPC_PROFESSION_DEFS,

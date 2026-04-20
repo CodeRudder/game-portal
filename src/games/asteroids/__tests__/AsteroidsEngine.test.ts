@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AsteroidsEngine } from '../AsteroidsEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -1057,14 +1056,14 @@ describe('AsteroidsEngine', () => {
 
   describe('事件系统', () => {
     it('start 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');
     });
 
     it('pause 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       engine.pause();
@@ -1072,7 +1071,7 @@ describe('AsteroidsEngine', () => {
     });
 
     it('resume 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       engine.pause();
@@ -1081,7 +1080,7 @@ describe('AsteroidsEngine', () => {
     });
 
     it('reset 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       engine.reset();
@@ -1089,7 +1088,7 @@ describe('AsteroidsEngine', () => {
     });
 
     it('gameover 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       (engine as any)._lives = 1;
@@ -1104,7 +1103,7 @@ describe('AsteroidsEngine', () => {
     });
 
     it('scoreChange 事件在击中行星时触发', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       startEngine(engine);
       (engine as any)._asteroids = [];
@@ -1125,7 +1124,7 @@ describe('AsteroidsEngine', () => {
     });
 
     it('off 取消事件监听', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.off('statusChange', handler);
       engine.start();
@@ -1133,14 +1132,14 @@ describe('AsteroidsEngine', () => {
     });
 
     it('start 触发 scoreChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(0);
     });
 
     it('start 触发 levelChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('levelChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(1);

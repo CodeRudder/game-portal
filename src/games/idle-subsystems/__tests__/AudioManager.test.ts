@@ -4,7 +4,6 @@
  * 测试程序化音频管理器的初始化、音量控制、静音、各音效播放。
  * 使用 mock AudioContext 来避免浏览器依赖。
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AudioManager } from '../AudioManager';
 
 // ═══════════════════════════════════════════════════════════════
@@ -15,12 +14,12 @@ function createMockGainNode(): GainNode {
   return {
     gain: {
       value: 1,
-      setValueAtTime: vi.fn(),
-      exponentialRampToValueAtTime: vi.fn(),
-      linearRampToValueAtTime: vi.fn(),
+      setValueAtTime: jest.fn(),
+      exponentialRampToValueAtTime: jest.fn(),
+      linearRampToValueAtTime: jest.fn(),
     },
-    connect: vi.fn(),
-    disconnect: vi.fn(),
+    connect: jest.fn(),
+    disconnect: jest.fn(),
   } as unknown as GainNode;
 }
 
@@ -29,14 +28,14 @@ function createMockOscillator(): OscillatorNode {
     type: 'sine' as OscillatorType,
     frequency: {
       value: 440,
-      setValueAtTime: vi.fn(),
-      exponentialRampToValueAtTime: vi.fn(),
-      linearRampToValueAtTime: vi.fn(),
+      setValueAtTime: jest.fn(),
+      exponentialRampToValueAtTime: jest.fn(),
+      linearRampToValueAtTime: jest.fn(),
     },
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    start: vi.fn(),
-    stop: vi.fn(),
+    connect: jest.fn(),
+    disconnect: jest.fn(),
+    start: jest.fn(),
+    stop: jest.fn(),
   } as unknown as OscillatorNode;
 }
 
@@ -44,13 +43,13 @@ function createMockAudioContext(): AudioContext {
   const ctx = {
     currentTime: 0,
     state: 'running' as AudioContextState,
-    createGain: vi.fn(() => createMockGainNode()),
-    createOscillator: vi.fn(() => createMockOscillator()),
+    createGain: jest.fn(() => createMockGainNode()),
+    createOscillator: jest.fn(() => createMockOscillator()),
     destination: {} as AudioDestinationNode,
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    close: vi.fn(),
-    resume: vi.fn(() => Promise.resolve()),
+    connect: jest.fn(),
+    disconnect: jest.fn(),
+    close: jest.fn(),
+    resume: jest.fn(() => Promise.resolve()),
   } as unknown as AudioContext;
   return ctx;
 }
@@ -67,19 +66,19 @@ describe('AudioManager', () => {
   let mockCtxInstance: any;
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
 
     // Mock AudioContext 构造函数 — 必须用 class 形式才能 `new`
     const MockAC = class {
       currentTime = 0;
       state: AudioContextState = 'running';
-      createGain = vi.fn(() => createMockGainNode());
-      createOscillator = vi.fn(() => createMockOscillator());
+      createGain = jest.fn(() => createMockGainNode());
+      createOscillator = jest.fn(() => createMockOscillator());
       destination = {};
-      connect = vi.fn();
-      disconnect = vi.fn();
-      close = vi.fn();
-      resume = vi.fn(() => Promise.resolve());
+      connect = jest.fn();
+      disconnect = jest.fn();
+      close = jest.fn();
+      resume = jest.fn(() => Promise.resolve());
     };
     globalThis.AudioContext = MockAC as unknown as typeof AudioContext;
 
@@ -94,7 +93,7 @@ describe('AudioManager', () => {
   afterEach(() => {
     audioManager.destroy();
     globalThis.AudioContext = originalAudioContext;
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   // ─── 初始化 ───────────────────────────────────────────
@@ -262,7 +261,7 @@ describe('AudioManager', () => {
       const ctx = getCtx();
 
       // 前进一个循环周期
-      vi.advanceTimersByTime(7000);
+      jest.advanceTimersByTime(7000);
 
       // 应该再次调用 createOscillator（新的循环）
       const callCount = ctx.createOscillator.mock.calls.length;

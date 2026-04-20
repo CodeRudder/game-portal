@@ -9,7 +9,6 @@
  * - 预定义任务数据一致性
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   OBJECTIVE_EVENT_MAP,
   DEFAULT_ACTIVITY_MILESTONES,

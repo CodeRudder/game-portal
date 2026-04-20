@@ -17,7 +17,6 @@
  * - 边界条件
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   ModuleEventBus,
   type BusEvent,
@@ -40,7 +39,7 @@ describe('ModuleEventBus', () => {
 
   describe('publish() & subscribe()', () => {
     it('应将事件分发给订阅者', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribe('test', handler);
       bus.publish('test', 'module-a', { value: 42 });
 
@@ -55,7 +54,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('事件应包含时间戳', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribe('test', handler);
       bus.publish('test', 'src', null);
 
@@ -65,8 +64,8 @@ describe('ModuleEventBus', () => {
     });
 
     it('应支持多个订阅者', () => {
-      const handler1 = vi.fn();
-      const handler2 = vi.fn();
+      const handler1 = jest.fn();
+      const handler2 = jest.fn();
       bus.subscribe('test', handler1);
       bus.subscribe('test', handler2);
       bus.publish('test', 'src', 'data');
@@ -76,7 +75,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('不应将事件分发给其他频道的订阅者', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribe('channel-a', handler);
       bus.publish('channel-b', 'src', 'data');
 
@@ -84,7 +83,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('应支持不同类型的事件数据', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribe('test', handler);
 
       bus.publish('test', 'src', null);
@@ -101,7 +100,7 @@ describe('ModuleEventBus', () => {
 
   describe('subscribe() 返回取消订阅函数', () => {
     it('调用返回的函数应取消订阅', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       const unsub = bus.subscribe('test', handler);
 
       bus.publish('test', 'src', 'first');
@@ -113,7 +112,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('多次调用取消函数不应报错', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       const unsub = bus.subscribe('test', handler);
 
       unsub();
@@ -126,7 +125,7 @@ describe('ModuleEventBus', () => {
 
   describe('subscribeOnce()', () => {
     it('应在触发一次后自动取消订阅', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribeOnce('test', handler);
 
       bus.publish('test', 'src', 'first');
@@ -139,7 +138,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('应返回可手动取消的函数', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       const unsub = bus.subscribeOnce('test', handler);
 
       unsub(); // 在触发前手动取消
@@ -149,8 +148,8 @@ describe('ModuleEventBus', () => {
     });
 
     it('多个一次性订阅应各自独立', () => {
-      const handler1 = vi.fn();
-      const handler2 = vi.fn();
+      const handler1 = jest.fn();
+      const handler2 = jest.fn();
 
       bus.subscribeOnce('test', handler1);
       bus.subscribeOnce('test', handler2);
@@ -169,7 +168,7 @@ describe('ModuleEventBus', () => {
 
   describe('unsubscribe()', () => {
     it('应取消指定处理函数的订阅', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribe('test', handler);
       bus.unsubscribe('test', handler);
 
@@ -178,17 +177,17 @@ describe('ModuleEventBus', () => {
     });
 
     it('取消不存在的频道不应报错', () => {
-      expect(() => bus.unsubscribe('nonexistent', vi.fn())).not.toThrow();
+      expect(() => bus.unsubscribe('nonexistent', jest.fn())).not.toThrow();
     });
 
     it('取消不存在的处理函数不应报错', () => {
-      bus.subscribe('test', vi.fn());
-      expect(() => bus.unsubscribe('test', vi.fn())).not.toThrow();
+      bus.subscribe('test', jest.fn());
+      expect(() => bus.unsubscribe('test', jest.fn())).not.toThrow();
     });
 
     it('应只取消指定的处理函数', () => {
-      const handler1 = vi.fn();
-      const handler2 = vi.fn();
+      const handler1 = jest.fn();
+      const handler2 = jest.fn();
       bus.subscribe('test', handler1);
       bus.subscribe('test', handler2);
 
@@ -204,7 +203,7 @@ describe('ModuleEventBus', () => {
 
   describe('通配符频道', () => {
     it('应匹配前缀相同的事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribe('building:*', handler);
 
       bus.publish('building:upgraded', 'src', 'data1');
@@ -214,7 +213,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('不应匹配前缀不同的事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribe('building:*', handler);
 
       bus.publish('unit:recruited', 'src', 'data');
@@ -223,8 +222,8 @@ describe('ModuleEventBus', () => {
     });
 
     it('通配符和精确订阅应同时触发', () => {
-      const wildcardHandler = vi.fn();
-      const exactHandler = vi.fn();
+      const wildcardHandler = jest.fn();
+      const exactHandler = jest.fn();
 
       bus.subscribe('building:*', wildcardHandler);
       bus.subscribe('building:upgraded', exactHandler);
@@ -236,8 +235,8 @@ describe('ModuleEventBus', () => {
     });
 
     it('应支持多个不同前缀的通配符', () => {
-      const buildingHandler = vi.fn();
-      const unitHandler = vi.fn();
+      const buildingHandler = jest.fn();
+      const unitHandler = jest.fn();
 
       bus.subscribe('building:*', buildingHandler);
       bus.subscribe('unit:*', unitHandler);
@@ -250,7 +249,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('通配符应匹配前缀下的所有子频道', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribe('game:*', handler);
 
       bus.publish('game:building', 'src', {});
@@ -282,7 +281,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('中间件不调用 next 应阻止事件分发', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.use((_event, _next) => {
         // 不调用 next
       });
@@ -306,10 +305,10 @@ describe('ModuleEventBus', () => {
     });
 
     it('中间件应能访问事件数据', () => {
-      const middleware = vi.fn((_event, next) => next());
+      const middleware = jest.fn((_event, next) => next());
       bus.use(middleware);
 
-      bus.subscribe('test', vi.fn());
+      bus.subscribe('test', jest.fn());
       bus.publish('test', 'src', { value: 42 });
 
       expect(middleware).toHaveBeenCalledWith(
@@ -327,8 +326,8 @@ describe('ModuleEventBus', () => {
 
   describe('异常隔离', () => {
     it('订阅者异常不应影响其他订阅者', () => {
-      const handler1 = vi.fn(() => { throw new Error('boom'); });
-      const handler2 = vi.fn();
+      const handler1 = jest.fn(() => { throw new Error('boom'); });
+      const handler2 = jest.fn();
 
       bus.subscribe('test', handler1);
       bus.subscribe('test', handler2);
@@ -340,8 +339,8 @@ describe('ModuleEventBus', () => {
     });
 
     it('订阅者异常不应影响通配符订阅者', () => {
-      const errorHandler = vi.fn(() => { throw new Error('boom'); });
-      const wildcardHandler = vi.fn();
+      const errorHandler = jest.fn(() => { throw new Error('boom'); });
+      const wildcardHandler = jest.fn();
 
       bus.subscribe('test', errorHandler);
       bus.subscribe('test:*', wildcardHandler);
@@ -357,7 +356,7 @@ describe('ModuleEventBus', () => {
 
   describe('getHistory()', () => {
     it('应返回所有历史事件', () => {
-      bus.subscribe('test', vi.fn());
+      bus.subscribe('test', jest.fn());
       bus.publish('test', 'src', 'a');
       bus.publish('test', 'src', 'b');
 
@@ -366,8 +365,8 @@ describe('ModuleEventBus', () => {
     });
 
     it('应按频道过滤历史', () => {
-      bus.subscribe('ch-a', vi.fn());
-      bus.subscribe('ch-b', vi.fn());
+      bus.subscribe('ch-a', jest.fn());
+      bus.subscribe('ch-b', jest.fn());
       bus.publish('ch-a', 'src', 'a');
       bus.publish('ch-b', 'src', 'b');
       bus.publish('ch-a', 'src', 'a2');
@@ -378,7 +377,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('应支持 limit 参数', () => {
-      bus.subscribe('test', vi.fn());
+      bus.subscribe('test', jest.fn());
       for (let i = 0; i < 10; i++) {
         bus.publish('test', 'src', i);
       }
@@ -388,9 +387,9 @@ describe('ModuleEventBus', () => {
     });
 
     it('应支持通配符过滤历史', () => {
-      bus.subscribe('building:up', vi.fn());
-      bus.subscribe('building:down', vi.fn());
-      bus.subscribe('unit:spawn', vi.fn());
+      bus.subscribe('building:up', jest.fn());
+      bus.subscribe('building:down', jest.fn());
+      bus.subscribe('unit:spawn', jest.fn());
 
       bus.publish('building:up', 'src', {});
       bus.publish('building:down', 'src', {});
@@ -409,7 +408,7 @@ describe('ModuleEventBus', () => {
 
   describe('clearHistory()', () => {
     it('应清除所有历史记录', () => {
-      bus.subscribe('test', vi.fn());
+      bus.subscribe('test', jest.fn());
       bus.publish('test', 'src', 'data');
       bus.clearHistory();
 
@@ -422,7 +421,7 @@ describe('ModuleEventBus', () => {
   describe('历史记录上限', () => {
     it('应遵守构造函数传入的上限', () => {
       const limitedBus = new ModuleEventBus(5);
-      limitedBus.subscribe('test', vi.fn());
+      limitedBus.subscribe('test', jest.fn());
 
       for (let i = 0; i < 10; i++) {
         limitedBus.publish('test', 'src', i);
@@ -434,7 +433,7 @@ describe('ModuleEventBus', () => {
 
     it('默认上限应为 100', () => {
       const defaultBus = new ModuleEventBus();
-      defaultBus.subscribe('test', vi.fn());
+      defaultBus.subscribe('test', jest.fn());
 
       for (let i = 0; i < 110; i++) {
         defaultBus.publish('test', 'src', i);
@@ -449,9 +448,9 @@ describe('ModuleEventBus', () => {
 
   describe('getSubscriberCount()', () => {
     it('应返回指定频道的订阅者数量', () => {
-      bus.subscribe('test', vi.fn());
-      bus.subscribe('test', vi.fn());
-      bus.subscribe('test', vi.fn());
+      bus.subscribe('test', jest.fn());
+      bus.subscribe('test', jest.fn());
+      bus.subscribe('test', jest.fn());
 
       expect(bus.getSubscriberCount('test')).toBe(3);
     });
@@ -461,7 +460,7 @@ describe('ModuleEventBus', () => {
     });
 
     it('取消订阅后应正确更新', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.subscribe('test', handler);
       expect(bus.getSubscriberCount('test')).toBe(1);
 
@@ -474,8 +473,8 @@ describe('ModuleEventBus', () => {
 
   describe('reset()', () => {
     it('应清除所有订阅', () => {
-      bus.subscribe('test', vi.fn());
-      bus.subscribe('test2', vi.fn());
+      bus.subscribe('test', jest.fn());
+      bus.subscribe('test2', jest.fn());
       bus.reset();
 
       expect(bus.getSubscriberCount('test')).toBe(0);
@@ -483,17 +482,17 @@ describe('ModuleEventBus', () => {
     });
 
     it('应清除所有中间件', () => {
-      const middleware = vi.fn((_event, next) => next());
+      const middleware = jest.fn((_event, next) => next());
       bus.use(middleware);
       bus.reset();
 
-      bus.subscribe('test', vi.fn());
+      bus.subscribe('test', jest.fn());
       bus.publish('test', 'src', 'data');
       expect(middleware).not.toHaveBeenCalled();
     });
 
     it('应清除历史记录', () => {
-      bus.subscribe('test', vi.fn());
+      bus.subscribe('test', jest.fn());
       bus.publish('test', 'src', 'data');
       bus.reset();
 

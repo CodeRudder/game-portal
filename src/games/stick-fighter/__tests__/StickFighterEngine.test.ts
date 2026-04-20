@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { StickFighterEngine } from '../StickFighterEngine';
 import * as C from '../constants';
 

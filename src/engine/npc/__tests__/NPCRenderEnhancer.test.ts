@@ -10,14 +10,12 @@
  * @module engine/npc/__tests__/NPCRenderEnhancer.test
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
 // ---------------------------------------------------------------------------
-// Mock PixiJS v8 — 使用 vi.hoisted 确保在模块加载前完成 mock
+// Mock PixiJS v8 — 使用 jest.hoisted 确保在模块加载前完成 mock
 // ---------------------------------------------------------------------------
 
-vi.mock('pixi.js', () => {
-  /** 创建一个轻量 mock Container，不依赖 vi.fn()（避免 hoist 问题） */
+jest.mock('pixi.js', () => {
+  /** 创建一个轻量 mock Container，不依赖 jest.fn()（避免 hoist 问题） */
   function createMockContainer(label?: string) {
     const children: any[] = [];
     return {
@@ -264,7 +262,7 @@ describe('NPCRenderEnhancer', () => {
   let mockParent: any;
 
   beforeEach(async () => {
-    // 使用 mock Container（import 会被 vi.mock 拦截）
+    // 使用 mock Container（import 会被 jest.mock 拦截）
     const { Container } = await import('pixi.js');
     mockParent = new Container();
     enhancer = new NPCRenderEnhancer(mockParent);

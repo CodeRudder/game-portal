@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { CaveFlyerEngine } from '../CaveFlyerEngine';
 import {
   CANVAS_WIDTH,

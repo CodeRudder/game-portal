@@ -7,7 +7,6 @@
  * @module engine/npc/__tests__/RelationshipSystem.test
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NPCEventBus } from '../NPCEventBus';
 import {
   RelationshipSystem,
@@ -183,7 +182,7 @@ describe('RelationshipSystem', () => {
     });
 
     it('等级变化应触发事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       eventBus.on('relationshipLevelChanged', listener);
 
       system.changeRelationship('npc_1', 'gift', 20); // 0 → 20, STRANGER → ACQUAINTANCE
@@ -203,7 +202,7 @@ describe('RelationshipSystem', () => {
 
   describe('事件触发', () => {
     it('好感度变动应触发 relationshipChanged 事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       eventBus.on('relationshipChanged', listener);
 
       system.changeRelationship('npc_1', 'dialogue');
@@ -286,7 +285,7 @@ describe('RelationshipSystem', () => {
     });
 
     it('解锁应触发 dialogueUnlocked 事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       eventBus.on('dialogueUnlocked', listener);
 
       system.unlockDialogue('npc_1', 'special_dlg_1');

@@ -3,7 +3,6 @@
  * 覆盖：fragmentSynthesize、getSynthesizeCost、canSynthesize
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { HeroSystem } from '../HeroSystem';
 import { Quality } from '../hero.types';
 import { SYNTHESIZE_REQUIRED_FRAGMENTS } from '../hero-config';

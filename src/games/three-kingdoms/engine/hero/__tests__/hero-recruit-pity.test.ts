@@ -9,7 +9,6 @@
  * 测试保底和计数器时使用 EPIC rng 值（有多个武将可选）来验证计数逻辑。
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HeroRecruitSystem } from '../HeroRecruitSystem';
 import type { RecruitDeps, PityState } from '../HeroRecruitSystem';
 import { HeroSystem } from '../HeroSystem';
@@ -25,8 +24,8 @@ import { DUPLICATE_FRAGMENT_COUNT } from '../hero-config';
 function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: vi.fn().mockReturnValue(true),
-    canAffordResource: vi.fn().mockReturnValue(true),
+    spendResource: jest.fn().mockReturnValue(true),
+    canAffordResource: jest.fn().mockReturnValue(true),
   };
 }
 
@@ -211,7 +210,7 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('版本不匹配时打印警告', () => {
-      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       recruit.deserialize({
         version: 999,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 },

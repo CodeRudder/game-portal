@@ -6,7 +6,6 @@
  * @module engine/tilemap/__tests__/BiomeConfig.test
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   BiomeType,
   BIOME_CONFIGS,

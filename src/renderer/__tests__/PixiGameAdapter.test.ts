@@ -10,7 +10,6 @@
  * - 尺寸管理
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PixiGameAdapter } from '../PixiGameAdapter';
 import type { PixiGameAdapterConfig } from '../types';
 import type { IdleGameRenderState } from '../types';
@@ -60,9 +59,9 @@ function createMockEngine(overrides: Record<string, any> = {}) {
 
   return {
     gameId: 'test-game',
-    getUnlockedResources: vi.fn(() => resources.filter(r => r.unlocked)),
-    getAvailableUpgrades: vi.fn(() => upgrades.filter(u => u.unlocked && u.level < u.maxLevel)),
-    getUpgradeCost: vi.fn((id: string) => {
+    getUnlockedResources: jest.fn(() => resources.filter(r => r.unlocked)),
+    getAvailableUpgrades: jest.fn(() => upgrades.filter(u => u.unlocked && u.level < u.maxLevel)),
+    getUpgradeCost: jest.fn((id: string) => {
       const u = upgrades.find(u => u.id === id);
       if (!u) return {};
       const cost: Record<string, number> = {};
@@ -71,19 +70,19 @@ function createMockEngine(overrides: Record<string, any> = {}) {
       }
       return cost;
     }),
-    canAfford: vi.fn((cost: Record<string, number>) => {
+    canAfford: jest.fn((cost: Record<string, number>) => {
       for (const [id, amount] of Object.entries(cost)) {
         const r = resources.find(r => r.id === id);
         if (!r || r.amount < amount) return false;
       }
       return true;
     }),
-    purchaseUpgrade: vi.fn(() => true),
+    purchaseUpgrade: jest.fn(() => true),
     prestige: { currency: 50, count: 2 },
     statistics: { totalGold: 10000, totalUpgrades: 5, playTime: 3600 },
-    on: vi.fn(),
-    off: vi.fn(),
-    emit: vi.fn(),
+    on: jest.fn(),
+    off: jest.fn(),
+    emit: jest.fn(),
     ...overrides,
   } as any;
 }
@@ -272,7 +271,7 @@ describe('PixiGameAdapter', () => {
 
     it('should handle engine with no resources', () => {
       const engine = createMockEngine({
-        getUnlockedResources: vi.fn(() => []),
+        getUnlockedResources: jest.fn(() => []),
       });
       const adapter = new PixiGameAdapter(engine);
       const state = (adapter as any).extractState() as IdleGameRenderState;
@@ -281,7 +280,7 @@ describe('PixiGameAdapter', () => {
 
     it('should handle engine with no upgrades', () => {
       const engine = createMockEngine({
-        getAvailableUpgrades: vi.fn(() => []),
+        getAvailableUpgrades: jest.fn(() => []),
       });
       const adapter = new PixiGameAdapter(engine);
       const state = (adapter as any).extractState() as IdleGameRenderState;
@@ -294,7 +293,7 @@ describe('PixiGameAdapter', () => {
   describe('event system', () => {
     it('should register and call event listeners', () => {
       const adapter = new PixiGameAdapter(mockEngine);
-      const callback = vi.fn();
+      const callback = jest.fn();
       adapter.on('ready', callback);
       (adapter as any).emit('ready');
       expect(callback).toHaveBeenCalledTimes(1);
@@ -302,7 +301,7 @@ describe('PixiGameAdapter', () => {
 
     it('should unregister event listeners', () => {
       const adapter = new PixiGameAdapter(mockEngine);
-      const callback = vi.fn();
+      const callback = jest.fn();
       adapter.on('ready', callback);
       adapter.off('ready', callback);
       (adapter as any).emit('ready');
@@ -311,8 +310,8 @@ describe('PixiGameAdapter', () => {
 
     it('should support multiple listeners for same event', () => {
       const adapter = new PixiGameAdapter(mockEngine);
-      const cb1 = vi.fn();
-      const cb2 = vi.fn();
+      const cb1 = jest.fn();
+      const cb2 = jest.fn();
       adapter.on('sync', cb1);
       adapter.on('sync', cb2);
       const testState = {} as IdleGameRenderState;
@@ -328,14 +327,14 @@ describe('PixiGameAdapter', () => {
 
     it('should catch errors in event listeners', () => {
       const adapter = new PixiGameAdapter(mockEngine);
-      const errorCallback = vi.fn(() => { throw new Error('test error'); });
+      const errorCallback = jest.fn(() => { throw new Error('test error'); });
       adapter.on('ready', errorCallback);
       expect(() => (adapter as any).emit('ready')).not.toThrow();
     });
 
     it('should pass arguments to event listeners', () => {
       const adapter = new PixiGameAdapter(mockEngine);
-      const callback = vi.fn();
+      const callback = jest.fn();
       adapter.on('upgradeClick', callback);
       (adapter as any).emit('upgradeClick', 'upgrade-1');
       expect(callback).toHaveBeenCalledWith('upgrade-1');
@@ -349,7 +348,7 @@ describe('PixiGameAdapter', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       // Initialize internals enough for handleUpgradeClick
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn() };
 
       (adapter as any).handleUpgradeClick('upgrade-1');
       expect(mockEngine.purchaseUpgrade).toHaveBeenCalledWith('upgrade-1');
@@ -357,7 +356,7 @@ describe('PixiGameAdapter', () => {
 
     it('should emit upgradeClick event', () => {
       const adapter = new PixiGameAdapter(mockEngine);
-      const callback = vi.fn();
+      const callback = jest.fn();
       adapter.on('upgradeClick', callback);
 
       (adapter as any).handleUpgradeClick('upgrade-1');
@@ -366,7 +365,7 @@ describe('PixiGameAdapter', () => {
 
     it('should sync state after successful purchase', () => {
       const adapter = new PixiGameAdapter(mockEngine);
-      const syncSpy = vi.spyOn(adapter as any, 'syncState').mockImplementation(() => {});
+      const syncSpy = jest.spyOn(adapter as any, 'syncState').mockImplementation(() => {});
 
       (adapter as any).handleUpgradeClick('upgrade-1');
       expect(syncSpy).toHaveBeenCalled();
@@ -374,7 +373,7 @@ describe('PixiGameAdapter', () => {
 
     it('should handle purchase failure gracefully', () => {
       const engine = createMockEngine({
-        purchaseUpgrade: vi.fn(() => { throw new Error('purchase failed'); }),
+        purchaseUpgrade: jest.fn(() => { throw new Error('purchase failed'); }),
       });
       const adapter = new PixiGameAdapter(engine);
       (adapter as any).initialized = true;
@@ -389,7 +388,7 @@ describe('PixiGameAdapter', () => {
     it('startSync should create an interval', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn() };
 
       adapter.startSync();
       expect((adapter as any).syncTimerId).not.toBeNull();
@@ -399,7 +398,7 @@ describe('PixiGameAdapter', () => {
     it('stopSync should clear the interval', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn() };
 
       adapter.startSync();
       adapter.stopSync();
@@ -409,7 +408,7 @@ describe('PixiGameAdapter', () => {
     it('startSync should not create duplicate intervals', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn() };
 
       adapter.startSync();
       const firstId = (adapter as any).syncTimerId;
@@ -421,7 +420,7 @@ describe('PixiGameAdapter', () => {
     it('syncState should update lastState', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn() };
 
       adapter.syncState();
       const state = adapter.getLastState();
@@ -432,8 +431,8 @@ describe('PixiGameAdapter', () => {
     it('syncState should emit sync event', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn() };
-      const callback = vi.fn();
+      (adapter as any).idleScene = { updateState: jest.fn() };
+      const callback = jest.fn();
       adapter.on('sync', callback);
 
       adapter.syncState();
@@ -450,7 +449,7 @@ describe('PixiGameAdapter', () => {
     it('syncState should not run when already syncing', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn() };
       (adapter as any).syncing = true;
 
       adapter.syncState();
@@ -470,8 +469,8 @@ describe('PixiGameAdapter', () => {
     it('should emit destroy event', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { destroy: vi.fn() };
-      const callback = vi.fn();
+      (adapter as any).idleScene = { destroy: jest.fn() };
+      const callback = jest.fn();
       adapter.on('destroy', callback);
 
       adapter.destroy();
@@ -481,7 +480,7 @@ describe('PixiGameAdapter', () => {
     it('should set initialized to false', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { destroy: vi.fn() };
+      (adapter as any).idleScene = { destroy: jest.fn() };
       adapter.destroy();
       expect(adapter.isInitialized()).toBe(false);
     });
@@ -489,8 +488,8 @@ describe('PixiGameAdapter', () => {
     it('should clear listeners', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { destroy: vi.fn() };
-      const callback = vi.fn();
+      (adapter as any).idleScene = { destroy: jest.fn() };
+      const callback = jest.fn();
       adapter.on('destroy', callback);
 
       adapter.destroy();
@@ -502,7 +501,7 @@ describe('PixiGameAdapter', () => {
     it('should stop sync on destroy', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn(), destroy: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn(), destroy: jest.fn() };
       adapter.startSync();
 
       adapter.destroy();
@@ -512,7 +511,7 @@ describe('PixiGameAdapter', () => {
     it('should clear lastState', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn(), destroy: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn(), destroy: jest.fn() };
       adapter.syncState();
       expect(adapter.getLastState()).not.toBeNull();
 
@@ -535,12 +534,12 @@ describe('PixiGameAdapter', () => {
   describe('edge cases', () => {
     it('should handle engine with empty resources gracefully', () => {
       const engine = createMockEngine({
-        getUnlockedResources: vi.fn(() => []),
-        getAvailableUpgrades: vi.fn(() => []),
+        getUnlockedResources: jest.fn(() => []),
+        getAvailableUpgrades: jest.fn(() => []),
       });
       const adapter = new PixiGameAdapter(engine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn() };
 
       adapter.syncState();
       const state = adapter.getLastState();
@@ -550,7 +549,7 @@ describe('PixiGameAdapter', () => {
 
     it('should handle engine with large numbers', () => {
       const engine = createMockEngine({
-        getUnlockedResources: vi.fn(() => [
+        getUnlockedResources: jest.fn(() => [
           { id: 'gold', name: '金币', amount: 1e15, perSecond: 1e9, maxAmount: Infinity, unlocked: true },
         ]),
       });
@@ -563,7 +562,7 @@ describe('PixiGameAdapter', () => {
     it('should handle multiple rapid syncState calls', () => {
       const adapter = new PixiGameAdapter(mockEngine);
       (adapter as any).initialized = true;
-      (adapter as any).idleScene = { updateState: vi.fn() };
+      (adapter as any).idleScene = { updateState: jest.fn() };
 
       adapter.syncState();
       adapter.syncState();

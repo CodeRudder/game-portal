@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { GravityFlipEngine } from '../GravityFlipEngine';
 import {
   CANVAS_WIDTH,

@@ -5,7 +5,6 @@
  * 渲染数据生成、层级计算、视口约束。
  */
 
-import { describe, it, expect } from 'vitest';
 import { MapDataRenderer } from '../MapDataRenderer';
 import type { ViewportState, TileData, TileRenderData } from '../../../core/map';
 import {

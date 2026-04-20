@@ -4,7 +4,6 @@
  *       终点系统、生命与重生、计时器、计分、关卡递进、状态管理、
  *       handleKeyDown/Up、getState、事件系统、边界与异常场景
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FroggerEngine } from '../FroggerEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -228,7 +227,7 @@ describe('FroggerEngine - 初始化', () => {
 describe('FroggerEngine - 启动事件', () => {
   it('start 发出 statusChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -236,7 +235,7 @@ describe('FroggerEngine - 启动事件', () => {
 
   it('start 发出 scoreChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(0);
@@ -244,7 +243,7 @@ describe('FroggerEngine - 启动事件', () => {
 
   it('start 发出 levelChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('levelChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(1);
@@ -1409,7 +1408,7 @@ describe('FroggerEngine - 状态管理', () => {
 
   it('pause/resume 发出 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.pause();
     expect(handler).toHaveBeenCalledWith('paused');
@@ -1419,7 +1418,7 @@ describe('FroggerEngine - 状态管理', () => {
 
   it('reset 发出 statusChange idle 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.reset();
     expect(handler).toHaveBeenCalledWith('idle');
@@ -1427,7 +1426,7 @@ describe('FroggerEngine - 状态管理', () => {
 
   it('destroy 清除所有事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.destroy();
     const callCountAfterDestroy = handler.mock.calls.length;
@@ -1513,7 +1512,7 @@ describe('FroggerEngine - getState', () => {
 describe('FroggerEngine - 事件系统', () => {
   it('on 注册事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test');
     expect(handler).toHaveBeenCalled();
@@ -1521,7 +1520,7 @@ describe('FroggerEngine - 事件系统', () => {
 
   it('off 取消事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.off('test', handler);
     engine.emit('test');
@@ -1530,7 +1529,7 @@ describe('FroggerEngine - 事件系统', () => {
 
   it('emit 传递参数', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test', 'arg1', 42);
     expect(handler).toHaveBeenCalledWith('arg1', 42);
@@ -1538,8 +1537,8 @@ describe('FroggerEngine - 事件系统', () => {
 
   it('多次 on 同一事件注册多个监听', () => {
     const engine = createEngine();
-    const h1 = vi.fn();
-    const h2 = vi.fn();
+    const h1 = jest.fn();
+    const h2 = jest.fn();
     engine.on('test', h1);
     engine.on('test', h2);
     engine.emit('test');
@@ -1549,7 +1548,7 @@ describe('FroggerEngine - 事件系统', () => {
 
   it('scoreChange 事件在得分时触发', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
     moveAndLand(engine, 'ArrowUp');
     expect(handler).toHaveBeenCalled();

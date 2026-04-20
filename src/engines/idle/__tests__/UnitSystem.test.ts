@@ -5,7 +5,6 @@
  * getDef, getState, getLevel, isUnlocked, checkEvolutionCompletion,
  * saveState, loadState, reset, onEvent。
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   UnitSystem,
   UnitRarity,
@@ -153,7 +152,7 @@ describe('UnitSystem', () => {
 
     it('解锁应触发 unlocked 事件', () => {
       const system = new UnitSystem([createUnitDef()]);
-      const handler = vi.fn();
+      const handler = jest.fn();
       system.onEvent(handler);
 
       system.unlock('warrior');
@@ -237,7 +236,7 @@ describe('UnitSystem', () => {
     it('增加经验应触发 exp_gained 事件', () => {
       const system = new UnitSystem([createUnitDef()]);
       system.unlock('warrior');
-      const handler = vi.fn();
+      const handler = jest.fn();
       system.onEvent(handler);
 
       system.addExp('warrior', 50);
@@ -250,7 +249,7 @@ describe('UnitSystem', () => {
     it('升级应触发 leveled_up 事件', () => {
       const system = new UnitSystem([createUnitDef()]);
       system.unlock('warrior');
-      const handler = vi.fn();
+      const handler = jest.fn();
       system.onEvent(handler);
 
       system.addExp('warrior', 100);
@@ -540,7 +539,7 @@ describe('UnitSystem', () => {
       system.unlock('dragon');
       system.evolve('dragon', 'fire_dragon');
 
-      const handler = vi.fn();
+      const handler = jest.fn();
       system.onEvent(handler);
 
       const internalState = (system as any).states.get('dragon');
@@ -670,7 +669,7 @@ describe('UnitSystem', () => {
   describe('onEvent', () => {
     it('返回的取消函数应正确移除监听器', () => {
       const system = new UnitSystem([createUnitDef()]);
-      const handler = vi.fn();
+      const handler = jest.fn();
       const unsubscribe = system.onEvent(handler);
 
       unsubscribe();
@@ -681,8 +680,8 @@ describe('UnitSystem', () => {
 
     it('应支持多个监听器', () => {
       const system = new UnitSystem([createUnitDef()]);
-      const handler1 = vi.fn();
-      const handler2 = vi.fn();
+      const handler1 = jest.fn();
+      const handler2 = jest.fn();
 
       system.onEvent(handler1);
       system.onEvent(handler2);
@@ -694,10 +693,10 @@ describe('UnitSystem', () => {
 
     it('监听器异常不应影响系统运行', () => {
       const system = new UnitSystem([createUnitDef()]);
-      const errorHandler = vi.fn(() => {
+      const errorHandler = jest.fn(() => {
         throw new Error('监听器异常');
       });
-      const normalHandler = vi.fn();
+      const normalHandler = jest.fn();
 
       system.onEvent(errorHandler);
       system.onEvent(normalHandler);

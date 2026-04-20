@@ -4,7 +4,6 @@
  * 测试领土产出计算、升级消耗、相邻关系、领土数据生成。
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   getBaseProduction,
   calculateProduction,

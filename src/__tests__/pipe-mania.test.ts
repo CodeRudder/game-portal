@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { PipeManiaEngine } from '@/games/pipe-mania/PipeManiaEngine';
 import {
   GRID_SIZE,

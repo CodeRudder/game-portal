@@ -4,7 +4,6 @@
  *       筹码系统、Blackjack判定、爆牌、胜负判定
  */
 
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
 import {
   SUITS,
   RANKS,
@@ -1440,7 +1439,7 @@ describe('事件系统', () => {
   it('stateChange 事件在下注时触发', () => {
     const engine = createEngine();
     engine.start();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('stateChange', listener);
     engine.placeBet();
     expect(listener).toHaveBeenCalled();
@@ -1449,7 +1448,7 @@ describe('事件系统', () => {
   it('stateChange 事件在 Hit 时触发', () => {
     const engine = createEngineAndDeal();
     if (engine.phase === GamePhase.PLAYER_TURN) {
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.hit();
       expect(listener).toHaveBeenCalled();
@@ -1459,7 +1458,7 @@ describe('事件系统', () => {
   it('stateChange 事件在 Stand 时触发', () => {
     const engine = createEngineAndDeal();
     if (engine.phase === GamePhase.PLAYER_TURN) {
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.stand();
       expect(listener).toHaveBeenCalled();
@@ -1469,7 +1468,7 @@ describe('事件系统', () => {
   it('off 取消监听', () => {
     const engine = createEngine();
     engine.start();
-    const listener = vi.fn();
+    const listener = jest.fn();
     engine.on('stateChange', listener);
     engine.off('stateChange', listener);
     engine.increaseBet();

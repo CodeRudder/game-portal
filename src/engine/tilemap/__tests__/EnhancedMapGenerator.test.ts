@@ -4,7 +4,6 @@
  * @module engine/tilemap/__tests__/EnhancedMapGenerator.test
  */
 
-import { describe, it, expect } from 'vitest';
 import { BiomeType, BIOME_CONFIGS } from '../BiomeConfig';
 import { TerrainType } from '../types';
 import type { TileMapData } from '../types';

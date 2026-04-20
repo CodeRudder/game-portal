@@ -9,7 +9,6 @@
  * @module engine/campaign/__tests__/CampaignIntegration.battle.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CampaignProgressSystem } from '../CampaignProgressSystem';
 import { RewardDistributor } from '../RewardDistributor';
 import { BattleEngine } from '../../battle/BattleEngine';
@@ -127,7 +126,7 @@ describe('CampaignIntegration 完整战斗流程', () => {
     distributedExp = 0;
     const deps: RewardDistributorDeps = {
       addResource: (type, amount) => { distributedResources[type] = (distributedResources[type] ?? 0) + amount; return amount; },
-      addFragment: vi.fn(),
+      addFragment: jest.fn(),
       addExp: (exp) => { distributedExp += exp; },
     };
     reward = new RewardDistributor(campaignDataProvider, deps, () => 0.5);

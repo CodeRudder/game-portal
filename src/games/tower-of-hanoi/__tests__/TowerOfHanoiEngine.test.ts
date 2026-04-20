@@ -4,7 +4,6 @@
  *       光标控制、选择机制、动画、盘数调整、状态管理、
  *       handleKeyDown/Up、getState、渲染、常量验证
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TowerOfHanoiEngine } from '../TowerOfHanoiEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -170,7 +169,7 @@ describe('TowerOfHanoiEngine - 启动', () => {
 
   it('start 发出 statusChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -178,7 +177,7 @@ describe('TowerOfHanoiEngine - 启动', () => {
 
   it('start 发出 scoreChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(0);
@@ -432,7 +431,7 @@ describe('TowerOfHanoiEngine - 胜利条件', () => {
 
   it('胜利后发出 statusChange gameover 事件', () => {
     const engine = createAndStartEngine(3);
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     performMove(engine, 0, 2);
     performMove(engine, 0, 1);
@@ -725,7 +724,7 @@ describe('TowerOfHanoiEngine - 盘数调整', () => {
 
   it('调整相同盘数不触发事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('diskCountChange', handler);
     engine.setDiskCount(DEFAULT_DISKS);
     expect(handler).not.toHaveBeenCalled();
@@ -733,7 +732,7 @@ describe('TowerOfHanoiEngine - 盘数调整', () => {
 
   it('调整不同盘数触发 diskCountChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('diskCountChange', handler);
     engine.setDiskCount(5);
     expect(handler).toHaveBeenCalledWith(5);
@@ -854,7 +853,7 @@ describe('TowerOfHanoiEngine - 状态管理', () => {
 
   it('destroy 清除所有事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.destroy();
     const callCount = handler.mock.calls.length;
@@ -864,7 +863,7 @@ describe('TowerOfHanoiEngine - 状态管理', () => {
 
   it('pause/resume 发出 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.pause();
     expect(handler).toHaveBeenCalledWith('paused');
@@ -874,7 +873,7 @@ describe('TowerOfHanoiEngine - 状态管理', () => {
 
   it('reset 发出 statusChange idle 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.reset();
     expect(handler).toHaveBeenCalledWith('idle');
@@ -1017,7 +1016,7 @@ describe('TowerOfHanoiEngine - getState', () => {
 describe('TowerOfHanoiEngine - 事件系统', () => {
   it('on 注册事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test');
     expect(handler).toHaveBeenCalled();
@@ -1025,7 +1024,7 @@ describe('TowerOfHanoiEngine - 事件系统', () => {
 
   it('off 取消事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.off('test', handler);
     engine.emit('test');
@@ -1034,7 +1033,7 @@ describe('TowerOfHanoiEngine - 事件系统', () => {
 
   it('emit 传递参数', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test', 'arg1', 42);
     expect(handler).toHaveBeenCalledWith('arg1', 42);
@@ -1042,8 +1041,8 @@ describe('TowerOfHanoiEngine - 事件系统', () => {
 
   it('多次 on 同一事件注册多个监听', () => {
     const engine = createEngine();
-    const h1 = vi.fn();
-    const h2 = vi.fn();
+    const h1 = jest.fn();
+    const h2 = jest.fn();
     engine.on('test', h1);
     engine.on('test', h2);
     engine.emit('test');
@@ -1053,7 +1052,7 @@ describe('TowerOfHanoiEngine - 事件系统', () => {
 
   it('移动时发出 scoreChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
     performMove(engine, 0, 1);
     expect(handler).toHaveBeenCalledWith(1);
@@ -1061,7 +1060,7 @@ describe('TowerOfHanoiEngine - 事件系统', () => {
 
   it('多次移动 scoreChange 累计', () => {
     const engine = createAndStartEngine(3);
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
     performMove(engine, 0, 2);
     performMove(engine, 0, 1);

@@ -7,7 +7,6 @@
  * @module engine/npc/__tests__/DailyScheduleSystem.test
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NPCEventBus } from '../NPCEventBus';
 import {
   DailyScheduleSystem,
@@ -293,7 +292,7 @@ describe('DailyScheduleSystem', () => {
         { startHour: 6, endHour: 12, state: NPCState.WORKING, label: '工作', interactable: false },
       ]);
 
-      const listener = vi.fn();
+      const listener = jest.fn();
       eventBus.on('scheduleStateChange', listener);
 
       system.update([npc], 8);
@@ -306,7 +305,7 @@ describe('DailyScheduleSystem', () => {
         { startHour: 6, endHour: 12, state: NPCState.WORKING, label: '工作', interactable: false },
       ]);
 
-      const listener = vi.fn();
+      const listener = jest.fn();
       eventBus.on('scheduleStateChange', listener);
 
       system.update([npc], 8);

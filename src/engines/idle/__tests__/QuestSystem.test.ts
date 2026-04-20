@@ -12,7 +12,6 @@
  * - 重置
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   QuestSystem,
   type QuestDef,
@@ -201,7 +200,7 @@ describe('QuestSystem', () => {
 
   it('应正确触发 quest_accepted 事件', () => {
     system.register([createMainQuest()]);
-    const handler = vi.fn();
+    const handler = jest.fn();
     system.onEvent(handler);
     system.acceptQuest('main_defeat_10');
     expect(handler).toHaveBeenCalledWith(expect.objectContaining({ type: 'quest_accepted', questId: 'main_defeat_10' }));
@@ -209,7 +208,7 @@ describe('QuestSystem', () => {
 
   it('应正确触发 quest_completed 事件', () => {
     system.register([createDailyQuest()]);
-    const handler = vi.fn();
+    const handler = jest.fn();
     system.onEvent(handler);
     system.updateProgress('build', 'any', 5);
     expect(handler).toHaveBeenCalledWith(expect.objectContaining({ type: 'quest_completed' }));

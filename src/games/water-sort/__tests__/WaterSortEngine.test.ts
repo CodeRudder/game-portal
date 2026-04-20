@@ -4,7 +4,6 @@
  * 覆盖：试管选择、倒水规则、胜利判定、撤销、关卡生成、键盘控制、边界情况
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { WaterSortEngine } from '../WaterSortEngine';
 import {
   TUBE_CAPACITY,

@@ -68,7 +68,7 @@ export const RARITY_MAIN_STAT_MULTIPLIER: Record<EquipmentRarity, number> = {
   green: 1.3,
   blue: 1.7,
   purple: 2.2,
-  gold: 3.0,
+  gold: 2.5,
 };
 
 /** 品质副属性倍率 */
@@ -256,3 +256,185 @@ export const TRANSFER_COST_FACTOR = 200;
 
 /** 强化转移等级损耗（-1级） */
 export const TRANSFER_LEVEL_LOSS = 1;
+
+// ─────────────────────────────────────────────
+// 9. 部位→主属性映射
+// ─────────────────────────────────────────────
+
+import type { SpecialEffectType } from './equipment.types';
+
+/** 各部位对应的主属性类型 */
+export const SLOT_MAIN_STAT_TYPE: Record<EquipmentSlot, MainStatType> = {
+  weapon: 'attack',
+  armor: 'defense',
+  accessory: 'intelligence',
+  mount: 'speed',
+};
+
+/** 各部位主属性基础值范围 */
+export const SLOT_MAIN_STAT_BASE: Record<EquipmentSlot, { min: number; max: number }> = {
+  weapon: { min: 10, max: 30 },
+  armor: { min: 8, max: 25 },
+  accessory: { min: 8, max: 20 },
+  mount: { min: 6, max: 18 },
+};
+
+/** 各部位副属性池 */
+export const SLOT_SUB_STAT_POOL: Record<EquipmentSlot, SubStatType[]> = {
+  weapon: ['critRate', 'critDamage', 'hitRate'],
+  armor: ['dodgeRate', 'antiCritRate', 'hp'],
+  accessory: ['skillDamage', 'cooldownReduce', 'rageRecovery'],
+  mount: ['movement', 'initiative', 'morale'],
+};
+
+/** 各部位特殊词条池 */
+export const SLOT_SPECIAL_EFFECT_POOL: Record<EquipmentSlot, SpecialEffectType[]> = {
+  weapon: ['lifeSteal', 'armorPen', 'comboAttack'],
+  armor: ['damageReflect', 'block', 'tenacity'],
+  accessory: ['skillChain', 'rangeIncrease', 'controlEnhance'],
+  mount: ['pursuit', 'retreat', 'charge'],
+};
+
+/** 各部位名称前缀 */
+export const SLOT_NAME_PREFIXES: Record<EquipmentSlot, string[]> = {
+  weapon: ['剑', '刀', '枪', '戟', '弓'],
+  armor: ['甲', '铠', '袍', '盾', '衣'],
+  accessory: ['佩', '环', '坠', '珠', '符'],
+  mount: ['马', '骥', '驹', '骑', '鹿'],
+};
+
+// ─────────────────────────────────────────────
+// 10. 品质名称前缀
+// ─────────────────────────────────────────────
+
+/** 品质名称前缀 */
+export const RARITY_NAME_PREFIX: Record<EquipmentRarity, string> = {
+  white: '',
+  green: '良·',
+  blue: '上·',
+  purple: '精·',
+  gold: '传·',
+};
+
+// ─────────────────────────────────────────────
+// 11. 背包上限与扩容
+// ─────────────────────────────────────────────
+
+/** 最大背包容量 */
+export const MAX_BAG_CAPACITY = 500;
+
+/** 背包扩容步长（与 BAG_EXPAND_STEP 同义，兼容旧名称） */
+export const BAG_EXPAND_INCREMENT = BAG_EXPAND_STEP;
+
+// ─────────────────────────────────────────────
+// 12. 品质强化上限
+// ─────────────────────────────────────────────
+
+/** 各品质强化等级上限 */
+export const RARITY_ENHANCE_CAP: Record<EquipmentRarity, number> = {
+  white: 5,
+  green: 8,
+  blue: 10,
+  purple: 12,
+  gold: 15,
+};
+
+// ─────────────────────────────────────────────
+// 13. 品质副属性数量
+// ─────────────────────────────────────────────
+
+/** 各品质副属性数量范围 [最小, 最大] */
+export const RARITY_SUB_STAT_COUNT: Record<EquipmentRarity, [number, number]> = {
+  white: [0, 1],
+  green: [1, 1],
+  blue: [2, 3],
+  purple: [3, 4],
+  gold: [4, 4],
+};
+
+/** 各品质特殊词条概率 */
+export const RARITY_SPECIAL_EFFECT_CHANCE: Record<EquipmentRarity, number> = {
+  white: 0,
+  green: 0,
+  blue: 0.25,
+  purple: 0.5,
+  gold: 0.8,
+};
+
+// ─────────────────────────────────────────────
+// 14. 强化属性系数
+// ─────────────────────────────────────────────
+
+/** 主属性强化系数范围 */
+export const ENHANCE_MAIN_STAT_FACTOR = { min: 0.02, max: 0.05 };
+
+/** 副属性强化系数范围 */
+export const ENHANCE_SUB_STAT_FACTOR = { min: 0.01, max: 0.03 };
+
+// ─────────────────────────────────────────────
+// 15. 副属性基础值范围
+// ─────────────────────────────────────────────
+
+/** 各副属性类型基础值范围 */
+export const SUB_STAT_BASE_RANGE: Record<SubStatType, { min: number; max: number }> = {
+  critRate: { min: 1, max: 5 },
+  critDamage: { min: 3, max: 10 },
+  hitRate: { min: 2, max: 8 },
+  dodgeRate: { min: 1, max: 5 },
+  antiCritRate: { min: 2, max: 6 },
+  hp: { min: 10, max: 50 },
+  skillDamage: { min: 2, max: 8 },
+  cooldownReduce: { min: 1, max: 5 },
+  rageRecovery: { min: 2, max: 6 },
+  movement: { min: 1, max: 4 },
+  initiative: { min: 2, max: 8 },
+  morale: { min: 1, max: 5 },
+};
+
+/** 各特殊词条类型效果值范围 */
+export const SPECIAL_EFFECT_VALUE_RANGE: Record<SpecialEffectType, { min: number; max: number }> = {
+  lifeSteal: { min: 2, max: 8 },
+  armorPen: { min: 3, max: 10 },
+  comboAttack: { min: 2, max: 6 },
+  damageReflect: { min: 2, max: 8 },
+  block: { min: 3, max: 10 },
+  tenacity: { min: 2, max: 8 },
+  skillChain: { min: 1, max: 5 },
+  rangeIncrease: { min: 2, max: 6 },
+  controlEnhance: { min: 2, max: 8 },
+  pursuit: { min: 2, max: 6 },
+  retreat: { min: 1, max: 4 },
+  charge: { min: 3, max: 8 },
+};
+
+// ─────────────────────────────────────────────
+// 16. 分解配置（兼容旧名称）
+// ─────────────────────────────────────────────
+
+/** 各品质分解铜钱产出 */
+export const DECOMPOSE_COPPER_BASE: Record<EquipmentRarity, number> = {
+  white: 50,
+  green: 150,
+  blue: 400,
+  purple: 1000,
+  gold: 2500,
+};
+
+/** 各品质分解强化石产出 */
+export const DECOMPOSE_STONE_BASE: Record<EquipmentRarity, number> = {
+  white: 1,
+  green: 2,
+  blue: 4,
+  purple: 8,
+  gold: 15,
+};
+
+/** 分解强化等级加成系数 */
+export const DECOMPOSE_ENHANCE_BONUS = 0.1;
+
+// ─────────────────────────────────────────────
+// 17. 存档版本
+// ─────────────────────────────────────────────
+
+/** 装备存档版本号 */
+export const EQUIPMENT_SAVE_VERSION = 1;

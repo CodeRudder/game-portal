@@ -5,7 +5,6 @@
  *       Unsubscribe 函数、通配符匹配、emit 异常隔离。
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventBus } from '../EventBus';
 
 // ─────────────────────────────────────────────
@@ -26,18 +25,18 @@ describe('EventBus — on / emit 基本功能', () => {
   });
 
   it('应正确触发已注册的监听器', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.on('test:event', handler);
     bus.emit('test:event', { value: 42 });
 
-    expect(handler).toHaveBeenCalledOnce();
+    expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith({ value: 42 });
   });
 
   it('应支持不同类型的 payload', () => {
-    const strHandler = vi.fn();
-    const numHandler = vi.fn();
-    const nullHandler = vi.fn();
+    const strHandler = jest.fn();
+    const numHandler = jest.fn();
+    const nullHandler = jest.fn();
 
     bus.on('str:event', strHandler);
     bus.on('num:event', numHandler);
@@ -53,9 +52,9 @@ describe('EventBus — on / emit 基本功能', () => {
   });
 
   it('同一事件注册多个 handler 应全部触发', () => {
-    const h1 = vi.fn();
-    const h2 = vi.fn();
-    const h3 = vi.fn();
+    const h1 = jest.fn();
+    const h2 = jest.fn();
+    const h3 = jest.fn();
 
     bus.on('multi:event', h1);
     bus.on('multi:event', h2);
@@ -63,9 +62,9 @@ describe('EventBus — on / emit 基本功能', () => {
 
     bus.emit('multi:event', 'payload');
 
-    expect(h1).toHaveBeenCalledOnce();
-    expect(h2).toHaveBeenCalledOnce();
-    expect(h3).toHaveBeenCalledOnce();
+    expect(h1).toHaveBeenCalledTimes(1);
+    expect(h2).toHaveBeenCalledTimes(1);
+    expect(h3).toHaveBeenCalledTimes(1);
   });
 
   it('emit 不存在的事件应静默忽略（无监听器）', () => {
@@ -84,19 +83,19 @@ describe('EventBus — once', () => {
   });
 
   it('once 注册的 handler 应只触发一次', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.once('once:event', handler);
 
     bus.emit('once:event', 'first');
     bus.emit('once:event', 'second');
 
-    expect(handler).toHaveBeenCalledOnce();
+    expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith('first');
   });
 
   it('once 和 on 可以共存于同一事件', () => {
-    const persistent = vi.fn();
-    const oneTime = vi.fn();
+    const persistent = jest.fn();
+    const oneTime = jest.fn();
 
     bus.on('mix:event', persistent);
     bus.once('mix:event', oneTime);
@@ -105,11 +104,11 @@ describe('EventBus — once', () => {
     bus.emit('mix:event', 2);
 
     expect(persistent).toHaveBeenCalledTimes(2);
-    expect(oneTime).toHaveBeenCalledOnce();
+    expect(oneTime).toHaveBeenCalledTimes(1);
   });
 
   it('once 返回的 Unsubscribe 应在触发前可取消', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     const unsub = bus.once('cancel:once', handler);
 
     unsub();
@@ -130,26 +129,26 @@ describe('EventBus — 通配符匹配', () => {
   });
 
   it('building:* 应匹配 building:upgraded', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.on('building:*', handler);
 
     bus.emit('building:upgraded', { type: 'barracks' });
 
-    expect(handler).toHaveBeenCalledOnce();
+    expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith({ type: 'barracks' });
   });
 
   it('building:* 应匹配 building:upgrade-started', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.on('building:*', handler);
 
     bus.emit('building:upgrade-started', { type: 'farm' });
 
-    expect(handler).toHaveBeenCalledOnce();
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 
   it('building:* 不应匹配 resource:changed', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.on('building:*', handler);
 
     bus.emit('resource:changed', { resource: 'gold' });
@@ -158,31 +157,31 @@ describe('EventBus — 通配符匹配', () => {
   });
 
   it('通配符 handler 和精确 handler 应同时触发', () => {
-    const wildcard = vi.fn();
-    const exact = vi.fn();
+    const wildcard = jest.fn();
+    const exact = jest.fn();
 
     bus.on('building:*', wildcard);
     bus.on('building:upgraded', exact);
 
     bus.emit('building:upgraded', { level: 5 });
 
-    expect(wildcard).toHaveBeenCalledOnce();
-    expect(exact).toHaveBeenCalledOnce();
+    expect(wildcard).toHaveBeenCalledTimes(1);
+    expect(exact).toHaveBeenCalledTimes(1);
   });
 
   it('once 通配符应只触发一次', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.once('building:*', handler);
 
     bus.emit('building:upgraded', 1);
     bus.emit('building:level-changed', 2);
 
-    expect(handler).toHaveBeenCalledOnce();
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 
   it('多个通配符前缀可以匹配同一事件', () => {
-    const h1 = vi.fn();
-    const h2 = vi.fn();
+    const h1 = jest.fn();
+    const h2 = jest.fn();
 
     bus.on('building:*', h1);
     bus.on('building:up:*', h2);
@@ -190,9 +189,9 @@ describe('EventBus — 通配符匹配', () => {
     bus.emit('building:up:test', 'payload');
 
     // 'building:up:test' startsWith 'building:' => true
-    expect(h1).toHaveBeenCalledOnce();
+    expect(h1).toHaveBeenCalledTimes(1);
     // 'building:up:test' startsWith 'building:up:' => true
-    expect(h2).toHaveBeenCalledOnce();
+    expect(h2).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -207,7 +206,7 @@ describe('EventBus — off', () => {
   });
 
   it('off 应移除指定的 on handler', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.on('off:test', handler);
     bus.off('off:test', handler);
 
@@ -217,7 +216,7 @@ describe('EventBus — off', () => {
   });
 
   it('off 应移除指定的 once handler', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.once('off:once', handler);
     bus.off('off:once', handler);
 
@@ -227,7 +226,7 @@ describe('EventBus — off', () => {
   });
 
   it('off 通配符应移除通配符 handler', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.on('wild:*', handler);
     bus.off('wild:*', handler);
 
@@ -237,12 +236,12 @@ describe('EventBus — off', () => {
   });
 
   it('off 不存在的 handler 应静默忽略（不抛异常）', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     expect(() => bus.off('no:exist', handler)).not.toThrow();
   });
 
   it('off 同一 handler 多次应安全（重复 off）', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     bus.on('repeat:off', handler);
     bus.off('repeat:off', handler);
     bus.off('repeat:off', handler);
@@ -264,7 +263,7 @@ describe('EventBus — Unsubscribe 函数', () => {
   });
 
   it('on 返回的 Unsubscribe 应正确取消订阅', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     const unsub = bus.on('unsub:test', handler);
 
     unsub();
@@ -274,7 +273,7 @@ describe('EventBus — Unsubscribe 函数', () => {
   });
 
   it('once 返回的 Unsubscribe 应正确取消订阅', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     const unsub = bus.once('unsub:once', handler);
 
     unsub();
@@ -284,7 +283,7 @@ describe('EventBus — Unsubscribe 函数', () => {
   });
 
   it('通配符 on 的 Unsubscribe 应正确取消订阅', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     const unsub = bus.on('unsub:wild:*', handler);
 
     unsub();
@@ -294,7 +293,7 @@ describe('EventBus — Unsubscribe 函数', () => {
   });
 
   it('通配符 once 的 Unsubscribe 应正确取消订阅', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     const unsub = bus.once('unsub:wildonce:*', handler);
 
     unsub();
@@ -304,7 +303,7 @@ describe('EventBus — Unsubscribe 函数', () => {
   });
 
   it('多次调用 Unsubscribe 应安全', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     const unsub = bus.on('multi:unsub', handler);
 
     unsub();
@@ -327,11 +326,11 @@ describe('EventBus — emit 异常隔离', () => {
   });
 
   it('一个 handler 报错不应阻止后续 handler 执行', () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const h1 = vi.fn(() => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const h1 = jest.fn(() => {
       throw new Error('handler 1 error');
     });
-    const h2 = vi.fn();
+    const h2 = jest.fn();
 
     bus.on('error:test', h1);
     bus.on('error:test', h2);
@@ -346,11 +345,11 @@ describe('EventBus — emit 异常隔离', () => {
   });
 
   it('once handler 报错不应阻止后续 handler', () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const badOnce = vi.fn(() => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const badOnce = jest.fn(() => {
       throw new Error('once error');
     });
-    const goodOnce = vi.fn();
+    const goodOnce = jest.fn();
 
     bus.once('error:once', badOnce);
     bus.once('error:once', goodOnce);
@@ -364,11 +363,11 @@ describe('EventBus — emit 异常隔离', () => {
   });
 
   it('通配符 handler 报错不应阻止精确 handler', () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const wildHandler = vi.fn(() => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const wildHandler = jest.fn(() => {
       throw new Error('wildcard error');
     });
-    const exactHandler = vi.fn();
+    const exactHandler = jest.fn();
 
     bus.on('err:*', wildHandler);
     bus.on('err:exact', exactHandler);

@@ -11,13 +11,11 @@
  * - 销毁
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 // ---------------------------------------------------------------------------
 // Mock PixiJS v8
 // ---------------------------------------------------------------------------
 
-vi.mock('pixi.js', () => {
+jest.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0;
@@ -25,9 +23,9 @@ vi.mock('pixi.js', () => {
     visible = true;
     children: any[] = [];
     parent: any = null;
-    emit = vi.fn();
-    on = vi.fn();
-    off = vi.fn();
+    emit = jest.fn();
+    on = jest.fn();
+    off = jest.fn();
 
     constructor(opts?: { label?: string }) { this.label = opts?.label ?? ''; }
 
@@ -49,9 +47,9 @@ vi.mock('pixi.js', () => {
     y = 0;
     visible = true;
     parent: any = null;
-    emit = vi.fn();
-    on = vi.fn();
-    off = vi.fn();
+    emit = jest.fn();
+    on = jest.fn();
+    off = jest.fn();
 
     // Track drawing calls
     drawingCalls: string[] = [];
@@ -74,7 +72,7 @@ vi.mock('pixi.js', () => {
   class MockText {
     label = '';
     text: string;
-    anchor = { set: vi.fn(), x: 0, y: 0 };
+    anchor = { set: jest.fn(), x: 0, y: 0 };
     x = 0;
     y = 0;
     width = 50;
@@ -82,8 +80,8 @@ vi.mock('pixi.js', () => {
     visible = true;
     parent: any = null;
     style: any;
-    emit = vi.fn();
-    on = vi.fn();
+    emit = jest.fn();
+    on = jest.fn();
 
     constructor(opts?: { text?: string; style?: any }) {
       this.text = opts?.text ?? '';

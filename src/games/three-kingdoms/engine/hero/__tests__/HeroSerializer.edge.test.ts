@@ -3,7 +3,6 @@
  * 覆盖：大量武将序列化、空对象处理、属性完整保留、版本兼容、undefined 字段
  */
 
-import { describe, it, expect, vi } from 'vitest';
 import {
   createEmptyState,
   cloneGeneral,
@@ -342,7 +341,7 @@ describe('HeroSerializer — 补充边界测试', () => {
   // ───────────────────────────────────────────
   describe('版本兼容性', () => {
     it('当前版本序列化反序列化无警告', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const state = createEmptyState();
       const data = serializeHeroState(state);
       deserializeHeroState(data);
@@ -351,7 +350,7 @@ describe('HeroSerializer — 补充边界测试', () => {
     });
 
     it('旧版本数据仍可反序列化（向前兼容）', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const data: HeroSaveData = {
         version: 0, // 旧版本
         state: createEmptyState(),

@@ -3,7 +3,6 @@
  * 覆盖：MAX_LEVEL addExp/quickEnhance、精确经验/铜钱边界、批量强化排序验证、属性变化
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HeroLevelSystem } from '../HeroLevelSystem';
 import type { LevelDeps, EnhancePreview } from '../HeroLevelSystem';
 import { HeroSystem } from '../HeroSystem';
@@ -16,12 +15,12 @@ function makeRichLevelDeps(heroSystem: HeroSystem): LevelDeps {
   const resources: Record<string, number> = { gold: 1e9, exp: 1e9 };
   return {
     heroSystem,
-    spendResource: vi.fn((type: string, amount: number) => {
+    spendResource: jest.fn((type: string, amount: number) => {
       resources[type] -= amount;
       return true;
     }),
-    canAffordResource: vi.fn((type: string, amount: number) => resources[type] >= amount),
-    getResourceAmount: vi.fn((type: string) => resources[type]),
+    canAffordResource: jest.fn((type: string, amount: number) => resources[type] >= amount),
+    getResourceAmount: jest.fn((type: string) => resources[type]),
   };
 }
 
@@ -29,13 +28,13 @@ function makeLevelDepsWithResources(heroSystem: HeroSystem, gold: number, exp: n
   const resources: Record<string, number> = { gold, exp };
   return {
     heroSystem,
-    spendResource: vi.fn((type: string, amount: number) => {
+    spendResource: jest.fn((type: string, amount: number) => {
       if (resources[type] < amount) return false;
       resources[type] -= amount;
       return true;
     }),
-    canAffordResource: vi.fn((type: string, amount: number) => resources[type] >= amount),
-    getResourceAmount: vi.fn((type: string) => resources[type]),
+    canAffordResource: jest.fn((type: string, amount: number) => resources[type] >= amount),
+    getResourceAmount: jest.fn((type: string) => resources[type]),
   };
 }
 

@@ -4,7 +4,6 @@
  * 覆盖：马走日字移动、可走位置计算、Warnsdorff 启发式、
  *        胜利/失败判定、撤销、棋盘大小、边界情况
  */
-import { describe, it, expect, beforeEach } from 'vitest';
 import { KnightsTourEngine } from '../KnightsTourEngine';
 import { KNIGHT_MOVES, DEFAULT_BOARD_SIZE } from '../constants';
 

@@ -18,7 +18,6 @@
  * @module engines/idle/__tests__/OfflineRewardCalculator.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import {
   OfflineRewardCalculator,
   type ProductionSource,

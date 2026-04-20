@@ -3,7 +3,6 @@
  *
  * 覆盖：初始化、常量验证、资源、点击、灵药田、炼丹、境界、产出倍率、声望、存档、键盘、渲染、边界
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AlchemyMasterEngine } from '@/games/alchemy-master/AlchemyMasterEngine';
 import {
   CANVAS_WIDTH,
@@ -503,7 +502,7 @@ describe('AlchemyMasterEngine', () => {
     });
 
     it('addResource 触发 resourceChange 事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('resourceChange', listener);
       addHerb(engine, 50);
       expect(listener).toHaveBeenCalledWith(RESOURCE_IDS.HERB, 50);
@@ -511,7 +510,7 @@ describe('AlchemyMasterEngine', () => {
 
     it('spendResource 触发 resourceChange 事件', () => {
       addHerb(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('resourceChange', listener);
       (engine as any).spendResource(RESOURCE_IDS.HERB, 30);
       expect(listener).toHaveBeenCalledWith(RESOURCE_IDS.HERB, 70);
@@ -562,7 +561,7 @@ describe('AlchemyMasterEngine', () => {
 
     it('资源解锁触发 resourceUnlocked 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('resourceUnlocked', listener);
       addHerb(engine, 60);
       tick(engine, 16);
@@ -613,7 +612,7 @@ describe('AlchemyMasterEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -720,7 +719,7 @@ describe('AlchemyMasterEngine', () => {
     it('购买灵药田触发 upgradePurchased 事件', () => {
       engine.start();
       addHerb(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseField(FIELD_IDS.HERB_GARDEN);
       expect(listener).toHaveBeenCalledWith(FIELD_IDS.HERB_GARDEN, 1);
@@ -776,7 +775,7 @@ describe('AlchemyMasterEngine', () => {
     it('购买灵药田触发 stateChange 事件', () => {
       engine.start();
       addHerb(engine, 100);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('stateChange', listener);
       engine.purchaseField(FIELD_IDS.HERB_GARDEN);
       expect(listener).toHaveBeenCalled();
@@ -902,7 +901,7 @@ describe('AlchemyMasterEngine', () => {
 
     it('灵药田解锁触发 fieldUnlocked 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('fieldUnlocked', listener);
       const garden = (engine as any).upgrades.get(FIELD_IDS.HERB_GARDEN);
       garden.level = 3;
@@ -991,7 +990,7 @@ describe('AlchemyMasterEngine', () => {
     it('炼制丹药触发 pillCrafted 事件', () => {
       engine.start();
       addHerb(engine, 20);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('pillCrafted', listener);
       engine.craftPill(RECIPE_IDS.HEALING_PILL);
       expect(listener).toHaveBeenCalledWith(RECIPE_IDS.HEALING_PILL, expect.any(Number));
@@ -1086,7 +1085,7 @@ describe('AlchemyMasterEngine', () => {
 
     it('境界提升触发 realmUpgraded 事件', () => {
       engine.start();
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('realmUpgraded', listener);
       addPill(engine, 15);
       tick(engine, 16);
@@ -1291,7 +1290,7 @@ describe('AlchemyMasterEngine', () => {
     it('传承重置触发 prestigeReset 事件', () => {
       engine.start();
       addPill(engine, MIN_PRESTIGE_PILLS * 4);
-      const listener = vi.fn();
+      const listener = jest.fn();
       engine.on('prestigeReset', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

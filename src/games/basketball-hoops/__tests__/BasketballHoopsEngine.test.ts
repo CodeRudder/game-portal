@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BasketballHoopsEngine } from '../BasketballHoopsEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,

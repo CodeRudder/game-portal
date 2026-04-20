@@ -4,7 +4,6 @@
  * 覆盖：地图参数、区域划分、地形类型、地标配置、辅助函数
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   MAP_SIZE,
   GRID_CONFIG,

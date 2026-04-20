@@ -8,7 +8,6 @@
  *   - 离线预估
  */
 
-import { describe, it, expect, vi } from 'vitest';
 import {
   formatOfflineDuration,
   shouldShowOfflinePopup,

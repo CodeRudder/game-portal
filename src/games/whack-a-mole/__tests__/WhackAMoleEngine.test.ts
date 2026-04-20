@@ -4,7 +4,6 @@
  *       计分（基础分+连击加成）、时间限制、等级递进、状态管理、handleKeyDown/Up、
  *       getState、事件系统、边界与异常场景
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WhackAMoleEngine } from '../WhackAMoleEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -642,7 +641,7 @@ describe('WhackAMoleEngine - 计分', () => {
   });
 
   it('击中后发出 hit 事件', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('hit', handler);
     makeMoleVisible(engine, engine.cursorIndex);
     engine.handleKeyDown(' ');
@@ -657,7 +656,7 @@ describe('WhackAMoleEngine - 计分', () => {
   });
 
   it('miss 后发出 miss 事件', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('miss', handler);
     engine.handleKeyDown(' ');
     expect(handler).toHaveBeenCalledTimes(1);
@@ -778,7 +777,7 @@ describe('WhackAMoleEngine - 等级递进', () => {
   });
 
   it('升级发出 levelUp 事件', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('levelUp', handler);
     setPrivate(engine, '_score', LEVEL_UP_SCORE);
     callUpdate(engine, 1);
@@ -1038,7 +1037,7 @@ describe('WhackAMoleEngine - 状态管理', () => {
 
   it('destroy 清除所有事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.destroy();
     const callCountAfterDestroy = handler.mock.calls.length;
@@ -1261,7 +1260,7 @@ describe('WhackAMoleEngine - getState', () => {
 describe('WhackAMoleEngine - 事件系统', () => {
   it('on 注册事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test');
     expect(handler).toHaveBeenCalled();
@@ -1269,7 +1268,7 @@ describe('WhackAMoleEngine - 事件系统', () => {
 
   it('off 取消事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.off('test', handler);
     engine.emit('test');
@@ -1278,7 +1277,7 @@ describe('WhackAMoleEngine - 事件系统', () => {
 
   it('emit 传递参数', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test', 'arg1', 42);
     expect(handler).toHaveBeenCalledWith('arg1', 42);
@@ -1286,8 +1285,8 @@ describe('WhackAMoleEngine - 事件系统', () => {
 
   it('多次 on 同一事件注册多个监听', () => {
     const engine = createEngine();
-    const h1 = vi.fn();
-    const h2 = vi.fn();
+    const h1 = jest.fn();
+    const h2 = jest.fn();
     engine.on('test', h1);
     engine.on('test', h2);
     engine.emit('test');
@@ -1297,7 +1296,7 @@ describe('WhackAMoleEngine - 事件系统', () => {
 
   it('hit 事件携带 holeIndex, combo, score', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('hit', handler);
     makeMoleVisible(engine, 2);
     engine.handleKeyDown('3');
@@ -1312,7 +1311,7 @@ describe('WhackAMoleEngine - 事件系统', () => {
 
   it('miss 事件携带 holeIndex', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('miss', handler);
     engine.handleKeyDown('1'); // hole 0 is HIDDEN
     expect(handler).toHaveBeenCalledWith(
@@ -1322,7 +1321,7 @@ describe('WhackAMoleEngine - 事件系统', () => {
 
   it('levelUp 事件携带新等级', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('levelUp', handler);
     setPrivate(engine, '_score', LEVEL_UP_SCORE);
     callUpdate(engine, 1);
@@ -1331,7 +1330,7 @@ describe('WhackAMoleEngine - 事件系统', () => {
 
   it('scoreChange 事件在击中时触发', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
     makeMoleVisible(engine, engine.cursorIndex);
     engine.handleKeyDown(' ');

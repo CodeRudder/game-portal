@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { SlopeBallEngine } from '../SlopeBallEngine';
 import {
   CANVAS_WIDTH,
@@ -32,19 +31,19 @@ let rafId = 0;
 const rafCallbacks = new Map<number, FrameRequestCallback>();
 
 beforeEach(() => {
-  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+  (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => {
     const id = ++rafId;
     rafCallbacks.set(id, cb);
     return id;
   });
-  vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+  (globalThis as any).cancelAnimationFrame = (id: number) => {
     rafCallbacks.delete(id);
   });
 });
 
 afterEach(() => {
   rafCallbacks.clear();
-  vi.restoreAllMocks();
+  jest.restoreAllMocks();
 });
 
 // ========== 辅助函数 ==========
@@ -168,7 +167,7 @@ describe('SlopeBallEngine', () => {
 
     it('start 应触发 statusChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');
@@ -176,7 +175,7 @@ describe('SlopeBallEngine', () => {
 
     it('start 应触发 scoreChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(0);
@@ -184,7 +183,7 @@ describe('SlopeBallEngine', () => {
 
     it('start 应触发 levelChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('levelChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(1);
@@ -730,7 +729,7 @@ describe('SlopeBallEngine', () => {
 
     it('分数应触发 scoreChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       engine.start();
       advanceOneFrame(engine);
@@ -773,7 +772,7 @@ describe('SlopeBallEngine', () => {
 
     it('等级提升应触发 levelChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('levelChange', handler);
       engine.start();
       engine['_score'] = LEVEL_UP_SCORE;
@@ -802,7 +801,7 @@ describe('SlopeBallEngine', () => {
 
     it('游戏结束应触发 statusChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       engine['obstacles'].push({
@@ -854,7 +853,7 @@ describe('SlopeBallEngine', () => {
 
     it('暂停应触发 statusChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       engine.pause();
@@ -863,7 +862,7 @@ describe('SlopeBallEngine', () => {
 
     it('恢复应触发 statusChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       engine.pause();
@@ -926,7 +925,7 @@ describe('SlopeBallEngine', () => {
 
     it('重置应触发 statusChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       engine.reset();
@@ -946,7 +945,7 @@ describe('SlopeBallEngine', () => {
 
     it('destroy 后监听器应被清除', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.destroy();
       engine['emit']('statusChange', 'playing');

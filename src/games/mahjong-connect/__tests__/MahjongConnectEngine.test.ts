@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   MahjongConnectEngine,
   shuffleArray,
@@ -916,7 +915,7 @@ describe('MahjongConnectEngine - Scoring System', () => {
     ]);
     engine.start();
 
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
 
     engine.clickTile(0, 0);
@@ -927,7 +926,7 @@ describe('MahjongConnectEngine - Scoring System', () => {
 
   it('should emit scoreChange event on shuffle', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
 
     engine.shuffle();
@@ -987,7 +986,7 @@ describe('MahjongConnectEngine - Level System', () => {
 
   it('should emit levelChange event on nextLevel', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('levelChange', handler);
     engine.nextLevel();
     expect(handler).toHaveBeenCalledWith(2);
@@ -1051,7 +1050,7 @@ describe('MahjongConnectEngine - State Management', () => {
 
   it('should emit statusChange on start', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -1059,7 +1058,7 @@ describe('MahjongConnectEngine - State Management', () => {
 
   it('should emit statusChange on pause', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.pause();
     expect(handler).toHaveBeenCalledWith('paused');
@@ -1068,7 +1067,7 @@ describe('MahjongConnectEngine - State Management', () => {
   it('should emit statusChange on resume', () => {
     const engine = createAndStartEngine();
     engine.pause();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.resume();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -1076,7 +1075,7 @@ describe('MahjongConnectEngine - State Management', () => {
 
   it('should emit statusChange on reset', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.reset();
     expect(handler).toHaveBeenCalledWith('idle');
@@ -1088,7 +1087,7 @@ describe('MahjongConnectEngine - State Management', () => {
     ]);
     engine.start();
 
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
 
     engine.clickTile(0, 0);
@@ -1100,7 +1099,7 @@ describe('MahjongConnectEngine - State Management', () => {
 
   it('should clear listeners on destroy', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.destroy();
     // After destroy, listeners should be cleared
@@ -1287,7 +1286,7 @@ describe('MahjongConnectEngine - getState', () => {
 describe('MahjongConnectEngine - Event System', () => {
   it('should support on/off event subscription', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('testEvent', handler);
     engine.emit('testEvent', 'data');
     expect(handler).toHaveBeenCalledWith('data');
@@ -1295,7 +1294,7 @@ describe('MahjongConnectEngine - Event System', () => {
 
   it('should unsubscribe with off', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('testEvent', handler);
     engine.off('testEvent', handler);
     engine.emit('testEvent');
@@ -1307,7 +1306,7 @@ describe('MahjongConnectEngine - Event System', () => {
       [0, 0],
     ]);
     engine.start();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('stateChange', handler);
 
     engine.clickTile(0, 0);
@@ -1318,7 +1317,7 @@ describe('MahjongConnectEngine - Event System', () => {
 
   it('should emit stateChange on shuffle', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('stateChange', handler);
     engine.shuffle();
     expect(handler).toHaveBeenCalled();

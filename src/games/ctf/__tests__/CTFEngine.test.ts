@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CTFEngine } from '../CTFEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -22,12 +21,12 @@ const rafCallbacks = new Map<number, FrameRequestCallback>();
 beforeEach(() => {
   rafId = 0;
   rafCallbacks.clear();
-  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+  (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => {
     const id = ++rafId;
     rafCallbacks.set(id, cb);
     return id;
   });
-  vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+  (globalThis as any).cancelAnimationFrame = (id: number) => {
     rafCallbacks.delete(id);
   });
 });
@@ -815,7 +814,7 @@ describe('CTFEngine', () => {
   describe('事件系统', () => {
     it('start 时触发 statusChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');
@@ -823,7 +822,7 @@ describe('CTFEngine', () => {
 
     it('pause 时触发 statusChange 事件', () => {
       const engine = createAndStartEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.pause();
       expect(handler).toHaveBeenCalledWith('paused');
@@ -831,7 +830,7 @@ describe('CTFEngine', () => {
 
     it('得分时触发 scoreChange 事件', () => {
       const engine = createAndStartEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       (engine as any)._redPlayer.hasFlag = true;
       (engine as any)._blueFlag.carrier = 'red';
@@ -844,7 +843,7 @@ describe('CTFEngine', () => {
 
     it('off 取消事件监听', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.off('statusChange', handler);
       engine.start();

@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ChineseChessEngine } from '../ChineseChessEngine';
 import {
   COLS, ROWS,
@@ -796,7 +795,7 @@ describe('AI', () => {
   let engine: ChineseChessEngine;
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
     engine = createEngine();
     clearBoard(engine);
     placePiece(engine, 9, 0, PIECE_KING, RED);
@@ -805,7 +804,7 @@ describe('AI', () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   it('AI 启用后走棋', () => {

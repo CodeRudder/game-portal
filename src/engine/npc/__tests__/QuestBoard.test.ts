@@ -7,7 +7,6 @@
  * @module engine/npc/__tests__/QuestBoard.test
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NPCEventBus } from '../NPCEventBus';
 import {
   QuestBoard,
@@ -96,7 +95,7 @@ describe('QuestBoard', () => {
     });
 
     it('创建任务应触发 questCreated 事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       eventBus.on('questCreated', listener);
 
       board.createQuest({
@@ -173,7 +172,7 @@ describe('QuestBoard', () => {
     });
 
     it('接取应触发 questAccepted 事件', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       eventBus.on('questAccepted', listener);
 
       const quest = board.createQuest({
@@ -302,7 +301,7 @@ describe('QuestBoard', () => {
     });
 
     it('所有目标完成应自动完成任务', () => {
-      const listener = vi.fn();
+      const listener = jest.fn();
       eventBus.on('questCompleted', listener);
 
       const quest = board.createQuest({

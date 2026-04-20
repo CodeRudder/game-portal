@@ -14,7 +14,6 @@
  * - 边界情况
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NPCMapPlacer } from '../NPCMapPlacer';
 import type { NPCMapPlacerDeps } from '../NPCMapPlacer';
 import type { ISystemDeps } from '../../../core/types';
@@ -28,14 +27,14 @@ import { GRID_CONFIG } from '../../../core/map';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -72,8 +71,8 @@ function createPlacer(
   const visibleNPCs = options.visibleNPCs ?? npcs;
 
   const placerDeps: NPCMapPlacerDeps = {
-    getAllNPCs: vi.fn().mockReturnValue(npcs),
-    getVisibleNPCs: vi.fn().mockReturnValue(visibleNPCs),
+    getAllNPCs: jest.fn().mockReturnValue(npcs),
+    getVisibleNPCs: jest.fn().mockReturnValue(visibleNPCs),
   };
 
   placer.setPlacerDeps(placerDeps);
@@ -422,7 +421,7 @@ describe('NPCMapPlacer', () => {
       p.computeMapDisplays();
 
       // 缓存应该有效
-      const mockVisible = p['placerDeps'].getVisibleNPCs as ReturnType<typeof vi.fn>;
+      const mockVisible = p['placerDeps'].getVisibleNPCs as ReturnType<typeof jest.fn>;
       const callCountBefore = mockVisible.mock.calls.length;
 
       p.setClusterConfig({ clusterDistance: 999 });
@@ -469,7 +468,7 @@ describe('NPCMapPlacer', () => {
       const { placer: p } = createPlacer({ npcs });
       p.computeMapDisplays();
 
-      const mockVisible = p['placerDeps'].getVisibleNPCs as ReturnType<typeof vi.fn>;
+      const mockVisible = p['placerDeps'].getVisibleNPCs as ReturnType<typeof jest.fn>;
       const callCountBefore = mockVisible.mock.calls.length;
 
       p.setCrowdConfig({ jitterRadius: 20 });
@@ -499,7 +498,7 @@ describe('NPCMapPlacer', () => {
       p.computeMapDisplays();
       p.invalidateCache();
 
-      const mockVisible = p['placerDeps'].getVisibleNPCs as ReturnType<typeof vi.fn>;
+      const mockVisible = p['placerDeps'].getVisibleNPCs as ReturnType<typeof jest.fn>;
       const callCountBefore = mockVisible.mock.calls.length;
 
       p.computeMapDisplays();
@@ -512,8 +511,8 @@ describe('NPCMapPlacer', () => {
 
       p.computeMapDisplays();
       p.setPlacerDeps({
-        getAllNPCs: vi.fn().mockReturnValue(npcs),
-        getVisibleNPCs: vi.fn().mockReturnValue(npcs),
+        getAllNPCs: jest.fn().mockReturnValue(npcs),
+        getVisibleNPCs: jest.fn().mockReturnValue(npcs),
       });
 
       // 缓存应该失效

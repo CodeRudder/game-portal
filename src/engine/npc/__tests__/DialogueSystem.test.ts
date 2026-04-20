@@ -7,7 +7,6 @@
  * @module engine/npc/__tests__/DialogueSystem.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { NPCEventBus } from '../NPCEventBus';
 import { DialogueSystem } from '../DialogueSystem';
 import type { DialogueTree, DialogueNode } from '../DialogueSystem';

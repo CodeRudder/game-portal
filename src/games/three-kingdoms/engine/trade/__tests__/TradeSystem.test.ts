@@ -13,7 +13,6 @@
  * 9. ISubsystem 接口
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TradeSystem } from '../TradeSystem';
 import type { TradeCurrencyOps } from '../TradeSystem';
 import {
@@ -27,17 +26,17 @@ import {
 
 function createMockDeps() {
   return {
-    eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() },
-    config: { get: vi.fn() },
-    registry: { get: vi.fn() },
+    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() },
+    config: { get: jest.fn() },
+    registry: { get: jest.fn() },
   };
 }
 
 function createMockCurrencyOps(): TradeCurrencyOps {
   return {
-    addCurrency: vi.fn(),
-    canAfford: vi.fn().mockReturnValue(true),
-    spendByPriority: vi.fn().mockReturnValue({ success: true }),
+    addCurrency: jest.fn(),
+    canAfford: jest.fn().mockReturnValue(true),
+    spendByPriority: jest.fn().mockReturnValue({ success: true }),
   };
 }
 
@@ -126,8 +125,8 @@ describe('TradeSystem - 商路开通', () => {
 
   it('openRoute 货币不足时失败', () => {
     const ops: TradeCurrencyOps = {
-      addCurrency: vi.fn(), canAfford: vi.fn().mockReturnValue(false),
-      spendByPriority: vi.fn().mockReturnValue({ success: false }),
+      addCurrency: jest.fn(), canAfford: jest.fn().mockReturnValue(false),
+      spendByPriority: jest.fn().mockReturnValue({ success: false }),
     };
     trade.setCurrencyOps(ops);
     const result = trade.openRoute(TRADE_ROUTE_DEFS[0].id, 1);

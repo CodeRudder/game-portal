@@ -4,7 +4,6 @@
  * @module engine/tilemap/__tests__/DecoLayer.test
  */
 
-import { describe, it, expect } from 'vitest';
 import { DecoLayer, DEFAULT_DECO_CONFIG } from '../DecoLayer';
 import { BiomeType, BIOME_CONFIGS } from '../BiomeConfig';
 import { TerrainType } from '../types';

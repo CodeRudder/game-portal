@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MissileCommandEngine } from '../MissileCommandEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -829,7 +828,7 @@ describe('MissileCommandEngine - 销毁', () => {
 
   it('destroy() 后应清理事件监听', () => {
     const engine = createEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.destroy();
     // 事件监听已清理，不应触发
@@ -936,14 +935,14 @@ describe('MissileCommandEngine - 事件系统', () => {
   });
 
   it('start() 应触发 statusChange 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
   });
 
   it('pause() 应触发 statusChange 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.start();
     engine.on('statusChange', callback);
     engine.pause();
@@ -951,7 +950,7 @@ describe('MissileCommandEngine - 事件系统', () => {
   });
 
   it('reset() 应触发 statusChange 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.start();
     engine.on('statusChange', callback);
     engine.reset();
@@ -959,7 +958,7 @@ describe('MissileCommandEngine - 事件系统', () => {
   });
 
   it('addScore 应触发 scoreChange 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('scoreChange', callback);
     engine.start();
     engine.addScore(50);
@@ -967,7 +966,7 @@ describe('MissileCommandEngine - 事件系统', () => {
   });
 
   it('setLevel 应触发 levelChange 事件', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('levelChange', callback);
     engine.start();
     engine.setLevel(3);
@@ -975,7 +974,7 @@ describe('MissileCommandEngine - 事件系统', () => {
   });
 
   it('off() 应移除事件监听', () => {
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();

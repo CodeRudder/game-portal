@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SpaceWarEngine } from '../SpaceWarEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -1142,14 +1141,14 @@ describe('SpaceWarEngine', () => {
 
   describe('事件系统', () => {
     it('start 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');
     });
 
     it('pause 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       engine.pause();
@@ -1157,7 +1156,7 @@ describe('SpaceWarEngine', () => {
     });
 
     it('resume 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       engine.pause();
@@ -1166,7 +1165,7 @@ describe('SpaceWarEngine', () => {
     });
 
     it('reset 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       engine.reset();
@@ -1174,7 +1173,7 @@ describe('SpaceWarEngine', () => {
     });
 
     it('gameover 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       (engine as any)._score1 = WINS_NEEDED - 1;
@@ -1185,7 +1184,7 @@ describe('SpaceWarEngine', () => {
     });
 
     it('off 取消事件监听', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.off('statusChange', handler);
       engine.start();
@@ -1193,14 +1192,14 @@ describe('SpaceWarEngine', () => {
     });
 
     it('start 触发 scoreChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(0);
     });
 
     it('start 触发 levelChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('levelChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(1);

@@ -6,7 +6,6 @@
  * @module engine/npc/__tests__/CollaborationSystem.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { NPCEventBus } from '../NPCEventBus';
 import { CollaborationSystem } from '../CollaborationSystem';
 import type { INPCManagerForCollaboration } from '../CollaborationSystem';

@@ -17,7 +17,6 @@
  * - 边界条件
  */
 
-import { describe, it, expect } from 'vitest';
 import { HexMap } from '../../modules/battle/HexMap';
 import type { HexMapDef, HexCell } from '../../modules/battle/HexMap';
 import type { TerrainType } from '../../modules/battle/HexMap';

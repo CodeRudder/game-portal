@@ -3,7 +3,6 @@
  * 覆盖：节点数据验证、连线数据、互斥组、队列配置
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   TECH_NODE_DEFS,
   TECH_NODE_MAP,
@@ -55,7 +54,7 @@ describe('科技配置数据完整性', () => {
     it('所有前置依赖指向存在的节点', () => {
       for (const def of TECH_NODE_DEFS) {
         for (const preId of def.prerequisites) {
-          expect(TECH_NODE_MAP.has(preId), `Missing prerequisite: ${preId}`).toBe(true);
+          expect(TECH_NODE_MAP.has(preId)).toBe(true);
         }
       }
     });
@@ -120,8 +119,8 @@ describe('科技配置数据完整性', () => {
 
     it('连线端点都指向存在的节点', () => {
       for (const edge of TECH_EDGES) {
-        expect(TECH_NODE_MAP.has(edge.from), `Missing from: ${edge.from}`).toBe(true);
-        expect(TECH_NODE_MAP.has(edge.to), `Missing to: ${edge.to}`).toBe(true);
+        expect(TECH_NODE_MAP.has(edge.from)).toBe(true);
+        expect(TECH_NODE_MAP.has(edge.to)).toBe(true);
       }
     });
 

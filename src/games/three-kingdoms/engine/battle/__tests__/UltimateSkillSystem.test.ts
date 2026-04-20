@@ -5,7 +5,6 @@
  * @module engine/battle/__tests__/UltimateSkillSystem.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UltimateSkillSystem } from '../UltimateSkillSystem';
 import type {
   BattleUnit, BattleSkill, IUltimateTimeStopHandler, UltimateTimeStopEvent,
@@ -53,8 +52,8 @@ function createUnit(overrides: Partial<BattleUnit> = {}): BattleUnit {
 
 function createMockHandler() {
   return {
-    onUltimateReady: vi.fn(), onBattlePaused: vi.fn(),
-    onUltimateConfirmed: vi.fn(), onUltimateCancelled: vi.fn(),
+    onUltimateReady: jest.fn(), onBattlePaused: jest.fn(),
+    onUltimateConfirmed: jest.fn(), onUltimateCancelled: jest.fn(),
   } as IUltimateTimeStopHandler;
 }
 
@@ -66,13 +65,13 @@ describe('UltimateSkillSystem', () => {
   let system: UltimateSkillSystem;
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
     system = new UltimateSkillSystem();
   });
 
   afterEach(() => {
     system.reset();
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   // ── 初始状态 ──
@@ -277,10 +276,10 @@ describe('UltimateSkillSystem', () => {
       const unit = createUnit({ id: 'hero1', rage: 100 });
       system.pauseForUltimate(unit, unit.skills[0]);
 
-      vi.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS - 1);
+      jest.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS - 1);
       expect(system.isPaused()).toBe(true);
 
-      vi.advanceTimersByTime(1);
+      jest.advanceTimersByTime(1);
       expect(handler.onUltimateConfirmed).toHaveBeenCalledTimes(1);
       expect(system.getState()).toBe(TimeStopState.INACTIVE);
     });
@@ -292,7 +291,7 @@ describe('UltimateSkillSystem', () => {
       system.pauseForUltimate(unit, unit.skills[0]);
       system.confirmUltimate('hero1', 'ultimate_fire');
 
-      vi.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS + 1000);
+      jest.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS + 1000);
       expect(handler.onUltimateConfirmed).toHaveBeenCalledTimes(1);
     });
 
@@ -302,7 +301,7 @@ describe('UltimateSkillSystem', () => {
       system.pauseForUltimate(createUnit({ id: 'hero1', rage: 100 }), ULTIMATE_SKILL);
       system.cancelUltimate();
 
-      vi.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS + 1000);
+      jest.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS + 1000);
       expect(handler.onUltimateConfirmed).not.toHaveBeenCalled();
     });
   });

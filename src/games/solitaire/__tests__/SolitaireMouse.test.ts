@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { SolitaireEngine } from '../SolitaireEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,

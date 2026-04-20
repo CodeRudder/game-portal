@@ -484,7 +484,7 @@ describe('TetrisEngine', () => {
     });
 
     it('scoreChange 事件在 start 时触发', () => {
-      const scoreHandler = vi.fn();
+      const scoreHandler = jest.fn();
       engine.on('scoreChange', scoreHandler);
 
       engine.start();
@@ -589,7 +589,7 @@ describe('TetrisEngine', () => {
     });
 
     it('levelChange 事件在 start 时触发', () => {
-      const levelHandler = vi.fn();
+      const levelHandler = jest.fn();
       engine.on('levelChange', levelHandler);
 
       engine.start();
@@ -663,7 +663,7 @@ describe('TetrisEngine', () => {
     });
 
     it('gameover 时应触发 statusChange 事件', () => {
-      const statusHandler = vi.fn();
+      const statusHandler = jest.fn();
       engine.on('statusChange', statusHandler);
 
       engine.start();
@@ -755,7 +755,7 @@ describe('TetrisEngine', () => {
     });
 
     it('destroy() 后事件监听器应被清除', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalled();
@@ -770,7 +770,7 @@ describe('TetrisEngine', () => {
     });
 
     it('statusChange 事件应按生命周期触发', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
 
       engine.start();

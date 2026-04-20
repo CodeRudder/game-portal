@@ -6,7 +6,6 @@
  * clear/size、ConfigError、边界条件。
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { ConfigRegistry, ConfigError } from '../ConfigRegistry';
 
 // ─────────────────────────────────────────────

@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FreeCellEngine } from '../FreeCellEngine';
 import {
   createDeck,
@@ -19,10 +18,10 @@ import {
 } from '../constants';
 
 // Mock requestAnimationFrame 防止 gameLoop 干扰
-vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+(globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => {
   return 1;
 });
-vi.stubGlobal('cancelAnimationFrame', (id: number) => {});
+(globalThis as any).cancelAnimationFrame = (id: number) => {});
 
 function createEngine(): FreeCellEngine {
   const engine = new FreeCellEngine();
@@ -866,13 +865,13 @@ describe('FreeCellEngine - Keyboard Controls', () => {
   });
 
   it('Space triggers select', () => {
-    const spy = vi.spyOn(engine as any, 'handleSelect');
+    const spy = jest.spyOn(engine as any, 'handleSelect');
     engine.handleKeyDown(' ');
     expect(spy).toHaveBeenCalled();
   });
 
   it('A triggers autoCompleteAll', () => {
-    const spy = vi.spyOn(engine as any, 'autoCompleteAll');
+    const spy = jest.spyOn(engine as any, 'autoCompleteAll');
     engine.handleKeyDown('a');
     expect(spy).toHaveBeenCalled();
   });

@@ -2,7 +2,6 @@
  * EventSystem 单元测试
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   EventSystem,
   type GameEvent,
@@ -174,7 +173,7 @@ describe('EventSystem', () => {
 
   it('应正确触发事件', () => {
     system.registerEvent(createGameEvent());
-    const handler = vi.fn();
+    const handler = jest.fn();
     system.on('event_participated', handler);
     system.participateEvent('spring_fest');
     expect(handler).toHaveBeenCalledWith(expect.objectContaining({ type: 'event_participated' }));

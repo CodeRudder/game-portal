@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ReactionTestEngine } from '../ReactionTestEngine';
 import {
   ReactionPhase,
@@ -186,11 +185,11 @@ describe('ReactionTestEngine - 计时逻辑', () => {
 
   beforeEach(() => {
     engine = startEngine();
-    vi.useFakeTimers();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   it('反应时间应大于 0', () => {
@@ -742,7 +741,7 @@ describe('ReactionTestEngine - getState', () => {
 describe('ReactionTestEngine - 事件系统', () => {
   it('状态变化时应触发 stateChange 事件', () => {
     const engine = startEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('stateChange', callback);
     forceWaitingComplete(engine);
     expect(callback).toHaveBeenCalled();
@@ -750,7 +749,7 @@ describe('ReactionTestEngine - 事件系统', () => {
 
   it('按键反应时应触发 stateChange', () => {
     const engine = startEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('stateChange', callback);
     forceWaitingComplete(engine);
     callback.mockClear();
@@ -760,7 +759,7 @@ describe('ReactionTestEngine - 事件系统', () => {
 
   it('过早按键应触发 stateChange', () => {
     const engine = startEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('stateChange', callback);
     pressKey(engine);
     expect(callback).toHaveBeenCalled();
@@ -768,7 +767,7 @@ describe('ReactionTestEngine - 事件系统', () => {
 
   it('off 应取消事件监听', () => {
     const engine = startEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('stateChange', callback);
     engine.off('stateChange', callback);
     forceWaitingComplete(engine);

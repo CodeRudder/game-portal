@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { LightsOutEngine } from "../LightsOutEngine";
 import { GRID_SIZE, GRID_CELLS, LEVEL_CONFIGS, MAX_LEVEL } from "../constants";
 

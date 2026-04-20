@@ -5,7 +5,6 @@
  * 覆盖常量验证、引擎初始化、建筑系统、弟子系统、资源系统、
  * 阶段系统(门派阶段)、科技系统(武学)、声望系统、存档系统、渲染和输入处理。
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SectRiseEngine, type SectRiseSaveState } from '@/games/sect-rise/SectRiseEngine';
 import {
   GAME_ID,
@@ -537,7 +536,7 @@ describe('渲染', () => {
   it('render 调用 Canvas API（fillRect 被调用）', () => {
     const canvas = (engine as any).canvas as HTMLCanvasElement;
     const ctx = canvas.getContext('2d')!;
-    const fillRectSpy = vi.spyOn(ctx, 'fillRect');
+    const fillRectSpy = jest.spyOn(ctx, 'fillRect');
     (engine as any).onRender(ctx, canvas.width, canvas.height);
     expect(fillRectSpy).toHaveBeenCalled();
     fillRectSpy.mockRestore();

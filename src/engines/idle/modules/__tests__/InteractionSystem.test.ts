@@ -13,7 +13,6 @@
  * @module engines/idle/modules/__tests__/InteractionSystem.test
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   InteractionSystem,
   type InteractionEvent,

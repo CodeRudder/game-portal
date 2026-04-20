@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CheckersEngine } from '@/games/checkers/CheckersEngine';
 import {
   EMPTY, RED, BLACK, RED_KING, BLACK_KING,
@@ -11,16 +10,16 @@ function createMockCanvas() {
   canvas.width = 480;
   canvas.height = 480;
   const ctx = {
-    fillRect: vi.fn(),
-    strokeRect: vi.fn(),
-    clearRect: vi.fn(),
-    fillText: vi.fn(),
-    beginPath: vi.fn(),
-    arc: vi.fn(),
-    fill: vi.fn(),
-    stroke: vi.fn(),
-    moveTo: vi.fn(),
-    lineTo: vi.fn(),
+    fillRect: jest.fn(),
+    strokeRect: jest.fn(),
+    clearRect: jest.fn(),
+    fillText: jest.fn(),
+    beginPath: jest.fn(),
+    arc: jest.fn(),
+    fill: jest.fn(),
+    stroke: jest.fn(),
+    moveTo: jest.fn(),
+    lineTo: jest.fn(),
     set fillStyle(_v: string) {},
     get fillStyle() { return ''; },
     set strokeStyle(_v: string) {},
@@ -34,7 +33,7 @@ function createMockCanvas() {
     set textBaseline(_v: CanvasTextBaseline) {},
     get textBaseline() { return 'alphabetic' as CanvasTextBaseline; },
   };
-  vi.spyOn(canvas, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
+  jest.spyOn(canvas, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
   return { canvas, ctx };
 }
 
@@ -810,7 +809,7 @@ describe('CheckersEngine', () => {
       }
       board[5][0] = RED;
 
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('turnChange', handler);
 
       engine.selectPiece(5, 0);
@@ -831,7 +830,7 @@ describe('CheckersEngine', () => {
       board[5][2] = RED;
       board[4][3] = BLACK;
 
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('capture', handler);
 
       engine.selectPiece(5, 2);
@@ -843,7 +842,7 @@ describe('CheckersEngine', () => {
 
     it('分数变化时触发 scoreChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
 
       const board = (engine as any)._board as number[][];
@@ -864,7 +863,7 @@ describe('CheckersEngine', () => {
 
     it('游戏结束时触发 statusChange 事件', () => {
       const engine = createEngine();
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
 
       const board = (engine as any)._board as number[][];

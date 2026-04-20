@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SolitaireEngine } from '../SolitaireEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -1125,28 +1124,28 @@ describe('SolitaireEngine', () => {
 
   describe('事件系统', () => {
     it('start 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');
     });
 
     it('start 触发 scoreChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(0);
     });
 
     it('start 触发 levelChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('levelChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(1);
     });
 
     it('pause 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       engine.pause();
@@ -1154,7 +1153,7 @@ describe('SolitaireEngine', () => {
     });
 
     it('resume 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       engine.pause();
@@ -1163,7 +1162,7 @@ describe('SolitaireEngine', () => {
     });
 
     it('reset 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       startEngine(engine);
       engine.reset();
@@ -1171,7 +1170,7 @@ describe('SolitaireEngine', () => {
     });
 
     it('翻牌触发 scoreChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       startEngine(engine);
       engine.on('scoreChange', handler);
       engine.drawFromStock();
@@ -1179,7 +1178,7 @@ describe('SolitaireEngine', () => {
     });
 
     it('off 取消事件监听', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('statusChange', handler);
       engine.off('statusChange', handler);
       engine.start();
@@ -1187,7 +1186,7 @@ describe('SolitaireEngine', () => {
     });
 
     it('gameover 触发 statusChange 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       startEngine(engine);
       engine.on('statusChange', handler);
       // 直接设置胜利条件

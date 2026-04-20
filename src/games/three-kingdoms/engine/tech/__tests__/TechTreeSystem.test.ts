@@ -3,7 +3,6 @@
  * 覆盖：节点管理、三条科技路线、前置依赖、互斥分支、效果汇总、序列化
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TechTreeSystem } from '../TechTreeSystem';
 import type { TechPath, TechNodeState } from '../tech.types';
 import { TECH_PATHS, TECH_PATH_LABELS, TECH_PATH_COLORS } from '../tech.types';
@@ -13,14 +12,14 @@ import type { ISystemDeps } from '../../../../core/types';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
   } as unknown as ISystemDeps;
 }
 

@@ -3,7 +3,6 @@
  * 覆盖：初始化、放置皇后、移除皇后、冲突检测（行/列/对角线）、
  *       胜利条件、提示功能、关卡、计分、状态管理、键盘、getState、事件
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { EightQueensEngine } from '../EightQueensEngine';
 import {
   BOARD_SIZE,
@@ -202,7 +201,7 @@ describe('EightQueensEngine - 启动', () => {
 
   it('start 发出 statusChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -210,7 +209,7 @@ describe('EightQueensEngine - 启动', () => {
 
   it('start 发出 scoreChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(0);
@@ -218,7 +217,7 @@ describe('EightQueensEngine - 启动', () => {
 
   it('start 发出 levelChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('levelChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(1);
@@ -286,7 +285,7 @@ describe('EightQueensEngine - 放置皇后', () => {
   });
 
   it('放置皇后发出 queenPlaced 事件', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('queenPlaced', handler);
     moveCursorTo(engine, 2, 3);
     toggleAtCursor(engine);
@@ -360,7 +359,7 @@ describe('EightQueensEngine - 移除皇后', () => {
   });
 
   it('移除皇后发出 queenRemoved 事件', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('queenRemoved', handler);
     moveCursorTo(engine, 1, 2);
     toggleAtCursor(engine);
@@ -652,7 +651,7 @@ describe('EightQueensEngine - 胜利条件', () => {
 
   it('胜利发出 statusChange gameover 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     for (let r = 0; r < BOARD_SIZE; r++) {
       moveCursorTo(engine, r, CLASSIC_SOLUTION[r]);
@@ -705,7 +704,7 @@ describe('EightQueensEngine - 提示功能', () => {
   });
 
   it('提示模式发出 hintModeChanged 事件', () => {
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('hintModeChanged', handler);
     engine.handleKeyDown('h');
     expect(handler).toHaveBeenCalledWith(true);
@@ -903,7 +902,7 @@ describe('EightQueensEngine - 计分', () => {
 
   it('addScore 发出 scoreChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('scoreChange', handler);
     moveCursorTo(engine, 0, 0);
     toggleAtCursor(engine);
@@ -1024,7 +1023,7 @@ describe('EightQueensEngine - 状态管理', () => {
 
   it('destroy 清除所有事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.destroy();
     const callCount = handler.mock.calls.length;
@@ -1034,7 +1033,7 @@ describe('EightQueensEngine - 状态管理', () => {
 
   it('pause/resume 发出 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.pause();
     expect(handler).toHaveBeenCalledWith('paused');
@@ -1044,7 +1043,7 @@ describe('EightQueensEngine - 状态管理', () => {
 
   it('reset 发出 statusChange idle 事件', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.reset();
     expect(handler).toHaveBeenCalledWith('idle');
@@ -1400,7 +1399,7 @@ describe('EightQueensEngine - getState', () => {
 describe('EightQueensEngine - 事件系统', () => {
   it('on 注册事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test');
     expect(handler).toHaveBeenCalled();
@@ -1408,7 +1407,7 @@ describe('EightQueensEngine - 事件系统', () => {
 
   it('off 取消事件监听', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.off('test', handler);
     engine.emit('test');
@@ -1417,7 +1416,7 @@ describe('EightQueensEngine - 事件系统', () => {
 
   it('emit 传递参数', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('test', handler);
     engine.emit('test', 'arg1', 42);
     expect(handler).toHaveBeenCalledWith('arg1', 42);
@@ -1425,8 +1424,8 @@ describe('EightQueensEngine - 事件系统', () => {
 
   it('多次 on 同一事件注册多个监听', () => {
     const engine = createEngine();
-    const h1 = vi.fn();
-    const h2 = vi.fn();
+    const h1 = jest.fn();
+    const h2 = jest.fn();
     engine.on('test', h1);
     engine.on('test', h2);
     engine.emit('test');
@@ -1436,7 +1435,7 @@ describe('EightQueensEngine - 事件系统', () => {
 
   it('queenPlaced 事件携带位置信息', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('queenPlaced', handler);
     moveCursorTo(engine, 4, 4);
     toggleAtCursor(engine);
@@ -1445,7 +1444,7 @@ describe('EightQueensEngine - 事件系统', () => {
 
   it('queenRemoved 事件携带位置信息', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('queenRemoved', handler);
     moveCursorTo(engine, 4, 4);
     toggleAtCursor(engine);
@@ -1455,7 +1454,7 @@ describe('EightQueensEngine - 事件系统', () => {
 
   it('hintModeChanged 事件携带布尔值', () => {
     const engine = createAndStartEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('hintModeChanged', handler);
     engine.handleKeyDown('h');
     expect(handler).toHaveBeenCalledWith(true);

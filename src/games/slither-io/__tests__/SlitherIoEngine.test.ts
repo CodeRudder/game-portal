@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SlitherIoEngine } from '../SlitherIoEngine';
 import type { Worm, Food, Segment } from '../SlitherIoEngine';
 import {

@@ -1,7 +1,6 @@
 /**
  * BuildingSystem 单元测试
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   BuildingSystem,
   type BuildingDef,
@@ -506,7 +505,7 @@ describe('BuildingSystem', () => {
 
     it('forceUnlock — 已解锁建筑不应重复触发事件', () => {
       const system = createSystem();
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.onEvent(listener);
 
       system.forceUnlock('fisherman'); // 已经解锁
@@ -526,7 +525,7 @@ describe('BuildingSystem', () => {
   describe('事件', () => {
     it('onEvent — 购买时应触发 purchased 事件', () => {
       const system = createSystem();
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.onEvent(listener);
 
       const resources = { gold: 100 };
@@ -541,7 +540,7 @@ describe('BuildingSystem', () => {
 
     it('onEvent — 达到最大等级时应触发 levelMaxed 事件', () => {
       const system = createSystem();
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.onEvent(listener);
 
       const resources = { gold: 9999 };
@@ -556,7 +555,7 @@ describe('BuildingSystem', () => {
 
     it('onEvent — 解锁时应触发 unlocked 事件', () => {
       const system = createSystem();
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.onEvent(listener);
 
       system.loadState({ fisherman: 1 });
@@ -570,7 +569,7 @@ describe('BuildingSystem', () => {
 
     it('onEvent — forceUnlock 应触发 unlocked 事件', () => {
       const system = createSystem();
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.onEvent(listener);
 
       system.forceUnlock('dock');
@@ -583,7 +582,7 @@ describe('BuildingSystem', () => {
 
     it('offEvent — 应正确移除监听器', () => {
       const system = createSystem();
-      const listener = vi.fn();
+      const listener = jest.fn();
       system.onEvent(listener);
       system.offEvent(listener);
 
@@ -595,16 +594,16 @@ describe('BuildingSystem', () => {
 
     it('offEvent — 移除未注册的监听器不应报错', () => {
       const system = createSystem();
-      const listener = vi.fn();
+      const listener = jest.fn();
       expect(() => system.offEvent(listener)).not.toThrow();
     });
 
     it('监听器异常不应中断其他监听器', () => {
       const system = createSystem();
-      const badListener = vi.fn(() => {
+      const badListener = jest.fn(() => {
         throw new Error('listener error');
       });
-      const goodListener = vi.fn();
+      const goodListener = jest.fn();
       system.onEvent(badListener);
       system.onEvent(goodListener);
 

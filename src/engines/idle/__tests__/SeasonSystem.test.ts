@@ -5,7 +5,6 @@
  * getProgress, getNext, getRemainingTime, getEffects, serialize,
  * deserialize, getYear, reset, onEvent。
  */
-import { describe, it, expect, vi } from 'vitest';
 import {
   SeasonSystem,
   type Season,

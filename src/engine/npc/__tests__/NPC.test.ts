@@ -7,7 +7,6 @@
  * @module engine/npc/__tests__/NPC.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   NPCManager,
   NPCProfession,
@@ -212,7 +211,7 @@ describe('NPC 系统', () => {
 
     it('状态变更应触发 npcStateChange 事件', () => {
       const npc = manager.spawnNPC('farmer_01', 5, 5);
-      const listener = vi.fn();
+      const listener = jest.fn();
       manager.on('npcStateChange', listener);
 
       // 模拟更新，让日程触发状态变更
@@ -275,7 +274,7 @@ describe('NPC 系统', () => {
       manager.spawnNPC('farmer_01', 5, 5);
       manager.spawnNPC('villager_01', 5, 6);
 
-      const chatListener = vi.fn();
+      const chatListener = jest.fn();
       manager.on('npcChat', chatListener);
 
       // 多次更新增加触发概率
@@ -347,7 +346,7 @@ describe('NPC 系统', () => {
       const npc1 = manager.spawnNPC('soldier_01', 5, 5);
       const npc2 = manager.spawnNPC('soldier_01', 6, 5);
 
-      const listener = vi.fn();
+      const listener = jest.fn();
       manager.on('npcCollaborate', listener);
 
       const task: NPCTask = {
@@ -473,7 +472,7 @@ describe('NPC 系统', () => {
   describe('NPCEventBus', () => {
     it('应能注册和触发事件', () => {
       const bus = new NPCEventBus();
-      const listener = vi.fn();
+      const listener = jest.fn();
       bus.on('test', listener);
       bus.emit('test', 'arg1', 'arg2');
 
@@ -482,7 +481,7 @@ describe('NPC 系统', () => {
 
     it('应能注销事件', () => {
       const bus = new NPCEventBus();
-      const listener = vi.fn();
+      const listener = jest.fn();
       bus.on('test', listener);
       bus.off('test', listener);
       bus.emit('test');
@@ -492,7 +491,7 @@ describe('NPC 系统', () => {
 
     it('应能清除所有监听器', () => {
       const bus = new NPCEventBus();
-      const listener = vi.fn();
+      const listener = jest.fn();
       bus.on('test', listener);
       bus.clear();
       bus.emit('test');
@@ -502,8 +501,8 @@ describe('NPC 系统', () => {
 
     it('监听器错误不应影响其他监听器', () => {
       const bus = new NPCEventBus();
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const goodListener = vi.fn();
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const goodListener = jest.fn();
 
       bus.on('test', () => { throw new Error('test error'); });
       bus.on('test', goodListener);

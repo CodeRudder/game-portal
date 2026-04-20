@@ -1,7 +1,6 @@
 /**
  * 电子宠物 Virtual Pet — 完整测试套件
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { VirtualPetEngine } from '../VirtualPetEngine';
 import {
   STAT_MIN,
@@ -1212,7 +1211,7 @@ describe('VirtualPetEngine - 边界情况', () => {
 describe('VirtualPetEngine - 事件系统', () => {
   it('应触发 stateChange 事件', () => {
     const engine = createAndStartEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('stateChange', callback);
     engine.feed();
     // update 会触发 stateChange
@@ -1221,7 +1220,7 @@ describe('VirtualPetEngine - 事件系统', () => {
 
   it('应触发 scoreChange 事件', () => {
     const engine = createAndStartEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('scoreChange', callback);
     engine.feed();
     expect(callback).toHaveBeenCalledWith(expect.any(Number));
@@ -1229,7 +1228,7 @@ describe('VirtualPetEngine - 事件系统', () => {
 
   it('应触发 statusChange 事件', () => {
     const engine = createEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1237,7 +1236,7 @@ describe('VirtualPetEngine - 事件系统', () => {
 
   it('off 应取消事件监听', () => {
     const engine = createAndStartEngine();
-    const callback = vi.fn();
+    const callback = jest.fn();
     engine.on('stateChange', callback);
     engine.off('stateChange', callback);
     engine.feed();

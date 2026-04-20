@@ -4,7 +4,6 @@
  * 覆盖所有公共方法和边界情况。
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   TerritorySystem,
   type TerritoryDef,
@@ -109,12 +108,12 @@ describe('TerritorySystem', () => {
   let system: TerritorySystem;
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
     system = new TerritorySystem([...BASIC_TERRITORIES]);
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   // ----------------------------------------------------------
@@ -367,7 +366,7 @@ describe('TerritorySystem', () => {
       system.conquer('home');
       expect(system.getTerritoryStatus('home')!.prosperity).toBe(10);
 
-      vi.advanceTimersByTime(10000);
+      jest.advanceTimersByTime(10000);
       system.update(10000);
 
       const status = system.getTerritoryStatus('home');
@@ -378,7 +377,7 @@ describe('TerritorySystem', () => {
       system.conquer('home');
 
       // 大量时间推进
-      vi.advanceTimersByTime(10000000);
+      jest.advanceTimersByTime(10000000);
       system.update(10000000);
 
       const status = system.getTerritoryStatus('home');
@@ -393,7 +392,7 @@ describe('TerritorySystem', () => {
       sys2.conquer('home');
       // sys2 没有 garrison
 
-      vi.advanceTimersByTime(10000);
+      jest.advanceTimersByTime(10000);
       system.update(10000);
       sys2.update(10000);
 
@@ -474,7 +473,7 @@ describe('TerritorySystem', () => {
 
       const incomeBefore = system.getIncomePerSecond();
 
-      vi.advanceTimersByTime(100000);
+      jest.advanceTimersByTime(100000);
       system.update(100000);
 
       const incomeAfter = system.getIncomePerSecond();
@@ -609,7 +608,7 @@ describe('TerritorySystem', () => {
       system.conquer('home');
       system.setGarrison('home', 50);
 
-      vi.advanceTimersByTime(50000);
+      jest.advanceTimersByTime(50000);
       system.update(50000);
 
       const prosperityBefore = system.getTerritoryStatus('home')!.prosperity;

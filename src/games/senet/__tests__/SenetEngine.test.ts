@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SenetEngine } from '../SenetEngine';
 import {
   CANVAS_WIDTH,
@@ -795,7 +794,7 @@ describe('SenetEngine - 生命周期', () => {
 describe('SenetEngine - 事件', () => {
   it('触发 statusChange 事件', () => {
     const engine = createEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -803,7 +802,7 @@ describe('SenetEngine - 事件', () => {
 
   it('gameover 触发 statusChange', () => {
     const engine = startEngine();
-    const handler = vi.fn();
+    const handler = jest.fn();
     engine.on('statusChange', handler);
     // 模拟胜利
     const board = new Array(TOTAL_CELLS).fill(0);

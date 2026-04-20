@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OthelloEngine } from '@/games/othello/OthelloEngine';
 import {
   EMPTY, BLACK, WHITE,
@@ -8,13 +7,13 @@ import {
 
 // ========== Mock Canvas ==========
 const mockCtx = {
-  fillRect: vi.fn(), clearRect: vi.fn(), fillText: vi.fn(),
-  beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn(),
-  strokeRect: vi.fn(), stroke: vi.fn(), measureText: vi.fn(() => ({ width: 50 })),
+  fillRect: jest.fn(), clearRect: jest.fn(), fillText: jest.fn(),
+  beginPath: jest.fn(), arc: jest.fn(), fill: jest.fn(),
+  strokeRect: jest.fn(), stroke: jest.fn(), measureText: jest.fn(() => ({ width: 50 })),
 };
 const mockCanvas = {
   width: 480, height: 480,
-  getContext: vi.fn(() => mockCtx),
+  getContext: jest.fn(() => mockCtx),
 } as unknown as HTMLCanvasElement;
 
 function createEngine(): OthelloEngine {
@@ -37,7 +36,7 @@ describe('OthelloEngine', () => {
   let engine: OthelloEngine;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     engine = createEngine();
   });
 
@@ -520,14 +519,14 @@ describe('OthelloEngine', () => {
   // ========== 事件 ==========
   describe('事件', () => {
     it('落子触发 move 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('move', handler);
       engine.makeMove(2, 3);
       expect(handler).toHaveBeenCalledOnce();
     });
 
     it('move 事件包含行列和玩家信息', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('move', handler);
       engine.makeMove(2, 3);
       expect(handler).toHaveBeenCalledWith({
@@ -538,14 +537,14 @@ describe('OthelloEngine', () => {
     });
 
     it('无效落子不触发 move 事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('move', handler);
       engine.makeMove(0, 0);
       expect(handler).not.toHaveBeenCalled();
     });
 
     it('可以取消事件监听', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('move', handler);
       engine.off('move', handler);
       engine.makeMove(2, 3);
@@ -553,7 +552,7 @@ describe('OthelloEngine', () => {
     });
 
     it('scoreChange 事件在落子后触发', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('scoreChange', handler);
       engine.makeMove(2, 3);
       expect(handler).toHaveBeenCalled();
@@ -636,7 +635,7 @@ describe('OthelloEngine', () => {
     });
 
     it('销毁后清理事件', () => {
-      const handler = vi.fn();
+      const handler = jest.fn();
       engine.on('move', handler);
       engine.destroy();
       // 销毁后不应再触发事件（内部 listeners 已清空）

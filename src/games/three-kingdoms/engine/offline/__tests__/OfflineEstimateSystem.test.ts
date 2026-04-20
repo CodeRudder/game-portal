@@ -9,7 +9,6 @@
  *   - 推荐下线时长
  */
 
-import { describe, it, expect } from 'vitest';
 import { OfflineEstimateSystem } from '../OfflineEstimateSystem';
 
 const RATES = { grain: 10, gold: 5, troops: 2, mandate: 1 };

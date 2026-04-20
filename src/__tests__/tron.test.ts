@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { TronEngine } from '@/games/tron/TronEngine';
 import { Direction, GRID_COLS, GRID_ROWS } from '@/games/tron/constants';
 

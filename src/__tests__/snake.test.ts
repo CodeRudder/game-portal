@@ -372,7 +372,7 @@ describe('SnakeEngine', () => {
 
     it('destroy 清除所有事件监听', () => {
       const engine = startEngine();
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('statusChange', cb);
       engine.destroy();
       // destroy 后事件应被清除，不会触发
@@ -381,7 +381,7 @@ describe('SnakeEngine', () => {
 
     it('start 触发 statusChange 事件为 playing', () => {
       const engine = createEngine();
-      const cb = vi.fn();
+      const cb = jest.fn();
       engine.on('statusChange', cb);
       engine.start();
       expect(cb).toHaveBeenCalledWith('playing');
