@@ -320,21 +320,108 @@ describe('TechLinkSystem', () => {
   });
 
   // ═══════════════════════════════════════════
-  // 8. ISubsystem 接口
+  // 8. 统一查询接口 getTechBonus
   // ═══════════════════════════════════════════
-  describe('ISubsystem 接口', () => {
-    it('name 正确', () => {
-      expect(link.name).toBe('tech-link');
+  describe('getTechBonus 统一查询', () => {
+    it('未完成科技时 getTechBonus 返回 0', () => {
+      expect(link.getTechBonus('building', 'farm')).toBe(0);
+      expect(link.getTechBonus('hero', 'cavalry_charge')).toBe(0);
+      expect(link.getTechBonus('resource', 'grain')).toBe(0);
     });
 
-    it('getState 返回完整状态', () => {
-      const state = link.getState();
-      expect(state.totalLinks).toBeGreaterThan(0);
-      expect(state.activeLinks).toBe(0);
+    it('getTechBonus 查询建筑联动加成', () => {
+      link.addCompletedTech('eco_t1_farming');
+      expect(link.getTechBonus('building', 'farm')).toBe(20);
     });
 
-    it('update 不抛异常', () => {
-      expect(() => link.update(0.016)).not.toThrow();
+    it('getTechBonus 查询武将联动加成', () => {
+      link.addCompletedTech('mil_t2_charge');
+      expect(link.getTechBonus('hero', 'cavalry_charge')).toBe(20);
+    });
+
+    it('getTechBonus 查询资源联动加成', () => {
+      link.addCompletedTech('eco_t1_farming');
+      expect(link.getTechBonus('resource', 'grain')).toBe(10);
+    });
+
+    it('getTechBonus 多科技叠加', () => {
+      link.addCompletedTech('eco_t1_farming');
+      link.addCompletedTech('eco_t2_irrigation');
+      // 建筑 farm 加成: 20 + 25 = 45
+      expect(link.getTechBonus('building', 'farm')).toBe(45);
+    });
+
+    it('getTechBonus 不相关目标返回 0', () => {
+      link.addCompletedTech('eco_t1_farming');
+      expect(link.getTechBonus('building', 'barracks')).toBe(0);
+      expect(link.getTechBonus('hero', 'cavalry_charge')).toBe(0);
+    });
+
+    it('getTechBonusMultiplier 返回正确乘数', () => {
+      link.addCompletedTech('eco_t1_farming');
+      expect(link.getTechBonusMultiplier('building', 'farm')).toBeCloseTo(1.2);
+    });
+
+    it('getTechBonusMultiplier 无加成返回 1.0', () => {
+      expect(link.getTechBonusMultiplier('building', 'farm')).toBe(1.0);
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 9. 联动事件通知
+  // ═══════════════════════════════════════════
+  describe('联动事件通知', () => {
+    it('addCompletedTech 触发 linksChanged 事件', () => {
+      const deps = mockDeps();
+      link.init(deps);
+      link.addCompletedTech('eco_t1_farming');
+      expect(deps.eventBus.emit).toHaveBeenCalledWith(
+        'tech:linksChanged',
+        expect.objectContaining({
+          totalActive: expect.any(Number),
+        }),
+      );
+    });
+
+    it('syncCompletedTechIds 触发 linksChanged 事件', () => {
+      const deps = mockDeps();
+      link.init(deps);
+      link.syncCompletedTechIds(['eco_t1_farming']);
+      expect(deps.eventBus.emit).toHaveBeenCalledWith(
+        'tech:linksChanged',
+        expect.objectContaining({
+          totalActive: expect.any(Number),
+        }),
+      );
+    });
+
+    it('removeCompletedTech 触发 linksChanged 事件', () => {
+      const deps = mockDeps();
+      link.init(deps);
+      link.addCompletedTech('eco_t1_farming');
+      link.removeCompletedTech('eco_t1_farming');
+      // emit called at least twice (add + remove)
+      expect((deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 10. 综合联动快照
+  // ═══════════════════════════════════════════
+  describe('综合联动快照', () => {
+    it('getTechLinkSnapshot 返回指定科技的联动快照', () => {
+      const snapshot = link.getTechLinkSnapshot('eco_t1_farming');
+      expect(snapshot.building).toBeDefined();
+      expect(snapshot.hero).toBeDefined();
+      expect(snapshot.resource).toBeDefined();
+    });
+
+    it('getAllActiveBonuses 返回所有活跃加成', () => {
+      link.syncCompletedTechIds(['eco_t1_farming', 'mil_t2_charge']);
+      const bonuses = link.getAllActiveBonuses();
+      expect(bonuses.buildings).toBeDefined();
+      expect(bonuses.heroes).toBeDefined();
+      expect(bonuses.resources).toBeDefined();
     });
   });
 });

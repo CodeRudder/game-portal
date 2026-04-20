@@ -295,9 +295,17 @@ describe('TechDetailProvider', () => {
       expect(detail.tier).toBe(0);
     });
 
-    it('融合科技无联动效果', () => {
+    it('融合科技有联动效果（v5.0 扩展）', () => {
       const detail = provider.getTechDetail('fusion_mil_eco_1')!;
-      expect(detail.linkEffects).toHaveLength(0);
+      expect(detail.linkEffects.length).toBeGreaterThan(0);
+    });
+
+    it('融合科技联动效果包含完整信息', () => {
+      const detail = provider.getTechDetail('fusion_mil_eco_1')!;
+      const linkEff = detail.linkEffects[0];
+      expect(linkEff.target).toBeTruthy();
+      expect(linkEff.description).toBeTruthy();
+      expect(linkEff.value).toBeGreaterThan(0);
     });
 
     it('融合科技消耗和时间正确', () => {

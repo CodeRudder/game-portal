@@ -194,16 +194,21 @@ export class TechLinkSystem implements ISubsystem {
   /** 同步已完成的科技 ID 集合 */
   syncCompletedTechIds(techIds: string[]): void {
     this.completedTechIds = new Set(techIds);
+    // 通知联动效果变化（v5.0）
+    this.emitLinkChangeEvent();
   }
 
   /** 添加已完成的科技 ID */
   addCompletedTech(techId: string): void {
+    if (this.completedTechIds.has(techId)) return; // 避免重复
     this.completedTechIds.add(techId);
+    this.emitLinkChangeEvent();
   }
 
   /** 移除已完成的科技 ID（用于回退/重置场景） */
   removeCompletedTech(techId: string): void {
     this.completedTechIds.delete(techId);
+    this.emitLinkChangeEvent();
   }
 
   // ─────────────────────────────────────────
@@ -355,5 +360,130 @@ export class TechLinkSystem implements ISubsystem {
       }
     }
     return count;
+  }
+
+  // ─────────────────────────────────────────
+  // 联动事件通知（v5.0 扩展）
+  // ─────────────────────────────────────────
+
+  /** 发出联动效果变化事件 */
+  private emitLinkChangeEvent(): void {
+    if (!this.deps) return;
+    const activeBuildingLinks = this.getActiveLinksByTarget('building');
+    const activeHeroLinks = this.getActiveLinksByTarget('hero');
+    const activeResourceLinks = this.getActiveLinksByTarget('resource');
+
+    this.deps.eventBus.emit('tech:linksChanged', {
+      buildingLinks: activeBuildingLinks.length,
+      heroLinks: activeHeroLinks.length,
+      resourceLinks: activeResourceLinks.length,
+      totalActive: activeBuildingLinks.length + activeHeroLinks.length + activeResourceLinks.length,
+    });
+  }
+
+  // ─────────────────────────────────────────
+  // 综合联动查询（v5.0 扩展）
+  // ─────────────────────────────────────────
+
+  /**
+   * 获取指定科技完成后的联动效果快照
+   *
+   * 用于科技完成时一次性获取所有联动效果变化。
+   */
+  getTechLinkSnapshot(techId: string): {
+    building: BuildingLinkBonus[];
+    hero: HeroLinkBonus[];
+    resource: ResourceLinkBonus[];
+  } {
+    const links = this.getLinksByTechId(techId);
+    const buildingTypes = new Set<string>();
+    const skillIds = new Set<string>();
+    const resourceTypes = new Set<string>();
+
+    for (const link of links) {
+      if (link.target === 'building') buildingTypes.add(link.targetSub);
+      else if (link.target === 'hero') skillIds.add(link.targetSub);
+      else if (link.target === 'resource') {
+        const base = link.targetSub.replace(/_storage$|_trade$/, '');
+        resourceTypes.add(base);
+      }
+    }
+
+    return {
+      building: Array.from(buildingTypes).map((bt) => this.getBuildingLinkBonus(bt)),
+      hero: Array.from(skillIds).map((sid) => this.getHeroLinkBonus(sid)),
+      resource: Array.from(resourceTypes).map((rt) => this.getResourceLinkBonus(rt)),
+    };
+  }
+
+  /**
+   * 获取所有活跃联动的综合加成摘要（v5.0 扩展）
+   *
+   * 供外部系统一次性查询所有联动加成。
+   */
+  getAllActiveBonuses(): {
+    buildings: BuildingLinkBonus[];
+    heroes: HeroLinkBonus[];
+    resources: ResourceLinkBonus[];
+  } {
+    return {
+      buildings: this.getAllBuildingBonuses(),
+      heroes: this.getAllHeroBonuses(),
+      resources: this.getAllResourceBonuses(),
+    };
+  }
+
+  // ─────────────────────────────────────────
+  // 统一查询接口 getTechBonus(system, stat)
+  // ─────────────────────────────────────────
+
+  /**
+   * 统一联动加成查询接口
+   *
+   * 提供标准化的查询方式，供建筑/武将/资源等外部系统获取科技联动加成。
+   *
+   * @param system - 目标系统类型 ('building' | 'hero' | 'resource')
+   * @param stat - 目标统计项（建筑类型 / 技能ID / 资源类型）
+   * @returns 加成值（百分比，如 20 表示 +20%）
+   *
+   * @example
+   * ```ts
+   * // 建筑系统查询农田产出加成
+   * const farmBonus = linkSystem.getTechBonus('building', 'farm');
+   * // → 20（表示 +20%）
+   *
+   * // 武将系统查询骑兵冲锋技能加成
+   * const cavalryBonus = linkSystem.getTechBonus('hero', 'cavalry_charge');
+   * // → 20（表示 +20%）
+   *
+   * // 资源系统查询粮草产出加成
+   * const grainBonus = linkSystem.getTechBonus('resource', 'grain');
+   * // → 25（表示 +25%）
+   * ```
+   */
+  getTechBonus(system: LinkTarget, stat: string): number {
+    switch (system) {
+      case 'building':
+        return this.getBuildingLinkBonus(stat).productionBonus;
+      case 'hero':
+        return this.getHeroLinkBonus(stat).enhanceBonus;
+      case 'resource':
+        return this.getResourceLinkBonus(stat).productionBonus;
+      default:
+        return 0;
+    }
+  }
+
+  /**
+   * 统一联动加成乘数查询接口
+   *
+   * 返回 1 + bonus/100 的系数，方便直接乘法运算。
+   *
+   * @param system - 目标系统类型
+   * @param stat - 目标统计项
+   * @returns 乘数（如 1.2 表示 ×1.2）
+   */
+  getTechBonusMultiplier(system: LinkTarget, stat: string): number {
+    return 1 + this.getTechBonus(system, stat) / 100;
   }
 }

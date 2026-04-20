@@ -178,6 +178,7 @@ describe('TechOfflineSystem', () => {
 
     it('getEfficiencyAtTime 返回正确分段效率', () => {
       expect(env.offlineSys.getEfficiencyAtTime(H(0.5))).toBe(1.0);
+      expect(env.offlineSys.getEfficiencyAtTime(H(1))).toBe(1.0);
       expect(env.offlineSys.getEfficiencyAtTime(H(3))).toBe(0.7);
       expect(env.offlineSys.getEfficiencyAtTime(H(10))).toBe(0.4);
       expect(env.offlineSys.getEfficiencyAtTime(H(30))).toBe(0.2);

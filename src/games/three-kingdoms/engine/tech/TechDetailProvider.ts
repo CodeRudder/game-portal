@@ -334,7 +334,7 @@ export class TechDetailProvider {
         sufficient: currentPoints >= def.costPoints,
       },
       researchTime: this.buildTimeDisplay(def.researchTime, speedBonus),
-      linkEffects: [], // 融合科技暂无联动
+      linkEffects: this.buildFusionLinkEffects(def.id), // v5.0: 融合科技联动
     };
   }
 
@@ -415,6 +415,18 @@ export class TechDetailProvider {
   private buildLinkEffects(techId: string): LinkEffectDisplay[] {
     if (!this.linkSystem) return [];
     const links = this.linkSystem.getLinksByTechId(techId);
+    return links.map((link) => ({
+      target: link.target,
+      targetSub: link.targetSub,
+      description: link.description,
+      value: link.value,
+    }));
+  }
+
+  /** 构建融合科技联动效果展示（v5.0 扩展） */
+  private buildFusionLinkEffects(fusionTechId: string): LinkEffectDisplay[] {
+    if (!this.fusionSystem) return [];
+    const links = this.fusionSystem.getFusionLinkEffects(fusionTechId);
     return links.map((link) => ({
       target: link.target,
       targetSub: link.targetSub,

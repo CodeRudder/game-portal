@@ -161,6 +161,10 @@ export interface FusionLinkEffect {
   unlockFeature?: boolean;
   /** 解锁功能描述 */
   unlockDescription?: string;
+  /** 是否解锁新技能 */
+  unlockSkill?: boolean;
+  /** 新技能描述 */
+  newSkillDescription?: string;
 }
 
 // ─────────────────────────────────────────────
