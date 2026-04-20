@@ -238,14 +238,14 @@ describe('CampaignProgressSystem 章节推进', () => {
     expect(system.getStageStatus('chapter2_stage1')).toBe('locked');
   });
 
-  it('通关全部24关后当前章节为第3章', () => {
+  it('通关全部48关后当前章节为第6章', () => {
     for (const ch of getChapters()) {
       for (const st of ch.stages) {
         system.completeStage(st.id, 1);
       }
     }
     const chapter = system.getCurrentChapter();
-    expect(chapter!.id).toBe('chapter3');
+    expect(chapter!.id).toBe('chapter6');
   });
 
   it('总星数统计正确', () => {
