@@ -148,8 +148,9 @@ export const LEADERBOARD_TYPE_LABELS: Record<LeaderboardType, string> = {
 // ─────────────────────────────────────────────
 
 /** 生成赛季ID */
+let _seasonCounter = 0;
 function generateSeasonId(): string {
-  return `season_${Date.now()}`;
+  return `season_${Date.now()}_${++_seasonCounter}`;
 }
 
 /** 创建默认赛季 */
