@@ -165,7 +165,10 @@ describe('StoryEventPlayer', () => {
     it('tap 在最后一行完成时应标记complete', () => {
       player.startEvent('e1_peach_garden');
       const totalLines = player.getStoryEventDefinition('e1_peach_garden')!.dialogues.length;
-      for (let i = 0; i < totalLines * 2; i++) player.tap();
+      // 每行需要2次tap: reveal_line + next_line（最后一行第2次tap返回complete）
+      for (let i = 0; i < totalLines * 2 - 1; i++) player.tap();
+      const result = player.tap();
+      expect(result.action).toBe('complete');
       expect(player.getPlayProgress().typewriter.allComplete).toBe(true);
     });
 
