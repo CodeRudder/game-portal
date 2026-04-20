@@ -213,7 +213,6 @@ export const STORY_EVENT_DEFINITIONS: StoryEventDefinition[] = [
       { speaker: '关羽', text: '关某愿追随兄长，赴汤蹈火，在所不辞！' },
       { speaker: '张飞', text: '俺也一样！大哥说干啥就干啥！' },
       { speaker: '', text: '三人于桃园焚香结义，立誓同生共死。' },
-      { speaker: '旁白', text: '桃园三结义，传为千古佳话。' },
     ],
     estimatedDurationMs: 45000,
     triggerCondition: { type: 'first_enter' },
