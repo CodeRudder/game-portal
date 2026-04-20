@@ -275,3 +275,37 @@ export const REBIRTH_QUESTS: RebirthQuestDef[] = [
     targetCount: 5, rewards: { prestigePoints: 2000, resources: { gold: 15000, mandate: 50 } },
   },
 ];
+
+// ─────────────────────────────────────────────
+// 7. v16.0 传承系统深化配置
+// ─────────────────────────────────────────────
+
+import type {
+  RebirthInitialGift,
+  RebirthInstantBuild,
+  RebirthUnlockContentV16,
+} from './prestige.types';
+
+/** 转生后初始资源赠送 */
+export const REBIRTH_INITIAL_GIFT: RebirthInitialGift = {
+  grain: 5000,
+  gold: 3000,
+  troops: 1000,
+};
+
+/** 转生后低级建筑瞬间升级配置 */
+export const REBIRTH_INSTANT_BUILD: RebirthInstantBuild = {
+  maxInstantLevel: 10,
+  speedDivisor: 10, // 建筑升级时间÷10（几乎瞬间）
+};
+
+/** v16.0 转生次数解锁内容（覆盖v14.0） */
+export const REBIRTH_UNLOCK_CONTENTS_V16: RebirthUnlockContentV16[] = [
+  { requiredRebirthCount: 1, description: '天命系统解锁', type: 'feature', unlockId: 'mandate_system' },
+  { requiredRebirthCount: 2, description: '专属科技路线', type: 'tech', unlockId: 'exclusive_tech' },
+  { requiredRebirthCount: 3, description: '神话武将招募池', type: 'hero', unlockId: 'mythic_hero_pool' },
+  { requiredRebirthCount: 5, description: '跨服竞技场', type: 'feature', unlockId: 'cross_server_arena' },
+];
+
+/** 收益模拟器边际收益递减拐点（小时） */
+export const SIMULATION_DIMINISHING_RETURNS_HOUR = 72;

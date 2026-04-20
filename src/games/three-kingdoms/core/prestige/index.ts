@@ -29,6 +29,12 @@ export type {
   PrestigeState,
   RebirthState,
   PrestigeSaveData,
+  // v16.0 传承系统深化
+  RebirthInitialGift,
+  RebirthInstantBuild,
+  RebirthUnlockContentV16,
+  RebirthSimulationComparison,
+  SimulationResultV16,
 } from './prestige.types';
 
 export { PRESTIGE_SAVE_VERSION } from './prestige.types';
@@ -50,4 +56,9 @@ export {
   REBIRTH_UNLOCK_CONTENTS,
   PRESTIGE_QUESTS,
   REBIRTH_QUESTS,
+  // v16.0 传承系统深化
+  REBIRTH_INITIAL_GIFT,
+  REBIRTH_INSTANT_BUILD,
+  REBIRTH_UNLOCK_CONTENTS_V16,
+  SIMULATION_DIMINISHING_RETURNS_HOUR,
 } from './prestige-config';

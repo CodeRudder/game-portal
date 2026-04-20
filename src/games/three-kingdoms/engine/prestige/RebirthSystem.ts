@@ -8,6 +8,9 @@
  *   #11 转生后加速 — 建筑/科技/资源/经验加速，持续7天
  *   #12 次数解锁内容 — 转生1/2/3/5/7/10次解锁
  *   #13 收益模拟器 — 预估转生后收益
+ *   #18 转生后加速机制(v16.0) — 初始资源赠送+低级建筑瞬间+一键重建
+ *   #19 转生次数解锁内容(v16.0) — 天命/专属科技/神话武将/跨服
+ *   #20 收益模拟器深化(v16.0) — 声望增长预测+推荐转生时机+倍率对比
  *
  * @module engine/prestige/RebirthSystem
  */
@@ -20,6 +23,11 @@ import type {
   RebirthUnlockContent,
   SimulationParams,
   SimulationResult,
+  RebirthInitialGift,
+  RebirthInstantBuild,
+  RebirthUnlockContentV16,
+  SimulationResultV16,
+  RebirthSimulationComparison,
 } from '../../core/prestige';
 import {
   REBIRTH_CONDITIONS,
@@ -29,6 +37,10 @@ import {
   REBIRTH_ACCELERATION,
   REBIRTH_UNLOCK_CONTENTS,
   PRESTIGE_SAVE_VERSION,
+  REBIRTH_INITIAL_GIFT,
+  REBIRTH_INSTANT_BUILD,
+  REBIRTH_UNLOCK_CONTENTS_V16,
+  SIMULATION_DIMINISHING_RETURNS_HOUR,
 } from '../../core/prestige';
 
 // ─────────────────────────────────────────────
@@ -389,5 +401,160 @@ export class RebirthSystem implements ISubsystem {
         });
       }
     }
+  }
+
+  // ─────────────────────────────────────────
+  // #18 转生后加速机制 (v16.0)
+  // ─────────────────────────────────────────
+
+  /** 获取转生后初始资源赠送 */
+  getInitialGift(): RebirthInitialGift {
+    return { ...REBIRTH_INITIAL_GIFT };
+  }
+
+  /** 获取低级建筑瞬间升级配置 */
+  getInstantBuildConfig(): RebirthInstantBuild {
+    return { ...REBIRTH_INSTANT_BUILD };
+  }
+
+  /** 计算建筑升级时间（含转生加速） */
+  calculateBuildTime(baseTimeSeconds: number, buildingLevel: number): number {
+    const multiplier = this.state.currentMultiplier;
+    const accel = this.state.accelerationDaysLeft > 0 ? REBIRTH_ACCELERATION : null;
+
+    // 低级建筑瞬间升级
+    if (buildingLevel <= REBIRTH_INSTANT_BUILD.maxInstantLevel && accel) {
+      return Math.max(1, Math.floor(baseTimeSeconds / REBIRTH_INSTANT_BUILD.speedDivisor));
+    }
+
+    // 正常加速
+    const speedMul = multiplier * (accel?.buildSpeedMultiplier ?? 1);
+    return Math.max(1, Math.floor(baseTimeSeconds / speedMul));
+  }
+
+  /** 一键重建（返回上次建筑优先级列表） */
+  getAutoRebuildPlan(): string[] | null {
+    if (this.state.rebirthCount === 0) return null;
+    // 按标准优先级返回建筑类型列表
+    return ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
+  }
+
+  // ─────────────────────────────────────────
+  // #19 转生次数解锁内容 (v16.0)
+  // ─────────────────────────────────────────
+
+  /** 获取v16.0解锁内容列表 */
+  getUnlockContentsV16(): RebirthUnlockContentV16[] {
+    return REBIRTH_UNLOCK_CONTENTS_V16.map(c => ({
+      ...c,
+      unlocked: this.state.rebirthCount >= c.requiredRebirthCount,
+    }));
+  }
+
+  /** 获取已解锁的v16.0内容 */
+  getUnlockedContentsV16(): RebirthUnlockContentV16[] {
+    return REBIRTH_UNLOCK_CONTENTS_V16.filter(
+      c => this.state.rebirthCount >= c.requiredRebirthCount,
+    );
+  }
+
+  /** 检查特定功能是否已解锁 */
+  isFeatureUnlocked(unlockId: string): boolean {
+    const content = REBIRTH_UNLOCK_CONTENTS_V16.find(c => c.unlockId === unlockId);
+    if (!content) return false;
+    return this.state.rebirthCount >= content.requiredRebirthCount;
+  }
+
+  // ─────────────────────────────────────────
+  // #20 收益模拟器深化 (v16.0)
+  // ─────────────────────────────────────────
+
+  /** 生成声望增长预测曲线 */
+  generatePrestigeGrowthCurve(params: SimulationParams): Array<{ day: number; prestige: number }> {
+    const curve: Array<{ day: number; prestige: number }> = [];
+    const nextMultiplier = calcRebirthMultiplier(params.currentRebirthCount + 1);
+    const baseDailyPrestige = 20 * params.dailyOnlineHours;
+
+    let accumulated = 0;
+    for (let day = 0; day <= params.simulateDays; day++) {
+      const isAccelDay = day <= REBIRTH_ACCELERATION.durationDays;
+      const dayMultiplier = isAccelDay
+        ? nextMultiplier * REBIRTH_ACCELERATION.resourceMultiplier
+        : nextMultiplier;
+      accumulated += baseDailyPrestige * dayMultiplier;
+      curve.push({ day, prestige: Math.floor(accumulated) });
+    }
+
+    return curve;
+  }
+
+  /** 倍率对比：立即转生 vs 等待 */
+  compareRebirthTiming(
+    currentRebirthCount: number,
+    waitHoursOptions: number[] = [0, 12, 24, 48, 72, 168],
+  ): RebirthSimulationComparison[] {
+    const immediateMultiplier = calcRebirthMultiplier(currentRebirthCount + 1);
+    const results: RebirthSimulationComparison[] = [];
+
+    for (const hours of waitHoursOptions) {
+      // 等待期间可以继续积累声望，然后转生
+      // 但等待太久边际收益递减
+      const waitMultiplier = immediateMultiplier; // 倍率不变
+      const currentMultiplier = calcRebirthMultiplier(currentRebirthCount);
+
+      // 收益差异 = 等待期间用当前倍率产出 vs 立即转生用新倍率产出
+      const currentRate = currentMultiplier;
+      const newRate = immediateMultiplier;
+      const hoursToBreakEven = hours > 0
+        ? (hours * currentRate) / (newRate - currentRate || 1)
+        : 0;
+
+      let recommendedAction: 'rebirth_now' | 'wait' | 'no_difference';
+      let confidence: 'high' | 'medium' | 'low';
+
+      if (hours === 0) {
+        recommendedAction = 'rebirth_now';
+        confidence = 'high';
+      } else if (hours <= SIMULATION_DIMINISHING_RETURNS_HOUR) {
+        recommendedAction = newRate > currentRate * 1.2 ? 'rebirth_now' : 'no_difference';
+        confidence = 'medium';
+      } else {
+        recommendedAction = 'wait';
+        confidence = 'low';
+      }
+
+      results.push({
+        immediateMultiplier,
+        waitMultiplier,
+        waitHours: hours,
+        diminishingReturnsHour: SIMULATION_DIMINISHING_RETURNS_HOUR,
+        recommendedAction,
+        confidence,
+      });
+    }
+
+    return results;
+  }
+
+  /** 完整收益模拟（v16.0 深化版） */
+  simulateEarningsV16(params: SimulationParams): SimulationResultV16 {
+    const baseResult = this.simulateEarnings(params);
+    const prestigeGrowthCurve = this.generatePrestigeGrowthCurve(params);
+    const comparisons = this.compareRebirthTiming(params.currentRebirthCount);
+
+    // 找到最佳推荐
+    const bestComparison = comparisons.find(c => c.recommendedAction === 'rebirth_now') ?? comparisons[0];
+    const recommendation = bestComparison.recommendedAction === 'rebirth_now'
+      ? '建议立即转生，当前收益已达到边际递减拐点'
+      : bestComparison.recommendedAction === 'wait'
+        ? `建议等待${bestComparison.waitHours}小时后转生`
+        : '当前转生与等待收益相近，可根据需要选择';
+
+    return {
+      ...baseResult,
+      prestigeGrowthCurve,
+      comparison: bestComparison,
+      recommendation,
+    };
   }
 }

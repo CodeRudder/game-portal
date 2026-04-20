@@ -363,3 +363,71 @@ export interface PrestigeSaveData {
 
 /** 声望系统存档版本 */
 export const PRESTIGE_SAVE_VERSION = 1;
+
+// ─────────────────────────────────────────────
+// 9. v16.0 传承系统深化
+// ─────────────────────────────────────────────
+
+/** 转生后初始资源赠送 */
+export interface RebirthInitialGift {
+  /** 粮草赠送量 */
+  grain: number;
+  /** 铜钱赠送量 */
+  gold: number;
+  /** 兵力赠送量 */
+  troops: number;
+}
+
+/** 转生后加速建筑配置（低级建筑瞬间升级） */
+export interface RebirthInstantBuild {
+  /** 可瞬间升级的最高建筑等级 */
+  maxInstantLevel: number;
+  /** 建筑升级时间除以倍率 */
+  speedDivisor: number;
+}
+
+/** 一键重建配置 */
+export interface RebirthAutoRebuild {
+  /** 是否启用 */
+  enabled: boolean;
+  /** 按上次优先级自动升级 */
+  useLastPriority: boolean;
+}
+
+/** 转生次数解锁内容（v16.0 更新） */
+export interface RebirthUnlockContentV16 {
+  /** 所需转生次数 */
+  requiredRebirthCount: number;
+  /** 解锁内容描述 */
+  description: string;
+  /** 解锁类型 */
+  type: 'hero' | 'tech' | 'feature' | 'area';
+  /** 解锁ID */
+  unlockId: string;
+}
+
+/** 收益模拟器倍率对比结果 */
+export interface RebirthSimulationComparison {
+  /** 立即转生的倍率 */
+  immediateMultiplier: number;
+  /** 等待X小时后转生的倍率 */
+  waitMultiplier: number;
+  /** 等待时间（小时） */
+  waitHours: number;
+  /** 边际收益递减拐点（小时） */
+  diminishingReturnsHour: number;
+  /** 推荐转生时机 */
+  recommendedAction: 'rebirth_now' | 'wait' | 'no_difference';
+  /** 置信度 */
+  confidence: 'high' | 'medium' | 'low';
+}
+
+/** 收益模拟器完整结果（v16.0 深化） */
+export interface SimulationResultV16 extends SimulationResult {
+  /** 声望增长预测曲线数据点 */
+  prestigeGrowthCurve: Array<{ day: number; prestige: number }>;
+  /** 倍率对比 */
+  comparison: RebirthSimulationComparison;
+  /** 推荐转生时机描述 */
+  recommendation: string;
+}
