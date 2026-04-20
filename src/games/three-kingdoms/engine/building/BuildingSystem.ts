@@ -419,6 +419,136 @@ export class BuildingSystem implements ISubsystem {
     this.upgradeQueue = [];
   }
 
+  // ── 12. C19 建筑升级路线推荐 ──
+
+  /**
+   * 根据当前建筑状态推荐升级路线
+   *
+   * 策略：优先主城 → 产出建筑（按资源瓶颈排序） → 功能建筑
+   * 返回按优先级排序的推荐列表，每项包含建筑类型、原因和预估收益
+   */
+  getUpgradeRouteRecommendation(resources?: Readonly<Resources>): Array<{
+    type: BuildingType;
+    priority: number;
+    reason: string;
+    estimatedBenefit: string;
+  }> {
+    const recommendations: Array<{
+      type: BuildingType;
+      priority: number;
+      reason: string;
+      estimatedBenefit: string;
+    }> = [];
+
+    for (const t of BUILDING_TYPES) {
+      const state = this.buildings[t];
+      if (state.status === 'locked' || state.status === 'upgrading') continue;
+
+      const maxLv = BUILDING_MAX_LEVELS[t];
+      if (state.level >= maxLv) continue;
+
+      // 检查是否能升级（不含资源检查）
+      const levelOk = t === 'castle' || state.level < this.buildings.castle.level;
+      if (!levelOk) continue;
+
+      let priority = 0;
+      let reason = '';
+      let benefit = '';
+
+      if (t === 'castle') {
+        // 主城优先级最高
+        priority = 100;
+        reason = '主城升级解锁新建筑并提升全资源加成';
+        const nextBonus = BUILDING_DEFS.castle.levelTable[state.level]?.production ?? 0;
+        benefit = `全资源加成 +${nextBonus}%`;
+      } else {
+        const def = BUILDING_DEFS[t];
+        const currentProd = this.getProduction(t);
+        const nextProd = def.levelTable[state.level]?.production ?? currentProd;
+        const prodGain = nextProd - currentProd;
+
+        if (def.production) {
+          priority = 50 + Math.round(prodGain * 10);
+          reason = `${BUILDING_LABELS[t]}产出提升`;
+          benefit = `产出 +${prodGain.toFixed(1)}/s`;
+        } else {
+          priority = 30;
+          reason = `${BUILDING_LABELS[t]}功能强化`;
+          const specialVal = def.levelTable[state.level]?.specialValue ?? 0;
+          benefit = specialVal > 0 ? `属性值 +${specialVal}` : '等级提升';
+        }
+      }
+
+      // 资源不足降低优先级
+      if (resources) {
+        const cost = this.getUpgradeCost(t);
+        if (cost && (resources.grain < cost.grain || resources.gold < cost.gold)) {
+          priority -= 20;
+        }
+      }
+
+      recommendations.push({ type: t, priority, reason, estimatedBenefit: benefit });
+    }
+
+    return recommendations.sort((a, b) => b.priority - a.priority);
+  }
+
+  // ── 13. B13 批量升级 ──
+
+  /**
+   * 批量升级：尝试升级多个建筑
+   *
+   * 按列表顺序依次尝试升级，跳过不可升级的建筑。
+   * 返回成功和失败的建筑列表及对应原因。
+   */
+  batchUpgrade(
+    types: BuildingType[],
+    resources: Resources,
+  ): {
+    succeeded: Array<{ type: BuildingType; cost: UpgradeCost }>;
+    failed: Array<{ type: BuildingType; reason: string }>;
+    totalCost: UpgradeCost;
+  } {
+    const succeeded: Array<{ type: BuildingType; cost: UpgradeCost }> = [];
+    const failed: Array<{ type: BuildingType; reason: string }> = [];
+    const totalCost: UpgradeCost = { grain: 0, gold: 0, troops: 0, timeSeconds: 0 };
+
+    // 追踪剩余资源（避免超支）
+    let remainingGrain = resources.grain;
+    let remainingGold = resources.gold;
+    let remainingTroops = resources.troops;
+
+    for (const t of types) {
+      const currentResources: Resources = {
+        grain: remainingGrain,
+        gold: remainingGold,
+        troops: remainingTroops,
+        mandate: resources.mandate,
+      };
+      const check = this.checkUpgrade(t, currentResources);
+      if (!check.canUpgrade) {
+        failed.push({ type: t, reason: check.reasons.join('；') });
+        continue;
+      }
+
+      try {
+        const cost = this.startUpgrade(t, currentResources);
+        succeeded.push({ type: t, cost });
+        totalCost.grain += cost.grain;
+        totalCost.gold += cost.gold;
+        totalCost.troops += cost.troops;
+        totalCost.timeSeconds += cost.timeSeconds;
+        remainingGrain -= cost.grain;
+        remainingGold -= cost.gold;
+        remainingTroops -= cost.troops;
+      } catch (e) {
+        failed.push({ type: t, reason: e instanceof Error ? e.message : '未知错误' });
+      }
+    }
+
+    return { succeeded, failed, totalCost };
+  }
+
   // ── 私有 ──
 
   private cloneBuildings(): Record<BuildingType, BuildingState> {

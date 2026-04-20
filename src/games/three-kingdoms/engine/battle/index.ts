@@ -59,6 +59,8 @@ export { BATTLE_CONFIG } from './battle-config';
 
 // 战斗引擎
 export { BattleEngine } from './BattleEngine';
+export { autoFormation } from './BattleEngine';
+export type { AutoFormationResult } from './BattleEngine';
 export { BattleTurnExecutor } from './BattleTurnExecutor';
 export {
   getAliveUnits,
