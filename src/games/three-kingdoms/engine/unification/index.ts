@@ -23,15 +23,17 @@ export {
   calcPower,
   calcRebirthMultiplier,
   generateResourceCurve,
-  validateSingleResource,
-  validateSingleHero,
-  calculateStagePoints,
-  validateEconomy,
   calculateRebirthPoints,
-  validateRebirth,
   DEFAULT_RESOURCE_CONFIGS,
   HERO_BASE_STATS,
   DEFAULT_BATTLE_CONFIG,
   DEFAULT_ECONOMY_CONFIGS,
   DEFAULT_REBIRTH_CONFIG,
 } from './BalanceCalculator';
+export {
+  validateSingleResource,
+  validateSingleHero,
+  calculateStagePoints,
+  validateEconomy,
+  validateRebirth,
+} from './BalanceReport';

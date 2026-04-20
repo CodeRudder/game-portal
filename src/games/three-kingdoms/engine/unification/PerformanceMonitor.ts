@@ -8,6 +8,10 @@
  *   - 脏矩形管理: 标记变化区域，减少重绘
  *   - 对象池管理: 粒子/飘字/子弹复用
  *
+ * 对象池和脏矩形管理器已拆分到独立模块：
+ *   - ObjectPool → engine/unification/ObjectPool
+ *   - DirtyRectManager → engine/unification/DirtyRectManager
+ *
  * @module engine/unification/PerformanceMonitor
  */
 
@@ -16,22 +20,23 @@ import type {
   FPSSample,
   FPSStats,
   FPSAlertLevel,
-  FPSThresholds,
   MemorySample,
   MemoryStats,
   MemoryAlertLevel,
-  MemoryThresholds,
   LoadingPhase,
-  LoadingRecord,
   LoadingStats,
-  LoadingThresholds,
   PerformanceBottleneck,
   PerformanceReport,
   PerformanceMonitorConfig,
   ObjectPoolState,
-  DirtyRect,
   RenderFrameData,
 } from '../../core/unification';
+
+// 从拆分模块中导入
+export { ObjectPool } from './ObjectPool';
+export { DirtyRectManager } from './DirtyRectManager';
+import { ObjectPool } from './ObjectPool';
+import { DirtyRectManager } from './DirtyRectManager';
 
 // ─────────────────────────────────────────────
 // 默认配置
@@ -45,170 +50,6 @@ const DEFAULT_CONFIG: PerformanceMonitorConfig = {
   memoryThresholds: { normal: 0.6, elevated: 0.8, high: 0.9, critical: 0.95 },
   loadingThresholds: { firstScreenMaxMs: 3000, interactiveMaxMs: 5000, phaseMaxMs: 1500 },
 };
-
-// ─────────────────────────────────────────────
-// 对象池实现
-// ─────────────────────────────────────────────
-
-/** 对象池条目 */
-interface PoolEntry<T> {
-  object: T;
-  active: boolean;
-}
-
-/**
- * 通用对象池
- *
- * 用于粒子、飘字、子弹等高频创建/销毁对象的复用。
- */
-export class ObjectPool<T> {
-  private pool: PoolEntry<T>[] = [];
-  private factory: () => T;
-  private resetFn: (obj: T) => void;
-  private name: string;
-  private totalAllocations = 0;
-  private totalDeallocations = 0;
-  private hits = 0;
-  private misses = 0;
-
-  constructor(name: string, factory: () => T, resetFn: (obj: T) => void, initialSize: number = 10) {
-    this.name = name;
-    this.factory = factory;
-    this.resetFn = resetFn;
-
-    for (let i = 0; i < initialSize; i++) {
-      this.pool.push({ object: this.factory(), active: false });
-    }
-  }
-
-  /** 分配一个对象 */
-  allocate(): T {
-    this.totalAllocations++;
-    const inactive = this.pool.find(e => !e.active);
-    if (inactive) {
-      inactive.active = true;
-      this.hits++;
-      this.resetFn(inactive.object);
-      return inactive.object;
-    }
-    this.misses++;
-    const obj = this.factory();
-    this.pool.push({ object: obj, active: true });
-    return obj;
-  }
-
-  /** 回收一个对象 */
-  deallocate(obj: T): void {
-    const entry = this.pool.find(e => e.object === obj);
-    if (entry) {
-      entry.active = false;
-      this.totalDeallocations++;
-      this.resetFn(obj);
-    }
-  }
-
-  /** 获取池状态 */
-  getState(): ObjectPoolState {
-    const activeCount = this.pool.filter(e => e.active).length;
-    return {
-      name: this.name,
-      poolSize: this.pool.length,
-      activeCount,
-      totalAllocations: this.totalAllocations,
-      totalDeallocations: this.totalDeallocations,
-      hitRate: this.totalAllocations > 0 ? this.hits / this.totalAllocations : 0,
-    };
-  }
-
-  /** 清空池 */
-  clear(): void {
-    this.pool = [];
-    this.totalAllocations = 0;
-    this.totalDeallocations = 0;
-    this.hits = 0;
-    this.misses = 0;
-  }
-}
-
-// ─────────────────────────────────────────────
-// 脏矩形管理器
-// ─────────────────────────────────────────────
-
-/**
- * 脏矩形管理器
- *
- * 跟踪画面变化区域，仅重绘脏区域以优化渲染性能。
- */
-export class DirtyRectManager {
-  private dirtyRects: DirtyRect[] = [];
-  private fullRedrawNeeded = false;
-
-  /** 标记一个区域为脏 */
-  markDirty(rect: DirtyRect): void {
-    this.dirtyRects.push(rect);
-  }
-
-  /** 标记整个画面需要重绘 */
-  markFullRedraw(): void {
-    this.fullRedrawNeeded = true;
-    this.dirtyRects = [];
-  }
-
-  /** 获取当前脏矩形 */
-  getDirtyRects(): DirtyRect[] {
-    return this.fullRedrawNeeded ? [] : [...this.dirtyRects];
-  }
-
-  /** 是否需要全量重绘 */
-  isFullRedraw(): boolean {
-    return this.fullRedrawNeeded;
-  }
-
-  /** 检查对象是否在脏矩形内 */
-  isObjectDirty(x: number, y: number, width: number, height: number): boolean {
-    if (this.fullRedrawNeeded) return true;
-    return this.dirtyRects.some(r =>
-      r.x < x + width && r.x + r.width > x &&
-      r.y < y + height && r.y + r.height > y,
-    );
-  }
-
-  /** 合并重叠的脏矩形 */
-  merge(): DirtyRect[] {
-    if (this.fullRedrawNeeded || this.dirtyRects.length === 0) {
-      return [];
-    }
-
-    const merged: DirtyRect[] = [];
-    const sorted = [...this.dirtyRects].sort((a, b) => a.x - b.x || a.y - b.y);
-
-    for (const rect of sorted) {
-      const overlap = merged.find(m =>
-        m.x < rect.x + rect.width && m.x + m.width > rect.x &&
-        m.y < rect.y + rect.height && m.y + m.height > rect.y,
-      );
-      if (overlap) {
-        const x = Math.min(overlap.x, rect.x);
-        const y = Math.min(overlap.y, rect.y);
-        overlap.x = x;
-        overlap.y = y;
-        overlap.width = Math.max(overlap.x + overlap.width, rect.x + rect.width) - x;
-        overlap.height = Math.max(overlap.y + overlap.height, rect.y + rect.height) - y;
-      } else {
-        merged.push({ ...rect });
-      }
-    }
-
-    this.dirtyRects = merged;
-    return merged;
-  }
-
-  /** 清除所有脏矩形（每帧渲染后调用） */
-  clear(): void {
-    this.dirtyRects = [];
-    this.fullRedrawNeeded = false;
-  }
-}
 
 // ─────────────────────────────────────────────
 // 性能监控器
@@ -235,7 +76,7 @@ export class PerformanceMonitor implements ISubsystem {
   private peakMemory = 0;
 
   // 加载记录
-  private loadingRecords: LoadingRecord[] = [];
+  private loadingRecords: { phase: LoadingPhase; startMs: number; endMs: number; durationMs: number; resourceCount: number; totalBytes: number }[] = [];
   private loadingPhaseStarts = new Map<LoadingPhase, number>();
 
   // 对象池注册
@@ -420,7 +261,7 @@ export class PerformanceMonitor implements ISubsystem {
       averageUsed: Math.floor(averageUsed),
       limit: current.heapSizeLimit,
       usageRatio: current.usageRatio,
-      gcCount: 0, // GC 次数无法直接测量
+      gcCount: 0,
       sampleCount: samples.length,
     };
   }
@@ -437,7 +278,6 @@ export class PerformanceMonitor implements ISubsystem {
 
   /** 内存采样 */
   private sampleMemory(now: number): void {
-    // 使用 performance.memory（Chrome）或模拟
     const perf = performance as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } };
     if (perf.memory) {
       const m = perf.memory;
@@ -451,8 +291,7 @@ export class PerformanceMonitor implements ISubsystem {
       this.memorySamples.push(sample);
       this.peakMemory = Math.max(this.peakMemory, m.usedJSHeapSize);
     } else {
-      // 无 performance.memory 时使用模拟值
-      const estimated = 50 * 1024 * 1024; // 50MB 估算
+      const estimated = 50 * 1024 * 1024;
       const sample: MemorySample = {
         timestamp: now,
         usedHeapSize: estimated,
@@ -464,7 +303,6 @@ export class PerformanceMonitor implements ISubsystem {
       this.peakMemory = Math.max(this.peakMemory, estimated);
     }
 
-    // 保留最近 500 个样本
     if (this.memorySamples.length > 500) {
       this.memorySamples.shift();
     }
@@ -484,12 +322,9 @@ export class PerformanceMonitor implements ISubsystem {
 
     const endMs = performance.now();
     this.loadingRecords.push({
-      phase,
-      startMs,
-      endMs,
+      phase, startMs, endMs,
       durationMs: endMs - startMs,
-      resourceCount,
-      totalBytes,
+      resourceCount, totalBytes,
     });
     this.loadingPhaseStarts.delete(phase);
   }
@@ -572,7 +407,6 @@ export class PerformanceMonitor implements ISubsystem {
     const loadingStats = this.getLoadingStats();
     const bottlenecks = this.identifyBottlenecks(fpsStats, memoryStats, loadingStats);
 
-    // 计算综合评分
     let score = 100;
     score -= bottlenecks.filter(b => b.severity === 'high').length * 15;
     score -= bottlenecks.filter(b => b.severity === 'medium').length * 8;
@@ -599,7 +433,6 @@ export class PerformanceMonitor implements ISubsystem {
     const bottlenecks: PerformanceBottleneck[] = [];
     const t = this.config;
 
-    // FPS 瓶颈
     if (fps.average < t.fpsThresholds.warning) {
       bottlenecks.push({
         type: 'fps',
@@ -611,7 +444,6 @@ export class PerformanceMonitor implements ISubsystem {
       });
     }
 
-    // 内存瓶颈
     if (memory.usageRatio > t.memoryThresholds.elevated) {
       bottlenecks.push({
         type: 'memory',
@@ -623,7 +455,6 @@ export class PerformanceMonitor implements ISubsystem {
       });
     }
 
-    // 加载瓶颈
     if (loading.firstScreenMs > t.loadingThresholds.firstScreenMaxMs) {
       bottlenecks.push({
         type: 'loading',
