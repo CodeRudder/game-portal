@@ -61,3 +61,22 @@ export type {
   AlertStack,
   EventLogSaveData,
 } from './EventLogSystem';
+
+// v15.0 — 事件触发引擎（触发条件+概率+通知+冷却+分支）
+export { EventTriggerEngine } from './EventTriggerEngine';
+
+// v15.0 — 连锁事件引擎（分支追踪+快照）
+export { ChainEventEngine } from './ChainEventEngine';
+export type {
+  ChainEngineId,
+  ChainEngineNodeId,
+  ChainEngineOptionId,
+  ChainEventDefV15,
+  ChainNodeDefV15,
+  ChainNodeOption,
+  ChainAdvanceResultV15,
+  ChainEngineSaveData,
+} from './ChainEventEngine';
+
+// v15.0 — 离线事件堆积处理
+export { OfflineEventHandler } from './OfflineEventHandler';

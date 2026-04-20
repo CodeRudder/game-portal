@@ -51,3 +51,20 @@ export {
   SIGN_IN_CYCLE_DAYS,
   createDefaultSignInData,
 } from './SignInSystem';
+
+// v15.0 — 代币兑换商店
+export {
+  TokenShopSystem,
+  DEFAULT_TOKEN_SHOP_CONFIG,
+  RARITY_ORDER,
+  RARITY_PRICE_MULTIPLIER,
+  DEFAULT_SHOP_ITEMS,
+} from './TokenShopSystem';
+
+// v15.0 — 限时活动系统（排行榜+限时流程+节日框架+离线进度）
+export {
+  TimedActivitySystem,
+  DEFAULT_LEADERBOARD_CONFIG,
+  DEFAULT_TIMED_OFFLINE_EFFICIENCY,
+  FESTIVAL_TEMPLATES,
+} from './TimedActivitySystem';
