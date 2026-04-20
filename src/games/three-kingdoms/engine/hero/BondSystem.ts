@@ -78,10 +78,8 @@ export class BondSystem implements ISubsystem {
     const activeBonds: ActiveBond[] = [];
 
     for (const bond of BOND_DEFINITIONS) {
-      const result = this.checkBondCondition(bond, factionCounts, heroes);
-      if (result) {
-        activeBonds.push(result);
-      }
+      const results = this.checkBondCondition(bond, factionCounts, heroes);
+      activeBonds.push(...results);
     }
 
     return activeBonds;
@@ -162,25 +160,26 @@ export class BondSystem implements ISubsystem {
     return counts;
   }
 
-  /** 检查单个羁绊条件是否满足 */
+  /** 检查单个羁绊条件是否满足，返回所有匹配的激活羁绊 */
   private checkBondCondition(
     bond: BondDefinition,
     factionCounts: Record<Faction, number>,
     heroes: FormationHero[],
-  ): ActiveBond | null {
+  ): ActiveBond[] {
     const { condition } = bond;
+    const results: ActiveBond[] = [];
 
     if (condition.type === 'same_faction') {
-      // 同阵营羁绊：找到满足数量的阵营
+      // 同阵营羁绊：找到所有满足数量的阵营，每个阵营各产生一个激活羁绊
       const minCount = condition.minSameFaction ?? 0;
       for (const faction of ['shu', 'wei', 'wu', 'qun'] as Faction[]) {
         if (factionCounts[faction] >= minCount) {
-          return {
+          results.push({
             bond,
             matchingFaction: faction,
             heroCount: factionCounts[faction],
             bonuses: bond.bonuses,
-          };
+          });
         }
       }
     } else if (condition.type === 'mixed_factions') {
@@ -191,19 +190,19 @@ export class BondSystem implements ISubsystem {
           g => factionCounts[g.faction] >= g.minCount,
         );
         if (allMet) {
-          return {
+          results.push({
             bond,
             matchingFaction: 'qun', // 混搭无特定阵营
             heroCount: groups.reduce(
               (sum, g) => sum + factionCounts[g.faction], 0,
             ),
             bonuses: bond.bonuses,
-          };
+          });
         }
       }
     }
 
-    return null;
+    return results;
   }
 
   /** 查找潜在可激活的羁绊 */

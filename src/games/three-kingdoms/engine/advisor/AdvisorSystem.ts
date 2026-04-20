@@ -17,14 +17,14 @@ import type {
   AdvisorDisplayState,
   AdvisorSaveData,
   AdvisorCooldownRecord,
-} from '../../../core/advisor';
+} from '../../core/advisor';
 import {
   ADVISOR_TRIGGER_PRIORITY,
   ADVISOR_MAX_DISPLAY,
   ADVISOR_DAILY_LIMIT,
   ADVISOR_CLOSE_COOLDOWN_MS,
   ADVISOR_SAVE_VERSION,
-} from '../../../core/advisor';
+} from '../../core/advisor';
 
 // ─────────────────────────────────────────────
 // 类型定义
@@ -158,11 +158,11 @@ export class AdvisorSystem implements ISubsystem {
 
     // 资源溢出检测: 任何资源 > 80% 上限
     const overflowResource = this.findOverflowResource(snapshot);
-    if (overflowResource) {
+    if (overflowResource && !this.isInCooldown('resource_overflow')) {
       suggestions.push(this.createSuggestion(
         'resource_overflow',
-        '粮仓满载，建议升级',
-        `资源已满载，建议升级仓库或消耗资源`,
+        '资源满仓，建议升级',
+        `资源已满仓，建议升级仓库或消耗资源`,
         'high',
         '前往升级',
         'building',
@@ -171,7 +171,7 @@ export class AdvisorSystem implements ISubsystem {
 
     // 资源告急检测: 任何资源 < 10% 上限
     const shortageResource = this.findShortageResource(snapshot);
-    if (shortageResource) {
+    if (shortageResource && !this.isInCooldown('resource_shortage')) {
       suggestions.push(this.createSuggestion(
         'resource_shortage',
         '粮草告急，建议建造农田',
@@ -183,7 +183,7 @@ export class AdvisorSystem implements ISubsystem {
     }
 
     // 建筑队列空闲
-    if (snapshot.buildingQueueIdle) {
+    if (snapshot.buildingQueueIdle && !this.isInCooldown('building_idle')) {
       suggestions.push(this.createSuggestion(
         'building_idle',
         '建造队列空闲，建议升级',
@@ -195,7 +195,7 @@ export class AdvisorSystem implements ISubsystem {
     }
 
     // 武将可升级
-    if (snapshot.upgradeableHeroes.length > 0) {
+    if (snapshot.upgradeableHeroes.length > 0 && !this.isInCooldown('hero_upgradeable')) {
       const heroId = snapshot.upgradeableHeroes[0];
       suggestions.push(this.createSuggestion(
         'hero_upgradeable',
@@ -209,7 +209,7 @@ export class AdvisorSystem implements ISubsystem {
     }
 
     // 科技队列空闲
-    if (snapshot.techQueueIdle) {
+    if (snapshot.techQueueIdle && !this.isInCooldown('tech_idle')) {
       suggestions.push(this.createSuggestion(
         'tech_idle',
         '科技研究空闲',
@@ -221,7 +221,7 @@ export class AdvisorSystem implements ISubsystem {
     }
 
     // 兵力满值
-    if (snapshot.armyFull) {
+    if (snapshot.armyFull && !this.isInCooldown('army_full')) {
       suggestions.push(this.createSuggestion(
         'army_full',
         '兵力已满，建议出征',
@@ -234,32 +234,36 @@ export class AdvisorSystem implements ISubsystem {
 
     // 限时NPC即将离开
     for (const npc of snapshot.leavingNpcs) {
-      suggestions.push(this.createSuggestion(
-        'npc_leaving',
-        `${npc.name}即将离开`,
-        `限时NPC${npc.name}即将离开，请尽快交互`,
-        'high',
-        '前往查看',
-        'npc',
-        npc.id,
-      ));
+      if (!this.isInCooldown('npc_leaving')) {
+        suggestions.push(this.createSuggestion(
+          'npc_leaving',
+          `${npc.name}即将离开`,
+          `限时NPC${npc.name}即将离开，请尽快交互`,
+          'high',
+          '前往查看',
+          'npc',
+          npc.id,
+        ));
+      }
     }
 
     // 新功能解锁
     for (const feature of snapshot.newFeatures) {
-      suggestions.push(this.createSuggestion(
-        'new_feature_unlock',
-        `点击了解${feature.name}`,
-        `新功能${feature.name}已解锁，点击了解详情`,
-        'low',
-        '了解更多',
-        'feature',
-        feature.id,
-      ));
+      if (!this.isInCooldown('new_feature_unlock')) {
+        suggestions.push(this.createSuggestion(
+          'new_feature_unlock',
+          `点击了解${feature.name}`,
+          `新功能${feature.name}已解锁，点击了解详情`,
+          'low',
+          '了解更多',
+          'feature',
+          feature.id,
+        ));
+      }
     }
 
     // 离线溢出
-    if (snapshot.offlineOverflowPercent > 50) {
+    if (snapshot.offlineOverflowPercent > 50 && !this.isInCooldown('offline_overflow')) {
       suggestions.push(this.createSuggestion(
         'offline_overflow',
         '建议升级仓库',
