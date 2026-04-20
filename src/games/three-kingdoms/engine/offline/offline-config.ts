@@ -17,27 +17,25 @@ import type {
 } from './offline.types';
 
 // ─────────────────────────────────────────────
-// 1. 6档衰减配置
+// 1. 5档衰减配置
 // ─────────────────────────────────────────────
 
 /**
- * 6档衰减表（v9.0 PLAN 规范）
+ * 5档衰减表（v9.0 PRD 规范）
  *
  * 0~2h:   100% 完整效率
- * 2~4h:    80% 高效
- * 4~8h:    60% 中效
- * 8~24h:   40% 低效
- * 24~48h:  25% 衰退
- * 48~72h:  15% 极低
+ * 2~8h:    80% 高效
+ * 8~24h:   60% 中效
+ * 24~48h:  40% 低效
+ * 48~72h:  25% 衰退
  * >72h:     0% 无收益
  */
 export const DECAY_TIERS: readonly DecayTier[] = [
   { id: 'tier1', startHours: 0, endHours: 2, efficiency: 1.0, label: '完整' },
-  { id: 'tier2', startHours: 2, endHours: 4, efficiency: 0.80, label: '高效' },
-  { id: 'tier3', startHours: 4, endHours: 8, efficiency: 0.60, label: '中效' },
-  { id: 'tier4', startHours: 8, endHours: 24, efficiency: 0.40, label: '低效' },
-  { id: 'tier5', startHours: 24, endHours: 48, efficiency: 0.25, label: '衰退' },
-  { id: 'tier6', startHours: 48, endHours: 72, efficiency: 0.15, label: '极低' },
+  { id: 'tier2', startHours: 2, endHours: 8, efficiency: 0.80, label: '高效' },
+  { id: 'tier3', startHours: 8, endHours: 24, efficiency: 0.60, label: '中效' },
+  { id: 'tier4', startHours: 24, endHours: 48, efficiency: 0.40, label: '低效' },
+  { id: 'tier5', startHours: 48, endHours: 72, efficiency: 0.25, label: '衰退' },
 ] as const;
 
 /** 最大离线收益时长（小时） */

@@ -343,4 +343,38 @@ export class ChatSystem {
   getChannelCount(): number {
     return 4; // 世界/公会/私聊/系统
   }
+
+  // ── 存档序列化 ──────────────────────────
+
+  /**
+   * 序列化聊天相关状态
+   */
+  serializeChat(state: SocialState): {
+    chatMessages: Record<string, import('../../core/social/social.types').ChatMessage[]>;
+    lastSendTime: Record<string, number>;
+    muteRecords: import('../../core/social/social.types').MuteRecord[];
+  } {
+    return {
+      chatMessages: { ...state.chatMessages },
+      lastSendTime: { ...state.lastSendTime },
+      muteRecords: [...state.muteRecords],
+    };
+  }
+
+  /**
+   * 反序列化恢复聊天状态
+   */
+  deserializeChat(data: {
+    chatMessages: Record<string, import('../../core/social/social.types').ChatMessage[]>;
+    lastSendTime: Record<string, number>;
+    muteRecords: import('../../core/social/social.types').MuteRecord[];
+  }): Partial<SocialState> {
+    return {
+      chatMessages: (data.chatMessages ?? {
+        WORLD: [], GUILD: [], PRIVATE: [], SYSTEM: [],
+      }) as SocialState['chatMessages'],
+      lastSendTime: data.lastSendTime ?? {},
+      muteRecords: data.muteRecords ?? [],
+    };
+  }
 }

@@ -241,4 +241,38 @@ export class ArenaSeasonSystem {
   getAllSeasonRewards(): SeasonReward[] {
     return [...SEASON_REWARDS];
   }
+
+  // ── 存档序列化 ──────────────────────────
+
+  /**
+   * 序列化赛季数据
+   */
+  serializeSeason(season: SeasonData, highestRankId: string): {
+    season: SeasonData;
+    highestRankId: string;
+  } {
+    return {
+      season: { ...season },
+      highestRankId,
+    };
+  }
+
+  /**
+   * 反序列化赛季数据
+   */
+  deserializeSeason(data: {
+    season: SeasonData;
+    highestRankId: string;
+  }): { season: SeasonData; highestRankId: string } {
+    return {
+      season: data.season ?? {
+        seasonId: '',
+        startTime: 0,
+        endTime: 0,
+        currentDay: 1,
+        isSettled: false,
+      },
+      highestRankId: data.highestRankId ?? 'BRONZE_V',
+    };
+  }
 }

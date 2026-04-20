@@ -486,4 +486,42 @@ export class FriendSystem {
   getInteractionConfig(): InteractionConfig {
     return { ...this.interactionConfig };
   }
+
+  // ── 存档序列化 ──────────────────────────
+
+  /**
+   * 序列化社交状态
+   */
+  serialize(state: SocialState): import('../../core/social/social.types').SocialSaveData {
+    return {
+      version: SOCIAL_SAVE_VERSION,
+      state: {
+        friends: { ...state.friends },
+        pendingRequests: [...state.pendingRequests],
+        dailyRequestsSent: state.dailyRequestsSent,
+        lastDailyReset: state.lastDailyReset,
+        dailyInteractions: [...state.dailyInteractions],
+        friendshipPoints: state.friendshipPoints,
+        dailyFriendshipEarned: state.dailyFriendshipEarned,
+        activeBorrows: [...state.activeBorrows],
+        dailyBorrowCount: state.dailyBorrowCount,
+        deleteCooldowns: { ...state.deleteCooldowns },
+        chatMessages: { ...state.chatMessages },
+        lastSendTime: { ...state.lastSendTime },
+        muteRecords: [...state.muteRecords],
+        reportRecords: [...state.reportRecords],
+        falseReportCounts: { ...state.falseReportCounts },
+      },
+    };
+  }
+
+  /**
+   * 反序列化恢复社交状态
+   */
+  deserialize(data: import('../../core/social/social.types').SocialSaveData): SocialState {
+    if (!data || data.version !== SOCIAL_SAVE_VERSION) {
+      return createDefaultSocialState();
+    }
+    return { ...data.state };
+  }
 }

@@ -149,19 +149,9 @@ export class ArenaSystem {
     // 按阵营分布尽量均匀选取
     const selected = this.selectByFactionBalance(eligible, candidateCount);
 
-    // 如果不够，从战力范围中补充
+    // 如果不够，从合格对手中补充（仅使用同时满足战力和排名范围的对手）
     if (selected.length < candidateCount) {
-      const remaining = eligible
-        .filter((p) => !selected.includes(p))
-        .concat(
-          allPlayers.filter(
-            (p) =>
-              p.power >= minPower &&
-              p.power <= maxPower &&
-              !selected.includes(p) &&
-              !eligible.includes(p),
-          ),
-        );
+      const remaining = eligible.filter((p) => !selected.includes(p));
       while (selected.length < candidateCount && remaining.length > 0) {
         const idx = Math.floor(Math.random() * remaining.length);
         selected.push(remaining.splice(idx, 1)[0]);
@@ -439,5 +429,35 @@ export class ArenaSystem {
    */
   getChallengeConfig(): ChallengeConfig {
     return { ...this.challengeConfig };
+  }
+
+  // ── 存档序列化 ──────────────────────────
+
+  /**
+   * 序列化玩家竞技场状态
+   */
+  serialize(playerState: ArenaPlayerState): import('../../core/pvp/pvp.types').ArenaSaveData {
+    return {
+      version: ARENA_SAVE_VERSION,
+      state: { ...playerState },
+      season: {
+        seasonId: '',
+        startTime: 0,
+        endTime: 0,
+        currentDay: 1,
+        isSettled: false,
+      },
+      highestRankId: playerState.rankId,
+    };
+  }
+
+  /**
+   * 反序列化恢复玩家竞技场状态
+   */
+  deserialize(data: import('../../core/pvp/pvp.types').ArenaSaveData): ArenaPlayerState {
+    if (!data || data.version !== ARENA_SAVE_VERSION) {
+      return createDefaultArenaPlayerState();
+    }
+    return { ...data.state };
   }
 }

@@ -47,7 +47,7 @@ function sumResources(r: Resources): number {
 // 1. 6档衰减系数
 // ═══════════════════════════════════════════════
 
-describe('OfflineRewardEngine — 6档衰减系数', () => {
+describe('OfflineRewardEngine — 5档衰减系数', () => {
   it('0~2h: 100%效率', () => {
     // 1小时 = 3600秒，全在第一档
     const details = calculateTierDetails(3600, RATES);
@@ -58,8 +58,8 @@ describe('OfflineRewardEngine — 6档衰减系数', () => {
     expect(details[0].earned.grain).toBeCloseTo(36000, 1);
   });
 
-  it('2~4h: 80%效率', () => {
-    // 3小时 = 10800秒，跨越 tier1(0~2h) + tier2(2~4h)
+  it('2~8h: 80%效率', () => {
+    // 3小时 = 10800秒，跨越 tier1(0~2h) + tier2(2~8h)
     const details = calculateTierDetails(10800, RATES);
     expect(details).toHaveLength(2);
     expect(details[0].efficiency).toBe(1.0);
@@ -68,44 +68,36 @@ describe('OfflineRewardEngine — 6档衰减系数', () => {
     expect(details[1].seconds).toBe(3600); // 2~3h
   });
 
-  it('4~8h: 60%效率', () => {
-    // 6小时 = 21600秒，跨越 tier1 + tier2 + tier3(4~8h)
-    const details = calculateTierDetails(21600, RATES);
+  it('8~24h: 60%效率', () => {
+    // 12小时 = 43200秒，跨越 tier1(0~2h) + tier2(2~8h) + tier3(8~24h)
+    const details = calculateTierDetails(43200, RATES);
     expect(details).toHaveLength(3);
     expect(details[2].efficiency).toBe(0.6);
-    expect(details[2].seconds).toBe(7200); // 4~6h
+    expect(details[2].seconds).toBe(14400); // 8~12h
   });
 
-  it('8~24h: 40%效率', () => {
-    // 12小时 = 43200秒
-    const details = calculateTierDetails(43200, RATES);
+  it('24~48h: 40%效率', () => {
+    // 36小时 = 129600秒，跨越 tier1~tier3 + tier4(24~48h)
+    const details = calculateTierDetails(129600, RATES);
     expect(details).toHaveLength(4);
     expect(details[3].efficiency).toBe(0.4);
-    expect(details[3].seconds).toBe(14400); // 8~12h
+    expect(details[3].seconds).toBe(43200); // 24~36h
   });
 
-  it('24~48h: 25%效率', () => {
-    // 36小时 = 129600秒
-    const details = calculateTierDetails(129600, RATES);
+  it('48~72h: 25%效率', () => {
+    // 60小时 = 216000秒，跨越 tier1~tier4 + tier5(48~72h)
+    const details = calculateTierDetails(216000, RATES);
     expect(details).toHaveLength(5);
     expect(details[4].efficiency).toBe(0.25);
-    expect(details[4].seconds).toBe(43200); // 24~36h
-  });
-
-  it('48~72h: 15%效率', () => {
-    // 60小时 = 216000秒
-    const details = calculateTierDetails(216000, RATES);
-    expect(details).toHaveLength(6);
-    expect(details[5].efficiency).toBe(0.15);
-    expect(details[5].seconds).toBe(43200); // 48~60h
+    expect(details[4].seconds).toBe(43200); // 48~60h
   });
 
   it('超过72h封顶到72h', () => {
     // 100小时
     const details = calculateTierDetails(MAX_OFFLINE_SECONDS, RATES);
-    expect(details).toHaveLength(6);
+    expect(details).toHaveLength(5);
     // 最后一档 48~72h = 86400秒
-    expect(details[5].seconds).toBe(86400);
+    expect(details[4].seconds).toBe(86400);
   });
 
   it('0秒离线无收益', () => {

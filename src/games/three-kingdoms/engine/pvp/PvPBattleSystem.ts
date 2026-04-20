@@ -319,4 +319,40 @@ export class PvPBattleSystem {
   getRankLevelCount(): number {
     return RANK_LEVELS.length;
   }
+
+  // ── 存档序列化 ──────────────────────────
+
+  /**
+   * 序列化回放数据
+   */
+  serializeReplays(playerState: ArenaPlayerState): {
+    replays: BattleReplay[];
+    score: number;
+    rankId: string;
+    arenaCoins: number;
+  } {
+    return {
+      replays: [...playerState.replays],
+      score: playerState.score,
+      rankId: playerState.rankId,
+      arenaCoins: playerState.arenaCoins,
+    };
+  }
+
+  /**
+   * 反序列化回放数据
+   */
+  deserializeReplays(data: {
+    replays: BattleReplay[];
+    score: number;
+    rankId: string;
+    arenaCoins: number;
+  }): Partial<ArenaPlayerState> {
+    return {
+      replays: data.replays ?? [],
+      score: data.score ?? 0,
+      rankId: data.rankId ?? 'BRONZE_V',
+      arenaCoins: data.arenaCoins ?? 0,
+    };
+  }
 }

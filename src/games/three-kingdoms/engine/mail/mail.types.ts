@@ -28,12 +28,12 @@ export type MailPriority = 'low' | 'normal' | 'high' | 'urgent';
 /**
  * 邮件状态（v9.0 四态管理）
  *
- * unread:       未读
- * read:         已读（无附件或附件未领取）
- * claimed:      已领取（附件已领取）
- * expired:      已过期
+ * unread:         未读
+ * read_unclaimed: 已读未领（有附件未领取）
+ * read_claimed:   已读已领（附件已领取或无附件）
+ * expired:        已过期
  */
-export type MailStatus = 'unread' | 'read' | 'claimed' | 'expired';
+export type MailStatus = 'unread' | 'read_unclaimed' | 'read_claimed' | 'expired';
 
 // ─────────────────────────────────────────────
 // 2. 邮件附件
@@ -174,7 +174,7 @@ export const MAIL_CATEGORY_LABELS: Record<MailCategory, string> = {
 
 /** 邮件状态标签 */
 export const MAIL_STATUS_LABELS: Record<MailStatus, string> = {
-  unread: '未读', read: '已读', claimed: '已领取', expired: '已过期',
+  unread: '未读', read_unclaimed: '已读未领', read_claimed: '已读已领', expired: '已过期',
 };
 
 /** 邮件优先级标签 */
