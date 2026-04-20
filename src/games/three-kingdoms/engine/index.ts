@@ -248,6 +248,96 @@ export type {
   WorldMapState,
   WorldMapSaveData,
 } from '../core/map';
+
+// ──────────────────────────────────────────────
+// v8.0 商贸繁荣
+// ──────────────────────────────────────────────
+
+// 货币域
+export { CurrencySystem } from './currency/CurrencySystem';
+export type {
+  CurrencyType,
+  CurrencyWallet,
+  CurrencySaveData,
+  CurrencyShortage,
+  ExchangeRequest,
+  ExchangeResult,
+  ExchangeRate,
+  SpendPriorityConfig,
+} from '../core/currency/currency.types';
+export {
+  CURRENCY_TYPES,
+  CURRENCY_LABELS,
+  CURRENCY_COLORS,
+  CURRENCY_ICONS,
+  CURRENCY_IS_PAID,
+} from '../core/currency/currency.types';
+
+// 商店域
+export { ShopSystem } from './shop/ShopSystem';
+export type {
+  ShopType,
+  GoodsCategory,
+  GoodsRarity,
+  GoodsDef,
+  GoodsItem,
+  BuyRequest,
+  BuyResult,
+  BuyValidation,
+  ConfirmLevel,
+  ShopState,
+  ShopSaveData,
+  RestockResult,
+  RestockType,
+  GoodsFilter,
+  DiscountConfig,
+  DiscountType,
+} from '../core/shop/shop.types';
+export {
+  SHOP_TYPES,
+  SHOP_TYPE_LABELS,
+  GOODS_CATEGORY_LABELS,
+  GOODS_RARITY_LABELS,
+} from '../core/shop/shop.types';
+
+// 贸易域
+export { TradeSystem } from './trade/TradeSystem';
+export type { TradeCurrencyOps } from './trade/TradeSystem';
+export { CaravanSystem } from './trade/CaravanSystem';
+export type { RouteInfoProvider } from './trade/CaravanSystem';
+export type {
+  CityId,
+  TradeRouteId,
+  TradeRouteDef,
+  TradeRouteState,
+  TradeGoodsId,
+  TradeGoodsDef,
+  TradeGoodsPrice,
+  TradeProfit,
+  Caravan,
+  CaravanAttributes,
+  CaravanStatus,
+  CaravanDispatchRequest,
+  CaravanDispatchResult,
+  GuardMutexCheck,
+  GuardDispatchResult,
+  TradeEventType,
+  TradeEventDef,
+  TradeEventInstance,
+  TradeEventOption,
+  ProsperityLevel,
+  ProsperityTier,
+  NpcMerchantType,
+  NpcMerchantDef,
+  NpcMerchantInstance,
+  TradeSaveData,
+} from '../core/trade/trade.types';
+export {
+  CITY_IDS,
+  CITY_LABELS,
+  CARAVAN_STATUS_LABELS,
+  PROSPERITY_LABELS,
+} from '../core/trade/trade.types';
 export {
   MAP_SIZE,
   GRID_CONFIG,
