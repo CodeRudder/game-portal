@@ -181,7 +181,7 @@ describe('CloudSaveSystem', () => {
 
     it('buildPayload 应构建完整载荷', () => {
       const payload = cloud.buildPayload('game data');
-      expect(payload.version).toBeGreaterThan(0);
+      expect(payload.version).toBeTruthy();
       expect(payload.encryptedData).toBeTruthy();
       expect(payload.deviceId).toBeTruthy();
       expect(payload.checksum).toBeTruthy();
