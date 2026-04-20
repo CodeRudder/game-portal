@@ -1,16 +1,16 @@
 /**
- * 离线收益域 — 类型定义
+ * 离线收益域 — 核心类型定义
  *
  * v9.0 离线收益深化模块的全部类型
  * 规则：只有 interface/type/const，零逻辑
  *
- * @module engine/offline/offline.types
+ * @module core/offline/offline-reward.types
  */
 
-import type { Resources, ProductionRate } from '../../shared/types';
+import type { Resources, ProductionRate, ResourceCap } from '../../shared/types';
 
 // ─────────────────────────────────────────────
-// 1. 6档衰减快照
+// 1. 6档衰减
 // ─────────────────────────────────────────────
 
 /** 衰减档位定义 */
@@ -27,6 +27,22 @@ export interface DecayTier {
   label: string;
 }
 
+/** 单档位明细 */
+export interface TierDetail {
+  /** 档位ID */
+  tierId: string;
+  /** 该档位秒数 */
+  seconds: number;
+  /** 该档位效率 */
+  efficiency: number;
+  /** 该档位收益 */
+  earned: Resources;
+}
+
+// ─────────────────────────────────────────────
+// 2. 离线快照
+// ─────────────────────────────────────────────
+
 /** 离线快照数据 */
 export interface OfflineSnapshot {
   /** 快照时间戳（ms） */
@@ -41,32 +57,6 @@ export interface OfflineSnapshot {
   overallEfficiency: number;
   /** 是否封顶 */
   isCapped: boolean;
-}
-
-/** 单档位明细 */
-export interface TierDetail {
-  /** 档位ID */
-  tierId: string;
-  /** 该档位秒数 */
-  seconds: number;
-  /** 该档位效率 */
-  efficiency: number;
-  /** 该档位收益 */
-  earned: Resources;
-}
-
-// ─────────────────────────────────────────────
-// 2. 加成系数
-// ─────────────────────────────────────────────
-
-/** 加成来源 */
-export interface BonusSources {
-  /** 科技加成（0~1） */
-  tech?: number;
-  /** VIP加成（0~1） */
-  vip?: number;
-  /** 声望加成（0~1） */
-  reputation?: number;
 }
 
 // ─────────────────────────────────────────────
@@ -101,107 +91,21 @@ export interface DoubleResult {
 }
 
 // ─────────────────────────────────────────────
-// 3. 回归面板
+// 4. 加成系数
 // ─────────────────────────────────────────────
 
-/** 回归面板数据 */
-export interface ReturnPanelData {
-  /** 离线时长（秒） */
-  offlineSeconds: number;
-  /** 格式化的离线时长 */
-  formattedTime: string;
-  /** 综合效率百分比 */
-  efficiencyPercent: number;
-  /** 各档位明细 */
-  tierDetails: TierDetail[];
-  /** 总收益 */
-  totalEarned: Resources;
-  /** 是否封顶 */
-  isCapped: boolean;
-  /** 可用翻倍选项 */
-  availableDoubles: DoubleRequest[];
-  /** 离线加速道具列表 */
-  boostItems: OfflineBoostItem[];
+/** 加成来源 */
+export interface BonusSources {
+  /** 科技加成（0~1） */
+  tech?: number;
+  /** VIP加成（0~1） */
+  vip?: number;
+  /** 声望加成（0~1） */
+  reputation?: number;
 }
 
 // ─────────────────────────────────────────────
-// 4. 离线加速道具
-// ─────────────────────────────────────────────
-
-/** 离线加速道具定义 */
-export interface OfflineBoostItem {
-  /** 道具ID */
-  id: string;
-  /** 道具名称 */
-  name: string;
-  /** 加速小时数 */
-  boostHours: number;
-  /** 道具数量 */
-  count: number;
-  /** 道具描述 */
-  description: string;
-}
-
-/** 加速道具使用结果 */
-export interface BoostUseResult {
-  /** 是否成功 */
-  success: boolean;
-  /** 增加的秒数 */
-  addedSeconds: number;
-  /** 增加的收益 */
-  addedEarned: Resources;
-  /** 剩余道具数量 */
-  remainingCount: number;
-  /** 失败原因 */
-  reason?: string;
-}
-
-// ─────────────────────────────────────────────
-// 5. 离线贸易行为
-// ─────────────────────────────────────────────
-
-/** 离线贸易事件 */
-export interface OfflineTradeEvent {
-  /** 事件ID */
-  id: string;
-  /** 贸易路线 */
-  routeId: string;
-  /** 发起时间戳 */
-  startTime: number;
-  /** 完成时间戳 */
-  completeTime: number;
-  /** 预估收益 */
-  estimatedProfit: Resources;
-}
-
-/** 离线贸易汇总 */
-export interface OfflineTradeSummary {
-  /** 完成的贸易次数 */
-  completedTrades: number;
-  /** 总贸易收益 */
-  totalProfit: Resources;
-  /** 贸易事件列表 */
-  events: OfflineTradeEvent[];
-}
-
-// ─────────────────────────────────────────────
-// 6. VIP离线加成
-// ─────────────────────────────────────────────
-
-/** VIP离线加成配置 */
-export interface VipOfflineBonus {
-  /** VIP等级 */
-  vipLevel: number;
-  /** 离线效率加成（0~1） */
-  efficiencyBonus: number;
-  /** 离线时长加成（小时） */
-  extraHours: number;
-  /** 翻倍次数上限（每日） */
-  dailyDoubleLimit: number;
-}
-
-// ─────────────────────────────────────────────
-// 7. 离线效率修正系数
+// 5. 系统效率修正
 // ─────────────────────────────────────────────
 
 /** 系统级效率修正 */
@@ -217,7 +121,7 @@ export interface SystemEfficiencyModifier {
 }
 
 // ─────────────────────────────────────────────
-// 8. 收益上限与资源保护
+// 6. 资源溢出
 // ─────────────────────────────────────────────
 
 /** 溢出策略 */
@@ -239,23 +143,103 @@ export interface OverflowRule {
 export interface ResourceProtection {
   /** 资源类型 */
   resourceType: string;
-  /** 保护比例（0~1，被掠夺/消耗时保留的比例） */
+  /** 保护比例（0~1） */
   protectionRatio: number;
   /** 保护下限（绝对值） */
   protectionFloor: number;
 }
 
+// ─────────────────────────────────────────────
+// 7. 回归面板
+// ─────────────────────────────────────────────
+
+/** 离线加速道具 */
+export interface OfflineBoostItem {
+  id: string;
+  name: string;
+  boostHours: number;
+  count: number;
+  description: string;
+}
+
+/** 加速道具使用结果 */
+export interface BoostUseResult {
+  success: boolean;
+  addedSeconds: number;
+  addedEarned: Resources;
+  remainingCount: number;
+  reason?: string;
+}
+
+/** 回归面板数据 */
+export interface ReturnPanelData {
+  offlineSeconds: number;
+  formattedTime: string;
+  efficiencyPercent: number;
+  tierDetails: TierDetail[];
+  totalEarned: Resources;
+  isCapped: boolean;
+  availableDoubles: DoubleRequest[];
+  boostItems: OfflineBoostItem[];
+}
+
+// ─────────────────────────────────────────────
+// 8. VIP加成
+// ─────────────────────────────────────────────
+
+/** VIP离线加成配置 */
+export interface VipOfflineBonus {
+  vipLevel: number;
+  efficiencyBonus: number;
+  extraHours: number;
+  dailyDoubleLimit: number;
+}
+
+// ─────────────────────────────────────────────
+// 9. 离线贸易
+// ─────────────────────────────────────────────
+
+/** 离线贸易事件 */
+export interface OfflineTradeEvent {
+  id: string;
+  routeId: string;
+  startTime: number;
+  completeTime: number;
+  estimatedProfit: Resources;
+}
+
+/** 离线贸易汇总 */
+export interface OfflineTradeSummary {
+  completedTrades: number;
+  totalProfit: Resources;
+  events: OfflineTradeEvent[];
+}
+
+// ─────────────────────────────────────────────
+// 10. 完整结果
+// ─────────────────────────────────────────────
+
+/** 离线收益完整计算结果（v9.0） */
+export interface OfflineRewardResultV9 {
+  snapshot: OfflineSnapshot;
+  vipBoostedEarned: Resources;
+  systemModifiedEarned: Resources;
+  cappedEarned: Resources;
+  overflowResources: Resources;
+  tradeSummary: OfflineTradeSummary | null;
+  panelData: ReturnPanelData;
+}
+
+// ─────────────────────────────────────────────
+// 11. 存档
+// ─────────────────────────────────────────────
+
 /** 仓库扩容配置 */
 export interface WarehouseExpansion {
-  /** 资源类型 */
   resourceType: string;
-  /** 基础容量 */
   baseCapacity: number;
-  /** 每级增量 */
   perLevelIncrease: number;
-  /** 最大等级 */
   maxLevel: number;
-  /** 当前等级 */
   currentLevel: number;
 }
 
@@ -268,46 +252,13 @@ export interface ExpansionResult {
   reason?: string;
 }
 
-// ─────────────────────────────────────────────
-// 9. 离线收益完整结果
-// ─────────────────────────────────────────────
-
-/** 离线收益完整计算结果（v9.0） */
-export interface OfflineRewardResultV9 {
-  /** 基础快照 */
-  snapshot: OfflineSnapshot;
-  /** VIP加成后收益 */
-  vipBoostedEarned: Resources;
-  /** 系统修正后收益 */
-  systemModifiedEarned: Resources;
-  /** 应用上限后收益 */
-  cappedEarned: Resources;
-  /** 溢出资源（被丢弃/转换的） */
-  overflowResources: Resources;
-  /** 离线贸易汇总 */
-  tradeSummary: OfflineTradeSummary | null;
-  /** 回归面板数据 */
-  panelData: ReturnPanelData;
-}
-
-// ─────────────────────────────────────────────
-// 10. 存档数据
-// ─────────────────────────────────────────────
-
 /** 离线系统存档数据 */
 export interface OfflineSaveData {
-  /** 上次离线时间戳 */
   lastOfflineTime: number;
-  /** VIP加成使用记录 */
   vipDoubleUsedToday: number;
-  /** vipDouble重置日期 */
   vipDoubleResetDate: string;
-  /** 加速道具库存 */
   boostItems: Record<string, number>;
-  /** 离线贸易进行中事件 */
   activeTradeEvents: OfflineTradeEvent[];
-  /** 仓库扩容等级 */
   warehouseLevels: Record<string, number>;
-  /** 版本号 */
   version: number;
 }

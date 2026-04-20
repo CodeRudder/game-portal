@@ -116,9 +116,10 @@ describe('trade-helpers', () => {
         goodsId: 'test', currentPrice: 100, lastPrice: 100,
         consecutiveDirection: 0, lastRefreshTime: 0,
       };
-      refreshSinglePrice(price, def, Date.now());
+      const now = Date.now();
+      refreshSinglePrice(price, def, now);
       expect(price.lastPrice).toBe(100);
-      expect(price.lastRefreshTime).toBe(Date.now());
+      expect(price.lastRefreshTime).toBe(now);
     });
 
     it('价格不低于基础价50%', () => {
