@@ -21,7 +21,6 @@ import {
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import './TechNodeDetailModal.css';
-import './TechNodeDetailModal.mobile.css';
 
 // ─────────────────────────────────────────────
 // Props

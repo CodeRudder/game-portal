@@ -32,7 +32,6 @@ import {
 import TechNodeDetailModal from './TechNodeDetailModal';
 import TechResearchPanel from './TechResearchPanel';
 import './TechTab.css';
-import './TechTab.mobile.css';
 
 // ─────────────────────────────────────────────
 // Props

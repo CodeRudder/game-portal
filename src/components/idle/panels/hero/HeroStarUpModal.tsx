@@ -24,7 +24,6 @@ import type {
 } from '@/games/three-kingdoms/engine/hero/star-up.types';
 import { MAX_STAR_LEVEL } from '@/games/three-kingdoms/engine/hero/star-up-config';
 import './HeroStarUpModal.css';
-import './HeroStarUpModal.mobile.css';
 
 // ─────────────────────────────────────────────
 // Props

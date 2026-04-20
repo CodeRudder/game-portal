@@ -80,6 +80,90 @@ export interface FusionTechSaveData {
 }
 
 // ─────────────────────────────────────────────
+// 3. 多级跨路线前置条件（v5.0 扩展）
+// ─────────────────────────────────────────────
+
+/**
+ * 多级跨路线前置条件组
+ *
+ * 支持更复杂的跨路线解锁条件：
+ * - 每组条件指定一条路线和该路线需完成的节点列表
+ * - 所有组都满足时，融合科技解锁
+ *
+ * @example
+ * ```ts
+ * const prereq: MultiPathPrerequisite = {
+ *   groups: [
+ *     { path: 'military', requiredNodes: ['mil_t2_charge', 'mil_t3_blitz'], minCompleted: 1 },
+ *     { path: 'economy', requiredNodes: ['eco_t2_irrigation', 'eco_t3_granary'], minCompleted: 1 },
+ *   ],
+ * };
+ * ```
+ */
+export interface MultiPathPrerequisite {
+  /** 前置条件组 */
+  groups: PathPrerequisiteGroup[];
+}
+
+/** 单条路线的前置条件组 */
+export interface PathPrerequisiteGroup {
+  /** 路线 */
+  path: TechPath;
+  /** 该路线需完成的节点 ID 列表 */
+  requiredNodes: string[];
+  /** 最少需要完成的节点数量 */
+  minCompleted: number;
+}
+
+/** 前置条件检查结果（详细） */
+export interface PrerequisiteCheckResult {
+  /** 是否全部满足 */
+  met: boolean;
+  /** 各组检查详情 */
+  groups: PathGroupCheckResult[];
+}
+
+/** 单组检查结果 */
+export interface PathGroupCheckResult {
+  /** 路线 */
+  path: TechPath;
+  /** 需要的节点 */
+  requiredNodes: string[];
+  /** 已完成的节点 */
+  completedNodes: string[];
+  /** 最少需要完成数 */
+  minCompleted: number;
+  /** 实际完成数 */
+  actualCompleted: number;
+  /** 本组是否满足 */
+  met: boolean;
+}
+
+// ─────────────────────────────────────────────
+// 4. 融合科技联动效果（v5.0 扩展）
+// ─────────────────────────────────────────────
+
+/** 融合科技联动效果 */
+export interface FusionLinkEffect {
+  /** 联动效果唯一 ID */
+  id: string;
+  /** 关联的融合科技 ID */
+  fusionTechId: string;
+  /** 联动目标系统 */
+  target: 'building' | 'hero' | 'resource';
+  /** 联动目标子类型 */
+  targetSub: string;
+  /** 效果描述 */
+  description: string;
+  /** 效果值 */
+  value: number;
+  /** 是否解锁新功能 */
+  unlockFeature?: boolean;
+  /** 解锁功能描述 */
+  unlockDescription?: string;
+}
+
+// ─────────────────────────────────────────────
 // 2. 融合科技配置数据
 // ─────────────────────────────────────────────
 

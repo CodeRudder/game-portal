@@ -437,3 +437,45 @@
   color: var(--tk-gold);
   font-weight: 600;
 }
+
+@media (max-width: 480px) {
+  .tk-starup-overlay {
+    align-items: flex-end;
+  }
+
+  .tk-starup-modal {
+    width: 100%;
+    max-width: 100vw;
+    max-height: 80vh;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .tk-starup-header {
+    padding: 12px 14px;
+  }
+
+  .tk-starup-title {
+    font-size: 15px;
+  }
+
+  .tk-starup-body {
+    padding: 12px 14px;
+  }
+
+  .tk-starup-star {
+    font-size: 20px;
+  }
+
+  .tk-starup-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tk-starup-actions {
+    padding: 12px 14px;
+  }
+
+  .tk-starup-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}

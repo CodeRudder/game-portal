@@ -21,9 +21,13 @@ import type {
   FusionPrerequisite,
   FusionTechSystemState,
   FusionTechSaveData,
+  PrerequisiteCheckResult,
+  PathGroupCheckResult,
+  FusionLinkEffect,
 } from './fusion-tech.types';
 import { FUSION_TECH_DEFS, FUSION_TECH_MAP } from './fusion-tech.types';
 import type { TechTreeSystem } from './TechTreeSystem';
+import type { TechLinkSystem } from './TechLinkSystem';
 
 // ─────────────────────────────────────────────
 // 辅助函数

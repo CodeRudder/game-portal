@@ -9,6 +9,7 @@ export { TechEffectSystem } from './TechEffectSystem';
 export { FusionTechSystem } from './FusionTechSystem';
 export { TechLinkSystem } from './TechLinkSystem';
 export { TechDetailProvider } from './TechDetailProvider';
+export { TechOfflineSystem } from './TechOfflineSystem';
 
 export type {
   EffectCategory,
@@ -94,3 +95,19 @@ export type {
   LinkEffectDisplay,
   TechDetail,
 } from './TechDetailProvider';
+
+// ── 离线研究类型 ──
+export type {
+  EfficiencyTier,
+  OfflineTechProgress,
+  EfficiencyCurvePoint,
+  OfflineResearchPanel,
+  OfflineResearchSaveData,
+  ResearchSnapshotItem,
+  OfflineResearchState,
+} from '../../core/tech/offline-research.types';
+
+export {
+  OFFLINE_RESEARCH_DECAY_TIERS,
+  MAX_OFFLINE_RESEARCH_SECONDS,
+} from '../../core/tech/offline-research.types';
