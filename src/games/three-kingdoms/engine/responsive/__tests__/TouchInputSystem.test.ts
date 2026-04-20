@@ -282,7 +282,7 @@ describe('TouchInputSystem', () => {
     });
 
     describe('防误触', () => {
-      it('快速连续点击只响应第一次', () => {
+      it('快速连续点击三次，第三次被防误触抑制', () => {
         const gestures: any[] = [];
         system.onGesture((e) => gestures.push(e));
 
@@ -291,15 +291,22 @@ describe('TouchInputSystem', () => {
         advanceTime(100);
         system.handleTouchEnd(100, 100);
 
-        // 立即第二次点击（在防误触间隔内）
+        // 第二次快速点击 → 构成DoubleTap
+        advanceTime(100);
+        system.handleTouchStart(100, 100);
+        advanceTime(100);
+        system.handleTouchEnd(100, 100);
+
+        // 第三次快速点击（在防误触间隔内，不应产生手势）
         advanceTime(50); // <300ms
         system.handleTouchStart(100, 100);
         advanceTime(100);
         system.handleTouchEnd(100, 100);
 
-        // 只应该有一次Tap
-        expect(gestures.length).toBe(1);
+        // 应该有Tap + DoubleTap，第三次点击被防误触抑制
+        expect(gestures.length).toBe(2);
         expect(gestures[0].type).toBe(GestureType.Tap);
+        expect(gestures[1].type).toBe(GestureType.DoubleTap);
       });
 
       it('超过防误触间隔后应正常响应', () => {

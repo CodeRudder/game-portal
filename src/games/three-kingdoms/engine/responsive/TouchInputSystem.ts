@@ -308,13 +308,8 @@ export class TouchInputSystem {
 
   private _recognizeTapOrDoubleTap(start: TouchPoint, end: TouchPoint, duration: number): void {
     const now = Date.now();
-    // 防误触期间：静默忽略（不发出手势，也不检测双击）
-    if (this.isBounceProtected()) {
-      this._lastTapTime = now;
-      this._lastTapPoint = end;
-      return;
-    }
-    // 检查双击（双击不受防误触影响，因为上面已过滤）
+
+    // 优先检测双击（双击检测不受防误触影响）
     if (
       this._lastTapPoint && this._lastTapTime > 0 &&
       now - this._lastTapTime < GESTURE_THRESHOLDS.doubleTapMaxInterval &&
@@ -323,11 +318,20 @@ export class TouchInputSystem {
       this._emitGesture({ type: GestureType.DoubleTap, startPoint: start, endPoint: end, distance: 0, duration, scale: 1 }, true);
       this._lastTapTime = 0;
       this._lastTapPoint = null;
-    } else {
-      this._emitGesture({ type: GestureType.Tap, startPoint: start, endPoint: end, distance: 0, duration, scale: 1 });
+      return;
+    }
+
+    // 防误触期间：静默忽略（不发出Tap手势，但记录本次点击以备后续双击检测）
+    if (this.isBounceProtected()) {
       this._lastTapTime = now;
       this._lastTapPoint = end;
+      return;
     }
+
+    // 普通单击
+    this._emitGesture({ type: GestureType.Tap, startPoint: start, endPoint: end, distance: 0, duration, scale: 1 });
+    this._lastTapTime = now;
+    this._lastTapPoint = end;
   }
 
   private _emitGesture(event: GestureEvent, skipBounce = false): void {
