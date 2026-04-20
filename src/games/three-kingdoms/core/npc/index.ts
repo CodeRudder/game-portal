@@ -4,6 +4,9 @@
  * @module core/npc
  */
 
+// 从 map 模块重新导出 NPC 系统依赖的地图类型
+export type { GridPosition, RegionId } from '../map';
+
 // 类型导出
 export type {
   NPCProfession,
@@ -82,3 +85,30 @@ export {
   BOND_SKILL_TRAVELER,
   BOND_SKILLS,
 } from './favorability.types';
+
+// v7.0 巡逻路径类型导出
+export type {
+  PatrolPathId,
+  PatrolPath,
+  NPCPatrolState,
+  PatrolAssignment,
+  NPCSpawnTemplate,
+  NPCSpawnConfig,
+  NPCSpawnRecord,
+  SpawnResult,
+  PatrolSystemState,
+  PatrolSaveData,
+} from './patrol.types';
+
+// v7.0 赠送系统类型导出
+export type {
+  ItemId,
+  ItemRarity,
+  ItemCategory,
+  ItemDef,
+  NPCPreference,
+  GiftRequest,
+  GiftResult,
+  GiftSystemConfig,
+  GiftSaveData,
+} from './gift.types';
