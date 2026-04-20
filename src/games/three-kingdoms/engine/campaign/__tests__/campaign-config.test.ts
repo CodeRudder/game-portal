@@ -21,8 +21,8 @@ import type { Chapter, Stage, StageType } from '../campaign.types';
 // ─────────────────────────────────────────────
 
 describe('campaign-config 章节数据', () => {
-  it('应有3个章节', () => {
-    expect(ALL_CHAPTERS).toHaveLength(3);
+  it('应有6个章节', () => {
+    expect(ALL_CHAPTERS).toHaveLength(6);
   });
 
   it('章节应按 order 排序', () => {
@@ -69,9 +69,9 @@ describe('campaign-config 关卡数据', () => {
     }
   });
 
-  it('总关卡数应为24', () => {
+  it('总关卡数应为48', () => {
     const total = ALL_CHAPTERS.reduce((sum, ch) => sum + ch.stages.length, 0);
-    expect(total).toBe(24);
+    expect(total).toBe(48);
   });
 
   it('关卡ID格式正确', () => {
@@ -182,10 +182,10 @@ describe('campaign-config 关卡数据', () => {
     }
   });
 
-  it('非BOSS关三星倍率应为1.5', () => {
+  it('非BOSS关三星倍率应为1.5或1.8', () => {
     for (const ch of ALL_CHAPTERS) {
       for (const st of ch.stages.slice(0, -1)) {
-        expect(st.threeStarBonusMultiplier).toBe(1.5);
+        expect([1.5, 1.8]).toContain(st.threeStarBonusMultiplier);
       }
     }
   });
@@ -264,6 +264,6 @@ describe('campaign-config 查询函数', () => {
         ids.add(st.id);
       }
     }
-    expect(ids.size).toBe(24);
+    expect(ids.size).toBe(48);
   });
 });
