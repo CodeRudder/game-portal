@@ -44,20 +44,14 @@ import {
 import { UltimateSkillSystem } from './UltimateSkillSystem';
 import { BattleSpeedController } from './BattleSpeedController';
 
-// ─────────────────────────────────────────────
 // 工具函数
-// ─────────────────────────────────────────────
 
-/**
- * 生成唯一ID
- */
+/** 生成唯一ID */
 function generateBattleId(): string {
   return `battle_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// ─────────────────────────────────────────────
 // BattleEngine
-// ─────────────────────────────────────────────
 
 /**
  * 战斗引擎
@@ -281,9 +275,7 @@ export class BattleEngine implements IBattleEngine {
     this.ultimateSystem.setEnabled(mode === BattleMode.SEMI_AUTO);
   }
 
-  /**
-   * 获取当前战斗模式
-   */
+  /** 获取当前战斗模式 */
   getBattleMode(): BattleMode {
     return this.battleMode;
   }
@@ -302,9 +294,7 @@ export class BattleEngine implements IBattleEngine {
     this.ultimateSystem.confirmUltimate(unitId, skillId);
   }
 
-  /**
-   * 取消大招释放（半自动模式）
-   */
+  /** 取消大招释放（半自动模式） */
   cancelUltimate(): void {
     this.ultimateSystem.cancelUltimate();
   }
@@ -318,16 +308,12 @@ export class BattleEngine implements IBattleEngine {
     this.ultimateSystem.registerHandler(handler);
   }
 
-  /**
-   * 获取大招时停系统（用于高级用法）
-   */
+  /** 获取大招时停系统（用于高级用法） */
   getUltimateSystem(): UltimateSkillSystem {
     return this.ultimateSystem;
   }
 
-  /**
-   * 检查大招时停是否暂停中
-   */
+  /** 检查大招时停是否暂停中 */
   isTimeStopPaused(): boolean {
     return this.ultimateSystem.isPaused();
   }
@@ -345,30 +331,22 @@ export class BattleEngine implements IBattleEngine {
     this.speedController.setSpeed(speed);
   }
 
-  /**
-   * 获取当前战斗速度状态
-   */
+  /** 获取当前战斗速度状态 */
   getSpeedState(): BattleSpeedState {
     return this.speedController.getSpeedState();
   }
 
-  /**
-   * 获取战斗加速控制器（用于高级用法）
-   */
+  /** 获取战斗加速控制器（用于高级用法） */
   getSpeedController(): BattleSpeedController {
     return this.speedController;
   }
 
-  /**
-   * 获取调整后的回合间隔（ms）
-   */
+  /** 获取调整后的回合间隔（ms） */
   getAdjustedTurnInterval(): number {
     return this.speedController.getAdjustedTurnInterval();
   }
 
-  /**
-   * 获取动画速度缩放系数
-   */
+  /** 获取动画速度缩放系数 */
   getAnimationSpeedScale(): number {
     return this.speedController.getAnimationSpeedScale();
   }
@@ -377,9 +355,7 @@ export class BattleEngine implements IBattleEngine {
   // 回合内部流程
   // ─────────────────────────────────────────
 
-  /**
-   * 回合结束处理
-   */
+  /** 回合结束处理 */
   private endTurn(state: BattleState): void {
     this.turnExecutor.endTurn(state);
 
@@ -428,9 +404,7 @@ export class BattleEngine implements IBattleEngine {
   // 战斗统计
   // ─────────────────────────────────────────
 
-  /**
-   * 计算战斗统计数据
-   */
+  /** 计算战斗统计数据 */
   private calculateBattleStats(state: BattleState): {
     allyTotalDamage: number;
     enemyTotalDamage: number;
@@ -477,9 +451,7 @@ export class BattleEngine implements IBattleEngine {
   // 辅助方法
   // ─────────────────────────────────────────
 
-  /**
-   * 生成战斗摘要
-   */
+  /** 生成战斗摘要 */
   private generateSummary(
     outcome: BattleOutcome,
     stars: StarRating,
@@ -497,9 +469,7 @@ export class BattleEngine implements IBattleEngine {
   }
 }
 
-// ─────────────────────────────────────────────
 // 一键布阵（独立方法）
-// ─────────────────────────────────────────────
 
 /** 布阵结果 */
 export interface AutoFormationResult {

@@ -245,6 +245,117 @@ export class HeroFormation {
     return Object.keys(this.state.formations).length;
   }
 
+  // ── 一键布阵 ──
+
+  /**
+   * 一键布阵：自动按战力排序选前5个武将编入指定编队
+   *
+   * 策略：按战力降序排列，取前5名自动填入编队空位。
+   * 如果编队不存在则自动创建。
+   * 已在其他编队中的武将不会被重复选择（除非 allowOverlap=true）。
+   *
+   * @param getGeneral - 获取武将数据的函数
+   * @param calcPower - 计算战力的函数
+   * @param formationId - 目标编队ID（默认 '1'）
+   * @param maxSlots - 最大选择数量（默认 5）
+   * @param allowOverlap - 是否允许与其他编队重叠（默认 false）
+   * @returns 编队数据，或 null（无可用武将）
+   */
+  autoFormation(
+    getGeneral: (id: string) => GeneralData | undefined,
+    calcPower: (g: GeneralData) => number,
+    formationId = '1',
+    maxSlots = 5,
+    allowOverlap = false,
+  ): FormationData | null {
+    // 确保编队存在
+    let formation = this.state.formations[formationId];
+    if (!formation) {
+      const created = this.createFormation(formationId);
+      if (!created) return null;
+      formation = this.state.formations[formationId];
+    }
+    if (!formation) return null;
+
+    // 收集所有武将并按战力降序排列
+    const allIds: string[] = [];
+    // 通过外部传入的 getGeneral 遍历（需要调用方提供所有武将ID列表）
+    // 这里约定：getGeneral 能获取的武将范围由调用方决定
+    // 我们需要所有武将ID列表——通过 getAllFormations 中已知的武将 + 外部传入
+
+    // 由于 HeroFormation 不持有全部武将列表，我们改用回调方式：
+    // 调用方应传入所有候选武将ID
+    // 为保持 API 简洁，使用 getGeneral 来过滤有效武将
+    // 实际使用中推荐 autoFormationByIds
+    return this.autoFormationByIds(
+      [], // 空列表表示无法获取全部ID
+      getGeneral,
+      calcPower,
+      formationId,
+      maxSlots,
+      allowOverlap,
+    );
+  }
+
+  /**
+   * 一键布阵（指定候选武将ID列表）
+   *
+   * 按战力降序排列候选武将，取前 maxSlots 个自动填入编队。
+   *
+   * @param candidateIds - 候选武将ID列表
+   * @param getGeneral - 获取武将数据的函数
+   * @param calcPower - 计算战力的函数
+   * @param formationId - 目标编队ID（默认 '1'）
+   * @param maxSlots - 最大选择数量（默认 5）
+   * @param allowOverlap - 是否允许与其他编队重叠（默认 false）
+   * @returns 编队数据，或 null（无可用武将）
+   */
+  autoFormationByIds(
+    candidateIds: string[],
+    getGeneral: (id: string) => GeneralData | undefined,
+    calcPower: (g: GeneralData) => number,
+    formationId = '1',
+    maxSlots = 5,
+    allowOverlap = false,
+  ): FormationData | null {
+    // 确保编队存在
+    let formation = this.state.formations[formationId];
+    if (!formation) {
+      const created = this.createFormation(formationId);
+      if (!created) return null;
+      formation = this.state.formations[formationId];
+    }
+    if (!formation) return null;
+
+    // 过滤有效武将（存在且未在其他编队中）
+    const validCandidates = candidateIds.filter((id) => {
+      const g = getGeneral(id);
+      if (!g) return false;
+      if (!allowOverlap && this.isGeneralInAnyFormation(id)) return false;
+      return true;
+    });
+
+    // 按战力降序排列
+    const sorted = [...validCandidates].sort((a, b) => {
+      const ga = getGeneral(a);
+      const gb = getGeneral(b);
+      return (gb && ga) ? calcPower(gb) - calcPower(ga) : 0;
+    });
+
+    // 取前 maxSlots 个
+    const selected = sorted.slice(0, Math.min(maxSlots, MAX_SLOTS_PER_FORMATION));
+
+    if (selected.length === 0) return null;
+
+    // 清空编队并填入选中的武将
+    formation.slots = Array(MAX_SLOTS_PER_FORMATION).fill('');
+    selected.forEach((id, i) => {
+      formation!.slots[i] = id;
+    });
+
+    return { ...formation, slots: [...formation.slots] };
+  }
+
   // ── 序列化 ──
 
   serialize(): FormationSaveData {

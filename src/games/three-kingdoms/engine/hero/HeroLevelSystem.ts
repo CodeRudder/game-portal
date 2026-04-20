@@ -347,6 +347,51 @@ export class HeroLevelSystem implements ISubsystem {
     return { results, totalGoldSpent: totalGold, totalExpSpent: totalExp, totalPowerGain: totalPower };
   }
 
+  // ── 5b. B13 批量升级（按指定 ID 列表） ──
+
+  /**
+   * 批量升级指定武将列表
+   *
+   * 按列表顺序依次尝试升级，跳过不存在/满级/资源不足的武将。
+   * 返回成功列表、跳过列表及汇总统计。
+   */
+  batchUpgrade(
+    heroIds: string[],
+    targetLevel?: number,
+  ): BatchEnhanceResult & { skipped: string[] } {
+    const empty: BatchEnhanceResult & { skipped: string[] } = {
+      results: [], totalGoldSpent: 0, totalExpSpent: 0, totalPowerGain: 0, skipped: [],
+    };
+    if (!this.levelDeps) return empty;
+
+    const { heroSystem } = this.levelDeps;
+    const results: LevelUpResult[] = [];
+    const skipped: string[] = [];
+    let totalGold = 0, totalExp = 0, totalPower = 0;
+
+    for (const id of heroIds) {
+      const general = heroSystem.getGeneral(id);
+      if (!general || general.level >= HERO_MAX_LEVEL) {
+        skipped.push(id);
+        continue;
+      }
+
+      const pwrBefore = heroSystem.calculatePower(general);
+      const r = this.quickEnhance(id, targetLevel);
+      if (r && r.levelsGained > 0) {
+        results.push(r);
+        totalGold += r.goldSpent;
+        totalExp += r.expSpent;
+        const updated = heroSystem.getGeneral(id);
+        totalPower += (updated ? heroSystem.calculatePower(updated) : pwrBefore) - pwrBefore;
+      } else {
+        skipped.push(id);
+      }
+    }
+
+    return { results, totalGoldSpent: totalGold, totalExpSpent: totalExp, totalPowerGain: totalPower, skipped };
+  }
+
   /** 批量强化预览（默认前5个） */
   getBatchEnhancePreview(targetLevel?: number, limit = 5): EnhancePreview[] {
     if (!this.levelDeps) return [];

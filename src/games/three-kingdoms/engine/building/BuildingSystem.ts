@@ -16,7 +16,7 @@ import type {
   BuildingSaveData,
   AppearanceStage,
 } from './building.types';
-import { BUILDING_TYPES } from './building.types';
+import { BUILDING_TYPES, BUILDING_LABELS } from './building.types';
 import {
   BUILDING_DEFS,
   BUILDING_MAX_LEVELS,
@@ -28,9 +28,7 @@ import {
 import type { Resources } from '../resource/resource.types';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 
-// ─────────────────────────────────────────────
 // 辅助
-// ─────────────────────────────────────────────
 
 /** 根据等级获取外观阶段 */
 function getAppearanceStage(level: number): AppearanceStage {
@@ -57,9 +55,7 @@ function createAllStates(): Record<BuildingType, BuildingState> {
   return s;
 }
 
-// ─────────────────────────────────────────────
 // BuildingSystem
-// ─────────────────────────────────────────────
 
 export class BuildingSystem implements ISubsystem {
   // ── ISubsystem 接口 ──
@@ -422,11 +418,61 @@ export class BuildingSystem implements ISubsystem {
   // ── 12. C19 建筑升级路线推荐 ──
 
   /**
-   * 根据当前建筑状态推荐升级路线
+   * 建筑升级路线推荐（按游戏阶段）
    *
-   * 策略：优先主城 → 产出建筑（按资源瓶颈排序） → 功能建筑
-   * 返回按优先级排序的推荐列表，每项包含建筑类型、原因和预估收益
+   * 根据当前建筑状态和游戏阶段，返回推荐的建筑升级顺序列表。
+   * - newbie（新手期）：主城 → 农田 → 市集 → 兵营
+   * - development（发展期）：主城 → 铁匠铺 → 书院 → 兵营 → 产出建筑
+   * - late（后期）：主城 → 城墙 → 医馆 → 均衡提升
+   *
+   * @param context - 游戏阶段
+   * @returns 推荐的建筑升级顺序列表
    */
+  recommendUpgradePath(
+    context: 'newbie' | 'development' | 'late',
+  ): Array<{ type: BuildingType; reason: string }> {
+    type Recommendation = { type: BuildingType; reason: string };
+
+    const newbieOrder: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
+    const developmentOrder: BuildingType[] = ['castle', 'smithy', 'academy', 'barracks', 'farmland', 'market', 'wall', 'clinic'];
+    const lateOrder: BuildingType[] = ['castle', 'wall', 'clinic', 'barracks', 'smithy', 'academy', 'farmland', 'market'];
+
+    const orderMap: Record<string, BuildingType[]> = {
+      newbie: newbieOrder,
+      development: developmentOrder,
+      late: lateOrder,
+    };
+
+    const order = orderMap[context] ?? newbieOrder;
+    const reasons: Record<BuildingType, string> = {
+      castle: '主城升级解锁新建筑并提升全资源加成',
+      farmland: '农田提升粮草产出，保障基础资源',
+      market: '市集提升铜钱产出，加速发展',
+      barracks: '兵营提升兵力产出，增强军力',
+      smithy: '铁匠铺强化装备，提升武将战力',
+      academy: '书院加速科技研究，解锁高级科技',
+      clinic: '医馆提升恢复速率，减少战损',
+      wall: '城墙提升城防值，增强防御能力',
+    };
+
+    const result: Recommendation[] = [];
+
+    for (const t of order) {
+      const state = this.buildings[t];
+      // 跳过已满级或正在升级的
+      const maxLv = BUILDING_MAX_LEVELS[t];
+      if (state.level >= maxLv) continue;
+      if (state.status === 'upgrading') continue;
+      // 跳过未解锁的
+      if (state.status === 'locked') continue;
+
+      result.push({ type: t, reason: reasons[t] });
+    }
+
+    return result;
+  }
+
+  /** 根据当前建筑状态推荐升级路线。策略：优先主城 → 产出建筑 → 功能建筑 */
   getUpgradeRouteRecommendation(resources?: Readonly<Resources>): Array<{
     type: BuildingType;
     priority: number;
@@ -443,11 +489,7 @@ export class BuildingSystem implements ISubsystem {
     for (const t of BUILDING_TYPES) {
       const state = this.buildings[t];
       if (state.status === 'locked' || state.status === 'upgrading') continue;
-
-      const maxLv = BUILDING_MAX_LEVELS[t];
-      if (state.level >= maxLv) continue;
-
-      // 检查是否能升级（不含资源检查）
+      if (state.level >= BUILDING_MAX_LEVELS[t]) continue;
       const levelOk = t === 'castle' || state.level < this.buildings.castle.level;
       if (!levelOk) continue;
 
@@ -456,7 +498,6 @@ export class BuildingSystem implements ISubsystem {
       let benefit = '';
 
       if (t === 'castle') {
-        // 主城优先级最高
         priority = 100;
         reason = '主城升级解锁新建筑并提升全资源加成';
         const nextBonus = BUILDING_DEFS.castle.levelTable[state.level]?.production ?? 0;
@@ -466,7 +507,6 @@ export class BuildingSystem implements ISubsystem {
         const currentProd = this.getProduction(t);
         const nextProd = def.levelTable[state.level]?.production ?? currentProd;
         const prodGain = nextProd - currentProd;
-
         if (def.production) {
           priority = 50 + Math.round(prodGain * 10);
           reason = `${BUILDING_LABELS[t]}产出提升`;
@@ -479,7 +519,6 @@ export class BuildingSystem implements ISubsystem {
         }
       }
 
-      // 资源不足降低优先级
       if (resources) {
         const cost = this.getUpgradeCost(t);
         if (cost && (resources.grain < cost.grain || resources.gold < cost.gold)) {
@@ -493,14 +532,30 @@ export class BuildingSystem implements ISubsystem {
     return recommendations.sort((a, b) => b.priority - a.priority);
   }
 
-  // ── 13. B13 批量升级 ──
+  // ── 13. 建筑升级路线推荐（简化版） ──
 
   /**
-   * 批量升级：尝试升级多个建筑
+   * 建筑升级路线推荐（简化版）
    *
-   * 按列表顺序依次尝试升级，跳过不可升级的建筑。
-   * 返回成功和失败的建筑列表及对应原因。
+   * 返回当前可升级建筑的推荐顺序，按优先级从高到低排列。
+   * 综合考虑：主城优先 → 产出增益 → 资源充足度。
+   *
+   * @param resources - 当前资源（可选，影响优先级调整）
+   * @returns 推荐的建筑升级顺序列表
    */
+  getUpgradeRecommendation(resources?: Readonly<Resources>): Array<{
+    type: BuildingType;
+    reason: string;
+  }> {
+    return this.getUpgradeRouteRecommendation(resources).map((r) => ({
+      type: r.type,
+      reason: `${r.reason}（${r.estimatedBenefit}）`,
+    }));
+  }
+
+  // ── 14. B13 批量升级 ──
+
+  /** 批量升级：按列表顺序依次尝试升级，跳过不可升级的建筑 */
   batchUpgrade(
     types: BuildingType[],
     resources: Resources,
@@ -512,8 +567,6 @@ export class BuildingSystem implements ISubsystem {
     const succeeded: Array<{ type: BuildingType; cost: UpgradeCost }> = [];
     const failed: Array<{ type: BuildingType; reason: string }> = [];
     const totalCost: UpgradeCost = { grain: 0, gold: 0, troops: 0, timeSeconds: 0 };
-
-    // 追踪剩余资源（避免超支）
     let remainingGrain = resources.grain;
     let remainingGold = resources.gold;
     let remainingTroops = resources.troops;

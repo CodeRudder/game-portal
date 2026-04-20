@@ -20,6 +20,9 @@ import type {
 import { CHAPTER1_STAGES } from './campaign-chapter1';
 import { CHAPTER2_STAGES } from './campaign-chapter2';
 import { CHAPTER3_STAGES } from './campaign-chapter3';
+import { CHAPTER4_STAGES } from './campaign-chapter4';
+import { CHAPTER5_STAGES } from './campaign-chapter5';
+import { CHAPTER6_STAGES } from './campaign-chapter6';
 
 // ═══════════════════════════════════════════════
 // 章节组装
@@ -58,8 +61,41 @@ export const CHAPTER_3: Chapter = {
   description: '董卓覆灭后，各路诸侯争霸中原。曹操与袁绍在官渡展开决战，以少胜多奠定北方基业。',
 };
 
+/** 第4章：赤壁之战 */
+export const CHAPTER_4: Chapter = {
+  id: 'chapter4',
+  name: '赤壁之战',
+  subtitle: '东风夜放花千树',
+  order: 4,
+  stages: CHAPTER4_STAGES,
+  prerequisiteChapterId: 'chapter3',
+  description: '曹操率八十万大军南下，孙刘联军在赤壁以火攻大破曹军，奠定三分天下之局。',
+};
+
+/** 第5章：取西川 */
+export const CHAPTER_5: Chapter = {
+  id: 'chapter5',
+  name: '取西川',
+  subtitle: '隆中对第二步',
+  order: 5,
+  stages: CHAPTER5_STAGES,
+  prerequisiteChapterId: 'chapter4',
+  description: '刘备入川取益州，历经涪城、雒城、成都诸战，终得益州基业。',
+};
+
+/** 第6章：汉中争夺 */
+export const CHAPTER_6: Chapter = {
+  id: 'chapter6',
+  name: '汉中争夺',
+  subtitle: '进位汉中王',
+  order: 6,
+  stages: CHAPTER6_STAGES,
+  prerequisiteChapterId: 'chapter5',
+  description: '刘备与曹操在汉中展开决战，黄忠定军山斩夏侯渊，赵云汉水退敌，终取汉中。',
+};
+
 /** 所有章节配置（按 order 排序） */
-export const ALL_CHAPTERS: Chapter[] = [CHAPTER_1, CHAPTER_2, CHAPTER_3];
+export const ALL_CHAPTERS: Chapter[] = [CHAPTER_1, CHAPTER_2, CHAPTER_3, CHAPTER_4, CHAPTER_5, CHAPTER_6];
 
 // ═══════════════════════════════════════════════
 // 查找函数
