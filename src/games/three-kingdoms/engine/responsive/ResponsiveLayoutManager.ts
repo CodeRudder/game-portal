@@ -5,428 +5,256 @@
  * - #1 7级断点体系检测与切换
  * - #2 画布缩放算法（PC/平板等比缩放 + 移动端流式布局 + 4K上限）
  * - #3 留白区域处理（居中+侧边装饰+背景填充+信息面板）
+ * - #4 手机端画布基准 + 区域尺寸计算
+ * - #5 底部Tab导航管理
+ * - #6 全屏面板模式
+ * - #7 Bottom Sheet交互
  * - #12 左手模式布局镜像
  * - #14 字体大小三档切换
- *
- * 设计原则：
- * - 纯计算引擎，不操作DOM
- * - 通过回调通知布局变更
- * - 可在测试环境中完整验证
+ * - #17 手机端导航
+ * - #18 面包屑导航
  *
  * @module engine/responsive/ResponsiveLayoutManager
  */
 
 import {
-  Breakpoint,
-  BREAKPOINT_WIDTHS,
-  CANVAS_BASE_WIDTH,
-  CANVAS_BASE_HEIGHT,
-  SCALE_MAX,
-  WhitespaceStrategy,
-  type CanvasScaleResult,
-  type ResponsiveLayoutSnapshot,
-  type OnLayoutChange,
-  FontSizeLevel,
-  FONT_SIZE_MAP,
+  Breakpoint, BREAKPOINT_WIDTHS, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT,
+  SCALE_MAX, WhitespaceStrategy, MOBILE_LAYOUT, FontSizeLevel, FONT_SIZE_MAP,
+  type CanvasScaleResult, type ResponsiveLayoutSnapshot, type OnLayoutChange,
+  type MobileTabItem, type MobileTabBarState, type FullScreenPanelState,
+  type BottomSheetState, type MobileLayoutState, type BreadcrumbItem,
+  type NavigationPathState, type OnNavigationChange,
 } from '../../core/responsive/responsive.types';
 
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-/** 断点检测顺序（从大到小） */
 const BREAKPOINT_ORDER: Breakpoint[] = [
-  Breakpoint.DesktopL,
-  Breakpoint.Desktop,
-  Breakpoint.TabletL,
-  Breakpoint.Tablet,
-  Breakpoint.MobileL,
-  Breakpoint.Mobile,
-  Breakpoint.MobileS,
+  Breakpoint.DesktopL, Breakpoint.Desktop, Breakpoint.TabletL,
+  Breakpoint.Tablet, Breakpoint.MobileL, Breakpoint.Mobile, Breakpoint.MobileS,
+];
+const MOBILE_BPS = new Set([Breakpoint.MobileL, Breakpoint.Mobile, Breakpoint.MobileS]);
+const TABLET_BPS = new Set([Breakpoint.TabletL, Breakpoint.Tablet]);
+const DESKTOP_BPS = new Set([Breakpoint.DesktopL, Breakpoint.Desktop]);
+const MAX_NAV_DEPTH = 10;
+
+const DEFAULT_TABS: MobileTabItem[] = [
+  { id: 'home', label: '主城', icon: 'castle', isActive: true },
+  { id: 'heroes', label: '武将', icon: 'sword', isActive: false },
+  { id: 'map', label: '地图', icon: 'map', isActive: false },
+  { id: 'campaign', label: '关卡', icon: 'flag', isActive: false },
+  { id: 'more', label: '更多', icon: 'menu', isActive: false },
 ];
 
-/** 移动端断点集合 */
-const MOBILE_BREAKPOINTS = new Set<Breakpoint>([
-  Breakpoint.MobileL,
-  Breakpoint.Mobile,
-  Breakpoint.MobileS,
-]);
-
-/** 平板断点集合 */
-const TABLET_BREAKPOINTS = new Set<Breakpoint>([
-  Breakpoint.TabletL,
-  Breakpoint.Tablet,
-]);
-
-/** 桌面端断点集合 */
-const DESKTOP_BREAKPOINTS = new Set<Breakpoint>([
-  Breakpoint.DesktopL,
-  Breakpoint.Desktop,
-]);
-
-// ─────────────────────────────────────────────
-// ResponsiveLayoutManager
-// ─────────────────────────────────────────────
-
-/**
- * 响应式布局管理器
- *
- * 管理断点检测、画布缩放、留白处理。
- * 纯计算引擎，不直接操作DOM。
- */
+/** 响应式布局管理器 — 断点检测、画布缩放、留白处理、手机端布局、导航。 */
 export class ResponsiveLayoutManager {
-  // ── 内部状态 ──
-  private _currentBreakpoint: Breakpoint = Breakpoint.Desktop;
-  private _viewportWidth: number = CANVAS_BASE_WIDTH;
-  private _viewportHeight: number = CANVAS_BASE_HEIGHT;
-  private _devicePixelRatio: number = 1;
-  private _orientation: 'portrait' | 'landscape' = 'landscape';
-  private _leftHandMode: boolean = false;
+  private _bp: Breakpoint = Breakpoint.Desktop;
+  private _vw: number = CANVAS_BASE_WIDTH;
+  private _vh: number = CANVAS_BASE_HEIGHT;
+  private _dpr: number = 1;
+  private _orient: 'portrait' | 'landscape' = 'landscape';
+  private _leftHand: boolean = false;
   private _fontSize: FontSizeLevel = FontSizeLevel.Medium;
+  private _tabBar: MobileTabBarState;
+  private _panel: FullScreenPanelState;
+  private _sheet: BottomSheetState;
+  private _breadcrumbs: BreadcrumbItem[];
+  private _navDepth: number = 0;
+  private readonly _layoutListeners: Set<OnLayoutChange> = new Set();
+  private readonly _navListeners: Set<OnNavigationChange> = new Set();
 
-  // ── 回调列表 ──
-  private readonly _listeners: Set<OnLayoutChange> = new Set();
-
-  // ─────────────────────────────────────────
-  // 公共属性
-  // ─────────────────────────────────────────
-
-  /** 当前断点 */
-  get currentBreakpoint(): Breakpoint {
-    return this._currentBreakpoint;
+  constructor() {
+    this._tabBar = { tabs: DEFAULT_TABS.map((t) => ({ ...t })), activeTabId: 'home', safeAreaHeight: MOBILE_LAYOUT.tabBarHeight };
+    this._panel = { isOpen: false, panelId: '', title: '', swipeBackEnabled: true };
+    this._sheet = { isOpen: false, sheetId: '', contentHeight: 0, showHandle: true };
+    this._breadcrumbs = [{ path: '/', label: '主城', clickable: false }];
   }
 
-  /** 当前视口宽度 */
-  get viewportWidth(): number {
-    return this._viewportWidth;
-  }
+  // ── 公共属性 ──
+  get currentBreakpoint(): Breakpoint { return this._bp; }
+  get viewportWidth(): number { return this._vw; }
+  get viewportHeight(): number { return this._vh; }
+  get isMobile(): boolean { return MOBILE_BPS.has(this._bp); }
+  get isTablet(): boolean { return TABLET_BPS.has(this._bp); }
+  get isDesktop(): boolean { return DESKTOP_BPS.has(this._bp); }
+  get leftHandMode(): boolean { return this._leftHand; }
+  get fontSize(): FontSizeLevel { return this._fontSize; }
+  get fontSizePx(): number { return FONT_SIZE_MAP[this._fontSize]; }
+  get orientation(): 'portrait' | 'landscape' { return this._orient; }
+  get tabBar(): MobileTabBarState { return this._tabBar; }
+  get fullScreenPanel(): FullScreenPanelState { return this._panel; }
+  get bottomSheet(): BottomSheetState { return this._sheet; }
+  get breadcrumbs(): BreadcrumbItem[] { return [...this._breadcrumbs]; }
+  get navigationDepth(): number { return this._navDepth; }
 
-  /** 当前视口高度 */
-  get _viewportHeightValue(): number {
-    return this._viewportHeight;
-  }
+  // ── #1 断点检测 ──
 
-  /** 是否移动端 */
-  get isMobile(): boolean {
-    return MOBILE_BREAKPOINTS.has(this._currentBreakpoint);
-  }
-
-  /** 是否平板 */
-  get isTablet(): boolean {
-    return TABLET_BREAKPOINTS.has(this._currentBreakpoint);
-  }
-
-  /** 是否桌面端 */
-  get isDesktop(): boolean {
-    return DESKTOP_BREAKPOINTS.has(this._currentBreakpoint);
-  }
-
-  /** 左手模式 */
-  get leftHandMode(): boolean {
-    return this._leftHandMode;
-  }
-
-  /** 字体大小档位 */
-  get fontSize(): FontSizeLevel {
-    return this._fontSize;
-  }
-
-  /** 字体像素值 */
-  get fontSizePx(): number {
-    return FONT_SIZE_MAP[this._fontSize];
-  }
-
-  // ─────────────────────────────────────────
-  // 断点检测 (#1)
-  // ─────────────────────────────────────────
-
-  /**
-   * 根据视口宽度计算断点
-   *
-   * @param width - 视口宽度（px）
-   * @returns 匹配的断点
-   */
   detectBreakpoint(width: number): Breakpoint {
-    for (const bp of BREAKPOINT_ORDER) {
-      if (width >= BREAKPOINT_WIDTHS[bp]) {
-        return bp;
-      }
-    }
-    // 兜底：最小断点
+    for (const bp of BREAKPOINT_ORDER) { if (width >= BREAKPOINT_WIDTHS[bp]) return bp; }
     return Breakpoint.MobileS;
   }
 
-  /**
-   * 更新视口尺寸并重新计算断点
-   *
-   * @param width - 新视口宽度
-   * @param height - 新视口高度
-   * @param devicePixelRatio - 设备像素比
-   * @returns 是否发生了断点变更
-   */
-  updateViewport(
-    width: number,
-    height: number,
-    devicePixelRatio: number = 1,
-  ): boolean {
-    const prevBreakpoint = this._currentBreakpoint;
-
-    this._viewportWidth = width;
-    this._viewportHeight = height;
-    this._devicePixelRatio = devicePixelRatio;
-    this._orientation = width >= height ? 'landscape' : 'portrait';
-    this._currentBreakpoint = this.detectBreakpoint(width);
-
-    const changed = prevBreakpoint !== this._currentBreakpoint;
-
-    // 通知所有监听者
-    if (changed) {
-      this._notifyListeners();
-    }
-
+  updateViewport(width: number, height: number, devicePixelRatio = 1): boolean {
+    const prev = this._bp;
+    this._vw = width; this._vh = height; this._dpr = devicePixelRatio;
+    this._orient = width >= height ? 'landscape' : 'portrait';
+    this._bp = this.detectBreakpoint(width);
+    const changed = prev !== this._bp;
+    if (changed) this._notifyLayout();
     return changed;
   }
 
-  // ─────────────────────────────────────────
-  // 画布缩放算法 (#2)
-  // ─────────────────────────────────────────
+  // ── #2 画布缩放算法 ──
 
-  /**
-   * 计算画布缩放参数
-   *
-   * PC/平板端：等比缩放 scale = min(viewW/1280, viewH/800)，上限2.0
-   * 移动端：流式布局 scale=1, canvasW=viewW, canvasH=viewH
-   *
-   * @param viewportWidth - 视口宽度
-   * @param viewportHeight - 视口高度
-   * @param breakpoint - 当前断点（可选，自动检测）
-   * @returns 缩放计算结果
-   */
-  calculateCanvasScale(
-    viewportWidth: number,
-    viewportHeight: number,
-    breakpoint?: Breakpoint,
-  ): CanvasScaleResult {
-    const bp = breakpoint ?? this.detectBreakpoint(viewportWidth);
-
-    // 移动端：流式布局
-    if (MOBILE_BREAKPOINTS.has(bp)) {
-      return {
-        scale: 1,
-        offsetX: 0,
-        offsetY: 0,
-        whitespaceStrategy: WhitespaceStrategy.CenterFilled,
-        canvasWidth: viewportWidth,
-        canvasHeight: viewportHeight,
-      };
+  calculateCanvasScale(vw: number, vh: number, breakpoint?: Breakpoint): CanvasScaleResult {
+    const bp = breakpoint ?? this.detectBreakpoint(vw);
+    if (MOBILE_BPS.has(bp)) {
+      return { scale: 1, offsetX: 0, offsetY: 0, whitespaceStrategy: WhitespaceStrategy.CenterFilled, canvasWidth: vw, canvasHeight: vh };
     }
-
-    // PC/平板端：等比缩放
-    const rawScale = Math.min(
-      viewportWidth / CANVAS_BASE_WIDTH,
-      viewportHeight / CANVAS_BASE_HEIGHT,
-    );
+    const rawScale = Math.min(vw / CANVAS_BASE_WIDTH, vh / CANVAS_BASE_HEIGHT);
     const scale = Math.min(rawScale, SCALE_MAX);
-
-    const canvasWidth = CANVAS_BASE_WIDTH * scale;
-    const canvasHeight = CANVAS_BASE_HEIGHT * scale;
-    const offsetX = (viewportWidth - canvasWidth) / 2;
-    const offsetY = (viewportHeight - canvasHeight) / 2;
-
-    // 根据断点选择留白策略
-    const whitespaceStrategy = this._selectWhitespaceStrategy(bp, scale);
-
+    const cw = CANVAS_BASE_WIDTH * scale, ch = CANVAS_BASE_HEIGHT * scale;
     return {
-      scale,
-      offsetX: Math.max(0, offsetX),
-      offsetY: Math.max(0, offsetY),
-      whitespaceStrategy,
-      canvasWidth,
-      canvasHeight,
+      scale, offsetX: Math.max(0, (vw - cw) / 2), offsetY: Math.max(0, (vh - ch) / 2),
+      whitespaceStrategy: DESKTOP_BPS.has(bp) ? WhitespaceStrategy.CenterDecorated : WhitespaceStrategy.CenterFilled,
+      canvasWidth: cw, canvasHeight: ch,
     };
   }
 
-  // ─────────────────────────────────────────
-  // 留白区域处理 (#3)
-  // ─────────────────────────────────────────
+  // ── #3 留白区域处理 ──
 
-  /**
-   * 计算留白区域信息
-   *
-   * @param viewportWidth - 视口宽度
-   * @param canvasWidth - 缩放后画布宽度
-   * @returns 左右留白宽度
-   */
-  calculateWhitespace(viewportWidth: number, canvasWidth: number): {
-    leftWidth: number;
-    rightWidth: number;
-    totalWidth: number;
-  } {
+  calculateWhitespace(viewportWidth: number, canvasWidth: number): { leftWidth: number; rightWidth: number; totalWidth: number } {
     const totalWidth = Math.max(0, viewportWidth - canvasWidth);
-    const leftWidth = totalWidth / 2;
-    const rightWidth = totalWidth - leftWidth;
-    return { leftWidth, rightWidth, totalWidth };
+    return { leftWidth: totalWidth / 2, rightWidth: totalWidth - totalWidth / 2, totalWidth };
   }
 
-  /**
-   * 应用左手模式镜像偏移
-   *
-   * 左手模式下，左右留白互换
-   *
-   * @param whitespace - 原始留白
-   * @returns 镜像后的留白
-   */
-  applyLeftHandMirror(whitespace: {
-    leftWidth: number;
-    rightWidth: number;
-    totalWidth: number;
-  }): { leftWidth: number; rightWidth: number; totalWidth: number } {
-    if (!this._leftHandMode) {
-      return whitespace;
-    }
+  applyLeftHandMirror(ws: { leftWidth: number; rightWidth: number; totalWidth: number }): typeof ws {
+    if (!this._leftHand) return ws;
+    return { leftWidth: ws.rightWidth, rightWidth: ws.leftWidth, totalWidth: ws.totalWidth };
+  }
+
+  // ── #4 手机端画布区域计算 ──
+
+  calculateMobileSceneHeight(viewportHeight?: number): number {
+    const h = viewportHeight ?? 667;
+    return Math.max(0, h - MOBILE_LAYOUT.resourceBarHeight - MOBILE_LAYOUT.quickIconBarHeight - MOBILE_LAYOUT.tabBarHeight);
+  }
+
+  getMobileLayoutState(viewportHeight?: number): MobileLayoutState {
     return {
-      leftWidth: whitespace.rightWidth,
-      rightWidth: whitespace.leftWidth,
-      totalWidth: whitespace.totalWidth,
+      tabBar: { ...this._tabBar }, fullScreenPanel: { ...this._panel }, bottomSheet: { ...this._sheet },
+      quickIconBarHeight: MOBILE_LAYOUT.quickIconBarHeight, resourceBarHeight: MOBILE_LAYOUT.resourceBarHeight,
+      sceneAreaHeight: this.calculateMobileSceneHeight(viewportHeight),
     };
   }
 
-  // ─────────────────────────────────────────
-  // 设置操作
-  // ─────────────────────────────────────────
+  // ── #5 底部Tab导航 ──
 
-  /**
-   * 设置左手模式
-   *
-   * @param enabled - 是否启用
-   */
-  setLeftHandMode(enabled: boolean): void {
-    this._leftHandMode = enabled;
-    this._notifyListeners();
+  switchTab(tabId: string): boolean {
+    if (!this._tabBar.tabs.find((t) => t.id === tabId)) return false;
+    this._tabBar.tabs = this._tabBar.tabs.map((t) => ({ ...t, isActive: t.id === tabId }));
+    this._tabBar.activeTabId = tabId;
+    this._notifyLayout();
+    return true;
   }
 
-  /**
-   * 设置字体大小档位
-   *
-   * @param level - 字体大小档位
-   */
-  setFontSize(level: FontSizeLevel): void {
-    this._fontSize = level;
-    this._notifyListeners();
+  setTabs(tabs: MobileTabItem[]): void {
+    this._tabBar = {
+      tabs: tabs.map((t) => ({ ...t })),
+      activeTabId: tabs.find((t) => t.isActive)?.id ?? tabs[0]?.id ?? '',
+      safeAreaHeight: MOBILE_LAYOUT.tabBarHeight,
+    };
+    this._notifyLayout();
   }
 
-  // ─────────────────────────────────────────
-  // 快照
-  // ─────────────────────────────────────────
+  // ── #6 全屏面板模式 ──
 
-  /**
-   * 获取当前布局快照
-   */
+  openFullScreenPanel(panelId: string, title: string, swipeBack = true): void {
+    this._panel = { isOpen: true, panelId, title, swipeBackEnabled: swipeBack };
+    this._navDepth++;
+    this._notifyLayout();
+  }
+
+  closeFullScreenPanel(): void {
+    this._panel = { isOpen: false, panelId: '', title: '', swipeBackEnabled: true };
+    this._navDepth = Math.max(0, this._navDepth - 1);
+    this._notifyLayout();
+  }
+
+  // ── #7 Bottom Sheet ──
+
+  openBottomSheet(sheetId: string, contentHeight: number, showHandle = true): void {
+    this._sheet = { isOpen: true, sheetId, contentHeight, showHandle };
+    this._notifyLayout();
+  }
+
+  closeBottomSheet(): void {
+    this._sheet = { isOpen: false, sheetId: '', contentHeight: 0, showHandle: true };
+    this._notifyLayout();
+  }
+
+  // ── #12 左手模式 ──
+
+  setLeftHandMode(enabled: boolean): void { this._leftHand = enabled; this._notifyLayout(); }
+
+  // ── #14 字体大小 ──
+
+  setFontSize(level: FontSizeLevel): void { this._fontSize = level; this._notifyLayout(); }
+
+  // ── #18 面包屑导航 ──
+
+  pushBreadcrumb(path: string, label: string): void {
+    if (this._navDepth >= MAX_NAV_DEPTH) return;
+    if (this._breadcrumbs.length > 0) {
+      this._breadcrumbs[this._breadcrumbs.length - 1] = { ...this._breadcrumbs[this._breadcrumbs.length - 1], clickable: true };
+    }
+    this._breadcrumbs.push({ path, label, clickable: false });
+    this._navDepth++;
+    this._notifyNav();
+  }
+
+  popToBreadcrumb(index: number): void {
+    if (index < 0 || index >= this._breadcrumbs.length) return;
+    this._breadcrumbs = this._breadcrumbs.slice(0, index + 1);
+    this._breadcrumbs[this._breadcrumbs.length - 1].clickable = false;
+    this._navDepth = this._breadcrumbs.length - 1;
+    this._notifyNav();
+  }
+
+  getNavigationState(): NavigationPathState {
+    return { breadcrumbs: [...this._breadcrumbs], depth: this._navDepth, maxDepth: MAX_NAV_DEPTH, canGoBack: this._navDepth > 0 };
+  }
+
+  navigateBack(): boolean {
+    if (this._navDepth <= 0) return false;
+    if (this._panel.isOpen) { this.closeFullScreenPanel(); return true; }
+    this.popToBreadcrumb(this._breadcrumbs.length - 2);
+    return true;
+  }
+
+  // ── 快照 ──
+
   getSnapshot(): ResponsiveLayoutSnapshot {
-    const canvasScale = this.calculateCanvasScale(
-      this._viewportWidth,
-      this._viewportHeight,
-      this._currentBreakpoint,
-    );
-
     return {
-      breakpoint: this._currentBreakpoint,
-      viewportWidth: this._viewportWidth,
-      viewportHeight: this._viewportHeight,
-      isMobile: this.isMobile,
-      isTablet: this.isTablet,
-      isDesktop: this.isDesktop,
-      canvasScale,
-      devicePixelRatio: this._devicePixelRatio,
-      orientation: this._orientation,
+      breakpoint: this._bp, viewportWidth: this._vw, viewportHeight: this._vh,
+      isMobile: this.isMobile, isTablet: this.isTablet, isDesktop: this.isDesktop,
+      canvasScale: this.calculateCanvasScale(this._vw, this._vh, this._bp),
+      devicePixelRatio: this._dpr, orientation: this._orient,
     };
   }
 
-  // ─────────────────────────────────────────
-  // 事件监听
-  // ─────────────────────────────────────────
+  // ── 事件监听 ──
 
-  /**
-   * 注册布局变更监听器
-   *
-   * @param listener - 回调函数
-   * @returns 取消注册函数
-   */
-  onLayoutChange(listener: OnLayoutChange): () => void {
-    this._listeners.add(listener);
-    return () => {
-      this._listeners.delete(listener);
-    };
-  }
+  onLayoutChange(listener: OnLayoutChange): () => void { this._layoutListeners.add(listener); return () => this._layoutListeners.delete(listener); }
+  onNavigationChange(listener: OnNavigationChange): () => void { this._navListeners.add(listener); return () => this._navListeners.delete(listener); }
+  clearListeners(): void { this._layoutListeners.clear(); this._navListeners.clear(); }
 
-  /**
-   * 清除所有监听器
-   */
-  clearListeners(): void {
-    this._listeners.clear();
-  }
+  // ── 静态工具 ──
 
-  // ─────────────────────────────────────────
-  // 私有方法
-  // ─────────────────────────────────────────
+  static isMobileBreakpoint(bp: Breakpoint): boolean { return MOBILE_BPS.has(bp); }
+  static isTabletBreakpoint(bp: Breakpoint): boolean { return TABLET_BPS.has(bp); }
+  static isDesktopBreakpoint(bp: Breakpoint): boolean { return DESKTOP_BPS.has(bp); }
+  static getAllBreakpoints(): Breakpoint[] { return [...BREAKPOINT_ORDER]; }
 
-  /**
-   * 根据断点和缩放比选择留白策略
-   */
-  private _selectWhitespaceStrategy(
-    bp: Breakpoint,
-    _scale: number,
-  ): WhitespaceStrategy {
-    if (DESKTOP_BREAKPOINTS.has(bp)) {
-      // 桌面端：侧边装饰纹理
-      return WhitespaceStrategy.CenterDecorated;
-    }
-    if (TABLET_BREAKPOINTS.has(bp)) {
-      // 平板端：背景填充
-      return WhitespaceStrategy.CenterFilled;
-    }
-    return WhitespaceStrategy.CenterFilled;
-  }
+  // ── 私有方法 ──
 
-  /**
-   * 通知所有监听器
-   */
-  private _notifyListeners(): void {
-    const snapshot = this.getSnapshot();
-    for (const listener of this._listeners) {
-      listener(snapshot);
-    }
-  }
-
-  // ─────────────────────────────────────────
-  // 静态工具方法
-  // ─────────────────────────────────────────
-
-  /**
-   * 判断给定断点是否为移动端
-   */
-  static isMobileBreakpoint(bp: Breakpoint): boolean {
-    return MOBILE_BREAKPOINTS.has(bp);
-  }
-
-  /**
-   * 判断给定断点是否为平板端
-   */
-  static isTabletBreakpoint(bp: Breakpoint): boolean {
-    return TABLET_BREAKPOINTS.has(bp);
-  }
-
-  /**
-   * 判断给定断点是否为桌面端
-   */
-  static isDesktopBreakpoint(bp: Breakpoint): boolean {
-    return DESKTOP_BREAKPOINTS.has(bp);
-  }
-
-  /**
-   * 获取所有断点列表（从大到小）
-   */
-  static getAllBreakpoints(): Breakpoint[] {
-    return [...BREAKPOINT_ORDER];
-  }
+  private _notifyLayout(): void { const s = this.getSnapshot(); for (const l of this._layoutListeners) l(s); }
+  private _notifyNav(): void { const s = this.getNavigationState(); for (const l of this._navListeners) l(s); }
 }
