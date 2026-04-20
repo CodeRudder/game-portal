@@ -31,8 +31,42 @@ export { SaveSlotManager } from './SaveSlotManager';
 export { CloudSyncStatus } from './SaveSlotManager';
 export type {
   SaveSlotChangeCallback,
-  CloudSyncResult,
+  CloudSyncResult as SaveSlotCloudSyncResult,
   SaveSlotResult,
   ExportData,
   ISaveSlotStorage,
 } from './SaveSlotManager';
+
+// CloudSaveSystem
+export { CloudSaveSystem, CloudSyncState } from './CloudSaveSystem';
+export type {
+  CloudSyncResult,
+  CloudSaveMetadata,
+  SyncScheduler,
+  INetworkDetector,
+  ICloudStorage,
+  CloudSaveChangeCallback,
+  NowFn as CloudNowFn,
+} from './CloudSaveSystem';
+
+// AccountSystem
+export { AccountSystem, DeleteFlowState } from './AccountSystem';
+export type {
+  AccountResult,
+  BindResult,
+  DeviceResult,
+  DeleteFlowData,
+  AccountChangeCallback,
+  SpendIngotFn,
+  GrantIngotFn,
+  NowFn as AccountNowFn,
+} from './AccountSystem';
+
+// AnimationController
+export { AnimationController } from './AnimationController';
+export type {
+  IAnimationPlayer,
+  AnimationEventCallbacks,
+  AnimationChangeCallback,
+  AnimationPlayRequest,
+} from './AnimationController';

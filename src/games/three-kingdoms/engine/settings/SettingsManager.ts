@@ -383,7 +383,7 @@ export class SettingsManager {
     key: string,
     newValue: unknown,
   ): void {
-    const oldValue = (this.settings as Record<string, unknown>)[key];
+    const oldValue = (this.settings as unknown as Record<string, unknown>)[key];
     this.settings = {
       ...this.settings,
       [key]: newValue,
