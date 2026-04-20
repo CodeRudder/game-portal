@@ -144,7 +144,7 @@ export function OfflineSummary({ sections: propSections, className }: OfflineSum
 
     // 科技摘要
     if (snapshot.techState) {
-      const researching = snapshot.techState.researchingTechId;
+      const researching = snapshot.techState.researchQueue?.[0]?.techId;
       if (researching) {
         techItems.push({
           icon: '🔬',

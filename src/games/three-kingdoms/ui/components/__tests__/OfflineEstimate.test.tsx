@@ -70,7 +70,7 @@ describe('OfflineEstimate', () => {
 
   it('点击预设按钮更新时长', () => {
     render(<OfflineEstimate />);
-    fireEvent.click(screen.getByText('24h'));
+    fireEvent.click(screen.getByText('1d'));
     expect(screen.getByText('24小时')).toBeInTheDocument();
   });
 

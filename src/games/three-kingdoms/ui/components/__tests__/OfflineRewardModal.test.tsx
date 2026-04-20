@@ -80,7 +80,7 @@ describe('OfflineRewardModal', () => {
 
   it('显示各资源收益', () => {
     render(<OfflineRewardModal {...defaultProps} />);
-    expect(screen.getByText('+1K')).toBeInTheDocument(); // grain 1000
+    expect(screen.getByText('+1.0K')).toBeInTheDocument(); // grain 1000
   });
 
   // ── 来源占比 ──

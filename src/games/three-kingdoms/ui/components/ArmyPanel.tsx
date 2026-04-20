@@ -93,7 +93,7 @@ function FormationCard({ formation, isActive, heroes, onSelect, onHeroClick }: F
 
       {/* 武将列表 */}
       <div style={cardStyles.heroGrid}>
-        {formation.generalIds.map((heroId, idx) => {
+        {formation.slots.map((heroId: string, idx: number) => {
           const hero = heroes.find((h) => h.id === heroId);
           if (!hero) {
             return (
@@ -151,11 +151,12 @@ export function ArmyPanel({ onFormationSelect, onHeroClick, className }: ArmyPan
     const map = new Map<string, { id: string; name: string; faction: string; power: number }>();
     if (!snapshot) return map;
     for (const g of snapshot.heroes) {
+      const { attack, defense, intelligence, speed } = g.baseStats;
       map.set(g.id, {
         id: g.id,
         name: g.name,
         faction: g.faction,
-        power: g.power,
+        power: attack + defense + intelligence + speed,
       });
     }
     return map;
@@ -197,7 +198,7 @@ export function ArmyPanel({ onFormationSelect, onHeroClick, className }: ArmyPan
             key={f.id}
             formation={f}
             isActive={f.id === activeFormationId}
-            heroes={f.generalIds.map((id) => heroMap.get(id)!).filter(Boolean)}
+            heroes={f.slots.filter((id: string) => id !== '').map((id: string) => heroMap.get(id)!).filter(Boolean)}
             onSelect={() => handleFormationSelect(f.id)}
             onHeroClick={handleHeroClick}
           />

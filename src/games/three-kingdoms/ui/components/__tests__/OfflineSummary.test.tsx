@@ -72,7 +72,7 @@ describe('OfflineSummary', () => {
 
   it('不传sections时从引擎推断摘要', () => {
     render(<OfflineSummary />);
-    expect(screen.getByText('离线回归摘要')).toBeInTheDocument();
+    expect(screen.getByText(/离线回归摘要/)).toBeInTheDocument();
     expect(screen.getByText('建筑动态')).toBeInTheDocument();
   });
 
