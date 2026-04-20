@@ -218,3 +218,53 @@ export {
   getQueueSizeForAcademyLevel,
   getTechPointProduction,
 } from './tech/tech-config';
+
+// 世界地图域
+export { WorldMapSystem } from './map/WorldMapSystem';
+export { MapDataRenderer } from './map/MapDataRenderer';
+export { MapFilterSystem } from './map/MapFilterSystem';
+export type {
+  GridPosition,
+  MapSize,
+  GridConfig,
+  ViewportConfig,
+  ViewportState,
+  RegionId,
+  RegionDef,
+  RegionBounds,
+  TerrainType,
+  TerrainDef,
+  TileData,
+  LandmarkType,
+  LandmarkLevel,
+  OwnershipStatus,
+  ResourceNodeType,
+  LandmarkData,
+  MapFilterCriteria,
+  MapFilterResult,
+  RenderLayer,
+  TileRenderData,
+  ViewportRenderData,
+  WorldMapState,
+  WorldMapSaveData,
+} from '../core/map';
+export {
+  MAP_SIZE,
+  GRID_CONFIG,
+  VIEWPORT_CONFIG,
+  MAP_PIXEL_SIZE,
+  REGION_IDS,
+  REGION_DEFS,
+  REGION_LABELS,
+  REGION_COLORS,
+  TERRAIN_TYPES,
+  TERRAIN_DEFS,
+  TERRAIN_LABELS,
+  TERRAIN_COLORS,
+  DEFAULT_LANDMARKS,
+  LANDMARK_POSITIONS,
+  MAP_SAVE_VERSION,
+  getRegionAtPosition,
+  getTerrainAtPosition,
+  generateAllTiles,
+} from '../core/map';
