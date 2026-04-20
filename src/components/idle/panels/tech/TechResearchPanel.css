@@ -1,0 +1,278 @@
+/**
+ * TechResearchPanel — 研究队列面板样式
+ *
+ * PC端：内嵌在科技树面板右侧
+ * 手机端：底部浮动条+展开面板
+ */
+
+/* ═══════════════════════════════════════════
+   研究队列面板容器
+   ═══════════════════════════════════════════ */
+.tk-tech-research-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   队列标题
+   ═══════════════════════════════════════════ */
+.tk-tech-research-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.tk-tech-research-title-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+}
+
+.tk-tech-research-title-slots {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   研究槽位
+   ═══════════════════════════════════════════ */
+.tk-tech-research-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(30, 20, 10, 0.6);
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 8px;
+}
+
+.tk-tech-research-slot--active {
+  border-color: rgba(52, 152, 219, 0.3);
+  background: rgba(52, 152, 219, 0.05);
+}
+
+.tk-tech-research-slot--empty {
+  border-style: dashed;
+  border-color: rgba(102, 102, 102, 0.3);
+  background: transparent;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+}
+
+/* 槽位头部 */
+.tk-tech-research-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tk-tech-research-slot-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--tk-text-primary);
+  font-weight: 600;
+}
+
+.tk-tech-research-slot-icon {
+  font-size: 14px;
+}
+
+.tk-tech-research-slot-percent {
+  font-size: 12px;
+  color: #3498db;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 进度条 */
+.tk-tech-research-progress {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tk-tech-research-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2980b9, #3498db);
+  border-radius: 3px;
+  transition: width 0.5s linear;
+  position: relative;
+}
+
+/* 进度条闪光效果 */
+.tk-tech-research-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  animation: tk-research-shimmer 2s infinite;
+}
+
+@keyframes tk-research-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* 槽位底部 */
+.tk-tech-research-slot-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tk-tech-research-remaining {
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 操作按钮组 */
+.tk-tech-research-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.tk-tech-research-action-btn {
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.tk-tech-research-action-btn:hover {
+  border-color: rgba(200, 168, 76, 0.5);
+  color: var(--tk-text-primary);
+}
+
+.tk-tech-research-action-btn--speedup {
+  border-color: rgba(52, 152, 219, 0.3);
+  color: #7EC8E3;
+}
+
+.tk-tech-research-action-btn--speedup:hover {
+  border-color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.tk-tech-research-action-btn--cancel {
+  border-color: rgba(229, 57, 53, 0.2);
+  color: rgba(229, 57, 53, 0.7);
+}
+
+.tk-tech-research-action-btn--cancel:hover {
+  border-color: #E53935;
+  color: #E53935;
+  background: rgba(229, 57, 53, 0.08);
+}
+
+/* 空槽位文本 */
+.tk-tech-research-slot-empty-text {
+  font-size: 12px;
+  color: var(--tk-text-muted);
+}
+
+/* ═══════════════════════════════════════════
+   加速选项弹窗（内联）
+   ═══════════════════════════════════════════ */
+.tk-tech-speedup-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(18, 12, 6, 0.9);
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.tk-tech-speedup-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(200, 168, 76, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tk-tech-speedup-option:hover {
+  background: rgba(200, 168, 76, 0.08);
+  border-color: rgba(200, 168, 76, 0.3);
+}
+
+.tk-tech-speedup-option-label {
+  font-size: 12px;
+  color: var(--tk-text-primary);
+}
+
+.tk-tech-speedup-option-cost {
+  font-size: 12px;
+  color: var(--tk-gold-light);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-tech-research-panel {
+    padding: 4px 0;
+    gap: 4px;
+  }
+
+  .tk-tech-research-slot {
+    padding: 8px;
+  }
+
+  .tk-tech-research-slot-header {
+    gap: 4px;
+  }
+
+  .tk-tech-research-slot-name {
+    font-size: 12px;
+  }
+
+  .tk-tech-research-progress {
+    height: 4px;
+  }
+
+  .tk-tech-research-slot-footer {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tk-tech-research-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .tk-tech-speedup-options {
+    padding: 6px;
+  }
+}

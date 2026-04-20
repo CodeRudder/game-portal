@@ -1,0 +1,489 @@
+/**
+ * TechTab — 科技树主面板样式
+ *
+ * PC端：三路线并排展示，节点+连线+前置依赖
+ * 手机端：Tab切换单路线竖向时间轴
+ */
+
+/* 面板容器 */
+.tk-tech-tab {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: rgba(18, 12, 6, 0.6);
+}
+
+/* 顶部路线切换栏 */
+.tk-tech-path-tabs {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+}
+
+.tk-tech-path-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 6px;
+  color: var(--tk-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tk-tech-path-tab:hover {
+  border-color: rgba(200, 168, 76, 0.4);
+  color: var(--tk-text-primary);
+}
+
+.tk-tech-path-tab--active {
+  font-weight: 600;
+}
+
+/* 路线颜色主题 */
+.tk-tech-path-tab--military.tk-tech-path-tab--active {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: #DC2626;
+  color: #FCA5A5;
+}
+
+.tk-tech-path-tab--economy.tk-tech-path-tab--active {
+  background: rgba(217, 119, 6, 0.12);
+  border-color: #D97706;
+  color: #FCD34D;
+}
+
+.tk-tech-path-tab--culture.tk-tech-path-tab--active {
+  background: rgba(124, 58, 237, 0.12);
+  border-color: #7C3AED;
+  color: #C4B5FD;
+}
+
+/* Tab图标 */
+.tk-tech-path-icon {
+  font-size: 14px;
+}
+
+/* Tab进度指示 */
+.tk-tech-path-progress {
+  font-size: 11px;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 科技点信息栏 */
+.tk-tech-points-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+.tk-tech-points-label {
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+}
+
+.tk-tech-points-value {
+  font-size: 14px;
+  color: var(--tk-gold-light);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-tech-points-rate {
+  font-size: 11px;
+  color: var(--tk-green);
+  opacity: 0.8;
+}
+
+/* 科技树画布 */
+.tk-tech-canvas {
+  flex: 1;
+  display: flex;
+  gap: 24px;
+  padding: 16px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.tk-tech-canvas::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tk-tech-canvas::-webkit-scrollbar-track {
+  background: rgba(20, 25, 35, 0.5);
+}
+
+.tk-tech-canvas::-webkit-scrollbar-thumb {
+  background: rgba(200, 169, 110, 0.3);
+  border-radius: 3px;
+}
+
+/* 单条路线列 */
+.tk-tech-path-column {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: center;
+}
+
+/* 路线标题 */
+.tk-tech-path-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.tk-tech-path-title--military {
+  color: #FCA5A5;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.tk-tech-path-title--economy {
+  color: #FCD34D;
+  background: rgba(217, 119, 6, 0.08);
+}
+
+.tk-tech-path-title--culture {
+  color: #C4B5FD;
+  background: rgba(124, 58, 237, 0.08);
+}
+
+/* 层级行 */
+.tk-tech-tier-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+}
+
+/* 层间连线（竖向） */
+.tk-tech-tier-connector {
+  width: 2px;
+  height: 20px;
+  margin: 0 auto;
+  background: rgba(200, 168, 76, 0.3);
+  position: relative;
+}
+
+.tk-tech-tier-connector--active {
+  background: var(--tk-gold);
+}
+
+.tk-tech-tier-connector--locked {
+  background: rgba(102, 102, 102, 0.3);
+}
+
+/* 分叉连线容器 */
+.tk-tech-fork-connector {
+  display: flex;
+  justify-content: center;
+  height: 20px;
+  position: relative;
+  width: 100%;
+}
+
+/* 科技节点 */
+.tk-tech-node {
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  background: rgba(30, 20, 10, 0.6);
+}
+
+.tk-tech-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 节点状态 */
+.tk-tech-node--completed {
+  border-color: #27ae60;
+  background: rgba(39, 174, 96, 0.10);
+}
+
+.tk-tech-node--researching {
+  border-color: #3498db;
+  background: rgba(52, 152, 219, 0.10);
+  animation: tk-tech-pulse 2s ease-in-out infinite;
+}
+
+.tk-tech-node--available {
+  border-color: #c8a96e;
+  background: rgba(200, 169, 110, 0.08);
+}
+
+.tk-tech-node--locked {
+  border-color: #666;
+  background: rgba(102, 102, 102, 0.10);
+  opacity: 0.6;
+}
+
+.tk-tech-node--mutex-locked {
+  border-color: #d4380d;
+  background: rgba(212, 56, 13, 0.08);
+  opacity: 0.4;
+}
+
+/* 脉冲动画（研究中） */
+@keyframes tk-tech-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.3); }
+  50% { box-shadow: 0 0 12px 4px rgba(52, 152, 219, 0.15); }
+}
+
+/* 节点图标 */
+.tk-tech-node-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* 节点名称 */
+.tk-tech-node-name {
+  font-size: 11px;
+  color: var(--tk-text-primary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.2;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 节点状态标记 */
+.tk-tech-node-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.tk-tech-node-badge--completed {
+  background: #27ae60;
+  color: #fff;
+}
+
+.tk-tech-node-badge--researching {
+  background: #3498db;
+  color: #fff;
+}
+
+.tk-tech-node-badge--locked {
+  background: #555;
+  color: #999;
+}
+
+/* 节点研究进度条 */
+.tk-tech-node-progress {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.tk-tech-node-progress-fill {
+  height: 100%;
+  background: #3498db;
+  border-radius: 2px;
+  transition: width 0.5s linear;
+}
+
+/* 互斥标签 */
+.tk-tech-mutex-tag {
+  font-size: 9px;
+  color: #d4380d;
+  background: rgba(212, 56, 13, 0.12);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-top: 2px;
+}
+
+/* 底部研究进度浮动条（手机端） */
+.tk-tech-research-float {
+  display: none;
+}
+
+/* 手机端适配 */
+@media (max-width: 767px) {
+  .tk-tech-tab {
+    padding: 8px;
+  }
+
+  /* 路线Tab紧凑 */
+  .tk-tech-path-tabs {
+    gap: 2px;
+    padding-bottom: 8px;
+  }
+
+  .tk-tech-path-tab {
+    padding: 5px 10px;
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .tk-tech-path-progress {
+    display: none;
+  }
+
+  /* 科技点信息紧凑 */
+  .tk-tech-points-bar {
+    padding: 4px 0;
+    gap: 8px;
+  }
+
+  /* 竖向时间轴 */
+  .tk-tech-canvas {
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 0;
+  }
+
+  .tk-tech-path-column {
+    min-width: unset;
+  }
+
+  /* 路线标题隐藏（Tab已显示） */
+  .tk-tech-path-title {
+    display: none;
+  }
+
+  /* 层级行左对齐时间轴 */
+  .tk-tech-tier-row {
+    justify-content: flex-start;
+    padding-left: 24px;
+    position: relative;
+  }
+
+  /* 时间轴竖线 */
+  .tk-tech-tier-row::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(200, 168, 76, 0.2);
+  }
+
+  /* 节点缩小 */
+  .tk-tech-node {
+    width: 60px;
+    padding: 4px;
+  }
+
+  .tk-tech-node-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .tk-tech-node-name {
+    font-size: 10px;
+    max-width: 56px;
+  }
+
+  /* 底部研究浮动条显示 */
+  .tk-tech-research-float {
+    display: flex;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(26, 18, 8, 0.95);
+    border-top: 1px solid rgba(200, 168, 76, 0.2);
+    border-radius: 8px 8px 0 0;
+    flex-shrink: 0;
+  }
+
+  .tk-tech-research-float-name {
+    font-size: 12px;
+    color: #3498db;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .tk-tech-research-float-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .tk-tech-research-float-fill {
+    height: 100%;
+    background: #3498db;
+    border-radius: 3px;
+    transition: width 0.5s linear;
+  }
+
+  .tk-tech-research-float-time {
+    font-size: 11px;
+    color: var(--tk-text-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .tk-tech-research-float-speedup {
+    padding: 3px 8px;
+    background: rgba(200, 168, 76, 0.15);
+    border: 1px solid var(--tk-gold);
+    border-radius: 4px;
+    color: var(--tk-gold-light);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* 层间连线隐藏（手机端用时间轴） */
+  .tk-tech-tier-connector,
+  .tk-tech-fork-connector {
+    height: 8px;
+  }
+}

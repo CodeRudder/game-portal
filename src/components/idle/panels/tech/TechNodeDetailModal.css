@@ -1,0 +1,452 @@
+/**
+ * TechNodeDetailModal — 科技节点详情弹窗样式
+ *
+ * PC端：420×696 右侧滑入面板
+ * 手机端：全屏底部上滑面板
+ */
+
+/* ═══════════════════════════════════════════
+   遮罩层
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  animation: tk-tech-detail-fade-in 0.2s ease-out;
+}
+
+@keyframes tk-tech-detail-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   面板主体
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-panel {
+  width: 420px;
+  height: 100%;
+  background: linear-gradient(180deg, #1a1410 0%, #12100c 100%);
+  border-left: 1px solid rgba(200, 168, 76, 0.2);
+  display: flex;
+  flex-direction: column;
+  animation: tk-tech-detail-slide-in 0.25s ease-out;
+  overflow: hidden;
+}
+
+@keyframes tk-tech-detail-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* ═══════════════════════════════════════════
+   面板头部
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+  flex-shrink: 0;
+}
+
+.tk-tech-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+}
+
+.tk-tech-detail-close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tk-tech-detail-close:hover {
+  border-color: rgba(200, 168, 76, 0.5);
+  color: var(--tk-text-primary);
+}
+
+/* ═══════════════════════════════════════════
+   可滚动内容区
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tk-tech-detail-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tk-tech-detail-body::-webkit-scrollbar-thumb {
+  background: rgba(200, 169, 110, 0.3);
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   科技信息头部（图标+名称+路线+等级+状态）
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-info {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.tk-tech-detail-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  flex-shrink: 0;
+}
+
+.tk-tech-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-tech-detail-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tk-text-primary);
+}
+
+.tk-tech-detail-path {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tk-tech-detail-status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.tk-tech-detail-status--completed {
+  background: rgba(39, 174, 96, 0.15);
+  color: #27ae60;
+}
+
+.tk-tech-detail-status--researching {
+  background: rgba(52, 152, 219, 0.15);
+  color: #3498db;
+}
+
+.tk-tech-detail-status--available {
+  background: rgba(200, 169, 110, 0.15);
+  color: #c8a96e;
+}
+
+.tk-tech-detail-status--locked {
+  background: rgba(102, 102, 102, 0.15);
+  color: #999;
+}
+
+/* ═══════════════════════════════════════════
+   区块标题
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tk-tech-detail-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.1);
+}
+
+/* ═══════════════════════════════════════════
+   科技描述
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-desc {
+  font-size: 13px;
+  color: var(--tk-text-secondary);
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════
+   效果预览
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-effects {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-tech-detail-effect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tk-tech-detail-effect-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+}
+
+.tk-tech-detail-effect-text {
+  color: var(--tk-text-primary);
+  flex: 1;
+}
+
+.tk-tech-detail-effect-value {
+  color: var(--tk-green);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   研究消耗
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-costs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tk-tech-detail-cost {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.tk-tech-detail-cost-label {
+  color: var(--tk-text-secondary);
+}
+
+.tk-tech-detail-cost-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-tech-detail-cost-value--enough {
+  color: var(--tk-green);
+}
+
+.tk-tech-detail-cost-value--not-enough {
+  color: #E53935;
+}
+
+/* ═══════════════════════════════════════════
+   前置条件列表
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-prereqs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-tech-detail-prereq {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 3px 0;
+}
+
+.tk-tech-detail-prereq-icon {
+  font-size: 12px;
+}
+
+.tk-tech-detail-prereq-icon--met {
+  color: #27ae60;
+}
+
+.tk-tech-detail-prereq-icon--unmet {
+  color: #E53935;
+}
+
+.tk-tech-detail-prereq-name {
+  color: var(--tk-text-primary);
+}
+
+.tk-tech-detail-prereq-name--unmet {
+  color: var(--tk-text-muted);
+}
+
+/* ═══════════════════════════════════════════
+   互斥分支提示
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-mutex {
+  padding: 8px 12px;
+  background: rgba(212, 56, 13, 0.08);
+  border: 1px solid rgba(212, 56, 13, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #FCA5A5;
+  line-height: 1.5;
+}
+
+.tk-tech-detail-mutex-title {
+  font-weight: 600;
+  color: #E53935;
+  margin-bottom: 4px;
+}
+
+.tk-tech-detail-mutex-alt {
+  color: var(--tk-text-muted);
+  text-decoration: line-through;
+}
+
+/* ═══════════════════════════════════════════
+   底部操作栏
+   ═══════════════════════════════════════════ */
+.tk-tech-detail-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(200, 168, 76, 0.12);
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tk-tech-detail-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+
+.tk-tech-detail-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 主按钮（金色） */
+.tk-tech-detail-btn--primary {
+  background: rgba(200, 168, 76, 0.2);
+  border-color: var(--tk-gold);
+  color: var(--tk-gold-light);
+}
+
+.tk-tech-detail-btn--primary:hover:not(:disabled) {
+  background: rgba(200, 168, 76, 0.35);
+  box-shadow: 0 0 12px rgba(200, 168, 76, 0.2);
+}
+
+/* 次按钮（描边） */
+.tk-tech-detail-btn--secondary {
+  background: transparent;
+  border-color: rgba(200, 168, 76, 0.3);
+  color: var(--tk-text-secondary);
+}
+
+.tk-tech-detail-btn--secondary:hover:not(:disabled) {
+  border-color: rgba(200, 168, 76, 0.6);
+  color: var(--tk-text-primary);
+}
+
+/* 加速按钮（蓝色） */
+.tk-tech-detail-btn--speedup {
+  background: rgba(52, 152, 219, 0.12);
+  border-color: #3498db;
+  color: #7EC8E3;
+}
+
+.tk-tech-detail-btn--speedup:hover:not(:disabled) {
+  background: rgba(52, 152, 219, 0.25);
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-tech-detail-overlay {
+    justify-content: center;
+    align-items: flex-end;
+  }
+
+  .tk-tech-detail-panel {
+    width: 100%;
+    height: 85vh;
+    border-left: none;
+    border-top: 1px solid rgba(200, 168, 76, 0.2);
+    border-radius: 16px 16px 0 0;
+    animation: tk-tech-detail-slide-up 0.25s ease-out;
+  }
+
+  @keyframes tk-tech-detail-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .tk-tech-detail-header {
+    padding: 10px 12px;
+  }
+
+  .tk-tech-detail-title {
+    font-size: 14px;
+  }
+
+  .tk-tech-detail-body {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .tk-tech-detail-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
+
+  .tk-tech-detail-name {
+    font-size: 15px;
+  }
+
+  .tk-tech-detail-footer {
+    padding: 10px 12px;
+  }
+
+  .tk-tech-detail-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}

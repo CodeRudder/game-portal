@@ -1,0 +1,170 @@
+/**
+ * HeroStarUpPanel — 武将升星面板样式
+ * 设计风格：水墨江山·铜纹霸业 | 响应式：PC 嵌入武将详情 / 手机端全屏 Tab
+ */
+
+/* 面板根容器 */
+.tk-star-panel {
+  display: flex; flex-direction: column; gap: 16px; padding: 0;
+  color: var(--tk-text-primary); font-family: var(--tk-font-body);
+}
+
+/* 星级展示 */
+.tk-star-display {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px; background: rgba(200, 168, 76, 0.06);
+  border-radius: var(--tk-radius-lg); border: 1px solid rgba(200, 168, 76, 0.1);
+}
+.tk-star-display-star { font-size: 24px; line-height: 1; transition: all 0.3s; }
+.tk-star-display-star--filled { color: var(--tk-gold); text-shadow: 0 0 10px rgba(200, 168, 76, 0.5); }
+.tk-star-display-star--empty { color: rgba(100, 100, 100, 0.25); }
+.tk-star-display-star--max {
+  color: var(--tk-gold-bright, #e8c468); text-shadow: 0 0 16px rgba(232, 196, 104, 0.6);
+  animation: tk-star-pulse 1.5s ease-in-out infinite;
+}
+@keyframes tk-star-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.tk-star-display-level { font-size: 12px; color: var(--tk-text-secondary); margin-left: 8px; }
+
+/* 碎片进度条 */
+.tk-star-fragment-section {
+  padding: 12px; background: rgba(200, 168, 76, 0.04);
+  border-radius: var(--tk-radius-lg); border: 1px solid rgba(200, 168, 76, 0.08);
+}
+.tk-star-fragment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.tk-star-fragment-label { font-size: 13px; color: var(--tk-text-secondary); }
+.tk-star-fragment-count { font-size: 14px; font-weight: 700; font-family: var(--tk-font-num); }
+.tk-star-fragment-count--sufficient { color: var(--tk-green); }
+.tk-star-fragment-count--insufficient { color: var(--tk-text-secondary); }
+.tk-star-fragment-count--max { color: var(--tk-gold-light); }
+.tk-star-progress-bar {
+  width: 100%; height: 8px; background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px; overflow: hidden; margin-bottom: 6px;
+}
+.tk-star-progress-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease-out, background 0.3s; min-width: 0; }
+.tk-star-progress-fill--low { background: linear-gradient(90deg, #42A5F5, #64B5F6); }
+.tk-star-progress-fill--mid { background: linear-gradient(90deg, #AB47BC, #CE93D8); }
+.tk-star-progress-fill--high { background: linear-gradient(90deg, #FFD700, #FFE082); }
+.tk-star-progress-fill--full { background: linear-gradient(90deg, #7EC850, #A5D6A7); }
+.tk-star-progress-fill--max {
+  background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-light));
+  animation: tk-progress-glow 1.5s ease-in-out infinite;
+}
+@keyframes tk-progress-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(200, 168, 76, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(200, 168, 76, 0.6); }
+}
+.tk-star-progress-text { font-size: 11px; color: var(--tk-text-muted); text-align: right; }
+.tk-star-fragment-sources { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.tk-star-source-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 8px; background: rgba(200, 168, 76, 0.08);
+  border-radius: 10px; font-size: 11px; color: var(--tk-text-secondary);
+  cursor: pointer; transition: all 0.15s; border: none;
+}
+.tk-star-source-tag:hover { background: rgba(200, 168, 76, 0.15); color: var(--tk-text-primary); }
+
+/* 升星预览（属性提升） */
+.tk-star-preview {
+  padding: 12px; background: rgba(200, 168, 76, 0.04);
+  border-radius: var(--tk-radius-lg); border: 1px solid rgba(200, 168, 76, 0.08);
+}
+.tk-star-preview-title {
+  font-size: 13px; font-weight: 600; color: var(--tk-gold-light);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.tk-star-preview-title-arrow { font-size: 14px; color: var(--tk-gold); }
+.tk-star-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tk-star-stat-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 10px; background: rgba(0, 0, 0, 0.15); border-radius: var(--tk-radius-sm);
+}
+.tk-star-stat-name { font-size: 11px; color: var(--tk-text-muted); }
+.tk-star-stat-values { display: flex; align-items: center; gap: 4px; font-size: 12px; font-family: var(--tk-font-num); }
+.tk-star-stat-before { color: var(--tk-text-secondary); }
+.tk-star-stat-arrow { color: var(--tk-text-muted); font-size: 10px; }
+.tk-star-stat-after { color: var(--tk-text-primary); font-weight: 600; }
+.tk-star-stat-diff { font-size: 10px; color: var(--tk-green); font-weight: 600; }
+
+/* 升星消耗 */
+.tk-star-cost-section {
+  display: flex; gap: 12px; padding: 10px 12px;
+  background: rgba(200, 168, 76, 0.04); border-radius: var(--tk-radius-lg);
+  border: 1px solid rgba(200, 168, 76, 0.08);
+}
+.tk-star-cost-item { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; }
+.tk-star-cost-icon { font-size: 16px; }
+.tk-star-cost-label { color: var(--tk-text-secondary); }
+.tk-star-cost-value { font-weight: 700; font-family: var(--tk-font-num); }
+.tk-star-cost-value--sufficient { color: var(--tk-green); }
+.tk-star-cost-value--insufficient { color: var(--tk-danger); }
+
+/* 突破状态 */
+.tk-star-breakthrough {
+  padding: 12px; background: rgba(123, 94, 167, 0.06);
+  border-radius: var(--tk-radius-lg); border: 1px solid rgba(123, 94, 167, 0.15);
+}
+.tk-star-bt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.tk-star-bt-title { font-size: 13px; font-weight: 600; color: var(--tk-purple); }
+.tk-star-bt-stage { font-size: 12px; color: var(--tk-text-secondary); font-family: var(--tk-font-num); }
+.tk-star-bt-info { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.tk-star-bt-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.tk-star-bt-row-label { color: var(--tk-text-muted); }
+.tk-star-bt-row-value { color: var(--tk-text-primary); font-weight: 500; }
+.tk-star-bt-row-value--highlight { color: var(--tk-green); }
+.tk-star-bt-row-value--warning { color: var(--tk-danger); }
+.tk-star-bt-costs { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid rgba(123, 94, 167, 0.1); }
+.tk-star-bt-cost-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
+}
+.tk-star-bt-cost-tag--sufficient { background: rgba(126, 200, 80, 0.1); color: var(--tk-green); }
+.tk-star-bt-cost-tag--insufficient { background: rgba(200, 50, 50, 0.1); color: var(--tk-danger); }
+.tk-star-bt-max { text-align: center; padding: 8px; color: var(--tk-gold-light); font-size: 13px; font-weight: 500; }
+
+/* 操作按钮 */
+.tk-star-actions { display: flex; gap: 10px; }
+.tk-star-btn {
+  flex: 1; padding: 10px 16px; border: none; border-radius: var(--tk-radius-lg);
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  font-family: inherit; letter-spacing: 1px;
+}
+.tk-star-btn--star-up {
+  background: linear-gradient(135deg, #c9a84c, #dbb85c);
+  color: #1a2332; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.tk-star-btn--star-up:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dbb85c, #e8cc70);
+  transform: translateY(-1px); box-shadow: 0 4px 16px rgba(200, 168, 76, 0.4);
+}
+.tk-star-btn--breakthrough {
+  background: linear-gradient(135deg, #7B5EA7, #9575CD); color: #fff;
+}
+.tk-star-btn--breakthrough:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9575CD, #B39DDB);
+  transform: translateY(-1px); box-shadow: 0 4px 16px rgba(123, 94, 167, 0.4);
+}
+.tk-star-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* 满星/满突状态 */
+.tk-star-maxed-notice {
+  text-align: center; padding: 16px; color: var(--tk-gold-light);
+  font-size: 14px; font-weight: 500; background: rgba(200, 168, 76, 0.06);
+  border-radius: var(--tk-radius-lg); border: 1px solid rgba(200, 168, 76, 0.15);
+}
+
+/* 手机端适配（≤480px） */
+@media (max-width: 480px) {
+  .tk-star-panel { gap: 12px; }
+  .tk-star-display { padding: 10px; gap: 4px; }
+  .tk-star-display-star { font-size: 20px; }
+  .tk-star-fragment-section, .tk-star-preview, .tk-star-breakthrough { padding: 10px; }
+  .tk-star-stats-grid { gap: 4px; }
+  .tk-star-stat-row { padding: 4px 8px; }
+  .tk-star-cost-section { flex-direction: column; gap: 6px; padding: 8px 10px; }
+  .tk-star-btn { padding: 10px 12px; font-size: 13px; }
+}
+
+/* 平板适配（481px~768px） */
+@media (min-width: 481px) and (max-width: 768px) {
+  .tk-star-stats-grid { gap: 4px; }
+}
