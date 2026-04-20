@@ -123,11 +123,14 @@ export class TouchInteractionSystem {
     this._clearLongPressTimer();
 
     if (this._isLongPressFired) { this._resetTouchState(); return null; }
-    if (this._isDragging) {
+
+    // 拖拽/滑动判断（即使没有经过handleTouchMove也检查）
+    if (dist > GESTURE_THRESHOLDS.dragMinDistance && duration > GESTURE_THRESHOLDS.dragMinDuration) {
       const g = this._recognizeSwipeOrDrag(this._touchStartPoint, endPoint, dist, duration);
       this._resetTouchState();
       return g;
     }
+
     if (duration < GESTURE_THRESHOLDS.tapMaxDuration && dist < GESTURE_THRESHOLDS.tapMaxDistance) {
       const g = this._recognizeTap(endPoint, now);
       this._resetTouchState();
@@ -287,7 +290,7 @@ export class TouchInteractionSystem {
   }
 
   private _recognizeTap(endPoint: TouchPoint, now: number): GestureType {
-    if (this.shouldBounce(now)) return null as unknown as GestureType;
+    // 先检查双击（双击不受防误触限制）
     if (this._lastTapTime > 0 && now - this._lastTapTime < GESTURE_THRESHOLDS.doubleTapMaxInterval && this._lastTapPoint) {
       if (this._getDistance(this._lastTapPoint, endPoint) < GESTURE_THRESHOLDS.tapMaxDistance) {
         this._lastTapTime = 0; this._lastTapPoint = null;
@@ -295,6 +298,8 @@ export class TouchInteractionSystem {
         return GestureType.DoubleTap;
       }
     }
+    // 普通点击检查防误触
+    if (this.shouldBounce(now)) return null as unknown as GestureType;
     this._lastTapTime = now; this._lastTapPoint = endPoint;
     this._emitGesture({ type: GestureType.Tap, startPoint: endPoint, endPoint, distance: 0, duration: now - this._touchStartTime, scale: 1 });
     return GestureType.Tap;

@@ -44,9 +44,11 @@ export class TouchInputSystem {
   private _lastTapPoint: TouchPoint | null = null;
   private _longPressTimer: ReturnType<typeof setTimeout> | null = null;
   private _isLongPress: boolean = false;
+  private _longPressCancelled: boolean = false;
   private _pinchStartDistance: number = 0;
   private _lastActionTime: number = 0;
   private _selectedHeroId: string | null = null;
+  private _selectedSlotIndex: number | null = null;
   private _feedbackConfig: TouchFeedbackConfig = {
     type: 'light-vibration' as TouchFeedbackType,
     visualScaleValue: 0.96,
@@ -63,6 +65,7 @@ export class TouchInputSystem {
   get phase(): TouchPhase { return this._phase; }
   get feedbackConfig(): TouchFeedbackConfig { return { ...this._feedbackConfig }; }
   get selectedHeroId(): string | null { return this._selectedHeroId; }
+  get selectedSlotIndex(): number | null { return this._selectedSlotIndex; }
 
   // ─────────────────────────────────────────
   // #8 手势识别 — 7种手势
@@ -75,6 +78,7 @@ export class TouchInputSystem {
     this._startPoint = point;
     this._currentPoint = point;
     this._isLongPress = false;
+    this._longPressCancelled = false;
     this._clearLongPressTimer();
 
     this._longPressTimer = setTimeout(() => {
@@ -98,8 +102,14 @@ export class TouchInputSystem {
   /** 处理触控移动 */
   handleTouchMove(x: number, y: number): void {
     if (this._phase !== TouchPhase.Started && this._phase !== TouchPhase.Moved) return;
-    this._phase = TouchPhase.Moved;
     this._currentPoint = { x, y, timestamp: Date.now() };
+    // 移动距离>10px时取消长按检测，并标记整个触摸序列取消
+    if (this._startPoint && this._calcDistance(this._startPoint, this._currentPoint) > GESTURE_THRESHOLDS.longPressMaxDistance) {
+      this._clearLongPressTimer();
+      this._isLongPress = false;
+      this._longPressCancelled = true;
+    }
+    this._phase = TouchPhase.Moved;
   }
 
   /** 处理触控结束 */
@@ -113,6 +123,9 @@ export class TouchInputSystem {
     const distance = this._calcDistance(this._startPoint!, endPoint);
 
     if (this._isLongPress) { this._resetState(); return; }
+
+    // 长按被移动取消时，不再识别其他手势（整个触摸序列取消）
+    if (this._longPressCancelled) { this._resetState(); return; }
 
     // 拖拽类手势判定
     if (distance > GESTURE_THRESHOLDS.dragMinDistance && duration > GESTURE_THRESHOLDS.dragMinDuration) {
@@ -208,6 +221,7 @@ export class TouchInputSystem {
   /** 清除编队选中状态 */
   clearFormationSelection(): void {
     this._selectedHeroId = null;
+    this._selectedSlotIndex = null;
   }
 
   // ─────────────────────────────────────────
@@ -294,12 +308,19 @@ export class TouchInputSystem {
 
   private _recognizeTapOrDoubleTap(start: TouchPoint, end: TouchPoint, duration: number): void {
     const now = Date.now();
+    // 防误触期间：静默忽略（不发出手势，也不检测双击）
+    if (this.isBounceProtected()) {
+      this._lastTapTime = now;
+      this._lastTapPoint = end;
+      return;
+    }
+    // 检查双击（双击不受防误触影响，因为上面已过滤）
     if (
       this._lastTapPoint && this._lastTapTime > 0 &&
       now - this._lastTapTime < GESTURE_THRESHOLDS.doubleTapMaxInterval &&
       this._calcDistance(this._lastTapPoint, end) < GESTURE_THRESHOLDS.tapMaxDistance
     ) {
-      this._emitGesture({ type: GestureType.DoubleTap, startPoint: start, endPoint: end, distance: 0, duration, scale: 1 });
+      this._emitGesture({ type: GestureType.DoubleTap, startPoint: start, endPoint: end, distance: 0, duration, scale: 1 }, true);
       this._lastTapTime = 0;
       this._lastTapPoint = null;
     } else {
@@ -309,8 +330,8 @@ export class TouchInputSystem {
     }
   }
 
-  private _emitGesture(event: GestureEvent): void {
-    if ((event.type === GestureType.Tap || event.type === GestureType.DoubleTap) && this.isBounceProtected()) return;
+  private _emitGesture(event: GestureEvent, skipBounce = false): void {
+    if (!skipBounce && (event.type === GestureType.Tap || event.type === GestureType.DoubleTap) && this.isBounceProtected()) return;
     this._lastActionTime = Date.now();
     for (const listener of this._gestureListeners) listener(event);
   }
@@ -324,6 +345,7 @@ export class TouchInputSystem {
     this._startPoint = null;
     this._currentPoint = null;
     this._isLongPress = false;
+    this._longPressCancelled = false;
     this._clearLongPressTimer();
   }
 }

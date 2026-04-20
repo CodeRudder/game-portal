@@ -62,10 +62,10 @@ describe('TouchInteractionSystem', () => {
       expect(result).toBeNull();
     });
 
-    it('移动过大不算Tap', () => {
+    it('移动过大识别为Drag', () => {
       system.handleTouchStart(100, 100, 0);
-      const result = system.handleTouchEnd(120, 120, 200); // >10px
-      expect(result).toBeNull();
+      const result = system.handleTouchEnd(120, 120, 200); // ~28px移动
+      expect(result).toBe(GestureType.Drag);
     });
   });
 

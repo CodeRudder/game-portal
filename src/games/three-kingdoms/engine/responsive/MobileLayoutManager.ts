@@ -38,7 +38,7 @@ export class MobileLayoutManager {
   private _panel: FullScreenPanelState;
   private _sheet: BottomSheetState;
   private _panelStack: Array<{ panelId: string; title: string }> = [];
-  private _breadcrumbs: BreadcrumbItem[] = [];
+  private _breadcrumbs: BreadcrumbItem[] = [{ path: 'root', label: '首页', clickable: false }];
   private readonly _navListeners: Set<OnNavigationChange> = new Set();
 
   constructor(responsiveManager: ResponsiveLayoutManager) {
@@ -53,7 +53,8 @@ export class MobileLayoutManager {
   get fullScreenPanel(): FullScreenPanelState { return { ...this._panel }; }
   get bottomSheet(): BottomSheetState { return { ...this._sheet }; }
   get navigationPath(): NavigationPathState {
-    return { breadcrumbs: this._breadcrumbs.map((b) => ({ ...b })), depth: this._panelStack.length, maxDepth: MAX_PANEL_DEPTH, canGoBack: this._panelStack.length > 0 };
+    const depth = this._panelStack.length;
+    return { breadcrumbs: this._breadcrumbs.map((b) => ({ ...b })), depth, maxDepth: MAX_PANEL_DEPTH, canGoBack: this._panelStack.length > 0 || this._panel.isOpen };
   }
 
   // ── #4 手机端画布尺寸 ──
@@ -86,7 +87,9 @@ export class MobileLayoutManager {
   // ── #6 全屏面板模式 ──
 
   openFullScreenPanel(panelId: string, title: string, swipeBackEnabled = true): boolean {
-    if (this._panelStack.length >= MAX_PANEL_DEPTH) return false;
+    // 总深度 = 栈深度 + 当前面板（如果打开）
+    const totalDepth = this._panelStack.length + (this._panel.isOpen ? 1 : 0);
+    if (totalDepth >= MAX_PANEL_DEPTH) return false;
     if (this._panel.isOpen) this._panelStack.push({ panelId: this._panel.panelId, title: this._panel.title });
     this._panel = { isOpen: true, panelId, title, swipeBackEnabled };
     this._updateBreadcrumbs();
@@ -128,11 +131,17 @@ export class MobileLayoutManager {
   navigateToBreadcrumb(targetPath: string): boolean {
     const idx = this._breadcrumbs.findIndex((b) => b.path === targetPath);
     if (idx < 0) return false;
-    while (this._panelStack.length > idx) this._panelStack.pop();
-    if (this._panelStack.length > 0) {
-      const t = this._panelStack[this._panelStack.length - 1];
-      this._panel = { isOpen: true, panelId: t.panelId, title: t.title, swipeBackEnabled: true };
-    } else { this._closePanel(); }
+    // root(idx=0) → 关闭所有; stack项(idx>=1) → 弹出到idx-1, 设为当前面板
+    if (idx === 0) {
+      this._panelStack = [];
+      this._closePanel();
+    } else {
+      // 目标在stack中(idx-1位置), 弹出到idx位置(不含目标), 目标变为当前面板
+      const targetStackIdx = idx - 1;
+      const targetPanel = this._panelStack[targetStackIdx];
+      this._panelStack = this._panelStack.slice(0, targetStackIdx);
+      this._panel = { isOpen: true, panelId: targetPanel.panelId, title: targetPanel.title, swipeBackEnabled: true };
+    }
     this._updateBreadcrumbs();
     return true;
   }
@@ -152,7 +161,7 @@ export class MobileLayoutManager {
   private _updateBreadcrumbs(): void {
     const crumbs: BreadcrumbItem[] = [{ path: 'root', label: '首页', clickable: true }];
     for (let i = 0; i < this._panelStack.length; i++) {
-      crumbs.push({ path: this._panelStack[i].panelId, label: this._panelStack[i].title, clickable: i < this._panelStack.length - 1 });
+      crumbs.push({ path: this._panelStack[i].panelId, label: this._panelStack[i].title, clickable: true });
     }
     if (this._panel.isOpen) crumbs.push({ path: this._panel.panelId, label: this._panel.title, clickable: false });
     this._breadcrumbs = crumbs;
