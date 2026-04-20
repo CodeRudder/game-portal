@@ -1,0 +1,533 @@
+/**
+ * SweepPanel — 扫荡面板样式
+ *
+ * PC端(1280×696)：居中弹窗，左右布局
+ * 手机端(375×507)：全屏弹窗，纵向堆叠
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* ── 遮罩层 ── */
+.tk-sweep-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: tk-sweep-panel-fade-in 0.2s ease-out;
+}
+
+@keyframes tk-sweep-panel-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── 主面板 ── */
+.tk-sweep-panel {
+  width: 480px;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(26, 35, 50, 0.98) 0%, rgba(18, 22, 32, 0.99) 100%);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 12px;
+  overflow: hidden;
+  animation: tk-sweep-panel-slide-up 0.25s ease-out;
+}
+
+@keyframes tk-sweep-panel-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ── 标题栏 ── */
+.tk-sweep-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+  background: rgba(200, 168, 76, 0.04);
+}
+
+.tk-sweep-panel-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+  font-family: var(--tk-font-title);
+  letter-spacing: 1px;
+}
+
+.tk-sweep-panel-close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tk-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.tk-sweep-panel-close:hover {
+  background: rgba(200, 168, 76, 0.15);
+  color: var(--tk-text-primary);
+}
+
+/* ── 内容区 ── */
+.tk-sweep-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+}
+
+.tk-sweep-panel-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tk-sweep-panel-body::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 76, 0.2);
+  border-radius: 2px;
+}
+
+/* ── 关卡信息卡 ── */
+.tk-sweep-stage-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(200, 168, 76, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.12);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.tk-sweep-stage-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.tk-sweep-stage-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.tk-sweep-stage-name-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  margin-bottom: 4px;
+}
+
+.tk-sweep-stage-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.tk-sweep-stage-star {
+  font-size: 14px;
+  color: rgba(100, 100, 100, 0.3);
+  line-height: 1;
+}
+
+.tk-sweep-stage-star--filled {
+  color: var(--tk-gold);
+}
+
+.tk-sweep-status-badge {
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.tk-sweep-status-badge--ready {
+  background: rgba(39, 174, 96, 0.15);
+  color: #2ecc71;
+  border: 1px solid rgba(39, 174, 96, 0.3);
+}
+
+.tk-sweep-status-badge--locked {
+  background: rgba(100, 100, 100, 0.15);
+  color: #888;
+  border: 1px solid rgba(100, 100, 100, 0.3);
+}
+
+/* ── 扫荡次数控制 ── */
+.tk-sweep-section-label {
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.tk-sweep-count-section {
+  margin-bottom: 14px;
+}
+
+.tk-sweep-count-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tk-sweep-count-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 6px;
+  background: rgba(200, 168, 76, 0.08);
+  color: var(--tk-gold-light);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  user-select: none;
+}
+
+.tk-sweep-count-btn:hover:not(:disabled) {
+  background: rgba(200, 168, 76, 0.2);
+  border-color: var(--tk-gold);
+}
+
+.tk-sweep-count-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tk-sweep-count-display {
+  min-width: 48px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-sweep-max-btn {
+  padding: 6px 12px;
+  background: rgba(200, 168, 76, 0.12);
+  border: 1px solid rgba(200, 168, 76, 0.3);
+  border-radius: 6px;
+  color: var(--tk-gold-light);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  letter-spacing: 1px;
+}
+
+.tk-sweep-max-btn:hover {
+  background: rgba(200, 168, 76, 0.25);
+  border-color: var(--tk-gold);
+}
+
+/* ── 扫荡令 ── */
+.tk-sweep-ticket-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(200, 168, 76, 0.04);
+  border: 1px solid rgba(200, 168, 76, 0.1);
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
+.tk-sweep-ticket-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--tk-text-secondary);
+}
+
+.tk-sweep-ticket-icon {
+  font-size: 16px;
+}
+
+.tk-sweep-ticket-count {
+  color: var(--tk-gold-light);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-sweep-ticket-cost {
+  font-size: 12px;
+  color: var(--tk-green);
+  font-weight: 500;
+}
+
+.tk-sweep-ticket-cost--insufficient {
+  color: #e74c3c;
+}
+
+/* ── 预计奖励 ── */
+.tk-sweep-preview-section {
+  margin-bottom: 14px;
+}
+
+.tk-sweep-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tk-sweep-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(200, 168, 76, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.1);
+  border-radius: 4px;
+}
+
+.tk-sweep-preview-item-icon {
+  font-size: 14px;
+}
+
+.tk-sweep-preview-item-value {
+  font-size: 12px;
+  color: var(--tk-gold-light);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 自动推图开关 ── */
+.tk-sweep-auto-push {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  margin-bottom: 10px;
+  border-top: 1px solid rgba(200, 168, 76, 0.08);
+}
+
+.tk-sweep-auto-push-label {
+  font-size: 13px;
+  color: var(--tk-text-secondary);
+}
+
+.tk-sweep-toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  background: rgba(100, 100, 100, 0.2);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  font-family: inherit;
+}
+
+.tk-sweep-toggle--active {
+  background: rgba(39, 174, 96, 0.3);
+  border-color: rgba(39, 174, 96, 0.5);
+}
+
+.tk-sweep-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--tk-text-secondary);
+  transition: all 0.2s;
+}
+
+.tk-sweep-toggle--active .tk-sweep-toggle-knob {
+  left: 22px;
+  background: #2ecc71;
+}
+
+/* ── 扫荡结果 ── */
+.tk-sweep-results {
+  padding: 12px;
+  background: rgba(39, 174, 96, 0.06);
+  border: 1px solid rgba(39, 174, 96, 0.15);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.tk-sweep-results-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2ecc71;
+  margin-bottom: 10px;
+}
+
+.tk-sweep-results-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tk-sweep-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.tk-sweep-result-label {
+  color: var(--tk-text-secondary);
+}
+
+.tk-sweep-result-value {
+  color: var(--tk-gold-light);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-sweep-result-row--exp .tk-sweep-result-value {
+  color: #3498db;
+}
+
+.tk-sweep-result-row--tickets .tk-sweep-result-value {
+  color: #e74c3c;
+}
+
+.tk-sweep-fragments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(200, 168, 76, 0.08);
+}
+
+.tk-sweep-fragment-tag {
+  padding: 2px 8px;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #c4b5fd;
+}
+
+.tk-sweep-error {
+  padding: 10px;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  border-radius: 6px;
+  color: #e74c3c;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+
+/* ── 底部操作 ── */
+.tk-sweep-panel-footer {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(200, 168, 76, 0.12);
+  background: rgba(200, 168, 76, 0.03);
+}
+
+.tk-sweep-panel-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  letter-spacing: 1px;
+}
+
+.tk-sweep-panel-btn--cancel {
+  background: rgba(100, 100, 100, 0.15);
+  border: 1px solid rgba(100, 100, 100, 0.25);
+  color: var(--tk-text-secondary);
+}
+
+.tk-sweep-panel-btn--cancel:hover {
+  background: rgba(100, 100, 100, 0.25);
+}
+
+.tk-sweep-panel-btn--confirm {
+  background: linear-gradient(135deg, rgba(200, 168, 76, 0.3), rgba(200, 168, 76, 0.15));
+  border: 1px solid var(--tk-gold);
+  color: var(--tk-gold-light);
+}
+
+.tk-sweep-panel-btn--confirm:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(200, 168, 76, 0.45), rgba(200, 168, 76, 0.25));
+  box-shadow: 0 0 12px rgba(200, 168, 76, 0.3);
+}
+
+.tk-sweep-panel-btn--confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── 手机端适配（≤480px） ── */
+@media (max-width: 480px) {
+  .tk-sweep-panel {
+    width: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .tk-sweep-panel-header {
+    padding: 12px 14px;
+  }
+
+  .tk-sweep-panel-title {
+    font-size: 15px;
+  }
+
+  .tk-sweep-panel-body {
+    padding: 12px 14px;
+  }
+
+  .tk-sweep-stage-card {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .tk-sweep-stage-icon {
+    font-size: 24px;
+  }
+
+  .tk-sweep-stage-name-text {
+    font-size: 13px;
+  }
+
+  .tk-sweep-count-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .tk-sweep-count-display {
+    font-size: 18px;
+    min-width: 40px;
+  }
+
+  .tk-sweep-panel-footer {
+    padding: 12px 14px;
+  }
+
+  .tk-sweep-panel-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
