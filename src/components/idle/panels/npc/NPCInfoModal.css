@@ -1,0 +1,229 @@
+/**
+ * NPCInfoModal — NPC信息弹窗样式
+ * 设计规范：水墨江山·铜纹霸业
+ */
+
+.tk-npcinfo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  animation: tk-npcinfo-fade-in 200ms ease-out;
+}
+
+@keyframes tk-npcinfo-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tk-npcinfo-modal {
+  position: relative;
+  width: 380px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: rgba(26, 35, 50, 0.97);
+  border: 2px solid rgba(200, 168, 76, 0.5);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  animation: tk-npcinfo-enter 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  overflow-y: auto;
+}
+
+.tk-npcinfo-modal::-webkit-scrollbar { width: 5px; }
+.tk-npcinfo-modal::-webkit-scrollbar-thumb { background: rgba(200, 168, 76, 0.25); border-radius: 3px; }
+
+@keyframes tk-npcinfo-enter {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── 关闭按钮 ── */
+
+.tk-npcinfo-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #a0a0a0;
+  font-size: 14px;
+  border-radius: 4px;
+  z-index: 1;
+}
+
+.tk-npcinfo-close:hover { color: #f0e6d3; background: rgba(255, 255, 255, 0.08); }
+
+/* ── 头像区 ── */
+
+.tk-npcinfo-portrait {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+}
+
+.tk-npcinfo-portrait-icon {
+  font-size: 36px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(200, 168, 76, 0.1);
+  border: 2px solid rgba(200, 168, 76, 0.3);
+  border-radius: 50%;
+}
+
+.tk-npcinfo-portrait-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-npcinfo-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f0e6d3;
+}
+
+.tk-npcinfo-profession {
+  font-size: 13px;
+  color: #c9a84c;
+}
+
+/* ── 内容区段 ── */
+
+.tk-npcinfo-section {
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.1);
+}
+
+.tk-npcinfo-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #706858;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.tk-npcinfo-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #a0a0a0;
+}
+
+/* ── 好感度 ── */
+
+.tk-npcinfo-affinity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tk-npcinfo-affinity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tk-npcinfo-affinity-level {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tk-npcinfo-affinity-value {
+  font-size: 13px;
+  color: #a0a0a0;
+}
+
+.tk-npcinfo-affinity-bar {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tk-npcinfo-affinity-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 300ms ease-out;
+}
+
+.tk-npcinfo-affinity-progress {
+  font-size: 11px;
+}
+
+.tk-npcinfo-affinity-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #706858;
+  font-style: italic;
+}
+
+/* ── 位置信息 ── */
+
+.tk-npcinfo-location {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #a0a0a0;
+}
+
+/* ── 操作按钮 ── */
+
+.tk-npcinfo-actions {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+}
+
+.tk-npcinfo-action-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 8px 12px;
+  background: rgba(200, 168, 76, 0.08);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 6px;
+  color: #e0d8c8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 200ms;
+  text-align: center;
+}
+
+.tk-npcinfo-action-btn:hover {
+  background: rgba(200, 168, 76, 0.18);
+  border-color: rgba(200, 168, 76, 0.4);
+}
+
+.tk-npcinfo-action-btn--primary {
+  background: rgba(200, 168, 76, 0.15);
+  border-color: rgba(200, 168, 76, 0.4);
+  color: #e8d48b;
+  font-weight: 600;
+}
+
+.tk-npcinfo-action-btn--primary:hover {
+  background: rgba(200, 168, 76, 0.3);
+}
+
+/* ── 响应式 ── */
+
+@media (max-width: 767px) {
+  .tk-npcinfo-modal { width: min(340px, 90vw); }
+  .tk-npcinfo-actions { flex-direction: column; }
+  .tk-npcinfo-action-btn { min-width: auto; }
+}

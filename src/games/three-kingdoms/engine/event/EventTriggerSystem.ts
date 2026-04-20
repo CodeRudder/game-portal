@@ -1,43 +1,45 @@
 /**
  * 引擎层 — 事件触发系统
  *
- * 管理游戏事件的触发、生命周期和条件检查：
- *   - 事件类型矩阵（随机/固定/连锁）
- *   - 触发条件检查（概率/条件/前置事件）
- *   - 事件冷却管理
- *   - 活跃事件管理
- *   - 离线事件自动处理
+ * 管理事件系统的完整生命周期：
+ *   - 事件注册（随机/固定/连锁三类事件）
+ *   - 事件触发判定（概率/条件/前置事件）
+ *   - 事件选择处理
+ *   - 事件过期清理
+ *   - 存档序列化/反序列化
  *
  * 功能覆盖：
  *   #21 事件类型矩阵
- *   #23 随机遭遇弹窗
- *   #24 离线事件处理
+ *   #23 随机遭遇弹窗（事件触发部分）
  *
  * @module engine/event/EventTriggerSystem
  */
 
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
-  GameEventId,
-  GameEventDef,
+  EventId,
+  EventDef,
+  EventInstance,
   EventTriggerType,
-  EventPriority,
-  EventOption,
-  EventOptionId,
+  EventTriggerResult,
+  EventChoiceResult,
+  EventCondition,
   EventConsequence,
-  ActiveGameEvent,
-  OfflineEventResult,
-  OfflineEventDetail,
-  EventSystemState,
   EventSystemSaveData,
-} from '../../core/events';
+  EventTriggerConfig,
+} from '../../core/event';
 import {
-  DEFAULT_EVENT_DEFS,
-  GLOBAL_EVENT_COOLDOWN,
-  MAX_EVENTS_PER_TURN,
-  MAX_OFFLINE_EVENTS,
-  EVENT_SYSTEM_SAVE_VERSION,
-} from '../../core/events';
+  DEFAULT_EVENT_TRIGGER_CONFIG,
+  PREDEFINED_EVENTS,
+  EVENT_SAVE_VERSION,
+} from '../../core/event';
+
+// ─────────────────────────────────────────────
+// 常量
+// ─────────────────────────────────────────────
+
+/** 最大活跃事件数上限 */
+const ABSOLUTE_MAX_EVENTS = 20;
 
 // ─────────────────────────────────────────────
 // 事件触发系统
@@ -46,133 +48,147 @@ import {
 /**
  * 事件触发系统
  *
- * 管理事件的触发条件检查和生命周期。
- * 支持随机/固定/连锁三种触发类型。
+ * 管理随机/固定/连锁三类事件的注册、触发和选择。
  */
 export class EventTriggerSystem implements ISubsystem {
   readonly name = 'eventTrigger';
 
   private deps!: ISystemDeps;
-  private eventDefs: Map<GameEventId, GameEventDef> = new Map();
-  private activeEvents: Map<string, ActiveGameEvent> = new Map();
-  private cooldowns: Map<GameEventId, number> = new Map();
-  private completedEventIds: Set<GameEventId> = new Set();
+  private config: EventTriggerConfig = { ...DEFAULT_EVENT_TRIGGER_CONFIG };
+  private eventDefs: Map<EventId, EventDef> = new Map();
+  private activeEvents: Map<string, EventInstance> = new Map();
+  private completedEventIds: Set<EventId> = new Set();
+  private cooldowns: Map<EventId, number> = new Map();
   private instanceCounter = 0;
-  private totalTriggered = 0;
-  private totalCompleted = 0;
 
   // ─── ISubsystem 接口 ───────────────────────
 
   init(deps: ISystemDeps): void {
     this.deps = deps;
-    this.loadDefaultEvents();
+    this.loadPredefinedEvents();
   }
 
-  update(_dt: number): void { /* 预留 */ }
+  update(_dt: number): void {
+    // 预留：回合更新在 tick 方法中执行
+  }
 
-  getState(): EventSystemState {
+  getState() {
     return {
+      eventDefs: new Map(this.eventDefs),
       activeEvents: this.getActiveEvents(),
-      bannerQueue: {
-        current: null,
-        pending: [],
-        expired: [],
-      },
-      cooldowns: this.getAllCooldowns(),
-      totalTriggered: this.totalTriggered,
-      totalCompleted: this.totalCompleted,
+      completedEventIds: new Set(this.completedEventIds),
     };
   }
 
   reset(): void {
     this.activeEvents.clear();
-    this.cooldowns.clear();
     this.completedEventIds.clear();
+    this.cooldowns.clear();
     this.instanceCounter = 0;
-    this.totalTriggered = 0;
-    this.totalCompleted = 0;
-    this.loadDefaultEvents();
+    this.config = { ...DEFAULT_EVENT_TRIGGER_CONFIG };
   }
 
-  // ─── 事件定义管理 ──────────────────────────
+  // ─── 事件注册 ────────────────────────────
 
-  /** 加载默认事件定义 */
-  private loadDefaultEvents(): void {
-    this.eventDefs.clear();
-    for (const [id, def] of Object.entries(DEFAULT_EVENT_DEFS)) {
-      this.eventDefs.set(id, def);
-    }
-  }
-
-  /** 注册自定义事件定义 */
-  registerEventDef(def: GameEventDef): void {
+  /**
+   * 注册事件定义
+   *
+   * @param def - 事件定义
+   */
+  registerEvent(def: EventDef): void {
     this.eventDefs.set(def.id, def);
   }
 
-  /** 获取事件定义 */
-  getEventDef(id: GameEventId): GameEventDef | null {
-    return this.eventDefs.get(id) ?? null;
+  /**
+   * 批量注册事件定义
+   *
+   * @param defs - 事件定义数组
+   */
+  registerEvents(defs: EventDef[]): void {
+    for (const def of defs) {
+      this.registerEvent(def);
+    }
   }
 
-  /** 获取所有事件定义 */
-  getAllEventDefs(): GameEventDef[] {
+  /**
+   * 获取事件定义
+   *
+   * @param id - 事件ID
+   * @returns 事件定义，不存在返回undefined
+   */
+  getEventDef(id: EventId): EventDef | undefined {
+    return this.eventDefs.get(id);
+  }
+
+  /**
+   * 获取所有事件定义
+   *
+   * @returns 事件定义列表
+   */
+  getAllEventDefs(): EventDef[] {
     return Array.from(this.eventDefs.values());
   }
 
-  /** 按触发类型获取事件定义 */
-  getEventDefsByType(type: EventTriggerType): GameEventDef[] {
-    return this.getAllEventDefs().filter(d => d.triggerType === type);
+  /**
+   * 按触发类型获取事件定义
+   *
+   * @param triggerType - 触发类型
+   * @returns 事件定义列表
+   */
+  getEventDefsByType(triggerType: EventTriggerType): EventDef[] {
+    return this.getAllEventDefs().filter((d) => d.triggerType === triggerType);
   }
 
-  /** 按分类获取事件定义 */
-  getEventDefsByCategory(category: string): GameEventDef[] {
-    return this.getAllEventDefs().filter(d => d.category === category);
-  }
-
-  // ─── 事件触发（#21）──────────────────────────
+  // ─── 事件触发判定（#21）───────────────────────
 
   /**
-   * 检查并触发本回合事件
+   * 每回合事件触发检查
+   *
+   * 检查所有事件是否满足触发条件，生成触发结果。
    *
    * @param currentTurn - 当前回合
-   * @param context - 触发上下文（用于条件检查）
-   * @returns 触发的事件列表
+   * @returns 触发的事件实例列表
    */
-  checkAndTrigger(currentTurn: number, context?: EventTriggerContext): ActiveGameEvent[] {
-    const triggered: ActiveGameEvent[] = [];
-    let triggeredThisTurn = 0;
+  checkAndTriggerEvents(currentTurn: number): EventInstance[] {
+    const triggered: EventInstance[] = [];
 
-    // 检查全局冷却
-    const lastGlobalTrigger = this.cooldowns.get('__global__') ?? 0;
-    if (currentTurn - lastGlobalTrigger < GLOBAL_EVENT_COOLDOWN) {
-      return triggered;
+    // 检查冷却
+    this.tickCooldowns(currentTurn);
+
+    // 1. 检查固定事件（条件触发）
+    const fixedEvents = this.getEventDefsByType('fixed');
+    for (const def of fixedEvents) {
+      if (this.canTrigger(def.id, currentTurn)) {
+        const result = this.triggerEvent(def.id, currentTurn);
+        if (result.triggered && result.instance) {
+          triggered.push(result.instance);
+        }
+      }
     }
 
-    // 按优先级排序事件定义
-    const sortedDefs = this.getSortedEventDefs();
+    // 2. 检查连锁事件（前置事件完成触发）
+    const chainEvents = this.getEventDefsByType('chain');
+    for (const def of chainEvents) {
+      if (this.canTrigger(def.id, currentTurn)) {
+        const result = this.triggerEvent(def.id, currentTurn);
+        if (result.triggered && result.instance) {
+          triggered.push(result.instance);
+        }
+      }
+    }
 
-    for (const def of sortedDefs) {
-      if (triggeredThisTurn >= MAX_EVENTS_PER_TURN) break;
-      if (!this.canTrigger(def, currentTurn, context)) continue;
-
-      const event = this.createActiveEvent(def, currentTurn);
-      if (event) {
-        triggered.push(event);
-        triggeredThisTurn++;
-
-        // 设置冷却
-        this.cooldowns.set(def.id, currentTurn + def.cooldownTurns);
-        this.cooldowns.set('__global__', currentTurn + GLOBAL_EVENT_COOLDOWN);
-        this.totalTriggered++;
-
-        // 发出事件触发通知
-        this.deps?.eventBus.emit('event:triggered', {
-          eventId: def.id,
-          eventName: def.name,
-          instanceId: event.instanceId,
-          category: def.category,
-          priority: def.priority,
-        });
+    // 3. 检查随机事件（概率触发）
+    const randomEvents = this.getEventDefsByType('random');
+    for (const def of randomEvents) {
+      if (this.canTrigger(def.id, currentTurn)) {
+        // 概率判定
+        const probability = def.triggerProbability ?? this.config.randomEventProbability;
+        if (Math.random() < probability) {
+          const result = this.triggerEvent(def.id, currentTurn);
+          if (result.triggered && result.instance) {
+            triggered.push(result.instance);
+          }
+        }
       }
     }
 
@@ -180,332 +196,324 @@ export class EventTriggerSystem implements ISubsystem {
   }
 
   /**
-   * 检查单个事件是否可以触发
+   * 强制触发指定事件（测试用）
    *
-   * @param def - 事件定义
+   * @param eventId - 事件ID
    * @param currentTurn - 当前回合
-   * @param context - 触发上下文
-   * @returns 是否可触发
+   * @returns 触发结果
    */
-  canTrigger(def: GameEventDef, currentTurn: number, context?: EventTriggerContext): boolean {
-    // 最低回合检查
-    if (currentTurn < def.minTurn) return false;
-
-    // 冷却检查
-    const cooldownEnd = this.cooldowns.get(def.id) ?? 0;
-    if (currentTurn < cooldownEnd) return false;
-
-    // 已完成检查（固定事件只触发一次）
-    if (def.triggerType === 'fixed' && this.completedEventIds.has(def.id)) return false;
-
-    // 概率检查
-    if (def.triggerType === 'random' && Math.random() > def.triggerProbability) return false;
-
-    // 条件检查
-    if (context) {
-      if (!this.checkConditions(def, context)) return false;
-    }
-
-    // 持续事件检查（同类事件不可叠加）
-    for (const active of this.activeEvents.values()) {
-      if (active.eventId === def.id && active.status === 'active') return false;
-    }
-
-    return true;
+  forceTriggerEvent(eventId: EventId, currentTurn: number): EventTriggerResult {
+    return this.triggerEvent(eventId, currentTurn, true);
   }
 
-  // ─── 随机遭遇（#23）──────────────────────────
+  /**
+   * 检查事件是否可以触发
+   *
+   * @param eventId - 事件ID
+   * @param currentTurn - 当前回合
+   * @returns 是否可以触发
+   */
+  canTrigger(eventId: EventId, currentTurn: number): boolean {
+    const def = this.eventDefs.get(eventId);
+    if (!def) return false;
+
+    // 已完成的事件不再触发（除非有冷却）
+    if (this.completedEventIds.has(eventId)) return false;
+
+    // 已有同类型活跃事件
+    if (this.hasActiveEvent(eventId)) return false;
+
+    // 冷却检查
+    const cooldownEnd = this.cooldowns.get(eventId);
+    if (cooldownEnd !== undefined && currentTurn < cooldownEnd) return false;
+
+    // 活跃事件数上限
+    if (this.activeEvents.size >= this.config.maxActiveEvents) return false;
+
+    // 按类型检查
+    switch (def.triggerType) {
+      case 'fixed':
+        return this.checkFixedConditions(def, currentTurn);
+      case 'chain':
+        return this.checkChainPrerequisites(def);
+      case 'random':
+        return true; // 概率判定在 checkAndTriggerEvents 中执行
+      default:
+        return false;
+    }
+  }
+
+  // ─── 事件选择处理（#23）───────────────────────
 
   /**
-   * 选择事件选项
+   * 处理事件选择
    *
    * @param instanceId - 事件实例ID
-   * @param optionId - 选项ID
-   * @returns 选择结果
+   * @param optionId - 选择的选项ID
+   * @returns 选择结果，失败返回null
    */
-  selectOption(instanceId: string, optionId: EventOptionId): EventSelectResult {
-    const event = this.activeEvents.get(instanceId);
-    if (!event) {
-      return { success: false, error: '事件实例不存在' };
+  resolveEvent(instanceId: string, optionId: string): EventChoiceResult | null {
+    const instance = this.activeEvents.get(instanceId);
+    if (!instance) return null;
+    if (instance.status !== 'active') return null;
+
+    const def = this.eventDefs.get(instance.eventDefId);
+    if (!def) return null;
+
+    const option = def.options.find((o) => o.id === optionId);
+    if (!option) return null;
+
+    // 更新实例状态
+    instance.status = 'resolved';
+
+    // 记录完成
+    this.completedEventIds.add(instance.eventDefId);
+
+    // 设置冷却
+    if (def.cooldownTurns) {
+      this.cooldowns.set(instance.eventDefId, instance.triggeredTurn + def.cooldownTurns);
     }
 
-    if (event.status !== 'active') {
-      return { success: false, error: '事件已处理' };
-    }
+    // 从活跃列表移除
+    this.activeEvents.delete(instanceId);
 
-    const option = event.options.find(o => o.id === optionId);
-    if (!option) {
-      return { success: false, error: '选项不存在' };
-    }
-
-    // 应用后果
-    const consequences = [...option.consequences];
-    event.selectedOptionId = optionId;
-    event.appliedConsequences = consequences;
-    event.status = 'completed';
-
-    this.totalCompleted++;
-    this.completedEventIds.add(event.eventId);
-
-    // 发出事件完成通知
-    this.deps?.eventBus.emit('event:completed', {
-      eventId: event.eventId,
-      eventName: event.name,
+    // 发出事件
+    this.deps?.eventBus.emit('event:resolved', {
       instanceId,
-      selectedOptionId: optionId,
-      consequences,
+      eventDefId: instance.eventDefId,
+      optionId,
+      consequences: option.consequences,
     });
 
     return {
-      success: true,
-      consequences,
-      event: { ...event },
+      instanceId,
+      optionId,
+      consequences: option.consequences,
+      chainEventId: option.consequences.triggerEventId,
     };
   }
 
+  // ─── 活跃事件管理 ──────────────────────────
+
   /**
-   * 获取活跃事件
+   * 获取所有活跃事件
    */
-  getActiveEvents(): ActiveGameEvent[] {
-    return Array.from(this.activeEvents.values())
-      .filter(e => e.status === 'active')
-      .map(e => ({ ...e, options: [...e.options], appliedConsequences: [...e.appliedConsequences] }));
+  getActiveEvents(): EventInstance[] {
+    return Array.from(this.activeEvents.values());
+  }
+
+  /**
+   * 检查是否有活跃事件
+   *
+   * @param eventDefId - 事件定义ID
+   */
+  hasActiveEvent(eventDefId: EventId): boolean {
+    for (const inst of this.activeEvents.values()) {
+      if (inst.eventDefId === eventDefId) return true;
+    }
+    return false;
   }
 
   /**
    * 获取事件实例
+   *
+   * @param instanceId - 实例ID
    */
-  getActiveEvent(instanceId: string): ActiveGameEvent | null {
-    const event = this.activeEvents.get(instanceId);
-    return event ? { ...event, options: [...event.options], appliedConsequences: [...event.appliedConsequences] } : null;
+  getInstance(instanceId: string): EventInstance | undefined {
+    return this.activeEvents.get(instanceId);
   }
 
   /**
-   * 过期检查
+   * 获取活跃事件数量
+   */
+  getActiveEventCount(): number {
+    return this.activeEvents.size;
+  }
+
+  /**
+   * 检查事件是否已完成
+   *
+   * @param eventId - 事件ID
+   */
+  isEventCompleted(eventId: EventId): boolean {
+    return this.completedEventIds.has(eventId);
+  }
+
+  /**
+   * 获取所有已完成事件ID
+   */
+  getCompletedEventIds(): EventId[] {
+    return Array.from(this.completedEventIds);
+  }
+
+  // ─── 过期处理 ──────────────────────────────
+
+  /**
+   * 处理过期事件
    *
    * @param currentTurn - 当前回合
-   * @returns 过期的事件列表
+   * @returns 过期的事件实例列表
    */
-  checkExpiry(currentTurn: number): ActiveGameEvent[] {
-    const expired: ActiveGameEvent[] = [];
+  expireEvents(currentTurn: number): EventInstance[] {
+    const expired: EventInstance[] = [];
 
-    for (const [id, event] of this.activeEvents) {
-      if (event.status !== 'active') continue;
-      if (event.expiresAtTurn > 0 && currentTurn >= event.expiresAtTurn) {
-        event.status = 'expired';
-        expired.push({ ...event });
+    for (const [instanceId, instance] of this.activeEvents) {
+      if (instance.expireTurn !== null && currentTurn >= instance.expireTurn) {
+        instance.status = 'expired';
+        expired.push(instance);
+        this.activeEvents.delete(instanceId);
+
+        this.deps?.eventBus.emit('event:expired', {
+          instanceId,
+          eventDefId: instance.eventDefId,
+        });
       }
     }
 
     return expired;
   }
 
-  // ─── 离线事件处理（#24）──────────────────────
+  // ─── 配置 ──────────────────────────────────
 
-  /**
-   * 离线事件自动处理
-   *
-   * 对离线期间积累的事件进行自动处理：
-   *   - 选择AI权重最高的选项
-   *   - 应用后果
-   *   - 生成处理报告
-   *
-   * @param offlineTurns - 离线回合数
-   * @param currentTurn - 回归时的回合
-   * @returns 离线处理结果
-   */
-  processOfflineEvents(offlineTurns: number, currentTurn: number): OfflineEventResult {
-    const details: OfflineEventDetail[] = [];
-    const totalResourceChanges: Record<string, number> = {};
-    let processedCount = 0;
-
-    // 模拟离线期间每回合的事件触发
-    for (let i = 0; i < Math.min(offlineTurns, MAX_OFFLINE_EVENTS); i++) {
-      const simTurn = currentTurn - offlineTurns + i;
-
-      // 检查可触发事件
-      const sortedDefs = this.getSortedEventDefs();
-      for (const def of sortedDefs) {
-        if (processedCount >= MAX_OFFLINE_EVENTS) break;
-        if (!this.canTriggerForOffline(def, simTurn)) continue;
-
-        // 选择AI权重最高的选项
-        const bestOption = this.selectBestOptionForAI(def.options);
-        if (!bestOption) continue;
-
-        // 应用后果
-        const consequences = [...bestOption.consequences];
-        for (const c of consequences) {
-          if (c.type === 'resource_change') {
-            totalResourceChanges[c.target] = (totalResourceChanges[c.target] ?? 0) + c.value;
-          }
-        }
-
-        details.push({
-          eventName: def.name,
-          selectedOptionText: bestOption.text,
-          consequences,
-        });
-
-        processedCount++;
-        this.cooldowns.set(def.id, simTurn + def.cooldownTurns);
-        this.totalTriggered++;
-        this.totalCompleted++;
-        this.completedEventIds.add(def.id);
-
-        break; // 每模拟回合最多处理1个事件
-      }
-    }
-
-    return {
-      processedCount,
-      details,
-      totalResourceChanges,
-    };
+  /** 获取配置 */
+  getConfig(): EventTriggerConfig {
+    return { ...this.config };
   }
 
-  // ─── 统计查询 ──────────────────────────────
-
-  getTotalTriggered(): number { return this.totalTriggered; }
-  getTotalCompleted(): number { return this.totalCompleted; }
-
-  /** 获取所有冷却记录 */
-  getAllCooldowns(): Record<GameEventId, number> {
-    return Object.fromEntries(this.cooldowns);
-  }
-
-  /** 获取已完成事件ID列表 */
-  getCompletedEventIds(): GameEventId[] {
-    return Array.from(this.completedEventIds);
+  /** 更新配置 */
+  setConfig(config: Partial<EventTriggerConfig>): void {
+    this.config = { ...this.config, ...config };
   }
 
   // ─── 序列化 ────────────────────────────────
 
   serialize(): EventSystemSaveData {
     return {
+      activeEvents: this.getActiveEvents(),
       completedEventIds: Array.from(this.completedEventIds),
+      banners: [],
       cooldowns: Object.fromEntries(this.cooldowns),
-      totalTriggered: this.totalTriggered,
-      totalCompleted: this.totalCompleted,
-      version: EVENT_SYSTEM_SAVE_VERSION,
+      version: EVENT_SAVE_VERSION,
     };
   }
 
   deserialize(data: EventSystemSaveData): void {
-    this.completedEventIds = new Set(data.completedEventIds ?? []);
+    this.activeEvents.clear();
+    for (const inst of data.activeEvents ?? []) {
+      this.activeEvents.set(inst.instanceId, inst);
+    }
+
+    this.completedEventIds.clear();
+    for (const id of data.completedEventIds ?? []) {
+      this.completedEventIds.add(id);
+    }
+
     this.cooldowns.clear();
     if (data.cooldowns) {
-      for (const [id, turn] of Object.entries(data.cooldowns)) {
-        this.cooldowns.set(id, turn);
+      for (const [eventId, turn] of Object.entries(data.cooldowns)) {
+        this.cooldowns.set(eventId, turn);
       }
     }
-    this.totalTriggered = data.totalTriggered ?? 0;
-    this.totalCompleted = data.totalCompleted ?? 0;
-    this.activeEvents.clear();
   }
 
   // ─── 内部方法 ──────────────────────────────
 
-  /** 创建活跃事件实例 */
-  private createActiveEvent(def: GameEventDef, currentTurn: number): ActiveGameEvent | null {
-    this.instanceCounter++;
-    const instanceId = `evt-instance-${this.instanceCounter}-${Date.now()}`;
-
-    const event: ActiveGameEvent = {
-      instanceId,
-      eventId: def.id,
-      name: def.name,
-      description: def.description,
-      triggerType: def.triggerType,
-      category: def.category,
-      priority: def.priority,
-      status: 'active',
-      options: def.options.map(o => ({ ...o, consequences: [...o.consequences] })),
-      triggeredAtTurn: currentTurn,
-      expiresAtTurn: def.durationTurns > 0 ? currentTurn + def.durationTurns : 0,
-      selectedOptionId: null,
-      appliedConsequences: [],
-    };
-
-    this.activeEvents.set(instanceId, event);
-    return { ...event };
+  /** 加载预定义事件 */
+  private loadPredefinedEvents(): void {
+    for (const def of Object.values(PREDEFINED_EVENTS)) {
+      this.eventDefs.set(def.id, def);
+    }
   }
 
-  /** 按优先级排序事件定义 */
-  private getSortedEventDefs(): GameEventDef[] {
-    const priorityOrder: Record<EventPriority, number> = {
-      urgent: 4, high: 3, normal: 2, low: 1,
-    };
-    return this.getAllEventDefs().sort(
-      (a, b) => priorityOrder[b.priority] - priorityOrder[a.priority],
-    );
-  }
-
-  /** 检查事件条件 */
-  private checkConditions(def: GameEventDef, context: EventTriggerContext): boolean {
-    // 固定事件需要特定条件
-    if (def.triggerType === 'fixed') {
-      if (def.id === 'evt-hulao-pass' && !context.territoriesOwned?.includes('pass-hulao-adjacent')) {
-        return false;
-      }
+  /** 触发事件 */
+  private triggerEvent(eventId: EventId, currentTurn: number, force = false): EventTriggerResult {
+    const def = this.eventDefs.get(eventId);
+    if (!def) {
+      return { triggered: false, reason: `事件 ${eventId} 不存在` };
     }
 
-    // 连锁事件需要前置事件完成
-    if (def.triggerType === 'chain') {
-      // 简化：连锁事件的前置条件通过 completedEventIds 检查
-      // 实际可扩展为 def.prerequisiteEventId
+    // 已有同类型活跃事件时不可重复触发（即使 force）
+    if (this.hasActiveEvent(eventId)) {
+      return { triggered: false, reason: `事件 ${eventId} 已有活跃实例` };
+    }
+
+    if (!force && !this.canTrigger(eventId, currentTurn)) {
+      return { triggered: false, reason: `事件 ${eventId} 不满足触发条件` };
+    }
+
+    // 创建实例
+    const instance = this.createInstance(def, currentTurn);
+
+    // 添加到活跃列表
+    this.activeEvents.set(instance.instanceId, instance);
+
+    // 发出事件
+    this.deps?.eventBus.emit('event:triggered', {
+      instanceId: instance.instanceId,
+      eventDefId: def.id,
+      title: def.title,
+      urgency: def.urgency,
+    });
+
+    return { triggered: true, instance };
+  }
+
+  /** 创建事件实例 */
+  private createInstance(def: EventDef, currentTurn: number): EventInstance {
+    this.instanceCounter++;
+    const expireTurn = def.expireAfterTurns != null
+      ? currentTurn + def.expireAfterTurns
+      : null;
+
+    return {
+      instanceId: `event-inst-${this.instanceCounter}`,
+      eventDefId: def.id,
+      triggeredTurn: currentTurn,
+      expireTurn,
+      status: 'active',
+    };
+  }
+
+  /** 检查固定事件条件 */
+  private checkFixedConditions(def: EventDef, _currentTurn: number): boolean {
+    if (!def.triggerConditions || def.triggerConditions.length === 0) {
+      return true;
+    }
+
+    // 条件检查 — 当前仅做基础验证，后续可扩展
+    for (const cond of def.triggerConditions) {
+      if (!this.evaluateCondition(cond)) {
+        return false;
+      }
     }
 
     return true;
   }
 
-  /** 离线触发检查（简化版概率检查） */
-  private canTriggerForOffline(def: GameEventDef, turn: number): boolean {
-    if (turn < def.minTurn) return false;
-    if (def.triggerType === 'fixed' && this.completedEventIds.has(def.id)) return false;
-    if (!def.offlineProcessable) return false;
+  /** 检查连锁事件前置条件 */
+  private checkChainPrerequisites(def: EventDef): boolean {
+    if (!def.prerequisiteEventIds || def.prerequisiteEventIds.length === 0) {
+      return true;
+    }
 
-    const cooldownEnd = this.cooldowns.get(def.id) ?? 0;
-    if (turn < cooldownEnd) return false;
-
-    // 离线使用固定概率（不使用 Math.random）
-    return def.triggerProbability >= 0.1;
+    return def.prerequisiteEventIds.every((id) => this.completedEventIds.has(id));
   }
 
-  /** AI选择最优选项 */
-  private selectBestOptionForAI(options: EventOption[]): EventOption | null {
-    if (options.length === 0) return null;
-
-    // 优先选择默认选项
-    const defaultOpt = options.find(o => o.isDefault);
-    if (defaultOpt) return defaultOpt;
-
-    // 按AI权重降序排列
-    const sorted = [...options].sort((a, b) => b.aiWeight - a.aiWeight);
-    return sorted[0] ?? null;
+  /** 评估单个条件 */
+  private evaluateCondition(_cond: EventCondition): boolean {
+    // 基础实现：固定事件默认返回true
+    // 后续可扩展为实际条件评估（资源检查、建筑等级检查等）
+    return true;
   }
-}
 
-// ─────────────────────────────────────────────
-// 辅助类型
-// ─────────────────────────────────────────────
+  /** 处理冷却 */
+  private tickCooldowns(_currentTurn: number): void {
+    // 冷却检查在 canTrigger 中处理
+  }
 
-/** 事件触发上下文 */
-export interface EventTriggerContext {
-  /** 已占领领土列表 */
-  territoriesOwned?: string[];
-  /** 玩家等级 */
-  playerLevel?: number;
-  /** 当前资源 */
-  resources?: Record<string, number>;
-  /** 已完成事件ID列表 */
-  completedEvents?: string[];
-}
-
-/** 事件选择结果 */
-export interface EventSelectResult {
-  success: boolean;
-  consequences?: EventConsequence[];
-  event?: ActiveGameEvent;
-  error?: string;
+  /** 生成唯一ID */
+  private generateInstanceId(): string {
+    this.instanceCounter++;
+    return `event-inst-${this.instanceCounter}`;
+  }
 }

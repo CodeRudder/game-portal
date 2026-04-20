@@ -1,0 +1,233 @@
+/**
+ * NPCTab — NPC名册面板样式
+ * 设计规范：水墨江山·铜纹霸业
+ */
+
+.tk-npc-tab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(26, 35, 50, 0.95);
+  border: 1px solid rgba(200, 168, 76, 0.4);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ── 工具栏 ── */
+
+.tk-npc-tab-toolbar {
+  padding: 12px 16px 8px;
+  flex-shrink: 0;
+}
+
+.tk-npc-search {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 6px;
+  color: #f0e6d3;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 200ms;
+}
+
+.tk-npc-search::placeholder { color: #706858; }
+.tk-npc-search:focus { border-color: rgba(200, 168, 76, 0.6); }
+
+/* ── 筛选栏 ── */
+
+.tk-npc-filter-bar {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 10px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.tk-npc-filter-bar::-webkit-scrollbar { height: 3px; }
+.tk-npc-filter-bar::-webkit-scrollbar-thumb { background: rgba(200, 168, 76, 0.2); border-radius: 2px; }
+
+.tk-npc-filter-btn {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 14px;
+  color: #a0a0a0;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 200ms;
+}
+
+.tk-npc-filter-btn:hover { border-color: rgba(200, 168, 76, 0.4); color: #f0e6d3; }
+
+.tk-npc-filter-btn--active {
+  background: rgba(200, 168, 76, 0.15);
+  border-color: #c9a84c;
+  color: #e8d48b;
+}
+
+/* ── NPC列表 ── */
+
+.tk-npc-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tk-npc-list::-webkit-scrollbar { width: 5px; }
+.tk-npc-list::-webkit-scrollbar-thumb { background: rgba(200, 168, 76, 0.25); border-radius: 3px; }
+
+/* ── NPC卡片 ── */
+
+.tk-npc-card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.tk-npc-card:hover {
+  border-color: rgba(200, 168, 76, 0.4);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.tk-npc-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.tk-npc-card-icon {
+  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(200, 168, 76, 0.1);
+  border-radius: 50%;
+}
+
+.tk-npc-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-npc-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f0e6d3;
+}
+
+.tk-npc-card-profession {
+  font-size: 11px;
+  color: #a0a0a0;
+}
+
+/* ── 好感度条 ── */
+
+.tk-npc-card-affinity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tk-npc-affinity-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tk-npc-affinity-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 300ms ease-out;
+}
+
+.tk-npc-affinity-label {
+  font-size: 11px;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* ── 操作按钮 ── */
+
+.tk-npc-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tk-npc-action-btn {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 200ms;
+  text-align: center;
+}
+
+.tk-npc-action-btn--dialog {
+  background: rgba(200, 168, 76, 0.12);
+  border-color: rgba(200, 168, 76, 0.3);
+  color: #e8d48b;
+}
+
+.tk-npc-action-btn--dialog:hover { background: rgba(200, 168, 76, 0.25); }
+
+.tk-npc-action-btn--info {
+  background: rgba(52, 152, 219, 0.1);
+  border-color: rgba(52, 152, 219, 0.3);
+  color: #7ec8e3;
+}
+
+.tk-npc-action-btn--info:hover { background: rgba(52, 152, 219, 0.2); }
+
+/* ── 空状态 ── */
+
+.tk-npc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 16px;
+  color: #706858;
+}
+
+.tk-npc-empty-icon { font-size: 32px; }
+.tk-npc-empty-text { font-size: 13px; }
+
+/* ── 底部统计 ── */
+
+.tk-npc-tab-footer {
+  padding: 8px 16px;
+  border-top: 1px solid rgba(200, 168, 76, 0.15);
+  flex-shrink: 0;
+}
+
+.tk-npc-tab-count {
+  font-size: 12px;
+  color: #706858;
+}
+
+/* ── 响应式 ── */
+
+@media (max-width: 767px) {
+  .tk-npc-filter-bar { gap: 4px; }
+  .tk-npc-filter-btn { padding: 3px 8px; font-size: 11px; }
+  .tk-npc-card-actions { flex-direction: column; gap: 4px; }
+}

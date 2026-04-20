@@ -5,6 +5,7 @@
  */
 
 export { EventTriggerSystem } from './EventTriggerSystem';
-export type { EventTriggerContext, EventSelectResult } from './EventTriggerSystem';
 export { EventUINotification } from './EventUINotification';
 export type { EncounterOptionDisplay, EncounterModalData } from './EventUINotification';
+export { EventNotificationSystem } from './EventNotificationSystem';
+export type { EventNotificationSaveData } from './EventNotificationSystem';
