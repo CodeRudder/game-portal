@@ -1,0 +1,369 @@
+/**
+ * WorldMapTab — 世界地图Tab面板样式
+ *
+ * 功能：领土网格地图、筛选工具栏、收益热力图叠加
+ * PC端(1280×696)：左侧地图+右侧信息面板
+ * 手机端(375×507)：全屏地图+底部抽屉信息
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* ── 面板容器 ── */
+.tk-worldmap-tab {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(26, 35, 50, 0.95) 0%, rgba(20, 25, 35, 0.98) 100%);
+}
+
+/* ── 筛选工具栏 ── */
+.tk-worldmap-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+  flex-wrap: wrap;
+}
+
+.tk-worldmap-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tk-worldmap-filter-label {
+  font-size: 11px;
+  color: var(--tk-text-secondary, #a0a0a0);
+  white-space: nowrap;
+}
+
+.tk-worldmap-filter-select {
+  padding: 4px 8px;
+  background: rgba(200, 168, 76, 0.08);
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-primary, #f0e6d3);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+.tk-worldmap-filter-select:hover {
+  border-color: rgba(200, 168, 76, 0.4);
+}
+
+.tk-worldmap-filter-select:focus {
+  border-color: var(--tk-gold, #c9a84c);
+  box-shadow: 0 0 0 2px rgba(200, 168, 76, 0.15);
+}
+
+.tk-worldmap-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(200, 168, 76, 0.15);
+  margin: 0 4px;
+}
+
+/* 热力图开关 */
+.tk-worldmap-heatmap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(200, 168, 76, 0.08);
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-secondary, #a0a0a0);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tk-worldmap-heatmap-toggle:hover {
+  border-color: rgba(200, 168, 76, 0.4);
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-worldmap-heatmap-toggle--active {
+  background: rgba(200, 168, 76, 0.2);
+  border-color: var(--tk-gold, #c9a84c);
+  color: var(--tk-gold-light, #e8d48b);
+}
+
+/* ── 地图主体 ── */
+.tk-worldmap-body {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 地图网格容器 */
+.tk-worldmap-grid-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 6px;
+  background: rgba(10, 14, 20, 0.8);
+}
+
+/* 领土网格 */
+.tk-worldmap-grid {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* 单个领土格子 */
+.tk-territory-cell {
+  position: relative;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  transition: all 0.15s;
+  min-height: 48px;
+  overflow: hidden;
+}
+
+.tk-territory-cell:hover {
+  transform: scale(1.05);
+  z-index: 2;
+  border-color: rgba(200, 168, 76, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* 领土归属状态 */
+.tk-territory-cell--player {
+  background: rgba(52, 152, 219, 0.25);
+  border-color: rgba(52, 152, 219, 0.4);
+}
+
+.tk-territory-cell--enemy {
+  background: rgba(184, 66, 58, 0.2);
+  border-color: rgba(184, 66, 58, 0.3);
+}
+
+.tk-territory-cell--neutral {
+  background: rgba(100, 100, 100, 0.15);
+  border-color: rgba(100, 100, 100, 0.25);
+}
+
+.tk-territory-cell--selected {
+  border-color: var(--tk-gold, #c9a84c);
+  box-shadow: 0 0 0 2px rgba(200, 168, 76, 0.3);
+}
+
+/* 领土名称 */
+.tk-territory-cell-name {
+  font-size: 10px;
+  color: var(--tk-text-primary, #f0e6d3);
+  text-align: center;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* 领土等级 */
+.tk-territory-cell-level {
+  font-size: 9px;
+  color: var(--tk-gold-light, #e8d48b);
+  margin-top: 2px;
+}
+
+/* 热力图叠加层 */
+.tk-territory-cell-heatmap {
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ── 产出气泡 ── */
+.tk-territory-bubble {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: rgba(126, 200, 80, 0.9);
+  color: #1a1a1a;
+  font-size: 9px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  animation: tk-bubble-pop 300ms ease-out;
+  white-space: nowrap;
+}
+
+.tk-territory-bubble--gold {
+  background: rgba(212, 160, 23, 0.9);
+  color: #1a1a1a;
+}
+
+.tk-territory-bubble--troops {
+  background: rgba(220, 38, 38, 0.9);
+  color: #fff;
+}
+
+@keyframes tk-bubble-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── 右侧信息面板 ── */
+.tk-worldmap-info-panel {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-left: 4px;
+}
+
+.tk-worldmap-info-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tk-worldmap-info-panel::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 76, 0.2);
+  border-radius: 2px;
+}
+
+/* ── 统计卡片 ── */
+.tk-worldmap-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tk-worldmap-stat-card {
+  flex: 1;
+  min-width: 100px;
+  padding: 8px 10px;
+  background: rgba(200, 168, 76, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.12);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-worldmap-stat-label {
+  font-size: 10px;
+  color: var(--tk-text-secondary, #a0a0a0);
+}
+
+.tk-worldmap-stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tk-gold-light, #e8d48b);
+  font-family: var(--tk-font-title, inherit);
+}
+
+/* ── 热力图图例 ── */
+.tk-worldmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(200, 168, 76, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.12);
+  border-radius: 6px;
+}
+
+.tk-worldmap-legend-label {
+  font-size: 10px;
+  color: var(--tk-text-secondary, #a0a0a0);
+}
+
+.tk-worldmap-legend-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(52, 152, 219, 0.3), rgba(126, 200, 80, 0.6), rgba(212, 160, 23, 0.8), rgba(220, 38, 38, 0.9));
+}
+
+/* ── 空状态 ── */
+.tk-worldmap-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tk-text-secondary, #a0a0a0);
+  font-size: 14px;
+}
+
+/* ── 移动端适配 ── */
+@media (max-width: 767px) {
+  .tk-worldmap-toolbar {
+    gap: 4px;
+    padding: 4px 0 8px;
+  }
+
+  .tk-worldmap-filter-label {
+    display: none;
+  }
+
+  .tk-worldmap-filter-select {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .tk-worldmap-body {
+    flex-direction: column;
+  }
+
+  .tk-worldmap-info-panel {
+    width: 100%;
+    max-height: 160px;
+    padding-left: 0;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .tk-worldmap-stat-card {
+    min-width: 80px;
+  }
+
+  .tk-territory-cell {
+    min-height: 36px;
+  }
+
+  .tk-territory-cell-name {
+    font-size: 8px;
+  }
+
+  .tk-territory-bubble {
+    min-width: 14px;
+    height: 14px;
+    font-size: 8px;
+    top: -4px;
+    right: -4px;
+  }
+}

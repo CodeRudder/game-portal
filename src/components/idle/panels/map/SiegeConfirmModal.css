@@ -1,0 +1,144 @@
+/**
+ * SiegeConfirmModal — 攻城确认弹窗样式
+ */
+
+/* 容器 */
+.tk-siege-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 目标信息 */
+.tk-siege-target-info {
+  display: flex;
+  gap: 16px;
+  padding: 8px 12px;
+  background: rgba(184, 66, 58, 0.08);
+  border: 1px solid rgba(184, 66, 58, 0.2);
+  border-radius: 6px;
+}
+
+.tk-siege-target-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-siege-target-label {
+  font-size: 10px;
+  color: var(--tk-text-secondary, #a0a0a0);
+}
+
+.tk-siege-target-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+/* 区段标题 */
+.tk-siege-section-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tk-gold-light, #e8d48b);
+}
+
+/* 条件列表 */
+.tk-siege-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-siege-condition {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.tk-siege-condition--pass {
+  background: rgba(126, 200, 80, 0.08);
+}
+
+.tk-siege-condition--fail {
+  background: rgba(184, 66, 58, 0.08);
+}
+
+.tk-siege-condition-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.tk-siege-condition-label {
+  color: var(--tk-text-primary, #f0e6d3);
+  min-width: 60px;
+}
+
+.tk-siege-condition-detail {
+  color: var(--tk-text-secondary, #a0a0a0);
+  font-size: 11px;
+}
+
+/* 消耗区 */
+.tk-siege-cost {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-siege-cost-grid {
+  display: flex;
+  gap: 12px;
+}
+
+.tk-siege-cost-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(200, 168, 76, 0.06);
+  border-radius: 4px;
+}
+
+.tk-siege-cost-icon {
+  font-size: 12px;
+}
+
+.tk-siege-cost-label {
+  font-size: 11px;
+  color: var(--tk-text-secondary, #a0a0a0);
+}
+
+.tk-siege-cost-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e8a0a0;
+}
+
+/* 错误消息 */
+.tk-siege-error {
+  padding: 8px 12px;
+  background: rgba(184, 66, 58, 0.12);
+  border: 1px solid rgba(184, 66, 58, 0.3);
+  border-radius: 6px;
+  color: #e8a0a0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* 移动端 */
+@media (max-width: 767px) {
+  .tk-siege-target-info {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tk-siege-cost-grid {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

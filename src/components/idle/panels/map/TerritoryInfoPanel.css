@@ -1,0 +1,175 @@
+/**
+ * TerritoryInfoPanel — 领土信息面板样式
+ */
+
+/* 面板容器 */
+.tk-territory-info {
+  padding: 10px 12px;
+  background: rgba(200, 168, 76, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tk-territory-info--player { border-color: rgba(52, 152, 219, 0.3); }
+.tk-territory-info--enemy { border-color: rgba(184, 66, 58, 0.3); }
+.tk-territory-info--neutral { border-color: rgba(100, 100, 100, 0.25); }
+
+/* 标题区 */
+.tk-territory-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tk-territory-info-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-territory-info-ownership {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(200, 168, 76, 0.12);
+  color: var(--tk-text-secondary, #a0a0a0);
+}
+
+.tk-territory-info--player .tk-territory-info-ownership {
+  background: rgba(52, 152, 219, 0.15);
+  color: #7ec8e3;
+}
+
+.tk-territory-info--enemy .tk-territory-info-ownership {
+  background: rgba(184, 66, 58, 0.15);
+  color: #e8a0a0;
+}
+
+/* 属性区 */
+.tk-territory-info-attrs {
+  display: flex;
+  gap: 12px;
+}
+
+.tk-territory-info-attr {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tk-territory-info-attr-label {
+  font-size: 10px;
+  color: var(--tk-text-secondary, #a0a0a0);
+}
+
+.tk-territory-info-attr-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tk-gold-light, #e8d48b);
+}
+
+/* 产出区 */
+.tk-territory-info-production {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-territory-info-section-title {
+  margin: 0;
+  font-size: 11px;
+  color: var(--tk-text-secondary, #a0a0a0);
+  font-weight: 400;
+}
+
+.tk-territory-info-prod-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+}
+
+.tk-territory-info-prod-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tk-territory-info-prod-icon {
+  font-size: 12px;
+}
+
+.tk-territory-info-prod-value {
+  font-size: 12px;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-territory-info-total {
+  font-size: 11px;
+  color: var(--tk-text-secondary, #a0a0a0);
+  padding-top: 2px;
+  border-top: 1px solid rgba(200, 168, 76, 0.08);
+}
+
+.tk-territory-info-total strong {
+  color: var(--tk-gold-light, #e8d48b);
+}
+
+/* 操作按钮 */
+.tk-territory-info-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tk-territory-info-btn {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: inherit;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.tk-territory-info-btn--upgrade {
+  background: rgba(52, 152, 219, 0.15);
+  border-color: rgba(52, 152, 219, 0.4);
+  color: #7ec8e3;
+}
+
+.tk-territory-info-btn--upgrade:hover {
+  background: rgba(52, 152, 219, 0.25);
+}
+
+.tk-territory-info-btn--siege {
+  background: rgba(184, 66, 58, 0.15);
+  border-color: rgba(184, 66, 58, 0.4);
+  color: #e8a0a0;
+}
+
+.tk-territory-info-btn--siege:hover {
+  background: rgba(184, 66, 58, 0.25);
+}
+
+/* 移动端 */
+@media (max-width: 767px) {
+  .tk-territory-info {
+    padding: 8px;
+    min-width: 160px;
+  }
+
+  .tk-territory-info-name {
+    font-size: 12px;
+  }
+
+  .tk-territory-info-attrs {
+    gap: 8px;
+  }
+}

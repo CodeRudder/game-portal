@@ -1,0 +1,234 @@
+/**
+ * TechOfflinePanel — 离线研究面板样式
+ */
+
+/* 容器 */
+.tk-tech-offline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 离线时长 */
+.tk-tech-offline-duration {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(200, 168, 76, 0.08);
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 6px;
+}
+
+.tk-tech-offline-duration-icon {
+  font-size: 16px;
+}
+
+.tk-tech-offline-duration-text {
+  font-size: 13px;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-tech-offline-duration-text strong {
+  color: var(--tk-gold-light, #e8d48b);
+}
+
+/* 区段 */
+.tk-tech-offline-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tk-tech-offline-section-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tk-gold-light, #e8d48b);
+}
+
+/* 完成的研究列表 */
+.tk-tech-offline-tech-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tk-tech-offline-tech-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(126, 200, 80, 0.06);
+  border-radius: 4px;
+}
+
+.tk-tech-offline-tech-icon {
+  font-size: 12px;
+}
+
+.tk-tech-offline-tech-name {
+  font-size: 12px;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+/* 效果列表 */
+.tk-tech-offline-effects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.tk-tech-offline-effect-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: rgba(200, 168, 76, 0.06);
+  border-radius: 4px;
+}
+
+.tk-tech-offline-effect-key {
+  font-size: 11px;
+  color: var(--tk-text-secondary, #a0a0a0);
+}
+
+.tk-tech-offline-effect-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7ec8e3;
+}
+
+/* 科技点 */
+.tk-tech-offline-points {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 6px;
+}
+
+.tk-tech-offline-points-icon {
+  font-size: 14px;
+}
+
+.tk-tech-offline-points-text {
+  font-size: 13px;
+  color: var(--tk-text-primary, #f0e6d3);
+  flex: 1;
+}
+
+.tk-tech-offline-points-text strong {
+  color: #c4b5fd;
+}
+
+.tk-tech-offline-allocate-btn {
+  padding: 4px 12px;
+  background: rgba(124, 58, 237, 0.2);
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  border-radius: 4px;
+  color: #c4b5fd;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tk-tech-offline-allocate-btn:hover {
+  background: rgba(124, 58, 237, 0.35);
+}
+
+/* 空状态 */
+.tk-tech-offline-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--tk-text-secondary, #a0a0a0);
+  font-size: 13px;
+}
+
+/* 科技重置区 */
+.tk-tech-offline-reset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(184, 66, 58, 0.06);
+  border: 1px solid rgba(184, 66, 58, 0.15);
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+
+.tk-tech-offline-reset-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.tk-tech-offline-reset-label {
+  font-size: 12px;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-tech-offline-reset-hint {
+  font-size: 10px;
+  color: var(--tk-text-secondary, #a0a0a0);
+}
+
+.tk-tech-offline-reset-btn {
+  padding: 6px 14px;
+  background: rgba(184, 66, 58, 0.12);
+  border: 1px solid rgba(184, 66, 58, 0.3);
+  border-radius: 6px;
+  color: #e8a0a0;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.tk-tech-offline-reset-btn:hover {
+  background: rgba(184, 66, 58, 0.2);
+}
+
+.tk-tech-offline-reset-btn--confirm {
+  background: rgba(184, 66, 58, 0.25);
+  border-color: rgba(184, 66, 58, 0.6);
+  animation: tk-reset-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes tk-reset-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.tk-tech-offline-reset-cancel {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-secondary, #a0a0a0);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* 移动端 */
+@media (max-width: 767px) {
+  .tk-tech-offline-effects {
+    grid-template-columns: 1fr;
+  }
+
+  .tk-tech-offline-reset {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tk-tech-offline-reset-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

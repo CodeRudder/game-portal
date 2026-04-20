@@ -140,7 +140,7 @@ export interface TileData {
 // ─────────────────────────────────────────────
 
 /** 地标类型 */
-export type LandmarkType = 'city' | 'pass' | 'resource';
+export type LandmarkType = 'city' | 'pass' | 'resource' | 'capital' | 'fortress' | 'village';
 
 /** 地标等级 */
 export type LandmarkLevel = 1 | 2 | 3 | 4 | 5;
