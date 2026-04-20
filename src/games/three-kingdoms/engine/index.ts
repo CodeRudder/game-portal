@@ -436,3 +436,31 @@ export {
   DEFAULT_MAIL_EXPIRE_DAYS,
   MAIL_SAVE_VERSION,
 } from './mail/mail.types';
+
+// ──────────────────────────────────────────────
+// v18.0 新手引导
+// ──────────────────────────────────────────────
+
+// 引导域
+export { TutorialStateMachine } from './guide/TutorialStateMachine';
+export { TutorialStepManager } from './guide/TutorialStepManager';
+export type {
+  TutorialGameState,
+  AccelerationState,
+  StepExecutionResult,
+} from './guide/TutorialStepManager';
+export { TutorialStepExecutor } from './guide/TutorialStepExecutor';
+export type { StepExecutorStateSlice } from './guide/TutorialStepExecutor';
+export { StoryEventPlayer } from './guide/StoryEventPlayer';
+export type {
+  StoryPlayState,
+  TypewriterState,
+  StoryPlayProgress,
+  StoryGameState,
+  SkipConfirmResult,
+} from './guide/StoryEventPlayer';
+export { TutorialStorage } from './guide/TutorialStorage';
+export type {
+  StorageResult,
+  FirstLaunchResult,
+} from './guide/TutorialStorage';
