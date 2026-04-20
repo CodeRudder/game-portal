@@ -1,7 +1,7 @@
 /**
  * 核心层 — NPC 数据配置
  *
- * 包含 NPC 职业定义、初始 NPC 列表、对话树配置、地图展示参数等静态配置。
+ * 包含 NPC 职业定义、默认 NPC 数据、对话树配置等静态数据。
  * 所有配置为只读常量，运行时不可修改。
  *
  * @module core/npc/npc-config
@@ -11,16 +11,18 @@ import type {
   NPCProfession,
   NPCProfessionDef,
   NPCData,
-  NPCId,
   AffinityLevel,
   DialogTree,
   NPCClusterConfig,
   CrowdManagementConfig,
+  NPCAction,
 } from './npc.types';
 import { AFFINITY_THRESHOLDS } from './npc.types';
+import type { RegionId, GridPosition } from '../map';
+import { REGION_IDS } from '../map';
 
 // ─────────────────────────────────────────────
-// 1. NPC 职业定义（#9）
+// 1. 职业定义（#9）
 // ─────────────────────────────────────────────
 
 /** NPC 职业定义表 */
@@ -28,7 +30,7 @@ export const NPC_PROFESSION_DEFS: Record<NPCProfession, NPCProfessionDef> = {
   merchant: {
     profession: 'merchant',
     label: '商人',
-    description: '行走各地的商人，出售稀有物品和资源',
+    description: '行走天下的商贾，善于交易买卖',
     icon: '🏪',
     defaultAffinity: 30,
     affinityDecayRate: -0.5,
@@ -37,7 +39,7 @@ export const NPC_PROFESSION_DEFS: Record<NPCProfession, NPCProfessionDef> = {
   strategist: {
     profession: 'strategist',
     label: '谋士',
-    description: '隐居山林的谋士，提供情报和计策',
+    description: '运筹帷幄的智者，提供情报与计策',
     icon: '📜',
     defaultAffinity: 25,
     affinityDecayRate: -0.3,
@@ -46,7 +48,7 @@ export const NPC_PROFESSION_DEFS: Record<NPCProfession, NPCProfessionDef> = {
   warrior: {
     profession: 'warrior',
     label: '武将',
-    description: '游历四方的武将，可切磋武艺',
+    description: '身经百战的猛将，可进行比武挑战',
     icon: '⚔️',
     defaultAffinity: 20,
     affinityDecayRate: -0.2,
@@ -55,41 +57,87 @@ export const NPC_PROFESSION_DEFS: Record<NPCProfession, NPCProfessionDef> = {
   artisan: {
     profession: 'artisan',
     label: '工匠',
-    description: '精通锻造的工匠，可强化装备',
+    description: '技艺精湛的匠人，可锻造升级装备',
     icon: '🔨',
-    defaultAffinity: 35,
+    defaultAffinity: 30,
     affinityDecayRate: -0.4,
     interactionType: 'craft',
   },
   traveler: {
     profession: 'traveler',
     label: '旅人',
-    description: '云游四方的旅人，讲述各地见闻',
+    description: '云游四方的行者，讲述奇闻轶事',
     icon: '🗺️',
-    defaultAffinity: 40,
+    defaultAffinity: 35,
     affinityDecayRate: -0.1,
     interactionType: 'story',
   },
 } as const;
 
-/** NPC 职业列表 */
+/** 职业列表 */
 export const NPC_PROFESSIONS: readonly NPCProfession[] = [
   'merchant', 'strategist', 'warrior', 'artisan', 'traveler',
 ] as const;
 
+/** 职业中文名映射 */
+export const NPC_PROFESSION_LABELS: Record<NPCProfession, string> = {
+  merchant: '商人',
+  strategist: '谋士',
+  warrior: '武将',
+  artisan: '工匠',
+  traveler: '旅人',
+} as const;
+
 // ─────────────────────────────────────────────
-// 2. 初始 NPC 数据（#10）
+// 2. 好感度工具函数（#10, #17）
+// ─────────────────────────────────────────────
+
+/** 根据好感度值获取等级 */
+export function getAffinityLevel(affinity: number): AffinityLevel {
+  const clamped = Math.max(0, Math.min(100, affinity));
+  if (clamped >= AFFINITY_THRESHOLDS.bonded.min) return 'bonded';
+  if (clamped >= AFFINITY_THRESHOLDS.trusted.min) return 'trusted';
+  if (clamped >= AFFINITY_THRESHOLDS.friendly.min) return 'friendly';
+  if (clamped >= AFFINITY_THRESHOLDS.neutral.min) return 'neutral';
+  return 'hostile';
+}
+
+/** 获取当前等级内的进度 (0-1) */
+export function getAffinityProgress(affinity: number): number {
+  const clamped = Math.max(0, Math.min(100, affinity));
+  const level = getAffinityLevel(clamped);
+  const threshold = AFFINITY_THRESHOLDS[level];
+  const range = threshold.max - threshold.min;
+  if (range === 0) return 1;
+  return (clamped - threshold.min) / range;
+}
+
+/** 将好感度限制在 0-100 范围 */
+export function clampAffinity(value: number): number {
+  return Math.max(0, Math.min(100, value));
+}
+
+/** 好感度等级中文名 */
+export const AFFINITY_LEVEL_LABELS: Record<AffinityLevel, string> = {
+  hostile: '敌意',
+  neutral: '中立',
+  friendly: '友善',
+  trusted: '信赖',
+  bonded: '羁绊',
+} as const;
+
+// ─────────────────────────────────────────────
+// 3. 默认 NPC 数据（#10）
 // ─────────────────────────────────────────────
 
 /** 默认 NPC 列表 */
-export const DEFAULT_NPCS: readonly NPCData[] = [
-  // ── 中原 NPC ──
+export const DEFAULT_NPCS: NPCData[] = [
   {
     id: 'npc-merchant-01',
-    name: '吕不韦',
+    name: '甄商',
     profession: 'merchant',
     affinity: 30,
-    position: { x: 32, y: 9 },
+    position: { x: 32, y: 10 },
     region: 'central_plains',
     visible: true,
     dialogId: 'dialog-merchant-default',
@@ -98,10 +146,10 @@ export const DEFAULT_NPCS: readonly NPCData[] = [
   },
   {
     id: 'npc-strategist-01',
-    name: '水镜先生',
+    name: '荀策',
     profession: 'strategist',
     affinity: 25,
-    position: { x: 28, y: 14 },
+    position: { x: 35, y: 8 },
     region: 'central_plains',
     visible: true,
     dialogId: 'dialog-strategist-default',
@@ -110,10 +158,10 @@ export const DEFAULT_NPCS: readonly NPCData[] = [
   },
   {
     id: 'npc-warrior-01',
-    name: '赵云',
+    name: '赵锋',
     profession: 'warrior',
     affinity: 20,
-    position: { x: 35, y: 12 },
+    position: { x: 40, y: 15 },
     region: 'central_plains',
     visible: true,
     dialogId: 'dialog-warrior-default',
@@ -122,11 +170,11 @@ export const DEFAULT_NPCS: readonly NPCData[] = [
   },
   {
     id: 'npc-artisan-01',
-    name: '蒲元',
+    name: '鲁匠',
     profession: 'artisan',
-    affinity: 35,
-    position: { x: 25, y: 15 },
-    region: 'central_plains',
+    affinity: 30,
+    position: { x: 20, y: 25 },
+    region: 'western_shu',
     visible: true,
     dialogId: 'dialog-artisan-default',
     createdAt: 0,
@@ -134,23 +182,22 @@ export const DEFAULT_NPCS: readonly NPCData[] = [
   },
   {
     id: 'npc-traveler-01',
-    name: '徐庶',
+    name: '司马行',
     profession: 'traveler',
-    affinity: 40,
-    position: { x: 30, y: 7 },
-    region: 'central_plains',
+    affinity: 35,
+    position: { x: 45, y: 28 },
+    region: 'jiangnan',
     visible: true,
     dialogId: 'dialog-traveler-default',
     createdAt: 0,
     lastInteractedAt: 0,
   },
-  // ── 江南 NPC ──
   {
     id: 'npc-merchant-02',
-    name: '陆逊',
+    name: '糜商',
     profession: 'merchant',
-    affinity: 30,
-    position: { x: 48, y: 30 },
+    affinity: 40,
+    position: { x: 50, y: 32 },
     region: 'jiangnan',
     visible: true,
     dialogId: 'dialog-merchant-default',
@@ -159,11 +206,11 @@ export const DEFAULT_NPCS: readonly NPCData[] = [
   },
   {
     id: 'npc-strategist-02',
-    name: '鲁肃',
+    name: '庞策',
     profession: 'strategist',
-    affinity: 28,
-    position: { x: 44, y: 33 },
-    region: 'jiangnan',
+    affinity: 45,
+    position: { x: 15, y: 28 },
+    region: 'western_shu',
     visible: true,
     dialogId: 'dialog-strategist-default',
     createdAt: 0,
@@ -171,73 +218,67 @@ export const DEFAULT_NPCS: readonly NPCData[] = [
   },
   {
     id: 'npc-warrior-02',
-    name: '甘宁',
+    name: '黄武',
     profession: 'warrior',
-    affinity: 22,
-    position: { x: 50, y: 35 },
-    region: 'jiangnan',
+    affinity: 50,
+    position: { x: 38, y: 12 },
+    region: 'central_plains',
     visible: true,
     dialogId: 'dialog-warrior-default',
     createdAt: 0,
     lastInteractedAt: 0,
   },
   {
-    id: 'npc-traveler-02',
-    name: '步骘',
-    profession: 'traveler',
-    affinity: 38,
-    position: { x: 42, y: 28 },
-    region: 'jiangnan',
-    visible: true,
-    dialogId: 'dialog-traveler-default',
-    createdAt: 0,
-    lastInteractedAt: 0,
-  },
-  // ── 西蜀 NPC ──
-  {
     id: 'npc-artisan-02',
-    name: '马钧',
+    name: '陈匠',
     profession: 'artisan',
-    affinity: 32,
-    position: { x: 10, y: 28 },
-    region: 'western_shu',
+    affinity: 40,
+    position: { x: 46, y: 30 },
+    region: 'jiangnan',
     visible: true,
     dialogId: 'dialog-artisan-default',
     createdAt: 0,
     lastInteractedAt: 0,
   },
   {
-    id: 'npc-strategist-03',
-    name: '法正',
-    profession: 'strategist',
-    affinity: 26,
+    id: 'npc-traveler-02',
+    name: '孙游',
+    profession: 'traveler',
+    affinity: 35,
     position: { x: 14, y: 32 },
     region: 'western_shu',
     visible: true,
-    dialogId: 'dialog-strategist-default',
-    createdAt: 0,
-    lastInteractedAt: 0,
-  },
-  {
-    id: 'npc-warrior-03',
-    name: '魏延',
-    profession: 'warrior',
-    affinity: 18,
-    position: { x: 8, y: 25 },
-    region: 'western_shu',
-    visible: true,
-    dialogId: 'dialog-warrior-default',
+    dialogId: 'dialog-traveler-default',
     createdAt: 0,
     lastInteractedAt: 0,
   },
 ] as const;
 
 // ─────────────────────────────────────────────
-// 3. 对话树配置（#15）
+// 4. 地图展示配置（#11）
+// ─────────────────────────────────────────────
+
+/** 默认聚合配置 */
+export const DEFAULT_CLUSTER_CONFIG: NPCClusterConfig = {
+  clusterDistance: 48,
+  maxDisplayPerRegion: 5,
+  minClusterSize: 2,
+  enabled: true,
+} as const;
+
+/** 默认拥挤管理配置 */
+export const DEFAULT_CROWD_CONFIG: CrowdManagementConfig = {
+  maxNPCsPerTile: 3,
+  minSpacing: 1,
+  jitterRadius: 12,
+} as const;
+
+// ─────────────────────────────────────────────
+// 5. 对话树配置（#15）
 // ─────────────────────────────────────────────
 
 /** 商人默认对话树 */
-export const DIALOG_MERCHANT_DEFAULT: DialogTree = {
+export const DIALOG_TREE_MERCHANT: DialogTree = {
   id: 'dialog-merchant-default',
   profession: 'merchant',
   startNodeId: 'merchant-start',
@@ -245,93 +286,65 @@ export const DIALOG_MERCHANT_DEFAULT: DialogTree = {
     'merchant-start': {
       id: 'merchant-start',
       speaker: '商人',
-      text: '客官，远道而来辛苦了！在下有些稀罕物件，不知客官可有兴趣？',
+      text: '客官，远道而来辛苦了！我这里有上好的货物，不知客官是否有兴趣？',
       options: [
         {
-          id: 'opt-browse',
+          id: 'merchant-buy',
           text: '看看你有什么好东西',
-          nextNodeId: 'merchant-browse',
+          nextNodeId: 'merchant-buy-response',
           requiredAffinity: 20,
         },
         {
-          id: 'opt-bargain',
-          text: '能不能便宜点？',
-          nextNodeId: 'merchant-bargain',
-          requiredAffinity: 50,
-          effects: [{ type: 'affinity_change', value: -5 }],
-        },
-        {
-          id: 'opt-rumor',
-          text: '听说最近有什么新鲜事？',
-          nextNodeId: 'merchant-rumor',
+          id: 'merchant-rumor',
+          text: '最近有什么消息吗？',
+          nextNodeId: 'merchant-rumor-response',
           requiredAffinity: 40,
         },
         {
-          id: 'opt-leave',
-          text: '下次再说吧',
+          id: 'merchant-bye',
+          text: '下次再来',
           nextNodeId: null,
+          isDefault: true,
         },
       ],
     },
-    'merchant-browse': {
-      id: 'merchant-browse',
+    'merchant-buy-response': {
+      id: 'merchant-buy-response',
       speaker: '商人',
-      text: '这些都是从西域带来的好货，品质上乘！',
+      text: '好眼光！这批丝绸和茶叶都是上等货色，价格公道。',
       options: [
         {
-          id: 'opt-buy',
-          text: '买下这件商品',
-          nextNodeId: 'merchant-thanks',
-          effects: [{ type: 'affinity_change', value: 10 }],
+          id: 'merchant-buy-confirm',
+          text: '买了！',
+          nextNodeId: null,
+          effects: [
+            { type: 'affinity_change', value: 5 },
+            { type: 'grant_resource', value: 'gold', params: { amount: -100 } },
+          ],
         },
         {
-          id: 'opt-back',
-          text: '再看看',
-          nextNodeId: 'merchant-start',
+          id: 'merchant-buy-decline',
+          text: '太贵了，下次吧',
+          nextNodeId: null,
+          effects: [
+            { type: 'affinity_change', value: -2 },
+          ],
         },
       ],
     },
-    'merchant-bargain': {
-      id: 'merchant-bargain',
+    'merchant-rumor-response': {
+      id: 'merchant-rumor-response',
       speaker: '商人',
-      text: '客官真是会做生意……好吧，看在老交情的份上，给你个实惠价！',
+      text: '听说北方的曹操正在大规模征兵，南方孙权也在加固城防……这天下怕是要大变了。',
       options: [
         {
-          id: 'opt-accept',
-          text: '成交！',
-          nextNodeId: 'merchant-thanks',
-          effects: [{ type: 'affinity_change', value: 5 }],
-        },
-        {
-          id: 'opt-refuse',
-          text: '还是太贵了',
+          id: 'merchant-rumor-thanks',
+          text: '多谢消息',
           nextNodeId: null,
-        },
-      ],
-    },
-    'merchant-rumor': {
-      id: 'merchant-rumor',
-      speaker: '商人',
-      text: '听说北边最近不太平，各路诸侯都在招兵买马……多加小心啊客官。',
-      options: [
-        {
-          id: 'opt-thanks',
-          text: '多谢提醒',
-          nextNodeId: null,
-          effects: [{ type: 'affinity_change', value: 3 }],
-        },
-      ],
-    },
-    'merchant-thanks': {
-      id: 'merchant-thanks',
-      speaker: '商人',
-      text: '多谢客官惠顾！下次有好货一定给您留着。',
-      options: [
-        {
-          id: 'opt-goodbye',
-          text: '后会有期',
-          nextNodeId: null,
-          effects: [{ type: 'affinity_change', value: 2 }],
+          effects: [
+            { type: 'affinity_change', value: 3 },
+            { type: 'unlock_info', value: 'north_military_movement' },
+          ],
         },
       ],
     },
@@ -339,7 +352,7 @@ export const DIALOG_MERCHANT_DEFAULT: DialogTree = {
 };
 
 /** 谋士默认对话树 */
-export const DIALOG_STRATEGIST_DEFAULT: DialogTree = {
+export const DIALOG_TREE_STRATEGIST: DialogTree = {
   id: 'dialog-strategist-default',
   profession: 'strategist',
   startNodeId: 'strategist-start',
@@ -347,73 +360,64 @@ export const DIALOG_STRATEGIST_DEFAULT: DialogTree = {
     'strategist-start': {
       id: 'strategist-start',
       speaker: '谋士',
-      text: '阁下气度不凡，想必是干大事之人。在下虽不才，但对天下大势略知一二。',
+      text: '主公，天下大势，合久必分，分久必合。不知主公有何打算？',
       options: [
         {
-          id: 'opt-ask-intel',
-          text: '请先生指点天下大势',
-          nextNodeId: 'strategist-intel',
-          requiredAffinity: 30,
+          id: 'strategist-ask-plan',
+          text: '先生有何高见？',
+          nextNodeId: 'strategist-plan-response',
+          requiredAffinity: 25,
         },
         {
-          id: 'opt-recruit',
-          text: '先生可愿出山相助？',
-          nextNodeId: 'strategist-recruit',
-          requiredAffinity: 65,
+          id: 'strategist-ask-intel',
+          text: '打探一下各方势力的情报',
+          nextNodeId: 'strategist-intel-response',
+          requiredAffinity: 45,
         },
         {
-          id: 'opt-leave',
-          text: '打扰了',
+          id: 'strategist-bye',
+          text: '容后再议',
           nextNodeId: null,
+          isDefault: true,
         },
       ],
     },
-    'strategist-intel': {
-      id: 'strategist-intel',
+    'strategist-plan-response': {
+      id: 'strategist-plan-response',
       speaker: '谋士',
-      text: '据我观察，曹操雄踞北方，孙权虎踞江东，刘备寄居荆州。三方势力此消彼长……',
+      text: '依我之见，当先稳固根基，广积粮草，高筑城墙，待时机成熟再图大业。',
       options: [
         {
-          id: 'opt-detail',
-          text: '请继续说',
-          nextNodeId: 'strategist-detail',
-          effects: [{ type: 'affinity_change', value: 5 }],
-        },
-        {
-          id: 'opt-back',
-          text: '多谢先生',
-          nextNodeId: null,
-        },
-      ],
-    },
-    'strategist-detail': {
-      id: 'strategist-detail',
-      speaker: '谋士',
-      text: '若要成就霸业，需得天时地利人和。中原虽好，但四面受敌；西蜀险要，可图长远。',
-      options: [
-        {
-          id: 'opt-thanks',
-          text: '受教了',
+          id: 'strategist-accept',
+          text: '先生所言极是',
           nextNodeId: null,
           effects: [
-            { type: 'affinity_change', value: 5 },
-            { type: 'unlock_info', value: 'strategic_overview' },
+            { type: 'affinity_change', value: 8 },
+            { type: 'unlock_info', value: 'strategy_consolidate' },
+          ],
+        },
+        {
+          id: 'strategist-decline',
+          text: '兵贵神速，我意已决',
+          nextNodeId: null,
+          effects: [
+            { type: 'affinity_change', value: -5 },
           ],
         },
       ],
     },
-    'strategist-recruit': {
-      id: 'strategist-recruit',
+    'strategist-intel-response': {
+      id: 'strategist-intel-response',
       speaker: '谋士',
-      text: '阁下诚意可鉴，在下愿效犬马之劳！',
+      text: '据我打探，曹操麾下谋士如云，刘备仁德广布，孙权据江东之险。三方势力各有优劣。',
       options: [
         {
-          id: 'opt-accept',
-          text: '太好了！欢迎加入！',
+          id: 'strategist-intel-thanks',
+          text: '多谢先生',
           nextNodeId: null,
           effects: [
-            { type: 'affinity_change', value: 20 },
-            { type: 'trigger_event', value: 'npc_recruited' },
+            { type: 'affinity_change', value: 5 },
+            { type: 'unlock_info', value: 'faction_intel_report' },
           ],
         },
       ],
@@ -422,7 +426,7 @@ export const DIALOG_STRATEGIST_DEFAULT: DialogTree = {
 };
 
 /** 武将默认对话树 */
-export const DIALOG_WARRIOR_DEFAULT: DialogTree = {
+export const DIALOG_TREE_WARRIOR: DialogTree = {
   id: 'dialog-warrior-default',
   profession: 'warrior',
   startNodeId: 'warrior-start',
@@ -430,41 +434,36 @@ export const DIALOG_WARRIOR_DEFAULT: DialogTree = {
     'warrior-start': {
       id: 'warrior-start',
       speaker: '武将',
-      text: '来者何人？看你身手不错，可敢与我一战？',
+      text: '哼，看你的样子，也是习武之人？可敢与我比试比试？',
       options: [
         {
-          id: 'opt-challenge',
-          text: '正想讨教！',
-          nextNodeId: 'warrior-challenge',
+          id: 'warrior-challenge',
+          text: '来吧！一决高下！',
+          nextNodeId: 'warrior-challenge-response',
           requiredAffinity: 20,
         },
         {
-          id: 'opt-spar',
-          text: '切磋一下也无妨',
-          nextNodeId: 'warrior-spar',
+          id: 'warrior-train',
+          text: '请教几招武艺',
+          nextNodeId: 'warrior-train-response',
           requiredAffinity: 40,
         },
         {
-          id: 'opt-friendship',
-          text: '英雄相惜，不如交个朋友',
-          nextNodeId: 'warrior-friendship',
-          requiredAffinity: 60,
-        },
-        {
-          id: 'opt-decline',
-          text: '改日再战',
+          id: 'warrior-bye',
+          text: '告辞',
           nextNodeId: null,
+          isDefault: true,
         },
       ],
     },
-    'warrior-challenge': {
-      id: 'warrior-challenge',
+    'warrior-challenge-response': {
+      id: 'warrior-challenge-response',
       speaker: '武将',
-      text: '好！有胆量！来吧，让我看看你的本事！',
+      text: '好！痛快！且看谁更胜一筹！',
       options: [
         {
-          id: 'opt-fight',
-          text: '迎战！',
+          id: 'warrior-fight',
+          text: '开始比武',
           nextNodeId: null,
           effects: [
             { type: 'affinity_change', value: 10 },
@@ -473,34 +472,18 @@ export const DIALOG_WARRIOR_DEFAULT: DialogTree = {
         },
       ],
     },
-    'warrior-spar': {
-      id: 'warrior-spar',
+    'warrior-train-response': {
+      id: 'warrior-train-response',
       speaker: '武将',
-      text: '你的身手确实了得！我甘拜下风。',
+      text: '好吧，看在你虚心求教的份上，我就教你几招实用的招式。',
       options: [
         {
-          id: 'opt-respect',
-          text: '承让！你的武艺也令人敬佩',
+          id: 'warrior-learn',
+          text: '多谢指教！',
           nextNodeId: null,
           effects: [
-            { type: 'affinity_change', value: 15 },
-            { type: 'grant_resource', value: 'troops', params: { amount: 50 } },
-          ],
-        },
-      ],
-    },
-    'warrior-friendship': {
-      id: 'warrior-friendship',
-      speaker: '武将',
-      text: '好！你是个值得结交的朋友！日后若有需要，尽管来找我。',
-      options: [
-        {
-          id: 'opt-promise',
-          text: '一言为定！',
-          nextNodeId: null,
-          effects: [
-            { type: 'affinity_change', value: 25 },
-            { type: 'trigger_event', value: 'npc_bonded' },
+            { type: 'affinity_change', value: 6 },
+            { type: 'unlock_item', value: 'combat_technique_basic' },
           ],
         },
       ],
@@ -509,7 +492,7 @@ export const DIALOG_WARRIOR_DEFAULT: DialogTree = {
 };
 
 /** 工匠默认对话树 */
-export const DIALOG_ARTISAN_DEFAULT: DialogTree = {
+export const DIALOG_TREE_ARTISAN: DialogTree = {
   id: 'dialog-artisan-default',
   profession: 'artisan',
   startNodeId: 'artisan-start',
@@ -517,77 +500,56 @@ export const DIALOG_ARTISAN_DEFAULT: DialogTree = {
     'artisan-start': {
       id: 'artisan-start',
       speaker: '工匠',
-      text: '欢迎光临！在下是这里的铁匠，精工细作，童叟无欺。',
+      text: '我的手艺可是祖传的！不管是武器还是防具，我都能打造。需要什么？',
       options: [
         {
-          id: 'opt-craft',
+          id: 'artisan-craft',
           text: '帮我打造一件装备',
-          nextNodeId: 'artisan-craft',
-          requiredAffinity: 25,
+          nextNodeId: 'artisan-craft-response',
+          requiredAffinity: 30,
         },
         {
-          id: 'opt-upgrade',
-          text: '强化我的装备',
-          nextNodeId: 'artisan-upgrade',
-          requiredAffinity: 45,
+          id: 'artisan-upgrade',
+          text: '升级我的装备',
+          nextNodeId: 'artisan-upgrade-response',
+          requiredAffinity: 50,
         },
         {
-          id: 'opt-legendary',
-          text: '我听说你能锻造神器？',
-          nextNodeId: 'artisan-legendary',
-          requiredAffinity: 80,
-        },
-        {
-          id: 'opt-leave',
-          text: '下次再来',
+          id: 'artisan-bye',
+          text: '暂时不需要',
           nextNodeId: null,
+          isDefault: true,
         },
       ],
     },
-    'artisan-craft': {
-      id: 'artisan-craft',
+    'artisan-craft-response': {
+      id: 'artisan-craft-response',
       speaker: '工匠',
-      text: '好！让我看看……嗯，这些材料品质不错，一定能打造出上等货色！',
+      text: '好嘞！给我一些材料和时间，保证给你打造出上等货色！',
       options: [
         {
-          id: 'opt-confirm',
-          text: '拜托了！',
+          id: 'artisan-craft-confirm',
+          text: '就拜托你了',
           nextNodeId: null,
           effects: [
-            { type: 'affinity_change', value: 8 },
-            { type: 'trigger_event', value: 'npc_craft' },
+            { type: 'affinity_change', value: 5 },
+            { type: 'trigger_event', value: 'crafting_start' },
           ],
         },
       ],
     },
-    'artisan-upgrade': {
-      id: 'artisan-upgrade',
+    'artisan-upgrade-response': {
+      id: 'artisan-upgrade-response',
       speaker: '工匠',
-      text: '强化装备需要格外小心……不过你放心，我的手艺绝对可靠！',
+      text: '升级装备需要稀有材料，不过放心，交给我准没错！',
       options: [
         {
-          id: 'opt-confirm',
+          id: 'artisan-upgrade-confirm',
           text: '相信你的手艺',
           nextNodeId: null,
           effects: [
-            { type: 'affinity_change', value: 10 },
-            { type: 'trigger_event', value: 'npc_upgrade' },
-          ],
-        },
-      ],
-    },
-    'artisan-legendary': {
-      id: 'artisan-legendary',
-      speaker: '工匠',
-      text: '嘿嘿，你消息灵通啊！确实，我祖上曾传下一门绝技……不过锻造神器需要稀世材料。',
-      options: [
-        {
-          id: 'opt-ask',
-          text: '需要什么材料？',
-          nextNodeId: null,
-          effects: [
-            { type: 'affinity_change', value: 15 },
-            { type: 'unlock_info', value: 'legendary_materials' },
+            { type: 'affinity_change', value: 7 },
+            { type: 'trigger_event', value: 'upgrade_start' },
           ],
         },
       ],
@@ -596,7 +558,7 @@ export const DIALOG_ARTISAN_DEFAULT: DialogTree = {
 };
 
 /** 旅人默认对话树 */
-export const DIALOG_TRAVELER_DEFAULT: DialogTree = {
+export const DIALOG_TREE_TRAVELER: DialogTree = {
   id: 'dialog-traveler-default',
   profession: 'traveler',
   startNodeId: 'traveler-start',
@@ -604,95 +566,63 @@ export const DIALOG_TRAVELER_DEFAULT: DialogTree = {
     'traveler-start': {
       id: 'traveler-start',
       speaker: '旅人',
-      text: '你好啊！我从远方来，走过很多地方，见过很多有趣的事。想听听吗？',
+      text: '啊，又遇到一位旅途中的人。我走遍天下，见过许多奇闻异事，想听听吗？',
       options: [
         {
-          id: 'opt-story',
-          text: '说说你的见闻吧',
-          nextNodeId: 'traveler-story',
+          id: 'traveler-story',
+          text: '说说你的故事',
+          nextNodeId: 'traveler-story-response',
         },
         {
-          id: 'opt-direction',
-          text: '附近有什么值得去的地方？',
-          nextNodeId: 'traveler-direction',
-          requiredAffinity: 30,
+          id: 'traveler-legend',
+          text: '有什么传说吗？',
+          nextNodeId: 'traveler-legend-response',
+          requiredAffinity: 35,
         },
         {
-          id: 'opt-secret',
-          text: '有什么秘密可以告诉我吗？',
-          nextNodeId: 'traveler-secret',
-          requiredAffinity: 70,
-        },
-        {
-          id: 'opt-leave',
-          text: '有缘再见',
+          id: 'traveler-bye',
+          text: '后会有期',
           nextNodeId: null,
+          isDefault: true,
         },
       ],
     },
-    'traveler-story': {
-      id: 'traveler-story',
+    'traveler-story-response': {
+      id: 'traveler-story-response',
       speaker: '旅人',
-      text: '我曾到过西域，那里有大漠孤烟，也有绿洲明珠。最难忘的是一次在月下听老者讲述古战场的传说……',
+      text: '有一次我在深山中发现了一座古墓，里面藏着上古的兵法和宝物……不过那地方危险重重。',
       options: [
         {
-          id: 'opt-more',
-          text: '继续说',
-          nextNodeId: 'traveler-story2',
-          effects: [{ type: 'affinity_change', value: 3 }],
-        },
-        {
-          id: 'opt-back',
-          text: '真是有趣',
-          nextNodeId: null,
-          effects: [{ type: 'affinity_change', value: 2 }],
-        },
-      ],
-    },
-    'traveler-story2': {
-      id: 'traveler-story2',
-      speaker: '旅人',
-      text: '据说在那片古战场上，至今还能听到战鼓声……有人在那里找到了一把锈迹斑斑的古剑。',
-      options: [
-        {
-          id: 'opt-thanks',
-          text: '多谢分享，记下了',
+          id: 'traveler-story-interested',
+          text: '古墓在哪里？',
           nextNodeId: null,
           effects: [
-            { type: 'affinity_change', value: 5 },
-            { type: 'unlock_info', value: 'ancient_battlefield' },
+            { type: 'affinity_change', value: 4 },
+            { type: 'unlock_info', value: 'ancient_tomb_location' },
+          ],
+        },
+        {
+          id: 'traveler-story-cautious',
+          text: '听起来很危险',
+          nextNodeId: null,
+          effects: [
+            { type: 'affinity_change', value: 2 },
           ],
         },
       ],
     },
-    'traveler-direction': {
-      id: 'traveler-direction',
+    'traveler-legend-response': {
+      id: 'traveler-legend-response',
       speaker: '旅人',
-      text: '往东走有一座古城遗址，据说藏有宝物。不过那里机关重重，需要小心行事。',
+      text: '传说在极西之地，有一座通天塔，登顶者可得天命……不过至今无人成功。',
       options: [
         {
-          id: 'opt-thanks',
-          text: '多谢指引！',
+          id: 'traveler-legend-thanks',
+          text: '有意思的传说',
           nextNodeId: null,
           effects: [
             { type: 'affinity_change', value: 5 },
-            { type: 'unlock_info', value: 'ancient_ruins_location' },
-          ],
-        },
-      ],
-    },
-    'traveler-secret': {
-      id: 'traveler-secret',
-      speaker: '旅人',
-      text: '既然你如此信任我……我告诉你一个秘密。在剑阁附近的山洞中，藏着一位隐士留下的兵法残卷。',
-      options: [
-        {
-          id: 'opt-gratitude',
-          text: '太感谢了！我一定去找',
-          nextNodeId: null,
-          effects: [
-            { type: 'affinity_change', value: 15 },
-            { type: 'unlock_item', value: 'scroll_fragment_location' },
+            { type: 'unlock_info', value: 'legend_sky_tower' },
           ],
         },
       ],
@@ -702,78 +632,83 @@ export const DIALOG_TRAVELER_DEFAULT: DialogTree = {
 
 /** 所有对话树映射 */
 export const DIALOG_TREES: Record<string, DialogTree> = {
-  'dialog-merchant-default': DIALOG_MERCHANT_DEFAULT,
-  'dialog-strategist-default': DIALOG_STRATEGIST_DEFAULT,
-  'dialog-warrior-default': DIALOG_WARRIOR_DEFAULT,
-  'dialog-artisan-default': DIALOG_ARTISAN_DEFAULT,
-  'dialog-traveler-default': DIALOG_TRAVELER_DEFAULT,
+  'dialog-merchant-default': DIALOG_TREE_MERCHANT,
+  'dialog-strategist-default': DIALOG_TREE_STRATEGIST,
+  'dialog-warrior-default': DIALOG_TREE_WARRIOR,
+  'dialog-artisan-default': DIALOG_TREE_ARTISAN,
+  'dialog-traveler-default': DIALOG_TREE_TRAVELER,
 } as const;
 
-// ─────────────────────────────────────────────
-// 4. 地图展示配置（#11）
-// ─────────────────────────────────────────────
-
-/** 默认聚合配置 */
-export const DEFAULT_CLUSTER_CONFIG: NPCClusterConfig = {
-  clusterDistance: 48,
-  maxDisplayPerRegion: 8,
-  minClusterSize: 2,
-  enabled: true,
-} as const;
-
-/** 默认拥挤管理配置 */
-export const DEFAULT_CROWD_CONFIG: CrowdManagementConfig = {
-  maxNPCsPerTile: 3,
-  minSpacing: 2,
-  jitterRadius: 12,
-} as const;
+/** 对话树别名（按测试约定命名） */
+export const DIALOG_MERCHANT_DEFAULT = DIALOG_TREE_MERCHANT;
+export const DIALOG_STRATEGIST_DEFAULT = DIALOG_TREE_STRATEGIST;
+export const DIALOG_WARRIOR_DEFAULT = DIALOG_TREE_WARRIOR;
+export const DIALOG_ARTISAN_DEFAULT = DIALOG_TREE_ARTISAN;
+export const DIALOG_TRAVELER_DEFAULT = DIALOG_TREE_TRAVELER;
 
 // ─────────────────────────────────────────────
-// 5. 辅助函数
+// 6. NPC 操作定义（#14）
+// ─────────────────────────────────────────────
+
+/** 根据职业和好感度获取可用操作 */
+export function getAvailableActions(
+  profession: NPCProfession,
+  affinity: number,
+): NPCAction[] {
+  const def = NPC_PROFESSION_DEFS[profession];
+  const actions: NPCAction[] = [
+    {
+      id: 'talk',
+      label: '对话',
+      icon: '💬',
+      enabled: true,
+      requiredAffinity: 0,
+    },
+    {
+      id: def.interactionType,
+      label: getInteractionLabel(def.interactionType),
+      icon: def.icon,
+      enabled: affinity >= def.defaultAffinity,
+      disabledReason: affinity < def.defaultAffinity
+        ? `需要好感度达到${def.defaultAffinity}`
+        : undefined,
+      requiredAffinity: def.defaultAffinity,
+    },
+    {
+      id: 'gift',
+      label: '赠送',
+      icon: '🎁',
+      enabled: affinity >= 30,
+      disabledReason: affinity < 30 ? '需要好感度达到30' : undefined,
+      requiredAffinity: 30,
+    },
+    {
+      id: 'quest',
+      label: '任务',
+      icon: '📋',
+      enabled: affinity >= 50,
+      disabledReason: affinity < 50 ? '需要好感度达到50' : undefined,
+      requiredAffinity: 50,
+    },
+  ];
+  return actions;
+}
+
+/** 获取交互类型中文名 */
+function getInteractionLabel(type: string): string {
+  const labels: Record<string, string> = {
+    trade: '交易',
+    intel: '情报',
+    challenge: '比武',
+    craft: '锻造',
+    story: '故事',
+  };
+  return labels[type] ?? '交互';
+}
+
+// ─────────────────────────────────────────────
+// 7. 存档版本
 // ─────────────────────────────────────────────
 
 /** NPC 存档版本号 */
 export const NPC_SAVE_VERSION = 1;
-
-/**
- * 根据好感度值获取好感度等级
- *
- * @param affinity - 好感度值 (0-100)
- * @returns 好感度等级
- */
-export function getAffinityLevel(affinity: number): AffinityLevel {
-  const clamped = Math.max(0, Math.min(100, affinity));
-  const levels: AffinityLevel[] = ['hostile', 'neutral', 'friendly', 'trusted', 'bonded'];
-  for (const level of levels) {
-    const threshold = AFFINITY_THRESHOLDS[level];
-    if (clamped >= threshold.min && clamped <= threshold.max) {
-      return level;
-    }
-  }
-  return 'neutral';
-}
-
-/**
- * 获取好感度在当前等级内的进度 (0-1)
- *
- * @param affinity - 好感度值
- * @returns 进度百分比
- */
-export function getAffinityProgress(affinity: number): number {
-  const clamped = Math.max(0, Math.min(100, affinity));
-  const level = getAffinityLevel(clamped);
-  const threshold = AFFINITY_THRESHOLDS[level];
-  const range = threshold.max - threshold.min;
-  if (range === 0) return 0;
-  return (clamped - threshold.min) / range;
-}
-
-/**
- * 限制好感度在有效范围内
- *
- * @param affinity - 好感度值
- * @returns 钳位后的好感度
- */
-export function clampAffinity(affinity: number): number {
-  return Math.max(0, Math.min(100, affinity));
-}
