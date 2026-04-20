@@ -116,7 +116,7 @@ export class ChatSystem {
     const channelKey = targetId ? `${channel}_${targetId}` : channel;
     const lastSend = state.lastSendTime[channelKey] || 0;
     const interval = this.channelConfigs[channel].sendIntervalMs;
-    if (interval > 0 && now - lastSend < interval) {
+    if (interval > 0 && lastSend > 0 && now - lastSend < interval) {
       throw new Error('发言间隔太短');
     }
 

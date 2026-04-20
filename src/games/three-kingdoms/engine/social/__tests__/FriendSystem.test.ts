@@ -81,8 +81,8 @@ describe('FriendSystem — 好友添加', () => {
 
   test('重复添加好友应抛出异常', () => {
     const friend = createFriend();
-    system.addFriend(state, friend);
-    expect(() => system.addFriend(state, friend)).toThrow('已经是好友了');
+    const added = system.addFriend(state, friend);
+    expect(() => system.addFriend(added, friend)).toThrow('已经是好友了');
   });
 
   test('达到好友上限应抛出异常', () => {
@@ -133,7 +133,10 @@ describe('FriendSystem — 好友删除', () => {
     const s = system.addFriend(state, friend);
     const now = 2000000;
     const after = system.removeFriend(s, friend.playerId, now);
-    expect(() => system.removeFriend(after, friend.playerId, now + 1000)).toThrow('删除冷却中');
+    // 删除后好友已移除，再次删除会先检查"不是好友"
+    // 需要重新添加好友来触发冷却检查
+    const readded = system.addFriend(after, friend);
+    expect(() => system.removeFriend(readded, friend.playerId, now + 1000)).toThrow('删除冷却中');
   });
 
   test('冷却结束后可再次删除（重新添加后）', () => {
@@ -349,16 +352,15 @@ describe('FriendSystem — 借将系统', () => {
 
   test('借将达到每日上限', () => {
     let s = friendState;
+    // 添加多个好友作为出借方
+    s = system.addFriend(s, createFriend({ playerId: 'lender2' }));
+    s = system.addFriend(s, createFriend({ playerId: 'lender3' }));
+    const lenders = ['lender', 'lender2', 'lender3'];
+
     for (let i = 0; i < DEFAULT_INTERACTION_CONFIG.borrowDailyLimit; i++) {
-      const result = system.borrowHero(s, `hero_${i}`, `lender`, 'borrower', 1000 + i);
+      const result = system.borrowHero(s, `hero_${i}`, lenders[i], 'borrower', 1000 + i);
       s = result.state;
-      // 归还上一个借将，以避免"已有借出武将未归还"的限制
-      if (i > 0) {
-        s = system.returnBorrowedHero(s, s.activeBorrows[i - 1].id);
-      }
     }
-    // 注意：由于同一好友只能借一个，需要特殊处理
-    // 直接测试达到上限
     expect(s.dailyBorrowCount).toBe(DEFAULT_INTERACTION_CONFIG.borrowDailyLimit);
   });
 
