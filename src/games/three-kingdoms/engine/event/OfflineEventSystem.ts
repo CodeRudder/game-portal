@@ -398,15 +398,19 @@ export class OfflineEventSystem implements ISubsystem {
         return bestId;
       }
       case 'safest': {
-        // 选择资源消耗最小的选项
+        // 选择资源消耗最小的选项（先比较损失，损失相同则比较总变化量绝对值）
         let safestId = def.options[0].id;
         let minLoss = Infinity;
+        let minTotalImpact = Infinity;
         for (const opt of def.options) {
-          const loss = Object.values(opt.consequences.resourceChanges ?? {})
+          const changes = Object.values(opt.consequences.resourceChanges ?? {});
+          const loss = changes
             .filter(v => v < 0)
             .reduce((s, v) => s + Math.abs(v), 0);
-          if (loss < minLoss) {
+          const totalImpact = changes.reduce((s, v) => s + Math.abs(v), 0);
+          if (loss < minLoss || (loss === minLoss && totalImpact < minTotalImpact)) {
             minLoss = loss;
+            minTotalImpact = totalImpact;
             safestId = opt.id;
           }
         }

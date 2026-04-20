@@ -447,8 +447,8 @@ describe('EventTriggerEngine', () => {
       engine.setCooldown('evt-3', 1, 10);
 
       const cleaned = engine.cleanExpiredCooldowns(5);
-      expect(cleaned).toBe(2); // evt-1(end=6) and evt-2(end=4) are cleaned
-      expect(engine.getAllCooldowns()).toHaveLength(1);
+      expect(cleaned).toBe(1); // evt-2(end=4) is cleaned, evt-1(end=6) not yet expired
+      expect(engine.getAllCooldowns()).toHaveLength(2);
     });
   });
 
