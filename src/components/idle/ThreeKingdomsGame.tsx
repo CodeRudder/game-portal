@@ -46,6 +46,7 @@ import WorldMapTab from '@/components/idle/panels/map/WorldMapTab';
 import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import EventBanner from '@/components/idle/panels/event/EventBanner';
 import RandomEncounterModal from '@/components/idle/panels/event/RandomEncounterModal';
+import StoryEventModal from '@/components/idle/panels/event/StoryEventModal';
 import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
 import ArmyTab from '@/components/idle/panels/army/ArmyTab';
 import MailPanel from '@/components/idle/panels/mail/MailPanel';
@@ -200,6 +201,9 @@ const ThreeKingdomsGame: React.FC = () => {
   const [activeBanner, setActiveBanner] = useState<any>(null);
   const [activeEncounter, setActiveEncounter] = useState<any>(null);
 
+  // ── P1-02: 剧情事件状态 ──
+  const [activeStoryEvent, setActiveStoryEvent] = useState<any>(null);
+
   // ── P0-02: 缩放计算 — 根据视口大小动态设置 --tk-scale CSS变量 ──
   useEffect(() => {
     const updateScale = () => {
@@ -310,9 +314,33 @@ const ThreeKingdomsGame: React.FC = () => {
     engine.on('event:banner_created' as any, handleBannerCreated);
     engine.on('event:encounter_triggered' as any, handleEncounterTriggered);
 
+    // ── P1-02: 监听剧情事件 ──
+    const handleStoryTriggered = (data: any) => {
+      const registry = (engine as any).registry;
+      const storySys = registry?.get?.('storyEvent');
+      const act = storySys?.getCurrentAct?.(data.storyId);
+      if (act) setActiveStoryEvent(act);
+    };
+    const handleStoryActAdvanced = (data: any) => {
+      const registry = (engine as any).registry;
+      const storySys = registry?.get?.('storyEvent');
+      const act = storySys?.getCurrentAct?.(data.storyId);
+      if (act) setActiveStoryEvent(act);
+    };
+    const handleStoryCompleted = () => {
+      setActiveStoryEvent(null);
+    };
+
+    engine.on('story:triggered' as any, handleStoryTriggered);
+    engine.on('story:actAdvanced' as any, handleStoryActAdvanced);
+    engine.on('story:completed' as any, handleStoryCompleted);
+
     return () => {
       engine.off('event:banner_created' as any, handleBannerCreated);
       engine.off('event:encounter_triggered' as any, handleEncounterTriggered);
+      engine.off('story:triggered' as any, handleStoryTriggered);
+      engine.off('story:actAdvanced' as any, handleStoryActAdvanced);
+      engine.off('story:completed' as any, handleStoryCompleted);
     };
   }, [engine]);
 
@@ -554,7 +582,16 @@ const ThreeKingdomsGame: React.FC = () => {
   // ── P1-01: 首次启动欢迎弹窗回调 ──
   const handleWelcomeClose = useCallback(() => {
     setShowWelcome(false);
-  }, []);
+    // 首次启动后自动进入武将Tab触发引导
+    try {
+      const registry = engine?.getSubsystemRegistry?.();
+      const tutorialSM = registry?.get?.('tutorial');
+      const phase = tutorialSM?.getCurrentPhase?.();
+      if (phase && phase !== 'free_play' && phase !== 'mini_tutorial') {
+        setActiveTab('hero');
+      }
+    } catch {}
+  }, [engine]);
 
   // ── 主渲染 ──
   return (
@@ -850,6 +887,33 @@ const ThreeKingdomsGame: React.FC = () => {
         onSelectOption={handleEncounterSelectOption}
         onClose={handleEncounterClose}
       />
+
+      {/* P1-02: 剧情事件弹窗（全局覆盖层） */}
+      {activeStoryEvent && (
+        <StoryEventModal
+          event={activeStoryEvent}
+          onSelect={(choiceId: string) => {
+            // 选择后推进剧情到下一幕
+            const registry = (engine as any).registry;
+            const storySys = registry?.get?.('storyEvent');
+            if (storySys) {
+              const state = storySys.getState?.();
+              const progresses = state?.progresses;
+              let activeStoryId: string | null = null;
+              if (progresses) {
+                progresses.forEach((p: any, id: string) => {
+                  if (p.triggered && !p.completed && p.currentActId && !activeStoryId) {
+                    activeStoryId = id;
+                  }
+                });
+              }
+              if (activeStoryId) storySys.advanceStory(activeStoryId);
+            }
+            setActiveStoryEvent(null);
+          }}
+          onDismiss={() => setActiveStoryEvent(null)}
+        />
+      )}
     </div>
   );
 };
