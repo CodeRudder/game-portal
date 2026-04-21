@@ -6,9 +6,14 @@
  * @module panels/heritage/HeritagePanel
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 interface HeritagePanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
 type HeritageTab = 'hero' | 'equipment' | 'experience' | 'acceleration';
@@ -20,7 +25,7 @@ const TABS: { id: HeritageTab; label: string; icon: string }[] = [
   { id: 'acceleration', label: '转生加速', icon: '🚀' },
 ];
 
-export default function HeritagePanel({ engine }: HeritagePanelProps) {
+export default function HeritagePanel({ engine, visible = true, onClose }: HeritagePanelProps) {
   const [tab, setTab] = useState<HeritageTab>('hero');
   const [message, setMessage] = useState<string | null>(null);
 
@@ -61,6 +66,13 @@ export default function HeritagePanel({ engine }: HeritagePanelProps) {
   }, [heritageSystem]);
 
   return (
+    <SharedPanel
+      visible={visible}
+      title="传承"
+      icon="⚔️"
+      onClose={onClose}
+      width="520px"
+    >
     <div style={styles.container}>
       {message && <div style={styles.toast}>{message}</div>}
 

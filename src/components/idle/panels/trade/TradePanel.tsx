@@ -9,14 +9,19 @@
  * @module panels/trade/TradePanel
  */
 import React, { useState, useMemo } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 // ─── 类型 ────────────────────────────────────
 interface TradePanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
 // ─── 主组件 ──────────────────────────────────
-const TradePanel: React.FC<TradePanelProps> = ({ engine }) => {
+const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose }) => {
   const [message, setMessage] = useState<string | null>(null);
 
   // 获取贸易系统
@@ -40,49 +45,55 @@ const TradePanel: React.FC<TradePanelProps> = ({ engine }) => {
   };
 
   return (
-    <div style={styles.wrap} data-testid="trade-panel">
-      <h3 style={styles.heading}>商贸路线</h3>
+    <SharedPanel
+      visible={visible}
+      title="商贸"
+      icon="🚃"
+      onClose={onClose}
+      width="520px"
+    >
+      <div style={styles.wrap} data-testid="trade-panel">
+        {/* 操作反馈消息 */}
+        {message && (
+          <div style={styles.message}>{message}</div>
+        )}
 
-      {/* 操作反馈消息 */}
-      {message && (
-        <div style={styles.message}>{message}</div>
-      )}
-
-      {/* 路线列表 */}
-      {routes.length === 0 ? (
-        <div style={styles.empty}>暂无可用贸易路线</div>
-      ) : (
-        <div style={styles.routeList}>
-          {routes.map((route: any, i: number) => (
-            <div key={route.id ?? i} style={styles.routeCard}>
-              <div style={styles.routeInfo}>
-                <div style={styles.routeName}>{route.name ?? `路线${i + 1}`}</div>
-                <div style={styles.routeMeta}>
-                  利润: {route.profit ?? '???'} | 时长: {route.duration ?? '???'}分钟
+        {/* 路线列表 */}
+        {routes.length === 0 ? (
+          <div style={styles.empty}>暂无可用贸易路线</div>
+        ) : (
+          <div style={styles.routeList}>
+            {routes.map((route: any, i: number) => (
+              <div key={route.id ?? i} style={styles.routeCard}>
+                <div style={styles.routeInfo}>
+                  <div style={styles.routeName}>{route.name ?? `路线${i + 1}`}</div>
+                  <div style={styles.routeMeta}>
+                    利润: {route.profit ?? '???'} | 时长: {route.duration ?? '???'}分钟
+                  </div>
                 </div>
+                <button style={styles.sendBtn} onClick={() => handleSendCaravan(route.id)}>
+                  发送商队
+                </button>
               </div>
-              <button style={styles.sendBtn} onClick={() => handleSendCaravan(route.id)}>
-                发送商队
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* 活跃商队 */}
-      <h4 style={styles.subHeading}>活跃商队 ({caravans.length})</h4>
-      {caravans.length === 0 ? (
-        <div style={styles.emptySmall}>暂无活跃商队</div>
-      ) : (
-        <div style={styles.caravanList}>
-          {caravans.map((c: any, i: number) => (
-            <div key={i} style={styles.caravanCard}>
-              🚃 {c.routeName ?? '商队'} — 剩余 {c.remainingTime ?? '???'} 分钟
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+        {/* 活跃商队 */}
+        <h4 style={styles.subHeading}>活跃商队 ({caravans.length})</h4>
+        {caravans.length === 0 ? (
+          <div style={styles.emptySmall}>暂无活跃商队</div>
+        ) : (
+          <div style={styles.caravanList}>
+            {caravans.map((c: any, i: number) => (
+              <div key={i} style={styles.caravanCard}>
+                🚃 {c.routeName ?? '商队'} — 剩余 {c.remainingTime ?? '???'} 分钟
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </SharedPanel>
   );
 };
 
