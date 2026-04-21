@@ -3,6 +3,16 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const fs = require('fs');
 
+const SCREENSHOT_DIR = '/mnt/user-data/workspace/game-portal/screenshots';
+
+async function safeScreenshot(page, filename) {
+  const fullPath = `${SCREENSHOT_DIR}/${filename}`;
+  const buf = await page.screenshot();
+  fs.writeFileSync(fullPath, buf);
+  const stat = fs.statSync(fullPath);
+  console.log(`截图: ${filename} (${(stat.size/1024).toFixed(1)}KB)`);
+}
+
 (async () => {
   const browser = await chromium.launch({ headless: true });
   
@@ -21,19 +31,16 @@ const fs = require('fs');
   await page.waitForTimeout(5000);
   
   // 截图1: 欢迎弹窗
-  await page.screenshot({ path: '/mnt/user-data/workspace/game-portal/screenshots/v1-01-welcome.png' });
-  console.log('截图: v1-01-welcome.png');
+  await safeScreenshot(page, 'v1-01-welcome.png');
   
   // 2. 关闭欢迎弹窗 — 点击"开始游戏"按钮或关闭按钮
   console.log('\n--- 关闭欢迎弹窗 ---');
   try {
-    // 尝试点击"开始游戏"按钮
     const startBtn = await page.$('button:has-text("开始游戏")');
     if (startBtn) {
       await startBtn.click();
       console.log('点击"开始游戏"');
     } else {
-      // 尝试点击overlay关闭
       const overlay = await page.$('.tk-modal-overlay--visible');
       if (overlay) {
         await overlay.click();
@@ -46,8 +53,7 @@ const fs = require('fs');
   }
   
   // 截图2: 主界面
-  await page.screenshot({ path: '/mnt/user-data/workspace/game-portal/screenshots/v1-02-main.png' });
-  console.log('截图: v1-02-main.png');
+  await safeScreenshot(page, 'v1-02-main.png');
   
   // 3. 验证主界面元素
   console.log('\n--- 主界面验证 ---');
@@ -77,8 +83,7 @@ const fs = require('fs');
     if (buildingTab) {
       await buildingTab.click();
       await page.waitForTimeout(2000);
-      await page.screenshot({ path: '/mnt/user-data/workspace/game-portal/screenshots/v1-03-building.png' });
-      console.log('截图: v1-03-building.png');
+      await safeScreenshot(page, 'v1-03-building.png');
       
       const bldInfo = await page.evaluate(() => {
         const pins = document.querySelectorAll('[class*="bld-pin"]');
@@ -102,13 +107,11 @@ const fs = require('fs');
   // 5. 点击一个建筑查看升级弹窗
   console.log('\n--- 建筑升级弹窗 ---');
   try {
-    // 找到可点击的建筑pin（非locked）
     const upgradablePin = await page.$('[class*="bld-pin"]:not([class*="locked"])');
     if (upgradablePin) {
       await upgradablePin.click();
       await page.waitForTimeout(1500);
-      await page.screenshot({ path: '/mnt/user-data/workspace/game-portal/screenshots/v1-04-upgrade-modal.png' });
-      console.log('截图: v1-04-upgrade-modal.png');
+      await safeScreenshot(page, 'v1-04-upgrade-modal.png');
       
       const modalInfo = await page.evaluate(() => {
         const modal = document.querySelector('.shared-panel, [class*="modal"], [class*="upgrade"]');
@@ -134,8 +137,7 @@ const fs = require('fs');
   if (incomeBtn) {
     await incomeBtn.click();
     await page.waitForTimeout(1000);
-    await page.screenshot({ path: '/mnt/user-data/workspace/game-portal/screenshots/v1-05-income.png' });
-    console.log('截图: v1-05-income.png');
+    await safeScreenshot(page, 'v1-05-income.png');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
   } else {
@@ -146,8 +148,7 @@ const fs = require('fs');
   console.log('\n--- 移动端(375px) ---');
   await page.setViewportSize({ width: 375, height: 667 });
   await page.waitForTimeout(2000);
-  await page.screenshot({ path: '/mnt/user-data/workspace/game-portal/screenshots/v1-06-mobile.png' });
-  console.log('截图: v1-06-mobile.png');
+  await safeScreenshot(page, 'v1-06-mobile.png');
   
   const mobileInfo = await page.evaluate(() => {
     const overflow = document.documentElement.scrollWidth > document.documentElement.clientWidth;

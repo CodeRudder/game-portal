@@ -158,6 +158,9 @@
   flex-shrink: 0;
   padding: 0 8px;
   gap: 2px;
+  /* P1-2 (A-02): 固定底部，滚动时保持可见 */
+  position: sticky;
+  bottom: 0;
   /* P0-01: 横向滚动支持 */
   overflow-x: auto;
   overflow-y: hidden;

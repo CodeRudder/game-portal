@@ -21,6 +21,9 @@
   gap: 8px;
   box-sizing: border-box;
   overflow: visible;
+  /* P1-1 (A-01): 固定顶部，滚动时保持可见 */
+  position: sticky;
+  top: 0;
 }
 
 /* 游戏标题 */
@@ -81,14 +84,14 @@
 }
 
 .tk-res-cap {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--tk-text-muted);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 
 .tk-res-rate {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--tk-text-secondary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -274,11 +277,11 @@
   }
 
   .tk-res-cap {
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .tk-res-rate {
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .tk-res-cap-bar {
