@@ -14,6 +14,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useGameContext } from '../../context/GameContext';
+import { useDebouncedAction } from '../../hooks/useDebouncedAction';
 import type {
   StarUpPreview,
   StarUpResult,
@@ -332,6 +333,10 @@ export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, clas
     setPanelState((prev) => ({ ...prev, isOperating: false }));
   }, [logic, generalId]);
 
+  // P0-UI-02: 防抖包裹
+  const { action: debouncedStarUp, isActing: isStarUpDebounced } = useDebouncedAction(handleStarUp, 500);
+  const { action: debouncedBreakthrough, isActing: isBreakthroughDebounced } = useDebouncedAction(handleBreakthrough, 500);
+
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setPanelState((prev) => ({ ...prev, viewMode: mode, error: null }));
   }, []);
@@ -404,10 +409,10 @@ export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, clas
           <button
             style={{
               ...styles.actionBtn,
-              ...(!logic.canStarUp() || panelState.isOperating ? styles.actionBtnDisabled : {}),
+              ...(!logic.canStarUp() || panelState.isOperating || isStarUpDebounced ? styles.actionBtnDisabled : {}),
             }}
-            onClick={handleStarUp}
-            disabled={!logic.canStarUp() || panelState.isOperating}
+            onClick={debouncedStarUp}
+            disabled={!logic.canStarUp() || panelState.isOperating || isStarUpDebounced}
           >
             {panelState.isOperating ? '升星中...' : logic.isMaxStar() ? '已达最高星级' : '升星'}
           </button>
@@ -431,10 +436,10 @@ export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, clas
           <button
             style={{
               ...styles.actionBtn,
-              ...(!logic.canBreakthrough() || panelState.isOperating ? styles.actionBtnDisabled : {}),
+              ...(!logic.canBreakthrough() || panelState.isOperating || isBreakthroughDebounced ? styles.actionBtnDisabled : {}),
             }}
-            onClick={handleBreakthrough}
-            disabled={!logic.canBreakthrough() || panelState.isOperating}
+            onClick={debouncedBreakthrough}
+            disabled={!logic.canBreakthrough() || panelState.isOperating || isBreakthroughDebounced}
           >
             {panelState.isOperating ? '突破中...' : '突破'}
           </button>

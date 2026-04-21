@@ -66,7 +66,16 @@ export function buildRewardDeps(
   return {
     addResource: (type, amount) => resource.addResource(type, amount),
     addFragment: (generalId, count) => hero.addFragment(generalId, count),
-    addExp: (_exp: number) => { /* TODO: v3.1 接入武将经验系统 */ },
+    addExp: (exp: number) => {
+      // 将经验平均分给所有已拥有的武将
+      const generals = hero.getAllGenerals();
+      if (generals.length === 0) return;
+      const perHero = Math.floor(exp / generals.length);
+      if (perHero <= 0) return;
+      for (const g of generals) {
+        hero.addExp(g.id, perHero);
+      }
+    },
   };
 }
 

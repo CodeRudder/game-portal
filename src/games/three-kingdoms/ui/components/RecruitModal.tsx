@@ -13,6 +13,8 @@
 
 import { useState, useCallback } from 'react';
 import { useGameContext } from '../context/GameContext';
+import { useDebouncedAction } from '../hooks/useDebouncedAction';
+import { useToast } from './ToastProvider';
 import type { RecruitType } from '../../engine/hero/hero-recruit-config';
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS } from '../../engine/hero/hero.types';
 import type { RecruitOutput, RecruitResult } from '../../engine/hero/HeroRecruitSystem';
@@ -87,6 +89,7 @@ function ResultCard({ result, index }: ResultCardProps) {
  */
 export function RecruitModal({ isOpen, onClose }: RecruitModalProps) {
   const { engine } = useGameContext();
+  const { addToast } = useToast();
   const [recruitType, setRecruitType] = useState<RecruitType>('normal');
   const [results, setResults] = useState<RecruitOutput | null>(null);
   const [isRecruiting, setIsRecruiting] = useState(false);
@@ -109,14 +112,18 @@ export function RecruitModal({ isOpen, onClose }: RecruitModalProps) {
           const output = engine.recruit(recruitType, count);
           setResults(output);
         } catch {
-          // 资源不足等情况
+          // 资源不足等情况 — Toast 反馈
+          addToast('招募失败，资源不足', 'error');
           setResults(null);
         }
         setIsRecruiting(false);
       }, 300);
     },
-    [engine, recruitType],
+    [engine, recruitType, addToast],
   );
+
+  // P0-UI-02: 防抖包裹
+  const { action: debouncedRecruit, isActing: isDebounced } = useDebouncedAction(handleRecruit, 500);
 
   const handleClose = useCallback(() => {
     setResults(null);
@@ -179,10 +186,10 @@ export function RecruitModal({ isOpen, onClose }: RecruitModalProps) {
           <button
             style={{
               ...styles.recruitBtn,
-              ...(isRecruiting ? styles.recruitBtnDisabled : {}),
+              ...((isRecruiting || isDebounced) ? styles.recruitBtnDisabled : {}),
             }}
-            disabled={isRecruiting}
-            onClick={() => handleRecruit(1)}
+            disabled={isRecruiting || isDebounced}
+            onClick={() => debouncedRecruit(1)}
           >
             {isRecruiting ? '招募中...' : '单抽'}
           </button>
@@ -190,10 +197,10 @@ export function RecruitModal({ isOpen, onClose }: RecruitModalProps) {
             style={{
               ...styles.recruitBtn,
               ...styles.recruitBtnTen,
-              ...(isRecruiting ? styles.recruitBtnDisabled : {}),
+              ...((isRecruiting || isDebounced) ? styles.recruitBtnDisabled : {}),
             }}
-            disabled={isRecruiting}
-            onClick={() => handleRecruit(10)}
+            disabled={isRecruiting || isDebounced}
+            onClick={() => debouncedRecruit(10)}
           >
             {isRecruiting ? '招募中...' : '十连抽'}
           </button>

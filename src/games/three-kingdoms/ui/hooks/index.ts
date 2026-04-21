@@ -10,3 +10,5 @@ export type { UseBuildingActionsResult } from './useBuildingActions';
 
 export { useSystemState } from './useSystemState';
 export type { UseSystemStateResult } from './useSystemState';
+
+export { useDebouncedAction } from './useDebouncedAction';

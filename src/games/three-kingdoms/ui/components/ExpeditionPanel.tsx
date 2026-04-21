@@ -8,6 +8,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import { useDebouncedAction } from '../hooks/useDebouncedAction';
 import {
   DIFFICULTY_LABELS,
   DIFFICULTY_STARS,
@@ -230,6 +231,9 @@ export function ExpeditionPanel({
     }
   }, [selectedRouteId, selectedTeamId, onStartExpedition]);
 
+  // P0-UI-02: 防抖包裹
+  const { action: debouncedStart, isActing: isStarting } = useDebouncedAction(handleStart, 500);
+
   // 按区域分组
   const groupedRoutes = useMemo(() => {
     const groups: { region: ExpeditionRegion; routes: ExpeditionRoute[] }[] = [];
@@ -310,10 +314,10 @@ export function ExpeditionPanel({
       <button
         style={{
           ...styles.startBtn,
-          opacity: selectedRouteId && selectedTeamId ? 1 : 0.4,
+          opacity: selectedRouteId && selectedTeamId && !isStarting ? 1 : 0.4,
         }}
-        disabled={!selectedRouteId || !selectedTeamId}
-        onClick={handleStart}
+        disabled={!selectedRouteId || !selectedTeamId || isStarting}
+        onClick={debouncedStart}
       >
         🚀 出发远征
       </button>

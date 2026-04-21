@@ -177,6 +177,7 @@ export class ResourceSystem implements ISubsystem {
    * 直接设置资源数量（用于加载存档等场景）
    */
   setResource(type: ResourceType, amount: number): void {
+    amount = Math.max(0, amount);
     const cap = this.caps[type];
     this.resources[type] = cap !== null ? Math.min(amount, cap) : amount;
   }
@@ -369,6 +370,11 @@ export class ResourceSystem implements ISubsystem {
     }
 
     this.resources = cloneResources(data.resources);
+    // 校验每个资源值：防止 NaN、负数、undefined
+    for (const type of RESOURCE_TYPES) {
+      const val = this.resources[type];
+      this.resources[type] = Math.max(0, Number(val) || 0) as any;
+    }
     this.productionRates = { ...data.productionRates };
     this.caps = { ...data.caps };
     this.lastSaveTime = data.lastSaveTime;

@@ -4,11 +4,15 @@
  * 通过 React Context 向组件树提供引擎实例与状态快照。
  * UI 层的所有 hooks 均通过 useGameContext() 获取引擎引用，
  * 不直接 new ThreeKingdomsEngine。
+ *
+ * GameProvider 组件内置 GameErrorBoundary，捕获子组件渲染异常，
+ * 防止白屏并显示友好的错误提示页面。
  */
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import type { ThreeKingdomsEngine } from '../../engine/ThreeKingdomsEngine';
 import type { EngineSnapshot } from '../../shared/types';
+import { GameErrorBoundary } from '../components/GameErrorBoundary';
 
 // ─────────────────────────────────────────────
 // Context Value 类型
@@ -32,6 +36,38 @@ export interface GameContextValue {
 export const GameContext = createContext<GameContextValue | null>(null);
 
 // ─────────────────────────────────────────────
+// Provider 组件
+// ─────────────────────────────────────────────
+
+interface GameProviderProps {
+  children: ReactNode;
+  value: GameContextValue;
+}
+
+/**
+ * GameProvider — 游戏 Context Provider
+ *
+ * 在 GameContext.Provider 外层包裹 GameErrorBoundary，
+ * 捕获子组件渲染异常，防止白屏。
+ *
+ * @example
+ * ```tsx
+ * <GameProvider value={{ engine, snapshot }}>
+ *   <GameUI />
+ * </GameProvider>
+ * ```
+ */
+export function GameProvider({ children, value }: GameProviderProps) {
+  return (
+    <GameErrorBoundary>
+      <GameContext.Provider value={value}>
+        {children}
+      </GameContext.Provider>
+    </GameErrorBoundary>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Consumer Hook
 // ─────────────────────────────────────────────
 
@@ -51,7 +87,7 @@ export function useGameContext(): GameContextValue {
   if (!ctx) {
     throw new Error(
       'useGameContext must be used within a <GameProvider>. ' +
-      'Make sure the component is wrapped with GameContext.Provider.',
+      'Make sure the component is wrapped with GameProvider.',
     );
   }
   return ctx;

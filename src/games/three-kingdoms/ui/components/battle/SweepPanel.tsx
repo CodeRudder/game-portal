@@ -14,6 +14,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useGameContext } from '../../context/GameContext';
+import { useDebouncedAction } from '../../hooks/useDebouncedAction';
 import type { SweepBatchResult } from '../../../engine/campaign/sweep.types';
 import { DEFAULT_SWEEP_CONFIG } from '../../../engine/campaign/sweep.types';
 
@@ -326,6 +327,9 @@ export function SweepPanel({ stageId, onSweepComplete, onClose, className }: Swe
     }
   }, [sweepCheck, stageId, state.selectedCount, estimate, logic, onSweepComplete]);
 
+  // P0-UI-02: 防抖包裹
+  const { action: debouncedSweep, isActing: isDebouncedSweep } = useDebouncedAction(handleSweep, 500);
+
   if (!snapshot) {
     return <div style={styles.loading}>加载中...</div>;
   }
@@ -380,10 +384,10 @@ export function SweepPanel({ stageId, onSweepComplete, onClose, className }: Swe
       <button
         style={{
           ...styles.sweepBtn,
-          ...(!sweepCheck.can || state.isSweeping ? styles.sweepBtnDisabled : {}),
+          ...(!sweepCheck.can || state.isSweeping || isDebouncedSweep ? styles.sweepBtnDisabled : {}),
         }}
-        onClick={handleSweep}
-        disabled={!sweepCheck.can || state.isSweeping}
+        onClick={debouncedSweep}
+        disabled={!sweepCheck.can || state.isSweeping || isDebouncedSweep}
       >
         {state.isSweeping ? '扫荡中...' : `扫荡 (${logic.getRequiredTickets(state.selectedCount)}令)`}
       </button>

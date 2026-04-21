@@ -12,6 +12,8 @@
 
 import { useCallback, useMemo } from 'react';
 import { useGameContext } from '../context/GameContext';
+import { useDebouncedAction } from '../hooks/useDebouncedAction';
+import { useToast } from './ToastProvider';
 import type { BuildingType, BuildingState, UpgradeCost } from '../../shared/types';
 
 // ─────────────────────────────────────────────
@@ -191,6 +193,7 @@ function BuildingCard({
  */
 export function BuildingPanel({ onBuildingClick, className }: BuildingPanelProps) {
   const { engine, snapshot } = useGameContext();
+  const { addToast } = useToast();
 
   // 预计算所有建筑的状态
   const buildingInfos = useMemo(() => {
@@ -210,11 +213,15 @@ export function BuildingPanel({ onBuildingClick, className }: BuildingPanelProps
       try {
         engine.upgradeBuilding(type);
       } catch {
-        // 升级失败时静默处理（按钮已做前置检查）
+        // P0-UI-05: 升级失败时 Toast 反馈
+        addToast('建筑升级失败', 'error');
       }
     },
-    [engine],
+    [engine, addToast],
   );
+
+  // P0-UI-02: 防抖包裹
+  const { action: debouncedUpgrade, isActing: isUpgrading } = useDebouncedAction(handleUpgrade, 500);
 
   const handleClick = useCallback(
     (type: BuildingType) => {
@@ -246,7 +253,7 @@ export function BuildingPanel({ onBuildingClick, className }: BuildingPanelProps
             reasons={info.check.reasons}
             progress={info.progress}
             remainingMs={info.remaining}
-            onUpgrade={handleUpgrade}
+            onUpgrade={debouncedUpgrade}
             onClick={handleClick}
           />
         ))}

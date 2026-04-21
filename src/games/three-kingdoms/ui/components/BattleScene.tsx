@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameContext } from '../context/GameContext';
+import { useToast } from './ToastProvider';
 import type { BattleResult, BattleUnit } from '../../engine/battle/battle.types';
 import { BattleOutcome, StarRating, BattlePhase } from '../../engine/battle/battle.types';
 
@@ -151,11 +152,15 @@ function SettlementPanel({ result, onClose }: { result: BattleResult; onClose: (
  */
 export function BattleScene({ stageId, onBattleEnd, onClose }: BattleSceneProps) {
   const { engine } = useGameContext();
+  const { addToast } = useToast();
   const [phase, setPhase] = useState<'loading' | 'fighting' | 'settling'>('loading');
   const [result, setResult] = useState<BattleResult | null>(null);
   const [turn, setTurn] = useState(0);
   const [maxTurns] = useState(20);
   const hasRun = useRef(false);
+
+  // P0-UI-03: 将 turnInterval ref 提升到 effect 外部，确保 cleanup 能清除
+  const turnIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 执行战斗
   useEffect(() => {
@@ -174,18 +179,22 @@ export function BattleScene({ stageId, onBattleEnd, onClose }: BattleSceneProps)
         const totalTurns = battleResult.totalTurns;
         let currentTurn = 0;
 
-        const turnInterval = setInterval(() => {
+        turnIntervalRef.current = setInterval(() => {
           currentTurn++;
           setTurn(currentTurn);
           if (currentTurn >= totalTurns) {
-            clearInterval(turnInterval);
+            if (turnIntervalRef.current) {
+              clearInterval(turnIntervalRef.current);
+              turnIntervalRef.current = null;
+            }
             setResult(battleResult);
             setPhase('settling');
             onBattleEnd?.(battleResult);
           }
         }, 200);
       } catch {
-        // 战斗失败（关卡未解锁等）
+        // P0-UI-05: 战斗失败时 Toast 反馈
+        addToast('战斗失败，请稍后重试', 'error');
         setPhase('settling');
         setResult({
           outcome: BattleOutcome.DEFEAT,
@@ -202,8 +211,15 @@ export function BattleScene({ stageId, onBattleEnd, onClose }: BattleSceneProps)
       }
     }, 500);
 
-    return () => clearTimeout(loadTimer);
-  }, [stageId, engine, onBattleEnd]);
+    // P0-UI-03: cleanup 中同时清理 loadTimer 和 turnInterval
+    return () => {
+      clearTimeout(loadTimer);
+      if (turnIntervalRef.current) {
+        clearInterval(turnIntervalRef.current);
+        turnIntervalRef.current = null;
+      }
+    };
+  }, [stageId, engine, onBattleEnd, addToast]);
 
   const handleClose = useCallback(() => {
     onClose?.();

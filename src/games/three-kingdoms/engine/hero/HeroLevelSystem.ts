@@ -202,7 +202,9 @@ export class HeroLevelSystem implements ISubsystem {
         if (!this.levelDeps.canAffordResource(GOLD_TYPE, goldReq)) {
           curExp = acc; rem = 0; break;
         }
-        this.levelDeps.spendResource(GOLD_TYPE, goldReq);
+        if (!this.levelDeps.spendResource(GOLD_TYPE, goldReq)) {
+          curExp = acc; rem = 0; break;
+        }
         goldSpent += goldReq;
         rem = acc - expReq;
         curLv += 1; curExp = 0; gained += 1;
@@ -305,8 +307,8 @@ export class HeroLevelSystem implements ISubsystem {
     const goldNeed = totalGoldBetween(beforeLv, final);
     const expNeed = Math.max(0, totalExpBetween(beforeLv, final) - general.exp);
 
-    if (goldNeed > 0) this.levelDeps.spendResource(GOLD_TYPE, goldNeed);
-    if (expNeed > 0) this.levelDeps.spendResource(EXP_TYPE, expNeed);
+    if (goldNeed > 0 && !this.levelDeps.spendResource(GOLD_TYPE, goldNeed)) return null;
+    if (expNeed > 0 && !this.levelDeps.spendResource(EXP_TYPE, expNeed)) return null;
     this.syncToHeroSystem(heroSystem, generalId, final, 0);
 
     return {

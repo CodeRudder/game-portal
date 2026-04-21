@@ -15,6 +15,9 @@ export type { ToastProps, ToastItem, ToastType } from './Toast';
 
 export { ToastProvider, useToast } from './ToastProvider';
 
+export { GameErrorBoundary } from './GameErrorBoundary';
+export type { GameErrorBoundaryProps } from './GameErrorBoundary';
+
 // v9.0 离线收益
 export { OfflineRewardModal } from './OfflineRewardModal';
 export type { OfflineRewardModalProps } from './OfflineRewardModal';

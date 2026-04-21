@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
+import { useDebouncedAction } from '../hooks/useDebouncedAction';
 import type { ArenaPlayerState, ArenaOpponent, SeasonData } from '../../core/pvp/pvp.types';
 
 // ─────────────────────────────────────────────
@@ -123,6 +124,12 @@ export function ArenaPanel({
     [onChallenge],
   );
 
+  // P0-UI-02: 防抖包裹
+  const { action: debouncedChallenge, isActing: isChallenging } = useDebouncedAction(
+    (id: string) => handleChallenge(id),
+    500,
+  );
+
   if (!playerState) {
     return <div style={styles.loading}>加载中...</div>;
   }
@@ -178,7 +185,7 @@ export function ArenaPanel({
             <OpponentCard
               key={opp.playerId}
               opponent={opp}
-              onChallenge={() => handleChallenge(opp.playerId)}
+              onChallenge={() => debouncedChallenge(opp.playerId)}
             />
           ))
         ) : (

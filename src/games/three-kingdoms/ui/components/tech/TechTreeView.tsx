@@ -14,6 +14,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useGameContext } from '../../context/GameContext';
+import { useDebouncedAction } from '../../hooks/useDebouncedAction';
 import type {
   TechPath,
   TechNodeDef,
@@ -469,6 +470,9 @@ export function TechTreeView({ onNodeClick, onResearch, className }: TechTreeVie
     if (selectedNodeId) onResearch?.(selectedNodeId);
   }, [selectedNodeId, onResearch]);
 
+  // P0-UI-02: 防抖包裹
+  const { action: debouncedResearch, isActing: isResearching } = useDebouncedAction(handleResearch, 500);
+
   const handleCloseDetail = useCallback(() => setSelectedNodeId(null), []);
 
   if (!snapshot) {
@@ -537,7 +541,7 @@ export function TechTreeView({ onNodeClick, onResearch, className }: TechTreeVie
           isMutexLocked={selectedInfo.isMutexLocked}
           prerequisiteDesc={selectedInfo.prerequisiteDesc}
           effectDesc={selectedInfo.effectDesc}
-          onResearch={handleResearch}
+          onResearch={debouncedResearch}
           onClose={handleCloseDetail}
         />
       )}

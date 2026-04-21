@@ -331,7 +331,9 @@ export class CampaignProgressSystem implements ISubsystem {
       version: SAVE_VERSION,
       progress: {
         currentChapterId: this.progress.currentChapterId,
-        stageStates: { ...this.progress.stageStates },
+        stageStates: Object.fromEntries(
+          Object.entries(this.progress.stageStates).map(([id, s]) => [id, { ...s }]),
+        ),
         lastClearTime: this.progress.lastClearTime,
       },
     };

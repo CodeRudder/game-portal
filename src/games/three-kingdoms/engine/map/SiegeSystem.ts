@@ -237,6 +237,7 @@ export class SiegeSystem implements ISubsystem {
     const defenderPower = target.defenseValue * (1 + (target.level - 1) * 0.15);
     const cost = this.calculateSiegeCost(target);
     const effectiveTroops = attackerTroops - cost.troops;
+    if (effectiveTroops <= 0) return false;
     const winRate = effectiveTroops / (effectiveTroops + defenderPower);
     return winRate > 0.4;
   }

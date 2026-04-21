@@ -155,7 +155,7 @@ export class ThreeKingdomsEngine {
     const now = Date.now();
     const dt = deltaMs ?? (now - this.lastTickTime);
     this.lastTickTime = now;
-    const dtSec = dt / 1000;
+    const dtSec = Math.max(0, dt / 1000);
     const ctx = this.buildTickCtx();
     executeTick(ctx, dtSec);
     this.syncTickCtx(ctx);
