@@ -37,7 +37,8 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
   // ── 获取数据 ──
   const formations = useMemo(() => {
     void snapshotVersion;
-    return formationSystem.getAllFormations();
+    const raw = formationSystem.getAllFormations();
+    return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, any>) : [];
   }, [formationSystem, snapshotVersion]);
 
   const activeId = formationSystem.getActiveFormationId();
@@ -125,7 +126,7 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
             const isActive = f.id === activeId;
             const isEditing = f.id === editingId;
             const isRenaming = f.id === renameId;
-            const members = f.slots.filter((s) => s !== '');
+            const members = f.slots.filter((s: string) => s !== '');
             const power = getFormationPower(f);
 
             return (
@@ -184,7 +185,7 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
 
                 {/* 编队槽位 */}
                 <div className="tk-formation-slots">
-                  {f.slots.map((heroId, idx) => {
+                  {f.slots.map((heroId: string, idx: number) => {
                     if (!heroId) {
                       return (
                         <div key={idx} className="tk-formation-slot tk-formation-slot--empty">

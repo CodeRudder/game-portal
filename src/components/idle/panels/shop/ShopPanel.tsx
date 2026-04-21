@@ -63,7 +63,8 @@ export default function ShopPanel({ engine, visible = true, onClose }: ShopPanel
   const goods = useMemo(() => {
     if (!shopSystem) return [];
     try {
-      return shopSystem.getShopGoods?.(activeTab) ?? [];
+      const raw = shopSystem.getShopGoods?.(activeTab) ?? [];
+      return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, any>) : [];
     } catch {
       return [];
     }

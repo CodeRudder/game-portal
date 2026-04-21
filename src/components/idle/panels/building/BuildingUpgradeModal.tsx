@@ -161,7 +161,7 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
         {/* 失败原因 */}
         {!info.canUpgrade && info.reasons.length > 0 && (
           <div className="tk-upgrade-section tk-upgrade-reasons">
-            {info.reasons.map((reason, i) => (
+            {info.reasons.map((reason: string, i: number) => (
               <div key={i} className="tk-upgrade-reason">❌ {reason}</div>
             ))}
           </div>

@@ -376,7 +376,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
               {general.skills.length === 0 ? (
                 <div className="tk-hero-detail-skill-empty">暂无技能</div>
               ) : (
-                general.skills.map((skill) => (
+                general.skills.map((skill: any) => (
                   <div key={skill.id} className="tk-hero-detail-skill-item">
                     <div className="tk-hero-detail-skill-header">
                       <span className="tk-hero-detail-skill-name">{skill.name}</span>

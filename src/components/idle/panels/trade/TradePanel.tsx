@@ -28,10 +28,12 @@ const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose
   const tradeSystem = engine?.getTradeSystem?.() ?? engine?.trade;
   const state = tradeSystem?.getState?.();
 
-  // 贸易路线列表
-  const routes = state?.routes ?? [];
-  // 商队列表
-  const caravans = state?.caravans ?? [];
+  // 贸易路线列表（防御：routes可能是Object而非Array）
+  const rawRoutes = state?.routes;
+  const routes: any[] = Array.isArray(rawRoutes) ? rawRoutes : rawRoutes ? Object.values(rawRoutes as Record<string, any>) : [];
+  // 商队列表（防御：caravans可能是Object而非Array）
+  const rawCaravans = state?.caravans;
+  const caravans: any[] = Array.isArray(rawCaravans) ? rawCaravans : rawCaravans ? Object.values(rawCaravans as Record<string, any>) : [];
 
   /** 发送商队 */
   const handleSendCaravan = (routeId: string) => {

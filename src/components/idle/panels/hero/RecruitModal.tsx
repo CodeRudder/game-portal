@@ -251,7 +251,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
               <button className="tk-recruit-results-close" onClick={handleCloseResults}>✕</button>
             </div>
             <div className="tk-recruit-results-grid">
-              {results.results.map((result, idx) => (
+              {results.results.map((result: any, idx: number) => (
                 <RecruitResultCard
                   key={`${result.general?.id ?? idx}-${idx}`}
                   result={result}
@@ -294,15 +294,15 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
                       </span>
                     </div>
                     <div className="tk-recruit-history-item-right">
-                      {entry.results.map((r, rIdx) => (
+                      {entry.results.map((r: any, rIdx: number) => (
                         <span
                           key={`${r.general?.id ?? rIdx}-${rIdx}`}
                           className="tk-recruit-history-hero"
-                          style={{ borderColor: QUALITY_BORDER_COLORS[r.quality] }}
+                          style={{ borderColor: QUALITY_BORDER_COLORS[r.quality as Quality] }}
                         >
                           <span
                             className="tk-recruit-history-hero-dot"
-                            style={{ background: QUALITY_BORDER_COLORS[r.quality] }}
+                            style={{ background: QUALITY_BORDER_COLORS[r.quality as Quality] }}
                           />
                           {r.general?.name ?? '???'}
                         </span>

@@ -183,7 +183,7 @@ const NPCDialogModal: React.FC<NPCDialogModalProps> = ({
                 <span className="tk-dialog-option-text">{option.text}</span>
                 {option.effects && option.effects.length > 0 && (
                   <div className="tk-dialog-option-effects">
-                    {option.effects.map(renderEffectTag)}
+                    {(option.effects as any[]).map(renderEffectTag)}
                   </div>
                 )}
               </button>

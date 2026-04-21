@@ -49,8 +49,10 @@ const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine }) => {
   // ── 获取远征系统 ──
   const expeditionSystem = engine?.getExpeditionSystem?.() ?? engine?.expedition;
   const state = expeditionSystem?.getState?.();
-  const routes = useMemo(() => expeditionSystem?.getAllRoutes?.() ?? [], [expeditionSystem, engine]);
-  const teams = useMemo(() => expeditionSystem?.getAllTeams?.() ?? [], [expeditionSystem, engine]);
+  const rawRoutes = useMemo(() => expeditionSystem?.getAllRoutes?.() ?? [], [expeditionSystem, engine]);
+  const routes: any[] = Array.isArray(rawRoutes) ? rawRoutes : rawRoutes ? Object.values(rawRoutes as Record<string, any>) : [];
+  const rawTeams = useMemo(() => expeditionSystem?.getAllTeams?.() ?? [], [expeditionSystem, engine]);
+  const teams: any[] = Array.isArray(rawTeams) ? rawTeams : rawTeams ? Object.values(rawTeams as Record<string, any>) : [];
   const unlockedSlots = state?.unlockedSlots ?? 1;
   const clearedIds: Set<string> = state?.clearedRouteIds ?? new Set();
 

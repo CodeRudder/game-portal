@@ -135,7 +135,7 @@ export default function EventListPanel({ engine, snapshotVersion, visible = true
               {/* 选项预览 */}
               {evt.options.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {evt.options.map((opt: any) => {
+                  {(evt.options.map || []).map((opt: any) => {
                     // 解析后果中的资源变化
                     const resChanges: string[] = [];
                     if (opt.consequences?.resourceChanges) {

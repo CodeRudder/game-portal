@@ -114,7 +114,7 @@ const TechNodeDetailModal: React.FC<TechNodeDetailModalProps> = ({
 
   // 前置依赖
   const prerequisites = useMemo(() => {
-    return nodeDef.prerequisites.map((preId) => {
+    return (nodeDef.prerequisites || []).map((preId) => {
       const def = TECH_NODE_MAP.get(preId);
       const state = treeSystem.getNodeState(preId);
       return {

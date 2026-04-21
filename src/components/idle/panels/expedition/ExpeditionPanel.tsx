@@ -19,8 +19,10 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
 
   const exp = engine?.getExpeditionSystem?.() ?? engine?.expedition;
   const state = exp?.getState?.();
-  const routes = useMemo(() => exp?.getAllRoutes?.() ?? [], [exp]);
-  const teams = useMemo(() => exp?.getAllTeams?.() ?? [], [exp]);
+  const rawRoutes = useMemo(() => exp?.getAllRoutes?.() ?? [], [exp]);
+  const routes: any[] = Array.isArray(rawRoutes) ? rawRoutes : rawRoutes ? Object.values(rawRoutes as Record<string, any>) : [];
+  const rawTeams = useMemo(() => exp?.getAllTeams?.() ?? [], [exp]);
+  const teams: any[] = Array.isArray(rawTeams) ? rawTeams : rawTeams ? Object.values(rawTeams as Record<string, any>) : [];
   const unlockedSlots = state?.unlockedSlots ?? exp?.getUnlockedSlots?.() ?? 1;
   const clearedIds: Set<string> = exp?.getClearedRouteIds?.() ?? new Set();
 

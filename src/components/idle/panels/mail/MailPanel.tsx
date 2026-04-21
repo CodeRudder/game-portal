@@ -37,7 +37,8 @@ export default function MailPanel({ engine, visible = true, onClose }: MailPanel
   // 获取邮件列表
   const mails = useMemo(() => {
     if (!mailSystem) return [];
-    return mailSystem.getMails?.({ category: tab === 'all' ? undefined : tab }) ?? [];
+    const raw = mailSystem.getMails?.({ category: tab === 'all' ? undefined : tab }) ?? [];
+    return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, any>) : [];
   }, [mailSystem, tab]);
 
   // 未读数
@@ -151,7 +152,7 @@ export default function MailPanel({ engine, visible = true, onClose }: MailPanel
             {selectedMail.attachments?.length > 0 && (
               <div style={styles.attachmentSection}>
                 <div style={styles.attachmentLabel}>附件</div>
-                {selectedMail.attachments.map((att: any) => (
+                {(selectedMail.attachments.map || []).map((att: any) => (
                   <div key={att.id} style={styles.attachmentItem}>
                     <span>{att.resourceType}: {att.amount}</span>
                     <span>{att.claimed ? '✅' : '未领取'}</span>

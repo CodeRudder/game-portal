@@ -89,7 +89,8 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
   const allGenerals = useMemo(() => {
     void snapshotVersion;
     try {
-      return engine?.getGenerals?.() ?? [];
+      const raw = engine?.getGenerals?.() ?? [];
+      return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, any>) : [];
     } catch {
       return [];
     }
@@ -106,7 +107,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
       switch (sortKey) {
         case 'power': return heroSystem.calculatePower(b) - heroSystem.calculatePower(a);
         case 'level': return b.level - a.level;
-        case 'quality': return (QUALITY_ORDER[b.quality] ?? 0) - (QUALITY_ORDER[a.quality] ?? 0);
+        case 'quality': return (QUALITY_ORDER[b.quality as Quality] ?? 0) - (QUALITY_ORDER[a.quality as Quality] ?? 0);
         default: return 0;
       }
     });
