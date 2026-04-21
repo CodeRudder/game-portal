@@ -15,6 +15,7 @@ import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine';
 import { BUILDING_LABELS, BUILDING_ICONS } from '@/games/three-kingdoms/engine/building/building.types';
 import type { BuildingState, BuildingType } from '@/games/three-kingdoms/engine/building/building.types';
 import { BUILDING_DEFS } from '@/games/three-kingdoms/engine/building/building-config';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 import './ResourceBar.css';
 
 interface ResourceBarProps {
@@ -46,18 +47,9 @@ const RESOURCE_COLORS: Record<ResourceType, string> = {
 /** 资源排列顺序 */
 const RESOURCE_ORDER: ResourceType[] = ['grain', 'gold', 'troops', 'mandate'];
 
-/** 格式化数值：手机端 >=1000 显示 k */
-function formatAmount(value: number, compact: boolean = false): string {
-  if (compact && value >= 10000) {
-    return `${(value / 1000).toFixed(1)}k`;
-  }
-  if (compact && value >= 1000) {
-    return `${(value / 1000).toFixed(1)}k`;
-  }
-  if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(2)}M`;
-  }
-  return Math.floor(value).toLocaleString('zh-CN');
+/** 格式化数值：使用统一 formatNumber，compact 模式同标准模式 */
+function formatAmount(value: number, _compact: boolean = false): string {
+  return formatNumber(value);
 }
 
 /** 格式化产出速率 */

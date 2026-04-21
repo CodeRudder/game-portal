@@ -8,6 +8,7 @@
  */
 import React from 'react';
 import Modal from '@/components/idle/common/Modal';
+import './StoryEventModal.css';
 
 export interface StoryEventModalProps {
   /** 当前剧情幕数据 { id, title, storyLines, isFinal } */
@@ -50,40 +51,36 @@ const StoryEventModal: React.FC<StoryEventModalProps> = ({
       onCancel={onDismiss}
       width="520px"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: '#e8e0d0', fontSize: '14px' }}>
+      <div className="tk-story-container">
         {/* 对话内容 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+        <div className="tk-story-dialogues">
           {storyLines.map((line: any, idx: number) => (
-            <div key={idx} style={{ display: 'flex', gap: '8px' }}>
-              <span style={{ fontWeight: 700, color: '#f0c040', minWidth: '48px' }}>{line.speaker}</span>
-              <span style={{ lineHeight: 1.6 }}>{line.text}</span>
+            <div key={idx} className="tk-story-line">
+              <span className="tk-story-speaker">{line.speaker}</span>
+              <span className="tk-story-text">{line.text}</span>
             </div>
           ))}
         </div>
 
         {/* 奖励预览 */}
         {allRewards.length > 0 && (
-          <div style={{ fontSize: '12px', color: '#a0d0a0', borderTop: '1px solid #555', paddingTop: '8px' }}>
+          <div className="tk-story-rewards">
             🎁 可能奖励：{allRewards.join('  ')}
           </div>
         )}
 
         {/* 选择按钮 */}
         {choices.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+          <div className="tk-story-choices">
             {choices.map((choice: any) => (
               <button
                 key={choice.id}
+                className="tk-story-choice-btn"
                 onClick={() => onSelect(choice.id)}
-                style={{
-                  padding: '10px 16px', borderRadius: 'var(--tk-radius-md)' as any, border: '1px solid #8b7355',
-                  background: 'linear-gradient(135deg, #3a2a1a, #4a3a2a)', color: '#e8e0d0',
-                  cursor: 'pointer', textAlign: 'left', fontSize: '14px',
-                }}
               >
-                <div style={{ fontWeight: 600 }}>{choice.text}</div>
+                <div className="tk-story-choice-text">{choice.text}</div>
                 {choice.consequence && (
-                  <div style={{ fontSize: '12px', color: '#c0a080', marginTop: '2px' }}>
+                  <div className="tk-story-choice-consequence">
                     → {choice.consequence}
                   </div>
                 )}

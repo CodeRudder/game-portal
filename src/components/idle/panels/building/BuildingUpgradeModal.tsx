@@ -13,6 +13,7 @@ import {
   BUILDING_ZONES,
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 import './BuildingUpgradeModal.css';
 
 interface BuildingUpgradeModalProps {
@@ -34,9 +35,7 @@ const ZONE_LABELS: Record<string, string> = {
 
 /** 格式化数值 */
 function formatNum(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 10000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toLocaleString('zh-CN');
+  return formatNumber(n);
 }
 
 /** 格式化时间 */

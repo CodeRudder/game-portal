@@ -11,6 +11,7 @@ import type { GeneralData, Quality, Faction } from '@/games/three-kingdoms/engin
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS, FACTION_LABELS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { HERO_QUALITY_BG_COLORS } from '../../common/constants';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 import './HeroCard.css';
 
 // ─────────────────────────────────────────────
@@ -50,9 +51,7 @@ const QUALITY_BG: Record<Quality, string> = {
 // 工具函数
 // ─────────────────────────────────────────────
 function formatPower(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 10000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toLocaleString('zh-CN');
+  return formatNumber(n);
 }
 
 // ─────────────────────────────────────────────

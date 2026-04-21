@@ -31,6 +31,7 @@ import type {
 import type { Season, WeatherType } from '@/games/three-kingdoms/engine/calendar/calendar.types';
 import { SEASON_LABELS, WEATHER_LABELS } from '@/games/three-kingdoms/engine/calendar/calendar.types';
 import { Toast } from '@/components/idle/common/Toast';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 import ResourceBar from '@/components/idle/panels/resource/ResourceBar';
 import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
 import HeroTab from '@/components/idle/panels/hero/HeroTab';
@@ -500,7 +501,7 @@ const ThreeKingdomsGame: React.FC = () => {
     // RES-CAP-02: 资源溢出通知
     const handleResourceOverflow = (data: any) => {
       const label = RESOURCE_LABELS[data.resourceType as keyof typeof RESOURCE_LABELS] ?? data.resourceType;
-      Toast.danger(`${label}溢出！损失 ${Math.floor(data.overflow).toLocaleString()}，升级仓库可避免`);
+      Toast.danger(`${label}溢出！损失 ${formatNumber(data.overflow)}，升级仓库可避免`);
       setSnapshotVersion(v => v + 1);
     };
 
@@ -951,7 +952,7 @@ const ThreeKingdomsGame: React.FC = () => {
                   <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any }}>
                     <span>{icon}</span>
                     <span>{label}</span>
-                    <span style={{ color, marginLeft: 'auto', fontWeight: 600 }}>+{Math.floor(val).toLocaleString()}</span>
+                    <span style={{ color, marginLeft: 'auto', fontWeight: 600 }}>+{formatNumber(val)}</span>
                   </div>
                 );
               })}

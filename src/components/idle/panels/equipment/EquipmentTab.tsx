@@ -17,6 +17,7 @@ import {
   EQUIPMENT_SLOTS, EQUIPMENT_RARITIES,
 } from '@/games/three-kingdoms/core/equipment';
 import { EQUIP_QUALITY_COLORS } from '../../common/constants';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 /** 品质颜色（使用统一常量覆盖引擎默认值） */
 const RARITY_COLORS = EQUIP_QUALITY_COLORS;
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
@@ -40,7 +41,7 @@ const RARITY_ORDER: Record<EquipmentRarity, number> = {
 };
 
 function fmt(n: number): string {
-  return n >= 10000 ? `${(n / 1000).toFixed(1)}K` : Math.floor(n).toString();
+  return formatNumber(n);
 }
 
 // ─── 主组件 ─────────────────────────────────

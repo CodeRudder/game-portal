@@ -31,6 +31,7 @@ import type {
   TerritoryProductionSummary,
 } from '@/games/three-kingdoms/core/map';
 import TerritoryInfoPanel from './TerritoryInfoPanel';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 import './WorldMapTab.css';
 
 // ─────────────────────────────────────────────
@@ -78,8 +79,7 @@ function getHeatmapColor(value: number, max: number): string {
 
 /** 格式化产出数值 */
 function formatProduction(val: number): string {
-  if (val >= 1000) return `${(val / 1000).toFixed(1)}K`;
-  return val.toFixed(1);
+  return formatNumber(val);
 }
 
 // ─────────────────────────────────────────────

@@ -4,6 +4,7 @@
  */
 import type { FC } from 'react';
 import type { Resources, ProductionRate, ResourceCap } from '@/games/three-kingdoms/engine/resource/resource.types';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 import './ResourceBar.css';
 
 interface ResourceBarProps {
@@ -18,12 +19,6 @@ const RESOURCE_CONFIG = [
   { key: 'troops' as const, icon: '⚔️', label: '兵力', hasCap: true },
   { key: 'mandate' as const, icon: '👑', label: '天命', hasCap: false },
 ];
-
-function formatNumber(n: number): string {
-  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-  return Math.floor(n).toString();
-}
 
 export const ResourceBar: FC<ResourceBarProps> = ({ resources, rates, caps }) => {
   return (

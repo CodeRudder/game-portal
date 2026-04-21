@@ -18,6 +18,7 @@ import {
   EQUIPMENT_SLOTS, EQUIPMENT_RARITIES,
 } from '@/games/three-kingdoms/core/equipment';
 import { EQUIP_QUALITY_COLORS } from '../../common/constants';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 /** 品质颜色（使用统一常量覆盖引擎默认值） */
 const RARITY_COLORS = EQUIP_QUALITY_COLORS;
 
@@ -39,7 +40,7 @@ const SORT_OPTIONS: { value: BagSortMode; label: string }[] = [
 
 // ─── 工具函数 ───────────────────────────────
 function formatStat(n: number): string {
-  return n >= 10000 ? `${(n / 1000).toFixed(1)}K` : Math.floor(n).toString();
+  return formatNumber(n);
 }
 
 // ─── 主组件 ─────────────────────────────────

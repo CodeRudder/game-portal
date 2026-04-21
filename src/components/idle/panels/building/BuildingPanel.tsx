@@ -22,6 +22,7 @@ import {
   RESOURCE_LABELS,
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 import BuildingUpgradeModal from './BuildingUpgradeModal';
 import './BuildingPanel.css';
 
@@ -83,9 +84,7 @@ const BUILDING_EFFECTS: Record<BuildingType, string> = {
 // 工具函数
 // ─────────────────────────────────────────────
 function formatNum(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 10000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toLocaleString('zh-CN');
+  return formatNumber(n);
 }
 
 function formatTime(seconds: number): string {

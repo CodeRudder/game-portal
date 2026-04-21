@@ -17,6 +17,7 @@ import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKin
 import type { EnhancePreview } from '@/games/three-kingdoms/engine';
 import { Toast } from '@/components/idle/common/Toast';
 import { HERO_QUALITY_BG_COLORS } from '../../common/constants';
+import { formatNumber } from '@/components/idle/utils/formatNumber';
 import RadarChart from './RadarChart';
 import HeroStarUpModal from './HeroStarUpModal';
 import './HeroDetailModal.css';
@@ -65,9 +66,7 @@ function computeStatMax(stats: { attack: number; defense: number; intelligence: 
 
 /** 格式化数值 */
 function formatNum(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 10000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toLocaleString('zh-CN');
+  return formatNumber(n);
 }
 
 // ─────────────────────────────────────────────
