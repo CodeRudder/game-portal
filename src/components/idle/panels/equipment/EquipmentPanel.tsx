@@ -276,13 +276,13 @@ const styles: Record<string, React.CSSProperties> = {
   title: { fontSize: 16, fontWeight: 600, color: '#d4a574' },
   capacity: { fontSize: 12, color: '#a0a0a0' },
   toast: {
-    padding: '6px 12px', marginBottom: 8, borderRadius: 6,
+    padding: '6px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center',
   },
   filterBar: { marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 6 },
   filterGroup: { display: 'flex', gap: 4, flexWrap: 'wrap' },
   filterBtn: {
-    padding: '4px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4,
+    padding: '4px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 11, cursor: 'pointer',
   },
   activeBtn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
@@ -297,7 +297,7 @@ const styles: Record<string, React.CSSProperties> = {
   card: {
     display: 'flex', flexDirection: 'column', gap: 4, padding: 8,
     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,165,116,0.2)',
-    borderRadius: 8, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+    borderRadius: 'var(--tk-radius-lg)' as any, cursor: 'pointer', position: 'relative', overflow: 'hidden',
   },
   rarityBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
   cardHeader: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 },
@@ -308,7 +308,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any,
   },
   detailPanel: {
-    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 12, padding: 20,
+    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 'var(--tk-radius-xl)' as any, padding: 20,
     minWidth: 300, maxWidth: 400, color: '#e8e0d0',
   },
   detailTitle: { fontSize: 18, fontWeight: 600, marginBottom: 4 },
@@ -317,19 +317,19 @@ const styles: Record<string, React.CSSProperties> = {
   detailLabel: { color: '#d4a574', fontSize: 12, marginBottom: 2 },
   detailActions: { display: 'flex', gap: 8, marginTop: 16 },
   decomposeBtn: {
-    flex: 1, padding: '8px', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 6,
+    flex: 1, padding: '8px', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(255,100,100,0.15)', color: '#ff6464', fontSize: 13, cursor: 'pointer',
   },
   enhanceBtn: {
-    flex: 1, padding: '8px', border: '1px solid rgba(100,180,255,0.3)', borderRadius: 6,
+    flex: 1, padding: '8px', border: '1px solid rgba(100,180,255,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(100,180,255,0.15)', color: '#64b4ff', fontSize: 13, cursor: 'pointer',
   },
   forgeBtn: {
-    flex: 1, padding: '8px', border: '1px solid rgba(255,180,60,0.3)', borderRadius: 6,
+    flex: 1, padding: '8px', border: '1px solid rgba(255,180,60,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(255,180,60,0.15)', color: '#ffb43c', fontSize: 13, cursor: 'pointer',
   },
   closeBtn: {
-    flex: 1, padding: '8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    flex: 1, padding: '8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 13, cursor: 'pointer',
   },
 };

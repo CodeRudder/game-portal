@@ -187,11 +187,11 @@ export default function HeritagePanel({ engine }: HeritagePanelProps) {
 const styles: Record<string, React.CSSProperties> = {
   container: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
   toast: {
-    padding: '8px 12px', marginBottom: 8, borderRadius: 6,
+    padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center',
   },
   overview: {
-    display: 'flex', gap: 8, padding: 10, marginBottom: 12, borderRadius: 8,
+    display: 'flex', gap: 8, padding: 10, marginBottom: 12, borderRadius: 'var(--tk-radius-lg)' as any,
     background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)',
   },
   statItem: { flex: 1, textAlign: 'center' },
@@ -199,32 +199,32 @@ const styles: Record<string, React.CSSProperties> = {
   statLabel: { display: 'block', fontSize: 10, color: '#888', marginTop: 2 },
   tabBar: { display: 'flex', gap: 3, marginBottom: 12, flexWrap: 'wrap' },
   tabBtn: {
-    padding: '5px 8px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6,
+    padding: '5px 8px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#888', fontSize: 11, cursor: 'pointer',
   },
   activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
   placeholder: {
-    padding: 30, textAlign: 'center', borderRadius: 8,
+    padding: 30, textAlign: 'center', borderRadius: 'var(--tk-radius-lg)' as any,
     background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.08)',
   },
   heritageSection: { display: 'flex', flexDirection: 'column', gap: 8 },
   historySection: {
-    padding: 10, borderRadius: 8,
+    padding: 10, borderRadius: 'var(--tk-radius-lg)' as any,
     background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
   },
   historyItem: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '6px 8', marginBottom: 3, background: 'rgba(255,255,255,0.02)', borderRadius: 4, fontSize: 12,
+    padding: '6px 8', marginBottom: 3, background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--tk-radius-sm)' as any, fontSize: 12,
   },
   accelSection: { display: 'flex', flexDirection: 'column', gap: 8 },
   accelCard: {
-    padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.04)',
+    padding: 12, borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(212,165,116,0.15)',
   },
   accelTitle: { fontSize: 14, fontWeight: 600, color: '#d4a574', marginBottom: 4 },
   accelDesc: { fontSize: 12, color: '#888', marginBottom: 8 },
   accelBtn: {
-    padding: '6px 16px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6,
+    padding: '6px 16px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 12, cursor: 'pointer',
   },
   accelBtnDone: { background: 'transparent', color: '#666', borderColor: 'rgba(255,255,255,0.06)', cursor: 'default' },
@@ -232,6 +232,6 @@ const styles: Record<string, React.CSSProperties> = {
   sectionHeader: { fontSize: 14, fontWeight: 600, color: '#d4a574', marginBottom: 8 },
   unlockItem: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '8px 10', marginBottom: 4, background: 'rgba(255,255,255,0.03)', borderRadius: 6, fontSize: 13,
+    padding: '8px 10', marginBottom: 4, background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--tk-radius-md)' as any, fontSize: 13,
   },
 };

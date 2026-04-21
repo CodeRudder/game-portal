@@ -209,24 +209,24 @@ const styles: Record<string, React.CSSProperties> = {
   tabBar: { display: 'flex', gap: 4, marginBottom: 12, overflowX: 'auto' },
   tabBtn: {
     display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px',
-    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
   },
   activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
   currencyBar: {
     display: 'flex', gap: 12, padding: '6px 10px', marginBottom: 8,
-    background: 'rgba(255,255,255,0.04)', borderRadius: 6, flexWrap: 'wrap',
+    background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any, flexWrap: 'wrap',
   },
   currencyItem: { fontSize: 12, color: '#d4a574', fontWeight: 600 },
   toast: {
-    padding: '8px 12px', marginBottom: 8, borderRadius: 6,
+    padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center',
   },
   goodsGrid: { display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', maxHeight: '60vh' },
   goodsCard: {
     display: 'flex', alignItems: 'center', gap: 10, padding: 10,
     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,165,116,0.15)',
-    borderRadius: 8,
+    borderRadius: 'var(--tk-radius-lg)' as any,
   },
   goodsIcon: { fontSize: 28, width: 40, textAlign: 'center' },
   goodsInfo: { flex: 1, minWidth: 0 },
@@ -237,7 +237,7 @@ const styles: Record<string, React.CSSProperties> = {
   price: { color: '#d4a574', fontWeight: 600 },
   limitInfo: { fontSize: 10, color: '#888', marginTop: 2 },
   buyBtn: {
-    padding: '6px 14px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6,
+    padding: '6px 14px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 12, cursor: 'pointer',
   },
   buyBtnDisabled: { opacity: 0.5, cursor: 'not-allowed' },
@@ -247,17 +247,17 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any,
   },
   confirmPanel: {
-    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 12,
+    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 'var(--tk-radius-xl)' as any,
     padding: 20, minWidth: 260, textAlign: 'center',
   },
   confirmTitle: { fontSize: 15, color: '#e8e0d0', marginBottom: 16 },
   confirmActions: { display: 'flex', gap: 10 },
   cancelBtn: {
-    flex: 1, padding: 8, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    flex: 1, padding: 8, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', cursor: 'pointer',
   },
   confirmBtn: {
-    flex: 1, padding: 8, border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6,
+    flex: 1, padding: 8, border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.2)', color: '#d4a574', cursor: 'pointer',
   },
 };

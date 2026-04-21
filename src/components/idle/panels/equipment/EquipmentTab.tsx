@@ -285,21 +285,21 @@ export default EquipmentTab;
 
 // ─── 样式 ───────────────────────────────────
 const S: Record<string, React.CSSProperties> = {
-  container: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
+  container: { padding: 12, color: '#e8e0d0', minHeight: '100%', maxHeight: '80vh', overflowY: 'auto' },
   subTabs: { display: 'flex', gap: 4, marginBottom: 12 },
   subBtn: {
-    padding: '6px 14px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    padding: '6px 14px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 13, cursor: 'pointer',
   },
   subBtnActive: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
   msgBar: {
     padding: '6px 12px', marginBottom: 8, background: 'rgba(212,165,116,0.15)',
-    borderRadius: 6, fontSize: 12, color: '#d4a574', cursor: 'pointer', textAlign: 'center',
+    borderRadius: 'var(--tk-radius-md)' as any, fontSize: 12, color: '#d4a574', cursor: 'pointer', textAlign: 'center',
   },
   filterRow: { display: 'flex', gap: 4, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' },
   info: { fontSize: 12, color: '#a0a0a0', marginRight: 8 },
   filterBtn: {
-    padding: '4px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4,
+    padding: '4px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 11, cursor: 'pointer',
   },
   activeBtn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
@@ -307,7 +307,7 @@ const S: Record<string, React.CSSProperties> = {
   card: {
     display: 'flex', flexDirection: 'column', gap: 4, padding: 8,
     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,165,116,0.2)',
-    borderRadius: 8, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+    borderRadius: 'var(--tk-radius-lg)' as any, cursor: 'pointer', position: 'relative', overflow: 'hidden',
   },
   rarityBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
   cardHead: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 },
@@ -317,32 +317,32 @@ const S: Record<string, React.CSSProperties> = {
   sectionTitle: { fontSize: 15, fontWeight: 600, color: '#d4a574', marginBottom: 12 },
   forgeTypes: { display: 'flex', gap: 8, marginBottom: 8 },
   forgeBtn: {
-    padding: '8px 16px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    padding: '8px 16px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 13, cursor: 'pointer',
   },
   forgeBtnActive: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
   actionBtn: {
-    padding: '10px 24px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6,
+    padding: '10px 24px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 14, cursor: 'pointer', fontWeight: 600,
   },
   closeBtn: {
-    padding: '10px 24px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    padding: '10px 24px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 13, cursor: 'pointer',
   },
   enhancePanel: { padding: '8px 0' },
-  enhanceDetail: { padding: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 8 },
+  enhanceDetail: { padding: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-lg)' as any },
   overlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
     background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any,
   },
   detailPanel: {
-    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 12, padding: 20,
+    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 'var(--tk-radius-xl)' as any, padding: 20,
     minWidth: 300, maxWidth: 400, color: '#e8e0d0',
   },
   detailSection: { marginBottom: 10, fontSize: 13 },
   detailLabel: { color: '#d4a574', fontSize: 12, marginBottom: 2 },
   decomposeBtn: {
-    flex: 1, padding: '8px', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 6,
+    flex: 1, padding: '8px', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(255,100,100,0.15)', color: '#ff6464', fontSize: 13, cursor: 'pointer',
   },
 };

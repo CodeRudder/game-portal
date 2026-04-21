@@ -103,8 +103,8 @@ export default function QuestPanel({ engine }: QuestPanelProps) {
             </div>
             {objs.map((o: any) => (
               <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', borderRadius: 2, background: '#7EC850', width: `${Math.min(100, (o.currentCount / o.targetCount) * 100)}%` }} />
+                <div style={{ flex: 1, height: 4, borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 'var(--tk-radius-sm)' as any, background: '#7EC850', width: `${Math.min(100, (o.currentCount / o.targetCount) * 100)}%` }} />
                 </div>
                 <span style={{ fontSize: 11, color: '#888', minWidth: 44, textAlign: 'right' }}>{o.currentCount}/{o.targetCount}</span>
               </div>
@@ -120,16 +120,16 @@ export default function QuestPanel({ engine }: QuestPanelProps) {
 
 const s: Record<string, React.CSSProperties> = {
   wrap: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
-  toast: { padding: '8px 12px', marginBottom: 8, borderRadius: 6, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
-  actBox: { padding: 10, marginBottom: 12, borderRadius: 8, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)' },
+  toast: { padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
+  actBox: { padding: 10, marginBottom: 12, borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)' },
   barBg: { height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #d4a574, #e8c49a)' },
-  msBtn: { padding: '3px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, background: 'transparent', color: '#888', fontSize: 10, cursor: 'pointer' },
+  msBtn: { padding: '3px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any, background: 'transparent', color: '#888', fontSize: 10, cursor: 'pointer' },
   tabs: { display: 'flex', gap: 4, marginBottom: 12, alignItems: 'center' },
-  tab: { padding: '6px 12px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, background: 'transparent', color: '#a0a0a0', fontSize: 12, cursor: 'pointer' },
+  tab: { padding: '6px 12px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any, background: 'transparent', color: '#a0a0a0', fontSize: 12, cursor: 'pointer' },
   tabOn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
-  claimAll: { marginLeft: 'auto', padding: '5px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6, background: 'rgba(212,165,116,0.1)', color: '#d4a574', fontSize: 11, cursor: 'pointer' },
-  card: { padding: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, marginBottom: 6 },
-  btn: { marginTop: 6, padding: '5px 14px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6, background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 12, cursor: 'pointer' },
+  claimAll: { marginLeft: 'auto', padding: '5px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any, background: 'rgba(212,165,116,0.1)', color: '#d4a574', fontSize: 11, cursor: 'pointer' },
+  card: { padding: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-lg)' as any, marginBottom: 6 },
+  btn: { marginTop: 6, padding: '5px 14px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any, background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 12, cursor: 'pointer' },
   empty: { textAlign: 'center', padding: 24, color: '#666', fontSize: 13 },
 };

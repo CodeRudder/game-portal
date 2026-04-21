@@ -253,7 +253,7 @@ function EventListPanel({ engine, snapshotVersion }: { engine: ThreeKingdomsEngi
               style={{
                 padding: '12px',
                 background: 'rgba(255,255,255,0.04)',
-                borderRadius: '8px',
+                borderRadius: 'var(--tk-radius-lg)' as any,
                 borderLeft: `3px solid ${EVENT_URGENCY_COLORS[evt.urgency] ?? '#666'}`,
               }}
             >
@@ -265,7 +265,7 @@ function EventListPanel({ engine, snapshotVersion }: { engine: ThreeKingdomsEngi
                   style={{
                     fontSize: '10px',
                     padding: '2px 6px',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--tk-radius-sm)' as any,
                     background: `${EVENT_URGENCY_COLORS[evt.urgency] ?? '#666'}22`,
                     color: EVENT_URGENCY_COLORS[evt.urgency] ?? '#666',
                     fontWeight: 600,
@@ -312,7 +312,7 @@ function EventListPanel({ engine, snapshotVersion }: { engine: ThreeKingdomsEngi
                           fontSize: '11px',
                           padding: '4px 8px',
                           background: 'rgba(255,255,255,0.03)',
-                          borderRadius: '4px',
+                          borderRadius: 'var(--tk-radius-sm)' as any,
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
@@ -357,7 +357,7 @@ function EventListPanel({ engine, snapshotVersion }: { engine: ThreeKingdomsEngi
                     fontSize: '11px',
                     padding: '3px 8px',
                     background: 'rgba(255,255,255,0.04)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--tk-radius-sm)' as any,
                     color: '#888',
                   }}
                 >
@@ -928,7 +928,7 @@ const ThreeKingdomsGame: React.FC = () => {
           width="420px"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: '#e8e0d0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-lg)' as any, fontSize: '13px' }}>
               <span>⏱ 离线时长：{formatOfflineDuration(offlineReward.offlineSeconds)}</span>
               {offlineReward.isCapped && <span style={{ color: '#e8a735' }}>⚠️ 已达上限</span>}
             </div>
@@ -942,7 +942,7 @@ const ThreeKingdomsGame: React.FC = () => {
                 const val = offlineReward.earned[key];
                 if (val <= 0) return null;
                 return (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any }}>
                     <span>{icon}</span>
                     <span>{label}</span>
                     <span style={{ color, marginLeft: 'auto', fontWeight: 600 }}>+{Math.floor(val).toLocaleString()}</span>
@@ -975,7 +975,7 @@ const ThreeKingdomsGame: React.FC = () => {
               { icon: '📜', label: '科技', desc: '研究强化国家实力' },
               { icon: '⚔️', label: '关卡', desc: '征战四方开疆拓土' },
             ]).map(({ icon, label, desc }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px' }}>
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-lg)' as any }}>
                 <span style={{ fontSize: '20px' }}>{icon}</span>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '13px' }}>{label}</div>

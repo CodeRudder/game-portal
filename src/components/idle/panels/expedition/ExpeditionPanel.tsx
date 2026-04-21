@@ -135,13 +135,13 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
 
 const s: Record<string, React.CSSProperties> = {
   container: { padding: 8, color: '#e8e0d0' },
-  toast: { padding: '6px 10', marginBottom: 6, borderRadius: 6, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
-  overview: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 10, marginBottom: 8, borderRadius: 8, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)' },
+  toast: { padding: '6px 10', marginBottom: 6, borderRadius: 'var(--tk-radius-md)' as any, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
+  overview: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 10, marginBottom: 8, borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)' },
   title: { fontSize: 13, fontWeight: 600, color: '#d4a574', marginBottom: 6 },
-  teamCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 8, marginBottom: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 6 },
+  teamCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 8, marginBottom: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any },
   teamName: { fontSize: 13, fontWeight: 600 }, teamMeta: { fontSize: 11, color: '#888', marginTop: 2 },
-  btn: { padding: '4px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 4, background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 11, cursor: 'pointer' },
-  routeCard: { padding: 8, marginBottom: 4, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, cursor: 'pointer' },
+  btn: { padding: '4px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 11, cursor: 'pointer' },
+  routeCard: { padding: 8, marginBottom: 4, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-md)' as any, cursor: 'pointer' },
   nodeList: { display: 'flex', flexDirection: 'column', gap: 3 },
   nodeItem: { display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0' },
   empty: { textAlign: 'center', padding: 20, color: '#666', fontSize: 12 },

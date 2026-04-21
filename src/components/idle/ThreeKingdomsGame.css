@@ -49,6 +49,8 @@
   --tk-radius-sm: 4px;
   --tk-radius-md: 6px;
   --tk-radius-lg: 8px;
+  --tk-radius-xl: 12px;
+  --tk-radius-full: 9999px;
 
   /* 动画 */
   --tk-ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
@@ -236,7 +238,7 @@
   right: 4px;
   background: rgba(102, 102, 102, 0.3);
   padding: 1px 4px;
-  border-radius: 2px;
+  border-radius: var(--tk-radius-sm);
 }
 
 /* ═══════════════════════════════════════════

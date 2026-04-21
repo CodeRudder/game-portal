@@ -279,7 +279,7 @@ export default ArenaTab;
 const S: Record<string, React.CSSProperties> = {
   container: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
   seasonBar: {
-    padding: 12, marginBottom: 10, borderRadius: 10,
+    padding: 12, marginBottom: 10, borderRadius: 'var(--tk-radius-lg)' as any,
     background: 'linear-gradient(135deg, rgba(212,165,116,0.12), rgba(255,215,0,0.08))',
     border: '1px solid rgba(212,165,116,0.2)',
   },
@@ -288,12 +288,12 @@ const S: Record<string, React.CSSProperties> = {
   seasonInfo: { fontSize: 11, color: '#a0a0a0', marginBottom: 4 },
   challengeRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, marginBottom: 4 },
   buyBtn: {
-    padding: '3px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 4,
+    padding: '3px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'rgba(212,165,116,0.1)', color: '#d4a574', fontSize: 11, cursor: 'pointer',
   },
   coinRow: { fontSize: 12, color: '#C9A84C' },
   toast: {
-    padding: '6px 12px', marginBottom: 8, borderRadius: 6,
+    padding: '6px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center',
   },
   section: { marginBottom: 10 },
@@ -302,26 +302,26 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: 14, fontWeight: 600, color: '#d4a574', marginBottom: 8,
   },
   refreshBtn: {
-    padding: '4px 10px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4,
+    padding: '4px 10px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 11, cursor: 'pointer',
   },
   oppList: { display: 'flex', flexDirection: 'column', gap: 6 },
   oppCard: {
     display: 'flex', alignItems: 'center', gap: 8, padding: 10,
-    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8,
+    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-lg)' as any,
   },
   oppInfo: { flex: 1, minWidth: 0 },
   oppName: { fontSize: 14, fontWeight: 600, color: '#e8e0d0' },
   oppMeta: { display: 'flex', gap: 8, fontSize: 11, color: '#a0a0a0', marginTop: 2 },
   challengeBtn: {
-    padding: '6px 16px', border: 'none', borderRadius: 6,
+    padding: '6px 16px', border: 'none', borderRadius: 'var(--tk-radius-md)' as any,
     background: '#B8423A', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
   },
   disabled: { opacity: 0.4, cursor: 'not-allowed' },
   empty: { textAlign: 'center', padding: 20, color: '#666', fontSize: 13 },
   actionBar: { display: 'flex', gap: 8, marginBottom: 10 },
   actionBtn: {
-    flex: 1, padding: '8px 0', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6,
+    flex: 1, padding: '8px 0', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.1)', color: '#d4a574', fontSize: 12, cursor: 'pointer',
   },
   overlay: {
@@ -329,29 +329,29 @@ const S: Record<string, React.CSSProperties> = {
     background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any,
   },
   modal: {
-    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 12,
+    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 'var(--tk-radius-xl)' as any,
     padding: 20, minWidth: 280, maxWidth: 400, color: '#e8e0d0',
   },
   modalTitle: { fontSize: 16, fontWeight: 600, color: '#d4a574', marginBottom: 12, textAlign: 'center' },
   modalBtn: {
     display: 'block', margin: '14px auto 0', padding: '8px 24px',
-    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', cursor: 'pointer',
   },
   rankList: { display: 'flex', flexDirection: 'column', gap: 4 },
   rankItem: {
     display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px',
-    fontSize: 13, background: 'rgba(255,255,255,0.03)', borderRadius: 4,
+    fontSize: 13, background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--tk-radius-sm)' as any,
   },
   rankNum: { width: 28, textAlign: 'center', fontWeight: 600 },
   formationSlots: { display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' },
   slot: {
     width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 8, fontSize: 11, color: '#666',
+    border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 'var(--tk-radius-lg)' as any, fontSize: 11, color: '#666',
   },
   logList: { display: 'flex', flexDirection: 'column', gap: 4 },
   logItem: {
     display: 'flex', justifyContent: 'space-between', padding: '6px 8px',
-    fontSize: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 4,
+    fontSize: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--tk-radius-sm)' as any,
   },
 };

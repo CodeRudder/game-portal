@@ -7,6 +7,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 /* 离线时长 */

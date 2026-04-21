@@ -131,16 +131,16 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
 
 const s: Record<string, React.CSSProperties> = {
   container: { padding: 8, color: '#e8e0d0' },
-  rankBanner: { display: 'flex', alignItems: 'center', gap: 10, padding: 12, background: 'linear-gradient(135deg,rgba(212,165,116,0.12),rgba(255,215,0,0.08))', borderRadius: 10, marginBottom: 8 },
+  rankBanner: { display: 'flex', alignItems: 'center', gap: 10, padding: 12, background: 'linear-gradient(135deg,rgba(212,165,116,0.12),rgba(255,215,0,0.08))', borderRadius: 'var(--tk-radius-lg)' as any, marginBottom: 8 },
   rankLabel: { fontSize: 18, fontWeight: 700 }, scoreText: { fontSize: 12, color: '#a0a0a0', marginTop: 2 },
-  bar: { display: 'flex', justifyContent: 'space-between', padding: '6px 10', background: 'rgba(255,255,255,0.04)', borderRadius: 6, fontSize: 12, marginBottom: 6 },
+  bar: { display: 'flex', justifyContent: 'space-between', padding: '6px 10', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any, fontSize: 12, marginBottom: 6 },
   infoRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, marginBottom: 6 },
-  smBtn: { padding: '3px 8px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 4, background: 'transparent', color: '#d4a574', fontSize: 11, cursor: 'pointer' },
-  toast: { padding: '6px 10', marginBottom: 6, borderRadius: 6, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
+  smBtn: { padding: '3px 8px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-sm)' as any, background: 'transparent', color: '#d4a574', fontSize: 11, cursor: 'pointer' },
+  toast: { padding: '6px 10', marginBottom: 6, borderRadius: 'var(--tk-radius-md)' as any, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, fontWeight: 600, color: '#d4a574', marginBottom: 6 },
-  oppCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 8, background: 'rgba(255,255,255,0.04)', borderRadius: 6, marginBottom: 4 },
+  oppCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 8, background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any, marginBottom: 4 },
   oppName: { fontSize: 13, fontWeight: 600 }, oppMeta: { fontSize: 11, color: '#888', marginTop: 2 },
-  chalBtn: { padding: '5px 14px', border: 'none', borderRadius: 4, background: '#B8423A', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' },
+  chalBtn: { padding: '5px 14px', border: 'none', borderRadius: 'var(--tk-radius-sm)' as any, background: '#B8423A', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' },
   empty: { textAlign: 'center', padding: 16, color: '#666', fontSize: 12 },
-  logItem: { display: 'flex', justifyContent: 'space-between', padding: '4px 6', fontSize: 11, background: 'rgba(255,255,255,0.02)', borderRadius: 4, marginBottom: 2 },
+  logItem: { display: 'flex', justifyContent: 'space-between', padding: '4px 6', fontSize: 11, background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--tk-radius-sm)' as any, marginBottom: 2 },
 };

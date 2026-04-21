@@ -76,7 +76,7 @@ const StoryEventModal: React.FC<StoryEventModalProps> = ({
                 key={choice.id}
                 onClick={() => onSelect(choice.id)}
                 style={{
-                  padding: '10px 16px', borderRadius: '6px', border: '1px solid #8b7355',
+                  padding: '10px 16px', borderRadius: 'var(--tk-radius-md)' as any, border: '1px solid #8b7355',
                   background: 'linear-gradient(135deg, #3a2a1a, #4a3a2a)', color: '#e8e0d0',
                   cursor: 'pointer', textAlign: 'left', fontSize: '14px',
                 }}

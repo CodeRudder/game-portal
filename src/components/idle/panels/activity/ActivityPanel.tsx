@@ -175,17 +175,17 @@ export default function ActivityPanel({ engine }: ActivityPanelProps) {
 const styles: Record<string, React.CSSProperties> = {
   container: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
   toast: {
-    padding: '8px 12px', marginBottom: 8, borderRadius: 6,
+    padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center',
   },
   signInCard: {
-    padding: 12, marginBottom: 12, borderRadius: 8, textAlign: 'center',
+    padding: 12, marginBottom: 12, borderRadius: 'var(--tk-radius-lg)' as any, textAlign: 'center',
     background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)',
   },
   signInTitle: { fontSize: 14, fontWeight: 600, color: '#d4a574', marginBottom: 4 },
   signInInfo: { fontSize: 12, color: '#a0a0a0', marginBottom: 8 },
   signInBtn: {
-    padding: '6px 20px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6,
+    padding: '6px 20px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 13, cursor: 'pointer',
   },
   signInBtnDone: { background: 'transparent', color: '#666', borderColor: 'rgba(255,255,255,0.06)', cursor: 'default' },
@@ -194,24 +194,24 @@ const styles: Record<string, React.CSSProperties> = {
   activityList: { display: 'flex', flexDirection: 'column', gap: 8 },
   activityCard: {
     padding: 12, background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, cursor: 'pointer',
+    border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-lg)' as any, cursor: 'pointer',
   },
   activityName: { fontSize: 14, fontWeight: 600, marginBottom: 4 },
   activityPoints: { fontSize: 12, color: '#a0a0a0', marginBottom: 8 },
   taskItem: { marginBottom: 6, padding: '6px 0' },
   taskInfo: { display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 },
-  taskBar: { height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 4 },
-  taskFill: { height: '100%', borderRadius: 2, background: '#7EC850' },
+  taskBar: { height: 4, borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 4 },
+  taskFill: { height: '100%', borderRadius: 'var(--tk-radius-sm)' as any, background: '#7EC850' },
   taskClaimBtn: {
-    padding: '3px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 4,
+    padding: '3px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 10, cursor: 'pointer',
   },
   milestoneItem: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '6px 8', marginTop: 4, background: 'rgba(212,165,116,0.06)', borderRadius: 4,
+    padding: '6px 8', marginTop: 4, background: 'rgba(212,165,116,0.06)', borderRadius: 'var(--tk-radius-sm)' as any,
   },
   milestoneClaimBtn: {
-    padding: '3px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 4,
+    padding: '3px 10px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 10, cursor: 'pointer',
   },
   empty: { textAlign: 'center', padding: 30, color: '#666', fontSize: 13 },

@@ -168,7 +168,7 @@ export default function MailPanel({ engine }: MailPanelProps) {
 const styles: Record<string, React.CSSProperties> = {
   container: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
   toast: {
-    padding: '8px 12px', marginBottom: 8, borderRadius: 6,
+    padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center',
   },
   actionBar: {
@@ -177,19 +177,19 @@ const styles: Record<string, React.CSSProperties> = {
   unreadInfo: { fontSize: 13, color: '#a0a0a0' },
   actionBtns: { display: 'flex', gap: 6 },
   actionBtn: {
-    padding: '4px 10px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4,
+    padding: '4px 10px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 11, cursor: 'pointer',
   },
   tabBar: { display: 'flex', gap: 3, marginBottom: 10 },
   tabBtn: {
-    padding: '5px 10px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6,
+    padding: '5px 10px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#888', fontSize: 11, cursor: 'pointer',
   },
   activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
   mailList: { display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', maxHeight: '60vh' },
   mailItem: {
     padding: '8px 10', background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, cursor: 'pointer',
+    border: '1px solid rgba(255,255,255,0.06)', borderRadius: 'var(--tk-radius-md)' as any, cursor: 'pointer',
   },
   mailItemSelected: { borderColor: '#d4a574', background: 'rgba(212,165,116,0.06)' },
   mailHeader: { display: 'flex', justifyContent: 'space-between' },
@@ -203,25 +203,25 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any,
   },
   detailPanel: {
-    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 12,
+    background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 'var(--tk-radius-xl)' as any,
     padding: 20, minWidth: 300, maxWidth: 420, color: '#e8e0d0',
   },
   detailTitle: { fontSize: 16, fontWeight: 600, marginBottom: 4 },
   detailMeta: { fontSize: 11, color: '#888', marginBottom: 12 },
   detailContent: { fontSize: 13, lineHeight: 1.6, marginBottom: 12 },
   attachmentSection: {
-    padding: 10, marginBottom: 10, borderRadius: 6,
+    padding: 10, marginBottom: 10, borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.06)', border: '1px solid rgba(212,165,116,0.15)',
   },
   attachmentLabel: { fontSize: 12, color: '#d4a574', marginBottom: 6 },
   attachmentItem: { display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 },
   claimBtn: {
-    marginTop: 8, padding: '6px 14px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6,
+    marginTop: 8, padding: '6px 14px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 12, cursor: 'pointer', width: '100%',
   },
   closeBtn: {
     display: 'block', margin: '0 auto', padding: '6px 20px',
-    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', cursor: 'pointer',
   },
 };

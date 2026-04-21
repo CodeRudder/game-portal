@@ -199,7 +199,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
             background: 'rgba(212,165,116,0.2)',
             color: '#d4a574',
             border: '1px solid rgba(212,165,116,0.4)',
-            borderRadius: 6,
+            borderRadius: 'var(--tk-radius-md)' as any,
             fontSize: 12,
             cursor: 'pointer',
           }}
@@ -370,14 +370,14 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
           onClick={(e) => e.target === e.currentTarget && setShowIncomeModal(false)}
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal-detail)' as any,
           }}
         >
           <div
             className="tk-bld-income-modal"
             role="dialog" aria-modal="true" aria-label="资源收支详情"
             style={{
-              background: '#1a1a2e', borderRadius: 12, padding: 20,
+              background: '#1a1a2e', borderRadius: 'var(--tk-radius-xl)' as any, padding: 20,
               minWidth: 340, maxWidth: 480, maxHeight: '80vh', overflow: 'auto',
               border: '1px solid rgba(212,165,116,0.3)',
             }}
@@ -403,7 +403,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
             </div>
 
             {/* 净收入 */}
-            <div style={{ marginBottom: 16, padding: '10px 12px', background: 'rgba(212,165,116,0.1)', borderRadius: 8 }}>
+            <div style={{ marginBottom: 16, padding: '10px 12px', background: 'rgba(212,165,116,0.1)', borderRadius: 'var(--tk-radius-lg)' as any }}>
               <h4 style={{ color: '#d4a574', fontSize: 13, marginBottom: 8 }}>💰 净收入</h4>
               {(['grain', 'gold', 'troops', 'mandate'] as const).map((resType) => {
                 const rate = rates[resType];

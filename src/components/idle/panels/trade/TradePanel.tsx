@@ -104,7 +104,7 @@ const styles: Record<string, React.CSSProperties> = {
   message: {
     padding: '8px 12px',
     background: 'rgba(212,165,116,0.2)',
-    borderRadius: 8,
+    borderRadius: 'var(--tk-radius-lg)' as any,
     marginBottom: 12,
     fontSize: 13,
   },
@@ -127,7 +127,7 @@ const styles: Record<string, React.CSSProperties> = {
   routeCard: {
     padding: 12,
     background: 'rgba(255,255,255,0.05)',
-    borderRadius: 8,
+    borderRadius: 'var(--tk-radius-lg)' as any,
     border: '1px solid rgba(212,165,116,0.2)',
     display: 'flex',
     justifyContent: 'space-between',
@@ -150,7 +150,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#d4a574',
     color: '#1a1a2e',
     border: 'none',
-    borderRadius: 6,
+    borderRadius: 'var(--tk-radius-md)' as any,
     fontWeight: 'bold',
     fontSize: 13,
     cursor: 'pointer',
@@ -169,7 +169,7 @@ const styles: Record<string, React.CSSProperties> = {
   caravanCard: {
     padding: 8,
     background: 'rgba(76,175,80,0.1)',
-    borderRadius: 6,
+    borderRadius: 'var(--tk-radius-md)' as any,
     fontSize: 13,
     color: '#e0d5c0',
   },

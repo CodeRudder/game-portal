@@ -183,7 +183,7 @@ export default function SocialPanel({ engine }: SocialPanelProps) {
               <div style={styles.friendInfo}>
                 <div style={styles.friendName}>
                   <span style={{
-                    display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+                    display: 'inline-block', width: 6, height: 6, borderRadius: 'var(--tk-radius-full)' as any,
                     background: f.status === 'online' ? '#7EC850' : '#666', marginRight: 6,
                   }} />
                   {f.playerName}
@@ -218,21 +218,21 @@ export default function SocialPanel({ engine }: SocialPanelProps) {
 const styles: Record<string, React.CSSProperties> = {
   container: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
   toast: {
-    padding: '8px 12px', marginBottom: 8, borderRadius: 6,
+    padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center',
   },
   overview: {
-    display: 'flex', gap: 14, padding: 10, marginBottom: 10, borderRadius: 8,
+    display: 'flex', gap: 14, padding: 10, marginBottom: 10, borderRadius: 'var(--tk-radius-lg)' as any,
     background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)',
     fontSize: 12, color: '#a0a0a0',
   },
   requestBar: {
-    padding: '6px 10', marginBottom: 8, borderRadius: 6,
+    padding: '6px 10', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.1)', color: '#d4a574', fontSize: 12,
   },
   tabBar: { display: 'flex', gap: 4, marginBottom: 12 },
   tabBtn: {
-    flex: 1, padding: '6px 8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    flex: 1, padding: '6px 8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 12, cursor: 'pointer', textAlign: 'center',
   },
   activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
@@ -240,14 +240,14 @@ const styles: Record<string, React.CSSProperties> = {
   friendCard: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: 10, background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-lg)' as any,
   },
   friendInfo: { flex: 1 },
   friendName: { fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center' },
   friendMeta: { fontSize: 11, color: '#888', marginTop: 2 },
   friendActions: { display: 'flex', gap: 4 },
   smallBtn: {
-    width: 30, height: 30, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+    width: 30, height: 30, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   empty: { textAlign: 'center', padding: 30, color: '#666', fontSize: 13 },
@@ -258,17 +258,17 @@ const styles: Record<string, React.CSSProperties> = {
   chatContent: { color: '#e8e0d0', wordBreak: 'break-all' },
   chatInputRow: { display: 'flex', gap: 6 },
   chatInput: {
-    flex: 1, padding: '6px 10', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)',
+    flex: 1, padding: '6px 10', borderRadius: 'var(--tk-radius-md)' as any, border: '1px solid rgba(255,255,255,0.1)',
     background: 'rgba(255,255,255,0.06)', color: '#e8e0d0', fontSize: 12, outline: 'none',
   },
   chatSendBtn: {
-    padding: '6px 14', borderRadius: 6, border: '1px solid rgba(212,165,116,0.3)',
+    padding: '6px 14', borderRadius: 'var(--tk-radius-md)' as any, border: '1px solid rgba(212,165,116,0.3)',
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 12, cursor: 'pointer',
   },
   rankList: { display: 'flex', flexDirection: 'column', gap: 4 },
   rankItem: {
     display: 'flex', alignItems: 'center', gap: 10,
-    padding: '8px 10', borderRadius: 6, border: '1px solid rgba(255,255,255,0.06)',
+    padding: '8px 10', borderRadius: 'var(--tk-radius-md)' as any, border: '1px solid rgba(255,255,255,0.06)',
   },
   rankNum: { width: 32, fontSize: 16, textAlign: 'center' },
   rankName: { flex: 1, fontSize: 13, fontWeight: 600 },
