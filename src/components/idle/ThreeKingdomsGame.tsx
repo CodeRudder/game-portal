@@ -27,6 +27,7 @@ import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine/resource/resource
 import type {
   EngineSnapshot,
   BuildingType,
+  BuildingState,
 } from '@/games/three-kingdoms/shared/types';
 import type { Season, WeatherType } from '@/games/three-kingdoms/engine/calendar/calendar.types';
 import { SEASON_LABELS, WEATHER_LABELS } from '@/games/three-kingdoms/engine/calendar/calendar.types';
@@ -379,13 +380,42 @@ const ThreeKingdomsGame: React.FC = () => {
     } catch (e) {
       console.error('[ThreeKingdomsGame] getSnapshot failed:', e);
       // 返回安全的默认快照，避免渲染崩溃
+      const defaultBuildingState = (type: BuildingType): BuildingState => ({
+        type,
+        level: 0,
+        status: 'locked',
+        upgradeStartTime: null,
+        upgradeEndTime: null,
+      });
       return {
-        resources: { grain: 0, gold: 0, troops: 0 },
-        productionRates: { grain: 0, gold: 0, troops: 0 },
-        caps: { grain: 0, gold: 0, troops: 0 },
-        buildings: {},
-        calendar: { day: 1, season: 'spring', year: 1, seasonIndex: 0 },
-      } as EngineSnapshot;
+        resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
+        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
+        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        buildings: {
+          castle: defaultBuildingState('castle'),
+          farmland: defaultBuildingState('farmland'),
+          market: defaultBuildingState('market'),
+          barracks: defaultBuildingState('barracks'),
+          smithy: defaultBuildingState('smithy'),
+          academy: defaultBuildingState('academy'),
+          clinic: defaultBuildingState('clinic'),
+          wall: defaultBuildingState('wall'),
+        },
+        calendar: {
+          date: { year: 1, month: 1, day: 1, season: 'spring', eraName: '建安', yearInEra: 1 },
+          weather: 'clear',
+          totalDays: 0,
+          paused: false,
+        },
+        onlineSeconds: 0,
+        heroes: [],
+        heroFragments: {},
+        totalPower: 0,
+        formations: [],
+        activeFormationId: null,
+        campaignProgress: { currentChapterId: '', stageStates: {}, lastClearTime: 0 },
+        techState: { nodes: {}, researchQueue: [], techPoints: { current: 0, totalEarned: 0, totalSpent: 0 }, chosenMutexNodes: {} },
+      } satisfies EngineSnapshot;
     }
   }, [engine, snapshotVersion]);
 

@@ -148,7 +148,8 @@ export type EngineEventType =
   | 'game:initialized'       // 游戏初始化完成
   | 'game:loaded'            // 读档完成
   | 'game:saved'             // 存档完成
-  | 'game:offline-earnings'; // 离线收益
+  | 'game:offline-earnings'  // 离线收益
+  | 'resource:overflow';     // 资源溢出
 
 /** 事件载荷映射 */
 export interface EngineEventMap {
@@ -162,6 +163,7 @@ export interface EngineEventMap {
   'game:loaded': { offlineEarnings?: OfflineEarnings };
   'game:saved': { timestamp: number };
   'game:offline-earnings': OfflineEarnings;
+  'resource:overflow': { resource: string; overflow: number };
 }
 
 /** 通用事件监听器 */

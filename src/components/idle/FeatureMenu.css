@@ -12,6 +12,10 @@
   position: relative;
   flex-shrink: 0;
   z-index: var(--tk-z-dropdown);
+}
+
+/* ═══════════════════════════════════════════
+   触发按钮
    ═══════════════════════════════════════════ */
 .tk-feature-menu-trigger {
   display: flex;
