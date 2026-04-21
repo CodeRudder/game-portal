@@ -133,4 +133,61 @@ describe('ResourceBar', () => {
     // 速率为0时不应显示速率文本
     expect(screen.queryByText('/秒')).not.toBeInTheDocument();
   });
+
+  it('接近上限(>80%)时资源数值应显示警告样式', () => {
+    // 粮草 85% → warning 级别
+    const resources = { grain: 4250, gold: 500, troops: 200, mandate: 10 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+
+    const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
+
+    // 粮草数值应有 warning 样式类
+    const valueEls = container.querySelectorAll('.tk-res-value');
+    const grainValue = valueEls[0] as HTMLElement;
+    expect(grainValue.classList.contains('tk-res-value--warning')).toBe(true);
+  });
+
+  it('接近上限(>80%)时应显示⚠️警告图标', () => {
+    // 粮草 90% → warning 级别，显示 ⚠️
+    const resources = { grain: 4500, gold: 500, troops: 200, mandate: 10 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+
+    const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
+
+    // 应存在接近上限的警告图标（非溢出场景）
+    const badges = container.querySelectorAll('.tk-res-nearcap-badge');
+    expect(badges.length).toBe(1);
+  });
+
+  it('资源远未达上限时不应显示警告样式', () => {
+    // 粮草 20% → 无警告
+    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+
+    const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
+
+    // 不应有 warning 样式类
+    const warningValues = container.querySelectorAll('.tk-res-value--warning');
+    expect(warningValues.length).toBe(0);
+
+    // 不应有接近上限警告图标
+    const badges = container.querySelectorAll('.tk-res-nearcap-badge');
+    expect(badges.length).toBe(0);
+  });
+
+  it('资源已满时应显示full级别警告样式', () => {
+    // 粮草 100% → full 级别
+    const resources = { grain: 5000, gold: 500, troops: 200, mandate: 10 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+
+    const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
+
+    const valueEls = container.querySelectorAll('.tk-res-value');
+    const grainValue = valueEls[0] as HTMLElement;
+    expect(grainValue.classList.contains('tk-res-value--full')).toBe(true);
+  });
 });

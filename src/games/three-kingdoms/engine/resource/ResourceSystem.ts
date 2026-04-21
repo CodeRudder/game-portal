@@ -131,7 +131,8 @@ export class ResourceSystem implements ISubsystem {
 
   // ── 3. 资源增减 ──
 
-  /** 增加资源（受上限约束，自动截断） */
+  /** 增加资源（受上限约束，自动截断）。
+   *  RES-CAP-02: 当资源被截断时发出 resource:overflow 事件 */
   addResource(type: ResourceType, amount: number): number {
     if (amount <= 0) return 0;
 
@@ -139,8 +140,22 @@ export class ResourceSystem implements ISubsystem {
     const before = this.resources[type];
     const after = cap !== null ? Math.min(before + amount, cap) : before + amount;
     const actual = after - before;
+    const overflow = amount - actual;
 
     this.resources[type] = after;
+
+    // RES-CAP-02: 资源溢出时发出通知
+    if (overflow > 0) {
+      this.deps?.eventBus.emit('resource:overflow', {
+        resourceType: type,
+        requested: amount,
+        actual,
+        overflow,
+        cap,
+        current: after,
+      });
+    }
+
     return actual;
   }
 

@@ -52,6 +52,8 @@ export const ResourceEvents = {
   CAP_REACHED: 'resource:cap-reached',
   /** 容量警告 */
   CAP_WARNING: 'resource:cap-warning',
+  /** RES-CAP-02: 资源溢出（临时收入超过容量上限被截断） */
+  OVERFLOW: 'resource:overflow',
   /** 离线收益计算完成 */
   OFFLINE_EARNINGS: 'resource:offline-earnings',
 } as const;
@@ -287,6 +289,7 @@ export interface EventPayloadMap {
   [ResourceEvents.PRODUCTION_UPDATED]: { resource: string; rate: number };
   [ResourceEvents.CAP_REACHED]: { resource: string; cap: number };
   [ResourceEvents.CAP_WARNING]: { resource: string; current: number; cap: number };
+  [ResourceEvents.OVERFLOW]: { resourceType: string; requested: number; actual: number; overflow: number; cap: number | null; current: number };
   [ResourceEvents.OFFLINE_EARNINGS]: { earnings: Record<string, number>; duration: number };
 
   // ── 建筑事件 ──
