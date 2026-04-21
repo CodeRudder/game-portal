@@ -76,7 +76,7 @@ export default function AlliancePanel({ engine }: AlliancePanelProps) {
         <div key={m.playerId} style={s.row}>
           <span style={{ flex: 1, fontWeight: 600 }}>{m.playerName}</span>
           <span style={{ fontSize: 11, color: m.role === 'LEADER' ? '#d4a574' : m.role === 'ADVISOR' ? '#7EC850' : '#a0a0a0' }}>
-            {{ LEADER: '盟主', ADVISOR: '军师', MEMBER: '成员' }[m.role] ?? m.role}
+            {({ LEADER: '盟主', ADVISOR: '军师', MEMBER: '成员' } as Record<string, string>)[m.role] ?? m.role}
           </span>
           <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>战力 {m.power ?? 0}</span>
         </div>

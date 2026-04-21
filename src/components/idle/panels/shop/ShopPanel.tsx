@@ -130,7 +130,7 @@ export default function ShopPanel({ engine }: ShopPanelProps) {
 
       {/* 商品列表 */}
       <div style={styles.goodsGrid}>
-        {goods.map(item => {
+        {goods.map((item: any) => {
           const def = getGoodsDef(item.defId);
           if (!def) return null;
           const outOfStock = item.stock !== -1 && item.stock <= 0;
