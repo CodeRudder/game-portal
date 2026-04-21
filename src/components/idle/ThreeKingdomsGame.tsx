@@ -58,6 +58,8 @@ import ShopPanel from '@/components/idle/panels/shop/ShopPanel';
 import AchievementPanel from '@/components/idle/panels/achievement/AchievementPanel';
 import AlliancePanel from '@/components/idle/panels/alliance/AlliancePanel';
 import PrestigePanel from '@/components/idle/panels/prestige/PrestigePanel';
+import TradePanel from '@/components/idle/panels/trade/TradePanel';
+import SettingsPanel from '@/components/idle/panels/settings/SettingsPanel';
 import './ThreeKingdomsGame.css';
 
 // ─────────────────────────────────────────────
@@ -112,7 +114,7 @@ const TABS: TabConfig[] = [
 ];
 
 /** 功能菜单面板ID */
-type FeaturePanelId = 'events' | 'quest' | 'shop' | 'mail' | 'achievement' | 'activity' | 'alliance' | 'prestige' | 'heritage' | 'social';
+type FeaturePanelId = 'events' | 'quest' | 'shop' | 'mail' | 'achievement' | 'activity' | 'alliance' | 'prestige' | 'heritage' | 'social' | 'trade' | 'settings';
 
 /** 功能菜单项配置（静态部分，badge 动态计算） */
 const FEATURE_ITEMS: Array<Omit<FeatureMenuItem, 'badge'>> = [
@@ -766,6 +768,28 @@ const ThreeKingdomsGame: React.FC = () => {
       </FeaturePanel>
 
       {/* npc 已有独立Tab，不再重复渲染 FeaturePanel */}
+
+      {/* P0-01: 商贸路线系统 */}
+      <FeaturePanel
+        visible={openFeature === 'trade'}
+        title="商贸"
+        icon="🚃"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <TradePanel engine={engine} />
+      </FeaturePanel>
+
+      {/* P0-02: 设置/云存档系统 */}
+      <FeaturePanel
+        visible={openFeature === 'settings'}
+        title="设置"
+        icon="⚙️"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <SettingsPanel engine={engine} />
+      </FeaturePanel>
 
       {/* P1-01: 随机遭遇弹窗（全局覆盖层） */}
       <RandomEncounterModal

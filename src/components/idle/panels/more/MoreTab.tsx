@@ -35,6 +35,8 @@ const MORE_ITEMS: MoreItem[] = [
   { id: 'prestige',    icon: '📊', label: '声望',   getBadge: () => 0 },
   { id: 'heritage',    icon: '👨‍👩‍👧', label: '传承', getBadge: () => 0 },
   { id: 'social',      icon: '💬', label: '社交',   getBadge: (e) => { const s = e?.getFriendSystem?.() ?? e?.friend; return s?.getUnreadCount?.() ?? 0; } },
+  { id: 'trade',       icon: '🚃', label: '商贸',   getBadge: (e) => { const t = e?.getTradeSystem?.() ?? e?.trade; return t?.getActiveCaravanCount?.() ?? 0; } },
+  { id: 'settings',    icon: '⚙️', label: '设置',   getBadge: () => 0 },
 ];
 
 // ─── 主组件 ──────────────────────────────────
