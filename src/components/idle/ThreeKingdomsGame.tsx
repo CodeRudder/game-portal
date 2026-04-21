@@ -855,6 +855,7 @@ const ThreeKingdomsGame: React.FC = () => {
           resources={resources}
           rates={productionRates}
           caps={caps}
+          buildings={buildings}
         />
 
         {/* P1-01: 急报横幅（资源栏下方） */}

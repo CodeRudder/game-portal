@@ -287,3 +287,112 @@
     height: 2px;
   }
 }
+
+/* ═══════════════════════════════════════════
+   收支详情按钮 & 弹窗
+   ═══════════════════════════════════════════ */
+.tk-res-detail-btn {
+  background: none;
+  border: 1px solid rgba(200, 169, 110, 0.3);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--tk-gold-soft);
+  flex-shrink: 0;
+  transition: background 0.2s;
+  line-height: 1;
+}
+.tk-res-detail-btn:hover {
+  background: rgba(200, 169, 110, 0.12);
+}
+
+.tk-res-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.tk-res-detail-modal {
+  background: #1a1f2e;
+  border: 1px solid rgba(200, 169, 110, 0.25);
+  border-radius: 8px;
+  width: 340px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #e0ddd5;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.tk-res-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(200, 169, 110, 0.15);
+}
+.tk-res-detail-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--tk-gold-soft);
+}
+.tk-res-detail-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.tk-res-detail-close:hover { color: #ccc; }
+
+.tk-res-detail-body {
+  padding: 12px 16px;
+}
+
+.tk-res-detail-section {
+  margin-bottom: 12px;
+}
+.tk-res-detail-section h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #aaa;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding-bottom: 4px;
+}
+
+.tk-res-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.tk-res-detail-label {
+  color: #ccc;
+}
+
+.tk-res-detail-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.tk-res-detail-positive { color: #7EC850; }
+.tk-res-detail-negative { color: #e74c3c; }
+
+.tk-res-detail-empty {
+  color: #666;
+  font-size: 12px;
+  text-align: center;
+  padding: 8px;
+}
+
+.tk-res-detail-net {
+  border-top: 1px solid rgba(200, 169, 110, 0.15);
+  padding-top: 12px;
+}

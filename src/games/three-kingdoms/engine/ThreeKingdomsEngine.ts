@@ -81,6 +81,7 @@ import { HeritageSystem } from './heritage/HeritageSystem';
 import { ActivitySystem } from './activity/ActivitySystem';
 import { TradeSystem } from './trade/TradeSystem';
 import { SettingsManager } from './settings/SettingsManager';
+import { AccountSystem } from './settings/AccountSystem';
 
 // ─────────────────────────────────────────────
 // ThreeKingdomsEngine
@@ -121,6 +122,7 @@ export class ThreeKingdomsEngine {
   private readonly activitySystem: ActivitySystem;
   private readonly tradeSystem: TradeSystem;
   private readonly settingsManager: SettingsManager;
+  private readonly accountSystem: AccountSystem;
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
@@ -207,6 +209,7 @@ export class ThreeKingdomsEngine {
     this.activitySystem = new ActivitySystem();
     this.tradeSystem = new TradeSystem();
     this.settingsManager = new SettingsManager();
+    this.accountSystem = new AccountSystem();
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
@@ -265,6 +268,7 @@ export class ThreeKingdomsEngine {
     r.register('activity', this.activitySystem);
     r.register('trade', this.tradeSystem);
     r.register('settings', this.settingsManager);
+    r.register('account', this.accountSystem);
   }
 
   // ── 初始化 ──
@@ -371,6 +375,7 @@ export class ThreeKingdomsEngine {
     this.equipmentForgeSystem.reset(); this.equipmentEnhanceSystem.reset();
     this.prestigeSystem.reset(); this.questSystem.reset();
     this.achievementSystem.reset(); this.heritageSystem.reset();
+    this.accountSystem.reset();
     this.initialized = false; this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0; this.prevResourcesJson = ''; this.prevRatesJson = '';
     this.saveManager.deleteSave(); this.bus.removeAllListeners();
@@ -563,6 +568,8 @@ export class ThreeKingdomsEngine {
   getTradeSystem(): TradeSystem { return this.tradeSystem; }
   /** 获取设置管理器 */
   getSettingsManager(): SettingsManager { return this.settingsManager; }
+  /** 获取账号系统 */
+  getAccountSystem(): AccountSystem { return this.accountSystem; }
 
   // ═══════════════════════════════════════════
   // 私有方法

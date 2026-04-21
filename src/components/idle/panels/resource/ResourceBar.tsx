@@ -9,9 +9,12 @@
  * 响应式：PC 1280×56px / 手机 375×48px
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { Resources, ProductionRate, ResourceCap, ResourceType } from '@/games/three-kingdoms/engine';
 import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine';
+import { BUILDING_LABELS, BUILDING_ICONS } from '@/games/three-kingdoms/engine/building/building.types';
+import type { BuildingState, BuildingType } from '@/games/three-kingdoms/engine/building/building.types';
+import { BUILDING_DEFS } from '@/games/three-kingdoms/engine/building/building-config';
 import './ResourceBar.css';
 
 interface ResourceBarProps {
@@ -20,6 +23,8 @@ interface ResourceBarProps {
   caps: ResourceCap;
   /** RES-CAP-02: 即将获得的临时收入（如战斗奖励），用于预判溢出 */
   pendingGains?: Partial<Record<ResourceType, number>>;
+  /** 建筑状态，用于收支详情弹窗 */
+  buildings?: Record<BuildingType, BuildingState>;
 }
 
 /** 资源图标映射 */
@@ -174,7 +179,31 @@ function ResourceItem({
 }
 
 // ─── 资源栏主组件 ────────────────────────────────
-export default function ResourceBar({ resources, rates, caps, pendingGains }: ResourceBarProps) {
+export default function ResourceBar({ resources, rates, caps, pendingGains, buildings }: ResourceBarProps) {
+  const [showDetails, setShowDetails] = useState(false);
+
+  // 收支详情：计算各建筑的产出明细
+  const productionBreakdown = useMemo(() => {
+    if (!buildings) return [];
+    const items: Array<{ building: BuildingType; label: string; icon: string; resource: ResourceType; amount: number }> = [];
+    for (const [type, state] of Object.entries(buildings)) {
+      const def = BUILDING_DEFS[type as BuildingType];
+      if (!def?.production || state.level <= 0) continue;
+      const lv = state.level;
+      const data = def.levelTable[lv - 1];
+      const amount = data?.production ?? 0;
+      if (amount <= 0) continue;
+      items.push({
+        building: type as BuildingType,
+        label: BUILDING_LABELS[type as BuildingType],
+        icon: BUILDING_ICONS[type as BuildingType],
+        resource: def.production.resourceType as ResourceType,
+        amount,
+      });
+    }
+    return items;
+  }, [buildings]);
+
   // RES-CAP-02: 计算整体溢出警告（用于全局提示）
   const overflowWarnings = useMemo(() => {
     const warnings: Array<{ type: ResourceType; label: string; wasted: number }> = [];
@@ -216,6 +245,58 @@ export default function ResourceBar({ resources, rates, caps, pendingGains }: Re
       {overflowWarnings.length > 0 && (
         <div className="tk-res-overflow-banner" role="alert">
           ⚠️ {overflowWarnings.map(w => `${w.label}溢出${formatAmount(w.wasted)}`).join('、')}，升级仓库可避免损失
+        </div>
+      )}
+
+      {/* 收支详情按钮 */}
+      <button
+        className="tk-res-detail-btn"
+        onClick={() => setShowDetails(true)}
+        aria-label="收支详情"
+        title="收支详情"
+      >
+        📊
+      </button>
+
+      {/* 收支详情弹窗 */}
+      {showDetails && (
+        <div className="tk-res-detail-overlay" onClick={() => setShowDetails(false)}>
+          <div className="tk-res-detail-modal" onClick={e => e.stopPropagation()}>
+            <div className="tk-res-detail-header">
+              <h3>资源收支</h3>
+              <button className="tk-res-detail-close" onClick={() => setShowDetails(false)}>✕</button>
+            </div>
+            <div className="tk-res-detail-body">
+              {/* 产出列表 */}
+              <div className="tk-res-detail-section">
+                <h4>产出</h4>
+                {productionBreakdown.length === 0 ? (
+                  <div className="tk-res-detail-empty">暂无建筑产出</div>
+                ) : (
+                  productionBreakdown.map(item => (
+                    <div key={item.building} className="tk-res-detail-row">
+                      <span className="tk-res-detail-label">{item.icon} {item.label}</span>
+                      <span className="tk-res-detail-value tk-res-detail-positive">
+                        +{item.amount.toFixed(1)}/秒 {RESOURCE_ICONS[item.resource]}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+              {/* 净收入 */}
+              <div className="tk-res-detail-section tk-res-detail-net">
+                <h4>净收入</h4>
+                {RESOURCE_ORDER.map(type => (
+                  <div key={type} className="tk-res-detail-row">
+                    <span className="tk-res-detail-label">{RESOURCE_ICONS[type]} {RESOURCE_LABELS[type]}</span>
+                    <span className={`tk-res-detail-value ${rates[type] >= 0 ? 'tk-res-detail-positive' : 'tk-res-detail-negative'}`}>
+                      {rates[type] >= 0 ? '+' : ''}{rates[type].toFixed(1)}/秒
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

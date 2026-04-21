@@ -171,6 +171,28 @@
   background: rgba(76, 175, 80, 0.25);
 }
 
+/* 武将对比入口按钮（列表顶部） */
+.tk-hero-compare-entry {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(200, 168, 76, 0.1));
+  border: 1px dashed rgba(76, 175, 80, 0.4);
+  border-radius: 8px;
+  color: var(--tk-green);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: center;
+}
+.tk-hero-compare-entry:hover {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(200, 168, 76, 0.2));
+  border-color: rgba(76, 175, 80, 0.7);
+}
+
 /* ═══════════════════════════════════════════
    武将网格 — PC端 4列
    ═══════════════════════════════════════════ */

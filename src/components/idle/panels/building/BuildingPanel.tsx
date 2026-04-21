@@ -19,6 +19,7 @@ import {
   BUILDING_LABELS,
   BUILDING_ICONS,
   BUILDING_ZONES,
+  RESOURCE_LABELS,
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import BuildingUpgradeModal from './BuildingUpgradeModal';
@@ -119,6 +120,8 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
 }) => {
   // 升级弹窗状态
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingType | null>(null);
+  // P1-03: 资源收支详情弹窗
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
 
   // 计算每座建筑的可升级状态和进度
   const buildingInfo = useMemo(() => {
@@ -186,6 +189,25 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
 
   return (
     <div className="tk-building-panel">
+      {/* P1-03: 资源收支详情按钮 */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <button
+          className="tk-bld-income-btn"
+          onClick={() => setShowIncomeModal(true)}
+          style={{
+            padding: '6px 14px',
+            background: 'rgba(212,165,116,0.2)',
+            color: '#d4a574',
+            border: '1px solid rgba(212,165,116,0.4)',
+            borderRadius: 6,
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          📊 收支详情
+        </button>
+      </div>
+
       {/* 升级队列 — 右上角悬浮 */}
       {upgradingBuildings.length > 0 && (
         <div className="tk-bld-queue">
@@ -339,6 +361,82 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
           onConfirm={handleUpgradeConfirm}
           onCancel={() => setSelectedBuilding(null)}
         />
+      )}
+
+      {/* P1-03: 资源收支详情弹窗 */}
+      {showIncomeModal && (
+        <div
+          className="tk-bld-income-overlay"
+          onClick={(e) => e.target === e.currentTarget && setShowIncomeModal(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          }}
+        >
+          <div
+            className="tk-bld-income-modal"
+            role="dialog" aria-modal="true" aria-label="资源收支详情"
+            style={{
+              background: '#1a1a2e', borderRadius: 12, padding: 20,
+              minWidth: 340, maxWidth: 480, maxHeight: '80vh', overflow: 'auto',
+              border: '1px solid rgba(212,165,116,0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ color: '#d4a574', fontSize: 16, margin: 0 }}>📊 资源收支详情</h3>
+              <button onClick={() => setShowIncomeModal(false)} style={{ background: 'none', border: 'none', color: '#999', fontSize: 18, cursor: 'pointer' }}>✕</button>
+            </div>
+
+            {/* 每秒产出 */}
+            <div style={{ marginBottom: 16 }}>
+              <h4 style={{ color: '#d4a574', fontSize: 13, marginBottom: 8 }}>📈 每秒产出（建筑汇总）</h4>
+              {(['grain', 'gold', 'troops', 'mandate'] as const).map((resType) => {
+                const rate = rates[resType];
+                if (rate <= 0) return null;
+                return (
+                  <div key={resType} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: '#e0d5c0', fontSize: 13 }}>
+                    <span>{RESOURCE_LABELS[resType]}</span>
+                    <span style={{ color: '#7EC850' }}>+{rate.toFixed(2)}/秒</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 净收入 */}
+            <div style={{ marginBottom: 16, padding: '10px 12px', background: 'rgba(212,165,116,0.1)', borderRadius: 8 }}>
+              <h4 style={{ color: '#d4a574', fontSize: 13, marginBottom: 8 }}>💰 净收入</h4>
+              {(['grain', 'gold', 'troops', 'mandate'] as const).map((resType) => {
+                const rate = rates[resType];
+                const isPositive = rate > 0;
+                return (
+                  <div key={resType} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13 }}>
+                    <span style={{ color: '#e0d5c0' }}>{RESOURCE_LABELS[resType]}</span>
+                    <span style={{ color: isPositive ? '#7EC850' : rate < 0 ? '#E53935' : '#999' }}>
+                      {isPositive ? '+' : ''}{rate.toFixed(2)}/秒
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 各建筑产出明细 */}
+            <div>
+              <h4 style={{ color: '#d4a574', fontSize: 13, marginBottom: 8 }}>🏗️ 建筑产出明细</h4>
+              {BUILDING_TYPES.map((type) => {
+                const state = buildings[type];
+                if (!state || state.level <= 0 || type === 'castle') return null;
+                const prod = engine.building?.getProduction?.(type) ?? 0;
+                if (prod <= 0) return null;
+                return (
+                  <div key={type} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13 }}>
+                    <span style={{ color: '#e0d5c0' }}>{BUILDING_ICONS[type]} {BUILDING_LABELS[type]} Lv.{state.level}</span>
+                    <span style={{ color: '#7EC850' }}>+{prod.toFixed(2)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

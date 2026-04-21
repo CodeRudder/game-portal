@@ -495,3 +495,19 @@
   transform: scale(0.97);
   transition: transform 0.1s;
 }
+
+/* P1-01: 对比按钮 */
+.tk-hero-detail-compare-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  background: rgba(212, 165, 116, 0.2);
+  color: #d4a574;
+  border: 1px solid rgba(212, 165, 116, 0.4);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tk-hero-detail-compare-btn:hover {
+  background: rgba(212, 165, 116, 0.35);
+}

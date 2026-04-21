@@ -32,6 +32,8 @@ interface HeroDetailModalProps {
   onClose: () => void;
   /** 升级完成回调（触发外部重渲染） */
   onEnhanceComplete?: () => void;
+  /** 对比回调（打开武将对比弹窗） */
+  onCompare?: (general: GeneralData) => void;
 }
 
 // ─────────────────────────────────────────────
@@ -75,6 +77,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
   engine,
   onClose,
   onEnhanceComplete,
+  onCompare,
 }) => {
   const heroSystem = engine.getHeroSystem();
   const levelSystem = engine.getLevelSystem();
@@ -199,6 +202,16 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
           >
             {qualityLabel}
           </span>
+          {/* P1-01: 与其他武将对比按钮 */}
+          {onCompare && (
+            <button
+              className="tk-hero-detail-compare-btn"
+              onClick={() => onCompare(general)}
+              title="与其他武将对比"
+            >
+              ⚖️ 对比
+            </button>
+          )}
         </div>
 
         {/* 武将传记 */}

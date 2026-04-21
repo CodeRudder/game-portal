@@ -2,10 +2,12 @@
  * SettingsPanel — 设置与存档面板
  *
  * 提供音效、画面等开关设置，以及手动存档功能。
+ * P1-02: 集成账号管理入口（AccountSystem）
  *
  * 数据来源：
  * - engine.getSettingsManager() / engine.settings
  * - engine.getCloudSaveSystem() / engine.cloudSave
+ * - engine.getAccountSystem() — 账号管理
  *
  * @module panels/settings/SettingsPanel
  */
@@ -35,10 +37,12 @@ const VISUAL_SETTINGS: SettingToggle[] = [
 // ─── 主组件 ──────────────────────────────────
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ engine }) => {
   const [message, setMessage] = useState<string | null>(null);
+  const [showAccount, setShowAccount] = useState(false);
 
   // 获取各子系统
   const settingsManager = engine?.getSettingsManager?.() ?? engine?.settings;
   const cloudSave = engine?.getCloudSaveSystem?.() ?? engine?.cloudSave;
+  const accountSystem = engine?.getAccountSystem?.();
   const settings = settingsManager?.getState?.();
 
   /** 切换开关 */
@@ -80,6 +84,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ engine }) => {
       </div>
     ));
 
+  // ── P1-02: 账号管理信息 ──
+  const accountSettings = accountSystem?.getSettings?.();
+  const bindings = accountSystem?.getBindings?.() ?? [];
+  const devices = accountSystem?.getDevices?.() ?? [];
+  const isGuest = accountSettings?.isGuest ?? true;
+
   return (
     <div style={styles.wrap} data-testid="settings-panel">
       <h3 style={styles.heading}>设置</h3>
@@ -97,6 +107,46 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ engine }) => {
       <div style={styles.section}>
         <h4 style={styles.sectionTitle}>🎨 画面</h4>
         {renderToggleGroup(VISUAL_SETTINGS)}
+      </div>
+
+      {/* P1-02: 账号管理 */}
+      <div style={styles.section}>
+        <h4 style={styles.sectionTitle}>👤 账号</h4>
+        {accountSystem ? (
+          <div>
+            <div style={styles.toggleRow}>
+              <span style={styles.toggleLabel}>
+                {isGuest ? '游客账号' : '已绑定账号'}
+              </span>
+              <span style={{ ...styles.toggleLabel, color: isGuest ? '#e67e22' : '#4caf50' }}>
+                {isGuest ? '未绑定' : `${bindings.length}个绑定`}
+              </span>
+            </div>
+            {/* 绑定信息 */}
+            {bindings.length > 0 && bindings.map((b: any) => (
+              <div key={b.method} style={styles.toggleRow}>
+                <span style={styles.toggleLabel}>
+                  {b.method === 'phone' ? '📱 手机' : b.method === 'email' ? '📧 邮箱' : '🔗 第三方'}
+                </span>
+                <span style={styles.toggleLabel}>{b.identifier}</span>
+              </div>
+            ))}
+            {/* 设备信息 */}
+            {devices.length > 0 && (
+              <div style={styles.toggleRow}>
+                <span style={styles.toggleLabel}>📱 设备数</span>
+                <span style={styles.toggleLabel}>{devices.length}/5</span>
+              </div>
+            )}
+            <button onClick={() => setShowAccount(!showAccount)} style={styles.saveBtn}>
+              {showAccount ? '收起详情' : '管理账号'}
+            </button>
+          </div>
+        ) : (
+          <div style={styles.toggleRow}>
+            <span style={{ ...styles.toggleLabel, color: '#999' }}>账号系统未就绪</span>
+          </div>
+        )}
       </div>
 
       {/* 存档管理 */}

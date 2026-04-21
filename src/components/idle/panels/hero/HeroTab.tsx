@@ -71,6 +71,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
   const [selectedGeneral, setSelectedGeneral] = useState<GeneralData | null>(null);
   const [showRecruitModal, setShowRecruitModal] = useState(false);
   const [compareGeneral, setCompareGeneral] = useState<GeneralData | null>(null);
+  const [showCompare, setShowCompare] = useState(false);
 
   // ── 引导状态 ──
   const [showGuide, setShowGuide] = useState(() => {
@@ -127,7 +128,8 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
   const handleRecruitComplete = useCallback(() => { /* snapshotVersion handles refresh */ }, []);
 
   const handleCompareOpen = useCallback((general: GeneralData) => setCompareGeneral(general), []);
-  const handleCompareClose = useCallback(() => setCompareGeneral(null), []);
+  const handleCompareClose = useCallback(() => { setCompareGeneral(null); setShowCompare(false); }, []);
+  const handleCompareToggle = useCallback(() => setShowCompare((v) => !v), []);
 
   const handleGuideComplete = useCallback(() => setShowGuide(false), []);
   const handleGuideSkip = useCallback(() => setShowGuide(false), []);
@@ -214,11 +216,18 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
               <div className="tk-hero-empty-sub">试试调整筛选条件</div>
             </div>
           ) : (
-            <div className="tk-hero-grid">
+            <>
+              {allGenerals.length >= 2 && (
+                <button className="tk-hero-compare-entry" onClick={handleCompareToggle}>
+                  ⚔️ 武将对比
+                </button>
+              )}
+              <div className="tk-hero-grid">
               {filteredGenerals.map((general) => (
                 <HeroCard key={general.id} general={general} engine={engine} onClick={handleCardClick} />
               ))}
             </div>
+            </>
           )}
 
           {filteredGenerals.length > 0 && (
@@ -239,7 +248,8 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
       {/* 武将详情弹窗 */}
       {selectedGeneral && (
         <HeroDetailModal general={selectedGeneral} engine={engine}
-          onClose={handleDetailClose} onEnhanceComplete={handleEnhanceComplete} />
+          onClose={handleDetailClose} onEnhanceComplete={handleEnhanceComplete}
+          onCompare={(g) => { setSelectedGeneral(null); handleCompareOpen(g); }} />
       )}
 
       {/* 招募弹窗 */}
@@ -248,8 +258,12 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
       )}
 
       {/* 武将对比弹窗 */}
-      {compareGeneral && (
-        <HeroCompareModal baseGeneral={compareGeneral} engine={engine} onClose={handleCompareClose} />
+      {(showCompare || compareGeneral) && allGenerals.length >= 2 && (
+        <HeroCompareModal
+          baseGeneral={compareGeneral ?? (filteredGenerals[0] as GeneralData)}
+          engine={engine}
+          onClose={handleCompareClose}
+        />
       )}
     </div>
   );
