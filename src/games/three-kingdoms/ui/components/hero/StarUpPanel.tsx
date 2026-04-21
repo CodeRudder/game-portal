@@ -297,11 +297,12 @@ export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, clas
 
   // 获取引擎数据
   const heroSystem = engine.getHeroSystem();
+  const heroStarSystem = engine.getHeroStarSystem();
   const general = heroSystem.getGeneral(generalId);
-  const currentStar = 1; // 从引擎获取
-  const fragmentProgress = null as FragmentProgress | null; // 从引擎获取
-  const starUpPreview: StarUpPreview | null = null; // 从引擎获取
-  const breakthroughPreview: BreakthroughPreview | null = null; // 从引擎获取
+  const currentStar = heroStarSystem.getStar(generalId);
+  const fragmentProgress = heroStarSystem.getFragmentProgress(generalId);
+  const starUpPreview: StarUpPreview | null = heroStarSystem.getStarUpPreview(generalId);
+  const breakthroughPreview: BreakthroughPreview | null = heroStarSystem.getBreakthroughPreview(generalId);
 
   // 创建逻辑实例
   const logic = useMemo(
@@ -317,9 +318,14 @@ export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, clas
     }
     setPanelState((prev) => ({ ...prev, isOperating: true, error: null }));
     // 实际调用引擎升星
-    // const result = engine.heroStarSystem.starUp(generalId);
-    setPanelState((prev) => ({ ...prev, isOperating: false }));
-  }, [logic, generalId]);
+    const result = heroStarSystem.starUp(generalId);
+    setPanelState((prev) => ({ ...prev, isOperating: false, starUpResult: result }));
+    if (result.success) {
+      onStarUp?.(result);
+    } else {
+      setPanelState((prev) => ({ ...prev, error: '升星失败：条件未满足' }));
+    }
+  }, [heroStarSystem, generalId, onStarUp]);
 
   const handleBreakthrough = useCallback(() => {
     const validation = logic.validateBreakthrough();
@@ -329,9 +335,14 @@ export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, clas
     }
     setPanelState((prev) => ({ ...prev, isOperating: true, error: null }));
     // 实际调用引擎突破
-    // const result = engine.heroStarSystem.breakthrough(generalId);
-    setPanelState((prev) => ({ ...prev, isOperating: false }));
-  }, [logic, generalId]);
+    const result = heroStarSystem.breakthrough(generalId);
+    setPanelState((prev) => ({ ...prev, isOperating: false, breakthroughResult: result }));
+    if (result.success) {
+      onBreakthrough?.(result);
+    } else {
+      setPanelState((prev) => ({ ...prev, error: '突破失败：条件未满足' }));
+    }
+  }, [heroStarSystem, generalId, onBreakthrough]);
 
   // P0-UI-02: 防抖包裹
   const { action: debouncedStarUp, isActing: isStarUpDebounced } = useDebouncedAction(handleStarUp, 500);

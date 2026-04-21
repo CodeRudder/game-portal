@@ -253,10 +253,11 @@ export function SweepPanel({ stageId, onSweepComplete, onClose, className }: Swe
   });
 
   // 获取扫荡系统数据（通过引擎获取）
-  const sweepSystem = engine.getCampaignSystem();
-  const ticketCount = 10; // 默认值，实际从引擎获取
-  const canSweepStage = true; // 默认值，实际从引擎获取
-  const stageStars = 3; // 默认值
+  const sweepSystem = engine.getSweepSystem();
+  const ticketCount = sweepSystem.getTicketCount();
+  const sweepStatus = sweepSystem.getSweepStatus(stageId);
+  const canSweepStage = sweepStatus.canSweep;
+  const stageStars = sweepStatus.stars;
 
   // 创建逻辑实例
   const logic = useMemo(
@@ -300,24 +301,11 @@ export function SweepPanel({ stageId, onSweepComplete, onClose, className }: Swe
 
     setState((prev) => ({ ...prev, isSweeping: true, error: null }));
 
-    // 实际调用引擎扫荡（此处为简化逻辑，真实场景通过引擎调用）
+    // 实际调用引擎扫荡
     try {
-      // const result = sweepSystem.sweep(stageId, state.selectedCount);
-      // 模拟成功结果
-      const mockResult: SweepBatchResult = {
-        success: true,
-        stageId,
-        requestedCount: state.selectedCount,
-        executedCount: state.selectedCount,
-        results: [],
-        totalResources: { grain: estimate.estimatedResources.grain ?? 0, gold: estimate.estimatedResources.gold ?? 0 },
-        totalExp: estimate.estimatedExp,
-        totalFragments: {},
-        ticketsUsed: logic.getRequiredTickets(state.selectedCount),
-      };
-
-      setState((prev) => ({ ...prev, isSweeping: false, result: mockResult }));
-      onSweepComplete?.(mockResult);
+      const result = sweepSystem.sweep(stageId, state.selectedCount);
+      setState((prev) => ({ ...prev, isSweeping: false, result }));
+      onSweepComplete?.(result);
     } catch (e) {
       setState((prev) => ({
         ...prev,
@@ -325,7 +313,7 @@ export function SweepPanel({ stageId, onSweepComplete, onClose, className }: Swe
         error: e instanceof Error ? e.message : '扫荡失败',
       }));
     }
-  }, [sweepCheck, stageId, state.selectedCount, estimate, logic, onSweepComplete]);
+  }, [sweepSystem, stageId, state.selectedCount, onSweepComplete]);
 
   // P0-UI-02: 防抖包裹
   const { action: debouncedSweep, isActing: isDebouncedSweep } = useDebouncedAction(handleSweep, 500);
