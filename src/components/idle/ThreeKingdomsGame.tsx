@@ -38,6 +38,9 @@ import ResourceBar from '@/components/idle/panels/resource/ResourceBar';
 import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
 import HeroTab from '@/components/idle/panels/hero/HeroTab';
 import CampaignTab from '@/components/idle/panels/campaign/CampaignTab';
+import TechTab from '@/components/idle/panels/tech/TechTab';
+import Modal from '@/components/idle/common/Modal';
+import type { OfflineEarnings } from '@/games/three-kingdoms/shared/types';
 import './ThreeKingdomsGame.css';
 
 // ─────────────────────────────────────────────
@@ -80,7 +83,7 @@ interface TabConfig {
 const TABS: TabConfig[] = [
   { id: 'building', icon: '🏗️', label: '建筑', available: true },
   { id: 'hero', icon: '⚔️', label: '武将', available: true },
-  { id: 'tech', icon: '📜', label: '科技', available: false },
+  { id: 'tech', icon: '📜', label: '科技', available: true },
   { id: 'campaign', icon: '🗺️', label: '关卡', available: true },
 ];
 
@@ -134,6 +137,7 @@ const ThreeKingdomsGame: React.FC = () => {
   // ── UI 状态 ──
   const [activeTab, setActiveTab] = useState<TabId>('building');
   const [snapshotVersion, setSnapshotVersion] = useState(0);
+  const [offlineReward, setOfflineReward] = useState<OfflineEarnings | null>(null);
 
   // ── 引擎初始化（只执行一次） ──
   const initializedRef = useRef(false);
@@ -146,6 +150,15 @@ const ThreeKingdomsGame: React.FC = () => {
     const offlineEarnings = engine.load();
     if (!offlineEarnings) {
       engine.init();
+    } else {
+      // 有离线收益，弹出领取弹窗
+      const hasEarnings = offlineEarnings.earned.grain > 0
+        || offlineEarnings.earned.gold > 0
+        || offlineEarnings.earned.troops > 0
+        || offlineEarnings.earned.mandate > 0;
+      if (hasEarnings) {
+        setOfflineReward(offlineEarnings);
+      }
     }
 
     // 首次渲染触发
@@ -215,6 +228,23 @@ const ThreeKingdomsGame: React.FC = () => {
     Toast.danger(error.message || '升级失败');
   }, []);
 
+  // ── 离线收益领取回调 ──
+  const handleOfflineClaim = useCallback(() => {
+    setOfflineReward(null);
+    Toast.success('离线收益已领取！');
+  }, []);
+
+  // ── 离线收益格式化 ──
+  const formatOfflineDuration = (seconds: number): string => {
+    if (seconds < 60) return `${Math.floor(seconds)}秒`;
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const d = Math.floor(h / 24);
+    if (d > 0) return `${d}天${h % 24}小时`;
+    if (h > 0) return m > 0 ? `${h}小时${m}分钟` : `${h}小时`;
+    return `${m}分钟`;
+  };
+
   // ── Tab 切换 ──
   const handleTabChange = useCallback((tab: TabConfig) => {
     if (!tab.available) {
@@ -251,17 +281,10 @@ const ThreeKingdomsGame: React.FC = () => {
 
       case 'tech':
         return (
-          <div className="tk-scene-placeholder">
-            <div className="tk-placeholder-content">
-              <span className="tk-placeholder-icon">
-                {TABS.find(t => t.id === activeTab)?.icon || '🚧'}
-              </span>
-              <span className="tk-placeholder-text">敬请期待</span>
-              <span className="tk-placeholder-sub">
-                {TABS.find(t => t.id === activeTab)?.label}系统将在后续版本开放
-              </span>
-            </div>
-          </div>
+          <TechTab
+            engine={engine}
+            snapshotVersion={snapshotVersion}
+          />
         );
 
       case 'campaign':
@@ -333,6 +356,44 @@ const ThreeKingdomsGame: React.FC = () => {
           {renderSceneContent()}
         </div>
       </div>
+
+      {/* 离线收益弹窗 */}
+      {offlineReward && (
+        <Modal
+          visible
+          type="info"
+          title="离线收益"
+          confirmText="领取收益"
+          onConfirm={handleOfflineClaim}
+          onCancel={handleOfflineClaim}
+          width="420px"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: '#e8e0d0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', fontSize: '13px' }}>
+              <span>⏱ 离线时长：{formatOfflineDuration(offlineReward.offlineSeconds)}</span>
+              {offlineReward.isCapped && <span style={{ color: '#e8a735' }}>⚠️ 已达上限</span>}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {([
+                { key: 'grain' as const, label: '粮草', icon: '🌾', color: '#7EC850' },
+                { key: 'gold' as const, label: '铜钱', icon: '💰', color: '#C9A84C' },
+                { key: 'troops' as const, label: '兵力', icon: '⚔️', color: '#B8423A' },
+                { key: 'mandate' as const, label: '天命', icon: '✨', color: '#7B5EA7' },
+              ]).map(({ key, label, icon, color }) => {
+                const val = offlineReward.earned[key];
+                if (val <= 0) return null;
+                return (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
+                    <span>{icon}</span>
+                    <span>{label}</span>
+                    <span style={{ color, marginLeft: 'auto', fontWeight: 600 }}>+{Math.floor(val).toLocaleString()}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
