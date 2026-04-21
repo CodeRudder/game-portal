@@ -14,7 +14,7 @@ import {
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
-import { SharedPanel } from '../../components/SharedPanel';
+import SharedPanel from '../../components/SharedPanel';
 import './BuildingUpgradeModal.css';
 
 interface BuildingUpgradeModalProps {
@@ -107,7 +107,7 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
   const canAfford = affordability.grain && affordability.gold && affordability.troops;
 
   return (
-    <SharedPanel title={`${name}升级`} onClose={onCancel}>
+    <SharedPanel visible={true} title={`${name}升级`} onClose={onCancel}>
         {/* 建筑头部 */}
         <div className="tk-upgrade-header">
           <span className="tk-upgrade-icon">{icon}</span>
