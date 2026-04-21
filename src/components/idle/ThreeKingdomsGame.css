@@ -518,6 +518,118 @@
   [class*="list"] > *, [class*="List"] > * {
     padding: 6px 8px !important;
   }
+
+  /* ═══════════════════════════════════════════
+     P1-02b: 17个新面板移动端适配
+     ═══════════════════════════════════════════ */
+
+  /* 装备面板 */
+  [data-testid="equipment-tab"] .tk-equipment-sub-tabs {
+    font-size: 12px !important;
+    gap: 4px !important;
+  }
+  [data-testid="equipment-tab"] .tk-equipment-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  /* 竞技场 */
+  [data-testid="arena-tab"] .tk-arena-actions {
+    padding: 8px !important;
+  }
+  [data-testid="arena-tab"] .tk-arena-modal {
+    font-size: 12px !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* 远征 */
+  [data-testid="expedition-tab"] .tk-expedition-route-list {
+    padding: 8px !important;
+  }
+  [data-testid="expedition-tab"] .tk-expedition-node-chain {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* 军队 */
+  [data-testid="army-tab"] .tk-army-slot-card {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  [data-testid="army-tab"] .tk-army-hero-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  /* MoreTab */
+  [data-testid="more-tab"] .tk-more-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  [data-testid="more-tab"] .tk-more-card {
+    padding: 10px 6px !important;
+  }
+
+  /* 任务 */
+  [data-testid="quest-panel"] .tk-quest-item {
+    padding: 8px !important;
+    font-size: 13px !important;
+  }
+
+  /* 商店 */
+  [data-testid="shop-panel"] .tk-shop-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* 邮件 */
+  [data-testid="mail-panel"] .tk-mail-item {
+    padding: 8px !important;
+  }
+
+  /* 成就 */
+  [data-testid="achievement-panel"] .tk-achievement-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* 活动 */
+  [data-testid="activity-panel"] .tk-activity-card {
+    padding: 10px !important;
+  }
+
+  /* 联盟 */
+  [data-testid="alliance-panel"] .tk-alliance-member-list {
+    font-size: 13px !important;
+  }
+
+  /* 声望 */
+  [data-testid="prestige-panel"] .tk-prestige-info {
+    padding: 10px !important;
+  }
+
+  /* 传承 */
+  [data-testid="heritage-panel"] .tk-heritage-tab-content {
+    padding: 10px !important;
+  }
+
+  /* 社交 */
+  [data-testid="social-panel"] .tk-social-chat-area {
+    height: 200px !important;
+  }
+
+  /* 商贸 */
+  [data-testid="trade-panel"] .tk-trade-route-card {
+    padding: 8px !important;
+  }
+
+  /* 设置 */
+  [data-testid="settings-panel"] .tk-settings-row {
+    padding: 6px 0 !important;
+  }
+
+  /* 资源收支弹窗 */
+  .tk-resource-detail-modal {
+    width: 95vw !important;
+    max-height: 70vh !important;
+  }
 }
 
 /* ═══════════════════════════════════════════
