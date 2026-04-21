@@ -203,7 +203,7 @@ export function calculateStagePoints(cfg: BattleDifficultyConfig): BattleDifficu
   for (let ch = 0; ch < cfg.totalChapters; ch++) {
     for (let st = 0; st < cfg.stagesPerChapter; st++) {
       const stageIdx = ch * cfg.stagesPerChapter + st;
-      const progress = stageIdx / (totalStages - 1);
+      const progress = totalStages > 1 ? stageIdx / (totalStages - 1) : 0;
       const isBoss = st === cfg.stagesPerChapter - 1;
 
       let enemyPower: number;
@@ -212,7 +212,7 @@ export function calculateStagePoints(cfg: BattleDifficultyConfig): BattleDifficu
       } else if (cfg.curveType === 'linear') {
         enemyPower = cfg.firstStagePower + (cfg.lastStagePower - cfg.firstStagePower) * progress;
       } else {
-        const chapterProgress = ch / (cfg.totalChapters - 1);
+        const chapterProgress = cfg.totalChapters > 1 ? ch / (cfg.totalChapters - 1) : 0;
         enemyPower = cfg.firstStagePower + (cfg.lastStagePower - cfg.firstStagePower) * chapterProgress;
       }
 
@@ -222,7 +222,7 @@ export function calculateStagePoints(cfg: BattleDifficultyConfig): BattleDifficu
 
       enemyPower = Math.floor(enemyPower);
       const recommendedPower = Math.floor(enemyPower * 0.85);
-      const difficultyFactor = Math.min(1, enemyPower / cfg.lastStagePower);
+      const difficultyFactor = cfg.lastStagePower > 0 ? Math.min(1, enemyPower / cfg.lastStagePower) : 0;
 
       stagePoints.push({
         chapterIndex: ch,

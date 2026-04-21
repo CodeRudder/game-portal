@@ -95,6 +95,17 @@ export class CloudSaveSystem implements ISubsystem {
   init(deps: ISystemDeps): void {
     this.deps = deps;
     this.initialized = true;
+    // 初始化默认存档槽位（如果尚未通过 syncAccountSettings 设置）
+    if (this.saveSlots.length === 0) {
+      for (let i = 0; i < TOTAL_SAVE_SLOTS; i++) {
+        this.saveSlots.push({
+          slotIndex: i,
+          isPaid: i >= FREE_SAVE_SLOTS,
+          purchased: i < FREE_SAVE_SLOTS,
+          data: null,
+        });
+      }
+    }
   }
 
   update(dt: number): void {

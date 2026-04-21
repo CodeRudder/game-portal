@@ -182,7 +182,7 @@ export class TutorialStepManager implements ISubsystem {
   advanceSubStep(): StepExecutionResult {
     const stepId = this.state.activeStepId;
     if (!stepId) {
-      return { completed: false, stepId: 'step1_castle_overview' as TutorialStepId, subStepIndex: 0, rewards: [] };
+      return { completed: false, stepId: '' as TutorialStepId, subStepIndex: 0, rewards: [] };
     }
     const definition = STEP_DEFINITION_MAP[stepId];
     if (!definition) {
@@ -204,7 +204,7 @@ export class TutorialStepManager implements ISubsystem {
   completeCurrentStep(): StepExecutionResult {
     const stepId = this.state.activeStepId;
     if (!stepId) {
-      return { completed: false, stepId: 'step1_castle_overview' as TutorialStepId, subStepIndex: 0, rewards: [] };
+      return { completed: false, stepId: '' as TutorialStepId, subStepIndex: 0, rewards: [] };
     }
 
     const definition = STEP_DEFINITION_MAP[stepId];

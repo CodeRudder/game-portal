@@ -352,7 +352,7 @@ export class TutorialStateMachine implements ISubsystem {
 
     // 取进度更高的阶段
     const phaseOrder: TutorialPhase[] = [
-      'not_started', 'core_guiding', 'free_explore', 'free_play', 'mini_tutorial',
+      'not_started', 'core_guiding', 'free_explore', 'mini_tutorial', 'free_play',
     ];
     const localIdx = phaseOrder.indexOf(localData.currentPhase);
     const remoteIdx = phaseOrder.indexOf(remoteData.currentPhase);

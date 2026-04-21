@@ -100,6 +100,9 @@ export class AccountSystem implements ISubsystem {
       devices: this.devices.map(d => ({ ...d })),
       saveSlots: [],
       lastAutoSaveAt: 0,
+      deleteRequest: this.deleteRequest ? { ...this.deleteRequest } : null,
+      currentDeviceId: this.currentDeviceId,
+      unbindCooldowns: Object.fromEntries(this.unbindCooldowns),
     };
   }
 
@@ -121,6 +124,16 @@ export class AccountSystem implements ISubsystem {
     this.firstBindRewardClaimed = settings.firstBindRewardClaimed;
     this.devices = settings.devices.map(d => ({ ...d }));
     this.status = settings.isGuest ? AccountStatus.Guest : AccountStatus.Bound;
+    // 恢复持久化字段
+    if (settings.deleteRequest !== undefined) {
+      this.deleteRequest = settings.deleteRequest ? { ...settings.deleteRequest } : null;
+    }
+    if (settings.currentDeviceId !== undefined) {
+      this.currentDeviceId = settings.currentDeviceId;
+    }
+    if (settings.unbindCooldowns !== undefined) {
+      this.unbindCooldowns = new Map(Object.entries(settings.unbindCooldowns));
+    }
   }
 
   // ─── 账号绑定 (#11) ──────────────────────

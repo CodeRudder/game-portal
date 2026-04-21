@@ -210,10 +210,12 @@ export class TutorialStorage implements ISubsystem {
       ...currentData,
       currentPhase: 'not_started',
       completedSteps: [],
+      completedEvents: [],
       currentStepId: null,
       currentSubStepIndex: 0,
       tutorialStartTime: null,
       transitionLogs: [],
+      protectionStartTime: null,
     };
     this._stateMachine.loadSaveData(resetData);
     return this.save();

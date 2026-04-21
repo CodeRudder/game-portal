@@ -224,6 +224,7 @@ export class ResponsiveLayoutManager {
 
   navigateBack(): boolean {
     if (this._navDepth <= 0) return false;
+    if (this._breadcrumbs.length < 2) return false;
     if (this._panel.isOpen) { this.closeFullScreenPanel(); return true; }
     this.popToBreadcrumb(this._breadcrumbs.length - 2);
     return true;

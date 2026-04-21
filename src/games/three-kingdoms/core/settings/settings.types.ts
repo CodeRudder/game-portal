@@ -11,6 +11,8 @@
  * @module core/settings/settings.types
  */
 
+import type { AccountDeleteRequest } from '../unification/unification.types';
+
 // ─────────────────────────────────────────────
 // 通用
 // ─────────────────────────────────────────────
@@ -253,6 +255,12 @@ export interface AccountSettings {
   saveSlots: SaveSlot[];
   /** 最后自动保存时间 */
   lastAutoSaveAt: number;
+  /** 账号删除请求（持久化用） */
+  deleteRequest?: AccountDeleteRequest | null;
+  /** 当前设备 ID（持久化用） */
+  currentDeviceId?: string;
+  /** 解绑冷却记录（持久化用） */
+  unbindCooldowns?: Record<string, number>;
 }
 
 // ─────────────────────────────────────────────

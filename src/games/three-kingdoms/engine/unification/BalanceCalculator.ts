@@ -203,7 +203,7 @@ export function generateResourceCurve(config: ResourceBalanceConfig): ResourceCu
 
   for (const day of days) {
     const productionRate = (earlyDaily / 86400) * Math.pow(growthRate, day - 1);
-    const consumptionRate = productionRate * (0.5 + Math.random() * 0.3);
+    const consumptionRate = productionRate * 0.65;
     totalProduced += productionRate * 86400;
     totalConsumed += consumptionRate * 86400;
 
