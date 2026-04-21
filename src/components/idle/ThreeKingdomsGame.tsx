@@ -41,6 +41,14 @@ import CampaignTab from '@/components/idle/panels/campaign/CampaignTab';
 import TechTab from '@/components/idle/panels/tech/TechTab';
 import Modal from '@/components/idle/common/Modal';
 import type { OfflineEarnings } from '@/games/three-kingdoms/shared/types';
+import FeatureMenu from '@/components/idle/FeatureMenu';
+import type { FeatureMenuItem } from '@/components/idle/FeatureMenu';
+import FeaturePanel from '@/components/idle/FeaturePanel';
+import WorldMapTab from '@/components/idle/panels/map/WorldMapTab';
+import NPCTab from '@/components/idle/panels/npc/NPCTab';
+import EventBanner from '@/components/idle/panels/event/EventBanner';
+import RandomEncounterModal from '@/components/idle/panels/event/RandomEncounterModal';
+import { EquipmentBag, ArenaPanel, ExpeditionPanel } from '@/games/three-kingdoms/ui/components';
 import './ThreeKingdomsGame.css';
 
 // ─────────────────────────────────────────────
@@ -70,7 +78,7 @@ const SEASON_ICONS: Record<Season, string> = {
 };
 
 /** Tab 类型定义 */
-type TabId = 'building' | 'hero' | 'tech' | 'campaign';
+type TabId = 'building' | 'hero' | 'tech' | 'campaign' | 'map' | 'npc';
 
 /** Tab 配置 */
 interface TabConfig {
@@ -85,6 +93,21 @@ const TABS: TabConfig[] = [
   { id: 'hero', icon: '⚔️', label: '武将', available: true },
   { id: 'tech', icon: '📜', label: '科技', available: true },
   { id: 'campaign', icon: '🗺️', label: '关卡', available: true },
+  { id: 'map', icon: '🗺️', label: '天下', available: true },
+  { id: 'npc', icon: '👤', label: '名士', available: true },
+];
+
+/** 功能菜单面板ID */
+type FeaturePanelId = 'worldmap' | 'equipment' | 'arena' | 'expedition' | 'events' | 'npc';
+
+/** 功能菜单项配置（静态部分，badge 动态计算） */
+const FEATURE_ITEMS: Array<Omit<FeatureMenuItem, 'badge'>> = [
+  { id: 'worldmap', icon: '🗺️', label: '世界地图', description: '三国势力分布与领土管理', available: true },
+  { id: 'equipment', icon: '🎒', label: '装备背包', description: '装备管理与穿戴', available: true },
+  { id: 'arena', icon: '⚔️', label: '竞技场', description: 'PvP对战与赛季排名', available: true },
+  { id: 'expedition', icon: '🚀', label: '远征', description: '探索未知领域', available: true },
+  { id: 'events', icon: '⚡', label: '事件', description: '当前活跃事件', available: true },
+  { id: 'npc', icon: '👥', label: 'NPC名册', description: '已发现的NPC角色', available: true },
 ];
 
 // ─────────────────────────────────────────────
@@ -138,6 +161,13 @@ const ThreeKingdomsGame: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('building');
   const [snapshotVersion, setSnapshotVersion] = useState(0);
   const [offlineReward, setOfflineReward] = useState<OfflineEarnings | null>(null);
+
+  // ── 功能面板状态 ──
+  const [openFeature, setOpenFeature] = useState<FeaturePanelId | null>(null);
+
+  // ── P1-01: 事件系统状态 ──
+  const [activeBanner, setActiveBanner] = useState<any>(null);
+  const [activeEncounter, setActiveEncounter] = useState<any>(null);
 
   // ── 引擎初始化（只执行一次） ──
   const initializedRef = useRef(false);
@@ -208,6 +238,35 @@ const ThreeKingdomsGame: React.FC = () => {
     };
   }, [engine]);
 
+  // ── P1-01: 事件系统监听（急报横幅 + 随机遭遇弹窗） ──
+  useEffect(() => {
+    const handleBannerCreated = (data: any) => {
+      setActiveBanner({
+        id: data.bannerId ?? `banner-${Date.now()}`,
+        eventId: data.eventId ?? '',
+        title: data.title ?? '急报',
+        content: data.content ?? '',
+        icon: data.icon ?? '📢',
+        priority: data.priority ?? 'normal',
+        displayDuration: data.displayDuration ?? 5000,
+        createdAt: Date.now(),
+        read: false,
+      });
+    };
+
+    const handleEncounterTriggered = (data: any) => {
+      setActiveEncounter(data.event ?? null);
+    };
+
+    engine.on('event:banner_created' as any, handleBannerCreated);
+    engine.on('event:encounter_triggered' as any, handleEncounterTriggered);
+
+    return () => {
+      engine.off('event:banner_created' as any, handleBannerCreated);
+      engine.off('event:encounter_triggered' as any, handleEncounterTriggered);
+    };
+  }, [engine]);
+
   // ── 获取引擎快照 ──
   const snapshot: EngineSnapshot = useMemo(() => {
     // snapshotVersion 作为依赖触发重计算
@@ -254,6 +313,62 @@ const ThreeKingdomsGame: React.FC = () => {
     setActiveTab(tab.id);
   }, []);
 
+  // ── 功能菜单选择 ──
+  const handleFeatureSelect = useCallback((id: string) => {
+    setOpenFeature(id as FeaturePanelId);
+  }, []);
+
+  // ── 功能面板关闭 ──
+  const handleFeatureClose = useCallback(() => {
+    setOpenFeature(null);
+  }, []);
+
+  // ── P1-01: 事件系统回调 ──
+  const handleBannerDismiss = useCallback((_bannerId: string) => {
+    setActiveBanner(null);
+  }, []);
+
+  const handleEncounterSelectOption = useCallback((_instanceId: string, _optionId: string) => {
+    setActiveEncounter(null);
+    Toast.success('已做出选择！');
+  }, []);
+
+  const handleEncounterClose = useCallback(() => {
+    setActiveEncounter(null);
+  }, []);
+
+  // ── 功能菜单项（动态计算 badge） ──
+  const featureMenuItems: FeatureMenuItem[] = useMemo(() => {
+    return FEATURE_ITEMS.map(item => {
+      let badge = 0;
+      // 事件面板显示活跃事件数
+      if (item.id === 'events') {
+        const activeEvents = (snapshot as any).activeEvents as any[] | undefined;
+        badge = activeEvents?.length ?? 0;
+      }
+      return { ...item, badge };
+    });
+  }, [snapshotVersion]);
+
+  // ── 世界地图数据 ──
+  const worldMapData = useMemo(() => {
+    const territorySys = engine.getTerritorySystem();
+    const territories = territorySys.getAllTerritories();
+    const productionSummary = territorySys.getPlayerProductionSummary();
+    return { territories, productionSummary };
+  }, [engine, snapshotVersion]);
+
+  // ── NPC 数据（使用引擎 NPC 系统，若可用） ──
+  const npcData = useMemo(() => {
+    // 尝试从引擎获取 NPC 系统
+    const npcSys = (engine as any).npcSystem;
+    if (npcSys && typeof npcSys.getAllNPCs === 'function') {
+      return npcSys.getAllNPCs();
+    }
+    // 备用：返回空数组（NPC系统尚未集成到引擎时）
+    return [];
+  }, [engine, snapshotVersion]);
+
   // ── 渲染场景区内容 ──
   const renderSceneContent = () => {
     switch (activeTab) {
@@ -295,6 +410,30 @@ const ThreeKingdomsGame: React.FC = () => {
           />
         );
 
+      case 'map':
+        return (
+          <WorldMapTab
+            territories={worldMapData.territories}
+            productionSummary={worldMapData.productionSummary}
+            snapshotVersion={snapshotVersion}
+            onSelectTerritory={(id) => {
+              Toast.info(`选中领土: ${id}`);
+            }}
+            onSiegeTerritory={(id) => {
+              Toast.info(`发起攻城: ${id}`);
+            }}
+          />
+        );
+
+      case 'npc':
+        return (
+          <NPCTab
+            npcs={npcData}
+            onSelectNPC={(npcId) => Toast.info(`查看NPC: ${npcId}`)}
+            onStartDialog={(npcId) => Toast.info(`与NPC对话: ${npcId}`)}
+          />
+        );
+
       default:
         return null;
     }
@@ -309,6 +448,12 @@ const ThreeKingdomsGame: React.FC = () => {
           resources={resources}
           rates={productionRates}
           caps={caps}
+        />
+
+        {/* P1-01: 急报横幅（资源栏下方） */}
+        <EventBanner
+          banner={activeBanner}
+          onDismiss={handleBannerDismiss}
         />
 
         {/* B区：Tab 栏 */}
@@ -327,6 +472,12 @@ const ThreeKingdomsGame: React.FC = () => {
               {!tab.available && <span className="tk-tab-soon">即将开放</span>}
             </button>
           ))}
+
+          {/* 功能菜单按钮 */}
+          <FeatureMenu
+            items={featureMenuItems}
+            onSelect={handleFeatureSelect}
+          />
 
           {/* 日历信息（右侧） — 接入 CalendarSystem 实时数据 */}
           <div className="tk-calendar">
@@ -394,6 +545,121 @@ const ThreeKingdomsGame: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      {/* ═══ 功能面板弹窗 ═══ */}
+
+      {/* P1-02: 世界地图 */}
+      <FeaturePanel
+        visible={openFeature === 'worldmap'}
+        title="世界地图"
+        icon="🗺️"
+        width="720px"
+        onClose={handleFeatureClose}
+      >
+        <WorldMapTab
+          territories={worldMapData.territories}
+          productionSummary={worldMapData.productionSummary}
+          snapshotVersion={snapshotVersion}
+          onSelectTerritory={(id) => {
+            Toast.info(`选中领土: ${id}`);
+          }}
+          onSiegeTerritory={(id) => {
+            Toast.info(`发起攻城: ${id}`);
+          }}
+        />
+      </FeaturePanel>
+
+      {/* P1-04: 装备背包 */}
+      <FeaturePanel
+        visible={openFeature === 'equipment'}
+        title="装备背包"
+        icon="🎒"
+        width="600px"
+        onClose={handleFeatureClose}
+      >
+        <EquipmentBag
+          equipments={[]}
+          onEquipClick={(uid) => Toast.info(`查看装备: ${uid}`)}
+          onEquip={(uid) => Toast.success(`穿戴装备: ${uid}`)}
+          onUnequip={(uid) => Toast.info(`卸下装备: ${uid}`)}
+          onDecompose={(uid) => Toast.info(`分解装备: ${uid}`)}
+        />
+      </FeaturePanel>
+
+      {/* P1-05: 竞技场 */}
+      <FeaturePanel
+        visible={openFeature === 'arena'}
+        title="竞技场"
+        icon="⚔️"
+        width="560px"
+        onClose={handleFeatureClose}
+      >
+        <ArenaPanel
+          playerState={null}
+          seasonData={null}
+          onChallenge={(opponentId) => Toast.info(`挑战对手: ${opponentId}`)}
+          onRefresh={() => Toast.info('刷新对手列表')}
+        />
+      </FeaturePanel>
+
+      {/* P1-06: 远征 */}
+      <FeaturePanel
+        visible={openFeature === 'expedition'}
+        title="远征天下"
+        icon="🚀"
+        width="600px"
+        onClose={handleFeatureClose}
+      >
+        <ExpeditionPanel
+          routes={[]}
+          regions={[]}
+          teams={[]}
+          unlockedSlots={1}
+          onRouteSelect={(routeId) => Toast.info(`选择路线: ${routeId}`)}
+          onStartExpedition={(routeId, teamId) => Toast.success(`出发远征: ${routeId} / ${teamId}`)}
+        />
+      </FeaturePanel>
+
+      {/* P1-01: 事件系统 */}
+      <FeaturePanel
+        visible={openFeature === 'events'}
+        title="事件"
+        icon="⚡"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <div style={{ padding: '16px', color: '#e8e0d0' }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: '#d4a574', marginBottom: '12px' }}>
+            📨 当前事件
+          </div>
+          <div style={{ textAlign: 'center', padding: '24px', color: '#666', fontSize: '13px' }}>
+            暂无活跃事件
+          </div>
+        </div>
+      </FeaturePanel>
+
+      {/* P1-03: NPC名册 */}
+      <FeaturePanel
+        visible={openFeature === 'npc'}
+        title="NPC名册"
+        icon="👥"
+        width="560px"
+        onClose={handleFeatureClose}
+      >
+        <NPCTab
+          npcs={npcData}
+          onSelectNPC={(npcId) => Toast.info(`查看NPC: ${npcId}`)}
+          onStartDialog={(npcId) => Toast.info(`与NPC对话: ${npcId}`)}
+        />
+      </FeaturePanel>
+
+      {/* P1-01: 随机遭遇弹窗（全局覆盖层） */}
+      <RandomEncounterModal
+        visible={activeEncounter !== null}
+        event={activeEncounter}
+        onSelectOption={handleEncounterSelectOption}
+        onClose={handleEncounterClose}
+      />
     </div>
   );
 };

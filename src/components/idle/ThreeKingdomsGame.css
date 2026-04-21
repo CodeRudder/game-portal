@@ -129,6 +129,12 @@
   gap: 2px;
 }
 
+.tk-tab-bar .tk-feature-menu {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
 .tk-tab-btn {
   flex: 1;
   max-width: 120px;

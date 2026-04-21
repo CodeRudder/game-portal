@@ -1,0 +1,263 @@
+/**
+ * FeatureMenu — 功能菜单样式
+ *
+ * 设计规范：水墨江山·铜纹霸业
+ * 定位在Tab栏右侧、日历信息左边
+ */
+
+/* ═══════════════════════════════════════════
+   根容器 — 相对定位锚点
+   ═══════════════════════════════════════════ */
+.tk-feature-menu {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+/* ═══════════════════════════════════════════
+   触发按钮
+   ═══════════════════════════════════════════ */
+.tk-feature-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: var(--tk-radius-md, 6px);
+  background: rgba(200, 168, 76, 0.08);
+  color: var(--tk-gold, #C9A84C);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.tk-feature-menu-trigger:hover {
+  background: rgba(200, 168, 76, 0.18);
+  border-color: rgba(200, 168, 76, 0.45);
+}
+
+.tk-feature-menu--open .tk-feature-menu-trigger {
+  background: rgba(200, 168, 76, 0.22);
+  border-color: rgba(200, 168, 76, 0.5);
+  box-shadow: 0 0 8px rgba(200, 168, 76, 0.15);
+}
+
+.tk-feature-menu-icon {
+  font-size: 15px;
+}
+
+.tk-feature-menu-label {
+  font-size: 12px;
+}
+
+.tk-feature-menu-arrow {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  margin-left: 2px;
+}
+
+.tk-feature-menu-arrow--up {
+  transform: rotate(180deg);
+}
+
+/* 角标 */
+.tk-feature-menu-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--tk-red, #B8423A);
+  border-radius: 8px;
+  padding: 0 4px;
+  box-shadow: 0 1px 4px rgba(184, 66, 58, 0.4);
+}
+
+/* ═══════════════════════════════════════════
+   下拉面板
+   ═══════════════════════════════════════════ */
+.tk-feature-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 260px;
+  max-height: 420px;
+  background: rgba(20, 25, 35, 0.98);
+  border: 1px solid rgba(200, 168, 76, 0.3);
+  border-radius: var(--tk-radius-lg, 8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: tk-feature-menu-enter 0.15s ease-out;
+  z-index: 200;
+}
+
+@keyframes tk-feature-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 面板头部 */
+.tk-feature-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+}
+
+.tk-feature-menu-header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-gold, #C9A84C);
+  letter-spacing: 1px;
+}
+
+.tk-feature-menu-header-count {
+  font-size: 10px;
+  color: var(--tk-text-muted, #666);
+}
+
+/* 功能列表 */
+.tk-feature-menu-list {
+  overflow-y: auto;
+  padding: 4px 6px 6px;
+}
+
+.tk-feature-menu-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tk-feature-menu-list::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 76, 0.2);
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   功能项
+   ═══════════════════════════════════════════ */
+.tk-feature-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 10px;
+  border: none;
+  border-radius: var(--tk-radius-md, 6px);
+  background: transparent;
+  color: var(--tk-text-primary, #F0E6D3);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  text-align: left;
+  font-family: inherit;
+  position: relative;
+}
+
+.tk-feature-menu-item:hover {
+  background: rgba(200, 168, 76, 0.1);
+}
+
+.tk-feature-menu-item:active {
+  background: rgba(200, 168, 76, 0.18);
+}
+
+.tk-feature-menu-item--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tk-feature-menu-item--disabled:hover {
+  background: transparent;
+}
+
+.tk-feature-menu-item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.tk-feature-menu-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-feature-menu-item-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tk-text-primary, #F0E6D3);
+}
+
+.tk-feature-menu-item-desc {
+  font-size: 10px;
+  color: var(--tk-text-muted, #666);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 功能项角标 */
+.tk-feature-menu-item-badge {
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--tk-red, #B8423A);
+  border-radius: 9px;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+
+/* 锁定图标 */
+.tk-feature-menu-item-locked {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   响应式 — 手机端
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-feature-menu-trigger {
+    padding: 4px 8px;
+    gap: 2px;
+  }
+
+  .tk-feature-menu-label {
+    display: none;
+  }
+
+  .tk-feature-menu-dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 44px;
+    right: 4px;
+    left: 4px;
+    width: auto;
+    max-height: 50vh;
+    border-radius: 12px 12px 4px 4px;
+  }
+}
