@@ -237,6 +237,11 @@ export default function IdleGamePage() {
     );
   }
 
+  // 三国霸业：全屏模式，不显示 Header / 标题区
+  if (config.pixiComponent && gameId === 'three-kingdoms') {
+    return <ThreeKingdomsGame />;
+  }
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -257,12 +262,8 @@ export default function IdleGamePage() {
           </div>
         </div>
 
-        {/* 游戏区域 — PixiJS 游戏不使用 max-w 限制，由组件自身控制尺寸 */}
-        {config.pixiComponent && gameId === 'three-kingdoms' ? (
-          <div className="flex justify-center overflow-hidden">
-            <ThreeKingdomsGame />
-          </div>
-        ) : (
+        {/* 游戏区域 */}
+        {(
           <div className="flex flex-col items-center justify-center gap-4 py-12">
             <div className="text-5xl">{config.icon}</div>
             <p className="text-center text-sm text-gray-400">

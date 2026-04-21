@@ -712,7 +712,12 @@ const ThreeKingdomsGame: React.FC = () => {
           onDismiss={handleBannerDismiss}
         />
 
-        {/* B区：Tab 栏 */}
+        {/* C区：场景区 — flex:1 撑满中间空间 */}
+        <div className="tk-scene-area">
+          {renderSceneContent()}
+        </div>
+
+        {/* B区：Tab 栏 — 固定底部 */}
         <div className="tk-tab-bar">
           {TABS.map(tab => (
             <button
@@ -756,11 +761,6 @@ const ThreeKingdomsGame: React.FC = () => {
               {calendar?.date ? formatGameDate(calendar.date) : '正月初一'}
             </span>
           </div>
-        </div>
-
-        {/* C区：场景区 */}
-        <div className="tk-scene-area">
-          {renderSceneContent()}
         </div>
       </div>
 

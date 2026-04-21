@@ -106,13 +106,16 @@
 .tk-game-root {
   width: 100vw;
   height: 100vh;
+  height: 100dvh; /* 动态视口高度，兼容移动端地址栏 */
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   background: var(--tk-bg-dark);
   overflow: hidden;
   font-family: var(--tk-font-body);
   color: var(--tk-text-primary);
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 /* 加载状态 */
@@ -128,20 +131,21 @@
 }
 
 /* ═══════════════════════════════════════════
-   游戏画框 — PC 1280×800 固定尺寸
+   游戏画框 — 自适应视口，撑满全屏
    ═══════════════════════════════════════════ */
 .tk-game-frame {
-  width: 1280px;
-  height: 800px;
-  max-width: 100vw;
-  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  max-width: 1280px;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--tk-bg);
   position: relative;
   overflow: hidden;
-  transform-origin: center center;
   box-sizing: border-box;
+  /* PC端居中 */
+  margin: 0 auto;
 }
 
 /* ═══════════════════════════════════════════
@@ -153,14 +157,13 @@
   display: flex;
   align-items: stretch;
   background: rgba(20, 25, 35, 0.95);
-  border-bottom: 1px solid rgba(200, 169, 110, 0.15);
+  border-top: 1px solid rgba(200, 169, 110, 0.15);
   z-index: var(--tk-z-tab-bar);
   flex-shrink: 0;
   padding: 0 8px;
   gap: 2px;
-  /* P1-2 (A-02): 固定底部，滚动时保持可见 */
-  position: sticky;
-  bottom: 0;
+  /* PC端：通过 flex order 排到底部，无需 sticky */
+  order: 3;
   /* P0-01: 横向滚动支持 */
   overflow-x: auto;
   overflow-y: hidden;
@@ -296,6 +299,8 @@
   overflow-x: hidden;
   position: relative;
   z-index: var(--tk-z-scene);
+  /* PC端：排在资源栏之后、Tab栏之前 */
+  order: 2;
 }
 
 .tk-scene-placeholder {
@@ -330,12 +335,12 @@
 }
 
 /* ═══════════════════════════════════════════
-   响应式 — PC端自适应缩放
+   响应式 — PC端小屏自适应
    ═══════════════════════════════════════════ */
 @media (max-width: 1280px) or (max-height: 800px) {
   .tk-game-frame {
-    transform: scale(var(--tk-scale, 1));
-    transform-origin: top center;
+    max-width: 100%;
+    max-height: 100%;
   }
 }
 
@@ -349,8 +354,6 @@
   }
 
   .tk-game-frame {
-    width: 100%;
-    height: 100%;
     max-width: 100%;
     max-height: 100%;
     transform: none;

@@ -21,9 +21,8 @@
   gap: 8px;
   box-sizing: border-box;
   overflow: visible;
-  /* P1-1 (A-01): 固定顶部，滚动时保持可见 */
-  position: sticky;
-  top: 0;
+  /* PC端：flex布局顶部固定，无需 sticky */
+  order: 1;
 }
 
 /* 游戏标题 */
