@@ -189,19 +189,10 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
   return (
     <div className="tk-building-panel">
       {/* P1-03: 资源收支详情按钮 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+      <div className="tk-bld-income-bar">
         <button
           className="tk-bld-income-btn"
           onClick={() => setShowIncomeModal(true)}
-          style={{
-            padding: '6px 14px',
-            background: 'rgba(212,165,116,0.2)',
-            color: '#d4a574',
-            border: '1px solid rgba(212,165,116,0.4)',
-            borderRadius: 'var(--tk-radius-md)' as any,
-            fontSize: 12,
-            cursor: 'pointer',
-          }}
         >
           📊 收支详情
         </button>
@@ -322,7 +313,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
                 {isLocked ? (
                   <div className="tk-bld-list-detail">未解锁</div>
                 ) : isUpgrading ? (
-                  <div className="tk-bld-list-detail" style={{ color: '#7EC850' }}>
+                  <div className="tk-bld-list-detail tk-bld-list-detail--upgrading">
                     升级中 {Math.floor(info.progress * 100)}% {formatTime(info.remaining)}
                   </div>
                 ) : (
@@ -367,50 +358,41 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
         <div
           className="tk-bld-income-overlay"
           onClick={(e) => e.target === e.currentTarget && setShowIncomeModal(false)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal-detail)' as any,
-          }}
         >
           <div
             className="tk-bld-income-modal"
             role="dialog" aria-modal="true" aria-label="资源收支详情"
-            style={{
-              background: '#1a1a2e', borderRadius: 'var(--tk-radius-xl)' as any, padding: 20,
-              minWidth: 340, maxWidth: 480, maxHeight: '80vh', overflow: 'auto',
-              border: '1px solid rgba(212,165,116,0.3)',
-            }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ color: '#d4a574', fontSize: 16, margin: 0 }}>📊 资源收支详情</h3>
-              <button onClick={() => setShowIncomeModal(false)} style={{ background: 'none', border: 'none', color: '#999', fontSize: 18, cursor: 'pointer' }}>✕</button>
+            <div className="tk-bld-income-header">
+              <h3 className="tk-bld-income-title">📊 资源收支详情</h3>
+              <button className="tk-bld-income-close" onClick={() => setShowIncomeModal(false)}>✕</button>
             </div>
 
             {/* 每秒产出 */}
-            <div style={{ marginBottom: 16 }}>
-              <h4 style={{ color: '#d4a574', fontSize: 13, marginBottom: 8 }}>📈 每秒产出（建筑汇总）</h4>
+            <div className="tk-bld-income-section">
+              <h4 className="tk-bld-income-section-title">📈 每秒产出（建筑汇总）</h4>
               {(['grain', 'gold', 'troops', 'mandate'] as const).map((resType) => {
                 const rate = rates[resType];
                 if (rate <= 0) return null;
                 return (
-                  <div key={resType} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: '#e0d5c0', fontSize: 13 }}>
+                  <div key={resType} className="tk-bld-income-row">
                     <span>{RESOURCE_LABELS[resType]}</span>
-                    <span style={{ color: '#7EC850' }}>+{rate.toFixed(2)}/秒</span>
+                    <span className="tk-bld-income-rate">+{rate.toFixed(2)}/秒</span>
                   </div>
                 );
               })}
             </div>
 
             {/* 净收入 */}
-            <div style={{ marginBottom: 16, padding: '10px 12px', background: 'rgba(212,165,116,0.1)', borderRadius: 'var(--tk-radius-lg)' as any }}>
-              <h4 style={{ color: '#d4a574', fontSize: 13, marginBottom: 8 }}>💰 净收入</h4>
+            <div className="tk-bld-income-net-box">
+              <h4 className="tk-bld-income-section-title">💰 净收入</h4>
               {(['grain', 'gold', 'troops', 'mandate'] as const).map((resType) => {
                 const rate = rates[resType];
                 const isPositive = rate > 0;
                 return (
-                  <div key={resType} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13 }}>
-                    <span style={{ color: '#e0d5c0' }}>{RESOURCE_LABELS[resType]}</span>
-                    <span style={{ color: isPositive ? '#7EC850' : rate < 0 ? '#E53935' : '#999' }}>
+                  <div key={resType} className="tk-bld-income-row">
+                    <span>{RESOURCE_LABELS[resType]}</span>
+                    <span className={isPositive ? 'tk-bld-income-rate' : rate < 0 ? 'tk-bld-income-rate--negative' : 'tk-bld-income-rate--zero'}>
                       {isPositive ? '+' : ''}{rate.toFixed(2)}/秒
                     </span>
                   </div>
@@ -419,17 +401,17 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
             </div>
 
             {/* 各建筑产出明细 */}
-            <div>
-              <h4 style={{ color: '#d4a574', fontSize: 13, marginBottom: 8 }}>🏗️ 建筑产出明细</h4>
+            <div className="tk-bld-income-section">
+              <h4 className="tk-bld-income-section-title">🏗️ 建筑产出明细</h4>
               {BUILDING_TYPES.map((type) => {
                 const state = buildings[type];
                 if (!state || state.level <= 0 || type === 'castle') return null;
                 const prod = engine.building?.getProduction?.(type) ?? 0;
                 if (prod <= 0) return null;
                 return (
-                  <div key={type} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13 }}>
-                    <span style={{ color: '#e0d5c0' }}>{BUILDING_ICONS[type]} {BUILDING_LABELS[type]} Lv.{state.level}</span>
-                    <span style={{ color: '#7EC850' }}>+{prod.toFixed(2)}</span>
+                  <div key={type} className="tk-bld-income-row">
+                    <span>{BUILDING_ICONS[type]} {BUILDING_LABELS[type]} Lv.{state.level}</span>
+                    <span className="tk-bld-income-rate">+{prod.toFixed(2)}</span>
                   </div>
                 );
               })}
