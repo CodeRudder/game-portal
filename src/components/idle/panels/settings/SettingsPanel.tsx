@@ -4,6 +4,8 @@
  * 提供音效、画面等开关设置，以及手动存档功能。
  * P1-02: 集成账号管理入口（AccountSystem）
  *
+ * NEW-R5: 使用 SharedPanel 统一弹窗容器，消除重复 overlay/header/close 代码。
+ *
  * 数据来源：
  * - engine.getSettingsManager() / engine.settings
  * - engine.getCloudSaveSystem() / engine.cloudSave
@@ -12,10 +14,15 @@
  * @module panels/settings/SettingsPanel
  */
 import React, { useState } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 // ─── 类型 ────────────────────────────────────
 interface SettingsPanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
 // ─── 设置项配置 ──────────────────────────────
@@ -35,7 +42,7 @@ const VISUAL_SETTINGS: SettingToggle[] = [
 ];
 
 // ─── 主组件 ──────────────────────────────────
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ engine }) => {
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ engine, visible = true, onClose }) => {
   const [message, setMessage] = useState<string | null>(null);
   const [showAccount, setShowAccount] = useState(false);
 
@@ -91,72 +98,78 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ engine }) => {
   const isGuest = accountSettings?.isGuest ?? true;
 
   return (
-    <div style={styles.wrap} data-testid="settings-panel">
-      <h3 style={styles.heading}>设置</h3>
+    <SharedPanel
+      visible={visible}
+      title="设置"
+      icon="⚙️"
+      onClose={onClose}
+      width="520px"
+    >
+      <div style={styles.wrap} data-testid="settings-panel">
+        {/* 操作反馈消息 */}
+        {message && <div style={styles.message}>{message}</div>}
 
-      {/* 操作反馈消息 */}
-      {message && <div style={styles.message}>{message}</div>}
+        {/* 音频设置 */}
+        <div style={styles.section}>
+          <h4 style={styles.sectionTitle}>🔊 音频</h4>
+          {renderToggleGroup(AUDIO_SETTINGS)}
+        </div>
 
-      {/* 音频设置 */}
-      <div style={styles.section}>
-        <h4 style={styles.sectionTitle}>🔊 音频</h4>
-        {renderToggleGroup(AUDIO_SETTINGS)}
-      </div>
+        {/* 画面设置 */}
+        <div style={styles.section}>
+          <h4 style={styles.sectionTitle}>🎨 画面</h4>
+          {renderToggleGroup(VISUAL_SETTINGS)}
+        </div>
 
-      {/* 画面设置 */}
-      <div style={styles.section}>
-        <h4 style={styles.sectionTitle}>🎨 画面</h4>
-        {renderToggleGroup(VISUAL_SETTINGS)}
-      </div>
-
-      {/* P1-02: 账号管理 */}
-      <div style={styles.section}>
-        <h4 style={styles.sectionTitle}>👤 账号</h4>
-        {accountSystem ? (
-          <div>
-            <div style={styles.toggleRow}>
-              <span style={styles.toggleLabel}>
-                {isGuest ? '游客账号' : '已绑定账号'}
-              </span>
-              <span style={{ ...styles.toggleLabel, color: isGuest ? '#e67e22' : '#4caf50' }}>
-                {isGuest ? '未绑定' : `${bindings.length}个绑定`}
-              </span>
-            </div>
-            {/* 绑定信息 */}
-            {bindings.length > 0 && bindings.map((b: any) => (
-              <div key={b.method} style={styles.toggleRow}>
-                <span style={styles.toggleLabel}>
-                  {b.method === 'phone' ? '📱 手机' : b.method === 'email' ? '📧 邮箱' : '🔗 第三方'}
-                </span>
-                <span style={styles.toggleLabel}>{b.identifier}</span>
-              </div>
-            ))}
-            {/* 设备信息 */}
-            {devices.length > 0 && (
+        {/* P1-02: 账号管理 */}
+        <div style={styles.section}>
+          <h4 style={styles.sectionTitle}>👤 账号</h4>
+          {accountSystem ? (
+            <div>
               <div style={styles.toggleRow}>
-                <span style={styles.toggleLabel}>📱 设备数</span>
-                <span style={styles.toggleLabel}>{devices.length}/5</span>
+                <span style={styles.toggleLabel}>
+                  {isGuest ? '游客账号' : '已绑定账号'}
+                </span>
+                <span style={{ ...styles.toggleLabel, color: isGuest ? '#e67e22' : '#4caf50' }}>
+                  {isGuest ? '未绑定' : `${bindings.length}个绑定`}
+                </span>
               </div>
-            )}
-            <button onClick={() => setShowAccount(!showAccount)} style={styles.saveBtn}>
-              {showAccount ? '收起详情' : '管理账号'}
-            </button>
-          </div>
-        ) : (
-          <div style={styles.toggleRow}>
-            <span style={{ ...styles.toggleLabel, color: '#999' }}>账号系统未就绪</span>
-          </div>
-        )}
-      </div>
+              {/* 绑定信息 */}
+              {bindings.length > 0 && bindings.map((b: any) => (
+                <div key={b.method} style={styles.toggleRow}>
+                  <span style={styles.toggleLabel}>
+                    {b.method === 'phone' ? '📱 手机' : b.method === 'email' ? '📧 邮箱' : '🔗 第三方'}
+                  </span>
+                  <span style={styles.toggleLabel}>{b.identifier}</span>
+                </div>
+              ))}
+              {/* 设备信息 */}
+              {devices.length > 0 && (
+                <div style={styles.toggleRow}>
+                  <span style={styles.toggleLabel}>📱 设备数</span>
+                  <span style={styles.toggleLabel}>{devices.length}/5</span>
+                </div>
+              )}
+              <button onClick={() => setShowAccount(!showAccount)} style={styles.saveBtn}>
+                {showAccount ? '收起详情' : '管理账号'}
+              </button>
+            </div>
+          ) : (
+            <div style={styles.toggleRow}>
+              <span style={{ ...styles.toggleLabel, color: '#999' }}>账号系统未就绪</span>
+            </div>
+          )}
+        </div>
 
-      {/* 存档管理 */}
-      <div style={styles.section}>
-        <h4 style={styles.sectionTitle}>💾 存档</h4>
-        <button onClick={handleSave} style={styles.saveBtn}>
-          手动保存
-        </button>
+        {/* 存档管理 */}
+        <div style={styles.section}>
+          <h4 style={styles.sectionTitle}>💾 存档</h4>
+          <button onClick={handleSave} style={styles.saveBtn}>
+            手动保存
+          </button>
+        </div>
       </div>
-    </div>
+    </SharedPanel>
   );
 };
 
@@ -169,11 +182,6 @@ const styles: Record<string, React.CSSProperties> = {
   wrap: {
     padding: 16,
     color: '#e0d5c0',
-  },
-  heading: {
-    fontSize: 16,
-    marginBottom: 12,
-    color: '#d4a574',
   },
   message: {
     padding: '8px 12px',

@@ -2,16 +2,22 @@
  * 声望系统面板 — 声望等级、进度条、产出加成、等级奖励领取
  *
  * 读取引擎 PrestigeSystem 数据。
+ * NEW-R5: 使用 SharedPanel 统一弹窗容器。
  *
  * @module panels/prestige/PrestigePanel
  */
 import React, { useState, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 interface PrestigePanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
-export default function PrestigePanel({ engine }: PrestigePanelProps) {
+export default function PrestigePanel({ engine, visible = true, onClose }: PrestigePanelProps) {
   const [message, setMessage] = useState<string | null>(null);
 
   const ps = engine?.getPrestigeSystem?.() ?? engine?.prestige;
@@ -36,57 +42,65 @@ export default function PrestigePanel({ engine }: PrestigePanelProps) {
   }, [ps, flash]);
 
   return (
-    <div style={s.wrap}>
-      {message && <div style={s.toast}>{message}</div>}
-      {/* 声望等级卡片 */}
-      <div style={s.card}>
-        <div style={s.badge}>🏅 {title}</div>
-        <div style={s.lvNum}>Lv.{level}</div>
-        <div style={s.bonusText}>产出加成 ×{(bonus ?? 1.0).toFixed(2)}</div>
-        <div style={s.barBg}><div style={{ ...s.barFill, width: `${pct}%` }} /></div>
-        <div style={s.progText}>{points} / {nextPts} 声望</div>
-      </div>
-      {/* 获取途径 */}
-      <div style={s.section}>
-        <div style={s.sectionTitle}>📊 获取途径</div>
-        {sources.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 16, color: '#666', fontSize: 12 }}>暂无数据</div>
-        ) : (
-          sources.map((cfg: any, i: number) => (
-            <div key={i} style={s.srcRow}>
-              <span>{cfg.label ?? cfg.type}</span>
-              <span style={{ color: '#888' }}>每日上限: {cfg.dailyCap > 0 ? cfg.dailyCap : '无限'}</span>
-            </div>
-          ))
-        )}
-      </div>
-      {/* 等级奖励 */}
-      <div style={s.section}>
-        <div style={s.sectionTitle}>🎁 等级奖励</div>
-        {rewards.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 16, color: '#666', fontSize: 12 }}>暂无数据</div>
-        ) : (
-          rewards.map((rw: any) => {
-          const unlocked = rw.level <= level;
-          const claimed = rw.claimed;
-          return (
-            <div key={rw.level} style={s.rwItem}>
-              <div style={{ width: 56 }}>
-                <span style={{ fontWeight: 600 }}>Lv.{rw.level}</span>
-                {unlocked && <span style={{ color: '#7EC850', fontSize: 10, marginLeft: 4 }}>✓</span>}
+    <SharedPanel
+      visible={visible}
+      title="声望"
+      icon="📊"
+      onClose={onClose}
+      width="520px"
+    >
+      <div style={s.wrap}>
+        {message && <div style={s.toast}>{message}</div>}
+        {/* 声望等级卡片 */}
+        <div style={s.card}>
+          <div style={s.badge}>🏅 {title}</div>
+          <div style={s.lvNum}>Lv.{level}</div>
+          <div style={s.bonusText}>产出加成 ×{(bonus ?? 1.0).toFixed(2)}</div>
+          <div style={s.barBg}><div style={{ ...s.barFill, width: `${pct}%` }} /></div>
+          <div style={s.progText}>{points} / {nextPts} 声望</div>
+        </div>
+        {/* 获取途径 */}
+        <div style={s.section}>
+          <div style={s.sectionTitle}>📊 获取途径</div>
+          {sources.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 16, color: '#666', fontSize: 12 }}>暂无数据</div>
+          ) : (
+            sources.map((cfg: any, i: number) => (
+              <div key={i} style={s.srcRow}>
+                <span>{cfg.label ?? cfg.type}</span>
+                <span style={{ color: '#888' }}>每日上限: {cfg.dailyCap > 0 ? cfg.dailyCap : '无限'}</span>
               </div>
-              <div style={{ flex: 1, fontSize: 12, color: '#a0a0a0' }}>{rw.description ?? `声望等级${rw.level}奖励`}</div>
-              <button
-                style={{ ...s.claimBtn, ...(claimed ? s.claimedBtn : {}), ...(!unlocked ? s.lockedBtn : {}) }}
-                disabled={claimed || !unlocked}
-                onClick={() => handleClaim(rw.level)}
-              >{claimed ? '已领' : !unlocked ? '🔒' : '领取'}</button>
-            </div>
-          );
-        })
-        )}
+            ))
+          )}
+        </div>
+        {/* 等级奖励 */}
+        <div style={s.section}>
+          <div style={s.sectionTitle}>🎁 等级奖励</div>
+          {rewards.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 16, color: '#666', fontSize: 12 }}>暂无数据</div>
+          ) : (
+            rewards.map((rw: any) => {
+            const unlocked = rw.level <= level;
+            const claimed = rw.claimed;
+            return (
+              <div key={rw.level} style={s.rwItem}>
+                <div style={{ width: 56 }}>
+                  <span style={{ fontWeight: 600 }}>Lv.{rw.level}</span>
+                  {unlocked && <span style={{ color: '#7EC850', fontSize: 10, marginLeft: 4 }}>✓</span>}
+                </div>
+                <div style={{ flex: 1, fontSize: 12, color: '#a0a0a0' }}>{rw.description ?? `声望等级${rw.level}奖励`}</div>
+                <button
+                  style={{ ...s.claimBtn, ...(claimed ? s.claimedBtn : {}), ...(!unlocked ? s.lockedBtn : {}) }}
+                  disabled={claimed || !unlocked}
+                  onClick={() => handleClaim(rw.level)}
+                >{claimed ? '已领' : !unlocked ? '🔒' : '领取'}</button>
+              </div>
+            );
+          })
+          )}
+        </div>
       </div>
-    </div>
+    </SharedPanel>
   );
 }
 

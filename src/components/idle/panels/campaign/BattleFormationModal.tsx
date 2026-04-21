@@ -12,7 +12,7 @@
  * @module components/idle/panels/campaign/BattleFormationModal
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { Stage, EnemyUnitDef } from '@/games/three-kingdoms/engine/campaign/campaign.types';
 import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine/campaign/campaign.types';
@@ -65,6 +65,15 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
   snapshotVersion,
 }) => {
   const heroSystem = engine.getHeroSystem();
+
+  // ── ESC 键关闭 ──
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
 
   // ── 数据 ──
   const allGenerals = useMemo(() => {

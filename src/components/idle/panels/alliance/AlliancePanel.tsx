@@ -2,18 +2,24 @@
  * 联盟系统面板 — 联盟信息、成员列表、联盟任务、加入/退出
  *
  * 读取引擎 AllianceSystem / AllianceTaskSystem 数据。
+ * NEW-R5: 使用 SharedPanel 统一弹窗容器。
  *
  * @module panels/alliance/AlliancePanel
  */
 import React, { useState, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 interface AlliancePanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
 type AllianceTab = 'info' | 'members' | 'tasks';
 
-export default function AlliancePanel({ engine }: AlliancePanelProps) {
+export default function AlliancePanel({ engine, visible = true, onClose }: AlliancePanelProps) {
   const [tab, setTab] = useState<AllianceTab>('info');
   const [message, setMessage] = useState<string | null>(null);
   const [allianceName, setAllianceName] = useState('');
@@ -54,84 +60,99 @@ export default function AlliancePanel({ engine }: AlliancePanelProps) {
     }
   }, [allianceName, allianceSystem, flash]);
 
-  if (!isInAlliance) {
+  /** 渲染面板内容（独立于 SharedPanel 容器） */
+  const renderContent = () => {
+    if (!isInAlliance) {
+      return (
+        <div style={s.wrap}>
+          {message && <div style={s.toast}>{message}</div>}
+          <div style={s.empty}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🏰</div>
+            <div style={{ color: '#a0a0a0', marginBottom: 16 }}>你尚未加入联盟</div>
+            {!showCreateForm ? (
+              <button style={s.btn} onClick={() => setShowCreateForm(true)}>创建联盟</button>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <input
+                  style={s.input}
+                  value={allianceName}
+                  onChange={e => setAllianceName(e.target.value)}
+                  placeholder="输入联盟名称（2-8字）"
+                  maxLength={8}
+                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button style={s.btn} onClick={handleCreate}>确认创建</button>
+                  <button style={{ ...s.btn, background: 'transparent' }} onClick={() => setShowCreateForm(false)}>取消</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={s.wrap}>
         {message && <div style={s.toast}>{message}</div>}
-        <div style={s.empty}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🏰</div>
-          <div style={{ color: '#a0a0a0', marginBottom: 16 }}>你尚未加入联盟</div>
-          {!showCreateForm ? (
-            <button style={s.btn} onClick={() => setShowCreateForm(true)}>创建联盟</button>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <input
-                style={s.input}
-                value={allianceName}
-                onChange={e => setAllianceName(e.target.value)}
-                placeholder="输入联盟名称（2-8字）"
-                maxLength={8}
-              />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button style={s.btn} onClick={handleCreate}>确认创建</button>
-                <button style={{ ...s.btn, background: 'transparent' }} onClick={() => setShowCreateForm(false)}>取消</button>
-              </div>
-            </div>
-          )}
+        {/* 联盟头部 */}
+        <div style={s.header}>
+          <div style={s.name}>{alliance?.name ?? '联盟'}</div>
+          <div style={s.meta}>Lv.{alliance?.level ?? 1} · 成员 {members.length}/{allianceSystem?.getMaxMembers?.(alliance?.level ?? 1) ?? 20}</div>
+          {bonuses && <div style={s.bonus}>资源+{bonuses.resourceBonus}% · 远征+{bonuses.expeditionBonus}%</div>}
         </div>
+        {/* Tab */}
+        <div style={s.tabs}>
+          {(['info', 'members', 'tasks'] as const).map(t => (
+            <button key={t} style={{ ...s.tab, ...(tab === t ? s.tabOn : {}) }} onClick={() => setTab(t)}>
+              {{ info: '📋 信息', members: '👥 成员', tasks: '🎯 任务' }[t]}
+            </button>
+          ))}
+        </div>
+        {/* 信息 */}
+        {tab === 'info' && (
+          <div style={s.block}>
+            <div style={s.label}>宣言</div><div style={s.val}>{alliance?.declaration ?? '暂无'}</div>
+            <div style={s.label}>经验</div><div style={s.val}>{alliance?.experience ?? 0} EXP</div>
+          </div>
+        )}
+        {/* 成员 */}
+        {tab === 'members' && members.map((m: any) => (
+          <div key={m.playerId} style={s.row}>
+            <span style={{ flex: 1, fontWeight: 600 }}>{m.playerName}</span>
+            <span style={{ fontSize: 11, color: m.role === 'LEADER' ? '#d4a574' : m.role === 'ADVISOR' ? '#7EC850' : '#a0a0a0' }}>
+              {({ LEADER: '盟主', ADVISOR: '军师', MEMBER: '成员' } as Record<string, string>)[m.role] ?? m.role}
+            </span>
+            <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>战力 {m.power ?? 0}</span>
+          </div>
+        ))}
+        {/* 联盟任务 */}
+        {tab === 'tasks' && (allianceTasks.length > 0 ? allianceTasks.map((task: any) => {
+          const def = taskSystem?.getTaskDef?.(task.defId);
+          const progress = taskSystem?.getTaskProgress?.(task.defId);
+          const pct = progress?.percent ?? 0;
+          return (
+            <div key={task.defId} style={s.card}>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>{def?.name ?? task.defId}</div>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>{def?.description ?? ''}</div>
+              <div style={s.bar}><div style={{ ...s.fill, width: `${pct}%` }} /></div>
+              <div style={{ fontSize: 10, color: '#a0a0a0' }}>{progress?.current ?? 0}/{progress?.target ?? 0} · {task.status === 'completed' ? '✅' : '进行中'}</div>
+            </div>
+          );
+        }) : <div style={s.emptySmall}>暂无联盟任务</div>)}
       </div>
     );
-  }
+  };
 
   return (
-    <div style={s.wrap}>
-      {message && <div style={s.toast}>{message}</div>}
-      {/* 联盟头部 */}
-      <div style={s.header}>
-        <div style={s.name}>{alliance?.name ?? '联盟'}</div>
-        <div style={s.meta}>Lv.{alliance?.level ?? 1} · 成员 {members.length}/{allianceSystem?.getMaxMembers?.(alliance?.level ?? 1) ?? 20}</div>
-        {bonuses && <div style={s.bonus}>资源+{bonuses.resourceBonus}% · 远征+{bonuses.expeditionBonus}%</div>}
-      </div>
-      {/* Tab */}
-      <div style={s.tabs}>
-        {(['info', 'members', 'tasks'] as const).map(t => (
-          <button key={t} style={{ ...s.tab, ...(tab === t ? s.tabOn : {}) }} onClick={() => setTab(t)}>
-            {{ info: '📋 信息', members: '👥 成员', tasks: '🎯 任务' }[t]}
-          </button>
-        ))}
-      </div>
-      {/* 信息 */}
-      {tab === 'info' && (
-        <div style={s.block}>
-          <div style={s.label}>宣言</div><div style={s.val}>{alliance?.declaration ?? '暂无'}</div>
-          <div style={s.label}>经验</div><div style={s.val}>{alliance?.experience ?? 0} EXP</div>
-        </div>
-      )}
-      {/* 成员 */}
-      {tab === 'members' && members.map((m: any) => (
-        <div key={m.playerId} style={s.row}>
-          <span style={{ flex: 1, fontWeight: 600 }}>{m.playerName}</span>
-          <span style={{ fontSize: 11, color: m.role === 'LEADER' ? '#d4a574' : m.role === 'ADVISOR' ? '#7EC850' : '#a0a0a0' }}>
-            {({ LEADER: '盟主', ADVISOR: '军师', MEMBER: '成员' } as Record<string, string>)[m.role] ?? m.role}
-          </span>
-          <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>战力 {m.power ?? 0}</span>
-        </div>
-      ))}
-      {/* 联盟任务 */}
-      {tab === 'tasks' && (allianceTasks.length > 0 ? allianceTasks.map((task: any) => {
-        const def = taskSystem?.getTaskDef?.(task.defId);
-        const progress = taskSystem?.getTaskProgress?.(task.defId);
-        const pct = progress?.percent ?? 0;
-        return (
-          <div key={task.defId} style={s.card}>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>{def?.name ?? task.defId}</div>
-            <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>{def?.description ?? ''}</div>
-            <div style={s.bar}><div style={{ ...s.fill, width: `${pct}%` }} /></div>
-            <div style={{ fontSize: 10, color: '#a0a0a0' }}>{progress?.current ?? 0}/{progress?.target ?? 0} · {task.status === 'completed' ? '✅' : '进行中'}</div>
-          </div>
-        );
-      }) : <div style={s.emptySmall}>暂无联盟任务</div>)}
-    </div>
+    <SharedPanel
+      visible={visible}
+      title="联盟"
+      icon="🤝"
+      onClose={onClose}
+      width="520px"
+    >
+      {renderContent()}
+    </SharedPanel>
   );
 }
 

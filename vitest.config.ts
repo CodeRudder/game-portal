@@ -6,7 +6,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
-    include: ['src/__tests__/**/*.test.{ts,tsx}', 'src/engine/**/__tests__/**/*.test.{ts,tsx}', 'src/engines/**/__tests__/**/*.test.{ts,tsx}', 'src/games/**/__tests__/**/*.test.{ts,tsx}', 'src/renderer/**/__tests__/**/*.test.{ts,tsx}', 'src/components/**/__tests__/**/*.test.{ts,tsx}'],
+    include: ['src/__tests__/**/*.test.{ts,tsx}', 'src/engine/**/__tests__/**/*.test.{ts,tsx}', 'src/engines/**/__tests__/**/*.test.{ts,tsx}', 'src/games/**/__tests__/**/*.test.{ts,tsx}', 'src/games/**/tests/**/*.test.{ts,tsx}', 'src/renderer/**/__tests__/**/*.test.{ts,tsx}', 'src/components/**/__tests__/**/*.test.{ts,tsx}'],
     exclude: ['src/games/three-kingdoms/bak/**'],
     coverage: {
       provider: 'v8',

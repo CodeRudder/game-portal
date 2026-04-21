@@ -1105,26 +1105,19 @@ const ThreeKingdomsGame: React.FC = () => {
       </FeaturePanel>
 
       {/* 联盟系统 */}
-      <FeaturePanel
+      {/* NEW-R5: 联盟系统 — 已迁移至 SharedPanel */}
+      <AlliancePanel
+        engine={engine}
         visible={openFeature === 'alliance'}
-        title="联盟"
-        icon="🤝"
-        width="520px"
         onClose={handleFeatureClose}
-      >
-        <AlliancePanel engine={engine} />
-      </FeaturePanel>
+      />
 
-      {/* 声望系统 */}
-      <FeaturePanel
+      {/* NEW-R5: 声望系统 — 已迁移至 SharedPanel */}
+      <PrestigePanel
+        engine={engine}
         visible={openFeature === 'prestige'}
-        title="声望"
-        icon="📊"
-        width="520px"
         onClose={handleFeatureClose}
-      >
-        <PrestigePanel engine={engine} />
-      </FeaturePanel>
+      />
 
       {/* npc 已有独立Tab，不再重复渲染 FeaturePanel */}
 
@@ -1139,16 +1132,12 @@ const ThreeKingdomsGame: React.FC = () => {
         <TradePanel engine={engine} />
       </FeaturePanel>
 
-      {/* P0-02: 设置/云存档系统 */}
-      <FeaturePanel
+      {/* NEW-R5: 设置/云存档系统 — 已迁移至 SharedPanel */}
+      <SettingsPanel
+        engine={engine}
         visible={openFeature === 'settings'}
-        title="设置"
-        icon="⚙️"
-        width="520px"
         onClose={handleFeatureClose}
-      >
-        <SettingsPanel engine={engine} />
-      </FeaturePanel>
+      />
 
       {/* P1-01: 随机遭遇弹窗（全局覆盖层） */}
       <RandomEncounterModal
