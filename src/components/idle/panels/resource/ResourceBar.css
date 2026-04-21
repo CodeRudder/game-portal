@@ -16,7 +16,7 @@
   background: rgba(20, 25, 35, 0.9);
   border-bottom: 1px solid rgba(200, 169, 110, 0.15);
   padding: 0 16px;
-  z-index: 100;
+  z-index: var(--tk-z-resource-bar);
   flex-shrink: 0;
   gap: 8px;
   box-sizing: border-box;

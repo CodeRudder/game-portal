@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--tk-z-modal);
   animation: tk-fp-overlay-in 0.15s ease-out;
 }
 

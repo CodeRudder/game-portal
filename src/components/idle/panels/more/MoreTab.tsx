@@ -49,7 +49,7 @@ const MoreTab: React.FC<MoreTabProps> = ({ engine, snapshotVersion, onOpenPanel 
   }, [engine, snapshotVersion]);
 
   return (
-    <div style={styles.wrap}>
+    <div style={styles.wrap} data-testid="more-tab">
       <div style={styles.title}>🎮 更多功能</div>
       <div style={styles.grid}>
         {items.map(item => (

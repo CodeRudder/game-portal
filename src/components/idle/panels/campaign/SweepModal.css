@@ -8,7 +8,7 @@
   position: fixed; inset: 0;
   background: rgba(0, 0, 0, 0.7);
   display: flex; align-items: center; justify-content: center;
-  z-index: 1100;
+  z-index: var(--tk-z-modal-detail);
   animation: tk-sweep-fade-in 0.2s ease-out;
 }
 @keyframes tk-sweep-fade-in { from { opacity: 0; } to { opacity: 1; } }

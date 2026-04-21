@@ -15,7 +15,7 @@
 .tk-bs-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1050;
+  z-index: var(--tk-z-battle-scene);
   background: linear-gradient(180deg, #0a0e14 0%, #111820 40%, #0d1117 100%);
   display: flex;
   flex-direction: column;

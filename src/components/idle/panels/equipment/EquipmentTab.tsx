@@ -100,7 +100,7 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) 
   return (
     <div style={S.container} data-testid="equipment-tab">
       {/* 子Tab导航 */}
-      <div style={S.subTabs}>
+      <div style={S.subTabs} className="tk-equipment-sub-tabs">
         {SUB_TABS.map(t => (
           <button key={t.id} style={{ ...S.subBtn, ...(subTab === t.id ? S.subBtnActive : {}) }}
             onClick={() => { setSubTab(t.id); setSelectedUid(null); setMessage(null); }}>
@@ -301,7 +301,7 @@ const S: Record<string, React.CSSProperties> = {
   enhanceDetail: { padding: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 8 },
   overlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any,
   },
   detailPanel: {
     background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 12, padding: 20,

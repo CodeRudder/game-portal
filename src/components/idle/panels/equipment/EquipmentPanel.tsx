@@ -268,7 +268,7 @@ const styles: Record<string, React.CSSProperties> = {
   empty: { textAlign: 'center', padding: 24, color: '#666', fontSize: 13 },
   detailOverlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any,
   },
   detailPanel: {
     background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 12, padding: 20,

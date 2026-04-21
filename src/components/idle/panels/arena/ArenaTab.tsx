@@ -323,7 +323,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   overlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any,
   },
   modal: {
     background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 12,

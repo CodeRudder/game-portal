@@ -140,7 +140,7 @@ const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine }) => {
 
   // ── 渲染 ──
   return (
-    <div style={S.container}>
+    <div style={S.container} data-testid="expedition-tab">
       {/* 提示 */}
       {message && <div style={S.toast}>{message}</div>}
 
@@ -299,7 +299,7 @@ const S: Record<string, React.CSSProperties> = {
   btnSmall: { padding: '4px 10px', borderRadius: 4, border: '1px solid rgba(212,165,116,0.3)', background: 'rgba(212,165,116,0.1)', color: '#d4a574', fontSize: 12, cursor: 'pointer' },
   bottomBar: { display: 'flex', gap: 8, marginTop: 12 },
   btnAction: { flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', color: '#e8e0d0', fontSize: 13, cursor: 'pointer', transition: 'background 0.2s' },
-  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any },
   modal: { background: '#2a2520', borderRadius: 12, padding: 20, minWidth: 300, maxWidth: 400, border: '1px solid rgba(212,165,116,0.3)' },
   modalTitle: { fontSize: 16, fontWeight: 700, color: '#d4a574', textAlign: 'center', marginBottom: 12 },
   historyItem: { display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 13 },

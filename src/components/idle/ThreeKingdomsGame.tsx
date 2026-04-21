@@ -192,6 +192,24 @@ const ThreeKingdomsGame: React.FC = () => {
   const [activeBanner, setActiveBanner] = useState<any>(null);
   const [activeEncounter, setActiveEncounter] = useState<any>(null);
 
+  // ── P0-02: 缩放计算 — 根据视口大小动态设置 --tk-scale CSS变量 ──
+  useEffect(() => {
+    const updateScale = () => {
+      const gameWidth = 1280;
+      const gameHeight = 800;
+      const containerWidth = window.innerWidth;
+      const containerHeight = window.innerHeight;
+      const scaleX = containerWidth / gameWidth;
+      const scaleY = containerHeight / gameHeight;
+      // 只缩小不放大
+      const scale = Math.min(scaleX, scaleY, 1);
+      document.documentElement.style.setProperty('--tk-scale', scale.toString());
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
+
   // ── 引擎初始化（只执行一次） ──
   const initializedRef = useRef(false);
 

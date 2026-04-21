@@ -149,7 +149,7 @@ const ArmyTab: React.FC<ArmyTabProps> = ({ engine }) => {
 
   // ── 渲染 ──
   return (
-    <div style={S.container}>
+    <div style={S.container} data-testid="army-tab">
       {message && <div style={S.toast}>{message}</div>}
 
       {/* 顶部：战力总览 */}

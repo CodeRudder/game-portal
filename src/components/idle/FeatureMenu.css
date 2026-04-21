@@ -11,7 +11,7 @@
 .tk-feature-menu {
   position: relative;
   flex-shrink: 0;
-  z-index: 300;
+  z-index: var(--tk-z-dropdown);
    ═══════════════════════════════════════════ */
 .tk-feature-menu-trigger {
   display: flex;
@@ -95,7 +95,7 @@
   display: flex;
   flex-direction: column;
   animation: tk-feature-menu-enter 0.15s ease-out;
-  z-index: 300;
+  z-index: var(--tk-z-dropdown);
 }
 
 @keyframes tk-feature-menu-enter {

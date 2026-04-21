@@ -4,7 +4,7 @@
 .tk-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--tk-z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -128,8 +128,20 @@
 
 .tk-modal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ═══════════════════════════════════════════
+   P1-01: 通用弹窗内容区域 max-height / 滚动
+   适用于所有自定义弹窗（内联样式的 overlay+modal 组合）
+   ═══════════════════════════════════════════ */
+.tk-modal-content,
+[data-testid="equipment-tab"] > div[style*="position: fixed"],
+[data-testid="arena-tab"] > div[style*="position: fixed"] {
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 @media (max-width: 767px) {
-  .tk-modal { width: min(340px, 90vw); }
+  .tk-modal { width: min(340px, 90vw); max-height: 90vh; }
   .tk-modal-actions { flex-direction: column-reverse; gap: 8px; }
   .tk-modal-btn { width: 100%; text-align: center; }
 }

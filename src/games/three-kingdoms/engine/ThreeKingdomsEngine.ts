@@ -59,6 +59,27 @@ import {
 import { createTechSystems, initTechSystems, type TechSystems } from './engine-tech-deps';
 import { createMapSystems, initMapSystems, type MapSystems } from './engine-map-deps';
 
+// R11: 注册13个缺失子系统
+import { MailSystem } from './mail/MailSystem';
+import { ShopSystem } from './shop/ShopSystem';
+import { CurrencySystem } from './currency/CurrencySystem';
+import { NPCSystem } from './npc/NPCSystem';
+import { EquipmentSystem } from './equipment/EquipmentSystem';
+import { EquipmentForgeSystem } from './equipment/EquipmentForgeSystem';
+import { EquipmentEnhanceSystem } from './equipment/EquipmentEnhanceSystem';
+import { ArenaSystem } from './pvp/ArenaSystem';
+import { ArenaSeasonSystem } from './pvp/ArenaSeasonSystem';
+import { RankingSystem } from './pvp/RankingSystem';
+import { ExpeditionSystem } from './expedition/ExpeditionSystem';
+import { AllianceSystem } from './alliance/AllianceSystem';
+import { AllianceTaskSystem } from './alliance/AllianceTaskSystem';
+import { PrestigeSystem } from './prestige/PrestigeSystem';
+import { QuestSystem } from './quest/QuestSystem';
+import { AchievementSystem } from './achievement/AchievementSystem';
+import { FriendSystem } from './social/FriendSystem';
+import { HeritageSystem } from './heritage/HeritageSystem';
+import { ActivitySystem } from './activity/ActivitySystem';
+
 // ─────────────────────────────────────────────
 // ThreeKingdomsEngine
 // ─────────────────────────────────────────────
@@ -76,6 +97,26 @@ export class ThreeKingdomsEngine {
   private readonly sweepSystem: SweepSystem;
   private readonly techSystems: TechSystems;
   private readonly mapSystems: MapSystems;
+  // R11: 13个缺失子系统
+  private readonly mailSystem: MailSystem;
+  private readonly shopSystem: ShopSystem;
+  private readonly currencySystem: CurrencySystem;
+  private readonly npcSystem: NPCSystem;
+  private readonly equipmentSystem: EquipmentSystem;
+  private readonly equipmentForgeSystem: EquipmentForgeSystem;
+  private readonly equipmentEnhanceSystem: EquipmentEnhanceSystem;
+  private readonly arenaSystem: ArenaSystem;
+  private readonly arenaSeasonSystem: ArenaSeasonSystem;
+  private readonly rankingSystem: RankingSystem;
+  private readonly expeditionSystem: ExpeditionSystem;
+  private readonly allianceSystem: AllianceSystem;
+  private readonly allianceTaskSystem: AllianceTaskSystem;
+  private readonly prestigeSystem: PrestigeSystem;
+  private readonly questSystem: QuestSystem;
+  private readonly achievementSystem: AchievementSystem;
+  private readonly friendSystem: FriendSystem;
+  private readonly heritageSystem: HeritageSystem;
+  private readonly activitySystem: ActivitySystem;
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
@@ -140,6 +181,26 @@ export class ThreeKingdomsEngine {
     );
     this.techSystems = createTechSystems(this.building);
     this.mapSystems = createMapSystems();
+    // R11: 初始化13个缺失子系统
+    this.mailSystem = new MailSystem();
+    this.shopSystem = new ShopSystem();
+    this.currencySystem = new CurrencySystem();
+    this.npcSystem = new NPCSystem();
+    this.equipmentSystem = new EquipmentSystem();
+    this.equipmentForgeSystem = new EquipmentForgeSystem(this.equipmentSystem);
+    this.equipmentEnhanceSystem = new EquipmentEnhanceSystem(this.equipmentSystem);
+    this.arenaSystem = new ArenaSystem();
+    this.arenaSeasonSystem = new ArenaSeasonSystem();
+    this.rankingSystem = new RankingSystem();
+    this.expeditionSystem = new ExpeditionSystem();
+    this.allianceSystem = new AllianceSystem();
+    this.allianceTaskSystem = new AllianceTaskSystem();
+    this.prestigeSystem = new PrestigeSystem();
+    this.questSystem = new QuestSystem();
+    this.achievementSystem = new AchievementSystem();
+    this.friendSystem = new FriendSystem();
+    this.heritageSystem = new HeritageSystem();
+    this.activitySystem = new ActivitySystem();
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
@@ -176,6 +237,26 @@ export class ThreeKingdomsEngine {
     r.register('siege', this.mapSystems.siege);
     r.register('garrison', this.mapSystems.garrison);
     r.register('siegeEnhancer', this.mapSystems.siegeEnhancer);
+    // R11: 注册13个缺失子系统
+    r.register('mail', this.mailSystem);
+    r.register('shop', this.shopSystem);
+    r.register('currency', this.currencySystem);
+    r.register('npc', this.npcSystem);
+    r.register('equipment', this.equipmentSystem);
+    r.register('equipmentForge', this.equipmentForgeSystem);
+    r.register('equipmentEnhance', this.equipmentEnhanceSystem);
+    r.register('arena', this.arenaSystem);
+    r.register('arenaSeason', this.arenaSeasonSystem);
+    r.register('ranking', this.rankingSystem);
+    r.register('expedition', this.expeditionSystem);
+    r.register('alliance', this.allianceSystem);
+    r.register('allianceTask', this.allianceTaskSystem);
+    r.register('prestige', this.prestigeSystem);
+    r.register('quest', this.questSystem);
+    r.register('achievement', this.achievementSystem);
+    r.register('friend', this.friendSystem);
+    r.register('heritage', this.heritageSystem);
+    r.register('activity', this.activitySystem);
   }
 
   // ── 初始化 ──
@@ -276,6 +357,12 @@ export class ThreeKingdomsEngine {
     this.mapSystems.worldMap.reset(); this.mapSystems.territory.reset();
     this.mapSystems.siege.reset(); this.mapSystems.garrison.reset();
     this.mapSystems.siegeEnhancer.reset();
+    // R11: 重置13个缺失子系统
+    this.mailSystem.reset(); this.shopSystem.reset(); this.currencySystem.reset();
+    this.npcSystem.reset(); this.equipmentSystem.reset();
+    this.equipmentForgeSystem.reset(); this.equipmentEnhanceSystem.reset();
+    this.prestigeSystem.reset(); this.questSystem.reset();
+    this.achievementSystem.reset(); this.heritageSystem.reset();
     this.initialized = false; this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0; this.prevResourcesJson = ''; this.prevRatesJson = '';
     this.saveManager.deleteSave(); this.bus.removeAllListeners();
@@ -423,6 +510,47 @@ export class ThreeKingdomsEngine {
   getTechOfflineSystem() { return this.techSystems.offlineSystem; }
   /** 获取科技详情数据提供者 */
   getTechDetailProvider() { return this.techSystems.detailProvider; }
+
+  // ── R11: 13个缺失子系统 getter ──
+
+  /** 获取邮件系统 */
+  getMailSystem(): MailSystem { return this.mailSystem; }
+  /** 获取商店系统 */
+  getShopSystem(): ShopSystem { return this.shopSystem; }
+  /** 获取货币系统 */
+  getCurrencySystem(): CurrencySystem { return this.currencySystem; }
+  /** 获取NPC系统 */
+  getNPCSystem(): NPCSystem { return this.npcSystem; }
+  /** 获取装备系统 */
+  getEquipmentSystem(): EquipmentSystem { return this.equipmentSystem; }
+  /** 获取装备锻造系统 */
+  getEquipmentForgeSystem(): EquipmentForgeSystem { return this.equipmentForgeSystem; }
+  /** 获取装备强化系统 */
+  getEquipmentEnhanceSystem(): EquipmentEnhanceSystem { return this.equipmentEnhanceSystem; }
+  /** 获取竞技场系统 */
+  getArenaSystem(): ArenaSystem { return this.arenaSystem; }
+  /** 获取赛季系统 */
+  getSeasonSystem(): ArenaSeasonSystem { return this.arenaSeasonSystem; }
+  /** 获取排名系统 */
+  getRankingSystem(): RankingSystem { return this.rankingSystem; }
+  /** 获取远征系统 */
+  getExpeditionSystem(): ExpeditionSystem { return this.expeditionSystem; }
+  /** 获取联盟系统 */
+  getAllianceSystem(): AllianceSystem { return this.allianceSystem; }
+  /** 获取联盟任务系统 */
+  getAllianceTaskSystem(): AllianceTaskSystem { return this.allianceTaskSystem; }
+  /** 获取声望系统 */
+  getPrestigeSystem(): PrestigeSystem { return this.prestigeSystem; }
+  /** 获取任务系统 */
+  getQuestSystem(): QuestSystem { return this.questSystem; }
+  /** 获取成就系统 */
+  getAchievementSystem(): AchievementSystem { return this.achievementSystem; }
+  /** 获取好友系统（社交） */
+  getFriendSystem(): FriendSystem { return this.friendSystem; }
+  /** 获取传承系统 */
+  getHeritageSystem(): HeritageSystem { return this.heritageSystem; }
+  /** 获取活动系统 */
+  getActivitySystem(): ActivitySystem { return this.activitySystem; }
 
   // ═══════════════════════════════════════════
   // 私有方法

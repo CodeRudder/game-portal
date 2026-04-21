@@ -67,6 +67,25 @@
   /* 阴影 */
   --tk-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   --tk-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+  /* ═══════════════════════════════════════════
+     UI层级体系 — 从低到高
+     ═══════════════════════════════════════════ */
+  --tk-z-base: 0;              /* 基础内容层 */
+  --tk-z-scene: 10;            /* 场景区 */
+  --tk-z-tab-bar: 15;          /* Tab栏 */
+  --tk-z-resource-bar: 15;     /* 资源栏 */
+  --tk-z-panel: 100;           /* 面板层 */
+  --tk-z-dropdown: 200;        /* 下拉菜单 */
+  --tk-z-banner: 300;          /* 横幅通知 */
+  --tk-z-modal: 500;           /* 弹窗 */
+  --tk-z-battle-scene: 550;    /* 战斗场景(高于普通弹窗) */
+  --tk-z-modal-detail: 600;    /* 详情/子弹窗(高于主弹窗) */
+  --tk-z-tooltip: 700;         /* 工具提示 */
+  --tk-z-toast: 800;           /* Toast提示 */
+  --tk-z-guide-mask: 900;      /* 引导遮罩 */
+  --tk-z-guide-highlight: 901; /* 引导高亮 */
+  --tk-z-offline-modal: 1000;  /* 离线收益弹窗(最高优先) */
 }
 
 /* ═══════════════════════════════════════════
@@ -123,10 +142,21 @@
   align-items: stretch;
   background: rgba(20, 25, 35, 0.95);
   border-bottom: 1px solid rgba(200, 169, 110, 0.15);
-  z-index: 100;
+  z-index: var(--tk-z-tab-bar);
   flex-shrink: 0;
   padding: 0 8px;
   gap: 2px;
+  /* P0-01: 横向滚动支持 */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; /* iOS 平滑滚动 */
+  scrollbar-width: none; /* Firefox 隐藏滚动条 */
+  -ms-overflow-style: none; /* IE 隐藏滚动条 */
+}
+
+/* P0-01: 隐藏 Tab 栏 webkit 滚动条 */
+.tk-tab-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .tk-tab-bar .tk-feature-menu {
@@ -138,6 +168,7 @@
 .tk-tab-btn {
   flex: 1;
   max-width: 120px;
+  min-width: 48px;
   border: none;
   background: transparent;
   color: var(--tk-text-secondary);
@@ -152,6 +183,10 @@
   gap: 4px;
   font-family: inherit;
   border-radius: var(--tk-radius-sm) var(--tk-radius-sm) 0 0;
+  /* P0-01: 防止压缩和换行 */
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 6px 8px;
 }
 
 .tk-tab-btn:hover {
@@ -245,7 +280,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  z-index: 10;
+  z-index: var(--tk-z-scene);
 }
 
 .tk-scene-placeholder {
@@ -285,6 +320,7 @@
 @media (max-width: 1280px) or (max-height: 800px) {
   .tk-game-frame {
     transform: scale(var(--tk-scale, 1));
+    transform-origin: top center;
   }
 }
 
@@ -303,6 +339,11 @@
     max-width: 100%;
     max-height: 100%;
     transform: none;
+    /* P1-03: safe-area 支持（刘海屏/底部横条） */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   .tk-tab-bar {
@@ -311,11 +352,25 @@
     order: 3;
     border-top: 1px solid rgba(200, 169, 110, 0.15);
     border-bottom: none;
+    /* P0-01: 手机端横向滚动 */
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .tk-tab-bar::-webkit-scrollbar {
+    display: none;
   }
 
   .tk-tab-btn {
-    font-size: 12px;
+    font-size: 11px;
     max-width: none;
+    min-width: 48px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 4px 6px;
   }
 
   .tk-tab-icon {
@@ -336,6 +391,84 @@
 
   .tk-scene-area {
     order: 2;
+  }
+
+  /* ═══════════════════════════════════════════
+     P1-02: 新面板响应式适配
+     ═══════════════════════════════════════════ */
+
+  /* 所有新面板容器：启用纵向滚动 */
+  [data-testid="equipment-tab"],
+  [data-testid="arena-tab"],
+  [data-testid="expedition-tab"],
+  [data-testid="army-tab"],
+  [data-testid="more-tab"] {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 装备面板响应式 */
+  .tk-equipment-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .tk-equipment-sub-tabs {
+    font-size: 12px !important;
+  }
+  .tk-equipment-detail-modal {
+    max-width: 92vw !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* 竞技场响应式 */
+  .tk-arena-actions {
+    flex-wrap: wrap !important;
+  }
+  .tk-arena-action-btn {
+    font-size: 11px !important;
+  }
+  .tk-arena-modal {
+    max-width: 92vw !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* 远征面板响应式 */
+  .tk-expedition-route-list {
+    max-height: 40vh !important;
+  }
+  .tk-expedition-bottom-bar {
+    flex-wrap: wrap !important;
+  }
+  .tk-expedition-modal {
+    max-width: 92vw !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* 军队面板响应式 */
+  .tk-army-formation-row {
+    gap: 4px !important;
+  }
+  .tk-army-hero-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 4px !important;
+  }
+  .tk-army-slot-card {
+    width: 72px !important;
+    height: 48px !important;
+  }
+
+  /* 更多面板响应式 */
+  .tk-more-grid {
+    gap: 6px !important;
+  }
+  .tk-more-card {
+    padding: 12px 8px !important;
+  }
+  .tk-more-title {
+    font-size: 14px !important;
+    margin-bottom: 10px !important;
   }
 }
 
