@@ -65,6 +65,9 @@ export const GRANARY_CAPACITY_TABLE: Readonly<
   Record<number, number>
 > = {
   1: 2000,
+  2: 2750,
+  3: 3500,
+  4: 4250,
   5: 5000,
   10: 12000,
   15: 25000,

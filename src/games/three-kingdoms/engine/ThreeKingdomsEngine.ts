@@ -79,6 +79,8 @@ import { AchievementSystem } from './achievement/AchievementSystem';
 import { FriendSystem } from './social/FriendSystem';
 import { HeritageSystem } from './heritage/HeritageSystem';
 import { ActivitySystem } from './activity/ActivitySystem';
+import { TradeSystem } from './trade/TradeSystem';
+import { SettingsManager } from './settings/SettingsManager';
 
 // ─────────────────────────────────────────────
 // ThreeKingdomsEngine
@@ -117,7 +119,8 @@ export class ThreeKingdomsEngine {
   private readonly friendSystem: FriendSystem;
   private readonly heritageSystem: HeritageSystem;
   private readonly activitySystem: ActivitySystem;
-  private readonly bus: EventBus;
+  private readonly tradeSystem: TradeSystem;
+  private readonly settingsManager: SettingsManager;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
   private readonly configRegistry: ConfigRegistry;
@@ -201,6 +204,8 @@ export class ThreeKingdomsEngine {
     this.friendSystem = new FriendSystem();
     this.heritageSystem = new HeritageSystem();
     this.activitySystem = new ActivitySystem();
+    this.tradeSystem = new TradeSystem();
+    this.settingsManager = new SettingsManager();
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
@@ -257,6 +262,8 @@ export class ThreeKingdomsEngine {
     r.register('friend', this.friendSystem);
     r.register('heritage', this.heritageSystem);
     r.register('activity', this.activitySystem);
+    r.register('trade', this.tradeSystem);
+    r.register('settings', this.settingsManager);
   }
 
   // ── 初始化 ──
@@ -551,6 +558,10 @@ export class ThreeKingdomsEngine {
   getHeritageSystem(): HeritageSystem { return this.heritageSystem; }
   /** 获取活动系统 */
   getActivitySystem(): ActivitySystem { return this.activitySystem; }
+  /** 获取贸易系统 */
+  getTradeSystem(): TradeSystem { return this.tradeSystem; }
+  /** 获取设置管理器 */
+  getSettingsManager(): SettingsManager { return this.settingsManager; }
 
   // ═══════════════════════════════════════════
   // 私有方法
