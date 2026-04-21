@@ -25,6 +25,21 @@ vi.mock('@/games/three-kingdoms/engine', () => ({
   },
 }));
 
+vi.mock('@/games/three-kingdoms/engine/building/building.types', () => ({
+  BUILDING_LABELS: {
+    castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
+    smithy: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
+  },
+  BUILDING_ICONS: {
+    castle: '🏛️', farmland: '🌾', market: '💰', barracks: '⚔️',
+    smithy: '🔨', academy: '📜', clinic: '🏥', wall: '🧱',
+  },
+}));
+
+vi.mock('@/games/three-kingdoms/engine/building/building-config', () => ({
+  BUILDING_DEFS: {},
+}));
+
 // ── 导入被测组件（在 mock 之后）──
 import ResourceBar from '../ResourceBar';
 
