@@ -287,7 +287,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   activeBtn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
   sortBtn: {
-    padding: '3px 6px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3,
+    padding: '3px 6px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'transparent', color: '#666', fontSize: 10, cursor: 'pointer',
   },
   activeSortBtn: { background: 'rgba(212,165,116,0.1)', color: '#d4a574', borderColor: 'rgba(212,165,116,0.3)' },

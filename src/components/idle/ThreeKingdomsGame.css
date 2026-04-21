@@ -482,6 +482,42 @@
     font-size: 14px !important;
     margin-bottom: 10px !important;
   }
+
+  /* ═══════════════════════════════════════════
+     通用面板响应式适配（覆盖所有面板）
+     ═══════════════════════════════════════════ */
+
+  /* 所有面板内边距缩小 */
+  [class*="panel"], [class*="Panel"], [class*="tab"], [class*="Tab"] {
+    padding: 8px !important;
+  }
+
+  /* 所有面板标题缩小 */
+  [class*="panel"] h3, [class*="Panel"] h3, [class*="tab"] h3, [class*="Tab"] h3 {
+    font-size: 15px !important;
+  }
+
+  /* 网格布局改为2列 */
+  [class*="grid"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* 弹窗宽度适配 */
+  [class*="modal"], [class*="Modal"] {
+    width: 95vw !important;
+    max-width: 95vw !important;
+  }
+
+  /* 按钮最小触摸热区 */
+  button {
+    min-height: 36px !important;
+    padding: 8px 12px !important;
+  }
+
+  /* 列表项间距缩小 */
+  [class*="list"] > *, [class*="List"] > * {
+    padding: 6px 8px !important;
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -497,7 +533,7 @@
 
 .tk-scene-area::-webkit-scrollbar-thumb {
   background: rgba(200, 169, 110, 0.3);
-  border-radius: 3px;
+  border-radius: var(--tk-radius-sm);
 }
 
 .tk-scene-area::-webkit-scrollbar-thumb:hover {
@@ -541,7 +577,7 @@ button[class*="tk-"]:active:not(:disabled) {
 [class*="Dialog"] {
   background: #1a1a2e !important;
   border: 1px solid rgba(212, 165, 116, 0.3) !important;
-  border-radius: 12px !important;
+  border-radius: var(--tk-radius-xl) !important;
   box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
 }
 

@@ -125,3 +125,27 @@
   font-size: 11px;
   color: #666;
 }
+
+/* ═══════════════════════════════════════════
+   响应式 — 手机端
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-guide-tooltip {
+    max-width: 92vw;
+    padding: 14px 16px;
+  }
+
+  .tk-guide-tooltip__title {
+    font-size: 14px;
+  }
+
+  .tk-guide-tooltip__desc {
+    font-size: 12px;
+  }
+
+  .tk-guide-btn {
+    min-height: 36px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
