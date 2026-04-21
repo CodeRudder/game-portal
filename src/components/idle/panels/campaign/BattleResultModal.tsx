@@ -9,11 +9,12 @@
  * @module components/idle/panels/campaign/BattleResultModal
  */
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine/battle/battle.types';
 import type { BattleResult } from '@/games/three-kingdoms/engine/battle/battle.types';
 import type { Stage } from '@/games/three-kingdoms/engine/campaign/campaign.types';
 import { STAGE_TYPE_LABELS, MAX_STARS } from '@/games/three-kingdoms/engine/campaign/campaign.types';
+import SharedPanel from '../../components/SharedPanel';
 import './BattleResultModal.css';
 
 // ─────────────────────────────────────────────
@@ -72,15 +73,6 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
   stage,
   onConfirm,
 }) => {
-  // ── ESC 键关闭 ──
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onConfirm?.();
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [onConfirm]);
-
   const isVictory = result.outcome === BattleOutcome.VICTORY;
   const isDraw = result.outcome === BattleOutcome.DRAW;
   const stars = result.stars as number;
@@ -178,16 +170,17 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
     </div>
   );
 
+  const resultTitle = isVictory ? '战斗胜利' : isDraw ? '平局' : '战斗失败';
+
   return (
-    <div className="tk-brm-overlay" role="dialog" aria-modal="true" aria-label="战斗结算" onClick={onConfirm}>
-      <div className={`tk-brm-modal ${isVictory ? 'tk-brm-modal--victory' : 'tk-brm-modal--defeat'}`} onClick={e => e.stopPropagation()}>
+    <SharedPanel title={resultTitle} onClose={onConfirm} visible={true}>
         {/* ── 结果标题 ── */}
         <div className="tk-brm-result-header">
           <div className={`tk-brm-result-icon ${isVictory ? 'tk-brm-result-icon--victory' : 'tk-brm-result-icon--defeat'}`}>
             {isVictory ? '🏆' : isDraw ? '⚖️' : '💀'}
           </div>
           <h2 className={`tk-brm-result-title ${isVictory ? 'tk-brm-result-title--victory' : 'tk-brm-result-title--defeat'}`}>
-            {isVictory ? '战斗胜利' : isDraw ? '平局' : '战斗失败'}
+            {resultTitle}
           </h2>
           <div className="tk-brm-result-stage">
             {STAGE_TYPE_LABELS[stage.type]} · {stage.name}
@@ -281,8 +274,7 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
             {isVictory ? '确认' : '返回'}
           </button>
         </div>
-      </div>
-    </div>
+    </SharedPanel>
   );
 };
 

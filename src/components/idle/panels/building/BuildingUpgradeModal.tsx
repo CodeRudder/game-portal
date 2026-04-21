@@ -107,7 +107,7 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
   const canAfford = affordability.grain && affordability.gold && affordability.troops;
 
   return (
-    <SharedPanel visible={true} title={`${name}升级`} onClose={onCancel}>
+    <SharedPanel title={`${name}升级`} onClose={onCancel} visible={true}>
         {/* 建筑头部 */}
         <div className="tk-upgrade-header">
           <span className="tk-upgrade-icon">{icon}</span>

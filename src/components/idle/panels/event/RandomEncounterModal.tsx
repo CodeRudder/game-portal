@@ -6,7 +6,7 @@
  *
  * 设计规范：水墨江山·铜纹霸业
  */
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import './RandomEncounterModal.css';
 
 import type {
@@ -16,6 +16,7 @@ import type {
   EventCategory,
   EventPriority,
 } from '@/games/three-kingdoms/core/events';
+import SharedPanel from '../../components/SharedPanel';
 
 // ─────────────────────────────────────────────
 // 类型定义
@@ -101,15 +102,6 @@ const RandomEncounterModal: React.FC<RandomEncounterModalProps> = ({
   onSelectOption,
   onClose,
 }) => {
-  // ── ESC 键关闭 ──
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose?.();
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
-
   if (!visible || !event) return null;
 
   const categoryIcon = CATEGORY_ICONS[event.category] ?? '❓';
@@ -117,63 +109,57 @@ const RandomEncounterModal: React.FC<RandomEncounterModalProps> = ({
   const priorityClass = PRIORITY_CLASSES[event.priority] ?? 'tk-encounter--normal';
 
   return (
-    <div className="tk-encounter-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={event.name}>
-      <div
-        className={`tk-encounter-modal ${priorityClass}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 关闭按钮 */}
-        <button className="tk-encounter-close" onClick={onClose} aria-label="关闭">✕</button>
-
-        {/* 事件头部 */}
-        <div className="tk-encounter-header">
-          <div className="tk-encounter-category">
-            <span className="tk-encounter-category-icon">{categoryIcon}</span>
-            <span className="tk-encounter-category-label">{categoryLabel}</span>
+    <SharedPanel title={event.name} onClose={onClose} visible={visible}>
+        <div className={`tk-encounter-modal ${priorityClass}`}>
+          {/* 事件头部 */}
+          <div className="tk-encounter-header">
+            <div className="tk-encounter-category">
+              <span className="tk-encounter-category-icon">{categoryIcon}</span>
+              <span className="tk-encounter-category-label">{categoryLabel}</span>
+            </div>
+            <h3 className="tk-encounter-title">{event.name}</h3>
           </div>
-          <h3 className="tk-encounter-title">{event.name}</h3>
-        </div>
 
-        {/* 事件描述 */}
-        <div className="tk-encounter-body">
-          <p className="tk-encounter-desc">{event.description}</p>
-        </div>
+          {/* 事件描述 */}
+          <div className="tk-encounter-body">
+            <p className="tk-encounter-desc">{event.description}</p>
+          </div>
 
-        {/* 选项列表 */}
-        <div className="tk-encounter-options">
-          <div className="tk-encounter-options-title">选择应对方式</div>
-          {event.options.map((option) => (
-            <button
-              key={option.id}
-              className="tk-encounter-option-btn"
-              onClick={() => onSelectOption(event.instanceId, option.id)}
-              aria-label={option.text}
-            >
-              <div className="tk-encounter-option-main">
-                <span className="tk-encounter-option-text">{option.text}</span>
-                {option.description && (
-                  <span className="tk-encounter-option-desc">{option.description}</span>
-                )}
-              </div>
-              {option.consequences.length > 0 && (
-                <div className="tk-encounter-option-consequences">
-                  {option.consequences.map((c, idx) => (
-                    <ConsequenceTag key={`${c.type}-${c.target}-${idx}`} consequence={c} />
-                  ))}
+          {/* 选项列表 */}
+          <div className="tk-encounter-options">
+            <div className="tk-encounter-options-title">选择应对方式</div>
+            {event.options.map((option) => (
+              <button
+                key={option.id}
+                className="tk-encounter-option-btn"
+                onClick={() => onSelectOption(event.instanceId, option.id)}
+                aria-label={option.text}
+              >
+                <div className="tk-encounter-option-main">
+                  <span className="tk-encounter-option-text">{option.text}</span>
+                  {option.description && (
+                    <span className="tk-encounter-option-desc">{option.description}</span>
+                  )}
                 </div>
-              )}
-            </button>
-          ))}
-        </div>
+                {option.consequences.length > 0 && (
+                  <div className="tk-encounter-option-consequences">
+                    {option.consequences.map((c, idx) => (
+                      <ConsequenceTag key={`${c.type}-${c.target}-${idx}`} consequence={c} />
+                    ))}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
 
-        {/* 忽略按钮 */}
-        <div className="tk-encounter-footer">
-          <button className="tk-encounter-ignore-btn" onClick={onClose}>
-            暂不处理
-          </button>
+          {/* 忽略按钮 */}
+          <div className="tk-encounter-footer">
+            <button className="tk-encounter-ignore-btn" onClick={onClose}>
+              暂不处理
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
+    </SharedPanel>
   );
 };
 

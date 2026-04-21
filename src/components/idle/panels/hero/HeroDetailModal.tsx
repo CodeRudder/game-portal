@@ -20,6 +20,7 @@ import { HERO_QUALITY_BG_COLORS } from '../../common/constants';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import RadarChart from './RadarChart';
 import HeroStarUpModal from './HeroStarUpModal';
+import SharedPanel from '../../components/SharedPanel';
 import './HeroDetailModal.css';
 
 // ─────────────────────────────────────────────
@@ -84,8 +85,8 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose?.();
     };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
   const heroSystem = engine.getHeroSystem();

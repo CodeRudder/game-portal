@@ -7,6 +7,7 @@
  * 设计规范：水墨江山·铜纹霸业
  */
 import React, { useMemo, useEffect } from 'react';
+import SharedPanel from '../../components/SharedPanel';
 import './NPCInfoModal.css';
 
 import type {
@@ -70,12 +71,13 @@ const NPCInfoModal: React.FC<NPCInfoModalProps> = ({
 }) => {
   // ── ESC 键关闭 ──
   useEffect(() => {
+    if (!visible) return;
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose?.();
     };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [visible, onClose]);
 
   if (!visible || !npc) return null;
 

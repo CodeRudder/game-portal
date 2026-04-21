@@ -12,7 +12,7 @@
  * @module components/idle/panels/campaign/BattleFormationModal
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { Stage, EnemyUnitDef } from '@/games/three-kingdoms/engine/campaign/campaign.types';
 import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine/campaign/campaign.types';
@@ -26,6 +26,7 @@ import { BattleOutcome } from '@/games/three-kingdoms/engine/battle/battle.types
 import type { BattleResult } from '@/games/three-kingdoms/engine/battle/battle.types';
 import BattleResultModal from './BattleResultModal';
 import BattleScene from './BattleScene';
+import SharedPanel from '../../components/SharedPanel';
 import './BattleFormationModal.css';
 
 // ─────────────────────────────────────────────
@@ -65,15 +66,6 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
   snapshotVersion,
 }) => {
   const heroSystem = engine.getHeroSystem();
-
-  // ── ESC 键关闭 ──
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
 
   // ── 数据 ──
   const allGenerals = useMemo(() => {
@@ -256,27 +248,7 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
   }
 
   return (
-    <div
-      className="tk-bfm-overlay"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={`战前布阵 - ${stage.name}`}
-    >
-      <div className="tk-bfm-modal" onClick={(e) => e.stopPropagation()}>
-        {/* ── 标题栏 ── */}
-        <div className="tk-bfm-header">
-          <div className="tk-bfm-title">
-            <span className="tk-bfm-stage-type">
-              {STAGE_TYPE_LABELS[stage.type]}
-            </span>
-            <span className="tk-bfm-stage-name">{stage.name}</span>
-          </div>
-          <button className="tk-bfm-close" onClick={onClose} aria-label="关闭">
-            ✕
-          </button>
-        </div>
-
+    <SharedPanel title={`战前布阵 - ${stage.name}`} onClose={onClose} visible={true}>
         {/* ── 关卡描述 ── */}
         {stage.description && (
           <div className="tk-bfm-desc">{stage.description}</div>
@@ -361,8 +333,7 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
             {isBattling ? '⏳ 战斗中...' : '⚔️ 出征'}
           </button>
         </div>
-      </div>
-    </div>
+    </SharedPanel>
   );
 };
 

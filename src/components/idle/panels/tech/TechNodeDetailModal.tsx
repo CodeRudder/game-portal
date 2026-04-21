@@ -11,7 +11,7 @@
  * 手机端：底部上滑全屏面板
  */
 
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import type { TechNodeDef, TechNodeState, TechNodeStatus } from '@/games/three-kingdoms/engine';
 import {
   TECH_PATH_LABELS,
@@ -20,6 +20,7 @@ import {
   TECH_NODE_MAP,
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import SharedPanel from '../../components/SharedPanel';
 import './TechNodeDetailModal.css';
 
 // ─────────────────────────────────────────────
@@ -99,15 +100,6 @@ const TechNodeDetailModal: React.FC<TechNodeDetailModalProps> = ({
   const treeSystem = engine.getTechTreeSystem();
   const pointSystem = engine.getTechPointSystem();
   const researchSystem = engine.getTechResearchSystem();
-
-  // ESC关闭
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
 
   // ── 计算数据 ──
   const status = nodeState.status;
@@ -234,28 +226,7 @@ const TechNodeDetailModal: React.FC<TechNodeDetailModalProps> = ({
   );
 
   return (
-    <div className="tk-tech-detail-overlay" onClick={onClose} data-testid="tech-detail-overlay">
-      <div
-        className="tk-tech-detail-panel"
-        onClick={(e) => e.stopPropagation()}
-        data-testid="tech-detail-panel"
-      >
-        {/* 头部 */}
-        <div className="tk-tech-detail-header">
-          <div className="tk-tech-detail-title">
-            <span>{nodeDef.icon}</span>
-            <span>{nodeDef.name}</span>
-          </div>
-          <button
-            className="tk-tech-detail-close"
-            onClick={onClose}
-            aria-label="关闭"
-            data-testid="tech-detail-close"
-          >
-            ✕
-          </button>
-        </div>
-
+    <SharedPanel title={nodeDef.name} onClose={onClose} visible={true}>
         {/* 可滚动内容 */}
         <div className="tk-tech-detail-body">
           {/* 信息头部 */}
@@ -435,8 +406,7 @@ const TechNodeDetailModal: React.FC<TechNodeDetailModalProps> = ({
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </SharedPanel>
   );
 };
 

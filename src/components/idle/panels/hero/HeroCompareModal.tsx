@@ -8,6 +8,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { GeneralData, Quality } from '@/games/three-kingdoms/engine';
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS, FACTION_LABELS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import SharedPanel from '../../components/SharedPanel';
 import './HeroCompareModal.css';
 
 // ─────────────────────────────────────────────
@@ -46,8 +47,8 @@ const HeroCompareModal: React.FC<HeroCompareModalProps> = ({
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose?.();
     };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
   const heroSystem = engine.getHeroSystem();

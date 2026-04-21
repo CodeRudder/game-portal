@@ -7,6 +7,7 @@
  * 设计规范：水墨江山·铜纹霸业
  */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import SharedPanel from '../../components/SharedPanel';
 import './NPCDialogModal.css';
 
 import type {
@@ -64,12 +65,13 @@ const NPCDialogModal: React.FC<NPCDialogModalProps> = ({
 }) => {
   // ── ESC 键关闭 ──
   useEffect(() => {
+    if (!visible) return;
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose?.();
     };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [visible, onClose]);
 
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);

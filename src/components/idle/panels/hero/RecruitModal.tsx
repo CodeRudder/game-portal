@@ -18,6 +18,7 @@ import type { RecruitType, RecruitOutput, RecruitResult, Quality, RecruitHistory
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { Toast } from '@/components/idle/common/Toast';
+import SharedPanel from '../../components/SharedPanel';
 import './RecruitModal.css';
 
 // ─────────────────────────────────────────────
@@ -84,8 +85,8 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose?.();
     };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
   const [recruitType, setRecruitType] = useState<RecruitType>('normal');
