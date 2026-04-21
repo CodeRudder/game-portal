@@ -89,9 +89,13 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
 
   // 操作
   const handleDecompose = useCallback((uid: string) => {
-    const result = eqSystem?.decompose?.(uid);
-    if (result && !result.success) {
-      flash(result.reason ?? '分解失败');
+    try {
+      const result = eqSystem?.decompose?.(uid);
+      if (result && !result.success) {
+        flash(result.reason ?? '分解失败');
+      }
+    } catch (e: any) {
+      flash(e?.message ?? '分解操作失败');
     }
     setSelectedUid(null);
   }, [eqSystem, flash]);
@@ -204,16 +208,26 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
               <button
                 style={styles.enhanceBtn}
                 onClick={() => {
-                  const enhanceSys = engine?.getEquipmentEnhanceSystem?.() ?? engine?.equipmentEnhance;
-                  if (!enhanceSys) return;
-                  const result = enhanceSys.enhance?.(selectedEquip.uid, false);
-                  if (result) {
-                    const label = result.outcome === 'success'
-                      ? `强化成功 → +${result.currentLevel}`
-                      : result.outcome === 'downgrade'
-                        ? `强化降级 → +${result.currentLevel}`
-                        : `强化失败（+${result.currentLevel}）`;
-                    flash(label);
+                  try {
+                    const enhanceSys = engine?.getEquipmentEnhanceSystem?.() ?? engine?.equipmentEnhance;
+                    if (!enhanceSys) return;
+                    const enhanceCost = enhanceSys.getEnhanceCost?.(selectedEquip);
+                    const currentGold = engine?.getResources?.()?.gold ?? engine?.getCurrencySystem?.()?.getBalance?.('copper') ?? 0;
+                    if (enhanceCost && currentGold < enhanceCost) {
+                      flash('💰 铜钱不足，无法强化');
+                      return;
+                    }
+                    const result = enhanceSys.enhance?.(selectedEquip.uid, false);
+                    if (result) {
+                      const label = result.outcome === 'success'
+                        ? `强化成功 → +${result.currentLevel}`
+                        : result.outcome === 'downgrade'
+                          ? `强化降级 → +${result.currentLevel}`
+                          : `强化失败（+${result.currentLevel}）`;
+                      flash(label);
+                    }
+                  } catch (e: any) {
+                    flash(e?.message ?? '强化操作失败');
                   }
                   setSelectedUid(null);
                 }}
@@ -223,12 +237,22 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
                 <button
                   style={styles.forgeBtn}
                   onClick={() => {
+                  try {
                     const forgeSys = engine?.getEquipmentForgeSystem?.() ?? engine?.equipmentForge;
                     if (!forgeSys) return;
+                    const forgeCost = forgeSys.getForgeCost?.('basic');
+                    const currentGold = engine?.getResources?.()?.gold ?? engine?.getCurrencySystem?.()?.getBalance?.('copper') ?? 0;
+                    if (forgeCost && currentGold < forgeCost) {
+                      flash('💰 铜钱不足，无法锻造');
+                      return;
+                    }
                     const result = forgeSys.basicForge?.();
                     flash(result?.success ? `锻造成功: ${result.equipment?.name ?? '新装备'}` : '锻造失败');
-                    setSelectedUid(null);
-                  }}
+                  } catch (e: any) {
+                    flash(e?.message ?? '锻造操作失败');
+                  }
+                  setSelectedUid(null);
+                }}
                 >🔥 锻造</button>
               )}
               {!selectedEquip.isEquipped && (

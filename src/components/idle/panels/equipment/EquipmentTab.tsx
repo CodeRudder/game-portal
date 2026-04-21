@@ -75,27 +75,56 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) 
 
   // ── 操作 ──
   const handleForge = useCallback(() => {
-    if (!forgeSys) return setMessage('锻造系统未就绪');
-    const result = forgeType === 'basic'
-      ? forgeSys.basicForge?.()
-      : forgeSys.advancedForge?.();
-    setMessage(result?.success ? `锻造成功: ${result.output?.name ?? '新装备'}` : `锻造失败: ${result?.reason ?? '未知'}`);
-  }, [forgeSys, forgeType]);
+    try {
+      if (!forgeSys) return setMessage('锻造系统未就绪');
+      const forgeCost = forgeSys.getForgeCost?.(forgeType);
+      const currentGold = (engine as any)?.getResources?.()?.gold ?? (engine as any)?.getCurrencySystem?.()?.getBalance?.('copper') ?? 0;
+      if (forgeCost && currentGold < forgeCost) {
+        setMessage('💰 铜钱不足，无法锻造');
+        setTimeout(() => setMessage(null), 2000);
+        return;
+      }
+      const result = forgeType === 'basic'
+        ? forgeSys.basicForge?.()
+        : forgeSys.advancedForge?.();
+      setMessage(result?.success ? `锻造成功: ${result.output?.name ?? '新装备'}` : `锻造失败: ${result?.reason ?? '未知'}`);
+    } catch (e: any) {
+      setMessage(e?.message ?? '锻造操作失败');
+      setTimeout(() => setMessage(null), 2000);
+    }
+  }, [forgeSys, forgeType, engine]);
 
   const handleEnhance = useCallback(() => {
-    if (!selectedUid) return setMessage('请先选择装备');
-    if (!enhanceSys) return setMessage('强化系统未就绪');
-    const result = enhanceSys.enhance?.(selectedUid, enhanceUseProt);
-    setMessage(result?.success
-      ? `强化成功 → +${result.newLevel}`
-      : `强化失败: ${result?.outcome ?? '未知'}`,
-    );
+    try {
+      if (!selectedUid) return setMessage('请先选择装备');
+      if (!enhanceSys) return setMessage('强化系统未就绪');
+      const enhanceCost = enhanceSys.getEnhanceCost?.(selected);
+      const currentGold = (engine as any)?.getResources?.()?.gold ?? (engine as any)?.getCurrencySystem?.()?.getBalance?.('copper') ?? 0;
+      if (enhanceCost && currentGold < enhanceCost) {
+        setMessage('💰 铜钱不足，无法强化');
+        setTimeout(() => setMessage(null), 2000);
+        return;
+      }
+      const result = enhanceSys.enhance?.(selectedUid, enhanceUseProt);
+      setMessage(result?.success
+        ? `强化成功 → +${result.newLevel}`
+        : `强化失败: ${result?.outcome ?? '未知'}`,
+      );
+    } catch (e: any) {
+      setMessage(e?.message ?? '强化操作失败');
+      setTimeout(() => setMessage(null), 2000);
+    }
     setSelectedUid(null);
-  }, [selectedUid, enhanceSys, enhanceUseProt]);
+  }, [selectedUid, selected, enhanceSys, enhanceUseProt, engine]);
 
   const handleDecompose = useCallback((uid: string) => {
-    const result = eqSys?.decompose?.(uid);
-    setMessage(result?.success ? '已分解' : `分解失败: ${result?.reason ?? ''}`);
+    try {
+      const result = eqSys?.decompose?.(uid);
+      setMessage(result?.success ? '已分解' : `分解失败: ${result?.reason ?? ''}`);
+    } catch (e: any) {
+      setMessage(e?.message ?? '分解操作失败');
+      setTimeout(() => setMessage(null), 2000);
+    }
     setSelectedUid(null);
   }, [eqSys]);
 

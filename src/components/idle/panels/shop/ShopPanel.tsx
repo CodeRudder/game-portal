@@ -80,6 +80,18 @@ export default function ShopPanel({ engine }: ShopPanelProps) {
   const handleBuy = useCallback((defId: string) => {
     if (!shopSystem) return;
     try {
+      const finalPrice = shopSystem.calculateFinalPrice?.(defId, activeTab);
+      if (finalPrice) {
+        for (const [cur, amt] of Object.entries(finalPrice)) {
+          const balance = currencySystem?.getBalance?.(cur) ?? 0;
+          if (balance < (amt as number)) {
+            setMessage(`💰 ${CUR_LABELS[cur] ?? cur}不足，无法购买`);
+            setBuyingId(null);
+            setTimeout(() => setMessage(null), 2000);
+            return;
+          }
+        }
+      }
       const result = shopSystem.executeBuy?.({ goodsId: defId, quantity: 1, shopType: activeTab });
       if (result?.success) {
         setMessage('购买成功！');
@@ -91,7 +103,7 @@ export default function ShopPanel({ engine }: ShopPanelProps) {
     }
     setBuyingId(null);
     setTimeout(() => setMessage(null), 2000);
-  }, [shopSystem, activeTab]);
+  }, [shopSystem, activeTab, currencySystem]);
 
   return (
     <div style={styles.container}>

@@ -37,9 +37,18 @@ export default function QuestPanel({ engine }: QuestPanelProps) {
   const flash = useCallback((msg: string) => { setMessage(msg); setTimeout(() => setMessage(null), 2000); }, []);
 
   const handleClaim = useCallback((id: string) => {
+    const quest = qs?.getQuest?.(id) ?? quests.find((q: any) => q.instanceId === id);
+    if (!quest || quest.status !== 'completed') {
+      flash('📋 任务尚未完成，无法领取奖励');
+      return;
+    }
+    if (quest.rewardClaimed) {
+      flash('📋 奖励已领取，请勿重复操作');
+      return;
+    }
     const r = qs?.claimReward?.(id);
     flash(r ? '🎉 奖励已领取！' : '领取失败');
-  }, [qs, flash]);
+  }, [qs, flash, quests]);
 
   const handleClaimAll = useCallback(() => {
     const rs = qs?.claimAllRewards?.();

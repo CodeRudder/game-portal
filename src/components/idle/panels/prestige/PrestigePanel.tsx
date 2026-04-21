@@ -42,24 +42,31 @@ export default function PrestigePanel({ engine }: PrestigePanelProps) {
       <div style={s.card}>
         <div style={s.badge}>🏅 {title}</div>
         <div style={s.lvNum}>Lv.{level}</div>
-        <div style={s.bonusText}>产出加成 ×{bonus.toFixed(2)}</div>
+        <div style={s.bonusText}>产出加成 ×{(bonus ?? 1.0).toFixed(2)}</div>
         <div style={s.barBg}><div style={{ ...s.barFill, width: `${pct}%` }} /></div>
         <div style={s.progText}>{points} / {nextPts} 声望</div>
       </div>
       {/* 获取途径 */}
       <div style={s.section}>
         <div style={s.sectionTitle}>📊 获取途径</div>
-        {sources.map((cfg: any, i: number) => (
-          <div key={i} style={s.srcRow}>
-            <span>{cfg.label ?? cfg.type}</span>
-            <span style={{ color: '#888' }}>每日上限: {cfg.dailyCap > 0 ? cfg.dailyCap : '无限'}</span>
-          </div>
-        ))}
+        {sources.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 16, color: '#666', fontSize: 12 }}>暂无数据</div>
+        ) : (
+          sources.map((cfg: any, i: number) => (
+            <div key={i} style={s.srcRow}>
+              <span>{cfg.label ?? cfg.type}</span>
+              <span style={{ color: '#888' }}>每日上限: {cfg.dailyCap > 0 ? cfg.dailyCap : '无限'}</span>
+            </div>
+          ))
+        )}
       </div>
       {/* 等级奖励 */}
       <div style={s.section}>
         <div style={s.sectionTitle}>🎁 等级奖励</div>
-        {rewards.map((rw: any) => {
+        {rewards.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 16, color: '#666', fontSize: 12 }}>暂无数据</div>
+        ) : (
+          rewards.map((rw: any) => {
           const unlocked = rw.level <= level;
           const claimed = rw.claimed;
           return (
@@ -76,7 +83,8 @@ export default function PrestigePanel({ engine }: PrestigePanelProps) {
               >{claimed ? '已领' : !unlocked ? '🔒' : '领取'}</button>
             </div>
           );
-        })}
+        })
+        )}
       </div>
     </div>
   );

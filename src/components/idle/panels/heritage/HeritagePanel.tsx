@@ -40,15 +40,23 @@ export default function HeritagePanel({ engine }: HeritagePanelProps) {
 
   // 领取初始资源
   const handleClaimGift = useCallback(() => {
-    const result = heritageSystem?.claimInitialGift?.();
-    setMessage(result?.success ? `🎉 获得初始资源！` : result?.reason ?? '领取失败');
+    try {
+      const result = heritageSystem?.claimInitialGift?.();
+      setMessage(result?.success ? `🎉 获得初始资源！` : result?.reason ?? '领取失败');
+    } catch (e: any) {
+      setMessage(e?.message ?? '领取操作失败');
+    }
     setTimeout(() => setMessage(null), 2000);
   }, [heritageSystem]);
 
   // 一键重建
   const handleRebuild = useCallback(() => {
-    const result = heritageSystem?.executeRebuild?.();
-    setMessage(result?.success ? `🏗️ 重建完成！升级了${result.upgradedBuildings.length}座建筑` : result?.reason ?? '重建失败');
+    try {
+      const result = heritageSystem?.executeRebuild?.();
+      setMessage(result?.success ? `🏗️ 重建完成！升级了${result.upgradedBuildings.length}座建筑` : result?.reason ?? '重建失败');
+    } catch (e: any) {
+      setMessage(e?.message ?? '重建操作失败');
+    }
     setTimeout(() => setMessage(null), 2000);
   }, [heritageSystem]);
 

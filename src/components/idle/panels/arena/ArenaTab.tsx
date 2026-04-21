@@ -73,7 +73,7 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion }) => {
   }, []);
 
   const handleChallenge = useCallback((oppId: string) => {
-    if (!ps || ps.dailyChallengesLeft <= 0) return flash('今日挑战次数已用完');
+    if (!ps || (ps.dailyChallengesLeft ?? 0) <= 0) return flash('⚔️ 今日挑战次数不足，请明日再来或购买额外次数');
     try {
       if (!arenaSys?.executeBattle) {
         flash('竞技场系统维护中，请稍后再试');
