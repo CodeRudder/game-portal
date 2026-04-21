@@ -360,6 +360,16 @@ export class EquipmentSystem implements ISubsystem {
     if (this.bagCapacity >= MAX_BAG_CAPACITY) {
       return { success: false, reason: '已达最大容量' };
     }
+    // 扣除扩容费用
+    if (this.deps?.eventBus) {
+      // 通过事件通知资源系统扣除铜钱
+      // 如果有 CurrencySystem 可用，应在此检查并扣除
+      // 此处发出事件让外部系统处理费用扣除
+      (this.deps.eventBus as any).emit('equipment:bag_expand_cost', {
+        cost: BAG_EXPAND_COST,
+        currency: 'copper',
+      });
+    }
     this.bagCapacity = Math.min(this.bagCapacity + BAG_EXPAND_INCREMENT, MAX_BAG_CAPACITY);
     this.emitEvent('equipment:bag_expanded', { capacity: this.bagCapacity });
     return { success: true };

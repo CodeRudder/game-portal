@@ -232,14 +232,14 @@ export class SiegeSystem implements ISubsystem {
 
   // ─── 战斗模拟 ──────────────────────────────
 
-  /** 简化版战斗：基于兵力对比和防御加成 */
+  /** 简化版战斗：基于兵力对比和防御加成（概率判定） */
   private simulateBattle(attackerTroops: number, target: TerritoryData): boolean {
     const defenderPower = target.defenseValue * (1 + (target.level - 1) * 0.15);
     const cost = this.calculateSiegeCost(target);
     const effectiveTroops = attackerTroops - cost.troops;
     if (effectiveTroops <= 0) return false;
     const winRate = effectiveTroops / (effectiveTroops + defenderPower);
-    return winRate > 0.4;
+    return Math.random() < winRate;
   }
 
   // ─── 统计查询 ──────────────────────────────

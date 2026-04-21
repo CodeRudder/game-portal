@@ -226,6 +226,11 @@ export class ShopSystem implements ISubsystem {
     const errors: string[] = [];
     const { goodsId, quantity, shopType } = request;
 
+    // 数量合法性校验
+    if (!quantity || quantity <= 0 || !Number.isInteger(quantity)) {
+      return { canBuy: false, confirmLevel: 'none', errors: ['购买数量无效：必须为正整数'], finalPrice: {} };
+    }
+
     const def = GOODS_DEF_MAP[goodsId];
     if (!def) return { canBuy: false, confirmLevel: 'none', errors: ['商品不存在'], finalPrice: {} };
 

@@ -193,6 +193,12 @@ export interface GameSaveData {
   campaign?: import('../engine/campaign/campaign.types').CampaignSaveData;
   /** 科技系统数据（可选，向后兼容旧存档） */
   tech?: import('../engine/tech/tech.types').TechSaveData;
+  /** 装备系统数据（可选，v5.0+） */
+  equipment?: import('../core/equipment/equipment.types').EquipmentSaveData;
+  /** 贸易系统数据（可选，v5.0+） */
+  trade?: import('../core/trade/trade.types').TradeSaveData;
+  /** 商店系统数据（可选，v5.0+） */
+  shop?: import('../core/shop/shop.types').ShopSaveData;
 }
 
 // ─────────────────────────────────────────────

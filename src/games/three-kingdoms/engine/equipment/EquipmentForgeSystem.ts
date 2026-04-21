@@ -344,15 +344,8 @@ export class EquipmentForgeSystem implements ISubsystem {
       }
     }
 
-    // 背包中没有足够的同品质装备，自动生成白色装备作为输入
-    const slots: EquipmentSlot[] = ['weapon', 'armor', 'accessory', 'mount'];
-    const uids: string[] = [];
-    for (let i = 0; i < requiredCount; i++) {
-      const slot = slots[i % slots.length];
-      const eq = this.equipmentSystem.generateEquipment(slot, 'white', 'forge');
-      if (eq) uids.push(eq.uid);
-    }
-    return uids;
+    // 背包中没有足够的同品质装备，返回空数组
+    return [];
   }
 
   /**

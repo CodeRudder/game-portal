@@ -26,19 +26,30 @@ import {
   TRANSFER_COST_FACTOR,
   TRANSFER_LEVEL_LOSS,
 } from '../../core/equipment/equipment-config';
+import { RARITY_ENHANCE_CAP } from '../../core/equipment/equipment-config';
 import type { EquipmentSystem } from './EquipmentSystem';
 
 // ─────────────────────────────────────────────
 // EquipmentEnhanceSystem
 // ─────────────────────────────────────────────
 
+/** 资源扣除回调类型 */
+export type ResourceDeductFn = (copper: number, stone: number) => boolean;
+
 export class EquipmentEnhanceSystem {
   private readonly equipmentSystem: EquipmentSystem;
   private protectionCount = 0;
   private rngState = 67890;
+  /** 资源扣除回调（通过 setter 注入） */
+  private deductResources: ResourceDeductFn | null = null;
 
   constructor(equipmentSystem: EquipmentSystem) {
     this.equipmentSystem = equipmentSystem;
+  }
+
+  /** 注入资源扣除回调 */
+  setResourceDeductor(fn: ResourceDeductFn): void {
+    this.deductResources = fn;
   }
 
   // ── 单次强化（#10, #11, #12） ──
@@ -53,6 +64,12 @@ export class EquipmentEnhanceSystem {
       return this.failResult(eq.enhanceLevel, 0, false, 0);
     }
 
+    // 品质强化上限校验
+    const rarityCap = RARITY_ENHANCE_CAP[eq.rarity] ?? ENHANCE_CONFIG.maxLevel;
+    if (eq.enhanceLevel >= rarityCap) {
+      return this.failResult(eq.enhanceLevel, 0, false, 0);
+    }
+
     const level = eq.enhanceLevel;
     const successRate = this.getSuccessRate(level);
     const copperCost = this.getCopperCost(level);
@@ -63,6 +80,14 @@ export class EquipmentEnhanceSystem {
     if (useProtection && protCost > 0) {
       if (this.protectionCount < protCost) {
         useProtection = false; // 保护符不足，不使用
+      }
+    }
+
+    // 扣除资源（铜钱 + 强化石）
+    if (this.deductResources) {
+      const deducted = this.deductResources(copperCost, stoneCost);
+      if (!deducted) {
+        return this.failResult(level, 0, false, 0);
       }
     }
 

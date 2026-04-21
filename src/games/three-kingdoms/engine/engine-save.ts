@@ -55,6 +55,12 @@ export interface SaveContext {
   readonly bus: EventBus;
   readonly registry: SubsystemRegistry;
   readonly configRegistry: ConfigRegistry;
+  /** 装备系统（可选，v5.0+） */
+  readonly equipment?: import('./equipment/EquipmentSystem').EquipmentSystem;
+  /** 贸易系统（可选，v5.0+） */
+  readonly trade?: import('./trade/TradeSystem').TradeSystem;
+  /** 商店系统（可选，v5.0+） */
+  readonly shop?: import('./shop/ShopSystem').ShopSystem;
   /** 在线时长（秒） */
   onlineSeconds: number;
 }
@@ -73,6 +79,7 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     version: 1,
     completedTechIds: treeData.completedTechIds,
     activeResearch: researchData.activeResearch,
+    researchQueue: researchData.researchQueue,
     techPoints: pointData.techPoints,
     chosenMutexNodes: treeData.chosenMutexNodes,
   };
@@ -88,24 +95,32 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     formation: ctx.formation.serialize(),
     campaign: ctx.campaign.serialize(),
     tech: techSaveData,
+    equipment: ctx.equipment?.serialize(),
+    trade: ctx.trade?.serialize(),
+    shop: ctx.shop?.serialize(),
   };
 }
 
 /** 将 GameSaveData 转换为 IGameState 格式（供 SaveManager 使用） */
 export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameState {
+  const subsystems: Record<string, unknown> = {
+    resource: data.resource,
+    building: data.building,
+    calendar: data.calendar,
+    hero: data.hero,
+    recruit: data.recruit,
+    formation: data.formation,
+    campaign: data.campaign,
+    tech: data.tech,
+  };
+  if (data.equipment) subsystems.equipment = data.equipment;
+  if (data.trade) subsystems.trade = data.trade;
+  if (data.shop) subsystems.shop = data.shop;
+
   return {
     version: String(data.version),
     timestamp: data.saveTime,
-    subsystems: {
-      resource: data.resource,
-      building: data.building,
-      calendar: data.calendar,
-      hero: data.hero,
-      recruit: data.recruit,
-      formation: data.formation,
-      campaign: data.campaign,
-      tech: data.tech,
-    },
+    subsystems,
     metadata: {
       totalPlayTime: onlineSeconds,
       saveCount: 0,
@@ -128,6 +143,9 @@ export function fromIGameState(state: IGameState): GameSaveData {
     formation: s.formation as FormationSaveData | undefined,
     campaign: s.campaign as import('./campaign/campaign.types').CampaignSaveData | undefined,
     tech: s.tech as TechSaveData | undefined,
+    equipment: s.equipment as import('../core/equipment/equipment.types').EquipmentSaveData | undefined,
+    trade: s.trade as import('../core/trade/trade.types').TradeSaveData | undefined,
+    shop: s.shop as import('../core/shop/shop.types').ShopSaveData | undefined,
   };
 }
 
@@ -245,12 +263,28 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     });
     ctx.techResearch.deserialize({
       activeResearch: data.tech.activeResearch,
+      researchQueue: data.tech.researchQueue,
     });
     ctx.techPoint.deserialize({
       techPoints: data.tech.techPoints,
     });
   } else {
     console.info('[Save] v3.0 存档迁移：无科技数据，自动初始化空科技系统');
+  }
+
+  // ── 装备系统 v5.0 ──
+  if (data.equipment && ctx.equipment) {
+    ctx.equipment.deserialize(data.equipment);
+  }
+
+  // ── 贸易系统 v5.0 ──
+  if (data.trade && ctx.trade) {
+    ctx.trade.deserialize(data.trade);
+  }
+
+  // ── 商店系统 v5.0 ──
+  if (data.shop && ctx.shop) {
+    ctx.shop.deserialize(data.shop);
   }
 
   syncBuildingToResource({

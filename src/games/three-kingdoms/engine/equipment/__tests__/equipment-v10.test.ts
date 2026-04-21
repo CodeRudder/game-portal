@@ -217,6 +217,10 @@ describe('模块B: 装备品质与炼制', () => {
   // #6 基础炼制
   describe('#6 基础炼制', () => {
     it('基础炼制产出装备', () => {
+      // 先在背包中添加3件白色装备作为材料
+      for (let i = 0; i < 3; i++) {
+        systems.equipment.generateEquipment('weapon', 'white');
+      }
       const result = systems.forge.basicForge();
       expect(result.success).toBe(true);
       expect(result.equipment).not.toBeNull();
@@ -234,6 +238,10 @@ describe('模块B: 装备品质与炼制', () => {
   // #7 高级炼制
   describe('#7 高级炼制', () => {
     it('高级炼制产出装备', () => {
+      // 先在背包中添加5件白色装备作为材料
+      for (let i = 0; i < 5; i++) {
+        systems.equipment.generateEquipment('weapon', 'white');
+      }
       const result = systems.forge.advancedForge();
       expect(result.success).toBe(true);
       expect(result.equipment).not.toBeNull();
@@ -249,6 +257,10 @@ describe('模块B: 装备品质与炼制', () => {
   // #8 定向炼制
   describe('#8 定向炼制', () => {
     it('定向炼制产出指定部位装备', () => {
+      // 先在背包中添加3件白色装备作为材料
+      for (let i = 0; i < 3; i++) {
+        systems.equipment.generateEquipment('weapon', 'white');
+      }
       const result = systems.forge.targetedForge('weapon');
       expect(result.success).toBe(true);
       expect(result.equipment?.slot).toBe('weapon');
@@ -265,6 +277,10 @@ describe('模块B: 装备品质与炼制', () => {
     it('保底计数器正确递增', () => {
       // 连续炼制，保底计数器应递增
       for (let i = 0; i < 5; i++) {
+        // 每次炼制需要3件白色装备
+        for (let j = 0; j < 3; j++) {
+          systems.equipment.generateEquipment('weapon', 'white');
+        }
         systems.forge.basicForge();
       }
       const pity = systems.forge.getPityState();
@@ -279,6 +295,9 @@ describe('模块B: 装备品质与炼制', () => {
     });
 
     it('保底状态可序列化', () => {
+      for (let j = 0; j < 3; j++) {
+        systems.equipment.generateEquipment('weapon', 'white');
+      }
       systems.forge.basicForge();
       const data = systems.forge.serialize();
       expect(data.pity).toBeDefined();
@@ -693,7 +712,10 @@ describe('装备系统存档', () => {
   it('ForgeSystem 序列化/反序列化一致', () => {
     const eq = new EquipmentSystem();
     const forge = new EquipmentForgeSystem(eq);
+    // 添加材料后炼制
+    for (let i = 0; i < 3; i++) eq.generateEquipment('weapon', 'white');
     forge.basicForge();
+    for (let i = 0; i < 5; i++) eq.generateEquipment('weapon', 'white');
     forge.advancedForge();
 
     const data = forge.serialize();

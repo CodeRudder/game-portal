@@ -21,6 +21,7 @@ import { HeroSystem } from './hero/HeroSystem';
 import { HeroRecruitSystem, type RecruitOutput } from './hero/HeroRecruitSystem';
 import { HeroLevelSystem, type LevelUpResult, type BatchEnhanceResult, type EnhancePreview } from './hero/HeroLevelSystem';
 import { HeroFormation, type FormationData } from './hero/HeroFormation';
+import { HeroStarSystem } from './hero/HeroStarSystem';
 import type { CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type {
@@ -48,6 +49,7 @@ import {
   createCampaignSystems, initCampaignSystems, buildAllyTeam, buildEnemyTeam,
   type CampaignSystems,
 } from './engine-campaign-deps';
+import { SweepSystem } from './campaign/SweepSystem';
 import { campaignDataProvider } from './campaign/campaign-config';
 import {
   checkBuildingUpgrade, getBuildingUpgradeCost,
@@ -69,7 +71,9 @@ export class ThreeKingdomsEngine {
   readonly heroRecruit: HeroRecruitSystem;
   readonly heroLevel: HeroLevelSystem;
   private readonly heroFormation: HeroFormation;
+  private readonly heroStarSystem: HeroStarSystem;
   private readonly campaignSystems: CampaignSystems;
+  private readonly sweepSystem: SweepSystem;
   private readonly techSystems: TechSystems;
   private readonly mapSystems: MapSystems;
   private readonly bus: EventBus;
@@ -91,7 +95,49 @@ export class ThreeKingdomsEngine {
     this.heroRecruit = new HeroRecruitSystem();
     this.heroLevel = new HeroLevelSystem();
     this.heroFormation = new HeroFormation();
+    this.heroStarSystem = new HeroStarSystem(this.hero);
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
+    const self = this;
+    this.sweepSystem = new SweepSystem(
+      campaignDataProvider,
+      {
+        addResource: (type: string, amount: number) => self.resource.addResource(type as import('../shared/types').ResourceType, amount),
+        addFragment: (id: string, count: number) => self.hero.addFragment(id, count),
+        addExp: (exp: number) => {
+          const gs = self.hero.getAllGenerals();
+          if (!gs.length) return;
+          const per = Math.floor(exp / gs.length);
+          if (per <= 0) return;
+          for (const g of gs) self.hero.addExp(g.id, per);
+        },
+      },
+      {
+        simulateBattle: (stageId: string) => {
+          try {
+            const r = self.campaignSystems.battleEngine.runFullBattle(
+              buildAllyTeam(self.heroFormation, self.hero),
+              buildEnemyTeam(campaignDataProvider.getStage(stageId)!),
+            );
+            return { victory: r.outcome === 'VICTORY' as const, stars: r.stars as number };
+          } catch {
+            return { victory: false, stars: 0 };
+          }
+        },
+        getStageStars: (stageId: string) => self.campaignSystems.campaignSystem.getStageStars(stageId),
+        canChallenge: (stageId: string) => self.campaignSystems.campaignSystem.canChallenge(stageId),
+        getFarthestStageId: () => {
+          const progress = self.campaignSystems.campaignSystem.getProgress();
+          const stages = campaignDataProvider.getChapters().flatMap(c => c.stages);
+          let farthest: string | null = null;
+          for (const s of stages) {
+            if (progress.stageStates[s.id]?.firstCleared) farthest = s.id;
+            else break;
+          }
+          return farthest;
+        },
+        completeStage: (stageId: string, stars: number) => self.campaignSystems.campaignSystem.completeStage(stageId, stars),
+      },
+    );
     this.techSystems = createTechSystems(this.building);
     this.mapSystems = createMapSystems();
     this.bus = new EventBus();
@@ -112,9 +158,11 @@ export class ThreeKingdomsEngine {
     r.register('heroRecruit', this.heroRecruit);
     r.register('heroLevel', this.heroLevel);
     r.register('heroFormation', this.heroFormation);
+    r.register('heroStarSystem', this.heroStarSystem);
     r.register('battleEngine', this.campaignSystems.battleEngine);
     r.register('campaignSystem', this.campaignSystems.campaignSystem);
     r.register('rewardDistributor', this.campaignSystems.rewardDistributor);
+    r.register('sweepSystem', this.sweepSystem);
     r.register('techTree', this.techSystems.treeSystem);
     r.register('techPoint', this.techSystems.pointSystem);
     r.register('techResearch', this.techSystems.researchSystem);
@@ -219,7 +267,8 @@ export class ThreeKingdomsEngine {
   reset(): void {
     this.resource.reset(); this.building.reset(); this.calendar.reset();
     this.hero.reset(); this.heroRecruit.reset(); this.heroLevel.reset();
-    this.heroFormation.reset(); this.campaignSystems.campaignSystem.reset();
+    this.heroFormation.reset(); this.heroStarSystem.reset();
+    this.campaignSystems.campaignSystem.reset(); this.sweepSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
     this.techSystems.researchSystem.reset();
     this.techSystems.fusionSystem.reset(); this.techSystems.linkSystem.reset();
@@ -277,6 +326,13 @@ export class ThreeKingdomsEngine {
   getFormationSystem(): HeroFormation { return this.heroFormation; }
   getFormations(): FormationData[] { return this.heroFormation.getAllFormations(); }
   getActiveFormation(): FormationData | null { return this.heroFormation.getActiveFormation(); }
+
+  /** 获取升星系统 */
+  getHeroStarSystem(): HeroStarSystem { return this.heroStarSystem; }
+
+  /** 获取扫荡系统 */
+  getSweepSystem(): SweepSystem { return this.sweepSystem; }
+
   createFormation(id?: string): FormationData | null { return this.heroFormation.createFormation(id); }
   setFormation(id: string, generalIds: string[]): FormationData | null { return this.heroFormation.setFormation(id, generalIds); }
   addToFormation(formationId: string, generalId: string): FormationData | null { return this.heroFormation.addToFormation(formationId, generalId); }
@@ -375,7 +431,25 @@ export class ThreeKingdomsEngine {
   private get heroSystems(): HeroSystems {
     return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel };
   }
-  private initHeroSystems(deps: ISystemDeps): void { initHeroSystems(this.heroSystems, this.resource, deps); }
+  private initHeroSystems(deps: ISystemDeps): void {
+    initHeroSystems(this.heroSystems, this.resource, deps);
+    // 初始化升星系统
+    this.heroStarSystem.init(deps);
+    this.heroStarSystem.setDeps({
+      spendFragments: (generalId: string, count: number) => this.hero.useFragments(generalId, count),
+      getFragments: (generalId: string) => this.hero.getFragments(generalId),
+      spendResource: (type: string, amount: number) => {
+        try { this.resource.consumeResource(type as import('../shared/types').ResourceType, amount); return true; } catch { return false; }
+      },
+      canAffordResource: (type: string, amount: number) => {
+        const current = this.resource.getAmount(type as import('../shared/types').ResourceType);
+        return current >= amount;
+      },
+      getResourceAmount: (type: string) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+    });
+    // 初始化扫荡系统
+    this.sweepSystem.init(deps);
+  }
   private buildDeps(): ISystemDeps { return { eventBus: this.bus, config: this.configRegistry, registry: this.registry }; }
   private buildTickCtx(): TickContext {
     return {

@@ -156,7 +156,7 @@ export class TechResearchSystem implements ISubsystem {
     this.treeSystem.cancelResearch(techId);
 
     // 返还科技点
-    this.pointSystem.spend(-refundPoints); // 负数消耗 = 增加
+    this.pointSystem.refund(refundPoints);
     this.pointSystem.getState(); // 触发状态更新
 
     return { success: true, refundPoints };
@@ -333,20 +333,28 @@ export class TechResearchSystem implements ISubsystem {
   // 序列化
   // ─────────────────────────────────────────
 
-  /** 序列化 */
-  serialize(): Pick<TechSaveData, 'activeResearch'> {
+  /** 序列化（保存整个研究队列） */
+  serialize(): Pick<TechSaveData, 'activeResearch'> & { researchQueue: ResearchSlot[] } {
     return {
       activeResearch: this.queue.length > 0 ? { ...this.queue[0] } : null,
+      researchQueue: this.queue.map(slot => ({ ...slot })),
     };
   }
 
-  /** 反序列化 */
-  deserialize(data: Pick<TechSaveData, 'activeResearch'>): void {
+  /** 反序列化（恢复整个研究队列） */
+  deserialize(data: Pick<TechSaveData, 'activeResearch'> & { researchQueue?: ResearchSlot[] }): void {
     this.queue = [];
-    if (data.activeResearch) {
+    // 优先使用完整的队列数据
+    const queueData = data.researchQueue;
+    if (queueData && queueData.length > 0) {
+      for (const slot of queueData) {
+        this.queue.push({ ...slot });
+        this.treeSystem.setResearching(slot.techId, slot.startTime, slot.endTime);
+      }
+    } else if (data.activeResearch) {
+      // 兼容旧存档：只有单个 activeResearch
       const slot = data.activeResearch;
       this.queue.push({ ...slot });
-      // 恢复节点状态
       this.treeSystem.setResearching(slot.techId, slot.startTime, slot.endTime);
     }
   }

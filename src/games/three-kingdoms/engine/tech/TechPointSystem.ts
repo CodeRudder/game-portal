@@ -96,6 +96,15 @@ export class TechPointSystem implements ISubsystem {
   spend(points: number): void {
     this.techPoints.current -= points;
     this.techPoints.totalSpent += points;
+    // 防护：确保科技点不会变为负数
+    this.techPoints.current = Math.max(0, this.techPoints.current);
+  }
+
+  /** 退还科技点（不修改 totalSpent） */
+  refund(points: number): void {
+    this.techPoints.current += points;
+    // 防护：确保科技点不会变为负数
+    this.techPoints.current = Math.max(0, this.techPoints.current);
   }
 
   /** 尝试消耗科技点（检查后扣除） */

@@ -201,8 +201,10 @@ export interface TechSaveData {
   version: number;
   /** 已完成的科技 ID 列表 */
   completedTechIds: string[];
-  /** 正在研究的科技 */
+  /** 正在研究的科技（兼容旧存档，仅队列首项） */
   activeResearch: ResearchSlot | null;
+  /** 完整研究队列（v5.0+） */
+  researchQueue?: ResearchSlot[];
   /** 科技点 */
   techPoints: TechPointState;
   /** 已选择的互斥节点映射 */
