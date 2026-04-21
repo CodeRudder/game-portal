@@ -210,7 +210,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '8px 12px', marginBottom: 8, borderRadius: 6,
     background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center',
   },
-  goodsGrid: { display: 'flex', flexDirection: 'column', gap: 8 },
+  goodsGrid: { display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', maxHeight: '60vh' },
   goodsCard: {
     display: 'flex', alignItems: 'center', gap: 10, padding: 10,
     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,165,116,0.15)',

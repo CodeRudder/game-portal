@@ -288,7 +288,7 @@ const S: Record<string, React.CSSProperties> = {
   progressText: { fontSize: 12, color: '#a0a0a0', whiteSpace: 'nowrap' },
   section: { marginBottom: 14 },
   sectionTitle: { fontSize: 14, fontWeight: 600, color: '#d4a574', marginBottom: 8 },
-  routeList: { display: 'flex', flexDirection: 'column', gap: 6 },
+  routeList: { display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', maxHeight: '60vh' },
   routeCard: { padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid', borderRadius: 8, cursor: 'pointer', transition: 'border-color 0.2s' },
   empty: { textAlign: 'center', color: '#a0a0a0', fontSize: 13, padding: 16 },
   nodeChain: { display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', padding: '6px 0' },

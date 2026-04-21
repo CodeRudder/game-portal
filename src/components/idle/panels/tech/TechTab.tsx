@@ -71,6 +71,7 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
   const [activePath, setActivePath] = useState<TechPath>('military');
   const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
@@ -78,6 +79,16 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
   useEffect(() => {
     timerRef.current = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(timerRef.current);
+  }, []);
+
+  // 响应式：监听窗口宽度变化
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
   // ── 引擎引用 ──
@@ -334,7 +345,7 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
       {/* 科技树画布 */}
       <div className="tk-tech-canvas" data-testid="tech-canvas">
         {/* PC端：显示所有路线 / 手机端：仅显示选中路线 */}
-        {(window.innerWidth < 768 ? [activePath] : TECH_PATHS).map((path) => (
+        {(isMobile ? [activePath] : TECH_PATHS).map((path) => (
           <React.Fragment key={path}>{renderPathColumn(path)}</React.Fragment>
         ))}
       </div>

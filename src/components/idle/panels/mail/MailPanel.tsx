@@ -186,7 +186,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent', color: '#888', fontSize: 11, cursor: 'pointer',
   },
   activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
-  mailList: { display: 'flex', flexDirection: 'column', gap: 4 },
+  mailList: { display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', maxHeight: '60vh' },
   mailItem: {
     padding: '8px 10', background: 'rgba(255,255,255,0.03)',
     border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, cursor: 'pointer',

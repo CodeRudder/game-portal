@@ -34,7 +34,7 @@
   border: 1px solid rgba(200, 168, 76, 0.3);
   border-radius: 6px;
   padding: 8px 12px;
-  z-index: 30;
+  z-index: 100;
 }
 
 .tk-bld-queue-title {
