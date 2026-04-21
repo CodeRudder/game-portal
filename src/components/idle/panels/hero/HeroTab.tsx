@@ -231,9 +231,9 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
         <FormationPanel engine={engine} snapshotVersion={snapshotVersion} />
       )}
 
-      {/* 新手引导 */}
+      {/* 新手引导 — 对接引擎 TutorialStateMachine */}
       {showGuide && subTab === 'list' && (
-        <GuideOverlay onComplete={handleGuideComplete} onSkip={handleGuideSkip} />
+        <GuideOverlay engine={engine} onComplete={handleGuideComplete} onSkip={handleGuideSkip} />
       )}
 
       {/* 武将详情弹窗 */}

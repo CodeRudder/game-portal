@@ -185,6 +185,17 @@ const ThreeKingdomsGame: React.FC = () => {
   // ── 功能面板状态 ──
   const [openFeature, setOpenFeature] = useState<FeaturePanelId | null>(null);
 
+  // ── P1-01: 首次启动欢迎弹窗 ──
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    const hasVisited = localStorage.getItem('tk-has-visited');
+    if (!hasVisited) {
+      setShowWelcome(true);
+      localStorage.setItem('tk-has-visited', 'true');
+    }
+  }, []);
+
   // ── P1-01: 事件系统状态 ──
   const [activeBanner, setActiveBanner] = useState<any>(null);
   const [activeEncounter, setActiveEncounter] = useState<any>(null);
@@ -540,6 +551,11 @@ const ThreeKingdomsGame: React.FC = () => {
     }
   };
 
+  // ── P1-01: 首次启动欢迎弹窗回调 ──
+  const handleWelcomeClose = useCallback(() => {
+    setShowWelcome(false);
+  }, []);
+
   // ── 主渲染 ──
   return (
     <div className="tk-game-root">
@@ -646,6 +662,42 @@ const ThreeKingdomsGame: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      {/* P1-01: 首次启动欢迎弹窗 */}
+      <Modal
+        visible={showWelcome}
+        type="info"
+        title="⚔️ 欢迎来到三国霸业！"
+        confirmText="开始游戏"
+        onConfirm={handleWelcomeClose}
+        onCancel={handleWelcomeClose}
+        width="460px"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', color: '#e8e0d0', fontSize: '14px' }}>
+          <p style={{ margin: 0, lineHeight: 1.6 }}>
+            乱世纷争，群雄并起。你将作为一方诸侯，招募武将、发展城池，逐鹿天下！
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {([
+              { icon: '🏰', label: '建筑', desc: '建造升级城池设施' },
+              { icon: '🦸', label: '武将', desc: '招募培养三国名将' },
+              { icon: '📜', label: '科技', desc: '研究强化国家实力' },
+              { icon: '⚔️', label: '关卡', desc: '征战四方开疆拓土' },
+            ]).map(({ icon, label, desc }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px' }}>
+                <span style={{ fontSize: '20px' }}>{icon}</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '13px' }}>{label}</div>
+                  <div style={{ fontSize: '11px', color: '#999' }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{ margin: 0, fontSize: '12px', color: '#888', textAlign: 'center' }}>
+            💡 点击底部 Tab 栏切换功能，右上角菜单查看更多玩法
+          </p>
+        </div>
+      </Modal>
 
       {/* ═══ 功能面板弹窗 ═══ */}
       {/* worldmap/equipment/arena/expedition/npc 已有独立Tab，不再重复渲染 FeaturePanel */}
