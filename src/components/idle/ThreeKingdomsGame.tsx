@@ -53,6 +53,16 @@ import RandomEncounterModal from '@/components/idle/panels/event/RandomEncounter
 import { EquipmentBag, ArenaPanel, ExpeditionPanel } from '@/games/three-kingdoms/ui/components';
 import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
 import ArmyTab from '@/components/idle/panels/army/ArmyTab';
+import MailPanel from '@/components/idle/panels/mail/MailPanel';
+import SocialPanel from '@/components/idle/panels/social/SocialPanel';
+import HeritagePanel from '@/components/idle/panels/heritage/HeritagePanel';
+import ActivityPanel from '@/components/idle/panels/activity/ActivityPanel';
+import MoreTab from '@/components/idle/panels/more/MoreTab';
+import QuestPanel from '@/components/idle/panels/quest/QuestPanel';
+import ShopPanel from '@/components/idle/panels/shop/ShopPanel';
+import AchievementPanel from '@/components/idle/panels/achievement/AchievementPanel';
+import AlliancePanel from '@/components/idle/panels/alliance/AlliancePanel';
+import PrestigePanel from '@/components/idle/panels/prestige/PrestigePanel';
 import './ThreeKingdomsGame.css';
 
 // ─────────────────────────────────────────────
@@ -82,7 +92,7 @@ const SEASON_ICONS: Record<Season, string> = {
 };
 
 /** Tab 类型定义 */
-type TabId = 'building' | 'hero' | 'tech' | 'campaign' | 'map' | 'npc' | 'equipment' | 'arena' | 'expedition' | 'army';
+type TabId = 'building' | 'hero' | 'tech' | 'campaign' | 'map' | 'npc' | 'equipment' | 'arena' | 'expedition' | 'army' | 'more';
 
 /** Tab 配置 */
 interface TabConfig {
@@ -93,20 +103,21 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
-  { id: 'building', icon: '🏗️', label: '建筑', available: true },
-  { id: 'hero', icon: '⚔️', label: '武将', available: true },
+  { id: 'building', icon: '🏰', label: '建筑', available: true },
+  { id: 'hero', icon: '🦸', label: '武将', available: true },
   { id: 'tech', icon: '📜', label: '科技', available: true },
-  { id: 'campaign', icon: '🗺️', label: '关卡', available: true },
-  { id: 'equipment', icon: '⚔️', label: '装备', available: true },
+  { id: 'campaign', icon: '⚔️', label: '关卡', available: true },
+  { id: 'equipment', icon: '🛡️', label: '装备', available: true },
   { id: 'map', icon: '🗺️', label: '天下', available: true },
   { id: 'npc', icon: '👤', label: '名士', available: true },
   { id: 'arena', icon: '🏟️', label: '竞技', available: true },
-  { id: 'expedition', icon: '🗺️', label: '远征', available: true },
-  { id: 'army', icon: '🛡️', label: '军队', available: true },
+  { id: 'expedition', icon: '🧭', label: '远征', available: true },
+  { id: 'army', icon: '💪', label: '军队', available: true },
+  { id: 'more', icon: '📋', label: '更多', available: true },
 ];
 
 /** 功能菜单面板ID */
-type FeaturePanelId = 'worldmap' | 'equipment' | 'arena' | 'expedition' | 'events' | 'npc';
+type FeaturePanelId = 'events' | 'quest' | 'shop' | 'mail' | 'achievement' | 'activity' | 'alliance' | 'prestige' | 'heritage' | 'social';
 
 /** 功能菜单项配置（静态部分，badge 动态计算） */
 const FEATURE_ITEMS: Array<Omit<FeatureMenuItem, 'badge'>> = [
@@ -116,6 +127,10 @@ const FEATURE_ITEMS: Array<Omit<FeatureMenuItem, 'badge'>> = [
   { id: 'expedition', icon: '🚀', label: '远征', description: '探索未知领域', available: true },
   { id: 'events', icon: '⚡', label: '事件', description: '当前活跃事件', available: true },
   { id: 'npc', icon: '👥', label: 'NPC名册', description: '已发现的NPC角色', available: true },
+  { id: 'mail', icon: '📬', label: '邮件', description: '系统邮件与奖励领取', available: true },
+  { id: 'social', icon: '👥', label: '社交', description: '好友互动与排行榜', available: true },
+  { id: 'heritage', icon: '⚔️', label: '传承', description: '武将装备经验传承', available: true },
+  { id: 'activity', icon: '🎪', label: '活动', description: '限时活动与签到', available: true },
 ];
 
 // ─────────────────────────────────────────────
@@ -322,8 +337,25 @@ const ThreeKingdomsGame: React.FC = () => {
   }, []);
 
   // ── 功能菜单选择 ──
+  // 已有独立Tab的功能（worldmap→map, equipment, arena, expedition, npc）直接切换到对应Tab
+  // 仅 events 等无独立Tab的功能使用 FeaturePanel 弹窗
+  const FEATURE_TO_TAB: Record<string, TabId> = {
+    worldmap: 'map',
+    equipment: 'equipment',
+    arena: 'arena',
+    expedition: 'expedition',
+    npc: 'npc',
+  };
+
   const handleFeatureSelect = useCallback((id: string) => {
-    setOpenFeature(id as FeaturePanelId);
+    const tabId = FEATURE_TO_TAB[id];
+    if (tabId) {
+      // 有独立Tab → 直接切换，不弹窗
+      setActiveTab(tabId);
+    } else {
+      // 无独立Tab → 使用 FeaturePanel 弹窗
+      setOpenFeature(id as FeaturePanelId);
+    }
   }, []);
 
   // ── 功能面板关闭 ──
@@ -353,6 +385,11 @@ const ThreeKingdomsGame: React.FC = () => {
       if (item.id === 'events') {
         const activeEvents = (snapshot as any).activeEvents as any[] | undefined;
         badge = activeEvents?.length ?? 0;
+      }
+      // 邮件面板显示未读数
+      if (item.id === 'mail') {
+        const mailSys = (engine as any).mail ?? (engine as any).getMailSystem?.();
+        badge = mailSys?.getUnreadCount?.() ?? 0;
       }
       return { ...item, badge };
     });
@@ -474,6 +511,15 @@ const ThreeKingdomsGame: React.FC = () => {
           />
         );
 
+      case 'more':
+        return (
+          <MoreTab
+            engine={engine}
+            snapshotVersion={snapshotVersion}
+            onOpenPanel={(id) => setOpenFeature(id as FeaturePanelId)}
+          />
+        );
+
       default:
         return null;
     }
@@ -587,78 +633,7 @@ const ThreeKingdomsGame: React.FC = () => {
       )}
 
       {/* ═══ 功能面板弹窗 ═══ */}
-
-      {/* P1-02: 世界地图 */}
-      <FeaturePanel
-        visible={openFeature === 'worldmap'}
-        title="世界地图"
-        icon="🗺️"
-        width="720px"
-        onClose={handleFeatureClose}
-      >
-        <WorldMapTab
-          territories={worldMapData.territories}
-          productionSummary={worldMapData.productionSummary}
-          snapshotVersion={snapshotVersion}
-          onSelectTerritory={(id) => {
-            Toast.info(`选中领土: ${id}`);
-          }}
-          onSiegeTerritory={(id) => {
-            Toast.info(`发起攻城: ${id}`);
-          }}
-        />
-      </FeaturePanel>
-
-      {/* P1-04: 装备背包 */}
-      <FeaturePanel
-        visible={openFeature === 'equipment'}
-        title="装备背包"
-        icon="🎒"
-        width="600px"
-        onClose={handleFeatureClose}
-      >
-        <EquipmentBag
-          equipments={[]}
-          onEquipClick={(uid) => Toast.info(`查看装备: ${uid}`)}
-          onEquip={(uid) => Toast.success(`穿戴装备: ${uid}`)}
-          onUnequip={(uid) => Toast.info(`卸下装备: ${uid}`)}
-          onDecompose={(uid) => Toast.info(`分解装备: ${uid}`)}
-        />
-      </FeaturePanel>
-
-      {/* P1-05: 竞技场 */}
-      <FeaturePanel
-        visible={openFeature === 'arena'}
-        title="竞技场"
-        icon="⚔️"
-        width="560px"
-        onClose={handleFeatureClose}
-      >
-        <ArenaPanel
-          playerState={null}
-          seasonData={null}
-          onChallenge={(opponentId) => Toast.info(`挑战对手: ${opponentId}`)}
-          onRefresh={() => Toast.info('刷新对手列表')}
-        />
-      </FeaturePanel>
-
-      {/* P1-06: 远征 */}
-      <FeaturePanel
-        visible={openFeature === 'expedition'}
-        title="远征天下"
-        icon="🚀"
-        width="600px"
-        onClose={handleFeatureClose}
-      >
-        <ExpeditionPanel
-          routes={[]}
-          regions={[]}
-          teams={[]}
-          unlockedSlots={1}
-          onRouteSelect={(routeId) => Toast.info(`选择路线: ${routeId}`)}
-          onStartExpedition={(routeId, teamId) => Toast.success(`出发远征: ${routeId} / ${teamId}`)}
-        />
-      </FeaturePanel>
+      {/* worldmap/equipment/arena/expedition/npc 已有独立Tab，不再重复渲染 FeaturePanel */}
 
       {/* P1-01: 事件系统 */}
       <FeaturePanel
@@ -678,20 +653,106 @@ const ThreeKingdomsGame: React.FC = () => {
         </div>
       </FeaturePanel>
 
-      {/* P1-03: NPC名册 */}
+      {/* Tier 3: 邮件系统 */}
       <FeaturePanel
-        visible={openFeature === 'npc'}
-        title="NPC名册"
+        visible={openFeature === 'mail'}
+        title="邮件"
+        icon="📬"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <MailPanel engine={engine} />
+      </FeaturePanel>
+
+      {/* Tier 3: 社交系统 */}
+      <FeaturePanel
+        visible={openFeature === 'social'}
+        title="社交"
         icon="👥"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <SocialPanel engine={engine} />
+      </FeaturePanel>
+
+      {/* Tier 3: 传承系统 */}
+      <FeaturePanel
+        visible={openFeature === 'heritage'}
+        title="传承"
+        icon="⚔️"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <HeritagePanel engine={engine} />
+      </FeaturePanel>
+
+      {/* Tier 3: 活动系统 */}
+      <FeaturePanel
+        visible={openFeature === 'activity'}
+        title="活动"
+        icon="🎪"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <ActivityPanel engine={engine} />
+      </FeaturePanel>
+
+      {/* 任务系统 */}
+      <FeaturePanel
+        visible={openFeature === 'quest'}
+        title="任务"
+        icon="📋"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <QuestPanel engine={engine} />
+      </FeaturePanel>
+
+      {/* 商店系统 */}
+      <FeaturePanel
+        visible={openFeature === 'shop'}
+        title="商店"
+        icon="🏪"
         width="560px"
         onClose={handleFeatureClose}
       >
-        <NPCTab
-          npcs={npcData}
-          onSelectNPC={(npcId) => Toast.info(`查看NPC: ${npcId}`)}
-          onStartDialog={(npcId) => Toast.info(`与NPC对话: ${npcId}`)}
-        />
+        <ShopPanel engine={engine} />
       </FeaturePanel>
+
+      {/* 成就系统 */}
+      <FeaturePanel
+        visible={openFeature === 'achievement'}
+        title="成就"
+        icon="🏆"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <AchievementPanel engine={engine} />
+      </FeaturePanel>
+
+      {/* 联盟系统 */}
+      <FeaturePanel
+        visible={openFeature === 'alliance'}
+        title="联盟"
+        icon="🤝"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <AlliancePanel engine={engine} />
+      </FeaturePanel>
+
+      {/* 声望系统 */}
+      <FeaturePanel
+        visible={openFeature === 'prestige'}
+        title="声望"
+        icon="📊"
+        width="520px"
+        onClose={handleFeatureClose}
+      >
+        <PrestigePanel engine={engine} />
+      </FeaturePanel>
+
+      {/* npc 已有独立Tab，不再重复渲染 FeaturePanel */}
 
       {/* P1-01: 随机遭遇弹窗（全局覆盖层） */}
       <RandomEncounterModal
