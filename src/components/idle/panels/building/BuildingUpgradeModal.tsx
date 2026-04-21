@@ -60,11 +60,29 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
 
   // 获取建筑状态和升级信息
   const info = useMemo(() => {
-    const snapshot = engine.getSnapshot();
+    let snapshot;
+    try {
+      snapshot = engine.getSnapshot();
+    } catch (e) {
+      console.error('[BuildingUpgradeModal] getSnapshot failed:', e);
+      return { level: 0, status: 'idle', canUpgrade: false, reasons: [], cost: null };
+    }
     const state = snapshot.buildings[buildingType];
     const level = state.level;
-    const check = engine.checkUpgrade(buildingType);
-    const cost = engine.getUpgradeCost(buildingType);
+    let check;
+    try {
+      check = engine.checkUpgrade(buildingType);
+    } catch (e) {
+      console.error('[BuildingUpgradeModal] checkUpgrade failed:', e);
+      check = { canUpgrade: false, reasons: ['引擎异常'] };
+    }
+    let cost;
+    try {
+      cost = engine.getUpgradeCost(buildingType);
+    } catch (e) {
+      console.error('[BuildingUpgradeModal] getUpgradeCost failed:', e);
+      cost = null;
+    }
 
     return {
       level,

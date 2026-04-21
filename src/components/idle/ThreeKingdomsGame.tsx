@@ -469,7 +469,11 @@ const ThreeKingdomsGame: React.FC = () => {
   // ── 引擎 tick 循环 ──
   useEffect(() => {
     const timer = setInterval(() => {
-      engine.tick(TICK_INTERVAL);
+      try {
+        engine.tick(TICK_INTERVAL);
+      } catch (e) {
+        console.error('[ThreeKingdomsGame] Tick failed:', e);
+      }
     }, TICK_INTERVAL);
 
     return () => clearInterval(timer);
@@ -575,7 +579,19 @@ const ThreeKingdomsGame: React.FC = () => {
   const snapshot: EngineSnapshot = useMemo(() => {
     // snapshotVersion 作为依赖触发重计算
     void snapshotVersion;
-    return engine.getSnapshot();
+    try {
+      return engine.getSnapshot();
+    } catch (e) {
+      console.error('[ThreeKingdomsGame] getSnapshot failed:', e);
+      // 返回安全的默认快照，避免渲染崩溃
+      return {
+        resources: { grain: 0, gold: 0, troops: 0 },
+        productionRates: { grain: 0, gold: 0, troops: 0 },
+        caps: { grain: 0, gold: 0, troops: 0 },
+        buildings: {},
+        calendar: { day: 1, season: 'spring', year: 1, seasonIndex: 0 },
+      } as EngineSnapshot;
+    }
   }, [engine, snapshotVersion]);
 
   const { resources, productionRates, caps, buildings, calendar } = snapshot;
