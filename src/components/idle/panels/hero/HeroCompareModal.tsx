@@ -4,7 +4,7 @@
  * 并排展示两个武将的属性条，高亮差异属性
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { GeneralData, Quality } from '@/games/three-kingdoms/engine';
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS, FACTION_LABELS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
@@ -41,6 +41,15 @@ const HeroCompareModal: React.FC<HeroCompareModalProps> = ({
   engine,
   onClose,
 }) => {
+  // ── ESC 键关闭 ──
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   const heroSystem = engine.getHeroSystem();
   const allGenerals = engine.getGenerals().filter((g) => g.id !== baseGeneral.id);
 

@@ -62,6 +62,15 @@ const NPCDialogModal: React.FC<NPCDialogModalProps> = ({
   onSelectOption,
   onClose,
 }) => {
+  // ── ESC 键关闭 ──
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);

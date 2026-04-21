@@ -9,7 +9,7 @@
  * @module components/idle/panels/campaign/BattleResultModal
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine/battle/battle.types';
 import type { BattleResult } from '@/games/three-kingdoms/engine/battle/battle.types';
 import type { Stage } from '@/games/three-kingdoms/engine/campaign/campaign.types';
@@ -72,6 +72,15 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
   stage,
   onConfirm,
 }) => {
+  // ── ESC 键关闭 ──
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onConfirm?.();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onConfirm]);
+
   const isVictory = result.outcome === BattleOutcome.VICTORY;
   const isDraw = result.outcome === BattleOutcome.DRAW;
   const stars = result.stars as number;
@@ -170,8 +179,8 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
   );
 
   return (
-    <div className="tk-brm-overlay" role="dialog" aria-modal="true" aria-label="战斗结算">
-      <div className={`tk-brm-modal ${isVictory ? 'tk-brm-modal--victory' : 'tk-brm-modal--defeat'}`}>
+    <div className="tk-brm-overlay" role="dialog" aria-modal="true" aria-label="战斗结算" onClick={onConfirm}>
+      <div className={`tk-brm-modal ${isVictory ? 'tk-brm-modal--victory' : 'tk-brm-modal--defeat'}`} onClick={e => e.stopPropagation()}>
         {/* ── 结果标题 ── */}
         <div className="tk-brm-result-header">
           <div className={`tk-brm-result-icon ${isVictory ? 'tk-brm-result-icon--victory' : 'tk-brm-result-icon--defeat'}`}>

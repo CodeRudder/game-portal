@@ -441,18 +441,24 @@ const ThreeKingdomsGame: React.FC = () => {
     initializedRef.current = true;
 
     // 尝试加载存档，无存档则新游戏
-    const offlineEarnings = engine.load();
-    if (!offlineEarnings) {
-      engine.init();
-    } else {
-      // 有离线收益，弹出领取弹窗
-      const hasEarnings = offlineEarnings.earned.grain > 0
-        || offlineEarnings.earned.gold > 0
-        || offlineEarnings.earned.troops > 0
-        || offlineEarnings.earned.mandate > 0;
-      if (hasEarnings) {
-        setOfflineReward(offlineEarnings);
+    try {
+      const offlineEarnings = engine.load();
+      if (!offlineEarnings) {
+        engine.init();
+      } else {
+        // 有离线收益，弹出领取弹窗
+        const hasEarnings = offlineEarnings.earned.grain > 0
+          || offlineEarnings.earned.gold > 0
+          || offlineEarnings.earned.troops > 0
+          || offlineEarnings.earned.mandate > 0;
+        if (hasEarnings) {
+          setOfflineReward(offlineEarnings);
+        }
       }
+    } catch (e) {
+      console.error('Failed to load save:', e);
+      // 存档损坏时重置
+      Toast.danger('存档加载失败，已重置');
     }
 
     // 首次渲染触发

@@ -13,7 +13,7 @@
  * @module components/idle/panels/campaign/SweepModal
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import type { SweepBatchResult, AutoPushResult } from '@/games/three-kingdoms/engine/campaign/sweep.types';
 import { DEFAULT_SWEEP_CONFIG } from '@/games/three-kingdoms/engine/campaign/sweep.types';
 import './SweepModal.css';
@@ -79,6 +79,15 @@ const SweepModal: React.FC<SweepModalProps> = ({
   onSweep,
   onAutoPush,
 }) => {
+  // ── ESC 键关闭 ──
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   // ── 状态 ──
   const [sweepCount, setSweepCount] = useState(1);
   const [autoPushEnabled, setAutoPushEnabled] = useState(false);
@@ -263,8 +272,8 @@ const SweepModal: React.FC<SweepModalProps> = ({
   };
 
   return (
-    <div className="tk-sweep-overlay" role="dialog" aria-modal="true" aria-label="扫荡弹窗">
-      <div className="tk-sweep-modal">
+    <div className="tk-sweep-overlay" role="dialog" aria-modal="true" aria-label="扫荡弹窗" onClick={onClose}>
+      <div className="tk-sweep-modal" onClick={e => e.stopPropagation()}>
         {/* ── 标题栏 ── */}
         <div className="tk-sweep-header">
           <h3 className="tk-sweep-title">

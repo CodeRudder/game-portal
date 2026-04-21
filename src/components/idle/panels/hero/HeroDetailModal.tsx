@@ -4,7 +4,7 @@
  * 功能：雷达图、属性条、技能列表、升级操作、武将传记
  */
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import type { GeneralData, Quality } from '@/games/three-kingdoms/engine';
 import {
   QUALITY_LABELS,
@@ -80,6 +80,15 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
   onEnhanceComplete,
   onCompare,
 }) => {
+  // ── ESC 键关闭 ──
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   const heroSystem = engine.getHeroSystem();
   const levelSystem = engine.getLevelSystem();
 

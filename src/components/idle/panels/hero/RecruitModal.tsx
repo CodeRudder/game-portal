@@ -79,6 +79,15 @@ function formatTimestamp(ts: number): string {
 // 主组件
 // ─────────────────────────────────────────────
 const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitComplete }) => {
+  // ── ESC 键关闭 ──
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   const [recruitType, setRecruitType] = useState<RecruitType>('normal');
   const [results, setResults] = useState<RecruitOutput | null>(null);
   const [isRecruiting, setIsRecruiting] = useState(false);

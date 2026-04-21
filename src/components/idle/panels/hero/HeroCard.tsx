@@ -59,7 +59,13 @@ function formatPower(n: number): string {
 // 主组件
 // ─────────────────────────────────────────────
 const HeroCard: React.FC<HeroCardProps> = ({ general, engine, onClick }) => {
-  const power = useMemo(() => engine.getHeroSystem().calculatePower(general), [engine, general]);
+  const power = useMemo(() => {
+    try {
+      return engine?.getHeroSystem?.()?.calculatePower?.(general) ?? 0;
+    } catch {
+      return 0;
+    }
+  }, [engine, general]);
 
   const borderColor = QUALITY_BORDER_COLORS[general.quality];
   const factionLabel = FACTION_LABELS[general.faction];

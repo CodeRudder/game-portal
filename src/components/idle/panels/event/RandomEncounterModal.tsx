@@ -6,7 +6,7 @@
  *
  * 设计规范：水墨江山·铜纹霸业
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import './RandomEncounterModal.css';
 
 import type {
@@ -101,6 +101,15 @@ const RandomEncounterModal: React.FC<RandomEncounterModalProps> = ({
   onSelectOption,
   onClose,
 }) => {
+  // ── ESC 键关闭 ──
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   if (!visible || !event) return null;
 
   const categoryIcon = CATEGORY_ICONS[event.category] ?? '❓';

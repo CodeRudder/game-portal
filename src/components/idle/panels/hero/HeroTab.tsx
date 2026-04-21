@@ -88,7 +88,11 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
   // ── 获取武将列表 ──
   const allGenerals = useMemo(() => {
     void snapshotVersion;
-    return engine.getGenerals();
+    try {
+      return engine?.getGenerals?.() ?? [];
+    } catch {
+      return [];
+    }
   }, [engine, snapshotVersion]);
 
   // ── 筛选 + 排序 ──

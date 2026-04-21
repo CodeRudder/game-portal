@@ -14,7 +14,7 @@
  * @module components/idle/panels/hero/HeroStarUpModal
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import type {
   StarUpPreview,
   FragmentProgress,
@@ -104,6 +104,15 @@ const HeroStarUpModal: React.FC<HeroStarUpModalProps> = ({
   onBreakthrough,
   onSourceClick,
 }) => {
+  // ── ESC 键关闭 ──
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   const isMaxStar = currentStar >= MAX_STAR_LEVEL;
 
   // ── 升星消耗是否充足 ──
