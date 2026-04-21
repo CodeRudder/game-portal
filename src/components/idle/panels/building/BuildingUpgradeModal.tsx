@@ -5,7 +5,7 @@
  * 居中弹窗，显示升级预览 + 费用 + 操作按钮
  * 关闭方式：[×] / 点击遮罩 / ESC
  */
-import React, { useMemo, useEffect, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import type { BuildingType, Resources } from '@/games/three-kingdoms/engine';
 import {
   BUILDING_LABELS,
@@ -14,6 +14,7 @@ import {
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
+import { SharedPanel } from '../../components/SharedPanel';
 import './BuildingUpgradeModal.css';
 
 interface BuildingUpgradeModalProps {
@@ -103,31 +104,10 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
     };
   }, [info.cost, resources]);
 
-  // ESC 关闭
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onCancel]);
-
-  // 遮罩点击关闭
-  const handleOverlayClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) onCancel();
-    },
-    [onCancel],
-  );
-
   const canAfford = affordability.grain && affordability.gold && affordability.troops;
 
   return (
-    <div className="tk-upgrade-overlay" onClick={handleOverlayClick}>
-      <div className="tk-upgrade-modal" role="dialog" aria-label={`${name}升级`}>
-        {/* 关闭按钮 */}
-        <button className="tk-upgrade-close" onClick={onCancel} aria-label="关闭">✕</button>
-
+    <SharedPanel title={`${name}升级`} onClose={onCancel}>
         {/* 建筑头部 */}
         <div className="tk-upgrade-header">
           <span className="tk-upgrade-icon">{icon}</span>
@@ -200,8 +180,7 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
             {canAfford ? `▲ 升级` : '资源不足'}
           </button>
         </div>
-      </div>
-    </div>
+    </SharedPanel>
   );
 };
 
