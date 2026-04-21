@@ -121,6 +121,7 @@ export class ThreeKingdomsEngine {
   private readonly activitySystem: ActivitySystem;
   private readonly tradeSystem: TradeSystem;
   private readonly settingsManager: SettingsManager;
+  private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
   private readonly configRegistry: ConfigRegistry;
@@ -640,4 +641,9 @@ export class ThreeKingdomsEngine {
   handleMouseMove(_x: number, _y: number): void { /* no-op */ }
   handleRightClick(_x: number, _y: number): void { /* no-op */ }
   handleDoubleClick(_x: number, _y: number): void { /* no-op */ }
+
+  /** 暴露子系统注册表，供外部面板查询子系统实例 */
+  getSubsystemRegistry(): SubsystemRegistry {
+    return this.registry;
+  }
 }

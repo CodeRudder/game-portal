@@ -585,7 +585,7 @@ const ThreeKingdomsGame: React.FC = () => {
     // 首次启动后自动进入武将Tab触发引导
     try {
       const registry = engine?.getSubsystemRegistry?.();
-      const tutorialSM = registry?.get?.('tutorial');
+      const tutorialSM = registry?.get?.('tutorial') as any;
       const phase = tutorialSM?.getCurrentPhase?.();
       if (phase && phase !== 'free_play' && phase !== 'mini_tutorial') {
         setActiveTab('hero');
