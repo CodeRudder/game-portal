@@ -193,6 +193,7 @@ export default function HeritagePanel({ engine, visible = true, onClose }: Herit
         </div>
       )}
     </div>
+    </SharedPanel>
   );
 }
 

@@ -6,9 +6,14 @@
  * @module panels/social/SocialPanel
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 interface SocialPanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
 type SocialTab = 'friends' | 'chat' | 'rank';
@@ -106,7 +111,7 @@ function RankSection({ engine }: { engine: any }) {
   );
 }
 
-export default function SocialPanel({ engine }: SocialPanelProps) {
+export default function SocialPanel({ engine, visible = true, onClose }: SocialPanelProps) {
   const [tab, setTab] = useState<SocialTab>('friends');
   const [message, setMessage] = useState<string | null>(null);
 
@@ -147,6 +152,13 @@ export default function SocialPanel({ engine }: SocialPanelProps) {
   }, [friendSystem, socialState]);
 
   return (
+    <SharedPanel
+      visible={visible}
+      title="社交"
+      icon="👥"
+      onClose={onClose}
+      width="520px"
+    >
     <div style={styles.container}>
       {message && <div style={styles.toast}>{message}</div>}
 
@@ -212,6 +224,7 @@ export default function SocialPanel({ engine }: SocialPanelProps) {
         <RankSection engine={engine} />
       )}
     </div>
+    </SharedPanel>
   );
 }
 

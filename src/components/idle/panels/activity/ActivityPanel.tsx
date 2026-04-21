@@ -6,12 +6,17 @@
  * @module panels/activity/ActivityPanel
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 interface ActivityPanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
-export default function ActivityPanel({ engine }: ActivityPanelProps) {
+export default function ActivityPanel({ engine, visible = true, onClose }: ActivityPanelProps) {
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -87,6 +92,13 @@ export default function ActivityPanel({ engine }: ActivityPanelProps) {
   }, [activitySystem, state]);
 
   return (
+    <SharedPanel
+      visible={visible}
+      title="活动"
+      icon="🎪"
+      onClose={onClose}
+      width="520px"
+    >
     <div style={styles.container}>
       {message && <div style={styles.toast}>{message}</div>}
 
@@ -169,6 +181,7 @@ export default function ActivityPanel({ engine }: ActivityPanelProps) {
         </div>
       )}
     </div>
+    </SharedPanel>
   );
 }
 

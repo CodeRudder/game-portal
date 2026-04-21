@@ -1038,38 +1038,26 @@ const ThreeKingdomsGame: React.FC = () => {
         <MailPanel engine={engine} />
       </FeaturePanel>
 
-      {/* Tier 3: 社交系统 */}
-      <FeaturePanel
+      {/* Tier 3: 社交系统 — 已迁移至 SharedPanel */}
+      <SocialPanel
+        engine={engine}
         visible={openFeature === 'social'}
-        title="社交"
-        icon="👥"
-        width="520px"
         onClose={handleFeatureClose}
-      >
-        <SocialPanel engine={engine} />
-      </FeaturePanel>
+      />
 
-      {/* Tier 3: 传承系统 */}
-      <FeaturePanel
+      {/* Tier 3: 传承系统 — 已迁移至 SharedPanel */}
+      <HeritagePanel
+        engine={engine}
         visible={openFeature === 'heritage'}
-        title="传承"
-        icon="⚔️"
-        width="520px"
         onClose={handleFeatureClose}
-      >
-        <HeritagePanel engine={engine} />
-      </FeaturePanel>
+      />
 
-      {/* Tier 3: 活动系统 */}
-      <FeaturePanel
+      {/* Tier 3: 活动系统 — 已迁移至 SharedPanel */}
+      <ActivityPanel
+        engine={engine}
         visible={openFeature === 'activity'}
-        title="活动"
-        icon="🎪"
-        width="520px"
         onClose={handleFeatureClose}
-      >
-        <ActivityPanel engine={engine} />
-      </FeaturePanel>
+      />
 
       {/* 任务系统 */}
       <FeaturePanel
@@ -1082,16 +1070,12 @@ const ThreeKingdomsGame: React.FC = () => {
         <QuestPanel engine={engine} />
       </FeaturePanel>
 
-      {/* 商店系统 */}
-      <FeaturePanel
+      {/* 商店系统 — 已迁移至 SharedPanel */}
+      <ShopPanel
+        engine={engine}
         visible={openFeature === 'shop'}
-        title="商店"
-        icon="🏪"
-        width="560px"
         onClose={handleFeatureClose}
-      >
-        <ShopPanel engine={engine} />
-      </FeaturePanel>
+      />
 
       {/* 成就系统 */}
       <FeaturePanel
@@ -1121,16 +1105,12 @@ const ThreeKingdomsGame: React.FC = () => {
 
       {/* npc 已有独立Tab，不再重复渲染 FeaturePanel */}
 
-      {/* P0-01: 商贸路线系统 */}
-      <FeaturePanel
+      {/* P0-01: 商贸路线系统 — 已迁移至 SharedPanel */}
+      <TradePanel
+        engine={engine}
         visible={openFeature === 'trade'}
-        title="商贸"
-        icon="🚃"
-        width="520px"
         onClose={handleFeatureClose}
-      >
-        <TradePanel engine={engine} />
-      </FeaturePanel>
+      />
 
       {/* NEW-R5: 设置/云存档系统 — 已迁移至 SharedPanel */}
       <SettingsPanel

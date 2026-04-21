@@ -6,10 +6,15 @@
  * @module panels/shop/ShopPanel
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 // ─── Props ──────────────────────────────────
 interface ShopPanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
 // ─── 货币中文名 ─────────────────────────────
@@ -27,7 +32,7 @@ const SHOP_TABS = [
 ] as const;
 
 // ─── 主组件 ─────────────────────────────────
-export default function ShopPanel({ engine }: ShopPanelProps) {
+export default function ShopPanel({ engine, visible = true, onClose }: ShopPanelProps) {
   const [activeTab, setActiveTab] = useState<string>('general');
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -106,6 +111,13 @@ export default function ShopPanel({ engine }: ShopPanelProps) {
   }, [shopSystem, activeTab, currencySystem]);
 
   return (
+    <SharedPanel
+      visible={visible}
+      title="商店"
+      icon="🏪"
+      onClose={onClose}
+      width="560px"
+    >
     <div style={styles.container}>
       {/* 商店Tab */}
       <div style={styles.tabBar}>
@@ -200,6 +212,7 @@ export default function ShopPanel({ engine }: ShopPanelProps) {
         </div>
       )}
     </div>
+    </SharedPanel>
   );
 }
 
