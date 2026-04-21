@@ -131,12 +131,16 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
   // ── 扫荡三星关卡 ──
   const handleSweep = useCallback(
     (stage: Stage) => {
-      const result = engine.startBattle(stage.id);
-      if (result.outcome === BattleOutcome.VICTORY) {
-        engine.completeBattle(stage.id, result.stars as number);
+      try {
+        const result = engine.startBattle(stage.id);
+        if (result.outcome === BattleOutcome.VICTORY) {
+          engine.completeBattle(stage.id, result.stars as number);
+        }
+        setSweepResult(result);
+        setSweepStage(stage);
+      } catch (e) {
+        console.error('扫荡失败:', e);
       }
-      setSweepResult(result);
-      setSweepStage(stage);
     },
     [engine],
   );

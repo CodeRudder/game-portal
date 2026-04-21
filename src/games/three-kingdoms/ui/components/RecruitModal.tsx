@@ -211,7 +211,7 @@ export function RecruitModal({ isOpen, onClose }: RecruitModalProps) {
           <div style={styles.resultsSection}>
             <div style={styles.resultsTitle}>招募结果</div>
             <div style={styles.resultsGrid}>
-              {results.results.map((r, i) => (
+              {(results.results ?? []).map((r, i) => (
                 <ResultCard key={`${r.general.id}-${i}`} result={r} index={i} />
               ))}
             </div>

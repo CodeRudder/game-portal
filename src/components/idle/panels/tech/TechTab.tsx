@@ -296,10 +296,14 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
   // ── 处理研究开始 ──
   const handleStartResearch = useCallback(
     (techId: string) => {
-      const result = researchSystem.startResearch(techId);
-      if (!result.success) {
-        // 可通过 toast 提示，此处简单处理
-        console.warn('研究失败:', result.reason);
+      try {
+        const result = researchSystem.startResearch(techId);
+        if (!result.success) {
+          // 可通过 toast 提示，此处简单处理
+          console.warn('研究失败:', result.reason);
+        }
+      } catch (e) {
+        console.error('研究失败:', e);
       }
     },
     [researchSystem],

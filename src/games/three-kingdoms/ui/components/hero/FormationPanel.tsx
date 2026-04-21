@@ -319,9 +319,9 @@ export function FormationPanel({ onFormationChange, className }: FormationPanelP
   }
 
   // 获取引擎数据
-  const formations = engine.getFormations();
+  const formations = engine.getFormations?.() ?? [];
   const activeFormationId = snapshot.activeFormationId ?? '1';
-  const heroes = snapshot.heroes as readonly GeneralData[];
+  const heroes = (snapshot.heroes ?? []) as readonly GeneralData[];
 
   // 创建逻辑实例
   const logic = useMemo(
