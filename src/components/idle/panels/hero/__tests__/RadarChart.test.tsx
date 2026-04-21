@@ -25,21 +25,21 @@ import { Quality } from '@/games/three-kingdoms/engine';
 vi.mock('../HeroDetailModal.css', () => ({}));
 
 // ─────────────────────────────────────────────
-// 品质对应的填充色（从 RadarChart.tsx 镜像）
+// 品质对应的填充色（从 RadarChart.tsx 镜像，使用统一品质颜色）
 // ─────────────────────────────────────────────
 const QUALITY_FILL: Record<Quality, string> = {
-  COMMON: 'rgba(139, 154, 107, 0.35)',
-  FINE: 'rgba(91, 139, 212, 0.35)',
-  RARE: 'rgba(155, 109, 191, 0.35)',
-  EPIC: 'rgba(212, 85, 58, 0.35)',
-  LEGENDARY: 'rgba(201, 168, 76, 0.35)',
+  COMMON: 'rgba(158, 158, 158, 0.35)',
+  FINE: 'rgba(33, 150, 243, 0.35)',
+  RARE: 'rgba(156, 39, 176, 0.35)',
+  EPIC: 'rgba(244, 67, 54, 0.35)',
+  LEGENDARY: 'rgba(255, 152, 0, 0.35)',
 };
 const QUALITY_STROKE: Record<Quality, string> = {
-  COMMON: 'rgba(139, 154, 107, 0.8)',
-  FINE: 'rgba(91, 139, 212, 0.8)',
-  RARE: 'rgba(155, 109, 191, 0.8)',
-  EPIC: 'rgba(212, 85, 58, 0.8)',
-  LEGENDARY: 'rgba(201, 168, 76, 0.8)',
+  COMMON: 'rgba(158, 158, 158, 0.8)',
+  FINE: 'rgba(33, 150, 243, 0.8)',
+  RARE: 'rgba(156, 39, 176, 0.8)',
+  EPIC: 'rgba(244, 67, 54, 0.8)',
+  LEGENDARY: 'rgba(255, 152, 0, 0.8)',
 };
 
 // ─────────────────────────────────────────────

@@ -32,9 +32,9 @@ const FACTION_ICONS: Record<string, string> = {
   wei: '🔵', shu: '🔴', wu: '🟢', qun: '🟡', neutral: '⚪',
 };
 
-const QUALITY_COLORS: Record<string, string> = {
-  LEGENDARY: '#ff9800', EPIC: '#c77dff', RARE: '#4fc3f7', UNCOMMON: '#7EC850', COMMON: '#a0a0a0',
-};
+import { HERO_QUALITY_COLORS } from '../../common/constants';
+/** 品质颜色（使用统一常量） */
+const QUALITY_COLORS = HERO_QUALITY_COLORS;
 
 // ─── 主组件 ─────────────────────────────────
 const ArmyTab: React.FC<ArmyTabProps> = ({ engine }) => {

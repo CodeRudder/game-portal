@@ -10,6 +10,7 @@ import React, { useMemo } from 'react';
 import type { GeneralData, Quality, Faction } from '@/games/three-kingdoms/engine';
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS, FACTION_LABELS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import { HERO_QUALITY_BG_COLORS } from '../../common/constants';
 import './HeroCard.css';
 
 // ─────────────────────────────────────────────
@@ -35,14 +36,14 @@ const FACTION_ICONS: Record<Faction, string> = {
 };
 
 // ─────────────────────────────────────────────
-// 品质对应的头像背景渐变
+// 品质对应的头像背景渐变（使用统一常量）
 // ─────────────────────────────────────────────
 const QUALITY_BG: Record<Quality, string> = {
-  COMMON: 'linear-gradient(135deg, #555 0%, #777 100%)',
-  FINE: 'linear-gradient(135deg, #2a5298 0%, #5B8BD4 100%)',
-  RARE: 'linear-gradient(135deg, #6a1b9a 0%, #9B6DBF 100%)',
-  EPIC: 'linear-gradient(135deg, #b71c1c 0%, #D4553A 100%)',
-  LEGENDARY: 'linear-gradient(135deg, #8B6914 0%, #C9A84C 100%)',
+  COMMON: `linear-gradient(135deg, rgba(158,158,158,0.4) 0%, rgba(158,158,158,0.2) 100%)`,
+  FINE: `linear-gradient(135deg, rgba(33,150,243,0.4) 0%, rgba(33,150,243,0.2) 100%)`,
+  RARE: `linear-gradient(135deg, rgba(156,39,176,0.4) 0%, rgba(156,39,176,0.2) 100%)`,
+  EPIC: `linear-gradient(135deg, rgba(244,67,54,0.4) 0%, rgba(244,67,54,0.2) 100%)`,
+  LEGENDARY: `linear-gradient(135deg, rgba(255,152,0,0.4) 0%, rgba(255,152,0,0.2) 100%)`,
 };
 
 // ─────────────────────────────────────────────

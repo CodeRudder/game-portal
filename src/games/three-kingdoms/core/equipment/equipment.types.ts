@@ -77,13 +77,13 @@ export const RARITY_LABELS: Record<EquipmentRarity, string> = {
   gold: '传说',
 };
 
-/** 品质颜色映射 */
+/** 品质颜色映射（统一品质颜色） */
 export const RARITY_COLORS: Record<EquipmentRarity, string> = {
-  white: '#B0B0B0',
-  green: '#5CB85C',
-  blue: '#4A90D9',
-  purple: '#9B59B6',
-  gold: '#D4A843',
+  white: '#9e9e9e',
+  green: '#4caf50',
+  blue: '#2196f3',
+  purple: '#9c27b0',
+  gold: '#ff9800',
 };
 
 /** 品质渐变色映射 */

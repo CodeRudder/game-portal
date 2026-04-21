@@ -56,13 +56,13 @@ export const QUALITY_LABELS: Record<Quality, string> = {
   [Quality.LEGENDARY]: '传说',
 };
 
-/** 品质边框色映射 */
+/** 品质边框色映射（统一品质颜色） */
 export const QUALITY_BORDER_COLORS: Record<Quality, string> = {
-  [Quality.COMMON]: '#8B9A6B',
-  [Quality.FINE]: '#5B8BD4',
-  [Quality.RARE]: '#9B6DBF',
-  [Quality.EPIC]: '#D4553A',
-  [Quality.LEGENDARY]: '#C9A84C',
+  [Quality.COMMON]: '#9e9e9e',
+  [Quality.FINE]: '#2196f3',
+  [Quality.RARE]: '#9c27b0',
+  [Quality.EPIC]: '#f44336',
+  [Quality.LEGENDARY]: '#ff9800',
 };
 
 // ─────────────────────────────────────────────

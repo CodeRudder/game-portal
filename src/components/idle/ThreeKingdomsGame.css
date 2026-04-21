@@ -86,6 +86,16 @@
   --tk-z-guide-mask: 900;      /* 引导遮罩 */
   --tk-z-guide-highlight: 901; /* 引导高亮 */
   --tk-z-offline-modal: 1000;  /* 离线收益弹窗(最高优先) */
+
+  /* ═══════════════════════════════════════════
+     品质颜色统一
+     ═══════════════════════════════════════════ */
+  --tk-quality-common: #9e9e9e;
+  --tk-quality-uncommon: #4caf50;
+  --tk-quality-rare: #2196f3;
+  --tk-quality-epic: #9c27b0;
+  --tk-quality-legendary: #ff9800;
+  --tk-quality-mythic: #f44336;
 }
 
 /* ═══════════════════════════════════════════
@@ -515,4 +525,37 @@
 button[class*="tk-"]:active:not(:disabled) {
   transform: scale(0.97);
   transition: transform 0.1s;
+}
+
+/* ═══════════════════════════════════════════
+   P0-02: 统一弹窗样式覆盖
+   确保所有弹窗（modal/dialog/overlay）视觉一致
+   ═══════════════════════════════════════════ */
+
+/* 统一弹窗容器 */
+[class*="modal"],
+[class*="Modal"],
+[class*="dialog"],
+[class*="Dialog"] {
+  background: #1a1a2e !important;
+  border: 1px solid rgba(212, 165, 116, 0.3) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+}
+
+/* 统一弹窗遮罩 */
+[class*="overlay"],
+[class*="Overlay"],
+[class*="backdrop"] {
+  background: rgba(0,0,0,0.6) !important;
+}
+
+/* 统一按钮样式 */
+button {
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+button:active {
+  transform: scale(0.97);
+  opacity: 0.8;
 }

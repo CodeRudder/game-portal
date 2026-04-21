@@ -13,9 +13,12 @@ import type {
   EquipmentRarity,
 } from '@/games/three-kingdoms/core/equipment';
 import {
-  SLOT_LABELS, SLOT_ICONS, RARITY_LABELS, RARITY_COLORS,
+  SLOT_LABELS, SLOT_ICONS, RARITY_LABELS,
   EQUIPMENT_SLOTS, EQUIPMENT_RARITIES,
 } from '@/games/three-kingdoms/core/equipment';
+import { EQUIP_QUALITY_COLORS } from '../../common/constants';
+/** 品质颜色（使用统一常量覆盖引擎默认值） */
+const RARITY_COLORS = EQUIP_QUALITY_COLORS;
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 
 // ─── Props ──────────────────────────────────

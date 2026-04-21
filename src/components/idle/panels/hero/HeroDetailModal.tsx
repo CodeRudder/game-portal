@@ -16,6 +16,7 @@ import {
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { EnhancePreview } from '@/games/three-kingdoms/engine';
 import { Toast } from '@/components/idle/common/Toast';
+import { HERO_QUALITY_BG_COLORS } from '../../common/constants';
 import RadarChart from './RadarChart';
 import './HeroDetailModal.css';
 
@@ -43,14 +44,14 @@ const STAT_COLORS: Record<string, string> = {
   attack: '#E53935', defense: '#1E88E5', intelligence: '#AB47BC', speed: '#43A047',
 };
 // ─────────────────────────────────────────────
-// 品质对应的头像背景渐变
+// 品质对应的头像背景渐变（使用统一常量）
 // ─────────────────────────────────────────────
 const QUALITY_BG: Record<Quality, string> = {
-  COMMON: 'linear-gradient(135deg, #555 0%, #777 100%)',
-  FINE: 'linear-gradient(135deg, #2a5298 0%, #5B8BD4 100%)',
-  RARE: 'linear-gradient(135deg, #6a1b9a 0%, #9B6DBF 100%)',
-  EPIC: 'linear-gradient(135deg, #b71c1c 0%, #D4553A 100%)',
-  LEGENDARY: 'linear-gradient(135deg, #8B6914 0%, #C9A84C 100%)',
+  COMMON: `linear-gradient(135deg, rgba(158,158,158,0.4) 0%, rgba(158,158,158,0.2) 100%)`,
+  FINE: `linear-gradient(135deg, rgba(33,150,243,0.4) 0%, rgba(33,150,243,0.2) 100%)`,
+  RARE: `linear-gradient(135deg, rgba(156,39,176,0.4) 0%, rgba(156,39,176,0.2) 100%)`,
+  EPIC: `linear-gradient(135deg, rgba(244,67,54,0.4) 0%, rgba(244,67,54,0.2) 100%)`,
+  LEGENDARY: `linear-gradient(135deg, rgba(255,152,0,0.4) 0%, rgba(255,152,0,0.2) 100%)`,
 };
 
 /** 计算动态属性上限（当前武将最大属性值 × 1.2，向上取整到10的倍数） */
