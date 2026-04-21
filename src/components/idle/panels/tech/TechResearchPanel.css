@@ -14,7 +14,7 @@
   gap: 8px;
   padding: 8px 0;
   flex-shrink: 0;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
 }
 

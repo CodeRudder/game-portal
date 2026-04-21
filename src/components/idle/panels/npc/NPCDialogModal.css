@@ -22,7 +22,7 @@
 .tk-dialog-modal {
   width: 500px;
   max-width: 95vw;
-  max-height: 70vh;
+  max-height: 85vh;
   background: rgba(20, 28, 40, 0.98);
   border: 2px solid rgba(200, 168, 76, 0.5);
   border-radius: 12px 12px 0 0;

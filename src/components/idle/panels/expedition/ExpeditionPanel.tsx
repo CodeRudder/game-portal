@@ -2,7 +2,7 @@
  * 引擎API: expedition.getState/getAllRoutes/getAllTeams/getClearedRouteIds/getRouteStars/dispatchTeam/advanceToNextNode/completeRoute
  * @module panels/expedition/ExpeditionPanel */
 import React, { useState, useMemo, useCallback } from 'react';
-import Panel from '@/components/idle/common/Panel';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 import Modal from '@/components/idle/common/Modal';
 
 const NODE_ICONS: Record<string, string> = { BANDIT: '🗡️', HAZARD: '⛰️', BOSS: '👹', TREASURE: '📦', REST: '🏕️' };
@@ -56,7 +56,7 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
 
   return (
     <>
-      <Panel title="🗺️ 远征天下" visible={visible} onClose={onClose} showOverlay width="400px">
+      <SharedPanel title="🗺️ 远征天下" visible={visible} onClose={onClose} width="400px">
         <div style={s.container}>
           {message && <div style={s.toast}>{message}</div>}
           {/* 概览 */}
@@ -121,7 +121,7 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
           </>)}
           {routes.length === 0 && <div style={s.empty}>暂无远征路线</div>}
         </div>
-      </Panel>
+      </SharedPanel>
       <Modal visible={!!battleResult} type="success" title="⚔️ 节点战斗"
         confirmText="继续" onConfirm={() => setBattleResult(null)} onCancel={() => setBattleResult(null)} width="280px">
         <div style={{ textAlign: 'center' }}>

@@ -29,7 +29,7 @@
 .tk-tech-detail-panel {
   width: 420px;
   height: 100%;
-  max-height: 80vh;
+  max-height: 85vh;
   background: linear-gradient(180deg, #1a1410 0%, #12100c 100%);
   border-left: 1px solid rgba(200, 168, 76, 0.2);
   display: flex;

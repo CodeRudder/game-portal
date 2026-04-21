@@ -2,13 +2,19 @@
  * 邮件系统面板 — 分类Tab、邮件列表、附件领取
  *
  * 读取引擎 MailSystem 数据。
+ * 已迁移至 SharedPanel 统一弹窗容器。
  *
  * @module panels/mail/MailPanel
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 interface MailPanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
 type MailTab = 'all' | 'system' | 'battle' | 'social' | 'reward';
@@ -21,7 +27,7 @@ const MAIL_TABS: { id: MailTab; label: string }[] = [
   { id: 'reward', label: '奖励' },
 ];
 
-export default function MailPanel({ engine }: MailPanelProps) {
+export default function MailPanel({ engine, visible = true, onClose }: MailPanelProps) {
   const [tab, setTab] = useState<MailTab>('all');
   const [selectedMailId, setSelectedMailId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -80,6 +86,7 @@ export default function MailPanel({ engine }: MailPanelProps) {
   };
 
   return (
+    <SharedPanel visible={visible} title="邮件" icon="📬" onClose={onClose} width="520px">
     <div style={styles.container}>
       {message && <div style={styles.toast}>{message}</div>}
 
@@ -162,6 +169,7 @@ export default function MailPanel({ engine }: MailPanelProps) {
         </div>
       )}
     </div>
+    </SharedPanel>
   );
 }
 

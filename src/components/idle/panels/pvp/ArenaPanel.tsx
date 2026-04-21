@@ -3,7 +3,7 @@
  *          battle.executeBattle/applyBattleResult
  * @module panels/pvp/ArenaPanel */
 import React, { useState, useMemo, useCallback } from 'react';
-import Panel from '@/components/idle/common/Panel';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 import Modal from '@/components/idle/common/Modal';
 
 const RANK_META: Record<string, { label: string; icon: string; color: string }> = {
@@ -69,7 +69,7 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
 
   return (
     <>
-      <Panel title="⚔️ 竞技场" visible={visible} onClose={onClose} showOverlay width="380px">
+      <SharedPanel title="⚔️ 竞技场" visible={visible} onClose={onClose} width="380px">
         <div style={s.container}>
           {/* 段位 */}
           <div style={s.rankBanner}>
@@ -112,7 +112,7 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
             ))}</>
           )}
         </div>
-      </Panel>
+      </SharedPanel>
       <Modal visible={!!battleResult} type={battleResult?.attackerWon ? 'success' : 'danger'}
         title={battleResult?.attackerWon ? '🎉 挑战胜利' : '💔 挑战失败'}
         confirmText="确定" onConfirm={() => setBattleResult(null)} onCancel={() => setBattleResult(null)} width="300px">
