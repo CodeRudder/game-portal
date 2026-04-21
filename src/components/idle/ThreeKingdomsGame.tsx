@@ -39,6 +39,8 @@ import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
 import HeroTab from '@/components/idle/panels/hero/HeroTab';
 import CampaignTab from '@/components/idle/panels/campaign/CampaignTab';
 import TechTab from '@/components/idle/panels/tech/TechTab';
+import EquipmentTab from '@/components/idle/panels/equipment/EquipmentTab';
+import ArenaTab from '@/components/idle/panels/arena/ArenaTab';
 import Modal from '@/components/idle/common/Modal';
 import type { OfflineEarnings } from '@/games/three-kingdoms/shared/types';
 import FeatureMenu from '@/components/idle/FeatureMenu';
@@ -49,6 +51,8 @@ import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import EventBanner from '@/components/idle/panels/event/EventBanner';
 import RandomEncounterModal from '@/components/idle/panels/event/RandomEncounterModal';
 import { EquipmentBag, ArenaPanel, ExpeditionPanel } from '@/games/three-kingdoms/ui/components';
+import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
+import ArmyTab from '@/components/idle/panels/army/ArmyTab';
 import './ThreeKingdomsGame.css';
 
 // ─────────────────────────────────────────────
@@ -78,7 +82,7 @@ const SEASON_ICONS: Record<Season, string> = {
 };
 
 /** Tab 类型定义 */
-type TabId = 'building' | 'hero' | 'tech' | 'campaign' | 'map' | 'npc';
+type TabId = 'building' | 'hero' | 'tech' | 'campaign' | 'map' | 'npc' | 'equipment' | 'arena' | 'expedition' | 'army';
 
 /** Tab 配置 */
 interface TabConfig {
@@ -93,8 +97,12 @@ const TABS: TabConfig[] = [
   { id: 'hero', icon: '⚔️', label: '武将', available: true },
   { id: 'tech', icon: '📜', label: '科技', available: true },
   { id: 'campaign', icon: '🗺️', label: '关卡', available: true },
+  { id: 'equipment', icon: '⚔️', label: '装备', available: true },
   { id: 'map', icon: '🗺️', label: '天下', available: true },
   { id: 'npc', icon: '👤', label: '名士', available: true },
+  { id: 'arena', icon: '🏟️', label: '竞技', available: true },
+  { id: 'expedition', icon: '🗺️', label: '远征', available: true },
+  { id: 'army', icon: '🛡️', label: '军队', available: true },
 ];
 
 /** 功能菜单面板ID */
@@ -410,6 +418,14 @@ const ThreeKingdomsGame: React.FC = () => {
           />
         );
 
+      case 'equipment':
+        return (
+          <EquipmentTab
+            engine={engine}
+            snapshotVersion={snapshotVersion}
+          />
+        );
+
       case 'map':
         return (
           <WorldMapTab
@@ -431,6 +447,30 @@ const ThreeKingdomsGame: React.FC = () => {
             npcs={npcData}
             onSelectNPC={(npcId) => Toast.info(`查看NPC: ${npcId}`)}
             onStartDialog={(npcId) => Toast.info(`与NPC对话: ${npcId}`)}
+          />
+        );
+
+      case 'arena':
+        return (
+          <ArenaTab
+            engine={engine}
+            snapshotVersion={snapshotVersion}
+          />
+        );
+
+      case 'expedition':
+        return (
+          <ExpeditionTab
+            engine={engine}
+            snapshotVersion={snapshotVersion}
+          />
+        );
+
+      case 'army':
+        return (
+          <ArmyTab
+            engine={engine}
+            snapshotVersion={snapshotVersion}
           />
         );
 
