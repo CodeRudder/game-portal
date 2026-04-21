@@ -18,6 +18,7 @@ import type { EnhancePreview } from '@/games/three-kingdoms/engine';
 import { Toast } from '@/components/idle/common/Toast';
 import { HERO_QUALITY_BG_COLORS } from '../../common/constants';
 import RadarChart from './RadarChart';
+import HeroStarUpModal from './HeroStarUpModal';
 import './HeroDetailModal.css';
 
 // ─────────────────────────────────────────────
@@ -86,6 +87,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
   const [targetLevel, setTargetLevel] = useState(general.level + 1);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [showStarUp, setShowStarUp] = useState(false);
 
   const power = useMemo(
     () => heroSystem.calculatePower(general),
@@ -212,6 +214,14 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
               ⚖️ 对比
             </button>
           )}
+          {/* P0: 升星按钮 — 打开升星弹窗 */}
+          <button
+            className="tk-hero-detail-compare-btn"
+            onClick={() => setShowStarUp(true)}
+            title="武将升星"
+          >
+            ⭐ 升星
+          </button>
         </div>
 
         {/* 武将传记 */}
@@ -375,6 +385,46 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
             </div>
           </div>
         </div>
+
+        {/* P0: 升星弹窗 */}
+        {showStarUp && (
+          <HeroStarUpModal
+            generalId={general.id}
+            generalName={general.name}
+            level={general.level}
+            currentStar={engine.getHeroStarSystem().getStar(general.id)}
+            fragmentProgress={engine.getHeroStarSystem().getFragmentProgress(general.id)}
+            starUpPreview={engine.getHeroStarSystem().getStarUpPreview(general.id)}
+            breakthroughPreview={engine.getHeroStarSystem().getBreakthroughPreview(general.id)}
+            breakthroughStage={engine.getHeroStarSystem().getBreakthroughStage(general.id)}
+            levelCap={engine.getHeroStarSystem().getLevelCap(general.id)}
+            goldAmount={engine.getResourceAmount('gold')}
+            breakthroughStoneAmount={engine.getResourceAmount('breakthroughStone')}
+            onClose={() => setShowStarUp(false)}
+            onStarUp={(id) => {
+              const result = engine.getHeroStarSystem().starUp(id);
+              if (result.success) {
+                Toast.success(`⭐ ${general.name} 升星成功！${result.previousStar}→${result.currentStar}`);
+                onEnhanceComplete?.();
+              } else {
+                Toast.danger('升星失败：资源不足');
+              }
+              setShowStarUp(false);
+              return result;
+            }}
+            onBreakthrough={(id) => {
+              const result = engine.getHeroStarSystem().breakthrough(id);
+              if (result.success) {
+                Toast.success(`🔮 ${general.name} 突破成功！等级上限 → Lv.${result.newLevelCap}`);
+                onEnhanceComplete?.();
+              } else {
+                Toast.danger('突破失败：资源不足或条件未满足');
+              }
+              setShowStarUp(false);
+              return result;
+            }}
+          />
+        )}
       </div>
     </div>
   );

@@ -379,10 +379,11 @@
   .tk-tab-btn {
     font-size: 11px;
     max-width: none;
-    min-width: 48px;
+    min-width: 44px;
+    min-height: 44px;
     flex-shrink: 0;
     white-space: nowrap;
-    padding: 4px 6px;
+    padding: 8px 6px;
   }
 
   .tk-tab-icon {

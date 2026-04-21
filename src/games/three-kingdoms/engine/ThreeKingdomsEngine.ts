@@ -430,6 +430,11 @@ export class ThreeKingdomsEngine {
   /** 获取升星系统 */
   getHeroStarSystem(): HeroStarSystem { return this.heroStarSystem; }
 
+  /** 获取指定资源数量 */
+  getResourceAmount(type: string): number {
+    return this.resource.getAmount(type as import('../shared/types').ResourceType);
+  }
+
   /** 获取扫荡系统 */
   getSweepSystem(): SweepSystem { return this.sweepSystem; }
 
