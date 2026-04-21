@@ -106,6 +106,8 @@ export interface OfflineExpeditionState {
 export class AutoExpeditionSystem {
   private battleSystem: ExpeditionBattleSystem;
   private rewardSystem: ExpeditionRewardSystem;
+  /** 剩余重复次数（null=无限，0=用完） */
+  private remainingRepeats: number | null = null;
 
   constructor(
     battleSystem: ExpeditionBattleSystem,
@@ -138,6 +140,10 @@ export class AutoExpeditionSystem {
 
     state.isAutoExpeditioning = true;
     state.consecutiveFailures = 0;
+    // 初始化剩余次数：repeatCount=0 表示无限（null），否则使用配置值
+    this.remainingRepeats = state.autoConfig.repeatCount === 0
+      ? null
+      : state.autoConfig.repeatCount;
     return true;
   }
 
@@ -147,6 +153,7 @@ export class AutoExpeditionSystem {
   stopAutoExpedition(state: ExpeditionState): void {
     state.isAutoExpeditioning = false;
     state.consecutiveFailures = 0;
+    this.remainingRepeats = null;
   }
 
   /**
@@ -214,12 +221,12 @@ export class AutoExpeditionSystem {
     // 检查暂停条件
     const { paused, pauseReason } = this.checkPauseConditions(state);
 
-    // 减少重复次数
-    if (state.autoConfig.repeatCount > 0) {
-      state.autoConfig.repeatCount--;
+    // 减少剩余重复次数（null=无限，不减）
+    if (this.remainingRepeats !== null) {
+      this.remainingRepeats--;
     }
 
-    const remainingRepeats = this.getRemainingRepeats(state);
+    const remainingRepeats = this.remainingRepeats;
 
     return {
       success,
@@ -376,17 +383,8 @@ export class AutoExpeditionSystem {
       return { paused: true, pauseReason: PauseReason.CONSECUTIVE_FAILURES };
     }
 
-    // 完成设定次数
-    if (state.autoConfig.repeatCount > 0) {
-      // 还有剩余次数，继续
-    } else if (state.autoConfig.repeatCount === 0) {
-      // repeatCount=0 表示无限
-    }
-
-    // 注意：repeatCount减少到0时（原来是正数）表示完成
-    // 这里通过 remainingRepeats 来判断
-    const remaining = this.getRemainingRepeats(state);
-    if (remaining === 0) {
+    // 完成设定次数（remainingRepeats=0 表示用完，null 表示无限）
+    if (this.remainingRepeats !== null && this.remainingRepeats <= 0) {
       state.isAutoExpeditioning = false;
       return { paused: true, pauseReason: PauseReason.COMPLETED };
     }
@@ -396,9 +394,7 @@ export class AutoExpeditionSystem {
 
   /** 获取剩余重复次数 */
   private getRemainingRepeats(state: ExpeditionState): number | null {
-    // repeatCount=0 表示无限
-    if (state.autoConfig.repeatCount === 0) return null;
-    return state.autoConfig.repeatCount;
+    return this.remainingRepeats;
   }
 
   /** 估算胜率（基于战力比） */

@@ -113,6 +113,17 @@ export function buildEnemyTeam(stage: Stage): BattleTeam {
 // 内部辅助
 // ─────────────────────────────────────────────
 
+/** 根据武将四维属性推断兵种（最高属性决定） */
+function inferTroopType(stats: { attack: number; defense: number; intelligence: number; speed: number }): TroopType {
+  const { attack, defense, intelligence, speed } = stats;
+  const max = Math.max(attack, defense, intelligence, speed);
+  if (max === attack) return TroopType.CAVALRY;       // 武力最高 → 骑兵（猛将）
+  if (max === intelligence) return TroopType.STRATEGIST; // 智力最高 → 谋士
+  if (max === speed) return TroopType.ARCHER;          // 速度最高 → 弓兵
+  if (max === defense) return TroopType.SPEARMAN;      // 统率最高 → 枪兵
+  return TroopType.INFANTRY; // 兜底
+}
+
 function generalToBattleUnit(
   g: { id: string; name: string; faction: any; baseStats: any; level: number; skills: any[] },
   side: 'ally' | 'enemy',
@@ -133,7 +144,7 @@ function generalToBattleUnit(
   }));
   return {
     id: g.id, name: g.name, faction: g.faction,
-    troopType: TroopType.INFANTRY, position, side,
+    troopType: inferTroopType(g.baseStats), position, side,
     attack: g.baseStats.attack, baseAttack: g.baseStats.attack,
     defense: g.baseStats.defense, baseDefense: g.baseStats.defense,
     intelligence: g.baseStats.intelligence, speed: g.baseStats.speed,

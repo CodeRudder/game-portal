@@ -66,8 +66,9 @@ export function createDefaultDefenseFormation(): DefenseFormation {
 }
 
 /** 创建默认竞技场玩家状态 */
-export function createDefaultArenaPlayerState(): ArenaPlayerState {
+export function createDefaultArenaPlayerState(playerId: string = ''): ArenaPlayerState {
   return {
+    playerId,
     score: 0,
     rankId: 'BRONZE_V',
     ranking: 0,

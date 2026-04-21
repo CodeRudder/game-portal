@@ -371,6 +371,8 @@ export interface ArenaShopItem {
 
 /** 竞技场玩家状态 */
 export interface ArenaPlayerState {
+  /** 玩家唯一ID（可选，用于PvP战斗结果标识） */
+  playerId?: string;
   /** 当前积分 */
   score: number;
   /** 当前段位ID */

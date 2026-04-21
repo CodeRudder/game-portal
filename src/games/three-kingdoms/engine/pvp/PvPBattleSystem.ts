@@ -224,14 +224,14 @@ export class PvPBattleSystem {
       : this.calculateLoseScore();
 
     const newAttackerScore = Math.max(0, attackerState.score + scoreChange);
-    // 防守方积分变化：进攻方胜则防守方扣相同积分，反之加积分
-    const defenderScoreChange = attackerWon ? scoreChange : Math.abs(scoreChange) * 0.5;
-    const newDefenderScore = Math.max(0, defenderState.score + (attackerWon ? -defenderScoreChange : defenderScoreChange));
+    // 防守方积分变化：与进攻方对称（进攻方赢则防守方扣同等绝对值，进攻方输则防守方加同等绝对值）
+    const defenderScoreChange = -scoreChange;
+    const newDefenderScore = Math.max(0, defenderState.score + defenderScoreChange);
 
     return {
       battleId: `pvp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      attackerId: 'player_attacker',
-      defenderId: 'player_defender',
+      attackerId: attackerState.playerId || 'player_attacker',
+      defenderId: defenderState.playerId || 'player_defender',
       attackerWon,
       scoreChange,
       attackerNewScore: newAttackerScore,

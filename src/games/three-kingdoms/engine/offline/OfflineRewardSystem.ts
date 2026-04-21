@@ -70,6 +70,8 @@ export class OfflineRewardSystem {
   private vipDoubleResetDate = '';
   private warehouseLevels: Map<string, number> = new Map();
   private lastOfflineTime = 0;
+  /** 防重复领取：当前离线奖励是否已领取 */
+  private rewardClaimed = false;
 
   // ─────────────────────────────────────────────
   // 1. 6档衰减快照
@@ -303,7 +305,40 @@ export class OfflineRewardSystem {
   }
 
   // ─────────────────────────────────────────────
-  // 11. 序列化
+  // 11. 领取离线奖励（防重复）
+  // ─────────────────────────────────────────────
+
+  /**
+   * 计算离线奖励并准备领取
+   *
+   * 每次调用会重置 claimed 状态，允许新一轮领取
+   */
+  calculateOfflineReward(
+    offlineSeconds: number, productionRates: Readonly<Resources>,
+    currentResources: Readonly<Resources>, caps: Readonly<Record<string, number | null>>,
+    vipLevel: number = 0, primarySystem: string = 'building',
+  ): OfflineRewardResultV9 {
+    // 重置领取状态，允许新一轮领取
+    this.rewardClaimed = false;
+    return this.calculateFullReward(
+      offlineSeconds, productionRates, currentResources, caps, vipLevel, primarySystem,
+    );
+  }
+
+  /**
+   * 领取离线奖励
+   *
+   * 防重复领取：每次 calculateOfflineReward 后只能 claim 一次
+   * @returns 领取到的资源，已领取过则返回 null
+   */
+  claimReward(reward: OfflineRewardResultV9): Resources | null {
+    if (this.rewardClaimed) return null;
+    this.rewardClaimed = true;
+    return cloneRes(reward.cappedEarned);
+  }
+
+  // ─────────────────────────────────────────────
+  // 12. 序列化
   // ─────────────────────────────────────────────
 
   serialize(): OfflineSaveData {
@@ -342,5 +377,6 @@ export class OfflineRewardSystem {
     this.vipDoubleResetDate = '';
     this.warehouseLevels.clear();
     this.lastOfflineTime = 0;
+    this.rewardClaimed = false;
   }
 }

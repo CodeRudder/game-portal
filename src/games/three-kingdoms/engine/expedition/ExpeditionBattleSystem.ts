@@ -144,7 +144,7 @@ export class ExpeditionBattleSystem {
       allyDeaths = Math.floor(Math.random() * 5);
     }
 
-    const won = allyHpPercent > 0 && powerRatio > 0.6;
+    const won = allyHpPercent > 0;
     if (!won) {
       allyHpPercent = 0;
     }

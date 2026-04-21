@@ -497,4 +497,6 @@ export interface ExpeditionSaveData {
   consecutiveFailures: number;
   /** 是否自动远征中 */
   isAutoExpeditioning: boolean;
+  /** 路线节点状态（路线ID → 节点ID → 状态字符串） */
+  routeNodeStatuses?: Record<string, Record<string, string>>;
 }

@@ -455,7 +455,7 @@ export class ExpeditionSystem {
   }
 
   /** 推进到下一个节点 */
-  advanceToNextNode(teamId: string): string | null {
+  advanceToNextNode(teamId: string, branchIndex: number = 0): string | null {
     const team = this.state.teams[teamId];
     if (!team || !team.isExpeditioning || !team.currentRouteId || !team.currentNodeId) {
       return null;
@@ -473,8 +473,8 @@ export class ExpeditionSystem {
     // 标记当前节点为已通关
     currentNode.status = NodeStatus.CLEARED;
 
-    // 推进到下一个节点
-    const nextNodeId = currentNode.nextNodeIds[0];
+    // 推进到下一个节点（支持分支选择）
+    const nextNodeId = currentNode.nextNodeIds[branchIndex] ?? currentNode.nextNodeIds[0];
     const nextNode = route.nodes[nextNodeId];
     if (nextNode) {
       nextNode.status = NodeStatus.MARCHING;
@@ -663,6 +663,16 @@ export class ExpeditionSystem {
       sweepCounts[routeId] = { ...counts };
     }
 
+    // 保存路线节点状态
+    const routeNodeStatuses: Record<string, Record<string, string>> = {};
+    for (const [routeId, route] of Object.entries(this.state.routes)) {
+      const nodeStatuses: Record<string, string> = {};
+      for (const [nodeId, node] of Object.entries(route.nodes)) {
+        nodeStatuses[nodeId] = node.status;
+      }
+      routeNodeStatuses[routeId] = nodeStatuses;
+    }
+
     return {
       version: SAVE_VERSION,
       clearedRouteIds: [...this.state.clearedRouteIds],
@@ -674,6 +684,7 @@ export class ExpeditionSystem {
       unlockedSlots: this.state.unlockedSlots,
       consecutiveFailures: this.state.consecutiveFailures,
       isAutoExpeditioning: this.state.isAutoExpeditioning,
+      routeNodeStatuses,
     };
   }
 
@@ -702,13 +713,41 @@ export class ExpeditionSystem {
       this.state.sweepCounts[routeId] = counts as Record<SweepType, number>;
     }
 
-    // 恢复路线解锁状态
+    // 恢复路线解锁状态和节点状态
+    const savedNodeStatuses = (data as any).routeNodeStatuses as Record<string, Record<string, string>> | undefined;
     for (const routeId of this.state.clearedRouteIds) {
       const route = this.state.routes[routeId];
       if (route) {
         route.unlocked = true;
-        for (const node of Object.values(route.nodes)) {
-          node.status = NodeStatus.CLEARED;
+        if (savedNodeStatuses?.[routeId]) {
+          // 从存档恢复每个节点的真实状态
+          for (const [nodeId, statusStr] of Object.entries(savedNodeStatuses[routeId])) {
+            const node = route.nodes[nodeId];
+            if (node) {
+              node.status = statusStr as NodeStatus;
+            }
+          }
+        } else {
+          // 无节点状态存档（旧存档兼容）：已通关路线所有节点标记为CLEARED
+          for (const node of Object.values(route.nodes)) {
+            node.status = NodeStatus.CLEARED;
+          }
+        }
+      }
+    }
+
+    // 恢复未通关但已解锁路线的节点状态
+    if (savedNodeStatuses) {
+      for (const [routeId, nodeStatuses] of Object.entries(savedNodeStatuses)) {
+        if (this.state.clearedRouteIds.has(routeId)) continue; // 已处理
+        const route = this.state.routes[routeId];
+        if (route) {
+          for (const [nodeId, statusStr] of Object.entries(nodeStatuses)) {
+            const node = route.nodes[nodeId];
+            if (node && statusStr !== NodeStatus.LOCKED) {
+              node.status = statusStr as NodeStatus;
+            }
+          }
         }
       }
     }
