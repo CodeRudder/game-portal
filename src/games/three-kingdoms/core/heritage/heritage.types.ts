@@ -207,6 +207,8 @@ export interface HeritageSaveData {
   version: number;
   /** 传承状态 */
   state: HeritageState;
+  /** 转生后加速状态 */
+  accelState?: RebirthAccelerationState;
 }
 
 // ─────────────────────────────────────────────

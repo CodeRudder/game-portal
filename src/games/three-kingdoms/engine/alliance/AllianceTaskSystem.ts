@@ -225,6 +225,32 @@ export class AllianceTaskSystem {
   }
 
   /**
+   * 序列化任务列表为 JSON 安全格式
+   * 将 claimedPlayers (Set<string>) 转为 string[]
+   */
+  serializeTasks(): Array<Omit<AllianceTaskInstance, 'claimedPlayers'> & { claimedPlayers: string[] }> {
+    return this.activeTasks.map(task => ({
+      defId: task.defId,
+      currentProgress: task.currentProgress,
+      status: task.status,
+      claimedPlayers: Array.from(task.claimedPlayers),
+    }));
+  }
+
+  /**
+   * 从 JSON 数据恢复任务列表
+   * 将 claimedPlayers (string[]) 转回 Set<string>
+   */
+  deserializeTasks(data: Array<{ defId: string; currentProgress: number; status: AllianceTaskStatus; claimedPlayers: string[] }>): void {
+    this.activeTasks = data.map(item => ({
+      defId: item.defId,
+      currentProgress: item.currentProgress,
+      status: item.status,
+      claimedPlayers: new Set(item.claimedPlayers),
+    }));
+  }
+
+  /**
    * 获取任务定义
    */
   getTaskDef(defId: string): AllianceTaskDef | undefined {

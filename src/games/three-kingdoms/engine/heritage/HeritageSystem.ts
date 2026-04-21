@@ -256,6 +256,9 @@ export class HeritageSystem implements ISubsystem {
     });
     const targetAfter = this.makeHeroSummary({ ...target, exp: newTargetExp });
 
+    // 扣除铜钱
+    this.addResourcesCallback?.({ copper: -copperCost });
+
     this.recordHeritage('hero', source.id, target.id, efficiency, copperCost);
 
     return {
@@ -338,6 +341,9 @@ export class HeritageSystem implements ISubsystem {
     };
     const targetAfter: HeritageDataSummary = { id: target.uid, level: finalLevel, value: finalLevel };
 
+    // 扣除铜钱
+    this.addResourcesCallback?.({ copper: -copperCost });
+
     this.recordHeritage('equipment', source.uid, target.uid, efficiency, copperCost);
 
     return {
@@ -402,6 +408,9 @@ export class HeritageSystem implements ISubsystem {
 
     const sourceAfter = this.makeHeroSummary({ ...source, exp: newSourceExp });
     const targetAfter = this.makeHeroSummary({ ...target, exp: newTargetExp });
+
+    // 扣除铜钱
+    this.addResourcesCallback?.({ copper: -copperCost });
 
     this.recordHeritage('experience', source.id, target.id, EXPERIENCE_HERITAGE_RULE.efficiency, copperCost);
 
@@ -587,6 +596,9 @@ export class HeritageSystem implements ISubsystem {
   /** 加载存档 */
   loadSaveData(data: HeritageSaveData): void {
     this.state = { ...data.state };
+    if (data.accelState) {
+      this.accelState = { ...data.accelState };
+    }
   }
 
   /** 导出存档 */
@@ -594,6 +606,7 @@ export class HeritageSystem implements ISubsystem {
     return {
       version: HERITAGE_SAVE_VERSION,
       state: { ...this.state },
+      accelState: { ...this.accelState },
     };
   }
 

@@ -15,7 +15,7 @@
  * @module core/event/event-v15.types
  */
 
-import type { EventId, EventDef, EventConsequence } from './event.types';
+import type { EventId, EventDef, EventConsequence, EventInstance } from './event.types';
 
 // 重新导出 EventConsequence，供引擎层直接从本模块引用
 export type { EventConsequence } from './event.types';
@@ -879,6 +879,12 @@ export interface EventSaveDataV15 {
   }>;
   /** 自动处理规则 */
   autoProcessRules: AutoProcessRule[];
+  /** 活跃事件列表 */
+  activeEvents?: EventInstance[];
+  /** 已完成事件ID列表 */
+  completedEventIds?: EventId[];
+  /** 实例计数器 */
+  instanceCounter?: number;
 }
 
 // ─────────────────────────────────────────────

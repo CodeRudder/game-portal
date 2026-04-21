@@ -108,7 +108,9 @@ export class OfflineEventHandler {
   tryAutoResolve(eventDef: EventDef): AutoResolveResult | null {
     // 检查事件优先级（通过urgency映射）
     const priority = urgencyToPriority(eventDef.urgency);
-    if (priority <= AUTO_RESOLVE_THRESHOLD) {
+    // 数值越小优先级越高：SYSTEM=0, URGENT=1, HIGH=2, MEDIUM=3, LOW=4, INFO=5
+    // AUTO_RESOLVE_THRESHOLD=MEDIUM(3)，MEDIUM及以下（数值≥3）自动处理
+    if (priority < AUTO_RESOLVE_THRESHOLD) {
       // 高优先级事件保留给玩家
       return null;
     }

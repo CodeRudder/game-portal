@@ -556,6 +556,9 @@ export class EventEngine implements ISubsystem {
         rewardMultiplier: t.rewardMultiplier,
       })),
       autoProcessRules: [],
+      activeEvents: Array.from(this.activeEvents.values()),
+      completedEventIds: Array.from(this.completedEventIds),
+      instanceCounter: this.instanceCounter,
     };
   }
 
@@ -601,6 +604,21 @@ export class EventEngine implements ISubsystem {
         isActivityExclusive: false,
       });
     }
+
+    // 恢复活跃事件
+    this.activeEvents.clear();
+    for (const inst of data.activeEvents ?? []) {
+      this.activeEvents.set(inst.instanceId, inst);
+    }
+
+    // 恢复已完成事件ID
+    this.completedEventIds.clear();
+    for (const id of data.completedEventIds ?? []) {
+      this.completedEventIds.add(id);
+    }
+
+    // 恢复实例计数器
+    this.instanceCounter = data.instanceCounter ?? 0;
   }
 
   // ─── 内部方法 ──────────────────────────────

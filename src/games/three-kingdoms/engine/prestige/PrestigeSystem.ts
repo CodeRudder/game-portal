@@ -24,6 +24,7 @@ import type {
   PrestigeState,
   PrestigeSaveData,
   LevelUnlockReward,
+  RebirthState,
 } from '../../core/prestige';
 import {
   MAX_PRESTIGE_LEVEL,
@@ -122,6 +123,7 @@ export class PrestigeSystem implements ISubsystem {
   private deps!: ISystemDeps;
   private state: PrestigeState = createInitialState();
   private rewardCallback?: (reward: Record<string, number>) => void;
+  private rebirthStateCallback?: () => RebirthState;
 
   // ─── 生命周期 ───────────────────────────
 
@@ -155,6 +157,11 @@ export class PrestigeSystem implements ISubsystem {
   /** 设置奖励回调 */
   setRewardCallback(cb: (reward: Record<string, number>) => void): void {
     this.rewardCallback = cb;
+  }
+
+  /** 设置转生状态回调（用于存档时获取实际转生数据） */
+  setRebirthStateCallback(cb: () => RebirthState): void {
+    this.rebirthStateCallback = cb;
   }
 
   /** 获取声望分栏信息 (#1) */
@@ -301,16 +308,17 @@ export class PrestigeSystem implements ISubsystem {
 
   /** 获取存档数据 */
   getSaveData(): PrestigeSaveData {
+    const rebirth = this.rebirthStateCallback?.() ?? {
+      rebirthCount: 0,
+      currentMultiplier: 1.0,
+      rebirthRecords: [],
+      accelerationDaysLeft: 0,
+      completedRebirthQuests: [],
+      rebirthQuestProgress: {},
+    };
     return {
       prestige: { ...this.state },
-      rebirth: {
-        rebirthCount: 0,
-        currentMultiplier: 1.0,
-        rebirthRecords: [],
-        accelerationDaysLeft: 0,
-        completedRebirthQuests: [],
-        rebirthQuestProgress: {},
-      },
+      rebirth,
       version: PRESTIGE_SAVE_VERSION,
     };
   }
