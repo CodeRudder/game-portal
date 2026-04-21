@@ -2,13 +2,19 @@
  * 任务系统面板 — 每日/主线/支线任务、活跃度里程碑、一键领取
  *
  * 读取引擎 QuestSystem 数据。
+ * 已迁移至 SharedPanel 统一弹窗容器。
  *
  * @module panels/quest/QuestPanel
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 interface QuestPanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
 type QTab = 'daily' | 'main' | 'side';
@@ -18,7 +24,7 @@ const TABS: { id: QTab; label: string; icon: string }[] = [
   { id: 'side', label: '支线', icon: '📜' },
 ];
 
-export default function QuestPanel({ engine }: QuestPanelProps) {
+export default function QuestPanel({ engine, visible = true, onClose }: QuestPanelProps) {
   const [tab, setTab] = useState<QTab>('daily');
   const [message, setMessage] = useState<string | null>(null);
 
@@ -61,6 +67,7 @@ export default function QuestPanel({ engine }: QuestPanelProps) {
   }, [qs, flash]);
 
   return (
+    <SharedPanel visible={visible} title="任务" icon="📋" onClose={onClose} width="520px">
     <div style={s.wrap}>
       {message && <div style={s.toast}>{message}</div>}
       {/* 活跃度 */}
@@ -115,6 +122,7 @@ export default function QuestPanel({ engine }: QuestPanelProps) {
       })}
       {quests.length === 0 && <div style={s.empty}>暂无{TABS.find(t => t.id === tab)?.label ?? ''}任务</div>}
     </div>
+    </SharedPanel>
   );
 }
 

@@ -2,13 +2,19 @@
  * 成就系统面板 — 5维度成就(战斗/建设/收集/社交/转生)、进度、奖励领取
  *
  * 读取引擎 AchievementSystem 数据。
+ * 已迁移至 SharedPanel 统一弹窗容器。
  *
  * @module panels/achievement/AchievementPanel
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 interface AchievementPanelProps {
   engine: any;
+  /** 是否显示面板 */
+  visible?: boolean;
+  /** 关闭回调 */
+  onClose?: () => void;
 }
 
 type Dim = 'battle' | 'building' | 'collection' | 'social' | 'rebirth';
@@ -20,7 +26,7 @@ const DIMS: { id: Dim; label: string; icon: string }[] = [
   { id: 'rebirth', label: '转生', icon: '🔄' },
 ];
 
-export default function AchievementPanel({ engine }: AchievementPanelProps) {
+export default function AchievementPanel({ engine, visible = true, onClose }: AchievementPanelProps) {
   const [tab, setTab] = useState<Dim>('battle');
   const [message, setMessage] = useState<string | null>(null);
 
@@ -38,6 +44,7 @@ export default function AchievementPanel({ engine }: AchievementPanelProps) {
   }, [ach, flash]);
 
   return (
+    <SharedPanel visible={visible} title="成就" icon="🏆" onClose={onClose} width="520px">
     <div style={s.wrap}>
       {message && <div style={s.toast}>{message}</div>}
       {/* 总览 */}
@@ -85,6 +92,7 @@ export default function AchievementPanel({ engine }: AchievementPanelProps) {
       })}
       {achievements.length === 0 && <div style={s.empty}>暂无成就</div>}
     </div>
+    </SharedPanel>
   );
 }
 

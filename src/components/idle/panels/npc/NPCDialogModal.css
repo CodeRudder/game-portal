@@ -68,7 +68,7 @@
 .tk-dialog-speaker-name {
   font-size: 15px;
   font-weight: 600;
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
 }
 
 .tk-dialog-close {
@@ -76,12 +76,12 @@
   border: none;
   cursor: pointer;
   padding: 4px 8px;
-  color: #a0a0a0;
+  color: var(--tk-text-secondary);
   font-size: 14px;
   border-radius: 4px;
 }
 
-.tk-dialog-close:hover { color: #f0e6d3; background: rgba(255, 255, 255, 0.08); }
+.tk-dialog-close:hover { color: var(--tk-text-primary); background: rgba(255, 255, 255, 0.08); }
 
 /* ── 内容区 ── */
 
@@ -107,12 +107,12 @@
   margin: 0;
   font-size: 14px;
   line-height: 1.7;
-  color: #e0d8c8;
+  color: var(--tk-text-primary);
 }
 
 .tk-dialog-cursor {
   display: inline-block;
-  color: #c9a84c;
+  color: var(--tk-gold);
   animation: tk-cursor-blink 600ms infinite;
 }
 
@@ -129,7 +129,7 @@
   align-items: center;
   gap: 8px;
   padding: 24px;
-  color: #a0a0a0;
+  color: var(--tk-text-secondary);
 }
 
 .tk-dialog-ended-icon { font-size: 32px; }
@@ -165,8 +165,7 @@
   cursor: pointer;
   transition: all 200ms;
   text-align: left;
-  color: #e0d8c8;
-  font-size: 13px;
+  color: var(--tk-text-primary);
 }
 
 .tk-dialog-option-btn:hover {
@@ -187,8 +186,7 @@
   padding: 2px 6px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  color: #a0a0a0;
-  white-space: nowrap;
+  color: var(--tk-text-secondary);
 }
 
 /* ── 底部 ── */
@@ -206,7 +204,7 @@
   background: rgba(200, 168, 76, 0.15);
   border: 1px solid rgba(200, 168, 76, 0.3);
   border-radius: 6px;
-  color: #e8d48b;
+  color: var(--tk-gold-light);
   font-size: 14px;
   cursor: pointer;
   transition: all 200ms;

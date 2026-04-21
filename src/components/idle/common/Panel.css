@@ -17,8 +17,8 @@
 }
 
 .tk-panel {
-  background: rgba(26, 35, 50, 0.95);
-  border: 1px solid rgba(200, 168, 76, 0.4);
+  background: var(--tk-panel-bg);
+  border: 1px solid var(--tk-border);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -58,7 +58,7 @@
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #f0e6d3;
+  color: var(--tk-text-primary);
 }
 
 .tk-panel-collapse-btn {
@@ -66,11 +66,11 @@
   border: none;
   cursor: pointer;
   padding: 2px 4px;
-  color: #a0a0a0;
+  color: var(--tk-text-secondary);
   font-size: 12px;
 }
 
-.tk-panel-collapse-btn:hover { color: #f0e6d3; }
+.tk-panel-collapse-btn:hover { color: var(--tk-text-primary); }
 
 .tk-panel-collapse-icon {
   display: inline-block;
@@ -84,12 +84,12 @@
   border: none;
   cursor: pointer;
   padding: 4px 8px;
-  color: #a0a0a0;
+  color: var(--tk-text-secondary);
   font-size: 14px;
   border-radius: 4px;
 }
 
-.tk-panel-close-btn:hover { color: #f0e6d3; background: rgba(255,255,255,0.08); }
+.tk-panel-close-btn:hover { color: var(--tk-text-primary); background: rgba(255,255,255,0.08); }
 
 .tk-panel-content {
   flex: 1;
