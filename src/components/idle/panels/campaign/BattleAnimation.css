@@ -354,7 +354,7 @@
    手机端动画适配
    ═══════════════════════════════════════════ */
 
-@media (max-width: 480px) {
+@media (max-width: 767px) {
   .tk-bs-end-text {
     font-size: 24px;
     letter-spacing: 4px;

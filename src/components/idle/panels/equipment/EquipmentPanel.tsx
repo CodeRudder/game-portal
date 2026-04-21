@@ -44,6 +44,9 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
   const [slotFilter, setSlotFilter] = useState<EquipmentSlot | null>(null);
   const [sortMode, setSortMode] = useState<BagSortMode>('rarity_desc');
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const flash = useCallback((msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500); }, []);
 
   // 获取装备系统
   const eqSystem = engine?.getEquipmentSystem?.() ?? engine?.equipment;
@@ -85,10 +88,10 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
   const handleDecompose = useCallback((uid: string) => {
     const result = eqSystem?.decompose?.(uid);
     if (result && !result.success) {
-      alert(result.reason ?? '分解失败');
+      flash(result.reason ?? '分解失败');
     }
     setSelectedUid(null);
-  }, [eqSystem]);
+  }, [eqSystem, flash]);
 
   return (
     <div style={styles.container}>
@@ -97,6 +100,9 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
         <span style={styles.title}>🎒 装备背包</span>
         <span style={styles.capacity}>{bagUsed}/{bagCapacity}</span>
       </div>
+
+      {/* 消息提示 */}
+      {toast && <div style={styles.toast}>{toast}</div>}
 
       {/* 筛选栏 */}
       <div style={styles.filterBar}>
@@ -204,7 +210,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
                       : result.outcome === 'downgrade'
                         ? `强化降级 → +${result.currentLevel}`
                         : `强化失败（+${result.currentLevel}）`;
-                    alert(label);
+                    flash(label);
                   }
                   setSelectedUid(null);
                 }}
@@ -217,7 +223,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
                     const forgeSys = engine?.getEquipmentForgeSystem?.() ?? engine?.equipmentForge;
                     if (!forgeSys) return;
                     const result = forgeSys.basicForge?.();
-                    alert(result?.success ? `锻造成功: ${result.equipment?.name ?? '新装备'}` : '锻造失败');
+                    flash(result?.success ? `锻造成功: ${result.equipment?.name ?? '新装备'}` : '锻造失败');
                     setSelectedUid(null);
                   }}
                 >🔥 锻造</button>
@@ -242,6 +248,10 @@ const styles: Record<string, React.CSSProperties> = {
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 16, fontWeight: 600, color: '#d4a574' },
   capacity: { fontSize: 12, color: '#a0a0a0' },
+  toast: {
+    padding: '6px 12px', marginBottom: 8, borderRadius: 6,
+    background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center',
+  },
   filterBar: { marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 6 },
   filterGroup: { display: 'flex', gap: 4, flexWrap: 'wrap' },
   filterBtn: {

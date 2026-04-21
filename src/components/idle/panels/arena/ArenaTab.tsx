@@ -75,8 +75,11 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion }) => {
   const handleChallenge = useCallback((oppId: string) => {
     if (!ps || ps.dailyChallengesLeft <= 0) return flash('今日挑战次数已用完');
     try {
-      const result = arenaSys?.executeBattle?.(oppId) ??
-        { victory: Math.random() > 0.5, scoreChange: Math.floor(Math.random() * 30) + 10 };
+      if (!arenaSys?.executeBattle) {
+        flash('竞技场系统维护中，请稍后再试');
+        return;
+      }
+      const result = arenaSys.executeBattle(oppId);
       setBattleResult(result);
     } catch (e: any) {
       flash(e?.message ?? '挑战失败');

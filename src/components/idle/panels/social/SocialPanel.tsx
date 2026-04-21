@@ -19,6 +19,93 @@ const TABS: { id: SocialTab; label: string; icon: string }[] = [
   { id: 'rank', label: '排行', icon: '🏆' },
 ];
 
+/** 聊天子面板 */
+function ChatSection({ engine, friendSystem, socialState }: { engine: any; friendSystem: any; socialState: any }) {
+  const [chatInput, setChatInput] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
+
+  const chatSystem = engine?.getChatSystem?.() ?? engine?.chatSystem;
+  const messages: any[] = useMemo(() => {
+    if (!chatSystem || !socialState) return [];
+    try { return chatSystem.getMessages(socialState, 'WORLD') ?? []; } catch { return []; }
+  }, [chatSystem, socialState]);
+
+  const handleSend = useCallback(() => {
+    if (!chatInput.trim()) return;
+    try {
+      if (chatSystem?.sendMessage) {
+        chatSystem.sendMessage(socialState, 'WORLD', 'player', '玩家', chatInput.trim(), Date.now());
+        setMessage('✅ 发送成功');
+      } else {
+        setMessage('⚠️ 聊天系统暂未开放');
+      }
+    } catch (e: any) {
+      setMessage(e?.message ?? '发送失败');
+    }
+    setChatInput('');
+    setTimeout(() => setMessage(null), 2000);
+  }, [chatInput, chatSystem, socialState]);
+
+  return (
+    <div style={styles.chatContainer}>
+      {message && <div style={styles.toast}>{message}</div>}
+      <div style={styles.chatMessages}>
+        {messages.slice(-20).map((m: any) => (
+          <div key={m.id} style={styles.chatMsg}>
+            <span style={styles.chatSender}>{m.senderName ?? '未知'}</span>
+            <span style={styles.chatContent}>{m.content}</span>
+          </div>
+        ))}
+        {messages.length === 0 && <div style={styles.empty}>暂无消息</div>}
+      </div>
+      <div style={styles.chatInputRow}>
+        <input
+          style={styles.chatInput}
+          value={chatInput}
+          onChange={e => setChatInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSend()}
+          placeholder="输入消息..."
+        />
+        <button style={styles.chatSendBtn} onClick={handleSend}>发送</button>
+      </div>
+    </div>
+  );
+}
+
+/** 排行榜子面板 */
+function RankSection({ engine }: { engine: any }) {
+  const leaderboardSystem = engine?.getLeaderboardSystem?.() ?? engine?.leaderboardSystem;
+  const top10: any[] = useMemo(() => {
+    if (!leaderboardSystem?.getTopN) return [];
+    try { return leaderboardSystem.getTopN('power', 10); } catch { return []; }
+  }, [leaderboardSystem]);
+
+  if (!leaderboardSystem) {
+    return <div style={styles.empty}><div style={{ fontSize: 32, marginBottom: 8 }}>🏆</div>排行榜系统暂未开放</div>;
+  }
+
+  return (
+    <div style={styles.rankList}>
+      {top10.map((entry: any) => (
+        <div key={entry.playerId} style={{
+          ...styles.rankItem,
+          background: entry.rank <= 3 ? 'rgba(212,165,116,0.1)' : 'rgba(255,255,255,0.03)',
+        }}>
+          <span style={{
+            ...styles.rankNum,
+            color: entry.rank === 1 ? '#FFD700' : entry.rank === 2 ? '#C0C0C0' : entry.rank === 3 ? '#CD7F32' : '#888',
+          }}>
+            {entry.rank <= 3 ? ['🥇','🥈','🥉'][entry.rank - 1] : `#${entry.rank}`}
+          </span>
+          <span style={styles.rankName}>{entry.playerName ?? entry.playerId}</span>
+          <span style={styles.rankScore}>{(entry.score ?? 0).toLocaleString()}</span>
+        </div>
+      ))}
+      {top10.length === 0 && <div style={styles.empty}>暂无排行数据</div>}
+    </div>
+  );
+}
+
 export default function SocialPanel({ engine }: SocialPanelProps) {
   const [tab, setTab] = useState<SocialTab>('friends');
   const [message, setMessage] = useState<string | null>(null);
@@ -117,20 +204,12 @@ export default function SocialPanel({ engine }: SocialPanelProps) {
 
       {/* 聊天 */}
       {tab === 'chat' && (
-        <div style={styles.empty}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
-          聊天功能开发中
-          {/* TODO: 对接 ChatSystem */}
-        </div>
+        <ChatSection engine={engine} friendSystem={friendSystem} socialState={socialState} />
       )}
 
       {/* 排行榜 */}
       {tab === 'rank' && (
-        <div style={styles.empty}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>🏆</div>
-          排行榜功能开发中
-          {/* TODO: 对接 LeaderboardSystem */}
-        </div>
+        <RankSection engine={engine} />
       )}
     </div>
   );
@@ -172,4 +251,26 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   empty: { textAlign: 'center', padding: 30, color: '#666', fontSize: 13 },
+  chatContainer: { display: 'flex', flexDirection: 'column', height: '50vh' },
+  chatMessages: { flex: 1, overflowY: 'auto', marginBottom: 8, padding: 4 },
+  chatMsg: { padding: '4px 0', fontSize: 12, display: 'flex', gap: 6 },
+  chatSender: { color: '#d4a574', fontWeight: 600, whiteSpace: 'nowrap' },
+  chatContent: { color: '#e8e0d0', wordBreak: 'break-all' },
+  chatInputRow: { display: 'flex', gap: 6 },
+  chatInput: {
+    flex: 1, padding: '6px 10', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.06)', color: '#e8e0d0', fontSize: 12, outline: 'none',
+  },
+  chatSendBtn: {
+    padding: '6px 14', borderRadius: 6, border: '1px solid rgba(212,165,116,0.3)',
+    background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 12, cursor: 'pointer',
+  },
+  rankList: { display: 'flex', flexDirection: 'column', gap: 4 },
+  rankItem: {
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '8px 10', borderRadius: 6, border: '1px solid rgba(255,255,255,0.06)',
+  },
+  rankNum: { width: 32, fontSize: 16, textAlign: 'center' },
+  rankName: { flex: 1, fontSize: 13, fontWeight: 600 },
+  rankScore: { fontSize: 12, color: '#a0a0a0' },
 };

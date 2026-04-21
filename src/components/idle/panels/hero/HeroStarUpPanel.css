@@ -153,7 +153,7 @@
 }
 
 /* 手机端适配（≤480px） */
-@media (max-width: 480px) {
+@media (max-width: 767px) {
   .tk-star-panel { gap: 12px; }
   .tk-star-display { padding: 10px; gap: 4px; }
   .tk-star-display-star { font-size: 20px; }

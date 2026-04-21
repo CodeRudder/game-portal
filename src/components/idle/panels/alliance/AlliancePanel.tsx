@@ -16,6 +16,8 @@ type AllianceTab = 'info' | 'members' | 'tasks';
 export default function AlliancePanel({ engine }: AlliancePanelProps) {
   const [tab, setTab] = useState<AllianceTab>('info');
   const [message, setMessage] = useState<string | null>(null);
+  const [allianceName, setAllianceName] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const allianceSystem = engine?.getAllianceSystem?.() ?? engine?.alliance;
   const taskSystem = engine?.getAllianceTaskSystem?.() ?? engine?.allianceTask;
@@ -29,19 +31,53 @@ export default function AlliancePanel({ engine }: AlliancePanelProps) {
   const flash = useCallback((msg: string) => { setMessage(msg); setTimeout(() => setMessage(null), 2500); }, []);
 
   const handleCreate = useCallback(() => {
-    const name = prompt('输入联盟名称（2-8字）:');
-    if (!name) return;
-    // TODO: 调用引擎创建联盟 — 需传入 playerId/playerName
-    flash(`联盟「${name}」创建成功！`);
-  }, [flash]);
+    const name = allianceName.trim();
+    if (!name || name.length < 2 || name.length > 8) {
+      flash('联盟名称需2-8个字');
+      return;
+    }
+    if (!allianceSystem?.createAlliance) {
+      flash('联盟系统暂未开放');
+      return;
+    }
+    try {
+      const result = allianceSystem.createAlliance(name);
+      if (result?.success) {
+        flash(`联盟「${name}」创建成功！`);
+        setShowCreateForm(false);
+        setAllianceName('');
+      } else {
+        flash(result?.reason ?? '创建失败');
+      }
+    } catch (e: any) {
+      flash(e?.message ?? '创建失败');
+    }
+  }, [allianceName, allianceSystem, flash]);
 
   if (!isInAlliance) {
     return (
       <div style={s.wrap}>
+        {message && <div style={s.toast}>{message}</div>}
         <div style={s.empty}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🏰</div>
           <div style={{ color: '#a0a0a0', marginBottom: 16 }}>你尚未加入联盟</div>
-          <button style={s.btn} onClick={handleCreate}>创建联盟</button>
+          {!showCreateForm ? (
+            <button style={s.btn} onClick={() => setShowCreateForm(true)}>创建联盟</button>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <input
+                style={s.input}
+                value={allianceName}
+                onChange={e => setAllianceName(e.target.value)}
+                placeholder="输入联盟名称（2-8字）"
+                maxLength={8}
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button style={s.btn} onClick={handleCreate}>确认创建</button>
+                <button style={{ ...s.btn, background: 'transparent' }} onClick={() => setShowCreateForm(false)}>取消</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -104,6 +140,10 @@ const s: Record<string, React.CSSProperties> = {
   empty: { padding: '40px 20px', textAlign: 'center' },
   emptySmall: { textAlign: 'center', padding: 20, color: '#666', fontSize: 13 },
   btn: { padding: '10px 24px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 8, background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 14, cursor: 'pointer' },
+  input: {
+    padding: '8px 12px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 6,
+    background: 'rgba(255,255,255,0.06)', color: '#e8e0d0', fontSize: 14, width: 200, outline: 'none',
+  },
   toast: { padding: '8px 12px', marginBottom: 8, borderRadius: 6, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
   header: { padding: 12, marginBottom: 12, borderRadius: 8, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)' },
   name: { fontSize: 18, fontWeight: 600, color: '#d4a574' },

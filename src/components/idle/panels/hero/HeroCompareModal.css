@@ -95,3 +95,56 @@
 .tk-compare-power-label { font-size: 13px; color: rgba(240, 230, 211, 0.6); }
 .tk-compare-power-value { font-size: 16px; font-weight: 700; color: #C9A84C; }
 .tk-compare-power-vs { font-size: 14px; color: rgba(240, 230, 211, 0.4); }
+
+/* ═══════════════════════════════════════════
+   手机端响应式
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-compare-modal {
+    width: 95%;
+    max-width: 100%;
+    padding: 16px 12px;
+    border-radius: 12px 12px 0 0;
+    max-height: 90vh;
+  }
+  .tk-compare-overlay {
+    align-items: flex-end;
+  }
+  .tk-compare-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  .tk-compare-content {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .tk-compare-vs {
+    font-size: 16px;
+  }
+  .tk-compare-hero {
+    width: 100%;
+    padding: 10px 8px;
+  }
+  .tk-compare-stat-bars {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tk-compare-stat-side {
+    width: 100%;
+  }
+  .tk-compare-stat-side--base {
+    flex-direction: row;
+  }
+  .tk-compare-selector {
+    flex-wrap: wrap;
+  }
+  .tk-compare-select {
+    min-width: 0;
+  }
+  .tk-compare-power-row {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+  }
+}

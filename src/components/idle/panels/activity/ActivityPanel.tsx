@@ -18,6 +18,35 @@ export default function ActivityPanel({ engine }: ActivityPanelProps) {
   const activitySystem = engine?.getActivitySystem?.() ?? engine?.activity;
   const state = activitySystem?.getState?.();
 
+  // 签到系统 — 优先尝试 SignInSystem，降级到 ActivitySystem 内置 signIn 状态
+  const signInSystem = engine?.getSignInSystem?.() ?? engine?.signInSystem;
+  const signIn = state?.signIn;
+  const consecutiveDays = signIn?.consecutiveDays ?? 0;
+  const todaySigned = signIn?.todaySigned ?? false;
+
+  // 签到操作
+  const handleSignIn = useCallback(() => {
+    try {
+      // 优先调用 SignInSystem
+      if (signInSystem?.signIn) {
+        const data = signInSystem.getState?.() ?? signIn;
+        const result = signInSystem.signIn(data, Date.now());
+        if (result?.reward) {
+          const r = result.reward;
+          setMessage(`🎉 签到成功！连续${result.data.consecutiveDays}天 · 获得${r.gold ?? 0}金币 ${r.copper ?? 0}铜钱`);
+        }
+      } else if (activitySystem?.claimDailyReward) {
+        const result = activitySystem.claimDailyReward(state);
+        setMessage(result ? '🎉 签到成功！' : '签到失败');
+      } else {
+        setMessage('⚠️ 活动系统暂未开放');
+      }
+    } catch (e: any) {
+      setMessage(e?.message ?? '签到失败');
+    }
+    setTimeout(() => setMessage(null), 2500);
+  }, [signInSystem, activitySystem, state, signIn]);
+
   // 活跃活动
   const activities = useMemo(() => {
     if (!state?.activities) return [];
@@ -25,11 +54,6 @@ export default function ActivityPanel({ engine }: ActivityPanelProps) {
       .filter(([, a]: [string, any]) => a.status === 'ACTIVE')
       .map(([id, a]: [string, any]) => ({ id, ...a }));
   }, [state]);
-
-  // 签到状态
-  const signIn = state?.signIn;
-  const consecutiveDays = signIn?.consecutiveDays ?? 0;
-  const todaySigned = signIn?.todaySigned ?? false;
 
   // 选中的活动
   const selectedActivity = selectedActivityId
@@ -74,6 +98,7 @@ export default function ActivityPanel({ engine }: ActivityPanelProps) {
           <button
             style={{ ...styles.signInBtn, ...(todaySigned ? styles.signInBtnDone : {}) }}
             disabled={todaySigned}
+            onClick={handleSignIn}
           >
             {todaySigned ? '✅ 今日已签' : '签到'}
           </button>

@@ -177,7 +177,7 @@
 .tk-hero-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(4, 160px);
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
   gap: 16px;
   justify-content: center;
   align-content: start;

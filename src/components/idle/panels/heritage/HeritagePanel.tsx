@@ -91,19 +91,38 @@ export default function HeritagePanel({ engine }: HeritagePanelProps) {
 
       {/* 传承Tab内容 */}
       {(tab === 'hero' || tab === 'equipment' || tab === 'experience') && (
-        <div style={styles.placeholder}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>
-            {tab === 'hero' ? '⚔️' : tab === 'equipment' ? '🛡️' : '✨'}
+        <div style={styles.heritageSection}>
+          <div style={styles.placeholder}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>
+              {tab === 'hero' ? '⚔️' : tab === 'equipment' ? '🛡️' : '✨'}
+            </div>
+            <div style={{ color: '#a0a0a0', marginBottom: 8 }}>
+              {tab === 'hero' ? '选择源武将和目标武将进行传承' :
+                tab === 'equipment' ? '选择源装备和目标装备进行传承' :
+                  '选择源武将和目标武将进行经验传承'}
+            </div>
+            <div style={{ color: '#666', fontSize: 12 }}>
+              请在武将/装备面板中选择传承对象
+            </div>
           </div>
-          <div style={{ color: '#a0a0a0', marginBottom: 8 }}>
-            {tab === 'hero' ? '选择源武将和目标武将进行传承' :
-              tab === 'equipment' ? '选择源装备和目标装备进行传承' :
-                '选择源武将和目标武将进行经验传承'}
-          </div>
-          {/* TODO: 完整的传承操作UI — 需要选择源/目标武将或装备 */}
-          <div style={{ color: '#666', fontSize: 12 }}>
-            请在武将/装备面板中选择传承对象
-          </div>
+
+          {/* 传承历史 */}
+          {(state?.heritageHistory?.length ?? 0) > 0 && (
+            <div style={styles.historySection}>
+              <div style={styles.sectionHeader}>📜 传承记录（最近3次）</div>
+              {state.heritageHistory.slice(-3).reverse().map((rec: any, idx: number) => (
+                <div key={idx} style={styles.historyItem}>
+                  <span>
+                    {rec.type === 'hero' ? '⚔️' : rec.type === 'equipment' ? '🛡️' : '✨'}
+                    {' '}{rec.sourceId} → {rec.targetId}
+                  </span>
+                  <span style={{ fontSize: 11, color: '#888' }}>
+                    效率{((rec.efficiency ?? 0) * 100).toFixed(0)}% · 花费{rec.copperCost ?? 0}铜
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -179,6 +198,15 @@ const styles: Record<string, React.CSSProperties> = {
   placeholder: {
     padding: 30, textAlign: 'center', borderRadius: 8,
     background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.08)',
+  },
+  heritageSection: { display: 'flex', flexDirection: 'column', gap: 8 },
+  historySection: {
+    padding: 10, borderRadius: 8,
+    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+  },
+  historyItem: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '6px 8', marginBottom: 3, background: 'rgba(255,255,255,0.02)', borderRadius: 4, fontSize: 12,
   },
   accelSection: { display: 'flex', flexDirection: 'column', gap: 8 },
   accelCard: {

@@ -137,7 +137,7 @@
 }
 
 /* 手机端适配（≤480px）— 纵向滚动 */
-@media (max-width: 480px) {
+@media (max-width: 767px) {
   .tk-campaign-tab { padding: 8px 10px; }
   .tk-chapter-selector { gap: 10px; padding: 6px 0 8px; }
   .tk-chapter-arrow { width: 28px; height: 28px; font-size: 12px; }

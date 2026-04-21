@@ -96,7 +96,7 @@
   overflow-y: auto;
   padding: 16px;
   transition: max-height 250ms ease-out, opacity 200ms ease-out;
-  max-height: 800px;
+  max-height: min(800px, 80vh);
 }
 
 .tk-panel-content--hidden {

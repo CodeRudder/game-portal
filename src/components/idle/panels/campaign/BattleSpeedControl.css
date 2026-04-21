@@ -96,7 +96,7 @@
 }
 
 /* ── 手机端适配（≤480px） ── */
-@media (max-width: 480px) {
+@media (max-width: 767px) {
   .tk-speed-control {
     gap: 2px;
     padding: 3px;

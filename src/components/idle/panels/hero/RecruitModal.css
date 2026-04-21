@@ -116,7 +116,6 @@
   display: grid; grid-template-columns: repeat(5, 1fr);
   gap: 8px; max-height: 280px; overflow-y: auto;
 }
-.tk-recruit-results-header {
   display: flex; align-items: center; justify-content: space-between;
   font-size: 14px; font-weight: 600; color: var(--tk-gold-light); margin-bottom: 10px;
 }
@@ -129,13 +128,6 @@
   color: #a0a0a0; font-size: 14px; padding: 2px 6px; border-radius: 3px;
 }
 .tk-recruit-results-close:hover { color: #f0e6d3; }
-.tk-recruit-results-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  max-height: 280px;
-  overflow-y: auto;
-}
 
 /* 结果卡片 */
 .tk-recruit-result-card {

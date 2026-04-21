@@ -132,12 +132,38 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
   const handleSweep = useCallback(
     (stage: Stage) => {
       try {
-        const result = engine.startBattle(stage.id);
-        if (result.outcome === BattleOutcome.VICTORY) {
-          engine.completeBattle(stage.id, result.stars as number);
+        // 优先调用 SweepSystem 扫荡 API
+        const sweepSystem = engine.getSweepSystem?.();
+        if (sweepSystem?.sweep) {
+          const batchResult = sweepSystem.sweep(stage.id, 1);
+          if (!batchResult.success) {
+            console.warn('扫荡失败:', batchResult.failureReason ?? '未知原因');
+            return;
+          }
+          // 将 SweepBatchResult 转换为 BattleResult 格式以复用弹窗
+          const result: BattleResult = {
+            outcome: BattleOutcome.VICTORY,
+            stars: 3 as any,
+            totalTurns: 0,
+            allySurvivors: 0,
+            enemySurvivors: 0,
+            allyTotalDamage: 0,
+            enemyTotalDamage: 0,
+            maxSingleDamage: 0,
+            maxCombo: 0,
+            summary: `扫荡成功！消耗${batchResult.ticketsUsed}扫荡令，获得${batchResult.totalExp}经验`,
+          };
+          setSweepResult(result);
+          setSweepStage(stage);
+        } else {
+          // 降级：走普通战斗流程
+          const result = engine.startBattle(stage.id);
+          if (result.outcome === BattleOutcome.VICTORY) {
+            engine.completeBattle(stage.id, result.stars as number);
+          }
+          setSweepResult(result);
+          setSweepStage(stage);
         }
-        setSweepResult(result);
-        setSweepStage(stage);
       } catch (e) {
         console.error('扫荡失败:', e);
       }

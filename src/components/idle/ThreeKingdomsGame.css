@@ -495,8 +495,7 @@
 /* 弹窗内容滚动支持 */
 .tk-modal-content,
 .tk-modal .modal-content,
-[class*="modal"] [class*="content"],
-[style*="position: fixed"] > div {
+.tk-modal-scroll-content {
   max-height: 80vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;

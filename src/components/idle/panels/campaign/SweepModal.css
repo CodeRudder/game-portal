@@ -188,7 +188,7 @@
 .tk-sweep-btn--confirm:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* 手机端适配（≤480px）— Bottom Sheet */
-@media (max-width: 480px) {
+@media (max-width: 767px) {
   .tk-sweep-overlay { align-items: flex-end; }
   .tk-sweep-modal {
     width: 100vw; max-width: 100vw; max-height: 70vh;
