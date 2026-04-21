@@ -148,3 +148,9 @@
     padding: 10px;
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-compare-close:active {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

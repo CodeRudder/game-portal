@@ -276,3 +276,9 @@
     padding: 6px;
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-tech-research-action-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

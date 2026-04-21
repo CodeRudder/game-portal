@@ -482,3 +482,9 @@
     width: 480px;
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-bfm-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

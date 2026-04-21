@@ -447,3 +447,9 @@
     font-size: 13px;
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-tech-detail-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

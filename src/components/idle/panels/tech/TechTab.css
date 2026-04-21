@@ -486,3 +486,10 @@
     height: 8px;
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-tech-path-tab:active:not(:disabled),
+.tk-tech-node:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

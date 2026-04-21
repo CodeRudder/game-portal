@@ -157,3 +157,12 @@
   .tk-campaign-progress { padding: 8px 0 2px; }
   .tk-campaign-progress-text { font-size: 11px; }
 }
+
+/* 按钮 active 反馈 */
+.tk-chapter-arrow:active:not(:disabled),
+.tk-map-scroll-btn:active:not(:disabled),
+.tk-stage-node:active:not(.tk-stage-node--locked),
+.tk-stage-sweep-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

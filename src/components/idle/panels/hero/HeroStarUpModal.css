@@ -479,3 +479,11 @@
     font-size: 13px;
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-starup-close:active,
+.tk-starup-source-tag:active,
+.tk-starup-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

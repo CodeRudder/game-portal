@@ -277,3 +277,13 @@
     font-size: 11px;
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-formation-create-btn:active:not(:disabled),
+.tk-formation-activate-btn:active:not(:disabled),
+.tk-formation-edit-btn:active:not(:disabled),
+.tk-formation-delete-btn:active:not(:disabled),
+.tk-formation-add-hero:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

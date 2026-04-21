@@ -227,3 +227,10 @@
   .tk-npcinfo-actions { flex-direction: column; }
   .tk-npcinfo-action-btn { min-width: auto; }
 }
+
+/* 按钮 active 反馈 */
+.tk-npcinfo-close:active,
+.tk-npcinfo-action-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

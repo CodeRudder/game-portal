@@ -210,3 +210,12 @@
 @media (min-width: 481px) and (max-width: 768px) {
   .tk-sweep-modal { width: 380px; }
 }
+
+/* 按钮 active 反馈 */
+.tk-sweep-close-btn:active,
+.tk-sweep-count-btn:active:not(:disabled),
+.tk-sweep-max-btn:active:not(:disabled),
+.tk-sweep-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

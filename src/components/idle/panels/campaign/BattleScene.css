@@ -442,3 +442,10 @@
   .tk-bs-unit-avatar { width: 34px; height: 34px; font-size: 14px; }
   .tk-bs-unit-name { font-size: 9px; }
 }
+
+/* 按钮 active 反馈 */
+.tk-bs-speed-btn:active,
+.tk-bs-skip-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

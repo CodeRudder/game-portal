@@ -108,3 +108,10 @@
 
 .tk-panel-content::-webkit-scrollbar { width: 5px; }
 .tk-panel-content::-webkit-scrollbar-thumb { background: rgba(200,168,76,0.25); border-radius: 3px; }
+
+/* 按钮 active 反馈 */
+.tk-panel-collapse-btn:active,
+.tk-panel-close-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

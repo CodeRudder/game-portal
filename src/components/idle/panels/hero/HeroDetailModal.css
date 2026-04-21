@@ -486,3 +486,12 @@
   .tk-hero-detail-radar-wrap { padding: 0; }
   .tk-hero-radar { width: 160px; height: 160px; }
 }
+
+/* 按钮 active 反馈 */
+.tk-hero-detail-close:active,
+.tk-hero-detail-synthesize-btn:active:not(:disabled),
+.tk-hero-detail-enhance-max-btn:active:not(:disabled),
+.tk-hero-detail-enhance-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

@@ -506,3 +506,13 @@
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* 通用按钮交互 */
+.tk-btn:hover { filter: brightness(1.1); }
+.tk-btn:active { transform: scale(0.97); transition: transform 0.1s; }
+
+/* 全局按钮 active 反馈（所有 tk- 命名空间的按钮） */
+button[class*="tk-"]:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

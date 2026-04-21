@@ -206,6 +206,14 @@
   cursor: not-allowed;
 }
 
+/* 按钮 active 反馈 */
+.tk-sweep-count-btn:active:not(:disabled),
+.tk-sweep-max-btn:active:not(:disabled),
+.tk-sweep-panel-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}
+
 .tk-sweep-count-display {
   min-width: 48px;
   text-align: center;

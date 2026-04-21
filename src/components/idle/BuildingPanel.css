@@ -169,6 +169,11 @@
   background: rgba(39, 174, 96, 0.15);
 }
 
+.btn-upgrade:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}
+
 .btn-detail {
   font-size: 11px;
   padding: 3px 10px;
@@ -181,6 +186,11 @@
 
 .btn-detail:hover {
   border-color: #c8a96e;
+}
+
+.btn-detail:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
 }
 
 .locked-overlay {

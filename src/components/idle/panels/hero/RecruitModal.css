@@ -414,3 +414,13 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-recruit-close:active,
+.tk-recruit-type-btn:active:not(:disabled),
+.tk-recruit-btn:active:not(:disabled),
+.tk-recruit-results-close:active,
+.tk-recruit-history-toggle:active {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

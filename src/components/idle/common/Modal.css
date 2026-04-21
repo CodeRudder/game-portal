@@ -143,3 +143,10 @@
   .tk-modal-actions { flex-direction: column-reverse; gap: 8px; }
   .tk-modal-btn { width: 100%; text-align: center; }
 }
+
+/* 按钮 active 反馈 */
+.tk-modal-close:active,
+.tk-modal-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

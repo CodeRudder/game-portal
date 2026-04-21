@@ -313,3 +313,13 @@
     padding-top: 10px;
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-hero-sub-tab:active:not(:disabled),
+.tk-hero-filter-btn:active:not(:disabled),
+.tk-hero-recruit-btn:active:not(:disabled),
+.tk-hero-compare-btn:active:not(:disabled),
+.tk-hero-empty-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

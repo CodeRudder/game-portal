@@ -231,3 +231,10 @@
   .tk-npc-filter-btn { padding: 3px 8px; font-size: 11px; }
   .tk-npc-card-actions { flex-direction: column; gap: 4px; }
 }
+
+/* 按钮 active 反馈 */
+.tk-npc-action-btn:active:not(:disabled),
+.tk-npc-filter-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

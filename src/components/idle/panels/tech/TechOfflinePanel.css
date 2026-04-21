@@ -232,3 +232,9 @@
     text-align: center;
   }
 }
+
+/* 按钮 active 反馈 */
+.tk-tech-offline-allocate-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}

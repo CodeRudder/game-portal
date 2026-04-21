@@ -26,10 +26,6 @@ import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdoms
 import type {
   EngineSnapshot,
   BuildingType,
-  Resources,
-  ProductionRate,
-  ResourceCap,
-  BuildingState,
 } from '@/games/three-kingdoms/shared/types';
 import type { Season, WeatherType } from '@/games/three-kingdoms/engine/calendar/calendar.types';
 import { SEASON_LABELS, WEATHER_LABELS } from '@/games/three-kingdoms/engine/calendar/calendar.types';
@@ -50,7 +46,6 @@ import WorldMapTab from '@/components/idle/panels/map/WorldMapTab';
 import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import EventBanner from '@/components/idle/panels/event/EventBanner';
 import RandomEncounterModal from '@/components/idle/panels/event/RandomEncounterModal';
-import { EquipmentBag, ArenaPanel, ExpeditionPanel } from '@/games/three-kingdoms/ui/components';
 import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
 import ArmyTab from '@/components/idle/panels/army/ArmyTab';
 import MailPanel from '@/components/idle/panels/mail/MailPanel';
