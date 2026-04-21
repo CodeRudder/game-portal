@@ -15,6 +15,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useGameContext } from '../../context/GameContext';
 import { useDebouncedAction } from '../../hooks/useDebouncedAction';
+import { useToast } from '../ToastProvider';
 import type {
   StarUpPreview,
   StarUpResult,
@@ -287,6 +288,7 @@ function StatsPreview({ statsDiff }: StatsPreviewProps) {
  */
 export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, className }: StarUpPanelProps) {
   const { engine, snapshot } = useGameContext();
+  const { addToast } = useToast();
   const [panelState, setPanelState] = useState<StarUpPanelState>({
     viewMode: 'starUp',
     starUpResult: null,

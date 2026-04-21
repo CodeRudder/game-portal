@@ -210,8 +210,18 @@ export function BuildingPanel({ onBuildingClick, className }: BuildingPanelProps
 
   const handleUpgrade = useCallback(
     (type: BuildingType) => {
+      // R16: 资源不足预检查
+      const check = engine.checkUpgrade(type);
+      if (!check?.canUpgrade) {
+        const reason = check?.reasons?.[0] ?? '资源不足';
+        addToast(reason, 'warning');
+        return;
+      }
       try {
         engine.upgradeBuilding(type);
+        // R16: 升级成功 Toast
+        const meta = BUILDING_META[type];
+        addToast(`${meta.label} 升级成功！`, 'success');
       } catch {
         // P0-UI-05: 升级失败时 Toast 反馈
         addToast('建筑升级失败', 'error');

@@ -12,6 +12,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useGameContext } from '../context/GameContext';
+import { useToast } from './ToastProvider';
 import type { Chapter, Stage, StageStatus } from '../../engine/campaign/campaign.types';
 import { MAX_STARS } from '../../engine/campaign/campaign.types';
 import { StarRating } from '../../engine/battle/battle.types';
@@ -158,6 +159,7 @@ function StageNode({ stage, status, stars, onClick }: StageNodeProps) {
  */
 export function CampaignMap({ onStageClick, className }: CampaignMapProps) {
   const { engine, snapshot } = useGameContext();
+  const { addToast } = useToast();
   const chapters = engine.getChapters() ?? [];
   const [selectedChapterId, setSelectedChapterId] = useState(chapters[0]?.id ?? '');
 
@@ -176,12 +178,21 @@ export function CampaignMap({ onStageClick, className }: CampaignMapProps) {
   const handleStageClick = useCallback(
     (stageId: string) => {
       try {
+        // R16: 检查关卡是否锁定
+        const currentStages = currentChapter?.stages ?? [];
+        const status = getStageStatus(stageId, stageStates, currentStages);
+        if (status === 'locked') {
+          addToast('关卡尚未解锁，请先通关前置关卡', 'warning');
+          return;
+        }
         onStageClick?.(stageId);
+        addToast('战斗开始！', 'info');
       } catch (error) {
         console.error('关卡挑战失败:', error);
+        addToast('关卡挑战失败', 'error');
       }
     },
-    [onStageClick],
+    [onStageClick, currentChapter, stageStates, addToast],
   );
 
   if (!snapshot) {

@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useDebouncedAction } from '../hooks/useDebouncedAction';
+import { useToast } from './ToastProvider';
 import {
   DIFFICULTY_LABELS,
   DIFFICULTY_STARS,
@@ -206,8 +207,10 @@ export function ExpeditionPanel({
   onStartExpedition,
   className,
 }: ExpeditionPanelProps) {
+  const { addToast } = useToast();
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [isStartingExpedition, setIsStartingExpedition] = useState(false);
 
   const selectedRoute = useMemo(
     () => routes.find((r) => r.id === selectedRouteId) ?? null,
@@ -226,10 +229,29 @@ export function ExpeditionPanel({
   }, [onRouteSelect]);
 
   const handleStart = useCallback(() => {
-    if (selectedRouteId && selectedTeamId) {
-      onStartExpedition?.(selectedRouteId, selectedTeamId);
+    if (!selectedRouteId || !selectedTeamId) {
+      // R16: 资源不足/条件不满足提示
+      if (!selectedRouteId) addToast('请先选择远征路线', 'warning');
+      if (!selectedTeamId) addToast('请先选择远征队伍', 'warning');
+      return;
     }
-  }, [selectedRouteId, selectedTeamId, onStartExpedition]);
+    // R16: 检查队伍是否已在远征中
+    const team = teams.find((t) => t.id === selectedTeamId);
+    if (team?.isExpeditioning) {
+      addToast('该队伍正在远征中', 'warning');
+      return;
+    }
+    setIsStartingExpedition(true);
+    try {
+      onStartExpedition?.(selectedRouteId, selectedTeamId);
+      addToast('远征出发！', 'success');
+    } catch (error) {
+      console.error('远征出发失败:', error);
+      addToast('远征出发失败', 'error');
+    } finally {
+      setTimeout(() => setIsStartingExpedition(false), 600);
+    }
+  }, [selectedRouteId, selectedTeamId, onStartExpedition, teams, addToast]);
 
   // P0-UI-02: 防抖包裹
   const { action: debouncedStart, isActing: isStarting } = useDebouncedAction(handleStart, 500);
@@ -314,12 +336,12 @@ export function ExpeditionPanel({
       <button
         style={{
           ...styles.startBtn,
-          opacity: selectedRouteId && selectedTeamId && !isStarting ? 1 : 0.4,
+          opacity: selectedRouteId && selectedTeamId && !isStarting && !isStartingExpedition ? 1 : 0.4,
         }}
-        disabled={!selectedRouteId || !selectedTeamId || isStarting}
+        disabled={!selectedRouteId || !selectedTeamId || isStarting || isStartingExpedition}
         onClick={debouncedStart}
       >
-        🚀 出发远征
+        {isStartingExpedition ? '出发中...' : '🚀 出发远征'}
       </button>
     </div>
   );

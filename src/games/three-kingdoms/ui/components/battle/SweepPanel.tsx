@@ -15,6 +15,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useGameContext } from '../../context/GameContext';
 import { useDebouncedAction } from '../../hooks/useDebouncedAction';
+import { useToast } from '../ToastProvider';
 import type { SweepBatchResult } from '../../../engine/campaign/sweep.types';
 import { DEFAULT_SWEEP_CONFIG } from '../../../engine/campaign/sweep.types';
 
@@ -245,6 +246,7 @@ function SweepResultDisplay({ result }: SweepResultDisplayProps) {
  */
 export function SweepPanel({ stageId, onSweepComplete, onClose, className }: SweepPanelProps) {
   const { engine, snapshot } = useGameContext();
+  const { addToast } = useToast();
   const [state, setState] = useState<SweepPanelState>({
     selectedCount: 1,
     isSweeping: false,
@@ -295,6 +297,8 @@ export function SweepPanel({ stageId, onSweepComplete, onClose, className }: Swe
 
   const handleSweep = useCallback(() => {
     if (!sweepCheck.can) {
+      // R16: 资源不足提示
+      addToast(sweepCheck.reason ?? '无法扫荡', 'warning');
       setState((prev) => ({ ...prev, error: sweepCheck.reason ?? '无法扫荡' }));
       return;
     }
@@ -305,15 +309,23 @@ export function SweepPanel({ stageId, onSweepComplete, onClose, className }: Swe
     try {
       const result = sweepSystem.sweep(stageId, state.selectedCount);
       setState((prev) => ({ ...prev, isSweeping: false, result }));
+      // R16: 扫荡结果 Toast
+      if (result.success) {
+        addToast(`扫荡完成！获得 ${result.totalExp} 经验`, 'success');
+      } else {
+        addToast(result.failureReason ?? '扫荡失败', 'error');
+      }
       onSweepComplete?.(result);
     } catch (e) {
+      const msg = e instanceof Error ? e.message : '扫荡失败';
       setState((prev) => ({
         ...prev,
         isSweeping: false,
-        error: e instanceof Error ? e.message : '扫荡失败',
+        error: msg,
       }));
+      addToast(msg, 'error');
     }
-  }, [sweepSystem, stageId, state.selectedCount, onSweepComplete]);
+  }, [sweepSystem, stageId, state.selectedCount, onSweepComplete, sweepCheck, addToast]);
 
   // P0-UI-02: 防抖包裹
   const { action: debouncedSweep, isActing: isDebouncedSweep } = useDebouncedAction(handleSweep, 500);

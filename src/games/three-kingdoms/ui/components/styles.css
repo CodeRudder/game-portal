@@ -148,3 +148,147 @@
 
 .tk-toast-info { border-left: 3px solid var(--tk-info); }
 .tk-toast-info .tk-toast__icon { background: rgba(91, 155, 213, 0.15); color: var(--tk-info); }
+
+/* ═══ 5. 按钮交互反馈 (R16) ═══ */
+
+/* ── 5.1 通用按钮 hover/active ── */
+
+/* 建筑面板升级按钮 */
+.tk-building-panel button:not([disabled]):hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+.tk-building-panel button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* 竞技场面板按钮 */
+.tk-arena-panel button:not([disabled]):hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+.tk-arena-panel button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* 装备背包按钮 */
+.tk-equipment-bag button:not([disabled]):hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+.tk-equipment-bag button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* 关卡地图按钮 */
+.tk-campaign-map button:not([disabled]):hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+.tk-campaign-map button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* 远征面板按钮 */
+.tk-expedition-panel button:not([disabled]):hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+.tk-expedition-panel button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* 扫荡面板按钮 */
+.tk-sweep-panel button:not([disabled]):hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+.tk-sweep-panel button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* 升星面板按钮 */
+.tk-star-up-panel button:not([disabled]):hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+.tk-star-up-panel button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* 科技树按钮 */
+.tk-tech-tree button:not([disabled]):hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+.tk-tech-tree button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* 武将列表按钮 */
+.tk-hero-list button:not([disabled]):hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+.tk-hero-list button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* ── 5.2 Loading 旋转动画 ── */
+
+@keyframes tk-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.tk-btn-loading {
+  position: relative;
+  pointer-events: none;
+}
+.tk-btn-loading::after {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: tk-spin 0.6s linear infinite;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ── 5.3 按钮成功闪烁 ── */
+
+@keyframes tk-btn-success-flash {
+  0% { box-shadow: 0 0 0 0 rgba(126, 200, 80, 0.5); }
+  50% { box-shadow: 0 0 8px 2px rgba(126, 200, 80, 0.3); }
+  100% { box-shadow: 0 0 0 0 rgba(126, 200, 80, 0); }
+}
+
+.tk-btn-success {
+  animation: tk-btn-success-flash 0.6s ease-out;
+}
+
+/* ── 5.4 按钮失败抖动 ── */
+
+@keyframes tk-btn-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+.tk-btn-error {
+  animation: tk-btn-shake 0.4s ease-out;
+}

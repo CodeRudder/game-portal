@@ -9,6 +9,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useDebouncedAction } from '../hooks/useDebouncedAction';
+import { useToast } from './ToastProvider';
 import type { ArenaPlayerState, ArenaOpponent, SeasonData } from '../../core/pvp/pvp.types';
 
 // ─────────────────────────────────────────────
@@ -59,7 +60,7 @@ interface OpponentCardProps {
   onChallenge: () => void;
 }
 
-function OpponentCard({ opponent, onChallenge }: OpponentCardProps) {
+function OpponentCard({ opponent, onChallenge, isLoading }: OpponentCardProps & { isLoading?: boolean }) {
   const rankDisplay = getRankDisplay(opponent.rankId);
 
   return (
@@ -77,8 +78,15 @@ function OpponentCard({ opponent, onChallenge }: OpponentCardProps) {
           <span>排名 #{opponent.ranking}</span>
         </div>
       </div>
-      <button style={cardStyles.challengeBtn} onClick={onChallenge}>
-        挑战
+      <button
+        style={{
+          ...cardStyles.challengeBtn,
+          ...(isLoading ? cardStyles.challengeBtnLoading : {}),
+        }}
+        onClick={onChallenge}
+        disabled={isLoading}
+      >
+        {isLoading ? '挑战中...' : '挑战'}
       </button>
     </div>
   );
@@ -107,6 +115,7 @@ export function ArenaPanel({
   onRefresh,
   className,
 }: ArenaPanelProps) {
+  const { addToast } = useToast();
   const rankDisplay = useMemo(
     () => (playerState ? getRankDisplay(playerState.rankId) : null),
     [playerState],
@@ -121,13 +130,21 @@ export function ArenaPanel({
 
   const handleChallenge = useCallback(
     (id: string) => {
+      // R16: 检查挑战次数
+      if (playerState && (playerState.dailyChallengesLeft ?? 0) <= 0) {
+        addToast('今日挑战次数已用完', 'warning');
+        return;
+      }
       try {
         onChallenge?.(id);
+        // R16: 挑战成功 Toast
+        addToast('挑战已发起！', 'success');
       } catch (error) {
         console.error('竞技场挑战失败:', error);
+        addToast('竞技场挑战失败', 'error');
       }
     },
-    [onChallenge],
+    [onChallenge, playerState, addToast],
   );
 
   // P0-UI-02: 防抖包裹
@@ -192,6 +209,7 @@ export function ArenaPanel({
               key={opp.playerId}
               opponent={opp}
               onChallenge={() => debouncedChallenge(opp.playerId)}
+              isLoading={isChallenging}
             />
           ))
         ) : (
@@ -323,5 +341,10 @@ const cardStyles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     cursor: 'pointer',
     flexShrink: 0,
+    transition: 'all 0.15s ease',
+  },
+  challengeBtnLoading: {
+    opacity: 0.6,
+    cursor: 'not-allowed',
   },
 };

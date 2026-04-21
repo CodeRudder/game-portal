@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useGameContext } from '../context/GameContext';
+import { useToast } from './ToastProvider';
 import type {
   EquipmentInstance,
   EquipmentSlot,
@@ -186,6 +187,7 @@ export function EquipmentBag({
   const [slotFilter, setSlotFilter] = useState<EquipmentSlot | null>(null);
   const [rarityFilter, setRarityFilter] = useState<EquipmentRarity | null>(null);
   const [sortMode, setSortMode] = useState<BagSortMode>('rarity_desc');
+  const { addToast } = useToast();
 
   // 筛选 + 排序
   const filteredItems = useMemo(() => {
@@ -204,22 +206,30 @@ export function EquipmentBag({
     (uid: string) => {
       try {
         onEquip?.(uid);
+        // R16: 穿戴成功 Toast
+        const equip = equipments.find((e) => e.uid === uid);
+        if (equip) addToast(`${equip.name} 已穿戴`, 'success');
       } catch (error) {
         console.error('装备穿戴失败:', error);
+        addToast('装备穿戴失败', 'error');
       }
     },
-    [onEquip],
+    [onEquip, equipments, addToast],
   );
 
   const handleUnequip = useCallback(
     (uid: string) => {
       try {
         onUnequip?.(uid);
+        // R16: 卸下成功 Toast
+        const equip = equipments.find((e) => e.uid === uid);
+        if (equip) addToast(`${equip.name} 已卸下`, 'info');
       } catch (error) {
         console.error('装备卸下失败:', error);
+        addToast('装备卸下失败', 'error');
       }
     },
-    [onUnequip],
+    [onUnequip, equipments, addToast],
   );
 
   return (
