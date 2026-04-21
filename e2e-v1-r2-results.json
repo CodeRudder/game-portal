@@ -1,4 +1,72 @@
 {
   "issues": [],
-  "errors": 0
+  "tabResults": {
+    "🏰建筑": {
+      "contentLen": 315,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "🦸武将": {
+      "contentLen": 257,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "📜科技": {
+      "contentLen": 387,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "⚔️关卡": {
+      "contentLen": 275,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "🛡️装备": {
+      "contentLen": 142,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "🗺️天下": {
+      "contentLen": 281,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "👤名士": {
+      "contentLen": 152,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "🏟️竞技": {
+      "contentLen": 181,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "🧭远征": {
+      "contentLen": 281,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "💪军队": {
+      "contentLen": 172,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    },
+    "📋更多": {
+      "contentLen": 163,
+      "hasNaN": false,
+      "hasUndef": false,
+      "errors": 0
+    }
+  },
+  "totalErrors": 0
 }
