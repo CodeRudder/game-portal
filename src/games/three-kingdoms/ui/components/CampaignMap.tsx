@@ -158,7 +158,7 @@ function StageNode({ stage, status, stars, onClick }: StageNodeProps) {
  */
 export function CampaignMap({ onStageClick, className }: CampaignMapProps) {
   const { engine, snapshot } = useGameContext();
-  const chapters = engine.getChapters();
+  const chapters = engine.getChapters() ?? [];
   const [selectedChapterId, setSelectedChapterId] = useState(chapters[0]?.id ?? '');
 
   // 当前章节
@@ -170,11 +170,17 @@ export function CampaignMap({ onStageClick, className }: CampaignMapProps) {
   // 关卡状态
   const stageStates = useMemo(() => {
     if (!snapshot) return {} as Record<string, { stars: StarRating; firstCleared: boolean; clearCount: number }>;
-    return snapshot.campaignProgress.stageStates;
+    return snapshot.campaignProgress?.stageStates ?? {};
   }, [snapshot]);
 
   const handleStageClick = useCallback(
-    (stageId: string) => onStageClick?.(stageId),
+    (stageId: string) => {
+      try {
+        onStageClick?.(stageId);
+      } catch (error) {
+        console.error('关卡挑战失败:', error);
+      }
+    },
     [onStageClick],
   );
 

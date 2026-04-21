@@ -201,12 +201,24 @@ export function EquipmentBag({
   );
 
   const handleEquip = useCallback(
-    (uid: string) => { onEquip?.(uid); },
+    (uid: string) => {
+      try {
+        onEquip?.(uid);
+      } catch (error) {
+        console.error('装备穿戴失败:', error);
+      }
+    },
     [onEquip],
   );
 
   const handleUnequip = useCallback(
-    (uid: string) => { onUnequip?.(uid); },
+    (uid: string) => {
+      try {
+        onUnequip?.(uid);
+      } catch (error) {
+        console.error('装备卸下失败:', error);
+      }
+    },
     [onUnequip],
   );
 

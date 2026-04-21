@@ -156,7 +156,7 @@ const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine }) => {
       {/* 中间：路线列表 */}
       <div style={S.section}>
         <div style={S.sectionTitle}>📜 远征路线</div>
-        <div style={S.routeList}>
+        <div style={S.routeList} className="tk-expedition-route-list">
           {routes.map((route: any) => {
             const cleared = clearedIds.has(route.id);
             const selected = selectedRouteId === route.id;
@@ -230,7 +230,7 @@ const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine }) => {
       </div>
 
       {/* 底部操作栏 */}
-      <div style={S.bottomBar}>
+      <div style={S.bottomBar} className="tk-expedition-bottom-bar">
         <button style={{ ...S.btnAction, background: autoExpedition ? 'rgba(126,200,80,0.15)' : 'rgba(255,255,255,0.05)' }}
           onClick={handleAutoToggle}>
           {autoExpedition ? '🔄 自动远征中' : '⏸ 自动远征'}
@@ -243,7 +243,7 @@ const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine }) => {
       {/* 远征历史弹窗 */}
       {showHistory && (
         <div style={S.modalOverlay} onClick={() => setShowHistory(false)}>
-          <div style={S.modal} onClick={e => e.stopPropagation()}>
+          <div style={S.modal} className="tk-expedition-modal" onClick={e => e.stopPropagation()}>
             <div style={S.modalTitle}>📋 远征历史</div>
             {history.length === 0 ? <div style={S.empty}>暂无记录</div> : (
               history.map(h => (

@@ -135,7 +135,7 @@ export function HeroListPanel({ onHeroClick, className }: HeroListPanelProps) {
 
   // 筛选 + 排序
   const heroes = useMemo(() => {
-    if (!snapshot) return [];
+    if (!snapshot?.heroes) return [];
 
     let list = [...snapshot.heroes];
 
@@ -184,7 +184,7 @@ export function HeroListPanel({ onHeroClick, className }: HeroListPanelProps) {
     >
       {/* 标题 */}
       <div style={styles.title}>
-        武将 ({snapshot.heroes.length})
+        武将 ({snapshot.heroes?.length ?? 0})
       </div>
 
       {/* 筛选栏 */}

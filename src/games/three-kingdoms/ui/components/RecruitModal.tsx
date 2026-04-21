@@ -95,9 +95,9 @@ export function RecruitModal({ isOpen, onClose }: RecruitModalProps) {
   const [isRecruiting, setIsRecruiting] = useState(false);
 
   // 保底进度
-  const pityState = engine.getRecruitSystem().getGachaState();
-  const pityCount = recruitType === 'normal' ? pityState.normalPity : pityState.advancedPity;
-  const hardCount = recruitType === 'normal' ? pityState.normalHardPity : pityState.advancedHardPity;
+  const pityState = engine.getRecruitSystem().getGachaState?.() ?? { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 };
+  const pityCount = recruitType === 'normal' ? (pityState.normalPity ?? 0) : (pityState.advancedPity ?? 0);
+  const hardCount = recruitType === 'normal' ? (pityState.normalHardPity ?? 0) : (pityState.advancedHardPity ?? 0);
   const pityPercent = Math.min((pityCount / PITY_SOFT) * 100, 100);
   const hardPercent = Math.min((hardCount / PITY_HARD) * 100, 100);
 

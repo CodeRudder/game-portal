@@ -126,7 +126,7 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) 
                 onClick={() => setSlotFilter(s)}>{SLOT_ICONS[s]}</button>
             ))}
           </div>
-          <div style={S.grid}>
+          <div style={S.grid} className="tk-equipment-grid">
             {displayItems.map(eq => (
               <div key={eq.uid} style={{ ...S.card, borderColor: RARITY_COLORS[eq.rarity] + '40' }}
                 onClick={() => setSelectedUid(eq.uid)}>
@@ -215,7 +215,7 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) 
       {/* ── 装备详情弹窗（背包用） ── */}
       {subTab === 'bag' && selected && (
         <div style={S.overlay} onClick={() => setSelectedUid(null)}>
-          <div style={S.detailPanel} onClick={e => e.stopPropagation()}>
+          <div style={S.detailPanel} className="tk-equipment-detail-modal" onClick={e => e.stopPropagation()}>
             <div style={{ color: RARITY_COLORS[selected.rarity], fontSize: 18, fontWeight: 600 }}>{selected.name}</div>
             <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 12 }}>
               {RARITY_LABELS[selected.rarity]} · {SLOT_LABELS[selected.slot]} · +{selected.enhanceLevel}

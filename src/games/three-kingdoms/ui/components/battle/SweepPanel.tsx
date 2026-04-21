@@ -254,10 +254,10 @@ export function SweepPanel({ stageId, onSweepComplete, onClose, className }: Swe
 
   // 获取扫荡系统数据（通过引擎获取）
   const sweepSystem = engine.getSweepSystem();
-  const ticketCount = sweepSystem.getTicketCount();
-  const sweepStatus = sweepSystem.getSweepStatus(stageId);
-  const canSweepStage = sweepStatus.canSweep;
-  const stageStars = sweepStatus.stars;
+  const ticketCount = sweepSystem.getTicketCount?.() ?? 0;
+  const sweepStatus = sweepSystem.getSweepStatus?.(stageId) ?? { canSweep: false, stars: 0 };
+  const canSweepStage = sweepStatus.canSweep ?? false;
+  const stageStars = sweepStatus.stars ?? 0;
 
   // 创建逻辑实例
   const logic = useMemo(

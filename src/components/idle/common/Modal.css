@@ -130,11 +130,9 @@
 
 /* ═══════════════════════════════════════════
    P1-01: 通用弹窗内容区域 max-height / 滚动
-   适用于所有自定义弹窗（内联样式的 overlay+modal 组合）
+   适用于所有自定义弹窗（通过 className 挂载）
    ═══════════════════════════════════════════ */
-.tk-modal-content,
-[data-testid="equipment-tab"] > div[style*="position: fixed"],
-[data-testid="arena-tab"] > div[style*="position: fixed"] {
+.tk-modal-content {
   max-height: 80vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;

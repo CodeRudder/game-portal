@@ -172,13 +172,13 @@ const ArmyTab: React.FC<ArmyTabProps> = ({ engine }) => {
       <div style={S.formationBox}>
         <div style={S.formationTitle}>🛡️ 阵型</div>
         {/* 后排 3 */}
-        <div style={S.backRow}>
+        <div style={S.backRow} className="tk-army-formation-row">
           {SLOTS.filter(s => s.row === 'back').map(slot => (
             <SlotCard key={slot.id} slot={slot} heroId={slots[slot.id]} heroMap={heroMap} onRemove={() => handleRemoveHero(slot.id)} />
           ))}
         </div>
         {/* 前排 2 */}
-        <div style={S.frontRow}>
+        <div style={S.frontRow} className="tk-army-formation-row">
           {SLOTS.filter(s => s.row === 'front').map(slot => (
             <SlotCard key={slot.id} slot={slot} heroId={slots[slot.id]} heroMap={heroMap} onRemove={() => handleRemoveHero(slot.id)} />
           ))}
@@ -188,7 +188,7 @@ const ArmyTab: React.FC<ArmyTabProps> = ({ engine }) => {
       {/* 武将选择列表 */}
       <div style={S.section}>
         <div style={S.sectionTitle}>👤 可用武将 ({availableHeroes.length})</div>
-        <div style={S.heroGrid}>
+        <div style={S.heroGrid} className="tk-army-hero-grid">
           {availableHeroes.map((hero: any) => (
             <div key={hero.id} style={S.heroCard} onClick={() => handleAddHero(hero.id)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -226,6 +226,7 @@ const SlotCard: React.FC<SlotCardProps> = ({ slot, heroId, heroMap, onRemove }) 
   const hero = heroId ? heroMap[heroId] : null;
   return (
     <div style={{ ...S.slotCard, borderColor: hero ? (QUALITY_COLORS[hero.quality] ?? '#d4a574') : 'rgba(255,255,255,0.1)' }}
+      className="tk-army-slot-card"
       onClick={hero ? onRemove : undefined}>
       {hero ? (
         <>

@@ -491,3 +491,19 @@
 .tk-scene-area::-webkit-scrollbar-thumb:hover {
   background: rgba(200, 169, 110, 0.5);
 }
+
+/* 弹窗内容滚动支持 */
+.tk-modal-content,
+.tk-modal .modal-content,
+[class*="modal"] [class*="content"],
+[style*="position: fixed"] > div {
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* safe-area支持 */
+.tk-game-container {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}

@@ -166,16 +166,16 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion }) => {
       </div>
 
       {/* 功能按钮 */}
-      <div style={S.actionBar}>
-        <button style={S.actionBtn} onClick={() => setShowRanking(true)}>📊 排行榜</button>
-        <button style={S.actionBtn} onClick={() => setShowDefense(true)}>🛡️ 防守阵容</button>
-        <button style={S.actionBtn} onClick={() => setShowHistory(true)}>📜 战斗记录</button>
+      <div style={S.actionBar} className="tk-arena-actions">
+        <button style={S.actionBtn} className="tk-arena-action-btn" onClick={() => setShowRanking(true)}>📊 排行榜</button>
+        <button style={S.actionBtn} className="tk-arena-action-btn" onClick={() => setShowDefense(true)}>🛡️ 防守阵容</button>
+        <button style={S.actionBtn} className="tk-arena-action-btn" onClick={() => setShowHistory(true)}>📜 战斗记录</button>
       </div>
 
       {/* ── 弹窗：战斗结果 ── */}
       {battleResult && (
         <div style={S.overlay} onClick={() => setBattleResult(null)}>
-          <div style={S.modal} onClick={e => e.stopPropagation()}>
+          <div style={S.modal} className="tk-arena-modal" onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 28, textAlign: 'center' }}>
               {battleResult.victory ? '🎉 胜利' : '😤 失败'}
             </div>

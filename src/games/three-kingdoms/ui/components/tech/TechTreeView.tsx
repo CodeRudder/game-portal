@@ -15,6 +15,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useGameContext } from '../../context/GameContext';
 import { useDebouncedAction } from '../../hooks/useDebouncedAction';
+import { useToast } from '../ToastProvider';
 import type {
   TechPath,
   TechNodeDef,
@@ -412,15 +413,16 @@ function DetailPanel({ def, status, isMutexLocked, prerequisiteDesc, effectDesc,
  */
 export function TechTreeView({ onNodeClick, onResearch, className }: TechTreeViewProps) {
   const { engine, snapshot } = useGameContext();
+  const { addToast } = useToast();
   const [selectedPath, setSelectedPath] = useState<TechPath>('military');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   // 获取引擎数据
   const techTreeSystem = engine.getTechTreeSystem();
-  const allNodeDefs = techTreeSystem.getAllNodeDefs();
-  const allNodeStates = techTreeSystem.getAllNodeStates();
-  const edges = techTreeSystem.getEdges();
-  const chosenMutex = techTreeSystem.getChosenMutexNodes();
+  const allNodeDefs = techTreeSystem.getAllNodeDefs() ?? [];
+  const allNodeStates = techTreeSystem.getAllNodeStates() ?? {};
+  const edges = techTreeSystem.getEdges() ?? [];
+  const chosenMutex = techTreeSystem.getChosenMutexNodes() ?? {};
 
   // 创建逻辑实例
   const logic = useMemo(
@@ -467,8 +469,14 @@ export function TechTreeView({ onNodeClick, onResearch, className }: TechTreeVie
   );
 
   const handleResearch = useCallback(() => {
-    if (selectedNodeId) onResearch?.(selectedNodeId);
-  }, [selectedNodeId, onResearch]);
+    if (!selectedNodeId) return;
+    try {
+      onResearch?.(selectedNodeId);
+    } catch (error) {
+      console.error('科技研究失败:', error);
+      addToast('科技研究失败', 'error');
+    }
+  }, [selectedNodeId, onResearch, addToast]);
 
   // P0-UI-02: 防抖包裹
   const { action: debouncedResearch, isActing: isResearching } = useDebouncedAction(handleResearch, 500);

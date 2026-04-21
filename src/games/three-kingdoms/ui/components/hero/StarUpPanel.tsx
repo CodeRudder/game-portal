@@ -299,10 +299,10 @@ export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, clas
   const heroSystem = engine.getHeroSystem();
   const heroStarSystem = engine.getHeroStarSystem();
   const general = heroSystem.getGeneral(generalId);
-  const currentStar = heroStarSystem.getStar(generalId);
-  const fragmentProgress = heroStarSystem.getFragmentProgress(generalId);
-  const starUpPreview: StarUpPreview | null = heroStarSystem.getStarUpPreview(generalId);
-  const breakthroughPreview: BreakthroughPreview | null = heroStarSystem.getBreakthroughPreview(generalId);
+  const currentStar = heroStarSystem.getStar(generalId) ?? 1;
+  const fragmentProgress = heroStarSystem.getFragmentProgress(generalId) ?? null;
+  const starUpPreview: StarUpPreview | null = heroStarSystem.getStarUpPreview(generalId) ?? null;
+  const breakthroughPreview: BreakthroughPreview | null = heroStarSystem.getBreakthroughPreview(generalId) ?? null;
 
   // 创建逻辑实例
   const logic = useMemo(
@@ -317,13 +317,17 @@ export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, clas
       return;
     }
     setPanelState((prev) => ({ ...prev, isOperating: true, error: null }));
-    // 实际调用引擎升星
-    const result = heroStarSystem.starUp(generalId);
-    setPanelState((prev) => ({ ...prev, isOperating: false, starUpResult: result }));
-    if (result.success) {
-      onStarUp?.(result);
-    } else {
-      setPanelState((prev) => ({ ...prev, error: '升星失败：条件未满足' }));
+    try {
+      const result = heroStarSystem.starUp(generalId);
+      setPanelState((prev) => ({ ...prev, isOperating: false, starUpResult: result }));
+      if (result.success) {
+        onStarUp?.(result);
+      } else {
+        setPanelState((prev) => ({ ...prev, error: '升星失败：条件未满足' }));
+      }
+    } catch (error) {
+      console.error('升星操作失败:', error);
+      setPanelState((prev) => ({ ...prev, isOperating: false, error: '升星操作异常' }));
     }
   }, [heroStarSystem, generalId, onStarUp]);
 
@@ -334,13 +338,17 @@ export function StarUpPanel({ generalId, onStarUp, onBreakthrough, onClose, clas
       return;
     }
     setPanelState((prev) => ({ ...prev, isOperating: true, error: null }));
-    // 实际调用引擎突破
-    const result = heroStarSystem.breakthrough(generalId);
-    setPanelState((prev) => ({ ...prev, isOperating: false, breakthroughResult: result }));
-    if (result.success) {
-      onBreakthrough?.(result);
-    } else {
-      setPanelState((prev) => ({ ...prev, error: '突破失败：条件未满足' }));
+    try {
+      const result = heroStarSystem.breakthrough(generalId);
+      setPanelState((prev) => ({ ...prev, isOperating: false, breakthroughResult: result }));
+      if (result.success) {
+        onBreakthrough?.(result);
+      } else {
+        setPanelState((prev) => ({ ...prev, error: '突破失败：条件未满足' }));
+      }
+    } catch (error) {
+      console.error('突破操作失败:', error);
+      setPanelState((prev) => ({ ...prev, isOperating: false, error: '突破操作异常' }));
     }
   }, [heroStarSystem, generalId, onBreakthrough]);
 

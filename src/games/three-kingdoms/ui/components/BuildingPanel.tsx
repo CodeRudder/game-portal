@@ -197,13 +197,13 @@ export function BuildingPanel({ onBuildingClick, className }: BuildingPanelProps
 
   // 预计算所有建筑的状态
   const buildingInfos = useMemo(() => {
-    if (!snapshot) return [];
+    if (!snapshot?.buildings) return [];
     return BUILDING_ORDER.map((type) => {
       const state = snapshot.buildings[type];
-      const check = engine.checkUpgrade(type);
-      const cost = engine.getUpgradeCost(type);
-      const progress = engine.getUpgradeProgress(type);
-      const remaining = engine.getUpgradeRemainingTime(type);
+      const check = engine.checkUpgrade(type) ?? { canUpgrade: false, reasons: [] };
+      const cost = engine.getUpgradeCost(type) ?? null;
+      const progress = engine.getUpgradeProgress(type) ?? 0;
+      const remaining = engine.getUpgradeRemainingTime(type) ?? 0;
       return { type, state, check, cost, progress, remaining };
     });
   }, [snapshot, engine]);

@@ -120,7 +120,13 @@ export function ArenaPanel({
   }, [seasonData]);
 
   const handleChallenge = useCallback(
-    (id: string) => { onChallenge?.(id); },
+    (id: string) => {
+      try {
+        onChallenge?.(id);
+      } catch (error) {
+        console.error('竞技场挑战失败:', error);
+      }
+    },
     [onChallenge],
   );
 
@@ -165,8 +171,8 @@ export function ArenaPanel({
 
       {/* 挑战次数 */}
       <div style={styles.challengeInfo}>
-        <span>今日挑战：剩余 {playerState.dailyChallengesLeft} 次</span>
-        {playerState.dailyBoughtChallenges > 0 && (
+        <span>今日挑战：剩余 {playerState.dailyChallengesLeft ?? 0} 次</span>
+        {(playerState.dailyBoughtChallenges ?? 0) > 0 && (
           <span style={styles.boughtInfo}>（已购买 {playerState.dailyBoughtChallenges} 次）</span>
         )}
       </div>
@@ -180,8 +186,8 @@ export function ArenaPanel({
       </div>
 
       <div style={styles.opponentList}>
-        {playerState.opponents.length > 0 ? (
-          playerState.opponents.map((opp) => (
+        {(playerState.opponents ?? []).length > 0 ? (
+          (playerState.opponents ?? []).map((opp) => (
             <OpponentCard
               key={opp.playerId}
               opponent={opp}
@@ -195,7 +201,7 @@ export function ArenaPanel({
 
       {/* 竞技币 */}
       <div style={styles.coinBar}>
-        🪙 竞技币：{playerState.arenaCoins}
+        🪙 竞技币：{playerState.arenaCoins ?? 0}
       </div>
     </div>
   );

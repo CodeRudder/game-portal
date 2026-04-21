@@ -50,12 +50,13 @@ const MoreTab: React.FC<MoreTabProps> = ({ engine, snapshotVersion, onOpenPanel 
 
   return (
     <div style={styles.wrap} data-testid="more-tab">
-      <div style={styles.title}>🎮 更多功能</div>
-      <div style={styles.grid}>
+      <div style={styles.title} className="tk-more-title">🎮 更多功能</div>
+      <div style={styles.grid} className="tk-more-grid">
         {items.map(item => (
           <button
             key={item.id}
             style={styles.card}
+            className="tk-more-card"
             onClick={() => onOpenPanel(item.id)}
             aria-label={item.label}
           >
