@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-04-22T06:13:16.546Z",
+  "version": "v3.0",
+  "module": "攻城掠地(上)",
+  "summary": {
+    "passed": 0,
+    "failed": 1,
+    "warnings": 0,
+    "screenshots": 1,
+    "consoleErrors": 0
+  },
+  "passed": [],
+  "failed": [
+    {
+      "name": "测试执行异常",
+      "detail": "page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/idle/three-kingdoms\nCall log:\n  - navigating to \"http://localhost:5173/idle/three-kingdoms\", waiting until \"networkidle\"\n"
+    }
+  ],
+  "warnings": [],
+  "screenshots": [
+    "v3-error.png"
+  ],
+  "consoleErrors": []
+}
