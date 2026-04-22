@@ -33,6 +33,8 @@ import type { NPCSystem } from './npc/NPCSystem';
 import type { EquipmentSystem } from './equipment/EquipmentSystem';
 import type { EquipmentForgeSystem } from './equipment/EquipmentForgeSystem';
 import type { EquipmentEnhanceSystem } from './equipment/EquipmentEnhanceSystem';
+import type { EquipmentSetSystem } from './equipment/EquipmentSetSystem';
+import type { EquipmentRecommendSystem } from './equipment/EquipmentRecommendSystem';
 import type { ArenaSystem } from './pvp/ArenaSystem';
 import type { ArenaSeasonSystem } from './pvp/ArenaSeasonSystem';
 import type { RankingSystem } from './pvp/RankingSystem';
@@ -189,6 +191,8 @@ export function applyGetters(cls: any): void {
   p.getEquipmentSystem = function(this: EngineAny): EquipmentSystem { return this.equipmentSystem; };
   p.getEquipmentForgeSystem = function(this: EngineAny): EquipmentForgeSystem { return this.equipmentForgeSystem; };
   p.getEquipmentEnhanceSystem = function(this: EngineAny): EquipmentEnhanceSystem { return this.equipmentEnhanceSystem; };
+  p.getEquipmentSetSystem = function(this: EngineAny): EquipmentSetSystem { return this.equipmentSetSystem; };
+  p.getEquipmentRecommendSystem = function(this: EngineAny): EquipmentRecommendSystem { return this.equipmentRecommendSystem; };
   p.getArenaSystem = function(this: EngineAny): ArenaSystem { return this.arenaSystem; };
   p.getSeasonSystem = function(this: EngineAny): ArenaSeasonSystem { return this.arenaSeasonSystem; };
   p.getRankingSystem = function(this: EngineAny): RankingSystem { return this.rankingSystem; };

@@ -197,6 +197,10 @@ export interface GameSaveData {
   tech?: import('../engine/tech/tech.types').TechSaveData;
   /** 装备系统数据（可选，v5.0+） */
   equipment?: import('../core/equipment/equipment.types').EquipmentSaveData;
+  /** 装备炼制系统数据（可选，v10.0+） */
+  equipmentForge?: import('../core/equipment/equipment-v10.types').ForgeSaveData;
+  /** 装备强化系统数据（可选，v10.0+） */
+  equipmentEnhance?: { protectionCount: number };
   /** 贸易系统数据（可选，v5.0+） */
   trade?: import('../core/trade/trade.types').TradeSaveData;
   /** 商店系统数据（可选，v5.0+） */

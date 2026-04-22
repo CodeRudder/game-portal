@@ -168,15 +168,11 @@ export class EquipmentForgeSystem implements ISubsystem {
     // 消耗输入
     this.consumeInputEquipments(inputUids);
 
-    // 生成新装备
+    // 生成新装备（generateEquipment 已自动 addToBag）
     const outputSlot = targetSlot ?? this.randomSlot(rng);
     let equipment: EquipmentInstance | null = null;
     if (this.equipmentSystem) {
-      const newEq = this.equipmentSystem.generateEquipment(outputSlot, outputRarity, 'forge');
-      if (newEq) {
-        const addResult = this.equipmentSystem.addToBag(newEq);
-        if (addResult.success) equipment = newEq;
-      }
+      equipment = this.equipmentSystem.generateEquipment(outputSlot, outputRarity, 'forge');
     }
 
     this.totalForgeCount++;

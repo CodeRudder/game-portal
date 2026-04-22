@@ -2,7 +2,7 @@
  * 装备域 — 统一导出入口
  *
  * v10.0「兵强马壮」装备系统
- * 7个模块：EquipmentSystem / Forge / Enhance / Set / Recommend / BagManager / ForgePityManager
+ * 5个子系统 + 辅助模块
  *
  * @module engine/equipment
  */

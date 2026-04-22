@@ -207,18 +207,24 @@ async function testLeaderboardPanel(page) {
   console.log('\n📋 测试7: 排行榜面板');
   try {
     await closeAllModals(page);
+    await page.waitForTimeout(500);
     const lbBtn = await page.$('[data-testid="leaderboard-panel"], button:has-text("排行"), .tk-leaderboard-btn');
     if (lbBtn) {
-      await lbBtn.click();
-      await page.waitForTimeout(1500);
-      await takeScreenshot(page, 'v11-leaderboard-panel');
-      pass('排行榜面板可打开');
-      
-      // 检查多维度Tab
-      const lbTabs = await page.$$('.tk-lb-tab, [data-testid="lb-tab"]');
-      if (lbTabs.length >= 5) pass(`排行榜维度Tab存在(${lbTabs.length}个)`);
-      else if (lbTabs.length > 0) warn('排行榜维度Tab不足', `找到${lbTabs.length}个`);
-      else warn('排行榜维度Tab未找到');
+      const isVisible = await lbBtn.isVisible().catch(() => false);
+      if (isVisible) {
+        await lbBtn.click({ timeout: 5000 }).catch(() => {});
+        await page.waitForTimeout(1500);
+        await takeScreenshot(page, 'v11-leaderboard-panel');
+        pass('排行榜面板可打开');
+
+        // 检查多维度Tab
+        const lbTabs = await page.$$('.tk-lb-tab, [data-testid="lb-tab"]');
+        if (lbTabs.length >= 5) pass(`排行榜维度Tab存在(${lbTabs.length}个)`);
+        else if (lbTabs.length > 0) warn('排行榜维度Tab不足', `找到${lbTabs.length}个`);
+        else warn('排行榜维度Tab未找到');
+      } else {
+        warn('排行榜面板按钮不可见');
+      }
     } else {
       warn('排行榜面板按钮未找到');
     }

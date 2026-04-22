@@ -31,6 +31,8 @@ import type { NPCSystem } from './npc/NPCSystem';
 import type { EquipmentSystem } from './equipment/EquipmentSystem';
 import type { EquipmentForgeSystem } from './equipment/EquipmentForgeSystem';
 import type { EquipmentEnhanceSystem } from './equipment/EquipmentEnhanceSystem';
+import type { EquipmentSetSystem } from './equipment/EquipmentSetSystem';
+import type { EquipmentRecommendSystem } from './equipment/EquipmentRecommendSystem';
 import type { ArenaSystem } from './pvp/ArenaSystem';
 import type { ArenaSeasonSystem } from './pvp/ArenaSeasonSystem';
 import type { RankingSystem } from './pvp/RankingSystem';
@@ -125,6 +127,8 @@ export interface EngineGettersMixin {
   getEquipmentSystem(): EquipmentSystem;
   getEquipmentForgeSystem(): EquipmentForgeSystem;
   getEquipmentEnhanceSystem(): EquipmentEnhanceSystem;
+  getEquipmentSetSystem(): EquipmentSetSystem;
+  getEquipmentRecommendSystem(): EquipmentRecommendSystem;
   getArenaSystem(): ArenaSystem;
   getSeasonSystem(): ArenaSeasonSystem;
   getRankingSystem(): RankingSystem;

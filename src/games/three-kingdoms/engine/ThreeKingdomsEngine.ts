@@ -67,6 +67,8 @@ import { PrestigeSystem } from './prestige/PrestigeSystem';
 import { QuestSystem } from './quest/QuestSystem';
 import { AchievementSystem } from './achievement/AchievementSystem';
 import { FriendSystem } from './social/FriendSystem';
+import { ChatSystem } from './social/ChatSystem';
+import { LeaderboardSystem as SocialLeaderboardSystem } from './social/LeaderboardSystem';
 import { HeritageSystem } from './heritage/HeritageSystem';
 import { ActivitySystem } from './activity/ActivitySystem';
 import { TradeSystem } from './trade/TradeSystem';
@@ -118,6 +120,8 @@ export class ThreeKingdomsEngine {
   private readonly questSystem: QuestSystem;
   private readonly achievementSystem: AchievementSystem;
   private readonly friendSystem: FriendSystem;
+  private readonly chatSystem: ChatSystem;
+  private readonly socialLeaderboardSystem: SocialLeaderboardSystem;
   private readonly heritageSystem: HeritageSystem;
   private readonly activitySystem: ActivitySystem;
   private readonly tradeSystem: TradeSystem;
@@ -207,6 +211,8 @@ export class ThreeKingdomsEngine {
     this.questSystem = new QuestSystem();
     this.achievementSystem = new AchievementSystem();
     this.friendSystem = new FriendSystem();
+    this.chatSystem = new ChatSystem();
+    this.socialLeaderboardSystem = new SocialLeaderboardSystem();
     this.heritageSystem = new HeritageSystem();
     this.activitySystem = new ActivitySystem();
     this.tradeSystem = new TradeSystem();
@@ -496,6 +502,9 @@ export class ThreeKingdomsEngine {
       techTree: this.techSystems.treeSystem, techPoint: this.techSystems.pointSystem,
       techResearch: this.techSystems.researchSystem,
       bus: this.bus, registry: this.registry, configRegistry: this.configRegistry,
+      equipment: this.equipmentSystem,
+      equipmentForge: this.equipmentForgeSystem,
+      equipmentEnhance: this.equipmentEnhanceSystem,
       onlineSeconds: this.onlineSeconds,
     };
   }

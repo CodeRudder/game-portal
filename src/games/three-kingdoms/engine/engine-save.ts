@@ -57,6 +57,10 @@ export interface SaveContext {
   readonly configRegistry: ConfigRegistry;
   /** 装备系统（可选，v5.0+） */
   readonly equipment?: import('./equipment/EquipmentSystem').EquipmentSystem;
+  /** 装备炼制系统（可选，v10.0+） */
+  readonly equipmentForge?: import('./equipment/EquipmentForgeSystem').EquipmentForgeSystem;
+  /** 装备强化系统（可选，v10.0+） */
+  readonly equipmentEnhance?: import('./equipment/EquipmentEnhanceSystem').EquipmentEnhanceSystem;
   /** 贸易系统（可选，v5.0+） */
   readonly trade?: import('./trade/TradeSystem').TradeSystem;
   /** 商店系统（可选，v5.0+） */
@@ -96,6 +100,8 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     campaign: ctx.campaign.serialize(),
     tech: techSaveData,
     equipment: ctx.equipment?.serialize(),
+    equipmentForge: ctx.equipmentForge?.serialize(),
+    equipmentEnhance: ctx.equipmentEnhance?.serialize(),
     trade: ctx.trade?.serialize(),
     shop: ctx.shop?.serialize(),
   };
@@ -114,6 +120,8 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
     tech: data.tech,
   };
   if (data.equipment) subsystems.equipment = data.equipment;
+  if (data.equipmentForge) subsystems.equipmentForge = data.equipmentForge;
+  if (data.equipmentEnhance) subsystems.equipmentEnhance = data.equipmentEnhance;
   if (data.trade) subsystems.trade = data.trade;
   if (data.shop) subsystems.shop = data.shop;
 
@@ -144,6 +152,8 @@ export function fromIGameState(state: IGameState): GameSaveData {
     campaign: s.campaign as import('./campaign/campaign.types').CampaignSaveData | undefined,
     tech: s.tech as TechSaveData | undefined,
     equipment: s.equipment as import('../core/equipment/equipment.types').EquipmentSaveData | undefined,
+    equipmentForge: s.equipmentForge as import('../core/equipment/equipment-v10.types').ForgeSaveData | undefined,
+    equipmentEnhance: s.equipmentEnhance as { protectionCount: number } | undefined,
     trade: s.trade as import('../core/trade/trade.types').TradeSaveData | undefined,
     shop: s.shop as import('../core/shop/shop.types').ShopSaveData | undefined,
   };
@@ -275,6 +285,16 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   // ── 装备系统 v5.0 ──
   if (data.equipment && ctx.equipment) {
     ctx.equipment.deserialize(data.equipment);
+  }
+
+  // ── 装备炼制系统 v10.0 ──
+  if (data.equipmentForge && ctx.equipmentForge) {
+    ctx.equipmentForge.deserialize(data.equipmentForge);
+  }
+
+  // ── 装备强化系统 v10.0 ──
+  if (data.equipmentEnhance && ctx.equipmentEnhance) {
+    ctx.equipmentEnhance.deserialize(data.equipmentEnhance);
   }
 
   // ── 贸易系统 v5.0 ──
