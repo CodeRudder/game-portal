@@ -14,7 +14,7 @@
 - [v11.0 R2: 群雄逐鹿进化迭代](../tech-reviews/v11.0-review-r2.md) — Play文档7流程+技术审查P0:0/P1:6/P2:5+3条经验教训
 - [Round 4复盘: ISubsystem+大文件拆分](./evolution-r4-round.md) — ISubsystem覆盖率100%(91/91)+8大文件拆分至0超限+EVO-046~048
 - [Round 2全局复盘](./evolution-r11.md) — 20版本完成(14通过/6有条件)+P0:0/P1:~20+GameEventSimulator+门面精简616→138行+EVO-049~052
-- [Round 7复盘: P1修复+测试增强](./progress/evolution-progress-r7.md) — EventTriggerSystem增强+calcRebirthMultiplier签名统一+data-testid补全10组件+测试修复16文件+EVO-056~058
+- [Round 7复盘: P1修复+测试增强](./progress/evolution-progress-r7.md) — GameEventSimulator修复+calcRebirthMultiplier签名统一+data-testid补全6组件+三国测试24→0失败+EVO-056~058
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -262,25 +262,19 @@ Round 2发现6对重叠系统，Round 3必须逐一治理：
 审查报告需注明实际目录路径，避免按版本号臆测功能位置。
 发现命名不一致时，以实际目录为准更新文档。
 
-### EVO-056: data-testid 覆盖率要求（来自Round 7复盘）
-所有 UI 组件根元素必须有 data-testid 属性，新建组件必须同步添加。
-命名规范: kebab-case（如 `data-testid="resource-bar"`）。
-动态列表项使用模板（如 `data-testid="resource-item-${resourceId}"`）。
-优先级: P0主界面组件 → P1交互组件 → P2辅助组件。
-验证方法: `grep -rn "data-testid" src/components/ | wc -l`
+### EVO-056: 测试资源预置规则（来自Round 7复盘）
+测试工具方法（如 upgradeBuildingToWithHighCaps）在每次迭代操作前必须确保资源充足，不能假设前一次操作后资源仍有余量。
+范例: GameEventSimulator.upgradeBuildingToWithHighCaps 每次升级前补充资源（grain:10M + gold:20M + troops:5M）。
+违反后果: 连续升级操作因资源耗尽而失败，产生误报。
 
-### EVO-057: 函数签名冲突检测（来自Round 7复盘）
-同名函数在不同模块中存在时，必须明确权威版本和委托关系。
-权威版本: 实现最完整的版本（如 unification/BalanceCalculator.calcRebirthMultiplier）。
-委托版本: 薄封装器，仅调用权威版本并保持向后兼容。
+### EVO-057: 签名冲突优先级（来自Round 7复盘）
+当同一功能在多个模块有不同签名时，以参数更完整、更可测试的版本为权威，其他版本改为薄封装器。
+权威版本: unification/BalanceCalculator.calcRebirthMultiplier（接受 config 参数）
+委托版本: prestige/RebirthSystem（单参数，委托权威版本）
 禁止两个模块各自独立实现相同逻辑（逻辑分叉风险）。
-发现冲突时: 在委托版本头部注释 `// Delegates to <权威模块路径>` 标明关系。
 
-### EVO-058: 测试修复批量策略（来自Round 7复盘）
-批量修复预存测试失败时，优先修复高频同类问题，按以下顺序：
-1. vitest 导入（`import { describe, it, expect } from 'vitest'`）
-2. mock 配置（`vi.mock()` 路径和工厂函数）
-3. 类型断言（`as any` 替换为精确类型或 `as unknown as T`）
-每批修复后运行 `pnpm test` 确认无回归。
-目标: 每轮至少修复 10 个测试文件或消除一类问题。
+### EVO-058: 空壳验证规则（来自Round 7复盘）
+标记为"空壳"的方法必须在修复前验证是否已有实现，避免基于过时文档做无效修改。
+验证方法: 直接阅读源码确认方法体是否为空。
+范例: EventTriggerSystem.calculateProbability 和 evaluateCondition 在 R6 重构方案中被标记为空壳，实际已有完整实现。
 
