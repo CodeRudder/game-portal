@@ -16,7 +16,6 @@ import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   ActivityDef,
   ActivityInstance,
-  ActivityTask,
   ActivityTaskDef,
   ActivityMilestone,
   ActivityConcurrencyConfig,
@@ -33,20 +32,23 @@ import type {
 import {
   ActivityType,
   ActivityStatus,
-  ActivityTaskType,
   ActivityTaskStatus,
   MilestoneStatus,
 } from '../../core/activity/activity.types';
 
+// 配置与常量（从 ActivitySystemConfig 拆分）
 import {
+  DEFAULT_CONCURRENCY_CONFIG,
+  DEFAULT_OFFLINE_EFFICIENCY,
+  ACTIVITY_SAVE_VERSION,
+  seasonHelper,
+} from './ActivitySystemConfig';
+export {
+  DEFAULT_CONCURRENCY_CONFIG,
+  DEFAULT_OFFLINE_EFFICIENCY,
+  ACTIVITY_SAVE_VERSION,
   DEFAULT_SEASON_THEMES,
-  getCurrentSeasonTheme as _getTheme,
-  createSettlementAnimation as _createAnim,
-  updateSeasonRecord as _updateRecord,
-  generateSeasonRecordRanking as _genRanking,
-  getSeasonThemes as _getThemes,
-} from './SeasonHelper';
-export { DEFAULT_SEASON_THEMES };
+} from './ActivitySystemConfig';
 
 // 从 ActivityFactory 导入工厂函数（类内部使用）
 import {
@@ -64,45 +66,11 @@ export {
   createMilestone,
 };
 
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-/** 默认并行上限配置 */
-export const DEFAULT_CONCURRENCY_CONFIG: ActivityConcurrencyConfig = {
-  maxSeason: 1,
-  maxLimitedTime: 2,
-  maxDaily: 1,
-  maxFestival: 1,
-  maxAlliance: 1,
-  maxTotal: 5,
-};
-
-/** 默认离线效率配置 */
-export const DEFAULT_OFFLINE_EFFICIENCY: OfflineEfficiencyConfig = {
-  season: 0.5,
-  limitedTime: 0.3,
-  daily: 1.0,
-  festival: 0.5,
-  alliance: 0.5,
-};
-
-/** 活动存档版本 */
-export const ACTIVITY_SAVE_VERSION = 1;
-
-/** 每秒基础积分（离线计算用） */
-const BASE_POINTS_PER_SECOND = 0.1;
-
-/** 默认赛季主题列表 — 从 SeasonHelper.ts 导入（已在顶部导入） */
-
-/** seasonHelper 委托对象 */
-const seasonHelper = {
-  getCurrentSeasonTheme: _getTheme,
-  createSettlementAnimation: _createAnim,
-  updateSeasonRecord: _updateRecord,
-  generateSeasonRecordRanking: _genRanking,
-  getSeasonThemes: _getThemes,
-};
+// 离线进度计算（从 ActivityOfflineCalculator 拆分）
+import {
+  calculateOfflineProgress as _calcOffline,
+  applyOfflineProgress as _applyOffline,
+} from './ActivityOfflineCalculator';
 
 // ─────────────────────────────────────────────
 // ActivitySystem 类
@@ -404,71 +372,22 @@ export class ActivitySystem implements ISubsystem {
   }
 
   // ── 离线进度 ──────────────────────────────
+  // 委托到 ActivityOfflineCalculator.ts
 
-  /**
-   * 计算离线进度
-   */
+  /** 计算离线进度 */
   calculateOfflineProgress(
     state: ActivityState,
     offlineDurationMs: number,
   ): OfflineActivityResult[] {
-    const results: OfflineActivityResult[] = [];
-    const durationSeconds = offlineDurationMs / 1000;
-
-    for (const [activityId, instance] of Object.entries(state.activities)) {
-      if (instance.status !== ActivityStatus.ACTIVE) continue;
-
-      // 根据活动类型获取效率（简化：通过defId前缀判断）
-      let efficiency = 0.5;
-      if (activityId.startsWith('season_')) efficiency = this.offlineEfficiency.season;
-      else if (activityId.startsWith('limited_')) efficiency = this.offlineEfficiency.limitedTime;
-      else if (activityId.startsWith('daily_')) efficiency = this.offlineEfficiency.daily;
-      else if (activityId.startsWith('festival_')) efficiency = this.offlineEfficiency.festival;
-      else if (activityId.startsWith('alliance_')) efficiency = this.offlineEfficiency.alliance;
-
-      const pointsEarned = Math.floor(durationSeconds * BASE_POINTS_PER_SECOND * efficiency);
-      const tokensEarned = Math.floor(pointsEarned * 0.1);
-
-      if (pointsEarned > 0) {
-        results.push({
-          activityId,
-          pointsEarned,
-          tokensEarned,
-          offlineDuration: offlineDurationMs,
-        });
-      }
-    }
-
-    return results;
+    return _calcOffline(state, offlineDurationMs, this.offlineEfficiency);
   }
 
-  /**
-   * 应用离线进度
-   */
+  /** 应用离线进度 */
   applyOfflineProgress(
     state: ActivityState,
     results: OfflineActivityResult[],
   ): ActivityState {
-    let newState = { ...state };
-
-    for (const result of results) {
-      const instance = newState.activities[result.activityId];
-      if (!instance) continue;
-
-      newState = {
-        ...newState,
-        activities: {
-          ...newState.activities,
-          [result.activityId]: {
-            ...instance,
-            points: instance.points + result.pointsEarned,
-            tokens: instance.tokens + result.tokensEarned,
-          },
-        },
-      };
-    }
-
-    return newState;
+    return _applyOffline(state, results);
   }
 
   // ── 赛季深化 ──────────────────────────────

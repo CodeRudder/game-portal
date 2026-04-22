@@ -311,6 +311,9 @@ export class ExpeditionBattleSystem implements ISubsystem {
       [NodeType.BOSS]: 800,
       [NodeType.TREASURE]: 100,
       [NodeType.REST]: 50,
+      [NodeType.BATTLE]: 200,
+      [NodeType.EVENT]: 100,
+      [NodeType.SHOP]: 50,
     };
     const gradeMultiplier: Record<BattleGrade, number> = {
       [BattleGrade.GREAT_VICTORY]: 1.5,

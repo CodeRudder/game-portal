@@ -43,6 +43,17 @@ export {
   createActivityInstance,
 } from './ActivitySystem';
 
+// ActivitySystemConfig（常量与配置，拆分模块）
+export {
+  DEFAULT_SEASON_THEMES,
+} from './ActivitySystemConfig';
+
+// ActivityOfflineCalculator（离线进度计算，拆分模块）
+export {
+  calculateOfflineProgress,
+  applyOfflineProgress,
+} from './ActivityOfflineCalculator';
+
 // SignInSystem
 export {
   SignInSystem,

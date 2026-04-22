@@ -32,33 +32,10 @@ import {
   getUpgradeRouteRecommendation,
   getUpgradeRecommendation,
 } from './BuildingRecommender';
-
-// 辅助
-
-/** 根据等级获取外观阶段 */
-function getAppearanceStage(level: number): AppearanceStage {
-  if (level <= 5) return 'humble';
-  if (level <= 12) return 'orderly';
-  if (level <= 20) return 'refined';
-  return 'glorious';
-}
-
-function createInitialState(type: BuildingType): BuildingState {
-  const unlocked = BUILDING_UNLOCK_LEVELS[type] === 0;
-  return {
-    type,
-    level: unlocked ? 1 : 0,
-    status: unlocked ? 'idle' : 'locked',
-    upgradeStartTime: null,
-    upgradeEndTime: null,
-  };
-}
-
-function createAllStates(): Record<BuildingType, BuildingState> {
-  const s = {} as Record<BuildingType, BuildingState>;
-  for (const t of BUILDING_TYPES) s[t] = createInitialState(t);
-  return s;
-}
+// 拆分模块
+import { getAppearanceStage, createAllStates } from './BuildingStateHelpers';
+import { batchUpgrade } from './BuildingBatchOps';
+import type { BatchUpgradeResult } from './BuildingBatchOps';
 
 // BuildingSystem
 
@@ -441,53 +418,18 @@ export class BuildingSystem implements ISubsystem {
     );
   }
 
-  // ── 14. B13 批量升级 ──
+  // ── 14. B13 批量升级 ──（委托 BuildingBatchOps）
 
   /** 批量升级：按列表顺序依次尝试升级，跳过不可升级的建筑 */
   batchUpgrade(
     types: BuildingType[],
     resources: Resources,
-  ): {
-    succeeded: Array<{ type: BuildingType; cost: UpgradeCost }>;
-    failed: Array<{ type: BuildingType; reason: string }>;
-    totalCost: UpgradeCost;
-  } {
-    const succeeded: Array<{ type: BuildingType; cost: UpgradeCost }> = [];
-    const failed: Array<{ type: BuildingType; reason: string }> = [];
-    const totalCost: UpgradeCost = { grain: 0, gold: 0, troops: 0, timeSeconds: 0 };
-    let remainingGrain = resources.grain;
-    let remainingGold = resources.gold;
-    let remainingTroops = resources.troops;
-
-    for (const t of types) {
-      const currentResources: Resources = {
-        grain: remainingGrain,
-        gold: remainingGold,
-        troops: remainingTroops,
-        mandate: resources.mandate,
-      };
-      const check = this.checkUpgrade(t, currentResources);
-      if (!check.canUpgrade) {
-        failed.push({ type: t, reason: check.reasons.join('；') });
-        continue;
-      }
-
-      try {
-        const cost = this.startUpgrade(t, currentResources);
-        succeeded.push({ type: t, cost });
-        totalCost.grain += cost.grain;
-        totalCost.gold += cost.gold;
-        totalCost.troops += cost.troops;
-        totalCost.timeSeconds += cost.timeSeconds;
-        remainingGrain -= cost.grain;
-        remainingGold -= cost.gold;
-        remainingTroops -= cost.troops;
-      } catch (e) {
-        failed.push({ type: t, reason: e instanceof Error ? e.message : '未知错误' });
-      }
-    }
-
-    return { succeeded, failed, totalCost };
+  ): BatchUpgradeResult {
+    return batchUpgrade(types, resources, {
+      getBuilding: (t) => this.getBuilding(t),
+      checkUpgrade: (t, r) => this.checkUpgrade(t, r),
+      startUpgrade: (t, r) => this.startUpgrade(t, r),
+    });
   }
 
   // ── 私有 ──

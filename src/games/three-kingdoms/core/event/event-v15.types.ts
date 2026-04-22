@@ -1,12 +1,14 @@
 /**
- * 核心层 — v15.0 事件引擎核心类型
+ * 核心层 — v15.0 事件引擎核心类型（聚合导出）
  *
  * 包含：事件分类、权重系统、条件系统、加权选择、活动绑定、
- *       限时事件、奖励联动、存档数据、连锁事件v15、离线事件处理
+ *       限时事件、奖励联动、存档数据
  *
- * 从子模块重新导出所有类型：
+ * 子模块：
  *   - event-v15-event.types — 基础事件类型
  *   - event-v15-activity.types — 活动/离线类型
+ *   - event-v15-chain.types — 连锁事件v15类型
+ *   - event-v15-offline.types — 离线事件处理类型
  *
  * @module core/event/event-v15.types
  */
@@ -45,6 +47,29 @@ export type {
   FestivalType, FestivalActivityDef,
   ActivityOfflineSummary,
 } from './event-v15-activity.types';
+
+// 重新导出连锁事件类型
+export type {
+  ChainId,
+  ChainNodeId,
+  ChainMergePoint,
+  ChainNodeDefV15,
+  EventChainDefV15,
+  ChainProgressV15,
+  ChainAdvanceResultV15,
+} from './event-v15-chain.types';
+
+// 重新导出离线事件处理类型
+export type {
+  OfflineEventEntry,
+  AutoSelectStrategy,
+  AutoProcessRule,
+  OfflineEventProcessResult,
+  EventRetrospectiveData,
+} from './event-v15-offline.types';
+
+// 从离线类型子模块导入，用于本模块内引用
+import type { OfflineEventEntry, AutoProcessRule } from './event-v15-offline.types';
 
 // ─────────────────────────────────────────────
 // 19. v15 事件系统状态扩展
@@ -345,204 +370,4 @@ export interface EventSaveDataV15 {
   completedEventIds?: EventId[];
   /** 实例计数器 */
   instanceCounter?: number;
-}
-
-// ─────────────────────────────────────────────
-// 30. 连锁事件系统 v15 类型
-// ─────────────────────────────────────────────
-
-/** 连锁事件链 ID */
-export type ChainId = string;
-
-/** 连锁事件节点 ID */
-export type ChainNodeId = string;
-
-/** 连锁事件合并点 */
-export interface ChainMergePoint {
-  /** 合并目标节点 ID */
-  mergeNodeId: ChainNodeId;
-  /** 来源节点 ID 列表 */
-  sourceNodeIds: ChainNodeId[];
-  /** 是否需要所有来源都完成 */
-  requireAll: boolean;
-}
-
-/** 连锁事件节点定义 v15 */
-export interface ChainNodeDefV15 {
-  /** 节点 ID */
-  id: ChainNodeId;
-  /** 关联事件定义 ID */
-  eventDefId: EventId;
-  /** 前序节点 ID */
-  parentNodeId?: ChainNodeId;
-  /** 前序选项 ID */
-  parentOptionId?: string;
-  /** 深度 */
-  depth: number;
-  /** 节点描述 */
-  description?: string;
-  /** 是否合并节点 */
-  isMergeNode?: boolean;
-  /** 合并来源节点 ID 列表 */
-  mergeSourceIds?: ChainNodeId[];
-}
-
-/** 连锁事件链定义 v15 */
-export interface EventChainDefV15 {
-  /** 链 ID */
-  id: ChainId;
-  /** 链名称 */
-  name: string;
-  /** 链描述 */
-  description: string;
-  /** 事件分类 */
-  category: EventCategory;
-  /** 最大深度 */
-  maxDepth: number;
-  /** 超时回合数（null=不超时） */
-  timeoutTurns: number | null;
-  /** 合并点列表 */
-  mergePoints: ChainMergePoint[];
-  /** 节点列表 */
-  nodes: ChainNodeDefV15[];
-}
-
-/** 连锁事件进度 v15 */
-export interface ChainProgressV15 {
-  /** 链 ID */
-  chainId: ChainId;
-  /** 当前节点 ID */
-  currentNodeId: ChainNodeId | null;
-  /** 已完成节点 ID 集合 */
-  completedNodeIds: Set<ChainNodeId>;
-  /** 已访问分支路径 */
-  visitedBranches: string[];
-  /** 是否已完成 */
-  isCompleted: boolean;
-  /** 开始回合 */
-  startedAtTurn: number;
-  /** 完成回合 */
-  completedAtTurn: number | null;
-  /** 是否超时 */
-  isTimedOut: boolean;
-}
-
-/** 连锁事件推进结果 v15 */
-export interface ChainAdvanceResultV15 {
-  /** 是否成功 */
-  success: boolean;
-  /** 前一个节点 ID */
-  previousNodeId: ChainNodeId | null;
-  /** 当前节点 */
-  currentNode: ChainNodeDefV15 | null;
-  /** 链是否已完成 */
-  chainCompleted: boolean;
-  /** 是否为合并推进 */
-  isMerge: boolean;
-  /** 是否超时 */
-  isTimedOut: boolean;
-  /** 失败原因 */
-  reason?: string;
-}
-
-// ─────────────────────────────────────────────
-// 31. 离线事件处理系统类型
-// ─────────────────────────────────────────────
-
-/** 离线事件条目（扩展版，供 OfflineEventSystem 使用） */
-export interface OfflineEventEntry {
-  /** 条目 ID */
-  id: string;
-  /** 事件 ID（兼容 OfflineEventHandler） */
-  eventId: EventId;
-  /** 事件定义 ID */
-  eventDefId: EventId;
-  /** 事件标题 */
-  title: string;
-  /** 事件描述 */
-  description: string;
-  /** 紧急程度 */
-  urgency: 'critical' | 'high' | 'medium' | 'low';
-  /** 事件分类 */
-  category: EventCategory;
-  /** 触发时间（回合） */
-  triggeredAt: number;
-  /** 触发回合 */
-  triggerTurn: number;
-  /** 事件定义 */
-  eventDef: EventDef;
-  /** 自动处理结果（null=需玩家处理） */
-  autoResult: import('./event-v15-activity.types').AutoResolveResult | null;
-  /** 是否已自动处理 */
-  autoProcessed: boolean;
-  /** 自动处理规则 ID */
-  autoRuleId?: string;
-  /** 自动选择的选项 ID */
-  autoSelectedOptionId?: string;
-  /** 是否需要手动操作 */
-  requiresManualAction: boolean;
-}
-
-/** 自动处理策略 */
-export type AutoSelectStrategy =
-  | 'default_option'
-  | 'best_outcome'
-  | 'safest'
-  | 'weighted_random'
-  | 'skip';
-
-/** 自动处理规则 */
-export interface AutoProcessRule {
-  /** 规则 ID */
-  id: string;
-  /** 规则名称 */
-  name: string;
-  /** 规则描述 */
-  description: string;
-  /** 是否启用 */
-  enabled: boolean;
-  /** 优先级（越高越先匹配） */
-  priority: number;
-  /** 紧急程度阈值（高于此值不自动处理） */
-  urgencyThreshold: 'critical' | 'high' | 'medium' | 'low';
-  /** 适用的分类列表（空=全部分类） */
-  applicableCategories: EventCategory[];
-  /** 适用的事件 ID 列表（空=全部事件） */
-  applicableEventIds: EventId[];
-  /** 选择策略 */
-  strategy: AutoSelectStrategy;
-}
-
-/** 离线事件处理结果 */
-export interface OfflineEventProcessResult {
-  /** 自动处理数量 */
-  autoProcessedCount: number;
-  /** 需手动处理数量 */
-  manualRequiredCount: number;
-  /** 已处理条目列表 */
-  processedEntries: Array<{
-    entryId: string;
-    eventDefId: EventId;
-    selectedOptionId: string;
-    consequences: OptionConsequence;
-  }>;
-  /** 待处理条目列表 */
-  pendingEntries: OfflineEventEntry[];
-  /** 事件回溯数据 */
-  retrospectiveData: EventRetrospectiveData;
-}
-
-/** 事件回溯数据 */
-export interface EventRetrospectiveData {
-  /** 离线事件列表 */
-  offlineEvents: OfflineEventEntry[];
-  /** 资源变化汇总 */
-  totalResourceChanges: Record<string, number>;
-  /** 时间线 */
-  timeline: Array<{
-    timestamp: number;
-    eventTitle: string;
-    action: string;
-    result: string;
-  }>;
 }

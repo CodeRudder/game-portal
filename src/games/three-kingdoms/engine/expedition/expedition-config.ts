@@ -63,6 +63,7 @@ export const BASE_REWARDS: Record<RouteDifficulty, {
   [RouteDifficulty.EASY]: { grain: 200, gold: 400, iron: 1, equipFragments: 1, exp: 500 },
   [RouteDifficulty.NORMAL]: { grain: 400, gold: 800, iron: 2, equipFragments: 2, exp: 1200 },
   [RouteDifficulty.HARD]: { grain: 600, gold: 1200, iron: 4, equipFragments: 4, exp: 2500 },
+  [RouteDifficulty.EPIC]: { grain: 800, gold: 1600, iron: 5, equipFragments: 5, exp: 3500 },
   [RouteDifficulty.AMBUSH]: { grain: 1000, gold: 2000, iron: 6, equipFragments: 6, exp: 5000 },
 };
 
@@ -78,6 +79,7 @@ export const POWER_MULTIPLIERS: Record<RouteDifficulty, number> = {
   [RouteDifficulty.EASY]: 1.0,
   [RouteDifficulty.NORMAL]: 1.5,
   [RouteDifficulty.HARD]: 2.0,
+  [RouteDifficulty.EPIC]: 2.5,
   [RouteDifficulty.AMBUSH]: 3.0,
 };
 
@@ -86,6 +88,7 @@ export const MARCH_DURATION: Record<RouteDifficulty, { min: number; max: number 
   [RouteDifficulty.EASY]: { min: 1800, max: 2700 },     // 30~45min
   [RouteDifficulty.NORMAL]: { min: 2700, max: 5400 },    // 45min~1.5h
   [RouteDifficulty.HARD]: { min: 3600, max: 7200 },      // 1~2h
+  [RouteDifficulty.EPIC]: { min: 5400, max: 9000 },      // 1.5~2.5h
   [RouteDifficulty.AMBUSH]: { min: 7200, max: 10800 },   // 2~3h
 };
 
