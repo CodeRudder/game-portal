@@ -267,6 +267,7 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
             className="tk-stage-sweep-btn"
             onClick={(e) => { e.stopPropagation(); handleSweep(stage); }}
             aria-label={`扫荡 ${stage.name}`}
+            data-testid="sweep-btn"
           >
             ⚡ 扫荡
           </button>
@@ -280,7 +281,7 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
 
   // ── 渲染章节选择器 ──
   const renderChapterSelector = () => (
-    <div className="tk-chapter-selector">
+    <div className="tk-chapter-selector" data-testid="chapter-selector">
       <button
         className="tk-chapter-arrow tk-chapter-arrow--left"
         onClick={() => handleChapterChange(selectedChapterIdx - 1)}
@@ -336,7 +337,7 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
   };
 
   return (
-    <div className="tk-campaign-tab">
+    <div className="tk-campaign-tab" data-testid="campaign-tab">
       {/* 章节选择器 */}
       {renderChapterSelector()}
 

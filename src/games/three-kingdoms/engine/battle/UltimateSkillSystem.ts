@@ -13,6 +13,7 @@
  * @module engine/battle/UltimateSkillSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   BattleSkill,
   BattleState,
@@ -48,7 +49,9 @@ import { BATTLE_CONFIG } from './battle-config';
  * }
  * ```
  */
-export class UltimateSkillSystem {
+export class UltimateSkillSystem implements ISubsystem {
+  readonly name = 'ultimate-skill' as const;
+
   /** 当前时停状态 */
   private state: TimeStopState = TimeStopState.INACTIVE;
 
@@ -66,6 +69,23 @@ export class UltimateSkillSystem {
 
   /** 超时定时器ID */
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  /** 系统依赖 */
+  private deps: ISystemDeps | null = null;
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void {
+    // 时停系统由事件驱动（checkUltimateReady/pauseForUltimate），无需每帧更新
+  }
+
+  getState(): { state: TimeStopState; enabled: boolean; pendingUnitId: string | null; pendingSkillId: string | null } {
+    return this.serialize();
+  }
 
   // ─────────────────────────────────────────
   // 公共API

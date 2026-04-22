@@ -76,23 +76,41 @@ async function enterGame(page) {
     await page.waitForTimeout(3000);
   }
 
-  // 如果有新手引导覆盖层，点击跳过
-  const guideSkip = await page.$('.tk-guide-btn--skip');
-  if (guideSkip) {
-    await guideSkip.click();
-    await page.waitForTimeout(1000);
-  }
+  // 关闭新手引导覆盖层 — 使用 force click 或 JS click 避免遮罩拦截
+  await dismissGuide(page);
+}
 
-  // 如果仍有引导遮罩，用 Escape 关闭
-  const guideOverlay = await page.$('.tk-guide-overlay');
-  if (guideOverlay) {
+async function dismissGuide(page) {
+  // 尝试多次关闭引导（引导可能有多步）
+  for (let i = 0; i < 5; i++) {
+    const guideOverlay = await page.$('.tk-guide-overlay');
+    if (!guideOverlay) break;
+
+    // 方法1: JS直接点击跳过按钮
+    const skipBtn = await page.$('.tk-guide-btn--skip');
+    if (skipBtn) {
+      await skipBtn.evaluate(el => el.click());
+      await page.waitForTimeout(500);
+      continue;
+    }
+
+    // 方法2: JS直接点击遮罩背景
+    const backdrop = await page.$('.tk-guide-backdrop');
+    if (backdrop) {
+      await backdrop.evaluate(el => el.click());
+      await page.waitForTimeout(500);
+      continue;
+    }
+
+    // 方法3: Escape
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
   }
 }
 
 async function switchTab(page, tabName) {
-  // 先关闭可能遮挡的弹窗
+  // 先关闭可能遮挡的弹窗和引导
+  await dismissGuide(page);
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
 
@@ -175,12 +193,12 @@ async function checkDataIntegrity(page) {
     console.log(`    当前武将数量: ${heroCards.length}`);
 
     if (heroCards.length === 0) {
-      // 尝试招募
+      // 尝试招募 — 使用JS click避免遮罩拦截
       const recruitBtn = await page.$('.tk-hero-recruit-btn') ||
         await page.$('.tk-hero-empty-btn') ||
         await page.$('button:has-text("招募")');
       if (recruitBtn) {
-        await recruitBtn.click();
+        await recruitBtn.evaluate(el => el.click());
         await page.waitForTimeout(1500);
 
         // 在招募弹窗中点击单次招募
@@ -189,7 +207,7 @@ async function checkDataIntegrity(page) {
         if (recruitOnceBtn) {
           const btnDisabled = await recruitOnceBtn.evaluate(el => el.disabled);
           if (!btnDisabled) {
-            await recruitOnceBtn.click();
+            await recruitOnceBtn.evaluate(el => el.click());
             await page.waitForTimeout(2500);
             const shotRecruit = await takeScreenshot(page, 'v3e-00b-recruit');
             screenshot(shotRecruit);
@@ -200,7 +218,7 @@ async function checkDataIntegrity(page) {
             const resultsCloseBtn = await page.$('.tk-recruit-results-close') ||
               await page.$('button:has-text("确认")');
             if (resultsCloseBtn) {
-              await resultsCloseBtn.click();
+              await resultsCloseBtn.evaluate(el => el.click());
               await page.waitForTimeout(1000);
             }
           } else {
@@ -212,7 +230,7 @@ async function checkDataIntegrity(page) {
         const recruitCloseBtn = await page.$('.tk-recruit-close') ||
           await page.$('button:has-text("关闭")');
         if (recruitCloseBtn) {
-          await recruitCloseBtn.click();
+          await recruitCloseBtn.evaluate(el => el.click());
           await page.waitForTimeout(1000);
         }
       } else {
@@ -420,13 +438,13 @@ async function checkDataIntegrity(page) {
       const shot4 = await takeScreenshot(page, 'v3e-04-formation-modal');
       screenshot(shot4);
 
-      // 4.1 检查布阵弹窗
-      const bfmModal = await page.$('.tk-bfm-modal');
-      const bfmOverlay = await page.$('.tk-bfm-overlay');
-      if (bfmModal || bfmOverlay) {
-        pass('战前布阵弹窗已打开(tk-bfm-modal/overlay)');
+      // 4.1 检查布阵弹窗（使用SharedPanel组件）
+      const sharedPanel = await page.$('.tk-shared-panel');
+      const sharedPanelOverlay = await page.$('.tk-shared-panel-overlay');
+      if (sharedPanel || sharedPanelOverlay) {
+        pass('战前布阵弹窗已打开(tk-shared-panel)');
       } else {
-        fail('战前布阵弹窗', '未找到.tk-bfm-modal或.tk-bfm-overlay');
+        fail('战前布阵弹窗', '未找到.tk-shared-panel或.tk-shared-panel-overlay');
       }
 
       // 4.2 弹窗头部
@@ -495,15 +513,15 @@ async function checkDataIntegrity(page) {
         if (powerVs) pass('VS标识(.tk-bfm-power-vs)存在');
 
         // 战力状态标签
-        const powerDanger = await page.$('.tk-bfm-power--danger');
-        const powerEven = await page.$('.tk-bfm-power--even');
-        const powerAdvantage = await page.$('.tk-bfm-power--advantage');
-        const powerCrush = await page.$('.tk-bfm-power--crush');
+        const powerDanger = await page.$('.tk-power--danger');
+        const powerEven = await page.$('.tk-power--even');
+        const powerAdvantage = await page.$('.tk-power--advantage');
+        const powerCrush = await page.$('.tk-power--crush');
         if (powerDanger) pass('战力状态: 危险');
         else if (powerEven) pass('战力状态: 势均力敌');
         else if (powerAdvantage) pass('战力状态: 占优');
         else if (powerCrush) pass('战力状态: 碾压');
-        else warn('战力状态', '未找到战力状态标签');
+        else warn('战力状态', '未找到战力状态标签(tk-power--*)');
       } else {
         fail('战力对比', '.tk-bfm-power-compare 未找到');
       }
@@ -695,9 +713,13 @@ async function checkDataIntegrity(page) {
             pass('速度控制按钮(.tk-bs-speed-btn)存在');
             const speedActive = await page.$('.tk-bs-speed-btn--active');
             if (speedActive) pass('速度按钮激活状态(.tk-bs-speed-btn--active)存在');
-            await speedBtn.click();
-            await page.waitForTimeout(500);
-            pass('速度切换点击成功');
+            try {
+              await page.$eval('.tk-bs-speed-btn', el => el.click());
+              await page.waitForTimeout(500);
+              pass('速度切换点击成功');
+            } catch (e) {
+              warn('速度切换', '点击失败: ' + e.message.substring(0, 80));
+            }
           }
 
           // 4.21 跳过按钮

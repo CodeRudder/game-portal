@@ -12,6 +12,7 @@
  * @module engine/battle/BattleSpeedController
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { BattleSpeedState, SpeedChangeEvent } from './battle.types';
 import { BattleSpeed } from './battle.types';
 import { BATTLE_CONFIG } from './battle-config';
@@ -54,7 +55,9 @@ export interface ISpeedChangeListener {
  * const animSpeed = controller.getAnimationSpeedScale(); // 2.0
  * ```
  */
-export class BattleSpeedController {
+export class BattleSpeedController implements ISubsystem {
+  readonly name = 'battle-speed' as const;
+
   /** 当前速度状态 */
   private speedState: BattleSpeedState;
 
@@ -64,10 +67,27 @@ export class BattleSpeedController {
   /** 历史速度变更记录（用于调试和回放） */
   private changeHistory: SpeedChangeEvent[] = [];
 
+  /** 系统依赖 */
+  private deps: ISystemDeps | null = null;
+
   constructor() {
     this.speedState = this.createSpeedState(
       BATTLE_CONFIG.DEFAULT_BATTLE_SPEED as BattleSpeed,
     );
+  }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void {
+    // 速度控制器无需每帧更新，速度切换由 setSpeed/cycleSpeed 驱动
+  }
+
+  getState(): BattleSpeedState {
+    return { ...this.speedState };
   }
 
   // ─────────────────────────────────────────

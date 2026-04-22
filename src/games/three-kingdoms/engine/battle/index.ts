@@ -61,7 +61,7 @@ export { BATTLE_CONFIG } from './battle-config';
 export { BattleEngine } from './BattleEngine';
 export { autoFormation } from './autoFormation';
 export type { AutoFormationResult } from './autoFormation';
-export { calculateBattleStats, generateSummary } from './BattleStatistics';
+export { calculateBattleStats, generateSummary, BattleStatisticsSubsystem } from './BattleStatistics';
 export type { BattleStats } from './BattleStatistics';
 export { BattleTurnExecutor } from './BattleTurnExecutor';
 export {
@@ -95,6 +95,9 @@ export type {
   EffectElement,
   EffectTrigger,
 } from './battle-effect-presets';
+
+// v4.0：战斗特效管理器
+export { BattleEffectManager } from './BattleEffectManager';
 
 // v4.0：伤害数字动画系统
 export { DamageNumberSystem, DamageNumberType, TrajectoryType } from './DamageNumberSystem';

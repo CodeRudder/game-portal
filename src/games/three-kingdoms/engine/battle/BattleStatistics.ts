@@ -9,6 +9,7 @@
 
 import type { BattleState } from './battle.types';
 import { BattleOutcome, StarRating } from './battle.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────
 // 类型
@@ -24,6 +25,62 @@ export interface BattleStats {
   maxSingleDamage: number;
   /** 最大连击数（连续暴击） */
   maxCombo: number;
+}
+
+// ─────────────────────────────────────────
+// BattleStatisticsSubsystem — ISubsystem 包装
+// ─────────────────────────────────────────
+
+/**
+ * 战斗统计子系统
+ *
+ * 实现 ISubsystem 接口，封装战斗统计的纯函数。
+ * 提供依赖注入入口和状态管理能力。
+ */
+export class BattleStatisticsSubsystem implements ISubsystem {
+  readonly name = 'battleStatistics' as const;
+  private sysDeps: ISystemDeps | null = null;
+  private lastStats: BattleStats | null = null;
+
+  /** ISubsystem.init — 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.sysDeps = deps;
+  }
+
+  /** ISubsystem.update — 统计模块按需调用，不需要每帧更新 */
+  update(_dt: number): void {
+    // 战斗统计在战斗结束时调用，不需要每帧更新
+  }
+
+  /** ISubsystem.getState — 返回最近一次统计数据 */
+  getState(): { lastStats: BattleStats | null } {
+    return { lastStats: this.lastStats };
+  }
+
+  /** ISubsystem.reset — 重置统计数据 */
+  reset(): void {
+    this.lastStats = null;
+  }
+
+  /**
+   * 计算战斗统计数据（委托给纯函数）
+   */
+  calculate(state: BattleState): BattleStats {
+    this.lastStats = calculateBattleStats(state);
+    return this.lastStats;
+  }
+
+  /**
+   * 生成战斗摘要（委托给纯函数）
+   */
+  summary(
+    outcome: BattleOutcome,
+    stars: StarRating,
+    turns: number,
+    allyAlive: number,
+  ): string {
+    return generateSummary(outcome, stars, turns, allyAlive);
+  }
 }
 
 // ─────────────────────────────────────────

@@ -188,7 +188,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   // ── 加载中 ──
   if (!battleState) {
     return (
-      <div className="tk-bs-overlay">
+      <div className="tk-bs-overlay" data-testid="battle-scene-loading">
         <div style={{ color: 'var(--tk-text-secondary)', textAlign: 'center', marginTop: '40vh' }}>
           正在准备战斗...
         </div>
@@ -203,7 +203,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   };
 
   return (
-    <div className="tk-bs-overlay">
+    <div className="tk-bs-overlay" data-testid="battle-scene">
       {/* 顶部信息栏 */}
       <div className="tk-bs-top-bar">
         <div className="tk-bs-stage-info">
@@ -214,10 +214,10 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
           回合 {battleState.currentTurn}/{battleState.maxTurns}
         </div>
         <div className="tk-bs-controls">
-          <button className={`tk-bs-speed-btn ${speed === 2 ? 'tk-bs-speed-btn--active' : ''}`} onClick={toggleSpeed}>
+          <button className={`tk-bs-speed-btn ${speed === 2 ? 'tk-bs-speed-btn--active' : ''}`} onClick={toggleSpeed} data-testid="battle-speed-btn">
             {speed}x
           </button>
-          {!isFinished && <button className="tk-bs-skip-btn" onClick={skip}>跳过</button>}
+          {!isFinished && <button className="tk-bs-skip-btn" onClick={skip} data-testid="battle-skip-btn">跳过</button>}
         </div>
       </div>
 

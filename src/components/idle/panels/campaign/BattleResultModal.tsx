@@ -173,7 +173,7 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
   const resultTitle = isVictory ? '战斗胜利' : isDraw ? '平局' : '战斗失败';
 
   return (
-    <SharedPanel title={resultTitle} onClose={onConfirm} visible={true}>
+    <SharedPanel title={resultTitle} onClose={onConfirm} visible={true} data-testid="battle-result-modal">
         {/* ── 结果标题 ── */}
         <div className="tk-brm-result-header">
           <div className={`tk-brm-result-icon ${isVictory ? 'tk-brm-result-icon--victory' : 'tk-brm-result-icon--defeat'}`}>
