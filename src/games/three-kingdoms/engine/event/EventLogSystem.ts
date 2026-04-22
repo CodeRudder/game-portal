@@ -93,6 +93,7 @@ export class EventLogSystem implements ISubsystem {
     const log: EventLogEntry = { ...entry, id: `log-${this.logIdCounter}` };
     this.eventLog.push(log);
     this.trimLog();
+    this.deps?.eventBus.emit('eventLog:added', { logId: log.id, eventDefId: log.eventDefId, title: log.title });
     return log;
   }
 

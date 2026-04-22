@@ -1,0 +1,68 @@
+{
+  "passed": [
+    "游戏主界面加载成功",
+    "主界面数据完整性检查通过",
+    "天下Tab容器存在（data-testid=worldmap-tab）",
+    "世界地图工具栏存在（data-testid=worldmap-toolbar）",
+    "世界地图网格渲染（data-testid=worldmap-grid）",
+    "领土格子渲染 (18个, data-testid=territory-cell-*)",
+    "区域筛选下拉框存在（data-testid=worldmap-filter-region）",
+    "归属筛选下拉框存在（data-testid=worldmap-filter-ownership）",
+    "热力图切换按钮存在（data-testid=worldmap-heatmap-toggle）",
+    "热力图切换可点击",
+    "领土格子可点击",
+    "NPC名册Tab容器存在 [data-testid=\"npc-tab\"]",
+    "NPC搜索框存在 [data-testid=\"npc-search-input\"]",
+    "NPC职业筛选栏存在 [data-testid=\"npc-filter-bar\"]",
+    "NPC列表容器存在 [data-testid=\"npc-list\"]",
+    "NPC卡片渲染 (10个)",
+    "NPC底部统计存在",
+    "NPC\"全部\"筛选按钮可点击",
+    "NPC搜索输入功能正常",
+    "NPC对话弹窗通过Escape关闭",
+    "NPC好感度条渲染 (10个)",
+    "无急报横幅（当前无紧急事件，属正常状态）",
+    "无随机遭遇弹窗（随机触发，当前无事件属正常状态）",
+    "移动端NPC Tab正常显示",
+    "移动端天下Tab截图完成",
+    "最终数据完整性检查通过"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "NPC详情弹窗未找到",
+      "detail": "可能需要等待加载"
+    },
+    {
+      "name": "NPC对话弹窗未找到",
+      "detail": "可能需要等待"
+    },
+    {
+      "name": "\"更多\"Tab中未找到事件入口",
+      "detail": "可能标签名不同"
+    }
+  ],
+  "screenshots": [
+    "v6e-00-main",
+    "v6e-A1-map-tab",
+    "v6e-A2-heatmap-on",
+    "v6e-A3-territory-click",
+    "v6e-B1-npc-tab",
+    "v6e-B2-npc-search",
+    "v6e-B3-npc-info",
+    "v6e-B4-npc-dialog",
+    "v6e-C1-more-tab",
+    "v6e-D1-npc-mobile",
+    "v6e-D2-map-mobile"
+  ],
+  "consoleErrors": [],
+  "startTime": "2026-04-22T11:52:23.225Z",
+  "endTime": "2026-04-22T11:53:13.681Z",
+  "summary": {
+    "total": 29,
+    "passed": 26,
+    "failed": 0,
+    "warnings": 3,
+    "screenshots": 11
+  }
+}

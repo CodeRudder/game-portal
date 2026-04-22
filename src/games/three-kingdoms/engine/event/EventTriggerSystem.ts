@@ -1,55 +1,23 @@
 /**
  * 引擎层 — 事件触发系统
- *
- * 管理事件系统的完整生命周期：
- *   - 事件注册（随机/固定/连锁三类事件）
- *   - 事件触发判定（概率/条件/前置事件）
- *   - 事件选择处理
- *   - 事件过期清理
- *   - 存档序列化/反序列化
- *
- * 功能覆盖：
- *   #21 事件类型矩阵
- *   #23 随机遭遇弹窗（事件触发部分）
- *
+ * 随机/固定/连锁三类事件的注册、触发、选择、过期、序列化
+ * #21 事件类型矩阵 #23 随机遭遇弹窗(触发部分)
  * @module engine/event/EventTriggerSystem
  */
 
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
-  EventId,
-  EventDef,
-  EventInstance,
-  EventTriggerType,
-  EventTriggerResult,
-  EventChoiceResult,
-  EventCondition,
-  EventConsequence,
-  EventSystemSaveData,
-  EventTriggerConfig,
+  EventId, EventDef, EventInstance, EventTriggerType,
+  EventTriggerResult, EventChoiceResult, EventCondition,
+  EventConsequence, EventSystemSaveData, EventTriggerConfig,
 } from '../../core/event';
 import {
-  DEFAULT_EVENT_TRIGGER_CONFIG,
-  PREDEFINED_EVENTS,
-  EVENT_SAVE_VERSION,
+  DEFAULT_EVENT_TRIGGER_CONFIG, PREDEFINED_EVENTS, EVENT_SAVE_VERSION,
 } from '../../core/event';
 
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-/** 最大活跃事件数上限 */
 const ABSOLUTE_MAX_EVENTS = 20;
 
-// ─────────────────────────────────────────────
-// 事件触发系统
-// ─────────────────────────────────────────────
-
-/**
- * 事件触发系统
- *
- * 管理随机/固定/连锁三类事件的注册、触发和选择。
- */
+/** 管理随机/固定/连锁三类事件的注册、触发和选择 */
 export class EventTriggerSystem implements ISubsystem {
   readonly name = 'eventTrigger';
 

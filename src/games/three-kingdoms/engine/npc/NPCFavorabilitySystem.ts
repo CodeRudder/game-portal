@@ -68,9 +68,11 @@ export class NPCFavorabilitySystem implements ISubsystem {
       const npcSys = this.getNPCSystem();
       if (!npcSys) continue;
       const npc = npcSys.getNPCById(npcId);
-      if (npc && npc.affinity > 0) {
-        this.addAffinity(npcId, -this.gainConfig.decayPerTurn, 'time_decay', '好感度自然衰减', currentTurn);
-      }
+      if (!npc || npc.affinity <= 0) continue;
+      // 超过10回合未交互才触发衰减
+      const turnsSinceLastInteract = currentTurn - (npc.lastInteractedAt ?? 0);
+      if (turnsSinceLastInteract <= 10) continue;
+      this.addAffinity(npcId, -this.gainConfig.decayPerTurn, 'time_decay', '好感度自然衰减', currentTurn);
     }
   }
 
@@ -190,12 +192,14 @@ export class NPCFavorabilitySystem implements ISubsystem {
   // ─── 内部方法 ──────────────────────────────
 
   private addAffinity(npcId: NPCId, delta: number, source: AffinitySource, description: string, turn: number): number | null {
-    const npc = this.getNPCData(npcId);
-    if (!npc) return null;
+    const npcSys = this.getNPCSystem();
+    const npc = npcSys?.getNPCById(npcId);
+    if (!npc || !npcSys) return null;
     const prev = npc.affinity;
     const newVal = Math.max(0, Math.min(100, prev + delta));
     const actualDelta = newVal - prev;
-    npc.affinity = newVal;
+    // 使用 NPCSystem.setAffinity 修改原始数据（getNPCById 返回副本）
+    npcSys.setAffinity(npcId, newVal);
     this.recordChange(npcId, actualDelta, prev, newVal, source, description, turn);
     return actualDelta;
   }

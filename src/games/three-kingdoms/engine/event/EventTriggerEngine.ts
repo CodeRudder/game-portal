@@ -1,58 +1,24 @@
 /**
  * 引擎层 — 事件触发引擎 v15.0
- *
- * 功能覆盖：
- *   #6  触发条件引擎（时间+条件+概率）
- *   #7  概率触发公式（加法+乘法修正）
- *   #8  通知优先级（6级）
- *   #9  事件冷却
- *   #10 事件选项系统（2-3分支）
- *
- * 设计：
- *   - TriggerConditionGroup → 时间条件 AND/OR 状态条件 AND 概率条件
- *   - 概率公式：P = clamp(base + Σ(additive) * Π(multiplicative), 0, 1)
- *   - 通知6级优先级队列
- *   - 冷却回合追踪
- *   - 分支选项含条件可见性
- *
+ * #6 触发条件(时间+条件+概率) #7 概率公式(加法+乘法修正)
+ * #8 通知优先级(6级) #9 事件冷却 #10 选项系统(2-3分支)
+ * P = clamp(base + Σ(additive) * Π(multiplicative), 0, 1)
  * @module engine/event/EventTriggerEngine
  */
 
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { EventId } from '../../core/event';
 import type {
-  TriggerConditionGroup,
-  TimeCondition,
-  StateCondition,
-  ProbabilityCondition,
-  ProbabilityModifier,
-  ProbabilityResult,
-  EventNotification,
-  CooldownRecord,
-  BranchOption,
-  NotificationPriority,
+  TriggerConditionGroup, TimeCondition, StateCondition,
+  ProbabilityCondition, ProbabilityModifier, ProbabilityResult,
+  EventNotification, CooldownRecord, BranchOption, NotificationPriority,
 } from '../../core/event/event-v15.types';
 import { NotificationPriority as NotificationPriorityEnum } from '../../core/event/event-v15.types';
 
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-/** 最大通知队列大小 */
 const MAX_NOTIFICATION_QUEUE_SIZE = 50;
-
-/** 默认冷却回合数 */
 const DEFAULT_COOLDOWN_TURNS = 5;
 
-// ─────────────────────────────────────────────
-// 事件触发引擎
-// ─────────────────────────────────────────────
-
-/**
- * 事件触发引擎
- *
- * 管理触发条件评估、概率计算、通知优先级、冷却、分支选项。
- */
+/** 管理触发条件评估、概率计算、通知优先级、冷却、分支选项 */
 export class EventTriggerEngine implements ISubsystem {
   readonly name = 'eventTriggerEngine';
 

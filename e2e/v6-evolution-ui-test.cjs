@@ -193,56 +193,59 @@ async function checkDataIntegrity(page) {
     const shotA1 = await takeScreenshot(page, 'v6e-A1-map-tab');
     screenshot(shotA1);
 
-    // A1.1 地图Tab容器
-    const mapTab = await page.$('[data-testid="world-map-tab"]') ||
-      await page.$('.tk-worldmap-tab') ||
-      await page.$('.tk-map-container');
-    if (mapTab) pass('天下Tab容器存在');
-    else warn('天下Tab容器选择器未命中', '可能CSS类名变更');
+    // A1.1 地图Tab容器 — 使用源码中实际的 data-testid="worldmap-tab"
+    const mapTab = await page.$('[data-testid="worldmap-tab"]');
+    if (mapTab) pass('天下Tab容器存在（data-testid=worldmap-tab）');
+    else warn('天下Tab容器选择器未命中', 'data-testid=worldmap-tab 不存在');
 
-    // A1.2 地图网格渲染
-    const mapGrid = await page.$('.tk-worldmap-grid') ||
-      await page.$('.tk-map-grid') ||
-      await page.$('[data-testid="map-grid"]');
-    if (mapGrid) pass('世界地图网格渲染');
-    else warn('世界地图网格未找到', '可能使用Canvas渲染');
+    // A1.2 地图工具栏 — data-testid="worldmap-toolbar"
+    const toolbar = await page.$('[data-testid="worldmap-toolbar"]');
+    if (toolbar) pass('世界地图工具栏存在（data-testid=worldmap-toolbar）');
+    else warn('世界地图工具栏未找到', 'data-testid=worldmap-toolbar 不存在');
 
-    // A1.3 领土格子
-    const territoryTiles = await page.$$('[data-testid^="territory-"]') ||
-      await page.$$('.tk-territory-cell');
+    // A1.3 地图网格 — data-testid="worldmap-grid"
+    const mapGrid = await page.$('[data-testid="worldmap-grid"]');
+    if (mapGrid) pass('世界地图网格渲染（data-testid=worldmap-grid）');
+    else warn('世界地图网格未找到', 'data-testid=worldmap-grid 不存在');
+
+    // A1.4 领土格子 — data-testid="territory-cell-{id}"
+    const territoryTiles = await page.$$('[data-testid^="territory-cell-"]');
     if (territoryTiles.length > 0) {
-      pass(`领土格子渲染 (${territoryTiles.length}个)`);
+      pass(`领土格子渲染 (${territoryTiles.length}个, data-testid=territory-cell-*)`);
     } else {
-      warn('领土格子未找到', '可能使用Canvas渲染而非DOM格子');
+      warn('领土格子未找到', 'data-testid=territory-cell-* 无匹配');
     }
 
-    // A1.4 地图筛选工具栏
-    const filterBar = await page.$('.tk-map-filter-bar') ||
-      await page.$('[data-testid="map-filter-bar"]');
-    if (filterBar) pass('地图筛选工具栏存在');
-    else warn('地图筛选工具栏未找到', '可能嵌入在Tab内');
+    // A1.5 区域筛选 — data-testid="worldmap-filter-region"
+    const regionFilter = await page.$('[data-testid="worldmap-filter-region"]');
+    if (regionFilter) pass('区域筛选下拉框存在（data-testid=worldmap-filter-region）');
+    else warn('区域筛选下拉框未找到', 'data-testid=worldmap-filter-region 不存在');
 
-    // A1.5 统计面板
-    const statsPanel = await page.$('.tk-map-stats') ||
-      await page.$('[data-testid="map-stats"]');
-    if (statsPanel) pass('地图统计面板存在');
-    else warn('地图统计面板未找到', '可能为简化视图');
+    // A1.6 归属筛选 — data-testid="worldmap-filter-ownership"
+    const ownershipFilter = await page.$('[data-testid="worldmap-filter-ownership"]');
+    if (ownershipFilter) pass('归属筛选下拉框存在（data-testid=worldmap-filter-ownership）');
+    else warn('归属筛选下拉框未找到', 'data-testid=worldmap-filter-ownership 不存在');
 
-    // A1.6 检查地图区域标签
-    const regionLabels = await page.$$('.tk-region-label') ||
-      await page.$$('[data-testid^="region-label-"]');
-    if (regionLabels.length > 0) {
-      pass(`地图区域标签显示 (${regionLabels.length}个)`);
+    // A1.7 热力图切换 — data-testid="worldmap-heatmap-toggle"
+    const heatmapToggle = await page.$('[data-testid="worldmap-heatmap-toggle"]');
+    if (heatmapToggle) {
+      pass('热力图切换按钮存在（data-testid=worldmap-heatmap-toggle）');
+      // 尝试切换热力图
+      await heatmapToggle.click();
+      await page.waitForTimeout(1000);
+      const shotA2 = await takeScreenshot(page, 'v6e-A2-heatmap-on');
+      screenshot(shotA2);
+      pass('热力图切换可点击');
     } else {
-      warn('地图区域标签未找到', '可能使用Canvas绘制');
+      warn('热力图切换按钮未找到', 'data-testid=worldmap-heatmap-toggle 不存在');
     }
 
-    // A1.7 点击一个领土格子（如果存在）
+    // A1.8 点击一个领土格子
     if (territoryTiles.length > 0) {
       await territoryTiles[0].click();
       await page.waitForTimeout(1000);
-      const shotA2 = await takeScreenshot(page, 'v6e-A2-territory-click');
-      screenshot(shotA2);
+      const shotA3 = await takeScreenshot(page, 'v6e-A3-territory-click');
+      screenshot(shotA3);
       pass('领土格子可点击');
     }
 
@@ -317,9 +320,10 @@ async function checkDataIntegrity(page) {
       await page.waitForTimeout(300);
     }
 
-    // B1.9 点击NPC卡片查看详情
-    if (npcCards.length > 0) {
-      const firstCard = npcCards[0];
+    // B1.9 重新获取NPC卡片（搜索清空后DOM可能已更新）
+    const npcCardsAfterSearch = await page.$$('[data-testid^="npc-card-"]');
+    if (npcCardsAfterSearch.length > 0) {
+      const firstCard = npcCardsAfterSearch[0];
       const cardTestId = await firstCard.getAttribute('data-testid');
       console.log(`  ℹ️  点击NPC卡片: ${cardTestId}`);
 
@@ -356,8 +360,9 @@ async function checkDataIntegrity(page) {
     }
 
     // B1.10 NPC对话测试
-    if (npcCards.length > 0) {
-      const firstCard = npcCards[0];
+    const npcCardsForDialog = await page.$$('[data-testid^="npc-card-"]');
+    if (npcCardsForDialog.length > 0) {
+      const firstCard = npcCardsForDialog[0];
       const dialogBtn = await firstCard.$('[data-testid^="npc-btn-dialog-"]');
       if (dialogBtn) {
         await dialogBtn.click();

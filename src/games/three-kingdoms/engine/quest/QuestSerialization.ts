@@ -25,7 +25,7 @@ import type { QuestId } from '../../core/quest';
 export function serializeQuestState(data: {
   activeQuests: Map<string, QuestInstance>;
   completedQuestIds: Set<QuestId>;
-  activityState: Record<string, unknown>;
+  activityState: import('../../core/quest').ActivityState;
   dailyRefreshDate: string;
   dailyQuestInstanceIds: string[];
 }): QuestSystemSaveData {

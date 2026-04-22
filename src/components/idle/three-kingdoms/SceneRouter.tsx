@@ -17,6 +17,8 @@ import EquipmentTab from '@/components/idle/panels/equipment/EquipmentTab';
 import ArenaTab from '@/components/idle/panels/arena/ArenaTab';
 import WorldMapTab from '@/components/idle/panels/map/WorldMapTab';
 import NPCTab from '@/components/idle/panels/npc/NPCTab';
+import NPCInfoModal from '@/components/idle/panels/npc/NPCInfoModal';
+import type { NPCData } from '@/games/three-kingdoms/core/npc';
 import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
 import ArmyTab from '@/components/idle/panels/army/ArmyTab';
 import MoreTab from '@/components/idle/panels/more/MoreTab';
@@ -74,6 +76,18 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
     }
     return [];
   }, [engine, snapshotVersion]);
+
+  // ── NPC 弹窗状态 ──
+  const [selectedNPC, setSelectedNPC] = React.useState<NPCData | null>(null);
+
+  const handleSelectNPC = React.useCallback((npcId: string) => {
+    const npc = npcData.find((n: NPCData) => n.id === npcId);
+    if (npc) setSelectedNPC(npc);
+  }, [npcData]);
+
+  const handleStartDialog = React.useCallback((npcId: string) => {
+    Toast.info(`与NPC对话: ${npcId}`);
+  }, []);
 
   switch (activeTab) {
     case 'building':
@@ -139,11 +153,26 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
 
     case 'npc':
       return (
-        <NPCTab
-          npcs={npcData}
-          onSelectNPC={(npcId) => Toast.info(`查看NPC: ${npcId}`)}
-          onStartDialog={(npcId) => Toast.info(`与NPC对话: ${npcId}`)}
-        />
+        <>
+          <NPCTab
+            npcs={npcData}
+            onSelectNPC={handleSelectNPC}
+            onStartDialog={handleStartDialog}
+          />
+          {/* NPC详情弹窗 */}
+          {selectedNPC && (
+            <NPCInfoModal
+              visible={true}
+              npc={selectedNPC}
+              onClose={() => setSelectedNPC(null)}
+              onStartDialog={(npcId) => {
+                setSelectedNPC(null);
+                Toast.info(`与NPC对话: ${npcId}`);
+              }}
+            />
+          )}
+          {/* NPC对话 — 通过Toast提示，完整弹窗需DialogSystem集成 */}
+        </>
       );
 
     case 'arena':

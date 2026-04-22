@@ -7,6 +7,7 @@
 - [Round 4: v4.0攻城略地(下)](./evolution-r4.md) — ISubsystem同步实现+复杂域拆分+废弃全局扫描+UI警告分类
 - [Round 5: v3.0攻城略地-上](./evolution-r5.md) — 技术审查4问题修复+30/30 UI测试通过
 - [Round 6: v5.0百家争鸣](./evolution-r6.md) — 0P0+0P1首次零缺陷+62/62 UI测试+四层拆分成熟
+- [Round 7: v6.0天下大势](./evolution-r7.md) — P0修复(Event接入引擎+门面补全)+26/26 UI测试+exports-v6拆分策略
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -111,3 +112,16 @@ UI测试警告应分为两类：
 - "数据依赖型"：初始状态无数据导致（如无武将、无已通关关卡），可忽略
 - "功能缺失型"：功能未实现或实现有误，需修复
 测试报告中应明确标注警告类型。
+
+### EVO-029: 搜索后DOM刷新（来自v6.0进化R1）
+E2E测试中搜索清空后必须重新获取DOM元素引用，旧引用会因React重渲染而失效。
+不要在搜索操作后继续使用搜索前获取的元素引用。
+
+### EVO-030: 子系统接入检查清单（来自v6.0进化R1）
+新增子系统接入引擎时必须检查以下6项：
+1. createXxxSystems() 在构造函数中调用
+2. registerSubsystems() 中注册到 registry
+3. init() 中调用 initXxxSystems()
+4. reset() 中调用各子系统 reset()
+5. engine-getters.ts 中添加 getter
+6. exports门面导出（engine/index.ts 或拆分文件）

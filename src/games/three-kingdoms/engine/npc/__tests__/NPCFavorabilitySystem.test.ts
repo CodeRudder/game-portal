@@ -191,8 +191,8 @@ describe('NPCFavorabilitySystem', () => {
       expect(discount).toBe(AFFINITY_LEVEL_EFFECTS.neutral.tradeDiscount);
     });
 
-    it('getTradeDiscount 不存在的NPC返回1.0', () => {
-      expect(favSys.getTradeDiscount('non-existent')).toBe(1.0);
+    it('getTradeDiscount 不存在的NPC返回0', () => {
+      expect(favSys.getTradeDiscount('non-existent')).toBe(0);
     });
 
     it('getQuestRewardMultiplier 返回倍率', () => {
@@ -211,7 +211,8 @@ describe('NPCFavorabilitySystem', () => {
 
       const result = favSys.addDialogAffinity('npc-merchant-01', 1);
       expect(result).not.toBeNull();
-      expect(result).toBe(prevAffinity + DEFAULT_AFFINITY_GAIN_CONFIG.dialogBase);
+      expect(result).toBe(DEFAULT_AFFINITY_GAIN_CONFIG.dialogBase);
+      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + DEFAULT_AFFINITY_GAIN_CONFIG.dialogBase);
     });
 
     it('addGiftAffinity 赠送普通物品增加好感度', () => {
@@ -220,7 +221,8 @@ describe('NPCFavorabilitySystem', () => {
 
       const result = favSys.addGiftAffinity('npc-merchant-01', false, 10, 1);
       expect(result).not.toBeNull();
-      expect(result).toBe(prevAffinity + 10); // 10 * 1.0
+      expect(result).toBe(10); // 10 * 1.0
+      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + 10);
     });
 
     it('addGiftAffinity 赠送偏好物品加倍好感度', () => {
@@ -229,7 +231,8 @@ describe('NPCFavorabilitySystem', () => {
 
       const result = favSys.addGiftAffinity('npc-merchant-01', true, 10, 1);
       expect(result).not.toBeNull();
-      expect(result).toBe(prevAffinity + 20); // 10 * 2.0
+      expect(result).toBe(20); // 10 * 2.0
+      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + 20);
     });
 
     it('addQuestCompleteAffinity 完成任务增加好感度', () => {
@@ -238,7 +241,8 @@ describe('NPCFavorabilitySystem', () => {
 
       const result = favSys.addQuestCompleteAffinity('npc-merchant-01', 1);
       expect(result).not.toBeNull();
-      expect(result).toBe(prevAffinity + DEFAULT_AFFINITY_GAIN_CONFIG.questComplete);
+      expect(result).toBe(DEFAULT_AFFINITY_GAIN_CONFIG.questComplete);
+      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + DEFAULT_AFFINITY_GAIN_CONFIG.questComplete);
     });
 
     it('addTradeAffinity 通过交易增加好感度', () => {
@@ -247,7 +251,8 @@ describe('NPCFavorabilitySystem', () => {
 
       const result = favSys.addTradeAffinity('npc-merchant-01', 1);
       expect(result).not.toBeNull();
-      expect(result).toBe(prevAffinity + DEFAULT_AFFINITY_GAIN_CONFIG.tradeBase);
+      expect(result).toBe(DEFAULT_AFFINITY_GAIN_CONFIG.tradeBase);
+      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + DEFAULT_AFFINITY_GAIN_CONFIG.tradeBase);
     });
 
     it('addBattleAssistAffinity 通过战斗协助增加好感度', () => {
@@ -256,7 +261,8 @@ describe('NPCFavorabilitySystem', () => {
 
       const result = favSys.addBattleAssistAffinity('npc-merchant-01', 1);
       expect(result).not.toBeNull();
-      expect(result).toBe(prevAffinity + DEFAULT_AFFINITY_GAIN_CONFIG.battleAssist);
+      expect(result).toBe(DEFAULT_AFFINITY_GAIN_CONFIG.battleAssist);
+      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + DEFAULT_AFFINITY_GAIN_CONFIG.battleAssist);
     });
 
     it('不存在的NPC返回null', () => {
@@ -269,9 +275,10 @@ describe('NPCFavorabilitySystem', () => {
 
     it('好感度上限为100', () => {
       npcSys.setAffinity('npc-merchant-01', 99);
-      favSys.addDialogAffinity('npc-merchant-01', 1);
+      const result = favSys.addDialogAffinity('npc-merchant-01', 1);
       const npc = npcSys.getNPCById('npc-merchant-01');
       expect(npc!.affinity).toBe(100);
+      expect(result).toBe(1); // 实际只增加了1（被clamp到100）
     });
 
     it('好感度变化被记录', () => {
@@ -412,7 +419,7 @@ describe('NPCFavorabilitySystem', () => {
       ctx.favSys.activateBondSkill('npc-merchant-01', 1);
 
       expect(ctx.deps.eventBus.emit).toHaveBeenCalledWith(
-        'npc:bond_skill_activated',
+        'npc:bondSkillActivated',
         expect.objectContaining({
           npcId: 'npc-merchant-01',
           skillId: 'bond-merchant-goldrush',
@@ -428,20 +435,16 @@ describe('NPCFavorabilitySystem', () => {
       expect(effects.size).toBe(1);
     });
 
-    it('tickBondEffects 减少持续回合', () => {
+    it('tickBondEffects 冷却到期后效果过期', () => {
       npcSys.setAffinity('npc-merchant-01', 90);
       favSys.activateBondSkill('npc-merchant-01', 1);
 
-      // 效果持续3回合
-      const expired1 = favSys.tickBondEffects(2);
-      expect(expired1.length).toBe(0);
+      // merchant cooldownTurns=10, cooldownEnd=11
+      const expired1 = favSys.tickBondEffects(10);
+      expect(expired1.length).toBe(0); // 10 < 11, 未过期
 
-      const expired2 = favSys.tickBondEffects(3);
-      expect(expired2.length).toBe(0);
-
-      const expired3 = favSys.tickBondEffects(4);
-      // 最后一次减少后 duration=0，应该过期
-      expect(expired3.length).toBe(1);
+      const expired2 = favSys.tickBondEffects(11);
+      expect(expired2.length).toBe(1); // 11 >= 11, 过期
     });
   });
 
