@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-04-22T10:48:17.424Z",
+  "version": "v4.0",
+  "module": "攻城略地(下)",
+  "type": "进化迭代R1",
+  "summary": {
+    "passed": 26,
+    "failed": 0,
+    "warnings": 7,
+    "screenshots": 15,
+    "consoleErrors": 0
+  },
+  "passed": [
+    "游戏主界面加载成功",
+    "主界面数据完整性检查通过",
+    "单次招募成功",
+    "关卡Tab(.tk-campaign-tab)存在",
+    "一键布阵成功",
+    "战斗场景覆盖层(.tk-bs-overlay)存在",
+    "速度控制按钮数量: 1",
+    "武将卡片数量: 1",
+    "武将详情弹窗已打开",
+    "升星Tab点击成功",
+    "升星按钮存在 (禁用: false)",
+    "科技Tab容器存在",
+    "军事路线存在",
+    "经济路线存在",
+    "文化路线存在",
+    "科技节点数量: 24",
+    "科技节点状态分类正常",
+    "科技节点详情弹窗已打开",
+    "研究按钮存在",
+    "移动端科技Tab正常",
+    "移动端关卡Tab正常",
+    "移动端武将Tab正常",
+    "移动端无水平溢出 (scrollWidth=375)",
+    "移动端数据完整性检查通过",
+    "移动端无控制台错误",
+    "PC端无控制台错误"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "速度切换",
+      "detail": "elementHandle.click: Element is not attached to the DOM\nCall log:\n  - attempting"
+    },
+    {
+      "name": "大招时停UI",
+      "detail": "未找到大招按钮（可能需要怒气满才显示）"
+    },
+    {
+      "name": "战斗结算",
+      "detail": "未找到标准结算弹窗"
+    },
+    {
+      "name": "扫荡按钮",
+      "detail": "未找到扫荡按钮（可能没有三星通关关卡）"
+    },
+    {
+      "name": "碎片进度",
+      "detail": "未找到碎片进度UI"
+    },
+    {
+      "name": "科技点",
+      "detail": "未找到科技点显示"
+    },
+    {
+      "name": "研究队列",
+      "detail": "未找到研究队列UI"
+    }
+  ],
+  "screenshots": [
+    "v4e-00-main",
+    "v4e-A2-campaign-tab",
+    "v4e-A3-formation-modal",
+    "v4e-A4-battle-scene",
+    "v4e-A4b-battle-mid",
+    "v4e-A5-battle-result",
+    "v4e-C1-hero-tab",
+    "v4e-C1b-hero-detail",
+    "v4e-C1c-star-up-panel",
+    "v4e-D1-tech-tab",
+    "v4e-D1b-tech-node-detail",
+    "v4e-D1c-tech-final",
+    "v4e-E1-tech-mobile",
+    "v4e-E1b-campaign-mobile",
+    "v4e-E1c-hero-mobile"
+  ],
+  "consoleErrors": []
+}

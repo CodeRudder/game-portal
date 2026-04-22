@@ -4,6 +4,7 @@
 - [Round 1: v1.0评测](./evolution-r1.md) — 建立测试基础设施+技术审查流程
 - [Round 2: v2.0招贤纳士](./evolution-r2.md) — 新增即导出+选择器先探后测
 - [Round 3: v1.0进化迭代](./evolution-r3.md) — 大文件拆分+门面违规修复+Mixin模式+data-testid规则
+- [Round 4: v4.0攻城略地(下)](./evolution-r4.md) — ISubsystem同步实现+复杂域拆分+废弃全局扫描+UI警告分类
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -86,3 +87,25 @@ CSS文件超限时，优先识别并提取独立功能块（如chart样式、ani
 ### EVO-023: 废弃文件即时清理（来自v3.0进化R1）
 技术审查发现废弃文件(bak/目录)时立即清理，不要累积到后续版本。
 清理后运行 pnpm run build 确认无引用断裂。
+
+### EVO-024: 复杂域四层拆分模式（来自v4.0进化R1）
+子系统数量>5的复杂功能域，必须按"数据管理/流程控制/效果计算/辅助功能"四层拆分。
+科技系统(TechTreeSystem+TechResearchSystem+TechEffectSystem+TechOfflineSystem)是范例。
+
+### EVO-025: ISubsystem同步实现（来自v4.0进化R1）
+新增子系统时必须同步实现ISubsystem接口，不应留到进化迭代修复。
+技术审查中ISubsystem实现率应作为必检项，目标100%。
+
+### EVO-026: 废弃目录全局扫描（来自v4.0进化R1）
+每次重构后执行 `find . -name "bak" -type d` 全局扫描废弃目录。
+不同域可能独立存在bak/目录，仅清理当前工作域不够。
+
+### EVO-027: 域内子系统命名统一（来自v4.0进化R1）
+同一域的子系统命名遵循 `{Domain}{Function}System` 模式。
+如科技域：TechTreeSystem, TechResearchSystem, TechPointSystem, TechEffectSystem。
+
+### EVO-028: UI测试警告分类（来自v4.0进化R1）
+UI测试警告应分为两类：
+- "数据依赖型"：初始状态无数据导致（如无武将、无已通关关卡），可忽略
+- "功能缺失型"：功能未实现或实现有误，需修复
+测试报告中应明确标注警告类型。
