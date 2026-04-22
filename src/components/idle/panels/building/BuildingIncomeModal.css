@@ -1,0 +1,56 @@
+/**
+ * 三国霸业 v1.0 — 资源收支详情弹窗样式
+ *
+ * 从 BuildingPanel.css 中提取的收支弹窗专用样式。
+ * 弹窗容器（overlay/header/close）由 SharedPanel 提供。
+ * 本文件仅定义内容区样式。
+ */
+
+/* ═══════════════════════════════════════════
+   收支详情 — 内容区
+   ═══════════════════════════════════════════ */
+
+/* 区块容器 */
+.tk-income-section {
+  margin-bottom: 16px;
+}
+
+/* 区块标题 */
+.tk-income-section-title {
+  color: #d4a574;
+  font-size: 13px;
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+/* 数据行 */
+.tk-income-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+  color: #e0d5c0;
+}
+
+/* 正值速率 */
+.tk-income-rate {
+  color: #7EC850;
+}
+
+/* 负值速率 */
+.tk-income-rate--negative {
+  color: #E53935;
+}
+
+/* 零值速率 */
+.tk-income-rate--zero {
+  color: #999;
+}
+
+/* 净收入区域 */
+.tk-income-net-box {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: rgba(212, 165, 116, 0.1);
+  border-radius: var(--tk-radius-lg, 8px);
+}

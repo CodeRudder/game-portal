@@ -18,12 +18,11 @@ import {
   BUILDING_TYPES,
   BUILDING_LABELS,
   BUILDING_ICONS,
-  BUILDING_ZONES,
-  RESOURCE_LABELS,
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import BuildingUpgradeModal from './BuildingUpgradeModal';
+import BuildingIncomeModal from './BuildingIncomeModal';
 import './BuildingPanel.css';
 
 // ─────────────────────────────────────────────
@@ -354,71 +353,13 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
       )}
 
       {/* P1-03: 资源收支详情弹窗 */}
-      {showIncomeModal && (
-        <div
-          className="tk-bld-income-overlay"
-          onClick={(e) => e.target === e.currentTarget && setShowIncomeModal(false)}
-        >
-          <div
-            className="tk-bld-income-modal"
-            role="dialog" aria-modal="true" aria-label="资源收支详情"
-          >
-            <div className="tk-bld-income-header">
-              <h3 className="tk-bld-income-title">📊 资源收支详情</h3>
-              <button className="tk-bld-income-close" onClick={() => setShowIncomeModal(false)}>✕</button>
-            </div>
-
-            {/* 每秒产出 */}
-            <div className="tk-bld-income-section">
-              <h4 className="tk-bld-income-section-title">📈 每秒产出（建筑汇总）</h4>
-              {(['grain', 'gold', 'troops', 'mandate'] as const).map((resType) => {
-                const rate = rates[resType];
-                if (rate <= 0) return null;
-                return (
-                  <div key={resType} className="tk-bld-income-row">
-                    <span>{RESOURCE_LABELS[resType]}</span>
-                    <span className="tk-bld-income-rate">+{rate.toFixed(2)}/秒</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* 净收入 */}
-            <div className="tk-bld-income-net-box">
-              <h4 className="tk-bld-income-section-title">💰 净收入</h4>
-              {(['grain', 'gold', 'troops', 'mandate'] as const).map((resType) => {
-                const rate = rates[resType];
-                const isPositive = rate > 0;
-                return (
-                  <div key={resType} className="tk-bld-income-row">
-                    <span>{RESOURCE_LABELS[resType]}</span>
-                    <span className={isPositive ? 'tk-bld-income-rate' : rate < 0 ? 'tk-bld-income-rate--negative' : 'tk-bld-income-rate--zero'}>
-                      {isPositive ? '+' : ''}{rate.toFixed(2)}/秒
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* 各建筑产出明细 */}
-            <div className="tk-bld-income-section">
-              <h4 className="tk-bld-income-section-title">🏗️ 建筑产出明细</h4>
-              {BUILDING_TYPES.map((type) => {
-                const state = buildings[type];
-                if (!state || state.level <= 0 || type === 'castle') return null;
-                const prod = engine.building?.getProduction?.(type) ?? 0;
-                if (prod <= 0) return null;
-                return (
-                  <div key={type} className="tk-bld-income-row">
-                    <span>{BUILDING_ICONS[type]} {BUILDING_LABELS[type]} Lv.{state.level}</span>
-                    <span className="tk-bld-income-rate">+{prod.toFixed(2)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+      <BuildingIncomeModal
+        isOpen={showIncomeModal}
+        onClose={() => setShowIncomeModal(false)}
+        engine={engine}
+        buildings={buildings}
+        rates={rates}
+      />
     </div>
   );
 };
