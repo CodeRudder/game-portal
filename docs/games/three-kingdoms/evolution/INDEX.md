@@ -239,3 +239,25 @@ Round 2发现6对重叠系统，Round 3必须逐一治理：
 6. RebirthSystem / RebirthSystemV16 → 保留V16删除旧版
 治理时遵循EVO-040重叠迁移策略。
 
+### EVO-053: 死代码清理规则（来自Round 6复盘）
+当新旧实现并存时，@deprecated标记后必须在下一轮完成删除。
+不得长期保留已废弃的Engine/Manager/Service文件。
+删除前必须确认零外部引用（grep验证），确保破坏性为零。
+范例: Round 6删除6个EventEngine文件(~2550行)，零破坏性。
+
+### EVO-054: as any 零容忍（来自Round 6复盘）
+引擎层(engine/)不允许新增 `as any` 类型断言。
+已有的 `as any` 必须在发现后2轮内消除，修复方式优先级：
+1. 扩展接口定义（如添加缺失字段）
+2. 利用已有泛型/联合类型（如IEventBus.emit的payload参数）
+3. 精确类型断言（如 `as SetId` 替代 `as any`）
+4. 全局类型扩展（如 navigator.d.ts）
+检查方法: `grep -rn "as any" src/engine/`
+
+### EVO-055: 模块命名一致性（来自Round 6复盘）
+版本功能模块命名必须与实际目录一致：
+- v5.0 policy → 实际在 engine/tech/（策略/科技）
+- v10.0 military → 实际在 engine/equipment/（装备）
+审查报告需注明实际目录路径，避免按版本号臆测功能位置。
+发现命名不一致时，以实际目录为准更新文档。
+
