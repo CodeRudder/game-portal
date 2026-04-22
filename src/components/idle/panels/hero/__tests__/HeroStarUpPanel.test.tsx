@@ -22,7 +22,7 @@ import type {
   BreakthroughPreview,
   StarUpResult,
   BreakthroughResult,
-} from '@/games/three-kingdoms/engine/hero/star-up.types';
+} from '@/games/three-kingdoms/engine';
 
 // ── Mock CSS ──
 vi.mock('../HeroStarUpPanel.css', () => ({}));

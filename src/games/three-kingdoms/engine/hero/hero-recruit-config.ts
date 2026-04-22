@@ -145,23 +145,17 @@ export const RECRUIT_PITY: Record<RecruitType, PityConfig> = {
 };
 
 // ─────────────────────────────────────────────
-// 5. 重复武将碎片转化表
+// 5. 重复武将碎片转化表（从 hero-config.ts 统一导出）
 // ─────────────────────────────────────────────
 
 /**
  * 重复武将按品质转化为碎片数量
  *
  * 来源：v2.0-招贤纳士.md 功能点8
- * 此处与 hero-config.ts 的 DUPLICATE_FRAGMENT_COUNT 保持一致。
- * 招募系统内部使用此表，实际碎片写入由 HeroSystem.handleDuplicate 完成。
+ * 统一使用 hero-config.ts 中的 DUPLICATE_FRAGMENT_COUNT，
+ * 此处提供别名以保持向后兼容。
  */
-export const DUPLICATE_FRAGMENT_REWARD: Record<Quality, number> = {
-  [Q.COMMON]: 5,
-  [Q.FINE]: 10,
-  [Q.RARE]: 20,
-  [Q.EPIC]: 40,
-  [Q.LEGENDARY]: 80,
-};
+export { DUPLICATE_FRAGMENT_COUNT as DUPLICATE_FRAGMENT_REWARD } from './hero-config';
 
 // ─────────────────────────────────────────────
 // 6. 招募存档版本

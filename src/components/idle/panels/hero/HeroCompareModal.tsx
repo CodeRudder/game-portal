@@ -8,7 +8,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { GeneralData, Quality } from '@/games/three-kingdoms/engine';
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS, FACTION_LABELS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import SharedPanel from '../../components/SharedPanel';
 import './HeroCompareModal.css';
 
 // ─────────────────────────────────────────────

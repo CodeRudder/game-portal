@@ -84,8 +84,19 @@ export {
   FACTION_LABELS,
   FACTIONS,
 } from './hero/hero.types';
-export { HERO_MAX_LEVEL, GENERAL_DEF_MAP } from './hero/hero-config';
+export { HERO_MAX_LEVEL, GENERAL_DEF_MAP, DUPLICATE_FRAGMENT_COUNT } from './hero/hero-config';
 export type { RecruitType } from './hero/hero-recruit-config';
+export type {
+  StarUpPreview,
+  FragmentProgress,
+  BreakthroughPreview,
+  StarUpResult,
+  BreakthroughResult,
+  StarData,
+  FragmentSource,
+  BreakthroughTier,
+} from './hero/star-up.types';
+export { MAX_STAR_LEVEL } from './hero/star-up-config';
 export { HeroFormation, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './hero/HeroFormation';
 export type {
   FormationData,

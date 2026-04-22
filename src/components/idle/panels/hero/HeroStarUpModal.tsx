@@ -21,9 +21,8 @@ import type {
   BreakthroughPreview,
   StarUpResult,
   BreakthroughResult,
-} from '@/games/three-kingdoms/engine/hero/star-up.types';
-import { MAX_STAR_LEVEL } from '@/games/three-kingdoms/engine/hero/star-up-config';
-import SharedPanel from '../../components/SharedPanel';
+} from '@/games/three-kingdoms/engine';
+import { MAX_STAR_LEVEL } from '@/games/three-kingdoms/engine';
 import './HeroStarUpModal.css';
 
 // ─────────────────────────────────────────────

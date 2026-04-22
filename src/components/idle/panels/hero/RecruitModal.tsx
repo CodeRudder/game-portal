@@ -18,7 +18,6 @@ import type { RecruitType, RecruitOutput, RecruitResult, Quality, RecruitHistory
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { Toast } from '@/components/idle/common/Toast';
-import SharedPanel from '../../components/SharedPanel';
 import './RecruitModal.css';
 
 // ─────────────────────────────────────────────

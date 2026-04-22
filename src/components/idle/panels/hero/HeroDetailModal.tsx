@@ -20,7 +20,6 @@ import { HERO_QUALITY_BG_COLORS } from '../../common/constants';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import RadarChart from './RadarChart';
 import HeroStarUpModal from './HeroStarUpModal';
-import SharedPanel from '../../components/SharedPanel';
 import './HeroDetailModal.css';
 
 // ─────────────────────────────────────────────

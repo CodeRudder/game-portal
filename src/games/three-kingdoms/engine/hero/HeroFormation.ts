@@ -138,6 +138,9 @@ export class HeroFormation {
     // 已在该编队中
     if (formation.slots.includes(generalId)) return null;
 
+    // 已在其他编队中，不允许同一武将加入多个编队
+    if (this.isGeneralInAnyFormation(generalId)) return null;
+
     // 找空位
     const emptyIdx = formation.slots.indexOf('');
     if (emptyIdx === -1) return null; // 编队已满

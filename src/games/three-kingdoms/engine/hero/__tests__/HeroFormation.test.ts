@@ -355,10 +355,10 @@ describe('HeroFormation', () => {
       formation.createFormation('1');
       formation.createFormation('2');
       formation.addToFormation('1', 'hero1');
-      formation.addToFormation('2', 'hero1');
+      formation.addToFormation('2', 'hero2');
       const ids = formation.getFormationsContainingGeneral('hero1');
       expect(ids).toContain('1');
-      expect(ids).toContain('2');
+      expect(ids).not.toContain('2');
     });
 
     it('should return empty when general not in any formation', () => {
@@ -419,13 +419,13 @@ describe('HeroFormation', () => {
   // 12. 边界情况
   // ═══════════════════════════════════════════
   describe('边界情况', () => {
-    it('should handle same hero in different formations', () => {
+    it('should reject same hero in different formations', () => {
       formation.createFormation('1');
       formation.createFormation('2');
       formation.addToFormation('1', 'hero1');
+      // 同一武将不允许加入其他编队
       const f = formation.addToFormation('2', 'hero1');
-      expect(f).not.toBeNull();
-      expect(f!.slots[0]).toBe('hero1');
+      expect(f).toBeNull();
     });
 
     it('should handle remove and re-add to same slot', () => {

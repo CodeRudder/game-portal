@@ -12,7 +12,6 @@ import type {
   GeneralStats,
   Faction,
   SkillData,
-  QualityProbability,
   LevelExpTier,
 } from './hero.types';
 import { Quality as Q } from './hero.types';
@@ -36,26 +35,7 @@ export const QUALITY_MULTIPLIERS: Record<Quality, number> = {
 };
 
 // ─────────────────────────────────────────────
-// 2. 品质概率表
-// ─────────────────────────────────────────────
-
-/**
- * 招募品质概率表
- *
- * 来源：PRD HER-2 招募概率
- * 普通招贤：普通60% / 精良30% / 稀有8% / 史诗2% / 传说0%
- * 高级招贤：普通20% / 精良40% / 稀有25% / 史诗13% / 传说2%
- */
-export const QUALITY_PROBABILITIES: readonly QualityProbability[] = [
-  { quality: Q.COMMON, normalRate: 0.60, advancedRate: 0.20 },
-  { quality: Q.FINE, normalRate: 0.30, advancedRate: 0.40 },
-  { quality: Q.RARE, normalRate: 0.08, advancedRate: 0.25 },
-  { quality: Q.EPIC, normalRate: 0.02, advancedRate: 0.13 },
-  { quality: Q.LEGENDARY, normalRate: 0.00, advancedRate: 0.02 },
-] as const;
-
-// ─────────────────────────────────────────────
-// 3. 升级经验表
+// 2. 升级经验表
 // ─────────────────────────────────────────────
 
 /**

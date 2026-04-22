@@ -12,7 +12,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import type { GeneralData } from '@/games/three-kingdoms/engine';
 import { QUALITY_BORDER_COLORS, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import type { FormationData } from '@/games/three-kingdoms/engine/hero/HeroFormation';
+import type { FormationData } from '@/games/three-kingdoms/engine';
 import './FormationPanel.css';
 
 // ─────────────────────────────────────────────
