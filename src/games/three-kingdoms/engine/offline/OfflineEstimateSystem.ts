@@ -15,6 +15,7 @@
 import type { Resources } from '../../shared/types';
 import type { TierDetail, SystemEfficiencyModifier } from './offline.types';
 import { DECAY_TIERS, MAX_OFFLINE_HOURS, SYSTEM_EFFICIENCY_MODIFIERS } from './offline-config';
+import { zeroRes as zeroResources, mulRes as scaleResources } from './offline-utils';
 
 // ─────────────────────────────────────────────
 // 类型
@@ -41,23 +42,8 @@ export interface EstimateResult {
 }
 
 // ─────────────────────────────────────────────
-// 辅助函数
+// 内部计算
 // ─────────────────────────────────────────────
-
-/** 创建零资源 */
-function zeroResources(): Resources {
-  return { grain: 0, gold: 0, troops: 0, mandate: 0 };
-}
-
-/** 资源乘以标量 */
-function scaleResources(r: Readonly<Resources>, factor: number): Resources {
-  return {
-    grain: r.grain * factor,
-    gold: r.gold * factor,
-    troops: r.troops * factor,
-    mandate: r.mandate * factor,
-  };
-}
 
 /** 计算指定小时数的收益（按6档衰减） */
 function calculateEarnedForHours(

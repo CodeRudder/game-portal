@@ -29,6 +29,7 @@ import type {
   SweepSaveData,
 } from './sweep.types';
 import { DEFAULT_SWEEP_CONFIG } from './sweep.types';
+import { mergeResources, mergeFragments } from './campaign-utils';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -38,7 +39,7 @@ import { DEFAULT_SWEEP_CONFIG } from './sweep.types';
 const SAVE_VERSION = 1;
 
 // ─────────────────────────────────────────────
-// 辅助函数
+// 辅助函数（仅本模块使用）
 // ─────────────────────────────────────────────
 
 /** 获取今日日期字符串（YYYY-MM-DD） */
@@ -48,30 +49,6 @@ function getTodayString(now: number = Date.now()): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
-}
-
-/** 合并资源到目标 */
-function mergeResources(
-  target: Partial<Record<string, number>>,
-  source: Partial<Record<string, number>>,
-): void {
-  for (const [type, amount] of Object.entries(source)) {
-    if (amount !== undefined && amount > 0) {
-      target[type] = (target[type] ?? 0) + amount;
-    }
-  }
-}
-
-/** 合并碎片到目标 */
-function mergeFragments(
-  target: Record<string, number>,
-  source: Record<string, number>,
-): void {
-  for (const [id, count] of Object.entries(source)) {
-    if (count > 0) {
-      target[id] = (target[id] ?? 0) + count;
-    }
-  }
 }
 
 // ─────────────────────────────────────────────

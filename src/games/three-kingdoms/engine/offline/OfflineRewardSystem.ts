@@ -32,19 +32,11 @@ import {
   OFFLINE_SAVE_VERSION,
 } from './offline-config';
 import { getBoostItemList, useBoostItem, simulateOfflineTrade } from './OfflineTradeAndBoost';
+import { zeroRes, cloneRes, addRes, mulRes } from './offline-utils';
 
 // ─────────────────────────────────────────────
-// 辅助函数
+// 辅助函数（仅本模块使用）
 // ─────────────────────────────────────────────
-
-function zeroRes(): Resources { return { grain: 0, gold: 0, troops: 0, mandate: 0 }; }
-function cloneRes(r: Readonly<Resources>): Resources { return { ...r }; }
-function addRes(a: Resources, b: Readonly<Resources>): Resources {
-  return { grain: a.grain + b.grain, gold: a.gold + b.gold, troops: a.troops + b.troops, mandate: a.mandate + b.mandate };
-}
-function mulRes(r: Readonly<Resources>, f: number): Resources {
-  return { grain: r.grain * f, gold: r.gold * f, troops: r.troops * f, mandate: r.mandate * f };
-}
 
 function formatOfflineTime(seconds: number): string {
   if (seconds <= 0) return '刚刚';

@@ -1,0 +1,322 @@
+{
+  "version": "v1.0",
+  "testRound": "R1",
+  "date": "2026-04-22T09:03:02.955Z",
+  "gameUrl": "http://localhost:3000/idle/three-kingdoms",
+  "browser": "Chromium",
+  "viewport": {
+    "pc": "1280x800",
+    "mobile": "375x667"
+  },
+  "total": 44,
+  "passed": 36,
+  "failed": 8,
+  "issues": [
+    {
+      "id": "NAV-2-铜钱",
+      "desc": "资源显示: 铜钱",
+      "severity": "P2"
+    },
+    {
+      "id": "NAV-2-兵力",
+      "desc": "资源显示: 兵力",
+      "severity": "P2"
+    },
+    {
+      "id": "NAV-2-天命",
+      "desc": "资源显示: 天命",
+      "severity": "P2"
+    },
+    {
+      "id": "RES-6",
+      "desc": "资源数值显示 — 找到1个资源数值",
+      "severity": "P2"
+    },
+    {
+      "id": "RES-12",
+      "desc": "Canvas渲染层 — 未找到Canvas",
+      "severity": "P2"
+    },
+    {
+      "id": "BLD-15",
+      "desc": "升级按钮",
+      "severity": "P2"
+    },
+    {
+      "id": "BLD-17",
+      "desc": "建筑升级弹窗 — 未找到可点击的建筑卡片",
+      "severity": "P2"
+    },
+    {
+      "id": "SPEC-22",
+      "desc": "弹窗组件（DOM中）",
+      "severity": "P2"
+    }
+  ],
+  "results": [
+    {
+      "id": "NAV-1",
+      "name": "主界面布局",
+      "pass": true,
+      "detail": "页面内容长度=330"
+    },
+    {
+      "id": "NAV-1-container",
+      "name": "主容器元素",
+      "pass": true,
+      "detail": "主容器存在"
+    },
+    {
+      "id": "NAV-2",
+      "name": "顶部资源栏",
+      "pass": true,
+      "detail": "资源栏存在"
+    },
+    {
+      "id": "NAV-2-粮草",
+      "name": "资源显示: 粮草",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "NAV-2-铜钱",
+      "name": "资源显示: 铜钱",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "id": "NAV-2-兵力",
+      "name": "资源显示: 兵力",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "id": "NAV-2-天命",
+      "name": "资源显示: 天命",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "id": "NAV-3",
+      "name": "Tab切换",
+      "pass": true,
+      "detail": "找到4/4个核心Tab"
+    },
+    {
+      "id": "NAV-3-bar",
+      "name": "Tab栏容器",
+      "pass": true,
+      "detail": "Tab栏存在"
+    },
+    {
+      "id": "NAV-4",
+      "name": "中央场景区",
+      "pass": true,
+      "detail": "场景区存在"
+    },
+    {
+      "id": "NAV-5",
+      "name": "日历系统",
+      "pass": true,
+      "detail": "年份=true 季节=true 天气=true 月份=true"
+    },
+    {
+      "id": "NAV-5-el",
+      "name": "日历组件元素",
+      "pass": true,
+      "detail": "日历组件存在"
+    },
+    {
+      "id": "RES-6",
+      "name": "资源数值显示",
+      "pass": false,
+      "detail": "找到1个资源数值"
+    },
+    {
+      "id": "RES-7",
+      "name": "资源产出速率",
+      "pass": true,
+      "detail": "速率显示: +0.8/秒"
+    },
+    {
+      "id": "RES-8",
+      "name": "资源实时变化",
+      "pass": true,
+      "detail": "变化前: 506/2K,506,300,300,50/500,50,0,0 → 变化后: 508/2K,508,300,300,50/500,50,0,0"
+    },
+    {
+      "id": "RES-9",
+      "name": "资源容量进度条",
+      "pass": true,
+      "detail": "进度条存在"
+    },
+    {
+      "id": "RES-10",
+      "name": "容量/上限显示",
+      "pass": true,
+      "detail": "有容量/上限显示"
+    },
+    {
+      "id": "RES-11",
+      "name": "天命资源",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "RES-12",
+      "name": "Canvas渲染层",
+      "pass": false,
+      "detail": "未找到Canvas"
+    },
+    {
+      "id": "BLD-13",
+      "name": "建筑卡片列表",
+      "pass": true,
+      "detail": "找到8个建筑卡片/元素"
+    },
+    {
+      "id": "BLD-13-names",
+      "name": "建筑名称显示",
+      "pass": true,
+      "detail": "找到6/8个建筑名称"
+    },
+    {
+      "id": "BLD-14",
+      "name": "建筑等级显示",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "BLD-15",
+      "name": "升级按钮",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "id": "BLD-16",
+      "name": "建筑产出信息",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "BLD-17",
+      "name": "建筑升级弹窗",
+      "pass": false,
+      "detail": "未找到可点击的建筑卡片"
+    },
+    {
+      "id": "BLD-18",
+      "name": "建筑队列管理",
+      "pass": true,
+      "detail": "需通过升级流程验证"
+    },
+    {
+      "id": "BLD-19",
+      "name": "建筑升级路线推荐",
+      "pass": true,
+      "detail": "无推荐文字"
+    },
+    {
+      "id": "SPEC-20",
+      "name": "CSS变量定义",
+      "pass": true,
+      "detail": "tk-bg=#1A1A2E, tk-gold=#C9A84C"
+    },
+    {
+      "id": "SPEC-21",
+      "name": "面板组件",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "SPEC-22",
+      "name": "弹窗组件（DOM中）",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "id": "SPEC-23",
+      "name": "Toast组件（DOM中）",
+      "pass": true,
+      "detail": "Toast组件未渲染（正常，需触发）"
+    },
+    {
+      "id": "SPEC-24",
+      "name": "自动保存到localStorage",
+      "pass": true,
+      "detail": "检测到存档数据"
+    },
+    {
+      "id": "SPEC-25",
+      "name": "离线收益机制",
+      "pass": true,
+      "detail": "引擎层OfflineEarningsCalculator已实现"
+    },
+    {
+      "id": "CONSOLE",
+      "name": "控制台无JS错误",
+      "pass": true,
+      "detail": "无错误"
+    },
+    {
+      "id": "DATA-1",
+      "name": "无NaN显示",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "DATA-2",
+      "name": "无undefined显示",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "DATA-3",
+      "name": "无null显示",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "MOBILE-1",
+      "name": "移动端视口",
+      "pass": true,
+      "detail": "宽度=375"
+    },
+    {
+      "id": "MOBILE-2",
+      "name": "移动端资源栏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "MOBILE-3",
+      "name": "移动端Tab栏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "MOBILE-4",
+      "name": "移动端场景区",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "MOBILE-5",
+      "name": "移动端无NaN",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "MOBILE-6",
+      "name": "移动端无undefined",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "TAB-SWITCH",
+      "name": "Tab切换功能",
+      "pass": true,
+      "detail": "成功切换11/11个Tab"
+    }
+  ]
+}

@@ -8,9 +8,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type {
   BattleResult, BattleState, BattleAction, BattleUnit, IBattleEngine,
-} from '@/games/three-kingdoms/engine/battle/battle.types';
-import { BattleOutcome, BattlePhase } from '@/games/three-kingdoms/engine/battle/battle.types';
-import { findUnit as findUnitInState } from '@/games/three-kingdoms/engine/battle';
+} from '@/games/three-kingdoms/engine';
+import { BattleOutcome, BattlePhase } from '@/games/three-kingdoms/engine';
+import { findUnit as findUnitInState } from '@/games/three-kingdoms/engine';
 
 // ── 导出类型 ──
 export interface DamageFloat { id: number; unitId: string; value: number; isCritical: boolean; isHeal: boolean; }

@@ -3,8 +3,8 @@
  * 设计规范: C区 6×5网格, 每格 180×160px
  */
 import type { FC } from 'react';
-import type { BuildingType, BuildingState } from '@/games/three-kingdoms/engine/building/building.types';
-import { BUILDING_TYPES, BUILDING_LABELS, BUILDING_ICONS } from '@/games/three-kingdoms/engine/building/building.types';
+import type { BuildingType, BuildingState } from '@/games/three-kingdoms/engine';
+import { BUILDING_TYPES, BUILDING_LABELS, BUILDING_ICONS } from '@/games/three-kingdoms/engine';
 import './BuildingPanel.css';
 
 interface BuildingPanelProps {

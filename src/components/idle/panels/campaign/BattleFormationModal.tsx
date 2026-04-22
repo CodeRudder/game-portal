@@ -13,17 +13,17 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import type { Stage, EnemyUnitDef } from '@/games/three-kingdoms/engine/campaign/campaign.types';
-import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine/campaign/campaign.types';
+import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
+import type { Stage, EnemyUnitDef } from '@/games/three-kingdoms/engine';
+import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine';
 import {
   QUALITY_LABELS,
   QUALITY_BORDER_COLORS,
-} from '@/games/three-kingdoms/engine/hero/hero.types';
-import type { GeneralData } from '@/games/three-kingdoms/engine/hero/hero.types';
-import { MAX_SLOTS_PER_FORMATION } from '@/games/three-kingdoms/engine/hero/HeroFormation';
-import { BattleOutcome } from '@/games/three-kingdoms/engine/battle/battle.types';
-import type { BattleResult } from '@/games/three-kingdoms/engine/battle/battle.types';
+} from '@/games/three-kingdoms/engine';
+import type { GeneralData } from '@/games/three-kingdoms/engine';
+import { MAX_SLOTS_PER_FORMATION } from '@/games/three-kingdoms/engine';
+import { BattleOutcome } from '@/games/three-kingdoms/engine';
+import type { BattleResult } from '@/games/three-kingdoms/engine';
 import BattleResultModal from './BattleResultModal';
 import BattleScene from './BattleScene';
 import SharedPanel from '../../components/SharedPanel';

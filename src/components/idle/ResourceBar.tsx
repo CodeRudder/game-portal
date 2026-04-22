@@ -3,7 +3,7 @@
  * 设计规范: A区 1280×56px, 显示4种资源
  */
 import type { FC } from 'react';
-import type { Resources, ProductionRate, ResourceCap } from '@/games/three-kingdoms/engine/resource/resource.types';
+import type { Resources, ProductionRate, ResourceCap } from '@/games/three-kingdoms/engine';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import './ResourceBar.css';
 

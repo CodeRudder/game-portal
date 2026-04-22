@@ -1,0 +1,140 @@
+/**
+ * 类型声明 — 为 engine-getters.ts 中 Mixin 模式挂载的方法提供 TypeScript 类型。
+ *
+ * engine-getters.ts 通过 applyGetters() 将 getter / API 方法
+ * 混入 ThreeKingdomsEngine.prototype，但 TypeScript 无法自动推断
+ * 这些动态添加的方法。本文件通过 interface 合并补充类型声明。
+ */
+
+import type { HeroSystem } from './hero/HeroSystem';
+import type { HeroRecruitSystem, RecruitOutput } from './hero/HeroRecruitSystem';
+import type { HeroLevelSystem, LevelUpResult, BatchEnhanceResult, EnhancePreview } from './hero/HeroLevelSystem';
+import type { HeroFormation, FormationData } from './hero/HeroFormation';
+import type { HeroStarSystem } from './hero/HeroStarSystem';
+import type { SweepSystem } from './campaign/SweepSystem';
+import type { BattleEngine } from './battle/BattleEngine';
+import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
+import type { RewardDistributor } from './campaign/RewardDistributor';
+import type { TechTreeSystem } from './tech/TechTreeSystem';
+import type { TechPointSystem } from './tech/TechPointSystem';
+import type { TechResearchSystem } from './tech/TechResearchSystem';
+import type { WorldMapSystem } from './map/WorldMapSystem';
+import type { TerritorySystem } from './map/TerritorySystem';
+import type { SiegeSystem } from './map/SiegeSystem';
+import type { GarrisonSystem } from './map/GarrisonSystem';
+import type { SiegeEnhancer } from './map/SiegeEnhancer';
+import type { MailSystem } from './mail/MailSystem';
+import type { ShopSystem } from './shop/ShopSystem';
+import type { CurrencySystem } from './currency/CurrencySystem';
+import type { NPCSystem } from './npc/NPCSystem';
+import type { EquipmentSystem } from './equipment/EquipmentSystem';
+import type { EquipmentForgeSystem } from './equipment/EquipmentForgeSystem';
+import type { EquipmentEnhanceSystem } from './equipment/EquipmentEnhanceSystem';
+import type { ArenaSystem } from './pvp/ArenaSystem';
+import type { ArenaSeasonSystem } from './pvp/ArenaSeasonSystem';
+import type { RankingSystem } from './pvp/RankingSystem';
+import type { ExpeditionSystem } from './expedition/ExpeditionSystem';
+import type { AllianceSystem } from './alliance/AllianceSystem';
+import type { AllianceTaskSystem } from './alliance/AllianceTaskSystem';
+import type { PrestigeSystem } from './prestige/PrestigeSystem';
+import type { QuestSystem } from './quest/QuestSystem';
+import type { AchievementSystem } from './achievement/AchievementSystem';
+import type { FriendSystem } from './social/FriendSystem';
+import type { HeritageSystem } from './heritage/HeritageSystem';
+import type { ActivitySystem } from './activity/ActivitySystem';
+import type { TradeSystem } from './trade/TradeSystem';
+import type { SettingsManager } from './settings/SettingsManager';
+import type { AccountSystem } from './settings/AccountSystem';
+import type { GeneralData } from './hero/hero.types';
+import type { RecruitType } from './hero/hero-recruit-config';
+import type { BattleResult } from './battle/battle.types';
+import type { Stage, Chapter, CampaignProgress } from './campaign/campaign.types';
+import type { TechState } from './tech/tech.types';
+import type { BattleUnit, BattleTeam } from './battle/battle.types';
+
+/**
+ * Mixin 方法接口 — 由 engine-getters.ts 通过原型挂载实现。
+ * ThreeKingdomsEngine 通过 interface 合并获得这些方法的类型声明。
+ */
+export interface EngineGettersMixin {
+  // ── 武将系统 API ──
+  getHeroSystem(): HeroSystem;
+  getRecruitSystem(): HeroRecruitSystem;
+  getLevelSystem(): HeroLevelSystem;
+  getFormationSystem(): HeroFormation;
+  getFormations(): FormationData[];
+  getActiveFormation(): FormationData | null;
+  getHeroStarSystem(): HeroStarSystem;
+  getSweepSystem(): SweepSystem;
+  getResourceAmount(type: string): number;
+  createFormation(id?: string): FormationData | null;
+  setFormation(id: string, generalIds: string[]): FormationData | null;
+  addToFormation(formationId: string, generalId: string): FormationData | null;
+  removeFromFormation(formationId: string, generalId: string): FormationData | null;
+  recruit(type: RecruitType, count?: 1 | 10): RecruitOutput | null;
+  enhanceHero(id: string, lvl?: number): LevelUpResult | null;
+  enhanceAllHeroes(lvl?: number): BatchEnhanceResult;
+  getGenerals(): Readonly<GeneralData>[];
+  getGeneral(id: string): Readonly<GeneralData> | undefined;
+  getRecruitHistory(): ReturnType<HeroRecruitSystem['getRecruitHistory']>;
+  getSynthesizeProgress(id: string): ReturnType<HeroSystem['getSynthesizeProgress']>;
+  getEnhancePreview(id: string, lvl: number): EnhancePreview | null;
+
+  // ── 战斗/关卡系统 API ──
+  getBattleEngine(): BattleEngine;
+  getCampaignSystem(): CampaignProgressSystem;
+  getRewardDistributor(): RewardDistributor;
+  startBattle(stageId: string): BattleResult;
+  buildTeamsForStage(stage: Stage): { allyTeam: BattleTeam; enemyTeam: BattleTeam };
+  completeBattle(stageId: string, stars: number): void;
+  getStageList(): Stage[];
+  getStageInfo(stageId: string): Stage | undefined;
+  getChapters(): Chapter[];
+  getCampaignProgress(): CampaignProgress;
+
+  // ── 科技系统 API ──
+  getTechTreeSystem(): TechTreeSystem;
+  getTechPointSystem(): TechPointSystem;
+  getTechResearchSystem(): TechResearchSystem;
+  getTechState(): TechState;
+  startTechResearch(techId: string): unknown;
+  cancelTechResearch(techId: string): unknown;
+  speedUpTechResearch(techId: string, method: 'mandate' | 'ingot', amount: number): unknown;
+
+  // ── 地图系统 API ──
+  getWorldMapSystem(): WorldMapSystem;
+  getTerritorySystem(): TerritorySystem;
+  getSiegeSystem(): SiegeSystem;
+  getGarrisonSystem(): GarrisonSystem;
+  getSiegeEnhancer(): SiegeEnhancer;
+
+  // ── 科技子系统扩展 ──
+  getFusionTechSystem(): unknown;
+  getTechLinkSystem(): unknown;
+  getTechOfflineSystem(): unknown;
+  getTechDetailProvider(): unknown;
+
+  // ── R11: 缺失子系统 getter ──
+  getMailSystem(): MailSystem;
+  getShopSystem(): ShopSystem;
+  getCurrencySystem(): CurrencySystem;
+  getNPCSystem(): NPCSystem;
+  getEquipmentSystem(): EquipmentSystem;
+  getEquipmentForgeSystem(): EquipmentForgeSystem;
+  getEquipmentEnhanceSystem(): EquipmentEnhanceSystem;
+  getArenaSystem(): ArenaSystem;
+  getSeasonSystem(): ArenaSeasonSystem;
+  getRankingSystem(): RankingSystem;
+  getExpeditionSystem(): ExpeditionSystem;
+  getAllianceSystem(): AllianceSystem;
+  getAllianceTaskSystem(): AllianceTaskSystem;
+  getPrestigeSystem(): PrestigeSystem;
+  getQuestSystem(): QuestSystem;
+  getAchievementSystem(): AchievementSystem;
+  getFriendSystem(): FriendSystem;
+  getHeritageSystem(): HeritageSystem;
+  getActivitySystem(): ActivitySystem;
+  getTradeSystem(): TradeSystem;
+  getSettingsManager(): SettingsManager;
+  getAccountSystem(): AccountSystem;
+}

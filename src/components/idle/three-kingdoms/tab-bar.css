@@ -1,0 +1,175 @@
+/**
+ * 三国霸业 — Tab 栏样式
+ * 从 ThreeKingdomsGame.css 拆分出来
+ */
+
+/* ═══════════════════════════════════════════
+   B区：导航Tab栏 — 1280×48px
+   ═══════════════════════════════════════════ */
+.tk-tab-bar {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: stretch;
+  background: rgba(20, 25, 35, 0.95);
+  border-top: 1px solid rgba(200, 169, 110, 0.15);
+  z-index: var(--tk-z-tab-bar);
+  flex-shrink: 0;
+  padding: 0 8px;
+  gap: 2px;
+  /* PC端：通过 flex order 排到底部，无需 sticky */
+  order: 3;
+  /* P0-01: 横向滚动支持 */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; /* iOS 平滑滚动 */
+  scrollbar-width: none; /* Firefox 隐藏滚动条 */
+  -ms-overflow-style: none; /* IE 隐藏滚动条 */
+}
+
+/* P0-01: 隐藏 Tab 栏 webkit 滚动条 */
+.tk-tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tk-tab-bar .tk-feature-menu {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.tk-tab-btn {
+  flex: 1;
+  max-width: 120px;
+  min-width: 48px;
+  border: none;
+  background: transparent;
+  color: var(--tk-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: inherit;
+  border-radius: var(--tk-radius-sm) var(--tk-radius-sm) 0 0;
+  /* P0-01: 防止压缩和换行 */
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 6px 8px;
+}
+
+.tk-tab-btn:hover {
+  color: var(--tk-text-primary);
+  background: rgba(200, 168, 76, 0.08);
+}
+
+.tk-tab-btn--active {
+  color: var(--tk-gold);
+  font-weight: 600;
+  background: rgba(200, 168, 76, 0.12);
+}
+
+.tk-tab-btn--active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--tk-gold);
+}
+
+.tk-tab-icon {
+  font-size: 16px;
+}
+
+.tk-tab-label {
+  font-size: 13px;
+}
+
+.tk-tab-soon {
+  font-size: 9px;
+  color: var(--tk-text-muted);
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(102, 102, 102, 0.3);
+  padding: 1px 4px;
+  border-radius: var(--tk-radius-sm);
+}
+
+/* ═══════════════════════════════════════════
+   Tab 栏响应式 — 手机端
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-tab-bar {
+    height: 40px;
+    padding: 0 4px;
+    order: 3;
+    border-top: 1px solid rgba(200, 169, 110, 0.15);
+    border-bottom: none;
+    /* P0-01: 手机端横向滚动 */
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .tk-tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tk-tab-btn {
+    font-size: 11px;
+    max-width: none;
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 8px 6px;
+  }
+
+  .tk-tab-icon {
+    font-size: 14px;
+  }
+
+  .tk-tab-label {
+    font-size: 11px;
+  }
+
+  .tk-tab-soon {
+    display: none;
+  }
+
+  .tk-calendar {
+    display: none;
+  }
+}
+
+
+/* 统一按钮样式（从主文件移入） */
+button {
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+button:active {
+  transform: scale(0.97);
+  opacity: 0.8;
+}
+
+/* 全局触摸热区策略（移动端 ≥44px） */
+@media (max-width: 767px) {
+  button,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  button:not(.tk-tab-btn):not(.shared-panel-close) {
+    padding: 8px 12px;
+  }
+}

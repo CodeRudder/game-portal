@@ -15,10 +15,10 @@ import type {
   BattleAction,
   BattleState,
   BattleUnit,
-} from '@/games/three-kingdoms/engine/battle/battle.types';
+} from '@/games/three-kingdoms/engine';
 
 // 复用引擎层 findUnit，避免 UI 层重复实现
-export { findUnit as findUnitInState } from '@/games/three-kingdoms/engine/battle';
+export { findUnit as findUnitInState } from '@/games/three-kingdoms/engine';
 
 // ─────────────────────────────────────────────
 // 类型

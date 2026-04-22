@@ -15,15 +15,15 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
 import type {
   BattleResult,
   BattleUnit,
   BattleTeam,
-} from '@/games/three-kingdoms/engine/battle/battle.types';
-import { BattleOutcome } from '@/games/three-kingdoms/engine/battle/battle.types';
-import type { Stage } from '@/games/three-kingdoms/engine/campaign/campaign.types';
-import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine/campaign/campaign.types';
+} from '@/games/three-kingdoms/engine';
+import { BattleOutcome } from '@/games/three-kingdoms/engine';
+import type { Stage } from '@/games/three-kingdoms/engine';
+import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine';
 import { useBattleAnimation } from './BattleAnimation';
 import type { LogEntry } from './BattleAnimation';
 import './BattleScene.css';

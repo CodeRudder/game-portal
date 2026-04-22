@@ -8,7 +8,7 @@
  */
 import React, { useMemo } from 'react';
 import SharedPanel from '@/components/idle/components/SharedPanel';
-import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine/resource/resource.types';
+import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine';
 
 // ─── Props ──────────────────────────────────
 interface EventListPanelProps {

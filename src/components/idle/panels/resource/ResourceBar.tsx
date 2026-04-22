@@ -9,12 +9,12 @@
  * 响应式：PC 1280×56px / 手机 375×48px
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Resources, ProductionRate, ResourceCap, ResourceType } from '@/games/three-kingdoms/engine';
 import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine';
-import { BUILDING_LABELS, BUILDING_ICONS } from '@/games/three-kingdoms/engine/building/building.types';
-import type { BuildingState, BuildingType } from '@/games/three-kingdoms/engine/building/building.types';
-import { BUILDING_DEFS } from '@/games/three-kingdoms/engine/building/building-config';
+import { BUILDING_LABELS, BUILDING_ICONS } from '@/games/three-kingdoms/engine';
+import type { BuildingState, BuildingType } from '@/games/three-kingdoms/engine';
+import { BUILDING_DEFS } from '@/games/three-kingdoms/engine';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import './ResourceBar.css';
 

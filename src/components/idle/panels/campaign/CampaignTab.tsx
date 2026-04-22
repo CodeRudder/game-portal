@@ -17,13 +17,13 @@ import type {
   Chapter,
   Stage,
   StageStatus,
-} from '@/games/three-kingdoms/engine/campaign/campaign.types';
+} from '@/games/three-kingdoms/engine';
 import {
   STAGE_TYPE_LABELS,
   MAX_STARS,
-} from '@/games/three-kingdoms/engine/campaign/campaign.types';
-import type { BattleResult } from '@/games/three-kingdoms/engine/battle/battle.types';
-import { BattleOutcome } from '@/games/three-kingdoms/engine/battle/battle.types';
+} from '@/games/three-kingdoms/engine';
+import type { BattleResult } from '@/games/three-kingdoms/engine';
+import { BattleOutcome } from '@/games/three-kingdoms/engine';
 import BattleFormationModal from './BattleFormationModal';
 import BattleResultModal from './BattleResultModal';
 import './CampaignTab.css';

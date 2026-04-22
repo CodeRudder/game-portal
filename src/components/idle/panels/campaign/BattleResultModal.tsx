@@ -10,10 +10,10 @@
  */
 
 import React, { useMemo } from 'react';
-import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine/battle/battle.types';
-import type { BattleResult } from '@/games/three-kingdoms/engine/battle/battle.types';
-import type { Stage } from '@/games/three-kingdoms/engine/campaign/campaign.types';
-import { STAGE_TYPE_LABELS, MAX_STARS } from '@/games/three-kingdoms/engine/campaign/campaign.types';
+import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
+import type { BattleResult } from '@/games/three-kingdoms/engine';
+import type { Stage } from '@/games/three-kingdoms/engine';
+import { STAGE_TYPE_LABELS, MAX_STARS } from '@/games/three-kingdoms/engine';
 import SharedPanel from '../../components/SharedPanel';
 import './BattleResultModal.css';
 

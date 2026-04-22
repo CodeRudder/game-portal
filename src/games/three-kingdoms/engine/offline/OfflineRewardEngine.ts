@@ -28,6 +28,7 @@ import {
   formatOfflineDuration, shouldShowOfflinePopup,
   generateReturnPanelData, estimateOfflineReward as _estimateOfflineReward,
 } from './OfflinePanelHelper';
+import { zeroRes, cloneRes, addRes, mulRes, floorRes } from './offline-utils';
 
 // 重导出面板辅助函数，保持向后兼容
 export {
@@ -45,22 +46,6 @@ export function estimateOfflineReward(
   bonusSources: { tech?: number; vip?: number; reputation?: number } = {},
 ): OfflineSnapshot {
   return _estimateOfflineReward(hours, productionRates, bonusSources, calculateOfflineSnapshot);
-}
-
-// ─────────────────────────────────────────────
-// 辅助函数
-// ─────────────────────────────────────────────
-
-function zeroRes(): Resources { return { grain: 0, gold: 0, troops: 0, mandate: 0 }; }
-function cloneRes(r: Readonly<Resources>): Resources { return { ...r }; }
-function addRes(a: Resources, b: Readonly<Resources>): Resources {
-  return { grain: a.grain + b.grain, gold: a.gold + b.gold, troops: a.troops + b.troops, mandate: a.mandate + b.mandate };
-}
-function mulRes(r: Readonly<Resources>, f: number): Resources {
-  return { grain: r.grain * f, gold: r.gold * f, troops: r.troops * f, mandate: r.mandate * f };
-}
-function floorRes(r: Resources): Resources {
-  return { grain: Math.floor(r.grain), gold: Math.floor(r.gold), troops: Math.floor(r.troops), mandate: Math.floor(r.mandate) };
 }
 
 // ─────────────────────────────────────────────

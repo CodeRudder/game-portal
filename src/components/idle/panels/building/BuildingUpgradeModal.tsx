@@ -12,6 +12,7 @@ import {
   BUILDING_ICONS,
   BUILDING_ZONES,
 } from '@/games/three-kingdoms/engine';
+import { BUILDING_DEFS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import SharedPanel from '../../components/SharedPanel';
@@ -123,6 +124,44 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
           <div className="tk-upgrade-level-change">
             Lv.{info.level} → Lv.{info.level + 1}
           </div>
+          {/* 产出变化预览 */}
+          {(() => {
+            const def = BUILDING_DEFS[buildingType];
+            const currentLevelData = def?.levelTable?.[info.level];
+            const nextLevelData = def?.levelTable?.[info.level + 1];
+            if (!def?.production || !currentLevelData) return null;
+            const prod = def.production;
+            const currentProd = currentLevelData.production;
+            const nextProd = nextLevelData?.production ?? currentProd;
+            const resIcon: Record<string, string> = { grain: '🌾', gold: '💰', troops: '⚔️', mandate: '👑', material: '🔨', techPoint: '📜' };
+            return (
+              <div className="tk-upgrade-production">
+                <span className="tk-upgrade-prod-icon">{resIcon[prod.resourceType] || '📊'}</span>
+                <span className="tk-upgrade-prod-label">产出</span>
+                <span className="tk-upgrade-prod-current">{formatNum(currentProd)}/秒</span>
+                <span className="tk-upgrade-prod-arrow">→</span>
+                <span className="tk-upgrade-prod-next">{formatNum(nextProd)}/秒</span>
+              </div>
+            );
+          })()}
+          {/* 特殊属性变化预览 */}
+          {(() => {
+            const def = BUILDING_DEFS[buildingType];
+            const currentLevelData = def?.levelTable?.[info.level];
+            const nextLevelData = def?.levelTable?.[info.level + 1];
+            if (!def?.specialAttribute || !currentLevelData) return null;
+            const currentVal = currentLevelData.specialValue ?? 0;
+            const nextVal = nextLevelData?.specialValue ?? currentVal;
+            return (
+              <div className="tk-upgrade-production">
+                <span className="tk-upgrade-prod-icon">📊</span>
+                <span className="tk-upgrade-prod-label">{def.specialAttribute.name}</span>
+                <span className="tk-upgrade-prod-current">{currentVal}%</span>
+                <span className="tk-upgrade-prod-arrow">→</span>
+                <span className="tk-upgrade-prod-next">{nextVal}%</span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* 升级消耗 */}

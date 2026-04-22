@@ -1,6 +1,14 @@
 /**
  * 资源域 — 离线收益计算器
  *
+ * ⚠️ DEPRECATED: 本模块是 resource 域的简化版离线收益计算器。
+ * 完整版离线收益引擎位于 offline 域的 OfflineRewardEngine.ts。
+ * 新功能请直接使用 OfflineRewardEngine，本文件仅保留向后兼容。
+ *
+ * 桥接关系：
+ *   resource 域 (ResourceSystem) → OfflineEarningsCalculator（本文件，简化版）
+ *   offline  域 (OfflineRewardSystem) → OfflineRewardEngine（完整版，含6档衰减/VIP/道具/贸易）
+ *
  * 职责：离线收益相关的纯计算逻辑（无状态工具类）
  * 规则：不持有任何状态，所有数据通过参数传入
  *

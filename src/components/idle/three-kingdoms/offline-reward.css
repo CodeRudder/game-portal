@@ -1,0 +1,56 @@
+/**
+ * 三国霸业 — 离线收益弹窗样式
+ * 从 ThreeKingdomsGame.css 拆分出来
+ *
+ * 注：离线收益弹窗主要使用 inline styles，
+ * 此文件保留弹窗相关的通用样式覆盖
+ */
+
+/* ═══════════════════════════════════════════
+   P0-02: 统一弹窗样式覆盖
+   确保所有弹窗（modal/dialog/overlay）视觉一致
+   ═══════════════════════════════════════════ */
+
+/* 统一弹窗容器 */
+[class*="modal"],
+[class*="Modal"],
+[class*="dialog"],
+[class*="Dialog"] {
+  background: #1a1a2e !important;
+  border: 1px solid rgba(212, 165, 116, 0.3) !important;
+  border-radius: var(--tk-radius-xl) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+}
+
+/* 统一弹窗遮罩 */
+[class*="overlay"],
+[class*="Overlay"],
+[class*="backdrop"] {
+  background: rgba(0,0,0,0.6) !important;
+}
+
+/* 弹窗内容滚动支持 */
+.tk-modal-content,
+.tk-modal .modal-content,
+.tk-modal-scroll-content {
+  max-height: 85vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ═══════════════════════════════════════════
+   弹窗响应式 — 手机端
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* 弹窗宽度适配 */
+  [class*="modal"], [class*="Modal"] {
+    width: 95vw !important;
+    max-width: 95vw !important;
+  }
+
+  /* 资源收支弹窗 */
+  .tk-resource-detail-modal {
+    width: 95vw !important;
+    max-height: 85vh !important;
+  }
+}

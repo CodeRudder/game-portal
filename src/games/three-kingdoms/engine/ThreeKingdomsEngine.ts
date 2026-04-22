@@ -1,36 +1,22 @@
 /**
  * 三国霸业 — 引擎主类（应用层/编排层）
- *
- * 职责：编排各子系统，协调业务流程
- * 规则：不包含具体业务逻辑，只做编排
- *
- * 基础设施依赖（core/ 层）：EventBus / SubsystemRegistry / SaveManager
- *
- * 拆分：
- *   - engine-tick.ts — tick 内部逻辑
- *   - engine-save.ts — 存档相关逻辑
- *   - engine-hero-deps.ts — 武将系统依赖注入
- *   - engine-campaign-deps.ts — 关卡/战斗系统依赖注入
- *   - engine-building-ops.ts — 建筑升级操作
+ * 职责：编排各子系统，协调业务流程。不包含具体业务逻辑。
+ * 拆分：engine-tick/save/hero-deps/campaign-deps/building-ops/getters
  */
 
 import { ResourceSystem } from './resource/ResourceSystem';
 import { BuildingSystem } from './building/BuildingSystem';
 import { CalendarSystem } from './calendar/CalendarSystem';
 import { HeroSystem } from './hero/HeroSystem';
-import { HeroRecruitSystem, type RecruitOutput } from './hero/HeroRecruitSystem';
-import { HeroLevelSystem, type LevelUpResult, type BatchEnhanceResult, type EnhancePreview } from './hero/HeroLevelSystem';
-import { HeroFormation, type FormationData } from './hero/HeroFormation';
+import { HeroRecruitSystem } from './hero/HeroRecruitSystem';
+import { HeroLevelSystem } from './hero/HeroLevelSystem';
+import { HeroFormation } from './hero/HeroFormation';
 import { HeroStarSystem } from './hero/HeroStarSystem';
 import type { CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type {
   EngineEventType, EngineEventMap, EventListener, EngineSnapshot,
 } from '../shared/types';
-import type { GeneralData } from './hero/hero.types';
-import type { RecruitType } from './hero/hero-recruit-config';
-import type { BattleResult } from './battle/battle.types';
-import type { Stage, Chapter, CampaignProgress } from './campaign/campaign.types';
 import { AUTO_SAVE_INTERVAL_SECONDS, SAVE_KEY, ENGINE_SAVE_VERSION } from '../shared/constants';
 import type { IGameState } from '../core/types/state';
 import type { ISystemDeps } from '../core/types/subsystem';
@@ -83,9 +69,14 @@ import { TradeSystem } from './trade/TradeSystem';
 import { SettingsManager } from './settings/SettingsManager';
 import { AccountSystem } from './settings/AccountSystem';
 
-// ─────────────────────────────────────────────
-// ThreeKingdomsEngine
-// ─────────────────────────────────────────────
+import { applyGetters } from './engine-getters';
+import type { EngineGettersMixin } from './engine-getters-types';
+
+/**
+ * 通过 interface 合并将 Mixin 方法类型注入 ThreeKingdomsEngine。
+ * 实际实现由 engine-getters.ts 中的 applyGetters() 挂载到原型。
+ */
+export interface ThreeKingdomsEngine extends EngineGettersMixin {} // eslint-disable-line @typescript-eslint/no-empty-object-type
 
 export class ThreeKingdomsEngine {
   readonly resource: ResourceSystem;
@@ -135,10 +126,8 @@ export class ThreeKingdomsEngine {
   private prevRatesJson = '';
 
   constructor() {
-    this.resource = new ResourceSystem();
-    this.building = new BuildingSystem();
-    this.calendar = new CalendarSystem();
-    this.hero = new HeroSystem();
+    this.resource = new ResourceSystem(); this.building = new BuildingSystem();
+    this.calendar = new CalendarSystem(); this.hero = new HeroSystem();
     this.heroRecruit = new HeroRecruitSystem();
     this.heroLevel = new HeroLevelSystem();
     this.heroFormation = new HeroFormation();
@@ -188,8 +177,7 @@ export class ThreeKingdomsEngine {
     this.techSystems = createTechSystems(this.building);
     this.mapSystems = createMapSystems();
     // R11: 初始化13个缺失子系统
-    this.mailSystem = new MailSystem();
-    this.shopSystem = new ShopSystem();
+    this.mailSystem = new MailSystem(); this.shopSystem = new ShopSystem();
     this.currencySystem = new CurrencySystem();
     this.npcSystem = new NPCSystem();
     this.equipmentSystem = new EquipmentSystem();
@@ -277,15 +265,12 @@ export class ThreeKingdomsEngine {
     if (this.initialized) return;
     syncBuildingToResource(this.buildTickCtx());
     const deps = this.buildDeps();
-    this.calendar.init(deps);
-    this.initHeroSystems(deps);
+    this.calendar.init(deps); this.initHeroSystems(deps);
     initCampaignSystems(this.campaignSystems, deps);
     initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps);
-    this.initialized = true;
-    this.lastTickTime = Date.now();
-    this.onlineSeconds = 0;
-    this.autoSaveAccumulator = 0;
+    this.initialized = true; this.lastTickTime = Date.now();
+    this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
     this.bus.emit('game:initialized', { isNewGame: true });
   }
 
@@ -299,11 +284,9 @@ export class ThreeKingdomsEngine {
     const dtSec = Math.max(0, dt / 1000);
     const ctx = this.buildTickCtx();
     executeTick(ctx, dtSec);
-    this.syncTickCtx(ctx);
-    this.autoSaveAccumulator += dtSec;
+    this.syncTickCtx(ctx); this.autoSaveAccumulator += dtSec;
     if (this.autoSaveAccumulator >= AUTO_SAVE_INTERVAL_SECONDS) {
-      this.autoSaveAccumulator = 0;
-      this.save();
+      this.autoSaveAccumulator = 0; this.save();
     }
     this.onlineSeconds += dtSec;
   }
@@ -350,8 +333,7 @@ export class ThreeKingdomsEngine {
 
   deserialize(json: string): void {
     applyDeserialize(this.buildSaveCtx(), json);
-    this.initHeroSystems(this.buildDeps());
-    this.initialized = true;
+    this.initHeroSystems(this.buildDeps()); this.initialized = true;
     this.lastTickTime = Date.now();
   }
 
@@ -418,174 +400,32 @@ export class ThreeKingdomsEngine {
   getUpgradeProgress(type: BuildingType): number { return this.building.getUpgradeProgress(type); }
   getUpgradeRemainingTime(type: BuildingType): number { return this.building.getUpgradeRemainingTime(type); }
 
-  // ── 武将系统 API ──
+  // ── IGameEngine 兼容存根 ──
+  get score(): number { return 0; }
+  get level(): number { return 1; }
+  get elapsedTime(): number { return this.onlineSeconds; }
+  get status(): string { return this.initialized ? 'playing' : 'idle'; }
+  setCanvas(_c: HTMLCanvasElement): void { /* no-op */ }
+  getState(): Record<string, unknown> { return this.getSnapshot() as unknown as Record<string, unknown>; }
+  start(): void { this.init(); }
+  pause(): void { /* no-op */ }
+  resume(): void { /* no-op */ }
+  destroy(): void { this.reset(); }
+  handleKeyDown(_k: string): void { /* no-op */ }
+  handleKeyUp(_k: string): void { /* no-op */ }
+  handleClick(_x: number, _y: number): void { /* no-op */ }
+  handleMouseDown(_x: number, _y: number): void { /* no-op */ }
+  handleMouseUp(_x: number, _y: number): void { /* no-op */ }
+  handleMouseMove(_x: number, _y: number): void { /* no-op */ }
+  handleRightClick(_x: number, _y: number): void { /* no-op */ }
+  handleDoubleClick(_x: number, _y: number): void { /* no-op */ }
 
-  getHeroSystem(): HeroSystem { return this.hero; }
-  getRecruitSystem(): HeroRecruitSystem { return this.heroRecruit; }
-  getLevelSystem(): HeroLevelSystem { return this.heroLevel; }
-  getFormationSystem(): HeroFormation { return this.heroFormation; }
-  getFormations(): FormationData[] { return this.heroFormation.getAllFormations(); }
-  getActiveFormation(): FormationData | null { return this.heroFormation.getActiveFormation(); }
-
-  /** 获取升星系统 */
-  getHeroStarSystem(): HeroStarSystem { return this.heroStarSystem; }
-
-  /** 获取指定资源数量 */
-  getResourceAmount(type: string): number {
-    return this.resource.getAmount(type as import('../shared/types').ResourceType);
+  /** 暴露子系统注册表，供外部面板查询子系统实例 */
+  getSubsystemRegistry(): SubsystemRegistry {
+    return this.registry;
   }
 
-  /** 获取扫荡系统 */
-  getSweepSystem(): SweepSystem { return this.sweepSystem; }
-
-  createFormation(id?: string): FormationData | null { return this.heroFormation.createFormation(id); }
-  setFormation(id: string, generalIds: string[]): FormationData | null { return this.heroFormation.setFormation(id, generalIds); }
-  addToFormation(formationId: string, generalId: string): FormationData | null { return this.heroFormation.addToFormation(formationId, generalId); }
-  removeFromFormation(formationId: string, generalId: string): FormationData | null { return this.heroFormation.removeFromFormation(formationId, generalId); }
-  recruit(type: RecruitType, count: 1 | 10 = 1): RecruitOutput | null { return count === 10 ? this.heroRecruit.recruitTen(type) : this.heroRecruit.recruitSingle(type); }
-  enhanceHero(id: string, lvl?: number): LevelUpResult | null { return this.heroLevel.quickEnhance(id, lvl); }
-  enhanceAllHeroes(lvl?: number): BatchEnhanceResult { return this.heroLevel.quickEnhanceAll(lvl); }
-  getGenerals(): Readonly<GeneralData>[] { return this.hero.getAllGenerals(); }
-  getGeneral(id: string): Readonly<GeneralData> | undefined { return this.hero.getGeneral(id); }
-  getRecruitHistory() { return this.heroRecruit.getRecruitHistory(); }
-  getSynthesizeProgress(id: string) { return this.hero.getSynthesizeProgress(id); }
-  getEnhancePreview(id: string, lvl: number): EnhancePreview | null { return this.heroLevel.getEnhancePreview(id, lvl); }
-
-  // ── 战斗/关卡系统 API ──
-
-  getBattleEngine() { return this.campaignSystems.battleEngine; }
-  getCampaignSystem() { return this.campaignSystems.campaignSystem; }
-  getRewardDistributor() { return this.campaignSystems.rewardDistributor; }
-
-  /** 发起战斗：布阵→战斗→返回结果（胜利时由UI调用 completeBattle 发放奖励） */
-  startBattle(stageId: string): BattleResult {
-    const stage = campaignDataProvider.getStage(stageId);
-    if (!stage) throw new Error(`关卡不存在: ${stageId}`);
-    if (!this.campaignSystems.campaignSystem.canChallenge(stageId)) throw new Error(`关卡未解锁: ${stageId}`);
-    const allyTeam = buildAllyTeam(this.heroFormation, this.hero);
-    const enemyTeam = buildEnemyTeam(stage);
-    return this.campaignSystems.battleEngine.runFullBattle(allyTeam, enemyTeam);
-  }
-
-  /** 根据关卡构建双方队伍（供 UI 层使用，避免直接依赖 engine-campaign-deps） */
-  buildTeamsForStage(stage: Stage) {
-    const allyTeam = buildAllyTeam(this.heroFormation, this.hero);
-    const enemyTeam = buildEnemyTeam(stage);
-    return { allyTeam, enemyTeam };
-  }
-
-  /** 通关处理：奖励发放 + 进度更新 */
-  completeBattle(stageId: string, stars: number): void {
-    const isFirst = !this.campaignSystems.campaignSystem.isFirstCleared(stageId);
-    this.campaignSystems.rewardDistributor.calculateAndDistribute(stageId, stars, isFirst);
-    this.campaignSystems.campaignSystem.completeStage(stageId, stars);
-  }
-
-  getStageList(): Stage[] { return campaignDataProvider.getChapters().flatMap(c => c.stages); }
-  getStageInfo(stageId: string): Stage | undefined { return campaignDataProvider.getStage(stageId); }
-  getChapters(): Chapter[] { return campaignDataProvider.getChapters(); }
-  getCampaignProgress(): CampaignProgress { return this.campaignSystems.campaignSystem.getProgress(); }
-
-  // ── 科技系统 API ──
-
-  getTechTreeSystem() { return this.techSystems.treeSystem; }
-  getTechPointSystem() { return this.techSystems.pointSystem; }
-  getTechResearchSystem() { return this.techSystems.researchSystem; }
-
-  /** 获取科技系统完整状态 */
-  getTechState() {
-    const tree = this.techSystems.treeSystem;
-    const point = this.techSystems.pointSystem;
-    const research = this.techSystems.researchSystem;
-    return {
-      ...tree.getState(),
-      researchQueue: research.getQueue(),
-      techPoints: point.getTechPointState(),
-    };
-  }
-
-  /** 开始科技研究 */
-  startTechResearch(techId: string) {
-    return this.techSystems.researchSystem.startResearch(techId);
-  }
-
-  /** 取消科技研究 */
-  cancelTechResearch(techId: string) {
-    return this.techSystems.researchSystem.cancelResearch(techId);
-  }
-
-  /** 加速科技研究 */
-  speedUpTechResearch(techId: string, method: 'mandate' | 'ingot', amount: number) {
-    return this.techSystems.researchSystem.speedUp(techId, method, amount);
-  }
-
-  // ── 地图系统 API ──
-
-  getWorldMapSystem() { return this.mapSystems.worldMap; }
-  getTerritorySystem() { return this.mapSystems.territory; }
-  getSiegeSystem() { return this.mapSystems.siege; }
-  getGarrisonSystem() { return this.mapSystems.garrison; }
-  getSiegeEnhancer() { return this.mapSystems.siegeEnhancer; }
-
-  /** 获取融合科技系统 */
-  getFusionTechSystem() { return this.techSystems.fusionSystem; }
-  /** 获取科技联动系统 */
-  getTechLinkSystem() { return this.techSystems.linkSystem; }
-  /** 获取离线研究系统 */
-  getTechOfflineSystem() { return this.techSystems.offlineSystem; }
-  /** 获取科技详情数据提供者 */
-  getTechDetailProvider() { return this.techSystems.detailProvider; }
-
-  // ── R11: 13个缺失子系统 getter ──
-
-  /** 获取邮件系统 */
-  getMailSystem(): MailSystem { return this.mailSystem; }
-  /** 获取商店系统 */
-  getShopSystem(): ShopSystem { return this.shopSystem; }
-  /** 获取货币系统 */
-  getCurrencySystem(): CurrencySystem { return this.currencySystem; }
-  /** 获取NPC系统 */
-  getNPCSystem(): NPCSystem { return this.npcSystem; }
-  /** 获取装备系统 */
-  getEquipmentSystem(): EquipmentSystem { return this.equipmentSystem; }
-  /** 获取装备锻造系统 */
-  getEquipmentForgeSystem(): EquipmentForgeSystem { return this.equipmentForgeSystem; }
-  /** 获取装备强化系统 */
-  getEquipmentEnhanceSystem(): EquipmentEnhanceSystem { return this.equipmentEnhanceSystem; }
-  /** 获取竞技场系统 */
-  getArenaSystem(): ArenaSystem { return this.arenaSystem; }
-  /** 获取赛季系统 */
-  getSeasonSystem(): ArenaSeasonSystem { return this.arenaSeasonSystem; }
-  /** 获取排名系统 */
-  getRankingSystem(): RankingSystem { return this.rankingSystem; }
-  /** 获取远征系统 */
-  getExpeditionSystem(): ExpeditionSystem { return this.expeditionSystem; }
-  /** 获取联盟系统 */
-  getAllianceSystem(): AllianceSystem { return this.allianceSystem; }
-  /** 获取联盟任务系统 */
-  getAllianceTaskSystem(): AllianceTaskSystem { return this.allianceTaskSystem; }
-  /** 获取声望系统 */
-  getPrestigeSystem(): PrestigeSystem { return this.prestigeSystem; }
-  /** 获取任务系统 */
-  getQuestSystem(): QuestSystem { return this.questSystem; }
-  /** 获取成就系统 */
-  getAchievementSystem(): AchievementSystem { return this.achievementSystem; }
-  /** 获取好友系统（社交） */
-  getFriendSystem(): FriendSystem { return this.friendSystem; }
-  /** 获取传承系统 */
-  getHeritageSystem(): HeritageSystem { return this.heritageSystem; }
-  /** 获取活动系统 */
-  getActivitySystem(): ActivitySystem { return this.activitySystem; }
-  /** 获取贸易系统 */
-  getTradeSystem(): TradeSystem { return this.tradeSystem; }
-  /** 获取设置管理器 */
-  getSettingsManager(): SettingsManager { return this.settingsManager; }
-  /** 获取账号系统 */
-  getAccountSystem(): AccountSystem { return this.accountSystem; }
-
-  // ═══════════════════════════════════════════
-  // 私有方法
-  // ═══════════════════════════════════════════
+  // ── 私有方法 ──
 
   private get heroSystems(): HeroSystems {
     return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel };
@@ -640,29 +480,7 @@ export class ThreeKingdomsEngine {
     initMapSystems(this.mapSystems, deps);
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
   }
-
-  // ── IGameEngine 兼容存根 ──
-  get score(): number { return 0; }
-  get level(): number { return 1; }
-  get elapsedTime(): number { return this.onlineSeconds; }
-  get status(): string { return this.initialized ? 'playing' : 'idle'; }
-  setCanvas(_c: HTMLCanvasElement): void { /* no-op */ }
-  getState(): Record<string, unknown> { return this.getSnapshot() as unknown as Record<string, unknown>; }
-  start(): void { this.init(); }
-  pause(): void { /* no-op */ }
-  resume(): void { /* no-op */ }
-  destroy(): void { this.reset(); }
-  handleKeyDown(_k: string): void { /* no-op */ }
-  handleKeyUp(_k: string): void { /* no-op */ }
-  handleClick(_x: number, _y: number): void { /* no-op */ }
-  handleMouseDown(_x: number, _y: number): void { /* no-op */ }
-  handleMouseUp(_x: number, _y: number): void { /* no-op */ }
-  handleMouseMove(_x: number, _y: number): void { /* no-op */ }
-  handleRightClick(_x: number, _y: number): void { /* no-op */ }
-  handleDoubleClick(_x: number, _y: number): void { /* no-op */ }
-
-  /** 暴露子系统注册表，供外部面板查询子系统实例 */
-  getSubsystemRegistry(): SubsystemRegistry {
-    return this.registry;
-  }
 }
+
+// ── 应用 Mixin：将 engine-getters.ts 中的 getter / API 方法混入原型 ──
+applyGetters(ThreeKingdomsEngine);

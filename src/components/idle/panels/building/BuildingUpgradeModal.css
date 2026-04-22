@@ -180,6 +180,49 @@
 }
 
 /* ═══════════════════════════════════════════
+   产出变化预览
+   ═══════════════════════════════════════════ */
+.tk-upgrade-production {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin-top: 6px;
+  border-radius: 4px;
+  background: rgba(200, 169, 110, 0.06);
+  font-size: 13px;
+}
+
+.tk-upgrade-prod-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.tk-upgrade-prod-label {
+  color: var(--tk-text-secondary);
+  font-size: 12px;
+  min-width: 32px;
+}
+
+.tk-upgrade-prod-current {
+  color: var(--tk-text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-upgrade-prod-arrow {
+  color: var(--tk-gold-soft);
+  font-weight: 700;
+}
+
+.tk-upgrade-prod-next {
+  color: #4caf50;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
    失败原因
    ═══════════════════════════════════════════ */
 .tk-upgrade-reasons {

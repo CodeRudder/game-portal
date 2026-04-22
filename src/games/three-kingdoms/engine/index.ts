@@ -45,6 +45,7 @@ export {
   BUILDING_ICONS,
   BUILDING_ZONES,
 } from './building/building.types';
+export { BUILDING_DEFS } from './building/building-config';
 
 // 日历域
 export { CalendarSystem } from './calendar/CalendarSystem';
@@ -148,6 +149,7 @@ export {
   StarRating,
 } from './battle/battle.types';
 export { BATTLE_CONFIG } from './battle/battle-config';
+export { findUnit, findUnitInTeam } from './battle/index';
 
 // 战斗域 v4.0
 export { BattleEffectApplier } from './battle/BattleEffectApplier';
@@ -190,6 +192,12 @@ export type {
   ICampaignDataProvider,
 } from './campaign/campaign.types';
 export { MAX_STARS } from './campaign/campaign.types';
+export { STAGE_TYPE_LABELS } from './campaign/campaign.types';
+export type {
+  SweepBatchResult,
+  AutoPushResult,
+} from './campaign/sweep.types';
+export { DEFAULT_SWEEP_CONFIG } from './campaign/sweep.types';
 
 // 科技域
 export { TechTreeSystem } from './tech/TechTreeSystem';

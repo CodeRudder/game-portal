@@ -7,7 +7,6 @@
  * - useState 管理当前 Tab（默认 building）
  * - 事件监听 resource:changed / building:upgraded 触发重渲染
  * - 渲染子组件：顶部信息栏 + 资源栏 + Tab栏 + 场景区 + 建筑面板
- * - v1.0 只有建筑Tab有内容，其他Tab显示"敬请期待"
  *
  * 布局规格（PC 1280×800）：
  * ┌──────────────────────────────────────────────┐
@@ -22,49 +21,38 @@
  */
 
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine/resource/resource.types';
+import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
+import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine';
 import type {
   EngineSnapshot,
   BuildingType,
   BuildingState,
 } from '@/games/three-kingdoms/shared/types';
-import type { Season, WeatherType } from '@/games/three-kingdoms/engine/calendar/calendar.types';
-import { SEASON_LABELS, WEATHER_LABELS } from '@/games/three-kingdoms/engine/calendar/calendar.types';
 import { Toast } from '@/components/idle/common/Toast';
-import { formatNumber } from '@/components/idle/utils/formatNumber';
 import ResourceBar from '@/components/idle/panels/resource/ResourceBar';
-import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
-import HeroTab from '@/components/idle/panels/hero/HeroTab';
-import CampaignTab from '@/components/idle/panels/campaign/CampaignTab';
-import TechTab from '@/components/idle/panels/tech/TechTab';
-import EquipmentTab from '@/components/idle/panels/equipment/EquipmentTab';
-import ArenaTab from '@/components/idle/panels/arena/ArenaTab';
 import Modal from '@/components/idle/common/Modal';
-import type { OfflineEarnings } from '@/games/three-kingdoms/shared/types';
-import FeatureMenu from '@/components/idle/FeatureMenu';
-import type { FeatureMenuItem } from '@/components/idle/FeatureMenu';
-import WorldMapTab from '@/components/idle/panels/map/WorldMapTab';
-import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import EventBanner from '@/components/idle/panels/event/EventBanner';
-import EventListPanel from '@/components/idle/panels/event/EventListPanel';
 import RandomEncounterModal from '@/components/idle/panels/event/RandomEncounterModal';
 import StoryEventModal from '@/components/idle/panels/event/StoryEventModal';
-import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
-import ArmyTab from '@/components/idle/panels/army/ArmyTab';
-import MailPanel from '@/components/idle/panels/mail/MailPanel';
-import SocialPanel from '@/components/idle/panels/social/SocialPanel';
-import HeritagePanel from '@/components/idle/panels/heritage/HeritagePanel';
-import ActivityPanel from '@/components/idle/panels/activity/ActivityPanel';
-import MoreTab from '@/components/idle/panels/more/MoreTab';
-import QuestPanel from '@/components/idle/panels/quest/QuestPanel';
-import ShopPanel from '@/components/idle/panels/shop/ShopPanel';
-import AchievementPanel from '@/components/idle/panels/achievement/AchievementPanel';
-import AlliancePanel from '@/components/idle/panels/alliance/AlliancePanel';
-import PrestigePanel from '@/components/idle/panels/prestige/PrestigePanel';
-import TradePanel from '@/components/idle/panels/trade/TradePanel';
-import SettingsPanel from '@/components/idle/panels/settings/SettingsPanel';
+
+// ── 拆分组件 ──
+import TabBar, {
+  type TabId,
+  type TabConfig,
+  FEATURE_ITEMS,
+  FEATURE_TO_TAB,
+} from './three-kingdoms/TabBar';
+import OfflineRewardModal from './three-kingdoms/OfflineRewardModal';
+import WelcomeModal from './three-kingdoms/WelcomeModal';
+import SceneRouter from './three-kingdoms/SceneRouter';
+import { useEngineEvents } from './three-kingdoms/useEngineEvents';
+import FeaturePanelOverlay, { type FeaturePanelId } from './three-kingdoms/FeaturePanelOverlay';
+
+// ── 样式 ──
 import './ThreeKingdomsGame.css';
+import './three-kingdoms/calendar.css';
+import './three-kingdoms/tab-bar.css';
+import './three-kingdoms/offline-reward.css';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -76,104 +64,6 @@ const TICK_INTERVAL = 500;
 /** UI 刷新间隔（ms），控制资源栏等 UI 更新频率 */
 const UI_REFRESH_INTERVAL = 1000;
 
-/** 天气图标映射 */
-const WEATHER_ICONS: Record<WeatherType, string> = {
-  clear: '☀️',
-  rain: '🌧️',
-  snow: '❄️',
-  wind: '🌬️',
-};
-
-/** 季节图标映射 */
-const SEASON_ICONS: Record<Season, string> = {
-  spring: '🌸',
-  summer: '🌞',
-  autumn: '🍂',
-  winter: '❄️',
-};
-
-/** Tab 类型定义 */
-type TabId = 'building' | 'hero' | 'tech' | 'campaign' | 'map' | 'npc' | 'equipment' | 'arena' | 'expedition' | 'army' | 'more';
-
-/** Tab 配置 */
-interface TabConfig {
-  id: TabId;
-  icon: string;
-  label: string;
-  available: boolean;
-}
-
-const TABS: TabConfig[] = [
-  { id: 'building', icon: '🏰', label: '建筑', available: true },
-  { id: 'hero', icon: '🦸', label: '武将', available: true },
-  { id: 'tech', icon: '📜', label: '科技', available: true },
-  { id: 'campaign', icon: '⚔️', label: '关卡', available: true },
-  { id: 'equipment', icon: '🛡️', label: '装备', available: true },
-  { id: 'map', icon: '🗺️', label: '天下', available: true },
-  { id: 'npc', icon: '👤', label: '名士', available: true },
-  { id: 'arena', icon: '🏟️', label: '竞技', available: true },
-  { id: 'expedition', icon: '🧭', label: '远征', available: true },
-  { id: 'army', icon: '💪', label: '军队', available: true },
-  { id: 'more', icon: '📋', label: '更多', available: true },
-];
-
-/** 功能菜单面板ID */
-type FeaturePanelId = 'events' | 'quest' | 'shop' | 'mail' | 'achievement' | 'activity' | 'alliance' | 'prestige' | 'heritage' | 'social' | 'trade' | 'settings';
-
-/** 功能菜单项配置（静态部分，badge 动态计算） */
-const FEATURE_ITEMS: Array<Omit<FeatureMenuItem, 'badge'>> = [
-  { id: 'worldmap', icon: '🗺️', label: '世界地图', description: '三国势力分布与领土管理', available: true },
-  { id: 'equipment', icon: '🎒', label: '装备背包', description: '装备管理与穿戴', available: true },
-  { id: 'arena', icon: '⚔️', label: '竞技场', description: 'PvP对战与赛季排名', available: true },
-  { id: 'expedition', icon: '🚀', label: '远征', description: '探索未知领域', available: true },
-  { id: 'events', icon: '⚡', label: '事件', description: '当前活跃事件', available: true },
-  { id: 'npc', icon: '👥', label: 'NPC名册', description: '已发现的NPC角色', available: true },
-  { id: 'mail', icon: '📬', label: '邮件', description: '系统邮件与奖励领取', available: true },
-  { id: 'social', icon: '👥', label: '社交', description: '好友互动与排行榜', available: true },
-  { id: 'heritage', icon: '⚔️', label: '传承', description: '武将装备经验传承', available: true },
-  { id: 'activity', icon: '🎪', label: '活动', description: '限时活动与签到', available: true },
-];
-
-// ─────────────────────────────────────────────
-// 日历格式化工具
-// ─────────────────────────────────────────────
-
-const CN_DIGITS = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'] as const;
-
-/** 数字转中文（1-99） */
-function toChineseNumber(n: number): string {
-  if (n <= 10) return CN_DIGITS[n];
-  if (n < 20) return `十${n % 10 === 0 ? '' : CN_DIGITS[n % 10]}`;
-  if (n < 100 && n % 10 === 0) return `${CN_DIGITS[Math.floor(n / 10)]}十`;
-  return `${CN_DIGITS[Math.floor(n / 10)]}十${CN_DIGITS[n % 10]}`;
-}
-
-/** 年号内年数转中文 */
-function toChineseYear(n: number): string {
-  return toChineseNumber(n);
-}
-
-/** 日期转中文（带"初"前缀） */
-function toChineseDay(day: number): string {
-  if (day <= 10) return `初${CN_DIGITS[day]}`;
-  if (day === 20) return '二十';
-  if (day === 30) return '三十';
-  if (day < 20) return `十${CN_DIGITS[day % 10]}`;
-  return `二十${CN_DIGITS[day % 10]}`;
-}
-
-/** 格式化游戏日期为中文显示 */
-function formatGameDate(date: { month: number; day: number }): string {
-  const monthStr = date.month === 1 ? '正月' : `${toChineseNumber(date.month)}月`;
-  const dayStr = toChineseDay(date.day);
-  return `${monthStr}${dayStr}`;
-}
-
-// ─────────────────────────────────────────────
-// P0-02: 事件列表面板（真实事件数据）
-// ─────────────────────────────────────────────
-
-/** 事件分类图标 */
 // ─────────────────────────────────────────────
 // 主组件
 // ─────────────────────────────────────────────
@@ -189,12 +79,12 @@ const ThreeKingdomsGame: React.FC = () => {
   // ── UI 状态 ──
   const [activeTab, setActiveTab] = useState<TabId>('building');
   const [snapshotVersion, setSnapshotVersion] = useState(0);
-  const [offlineReward, setOfflineReward] = useState<OfflineEarnings | null>(null);
+  const [offlineReward, setOfflineReward] = useState<any>(null);
 
   // ── 功能面板状态 ──
   const [openFeature, setOpenFeature] = useState<FeaturePanelId | null>(null);
 
-  // ── P1-01: 首次启动欢迎弹窗 ──
+  // ── 首次启动欢迎弹窗 ──
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
@@ -205,14 +95,12 @@ const ThreeKingdomsGame: React.FC = () => {
     }
   }, []);
 
-  // ── P1-01: 事件系统状态 ──
+  // ── 事件系统状态 ──
   const [activeBanner, setActiveBanner] = useState<any>(null);
   const [activeEncounter, setActiveEncounter] = useState<any>(null);
-
-  // ── P1-02: 剧情事件状态 ──
   const [activeStoryEvent, setActiveStoryEvent] = useState<any>(null);
 
-  // ── P0-02: 缩放计算 — 根据视口大小动态设置 --tk-scale CSS变量 ──
+  // ── 缩放计算 — 根据视口大小动态设置 --tk-scale CSS变量 ──
   useEffect(() => {
     const updateScale = () => {
       const gameWidth = 1280;
@@ -221,7 +109,6 @@ const ThreeKingdomsGame: React.FC = () => {
       const containerHeight = window.innerHeight;
       const scaleX = containerWidth / gameWidth;
       const scaleY = containerHeight / gameHeight;
-      // 只缩小不放大
       const scale = Math.min(scaleX, scaleY, 1);
       document.documentElement.style.setProperty('--tk-scale', scale.toString());
     };
@@ -237,13 +124,11 @@ const ThreeKingdomsGame: React.FC = () => {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    // 尝试加载存档，无存档则新游戏
     try {
       const offlineEarnings = engine.load();
       if (!offlineEarnings) {
         engine.init();
       } else {
-        // 有离线收益，弹出领取弹窗
         const hasEarnings = offlineEarnings.earned.grain > 0
           || offlineEarnings.earned.gold > 0
           || offlineEarnings.earned.troops > 0
@@ -254,11 +139,9 @@ const ThreeKingdomsGame: React.FC = () => {
       }
     } catch (e) {
       console.error('Failed to load save:', e);
-      // 存档损坏时重置
       Toast.danger('存档加载失败，已重置');
     }
 
-    // 首次渲染触发
     setSnapshotVersion(1);
   }, [engine]);
 
@@ -284,102 +167,29 @@ const ThreeKingdomsGame: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // ── 事件监听：资源变化 / 建筑升级完成 → 立即刷新 UI ──
-  useEffect(() => {
-    const handleResourceChanged = () => {
-      setSnapshotVersion(v => v + 1);
-    };
+  // ── 引擎事件监听（拆分到自定义 Hook） ──
+  const handleRefresh = useCallback(() => setSnapshotVersion(v => v + 1), []);
+  const handleBannerCreated = useCallback((data: any) => setActiveBanner(data), []);
+  const handleEncounterTriggered = useCallback((data: any) => setActiveEncounter(data), []);
+  const handleStoryTriggered = useCallback((act: any) => setActiveStoryEvent(act), []);
+  const handleStoryCompleted = useCallback(() => setActiveStoryEvent(null), []);
 
-    const handleBuildingUpgraded = () => {
-      setSnapshotVersion(v => v + 1);
-    };
-
-    const handleBuildingUpgradeStart = () => {
-      setSnapshotVersion(v => v + 1);
-    };
-
-    // RES-CAP-02: 资源溢出通知
-    const handleResourceOverflow = (data: any) => {
-      const label = RESOURCE_LABELS[data.resourceType as keyof typeof RESOURCE_LABELS] ?? data.resourceType;
-      Toast.danger(`${label}溢出！损失 ${formatNumber(data.overflow)}，升级仓库可避免`);
-      setSnapshotVersion(v => v + 1);
-    };
-
-    engine.on('resource:changed', handleResourceChanged);
-    engine.on('building:upgraded', handleBuildingUpgraded);
-    engine.on('building:upgrade-start', handleBuildingUpgradeStart);
-    engine.on('resource:overflow', handleResourceOverflow);
-
-    return () => {
-      engine.off('resource:changed', handleResourceChanged);
-      engine.off('building:upgraded', handleBuildingUpgraded);
-      engine.off('building:upgrade-start', handleBuildingUpgradeStart);
-      engine.off('resource:overflow', handleResourceOverflow);
-    };
-  }, [engine]);
-
-  // ── P1-01: 事件系统监听（急报横幅 + 随机遭遇弹窗） ──
-  useEffect(() => {
-    const handleBannerCreated = (data: any) => {
-      setActiveBanner({
-        id: data.bannerId ?? `banner-${Date.now()}`,
-        eventId: data.eventId ?? '',
-        title: data.title ?? '急报',
-        content: data.content ?? '',
-        icon: data.icon ?? '📢',
-        priority: data.priority ?? 'normal',
-        displayDuration: data.displayDuration ?? 5000,
-        createdAt: Date.now(),
-        read: false,
-      });
-    };
-
-    const handleEncounterTriggered = (data: any) => {
-      setActiveEncounter(data.event ?? null);
-    };
-
-    engine.on('event:banner_created' as any, handleBannerCreated);
-    engine.on('event:encounter_triggered' as any, handleEncounterTriggered);
-
-    // ── P1-02: 监听剧情事件 ──
-    const handleStoryTriggered = (data: any) => {
-      const registry = (engine as any).registry;
-      const storySys = registry?.get?.('storyEvent');
-      const act = storySys?.getCurrentAct?.(data.storyId);
-      if (act) setActiveStoryEvent(act);
-    };
-    const handleStoryActAdvanced = (data: any) => {
-      const registry = (engine as any).registry;
-      const storySys = registry?.get?.('storyEvent');
-      const act = storySys?.getCurrentAct?.(data.storyId);
-      if (act) setActiveStoryEvent(act);
-    };
-    const handleStoryCompleted = () => {
-      setActiveStoryEvent(null);
-    };
-
-    engine.on('story:triggered' as any, handleStoryTriggered);
-    engine.on('story:actAdvanced' as any, handleStoryActAdvanced);
-    engine.on('story:completed' as any, handleStoryCompleted);
-
-    return () => {
-      engine.off('event:banner_created' as any, handleBannerCreated);
-      engine.off('event:encounter_triggered' as any, handleEncounterTriggered);
-      engine.off('story:triggered' as any, handleStoryTriggered);
-      engine.off('story:actAdvanced' as any, handleStoryActAdvanced);
-      engine.off('story:completed' as any, handleStoryCompleted);
-    };
-  }, [engine]);
+  useEngineEvents({
+    engine,
+    onRefresh: handleRefresh,
+    onBannerCreated: handleBannerCreated,
+    onEncounterTriggered: handleEncounterTriggered,
+    onStoryTriggered: handleStoryTriggered,
+    onStoryCompleted: handleStoryCompleted,
+  });
 
   // ── 获取引擎快照 ──
   const snapshot: EngineSnapshot = useMemo(() => {
-    // snapshotVersion 作为依赖触发重计算
     void snapshotVersion;
     try {
       return engine.getSnapshot();
     } catch (e) {
       console.error('[ThreeKingdomsGame] getSnapshot failed:', e);
-      // 返回安全的默认快照，避免渲染崩溃
       const defaultBuildingState = (type: BuildingType): BuildingState => ({
         type,
         level: 0,
@@ -438,17 +248,6 @@ const ThreeKingdomsGame: React.FC = () => {
     Toast.success('离线收益已领取！');
   }, []);
 
-  // ── 离线收益格式化 ──
-  const formatOfflineDuration = (seconds: number): string => {
-    if (seconds < 60) return `${Math.floor(seconds)}秒`;
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const d = Math.floor(h / 24);
-    if (d > 0) return `${d}天${h % 24}小时`;
-    if (h > 0) return m > 0 ? `${h}小时${m}分钟` : `${h}小时`;
-    return `${m}分钟`;
-  };
-
   // ── Tab 切换 ──
   const handleTabChange = useCallback((tab: TabConfig) => {
     if (!tab.available) {
@@ -459,23 +258,11 @@ const ThreeKingdomsGame: React.FC = () => {
   }, []);
 
   // ── 功能菜单选择 ──
-  // 已有独立Tab的功能（worldmap→map, equipment, arena, expedition, npc）直接切换到对应Tab
-  // 仅 events 等无独立Tab的功能使用 FeaturePanel 弹窗
-  const FEATURE_TO_TAB: Record<string, TabId> = {
-    worldmap: 'map',
-    equipment: 'equipment',
-    arena: 'arena',
-    expedition: 'expedition',
-    npc: 'npc',
-  };
-
   const handleFeatureSelect = useCallback((id: string) => {
     const tabId = FEATURE_TO_TAB[id];
     if (tabId) {
-      // 有独立Tab → 直接切换，不弹窗
       setActiveTab(tabId);
     } else {
-      // 无独立Tab → 使用 FeaturePanel 弹窗
       setOpenFeature(id as FeaturePanelId);
     }
   }, []);
@@ -485,7 +272,7 @@ const ThreeKingdomsGame: React.FC = () => {
     setOpenFeature(null);
   }, []);
 
-  // ── P1-01: 事件系统回调 ──
+  // ── 事件系统回调 ──
   const handleBannerDismiss = useCallback((_bannerId: string) => {
     setActiveBanner(null);
   }, []);
@@ -493,17 +280,14 @@ const ThreeKingdomsGame: React.FC = () => {
   const handleEncounterSelectOption = useCallback((instanceId: string, optionId: string) => {
     setActiveEncounter(null);
 
-    // P0-02: 尝试通过引擎解析事件，获取实际后果
     try {
       const registry = (engine as any).registry;
       const triggerSys = registry?.get?.('eventTrigger');
       const result = triggerSys?.resolveEvent?.(instanceId, optionId);
 
       if (result?.consequences) {
-        // 应用资源变化（v6.0 格式：consequences 为 EventConsequence 对象）
         const cons = result.consequences;
         if (cons.resourceChanges && typeof cons.resourceChanges === 'object' && !Array.isArray(cons.resourceChanges)) {
-          // v15 格式：{ grain: -50, gold: 80, ... }
           for (const [key, val] of Object.entries(cons.resourceChanges)) {
             const numVal = val as number;
             if (numVal !== 0) {
@@ -533,15 +317,13 @@ const ThreeKingdomsGame: React.FC = () => {
   }, []);
 
   // ── 功能菜单项（动态计算 badge） ──
-  const featureMenuItems: FeatureMenuItem[] = useMemo(() => {
+  const featureMenuItems = useMemo(() => {
     return FEATURE_ITEMS.map(item => {
       let badge = 0;
-      // 事件面板显示活跃事件数
       if (item.id === 'events') {
         const activeEvents = (snapshot as any).activeEvents as any[] | undefined;
         badge = activeEvents?.length ?? 0;
       }
-      // 邮件面板显示未读数
       if (item.id === 'mail') {
         const mailSys = (engine as any).mail ?? (engine as any).getMailSystem?.();
         badge = mailSys?.getUnreadCount?.() ?? 0;
@@ -550,140 +332,9 @@ const ThreeKingdomsGame: React.FC = () => {
     });
   }, [snapshotVersion]);
 
-  // ── 世界地图数据 ──
-  const worldMapData = useMemo(() => {
-    const territorySys = engine.getTerritorySystem();
-    const territories = territorySys.getAllTerritories();
-    const productionSummary = territorySys.getPlayerProductionSummary();
-    return { territories, productionSummary };
-  }, [engine, snapshotVersion]);
-
-  // ── NPC 数据（使用引擎 NPC 系统，若可用） ──
-  const npcData = useMemo(() => {
-    // 尝试从引擎获取 NPC 系统
-    const npcSys = (engine as any).npcSystem;
-    if (npcSys && typeof npcSys.getAllNPCs === 'function') {
-      return npcSys.getAllNPCs();
-    }
-    // 备用：返回空数组（NPC系统尚未集成到引擎时）
-    return [];
-  }, [engine, snapshotVersion]);
-
-  // ── 渲染场景区内容 ──
-  const renderSceneContent = () => {
-    switch (activeTab) {
-      case 'building':
-        return (
-          <BuildingPanel
-            buildings={buildings}
-            resources={resources}
-            rates={productionRates}
-            caps={caps}
-            engine={engine}
-            snapshotVersion={snapshotVersion}
-            onUpgradeComplete={handleUpgradeComplete}
-            onUpgradeError={handleUpgradeError}
-          />
-        );
-
-      case 'hero':
-        return (
-          <HeroTab
-            engine={engine}
-            snapshotVersion={snapshotVersion}
-          />
-        );
-
-      case 'tech':
-        return (
-          <TechTab
-            engine={engine}
-            snapshotVersion={snapshotVersion}
-          />
-        );
-
-      case 'campaign':
-        return (
-          <CampaignTab
-            engine={engine}
-            snapshotVersion={snapshotVersion}
-          />
-        );
-
-      case 'equipment':
-        return (
-          <EquipmentTab
-            engine={engine}
-            snapshotVersion={snapshotVersion}
-          />
-        );
-
-      case 'map':
-        return (
-          <WorldMapTab
-            territories={worldMapData.territories}
-            productionSummary={worldMapData.productionSummary}
-            snapshotVersion={snapshotVersion}
-            onSelectTerritory={(id) => {
-              Toast.info(`选中领土: ${id}`);
-            }}
-            onSiegeTerritory={(id) => {
-              Toast.info(`发起攻城: ${id}`);
-            }}
-          />
-        );
-
-      case 'npc':
-        return (
-          <NPCTab
-            npcs={npcData}
-            onSelectNPC={(npcId) => Toast.info(`查看NPC: ${npcId}`)}
-            onStartDialog={(npcId) => Toast.info(`与NPC对话: ${npcId}`)}
-          />
-        );
-
-      case 'arena':
-        return (
-          <ArenaTab
-            engine={engine}
-            snapshotVersion={snapshotVersion}
-          />
-        );
-
-      case 'expedition':
-        return (
-          <ExpeditionTab
-            engine={engine}
-            snapshotVersion={snapshotVersion}
-          />
-        );
-
-      case 'army':
-        return (
-          <ArmyTab
-            engine={engine}
-            snapshotVersion={snapshotVersion}
-          />
-        );
-
-      case 'more':
-        return (
-          <MoreTab
-            engine={engine}
-            snapshotVersion={snapshotVersion}
-            onOpenPanel={(id) => setOpenFeature(id as FeaturePanelId)}
-          />
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  // ── P1-01: 首次启动欢迎弹窗回调 ──
+  // ── 首次启动欢迎弹窗回调 ──
   const handleWelcomeClose = useCallback(() => {
     setShowWelcome(false);
-    // 首次启动后自动进入武将Tab触发引导
     try {
       const registry = engine?.getSubsystemRegistry?.();
       const tutorialSM = registry?.get?.('tutorial') as any;
@@ -706,7 +357,7 @@ const ThreeKingdomsGame: React.FC = () => {
           buildings={buildings}
         />
 
-        {/* P1-01: 急报横幅（资源栏下方） */}
+        {/* 急报横幅（资源栏下方） */}
         <EventBanner
           banner={activeBanner}
           onDismiss={handleBannerDismiss}
@@ -714,222 +365,50 @@ const ThreeKingdomsGame: React.FC = () => {
 
         {/* C区：场景区 — flex:1 撑满中间空间 */}
         <div className="tk-scene-area">
-          {renderSceneContent()}
+          <SceneRouter
+            activeTab={activeTab}
+            engine={engine}
+            snapshotVersion={snapshotVersion}
+            snapshot={snapshot}
+            onUpgradeComplete={handleUpgradeComplete}
+            onUpgradeError={handleUpgradeError}
+            onOpenFeature={(id) => setOpenFeature(id)}
+          />
         </div>
 
         {/* B区：Tab 栏 — 固定底部 */}
-        <div className="tk-tab-bar">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              className={`tk-tab-btn ${activeTab === tab.id ? 'tk-tab-btn--active' : ''}`}
-              onClick={() => handleTabChange(tab)}
-              aria-label={tab.label}
-              aria-selected={activeTab === tab.id}
-              role="tab"
-            >
-              <span className="tk-tab-icon">{tab.icon}</span>
-              <span className="tk-tab-label">{tab.label}</span>
-              {!tab.available && <span className="tk-tab-soon">即将开放</span>}
-            </button>
-          ))}
-
-          {/* 功能菜单按钮 */}
-          <FeatureMenu
-            items={featureMenuItems}
-            onSelect={handleFeatureSelect}
-          />
-
-          {/* 日历信息（右侧） — 接入 CalendarSystem 实时数据 */}
-          <div className="tk-calendar">
-            <span className="tk-calendar-era">
-              {calendar?.date
-                ? `${calendar.date.eraName}${calendar.date.yearInEra === 1 ? '元年' : `${toChineseYear(calendar.date.yearInEra)}年`}`
-                : '建安元年'}
-            </span>
-            <span className="tk-calendar-season">
-              {calendar?.date
-                ? `${SEASON_ICONS[calendar.date.season]} ${SEASON_LABELS[calendar.date.season]}`
-                : '🌸 春'}
-            </span>
-            <span className="tk-calendar-weather">
-              {calendar
-                ? `${WEATHER_ICONS[calendar.weather]} ${WEATHER_LABELS[calendar.weather]}`
-                : '☀️ 晴'}
-            </span>
-            <span className="tk-calendar-date">
-              {calendar?.date ? formatGameDate(calendar.date) : '正月初一'}
-            </span>
-          </div>
-        </div>
+        <TabBar
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          featureMenuItems={featureMenuItems}
+          onFeatureSelect={handleFeatureSelect}
+          calendar={calendar}
+        />
       </div>
 
       {/* 离线收益弹窗 */}
       {offlineReward && (
-        <Modal
-          visible
-          type="info"
-          title="离线收益"
-          confirmText="领取收益"
-          onConfirm={handleOfflineClaim}
-          onCancel={handleOfflineClaim}
-          width="420px"
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: '#e8e0d0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-lg)' as any, fontSize: '13px' }}>
-              <span>⏱ 离线时长：{formatOfflineDuration(offlineReward.offlineSeconds)}</span>
-              {offlineReward.isCapped && <span style={{ color: '#e8a735' }}>⚠️ 已达上限</span>}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              {([
-                { key: 'grain' as const, label: '粮草', icon: '🌾', color: '#7EC850' },
-                { key: 'gold' as const, label: '铜钱', icon: '💰', color: '#C9A84C' },
-                { key: 'troops' as const, label: '兵力', icon: '⚔️', color: '#B8423A' },
-                { key: 'mandate' as const, label: '天命', icon: '✨', color: '#7B5EA7' },
-              ]).map(({ key, label, icon, color }) => {
-                const val = offlineReward.earned[key];
-                if (val <= 0) return null;
-                return (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any }}>
-                    <span>{icon}</span>
-                    <span>{label}</span>
-                    <span style={{ color, marginLeft: 'auto', fontWeight: 600 }}>+{formatNumber(val)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </Modal>
+        <OfflineRewardModal
+          reward={offlineReward}
+          onClaim={handleOfflineClaim}
+        />
       )}
 
-      {/* P1-01: 首次启动欢迎弹窗 */}
-      <Modal
+      {/* 首次启动欢迎弹窗 */}
+      <WelcomeModal
         visible={showWelcome}
-        type="info"
-        title="⚔️ 欢迎来到三国霸业！"
-        confirmText="开始游戏"
-        onConfirm={handleWelcomeClose}
-        onCancel={handleWelcomeClose}
-        width="460px"
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', color: '#e8e0d0', fontSize: '14px' }}>
-          <p style={{ margin: 0, lineHeight: 1.6 }}>
-            乱世纷争，群雄并起。你将作为一方诸侯，招募武将、发展城池，逐鹿天下！
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            {([
-              { icon: '🏰', label: '建筑', desc: '建造升级城池设施' },
-              { icon: '🦸', label: '武将', desc: '招募培养三国名将' },
-              { icon: '📜', label: '科技', desc: '研究强化国家实力' },
-              { icon: '⚔️', label: '关卡', desc: '征战四方开疆拓土' },
-            ]).map(({ icon, label, desc }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-lg)' as any }}>
-                <span style={{ fontSize: '20px' }}>{icon}</span>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '13px' }}>{label}</div>
-                  <div style={{ fontSize: '11px', color: '#999' }}>{desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p style={{ margin: 0, fontSize: '12px', color: '#888', textAlign: 'center' }}>
-            💡 点击底部 Tab 栏切换功能，右上角菜单查看更多玩法
-          </p>
-        </div>
-      </Modal>
+        onClose={handleWelcomeClose}
+      />
 
       {/* ═══ 功能面板弹窗 ═══ */}
-      {/* worldmap/equipment/arena/expedition/npc 已有独立Tab，不再重复渲染 FeaturePanel */}
-
-      {/* P0-02: 事件系统 — 已迁移至 SharedPanel */}
-      <EventListPanel
+      <FeaturePanelOverlay
         engine={engine}
         snapshotVersion={snapshotVersion}
-        visible={openFeature === 'events'}
+        openFeature={openFeature}
         onClose={handleFeatureClose}
       />
 
-      {/* Tier 3: 邮件系统 — 已迁移至 SharedPanel */}
-      <MailPanel
-        engine={engine}
-        visible={openFeature === 'mail'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* Tier 3: 社交系统 — 已迁移至 SharedPanel */}
-      <SocialPanel
-        engine={engine}
-        visible={openFeature === 'social'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* Tier 3: 传承系统 — 已迁移至 SharedPanel */}
-      <HeritagePanel
-        engine={engine}
-        visible={openFeature === 'heritage'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* Tier 3: 活动系统 — 已迁移至 SharedPanel */}
-      <ActivityPanel
-        engine={engine}
-        visible={openFeature === 'activity'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* 任务系统 — 已迁移至 SharedPanel */}
-      <QuestPanel
-        engine={engine}
-        visible={openFeature === 'quest'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* 商店系统 — 已迁移至 SharedPanel */}
-      <ShopPanel
-        engine={engine}
-        visible={openFeature === 'shop'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* 成就系统 — 已迁移至 SharedPanel */}
-      <AchievementPanel
-        engine={engine}
-        visible={openFeature === 'achievement'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* 联盟系统 */}
-      {/* NEW-R5: 联盟系统 — 已迁移至 SharedPanel */}
-      <AlliancePanel
-        engine={engine}
-        visible={openFeature === 'alliance'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* NEW-R5: 声望系统 — 已迁移至 SharedPanel */}
-      <PrestigePanel
-        engine={engine}
-        visible={openFeature === 'prestige'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* npc 已有独立Tab，不再重复渲染 FeaturePanel */}
-
-      {/* P0-01: 商贸路线系统 — 已迁移至 SharedPanel */}
-      <TradePanel
-        engine={engine}
-        visible={openFeature === 'trade'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* NEW-R5: 设置/云存档系统 — 已迁移至 SharedPanel */}
-      <SettingsPanel
-        engine={engine}
-        visible={openFeature === 'settings'}
-        onClose={handleFeatureClose}
-      />
-
-      {/* P1-01: 随机遭遇弹窗（全局覆盖层） */}
+      {/* 随机遭遇弹窗（全局覆盖层） */}
       <RandomEncounterModal
         visible={activeEncounter !== null}
         event={activeEncounter}
@@ -937,12 +416,11 @@ const ThreeKingdomsGame: React.FC = () => {
         onClose={handleEncounterClose}
       />
 
-      {/* P1-02: 剧情事件弹窗（全局覆盖层） */}
+      {/* 剧情事件弹窗（全局覆盖层） */}
       {activeStoryEvent && (
         <StoryEventModal
           event={activeStoryEvent}
           onSelect={(choiceId: string) => {
-            // 选择后推进剧情到下一幕
             const registry = (engine as any).registry;
             const storySys = registry?.get?.('storyEvent');
             if (storySys) {

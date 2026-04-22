@@ -18,15 +18,7 @@ import type {
 import {
   OFFLINE_TRADE_EFFICIENCY, MAX_OFFLINE_TRADES, OFFLINE_TRADE_DURATION,
 } from './offline-config';
-
-// ─────────────────────────────────────────────
-// 辅助
-// ─────────────────────────────────────────────
-
-function zeroRes(): Resources { return { grain: 0, gold: 0, troops: 0, mandate: 0 }; }
-function mulRes(r: Readonly<Resources>, f: number): Resources {
-  return { grain: r.grain * f, gold: r.gold * f, troops: r.troops * f, mandate: r.mandate * f };
-}
+import { zeroRes, mulRes } from './offline-utils';
 
 // ─────────────────────────────────────────────
 // 加速道具
