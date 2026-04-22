@@ -89,128 +89,134 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
     Toast.info(`与NPC对话: ${npcId}`);
   }, []);
 
-  switch (activeTab) {
-    case 'building':
-      return (
-        <BuildingPanel
-          buildings={buildings}
-          resources={resources}
-          rates={productionRates}
-          caps={caps}
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-          onUpgradeComplete={onUpgradeComplete}
-          onUpgradeError={onUpgradeError}
-        />
-      );
+  return (
+    <div data-testid="tk-scene-router" className="tk-scene-router">
+      {(() => {
+        switch (activeTab) {
+          case 'building':
+            return (
+              <BuildingPanel
+                buildings={buildings}
+                resources={resources}
+                rates={productionRates}
+                caps={caps}
+                engine={engine}
+                snapshotVersion={snapshotVersion}
+                onUpgradeComplete={onUpgradeComplete}
+                onUpgradeError={onUpgradeError}
+              />
+            );
 
-    case 'hero':
-      return (
-        <HeroTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-        />
-      );
+          case 'hero':
+            return (
+              <HeroTab
+                engine={engine}
+                snapshotVersion={snapshotVersion}
+              />
+            );
 
-    case 'tech':
-      return (
-        <TechTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-        />
-      );
+          case 'tech':
+            return (
+              <TechTab
+                engine={engine}
+                snapshotVersion={snapshotVersion}
+              />
+            );
 
-    case 'campaign':
-      return (
-        <CampaignTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-        />
-      );
+          case 'campaign':
+            return (
+              <CampaignTab
+                engine={engine}
+                snapshotVersion={snapshotVersion}
+              />
+            );
 
-    case 'equipment':
-      return (
-        <EquipmentTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-        />
-      );
+          case 'equipment':
+            return (
+              <EquipmentTab
+                engine={engine}
+                snapshotVersion={snapshotVersion}
+              />
+            );
 
-    case 'map':
-      return (
-        <WorldMapTab
-          territories={worldMapData.territories}
-          productionSummary={worldMapData.productionSummary}
-          snapshotVersion={snapshotVersion}
-          onSelectTerritory={(id) => {
-            Toast.info(`选中领土: ${id}`);
-          }}
-          onSiegeTerritory={(id) => {
-            Toast.info(`发起攻城: ${id}`);
-          }}
-        />
-      );
+          case 'map':
+            return (
+              <WorldMapTab
+                territories={worldMapData.territories}
+                productionSummary={worldMapData.productionSummary}
+                snapshotVersion={snapshotVersion}
+                onSelectTerritory={(id) => {
+                  Toast.info(`选中领土: ${id}`);
+                }}
+                onSiegeTerritory={(id) => {
+                  Toast.info(`发起攻城: ${id}`);
+                }}
+              />
+            );
 
-    case 'npc':
-      return (
-        <>
-          <NPCTab
-            npcs={npcData}
-            onSelectNPC={handleSelectNPC}
-            onStartDialog={handleStartDialog}
-          />
-          {/* NPC详情弹窗 */}
-          {selectedNPC && (
-            <NPCInfoModal
-              visible={true}
-              npc={selectedNPC}
-              onClose={() => setSelectedNPC(null)}
-              onStartDialog={(npcId) => {
-                setSelectedNPC(null);
-                Toast.info(`与NPC对话: ${npcId}`);
-              }}
-            />
-          )}
-          {/* NPC对话 — 通过Toast提示，完整弹窗需DialogSystem集成 */}
-        </>
-      );
+          case 'npc':
+            return (
+              <>
+                <NPCTab
+                  npcs={npcData}
+                  onSelectNPC={handleSelectNPC}
+                  onStartDialog={handleStartDialog}
+                />
+                {/* NPC详情弹窗 */}
+                {selectedNPC && (
+                  <NPCInfoModal
+                    visible={true}
+                    npc={selectedNPC}
+                    onClose={() => setSelectedNPC(null)}
+                    onStartDialog={(npcId) => {
+                      setSelectedNPC(null);
+                      Toast.info(`与NPC对话: ${npcId}`);
+                    }}
+                  />
+                )}
+                {/* NPC对话 — 通过Toast提示，完整弹窗需DialogSystem集成 */}
+              </>
+            );
 
-    case 'arena':
-      return (
-        <ArenaTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-        />
-      );
+          case 'arena':
+            return (
+              <ArenaTab
+                engine={engine}
+                snapshotVersion={snapshotVersion}
+              />
+            );
 
-    case 'expedition':
-      return (
-        <ExpeditionTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-        />
-      );
+          case 'expedition':
+            return (
+              <ExpeditionTab
+                engine={engine}
+                snapshotVersion={snapshotVersion}
+              />
+            );
 
-    case 'army':
-      return (
-        <ArmyTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-        />
-      );
+          case 'army':
+            return (
+              <ArmyTab
+                engine={engine}
+                snapshotVersion={snapshotVersion}
+              />
+            );
 
-    case 'more':
-      return (
-        <MoreTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-          onOpenPanel={(id) => onOpenFeature(id as FeaturePanelId)}
-        />
-      );
+          case 'more':
+            return (
+              <MoreTab
+                engine={engine}
+                snapshotVersion={snapshotVersion}
+                onOpenPanel={(id) => onOpenFeature(id as FeaturePanelId)}
+              />
+            );
 
-    default:
-      return null;
-  }
+          default:
+            return null;
+        }
+      })()}
+    </div>
+  );
 };
 
 SceneRouter.displayName = 'SceneRouter';

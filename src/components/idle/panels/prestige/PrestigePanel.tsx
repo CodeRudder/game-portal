@@ -49,10 +49,10 @@ export default function PrestigePanel({ engine, visible = true, onClose }: Prest
       onClose={onClose}
       width="520px"
     >
-      <div style={s.wrap}>
-        {message && <div style={s.toast}>{message}</div>}
+      <div style={s.wrap} data-testid="prestige-panel">
+        {message && <div style={s.toast} data-testid="prestige-panel-toast">{message}</div>}
         {/* 声望等级卡片 */}
-        <div style={s.card}>
+        <div style={s.card} data-testid="prestige-panel-level-card">
           <div style={s.badge}>🏅 {title}</div>
           <div style={s.lvNum}>Lv.{level}</div>
           <div style={s.bonusText}>产出加成 ×{(bonus ?? 1.0).toFixed(2)}</div>
@@ -83,7 +83,7 @@ export default function PrestigePanel({ engine, visible = true, onClose }: Prest
             const unlocked = rw.level <= level;
             const claimed = rw.claimed;
             return (
-              <div key={rw.level} style={s.rwItem}>
+              <div key={rw.level} style={s.rwItem} data-testid={`prestige-panel-reward-${rw.level}`}>
                 <div style={{ width: 56 }}>
                   <span style={{ fontWeight: 600 }}>Lv.{rw.level}</span>
                   {unlocked && <span style={{ color: '#7EC850', fontSize: 10, marginLeft: 4 }}>✓</span>}

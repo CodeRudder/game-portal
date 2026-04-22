@@ -159,11 +159,11 @@ export default function SocialPanel({ engine, visible = true, onClose }: SocialP
       onClose={onClose}
       width="520px"
     >
-    <div style={styles.container}>
-      {message && <div style={styles.toast}>{message}</div>}
+    <div style={styles.container} data-testid="social-panel">
+      {message && <div style={styles.toast} data-testid="social-panel-toast">{message}</div>}
 
       {/* 概览 */}
-      <div style={styles.overview}>
+      <div style={styles.overview} data-testid="social-panel-overview">
         <span>👥 好友 {friends.length}</span>
         <span>🟢 在线 {onlineFriends.length}</span>
         <span>💎 友情点 {friendshipPoints}</span>
@@ -177,12 +177,13 @@ export default function SocialPanel({ engine, visible = true, onClose }: SocialP
       )}
 
       {/* Tab */}
-      <div style={styles.tabBar}>
+      <div style={styles.tabBar} data-testid="social-panel-tabs">
         {TABS.map(t => (
           <button
             key={t.id}
             style={{ ...styles.tabBtn, ...(tab === t.id ? styles.activeTab : {}) }}
             onClick={() => setTab(t.id)}
+            data-testid={`social-panel-tab-${t.id}`}
           >{t.icon} {t.label}</button>
         ))}
       </div>
@@ -191,7 +192,7 @@ export default function SocialPanel({ engine, visible = true, onClose }: SocialP
       {tab === 'friends' && (
         <div style={styles.friendList}>
           {friends.map((f: any) => (
-            <div key={f.playerId} style={styles.friendCard}>
+            <div key={f.playerId} style={styles.friendCard} data-testid={`social-panel-friend-${f.playerId}`}>
               <div style={styles.friendInfo}>
                 <div style={styles.friendName}>
                   <span style={{
@@ -205,8 +206,8 @@ export default function SocialPanel({ engine, visible = true, onClose }: SocialP
                 </div>
               </div>
               <div style={styles.friendActions}>
-                <button style={styles.smallBtn} onClick={() => handleGift(f.playerId)}>🎁</button>
-                <button style={styles.smallBtn} onClick={() => handleVisit(f.playerId)}>🏠</button>
+                <button style={styles.smallBtn} data-testid={`social-panel-gift-${f.playerId}`} onClick={() => handleGift(f.playerId)}>🎁</button>
+                <button style={styles.smallBtn} data-testid={`social-panel-visit-${f.playerId}`} onClick={() => handleVisit(f.playerId)}>🏠</button>
               </div>
             </div>
           ))}

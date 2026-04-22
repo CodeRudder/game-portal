@@ -106,7 +106,7 @@ const TabBar: React.FC<TabBarProps> = ({
   calendar,
 }) => {
   return (
-    <div className="tk-tab-bar">
+    <div className="tk-tab-bar" data-testid="tab-bar">
       {TABS.map(tab => (
         <button
           key={tab.id}
@@ -115,6 +115,7 @@ const TabBar: React.FC<TabBarProps> = ({
           aria-label={tab.label}
           aria-selected={activeTab === tab.id}
           role="tab"
+          data-testid={`tab-bar-${tab.id}`}
         >
           <span className="tk-tab-icon">{tab.icon}</span>
           <span className="tk-tab-label">{tab.label}</span>

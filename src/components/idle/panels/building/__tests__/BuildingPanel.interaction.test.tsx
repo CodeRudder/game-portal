@@ -209,7 +209,7 @@ function getModalCancelButton() {
  * 辅助：获取弹窗关闭按钮(×)
  */
 function getModalCloseButton() {
-  return document.querySelector('.tk-upgrade-close') as HTMLElement;
+  return document.querySelector('.tk-shared-panel-close') as HTMLElement;
 }
 
 describe('BuildingPanel 核心交互测试', () => {

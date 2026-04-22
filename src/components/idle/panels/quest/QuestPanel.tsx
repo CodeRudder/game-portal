@@ -68,10 +68,10 @@ export default function QuestPanel({ engine, visible = true, onClose }: QuestPan
 
   return (
     <SharedPanel visible={visible} title="任务" icon="📋" onClose={onClose} width="520px">
-    <div style={s.wrap}>
-      {message && <div style={s.toast}>{message}</div>}
+    <div style={s.wrap} data-testid="quest-panel">
+      {message && <div style={s.toast} data-testid="quest-panel-toast">{message}</div>}
       {/* 活跃度 */}
-      <div style={s.actBox}>
+      <div style={s.actBox} data-testid="quest-panel-activity">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#d4a574' }}>⚡ 活跃度</span>
           <span style={{ fontSize: 12, color: '#a0a0a0' }}>{actPts}/{actMax}</span>
@@ -90,13 +90,13 @@ export default function QuestPanel({ engine, visible = true, onClose }: QuestPan
         </div>
       </div>
       {/* Tab + 一键领取 */}
-      <div style={s.tabs}>
+      <div style={s.tabs} data-testid="quest-panel-tabs">
         {TABS.map(t => (
-          <button key={t.id} style={{ ...s.tab, ...(tab === t.id ? s.tabOn : {}) }} onClick={() => setTab(t.id)}>
+          <button key={t.id} style={{ ...s.tab, ...(tab === t.id ? s.tabOn : {}) }} onClick={() => setTab(t.id)} data-testid={`quest-panel-tab-${t.id}`}>
             {t.icon} {t.label}
           </button>
         ))}
-        <button style={s.claimAll} onClick={handleClaimAll}>一键领取</button>
+        <button style={s.claimAll} data-testid="quest-panel-claim-all" onClick={handleClaimAll}>一键领取</button>
       </div>
       {/* 任务列表 */}
       {quests.map((q: any) => {
@@ -104,7 +104,7 @@ export default function QuestPanel({ engine, visible = true, onClose }: QuestPan
         const claimed = q.rewardClaimed;
         const objs: any[] = q.objectives ?? [];
         return (
-          <div key={q.instanceId} style={{ ...s.card, opacity: claimed ? 0.5 : 1 }}>
+          <div key={q.instanceId} style={{ ...s.card, opacity: claimed ? 0.5 : 1 }} data-testid={`quest-panel-item-${q.instanceId}`}>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
               {q.questDefId ?? '任务'}{done && <span style={{ color: '#7EC850', marginLeft: 6 }}>✅</span>}
             </div>
@@ -116,7 +116,7 @@ export default function QuestPanel({ engine, visible = true, onClose }: QuestPan
                 <span style={{ fontSize: 11, color: '#888', minWidth: 44, textAlign: 'right' }}>{o.currentCount}/{o.targetCount}</span>
               </div>
             ))}
-            {done && !claimed && <button style={s.btn} onClick={() => handleClaim(q.instanceId)}>领取奖励</button>}
+            {done && !claimed && <button style={s.btn} data-testid={`quest-panel-claim-${q.instanceId}`} onClick={() => handleClaim(q.instanceId)}>领取奖励</button>}
           </div>
         );
       })}

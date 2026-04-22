@@ -63,13 +63,13 @@ const BuildingIncomeModal: React.FC<BuildingIncomeModalProps> = ({
       width="480px"
     >
       {/* 每秒产出 */}
-      <div className="tk-income-section">
+      <div className="tk-income-section" data-testid="building-income-section">
         <h4 className="tk-income-section-title">📈 每秒产出（建筑汇总）</h4>
         {RESOURCE_TYPES.map((resType) => {
           const rate = rates[resType];
           if (rate <= 0) return null;
           return (
-            <div key={resType} className="tk-income-row">
+            <div key={resType} className="tk-income-row" data-testid={`building-income-rate-${resType}`}>
               <span>{RESOURCE_LABELS[resType]}</span>
               <span className="tk-income-rate">+{rate.toFixed(2)}/秒</span>
             </div>
@@ -78,7 +78,7 @@ const BuildingIncomeModal: React.FC<BuildingIncomeModalProps> = ({
       </div>
 
       {/* 净收入 */}
-      <div className="tk-income-net-box">
+      <div className="tk-income-net-box" data-testid="building-income-net">
         <h4 className="tk-income-section-title">💰 净收入</h4>
         {RESOURCE_TYPES.map((resType) => {
           const rate = rates[resType];
@@ -101,7 +101,7 @@ const BuildingIncomeModal: React.FC<BuildingIncomeModalProps> = ({
       </div>
 
       {/* 各建筑产出明细 */}
-      <div className="tk-income-section">
+      <div className="tk-income-section" data-testid="building-income-details">
         <h4 className="tk-income-section-title">🏗️ 建筑产出明细</h4>
         {BUILDING_TYPES.map((type) => {
           const state = buildings[type];

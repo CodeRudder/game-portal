@@ -88,6 +88,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ stats, quality, statMax }) => {
 
   return (
     <svg
+      data-testid="tk-radar-chart"
       className="tk-hero-radar"
       width={RADAR_SIZE}
       height={RADAR_SIZE}

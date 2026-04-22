@@ -99,17 +99,18 @@ export default function ActivityPanel({ engine, visible = true, onClose }: Activ
       onClose={onClose}
       width="520px"
     >
-    <div style={styles.container}>
-      {message && <div style={styles.toast}>{message}</div>}
+    <div style={styles.container} data-testid="activity-panel">
+      {message && <div style={styles.toast} data-testid="activity-panel-toast">{message}</div>}
 
       {/* 签到卡片 */}
       {signIn && (
-        <div style={styles.signInCard}>
+        <div style={styles.signInCard} data-testid="activity-panel-signin">
           <div style={styles.signInTitle}>📅 每日签到</div>
           <div style={styles.signInInfo}>连续签到 {consecutiveDays} 天</div>
           <button
             style={{ ...styles.signInBtn, ...(todaySigned ? styles.signInBtnDone : {}) }}
             disabled={todaySigned}
+            data-testid="activity-panel-signin-btn"
             onClick={handleSignIn}
           >
             {todaySigned ? '✅ 今日已签' : '签到'}
@@ -129,6 +130,7 @@ export default function ActivityPanel({ engine, visible = true, onClose }: Activ
                 borderColor: selectedActivityId === act.id ? '#d4a574' : 'rgba(255,255,255,0.08)',
               }}
               onClick={() => setSelectedActivityId(act.id)}
+              data-testid={`activity-panel-card-${act.id}`}
             >
               <div style={styles.activityName}>{act.defId ?? act.id}</div>
               <div style={styles.activityPoints}>
