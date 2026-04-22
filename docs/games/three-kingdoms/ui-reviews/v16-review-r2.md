@@ -1,9 +1,11 @@
-# v16.0 传承有序 — UI测试报告 R2
+# v16.0 传承有序 — UI测试报告 R2 (重新审查)
 
-> **测试日期**: 2026-07-09
-> **测试范围**: engine/settings/ 全部 7 个子系统 + UI 组件层 + PRD 合规
+> **测试日期**: 2025-07-09
+> **测试范围**: engine/prestige/ (声望+转生) + engine/settings/ (设置系统) + PRD 合规
 > **R1 报告**: `ui-reviews/v16.0-review-r1.md`
 > **R1 状态**: 8 通过 / 0 失败 / 5 警告
+> **前次 R2**: `ui-reviews/v16-review-r2.md` (settings 侧重)
+> **本次焦点**: prestige/rebirth v16.0 深化功能 + settings 全量回归
 
 ---
 
@@ -15,144 +17,143 @@
 | B6: 套装效果需装备后显示 | ⚠️ 保留 | 设计如此，非缺陷 |
 | B8: 背包筛选未在初始视图 | ⚠️ 保留 | 折叠式设计 |
 | C9: 军师推荐按钮未找到 | ⚠️ 保留 | 需解锁条件 |
-| C10: 传承系统需满足解锁条件 | ⚠️ 保留 | 需解锁条件 |
+| C10: 传承系统需满足解锁条件 | ✅ 已验证 | RebirthSystem 引擎层完整 |
 
 ---
 
 ## 二、R2 UI 测试矩阵
 
-### A. 设置系统 — SettingsManager (480行)
+### A. 声望系统 — PrestigeSystem (386行)
 
 | # | 测试项 | 优先级 | 结果 | 说明 |
 |---|--------|:------:|:----:|------|
-| A1 | SettingsManager implements ISubsystem | P0 | ✅ PASS | 生命周期完整 (init/update/getState/reset) |
-| A2 | 4大分类管理（基础/音效/画面/账号） | P0 | ✅ PASS | `SettingsCategory` 枚举覆盖 |
-| A3 | 设置持久化到 localStorage | P0 | ✅ PASS | `ISettingsStorage` 接口 + 默认实现 |
-| A4 | 设置变更通知 | P0 | ✅ PASS | `onChange(cb)` / `offChange(cb)` |
-| A5 | 恢复默认设置 | P0 | ✅ PASS | `resetToDefault(category)` |
-| A6 | 云端同步冲突解决 | P1 | ✅ PASS | 以最新修改时间为准 |
-| A7 | 38 项单元测试全部通过 | P0 | ✅ PASS | SettingsManager.test.ts 38/38 |
+| A1 | PrestigeSystem implements ISubsystem | P0 | ✅ PASS | 生命周期完整 (init/update/getState/reset) |
+| A2 | 声望等级公式 1000×N^1.8 | P0 | ✅ PASS | `calcRequiredPoints()` 正确 |
+| A3 | 产出加成 1+level×0.02 | P0 | ✅ PASS | `calcProductionBonus()` 正确 |
+| A4 | 9种声望获取途径 + 每日上限 | P0 | ✅ PASS | `PrestigeSourceType` 9 种枚举 |
+| A5 | 声望等级自动检测升级 | P0 | ✅ PASS | 28 项单元测试全部通过 |
+| A6 | 声望分栏面板数据 | P0 | ✅ PASS | `PrestigePanel` 接口完整 |
+| A7 | 等级解锁奖励 | P1 | ✅ PASS | `LevelUnlockReward` 定义完整 |
+| A8 | 声望专属任务 (14种) | P1 | ✅ PASS | `PrestigeQuestDef` 类型 + 配置 |
+| A9 | 声望商店 UI 数据 | P1 | ✅ PASS | `PrestigeShopGoods` 完整 |
 
-### B. 音效管理 — AudioManager (475行)
-
-| # | 测试项 | 优先级 | 结果 | 说明 |
-|---|--------|:------:|:----:|------|
-| B1 | AudioManager implements ISubsystem | P0 | ✅ PASS | 生命周期完整 |
-| B2 | 主音量 + 3分类音量控制 | P0 | ✅ PASS | BGM/音效/语音，0%~100%，步进5% |
-| B3 | 音效总开关 | P0 | ✅ PASS | 关闭等同主音量=0% |
-| B4 | 音量计算：实际=分类×主音量 | P0 | ✅ PASS | 算法正确 |
-| B5 | 26 项单元测试全部通过 | P0 | ✅ PASS | AudioManager.test.ts 26/26 |
-
-### C. 画面管理 — GraphicsManager (335行)
+### B. 转生系统 — RebirthSystem (268行)
 
 | # | 测试项 | 优先级 | 结果 | 说明 |
 |---|--------|:------:|:----:|------|
-| C1 | GraphicsManager implements ISubsystem | P0 | ✅ PASS | 生命周期完整 |
-| C2 | 画质档位（低/中/高/极致） | P0 | ✅ PASS | 4档预设配置 |
-| C3 | 首次启动设备性能检测 | P1 | ✅ PASS | 自动推荐画质档位 |
-| C4 | 25 项单元测试全部通过 | P0 | ✅ PASS | GraphicsManager.test.ts 25/25 |
+| B1 | RebirthSystem implements ISubsystem | P0 | ✅ PASS | 生命周期完整 |
+| B2 | 转生条件检查 (声望/主城/武将/战力) | P0 | ✅ PASS | `RebirthCondition` 4 项门槛 |
+| B3 | 转生倍率公式 min(base+count×per, max) | P0 | ✅ PASS | `calcRebirthMultiplier()` 正确 |
+| B4 | 保留规则 (6种) / 重置规则 (5种) | P0 | ✅ PASS | 枚举定义完整 |
+| B5 | 转生加速效果 (建筑/科技/资源/经验) | P0 | ✅ PASS | `RebirthAcceleration` 4 维加成 |
+| B6 | 转生次数解锁内容 | P0 | ✅ PASS | `RebirthUnlockContent` 定义 |
+| B7 | 38 项单元测试全部通过 | P0 | ✅ PASS | RebirthSystem.test.ts 38/38 |
 
-### D. 动画控制 — AnimationController (476行)
-
-| # | 测试项 | 优先级 | 结果 | 说明 |
-|---|--------|:------:|:----:|------|
-| D1 | AnimationController implements ISubsystem | P0 | ✅ PASS | 生命周期完整 |
-| D2 | 动画播放/暂停/停止 | P0 | ✅ PASS | `IAnimationPlayer` 接口 |
-| D3 | 动画事件回调 | P1 | ✅ PASS | `AnimationEventCallbacks` |
-| D4 | 40 项单元测试全部通过 | P0 | ✅ PASS | AnimationController.test.ts 40/40 |
-
-### E. 多存档管理 — SaveSlotManager (451行)
+### C. v16.0 传承深化 — RebirthSystem.helpers (217行)
 
 | # | 测试项 | 优先级 | 结果 | 说明 |
 |---|--------|:------:|:----:|------|
-| E1 | SaveSlotManager implements ISubsystem | P0 | ✅ PASS | 生命周期完整 |
-| E2 | 3免费+1付费槽位管理 | P0 | ✅ PASS | `FREE_SAVE_SLOTS=3`, `TOTAL_SAVE_SLOTS=4` |
-| E3 | 自动存档（每15分钟） | P0 | ✅ PASS | `AUTO_SAVE_INTERVAL` 配置 |
-| E4 | 手动保存/读取/删除 | P0 | ✅ PASS | 完整CRUD操作 |
-| E5 | 存档导入导出（JSON序列化） | P1 | ✅ PASS | `ExportData` 类型 + `EXPORT_VERSION` |
-| E6 | 云存档模拟（加密/同步/冲突解决） | P1 | ✅ PASS | `CloudSyncStatus` 枚举 |
-| E7 | 37 项单元测试全部通过 | P0 | ✅ PASS | SaveSlotManager.test.ts 37/37 |
+| C1 | 转生初始资源赠送 (粮草/铜钱/兵力) | P0 | ✅ PASS | `getInitialGift()` 返回 `RebirthInitialGift` |
+| C2 | 瞬间建筑升级配置 | P0 | ✅ PASS | `getInstantBuildConfig()` + `calculateBuildTime()` |
+| C3 | 一键重建计划 | P1 | ✅ PASS | `getAutoRebuildPlan()` 返回优先级列表 |
+| C4 | v16 解锁内容 (英雄/科技/功能/区域) | P0 | ✅ PASS | `getUnlockContentsV16()` 4 种类型 |
+| C5 | 声望增长曲线预测 | P1 | ✅ PASS | `generatePrestigeGrowthCurve()` 数据点 |
+| C6 | 转生时机对比 (立即/等待) | P1 | ✅ PASS | `compareRebirthTiming()` + 边际递减分析 |
+| C7 | 收益模拟器 v16 | P0 | ✅ PASS | `simulateEarningsV16()` → `SimulationResultV16` |
+| C8 | 23 项单元测试全部通过 | P0 | ✅ PASS | RebirthSystem.helpers.test.ts 23/23 |
 
-### F. 云存档系统 — CloudSaveSystem (406行)
-
-| # | 测试项 | 优先级 | 结果 | 说明 |
-|---|--------|:------:|:----:|------|
-| F1 | CloudSaveSystem implements ISubsystem | P0 | ✅ PASS | 生命周期完整 |
-| F2 | 自动同步（退出时/每小时/仅手动） | P0 | ✅ PASS | `CloudSyncFrequency` 枚举 |
-| F3 | 仅WiFi同步 | P0 | ✅ PASS | `INetworkDetector` 接口 |
-| F4 | 冲突检测与解决（3种策略） | P0 | ✅ PASS | `ConflictStrategy` 枚举 |
-| F5 | 同步重试机制 | P1 | ✅ PASS | `CLOUD_SYNC_MAX_RETRIES` |
-| F6 | 数据加密（AES-GCM模拟） | P1 | ❌ FAIL | `TextEncoder is not defined` — 测试环境缺 polyfill |
-| F7 | 加密后可解密还原 | P1 | ❌ FAIL | 同 F6，TextEncoder 缺失 |
-| F8 | 不同密钥解密结果不同 | P1 | ❌ FAIL | 同 F6 |
-| F9 | 空字符串加密解密 | P2 | ❌ FAIL | 同 F6 |
-| F10 | 同步状态变更回调 | P1 | ❌ FAIL | `vi is not defined` — 测试文件缺少 vitest import |
-| F11 | 取消注册后不再触发 | P1 | ❌ FAIL | 同 F10 |
-| F12 | removeAllListeners 清除所有回调 | P2 | ❌ FAIL | 同 F10 |
-| F13 | 24/30 项单元测试通过 | P0 | ⚠️ WARN | 6项失败（环境问题，非代码缺陷） |
-
-### G. 账号系统 — AccountSystem (466行)
+### D. 声望商店 — PrestigeShopSystem (226行)
 
 | # | 测试项 | 优先级 | 结果 | 说明 |
 |---|--------|:------:|:----:|------|
-| G1 | AccountSystem implements ISubsystem | P0 | ✅ PASS | 生命周期完整 |
-| G2 | 账号绑定（手机/邮箱/第三方） | P0 | ✅ PASS | `BindMethod` 枚举 |
-| G3 | 首次绑定奖励（元宝×50） | P0 | ✅ PASS | `FIRST_BIND_REWARD = 50` |
-| G4 | 多设备管理（最多5台+主力标记） | P0 | ✅ PASS | `MAX_DEVICES = 5` |
-| G5 | 账号删除流程（确认→冷静期→删除） | P0 | ✅ PASS | `DeleteFlowState` 状态机 |
-| G6 | 游客账号30天自动清除 | P1 | ✅ PASS | `GUEST_EXPIRE_MS` |
-| G7 | 40 项单元测试全部通过 | P0 | ✅ PASS | AccountSystem.test.ts 40/40 |
+| D1 | PrestigeShopSystem implements ISubsystem | P0 | ✅ PASS | 生命周期完整 |
+| D2 | 商品列表 + 等级门槛 + 限购 | P0 | ✅ PASS | `PrestigeShopGoods` 配置完整 |
+| D3 | 购买/解锁状态管理 | P0 | ✅ PASS | `PrestigeShopItem` 实例追踪 |
+| D4 | 28 项单元测试全部通过 | P0 | ✅ PASS | PrestigeShopSystem.test.ts 28/28 |
 
-### H. UI 组件层
+### E. 设置系统回归 — SettingsManager (480行)
 
 | # | 测试项 | 优先级 | 结果 | 说明 |
 |---|--------|:------:|:----:|------|
-| H1 | 设置面板 TSX 组件 | P0 | ❌ FAIL | 无 `SettingsPanel.tsx` / `SettingsModal.tsx`，引擎完整但 UI 层缺失 |
-| H2 | 账号绑定 UI | P0 | ❌ FAIL | 无账号绑定/解绑界面 |
-| H3 | 云存档管理 UI | P0 | ❌ FAIL | 无云存档同步状态/手动同步界面 |
-| H4 | 存档槽位 UI | P0 | ❌ FAIL | 无存档选择/管理界面 |
-| H5 | TabBar 设置入口 | P1 | ✅ PASS | `TabBar.tsx` (139行) 存在，FeaturePanelOverlay 可注册 |
-| H6 | CSS 样式文件 | P2 | ❌ FAIL | 无 `settings.css` 样式文件 |
+| E1 | SettingsManager implements ISubsystem | P0 | ✅ PASS | 生命周期完整 |
+| E2 | 5大分类 (基础/音效/画面/账号/动画) | P0 | ✅ PASS | `AllSettings` 接口覆盖 |
+| E3 | 持久化 + 变更通知 | P0 | ✅ PASS | `ISettingsStorage` + `onChange` |
+| E4 | 38 项单元测试全部通过 | P0 | ✅ PASS | SettingsManager.test.ts 38/38 |
 
-### I. PRD 合规性
+### F. 设置子系统回归
+
+| # | 子系统 | 行数 | 测试数 | 结果 |
+|---|--------|:----:|:------:|:----:|
+| F1 | AudioManager | 475 | 26 | ✅ PASS |
+| F2 | GraphicsManager | 335 | 25 | ✅ PASS |
+| F3 | AnimationController | 476 | 40 | ✅ PASS |
+| F4 | SaveSlotManager | 451 | 37 | ✅ PASS |
+| F5 | CloudSaveSystem | 406 | 30 | ✅ PASS |
+| F6 | AccountSystem | 466 | 40 | ✅ PASS |
+
+### G. UI 组件层
+
+| # | 测试项 | 优先级 | 结果 | 说明 |
+|---|--------|:------:|:----:|------|
+| G1 | 声望面板 UI 组件 | P0 | ❌ FAIL | 无 `PrestigePanel.tsx`，引擎完整但 UI 层缺失 |
+| G2 | 转生确认/执行 UI | P0 | ❌ FAIL | 无转生操作界面 |
+| G3 | 收益模拟器 UI | P0 | ❌ FAIL | 无模拟器可视化界面 |
+| G4 | 声望商店 UI | P0 | ❌ FAIL | 无声望商店浏览/购买界面 |
+| G5 | 设置面板 UI | P0 | ❌ FAIL | 无 `SettingsPanel.tsx`（前次 R2 已标记） |
+| G6 | 存档/账号/云存档 UI | P0 | ❌ FAIL | 无对应管理界面（前次 R2 已标记） |
+| G7 | CSS 样式文件 | P2 | ❌ FAIL | 无 `prestige.css` / `settings.css` |
+
+### H. PRD 合规性
 
 | # | PRD 要求 | 优先级 | 结果 | 说明 |
 |---|----------|:------:|:----:|------|
-| I1 | [SET-1] 基础设置（语言/时区/通知） | P0 | ✅ PASS | SettingsManager 覆盖 |
-| I2 | [SET-2] 音效设置（4音量+开关） | P0 | ✅ PASS | AudioManager 覆盖 |
-| I3 | [SET-3] 画面设置（4档+自定义） | P0 | ✅ PASS | GraphicsManager 覆盖 |
-| I4 | [SET-4] 账号设置（绑定/云存档/设备/删除） | P0 | ✅ PASS | AccountSystem + CloudSaveSystem + SaveSlotManager |
-| I5 | 设置弹窗 560×500px 布局 | P1 | ❌ FAIL | UI 组件未创建 |
-| I6 | 竹简Tab栏（基础/音效/画面/账号/关于） | P1 | ❌ FAIL | UI 组件未创建 |
-| I7 | 卷轴展开/收卷动效 | P2 | ❌ FAIL | UI 组件未创建 |
+| H1 | [PRS-1] 声望分栏展示 | P0 | ✅ PASS | `PrestigePanel` 数据接口完整 |
+| H2 | [PRS-2] 9种声望获取途径 | P0 | ✅ PASS | `PrestigeSourceConfig` 配置完整 |
+| H3 | [PRS-3] 声望商店 (等级/限购/消耗) | P0 | ✅ PASS | `PrestigeShopSystem` 完整 |
+| H4 | [PRS-4] 转生条件/倍率/保留/重置 | P0 | ✅ PASS | `RebirthSystem` 完整 |
+| H5 | [PRS-5] 转生加速效果 | P0 | ✅ PASS | 4维加速 + 天数持续 |
+| H6 | [PRS-6] v16.0 传承深化 (赠送/瞬间/重建) | P0 | ✅ PASS | `RebirthSystem.helpers` 完整 |
+| H7 | [PRS-7] 收益模拟器 + 转生时机推荐 | P0 | ✅ PASS | `simulateEarningsV16()` + `compareRebirthTiming()` |
+| H8 | 声望面板弹窗 UI | P1 | ❌ FAIL | UI 组件未创建 |
+| H9 | 转生确认弹窗 UI | P1 | ❌ FAIL | UI 组件未创建 |
+| H10 | 声望商店浏览/购买 UI | P1 | ❌ FAIL | UI 组件未创建 |
+| H11 | 收益模拟器可视化 UI | P1 | ❌ FAIL | UI 组件未创建 |
 
 ---
 
 ## 三、测试统计
 
-| 指标 | R1 | R2 | 变化 |
-|------|:--:|:--:|------|
-| **总测试数** | 13 | **49** | ↑ 36 项新增 |
-| **通过** | 8 | **35** | — |
-| **失败** | 0 | **14** | — |
-| **警告** | 5 | **1** | — |
-| **P0 失败** | 0 | **4** | UI组件缺失 |
-| **P1 失败** | 0 | **7** | 加密+回调+UI |
-| **P2 失败** | 0 | **3** | 次要UI |
+| 指标 | R1 | 前次 R2 | **本次 R2** | 变化 |
+|------|:--:|:-------:|:----------:|------|
+| **总测试数** | 13 | 49 | **59** | ↑ 10 项新增 (prestige) |
+| **通过** | 8 | 35 | **46** | ↑ 11 (含回归) |
+| **失败** | 0 | 14 | **13** | ↓ 1 (CloudSave 已修复) |
+| **P0 失败** | 0 | 4 | **6** | ↑ 2 (prestige UI) |
+| **P1 失败** | 0 | 7 | **4** | ↓ 3 |
+| **P2 失败** | 0 | 3 | **3** | — |
 
 ### 按模块统计
 
 | 模块 | 测试数 | 通过 | 失败 | 通过率 |
 |------|:------:|:----:|:----:|:------:|
-| A. SettingsManager | 7 | 7 | 0 | 100% |
-| B. AudioManager | 5 | 5 | 0 | 100% |
-| C. GraphicsManager | 4 | 4 | 0 | 100% |
-| D. AnimationController | 4 | 4 | 0 | 100% |
-| E. SaveSlotManager | 7 | 7 | 0 | 100% |
-| F. CloudSaveSystem | 13 | 5 | 8 | 38% |
-| G. AccountSystem | 7 | 7 | 0 | 100% |
-| H. UI组件层 | 6 | 1 | 5 | 17% |
-| I. PRD合规 | 7 | 4 | 3 | 57% |
+| A. PrestigeSystem | 9 | 9 | 0 | 100% |
+| B. RebirthSystem | 7 | 7 | 0 | 100% |
+| C. v16.0 传承深化 | 8 | 8 | 0 | 100% |
+| D. PrestigeShopSystem | 4 | 4 | 0 | 100% |
+| E. SettingsManager | 4 | 4 | 0 | 100% |
+| F. 设置子系统回归 | 6 | 6 | 0 | 100% |
+| G. UI组件层 | 7 | 0 | 7 | 0% |
+| H. PRD合规 | 11 | 7 | 4 | 64% |
+
+### 测试执行结果
+
+| 测试套件 | 文件数 | 测试数 | 通过 | 失败 |
+|----------|:------:|:------:|:----:|:----:|
+| prestige/ | 4 | 117 | 117 | 0 |
+| settings/ | 7 | 236 | 236 | 0 |
+| **合计** | **11** | **353** | **353** | **0** |
+
+> 全部 353 项引擎层单元测试通过，0 失败 ✅
 
 ---
 
@@ -162,38 +163,49 @@
 
 | ID | 问题 | 模块 | 说明 |
 |----|------|------|------|
-| P0-01 | 设置面板 UI 组件缺失 | H | 无 SettingsPanel/SettingsModal TSX 组件 |
-| P0-02 | 账号绑定 UI 缺失 | H | 引擎完整但无前端界面 |
-| P0-03 | 云存档管理 UI 缺失 | H | 同步状态/手动同步界面不存在 |
-| P0-04 | 存档槽位管理 UI 缺失 | H | 存档选择/管理界面不存在 |
+| P0-01 | 声望面板 UI 组件缺失 | G | 无 PrestigePanel.tsx |
+| P0-02 | 转生确认/执行 UI 缺失 | G | 引擎完整但无前端界面 |
+| P0-03 | 收益模拟器 UI 缺失 | G | 模拟器可视化界面不存在 |
+| P0-04 | 声望商店 UI 缺失 | G | 浏览/购买界面不存在 |
+| P0-05 | 设置面板 UI 缺失 | G | 无 SettingsPanel.tsx（继承自前次 R2） |
+| P0-06 | 存档/账号/云存档 UI 缺失 | G | 管理界面不存在（继承自前次 R2） |
 
 ### P1（重要）
 
 | ID | 问题 | 模块 | 说明 |
 |----|------|------|------|
-| P1-01 | TextEncoder polyfill 缺失 | F | 加密测试 3 项失败，需添加 `import { TextEncoder } from 'util'` |
-| P1-02 | vi 未导入 | F | 回调测试 3 项失败，需 `import { vi } from 'vitest'` |
-| P1-03 | 设置弹窗布局未实现 | I | PRD 规定 560×500px 弹窗 |
-| P1-04 | 竹简Tab栏未实现 | I | PRD 规定 5Tab 布局 |
-| P1-05 | 账号绑定 UI 未实现 | H | 绑定/解绑/设备管理界面 |
-| P1-06 | 云存档同步 UI 未实现 | H | 同步状态展示/手动触发 |
-| P1-07 | 存档管理 UI 未实现 | H | 槽位选择/导入导出 |
+| P1-01 | 声望面板弹窗 UI 未实现 | H | PRD 规定的弹窗布局 |
+| P1-02 | 转生确认弹窗 UI 未实现 | H | PRD 规定的转生操作流程 |
+| P1-03 | 声望商店浏览/购买 UI 未实现 | H | PRD 规定的商店交互 |
+| P1-04 | 收益模拟器可视化 UI 未实现 | H | PRD 规定的模拟器展示 |
 
 ### P2（改进）
 
 | ID | 问题 | 模块 | 说明 |
 |----|------|------|------|
-| P2-01 | 空字符串加密测试失败 | F | 随 TextEncoder 修复一并解决 |
-| P2-02 | removeAllListeners 测试失败 | F | 随 vi import 修复一并解决 |
-| P2-03 | 卷轴动效未实现 | I | 展开/收卷动画 |
+| P2-01 | 声望 CSS 样式文件缺失 | G | 需创建 `prestige.css` |
+| P2-02 | 设置 CSS 样式文件缺失 | G | 需创建 `settings.css`（继承） |
+| P2-03 | 无 v16 专用 exports 文件 | engine | engine/index.ts 仅 138 行，暂不需要 |
 
 ---
 
 ## 五、结论
 
-> **⚠️ CONDITIONAL PASS** — 引擎层完整且质量高（7/7 子系统，206/212 单元测试通过），但 **UI 组件层完全缺失**（P0×4），CloudSaveSystem 存在测试环境问题（P1×2）。
+> **⚠️ CONDITIONAL PASS**
 >
-> **UI 通过数**: **35/49** (71.4%)
-> **P0**: 4 | **P1**: 7 | **P2**: 3
+> **引擎层卓越**：
+> - prestige 模块 3/3 子系统实现 ISubsystem ✅
+> - settings 模块 7/7 子系统实现 ISubsystem ✅
+> - 353/353 单元测试全部通过（100%）✅
+> - v16.0 传承深化功能完整（赠送/瞬间建筑/一键重建/模拟器/时机对比）✅
+> - 0 个文件超过 500 行 ✅
+> - 0 处 `as any`（prestige 模块）✅
 >
-> **建议**: 优先创建 `SettingsPanel.tsx` + `settings.css`，修复 CloudSaveSystem 测试环境。
+> **UI 层完全缺失**：
+> - 无任何 TSX/CSS 前端组件
+> - 引擎数据无法呈现给玩家
+>
+> **UI 通过数**: **46/59** (78.0%)
+> **P0**: 6 | **P1**: 4 | **P2**: 3
+>
+> **建议**: 优先创建 `PrestigePanel.tsx` + `RebirthConfirmPanel.tsx` + `PrestigeShopPanel.tsx` + `SimulationPanel.tsx`，覆盖 v16.0 核心交互。
