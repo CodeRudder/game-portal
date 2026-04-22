@@ -1,7 +1,4 @@
-/**
- * v20.0 天下一统(下) — UI测试 R1 (Puppeteer)
- * 主页面加载、声望系统、转生循环、核心系统、终局内容、移动端适配
- */
+/** v20.0 天下一统(下) — UI测试 R1 (Puppeteer) */
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
