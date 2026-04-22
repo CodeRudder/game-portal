@@ -48,6 +48,12 @@ import type { ActivitySystem } from './activity/ActivitySystem';
 import type { TradeSystem } from './trade/TradeSystem';
 import type { SettingsManager } from './settings/SettingsManager';
 import type { AccountSystem } from './settings/AccountSystem';
+import type { EventTriggerSystem } from './event/EventTriggerSystem';
+import type { EventNotificationSystem } from './event/EventNotificationSystem';
+import type { EventUINotification } from './event/EventUINotification';
+import type { EventChainSystem } from './event/EventChainSystem';
+import type { EventLogSystem } from './event/EventLogSystem';
+import type { OfflineEventSystem } from './event/OfflineEventSystem';
 import type { GeneralData } from './hero/hero.types';
 import type { RecruitType } from './hero/hero-recruit-config';
 import type { BattleResult } from './battle/battle.types';
@@ -197,4 +203,13 @@ export function applyGetters(cls: any): void {
   p.getTradeSystem = function(this: EngineAny): TradeSystem { return this.tradeSystem; };
   p.getSettingsManager = function(this: EngineAny): SettingsManager { return this.settingsManager; };
   p.getAccountSystem = function(this: EngineAny): AccountSystem { return this.accountSystem; };
+
+  // ── v6.0: 事件子系统 getter ──
+
+  p.getEventTriggerSystem = function(this: EngineAny): EventTriggerSystem { return this.eventSystems.trigger; };
+  p.getEventNotificationSystem = function(this: EngineAny): EventNotificationSystem { return this.eventSystems.notification; };
+  p.getEventUINotification = function(this: EngineAny): EventUINotification { return this.eventSystems.uiNotification; };
+  p.getEventChainSystem = function(this: EngineAny): EventChainSystem { return this.eventSystems.chain; };
+  p.getEventLogSystem = function(this: EngineAny): EventLogSystem { return this.eventSystems.log; };
+  p.getOfflineEventSystem = function(this: EngineAny): OfflineEventSystem { return this.eventSystems.offline; };
 }

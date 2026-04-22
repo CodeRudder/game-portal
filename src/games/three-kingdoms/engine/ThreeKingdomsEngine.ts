@@ -45,6 +45,7 @@ import {
 } from './engine-building-ops';
 import { createTechSystems, initTechSystems, type TechSystems } from './engine-tech-deps';
 import { createMapSystems, initMapSystems, type MapSystems } from './engine-map-deps';
+import { createEventSystems, initEventSystems, type EventSystems } from './engine-event-deps';
 
 // R11: 注册13个缺失子系统
 import { MailSystem } from './mail/MailSystem';
@@ -93,6 +94,7 @@ export class ThreeKingdomsEngine {
   private readonly sweepSystem: SweepSystem;
   private readonly techSystems: TechSystems;
   private readonly mapSystems: MapSystems;
+  private readonly eventSystems: EventSystems;
   // R11: 13个缺失子系统
   private readonly mailSystem: MailSystem;
   private readonly shopSystem: ShopSystem;
@@ -179,6 +181,7 @@ export class ThreeKingdomsEngine {
     );
     this.techSystems = createTechSystems(this.building);
     this.mapSystems = createMapSystems();
+    this.eventSystems = createEventSystems();
     // R11: 初始化13个缺失子系统
     this.mailSystem = new MailSystem(); this.shopSystem = new ShopSystem();
     this.currencySystem = new CurrencySystem();
@@ -238,6 +241,13 @@ export class ThreeKingdomsEngine {
     r.register('siege', this.mapSystems.siege);
     r.register('garrison', this.mapSystems.garrison);
     r.register('siegeEnhancer', this.mapSystems.siegeEnhancer);
+    // v6.0: 事件子系统
+    r.register('eventTrigger', this.eventSystems.trigger);
+    r.register('eventNotification', this.eventSystems.notification);
+    r.register('eventUI', this.eventSystems.uiNotification);
+    r.register('eventChain', this.eventSystems.chain);
+    r.register('eventLog', this.eventSystems.log);
+    r.register('offlineEvent', this.eventSystems.offline);
     // R11: 注册13个缺失子系统
     r.register('mail', this.mailSystem);
     r.register('shop', this.shopSystem);
@@ -269,11 +279,10 @@ export class ThreeKingdomsEngine {
     if (this.initialized) return;
     syncBuildingToResource(this.buildTickCtx());
     const deps = this.buildDeps();
-    this.calendar.init(deps); this.initHeroSystems(deps);
-    this.bondSystem.init(deps);
-    initCampaignSystems(this.campaignSystems, deps);
-    initTechSystems(this.techSystems, deps);
-    initMapSystems(this.mapSystems, deps);
+    this.calendar.init(deps); this.initHeroSystems(deps); this.bondSystem.init(deps);
+    initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
+    initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
+    this.npcSystem.init(deps);
     this.initialized = true; this.lastTickTime = Date.now();
     this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
     this.bus.emit('game:initialized', { isNewGame: true });
@@ -338,9 +347,12 @@ export class ThreeKingdomsEngine {
 
   deserialize(json: string): void {
     applyDeserialize(this.buildSaveCtx(), json);
-    this.initHeroSystems(this.buildDeps()); this.bondSystem.init(this.buildDeps());
-    this.initialized = true;
-    this.lastTickTime = Date.now();
+    const deps = this.buildDeps();
+    this.initHeroSystems(deps); this.bondSystem.init(deps);
+    initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
+    initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
+    this.npcSystem.init(deps);
+    this.initialized = true; this.lastTickTime = Date.now();
   }
 
   hasSaveData(): boolean { return this.saveManager.hasSaveData(); }
@@ -357,6 +369,9 @@ export class ThreeKingdomsEngine {
     this.mapSystems.worldMap.reset(); this.mapSystems.territory.reset();
     this.mapSystems.siege.reset(); this.mapSystems.garrison.reset();
     this.mapSystems.siegeEnhancer.reset();
+    this.eventSystems.trigger.reset(); this.eventSystems.notification.reset();
+    this.eventSystems.uiNotification.reset(); this.eventSystems.chain.reset();
+    this.eventSystems.log.reset(); this.eventSystems.offline.reset();
     // R11: 重置13个缺失子系统
     this.mailSystem.reset(); this.shopSystem.reset(); this.currencySystem.reset();
     this.npcSystem.reset(); this.equipmentSystem.reset();
@@ -480,11 +495,10 @@ export class ThreeKingdomsEngine {
   }
   private finalizeLoad(): void {
     const deps = this.buildDeps();
-    this.initHeroSystems(deps);
-    this.bondSystem.init(deps);
-    initCampaignSystems(this.campaignSystems, deps);
-    initTechSystems(this.techSystems, deps);
-    initMapSystems(this.mapSystems, deps);
+    this.initHeroSystems(deps); this.bondSystem.init(deps);
+    initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
+    initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
+    this.npcSystem.init(deps);
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
   }
 }

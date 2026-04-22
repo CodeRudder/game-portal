@@ -76,6 +76,7 @@ const NPCCard: React.FC<NPCCardProps> = ({ npc, onSelect, onStartDialog }) => {
       role="button"
       tabIndex={0}
       aria-label={`${npc.name} ${affinityLabel} 好感度${npc.affinity}`}
+      data-testid={`npc-card-${npc.id}`}
       onKeyDown={(e) => { if (e.key === 'Enter') onSelect(); }}
     >
       <div className="tk-npc-card-header">
@@ -103,6 +104,7 @@ const NPCCard: React.FC<NPCCardProps> = ({ npc, onSelect, onStartDialog }) => {
           className="tk-npc-action-btn tk-npc-action-btn--dialog"
           onClick={(e) => { e.stopPropagation(); onStartDialog(); }}
           aria-label={`与${npc.name}对话`}
+          data-testid={`npc-btn-dialog-${npc.id}`}
         >
           💬 对话
         </button>
@@ -110,6 +112,7 @@ const NPCCard: React.FC<NPCCardProps> = ({ npc, onSelect, onStartDialog }) => {
           className="tk-npc-action-btn tk-npc-action-btn--info"
           onClick={(e) => { e.stopPropagation(); onSelect(); }}
           aria-label={`查看${npc.name}详情`}
+          data-testid={`npc-btn-info-${npc.id}`}
         >
           📋 详情
         </button>
@@ -167,7 +170,7 @@ const NPCTab: React.FC<NPCTabProps> = ({
   if (!visible) return null;
 
   return (
-    <div className="tk-npc-tab" role="region" aria-label="NPC名册">
+    <div className="tk-npc-tab" role="region" aria-label="NPC名册" data-testid="npc-tab">
       {/* 搜索栏 */}
       <div className="tk-npc-tab-toolbar">
         <input
@@ -177,11 +180,12 @@ const NPCTab: React.FC<NPCTabProps> = ({
           value={searchText}
           onChange={handleSearchChange}
           aria-label="搜索NPC"
+          data-testid="npc-search-input"
         />
       </div>
 
       {/* 职业筛选 */}
-      <div className="tk-npc-filter-bar" role="tablist" aria-label="职业筛选">
+      <div className="tk-npc-filter-bar" role="tablist" aria-label="职业筛选" data-testid="npc-filter-bar">
         {professionFilters.map((f) => (
           <button
             key={f.value}
@@ -189,6 +193,7 @@ const NPCTab: React.FC<NPCTabProps> = ({
             onClick={() => setFilterProfession(f.value)}
             role="tab"
             aria-selected={filterProfession === f.value}
+            data-testid={`npc-filter-${f.value}`}
           >
             {f.label}
           </button>
@@ -196,9 +201,9 @@ const NPCTab: React.FC<NPCTabProps> = ({
       </div>
 
       {/* NPC列表 */}
-      <div className="tk-npc-list">
+      <div className="tk-npc-list" data-testid="npc-list">
         {filteredNPCs.length === 0 ? (
-          <div className="tk-npc-empty">
+          <div className="tk-npc-empty" data-testid="npc-empty">
             <span className="tk-npc-empty-icon">🔍</span>
             <span className="tk-npc-empty-text">
               {searchText ? '未找到匹配的NPC' : '暂无发现的NPC'}
@@ -217,7 +222,7 @@ const NPCTab: React.FC<NPCTabProps> = ({
       </div>
 
       {/* 底部统计 */}
-      <div className="tk-npc-tab-footer">
+      <div className="tk-npc-tab-footer" data-testid="npc-tab-footer">
         <span className="tk-npc-tab-count">
           共 {filteredNPCs.length} / {npcs.filter((n) => n.visible).length} 位
         </span>

@@ -91,7 +91,7 @@ export default function EventListPanel({ engine, snapshotVersion, visible = true
 
   return (
     <SharedPanel visible={visible} title="事件" icon="⚡" onClose={onClose} width="520px">
-    <div style={{ padding: '16px', color: '#e8e0d0' }}>
+    <div style={{ padding: '16px', color: '#e8e0d0' }} data-testid="event-list-panel">
       {/* 活跃事件 */}
       <div style={{ fontSize: '14px', fontWeight: 600, color: '#d4a574', marginBottom: '12px' }}>
         📨 当前事件 ({displayEvents.length})
@@ -102,6 +102,7 @@ export default function EventListPanel({ engine, snapshotVersion, visible = true
           {displayEvents.map((evt: any) => (
             <div
               key={evt.instanceId}
+              data-testid={`event-card-${evt.instanceId}`}
               style={{
                 padding: '12px',
                 background: 'rgba(255,255,255,0.04)',

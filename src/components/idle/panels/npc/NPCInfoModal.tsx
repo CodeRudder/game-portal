@@ -98,10 +98,10 @@ const NPCInfoModal: React.FC<NPCInfoModalProps> = ({
   };
 
   return (
-    <div className="tk-npcinfo-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={`${npc.name}信息`}>
-      <div className="tk-npcinfo-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="tk-npcinfo-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={`${npc.name}信息`} data-testid="npc-info-overlay">
+      <div className="tk-npcinfo-modal" onClick={(e) => e.stopPropagation()} data-testid="npc-info-modal">
         {/* 关闭按钮 */}
-        <button className="tk-npcinfo-close" onClick={onClose} aria-label="关闭">✕</button>
+        <button className="tk-npcinfo-close" onClick={onClose} aria-label="关闭" data-testid="npc-info-close">✕</button>
 
         {/* NPC头像区 */}
         <div className="tk-npcinfo-portrait">
@@ -120,7 +120,7 @@ const NPCInfoModal: React.FC<NPCInfoModalProps> = ({
         {/* 好感度区域 */}
         <div className="tk-npcinfo-section">
           <div className="tk-npcinfo-section-title">好感度</div>
-          <div className="tk-npcinfo-affinity">
+          <div className="tk-npcinfo-affinity" data-testid="npc-info-affinity">
             <div className="tk-npcinfo-affinity-header">
               <span className="tk-npcinfo-affinity-level" style={{ color: affinityDisplay.color }}>
                 {affinityDisplay.label}
@@ -152,7 +152,7 @@ const NPCInfoModal: React.FC<NPCInfoModalProps> = ({
         </div>
 
         {/* 操作按钮 */}
-        <div className="tk-npcinfo-actions">
+        <div className="tk-npcinfo-actions" data-testid="npc-info-actions">
           <button
             className="tk-npcinfo-action-btn tk-npcinfo-action-btn--primary"
             onClick={() => handleAction('dialog')}

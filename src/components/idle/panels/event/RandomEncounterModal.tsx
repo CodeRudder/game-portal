@@ -110,9 +110,9 @@ const RandomEncounterModal: React.FC<RandomEncounterModalProps> = ({
 
   return (
     <SharedPanel title={event.name} onClose={onClose} visible={visible}>
-        <div className={`tk-encounter-modal ${priorityClass}`}>
+        <div className={`tk-encounter-modal ${priorityClass}`} data-testid="encounter-modal">
           {/* 事件头部 */}
-          <div className="tk-encounter-header">
+          <div className="tk-encounter-header" data-testid="encounter-header">
             <div className="tk-encounter-category">
               <span className="tk-encounter-category-icon">{categoryIcon}</span>
               <span className="tk-encounter-category-label">{categoryLabel}</span>
@@ -134,6 +134,7 @@ const RandomEncounterModal: React.FC<RandomEncounterModalProps> = ({
                 className="tk-encounter-option-btn"
                 onClick={() => onSelectOption(event.instanceId, option.id)}
                 aria-label={option.text}
+                data-testid={`encounter-option-${option.id}`}
               >
                 <div className="tk-encounter-option-main">
                   <span className="tk-encounter-option-text">{option.text}</span>
@@ -154,7 +155,7 @@ const RandomEncounterModal: React.FC<RandomEncounterModalProps> = ({
 
           {/* 忽略按钮 */}
           <div className="tk-encounter-footer">
-            <button className="tk-encounter-ignore-btn" onClick={onClose}>
+            <button className="tk-encounter-ignore-btn" onClick={onClose} data-testid="encounter-ignore-btn">
               暂不处理
             </button>
           </div>

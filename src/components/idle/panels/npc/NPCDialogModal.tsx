@@ -142,19 +142,19 @@ const NPCDialogModal: React.FC<NPCDialogModalProps> = ({
   if (!visible) return null;
 
   return (
-    <div className="tk-dialog-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={`${npcName}对话`}>
-      <div className="tk-dialog-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="tk-dialog-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={`${npcName}对话`} data-testid="npc-dialog-overlay">
+      <div className="tk-dialog-modal" onClick={(e) => e.stopPropagation()} data-testid="npc-dialog-modal">
         {/* 对话头部 */}
         <div className="tk-dialog-header">
           <div className="tk-dialog-speaker">
             <span className="tk-dialog-speaker-icon">{npcIcon}</span>
             <span className="tk-dialog-speaker-name">{currentNode?.speaker ?? npcName}</span>
           </div>
-          <button className="tk-dialog-close" onClick={onClose} aria-label="关闭对话">✕</button>
+          <button className="tk-dialog-close" onClick={onClose} aria-label="关闭对话" data-testid="npc-dialog-close">✕</button>
         </div>
 
         {/* 对话内容区 */}
-        <div className="tk-dialog-content" ref={contentRef} onClick={handleSkipTyping}>
+        <div className="tk-dialog-content" ref={contentRef} onClick={handleSkipTyping} data-testid="npc-dialog-content">
           {currentNode ? (
             <div className="tk-dialog-bubble">
               <p className="tk-dialog-text">{displayedText}</p>
@@ -172,13 +172,14 @@ const NPCDialogModal: React.FC<NPCDialogModalProps> = ({
 
         {/* 选项区 */}
         {!dialogEnded && availableOptions.length > 0 && !isTyping && (
-          <div className="tk-dialog-options">
+          <div className="tk-dialog-options" data-testid="npc-dialog-options">
             {availableOptions.map((option) => (
               <button
                 key={option.id}
                 className="tk-dialog-option-btn"
                 onClick={() => onSelectOption(option.id)}
                 aria-label={option.text}
+                data-testid={`npc-dialog-option-${option.id}`}
               >
                 <span className="tk-dialog-option-text">{option.text}</span>
                 {option.effects && option.effects.length > 0 && (
@@ -194,7 +195,7 @@ const NPCDialogModal: React.FC<NPCDialogModalProps> = ({
         {/* 对话结束操作 */}
         {dialogEnded && (
           <div className="tk-dialog-footer">
-            <button className="tk-dialog-end-btn" onClick={onClose}>
+            <button className="tk-dialog-end-btn" onClick={onClose} data-testid="npc-dialog-end-btn">
               关闭
             </button>
           </div>

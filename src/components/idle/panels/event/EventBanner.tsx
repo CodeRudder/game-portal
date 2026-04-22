@@ -105,6 +105,7 @@ const EventBanner: React.FC<EventBannerProps> = ({
       className={`tk-ebanner ${priorityClass} ${exiting ? 'tk-ebanner--exiting' : 'tk-ebanner--entering'}`}
       role="alert"
       aria-live="assertive"
+      data-testid="event-banner"
     >
       <div className="tk-ebanner-content" onClick={handleClick}>
         <span className="tk-ebanner-icon">{banner.icon ?? icon}</span>
@@ -117,6 +118,7 @@ const EventBanner: React.FC<EventBannerProps> = ({
         className="tk-ebanner-dismiss"
         onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
         aria-label="关闭通知"
+        data-testid="event-banner-dismiss"
       >
         ✕
       </button>

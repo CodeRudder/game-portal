@@ -51,7 +51,7 @@ const StoryEventModal: React.FC<StoryEventModalProps> = ({
       onCancel={onDismiss}
       width="520px"
     >
-      <div className="tk-story-container">
+      <div className="tk-story-container" data-testid="story-event-modal">
         {/* 对话内容 */}
         <div className="tk-story-dialogues">
           {storyLines.map((line: any, idx: number) => (
@@ -71,7 +71,7 @@ const StoryEventModal: React.FC<StoryEventModalProps> = ({
 
         {/* 选择按钮 */}
         {choices.length > 0 && (
-          <div className="tk-story-choices">
+          <div className="tk-story-choices" data-testid="story-event-choices">
             {choices.map((choice: any) => (
               <button
                 key={choice.id}
