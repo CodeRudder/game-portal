@@ -8,16 +8,16 @@
  */
 
 import type { EquipmentRarity, ForgeType, ForgePityState } from '../../core/equipment';
-import { RARITY_ORDER, EQUIPMENT_RARITIES } from '../../core/equipment';
+import { RARITY_ORDER, EQUIPMENT_RARITIES, FORGE_PITY_THRESHOLDS } from '../../core/equipment';
 
 // ─────────────────────────────────────────────
-// 保底阈值配置
+// 保底阈值配置（统一使用 core/equipment-config）
 // ─────────────────────────────────────────────
 
 /** 保底阈值：连续未出紫色 */
-const PITY_PURPLE_THRESHOLD = 10;
+const PITY_PURPLE_THRESHOLD = FORGE_PITY_THRESHOLDS.basicBluePity;
 /** 保底阈值：连续未出金色 */
-const PITY_GOLD_THRESHOLD = 30;
+const PITY_GOLD_THRESHOLD = FORGE_PITY_THRESHOLDS.targetedGoldPity;
 
 // ─────────────────────────────────────────────
 // ForgePityManager

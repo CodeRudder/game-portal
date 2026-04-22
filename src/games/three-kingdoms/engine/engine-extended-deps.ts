@@ -102,6 +102,7 @@ export interface R11Systems {
  */
 export function createR11Systems(equipmentSystem?: EquipmentSystemType): R11Systems {
   const eq = equipmentSystem ?? new EquipmentSystem();
+  const setSystem = new EquipmentSetSystem(eq);
   return {
     mailSystem: new MailSystem(),
     mailTemplateSystem: new MailTemplateSystem(),
@@ -111,8 +112,8 @@ export function createR11Systems(equipmentSystem?: EquipmentSystemType): R11Syst
     equipmentSystem: eq,
     equipmentForgeSystem: new EquipmentForgeSystem(eq),
     equipmentEnhanceSystem: new EquipmentEnhanceSystem(eq),
-    equipmentSetSystem: new EquipmentSetSystem(eq),
-    equipmentRecommendSystem: new EquipmentRecommendSystem(eq, new EquipmentSetSystem(eq)),
+    equipmentSetSystem: setSystem,
+    equipmentRecommendSystem: new EquipmentRecommendSystem(eq, setSystem),
     arenaSystem: new ArenaSystem(),
     arenaSeasonSystem: new ArenaSeasonSystem(),
     rankingSystem: new RankingSystem(),

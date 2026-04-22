@@ -41,7 +41,7 @@ import { ForgePityManager } from './ForgePityManager';
 const BASIC_FORGE_WEIGHTS: Record<string, Record<string, number>> = {
   white: { green: 85, blue: 14, purple: 1 },
   green: { blue: 80, purple: 18, gold: 2 },
-  blue: { purple: 75, gold: 25 },
+  blue: { purple: 78, gold: 22 },
   purple: { gold: 100 },
 };
 

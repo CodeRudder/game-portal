@@ -131,8 +131,8 @@ export const FORGE_PITY_THRESHOLDS = {
 /** 强化成功率曲线（索引=强化等级） */
 export const ENHANCE_SUCCESS_RATES = [
   1.0,   // 0→1: 100%
-  0.95,  // 1→2: 95%
-  0.90,  // 2→3: 90%
+  1.0,   // 1→2: 100%
+  1.0,   // 2→3: 100%
   0.80,  // 3→4: 80%
   0.70,  // 4→5: 70%
   0.55,  // 5→6: 55%
@@ -239,7 +239,7 @@ export const DECOMPOSE_OUTPUT: Record<EquipmentRarity, { copper: number; enhance
 // ─────────────────────────────────────────────
 
 /** 默认背包容量 */
-export const DEFAULT_BAG_CAPACITY = 100;
+export const DEFAULT_BAG_CAPACITY = 50;
 
 /** 背包扩容步长 */
 export const BAG_EXPAND_STEP = 20;
@@ -356,9 +356,9 @@ export const RARITY_SUB_STAT_COUNT: Record<EquipmentRarity, [number, number]> = 
 export const RARITY_SPECIAL_EFFECT_CHANCE: Record<EquipmentRarity, number> = {
   white: 0,
   green: 0,
-  blue: 0.25,
-  purple: 0.5,
-  gold: 0.8,
+  blue: 0.05,
+  purple: 0.20,
+  gold: 1.0,
 };
 
 // ─────────────────────────────────────────────
