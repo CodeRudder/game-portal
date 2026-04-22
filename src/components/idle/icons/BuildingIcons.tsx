@@ -441,11 +441,11 @@ const BUILDING_ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
 export const BuildingIcon: React.FC<{ buildingId: string; size?: number }> = ({ buildingId, size = 40 }) => {
   const IconComponent = BUILDING_ICON_MAP[buildingId];
   if (IconComponent) {
-    return <IconComponent size={size} />;
+    return <span data-testid={`building-icon-${buildingId}`}><IconComponent size={size} /></span>;
   }
   // 兜底：显示通用建筑图标
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <svg data-testid="building-icon-default" width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
       <rect x="8" y="12" width="24" height="22" rx="2" fill="#8B7355" stroke="#6b5a3a" strokeWidth="1" />
       <path d="M6,14 L20,4 L34,14" fill="none" stroke="#6b4226" strokeWidth="2" />
       <rect x="16" y="24" width="8" height="10" rx="1" fill="#3a2a1a" />

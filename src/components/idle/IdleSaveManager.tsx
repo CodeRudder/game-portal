@@ -147,7 +147,7 @@ export default function IdleSaveManager({
   }, [onReset, refreshSlots]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-testid="idle-save-manager">
       {/* 存档槽位 */}
       <div className="flex flex-col gap-2">
         <h4 className="text-sm font-medium text-gray-300">💾 存档槽位</h4>

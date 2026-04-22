@@ -91,7 +91,7 @@ export default function CivIndiaPixiGame({
   }, [engine]);
 
   return (
-    <div ref={containerRef} className={className} style={{
+    <div ref={containerRef} className={className} data-testid="civ-india-pixi-game" style={{
       width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
       background: '#0a1a0e', ...style,
     }}>

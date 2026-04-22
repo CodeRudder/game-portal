@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const TavernIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg data-testid="building-extra-icon-tavern" width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
     {/* 旗杆 */}
     <line x1="10" y1="4" x2="10" y2="36" stroke="#6b4226" strokeWidth="2" />
     {/* 旗帜 */}
@@ -22,7 +22,7 @@ export const TavernIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
 
 /** 烽火台 — 高塔+火焰+浓烟（橙红色系，64×64） */
 export const BeaconTowerIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <svg data-testid="building-extra-icon-beacon-tower" width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="tk-beacon-fire" cx="0.5" cy="0.7" r="0.5">
         <stop offset="0%" stopColor="#ffeb3b" />
@@ -76,7 +76,7 @@ export const BeaconTowerIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
 
 /** 钱庄 — 金库大门+铜钱堆+算盘（金色系，64×64） */
 export const MintIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <svg data-testid="building-extra-icon-mint" width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-mint-gold" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#e8b84a" />
@@ -141,7 +141,7 @@ export const MintIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
 
 /** 锻兵坊 — 铁砧+锤子+火花+炉火（深红橙色系，64×64） */
 export const ForgeIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <svg data-testid="building-extra-icon-forge" width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="tk-forge-spark" cx="0.5" cy="0.5" r="0.5">
         <stop offset="0%" stopColor="#ffeb3b" />
@@ -184,7 +184,7 @@ export const ForgeIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
 
 /** 茶馆 — 两层楼阁+茶幌子+茶壶（翠绿色系，64×64） */
 export const TeahouseIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <svg data-testid="building-extra-icon-teahouse" width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-tea-roof" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#5a8a4a" />
@@ -244,7 +244,7 @@ export const TeahouseIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
 
 /** 粮仓 — 圆顶仓廪+粮袋堆+斗量（棕黄色系） */
 export const GranaryIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <svg data-testid="building-extra-icon-granary" width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="tk-granary-body" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#c49a28" />

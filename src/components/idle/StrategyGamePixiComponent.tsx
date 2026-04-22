@@ -404,6 +404,7 @@ export default function StrategyGamePixiComponent({
     <div
       ref={containerRef}
       className={className}
+      data-testid="strategy-game-pixi-component"
       style={{
         width: '100%',
         height: '100%',

@@ -168,6 +168,7 @@ export default function TotalWarPixiGame({
     <div
       ref={containerRef}
       className={className}
+      data-testid="total-war-pixi-game"
       style={{
         width: '100%',
         height: '100%',

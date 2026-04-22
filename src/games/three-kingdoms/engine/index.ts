@@ -90,8 +90,22 @@ export * from './social';
 export * from './expedition';
 
 // ── 排行榜引擎 (v12.0) ──
-export { LeaderboardSystem } from './leaderboard/LeaderboardSystem';
-export type { LeaderboardUpdateData, RewardDistributionResult } from './leaderboard/LeaderboardSystem';
+// NOTE: 原 leaderboard/LeaderboardSystem（ExpeditionLeaderboardSystem）已移除（无实际消费者）。
+// 排行榜功能统一由 social/LeaderboardSystem（SocialLeaderboardSystem）提供。
+export {
+  LeaderboardSystem,
+  LEADERBOARD_TYPE_LABELS,
+  createDefaultLeaderboardState,
+} from './social/LeaderboardSystem';
+export type {
+  LeaderboardType as LeaderboardTypeEnum,
+  LeaderboardEntry as SocialLeaderboardEntry,
+  LeaderboardSeason,
+  LeaderboardRewardConfig,
+  LeaderboardQuery,
+  LeaderboardPageResult,
+  LeaderboardState as SocialLeaderboardState,
+} from './social/LeaderboardSystem';
 
 // ── 联盟域 (v13.0) ──
 export * from './alliance';
