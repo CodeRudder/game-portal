@@ -11,7 +11,7 @@
  *   - 转生时机对比
  *   - 收益模拟器 v16
  *
- * @module engine/prestige/RebirthSystemV16
+ * @module engine/prestige/RebirthSystem.helpers
  */
 
 import type {

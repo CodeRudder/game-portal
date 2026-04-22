@@ -82,9 +82,6 @@ export type {
 export { OfflineEventHandler } from './OfflineEventHandler';
 export { OfflineEventSystem } from './OfflineEventSystem';
 
-// v15.0 — 连锁事件系统 V15
-export { ChainEventSystemV15 } from './ChainEventSystemV15';
-
 // 事件引擎 + 序列化
 export { EventEngine } from './EventEngine';
 export {

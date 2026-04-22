@@ -18,77 +18,30 @@ import {
   ConflictStrategy,
   CLOUD_DATA_VERSION,
   CLOUD_SYNC_MAX_RETRIES,
-  CLOUD_SYNC_RETRY_INTERVAL,
-  AUTO_SAVE_INTERVAL,
 } from '../../core/settings';
 import type { AccountSettings } from '../../core/settings';
+import {
+  type CloudSyncResult,
+  type CloudSaveMetadata,
+  type INetworkDetector,
+  type ICloudStorage,
+  type CloudSaveChangeCallback,
+  type NowFn,
+  CloudSyncState,
+  DefaultNetworkDetector,
+} from './cloud-save.types';
 
-// ─────────────────────────────────────────────
-// 类型
-// ─────────────────────────────────────────────
-
-/** 云同步状态 */
-export enum CloudSyncState {
-  Idle = 'idle',
-  Syncing = 'syncing',
-  Success = 'success',
-  Failed = 'failed',
-  Conflict = 'conflict',
-}
-
-/** 云同步结果 */
-export interface CloudSyncResult {
-  state: CloudSyncState;
-  message: string;
-  syncedAt: number;
-  /** 冲突时的远程数据 */
-  remoteData: string | null;
-  /** 冲突时的远程时间戳 */
-  remoteTimestamp: number;
-}
-
-/** 云存档元数据 */
-export interface CloudSaveMetadata {
-  /** 数据版本 */
-  version: string;
-  /** 最后同步时间 */
-  lastSyncedAt: number;
-  /** 同步设备 ID */
-  syncedDeviceId: string;
-  /** 数据大小 (bytes) */
-  sizeBytes: number;
-  /** 校验和 */
-  checksum: string;
-}
-
-/** 同步频率调度器 */
-export type SyncScheduler = {
-  start: (callback: () => void, intervalMs: number) => void;
-  stop: () => void;
-};
-
-/** 网络状态检测器 */
-export interface INetworkDetector {
-  isWifi(): boolean;
-  isOnline(): boolean;
-}
-
-/** 云存储接口 */
-export interface ICloudStorage {
-  upload(data: string, metadata: CloudSaveMetadata): Promise<boolean>;
-  download(): Promise<{ data: string; metadata: CloudSaveMetadata } | null>;
-  getMetadata(): Promise<CloudSaveMetadata | null>;
-  delete(): Promise<boolean>;
-}
-
-/** 云存档变更回调 */
-export type CloudSaveChangeCallback = (
-  state: CloudSyncState,
-  result: CloudSyncResult | null,
-) => void;
-
-/** 当前时间函数（便于测试注入） */
-export type NowFn = () => number;
+// 重导出类型供外部使用
+export { CloudSyncState } from './cloud-save.types';
+export type {
+  CloudSyncResult,
+  CloudSaveMetadata,
+  SyncScheduler,
+  INetworkDetector,
+  ICloudStorage,
+  CloudSaveChangeCallback,
+  NowFn as CloudNowFn,
+} from './cloud-save.types';
 
 // ─────────────────────────────────────────────
 // 云存档系统
@@ -103,11 +56,7 @@ export type NowFn = () => number;
  * ```ts
  * const cloud = new CloudSaveSystem();
  * cloud.configure(accountSettings);
- *
- * // 手动同步
  * const result = await cloud.sync(localData, 'device-1');
- *
- * // 启动自动同步
  * cloud.startAutoSync(() => engine.getGameState(), 'device-1');
  * ```
  */
@@ -136,18 +85,12 @@ export class CloudSaveSystem {
   // 配置
   // ─────────────────────────────────────────
 
-  /**
-   * 配置云存档系统
-   *
-   * @param settings - 账号设置（含同步频率、WiFi 限制等）
-   */
+  /** 配置云存档系统 */
   configure(settings: AccountSettings): void {
     this.config = { ...settings };
   }
 
-  /**
-   * 设置云存储实现
-   */
+  /** 设置云存储实现 */
   setCloudStorage(storage: ICloudStorage): void {
     this.cloudStorage = storage;
   }
@@ -166,13 +109,7 @@ export class CloudSaveSystem {
   // 同步操作
   // ─────────────────────────────────────────
 
-  /**
-   * 手动触发同步
-   *
-   * @param localData - 本地存档数据
-   * @param deviceId - 当前设备 ID
-   * @param localTimestamp - 本地数据时间戳
-   */
+  /** 手动触发同步 */
   async sync(
     localData: string,
     deviceId: string,
@@ -186,7 +123,6 @@ export class CloudSaveSystem {
       return this.failResult('网络不可用');
     }
 
-    // WiFi 限制检查
     if (this.config?.wifiOnlySync && !this.networkDetector.isWifi()) {
       return this.failResult('仅 WiFi 下同步');
     }
@@ -194,10 +130,8 @@ export class CloudSaveSystem {
     this.setState(CloudSyncState.Syncing);
 
     try {
-      // 下载远程数据
       const remote = await this.cloudStorage.download();
 
-      // 冲突检测
       if (remote && localTimestamp && remote.metadata.lastSyncedAt > localTimestamp) {
         const strategy = this.config?.conflictStrategy ?? ConflictStrategy.AlwaysAsk;
 
@@ -214,14 +148,12 @@ export class CloudSaveSystem {
           return result;
         }
 
-        // 自动解决冲突
         const resolved = this.resolveConflict(
           strategy, localData, remote.data,
           localTimestamp, remote.metadata.lastSyncedAt,
         );
         await this.uploadData(resolved, deviceId);
       } else {
-        // 无冲突，直接上传
         await this.uploadData(localData, deviceId);
       }
 
@@ -241,11 +173,7 @@ export class CloudSaveSystem {
     }
   }
 
-  /**
-   * 解决冲突并上传
-   *
-   * 用户选择后调用。
-   */
+  /** 解决冲突并上传 */
   async resolveAndUpload(
     chosenData: string,
     deviceId: string,
@@ -275,36 +203,19 @@ export class CloudSaveSystem {
   // 自动同步
   // ─────────────────────────────────────────
 
-  /**
-   * 启动自动同步
-   *
-   * 根据配置的同步频率自动触发同步。
-   *
-   * @param getDataFn - 获取本地数据的函数
-   * @param deviceId - 当前设备 ID
-   */
-  startAutoSync(
-    getDataFn: () => string,
-    deviceId: string,
-  ): void {
+  /** 启动自动同步 */
+  startAutoSync(getDataFn: () => string, deviceId: string): void {
     this.stopAutoSync();
 
     const frequency = this.config?.cloudSyncFrequency ?? CloudSyncFrequency.ManualOnly;
-
-    if (frequency === CloudSyncFrequency.ManualOnly) {
-      return; // 仅手动同步
-    }
+    if (frequency === CloudSyncFrequency.ManualOnly) return;
 
     if (frequency === CloudSyncFrequency.Hourly) {
-      const intervalMs = 60 * 60 * 1000;
       this.syncTimer = setInterval(() => {
         const data = getDataFn();
-        this.sync(data, deviceId).catch(() => {
-          // 静默处理自动同步错误
-        });
-      }, intervalMs);
+        this.sync(data, deviceId).catch(() => { /* 静默 */ });
+      }, 60 * 60 * 1000);
     }
-    // OnExit 不自动定时同步
   }
 
   /** 停止自动同步 */
@@ -324,15 +235,7 @@ export class CloudSaveSystem {
   // 加密
   // ─────────────────────────────────────────
 
-  /**
-   * 加密数据
-   *
-   * 模拟 AES-GCM 加密。实际环境应使用 Web Crypto API。
-   *
-   * @param data - 原始数据
-   * @param key - 加密密钥
-   * @returns 加密后的 Base64 字符串
-   */
+  /** 加密数据（模拟 AES-GCM） */
   encrypt(data: string, key: string): string {
     const keyBytes = new TextEncoder().encode(key);
     const dataBytes = new TextEncoder().encode(data);
@@ -343,13 +246,7 @@ export class CloudSaveSystem {
     return this.uint8ToBase64(encrypted);
   }
 
-  /**
-   * 解密数据
-   *
-   * @param encrypted - 加密后的 Base64 字符串
-   * @param key - 解密密钥
-   * @returns 原始数据
-   */
+  /** 解密数据 */
   decrypt(encrypted: string, key: string): string {
     const keyBytes = new TextEncoder().encode(key);
     const encryptedBytes = this.base64ToUint8(encrypted);
@@ -364,9 +261,7 @@ export class CloudSaveSystem {
   // 数据完整性
   // ─────────────────────────────────────────
 
-  /**
-   * 计算校验和
-   */
+  /** 计算校验和 */
   computeChecksum(data: string): string {
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
@@ -377,9 +272,7 @@ export class CloudSaveSystem {
     return Math.abs(hash).toString(16).padStart(8, '0');
   }
 
-  /**
-   * 验证数据完整性
-   */
+  /** 验证数据完整性 */
   verifyIntegrity(data: string, checksum: string): boolean {
     return this.computeChecksum(data) === checksum;
   }
@@ -388,10 +281,7 @@ export class CloudSaveSystem {
   // 事件监听
   // ─────────────────────────────────────────
 
-  /**
-   * 注册状态变更回调
-   * @returns 取消注册函数
-   */
+  /** 注册状态变更回调 */
   onChange(callback: CloudSaveChangeCallback): () => void {
     this.listeners.push(callback);
     return () => {
@@ -404,10 +294,6 @@ export class CloudSaveSystem {
   removeAllListeners(): void {
     this.listeners = [];
   }
-
-  // ─────────────────────────────────────────
-  // 重置
-  // ─────────────────────────────────────────
 
   /** 重置到初始状态 */
   reset(): void {
@@ -422,7 +308,6 @@ export class CloudSaveSystem {
   // 内部方法
   // ─────────────────────────────────────────
 
-  /** 冲突解决 */
   private resolveConflict(
     strategy: ConflictStrategy,
     localData: string,
@@ -442,7 +327,6 @@ export class CloudSaveSystem {
     }
   }
 
-  /** 上传数据 */
   private async uploadData(data: string, deviceId: string): Promise<boolean> {
     if (!this.cloudStorage) return false;
 
@@ -457,7 +341,6 @@ export class CloudSaveSystem {
     return this.cloudStorage.upload(data, metadata);
   }
 
-  /** 处理同步错误（含重试） */
   private handleSyncError(): CloudSyncResult {
     this.retryCount++;
 
@@ -475,19 +358,13 @@ export class CloudSaveSystem {
     return result;
   }
 
-  /** 设置状态并通知 */
   private setState(newState: CloudSyncState): void {
     this.state = newState;
     for (const cb of this.listeners) {
-      try {
-        cb(newState, this.lastSyncResult);
-      } catch {
-        // 不阻断
-      }
+      try { cb(newState, this.lastSyncResult); } catch { /* 不阻断 */ }
     }
   }
 
-  /** 构建失败结果 */
   private failResult(message: string): CloudSyncResult {
     const result: CloudSyncResult = {
       state: CloudSyncState.Failed,
@@ -500,7 +377,6 @@ export class CloudSaveSystem {
     return result;
   }
 
-  /** Uint8Array → Base64 */
   private uint8ToBase64(bytes: Uint8Array): string {
     let binary = '';
     for (let i = 0; i < bytes.length; i++) {
@@ -509,7 +385,6 @@ export class CloudSaveSystem {
     return btoa(binary);
   }
 
-  /** Base64 → Uint8Array */
   private base64ToUint8(base64: string): Uint8Array {
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);

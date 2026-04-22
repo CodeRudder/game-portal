@@ -2,7 +2,7 @@
  * 引擎层 — 转生系统
  *
  * 管理转生条件、倍率、保留/重置规则、加速效果。
- * v16.0 深化功能已拆分至 RebirthSystemV16.ts。
+ * v16.0 深化功能已拆分至 RebirthSystem.helpers.ts。
  *
  * @module engine/prestige/RebirthSystem
  */
@@ -38,7 +38,7 @@ import {
   generatePrestigeGrowthCurve,
   compareRebirthTiming,
   simulateEarningsV16,
-} from './RebirthSystemV16';
+} from './RebirthSystem.helpers';
 
 // ─────────────────────────────────────────────
 // 常量

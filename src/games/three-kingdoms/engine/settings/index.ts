@@ -4,41 +4,29 @@
  * @module engine/settings
  */
 
-// SettingsManager
-export { SettingsManager } from './SettingsManager';
+// ── 类型文件 ──
 export type {
-  SettingsChangeCallback,
-  ISettingsStorage,
-} from './SettingsManager';
+  AccountResult,
+  BindResult,
+  DeviceResult,
+  AccountChangeCallback,
+  SpendIngotFn,
+  GrantIngotFn,
+  NowFn as AccountNowFn,
+  DeleteFlowData,
+} from './account.types';
+export { DeleteFlowState } from './account.types';
 
-// AudioManager
-export { AudioManager } from './AudioManager';
-export type {
-  IAudioPlayer,
-  AudioEventCallbacks,
-  AudioManagerConfig,
-} from './AudioManager';
-
-// GraphicsManager
-export { GraphicsManager } from './GraphicsManager';
-export type {
-  PresetConfig,
-  GraphicsChangeCallback,
-} from './GraphicsManager';
-
-// SaveSlotManager
-export { SaveSlotManager } from './SaveSlotManager';
-export { CloudSyncStatus } from './SaveSlotManager';
 export type {
   SaveSlotChangeCallback,
-  SaveSlotCloudSyncResult,
   SaveSlotResult,
   ExportData,
   ISaveSlotStorage,
-} from './SaveSlotManager';
+  CloudSyncResult as SaveSlotCloudSyncResult,
+} from './save-slot.types';
+export { CloudSyncStatus } from './save-slot.types';
 
-// CloudSaveSystem
-export { CloudSaveSystem, CloudSyncState } from './CloudSaveSystem';
+export { CloudSyncState } from './cloud-save.types';
 export type {
   CloudSyncResult,
   CloudSaveMetadata,
@@ -47,22 +35,34 @@ export type {
   ICloudStorage,
   CloudSaveChangeCallback,
   NowFn as CloudNowFn,
-} from './CloudSaveSystem';
+} from './cloud-save.types';
 
-// AccountSystem
-export { AccountSystem, DeleteFlowState } from './AccountSystem';
+// ── 子系统 ──
+export { SettingsManager } from './SettingsManager';
 export type {
-  AccountResult,
-  BindResult,
-  DeviceResult,
-  DeleteFlowData,
-  AccountChangeCallback,
-  SpendIngotFn,
-  GrantIngotFn,
-  NowFn as AccountNowFn,
-} from './AccountSystem';
+  SettingsChangeCallback,
+  ISettingsStorage,
+} from './SettingsManager';
 
-// AnimationController
+export { AudioManager } from './AudioManager';
+export type {
+  IAudioPlayer,
+  AudioEventCallbacks,
+  AudioManagerConfig,
+} from './AudioManager';
+
+export { GraphicsManager } from './GraphicsManager';
+export type {
+  PresetConfig,
+  GraphicsChangeCallback,
+} from './GraphicsManager';
+
+export { SaveSlotManager } from './SaveSlotManager';
+
+export { CloudSaveSystem } from './CloudSaveSystem';
+
+export { AccountSystem } from './AccountSystem';
+
 export { AnimationController } from './AnimationController';
 export type {
   IAnimationPlayer,
