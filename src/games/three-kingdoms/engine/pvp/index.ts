@@ -40,13 +40,19 @@ export {
 // ArenaSystem
 export {
   ArenaSystem,
+} from './ArenaSystem';
+
+// ArenaSystem — 常量与工厂函数
+export {
   DEFAULT_MATCH_CONFIG,
   DEFAULT_REFRESH_CONFIG,
   DEFAULT_CHALLENGE_CONFIG,
   ARENA_SAVE_VERSION,
   createDefaultDefenseFormation,
   createDefaultArenaPlayerState,
-} from './ArenaSystem';
+  selectByFactionBalance,
+  calculatePower,
+} from './ArenaSystem.helpers';
 
 // PvPBattleSystem
 export {

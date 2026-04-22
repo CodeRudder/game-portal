@@ -70,3 +70,20 @@ export type {
   AnimationChangeCallback,
   AnimationPlayRequest,
 } from './AnimationController';
+
+// ── 辅助模块 ──
+export {
+  getDefaultTransitionConfig,
+  getDefaultStateAnimationConfig,
+  getDefaultFeedbackConfig,
+} from './animation-defaults';
+
+export {
+  initiateDelete,
+  confirmDelete,
+  checkDeleteCooldown,
+  executeDelete,
+  cancelDelete,
+  isGuestExpired as isGuestAccountExpired,
+  getGuestRemainingDays,
+} from './account-delete-flow';

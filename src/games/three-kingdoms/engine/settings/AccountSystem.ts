@@ -11,7 +11,7 @@
  * @module engine/settings/AccountSystem
  */
 
-import { BindMethod, MAX_DEVICES, FIRST_BIND_REWARD, ACCOUNT_DELETE_COOLDOWN_DAYS } from '../../core/settings';
+import { BindMethod, MAX_DEVICES, FIRST_BIND_REWARD } from '../../core/settings';
 import type { BindingInfo, DeviceInfo, AccountSettings } from '../../core/settings';
 import {
   type AccountResult,
@@ -22,11 +22,17 @@ import {
   type NowFn,
   DeleteFlowState,
   type DeleteFlowData,
-  DELETE_CONFIRM_TEXT,
-  COOLDOWN_MS,
   UNBIND_COOLDOWN_MS,
-  GUEST_EXPIRE_MS,
 } from './account.types';
+import {
+  initiateDelete as doInitiateDelete,
+  confirmDelete as doConfirmDelete,
+  checkDeleteCooldown as doCheckDeleteCooldown,
+  executeDelete as doExecuteDelete,
+  cancelDelete as doCancelDelete,
+  isGuestExpired as checkGuestExpired,
+  getGuestRemainingDays as calcGuestRemainingDays,
+} from './account-delete-flow';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // 重导出类型供外部使用
@@ -314,91 +320,50 @@ export class AccountSystem implements ISubsystem {
       return { success: false, message: '未初始化' };
     }
 
-    if (this.settings.isGuest) {
-      return { success: false, message: '游客账号无需删除流程' };
-    }
-
-    if (this.deleteFlow && this.deleteFlow.state !== DeleteFlowState.None) {
-      return { success: false, message: '删除流程已在进行中' };
-    }
-
-    if (confirmText !== DELETE_CONFIRM_TEXT) {
-      return { success: false, message: '确认文字不匹配' };
-    }
-
-    this.deleteFlow = {
-      state: DeleteFlowState.Confirmed,
-      initiatedAt: this.nowFn(),
-      cooldownEndAt: 0,
-    };
-
-    return { success: true, message: '已确认，请进行二次确认' };
+    const { result, flow } = doInitiateDelete(
+      confirmText,
+      this.settings,
+      this.deleteFlow,
+      this.nowFn,
+    );
+    this.deleteFlow = flow;
+    if (result.success) this.notifyListeners();
+    return result;
   }
 
   /** 二次确认删除（步骤2：进入冷静期） */
   confirmDelete(): AccountResult {
-    if (!this.deleteFlow || this.deleteFlow.state !== DeleteFlowState.Confirmed) {
-      return { success: false, message: '请先完成步骤1' };
-    }
-
-    const now = this.nowFn();
-    this.deleteFlow = {
-      ...this.deleteFlow,
-      state: DeleteFlowState.CoolingDown,
-      cooldownEndAt: now + COOLDOWN_MS,
-    };
-
-    return { success: true, message: `已进入${ACCOUNT_DELETE_COOLDOWN_DAYS}天冷静期` };
+    const { result, flow } = doConfirmDelete(this.deleteFlow, this.nowFn);
+    this.deleteFlow = flow;
+    return result;
   }
 
   /** 检查冷静期是否结束 */
   checkDeleteCooldown(): DeleteFlowData | null {
-    if (!this.deleteFlow) return null;
-
-    if (
-      this.deleteFlow.state === DeleteFlowState.CoolingDown &&
-      this.nowFn() >= this.deleteFlow.cooldownEndAt
-    ) {
-      this.deleteFlow = {
-        ...this.deleteFlow,
-        state: DeleteFlowState.ReadyToDelete,
-      };
-    }
-
-    return { ...this.deleteFlow };
+    this.deleteFlow = doCheckDeleteCooldown(this.deleteFlow, this.nowFn);
+    return this.deleteFlow ? { ...this.deleteFlow } : null;
   }
 
   /** 执行永久删除（步骤3：冷静期结束后） */
   executeDelete(): AccountResult {
-    if (!this.deleteFlow || this.deleteFlow.state !== DeleteFlowState.ReadyToDelete) {
-      return { success: false, message: '冷静期未结束或未发起删除' };
+    if (!this.settings) {
+      return { success: false, message: '未初始化' };
     }
 
-    this.settings = {
-      ...this.settings!,
-      bindings: [],
-      isGuest: true,
-      firstBindRewardClaimed: false,
-      devices: [],
-    };
-    this.deleteFlow = null;
-
-    this.notifyListeners();
-    return { success: true, message: '账号已永久删除' };
+    const { result, resetSettings } = doExecuteDelete(this.deleteFlow, this.settings);
+    if (resetSettings) {
+      this.settings = resetSettings;
+      this.deleteFlow = null;
+      this.notifyListeners();
+    }
+    return result;
   }
 
   /** 撤销删除（冷静期内） */
   cancelDelete(): AccountResult {
-    if (!this.deleteFlow) {
-      return { success: false, message: '无进行中的删除流程' };
-    }
-
-    if (this.deleteFlow.state === DeleteFlowState.ReadyToDelete) {
-      return { success: false, message: '冷静期已结束，请执行删除或联系客服' };
-    }
-
-    this.deleteFlow = null;
-    return { success: true, message: '删除已撤销' };
+    const { result, flow } = doCancelDelete(this.deleteFlow);
+    this.deleteFlow = flow;
+    return result;
   }
 
   /** 获取删除流程状态 */
@@ -412,16 +377,14 @@ export class AccountSystem implements ISubsystem {
 
   /** 检查游客账号是否过期 */
   isGuestExpired(createdAt: number): boolean {
-    if (!this.settings || !this.settings.isGuest) return false;
-    return this.nowFn() - createdAt >= GUEST_EXPIRE_MS;
+    if (!this.settings) return false;
+    return checkGuestExpired(this.settings, createdAt, this.nowFn);
   }
 
   /** 获取游客账号剩余天数 */
   getGuestRemainingDays(createdAt: number): number {
-    if (!this.settings || !this.settings.isGuest) return 0;
-    const elapsed = this.nowFn() - createdAt;
-    const remaining = GUEST_EXPIRE_MS - elapsed;
-    return Math.max(0, Math.ceil(remaining / (24 * 60 * 60 * 1000)));
+    if (!this.settings) return 0;
+    return calcGuestRemainingDays(this.settings, createdAt, this.nowFn);
   }
 
   // ─────────────────────────────────────────
