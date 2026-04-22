@@ -40,8 +40,8 @@ export {
   createDefaultSocialState,
 } from './FriendSystem';
 
-// BorrowHeroSubsystem（从FriendSystem拆分）
-export { BorrowHeroSubsystem } from './BorrowHeroSubsystem';
+// BorrowHeroHelper（从FriendSystem拆分）
+export { BorrowHeroHelper } from './BorrowHeroHelper';
 
 // ChatSystem
 export {

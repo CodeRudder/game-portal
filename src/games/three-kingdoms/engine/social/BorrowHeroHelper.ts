@@ -10,7 +10,7 @@
  *
  * 从 FriendSystem.ts 拆分，解决500行限制
  *
- * @module engine/social/BorrowHeroSubsystem
+ * @module engine/social/BorrowHeroHelper
  */
 
 import type {
@@ -29,7 +29,7 @@ function generateId(prefix: string): string {
 }
 
 // ─────────────────────────────────────────────
-// BorrowHeroSubsystem 类
+// BorrowHeroHelper 类
 // ─────────────────────────────────────────────
 
 /**
@@ -37,7 +37,7 @@ function generateId(prefix: string): string {
  *
  * 管理借将、归还、PvP禁用检查
  */
-export class BorrowHeroSubsystem {
+export class BorrowHeroHelper {
   private interactionConfig: InteractionConfig;
 
   constructor(interactionConfig: InteractionConfig) {
