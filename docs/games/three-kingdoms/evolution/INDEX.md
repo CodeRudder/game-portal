@@ -5,6 +5,8 @@
 - [Round 2: v2.0招贤纳士](./evolution-r2.md) — 新增即导出+选择器先探后测
 - [Round 3: v1.0进化迭代](./evolution-r3.md) — 大文件拆分+门面违规修复+Mixin模式+data-testid规则
 - [Round 4: v4.0攻城略地(下)](./evolution-r4.md) — ISubsystem同步实现+复杂域拆分+废弃全局扫描+UI警告分类
+- [Round 5: v3.0攻城略地-上](./evolution-r5.md) — 技术审查4问题修复+30/30 UI测试通过
+- [Round 6: v5.0百家争鸣](./evolution-r6.md) — 0P0+0P1首次零缺陷+62/62 UI测试+四层拆分成熟
 
 ## 进化规则
 ### EVO-001: 提取即删除
