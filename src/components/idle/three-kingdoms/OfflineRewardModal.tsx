@@ -51,7 +51,7 @@ const OfflineRewardModal: React.FC<OfflineRewardModalProps> = ({ reward, onClaim
       onCancel={onClaim}
       width="420px"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: '#e8e0d0' }}>
+      <div data-testid="offline-reward-modal" style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: '#e8e0d0' }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -73,7 +73,7 @@ const OfflineRewardModal: React.FC<OfflineRewardModalProps> = ({ reward, onClaim
             const val = reward.earned[key];
             if (val <= 0) return null;
             return (
-              <div key={key} style={{
+              <div key={key} data-testid={`offline-reward-${key}`} style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',

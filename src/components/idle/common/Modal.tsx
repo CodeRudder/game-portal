@@ -20,6 +20,8 @@ export interface ModalProps {
   dangerConfirm?: boolean;
   className?: string;
   width?: string;
+  /** 测试标识，会传递到弹窗容器 div 上 */
+  'data-testid'?: string;
 }
 
 const TYPE_ICONS: Record<ModalType, string> = {
@@ -42,6 +44,7 @@ const Modal: React.FC<ModalProps> = ({
   dangerConfirm = false,
   className = '',
   width,
+  'data-testid': dataTestId,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +81,7 @@ const Modal: React.FC<ModalProps> = ({
         ref={modalRef}
         className={`tk-modal tk-modal--${type}`}
         style={width ? { width } : undefined}
+        data-testid={dataTestId}
         role="dialog"
         aria-modal="true"
         aria-label={title}
