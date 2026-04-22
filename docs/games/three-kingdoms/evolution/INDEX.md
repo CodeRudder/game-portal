@@ -18,6 +18,7 @@
 - [Round 8复盘: 测试基础设施升级](./progress/evolution-progress-r8.md) — Jest→Vitest迁移261文件2976处替换+data-testid补全22组件+三国6158测试全通过+EVO-059~060
 - [Round 9复盘: 全版本审查验证](./progress/evolution-progress-r9.md) — 20版本技术审查+EventTriggerSystem拆分(697→468行)+废弃代码清理+BattleEffectApplier ISubsystem补全
 - [Round 10复盘: P2消化+质量扫描](./progress/evolution-progress-r10.md) — social命名修复+StoryEventPlayer拆分(499→331)+exports死代码删除(-202行)+全局质量扫描验证+EVO-061~062
+- [Round 11复盘: data-testid全覆盖+死代码清理](./progress/evolution-progress-r11.md) — data-testid 100%覆盖(89/89)+LeaderboardSystem死代码清理(-348行)+EVO-063
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -308,4 +309,11 @@ Round 2发现6对重叠系统，Round 3必须逐一治理：
 2. 零引用文件确认后删除，删除前运行 `pnpm run build` 验证
 3. 重点关注: exports-v*.ts 残留、bak/ 目录、废弃版本文件
 范例: Round 10 删除 exports-v9.ts(88行) + exports-v12.ts(114行) = 202行死代码。
+
+### EVO-063: data-testid 完备性要求（来自Round 11复盘）
+所有 UI 组件(.tsx)必须有 data-testid 属性，新建组件必须同步添加。
+命名规范: kebab-case（如 `data-testid="hero-panel"`）。
+覆盖率目标: 100%。
+检查方法: `grep -rL "data-testid" src/ --include="*.tsx" | grep -v node_modules`
+范例: Round 11 补全21个组件，覆盖率从76.4%提升至100%(89/89)。
 
