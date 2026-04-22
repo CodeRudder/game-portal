@@ -20,7 +20,7 @@ import type {
   AutoResolveResult,
   EventNotification,
 } from '../../core/event/event-v15.types';
-import { NotificationPriority } from '../../core/event/event-v15.types';
+import { NotificationPriority } from '../../core/event/event-v15-event.types';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -173,7 +173,7 @@ export class OfflineEventHandler {
 
         // 汇总资源变化
         const changes = entry.autoResult.consequences.resourceChanges ?? {};
-        for (const [resource, amount] of Object.entries(changes)) {
+        for (const [resource, amount] of Object.entries(changes) as [string, number][]) {
           autoResourceChanges[resource] = (autoResourceChanges[resource] ?? 0) + amount;
         }
       } else {
@@ -200,7 +200,7 @@ export class OfflineEventHandler {
     consequences: EventDef['options'][0]['consequences'] | null;
     reason?: string;
   } {
-    const entry = pile.events.find((e) => e.eventId === eventId);
+    const entry = pile.events.find((e: { eventId: string }) => e.eventId === eventId);
     if (!entry) {
       return { success: false, consequences: null, reason: '事件不存在' };
     }
@@ -209,7 +209,7 @@ export class OfflineEventHandler {
       return { success: false, consequences: null, reason: '事件已自动处理' };
     }
 
-    const option = entry.eventDef.options.find((o) => o.id === optionId);
+    const option = entry.eventDef.options.find((o: { id: string }) => o.id === optionId);
     if (!option) {
       return { success: false, consequences: null, reason: '选项不存在' };
     }
@@ -233,7 +233,7 @@ export class OfflineEventHandler {
     autoResolved: number;
   } {
     const total = pile.events.length;
-    const autoResolved = pile.events.filter((e) => e.autoResult !== null).length;
+    const autoResolved = pile.events.filter((e: { autoResult: unknown }) => e.autoResult !== null).length;
     return {
       total,
       pending: total - autoResolved,

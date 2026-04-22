@@ -13,7 +13,7 @@ import type {
   ProbabilityCondition, ProbabilityModifier, ProbabilityResult,
   EventNotification, CooldownRecord, BranchOption, NotificationPriority,
 } from '../../core/event/event-v15.types';
-import { NotificationPriority as NotificationPriorityEnum } from '../../core/event/event-v15.types';
+import { NotificationPriority as NotificationPriorityEnum } from '../../core/event/event-v15-event.types';
 
 const MAX_NOTIFICATION_QUEUE_SIZE = 50;
 const DEFAULT_COOLDOWN_TURNS = 5;

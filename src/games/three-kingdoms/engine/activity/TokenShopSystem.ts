@@ -256,8 +256,10 @@ export class TokenShopSystem {
 
     // 计算奖励
     const rewards: Record<string, number> = {};
-    for (const [key, value] of Object.entries(item.rewards)) {
-      rewards[key] = value * quantity;
+    if (item.rewards.resourceChanges) {
+      for (const [key, value] of Object.entries(item.rewards.resourceChanges)) {
+        rewards[key] = value * quantity;
+      }
     }
 
     return { success: true, rewards, tokensSpent: totalCost };

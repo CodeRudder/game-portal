@@ -31,6 +31,7 @@ import {
   createDefaultAlliancePlayerState,
   createAllianceData,
 } from './alliance-constants';
+import * as AllianceHelper from './AllianceHelper';
 
 // 重新导出常量供外部使用
 export {
@@ -288,51 +289,43 @@ export class AllianceSystem {
     alliance: AllianceData, playerId: string,
     action: 'approve' | 'announce' | 'kick' | 'manage',
   ): void {
-    const { requirePermission: rp } = require('./AllianceHelper');
-    rp(alliance, playerId, action);
+    AllianceHelper.requirePermission(alliance, playerId, action);
   }
 
   hasPermission(
     alliance: AllianceData, playerId: string,
     action: 'approve' | 'announce' | 'kick' | 'manage',
   ): boolean {
-    const { hasPermission: hp } = require('./AllianceHelper');
-    return hp(alliance, playerId, action);
+    return AllianceHelper.hasPermission(alliance, playerId, action);
   }
 
   // ── 工具方法（委托 AllianceHelper） ──
 
   getMemberList(alliance: AllianceData) {
-    const { getMemberList: gml } = require('./AllianceHelper');
-    return gml(alliance);
+    return AllianceHelper.getMemberList(alliance);
   }
 
   getPendingApplications(alliance: AllianceData) {
-    const { getPendingApplications: gpa } = require('./AllianceHelper');
-    return gpa(alliance);
+    return AllianceHelper.getPendingApplications(alliance);
   }
 
   getPinnedAnnouncements(alliance: AllianceData) {
-    const { getPinnedAnnouncements: gpa } = require('./AllianceHelper');
-    return gpa(alliance);
+    return AllianceHelper.getPinnedAnnouncements(alliance);
   }
 
   searchAlliance(alliances: AllianceData[], keyword: string): AllianceData[] {
-    const { searchAlliance: sa } = require('./AllianceHelper');
-    return sa(alliances, keyword);
+    return AllianceHelper.searchAlliance(alliances, keyword);
   }
 
   // ── 存档序列化（委托 AllianceHelper） ──
 
   serialize(playerState: AlliancePlayerState, alliance: AllianceData | null): AllianceSaveData {
-    const { serializeAlliance } = require('./AllianceHelper');
-    return serializeAlliance(playerState, alliance);
+    return AllianceHelper.serializeAlliance(playerState, alliance);
   }
 
   deserialize(data: AllianceSaveData): {
     playerState: AlliancePlayerState; alliance: AllianceData | null;
   } {
-    const { deserializeAlliance } = require('./AllianceHelper');
-    return deserializeAlliance(data);
+    return AllianceHelper.deserializeAlliance(data);
   }
 }

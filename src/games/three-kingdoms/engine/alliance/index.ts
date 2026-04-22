@@ -46,6 +46,16 @@ export {
   createAllianceData,
 } from './AllianceSystem';
 
+// 重新导出常量（来自 alliance-constants.ts）
+export {
+  DEFAULT_CREATE_CONFIG as CREATE_CONFIG,
+  ALLIANCE_LEVEL_CONFIGS as LEVEL_CONFIGS,
+  ALLIANCE_SAVE_VERSION as SAVE_VERSION,
+  createDefaultAlliancePlayerState as defaultPlayerState,
+  createAllianceData as initAllianceData,
+  generateId,
+} from './alliance-constants';
+
 // AllianceBossSystem
 export {
   AllianceBossSystem,
@@ -55,6 +65,7 @@ export {
 
 // AllianceShopSystem
 export {
+  AllianceShopSystem,
   DEFAULT_ALLIANCE_SHOP_ITEMS,
 } from './AllianceShopSystem';
 

@@ -1,10 +1,8 @@
 /**
  * 引擎层 — 传承系统
  *
- * 管理武将传承、装备传承、经验传承的完整流程：
- *   #18 转生后加速机制 — 初始资源赠送 + 低级建筑瞬间 + 一键重建
- *   #19 转生次数解锁内容 — 1次天命/2次专属科技/3次神话武将/5次跨服
- *   #20 收益模拟器 — 预测声望增长 + 推荐转生时机 + 倍率对比
+ * 管理武将传承、装备传承、经验传承的完整流程。
+ * 转生加速/次数解锁/收益模拟器已拆分至 HeritageSimulation.ts。
  *
  * 传承规则：
  *   - 武将传承：源武将经验/技能传给目标武将，源武将重置为1级
@@ -23,11 +21,9 @@ import type {
   HeritageRecord,
   HeritageSaveData,
   HeroHeritageRequest,
-  HeroHeritageOptions,
   EquipmentHeritageRequest,
   ExperienceHeritageRequest,
   RebirthAccelerationState,
-  RebirthRebuildConfig,
   HeritageSimulationParams,
   HeritageSimulationResult,
 } from '../../core/heritage';
@@ -37,18 +33,20 @@ import {
   EXPERIENCE_HERITAGE_RULE,
   QUALITY_EXP_EFFICIENCY,
   RARITY_DIFF_EFFICIENCY,
-  REBIRTH_INITIAL_GIFT,
-  DEFAULT_REBUILD_CONFIG,
-  INSTANT_UPGRADE_MAX_LEVEL,
-  INSTANT_UPGRADE_COUNT_PER_REBIRTH,
-  HERITAGE_REBIRTH_UNLOCKS,
-  SIMULATION_BASE_DAILY,
-  SIMULATION_DIMINISHING_THRESHOLD,
   DAILY_HERITAGE_LIMIT,
   HERITAGE_SAVE_VERSION,
 } from '../../core/heritage';
 import type { Faction } from '../hero/hero.types';
-import { calcRebirthMultiplier } from '../prestige/RebirthSystem';
+import {
+  claimInitialGift,
+  executeRebuild,
+  instantUpgrade,
+  createInitialAccelState,
+  getRebirthUnlocks,
+  isHeritageUnlocked,
+  simulateEarnings,
+  type RebirthAccelCallbacks,
+} from './HeritageSimulation';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -114,12 +112,7 @@ export class HeritageSystem implements ISubsystem {
 
   private deps!: ISystemDeps;
   private state: HeritageState = createInitialHeritageState();
-  private accelState: RebirthAccelerationState = {
-    initialGiftClaimed: false,
-    rebuildCompleted: false,
-    instantUpgradeCount: 0,
-    instantUpgradedBuildings: [],
-  };
+  private accelState: RebirthAccelerationState = createInitialAccelState();
 
   /** 外部数据查询回调 */
   private heroCallback?: (id: string) => HeroDataSource | null;
@@ -138,26 +131,15 @@ export class HeritageSystem implements ISubsystem {
     this.deps.eventBus.on('calendar:dayChanged', () => this.resetDailyCount());
   }
 
-  update(_dt: number): void {
-    // 传承系统不依赖帧更新
-  }
+  update(_dt: number): void { /* 传承系统不依赖帧更新 */ }
 
-  getState(): HeritageState {
-    return { ...this.state };
-  }
+  getState(): HeritageState { return { ...this.state }; }
 
-  getAccelerationState(): RebirthAccelerationState {
-    return { ...this.accelState };
-  }
+  getAccelerationState(): RebirthAccelerationState { return { ...this.accelState }; }
 
   reset(): void {
     this.state = createInitialHeritageState();
-    this.accelState = {
-      initialGiftClaimed: false,
-      rebuildCompleted: false,
-      instantUpgradeCount: 0,
-      instantUpgradedBuildings: [],
-    };
+    this.accelState = createInitialAccelState();
   }
 
   // ─── 配置回调 ───────────────────────────
@@ -183,20 +165,19 @@ export class HeritageSystem implements ISubsystem {
     this.rebirthCountCallback = callbacks.getRebirthCount;
   }
 
+  /** 获取加速回调集合 */
+  private getAccelCallbacks(): RebirthAccelCallbacks {
+    return {
+      addResources: this.addResourcesCallback,
+      upgradeBuilding: this.upgradeBuildingCallback,
+      getRebirthCount: this.rebirthCountCallback,
+    };
+  }
+
   // ─── 武将传承 API ───────────────────────
 
-  /**
-   * 执行武将传承
-   * 将源武将的经验和技能等级传给目标武将
-   *
-   * 规则：
-   * - 源武将品质 ≥ 精良(2)
-   * - 目标武将品质 ≥ 稀有(3)
-   * - 同阵营额外+10%效率，不同阵营-10%
-   * - 源武将传承后重置为1级
-   */
+  /** 执行武将传承 */
   executeHeroHeritage(request: HeroHeritageRequest): HeritageResult {
-    // 检查每日限制
     this.checkDailyReset();
     if (this.state.dailyHeritageCount >= DAILY_HERITAGE_LIMIT) {
       return this.failResult('hero', '今日传承次数已达上限');
@@ -208,82 +189,45 @@ export class HeritageSystem implements ISubsystem {
     if (!source) return this.failResult('hero', '源武将不存在');
     if (!target) return this.failResult('hero', '目标武将不存在');
     if (source.id === target.id) return this.failResult('hero', '不能自我传承');
+    if (source.quality < HERO_HERITAGE_RULE.minSourceQuality) return this.failResult('hero', '源武将品质不足');
+    if (target.quality < HERO_HERITAGE_RULE.minTargetQuality) return this.failResult('hero', '目标武将品质不足');
 
-    // 品质检查
-    if (source.quality < HERO_HERITAGE_RULE.minSourceQuality) {
-      return this.failResult('hero', '源武将品质不足');
-    }
-    if (target.quality < HERO_HERITAGE_RULE.minTargetQuality) {
-      return this.failResult('hero', '目标武将品质不足');
-    }
-
-    // 计算效率
     const baseEfficiency = QUALITY_EXP_EFFICIENCY[source.quality] ?? 0.5;
     const sameFaction = source.faction === target.faction;
-    const factionModifier = sameFaction
-      ? HERO_HERITAGE_RULE.sameFactionBonus
-      : -HERO_HERITAGE_RULE.diffFactionPenalty;
+    const factionModifier = sameFaction ? HERO_HERITAGE_RULE.sameFactionBonus : -HERO_HERITAGE_RULE.diffFactionPenalty;
     const efficiency = Math.min(1, Math.max(0, baseEfficiency + factionModifier));
-
-    // 计算铜钱消耗
     const copperCost = source.level * HERO_HERITAGE_RULE.copperCostFactor;
 
-    // 记录传承前数据
     const sourceBefore = this.makeHeroSummary(source);
     const targetBefore = this.makeHeroSummary(target);
 
-    // 执行传承
     const transferredExp = Math.floor(source.exp * efficiency * request.options.expEfficiency);
     const newTargetExp = target.exp + transferredExp;
 
-    // 更新目标武将
     this.updateHeroCallback?.(target.id, {
       exp: newTargetExp,
       ...(request.options.transferSkillLevels ? { skillLevels: [...source.skillLevels] } : {}),
       ...(request.options.transferFavorability ? { favorability: source.favorability } : {}),
     });
 
-    // 重置源武将
     if (HERO_HERITAGE_RULE.sourceAfterState === 'reset') {
       this.updateHeroCallback?.(source.id, { level: 1, exp: 0 });
     }
 
-    // 更新状态
     const sourceAfter = this.makeHeroSummary({
-      ...source,
-      level: HERO_HERITAGE_RULE.sourceAfterState === 'reset' ? 1 : source.level,
-      exp: 0,
+      ...source, level: HERO_HERITAGE_RULE.sourceAfterState === 'reset' ? 1 : source.level, exp: 0,
     });
     const targetAfter = this.makeHeroSummary({ ...target, exp: newTargetExp });
 
-    // 扣除铜钱
     this.addResourcesCallback?.({ copper: -copperCost });
-
     this.recordHeritage('hero', source.id, target.id, efficiency, copperCost);
 
-    return {
-      success: true,
-      type: 'hero',
-      efficiency,
-      copperCost,
-      sourceBefore,
-      sourceAfter,
-      targetBefore,
-      targetAfter,
-    };
+    return { success: true, type: 'hero', efficiency, copperCost, sourceBefore, sourceAfter, targetBefore, targetAfter };
   }
 
   // ─── 装备传承 API ───────────────────────
 
-  /**
-   * 执行装备传承
-   * 将源装备的强化等级传给目标装备
-   *
-   * 规则：
-   * - 必须同部位
-   * - 等级损耗-1
-   * - 源装备被消耗
-   */
+  /** 执行装备传承 */
   executeEquipmentHeritage(request: EquipmentHeritageRequest): HeritageResult {
     this.checkDailyReset();
     if (this.state.dailyHeritageCount >= DAILY_HERITAGE_LIMIT) {
@@ -296,19 +240,13 @@ export class HeritageSystem implements ISubsystem {
     if (!source) return this.failResult('equipment', '源装备不存在');
     if (!target) return this.failResult('equipment', '目标装备不存在');
     if (source.uid === target.uid) return this.failResult('equipment', '不能自我传承');
-
-    // 同部位检查
     if (EQUIPMENT_HERITAGE_RULE.mustSameSlot && source.slot !== target.slot) {
       return this.failResult('equipment', '源装备和目标装备必须同部位');
     }
 
-    // 计算传承等级
-    const rawLevel = request.options.transferEnhanceLevel
-      ? source.enhanceLevel
-      : 0;
+    const rawLevel = request.options.transferEnhanceLevel ? source.enhanceLevel : 0;
     const transferredLevel = Math.max(0, rawLevel - EQUIPMENT_HERITAGE_RULE.levelLoss);
 
-    // 品质差异影响
     const rarityDiff = target.rarity - source.rarity;
     let efficiency = 1.0;
     if (rarityDiff === 0) efficiency = RARITY_DIFF_EFFICIENCY['same'];
@@ -318,57 +256,28 @@ export class HeritageSystem implements ISubsystem {
     else efficiency = RARITY_DIFF_EFFICIENCY['lower_2'];
 
     const finalLevel = Math.floor(transferredLevel * efficiency);
-
-    // 铜钱消耗
     const copperCost = rawLevel * EQUIPMENT_HERITAGE_RULE.copperCostFactor;
 
-    // 记录传承前数据
     const sourceBefore: HeritageDataSummary = { id: source.uid, level: source.enhanceLevel, value: source.enhanceLevel };
     const targetBefore: HeritageDataSummary = { id: target.uid, level: target.enhanceLevel, value: target.enhanceLevel };
 
-    // 更新目标装备
     this.updateEquipCallback?.(target.uid, { enhanceLevel: finalLevel });
-
-    // 消耗源装备
     if (EQUIPMENT_HERITAGE_RULE.sourceAfterState === 'consumed') {
       this.removeEquipCallback?.(source.uid);
     }
 
-    const sourceAfter: HeritageDataSummary = {
-      id: source.uid,
-      level: EQUIPMENT_HERITAGE_RULE.sourceAfterState === 'consumed' ? 0 : 0,
-      value: 0,
-    };
+    const sourceAfter: HeritageDataSummary = { id: source.uid, level: 0, value: 0 };
     const targetAfter: HeritageDataSummary = { id: target.uid, level: finalLevel, value: finalLevel };
 
-    // 扣除铜钱
     this.addResourcesCallback?.({ copper: -copperCost });
-
     this.recordHeritage('equipment', source.uid, target.uid, efficiency, copperCost);
 
-    return {
-      success: true,
-      type: 'equipment',
-      efficiency,
-      copperCost,
-      sourceBefore,
-      sourceAfter,
-      targetBefore,
-      targetAfter,
-    };
+    return { success: true, type: 'equipment', efficiency, copperCost, sourceBefore, sourceAfter, targetBefore, targetAfter };
   }
 
   // ─── 经验传承 API ───────────────────────
 
-  /**
-   * 执行经验传承
-   * 将源武将的部分经验传给目标武将
-   *
-   * 规则：
-   * - 最大传承80%经验
-   * - 效率70%
-   * - 源武将最低10级
-   */
+  /** 执行经验传承 */
   executeExperienceHeritage(request: ExperienceHeritageRequest): HeritageResult {
     this.checkDailyReset();
     if (this.state.dailyHeritageCount >= DAILY_HERITAGE_LIMIT) {
@@ -381,25 +290,18 @@ export class HeritageSystem implements ISubsystem {
     if (!source) return this.failResult('experience', '源武将不存在');
     if (!target) return this.failResult('experience', '目标武将不存在');
     if (source.id === target.id) return this.failResult('experience', '不能自我传承');
-
-    // 最低等级检查
     if (source.level < EXPERIENCE_HERITAGE_RULE.minSourceLevel) {
       return this.failResult('experience', `源武将等级不足${EXPERIENCE_HERITAGE_RULE.minSourceLevel}级`);
     }
 
-    // 计算传承经验
     const ratio = Math.min(request.expRatio, EXPERIENCE_HERITAGE_RULE.maxExpRatio);
     const rawExp = source.exp * ratio;
     const transferredExp = Math.floor(rawExp * EXPERIENCE_HERITAGE_RULE.efficiency);
-
-    // 铜钱消耗
     const copperCost = Math.floor(source.level * EXPERIENCE_HERITAGE_RULE.copperCostFactor * ratio);
 
-    // 记录传承前数据
     const sourceBefore = this.makeHeroSummary(source);
     const targetBefore = this.makeHeroSummary(target);
 
-    // 执行传承
     const newSourceExp = source.exp - Math.floor(rawExp);
     const newTargetExp = target.exp + transferredExp;
 
@@ -409,259 +311,98 @@ export class HeritageSystem implements ISubsystem {
     const sourceAfter = this.makeHeroSummary({ ...source, exp: newSourceExp });
     const targetAfter = this.makeHeroSummary({ ...target, exp: newTargetExp });
 
-    // 扣除铜钱
     this.addResourcesCallback?.({ copper: -copperCost });
-
     this.recordHeritage('experience', source.id, target.id, EXPERIENCE_HERITAGE_RULE.efficiency, copperCost);
 
-    return {
-      success: true,
-      type: 'experience',
-      efficiency: EXPERIENCE_HERITAGE_RULE.efficiency,
-      copperCost,
-      sourceBefore,
-      sourceAfter,
-      targetBefore,
-      targetAfter,
-    };
+    return { success: true, type: 'experience', efficiency: EXPERIENCE_HERITAGE_RULE.efficiency, copperCost, sourceBefore, sourceAfter, targetBefore, targetAfter };
   }
 
   // ─── 转生后加速 API (#18) ───────────────
 
-  /**
-   * 领取转生后初始资源赠送
-   */
+  /** 领取转生后初始资源赠送 */
   claimInitialGift(): { success: boolean; resources: Record<string, number>; reason?: string } {
-    if (this.accelState.initialGiftClaimed) {
-      return { success: false, resources: {}, reason: '已领取过初始资源' };
-    }
-
-    const resources = {
-      grain: REBIRTH_INITIAL_GIFT.grain,
-      copper: REBIRTH_INITIAL_GIFT.copper,
-      enhanceStone: REBIRTH_INITIAL_GIFT.enhanceStone,
-    };
-
-    this.addResourcesCallback?.(resources);
-    this.accelState.initialGiftClaimed = true;
-
-    this.deps.eventBus.emit(`${EVENT_PREFIX}:initialGiftClaimed`, resources);
-
-    return { success: true, resources };
+    const result = claimInitialGift(this.accelState, this.getAccelCallbacks(), this.deps);
+    this.accelState = result.newState;
+    return { success: result.success, resources: result.resources, reason: result.reason };
   }
 
-  /**
-   * 一键重建 (#18)
-   * 按优先级自动升级建筑
-   */
-  executeRebuild(config?: Partial<RebirthRebuildConfig>): {
-    success: boolean;
-    upgradedBuildings: string[];
-    reason?: string;
+  /** 一键重建 */
+  executeRebuild(config?: Partial<import('../../core/heritage').RebirthRebuildConfig>): {
+    success: boolean; upgradedBuildings: string[]; reason?: string;
   } {
-    if (this.accelState.rebuildCompleted) {
-      return { success: false, upgradedBuildings: [], reason: '已执行过一键重建' };
-    }
-
-    const cfg = { ...DEFAULT_REBUILD_CONFIG, ...config };
-    const upgradedBuildings: string[] = [];
-
-    for (const buildingId of cfg.buildingPriority) {
-      const success = this.upgradeBuildingCallback?.(buildingId) ?? false;
-      if (success) {
-        upgradedBuildings.push(buildingId);
-      }
-    }
-
-    this.accelState.rebuildCompleted = true;
-
-    this.deps.eventBus.emit(`${EVENT_PREFIX}:rebuildCompleted`, { upgradedBuildings });
-
-    return { success: true, upgradedBuildings };
+    const result = executeRebuild(this.accelState, this.getAccelCallbacks(), this.deps, config);
+    this.accelState = result.newState;
+    return { success: result.success, upgradedBuildings: result.upgradedBuildings, reason: result.reason };
   }
 
-  /**
-   * 瞬间升级低级建筑 (#18)
-   */
+  /** 瞬间升级低级建筑 */
   instantUpgrade(buildingId: string): { success: boolean; reason?: string } {
-    const rebirthCount = this.rebirthCountCallback?.() ?? 0;
-    const maxInstantUpgrades = rebirthCount * INSTANT_UPGRADE_COUNT_PER_REBIRTH;
-
-    if (this.accelState.instantUpgradeCount >= maxInstantUpgrades) {
-      return { success: false, reason: '瞬间升级次数已用完' };
-    }
-
-    if (this.accelState.instantUpgradedBuildings.includes(buildingId)) {
-      return { success: false, reason: '该建筑已瞬间升级过' };
-    }
-
-    const success = this.upgradeBuildingCallback?.(buildingId) ?? false;
-    if (!success) {
-      return { success: false, reason: '建筑升级失败' };
-    }
-
-    this.accelState.instantUpgradeCount++;
-    this.accelState.instantUpgradedBuildings.push(buildingId);
-
-    return { success: true };
+    const result = instantUpgrade(buildingId, this.accelState, this.getAccelCallbacks());
+    this.accelState = result.newState;
+    return { success: result.success, reason: result.reason };
   }
 
-  /**
-   * 初始化转生后加速状态
-   * 在每次转生后调用
-   */
+  /** 初始化转生后加速状态 */
   initRebirthAcceleration(): void {
-    this.accelState = {
-      initialGiftClaimed: false,
-      rebuildCompleted: false,
-      instantUpgradeCount: 0,
-      instantUpgradedBuildings: [],
-    };
+    this.accelState = createInitialAccelState();
   }
 
   // ─── 转生次数解锁 (#19) ─────────────────
 
-  /**
-   * 获取转生次数解锁内容
-   */
-  getRebirthUnlocks(): Array<{
-    rebirthCount: number;
-    description: string;
-    type: string;
-    unlockId: string;
-    unlocked: boolean;
-  }> {
-    const currentCount = this.rebirthCountCallback?.() ?? 0;
-    return HERITAGE_REBIRTH_UNLOCKS.map(u => ({
-      ...u,
-      unlocked: currentCount >= u.rebirthCount,
-    }));
+  /** 获取转生次数解锁内容 */
+  getRebirthUnlocks() {
+    return getRebirthUnlocks(this.rebirthCountCallback?.() ?? 0);
   }
 
-  /**
-   * 检查指定内容是否已解锁
-   */
+  /** 检查指定内容是否已解锁 */
   isUnlocked(unlockId: string): boolean {
-    const currentCount = this.rebirthCountCallback?.() ?? 0;
-    return HERITAGE_REBIRTH_UNLOCKS.some(
-      u => u.unlockId === unlockId && currentCount >= u.rebirthCount,
-    );
+    return isHeritageUnlocked(unlockId, this.rebirthCountCallback?.() ?? 0);
   }
 
   // ─── 收益模拟器 (#20) ───────────────────
 
-  /**
-   * 模拟转生收益
-   * 对比立即转生和等待后转生的收益差异
-   */
+  /** 模拟转生收益 */
   simulateEarnings(params: HeritageSimulationParams): HeritageSimulationResult {
-    const immediateMultiplier = calcRebirthMultiplier(params.currentRebirthCount + 1);
-    const waitMultiplier = immediateMultiplier; // 倍率不受等待影响
-
-    // 立即转生：从现在开始享受倍率
-    const immediateDays = 30; // 模拟30天
-    const immediateEarnings = this.calcEarnings(
-      immediateMultiplier, immediateDays, params.dailyOnlineHours,
-    );
-
-    // 等待后转生：等待期间无倍率，之后享受倍率
-    const waitDays = params.waitHours / 24;
-    const remainingDays = Math.max(0, immediateDays - waitDays);
-    const waitEarnings = this.calcEarnings(
-      waitMultiplier, remainingDays, params.dailyOnlineHours,
-    );
-
-    // 计算边际收益递减拐点
-    const diminishingReturnHour = SIMULATION_DIMINISHING_THRESHOLD;
-    const recommendedWaitHours = this.findOptimalWaitTime(
-      params, immediateMultiplier,
-    );
-
-    // 置信度：基于在线时长，越长越准
-    const confidence = Math.min(1, params.dailyOnlineHours / 8);
-
-    return {
-      immediateMultiplier,
-      waitMultiplier,
-      immediateEarnings,
-      waitEarnings,
-      recommendedWaitHours,
-      diminishingReturnHour,
-      confidence,
-    };
+    return simulateEarnings(params);
   }
 
   // ─── 存档 ───────────────────────────────
 
-  /** 加载存档 */
   loadSaveData(data: HeritageSaveData): void {
     this.state = { ...data.state };
-    if (data.accelState) {
-      this.accelState = { ...data.accelState };
-    }
+    if (data.accelState) { this.accelState = { ...data.accelState }; }
   }
 
-  /** 导出存档 */
   getSaveData(): HeritageSaveData {
-    return {
-      version: HERITAGE_SAVE_VERSION,
-      state: { ...this.state },
-      accelState: { ...this.accelState },
-    };
+    return { version: HERITAGE_SAVE_VERSION, state: { ...this.state }, accelState: { ...this.accelState } };
   }
 
   // ─── 内部方法 ───────────────────────────
 
-  /** 创建失败结果 */
   private failResult(type: HeritageType, reason: string): HeritageResult {
     return {
-      success: false,
-      reason,
-      type,
-      efficiency: 0,
-      copperCost: 0,
-      sourceBefore: { id: '', level: 0, value: 0 },
-      sourceAfter: { id: '', level: 0, value: 0 },
-      targetBefore: { id: '', level: 0, value: 0 },
-      targetAfter: { id: '', level: 0, value: 0 },
+      success: false, reason, type, efficiency: 0, copperCost: 0,
+      sourceBefore: { id: '', level: 0, value: 0 }, sourceAfter: { id: '', level: 0, value: 0 },
+      targetBefore: { id: '', level: 0, value: 0 }, targetAfter: { id: '', level: 0, value: 0 },
     };
   }
 
-  /** 创建武将数据摘要 */
   private makeHeroSummary(hero: HeroDataSource): HeritageDataSummary {
     return { id: hero.id, level: hero.level, value: hero.exp };
   }
 
-  /** 记录传承历史 */
-  private recordHeritage(
-    type: HeritageType,
-    sourceId: string,
-    targetId: string,
-    efficiency: number,
-    copperCost: number,
-  ): void {
-    const record: HeritageRecord = {
-      type,
-      sourceId,
-      targetId,
-      efficiency,
-      copperCost,
-      timestamp: Date.now(),
-    };
-
+  private recordHeritage(type: HeritageType, sourceId: string, targetId: string, efficiency: number, copperCost: number): void {
+    const record: HeritageRecord = { type, sourceId, targetId, efficiency, copperCost, timestamp: Date.now() };
     this.state.heritageHistory.push(record);
     this.state.dailyHeritageCount++;
-
     switch (type) {
       case 'hero': this.state.heroHeritageCount++; break;
       case 'equipment': this.state.equipmentHeritageCount++; break;
       case 'experience': this.state.experienceHeritageCount++; break;
     }
-
     this.deps.eventBus.emit(`${EVENT_PREFIX}:completed`, record);
   }
 
-  /** 检查并重置每日计数 */
   private checkDailyReset(): void {
     const today = getTodayStr();
     if (this.state.lastDailyReset !== today) {
@@ -670,41 +411,8 @@ export class HeritageSystem implements ISubsystem {
     }
   }
 
-  /** 重置每日计数（由日历事件触发） */
   private resetDailyCount(): void {
     this.state.dailyHeritageCount = 0;
     this.state.lastDailyReset = getTodayStr();
-  }
-
-  /** 计算指定天数收益 */
-  private calcEarnings(
-    multiplier: number,
-    days: number,
-    dailyHours: number,
-  ): Record<string, number> {
-    return {
-      gold: Math.floor(SIMULATION_BASE_DAILY.gold * multiplier * days * (dailyHours / 4)),
-      grain: Math.floor(SIMULATION_BASE_DAILY.grain * multiplier * days * (dailyHours / 4)),
-      prestige: Math.floor(SIMULATION_BASE_DAILY.prestige * days * (dailyHours / 4)),
-    };
-  }
-
-  /** 寻找最优等待时间 */
-  private findOptimalWaitTime(
-    params: HeritageSimulationParams,
-    multiplier: number,
-  ): number {
-    // 简化模型：边际收益递减拐点即为推荐等待时间
-    // 实际应根据声望增长曲线计算
-    const basePrestigePerHour = SIMULATION_BASE_DAILY.prestige / 24;
-    const prestigeGain = basePrestigePerHour * params.waitHours;
-    const marginalGain = basePrestigePerHour * multiplier;
-
-    // 当边际收益开始递减时推荐转生
-    if (marginalGain < basePrestigePerHour * 1.5) {
-      return 0; // 立即转生
-    }
-
-    return SIMULATION_DIMINISHING_THRESHOLD;
   }
 }

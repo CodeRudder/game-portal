@@ -391,3 +391,6 @@ export class ThreeKingdomsEngine {
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
   }
 }
+
+// 将 engine-getters.ts 中定义的 getter / API 方法混入原型
+applyGetters(ThreeKingdomsEngine);

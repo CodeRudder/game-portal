@@ -24,6 +24,8 @@ import type {
   SocialState,
 } from '../../core/social/social.types';
 import { FriendStatus, InteractionType as IT } from '../../core/social/social.types';
+import { FriendInteractionSubsystem } from './FriendInteractionSubsystem';
+import { BorrowHeroSubsystem } from './BorrowHeroSubsystem';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -102,6 +104,8 @@ export function createDefaultSocialState(): SocialState {
 export class FriendSystem {
   private friendConfig: FriendConfig;
   private interactionConfig: InteractionConfig;
+  private readonly interactionSubsystem: FriendInteractionSubsystem;
+  private readonly borrowSubsystem: BorrowHeroSubsystem;
 
   constructor(
     friendConfig?: Partial<FriendConfig>,
@@ -109,8 +113,7 @@ export class FriendSystem {
   ) {
     this.friendConfig = { ...DEFAULT_FRIEND_CONFIG, ...friendConfig };
     this.interactionConfig = { ...DEFAULT_INTERACTION_CONFIG, ...interactionConfig };
-    // 延迟导入避免循环依赖
-    const { BorrowHeroSubsystem } = require('./BorrowHeroSubsystem');
+    this.interactionSubsystem = new FriendInteractionSubsystem(this.interactionConfig);
     this.borrowSubsystem = new BorrowHeroSubsystem(this.interactionConfig);
   }
 
@@ -249,107 +252,39 @@ export class FriendSystem {
   // ── 好友互动 ──────────────────────────────
 
   /**
-   * 赠送兵力
+   * 赠送兵力（委托 FriendInteractionSubsystem）
    */
   giftTroops(state: SocialState, friendId: string, now: number): {
     state: SocialState;
     friendshipEarned: number;
   } {
-    const todayInteractions = state.dailyInteractions.filter(
-      (i) => i.type === IT.GIFT_TROOPS,
-    );
-    if (todayInteractions.length >= this.interactionConfig.giftTroopsDailyLimit) {
-      throw new Error('今日赠送次数已达上限');
-    }
-    if (!state.friends[friendId]) {
-      throw new Error('不是好友');
-    }
-
-    const points = this.interactionConfig.giftTroopsFriendshipPoints;
-    const earned = this.calculateFriendshipEarned(state, points);
-
-    return {
-      state: {
-        ...state,
-        friendshipPoints: state.friendshipPoints + earned,
-        dailyFriendshipEarned: state.dailyFriendshipEarned + earned,
-        dailyInteractions: [
-          ...state.dailyInteractions,
-          { type: IT.GIFT_TROOPS, targetFriendId: friendId, timestamp: now },
-        ],
-      },
-      friendshipEarned: earned,
-    };
+    const result = this.interactionSubsystem.giftTroops(state, friendId, now);
+    return { state: result.state, friendshipEarned: result.pointsEarned };
   }
 
   /**
-   * 拜访主城
+   * 拜访主城（委托 FriendInteractionSubsystem）
    */
   visitCastle(state: SocialState, friendId: string, now: number): {
     state: SocialState;
     copperReward: number;
   } {
-    const todayVisits = state.dailyInteractions.filter(
-      (i) => i.type === IT.VISIT_CASTLE,
-    );
-    if (todayVisits.length >= this.interactionConfig.visitDailyLimit) {
-      throw new Error('今日拜访次数已达上限');
-    }
-    if (!state.friends[friendId]) {
-      throw new Error('不是好友');
-    }
-
-    return {
-      state: {
-        ...state,
-        dailyInteractions: [
-          ...state.dailyInteractions,
-          { type: IT.VISIT_CASTLE, targetFriendId: friendId, timestamp: now },
-        ],
-      },
-      copperReward: this.interactionConfig.visitCopperReward,
-    };
+    const result = this.interactionSubsystem.visitCastle(state, friendId, now);
+    return { state: result.state, copperReward: result.copperReward };
   }
 
   /**
-   * 切磋
+   * 切磋（委托 FriendInteractionSubsystem）
    */
   spar(state: SocialState, friendId: string, won: boolean, now: number): {
     state: SocialState;
     friendshipEarned: number;
   } {
-    const todaySpars = state.dailyInteractions.filter(
-      (i) => i.type === IT.SPAR,
-    );
-    if (todaySpars.length >= this.interactionConfig.sparDailyLimit) {
-      throw new Error('今日切磋次数已达上限');
-    }
-    if (!state.friends[friendId]) {
-      throw new Error('不是好友');
-    }
-
-    const basePoints = won
-      ? this.interactionConfig.sparWinPoints
-      : this.interactionConfig.sparLosePoints;
-    const earned = this.calculateFriendshipEarned(state, basePoints);
-
-    return {
-      state: {
-        ...state,
-        friendshipPoints: state.friendshipPoints + earned,
-        dailyFriendshipEarned: state.dailyFriendshipEarned + earned,
-        dailyInteractions: [
-          ...state.dailyInteractions,
-          { type: IT.SPAR, targetFriendId: friendId, timestamp: now },
-        ],
-      },
-      friendshipEarned: earned,
-    };
+    const result = this.interactionSubsystem.spar(state, friendId, won, now);
+    return { state: result.state, friendshipEarned: result.pointsEarned };
   }
 
   // ── 借将系统（委托 BorrowHeroSubsystem） ──
-
-  private borrowSubsystem: import('./BorrowHeroSubsystem').BorrowHeroSubsystem;
 
   /**
    * 借将
@@ -363,7 +298,7 @@ export class FriendSystem {
   ): { state: SocialState; powerRatio: number } {
     return this.borrowSubsystem.borrowHero(
       state, heroId, lenderPlayerId, borrowerPlayerId, now,
-      (s, pts) => this.calculateFriendshipEarned(s, pts),
+      (s: SocialState, pts: number) => this.calculateFriendshipEarned(s, pts),
     );
   }
 

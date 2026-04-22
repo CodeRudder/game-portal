@@ -37,6 +37,32 @@ import {
   MilestoneStatus,
 } from '../../core/activity/activity.types';
 
+import {
+  DEFAULT_SEASON_THEMES,
+  getCurrentSeasonTheme as _getTheme,
+  createSettlementAnimation as _createAnim,
+  updateSeasonRecord as _updateRecord,
+  generateSeasonRecordRanking as _genRanking,
+  getSeasonThemes as _getThemes,
+} from './SeasonHelper';
+export { DEFAULT_SEASON_THEMES };
+
+// 从 ActivityFactory 导入工厂函数（类内部使用）
+import {
+  createDefaultActivityState,
+  createActivityInstance,
+  createActivityTask,
+  createMilestone,
+} from './ActivityFactory';
+
+// 重新导出供外部使用
+export {
+  createDefaultActivityState,
+  createActivityInstance,
+  createActivityTask,
+  createMilestone,
+};
+
 // ─────────────────────────────────────────────
 // 常量
 // ─────────────────────────────────────────────
@@ -66,83 +92,16 @@ export const ACTIVITY_SAVE_VERSION = 1;
 /** 每秒基础积分（离线计算用） */
 const BASE_POINTS_PER_SECOND = 0.1;
 
-/** 默认赛季主题列表 */
-export const DEFAULT_SEASON_THEMES: SeasonTheme[] = [
-  { id: 'theme_s1', name: '黄巾之乱', description: '苍天已死，黄天当立', avatarFrameId: 'frame_s1', kingTitle: '平乱功臣' },
-  { id: 'theme_s2', name: '群雄逐鹿', description: '天下英雄谁敌手', avatarFrameId: 'frame_s2', kingTitle: '天下霸主' },
-  { id: 'theme_s3', name: '赤壁烽火', description: '东风不与周郎便', avatarFrameId: 'frame_s3', kingTitle: '赤壁英雄' },
-  { id: 'theme_s4', name: '三国鼎立', description: '三分天下有其一', avatarFrameId: 'frame_s4', kingTitle: '一统天下' },
-];
+/** 默认赛季主题列表 — 从 SeasonHelper.ts 导入（已在顶部导入） */
 
-// ─────────────────────────────────────────────
-// 工具函数
-// ─────────────────────────────────────────────
-
-/** 创建默认活动状态 */
-export function createDefaultActivityState(): ActivityState {
-  return {
-    activities: {},
-    signIn: {
-      consecutiveDays: 0,
-      todaySigned: false,
-      lastSignInTime: 0,
-      weeklyRetroactiveCount: 0,
-      lastRetroactiveResetWeek: 0,
-    },
-    seasonRecord: {
-      seasonId: '',
-      wins: 0,
-      losses: 0,
-      total: 0,
-      winRate: 0,
-      highestRank: '',
-      highestRanking: 0,
-    },
-  };
-}
-
-/** 从活动定义创建活动实例 */
-export function createActivityInstance(def: ActivityDef, now: number): ActivityInstance {
-  return {
-    defId: def.id,
-    status: ActivityStatus.ACTIVE,
-    points: 0,
-    tokens: 0,
-    tasks: [],
-    milestones: [],
-    createdAt: now,
-  };
-}
-
-/** 从任务定义创建任务实例 */
-export function createActivityTask(def: ActivityTaskDef): ActivityTask {
-  return {
-    defId: def.id,
-    taskType: def.taskType,
-    currentProgress: 0,
-    targetCount: def.targetCount,
-    status: ActivityTaskStatus.INCOMPLETE,
-    tokenReward: def.tokenReward,
-    pointReward: def.pointReward,
-    resourceReward: { ...def.resourceReward },
-  };
-}
-
-/** 创建里程碑 */
-export function createMilestone(
-  id: string,
-  requiredPoints: number,
-  rewards: Record<string, number>,
-  isFinal = false,
-): ActivityMilestone {
-  return {
-    id,
-    requiredPoints,
-    status: MilestoneStatus.LOCKED,
-    rewards: { ...rewards },
-    isFinal,
-  };
-}
+/** seasonHelper 委托对象 */
+const seasonHelper = {
+  getCurrentSeasonTheme: _getTheme,
+  createSettlementAnimation: _createAnim,
+  updateSeasonRecord: _updateRecord,
+  generateSeasonRecordRanking: _genRanking,
+  getSeasonThemes: _getThemes,
+};
 
 // ─────────────────────────────────────────────
 // ActivitySystem 类
@@ -479,83 +438,31 @@ export class ActivitySystem {
   }
 
   // ── 赛季深化 ──────────────────────────────
+  // 赛季方法委托到 SeasonHelper.ts
 
-  /**
-   * 获取当前赛季主题
-   */
+  /** 获取当前赛季主题 */
   getCurrentSeasonTheme(seasonIndex: number): SeasonTheme {
-    const idx = seasonIndex % DEFAULT_SEASON_THEMES.length;
-    return DEFAULT_SEASON_THEMES[idx];
+    return seasonHelper.getCurrentSeasonTheme(seasonIndex);
   }
 
-  /**
-   * 生成赛季结算动画数据
-   */
+  /** 生成赛季结算动画数据 */
   createSettlementAnimation(
-    seasonId: string,
-    oldRankId: string,
-    newRankId: string,
-    oldRanking: number,
-    newRanking: number,
+    seasonId: string, oldRankId: string, newRankId: string,
+    oldRanking: number, newRanking: number,
     rewards: SeasonSettlementAnimation['rewards'],
     isServerAnnouncement: boolean,
   ): SeasonSettlementAnimation {
-    return {
-      seasonId,
-      oldRankId,
-      newRankId,
-      oldRanking,
-      newRanking,
-      rewards,
-      isServerAnnouncement,
-    };
+    return seasonHelper.createSettlementAnimation(seasonId, oldRankId, newRankId, oldRanking, newRanking, rewards, isServerAnnouncement);
   }
 
-  /**
-   * 更新赛季战绩
-   */
-  updateSeasonRecord(
-    record: SeasonRecord,
-    won: boolean,
-    currentRank: string,
-    currentRanking: number,
-  ): SeasonRecord {
-    const wins = record.wins + (won ? 1 : 0);
-    const losses = record.losses + (won ? 0 : 1);
-    const total = wins + losses;
-
-    return {
-      ...record,
-      wins,
-      losses,
-      total,
-      winRate: total > 0 ? Math.round((wins / total) * 100) : 0,
-      highestRank: currentRank,
-      highestRanking: Math.min(currentRanking, record.highestRanking || currentRanking),
-    };
+  /** 更新赛季战绩 */
+  updateSeasonRecord(record: SeasonRecord, won: boolean, currentRank: string, currentRanking: number): SeasonRecord {
+    return seasonHelper.updateSeasonRecord(record, won, currentRank, currentRanking);
   }
 
-  /**
-   * 生成赛季战绩排行
-   */
-  generateSeasonRecordRanking(
-    records: Array<{ playerId: string; playerName: string; record: SeasonRecord }>,
-  ): SeasonRecordEntry[] {
-    const entries = records
-      .map(r => ({
-        playerId: r.playerId,
-        playerName: r.playerName,
-        wins: r.record.wins,
-        winRate: r.record.winRate,
-        rank: 0,
-      }))
-      .sort((a, b) => {
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        return b.winRate - a.winRate;
-      });
-
-    entries.forEach((e, i) => { e.rank = i + 1; });
-    return entries;
+  /** 生成赛季战绩排行 */
+  generateSeasonRecordRanking(records: Array<{ playerId: string; playerName: string; record: SeasonRecord }>): SeasonRecordEntry[] {
+    return seasonHelper.generateSeasonRecordRanking(records);
   }
 
   // ── 工具方法 ──────────────────────────────
@@ -572,7 +479,7 @@ export class ActivitySystem {
 
   /** 获取赛季主题列表 */
   getSeasonThemes(): SeasonTheme[] {
-    return [...DEFAULT_SEASON_THEMES];
+    return seasonHelper.getSeasonThemes();
   }
 
   // ── 存档序列化 ──────────────────────────

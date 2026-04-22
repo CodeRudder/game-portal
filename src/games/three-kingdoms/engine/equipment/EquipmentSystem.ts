@@ -11,27 +11,27 @@
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   EquipmentSlot, EquipmentRarity, EquipmentInstance, EquipmentSource,
-  MainStat, SubStat, SpecialEffect, SubStatType,
+  MainStat, SubStat, SpecialEffect,
   BagSortMode, BagFilter, BagOperationResult,
   DecomposeResult, BatchDecomposeResult, EquipmentSaveData,
   HeroEquipSlots, EquipResult, CampaignType, CodexEntry,
 } from '../../core/equipment';
 import {
   EQUIPMENT_SLOTS, EQUIPMENT_RARITIES, RARITY_ORDER,
-  SLOT_MAIN_STAT_TYPE, SLOT_MAIN_STAT_BASE,
-  SLOT_SUB_STAT_POOL, SLOT_SPECIAL_EFFECT_POOL,
-  SLOT_NAME_PREFIXES, RARITY_NAME_PREFIX,
+  DEFAULT_BAG_CAPACITY, TEMPLATE_MAP,
 } from '../../core/equipment';
 import {
-  DEFAULT_BAG_CAPACITY, RARITY_ENHANCE_CAP,
-  RARITY_MAIN_STAT_MULTIPLIER, RARITY_SUB_STAT_MULTIPLIER,
-  RARITY_SUB_STAT_COUNT, RARITY_SPECIAL_EFFECT_CHANCE,
-  ENHANCE_MAIN_STAT_FACTOR, ENHANCE_SUB_STAT_FACTOR,
-  SUB_STAT_BASE_RANGE, SPECIAL_EFFECT_VALUE_RANGE,
-  DECOMPOSE_COPPER_BASE, DECOMPOSE_STONE_BASE, DECOMPOSE_ENHANCE_BONUS,
-  EQUIPMENT_SAVE_VERSION, TEMPLATE_MAP,
+  RARITY_ENHANCE_CAP,
+  EQUIPMENT_SAVE_VERSION,
+  RARITY_MAIN_STAT_MULTIPLIER,
+  RARITY_SUB_STAT_MULTIPLIER,
+  ENHANCE_MAIN_STAT_FACTOR,
+  ENHANCE_SUB_STAT_FACTOR,
 } from '../../core/equipment';
 import { EquipmentBagManager } from './EquipmentBagManager';
+import { EquipmentDecomposer } from './EquipmentDecomposer';
+import * as genHelper from './EquipmentGenHelper';
+import { weightedPickRarity, seedPick } from './EquipmentGenHelper';
 
 // ─────────────────────────────────────────────
 // 关卡掉落权重
@@ -49,49 +49,8 @@ const SOURCE_RARITY_WEIGHTS: Record<string, Record<EquipmentRarity, number>> = {
 };
 
 // ─────────────────────────────────────────────
-// 辅助函数
-// ─────────────────────────────────────────────
-
-let _uidCounter = 0;
-
-/** 生成唯一ID */
-function generateUid(): string {
-  return `eq_${Date.now()}_${(_uidCounter++).toString(36).padStart(4, '0')}_${Math.random().toString(36).slice(2, 6)}`;
-}
-
-/** 重置UID计数器（测试用） */
-export function resetUidCounter(): void {
-  _uidCounter = 0;
-}
-
-/** 范围内随机整数 */
-function randInt(min: number, max: number, seed: number): number {
-  return min + (seed % (max - min + 1));
-}
-
-/** 范围内随机浮点 */
-function randFloat(min: number, max: number, seed: number): number {
-  const norm = ((seed * 9301 + 49297) % 233280) / 233280;
-  return min + norm * (max - min);
-}
-
-/** 从数组中按种子选取 */
-function seedPick<T>(arr: readonly T[], seed: number): T {
-  return arr[Math.abs(seed) % arr.length];
-}
-
-/** 根据权重和种子选取品质 */
-function weightedPickRarity(weights: Record<string, number>, seed: number): string {
-  const entries = Object.entries(weights);
-  const total = entries.reduce((s, [, w]) => s + w, 0);
-  if (total === 0) return entries[0]?.[0] ?? 'white';
-  let roll = ((seed * 9301 + 49297) % 233280) / 233280 * total;
-  for (const [key, weight] of entries) {
-    roll -= weight;
-    if (roll <= 0) return key;
-  }
-  return entries[entries.length - 1][0];
-}
+// 重新导出生成辅助函数（保持向后兼容）
+export { generateUid, resetUidCounter, weightedPickRarity } from './EquipmentGenHelper';
 
 // ─────────────────────────────────────────────
 // EquipmentSystem
@@ -103,6 +62,8 @@ export class EquipmentSystem implements ISubsystem {
 
   /** 背包管理器 */
   private bag: EquipmentBagManager;
+  /** 分解与图鉴管理器 */
+  private decomposer: EquipmentDecomposer;
   /** 武将装备栏 heroId → HeroEquipSlots */
   private heroEquips: Map<string, HeroEquipSlots> = new Map();
   /** 装备图鉴 templateId → CodexEntry */
@@ -114,6 +75,9 @@ export class EquipmentSystem implements ISubsystem {
     this.bag = new EquipmentBagManager(
       (event, payload) => this.emitEvent(event, payload),
       (templateId) => TEMPLATE_MAP.get(templateId) as { setId?: string } | undefined,
+    );
+    this.decomposer = new EquipmentDecomposer(
+      this.bag, this.codex, (event, payload) => this.emitEvent(event, payload),
     );
   }
 
@@ -347,64 +311,35 @@ export class EquipmentSystem implements ISubsystem {
   }
 
   // ─────────────────────────────────────────────
-  // 装备分解
+  // 装备分解 — 委托到 EquipmentDecomposer
   // ─────────────────────────────────────────────
 
   calculateDecomposeReward(eq: EquipmentInstance): DecomposeResult {
-    const enhanceBonus = 1 + eq.enhanceLevel * DECOMPOSE_ENHANCE_BONUS;
-    return {
-      copper: Math.floor(DECOMPOSE_COPPER_BASE[eq.rarity] * enhanceBonus),
-      enhanceStone: Math.floor(DECOMPOSE_STONE_BASE[eq.rarity] * enhanceBonus),
-    };
+    return this.decomposer.calculateDecomposeReward(eq);
   }
 
   getDecomposePreview(uid: string): DecomposeResult | null {
-    const eq = this.bag.get(uid);
-    if (!eq) return null;
-    return this.calculateDecomposeReward(eq);
-  }
-
-  private decomposeSingle(uid: string): { success: boolean; result?: DecomposeResult; reason?: string } {
-    const eq = this.bag.get(uid);
-    if (!eq) return { success: false, reason: '装备不存在' };
-    if (eq.isEquipped) return { success: false, reason: '已穿戴装备不可分解' };
-    const reward = this.calculateDecomposeReward(eq);
-    this.bag.removeFromBag(uid);
-    this.emitEvent('equipment:decomposed', { uid, reward });
-    return { success: true, result: reward };
+    return this.decomposer.getDecomposePreview(uid);
   }
 
   decompose(uidOrUids: string | string[]): { success: boolean; result?: DecomposeResult; reason?: string } | BatchDecomposeResult {
-    if (Array.isArray(uidOrUids)) return this.batchDecompose(uidOrUids);
-    return this.decomposeSingle(uidOrUids);
+    return this.decomposer.decompose(uidOrUids);
   }
 
   batchDecompose(uids: string[]): BatchDecomposeResult {
-    const total: DecomposeResult = { copper: 0, enhanceStone: 0 };
-    const decomposedUids: string[] = [];
-    const skippedUids: string[] = [];
-    for (const uid of uids) {
-      const r = this.decomposeSingle(uid);
-      if ('success' in r && r.success && r.result) {
-        total.copper += r.result.copper;
-        total.enhanceStone += r.result.enhanceStone;
-        decomposedUids.push(uid);
-      } else { skippedUids.push(uid); }
-    }
-    return { total, decomposedUids, skippedUids };
+    return this.decomposer.batchDecompose(uids);
   }
 
   decomposeAllUnequipped(): BatchDecomposeResult {
-    const uids = this.getAllEquipments().filter(e => !e.isEquipped).map(e => e.uid);
-    return this.batchDecompose(uids);
+    return this.decomposer.decomposeAllUnequipped(() => this.getAllEquipments());
   }
 
   // ─────────────────────────────────────────────
-  // 图鉴
+  // 图鉴 — 委托到 EquipmentDecomposer
   // ─────────────────────────────────────────────
 
-  isCodexDiscovered(templateId: string): boolean { return this.codex.has(templateId); }
-  getCodexEntry(templateId: string): CodexEntry | null { return this.codex.get(templateId) ?? null; }
+  isCodexDiscovered(templateId: string): boolean { return this.decomposer.isCodexDiscovered(templateId); }
+  getCodexEntry(templateId: string): CodexEntry | null { return this.decomposer.getCodexEntry(templateId); }
 
   // ─────────────────────────────────────────────
   // 序列化
@@ -440,98 +375,35 @@ export class EquipmentSystem implements ISubsystem {
   }
 
   // ─────────────────────────────────────────────
-  // 私有方法
+  // 私有方法 — 委托到 EquipmentGenHelper
   // ─────────────────────────────────────────────
 
   private isSlot(value: string): value is EquipmentSlot {
-    return (EQUIPMENT_SLOTS as readonly string[]).includes(value);
+    return genHelper.isSlot(value);
   }
 
   private generateBySlot(slot: EquipmentSlot, rarity: EquipmentRarity, source: EquipmentSource, seed: number): EquipmentInstance {
-    const uid = generateUid();
-    const mainStat = this.genMainStat(slot, rarity, seed);
-    const subStats = this.genSubStats(slot, rarity, seed + 100);
-    const specialEffect = this.genSpecialEffect(slot, rarity, seed + 200);
-    const namePrefix = RARITY_NAME_PREFIX[rarity];
-    const baseName = seedPick(SLOT_NAME_PREFIXES[slot], seed + 300);
-    return {
-      uid, templateId: `tpl_${slot}_${rarity}`, name: namePrefix ? `${namePrefix}${baseName}` : baseName,
-      slot, rarity, enhanceLevel: 0, mainStat, subStats, specialEffect,
-      source, acquiredAt: Date.now(), isEquipped: false, equippedHeroId: null, seed,
-    };
+    return genHelper.generateBySlot(slot, rarity, source, seed);
   }
 
   private generateByTemplate(templateId: string, rarity: EquipmentRarity, seed: number): EquipmentInstance | null {
-    const tpl = TEMPLATE_MAP.get(templateId);
-    if (!tpl) return null;
-    const uid = generateUid();
-    const mainStat: MainStat = {
-      type: tpl.mainStatType, baseValue: tpl.baseMainStat,
-      value: Math.floor(tpl.baseMainStat * RARITY_MAIN_STAT_MULTIPLIER[rarity]),
-    };
-    const [minC, maxC] = RARITY_SUB_STAT_COUNT[rarity];
-    const count = minC + (seed % (maxC - minC + 1));
-    const subStats: SubStat[] = [];
-    for (let i = 0; i < Math.min(count, tpl.subStatPool.length); i++) {
-      const statType = tpl.subStatPool[(seed + i) % tpl.subStatPool.length];
-      const range = SUB_STAT_BASE_RANGE[statType];
-      const baseValue = randFloat(range.min, range.max, seed + i + 50);
-      subStats.push({ type: statType, baseValue: Math.floor(baseValue), value: Math.floor(baseValue * RARITY_SUB_STAT_MULTIPLIER[rarity]) });
-    }
-    return {
-      uid, templateId: tpl.id, name: `${RARITY_NAME_PREFIX[rarity]}${tpl.name}`,
-      slot: tpl.slot, rarity, enhanceLevel: 0, mainStat, subStats,
-      specialEffect: this.genSpecialEffect(tpl.slot, rarity, seed + 200),
-      source: 'forge', acquiredAt: Date.now(), isEquipped: false, equippedHeroId: null, seed,
-    };
+    return genHelper.generateByTemplate(templateId, rarity, seed);
   }
 
   private genMainStat(slot: EquipmentSlot, rarity: EquipmentRarity, seed: number): MainStat {
-    const type = SLOT_MAIN_STAT_TYPE[slot];
-    const range = SLOT_MAIN_STAT_BASE[slot];
-    const baseValue = randInt(range.min, range.max, seed);
-    return { type, baseValue, value: Math.floor(baseValue * RARITY_MAIN_STAT_MULTIPLIER[rarity]) };
+    return genHelper.genMainStat(slot, rarity, seed);
   }
 
   private genSubStats(slot: EquipmentSlot, rarity: EquipmentRarity, seed: number): SubStat[] {
-    const [minC, maxC] = RARITY_SUB_STAT_COUNT[rarity];
-    const count = minC === maxC ? minC : minC + (seed % (maxC - minC + 1));
-    const pool = SLOT_SUB_STAT_POOL[slot];
-    const result: SubStat[] = [];
-    const used = new Set<SubStatType>();
-    for (let i = 0; i < count && i < pool.length; i++) {
-      const idx = Math.abs(seed + i * 7) % pool.length;
-      const statType = pool[idx];
-      if (used.has(statType)) continue;
-      used.add(statType);
-      const range = SUB_STAT_BASE_RANGE[statType];
-      const baseValue = randFloat(range.min, range.max, seed + i * 13);
-      result.push({ type: statType, baseValue: Math.floor(baseValue), value: Math.floor(baseValue * RARITY_SUB_STAT_MULTIPLIER[rarity]) });
-    }
-    return result;
+    return genHelper.genSubStats(slot, rarity, seed);
   }
 
   private genSpecialEffect(slot: EquipmentSlot, rarity: EquipmentRarity, seed: number): SpecialEffect | null {
-    const chance = RARITY_SPECIAL_EFFECT_CHANCE[rarity];
-    if (chance <= 0) return null;
-    const roll = ((seed * 9301 + 49297) % 233280) / 233280;
-    if (roll >= chance) return null;
-    const pool = SLOT_SPECIAL_EFFECT_POOL[slot];
-    const effectType = pool[Math.abs(seed) % pool.length];
-    const range = SPECIAL_EFFECT_VALUE_RANGE[effectType];
-    const value = randFloat(range.min, range.max, seed + 77);
-    return { type: effectType, value: Math.floor(value * 10) / 10, description: `${effectType} +${Math.floor(value)}%` };
+    return genHelper.genSpecialEffect(slot, rarity, seed);
   }
 
   private updateCodex(eq: EquipmentInstance): void {
-    const tid = eq.templateId;
-    const existing = this.codex.get(tid);
-    if (existing) {
-      existing.obtainCount++;
-      if (RARITY_ORDER[eq.rarity] > RARITY_ORDER[existing.bestRarity ?? 'white']) existing.bestRarity = eq.rarity;
-    } else {
-      this.codex.set(tid, { templateId: tid, discovered: true, bestRarity: eq.rarity, obtainCount: 1 });
-    }
+    this.decomposer.updateCodex(eq);
   }
 
   private emitEvent(event: string, payload: unknown): void {

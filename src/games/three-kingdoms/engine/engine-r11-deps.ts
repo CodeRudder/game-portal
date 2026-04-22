@@ -28,13 +28,17 @@ import { AllianceTaskSystem } from './alliance/AllianceTaskSystem';
 import { AllianceBossSystem } from './alliance/AllianceBossSystem';
 import { AllianceShopSystem } from './alliance/AllianceShopSystem';
 import { PrestigeSystem } from './prestige/PrestigeSystem';
+import { PrestigeShopSystem } from './prestige/PrestigeShopSystem';
+import { RebirthSystem } from './prestige/RebirthSystem';
 import { QuestSystem } from './quest/QuestSystem';
 import { AchievementSystem } from './achievement/AchievementSystem';
 import { FriendSystem } from './social/FriendSystem';
 import { ChatSystem } from './social/ChatSystem';
 import { LeaderboardSystem as SocialLeaderboardSystem } from './social/LeaderboardSystem';
 import { HeritageSystem } from './heritage/HeritageSystem';
+import { AdvisorSystem } from './advisor/AdvisorSystem';
 import { ActivitySystem } from './activity/ActivitySystem';
+import { SignInSystem } from './activity/SignInSystem';
 import { TradeSystem } from './trade/TradeSystem';
 import { CaravanSystem } from './trade/CaravanSystem';
 import { SettingsManager } from './settings/SettingsManager';
@@ -70,13 +74,17 @@ export interface R11Systems {
   allianceBossSystem: AllianceBossSystem;
   allianceShopSystem: AllianceShopSystem;
   prestigeSystem: PrestigeSystem;
+  prestigeShopSystem: PrestigeShopSystem;
+  rebirthSystem: RebirthSystem;
   questSystem: QuestSystem;
   achievementSystem: AchievementSystem;
   friendSystem: FriendSystem;
   chatSystem: ChatSystem;
   socialLeaderboardSystem: SocialLeaderboardSystem;
   heritageSystem: HeritageSystem;
+  advisorSystem: AdvisorSystem;
   activitySystem: ActivitySystem;
+  signInSystem: SignInSystem;
   tradeSystem: TradeSystem;
   caravanSystem: CaravanSystem;
   settingsManager: SettingsManager;
@@ -105,19 +113,26 @@ export function createR11Systems(equipmentSystem?: EquipmentSystemType): R11Syst
     arenaSystem: new ArenaSystem(),
     arenaSeasonSystem: new ArenaSeasonSystem(),
     rankingSystem: new RankingSystem(),
+    pvpBattleSystem: new PvPBattleSystem(),
+    defenseFormationSystem: new DefenseFormationSystem(),
+    arenaShopSystem: new ArenaShopSystem(),
     expeditionSystem: new ExpeditionSystem(),
     allianceSystem: new AllianceSystem(),
     allianceTaskSystem: new AllianceTaskSystem(),
     allianceBossSystem: new AllianceBossSystem(),
     allianceShopSystem: new AllianceShopSystem(),
     prestigeSystem: new PrestigeSystem(),
+    prestigeShopSystem: new PrestigeShopSystem(),
+    rebirthSystem: new RebirthSystem(),
     questSystem: new QuestSystem(),
     achievementSystem: new AchievementSystem(),
     friendSystem: new FriendSystem(),
     chatSystem: new ChatSystem(),
     socialLeaderboardSystem: new SocialLeaderboardSystem(),
     heritageSystem: new HeritageSystem(),
+    advisorSystem: new AdvisorSystem(),
     activitySystem: new ActivitySystem(),
+    signInSystem: new SignInSystem(),
     tradeSystem: new TradeSystem(),
     caravanSystem: new CaravanSystem(),
     settingsManager: new SettingsManager(),
@@ -141,22 +156,31 @@ export function registerR11Systems(registry: SubsystemRegistry, systems: R11Syst
   r.register('equipment', systems.equipmentSystem);
   r.register('equipmentForge', systems.equipmentForgeSystem);
   r.register('equipmentEnhance', systems.equipmentEnhanceSystem);
+  r.register('equipmentSet', systems.equipmentSetSystem);
+  r.register('equipmentRecommend', systems.equipmentRecommendSystem);
   r.register('arena', systems.arenaSystem);
   r.register('arenaSeason', systems.arenaSeasonSystem);
   r.register('ranking', systems.rankingSystem);
+  r.register('pvpBattle', systems.pvpBattleSystem);
+  r.register('defenseFormation', systems.defenseFormationSystem);
+  r.register('arenaShop', systems.arenaShopSystem);
   r.register('expedition', systems.expeditionSystem);
   r.register('alliance', systems.allianceSystem);
   r.register('allianceTask', systems.allianceTaskSystem);
   r.register('allianceBoss', systems.allianceBossSystem);
   r.register('allianceShop', systems.allianceShopSystem);
   r.register('prestige', systems.prestigeSystem);
+  r.register('prestigeShop', systems.prestigeShopSystem);
+  r.register('rebirth', systems.rebirthSystem);
   r.register('quest', systems.questSystem);
   r.register('achievement', systems.achievementSystem);
   r.register('friend', systems.friendSystem);
   r.register('chat', systems.chatSystem);
   r.register('socialLeaderboard', systems.socialLeaderboardSystem);
   r.register('heritage', systems.heritageSystem);
+  r.register('advisor', systems.advisorSystem);
   r.register('activity', systems.activitySystem);
+  r.register('signIn', systems.signInSystem);
   r.register('trade', systems.tradeSystem);
   r.register('caravan', systems.caravanSystem);
   r.register('settings', systems.settingsManager);
@@ -186,8 +210,11 @@ export function resetR11Systems(systems: R11Systems): void {
   systems.equipmentForgeSystem.reset();
   systems.equipmentEnhanceSystem.reset();
   systems.prestigeSystem.reset();
+  systems.prestigeShopSystem.reset();
+  systems.rebirthSystem.reset();
   systems.questSystem.reset();
   systems.achievementSystem.reset();
   systems.heritageSystem.reset();
+  systems.advisorSystem.reset();
   systems.accountSystem.reset();
 }

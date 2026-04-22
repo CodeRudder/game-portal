@@ -1,0 +1,48 @@
+{
+  "passed": [
+    "无NaN/undefined显示",
+    "移动端页面正常渲染",
+    "无横向溢出"
+  ],
+  "failed": [
+    {
+      "name": "主页面加载",
+      "detail": "页面内容为空"
+    }
+  ],
+  "warnings": [
+    {
+      "name": "声望按钮未找到",
+      "detail": "undefined"
+    },
+    {
+      "name": "声望商店按钮未找到",
+      "detail": "可能需要先打开声望面板"
+    },
+    {
+      "name": "转生按钮未找到",
+      "detail": "可能需要满足解锁条件"
+    },
+    {
+      "name": "成就按钮未找到",
+      "detail": "可能需要先解锁"
+    },
+    {
+      "name": "任务按钮未找到",
+      "detail": "undefined"
+    }
+  ],
+  "screenshots": [
+    "v14-main-page",
+    "v14-mobile-main"
+  ],
+  "consoleErrors": [],
+  "startTime": "2026-04-22T13:51:02.673Z",
+  "endTime": "2026-04-22T13:51:10.942Z",
+  "summary": {
+    "total": 4,
+    "passed": 3,
+    "failed": 1,
+    "warnings": 5
+  }
+}
