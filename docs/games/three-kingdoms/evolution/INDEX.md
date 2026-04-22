@@ -11,6 +11,7 @@
 - [Round 3复盘: P1修复](./progress/evolution-progress-r3.md) — Round 2发现的4个P1问题全部修复，0P0/0P1收官
 - [Round 19: v19.0天下一统(上)](./evolution-r19.md) — 合并冲突修复+双目录重叠治理+引擎API冒烟测试+23/23 UI通过
 - [Round 20: v20.0天下一统(下)](./evolution-r20.md) — 全链路联调验证+数值平衡5维审查+性能优化三件套+17/17 UI通过+项目收官
+- [v11.0 R2: 群雄逐鹿进化迭代](../tech-reviews/v11.0-review-r2.md) — Play文档7流程+技术审查P0:0/P1:6/P2:5+3条经验教训
 
 ## 进化规则
 ### EVO-001: 提取即删除
