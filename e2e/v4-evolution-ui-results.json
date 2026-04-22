@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-04-22T10:44:45.172Z",
+  "version": "v4.0",
+  "module": "攻城略地(下)",
+  "type": "进化迭代R1",
+  "summary": {
+    "passed": 15,
+    "failed": 0,
+    "warnings": 7,
+    "screenshots": 8,
+    "consoleErrors": 0
+  },
+  "passed": [
+    "游戏主界面加载成功",
+    "主界面数据完整性检查通过",
+    "TechTab容器(data-testid=\"tech-tab\")存在",
+    "科技树节点数量: 24",
+    "点击可用科技节点成功",
+    "研究队列面板存在",
+    "CampaignTab(data-testid=\"campaign-tab\")存在",
+    "关卡节点数量: 8",
+    "战前布阵弹窗(data-testid)已打开",
+    "敌方单位数量: 3",
+    "战力对比区域存在",
+    "科技Tab移动端渲染",
+    "关卡Tab移动端渲染",
+    "最终数据完整性检查通过",
+    "无控制台错误"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "科技路线选择器",
+      "detail": "未找到路线选择器"
+    },
+    {
+      "name": "科技点显示",
+      "detail": ".tk-tech-points 未找到"
+    },
+    {
+      "name": "科技详情弹窗",
+      "detail": "点击节点后未弹出详情"
+    },
+    {
+      "name": "扫荡按钮",
+      "detail": "未找到（可能无已通关关卡）"
+    },
+    {
+      "name": "出征按钮",
+      "detail": "按钮被禁用（可能无武将）"
+    },
+    {
+      "name": "武将卡片",
+      "detail": "未找到武将卡片"
+    },
+    {
+      "name": "已通关关卡",
+      "detail": "无已通关关卡，跳过扫荡测试"
+    }
+  ],
+  "screenshots": [
+    "v4e-00-main",
+    "v4e-01-tech-tab",
+    "v4e-02-tech-node-click",
+    "v4e-03-campaign-tab",
+    "v4e-04a-click-stage",
+    "v4e-05-hero-tab",
+    "v4e-07a-tech-mobile",
+    "v4e-07b-campaign-mobile"
+  ],
+  "consoleErrors": []
+}

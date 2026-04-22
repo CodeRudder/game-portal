@@ -270,6 +270,7 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
           <button
             className={`tk-brm-confirm-btn ${isVictory ? 'tk-brm-confirm-btn--victory' : 'tk-brm-confirm-btn--defeat'}`}
             onClick={onConfirm}
+            data-testid="battle-result-confirm"
           >
             {isVictory ? '确认' : '返回'}
           </button>

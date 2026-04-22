@@ -129,7 +129,7 @@ export class UltimateSkillSystem implements ISubsystem {
   /**
    * 获取当前时停状态
    */
-  getState(): TimeStopState {
+  getTimeStopState(): TimeStopState {
     return this.state;
   }
 

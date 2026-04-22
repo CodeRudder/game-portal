@@ -345,18 +345,18 @@ const HeroStarUpModal: React.FC<HeroStarUpModalProps> = ({
 
   return (
     <div className="tk-starup-overlay" role="dialog" aria-modal="true" aria-label="武将升星" data-testid="starup-modal-overlay">
-      <div className="tk-starup-modal">
+      <div className="tk-starup-modal" data-testid="starup-modal-content">
         {/* 标题栏 */}
         <div className="tk-starup-header">
           <div>
-            <span className="tk-starup-title">⭐ {generalName} 升星</span>
+            <span className="tk-starup-title" data-testid="starup-modal-title">⭐ {generalName} 升星</span>
             <span className="tk-starup-subtitle">Lv.{level}/{levelCap}</span>
           </div>
-          <button className="tk-starup-close" onClick={onClose} aria-label="关闭">✕</button>
+          <button className="tk-starup-close" onClick={onClose} aria-label="关闭" data-testid="starup-modal-close">✕</button>
         </div>
 
         {/* 内容区 */}
-        <div className="tk-starup-body">
+        <div className="tk-starup-body" data-testid="starup-modal-body">
           {/* 星级展示 */}
           <div className="tk-starup-star-display">
             {renderStars()}

@@ -77,7 +77,7 @@ describe('UltimateSkillSystem', () => {
   // ── 初始状态 ──
 
   describe('初始状态', () => {
-    it('初始状态应为 INACTIVE', () => expect(system.getState()).toBe(TimeStopState.INACTIVE));
+    it('初始状态应为 INACTIVE', () => expect(system.getTimeStopState()).toBe(TimeStopState.INACTIVE));
     it('默认启用时停', () => expect(system.isEnabled()).toBe(true));
     it('初始无等待单位', () => {
       expect(system.getPendingUnitId()).toBeNull();
@@ -178,7 +178,7 @@ describe('UltimateSkillSystem', () => {
 
       expect(handler.onBattlePaused).toHaveBeenCalledTimes(1);
       expect(system.isPaused()).toBe(true);
-      expect(system.getState()).toBe(TimeStopState.PAUSED);
+      expect(system.getTimeStopState()).toBe(TimeStopState.PAUSED);
     });
 
     it('应记录等待的单位ID和技能ID', () => {
@@ -212,7 +212,7 @@ describe('UltimateSkillSystem', () => {
       const result = system.confirmUltimate('hero1', 'ultimate_fire');
       expect(result).toBe(true);
       expect(handler.onUltimateConfirmed).toHaveBeenCalledTimes(1);
-      expect(system.getState()).toBe(TimeStopState.INACTIVE);
+      expect(system.getTimeStopState()).toBe(TimeStopState.INACTIVE);
     });
 
     it('确认错误的单位ID应失败', () => {
@@ -258,7 +258,7 @@ describe('UltimateSkillSystem', () => {
 
       system.cancelUltimate();
       expect(handler.onUltimateCancelled).toHaveBeenCalledTimes(1);
-      expect(system.getState()).toBe(TimeStopState.INACTIVE);
+      expect(system.getTimeStopState()).toBe(TimeStopState.INACTIVE);
       expect(system.getPendingUnitId()).toBeNull();
     });
 
@@ -281,7 +281,7 @@ describe('UltimateSkillSystem', () => {
 
       jest.advanceTimersByTime(1);
       expect(handler.onUltimateConfirmed).toHaveBeenCalledTimes(1);
-      expect(system.getState()).toBe(TimeStopState.INACTIVE);
+      expect(system.getTimeStopState()).toBe(TimeStopState.INACTIVE);
     });
 
     it('确认后应清除超时定时器', () => {
@@ -314,7 +314,7 @@ describe('UltimateSkillSystem', () => {
       expect(system.isPaused()).toBe(true);
 
       system.setEnabled(false);
-      expect(system.getState()).toBe(TimeStopState.INACTIVE);
+      expect(system.getTimeStopState()).toBe(TimeStopState.INACTIVE);
       expect(system.getPendingUnitId()).toBeNull();
     });
 
@@ -377,7 +377,7 @@ describe('UltimateSkillSystem', () => {
         state: TimeStopState.PAUSED, enabled: true,
         pendingUnitId: 'hero1', pendingSkillId: 'skill1',
       });
-      expect(system.getState()).toBe(TimeStopState.PAUSED);
+      expect(system.getTimeStopState()).toBe(TimeStopState.PAUSED);
       expect(system.getPendingUnitId()).toBe('hero1');
     });
 
@@ -393,7 +393,7 @@ describe('UltimateSkillSystem', () => {
     it('应完全重置所有状态', () => {
       system.pauseForUltimate(createUnit({ id: 'hero1', rage: 100 }), ULTIMATE_SKILL);
       system.reset();
-      expect(system.getState()).toBe(TimeStopState.INACTIVE);
+      expect(system.getTimeStopState()).toBe(TimeStopState.INACTIVE);
       expect(system.getPendingUnitId()).toBeNull();
       expect(system.isPaused()).toBe(false);
     });

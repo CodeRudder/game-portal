@@ -336,6 +336,7 @@ const HeroStarUpPanel: React.FC<HeroStarUpPanelProps> = ({
             className="tk-star-btn tk-star-btn--star-up"
             onClick={handleStarUp}
             disabled={!starUpAffordable}
+            data-testid="btn-star-up"
           >
             ⭐ 升星 ({currentStar}→{currentStar + 1})
           </button>
@@ -345,6 +346,7 @@ const HeroStarUpPanel: React.FC<HeroStarUpPanelProps> = ({
             className="tk-star-btn tk-star-btn--breakthrough"
             onClick={handleBreakthrough}
             disabled={!btAffordable}
+            data-testid="btn-breakthrough"
           >
             🔮 突破
           </button>
@@ -354,7 +356,7 @@ const HeroStarUpPanel: React.FC<HeroStarUpPanelProps> = ({
   };
 
   return (
-    <div className="tk-star-panel" role="region" aria-label="武将升星">
+    <div className="tk-star-panel" role="region" aria-label="武将升星" data-testid="hero-star-up-panel">
       {/* ── 星级展示 ── */}
       <div className="tk-star-display">
         {renderStars()}

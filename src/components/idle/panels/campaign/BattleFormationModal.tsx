@@ -248,7 +248,7 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
   }
 
   return (
-    <SharedPanel title={`战前布阵 - ${stage.name}`} onClose={onClose} visible={true}>
+    <SharedPanel title={`战前布阵 - ${stage.name}`} onClose={onClose} visible={true} data-testid="battle-formation-modal">
         {/* ── 关卡描述 ── */}
         {stage.description && (
           <div className="tk-bfm-desc">{stage.description}</div>
@@ -316,12 +316,13 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
 
         {/* ── 操作按钮 ── */}
         <div className="tk-bfm-actions">
-          <button className="tk-bfm-btn tk-bfm-btn--cancel" onClick={onClose}>
+          <button className="tk-bfm-btn tk-bfm-btn--cancel" onClick={onClose} data-testid="bfm-cancel-btn">
             取消
           </button>
           <button
             className="tk-bfm-btn tk-bfm-btn--auto"
             onClick={handleAutoFormation}
+            data-testid="bfm-auto-btn"
           >
             🤖 一键布阵
           </button>
@@ -329,6 +330,7 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
             className="tk-bfm-btn tk-bfm-btn--fight"
             onClick={handleBattle}
             disabled={isBattling || formationGenerals.length === 0}
+            data-testid="bfm-fight-btn"
           >
             {isBattling ? '⏳ 战斗中...' : '⚔️ 出征'}
           </button>

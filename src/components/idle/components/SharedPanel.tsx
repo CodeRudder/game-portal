@@ -37,6 +37,8 @@ export interface SharedPanelProps {
   overlayClosable?: boolean;
   /** 标题栏右侧附加内容 */
   headerExtra?: React.ReactNode;
+  /** 测试标识 */
+  'data-testid'?: string;
   /** 面板内容 */
   children: React.ReactNode;
 }
@@ -55,6 +57,7 @@ const SharedPanel: React.FC<SharedPanelProps> = ({
   showClose = true,
   overlayClosable = true,
   headerExtra,
+  'data-testid': dataTestId,
   children,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -91,6 +94,7 @@ const SharedPanel: React.FC<SharedPanelProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={title}
+      data-testid={dataTestId}
     >
       <div
         ref={panelRef}

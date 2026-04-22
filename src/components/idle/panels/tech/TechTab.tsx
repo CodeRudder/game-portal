@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
 import type {
   TechPath,
   TechNodeDef,
