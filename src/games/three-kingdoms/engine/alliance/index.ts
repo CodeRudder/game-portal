@@ -41,7 +41,6 @@ export {
   AllianceSystem,
   DEFAULT_CREATE_CONFIG,
   ALLIANCE_LEVEL_CONFIGS,
-  ALLIANCE_SAVE_VERSION,
   createDefaultAlliancePlayerState,
   createAllianceData,
 } from './AllianceSystem';
@@ -50,7 +49,7 @@ export {
 export {
   DEFAULT_CREATE_CONFIG as CREATE_CONFIG,
   ALLIANCE_LEVEL_CONFIGS as LEVEL_CONFIGS,
-  ALLIANCE_SAVE_VERSION as SAVE_VERSION,
+  ALLIANCE_SAVE_VERSION,
   createDefaultAlliancePlayerState as defaultPlayerState,
   createAllianceData as initAllianceData,
   generateId,

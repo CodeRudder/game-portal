@@ -24,7 +24,7 @@ export {
   RouteDifficulty,
   NodeType,
   NodeStatus,
-  FormationType,
+  FormationType as ExpeditionFormationType,
   FORMATION_LABELS,
   FORMATION_EFFECTS,
   FORMATION_COUNTERS,

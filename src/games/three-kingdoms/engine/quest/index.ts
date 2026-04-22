@@ -11,3 +11,20 @@ export type {
   QuestProgressEvent,
 } from './QuestTrackerSystem';
 export { DEFAULT_JUMP_TARGETS } from './QuestTrackerSystem';
+export {
+  serializeQuestState,
+  deserializeQuestState,
+} from './QuestSerialization';
+export type { ActivityStateData } from './QuestSerialization';
+
+// 核心类型（从core层重新导出）
+export type {
+  QuestId, QuestCategory, QuestStatus, ObjectiveType,
+  QuestObjective, QuestReward, QuestDef, QuestInstance,
+  DailyQuestPoolConfig,
+  QuestSystemSaveData,
+} from '../../core/quest';
+export {
+  QUEST_SAVE_VERSION, DAILY_QUEST_TEMPLATES, PREDEFINED_QUESTS,
+  DEFAULT_ACTIVITY_MILESTONES, DEFAULT_DAILY_POOL_CONFIG,
+} from '../../core/quest';

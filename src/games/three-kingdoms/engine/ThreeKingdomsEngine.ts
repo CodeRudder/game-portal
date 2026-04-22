@@ -47,7 +47,7 @@ import { createEventSystems, initEventSystems, type EventSystems } from './engin
 import {
   createR11Systems, registerR11Systems, initR11Systems, resetR11Systems,
   type R11Systems,
-} from './engine-r11-deps';
+} from './engine-extended-deps';
 import { applyGetters } from './engine-getters';
 import type { EngineGettersMixin } from './engine-getters-types';
 

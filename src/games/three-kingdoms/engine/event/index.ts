@@ -80,3 +80,28 @@ export type {
 
 // v15.0 — 离线事件堆积处理
 export { OfflineEventHandler } from './OfflineEventHandler';
+export { OfflineEventSystem } from './OfflineEventSystem';
+
+// v15.0 — 连锁事件系统 V15
+export { ChainEventSystemV15 } from './ChainEventSystemV15';
+
+// 事件引擎 + 序列化
+export { EventEngine } from './EventEngine';
+export {
+  serializeEventEngine,
+  deserializeEventEngine,
+} from './EventEngineSerialization';
+export type { SerializableEventEngine } from './EventEngineSerialization';
+
+// 核心类型（从core层重新导出）
+export type {
+  EventId, EventTriggerType, EventUrgency, EventStatus, EventScope,
+  EventCondition, EventConsequence, EventOption, EventDef, EventInstance,
+  EventTriggerResult, EventChoiceResult, BannerId, BannerType,
+  EventBanner, BannerState, EncounterId, EncounterPopup,
+  EncounterOption, EncounterChoiceResult, EventTriggerConfig,
+  EventSystemState, EventSystemSaveData,
+} from '../../core/event';
+export {
+  DEFAULT_EVENT_TRIGGER_CONFIG, PREDEFINED_EVENTS, EVENT_SAVE_VERSION,
+} from '../../core/event';

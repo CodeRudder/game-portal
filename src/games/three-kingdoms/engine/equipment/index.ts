@@ -14,3 +14,51 @@ export { EquipmentSetSystem } from './EquipmentSetSystem';
 export { EquipmentRecommendSystem } from './EquipmentRecommendSystem';
 export { EquipmentBagManager } from './EquipmentBagManager';
 export { ForgePityManager } from './ForgePityManager';
+export {
+  generateUid,
+  resetUidCounter,
+  generateBySlot,
+  generateByTemplate,
+  genMainStat,
+  genSubStats,
+  genSpecialEffect,
+  isSlot as isEquipmentSlot,
+  weightedPickRarity,
+} from './EquipmentGenerator';
+
+// 核心类型（从core层重新导出）
+export type {
+  EquipmentSlot,
+  EquipmentRarity,
+  EquipmentInstance,
+  EquipmentSource,
+  MainStat,
+  SubStat,
+  SpecialEffect,
+  BagSortMode,
+  BagFilter,
+  BagOperationResult,
+  DecomposeResult,
+  BatchDecomposeResult,
+  EquipmentSaveData,
+  HeroEquipSlots,
+  EquipResult,
+  CodexEntry,
+} from '../../core/equipment';
+export type {
+  SetId,
+  SetBonusTier,
+  ActiveSetBonus,
+  EquipmentSetDef,
+  SetBonusEffect,
+  EnhanceResult,
+  EnhanceOutcome,
+  AutoEnhanceConfig,
+  AutoEnhanceResult,
+  EnhanceTransferResult,
+  ForgeResult,
+  ForgeType,
+  ForgeSaveData,
+  EquipRecommendation,
+  RecommendResult,
+} from '../../core/equipment';

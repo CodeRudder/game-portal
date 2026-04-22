@@ -22,10 +22,30 @@ export type {
   TrainingRecord,
   AllianceBonusType,
   AllianceBonus,
-  AllianceData,
   OfflineActionType,
   OfflineAction,
   OfflineSummary,
   DialogueHistoryEntry,
   NPCInteractionSaveData,
 } from './NPCTrainingSystem';
+export { NPCSpawnSystem } from './NPCSpawnSystem';
+
+// 核心类型（从core层重新导出）
+export type {
+  NPCProfession, NPCProfessionDef, NPCInteractionType,
+  NPCId, NPCData, AffinityLevel,
+  NPCMapDisplay, NPCClusterConfig, NPCPlacementResult,
+  NPCInfoPopup, NPCAction, DialogNodeId, DialogOption,
+  DialogEffect, DialogNode, DialogTree, DialogSession,
+  DialogHistoryEntry, NPCSystemState, NPCSaveData,
+} from '../../core/npc';
+export type {
+  AffinityLevelEffect, AffinitySource, AffinityChangeRecord,
+  AffinityGainConfig, BondSkillId, BondSkillDef, BondSkillEffect,
+  AffinityVisualization, FavorabilityState, FavorabilitySaveData,
+} from '../../core/npc';
+export {
+  AFFINITY_THRESHOLDS, NPC_PROFESSION_DEFS, NPC_PROFESSIONS,
+  NPC_PROFESSION_LABELS, AFFINITY_LEVEL_LABELS, NPC_SAVE_VERSION,
+  getAffinityLevel, getAffinityProgress, clampAffinity,
+} from '../../core/npc';

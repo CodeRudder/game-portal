@@ -1,616 +1,138 @@
-/** 引擎层 — 统一导出入口 */
+/**
+ * 引擎层 — 统一导出入口
+ *
+ * 按DDD业务域组织导出，每个域通过各自的 index.ts 导出。
+ * 本文件只做重导出，不包含具体类型/常量定义。
+ *
+ * @module engine
+ */
+
+// ── 引擎主类 ──
 export { ThreeKingdomsEngine } from './ThreeKingdomsEngine';
 
-// 资源域
-export { ResourceSystem } from './resource/ResourceSystem';
-export type {
-  BonusType,
-  Bonus,
-  ResourceType,
-  Resources,
-  ProductionRate,
-  ResourceCap,
-  ResourceCost,
-  CostCheckResult,
-  CapWarning,
-  CapWarningLevel,
-  Bonuses,
-  OfflineEarnings,
-  OfflineTierBreakdown,
-  ResourceSaveData,
-} from './resource/resource.types';
-export {
-  RESOURCE_TYPES,
-  RESOURCE_LABELS,
-  RESOURCE_COLORS,
-} from './resource/resource.types';
+// ── 资源域 (v1.0) ──
+export * from './resource';
 
-// 建筑域
-export { BuildingSystem } from './building/BuildingSystem';
-export type {
-  BuildingType,
-  BuildingState,
-  BuildingDef,
-  UpgradeCost,
-  UpgradeCheckResult,
-  QueueSlot,
-  BuildingSaveData,
-} from './building/building.types';
-export {
-  BUILDING_TYPES,
-  BUILDING_LABELS,
-  BUILDING_ICONS,
-  BUILDING_ZONES,
-} from './building/building.types';
-export { BUILDING_DEFS } from './building/building-config';
+// ── 建筑域 (v1.0) ──
+export * from './building';
 
-// 日历域
-export { CalendarSystem } from './calendar/CalendarSystem';
-export type {
-  Season,
-  WeatherType,
-  EraEntry,
-  GameDate,
-  SeasonBonus,
-  CalendarState,
-  CalendarSaveData,
-} from './calendar/calendar.types';
-export {
-  SEASONS,
-  SEASON_LABELS,
-  WEATHERS,
-  WEATHER_LABELS,
-} from './calendar/calendar.types';
+// ── 日历域 (v1.0) ──
+export * from './calendar';
 
-// 武将域
-export { HeroSystem } from './hero/HeroSystem';
-export { HeroRecruitSystem } from './hero/HeroRecruitSystem';
-export type {
-  GeneralStats,
-  GeneralData,
-  HeroState,
-  HeroSaveData,
-  SkillData,
-  Faction,
-} from './hero/hero.types';
-export {
-  Quality,
-  QUALITY_ORDER,
-  QUALITY_TIERS,
-  QUALITY_LABELS,
-  QUALITY_BORDER_COLORS,
-  FACTION_LABELS,
-  FACTIONS,
-} from './hero/hero.types';
-export { HERO_MAX_LEVEL, GENERAL_DEF_MAP, DUPLICATE_FRAGMENT_COUNT } from './hero/hero-config';
-export type { RecruitType } from './hero/hero-recruit-config';
-export type {
-  StarUpPreview,
-  FragmentProgress,
-  BreakthroughPreview,
-  StarUpResult,
-  BreakthroughResult,
-  StarData,
-  FragmentSource,
-  BreakthroughTier,
-} from './hero/star-up.types';
-export { MAX_STAR_LEVEL } from './hero/star-up-config';
-export { HeroStarSystem } from './hero/HeroStarSystem';
-export { HeroFormation, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './hero/HeroFormation';
-export type {
-  FormationData,
-  FormationState,
-  FormationSaveData,
-} from './hero/HeroFormation';
-export { HeroLevelSystem } from './hero/HeroLevelSystem';
-export type {
-  EnhancePreview,
-  LevelUpResult,
-  BatchEnhanceResult,
-  LevelSaveData,
-} from './hero/HeroLevelSystem';
-export type {
-  RecruitResult,
-  RecruitOutput,
-  PityState,
-  RecruitSaveData,
-  ResourceSpendFn,
-  ResourceCheckFn,
-  RecruitDeps,
-  RecruitHistoryEntry,
-} from './hero/HeroRecruitSystem';
+// ── 武将域 (v2.0) ──
+export * from './hero';
 
+// ── 羁绊域 (v2.0) ──
 export { BondSystem } from './bond/BondSystem';
 
-// 战斗域
-export { BattleEngine } from './battle/BattleEngine';
-export { DamageCalculator } from './battle/DamageCalculator';
-export { BattleEffectManager } from './battle/BattleEffectManager';
-export { BattleSpeedController } from './battle/BattleSpeedController';
-export { UltimateSkillSystem } from './battle/UltimateSkillSystem';
-export { BattleTurnExecutor } from './battle/BattleTurnExecutor';
-export { calculateBattleStats, generateSummary } from './battle/BattleStatistics';
-export type { BattleStats } from './battle/BattleStatistics';
-export type {
-  BattleUnit,
-  BattleTeam,
-  BattleAction,
-  BattleState,
-  BattleResult,
-  DamageResult,
-  BuffEffect,
-  BattleSkill,
-  CreateUnitParams,
-  Position,
-  BattleSide,
-  IDamageCalculator,
-  IBattleEngine,
-} from './battle/battle.types';
-export {
-  TroopType,
-  TROOP_TYPE_LABELS,
-  BuffType,
-  SkillTargetType,
-  BattlePhase,
-  BattleOutcome,
-  StarRating,
-} from './battle/battle.types';
-export { BATTLE_CONFIG } from './battle/battle-config';
-export { findUnit, findUnitInTeam } from './battle/index';
+// ── 战斗域 (v3.0) ──
+export * from './battle';
 
-// 战斗域 v4.0
-export { BattleEffectApplier } from './battle/BattleEffectApplier';
-export type {
-  SkillEffectConfig,
-  EnhancedBattleStats,
-  EnhancedDamageResult,
-} from './battle/BattleEffectApplier';
-export {
-  DamageNumberSystem,
-  DamageNumberType,
-  TrajectoryType,
-} from './battle/DamageNumberSystem';
-export type {
-  TrajectoryConfig,
-  DamageNumber,
-  DamageNumberConfig,
-} from './battle/DamageNumberSystem';
+// ── 关卡域 (v3.0) ──
+export * from './campaign';
 
-// 关卡域
-export { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
-export { RewardDistributor } from './campaign/RewardDistributor';
-export { SweepSystem } from './campaign/SweepSystem';
-export { AutoPushExecutor } from './campaign/AutoPushExecutor';
-export { serializeProgress, deserializeProgress, SAVE_VERSION as CampaignSaveVersion } from './campaign/CampaignSerializer';
-export {
-  campaignDataProvider,
-  getChapters as getCampaignChapters,
-  getStage as getCampaignStage,
-} from './campaign/campaign-config';
-export type {
-  StageType,
-  StageStatus,
-  EnemyUnitDef,
-  EnemyFormation,
-  StageReward,
-  Stage,
-  Chapter,
-  StageState,
-  CampaignProgress,
-  CampaignSaveData,
-  RewardDistributorDeps,
-  ICampaignDataProvider,
-} from './campaign/campaign.types';
-export { MAX_STARS } from './campaign/campaign.types';
-export { STAGE_TYPE_LABELS } from './campaign/campaign.types';
-export type {
-  SweepBatchResult,
-  AutoPushResult,
-} from './campaign/sweep.types';
-export { DEFAULT_SWEEP_CONFIG } from './campaign/sweep.types';
+// ── 科技域 (v5.0) ──
+export * from './tech';
 
-// 科技域
-export { TechTreeSystem } from './tech/TechTreeSystem';
-export { TechResearchSystem } from './tech/TechResearchSystem';
-export { TechPointSystem } from './tech/TechPointSystem';
-export { TechEffectSystem } from './tech/TechEffectSystem';
-export type {
-  TechPath,
-  TechNodeStatus,
-  TechNodeDef,
-  TechEffect,
-  TechEffectType,
-  TechEdge,
-  TechNodeState,
-  ResearchSlot,
-  TechPointState,
-  SpeedUpMethod,
-  SpeedUpResult,
-  StartResearchResult,
-  TechState,
-  TechSaveData,
-} from './tech/tech.types';
-export {
-  TECH_PATHS,
-  TECH_PATH_LABELS,
-  TECH_PATH_COLORS,
-  TECH_PATH_ICONS,
-} from './tech/tech.types';
-export {
-  TECH_NODE_DEFS,
-  TECH_NODE_MAP,
-  TECH_EDGES,
-  TECH_SAVE_VERSION,
-  getNodesByPath,
-  getNodesByTier,
-  getMutexGroups,
-  getQueueSizeForAcademyLevel,
-  getTechPointProduction,
-} from './tech/tech-config';
-
-// 世界地图域
+// ── 世界地图域 (v6.0) ──
 export { WorldMapSystem } from './map/WorldMapSystem';
 export { MapDataRenderer } from './map/MapDataRenderer';
 export { MapFilterSystem } from './map/MapFilterSystem';
 export type {
-  GridPosition,
-  MapSize,
-  GridConfig,
-  ViewportConfig,
-  ViewportState,
-  RegionId,
-  RegionDef,
-  RegionBounds,
-  TerrainType,
-  TerrainDef,
-  TileData,
-  LandmarkType,
-  LandmarkLevel,
-  OwnershipStatus,
-  ResourceNodeType,
-  LandmarkData,
-  MapFilterCriteria,
-  MapFilterResult,
-  RenderLayer,
-  TileRenderData,
-  ViewportRenderData,
-  WorldMapState,
-  WorldMapSaveData,
+  GridPosition, MapSize, GridConfig, ViewportConfig, ViewportState,
+  RegionId, RegionDef, RegionBounds, TerrainType, TerrainDef, TileData,
+  LandmarkType, LandmarkLevel, OwnershipStatus, ResourceNodeType, LandmarkData,
+  MapFilterCriteria, MapFilterResult, RenderLayer, TileRenderData, ViewportRenderData,
+  WorldMapState, WorldMapSaveData,
+} from '../core/map';
+export {
+  MAP_SIZE, GRID_CONFIG, VIEWPORT_CONFIG, MAP_PIXEL_SIZE,
+  REGION_IDS, REGION_DEFS, REGION_LABELS, REGION_COLORS,
+  TERRAIN_TYPES, TERRAIN_DEFS, TERRAIN_LABELS, TERRAIN_COLORS,
+  DEFAULT_LANDMARKS, LANDMARK_POSITIONS, MAP_SAVE_VERSION,
+  getRegionAtPosition, getTerrainAtPosition, generateAllTiles,
 } from '../core/map';
 
-// ──────────────────────────────────────────────
-// v8.0 商贸繁荣
-// ──────────────────────────────────────────────
+// ── NPC域 (v6.0) ──
+export * from './npc';
 
-// 货币域
-export { CurrencySystem } from './currency/CurrencySystem';
-export type {
-  CurrencyType,
-  CurrencyWallet,
-  CurrencySaveData,
-  CurrencyShortage,
-  ExchangeRequest,
-  ExchangeResult,
-  ExchangeRate,
-  SpendPriorityConfig,
-} from '../core/currency/currency.types';
-export {
-  CURRENCY_TYPES,
-  CURRENCY_LABELS,
-  CURRENCY_COLORS,
-  CURRENCY_ICONS,
-  CURRENCY_IS_PAID,
-} from '../core/currency/currency.types';
+// ── 事件域 (v6.0) ──
+export * from './event';
 
-// 商店域
-export { ShopSystem } from './shop/ShopSystem';
-export type {
-  ShopType,
-  GoodsCategory,
-  GoodsRarity,
-  GoodsDef,
-  GoodsItem,
-  BuyRequest,
-  BuyResult,
-  BuyValidation,
-  ConfirmLevel,
-  ShopState,
-  ShopSaveData,
-  RestockResult,
-  RestockType,
-  GoodsFilter,
-  DiscountConfig,
-  DiscountType,
-} from '../core/shop/shop.types';
-export {
-  SHOP_TYPES,
-  SHOP_TYPE_LABELS,
-  GOODS_CATEGORY_LABELS,
-  GOODS_RARITY_LABELS,
-} from '../core/shop/shop.types';
+// ── 任务域 (v7.0) ──
+export * from './quest';
 
-// 贸易域
-export { TradeSystem } from './trade/TradeSystem';
-export type { TradeCurrencyOps } from './trade/TradeSystem';
-export { CaravanSystem } from './trade/CaravanSystem';
-export type { RouteInfoProvider } from './trade/CaravanSystem';
-export type {
-  CityId,
-  TradeRouteId,
-  TradeRouteDef,
-  TradeRouteState,
-  TradeGoodsId,
-  TradeGoodsDef,
-  TradeGoodsPrice,
-  TradeProfit,
-  Caravan,
-  CaravanAttributes,
-  CaravanStatus,
-  CaravanDispatchRequest,
-  CaravanDispatchResult,
-  GuardMutexCheck,
-  GuardDispatchResult,
-  TradeEventType,
-  TradeEventDef,
-  TradeEventInstance,
-  TradeEventOption,
-  ProsperityLevel,
-  ProsperityTier,
-  NpcMerchantType,
-  NpcMerchantDef,
-  NpcMerchantInstance,
-  TradeSaveData,
-} from '../core/trade/trade.types';
-export {
-  CITY_IDS,
-  CITY_LABELS,
-  CARAVAN_STATUS_LABELS,
-  PROSPERITY_LABELS,
-} from '../core/trade/trade.types';
-export {
-  MAP_SIZE,
-  GRID_CONFIG,
-  VIEWPORT_CONFIG,
-  MAP_PIXEL_SIZE,
-  REGION_IDS,
-  REGION_DEFS,
-  REGION_LABELS,
-  REGION_COLORS,
-  TERRAIN_TYPES,
-  TERRAIN_DEFS,
-  TERRAIN_LABELS,
-  TERRAIN_COLORS,
-  DEFAULT_LANDMARKS,
-  LANDMARK_POSITIONS,
-  MAP_SAVE_VERSION,
-  getRegionAtPosition,
-  getTerrainAtPosition,
-  generateAllTiles,
-} from '../core/map';
+// ── 货币域 (v8.0) ──
+export * from './currency';
 
-// ──────────────────────────────────────────────
-// v9.0 离线收益深化
-// ──────────────────────────────────────────────
+// ── 商店域 (v8.0) ──
+export * from './shop';
 
-// 离线收益域
-export { OfflineRewardSystem } from './offline/OfflineRewardSystem';
-export { OfflineEstimateSystem } from './offline/OfflineEstimateSystem';
-export type {
-  EstimatePoint,
-  EstimateResult,
-} from './offline/OfflineEstimateSystem';
-export type {
-  DecayTier,
-  OfflineSnapshot,
-  TierDetail,
-  DoubleSource,
-  DoubleRequest,
-  DoubleResult,
-  ReturnPanelData,
-  OfflineBoostItem,
-  BoostUseResult,
-  OfflineTradeEvent,
-  OfflineTradeSummary,
-  VipOfflineBonus,
-  SystemEfficiencyModifier,
-  OverflowStrategy,
-  OverflowRule,
-  ResourceProtection,
-  WarehouseExpansion,
-  ExpansionResult,
-  OfflineRewardResultV9,
-  OfflineSaveData,
-} from './offline/offline.types';
-export {
-  DECAY_TIERS,
-  MAX_OFFLINE_HOURS,
-  MAX_OFFLINE_SECONDS,
-  AD_DOUBLE_MULTIPLIER,
-  ITEM_DOUBLE_MULTIPLIER,
-  RETURN_BONUS_MULTIPLIER,
-  RETURN_BONUS_MIN_HOURS,
-  VIP_OFFLINE_BONUSES,
-  SYSTEM_EFFICIENCY_MODIFIERS,
-  OVERFLOW_RULES,
-  RESOURCE_PROTECTIONS,
-  DEFAULT_WAREHOUSE_EXPANSIONS,
-  OFFLINE_TRADE_EFFICIENCY,
-  MAX_OFFLINE_TRADES,
-  OFFLINE_TRADE_DURATION,
-} from './offline/offline-config';
+// ── 贸易域 (v8.0) ──
+export * from './trade';
 
-// 邮件域
-export { MailSystem } from './mail/MailSystem';
-export { MailTemplateSystem } from './mail/MailTemplateSystem';
-export type {
-  MailCategory,
-  MailPriority,
-  MailStatus,
-  MailAttachment,
-  MailData,
-  MailFilter,
-  ClaimResult,
-  BatchClaimResult,
-  BatchAction,
-  BatchActionResult,
-  MailTemplate,
-  MailTemplateVars,
-  MailSaveData,
-} from './mail/mail.types';
-export {
-  MAIL_CATEGORY_LABELS,
-  MAIL_STATUS_LABELS,
-  MAIL_PRIORITY_LABELS,
-  MAILBOX_CAPACITY,
-  DEFAULT_MAIL_EXPIRE_DAYS,
-  MAIL_SAVE_VERSION,
-} from './mail/mail.types';
+// ── 离线收益域 (v9.0) ──
+export * from './offline';
 
-// ──────────────────────────────────────────────
-// v10.0 兵强马壮 — 装备系统
-// ──────────────────────────────────────────────
+// ── 邮件域 (v9.0) ──
+export * from './mail';
 
-export { EquipmentSystem } from './equipment/EquipmentSystem';
-export { EquipmentForgeSystem } from './equipment/EquipmentForgeSystem';
-export { EquipmentEnhanceSystem } from './equipment/EquipmentEnhanceSystem';
-export { EquipmentSetSystem } from './equipment/EquipmentSetSystem';
-export { EquipmentRecommendSystem } from './equipment/EquipmentRecommendSystem';
-export {
-  generateUid,
-  resetUidCounter,
-  generateBySlot,
-  generateByTemplate,
-  genMainStat,
-  genSubStats,
-  genSpecialEffect,
-  isSlot as isEquipmentSlot,
-  weightedPickRarity,
-} from './equipment/EquipmentGenerator';
+// ── 装备域 (v10.0) ──
+export * from './equipment';
 
-// ──────────────────────────────────────────────
-// v11.0 群雄逐鹿 — PvP竞技场 + 社交 → exports-v11.ts
-// ──────────────────────────────────────────────
-export * from './exports-v11';
+// ── PvP竞技场域 (v11.0) ──
+export * from './pvp';
 
-// ──────────────────────────────────────────────
-// v12.0 远征天下 — 远征系统 + 排行榜
-// ──────────────────────────────────────────────
+// ── 社交域 (v11.0) ──
+export * from './social';
 
-// 远征系统
-export { ExpeditionSystem } from './expedition/ExpeditionSystem';
-export type { HeroBrief, TeamValidationResult, UnlockCheckResult } from './expedition/ExpeditionSystem';
-export { ExpeditionBattleSystem } from './expedition/ExpeditionBattleSystem';
-export type { BattleUnitData, BattleTeamData, NodeBattleConfig, BattleTurnSnapshot } from './expedition/ExpeditionBattleSystem';
-export { ExpeditionRewardSystem } from './expedition/ExpeditionRewardSystem';
-export type { RewardParams, SweepRewardParams } from './expedition/ExpeditionRewardSystem';
-export { AutoExpeditionSystem } from './expedition/AutoExpeditionSystem';
-export type {
-  AutoExpeditionStepResult,
-  AutoExpeditionResult,
-  OfflineExpeditionParams,
-  OfflineExpeditionState,
-} from './expedition/AutoExpeditionSystem';
-export type {
-  ExpeditionNode,
-  ExpeditionRoute,
-  ExpeditionRegion,
-  ExpeditionTeam,
-  ExpeditionState,
-  ExpeditionSaveData,
-  ExpeditionBattleResult,
-  ExpeditionReward,
-  DropItem,
-  AutoExpeditionConfig,
-  OfflineExpeditionResult,
-  FormationEffect,
-} from '../core/expedition/expedition.types';
-export {
-  RouteDifficulty,
-  NodeType,
-  NodeStatus,
-  FormationType as ExpeditionFormationType,
-  FORMATION_LABELS as EXPEDITION_FORMATION_LABELS,
-  FORMATION_EFFECTS,
-  FORMATION_COUNTERS,
-  BattleGrade,
-  GRADE_STARS,
-  GRADE_LABELS,
-  SweepType,
-  SWEEP_CONFIG,
-  MilestoneType,
-  PauseReason,
-  CASTLE_LEVEL_SLOTS,
-  TROOP_COST,
-  FACTION_BOND_THRESHOLD,
-  FACTION_BOND_BONUS,
-  MAX_HEROES_PER_TEAM,
-  OFFLINE_EXPEDITION_CONFIG,
-  DEFAULT_AUTO_CONFIG,
-  DIFFICULTY_LABELS,
-  DIFFICULTY_STARS,
-} from '../core/expedition/expedition.types';
-export {
-  EXPEDITION_MAX_TURNS,
-  FORMATION_COUNTER_BONUS,
-  DROP_RATES,
-  BASE_REWARDS,
-  FIRST_CLEAR_REWARD,
-  POWER_MULTIPLIERS,
-  MARCH_DURATION,
-  MILESTONE_CONFIGS,
-  CONSECUTIVE_FAILURE_LIMIT,
-  REST_HEAL_PERCENT,
-  createDefaultRegions,
-  createDefaultRoutes,
-} from './expedition/expedition-config';
+// ── 远征域 (v12.0) ──
+export * from './expedition';
 
-// 排行榜引擎
+// ── 排行榜引擎 (v12.0) ──
 export { LeaderboardSystem } from './leaderboard/LeaderboardSystem';
-export type {
-  LeaderboardUpdateData,
-  RewardDistributionResult,
-} from './leaderboard/LeaderboardSystem';
+export type { LeaderboardUpdateData, RewardDistributionResult } from './leaderboard/LeaderboardSystem';
 
-// ──────────────────────────────────────────────
-// v18.0 新手引导
-// ──────────────────────────────────────────────
+// ── 联盟域 (v13.0) ──
+export * from './alliance';
 
-// 引导域
-export { TutorialStateMachine } from './guide/TutorialStateMachine';
-export { TutorialStepManager } from './guide/TutorialStepManager';
-export type {
-  TutorialGameState,
-  AccelerationState,
-  StepExecutionResult,
-} from './guide/TutorialStepManager';
-export { TutorialStepExecutor } from './guide/TutorialStepExecutor';
-export type { StepExecutorStateSlice } from './guide/TutorialStepExecutor';
-export { StoryEventPlayer } from './guide/StoryEventPlayer';
-export type {
-  StoryPlayState,
-  TypewriterState,
-  StoryPlayProgress,
-  StoryGameState,
-  SkipConfirmResult,
-} from './guide/StoryEventPlayer';
-export { TutorialStorage } from './guide/TutorialStorage';
-export type {
-  StorageResult,
-  FirstLaunchResult,
-} from './guide/TutorialStorage';
+// ── 声望域 (v14.0) ──
+export * from './prestige';
 
-// v6.0 NPC+Event → exports-v6.ts
-export * from './exports-v6';
+// ── 传承域 (v16.0) ──
+export * from './heritage';
 
-// v10.0 装备域 → exports-v10.ts
-export * from './exports-v10';
+// ── 活动域 (v15.0) ──
+export * from './activity';
 
-// ──────────────────────────────────────────────
-// v13.0~v16.0 联盟/声望/传承/成就/军师 → exports-v13.ts
-// ──────────────────────────────────────────────
-export * from './exports-v13';
+// ── 引导域 (v18.0) ──
+export * from './guide';
 
-// ──────────────────────────────────────────────
-// v17.0~v20.0 响应式/统一/设置 → exports-v17.ts
-// ──────────────────────────────────────────────
-export * from './exports-v17';
+// ── 响应式域 (v17.0) ──
+export * from './responsive';
+
+// ── 设置域 (v20.0) ──
+export * from './settings';
+
+// ── 统一域 (v19.0) — 仅导出独有的，与settings重复的已通过settings域导出 ──
+export { BalanceValidator } from './unification/BalanceValidator';
+export { AudioController as UnificationAudioController } from './unification/AudioController';
+export type { VolumeOutput, AudioControllerConfig } from './unification/AudioController';
+export { AudioScene } from './unification/AudioController';
+export { GraphicsQualityManager } from './unification/GraphicsQualityManager';
+export {
+  inRange, calcDeviation, makeEntry, calcPower, calcRebirthMultiplier,
+  generateResourceCurve, calculateRebirthPoints,
+  DEFAULT_RESOURCE_CONFIGS, HERO_BASE_STATS, DEFAULT_BATTLE_CONFIG,
+  DEFAULT_ECONOMY_CONFIGS, DEFAULT_REBIRTH_CONFIG,
+} from './unification/BalanceCalculator';
+export {
+  validateSingleResource, validateSingleHero, calculateStagePoints,
+  validateEconomy, validateRebirth,
+} from './unification/BalanceReport';
+
+// ── 军师域 (v20.0) ──
+export * from './advisor';
+
+// ── 成就域 (v20.0) ──
+export * from './achievement';

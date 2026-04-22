@@ -65,7 +65,7 @@ export {
 export { CampaignProgressSystem } from './CampaignProgressSystem';
 
 // 序列化
-export { serializeProgress, deserializeProgress, SAVE_VERSION } from './CampaignSerializer';
+export { serializeProgress, deserializeProgress, SAVE_VERSION as CampaignSaveVersion } from './CampaignSerializer';
 
 // 奖励分发器
 export { RewardDistributor } from './RewardDistributor';
