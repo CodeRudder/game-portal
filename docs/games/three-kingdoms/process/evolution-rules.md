@@ -7,8 +7,8 @@
 
 ## 迭代进化流程：
 ### 1、读取Next游戏版本计划(plans/vx-xxx.md)的功能清单. 
-1. evolution : process/evolution-rules.md
-2. 评测规范: checklist/ui-checklist.md, architecture/ddd-architecture.md.
+1. evolution : three-kingdoms/process/evolution-rules.md
+2. 评测规范: three-kingdoms/checklist/ui-checklist.md, three-kingdoms/architecture/ddd-architecture.md.
 3. 进化规范: three-kingdoms/evolution/
 
 ### 2、按功能清单的每个功能点循环处理：
