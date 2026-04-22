@@ -3,7 +3,7 @@
  * 覆盖：自动分配前排/后排、评分计算、边界情况
  */
 
-import { autoFormation, type AutoFormationResult } from '../BattleEngine';
+import { autoFormation, type AutoFormationResult } from '../autoFormation';
 import type { BattleUnit, BattleSkill } from '../battle.types';
 import { TroopType } from '../battle.types';
 

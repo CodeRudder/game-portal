@@ -24,7 +24,6 @@ import type {
   IDamageCalculator,
   IBattleEngine,
   IUltimateTimeStopHandler,
-  Position,
 } from './battle.types';
 import {
   BattleMode,
@@ -43,6 +42,7 @@ import {
 } from './BattleTurnExecutor';
 import { UltimateSkillSystem } from './UltimateSkillSystem';
 import { BattleSpeedController } from './BattleSpeedController';
+import { calculateBattleStats, generateSummary } from './BattleStatistics';
 
 // 工具函数
 
@@ -216,7 +216,7 @@ export class BattleEngine implements IBattleEngine {
     const stars = this.calculateStars(outcome, allyAlive, state.currentTurn);
 
     // 统计数据
-    const stats = this.calculateBattleStats(state);
+    const stats = calculateBattleStats(state);
 
     return {
       outcome,
@@ -225,7 +225,7 @@ export class BattleEngine implements IBattleEngine {
       allySurvivors: allyAlive,
       enemySurvivors: enemyAlive,
       ...stats,
-      summary: this.generateSummary(outcome, stars, state.currentTurn, allyAlive),
+      summary: generateSummary(outcome, stars, state.currentTurn, allyAlive),
     };
   }
 
@@ -399,132 +399,4 @@ export class BattleEngine implements IBattleEngine {
 
     return StarRating.ONE;
   }
-
-  // ─────────────────────────────────────────
-  // 战斗统计
-  // ─────────────────────────────────────────
-
-  /** 计算战斗统计数据 */
-  private calculateBattleStats(state: BattleState): {
-    allyTotalDamage: number;
-    enemyTotalDamage: number;
-    maxSingleDamage: number;
-    maxCombo: number;
-  } {
-    let allyTotalDamage = 0;
-    let enemyTotalDamage = 0;
-    let maxSingleDamage = 0;
-    let currentCombo = 0;
-    let maxCombo = 0;
-
-    for (const action of state.actionLog) {
-      const isAlly = action.actorSide === 'ally';
-
-      for (const [, result] of Object.entries(action.damageResults)) {
-        if (isAlly) {
-          allyTotalDamage += result.damage;
-        } else {
-          enemyTotalDamage += result.damage;
-        }
-
-        maxSingleDamage = Math.max(maxSingleDamage, result.damage);
-
-        // 连击统计（连续暴击）
-        if (result.isCritical) {
-          currentCombo++;
-          maxCombo = Math.max(maxCombo, currentCombo);
-        } else {
-          currentCombo = 0;
-        }
-      }
-    }
-
-    return {
-      allyTotalDamage,
-      enemyTotalDamage,
-      maxSingleDamage,
-      maxCombo,
-    };
-  }
-
-  // ─────────────────────────────────────────
-  // 辅助方法
-  // ─────────────────────────────────────────
-
-  /** 生成战斗摘要 */
-  private generateSummary(
-    outcome: BattleOutcome,
-    stars: StarRating,
-    turns: number,
-    allyAlive: number,
-  ): string {
-    if (outcome === BattleOutcome.VICTORY) {
-      const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
-      return `战斗胜利！${starStr}，用时${turns}回合，存活${allyAlive}人`;
-    }
-    if (outcome === BattleOutcome.DEFEAT) {
-      return `战斗失败，第${turns}回合全军覆没`;
-    }
-    return `战斗平局，${turns}回合内未能分出胜负`;
-  }
-}
-
-// 一键布阵（独立方法）
-
-/** 布阵结果 */
-export interface AutoFormationResult {
-  /** 布阵后的队伍 */
-  team: BattleTeam;
-  /** 前排单位ID */
-  frontLine: string[];
-  /** 后排单位ID */
-  backLine: string[];
-  /** 布阵评分（0~100） */
-  score: number;
-}
-
-/**
- * 一键布阵：根据武将属性自动分配前排/后排
- *
- * 策略：
- * 1. 防御最高的3个单位放前排
- * 2. 其余单位放后排
- * 3. 同防御时按HP降序排
- * 4. 最多6人（前排3 + 后排3）
- */
-export function autoFormation(units: BattleUnit[]): AutoFormationResult {
-  const valid = units.filter((u) => u.isAlive).slice(0, 6);
-  if (valid.length === 0) {
-    return { team: { units: [], side: 'ally' }, frontLine: [], backLine: [], score: 0 };
-  }
-
-  // 按防御降序 → HP降序排序
-  const sorted = [...valid].sort((a, b) => {
-    const defDiff = b.defense - a.defense;
-    if (defDiff !== 0) return defDiff;
-    return b.maxHp - a.maxHp;
-  });
-
-  const frontCount = Math.min(3, sorted.length);
-  const frontLine: string[] = [];
-  const backLine: string[] = [];
-
-  sorted.forEach((u, i) => {
-    const pos: Position = i < frontCount ? 'front' : 'back';
-    u.position = pos;
-    if (pos === 'front') frontLine.push(u.id);
-    else backLine.push(u.id);
-  });
-
-  // 计算布阵评分：前排坦度 + 后排火力
-  const frontDef = sorted.slice(0, frontCount).reduce((s, u) => s + u.defense, 0);
-  const backAtk = sorted.slice(frontCount).reduce((s, u) => s + u.attack, 0);
-  const score = Math.min(100, Math.round((frontDef * 0.5 + backAtk * 0.5) / valid.length));
-
-  return {
-    team: { units: sorted, side: 'ally' },
-    frontLine,
-    backLine,
-    score,
-  };
 }

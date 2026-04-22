@@ -13,16 +13,14 @@
 import type { BattleUnit, DamageResult } from './battle.types';
 import { TroopType } from './battle.types';
 import type { TechEffectSystem, EffectCategory } from '../tech/TechEffectSystem';
+import type { EffectElement, EffectTrigger } from './battle-effect-presets';
+
+// Re-export from the canonical definition in battle-effect-presets
+export type { EffectElement, EffectTrigger } from './battle-effect-presets';
 
 // ─────────────────────────────────────────────
 // 1. 武技特效配置（纯数据）
 // ─────────────────────────────────────────────
-
-/** 特效元素类型 */
-export type EffectElement = 'fire' | 'ice' | 'thunder' | 'wind' | 'earth' | 'light' | 'dark';
-
-/** 特效触发时机 */
-export type EffectTrigger = 'onSkillCast' | 'onHit' | 'onCritical' | 'onKill' | 'onHeal';
 
 /** 武技特效配置 */
 export interface SkillEffectConfig {

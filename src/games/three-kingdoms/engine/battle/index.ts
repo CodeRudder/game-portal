@@ -59,8 +59,10 @@ export { BATTLE_CONFIG } from './battle-config';
 
 // 战斗引擎
 export { BattleEngine } from './BattleEngine';
-export { autoFormation } from './BattleEngine';
-export type { AutoFormationResult } from './BattleEngine';
+export { autoFormation } from './autoFormation';
+export type { AutoFormationResult } from './autoFormation';
+export { calculateBattleStats, generateSummary } from './BattleStatistics';
+export type { BattleStats } from './BattleStatistics';
 export { BattleTurnExecutor } from './BattleTurnExecutor';
 export {
   getAliveUnits,
@@ -83,12 +85,16 @@ export type { ISpeedChangeListener } from './BattleSpeedController';
 // v4.0：科技效果应用器
 export { BattleEffectApplier } from './BattleEffectApplier';
 export type {
-  EffectElement,
-  EffectTrigger,
   SkillEffectConfig,
   EnhancedBattleStats,
   EnhancedDamageResult,
 } from './BattleEffectApplier';
+
+// v4.0：特效预设（EffectElement / EffectTrigger 的规范定义）
+export type {
+  EffectElement,
+  EffectTrigger,
+} from './battle-effect-presets';
 
 // v4.0：伤害数字动画系统
 export { DamageNumberSystem, DamageNumberType, TrajectoryType } from './DamageNumberSystem';

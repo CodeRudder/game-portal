@@ -25,13 +25,7 @@ import type {
   StarRating,
 } from './campaign.types';
 import { MAX_STARS } from './campaign.types';
-
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-/** 存档数据版本号 */
-const SAVE_VERSION = 1;
+import { serializeProgress, deserializeProgress } from './CampaignSerializer';
 
 // ─────────────────────────────────────────────
 // 辅助函数
