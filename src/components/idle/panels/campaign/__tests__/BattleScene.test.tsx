@@ -78,19 +78,7 @@ vi.mock('../BattleAnimation', () => ({
   // Re-export LogEntry type for consumers
 }));
 
-// ── Mock engine-campaign-deps ──
-vi.mock('@/games/three-kingdoms/engine/engine-campaign-deps', () => ({
-  buildAllyTeam: vi.fn(() => ({
-    id: 'ally',
-    units: [mockAllyUnit],
-    formationId: 'f1',
-  })),
-  buildEnemyTeam: vi.fn(() => ({
-    id: 'enemy',
-    units: [mockEnemyUnit],
-    formationId: 'ef1',
-  })),
-}));
+// ── Mock engine.buildTeamsForStage (facade method) ──
 
 // ── 测试数据 ──
 
@@ -121,6 +109,18 @@ function makeMockEngine() {
     getBattleEngine: vi.fn(() => ({})),
     getFormationSystem: vi.fn(() => ({})),
     getHeroSystem: vi.fn(() => ({})),
+    buildTeamsForStage: vi.fn(() => ({
+      allyTeam: {
+        id: 'ally',
+        units: [mockAllyUnit],
+        formationId: 'f1',
+      },
+      enemyTeam: {
+        id: 'enemy',
+        units: [mockEnemyUnit],
+        formationId: 'ef1',
+      },
+    })),
   } as unknown as ThreeKingdomsEngine;
 }
 

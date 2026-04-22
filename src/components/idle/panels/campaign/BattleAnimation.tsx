@@ -10,6 +10,7 @@ import type {
   BattleResult, BattleState, BattleAction, BattleUnit, IBattleEngine,
 } from '@/games/three-kingdoms/engine/battle/battle.types';
 import { BattleOutcome, BattlePhase } from '@/games/three-kingdoms/engine/battle/battle.types';
+import { findUnit as findUnitInState } from '@/games/three-kingdoms/engine/battle';
 
 // ── 导出类型 ──
 export interface DamageFloat { id: number; unitId: string; value: number; isCritical: boolean; isHeal: boolean; }
@@ -39,10 +40,6 @@ const END_DELAY = 1200;
 
 // ── 辅助函数 ──
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-function findUnitInState(state: BattleState, unitId: string): BattleUnit | undefined {
-  return state.allyTeam.units.find((u) => u.id === unitId) || state.enemyTeam.units.find((u) => u.id === unitId);
-}
 
 function buildActionLog(action: BattleAction): { html: string; type: LogEntry['type'] } {
   if (!action.skill) return { html: `<span class="tk-bs-log-actor">${action.actorName}</span> 被控制，无法行动`, type: 'system' };

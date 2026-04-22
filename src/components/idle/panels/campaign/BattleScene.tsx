@@ -24,7 +24,6 @@ import type {
 import { BattleOutcome } from '@/games/three-kingdoms/engine/battle/battle.types';
 import type { Stage } from '@/games/three-kingdoms/engine/campaign/campaign.types';
 import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine/campaign/campaign.types';
-import { buildAllyTeam, buildEnemyTeam } from '@/games/three-kingdoms/engine/engine-campaign-deps';
 import { useBattleAnimation } from './BattleAnimation';
 import type { LogEntry } from './BattleAnimation';
 import './BattleScene.css';
@@ -144,8 +143,7 @@ BattleLog.displayName = 'BattleLog';
 
 const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd }) => {
   const battleEngine = engine.getBattleEngine();
-  const allyTeam = useMemo(() => buildAllyTeam(engine.getFormationSystem(), engine.getHeroSystem()), [engine]);
-  const enemyTeam = useMemo(() => buildEnemyTeam(stage), [stage]);
+  const { allyTeam, enemyTeam } = useMemo(() => engine.buildTeamsForStage(stage), [engine, stage]);
 
   const {
     battleState, battleResult, isFinished,

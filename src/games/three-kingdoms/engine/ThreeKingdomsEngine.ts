@@ -467,6 +467,13 @@ export class ThreeKingdomsEngine {
     return this.campaignSystems.battleEngine.runFullBattle(allyTeam, enemyTeam);
   }
 
+  /** 根据关卡构建双方队伍（供 UI 层使用，避免直接依赖 engine-campaign-deps） */
+  buildTeamsForStage(stage: Stage) {
+    const allyTeam = buildAllyTeam(this.heroFormation, this.hero);
+    const enemyTeam = buildEnemyTeam(stage);
+    return { allyTeam, enemyTeam };
+  }
+
   /** 通关处理：奖励发放 + 进度更新 */
   completeBattle(stageId: string, stars: number): void {
     const isFirst = !this.campaignSystems.campaignSystem.isFirstCleared(stageId);

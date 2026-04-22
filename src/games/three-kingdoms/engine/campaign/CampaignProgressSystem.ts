@@ -8,7 +8,7 @@
  * - 初始化/重置进度（第1章第1关解锁）
  * - 查询关卡状态（locked/available/cleared/threeStar）
  * - 通关处理（更新星级、解锁下一关）
- * - 序列化/反序列化（存档支持）
+ * - 序列化/反序列化（委托 CampaignSerializer）
  *
  * @module engine/campaign/CampaignProgressSystem
  */
@@ -318,51 +318,24 @@ export class CampaignProgressSystem implements ISubsystem {
   /**
    * 序列化为存档数据
    *
+   * 委托给 CampaignSerializer.serializeProgress 纯函数。
+   *
    * @returns 存档数据
    */
   serialize(): CampaignSaveData {
-    return {
-      version: SAVE_VERSION,
-      progress: {
-        currentChapterId: this.progress.currentChapterId,
-        stageStates: Object.fromEntries(
-          Object.entries(this.progress.stageStates).map(([id, s]) => [id, { ...s }]),
-        ),
-        lastClearTime: this.progress.lastClearTime,
-      },
-    };
+    return serializeProgress(this.progress);
   }
 
   /**
    * 从存档数据反序列化
    *
+   * 委托给 CampaignSerializer.deserializeProgress 纯函数。
+   *
    * @param data - 存档数据
    * @throws {Error} 版本不兼容时抛出异常
    */
   deserialize(data: CampaignSaveData): void {
-    if (data.version !== SAVE_VERSION) {
-      throw new Error(
-        `[CampaignProgress] 存档版本不兼容: 期望 ${SAVE_VERSION}, 实际 ${data.version}`,
-      );
-    }
-
-    // 确保所有关卡状态都存在（兼容新增关卡）
-    const allStages = this.getAllStageIds();
-    const stageStates: Record<string, StageState> = {};
-
-    for (const stageId of allStages) {
-      if (data.progress.stageStates[stageId]) {
-        stageStates[stageId] = { ...data.progress.stageStates[stageId] };
-      } else {
-        stageStates[stageId] = createInitialStageState(stageId);
-      }
-    }
-
-    this.progress = {
-      currentChapterId: data.progress.currentChapterId,
-      stageStates,
-      lastClearTime: data.progress.lastClearTime,
-    };
+    this.progress = deserializeProgress(data, this.dataProvider);
   }
 
   // ─────────────────────────────────────────────
@@ -472,16 +445,5 @@ export class CampaignProgressSystem implements ISubsystem {
     }
   }
 
-  /**
-   * 获取所有关卡ID
-   */
-  private getAllStageIds(): string[] {
-    const ids: string[] = [];
-    for (const chapter of this.dataProvider.getChapters()) {
-      for (const stage of chapter.stages) {
-        ids.push(stage.id);
-      }
-    }
-    return ids;
-  }
+
 }

@@ -17,6 +17,9 @@ import type {
   BattleUnit,
 } from '@/games/three-kingdoms/engine/battle/battle.types';
 
+// 复用引擎层 findUnit，避免 UI 层重复实现
+export { findUnit as findUnitInState } from '@/games/three-kingdoms/engine/battle';
+
 // ─────────────────────────────────────────────
 // 类型
 // ─────────────────────────────────────────────
@@ -31,14 +34,6 @@ export type LogType = 'ally' | 'enemy' | 'critical' | 'turn' | 'system';
 /** Promise 延迟 */
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** 在战斗状态中查找单位（用于直接修改HP） */
-export function findUnitInState(state: BattleState, unitId: string): BattleUnit | undefined {
-  return (
-    state.allyTeam.units.find((u) => u.id === unitId) ||
-    state.enemyTeam.units.find((u) => u.id === unitId)
-  );
 }
 
 /** 获取血条颜色等级 */
