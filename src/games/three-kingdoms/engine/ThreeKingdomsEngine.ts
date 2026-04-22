@@ -363,22 +363,18 @@ export class ThreeKingdomsEngine {
     this.heroFormation.reset(); this.heroStarSystem.reset(); this.bondSystem.reset();
     this.campaignSystems.campaignSystem.reset(); this.sweepSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
-    this.techSystems.researchSystem.reset();
-    this.techSystems.fusionSystem.reset(); this.techSystems.linkSystem.reset();
-    this.techSystems.offlineSystem.reset();
+    this.techSystems.researchSystem.reset(); this.techSystems.fusionSystem.reset();
+    this.techSystems.linkSystem.reset(); this.techSystems.offlineSystem.reset();
     this.mapSystems.worldMap.reset(); this.mapSystems.territory.reset();
-    this.mapSystems.siege.reset(); this.mapSystems.garrison.reset();
-    this.mapSystems.siegeEnhancer.reset();
+    this.mapSystems.siege.reset(); this.mapSystems.garrison.reset(); this.mapSystems.siegeEnhancer.reset();
     this.eventSystems.trigger.reset(); this.eventSystems.notification.reset();
     this.eventSystems.uiNotification.reset(); this.eventSystems.chain.reset();
     this.eventSystems.log.reset(); this.eventSystems.offline.reset();
-    // R11: 重置13个缺失子系统
     this.mailSystem.reset(); this.shopSystem.reset(); this.currencySystem.reset();
     this.npcSystem.reset(); this.equipmentSystem.reset();
     this.equipmentForgeSystem.reset(); this.equipmentEnhanceSystem.reset();
     this.prestigeSystem.reset(); this.questSystem.reset();
-    this.achievementSystem.reset(); this.heritageSystem.reset();
-    this.accountSystem.reset();
+    this.achievementSystem.reset(); this.heritageSystem.reset(); this.accountSystem.reset();
     this.initialized = false; this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0; this.prevResourcesJson = ''; this.prevRatesJson = '';
     this.saveManager.deleteSave(); this.bus.removeAllListeners();
@@ -399,12 +395,9 @@ export class ThreeKingdomsEngine {
       resources: this.resource.getResources(),
       productionRates: this.resource.getProductionRates(),
       caps: this.resource.getCaps(),
-      buildings: this.building.getAllBuildings(),
-      onlineSeconds: this.onlineSeconds,
-      calendar: this.calendar.getState(),
-      heroes: this.hero?.getAllGenerals() ?? [],
-      heroFragments: this.hero?.getAllFragments() ?? {},
-      totalPower: this.hero?.calculateTotalPower() ?? 0,
+      buildings: this.building.getAllBuildings(), onlineSeconds: this.onlineSeconds,
+      calendar: this.calendar.getState(), heroes: this.hero?.getAllGenerals() ?? [],
+      heroFragments: this.hero?.getAllFragments() ?? {}, totalPower: this.hero?.calculateTotalPower() ?? 0,
       formations: this.heroFormation?.getAllFormations() ?? [],
       activeFormationId: this.heroFormation?.getActiveFormationId() ?? null,
       campaignProgress: this.campaignSystems?.campaignSystem?.getProgress() ?? { currentChapterId: '', stageStates: {}, lastClearTime: 0 },
