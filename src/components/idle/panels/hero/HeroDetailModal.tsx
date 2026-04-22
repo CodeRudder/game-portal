@@ -21,6 +21,7 @@ import { formatNumber } from '@/components/idle/utils/formatNumber';
 import RadarChart from './RadarChart';
 import HeroStarUpModal from './HeroStarUpModal';
 import './HeroDetailModal.css';
+import './HeroDetailModal-chart.css';
 
 // ─────────────────────────────────────────────
 // Props

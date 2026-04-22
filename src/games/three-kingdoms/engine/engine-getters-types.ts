@@ -11,6 +11,7 @@ import type { HeroRecruitSystem, RecruitOutput } from './hero/HeroRecruitSystem'
 import type { HeroLevelSystem, LevelUpResult, BatchEnhanceResult, EnhancePreview } from './hero/HeroLevelSystem';
 import type { HeroFormation, FormationData } from './hero/HeroFormation';
 import type { HeroStarSystem } from './hero/HeroStarSystem';
+import type { BondSystem } from './bond/BondSystem';
 import type { SweepSystem } from './campaign/SweepSystem';
 import type { BattleEngine } from './battle/BattleEngine';
 import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
@@ -65,6 +66,7 @@ export interface EngineGettersMixin {
   getFormations(): FormationData[];
   getActiveFormation(): FormationData | null;
   getHeroStarSystem(): HeroStarSystem;
+  getBondSystem(): BondSystem;
   getSweepSystem(): SweepSystem;
   getResourceAmount(type: string): number;
   createFormation(id?: string): FormationData | null;

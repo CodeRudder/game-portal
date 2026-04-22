@@ -10,9 +10,11 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import type { GeneralData } from '@/games/three-kingdoms/engine';
-import { QUALITY_BORDER_COLORS, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from '@/games/three-kingdoms/engine';
+import { QUALITY_BORDER_COLORS, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION, FACTION_LABELS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { FormationData } from '@/games/three-kingdoms/engine';
+import type { ActiveBond, BondPotentialTip } from '@/games/three-kingdoms/core/bond';
+import { BOND_NAMES } from '@/games/three-kingdoms/core/bond';
 import './FormationPanel.css';
 
 // ─────────────────────────────────────────────
@@ -102,6 +104,21 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
     return allGenerals.filter((g) => !inFormation.has(g.id));
   }, [editingId, allGenerals, formationSystem, snapshotVersion]);
 
+  // ── 羁绊数据 ──
+  const bondSystem = engine.getBondSystem();
+
+  const getBondPreview = useCallback(
+    (f: FormationData) => {
+      const heroes = f.slots
+        .filter((s) => s !== '')
+        .map((id) => heroSystem.getGeneral(id))
+        .filter((g): g is GeneralData => g !== undefined);
+      if (heroes.length === 0) return null;
+      return bondSystem.getFormationPreview(f.id, heroes);
+    },
+    [bondSystem, heroSystem],
+  );
+
   // ── 渲染 ──
   return (
     <div className="tk-formation-panel">
@@ -182,6 +199,45 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
                 <div className="tk-formation-power">
                   战力: {power.toLocaleString('zh-CN')}
                 </div>
+
+                {/* 羁绊信息 */}
+                {(() => {
+                  const preview = getBondPreview(f);
+                  if (!preview) return null;
+                  return (
+                    <div className="tk-formation-bonds">
+                      {preview.activeBonds.length > 0 && (
+                        <div className="tk-formation-bonds-active">
+                          {preview.activeBonds.map((bond: ActiveBond, idx: number) => (
+                            <span key={idx} className="tk-formation-bond-tag tk-formation-bond-tag--active">
+                              {bond.effect.icon} {bond.effect.name}
+                              <span className="tk-formation-bond-count">({FACTION_LABELS[bond.faction]}×{bond.heroCount})</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {preview.totalBonuses && Object.keys(preview.totalBonuses).length > 0 && (
+                        <div className="tk-formation-bonds-bonus">
+                          {Object.entries(preview.totalBonuses).map(([key, val]) => (
+                            <span key={key} className="tk-formation-bond-bonus">
+                              {key === 'attack' ? '攻击' : key === 'defense' ? '防御' : key === 'intelligence' ? '智力' : key === 'speed' ? '速度' : key}
+                              +{((val as number) * 100).toFixed(0)}%
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {preview.potentialBonds.length > 0 && (
+                        <div className="tk-formation-bonds-potential">
+                          {preview.potentialBonds.map((tip: BondPotentialTip, idx: number) => (
+                            <span key={idx} className="tk-formation-bond-tag tk-formation-bond-tag--potential">
+                              还差{tip.missingCount}名{FACTION_LABELS[tip.suggestedFaction]}武将激活「{BOND_NAMES[tip.type]}」
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* 编队槽位 */}
                 <div className="tk-formation-slots">

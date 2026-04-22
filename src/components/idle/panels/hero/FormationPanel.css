@@ -287,3 +287,63 @@
   transform: scale(0.97);
   transition: transform 0.1s;
 }
+
+/* ═══════════════════════════════════════════
+   羁绊信息区域
+   ═══════════════════════════════════════════ */
+.tk-formation-bonds {
+  margin-bottom: 6px;
+}
+
+.tk-formation-bonds-active {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.tk-formation-bond-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.tk-formation-bond-tag--active {
+  background: rgba(76, 175, 80, 0.12);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  color: var(--tk-green);
+}
+
+.tk-formation-bond-tag--potential {
+  background: rgba(200, 168, 76, 0.08);
+  border: 1px dashed rgba(200, 168, 76, 0.25);
+  color: var(--tk-text-muted);
+}
+
+.tk-formation-bond-count {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.tk-formation-bonds-bonus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tk-formation-bond-bonus {
+  font-size: 11px;
+  color: var(--tk-gold-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-formation-bonds-potential {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}

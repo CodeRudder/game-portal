@@ -1,0 +1,116 @@
+/**
+ * HeroDetailModal — 雷达图 / 属性条 / 技能列表样式
+ * 从 HeroDetailModal.css 拆分，保持主文件 ≤500 行
+ */
+
+/* 右侧：雷达图 + 属性 + 技能 */
+.tk-hero-detail-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tk-hero-detail-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+}
+
+/* 雷达图 */
+.tk-hero-detail-radar-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.tk-hero-radar {
+  display: block;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.tk-hero-radar-data {
+  animation: tk-radar-grow 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+}
+
+@keyframes tk-radar-grow {
+  from { opacity: 0; transform: scale(0.3); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 属性条 */
+.tk-hero-detail-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.tk-hero-detail-stat-label {
+  width: 36px;
+  font-size: 13px;
+  color: var(--tk-text-secondary);
+  flex-shrink: 0;
+}
+.tk-hero-detail-stat-bar {
+  flex: 1;
+  height: 16px;
+  background: rgba(240, 230, 211, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.tk-hero-detail-stat-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  opacity: 0.85;
+}
+
+.tk-hero-detail-stat-value {
+  width: 36px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 技能列表 */
+.tk-hero-detail-skill-empty { font-size: 13px; color: var(--tk-text-muted); padding: 8px 0; }
+
+.tk-hero-detail-skill-item {
+  background: rgba(240, 230, 211, 0.04);
+  border: 1px solid rgba(200, 168, 76, 0.1);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.tk-hero-detail-skill-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.tk-hero-detail-skill-name { font-size: 14px; font-weight: 600; color: var(--tk-text-primary); }
+.tk-hero-detail-skill-type {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(200, 168, 76, 0.15);
+  color: var(--tk-gold-light);
+}
+
+.tk-hero-detail-skill-level { font-size: 11px; color: var(--tk-text-secondary); margin-left: auto; }
+.tk-hero-detail-skill-desc { font-size: 12px; color: var(--tk-text-secondary); line-height: 1.5; }
+
+/* 手机端 — 图表区域响应式覆盖 */
+@media (max-width: 767px) {
+  .tk-hero-detail-right { gap: 14px; }
+  .tk-hero-detail-stat-row { gap: 8px; }
+  .tk-hero-detail-radar-wrap { padding: 0; }
+  .tk-hero-radar { width: 160px; height: 160px; }
+}

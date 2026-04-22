@@ -1,0 +1,311 @@
+{
+  "passed": [
+    {
+      "id": "LOAD-01",
+      "desc": "开始游戏按钮点击成功"
+    },
+    {
+      "id": "DATA-01",
+      "desc": "页面无NaN"
+    },
+    {
+      "id": "DATA-02",
+      "desc": "页面无undefined"
+    },
+    {
+      "id": "TAB-01",
+      "desc": "武将Tab切换成功"
+    },
+    {
+      "id": "TAB-03",
+      "desc": "武将工具栏(.tk-hero-toolbar)存在"
+    },
+    {
+      "id": "TAB-04",
+      "desc": "总战力显示: ⚔️ 总战力 0"
+    },
+    {
+      "id": "TAB-05",
+      "desc": "招募按钮(.tk-hero-recruit-btn)存在"
+    },
+    {
+      "id": "CARD-00",
+      "desc": "空状态提示(.tk-hero-empty)正确显示"
+    },
+    {
+      "id": "CARD-00-RECRUIT",
+      "desc": "通过空状态按钮招募了武将"
+    },
+    {
+      "id": "CARD-01",
+      "desc": "武将卡片数量: 1"
+    },
+    {
+      "id": "CARD-02",
+      "desc": "武将名字: 校尉"
+    },
+    {
+      "id": "CARD-03",
+      "desc": "品质标签: 精良"
+    },
+    {
+      "id": "CARD-04",
+      "desc": "等级显示: Lv.1"
+    },
+    {
+      "id": "CARD-05",
+      "desc": "战力显示: ⚔️ 507"
+    },
+    {
+      "id": "CARD-06",
+      "desc": "阵营显示: 🟣群"
+    },
+    {
+      "id": "CARD-07",
+      "desc": "头像区域(.tk-hero-card-portrait)存在"
+    },
+    {
+      "id": "CARD-08",
+      "desc": "品质边框颜色已设置(border-color)"
+    },
+    {
+      "id": "DETAIL-01",
+      "desc": "武将详情弹窗(.tk-hero-detail-overlay)已打开"
+    },
+    {
+      "id": "DETAIL-02",
+      "desc": "详情标题-名字: 校尉"
+    },
+    {
+      "id": "DETAIL-03",
+      "desc": "详情-品质: 精良 (颜色: 已设置)"
+    },
+    {
+      "id": "DETAIL-04",
+      "desc": "详情-阵营: 群"
+    },
+    {
+      "id": "DETAIL-05",
+      "desc": "详情-等级: Lv.1"
+    },
+    {
+      "id": "DETAIL-06",
+      "desc": "详情-战力: ⚔️ 战力 507"
+    },
+    {
+      "id": "DETAIL-07",
+      "desc": "详情-头像存在 (品质背景: 已设置)"
+    },
+    {
+      "id": "RADAR-01",
+      "desc": "SVG雷达图(.tk-hero-radar)存在"
+    },
+    {
+      "id": "RADAR-02",
+      "desc": "雷达图结构: polygons=true, circles=true, texts=true, lines=true"
+    },
+    {
+      "id": "RADAR-03",
+      "desc": "雷达图区域(.tk-hero-detail-radar-section)存在"
+    },
+    {
+      "id": "RADAR-04",
+      "desc": "雷达图数据多边形(.tk-hero-radar-data)存在"
+    },
+    {
+      "id": "UPGRADE-01",
+      "desc": "升级区域(.tk-hero-detail-enhance)存在"
+    },
+    {
+      "id": "UPGRADE-02",
+      "desc": "升级按钮: 升级至 Lv.2"
+    },
+    {
+      "id": "UPGRADE-03",
+      "desc": "+5级按钮(.tk-hero-detail-enhance-max-btn)存在"
+    },
+    {
+      "id": "UPGRADE-04",
+      "desc": "升级消耗: 💰 20 铜钱"
+    },
+    {
+      "id": "UPGRADE-05",
+      "desc": "战力预览: 战力: 507 → 531(+24)"
+    },
+    {
+      "id": "UPGRADE-06",
+      "desc": "资源状态: ❌ 资源不足"
+    },
+    {
+      "id": "FRAG-01",
+      "desc": "碎片区域(.tk-hero-detail-fragments)存在"
+    },
+    {
+      "id": "FRAG-02",
+      "desc": "碎片数量: 💎 碎片 0/80"
+    },
+    {
+      "id": "FRAG-03",
+      "desc": "碎片进度条(.tk-hero-detail-fragments-bar)存在"
+    },
+    {
+      "id": "FRAG-04",
+      "desc": "合成按钮: 碎片合成 (0/80)"
+    },
+    {
+      "id": "QUALITY-01",
+      "desc": "详情头部品质边框颜色已设置"
+    },
+    {
+      "id": "QUALITY-02",
+      "desc": "头像品质渐变背景已设置"
+    },
+    {
+      "id": "QUALITY-03",
+      "desc": "品质标签背景色已设置"
+    },
+    {
+      "id": "QUALITY-04",
+      "desc": "等级徽章品质边框已设置"
+    },
+    {
+      "id": "STATS-01",
+      "desc": "属性条数量: 4"
+    },
+    {
+      "id": "STATS-02",
+      "desc": "属性条填充: 有样式"
+    },
+    {
+      "id": "SKILL-01",
+      "desc": "技能数量: 2"
+    },
+    {
+      "id": "DETAIL-08",
+      "desc": "对比按钮(.tk-hero-detail-compare-btn)存在"
+    },
+    {
+      "id": "DETAIL-09",
+      "desc": "升星按钮存在"
+    },
+    {
+      "id": "DETAIL-10",
+      "desc": "经验条(.tk-hero-detail-exp-section)存在"
+    },
+    {
+      "id": "RECRUIT-01",
+      "desc": "招募按钮点击成功"
+    },
+    {
+      "id": "RECRUIT-02",
+      "desc": "招募弹窗(.tk-recruit-overlay)已打开"
+    },
+    {
+      "id": "RECRUIT-03",
+      "desc": "招募标题: ⚔️ 招贤纳士"
+    },
+    {
+      "id": "RECRUIT-04",
+      "desc": "招募类型按钮数量: 2"
+    },
+    {
+      "id": "RECRUIT-04-0",
+      "desc": "招募类型: 普通招贤"
+    },
+    {
+      "id": "RECRUIT-04-1",
+      "desc": "招募类型: 高级招贤"
+    },
+    {
+      "id": "PITY-01",
+      "desc": "保底区域(.tk-recruit-pity)存在"
+    },
+    {
+      "id": "PITY-02",
+      "desc": "保底进度项数量: 2"
+    },
+    {
+      "id": "PITY-03",
+      "desc": "十连保底标签: 十连保底（稀有+）"
+    },
+    {
+      "id": "PITY-04",
+      "desc": "硬保底标签: 硬保底（史诗+）"
+    },
+    {
+      "id": "PITY-05",
+      "desc": "保底进度条数量: 2"
+    },
+    {
+      "id": "PITY-06-0",
+      "desc": "保底填充0: width: 10%;"
+    },
+    {
+      "id": "PITY-06-1",
+      "desc": "保底填充1: width: 2%;"
+    },
+    {
+      "id": "PITY-07-0",
+      "desc": "保底计数0: 1/10"
+    },
+    {
+      "id": "PITY-07-1",
+      "desc": "保底计数1: 1/50"
+    },
+    {
+      "id": "RECRUIT-05",
+      "desc": "单次招募按钮存在"
+    },
+    {
+      "id": "RECRUIT-06",
+      "desc": "十连招募按钮存在"
+    },
+    {
+      "id": "RECRUIT-07-0",
+      "desc": "消耗显示: 铜钱 ×100"
+    },
+    {
+      "id": "RECRUIT-07-1",
+      "desc": "消耗显示: 铜钱 ×900"
+    },
+    {
+      "id": "RECRUIT-08",
+      "desc": "招募记录按钮(.tk-recruit-history-toggle)存在"
+    },
+    {
+      "id": "RECRUIT-09",
+      "desc": "切换到高级招募"
+    },
+    {
+      "id": "MOBILE-01",
+      "desc": "移动端武将卡片: 1"
+    },
+    {
+      "id": "MOBILE-02",
+      "desc": "移动端招募按钮存在"
+    },
+    {
+      "id": "CONSOLE-01",
+      "desc": "无控制台错误"
+    }
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "id": "TAB-02",
+      "desc": "武将列表网格(.tk-hero-grid)未找到"
+    }
+  ],
+  "consoleErrors": [],
+  "screenshots": [
+    "00-main-page",
+    "01-hero-tab",
+    "02-hero-cards",
+    "03-hero-detail",
+    "04-recruit-modal",
+    "05-recruit-advanced",
+    "06-mobile-hero-tab",
+    "07-mobile-recruit",
+    "08-mobile-hero-detail"
+  ]
+}

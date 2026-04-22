@@ -12,6 +12,7 @@ import { HeroRecruitSystem } from './hero/HeroRecruitSystem';
 import { HeroLevelSystem } from './hero/HeroLevelSystem';
 import { HeroFormation } from './hero/HeroFormation';
 import { HeroStarSystem } from './hero/HeroStarSystem';
+import { BondSystem } from './bond/BondSystem';
 import type { CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type {
@@ -87,6 +88,7 @@ export class ThreeKingdomsEngine {
   readonly heroLevel: HeroLevelSystem;
   private readonly heroFormation: HeroFormation;
   private readonly heroStarSystem: HeroStarSystem;
+  private readonly bondSystem: BondSystem;
   private readonly campaignSystems: CampaignSystems;
   private readonly sweepSystem: SweepSystem;
   private readonly techSystems: TechSystems;
@@ -132,6 +134,7 @@ export class ThreeKingdomsEngine {
     this.heroLevel = new HeroLevelSystem();
     this.heroFormation = new HeroFormation();
     this.heroStarSystem = new HeroStarSystem(this.hero);
+    this.bondSystem = new BondSystem();
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
     const self = this;
     this.sweepSystem = new SweepSystem(
@@ -217,6 +220,7 @@ export class ThreeKingdomsEngine {
     r.register('heroLevel', this.heroLevel);
     r.register('heroFormation', this.heroFormation);
     r.register('heroStarSystem', this.heroStarSystem);
+    r.register('bond', this.bondSystem);
     r.register('battleEngine', this.campaignSystems.battleEngine);
     r.register('campaignSystem', this.campaignSystems.campaignSystem);
     r.register('rewardDistributor', this.campaignSystems.rewardDistributor);
@@ -266,6 +270,7 @@ export class ThreeKingdomsEngine {
     syncBuildingToResource(this.buildTickCtx());
     const deps = this.buildDeps();
     this.calendar.init(deps); this.initHeroSystems(deps);
+    this.bondSystem.init(deps);
     initCampaignSystems(this.campaignSystems, deps);
     initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps);
@@ -333,7 +338,8 @@ export class ThreeKingdomsEngine {
 
   deserialize(json: string): void {
     applyDeserialize(this.buildSaveCtx(), json);
-    this.initHeroSystems(this.buildDeps()); this.initialized = true;
+    this.initHeroSystems(this.buildDeps()); this.bondSystem.init(this.buildDeps());
+    this.initialized = true;
     this.lastTickTime = Date.now();
   }
 
@@ -342,7 +348,7 @@ export class ThreeKingdomsEngine {
   reset(): void {
     this.resource.reset(); this.building.reset(); this.calendar.reset();
     this.hero.reset(); this.heroRecruit.reset(); this.heroLevel.reset();
-    this.heroFormation.reset(); this.heroStarSystem.reset();
+    this.heroFormation.reset(); this.heroStarSystem.reset(); this.bondSystem.reset();
     this.campaignSystems.campaignSystem.reset(); this.sweepSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
     this.techSystems.researchSystem.reset();
@@ -475,6 +481,7 @@ export class ThreeKingdomsEngine {
   private finalizeLoad(): void {
     const deps = this.buildDeps();
     this.initHeroSystems(deps);
+    this.bondSystem.init(deps);
     initCampaignSystems(this.campaignSystems, deps);
     initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps);

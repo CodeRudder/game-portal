@@ -13,6 +13,7 @@ import type { HeroRecruitSystem, RecruitOutput } from './hero/HeroRecruitSystem'
 import type { HeroLevelSystem, LevelUpResult, BatchEnhanceResult, EnhancePreview } from './hero/HeroLevelSystem';
 import type { HeroFormation, FormationData } from './hero/HeroFormation';
 import type { HeroStarSystem } from './hero/HeroStarSystem';
+import type { BondSystem } from './bond/BondSystem';
 import type { SweepSystem } from './campaign/SweepSystem';
 import type { BattleEngine } from './battle/BattleEngine';
 import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
@@ -76,6 +77,7 @@ export function applyGetters(cls: any): void {
   p.getFormations = function(this: EngineAny): FormationData[] { return this.heroFormation.getAllFormations(); };
   p.getActiveFormation = function(this: EngineAny): FormationData | null { return this.heroFormation.getActiveFormation(); };
   p.getHeroStarSystem = function(this: EngineAny): HeroStarSystem { return this.heroStarSystem; };
+  p.getBondSystem = function(this: EngineAny): BondSystem { return this.bondSystem; };
   p.getSweepSystem = function(this: EngineAny): SweepSystem { return this.sweepSystem; };
 
   p.getResourceAmount = function(this: EngineAny, type: string): number {
