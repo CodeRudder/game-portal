@@ -17,66 +17,32 @@ import {
   PAID_SLOT_PRICE,
   AUTO_SAVE_INTERVAL,
   ConflictStrategy,
-  CloudSyncFrequency,
 } from '../../core/settings';
 import type {
   SaveSlot,
   SaveSlotData,
   AccountSettings,
-  DeviceInfo,
 } from '../../core/settings';
+import {
+  type SaveSlotChangeCallback,
+  type SaveSlotResult,
+  type ExportData,
+  type ISaveSlotStorage,
+  type CloudSyncResult as SaveSlotCloudSyncResult,
+  CloudSyncStatus,
+  SAVE_SLOT_PREFIX,
+  EXPORT_VERSION,
+} from './save-slot.types';
 
-// ─────────────────────────────────────────────
-// 类型
-// ─────────────────────────────────────────────
-
-/** 存档槽位变更回调 */
-export type SaveSlotChangeCallback = (
-  slotIndex: number,
-  action: 'save' | 'load' | 'delete',
-) => void;
-
-/** 云同步状态 */
-export enum CloudSyncStatus {
-  Idle = 'idle',
-  Syncing = 'syncing',
-  Success = 'success',
-  Failed = 'failed',
-}
-
-/** 云同步结果 */
-export interface CloudSyncResult {
-  status: CloudSyncStatus;
-  message: string;
-  syncedAt: number;
-}
-
-/** 存档操作结果 */
-export interface SaveSlotResult {
-  success: boolean;
-  message: string;
-}
-
-/** 导出数据格式 */
-export interface ExportData {
-  version: string;
-  exportedAt: number;
-  slots: Record<number, string>; // slotIndex -> base64 encoded data
-}
-
-/** 存储适配器 */
-export interface ISaveSlotStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
-}
-
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-const SAVE_SLOT_PREFIX = 'three-kingdoms-slot-';
-const EXPORT_VERSION = '1.0.0';
+// 重导出类型供外部使用
+export type {
+  SaveSlotChangeCallback,
+  SaveSlotResult,
+  ExportData,
+  ISaveSlotStorage,
+  CloudSyncResult as SaveSlotCloudSyncResult,
+} from './save-slot.types';
+export { CloudSyncStatus } from './save-slot.types';
 
 // ─────────────────────────────────────────────
 // 多存档管理器
@@ -90,14 +56,8 @@ const EXPORT_VERSION = '1.0.0';
  * @example
  * ```ts
  * const mgr = new SaveSlotManager();
- *
- * // 保存到槽位 0
  * mgr.saveToSlot(0, gameState, '第一章');
- *
- * // 从槽位 0 加载
  * const data = mgr.loadFromSlot(0);
- *
- * // 自动存档
  * mgr.startAutoSave(() => engine.getGameState());
  * ```
  */
@@ -146,8 +106,8 @@ export class SaveSlotManager {
   isSlotAvailable(index: number): boolean {
     if (!this.isValidSlotIndex(index)) return false;
     const slot = this.slots[index];
-    if (!slot.isPaid) return true; // 免费槽位
-    return slot.purchased; // 付费槽位需购买
+    if (!slot.isPaid) return true;
+    return slot.purchased;
   }
 
   /** 槽位是否为空 */
@@ -160,14 +120,7 @@ export class SaveSlotManager {
   // 保存操作
   // ─────────────────────────────────────────
 
-  /**
-   * 保存到指定槽位
-   *
-   * @param index - 槽位索引
-   * @param gameData - 游戏数据（JSON 字符串）
-   * @param name - 存档名称
-   * @returns 操作结果
-   */
+  /** 保存到指定槽位 */
   saveToSlot(index: number, gameData: string, name: string): SaveSlotResult {
     if (!this.isValidSlotIndex(index)) {
       return { success: false, message: '无效的槽位索引' };
@@ -183,24 +136,17 @@ export class SaveSlotManager {
         progress: name,
         sizeBytes,
       };
-      this.slots[index] = {
-        ...this.slots[index],
-        data: slotData,
-      };
+      this.slots[index] = { ...this.slots[index], data: slotData };
       this.storage.setItem(`${SAVE_SLOT_PREFIX}${index}`, gameData);
       this.saveSlotMetadata();
       this.notifyListeners(index, 'save');
       return { success: true, message: '保存成功' };
-    } catch (e) {
+    } catch {
       return { success: false, message: '保存失败：存储空间不足' };
     }
   }
 
-  /**
-   * 从指定槽位加载
-   *
-   * @returns 游戏数据 JSON 字符串，或 null
-   */
+  /** 从指定槽位加载 */
   loadFromSlot(index: number): string | null {
     if (!this.isValidSlotIndex(index)) return null;
     if (this.slots[index].data === null) return null;
@@ -213,9 +159,7 @@ export class SaveSlotManager {
     }
   }
 
-  /**
-   * 删除指定槽位存档
-   */
+  /** 删除指定槽位存档 */
   deleteSlot(index: number): SaveSlotResult {
     if (!this.isValidSlotIndex(index)) {
       return { success: false, message: '无效的槽位索引' };
@@ -223,10 +167,7 @@ export class SaveSlotManager {
     if (this.slots[index].data === null) {
       return { success: false, message: '该槽位为空' };
     }
-    this.slots[index] = {
-      ...this.slots[index],
-      data: null,
-    };
+    this.slots[index] = { ...this.slots[index], data: null };
     this.storage.removeItem(`${SAVE_SLOT_PREFIX}${index}`);
     this.saveSlotMetadata();
     this.notifyListeners(index, 'delete');
@@ -237,12 +178,7 @@ export class SaveSlotManager {
   // 付费槽位
   // ─────────────────────────────────────────
 
-  /**
-   * 购买付费槽位
-   *
-   * @param spendFn - 消耗元宝的函数
-   * @returns 操作结果
-   */
+  /** 购买付费槽位 */
   purchasePaidSlot(spendFn: (amount: number) => boolean): SaveSlotResult {
     const paidSlot = this.slots.find((s) => s.isPaid && !s.purchased);
     if (!paidSlot) {
@@ -266,16 +202,8 @@ export class SaveSlotManager {
   // 自动存档
   // ─────────────────────────────────────────
 
-  /**
-   * 启动自动存档
-   *
-   * @param getStateFn - 获取当前游戏状态的函数
-   * @param slotIndex - 自动存档使用的槽位（默认0）
-   */
-  startAutoSave(
-    getStateFn: () => string,
-    slotIndex: number = 0,
-  ): void {
+  /** 启动自动存档 */
+  startAutoSave(getStateFn: () => string, slotIndex: number = 0): void {
     this.stopAutoSave();
     this.autoSaveTimer = setInterval(() => {
       const data = getStateFn();
@@ -306,34 +234,21 @@ export class SaveSlotManager {
   // 导入导出
   // ─────────────────────────────────────────
 
-  /**
-   * 导出所有存档
-   *
-   * 将所有非空槽位的数据打包为可导出的 JSON 格式。
-   */
+  /** 导出所有存档 */
   exportSaves(): ExportData {
     const slots: Record<number, string> = {};
     for (const slot of this.slots) {
       if (slot.data !== null) {
         const data = this.storage.getItem(`${SAVE_SLOT_PREFIX}${slot.slotIndex}`);
         if (data) {
-          // Base64 编码
           slots[slot.slotIndex] = btoa(unescape(encodeURIComponent(data)));
         }
       }
     }
-    return {
-      version: EXPORT_VERSION,
-      exportedAt: Date.now(),
-      slots,
-    };
+    return { version: EXPORT_VERSION, exportedAt: Date.now(), slots };
   }
 
-  /**
-   * 导入存档
-   *
-   * 从导出数据恢复存档。
-   */
+  /** 导入存档 */
   importSaves(exportData: ExportData): SaveSlotResult {
     if (!exportData || !exportData.slots) {
       return { success: false, message: '无效的导入数据' };
@@ -355,31 +270,19 @@ export class SaveSlotManager {
   // 云存档（模拟）
   // ─────────────────────────────────────────
 
-  /**
-   * 执行云同步
-   *
-   * 模拟云存档同步流程。
-   */
+  /** 执行云同步 */
   async cloudSync(
     accountSettings: AccountSettings,
     localData: string,
-  ): Promise<CloudSyncResult> {
+  ): Promise<SaveSlotCloudSyncResult> {
     this.cloudSyncStatus = CloudSyncStatus.Syncing;
-
-    // 检查 WiFi 限制
-    if (accountSettings.wifiOnlySync) {
-      // 模拟检查（实际环境中检查 navigator.connection）
-      // 这里简单通过
-    }
 
     // 模拟网络延迟
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     try {
       // 模拟加密存储
-      const encrypted = this.simpleEncrypt(localData);
-
-      // 模拟存储到云端
+      this.simpleEncrypt(localData);
       this.lastCloudSyncAt = Date.now();
       this.cloudSyncStatus = CloudSyncStatus.Success;
 
@@ -390,11 +293,7 @@ export class SaveSlotManager {
       };
     } catch {
       this.cloudSyncStatus = CloudSyncStatus.Failed;
-      return {
-        status: CloudSyncStatus.Failed,
-        message: '同步失败',
-        syncedAt: 0,
-      };
+      return { status: CloudSyncStatus.Failed, message: '同步失败', syncedAt: 0 };
     }
   }
 
@@ -408,11 +307,7 @@ export class SaveSlotManager {
     return this.lastCloudSyncAt;
   }
 
-  /**
-   * 解决冲突
-   *
-   * 根据冲突策略选择使用本地或远程数据。
-   */
+  /** 解决冲突 */
   resolveConflict(
     strategy: ConflictStrategy,
     localTimestamp: number,
@@ -426,7 +321,6 @@ export class SaveSlotManager {
       case ConflictStrategy.CloudWins:
         return remoteData;
       case ConflictStrategy.AlwaysAsk:
-        // 返回本地数据，由 UI 层处理询问
         return localData;
       default:
         return localData;
@@ -437,10 +331,7 @@ export class SaveSlotManager {
   // 事件监听
   // ─────────────────────────────────────────
 
-  /**
-   * 注册槽位变更回调
-   * @returns 取消注册函数
-   */
+  /** 注册槽位变更回调 */
   onChange(callback: SaveSlotChangeCallback): () => void {
     this.listeners.push(callback);
     return () => {
@@ -453,10 +344,6 @@ export class SaveSlotManager {
   removeAllListeners(): void {
     this.listeners = [];
   }
-
-  // ─────────────────────────────────────────
-  // 重置
-  // ─────────────────────────────────────────
 
   /** 重置所有槽位 */
   reset(): void {
@@ -475,7 +362,6 @@ export class SaveSlotManager {
   // 内部方法
   // ─────────────────────────────────────────
 
-  /** 初始化槽位 */
   private initializeSlots(): SaveSlot[] {
     const slots: SaveSlot[] = [];
     for (let i = 0; i < TOTAL_SAVE_SLOTS; i++) {
@@ -489,12 +375,10 @@ export class SaveSlotManager {
     return slots;
   }
 
-  /** 验证槽位索引 */
   private isValidSlotIndex(index: number): boolean {
     return index >= 0 && index < TOTAL_SAVE_SLOTS;
   }
 
-  /** 保存槽位元数据 */
   private saveSlotMetadata(): void {
     try {
       const metadata = {
@@ -507,45 +391,31 @@ export class SaveSlotManager {
         paidSlotPurchased: this.paidSlotPurchased,
       };
       this.storage.setItem(`${SAVE_SLOT_PREFIX}metadata`, JSON.stringify(metadata));
-    } catch {
-      // 静默失败
-    }
+    } catch { /* 静默 */ }
   }
 
-  /** 加载槽位元数据 */
   private loadSlotMetadata(): void {
     try {
       const raw = this.storage.getItem(`${SAVE_SLOT_PREFIX}metadata`);
       if (!raw) return;
       const metadata = JSON.parse(raw);
-      if (metadata.slots) {
-        this.slots = metadata.slots;
-      }
+      if (metadata.slots) this.slots = metadata.slots;
       if (metadata.paidSlotPurchased !== undefined) {
         this.paidSlotPurchased = metadata.paidSlotPurchased;
       }
-    } catch {
-      // 静默失败
-    }
+    } catch { /* 静默 */ }
   }
 
-  /** 简单加密（模拟，实际应使用 Web Crypto API） */
   private simpleEncrypt(data: string): string {
     return btoa(unescape(encodeURIComponent(data)));
   }
 
-  /** 通知监听器 */
   private notifyListeners(slotIndex: number, action: 'save' | 'load' | 'delete'): void {
     for (const cb of this.listeners) {
-      try {
-        cb(slotIndex, action);
-      } catch {
-        // 不阻断
-      }
+      try { cb(slotIndex, action); } catch { /* 不阻断 */ }
     }
   }
 
-  /** 创建默认存储 */
   private static createDefaultStorage(): ISaveSlotStorage {
     if (typeof localStorage !== 'undefined') {
       return localStorage;
