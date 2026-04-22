@@ -1,88 +1,78 @@
 # Round 2 全局复盘 — v1.0~v20.0 进化迭代
 
-> **日期**: 2026-04-23  
-> **范围**: v1.0 基业初立 → v20.0 天下一统(下)  
-> **总提交**: 575 commits  
-> **当前分支**: main
+日期: 2026-04-23
 
----
+## 一、总体完成情况
 
-## 一、完成概览
-
-### 1.1 文档交付
-
-| 类型 | Round 1 | Round 2 | 合计 |
-|------|---------|---------|------|
-| Play文档 | 20份 | 20份 | 20份(覆盖v1~v20) |
-| UI测试报告 | 20份 | 18份 | 38份 |
-| 技术审查报告 | 20份 | 26份 | 46份 |
-| 复盘文档 | 9份 | 26份 | 35份 |
-| 全局复盘 | — | 1份 | 1份 |
-| **Round 2 合计** | | | **91份** |
-
-### 1.2 关键指标
-
-| 指标 | 数值 | 状态 |
+### 文档交付
+| 类型 | 数量 | 说明 |
 |------|------|------|
-| TypeScript源文件 | 600个(.ts) | — |
-| 代码总行数 | 167,410行 | — |
-| 生产代码文件(非测试) | 259个 | — |
-| 测试文件 | 186个 | — |
-| ISubsystem实现 | 126个 | ✅ |
-| 编译错误 | 0 | ✅ |
+| Play文档 | 20份 | v1~v20每版本1份 |
+| 技术审查 | 26份 | Round 2审查报告（含补审） |
+| UI审查 | 18份 | Round 2 UI测试报告 |
+| 复盘文档 | 26份 | 含经验教训 |
+| **合计** | **90份** | Round 2全量交付 |
+
+### 代码质量
+| 指标 | 值 | 状态 |
+|------|-----|------|
+| 源文件数 | 595 | ✅ |
+| 代码行数 | 164,861 | ✅ |
+| 测试文件数(.test.ts) | 186 | ✅ |
+| ISubsystem实现 | 123个 | ✅ |
+| as any(生产代码) | 0处 | 🏆 零容忍达成 |
+| as any(测试代码) | 44处/44文件 | ⚠️ 待清理 |
+| 超标文件(>500行) | 28个 | ⚠️ 需拆分 |
 | DDD门面(engine/index.ts) | 138行 | ✅ |
-| exports-vN遗留 | 2个(v9, v12) | ⚠️ |
-| 生产代码 `as any` | 0处 | ✅ |
-| 测试代码 `as any` | 88处 | ⚠️ |
-| 生产代码超标(>500行) | 0处 | ✅ |
-| 测试文件超标(>500行) | 10处 | ⚠️ |
+| exports-vN反模式 | 2个(v9/v12遗留) | ⚠️ 待清理 |
 
----
+### 提交历史
+| 版本 | Commit | P0 | P1 | P2 |
+|------|--------|----|----|-----|
+| v1.0 | c34134a | 0 | 0 | 0 |
+| v2.0 | c0eb070 | 0 | 0 | 0 |
+| v3.0 | 0cfa0fd | 0 | 0 | 3 |
+| v4.0 | 1bf8770 | 2 | 3 | 4 |
+| v5.0 | 3e1903e | 2 | 3 | 2 |
+| v6.0 | 6001ee3 | 5 | 12 | 18 |
+| v7.0 | 1aa3c51 | 0 | 3 | 7 |
+| v8.0 | 7e84ed9 | 0 | 2 | 11 |
+| v9.0 | cff65a6 | 0 | 11 | 11 |
+| v10.0 | 297db0a | 8 | 15 | 10 |
+| v11.0 | 90d706d | 0 | 8 | 6 |
+| v12.0 | fd5eb71 | 0 | 4 | 5 |
+| v13.0 | b867def | 0 | 0 | 3 |
+| v14.0 | d6945ce | 0 | 0 | 5 |
+| v15.0 | dbc36ea | 0 | 3 | 2 |
+| v16.0 | 0264835 | 4 | 7 | 3 |
+| v17.0 | 7820898 | 0 | 0 | 0 |
+| v18.0 | 97f5cfe | 0 | 0 | 3 |
+| v19.0 | 8218e52 | 0 | 4 | 6 |
+| v20.0 | bbd8baf | 0 | 5 | 2 |
+| **合计** | | **21** | **80** | **100** |
 
-## 二、Round 2 vs Round 1 对比
+## 二、质量分析
 
-| 指标 | Round 1 | Round 2 | 变化 |
-|------|---------|---------|------|
-| DDD门面 | exports-vN反模式6个 | 仅遗留2个 | -66.7% |
-| engine/index.ts | 616行 | 138行 | **-77.5%** |
-| 游戏测试设施 | 无 | GameEventSimulator(411行+357行测试) | 新增 |
-| 文档路径规范 | 混乱 | 统一(play/ui-reviews/tech-reviews/lessons) | 规范化 |
-| 复盘文档 | 9份 | 26份(+1全局) | +188.9% |
-| 技术审查报告 | 20份 | 26份 | +30% |
-| ISubsystem实现 | ~90个 | 126个 | +40% |
-| 生产代码超标文件 | 多个 | 0个 | **清零** |
-| `as any`(生产) | 多处 | 0处 | **清零** |
-| P0问题 | 有 | 0个 | **清零** |
+### P0趋势
+- v1~v3: 0个（基础版本质量好）
+- v4~v6: 2/2/5个（中期暴露问题）
+- v7~v15: 0个（持续改善，13版本零P0）
+- v16: 4个（UI层缺失）
+- v17~v20: 0个（后期质量稳定）
 
----
+### 质量标杆版本
+- 🏆 **v17.0 竖屏适配**: P0/P1/P2全部为0 — 质量最高版本
+- 🏆 **v1.0 基础架构**: P0/P1/P2全部为0
+- 🏆 **v2.0 武将系统**: P0/P1/P2全部为0
+- 🏆 **v14.0 千秋万代**: P0/P1均为0
+- 🏆 **v18.0 新手引导**: P0/P1均为0
 
-## 三、代码规模明细
+### 质量薄弱版本
+- ⚠️ **v6.0 天下大势**: P0:5, P1:12, P2:18 — 测试文件超标严重
+- ⚠️ **v10.0 兵强马壮**: P0:8, P1:15 — UI层大量缺失
+- ⚠️ **v16.0 传承有序**: P0:4 — UI组件层完全缺失
 
-| 版本 | 模块 | 文件数 | 总行数 | 最大文件 |
-|------|------|--------|--------|----------|
-| v3 | campaign+map | 24 | 8,905 | CampaignProgressSystem.ts (449) |
-| v4 | battle | 16 | 4,497 | battle.types.ts (476) |
-| v5 | tech | 13 | 4,429 | FusionTechSystem.ts (487) |
-| v6 | alliance | 7 | 1,396 | AllianceSystem.ts (331) |
-| v7 | shop | 2 | 410 | ShopSystem.ts (380) |
-| v8 | offline | 10 | 2,185 | OfflineSnapshotSystem.ts (407) |
-| v9 | equipment | 12 | 2,370 | EquipmentSystem.ts (412) |
-| v10 | pvp | 7 | 1,920 | ArenaSystem.ts (464) |
-| v11 | expedition | 7 | 2,039 | AutoExpeditionSystem.ts (439) |
-| v12 | quest | 5 | 1,092 | QuestSystem.ts (495) |
-| v13 | social+mail | 10 | 2,766 | LeaderboardSystem.ts (444) |
-| v14 | heritage | 3 | 674 | HeritageSystem.ts (418) |
-| v15 | event | 16 | 5,298 | EventTriggerSystem.ts (487) |
-| v16 | settings | 8 | 3,455 | AccountSystem.ts (603) ⚠️ |
-| v17 | responsive | 7 | 1,693 | TouchInputSystem.ts (355) |
-| v18 | guide | 8 | 2,733 | StoryEventPlayer.ts (499) |
-| v19 | unification | 21 | 5,991 | AccountSystem.ts (424) |
-| v20 | prestige | 5 | 1,094 | PrestigeSystem.ts (386) |
-
----
-
-## 四、超标测试文件(>500行)
-
+### 超标文件TOP 15（>500行）
 | 行数 | 文件 |
 |------|------|
 | 934 | ActivitySystem.test.ts |
@@ -95,88 +85,68 @@
 | 646 | NPCPatrolSystem.test.ts |
 | 645 | CampaignProgressSystem.test.ts |
 | 643 | EventNotificationSystem.test.ts |
+| 623 | TouchInputSystem.test.ts |
+| 623 | NPCAffinitySystem.test.ts |
+| 612 | BattleEngine.test.ts |
+| 607 | HeritageSystem.test.ts |
+| 605 | ThreeKingdomsEngine.test.ts |
 
----
+> 全部28个超标文件均为测试文件，生产代码无超标。
 
-## 五、P0/P1问题汇总
+## 三、经验教训汇总（LL-185~LL-229）
 
-### P0问题: 0个 ✅
-Round 2 全部20个版本均无P0级问题。
+| 编号 | 教训 | 版本 |
+|------|------|------|
+| LL-185 | UI测试改用静态分析避免超时 | v4 |
+| LL-186 | ISubsystem实现率是全局问题 | v4 |
+| LL-187 | AccountSystem拆分按DDD域 | v4 |
+| LL-188~189 | exports-vN遗留+as any渐进修复 | v5 |
+| LL-190 | 静态分析UI测试稳定可靠 | v5 |
+| LL-191~192 | 测试文件超标全局处理 | v6 |
+| LL-193~194 | aria-label统一+测试定位修复 | v7 |
+| LL-195~196 | 商贸模块ISubsystem标杆+ARIA全局添加 | v8 |
+| LL-197~198 | UI通过率偏低+引擎/UI同步不足 | v9 |
+| LL-199~201 | 分解配置对齐+UI补全+测试修复 | v10 |
+| LL-202~203 | 存档tick集成+ISubsystem持续改善 | v11 |
+| LL-204~206 | 远征模块标杆+随机数服务+测试覆盖率 | v12 |
+| LL-207~210 | 联盟审查+三位一体验证 | v13 |
+| LL-211~212 | v14质量优秀+PrestigeShop存档 | v14 |
+| LL-213~215 | 事件系统689测试标杆+废弃代码清理 | v15 |
+| LL-216~218 | v16引擎完整UI缺失+CloudSave修复 | v16 |
+| LL-219~220 | v17质量最佳P0/P1/P2全零 | v17 |
+| LL-221~223 | v18质量优秀+TutorialStorage测试 | v18 |
+| LL-224~226 | v19零as any+双实现统一+循环依赖 | v19 |
+| LL-227~229 | v20生产零as any+测试修复+最大规模 | v20 |
 
-### P1问题: 4个 ⚠️
-1. **v16**: AccountSystem.ts(603行)/SaveSlotManager.ts(560行)/CloudSaveSystem.ts(544行) 超过500行限制
-2. **v15**: ChainEventSystem + ChainEventSystemV15 版本冗余文件
-3. **v19**: unification与settings模块存在AccountSystem/CloudSaveSystem/SettingsManager/AnimationController四重叠
-4. **v20**: RebirthSystem + RebirthSystemV16 版本冗余
+## 四、Round 3 建议
 
----
+### 优先修复(P0级)
+1. **exports-v9/v12遗留文件清理** — 删除2个反模式文件
+2. **测试文件超标拆分** — 28个>500行测试文件需拆分（TOP: ActivitySystem.test.ts 934行）
+3. **CloudSaveSystem 6个测试失败修复**
 
-## 六、Round 3 建议与行动项
+### 重要改进(P1级)
+1. **as any渐进清零** — 生产0处✅已达成，测试代码44处待清理
+2. **UI层缺失补全** — v10/v16最严重，需系统性补全
+3. **循环依赖解耦** — BalanceCalculator↔BalanceReport
+4. **双实现统一** — AudioController vs AudioManager
+5. **EventEngine集成主引擎** — 当前独立运行
 
-### 6.1 遗留清理(P0)
-| # | 行动项 | 优先级 | 预估工作量 |
-|---|--------|--------|-----------|
-| 1 | exports-v9.ts / exports-v12.ts 遗留清理 | P0 | 小 |
-| 2 | v15 ChainEventSystem vs ChainEventSystemV15 去重 | P0 | 中 |
-| 3 | v20 RebirthSystem vs RebirthSystemV16 去重 | P0 | 中 |
+### 进化规则建议
+- **EVO-056**: 每版本P0必须为0才能封版
+- **EVO-057**: 测试文件同样遵守≤500行限制
+- **EVO-058**: exports-vN反模式零容忍
+- **EVO-059**: 生产代码as any零容忍（已达成✅）
+- **EVO-060**: 测试代码as any每版本递减≥20%
 
-### 6.2 架构优化(P1)
-| # | 行动项 | 优先级 | 预估工作量 |
-|---|--------|--------|-----------|
-| 4 | v16 settings模块拆分(AccountSystem/SaveSlotManager/CloudSaveSystem) | P1 | 大 |
-| 5 | v19+v16模块重叠统一(settings vs unification) | P1 | 大 |
-| 6 | 测试代码 `as any` 消除(88处) | P1 | 中 |
-| 7 | 超标测试文件拆分(10个>500行) | P1 | 中 |
+## 五、Round 2 里程碑
 
-### 6.3 功能补全(P2)
-| # | 行动项 | 优先级 | 预估工作量 |
-|---|--------|--------|-----------|
-| 8 | v9/v10 UI层深化功能补全 | P2 | 大 |
-| 9 | Play文档与GameEventSimulator自动化验证结合 | P2 | 中 |
-
----
-
-## 七、经验教训汇总
-
-### Round 2 新增经验教训
-- **LL-162~LL-212**: 共约50条新经验教训(LL-162起为Round 2起始)
-- 覆盖领域: DDD门面设计、测试策略、文档规范、版本冗余管理、跨模块重叠检查
-
-### 进化方法修订(EVO)
-| 编号 | 规则 |
-|------|------|
-| EVO-024 | 技术审查应包含跨模块重叠检查，不只是单文件行数 |
-| EVO-025 | 版本冗余文件(如XxxV16.ts)应在下一版本迭代时清理，不应累积 |
-| EVO-026 | play文档应与GameEventSimulator结合，实现自动化流程验证 |
-
----
-
-## 八、提交里程碑(Round 2 关键提交)
-
-```
-58f5833 evolution(v15-v20-r2): 补全ui-review+lessons文档, Round 2全版本完成
-8cf5749 evolution(v15.0-r2): play文档5章节+UI测试17/17+技术审查P0:0/P1:4+复盘
-dbc36ea evolution(v15.0-r2): play文档5章节+UI测试689通过+技术审查P0:0/P1:3+复盘
-d6945ce evolution(v14.0-r2): play文档5章节+UI测试10/10+技术审查P0:0/P1:0+复盘
-c1fc75e evolution(r5-finalize): Round5复盘+进度文档(20版本审查+P0/P1修复)
-b867def evolution(v13.0-r2): 补完UI测试报告(静态分析4/4)+复盘更新
-2961a87 evolution(v13.0-r2): play文档5章节+UI测试7/12+技术审查P0:0/P1:1+复盘
-fd5eb71 evolution(v12.0-r2): play文档5章节+UI测试32/38+技术审查P0:0/P1:4+复盘
-90d706d evolution(v11.0-r2): play文档5章节+UI测试20/25+技术审查P0:0/P1:8+复盘
-297db0a evolution(v10.0-r2): play文档5章节+UI测试27通过+技术审查P0:1+复盘
-cff65a6 evolution(v9.0-r2): play文档5章节+UI测试16通过+技术审查P0:0+复盘
-```
-
----
-
-## 九、总结
-
-Round 2 在 Round 1 的基础上实现了质的飞跃：
-
-1. **DDD门面精简77.5%**: engine/index.ts 从616行压缩至138行，按业务域清晰导出
-2. **P0问题清零**: 全部20个版本均无P0级问题
-3. **生产代码质量**: `as any`清零、超标文件清零
-4. **文档体系完善**: 91份文档交付，覆盖play/ui-review/tech-review/lessons四大维度
-5. **测试基础设施**: GameEventSimulator为后续自动化验证奠定基础
-
-**Round 3 核心目标**: 清理遗留冗余、统一重叠模块、提升测试代码质量。
+| 指标 | Round 1 | Round 2 | 变化 |
+|------|---------|---------|------|
+| 版本数 | 20 | 20 | — |
+| 文档交付 | ~40份 | 90份 | +125% |
+| P0总计 | — | 21 | 13/20版本零P0 |
+| 生产as any | — | 0 | 零容忍达成 |
+| ISubsystem | — | 123 | DDD架构完善 |
+| 源文件 | — | 595 | 规模稳定 |
+| 代码行数 | — | 164,861 | 规模稳定 |
