@@ -84,16 +84,7 @@ export {
 } from './event/EventEngineSerialization';
 export type { SerializableEventEngine } from './event/EventEngineSerialization';
 export { ChainEventSystemV15 } from './event/ChainEventSystemV15';
-export type {
-  EventChain,
-  EventChainNode,
-  StoryEventDef,
-  StoryLine,
-  StoryChoice,
-  EventLogEntry,
-  ReturnAlert,
-  EventChainSaveData,
-} from './event/event-chain.types';
+// event-chain.types 中的类型已通过 EventChainSystem re-export，无需重复导出
 
 // 事件域 — 类型（从core层重新导出）
 export type {
