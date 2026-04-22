@@ -1,0 +1,50 @@
+{
+  "passed": [
+    "主页面正常加载",
+    "联盟面板通过更多菜单访问",
+    "PvP竞技面板可打开",
+    "排行榜面板可打开",
+    "无NaN/undefined显示",
+    "移动端页面正常渲染",
+    "无横向溢出"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "联盟Boss按钮未找到",
+      "detail": "可能需要先加入联盟"
+    },
+    {
+      "name": "联盟商店按钮未找到",
+      "detail": "可能需要先加入联盟"
+    },
+    {
+      "name": "赛季信息元素未找到",
+      "detail": "undefined"
+    },
+    {
+      "name": "活动按钮未找到",
+      "detail": "可能需要先解锁"
+    },
+    {
+      "name": "签到按钮未找到",
+      "detail": "可能需要先解锁"
+    }
+  ],
+  "screenshots": [
+    "v13-main-page",
+    "v13-alliance-panel-via-more",
+    "v13-pvp-season",
+    "v13-leaderboard",
+    "v13-mobile-main"
+  ],
+  "consoleErrors": [],
+  "startTime": "2026-04-22T14:08:45.318Z",
+  "endTime": "2026-04-22T14:09:03.192Z",
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "warnings": 5
+  }
+}

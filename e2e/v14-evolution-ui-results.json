@@ -1,20 +1,15 @@
 {
   "passed": [
+    "主页面正常加载",
+    "声望面板通过更多菜单访问",
+    "成就面板可打开",
+    "任务面板可打开",
     "无NaN/undefined显示",
     "移动端页面正常渲染",
     "无横向溢出"
   ],
-  "failed": [
-    {
-      "name": "主页面加载",
-      "detail": "页面内容为空"
-    }
-  ],
+  "failed": [],
   "warnings": [
-    {
-      "name": "声望按钮未找到",
-      "detail": "undefined"
-    },
     {
       "name": "声望商店按钮未找到",
       "detail": "可能需要先打开声望面板"
@@ -24,25 +19,24 @@
       "detail": "可能需要满足解锁条件"
     },
     {
-      "name": "成就按钮未找到",
-      "detail": "可能需要先解锁"
-    },
-    {
-      "name": "任务按钮未找到",
+      "name": "成就维度Tab未找到",
       "detail": "undefined"
     }
   ],
   "screenshots": [
     "v14-main-page",
+    "v14-prestige-panel-via-more",
+    "v14-achievement-panel",
+    "v14-quest-panel",
     "v14-mobile-main"
   ],
   "consoleErrors": [],
-  "startTime": "2026-04-22T13:51:02.673Z",
-  "endTime": "2026-04-22T13:51:10.942Z",
+  "startTime": "2026-04-22T14:09:50.883Z",
+  "endTime": "2026-04-22T14:10:07.745Z",
   "summary": {
-    "total": 4,
-    "passed": 3,
-    "failed": 1,
-    "warnings": 5
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "warnings": 3
   }
 }

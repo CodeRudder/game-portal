@@ -1,0 +1,52 @@
+{
+  "passed": [
+    "主页面正常加载",
+    "无NaN/undefined显示",
+    "移动端页面正常渲染",
+    "无横向溢出"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "事件通知横幅未找到",
+      "detail": "可能没有活跃事件"
+    },
+    {
+      "name": "事件日志按钮未找到",
+      "detail": "undefined"
+    },
+    {
+      "name": "事件选项面板未找到",
+      "detail": "需要触发事件后才会显示"
+    },
+    {
+      "name": "连锁事件元素未找到",
+      "detail": "需要触发连锁事件"
+    },
+    {
+      "name": "离线事件弹窗未找到",
+      "detail": "需要有离线积累"
+    },
+    {
+      "name": "代币商店按钮未找到",
+      "detail": "可能需要先打开活动面板"
+    },
+    {
+      "name": "签到按钮未找到",
+      "detail": "undefined"
+    }
+  ],
+  "screenshots": [
+    "v15-main-page",
+    "v15-mobile-main"
+  ],
+  "consoleErrors": [],
+  "startTime": "2026-04-22T14:10:20.577Z",
+  "endTime": "2026-04-22T14:10:31.577Z",
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "warnings": 7
+  }
+}

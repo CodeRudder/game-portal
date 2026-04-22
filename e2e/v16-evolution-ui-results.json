@@ -1,0 +1,55 @@
+{
+  "passed": [
+    "主页面正常加载",
+    "武将面板可打开",
+    "装备面板可打开",
+    "装备强化面板可打开",
+    "装备背包可打开",
+    "无NaN/undefined显示",
+    "移动端页面正常渲染",
+    "无横向溢出"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "羁绊信息元素未找到",
+      "detail": "可能需要选择武将"
+    },
+    {
+      "name": "套装效果元素未找到",
+      "detail": "需要装备套装后才显示"
+    },
+    {
+      "name": "背包筛选功能未找到",
+      "detail": "undefined"
+    },
+    {
+      "name": "军师推荐按钮未找到",
+      "detail": "undefined"
+    },
+    {
+      "name": "传承按钮未找到",
+      "detail": "可能需要满足解锁条件"
+    }
+  ],
+  "screenshots": [
+    "v16-main-page",
+    "v16-hero-panel",
+    "v16-equipment-panel",
+    "v16-equipment-enhance",
+    "v16-equipment-bag",
+    "v16-mobile-main"
+  ],
+  "consoleErrors": [
+    "Warning: %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.%s Removing borderColor border \n    at button\n    at div\n    at div\n    at EquipmentTab (http://localhost:5173/src/components/idle/panels/equipment/EquipmentTab.tsx:43:25)\n    at SceneRouter (http://localhost:5173/src/components/idle/three-kingdoms/SceneRouter.tsx?t=1776866505168:33:3)\n    at div\n    at div\n    at div\n    at ThreeKingdomsGame (http://localhost:5173/src/components/idle/ThreeKingdomsGame.tsx?t=1776866505168:43:21)\n    at IdleGamePage (http://localhost:5173/src/pages/IdleGamePage.tsx?t=1776866505168:218:22)\n    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4131:5)\n    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4601:5)\n    at div\n    at App\n    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4544:15)\n    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:5290:5)",
+    "Warning: %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.%s Removing borderColor border \n    at button\n    at div\n    at div\n    at EquipmentTab (http://localhost:5173/src/components/idle/panels/equipment/EquipmentTab.tsx:43:25)\n    at SceneRouter (http://localhost:5173/src/components/idle/three-kingdoms/SceneRouter.tsx?t=1776866505168:33:3)\n    at div\n    at div\n    at div\n    at ThreeKingdomsGame (http://localhost:5173/src/components/idle/ThreeKingdomsGame.tsx?t=1776866505168:43:21)\n    at IdleGamePage (http://localhost:5173/src/pages/IdleGamePage.tsx?t=1776866505168:218:22)\n    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4131:5)\n    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4601:5)\n    at div\n    at App\n    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4544:15)\n    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:5290:5)"
+  ],
+  "startTime": "2026-04-22T14:10:42.321Z",
+  "endTime": "2026-04-22T14:10:59.742Z",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "warnings": 5
+  }
+}
