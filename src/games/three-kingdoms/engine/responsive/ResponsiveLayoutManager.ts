@@ -17,6 +17,7 @@
  * @module engine/responsive/ResponsiveLayoutManager
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import {
   Breakpoint, BREAKPOINT_WIDTHS, CANVAS_BASE_WIDTH, CANVAS_BASE_HEIGHT,
   SCALE_MAX, WhitespaceStrategy, MOBILE_LAYOUT, FontSizeLevel, FONT_SIZE_MAP,
@@ -44,7 +45,7 @@ const DEFAULT_TABS: MobileTabItem[] = [
 ];
 
 /** 响应式布局管理器 — 断点检测、画布缩放、留白处理、手机端布局、导航。 */
-export class ResponsiveLayoutManager {
+export class ResponsiveLayoutManager implements ISubsystem {
   private _bp: Breakpoint = Breakpoint.Desktop;
   private _vw: number = CANVAS_BASE_WIDTH;
   private _vh: number = CANVAS_BASE_HEIGHT;
@@ -230,6 +231,16 @@ export class ResponsiveLayoutManager {
     return true;
   }
 
+  // ── ISubsystem 接口 ──
+
+  readonly name = 'responsive-layout';
+  private _initialized = false;
+
+  init(_deps: ISystemDeps): void { this._initialized = true; }
+  update(_dt: number): void { /* 响应式布局由事件驱动，无需帧更新 */ }
+  getState(): ResponsiveLayoutSnapshot { return this.getSnapshot(); }
+  get isInitialized(): boolean { return this._initialized; }
+
   // ── 快照 ──
 
   getSnapshot(): ResponsiveLayoutSnapshot {
@@ -246,6 +257,24 @@ export class ResponsiveLayoutManager {
   onLayoutChange(listener: OnLayoutChange): () => void { this._layoutListeners.add(listener); return () => this._layoutListeners.delete(listener); }
   onNavigationChange(listener: OnNavigationChange): () => void { this._navListeners.add(listener); return () => this._navListeners.delete(listener); }
   clearListeners(): void { this._layoutListeners.clear(); this._navListeners.clear(); }
+
+  /** 重置为默认状态 */
+  reset(): void {
+    this._bp = Breakpoint.Desktop;
+    this._vw = CANVAS_BASE_WIDTH;
+    this._vh = CANVAS_BASE_HEIGHT;
+    this._dpr = 1;
+    this._orient = 'landscape';
+    this._leftHand = false;
+    this._fontSize = FontSizeLevel.Medium;
+    this._tabBar = { tabs: DEFAULT_TABS.map((t) => ({ ...t })), activeTabId: 'home', safeAreaHeight: MOBILE_LAYOUT.tabBarHeight };
+    this._panel = { isOpen: false, panelId: '', title: '', swipeBackEnabled: true };
+    this._sheet = { isOpen: false, sheetId: '', contentHeight: 0, showHandle: true };
+    this._breadcrumbs = [{ path: '/', label: '主城', clickable: false }];
+    this._navDepth = 0;
+    this._initialized = false;
+    this.clearListeners();
+  }
 
   // ── 静态工具 ──
 

@@ -12,6 +12,8 @@
  * @module engine/responsive/MobileLayoutManager
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
+
 import {
   Breakpoint, MOBILE_CANVAS_WIDTH, MOBILE_CANVAS_HEIGHT, MOBILE_LAYOUT,
   type MobileTabItem, type MobileTabBarState, type FullScreenPanelState,
@@ -32,7 +34,7 @@ const MAX_PANEL_DEPTH = 5;
 /**
  * 手机端布局管理器 — 底部Tab、全屏面板、Bottom Sheet、导航路径。
  */
-export class MobileLayoutManager {
+export class MobileLayoutManager implements ISubsystem {
   private readonly _rm: ResponsiveLayoutManager;
   private _tabBar: MobileTabBarState;
   private _panel: FullScreenPanelState;

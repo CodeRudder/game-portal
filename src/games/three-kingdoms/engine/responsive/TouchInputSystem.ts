@@ -11,6 +11,8 @@
  * @module engine/responsive/TouchInputSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
+
 import {
   GestureType,
   GESTURE_THRESHOLDS,
@@ -36,7 +38,7 @@ enum TouchPhase { Idle = 'idle', Started = 'started', Moved = 'moved' }
 /**
  * 触控输入系统 — 7种手势识别、触控反馈、编队触控、桌面端交互、快捷键映射。
  */
-export class TouchInputSystem {
+export class TouchInputSystem implements ISubsystem {
   private _phase: TouchPhase = TouchPhase.Idle;
   private _startPoint: TouchPoint | null = null;
   private _currentPoint: TouchPoint | null = null;
@@ -253,6 +255,18 @@ export class TouchInputSystem {
   getHotkeys(): HotkeyDef[] { return [...this._hotkeys]; }
   setHotkeys(hotkeys: HotkeyDef[]): void { this._hotkeys = [...hotkeys]; }
 
+  // ── ISubsystem 接口 ──
+
+  readonly name = 'touch-input';
+  private _initialized = false;
+
+  init(_deps: ISystemDeps): void { this._initialized = true; }
+  update(_dt: number): void { /* 触控输入由事件驱动，无需帧更新 */ }
+  getState(): { phase: string; feedbackConfig: TouchFeedbackConfig; selectedHeroId: string | null } {
+    return { phase: this._phase, feedbackConfig: this._feedbackConfig, selectedHeroId: this._selectedHeroId };
+  }
+  get isInitialized(): boolean { return this._initialized; }
+
   // ─────────────────────────────────────────
   // 事件监听
   // ─────────────────────────────────────────
@@ -278,6 +292,25 @@ export class TouchInputSystem {
     this._formationListeners.clear();
     this._desktopListeners.clear();
     this._hotkeyListeners.clear();
+  }
+
+  /** 重置为默认状态 */
+  reset(): void {
+    this._resetState();
+    this._selectedHeroId = null;
+    this._selectedSlotIndex = null;
+    this._lastTapTime = 0;
+    this._lastTapPoint = null;
+    this._lastActionTime = 0;
+    this._hotkeys = [...DEFAULT_HOTKEYS];
+    this._feedbackConfig = {
+      type: 'light-vibration' as TouchFeedbackType,
+      visualScaleValue: 0.96,
+      vibrationEnabled: true,
+      antiBounceInterval: GESTURE_THRESHOLDS.antiBounceInterval,
+    };
+    this._initialized = false;
+    this.clearAllListeners();
   }
 
   // ─────────────────────────────────────────
