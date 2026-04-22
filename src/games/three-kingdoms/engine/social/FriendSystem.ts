@@ -109,6 +109,9 @@ export class FriendSystem {
   ) {
     this.friendConfig = { ...DEFAULT_FRIEND_CONFIG, ...friendConfig };
     this.interactionConfig = { ...DEFAULT_INTERACTION_CONFIG, ...interactionConfig };
+    // 延迟导入避免循环依赖
+    const { BorrowHeroSubsystem } = require('./BorrowHeroSubsystem');
+    this.borrowSubsystem = new BorrowHeroSubsystem(this.interactionConfig);
   }
 
   // ── 好友管理 ──────────────────────────────
@@ -344,7 +347,9 @@ export class FriendSystem {
     };
   }
 
-  // ── 借将系统 ──────────────────────────────
+  // ── 借将系统（委托 BorrowHeroSubsystem） ──
+
+  private borrowSubsystem: import('./BorrowHeroSubsystem').BorrowHeroSubsystem;
 
   /**
    * 借将
@@ -356,73 +361,24 @@ export class FriendSystem {
     borrowerPlayerId: string,
     now: number,
   ): { state: SocialState; powerRatio: number } {
-    if (state.dailyBorrowCount >= this.interactionConfig.borrowDailyLimit) {
-      throw new Error('今日借将次数已达上限');
-    }
-    if (!state.friends[lenderPlayerId]) {
-      throw new Error('不是好友');
-    }
-
-    // 检查是否已有未归还的借将
-    const activeFromLender = state.activeBorrows.filter(
-      (b) => b.lenderPlayerId === lenderPlayerId && !b.returned,
+    return this.borrowSubsystem.borrowHero(
+      state, heroId, lenderPlayerId, borrowerPlayerId, now,
+      (s, pts) => this.calculateFriendshipEarned(s, pts),
     );
-    if (activeFromLender.length > 0) {
-      throw new Error('该好友已有借出武将未归还');
-    }
-
-    const record: BorrowHeroRecord = {
-      id: generateId('borrow'),
-      heroId,
-      lenderPlayerId,
-      borrowerPlayerId,
-      borrowTime: now,
-      returned: false,
-    };
-
-    // 出借方获得友情点
-    const earned = this.calculateFriendshipEarned(
-      state,
-      this.interactionConfig.lendFriendshipPoints,
-    );
-
-    return {
-      state: {
-        ...state,
-        activeBorrows: [...state.activeBorrows, record],
-        dailyBorrowCount: state.dailyBorrowCount + 1,
-        friendshipPoints: state.friendshipPoints + earned,
-        dailyFriendshipEarned: state.dailyFriendshipEarned + earned,
-      },
-      powerRatio: this.interactionConfig.borrowPowerRatio,
-    };
   }
 
   /**
    * 归还借将
    */
   returnBorrowedHero(state: SocialState, borrowId: string): SocialState {
-    const borrow = state.activeBorrows.find((b) => b.id === borrowId);
-    if (!borrow) {
-      throw new Error('借将记录不存在');
-    }
-    if (borrow.returned) {
-      throw new Error('已归还');
-    }
-
-    return {
-      ...state,
-      activeBorrows: state.activeBorrows.map((b) =>
-        b.id === borrowId ? { ...b, returned: true } : b,
-      ),
-    };
+    return this.borrowSubsystem.returnBorrowedHero(state, borrowId);
   }
 
   /**
    * 检查借将是否可用于PvP
    */
   isBorrowHeroAllowedInPvP(): boolean {
-    return false; // 借将PvP禁用
+    return this.borrowSubsystem.isBorrowHeroAllowedInPvP();
   }
 
   // ── 每日重置 ──────────────────────────────

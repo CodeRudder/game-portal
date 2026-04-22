@@ -65,6 +65,12 @@ export interface SaveContext {
   readonly trade?: import('./trade/TradeSystem').TradeSystem;
   /** 商店系统（可选，v5.0+） */
   readonly shop?: import('./shop/ShopSystem').ShopSystem;
+  /** 声望系统（可选，v14.0+） */
+  readonly prestige?: import('./prestige/PrestigeSystem').PrestigeSystem;
+  /** 传承系统（可选，v14.0+） */
+  readonly heritage?: import('./heritage/HeritageSystem').HeritageSystem;
+  /** 成就系统（可选，v14.0+） */
+  readonly achievement?: import('./achievement/AchievementSystem').AchievementSystem;
   /** 在线时长（秒） */
   onlineSeconds: number;
 }
@@ -104,6 +110,9 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     equipmentEnhance: ctx.equipmentEnhance?.serialize(),
     trade: ctx.trade?.serialize(),
     shop: ctx.shop?.serialize(),
+    prestige: ctx.prestige?.getSaveData(),
+    heritage: ctx.heritage?.getSaveData(),
+    achievement: ctx.achievement?.getSaveData(),
   };
 }
 
@@ -124,6 +133,9 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.equipmentEnhance) subsystems.equipmentEnhance = data.equipmentEnhance;
   if (data.trade) subsystems.trade = data.trade;
   if (data.shop) subsystems.shop = data.shop;
+  if (data.prestige) subsystems.prestige = data.prestige;
+  if (data.heritage) subsystems.heritage = data.heritage;
+  if (data.achievement) subsystems.achievement = data.achievement;
 
   return {
     version: String(data.version),
@@ -156,6 +168,9 @@ export function fromIGameState(state: IGameState): GameSaveData {
     equipmentEnhance: s.equipmentEnhance as { protectionCount: number } | undefined,
     trade: s.trade as import('../core/trade/trade.types').TradeSaveData | undefined,
     shop: s.shop as import('../core/shop/shop.types').ShopSaveData | undefined,
+    prestige: s.prestige as import('../core/prestige').PrestigeSaveData | undefined,
+    heritage: s.heritage as import('../core/heritage').HeritageSaveData | undefined,
+    achievement: s.achievement as import('../core/achievement').AchievementSaveData | undefined,
   };
 }
 
@@ -305,6 +320,21 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   // ── 商店系统 v5.0 ──
   if (data.shop && ctx.shop) {
     ctx.shop.deserialize(data.shop);
+  }
+
+  // ── 声望系统 v14.0 ──
+  if (data.prestige && ctx.prestige) {
+    ctx.prestige.loadSaveData(data.prestige);
+  }
+
+  // ── 传承系统 v14.0 ──
+  if (data.heritage && ctx.heritage) {
+    ctx.heritage.loadSaveData(data.heritage);
+  }
+
+  // ── 成就系统 v14.0 ──
+  if (data.achievement && ctx.achievement) {
+    ctx.achievement.loadSaveData(data.achievement);
   }
 
   syncBuildingToResource({

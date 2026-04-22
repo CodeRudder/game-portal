@@ -205,6 +205,12 @@ export interface GameSaveData {
   trade?: import('../core/trade/trade.types').TradeSaveData;
   /** 商店系统数据（可选，v5.0+） */
   shop?: import('../core/shop/shop.types').ShopSaveData;
+  /** 声望系统数据（可选，v14.0+） */
+  prestige?: import('../core/prestige').PrestigeSaveData;
+  /** 传承系统数据（可选，v14.0+） */
+  heritage?: import('../core/heritage').HeritageSaveData;
+  /** 成就系统数据（可选，v14.0+） */
+  achievement?: import('../core/achievement').AchievementSaveData;
 }
 
 // ─────────────────────────────────────────────

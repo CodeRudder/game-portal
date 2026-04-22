@@ -41,10 +41,16 @@ import type { RankingSystem } from './pvp/RankingSystem';
 import type { ExpeditionSystem } from './expedition/ExpeditionSystem';
 import type { AllianceSystem } from './alliance/AllianceSystem';
 import type { AllianceTaskSystem } from './alliance/AllianceTaskSystem';
+import type { AllianceBossSystem } from './alliance/AllianceBossSystem';
+import type { AllianceShopSystem } from './alliance/AllianceShopSystem';
 import type { PrestigeSystem } from './prestige/PrestigeSystem';
+import type { PrestigeShopSystem } from './prestige/PrestigeShopSystem';
+import type { RebirthSystem } from './prestige/RebirthSystem';
 import type { QuestSystem } from './quest/QuestSystem';
 import type { AchievementSystem } from './achievement/AchievementSystem';
 import type { FriendSystem } from './social/FriendSystem';
+import type { ChatSystem } from './social/ChatSystem';
+import type { LeaderboardSystem as SocialLeaderboardSystem } from './social/LeaderboardSystem';
 import type { HeritageSystem } from './heritage/HeritageSystem';
 import type { ActivitySystem } from './activity/ActivitySystem';
 import type { TradeSystem } from './trade/TradeSystem';
@@ -182,33 +188,37 @@ export function applyGetters(cls: any): void {
   p.getTechOfflineSystem = function(this: EngineAny) { return this.techSystems.offlineSystem; };
   p.getTechDetailProvider = function(this: EngineAny) { return this.techSystems.detailProvider; };
 
-  // ── R11: 缺失子系统 getter ──
+  // ── R11: 缺失子系统 getter (via r11 集合对象) ──
 
-  p.getMailSystem = function(this: EngineAny): MailSystem { return this.mailSystem; };
-  p.getShopSystem = function(this: EngineAny): ShopSystem { return this.shopSystem; };
-  p.getCurrencySystem = function(this: EngineAny): CurrencySystem { return this.currencySystem; };
-  p.getNPCSystem = function(this: EngineAny): NPCSystem { return this.npcSystem; };
-  p.getEquipmentSystem = function(this: EngineAny): EquipmentSystem { return this.equipmentSystem; };
-  p.getEquipmentForgeSystem = function(this: EngineAny): EquipmentForgeSystem { return this.equipmentForgeSystem; };
-  p.getEquipmentEnhanceSystem = function(this: EngineAny): EquipmentEnhanceSystem { return this.equipmentEnhanceSystem; };
-  p.getEquipmentSetSystem = function(this: EngineAny): EquipmentSetSystem { return this.equipmentSetSystem; };
-  p.getEquipmentRecommendSystem = function(this: EngineAny): EquipmentRecommendSystem { return this.equipmentRecommendSystem; };
-  p.getArenaSystem = function(this: EngineAny): ArenaSystem { return this.arenaSystem; };
-  p.getSeasonSystem = function(this: EngineAny): ArenaSeasonSystem { return this.arenaSeasonSystem; };
-  p.getRankingSystem = function(this: EngineAny): RankingSystem { return this.rankingSystem; };
-  p.getExpeditionSystem = function(this: EngineAny): ExpeditionSystem { return this.expeditionSystem; };
-  p.getAllianceSystem = function(this: EngineAny): AllianceSystem { return this.allianceSystem; };
-  p.getAllianceTaskSystem = function(this: EngineAny): AllianceTaskSystem { return this.allianceTaskSystem; };
-  p.getPrestigeSystem = function(this: EngineAny): PrestigeSystem { return this.prestigeSystem; };
-  p.getQuestSystem = function(this: EngineAny): QuestSystem { return this.questSystem; };
-  p.getAchievementSystem = function(this: EngineAny): AchievementSystem { return this.achievementSystem; };
-  p.getFriendSystem = function(this: EngineAny): FriendSystem { return this.friendSystem; };
-  p.getHeritageSystem = function(this: EngineAny): HeritageSystem { return this.heritageSystem; };
-  p.getActivitySystem = function(this: EngineAny): ActivitySystem { return this.activitySystem; };
-  p.getTradeSystem = function(this: EngineAny): TradeSystem { return this.tradeSystem; };
-  p.getCaravanSystem = function(this: EngineAny): CaravanSystem { return this.caravanSystem; };
-  p.getSettingsManager = function(this: EngineAny): SettingsManager { return this.settingsManager; };
-  p.getAccountSystem = function(this: EngineAny): AccountSystem { return this.accountSystem; };
+  p.getMailSystem = function(this: EngineAny): MailSystem { return this.r11.mailSystem; };
+  p.getShopSystem = function(this: EngineAny): ShopSystem { return this.r11.shopSystem; };
+  p.getCurrencySystem = function(this: EngineAny): CurrencySystem { return this.r11.currencySystem; };
+  p.getNPCSystem = function(this: EngineAny): NPCSystem { return this.r11.npcSystem; };
+  p.getEquipmentSystem = function(this: EngineAny): EquipmentSystem { return this.r11.equipmentSystem; };
+  p.getEquipmentForgeSystem = function(this: EngineAny): EquipmentForgeSystem { return this.r11.equipmentForgeSystem; };
+  p.getEquipmentEnhanceSystem = function(this: EngineAny): EquipmentEnhanceSystem { return this.r11.equipmentEnhanceSystem; };
+  p.getEquipmentSetSystem = function(this: EngineAny): EquipmentSetSystem { return this.r11.equipmentSetSystem; };
+  p.getEquipmentRecommendSystem = function(this: EngineAny): EquipmentRecommendSystem { return this.r11.equipmentRecommendSystem; };
+  p.getArenaSystem = function(this: EngineAny): ArenaSystem { return this.r11.arenaSystem; };
+  p.getSeasonSystem = function(this: EngineAny): ArenaSeasonSystem { return this.r11.arenaSeasonSystem; };
+  p.getRankingSystem = function(this: EngineAny): RankingSystem { return this.r11.rankingSystem; };
+  p.getExpeditionSystem = function(this: EngineAny): ExpeditionSystem { return this.r11.expeditionSystem; };
+  p.getAllianceSystem = function(this: EngineAny): AllianceSystem { return this.r11.allianceSystem; };
+  p.getAllianceTaskSystem = function(this: EngineAny): AllianceTaskSystem { return this.r11.allianceTaskSystem; };
+  p.getPrestigeSystem = function(this: EngineAny): PrestigeSystem { return this.r11.prestigeSystem; };
+  p.getPrestigeShopSystem = function(this: EngineAny): PrestigeShopSystem { return this.r11.prestigeShopSystem; };
+  p.getRebirthSystem = function(this: EngineAny): RebirthSystem { return this.r11.rebirthSystem; };
+  p.getQuestSystem = function(this: EngineAny): QuestSystem { return this.r11.questSystem; };
+  p.getAchievementSystem = function(this: EngineAny): AchievementSystem { return this.r11.achievementSystem; };
+  p.getFriendSystem = function(this: EngineAny): FriendSystem { return this.r11.friendSystem; };
+  p.getChatSystem = function(this: EngineAny): ChatSystem { return this.r11.chatSystem; };
+  p.getSocialLeaderboardSystem = function(this: EngineAny): SocialLeaderboardSystem { return this.r11.socialLeaderboardSystem; };
+  p.getHeritageSystem = function(this: EngineAny): HeritageSystem { return this.r11.heritageSystem; };
+  p.getActivitySystem = function(this: EngineAny): ActivitySystem { return this.r11.activitySystem; };
+  p.getTradeSystem = function(this: EngineAny): TradeSystem { return this.r11.tradeSystem; };
+  p.getCaravanSystem = function(this: EngineAny): CaravanSystem { return this.r11.caravanSystem; };
+  p.getSettingsManager = function(this: EngineAny): SettingsManager { return this.r11.settingsManager; };
+  p.getAccountSystem = function(this: EngineAny): AccountSystem { return this.r11.accountSystem; };
 
   // ── v6.0: 事件子系统 getter ──
 

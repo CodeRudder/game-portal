@@ -1,0 +1,156 @@
+{
+  "version": "v10.0",
+  "timestamp": "2026-04-22T12:58:35.450Z",
+  "tests": [
+    {
+      "name": "进入游戏主界面",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "装备Tab按钮存在",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "装备面板渲染",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "子Tab数量>=3",
+      "passed": true,
+      "detail": "找到3个子Tab"
+    },
+    {
+      "name": "背包容量显示",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "部位筛选按钮存在",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "注入装备到引擎",
+      "passed": false,
+      "detail": "引擎未找到"
+    },
+    {
+      "name": "装备卡片渲染",
+      "passed": false,
+      "detail": "找到0个卡片"
+    },
+    {
+      "name": "装备详情弹窗显示",
+      "passed": false,
+      "detail": "无装备卡片可点击"
+    },
+    {
+      "name": "锻造面板显示",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "基础/高级锻造按钮",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "锻造操作执行",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "强化面板显示",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "保护符复选框",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "武将装备栏显示",
+      "passed": false,
+      "detail": "未找到武将卡片"
+    },
+    {
+      "name": "无NaN显示",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "无undefined显示",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "无严重控制台错误",
+      "passed": false,
+      "detail": "2个错误"
+    },
+    {
+      "name": "移动端装备面板",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "引擎API: getEquipmentSystem",
+      "passed": false,
+      "detail": "引擎未找到"
+    },
+    {
+      "name": "引擎API: getEquipmentForgeSystem",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "引擎API: getEquipmentEnhanceSystem",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "引擎API: getEquipmentSetSystem",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "引擎API: getEquipmentRecommendSystem",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "套装系统: 7套套装定义",
+      "passed": false,
+      "detail": "getEquipmentSetSystem不可用"
+    },
+    {
+      "name": "推荐系统: 推荐功能可用",
+      "passed": false,
+      "detail": "getEquipmentRecommendSystem不可用"
+    }
+  ],
+  "summary": {
+    "total": 26,
+    "passed": 13,
+    "failed": 13,
+    "errors": [
+      "注入装备到引擎: 引擎未找到",
+      "装备卡片渲染: 找到0个卡片",
+      "装备详情弹窗显示: 无装备卡片可点击",
+      "保护符复选框: ",
+      "武将装备栏显示: 未找到武将卡片",
+      "无严重控制台错误: 2个错误",
+      "引擎API: getEquipmentSystem: 引擎未找到",
+      "引擎API: getEquipmentForgeSystem: ",
+      "引擎API: getEquipmentEnhanceSystem: ",
+      "引擎API: getEquipmentSetSystem: ",
+      "引擎API: getEquipmentRecommendSystem: ",
+      "套装系统: 7套套装定义: getEquipmentSetSystem不可用",
+      "推荐系统: 推荐功能可用: getEquipmentRecommendSystem不可用"
+    ]
+  }
+}

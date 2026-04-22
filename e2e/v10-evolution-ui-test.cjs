@@ -16,7 +16,7 @@ const fs = require('fs');
 const {
   initBrowser, enterGame, switchTab, closeAllModals,
   takeScreenshot, checkDataIntegrity, getConsoleErrors, clearConsoleErrors,
-} = require('./utils/game-actions');
+} = require(path.join(__dirname, 'utils', 'game-actions.cjs'));
 
 const SCREENSHOT_DIR = path.join(__dirname, 'screenshots', 'v10-evolution');
 fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });

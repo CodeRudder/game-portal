@@ -3,17 +3,13 @@
     "主页面正常加载",
     "竞技场Tab可点击",
     "防守阵容面板可打开",
+    "排行榜面板可打开",
     "无NaN/undefined显示",
     "无控制台错误",
     "移动端页面正常渲染",
     "无横向溢出"
   ],
-  "failed": [
-    {
-      "name": "排行榜面板",
-      "detail": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div>…</div> intercepts pointer event"
-    }
-  ],
+  "failed": [],
   "warnings": [
     {
       "name": "排名信息未找到",
@@ -46,21 +42,26 @@
     {
       "name": "聊天面板按钮未找到",
       "detail": "undefined"
+    },
+    {
+      "name": "排行榜维度Tab未找到",
+      "detail": "undefined"
     }
   ],
   "screenshots": [
     "v11-main-page",
     "v11-arena-tab",
     "v11-defense-formation",
+    "v11-leaderboard-panel",
     "v11-mobile-main"
   ],
   "consoleErrors": [],
-  "startTime": "2026-04-22T12:48:19.190Z",
-  "endTime": "2026-04-22T12:49:05.028Z",
+  "startTime": "2026-04-22T12:57:03.121Z",
+  "endTime": "2026-04-22T12:57:27.435Z",
   "summary": {
     "total": 8,
-    "passed": 7,
-    "failed": 1,
-    "warnings": 8
+    "passed": 8,
+    "failed": 0,
+    "warnings": 9
   }
 }
