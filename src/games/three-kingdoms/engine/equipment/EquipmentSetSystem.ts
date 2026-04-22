@@ -10,6 +10,7 @@
  * @module engine/equipment/EquipmentSetSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { EquipmentSlot, EquipmentInstance } from '../../core/equipment/equipment.types';
 import type { SetId, SetBonusTier, ActiveSetBonus, EquipmentSetDef, SetBonusEffect } from '../../core/equipment/equipment-v10.types';
 import { EQUIPMENT_SLOTS } from '../../core/equipment/equipment.types';
@@ -25,12 +26,21 @@ import type { EquipmentSystem } from './EquipmentSystem';
 // EquipmentSetSystem
 // ─────────────────────────────────────────────
 
-export class EquipmentSetSystem {
+export class EquipmentSetSystem implements ISubsystem {
+  readonly name = 'equipmentSet';
+  private deps: ISystemDeps | null = null;
   private readonly equipmentSystem: EquipmentSystem;
 
   constructor(equipmentSystem: EquipmentSystem) {
     this.equipmentSystem = equipmentSystem;
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void {}
+  getState(): Record<string, unknown> { return {}; }
+  reset(): void {}
 
   // ── 套装定义查询 ──
 

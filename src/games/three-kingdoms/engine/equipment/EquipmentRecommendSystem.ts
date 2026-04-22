@@ -10,6 +10,7 @@
  * @module engine/equipment/EquipmentRecommendSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   EquipmentSlot,
   EquipmentRarity,
@@ -45,7 +46,9 @@ const WEIGHT_ENHANCE = 0.15;
 // EquipmentRecommendSystem
 // ─────────────────────────────────────────────
 
-export class EquipmentRecommendSystem {
+export class EquipmentRecommendSystem implements ISubsystem {
+  readonly name = 'equipmentRecommend';
+  private deps: ISystemDeps | null = null;
   private readonly equipmentSystem: EquipmentSystem;
   private readonly setSystem: EquipmentSetSystem;
 
@@ -53,6 +56,13 @@ export class EquipmentRecommendSystem {
     this.equipmentSystem = equipmentSystem;
     this.setSystem = setSystem;
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void {}
+  getState(): Record<string, unknown> { return {}; }
+  reset(): void {}
 
   // ── 单件评分 ──
 

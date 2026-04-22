@@ -44,6 +44,7 @@ import type { FriendSystem } from './social/FriendSystem';
 import type { HeritageSystem } from './heritage/HeritageSystem';
 import type { ActivitySystem } from './activity/ActivitySystem';
 import type { TradeSystem } from './trade/TradeSystem';
+import type { CaravanSystem } from './trade/CaravanSystem';
 import type { SettingsManager } from './settings/SettingsManager';
 import type { AccountSystem } from './settings/AccountSystem';
 import type { GeneralData } from './hero/hero.types';
@@ -137,6 +138,7 @@ export interface EngineGettersMixin {
   getHeritageSystem(): HeritageSystem;
   getActivitySystem(): ActivitySystem;
   getTradeSystem(): TradeSystem;
+  getCaravanSystem(): CaravanSystem;
   getSettingsManager(): SettingsManager;
   getAccountSystem(): AccountSystem;
 }

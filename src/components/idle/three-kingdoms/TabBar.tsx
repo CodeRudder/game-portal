@@ -55,6 +55,8 @@ export const FEATURE_ITEMS: Array<Omit<FeatureMenuItem, 'badge'>> = [
   { id: 'social', icon: '👥', label: '社交', description: '好友互动与排行榜', available: true },
   { id: 'heritage', icon: '⚔️', label: '传承', description: '武将装备经验传承', available: true },
   { id: 'activity', icon: '🎪', label: '活动', description: '限时活动与签到', available: true },
+  { id: 'quest', icon: '📜', label: '任务', description: '日常任务与活跃度', available: true },
+  { id: 'achievement', icon: '🏆', label: '成就', description: '成就系统与奖励', available: true },
 ];
 
 /** 已有独立Tab的功能映射 */

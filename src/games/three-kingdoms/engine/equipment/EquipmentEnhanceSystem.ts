@@ -12,6 +12,7 @@
  * @module engine/equipment/EquipmentEnhanceSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { EquipmentInstance } from '../../core/equipment/equipment.types';
 import type {
   EnhanceResult,
@@ -36,7 +37,9 @@ import type { EquipmentSystem } from './EquipmentSystem';
 /** 资源扣除回调类型 */
 export type ResourceDeductFn = (copper: number, stone: number) => boolean;
 
-export class EquipmentEnhanceSystem {
+export class EquipmentEnhanceSystem implements ISubsystem {
+  readonly name = 'equipmentEnhance';
+  private deps: ISystemDeps | null = null;
   private readonly equipmentSystem: EquipmentSystem;
   private protectionCount = 0;
   private rngState = 67890;
@@ -46,6 +49,12 @@ export class EquipmentEnhanceSystem {
   constructor(equipmentSystem: EquipmentSystem) {
     this.equipmentSystem = equipmentSystem;
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void {}
+  getState(): { protectionCount: number } { return this.serialize(); }
 
   /** 注入资源扣除回调 */
   setResourceDeductor(fn: ResourceDeductFn): void {

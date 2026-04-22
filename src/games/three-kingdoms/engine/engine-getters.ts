@@ -46,6 +46,7 @@ import type { FriendSystem } from './social/FriendSystem';
 import type { HeritageSystem } from './heritage/HeritageSystem';
 import type { ActivitySystem } from './activity/ActivitySystem';
 import type { TradeSystem } from './trade/TradeSystem';
+import type { CaravanSystem } from './trade/CaravanSystem';
 import type { SettingsManager } from './settings/SettingsManager';
 import type { AccountSystem } from './settings/AccountSystem';
 import type { EventTriggerSystem } from './event/EventTriggerSystem';
@@ -201,6 +202,7 @@ export function applyGetters(cls: any): void {
   p.getHeritageSystem = function(this: EngineAny): HeritageSystem { return this.heritageSystem; };
   p.getActivitySystem = function(this: EngineAny): ActivitySystem { return this.activitySystem; };
   p.getTradeSystem = function(this: EngineAny): TradeSystem { return this.tradeSystem; };
+  p.getCaravanSystem = function(this: EngineAny): CaravanSystem { return this.caravanSystem; };
   p.getSettingsManager = function(this: EngineAny): SettingsManager { return this.settingsManager; };
   p.getAccountSystem = function(this: EngineAny): AccountSystem { return this.accountSystem; };
 

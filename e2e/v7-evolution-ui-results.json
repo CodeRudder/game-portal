@@ -18,6 +18,13 @@
     "NPC职业筛选可切换（npc-filter-all）",
     "事件列表面板打开（data-testid=event-list-panel）",
     "事件面板可通过功能菜单打开",
+    "任务面板可通过功能菜单打开",
+    "任务面板内容渲染（包含任务相关文本）",
+    "活跃度进度条显示",
+    "日常任务Tab可切换",
+    "主线任务Tab可切换",
+    "支线任务Tab可切换",
+    "一键领取按钮存在",
     "回归: 建筑面板正常",
     "回归: 武将面板正常",
     "回归: 科技面板正常",
@@ -25,8 +32,7 @@
     "移动端: 游戏主界面加载",
     "移动端: NPC面板正常渲染",
     "移动端: 数据完整性检查通过",
-    "最终数据完整性检查通过",
-    "无显著控制台错误"
+    "最终数据完整性检查通过"
   ],
   "failed": [],
   "warnings": [
@@ -51,8 +57,8 @@
       "detail": "需引擎条件触发"
     },
     {
-      "name": "任务面板打开失败",
-      "detail": "FeatureMenu项未找到: quest"
+      "name": "控制台错误（2个）",
+      "detail": "Warning: %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.%s Removing borderColor border \n    at button\n  "
     }
   ],
   "screenshots": [
@@ -63,11 +69,18 @@
     "v7e-A3-npc-dialog",
     "v7e-A4-npc-filter",
     "v7e-B1-event-panel",
+    "v7e-C1-quest-panel",
+    "v7e-C2-quest-daily",
+    "v7e-C3-quest-main",
+    "v7e-C4-quest-side",
     "v7e-D-regression",
     "v7e-E1-mobile-main",
     "v7e-E2-mobile-npc"
   ],
-  "consoleErrors": [],
-  "startTime": "2026-04-22T12:14:08.189Z",
-  "endTime": "2026-04-22T12:15:07.188Z"
+  "consoleErrors": [
+    "Warning: %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.%s Removing borderColor border \n    at button\n    at div\n    at div\n    at div\n    at div\n    at div\n    at SharedPanel (http://localhost:5173/src/components/idle/components/SharedPanel.tsx?t=1776855715617:21:3)\n    at QuestPanel (http://localhost:5173/src/components/idle/panels/quest/QuestPanel.tsx?t=1776855715617:25:38)\n    at FeaturePanelOverlay (http://localhost:5173/src/components/idle/three-kingdoms/FeaturePanelOverlay.tsx?t=1776860728593:44:3)\n    at div\n    at ThreeKingdomsGame (http://localhost:5173/src/components/idle/ThreeKingdomsGame.tsx?t=1776860766494:43:21)\n    at IdleGamePage (http://localhost:5173/src/pages/IdleGamePage.tsx?t=1776860766494:218:22)\n    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4131:5)\n    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4601:5)\n    at div\n    at App\n    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4544:15)\n    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:5290:5)",
+    "Warning: %s a style property during rerender (%s) when a conflicting property is set (%s) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.%s Removing borderColor border \n    at button\n    at div\n    at div\n    at div\n    at div\n    at div\n    at SharedPanel (http://localhost:5173/src/components/idle/components/SharedPanel.tsx?t=1776855715617:21:3)\n    at QuestPanel (http://localhost:5173/src/components/idle/panels/quest/QuestPanel.tsx?t=1776855715617:25:38)\n    at FeaturePanelOverlay (http://localhost:5173/src/components/idle/three-kingdoms/FeaturePanelOverlay.tsx?t=1776860728593:44:3)\n    at div\n    at ThreeKingdomsGame (http://localhost:5173/src/components/idle/ThreeKingdomsGame.tsx?t=1776860766494:43:21)\n    at IdleGamePage (http://localhost:5173/src/pages/IdleGamePage.tsx?t=1776860766494:218:22)\n    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4131:5)\n    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4601:5)\n    at div\n    at App\n    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:4544:15)\n    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=8f312a10:5290:5)"
+  ],
+  "startTime": "2026-04-22T12:27:13.065Z",
+  "endTime": "2026-04-22T12:28:18.693Z"
 }

@@ -55,6 +55,8 @@ import { NPCSystem } from './npc/NPCSystem';
 import { EquipmentSystem } from './equipment/EquipmentSystem';
 import { EquipmentForgeSystem } from './equipment/EquipmentForgeSystem';
 import { EquipmentEnhanceSystem } from './equipment/EquipmentEnhanceSystem';
+import { EquipmentSetSystem } from './equipment/EquipmentSetSystem';
+import { EquipmentRecommendSystem } from './equipment/EquipmentRecommendSystem';
 import { ArenaSystem } from './pvp/ArenaSystem';
 import { ArenaSeasonSystem } from './pvp/ArenaSeasonSystem';
 import { RankingSystem } from './pvp/RankingSystem';
@@ -68,6 +70,7 @@ import { FriendSystem } from './social/FriendSystem';
 import { HeritageSystem } from './heritage/HeritageSystem';
 import { ActivitySystem } from './activity/ActivitySystem';
 import { TradeSystem } from './trade/TradeSystem';
+import { CaravanSystem } from './trade/CaravanSystem';
 import { SettingsManager } from './settings/SettingsManager';
 import { AccountSystem } from './settings/AccountSystem';
 
@@ -103,6 +106,8 @@ export class ThreeKingdomsEngine {
   private readonly equipmentSystem: EquipmentSystem;
   private readonly equipmentForgeSystem: EquipmentForgeSystem;
   private readonly equipmentEnhanceSystem: EquipmentEnhanceSystem;
+  private readonly equipmentSetSystem: EquipmentSetSystem;
+  private readonly equipmentRecommendSystem: EquipmentRecommendSystem;
   private readonly arenaSystem: ArenaSystem;
   private readonly arenaSeasonSystem: ArenaSeasonSystem;
   private readonly rankingSystem: RankingSystem;
@@ -116,6 +121,7 @@ export class ThreeKingdomsEngine {
   private readonly heritageSystem: HeritageSystem;
   private readonly activitySystem: ActivitySystem;
   private readonly tradeSystem: TradeSystem;
+  private readonly caravanSystem: CaravanSystem;
   private readonly settingsManager: SettingsManager;
   private readonly accountSystem: AccountSystem;
   private readonly bus: EventBus;
@@ -189,6 +195,8 @@ export class ThreeKingdomsEngine {
     this.equipmentSystem = new EquipmentSystem();
     this.equipmentForgeSystem = new EquipmentForgeSystem(this.equipmentSystem);
     this.equipmentEnhanceSystem = new EquipmentEnhanceSystem(this.equipmentSystem);
+    this.equipmentSetSystem = new EquipmentSetSystem(this.equipmentSystem);
+    this.equipmentRecommendSystem = new EquipmentRecommendSystem(this.equipmentSystem, this.equipmentSetSystem);
     this.arenaSystem = new ArenaSystem();
     this.arenaSeasonSystem = new ArenaSeasonSystem();
     this.rankingSystem = new RankingSystem();
@@ -202,6 +210,7 @@ export class ThreeKingdomsEngine {
     this.heritageSystem = new HeritageSystem();
     this.activitySystem = new ActivitySystem();
     this.tradeSystem = new TradeSystem();
+    this.caravanSystem = new CaravanSystem();
     this.settingsManager = new SettingsManager();
     this.accountSystem = new AccountSystem();
     this.bus = new EventBus();
@@ -269,6 +278,7 @@ export class ThreeKingdomsEngine {
     r.register('heritage', this.heritageSystem);
     r.register('activity', this.activitySystem);
     r.register('trade', this.tradeSystem);
+    r.register('caravan', this.caravanSystem);
     r.register('settings', this.settingsManager);
     r.register('account', this.accountSystem);
   }
@@ -283,6 +293,7 @@ export class ThreeKingdomsEngine {
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     this.npcSystem.init(deps);
+    this.equipmentSystem.init(deps); this.equipmentForgeSystem.init(deps);
     this.initialized = true; this.lastTickTime = Date.now();
     this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
     this.bus.emit('game:initialized', { isNewGame: true });
@@ -352,6 +363,7 @@ export class ThreeKingdomsEngine {
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     this.npcSystem.init(deps);
+    this.equipmentSystem.init(deps); this.equipmentForgeSystem.init(deps);
     this.initialized = true; this.lastTickTime = Date.now();
   }
 
@@ -371,6 +383,7 @@ export class ThreeKingdomsEngine {
     this.eventSystems.uiNotification.reset(); this.eventSystems.chain.reset();
     this.eventSystems.log.reset(); this.eventSystems.offline.reset();
     this.mailSystem.reset(); this.shopSystem.reset(); this.currencySystem.reset();
+    this.tradeSystem.reset(); this.caravanSystem.reset();
     this.npcSystem.reset(); this.equipmentSystem.reset();
     this.equipmentForgeSystem.reset(); this.equipmentEnhanceSystem.reset();
     this.prestigeSystem.reset(); this.questSystem.reset();

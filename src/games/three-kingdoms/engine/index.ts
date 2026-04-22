@@ -467,6 +467,243 @@ export {
 } from './mail/mail.types';
 
 // ──────────────────────────────────────────────
+// v10.0 兵强马壮 — 装备系统
+// ──────────────────────────────────────────────
+
+export { EquipmentSystem } from './equipment/EquipmentSystem';
+export { EquipmentForgeSystem } from './equipment/EquipmentForgeSystem';
+export { EquipmentEnhanceSystem } from './equipment/EquipmentEnhanceSystem';
+export { EquipmentSetSystem } from './equipment/EquipmentSetSystem';
+export { EquipmentRecommendSystem } from './equipment/EquipmentRecommendSystem';
+export {
+  generateUid,
+  resetUidCounter,
+  generateBySlot,
+  generateByTemplate,
+  genMainStat,
+  genSubStats,
+  genSpecialEffect,
+  isSlot as isEquipmentSlot,
+  weightedPickRarity,
+} from './equipment/EquipmentGenerator';
+
+// ──────────────────────────────────────────────
+// v11.0 群雄逐鹿 — PvP竞技场 + 社交
+// ──────────────────────────────────────────────
+
+// PvP 竞技场
+export {
+  ArenaSystem,
+  DEFAULT_MATCH_CONFIG,
+  DEFAULT_REFRESH_CONFIG,
+  DEFAULT_CHALLENGE_CONFIG,
+  ARENA_SAVE_VERSION,
+  createDefaultDefenseFormation,
+  createDefaultArenaPlayerState,
+} from './pvp/ArenaSystem';
+export {
+  PvPBattleSystem,
+  DEFAULT_PVP_BATTLE_CONFIG,
+  DEFAULT_SCORE_CONFIG,
+  REPLAY_CONFIG,
+  RANK_LEVELS,
+  RANK_LEVEL_MAP,
+} from './pvp/PvPBattleSystem';
+export {
+  ArenaSeasonSystem,
+  DEFAULT_SEASON_CONFIG,
+  SEASON_REWARDS,
+} from './pvp/ArenaSeasonSystem';
+export {
+  DefenseFormationSystem,
+  FORMATION_SLOT_COUNT,
+  MAX_DEFENSE_LOGS,
+  ALL_FORMATIONS,
+  ALL_STRATEGIES,
+  FORMATION_NAMES,
+  STRATEGY_NAMES,
+} from './pvp/DefenseFormationSystem';
+export {
+  RankingSystem,
+  RankingDimension,
+  DEFAULT_RANKING_CONFIG,
+  RANKING_SAVE_VERSION,
+} from './pvp/RankingSystem';
+export type {
+  RankingEntry,
+  RankingData,
+  RankingConfig,
+  RankingSaveData,
+} from './pvp/RankingSystem';
+export {
+  ArenaShopSystem,
+  DEFAULT_ARENA_SHOP_ITEMS,
+  ARENA_SHOP_SAVE_VERSION,
+} from './pvp/ArenaShopSystem';
+export type { ArenaShopSaveData } from './pvp/ArenaShopSystem';
+export type {
+  RankLevel,
+  RankDailyReward,
+  ArenaOpponent,
+  DefenseSnapshot,
+  MatchConfig,
+  RefreshConfig,
+  ChallengeConfig,
+  PvPBattleConfig,
+  ScoreConfig,
+  PvPBattleResult,
+  DefenseFormation,
+  DefenseLogEntry,
+  DefenseLogStats,
+  SeasonConfig,
+  SeasonData,
+  SeasonReward,
+  BattleReplay,
+  ReplayConfig,
+  ArenaShopItem,
+  ArenaPlayerState,
+  ArenaSaveData,
+} from '../core/pvp/pvp.types';
+export {
+  RankTier,
+  RankDivision,
+  PvPBattleMode,
+  FormationType as PvPFormationType,
+  AIDefenseStrategy,
+} from '../core/pvp/pvp.types';
+
+// 社交系统
+export {
+  FriendSystem,
+  DEFAULT_FRIEND_CONFIG,
+  DEFAULT_INTERACTION_CONFIG,
+  SOCIAL_SAVE_VERSION,
+  createDefaultSocialState,
+} from './social/FriendSystem';
+export {
+  ChatSystem,
+  DEFAULT_CHANNEL_CONFIGS,
+  MUTE_DURATIONS,
+} from './social/ChatSystem';
+export {
+  LeaderboardSystem as SocialLeaderboardSystem,
+  LEADERBOARD_TYPE_LABELS,
+  createDefaultLeaderboardState,
+} from './social/LeaderboardSystem';
+export type {
+  LeaderboardType as LeaderboardTypeEnum,
+  LeaderboardEntry as SocialLeaderboardEntry,
+  LeaderboardSeason,
+  LeaderboardRewardConfig,
+  LeaderboardQuery,
+  LeaderboardPageResult,
+  LeaderboardState,
+} from './social/LeaderboardSystem';
+export type {
+  FriendData,
+  FriendRequest,
+  FriendConfig,
+  InteractionConfig,
+  InteractionRecord,
+  BorrowHeroRecord,
+  BorrowConfig,
+  ChatMessage,
+  ChannelConfig,
+  ChatConfig,
+  MuteRecord,
+  ReportRecord,
+  ReportConfig,
+  SocialState,
+  SocialSaveData,
+} from '../core/social/social.types';
+export {
+  FriendStatus,
+  InteractionType,
+  ChatChannel,
+  MuteLevel,
+  ReportType,
+} from '../core/social/social.types';
+
+// ──────────────────────────────────────────────
+// v12.0 远征天下 — 远征系统 + 排行榜
+// ──────────────────────────────────────────────
+
+// 远征系统
+export { ExpeditionSystem } from './expedition/ExpeditionSystem';
+export type { HeroBrief, TeamValidationResult, UnlockCheckResult } from './expedition/ExpeditionSystem';
+export { ExpeditionBattleSystem } from './expedition/ExpeditionBattleSystem';
+export type { BattleUnitData, BattleTeamData, NodeBattleConfig, BattleTurnSnapshot } from './expedition/ExpeditionBattleSystem';
+export { ExpeditionRewardSystem } from './expedition/ExpeditionRewardSystem';
+export type { RewardParams, SweepRewardParams } from './expedition/ExpeditionRewardSystem';
+export { AutoExpeditionSystem } from './expedition/AutoExpeditionSystem';
+export type {
+  AutoExpeditionStepResult,
+  AutoExpeditionResult,
+  OfflineExpeditionParams,
+  OfflineExpeditionState,
+} from './expedition/AutoExpeditionSystem';
+export type {
+  ExpeditionNode,
+  ExpeditionRoute,
+  ExpeditionRegion,
+  ExpeditionTeam,
+  ExpeditionState,
+  ExpeditionSaveData,
+  ExpeditionBattleResult,
+  ExpeditionReward,
+  DropItem,
+  AutoExpeditionConfig,
+  OfflineExpeditionResult,
+  FormationEffect,
+} from '../core/expedition/expedition.types';
+export {
+  RouteDifficulty,
+  NodeType,
+  NodeStatus,
+  FormationType as ExpeditionFormationType,
+  FORMATION_LABELS as EXPEDITION_FORMATION_LABELS,
+  FORMATION_EFFECTS,
+  FORMATION_COUNTERS,
+  BattleGrade,
+  GRADE_STARS,
+  GRADE_LABELS,
+  SweepType,
+  SWEEP_CONFIG,
+  MilestoneType,
+  PauseReason,
+  CASTLE_LEVEL_SLOTS,
+  TROOP_COST,
+  FACTION_BOND_THRESHOLD,
+  FACTION_BOND_BONUS,
+  MAX_HEROES_PER_TEAM,
+  OFFLINE_EXPEDITION_CONFIG,
+  DEFAULT_AUTO_CONFIG,
+  DIFFICULTY_LABELS,
+  DIFFICULTY_STARS,
+} from '../core/expedition/expedition.types';
+export {
+  EXPEDITION_MAX_TURNS,
+  FORMATION_COUNTER_BONUS,
+  DROP_RATES,
+  BASE_REWARDS,
+  FIRST_CLEAR_REWARD,
+  POWER_MULTIPLIERS,
+  MARCH_DURATION,
+  MILESTONE_CONFIGS,
+  CONSECUTIVE_FAILURE_LIMIT,
+  REST_HEAL_PERCENT,
+  createDefaultRegions,
+  createDefaultRoutes,
+} from './expedition/expedition-config';
+
+// 排行榜引擎
+export { LeaderboardSystem } from './leaderboard/LeaderboardSystem';
+export type {
+  LeaderboardUpdateData,
+  RewardDistributionResult,
+} from './leaderboard/LeaderboardSystem';
+
+// ──────────────────────────────────────────────
 // v18.0 新手引导
 // ──────────────────────────────────────────────
 
@@ -496,3 +733,6 @@ export type {
 
 // v6.0 NPC+Event → exports-v6.ts
 export * from './exports-v6';
+
+// v10.0 装备域 → exports-v10.ts
+export * from './exports-v10';
