@@ -72,3 +72,26 @@ export type CloudSaveChangeCallback = (
 
 /** 当前时间函数（便于测试注入） */
 export type NowFn = () => number;
+
+// ─────────────────────────────────────────────
+// 默认实现
+// ─────────────────────────────────────────────
+
+/** 默认网络检测器 */
+export class DefaultNetworkDetector implements INetworkDetector {
+  isWifi(): boolean {
+    if (typeof navigator === 'undefined') return true;
+    const conn = (navigator as unknown as Record<string, unknown>).connection as
+      | Record<string, unknown>
+      | undefined;
+    if (conn && typeof conn === 'object' && 'type' in conn) {
+      return conn.type === 'wifi';
+    }
+    return true;
+  }
+
+  isOnline(): boolean {
+    if (typeof navigator === 'undefined') return true;
+    return navigator.onLine;
+  }
+}

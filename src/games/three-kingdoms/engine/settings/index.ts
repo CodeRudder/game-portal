@@ -31,7 +31,7 @@ export { SaveSlotManager } from './SaveSlotManager';
 export { CloudSyncStatus } from './SaveSlotManager';
 export type {
   SaveSlotChangeCallback,
-  CloudSyncResult as SaveSlotCloudSyncResult,
+  SaveSlotCloudSyncResult,
   SaveSlotResult,
   ExportData,
   ISaveSlotStorage,
