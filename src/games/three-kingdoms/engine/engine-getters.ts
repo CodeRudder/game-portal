@@ -27,6 +27,7 @@ import type { SiegeSystem } from './map/SiegeSystem';
 import type { GarrisonSystem } from './map/GarrisonSystem';
 import type { SiegeEnhancer } from './map/SiegeEnhancer';
 import type { MailSystem } from './mail/MailSystem';
+import type { MailTemplateSystem } from './mail/MailTemplateSystem';
 import type { ShopSystem } from './shop/ShopSystem';
 import type { CurrencySystem } from './currency/CurrencySystem';
 import type { NPCSystem } from './npc/NPCSystem';
@@ -199,6 +200,7 @@ export function applyGetters(cls: any): void {
   // ── R11: 缺失子系统 getter (via r11 集合对象) ──
 
   p.getMailSystem = function(this: EngineAny): MailSystem { return this.r11.mailSystem; };
+  p.getMailTemplateSystem = function(this: EngineAny): MailTemplateSystem { return this.r11.mailTemplateSystem; };
   p.getShopSystem = function(this: EngineAny): ShopSystem { return this.r11.shopSystem; };
   p.getCurrencySystem = function(this: EngineAny): CurrencySystem { return this.r11.currencySystem; };
   p.getNPCSystem = function(this: EngineAny): NPCSystem { return this.r11.npcSystem; };

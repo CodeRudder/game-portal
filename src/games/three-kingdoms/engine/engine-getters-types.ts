@@ -25,6 +25,7 @@ import type { SiegeSystem } from './map/SiegeSystem';
 import type { GarrisonSystem } from './map/GarrisonSystem';
 import type { SiegeEnhancer } from './map/SiegeEnhancer';
 import type { MailSystem } from './mail/MailSystem';
+import type { MailTemplateSystem } from './mail/MailTemplateSystem';
 import type { ShopSystem } from './shop/ShopSystem';
 import type { CurrencySystem } from './currency/CurrencySystem';
 import type { NPCSystem } from './npc/NPCSystem';
@@ -135,6 +136,7 @@ export interface EngineGettersMixin {
 
   // ── R11: 缺失子系统 getter ──
   getMailSystem(): MailSystem;
+  getMailTemplateSystem(): MailTemplateSystem;
   getShopSystem(): ShopSystem;
   getCurrencySystem(): CurrencySystem;
   getNPCSystem(): NPCSystem;

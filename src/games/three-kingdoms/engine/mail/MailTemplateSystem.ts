@@ -227,6 +227,19 @@ export class MailTemplateSystem {
     };
   }
 
+  /**
+   * 重置模板系统
+   *
+   * 清除自定义模板，恢复内置模板，重置ID计数器。
+   */
+  reset(): void {
+    this.templates.clear();
+    for (const tpl of BUILTIN_TEMPLATES) {
+      this.templates.set(tpl.id, { ...tpl });
+    }
+    this.idCounter = 0;
+  }
+
   // ─────────────────────────────────────────────
   // 内部方法
   // ─────────────────────────────────────────────

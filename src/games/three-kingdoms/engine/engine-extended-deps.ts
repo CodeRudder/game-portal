@@ -8,6 +8,7 @@
  */
 
 import { MailSystem } from './mail/MailSystem';
+import { MailTemplateSystem } from './mail/MailTemplateSystem';
 import { ShopSystem } from './shop/ShopSystem';
 import { CurrencySystem } from './currency/CurrencySystem';
 import { NPCSystem } from './npc/NPCSystem';
@@ -54,6 +55,7 @@ import type { ISystemDeps } from '../core/types';
 /** R11+ 子系统集合 */
 export interface R11Systems {
   mailSystem: MailSystem;
+  mailTemplateSystem: MailTemplateSystem;
   shopSystem: ShopSystem;
   currencySystem: CurrencySystem;
   npcSystem: NPCSystem;
@@ -102,6 +104,7 @@ export function createR11Systems(equipmentSystem?: EquipmentSystemType): R11Syst
   const eq = equipmentSystem ?? new EquipmentSystem();
   return {
     mailSystem: new MailSystem(),
+    mailTemplateSystem: new MailTemplateSystem(),
     shopSystem: new ShopSystem(),
     currencySystem: new CurrencySystem(),
     npcSystem: new NPCSystem(),
@@ -150,6 +153,7 @@ export function createR11Systems(equipmentSystem?: EquipmentSystemType): R11Syst
 export function registerR11Systems(registry: SubsystemRegistry, systems: R11Systems): void {
   const r = registry;
   r.register('mail', systems.mailSystem);
+  r.register('mailTemplate', systems.mailTemplateSystem);
   r.register('shop', systems.shopSystem);
   r.register('currency', systems.currencySystem);
   r.register('npc', systems.npcSystem);
@@ -201,6 +205,7 @@ export function initR11Systems(systems: R11Systems, deps: ISystemDeps): void {
  */
 export function resetR11Systems(systems: R11Systems): void {
   systems.mailSystem.reset();
+  systems.mailTemplateSystem.reset();
   systems.shopSystem.reset();
   systems.currencySystem.reset();
   systems.tradeSystem.reset();

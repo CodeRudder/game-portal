@@ -88,15 +88,15 @@ export default function MailPanel({ engine, visible = true, onClose }: MailPanel
 
   return (
     <SharedPanel visible={visible} title="邮件" icon="📬" onClose={onClose} width="520px">
-    <div style={styles.container}>
+    <div data-testid="mail-panel" style={styles.container}>
       {message && <div style={styles.toast}>{message}</div>}
 
       {/* 操作栏 */}
       <div style={styles.actionBar}>
         <span style={styles.unreadInfo}>📬 {unreadCount} 封未读</span>
         <div style={styles.actionBtns}>
-          <button style={styles.actionBtn} onClick={handleMarkAllRead}>全部已读</button>
-          <button style={styles.actionBtn} onClick={handleClaimAll}>一键领取</button>
+          <button style={styles.actionBtn} onClick={handleMarkAllRead} data-testid="mail-batch-read-btn">全部已读</button>
+          <button style={styles.actionBtn} onClick={handleClaimAll} data-testid="mail-batch-claim-btn">一键领取</button>
         </div>
       </div>
 
@@ -107,15 +107,17 @@ export default function MailPanel({ engine, visible = true, onClose }: MailPanel
             key={t.id}
             style={{ ...styles.tabBtn, ...(tab === t.id ? styles.activeTab : {}) }}
             onClick={() => setTab(t.id)}
+            data-testid={`mail-tab-${t.id}`}
           >{t.label}</button>
         ))}
       </div>
 
       {/* 邮件列表 */}
-      <div style={styles.mailList}>
+      <div style={styles.mailList} data-testid="mail-list">
         {mails.map((mail: any) => (
           <div
             key={mail.id}
+            data-testid={`mail-item-${mail.id}`}
             style={{
               ...styles.mailItem,
               ...(selectedMailId === mail.id ? styles.mailItemSelected : {}),
@@ -143,7 +145,7 @@ export default function MailPanel({ engine, visible = true, onClose }: MailPanel
       {/* 邮件详情 */}
       {selectedMail && (
         <div style={styles.detailOverlay} onClick={() => setSelectedMailId(null)}>
-          <div style={styles.detailPanel} onClick={e => e.stopPropagation()}>
+          <div style={styles.detailPanel} onClick={e => e.stopPropagation()} data-testid="mail-detail">
             <div style={styles.detailTitle}>{selectedMail.title}</div>
             <div style={styles.detailMeta}>
               {selectedMail.sender} · {formatTime(selectedMail.sendTime)}

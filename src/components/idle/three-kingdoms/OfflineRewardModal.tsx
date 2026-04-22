@@ -50,8 +50,9 @@ const OfflineRewardModal: React.FC<OfflineRewardModalProps> = ({ reward, onClaim
       onConfirm={onClaim}
       onCancel={onClaim}
       width="420px"
+      data-testid="offline-reward-modal"
     >
-      <div data-testid="offline-reward-modal" style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: '#e8e0d0' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: '#e8e0d0' }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
