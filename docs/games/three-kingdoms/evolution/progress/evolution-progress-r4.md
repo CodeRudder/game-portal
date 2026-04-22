@@ -55,4 +55,4 @@ Round 4 采用全局性修复策略，一次性解决所有版本的共性问题
 
 ### Round 4 完成
 - 全局性修复完成，所有版本统一标记已完成
-- 详见 [Round 4 复盘文档](../evolution-r4-round-summary.md)
+- 详见 [Round 4 复盘文档](../evolution-r4-round.md)
