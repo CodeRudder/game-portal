@@ -154,4 +154,4 @@ export {
 // 活动域 — 类型（从core层重新导出）
 export type {
   SignInReward, SignInData, SignInConfig,
-} from '../../core/activity/activity.types';
+} from '../core/activity/activity.types';

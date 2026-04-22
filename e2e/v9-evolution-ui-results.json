@@ -1,0 +1,24 @@
+{
+  "passed": [
+    "主页面正常加载",
+    "页面无NaN/undefined显示",
+    "资源栏存在",
+    "移动端无水平溢出",
+    "移动端适配测试完成"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "离线收益弹窗未触发（需要离线一段时间后重进）",
+      "detail": "undefined"
+    },
+    {
+      "name": "邮件按钮未找到（可能在更多菜单中）",
+      "detail": "undefined"
+    }
+  ],
+  "screenshots": [],
+  "consoleErrors": [],
+  "startTime": "2026-04-22T12:22:46.458Z",
+  "endTime": "2026-04-22T12:22:59.153Z"
+}
