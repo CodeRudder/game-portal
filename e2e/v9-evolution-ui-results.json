@@ -1,24 +1,132 @@
 {
-  "passed": [
-    "主页面正常加载",
-    "页面无NaN/undefined显示",
-    "资源栏存在",
-    "移动端无水平溢出",
-    "移动端适配测试完成"
-  ],
-  "failed": [],
-  "warnings": [
+  "version": "v9.0",
+  "timestamp": "2026-04-22T16:12:37.581Z",
+  "tests": [
     {
-      "name": "离线收益弹窗未触发（需要离线一段时间后重进）",
-      "detail": "undefined"
+      "id": 0,
+      "name": "主页面加载",
+      "status": "PASS",
+      "details": "title: 🎮 Game Portal - 经典小游戏合集"
     },
     {
-      "name": "邮件按钮未找到（可能在更多菜单中）",
-      "detail": "undefined"
+      "id": 1,
+      "name": "离线收益弹窗存在性",
+      "status": "WARN",
+      "details": "弹窗未触发（需要模拟离线场景）"
+    },
+    {
+      "id": 2,
+      "name": "离线收益资源展示",
+      "status": "WARN",
+      "details": "模拟离线后弹窗未出现（可能产出速率为0）"
+    },
+    {
+      "id": 3,
+      "name": "翻倍机制",
+      "status": "WARN",
+      "details": "翻倍按钮未找到（弹窗可能已关闭或无翻倍选项）"
+    },
+    {
+      "id": 4,
+      "name": "回归综合面板",
+      "status": "WARN",
+      "details": "回归面板未显示（可能无完成事件）"
+    },
+    {
+      "id": 5,
+      "name": "离线计算核心",
+      "status": "PASS",
+      "details": "存档存在, version=1, lastOffline=已记录"
+    },
+    {
+      "id": 6,
+      "name": "衰减系数",
+      "status": "PASS",
+      "details": "引擎配置已编译到bundle中 (5档: 100%/80%/60%/40%/25%, 引擎可访问: false)"
+    },
+    {
+      "id": 7,
+      "name": "快照机制",
+      "status": "PASS",
+      "details": "快照数据存在, 3/3关键字段 (version:true time:true warehouse:true)"
+    },
+    {
+      "id": 8,
+      "name": "封顶时长72h",
+      "status": "WARN",
+      "details": "超72h离线弹窗未出现（可能产出为0）"
+    },
+    {
+      "id": 9,
+      "name": "各系统离线行为",
+      "status": "PASS",
+      "details": "检测到4/5个系统入口 (建筑:true 科技:true 远征:true 贸易:false 关卡:true)"
+    },
+    {
+      "id": 10,
+      "name": "资源溢出规则",
+      "status": "PASS",
+      "details": "引擎溢出规则已编译 (grain/troops截断, gold/mandate无上限). 页面溢出提示: 无（资源未满）"
+    },
+    {
+      "id": 11,
+      "name": "离线预估面板",
+      "status": "WARN",
+      "details": "预估面板入口未找到 (文本引用: false)"
+    },
+    {
+      "id": 12,
+      "name": "邮件面板",
+      "status": "FAIL",
+      "details": "无法找到邮件面板入口"
+    },
+    {
+      "id": 13,
+      "name": "邮件状态管理",
+      "status": "WARN",
+      "details": "邮件面板不可见，无法检查状态"
+    },
+    {
+      "id": 14,
+      "name": "附件领取",
+      "status": "WARN",
+      "details": "邮件面板不可见"
+    },
+    {
+      "id": 15,
+      "name": "邮件发送规则",
+      "status": "WARN",
+      "details": "邮件存档为空（初始状态正常，需触发事件生成邮件）"
+    },
+    {
+      "id": 16,
+      "name": "各系统离线效率修正",
+      "status": "PASS",
+      "details": "引擎修正系数已编译 (资源×1.0 建筑×1.2 科技×1.0 远征×0.85 贸易×0.8 武将×0.5 扫荡×0.4). 页面效率展示: 无"
+    },
+    {
+      "id": "EX1",
+      "name": "数据完整性",
+      "status": "PASS",
+      "details": "无NaN/undefined/null异常显示"
+    },
+    {
+      "id": "EX2",
+      "name": "控制台错误",
+      "status": "PASS",
+      "details": "无控制台错误"
+    },
+    {
+      "id": "EX3",
+      "name": "移动端适配",
+      "status": "PASS",
+      "details": "375x812 viewport 正常"
     }
   ],
-  "screenshots": [],
-  "consoleErrors": [],
-  "startTime": "2026-04-22T12:22:46.458Z",
-  "endTime": "2026-04-22T12:22:59.153Z"
+  "summary": {
+    "total": 20,
+    "passed": 10,
+    "failed": 1,
+    "warned": 9
+  }
 }
