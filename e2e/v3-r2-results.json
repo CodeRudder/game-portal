@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-04-22T16:08:14.978Z",
+  "passed": [
+    "页面加载成功 (title: 🎮 Game Portal - 经典小游戏合集)",
+    "战役Tab(关卡)可见",
+    "战役场景切换成功",
+    "关卡列表可见 (容器=85, 章节=false, 关卡=true)",
+    "世界地图Tab(天下)可见",
+    "地图渲染成功",
+    "领土网格可见 (元素=54, 文字匹配=true)",
+    "无控制台错误",
+    "PC截图完成 (1280x720)",
+    "移动端截图完成 (375x812), 数据完整"
+  ],
+  "failed": [],
+  "warnings": [],
+  "screenshots": [
+    "01-loaded-pc.png",
+    "03-campaign-tab.png",
+    "06-world-map.png",
+    "09-pc-1280x720.png",
+    "10-mobile-375x812.png"
+  ],
+  "summary": {
+    "pass": 10,
+    "fail": 0,
+    "warn": 0
+  }
+}
