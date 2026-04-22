@@ -3,6 +3,7 @@
 ## 进化日志
 - [Round 1: v1.0评测](./evolution-r1.md) — 建立测试基础设施+技术审查流程
 - [Round 2: v2.0招贤纳士](./evolution-r2.md) — 新增即导出+选择器先探后测
+- [Round 3: v1.0进化迭代](./evolution-r3.md) — 大文件拆分+门面违规修复+Mixin模式+data-testid规则
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -26,6 +27,43 @@
 ### EVO-007: 选择器先探后测
 测试脚本先做DOM探测确认class名，再编写断言。
 
+### EVO-008: 门面违规检测
+技术审查必须包含门面违规检测：`grep -rn "from.*engine/(resource|building|calendar|hero|battle)" src/components/`，发现违规立即修复。
+
+### EVO-009: 文件行数预警
+每个版本迭代后检查是否有文件接近500行边界，提前拆分而非等到严重超限。
+
+### EVO-010: Mixin模式用于引擎扩展
+引擎主类getter方法通过mixin模式外移到engine-getters.ts，新增子系统getter时添加到engine-getters.ts而非引擎主类。
+
+### EVO-011: UI元素可测试性
+新增UI元素必须添加data-testid属性，测试脚本优先使用data-testid定位元素。
+
+### EVO-012: 子任务粒度控制
+单个子任务代码变更≤500行，超过500行的拆分任务分多个子任务执行，每个子任务预估时间≤10分钟。
+
+### EVO-013: 截图辅助测试
+UI测试应结合截图分析，不能仅依赖DOM文字搜索。资源图标应有aria-label或data-testid辅助测试。
+
+### EVO-014: data-testid强制规则
+- 所有新增UI元素必须添加data-testid属性
+- 测试脚本优先使用data-testid定位元素
+- 技术审查时检查是否有缺少data-testid的关键元素
+
+### EVO-015: 门面违规自动检测
+- 技术审查必须包含 `grep -rn "from.*engine/(resource|building|calendar|hero|battle|campaign|tech|npc|event|map|shop|trade|mail|equipment|expedition|pvp|social|alliance|prestige|quest|activity|bond|heritage|guide|settings|responsive|currency|advisor|offline)" src/components/ src/games/three-kingdoms/ui/` 检测
+- 发现违规立即修复，并在门面中补充缺失导出
+
+### EVO-016: 子任务粒度控制
+- 单个子任务代码变更≤500行
+- 超过500行的拆分任务分多个子任务执行
+- 每个子任务预估时间≤10分钟
+
+### EVO-017: Mixin模式用于引擎扩展
+- 引擎主类getter方法通过mixin模式外移
+- 新增子系统getter时添加到engine-getters.ts而非引擎主类
+
 ## 测试工具
 - game-actions.cjs: 可复用UI测试操作库（13个函数）
 - e2e/v1-ui-test.cjs: v1.0 UI测试脚本
+- e2e/v1-evolution-ui-test.cjs: v1.0 进化迭代UI测试脚本（30项测试）

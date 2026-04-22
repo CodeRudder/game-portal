@@ -47,6 +47,14 @@ const RESOURCE_COLORS: Record<ResourceType, string> = {
 /** 资源排列顺序 */
 const RESOURCE_ORDER: ResourceType[] = ['grain', 'gold', 'troops', 'mandate'];
 
+/** 资源脉冲动画颜色 — 功能点#12 粒子效果 */
+const RESOURCE_PULSE_COLORS: Record<ResourceType, string> = {
+  grain: 'rgba(126, 200, 80, 0.6)',   // 绿色
+  gold: 'rgba(201, 168, 76, 0.6)',     // 金色
+  troops: 'rgba(184, 66, 58, 0.6)',    // 红色
+  mandate: 'rgba(123, 94, 167, 0.6)',  // 紫色
+};
+
 /** 格式化数值：使用统一 formatNumber，compact 模式同标准模式 */
 function formatAmount(value: number, _compact: boolean = false): string {
   return formatNumber(value);
@@ -81,6 +89,23 @@ function ResourceItem({
   const percentage = hasCap ? Math.min(value / cap!, 1) : 0;
   const rateText = formatRate(rate);
 
+  // ── 功能点#12: 资源产出脉冲动画 ──
+  const prevValueRef = useRef(value);
+  const [pulsing, setPulsing] = useState(false);
+  const pulseColor = RESOURCE_PULSE_COLORS[type];
+
+  useEffect(() => {
+    if (prevValueRef.current !== value) {
+      // 仅在数值增加时触发脉冲（产出反馈）
+      if (value > prevValueRef.current) {
+        setPulsing(true);
+        const timer = setTimeout(() => setPulsing(false), 400);
+        return () => clearTimeout(timer);
+      }
+      prevValueRef.current = value;
+    }
+  }, [value]);
+
   // RES-CAP-02: 计算溢出情况
   const overflowInfo = useMemo(() => {
     if (!hasCap || cap === null || !pendingGain || pendingGain <= 0) return null;
@@ -109,7 +134,8 @@ function ResourceItem({
 
   return (
     <div
-      className={`tk-res-item ${warningLevel ? `tk-res-item--${warningLevel}` : ''}`}
+      className={`tk-res-item ${warningLevel ? `tk-res-item--${warningLevel}` : ''} ${pulsing ? 'tk-res-item--pulse' : ''}`}
+      style={pulsing ? { '--tk-pulse-color': pulseColor } as React.CSSProperties : undefined}
       title={`${label} ${formatAmount(value)}${overflowInfo ? `（溢出 ${formatAmount(overflowInfo.wasted)}）` : ''}`}
     >
       {/* 图标 */}

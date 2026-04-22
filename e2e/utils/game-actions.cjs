@@ -13,7 +13,8 @@
 const { chromium } = require('playwright');
 const path = require('path');
 
-const BASE_URL = 'http://localhost:5173/idle/three-kingdoms';
+// TOOL-01: BASE_URL 支持环境变量配置，默认5173端口
+const BASE_URL = process.env.GAME_BASE_URL || 'http://localhost:5173/idle/three-kingdoms';
 const SCREENSHOT_DIR = path.join(__dirname, '../../screenshots');
 
 /**
@@ -58,10 +59,14 @@ async function enterGame(page) {
 
 /**
  * 切换Tab
+ * TOOL-03: 切换前先关闭所有弹窗，避免遮挡导致点击失败
  * @param {import('playwright').Page} page
  * @param {string} tabName - Tab名称（如"建筑"、"武将"等）
  */
 async function switchTab(page, tabName) {
+  // 先关闭可能遮挡的弹窗
+  await closeAllModals(page);
+  
   const tab = await page.$('button:has-text("' + tabName + '")');
   if (!tab) throw new Error('Tab未找到: ' + tabName);
   await tab.click();
@@ -70,12 +75,18 @@ async function switchTab(page, tabName) {
 
 /**
  * 打开建筑升级弹窗
+ * TOOL-02: 更新选择器匹配实际DOM（tk-bld-pin / tk-bld-list-item）
  * @param {import('playwright').Page} page
  * @param {number} index - 建筑索引（默认0=主城）
  */
 async function openBuildingModal(page, index = 0) {
-  const bldPins = await page.$$('[class*="bld-pin"]:not([class*="locked"])');
-  if (!bldPins[index]) throw new Error('建筑索引' + index + '不存在');
+  // PC端地图模式选择器
+  let bldPins = await page.$$('[class*="tk-bld-pin"]:not([class*="tk-bld-pin--locked"])');
+  // 手机端列表模式兜底
+  if (bldPins.length === 0) {
+    bldPins = await page.$$('[class*="tk-bld-list-item"]:not([class*="tk-bld-list-item--locked"])');
+  }
+  if (!bldPins[index]) throw new Error('建筑索引' + index + '不存在（共' + bldPins.length + '个可点击建筑）');
   await bldPins[index].click();
   await page.waitForTimeout(1000);
 }
@@ -124,22 +135,23 @@ async function checkDataIntegrity(page) {
 
 /**
  * 检查布局位置
+ * TOOL-04: 安全获取 viewportSize，处理 null 返回
  * @param {import('playwright').Page} page
  * @returns {{resourceBarY: number, tabBarBottom: number, viewportHeight: number}}
  */
 async function checkLayout(page) {
   const resourceBar = await page.$('[class*="resource"], [class*="ResourceBar"]');
   const tabBar = await page.$('[class*="tk-tab-bar"], [class*="tab-bar"]');
-  const vp = page.viewportSize();
+  const vp = page.viewportSize() || { width: 1280, height: 720 };
   
   const result = { resourceBarY: -1, tabBarBottom: -1, viewportHeight: vp.height };
   if (resourceBar) {
     const box = await resourceBar.boundingBox();
-    result.resourceBarY = box.y;
+    if (box) result.resourceBarY = box.y;
   }
   if (tabBar) {
     const box = await tabBar.boundingBox();
-    result.tabBarBottom = box.y + box.height;
+    if (box) result.tabBarBottom = box.y + box.height;
   }
   return result;
 }
@@ -179,8 +191,27 @@ function clearConsoleErrors(page) {
   if (page._errors) page._errors.length = 0;
 }
 
+// TOOL-05: 实际的 localStorage 保存key（与 src/games/three-kingdoms/shared/constants.ts 保持一致）
+const SAVE_KEY = 'three-kingdoms-save';
+
+/**
+ * 检查存档数据是否存在
+ * @param {import('playwright').Page} page
+ * @returns {Promise<{exists: boolean, data: object|null, raw: string|null}>}
+ */
+async function checkSaveData(page) {
+  const raw = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+  if (!raw) return { exists: false, data: null, raw: null };
+  try {
+    return { exists: true, data: JSON.parse(raw), raw };
+  } catch {
+    return { exists: true, data: null, raw };
+  }
+}
+
 module.exports = {
   initBrowser, enterGame, switchTab, openBuildingModal, closeAllModals,
   takeScreenshot, checkDataIntegrity, checkLayout, switchToMobile, switchToPC,
-  getConsoleErrors, clearConsoleErrors, BASE_URL, SCREENSHOT_DIR
+  getConsoleErrors, clearConsoleErrors, checkSaveData,
+  BASE_URL, SCREENSHOT_DIR, SAVE_KEY
 };
