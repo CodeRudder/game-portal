@@ -16,6 +16,7 @@
 - [Round 2全局复盘](./evolution-r11.md) — 20版本完成(14通过/6有条件)+P0:0/P1:~20+GameEventSimulator+门面精简616→138行+EVO-049~052
 - [Round 7复盘: P1修复+测试增强](./progress/evolution-progress-r7.md) — GameEventSimulator修复+calcRebirthMultiplier签名统一+data-testid补全6组件+三国测试24→0失败+EVO-056~058
 - [Round 8复盘: 测试基础设施升级](./progress/evolution-progress-r8.md) — Jest→Vitest迁移261文件2976处替换+data-testid补全22组件+三国6158测试全通过+EVO-059~060
+- [Round 9复盘: 全版本审查验证](./progress/evolution-progress-r9.md) — 20版本技术审查+EventTriggerSystem拆分(697→468行)+废弃代码清理+BattleEffectApplier ISubsystem补全
 
 ## 进化规则
 ### EVO-001: 提取即删除
