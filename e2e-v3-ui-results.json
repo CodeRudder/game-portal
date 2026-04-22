@@ -1,90 +1,27 @@
 {
-  "timestamp": "2026-04-22T06:14:47.901Z",
+  "timestamp": "2026-04-22T06:23:10.963Z",
   "version": "v3.0",
   "module": "攻城掠地(上)",
   "summary": {
-    "passed": 41,
+    "passed": 2,
     "failed": 1,
-    "warnings": 4,
-    "screenshots": 8,
+    "warnings": 0,
+    "screenshots": 1,
     "consoleErrors": 0
   },
   "passed": [
     "游戏主界面加载成功",
-    "主界面数据完整性检查通过",
-    "CampaignTab容器(.tk-campaign-tab)存在",
-    "章节选择器(.tk-chapter-selector)存在",
-    "章节标题显示: \"第1章: 黄巾之乱\"",
-    "章节切换箭头存在",
-    "切换到下一章成功",
-    "关卡地图区域(.tk-campaign-map)存在",
-    "关卡节点数量: 8",
-    "关卡状态分类正常 (锁定/可挑战/已通关/三星 = 7/1/0/0)",
-    "锁定关卡显示🔒图标",
-    "关卡名称显示: \"黄巾前哨\"",
-    "关卡类型标签存在",
-    "推荐战力显示: \"战力 100\"",
-    "底部进度条(.tk-campaign-progress)存在",
-    "进度条填充宽度: 0%",
-    "地图滚动按钮存在",
-    "关卡描述区域存在",
-    "敌方阵容区域(.tk-bfm-enemy-units)存在",
-    "敌方单位数量: 3",
-    "战力对比区域(.tk-bfm-power-compare)存在",
-    "我方战力显示: 0",
-    "推荐战力显示: 100",
-    "战力评估: 危险",
-    "我方编队槽位数量: 6",
-    "编队状态: 已填充=0, 空位=6",
-    "前排/后排标签存在 (2个)",
-    "取消按钮存在",
-    "一键布阵按钮存在",
-    "一键布阵点击成功",
-    "出征按钮存在 (文本: \"⚔️ 出征\", 禁用: true)",
-    "第二章标题: \"第2章: 讨伐董卓\"",
-    "第二章关卡节点数量: 8",
-    "切回第一章成功",
-    "移动端CampaignTab存在",
-    "移动端关卡节点数量: 8",
-    "移动端章节选择器存在",
-    "移动端无水平溢出 (scrollWidth=375)",
-    "移动端数据完整性检查通过",
-    "移动端无控制台错误",
-    "PC端无控制台错误"
+    "主界面数据完整性检查通过"
   ],
   "failed": [
     {
-      "name": "战前布阵弹窗",
-      "detail": "未找到弹窗容器"
+      "name": "测试执行异常",
+      "detail": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"tk-guide-backdrop\"></div> from <div role=\"dialog\" aria-modal=\"true\" aria-label=\"Tutorial\" class=\"tk-guide-overlay\">…</div> subtree intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"tk-guide-backdrop\"></div> from <div role=\"dialog\" aria-modal=\"true\" aria-label=\"Tutorial\" class=\"tk-guide-overlay\">…</div> subtree intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    57 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"tk-guide-backdrop\"></div> from <div role=\"dialog\" aria-modal=\"true\" aria-label=\"Tutorial\" class=\"tk-guide-overlay\">…</div> subtree intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
     }
   ],
-  "warnings": [
-    {
-      "name": "星级元素",
-      "detail": "未找到.tk-stage-star（可能初始无已通关关卡）"
-    },
-    {
-      "name": "一键布阵",
-      "detail": "布阵后无已填充槽位（可能无可用武将）"
-    },
-    {
-      "name": "出征按钮",
-      "detail": "出征按钮被禁用（可能无武将在编队中）"
-    },
-    {
-      "name": "扫荡按钮",
-      "detail": "未找到扫荡按钮（可能没有三星通关关卡）"
-    }
-  ],
+  "warnings": [],
   "screenshots": [
-    "v3-00-main.png",
-    "v3-01-campaign-tab.png",
-    "v3-01b-chapter-next.png",
-    "v3-02-formation-modal.png",
-    "v3-02b-auto-formation.png",
-    "v3-06-chapter2.png",
-    "v3-07-campaign-mobile.png",
-    "v3-07b-formation-mobile.png"
+    "v3-00-main.png"
   ],
   "consoleErrors": []
 }
