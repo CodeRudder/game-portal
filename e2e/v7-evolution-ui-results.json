@@ -1,44 +1,73 @@
 {
   "passed": [
-    "NPC列表容器存在",
-    "NPC卡片数量: 10",
-    "页面无NaN/undefined显示",
-    "移动端适配测试完成"
+    "游戏主界面加载成功",
+    "主界面数据完整性检查通过（无NaN/undefined）",
+    "NPC名册Tab容器存在（data-testid=npc-tab）",
+    "NPC搜索框存在（data-testid=npc-search-input）",
+    "NPC职业筛选栏存在（data-testid=npc-filter-bar）",
+    "NPC列表容器存在（data-testid=npc-list）",
+    "NPC卡片渲染（10张, data-testid=npc-card-*）",
+    "NPC底部统计存在（data-testid=npc-tab-footer）",
+    "NPC\"全部\"筛选按钮可点击",
+    "NPC搜索输入功能正常",
+    "NPC详情弹窗打开（data-testid=npc-info-modal）",
+    "NPC好感度显示存在（data-testid=npc-info-affinity）",
+    "NPC操作按钮区域存在（data-testid=npc-info-actions）",
+    "NPC详情弹窗可关闭",
+    "NPC对话弹窗通过Escape关闭",
+    "NPC职业筛选可切换（npc-filter-all）",
+    "事件列表面板打开（data-testid=event-list-panel）",
+    "事件面板可通过功能菜单打开",
+    "回归: 建筑面板正常",
+    "回归: 武将面板正常",
+    "回归: 科技面板正常",
+    "回归: 关卡面板正常",
+    "移动端: 游戏主界面加载",
+    "移动端: NPC面板正常渲染",
+    "移动端: 数据完整性检查通过",
+    "最终数据完整性检查通过",
+    "无显著控制台错误"
   ],
-  "failed": [
-    {
-      "name": "NPC对话弹窗",
-      "detail": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" "
-    }
-  ],
+  "failed": [],
   "warnings": [
     {
-      "name": "好感度显示未找到",
-      "detail": "undefined"
+      "name": "NPC对话弹窗未找到",
+      "detail": "可能需要等待"
     },
     {
-      "name": "赠送按钮未找到",
-      "detail": "undefined"
+      "name": "事件急报横幅未显示",
+      "detail": "当前可能无活跃急报事件"
     },
     {
-      "name": "事件面板按钮未找到",
-      "detail": "undefined"
+      "name": "事件卡片为空",
+      "detail": "当前可能无活跃事件"
     },
     {
-      "name": "事件横幅未显示（可能无活跃事件）",
-      "detail": "undefined"
+      "name": "随机遭遇弹窗未触发",
+      "detail": "需引擎随机触发，非测试可控"
     },
     {
-      "name": "任务面板按钮未找到",
-      "detail": "undefined"
+      "name": "剧情事件弹窗未触发",
+      "detail": "需引擎条件触发"
     },
     {
-      "name": "任务追踪面板未显示（可能无进行中任务）",
-      "detail": "undefined"
+      "name": "任务面板打开失败",
+      "detail": "FeatureMenu项未找到: quest"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    "v7e-00-main",
+    "v7e-A1-npc-tab",
+    "v7e-A1-npc-search",
+    "v7e-A2-npc-info",
+    "v7e-A3-npc-dialog",
+    "v7e-A4-npc-filter",
+    "v7e-B1-event-panel",
+    "v7e-D-regression",
+    "v7e-E1-mobile-main",
+    "v7e-E2-mobile-npc"
+  ],
   "consoleErrors": [],
-  "startTime": "2026-04-22T12:08:02.281Z",
-  "endTime": "2026-04-22T12:08:58.766Z"
+  "startTime": "2026-04-22T12:14:08.189Z",
+  "endTime": "2026-04-22T12:15:07.188Z"
 }

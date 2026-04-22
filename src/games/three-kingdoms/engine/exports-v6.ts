@@ -77,6 +77,23 @@ export { EventLogSystem } from './event/EventLogSystem';
 export { EventTriggerEngine } from './event/EventTriggerEngine';
 export { OfflineEventHandler } from './event/OfflineEventHandler';
 export { OfflineEventSystem } from './event/OfflineEventSystem';
+export { EventEngine } from './event/EventEngine';
+export {
+  serializeEventEngine,
+  deserializeEventEngine,
+} from './event/EventEngineSerialization';
+export type { SerializableEventEngine } from './event/EventEngineSerialization';
+export { ChainEventSystemV15 } from './event/ChainEventSystemV15';
+export type {
+  EventChain,
+  EventChainNode,
+  StoryEventDef,
+  StoryLine,
+  StoryChoice,
+  EventLogEntry,
+  ReturnAlert,
+  EventChainSaveData,
+} from './event/event-chain.types';
 
 // 事件域 — 类型（从core层重新导出）
 export type {
@@ -99,7 +116,11 @@ export { QuestSystem } from './quest/QuestSystem';
 export { QuestTrackerSystem } from './quest/QuestTrackerSystem';
 export type { QuestJumpTarget, QuestProgressEvent } from './quest/QuestTrackerSystem';
 export { DEFAULT_JUMP_TARGETS } from './quest/QuestTrackerSystem';
-export { ActivitySystem } from './activity/ActivitySystem';
+export {
+  serializeQuestState,
+  deserializeQuestState,
+} from './quest/QuestSerialization';
+export type { ActivityStateData } from './quest/QuestSerialization';
 
 // 任务域 — 类型（从core层重新导出）
 export type {
@@ -112,3 +133,34 @@ export {
   QUEST_SAVE_VERSION, DAILY_QUEST_TEMPLATES, PREDEFINED_QUESTS,
   DEFAULT_ACTIVITY_MILESTONES, DEFAULT_DAILY_POOL_CONFIG,
 } from '../core/quest';
+
+// ──────────────────────────────────────────────
+// v7.0 — 活动域子系统
+// ──────────────────────────────────────────────
+
+export { ActivitySystem } from './activity/ActivitySystem';
+export { SignInSystem } from './activity/SignInSystem';
+export {
+  DEFAULT_SIGN_IN_REWARDS,
+  DEFAULT_SIGN_IN_CONFIG,
+  SIGN_IN_CYCLE_DAYS,
+  createDefaultSignInData,
+} from './activity/SignInSystem';
+export { TimedActivitySystem } from './activity/TimedActivitySystem';
+export {
+  DEFAULT_LEADERBOARD_CONFIG,
+  DEFAULT_TIMED_OFFLINE_EFFICIENCY,
+  FESTIVAL_TEMPLATES,
+} from './activity/TimedActivitySystem';
+export { TokenShopSystem } from './activity/TokenShopSystem';
+export {
+  DEFAULT_TOKEN_SHOP_CONFIG,
+  RARITY_ORDER,
+  RARITY_PRICE_MULTIPLIER,
+  DEFAULT_SHOP_ITEMS,
+} from './activity/TokenShopSystem';
+
+// 活动域 — 类型（从core层重新导出）
+export type {
+  SignInReward, SignInData, SignInConfig,
+} from '../../core/activity/activity.types';
