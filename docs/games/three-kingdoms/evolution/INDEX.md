@@ -8,6 +8,7 @@
 - [Round 5: v3.0攻城略地-上](./evolution-r5.md) — 技术审查4问题修复+30/30 UI测试通过
 - [Round 6: v5.0百家争鸣](./evolution-r6.md) — 0P0+0P1首次零缺陷+62/62 UI测试+四层拆分成熟
 - [Round 7: v6.0天下大势](./evolution-r7.md) — P0修复(Event接入引擎+门面补全)+26/26 UI测试+exports-v6拆分策略
+- [Round 3复盘: P1修复](./progress/evolution-progress-r3.md) — Round 2发现的4个P1问题全部修复，0P0/0P1收官
 
 ## 进化规则
 ### EVO-001: 提取即删除
