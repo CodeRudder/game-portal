@@ -1,7 +1,4 @@
-/**
- * 引擎层 — 统一导出入口
- */
-
+/** 引擎层 — 统一导出入口 */
 export { ThreeKingdomsEngine } from './ThreeKingdomsEngine';
 
 // 资源域
@@ -497,5 +494,5 @@ export type {
   FirstLaunchResult,
 } from './guide/TutorialStorage';
 
-// v6.0: NPC + Event 模块（拆分到 exports-v6.ts 避免超限）
+// v6.0 NPC+Event → exports-v6.ts
 export * from './exports-v6';

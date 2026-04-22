@@ -1,0 +1,69 @@
+{
+  "passed": [
+    "游戏加载成功",
+    "数据完整性检查通过（无NaN/undefined）",
+    "NPC Tab切换成功",
+    "NPC名册面板渲染（data-testid=npc-tab）",
+    "NPC搜索栏存在（data-testid=npc-search-input）",
+    "NPC搜索功能可用",
+    "NPC职业筛选栏存在（data-testid=npc-filter-bar）",
+    "NPC职业筛选可点击",
+    "NPC列表容器存在（data-testid=npc-list）",
+    "发现 10 张NPC卡片",
+    "NPC卡片点击响应",
+    "NPC好感度进度条渲染",
+    "NPC对话按钮存在",
+    "NPC详情按钮存在",
+    "NPC底部统计存在（data-testid=npc-tab-footer）",
+    "NPC统计显示: 共 10 / 10 位",
+    "随机遭遇弹窗未触发（正常，需引擎触发随机事件）",
+    "移动端NPC面板渲染",
+    "移动端地图Tab切换成功",
+    "回归: 建筑面板正常",
+    "回归: 武将面板正常",
+    "回归: 科技Tab可切换",
+    "最终数据完整性检查通过",
+    "无显著控制台错误"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "世界地图容器未找到",
+      "detail": "可能DOM结构变更"
+    },
+    {
+      "name": "地图筛选工具栏未找到",
+      "detail": "可能尚未渲染或选择器变更"
+    },
+    {
+      "name": "地图统计面板未找到",
+      "detail": "可能尚未渲染"
+    },
+    {
+      "name": "领土网格未找到",
+      "detail": "可能DOM结构变更"
+    },
+    {
+      "name": "NPC对话弹窗未弹出",
+      "detail": "可能弹窗结构变更"
+    },
+    {
+      "name": "NPC详情弹窗未弹出",
+      "detail": "可能弹窗结构变更"
+    },
+    {
+      "name": "急报横幅未显示",
+      "detail": "可能当前无活跃急报事件"
+    },
+    {
+      "name": "事件菜单项未找到",
+      "detail": "尝试其他方式"
+    },
+    {
+      "name": "事件列表面板未渲染",
+      "detail": "data-testid=event-list-panel 不存在"
+    }
+  ],
+  "screenshots": [],
+  "consoleErrors": []
+}
