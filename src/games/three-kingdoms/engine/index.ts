@@ -128,6 +128,12 @@ export { BondSystem } from './bond/BondSystem';
 // 战斗域
 export { BattleEngine } from './battle/BattleEngine';
 export { DamageCalculator } from './battle/DamageCalculator';
+export { BattleEffectManager } from './battle/BattleEffectManager';
+export { BattleSpeedController } from './battle/BattleSpeedController';
+export { UltimateSkillSystem } from './battle/UltimateSkillSystem';
+export { BattleTurnExecutor } from './battle/BattleTurnExecutor';
+export { calculateBattleStats, generateSummary } from './battle/BattleStatistics';
+export type { BattleStats } from './battle/BattleStatistics';
 export type {
   BattleUnit,
   BattleTeam,
@@ -176,6 +182,9 @@ export type {
 // 关卡域
 export { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
 export { RewardDistributor } from './campaign/RewardDistributor';
+export { SweepSystem } from './campaign/SweepSystem';
+export { AutoPushExecutor } from './campaign/AutoPushExecutor';
+export { serializeProgress, deserializeProgress, SAVE_VERSION as CampaignSaveVersion } from './campaign/CampaignSerializer';
 export {
   campaignDataProvider,
   getChapters as getCampaignChapters,

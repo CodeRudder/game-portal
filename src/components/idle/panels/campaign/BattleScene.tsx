@@ -25,7 +25,8 @@ import { BattleOutcome } from '@/games/three-kingdoms/engine';
 import type { Stage } from '@/games/three-kingdoms/engine';
 import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine';
 import { useBattleAnimation } from './BattleAnimation';
-import type { LogEntry } from './BattleAnimation';
+import type { LogEntry, LogPart } from './BattleAnimation';
+import { getHpLevel, formatHp } from './battle-scene-utils';
 import './BattleScene.css';
 
 // ─────────────────────────────────────────────
@@ -39,22 +40,6 @@ interface BattleSceneProps {
   stage: Stage;
   /** 战斗结束回调 */
   onBattleEnd: (result: BattleResult) => void;
-}
-
-// ─────────────────────────────────────────────
-// 辅助函数
-// ─────────────────────────────────────────────
-
-/** 获取血条颜色等级 */
-function getHpLevel(hp: number, maxHp: number): string {
-  if (hp <= 0) return 'dead';
-  const r = hp / maxHp;
-  return r > 0.6 ? 'high' : r > 0.25 ? 'mid' : 'low';
-}
-
-/** 格式化HP显示 */
-function formatHp(hp: number, maxHp: number): string {
-  return `${Math.max(0, Math.round(hp))}/${maxHp}`;
 }
 
 // ─────────────────────────────────────────────
@@ -128,8 +113,15 @@ const BattleLog: React.FC<BattleLogProps> = React.memo(({ logs, logAreaRef }) =>
       </div>
       <div className="tk-bs-log-content" ref={logAreaRef}>
         {logs.map((log) => (
-          <div key={log.id} className={`tk-bs-log-entry tk-bs-log-entry--${log.type}`}
-            dangerouslySetInnerHTML={{ __html: log.html }} />
+          <div key={log.id} className={`tk-bs-log-entry tk-bs-log-entry--${log.type}`}>
+            {log.parts.map((part, i) => {
+              if (part.type === 'actor') return <span key={i} className="tk-bs-log-actor">{part.text}</span>;
+              if (part.type === 'skill') return <span key={i} className="tk-bs-log-skill">{part.text}</span>;
+              if (part.type === 'damage') return <span key={i} className="tk-bs-log-damage">{part.text}</span>;
+              if (part.type === 'crit') return <span key={i} className="tk-bs-log-crit">{part.text}</span>;
+              return <span key={i}>{part.text}</span>;
+            })}
+          </div>
         ))}
       </div>
     </div>

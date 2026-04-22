@@ -19,6 +19,7 @@ import type {
   StageReward,
 } from './campaign.types';
 import { type StarRating, MAX_STARS } from './campaign.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -91,7 +92,11 @@ function getStarMultiplier(stars: number, threeStarBonusMultiplier: number): num
  * distributor.distribute(reward);
  * ```
  */
-export class RewardDistributor {
+export class RewardDistributor implements ISubsystem {
+  // ── ISubsystem 接口 ──
+  readonly name = 'rewardDistributor' as const;
+  private sysDeps: ISystemDeps | null = null;
+
   /** 关卡数据提供者 */
   private readonly dataProvider: ICampaignDataProvider;
   /** 奖励分发依赖（回调集合） */
@@ -346,5 +351,29 @@ export class RewardDistributor {
     }
 
     return { fragments, bonusExp };
+  }
+
+  // ─────────────────────────────────────────────
+  // ISubsystem 适配层
+  // ─────────────────────────────────────────────
+
+  /** ISubsystem.init — 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.sysDeps = deps;
+  }
+
+  /** ISubsystem.update — 奖励分发器是事件驱动的，不需要每帧更新 */
+  update(_dt: number): void {
+    // 奖励分发器按需调用，不需要每帧更新
+  }
+
+  /** ISubsystem.getState — 返回状态快照 */
+  getState(): { name: string } {
+    return { name: this.name };
+  }
+
+  /** ISubsystem.reset — 无状态需要重置 */
+  reset(): void {
+    // 奖励分发器无持久状态，无需重置
   }
 }

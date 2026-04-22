@@ -1,311 +1,221 @@
 {
-  "passed": [
-    {
-      "id": "LOAD-01",
-      "desc": "开始游戏按钮点击成功"
-    },
+  "version": "v2.0",
+  "testRound": "R1",
+  "date": "2026-04-22T10:08:13.648Z",
+  "gameUrl": "http://localhost:3000/idle/three-kingdoms",
+  "browser": "Chromium",
+  "viewport": {
+    "pc": "1280x720",
+    "mobile": "375x667"
+  },
+  "total": 34,
+  "passed": 34,
+  "failed": 0,
+  "issues": [],
+  "results": [
     {
       "id": "DATA-01",
-      "desc": "页面无NaN"
+      "name": "页面无NaN显示",
+      "pass": true,
+      "detail": ""
     },
     {
       "id": "DATA-02",
-      "desc": "页面无undefined"
+      "name": "页面无undefined显示",
+      "pass": true,
+      "detail": ""
     },
     {
-      "id": "TAB-01",
-      "desc": "武将Tab切换成功"
+      "id": "HER-A-1",
+      "name": "武将属性-名字显示",
+      "pass": true,
+      "detail": "名字: 刘备"
     },
     {
-      "id": "TAB-03",
-      "desc": "武将工具栏(.tk-hero-toolbar)存在"
+      "id": "HER-A-2",
+      "name": "武将属性-品质标识",
+      "pass": true,
+      "detail": "品质: 史诗, 背景色: 已设置"
     },
     {
-      "id": "TAB-04",
-      "desc": "总战力显示: ⚔️ 总战力 0"
+      "id": "HER-A-3",
+      "name": "武将属性-战力数值",
+      "pass": true,
+      "detail": "战力: ⚔️ 818"
     },
     {
-      "id": "TAB-05",
-      "desc": "招募按钮(.tk-hero-recruit-btn)存在"
+      "id": "HER-A-4",
+      "name": "武将属性-等级与阵营",
+      "pass": true,
+      "detail": "等级: Lv.1, 阵营: 🔴蜀"
     },
     {
-      "id": "CARD-00",
-      "desc": "空状态提示(.tk-hero-empty)正确显示"
+      "id": "HER-B-1",
+      "name": "招募按钮",
+      "pass": true,
+      "detail": "招募按钮可点击"
     },
     {
-      "id": "CARD-00-RECRUIT",
-      "desc": "通过空状态按钮招募了武将"
+      "id": "HER-B-2",
+      "name": "招募弹窗",
+      "pass": true,
+      "detail": "招募弹窗已打开"
     },
     {
-      "id": "CARD-01",
-      "desc": "武将卡片数量: 1"
+      "id": "HER-B-2-types",
+      "name": "普通/高级招募选项",
+      "pass": true,
+      "detail": "招募类型: 普通招贤, 高级招贤 "
     },
     {
-      "id": "CARD-02",
-      "desc": "武将名字: 校尉"
+      "id": "HER-B-3",
+      "name": "单抽/十连招募按钮",
+      "pass": true,
+      "detail": "单抽: 存在, 十连: 存在 "
     },
     {
-      "id": "CARD-03",
-      "desc": "品质标签: 精良"
+      "id": "HER-B-3-cost",
+      "name": "招募消耗显示",
+      "pass": true,
+      "detail": "消耗: 铜钱 ×100, 铜钱 ×900"
     },
     {
-      "id": "CARD-04",
-      "desc": "等级显示: Lv.1"
+      "id": "HER-B-4",
+      "name": "保底信息显示",
+      "pass": true,
+      "detail": "保底项: 十连保底（稀有+）, 硬保底（史诗+）, 进度条: 2条, 计数: 2个"
     },
     {
-      "id": "CARD-05",
-      "desc": "战力显示: ⚔️ 507"
+      "id": "HER-C-1",
+      "name": "升级按钮",
+      "pass": true,
+      "detail": "按钮文本: 升级至 Lv.2"
     },
     {
-      "id": "CARD-06",
-      "desc": "阵营显示: 🟣群"
+      "id": "HER-C-2",
+      "name": "一键强化(+5级)",
+      "pass": true,
+      "detail": "按钮文本: +5级"
     },
     {
-      "id": "CARD-07",
-      "desc": "头像区域(.tk-hero-card-portrait)存在"
+      "id": "HER-C-3",
+      "name": "升级消耗显示",
+      "pass": true,
+      "detail": "消耗: 💰 20 铜钱"
     },
     {
-      "id": "CARD-08",
-      "desc": "品质边框颜色已设置(border-color)"
+      "id": "HER-C-4",
+      "name": "战力预览",
+      "pass": true,
+      "detail": "预览: 战力: 818 → 857(+39)"
     },
     {
-      "id": "DETAIL-01",
-      "desc": "武将详情弹窗(.tk-hero-detail-overlay)已打开"
+      "id": "HER-C-5",
+      "name": "资源状态提示",
+      "pass": true,
+      "detail": "状态: ❌ 资源不足"
     },
     {
-      "id": "DETAIL-02",
-      "desc": "详情标题-名字: 校尉"
+      "id": "HER-D-1",
+      "name": "武将列表布局",
+      "pass": true,
+      "detail": "网格: 存在, Tab面板: 存在, 工具栏: 存在"
     },
     {
-      "id": "DETAIL-03",
-      "desc": "详情-品质: 精良 (颜色: 已设置)"
+      "id": "HER-D-2",
+      "name": "详情面板",
+      "pass": true,
+      "detail": "头部: 存在, 主体: 存在, 内容长度: 245"
     },
     {
-      "id": "DETAIL-04",
-      "desc": "详情-阵营: 群"
+      "id": "HER-D-3",
+      "name": "画像渲染",
+      "pass": true,
+      "detail": "头像存在, 品质背景: 已设置, 字符: 刘备"
     },
     {
-      "id": "DETAIL-05",
-      "desc": "详情-等级: Lv.1"
+      "id": "HER-D-4",
+      "name": "总战力显示",
+      "pass": true,
+      "detail": "显示: ⚔️ 总战力 818"
     },
     {
-      "id": "DETAIL-06",
-      "desc": "详情-战力: ⚔️ 战力 507"
+      "id": "HER-D-5",
+      "name": "筛选/排序功能",
+      "pass": true,
+      "detail": "筛选按钮: 5个, 下拉选择: 2个"
     },
     {
-      "id": "DETAIL-07",
-      "desc": "详情-头像存在 (品质背景: 已设置)"
+      "id": "HER-E-1",
+      "name": "技能列表",
+      "pass": true,
+      "detail": "技能数量: 2, 名称: 仁德, 蜀汉之主"
     },
     {
-      "id": "RADAR-01",
-      "desc": "SVG雷达图(.tk-hero-radar)存在"
+      "id": "HER-E-2",
+      "name": "技能详情",
+      "pass": true,
+      "detail": "描述: 有, 等级: Lv.1, 类型: 主动"
     },
     {
-      "id": "RADAR-02",
-      "desc": "雷达图结构: polygons=true, circles=true, texts=true, lines=true"
+      "id": "HER-E-3",
+      "name": "编队功能Tab",
+      "pass": true,
+      "detail": "编队子Tab存在"
     },
     {
-      "id": "RADAR-03",
-      "desc": "雷达图区域(.tk-hero-detail-radar-section)存在"
+      "id": "HER-E-4",
+      "name": "编队面板内容",
+      "pass": true,
+      "detail": "面板元素: 存在, 编队文字: true, 空位: false"
     },
     {
-      "id": "RADAR-04",
-      "desc": "雷达图数据多边形(.tk-hero-radar-data)存在"
+      "id": "BONUS-RADAR",
+      "name": "SVG雷达图",
+      "pass": true,
+      "detail": "多边形: true, 文字: true"
     },
     {
-      "id": "UPGRADE-01",
-      "desc": "升级区域(.tk-hero-detail-enhance)存在"
+      "id": "BONUS-QUALITY",
+      "name": "品质边框颜色",
+      "pass": true,
+      "detail": "边框样式: 已设置"
     },
     {
-      "id": "UPGRADE-02",
-      "desc": "升级按钮: 升级至 Lv.2"
+      "id": "BONUS-STATS",
+      "name": "四维属性条",
+      "pass": true,
+      "detail": "属性条数量: 4"
     },
     {
-      "id": "UPGRADE-03",
-      "desc": "+5级按钮(.tk-hero-detail-enhance-max-btn)存在"
+      "id": "BONUS-FRAG",
+      "name": "碎片合成",
+      "pass": true,
+      "detail": "碎片: 💎 碎片 0/80, 合成按钮: 存在"
     },
     {
-      "id": "UPGRADE-04",
-      "desc": "升级消耗: 💰 20 铜钱"
+      "id": "BONUS-EXP",
+      "name": "经验条",
+      "pass": true,
+      "detail": "经验条存在"
     },
     {
-      "id": "UPGRADE-05",
-      "desc": "战力预览: 战力: 507 → 531(+24)"
-    },
-    {
-      "id": "UPGRADE-06",
-      "desc": "资源状态: ❌ 资源不足"
-    },
-    {
-      "id": "FRAG-01",
-      "desc": "碎片区域(.tk-hero-detail-fragments)存在"
-    },
-    {
-      "id": "FRAG-02",
-      "desc": "碎片数量: 💎 碎片 0/80"
-    },
-    {
-      "id": "FRAG-03",
-      "desc": "碎片进度条(.tk-hero-detail-fragments-bar)存在"
-    },
-    {
-      "id": "FRAG-04",
-      "desc": "合成按钮: 碎片合成 (0/80)"
-    },
-    {
-      "id": "QUALITY-01",
-      "desc": "详情头部品质边框颜色已设置"
-    },
-    {
-      "id": "QUALITY-02",
-      "desc": "头像品质渐变背景已设置"
-    },
-    {
-      "id": "QUALITY-03",
-      "desc": "品质标签背景色已设置"
-    },
-    {
-      "id": "QUALITY-04",
-      "desc": "等级徽章品质边框已设置"
-    },
-    {
-      "id": "STATS-01",
-      "desc": "属性条数量: 4"
-    },
-    {
-      "id": "STATS-02",
-      "desc": "属性条填充: 有样式"
-    },
-    {
-      "id": "SKILL-01",
-      "desc": "技能数量: 2"
-    },
-    {
-      "id": "DETAIL-08",
-      "desc": "对比按钮(.tk-hero-detail-compare-btn)存在"
-    },
-    {
-      "id": "DETAIL-09",
-      "desc": "升星按钮存在"
-    },
-    {
-      "id": "DETAIL-10",
-      "desc": "经验条(.tk-hero-detail-exp-section)存在"
-    },
-    {
-      "id": "RECRUIT-01",
-      "desc": "招募按钮点击成功"
-    },
-    {
-      "id": "RECRUIT-02",
-      "desc": "招募弹窗(.tk-recruit-overlay)已打开"
-    },
-    {
-      "id": "RECRUIT-03",
-      "desc": "招募标题: ⚔️ 招贤纳士"
-    },
-    {
-      "id": "RECRUIT-04",
-      "desc": "招募类型按钮数量: 2"
-    },
-    {
-      "id": "RECRUIT-04-0",
-      "desc": "招募类型: 普通招贤"
-    },
-    {
-      "id": "RECRUIT-04-1",
-      "desc": "招募类型: 高级招贤"
-    },
-    {
-      "id": "PITY-01",
-      "desc": "保底区域(.tk-recruit-pity)存在"
-    },
-    {
-      "id": "PITY-02",
-      "desc": "保底进度项数量: 2"
-    },
-    {
-      "id": "PITY-03",
-      "desc": "十连保底标签: 十连保底（稀有+）"
-    },
-    {
-      "id": "PITY-04",
-      "desc": "硬保底标签: 硬保底（史诗+）"
-    },
-    {
-      "id": "PITY-05",
-      "desc": "保底进度条数量: 2"
-    },
-    {
-      "id": "PITY-06-0",
-      "desc": "保底填充0: width: 10%;"
-    },
-    {
-      "id": "PITY-06-1",
-      "desc": "保底填充1: width: 2%;"
-    },
-    {
-      "id": "PITY-07-0",
-      "desc": "保底计数0: 1/10"
-    },
-    {
-      "id": "PITY-07-1",
-      "desc": "保底计数1: 1/50"
-    },
-    {
-      "id": "RECRUIT-05",
-      "desc": "单次招募按钮存在"
-    },
-    {
-      "id": "RECRUIT-06",
-      "desc": "十连招募按钮存在"
-    },
-    {
-      "id": "RECRUIT-07-0",
-      "desc": "消耗显示: 铜钱 ×100"
-    },
-    {
-      "id": "RECRUIT-07-1",
-      "desc": "消耗显示: 铜钱 ×900"
-    },
-    {
-      "id": "RECRUIT-08",
-      "desc": "招募记录按钮(.tk-recruit-history-toggle)存在"
-    },
-    {
-      "id": "RECRUIT-09",
-      "desc": "切换到高级招募"
+      "id": "BONUS-STARUP",
+      "name": "升星按钮",
+      "pass": true,
+      "detail": "升星按钮存在"
     },
     {
       "id": "MOBILE-01",
-      "desc": "移动端武将卡片: 1"
+      "name": "移动端武将卡片",
+      "pass": true,
+      "detail": "数量: 1"
     },
     {
-      "id": "MOBILE-02",
-      "desc": "移动端招募按钮存在"
-    },
-    {
-      "id": "CONSOLE-01",
-      "desc": "无控制台错误"
+      "id": "CONSOLE",
+      "name": "控制台无JS错误",
+      "pass": true,
+      "detail": "无错误"
     }
-  ],
-  "failed": [],
-  "warnings": [
-    {
-      "id": "TAB-02",
-      "desc": "武将列表网格(.tk-hero-grid)未找到"
-    }
-  ],
-  "consoleErrors": [],
-  "screenshots": [
-    "00-main-page",
-    "01-hero-tab",
-    "02-hero-cards",
-    "03-hero-detail",
-    "04-recruit-modal",
-    "05-recruit-advanced",
-    "06-mobile-hero-tab",
-    "07-mobile-recruit",
-    "08-mobile-hero-detail"
   ]
 }

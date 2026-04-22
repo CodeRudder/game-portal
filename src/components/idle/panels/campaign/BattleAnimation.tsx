@@ -14,7 +14,8 @@ import { findUnit as findUnitInState } from '@/games/three-kingdoms/engine';
 
 // ── 导出类型 ──
 export interface DamageFloat { id: number; unitId: string; value: number; isCritical: boolean; isHeal: boolean; }
-export interface LogEntry { id: number; html: string; type: 'ally' | 'enemy' | 'critical' | 'turn' | 'system'; }
+export interface LogPart { type: 'text' | 'actor' | 'skill' | 'damage' | 'crit'; text: string; }
+export interface LogEntry { id: number; parts: LogPart[]; type: 'ally' | 'enemy' | 'critical' | 'turn' | 'system'; }
 export interface BattleAnimationState {
   battleState: BattleState | null;
   battleResult: BattleResult | null;
@@ -41,17 +42,22 @@ const END_DELAY = 1200;
 // ── 辅助函数 ──
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-function buildActionLog(action: BattleAction): { html: string; type: LogEntry['type'] } {
-  if (!action.skill) return { html: `<span class="tk-bs-log-actor">${action.actorName}</span> 被控制，无法行动`, type: 'system' };
+function buildActionLog(action: BattleAction): { parts: LogPart[]; type: LogEntry['type'] } {
+  if (!action.skill) return { parts: [{ type: 'actor', text: action.actorName }, { type: 'text', text: ' 被控制，无法行动' }], type: 'system' };
   let totalDmg = 0; let hasCrit = false;
   for (const [, dmg] of Object.entries(action.damageResults)) { totalDmg += dmg.damage; if (dmg.isCritical) hasCrit = true; }
   const side = action.actorSide === 'ally' ? 'ally' : 'enemy';
-  const critTag = hasCrit ? ' <span class="tk-bs-log-crit">暴击!</span>' : '';
   const aoeTag = action.targetIds.length > 1 ? ` (×${action.targetIds.length})` : '';
-  return {
-    html: `<span class="tk-bs-log-actor">${action.actorName}</span> 使用 <span class="tk-bs-log-skill">${action.skill.name}</span>${aoeTag} 造成 <span class="tk-bs-log-damage">${totalDmg.toLocaleString()}</span> 伤害${critTag}`,
-    type: hasCrit ? 'critical' : side,
-  };
+  const parts: LogPart[] = [
+    { type: 'actor', text: action.actorName },
+    { type: 'text', text: ' 使用 ' },
+    { type: 'skill', text: action.skill.name },
+    { type: 'text', text: `${aoeTag} 造成 ` },
+    { type: 'damage', text: totalDmg.toLocaleString() },
+    { type: 'text', text: ' 伤害' },
+  ];
+  if (hasCrit) parts.push({ type: 'crit', text: '暴击!' });
+  return { parts, type: hasCrit ? 'critical' : side };
 }
 
 // ── useBattleAnimation Hook ──
@@ -84,9 +90,9 @@ export function useBattleAnimation(
   // 跟踪已死亡的单位（避免重复触发死亡动画）
   const deadUnitsRef = useRef<Set<string>>(new Set());
 
-  const addLog = useCallback((html: string, type: LogEntry['type']) => {
+  const addLog = useCallback((parts: LogPart[], type: LogEntry['type']) => {
     const id = ++logIdRef.current;
-    setLogs((prev) => [...prev.slice(-50), { id, html, type }]);
+    setLogs((prev) => [...prev.slice(-50), { id, parts, type }]);
   }, []);
 
   const addDamageFloat = useCallback((unitId: string, value: number, isCritical: boolean, isHeal: boolean) => {
@@ -110,10 +116,10 @@ export function useBattleAnimation(
 
     const playBattle = async () => {
       const cur = { ...state };
-      addLog('⚔️ 战斗开始！', 'system');
+      addLog([{ type: 'text', text: '⚔️ 战斗开始！' }], 'system');
 
       while (cur.phase === BattlePhase.IN_PROGRESS && cur.currentTurn <= cur.maxTurns && !cancelledRef.current) {
-        addLog(`── 第 ${cur.currentTurn} 回合 ──`, 'turn');
+        addLog([{ type: 'text', text: `── 第 ${cur.currentTurn} 回合 ──` }], 'turn');
         const actions = battleEngine.executeTurn(cur);
 
         for (const action of actions) {
@@ -136,7 +142,7 @@ export function useBattleAnimation(
           setSkillActiveUnitId(null);
 
           const logInfo = buildActionLog(action);
-          addLog(logInfo.html, logInfo.type);
+          addLog(logInfo.parts, logInfo.type);
 
           // ── 处理伤害 + 受击 + 死亡 + 暴击震动 ──
           let hasCrit = false;
@@ -197,9 +203,9 @@ export function useBattleAnimation(
       setIsFinished(true);
 
       const starStr = '★'.repeat(result.stars as number) + '☆'.repeat(3 - (result.stars as number));
-      if (result.outcome === BattleOutcome.VICTORY) addLog(`🏆 战斗胜利！${starStr}`, 'system');
-      else if (result.outcome === BattleOutcome.DEFEAT) addLog('💀 战斗失败...', 'system');
-      else addLog('⚖️ 战斗平局', 'system');
+      if (result.outcome === BattleOutcome.VICTORY) addLog([{ type: 'text', text: `🏆 战斗胜利！${starStr}` }], 'system');
+      else if (result.outcome === BattleOutcome.DEFEAT) addLog([{ type: 'text', text: '💀 战斗失败...' }], 'system');
+      else addLog([{ type: 'text', text: '⚖️ 战斗平局' }], 'system');
 
       await sleep(skipRef.current ? 300 : END_DELAY);
       if (!cancelledRef.current) onBattleEnd(result);

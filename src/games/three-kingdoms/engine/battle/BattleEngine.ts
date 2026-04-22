@@ -43,6 +43,7 @@ import {
 import { UltimateSkillSystem } from './UltimateSkillSystem';
 import { BattleSpeedController } from './BattleSpeedController';
 import { calculateBattleStats, generateSummary } from './BattleStatistics';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // 工具函数
 
@@ -68,7 +69,11 @@ function generateBattleId(): string {
  * console.log(result.stars);   // 1 | 2 | 3
  * ```
  */
-export class BattleEngine implements IBattleEngine {
+export class BattleEngine implements IBattleEngine, ISubsystem {
+  // ── ISubsystem 接口 ──
+  readonly name = 'battleEngine' as const;
+  private sysDeps: ISystemDeps | null = null;
+
   private readonly damageCalculator: IDamageCalculator;
   private readonly turnExecutor: BattleTurnExecutor;
 
@@ -398,5 +403,31 @@ export class BattleEngine implements IBattleEngine {
     }
 
     return StarRating.ONE;
+  }
+
+  // ─────────────────────────────────────────
+  // ISubsystem 适配层
+  // ─────────────────────────────────────────
+
+  /** ISubsystem.init — 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.sysDeps = deps;
+  }
+
+  /** ISubsystem.update — 战斗引擎按需调用，不需要每帧更新 */
+  update(_dt: number): void {
+    // 战斗引擎是回合驱动的，不需要每帧更新
+  }
+
+  /** ISubsystem.getState — 返回引擎状态快照 */
+  getState(): { battleMode: BattleMode } {
+    return { battleMode: this.battleMode };
+  }
+
+  /** ISubsystem.reset — 重置战斗模式为自动 */
+  reset(): void {
+    this.battleMode = BattleMode.AUTO;
+    this.speedController.setSpeed(BattleSpeed.X1);
+    this.ultimateSystem.setEnabled(false);
   }
 }

@@ -18,6 +18,7 @@ import type {
   SweepResult,
 } from './sweep.types';
 import { mergeResources, mergeFragments } from './campaign-utils';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // AutoPushExecutor
@@ -29,7 +30,11 @@ import { mergeResources, mergeFragments } from './campaign-utils';
  * 封装自动推图的核心循环逻辑，与 SweepSystem 解耦。
  * 支持扫荡令管理和模拟战斗的协调。
  */
-export class AutoPushExecutor {
+export class AutoPushExecutor implements ISubsystem {
+  // ── ISubsystem 接口 ──
+  readonly name = 'autoPushExecutor' as const;
+  private sysDeps: ISystemDeps | null = null;
+
   private readonly dataProvider: ICampaignDataProvider;
   private readonly rewardDistributor: RewardDistributor;
   private readonly sweepDeps: SweepDeps;
@@ -268,5 +273,29 @@ export class AutoPushExecutor {
       totalFragments: {},
       ticketsUsed: 0,
     };
+  }
+
+  // ─────────────────────────────────────────────
+  // ISubsystem 适配层
+  // ─────────────────────────────────────────────
+
+  /** ISubsystem.init — 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.sysDeps = deps;
+  }
+
+  /** ISubsystem.update — 自动推图按需调用，不需要每帧更新 */
+  update(_dt: number): void {
+    // 自动推图是事件驱动的，不需要每帧更新
+  }
+
+  /** ISubsystem.getState — 返回进度快照 */
+  getState(): AutoPushProgress {
+    return this.getProgress();
+  }
+
+  /** ISubsystem.reset — 重置推图进度 */
+  reset(): void {
+    this.resetProgress();
   }
 }
