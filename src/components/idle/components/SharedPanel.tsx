@@ -39,6 +39,8 @@ export interface SharedPanelProps {
   headerExtra?: React.ReactNode;
   /** 测试标识 */
   'data-testid'?: string;
+  /** 面板内容区域的 testId（默认为 data-testid + '-panel'） */
+  'data-testid-panel'?: string;
   /** 面板内容 */
   children: React.ReactNode;
 }
@@ -58,6 +60,7 @@ const SharedPanel: React.FC<SharedPanelProps> = ({
   overlayClosable = true,
   headerExtra,
   'data-testid': dataTestId,
+  'data-testid-panel': dataTestIdPanel,
   children,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -101,6 +104,7 @@ const SharedPanel: React.FC<SharedPanelProps> = ({
         className="tk-shared-panel"
         style={{ width }}
         tabIndex={-1}
+        data-testid={dataTestIdPanel ?? (dataTestId ? `${dataTestId}-panel` : undefined)}
       >
         {/* 标题栏 */}
         <div className="tk-shared-panel-header">
@@ -115,6 +119,7 @@ const SharedPanel: React.FC<SharedPanelProps> = ({
                 className="tk-shared-panel-close"
                 onClick={onClose}
                 aria-label="关闭面板"
+                data-testid={dataTestId ? `${dataTestId}-close` : undefined}
               >
                 ✕
               </button>

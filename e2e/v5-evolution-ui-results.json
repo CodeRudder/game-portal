@@ -1,0 +1,65 @@
+{
+  "passed": [
+    "游戏主界面加载成功",
+    "主界面数据完整性检查通过",
+    "科技Tab渲染成功",
+    "科技路线Tab数量正确: 3个",
+    "科技路线切换成功",
+    "科技节点渲染数量: 24个",
+    "科技Canvas渲染成功",
+    "科技节点详情弹窗打开成功",
+    "研究面板存在",
+    "研究槽位显示正常: 1个空槽",
+    "世界地图Tab渲染成功",
+    "地图工具栏存在",
+    "区域筛选器存在",
+    "归属筛选器存在",
+    "地标筛选器存在",
+    "热力图切换按钮存在",
+    "地图网格容器存在",
+    "地图网格渲染成功",
+    "领土格子渲染数量: 18个",
+    "热力图切换成功",
+    "领土信息面板存在",
+    "领土统计卡片存在",
+    "粮食统计卡片存在",
+    "金币统计卡片存在",
+    "领土点击弹窗打开成功",
+    "科技Tab移动端渲染成功",
+    "世界地图Tab移动端渲染成功",
+    "科技Tab数据完整性检查通过",
+    "世界地图数据完整性检查通过"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "研究队列浮动面板",
+      "detail": "未找到，可能初始状态不显示"
+    },
+    {
+      "name": "离线研究面板",
+      "detail": "未找到，可能需要特定条件触发"
+    },
+    {
+      "name": "筛选器交互",
+      "detail": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - eleme"
+    }
+  ],
+  "screenshots": [
+    "v5e-00-main",
+    "v5e-A1-tech-tab",
+    "v5e-A2-tech-path-0",
+    "v5e-A2-tech-path-1",
+    "v5e-A2-tech-path-2",
+    "v5e-A3-tech-nodes",
+    "v5e-A5-tech-detail",
+    "v5e-B1-worldmap-tab",
+    "v5e-B3-worldmap-grid",
+    "v5e-B4-heatmap-on",
+    "v5e-B6-filter-region-open",
+    "v5e-B7-territory-click",
+    "v5e-C1-tech-mobile",
+    "v5e-C2-worldmap-mobile"
+  ],
+  "consoleErrors": []
+}

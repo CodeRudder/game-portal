@@ -226,7 +226,7 @@ const TechNodeDetailModal: React.FC<TechNodeDetailModalProps> = ({
   );
 
   return (
-    <SharedPanel title={nodeDef.name} onClose={onClose} visible={true}>
+    <SharedPanel title={nodeDef.name} onClose={onClose} visible={true} data-testid="tech-detail-overlay">
         {/* 可滚动内容 */}
         <div className="tk-tech-detail-body">
           {/* 信息头部 */}

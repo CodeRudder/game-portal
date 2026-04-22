@@ -134,7 +134,7 @@ describe('TechNodeDetailModal', () => {
   it('渲染弹窗遮罩和面板', () => {
     render(<TechNodeDetailModal {...defaultProps} />);
     expect(screen.getByTestId('tech-detail-overlay')).toBeInTheDocument();
-    expect(screen.getByTestId('tech-detail-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('tech-detail-overlay-panel')).toBeInTheDocument();
   });
 
   it('显示科技名称', () => {
@@ -271,7 +271,7 @@ describe('TechNodeDetailModal', () => {
   it('点击关闭按钮调用onClose', () => {
     const onClose = vi.fn();
     render(<TechNodeDetailModal {...defaultProps} onClose={onClose} />);
-    fireEvent.click(screen.getByTestId('tech-detail-close'));
+    fireEvent.click(screen.getByTestId('tech-detail-overlay-close'));
     expect(onClose).toHaveBeenCalled();
   });
 
