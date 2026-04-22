@@ -13,6 +13,8 @@
  * @module engine/responsive/PowerSaveSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
+
 import {
   PowerSaveLevel,
   type PowerSaveConfig,
@@ -47,7 +49,7 @@ const POWER_SAVE_FPS = 30;
  *
  * 管理省电模式开关、自动检测低电量、帧率控制。
  */
-export class PowerSaveSystem {
+export class PowerSaveSystem implements ISubsystem {
   // ── 状态 ──
   private _level: PowerSaveLevel = PowerSaveLevel.Off;
   private _isActive: boolean = false;
@@ -112,6 +114,18 @@ export class PowerSaveSystem {
       config: { ...this._config },
     };
   }
+
+  // ─────────────────────────────────────────
+  // ISubsystem 接口
+  // ─────────────────────────────────────────
+
+  readonly name = 'power-save';
+  private _initialized = false;
+
+  init(_deps: ISystemDeps): void { this._initialized = true; }
+  update(_dt: number): void { /* 省电模式由事件驱动，无需帧更新 */ }
+  getState(): PowerSaveState { return this.state; }
+  get isInitialized(): boolean { return this._initialized; }
 
   // ─────────────────────────────────────────
   // 省电模式控制 (#11)
@@ -278,6 +292,8 @@ export class PowerSaveSystem {
     this._screenAlwaysOn = false;
     this._batteryLevel = null;
     this._isCharging = false;
+    this._initialized = false;
+    this.clearListeners();
   }
 
   // ─────────────────────────────────────────

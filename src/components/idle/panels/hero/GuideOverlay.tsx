@@ -9,7 +9,7 @@
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import { TutorialStateMachine } from '@/games/three-kingdoms/engine/guide';
+import { TutorialStateMachine } from '@/games/three-kingdoms/engine';
 import type { TutorialPhase } from '@/games/three-kingdoms/core/guide';
 import './GuideOverlay.css';
 

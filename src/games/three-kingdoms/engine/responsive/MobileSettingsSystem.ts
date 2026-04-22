@@ -14,6 +14,8 @@
  * @module engine/responsive/MobileSettingsSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
+
 import {
   PowerSaveLevel,
   FontSizeLevel,
@@ -50,7 +52,7 @@ const POWER_SAVE_FPS = 30;
  *
  * 管理省电模式、屏幕常亮、字体大小等设置。
  */
-export class MobileSettingsSystem {
+export class MobileSettingsSystem implements ISubsystem {
   // ── 省电模式 ──
   private _powerSaveLevel: PowerSaveLevel = PowerSaveLevel.Off;
   private _powerSaveActive: boolean = false;
@@ -203,6 +205,32 @@ export class MobileSettingsSystem {
 
   clearListeners(): void {
     this._powerSaveListeners.clear();
+  }
+
+  // ─────────────────────────────────────────
+  // ISubsystem 接口
+  // ─────────────────────────────────────────
+
+  readonly name = 'mobile-settings';
+  private _initialized = false;
+
+  init(_deps: ISystemDeps): void { this._initialized = true; }
+  update(_dt: number): void { /* 设置系统由用户操作驱动，无需帧更新 */ }
+  getState(): MobileSettingsState { return this.getSettingsState(); }
+  get isInitialized(): boolean { return this._initialized; }
+
+  /** 重置为默认状态 */
+  reset(): void {
+    this._powerSaveLevel = PowerSaveLevel.Off;
+    this._powerSaveActive = false;
+    this._currentBatteryLevel = 100;
+    this._isCharging = false;
+    this._powerSaveConfig = { ...DEFAULT_POWER_SAVE_CONFIG };
+    this._screenAlwaysOn = false;
+    this._isInGame = false;
+    this._fontSize = FontSizeLevel.Medium;
+    this._initialized = false;
+    this.clearListeners();
   }
 
   // ─────────────────────────────────────────

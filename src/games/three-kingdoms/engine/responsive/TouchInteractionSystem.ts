@@ -11,6 +11,8 @@
  * @module engine/responsive/TouchInteractionSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
+
 import {
   GestureType,
   GESTURE_THRESHOLDS,
@@ -40,7 +42,7 @@ const DEFAULT_FEEDBACK: TouchFeedbackConfig = {
 /**
  * 触控交互系统 — 手势识别、触控反馈、编队触控、桌面端交互、快捷键。
  */
-export class TouchInteractionSystem {
+export class TouchInteractionSystem implements ISubsystem {
   private _touchStartTime: number = 0;
   private _touchStartPoint: TouchPoint | null = null;
   private _lastTapTime: number = 0;
@@ -258,6 +260,32 @@ export class TouchInteractionSystem {
   onDesktopInteraction(listener: OnDesktopInteraction): () => void { this._desktopListeners.add(listener); return () => this._desktopListeners.delete(listener); }
   onHotkey(listener: OnHotkey): () => void { this._hotkeyListeners.add(listener); return () => this._hotkeyListeners.delete(listener); }
   clearAllListeners(): void { this._gestureListeners.clear(); this._formationListeners.clear(); this._desktopListeners.clear(); this._hotkeyListeners.clear(); }
+
+  // ── ISubsystem 接口 ──
+
+  readonly name = 'touch-interaction';
+  private _initialized = false;
+
+  init(_deps: ISystemDeps): void { this._initialized = true; }
+  update(_dt: number): void { /* 触控交互由事件驱动，无需帧更新 */ }
+  getState(): { feedbackConfig: TouchFeedbackConfig; selectedHeroId: string | null; hotkeys: HotkeyDef[] } {
+    return { feedbackConfig: this._feedbackConfig, selectedHeroId: this._selectedHeroId, hotkeys: this.hotkeys };
+  }
+  get isInitialized(): boolean { return this._initialized; }
+
+  /** 重置为默认状态 */
+  reset(): void {
+    this._resetTouchState();
+    this._selectedHeroId = null;
+    this._selectedSlotIndex = null;
+    this._lastTapTime = 0;
+    this._lastTapPoint = null;
+    this._lastActionTime = 0;
+    this._hotkeys = DEFAULT_HOTKEYS.map((h) => ({ ...h }));
+    this._feedbackConfig = { ...DEFAULT_FEEDBACK };
+    this._initialized = false;
+    this.clearAllListeners();
+  }
 
   // ─────────────────────────────────────────
   // 私有方法

@@ -155,6 +155,27 @@ export class MobileLayoutManager implements ISubsystem {
   onNavigationChange(listener: OnNavigationChange): () => void { this._navListeners.add(listener); return () => this._navListeners.delete(listener); }
   clearListeners(): void { this._navListeners.clear(); }
 
+  // ── ISubsystem 接口 ──
+
+  readonly name = 'mobile-layout';
+  private _initialized = false;
+
+  init(_deps: ISystemDeps): void { this._initialized = true; }
+  update(_dt: number): void { /* 手机端布局由事件驱动，无需帧更新 */ }
+  getState(): NavigationPathState { return this.navigationPath; }
+  get isInitialized(): boolean { return this._initialized; }
+
+  /** 重置为默认状态 */
+  reset(): void {
+    this._tabBar = { tabs: DEFAULT_TABS.map((t) => ({ ...t })), activeTabId: 'map', safeAreaHeight: MOBILE_LAYOUT.tabBarHeight };
+    this._panel = { isOpen: false, panelId: '', title: '', swipeBackEnabled: true };
+    this._sheet = { isOpen: false, sheetId: '', contentHeight: 0, showHandle: true };
+    this._panelStack = [];
+    this._breadcrumbs = [{ path: 'root', label: '首页', clickable: false }];
+    this._initialized = false;
+    this.clearListeners();
+  }
+
   // ── 私有方法 ──
 
   private _closePanel(): void { this._panel = { isOpen: false, panelId: '', title: '', swipeBackEnabled: true }; }

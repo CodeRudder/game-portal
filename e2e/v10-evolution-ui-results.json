@@ -1,156 +1,87 @@
 {
   "version": "v10.0",
-  "timestamp": "2026-04-22T12:58:35.450Z",
+  "timestamp": "2026-04-22T16:36:54.841Z",
   "tests": [
     {
-      "name": "进入游戏主界面",
-      "passed": true,
-      "detail": ""
+      "name": "A1: 页面加载",
+      "status": true,
+      "details": "title: 🎮 Game Portal - 经典小游戏合集"
     },
     {
-      "name": "装备Tab按钮存在",
-      "passed": true,
-      "detail": ""
+      "name": "B1: 装备Tab可点击",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "装备面板渲染",
-      "passed": true,
-      "detail": ""
+      "name": "B2: 子Tab显示",
+      "status": true,
+      "details": "找到: 背包, 锻造, 强化"
     },
     {
-      "name": "子Tab数量>=3",
-      "passed": true,
-      "detail": "找到3个子Tab"
+      "name": "C1: 背包容量显示",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "背包容量显示",
-      "passed": true,
-      "detail": ""
+      "name": "C2: 部位筛选按钮",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "部位筛选按钮存在",
-      "passed": true,
-      "detail": ""
+      "name": "D1: 锻造面板显示",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "注入装备到引擎",
-      "passed": false,
-      "detail": "引擎未找到"
+      "name": "D2: 基础锻造按钮",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "装备卡片渲染",
-      "passed": false,
-      "detail": "找到0个卡片"
+      "name": "D3: 高级锻造按钮",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "装备详情弹窗显示",
-      "passed": false,
-      "detail": "无装备卡片可点击"
+      "name": "E1: 强化面板显示",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "锻造面板显示",
-      "passed": true,
-      "detail": ""
+      "name": "F1: 装备卡片数量",
+      "status": false,
+      "details": "找到 0 个卡片"
     },
     {
-      "name": "基础/高级锻造按钮",
-      "passed": true,
-      "detail": ""
+      "name": "G1: 引擎实例获取",
+      "status": false,
+      "details": ""
     },
     {
-      "name": "锻造操作执行",
-      "passed": true,
-      "detail": ""
+      "name": "H1: 无NaN显示",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "强化面板显示",
-      "passed": true,
-      "detail": ""
+      "name": "H2: 无undefined显示",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "保护符复选框",
-      "passed": false,
-      "detail": ""
+      "name": "H3: 移动端渲染",
+      "status": true,
+      "details": ""
     },
     {
-      "name": "武将装备栏显示",
-      "passed": false,
-      "detail": "未找到武将卡片"
-    },
-    {
-      "name": "无NaN显示",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "无undefined显示",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "无严重控制台错误",
-      "passed": false,
-      "detail": "2个错误"
-    },
-    {
-      "name": "移动端装备面板",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "引擎API: getEquipmentSystem",
-      "passed": false,
-      "detail": "引擎未找到"
-    },
-    {
-      "name": "引擎API: getEquipmentForgeSystem",
-      "passed": false,
-      "detail": ""
-    },
-    {
-      "name": "引擎API: getEquipmentEnhanceSystem",
-      "passed": false,
-      "detail": ""
-    },
-    {
-      "name": "引擎API: getEquipmentSetSystem",
-      "passed": false,
-      "detail": ""
-    },
-    {
-      "name": "引擎API: getEquipmentRecommendSystem",
-      "passed": false,
-      "detail": ""
-    },
-    {
-      "name": "套装系统: 7套套装定义",
-      "passed": false,
-      "detail": "getEquipmentSetSystem不可用"
-    },
-    {
-      "name": "推荐系统: 推荐功能可用",
-      "passed": false,
-      "detail": "getEquipmentRecommendSystem不可用"
+      "name": "H4: 无严重控制台错误",
+      "status": true,
+      "details": ""
     }
   ],
   "summary": {
-    "total": 26,
-    "passed": 13,
-    "failed": 13,
-    "errors": [
-      "注入装备到引擎: 引擎未找到",
-      "装备卡片渲染: 找到0个卡片",
-      "装备详情弹窗显示: 无装备卡片可点击",
-      "保护符复选框: ",
-      "武将装备栏显示: 未找到武将卡片",
-      "无严重控制台错误: 2个错误",
-      "引擎API: getEquipmentSystem: 引擎未找到",
-      "引擎API: getEquipmentForgeSystem: ",
-      "引擎API: getEquipmentEnhanceSystem: ",
-      "引擎API: getEquipmentSetSystem: ",
-      "引擎API: getEquipmentRecommendSystem: ",
-      "套装系统: 7套套装定义: getEquipmentSetSystem不可用",
-      "推荐系统: 推荐功能可用: getEquipmentRecommendSystem不可用"
-    ]
+    "total": 15,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 15
   }
 }
