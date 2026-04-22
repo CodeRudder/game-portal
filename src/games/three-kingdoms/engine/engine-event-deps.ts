@@ -21,8 +21,6 @@ import { EventUINotification } from './event/EventUINotification';
 import { EventChainSystem } from './event/EventChainSystem';
 import { EventLogSystem } from './event/EventLogSystem';
 import { OfflineEventSystem } from './event/OfflineEventSystem';
-import { EventTriggerEngine } from './event/EventTriggerEngine';
-import { ChainEventEngine } from './event/ChainEventEngine';
 import type { ISystemDeps } from '../core/types';
 
 // ─────────────────────────────────────────────

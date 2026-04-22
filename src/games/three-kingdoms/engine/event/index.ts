@@ -63,9 +63,11 @@ export type {
 } from './EventLogSystem';
 
 // v15.0 — 事件触发引擎（触发条件+概率+通知+冷却+分支）
+// @deprecated 与 EventTriggerSystem 功能重叠，未集成到引擎主流程
 export { EventTriggerEngine } from './EventTriggerEngine';
 
 // v15.0 — 连锁事件引擎（分支追踪+快照）
+// @deprecated 与 ChainEventSystem 功能重叠，未集成到引擎主流程
 export { ChainEventEngine } from './ChainEventEngine';
 export type {
   ChainEngineId,

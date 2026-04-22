@@ -12,6 +12,7 @@
  * @module engine/settings/AnimationController
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import {
   EasingType,
   TransitionType,
@@ -97,7 +98,9 @@ export interface AnimationPlayRequest {
  * anim.playInkWashTransition();
  * ```
  */
-export class AnimationController {
+export class AnimationController implements ISubsystem {
+  readonly name = 'animation' as const;
+  private deps!: ISystemDeps;
   private settings: AnimationSettings | null = null;
   private player: IAnimationPlayer | null = null;
   private callbacks: AnimationEventCallbacks = {};
@@ -106,6 +109,22 @@ export class AnimationController {
 
   constructor() {
     // 设置在 applySettings 时初始化
+  }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void { /* 动画系统由事件驱动，无需每帧更新 */ }
+
+  getState(): unknown {
+    return {
+      settings: this.settings,
+      activeAnimations: this.activeAnimations.length,
+      enabled: this.isEnabled(),
+    };
   }
 
   // ─────────────────────────────────────────

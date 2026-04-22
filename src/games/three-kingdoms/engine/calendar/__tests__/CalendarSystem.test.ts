@@ -7,9 +7,10 @@
 import { CalendarSystem } from '../CalendarSystem';
 import { DAYS_PER_MONTH, DAYS_PER_YEAR, ERA_TABLE, DEFAULT_TIME_SCALE } from '../calendar-config';
 import { SocialEvents } from '../../../core/events/EventTypes';
+import type { ISystemDeps } from '../../../core/types';
 
-// ── Mock ISystemDeps ──
-function createMockDeps() {
+// ── Mock ISystemDeps — 类型安全的 mock 工厂 ──
+function createMockDeps(): ISystemDeps {
   return {
     eventBus: {
       on: jest.fn(),
@@ -74,7 +75,7 @@ describe('CalendarSystem', () => {
   // 2. tick时间流逝 — update(dt)
   // ═══════════════════════════════════════════
   describe('update() 时间流逝', () => {
-    beforeEach(() => { calendar.init(deps as any); });
+    beforeEach(() => { calendar.init(deps); });
 
     it('update(1) 推进 1 游戏天', () => {
       calendar.update(1);
@@ -111,7 +112,7 @@ describe('CalendarSystem', () => {
   // 3. 季节切换 — 每90天（春→夏→秋→冬→春）
   // ═══════════════════════════════════════════
   describe('季节切换', () => {
-    beforeEach(() => { calendar.init(deps as any); });
+    beforeEach(() => { calendar.init(deps); });
 
     it('1-3月为春，4-6月为夏，7-9月为秋，10-12月为冬', () => {
       // month 1 → spring
@@ -153,7 +154,7 @@ describe('CalendarSystem', () => {
   // 4. 年号切换 — 按配置表的年份阈值
   // ═══════════════════════════════════════════
   describe('年号切换', () => {
-    beforeEach(() => { calendar.init(deps as any); });
+    beforeEach(() => { calendar.init(deps); });
 
     it('建安覆盖 year 1-24', () => {
       calendar.update(23 * DAYS_PER_YEAR);

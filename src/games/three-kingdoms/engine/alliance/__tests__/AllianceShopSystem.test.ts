@@ -14,7 +14,7 @@ import {
   DEFAULT_ALLIANCE_SHOP_ITEMS,
 } from '../AllianceShopSystem';
 import type { AlliancePlayerState } from '../../../core/alliance/alliance.types';
-import { createDefaultAlliancePlayerState } from '../AllianceSystem';
+import { createDefaultAlliancePlayerState } from '../alliance-constants';
 
 // ── 辅助函数 ──────────────────────────────
 

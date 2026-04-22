@@ -10,6 +10,7 @@
  * @module engine/settings/GraphicsManager
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import { GraphicsPreset } from '../../core/settings';
 import type {
   AdvancedGraphicsOptions,
@@ -100,7 +101,9 @@ const PRESET_CONFIGS: Record<GraphicsPreset, PresetConfig> = {
  * gfx.setAdvancedOption('particleEffects', false);
  * ```
  */
-export class GraphicsManager {
+export class GraphicsManager implements ISubsystem {
+  readonly name = 'graphics' as const;
+  private deps!: ISystemDeps;
   private settings: GraphicsSettings;
   private detectedPreset: GraphicsPreset | null = null;
   private listeners: GraphicsChangeCallback[] = [];
@@ -111,6 +114,30 @@ export class GraphicsManager {
       preset: GraphicsPreset.Auto,
       advanced: { ...PRESET_CONFIGS[GraphicsPreset.Auto] },
     };
+  }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void { /* 画面系统无需每帧更新 */ }
+
+  getState(): unknown {
+    return {
+      settings: this.settings,
+      detectedPreset: this.detectedPreset,
+    };
+  }
+
+  reset(): void {
+    this.settings = {
+      preset: GraphicsPreset.Auto,
+      advanced: { ...PRESET_CONFIGS[GraphicsPreset.Auto] },
+    };
+    this.detectedPreset = null;
+    this.listeners = [];
   }
 
   // ─────────────────────────────────────────

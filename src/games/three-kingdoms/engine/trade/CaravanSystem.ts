@@ -81,7 +81,7 @@ export interface RouteInfoProvider {
 // ─────────────────────────────────────────────
 
 export class CaravanSystem implements ISubsystem {
-  readonly name = 'caravan' as const;
+  readonly name = 'Caravan' as const;
   private deps: ISystemDeps | null = null;
 
   /** 商队列表 */

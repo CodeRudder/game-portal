@@ -6,13 +6,14 @@
  */
 
 import { CalendarSystem } from '../CalendarSystem';
-import type { CalendarSaveData } from '../calendar.types';
+import type { CalendarSaveData, WeatherType } from '../calendar.types';
 import { CALENDAR_SAVE_VERSION } from '../calendar-config';
 import { DAYS_PER_YEAR, DEFAULT_TIME_SCALE } from '../calendar-config';
 import { SocialEvents, MapEvents } from '../../../core/events/EventTypes';
+import type { ISystemDeps } from '../../../core/types';
 
-// ── Mock ISystemDeps ──
-function createMockDeps() {
+// ── Mock ISystemDeps — 类型安全的 mock 工厂 ──
+function createMockDeps(): ISystemDeps {
   return {
     eventBus: {
       on: jest.fn(),
@@ -43,8 +44,7 @@ describe('CalendarSystem', () => {
   // 5. 天气变化
   // ═══════════════════════════════════════════
   describe('天气变化', () => {
-    beforeEach(() => { calendar.init(deps as any); });
-
+    beforeEach(() => { calendar.init(deps); });
     it('setWeather 手动设置天气', () => {
       calendar.setWeather('rain');
       expect(calendar.getWeather()).toBe('rain');
@@ -78,8 +78,7 @@ describe('CalendarSystem', () => {
   // 6. 事件发出 — day/season/weather changed
   // ═══════════════════════════════════════════
   describe('事件发出', () => {
-    beforeEach(() => { calendar.init(deps as any); });
-
+    beforeEach(() => { calendar.init(deps); });
     it('日期变化发出 CALENDAR_DAY_CHANGED', () => {
       calendar.update(1);
       expect(deps.eventBus.emit).toHaveBeenCalledWith(
@@ -140,7 +139,7 @@ describe('CalendarSystem', () => {
     });
 
     it('deserialize 恢复状态', () => {
-      calendar.init(deps as any);
+      calendar.init(deps);
       calendar.update(100);
       calendar.pause();
       const saved = calendar.serialize();
@@ -154,7 +153,7 @@ describe('CalendarSystem', () => {
     });
 
     it('serialize → deserialize 往返一致性', () => {
-      calendar.init(deps as any);
+      calendar.init(deps);
       calendar.update(50);
       calendar.setWeather('rain');
       calendar.pause();
@@ -183,7 +182,7 @@ describe('CalendarSystem', () => {
     });
 
     it('deserialize 缺失字段使用默认值', () => {
-      calendar.deserialize({ version: CALENDAR_SAVE_VERSION } as any as CalendarSaveData);
+      calendar.deserialize({ version: CALENDAR_SAVE_VERSION } as Partial<CalendarSaveData> as CalendarSaveData);
       expect(calendar.getTotalDays()).toBe(0);
       expect(calendar.getWeather()).toBe('clear');
     });
@@ -191,13 +190,13 @@ describe('CalendarSystem', () => {
     it('deserialize 无效天气使用默认值', () => {
       calendar.deserialize({
         version: CALENDAR_SAVE_VERSION, totalDays: 10,
-        weather: 'invalid' as any, weatherTimer: 0, paused: false,
+        weather: 'invalid' as WeatherType, weatherTimer: 0, paused: false,
       });
       expect(calendar.getWeather()).toBe('clear');
     });
 
     it('deserialize 后 update 正常工作', () => {
-      calendar.init(deps as any);
+      calendar.init(deps);
       calendar.deserialize({
         version: CALENDAR_SAVE_VERSION, totalDays: 50,
         weather: 'rain', weatherTimer: 0, paused: false,
@@ -212,7 +211,7 @@ describe('CalendarSystem', () => {
   // ═══════════════════════════════════════════
   describe('reset()', () => {
     it('重置所有状态到初始值', () => {
-      calendar.init(deps as any);
+      calendar.init(deps);
       calendar.update(100);
       calendar.pause();
       calendar.setTimeScale(5);

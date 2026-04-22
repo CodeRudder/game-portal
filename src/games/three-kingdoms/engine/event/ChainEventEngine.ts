@@ -123,6 +123,9 @@ const CHAIN_ENGINE_SAVE_VERSION = 1;
  * 连锁事件引擎 v15
  *
  * 增强版连锁事件系统，支持分支追踪和快照。
+ *
+ * @deprecated 未集成到引擎主流程，与 ChainEventSystem 功能重叠。
+ *   保留供后续版本统一时参考。生产环境请使用 ChainEventSystem。
  */
 export class ChainEventEngine implements ISubsystem {
   readonly name = 'chainEventEngine';

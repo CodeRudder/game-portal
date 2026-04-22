@@ -11,6 +11,7 @@
  * @module engine/settings/SaveSlotManager
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import {
   FREE_SAVE_SLOTS,
   TOTAL_SAVE_SLOTS,
@@ -61,7 +62,9 @@ export { CloudSyncStatus } from './save-slot.types';
  * mgr.startAutoSave(() => engine.getGameState());
  * ```
  */
-export class SaveSlotManager {
+export class SaveSlotManager implements ISubsystem {
+  readonly name = 'saveSlot' as const;
+  private deps!: ISystemDeps;
   private storage: ISaveSlotStorage;
   private slots: SaveSlot[];
   private autoSaveTimer: ReturnType<typeof setInterval> | null = null;
@@ -75,6 +78,24 @@ export class SaveSlotManager {
     this.storage = storage ?? SaveSlotManager.createDefaultStorage();
     this.slots = this.initializeSlots();
     this.loadSlotMetadata();
+  }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void { /* 存档管理无需每帧更新 */ }
+
+  getState(): unknown {
+    return {
+      slots: this.slots.map((s) => ({ ...s })),
+      paidSlotPurchased: this.paidSlotPurchased,
+      lastAutoSaveAt: this.lastAutoSaveAt,
+      cloudSyncStatus: this.cloudSyncStatus,
+      lastCloudSyncAt: this.lastCloudSyncAt,
+    };
   }
 
   // ─────────────────────────────────────────

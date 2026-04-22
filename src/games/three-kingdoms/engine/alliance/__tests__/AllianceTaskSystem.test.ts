@@ -16,7 +16,7 @@ import {
 import { AllianceTaskStatus, AllianceTaskType } from '../../../core/alliance/alliance.types';
 import type { AllianceData, AlliancePlayerState } from '../../../core/alliance/alliance.types';
 import { AllianceRole } from '../../../core/alliance/alliance.types';
-import { createDefaultAlliancePlayerState, createAllianceData } from '../AllianceSystem';
+import { createDefaultAlliancePlayerState, createAllianceData } from '../alliance-constants';
 
 // ── 辅助函数 ──────────────────────────────
 

@@ -39,19 +39,15 @@ export {
 // AllianceSystem
 export {
   AllianceSystem,
-  DEFAULT_CREATE_CONFIG,
-  ALLIANCE_LEVEL_CONFIGS,
-  createDefaultAlliancePlayerState,
-  createAllianceData,
 } from './AllianceSystem';
 
-// 重新导出常量（来自 alliance-constants.ts）
+// 常量与工具函数（来自 alliance-constants.ts）
 export {
-  DEFAULT_CREATE_CONFIG as CREATE_CONFIG,
-  ALLIANCE_LEVEL_CONFIGS as LEVEL_CONFIGS,
+  DEFAULT_CREATE_CONFIG,
+  ALLIANCE_LEVEL_CONFIGS,
   ALLIANCE_SAVE_VERSION,
-  createDefaultAlliancePlayerState as defaultPlayerState,
-  createAllianceData as initAllianceData,
+  createDefaultAlliancePlayerState,
+  createAllianceData,
   generateId,
 } from './alliance-constants';
 

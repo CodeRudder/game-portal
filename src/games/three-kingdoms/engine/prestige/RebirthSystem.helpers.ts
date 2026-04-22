@@ -62,6 +62,10 @@ export function calculateBuildTime(
   multiplier: number,
   accelerationDaysLeft: number,
 ): number {
+  // 无转生加速（倍率为1.0且无加速期），直接返回原始时间
+  if (multiplier <= 1.0 && accelerationDaysLeft <= 0) {
+    return baseTimeSeconds;
+  }
   // 低级建筑瞬间升级
   if (buildingLevel <= REBIRTH_INSTANT_BUILD.maxInstantLevel) {
     return Math.max(1, Math.floor(baseTimeSeconds / REBIRTH_INSTANT_BUILD.speedDivisor));
@@ -82,9 +86,9 @@ export function getAutoRebuildPlan(rebirthCount: number): string[] | null {
   if (rebirthCount < 1) return null;
   // 按优先级返回需要重建的建筑ID列表
   return [
-    'main_hall',
+    'castle',
     'barracks',
-    'farm',
+    'farmland',
     'lumber_mill',
     'warehouse',
     'academy',
@@ -122,6 +126,8 @@ export function generatePrestigeGrowthCurve(
   params: SimulationParams,
 ): Array<{ day: number; prestige: number }> {
   const curve: Array<{ day: number; prestige: number }> = [];
+  // 包含 day 0（起始点）
+  curve.push({ day: 0, prestige: 0 });
   let accumulated = 0;
   const dailyPrestige = 20 * params.dailyOnlineHours;
 
@@ -140,42 +146,41 @@ export function generatePrestigeGrowthCurve(
 // 转生时机对比
 // ─────────────────────────────────────────────
 
-/** 对比立即转生与等待后转生的收益 */
+/** 对比立即转生与等待后转生的收益（返回每个等待选项的对比结果） */
 export function compareRebirthTiming(
   currentRebirthCount: number,
   waitHoursOptions: number[] = [24, 48, 72],
-): RebirthSimulationComparison {
+): RebirthSimulationComparison[] {
   const immediateMultiplier = 1 + (currentRebirthCount + 1) * 0.1;
-  const bestWait = waitHoursOptions.reduce((best, hours) => {
-    const waitMultiplier = 1 + (currentRebirthCount + 1) * 0.1 * (1 + hours / 240);
-    return waitMultiplier > best.mul ? { hours, mul: waitMultiplier } : best;
-  }, { hours: 0, mul: immediateMultiplier });
-
   const diminishingHour = SIMULATION_DIMINISHING_RETURNS_HOUR;
-  const diff = bestWait.mul - immediateMultiplier;
 
-  let recommendedAction: 'rebirth_now' | 'wait' | 'no_difference';
-  let confidence: 'high' | 'medium' | 'low';
+  return waitHoursOptions.map((hours) => {
+    const waitMultiplier = 1 + (currentRebirthCount + 1) * 0.1 * (1 + hours / 240);
+    const diff = waitMultiplier - immediateMultiplier;
 
-  if (diff < 0.01) {
-    recommendedAction = 'no_difference';
-    confidence = 'high';
-  } else if (bestWait.hours > diminishingHour) {
-    recommendedAction = 'rebirth_now';
-    confidence = 'medium';
-  } else {
-    recommendedAction = 'wait';
-    confidence = diff > 0.1 ? 'high' : 'medium';
-  }
+    let recommendedAction: 'rebirth_now' | 'wait' | 'no_difference';
+    let confidence: 'high' | 'medium' | 'low';
 
-  return {
-    immediateMultiplier,
-    waitMultiplier: bestWait.mul,
-    waitHours: bestWait.hours,
-    diminishingReturnsHour: diminishingHour,
-    recommendedAction,
-    confidence,
-  };
+    if (diff < 0.01) {
+      recommendedAction = 'no_difference';
+      confidence = 'high';
+    } else if (hours > diminishingHour) {
+      recommendedAction = 'rebirth_now';
+      confidence = 'medium';
+    } else {
+      recommendedAction = 'wait';
+      confidence = diff > 0.1 ? 'high' : 'medium';
+    }
+
+    return {
+      immediateMultiplier,
+      waitMultiplier,
+      waitHours: hours,
+      diminishingReturnsHour: diminishingHour,
+      recommendedAction,
+      confidence,
+    };
+  });
 }
 
 // ─────────────────────────────────────────────
@@ -188,18 +193,25 @@ export function simulateEarningsV16(
   baseResult: SimulationResult,
 ): SimulationResultV16 {
   const prestigeGrowthCurve = generatePrestigeGrowthCurve(params);
-  const comparison = compareRebirthTiming(params.currentRebirthCount);
+  const comparisons = compareRebirthTiming(params.currentRebirthCount);
 
-  const recommendation = comparison.recommendedAction === 'rebirth_now'
+  // 找到最佳推荐
+  const bestComparison = comparisons.reduce((best, c) => {
+    if (c.recommendedAction === 'wait' && c.confidence === 'high') return c;
+    if (best.recommendedAction !== 'wait' || best.confidence !== 'high') return c;
+    return best;
+  }, comparisons[0]);
+
+  const recommendation = bestComparison.recommendedAction === 'rebirth_now'
     ? '建议立即转生，等待收益递减'
-    : comparison.recommendedAction === 'wait'
-      ? `建议等待 ${comparison.waitHours} 小时后转生，可获得更高倍率`
+    : bestComparison.recommendedAction === 'wait'
+      ? `建议等待 ${bestComparison.waitHours} 小时后转生，可获得更高倍率`
       : '转生时机对收益影响不大，可自行决定';
 
   return {
     ...baseResult,
     prestigeGrowthCurve,
-    comparison,
+    comparison: comparisons,
     recommendation,
   };
 }

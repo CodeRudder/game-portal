@@ -51,7 +51,7 @@ export interface TradeCurrencyOps {
 }
 
 export class TradeSystem implements ISubsystem {
-  readonly name = 'trade' as const;
+  readonly name = 'Trade' as const;
   private deps: ISystemDeps | null = null;
 
   private routeStates: Map<TradeRouteId, TradeRouteState>;

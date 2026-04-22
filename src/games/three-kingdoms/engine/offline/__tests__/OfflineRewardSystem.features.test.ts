@@ -277,8 +277,8 @@ describe('OfflineRewardSystem v9.0 — 功能特性', () => {
       expect(system.getSystemModifier('expedition')).toBe(0.85);
     });
 
-    it('trade修正系数应为0.8', () => {
-      expect(system.getSystemModifier('trade')).toBe(0.8);
+    it('Trade修正系数应为0.8', () => {
+      expect(system.getSystemModifier('Trade')).toBe(0.8);
     });
 
     it('hero修正系数应为0.5', () => {

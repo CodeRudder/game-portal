@@ -34,15 +34,6 @@ import {
 } from './alliance-constants';
 import * as AllianceHelper from './AllianceHelper';
 
-// 重新导出常量供外部使用
-export {
-  DEFAULT_CREATE_CONFIG,
-  ALLIANCE_LEVEL_CONFIGS,
-  ALLIANCE_SAVE_VERSION,
-  createDefaultAlliancePlayerState,
-  createAllianceData,
-};
-
 /**
  * 联盟系统
  *

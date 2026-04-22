@@ -64,8 +64,8 @@ describe('CaravanSystem - 初始化与查询', () => {
     for (const c of cs.getCaravans()) expect(c.guardHeroId).toBeNull();
   });
 
-  it('name 为 caravan', () => {
-    expect(cs.name).toBe('caravan');
+  it('name 为 Caravan', () => {
+    expect(cs.name).toBe('Caravan');
   });
 
   it('CARAVAN_STATUS_LABELS 包含4种状态', () => {

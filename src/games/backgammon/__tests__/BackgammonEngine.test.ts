@@ -50,8 +50,11 @@ function getInternal(engine: BackgammonEngine): any {
 
 describe('BackgammonEngine', () => {
   beforeEach(() => {
-    jest.clearAllTimers();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // ========== 棋盘初始化 ==========
@@ -789,7 +792,7 @@ describe('BackgammonEngine', () => {
       engine.rollDice();
 
       // Advance timer enough for all AI moves
-      jest.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(3000);
 
       // AI should have completed its turn
       expect(engine.aiThinking).toBe(false);
@@ -805,7 +808,7 @@ describe('BackgammonEngine', () => {
       engine.rollDice();
 
       // Advance through all AI moves
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
 
       // Should eventually switch back to white
       if (engine.phase !== GamePhase.GAME_OVER) {
@@ -1075,7 +1078,7 @@ describe('BackgammonEngine', () => {
 
     it('should emit statusChange on start', () => {
       const engine = createEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.start();
       expect(listener).toHaveBeenCalledWith('playing');
@@ -1085,7 +1088,7 @@ describe('BackgammonEngine', () => {
       const engine = createAndStartEngine();
       const internal = getInternal(engine);
 
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('scoreChange', listener);
 
       internal._dice = { values: [3, 5], remaining: [3, 5] };
@@ -1099,7 +1102,7 @@ describe('BackgammonEngine', () => {
       const engine = createAndStartEngine();
       const internal = getInternal(engine);
 
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
 
       // Set up winning state

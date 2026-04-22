@@ -33,6 +33,9 @@ import type { FormationSaveData } from './hero/HeroFormation';
 import type { TechSaveData } from './tech/tech.types';
 import type { IGameState } from '../core/types/state';
 import type { ISystemDeps } from '../core/types/subsystem';
+import type { ArenaSystem } from './pvp/ArenaSystem';
+import type { ArenaShopSystem } from './pvp/ArenaShopSystem';
+import type { RankingSystem } from './pvp/RankingSystem';
 import { ENGINE_SAVE_VERSION, SAVE_KEY } from '../shared/constants';
 import { syncBuildingToResource } from './engine-tick';
 
@@ -71,6 +74,12 @@ export interface SaveContext {
   readonly heritage?: import('./heritage/HeritageSystem').HeritageSystem;
   /** 成就系统（可选，v14.0+） */
   readonly achievement?: import('./achievement/AchievementSystem').AchievementSystem;
+  /** 竞技场系统（可选，v7.0+） */
+  readonly arena?: ArenaSystem;
+  /** 竞技商店系统（可选，v7.0+） */
+  readonly arenaShop?: ArenaShopSystem;
+  /** 排行榜系统（可选，v7.0+） */
+  readonly ranking?: RankingSystem;
   /** 在线时长（秒） */
   onlineSeconds: number;
 }
@@ -113,6 +122,10 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     prestige: ctx.prestige?.getSaveData(),
     heritage: ctx.heritage?.getSaveData(),
     achievement: ctx.achievement?.getSaveData(),
+    // ── PvP 系统 v7.0 ──
+    pvpArena: ctx.arena?.serialize(),
+    pvpArenaShop: ctx.arenaShop?.serialize(),
+    pvpRanking: ctx.ranking?.serialize(),
   };
 }
 
@@ -136,6 +149,9 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.prestige) subsystems.prestige = data.prestige;
   if (data.heritage) subsystems.heritage = data.heritage;
   if (data.achievement) subsystems.achievement = data.achievement;
+  if (data.pvpArena) subsystems.pvpArena = data.pvpArena;
+  if (data.pvpArenaShop) subsystems.pvpArenaShop = data.pvpArenaShop;
+  if (data.pvpRanking) subsystems.pvpRanking = data.pvpRanking;
 
   return {
     version: String(data.version),
@@ -171,6 +187,9 @@ export function fromIGameState(state: IGameState): GameSaveData {
     prestige: s.prestige as import('../core/prestige').PrestigeSaveData | undefined,
     heritage: s.heritage as import('../core/heritage').HeritageSaveData | undefined,
     achievement: s.achievement as import('../core/achievement').AchievementSaveData | undefined,
+    pvpArena: s.pvpArena as import('../core/pvp/pvp.types').ArenaSaveData | undefined,
+    pvpArenaShop: s.pvpArenaShop as import('./pvp/ArenaShopSystem').ArenaShopSaveData | undefined,
+    pvpRanking: s.pvpRanking as import('./pvp/RankingSystem').RankingSaveData | undefined,
   };
 }
 
@@ -335,6 +354,23 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   // ── 成就系统 v14.0 ──
   if (data.achievement && ctx.achievement) {
     ctx.achievement.loadSaveData(data.achievement);
+  }
+
+  // ── PvP 竞技场系统 v7.0 ──
+  if (data.pvpArena && ctx.arena) {
+    ctx.arena.deserialize(data.pvpArena);
+  } else {
+    console.info('[Save] v7.0 存档迁移：无竞技场数据，自动初始化默认状态');
+  }
+
+  // ── 竞技商店系统 v7.0 ──
+  if (data.pvpArenaShop && ctx.arenaShop) {
+    ctx.arenaShop.deserialize(data.pvpArenaShop);
+  }
+
+  // ── 排行榜系统 v7.0 ──
+  if (data.pvpRanking && ctx.ranking) {
+    ctx.ranking.deserialize(data.pvpRanking);
   }
 
   syncBuildingToResource({

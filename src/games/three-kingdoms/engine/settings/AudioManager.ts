@@ -10,6 +10,7 @@
  * @module engine/settings/AudioManager
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import { AudioChannel, AudioSwitch } from '../../core/settings';
 import type { AudioSettings } from '../../core/settings';
 
@@ -81,7 +82,9 @@ const DEFAULT_AUDIO_CONFIG: AudioManagerConfig = {
  * const vol = audio.getEffectiveVolume(AudioChannel.BGM); // 0~1
  * ```
  */
-export class AudioManager {
+export class AudioManager implements ISubsystem {
+  readonly name = 'audio' as const;
+  private deps!: ISystemDeps;
   private config: AudioManagerConfig;
   private player: IAudioPlayer | null = null;
   private callbacks: AudioEventCallbacks = {};
@@ -95,6 +98,25 @@ export class AudioManager {
 
   constructor(config?: Partial<AudioManagerConfig>) {
     this.config = { ...DEFAULT_AUDIO_CONFIG, ...config };
+  }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void { /* 音频系统无需每帧更新 */ }
+
+  getState(): unknown {
+    return {
+      settings: this.settings,
+      currentBGM: this.currentBGM,
+      isInBackground: this.isInBackground,
+      isInCall: this.isInCall,
+      batteryLevel: this.batteryLevel,
+      isFirstLaunch: this.isFirstLaunch,
+    };
   }
 
   // ─────────────────────────────────────────

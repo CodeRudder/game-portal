@@ -11,6 +11,8 @@
  * @module engine/settings/SettingsManager
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
+
 import {
   SettingsCategory,
   SETTINGS_STORAGE_KEY,
@@ -76,7 +78,9 @@ export interface ISettingsStorage {
  * mgr.onChange((evt) => console.log(evt));
  * ```
  */
-export class SettingsManager {
+export class SettingsManager implements ISubsystem {
+  readonly name = 'settings' as const;
+  private deps!: ISystemDeps;
   private settings: AllSettings;
   private storage: ISettingsStorage;
   private listeners: SettingsChangeCallback[] = [];
@@ -85,6 +89,24 @@ export class SettingsManager {
   constructor(storage?: ISettingsStorage) {
     this.settings = createDefaultAllSettings();
     this.storage = storage ?? SettingsManager.createDefaultStorage();
+  }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+    this.initialize();
+  }
+
+  update(_dt: number): void { /* 设置系统无需每帧更新 */ }
+
+  getState(): unknown {
+    return this.getSaveData();
+  }
+
+  reset(): void {
+    this.resetAll();
+    this.initialized = false;
   }
 
   // ─────────────────────────────────────────

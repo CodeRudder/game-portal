@@ -12,7 +12,7 @@
  * @module engine/guide/TutorialStepExecutor
  */
 
-import type { ISystemDeps } from '../../core/types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   TutorialStepId,
   TutorialStepDefinition,
@@ -54,7 +54,9 @@ export interface StepExecutorStateSlice {
  * 管理加速机制、不可跳过检测、重玩功能和触发条件评估。
  * 通过共享状态切片与 TutorialStepManager 协作。
  */
-export class TutorialStepExecutor {
+export class TutorialStepExecutor implements ISubsystem {
+  readonly name = 'TutorialStepExecutor' as const;
+
   private deps!: ISystemDeps;
   private _stateMachine!: TutorialStateMachine;
 
@@ -68,6 +70,23 @@ export class TutorialStepExecutor {
   /** 注入状态机 */
   setStateMachine(sm: TutorialStateMachine): void {
     this._stateMachine = sm;
+  }
+
+  // ─── ISubsystem 接口实现 ──────────────────
+
+  /** 每帧更新（步骤执行器无帧级逻辑，保留空实现） */
+  update(_dt: number): void {
+    // 步骤执行器由 TutorialStepManager 驱动，无需帧级更新
+  }
+
+  /** 获取状态快照（步骤执行器为无状态服务，返回空对象） */
+  getState(): Record<string, never> {
+    return {};
+  }
+
+  /** 重置（步骤执行器无内部状态，无需重置） */
+  reset(): void {
+    // 步骤执行器通过共享状态切片工作，重置由 TutorialStepManager 管理
   }
 
   // ─── 加速机制 API (#10) ───────────────────

@@ -49,23 +49,3 @@ export {
   CARAVAN_STATUS_LABELS,
   PROSPERITY_LABELS,
 } from '../../core/trade/trade.types';
-export {
-  MAP_SIZE,
-  GRID_CONFIG,
-  VIEWPORT_CONFIG,
-  MAP_PIXEL_SIZE,
-  REGION_IDS,
-  REGION_DEFS,
-  REGION_LABELS,
-  REGION_COLORS,
-  TERRAIN_TYPES,
-  TERRAIN_DEFS,
-  TERRAIN_LABELS,
-  TERRAIN_COLORS,
-  DEFAULT_LANDMARKS,
-  LANDMARK_POSITIONS,
-  MAP_SAVE_VERSION,
-  getRegionAtPosition,
-  getTerrainAtPosition,
-  generateAllTiles,
-} from '../../core/map';

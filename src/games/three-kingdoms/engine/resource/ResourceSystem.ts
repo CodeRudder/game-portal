@@ -388,7 +388,7 @@ export class ResourceSystem implements ISubsystem {
     // 校验每个资源值：防止 NaN、负数、undefined
     for (const type of RESOURCE_TYPES) {
       const val = this.resources[type];
-      this.resources[type] = Math.max(0, Number(val) || 0) as any;
+      this.resources[type] = Math.max(0, Number(val) || 0);
     }
     this.productionRates = { ...data.productionRates };
     this.caps = { ...data.caps };

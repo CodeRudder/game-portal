@@ -104,6 +104,9 @@ export class ArenaSystem implements ISubsystem {
   /** 模拟的玩家池（playerId → ArenaOpponent） */
   private playerPool: Map<string, ArenaOpponent> = new Map();
 
+  /** 当前玩家竞技场状态（v7.0 存档集成） */
+  private playerState: ArenaPlayerState = createDefaultArenaPlayerState();
+
   constructor(
     matchConfig?: Partial<MatchConfig>,
     refreshConfig?: Partial<RefreshConfig>,
@@ -131,11 +134,13 @@ export class ArenaSystem implements ISubsystem {
       matchConfig: this.matchConfig,
       refreshConfig: this.refreshConfig,
       challengeConfig: this.challengeConfig,
+      playerState: this.playerState,
     };
   }
 
   reset(): void {
     this.playerPool.clear();
+    this.playerState = createDefaultArenaPlayerState();
   }
 
   // ── 匹配与对手选择 ──────────────────────────
@@ -464,10 +469,11 @@ export class ArenaSystem implements ISubsystem {
   /**
    * 序列化玩家竞技场状态
    */
-  serialize(playerState: ArenaPlayerState): import('../../core/pvp/pvp.types').ArenaSaveData {
+  serialize(playerState?: ArenaPlayerState): import('../../core/pvp/pvp.types').ArenaSaveData {
+    const state = playerState ?? this.playerState;
     return {
       version: ARENA_SAVE_VERSION,
-      state: { ...playerState },
+      state: { ...state },
       season: {
         seasonId: '',
         startTime: 0,
@@ -475,7 +481,7 @@ export class ArenaSystem implements ISubsystem {
         currentDay: 1,
         isSettled: false,
       },
-      highestRankId: playerState.rankId,
+      highestRankId: state.rankId,
     };
   }
 
@@ -484,8 +490,10 @@ export class ArenaSystem implements ISubsystem {
    */
   deserialize(data: import('../../core/pvp/pvp.types').ArenaSaveData): ArenaPlayerState {
     if (!data || data.version !== ARENA_SAVE_VERSION) {
-      return createDefaultArenaPlayerState();
+      this.playerState = createDefaultArenaPlayerState();
+      return this.playerState;
     }
-    return { ...data.state };
+    this.playerState = { ...data.state };
+    return this.playerState;
   }
 }

@@ -18,7 +18,12 @@ import { NotificationPriority as NotificationPriorityEnum } from '../../core/eve
 const MAX_NOTIFICATION_QUEUE_SIZE = 50;
 const DEFAULT_COOLDOWN_TURNS = 5;
 
-/** 管理触发条件评估、概率计算、通知优先级、冷却、分支选项 */
+/**
+ * 管理触发条件评估、概率计算、通知优先级、冷却、分支选项
+ *
+ * @deprecated 未集成到引擎主流程，与 EventTriggerSystem 功能重叠。
+ *   保留供后续版本统一时参考。生产环境请使用 EventTriggerSystem。
+ */
 export class EventTriggerEngine implements ISubsystem {
   readonly name = 'eventTriggerEngine';
 

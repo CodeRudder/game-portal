@@ -98,7 +98,7 @@ export const SYSTEM_EFFICIENCY_MODIFIERS: readonly SystemEfficiencyModifier[] = 
   { systemId: 'building', systemName: '建筑产出', modifier: 1.2, description: '建筑离线产出效率120%' },
   { systemId: 'tech', systemName: '科技研究', modifier: 1.0, description: '科技离线研究效率100%' },
   { systemId: 'expedition', systemName: '远征系统', modifier: 0.85, description: '远征离线效率85%' },
-  { systemId: 'trade', systemName: '贸易路线', modifier: 0.8, description: '离线贸易效率80%' },
+  { systemId: 'Trade', systemName: '贸易路线', modifier: 0.8, description: '离线贸易效率80%' },
   { systemId: 'hero', systemName: '武将训练', modifier: 0.5, description: '离线训练效率50%' },
   { systemId: 'campaign', systemName: '关卡扫荡', modifier: 0.4, description: '离线扫荡效率40%' },
 ] as const;

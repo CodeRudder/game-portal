@@ -211,6 +211,12 @@ export interface GameSaveData {
   heritage?: import('../core/heritage').HeritageSaveData;
   /** 成就系统数据（可选，v14.0+） */
   achievement?: import('../core/achievement').AchievementSaveData;
+  /** 竞技场存档数据（可选，v7.0+） */
+  pvpArena?: import('../core/pvp/pvp.types').ArenaSaveData;
+  /** 竞技商店存档数据（可选，v7.0+） */
+  pvpArenaShop?: import('../engine/pvp/ArenaShopSystem').ArenaShopSaveData;
+  /** 排行榜存档数据（可选，v7.0+） */
+  pvpRanking?: import('../engine/pvp/RankingSystem').RankingSaveData;
 }
 
 // ─────────────────────────────────────────────

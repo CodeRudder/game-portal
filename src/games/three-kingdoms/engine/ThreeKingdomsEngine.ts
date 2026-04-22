@@ -399,6 +399,9 @@ export class ThreeKingdomsEngine {
       equipment: this.r11.equipmentSystem,
       equipmentForge: this.r11.equipmentForgeSystem,
       equipmentEnhance: this.r11.equipmentEnhanceSystem,
+      arena: this.r11.arenaSystem,
+      arenaShop: this.r11.arenaShopSystem,
+      ranking: this.r11.rankingSystem,
       onlineSeconds: this.onlineSeconds,
     };
   }

@@ -426,8 +426,8 @@ export interface RebirthSimulationComparison {
 export interface SimulationResultV16 extends SimulationResult {
   /** 声望增长预测曲线数据点 */
   prestigeGrowthCurve: Array<{ day: number; prestige: number }>;
-  /** 倍率对比 */
-  comparison: RebirthSimulationComparison;
+  /** 倍率对比（每个等待选项一个结果） */
+  comparison: RebirthSimulationComparison[];
   /** 推荐转生时机描述 */
   recommendation: string;
 }
