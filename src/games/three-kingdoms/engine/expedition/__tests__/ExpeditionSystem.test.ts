@@ -218,39 +218,39 @@ describe('ExpeditionSystem — 队伍编成', () => {
   test('创建有效队伍', () => {
     const heroes = createShuHeroes(3);
     const heroMap = createHeroMap(heroes);
-    const result = system.createTeam('测试队', ['shu_0', 'shu_1', 'shu_2'], FormationType.FISH_SCALE, heroMap);
+    const result = system.createTeam('测试队', ['shu_0', 'shu_1', 'shu_2'], FormationType.STANDARD, heroMap);
     expect(result.valid).toBe(true);
     expect(result.totalPower).toBeGreaterThan(0);
   });
 
   test('空武将列表校验失败', () => {
-    const result = system.validateTeam([], FormationType.FISH_SCALE, {}, []);
+    const result = system.validateTeam([], FormationType.STANDARD, {}, []);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain('至少需要1名武将');
   });
 
   test('超过5名武将校验失败', () => {
     const ids = Array.from({ length: 6 }, (_, i) => `hero_${i}`);
-    const result = system.validateTeam(ids, FormationType.FISH_SCALE, {}, []);
+    const result = system.validateTeam(ids, FormationType.STANDARD, {}, []);
     expect(result.valid).toBe(false);
   });
 
   test('不存在的武将校验失败', () => {
-    const result = system.validateTeam(['ghost'], FormationType.FISH_SCALE, {}, []);
+    const result = system.validateTeam(['ghost'], FormationType.STANDARD, {}, []);
     expect(result.valid).toBe(false);
   });
 
   test('同阵营3人触发羁绊', () => {
     const heroes = createShuHeroes(3);
     const heroMap = createHeroMap(heroes);
-    const result = system.validateTeam(['shu_0', 'shu_1', 'shu_2'], FormationType.FISH_SCALE, heroMap, []);
+    const result = system.validateTeam(['shu_0', 'shu_1', 'shu_2'], FormationType.STANDARD, heroMap, []);
     expect(result.factionBond).toBe(true);
   });
 
   test('混合阵营不触发羁绊', () => {
     const heroes = createMixedHeroes();
     const heroMap = createHeroMap(heroes);
-    const result = system.validateTeam(['shu_1', 'wei_1', 'wu_1'], FormationType.FISH_SCALE, heroMap, []);
+    const result = system.validateTeam(['shu_1', 'wei_1', 'wu_1'], FormationType.STANDARD, heroMap, []);
     expect(result.factionBond).toBe(false);
   });
 
@@ -258,10 +258,10 @@ describe('ExpeditionSystem — 队伍编成', () => {
     const heroes = createShuHeroes(3);
     const heroMap = createHeroMap(heroes);
 
-    const withBond = system.calculateTeamPower(['shu_0', 'shu_1', 'shu_2'], heroMap, FormationType.FISH_SCALE);
+    const withBond = system.calculateTeamPower(['shu_0', 'shu_1', 'shu_2'], heroMap, FormationType.STANDARD);
     const mixed = createMixedHeroes();
     const mixedMap = createHeroMap(mixed);
-    const withoutBond = system.calculateTeamPower(['shu_1', 'wei_1', 'wu_1'], mixedMap, FormationType.FISH_SCALE);
+    const withoutBond = system.calculateTeamPower(['shu_1', 'wei_1', 'wu_1'], mixedMap, FormationType.STANDARD);
 
     // 羁绊加成10%，蜀国武将总power更高
     expect(withBond).toBeGreaterThan(withoutBond * 0.9);
@@ -275,7 +275,7 @@ describe('ExpeditionSystem — 队伍编成', () => {
       createHero('h4', 'wei', 1500),
       createHero('h5', 'wu', 1000),
     ];
-    const selected = system.autoComposeTeam(heroes, new Set(), FormationType.FISH_SCALE, 3);
+    const selected = system.autoComposeTeam(heroes, new Set(), FormationType.STANDARD, 3);
     expect(selected).toContain('h1');
     expect(selected).toContain('h2');
     expect(selected).toContain('h3');
@@ -288,7 +288,7 @@ describe('ExpeditionSystem — 队伍编成', () => {
       createHero('shu_3', 'shu', 2600),
       createHero('wei_1', 'wei', 2900),
     ];
-    const selected = system.autoComposeTeam(heroes, new Set(), FormationType.FISH_SCALE, 4);
+    const selected = system.autoComposeTeam(heroes, new Set(), FormationType.STANDARD, 4);
     // 至少包含3个蜀国武将
     const shuCount = selected.filter(id => id.startsWith('shu')).length;
     expect(shuCount).toBeGreaterThanOrEqual(3);
@@ -296,7 +296,7 @@ describe('ExpeditionSystem — 队伍编成', () => {
 
   test('autoComposeTeam 排除已出征武将', () => {
     const heroes = [createHero('h1', 'shu', 3000), createHero('h2', 'wei', 2000)];
-    const selected = system.autoComposeTeam(heroes, new Set(['h1']), FormationType.FISH_SCALE, 2);
+    const selected = system.autoComposeTeam(heroes, new Set(['h1']), FormationType.STANDARD, 2);
     expect(selected).not.toContain('h1');
     expect(selected).toContain('h2');
   });
@@ -312,7 +312,7 @@ describe('ExpeditionSystem — 远征推进', () => {
   beforeEach(() => {
     const heroes = createShuHeroes(3);
     const heroMap = createHeroMap(heroes);
-    const result = system.createTeam('远征队', ['shu_0', 'shu_1', 'shu_2'], FormationType.FISH_SCALE, heroMap);
+    const result = system.createTeam('远征队', ['shu_0', 'shu_1', 'shu_2'], FormationType.STANDARD, heroMap);
     teamId = Object.keys(system.getState().teams)[0];
     system.updateSlots(5);
   });
@@ -485,7 +485,7 @@ describe('ExpeditionSystem — 兵力恢复', () => {
   test('自然恢复兵力', () => {
     const heroes = createShuHeroes(3);
     const heroMap = createHeroMap(heroes);
-    system.createTeam('test', ['shu_0', 'shu_1', 'shu_2'], FormationType.FISH_SCALE, heroMap);
+    system.createTeam('test', ['shu_0', 'shu_1', 'shu_2'], FormationType.STANDARD, heroMap);
     const teamId = Object.keys(system.getState().teams)[0];
 
     const team = system.getTeam(teamId)!;
@@ -498,7 +498,7 @@ describe('ExpeditionSystem — 兵力恢复', () => {
   test('兵力不超过上限', () => {
     const heroes = createShuHeroes(3);
     const heroMap = createHeroMap(heroes);
-    system.createTeam('test', ['shu_0', 'shu_1', 'shu_2'], FormationType.FISH_SCALE, heroMap);
+    system.createTeam('test', ['shu_0', 'shu_1', 'shu_2'], FormationType.STANDARD, heroMap);
     const teamId = Object.keys(system.getState().teams)[0];
 
     const team = system.getTeam(teamId)!;
@@ -521,7 +521,7 @@ describe('ExpeditionSystem — 序列化', () => {
   test('序列化后反序列化保持一致', () => {
     const heroes = createShuHeroes(3);
     const heroMap = createHeroMap(heroes);
-    system.createTeam('test', ['shu_0', 'shu_1', 'shu_2'], FormationType.FISH_SCALE, heroMap);
+    system.createTeam('test', ['shu_0', 'shu_1', 'shu_2'], FormationType.STANDARD, heroMap);
     system.updateSlots(10);
 
     const data = system.serialize();

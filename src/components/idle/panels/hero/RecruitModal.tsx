@@ -155,10 +155,10 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
   };
 
   return (
-    <div className="tk-recruit-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="tk-recruit-modal" role="dialog" aria-modal="true" aria-label="招募武将">
+    <div className="tk-recruit-overlay" data-testid="recruit-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="tk-recruit-modal" data-testid="recruit-modal" role="dialog" aria-modal="true" aria-label="招募武将">
         {/* 关闭按钮 */}
-        <button className="tk-recruit-close" onClick={onClose} aria-label="关闭">✕</button>
+        <button className="tk-recruit-close" data-testid="recruit-modal-close" onClick={onClose} aria-label="关闭">✕</button>
 
         {/* 标题 */}
         <div className="tk-recruit-header">
@@ -171,6 +171,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
             <button
               key={type}
               className={`tk-recruit-type-btn ${recruitType === type ? 'tk-recruit-type-btn--active' : ''}`}
+              data-testid={`recruit-modal-type-${type}`}
               onClick={() => { setRecruitType(type); setResults(null); setRevealPhase(false); }}
             >
               <span className="tk-recruit-type-icon">{RECRUIT_TYPE_ICONS[type]}</span>
@@ -217,6 +218,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
             </div>
             <button
               className="tk-recruit-btn"
+              data-testid="recruit-modal-single-btn"
               disabled={!canSingle || isRecruiting}
               onClick={() => handleRecruit(1)}
             >
@@ -231,6 +233,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
             </div>
             <button
               className="tk-recruit-btn tk-recruit-btn--ten"
+              data-testid="recruit-modal-ten-btn"
               disabled={!canTen || isRecruiting}
               onClick={() => handleRecruit(10)}
             >
@@ -241,7 +244,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
 
         {/* 招募结果 */}
         {results && (
-          <div className="tk-recruit-results">
+          <div className="tk-recruit-results" data-testid="recruit-modal-results">
             <div className="tk-recruit-results-header">
               <span>招募结果</span>
               <div className="tk-recruit-results-total-cost">

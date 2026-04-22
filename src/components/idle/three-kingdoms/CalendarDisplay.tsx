@@ -88,23 +88,23 @@ interface CalendarDisplayProps {
 
 const CalendarDisplay: React.FC<CalendarDisplayProps> = ({ calendar }) => {
   return (
-    <div className="tk-calendar">
-      <span className="tk-calendar-era">
+    <div className="tk-calendar" data-testid="calendar-display">
+      <span className="tk-calendar-era" data-testid="calendar-display-era">
         {calendar?.date
           ? `${calendar.date.eraName}${calendar.date.yearInEra === 1 ? '元年' : `${toChineseYear(calendar.date.yearInEra)}年`}`
           : '建安元年'}
       </span>
-      <span className="tk-calendar-season">
+      <span className="tk-calendar-season" data-testid="calendar-display-season">
         {calendar?.date
           ? `${SEASON_ICONS[calendar.date.season]} ${SEASON_LABELS[calendar.date.season]}`
           : '🌸 春'}
       </span>
-      <span className="tk-calendar-weather">
+      <span className="tk-calendar-weather" data-testid="calendar-display-weather">
         {calendar
           ? `${WEATHER_ICONS[calendar.weather]} ${WEATHER_LABELS[calendar.weather]}`
           : '☀️ 晴'}
       </span>
-      <span className="tk-calendar-date">
+      <span className="tk-calendar-date" data-testid="calendar-display-date">
         {calendar?.date ? formatGameDate(calendar.date) : '正月初一'}
       </span>
     </div>

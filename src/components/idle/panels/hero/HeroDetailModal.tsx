@@ -198,15 +198,15 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
   }, [heroSystem, general.id, general.name, onEnhanceComplete]);
 
   return (
-    <div className="tk-hero-detail-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="tk-hero-detail-modal" role="dialog" aria-modal="true" aria-label={`${general.name} 详情`}>
+    <div className="tk-hero-detail-overlay" data-testid="hero-detail-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="tk-hero-detail-modal" data-testid="hero-detail-modal" role="dialog" aria-modal="true" aria-label={`${general.name} 详情`}>
         {/* 关闭按钮 */}
-        <button className="tk-hero-detail-close" onClick={onClose} aria-label="关闭">✕</button>
+        <button className="tk-hero-detail-close" data-testid="hero-detail-modal-close" onClick={onClose} aria-label="关闭">✕</button>
 
         {/* 标题栏 */}
         <div className="tk-hero-detail-header" style={{ borderBottomColor: borderColor }}>
-          <span className="tk-hero-detail-title-name">{general.name}</span>
-          <span className="tk-hero-detail-title-faction">{factionLabel}</span>
+          <span className="tk-hero-detail-title-name" data-testid="hero-detail-modal-name">{general.name}</span>
+          <span className="tk-hero-detail-title-faction" data-testid="hero-detail-modal-faction">{factionLabel}</span>
           <span
             className="tk-hero-detail-title-quality"
             style={{ background: borderColor }}
@@ -268,7 +268,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
             )}
 
             {/* 战力 */}
-            <div className="tk-hero-detail-power">
+            <div className="tk-hero-detail-power" data-testid="hero-detail-modal-power">
               ⚔️ 战力 <strong>{power.toLocaleString('zh-CN')}</strong>
             </div>
 
@@ -332,6 +332,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
               {/* 升级按钮 */}
               <button
                 className="tk-hero-detail-enhance-btn"
+                data-testid="hero-detail-modal-enhance-btn"
                 disabled={!enhancePreview?.affordable || isEnhancing || targetLevel <= general.level}
                 onClick={handleEnhance}
               >

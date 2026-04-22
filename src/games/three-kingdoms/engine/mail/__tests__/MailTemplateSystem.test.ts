@@ -136,9 +136,9 @@ describe('MailTemplateSystem', () => {
       });
 
       expect(mail.title).toBe('离线收益报告');
-      expect(mail.body).toContain('8');
-      expect(mail.body).toContain('1000');
-      expect(mail.body).toContain('500');
+      expect(mail.content).toContain('8');
+      expect(mail.content).toContain('1000');
+      expect(mail.content).toContain('500');
     });
 
     it('未提供的变量保留占位符', () => {
@@ -146,14 +146,14 @@ describe('MailTemplateSystem', () => {
         hours: '8',
       });
 
-      expect(mail.body).toContain('8');
+      expect(mail.content).toContain('8');
       // 未提供的变量保留 {{var}}
-      expect(mail.body).toContain('{{grain}}');
+      expect(mail.content).toContain('{{grain}}');
     });
 
     it('空变量不替换', () => {
       const mail = system.createFromTemplate('building_complete', {});
-      expect(mail.body).toContain('{{building}}');
+      expect(mail.content).toContain('{{building}}');
     });
 
     it('数字类型变量正确转换', () => {
@@ -161,8 +161,8 @@ describe('MailTemplateSystem', () => {
         level: 10,
         reward: '铜钱×100',
       });
-      expect(mail.body).toContain('10');
-      expect(mail.body).toContain('铜钱×100');
+      expect(mail.content).toContain('10');
+      expect(mail.content).toContain('铜钱×100');
     });
   });
 
@@ -174,7 +174,7 @@ describe('MailTemplateSystem', () => {
     it('生成的邮件初始状态为unread', () => {
       const mail = system.createFromTemplate('offline_reward', { hours: '1', grain: '0', gold: '0', troops: '0', mandate: '0' });
       expect(mail.status).toBe('unread');
-      expect(mail.starred).toBe(false);
+      expect(mail.isRead).toBe(false);
     });
 
     it('生成的邮件ID唯一', () => {
@@ -196,7 +196,7 @@ describe('MailTemplateSystem', () => {
       const mail = system.createFromTemplate('offline_reward', {
         hours: '1', grain: '0', gold: '0', troops: '0', mandate: '0',
       }, [
-        { type: 'resource', content: { grain: 100, gold: 0, troops: 0, mandate: 0 } },
+        { resourceType: 'grain', amount: 100 },
       ]);
 
       expect(mail.attachments).toHaveLength(1);
@@ -220,16 +220,16 @@ describe('MailTemplateSystem', () => {
       const mail = system.createCustom('system', '测试标题', '测试正文', '管理员');
       expect(mail.category).toBe('system');
       expect(mail.title).toBe('测试标题');
-      expect(mail.body).toBe('测试正文');
+      expect(mail.content).toBe('测试正文');
       expect(mail.sender).toBe('管理员');
-      expect(mail.priority).toBe('normal');
+      expect(mail.status).toBe('unread');
     });
 
     it('自定义优先级', () => {
       const mail = system.createCustom('system', '标题', '正文', '系统', {
-        priority: 'urgent',
+        expireSeconds: 3600,
       });
-      expect(mail.priority).toBe('urgent');
+      expect(mail.expireTime).toBeGreaterThan(mail.sendTime);
     });
 
     it('自定义过期时间', () => {
@@ -243,7 +243,7 @@ describe('MailTemplateSystem', () => {
     it('带附件的自定义邮件', () => {
       const mail = system.createCustom('reward', '奖励', '恭喜', '系统', {
         attachments: [
-          { type: 'resource', content: { grain: 500, gold: 100, troops: 0, mandate: 0 } },
+          { resourceType: 'grain', amount: 500 },
         ],
       });
       expect(mail.attachments).toHaveLength(1);

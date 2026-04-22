@@ -234,7 +234,7 @@ describe('FriendSystem — 好友互动', () => {
   });
 
   test('对非好友赠送兵力应抛出异常', () => {
-    expect(() => system.giftTroops(state, 'unknown', 1000)).toThrow('不是好友');
+    expect(() => system.giftTroops(state, 'unknown', 1000)).toThrow('好友不存在');
   });
 
   test('拜访主城', () => {

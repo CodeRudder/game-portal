@@ -35,10 +35,10 @@ beforeEach(() => {
     const id = ++rafId;
     rafCallbacks.set(id, cb);
     return id;
-  });
+  };
   (globalThis as any).cancelAnimationFrame = (id: number) => {
     rafCallbacks.delete(id);
-  });
+  };
 });
 
 afterEach(() => {

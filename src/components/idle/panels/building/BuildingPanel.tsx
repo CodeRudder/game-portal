@@ -186,11 +186,12 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
   }, [buildings]);
 
   return (
-    <div className="tk-building-panel">
+    <div className="tk-building-panel" data-testid="building-panel">
       {/* P1-03: 资源收支详情按钮 */}
       <div className="tk-bld-income-bar">
         <button
           className="tk-bld-income-btn"
+          data-testid="building-panel-income-btn"
           onClick={() => setShowIncomeModal(true)}
         >
           📊 收支详情
@@ -199,7 +200,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
 
       {/* 升级队列 — 右上角悬浮 */}
       {upgradingBuildings.length > 0 && (
-        <div className="tk-bld-queue">
+        <div className="tk-bld-queue" data-testid="building-panel-queue">
           <div className="tk-bld-queue-title">🔄 升级中 ({upgradingBuildings.length})</div>
           {upgradingBuildings.map(type => (
             <div key={type} className="tk-bld-queue-item">
@@ -211,7 +212,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
       )}
 
       {/* PC端：城池地图（绝对定位） */}
-      <div className="tk-bld-map">
+      <div className="tk-bld-map" data-testid="building-panel-map">
         {/* 地图背景装饰 */}
         <div className="tk-bld-map-ground" />
 
@@ -238,6 +239,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
             <div
               key={type}
               className={buildingClass}
+              data-testid={`building-panel-item-${type}`}
               style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
               onClick={() => handleBuildingClick(type)}
               role="button"
@@ -286,7 +288,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
       </div>
 
       {/* 手机端：建筑列表 */}
-      <div className="tk-bld-list">
+      <div className="tk-bld-list" data-testid="building-panel-list">
         {BUILDING_TYPES.map(type => {
           const state = buildings[type];
           if (!state) return null;
@@ -300,6 +302,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
             <div
               key={type}
               className={`tk-bld-list-item ${isLocked ? 'tk-bld-list-item--locked' : ''}`}
+              data-testid={`building-panel-list-item-${type}`}
               onClick={() => handleBuildingClick(type)}
             >
               <div className="tk-bld-list-icon">

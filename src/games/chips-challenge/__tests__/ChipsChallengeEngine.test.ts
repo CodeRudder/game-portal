@@ -7,11 +7,11 @@ const mockRaf = (cb: (t: number) => void) => {
   return setTimeout(() => cb(Date.now()), 0) as unknown as number;
 };
 const mockCancelRaf = (id: number) => clearTimeout(id);
-(globalThis as any).requestAnimationFrame = mockRaf);
-(globalThis as any).cancelAnimationFrame = mockCancelRaf);
+(globalThis as any).requestAnimationFrame = mockRaf;
+(globalThis as any).cancelAnimationFrame = mockCancelRaf;
 
 // Mock performance
-(globalThis as any).performance = { now: () => Date.now() });
+(globalThis as any).performance = { now: () => Date.now() };
 
 // Mock canvas
 function createMockCanvas() {

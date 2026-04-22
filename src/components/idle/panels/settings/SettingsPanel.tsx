@@ -81,6 +81,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ engine, visible = true, o
         <span style={styles.toggleLabel}>{item.label}</span>
         <button
           onClick={() => handleToggle(item.key)}
+          data-testid={`settings-panel-toggle-${item.key}`}
           style={{
             ...styles.toggleBtn,
             background: settings?.[item.key] ? '#4caf50' : '#666',
@@ -164,7 +165,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ engine, visible = true, o
         {/* 存档管理 */}
         <div style={styles.section}>
           <h4 style={styles.sectionTitle}>💾 存档</h4>
-          <button onClick={handleSave} style={styles.saveBtn}>
+          <button onClick={handleSave} data-testid="settings-panel-save-btn" style={styles.saveBtn}>
             手动保存
           </button>
         </div>

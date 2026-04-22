@@ -20,8 +20,8 @@ import {
 // Mock requestAnimationFrame 防止 gameLoop 干扰
 (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => {
   return 1;
-});
-(globalThis as any).cancelAnimationFrame = (id: number) => {});
+};
+(globalThis as any).cancelAnimationFrame = (id: number) => {};
 
 function createEngine(): FreeCellEngine {
   const engine = new FreeCellEngine();

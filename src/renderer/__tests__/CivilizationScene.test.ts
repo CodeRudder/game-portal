@@ -16,26 +16,28 @@
  * - 事件系统
  */
 
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 // ---------------------------------------------------------------------------
 // Mock PixiJS v8
 // ---------------------------------------------------------------------------
 
-jest.mock('pixi.js', () => {
+vi.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0;
     y = 0;
     rotation = 0;
     visible = true;
-    scale = { set: jest.fn(), x: 1, y: 1 };
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    scale = { set: vi.fn(), x: 1, y: 1 };
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
     children: any[] = [];
     parent: any = null;
-    emit = jest.fn();
-    on = jest.fn().mockReturnThis();
-    off = jest.fn();
-    once = jest.fn();
-    removeAllListeners = jest.fn();
+    emit = vi.fn();
+    on = vi.fn().mockReturnThis();
+    off = vi.fn();
+    once = vi.fn();
+    removeAllListeners = vi.fn();
     eventMode: string = 'passive';
     cursor: string = 'default';
 
@@ -71,10 +73,10 @@ jest.mock('pixi.js', () => {
     y = 0;
     visible = true;
     parent: any = null;
-    position = { set: jest.fn() };
-    emit = jest.fn();
-    on = jest.fn();
-    off = jest.fn();
+    position = { set: vi.fn() };
+    emit = vi.fn();
+    on = vi.fn();
+    off = vi.fn();
 
     clear() { return this; }
     circle(_x: number, _y: number, _r: number) { return this; }
@@ -93,17 +95,17 @@ jest.mock('pixi.js', () => {
   class MockText {
     label = '';
     text: string;
-    anchor = { set: jest.fn(), x: 0, y: 0 };
+    anchor = { set: vi.fn(), x: 0, y: 0 };
     x = 0;
     y = 0;
     width = 50;
     height = 14;
     visible = true;
     parent: any = null;
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
-    emit = jest.fn();
-    on = jest.fn();
-    off = jest.fn();
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    emit = vi.fn();
+    on = vi.fn();
+    off = vi.fn();
 
     constructor(opts?: any) { this.text = opts?.text ?? ''; }
     destroy() {}
@@ -515,7 +517,7 @@ describe('CivilizationScene', () => {
   describe('events', () => {
     it('should register and trigger upgradeClick', async () => {
       await scene.enter();
-      const handler = jest.fn();
+      const handler = vi.fn();
       scene.on('upgradeClick', handler);
       // Simulate upgrade click through updateState
       scene.updateState(FULL_STATE);
@@ -525,7 +527,7 @@ describe('CivilizationScene', () => {
 
     it('should register and trigger toggleTechPanel', async () => {
       await scene.enter();
-      const handler = jest.fn();
+      const handler = vi.fn();
       scene.on('toggleTechPanel', handler);
       scene.toggleTechPanel();
       expect(handler).toHaveBeenCalledTimes(1);
@@ -533,7 +535,7 @@ describe('CivilizationScene', () => {
 
     it('should unregister event callback', async () => {
       await scene.enter();
-      const handler = jest.fn();
+      const handler = vi.fn();
       scene.on('toggleTechPanel', handler);
       scene.off('toggleTechPanel', handler);
       scene.toggleTechPanel();
@@ -542,8 +544,8 @@ describe('CivilizationScene', () => {
 
     it('should handle multiple listeners on same event', async () => {
       await scene.enter();
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       scene.on('toggleTechPanel', handler1);
       scene.on('toggleTechPanel', handler2);
       scene.toggleTechPanel();
@@ -553,8 +555,8 @@ describe('CivilizationScene', () => {
 
     it('should handle errors in event callbacks gracefully', async () => {
       await scene.enter();
-      const errorHandler = jest.fn(() => { throw new Error('test error'); });
-      const goodHandler = jest.fn();
+      const errorHandler = vi.fn(() => { throw new Error('test error'); });
+      const goodHandler = vi.fn();
       scene.on('toggleTechPanel', errorHandler);
       scene.on('toggleTechPanel', goodHandler);
       // Should not throw

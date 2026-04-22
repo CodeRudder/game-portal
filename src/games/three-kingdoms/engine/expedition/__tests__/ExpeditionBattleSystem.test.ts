@@ -29,7 +29,7 @@ function createTeam(overrides: Partial<BattleTeamData> = {}): BattleTeamData {
       { id: 'h2', hp: 1000, maxHp: 1000, attack: 90, defense: 90, speed: 40, intelligence: 70 },
       { id: 'h3', hp: 1000, maxHp: 1000, attack: 110, defense: 70, speed: 60, intelligence: 50 },
     ],
-    formation: FormationType.FISH_SCALE,
+    formation: FormationType.OFFENSIVE,
     totalPower: 3000,
     ...overrides,
   };
@@ -40,7 +40,7 @@ function createNodeConfig(overrides: Partial<NodeBattleConfig> = {}): NodeBattle
   return {
     nodeType: NodeType.BOSS,
     enemyPower: 2000,
-    enemyFormation: FormationType.WEDGE,
+    enemyFormation: FormationType.DEFENSIVE,
     recommendedPower: 2500,
     ...overrides,
   };
@@ -122,22 +122,22 @@ describe('ExpeditionBattleSystem — executeBattle', () => {
 
 describe('ExpeditionBattleSystem — quickBattle', () => {
   test('压倒性优势（2x战力）结果好', () => {
-    const result = battle.quickBattle(5000, FormationType.FISH_SCALE, 2000, FormationType.WEDGE);
+    const result = battle.quickBattle(5000, FormationType.OFFENSIVE, 2000, FormationType.DEFENSIVE);
     expect(result.grade).not.toBe(BattleGrade.NARROW_DEFEAT);
     expect(result.allyHpPercent).toBeGreaterThan(50);
   });
 
   test('压倒性劣势（0.3x战力）大概率失败', () => {
-    const result = battle.quickBattle(500, FormationType.FISH_SCALE, 2000, FormationType.WEDGE);
+    const result = battle.quickBattle(500, FormationType.OFFENSIVE, 2000, FormationType.DEFENSIVE);
     // 极弱情况
     expect(result.allyHpPercent).toBeLessThanOrEqual(10);
   });
 
   test('阵型克制影响结果', () => {
-    // 鱼鳞克制锋矢
-    const counterResult = battle.quickBattle(2000, FormationType.FISH_SCALE, 2000, FormationType.WEDGE);
-    // 锋矢不克制鱼鳞
-    const neutralResult = battle.quickBattle(2000, FormationType.FISH_SCALE, 2000, FormationType.CRANE_WING);
+    // 锋矢克制方圆
+    const counterResult = battle.quickBattle(2000, FormationType.OFFENSIVE, 2000, FormationType.DEFENSIVE);
+    // 锋矢不克制攻城
+    const neutralResult = battle.quickBattle(2000, FormationType.OFFENSIVE, 2000, FormationType.SIEGE);
 
     // 克制方有加成，平均表现更好
     expect(counterResult.allyHpPercent).toBeGreaterThanOrEqual(0);
@@ -145,7 +145,7 @@ describe('ExpeditionBattleSystem — quickBattle', () => {
   });
 
   test('快速战斗返回完整结果结构', () => {
-    const result = battle.quickBattle(3000, FormationType.CRANE_WING, 2000, FormationType.GOOSE);
+    const result = battle.quickBattle(3000, FormationType.FLANKING, 2000, FormationType.SIEGE);
     expect(result).toHaveProperty('grade');
     expect(result).toHaveProperty('stars');
     expect(result).toHaveProperty('totalTurns');
@@ -157,7 +157,7 @@ describe('ExpeditionBattleSystem — quickBattle', () => {
   test('战力相当时结果不确定', () => {
     // 多次运行，结果应有变化
     const results = Array.from({ length: 10 }, () =>
-      battle.quickBattle(2000, FormationType.GOOSE, 2000, FormationType.SNAKE)
+      battle.quickBattle(2000, FormationType.FLANKING, 2000, FormationType.SIEGE)
     );
     const hpPercents = results.map(r => r.allyHpPercent);
     const hasVariance = new Set(hpPercents.map(p => Math.round(p))).size > 1;
@@ -170,45 +170,40 @@ describe('ExpeditionBattleSystem — quickBattle', () => {
 // ═══════════════════════════════════════════
 
 describe('ExpeditionBattleSystem — 阵型克制', () => {
-  test('鱼鳞克制锋矢', () => {
-    expect(battle.isCounter(FormationType.FISH_SCALE, FormationType.WEDGE)).toBe(true);
+  test('锋矢克制方圆', () => {
+    expect(battle.isCounter(FormationType.OFFENSIVE, FormationType.DEFENSIVE)).toBe(true);
   });
 
-  test('锋矢克制雁行', () => {
-    expect(battle.isCounter(FormationType.WEDGE, FormationType.GOOSE)).toBe(true);
+  test('方圆克制雁行', () => {
+    expect(battle.isCounter(FormationType.DEFENSIVE, FormationType.FLANKING)).toBe(true);
   });
 
-  test('雁行克制鹤翼', () => {
-    expect(battle.isCounter(FormationType.GOOSE, FormationType.CRANE_WING)).toBe(true);
+  test('雁行克制锋矢', () => {
+    expect(battle.isCounter(FormationType.FLANKING, FormationType.OFFENSIVE)).toBe(true);
   });
 
-  test('鹤翼克制鱼鳞', () => {
-    expect(battle.isCounter(FormationType.CRANE_WING, FormationType.FISH_SCALE)).toBe(true);
+  test('攻城克制普通', () => {
+    expect(battle.isCounter(FormationType.SIEGE, FormationType.STANDARD)).toBe(true);
   });
 
-  test('长蛇与方圆互克', () => {
-    expect(battle.isCounter(FormationType.SNAKE, FormationType.SQUARE)).toBe(true);
-    expect(battle.isCounter(FormationType.SQUARE, FormationType.SNAKE)).toBe(true);
-  });
-
-  test('鱼鳞不克制鹤翼', () => {
-    expect(battle.isCounter(FormationType.FISH_SCALE, FormationType.CRANE_WING)).toBe(false);
+  test('锋矢不克制雁行', () => {
+    expect(battle.isCounter(FormationType.OFFENSIVE, FormationType.FLANKING)).toBe(false);
   });
 
   test('getCounterBonus 克制方+10%', () => {
-    expect(battle.getCounterBonus(FormationType.FISH_SCALE, FormationType.WEDGE)).toBe(0.10);
+    expect(battle.getCounterBonus(FormationType.OFFENSIVE, FormationType.DEFENSIVE)).toBe(0.10);
   });
 
   test('getCounterBonus 被克制方-10%', () => {
-    expect(battle.getCounterBonus(FormationType.WEDGE, FormationType.FISH_SCALE)).toBe(-0.10);
+    expect(battle.getCounterBonus(FormationType.DEFENSIVE, FormationType.OFFENSIVE)).toBe(-0.10);
   });
 
   test('getCounterBonus 无克制关系为0', () => {
-    expect(battle.getCounterBonus(FormationType.FISH_SCALE, FormationType.GOOSE)).toBe(0);
+    expect(battle.getCounterBonus(FormationType.OFFENSIVE, FormationType.SIEGE)).toBe(0);
   });
 
   test('同阵型无克制', () => {
-    expect(battle.getCounterBonus(FormationType.FISH_SCALE, FormationType.FISH_SCALE)).toBe(0);
+    expect(battle.getCounterBonus(FormationType.OFFENSIVE, FormationType.OFFENSIVE)).toBe(0);
   });
 });
 

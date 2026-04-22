@@ -20,7 +20,7 @@ import type {
   AllianceData,
   AlliancePlayerState,
 } from '../../../core/alliance/alliance.types';
-import { createDefaultAlliancePlayerState, createAllianceData } from '../AllianceSystem';
+import { createDefaultAlliancePlayerState, createAllianceData } from '../alliance-constants';
 
 // ── 辅助函数 ──────────────────────────────
 

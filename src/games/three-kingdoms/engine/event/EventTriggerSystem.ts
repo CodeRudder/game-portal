@@ -11,6 +11,10 @@ import type {
   EventTriggerResult, EventChoiceResult, EventCondition,
   EventConsequence, EventSystemSaveData, EventTriggerConfig,
 } from '../../core/event';
+import type {
+  ProbabilityCondition, ProbabilityModifier, ProbabilityResult,
+  TimeCondition, StateCondition,
+} from '../../core/event/event-v15-event.types';
 import {
   DEFAULT_EVENT_TRIGGER_CONFIG, PREDEFINED_EVENTS, EVENT_SAVE_VERSION,
 } from '../../core/event';
@@ -28,6 +32,10 @@ export class EventTriggerSystem implements ISubsystem {
   private completedEventIds: Set<EventId> = new Set();
   private cooldowns: Map<EventId, number> = new Map();
   private instanceCounter = 0;
+  /** 概率条件注册表（v15 迁移） */
+  private probabilityConditions: Map<EventId, ProbabilityCondition> = new Map();
+  /** 当前游戏回合（供条件评估使用） */
+  private _currentTurn = 0;
 
   // ─── ISubsystem 接口 ───────────────────────
 
@@ -52,6 +60,8 @@ export class EventTriggerSystem implements ISubsystem {
     this.activeEvents.clear();
     this.completedEventIds.clear();
     this.cooldowns.clear();
+    this.probabilityConditions.clear();
+    this._currentTurn = 0;
     this.instanceCounter = 0;
     this.config = { ...DEFAULT_EVENT_TRIGGER_CONFIG };
   }
@@ -118,6 +128,7 @@ export class EventTriggerSystem implements ISubsystem {
    * @returns 触发的事件实例列表
    */
   checkAndTriggerEvents(currentTurn: number): EventInstance[] {
+    this._currentTurn = currentTurn;
     const triggered: EventInstance[] = [];
 
     // 检查冷却
@@ -149,13 +160,19 @@ export class EventTriggerSystem implements ISubsystem {
     const randomEvents = this.getEventDefsByType('random');
     for (const def of randomEvents) {
       if (this.canTrigger(def.id, currentTurn)) {
-        // 概率判定
-        const probability = def.triggerProbability ?? this.config.randomEventProbability;
-        if (Math.random() < probability) {
-          const result = this.triggerEvent(def.id, currentTurn);
-          if (result.triggered && result.instance) {
-            triggered.push(result.instance);
-          }
+        // 优先使用概率公式，否则回退到简单概率判定
+        const probCondition = this.probabilityConditions.get(def.id);
+        if (probCondition) {
+          const probResult = this.calculateProbability(probCondition);
+          if (!probResult.triggered) continue;
+        } else {
+          const probability = def.triggerProbability ?? this.config.randomEventProbability;
+          if (Math.random() >= probability) continue;
+        }
+
+        const result = this.triggerEvent(def.id, currentTurn);
+        if (result.triggered && result.instance) {
+          triggered.push(result.instance);
         }
       }
     }
@@ -172,6 +189,64 @@ export class EventTriggerSystem implements ISubsystem {
    */
   forceTriggerEvent(eventId: EventId, currentTurn: number): EventTriggerResult {
     return this.triggerEvent(eventId, currentTurn, true);
+  }
+
+  // ─── 概率计算（v15 迁移）──────────────────────
+
+  /**
+   * 计算最终触发概率
+   * 公式：P = clamp(base + Σ(active_additive) × Π(active_multiplicative), 0, 1)
+   *
+   * @param probCondition - 概率条件（含基础概率和修正因子）
+   * @returns 概率计算结果
+   */
+  calculateProbability(probCondition: ProbabilityCondition): ProbabilityResult {
+    const { baseProbability, modifiers } = probCondition;
+
+    // 仅计算 active 的修正因子
+    const activeModifiers = modifiers.filter((m) => m.active);
+
+    // Σ(additive) — 所有活跃加法修正之和
+    const additiveTotal = activeModifiers.reduce(
+      (sum, m) => sum + m.additiveBonus, 0,
+    );
+
+    // Π(multiplicative) — 所有活跃乘法修正之积
+    const multiplicativeTotal = activeModifiers.reduce(
+      (product, m) => product * m.multiplicativeBonus, 1,
+    );
+
+    // P = clamp(base + Σ(add) × Π(mul), 0, 1)
+    const finalProbability = Math.max(
+      0, Math.min(1, (baseProbability + additiveTotal) * multiplicativeTotal),
+    );
+
+    return {
+      finalProbability,
+      baseProbability,
+      additiveTotal,
+      multiplicativeTotal,
+      triggered: Math.random() < finalProbability,
+    };
+  }
+
+  /**
+   * 注册概率条件（为指定事件绑定高级概率公式）
+   *
+   * @param eventId - 事件ID
+   * @param condition - 概率条件
+   */
+  registerProbabilityCondition(eventId: EventId, condition: ProbabilityCondition): void {
+    this.probabilityConditions.set(eventId, condition);
+  }
+
+  /**
+   * 获取指定事件的概率条件
+   *
+   * @param eventId - 事件ID
+   */
+  getProbabilityCondition(eventId: EventId): ProbabilityCondition | undefined {
+    return this.probabilityConditions.get(eventId);
   }
 
   /**
@@ -443,14 +518,14 @@ export class EventTriggerSystem implements ISubsystem {
   }
 
   /** 检查固定事件条件 */
-  private checkFixedConditions(def: EventDef, _currentTurn: number): boolean {
+  private checkFixedConditions(def: EventDef, currentTurn: number): boolean {
     if (!def.triggerConditions || def.triggerConditions.length === 0) {
       return true;
     }
 
-    // 条件检查 — 当前仅做基础验证，后续可扩展
+    // 所有条件必须满足（AND 逻辑）
     for (const cond of def.triggerConditions) {
-      if (!this.evaluateCondition(cond)) {
+      if (!this.evaluateCondition(cond, currentTurn)) {
         return false;
       }
     }
@@ -467,11 +542,146 @@ export class EventTriggerSystem implements ISubsystem {
     return def.prerequisiteEventIds.every((id) => this.completedEventIds.has(id));
   }
 
-  /** 评估单个条件 */
-  private evaluateCondition(_cond: EventCondition): boolean {
-    // 基础实现：固定事件默认返回true
-    // 后续可扩展为实际条件评估（资源检查、建筑等级检查等）
+  /**
+   * 评估单个条件
+   * 支持 turn_range、resource_threshold、affinity_level、building_level、event_completed 五种类型
+   *
+   * @param cond - 事件条件
+   * @param currentTurn - 当前回合
+   * @param gameState - 可选的游戏状态（用于状态条件评估）
+   */
+  private evaluateCondition(
+    cond: EventCondition,
+    currentTurn?: number,
+    gameState?: Record<string, number>,
+  ): boolean {
+    const turn = currentTurn ?? this._currentTurn;
+
+    switch (cond.type) {
+      case 'turn_range':
+        return this.evaluateTurnRangeCondition(cond.params, turn);
+
+      case 'resource_threshold':
+        return this.evaluateResourceCondition(cond.params, gameState);
+
+      case 'affinity_level':
+        return this.evaluateAffinityCondition(cond.params, gameState);
+
+      case 'building_level':
+        return this.evaluateBuildingCondition(cond.params, gameState);
+
+      case 'event_completed':
+        return this.evaluateEventCompletedCondition(cond.params);
+
+      default:
+        // 未知条件类型默认通过（向后兼容）
+        return true;
+    }
+  }
+
+  /**
+   * 评估时间条件（turn_range）
+   * 支持 minTurn / maxTurn / turnInterval 参数
+   */
+  private evaluateTurnRangeCondition(
+    params: Record<string, unknown>,
+    currentTurn: number,
+  ): boolean {
+    const minTurn = params['minTurn'] as number | undefined;
+    const maxTurn = params['maxTurn'] as number | undefined;
+    const turnInterval = params['turnInterval'] as number | undefined;
+
+    if (minTurn !== undefined && currentTurn < minTurn) return false;
+    if (maxTurn !== undefined && currentTurn > maxTurn) return false;
+    if (turnInterval !== undefined && currentTurn % turnInterval !== 0) return false;
+
     return true;
+  }
+
+  /**
+   * 评估资源条件（resource_threshold）
+   * 支持 resource / minAmount / maxAmount / operator 参数
+   */
+  private evaluateResourceCondition(
+    params: Record<string, unknown>,
+    gameState?: Record<string, number>,
+  ): boolean {
+    if (!gameState) return true; // 无游戏状态时默认通过（兼容旧逻辑）
+
+    const target = params['resource'] as string;
+    const value = gameState[target] ?? 0;
+
+    return this.compareValue(value, params);
+  }
+
+  /**
+   * 评估好感度条件（affinity_level）
+   * 支持 target / value / operator 参数
+   */
+  private evaluateAffinityCondition(
+    params: Record<string, unknown>,
+    gameState?: Record<string, number>,
+  ): boolean {
+    if (!gameState) return true;
+
+    const target = params['target'] as string;
+    const value = gameState[target] ?? 0;
+
+    return this.compareValue(value, params);
+  }
+
+  /**
+   * 评估建筑等级条件（building_level）
+   * 支持 target / value / operator 参数
+   */
+  private evaluateBuildingCondition(
+    params: Record<string, unknown>,
+    gameState?: Record<string, number>,
+  ): boolean {
+    if (!gameState) return true;
+
+    const target = params['target'] as string;
+    const value = gameState[target] ?? 0;
+
+    return this.compareValue(value, params);
+  }
+
+  /**
+   * 评估事件完成条件（event_completed）
+   * 支持 eventId 参数
+   */
+  private evaluateEventCompletedCondition(
+    params: Record<string, unknown>,
+  ): boolean {
+    const eventId = params['eventId'] as EventId | undefined;
+    if (!eventId) return true;
+
+    return this.completedEventIds.has(eventId);
+  }
+
+  /**
+   * 通用比较运算（支持 6 种运算符）
+   * operator: '>=' | '<=' | '==' | '!=' | '>' | '<'
+   * 默认使用 '>='
+   */
+  private compareValue(
+    actual: number,
+    params: Record<string, unknown>,
+  ): boolean {
+    const expected = params['value'] as number | undefined
+      ?? params['minAmount'] as number | undefined
+      ?? 0;
+    const operator = (params['operator'] as string) ?? '>=';
+
+    switch (operator) {
+      case '>=': return actual >= expected;
+      case '<=': return actual <= expected;
+      case '==': return actual === expected;
+      case '!=': return actual !== expected;
+      case '>':  return actual > expected;
+      case '<':  return actual < expected;
+      default:   return actual >= expected;
+    }
   }
 
   /** 处理冷却 */

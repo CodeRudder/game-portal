@@ -141,19 +141,21 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
 
   // ── 渲染 ──
   return (
-    <div className="tk-hero-tab">
+    <div className="tk-hero-tab" data-testid="hero-tab">
       {/* 顶部工具栏 */}
       <div className="tk-hero-toolbar">
         {/* 子Tab切换 */}
         <div className="tk-hero-sub-tabs">
           <button
             className={`tk-hero-sub-tab ${subTab === 'list' ? 'tk-hero-sub-tab--active' : ''}`}
+            data-testid="hero-tab-subtab-list"
             onClick={() => setSubTab('list')}
           >
             武将
           </button>
           <button
             className={`tk-hero-sub-tab ${subTab === 'formation' ? 'tk-hero-sub-tab--active' : ''}`}
+            data-testid="hero-tab-subtab-formation"
             onClick={() => setSubTab('formation')}
           >
             编队
@@ -192,7 +194,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
 
         {/* 右侧：战力 + 按钮 */}
         <div className="tk-hero-toolbar-right">
-          <span className="tk-hero-total-power">⚔️ 总战力 {totalPower.toLocaleString('zh-CN')}</span>
+          <span className="tk-hero-total-power" data-testid="hero-tab-total-power">⚔️ 总战力 {totalPower.toLocaleString('zh-CN')}</span>
           {subTab === 'list' && allGenerals.length > 0 && (
             <button className="tk-hero-compare-btn" onClick={() => {
               if (filteredGenerals.length > 0) handleCompareOpen(filteredGenerals[0] as GeneralData);
@@ -200,7 +202,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
               ⚖️ 对比
             </button>
           )}
-          <button className="tk-hero-recruit-btn" onClick={handleRecruitOpen}>🏛️ 招募</button>
+          <button className="tk-hero-recruit-btn" data-testid="hero-tab-recruit-btn" onClick={handleRecruitOpen}>🏛️ 招募</button>
         </div>
       </div>
 
@@ -208,11 +210,11 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
       {subTab === 'list' ? (
         <>
           {filteredGenerals.length === 0 && allGenerals.length === 0 ? (
-            <div className="tk-hero-empty">
+            <div className="tk-hero-empty" data-testid="hero-tab-empty">
               <div className="tk-hero-empty-icon">⚔️</div>
               <div className="tk-hero-empty-text">尚无武将入麾下</div>
               <div className="tk-hero-empty-sub">点击「前往招募」招揽天下英才</div>
-              <button className="tk-hero-empty-btn" onClick={handleRecruitOpen}>前往招募</button>
+              <button className="tk-hero-empty-btn" data-testid="hero-tab-empty-recruit-btn" onClick={handleRecruitOpen}>前往招募</button>
             </div>
           ) : filteredGenerals.length === 0 ? (
             <div className="tk-hero-empty">
@@ -227,7 +229,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
                   ⚔️ 武将对比
                 </button>
               )}
-              <div className="tk-hero-grid">
+              <div className="tk-hero-grid" data-testid="hero-tab-grid">
               {filteredGenerals.map((general) => (
                 <HeroCard key={general.id} general={general} engine={engine} onClick={handleCardClick} />
               ))}
@@ -237,7 +239,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
 
           {filteredGenerals.length > 0 && (
             <div className="tk-hero-footer">
-              <span className="tk-hero-count">武将总数: {allGenerals.length}</span>
+              <span className="tk-hero-count" data-testid="hero-tab-count">武将总数: {allGenerals.length}</span>
             </div>
           )}
         </>

@@ -28,6 +28,8 @@ import {
   REBIRTH_ACCELERATION,
   REBIRTH_UNLOCK_CONTENTS,
 } from '../../core/prestige';
+import { calcRebirthMultiplier as calcRebirthMultiplierCore } from '../unification/BalanceCalculator';
+import type { RebirthBalanceConfig } from '../../core/unification';
 import {
   getInitialGift,
   getInstantBuildConfig,
@@ -52,11 +54,20 @@ const EVENT_PREFIX = 'rebirth';
 
 /**
  * 计算转生倍率 (#9)
- * 公式: min(base + count × perRebirth, max)
+ *
+ * 委托给 BalanceCalculator.calcRebirthMultiplier（权威版本），
+ * 使用 REBIRTH_MULTIPLIER 常量构建配置，保持向后兼容的单参数签名。
  */
 export function calcRebirthMultiplier(count: number): number {
-  const raw = REBIRTH_MULTIPLIER.base + count * REBIRTH_MULTIPLIER.perRebirth;
-  return Math.min(raw, REBIRTH_MULTIPLIER.max);
+  const config: RebirthBalanceConfig = {
+    maxRebirthCount: 100,
+    baseMultiplier: REBIRTH_MULTIPLIER.base,
+    perRebirthIncrement: REBIRTH_MULTIPLIER.perRebirth,
+    maxMultiplier: REBIRTH_MULTIPLIER.max,
+    curveType: 'linear',
+    decayFactor: 1.0,
+  };
+  return calcRebirthMultiplierCore(count, config);
 }
 
 /** 创建初始转生状态 */

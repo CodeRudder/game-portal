@@ -12,10 +12,12 @@
 
 import {
   AllianceSystem,
+} from '../AllianceSystem';
+import {
+  ALLIANCE_LEVEL_CONFIGS,
   createDefaultAlliancePlayerState,
   createAllianceData,
-  ALLIANCE_LEVEL_CONFIGS,
-} from '../AllianceSystem';
+} from '../alliance-constants';
 import { ApplicationStatus, AllianceRole } from '../../../core/alliance/alliance.types';
 import type {
   AllianceData,

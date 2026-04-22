@@ -205,12 +205,12 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   return (
     <div className="tk-bs-overlay" data-testid="battle-scene">
       {/* 顶部信息栏 */}
-      <div className="tk-bs-top-bar">
-        <div className="tk-bs-stage-info">
+      <div className="tk-bs-top-bar" data-testid="battle-scene-top-bar">
+        <div className="tk-bs-stage-info" data-testid="battle-scene-stage-info">
           <span className="tk-bs-stage-type">{STAGE_TYPE_LABELS[stage.type]}</span>
           <span className="tk-bs-stage-name">{stage.name}</span>
         </div>
-        <div className="tk-bs-turn-display">
+        <div className="tk-bs-turn-display" data-testid="battle-scene-turn">
           回合 {battleState.currentTurn}/{battleState.maxTurns}
         </div>
         <div className="tk-bs-controls">
@@ -222,7 +222,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
       </div>
 
       {/* 战场主区域 */}
-      <div className={`tk-bs-battlefield ${critShake ? 'tk-bs-battlefield--crit-shake' : ''}`}>
+      <div className={`tk-bs-battlefield ${critShake ? 'tk-bs-battlefield--crit-shake' : ''}`} data-testid="battle-scene-battlefield">
         {renderSide(battleState.allyTeam, 'ally')}
         <div className="tk-bs-vs-divider">VS</div>
         {renderSide(battleState.enemyTeam, 'enemy')}

@@ -135,23 +135,25 @@ function ResourceItem({
   return (
     <div
       className={`tk-res-item ${warningLevel ? `tk-res-item--${warningLevel}` : ''} ${pulsing ? 'tk-res-item--pulse' : ''}`}
+      data-testid={`resource-bar-item-${type}`}
       style={pulsing ? { '--tk-pulse-color': pulseColor } as React.CSSProperties : undefined}
       title={`${label} ${formatAmount(value)}${overflowInfo ? `（溢出 ${formatAmount(overflowInfo.wasted)}）` : ''}`}
     >
       {/* 图标 */}
-      <span className="tk-res-icon">{icon}</span>
+      <span className="tk-res-icon" data-testid={`resource-bar-${type}-icon`}>{icon}</span>
 
       {/* 数值区 */}
       <div className="tk-res-info">
         <div className="tk-res-value-row">
           <span
             className={`tk-res-value ${warningLevel ? `tk-res-value--${warningLevel}` : ''}`}
+            data-testid={`resource-bar-${type}-value`}
             style={{ color: warningLevel ? undefined : color }}
           >
             {formatAmount(value)}
           </span>
           {hasCap && (
-            <span className="tk-res-cap">
+            <span className="tk-res-cap" data-testid={`resource-bar-${type}-cap`}>
               /{formatAmount(cap!)}
             </span>
           )}
@@ -243,9 +245,9 @@ export default function ResourceBar({ resources, rates, caps, pendingGains, buil
   }, [resources, caps, pendingGains]);
 
   return (
-    <div className="tk-resource-bar" role="status" aria-label="资源栏">
+    <div className="tk-resource-bar" data-testid="resource-bar" role="status" aria-label="资源栏">
       {/* 游戏标题 */}
-      <div className="tk-res-title">三国霸业</div>
+      <div className="tk-res-title" data-testid="resource-bar-title">三国霸业</div>
 
       {/* 资源列表 */}
       {RESOURCE_ORDER.map(type => (
@@ -261,7 +263,7 @@ export default function ResourceBar({ resources, rates, caps, pendingGains, buil
 
       {/* RES-CAP-02: 全局溢出警告横幅 */}
       {overflowWarnings.length > 0 && (
-        <div className="tk-res-overflow-banner" role="alert">
+        <div className="tk-res-overflow-banner" data-testid="resource-bar-overflow-banner" role="alert">
           ⚠️ {overflowWarnings.map(w => `${w.label}溢出${formatAmount(w.wasted)}`).join('、')}，升级仓库可避免损失
         </div>
       )}
@@ -269,6 +271,7 @@ export default function ResourceBar({ resources, rates, caps, pendingGains, buil
       {/* 收支详情按钮 */}
       <button
         className="tk-res-detail-btn"
+        data-testid="resource-bar-detail-btn"
         onClick={() => setShowDetails(true)}
         aria-label="收支详情"
         title="收支详情"
@@ -278,11 +281,11 @@ export default function ResourceBar({ resources, rates, caps, pendingGains, buil
 
       {/* 收支详情弹窗 */}
       {showDetails && (
-        <div className="tk-res-detail-overlay" onClick={() => setShowDetails(false)}>
-          <div className="tk-res-detail-modal" onClick={e => e.stopPropagation()}>
+        <div className="tk-res-detail-overlay" data-testid="resource-bar-detail-overlay" onClick={() => setShowDetails(false)}>
+          <div className="tk-res-detail-modal" data-testid="resource-bar-detail-modal" onClick={e => e.stopPropagation()}>
             <div className="tk-res-detail-header">
               <h3>资源收支</h3>
-              <button className="tk-res-detail-close" onClick={() => setShowDetails(false)}>✕</button>
+              <button className="tk-res-detail-close" data-testid="resource-bar-detail-close" onClick={() => setShowDetails(false)}>✕</button>
             </div>
             <div className="tk-res-detail-body">
               {/* 产出列表 */}

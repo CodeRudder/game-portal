@@ -121,11 +121,12 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
 
   // ── 渲染 ──
   return (
-    <div className="tk-formation-panel">
+    <div className="tk-formation-panel" data-testid="formation-panel">
       <div className="tk-formation-header">
         <span className="tk-formation-title">⚔️ 编队管理</span>
         <button
           className="tk-formation-create-btn"
+          data-testid="formation-panel-create-btn"
           onClick={handleCreate}
           disabled={formations.length >= MAX_FORMATIONS}
         >
@@ -150,6 +151,7 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
               <div
                 key={f.id}
                 className={`tk-formation-card ${isActive ? 'tk-formation-card--active' : ''}`}
+                data-testid={`formation-panel-card-${f.id}`}
               >
                 <div className="tk-formation-card-header">
                   {isRenaming ? (
@@ -175,6 +177,7 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
                     {!isActive && (
                       <button
                         className="tk-formation-activate-btn"
+                        data-testid={`formation-panel-activate-btn-${f.id}`}
                         onClick={() => handleActivate(f.id)}
                       >
                         激活

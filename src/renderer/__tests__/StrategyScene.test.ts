@@ -12,25 +12,27 @@
  * - 边界情况
  */
 
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 // ---------------------------------------------------------------------------
 // Mock PixiJS v8
 // ---------------------------------------------------------------------------
 
-jest.mock('pixi.js', () => {
+vi.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0;
     y = 0;
     visible = true;
-    scale = { set: jest.fn(), x: 1, y: 1 };
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    scale = { set: vi.fn(), x: 1, y: 1 };
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
     children: any[] = [];
     parent: any = null;
-    emit = jest.fn();
-    on = jest.fn().mockReturnThis();
-    off = jest.fn();
-    once = jest.fn();
-    removeAllListeners = jest.fn();
+    emit = vi.fn();
+    on = vi.fn().mockReturnThis();
+    off = vi.fn();
+    once = vi.fn();
+    removeAllListeners = vi.fn();
     eventMode: string = 'passive';
     cursor: string = 'default';
 
@@ -66,12 +68,12 @@ jest.mock('pixi.js', () => {
     y = 0;
     visible = true;
     parent: any = null;
-    position = { set: jest.fn() };
-    emit = jest.fn();
-    on = jest.fn();
-    off = jest.fn();
-    once = jest.fn();
-    removeAllListeners = jest.fn();
+    position = { set: vi.fn() };
+    emit = vi.fn();
+    on = vi.fn();
+    off = vi.fn();
+    once = vi.fn();
+    removeAllListeners = vi.fn();
 
     clear() { return this; }
     circle(_x: number, _y: number, _r: number) { return this; }
@@ -91,20 +93,20 @@ jest.mock('pixi.js', () => {
   class MockText {
     label = '';
     text: string;
-    anchor = { set: jest.fn(), x: 0, y: 0 };
+    anchor = { set: vi.fn(), x: 0, y: 0 };
     x = 0;
     y = 0;
     width = 50;
     height = 14;
     visible = true;
     parent: any = null;
-    position = { set: jest.fn() };
+    position = { set: vi.fn() };
     style: any;
-    emit = jest.fn();
-    on = jest.fn();
-    off = jest.fn();
-    once = jest.fn();
-    removeAllListeners = jest.fn();
+    emit = vi.fn();
+    on = vi.fn();
+    off = vi.fn();
+    once = vi.fn();
+    removeAllListeners = vi.fn();
 
     constructor(opts?: { text?: string; style?: any }) {
       this.text = opts?.text ?? '';
@@ -473,43 +475,43 @@ describe('StrategyScene', () => {
     });
 
     it('should register and call event listeners', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('upgradeClick', callback);
       // Simulate event by updating state with upgrades
       // The scene internally emits events on user interactions
     });
 
     it('should unregister event listeners', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('upgradeClick', callback);
       scene.off('upgradeClick', callback);
       // After off, callback should not be called
     });
 
     it('should support multiple listeners for same event', () => {
-      const cb1 = jest.fn();
-      const cb2 = jest.fn();
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
       scene.on('upgradeClick', cb1);
       scene.on('upgradeClick', cb2);
     });
 
     it('should handle territoryClick event', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('territoryClick', callback);
     });
 
     it('should handle unitClick event', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('unitClick', callback);
     });
 
     it('should handle techClick event', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('techClick', callback);
     });
 
     it('should handle diplomacyClick event', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('diplomacyClick', callback);
     });
   });

@@ -10,19 +10,11 @@
 import type { EquipmentInstance, DecomposeResult, BatchDecomposeResult } from '../../core/equipment/equipment.types';
 import type { CodexEntry } from '../../core/equipment/equipment-v10.types';
 import type { EquipmentBagManager } from './EquipmentBagManager';
-
-/** 分解基础铜钱 */
-const DECOMPOSE_COPPER_BASE: Record<string, number> = {
-  white: 100, green: 300, blue: 800, purple: 2000, orange: 5000, red: 12000,
-};
-
-/** 分解基础强化石 */
-const DECOMPOSE_STONE_BASE: Record<string, number> = {
-  white: 1, green: 3, blue: 8, purple: 20, orange: 50, red: 120,
-};
-
-/** 强化等级额外奖励系数 */
-const DECOMPOSE_ENHANCE_BONUS = 0.1;
+import {
+  DECOMPOSE_COPPER_BASE,
+  DECOMPOSE_STONE_BASE,
+  DECOMPOSE_ENHANCE_BONUS,
+} from '../../core/equipment/equipment-config';
 
 /**
  * 装备分解与图鉴管理器
