@@ -1,0 +1,100 @@
+{
+  "passed": [
+    "游戏主界面加载成功",
+    "主界面数据完整性检查通过",
+    "CampaignTab容器(.tk-campaign-tab)存在",
+    "章节选择器(.tk-chapter-selector)存在",
+    "章节标题显示: \"第1章: 黄巾之乱\"",
+    "章节切换箭头存在",
+    "关卡地图区域(.tk-campaign-map)存在",
+    "关卡节点数量: 8",
+    "关卡状态分类正常 (4种状态)",
+    "底部进度条(.tk-campaign-progress)存在",
+    "切换到下一章: \"第2章: 讨伐董卓\"",
+    "下一章关卡节点: 8",
+    "切回第一章成功",
+    "关卡名称: \"黄巾前哨\"",
+    "关卡类型标签存在",
+    "推荐战力: \"战力 100\"",
+    "战前布阵弹窗已打开",
+    "战力对比区域存在",
+    "我方战力: 0",
+    "敌方战力: 100",
+    "我方编队槽位: 6",
+    "一键布阵点击成功",
+    "应用根节点存在",
+    "无ISubsystem相关控制台错误",
+    "移动端CampaignTab存在",
+    "移动端关卡节点: 8",
+    "移动端无水平溢出 (scrollWidth=375)",
+    "移动端数据完整性检查通过",
+    "移动端无控制台错误",
+    "PC端无控制台错误"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "星级元素",
+      "detail": "未找到.tk-stage-star（初始无已通关关卡）"
+    },
+    {
+      "name": "出征按钮",
+      "detail": "被禁用（可能无武将在编队中）"
+    },
+    {
+      "name": "扫荡按钮",
+      "detail": "未找到扫荡按钮（可能没有三星通关关卡）"
+    }
+  ],
+  "screenshots": [
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/screenshots/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v3-evolution/v3-evo-00-main.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/screenshots/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v3-evolution/v3-evo-01-campaign-tab.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/screenshots/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v3-evolution/v3-evo-02-chapter-next.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/screenshots/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v3-evolution/v3-evo-03a-formation-modal.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/screenshots/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v3-evolution/v3-evo-03b-auto-formation.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/screenshots/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v3-evolution/v3-evo-08-campaign-mobile.png"
+  ],
+  "consoleErrors": [],
+  "sections": {
+    "init": {
+      "pass": 2,
+      "fail": 0,
+      "warn": 0
+    },
+    "campaign-map": {
+      "pass": 8,
+      "fail": 0,
+      "warn": 1
+    },
+    "chapters": {
+      "pass": 6,
+      "fail": 0,
+      "warn": 0
+    },
+    "battle": {
+      "pass": 6,
+      "fail": 0,
+      "warn": 1
+    },
+    "sweep": {
+      "pass": 0,
+      "fail": 0,
+      "warn": 1
+    },
+    "subsystem": {
+      "pass": 2,
+      "fail": 0,
+      "warn": 0
+    },
+    "mobile": {
+      "pass": 5,
+      "fail": 0,
+      "warn": 0
+    },
+    "console": {
+      "pass": 1,
+      "fail": 0,
+      "warn": 0
+    }
+  }
+}

@@ -22,6 +22,7 @@ import {
   TroopType,
 } from './battle.types';
 import { BATTLE_CONFIG } from './battle-config';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 兵种克制关系表
@@ -196,7 +197,34 @@ export function getShieldAmount(unit: BattleUnit): number {
  * console.log(result.damage); // 最终伤害值
  * ```
  */
-export class DamageCalculator implements IDamageCalculator {
+export class DamageCalculator implements IDamageCalculator, ISubsystem {
+  // ── ISubsystem 接口 ──
+  readonly name = 'damageCalculator' as const;
+  private sysDeps: ISystemDeps | null = null;
+
+  // ─────────────────────────────────────────
+  // ISubsystem 适配层
+  // ─────────────────────────────────────────
+
+  /** ISubsystem.init — 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.sysDeps = deps;
+  }
+
+  /** ISubsystem.update — 伤害计算器无状态，不需要每帧更新 */
+  update(_dt: number): void {
+    // 伤害计算器是纯函数式调用，不需要每帧更新
+  }
+
+  /** ISubsystem.getState — 返回计算器状态 */
+  getState(): { type: string } {
+    return { type: 'DamageCalculator' };
+  }
+
+  /** ISubsystem.reset — 重置计算器（无状态，空操作） */
+  reset(): void {
+    // 伤害计算器无持久状态，无需重置
+  }
   /**
    * 计算伤害
    *

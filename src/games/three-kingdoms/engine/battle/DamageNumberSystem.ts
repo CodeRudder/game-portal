@@ -24,6 +24,7 @@ import type {
   DamageNumber,
   DamageNumberConfig,
 } from './DamageNumberConfig';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // Re-export for backward compatibility
 export { DamageNumberType, TrajectoryType } from './DamageNumberConfig';
@@ -39,7 +40,11 @@ export type { TrajectoryConfig, DamageNumber, MergedDamageNumber, DamageNumberCo
  * 管理战斗中所有飘字数字的生成、合并和生命周期。
  * 纯逻辑层，输出数据供渲染层使用。
  */
-export class DamageNumberSystem {
+export class DamageNumberSystem implements ISubsystem {
+  // ── ISubsystem 接口 ──
+  readonly name = 'damageNumberSystem' as const;
+  private sysDeps: ISystemDeps | null = null;
+
   /** 配置 */
   private config: DamageNumberConfig;
 
@@ -61,6 +66,26 @@ export class DamageNumberSystem {
     this.idCounter = 0;
     this.resolvedTrajectories = this.resolveTrajectories();
     this.resolvedColors = this.resolveColors();
+  }
+
+  // ─────────────────────────────────────────
+  // ISubsystem 适配层
+  // ─────────────────────────────────────────
+
+  /** ISubsystem.init — 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.sysDeps = deps;
+  }
+
+  /** ISubsystem.getState — 返回数字系统状态快照 */
+  getState(): { activeCount: number } {
+    return { activeCount: this.activeNumbers.length };
+  }
+
+  /** ISubsystem.reset — 重置数字系统 */
+  reset(): void {
+    this.activeNumbers = [];
+    this.idCounter = 0;
   }
 
   // ─────────────────────────────────────────

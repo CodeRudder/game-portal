@@ -38,6 +38,7 @@ import type {
   MobileLayoutConfig,
   ScreenClass,
 } from './battle-effect-presets';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 1. 武技特效数据
@@ -104,7 +105,11 @@ let effectIdCounter = 0;
  * 管理战斗中的所有视觉效果数据：武技特效、伤害数字动画、手机端布局。
  * 纯数据层，输出结构化数据供渲染层消费。
  */
-export class BattleEffectManager {
+export class BattleEffectManager implements ISubsystem {
+  // ── ISubsystem 接口 ──
+  readonly name = 'battleEffectManager' as const;
+  private sysDeps: ISystemDeps | null = null;
+
   private readonly damageNumbers: DamageNumberSystem;
   private battleSpeed: BattleSpeed;
   private layoutConfig: MobileLayoutConfig;
@@ -117,6 +122,30 @@ export class BattleEffectManager {
     this.layoutConfig = { ...SCREEN_PRESETS.medium, screenClass: 'medium' };
     this.activeEffects = [];
     this.damageAnimations = [];
+  }
+
+  // ─────────────────────────────────────────
+  // ISubsystem 适配层
+  // ─────────────────────────────────────────
+
+  /** ISubsystem.init — 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.sysDeps = deps;
+  }
+
+  /** ISubsystem.getState — 返回特效管理器状态快照 */
+  getState(): { activeEffectCount: number; battleSpeed: BattleSpeed } {
+    return {
+      activeEffectCount: this.activeEffects.length,
+      battleSpeed: this.battleSpeed,
+    };
+  }
+
+  /** ISubsystem.reset — 重置特效管理器状态 */
+  reset(): void {
+    this.activeEffects = [];
+    this.damageAnimations = [];
+    this.damageNumbers.clear();
   }
 
   // ─────────────────────────────────────────

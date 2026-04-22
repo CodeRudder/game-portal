@@ -82,3 +82,7 @@ CSS文件超限时，优先识别并提取独立功能块（如chart样式、ani
 - game-actions.cjs: 可复用UI测试操作库（13个函数）
 - e2e/v1-ui-test.cjs: v1.0 UI测试脚本
 - e2e/v1-evolution-ui-test.cjs: v1.0 进化迭代UI测试脚本（30项测试）
+
+### EVO-023: 废弃文件即时清理（来自v3.0进化R1）
+技术审查发现废弃文件(bak/目录)时立即清理，不要累积到后续版本。
+清理后运行 pnpm run build 确认无引用断裂。

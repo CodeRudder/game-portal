@@ -20,6 +20,7 @@ import type {
 } from './battle.types';
 import { BattlePhase } from './battle.types';
 import { BATTLE_CONFIG } from './battle-config';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 工具函数
@@ -99,11 +100,39 @@ export function findUnit(state: BattleState, unitId: string): BattleUnit | undef
  *
  * 由 BattleEngine 在每个回合中调用。
  */
-export class BattleTurnExecutor {
+export class BattleTurnExecutor implements ISubsystem {
+  // ── ISubsystem 接口 ──
+  readonly name = 'battleTurnExecutor' as const;
+  private sysDeps: ISystemDeps | null = null;
+
   private readonly damageCalculator: IDamageCalculator;
 
   constructor(damageCalculator: IDamageCalculator) {
     this.damageCalculator = damageCalculator;
+  }
+
+  // ─────────────────────────────────────────
+  // ISubsystem 适配层
+  // ─────────────────────────────────────────
+
+  /** ISubsystem.init — 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.sysDeps = deps;
+  }
+
+  /** ISubsystem.update — 回合执行器按需调用，不需要每帧更新 */
+  update(_dt: number): void {
+    // 回合执行器由 BattleEngine 驱动，不需要每帧更新
+  }
+
+  /** ISubsystem.getState — 返回执行器状态快照 */
+  getState(): { hasCalculator: boolean } {
+    return { hasCalculator: this.damageCalculator !== null };
+  }
+
+  /** ISubsystem.reset — 重置执行器状态 */
+  reset(): void {
+    // 回合执行器无持久状态，无需重置
   }
 
   /**
