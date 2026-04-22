@@ -1,25 +1,21 @@
 /**
  * 资源域 — 纯计算逻辑
  *
- * 职责：无状态的计算函数（加成、上限查表、离线收益、容量警告、工具方法）
+ * 职责：无状态的计算函数（加成、上限查表、容量警告）
+ * 离线收益相关函数已迁移至 OfflineEarningsCalculator.ts
  * 规则：不持有任何状态，所有数据通过参数传入，可引用 resource-config 和 resource.types
  */
 
 import type {
   ResourceType,
   Resources,
-  ProductionRate,
   Bonuses,
   CapWarning,
   CapWarningLevel,
-  OfflineEarnings,
-  OfflineTierBreakdown,
 } from './resource.types';
 import { RESOURCE_TYPES } from './resource.types';
 import {
   CAP_WARNING_THRESHOLDS,
-  OFFLINE_TIERS,
-  OFFLINE_MAX_SECONDS,
   GRANARY_CAPACITY_TABLE,
   BARRACKS_CAPACITY_TABLE,
 } from './resource-config';
@@ -158,115 +154,4 @@ export function calculateCapWarning(
   return { resourceType: type, level, current, cap, percentage };
 }
 
-// ─────────────────────────────────────────────
-// 5. 离线收益计算
-// ─────────────────────────────────────────────
 
-/**
- * 计算离线收益
- * @param offlineSeconds 离线秒数
- * @param productionRates 当前产出速率
- * @param bonuses 加成集合
- * @returns 离线收益详情
- */
-export function calculateOfflineEarnings(
-  offlineSeconds: number,
-  productionRates: Readonly<ProductionRate>,
-  bonuses?: Bonuses,
-): OfflineEarnings {
-  const capped = offlineSeconds > OFFLINE_MAX_SECONDS;
-  const effectiveSeconds = Math.min(offlineSeconds, OFFLINE_MAX_SECONDS);
-  const multiplier = calculateBonusMultiplier(bonuses);
-
-  const earned: Resources = zeroResources();
-  const tierBreakdown: OfflineTierBreakdown[] = [];
-
-  for (const tier of OFFLINE_TIERS) {
-    if (effectiveSeconds <= tier.startSeconds) break;
-
-    const tierSeconds = Math.min(effectiveSeconds, tier.endSeconds) - tier.startSeconds;
-    if (tierSeconds <= 0) continue;
-
-    const tierEarned = zeroResources();
-    for (const type of RESOURCE_TYPES) {
-      const gain = productionRates[type] * tierSeconds * tier.efficiency * multiplier;
-      tierEarned[type] = gain;
-      earned[type] += gain;
-    }
-
-    tierBreakdown.push({ tier, seconds: tierSeconds, earned: tierEarned });
-  }
-
-  return {
-    offlineSeconds,
-    earned,
-    isCapped: capped,
-    tierBreakdown,
-  };
-}
-
-// ─────────────────────────────────────────────
-// 6. 静态工具方法（无状态，从 ResourceSystem 提取）
-// ─────────────────────────────────────────────
-
-/**
- * 格式化离线时间为可读字符串
- *
- * 将秒数转换为人类友好的时间描述，如 "2小时30分钟"。
- * 自动选择合适的单位组合。
- *
- * @param seconds - 离线秒数
- * @returns 格式化后的时间字符串
- *
- * @example
- * ```ts
- * formatOfflineTime(90);    // "1分钟"
- * formatOfflineTime(3661);  // "1小时1分钟"
- * formatOfflineTime(90000); // "1天1小时"
- * formatOfflineTime(0);     // "刚刚"
- * ```
- */
-export function formatOfflineTime(seconds: number): string {
-  if (seconds <= 0) return '刚刚';
-  if (seconds < 60) return `${Math.floor(seconds)}秒`;
-
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (days > 0) {
-    const remainHours = hours % 24;
-    return remainHours > 0 ? `${days}天${remainHours}小时` : `${days}天`;
-  }
-
-  if (hours > 0) {
-    const remainMinutes = minutes % 60;
-    return remainMinutes > 0 ? `${hours}小时${remainMinutes}分钟` : `${hours}小时`;
-  }
-
-  return `${minutes}分钟`;
-}
-
-/**
- * 获取指定离线时长的综合效率百分比
- *
- * 用于 UI 显示"当前效率"提示。
- *
- * @param offlineSeconds - 离线秒数
- * @returns 效率百分比（0~100）
- */
-export function getOfflineEfficiencyPercent(offlineSeconds: number): number {
-  if (offlineSeconds <= 0) return 100;
-
-  const clamped = Math.min(offlineSeconds, OFFLINE_MAX_SECONDS);
-  let totalEffective = 0;
-
-  for (const tier of OFFLINE_TIERS) {
-    if (clamped <= tier.startSeconds) break;
-    const tierSeconds = Math.min(clamped, tier.endSeconds) - tier.startSeconds;
-    if (tierSeconds <= 0) continue;
-    totalEffective += tierSeconds * tier.efficiency;
-  }
-
-  return Math.round((totalEffective / clamped) * 100);
-}
