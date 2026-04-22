@@ -98,12 +98,14 @@ export type {
   BreakthroughTier,
 } from './hero/star-up.types';
 export { MAX_STAR_LEVEL } from './hero/star-up-config';
+export { HeroStarSystem } from './hero/HeroStarSystem';
 export { HeroFormation, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './hero/HeroFormation';
 export type {
   FormationData,
   FormationState,
   FormationSaveData,
 } from './hero/HeroFormation';
+export { HeroLevelSystem } from './hero/HeroLevelSystem';
 export type {
   EnhancePreview,
   LevelUpResult,
@@ -120,6 +122,8 @@ export type {
   RecruitDeps,
   RecruitHistoryEntry,
 } from './hero/HeroRecruitSystem';
+
+export { BondSystem } from './bond/BondSystem';
 
 // 战斗域
 export { BattleEngine } from './battle/BattleEngine';

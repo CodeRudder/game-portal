@@ -8,6 +8,7 @@
  */
 
 import type { GeneralData } from './hero.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types/subsystem';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -67,7 +68,9 @@ const DEFAULT_NAMES: Record<string, string> = {
  * 管理编队的创建、编辑、切换和战力计算。
  * 编队中的武将ID需要通过 HeroSystem 校验。
  */
-export class HeroFormation {
+export class HeroFormation implements ISubsystem {
+  readonly name = 'heroFormation' as const;
+  private deps: ISystemDeps | null = null;
   private state: FormationState;
 
   constructor() {
@@ -76,6 +79,12 @@ export class HeroFormation {
       activeFormationId: null,
     };
   }
+
+  // ── ISubsystem ──
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 编队系统无需每帧更新 */ }
+  getState(): unknown { return this.serialize(); }
 
   // ── 编队管理 ──
 
