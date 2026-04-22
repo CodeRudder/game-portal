@@ -12,6 +12,7 @@
 - [Round 19: v19.0天下一统(上)](./evolution-r19.md) — 合并冲突修复+双目录重叠治理+引擎API冒烟测试+23/23 UI通过
 - [Round 20: v20.0天下一统(下)](./evolution-r20.md) — 全链路联调验证+数值平衡5维审查+性能优化三件套+17/17 UI通过+项目收官
 - [v11.0 R2: 群雄逐鹿进化迭代](../tech-reviews/v11.0-review-r2.md) — Play文档7流程+技术审查P0:0/P1:6/P2:5+3条经验教训
+- [Round 4复盘: ISubsystem+大文件拆分](./evolution-r4-round.md) — ISubsystem覆盖率100%(117/117)+8大文件拆分至0超限+EVO-046~048
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -194,4 +195,18 @@ CI流程或pre-commit hook中增加 `grep -rn "<<<<<<" src/` 检测。
 - VisualConsistencyChecker 检查配色/字体/间距的视觉一致性
 - AnimationAuditor 检查动画时长/缓动函数的规范合规性
 每个新增UI组件都应通过三类审查器的规则检查。
+
+### EVO-046: ISubsystem同步实现（来自Round 4复盘）
+ISubsystem接口必须在新System类创建时同步实现，覆盖率目标100%。
+技术审查中ISubsystem实现率应作为必检项。
+检查方法: `grep -rn "implements ISubsystem" src/games/three-kingdoms/engine/`
+
+### EVO-047: 文件行数400行预警（来自Round 4复盘）
+文件行数预警线设为400行，超过400行时主动拆分，不再等到500行才被动处理。
+预警阈值: 400行 | 硬限制: 500行
+检查方法: `find src/ -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -20`
+
+### EVO-048: core层聚合导出模式（来自Round 4复盘）
+core层配置/模板文件按功能域拆分，主文件作为聚合导出(re-export)。
+范例: encounter-templates.ts按章节拆分4个子文件，主文件仅做聚合导出(139行)。
 
