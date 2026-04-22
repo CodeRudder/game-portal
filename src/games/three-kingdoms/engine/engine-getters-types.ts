@@ -60,6 +60,9 @@ import type { TradeSystem } from './trade/TradeSystem';
 import type { CaravanSystem } from './trade/CaravanSystem';
 import type { SettingsManager } from './settings/SettingsManager';
 import type { AccountSystem } from './settings/AccountSystem';
+import type { OfflineRewardSystem } from './offline/OfflineRewardSystem';
+import type { OfflineEstimateSystem } from './offline/OfflineEstimateSystem';
+import type { OfflineSnapshotSystem } from './offline/OfflineSnapshotSystem';
 import type { GeneralData } from './hero/hero.types';
 import type { RecruitType } from './hero/hero-recruit-config';
 import type { BattleResult } from './battle/battle.types';
@@ -167,4 +170,9 @@ export interface EngineGettersMixin {
   getCaravanSystem(): CaravanSystem;
   getSettingsManager(): SettingsManager;
   getAccountSystem(): AccountSystem;
+
+  // ── 离线收益子系统 getter ──
+  getOfflineRewardSystem(): OfflineRewardSystem;
+  getOfflineEstimateSystem(): OfflineEstimateSystem;
+  getOfflineSnapshotSystem(): OfflineSnapshotSystem;
 }

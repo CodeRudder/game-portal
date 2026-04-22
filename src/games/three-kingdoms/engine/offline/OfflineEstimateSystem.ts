@@ -171,4 +171,14 @@ export class OfflineEstimateSystem {
 
     return points;
   }
+
+  /**
+   * 重置系统状态
+   *
+   * OfflineEstimateSystem 是无状态的纯计算系统，
+   * reset 为空操作，满足 ISubsystem 接口规范。
+   */
+  reset(): void {
+    // 无状态，无需重置
+  }
 }

@@ -68,6 +68,9 @@ import type { EventUINotification } from './event/EventUINotification';
 import type { EventChainSystem } from './event/EventChainSystem';
 import type { EventLogSystem } from './event/EventLogSystem';
 import type { OfflineEventSystem } from './event/OfflineEventSystem';
+import type { OfflineRewardSystem } from './offline/OfflineRewardSystem';
+import type { OfflineEstimateSystem } from './offline/OfflineEstimateSystem';
+import type { OfflineSnapshotSystem } from './offline/OfflineSnapshotSystem';
 import type { GeneralData } from './hero/hero.types';
 import type { RecruitType } from './hero/hero-recruit-config';
 import type { BattleResult } from './battle/battle.types';
@@ -240,4 +243,10 @@ export function applyGetters(cls: any): void {
   p.getEventChainSystem = function(this: EngineAny): EventChainSystem { return this.eventSystems.chain; };
   p.getEventLogSystem = function(this: EngineAny): EventLogSystem { return this.eventSystems.log; };
   p.getOfflineEventSystem = function(this: EngineAny): OfflineEventSystem { return this.eventSystems.offline; };
+
+  // ── 离线收益子系统 getter (via offline 集合对象) ──
+
+  p.getOfflineRewardSystem = function(this: EngineAny): OfflineRewardSystem { return this.offline.offlineReward; };
+  p.getOfflineEstimateSystem = function(this: EngineAny): OfflineEstimateSystem { return this.offline.offlineEstimate; };
+  p.getOfflineSnapshotSystem = function(this: EngineAny): OfflineSnapshotSystem { return this.offline.offlineSnapshot; };
 }

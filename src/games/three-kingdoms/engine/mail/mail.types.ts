@@ -1,8 +1,12 @@
 /**
- * 邮件域 — 类型定义
+ * 邮件域 — 类型定义（单一数据源）
  *
  * v9.0 邮件系统全部类型
  * 规则：只有 interface/type/const，零逻辑
+ *
+ * 注意：此文件是邮件类型的唯一定义源，
+ * MailSystem.ts / MailTemplateSystem.ts / MailPersistence.ts
+ * 均从此文件导入类型，禁止重复定义。
  *
  * @module engine/mail/mail.types
  */
@@ -17,7 +21,8 @@ import type { Resources } from '../../shared/types';
 export type MailCategory =
   | 'system'       // 系统通知
   | 'reward'       // 奖励邮件
-  | 'combat'       // 战报
+  | 'battle'       // 战报（兼容旧数据）
+  | 'combat'       // 战报（新名称）
   | 'trade'        // 贸易通知
   | 'social'       // 社交消息
   | 'alliance';    // 联盟邮件
@@ -43,10 +48,10 @@ export type MailStatus = 'unread' | 'read_unclaimed' | 'read_claimed' | 'expired
 export interface MailAttachment {
   /** 附件ID */
   id: string;
-  /** 附件类型 */
-  type: 'resource' | 'item' | 'hero_fragment';
-  /** 附件内容 */
-  content: Resources | Record<string, number>;
+  /** 资源类型（如 'grain', 'gold' 等） */
+  resourceType: string;
+  /** 数量 */
+  amount: number;
   /** 是否已领取 */
   claimed: boolean;
 }
@@ -64,25 +69,37 @@ export interface MailData {
   /** 邮件标题 */
   title: string;
   /** 邮件正文 */
-  body: string;
+  content: string;
   /** 发送者 */
   sender: string;
   /** 发送时间戳 */
   sendTime: number;
-  /** 过期时间戳（0表示永不过期） */
-  expireTime: number;
+  /** 过期时间戳（null 表示永不过期） */
+  expireTime: number | null;
   /** 邮件状态 */
   status: MailStatus;
-  /** 优先级 */
-  priority: MailPriority;
+  /** 是否已读 */
+  isRead: boolean;
   /** 附件列表 */
   attachments: MailAttachment[];
-  /** 是否星标 */
-  starred: boolean;
 }
 
 // ─────────────────────────────────────────────
-// 4. 附件领取结果
+// 4. 邮件发送请求
+// ─────────────────────────────────────────────
+
+/** 邮件发送请求 */
+export interface MailSendRequest {
+  category: MailCategory;
+  title: string;
+  content: string;
+  sender: string;
+  attachments?: Array<{ resourceType: string; amount: number }>;
+  retainSeconds?: number | null;
+}
+
+// ─────────────────────────────────────────────
+// 5. 附件领取结果
 // ─────────────────────────────────────────────
 
 /** 单封附件领取结果 */
@@ -105,7 +122,7 @@ export interface BatchClaimResult {
 }
 
 // ─────────────────────────────────────────────
-// 5. 批量操作
+// 6. 批量操作
 // ─────────────────────────────────────────────
 
 /** 批量操作类型 */
@@ -118,8 +135,16 @@ export interface BatchActionResult {
   claimedResult?: BatchClaimResult;
 }
 
+/** 批量操作结果（MailSystem 兼容别名） */
+export interface BatchOperationResult {
+  count: number;
+  claimedResources: Record<string, number>;
+  successIds: string[];
+  failures: Array<{ id: string; reason: string }>;
+}
+
 // ─────────────────────────────────────────────
-// 6. 邮件模板
+// 7. 邮件模板
 // ─────────────────────────────────────────────
 
 /** 邮件模板定义 */
@@ -131,7 +156,7 @@ export interface MailTemplate {
   sender: string;
   priority: MailPriority;
   defaultExpireSeconds: number;
-  defaultAttachments?: Omit<MailAttachment, 'id' | 'claimed'>[];
+  defaultAttachments?: Array<{ resourceType: string; amount: number }>;
 }
 
 /** 邮件模板变量 */
@@ -140,36 +165,43 @@ export interface MailTemplateVars {
 }
 
 // ─────────────────────────────────────────────
-// 7. 邮件筛选
+// 8. 邮件筛选
 // ─────────────────────────────────────────────
 
 /** 邮件筛选条件 */
 export interface MailFilter {
-  category?: MailCategory;
+  category?: MailCategory | 'all';
   status?: MailStatus;
+  hasAttachment?: boolean;
   starredOnly?: boolean;
   hasAttachments?: boolean;
 }
 
 // ─────────────────────────────────────────────
-// 8. 存档数据
+// 9. 存档数据
 // ─────────────────────────────────────────────
 
 /** 邮件系统存档数据 */
 export interface MailSaveData {
   mails: MailData[];
-  lastCleanupTime: number;
+  nextId: number;
   version: number;
 }
 
 // ─────────────────────────────────────────────
-// 9. 常量
+// 10. 常量
 // ─────────────────────────────────────────────
 
 /** 邮件类别标签 */
-export const MAIL_CATEGORY_LABELS: Record<MailCategory, string> = {
-  system: '系统', reward: '奖励', combat: '战报',
-  trade: '贸易', social: '社交', alliance: '联盟',
+export const MAIL_CATEGORY_LABELS: Record<MailCategory | 'all', string> = {
+  all: '全部',
+  system: '系统',
+  reward: '奖励',
+  battle: '战斗',
+  combat: '战报',
+  trade: '贸易',
+  social: '社交',
+  alliance: '联盟',
 };
 
 /** 邮件状态标签 */
@@ -190,3 +222,6 @@ export const DEFAULT_MAIL_EXPIRE_DAYS = 30;
 
 /** 邮件系统存档版本 */
 export const MAIL_SAVE_VERSION = 1;
+
+/** 每页邮件数量 */
+export const MAILS_PER_PAGE = 20;

@@ -17,7 +17,7 @@ import type {
   MailCategory,
   MailData,
   MailSaveData,
-} from './MailSystem';
+} from './mail.types';
 
 // ─────────────────────────────────────────────
 // 常量

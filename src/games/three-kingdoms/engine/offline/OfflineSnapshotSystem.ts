@@ -366,6 +366,24 @@ export class OfflineSnapshotSystem {
     this.persistSaveData();
   }
 
+  /**
+   * 重置系统状态
+   *
+   * 清除快照并恢复默认存档数据，用于重新开始游戏。
+   */
+  reset(): void {
+    this.snapshot = null;
+    this.saveData = this.createDefaultSaveData();
+    if (this.storage) {
+      try {
+        this.storage.removeItem(SNAPSHOT_KEY);
+        this.storage.removeItem(SAVE_DATA_KEY);
+      } catch {
+        // 清除失败静默处理
+      }
+    }
+  }
+
   // ── 私有方法 ──
 
   private createDefaultSaveData(): OfflineSaveData {

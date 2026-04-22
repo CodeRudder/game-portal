@@ -22,70 +22,33 @@ import {
   persistToStorage,
   clearStorage,
 } from './MailPersistence';
+import type {
+  MailCategory,
+  MailStatus,
+  MailAttachment,
+  MailData,
+  MailSendRequest,
+  MailFilter,
+  BatchOperationResult,
+  MailSaveData,
+} from './mail.types';
+import {
+  MAIL_CATEGORY_LABELS as CATEGORY_LABELS,
+  MAIL_STATUS_LABELS as STATUS_LABELS,
+  MAILS_PER_PAGE,
+} from './mail.types';
 
-// ─────────────────────────────────────────────
-// 1. 类型定义
-// ─────────────────────────────────────────────
-
-/** 邮件分类 */
-export type MailCategory = 'system' | 'battle' | 'social' | 'reward';
-
-/** 邮件状态（四态） */
-export type MailStatus = 'unread' | 'read_unclaimed' | 'read_claimed' | 'expired';
-
-/** 附件 */
-export interface MailAttachment {
-  id: string;
-  resourceType: string;
-  amount: number;
-  claimed: boolean;
-}
-
-/** 邮件数据 */
-export interface MailData {
-  id: string;
-  category: MailCategory;
-  title: string;
-  content: string;
-  sender: string;
-  sendTime: number;
-  expireTime: number | null;
-  attachments: MailAttachment[];
-  status: MailStatus;
-  isRead: boolean;
-}
-
-/** 邮件发送请求 */
-export interface MailSendRequest {
-  category: MailCategory;
-  title: string;
-  content: string;
-  sender: string;
-  attachments?: Array<{ resourceType: string; amount: number }>;
-  retainSeconds?: number | null;
-}
-
-/** 邮件筛选条件 */
-export interface MailFilter {
-  category?: MailCategory | 'all';
-  status?: MailStatus;
-  hasAttachment?: boolean;
-}
-
-/** 批量操作结果 */
-export interface BatchOperationResult {
-  count: number;
-  claimedResources: Record<string, number>;
-  successIds: string[];
-  failures: Array<{ id: string; reason: string }>;
-}
-
-/** 邮件系统存档 */
-export interface MailSaveData {
-  mails: MailData[];
-  nextId: number;
-  version: number;
-}
+// Re-export types for backward compatibility
+export type {
+  MailCategory,
+  MailStatus,
+  MailAttachment,
+  MailData,
+  MailSendRequest,
+  MailFilter,
+  BatchOperationResult,
+  MailSaveData,
+} from './mail.types';
 
 // ─────────────────────────────────────────────
 // 2. 常量配置
@@ -100,25 +63,8 @@ const SYSTEM_RETAIN_SECONDS = 30 * 24 * 3600;
 /** 奖励邮件保留时长（14天） */
 const REWARD_RETAIN_SECONDS = 14 * 24 * 3600;
 
-/** 每页邮件数量 */
-export const MAILS_PER_PAGE = 20;
-
-/** 分类标签 */
-export const CATEGORY_LABELS: Record<MailCategory | 'all', string> = {
-  all: '全部',
-  system: '系统',
-  battle: '战斗',
-  social: '社交',
-  reward: '奖励',
-} as const;
-
-/** 状态标签 */
-export const STATUS_LABELS: Record<MailStatus, string> = {
-  unread: '未读',
-  read_unclaimed: '已读未领',
-  read_claimed: '已读已领',
-  expired: '已过期',
-} as const;
+// Re-export constants for backward compatibility
+export { CATEGORY_LABELS, STATUS_LABELS, MAILS_PER_PAGE };
 
 // ─────────────────────────────────────────────
 // 3. 邮件系统实现

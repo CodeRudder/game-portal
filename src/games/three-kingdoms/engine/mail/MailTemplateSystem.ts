@@ -160,28 +160,27 @@ export class MailTemplateSystem {
     const attachmentDefs = attachments ?? template.defaultAttachments ?? [];
     const mailAttachments: MailAttachment[] = attachmentDefs.map(att => ({
       id: `att_${++this.idCounter}`,
-      type: att.type,
-      content: att.content,
+      resourceType: att.resourceType,
+      amount: att.amount,
       claimed: false,
     }));
 
     const now = Date.now();
     const expireTime = template.defaultExpireSeconds > 0
       ? now + template.defaultExpireSeconds * 1000
-      : 0;
+      : null;
 
     return {
       id: `mail_${++this.idCounter}_${now}`,
       category: template.category,
       title,
-      body,
+      content: body,
       sender: template.sender,
       sendTime: now,
       expireTime,
       status: 'unread',
-      priority: template.priority,
+      isRead: false,
       attachments: mailAttachments,
-      starred: false,
     };
   }
 
@@ -201,7 +200,6 @@ export class MailTemplateSystem {
     body: string,
     sender: string,
     options?: {
-      priority?: MailPriority;
       expireSeconds?: number;
       attachments?: Omit<MailAttachment, 'id' | 'claimed'>[];
     },
@@ -210,8 +208,8 @@ export class MailTemplateSystem {
     const expireSeconds = options?.expireSeconds ?? DEFAULT_MAIL_EXPIRE_DAYS * 24 * 3600;
     const attachments: MailAttachment[] = (options?.attachments ?? []).map(att => ({
       id: `att_${++this.idCounter}`,
-      type: att.type,
-      content: att.content,
+      resourceType: att.resourceType,
+      amount: att.amount,
       claimed: false,
     }));
 
@@ -219,14 +217,13 @@ export class MailTemplateSystem {
       id: `mail_${++this.idCounter}_${now}`,
       category,
       title,
-      body,
+      content: body,
       sender,
       sendTime: now,
-      expireTime: expireSeconds > 0 ? now + expireSeconds * 1000 : 0,
+      expireTime: expireSeconds > 0 ? now + expireSeconds * 1000 : null,
       status: 'unread',
-      priority: options?.priority ?? 'normal',
+      isRead: false,
       attachments,
-      starred: false,
     };
   }
 
