@@ -125,3 +125,9 @@ E2E测试中搜索清空后必须重新获取DOM元素引用，旧引用会因Re
 4. reset() 中调用各子系统 reset()
 5. engine-getters.ts 中添加 getter
 6. exports门面导出（engine/index.ts 或拆分文件）
+
+### EVO-031: 不能跳过迭代进化流程的任何环节，特别是UI测试。
+反模式：第2轮进化v1版本功能时跳过UI测试。
+
+### EVO-032: 主界面不必要的动画效果，如资源增加的CSS脉冲动画。
+

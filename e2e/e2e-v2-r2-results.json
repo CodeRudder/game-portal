@@ -1,0 +1,79 @@
+{
+  "passed": [
+    {
+      "name": "页面加载无白屏",
+      "detail": "页面内容正常"
+    },
+    {
+      "name": "武将Tab可见",
+      "detail": "未找到武将Tab元素"
+    },
+    {
+      "name": "武将Tab可点击并激活",
+      "detail": "当前活跃Tab: 🦸武将"
+    },
+    {
+      "name": "招募按钮存在",
+      "detail": "未找到.tk-hero-recruit-btn"
+    },
+    {
+      "name": "招募弹窗可打开",
+      "detail": "招募弹窗未显示"
+    },
+    {
+      "name": "空状态引导可见",
+      "detail": "显示\"前往招募\"引导"
+    },
+    {
+      "name": "阵营筛选按钮存在",
+      "detail": "发现5个筛选按钮（蜀魏吴群+全部）"
+    },
+    {
+      "name": "排序下拉框存在",
+      "detail": "未找到排序选择器"
+    },
+    {
+      "name": "编队子Tab存在",
+      "detail": "未找到编队子Tab"
+    },
+    {
+      "name": "编队面板可见",
+      "detail": "编队面板未显示"
+    },
+    {
+      "name": "总战力显示",
+      "detail": "⚔️ 总战力 0"
+    },
+    {
+      "name": "无控制台错误",
+      "detail": "无错误"
+    }
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "name": "双池切换",
+      "detail": "未找到池子切换元素"
+    },
+    {
+      "name": "单抽/十连按钮",
+      "detail": "发现1个抽取按钮"
+    },
+    {
+      "name": "武将列表为空",
+      "detail": "显示空状态引导（正常：需先招募）"
+    },
+    {
+      "name": "编队槽位",
+      "detail": "未找到编队槽位"
+    }
+  ],
+  "screenshots": [
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v2-r2/01-page-loaded.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v2-r2/02-hero-tab.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v2-r2/03-recruit-modal.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v2-r2/04-hero-list.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v2-r2/05-formation-panel.png",
+    "/home/gongdewei/.deer-flow/threads/b1b0b907-8bd1-4869-bb96-682f9e50266e/user-data/workspace/game-portal/e2e/screenshots/v2-r2/07-final-state.png"
+  ]
+}
