@@ -19,6 +19,7 @@
 - [Round 9复盘: 全版本审查验证](./progress/evolution-progress-r9.md) — 20版本技术审查+EventTriggerSystem拆分(697→468行)+废弃代码清理+BattleEffectApplier ISubsystem补全
 - [Round 10复盘: P2消化+质量扫描](./progress/evolution-progress-r10.md) — social命名修复+StoryEventPlayer拆分(499→331)+exports死代码删除(-202行)+全局质量扫描验证+EVO-061~062
 - [Round 11复盘: data-testid全覆盖+死代码清理](./progress/evolution-progress-r11.md) — data-testid 100%覆盖(89/89)+LeaderboardSystem死代码清理(-348行)+EVO-063
+- [Round 12复盘: 预防性文件拆分](./progress/evolution-progress-r12.md) — ArenaSystem拆分(499→399)+settings预防性拆分(AnimationController 476→428+AccountSystem 466→429)+EVO-064
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -316,4 +317,14 @@ Round 2发现6对重叠系统，Round 3必须逐一治理：
 覆盖率目标: 100%。
 检查方法: `grep -rL "data-testid" src/ --include="*.tsx" | grep -v node_modules`
 范例: Round 11 补全21个组件，覆盖率从76.4%提升至100%(89/89)。
+
+### EVO-064: 预防性拆分阈值（来自Round 12复盘）
+引擎文件超过450行时触发预防性分析，超过480行时强制拆分。
+分析时优先提取纯函数/纯逻辑，不破坏类内聚性。
+拆分策略:
+1. 优先提取常量、工厂函数、纯辅助函数到 .helpers.ts 文件
+2. 优先提取配置/默认值到 -defaults.ts 文件
+3. 优先提取独立流程到独立模块（如 account-delete-flow.ts）
+检查方法: `find src/ -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -20`
+范例: Round 12 拆分 ArenaSystem(499→399)+AnimationController(476→428)+AccountSystem(466→429)。
 
