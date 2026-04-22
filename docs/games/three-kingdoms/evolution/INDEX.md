@@ -17,6 +17,7 @@
 - [Round 7复盘: P1修复+测试增强](./progress/evolution-progress-r7.md) — GameEventSimulator修复+calcRebirthMultiplier签名统一+data-testid补全6组件+三国测试24→0失败+EVO-056~058
 - [Round 8复盘: 测试基础设施升级](./progress/evolution-progress-r8.md) — Jest→Vitest迁移261文件2976处替换+data-testid补全22组件+三国6158测试全通过+EVO-059~060
 - [Round 9复盘: 全版本审查验证](./progress/evolution-progress-r9.md) — 20版本技术审查+EventTriggerSystem拆分(697→468行)+废弃代码清理+BattleEffectApplier ISubsystem补全
+- [Round 10复盘: P2消化+质量扫描](./progress/evolution-progress-r10.md) — social命名修复+StoryEventPlayer拆分(499→331)+exports死代码删除(-202行)+全局质量扫描验证+EVO-061~062
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -293,4 +294,18 @@ Round 2发现6对重叠系统，Round 3必须逐一治理：
 3. 全局回归: `pnpm vitest run` 确认无连锁破坏
 替换前建议在单个文件上试跑，确认替换模式无误后再批量执行。
 范例: Round 8 迁移 261 文件 2976 处替换，三国 6158 测试全部通过。
+
+### EVO-061: 命名一致性（来自Round 10复盘）
+以 Subsystem 结尾的类必须实现 ISubsystem 接口（含 init/reset 生命周期方法）。
+纯工具类（无状态、无生命周期）应使用 Helper 后缀，不得使用 Subsystem 命名。
+检查方法: `grep -rn "class.*Subsystem" src/ --include="*.ts" | grep -v "implements ISubsystem"`
+发现违规时立即重命名（Subsystem→Helper）并更新所有引用。
+范例: Round 10 将 FriendInteractionSubsystem/BorrowHeroSubsystem 重命名为 Helper。
+
+### EVO-062: 孤立文件定期清理（来自Round 10复盘）
+每轮进化末尾执行孤立文件扫描，识别并删除无引用文件：
+1. 扫描方法: 对非 index.ts 文件执行 `grep -rn "import.*{filename}" src/` 检查引用
+2. 零引用文件确认后删除，删除前运行 `pnpm run build` 验证
+3. 重点关注: exports-v*.ts 残留、bak/ 目录、废弃版本文件
+范例: Round 10 删除 exports-v9.ts(88行) + exports-v12.ts(114行) = 202行死代码。
 
