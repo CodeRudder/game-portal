@@ -30,6 +30,7 @@ import {
   OFFLINE_SAVE_VERSION,
   DEFAULT_WAREHOUSE_EXPANSIONS,
 } from './offline-config';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 1. 快照数据结构
@@ -112,7 +113,9 @@ const SAVE_DATA_KEY = 'three-kingdoms-offline-save';
  *
  * 管理下线快照的创建、存储、验证和过期清理
  */
-export class OfflineSnapshotSystem {
+export class OfflineSnapshotSystem implements ISubsystem {
+  readonly name = 'offlineSnapshot' as const;
+  private deps!: ISystemDeps;
   private snapshot: SystemSnapshot | null = null;
   private saveData: OfflineSaveData;
   private storage: Storage | null = null;
@@ -122,6 +125,12 @@ export class OfflineSnapshotSystem {
     this.saveData = this.createDefaultSaveData();
     this.loadSaveData();
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 预留 */ }
+  getState(): unknown { return this.snapshot; }
 
   // ── 快照创建 ──
 

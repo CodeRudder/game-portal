@@ -10,6 +10,7 @@
  * @module engine/pvp/ArenaSeasonSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   SeasonData,
   SeasonConfig,
@@ -67,11 +68,34 @@ const SEASON_REWARD_MAP = new Map<string, SeasonReward>(
  *
  * 管理赛季周期、结算、奖励
  */
-export class ArenaSeasonSystem {
+export class ArenaSeasonSystem implements ISubsystem {
+  readonly name = 'ArenaSeasonSystem';
+  private deps!: ISystemDeps;
   private config: SeasonConfig;
 
   constructor(config?: Partial<SeasonConfig>) {
     this.config = { ...DEFAULT_SEASON_CONFIG, ...config };
+  }
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void {
+    /* 预留：可在此处理赛季自动结算检测 */
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      config: this.config,
+      seasonDays: this.config.seasonDays,
+    };
+  }
+
+  reset(): void {
+    /* 赛季数据由外部管理，此处无内部状态需重置 */
   }
 
   // ── 赛季管理 ──────────────────────────────

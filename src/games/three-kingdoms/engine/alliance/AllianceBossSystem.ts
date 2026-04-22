@@ -12,6 +12,7 @@
  * @module engine/alliance/AllianceBossSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   AllianceBoss,
   AllianceBossConfig,
@@ -74,11 +75,33 @@ export function createBoss(allianceLevel: number, now: number): AllianceBoss {
  *
  * 管理Boss生成、挑战、伤害排行、奖励分配
  */
-export class AllianceBossSystem {
+export class AllianceBossSystem implements ISubsystem {
+  readonly name = 'AllianceBossSystem';
+  private deps!: ISystemDeps;
   private config: AllianceBossConfig;
 
   constructor(config?: Partial<AllianceBossConfig>) {
     this.config = { ...DEFAULT_BOSS_CONFIG, ...config };
+  }
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void {
+    /* 预留：可在此处理Boss自动刷新检测 */
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      config: this.config,
+    };
+  }
+
+  reset(): void {
+    /* Boss数据由外部管理，此处无内部状态需重置 */
   }
 
   // ── Boss管理 ──────────────────────────────

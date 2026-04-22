@@ -12,6 +12,7 @@
  * @module engine/expedition/ExpeditionRewardSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   ExpeditionReward,
   DropItem,
@@ -92,12 +93,39 @@ const DROP_TABLES: Record<string, DropTableEntry[]> = {
 // ExpeditionRewardSystem 类
 // ─────────────────────────────────────────────
 
-export class ExpeditionRewardSystem {
+export class ExpeditionRewardSystem implements ISubsystem {
+  // ─── ISubsystem 接口 ───────────────────────
+
+  readonly name = 'expeditionReward' as const;
+  private deps: ISystemDeps | null = null;
+
   /** 随机数生成器（可注入用于测试） */
   private rng: () => number;
 
   constructor(rng?: () => number) {
     this.rng = rng ?? Math.random;
+  }
+
+  // ─── ISubsystem 适配层 ─────────────────────
+
+  /** 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** 奖励系统无需帧更新 */
+  update(_dt: number): void {
+    // 奖励系统由事件驱动，无需帧更新
+  }
+
+  /** 获取系统状态快照 */
+  getState(): Record<string, unknown> {
+    return { name: this.name };
+  }
+
+  /** 重置系统状态 */
+  reset(): void {
+    // 奖励系统无持久状态，无需重置
   }
 
   /**

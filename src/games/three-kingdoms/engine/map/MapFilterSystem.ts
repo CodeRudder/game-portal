@@ -24,6 +24,7 @@ import type {
   RegionId,
   TerrainType,
 } from '../../core/map';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 地图筛选系统
@@ -44,7 +45,17 @@ import type {
  * });
  * ```
  */
-export class MapFilterSystem {
+export class MapFilterSystem implements ISubsystem {
+  readonly name = 'mapFilter' as const;
+  private deps!: ISystemDeps;
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 纯筛选系统，无帧更新逻辑 */ }
+  getState(): unknown { return { name: this.name }; }
+  reset(): void { /* 无状态，无需重置 */ }
+
   /**
    * 综合筛选
    *

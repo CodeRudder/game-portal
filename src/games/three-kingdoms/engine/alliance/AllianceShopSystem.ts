@@ -11,6 +11,7 @@
  * @module engine/alliance/AllianceShopSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   AllianceShopItem,
   AllianceShopConfig,
@@ -40,11 +41,33 @@ export const DEFAULT_ALLIANCE_SHOP_ITEMS: AllianceShopItem[] = [
  *
  * 管理公会币商店、等级解锁、限购
  */
-export class AllianceShopSystem {
+export class AllianceShopSystem implements ISubsystem {
+  readonly name = 'AllianceShopSystem';
+  private deps!: ISystemDeps;
   private shopItems: AllianceShopItem[];
 
   constructor(shopItems?: AllianceShopItem[]) {
     this.shopItems = shopItems ?? DEFAULT_ALLIANCE_SHOP_ITEMS.map(i => ({ ...i }));
+  }
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void {
+    /* 预留 */
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      shopItems: this.shopItems.map(i => ({ ...i })),
+    };
+  }
+
+  reset(): void {
+    this.resetShopWeekly();
   }
 
   // ── 商品查询 ──────────────────────────────

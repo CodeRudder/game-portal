@@ -27,6 +27,7 @@ import {
   UNBIND_COOLDOWN_MS,
   GUEST_EXPIRE_MS,
 } from './account.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // 重导出类型供外部使用
 export type {
@@ -65,7 +66,9 @@ export { DeleteFlowState } from './account.types';
  * account.registerDevice('dev1', 'iPhone 15');
  * ```
  */
-export class AccountSystem {
+export class AccountSystem implements ISubsystem {
+  readonly name = 'account' as const;
+  private deps!: ISystemDeps;
   private settings: AccountSettings | null = null;
   private deleteFlow: DeleteFlowData | null = null;
   private listeners: AccountChangeCallback[] = [];
@@ -80,6 +83,12 @@ export class AccountSystem {
           ? nowFn.nowFn
           : () => Date.now();
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 预留 */ }
+  getState(): unknown { return this.settings; }
 
   // ─────────────────────────────────────────
   // 初始化

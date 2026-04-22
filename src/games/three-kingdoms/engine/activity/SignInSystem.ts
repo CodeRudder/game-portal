@@ -11,6 +11,7 @@
  * @module engine/activity/SignInSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   SignInReward,
   SignInData,
@@ -99,7 +100,12 @@ function getWeekNumber(ts: number): number {
  *
  * 管理7天循环签到、补签、连续加成
  */
-export class SignInSystem {
+export class SignInSystem implements ISubsystem {
+  // ─── ISubsystem 接口 ───────────────────────
+
+  readonly name = 'signIn' as const;
+  private deps: ISystemDeps | null = null;
+
   private config: SignInConfig;
   private rewards: SignInReward[];
 
@@ -109,6 +115,33 @@ export class SignInSystem {
   ) {
     this.config = { ...DEFAULT_SIGN_IN_CONFIG, ...config };
     this.rewards = rewards ?? [...DEFAULT_SIGN_IN_REWARDS];
+  }
+
+  // ─── ISubsystem 适配层 ─────────────────────
+
+  /** 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** 签到系统无需帧更新 */
+  update(_dt: number): void {
+    // 签到系统由事件驱动，无需帧更新
+  }
+
+  /** 获取系统状态快照 */
+  getState(): Record<string, unknown> {
+    return {
+      name: this.name,
+      config: this.config,
+      rewardsCount: this.rewards.length,
+    };
+  }
+
+  /** 重置系统状态 */
+  reset(): void {
+    this.config = { ...DEFAULT_SIGN_IN_CONFIG };
+    this.rewards = [...DEFAULT_SIGN_IN_REWARDS];
   }
 
   // ── 签到操作 ──────────────────────────────

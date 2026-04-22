@@ -15,6 +15,7 @@
  * @module engine/expedition/ExpeditionBattleSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   ExpeditionBattleResult,
   FormationType,
@@ -70,7 +71,36 @@ export interface BattleTurnSnapshot {
 // ExpeditionBattleSystem 类
 // ─────────────────────────────────────────────
 
-export class ExpeditionBattleSystem {
+export class ExpeditionBattleSystem implements ISubsystem {
+  // ─── ISubsystem 接口 ───────────────────────
+
+  readonly name = 'expeditionBattle' as const;
+  private deps: ISystemDeps | null = null;
+
+  // ─── ISubsystem 适配层 ─────────────────────
+
+  /** 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** 战斗系统无需帧更新 */
+  update(_dt: number): void {
+    // 战斗系统由事件驱动，无需帧更新
+  }
+
+  /** 获取系统状态快照 */
+  getState(): Record<string, unknown> {
+    return { name: this.name };
+  }
+
+  /** 重置系统状态 */
+  reset(): void {
+    // 战斗系统无持久状态，无需重置
+  }
+
+  // ─── 战斗逻辑 ─────────────────────────────
+
   /**
    * 执行远征战斗
    *

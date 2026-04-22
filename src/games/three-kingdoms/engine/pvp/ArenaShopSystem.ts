@@ -10,6 +10,7 @@
  * @module engine/pvp/ArenaShopSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { ArenaShopItem, ArenaPlayerState } from '../../core/pvp/pvp.types';
 
 // ─────────────────────────────────────────────
@@ -52,12 +53,35 @@ export const ARENA_SHOP_SAVE_VERSION = 1;
  *
  * 管理竞技币兑换和物品限购
  */
-export class ArenaShopSystem {
+export class ArenaShopSystem implements ISubsystem {
+  readonly name = 'ArenaShopSystem';
+  private deps!: ISystemDeps;
+
   /** 商店物品列表 */
   private items: ArenaShopItem[];
 
   constructor(items?: ArenaShopItem[]) {
     this.items = (items ?? DEFAULT_ARENA_SHOP_ITEMS).map((item) => ({ ...item }));
+  }
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void {
+    /* 预留 */
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      items: this.serialize(),
+    };
+  }
+
+  reset(): void {
+    this.weeklyReset();
   }
 
   // ── 商品查询 ──────────────────────────────

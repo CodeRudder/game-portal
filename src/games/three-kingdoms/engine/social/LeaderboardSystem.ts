@@ -180,16 +180,26 @@ export function createDefaultLeaderboardState(): LeaderboardState {
   };
 }
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
+
 // ─────────────────────────────────────────────
 // LeaderboardSystem 类
 // ─────────────────────────────────────────────
 
-export class LeaderboardSystem {
+export class LeaderboardSystem implements ISubsystem {
+  readonly name = 'SocialLeaderboardSystem' as const;
+  private deps!: ISystemDeps;
   private state: LeaderboardState;
 
   constructor(initialState?: LeaderboardState) {
     this.state = initialState ?? createDefaultLeaderboardState();
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 预留 */ }
+  reset(): void { this.state = createDefaultLeaderboardState(); }
 
   // ─── 状态访问 ─────────────────────────────
 

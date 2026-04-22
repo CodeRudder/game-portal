@@ -18,6 +18,7 @@ import type {
 import {
   DEFAULT_MAIL_EXPIRE_DAYS,
 } from './mail.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 内置模板
@@ -91,7 +92,9 @@ const BUILTIN_TEMPLATES: MailTemplate[] = [
  * 管理邮件模板，支持变量插值和邮件生成。
  * 内置常用模板，支持自定义模板注册。
  */
-export class MailTemplateSystem {
+export class MailTemplateSystem implements ISubsystem {
+  readonly name = 'mailTemplate' as const;
+  private deps!: ISystemDeps;
 
   /** 已注册的模板映射 */
   private templates: Map<string, MailTemplate> = new Map();
@@ -105,6 +108,12 @@ export class MailTemplateSystem {
       this.templates.set(tpl.id, { ...tpl });
     }
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 纯模板系统，无帧更新逻辑 */ }
+  getState(): unknown { return { templates: Object.fromEntries(this.templates), idCounter: this.idCounter }; }
 
   /**
    * 注册自定义模板

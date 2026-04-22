@@ -7,6 +7,7 @@
  * @module engine/expedition/ExpeditionSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   ExpeditionRoute,
   ExpeditionRegion,
@@ -83,11 +84,35 @@ export function createDefaultExpeditionState(basePower: number = 1000): Expediti
 // ExpeditionSystem 类
 // ─────────────────────────────────────────────
 
-export class ExpeditionSystem {
+export class ExpeditionSystem implements ISubsystem {
+  // ─── ISubsystem 接口 ───────────────────────
+
+  readonly name = 'expedition' as const;
+  private deps: ISystemDeps | null = null;
+
+  // ─── 内部状态 ─────────────────────────────
+
   private state: ExpeditionState;
 
   constructor(initialState?: ExpeditionState) {
     this.state = initialState ?? createDefaultExpeditionState();
+  }
+
+  // ─── ISubsystem 适配层 ─────────────────────
+
+  /** 注入依赖（事件总线、配置注册表等） */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** ISubsystem.update — 远征系统由事件驱动，无需帧更新 */
+  update(_dt: number): void {
+    // 远征系统由事件驱动，无需帧更新
+  }
+
+  /** ISubsystem.reset — 重置远征状态到初始值 */
+  reset(): void {
+    this.state = createDefaultExpeditionState();
   }
 
   // ─── 状态访问 ─────────────────────────────

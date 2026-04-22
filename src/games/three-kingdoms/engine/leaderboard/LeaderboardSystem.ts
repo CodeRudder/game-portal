@@ -29,6 +29,7 @@ import {
   STANDARD_REWARD_TIERS,
   ARENA_REWARD_TIERS,
 } from '../../core/leaderboard/leaderboard.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -61,7 +62,9 @@ export interface RewardDistributionResult {
 // LeaderboardSystem 类
 // ─────────────────────────────────────────────
 
-export class LeaderboardSystem {
+export class LeaderboardSystem implements ISubsystem {
+  readonly name = 'ExpeditionLeaderboardSystem' as const;
+  private deps!: ISystemDeps;
   private state: LeaderboardState;
   private selfPlayerId: string;
 
@@ -69,6 +72,12 @@ export class LeaderboardSystem {
     this.selfPlayerId = selfPlayerId;
     this.state = this.createDefaultState();
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 预留 */ }
+  reset(): void { this.state = this.createDefaultState(); }
 
   // ─── 状态访问 ─────────────────────────────
 

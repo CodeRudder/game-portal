@@ -12,6 +12,7 @@
  * @module engine/pvp/ArenaSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   ArenaOpponent,
   ArenaPlayerState,
@@ -93,7 +94,9 @@ export function createDefaultArenaPlayerState(playerId: string = ''): ArenaPlaye
  *
  * 管理匹配、对手选择、刷新、挑战次数
  */
-export class ArenaSystem {
+export class ArenaSystem implements ISubsystem {
+  readonly name = 'ArenaSystem';
+  private deps!: ISystemDeps;
   private matchConfig: MatchConfig;
   private refreshConfig: RefreshConfig;
   private challengeConfig: ChallengeConfig;
@@ -109,6 +112,30 @@ export class ArenaSystem {
     this.matchConfig = { ...DEFAULT_MATCH_CONFIG, ...matchConfig };
     this.refreshConfig = { ...DEFAULT_REFRESH_CONFIG, ...refreshConfig };
     this.challengeConfig = { ...DEFAULT_CHALLENGE_CONFIG, ...challengeConfig };
+  }
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+    this.playerPool.clear();
+  }
+
+  update(_dt: number): void {
+    /* 预留：可在此处理匹配池自动刷新等定时逻辑 */
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      playerPoolSize: this.playerPool.size,
+      matchConfig: this.matchConfig,
+      refreshConfig: this.refreshConfig,
+      challengeConfig: this.challengeConfig,
+    };
+  }
+
+  reset(): void {
+    this.playerPool.clear();
   }
 
   // ── 匹配与对手选择 ──────────────────────────

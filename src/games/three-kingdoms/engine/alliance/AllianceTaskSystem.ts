@@ -10,6 +10,7 @@
  * @module engine/alliance/AllianceTaskSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   AllianceTaskDef,
   AllianceTaskInstance,
@@ -102,7 +103,9 @@ function createTaskInstance(def: AllianceTaskDef): AllianceTaskInstance {
  *
  * 管理每日联盟任务的生成、进度更新、完成奖励
  */
-export class AllianceTaskSystem {
+export class AllianceTaskSystem implements ISubsystem {
+  readonly name = 'AllianceTaskSystem';
+  private deps!: ISystemDeps;
   private config: AllianceTaskConfig;
   private taskPool: AllianceTaskDef[];
   private activeTasks: AllianceTaskInstance[];
@@ -113,6 +116,28 @@ export class AllianceTaskSystem {
   ) {
     this.config = { ...DEFAULT_TASK_CONFIG, ...config };
     this.taskPool = taskPool ?? [...ALLIANCE_TASK_POOL];
+    this.activeTasks = [];
+  }
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+    this.activeTasks = [];
+  }
+
+  update(_dt: number): void {
+    /* 预留 */
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      activeTasks: this.serializeTasks(),
+      config: this.config,
+    };
+  }
+
+  reset(): void {
     this.activeTasks = [];
   }
 

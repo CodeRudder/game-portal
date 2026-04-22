@@ -10,6 +10,7 @@
  * @module engine/pvp/RankingSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { ArenaOpponent } from '../../core/pvp/pvp.types';
 
 // ─────────────────────────────────────────────
@@ -82,7 +83,9 @@ export const RANKING_SAVE_VERSION = 1;
  *
  * 管理多维度排名计算和查询
  */
-export class RankingSystem {
+export class RankingSystem implements ISubsystem {
+  readonly name = 'PvpRankingSystem';
+  private deps!: ISystemDeps;
   private config: RankingConfig;
 
   /** 各维度排行榜缓存 */
@@ -91,6 +94,32 @@ export class RankingSystem {
   constructor(config?: Partial<RankingConfig>) {
     this.config = { ...DEFAULT_RANKING_CONFIG, ...config };
     // 初始化各维度排行榜
+    for (const dim of Object.values(RankingDimension)) {
+      this.rankings.set(dim, { entries: [], lastUpdateTime: 0 });
+    }
+  }
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+    for (const dim of Object.values(RankingDimension)) {
+      this.rankings.set(dim, { entries: [], lastUpdateTime: 0 });
+    }
+  }
+
+  update(_dt: number): void {
+    /* 预留：可在此处理排行榜自动刷新 */
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      rankings: this.serialize(),
+      config: this.config,
+    };
+  }
+
+  reset(): void {
     for (const dim of Object.values(RankingDimension)) {
       this.rankings.set(dim, { entries: [], lastUpdateTime: 0 });
     }

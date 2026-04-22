@@ -12,6 +12,7 @@
  * @module engine/activity/ActivitySystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   ActivityDef,
   ActivityInstance,
@@ -112,7 +113,13 @@ const seasonHelper = {
  *
  * 管理活动列表、任务、里程碑、离线进度、赛季主题
  */
-export class ActivitySystem {
+export class ActivitySystem implements ISubsystem {
+  // ─── ISubsystem 接口 ───────────────────────
+
+  /** 活动管理系统（区别于 quest/ActivitySystem 的活跃度系统 'activity'） */
+  readonly name = 'activityMgmt' as const;
+  private deps: ISystemDeps | null = null;
+
   private concurrencyConfig: ActivityConcurrencyConfig;
   private offlineEfficiency: OfflineEfficiencyConfig;
 
@@ -122,6 +129,33 @@ export class ActivitySystem {
   ) {
     this.concurrencyConfig = { ...DEFAULT_CONCURRENCY_CONFIG, ...concurrencyConfig };
     this.offlineEfficiency = { ...DEFAULT_OFFLINE_EFFICIENCY, ...offlineEfficiency };
+  }
+
+  // ─── ISubsystem 适配层 ─────────────────────
+
+  /** 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** 活动系统由事件驱动，无需帧更新 */
+  update(_dt: number): void {
+    // 活动系统由事件驱动，无需帧更新
+  }
+
+  /** 获取系统状态快照 */
+  getState(): Record<string, unknown> {
+    return {
+      name: this.name,
+      concurrencyConfig: this.concurrencyConfig,
+      offlineEfficiency: this.offlineEfficiency,
+    };
+  }
+
+  /** 重置系统状态 */
+  reset(): void {
+    this.concurrencyConfig = { ...DEFAULT_CONCURRENCY_CONFIG };
+    this.offlineEfficiency = { ...DEFAULT_OFFLINE_EFFICIENCY };
   }
 
   // ── 活动列表管理 ──────────────────────────

@@ -16,6 +16,7 @@
  * @module engine/activity/TimedActivitySystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   ActivityRankEntry,
   ActivityLeaderboardConfig,
@@ -134,7 +135,12 @@ export const FESTIVAL_TEMPLATES: FestivalActivityDef[] = [
  *
  * 管理限时活动流程、排行榜、节日框架、离线进度。
  */
-export class TimedActivitySystem {
+export class TimedActivitySystem implements ISubsystem {
+  // ─── ISubsystem 接口 ───────────────────────
+
+  readonly name = 'timedActivity' as const;
+  private deps: ISystemDeps | null = null;
+
   private leaderboardConfig: ActivityLeaderboardConfig;
   private offlineEfficiency: OfflineEfficiencyConfig;
   private flows: Map<string, TimedActivityFlow> = new Map();
@@ -146,6 +152,33 @@ export class TimedActivitySystem {
   ) {
     this.leaderboardConfig = { ...DEFAULT_LEADERBOARD_CONFIG, ...leaderboardConfig };
     this.offlineEfficiency = { ...DEFAULT_TIMED_OFFLINE_EFFICIENCY, ...offlineEfficiency };
+  }
+
+  // ─── ISubsystem 适配层 ─────────────────────
+
+  /** 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** 限时活动系统无需帧更新 */
+  update(_dt: number): void {
+    // 限时活动系统由事件驱动，无需帧更新
+  }
+
+  /** 获取系统状态快照 */
+  getState(): Record<string, unknown> {
+    return {
+      name: this.name,
+      flowsCount: this.flows.size,
+      leaderboardsCount: this.leaderboards.size,
+    };
+  }
+
+  /** 重置系统状态 */
+  reset(): void {
+    this.flows.clear();
+    this.leaderboards.clear();
   }
 
   // ─── #16 限时活动完整流程 ──────────────

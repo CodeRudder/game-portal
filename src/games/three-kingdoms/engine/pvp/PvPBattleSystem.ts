@@ -12,6 +12,7 @@
  * @module engine/pvp/PvPBattleSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   PvPBattleResult,
   PvPBattleConfig,
@@ -100,7 +101,9 @@ export const RANK_LEVEL_MAP = new Map<string, RankLevel>(
  *
  * 管理PvP战斗执行、积分变化、段位判定
  */
-export class PvPBattleSystem {
+export class PvPBattleSystem implements ISubsystem {
+  readonly name = 'PvPBattleSystem';
+  private deps!: ISystemDeps;
   private battleConfig: PvPBattleConfig;
   private scoreConfig: ScoreConfig;
 
@@ -110,6 +113,27 @@ export class PvPBattleSystem {
   ) {
     this.battleConfig = { ...DEFAULT_PVP_BATTLE_CONFIG, ...battleConfig };
     this.scoreConfig = { ...DEFAULT_SCORE_CONFIG, ...scoreConfig };
+  }
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void {
+    /* 预留：可在此处理回放自动清理等定时逻辑 */
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      battleConfig: this.battleConfig,
+      scoreConfig: this.scoreConfig,
+    };
+  }
+
+  reset(): void {
+    /* 配置类系统，无运行时状态需重置 */
   }
 
   // ── 积分计算 ──────────────────────────────

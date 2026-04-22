@@ -11,6 +11,7 @@
  * @module engine/pvp/DefenseFormationSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   DefenseFormation,
   DefenseLogEntry,
@@ -81,7 +82,28 @@ const MID_WIN_RATE_THRESHOLD = 0.5;
  *
  * 管理防守编队、AI策略、防守日志
  */
-export class DefenseFormationSystem {
+export class DefenseFormationSystem implements ISubsystem {
+  readonly name = 'DefenseFormationSystem';
+  private deps!: ISystemDeps;
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void {
+    /* 预留 */
+  }
+
+  getState(): Record<string, unknown> {
+    // DefenseFormationSystem 是无状态工具类，返回空状态
+    return {};
+  }
+
+  reset(): void {
+    /* 无内部状态，无需重置 */
+  }
   // ── 阵容管理 ──────────────────────────────
 
   /**

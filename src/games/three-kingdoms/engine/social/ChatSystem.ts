@@ -26,6 +26,7 @@ import type {
   SocialState,
 } from '../../core/social/social.types';
 import { ChatChannel as CC, MuteLevel as ML } from '../../core/social/social.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -76,7 +77,9 @@ function generateMessageId(): string {
  *
  * 管理多频道聊天、禁言、举报
  */
-export class ChatSystem {
+export class ChatSystem implements ISubsystem {
+  readonly name = 'chat' as const;
+  private deps!: ISystemDeps;
   private channelConfigs: Record<ChatChannel, ChannelConfig>;
 
   constructor(channelConfigs?: Partial<Record<ChatChannel, Partial<ChannelConfig>>>) {
@@ -87,6 +90,13 @@ export class ChatSystem {
       [CC.SYSTEM]: { ...DEFAULT_CHANNEL_CONFIGS[CC.SYSTEM], ...channelConfigs?.SYSTEM },
     };
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 预留 */ }
+  getState(): unknown { return { channelConfigs: this.channelConfigs }; }
+  reset(): void { /* 聊天系统无持久状态 */ }
 
   // ── 发送消息 ──────────────────────────────
 

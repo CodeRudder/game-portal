@@ -37,6 +37,7 @@ import {
   MAIL_STATUS_LABELS as STATUS_LABELS,
   MAILS_PER_PAGE,
 } from './mail.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // Re-export types for backward compatibility
 export type {
@@ -75,7 +76,9 @@ export { CATEGORY_LABELS, STATUS_LABELS, MAILS_PER_PAGE };
  *
  * 管理邮件的全生命周期：创建→阅读→领取→过期
  */
-export class MailSystem {
+export class MailSystem implements ISubsystem {
+  readonly name = 'mail' as const;
+  private deps!: ISystemDeps;
   private mails: Map<string, MailData> = new Map();
   private nextId: number = 1;
   private storage: Storage | null = null;
@@ -84,6 +87,12 @@ export class MailSystem {
     this.storage = storage ?? null;
     this.initFromStorage();
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 预留 */ }
+  getState(): unknown { return { mails: Object.fromEntries(this.mails), nextId: this.nextId }; }
 
   /** 从Storage初始化 */
   private initFromStorage(): void {

@@ -33,6 +33,7 @@ import {
 } from './offline-config';
 import { getBoostItemList, useBoostItem, simulateOfflineTrade } from './OfflineTradeAndBoost';
 import { zeroRes, cloneRes, addRes, mulRes } from './offline-utils';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 辅助函数（仅本模块使用）
@@ -56,7 +57,9 @@ function formatOfflineTime(seconds: number): string {
 /**
  * 离线收益聚合根 — v9.0 离线收益深化
  */
-export class OfflineRewardSystem {
+export class OfflineRewardSystem implements ISubsystem {
+  readonly name = 'offlineReward' as const;
+  private deps!: ISystemDeps;
   private boostInventory: Map<string, number> = new Map();
   private vipDoubleUsedToday = 0;
   private vipDoubleResetDate = '';
@@ -64,6 +67,12 @@ export class OfflineRewardSystem {
   private lastOfflineTime = 0;
   /** 防重复领取：当前离线奖励是否已领取 */
   private rewardClaimed = false;
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 预留 */ }
+  getState(): unknown { return { lastOfflineTime: this.lastOfflineTime, rewardClaimed: this.rewardClaimed }; }
 
   // ─────────────────────────────────────────────
   // 1. 6档衰减快照

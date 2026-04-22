@@ -30,6 +30,7 @@ import {
   CloudSyncState,
   DefaultNetworkDetector,
 } from './cloud-save.types';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // 重导出类型供外部使用
 export { CloudSyncState } from './cloud-save.types';
@@ -60,7 +61,9 @@ export type {
  * cloud.startAutoSync(() => engine.getGameState(), 'device-1');
  * ```
  */
-export class CloudSaveSystem {
+export class CloudSaveSystem implements ISubsystem {
+  readonly name = 'cloudSave' as const;
+  private deps!: ISystemDeps;
   private state: CloudSyncState = CloudSyncState.Idle;
   private lastSyncResult: CloudSyncResult | null = null;
   private config: AccountSettings | null = null;
@@ -80,6 +83,11 @@ export class CloudSaveSystem {
     this.networkDetector = deps?.networkDetector ?? new DefaultNetworkDetector();
     this.nowFn = deps?.nowFn ?? (() => Date.now());
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 预留 */ }
 
   // ─────────────────────────────────────────
   // 配置

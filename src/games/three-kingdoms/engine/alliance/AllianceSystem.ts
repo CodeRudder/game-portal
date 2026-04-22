@@ -12,6 +12,7 @@
  * @module engine/alliance/AllianceSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   AllianceData,
   AllianceRole,
@@ -47,11 +48,33 @@ export {
  *
  * 管理联盟CRUD、成员权限、等级福利
  */
-export class AllianceSystem {
+export class AllianceSystem implements ISubsystem {
+  readonly name = 'AllianceSystem';
+  private deps!: ISystemDeps;
   private createConfig: AllianceCreateConfig;
 
   constructor(createConfig?: Partial<AllianceCreateConfig>) {
     this.createConfig = { ...DEFAULT_CREATE_CONFIG, ...createConfig };
+  }
+
+  // ── ISubsystem 接口 ─────────────────────────
+
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  update(_dt: number): void {
+    /* 预留 */
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      createConfig: this.createConfig,
+    };
+  }
+
+  reset(): void {
+    /* 联盟数据由外部管理，此处无内部状态需重置 */
   }
 
   // ── 联盟创建与加入 ────────────────────────

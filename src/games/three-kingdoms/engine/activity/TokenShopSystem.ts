@@ -13,6 +13,7 @@
  * @module engine/activity/TokenShopSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   TokenShopItem,
   TokenShopConfig,
@@ -143,7 +144,12 @@ export const DEFAULT_SHOP_ITEMS: TokenShopItem[] = [
  *
  * 管理代币兑换、限购、刷新。
  */
-export class TokenShopSystem {
+export class TokenShopSystem implements ISubsystem {
+  // ─── ISubsystem 接口 ───────────────────────
+
+  readonly name = 'tokenShop' as const;
+  private deps: ISystemDeps | null = null;
+
   private config: TokenShopConfig;
   private items: Map<string, TokenShopItem> = new Map();
   private tokenBalance: number = 0;
@@ -159,6 +165,36 @@ export class TokenShopSystem {
     // 加载商品
     const items = initialItems ?? DEFAULT_SHOP_ITEMS;
     for (const item of items) {
+      this.items.set(item.id, { ...item });
+    }
+  }
+
+  // ─── ISubsystem 适配层 ─────────────────────
+
+  /** 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** 商店系统无需帧更新 */
+  update(_dt: number): void {
+    // 商店系统由事件驱动，无需帧更新
+  }
+
+  /** 获取系统状态快照 */
+  getState(): Record<string, unknown> {
+    return {
+      name: this.name,
+      tokenBalance: this.tokenBalance,
+      itemCount: this.items.size,
+    };
+  }
+
+  /** 重置系统状态 */
+  reset(): void {
+    this.tokenBalance = 0;
+    this.items.clear();
+    for (const item of DEFAULT_SHOP_ITEMS) {
       this.items.set(item.id, { ...item });
     }
   }

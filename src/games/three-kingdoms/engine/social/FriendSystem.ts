@@ -26,6 +26,7 @@ import type {
 import { FriendStatus, InteractionType as IT } from '../../core/social/social.types';
 import { FriendInteractionSubsystem } from './FriendInteractionSubsystem';
 import { BorrowHeroSubsystem } from './BorrowHeroSubsystem';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -101,7 +102,9 @@ export function createDefaultSocialState(): SocialState {
  *
  * 管理好友列表、互动、借将
  */
-export class FriendSystem {
+export class FriendSystem implements ISubsystem {
+  readonly name = 'friend' as const;
+  private deps!: ISystemDeps;
   private friendConfig: FriendConfig;
   private interactionConfig: InteractionConfig;
   private readonly interactionSubsystem: FriendInteractionSubsystem;
@@ -116,6 +119,13 @@ export class FriendSystem {
     this.interactionSubsystem = new FriendInteractionSubsystem(this.interactionConfig);
     this.borrowSubsystem = new BorrowHeroSubsystem(this.interactionConfig);
   }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 预留 */ }
+  getState(): unknown { return { friendConfig: this.friendConfig, interactionConfig: this.interactionConfig }; }
+  reset(): void { this.friendConfig = { ...DEFAULT_FRIEND_CONFIG }; this.interactionConfig = { ...DEFAULT_INTERACTION_CONFIG }; }
 
   // ── 好友管理 ──────────────────────────────
 

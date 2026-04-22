@@ -11,6 +11,7 @@
  * @module engine/expedition/AutoExpeditionSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   ExpeditionState,
   ExpeditionTeam,
@@ -103,7 +104,12 @@ export interface OfflineExpeditionState {
 // AutoExpeditionSystem 类
 // ─────────────────────────────────────────────
 
-export class AutoExpeditionSystem {
+export class AutoExpeditionSystem implements ISubsystem {
+  // ─── ISubsystem 接口 ───────────────────────
+
+  readonly name = 'autoExpedition' as const;
+  private deps: ISystemDeps | null = null;
+
   private battleSystem: ExpeditionBattleSystem;
   private rewardSystem: ExpeditionRewardSystem;
   /** 剩余重复次数（null=无限，0=用完） */
@@ -115,6 +121,31 @@ export class AutoExpeditionSystem {
   ) {
     this.battleSystem = battleSystem;
     this.rewardSystem = rewardSystem;
+  }
+
+  // ─── ISubsystem 适配层 ─────────────────────
+
+  /** 注入依赖 */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** 自动远征系统无需帧更新 */
+  update(_dt: number): void {
+    // 自动远征由事件驱动，无需帧更新
+  }
+
+  /** 获取系统状态快照 */
+  getState(): Record<string, unknown> {
+    return {
+      name: this.name,
+      remainingRepeats: this.remainingRepeats,
+    };
+  }
+
+  /** 重置系统状态 */
+  reset(): void {
+    this.remainingRepeats = null;
   }
 
   // ─── #12 自动远征 ─────────────────────────

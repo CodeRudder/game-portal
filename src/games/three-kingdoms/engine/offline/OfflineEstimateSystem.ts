@@ -16,6 +16,7 @@ import type { Resources } from '../../shared/types';
 import type { TierDetail, SystemEfficiencyModifier } from './offline.types';
 import { DECAY_TIERS, MAX_OFFLINE_HOURS, SYSTEM_EFFICIENCY_MODIFIERS } from './offline-config';
 import { zeroRes as zeroResources, mulRes as scaleResources } from './offline-utils';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 类型
@@ -82,10 +83,18 @@ function calculateEarnedForHours(
  * 提供离线收益预估功能，帮助玩家决策下线时机。
  * 支持各系统差异化修正系数，生成多时间点的预估数据。
  */
-export class OfflineEstimateSystem {
+export class OfflineEstimateSystem implements ISubsystem {
+  readonly name = 'offlineEstimate' as const;
+  private deps!: ISystemDeps;
 
   /** 预估时间点（小时） */
   private readonly estimateHours = [1, 2, 4, 8, 24, 48, 72];
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 纯计算系统，无帧更新逻辑 */ }
+  getState(): unknown { return { estimateHours: this.estimateHours }; }
 
   /**
    * 生成预估时间线
