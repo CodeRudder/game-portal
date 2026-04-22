@@ -1,10 +1,10 @@
 /**
- * R11+ 子系统依赖注入辅助
+ * 扩展子系统依赖注入辅助
  *
- * 从 ThreeKingdomsEngine 中拆分出的R11+子系统(13个缺失子系统)的
- * 创建、初始化和注册逻辑。
+ * 从 ThreeKingdomsEngine 中拆分出的扩展子系统（mail/shop/currency/equipment等）
+ * 的创建、初始化和注册逻辑。
  *
- * @module engine/engine-r11-deps
+ * @module engine/engine-extended-deps
  */
 
 import { MailSystem } from './mail/MailSystem';
