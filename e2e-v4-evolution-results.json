@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-04-22T10:48:17.424Z",
+  "timestamp": "2026-04-22T10:57:02.536Z",
   "version": "v4.0",
   "module": "攻城略地(下)",
   "type": "进化迭代R1",
   "summary": {
-    "passed": 26,
+    "passed": 25,
     "failed": 0,
     "warnings": 7,
     "screenshots": 15,
@@ -31,7 +31,6 @@
     "科技节点详情弹窗已打开",
     "研究按钮存在",
     "移动端科技Tab正常",
-    "移动端关卡Tab正常",
     "移动端武将Tab正常",
     "移动端无水平溢出 (scrollWidth=375)",
     "移动端数据完整性检查通过",

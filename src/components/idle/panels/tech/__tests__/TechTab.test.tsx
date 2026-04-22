@@ -34,6 +34,23 @@ vi.mock('../TechNodeDetailModal.css', () => ({}));
 vi.mock('../TechResearchPanel.css', () => ({}));
 
 // ─────────────────────────────────────────────
+// Mock window.matchMedia（jsdom 不支持）
+// ─────────────────────────────────────────────
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// ─────────────────────────────────────────────
 // Mock window.innerWidth
 // ─────────────────────────────────────────────
 const originalInnerWidth = window.innerWidth;
@@ -252,7 +269,10 @@ describe('TechTab', () => {
     const firstNode = screen.getByTestId(`tech-node-${milNodes[0].id}`);
     fireEvent.click(firstNode);
 
-    expect(screen.getByTestId('tech-detail-overlay')).toBeInTheDocument();
+    // TechNodeDetailModal 通过 SharedPanel 渲染，弹窗标题与节点名称相同
+    // 节点名称在列表和弹窗中都出现，所以用 getAllByText
+    const matches = screen.getAllByText(milNodes[0].name);
+    expect(matches.length).toBeGreaterThanOrEqual(2); // 列表中1个 + 弹窗标题1个
   });
 
   it('显示研究队列面板', () => {

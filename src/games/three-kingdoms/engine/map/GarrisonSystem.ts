@@ -378,8 +378,9 @@ export class GarrisonSystem implements ISubsystem {
   /** 检查武将是否在出战编队中 */
   private isGeneralInFormation(generalId: string): boolean {
     try {
-      // HeroFormation 未实现 ISubsystem，通过 any 绕过类型约束
-      const formation = this.deps?.registry?.get<any>('heroFormation');
+      // HeroFormation 已实现 ISubsystem，通过 registry 获取
+      const formation = this.deps?.registry?.get('heroFormation') as
+        import('../hero/HeroFormation').HeroFormation | undefined;
       return formation?.isGeneralInAnyFormation(generalId) ?? false;
     } catch {
       return false;

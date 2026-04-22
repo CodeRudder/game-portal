@@ -357,8 +357,8 @@ export class FusionTechSystem implements ISubsystem {
         value: fl.value,
         unlockFeature: fl.unlockFeature,
         unlockDescription: fl.unlockDescription,
-        unlockSkill: (fl as any).unlockSkill,
-        newSkillDescription: (fl as any).newSkillDescription,
+        unlockSkill: fl.unlockSkill,
+        newSkillDescription: fl.newSkillDescription,
       });
       // 标记融合科技为已完成，使联动生效
       this.linkSystem.addCompletedTech(fl.fusionTechId);
