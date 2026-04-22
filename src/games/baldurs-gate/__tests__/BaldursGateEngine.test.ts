@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Baldur's Gate（博德之门）放置类游戏 — 完整测试套件
  */
@@ -459,7 +460,7 @@ describe('BaldursGateEngine', () => {
 
     it('点击应触发 stateChange 事件', () => {
       engine.start();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       engine.click();
       expect(handler).toHaveBeenCalled();
@@ -530,7 +531,7 @@ describe('BaldursGateEngine', () => {
     it('购买应触发 upgradePurchased 事件', () => {
       engine.start();
       addGold(engine, 100);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('upgradePurchased', handler);
       engine.purchaseBuilding(0);
       expect(handler).toHaveBeenCalledWith('tavern', 1);
@@ -598,7 +599,7 @@ describe('BaldursGateEngine', () => {
     it('招募应触发 companionUnlocked 事件', () => {
       engine.start();
       addGold(engine, 1000);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('companionUnlocked', handler);
       engine.unlockCompanion('gale');
       expect(handler).toHaveBeenCalledWith('gale');
@@ -667,7 +668,7 @@ describe('BaldursGateEngine', () => {
       engine.start();
       addXp(engine, 100);
       addMagicItems(engine, 10);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('companionUpgraded', handler);
       engine.upgradeCompanion('shadowheart');
       expect(handler).toHaveBeenCalledWith('shadowheart', 1);
@@ -754,7 +755,7 @@ describe('BaldursGateEngine', () => {
 
     it('探索应触发 dungeonExploreStarted 事件', () => {
       engine.start();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('dungeonExploreStarted', handler);
       engine.startDungeonExplore('goblin_cave');
       expect(handler).toHaveBeenCalledWith('goblin_cave');
@@ -763,7 +764,7 @@ describe('BaldursGateEngine', () => {
     it('探索完成应触发 dungeonExploreCompleted 事件', () => {
       engine.start();
       engine.startDungeonExplore('goblin_cave');
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('dungeonExploreCompleted', handler);
       (engine as any).completeDungeonExplore();
       expect(handler).toHaveBeenCalled();
@@ -1410,7 +1411,7 @@ describe('BaldursGateEngine', () => {
   describe('事件系统', () => {
     it('应支持 on/off 事件监听', () => {
       engine.start();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       engine.click();
       engine.off('stateChange', handler);
@@ -1421,7 +1422,7 @@ describe('BaldursGateEngine', () => {
 
     it('应触发 resourceUnlocked 事件', () => {
       engine.start();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('resourceUnlocked', handler);
       const upgrade = (engine as any).upgrades.get('tavern');
       upgrade.level = 5;

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * HexEngine 综合测试
  * 覆盖：棋盘初始化、落子、六角网格邻居、路径判定（BFS连通检测）、
@@ -74,13 +75,13 @@ describe('HexEngine', () => {
   let engine: HexEngine;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine = createAndStartEngine();
   });
 
   afterEach(() => {
     engine.destroy();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   // ============================================================
@@ -694,7 +695,7 @@ describe('HexEngine', () => {
     it('AI 在延迟后落子', () => {
       engine.placePiece(5, 5);
       expect(engine.isAiThinking()).toBe(true);
-      jest.advanceTimersByTime(AI_THINK_DELAY);
+      vi.advanceTimersByTime(AI_THINK_DELAY);
       expect(engine.isAiThinking()).toBe(false);
       // AI 应该已经落子
       expect(engine.getMoveCount()).toBe(2);
@@ -702,13 +703,13 @@ describe('HexEngine', () => {
 
     it('AI 落子后切换回红方', () => {
       engine.placePiece(5, 5);
-      jest.advanceTimersByTime(AI_THINK_DELAY);
+      vi.advanceTimersByTime(AI_THINK_DELAY);
       expect(engine.getCurrentPlayer()).toBe(PLAYER_RED);
     });
 
     it('AI 落在空格上', () => {
       engine.placePiece(5, 5);
-      jest.advanceTimersByTime(AI_THINK_DELAY);
+      vi.advanceTimersByTime(AI_THINK_DELAY);
       // 检查棋盘上有一个蓝子
       const board = engine.getBoard();
       let blueCount = 0;
@@ -722,7 +723,7 @@ describe('HexEngine', () => {
 
     it('AI 不在已有棋子的位置落子', () => {
       engine.placePiece(5, 5);
-      jest.advanceTimersByTime(AI_THINK_DELAY);
+      vi.advanceTimersByTime(AI_THINK_DELAY);
       const board = engine.getBoard();
       // AI 不应该落在 (5,5)
       expect(board[5][5]).toBe(CELL_RED); // 仍然是红子
@@ -805,10 +806,10 @@ describe('HexEngine', () => {
     });
 
     it('AI 落子后触发 stateChange 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.placePiece(5, 5);
-      jest.advanceTimersByTime(AI_THINK_DELAY);
+      vi.advanceTimersByTime(AI_THINK_DELAY);
       // placePiece 触发一次，AI 落子触发一次
       expect(listener.mock.calls.length).toBeGreaterThanOrEqual(2);
     });
@@ -891,7 +892,7 @@ describe('HexEngine', () => {
     });
 
     it('获胜后触发 statusChange 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.setMode(MODE_PVP);
       const board = createEmptyBoard();
@@ -1103,7 +1104,7 @@ describe('HexEngine', () => {
 
     it('PvE 模式下 AI 自动落子', () => {
       engine.placePiece(5, 5);
-      jest.advanceTimersByTime(AI_THINK_DELAY);
+      vi.advanceTimersByTime(AI_THINK_DELAY);
       expect(engine.getMoveCount()).toBe(2);
       expect(engine.getCurrentPlayer()).toBe(PLAYER_RED);
     });
@@ -1114,7 +1115,7 @@ describe('HexEngine', () => {
   // ============================================================
   describe('事件系统', () => {
     it('落子触发 stateChange 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.placePiece(5, 5);
       expect(listener).toHaveBeenCalled();
@@ -1123,14 +1124,14 @@ describe('HexEngine', () => {
     it('交换触发 stateChange 事件', () => {
       engine.setMode(MODE_PVP);
       engine.placePiece(5, 5);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.performSwap();
       expect(listener).toHaveBeenCalled();
     });
 
     it('胜利触发 statusChange 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.setMode(MODE_PVP);
       const board = createEmptyBoard();
@@ -1145,7 +1146,7 @@ describe('HexEngine', () => {
     });
 
     it('可以取消事件监听', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.off('stateChange', listener);
       engine.placePiece(5, 5);
@@ -1734,7 +1735,7 @@ describe('HexEngine', () => {
 
     it('AI 完成后可以正常落子', () => {
       engine.placePiece(5, 5);
-      jest.advanceTimersByTime(AI_THINK_DELAY);
+      vi.advanceTimersByTime(AI_THINK_DELAY);
       expect(engine.isAiThinking()).toBe(false);
       expect(engine.placePiece(4, 4)).toBe(true);
     });

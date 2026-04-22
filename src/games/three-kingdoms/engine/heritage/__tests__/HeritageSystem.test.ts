@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * HeritageSystem 单元测试
  *
@@ -60,17 +61,17 @@ function createSystem(): {
 
   const sys = new HeritageSystem();
   const mockEventBus = {
-    emit: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    once: jest.fn(),
-    removeAllListeners: jest.fn(),
+    emit: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    once: vi.fn(),
+    removeAllListeners: vi.fn(),
   };
 
   sys.init({
     eventBus: mockEventBus as any,
-    config: { get: jest.fn() } as any,
-    registry: { get: jest.fn() } as any,
+    config: { get: vi.fn() } as any,
+    registry: { get: vi.fn() } as any,
   });
 
   sys.setCallbacks({

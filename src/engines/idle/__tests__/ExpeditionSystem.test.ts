@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * ExpeditionSystem 单元测试
  *
@@ -113,12 +114,12 @@ describe('ExpeditionSystem', () => {
   let system: ExpeditionSystem;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     system = new ExpeditionSystem(ALL_DEFS);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   // ----------------------------------------------------------
@@ -300,7 +301,7 @@ describe('ExpeditionSystem', () => {
     it('应随时间推进进度', () => {
       system.start('forest', ['h1', 'h2'], { gold: 200 });
 
-      jest.advanceTimersByTime(5_000);
+      vi.advanceTimersByTime(5_000);
       system.update(5_000);
 
       const activeList = system.getActiveExpeditions();
@@ -311,7 +312,7 @@ describe('ExpeditionSystem', () => {
     it('进度满后应自动完成远征', () => {
       system.start('forest', ['h1', 'h2'], { gold: 200 });
 
-      jest.advanceTimersByTime(20_000);
+      vi.advanceTimersByTime(20_000);
       system.update(20_000);
 
       expect(system.getActiveExpeditions()).toHaveLength(0);
@@ -333,7 +334,7 @@ describe('ExpeditionSystem', () => {
 
       system.start('forest', ['h1', 'h2'], { gold: 200 });
 
-      jest.advanceTimersByTime(5_000);
+      vi.advanceTimersByTime(5_000);
       system.update(5_000);
 
       expect(events.length).toBeGreaterThan(0);
@@ -346,7 +347,7 @@ describe('ExpeditionSystem', () => {
 
       system.start('forest', ['h1', 'h2'], { gold: 200 });
 
-      jest.advanceTimersByTime(15_000);
+      vi.advanceTimersByTime(15_000);
       system.update(15_000);
 
       const completionEvent = events.find(

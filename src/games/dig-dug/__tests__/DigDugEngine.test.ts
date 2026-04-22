@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { DigDugEngine } from '../DigDugEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -624,7 +625,7 @@ describe('DigDugEngine - 怪物', () => {
     (engine as any)._player.row = 5;
     const startCol = monster.col;
     // mock Math.random 避免怪物进入穿墙模式
-    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
     tick(engine, 100);
     randomSpy.mockRestore();
     // 怪物应该已经移动（朝玩家方向）
@@ -1130,7 +1131,7 @@ describe('DigDugEngine - 事件', () => {
   });
 
   it('start 触发 statusChange 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1138,7 +1139,7 @@ describe('DigDugEngine - 事件', () => {
 
   it('pause 触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.pause();
     expect(callback).toHaveBeenCalledWith('paused');
@@ -1147,7 +1148,7 @@ describe('DigDugEngine - 事件', () => {
   it('resume 触发 statusChange 事件', () => {
     engine.start();
     engine.pause();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.resume();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1155,7 +1156,7 @@ describe('DigDugEngine - 事件', () => {
 
   it('reset 触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.reset();
     expect(callback).toHaveBeenCalledWith('idle');
@@ -1163,7 +1164,7 @@ describe('DigDugEngine - 事件', () => {
 
   it('gameOver 触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     (engine as any).gameOver();
     expect(callback).toHaveBeenCalledWith('gameover');
@@ -1171,7 +1172,7 @@ describe('DigDugEngine - 事件', () => {
 
   it('得分变化触发 scoreChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('scoreChange', callback);
     (engine as any).addScore(200);
     expect(callback).toHaveBeenCalledWith(200);
@@ -1179,14 +1180,14 @@ describe('DigDugEngine - 事件', () => {
 
   it('失去生命触发 loseLife 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('loseLife', callback);
     (engine as any).playerHit();
     expect(callback).toHaveBeenCalledWith(INITIAL_LIVES - 1);
   });
 
   it('off 可以取消事件监听', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();

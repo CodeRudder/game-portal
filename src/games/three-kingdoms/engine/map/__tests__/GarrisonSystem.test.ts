@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * GarrisonSystem 测试
  *
@@ -55,16 +56,16 @@ function createMockDeps(
 
   const deps: ISystemDeps = {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
     registry: {
-      register: jest.fn(),
-      get: jest.fn().mockImplementation((name: string) => {
+      register: vi.fn(),
+      get: vi.fn().mockImplementation((name: string) => {
         if (name === 'territory') return territorySys;
         if (name === 'hero') return { getGeneral: (id: string) => generals[id] };
         if (name === 'heroFormation') return {
@@ -72,10 +73,10 @@ function createMockDeps(
         };
         throw new Error(`Subsystem ${name} not found`);
       }),
-      getAll: jest.fn().mockReturnValue(new Map()),
-      has: jest.fn().mockImplementation((name: string) =>
+      getAll: vi.fn().mockReturnValue(new Map()),
+      has: vi.fn().mockImplementation((name: string) =>
         ['territory', 'hero', 'heroFormation'].includes(name)),
-      unregister: jest.fn(),
+      unregister: vi.fn(),
     } as unknown as ISubsystemRegistry,
   };
 
@@ -242,7 +243,7 @@ describe('GarrisonSystem', () => {
       captureTerritory(deps, 'city-luoyang');
       garrison.assignGarrison('city-luoyang', 'guanyu');
 
-      (deps.eventBus.emit as ReturnType<typeof jest.fn>).mockClear();
+      (deps.eventBus.emit as ReturnType<typeof vi.fn>).mockClear();
       garrison.withdrawGarrison('city-luoyang');
 
       expect(deps.eventBus.emit).toHaveBeenCalledWith(

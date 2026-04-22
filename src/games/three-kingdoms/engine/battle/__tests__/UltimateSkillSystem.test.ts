@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 大招时停系统 — 单元测试
  *
@@ -52,8 +53,8 @@ function createUnit(overrides: Partial<BattleUnit> = {}): BattleUnit {
 
 function createMockHandler() {
   return {
-    onUltimateReady: jest.fn(), onBattlePaused: jest.fn(),
-    onUltimateConfirmed: jest.fn(), onUltimateCancelled: jest.fn(),
+    onUltimateReady: vi.fn(), onBattlePaused: vi.fn(),
+    onUltimateConfirmed: vi.fn(), onUltimateCancelled: vi.fn(),
   } as IUltimateTimeStopHandler;
 }
 
@@ -65,13 +66,13 @@ describe('UltimateSkillSystem', () => {
   let system: UltimateSkillSystem;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     system = new UltimateSkillSystem();
   });
 
   afterEach(() => {
     system.reset();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   // ── 初始状态 ──
@@ -276,10 +277,10 @@ describe('UltimateSkillSystem', () => {
       const unit = createUnit({ id: 'hero1', rage: 100 });
       system.pauseForUltimate(unit, unit.skills[0]);
 
-      jest.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS - 1);
+      vi.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS - 1);
       expect(system.isPaused()).toBe(true);
 
-      jest.advanceTimersByTime(1);
+      vi.advanceTimersByTime(1);
       expect(handler.onUltimateConfirmed).toHaveBeenCalledTimes(1);
       expect(system.getTimeStopState()).toBe(TimeStopState.INACTIVE);
     });
@@ -291,7 +292,7 @@ describe('UltimateSkillSystem', () => {
       system.pauseForUltimate(unit, unit.skills[0]);
       system.confirmUltimate('hero1', 'ultimate_fire');
 
-      jest.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS + 1000);
+      vi.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS + 1000);
       expect(handler.onUltimateConfirmed).toHaveBeenCalledTimes(1);
     });
 
@@ -301,7 +302,7 @@ describe('UltimateSkillSystem', () => {
       system.pauseForUltimate(createUnit({ id: 'hero1', rage: 100 }), ULTIMATE_SKILL);
       system.cancelUltimate();
 
-      jest.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS + 1000);
+      vi.advanceTimersByTime(BATTLE_CONFIG.TIME_STOP_TIMEOUT_MS + 1000);
       expect(handler.onUltimateConfirmed).not.toHaveBeenCalled();
     });
   });

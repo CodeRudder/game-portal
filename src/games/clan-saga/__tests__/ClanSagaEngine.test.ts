@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 家族传说 (Clan Saga) — 完整测试套件 v3.0
  *
@@ -253,7 +254,7 @@ describe('ClanSagaEngine', () => {
     });
 
     it('点击应触发 stateChange 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       (engine as any).doClick();
       expect(listener).toHaveBeenCalled();
@@ -478,7 +479,7 @@ describe('ClanSagaEngine', () => {
       addGrain(engine, PRESTIGE_CONFIG.threshold * 100);
       addSilk(engine, PRESTIGE_CONFIG.threshold * 100);
       addStone(engine, PRESTIGE_CONFIG.threshold * 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

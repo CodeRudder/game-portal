@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * CloudSaveSystem 单元测试
  *

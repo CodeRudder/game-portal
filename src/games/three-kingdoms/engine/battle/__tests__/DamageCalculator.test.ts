@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 伤害计算器 — 单元测试
  *
@@ -92,7 +93,7 @@ describe('DamageCalculator', () => {
 
       // Mock: crit check returns 0.99 (no crit, since crit rate = 0.05 + 80/100 = 0.85)
       // randomInRange returns 0.5 → factor = 0.9 + 0.5*0.2 = 1.0
-      const mockRandom = jest.spyOn(Math, 'random');
+      const mockRandom = vi.spyOn(Math, 'random');
       mockRandom.mockReturnValueOnce(0.99).mockReturnValueOnce(0.5);
 
       const result = calculator.calculateDamage(attacker, defender, 1.0);
@@ -110,7 +111,7 @@ describe('DamageCalculator', () => {
       const defender = createTestUnit({ attack: 0, defense: 50, troopType: TroopType.ARCHER });
 
       // Mock: crit check returns 0.99 (no crit), random returns 0.5 (factor=1.0)
-      const mockRandom = jest.spyOn(Math, 'random');
+      const mockRandom = vi.spyOn(Math, 'random');
       mockRandom.mockReturnValueOnce(0.99).mockReturnValueOnce(0.5);
 
       const result = calculator.calculateDamage(attacker, defender, 2.0);
@@ -151,7 +152,7 @@ describe('DamageCalculator', () => {
   describe('暴击判定', () => {
     it('暴击时伤害应为×1.5', () => {
       // Mock Math.random to control both crit roll and random factor
-      const mockRandom = jest.spyOn(Math, 'random');
+      const mockRandom = vi.spyOn(Math, 'random');
       // First call: crit check (return small value → trigger crit)
       mockRandom.mockReturnValueOnce(0.001);
       // Second call: randomInRange for random factor (return 0.5 → factor = 0.9 + 0.5*0.2 = 1.0)
@@ -171,7 +172,7 @@ describe('DamageCalculator', () => {
     });
 
     it('未暴击时伤害倍率应为×1.0', () => {
-      const mockRandom = jest.spyOn(Math, 'random');
+      const mockRandom = vi.spyOn(Math, 'random');
       // 暴击判定返回1.0 → 不暴击
       mockRandom.mockReturnValueOnce(1.0);
       // 随机波动返回1.0
@@ -267,7 +268,7 @@ describe('DamageCalculator', () => {
       });
       const defender = createTestUnit({ attack: 0, defense: 50, troopType: TroopType.ARCHER });
 
-      const mockRandom = jest.spyOn(Math, 'random');
+      const mockRandom = vi.spyOn(Math, 'random');
       mockRandom.mockReturnValue(1.0); // 不暴击，随机波动1.0
 
       const result = calculator.calculateDamage(attacker, defender, 1.0);
@@ -287,7 +288,7 @@ describe('DamageCalculator', () => {
       });
       const defender = createTestUnit({ attack: 0, defense: 50, troopType: TroopType.ARCHER });
 
-      const mockRandom = jest.spyOn(Math, 'random');
+      const mockRandom = vi.spyOn(Math, 'random');
       mockRandom.mockReturnValue(1.0);
 
       const result = calculator.calculateDamage(attacker, defender, 1.0);
@@ -308,7 +309,7 @@ describe('DamageCalculator', () => {
         buffs: [{ type: BuffType.DEF_UP, remainingTurns: 2, value: 0.5, sourceId: 's' }],
       });
 
-      const mockRandom = jest.spyOn(Math, 'random');
+      const mockRandom = vi.spyOn(Math, 'random');
       mockRandom.mockReturnValue(1.0);
 
       const result = calculator.calculateDamage(attacker, defender, 1.0);

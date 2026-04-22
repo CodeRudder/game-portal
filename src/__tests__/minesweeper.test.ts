@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { MinesweeperEngine } from '@/games/minesweeper/MinesweeperEngine';
 import {
   CANVAS_WIDTH,
@@ -726,7 +727,7 @@ describe('MinesweeperEngine', () => {
   describe('事件发射', () => {
     it('start 触发 statusChange 为 playing', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       // handleClick 中 idle → start
       doFirstClick(engine, 4, 4);
@@ -735,7 +736,7 @@ describe('MinesweeperEngine', () => {
 
     it('揭开格子触发 scoreChange 事件', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('scoreChange', cb);
       doFirstClick(engine, 4, 4);
       // 至少触发过一次 scoreChange（揭开格子得分）
@@ -749,7 +750,7 @@ describe('MinesweeperEngine', () => {
       const engine = createEngine();
       doFirstClick(engine, 4, 4);
 
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
 
       // 找地雷并点击
@@ -772,7 +773,7 @@ describe('MinesweeperEngine', () => {
     it('reset 触发 statusChange 为 idle', () => {
       const engine = createEngine();
       doFirstClick(engine, 4, 4);
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.reset();
       expect(cb).toHaveBeenCalledWith('idle');
@@ -781,7 +782,7 @@ describe('MinesweeperEngine', () => {
     it('reset 触发 scoreChange 为 0', () => {
       const engine = createEngine();
       doFirstClick(engine, 4, 4);
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('scoreChange', cb);
       engine.reset();
       expect(cb).toHaveBeenCalledWith(0);

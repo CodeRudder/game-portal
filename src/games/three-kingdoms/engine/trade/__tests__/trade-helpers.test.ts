@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * trade-helpers 单元测试
  *
@@ -140,7 +141,7 @@ describe('trade-helpers', () => {
         consecutiveDirection: MAX_CONSECUTIVE_DIRECTION, lastRefreshTime: 0,
       };
       // Mock Math.random to force direction
-      const spy = jest.spyOn(Math, 'random').mockReturnValue(0.99); // direction=1 (same as consecutive)
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0.99); // direction=1 (same as consecutive)
       refreshSinglePrice(price, def, Date.now());
       // consecutiveDirection should be forced reverse
       expect(price.consecutiveDirection).toBeLessThan(0);
@@ -157,7 +158,7 @@ describe('trade-helpers', () => {
 
     it('事件包含正确字段', () => {
       // Force event generation by mocking random
-      const spy = jest.spyOn(Math, 'random').mockReturnValue(0.01);
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0.01);
       const events = generateTradeEvents('c1', 'route_1');
       spy.mockRestore();
       if (events.length > 0) {

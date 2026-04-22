@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   WORD_LIST, WORD_TIERS,
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -972,7 +973,7 @@ describe('ZType - 事件系统', () => {
   });
 
   it('开始时触发 statusChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -980,7 +981,7 @@ describe('ZType - 事件系统', () => {
 
   it('暂停时触发 statusChange 事件', () => {
     engine.start();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.pause();
     expect(handler).toHaveBeenCalledWith('paused');
@@ -988,7 +989,7 @@ describe('ZType - 事件系统', () => {
 
   it('重置时触发 statusChange 事件', () => {
     engine.start();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.reset();
     expect(handler).toHaveBeenCalledWith('idle');
@@ -996,7 +997,7 @@ describe('ZType - 事件系统', () => {
 
   it('分数变化时触发 scoreChange 事件', () => {
     engine.start();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     const words = engine.currentWords.filter(w => !w.destroying);
     if (words.length > 0) {
@@ -1009,7 +1010,7 @@ describe('ZType - 事件系统', () => {
   });
 
   it('等级变化时触发 levelChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('levelChange', handler);
     engine.start();
     // 等级从 1 开始，start 时已触发

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 末日生存 (Doomsday) 放置类游戏 — 完整测试套件
  */
@@ -244,7 +245,7 @@ describe('DoomsdayEngine', () => {
 
     it('点击应触发 stateChange 事件', () => {
       engine.start();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       engine.click();
       expect(handler).toHaveBeenCalled();
@@ -574,7 +575,7 @@ describe('DoomsdayEngine', () => {
     it('render 应调用 ctx 绑定方法', () => {
       engine.start();
       const ctx = createMockCtx();
-      const fillRectSpy = jest.spyOn(ctx, 'fillRect');
+      const fillRectSpy = vi.spyOn(ctx, 'fillRect');
       (engine as any).onRender(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
       expect(fillRectSpy).toHaveBeenCalled();
     });

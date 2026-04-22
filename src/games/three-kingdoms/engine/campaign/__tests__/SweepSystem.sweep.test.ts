@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 扫荡系统测试 — 批量扫荡执行 + 扫荡产出 + 自动推图
  *
@@ -183,11 +184,11 @@ describe('SweepSystem 扫荡产出', () => {
   it('多次扫荡结果独立', () => {
     const tracked = createTrackedDeps();
     const deps = {
-      simulateBattle: jest.fn(() => ({ victory: true, stars: 3 })),
-      getStageStars: jest.fn(() => 3),
-      canChallenge: jest.fn(() => true),
-      getFarthestStageId: jest.fn(() => null),
-      completeStage: jest.fn(),
+      simulateBattle: vi.fn(() => ({ victory: true, stars: 3 })),
+      getStageStars: vi.fn(() => 3),
+      canChallenge: vi.fn(() => true),
+      getFarthestStageId: vi.fn(() => null),
+      completeStage: vi.fn(),
     } satisfies SweepDeps;
 
     let callCount = 0;
@@ -232,15 +233,15 @@ describe('SweepSystem 自动推图', () => {
   it('未三星关卡使用模拟战斗', () => {
     const tracked = createTrackedDeps();
     const deps = {
-      simulateBattle: jest.fn((stageId: string) => {
+      simulateBattle: vi.fn((stageId: string) => {
         if (stageId === 'chapter1_stage1') return { victory: true, stars: 3 };
         return { victory: false, stars: 0 };
       }),
-      getStageStars: jest.fn(() => 0),
-      canChallenge: jest.fn((stageId: string) =>
+      getStageStars: vi.fn(() => 0),
+      canChallenge: vi.fn((stageId: string) =>
         stageId === 'chapter1_stage1' || stageId === 'chapter1_stage2'),
-      getFarthestStageId: jest.fn(() => 'chapter1_stage1'),
-      completeStage: jest.fn(),
+      getFarthestStageId: vi.fn(() => 'chapter1_stage1'),
+      completeStage: vi.fn(),
     } satisfies SweepDeps;
 
     const system = new SweepSystem(dataProvider, tracked.deps, deps, undefined, noDropRng);
@@ -254,11 +255,11 @@ describe('SweepSystem 自动推图', () => {
   it('战斗失败时停止推图', () => {
     const tracked = createTrackedDeps();
     const deps = {
-      simulateBattle: jest.fn(() => ({ victory: false, stars: 0 })),
-      getStageStars: jest.fn(() => 0),
-      canChallenge: jest.fn(() => true),
-      getFarthestStageId: jest.fn(() => 'chapter1_stage1'),
-      completeStage: jest.fn(),
+      simulateBattle: vi.fn(() => ({ victory: false, stars: 0 })),
+      getStageStars: vi.fn(() => 0),
+      canChallenge: vi.fn(() => true),
+      getFarthestStageId: vi.fn(() => 'chapter1_stage1'),
+      completeStage: vi.fn(),
     } satisfies SweepDeps;
 
     const system = new SweepSystem(dataProvider, tracked.deps, deps, undefined, noDropRng);
@@ -274,11 +275,11 @@ describe('SweepSystem 自动推图', () => {
   it('达到最大尝试次数时停止', () => {
     const tracked = createTrackedDeps();
     const deps = {
-      simulateBattle: jest.fn(() => ({ victory: true, stars: 3 })),
-      getStageStars: jest.fn(() => 3),
-      canChallenge: jest.fn(() => true),
-      getFarthestStageId: jest.fn(() => 'chapter1_stage1'),
-      completeStage: jest.fn(),
+      simulateBattle: vi.fn(() => ({ victory: true, stars: 3 })),
+      getStageStars: vi.fn(() => 3),
+      canChallenge: vi.fn(() => true),
+      getFarthestStageId: vi.fn(() => 'chapter1_stage1'),
+      completeStage: vi.fn(),
     } satisfies SweepDeps;
 
     const system = new SweepSystem(
@@ -295,11 +296,11 @@ describe('SweepSystem 自动推图', () => {
   it('自动推图进度实时更新', () => {
     const tracked = createTrackedDeps();
     const deps = {
-      simulateBattle: jest.fn(() => ({ victory: false, stars: 0 })),
-      getStageStars: jest.fn(() => 0),
-      canChallenge: jest.fn(() => true),
-      getFarthestStageId: jest.fn(() => 'chapter1_stage1'),
-      completeStage: jest.fn(),
+      simulateBattle: vi.fn(() => ({ victory: false, stars: 0 })),
+      getStageStars: vi.fn(() => 0),
+      canChallenge: vi.fn(() => true),
+      getFarthestStageId: vi.fn(() => 'chapter1_stage1'),
+      completeStage: vi.fn(),
     } satisfies SweepDeps;
 
     const system = new SweepSystem(dataProvider, tracked.deps, deps, undefined, noDropRng);
@@ -314,11 +315,11 @@ describe('SweepSystem 自动推图', () => {
   it('自动推图汇总奖励', () => {
     const tracked = createTrackedDeps();
     const deps = {
-      simulateBattle: jest.fn(() => ({ victory: true, stars: 3 })),
-      getStageStars: jest.fn(() => 3),
-      canChallenge: jest.fn(() => true),
-      getFarthestStageId: jest.fn(() => 'chapter1_stage1'),
-      completeStage: jest.fn(),
+      simulateBattle: vi.fn(() => ({ victory: true, stars: 3 })),
+      getStageStars: vi.fn(() => 3),
+      canChallenge: vi.fn(() => true),
+      getFarthestStageId: vi.fn(() => 'chapter1_stage1'),
+      completeStage: vi.fn(),
     } satisfies SweepDeps;
 
     const system = new SweepSystem(
@@ -336,14 +337,14 @@ describe('SweepSystem 自动推图', () => {
   it('扫荡令不足时回退到模拟战斗', () => {
     const tracked = createTrackedDeps();
     const deps = {
-      simulateBattle: jest.fn((stageId: string) => {
+      simulateBattle: vi.fn((stageId: string) => {
         if (stageId === 'chapter1_stage1') return { victory: true, stars: 3 };
         return { victory: false, stars: 0 };
       }),
-      getStageStars: jest.fn(() => 3),
-      canChallenge: jest.fn(() => true),
-      getFarthestStageId: jest.fn(() => 'chapter1_stage1'),
-      completeStage: jest.fn(),
+      getStageStars: vi.fn(() => 3),
+      canChallenge: vi.fn(() => true),
+      getFarthestStageId: vi.fn(() => 'chapter1_stage1'),
+      completeStage: vi.fn(),
     } satisfies SweepDeps;
 
     const system = new SweepSystem(dataProvider, tracked.deps, deps, undefined, noDropRng);

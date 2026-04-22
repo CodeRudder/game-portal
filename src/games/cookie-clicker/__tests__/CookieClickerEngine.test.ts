@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Cookie Clicker 放置类游戏 — 完整测试套件
  *
@@ -64,7 +65,7 @@ function tick(engine: CookieClickerEngine, dt: number = 16): void {
 
 describe('CookieClickerEngine', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // ==================== 初始化 ====================
@@ -244,7 +245,7 @@ describe('CookieClickerEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       engine.click();
       expect(handler).toHaveBeenCalled();
@@ -252,7 +253,7 @@ describe('CookieClickerEngine', () => {
 
     it('点击触发 scoreChange 事件', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('scoreChange', handler);
       engine.click();
       expect(handler).toHaveBeenCalled();
@@ -370,7 +371,7 @@ describe('CookieClickerEngine', () => {
 
     it('购买触发 stateChange 事件', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       addCookies(engine, 100);
       engine.buyUpgrade(0);
@@ -379,7 +380,7 @@ describe('CookieClickerEngine', () => {
 
     it('购买失败不触发 stateChange', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       engine.buyUpgrade(0); // 买不起
       expect(handler).not.toHaveBeenCalled();
@@ -626,7 +627,7 @@ describe('CookieClickerEngine', () => {
       const engine = startEngine();
       addCookies(engine, 100);
       engine.buyUpgrade(1);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('scoreChange', handler);
       tick(engine, PRODUCTION_TICK_MS);
       expect(handler).toHaveBeenCalled();
@@ -891,7 +892,7 @@ describe('CookieClickerEngine', () => {
 
     it('loadState 触发 stateChange', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       engine.loadState({
         cookies: 100,

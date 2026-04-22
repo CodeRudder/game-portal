@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * ShopSystem 单元测试
  *
@@ -54,14 +55,14 @@ import type { CurrencySystem } from '../../currency/CurrencySystem';
 function createShop(): ShopSystem {
   const shop = new ShopSystem();
   const mockEventBus = {
-    emit: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    once: jest.fn(),
-    removeAllListeners: jest.fn(),
+    emit: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    once: vi.fn(),
+    removeAllListeners: vi.fn(),
   };
-  const mockConfig = { get: jest.fn() };
-  const mockRegistry = { get: jest.fn() };
+  const mockConfig = { get: vi.fn() };
+  const mockRegistry = { get: vi.fn() };
   shop.init({ eventBus: mockEventBus as any, config: mockConfig as any, registry: mockRegistry as any });
   return shop;
 }
@@ -78,15 +79,15 @@ function createMockCurrencySystem(): CurrencySystem & {
 
   return {
     name: 'currency',
-    init: jest.fn(),
-    update: jest.fn(),
-    getState: jest.fn().mockReturnValue({}),
-    reset: jest.fn(),
-    checkAffordability: jest.fn().mockImplementation(() => ({
+    init: vi.fn(),
+    update: vi.fn(),
+    getState: vi.fn().mockReturnValue({}),
+    reset: vi.fn(),
+    checkAffordability: vi.fn().mockImplementation(() => ({
       canAfford: affordable,
       shortages: shortages(),
     })),
-    spendByPriority: jest.fn().mockImplementation(() => {
+    spendByPriority: vi.fn().mockImplementation(() => {
       if (!affordable) throw new Error('货币不足');
       return {};
     }),
@@ -116,7 +117,7 @@ function getFavoritableGoodsId(): string | undefined {
 describe('ShopSystem', () => {
   let shop: ShopSystem;
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     shop = createShop();
   });
 
@@ -801,7 +802,7 @@ describe('ShopSystem', () => {
 
     it('init 可多次调用', () => {
       expect(() => {
-        shop.init({ eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as any, config: { get: jest.fn() } as any, registry: { get: jest.fn() } as any });
+        shop.init({ eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() } as any, config: { get: vi.fn() } as any, registry: { get: vi.fn() } as any });
       }).not.toThrow();
     });
 

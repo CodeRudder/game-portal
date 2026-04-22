@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Greek Gods（希腊众神）放置类游戏 — 完整测试套件
  */
@@ -365,7 +366,7 @@ describe('GreekGodsEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -500,7 +501,7 @@ describe('GreekGodsEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addGold(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -509,7 +510,7 @@ describe('GreekGodsEngine', () => {
     it('购买建筑触发 upgradePurchased 事件', () => {
       engine.start();
       addGold(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalledWith('temple_of_zeus', 1);
@@ -673,7 +674,7 @@ describe('GreekGodsEngine', () => {
     it('解锁神触发 godUnlocked 事件', () => {
       engine.start();
       addGold(engine, 1000);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('godUnlocked', listener);
       engine.unlockGod('athena');
       expect(listener).toHaveBeenCalledWith('athena');
@@ -773,7 +774,7 @@ describe('GreekGodsEngine', () => {
       engine.start();
       addFaith(engine, 100);
       addGlory(engine, 50);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('godBlessed', listener);
       engine.blessGod('zeus');
       expect(listener).toHaveBeenCalledWith('zeus', 1);
@@ -965,7 +966,7 @@ describe('GreekGodsEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalGoldEarned = MIN_PRESTIGE_GOLD * 4;
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();
@@ -1393,7 +1394,7 @@ describe('GreekGodsEngine', () => {
 
   describe('事件系统', () => {
     it('on/off 正常工作', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.start();
       engine.click();
@@ -1402,8 +1403,8 @@ describe('GreekGodsEngine', () => {
     });
 
     it('多个监听器正常工作', () => {
-      const listener1 = jest.fn();
-      const listener2 = jest.fn();
+      const listener1 = vi.fn();
+      const listener2 = vi.fn();
       engine.on('stateChange', listener1);
       engine.on('stateChange', listener2);
       engine.start();
@@ -1413,7 +1414,7 @@ describe('GreekGodsEngine', () => {
     });
 
     it('off 后不再触发', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.off('stateChange', listener);
       engine.start();

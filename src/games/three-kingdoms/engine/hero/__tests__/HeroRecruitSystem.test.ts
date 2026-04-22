@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * HeroRecruitSystem 单元测试 — 核心部分
  * 覆盖：初始化、单抽/十连、概率分布、重复武将处理、资源不足、消耗计算、reset、ISubsystem 接口
@@ -34,8 +35,8 @@ import { DUPLICATE_FRAGMENT_COUNT } from '../hero-config';
 function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: jest.fn().mockReturnValue(true),
-    canAffordResource: jest.fn().mockReturnValue(true),
+    spendResource: vi.fn().mockReturnValue(true),
+    canAffordResource: vi.fn().mockReturnValue(true),
   };
 }
 
@@ -43,8 +44,8 @@ function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
 function makePoorDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: jest.fn().mockReturnValue(false),
-    canAffordResource: jest.fn().mockReturnValue(false),
+    spendResource: vi.fn().mockReturnValue(false),
+    canAffordResource: vi.fn().mockReturnValue(false),
   };
 }
 
@@ -291,7 +292,7 @@ describe('HeroRecruitSystem', () => {
 
     it('spendResource 失败时招募返回 null', () => {
       const deps = makeRichDeps(heroSystem);
-      deps.spendResource = jest.fn().mockReturnValue(false);
+      deps.spendResource = vi.fn().mockReturnValue(false);
       recruit.setRecruitDeps(deps);
       expect(recruit.recruitSingle('normal')).toBeNull();
     });

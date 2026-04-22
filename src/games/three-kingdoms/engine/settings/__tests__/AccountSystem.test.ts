@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * AccountSystem 单元测试
  *
@@ -63,7 +64,7 @@ describe('AccountSystem', () => {
     });
 
     test('首次绑定奖励元宝×50', () => {
-      const grantFn = jest.fn();
+      const grantFn = vi.fn();
       account.setGrantIngotFn(grantFn);
       const result = account.bind(BindMethod.Phone, '138****1234');
       expect(result.rewardGranted).toBe(true);
@@ -348,14 +349,14 @@ describe('AccountSystem', () => {
 
   describe('事件监听', () => {
     test('onChange 在绑定变更时触发', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       account.onChange(cb);
       account.bind(BindMethod.Phone, '138****1234');
       expect(cb).toHaveBeenCalledTimes(1);
     });
 
     test('取消注册后不再触发', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       const unsub = account.onChange(cb);
       unsub();
       account.bind(BindMethod.Phone, '138****1234');
@@ -363,8 +364,8 @@ describe('AccountSystem', () => {
     });
 
     test('removeAllListeners 清除所有回调', () => {
-      const cb1 = jest.fn();
-      const cb2 = jest.fn();
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
       account.onChange(cb1);
       account.onChange(cb2);
       account.removeAllListeners();

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * QuestBoard 单元测试
  *
@@ -95,7 +96,7 @@ describe('QuestBoard', () => {
     });
 
     it('创建任务应触发 questCreated 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       eventBus.on('questCreated', listener);
 
       board.createQuest({
@@ -172,7 +173,7 @@ describe('QuestBoard', () => {
     });
 
     it('接取应触发 questAccepted 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       eventBus.on('questAccepted', listener);
 
       const quest = board.createQuest({
@@ -301,7 +302,7 @@ describe('QuestBoard', () => {
     });
 
     it('所有目标完成应自动完成任务', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       eventBus.on('questCompleted', listener);
 
       const quest = board.createQuest({

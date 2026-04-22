@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 战斗引擎 — 单元测试
  *
@@ -533,7 +534,7 @@ describe('BattleEngine', () => {
   describe('依赖注入', () => {
     it('应支持注入自定义伤害计算器', () => {
       const customCalculator = {
-        calculateDamage: jest.fn().mockReturnValue({
+        calculateDamage: vi.fn().mockReturnValue({
           damage: 999,
           baseDamage: 999,
           skillMultiplier: 1.0,
@@ -543,9 +544,9 @@ describe('BattleEngine', () => {
           randomFactor: 1.0,
           isMinDamage: false,
         }),
-        applyDamage: jest.fn().mockReturnValue(999),
-        calculateDotDamage: jest.fn().mockReturnValue(0),
-        isControlled: jest.fn().mockReturnValue(false),
+        applyDamage: vi.fn().mockReturnValue(999),
+        calculateDotDamage: vi.fn().mockReturnValue(0),
+        isControlled: vi.fn().mockReturnValue(false),
       };
 
       const customEngine = new BattleEngine(customCalculator);

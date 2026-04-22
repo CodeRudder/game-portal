@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * BloonsEngine 综合测试
  * 覆盖：初始化、气球生成/移动、路径跟随、飞镖投掷/碰撞、不同气球类型、
@@ -265,7 +266,7 @@ describe('BloonsEngine - 游戏启动', () => {
     const engine = createEngine();
     const canvas = createMockCanvas();
     engine.init(canvas);
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -275,7 +276,7 @@ describe('BloonsEngine - 游戏启动', () => {
     const engine = createEngine();
     const canvas = createMockCanvas();
     engine.init(canvas);
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(0);
@@ -288,7 +289,7 @@ describe('BloonsEngine - 游戏启动', () => {
 describe('BloonsEngine - 气球生成', () => {
   it('经过足够时间后应生成一个气球', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('bloonSpawned', handler);
 
     // 第一次生成在 spawnTimer <= 0 时立即触发
@@ -321,7 +322,7 @@ describe('BloonsEngine - 气球生成', () => {
 
   it('生成气球时发出 bloonSpawned 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('bloonSpawned', handler);
 
     callUpdate(engine, BLOON_SPAWN_INTERVAL + 1);
@@ -446,7 +447,7 @@ describe('BloonsEngine - 气球移动与路径跟随', () => {
 
   it('气球到达终点时发出 bloonEscaped 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('bloonEscaped', handler);
     addBloon(engine, { pathProgress: 0.99, speed: 1.0 });
 
@@ -475,7 +476,7 @@ describe('BloonsEngine - 飞镖投掷', () => {
     const engine = createAndStartEngine();
     // 推进 _gameTime 使冷却检查通过
     setPrivate(engine, '_gameTime', DART_COOLDOWN + 1);
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('dartThrown', handler);
 
     engine.handleKeyDown(' ');
@@ -540,7 +541,7 @@ describe('BloonsEngine - 飞镖投掷', () => {
 
   it('投掷飞镖时发出 dartThrown 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('dartThrown', handler);
     setPrivate(engine, '_gameTime', DART_COOLDOWN + 1);
 
@@ -701,7 +702,7 @@ describe('BloonsEngine - 碰撞检测', () => {
   it('击破气球时发出 bloonPopped 事件', () => {
     const engine = createAndStartEngine();
     setPrivate(engine, '_monkeys', []);
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('bloonPopped', handler);
     addBloon(engine, { pathProgress: 0.050420, hp: 1, maxHp: 1, type: BloonType.RED });
     addDart(engine, {
@@ -721,7 +722,7 @@ describe('BloonsEngine - 碰撞检测', () => {
   it('命中但未击破时发出 bloonHit 事件', () => {
     const engine = createAndStartEngine();
     setPrivate(engine, '_monkeys', []);
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('bloonHit', handler);
     addBloon(engine, { pathProgress: 0.050420, hp: 2, maxHp: 2, type: BloonType.BLUE });
     addDart(engine, {
@@ -891,7 +892,7 @@ describe('BloonsEngine - 飞镖猴系统', () => {
 
   it('按 T 键发出 placingMonkeyChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('placingMonkeyChange', handler);
 
     engine.handleKeyDown('t');
@@ -915,7 +916,7 @@ describe('BloonsEngine - 飞镖猴系统', () => {
 
   it('放置飞镖猴发出 monkeyPlaced 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('monkeyPlaced', handler);
     setPrivate(engine, '_crosshairX', MONKEY_SLOTS[0].x);
     setPrivate(engine, '_crosshairY', MONKEY_SLOTS[0].y);
@@ -1078,7 +1079,7 @@ describe('BloonsEngine - 关卡系统', () => {
 
   it('按 N 键发出 levelChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('levelChange', handler);
     setPrivate(engine, '_spawnQueue', []);
     setPrivate(engine, '_bloons', []);
@@ -1278,7 +1279,7 @@ describe('BloonsEngine - 计分系统', () => {
     const engine = createAndStartEngine();
     setPrivate(engine, '_monkeys', []);
     setPrivate(engine, '_spawnQueue', []);
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     addBloon(engine, { hp: 1, maxHp: 1, type: BloonType.RED, speed: 0, pathProgress: 0.1 });
     addDart(engine, { x: 120, y: 198, fromX: 120, fromY: 198, toX: 120, toY: 198, alive: true, checked: false });
@@ -1554,7 +1555,7 @@ describe('BloonsEngine - 游戏重置', () => {
 
   it('reset 发出 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
 
     engine.reset();
@@ -1668,7 +1669,7 @@ describe('BloonsEngine - getState', () => {
 describe('BloonsEngine - 事件系统', () => {
   it('可以注册和触发自定义事件', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('customEvent', handler);
     (engine as any).emit('customEvent', 'data');
     expect(handler).toHaveBeenCalledWith('data');
@@ -1676,7 +1677,7 @@ describe('BloonsEngine - 事件系统', () => {
 
   it('可以取消事件监听', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('customEvent', handler);
     engine.off('customEvent', handler);
     (engine as any).emit('customEvent');
@@ -1685,7 +1686,7 @@ describe('BloonsEngine - 事件系统', () => {
 
   it('destroy 后事件不再触发', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('customEvent', handler);
     engine.destroy();
     (engine as any).emit('customEvent');
@@ -1749,7 +1750,7 @@ describe('BloonsEngine - 游戏结束', () => {
 
   it('游戏结束时发出 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     setPrivate(engine, '_lives', 1);
     addBloon(engine, { pathProgress: 0.99, speed: 1.0 });

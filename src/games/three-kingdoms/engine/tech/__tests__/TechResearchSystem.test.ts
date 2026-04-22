@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * TechResearchSystem 单元测试
  * 覆盖：研究流程、队列规则、加速机制、序列化
@@ -11,14 +12,14 @@ import type { ISystemDeps } from '../../../../core/types';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -30,9 +31,9 @@ describe('TechResearchSystem', () => {
   let mandateAmount: number;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     baseTime = 1_000_000_000_000;
-    jest.spyOn(Date, 'now').mockReturnValue(baseTime);
+    vi.spyOn(Date, 'now').mockReturnValue(baseTime);
     mandateAmount = 100;
 
     treeSys = new TechTreeSystem();
@@ -58,7 +59,7 @@ describe('TechResearchSystem', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // 辅助：给科技点系统充入足够的点数
@@ -71,7 +72,7 @@ describe('TechResearchSystem', () => {
 
   // 辅助：推进时间
   function advanceTime(ms: number): void {
-    jest.spyOn(Date, 'now').mockReturnValue(baseTime + ms);
+    vi.spyOn(Date, 'now').mockReturnValue(baseTime + ms);
   }
 
   // ═══════════════════════════════════════════

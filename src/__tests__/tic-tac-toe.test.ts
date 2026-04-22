@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { TicTacToeEngine } from '@/games/tic-tac-toe/TicTacToeEngine';
 import {
   BOARD_SIZE,
@@ -821,7 +822,7 @@ describe('TicTacToeEngine', () => {
   describe('事件系统', () => {
     it('start 触发 statusChange 事件', () => {
       const engine = createEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.start();
       expect(listener).toHaveBeenCalledWith('playing');
@@ -830,7 +831,7 @@ describe('TicTacToeEngine', () => {
     it('pause 触发 statusChange 事件', () => {
       const engine = createEngine();
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.pause();
       expect(listener).toHaveBeenCalledWith('paused');
@@ -840,7 +841,7 @@ describe('TicTacToeEngine', () => {
       const engine = createEngine();
       engine.start();
       engine.pause();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.resume();
       expect(listener).toHaveBeenCalledWith('playing');
@@ -849,7 +850,7 @@ describe('TicTacToeEngine', () => {
     it('scoreChange 事件在计分时触发', () => {
       const engine = createEngine();
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('scoreChange', listener);
       // X 赢
       placeMove(engine, 0, 0); // X

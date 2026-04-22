@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { MastermindEngine } from '../MastermindEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -320,7 +321,7 @@ describe('MastermindEngine - 难度设置', () => {
   });
 
   it('设置难度触发 difficultyChange 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('difficultyChange', callback);
     engine.setDifficulty('easy');
     expect(callback).toHaveBeenCalledWith('easy');
@@ -372,7 +373,7 @@ describe('MastermindEngine - 颜色选择', () => {
   });
 
   it('选择颜色触发 inputChange 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('inputChange', callback);
     engine.selectColor(1);
     expect(callback).toHaveBeenCalled();
@@ -492,7 +493,7 @@ describe('MastermindEngine - 删除操作', () => {
   it('删除触发 inputChange 事件', () => {
     engine.selectColor(1);
     engine.setCursorPos(0);
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('inputChange', callback);
     engine.handleKeyDown('Backspace');
     expect(callback).toHaveBeenCalled();
@@ -564,7 +565,7 @@ describe('MastermindEngine - 提交猜测', () => {
     engine.selectColor(5);
     engine.selectColor(4);
     engine.selectColor(5);
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('guessSubmitted', callback);
     engine.submitGuess();
     expect(callback).toHaveBeenCalled();
@@ -731,7 +732,7 @@ describe('MastermindEngine - 胜利', () => {
   });
 
   it('胜利触发 win 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('win', callback);
     engine.selectColor(0);
     engine.selectColor(1);
@@ -783,7 +784,7 @@ describe('MastermindEngine - 失败', () => {
   });
 
   it('失败触发 lose 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('lose', callback);
     for (let i = 0; i < MAX_GUESSES; i++) {
       engine.selectColor(4);
@@ -892,7 +893,7 @@ describe('MastermindEngine - 事件', () => {
   });
 
   it('start 触发 statusChange 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -900,7 +901,7 @@ describe('MastermindEngine - 事件', () => {
 
   it('pause 触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.pause();
     expect(callback).toHaveBeenCalledWith('paused');
@@ -909,7 +910,7 @@ describe('MastermindEngine - 事件', () => {
   it('resume 触发 statusChange 事件', () => {
     engine.start();
     engine.pause();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.resume();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -917,7 +918,7 @@ describe('MastermindEngine - 事件', () => {
 
   it('reset 触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.reset();
     expect(callback).toHaveBeenCalledWith('idle');
@@ -925,7 +926,7 @@ describe('MastermindEngine - 事件', () => {
 
   it('gameOver 触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     (engine as any).gameOver();
     expect(callback).toHaveBeenCalledWith('gameover');
@@ -933,14 +934,14 @@ describe('MastermindEngine - 事件', () => {
 
   it('得分变化触发 scoreChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('scoreChange', callback);
     (engine as any).addScore(100);
     expect(callback).toHaveBeenCalledWith(100);
   });
 
   it('off 可以取消事件监听', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();
@@ -949,7 +950,7 @@ describe('MastermindEngine - 事件', () => {
 
   it('未填写完整提交触发 error 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('error', callback);
     engine.selectColor(0);
     engine.submitGuess();

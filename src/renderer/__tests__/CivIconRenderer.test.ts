@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * CivIconRenderer 测试
  *
@@ -15,7 +16,7 @@
 // Mock PixiJS v8
 // ---------------------------------------------------------------------------
 
-jest.mock('pixi.js', () => {
+vi.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0;
@@ -23,10 +24,10 @@ jest.mock('pixi.js', () => {
     visible = true;
     children: any[] = [];
     parent: any = null;
-    position = { set: jest.fn() };
-    emit = jest.fn();
-    on = jest.fn();
-    off = jest.fn();
+    position = { set: vi.fn() };
+    emit = vi.fn();
+    on = vi.fn();
+    off = vi.fn();
 
     constructor(opts?: { label?: string }) { this.label = opts?.label ?? ''; }
 

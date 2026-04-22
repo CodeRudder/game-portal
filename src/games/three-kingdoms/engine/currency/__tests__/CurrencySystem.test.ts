@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * CurrencySystem 单元测试
  *
@@ -32,14 +33,14 @@ import {
 function createSystem(): CurrencySystem {
   const cs = new CurrencySystem();
   const mockEventBus = {
-    emit: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    once: jest.fn(),
-    removeAllListeners: jest.fn(),
+    emit: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    once: vi.fn(),
+    removeAllListeners: vi.fn(),
   };
-  const mockConfig = { get: jest.fn() };
-  const mockRegistry = { get: jest.fn() };
+  const mockConfig = { get: vi.fn() };
+  const mockRegistry = { get: vi.fn() };
   cs.init({ eventBus: mockEventBus as any, config: mockConfig as any, registry: mockRegistry as any });
   return cs;
 }
@@ -47,7 +48,7 @@ function createSystem(): CurrencySystem {
 describe('CurrencySystem', () => {
   let cs: CurrencySystem;
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     cs = createSystem();
   });
 
@@ -361,7 +362,7 @@ describe('CurrencySystem', () => {
       expect(data.wallet.mandate).toBe(10);
 
       const cs2 = new CurrencySystem();
-      cs2.init({ eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as any, config: { get: jest.fn() } as any, registry: { get: jest.fn() } as any });
+      cs2.init({ eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() } as any, config: { get: vi.fn() } as any, registry: { get: vi.fn() } as any });
       cs2.deserialize(data);
       expect(cs2.getBalance('copper')).toBe(1500);
       expect(cs2.getBalance('mandate')).toBe(10);
@@ -369,7 +370,7 @@ describe('CurrencySystem', () => {
 
     it('deserialize 版本不匹配时仍恢复数据', () => {
       const data = { wallet: { ...INITIAL_WALLET, copper: 5000 }, version: 99 };
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       cs.deserialize(data as any);
       expect(cs.getBalance('copper')).toBe(5000);
       expect(consoleSpy).toHaveBeenCalled();

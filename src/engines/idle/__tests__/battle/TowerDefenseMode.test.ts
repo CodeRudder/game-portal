@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * TowerDefenseMode 单元测试
  *
@@ -58,20 +59,20 @@ function createMockContext(overrides?: {
   speed?: number;
 }): BattleModeContext {
   const units = overrides?.units ?? [];
-  const dealDamageMock = jest.fn().mockReturnValue({ damage: 10, isCrit: false, isMiss: false });
-  const healMock = jest.fn();
-  const addBuffMock = jest.fn();
-  const removeBuffMock = jest.fn();
-  const emitMock = jest.fn();
+  const dealDamageMock = vi.fn().mockReturnValue({ damage: 10, isCrit: false, isMiss: false });
+  const healMock = vi.fn();
+  const addBuffMock = vi.fn();
+  const removeBuffMock = vi.fn();
+  const emitMock = vi.fn();
 
   return {
     units,
-    getUnit: jest.fn((id: string) => units.find((u) => u.id === id)),
+    getUnit: vi.fn((id: string) => units.find((u) => u.id === id)),
     dealDamage: dealDamageMock,
     heal: healMock,
     addBuff: addBuffMock,
     removeBuff: removeBuffMock,
-    getAliveUnits: jest.fn((side?: 'attacker' | 'defender') => {
+    getAliveUnits: vi.fn((side?: 'attacker' | 'defender') => {
       if (side) return units.filter((u) => u.isAlive && u.side === side);
       return units.filter((u) => u.isAlive);
     }),

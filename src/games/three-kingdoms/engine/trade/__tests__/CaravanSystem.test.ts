@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * CaravanSystem 单元测试 — Part 1
  *
@@ -22,26 +23,26 @@ import {
 function createCaravan(): CaravanSystem {
   const caravan = new CaravanSystem();
   caravan.init({
-    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as any,
-    config: { get: jest.fn() } as any,
-    registry: { get: jest.fn() } as any,
+    eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() } as any,
+    config: { get: vi.fn() } as any,
+    registry: { get: vi.fn() } as any,
   });
   return caravan;
 }
 
 function createMockRouteProvider(): RouteInfoProvider {
   return {
-    getRouteDef: jest.fn().mockReturnValue({
+    getRouteDef: vi.fn().mockReturnValue({
       opened: true, baseTravelTime: 600, baseProfitRate: 0.15, from: 'luoyang', to: 'xuchang',
     }),
-    getPrice: jest.fn().mockReturnValue(100),
-    completeTrade: jest.fn(),
+    getPrice: vi.fn().mockReturnValue(100),
+    completeTrade: vi.fn(),
   };
 }
 
 describe('CaravanSystem - 初始化与查询', () => {
   let cs: CaravanSystem;
-  beforeEach(() => { jest.restoreAllMocks(); cs = createCaravan(); });
+  beforeEach(() => { vi.restoreAllMocks(); cs = createCaravan(); });
 
   it('初始商队数量为2', () => {
     expect(cs.getCaravanCount()).toBe(INITIAL_CARAVAN_COUNT);
@@ -102,7 +103,7 @@ describe('CaravanSystem - 初始化与查询', () => {
 
 describe('CaravanSystem - 商队派遣', () => {
   let cs: CaravanSystem;
-  beforeEach(() => { jest.restoreAllMocks(); cs = createCaravan(); });
+  beforeEach(() => { vi.restoreAllMocks(); cs = createCaravan(); });
 
   it('dispatch 成功派遣', () => {
     cs.setRouteProvider(createMockRouteProvider());
@@ -143,8 +144,8 @@ describe('CaravanSystem - 商队派遣', () => {
 
   it('dispatch 商路未开通失败', () => {
     const provider: RouteInfoProvider = {
-      getRouteDef: jest.fn().mockReturnValue({ opened: false, baseTravelTime: 600, baseProfitRate: 0.15, from: 'luoyang', to: 'xuchang' }),
-      getPrice: jest.fn().mockReturnValue(100), completeTrade: jest.fn(),
+      getRouteDef: vi.fn().mockReturnValue({ opened: false, baseTravelTime: 600, baseProfitRate: 0.15, from: 'luoyang', to: 'xuchang' }),
+      getPrice: vi.fn().mockReturnValue(100), completeTrade: vi.fn(),
     };
     cs.setRouteProvider(provider);
     const result = cs.dispatch({ caravanId: cs.getCaravans()[0].id, routeId: 'route_luoyang_xuchang', cargo: { silk: 10 } });
@@ -154,8 +155,8 @@ describe('CaravanSystem - 商队派遣', () => {
 
   it('dispatch 商路不存在失败', () => {
     const provider: RouteInfoProvider = {
-      getRouteDef: jest.fn().mockReturnValue(null),
-      getPrice: jest.fn().mockReturnValue(100), completeTrade: jest.fn(),
+      getRouteDef: vi.fn().mockReturnValue(null),
+      getPrice: vi.fn().mockReturnValue(100), completeTrade: vi.fn(),
     };
     cs.setRouteProvider(provider);
     const result = cs.dispatch({ caravanId: cs.getCaravans()[0].id, routeId: 'nonexistent', cargo: { silk: 10 } });
@@ -195,7 +196,7 @@ describe('CaravanSystem - 商队派遣', () => {
 
 describe('CaravanSystem - update 状态流转', () => {
   let cs: CaravanSystem;
-  beforeEach(() => { jest.restoreAllMocks(); cs = createCaravan(); });
+  beforeEach(() => { vi.restoreAllMocks(); cs = createCaravan(); });
 
   it('traveling 商队到达后转为 returning', () => {
     const provider = createMockRouteProvider();

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * StageSystem 单元测试
  *
@@ -391,7 +392,7 @@ describe('StageSystem', () => {
 
     it('推进应触发 advanced 事件', () => {
       const system = new StageSystem(createStageDefs(), 'stage_1');
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
 
       system.advance(
@@ -615,7 +616,7 @@ describe('StageSystem', () => {
   describe('onEvent', () => {
     it('返回的取消函数应正确移除监听器', () => {
       const system = new StageSystem(createStageDefs(), 'stage_1');
-      const handler = jest.fn();
+      const handler = vi.fn();
       const unsubscribe = system.onEvent(handler);
 
       unsubscribe();
@@ -626,8 +627,8 @@ describe('StageSystem', () => {
 
     it('应支持多个监听器', () => {
       const system = new StageSystem(createStageDefs(), 'stage_1');
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
 
       system.onEvent(handler1);
       system.onEvent(handler2);
@@ -639,10 +640,10 @@ describe('StageSystem', () => {
 
     it('监听器异常不应影响系统运行', () => {
       const system = new StageSystem(createStageDefs(), 'stage_1');
-      const errorHandler = jest.fn(() => {
+      const errorHandler = vi.fn(() => {
         throw new Error('监听器异常');
       });
-      const normalHandler = jest.fn();
+      const normalHandler = vi.fn();
 
       system.onEvent(errorHandler);
       system.onEvent(normalHandler);

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { FreeCellEngine } from '../FreeCellEngine';
 import {
   createDeck,
@@ -865,13 +866,13 @@ describe('FreeCellEngine - Keyboard Controls', () => {
   });
 
   it('Space triggers select', () => {
-    const spy = jest.spyOn(engine as any, 'handleSelect');
+    const spy = vi.spyOn(engine as any, 'handleSelect');
     engine.handleKeyDown(' ');
     expect(spy).toHaveBeenCalled();
   });
 
   it('A triggers autoCompleteAll', () => {
-    const spy = jest.spyOn(engine as any, 'autoCompleteAll');
+    const spy = vi.spyOn(engine as any, 'autoCompleteAll');
     engine.handleKeyDown('a');
     expect(spy).toHaveBeenCalled();
   });

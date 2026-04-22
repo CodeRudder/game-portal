@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * HeroRecruitSystem 边界测试 — 空池、无资源、保底重置、降级选择
  * 覆盖：极端场景、保底计数器边界、资源不足、序列化边界
@@ -19,16 +20,16 @@ import { DUPLICATE_FRAGMENT_COUNT } from '../hero-config';
 function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: jest.fn().mockReturnValue(true),
-    canAffordResource: jest.fn().mockReturnValue(true),
+    spendResource: vi.fn().mockReturnValue(true),
+    canAffordResource: vi.fn().mockReturnValue(true),
   };
 }
 
 function makePoorDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: jest.fn().mockReturnValue(false),
-    canAffordResource: jest.fn().mockReturnValue(false),
+    spendResource: vi.fn().mockReturnValue(false),
+    canAffordResource: vi.fn().mockReturnValue(false),
   };
 }
 
@@ -119,8 +120,8 @@ describe('HeroRecruitSystem — 边界测试', () => {
 
     it('canAfford 返回 true 但 spend 返回 false 时招募失败', () => {
       const deps = makeRichDeps(heroSystem);
-      deps.spendResource = jest.fn().mockReturnValue(false);
-      deps.canAffordResource = jest.fn().mockReturnValue(true);
+      deps.spendResource = vi.fn().mockReturnValue(false);
+      deps.canAffordResource = vi.fn().mockReturnValue(true);
       recruit.setRecruitDeps(deps);
       expect(recruit.recruitSingle('normal')).toBeNull();
     });

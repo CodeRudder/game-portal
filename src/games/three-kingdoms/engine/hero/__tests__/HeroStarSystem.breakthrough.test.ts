@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * HeroStarSystem 单元测试 — 突破系统
  *
@@ -16,9 +17,9 @@ import {
 
 function makeMockDeps() {
   return {
-    eventBus: { on: jest.fn(), off: jest.fn(), emit: jest.fn() },
-    config: { get: jest.fn(), set: jest.fn(), has: jest.fn() },
-    registry: { get: jest.fn(), register: jest.fn(), has: jest.fn(), getAll: jest.fn(), unregister: jest.fn() },
+    eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
+    config: { get: vi.fn(), set: vi.fn(), has: vi.fn() },
+    registry: { get: vi.fn(), register: vi.fn(), has: vi.fn(), getAll: vi.fn(), unregister: vi.fn() },
   };
 }
 
@@ -29,14 +30,14 @@ function makeStarDeps(overrides?: Partial<{ gold: number; breakthroughStones: nu
   };
   return {
     resources,
-    spendFragments: jest.fn(),
-    getFragments: jest.fn(),
-    spendResource: jest.fn((type: string, amount: number) => {
+    spendFragments: vi.fn(),
+    getFragments: vi.fn(),
+    spendResource: vi.fn((type: string, amount: number) => {
       if ((resources[type] ?? 0) >= amount) { resources[type] -= amount; return true; }
       return false;
     }),
-    canAffordResource: jest.fn((type: string, amount: number) => (resources[type] ?? 0) >= amount),
-    getResourceAmount: jest.fn((type: string) => resources[type] ?? 0),
+    canAffordResource: vi.fn((type: string, amount: number) => (resources[type] ?? 0) >= amount),
+    getResourceAmount: vi.fn((type: string) => resources[type] ?? 0),
   };
 }
 
@@ -58,7 +59,7 @@ describe('HeroStarSystem 突破系统 #14', () => {
   let deps: ReturnType<typeof makeStarDeps>;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     ({ heroSystem, starSystem, deps } = createTestSystem());
     heroSystem.addGeneral('guanyu');
   });

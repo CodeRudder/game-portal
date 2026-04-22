@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * JigsawPuzzleEngine 综合测试
  * 覆盖：碎片生成/打乱、选择/移动/放置、吸附检测、完成判定、
@@ -57,7 +58,7 @@ function setPrivate(engine: JigsawPuzzleEngine, key: string, value: unknown): vo
 describe('JigsawPuzzleEngine', () => {
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // ========== 1. 常量验证 ==========
@@ -570,7 +571,7 @@ describe('JigsawPuzzleEngine', () => {
 
     it('完成时应触发 statusChange 事件', () => {
       const engine = createAndStartEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       for (let i = 0; i < TOTAL_PIECES; i++) {
         const row = Math.floor(i / GRID_SIZE);
@@ -750,7 +751,7 @@ describe('JigsawPuzzleEngine', () => {
   describe('事件系统', () => {
     it('start 应触发 statusChange 为 playing', () => {
       const engine = createEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.start();
       expect(listener).toHaveBeenCalledWith('playing');
@@ -758,7 +759,7 @@ describe('JigsawPuzzleEngine', () => {
 
     it('reset 应触发 statusChange 为 idle', () => {
       const engine = createAndStartEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.handleKeyDown('r');
       expect(listener).toHaveBeenCalledWith('idle');
@@ -766,7 +767,7 @@ describe('JigsawPuzzleEngine', () => {
 
     it('放置碎片应触发 scoreChange', () => {
       const engine = createAndStartEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('scoreChange', listener);
       engine.placePiece(0, 0, 0);
       expect(listener).toHaveBeenCalledWith(1);
@@ -774,7 +775,7 @@ describe('JigsawPuzzleEngine', () => {
 
     it('放置碎片应触发 stateChange', () => {
       const engine = createAndStartEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.placePiece(0, 0, 0);
       expect(listener).toHaveBeenCalled();
@@ -782,7 +783,7 @@ describe('JigsawPuzzleEngine', () => {
 
     it('off 应取消事件监听', () => {
       const engine = createEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.off('statusChange', listener);
       engine.start();
@@ -962,7 +963,7 @@ describe('JigsawPuzzleEngine', () => {
   describe('destroy', () => {
     it('destroy 后应清理事件监听', () => {
       const engine = createAndStartEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.destroy();
       // 再次触发不应调用 listener

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 关卡进度系统测试
  *
@@ -626,7 +627,7 @@ describe('CampaignProgressSystem ISubsystem', () => {
   });
 
   it('init 注入依赖不报错', () => {
-    const mockDeps = { eventBus: { on: jest.fn(), off: jest.fn(), emit: jest.fn() } } as any;
+    const mockDeps = { eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() } } as any;
     expect(() => system.init(mockDeps)).not.toThrow();
   });
 

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * EquipmentSystem 单元测试
  *
@@ -47,14 +48,14 @@ function createSystem(): EquipmentSystem {
   resetUidCounter();
   const sys = new EquipmentSystem();
   const mockEventBus = {
-    emit: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    once: jest.fn(),
-    removeAllListeners: jest.fn(),
+    emit: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    once: vi.fn(),
+    removeAllListeners: vi.fn(),
   };
-  const mockConfig = { get: jest.fn() };
-  const mockRegistry = { get: jest.fn() };
+  const mockConfig = { get: vi.fn() };
+  const mockRegistry = { get: vi.fn() };
   sys.init({
     eventBus: mockEventBus as any,
     config: mockConfig as any,
@@ -798,7 +799,7 @@ describe('EquipmentSystem — 序列化', () => {
       equipments: [],
       bagCapacity: 100,
     };
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     sys.deserialize(data as any);
     expect(sys.getBagCapacity()).toBe(100);
     expect(consoleSpy).toHaveBeenCalled();

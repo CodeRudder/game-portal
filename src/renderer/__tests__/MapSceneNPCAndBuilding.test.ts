@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * MapScene NPC 外形和建筑动画测试
  *
@@ -10,18 +11,18 @@
 
 // ─── Mock PixiJS ──────────────────────────────────────────
 
-jest.mock('pixi.js', () => {
+vi.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0; y = 0; visible = true; alpha = 1;
-    scale = { set: jest.fn(), x: 1, y: 1 };
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    scale = { set: vi.fn(), x: 1, y: 1 };
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
     children: any[] = [];
     parent: any = null;
-    emit = jest.fn();
-    on = jest.fn().mockReturnThis();
-    off = jest.fn();
-    once = jest.fn();
+    emit = vi.fn();
+    on = vi.fn().mockReturnThis();
+    off = vi.fn();
+    once = vi.fn();
     eventMode: string = 'passive';
     cursor: string = 'default';
 
@@ -58,8 +59,8 @@ jest.mock('pixi.js', () => {
 
   class MockText {
     text: string;
-    anchor = { set: jest.fn(), x: 0, y: 0 };
-    position = { set: jest.fn() };
+    anchor = { set: vi.fn(), x: 0, y: 0 };
+    position = { set: vi.fn() };
     x = 0; y = 0; visible = true; alpha = 1;
     style: any;
     parent: any = null;
@@ -72,7 +73,7 @@ jest.mock('pixi.js', () => {
   }
 
   class MockSprite {
-    anchor = { set: jest.fn(), x: 0, y: 0 };
+    anchor = { set: vi.fn(), x: 0, y: 0 };
     width = 0; height = 0; visible = true;
     parent: any = null;
     constructor(_texture?: any) {}

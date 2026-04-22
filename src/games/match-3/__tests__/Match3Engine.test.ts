@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 消消乐（Match-3）引擎完整测试
  *
@@ -837,7 +838,7 @@ describe('Match3Engine', () => {
       grid[0][2] = 0;
       setGridTypes(engine, grid);
 
-      const scoreSpy = jest.fn();
+      const scoreSpy = vi.fn();
       engine.on('scoreCalc', scoreSpy);
 
       // 触发交换
@@ -924,7 +925,7 @@ describe('Match3Engine', () => {
     });
 
     it('洗牌后应触发 shuffle 事件', () => {
-      const shuffleSpy = jest.fn();
+      const shuffleSpy = vi.fn();
       engine.on('shuffle', shuffleSpy);
 
       engine.shuffleBoard();
@@ -963,7 +964,7 @@ describe('Match3Engine', () => {
     });
 
     it('达到目标分数应升级', () => {
-      const levelSpy = jest.fn();
+      const levelSpy = vi.fn();
       engine.on('levelChange', levelSpy);
 
       // 直接设置分数超过目标
@@ -995,7 +996,7 @@ describe('Match3Engine', () => {
     });
 
     it('应触发 levelUp 事件', () => {
-      const levelUpSpy = jest.fn();
+      const levelUpSpy = vi.fn();
       engine.on('levelUp', levelUpSpy);
 
       (engine as any).addScore(LEVEL_TARGETS[0]);
@@ -1292,7 +1293,7 @@ describe('Match3Engine', () => {
     });
 
     it('应触发 statusChange 事件', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       engine.on('statusChange', spy);
 
       engine.pause();
@@ -1303,7 +1304,7 @@ describe('Match3Engine', () => {
     });
 
     it('应触发 scoreChange 事件', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       engine.on('scoreChange', spy);
 
       (engine as any).addScore(100);
@@ -1312,7 +1313,7 @@ describe('Match3Engine', () => {
     });
 
     it('destroy 后应清理所有事件', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       engine.on('test', spy);
       engine.destroy();
 
@@ -1388,7 +1389,7 @@ describe('Match3Engine', () => {
   // ============================================================
   describe('事件系统', () => {
     it('选中宝石应触发 select 事件', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       engine.on('select', spy);
 
       const pos = engine.getCellPosition(0, 0);
@@ -1398,7 +1399,7 @@ describe('Match3Engine', () => {
     });
 
     it('取消选中应触发 deselect 事件', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       engine.on('deselect', spy);
 
       const pos = engine.getCellPosition(0, 0);
@@ -1409,7 +1410,7 @@ describe('Match3Engine', () => {
     });
 
     it('off 应取消事件监听', () => {
-      const spy = jest.fn();
+      const spy = vi.fn();
       engine.on('select', spy);
       engine.off('select', spy);
 

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * SettingsManager 单元测试
  *
@@ -40,9 +41,9 @@ function createMockStorage(): ISettingsStorage & { store: Record<string, string>
   const store: Record<string, string> = {};
   return {
     store,
-    getItem: jest.fn((key: string) => store[key] ?? null),
-    setItem: jest.fn((key: string, val: string) => { store[key] = val; }),
-    removeItem: jest.fn((key: string) => { delete store[key]; }),
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, val: string) => { store[key] = val; }),
+    removeItem: vi.fn((key: string) => { delete store[key]; }),
   };
 }
 
@@ -287,7 +288,7 @@ describe('SettingsManager', () => {
 
   describe('变更通知', () => {
     test('onChange 在设置变更时触发', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       manager.onChange(callback);
       manager.updateBasicSettings({ language: Language.English });
       expect(callback).toHaveBeenCalledTimes(1);
@@ -300,7 +301,7 @@ describe('SettingsManager', () => {
     });
 
     test('onChange 回调包含新旧值', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       manager.onChange(callback);
       manager.updateAudioSettings({ masterVolume: 50 });
       const event = callback.mock.calls[0][0];
@@ -310,7 +311,7 @@ describe('SettingsManager', () => {
     });
 
     test('取消注册后不再触发', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       const unsub = manager.onChange(callback);
       unsub();
       manager.updateBasicSettings({ timezone: 9 });
@@ -318,8 +319,8 @@ describe('SettingsManager', () => {
     });
 
     test('removeAllListeners 清除所有回调', () => {
-      const cb1 = jest.fn();
-      const cb2 = jest.fn();
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
       manager.onChange(cb1);
       manager.onChange(cb2);
       manager.removeAllListeners();

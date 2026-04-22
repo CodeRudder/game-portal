@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * AchievementSystem 单元测试
  *
@@ -19,14 +20,14 @@ import { ALL_ACHIEVEMENTS, REBIRTH_ACHIEVEMENT_CHAINS } from '../../../core/achi
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -144,7 +145,7 @@ describe('AchievementSystem', () => {
 
     test('完成时发射 achievement:completed 事件', () => {
       const deps = mockDeps();
-      const emitSpy = jest.spyOn(deps.eventBus, 'emit');
+      const emitSpy = vi.spyOn(deps.eventBus, 'emit');
       const sys = new AchievementSystem();
       sys.init(deps);
 
@@ -234,7 +235,7 @@ describe('AchievementSystem', () => {
 
     test('领取后触发奖励回调', () => {
       const sys = createSystem();
-      const cb = jest.fn();
+      const cb = vi.fn();
       sys.setRewardCallback(cb);
       sys.updateProgress('battle_wins', 10);
       sys.claimReward('ach-battle-001');
@@ -286,7 +287,7 @@ describe('AchievementSystem', () => {
 
     test('完成链中所有成就后链标记完成', () => {
       const sys = createSystem();
-      const rewardCb = jest.fn();
+      const rewardCb = vi.fn();
       sys.setRewardCallback(rewardCb);
 
       // 战神之路链: ach-battle-001, 002, 003, 004
@@ -309,7 +310,7 @@ describe('AchievementSystem', () => {
 
     test('链完成发放链奖励', () => {
       const sys = createSystem();
-      const rewardCb = jest.fn();
+      const rewardCb = vi.fn();
       sys.setRewardCallback(rewardCb);
 
       // 完成战神之路链
@@ -338,7 +339,7 @@ describe('AchievementSystem', () => {
       const sys = new AchievementSystem();
       sys.init(deps);
 
-      const onCalls = (deps.eventBus.on as jest.Mock).mock.calls;
+      const onCalls = (deps.eventBus.on as vi.Mock).mock.calls;
       const battleCall = onCalls.find((c: string[]) => c[0] === 'battle:completed');
       expect(battleCall).toBeDefined();
     });
@@ -348,7 +349,7 @@ describe('AchievementSystem', () => {
       const sys = new AchievementSystem();
       sys.init(deps);
 
-      const onCalls = (deps.eventBus.on as jest.Mock).mock.calls;
+      const onCalls = (deps.eventBus.on as vi.Mock).mock.calls;
       const rebirthCall = onCalls.find((c: string[]) => c[0] === 'rebirth:completed');
       expect(rebirthCall).toBeDefined();
     });
@@ -358,7 +359,7 @@ describe('AchievementSystem', () => {
       const sys = new AchievementSystem();
       sys.init(deps);
 
-      const onCalls = (deps.eventBus.on as jest.Mock).mock.calls;
+      const onCalls = (deps.eventBus.on as vi.Mock).mock.calls;
       const prestigeCall = onCalls.find((c: string[]) => c[0] === 'prestige:levelUp');
       expect(prestigeCall).toBeDefined();
     });

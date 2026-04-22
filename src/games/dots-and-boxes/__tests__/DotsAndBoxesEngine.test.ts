@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { DotsAndBoxesEngine } from '../DotsAndBoxesEngine';
 import {
   PLAYER_1, PLAYER_2, NO_PLAYER,

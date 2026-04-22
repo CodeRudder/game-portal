@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   SUITS,
   RANKS,
@@ -169,8 +170,8 @@ describe('VideoPokerEngine', () => {
     canvas = createMockCanvas();
     engine = new VideoPokerEngine();
     // 阻止 gameLoop
-    jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
-    jest.spyOn(window, 'cancelAnimationFrame').mockReturnValue();
+    vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+    vi.spyOn(window, 'cancelAnimationFrame').mockReturnValue();
   });
 
   // ========== 1. 常量测试 ==========
@@ -956,7 +957,7 @@ describe('VideoPokerEngine', () => {
   describe('Event System', () => {
     it('deal 应触发 stateChange 事件', () => {
       engine.init(canvas);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.deal();
       expect(listener).toHaveBeenCalled();
@@ -965,7 +966,7 @@ describe('VideoPokerEngine', () => {
     it('toggleHold 应触发 stateChange 事件', () => {
       engine.init(canvas);
       engine.deal();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.toggleHold(0);
       expect(listener).toHaveBeenCalled();
@@ -974,7 +975,7 @@ describe('VideoPokerEngine', () => {
     it('draw 应触发 stateChange 事件', () => {
       engine.init(canvas);
       engine.deal();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.draw();
       expect(listener).toHaveBeenCalled();

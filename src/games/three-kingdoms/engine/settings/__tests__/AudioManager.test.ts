@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * AudioManager 单元测试
  *
@@ -22,10 +23,10 @@ import { createDefaultAudioSettings } from '../../../core/settings';
 
 function createMockPlayer(): IAudioPlayer {
   return {
-    play: jest.fn(),
-    stop: jest.fn(),
-    setVolume: jest.fn(),
-    fade: jest.fn(),
+    play: vi.fn(),
+    stop: vi.fn(),
+    setVolume: vi.fn(),
+    fade: vi.fn(),
   };
 }
 
@@ -119,7 +120,7 @@ describe('AudioManager', () => {
 
     test('开关变更触发回调', () => {
       const callbacks: AudioEventCallbacks = {
-        onSwitchToggle: jest.fn(),
+        onSwitchToggle: vi.fn(),
       };
       audio.setCallbacks(callbacks);
       audio.applySettings({ ...defaultAudio(), bgmSwitch: false });
@@ -132,13 +133,13 @@ describe('AudioManager', () => {
   describe('特殊场景', () => {
     test('后台运行 → BGM 渐弱至静音', () => {
       // 需要先播放 BGM 才能触发渐弱
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const newAudio = new AudioManager({ firstLaunchDelayMs: 0 });
       newAudio.setPlayer(player);
       newAudio.applySettings(defaultAudio());
       newAudio.playBGM('main-theme');
-      jest.advanceTimersByTime(10);
-      jest.useRealTimers();
+      vi.advanceTimersByTime(10);
+      vi.useRealTimers();
 
       newAudio.enterBackground();
       expect(newAudio.getEffectiveVolume(AudioChannel.BGM)).toBe(0);
@@ -147,13 +148,13 @@ describe('AudioManager', () => {
     });
 
     test('回到前台 → BGM 渐入恢复', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const newAudio = new AudioManager({ firstLaunchDelayMs: 0 });
       newAudio.setPlayer(player);
       newAudio.applySettings(defaultAudio());
       newAudio.playBGM('main-theme');
-      jest.advanceTimersByTime(10);
-      jest.useRealTimers();
+      vi.advanceTimersByTime(10);
+      vi.useRealTimers();
 
       newAudio.enterBackground();
       newAudio.enterForeground();
@@ -169,13 +170,13 @@ describe('AudioManager', () => {
     });
 
     test('来电恢复 → 渐入恢复', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const newAudio = new AudioManager({ firstLaunchDelayMs: 0 });
       newAudio.setPlayer(player);
       newAudio.applySettings(defaultAudio());
       newAudio.playBGM('main-theme');
-      jest.advanceTimersByTime(10);
-      jest.useRealTimers();
+      vi.advanceTimersByTime(10);
+      vi.useRealTimers();
 
       newAudio.handleInterruption();
       newAudio.handleInterruptionEnd();
@@ -189,23 +190,23 @@ describe('AudioManager', () => {
       newAudio.applySettings(defaultAudio());
       expect(newAudio.isFirstLaunchState()).toBe(true);
 
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       newAudio.playBGM('main-theme');
       expect(player.play).not.toHaveBeenCalled(); // 还没播放
 
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       expect(player.play).toHaveBeenCalledWith(AudioChannel.BGM, 'main-theme', expect.any(Number));
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     test('非首次启动 → BGM 立即播放', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       audio.playBGM('theme-1'); // 首次
-      jest.advanceTimersByTime(3000); // 等待首次延迟
+      vi.advanceTimersByTime(3000); // 等待首次延迟
       audio.stopBGM();
       audio.playBGM('theme-2'); // 非首次
       // 第二次应该直接播放（setPlayer 的 player.play 已被调用）
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     test('低电量 (<20%) → BGM 音量降低 50%', () => {
@@ -225,30 +226,30 @@ describe('AudioManager', () => {
 
   describe('BGM 管理', () => {
     test('playBGM 播放指定 BGM', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const newAudio = new AudioManager({ firstLaunchDelayMs: 0 });
       newAudio.setPlayer(player);
       newAudio.applySettings(defaultAudio());
       newAudio.playBGM('main-theme');
-      jest.advanceTimersByTime(10);
+      vi.advanceTimersByTime(10);
       expect(player.play).toHaveBeenCalledWith(
         AudioChannel.BGM, 'main-theme', expect.any(Number),
       );
       expect(newAudio.getCurrentBGM()).toBe('main-theme');
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     test('重复播放同一 BGM 不重新播放', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const newAudio = new AudioManager({ firstLaunchDelayMs: 0 });
       newAudio.setPlayer(player);
       newAudio.applySettings(defaultAudio());
       newAudio.playBGM('main-theme');
-      jest.advanceTimersByTime(10);
-      const callCount = (player.play as jest.Mock).mock.calls.length;
+      vi.advanceTimersByTime(10);
+      const callCount = (player.play as vi.Mock).mock.calls.length;
       newAudio.playBGM('main-theme'); // 重复
-      expect((player.play as jest.Mock).mock.calls.length).toBe(callCount);
-      jest.useRealTimers();
+      expect((player.play as vi.Mock).mock.calls.length).toBe(callCount);
+      vi.useRealTimers();
     });
 
     test('stopBGM 停止播放', () => {
@@ -294,7 +295,7 @@ describe('AudioManager', () => {
 
     test('音量变更触发 onVolumeChange 回调', () => {
       const callbacks: AudioEventCallbacks = {
-        onVolumeChange: jest.fn(),
+        onVolumeChange: vi.fn(),
       };
       audio.setCallbacks(callbacks);
       audio.applySettings({ ...defaultAudio(), bgmVolume: 30 });

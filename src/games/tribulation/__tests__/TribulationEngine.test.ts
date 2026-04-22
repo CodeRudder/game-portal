@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 渡劫飞升（Tribulation）放置类游戏 — 完整测试套件
  */
@@ -321,7 +322,7 @@ describe('TribulationEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -329,7 +330,7 @@ describe('TribulationEngine', () => {
 
     it('点击触发 click 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('click', listener);
       engine.click();
       expect(listener).toHaveBeenCalledWith(SPIRIT_POWER_PER_CLICK);
@@ -502,7 +503,7 @@ describe('TribulationEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addSpirit(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(BUILDING_IDS.CAVE);
       expect(listener).toHaveBeenCalled();
@@ -560,7 +561,7 @@ describe('TribulationEngine', () => {
       addDaoRhyme(engine, 500);
 
       // Mock Math.random to guarantee success
-      const spy = jest.spyOn(Math, 'random').mockReturnValue(0);
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
 
       const result = engine.attemptTribulation();
 
@@ -579,7 +580,7 @@ describe('TribulationEngine', () => {
       addDaoRhyme(engine, 500);
 
       // Mock Math.random to guarantee failure
-      const spy = jest.spyOn(Math, 'random').mockReturnValue(0.99);
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
 
       const spiritBefore = getSpirit(engine);
       const result = engine.attemptTribulation();
@@ -597,7 +598,7 @@ describe('TribulationEngine', () => {
       addSpirit(engine, 10000);
       addDaoRhyme(engine, 500);
 
-      const spy = jest.spyOn(Math, 'random').mockReturnValue(0);
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
 
       const result = engine.attemptTribulation();
 
@@ -614,10 +615,10 @@ describe('TribulationEngine', () => {
       addSpirit(engine, 10000);
       addDaoRhyme(engine, 500);
 
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('tribulationSuccess', listener);
 
-      const spy = jest.spyOn(Math, 'random').mockReturnValue(0);
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
       engine.attemptTribulation();
       spy.mockRestore();
 
@@ -629,10 +630,10 @@ describe('TribulationEngine', () => {
       addSpirit(engine, 10000);
       addDaoRhyme(engine, 500);
 
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('tribulationFail', listener);
 
-      const spy = jest.spyOn(Math, 'random').mockReturnValue(0.99);
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
       engine.attemptTribulation();
       spy.mockRestore();
 
@@ -704,7 +705,7 @@ describe('TribulationEngine', () => {
 
     it('建筑解锁触发 buildingUnlocked 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('buildingUnlocked', listener);
       (engine as any)._completedTribulations.add(TRIBULATION_LEVELS.THUNDER);
       tick(engine, 16);
@@ -733,7 +734,7 @@ describe('TribulationEngine', () => {
 
     it('资源解锁触发 resourceUnlocked 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('resourceUnlocked', listener);
       (engine as any)._completedTribulations.add(TRIBULATION_LEVELS.THUNDER);
       tick(engine, 16);
@@ -847,7 +848,7 @@ describe('TribulationEngine', () => {
     it('飞升触发 prestige 事件', () => {
       engine.start();
       addSpirit(engine, MIN_PRESTIGE_SPIRIT * 4);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();
@@ -1056,7 +1057,7 @@ describe('TribulationEngine', () => {
       engine.start();
       addSpirit(engine, 10000);
       addDaoRhyme(engine, 500);
-      const spy = jest.spyOn(Math, 'random').mockReturnValue(0);
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
       engine.handleKeyDown('t');
       spy.mockRestore();
       // Should have attempted tribulation

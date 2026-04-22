@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * AnimationController 单元测试
  *
@@ -29,11 +30,11 @@ import { createDefaultAnimationSettings } from '../../../core/settings';
 
 function createMockPlayer(): IAnimationPlayer {
   return {
-    playTransition: jest.fn(),
-    playStateAnimation: jest.fn(),
-    playFeedback: jest.fn(),
-    playInkWashTransition: jest.fn(),
-    cancelAll: jest.fn(),
+    playTransition: vi.fn(),
+    playStateAnimation: vi.fn(),
+    playFeedback: vi.fn(),
+    playInkWashTransition: vi.fn(),
+    cancelAll: vi.fn(),
   };
 }
 
@@ -54,7 +55,7 @@ describe('AnimationController', () => {
   let player: IAnimationPlayer;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     ctrl = new AnimationController();
     player = createMockPlayer();
     ctrl.setPlayer(player);
@@ -62,7 +63,7 @@ describe('AnimationController', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   // ── 过渡动画 ────────────────────────────
@@ -110,7 +111,7 @@ describe('AnimationController', () => {
 
     test('过渡动画触发 onTransitionStart 回调', () => {
       const callbacks: AnimationEventCallbacks = {
-        onTransitionStart: jest.fn(),
+        onTransitionStart: vi.fn(),
       };
       ctrl.setCallbacks(callbacks);
       ctrl.playTransition(TransitionType.PanelOpen);
@@ -119,7 +120,7 @@ describe('AnimationController', () => {
 
     test('过渡动画结束后触发 onTransitionEnd 回调', () => {
       const callbacks: AnimationEventCallbacks = {
-        onTransitionEnd: jest.fn(),
+        onTransitionEnd: vi.fn(),
       };
       ctrl.setCallbacks(callbacks);
       ctrl.playTransition(TransitionType.PanelOpen);
@@ -128,7 +129,7 @@ describe('AnimationController', () => {
       expect(callbacks.onTransitionEnd).not.toHaveBeenCalled();
 
       // 快进 300ms
-      jest.advanceTimersByTime(300);
+      vi.advanceTimersByTime(300);
       expect(callbacks.onTransitionEnd).toHaveBeenCalledWith(TransitionType.PanelOpen);
     });
 
@@ -186,7 +187,7 @@ describe('AnimationController', () => {
 
     test('状态动画触发 onStateAnimationStart 回调', () => {
       const callbacks: AnimationEventCallbacks = {
-        onStateAnimationStart: jest.fn(),
+        onStateAnimationStart: vi.fn(),
       };
       ctrl.setCallbacks(callbacks);
       ctrl.playStateAnimation(StateAnimationType.ButtonHover);
@@ -239,7 +240,7 @@ describe('AnimationController', () => {
 
     test('反馈动画触发 onFeedbackStart 回调', () => {
       const callbacks: AnimationEventCallbacks = {
-        onFeedbackStart: jest.fn(),
+        onFeedbackStart: vi.fn(),
       };
       ctrl.setCallbacks(callbacks);
       ctrl.playFeedback(FeedbackAnimationType.ResourceFloat);
@@ -248,12 +249,12 @@ describe('AnimationController', () => {
 
     test('反馈动画结束后触发 onFeedbackEnd 回调', () => {
       const callbacks: AnimationEventCallbacks = {
-        onFeedbackEnd: jest.fn(),
+        onFeedbackEnd: vi.fn(),
       };
       ctrl.setCallbacks(callbacks);
       ctrl.playFeedback(FeedbackAnimationType.ToastSlideIn);
 
-      jest.advanceTimersByTime(300);
+      vi.advanceTimersByTime(300);
       expect(callbacks.onFeedbackEnd).toHaveBeenCalledWith(FeedbackAnimationType.ToastSlideIn);
     });
 
@@ -279,8 +280,8 @@ describe('AnimationController', () => {
 
     test('水墨过渡触发回调', () => {
       const callbacks: AnimationEventCallbacks = {
-        onInkWashStart: jest.fn(),
-        onInkWashEnd: jest.fn(),
+        onInkWashStart: vi.fn(),
+        onInkWashEnd: vi.fn(),
       };
       ctrl.setCallbacks(callbacks);
       ctrl.playInkWashTransition();
@@ -288,7 +289,7 @@ describe('AnimationController', () => {
       expect(callbacks.onInkWashStart).toHaveBeenCalled();
       expect(callbacks.onInkWashEnd).not.toHaveBeenCalled();
 
-      jest.advanceTimersByTime(600);
+      vi.advanceTimersByTime(600);
       expect(callbacks.onInkWashEnd).toHaveBeenCalled();
     });
 
@@ -361,7 +362,7 @@ describe('AnimationController', () => {
       ctrl.playTransition(TransitionType.PanelOpen);
       expect(ctrl.getActiveAnimations()).toHaveLength(1);
 
-      jest.advanceTimersByTime(300);
+      vi.advanceTimersByTime(300);
       expect(ctrl.getActiveAnimations()).toHaveLength(0);
     });
 
@@ -399,7 +400,7 @@ describe('AnimationController', () => {
     });
 
     test('applySettings 触发 onChange 回调', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       ctrl.onChange(cb);
 
       const settings = createDefaultAnimationSettings();
@@ -412,7 +413,7 @@ describe('AnimationController', () => {
 
   describe('事件监听', () => {
     test('取消注册后不再触发', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       const unsub = ctrl.onChange(cb);
       unsub();
 
@@ -421,8 +422,8 @@ describe('AnimationController', () => {
     });
 
     test('removeAllListeners 清除所有回调', () => {
-      const cb1 = jest.fn();
-      const cb2 = jest.fn();
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
       ctrl.onChange(cb1);
       ctrl.onChange(cb2);
       ctrl.removeAllListeners();
