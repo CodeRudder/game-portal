@@ -5,6 +5,8 @@
  */
 
 export { EventTriggerSystem } from './EventTriggerSystem';
+export { EventConditionEvaluator } from './EventConditionEvaluator';
+export type { ConditionContext } from './EventConditionEvaluator';
 export { EventUINotification } from './EventUINotification';
 export type { EncounterOptionDisplay, EncounterModalData } from './EventUINotification';
 export { EventNotificationSystem } from './EventNotificationSystem';
