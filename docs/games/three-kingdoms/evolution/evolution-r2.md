@@ -36,3 +36,24 @@
 ## EVO-010: 新子系统ISubsystem检查清单（来自v2.0 LL-v2-006）
 - 新子系统创建时第一项检查：实现ISubsystem接口
 - 包含init/update/getState/reset四个方法
+
+## EVO-011: 死代码扫描机制（来自v3.0 LL-v3-002）
+- 每次重构后执行死代码扫描
+- 检查是否有文件未被任何业务代码import
+- 死代码立即移至bak/目录
+
+## EVO-012: 禁止dangerouslySetInnerHTML（来自v3.0 LL-v3-004）
+- 动态内容必须通过React组件渲染
+- 禁止使用dangerouslySetInnerHTML渲染任何动态数据
+
+## EVO-013: 工具函数提取三步法（来自v3.0 LL-v3-005）
+- 提取=创建新文件+修改引用+删除原位定义
+- 三步缺一不可，必须验证所有引用路径
+
+## EVO-014: CSS文件创建同步import（来自v3.0 LL-v3-006）
+- 新CSS文件创建时同步在对应组件中添加import
+- 避免创建孤立的CSS文件
+
+## EVO-015: useEffect依赖完整性（来自v3.0 LL-v3-007）
+- useEffect依赖数组必须真实反映所有依赖
+- 闭包变量变化使用useRef追踪，禁止空依赖+eslint-disable
