@@ -11,97 +11,35 @@
  * @module engine/settings/AccountSystem
  */
 
+import { BindMethod, MAX_DEVICES, FIRST_BIND_REWARD, ACCOUNT_DELETE_COOLDOWN_DAYS } from '../../core/settings';
+import type { BindingInfo, DeviceInfo, AccountSettings } from '../../core/settings';
 import {
-  BindMethod,
-  MAX_DEVICES,
-  FIRST_BIND_REWARD,
-  ACCOUNT_DELETE_COOLDOWN_DAYS,
-  DEVICE_UNBIND_COOLDOWN_HOURS,
-} from '../../core/settings';
-import type {
-  BindingInfo,
-  DeviceInfo,
-  AccountSettings,
-} from '../../core/settings';
+  type AccountResult,
+  type BindResult,
+  type DeviceResult,
+  type AccountChangeCallback,
+  type GrantIngotFn,
+  type NowFn,
+  DeleteFlowState,
+  type DeleteFlowData,
+  DELETE_CONFIRM_TEXT,
+  COOLDOWN_MS,
+  UNBIND_COOLDOWN_MS,
+  GUEST_EXPIRE_MS,
+} from './account.types';
 
-// ─────────────────────────────────────────────
-// 类型
-// ─────────────────────────────────────────────
-
-/** 账号操作结果 */
-export interface AccountResult {
-  success: boolean;
-  message: string;
-}
-
-/** 绑定操作结果（含奖励信息） */
-export interface BindResult extends AccountResult {
-  /** 是否触发了首次绑定奖励 */
-  rewardGranted: boolean;
-  /** 奖励元宝数量 */
-  rewardAmount: number;
-}
-
-/** 设备操作结果 */
-export interface DeviceResult extends AccountResult {
-  /** 更新后的设备列表 */
-  devices: DeviceInfo[];
-}
-
-/** 删除流程状态 */
-export enum DeleteFlowState {
-  /** 未发起 */
-  None = 'none',
-  /** 已输入确认文字 */
-  Confirmed = 'confirmed',
-  /** 二次确认完成，冷静期中 */
-  CoolingDown = 'coolingDown',
-  /** 冷静期结束，可永久删除 */
-  ReadyToDelete = 'readyToDelete',
-}
-
-/** 删除流程数据 */
-export interface DeleteFlowData {
-  /** 当前状态 */
-  state: DeleteFlowState;
-  /** 发起时间 */
-  initiatedAt: number;
-  /** 冷静期结束时间 */
-  cooldownEndAt: number;
-}
-
-/** 账号变更回调 */
-export type AccountChangeCallback = (
-  settings: Readonly<AccountSettings>,
-) => void;
-
-/** 元宝消耗函数签名 */
-export type SpendIngotFn = (amount: number) => boolean;
-
-/** 元宝奖励函数签名 */
-export type GrantIngotFn = (amount: number) => void;
-
-/** 当前时间函数（便于测试注入） */
-export type NowFn = () => number;
-
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-/** 确认删除文字 */
-const DELETE_CONFIRM_TEXT = '确认删除';
-
-/** 冷静期天数转毫秒 */
-const COOLDOWN_MS = ACCOUNT_DELETE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
-
-/** 设备解绑冷却毫秒 */
-const UNBIND_COOLDOWN_MS = DEVICE_UNBIND_COOLDOWN_HOURS * 60 * 60 * 1000;
-
-/** 游客账号清除天数 */
-const GUEST_EXPIRE_DAYS = 30;
-
-/** 游客账号清除毫秒 */
-const GUEST_EXPIRE_MS = GUEST_EXPIRE_DAYS * 24 * 60 * 60 * 1000;
+// 重导出类型供外部使用
+export type {
+  AccountResult,
+  BindResult,
+  DeviceResult,
+  AccountChangeCallback,
+  SpendIngotFn,
+  GrantIngotFn,
+  NowFn,
+  DeleteFlowData,
+} from './account.types';
+export { DeleteFlowState } from './account.types';
 
 // ─────────────────────────────────────────────
 // 账号系统
@@ -124,7 +62,7 @@ const GUEST_EXPIRE_MS = GUEST_EXPIRE_DAYS * 24 * 60 * 60 * 1000;
  * }
  *
  * // 管理设备
- * account.registerDevice({ id: 'dev1', name: 'iPhone 15' });
+ * account.registerDevice('dev1', 'iPhone 15');
  * ```
  */
 export class AccountSystem {
@@ -147,19 +85,13 @@ export class AccountSystem {
   // 初始化
   // ─────────────────────────────────────────
 
-  /**
-   * 初始化账号系统
-   *
-   * @param settings - 当前账号设置
-   */
+  /** 初始化账号系统 */
   initialize(settings: AccountSettings): void {
     this.settings = { ...settings };
     this.deleteFlow = null;
   }
 
-  /**
-   * 设置元宝奖励函数
-   */
+  /** 设置元宝奖励函数 */
   setGrantIngotFn(fn: GrantIngotFn): void {
     this.grantIngotFn = fn;
   }
@@ -173,25 +105,17 @@ export class AccountSystem {
   // 账号绑定
   // ─────────────────────────────────────────
 
-  /**
-   * 绑定账号
-   *
-   * @param method - 绑定方式
-   * @param identifier - 绑定标识（脱敏后的）
-   * @returns 绑定结果
-   */
+  /** 绑定账号 */
   bind(method: BindMethod, identifier: string): BindResult {
     if (!this.settings) {
       return { success: false, message: '未初始化', rewardGranted: false, rewardAmount: 0 };
     }
 
-    // 检查是否已绑定相同方式
     const existing = this.settings.bindings.find((b) => b.method === method);
     if (existing) {
       return { success: false, message: '该方式已绑定', rewardGranted: false, rewardAmount: 0 };
     }
 
-    // 添加绑定
     const binding: BindingInfo = {
       method,
       identifier,
@@ -203,7 +127,6 @@ export class AccountSystem {
       isGuest: false,
     };
 
-    // 首次绑定奖励
     let rewardGranted = false;
     let rewardAmount = 0;
     if (!this.settings.firstBindRewardClaimed) {
@@ -220,12 +143,7 @@ export class AccountSystem {
     return { success: true, message: '绑定成功', rewardGranted, rewardAmount };
   }
 
-  /**
-   * 解绑账号
-   *
-   * @param method - 要解绑的绑定方式
-   * @returns 操作结果
-   */
+  /** 解绑账号 */
   unbind(method: BindMethod): AccountResult {
     if (!this.settings) {
       return { success: false, message: '未初始化' };
@@ -236,7 +154,6 @@ export class AccountSystem {
       return { success: false, message: '未找到该绑定' };
     }
 
-    // 至少保留一个绑定
     if (this.settings.bindings.length <= 1) {
       return { success: false, message: '至少保留一个绑定方式' };
     }
@@ -251,17 +168,13 @@ export class AccountSystem {
     return { success: true, message: '解绑成功' };
   }
 
-  /**
-   * 检查是否已绑定指定方式
-   */
+  /** 检查是否已绑定指定方式 */
   hasBinding(method: BindMethod): boolean {
     if (!this.settings) return false;
     return this.settings.bindings.some((b) => b.method === method);
   }
 
-  /**
-   * 获取所有绑定信息
-   */
+  /** 获取所有绑定信息 */
   getBindings(): Readonly<BindingInfo>[] {
     if (!this.settings) return [];
     return [...this.settings.bindings];
@@ -271,16 +184,7 @@ export class AccountSystem {
   // 多设备管理
   // ─────────────────────────────────────────
 
-  /**
-   * 注册设备
-   *
-   * 如果设备已存在则更新活跃时间，否则添加新设备。
-   * 超过最大设备数时返回失败。
-   *
-   * @param deviceId - 设备ID
-   * @param deviceName - 设备名称
-   * @returns 操作结果
-   */
+  /** 注册设备 */
   registerDevice(deviceId: string, deviceName: string): DeviceResult {
     if (!this.settings) {
       return { success: false, message: '未初始化', devices: [] };
@@ -290,7 +194,6 @@ export class AccountSystem {
     const existing = this.settings.devices.find((d) => d.deviceId === deviceId);
 
     if (existing) {
-      // 更新活跃时间
       const updated = this.settings.devices.map((d) =>
         d.deviceId === deviceId ? { ...d, lastActiveAt: now } : d,
       );
@@ -299,7 +202,6 @@ export class AccountSystem {
       return { success: true, message: '设备已更新', devices: [...this.settings.devices] };
     }
 
-    // 检查设备数量限制
     if (this.settings.devices.length >= MAX_DEVICES) {
       return {
         success: false,
@@ -308,7 +210,6 @@ export class AccountSystem {
       };
     }
 
-    // 添加新设备（第一个设备自动设为主力）
     const isFirst = this.settings.devices.length === 0;
     const device: DeviceInfo = {
       deviceId,
@@ -325,15 +226,7 @@ export class AccountSystem {
     return { success: true, message: '设备注册成功', devices: [...this.settings.devices] };
   }
 
-  /**
-   * 解绑设备
-   *
-   * 解绑后需等待24小时冷却才能再次绑定新设备。
-   * 主力设备解绑后，最新设备自动升级为主力。
-   *
-   * @param deviceId - 要解绑的设备ID
-   * @returns 操作结果
-   */
+  /** 解绑设备 */
   unregisterDevice(deviceId: string): DeviceResult {
     if (!this.settings) {
       return { success: false, message: '未初始化', devices: [] };
@@ -344,7 +237,6 @@ export class AccountSystem {
       return { success: false, message: '未找到该设备', devices: [...this.settings.devices] };
     }
 
-    // 不能解绑唯一设备
     if (this.settings.devices.length <= 1) {
       return { success: false, message: '至少保留一台设备', devices: [...this.settings.devices] };
     }
@@ -352,7 +244,6 @@ export class AccountSystem {
     const wasPrimary = device.isPrimary;
     const newDevices = this.settings.devices.filter((d) => d.deviceId !== deviceId);
 
-    // 如果解绑的是主力设备，最新设备自动升级
     if (wasPrimary && newDevices.length > 0) {
       const latest = newDevices.reduce((a, b) =>
         a.lastActiveAt > b.lastActiveAt ? a : b,
@@ -366,9 +257,7 @@ export class AccountSystem {
     return { success: true, message: '设备已解绑', devices: [...this.settings.devices] };
   }
 
-  /**
-   * 设置主力设备
-   */
+  /** 设置主力设备 */
   setPrimaryDevice(deviceId: string): DeviceResult {
     if (!this.settings) {
       return { success: false, message: '未初始化', devices: [] };
@@ -389,12 +278,7 @@ export class AccountSystem {
     return { success: true, message: '主力设备已设置', devices: [...this.settings.devices] };
   }
 
-  /**
-   * 检查设备是否在解绑冷却中
-   *
-   * @param unbindTimestamp - 解绑操作的时间戳
-   * @returns 是否仍在冷却中
-   */
+  /** 检查设备是否在解绑冷却中 */
   isDeviceInUnbindCooldown(unbindTimestamp: number): boolean {
     return this.nowFn() - unbindTimestamp < UNBIND_COOLDOWN_MS;
   }
@@ -415,12 +299,7 @@ export class AccountSystem {
   // 账号删除流程
   // ─────────────────────────────────────────
 
-  /**
-   * 发起账号删除（步骤1：输入确认文字）
-   *
-   * @param confirmText - 用户输入的确认文字
-   * @returns 操作结果
-   */
+  /** 发起账号删除（步骤1：输入确认文字） */
   initiateDelete(confirmText: string): AccountResult {
     if (!this.settings) {
       return { success: false, message: '未初始化' };
@@ -447,11 +326,7 @@ export class AccountSystem {
     return { success: true, message: '已确认，请进行二次确认' };
   }
 
-  /**
-   * 二次确认删除（步骤2）
-   *
-   * 进入冷静期。
-   */
+  /** 二次确认删除（步骤2：进入冷静期） */
   confirmDelete(): AccountResult {
     if (!this.deleteFlow || this.deleteFlow.state !== DeleteFlowState.Confirmed) {
       return { success: false, message: '请先完成步骤1' };
@@ -467,9 +342,7 @@ export class AccountSystem {
     return { success: true, message: `已进入${ACCOUNT_DELETE_COOLDOWN_DAYS}天冷静期` };
   }
 
-  /**
-   * 检查冷静期是否结束
-   */
+  /** 检查冷静期是否结束 */
   checkDeleteCooldown(): DeleteFlowData | null {
     if (!this.deleteFlow) return null;
 
@@ -486,15 +359,12 @@ export class AccountSystem {
     return { ...this.deleteFlow };
   }
 
-  /**
-   * 执行永久删除（步骤3：冷静期结束后）
-   */
+  /** 执行永久删除（步骤3：冷静期结束后） */
   executeDelete(): AccountResult {
     if (!this.deleteFlow || this.deleteFlow.state !== DeleteFlowState.ReadyToDelete) {
       return { success: false, message: '冷静期未结束或未发起删除' };
     }
 
-    // 重置为游客状态
     this.settings = {
       ...this.settings!,
       bindings: [],
@@ -508,9 +378,7 @@ export class AccountSystem {
     return { success: true, message: '账号已永久删除' };
   }
 
-  /**
-   * 撤销删除（冷静期内）
-   */
+  /** 撤销删除（冷静期内） */
   cancelDelete(): AccountResult {
     if (!this.deleteFlow) {
       return { success: false, message: '无进行中的删除流程' };
@@ -533,20 +401,13 @@ export class AccountSystem {
   // 游客账号
   // ─────────────────────────────────────────
 
-  /**
-   * 检查游客账号是否过期
-   *
-   * @param createdAt - 游客账号创建时间
-   * @returns 是否已过期
-   */
+  /** 检查游客账号是否过期 */
   isGuestExpired(createdAt: number): boolean {
     if (!this.settings || !this.settings.isGuest) return false;
     return this.nowFn() - createdAt >= GUEST_EXPIRE_MS;
   }
 
-  /**
-   * 获取游客账号剩余天数
-   */
+  /** 获取游客账号剩余天数 */
   getGuestRemainingDays(createdAt: number): number {
     if (!this.settings || !this.settings.isGuest) return 0;
     const elapsed = this.nowFn() - createdAt;
@@ -558,10 +419,7 @@ export class AccountSystem {
   // 事件监听
   // ─────────────────────────────────────────
 
-  /**
-   * 注册账号变更回调
-   * @returns 取消注册函数
-   */
+  /** 注册账号变更回调 */
   onChange(callback: AccountChangeCallback): () => void {
     this.listeners.push(callback);
     return () => {
@@ -574,10 +432,6 @@ export class AccountSystem {
   removeAllListeners(): void {
     this.listeners = [];
   }
-
-  // ─────────────────────────────────────────
-  // 重置
-  // ─────────────────────────────────────────
 
   /** 重置到初始状态 */
   reset(): void {

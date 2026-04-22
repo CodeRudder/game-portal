@@ -72,6 +72,13 @@ import type { OfflineEventSystem } from './event/OfflineEventSystem';
 import type { OfflineRewardSystem } from './offline/OfflineRewardSystem';
 import type { OfflineEstimateSystem } from './offline/OfflineEstimateSystem';
 import type { OfflineSnapshotSystem } from './offline/OfflineSnapshotSystem';
+import type { TutorialStateMachine } from './guide/TutorialStateMachine';
+import type { StoryEventPlayer } from './guide/StoryEventPlayer';
+import type { TutorialStepManager } from './guide/TutorialStepManager';
+import type { TutorialStepExecutor } from './guide/TutorialStepExecutor';
+import type { TutorialMaskSystem } from './guide/TutorialMaskSystem';
+import type { TutorialStorage } from './guide/TutorialStorage';
+import type { FirstLaunchDetector } from './guide/FirstLaunchDetector';
 import type { GeneralData } from './hero/hero.types';
 import type { RecruitType } from './hero/hero-recruit-config';
 import type { BattleResult } from './battle/battle.types';
@@ -251,4 +258,14 @@ export function applyGetters(cls: any): void {
   p.getOfflineRewardSystem = function(this: EngineAny): OfflineRewardSystem { return this.offline.offlineReward; };
   p.getOfflineEstimateSystem = function(this: EngineAny): OfflineEstimateSystem { return this.offline.offlineEstimate; };
   p.getOfflineSnapshotSystem = function(this: EngineAny): OfflineSnapshotSystem { return this.offline.offlineSnapshot; };
+
+  // ── v18.0: 新手引导子系统 getter (via guide 集合对象) ──
+
+  p.getTutorialStateMachine = function(this: EngineAny): TutorialStateMachine { return this.guide.tutorialStateMachine; };
+  p.getStoryEventPlayer = function(this: EngineAny): StoryEventPlayer { return this.guide.storyEventPlayer; };
+  p.getTutorialStepManager = function(this: EngineAny): TutorialStepManager { return this.guide.tutorialStepManager; };
+  p.getTutorialStepExecutor = function(this: EngineAny): TutorialStepExecutor { return this.guide.tutorialStepExecutor; };
+  p.getTutorialMaskSystem = function(this: EngineAny): TutorialMaskSystem { return this.guide.tutorialMaskSystem; };
+  p.getTutorialStorage = function(this: EngineAny): TutorialStorage { return this.guide.tutorialStorage; };
+  p.getFirstLaunchDetector = function(this: EngineAny): FirstLaunchDetector { return this.guide.firstLaunchDetector; };
 }

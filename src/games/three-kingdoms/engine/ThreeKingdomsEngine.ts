@@ -48,6 +48,14 @@ import {
   createR11Systems, registerR11Systems, initR11Systems, resetR11Systems,
   type R11Systems,
 } from './engine-extended-deps';
+import {
+  createOfflineSystems, registerOfflineSystems, initOfflineSystems, resetOfflineSystems,
+  type OfflineSystems,
+} from './engine-offline-deps';
+import {
+  createGuideSystems, registerGuideSystems, initGuideSystems, resetGuideSystems,
+  type GuideSystems,
+} from './engine-guide-deps';
 import { applyGetters } from './engine-getters';
 import type { EngineGettersMixin } from './engine-getters-types';
 
@@ -73,6 +81,8 @@ export class ThreeKingdomsEngine {
   private readonly mapSystems: MapSystems;
   private readonly eventSystems: EventSystems;
   private readonly r11: R11Systems;
+  private readonly offline: OfflineSystems;
+  private readonly guide: GuideSystems;
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
@@ -135,6 +145,8 @@ export class ThreeKingdomsEngine {
     this.mapSystems = createMapSystems();
     this.eventSystems = createEventSystems();
     this.r11 = createR11Systems();
+    this.offline = createOfflineSystems();
+    this.guide = createGuideSystems();
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
@@ -177,6 +189,8 @@ export class ThreeKingdomsEngine {
     r.register('eventLog', this.eventSystems.log);
     r.register('offlineEvent', this.eventSystems.offline);
     registerR11Systems(r, this.r11);
+    registerOfflineSystems(r, this.offline);
+    registerGuideSystems(r, this.guide);
   }
 
   // ── 初始化 ──
@@ -189,6 +203,8 @@ export class ThreeKingdomsEngine {
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
+    initOfflineSystems(this.offline, deps);
+    initGuideSystems(this.guide, deps);
     this.initialized = true; this.lastTickTime = Date.now();
     this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
     this.bus.emit('game:initialized', { isNewGame: true });
@@ -254,6 +270,8 @@ export class ThreeKingdomsEngine {
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
+    initOfflineSystems(this.offline, deps);
+    initGuideSystems(this.guide, deps);
     this.initialized = true; this.lastTickTime = Date.now();
   }
 
@@ -273,6 +291,8 @@ export class ThreeKingdomsEngine {
     this.eventSystems.uiNotification.reset(); this.eventSystems.chain.reset();
     this.eventSystems.log.reset(); this.eventSystems.offline.reset();
     resetR11Systems(this.r11);
+    resetOfflineSystems(this.offline);
+    resetGuideSystems(this.guide);
     this.initialized = false; this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0; this.prevResourcesJson = ''; this.prevRatesJson = '';
     this.saveManager.deleteSave(); this.bus.removeAllListeners();
@@ -388,6 +408,8 @@ export class ThreeKingdomsEngine {
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
+    initOfflineSystems(this.offline, deps);
+    initGuideSystems(this.guide, deps);
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
   }
 }

@@ -64,6 +64,13 @@ import type { AccountSystem } from './settings/AccountSystem';
 import type { OfflineRewardSystem } from './offline/OfflineRewardSystem';
 import type { OfflineEstimateSystem } from './offline/OfflineEstimateSystem';
 import type { OfflineSnapshotSystem } from './offline/OfflineSnapshotSystem';
+import type { TutorialStateMachine } from './guide/TutorialStateMachine';
+import type { StoryEventPlayer } from './guide/StoryEventPlayer';
+import type { TutorialStepManager } from './guide/TutorialStepManager';
+import type { TutorialStepExecutor } from './guide/TutorialStepExecutor';
+import type { TutorialMaskSystem } from './guide/TutorialMaskSystem';
+import type { TutorialStorage } from './guide/TutorialStorage';
+import type { FirstLaunchDetector } from './guide/FirstLaunchDetector';
 import type { GeneralData } from './hero/hero.types';
 import type { RecruitType } from './hero/hero-recruit-config';
 import type { BattleResult } from './battle/battle.types';
@@ -177,4 +184,13 @@ export interface EngineGettersMixin {
   getOfflineRewardSystem(): OfflineRewardSystem;
   getOfflineEstimateSystem(): OfflineEstimateSystem;
   getOfflineSnapshotSystem(): OfflineSnapshotSystem;
+
+  // ── v18.0: 新手引导子系统 getter ──
+  getTutorialStateMachine(): TutorialStateMachine;
+  getStoryEventPlayer(): StoryEventPlayer;
+  getTutorialStepManager(): TutorialStepManager;
+  getTutorialStepExecutor(): TutorialStepExecutor;
+  getTutorialMaskSystem(): TutorialMaskSystem;
+  getTutorialStorage(): TutorialStorage;
+  getFirstLaunchDetector(): FirstLaunchDetector;
 }
