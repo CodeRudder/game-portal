@@ -15,6 +15,7 @@
 - [Round 4复盘: ISubsystem+大文件拆分](./evolution-r4-round.md) — ISubsystem覆盖率100%(91/91)+8大文件拆分至0超限+EVO-046~048
 - [Round 2全局复盘](./evolution-r11.md) — 20版本完成(14通过/6有条件)+P0:0/P1:~20+GameEventSimulator+门面精简616→138行+EVO-049~052
 - [Round 7复盘: P1修复+测试增强](./progress/evolution-progress-r7.md) — GameEventSimulator修复+calcRebirthMultiplier签名统一+data-testid补全6组件+三国测试24→0失败+EVO-056~058
+- [Round 8复盘: 测试基础设施升级](./progress/evolution-progress-r8.md) — Jest→Vitest迁移261文件2976处替换+data-testid补全22组件+三国6158测试全通过+EVO-059~060
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -277,4 +278,18 @@ Round 2发现6对重叠系统，Round 3必须逐一治理：
 标记为"空壳"的方法必须在修复前验证是否已有实现，避免基于过时文档做无效修改。
 验证方法: 直接阅读源码确认方法体是否为空。
 范例: EventTriggerSystem.calculateProbability 和 evaluateCondition 在 R6 重构方案中被标记为空壳，实际已有完整实现。
+
+### EVO-059: 测试框架统一（来自Round 8复盘）
+所有测试文件必须使用 vitest API（vi.fn / vi.mock / vi.spyOn / vi.advanceTimersByTime），禁止使用 jest API。
+批量迁移时使用 `sed -i 's/jest\.fn/vi.fn/g'` 等模式替换，替换后必须添加 `import { vi } from 'vitest'`。
+检查方法: `grep -rn "jest\.\(fn\|mock\|spyOn\|advanceTimersByTime\)" src/ --include="*.test.*"`
+发现残留 jest API 时立即替换为对应 vitest API。
+
+### EVO-060: 批量替换安全模式（来自Round 8复盘）
+批量 sed 替换后必须执行三步验证：
+1. 编译验证: `pnpm run build` 确认无构建错误
+2. 目标模块测试: `pnpm vitest run src/games/three-kingdoms/` 确认核心测试全通过
+3. 全局回归: `pnpm vitest run` 确认无连锁破坏
+替换前建议在单个文件上试跑，确认替换模式无误后再批量执行。
+范例: Round 8 迁移 261 文件 2976 处替换，三国 6158 测试全部通过。
 
