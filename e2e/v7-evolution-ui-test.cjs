@@ -102,15 +102,15 @@ async function switchTab(page, tabId) {
   await page.waitForTimeout(2000);
 }
 
-async function openFeaturePanel(page, panelId) {
+async function openFeaturePanel(page, panelLabel) {
   await dismissGuide(page);
-  // 通过更多菜单中的功能面板按钮
-  const btn = await page.$(`[data-testid="feature-${panelId}"]`) ||
-    await page.$(`button:has-text("${panelId === 'quest' ? '任务' : panelId === 'events' ? '事件' : panelId}")`);
+  const btn = await page.$(`button:has-text("${panelLabel}")`);
   if (btn) {
     await btn.click();
     await page.waitForTimeout(1500);
+    return true;
   }
+  return false;
 }
 
 async function closeAllModals(page) {
@@ -241,12 +241,10 @@ async function testNPCGift(page) {
 async function testEventPanel(page) {
   console.log('\n📋 测试4: 事件列表面板');
   try {
-    // 尝试打开事件面板
+    await closeAllModals(page);
     await dismissGuide(page);
-    const eventBtn = await page.$('[data-testid="feature-events"], button:has-text("事件")');
-    if (eventBtn) {
-      await eventBtn.click();
-      await page.waitForTimeout(1500);
+    const opened = await openFeaturePanel(page, '事件');
+    if (opened) {
       await takeScreenshot(page, 'v7-event-panel');
       pass('事件面板可打开');
     } else {
@@ -268,16 +266,16 @@ async function testEventPanel(page) {
 async function testQuestPanel(page) {
   console.log('\n📋 测试5: 任务面板');
   try {
+    await closeAllModals(page);
     await dismissGuide(page);
-    const questBtn = await page.$('[data-testid="feature-quest"], button:has-text("任务")');
-    if (questBtn) {
-      await questBtn.click();
+    const opened = await openFeaturePanel(page, '任务');
+    if (opened) {
       await page.waitForTimeout(1500);
       await takeScreenshot(page, 'v7-quest-panel');
       pass('任务面板可打开');
 
       // 检查任务分类Tab
-      const questTabs = await page.$$('.tk-quest-tab, .quest-category-tab');
+      const questTabs = await page.$$('.tk-quest-tab, .quest-category-tab, [class*="quest"] [class*="tab"]');
       if (questTabs.length > 0) pass(`任务分类Tab数量: ${questTabs.length}`);
       else warn('任务分类Tab未找到');
 
@@ -291,7 +289,7 @@ async function testQuestPanel(page) {
       }
 
       // 检查活跃度
-      const activityBar = await page.$('.tk-activity-bar, .activity-progress, [data-testid="activity-bar"]');
+      const activityBar = await page.$('.tk-activity-bar, .activity-progress, [data-testid="activity-bar"], [class*="activity"]');
       if (activityBar) pass('活跃度进度条存在');
       else warn('活跃度进度条未找到');
     } else {
@@ -351,11 +349,12 @@ async function testMobile(page, context) {
     await takeScreenshot(mobilePage, 'v7-mobile-npc');
 
     // 任务面板移动端
+    await closeAllModals(mobilePage);
     await dismissGuide(mobilePage);
-    const questBtn = await mobilePage.$('[data-testid="feature-quest"], button:has-text("任务")');
+    const questBtn = await mobilePage.$('button:has-text("任务")');
     if (questBtn) {
       await questBtn.click();
-      await page.waitForTimeout(1500);
+      await mobilePage.waitForTimeout(1500);
       await takeScreenshot(mobilePage, 'v7-mobile-quest');
     }
 

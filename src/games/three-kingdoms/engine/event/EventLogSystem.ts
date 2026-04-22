@@ -97,11 +97,11 @@ export class EventLogSystem implements ISubsystem {
     return log;
   }
 
-  logEventResolved(eventDefId: EventId, chosenOptionText: string, consequenceDescription: string, triggeredTurn: number, resolvedTurn: number): EventLogEntry | null {
+  logEventResolved(eventDefId: EventId, chosenOptionText: string, consequenceDescription: string, triggeredTurn: number, resolvedTurn: number, eventType?: EventLogType, title?: string, description?: string): EventLogEntry | null {
     let existing = this.eventLog.find(l => l.eventDefId === eventDefId && !l.resolvedTurn && l.triggeredTurn === triggeredTurn);
     if (!existing) {
       this.logIdCounter++;
-      existing = { id: `log-${this.logIdCounter}`, eventDefId, title: eventDefId, description: '', triggeredTurn, timestamp: Date.now(), eventType: 'random' };
+      existing = { id: `log-${this.logIdCounter}`, eventDefId, title: title ?? eventDefId, description: description ?? '', triggeredTurn, timestamp: Date.now(), eventType: eventType ?? 'random' };
       this.eventLog.push(existing);
     }
     existing.chosenOptionText = chosenOptionText;
@@ -112,11 +112,13 @@ export class EventLogSystem implements ISubsystem {
 
   // ─── 日志查询 ──────────────────────────────
 
-  getEventLog(options?: { eventType?: EventLogType; fromTurn?: number; toTurn?: number; limit?: number }): EventLogEntry[] {
+  getEventLog(options?: { eventType?: EventLogType; fromTurn?: number; toTurn?: number; minTurn?: number; maxTurn?: number; limit?: number }): EventLogEntry[] {
     let logs = [...this.eventLog];
     if (options?.eventType) logs = logs.filter(l => l.eventType === options.eventType);
-    if (options?.fromTurn != null) logs = logs.filter(l => l.triggeredTurn >= options.fromTurn!);
-    if (options?.toTurn != null) logs = logs.filter(l => l.triggeredTurn <= options.toTurn!);
+    const from = options?.fromTurn ?? options?.minTurn;
+    const to = options?.toTurn ?? options?.maxTurn;
+    if (from != null) logs = logs.filter(l => l.triggeredTurn >= from!);
+    if (to != null) logs = logs.filter(l => l.triggeredTurn <= to!);
     if (options?.limit) logs = logs.slice(-options.limit);
     return logs;
   }
@@ -134,6 +136,7 @@ export class EventLogSystem implements ISubsystem {
     this.returnAlerts.push(newAlert);
     this.returnAlerts.sort((a, b) => URGENCY_WEIGHT[b.urgency] - URGENCY_WEIGHT[a.urgency]);
     this.trimAlerts();
+    this.deps?.eventBus.emit('alert:added', { alertId: newAlert.id, title: newAlert.title, urgency: newAlert.urgency });
     return newAlert;
   }
 
