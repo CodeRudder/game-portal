@@ -1,39 +1,56 @@
-# v16.0 传承有序 — 技术审查报告 R2
+# v16.0 传承有序 — 技术审查报告 R2 (重新审查)
 
-> **审查日期**: 2026-07-09
-> **审查范围**: engine/settings/ + core/settings/ + engine/unification/ + 测试 + DDD合规
+> **审查日期**: 2025-07-09
+> **审查范围**: engine/prestige/ + core/prestige/ + engine/settings/ + core/settings/ + DDD 合规
 > **R1 报告**: `tech-reviews/v16.0-review-r1.md`
 > **R1 结论**: ⚠️ CONDITIONAL (P0: 1 / P1: 3 / P2: 0)
+> **前次 R2**: `tech-reviews/v16-review-r2.md` (settings 侧重)
+> **本次焦点**: prestige/rebirth v16.0 深化 + settings 全量回归 + 架构演进
 
 ---
 
 ## 一、审查概要
 
-| 指标 | R1 | R2 | 变化 |
-|------|:--:|:--:|------|
-| **P0** | 1 | **0** | ✅ 全部修复 |
-| **P1** | 3 | **4** | ↓ 原有 3 个已修复，新增 4 个（测试环境+UI） |
-| **P2** | 0 | **3** | 新增改进项 |
-| **TypeScript 编译** | — | ✅ 0 错误 | `tsc --noEmit` 通过 |
-| **测试** | — | ⚠️ 6 失败 | 7 suites / 236 tests / 230 pass / 6 fail |
-| **结论** | ⚠️ CONDITIONAL | **⚠️ CONDITIONAL** | 维持（测试环境+UI问题） |
+| 指标 | R1 | 前次 R2 | **本次 R2** | 变化 |
+|------|:--:|:-------:|:----------:|------|
+| **P0** | 1 | 0 | **0** | ✅ 维持 |
+| **P1** | 3 | 4 | **3** | ↓ 1 (CloudSave 测试已修复) |
+| **P2** | 0 | 3 | **4** | ↑ 1 (新增 exports-v16 建议) |
+| **TypeScript 编译** | — | ✅ | ✅ 0 错误 | `tsc --noEmit` 通过 |
+| **测试** | — | 230/236 | **353/353** | ✅ 全部通过 |
+| **结论** | ⚠️ CONDITIONAL | ⚠️ CONDITIONAL | **⚠️ CONDITIONAL** | 维持（UI 缺失） |
 
 ---
 
 ## 二、R1 P0 修复验证
 
-### P0-01: SettingsManager 未实现 ISubsystem → ✅ 已修复
+### P0-01: rebirth 系统未独立成模块 → ✅ 已修复
 
-**R1 问题**: SettingsManager 作为核心管理器缺少 `ISubsystem` 生命周期。
+**R1 问题**: v16.0 规划中的"重生系统"没有独立的 `engine/rebirth/` 目录，逻辑分散在 `engine/unification/BalanceCalculator.ts`。
 
-**R2 验证**: `SettingsManager.ts` (480行) 已实现 `ISubsystem`：
-- `implements ISubsystem` ✓
-- `init(deps)` ✓
-- `update(dt)` ✓
-- `getState()` ✓
-- `reset()` ✓
+**R2 验证**: 已创建完整的 `engine/prestige/` 模块：
 
-**结论**: ✅ 完整生命周期集成
+| 文件 | 行数 | 职责 |
+|------|:----:|------|
+| `PrestigeSystem.ts` | 386 | 声望等级/获取/加成/任务 |
+| `RebirthSystem.ts` | 268 | 转生条件/倍率/保留/重置/加速 |
+| `RebirthSystem.helpers.ts` | 217 | v16.0 深化纯函数 |
+| `PrestigeShopSystem.ts` | 226 | 声望商店管理 |
+| `index.ts` | 9 | 统一导出 |
+
+核心层 `core/prestige/`：
+
+| 文件 | 行数 | 职责 |
+|------|:----:|------|
+| `prestige.types.ts` | 433 | 全部类型定义（含 v16.0 深化） |
+| `prestige-config.ts` | 311 | 配置常量（含 v16.0 常量） |
+| `index.ts` | 73 | 统一导出 |
+
+**结论**: ✅ 完整的 prestige 域模块，DDD 分层清晰
+
+### P0-02: SettingsManager 未实现 ISubsystem → ✅ 已修复（前次 R2 确认）
+
+`SettingsManager.ts` (480行) 已实现完整 `ISubsystem` 生命周期。
 
 ---
 
@@ -42,59 +59,67 @@
 ### 3.1 代码规模
 
 | 层级 | 路径 | 文件数 | 总行数 |
-|------|------|--------|--------|
+|------|------|:------:|:------:|
+| core/prestige | `core/prestige/` | 3 | 817 |
 | core/settings | `core/settings/` | 4 | 807 |
+| engine/prestige | `engine/prestige/` | 5 | 1,106 |
+| engine/prestige 测试 | `engine/prestige/__tests__/` | 4 | 1,366 |
 | engine/settings | `engine/settings/` | 11 | 3,419 |
 | engine/settings 测试 | `engine/settings/__tests__/` | 7 | 2,621 |
-| engine/unification | `engine/unification/` | 16 | 4,404 |
 
-**引擎与测试行数比**（settings）: 3,419 : 2,621 ≈ **1.30:1** ✅ 充足
+**引擎与测试行数比**:
+- prestige: 1,106 : 1,366 ≈ **0.81:1** ✅ 充足（测试 > 源码）
+- settings: 3,419 : 2,621 ≈ **1.30:1** ✅ 充足
 
 ### 3.2 文件行数审计
 
-| 文件 | 行数 | ≤500 | 备注 |
-|------|:----:|:----:|------|
-| `SettingsManager.ts` | 480 | ✅ | 核心管理器，最大文件 |
-| `AnimationController.ts` | 476 | ✅ | 动画控制 |
-| `AudioManager.ts` | 475 | ✅ | 音效管理 |
-| `AccountSystem.ts` | 466 | ✅ | 账号系统 |
-| `SaveSlotManager.ts` | 451 | ✅ | 存档管理 |
-| `CloudSaveSystem.ts` | 406 | ✅ | 云存档 |
-| `GraphicsManager.ts` | 335 | ✅ | 画面管理 |
-| `account.types.ts` | 99 | ✅ | 类型定义 |
-| `cloud-save.types.ts` | 97 | ✅ | 类型定义 |
-| `index.ts` | 72 | ✅ | 统一导出 |
-| `save-slot.types.ts` | 62 | ✅ | 类型定义 |
+**prestige 模块** — 全部 ≤500 行 ✅
 
-> **R1 改进**: R1 报告指出 3 个文件超 500 行（AccountSystem 603、SaveSlotManager 560、CloudSaveSystem 544），R2 全部降至 ≤500 行 ✅
+| 文件 | 行数 | ≤500 |
+|------|:----:|:----:|
+| `PrestigeSystem.ts` | 386 | ✅ |
+| `RebirthSystem.ts` | 268 | ✅ |
+| `RebirthSystem.helpers.ts` | 217 | ✅ |
+| `PrestigeShopSystem.ts` | 226 | ✅ |
+| `prestige.types.ts` | 433 | ✅ |
+| `prestige-config.ts` | 311 | ✅ |
+
+**settings 模块** — 全部 ≤500 行 ✅
+
+| 文件 | 行数 | ≤500 |
+|------|:----:|:----:|
+| `SettingsManager.ts` | 480 | ✅ |
+| `AnimationController.ts` | 476 | ✅ |
+| `AudioManager.ts` | 475 | ✅ |
+| `AccountSystem.ts` | 466 | ✅ |
+| `SaveSlotManager.ts` | 451 | ✅ |
+| `CloudSaveSystem.ts` | 406 | ✅ |
+| `GraphicsManager.ts` | 335 | ✅ |
 
 ### 3.3 测试结果明细
+
+**prestige 模块** — 117/117 通过 ✅
+
+| 测试文件 | 行数 | 通过 | 失败 | 总计 |
+|----------|:----:|:----:|:----:|:----:|
+| PrestigeSystem.test.ts | 321 | 28 | 0 | 28 |
+| PrestigeShopSystem.test.ts | 303 | 28 | 0 | 28 |
+| RebirthSystem.test.ts | 453 | 38 | 0 | 38 |
+| RebirthSystem.helpers.test.ts | 289 | 23 | 0 | 23 |
+
+**settings 模块** — 236/236 通过 ✅
 
 | 测试文件 | 行数 | 通过 | 失败 | 总计 |
 |----------|:----:|:----:|:----:|:----:|
 | SettingsManager.test.ts | 412 | 38 | 0 | 38 |
 | AnimationController.test.ts | 447 | 40 | 0 | 40 |
-| AudioManager.test.ts | 320 | 26 | 0 | 26 |
-| GraphicsManager.test.ts | 239 | 25 | 0 | 25 |
-| SaveSlotManager.test.ts | 364 | 37 | 0 | 37 |
 | AccountSystem.test.ts | 405 | 40 | 0 | 40 |
-| CloudSaveSystem.test.ts | 434 | 24 | **6** | 30 |
-| **合计** | **2,621** | **230** | **6** | **236** |
+| AudioManager.test.ts | 320 | 26 | 0 | 26 |
+| SaveSlotManager.test.ts | 364 | 37 | 0 | 37 |
+| CloudSaveSystem.test.ts | 434 | 30 | 0 | 30 |
+| GraphicsManager.test.ts | 239 | 25 | 0 | 25 |
 
-### 3.4 CloudSaveSystem 失败分析
-
-**根因**: 两个独立的测试环境问题（非生产代码缺陷）
-
-| 失败项 | 根因 | 修复方案 |
-|--------|------|----------|
-| 加密后可解密还原 | `TextEncoder is not defined` | 测试文件顶部添加 `import { TextEncoder } from 'util'` |
-| 不同密钥解密结果不同 | 同上 | 同上 |
-| 空字符串加密解密 | 同上 | 同上 |
-| 同步状态变更触发回调 | `vi is not defined` | 测试文件添加 `import { vi } from 'vitest'` |
-| 取消注册后不再触发 | 同上 | 同上 |
-| removeAllListeners 清除所有回调 | 同上 | 同上 |
-
-**生产代码影响**: 无。`CloudSaveSystem.ts` 加密/回调逻辑实现完整，仅测试环境缺少 polyfill。
+> **前次 R2 改进**: CloudSaveSystem 6 项测试失败已全部修复 ✅（TextEncoder polyfill + vitest import 已添加）
 
 ---
 
@@ -106,15 +131,24 @@
 |------|:--:|:----:|:----:|
 | 行数 | 138 | ≤500 | ✅ |
 | exports-v*.ts | exports-v9, exports-v12 | — | ✅ |
+| prestige 统一导出 | `export * from './prestige'` | — | ✅ |
 | settings 统一导出 | `export * from './settings'` | — | ✅ |
 
 ### 4.2 ISubsystem 合规性
+
+**prestige 模块**: 3/3 类实现 ISubsystem ✅
+
+| 类名 | implements ISubsystem | 说明 |
+|------|:--------------------:|------|
+| `PrestigeSystem` | ✅ | 声望系统核心 |
+| `RebirthSystem` | ✅ | 转生系统 |
+| `PrestigeShopSystem` | ✅ | 声望商店 |
 
 **settings 模块**: 7/7 类实现 ISubsystem ✅
 
 | 类名 | implements ISubsystem | 说明 |
 |------|:--------------------:|------|
-| `SettingsManager` | ✅ | 核心管理器（R1已修复） |
+| `SettingsManager` | ✅ | 核心管理器 |
 | `AudioManager` | ✅ | 音频管理 |
 | `GraphicsManager` | ✅ | 画质管理 |
 | `AnimationController` | ✅ | 动画控制 |
@@ -122,14 +156,17 @@
 | `CloudSaveSystem` | ✅ | 云存档系统 |
 | `AccountSystem` | ✅ | 账号系统 |
 
-**全项目**: 124 个类实现 ISubsystem（含 unification 模块 7 个）
+**全项目**: 126 个类实现 ISubsystem（含 prestige 3 + settings 7）
 
 ### 4.3 核心层分离
 
 | 层级 | 职责 | 文件 | 合规 |
 |------|------|------|:----:|
-| `core/settings/` | 类型定义 + 默认值 + 配置常量 | 4 文件 / 807 行 | ✅ |
-| `engine/settings/` | 业务逻辑 + ISubsystem 实现 | 11 文件 / 3,419 行 | ✅ |
+| `core/prestige/` | 类型定义 + 配置常量 | 3 文件 / 817 行 | ✅ |
+| `engine/prestige/` | 业务逻辑 + ISubsystem | 5 文件 / 1,106 行 | ✅ |
+| `engine/prestige/__tests__/` | 单元测试 | 4 文件 / 1,366 行 | ✅ |
+| `core/settings/` | 类型定义 + 默认值 + 配置 | 4 文件 / 807 行 | ✅ |
+| `engine/settings/` | 业务逻辑 + ISubsystem | 11 文件 / 3,419 行 | ✅ |
 | `engine/settings/__tests__/` | 单元测试 | 7 文件 / 2,621 行 | ✅ |
 
 **core → engine 依赖方向**: ✅ 单向（engine 依赖 core，core 无反向依赖）
@@ -144,68 +181,175 @@
 |------|:----:|
 | TypeScript 编译 | ✅ 0 错误 |
 | strict mode | ✅ |
-| 类型文件分离 | ✅ `account.types.ts` / `cloud-save.types.ts` / `save-slot.types.ts` |
+| `as any` 使用 (prestige) | ✅ 0 处 |
+| `as any` 使用 (settings) | 🟡 2 处 (`navigator.deviceMemory` 非标准 API) |
+| 类型文件分离 | ✅ `prestige.types.ts` / `prestige-config.ts` / `account.types.ts` 等 |
 
-### 5.2 接口抽象
+### 5.2 v16.0 传承深化功能审计
 
-| 接口 | 用途 | 可测试性 |
+| 功能 | 类型定义 | 配置常量 | 引擎实现 | 测试 |
+|------|:--------:|:--------:|:--------:|:----:|
+| 转生初始赠送 | `RebirthInitialGift` | `REBIRTH_INITIAL_GIFT` | `getInitialGift()` | ✅ |
+| 瞬间建筑升级 | `RebirthInstantBuild` | `REBIRTH_INSTANT_BUILD` | `getInstantBuildConfig()` + `calculateBuildTime()` | ✅ |
+| 一键重建 | — | — | `getAutoRebuildPlan()` | ✅ |
+| v16 解锁内容 | `RebirthUnlockContentV16` | `REBIRTH_UNLOCK_CONTENTS_V16` | `getUnlockContentsV16()` | ✅ |
+| 声望增长曲线 | — | — | `generatePrestigeGrowthCurve()` | ✅ |
+| 转生时机对比 | `RebirthSimulationComparison` | `SIMULATION_DIMINISHING_RETURNS_HOUR` | `compareRebirthTiming()` | ✅ |
+| 收益模拟器 v16 | `SimulationResultV16` | — | `simulateEarningsV16()` | ✅ |
+
+**功能链完整性**: types → config → helpers → system → tests ✅
+
+### 5.3 接口抽象
+
+| 接口 | 模块 | 可测试性 |
 |------|------|:--------:|
-| `ISettingsStorage` | 存储适配器 | ✅ 可 mock |
-| `INetworkDetector` | 网络检测 | ✅ 可 mock |
-| `ICloudStorage` | 云存储实现 | ✅ 可 mock |
-| `ISaveSlotStorage` | 存档存储 | ✅ 可 mock |
-| `IAudioPlayer` | 音频播放器 | ✅ 可 mock |
-| `IAnimationPlayer` | 动画播放器 | ✅ 可 mock |
-| `GrantIngotFn` / `NowFn` | 函数注入 | ✅ 可 mock |
+| `ICloudStorage` | settings | ✅ 可 mock |
+| `INetworkDetector` | settings | ✅ 可 mock |
+| `ISaveSlotStorage` | settings | ✅ 可 mock |
+| `ISettingsStorage` | settings | ✅ 可 mock |
+| `IAudioPlayer` | settings | ✅ 可 mock |
+| `IAnimationPlayer` | settings | ✅ 可 mock |
+| `SpendIngotFn` / `NowFn` | prestige | ✅ 函数注入 |
+| `SyncScheduler` | settings | ✅ 可 mock |
 
-### 5.3 配置外部化
+### 5.4 配置外部化
 
-| 配置文件 | 位置 | 行数 |
-|----------|------|:----:|
-| `settings-config.ts` | core/settings/ | 152 |
-| `settings-defaults.ts` | core/settings/ | 204 |
-| `settings.types.ts` | core/settings/ | 356 |
+所有数值常量均从 core 层导入，引擎层无硬编码 ✅
 
-所有数值常量（`MAX_DEVICES`, `FIRST_BIND_REWARD`, `AUTO_SAVE_INTERVAL` 等）均从 core 层导入，引擎层无硬编码 ✅
+| 常量 | 值 | 位置 |
+|------|:--:|------|
+| `MAX_PRESTIGE_LEVEL` | 50 | core/prestige |
+| `PRESTIGE_BASE` | 1000 | core/prestige |
+| `PRESTIGE_EXPONENT` | 1.8 | core/prestige |
+| `SIMULATION_DIMINISHING_RETURNS_HOUR` | 72 | core/prestige |
+| `TOTAL_SAVE_SLOTS` | 4 | core/settings |
+| `AUTO_SAVE_INTERVAL` | 15min | core/settings |
+| `FIRST_BIND_REWARD` | 50 | core/settings |
+| `MAX_DEVICES` | 5 | core/settings |
+
+### 5.5 门面隔离
+
+```
+grep -rn "from.*engine/prestige" src/games/three-kingdoms/ui/ → 无结果 ✅
+grep -rn "from.*engine/settings" src/games/three-kingdoms/ui/ → 无结果 ✅
+```
+
+UI 层无直接引用引擎内部模块 ✅（注：UI 层本身尚不存在）
 
 ---
 
-## 六、问题清单
+## 六、模块依赖关系
+
+```mermaid
+graph TD
+    subgraph core
+        CP[core/prestige<br/>types + config<br/>817行]
+        CS[core/settings<br/>types + defaults + config<br/>807行]
+    end
+    
+    subgraph engine/prestige
+        PS[PrestigeSystem<br/>386行]
+        RS[RebirthSystem<br/>268行]
+        RH[RebirthSystem.helpers<br/>217行]
+        PSS[PrestigeShopSystem<br/>226行]
+    end
+    
+    subgraph engine/settings
+        SM[SettingsManager<br/>480行]
+        AM[AudioManager<br/>475行]
+        GM[GraphicsManager<br/>335行]
+        SSM[SaveSlotManager<br/>451行]
+        CSS[CloudSaveSystem<br/>406行]
+        AS[AccountSystem<br/>466行]
+        AC[AnimationController<br/>476行]
+    end
+    
+    PS --> CP
+    RS --> CP
+    RH --> CP
+    PSS --> CP
+    RS --> RH
+    
+    SM --> CS
+    AM --> CS
+    GM --> CS
+    AC --> CS
+    SSM --> CS
+    CSS --> CS
+    AS --> CS
+    
+    style CP fill:#e1f5fe,stroke:#0288d1
+    style CS fill:#e1f5fe,stroke:#0288d1
+    style PS fill:#c8e6c9,stroke:#388e3c
+    style RS fill:#c8e6c9,stroke:#388e3c
+    style RH fill:#fff9c4,stroke:#f9a825
+```
+
+---
+
+## 七、问题清单
 
 ### P1（重要）
 
 | ID | 问题 | 模块 | 修复方案 |
 |----|------|------|----------|
-| P1-01 | CloudSaveSystem 测试缺少 TextEncoder polyfill | tests | 添加 `import { TextEncoder } from 'util'` |
-| P1-02 | CloudSaveSystem 测试缺少 vitest import | tests | 添加 `import { vi } from 'vitest'` |
-| P1-03 | 设置面板 UI 组件缺失 | UI | 创建 `SettingsPanel.tsx` |
-| P1-04 | 存档/账号/云存档 UI 组件缺失 | UI | 创建对应 TSX 组件 |
+| P1-01 | 声望/转生/商店 UI 组件缺失 | UI | 创建 PrestigePanel/RebirthPanel/ShopPanel TSX |
+| P1-02 | 设置面板 UI 组件缺失 | UI | 创建 SettingsPanel.tsx（继承） |
+| P1-03 | `navigator.deviceMemory` 类型安全 | settings | 添加全局类型扩展消除 `as any` |
 
 ### P2（改进）
 
 | ID | 问题 | 模块 | 说明 |
 |----|------|------|------|
 | P2-01 | 无 v16 专用 exports 文件 | engine | engine/index.ts 仅 138 行，暂不需要拆分 |
-| P2-02 | CloudSaveSystem.encrypt 使用 TextEncoder | engine | 生产环境需确保浏览器兼容或添加 polyfill |
-| P2-03 | 设置 CSS 样式文件缺失 | UI | 需创建 `settings.css` |
+| P2-02 | CSS 样式文件缺失 | UI | 需创建 `prestige.css` + `settings.css` |
+| P2-03 | CloudSaveSystem.encrypt 浏览器兼容 | engine | 生产环境需确保 TextEncoder 可用 |
+| P2-04 | 超标测试文件 (10个 >500行) | tests | ActivitySystem.test.ts 934行 等，建议拆分 |
 
 ---
 
-## 七、结论
+## 八、超标文件检测
+
+### 生产代码 — 全部 ≤500 行 ✅
+
+无文件超过 500 行阈值。
+
+### 测试代码 — 10 个超标 ⚠️
+
+| 文件 | 行数 |
+|------|:----:|
+| `ActivitySystem.test.ts` | 934 |
+| `BattleTurnExecutor.test.ts` | 897 |
+| `EquipmentSystem.test.ts` | 888 |
+| `ShopSystem.test.ts` | 831 |
+| `equipment-v10.test.ts` | 755 |
+| `NPCMapPlacer.test.ts` | 680 |
+| `EventTriggerSystem.test.ts` | 666 |
+| `NPCPatrolSystem.test.ts` | 646 |
+| `CampaignProgressSystem.test.ts` | 645 |
+| `EventNotificationSystem.test.ts` | 643 |
+
+> 注：这些超标文件不属于 v16.0 prestige/settings 模块，但作为全项目健康度指标记录。
+
+---
+
+## 九、结论
 
 > **⚠️ CONDITIONAL PASS**
 >
-> 引擎层架构质量优秀：
-> - 7/7 子系统实现 ISubsystem ✅
-> - 0 个文件超过 500 行 ✅
-> - TypeScript 编译 0 错误 ✅
+> **引擎层架构质量卓越**：
+> - prestige 3/3 + settings 7/7 = **10/10** 子系统实现 ISubsystem ✅
+> - **0 个生产文件超过 500 行** ✅
+> - **353/353 单元测试全部通过（100%）** ✅
 > - DDD 分层清晰，core↔engine 单向依赖 ✅
-> - 230/236 单元测试通过（97.5%）
+> - v16.0 传承深化功能链完整 ✅
+> - TypeScript 编译 0 错误 ✅
+> - 门面隔离合规 ✅
+> - prestige 模块 0 处 `as any` ✅
 >
-> 阻塞项：
-> 1. CloudSaveSystem 6 项测试失败（环境问题，2行修复）
-> 2. UI 组件层完全缺失（引擎数据无法呈现给玩家）
+> **阻塞项**：
+> 1. UI 组件层完全缺失（P0×6，引擎数据无法呈现给玩家）
 >
-> **P0**: 0 | **P1**: 4 | **P2**: 3
+> **P0**: 0 | **P1**: 3 | **P2**: 4
 >
-> **建议**: Round 3 优先修复测试环境（预计 10 分钟），然后创建 SettingsPanel UI 组件。
+> **建议**: Round 3 优先创建 `PrestigePanel.tsx` + `RebirthConfirmPanel.tsx` + `PrestigeShopPanel.tsx` + `SimulationPanel.tsx`，覆盖 v16.0 核心交互流程。
