@@ -13,6 +13,7 @@
 - [Round 20: v20.0天下一统(下)](./evolution-r20.md) — 全链路联调验证+数值平衡5维审查+性能优化三件套+17/17 UI通过+项目收官
 - [v11.0 R2: 群雄逐鹿进化迭代](../tech-reviews/v11.0-review-r2.md) — Play文档7流程+技术审查P0:0/P1:6/P2:5+3条经验教训
 - [Round 4复盘: ISubsystem+大文件拆分](./evolution-r4-round.md) — ISubsystem覆盖率100%(91/91)+8大文件拆分至0超限+EVO-046~048
+- [Round 2全局复盘](./evolution-r11.md) — 20版本完成(14通过/6有条件)+P0:0/P1:~20+GameEventSimulator+门面精简616→138行+EVO-049~052
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -209,4 +210,32 @@ ISubsystem接口必须在新System类创建时同步实现，覆盖率目标100%
 ### EVO-048: core层聚合导出模式（来自Round 4复盘）
 core层配置/模板文件按功能域拆分，主文件作为聚合导出(re-export)。
 范例: encounter-templates.ts按章节拆分4个子文件，主文件仅做聚合导出(139行)。
+
+### EVO-049: 按DDD业务域导出，禁止按版本号（来自Round 2全局复盘）
+门面导出文件按业务域命名(如 `exports-pvp.ts`, `exports-social.ts`)。
+禁止使用 `exports-vN` 按版本号导出。
+残留文件(exports-v9.ts, exports-v12.ts)需清理。
+检查方法: `find src/ -name "exports-v*" -type f`
+
+### EVO-050: GameEventSimulator用于模拟游戏事件（来自Round 2全局复盘）
+使用 `test-utils/GameEventSimulator.ts`(411行)模拟触发游戏事件。
+配套测试357行，覆盖核心事件场景。
+后续版本UI测试可复用此工具，避免手动触发复杂事件链。
+
+### EVO-051: 每版本4步流水线（来自Round 2全局复盘）
+标准进化流程: Play文档 → UI测试 → 技术审查 → 复盘。
+- Play文档: 5~7章节覆盖核心功能流程
+- 技术审查: P0/P1/P2分级 + ISubsystem合规 + DDD违规检测
+- 复盘: 经验教训提取 + 进化规则沉淀
+不得跳过任何环节(EVO-031强化)。
+
+### EVO-052: 双系统重叠治理清单（来自Round 2全局复盘）
+Round 2发现6对重叠系统，Round 3必须逐一治理：
+1. TouchInputSystem / TouchInteractionSystem → 合并统一触控
+2. EventTriggerSystem / EventTriggerEngine → 合并触发逻辑
+3. ChainEventSystem / ChainEventSystemV15 → 保留V15删除旧版
+4. RankingSystem / LeaderboardSystem → 统一排行榜接口
+5. EquipmentGenerator / EquipmentGenHelper → 合并单一生成器
+6. RebirthSystem / RebirthSystemV16 → 保留V16删除旧版
+治理时遵循EVO-040重叠迁移策略。
 
