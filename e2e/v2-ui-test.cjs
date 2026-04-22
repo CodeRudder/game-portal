@@ -6,46 +6,34 @@ const { initBrowser, enterGame, switchTab, takeScreenshot, checkDataIntegrity, c
 
   console.log('=== v2.0 UI测试 ===');
 
-  // 进入游戏
-  await enterGame(page);
-
-  // 关闭可能存在的教程/引导弹窗
-  async function dismissTutorial() {
-    for (let i = 0; i < 8; i++) {
-      const overlay = await page.$('[class*="guide-overlay"], [class*="tk-guide"], [role="dialog"]');
-      if (!overlay) break;
-      // 尝试各种关闭按钮
-      const closeBtn = await page.$([
-        '[class*="guide"] button:has-text("确")',
-        '[class*="guide"] button:has-text("知")',
-        '[class*="guide"] button:has-text("好")',
-        '[class*="guide"] button:has-text("OK")',
-        '[class*="guide"] button:has-text("×")',
-        '[class*="guide"] button:has-text("跳")',
-        '[class*="guide"] button:has-text("关")',
-        '[class*="guide"] button:has-text("下一")',
-        '[class*="guide"] button:has-text("继续")',
-        '[class*="guide"] [class*="close"]',
-        '[role="dialog"] button:has-text("确")',
-        '[role="dialog"] button:has-text("好")',
-        '[role="dialog"] button:has-text("×")',
-        '[role="dialog"] button:has-text("跳")',
-        '[role="dialog"] button:has-text("关")',
-        '[role="dialog"] button:has-text("下一")',
-        '[role="dialog"] button:has-text("继续")',
-        '[role="dialog"] [class*="close"]',
-      ].join(','));
-      if (closeBtn) {
-        await closeBtn.click();
-        await page.waitForTimeout(600);
-      } else {
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(600);
+  // Helper: dismiss tutorial/guide overlays
+  async function dismissGuide() {
+    for (let i = 0; i < 10; i++) {
+      const guide = await page.$('[class*="guide-overlay"], [class*="tk-guide"]');
+      if (!guide) break;
+      // Try Skip button first
+      const skipBtn = await page.$('button:has-text("Skip"), button:has-text("跳过")');
+      if (skipBtn) {
+        await skipBtn.click({ force: true });
+        await page.waitForTimeout(500);
+        continue;
       }
+      // Try Next button
+      const nextBtn = await page.$('button:has-text("Next"), button:has-text("下一步")');
+      if (nextBtn) {
+        await nextBtn.click({ force: true });
+        await page.waitForTimeout(500);
+        continue;
+      }
+      // Fallback: Escape
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
     }
   }
-  await dismissTutorial();
 
+  // 进入游戏
+  await enterGame(page);
+  await dismissGuide();
   await takeScreenshot(page, 'v2-ui-main');
   console.log('✅ 进入游戏');
 
@@ -58,7 +46,7 @@ const { initBrowser, enterGame, switchTab, takeScreenshot, checkDataIntegrity, c
   // === 2.1 武将Tab ===
   console.log('\n=== 武将Tab ===');
   await switchTab(page, '武将');
-  await dismissTutorial();
+  await dismissGuide();
   await takeScreenshot(page, 'v2-ui-hero-tab');
   
   const heroText = await page.textContent('body');
@@ -75,24 +63,52 @@ const { initBrowser, enterGame, switchTab, takeScreenshot, checkDataIntegrity, c
 
   // === 2.2 武将详情弹窗 ===
   console.log('\n=== 武将详情 ===');
-  // 尝试点击武将卡片
-  const selectors = ['[class*="hero-card"]', '[class*="tk-hero-card"]', '[class*="hero"] [role="button"]', '[class*="hero"] > div[style]'];
+  // 先检查是否有武将（首次可能无武将，需先招募）
+  const emptyState = await page.$('button:has-text("前往招募"), :text("尚无武将")');
+  if (emptyState) {
+    console.log('⚠️ 尚无武将，先招募一个武将以测试详情');
+    // 点击前往招募
+    const goRecruitBtn = await page.$('button:has-text("前往招募")');
+    if (goRecruitBtn) {
+      await goRecruitBtn.click({ force: true });
+      await page.waitForTimeout(1500);
+      await dismissGuide();
+      await takeScreenshot(page, 'v2-ui-recruit-from-empty');
+      
+      // 执行单抽
+      const singlePull = await page.$('button:has-text("单抽"), button:has-text("单次")');
+      if (singlePull) {
+        await singlePull.click({ force: true });
+        await page.waitForTimeout(2000);
+        await dismissGuide();
+        await takeScreenshot(page, 'v2-ui-after-pull');
+        console.log('✅ 已招募武将');
+      }
+      
+      // 关闭招募弹窗
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+      await dismissGuide();
+    }
+  }
+
+  // 现在尝试点击武将卡片打开详情
+  const selectors = ['[class*="hero-card"]', '[class*="tk-hero-card"]', '[class*="hero"] [role="button"]', '[class*="hero"] > div[style]', '[class*="hero-item"]'];
   let detailOpened = false;
   for (const sel of selectors) {
     const els = await page.$$(sel);
     if (els.length > 0) {
       console.log('尝试选择器: ' + sel + ' (' + els.length + '个)');
       try {
-        await els[0].click();
+        await els[0].click({ force: true });
         await page.waitForTimeout(1500);
-        await dismissTutorial();
+        await dismissGuide();
         const modal = await page.$('[class*="detail"], [class*="Detail"], [class*="shared-panel"]');
         if (modal) {
           const modalText = await modal.textContent();
           console.log('✅ 详情弹窗出现');
           console.log('详情内容: ' + modalText.substring(0, 150));
           
-          // 检查关键元素
           const hasLevel = modalText.includes('Lv') || modalText.includes('等级');
           const hasAttr = modalText.includes('武力') || modalText.includes('智力') || modalText.includes('统率');
           const hasPower = modalText.includes('战力');
@@ -101,7 +117,6 @@ const { initBrowser, enterGame, switchTab, takeScreenshot, checkDataIntegrity, c
           await takeScreenshot(page, 'v2-ui-hero-detail');
           detailOpened = true;
           
-          // 检查升级按钮
           const upgradeBtn = await page.$('button:has-text("升级"), button:has-text("强化"), button:has-text("▲")');
           console.log('升级按钮: ' + (!!upgradeBtn ? '✅' : '⚠️'));
           
@@ -115,17 +130,16 @@ const { initBrowser, enterGame, switchTab, takeScreenshot, checkDataIntegrity, c
     }
   }
   if (!detailOpened) {
-    console.log('⚠️ 武将详情弹窗未能打开');
+    console.log('⚠️ 武将详情弹窗未能打开（可能无武将卡片可点击）');
     issues.push({ id: 'V2-DETAIL', desc: '武将详情弹窗未能打开', severity: 'P1' });
   }
 
   // === 2.3 招募系统 ===
   console.log('\n=== 招募系统 ===');
   await switchTab(page, '武将');
-  await dismissTutorial();
+  await dismissGuide();
   clearConsoleErrors(page);
   
-  // 使用 force click 来避免被引导弹窗阻挡
   const recruitBtns = await page.$$('button');
   for (const btn of recruitBtns) {
     const text = await btn.textContent();
@@ -135,13 +149,13 @@ const { initBrowser, enterGame, switchTab, takeScreenshot, checkDataIntegrity, c
         await page.waitForTimeout(1500);
         console.log('点击招募按钮: ' + text.trim());
       } catch (e) {
-        console.log('点击招募按钮失败(尝试force): ' + e.message.substring(0, 80));
+        console.log('点击招募按钮失败: ' + e.message.substring(0, 80));
       }
       break;
     }
   }
   
-  await dismissTutorial();
+  await dismissGuide();
   await takeScreenshot(page, 'v2-ui-recruit');
   const recruitText = await page.textContent('body');
   console.log('招募页面内容: ' + recruitText.substring(0, 150));
