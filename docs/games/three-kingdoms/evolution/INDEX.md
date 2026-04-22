@@ -14,6 +14,7 @@
 - [v11.0 R2: 群雄逐鹿进化迭代](../tech-reviews/v11.0-review-r2.md) — Play文档7流程+技术审查P0:0/P1:6/P2:5+3条经验教训
 - [Round 4复盘: ISubsystem+大文件拆分](./evolution-r4-round.md) — ISubsystem覆盖率100%(91/91)+8大文件拆分至0超限+EVO-046~048
 - [Round 2全局复盘](./evolution-r11.md) — 20版本完成(14通过/6有条件)+P0:0/P1:~20+GameEventSimulator+门面精简616→138行+EVO-049~052
+- [Round 7复盘: P1修复+测试增强](./progress/evolution-progress-r7.md) — EventTriggerSystem增强+calcRebirthMultiplier签名统一+data-testid补全10组件+测试修复16文件+EVO-056~058
 
 ## 进化规则
 ### EVO-001: 提取即删除
@@ -260,4 +261,26 @@ Round 2发现6对重叠系统，Round 3必须逐一治理：
 - v10.0 military → 实际在 engine/equipment/（装备）
 审查报告需注明实际目录路径，避免按版本号臆测功能位置。
 发现命名不一致时，以实际目录为准更新文档。
+
+### EVO-056: data-testid 覆盖率要求（来自Round 7复盘）
+所有 UI 组件根元素必须有 data-testid 属性，新建组件必须同步添加。
+命名规范: kebab-case（如 `data-testid="resource-bar"`）。
+动态列表项使用模板（如 `data-testid="resource-item-${resourceId}"`）。
+优先级: P0主界面组件 → P1交互组件 → P2辅助组件。
+验证方法: `grep -rn "data-testid" src/components/ | wc -l`
+
+### EVO-057: 函数签名冲突检测（来自Round 7复盘）
+同名函数在不同模块中存在时，必须明确权威版本和委托关系。
+权威版本: 实现最完整的版本（如 unification/BalanceCalculator.calcRebirthMultiplier）。
+委托版本: 薄封装器，仅调用权威版本并保持向后兼容。
+禁止两个模块各自独立实现相同逻辑（逻辑分叉风险）。
+发现冲突时: 在委托版本头部注释 `// Delegates to <权威模块路径>` 标明关系。
+
+### EVO-058: 测试修复批量策略（来自Round 7复盘）
+批量修复预存测试失败时，优先修复高频同类问题，按以下顺序：
+1. vitest 导入（`import { describe, it, expect } from 'vitest'`）
+2. mock 配置（`vi.mock()` 路径和工厂函数）
+3. 类型断言（`as any` 替换为精确类型或 `as unknown as T`）
+每批修复后运行 `pnpm test` 确认无回归。
+目标: 每轮至少修复 10 个测试文件或消除一类问题。
 
