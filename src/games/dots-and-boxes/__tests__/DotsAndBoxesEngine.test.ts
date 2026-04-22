@@ -30,7 +30,7 @@ function createEngine(gridSize?: GridSize): DotsAndBoxesEngine {
 function startEngine(gridSize?: GridSize): DotsAndBoxesEngine {
   const engine = createEngine(gridSize);
   // mock requestAnimationFrame 防止 gameLoop
-  const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+  const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
   engine.start();
   rafSpy.mockRestore();
   return engine;
@@ -42,15 +42,14 @@ describe('DotsAndBoxesEngine', () => {
   let engine: DotsAndBoxesEngine;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine = startEngine();
     engine.setAI(false); // 禁用 AI 防止干扰
   });
 
   afterEach(() => {
     engine.destroy();
-    jest.clearAllTimers();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   // ========== 初始化测试 ==========
@@ -194,7 +193,7 @@ describe('DotsAndBoxesEngine', () => {
     });
 
     it('changeGridSize 相同大小不重置', () => {
-      const spy = jest.spyOn(engine, 'reset');
+      const spy = vi.spyOn(engine, 'reset');
       engine.changeGridSize(5);
       expect(spy).not.toHaveBeenCalled();
     });
@@ -578,7 +577,7 @@ describe('DotsAndBoxesEngine', () => {
       engine.drawLine(0, 0, LINE_HORIZONTAL, PLAYER_1);
       expect(engine.isLineDrawn(0, 0, LINE_HORIZONTAL)).toBe(true);
 
-      const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+      const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
       engine.handleKeyDown('r');
       rafSpy.mockRestore();
 
@@ -587,7 +586,7 @@ describe('DotsAndBoxesEngine', () => {
     });
 
     it('1 切换到 3×3', () => {
-      const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+      const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
       engine.handleKeyDown('1');
       rafSpy.mockRestore();
       expect(engine.gridPoints).toBe(3);
@@ -595,7 +594,7 @@ describe('DotsAndBoxesEngine', () => {
 
     it('2 切换到 5×5', () => {
       // 先切到 3×3
-      const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+      const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
       engine.handleKeyDown('1');
       expect(engine.gridPoints).toBe(3);
       engine.handleKeyDown('2');
@@ -604,7 +603,7 @@ describe('DotsAndBoxesEngine', () => {
     });
 
     it('3 切换到 7×7', () => {
-      const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+      const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
       engine.handleKeyDown('3');
       rafSpy.mockRestore();
       expect(engine.gridPoints).toBe(7);
@@ -614,7 +613,7 @@ describe('DotsAndBoxesEngine', () => {
       engine.setAI(false);
       (engine as any)._gameOver = true;
 
-      const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+      const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
       engine.handleKeyDown('r');
       rafSpy.mockRestore();
 
@@ -753,7 +752,7 @@ describe('DotsAndBoxesEngine', () => {
       expect(engine.aiThinking).toBe(true);
 
       // 推进时间
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
     });
   });
 
@@ -772,7 +771,7 @@ describe('DotsAndBoxesEngine', () => {
       engine.setAI(false);
       engine.drawLine(0, 0, LINE_HORIZONTAL, PLAYER_1);
 
-      const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+      const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
       engine.reset();
       engine.start();
       rafSpy.mockRestore();
@@ -802,7 +801,7 @@ describe('DotsAndBoxesEngine', () => {
     });
 
     it('resume 恢复游戏', () => {
-      const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+      const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
       engine.pause();
       engine.resume();
       rafSpy.mockRestore();
@@ -847,7 +846,7 @@ describe('DotsAndBoxesEngine', () => {
   describe('事件系统', () => {
     it('boxCompleted 事件在完成方格时触发', () => {
       engine.setAI(false);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('boxCompleted', handler);
 
       // 完成一个方格
@@ -858,7 +857,7 @@ describe('DotsAndBoxesEngine', () => {
 
     it('stateChange 事件在状态变化时触发', () => {
       engine.setAI(false);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
 
       engine.drawLine(0, 0, LINE_HORIZONTAL, PLAYER_1);
@@ -867,7 +866,7 @@ describe('DotsAndBoxesEngine', () => {
 
     it('off 取消事件监听', () => {
       engine.setAI(false);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       engine.off('stateChange', handler);
 
@@ -1050,7 +1049,7 @@ describe('DotsAndBoxesEngine', () => {
   describe('分数更新', () => {
     it('完成方格时 addScore 被调用', () => {
       engine.setAI(false);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('scoreChange', handler);
 
       completeOneBox(engine, 0, 0, PLAYER_1);

@@ -407,6 +407,6 @@ export class EquipmentSystem implements ISubsystem {
   }
 
   private emitEvent(event: string, payload: unknown): void {
-    if (this.deps?.eventBus) (this.deps.eventBus as any).emit(event, payload);
+    if (this.deps?.eventBus) this.deps.eventBus.emit(event, payload);
   }
 }

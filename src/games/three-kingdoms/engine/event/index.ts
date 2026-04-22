@@ -62,35 +62,13 @@ export type {
   EventLogSaveData,
 } from './EventLogSystem';
 
-// v15.0 — 事件触发引擎（触发条件+概率+通知+冷却+分支）
-// @deprecated 与 EventTriggerSystem 功能重叠，未集成到引擎主流程
-export { EventTriggerEngine } from './EventTriggerEngine';
 
-// v15.0 — 连锁事件引擎（分支追踪+快照）
-// @deprecated 与 ChainEventSystem 功能重叠，未集成到引擎主流程
-export { ChainEventEngine } from './ChainEventEngine';
-export type {
-  ChainEngineId,
-  ChainEngineNodeId,
-  ChainEngineOptionId,
-  ChainEventDefV15,
-  ChainNodeDefV15,
-  ChainNodeOption,
-  ChainAdvanceResultV15,
-  ChainEngineSaveData,
-} from './ChainEventEngine';
 
 // v15.0 — 离线事件堆积处理
 export { OfflineEventHandler } from './OfflineEventHandler';
 export { OfflineEventSystem } from './OfflineEventSystem';
 
-// 事件引擎 + 序列化
-export { EventEngine } from './EventEngine';
-export {
-  serializeEventEngine,
-  deserializeEventEngine,
-} from './EventEngineSerialization';
-export type { SerializableEventEngine } from './EventEngineSerialization';
+
 
 // 核心类型（从core层重新导出）
 export type {

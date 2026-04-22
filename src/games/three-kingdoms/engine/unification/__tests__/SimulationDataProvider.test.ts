@@ -7,7 +7,7 @@
  *   - 各方法返回值验证
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   ISimulationDataProvider,
   DefaultSimulationDataProvider,

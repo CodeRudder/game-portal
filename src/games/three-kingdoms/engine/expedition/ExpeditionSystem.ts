@@ -424,7 +424,7 @@ export class ExpeditionSystem implements ISubsystem {
       this.state.sweepCounts[routeId] = counts as Record<SweepType, number>;
     }
 
-    const savedNodeStatuses = (data as any).routeNodeStatuses as Record<string, Record<string, string>> | undefined;
+    const savedNodeStatuses = data.routeNodeStatuses;
     for (const routeId of this.state.clearedRouteIds) {
       const route = this.state.routes[routeId];
       if (route) {

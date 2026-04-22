@@ -31,6 +31,7 @@ import {
   MEDIUM_QUALITY_MIN_MEMORY,
   INK_WASH_TRANSITION_DURATION,
 } from '../../core/settings';
+/// <reference path="../types/navigator.d.ts" />
 
 // ─────────────────────────────────────────────
 // 预设配置表
@@ -219,7 +220,7 @@ export class GraphicsQualityManager implements ISubsystem {
     // 模拟设备检测
     this.deviceCpuCores = navigator?.hardwareConcurrency ?? 4;
     // 内存检测（如果 API 不可用则使用默认值）
-    this.deviceMemoryGB = (navigator as any)?.deviceMemory ?? 4;
+    this.deviceMemoryGB = navigator?.deviceMemory ?? 4;
 
     let recommendedPreset: string;
     if (

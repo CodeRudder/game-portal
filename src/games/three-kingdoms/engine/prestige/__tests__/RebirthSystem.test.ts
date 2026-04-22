@@ -10,6 +10,7 @@
  * - #13 收益模拟器
  */
 
+import { describe, it, test, expect, beforeEach, vi } from 'vitest';
 import { RebirthSystem, calcRebirthMultiplier } from '../RebirthSystem';
 import type { ISystemDeps } from '../../../core/types';
 import { REBIRTH_CONDITIONS, REBIRTH_MULTIPLIER, REBIRTH_ACCELERATION } from '../../../core/prestige';
@@ -21,14 +22,14 @@ import { REBIRTH_CONDITIONS, REBIRTH_MULTIPLIER, REBIRTH_ACCELERATION } from '..
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -39,9 +40,9 @@ function createSystem(): RebirthSystem {
 }
 
 /** 创建满足转生条件的系统 */
-function createReadySystem(): { sys: RebirthSystem; resetFn: jest.Mock } {
+function createReadySystem(): { sys: RebirthSystem; resetFn: vi.Mock } {
   const sys = createSystem();
-  const resetFn = jest.fn();
+  const resetFn = vi.fn();
   sys.setCallbacks({
     castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
     heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
@@ -218,7 +219,7 @@ describe('RebirthSystem', () => {
 
     test('转生发射 completed 事件', () => {
       const deps = mockDeps();
-      const emitSpy = jest.spyOn(deps.eventBus, 'emit');
+      const emitSpy = vi.spyOn(deps.eventBus, 'emit');
       const sys = new RebirthSystem();
       sys.init(deps);
       sys.setCallbacks({
@@ -321,7 +322,7 @@ describe('RebirthSystem', () => {
       sys2.executeRebirth();
 
       // 获取注册的 dayChanged 回调
-      const onCalls = (deps.eventBus.on as jest.Mock).mock.calls;
+      const onCalls = (deps.eventBus.on as vi.Mock).mock.calls;
       const dayChangedCall = onCalls.find((c: string[]) => c[0] === 'calendar:dayChanged');
       expect(dayChangedCall).toBeDefined();
       const dayChangedCb = dayChangedCall![1];

@@ -12,6 +12,7 @@
  * - #15 转生专属任务
  */
 
+import { describe, it, test, expect, beforeEach, vi } from 'vitest';
 import { PrestigeSystem, calcRequiredPoints, calcProductionBonus } from '../PrestigeSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type { PrestigeSourceType } from '../../../core/prestige';
@@ -24,14 +25,14 @@ import { MAX_PRESTIGE_LEVEL, PRESTIGE_BASE, PRESTIGE_EXPONENT } from '../../../c
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -215,7 +216,7 @@ describe('PrestigeSystem', () => {
 
     test('升级时发射事件', () => {
       const deps = mockDeps();
-      const emitSpy = jest.spyOn(deps.eventBus, 'emit');
+      const emitSpy = vi.spyOn(deps.eventBus, 'emit');
       const localSys = new PrestigeSystem();
       localSys.init(deps);
 

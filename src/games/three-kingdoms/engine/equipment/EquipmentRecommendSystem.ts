@@ -19,6 +19,7 @@ import type {
 import type {
   EquipRecommendation,
   RecommendResult,
+  SetId,
 } from '../../core/equipment/equipment-v10.types';
 import {
   EQUIPMENT_SLOTS,
@@ -214,7 +215,7 @@ export class EquipmentRecommendSystem implements ISubsystem {
 
     // 检查接近激活的套装
     for (const [setId, count] of setCounts) {
-      const def = SET_MAP.get(setId as any);
+      const def = SET_MAP.get(setId as SetId);
       if (!def) continue;
       if (count === 2) {
         suggestions.push(`${def.name}已凑齐2件，激活${def.bonus2.description}`);

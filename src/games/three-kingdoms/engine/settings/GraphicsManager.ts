@@ -17,6 +17,7 @@ import type {
   DeviceCapability,
   GraphicsSettings,
 } from '../../core/settings';
+/// <reference path="../types/navigator.d.ts" />
 
 // ─────────────────────────────────────────────
 // 类型
@@ -178,8 +179,8 @@ export class GraphicsManager implements ISubsystem {
     const cpuCores = typeof navigator !== 'undefined' && navigator.hardwareConcurrency
       ? navigator.hardwareConcurrency
       : 4;
-    const memoryGB = typeof navigator !== 'undefined' && (navigator as any).deviceMemory
-      ? (navigator as any).deviceMemory
+    const memoryGB = typeof navigator !== 'undefined' && navigator.deviceMemory
+      ? navigator.deviceMemory
       : 4;
     return { cpuCores, memoryGB };
   }

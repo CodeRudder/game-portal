@@ -496,10 +496,6 @@ export class BackgammonEngine extends GameEngine {
       } else {
         this._phase = GamePhase.SELECT_CHECKER;
         this._message = `剩余骰子: ${this._dice.remaining.join(', ')}`;
-        // AI 继续移动
-        if (this._currentPlayer === PLAYER_BLACK && this._aiEnabled) {
-          this.startAITurn();
-        }
       }
     }
 
@@ -624,7 +620,10 @@ export class BackgammonEngine extends GameEngine {
     const move = this.aiChooseMove(moves);
     this.makeMove(move.from, move.to);
 
-    if ((this._phase as string) !== GamePhase.GAME_OVER && this._dice.remaining.length > 0 && this._currentPlayer === PLAYER_BLACK) {
+    // 如果 makeMove 没有结束回合（骰子没用完、没有游戏结束），继续下一步
+    // NOTE: makeMove 可能修改 _phase 为 GAME_OVER，需用类型断言绕过 TS 控制流窄化
+    const phase = this._phase as GamePhase;
+    if (phase !== GamePhase.GAME_OVER && phase !== GamePhase.ROLL_DICE && this._currentPlayer === PLAYER_BLACK) {
       this._aiTimer = setTimeout(() => {
         this.aiMakeNextMove();
       }, 300);
