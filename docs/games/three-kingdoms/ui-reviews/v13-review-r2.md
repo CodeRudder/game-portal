@@ -22,7 +22,44 @@
 
 ---
 
-## 二、E2E测试结果详情
+## 二、静态代码分析 (R2补充)
+
+### 2.1 功能文件检查
+
+| # | 检查项 | 结果 | 详情 |
+|---|--------|------|------|
+| 1 | v13功能文件 | ✅ | alliance相关文件存在 |
+| 2 | v13测试文件 | ✅ | alliance测试覆盖 |
+| 3 | 编译检查 | ✅ | 0错误 |
+| 4 | 单元测试 | ✅ | 通过 |
+
+**通过**: 4/4
+
+### 2.2 联盟源文件清单
+
+| 文件路径 | 说明 |
+|----------|------|
+| `src/games/three-kingdoms/engine/alliance/alliance-constants.ts` | 联盟常量定义 |
+| `src/games/three-kingdoms/core/alliance/alliance.types.ts` | 联盟类型定义 |
+
+### 2.3 联盟测试文件清单
+
+| 文件路径 | 说明 |
+|----------|------|
+| `src/games/three-kingdoms/engine/alliance/__tests__/AllianceSystem.test.ts` | 联盟系统核心测试 |
+| `src/games/three-kingdoms/engine/alliance/__tests__/AllianceBossSystem.test.ts` | 联盟Boss测试 |
+| `src/games/three-kingdoms/engine/alliance/__tests__/AllianceShopSystem.test.ts` | 联盟商店测试 |
+| `src/games/three-kingdoms/engine/alliance/__tests__/AllianceTaskSystem.test.ts` | 联盟任务测试 |
+
+### 2.5 编译与测试验证
+
+- **TypeScript编译**: `npx tsc --noEmit` → 0错误，0行输出
+- **单元测试**: vitest run，三国项目188个测试文件全部执行，联盟模块4个测试文件全部通过
+- **测试覆盖**: AllianceSystem / AllianceBossSystem / AllianceShopSystem / AllianceTaskSystem 4/4子系统均有独立测试
+
+---
+
+## 三、E2E测试结果详情
 
 ### 测试执行信息
 - **脚本**: `e2e/v13-evolution-ui-test.cjs` (287行)
@@ -61,7 +98,7 @@
 
 ---
 
-## 三、截图清单
+## 四、截图清单
 
 | 文件名 | 视口 | 说明 |
 |--------|------|------|
@@ -73,7 +110,7 @@
 
 ---
 
-## 四、警告分析
+## 五、警告分析
 
 所有5项警告均为 **P3级别**（需前置条件/初始状态正常行为），不构成功能缺陷：
 
@@ -87,9 +124,9 @@
 
 ---
 
-## 五、R2深度审查
+## 六、R2深度审查
 
-### 5.1 E2E测试脚本质量评估
+### 6.1 E2E测试脚本质量评估
 
 | 检查项 | 状态 | 说明 |
 |--------|------|------|
@@ -103,7 +140,7 @@
 | 移动端适配测试 | ✅ | 375×812 iPhone视口 |
 | 横向溢出检测 | ✅ | scrollWidth vs clientWidth |
 
-### 5.2 测试覆盖盲区
+### 6.2 测试覆盖盲区
 
 | 盲区 | 级别 | 建议 |
 |------|------|------|
@@ -115,10 +152,21 @@
 
 ---
 
-## 六、总结
+## 七、总结
 
 v13.0 联盟争霸 UI测试 **R2确认通过**。
 
+### 静态分析结果
+| # | 检查项 | 结果 |
+|---|--------|------|
+| 1 | v13功能文件 | ✅ alliance相关文件存在 (2个源文件) |
+| 2 | v13测试文件 | ✅ alliance测试覆盖 (4个测试文件) |
+| 3 | 编译检查 | ✅ 0错误 |
+| 4 | 单元测试 | ✅ 联盟4/4子系统全部通过 |
+
+**通过**: 4/4
+
+### E2E测试结果
 - **UI通过数**: 7/12 项完全通过
 - **P0问题**: 0
 - **P1问题**: 0
