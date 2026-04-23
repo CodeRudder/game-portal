@@ -137,7 +137,7 @@ describe('NPC 核心层 — 类型与配置', () => {
     });
 
     it('每个区域至少有 2 个 NPC', () => {
-      const regions = ['central_plains', 'jiangnan', 'western_shu'] as const;
+      const regions = ['wei', 'wu', 'shu'] as const;
       for (const region of regions) {
         const count = DEFAULT_NPCS.filter(n => n.region === region).length;
         expect(count).toBeGreaterThanOrEqual(2);

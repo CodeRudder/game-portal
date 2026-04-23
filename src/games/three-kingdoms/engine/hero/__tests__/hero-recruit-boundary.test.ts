@@ -1,6 +1,11 @@
 /**
  * HeroRecruitSystem 边界测试 — 空池、无资源、保底重置、降级选择
  * 覆盖：极端场景、保底计数器边界、资源不足、序列化边界
+ *
+ * 设计规格（hero-system-design.md）：
+ * - 普通招募：recruitToken×1，高级招募：recruitToken×100
+ * - 十连折扣：1.0（无折扣）
+ * - 硬保底：100抽必出 LEGENDARY+
  */
 
 import { HeroRecruitSystem } from '../HeroRecruitSystem';
@@ -69,7 +74,7 @@ describe('HeroRecruitSystem — 边界测试', () => {
     });
 
     it('FINE 品质有武将可直接抽取', () => {
-      // normal: 0.60+0.25=0.85, rng=0.70 → FINE
+      // normal: 0.60+0.28=0.88, rng=0.70 → FINE
       const rng = makeConstantRng(0.70);
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
@@ -79,7 +84,6 @@ describe('HeroRecruitSystem — 边界测试', () => {
     it('十连招募结果包含多个武将', () => {
       const result = recruit.recruitTen('normal')!;
       const names = result.results.map((r) => r.general?.name).filter(Boolean);
-      // 10 次招募应该有结果
       expect(names.length).toBe(10);
     });
 
@@ -135,27 +139,25 @@ describe('HeroRecruitSystem — 边界测试', () => {
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 9, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 },
       });
-      // 抽一次 COMMON（有武将不降级）
       const rng = makeConstantRng(0.3); // COMMON
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
-      // COMMON < RARE → 十连保底应提升品质到 RARE+
       expect(QUALITY_ORDER[result.results[0].quality]).toBeGreaterThanOrEqual(
         QUALITY_ORDER[Quality.RARE],
       );
     });
 
-    it('hardPity 达到 49 时下次触发硬保底', () => {
+    it('hardPity 达到 99 时下次触发硬保底', () => {
+      // 设计规格：hardPityThreshold=100, hardPityMinQuality=LEGENDARY
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
-        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 49, advancedHardPity: 0 },
+        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 99, advancedHardPity: 0 },
       });
       const rng = makeConstantRng(0.88); // RARE
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
-      // 硬保底应提升到 EPIC+
       expect(QUALITY_ORDER[result.results[0].quality]).toBeGreaterThanOrEqual(
-        QUALITY_ORDER[Quality.EPIC],
+        QUALITY_ORDER[Quality.LEGENDARY],
       );
     });
 
@@ -168,24 +170,20 @@ describe('HeroRecruitSystem — 边界测试', () => {
       recruit.setRng(rng);
       recruit.recruitSingle('normal');
       const pity = recruit.getGachaState();
-      // 保底提升到 RARE+ 后 normalPity 重置
       expect(pity.normalPity).toBe(0);
     });
 
     it('高级招募保底独立于普通招募', () => {
-      // 设置普通保底计数器
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 5, advancedPity: 3, normalHardPity: 10, advancedHardPity: 7 },
       });
 
-      // 普通招募不影响高级保底
       const rng = makeConstantRng(0.88); // RARE
       recruit.setRng(rng);
       recruit.recruitSingle('normal');
 
       const pity = recruit.getGachaState();
-      // 高级保底应保持不变
       expect(pity.advancedHardPity).toBe(7);
     });
 
@@ -199,12 +197,13 @@ describe('HeroRecruitSystem — 边界测试', () => {
     });
 
     it('getNextHardPity 返回正确的剩余次数', () => {
+      // 设计规格：hardPityThreshold=100
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 30, advancedHardPity: 45 },
       });
-      expect(recruit.getNextHardPity('normal')).toBe(20);
-      expect(recruit.getNextHardPity('advanced')).toBe(5);
+      expect(recruit.getNextHardPity('normal')).toBe(70);
+      expect(recruit.getNextHardPity('advanced')).toBe(55);
     });
   });
 
@@ -213,24 +212,28 @@ describe('HeroRecruitSystem — 边界测试', () => {
   // ───────────────────────────────────────────
   describe('消耗计算边界', () => {
     it('十连折扣正确计算', () => {
+      // 设计规格：普通招募 recruitToken×1，TEN_PULL_DISCOUNT=1.0
       const cost = recruit.getRecruitCost('normal', 10);
+      expect(cost.amount).toBe(Math.floor(1 * 10 * TEN_PULL_DISCOUNT));
+      expect(cost.resourceType).toBe('recruitToken');
+    });
+
+    it('高级招募十连消耗 = 10 × 100 × 折扣', () => {
+      // 设计规格：高级招募 recruitToken×100
+      const cost = recruit.getRecruitCost('advanced', 10);
       expect(cost.amount).toBe(Math.floor(100 * 10 * TEN_PULL_DISCOUNT));
     });
 
-    it('高级招募十连消耗 = 10 × 1 × 折扣', () => {
-      const cost = recruit.getRecruitCost('advanced', 10);
-      expect(cost.amount).toBe(Math.floor(1 * 10 * TEN_PULL_DISCOUNT));
-    });
-
     it('单抽消耗无折扣', () => {
+      // 设计规格：普通招募 recruitToken×1
       const cost = recruit.getRecruitCost('normal', 1);
-      expect(cost.amount).toBe(100);
+      expect(cost.amount).toBe(1);
     });
 
     it('招募输出记录正确的消耗', () => {
       const result = recruit.recruitTen('normal')!;
-      expect(result.cost.amount).toBe(Math.floor(100 * 10 * TEN_PULL_DISCOUNT));
-      expect(result.cost.resourceType).toBe('gold');
+      expect(result.cost.amount).toBe(Math.floor(1 * 10 * TEN_PULL_DISCOUNT));
+      expect(result.cost.resourceType).toBe('recruitToken');
     });
   });
 

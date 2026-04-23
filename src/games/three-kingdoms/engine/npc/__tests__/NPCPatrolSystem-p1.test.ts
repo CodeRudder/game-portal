@@ -47,7 +47,7 @@ function mockDepsWithNPC(npcs: NPCData[] = []): ISystemDeps {
         profession,
         affinity: opts?.affinity ?? 30,
         position,
-        region: 'central_plains' as RegionId,
+        region: 'wei' as RegionId,
         visible: true,
         dialogId: `dialog-${profession}-default`,
         createdAt: 0,
@@ -93,7 +93,7 @@ function createTestPath(overrides?: Partial<PatrolPath>): PatrolPath {
       { x: 10, y: 0 },
       { x: 10, y: 10 },
     ],
-    region: 'central_plains',
+    region: 'wei',
     speed: 5.0,
     ...overrides,
   };
@@ -105,7 +105,7 @@ function createTestTemplate(overrides?: Partial<NPCSpawnTemplate>): NPCSpawnTemp
     id: 'template-1',
     name: '测试商人',
     profession: 'merchant',
-    region: 'central_plains',
+    region: 'wei',
     patrolPathId: 'test-path-1',
     initialAffinity: 30,
     weight: 1.0,
@@ -203,17 +203,17 @@ describe('NPCPatrolSystem', () => {
     it('getAllPatrolPaths 返回所有路径', () => {
       patrolSys.registerPatrolPaths([
         createTestPath({ id: 'path-1' }),
-        createTestPath({ id: 'path-2', region: 'jiangnan' }),
+        createTestPath({ id: 'path-2', region: 'wu' }),
       ]);
       expect(patrolSys.getAllPatrolPaths()).toHaveLength(2);
     });
 
     it('getPatrolPathsByRegion 按区域过滤', () => {
       patrolSys.registerPatrolPaths([
-        createTestPath({ id: 'path-1', region: 'central_plains' }),
-        createTestPath({ id: 'path-2', region: 'jiangnan' }),
+        createTestPath({ id: 'path-1', region: 'wei' }),
+        createTestPath({ id: 'path-2', region: 'wu' }),
       ]);
-      const result = patrolSys.getPatrolPathsByRegion('central_plains');
+      const result = patrolSys.getPatrolPathsByRegion('wei');
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('path-1');
     });

@@ -2,7 +2,7 @@
  * 三国霸业 v1.0 — 资源栏组件
  *
  * 设计稿：[RES-1] 资源栏 (A区 1280×56px)
- * 显示4种资源：粮草/铜钱/兵力/天命
+ * 显示5种资源：粮草/铜钱/兵力/天命/科技点
  * 每个资源显示：图标 + 数值 + 产出速率 + 容量进度条（有上限的资源）
  * RES-CAP-02: 资源接近/达到上限时显示警告提示
  *
@@ -34,6 +34,7 @@ const RESOURCE_ICONS: Record<ResourceType, string> = {
   gold: '💰',
   troops: '⚔️',
   mandate: '👑',
+  techPoint: '🔬',
 };
 
 /** 资源颜色映射 — [SPEC-1] */
@@ -42,10 +43,11 @@ const RESOURCE_COLORS: Record<ResourceType, string> = {
   gold: '#C9A84C',
   troops: '#B8423A',
   mandate: '#7B5EA7',
+  techPoint: '#4FC3F7',
 };
 
 /** 资源排列顺序 */
-const RESOURCE_ORDER: ResourceType[] = ['grain', 'gold', 'troops', 'mandate'];
+const RESOURCE_ORDER: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint'];
 
 /** 资源脉冲动画颜色 — 功能点#12 粒子效果 */
 const RESOURCE_PULSE_COLORS: Record<ResourceType, string> = {
@@ -53,6 +55,7 @@ const RESOURCE_PULSE_COLORS: Record<ResourceType, string> = {
   gold: 'rgba(201, 168, 76, 0.6)',     // 金色
   troops: 'rgba(184, 66, 58, 0.6)',    // 红色
   mandate: 'rgba(123, 94, 167, 0.6)',  // 紫色
+  techPoint: 'rgba(79, 195, 247, 0.6)', // 蓝色
 };
 
 /** 格式化数值：使用统一 formatNumber，compact 模式同标准模式 */

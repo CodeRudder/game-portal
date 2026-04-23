@@ -26,7 +26,7 @@ import type {
   FestivalType,
   FestivalActivityDef,
   ActivityOfflineSummary,
-} from '../../core/event/event-v15.types';
+} from '../../core/event/event-engine.types';
 
 import type {
   OfflineActivityResult,

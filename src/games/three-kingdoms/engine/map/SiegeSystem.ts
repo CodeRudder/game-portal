@@ -24,7 +24,8 @@ import type { TerritoryData } from '../../core/map';
 /** 攻城条件校验错误码 */
 export type SiegeErrorCode =
   | 'TARGET_NOT_FOUND' | 'TARGET_ALREADY_OWNED' | 'NOT_ADJACENT'
-  | 'INSUFFICIENT_TROOPS' | 'INSUFFICIENT_GRAIN' | 'NO_TROOPS_AVAILABLE';
+  | 'INSUFFICIENT_TROOPS' | 'INSUFFICIENT_GRAIN' | 'NO_TROOPS_AVAILABLE'
+  | 'DAILY_LIMIT_REACHED';
 
 /** 攻城条件校验结果 */
 export interface SiegeConditionResult {
@@ -50,6 +51,8 @@ export interface SiegeResult {
   cost: SiegeCost;
   capture?: { territoryId: string; newOwner: OwnershipStatus; previousOwner: OwnershipStatus };
   failureReason?: string;
+  /** 攻城失败时损失的兵力（MAP PRD v1.1: 30%出征兵力） */
+  defeatTroopLoss?: number;
 }
 
 /** 攻城系统状态 */
@@ -76,8 +79,13 @@ export interface SiegeSaveData {
 const MIN_SIEGE_TROOPS = 100;
 /** 兵力消耗系数 */
 const TROOP_COST_FACTOR = 1.0;
-/** 粮草消耗系数：基础消耗 × 目标等级 */
-const GRAIN_COST_FACTOR = 30;
+/**
+ * 粮草固定消耗量
+ * ⚠️ PRD MAP-4 统一声明：粮草×500（固定消耗），旧公式"出征距离×50+城防等级×100"已废弃
+ */
+const GRAIN_FIXED_COST = 500;
+/** 每日攻城次数上限（PRD MAP-4: 3次） */
+const DAILY_SIEGE_LIMIT = 3;
 /** 攻城存档版本 */
 const SIEGE_SAVE_VERSION = 1;
 
@@ -99,6 +107,8 @@ export class SiegeSystem implements ISubsystem {
   private totalSieges = 0;
   private victories = 0;
   private defeats = 0;
+  /** 今日已攻城次数 */
+  private dailySiegeCount = 0;
 
   // ─── ISubsystem 接口 ───────────────────────
 
@@ -160,17 +170,20 @@ export class SiegeSystem implements ISubsystem {
     if (availableGrain < cost.grain) {
       return { canSiege: false, errorCode: 'INSUFFICIENT_GRAIN', errorMessage: `粮草不足，需要 ${cost.grain}，当前 ${availableGrain}` };
     }
+    if (this.dailySiegeCount >= DAILY_SIEGE_LIMIT) {
+      return { canSiege: false, errorCode: 'DAILY_LIMIT_REACHED', errorMessage: `今日攻城次数已用完(${DAILY_SIEGE_LIMIT}次)` };
+    }
 
     return { canSiege: true };
   }
 
   // ─── 攻城消耗计算 ──────────────────────────
 
-  /** 计算攻城消耗：兵力 = 基础 × 防御/100，粮草 = 系数 × 等级 */
+  /** 计算攻城消耗：兵力 = 基础 × 防御/100，粮草 = 固定500（⚠️PRD MAP-4统一声明） */
   calculateSiegeCost(territory: TerritoryData): SiegeCost {
     return {
       troops: Math.ceil(MIN_SIEGE_TROOPS * (territory.defenseValue / 100) * TROOP_COST_FACTOR),
-      grain: Math.ceil(GRAIN_COST_FACTOR * territory.level),
+      grain: GRAIN_FIXED_COST,
     };
   }
 
@@ -234,7 +247,8 @@ export class SiegeSystem implements ISubsystem {
 
   /** 简化版战斗：基于兵力对比和防御加成（概率判定） */
   private simulateBattle(attackerTroops: number, target: TerritoryData): boolean {
-    const defenderPower = target.defenseValue * (1 + (target.level - 1) * 0.15);
+    // ⚠️ PRD MAP-4 统一声明：defenseValue 已按"基础(1000)×城市等级"生成
+    const defenderPower = target.defenseValue;
     const cost = this.calculateSiegeCost(target);
     const effectiveTroops = attackerTroops - cost.troops;
     if (effectiveTroops <= 0) return false;
@@ -252,6 +266,16 @@ export class SiegeSystem implements ISubsystem {
   getWinRate(): number {
     if (this.totalSieges === 0) return 0;
     return Math.round((this.victories / this.totalSieges) * 100) / 100;
+  }
+
+  /** 获取今日剩余攻城次数 */
+  getRemainingDailySieges(): number {
+    return Math.max(0, DAILY_SIEGE_LIMIT - this.dailySiegeCount);
+  }
+
+  /** 重置每日攻城次数（每日刷新调用） */
+  resetDailySiegeCount(): void {
+    this.dailySiegeCount = 0;
   }
 
   // ─── 序列化 ────────────────────────────────
@@ -288,6 +312,7 @@ export class SiegeSystem implements ISubsystem {
     };
 
     this.totalSieges++;
+    this.dailySiegeCount++;
 
     if (victory) {
       this.victories++;
@@ -299,9 +324,13 @@ export class SiegeSystem implements ISubsystem {
       });
     } else {
       this.defeats++;
+      // ⚠️ MAP PRD v1.1统一声明：攻城失败损失30%出征兵力，粮草不返还
+      const defeatTroopLoss = Math.floor(cost.troops * 0.3);
       result.failureReason = '攻城失败，兵力不足以攻破防线';
+      result.defeatTroopLoss = defeatTroopLoss;
       this.deps?.eventBus.emit('siege:defeat', {
         territoryId: targetId, territoryName: territory.name, cost,
+        defeatTroopLoss,
       });
     }
 

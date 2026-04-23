@@ -19,8 +19,8 @@ import type {
   OfflineEventEntry,
   AutoResolveResult,
   EventNotification,
-} from '../../core/event/event-v15.types';
-import { NotificationPriority } from '../../core/event/event-v15-event.types';
+} from '../../core/event/event-engine.types';
+import { NotificationPriority } from '../../core/event/event-encounter.types';
 
 // ─────────────────────────────────────────────
 // 常量

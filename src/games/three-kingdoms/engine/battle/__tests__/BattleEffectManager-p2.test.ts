@@ -7,7 +7,7 @@ import type {
 } from '../BattleEffectManager';
 import type { BattleUnit, BattleSkill, BattleAction, DamageResult } from '../battle.types';
 import { TroopType, BuffType, SkillTargetType } from '../battle.types';
-import { BattleSpeed } from '../battle-v4.types';
+import { BattleSpeed } from '../battle-ultimate.types';
 import { DamageNumberType } from '../DamageNumberSystem';
 
 function createTestSkill(overrides: Partial<BattleSkill> = {}): BattleSkill {

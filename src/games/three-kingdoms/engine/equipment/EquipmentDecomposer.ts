@@ -8,7 +8,7 @@
  */
 
 import type { EquipmentInstance, DecomposeResult, BatchDecomposeResult } from '../../core/equipment/equipment.types';
-import type { CodexEntry } from '../../core/equipment/equipment-v10.types';
+import type { CodexEntry } from '../../core/equipment/equipment-forge.types';
 import type { EquipmentBagManager } from './EquipmentBagManager';
 import {
   DECOMPOSE_COPPER_BASE,

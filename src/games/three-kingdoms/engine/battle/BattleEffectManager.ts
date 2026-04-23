@@ -18,7 +18,7 @@
 
 import type { BattleUnit, BattleSkill, DamageResult, BattleAction } from './battle.types';
 import { BuffType } from './battle.types';
-import { BattleSpeed } from './battle-v4.types';
+import { BattleSpeed } from './battle-ultimate.types';
 import {
   DamageNumberSystem,
   DamageNumberType,

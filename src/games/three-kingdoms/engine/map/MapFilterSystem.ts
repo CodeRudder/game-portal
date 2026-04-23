@@ -39,7 +39,7 @@ import type { ISubsystem, ISystemDeps } from '../../core/types';
  * @example
  * ```ts
  * const result = MapFilterSystem.filter(allTiles, allLandmarks, {
- *   regions: ['central_plains'],
+ *   regions: ['wei'],
  *   terrains: ['plain'],
  *   ownerships: ['player'],
  * });
@@ -193,9 +193,10 @@ export class MapFilterSystem implements ISubsystem {
    */
   static countByRegion(tiles: TileData[]): Record<RegionId, number> {
     const counts: Record<RegionId, number> = {
-      central_plains: 0,
-      jiangnan: 0,
-      western_shu: 0,
+      wei: 0,
+      wu: 0,
+      shu: 0,
+      neutral: 0,
     };
     for (const tile of tiles) {
       counts[tile.region]++;

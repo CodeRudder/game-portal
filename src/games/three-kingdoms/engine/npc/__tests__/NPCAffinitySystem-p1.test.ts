@@ -47,7 +47,7 @@ function createNPC(overrides: Partial<NPCData> = {}): NPCData {
     profession: 'merchant',
     affinity: 30,
     position: { x: 5, y: 5 },
-    region: 'central_plains',
+    region: 'wei',
     visible: true,
     dialogId: 'dialog-test',
     createdAt: 0,

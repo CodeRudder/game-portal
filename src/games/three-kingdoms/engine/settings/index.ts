@@ -44,13 +44,14 @@ export type {
   ISettingsStorage,
 } from './SettingsManager';
 
-export { AudioManager, AudioScene } from './AudioManager';
+export { AudioManager } from './AudioManager';
+export { AudioScene } from './audio-config';
 export type {
   IAudioPlayer,
   AudioEventCallbacks,
   AudioManagerConfig,
   VolumeOutput,
-} from './AudioManager';
+} from './audio-config';
 
 export { GraphicsManager } from './GraphicsManager';
 export type {

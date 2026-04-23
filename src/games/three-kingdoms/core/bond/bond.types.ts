@@ -12,8 +12,7 @@
  * @module core/bond/bond.types
  */
 
-import type { Faction } from '../../engine/hero/hero.types';
-import type { GeneralStats } from '../../engine/hero/hero.types';
+import type { Faction, GeneralStats } from '../../shared/types';
 
 // ─────────────────────────────────────────────
 // 1. 阵营羁绊类型 (#1)

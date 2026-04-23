@@ -134,10 +134,11 @@ describe('SiegeEnhancer', () => {
 
   describe('estimateWinRate', () => {
     it('高攻击力 vs 低防御 → 高胜率', () => {
-      const result = systems.enhancer.estimateWinRate(1000, 'city-luoyang');
+      // ⚠️ PRD MAP-4: 洛阳 defenseValue = 1000×5 = 5000
+      const result = systems.enhancer.estimateWinRate(10000, 'city-luoyang');
       expect(result).not.toBeNull();
       expect(result!.winRate).toBeGreaterThan(0.5);
-      expect(result!.attackerPower).toBe(1000);
+      expect(result!.attackerPower).toBe(10000);
       expect(result!.defenderPower).toBeGreaterThan(0);
     });
 
@@ -202,12 +203,12 @@ describe('SiegeEnhancer', () => {
   // ─── 防御力计算 ────────────────────────────
 
   describe('calculateDefenderPower', () => {
-    it('无驻防时防御力 = 基础 × 等级加成', () => {
+    it('无驻防时防御力 = 基础值（⚠️PRD MAP-4统一声明：defenseValue已含等级）', () => {
       const territory = systems.territory.getTerritoryById('city-luoyang')!;
       const power = systems.enhancer.calculateDefenderPower(territory);
 
-      const expected = territory.defenseValue * (1 + (territory.level - 1) * 0.15);
-      expect(power).toBeCloseTo(expected, 2);
+      // ⚠️ PRD MAP-4: defenseValue = 1000 × level，已包含等级因素
+      expect(power).toBeCloseTo(territory.defenseValue, 2);
     });
 
     it('有驻防时防御力增加', () => {
@@ -230,7 +231,7 @@ describe('SiegeEnhancer', () => {
 
   describe('calculateSiegeReward', () => {
     it('奖励与领土等级正相关', () => {
-      const t3 = systems.territory.getTerritoryById('city-changsha')!; // level 3
+      const t3 = systems.territory.getTerritoryById('city-hanzhong')!; // level 3
       const t5 = systems.territory.getTerritoryById('city-luoyang')!; // level 5
 
       const reward3 = systems.enhancer.calculateSiegeReward(t3);
@@ -242,12 +243,12 @@ describe('SiegeEnhancer', () => {
 
     it('关卡有额外奖励加成', () => {
       const pass = systems.territory.getTerritoryById('pass-hulao')!;
-      const city = systems.territory.getTerritoryById('city-changsha')!;
+      const city = systems.territory.getTerritoryById('city-hanzhong')!;
 
       const passReward = systems.enhancer.calculateSiegeReward(pass);
       const cityReward = systems.enhancer.calculateSiegeReward(city);
 
-      // 同等级关卡奖励应更高（pass-hulao level 3, city-changsha level 3）
+      // 同等级关卡奖励应更高（pass-hulao level 3, city-hanzhong level 3）
       if (pass.level === city.level) {
         expect(passReward.resources.grain).toBeGreaterThan(cityReward.resources.grain);
       }
@@ -316,9 +317,10 @@ describe('SiegeEnhancer', () => {
       systems.territory.captureTerritory('city-xuchang', 'player');
       systems.territory.captureTerritory('city-luoyang', 'enemy');
 
-      // 足够战力确保胜利
+      // ⚠️ PRD MAP-4: 洛阳 defenseValue = 1000×5 = 5000
+      // 足够战力确保高胜率（攻方10000 vs 防方5000）
       const result = systems.enhancer.executeConquest(
-        'city-luoyang', 'player', 5000, 5000, 5000,
+        'city-luoyang', 'player', 10000, 10000, 5000,
       );
 
       // 由于使用随机判定，可能胜也可能败

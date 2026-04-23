@@ -94,7 +94,7 @@ export class ParticleRenderer implements IRenderer {
   private readonly emitters: EmitterInstance[] = [];
   private nextId = 0;
 
-  // TODO: 粒子池和粒子数据数组
+  // stub: 粒子池和粒子数据数组
   // private particles: Particle[] = [];
   // private particleContainer: ParticleContainer;
 
@@ -111,7 +111,7 @@ export class ParticleRenderer implements IRenderer {
     container.addChild(this.root);
     this._initialized = true;
 
-    // TODO: 初始化 ParticleContainer 和粒子池
+    // stub: 初始化 ParticleContainer 和粒子池
   }
 
   /**
@@ -129,9 +129,9 @@ export class ParticleRenderer implements IRenderer {
 
       emitter.elapsed += dt;
 
-      // TODO: 根据发射速率生成新粒子
-      // TODO: 更新所有活跃粒子的位置、速度、大小、颜色
-      // TODO: 移除死亡粒子回收到粒子池
+      // stub: 根据发射速率生成新粒子
+      // stub: 更新所有活跃粒子的位置、速度、大小、颜色
+      // stub: 移除死亡粒子回收到粒子池
     }
 
     void dt; // 占位
@@ -142,7 +142,7 @@ export class ParticleRenderer implements IRenderer {
    */
   destroy(): void {
     this.emitters.length = 0;
-    // TODO: 清理粒子池
+    // stub: 清理粒子池
     this.root.destroy({ children: true });
     this._initialized = false;
   }

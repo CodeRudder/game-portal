@@ -66,11 +66,14 @@ export {
 // v15.0 — 代币兑换商店
 export {
   TokenShopSystem,
+} from './TokenShopSystem';
+
+export {
   DEFAULT_TOKEN_SHOP_CONFIG,
   RARITY_ORDER,
   RARITY_PRICE_MULTIPLIER,
   DEFAULT_SHOP_ITEMS,
-} from './TokenShopSystem';
+} from './token-shop-config';
 
 // v15.0 — 限时活动系统（排行榜+限时流程+节日框架+离线进度）
 export {

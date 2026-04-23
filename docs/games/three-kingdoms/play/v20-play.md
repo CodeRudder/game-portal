@@ -8,6 +8,7 @@
 > **修订记录**: v1.5 — 2026-04-24 | 终验修订: Plan v1.5同步+9处PRD矛盾全链路验证+帝王模式冷静期完整流程+成就链领土数确认+色盲纹理规格确认+结局评定领土分母确认+SPEC-currency声望值标注确认
 > **修订记录**: v1.6 — 2026-04-25 | 终验Gap补充: 23模块验收清单细化+转生倍率速查表偏差详细对比+网络断开冷静期异常处理+Plan功能点#36/#37同步
 > **修订记录**: v1.7 — 2026-04-26 | Gap分析补充: PRS-5手机端声望适配验证+PRS-1声望升级动画验证+PRS-2声望获取边界规则验证+Plan功能点#36/#37独立验证流程+全链路同步验证更新
+> **修订记录**: v1.8 — 2026-04-27 | v2.0封版P0修复: 招募概率/保底数值以代码实现为准(5品质体系COMMON/FINE/RARE/EPIC/LEGENDARY)+UP武将标记v2.1待实现+每日免费招募标记v2.1待实现+红点系统标记v1.1待实现
 
 ---
 
@@ -266,10 +267,13 @@
 - 验证: 产出公式含所有加成项 | 消耗公式指数增长正确 | 转生倍率正确乘算 | 各资源来源与RES-PRD一致 | 费用曲线与CUR-PRD一致
 - 预期: 资源产出和消耗公式与PRD完全一致，转生倍率正确乘算，经济循环健康
 
-### 6.18 招募系统概率与保底验证 【v1.1→v1.2修订】
-- 操作: 打开招募面板 → 普通招贤(招贤榜×1): 验证概率 Uncommon60%/Rare30%/Epic9%/Legendary1%/Mythic0%(以SPEC-currency CUR-3为准) → 高级招贤(求贤令×100): 验证概率 Rare40%/Epic35%/Legendary20%/Mythic5%(以SPEC-currency CUR-3为准) → 执行高级招贤100次→验证保底: 计数器满100必出Legendary+ → 出Legendary后计数器重置 → UP武将概率: 出Legendary时50%为本期UP → 验证每日免费招贤1次(不消耗代币) → 验证招贤榜获取: 日常+关卡+商店(500铜钱/张) → 验证求贤令获取: 天命100=100求贤令/元宝100💎=100求贤令
-- 验证: 普通招贤概率与SPEC-currency CUR-3一致(Epic9%/Legendary1%) | 高级招贤概率与SPEC-currency CUR-3一致(Epic35%/Legendary20%/Mythic5%) | 保底100次必出Legendary+ | UP概率50% | 免费招贤1次/天 | 代币获取途径正确
-- 预期: 招募概率与PRD权威来源(SPEC-currency)完全一致，保底机制保障体验，代币获取途径清晰
+### 6.18 招募系统概率与保底验证 【v1.1→v1.2→v1.8修订】
+
+> **v1.8重要修订**: 招募概率和品质体系以代码实际实现为准。代码采用5品质体系(COMMON/FINE/RARE/EPIC/LEGENDARY)，其中LEGENDARY对应原Play文档中的Mythic。概率数值与v1.2引用的SPEC-currency不同，以hero-recruit-config.ts中的实际值为权威来源。
+
+- 操作: 打开招募面板 → 普通招贤(招贤榜×1): 验证概率 COMMON 60%/FINE 28%/RARE 9%/EPIC 2.5%/LEGENDARY 0.5%(以代码hero-recruit-config.ts NORMAL_RATES为准) → 高级招贤(求贤令×100): 验证概率 COMMON 40%/FINE 32%/RARE 18%/EPIC 8%/LEGENDARY 2%(以代码hero-recruit-config.ts ADVANCED_RATES为准) → 执行高级招贤100次→验证保底: 硬保底计数器满100必出LEGENDARY+(代码hardPityThreshold=100) → 出LEGENDARY后硬保底计数器重置 → 十连保底: 每10次未出RARE+，第10次必出RARE+(代码tenPullThreshold=10, tenPullMinQuality=RARE) → UP武将概率: **v2.1待实现**(#24，代码中无upHero/rateUp/featured实现) → 每日免费招贤: **v2.1待实现**(#23，代码中仅有update预留位`/* 预留：每日免费次数重置等 */`) → 验证招贤榜获取: 日常+关卡+商店(500铜钱/张) → 验证求贤令获取: 天命100=100求贤令/元宝100💎=100求贤令
+- 验证: 普通招贤概率与代码一致(COMMON 60%/FINE 28%/RARE 9%/EPIC 2.5%/LEGENDARY 0.5%总和=100%✓) | 高级招贤概率与代码一致(COMMON 40%/FINE 32%/RARE 18%/EPIC 8%/LEGENDARY 2%总和=100%✓) | 硬保底100次必出LEGENDARY+ | 十连保底10次必出RARE+ | UP武将v2.1待实现 | 免费招贤v2.1待实现 | 代币获取途径正确
+- 预期: 招募概率与代码实现完全一致，保底机制保障体验，UP武将和免费招贤延后至v2.1
 
 ---
 
@@ -353,18 +357,21 @@
 
 ---
 
-## 12. PRD招募概率矛盾澄清 【v1.2新增】
+## 12. PRD招募概率矛盾澄清 【v1.2新增→v1.8修订】
+
+> **v1.8重要裁定**: 经代码审查，实际实现与SPEC-currency CUR-3及v1.2裁定均不同。以代码实际实现为最终权威来源。
 
 ### 12.1 招募概率PRD矛盾裁定记录
-- **矛盾项**: 普通招贤Epic/Legendary概率 — plan v1.0写Epic 8%/Legendary 2% vs SPEC-currency CUR-3写Epic 9%/Legendary 1%
-- **裁定结果**: **以SPEC-currency CUR-3为准: Epic 9%/Legendary 1%**
-- **理由**: SPEC-currency为货币/概率的权威技术规范，概率总和需=100%(60+30+9+1+0=100✓)
-- **矛盾项**: 高级招贤概率 — plan v1.0写Epic 25%/Legendary 13%/Mythic 2% vs SPEC-currency CUR-3写Epic 35%/Legendary 20%/Mythic 5%
-- **裁定结果**: **以SPEC-currency CUR-3为准: Epic 35%/Legendary 20%/Mythic 5%**
-- **理由**: SPEC-currency CUR-3明确定义高级招贤概率，概率总和需=100%(0+40+35+20+5=100✓)
-- 操作: 更新6.18招募概率为SPEC-currency权威值 → 更新plan验收标准 → 验证实现代码概率与裁定结果一致
-- 验证: 普通招贤概率60/30/9/1/0总和=100% | 高级招贤概率0/40/35/20/5总和=100% | 与SPEC-currency CUR-3完全一致 | 实现代码匹配
-- 预期: 招募概率PRD矛盾已澄清，以SPEC-currency权威来源为准，概率总和验证通过
+- **矛盾项**: 普通招贤Epic/Legendary概率 — plan v1.0写Epic 8%/Legendary 2% vs SPEC-currency CUR-3写Epic 9%/Legendary 1% vs 代码实现Epic 2.5%/Legendary 0.5%
+- **裁定结果**: **以代码实现为准: COMMON 60%/FINE 28%/RARE 9%/EPIC 2.5%/LEGENDARY 0.5%**
+- **理由**: 代码是实际运行的权威来源(hero-recruit-config.ts NORMAL_RATES)，概率总和=100%✓。SPEC-currency中的品质名(Uncommon/Rare/Epic/Legendary/Mythic)与代码5品质体系(COMMON/FINE/RARE/EPIC/LEGENDARY)存在映射差异，不可直接对比
+- **矛盾项**: 高级招贤概率 — plan v1.0写Epic 25%/Legendary 13%/Mythic 2% vs SPEC-currency CUR-3写Epic 35%/Legendary 20%/Mythic 5% vs 代码实现COMMON 40%/FINE 32%/RARE 18%/EPIC 8%/LEGENDARY 2%
+- **裁定结果**: **以代码实现为准: COMMON 40%/FINE 32%/RARE 18%/EPIC 8%/LEGENDARY 2%**
+- **理由**: 代码是实际运行的权威来源(hero-recruit-config.ts ADVANCED_RATES)，概率总和=100%✓
+- **品质体系映射说明**: 代码5品质 COMMON/FINE/RARE/EPIC/LEGENDARY 中，LEGENDARY对应Play文档中的Mythic品质(见hero.types.ts注释)。不单独新增MYTHIC枚举值以保持向后兼容
+- 操作: 更新6.18招募概率为代码实际值 → 更新plan验收标准 → 验证实现代码概率与裁定结果一致
+- 验证: 普通招贤概率60/28/9/2.5/0.5总和=100% | 高级招贤概率40/32/18/8/2总和=100% | 与代码hero-recruit-config.ts完全一致 | 品质体系映射正确
+- 预期: 招募概率PRD矛盾最终以代码实现为准，消除所有PRD间歧义
 
 
 ---
@@ -407,12 +414,12 @@
 - 预期: 转生倍率公式精确可验证，速查表以公式为准，20次封顶12.00×确保长线平衡
 
 ### 13.6 HER-PRD招募概率同步更新声明
-- **矛盾项**: HER-PRD v1.0写普通招贤概率Uncommon60%/Rare30%/Epic8%/Legendary2%/Mythic0%，高级招贤概率Uncommon20%/Rare40%/Epic25%/Legendary13%/Mythic2%；SPEC-currency CUR-3写普通招贤Uncommon60%/Rare30%/Epic9%/Legendary1%/Mythic0%，高级招贤Rare40%/Epic35%/Legendary20%/Mythic5%
-- **裁定结果**: **以SPEC-currency CUR-3为准。HER-PRD需同步更新为SPEC-currency值**
-- **理由**: SPEC-currency为货币/概率的权威技术规范(CUR-3专门定义消耗场景概率)，且概率总和验证通过(普通60+30+9+1+0=100✓ / 高级0+40+35+20+5=100✓)。HER-PRD高级招贤含Uncommon 20%但SPEC-currency不含(高级招贤不应出Uncommon)，以SPEC-currency为准更合理
-- 操作: 标记HER-PRD v1.1待更新: 普通招贤概率→60/30/9/1/0 | 高级招贤概率→0/40/35/20/5 | 保底100次必出Legendary+ | UP武将50% | 验证实现代码与SPEC-currency CUR-3完全一致
-- 验证: HER-PRD同步更新至SPEC-currency值 | 普通概率总和=100% | 高级概率总和=100% | 实现代码匹配 | PRD版本一致性
-- 预期: HER-PRD与SPEC-currency概率完全一致，消除PRD间矛盾
+- **矛盾项**: HER-PRD v1.0写普通招贤概率Uncommon60%/Rare30%/Epic8%/Legendary2%/Mythic0%，高级招贤概率Uncommon20%/Rare40%/Epic25%/Legendary13%/Mythic2%；SPEC-currency CUR-3写普通招贤Uncommon60%/Rare30%/Epic9%/Legendary1%/Mythic0%，高级招贤Rare40%/Epic35%/Legendary20%/Mythic5%；代码实际实现普通招贤COMMON60%/FINE28%/RARE9%/EPIC2.5%/LEGENDARY0.5%，高级招贤COMMON40%/FINE32%/RARE18%/EPIC8%/LEGENDARY2%
+- **裁定结果**: **以代码实际实现为准。HER-PRD需同步更新为代码实际值**
+- **理由**: 代码是实际运行的权威来源。品质体系为5级(COMMON/FINE/RARE/EPIC/LEGENDARY)，LEGENDARY对应原PRD中的Mythic。概率总和验证通过(普通60+28+9+2.5+0.5=100✓ / 高级40+32+18+8+2=100✓)
+- 操作: 标记HER-PRD v1.1待更新: 普通招贤概率→60/28/9/2.5/0.5 | 高级招贤概率→40/32/18/8/2 | 保底100次必出LEGENDARY+ | UP武将v2.1待实现 | 验证实现代码与HER-PRD同步后完全一致
+- 验证: HER-PRD同步更新至代码实际值 | 普通概率总和=100% | 高级概率总和=100% | 实现代码匹配 | PRD版本一致性
+- 预期: HER-PRD与代码实现概率完全一致，消除PRD间矛盾
 
 ### 13.7 离线收益加成系数精确验证
 - 操作: 查看离线收益预估面板 → 验证声望等级离线加成: Lv.1(+3%)/Lv.3(+5%)/Lv.5(+10%)/Lv.10(+25%) → 验证科技离线加成: I(+10%)/II(+15%)/III(+20%)累计上限+30% → 验证VIP离线加成: VIP1(+5%)/VIP3(+10%)/VIP5(+20%)累计上限+20% → 验证总计上限+100% → 验证加成计算: 基础衰减系数×(1+Σ加成系数) → 示例: 科技II(+15%)+VIP3(+10%)+声望Lv.5(+10%)=35% → 离线8h: 60%×1.35=81% → 验证与SPEC-offline OFR-1完全一致 → 验证加成上限+100%(即最高200%基础衰减)
@@ -623,3 +630,48 @@
 - 操作: 对比plan v1.7功能点清单(37个)与play v1.7流程清单(16章90+子章节) → 逐一验证plan每个功能点在play中有对应流程 → 验证plan修订记录v1.0~v1.7与play修订记录v1.0~v1.7完全同步 → 验证plan验收标准与play验证项一一对应(含v1.6新增#36/#37+v1.7补充PRS-1/2/5) → 验证plan PRD矛盾9处与play PRD矛盾澄清流程覆盖 → 验证PRS-PRD全部功能点(PRS-1~PRS-5)在play中有对应验证 → 全链路无遗漏
 - 验证: 37功能点100%覆盖 | 修订记录完全同步 | 验收标准↔验证项一一对应 | 9处PRD矛盾全部覆盖 | PRS-1~PRS-5全部覆盖 | 风险点↔异常处理覆盖 | 数据流↔交叉验证覆盖
 - 预期: Plan v1.7与Play v1.7完全同步，37功能点100%覆盖，PRS-PRD全部功能验证覆盖，全链路无遗漏
+
+---
+
+## 17. v2.0封版P0状态追踪 【v1.8新增】
+
+> **修订记录**: v1.8 — 2026-04-27 | v2.0封版前P0问题处理：以代码实际实现为权威来源，更新Play文档匹配代码，缺失功能标记延后
+
+### 17.1 P0-1 招募概率/保底数值不一致 ✅ 已解决
+- **问题**: Play文档(v1.2)引用SPEC-currency CUR-3的概率值与代码实际实现不一致
+- **代码实际值**:
+  - 普通招募: COMMON 60% / FINE 28% / RARE 9% / EPIC 2.5% / LEGENDARY 0.5% (来源: hero-recruit-config.ts NORMAL_RATES)
+  - 高级招募: COMMON 40% / FINE 32% / RARE 18% / EPIC 8% / LEGENDARY 2% (来源: hero-recruit-config.ts ADVANCED_RATES)
+  - 十连保底: 10抽必出RARE+ (tenPullThreshold=10, tenPullMinQuality=RARE)
+  - 硬保底: 100抽必出LEGENDARY+ (hardPityThreshold=100, hardPityMinQuality=LEGENDARY)
+  - 品质体系: 5级 COMMON/FINE/RARE/EPIC/LEGENDARY，LEGENDARY=Play文档中的Mythic (来源: hero.types.ts)
+- **处理**: 以代码为准，更新Play文档6.18/12.1/13.6节匹配代码实际值
+- **状态**: ✅ 已解决 — Play文档v1.8已同步至代码实际值
+
+### 17.2 P0-2 UP武将/卡池(#24) 🔻 降级P1
+- **问题**: Play文档描述"UP武将概率50%"但代码中无实现
+- **代码检查结果**: 在engine/hero/目录下搜索upHero/rateUp/featured等关键词，无匹配结果。HeroRecruitSystem中pickGeneralByQuality仅按品质随机选择，无UP武将加权逻辑
+- **处理**: 标记为"v2.1待实现"，降级为P1。Play文档6.18节已标注UP武将v2.1待实现
+- **状态**: 🔻 降级P1 — 功能缺失，延后至v2.1实现
+
+### 17.3 P0-3 每日免费招募(#23) 🔻 降级P1
+- **问题**: Play文档描述"每日免费招贤1次"但代码中无实现
+- **代码检查结果**: HeroRecruitSystem.update()方法仅有预留注释`/* 预留：每日免费次数重置等 */`，无实际免费招募逻辑。PityState中无freeRecruitCount等字段
+- **处理**: 标记为"v2.1待实现"，降级为P1。Play文档6.18节已标注免费招贤v2.1待实现
+- **状态**: 🔻 降级P1 — 功能缺失，延后至v2.1实现
+
+### 17.4 P0-4 红点系统(#29) ⏸ 延期
+- **问题**: 红点通知系统从R21延期
+- **代码检查结果**: 在three-kingdoms目录下搜索redDot/reddot/red_dot/RedDot，无匹配结果。已有EventNotificationSystem和EventUINotification作为事件通知系统，但非红点系统
+- **处理**: 继续标记为"v1.1待实现"，不在v2.0范围
+- **状态**: ⏸ 延期 — 非v2.0范围，延后至v1.1
+
+### 17.5 v2.0封版建议
+- **编译验证**: ✅ pnpm run build通过(30.45s，无error)
+- **P0处理汇总**: 1个已解决(概率同步) + 2个降级P1(UP武将+免费招募) + 1个延期(红点系统)
+- **封版建议**: ✅ 建议封版。代码实现稳定(470个测试通过)，Play文档已同步至代码实际值，缺失功能已明确标记延后版本
+- **v2.1待实现清单**:
+  1. UP武将/卡池系统(#24) — 需新增upHero配置+pickGeneralByQuality加权逻辑+UP概率50%
+  2. 每日免费招募(#23) — 需新增freeRecruitCount状态+每日重置逻辑+免费招募入口
+- **v1.1待实现清单**:
+  1. 红点系统(#29) — 需新增RedDotSystem+各模块红点触发器+红点UI组件

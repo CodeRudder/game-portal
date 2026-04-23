@@ -116,7 +116,7 @@ export * from './settings';
 
 // ── 统一域 (v19.0) — 仅导出独有的，与settings重复的已通过settings域导出 ──
 export { BalanceValidator } from './unification/BalanceValidator';
-export { AudioScene } from './settings/AudioManager';
+// AudioScene already exported via `export * from './settings'`
 export { GraphicsQualityManager } from './unification/GraphicsQualityManager';
 export {
   inRange, calcDeviation, makeEntry, calcPower, calcRebirthMultiplier,

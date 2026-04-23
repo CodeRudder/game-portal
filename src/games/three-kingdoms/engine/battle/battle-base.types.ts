@@ -1,7 +1,7 @@
 /**
  * 战斗系统 — 基础类型定义（无外部依赖）
  *
- * 提取 battle.types.ts 中被 battle-v4.types.ts 引用的基础类型，
+ * 提取 battle.types.ts 中被 battle-ultimate.types.ts 引用的基础类型，
  * 避免循环依赖。
  *
  * 包含：兵种枚举、状态效果、技能目标、战斗技能、战斗单位、站位、阵营标识

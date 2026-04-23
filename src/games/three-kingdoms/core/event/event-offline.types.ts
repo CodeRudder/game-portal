@@ -3,11 +3,11 @@
  *
  * 包含：离线事件条目、自动处理策略/规则、离线处理结果、事件回溯数据
  *
- * @module core/event/event-v15-offline.types
+ * @module core/event/event-offline.types
  */
 
 import type { EventId, EventDef } from './event.types';
-import type { EventCategory, OptionConsequence } from './event-v15-shared.types';
+import type { EventCategory, OptionConsequence } from './event-shared.types';
 
 // ─────────────────────────────────────────────
 // 离线事件处理系统类型
@@ -36,7 +36,7 @@ export interface OfflineEventEntry {
   /** 事件定义 */
   eventDef: EventDef;
   /** 自动处理结果（null=需玩家处理） */
-  autoResult: import('./event-v15-activity.types').AutoResolveResult | null;
+  autoResult: import('./event-activity.types').AutoResolveResult | null;
   /** 是否已自动处理 */
   autoProcessed: boolean;
   /** 自动处理规则 ID */

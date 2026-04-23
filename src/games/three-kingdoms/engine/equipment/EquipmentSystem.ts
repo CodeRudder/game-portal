@@ -7,6 +7,8 @@
  *
  * @module engine/equipment/EquipmentSystem
  */
+export { generateUid, resetUidCounter, weightedPickRarity } from './equipment-reexports';
+
 
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
@@ -50,12 +52,6 @@ const SOURCE_RARITY_WEIGHTS: Record<string, Record<EquipmentRarity, number>> = {
 
 // ─────────────────────────────────────────────
 // 重新导出生成辅助函数（保持向后兼容）
-export { generateUid, resetUidCounter, weightedPickRarity } from './EquipmentGenHelper';
-
-// ─────────────────────────────────────────────
-// EquipmentSystem
-// ─────────────────────────────────────────────
-
 export class EquipmentSystem implements ISubsystem {
   readonly name = 'equipment';
   private deps: ISystemDeps | null = null;

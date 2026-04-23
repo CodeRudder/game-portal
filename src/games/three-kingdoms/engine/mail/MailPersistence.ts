@@ -18,13 +18,11 @@ import type {
   MailData,
   MailSaveData,
 } from './mail.types';
+import { MAIL_SAVE_VERSION } from './mail.types';
 
 // ─────────────────────────────────────────────
 // 常量
 // ─────────────────────────────────────────────
-
-/** 邮件系统存档版本 */
-const MAIL_SAVE_VERSION = 1;
 
 /** 存储键 */
 const MAIL_SAVE_KEY = 'three-kingdoms-mails';

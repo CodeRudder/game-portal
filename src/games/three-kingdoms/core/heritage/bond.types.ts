@@ -11,7 +11,7 @@
  * @module core/heritage/bond.types
  */
 
-import type { Faction } from '../../engine/hero/hero.types';
+import type { Faction } from '../../shared/types';
 
 // ─────────────────────────────────────────────
 // 1. 羁绊定义

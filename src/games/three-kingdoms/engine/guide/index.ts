@@ -29,7 +29,7 @@ export type {
   TutorialOverlayRenderData,
   ElementBoundsProvider,
   ViewportSize,
-} from './TutorialMaskSystem';
+} from './tutorial-mask-types';
 export { FirstLaunchDetector } from './FirstLaunchDetector';
 export type {
   FirstLaunchStep,
@@ -39,4 +39,4 @@ export type {
   LanguageDetector,
   HardwareInfoProvider,
   PermissionRequester,
-} from './FirstLaunchDetector';
+} from './first-launch-types';

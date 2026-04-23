@@ -68,11 +68,11 @@ describe('map-config', () => {
   // 2. 三大区域划分（#10）
   // ═══════════════════════════════════════════
   describe('三大区域划分', () => {
-    it('REGION_IDS 包含三个区域', () => {
+    it('REGION_IDS 包含三个区域（⚠️ PRD MAP-1: 魏/蜀/吴）', () => {
       expect(REGION_IDS).toHaveLength(3);
-      expect(REGION_IDS).toContain('central_plains');
-      expect(REGION_IDS).toContain('jiangnan');
-      expect(REGION_IDS).toContain('western_shu');
+      expect(REGION_IDS).toContain('wei');
+      expect(REGION_IDS).toContain('wu');
+      expect(REGION_IDS).toContain('shu');
     });
 
     it('REGION_DEFS 每个区域定义完整', () => {
@@ -90,9 +90,9 @@ describe('map-config', () => {
     });
 
     it('REGION_LABELS 包含正确的中文名', () => {
-      expect(REGION_LABELS.central_plains).toBe('中原');
-      expect(REGION_LABELS.jiangnan).toBe('江南');
-      expect(REGION_LABELS.western_shu).toBe('西蜀');
+      expect(REGION_LABELS.wei).toBe('魏');
+      expect(REGION_LABELS.wu).toBe('吴');
+      expect(REGION_LABELS.shu).toBe('蜀');
     });
 
     it('REGION_COLORS 每个区域有颜色', () => {
@@ -211,7 +211,7 @@ describe('map-config', () => {
     it('每个地标定义完整', () => {
       for (const lm of DEFAULT_LANDMARKS) {
         expect(lm.id).toBeTruthy();
-        expect(['city', 'pass', 'resource']).toContain(lm.type);
+        expect(['city', 'pass', 'resource', 'capital']).toContain(lm.type);
         expect(lm.name).toBeTruthy();
         expect([1, 2, 3, 4, 5]).toContain(lm.level);
         expect(['player', 'enemy', 'neutral']).toContain(lm.ownership);
@@ -265,7 +265,7 @@ describe('map-config', () => {
       expect(keys.size).toBe(positions.length);
     });
 
-    it('初始所有地标为 neutral', () => {
+    it('初始地标归属正确（⚠️ PRD MAP-1: 所有地标初始为neutral）', () => {
       for (const lm of DEFAULT_LANDMARKS) {
         expect(lm.ownership).toBe('neutral');
       }
@@ -291,39 +291,38 @@ describe('map-config', () => {
   // 5. getRegionAtPosition
   // ═══════════════════════════════════════════
   describe('getRegionAtPosition', () => {
-    it('中原区域中心坐标', () => {
-      expect(getRegionAtPosition(30, 10)).toBe('central_plains');
+    it('魏国区域坐标（左上）', () => {
+      expect(getRegionAtPosition(15, 10)).toBe('wei');
     });
 
-    it('江南区域坐标', () => {
-      expect(getRegionAtPosition(45, 30)).toBe('jiangnan');
+    it('吴国区域坐标（右下）', () => {
+      expect(getRegionAtPosition(45, 30)).toBe('wu');
     });
 
-    it('西蜀区域坐标', () => {
-      expect(getRegionAtPosition(10, 25)).toBe('western_shu');
+    it('蜀国区域坐标（左下）', () => {
+      expect(getRegionAtPosition(10, 25)).toBe('shu');
     });
 
-    it('中原区域左上角', () => {
-      expect(getRegionAtPosition(15, 0)).toBe('central_plains');
+    it('魏国区域坐标（中原）', () => {
+      expect(getRegionAtPosition(40, 10)).toBe('wei');
     });
 
-    it('中原区域右下角', () => {
-      expect(getRegionAtPosition(44, 19)).toBe('central_plains');
+    it('魏国区域左上角', () => {
+      expect(getRegionAtPosition(0, 0)).toBe('wei');
     });
 
-    it('边界外坐标默认为中原', () => {
-      // 超出所有区域定义范围的坐标
-      expect(getRegionAtPosition(-1, -1)).toBe('central_plains');
+    it('边界外坐标默认为魏', () => {
+      expect(getRegionAtPosition(-1, -1)).toBe('wei');
     });
 
     it('区域边界值正确（起始坐标包含）', () => {
-      const { bounds } = REGION_DEFS.central_plains;
-      expect(getRegionAtPosition(bounds.startX, bounds.startY)).toBe('central_plains');
+      const { bounds } = REGION_DEFS.wei;
+      expect(getRegionAtPosition(bounds.startX, bounds.startY)).toBe('wei');
     });
 
     it('区域边界值正确（结束坐标包含）', () => {
-      const { bounds } = REGION_DEFS.central_plains;
-      expect(getRegionAtPosition(bounds.endX, bounds.endY)).toBe('central_plains');
+      const { bounds } = REGION_DEFS.wei;
+      expect(getRegionAtPosition(bounds.endX, bounds.endY)).toBe('wei');
     });
   });
 
@@ -332,7 +331,7 @@ describe('map-config', () => {
   // ═══════════════════════════════════════════
   describe('getTerrainAtPosition', () => {
     it('城池地标位置返回 city 地形', () => {
-      // 洛阳
+      // 洛阳（30,8）
       expect(getTerrainAtPosition(30, 8)).toBe('city');
     });
 

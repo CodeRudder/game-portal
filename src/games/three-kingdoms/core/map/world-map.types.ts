@@ -63,8 +63,8 @@ export interface ViewportState {
 // 2. 区域划分
 // ─────────────────────────────────────────────
 
-/** 三大区域标识 */
-export type RegionId = 'central_plains' | 'jiangnan' | 'western_shu';
+/** 四大区域标识（⚠️ PRD MAP-1: 魏/蜀/吴+中立） */
+export type RegionId = 'wei' | 'shu' | 'wu' | 'neutral';
 
 /** 区域定义 */
 export interface RegionDef {

@@ -107,9 +107,9 @@ describe('PvPBattleSystem — 积分计算', () => {
   });
 
   test('积分变化后段位自动更新', () => {
-    const state = createPlayerState(90); // BRONZE_V (0~99)
-    const result = system.applyScoreChange(state, 50); // 140 → BRONZE_IV (100~199)
-    expect(result.score).toBe(140);
+    const state = createPlayerState(90); // BRONZE_V (0~299)
+    const result = system.applyScoreChange(state, 250); // 340 → BRONZE_IV (300~599)
+    expect(result.score).toBe(340);
     expect(result.rankId).toBe('BRONZE_IV');
   });
 });
@@ -128,33 +128,33 @@ describe('PvPBattleSystem — 段位判定', () => {
     expect(system.getRankLevelCount()).toBe(21);
   });
 
-  test('段位从低到高：青铜→白银→黄金→铂金→钻石→大师→王者', () => {
+  test('段位从低到高：青铜→白银→黄金→钻石→王者', () => {
     const tiers = [...new Set(RANK_LEVELS.map((r) => r.tier))];
-    expect(tiers).toEqual(['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'MASTER', 'KING']);
+    expect(tiers).toEqual(['BRONZE', 'SILVER', 'GOLD', 'DIAMOND', 'KING']);
   });
 
   test('积分0对应青铜V', () => {
     expect(system.getRankIdForScore(0)).toBe('BRONZE_V');
   });
 
-  test('积分100对应青铜IV', () => {
-    expect(system.getRankIdForScore(100)).toBe('BRONZE_IV');
+  test('积分300对应青铜IV', () => {
+    expect(system.getRankIdForScore(300)).toBe('BRONZE_IV');
   });
 
-  test('积分500对应白银V', () => {
-    expect(system.getRankIdForScore(500)).toBe('SILVER_V');
+  test('积分1500对应白银V', () => {
+    expect(system.getRankIdForScore(1500)).toBe('SILVER_V');
   });
 
-  test('积分1000对应黄金IV', () => {
-    expect(system.getRankIdForScore(1000)).toBe('GOLD_IV');
+  test('积分3400对应黄金IV', () => {
+    expect(system.getRankIdForScore(3400)).toBe('GOLD_IV');
   });
 
-  test('积分4000对应王者I', () => {
-    expect(system.getRankIdForScore(4000)).toBe('KING_I');
+  test('积分10000对应王者I', () => {
+    expect(system.getRankIdForScore(10000)).toBe('KING_I');
   });
 
-  test('积分9999对应王者I', () => {
-    expect(system.getRankIdForScore(9999)).toBe('KING_I');
+  test('积分9999对应钻石I', () => {
+    expect(system.getRankIdForScore(9999)).toBe('DIAMOND_I');
   });
 
   test('getRankLevel返回正确段位定义', () => {

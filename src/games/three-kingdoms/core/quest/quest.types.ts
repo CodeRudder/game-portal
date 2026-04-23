@@ -18,7 +18,7 @@
 export type QuestId = string;
 
 /** 任务类型 */
-export type QuestCategory = 'main' | 'side' | 'daily';
+export type QuestCategory = 'main' | 'side' | 'daily' | 'weekly';
 
 /** 任务状态 */
 export type QuestStatus = 'locked' | 'available' | 'active' | 'completed' | 'failed' | 'expired';
@@ -191,7 +191,7 @@ export interface DailyQuestPoolConfig {
 export const DEFAULT_DAILY_POOL_CONFIG: DailyQuestPoolConfig = {
   poolSize: 20,
   dailyPickCount: 6,
-  refreshHour: 0,
+  refreshHour: 5,
 };
 
 // ─────────────────────────────────────────────

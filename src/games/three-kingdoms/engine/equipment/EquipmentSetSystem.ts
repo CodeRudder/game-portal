@@ -12,7 +12,7 @@
 
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { EquipmentSlot, EquipmentInstance } from '../../core/equipment/equipment.types';
-import type { SetId, SetBonusTier, ActiveSetBonus, EquipmentSetDef, SetBonusEffect } from '../../core/equipment/equipment-v10.types';
+import type { SetId, SetBonusTier, ActiveSetBonus, EquipmentSetDef, SetBonusEffect } from '../../core/equipment/equipment-forge.types';
 import { EQUIPMENT_SLOTS } from '../../core/equipment/equipment.types';
 import {
   EQUIPMENT_SETS,

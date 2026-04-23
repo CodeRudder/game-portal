@@ -50,7 +50,7 @@ import { getRegionAtPosition } from '../../core/map';
  * const npc = npcSystem.getNPCById('npc-merchant-01');
  *
  * // 按区域查询
- * const npcsInRegion = npcSystem.getNPCsByRegion('central_plains');
+ * const npcsInRegion = npcSystem.getNPCsByRegion('wei');
  *
  * // 修改好感度
  * npcSystem.changeAffinity('npc-merchant-01', 10);

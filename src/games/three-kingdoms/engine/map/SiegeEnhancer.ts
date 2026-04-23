@@ -114,10 +114,12 @@ export class SiegeEnhancer implements ISubsystem {
   /**
    * 计算防守方有效战力
    *
-   * 考虑领土基础防御 + 等级加成 + 驻防加成
+   * ⚠️ PRD MAP-4 统一声明：城防值=基础(1000)×城市等级×(1+科技加成)
+   * defenseValue 已由 territory-config 按公式"基础(1000)×城市等级"生成
+   * 此处叠加驻防加成；科技加成由 TechLinkSystem 在引擎层动态注入
    */
   calculateDefenderPower(territory: TerritoryData): number {
-    const basePower = territory.defenseValue * (1 + (territory.level - 1) * 0.15);
+    const basePower = territory.defenseValue;
 
     // 加入驻防防御加成
     const garrisonBonus = this.garrisonSys?.getGarrisonBonus(territory.id);

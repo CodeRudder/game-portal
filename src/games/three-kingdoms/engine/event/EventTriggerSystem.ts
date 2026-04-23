@@ -14,7 +14,7 @@ import type {
 import type {
   ProbabilityCondition, ProbabilityModifier, ProbabilityResult,
   TimeCondition, StateCondition,
-} from '../../core/event/event-v15-event.types';
+} from '../../core/event/event-encounter.types';
 import {
   DEFAULT_EVENT_TRIGGER_CONFIG, PREDEFINED_EVENTS,
 } from '../../core/event';

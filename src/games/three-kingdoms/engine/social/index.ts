@@ -34,11 +34,13 @@ export {
 // FriendSystem
 export {
   FriendSystem,
+} from './FriendSystem';
+export {
   DEFAULT_FRIEND_CONFIG,
   DEFAULT_INTERACTION_CONFIG,
   SOCIAL_SAVE_VERSION,
   createDefaultSocialState,
-} from './FriendSystem';
+} from './friend-config';
 
 // BorrowHeroSubsystem（从FriendSystem拆分）
 export { BorrowHeroSubsystem } from './BorrowHeroSubsystem';
@@ -53,9 +55,11 @@ export {
 // LeaderboardSystem
 export {
   LeaderboardSystem,
+} from './LeaderboardSystem';
+export {
   LEADERBOARD_TYPE_LABELS,
   createDefaultLeaderboardState,
-} from './LeaderboardSystem';
+} from './leaderboard-types';
 export type {
   LeaderboardType as LeaderboardTypeEnum,
   LeaderboardEntry,
@@ -64,4 +68,4 @@ export type {
   LeaderboardQuery,
   LeaderboardPageResult,
   LeaderboardState,
-} from './LeaderboardSystem';
+} from './leaderboard-types';

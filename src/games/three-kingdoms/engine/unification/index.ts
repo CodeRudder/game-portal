@@ -47,8 +47,8 @@ export type {
 // ── unification 模块独有的子系统 ──
 // AudioController 已统一到 AudioManager，此处仅做 re-export 以保持向后兼容
 export { AudioManager as AudioController } from '../settings/AudioManager';
-export { AudioScene } from '../settings/AudioManager';
-export type { VolumeOutput, AudioManagerConfig as AudioControllerConfig } from '../settings/AudioManager';
+export { AudioScene } from '../settings/audio-config';
+export type { VolumeOutput, AudioManagerConfig as AudioControllerConfig } from '../settings/audio-config';
 export { GraphicsQualityManager } from './GraphicsQualityManager';
 export { BalanceValidator } from './BalanceValidator';
 export {

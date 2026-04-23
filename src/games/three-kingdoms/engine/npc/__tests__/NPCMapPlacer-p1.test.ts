@@ -47,7 +47,7 @@ function createNPC(
     profession: 'merchant' as NPCProfession,
     affinity: 50,
     position: { x: 0, y: 0 },
-    region: 'central_plains',
+    region: 'wei',
     visible: true,
     dialogId: 'dialog-merchant-default',
     createdAt: 0,
@@ -181,7 +181,7 @@ describe('NPCMapPlacer', () => {
 
     it('单个 NPC 返回单个展示数据', () => {
       const npcs = [
-        createNPC({ id: 'npc-1', position: { x: 5, y: 5 }, region: 'central_plains' }),
+        createNPC({ id: 'npc-1', position: { x: 5, y: 5 }, region: 'wei' }),
       ];
       const { placer: p } = createPlacer({ npcs });
       const displays = p.computeMapDisplays();
@@ -231,9 +231,9 @@ describe('NPCMapPlacer', () => {
 
     it('多个区域 NPC 分别展示', () => {
       const npcs = [
-        createNPC({ id: 'npc-cp1', region: 'central_plains', position: { x: 20, y: 10 } }),
-        createNPC({ id: 'npc-jn1', region: 'jiangnan', position: { x: 40, y: 30 } }),
-        createNPC({ id: 'npc-ws1', region: 'western_shu', position: { x: 10, y: 25 } }),
+        createNPC({ id: 'npc-cp1', region: 'wei', position: { x: 20, y: 10 } }),
+        createNPC({ id: 'npc-jn1', region: 'wu', position: { x: 40, y: 30 } }),
+        createNPC({ id: 'npc-ws1', region: 'shu', position: { x: 10, y: 25 } }),
       ];
       const { placer: p } = createPlacer({ npcs });
       const displays = p.computeMapDisplays();
@@ -252,23 +252,23 @@ describe('NPCMapPlacer', () => {
   describe('getRegionDisplays', () => {
     it('返回指定区域的 NPC 展示数据', () => {
       const npcs = [
-        createNPC({ id: 'npc-cp1', region: 'central_plains', position: { x: 20, y: 10 } }),
-        createNPC({ id: 'npc-jn1', region: 'jiangnan', position: { x: 40, y: 30 } }),
+        createNPC({ id: 'npc-cp1', region: 'wei', position: { x: 20, y: 10 } }),
+        createNPC({ id: 'npc-jn1', region: 'wu', position: { x: 40, y: 30 } }),
       ];
       const { placer: p } = createPlacer({ npcs });
 
-      const cpDisplays = p.getRegionDisplays('central_plains');
+      const cpDisplays = p.getRegionDisplays('wei');
       expect(cpDisplays).toHaveLength(1);
       expect(cpDisplays[0].id).toBe('npc-cp1');
     });
 
     it('无 NPC 的区域返回空数组', () => {
       const npcs = [
-        createNPC({ id: 'npc-cp1', region: 'central_plains', position: { x: 20, y: 10 } }),
+        createNPC({ id: 'npc-cp1', region: 'wei', position: { x: 20, y: 10 } }),
       ];
       const { placer: p } = createPlacer({ npcs });
 
-      const jnDisplays = p.getRegionDisplays('jiangnan');
+      const jnDisplays = p.getRegionDisplays('wu');
       expect(jnDisplays).toHaveLength(0);
     });
   });

@@ -4,7 +4,7 @@
  * 包含：遭遇事件、剧情事件、NPC事件、天灾人祸、限时机遇、
  *       触发条件引擎、概率公式、通知优先级、事件冷却、选项系统、连锁事件
  *
- * @module core/event/event-v15-event.types
+ * @module core/event/event-encounter.types
  */
 
 import type { EventId, EventConsequence } from './event.types';

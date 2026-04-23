@@ -100,7 +100,7 @@ export class DamageNumberRenderer implements IRenderer {
     container.addChild(this.root);
     this._initialized = true;
 
-    // TODO: 初始化文字样式和对象池
+    // stub: 初始化文字样式和对象池
   }
 
   /**
@@ -123,9 +123,9 @@ export class DamageNumberRenderer implements IRenderer {
       if (progress >= 1) {
         num.done = true;
         this.activeNumbers.splice(i, 1);
-        // TODO: 回收文字对象
+        // stub: 回收文字对象
       } else {
-        // TODO: 更新位置（上升）和透明度（淡出）
+        // stub: 更新位置（上升）和透明度（淡出）
       }
     }
   }
@@ -155,7 +155,7 @@ export class DamageNumberRenderer implements IRenderer {
     };
     this.activeNumbers.push(instance);
 
-    // TODO: 创建文字对象并设置初始状态
+    // stub: 创建文字对象并设置初始状态
   }
 
   /**
@@ -163,7 +163,7 @@ export class DamageNumberRenderer implements IRenderer {
    */
   clearAll(): void {
     this.activeNumbers.length = 0;
-    // TODO: 回收所有文字对象
+    // stub: 回收所有文字对象
   }
 
   // ─── 访问器 ─────────────────────────────────

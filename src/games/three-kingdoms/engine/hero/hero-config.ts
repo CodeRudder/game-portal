@@ -95,8 +95,18 @@ export const STAR_UP_FRAGMENT_COST: readonly number[] = [
 /** 最大星级 */
 export const MAX_STAR_LEVEL = 6;
 
-/** 碎片合成武将所需碎片数量 */
-export const SYNTHESIZE_REQUIRED_FRAGMENTS = 80;
+/** 碎片合成武将所需碎片数量（按品质区分）
+ *
+ * 来源：PRD/Play 文档
+ * COMMON: 20 / FINE: 40 / RARE: 80 / EPIC: 150 / LEGENDARY: 300
+ */
+export const SYNTHESIZE_REQUIRED_FRAGMENTS: Record<Quality, number> = {
+  [Q.COMMON]: 20,
+  [Q.FINE]: 40,
+  [Q.RARE]: 80,
+  [Q.EPIC]: 150,
+  [Q.LEGENDARY]: 300,
+};
 
 // ─────────────────────────────────────────────
 // 6. 战力计算系数

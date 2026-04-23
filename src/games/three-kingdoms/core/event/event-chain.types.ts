@@ -3,11 +3,11 @@
  *
  * 包含：连锁事件链定义、节点定义、合并点、进度、推进结果
  *
- * @module core/event/event-v15-chain.types
+ * @module core/event/event-chain.types
  */
 
 import type { EventId } from './event.types';
-import type { EventCategory, OptionConsequence } from './event-v15-shared.types';
+import type { EventCategory, OptionConsequence } from './event-shared.types';
 
 // ─────────────────────────────────────────────
 // 连锁事件系统 v15 类型

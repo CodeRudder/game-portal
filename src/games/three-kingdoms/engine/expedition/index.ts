@@ -64,7 +64,8 @@ export {
 
 // 系统
 export { ExpeditionSystem } from './ExpeditionSystem';
-export type { HeroBrief, TeamValidationResult, UnlockCheckResult } from './ExpeditionSystem';
+export type { HeroBrief, TeamValidationResult } from './ExpeditionTeamHelper';
+export type { UnlockCheckResult } from './expedition-helpers';
 export { ExpeditionBattleSystem } from './ExpeditionBattleSystem';
 export type { BattleUnitData, BattleTeamData, NodeBattleConfig, BattleTurnSnapshot } from './ExpeditionBattleSystem';
 export { ExpeditionRewardSystem } from './ExpeditionRewardSystem';

@@ -6,7 +6,7 @@
  * @module core/event/encounter-templates-diplomatic
  */
 
-import type { EncounterTemplate } from './event-v15.types';
+import type { EncounterTemplate } from './event-engine.types';
 
 // ─────────────────────────────────────────────
 // 外交遭遇（diplomatic）— 5个

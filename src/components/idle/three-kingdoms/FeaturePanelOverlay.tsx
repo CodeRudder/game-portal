@@ -19,11 +19,47 @@ import AlliancePanel from '@/components/idle/panels/alliance/AlliancePanel';
 import PrestigePanel from '@/components/idle/panels/prestige/PrestigePanel';
 import TradePanel from '@/components/idle/panels/trade/TradePanel';
 import SettingsPanel from '@/components/idle/panels/settings/SettingsPanel';
+import EquipmentTab from '@/components/idle/panels/equipment/EquipmentTab';
+import ArenaTab from '@/components/idle/panels/arena/ArenaTab';
+import NPCTab from '@/components/idle/panels/npc/NPCTab';
+import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
+import ArmyTab from '@/components/idle/panels/army/ArmyTab';
+import type { NPCData } from '@/games/three-kingdoms/core/npc';
+import { Toast } from '@/components/idle/common/Toast';
+
+/** NPCTab包装器 — 适配FeaturePanelOverlay的engine/snapshotVersion/visible/onClose接口 */
+const NPCPanelWrapper: React.FC<any> = ({ engine, visible, onClose }) => {
+  const npcData: NPCData[] = React.useMemo(() => {
+    const npcSys = (engine as any)?.npcSystem;
+    if (npcSys && typeof npcSys.getAllNPCs === 'function') {
+      return npcSys.getAllNPCs();
+    }
+    return [];
+  }, [engine]);
+
+  if (!visible) return null;
+  return (
+    <div className="tk-feature-overlay" onClick={onClose}>
+      <div className="tk-feature-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="tk-feature-header">
+          <h3>👤 名士</h3>
+          <button onClick={onClose}>✕</button>
+        </div>
+        <NPCTab
+          npcs={npcData}
+          onSelectNPC={(id) => Toast.info(`选中NPC: ${id}`)}
+          onStartDialog={(id) => Toast.info(`与NPC对话: ${id}`)}
+        />
+      </div>
+    </div>
+  );
+};
 
 export type FeaturePanelId =
   | 'events' | 'mail' | 'social' | 'heritage' | 'activity'
   | 'quest' | 'shop' | 'achievement' | 'alliance' | 'prestige'
-  | 'trade' | 'settings';
+  | 'trade' | 'settings' | 'equipment' | 'npc' | 'arena'
+  | 'expedition' | 'army';
 
 interface FeaturePanelOverlayProps {
   engine: ThreeKingdomsEngine;
@@ -49,6 +85,11 @@ const PANELS: Array<{
   { id: 'prestige', Component: PrestigePanel },
   { id: 'trade', Component: TradePanel },
   { id: 'settings', Component: SettingsPanel },
+  { id: 'equipment', Component: EquipmentTab, needsSnapshot: true },
+  { id: 'arena', Component: ArenaTab, needsSnapshot: true },
+  { id: 'npc', Component: NPCPanelWrapper },
+  { id: 'expedition', Component: ExpeditionTab, needsSnapshot: true },
+  { id: 'army', Component: ArmyTab, needsSnapshot: true },
 ];
 
 const FeaturePanelOverlay: React.FC<FeaturePanelOverlayProps> = ({

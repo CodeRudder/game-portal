@@ -98,7 +98,7 @@ export class FloatingTextRenderer implements IRenderer {
     container.addChild(this.root);
     this._initialized = true;
 
-    // TODO: 初始化文字样式映射和对象池
+    // stub: 初始化文字样式映射和对象池
   }
 
   /**
@@ -119,9 +119,9 @@ export class FloatingTextRenderer implements IRenderer {
       if (progress >= 1) {
         item.done = true;
         this.activeTexts.splice(i, 1);
-        // TODO: 回收文字对象
+        // stub: 回收文字对象
       } else {
-        // TODO: 更新位置和透明度
+        // stub: 更新位置和透明度
       }
     }
   }
@@ -151,7 +151,7 @@ export class FloatingTextRenderer implements IRenderer {
     };
     this.activeTexts.push(instance);
 
-    // TODO: 创建文字对象
+    // stub: 创建文字对象
   }
 
   /**

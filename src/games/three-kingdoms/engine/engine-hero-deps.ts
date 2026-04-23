@@ -18,7 +18,7 @@ import type { ResourceType } from '../shared/types';
 // 资源安全操作（供武将系统回调）
 // ─────────────────────────────────────────────
 
-const VALID_RESOURCE_TYPES: readonly ResourceType[] = ['grain', 'gold', 'troops', 'mandate'];
+const VALID_RESOURCE_TYPES: readonly ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint'];
 
 /** 类型守卫：检查字符串是否为合法 ResourceType */
 function isResourceType(type: string): type is ResourceType {

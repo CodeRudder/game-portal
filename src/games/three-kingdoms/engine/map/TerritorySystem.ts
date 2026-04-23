@@ -298,9 +298,10 @@ export class TerritorySystem implements ISubsystem {
   getPlayerProductionSummary(): TerritoryProductionSummary {
     const playerTerritories = this.getTerritoriesByOwnership('player');
     const territoriesByRegion: Record<RegionId, number> = {
-      central_plains: 0,
-      jiangnan: 0,
-      western_shu: 0,
+      wei: 0,
+      wu: 0,
+      shu: 0,
+      neutral: 0,
     };
     const totalProduction: TerritoryProduction = {
       grain: 0,

@@ -56,50 +56,59 @@ export const MAP_PIXEL_SIZE = {
 // 2. 三大区域划分（#10）
 // ─────────────────────────────────────────────
 
-/** 区域ID列表 */
+/** 区域ID列表（⚠️ PRD MAP-1: 魏/蜀/吴） */
 export const REGION_IDS: readonly RegionId[] = [
-  'central_plains',
-  'jiangnan',
-  'western_shu',
+  'wei',
+  'shu',
+  'wu',
 ] as const;
 
 /** 区域定义表 */
 export const REGION_DEFS: Record<RegionId, RegionDef> = {
-  central_plains: {
-    id: 'central_plains',
-    label: '中原',
-    description: '中央平原，兵家必争之地，城池密集',
-    color: '#D4A574',
-    bounds: { startX: 15, endX: 44, startY: 0, endY: 19 },
+  wei: {
+    id: 'wei',
+    label: '魏',
+    description: '北方中原，曹魏基业，城池密集',
+    color: '#2E5090',
+    bounds: { startX: 10, endX: 50, startY: 0, endY: 19 },
   },
-  jiangnan: {
-    id: 'jiangnan',
-    label: '江南',
-    description: '东南水乡，资源丰富，水路纵横',
-    color: '#7FB3D8',
+  shu: {
+    id: 'shu',
+    label: '蜀',
+    description: '西南山地，蜀汉险要，易守难攻',
+    color: '#8B2500',
+    bounds: { startX: 0, endX: 29, startY: 20, endY: 39 },
+  },
+  wu: {
+    id: 'wu',
+    label: '吴',
+    description: '东南水乡，东吴水路，资源丰富',
+    color: '#2E6B3E',
     bounds: { startX: 30, endX: 59, startY: 20, endY: 39 },
   },
-  western_shu: {
-    id: 'western_shu',
-    label: '西蜀',
-    description: '西部山地，易守难攻，地形险要',
-    color: '#8B9E6B',
-    bounds: { startX: 0, endX: 29, startY: 20, endY: 39 },
+  neutral: {
+    id: 'neutral',
+    label: '中立',
+    description: '中立区域，各方势力交界',
+    color: '#808080',
+    bounds: { startX: 0, endX: 9, startY: 0, endY: 39 },
   },
 } as const;
 
 /** 区域中文名映射 */
 export const REGION_LABELS: Record<RegionId, string> = {
-  central_plains: '中原',
-  jiangnan: '江南',
-  western_shu: '西蜀',
+  wei: '魏',
+  shu: '蜀',
+  wu: '吴',
+  neutral: '中立',
 } as const;
 
 /** 区域颜色映射 */
 export const REGION_COLORS: Record<RegionId, string> = {
-  central_plains: '#D4A574',
-  jiangnan: '#7FB3D8',
-  western_shu: '#8B9E6B',
+  wei: '#2E5090',
+  shu: '#8B2500',
+  wu: '#2E6B3E',
+  neutral: '#808080',
 } as const;
 
 // ─────────────────────────────────────────────
@@ -198,59 +207,71 @@ export const TERRAIN_COLORS: Record<TerrainType, string> = {
 // 4. 特殊地标配置（#12）
 // ─────────────────────────────────────────────
 
-/** 默认地标列表 */
+/** 默认地标列表（⚠️ PRD MAP-1: 魏/蜀/吴+中立 13块领土+2中立） */
 export const DEFAULT_LANDMARKS: readonly LandmarkData[] = [
-  // ── 中原城池 ──
-  { id: 'city-luoyang', type: 'city', name: '洛阳', level: 5, ownership: 'neutral', icon: '🏰', productionMultiplier: 2.0, defenseValue: 100 },
-  { id: 'city-xuchang', type: 'city', name: '许昌', level: 4, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.8, defenseValue: 80 },
+  // ── 魏国领土 ──
   { id: 'city-ye', type: 'city', name: '邺城', level: 4, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.8, defenseValue: 80 },
+  { id: 'city-xuchang', type: 'city', name: '许昌', level: 4, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.8, defenseValue: 80 },
+  { id: 'city-puyang', type: 'city', name: '濮阳', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
+  { id: 'city-beihai', type: 'city', name: '北海', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
+  // ── 蜀国领土 ──
+  { id: 'city-chengdu', type: 'city', name: '成都', level: 5, ownership: 'neutral', icon: '🏰', productionMultiplier: 2.0, defenseValue: 100 },
+  { id: 'city-hanzhong', type: 'city', name: '汉中', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
+  { id: 'city-yongan', type: 'city', name: '永安', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
+  { id: 'city-nanzhong', type: 'city', name: '南中', level: 2, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.2, defenseValue: 40 },
+  // ── 吴国领土 ──
+  { id: 'city-jianye', type: 'city', name: '建业', level: 5, ownership: 'neutral', icon: '🏰', productionMultiplier: 2.0, defenseValue: 100 },
+  { id: 'city-kuaiji', type: 'city', name: '会稽', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
+  { id: 'city-chaisang', type: 'city', name: '柴桑', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
+  { id: 'city-lujiang', type: 'city', name: '庐江', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
+  // ── 中立领土 ──
+  { id: 'city-luoyang', type: 'city', name: '洛阳', level: 5, ownership: 'neutral', icon: '🏰', productionMultiplier: 2.0, defenseValue: 100 },
   { id: 'city-changan', type: 'city', name: '长安', level: 5, ownership: 'neutral', icon: '🏰', productionMultiplier: 2.0, defenseValue: 100 },
-  // ── 中原关卡 ──
+  { id: 'city-xiangyang', type: 'city', name: '襄阳', level: 4, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.8, defenseValue: 80 },
+  // ── 关卡 ──
   { id: 'pass-hulao', type: 'pass', name: '虎牢关', level: 3, ownership: 'neutral', icon: '🚩', productionMultiplier: 1.0, defenseValue: 120 },
   { id: 'pass-tong', type: 'pass', name: '潼关', level: 3, ownership: 'neutral', icon: '🚩', productionMultiplier: 1.0, defenseValue: 120 },
-  // ── 中原资源点 ──
+  { id: 'pass-jian', type: 'pass', name: '剑阁', level: 4, ownership: 'neutral', icon: '🚩', productionMultiplier: 1.0, defenseValue: 150 },
+  { id: 'pass-yangping', type: 'pass', name: '阳平关', level: 3, ownership: 'neutral', icon: '🚩', productionMultiplier: 1.0, defenseValue: 130 },
+  // ── 资源点 ──
   { id: 'res-grain1', type: 'resource', name: '许田', level: 2, ownership: 'neutral', icon: '🌾', resourceType: 'grain', productionMultiplier: 1.5, defenseValue: 20 },
   { id: 'res-gold1', type: 'resource', name: '金矿场', level: 2, ownership: 'neutral', icon: '💰', resourceType: 'gold', productionMultiplier: 1.5, defenseValue: 20 },
-  // ── 江南城池 ──
-  { id: 'city-jianye', type: 'city', name: '建业', level: 5, ownership: 'neutral', icon: '🏰', productionMultiplier: 2.0, defenseValue: 100 },
-  { id: 'city-changsha', type: 'city', name: '长沙', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
-  { id: 'city-chengdu', type: 'city', name: '成都', level: 4, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.8, defenseValue: 80 },
-  // ── 江南关卡 ──
-  { id: 'pass-jian', type: 'pass', name: '剑阁', level: 4, ownership: 'neutral', icon: '🚩', productionMultiplier: 1.0, defenseValue: 150 },
-  // ── 江南资源点 ──
   { id: 'res-grain2', type: 'resource', name: '稻田', level: 3, ownership: 'neutral', icon: '🌾', resourceType: 'grain', productionMultiplier: 2.0, defenseValue: 30 },
   { id: 'res-troops1', type: 'resource', name: '兵营', level: 2, ownership: 'neutral', icon: '⚔️', resourceType: 'troops', productionMultiplier: 1.5, defenseValue: 25 },
-  // ── 西蜀城池 ──
-  { id: 'city-hanzhong', type: 'city', name: '汉中', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
-  { id: 'city-mianzhu', type: 'city', name: '绵竹', level: 2, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.2, defenseValue: 40 },
-  // ── 西蜀关卡 ──
-  { id: 'pass-yangping', type: 'pass', name: '阳平关', level: 3, ownership: 'neutral', icon: '🚩', productionMultiplier: 1.0, defenseValue: 130 },
-  // ── 西蜀资源点 ──
   { id: 'res-mandate1', type: 'resource', name: '天命台', level: 2, ownership: 'neutral', icon: '🌟', resourceType: 'mandate', productionMultiplier: 1.5, defenseValue: 20 },
 ] as const;
 
-/** 地标坐标映射（landmark id → 格子坐标） */
+/** 地标坐标映射（⚠️ PRD MAP-1: 魏/蜀/吴+中立） */
 export const LANDMARK_POSITIONS: Record<string, { x: number; y: number }> = {
-  // 中原
-  'city-luoyang': { x: 30, y: 8 },
-  'city-xuchang': { x: 35, y: 10 },
-  'city-ye': { x: 38, y: 5 },
-  'city-changan': { x: 20, y: 12 },
-  'pass-hulao': { x: 33, y: 6 },
-  'pass-tong': { x: 22, y: 10 },
-  'res-grain1': { x: 36, y: 14 },
-  'res-gold1': { x: 25, y: 16 },
-  // 江南
-  'city-jianye': { x: 45, y: 28 },
-  'city-changsha': { x: 40, y: 32 },
+  // 魏国（左上 x<30, y<20）
+  'city-ye': { x: 20, y: 5 },
+  'city-xuchang': { x: 25, y: 10 },
+  'city-puyang': { x: 15, y: 8 },
+  'city-beihai': { x: 10, y: 15 },
+  // 蜀国（左下 x<30, y≥20）
   'city-chengdu': { x: 12, y: 28 },
-  'pass-jian': { x: 16, y: 24 },
-  'res-grain2': { x: 50, y: 30 },
-  'res-troops1': { x: 42, y: 36 },
-  // 西蜀
   'city-hanzhong': { x: 10, y: 22 },
-  'city-mianzhu': { x: 8, y: 30 },
+  'city-yongan': { x: 18, y: 32 },
+  'city-nanzhong': { x: 8, y: 36 },
+  // 吴国（右下 x≥30, y≥20）
+  'city-jianye': { x: 45, y: 28 },
+  'city-kuaiji': { x: 50, y: 32 },
+  'city-chaisang': { x: 38, y: 25 },
+  'city-lujiang': { x: 42, y: 22 },
+  // 中立（右上 x≥30, y<20）→ 现在属于魏国中原区域
+  'city-luoyang': { x: 30, y: 8 },
+  'city-changan': { x: 32, y: 12 },
+  'city-xiangyang': { x: 40, y: 15 },
+  // 关卡
+  'pass-hulao': { x: 33, y: 6 },
+  'pass-tong': { x: 31, y: 10 },
+  'pass-jian': { x: 16, y: 24 },
   'pass-yangping': { x: 5, y: 25 },
+  // 资源点
+  'res-grain1': { x: 36, y: 14 },
+  'res-gold1': { x: 38, y: 16 },
+  'res-grain2': { x: 48, y: 30 },
+  'res-troops1': { x: 42, y: 36 },
   'res-mandate1': { x: 15, y: 35 },
 } as const;
 
@@ -259,22 +280,19 @@ export const LANDMARK_POSITIONS: Record<string, { x: number; y: number }> = {
 // ─────────────────────────────────────────────
 
 /**
- * 根据坐标获取所属区域
+ * 根据坐标获取所属区域（⚠️ PRD MAP-1: 魏/蜀/吴）
  *
  * @param x - 列坐标
  * @param y - 行坐标
  * @returns 区域ID
  */
 export function getRegionAtPosition(x: number, y: number): RegionId {
-  for (const regionId of REGION_IDS) {
-    const def = REGION_DEFS[regionId];
-    const { startX, endX, startY, endY } = def.bounds;
-    if (x >= startX && x <= endX && y >= startY && y <= endY) {
-      return regionId;
-    }
-  }
-  // 默认归属中原（覆盖边界外区域）
-  return 'central_plains';
+  // 魏国（中原：y<20）
+  if (y < 20) return 'wei';
+  // 蜀国（左下：x<30, y>=20）
+  if (x < 30) return 'shu';
+  // 吴国（右下：x>=30, y>=20）
+  return 'wu';
 }
 
 /**
@@ -294,7 +312,7 @@ export function getTerrainAtPosition(x: number, y: number): TerrainType {
   for (const [id, pos] of Object.entries(LANDMARK_POSITIONS)) {
     if (pos.x === x && pos.y === y) {
       const landmark = DEFAULT_LANDMARKS.find(l => l.id === id);
-      if (landmark?.type === 'city' || landmark?.type === 'pass') {
+      if (landmark?.type === 'city' || landmark?.type === 'pass' || landmark?.type === 'capital') {
         return 'city';
       }
     }
@@ -306,24 +324,27 @@ export function getTerrainAtPosition(x: number, y: number): TerrainType {
   const hash = ((x * 7 + y * 13 + x * y * 3) % 100);
 
   switch (region) {
-    case 'central_plains':
+    case 'wei':
+      // 魏国：北方平原为主，少量森林和山地
       if (hash < 65) return 'plain';
       if (hash < 80) return 'forest';
       if (hash < 90) return 'mountain';
       return 'desert';
 
-    case 'jiangnan':
-      if (hash < 40) return 'plain';
-      if (hash < 65) return 'water';
-      if (hash < 85) return 'forest';
-      return 'mountain';
-
-    case 'western_shu':
+    case 'shu':
+      // 蜀国：西南山地为主，少量平原和森林
       if (hash < 35) return 'mountain';
       if (hash < 55) return 'plain';
       if (hash < 75) return 'forest';
       if (hash < 90) return 'mountain';
       return 'desert';
+
+    case 'wu':
+      // 吴国：东南水乡，水域较多
+      if (hash < 40) return 'plain';
+      if (hash < 65) return 'water';
+      if (hash < 85) return 'forest';
+      return 'mountain';
 
     default:
       return 'plain';

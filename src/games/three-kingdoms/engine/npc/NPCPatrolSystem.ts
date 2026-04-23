@@ -22,22 +22,7 @@ import type {
   PatrolSaveData,
 } from '../../core/npc';
 import { PatrolPathCalculator, type RuntimePatrolState } from './PatrolPathCalculator';
-
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-/** 巡逻存档版本 */
-const PATROL_SAVE_VERSION = 1;
-
-/** 默认刷新配置 */
-const DEFAULT_SPAWN_CONFIG: NPCSpawnConfig = {
-  spawnInterval: 30,
-  maxNPCCount: 20,
-  maxNPCPerRegion: 8,
-  npcLifetime: 0,
-  autoSpawnEnabled: true,
-};
+import { PATROL_SAVE_VERSION, DEFAULT_SPAWN_CONFIG } from './PatrolConfig';
 
 // ─────────────────────────────────────────────
 // NPC 巡逻系统

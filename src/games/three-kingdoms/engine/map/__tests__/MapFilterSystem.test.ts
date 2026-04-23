@@ -17,33 +17,33 @@ describe('MapFilterSystem', () => {
   // ═══════════════════════════════════════════
   describe('按区域筛选 (#14)', () => {
     it('筛选中原区域', () => {
-      const result = MapFilterSystem.filterByRegion(allTiles, ['central_plains']);
+      const result = MapFilterSystem.filterByRegion(allTiles, ['wei']);
       expect(result.length).toBeGreaterThan(0);
       for (const tile of result) {
-        expect(tile.region).toBe('central_plains');
+        expect(tile.region).toBe('wei');
       }
     });
 
     it('筛选江南区域', () => {
-      const result = MapFilterSystem.filterByRegion(allTiles, ['jiangnan']);
+      const result = MapFilterSystem.filterByRegion(allTiles, ['wu']);
       expect(result.length).toBeGreaterThan(0);
       for (const tile of result) {
-        expect(tile.region).toBe('jiangnan');
+        expect(tile.region).toBe('wu');
       }
     });
 
     it('筛选西蜀区域', () => {
-      const result = MapFilterSystem.filterByRegion(allTiles, ['western_shu']);
+      const result = MapFilterSystem.filterByRegion(allTiles, ['shu']);
       expect(result.length).toBeGreaterThan(0);
       for (const tile of result) {
-        expect(tile.region).toBe('western_shu');
+        expect(tile.region).toBe('shu');
       }
     });
 
     it('筛选多个区域', () => {
-      const result = MapFilterSystem.filterByRegion(allTiles, ['central_plains', 'jiangnan']);
+      const result = MapFilterSystem.filterByRegion(allTiles, ['wei', 'wu']);
       for (const tile of result) {
-        expect(['central_plains', 'jiangnan']).toContain(tile.region);
+        expect(['wei', 'wu']).toContain(tile.region);
       }
     });
 
@@ -53,9 +53,9 @@ describe('MapFilterSystem', () => {
     });
 
     it('三区域之和 = 总数', () => {
-      const cp = MapFilterSystem.filterByRegion(allTiles, ['central_plains']);
-      const jn = MapFilterSystem.filterByRegion(allTiles, ['jiangnan']);
-      const ws = MapFilterSystem.filterByRegion(allTiles, ['western_shu']);
+      const cp = MapFilterSystem.filterByRegion(allTiles, ['wei']);
+      const jn = MapFilterSystem.filterByRegion(allTiles, ['wu']);
+      const ws = MapFilterSystem.filterByRegion(allTiles, ['shu']);
       expect(cp.length + jn.length + ws.length).toBe(allTiles.length);
     });
   });
@@ -182,23 +182,23 @@ describe('MapFilterSystem', () => {
 
     it('单条件筛选', () => {
       const result = MapFilterSystem.filter(allTiles, allLandmarks, {
-        regions: ['central_plains'],
+        regions: ['wei'],
       });
       expect(result.totalTiles).toBeLessThan(allTiles.length);
       for (const tile of result.tiles) {
-        expect(tile.region).toBe('central_plains');
+        expect(tile.region).toBe('wei');
       }
     });
 
     it('多条件叠加', () => {
       const result = MapFilterSystem.filter(allTiles, allLandmarks, {
-        regions: ['central_plains'],
+        regions: ['wei'],
         terrains: ['plain'],
         ownerships: ['neutral'],
       });
       expect(result.totalTiles).toBeGreaterThan(0);
       for (const tile of result.tiles) {
-        expect(tile.region).toBe('central_plains');
+        expect(tile.region).toBe('wei');
         expect(tile.terrain).toBe('plain');
       }
       for (const lm of result.landmarks) {
@@ -248,11 +248,11 @@ describe('MapFilterSystem', () => {
   describe('统计', () => {
     it('countByRegion 统计正确', () => {
       const counts = MapFilterSystem.countByRegion(allTiles);
-      const total = counts.central_plains + counts.jiangnan + counts.western_shu;
+      const total = counts.wei + counts.wu + counts.shu;
       expect(total).toBe(allTiles.length);
-      expect(counts.central_plains).toBeGreaterThan(0);
-      expect(counts.jiangnan).toBeGreaterThan(0);
-      expect(counts.western_shu).toBeGreaterThan(0);
+      expect(counts.wei).toBeGreaterThan(0);
+      expect(counts.wu).toBeGreaterThan(0);
+      expect(counts.shu).toBeGreaterThan(0);
     });
 
     it('countByTerrain 统计正确', () => {
@@ -270,7 +270,7 @@ describe('MapFilterSystem', () => {
 
     it('countByRegion 与 filterByRegion 一致', () => {
       const counts = MapFilterSystem.countByRegion(allTiles);
-      for (const region of ['central_plains', 'jiangnan', 'western_shu'] as const) {
+      for (const region of ['wei', 'wu', 'shu'] as const) {
         const filtered = MapFilterSystem.filterByRegion(allTiles, [region]);
         expect(counts[region]).toBe(filtered.length);
       }

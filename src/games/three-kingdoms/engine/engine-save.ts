@@ -206,7 +206,7 @@ export function fromIGameState(state: IGameState): GameSaveData {
     campaign: s.campaign as import('./campaign/campaign.types').CampaignSaveData | undefined,
     tech: s.tech as TechSaveData | undefined,
     equipment: s.equipment as import('../core/equipment/equipment.types').EquipmentSaveData | undefined,
-    equipmentForge: s.equipmentForge as import('../core/equipment/equipment-v10.types').ForgeSaveData | undefined,
+    equipmentForge: s.equipmentForge as import('../core/equipment/equipment-forge.types').ForgeSaveData | undefined,
     equipmentEnhance: s.equipmentEnhance as { protectionCount: number } | undefined,
     trade: s.trade as import('../core/trade/trade.types').TradeSaveData | undefined,
     shop: s.shop as import('../core/shop/shop.types').ShopSaveData | undefined,

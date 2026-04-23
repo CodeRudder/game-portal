@@ -63,7 +63,7 @@ export class TerritoryRenderer implements IRenderer {
   private _visible = true;
   private _initialized = false;
 
-  // TODO: 势力颜色映射和 Graphics 对象池
+  // stub: 势力颜色映射和 Graphics 对象池
   // private factionColors = new Map<string, IFactionColor>();
   // private borderGraphics = new Map<string, Graphics>();
 
@@ -84,7 +84,7 @@ export class TerritoryRenderer implements IRenderer {
     container.addChild(this.root);
     this._initialized = true;
 
-    // TODO: 初始化 Graphics 对象
+    // stub: 初始化 Graphics 对象
   }
 
   /**
@@ -95,7 +95,7 @@ export class TerritoryRenderer implements IRenderer {
   update(dt: number): void {
     if (!this._initialized) return;
 
-    // TODO: 更新边界动画（如呼吸效果、闪烁等）
+    // stub: 更新边界动画（如呼吸效果、闪烁等）
     void dt;
   }
 
@@ -103,7 +103,7 @@ export class TerritoryRenderer implements IRenderer {
    * 销毁领土渲染器
    */
   destroy(): void {
-    // TODO: 清理 Graphics 对象
+    // stub: 清理 Graphics 对象
     this.root.destroy({ children: true });
     this._initialized = false;
   }
@@ -116,7 +116,7 @@ export class TerritoryRenderer implements IRenderer {
    * @param _colors - 势力颜色数组
    */
   setFactionColors(_colors: IFactionColor[]): void {
-    // TODO: 更新势力颜色映射
+    // stub: 更新势力颜色映射
   }
 
   /**
@@ -127,7 +127,7 @@ export class TerritoryRenderer implements IRenderer {
    * @param _territories - 领土数据数组
    */
   updateTerritories(_territories: ITerritoryData[]): void {
-    // TODO: 计算边界路径并绘制
+    // stub: 计算边界路径并绘制
   }
 
   // ─── 访问器 ─────────────────────────────────

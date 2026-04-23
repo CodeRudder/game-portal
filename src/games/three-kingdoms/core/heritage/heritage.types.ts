@@ -12,7 +12,7 @@
  * @module core/heritage/heritage.types
  */
 
-import type { Faction } from '../../engine/hero/hero.types';
+import type { Faction } from '../../shared/types';
 import type { EquipmentRarity, EquipmentSlot } from '../equipment/equipment.types';
 
 // ─────────────────────────────────────────────

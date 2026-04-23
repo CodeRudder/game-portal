@@ -58,7 +58,7 @@ export interface NPCMapPlacerDeps {
  * const displays = placer.computeMapDisplays();
  *
  * // 按区域获取聚合展示
- * const regionDisplays = placer.getRegionDisplays('central_plains');
+ * const regionDisplays = placer.getRegionDisplays('wei');
  *
  * // 获取视口内的 NPC
  * const visible = placer.getNPCsInViewport(0, 0, 1280, 696, 1.0);

@@ -40,7 +40,7 @@ function mockDeps(): ISystemDeps {
           profession: 'merchant',
           affinity: 50,
           position: { x: 1, y: 1 },
-          region: 'central_plains',
+          region: 'wei',
           visible: true,
           dialogId: 'dialog-merchant-default',
           createdAt: 0,

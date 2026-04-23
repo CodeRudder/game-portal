@@ -144,27 +144,27 @@ describe('WorldMapSystem 基础与区域地形', () => {
       const regions = mapSys.getRegions();
       expect(regions.length).toBe(3);
       const ids = regions.map(r => r.id);
-      expect(ids).toContain('central_plains');
-      expect(ids).toContain('jiangnan');
-      expect(ids).toContain('western_shu');
+      expect(ids).toContain('wei');
+      expect(ids).toContain('wu');
+      expect(ids).toContain('shu');
     });
 
     it('getRegionAt 中原坐标', () => {
       const region = mapSys.getRegionAt({ x: 30, y: 10 });
       expect(region).not.toBeNull();
-      expect(region!.id).toBe('central_plains');
+      expect(region!.id).toBe('wei');
     });
 
     it('getRegionAt 江南坐标', () => {
       const region = mapSys.getRegionAt({ x: 45, y: 30 });
       expect(region).not.toBeNull();
-      expect(region!.id).toBe('jiangnan');
+      expect(region!.id).toBe('wu');
     });
 
     it('getRegionAt 西蜀坐标', () => {
       const region = mapSys.getRegionAt({ x: 10, y: 25 });
       expect(region).not.toBeNull();
-      expect(region!.id).toBe('western_shu');
+      expect(region!.id).toBe('shu');
     });
 
     it('getRegionAt 非法坐标返回 null', () => {
@@ -172,18 +172,18 @@ describe('WorldMapSystem 基础与区域地形', () => {
     });
 
     it('getTilesByRegion 返回正确格子', () => {
-      const centralTiles = mapSys.getTilesByRegion('central_plains');
+      const centralTiles = mapSys.getTilesByRegion('wei');
       expect(centralTiles.length).toBeGreaterThan(0);
       for (const tile of centralTiles) {
-        expect(tile.region).toBe('central_plains');
+        expect(tile.region).toBe('wei');
       }
     });
 
     it('getRegionTileCount 三个区域总和等于总格子数', () => {
       const total =
-        mapSys.getRegionTileCount('central_plains') +
-        mapSys.getRegionTileCount('jiangnan') +
-        mapSys.getRegionTileCount('western_shu');
+        mapSys.getRegionTileCount('wei') +
+        mapSys.getRegionTileCount('wu') +
+        mapSys.getRegionTileCount('shu');
       expect(total).toBe(mapSys.getTotalTiles());
     });
   });

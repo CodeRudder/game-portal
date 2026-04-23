@@ -53,7 +53,7 @@ export type {
   ChainProgress,
   ChainAdvanceResult,
   ChainEventSaveData,
-} from './ChainEventSystem';
+} from './chain-event-types';
 
 // v7.0 Phase2 — 历史剧情事件
 export { StoryEventSystem } from './StoryEventSystem';

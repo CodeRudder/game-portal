@@ -10,7 +10,7 @@
  *   #16 三层属性 / #17 套装效果
  *   #19 一键推荐
  *
- * @module core/equipment/equipment-v10.types
+ * @module core/equipment/equipment-forge.types
  */
 
 import type {

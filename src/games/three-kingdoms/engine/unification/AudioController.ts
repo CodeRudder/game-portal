@@ -10,6 +10,6 @@
 
 // Re-export AudioManager as AudioController for backward compatibility
 export { AudioManager as AudioController } from '../settings/AudioManager';
-export { AudioScene } from '../settings/AudioManager';
-export type { VolumeOutput } from '../settings/AudioManager';
-export type { AudioManagerConfig as AudioControllerConfig } from '../settings/AudioManager';
+export { AudioScene } from '../settings/audio-config';
+export type { VolumeOutput } from '../settings/audio-config';
+export type { AudioManagerConfig as AudioControllerConfig } from '../settings/audio-config';

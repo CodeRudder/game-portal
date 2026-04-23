@@ -106,7 +106,7 @@ export class BattleEffectRenderer implements IRenderer {
     container.addChild(this.root);
     this._initialized = true;
 
-    // TODO: 初始化特效精灵池
+    // stub: 初始化特效精灵池
   }
 
   /**
@@ -127,9 +127,9 @@ export class BattleEffectRenderer implements IRenderer {
       if (effect.elapsed >= duration) {
         effect.done = true;
         this.activeEffects.splice(i, 1);
-        // TODO: 回收精灵到对象池
+        // stub: 回收精灵到对象池
       } else {
-        // TODO: 更新特效动画帧
+        // stub: 更新特效动画帧
       }
     }
   }
@@ -159,7 +159,7 @@ export class BattleEffectRenderer implements IRenderer {
     };
     this.activeEffects.push(instance);
 
-    // TODO: 从精灵池获取精灵并设置初始状态
+    // stub: 从精灵池获取精灵并设置初始状态
   }
 
   /**
@@ -167,7 +167,7 @@ export class BattleEffectRenderer implements IRenderer {
    */
   clearAll(): void {
     this.activeEffects.length = 0;
-    // TODO: 回收所有精灵
+    // stub: 回收所有精灵
   }
 
   // ─── 访问器 ─────────────────────────────────

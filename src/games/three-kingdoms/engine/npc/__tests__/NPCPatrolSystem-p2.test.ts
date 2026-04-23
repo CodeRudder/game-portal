@@ -47,7 +47,7 @@ function mockDepsWithNPC(npcs: NPCData[] = []): ISystemDeps {
         profession,
         affinity: opts?.affinity ?? 30,
         position,
-        region: 'central_plains' as RegionId,
+        region: 'wei' as RegionId,
         visible: true,
         dialogId: `dialog-${profession}-default`,
         createdAt: 0,
@@ -93,7 +93,7 @@ function createTestPath(overrides?: Partial<PatrolPath>): PatrolPath {
       { x: 10, y: 0 },
       { x: 10, y: 10 },
     ],
-    region: 'central_plains',
+    region: 'wei',
     speed: 5.0,
     ...overrides,
   };
@@ -105,7 +105,7 @@ function createTestTemplate(overrides?: Partial<NPCSpawnTemplate>): NPCSpawnTemp
     id: 'template-1',
     name: '测试商人',
     profession: 'merchant',
-    region: 'central_plains',
+    region: 'wei',
     patrolPathId: 'test-path-1',
     initialAffinity: 30,
     weight: 1.0,
@@ -352,7 +352,7 @@ describe('NPCPatrolSystem', () => {
         'patrol:npc_spawned',
         expect.objectContaining({
           templateId: 'template-1',
-          region: 'central_plains',
+          region: 'wei',
         }),
       );
     });

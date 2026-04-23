@@ -21,7 +21,7 @@ import type {
   OfflineEventProcessResult,
   EventRetrospectiveData,
   OptionConsequence,
-} from '../../core/event/event-v15.types';
+} from '../../core/event/event-engine.types';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -131,7 +131,7 @@ export class OfflineEventSystem implements ISubsystem {
     requiresManualAction: boolean;
     triggerTurn: number;
     eventDef: EventDef;
-    autoResult: import('../../core/event/event-v15.types').AutoResolveResult | null;
+    autoResult: import('../../core/event/event-engine.types').AutoResolveResult | null;
   }>): OfflineEventEntry[] {
     return events.map(e => this.addOfflineEvent(e));
   }

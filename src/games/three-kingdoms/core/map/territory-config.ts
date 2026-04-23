@@ -53,20 +53,27 @@ const UPGRADE_BASE_COST: TerritoryUpgradeCost = {
  */
 const RAW_ADJACENCY: Record<string, string[]> = {
   // ── 中原 ──
-  'city-luoyang': ['city-xuchang', 'city-ye', 'city-changan', 'pass-hulao', 'pass-tong'],
-  'city-xuchang': ['city-ye', 'res-grain1'],
-  'city-changan': ['pass-jian', 'city-hanzhong'],
+  'city-luoyang': ['city-xuchang', 'city-ye', 'city-changan', 'pass-hulao', 'pass-tong', 'city-xiangyang'],
+  'city-xuchang': ['city-ye', 'res-grain1', 'city-puyang'],
+  'city-changan': ['pass-jian', 'city-hanzhong', 'pass-tong'],
   'pass-tong': ['res-gold1'],
   'res-grain1': ['res-gold1'],
+  'city-ye': ['city-puyang', 'city-beihai'],
+  'city-puyang': ['city-beihai'],
+  'city-beihai': ['city-xiangyang'],
+  'city-xiangyang': ['city-chaisang'],
   // ── 江南 ──
-  'city-jianye': ['city-changsha', 'res-grain2', 'res-troops1'],
-  'city-chengdu': ['city-mianzhu', 'city-hanzhong'],
+  'city-jianye': ['city-chaisang', 'res-grain2', 'res-troops1', 'city-kuaiji', 'city-lujiang'],
+  'city-chengdu': ['city-yongan', 'city-hanzhong', 'city-nanzhong'],
   'pass-jian': ['city-hanzhong'],
-  'res-grain2': ['city-changsha'],
-  'res-troops1': ['city-changsha'],
+  'res-grain2': ['city-chaisang', 'city-kuaiji'],
+  'res-troops1': ['city-chaisang'],
+  'city-chaisang': ['city-lujiang'],
+  'city-kuaiji': ['city-lujiang'],
   // ── 西蜀 ──
-  'city-mianzhu': ['res-mandate1'],
+  'city-yongan': ['res-mandate1', 'city-nanzhong'],
   'pass-yangping': ['res-mandate1'],
+  'city-nanzhong': ['res-mandate1'],
 };
 
 /** 将单向邻接表转为双向对称 */
@@ -169,14 +176,34 @@ export function areAdjacent(id1: string, id2: string): boolean {
 }
 
 /**
+ * 城防基础值常量
+ * ⚠️ PRD MAP-4 统一声明：城防值=基础(1000)×城市等级×(1+科技加成)
+ * 旧公式"基础城防(500~5000)+城墙等级+驻防×0.5"已废弃
+ */
+const BASE_CITY_DEFENSE = 1000;
+
+/**
+ * 计算城防基础值（不含科技加成，科技加成由引擎层动态计算）
+ *
+ * @param level - 城市等级
+ * @returns 城防基础值 = 1000 × level
+ */
+function calculateBaseDefenseValue(level: number): number {
+  return BASE_CITY_DEFENSE * level;
+}
+
+/**
  * 从 DEFAULT_LANDMARKS 生成初始领土数据
+ *
+ * 城防值按 PRD 统一声明公式生成：基础(1000) × 城市等级
+ * 科技加成由 SiegeEnhancer 在运行时动态叠加
  *
  * @returns 所有领土数据列表
  */
 export function generateTerritoryData(): TerritoryData[] {
   return DEFAULT_LANDMARKS.map((lm) => {
     const pos = LANDMARK_POSITIONS[lm.id];
-    const region = pos ? getRegionAtPosition(pos.x, pos.y) : 'central_plains';
+    const region = pos ? getRegionAtPosition(pos.x, pos.y) : 'wei';
     const baseProd = getBaseProduction(lm.type, lm.resourceType);
     const currentProd = calculateProduction(baseProd, lm.level);
 
@@ -189,7 +216,7 @@ export function generateTerritoryData(): TerritoryData[] {
       level: lm.level,
       baseProduction: baseProd,
       currentProduction: currentProd,
-      defenseValue: lm.defenseValue,
+      defenseValue: calculateBaseDefenseValue(lm.level),
       adjacentIds: getAdjacentIds(lm.id),
     };
   });

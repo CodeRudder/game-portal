@@ -6,7 +6,7 @@
  * @module core/event/encounter-templates-exploration
  */
 
-import type { EncounterTemplate } from './event-v15.types';
+import type { EncounterTemplate } from './event-engine.types';
 
 // ─────────────────────────────────────────────
 // 探索遭遇（exploration）— 5个

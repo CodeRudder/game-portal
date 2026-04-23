@@ -89,7 +89,7 @@ export class GeneralPortraitRenderer implements IRenderer {
   private _visible = true;
   private _initialized = false;
 
-  // TODO: 当前显示的立绘 Sprite 和动画状态
+  // stub: 当前显示的立绘 Sprite 和动画状态
   // private activePortraits = new Map<string, Sprite>();
   // private animationConfig: IPortraitAnimationConfig;
 
@@ -110,7 +110,7 @@ export class GeneralPortraitRenderer implements IRenderer {
     container.addChild(this.root);
     this._initialized = true;
 
-    // TODO: 初始化动画配置
+    // stub: 初始化动画配置
   }
 
   /**
@@ -121,7 +121,7 @@ export class GeneralPortraitRenderer implements IRenderer {
   update(dt: number): void {
     if (!this._initialized) return;
 
-    // TODO: 更新立绘动画（呼吸效果、表情过渡等）
+    // stub: 更新立绘动画（呼吸效果、表情过渡等）
     void dt;
   }
 
@@ -129,7 +129,7 @@ export class GeneralPortraitRenderer implements IRenderer {
    * 销毁武将立绘渲染器
    */
   destroy(): void {
-    // TODO: 清理所有立绘 Sprite
+    // stub: 清理所有立绘 Sprite
     this.root.destroy({ children: true });
     this._initialized = false;
   }
@@ -144,7 +144,7 @@ export class GeneralPortraitRenderer implements IRenderer {
    * @param _data - 武将立绘数据
    */
   showPortrait(_data: IGeneralPortraitData): void {
-    // TODO: 加载纹理、创建 Sprite、播放入场动画
+    // stub: 加载纹理、创建 Sprite、播放入场动画
   }
 
   /**
@@ -153,7 +153,7 @@ export class GeneralPortraitRenderer implements IRenderer {
    * @param _generalId - 武将 ID
    */
   hidePortrait(_generalId: string): void {
-    // TODO: 播放退场动画并移除 Sprite
+    // stub: 播放退场动画并移除 Sprite
   }
 
   /**
@@ -163,7 +163,7 @@ export class GeneralPortraitRenderer implements IRenderer {
    * @param _expression - 新的表情状态
    */
   setExpression(_generalId: string, _expression: PortraitExpression): void {
-    // TODO: 切换立绘纹理
+    // stub: 切换立绘纹理
   }
 
   // ─── 访问器 ─────────────────────────────────

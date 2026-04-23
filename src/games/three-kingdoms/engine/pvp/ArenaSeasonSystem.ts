@@ -29,28 +29,33 @@ export const DEFAULT_SEASON_CONFIG: SeasonConfig = {
   scoreResetRatio: 0.5,
 };
 
-/** 赛季结算奖励表 */
+/** 赛季结算奖励表（5大段位21级，与PRD PVP-3对齐） */
 export const SEASON_REWARDS: SeasonReward[] = [
+  // 青铜 (5级)
   { rankId: 'BRONZE_V', copper: 2000, arenaCoin: 50, gold: 20, title: null },
   { rankId: 'BRONZE_IV', copper: 3000, arenaCoin: 60, gold: 25, title: null },
   { rankId: 'BRONZE_III', copper: 4000, arenaCoin: 70, gold: 30, title: null },
   { rankId: 'BRONZE_II', copper: 5000, arenaCoin: 80, gold: 35, title: null },
   { rankId: 'BRONZE_I', copper: 6000, arenaCoin: 100, gold: 40, title: null },
+  // 白银 (5级)
   { rankId: 'SILVER_V', copper: 7000, arenaCoin: 120, gold: 50, title: null },
   { rankId: 'SILVER_IV', copper: 8000, arenaCoin: 140, gold: 55, title: '银光闪耀' },
   { rankId: 'SILVER_III', copper: 9000, arenaCoin: 160, gold: 60, title: '银光闪耀' },
   { rankId: 'SILVER_II', copper: 10000, arenaCoin: 180, gold: 65, title: '银光闪耀' },
   { rankId: 'SILVER_I', copper: 11000, arenaCoin: 200, gold: 70, title: '银翼战士' },
-  { rankId: 'GOLD_IV', copper: 13000, arenaCoin: 250, gold: 80, title: '金甲将军' },
-  { rankId: 'GOLD_III', copper: 15000, arenaCoin: 300, gold: 90, title: '金甲将军' },
-  { rankId: 'GOLD_II', copper: 17000, arenaCoin: 350, gold: 100, title: '金甲将军' },
-  { rankId: 'GOLD_I', copper: 20000, arenaCoin: 400, gold: 120, title: '黄金霸主' },
-  { rankId: 'PLATINUM_III', copper: 25000, arenaCoin: 500, gold: 150, title: '铂金之刃' },
-  { rankId: 'PLATINUM_II', copper: 30000, arenaCoin: 600, gold: 180, title: '铂金之刃' },
-  { rankId: 'PLATINUM_I', copper: 35000, arenaCoin: 700, gold: 200, title: '铂金统帅' },
-  { rankId: 'DIAMOND_II', copper: 40000, arenaCoin: 800, gold: 250, title: '钻石之心' },
-  { rankId: 'DIAMOND_I', copper: 50000, arenaCoin: 1000, gold: 300, title: '钻石之心' },
-  { rankId: 'MASTER_I', copper: 60000, arenaCoin: 1200, gold: 400, title: '无双战神' },
+  // 黄金 (5级)
+  { rankId: 'GOLD_V', copper: 13000, arenaCoin: 220, gold: 75, title: '金甲将军' },
+  { rankId: 'GOLD_IV', copper: 15000, arenaCoin: 250, gold: 80, title: '金甲将军' },
+  { rankId: 'GOLD_III', copper: 17000, arenaCoin: 300, gold: 90, title: '金甲将军' },
+  { rankId: 'GOLD_II', copper: 20000, arenaCoin: 350, gold: 100, title: '金甲将军' },
+  { rankId: 'GOLD_I', copper: 23000, arenaCoin: 400, gold: 120, title: '黄金霸主' },
+  // 钻石 (5级)
+  { rankId: 'DIAMOND_V', copper: 28000, arenaCoin: 500, gold: 150, title: '钻石之心' },
+  { rankId: 'DIAMOND_IV', copper: 32000, arenaCoin: 600, gold: 180, title: '钻石之心' },
+  { rankId: 'DIAMOND_III', copper: 38000, arenaCoin: 700, gold: 200, title: '钻石之心' },
+  { rankId: 'DIAMOND_II', copper: 45000, arenaCoin: 800, gold: 250, title: '钻石之心' },
+  { rankId: 'DIAMOND_I', copper: 55000, arenaCoin: 1000, gold: 300, title: '钻石之心' },
+  // 王者 (1级)
   { rankId: 'KING_I', copper: 100000, arenaCoin: 2000, gold: 500, title: '天下霸主' },
 ];
 

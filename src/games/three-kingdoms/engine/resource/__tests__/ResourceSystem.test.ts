@@ -246,9 +246,9 @@ describe('ResourceSystem', () => {
       const r = rs.calculateOfflineEarnings(86400 + 3600);
       expect(r.tierBreakdown!.length).toBeGreaterThanOrEqual(4);
     });
-    it('第五档 48~72h 效率25%', () => {
+    it('第五档 48~72h 效率20%', () => {
       const r = rs.calculateOfflineEarnings(172800 + 3600);
-      const t = r.tierBreakdown!.find((b) => b.tier.efficiency === 0.25);
+      const t = r.tierBreakdown!.find((b) => b.tier.efficiency === 0.20);
       expect(t).toBeDefined();
       expect(t!.seconds).toBe(3600);
     });

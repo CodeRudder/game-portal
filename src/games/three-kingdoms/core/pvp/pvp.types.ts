@@ -7,14 +7,14 @@
  * @module core/pvp/pvp.types
  */
 
-import type { Faction } from '../../engine/hero/hero.types';
-import type { BattleAction, BattleResult, BattleState } from '../../engine/battle/battle.types';
+import type { Faction } from '../../shared/types';
+import type { BattleAction, BattleResult, BattleState } from '../../shared/types';
 
 // ─────────────────────────────────────────────
 // 1. 段位等级（21级）
 // ─────────────────────────────────────────────
 
-/** 大段位 */
+/** 大段位（5大段位，与PRD PVP-3对齐：青铜/白银/黄金/钻石/王者） */
 export enum RankTier {
   /** 青铜 */
   BRONZE = 'BRONZE',
@@ -22,12 +22,8 @@ export enum RankTier {
   SILVER = 'SILVER',
   /** 黄金 */
   GOLD = 'GOLD',
-  /** 铂金 */
-  PLATINUM = 'PLATINUM',
   /** 钻石 */
   DIAMOND = 'DIAMOND',
-  /** 大师 */
-  MASTER = 'MASTER',
   /** 王者 */
   KING = 'KING',
 }

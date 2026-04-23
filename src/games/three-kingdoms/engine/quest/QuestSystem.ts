@@ -17,8 +17,11 @@ import {
 import type { ActivityState, ActivityMilestone, QuestReward as QR } from '../../core/quest';
 import { serializeQuestState, deserializeQuestState } from './QuestSerialization';
 
-const MAX_TRACKED_QUESTS = 3;
-const MAX_ACTIVITY_POINTS = 100;
+/** 最大追踪任务数 */
+export const MAX_TRACKED_QUESTS = 3;
+
+/** 最大活跃度点数 */
+export const MAX_ACTIVITY_POINTS = 100;
 
 /** 管理所有类型任务的注册、接受、进度追踪和奖励发放 */
 export class QuestSystem implements ISubsystem {

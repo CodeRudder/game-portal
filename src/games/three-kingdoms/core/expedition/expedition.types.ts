@@ -10,7 +10,7 @@
  * @module core/expedition/expedition.types
  */
 
-import type { Faction } from '../../engine/hero/hero.types';
+import type { Faction } from '../../shared/types';
 
 // 从战斗/奖励子模块重新导出
 export {

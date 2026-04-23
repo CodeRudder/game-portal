@@ -7,6 +7,41 @@
  * @module engine/hero/HeroRecruitSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
+import type {
+  RecruitResult,
+  RecruitOutput,
+  PityState,
+  FreeRecruitState,
+  UpHeroState,
+  RecruitSaveData,
+  ResourceSpendFn,
+  ResourceCheckFn,
+  RecruitHistoryEntry,
+  RecruitDeps,
+} from './recruit-types';
+
+// Re-export for index.ts convenience
+export type {
+  RecruitResult,
+  RecruitOutput,
+  PityState,
+  RecruitSaveData,
+  ResourceSpendFn,
+  ResourceCheckFn,
+  RecruitHistoryEntry,
+  RecruitDeps,
+} from './recruit-types';
+import {
+  createEmptyPity,
+  createEmptyFreeRecruit,
+  createDefaultUpHero,
+  todayDateString,
+  rollQuality,
+  applyPity,
+  pickGeneralByQuality,
+  MAX_HISTORY_SIZE,
+} from './recruit-types';
 import type { Quality, GeneralData } from './hero.types';
 import { Quality as Q, QUALITY_ORDER } from './hero.types';
 import type { HeroSystem } from './HeroSystem';
@@ -16,160 +51,25 @@ import {
   RECRUIT_RATES,
   RECRUIT_PITY,
   RECRUIT_SAVE_VERSION,
+  DEFAULT_UP_CONFIG,
+  DAILY_FREE_CONFIG,
 } from './hero-recruit-config';
-import type { RecruitType, QualityRate, PityConfig } from './hero-recruit-config';
-import type { ISubsystem, ISystemDeps } from '../../core/types';
+import type { RecruitType, QualityRate, PityConfig, UpHeroConfig } from './hero-recruit-config';
 
-// ─────────────────────────────────────────────
-// 类型
-// ─────────────────────────────────────────────
-
-/** 单次招募结果 */
-export interface RecruitResult {
-  general: GeneralData;
-  /** 是否为重复武将 */
-  isDuplicate: boolean;
-  /** 转化碎片数（重复时 > 0） */
-  fragmentCount: number;
-  quality: Quality;
-}
-
-/** 招募执行结果（单抽或十连） */
-export interface RecruitOutput {
-  type: RecruitType;
-  results: RecruitResult[];
-  cost: { resourceType: string; amount: number };
-}
-
-/** 保底计数器状态 */
-export interface PityState {
-  /** 普通招募已抽次数（自上次出稀有+以来） */
-  normalPity: number;
-  /** 高级招募已抽次数（自上次出稀有+以来） */
-  advancedPity: number;
-  /** 普通招募硬保底计数（自上次出史诗+以来） */
-  normalHardPity: number;
-  /** 高级招募硬保底计数（自上次出史诗+以来） */
-  advancedHardPity: number;
-}
-
-/** 招募系统存档数据 */
-export interface RecruitSaveData {
-  version: number;
-  pity: PityState;
-  /** 招募历史记录（最近20条） */
-  history?: RecruitHistoryEntry[];
-}
-
-/** 资源消耗回调 */
-export type ResourceSpendFn = (resourceType: string, amount: number) => boolean;
-/** 资源检查回调 */
-export type ResourceCheckFn = (resourceType: string, amount: number) => boolean;
-
-/** 招募历史条目 */
-export interface RecruitHistoryEntry {
-  /** 招募时间戳 */
-  timestamp: number;
-  /** 招募类型 */
-  type: RecruitType;
-  /** 招募结果 */
-  results: RecruitResult[];
-  /** 消耗 */
-  cost: { resourceType: string; amount: number };
-}
-
-/** 最大历史记录数 */
-const MAX_HISTORY_SIZE = 20;
-
-/** 招募系统业务依赖（通过回调解耦 ResourceSystem） */
-export interface RecruitDeps {
-  heroSystem: HeroSystem;
-  /** 资源消耗回调 — 返回 true 表示消耗成功 */
-  spendResource: ResourceSpendFn;
-  /** 资源检查回调 — 返回 true 表示资源充足 */
-  canAffordResource: ResourceCheckFn;
-}
-
-// ─────────────────────────────────────────────
-// 辅助函数
-// ─────────────────────────────────────────────
-
-function createEmptyPity(): PityState {
-  return { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 };
-}
-
-/** 累积概率法抽取品质 */
-function rollQuality(rates: readonly QualityRate[], rng: () => number): Quality {
-  const roll = rng();
-  let cumulative = 0;
-  for (const entry of rates) {
-    cumulative += entry.rate;
-    if (roll < cumulative) return entry.quality;
-  }
-  return rates[rates.length - 1].quality;
-}
-
-/** 保底修正：硬保底（史诗+）优先于十连保底（稀有+） */
-function applyPity(
-  baseQuality: Quality,
-  pityCount: number,
-  hardPityCount: number,
-  config: PityConfig,
-): Quality {
-  if (hardPityCount >= config.hardPityThreshold - 1) {
-    if (QUALITY_ORDER[baseQuality] < QUALITY_ORDER[config.hardPityMinQuality]) {
-      return config.hardPityMinQuality;
-    }
-  }
-  if (pityCount >= config.tenPullThreshold - 1) {
-    if (QUALITY_ORDER[baseQuality] < QUALITY_ORDER[config.tenPullMinQuality]) {
-      return config.tenPullMinQuality;
-    }
-  }
-  return baseQuality;
-}
-
-/** 按品质从武将定义池中随机选择一个武将ID */
-function pickGeneralByQuality(
-  heroSystem: HeroSystem,
-  quality: Quality,
-  rng: () => number,
-): string | null {
-  const candidates = heroSystem.getAllGeneralDefs().filter((def) => def.quality === quality);
-  if (candidates.length === 0) return null;
-  return candidates[Math.floor(rng() * candidates.length)].id;
-}
-
-// ─────────────────────────────────────────────
-// HeroRecruitSystem
-// ─────────────────────────────────────────────
-
-/**
- * 武将招募系统
- *
- * 管理普通招募和高级招募的完整流程：
- * - 概率计算与品质抽取（含保底修正）
- * - 保底计数器（10连稀有+、50抽史诗+）
- * - 重复武将自动转化为碎片
- * - 资源消耗通过回调解耦
- *
- * @example
- * ```ts
- * const recruit = new HeroRecruitSystem();
- * recruit.setRecruitDeps({ heroSystem, spendResource, canAffordResource });
- * const result = recruit.recruitSingle('advanced');
- * ```
- */
 export class HeroRecruitSystem implements ISubsystem {
   readonly name = 'heroRecruit' as const;
   private deps: ISystemDeps | null = null;
   private recruitDeps: RecruitDeps | null = null;
   private pity: PityState;
+  private freeRecruit: FreeRecruitState;
+  private upHero: UpHeroState;
   private rng: () => number;
   private history: RecruitHistoryEntry[];
 
   constructor(rng: () => number = Math.random) {
     this.pity = createEmptyPity();
+    this.freeRecruit = createEmptyFreeRecruit();
+    this.upHero = createDefaultUpHero();
     this.rng = rng;
     this.history = [];
   }
@@ -177,9 +77,14 @@ export class HeroRecruitSystem implements ISubsystem {
   // ── ISubsystem 适配层 ──
 
   init(deps: ISystemDeps): void { this.deps = deps; }
-  update(_dt: number): void { /* 预留：每日免费次数重置等 */ }
+  update(_dt: number): void { this.checkDailyReset(); }
   getState(): unknown { return this.serialize(); }
-  reset(): void { this.pity = createEmptyPity(); this.history = []; }
+  reset(): void {
+    this.pity = createEmptyPity();
+    this.freeRecruit = createEmptyFreeRecruit();
+    this.upHero = createDefaultUpHero();
+    this.history = [];
+  }
 
   // ─────────────────────────────────────────
   // 1. 依赖注入
@@ -247,6 +152,97 @@ export class HeroRecruitSystem implements ISubsystem {
   }
 
   // ─────────────────────────────────────────
+  // 3.5 UP 武将管理
+  // ─────────────────────────────────────────
+
+  /** 设置当前 UP 武将（仅高级招募生效） */
+  setUpHero(generalId: string | null, rate?: number): void {
+    this.upHero.upGeneralId = generalId;
+    if (rate !== undefined) {
+      this.upHero.upRate = rate;
+    }
+  }
+
+  /** 获取当前 UP 武将状态 */
+  getUpHeroState(): Readonly<UpHeroState> {
+    return { ...this.upHero };
+  }
+
+  // ─────────────────────────────────────────
+  // 3.6 每日免费招募
+  // ─────────────────────────────────────────
+
+  /** 检查并执行每日免费次数重置 */
+  private checkDailyReset(): void {
+    const today = todayDateString();
+    if (this.freeRecruit.lastResetDate !== today) {
+      this.freeRecruit = createEmptyFreeRecruit();
+    }
+  }
+
+  /** 获取今日剩余免费次数 */
+  getRemainingFreeCount(type: RecruitType): number {
+    this.checkDailyReset();
+    const maxFree = DAILY_FREE_CONFIG[type].freeCount;
+    const used = this.freeRecruit.usedFreeCount[type];
+    return Math.max(0, maxFree - used);
+  }
+
+  /** 是否可以使用免费招募 */
+  canFreeRecruit(type: RecruitType): boolean {
+    return this.getRemainingFreeCount(type) > 0;
+  }
+
+  /**
+   * 使用免费招募（单次）
+   *
+   * 不消耗资源，使用每日免费次数
+   * @returns 招募结果，或 null（无免费次数/依赖未设置）
+   */
+  freeRecruitSingle(type: RecruitType): RecruitOutput | null {
+    if (!this.recruitDeps) return null;
+    this.checkDailyReset();
+
+    if (!this.canFreeRecruit(type)) return null;
+
+    // 标记使用免费次数
+    this.freeRecruit.usedFreeCount[type] += 1;
+
+    // 免费招募不消耗资源，直接执行抽卡
+    const results: RecruitResult[] = [];
+    for (let i = 0; i < 1; i++) {
+      results.push(this.executeSinglePull(type));
+    }
+
+    const output: RecruitOutput = {
+      type,
+      results,
+      cost: { resourceType: 'free', amount: 0 },
+    };
+
+    this.history.push({
+      timestamp: Date.now(),
+      type,
+      results: output.results,
+      cost: output.cost,
+    });
+    if (this.history.length > MAX_HISTORY_SIZE) {
+      this.history = this.history.slice(-MAX_HISTORY_SIZE);
+    }
+
+    return output;
+  }
+
+  /** 获取免费招募状态（只读） */
+  getFreeRecruitState(): Readonly<FreeRecruitState> {
+    this.checkDailyReset();
+    return {
+      usedFreeCount: { ...this.freeRecruit.usedFreeCount },
+      lastResetDate: this.freeRecruit.lastResetDate,
+    };
+  }
+
+  // ─────────────────────────────────────────
   // 4. 核心招募逻辑
   // ─────────────────────────────────────────
 
@@ -276,16 +272,21 @@ export class HeroRecruitSystem implements ISubsystem {
   // 5. 序列化/反序列化
   // ─────────────────────────────────────────
 
-  /** 序列化（保存保底计数器和招募历史） */
+  /** 序列化（保存保底计数器、免费招募状态、UP武将状态和招募历史） */
   serialize(): RecruitSaveData {
     return {
       version: RECRUIT_SAVE_VERSION,
       pity: { ...this.pity },
+      freeRecruit: {
+        usedFreeCount: { ...this.freeRecruit.usedFreeCount },
+        lastResetDate: this.freeRecruit.lastResetDate,
+      },
+      upHero: { ...this.upHero },
       history: [...this.history],
     };
   }
 
-  /** 反序列化恢复保底计数器和招募历史 */
+  /** 反序列化恢复保底计数器、免费招募状态、UP武将状态和招募历史 */
   deserialize(data: RecruitSaveData): void {
     if (data.version !== RECRUIT_SAVE_VERSION) {
       console.warn(
@@ -298,6 +299,27 @@ export class HeroRecruitSystem implements ISubsystem {
       normalHardPity: data.pity.normalHardPity ?? 0,
       advancedHardPity: data.pity.advancedHardPity ?? 0,
     };
+    // 恢复免费招募状态（兼容旧存档）
+    if (data.freeRecruit) {
+      this.freeRecruit = {
+        usedFreeCount: {
+          normal: data.freeRecruit.usedFreeCount?.normal ?? 0,
+          advanced: data.freeRecruit.usedFreeCount?.advanced ?? 0,
+        },
+        lastResetDate: data.freeRecruit.lastResetDate ?? todayDateString(),
+      };
+    } else {
+      this.freeRecruit = createEmptyFreeRecruit();
+    }
+    // 恢复 UP 武将状态（兼容旧存档）
+    if (data.upHero) {
+      this.upHero = {
+        upGeneralId: data.upHero.upGeneralId ?? null,
+        upRate: data.upHero.upRate ?? DEFAULT_UP_CONFIG.upRate,
+      };
+    } else {
+      this.upHero = createDefaultUpHero();
+    }
     // 恢复招募历史（兼容无 history 字段的旧存档）
     if (Array.isArray(data.history)) {
       this.history = data.history.slice(-MAX_HISTORY_SIZE);
@@ -354,9 +376,26 @@ export class HeroRecruitSystem implements ISubsystem {
     // 1. 概率抽取品质 → 保底修正
     const finalQuality = applyPity(rollQuality(rates, this.rng), pityCount, hardPityCount, config);
 
-    // 2. 从对应品质武将池中随机选择（无匹配时降级）
-    const generalId = pickGeneralByQuality(heroSystem, finalQuality, this.rng)
-      ?? this.fallbackPick(heroSystem, finalQuality);
+    // 2. UP 武将机制：高级招募出 LEGENDARY 时，有概率直接获得 UP 武将
+    let generalId: string | null = null;
+    if (
+      type === 'advanced'
+      && this.upHero.upGeneralId
+      && finalQuality === Q.LEGENDARY
+      && this.rng() < this.upHero.upRate
+    ) {
+      // UP 武将命中：验证 UP 武将确实存在
+      const upDef = heroSystem.getGeneralDef(this.upHero.upGeneralId);
+      if (upDef) {
+        generalId = this.upHero.upGeneralId;
+      }
+    }
+
+    // 3. 非UP命中时，从对应品质武将池中随机选择（无匹配时降级）
+    if (!generalId) {
+      generalId = pickGeneralByQuality(heroSystem, finalQuality, this.rng)
+        ?? this.fallbackPick(heroSystem, finalQuality);
+    }
 
     // 极端情况：完全无武将可用
     if (!generalId) {

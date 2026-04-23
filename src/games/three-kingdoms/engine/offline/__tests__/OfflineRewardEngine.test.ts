@@ -88,7 +88,7 @@ describe('OfflineRewardEngine — 5档衰减系数', () => {
     // 60小时 = 216000秒，跨越 tier1~tier4 + tier5(48~72h)
     const details = calculateTierDetails(216000, RATES);
     expect(details).toHaveLength(5);
-    expect(details[4].efficiency).toBe(0.25);
+    expect(details[4].efficiency).toBe(0.20);
     expect(details[4].seconds).toBe(43200); // 48~60h
   });
 

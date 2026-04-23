@@ -44,7 +44,7 @@ export {
 } from './encounter-templates-disaster';
 
 // 导入类型用于汇总
-import type { EncounterTemplate } from './event-v15.types';
+import type { EncounterTemplate } from './event-engine.types';
 import {
   ENCOUNTER_COMBAT_BANDITS,
   ENCOUNTER_COMBAT_TIGER,

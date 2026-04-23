@@ -21,69 +21,15 @@ import type {
   RefreshConfig,
   ChallengeConfig,
 } from '../../core/pvp/pvp.types';
-import { DefenseFormation, FormationType, AIDefenseStrategy } from '../../core/pvp/pvp.types';
-
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-/** 默认匹配配置 */
-export const DEFAULT_MATCH_CONFIG: MatchConfig = {
-  powerMinRatio: 0.7,
-  powerMaxRatio: 1.3,
-  rankMinOffset: 5,
-  rankMaxOffset: 20,
-  candidateCount: 3,
-};
-
-/** 默认刷新配置 */
-export const DEFAULT_REFRESH_CONFIG: RefreshConfig = {
-  freeIntervalMs: 30 * 60 * 1000, // 30分钟
-  manualCostCopper: 500,
-  dailyManualLimit: 10,
-};
-
-/** 默认挑战配置 */
-export const DEFAULT_CHALLENGE_CONFIG: ChallengeConfig = {
-  dailyFreeChallenges: 5,
-  buyCostGold: 50,
-  dailyBuyLimit: 5,
-};
-
-/** 竞技场存档版本 */
-export const ARENA_SAVE_VERSION = 1;
-
-// ─────────────────────────────────────────────
-// 默认防守阵容
-// ─────────────────────────────────────────────
-
-/** 创建默认防守阵容 */
-export function createDefaultDefenseFormation(): DefenseFormation {
-  return {
-    slots: ['', '', '', '', ''],
-    formation: FormationType.FISH_SCALE,
-    strategy: AIDefenseStrategy.BALANCED,
-  };
-}
-
-/** 创建默认竞技场玩家状态 */
-export function createDefaultArenaPlayerState(playerId: string = ''): ArenaPlayerState {
-  return {
-    playerId,
-    score: 0,
-    rankId: 'BRONZE_V',
-    ranking: 0,
-    dailyChallengesLeft: DEFAULT_CHALLENGE_CONFIG.dailyFreeChallenges,
-    dailyBoughtChallenges: 0,
-    dailyManualRefreshes: 0,
-    lastFreeRefreshTime: 0,
-    opponents: [],
-    defenseFormation: createDefaultDefenseFormation(),
-    defenseLogs: [],
-    replays: [],
-    arenaCoins: 0,
-  };
-}
+import { FormationType, AIDefenseStrategy } from '../../core/pvp/pvp.types';
+import {
+  DEFAULT_MATCH_CONFIG,
+  DEFAULT_REFRESH_CONFIG,
+  DEFAULT_CHALLENGE_CONFIG,
+  ARENA_SAVE_VERSION,
+  createDefaultDefenseFormation,
+  createDefaultArenaPlayerState,
+} from './ArenaConfig';
 
 // ─────────────────────────────────────────────
 // ArenaSystem 类

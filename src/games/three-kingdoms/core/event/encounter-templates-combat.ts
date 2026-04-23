@@ -6,7 +6,7 @@
  * @module core/event/encounter-templates-combat
  */
 
-import type { EncounterTemplate } from './event-v15.types';
+import type { EncounterTemplate } from './event-engine.types';
 
 // ─────────────────────────────────────────────
 // 战斗遭遇（combat）— 5个

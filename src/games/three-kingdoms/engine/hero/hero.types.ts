@@ -14,7 +14,10 @@
  * 武将品质等级
  *
  * 从低到高：普通 → 精良 → 稀有 → 史诗 → 传说
- * 对应 PRD 中的 Uncommon → Rare → Epic → Legendary → Mythic
+ * 对应 PRD/Play 文档中的 COMMON → FINE → RARE → EPIC → LEGENDARY(Mythic)
+ *
+ * 注：LEGENDARY 即 Play 文档中的 Mythic 品质，采用 5 级品质体系，
+ *     不单独新增 MYTHIC 枚举值以保持向后兼容。
  */
 export enum Quality {
   /** 普通 — 灰绿边框 */
@@ -25,7 +28,7 @@ export enum Quality {
   RARE = 'RARE',
   /** 史诗 — 赤金边框 */
   EPIC = 'EPIC',
-  /** 传说 — 天命紫+流光边框 */
+  /** 传说(Mythic) — 天命紫+流光边框 */
   LEGENDARY = 'LEGENDARY',
 }
 

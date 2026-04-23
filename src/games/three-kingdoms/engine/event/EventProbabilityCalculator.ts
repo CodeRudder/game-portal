@@ -11,7 +11,7 @@ import type { EventId } from '../../core/event';
 import type {
   ProbabilityCondition,
   ProbabilityResult,
-} from '../../core/event/event-v15-event.types';
+} from '../../core/event/event-encounter.types';
 
 /**
  * 计算最终触发概率

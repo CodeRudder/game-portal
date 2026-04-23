@@ -6,7 +6,7 @@
  * @module core/event/encounter-templates-disaster
  */
 
-import type { EncounterTemplate } from './event-v15.types';
+import type { EncounterTemplate } from './event-engine.types';
 
 // ─────────────────────────────────────────────
 // 天灾人祸（disaster）— 5个

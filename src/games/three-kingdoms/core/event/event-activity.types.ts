@@ -9,13 +9,13 @@
  *   - 节日活动（FestivalType, FestivalActivityDef）
  *   - 活动离线摘要（ActivityOfflineSummary）
  *
- * 注意：OfflineEventEntry 在 event-v15.types.ts 中定义（扩展版），此处不重复。
+ * 注意：OfflineEventEntry 在 event-engine.types.ts 中定义（扩展版），此处不重复。
  *
- * @module core/event/event-v15-activity.types
+ * @module core/event/event-activity.types
  */
 
 import type { EventConsequence } from './event.types';
-import type { OfflineEventEntry } from './event-v15-offline.types';
+import type { OfflineEventEntry } from './event-offline.types';
 
 // ─────────────────────────────────────────────
 // 1. 离线事件堆积

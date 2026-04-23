@@ -144,6 +144,39 @@ export class TechPointSystem implements ISubsystem {
   }
 
   // ─────────────────────────────────────────
+  // 铜钱兑换科技点（PRD TEC-2: 比率100:1，需书院Lv5+）
+  // ─────────────────────────────────────────
+
+  /** 铜钱兑换科技点的比率 */
+  static readonly EXCHANGE_RATE = 100;
+  /** 兑换所需最低书院等级 */
+  static readonly EXCHANGE_MIN_ACADEMY_LEVEL = 5;
+
+  /** 检查是否可以兑换 */
+  canExchange(academyLevel: number): { can: boolean; reason?: string } {
+    if (academyLevel < TechPointSystem.EXCHANGE_MIN_ACADEMY_LEVEL) {
+      return { can: false, reason: `书院等级不足：需Lv.${TechPointSystem.EXCHANGE_MIN_ACADEMY_LEVEL}+` };
+    }
+    return { can: true };
+  }
+
+  /** 铜钱兑换科技点（返回消耗的铜钱和获得的科技点） */
+  exchangeGoldForTechPoints(goldAmount: number, academyLevel: number): { success: boolean; goldSpent: number; pointsGained: number; reason?: string } {
+    const check = this.canExchange(academyLevel);
+    if (!check.can) {
+      return { success: false, goldSpent: 0, pointsGained: 0, reason: check.reason };
+    }
+    if (goldAmount <= 0) {
+      return { success: false, goldSpent: 0, pointsGained: 0, reason: '兑换铜钱数量必须大于0' };
+    }
+    // 100铜钱 = 1科技点
+    const pointsGained = goldAmount / TechPointSystem.EXCHANGE_RATE;
+    this.techPoints.current += pointsGained;
+    this.techPoints.totalEarned += pointsGained;
+    return { success: true, goldSpent: goldAmount, pointsGained };
+  }
+
+  // ─────────────────────────────────────────
   // 序列化
   // ─────────────────────────────────────────
 

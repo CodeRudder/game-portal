@@ -6,113 +6,31 @@
  *   - 快照有效期72h管理
  *   - 快照序列化/反序列化
  *   - 快照数据校验
- *
- * 规则：管理快照生命周期，不涉及具体收益计算
- *
- * @module engine/offline/OfflineSnapshotSystem
  */
 
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   Resources,
   ProductionRate,
   ResourceCap,
 } from '../../shared/types';
 import type {
+  SystemSnapshot,
+  BuildingQueueSnapshot,
+  TechQueueSnapshot,
+  ExpeditionQueueSnapshot,
+  TradeCaravanSnapshot,
+} from './offline-snapshot-types';
+import type {
   OfflineSaveData,
   OfflineBoostItem,
   BoostUseResult,
-  OfflineTradeEvent,
-  ExpansionResult,
   WarehouseExpansion,
+  ExpansionResult,
 } from './offline.types';
-import {
-  MAX_OFFLINE_SECONDS,
-  OFFLINE_SAVE_VERSION,
-  DEFAULT_WAREHOUSE_EXPANSIONS,
-} from './offline-config';
-import type { ISubsystem, ISystemDeps } from '../../core/types';
+import { OFFLINE_SAVE_VERSION, MAX_OFFLINE_SECONDS, DEFAULT_WAREHOUSE_EXPANSIONS } from './offline-config';
+import { SAVE_DATA_KEY, SNAPSHOT_KEY } from './offline-snapshot-types';
 
-// ─────────────────────────────────────────────
-// 1. 快照数据结构
-// ─────────────────────────────────────────────
-
-/** 系统状态快照（下线时记录） */
-export interface SystemSnapshot {
-  /** 资源快照 */
-  resources: Resources;
-  /** 产出速率快照 */
-  productionRates: ProductionRate;
-  /** 资源上限快照 */
-  caps: ResourceCap;
-  /** 建筑队列状态 */
-  buildingQueue: BuildingQueueSnapshot[];
-  /** 科技队列状态 */
-  techQueue: TechQueueSnapshot[];
-  /** 远征队列状态 */
-  expeditionQueue: ExpeditionQueueSnapshot[];
-  /** 商队运输状态 */
-  tradeCaravans: TradeCaravanSnapshot[];
-}
-
-/** 建筑队列快照 */
-export interface BuildingQueueSnapshot {
-  /** 建筑类型 */
-  buildingType: string;
-  /** 开始时间戳 */
-  startTime: number;
-  /** 完成时间戳 */
-  endTime: number;
-}
-
-/** 科技队列快照 */
-export interface TechQueueSnapshot {
-  /** 科技ID */
-  techId: string;
-  /** 开始时间戳 */
-  startTime: number;
-  /** 完成时间戳 */
-  endTime: number;
-}
-
-/** 远征队列快照 */
-export interface ExpeditionQueueSnapshot {
-  /** 远征ID */
-  expeditionId: string;
-  /** 开始时间戳 */
-  startTime: number;
-  /** 完成时间戳 */
-  endTime: number;
-  /** 预估收益 */
-  estimatedReward: Resources;
-}
-
-/** 商队运输快照 */
-export interface TradeCaravanSnapshot {
-  /** 商队ID */
-  caravanId: string;
-  /** 路线ID */
-  routeId: string;
-  /** 出发时间戳 */
-  startTime: number;
-  /** 到达时间戳 */
-  endTime: number;
-  /** 预估收益 */
-  estimatedProfit: Resources;
-}
-
-// ─────────────────────────────────────────────
-// 2. 快照管理器
-// ─────────────────────────────────────────────
-
-/** 快照存储键 */
-const SNAPSHOT_KEY = 'three-kingdoms-offline-snapshot';
-const SAVE_DATA_KEY = 'three-kingdoms-offline-save';
-
-/**
- * 离线快照系统
- *
- * 管理下线快照的创建、存储、验证和过期清理
- */
 export class OfflineSnapshotSystem implements ISubsystem {
   readonly name = 'offlineSnapshot' as const;
   private deps!: ISystemDeps;
@@ -268,10 +186,10 @@ export class OfflineSnapshotSystem implements ISubsystem {
   ): BoostUseResult {
     const item = items.find(i => i.id === itemId);
     if (!item) {
-      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0 }, remainingCount: 0, reason: '道具不存在' };
+      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 }, remainingCount: 0, reason: '道具不存在' };
     }
     if (item.count <= 0) {
-      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0 }, remainingCount: 0, reason: '道具数量不足' };
+      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 }, remainingCount: 0, reason: '道具数量不足' };
     }
 
     const addedSeconds = item.boostHours * 3600;
@@ -285,6 +203,7 @@ export class OfflineSnapshotSystem implements ISubsystem {
       gold: Math.floor(productionRates.gold * addedSeconds * bonusMultiplier),
       troops: Math.floor(productionRates.troops * addedSeconds * bonusMultiplier),
       mandate: Math.floor(productionRates.mandate * addedSeconds * bonusMultiplier),
+      techPoint: Math.floor(productionRates.techPoint * addedSeconds * bonusMultiplier),
     };
 
     return {

@@ -4,7 +4,7 @@
  * 包含大招时停机制、战斗加速系统、战斗模式等 v4.0 新增类型
  * 规则：只有 interface/type/enum/const，零运行时逻辑
  *
- * @module engine/battle/battle-v4.types
+ * @module engine/battle/battle-ultimate.types
  */
 
 import type {

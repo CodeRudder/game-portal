@@ -2,11 +2,13 @@
  * HeroRecruitSystem 单元测试 — 保底机制部分
  * 覆盖：保底机制、序列化/反序列化保底计数器、注入确定性 RNG
  *
- * 重要：GENERAL_DEFS 中没有 COMMON 和 FINE 品质的武将定义。
- * 当 rollQuality 抽到 COMMON/FINE 时，fallbackPick 会降级到 RARE（dianwei）。
- * 因此实际所有抽卡结果都是 RARE+ 品质，保底计数器总是被重置。
+ * 设计规格（hero-system-design.md §2.4）：
+ * - 十连保底：10抽必出稀有+
+ * - 硬保底：50抽必出史诗+
+ * - 优先级：硬保底 > 十连保底 > 随机品质
  *
- * 测试保底和计数器时使用 EPIC rng 值（有多个武将可选）来验证计数逻辑。
+ * 注意：GENERAL_DEFS 包含 COMMON/FINE/RARE/EPIC/LEGENDARY 全品质武将。
+ * COMMON/FINE 抽到时不会降级。
  */
 
 import { HeroRecruitSystem } from '../HeroRecruitSystem';
@@ -60,43 +62,38 @@ describe('HeroRecruitSystem — 保底机制', () => {
   // ───────────────────────────────────────────
   describe('保底机制', () => {
     it('每次招募保底计数 +1', () => {
-      // EPIC rng → EPIC 品质（有多个武将可选）
-      // EPIC 品质 >= RARE，会重置 tenPullPity
-      // EPIC 品质 >= EPIC，也会重置 hardPity
-      // 所以需要用不会重置计数的品质来测试
-      // 但由于 COMMON/FINE 降级到 RARE，所有结果都是 RARE+
-      // RARE 会重置 tenPullPity 但不重置 hardPity
-      const rng = makeConstantRng(0.88); // RARE
+      // P0-1 修复后：Normal COMMON=0.60, FINE=0.30, RARE=0.08
+      // rng=0.93 → 0.90 <= 0.93 < 0.98 命中 RARE
+      // RARE >= RARE → tenPullPity 重置为 0
+      // RARE < LEGENDARY → hardPity 不重置，保持 1
+      const rng = makeConstantRng(0.93);
       recruit.setRng(rng);
       recruit.recruitSingle('normal');
       const pity = recruit.getGachaState();
-      // RARE >= RARE → tenPullPity 重置为 0
       expect(pity.normalPity).toBe(0);
-      // RARE < EPIC → hardPity 不重置
       expect(pity.normalHardPity).toBe(1);
     });
 
-    it('出 EPIC 品质重置所有保底计数', () => {
-      const rng = makeConstantRng(0.97); // EPIC in normal
+    it('出 EPIC 品质重置十连保底但不重置硬保底', () => {
+      // P0-1 修复后：Normal EPIC 区间 [0.98, 1.00)
+      // rng=0.985 → EPIC in normal
+      // EPIC >= RARE → 重置 tenPullPity
+      // EPIC < LEGENDARY → 不重置 hardPity
+      const rng = makeConstantRng(0.985);
       recruit.setRng(rng);
       recruit.recruitSingle('normal');
       const pity = recruit.getGachaState();
       expect(pity.normalPity).toBe(0);
-      expect(pity.normalHardPity).toBe(0);
+      expect(pity.normalHardPity).toBe(1);
     });
 
     it('10连保底：第10次必出稀有+', () => {
-      // 由于所有结果都是 RARE+，保底计数器始终为 0
-      // 改为验证：保底机制代码逻辑正确
-      // 先手动设置保底计数器到 9
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 9, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 },
       });
 
-      // 第10次即使 rng 指向 COMMON（降级到 RARE），保底应提升
-      // 由于 RARE 已经 >= RARE，保底不会额外提升，但品质确实是 RARE+
-      const rng = makeConstantRng(0.3); // COMMON → fallback → RARE
+      const rng = makeConstantRng(0.3); // COMMON → 保底提升到 RARE+
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
       expect(QUALITY_ORDER[result.results[0].quality]).toBeGreaterThanOrEqual(
@@ -104,46 +101,44 @@ describe('HeroRecruitSystem — 保底机制', () => {
       );
     });
 
-    it('硬保底：第50次必出史诗+', () => {
-      // 手动设置硬保底计数器到 49
+    it('硬保底：第100次必出传说+', () => {
+      // P0-1 修复后：100抽保底 LEGENDARY+
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
-        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 49, advancedHardPity: 0 },
+        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 99, advancedHardPity: 0 },
       });
 
-      // 第50次保底应提升到 EPIC
-      // 用 rng 值让 rollQuality 抽到 RARE（降级结果也是 RARE）
-      // 但保底应将其提升到 EPIC
-      const rng = makeConstantRng(0.88); // RARE in normal
+      // 第100次保底应提升到 LEGENDARY+
+      const rng = makeConstantRng(0.93); // RARE in normal → 保底提升到 LEGENDARY+
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
       expect(QUALITY_ORDER[result.results[0].quality]).toBeGreaterThanOrEqual(
-        QUALITY_ORDER[Quality.EPIC],
+        QUALITY_ORDER[Quality.LEGENDARY],
       );
     });
 
     it('普通和高级招募保底独立计数', () => {
-      // EPIC 在 normal 中：重置所有 normal 计数
-      const epicRng = makeConstantRng(0.97); // EPIC in normal
+      // P0-1 修复后概率：
+      // Normal: COMMON=0.60, FINE=0.30, RARE=0.08, EPIC=0.02, LEGENDARY=0.00
+      // Advanced: COMMON=0.20, FINE=0.40, RARE=0.25, EPIC=0.13, LEGENDARY=0.02
+      // EPIC in normal: rng=0.985 → 0.98 <= 0.985 < 1.00 命中 EPIC
+      const epicRng = makeConstantRng(0.985);
       recruit.setRng(epicRng);
       recruit.recruitSingle('normal');
-      // RARE 在 advanced 中：重置 advancedPity，不重置 advancedHardPity
-      // 高级招募累积概率：COMMON=0.30, FINE=0.65, RARE=0.87
-      // rng=0.80 命中 RARE（0.65 <= 0.80 < 0.87）
-      const rareAdvRng = makeConstantRng(0.80);
+      // RARE in advanced: rng=0.70 → 0.60 <= 0.70 < 0.85 命中 RARE
+      const rareAdvRng = makeConstantRng(0.70);
       recruit.setRng(rareAdvRng);
       recruit.recruitSingle('advanced');
       const pity = recruit.getGachaState();
-      // normal EPIC 重置了 normalPity 和 normalHardPity
+      // normal EPIC 重置了 normalPity（EPIC >= RARE），不重置 normalHardPity（EPIC < LEGENDARY）
       expect(pity.normalPity).toBe(0);
-      expect(pity.normalHardPity).toBe(0);
-      // advanced RARE 重置了 advancedPity，不重置 advancedHardPity
+      expect(pity.normalHardPity).toBe(1);
+      // advanced RARE 重置了 advancedPity（RARE >= RARE），不重置 advancedHardPity（RARE < LEGENDARY）
       expect(pity.advancedPity).toBe(0);
       expect(pity.advancedHardPity).toBe(1);
     });
 
     it('getNextTenPullPity 返回剩余次数', () => {
-      // 手动设置保底计数器
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 5, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 },
@@ -152,23 +147,22 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('getNextHardPity 返回剩余次数', () => {
+      // P0-2 修复后：hardPityThreshold=100
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 20, advancedHardPity: 0 },
       });
-      expect(recruit.getNextHardPity('normal')).toBe(30);
+      expect(recruit.getNextHardPity('normal')).toBe(80);
     });
 
     it('保底计数器在多次 RARE 抽取后 hardPity 递增', () => {
-      const rng = makeConstantRng(0.88); // RARE
+      const rng = makeConstantRng(0.93); // RARE in normal (P0-1 fix: 0.90-0.98)
       recruit.setRng(rng);
       for (let i = 0; i < 3; i++) {
         recruit.recruitSingle('normal');
       }
       const pity = recruit.getGachaState();
-      // RARE >= RARE → normalPity 重置为 0 每次
       expect(pity.normalPity).toBe(0);
-      // RARE < EPIC → normalHardPity 不重置，每次 +1
       expect(pity.normalHardPity).toBe(3);
     });
   });
@@ -183,7 +177,6 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('serialize 包含保底计数器', () => {
-      // 设置手动保底计数器
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 5, advancedPity: 3, normalHardPity: 10, advancedHardPity: 7 },
@@ -194,7 +187,6 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('往返一致性', () => {
-      // 手动设置保底计数器
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 5, advancedPity: 3, normalHardPity: 10, advancedHardPity: 7 },
@@ -220,23 +212,24 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('反序列化恢复保底计数器后招募继续计数', () => {
-      // 设置 normalHardPity=48，再抽2次应触发硬保底
+      // P0-1 修复后：hardPityThreshold=100, hardPityMinQuality=LEGENDARY
+      // 设置 normalHardPity=98，再抽2次应触发硬保底
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
-        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 48, advancedHardPity: 0 },
+        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 98, advancedHardPity: 0 },
       });
 
-      // 抽一次 RARE → hardPity=49
-      const rng = makeConstantRng(0.88);
+      // 抽一次 RARE → hardPity=99 (rng=0.93 → RARE in normal)
+      const rng = makeConstantRng(0.93);
       recruit.setRng(rng);
       recruit.recruitSingle('normal');
-      expect(recruit.getGachaState().normalHardPity).toBe(49);
+      expect(recruit.getGachaState().normalHardPity).toBe(99);
 
-      // 再抽一次 → hardPity 达到 50，保底提升到 EPIC
+      // 再抽一次 → hardPity 达到 100，保底提升到 LEGENDARY
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
       expect(QUALITY_ORDER[result.results[0].quality]).toBeGreaterThanOrEqual(
-        QUALITY_ORDER[Quality.EPIC],
+        QUALITY_ORDER[Quality.LEGENDARY],
       );
     });
 
@@ -256,7 +249,8 @@ describe('HeroRecruitSystem — 保底机制', () => {
   // ───────────────────────────────────────────
   describe('注入确定性 RNG', () => {
     it('构造函数注入 RNG', () => {
-      const rng = makeConstantRng(0.88); // RARE
+      // P0-1 修复后：Normal RARE 区间 [0.90, 0.98)
+      const rng = makeConstantRng(0.93); // RARE
       const r = new HeroRecruitSystem(rng);
       r.setRecruitDeps(makeRichDeps(heroSystem));
       const result = r.recruitSingle('normal')!;
@@ -264,22 +258,25 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('setRng 运行时替换 RNG', () => {
-      recruit.setRng(makeConstantRng(0.88)); // RARE
+      // P0-1 修复后：Normal RARE 区间 [0.90, 0.98)
+      recruit.setRng(makeConstantRng(0.93)); // RARE
       const r1 = recruit.recruitSingle('normal')!;
       expect(r1.results[0].quality).toBe(Quality.RARE);
 
+      // P0-1 修复后：Advanced LEGENDARY 区间 [0.98, 1.00)
       recruit.setRng(makeConstantRng(0.99));
-      // 高级招募 rng=0.99 → LEGENDARY
       const r2 = recruit.recruitSingle('advanced')!;
       expect(r2.results[0].quality).toBe(Quality.LEGENDARY);
     });
 
     it('多次招募使用序列 RNG', () => {
       // 每次 pull 消耗 2 次 rng（rollQuality + pickGeneralByQuality）
+      // P0-1 修复后概率：
+      // Normal: COMMON=0.60, FINE=0.30, RARE=0.08, EPIC=0.02, LEGENDARY=0.00
       const values = [
-        0.88, 0.5,   // pull 1: quality=RARE, pick dianwei
-        0.97, 0.5,   // pull 2: quality=EPIC, pick one of EPIC generals
-        0.88, 0.5,   // pull 3: quality=RARE, pick dianwei (duplicate)
+        0.93, 0.5,   // pull 1: quality=RARE, pick dianwei
+        0.985, 0.5,  // pull 2: quality=EPIC, pick one of EPIC generals
+        0.93, 0.5,   // pull 3: quality=RARE, pick dianwei (duplicate)
       ];
       const rng = makeSequenceRng(values);
       recruit.setRng(rng);

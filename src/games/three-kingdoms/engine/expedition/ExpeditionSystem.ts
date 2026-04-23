@@ -9,80 +9,30 @@
 
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
+  UnlockCheckResult,
+} from './expedition-helpers';
+import {
+  createDefaultExpeditionState,
+  SAVE_VERSION,
+} from './expedition-helpers';
+import type {
+  ExpeditionState,
   ExpeditionRoute,
   ExpeditionRegion,
   ExpeditionTeam,
-  ExpeditionState,
   ExpeditionSaveData,
-  FormationType,
 } from '../../core/expedition/expedition.types';
 import {
+  RouteDifficulty,
   NodeStatus,
   NodeType,
-  RouteDifficulty,
+  FormationType,
   CASTLE_LEVEL_SLOTS,
   TROOP_COST,
-  SweepType,
-  MilestoneType,
 } from '../../core/expedition/expedition.types';
-import {
-  createDefaultRegions,
-  createDefaultRoutes,
-} from './expedition-config';
-import {
-  ExpeditionTeamHelper,
-  type HeroBrief,
-  type TeamValidationResult,
-} from './ExpeditionTeamHelper';
-
-// 重导出辅助类型，保持向后兼容
-export type { HeroBrief, TeamValidationResult } from './ExpeditionTeamHelper';
-
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-const SAVE_VERSION = 1;
-
-// ─────────────────────────────────────────────
-// 辅助类型
-// ─────────────────────────────────────────────
-
-/** 路线解锁校验结果 */
-export interface UnlockCheckResult {
-  canUnlock: boolean;
-  reasons: string[];
-}
-
-// ─────────────────────────────────────────────
-// 工具函数
-// ─────────────────────────────────────────────
-
-/** 创建默认远征状态 */
-export function createDefaultExpeditionState(basePower: number = 1000): ExpeditionState {
-  return {
-    routes: createDefaultRoutes(basePower),
-    regions: createDefaultRegions(),
-    teams: {},
-    unlockedSlots: 1,
-    clearedRouteIds: new Set<string>(),
-    routeStars: {},
-    sweepCounts: {},
-    achievedMilestones: new Set<MilestoneType>(),
-    autoConfig: {
-      repeatCount: 0,
-      failureAction: 'pause',
-      bagFullAction: 'pause',
-      lowTroopAction: 'pause',
-    },
-    consecutiveFailures: 0,
-    isAutoExpeditioning: false,
-  };
-}
-
-// ─────────────────────────────────────────────
-// ExpeditionSystem 类
-// ─────────────────────────────────────────────
+import type { HeroBrief, TeamValidationResult } from './ExpeditionTeamHelper';
+import { ExpeditionTeamHelper } from './ExpeditionTeamHelper';
+import { SweepType, MilestoneType } from '../../core/expedition/expedition-battle.types';
 
 export class ExpeditionSystem implements ISubsystem {
   // ─── ISubsystem 接口 ───────────────────────

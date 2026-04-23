@@ -205,7 +205,7 @@ describe('territory-config', () => {
         expect(t.position).toBeDefined();
         expect(t.position.x).toBeGreaterThanOrEqual(0);
         expect(t.position.y).toBeGreaterThanOrEqual(0);
-        expect(['central_plains', 'jiangnan', 'western_shu']).toContain(t.region);
+        expect(['wei', 'wu', 'shu']).toContain(t.region);
         expect(['player', 'enemy', 'neutral']).toContain(t.ownership);
         expect([1, 2, 3, 4, 5]).toContain(t.level);
         expect(t.baseProduction).toBeDefined();
@@ -215,7 +215,7 @@ describe('territory-config', () => {
       }
     });
 
-    it('初始所有领土为 neutral', () => {
+    it('初始领土归属正确（⚠️ PRD MAP-1: 所有地标初始为neutral）', () => {
       const data = generateTerritoryData();
       for (const t of data) {
         expect(t.ownership).toBe('neutral');

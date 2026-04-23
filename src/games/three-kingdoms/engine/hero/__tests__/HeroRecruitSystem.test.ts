@@ -138,20 +138,23 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('招募消耗正确记录', () => {
+      // 设计规格：普通招募 recruitToken×1
       const result = recruit.recruitSingle('normal')!;
-      expect(result.cost.resourceType).toBe('gold');
-      expect(result.cost.amount).toBe(100);
+      expect(result.cost.resourceType).toBe('recruitToken');
+      expect(result.cost.amount).toBe(1);
     });
 
     it('十连消耗 = 10 × 单价 × 折扣', () => {
+      // 设计规格：普通招募 recruitToken×1，TEN_PULL_DISCOUNT=1.0
       const result = recruit.recruitTen('normal')!;
-      expect(result.cost.amount).toBe(Math.floor(100 * 10 * TEN_PULL_DISCOUNT));
+      expect(result.cost.amount).toBe(Math.floor(1 * 10 * TEN_PULL_DISCOUNT));
     });
 
     it('高级招募消耗求贤令', () => {
+      // 设计规格：高级招募 recruitToken×100
       const result = recruit.recruitSingle('advanced')!;
       expect(result.cost.resourceType).toBe('recruitToken');
-      expect(result.cost.amount).toBe(1);
+      expect(result.cost.amount).toBe(100);
     });
 
     it('招募类型正确记录', () => {
@@ -183,15 +186,15 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('确定性 RNG 抽到 EPIC 品质（普通招募）', () => {
-      // 0.60+0.25+0.10=0.95, rng=0.97 命中 EPIC
-      const rng = makeConstantRng(0.97);
+      // P0-1 修复后：0.60+0.30+0.08=0.98, rng=0.985 命中 EPIC
+      const rng = makeConstantRng(0.985);
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
       expect(result.results[0].quality).toBe(Quality.EPIC);
     });
 
     it('确定性 RNG 抽到 LEGENDARY 品质（高级招募）', () => {
-      // 0.30+0.35+0.22+0.10=0.97, rng=0.99 命中 LEGENDARY
+      // P0-1 修复后：0.20+0.40+0.25+0.13=0.98, rng=0.99 命中 LEGENDARY
       const rng = makeConstantRng(0.99);
       recruit.setRng(rng);
       const result = recruit.recruitSingle('advanced')!;
@@ -199,8 +202,8 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('RARE rng 值命中 RARE 品质（普通招募）', () => {
-      // 0.60+0.25=0.85, rng=0.88 命中 RARE
-      const rng = makeConstantRng(0.88);
+      // P0-1 修复后：0.60+0.30=0.90, rng=0.93 命中 RARE
+      const rng = makeConstantRng(0.93);
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
       expect(result.results[0].quality).toBe(Quality.RARE);
@@ -226,8 +229,9 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('重复招募同一武将 isDuplicate=true（RARE 品质只有1个武将）', () => {
+      // P0-1 修复后：Normal RARE 区间 [0.90, 0.98)
       // RARE 品质只有 dianwei，连续抽两次 RARE 必重复
-      const rng = makeConstantRng(0.88); // RARE
+      const rng = makeConstantRng(0.93); // RARE
       recruit.setRng(rng);
       const first = recruit.recruitSingle('normal')!;
       expect(first.results[0].isDuplicate).toBe(false);
@@ -239,7 +243,7 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('重复武将碎片数量与品质对应', () => {
-      const rng = makeConstantRng(0.88); // RARE
+      const rng = makeConstantRng(0.93); // RARE (P0-1 fix)
       recruit.setRng(rng);
       recruit.recruitSingle('normal'); // 首次
       recruit.setRng(rng);
@@ -250,7 +254,8 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('EPIC 品质武将首次招募不重复', () => {
-      const rng = makeConstantRng(0.97); // EPIC in normal
+      // P0-1 修复后：Normal EPIC 区间 [0.98, 1.00)
+      const rng = makeConstantRng(0.985); // EPIC in normal
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
       expect(result.results[0].isDuplicate).toBe(false);
@@ -302,20 +307,23 @@ describe('HeroRecruitSystem', () => {
   // ───────────────────────────────────────────
   describe('消耗计算', () => {
     it('getRecruitCost 单抽普通招募', () => {
+      // 设计规格：普通招募 recruitToken×1
       const cost = recruit.getRecruitCost('normal', 1);
-      expect(cost.resourceType).toBe('gold');
-      expect(cost.amount).toBe(100);
-    });
-
-    it('getRecruitCost 单抽高级招募', () => {
-      const cost = recruit.getRecruitCost('advanced', 1);
       expect(cost.resourceType).toBe('recruitToken');
       expect(cost.amount).toBe(1);
     });
 
+    it('getRecruitCost 单抽高级招募', () => {
+      // 设计规格：高级招募 recruitToken×100
+      const cost = recruit.getRecruitCost('advanced', 1);
+      expect(cost.resourceType).toBe('recruitToken');
+      expect(cost.amount).toBe(100);
+    });
+
     it('getRecruitCost 十连普通招募', () => {
+      // 设计规格：普通招募 recruitToken×1，TEN_PULL_DISCOUNT=1.0
       const cost = recruit.getRecruitCost('normal', 10);
-      expect(cost.amount).toBe(Math.floor(100 * 10 * TEN_PULL_DISCOUNT));
+      expect(cost.amount).toBe(Math.floor(1 * 10 * TEN_PULL_DISCOUNT));
     });
   });
 
@@ -328,6 +336,8 @@ describe('HeroRecruitSystem', () => {
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 10, advancedPity: 5, normalHardPity: 20, advancedHardPity: 15 },
+        freeRecruit: { usedFreeCount: { normal: 1, advanced: 0 }, lastResetDate: '2026-01-01' },
+        upHero: { upGeneralId: null, upRate: 0.5 },
       });
       expect(recruit.getGachaState().normalPity).toBeGreaterThan(0);
 

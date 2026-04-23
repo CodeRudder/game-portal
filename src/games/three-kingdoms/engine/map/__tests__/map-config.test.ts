@@ -80,9 +80,9 @@ describe('三大区域划分 (#10)', () => {
     });
 
     it('包含中原/江南/西蜀', () => {
-      expect(REGION_IDS).toContain('central_plains');
-      expect(REGION_IDS).toContain('jiangnan');
-      expect(REGION_IDS).toContain('western_shu');
+      expect(REGION_IDS).toContain('wei');
+      expect(REGION_IDS).toContain('wu');
+      expect(REGION_IDS).toContain('shu');
     });
   });
 
@@ -101,19 +101,19 @@ describe('三大区域划分 (#10)', () => {
     });
 
     it('中原位于中央', () => {
-      const cp = REGION_DEFS.central_plains.bounds;
+      const cp = REGION_DEFS.wei.bounds;
       expect(cp.startX).toBeGreaterThanOrEqual(10);
       expect(cp.endX).toBeLessThanOrEqual(50);
     });
 
     it('江南位于东南', () => {
-      const jn = REGION_DEFS.jiangnan.bounds;
+      const jn = REGION_DEFS.wu.bounds;
       expect(jn.startY).toBeGreaterThan(15);
       expect(jn.startX).toBeGreaterThan(25);
     });
 
     it('西蜀位于西部', () => {
-      const ws = REGION_DEFS.western_shu.bounds;
+      const ws = REGION_DEFS.shu.bounds;
       expect(ws.startX).toBeLessThanOrEqual(5);
       expect(ws.startY).toBeGreaterThan(15);
     });
@@ -121,9 +121,9 @@ describe('三大区域划分 (#10)', () => {
 
   describe('REGION_LABELS', () => {
     it('区域名称映射正确', () => {
-      expect(REGION_LABELS.central_plains).toBe('中原');
-      expect(REGION_LABELS.jiangnan).toBe('江南');
-      expect(REGION_LABELS.western_shu).toBe('西蜀');
+      expect(REGION_LABELS.wei).toBe('魏');
+      expect(REGION_LABELS.wu).toBe('吴');
+      expect(REGION_LABELS.shu).toBe('蜀');
     });
   });
 
@@ -136,22 +136,22 @@ describe('三大区域划分 (#10)', () => {
   });
 
   describe('getRegionAtPosition', () => {
-    it('中原区域的坐标返回 central_plains', () => {
-      expect(getRegionAtPosition(30, 10)).toBe('central_plains');
+    it('中原区域的坐标返回 wei', () => {
+      expect(getRegionAtPosition(30, 10)).toBe('wei');
     });
 
-    it('江南区域的坐标返回 jiangnan', () => {
-      expect(getRegionAtPosition(45, 30)).toBe('jiangnan');
+    it('江南区域的坐标返回 wu', () => {
+      expect(getRegionAtPosition(45, 30)).toBe('wu');
     });
 
-    it('西蜀区域的坐标返回 western_shu', () => {
-      expect(getRegionAtPosition(10, 25)).toBe('western_shu');
+    it('西蜀区域的坐标返回 shu', () => {
+      expect(getRegionAtPosition(10, 25)).toBe('shu');
     });
 
     it('边界坐标也能正确识别', () => {
       // 中原左上角
-      const cp = REGION_DEFS.central_plains.bounds;
-      expect(getRegionAtPosition(cp.startX, cp.startY)).toBe('central_plains');
+      const cp = REGION_DEFS.wei.bounds;
+      expect(getRegionAtPosition(cp.startX, cp.startY)).toBe('wei');
     });
   });
 });
@@ -240,22 +240,22 @@ describe('地形类型 (#11)', () => {
     it('不同区域地形分布不同', () => {
       // 统计各区域地形分布
       const centralTerrains = new Set<string>();
-      const jiangnanTerrains = new Set<string>();
+      const wuTerrains = new Set<string>();
       const westernShuTerrains = new Set<string>();
 
       for (let y = 0; y < 40; y++) {
         for (let x = 0; x < 60; x++) {
           const region = getRegionAtPosition(x, y);
           const terrain = getTerrainAtPosition(x, y);
-          if (region === 'central_plains') centralTerrains.add(terrain);
-          else if (region === 'jiangnan') jiangnanTerrains.add(terrain);
-          else if (region === 'western_shu') westernShuTerrains.add(terrain);
+          if (region === 'wei') centralTerrains.add(terrain);
+          else if (region === 'wu') wuTerrains.add(terrain);
+          else if (region === 'shu') westernShuTerrains.add(terrain);
         }
       }
 
       // 每个区域至少有2种不同地形
       expect(centralTerrains.size).toBeGreaterThanOrEqual(2);
-      expect(jiangnanTerrains.size).toBeGreaterThanOrEqual(2);
+      expect(wuTerrains.size).toBeGreaterThanOrEqual(2);
       expect(westernShuTerrains.size).toBeGreaterThanOrEqual(2);
     });
   });

@@ -44,7 +44,7 @@ function createNPC(
     profession: 'merchant' as NPCProfession,
     affinity: 50,
     position: { x: 0, y: 0 },
-    region: 'central_plains',
+    region: 'wei',
     visible: true,
     dialogId: 'dialog-merchant-default',
     createdAt: 0,
@@ -193,7 +193,7 @@ describe('NPCMapPlacer', () => {
 
     it('禁用聚合时 NPC 单独展示', () => {
       const npcs = Array.from({ length: 10 }, (_, i) =>
-        createNPC({ id: `npc-${i}`, position: { x: 5 + i, y: 5 }, region: 'central_plains' }),
+        createNPC({ id: `npc-${i}`, position: { x: 5 + i, y: 5 }, region: 'wei' }),
       );
       const { placer: p } = createPlacer({ npcs });
       p.setClusterConfig({ enabled: false });
@@ -306,7 +306,7 @@ describe('NPCMapPlacer', () => {
   describe('边界情况', () => {
     it('大量 NPC 在同一位置', () => {
       const npcs = Array.from({ length: 20 }, (_, i) =>
-        createNPC({ id: `npc-${i}`, position: { x: 10, y: 10 }, region: 'central_plains' }),
+        createNPC({ id: `npc-${i}`, position: { x: 10, y: 10 }, region: 'wei' }),
       );
       const { placer: p } = createPlacer({ npcs });
       const displays = p.computeMapDisplays();
@@ -371,8 +371,8 @@ describe('NPCMapPlacer', () => {
   describe('完整流程', () => {
     it('初始化 → 注入依赖 → 计算展示 → 视口过滤', () => {
       const npcs = [
-        createNPC({ id: 'npc-1', position: { x: 10, y: 10 }, region: 'central_plains' }),
-        createNPC({ id: 'npc-2', position: { x: 40, y: 30 }, region: 'jiangnan' }),
+        createNPC({ id: 'npc-1', position: { x: 10, y: 10 }, region: 'wei' }),
+        createNPC({ id: 'npc-2', position: { x: 40, y: 30 }, region: 'wu' }),
       ];
       const { placer: p } = createPlacer({ npcs });
 
@@ -394,7 +394,7 @@ describe('NPCMapPlacer', () => {
         createNPC({
           id: `npc-${i}`,
           position: { x: 5 + i, y: 5 },
-          region: 'central_plains',
+          region: 'wei',
         }),
       );
       const { placer: p } = createPlacer({ npcs });
@@ -417,21 +417,21 @@ describe('NPCMapPlacer', () => {
           createNPC({
             id: `cp-${i}`,
             position: { x: 20 + i, y: 10 },
-            region: 'central_plains',
+            region: 'wei',
           }),
         ),
         ...Array.from({ length: 3 }, (_, i) =>
           createNPC({
             id: `jn-${i}`,
             position: { x: 40 + i, y: 30 },
-            region: 'jiangnan',
+            region: 'wu',
           }),
         ),
       ];
       const { placer: p } = createPlacer({ npcs });
 
-      const cpDisplays = p.getRegionDisplays('central_plains');
-      const jnDisplays = p.getRegionDisplays('jiangnan');
+      const cpDisplays = p.getRegionDisplays('wei');
+      const jnDisplays = p.getRegionDisplays('wu');
 
       expect(cpDisplays.length).toBe(3);
       expect(jnDisplays.length).toBe(3);

@@ -114,7 +114,7 @@ describe('NPCSystem', () => {
 
     it('createNPC 自动计算区域', () => {
       const npc = npcSys.createNPC('测试', 'merchant', { x: 30, y: 10 });
-      expect(npc.region).toBe('central_plains');
+      expect(npc.region).toBe('wei');
     });
 
     it('createNPC 触发 npc:created 事件', () => {
@@ -190,16 +190,16 @@ describe('NPCSystem', () => {
     });
 
     it('getNPCsByRegion 按区域过滤', () => {
-      const central = npcSys.getNPCsByRegion('central_plains');
-      const western = npcSys.getNPCsByRegion('western_shu');
-      const jiangnan = npcSys.getNPCsByRegion('jiangnan');
+      const central = npcSys.getNPCsByRegion('wei');
+      const western = npcSys.getNPCsByRegion('shu');
+      const wu = npcSys.getNPCsByRegion('wu');
 
       expect(central.length).toBeGreaterThan(0);
       expect(western.length).toBeGreaterThan(0);
-      expect(jiangnan.length).toBeGreaterThan(0);
-      expect(central.every((n) => n.region === 'central_plains')).toBe(true);
-      expect(western.every((n) => n.region === 'western_shu')).toBe(true);
-      expect(jiangnan.every((n) => n.region === 'jiangnan')).toBe(true);
+      expect(wu.length).toBeGreaterThan(0);
+      expect(central.every((n) => n.region === 'wei')).toBe(true);
+      expect(western.every((n) => n.region === 'shu')).toBe(true);
+      expect(wu.every((n) => n.region === 'wu')).toBe(true);
     });
 
     it('getNPCsByProfession 按职业过滤', () => {
@@ -346,7 +346,7 @@ describe('NPCSystem', () => {
     it('moveNPC 自动更新区域', () => {
       npcSys.moveNPC('npc-merchant-01', { x: 50, y: 30 });
       const npc = npcSys.getNPCById('npc-merchant-01');
-      expect(npc!.region).toBe('jiangnan');
+      expect(npc!.region).toBe('wu');
     });
 
     it('moveNPC 不存在的 NPC 返回 false', () => {
@@ -416,7 +416,7 @@ describe('NPCSystem', () => {
           profession: 'merchant' as NPCProfession,
           affinity: 50,
           position: { x: 10, y: 10 },
-          region: 'central_plains' as const,
+          region: 'wei' as const,
           visible: true,
           dialogId: 'test-dialog',
           createdAt: 0,

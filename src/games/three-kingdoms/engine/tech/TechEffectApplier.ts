@@ -24,7 +24,7 @@ import type { Bonuses } from '../resource/resource.types';
 // ─────────────────────────────────────────────
 
 /** 资源类型（与 shared/types 对齐） */
-type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate';
+type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate' | 'techPoint';
 
 /** 资源类型到科技效果 target 的映射 */
 const RESOURCE_TARGET_MAP: Record<ResourceType, string> = {
@@ -32,10 +32,11 @@ const RESOURCE_TARGET_MAP: Record<ResourceType, string> = {
   gold: 'gold',
   troops: 'troops',
   mandate: 'mandate',
+  techPoint: 'techPoint',
 };
 
 /** 资源类型到产出速率字段名的映射 */
-type ProductionField = 'grainPerSec' | 'goldPerSec' | 'troopsPerSec' | 'mandatePerSec';
+type ProductionField = 'grainPerSec' | 'goldPerSec' | 'troopsPerSec' | 'mandatePerSec' | 'techPointPerSec';
 
 /** 资源类型 → 产出字段 */
 const RESOURCE_PRODUCTION_MAP: Record<ResourceType, ProductionField> = {
@@ -43,6 +44,7 @@ const RESOURCE_PRODUCTION_MAP: Record<ResourceType, ProductionField> = {
   gold: 'goldPerSec',
   troops: 'troopsPerSec',
   mandate: 'mandatePerSec',
+  techPoint: 'techPointPerSec',
 };
 
 /** 战斗科技加成快照 */
@@ -107,8 +109,8 @@ function defaultBattleBonuses(): BattleTechBonuses {
 /** 创建默认资源加成 */
 function defaultResourceBonuses(): ResourceTechBonuses {
   return {
-    productionMultipliers: { grain: 1, gold: 1, troops: 1, mandate: 1 },
-    storageMultipliers: { grain: 1, gold: 1, troops: 1, mandate: 1 },
+    productionMultipliers: { grain: 1, gold: 1, troops: 1, mandate: 1, techPoint: 1 },
+    storageMultipliers: { grain: 1, gold: 1, troops: 1, mandate: 1, techPoint: 1 },
     tradeBonus: 0,
   };
 }
@@ -260,7 +262,7 @@ export class TechEffectApplier {
   getResourceBonuses(): ResourceTechBonuses {
     if (!this.techEffect) return defaultResourceBonuses();
 
-    const types: ResourceType[] = ['grain', 'gold', 'troops', 'mandate'];
+    const types: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint'];
     const productionMultipliers: Record<ResourceType, number> = {} as Record<ResourceType, number>;
     const storageMultipliers: Record<ResourceType, number> = {} as Record<ResourceType, number>;
 
@@ -297,7 +299,7 @@ export class TechEffectApplier {
 
     // 取所有资源类型产出乘数的平均值作为 tech 加成
     // 如果有特定资源需要精确加成，应使用 getResourceBonuses() 直接获取
-    const types: ResourceType[] = ['grain', 'gold', 'troops', 'mandate'];
+    const types: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint'];
     let totalProdBonus = 0;
     for (const rt of types) {
       totalProdBonus += (resourceBonuses.productionMultipliers[rt] - 1) * 100;

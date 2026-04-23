@@ -10,7 +10,7 @@
 import { AudioChannel, AudioSwitch } from '../../core/settings';
 import type { AudioSettings } from '../../core/settings';
 import { VOLUME_STEP, VOLUME_MIN, VOLUME_MAX } from '../../core/settings';
-import type { IAudioPlayer, AudioEventCallbacks, VolumeOutput } from './AudioManager';
+import type { IAudioPlayer, AudioEventCallbacks, VolumeOutput } from './audio-config';
 
 // ─────────────────────────────────────────────
 // 类型

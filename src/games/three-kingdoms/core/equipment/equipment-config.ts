@@ -8,7 +8,7 @@
  */
 
 import type { EquipmentRarity, EquipmentSlot, MainStatType, SubStatType } from './equipment.types';
-import type { ForgeConfig, EnhanceConfig, EquipmentSetDef, SetId } from './equipment-v10.types';
+import type { ForgeConfig, EnhanceConfig, EquipmentSetDef, SetId } from './equipment-forge.types';
 
 // ─────────────────────────────────────────────
 // 1. 装备模板

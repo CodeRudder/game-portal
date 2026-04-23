@@ -185,7 +185,8 @@ export class HeroSystem implements ISubsystem {
    * 碎片合成武将
    *
    * 当指定武将的碎片数量达到合成所需数量时，消耗碎片并添加武将。
-   * 合成所需碎片数量 = SYNTHESIZE_REQUIRED_FRAGMENTS（80）
+   * 合成所需碎片数量按品质区分：
+   *   COMMON=20 / FINE=40 / RARE=80 / EPIC=150 / LEGENDARY=300
    *
    * @returns 合成后的武将数据，或 null（碎片不足/已拥有/未找到定义）
    */
@@ -197,8 +198,8 @@ export class HeroSystem implements ISubsystem {
     const def = GENERAL_DEF_MAP.get(generalId);
     if (!def) return null;
 
-    // 检查碎片数量
-    const required = SYNTHESIZE_REQUIRED_FRAGMENTS;
+    // 按品质获取所需碎片数量
+    const required = SYNTHESIZE_REQUIRED_FRAGMENTS[def.quality];
     const current = this.state.fragments[generalId] ?? 0;
     if (current < required) return null;
 
@@ -212,16 +213,20 @@ export class HeroSystem implements ISubsystem {
     return this.addGeneral(generalId);
   }
 
-  /** 获取碎片合成所需数量 */
-  getSynthesizeCost(): number {
-    return SYNTHESIZE_REQUIRED_FRAGMENTS;
+  /** 获取碎片合成所需数量（按武将品质区分） */
+  getSynthesizeCost(generalId: string): number {
+    const def = GENERAL_DEF_MAP.get(generalId);
+    if (!def) return 0;
+    return SYNTHESIZE_REQUIRED_FRAGMENTS[def.quality];
   }
 
   /** 检查指定武将是否可合成 */
   canSynthesize(generalId: string): boolean {
     if (this.state.generals[generalId]) return false;
-    if (!GENERAL_DEF_MAP.has(generalId)) return false;
-    return (this.state.fragments[generalId] ?? 0) >= SYNTHESIZE_REQUIRED_FRAGMENTS;
+    const def = GENERAL_DEF_MAP.get(generalId);
+    if (!def) return false;
+    const required = SYNTHESIZE_REQUIRED_FRAGMENTS[def.quality];
+    return (this.state.fragments[generalId] ?? 0) >= required;
   }
 
   /**
@@ -230,9 +235,11 @@ export class HeroSystem implements ISubsystem {
    * @returns { current: number, required: number } 当前碎片数和所需碎片数
    */
   getSynthesizeProgress(generalId: string): { current: number; required: number } {
+    const def = GENERAL_DEF_MAP.get(generalId);
+    const required = def ? SYNTHESIZE_REQUIRED_FRAGMENTS[def.quality] : 0;
     return {
       current: this.state.fragments[generalId] ?? 0,
-      required: SYNTHESIZE_REQUIRED_FRAGMENTS,
+      required,
     };
   }
 

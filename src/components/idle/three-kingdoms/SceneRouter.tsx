@@ -13,14 +13,7 @@ import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
 import HeroTab from '@/components/idle/panels/hero/HeroTab';
 import CampaignTab from '@/components/idle/panels/campaign/CampaignTab';
 import TechTab from '@/components/idle/panels/tech/TechTab';
-import EquipmentTab from '@/components/idle/panels/equipment/EquipmentTab';
-import ArenaTab from '@/components/idle/panels/arena/ArenaTab';
 import WorldMapTab from '@/components/idle/panels/map/WorldMapTab';
-import NPCTab from '@/components/idle/panels/npc/NPCTab';
-import NPCInfoModal from '@/components/idle/panels/npc/NPCInfoModal';
-import type { NPCData } from '@/games/three-kingdoms/core/npc';
-import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
-import ArmyTab from '@/components/idle/panels/army/ArmyTab';
 import MoreTab from '@/components/idle/panels/more/MoreTab';
 import type { TabId, FeaturePanelId } from './TabBar';
 
@@ -68,39 +61,27 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
     return { territories, productionSummary };
   }, [engine, snapshotVersion]);
 
-  // ── NPC 数据 ──
-  const npcData = React.useMemo(() => {
-    const npcSys = (engine as any).npcSystem;
-    if (npcSys && typeof npcSys.getAllNPCs === 'function') {
-      return npcSys.getAllNPCs();
-    }
-    return [];
-  }, [engine, snapshotVersion]);
-
-  // ── NPC 弹窗状态 ──
-  const [selectedNPC, setSelectedNPC] = React.useState<NPCData | null>(null);
-
-  const handleSelectNPC = React.useCallback((npcId: string) => {
-    const npc = npcData.find((n: NPCData) => n.id === npcId);
-    if (npc) setSelectedNPC(npc);
-  }, [npcData]);
-
-  const handleStartDialog = React.useCallback((npcId: string) => {
-    Toast.info(`与NPC对话: ${npcId}`);
-  }, []);
-
   switch (activeTab) {
-    case 'building':
+    case 'map':
       return (
-        <BuildingPanel
-          buildings={buildings}
-          resources={resources}
-          rates={productionRates}
-          caps={caps}
+        <WorldMapTab
+          territories={worldMapData.territories}
+          productionSummary={worldMapData.productionSummary}
+          snapshotVersion={snapshotVersion}
+          onSelectTerritory={(id) => {
+            Toast.info(`选中领土: ${id}`);
+          }}
+          onSiegeTerritory={(id) => {
+            Toast.info(`发起攻城: ${id}`);
+          }}
+        />
+      );
+
+    case 'campaign':
+      return (
+        <CampaignTab
           engine={engine}
           snapshotVersion={snapshotVersion}
-          onUpgradeComplete={onUpgradeComplete}
-          onUpgradeError={onUpgradeError}
         />
       );
 
@@ -120,82 +101,27 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
         />
       );
 
-    case 'campaign':
+    case 'building':
       return (
-        <CampaignTab
+        <BuildingPanel
+          buildings={buildings}
+          resources={resources}
+          rates={productionRates}
+          caps={caps}
           engine={engine}
           snapshotVersion={snapshotVersion}
+          onUpgradeComplete={onUpgradeComplete}
+          onUpgradeError={onUpgradeError}
         />
       );
 
-    case 'equipment':
+    case 'prestige':
+      // 声望Tab — 通过FeaturePanelOverlay渲染，这里作为Tab占位
       return (
-        <EquipmentTab
+        <MoreTab
           engine={engine}
           snapshotVersion={snapshotVersion}
-        />
-      );
-
-    case 'map':
-      return (
-        <WorldMapTab
-          territories={worldMapData.territories}
-          productionSummary={worldMapData.productionSummary}
-          snapshotVersion={snapshotVersion}
-          onSelectTerritory={(id) => {
-            Toast.info(`选中领土: ${id}`);
-          }}
-          onSiegeTerritory={(id) => {
-            Toast.info(`发起攻城: ${id}`);
-          }}
-        />
-      );
-
-    case 'npc':
-      return (
-        <>
-          <NPCTab
-            npcs={npcData}
-            onSelectNPC={handleSelectNPC}
-            onStartDialog={handleStartDialog}
-          />
-          {/* NPC详情弹窗 */}
-          {selectedNPC && (
-            <NPCInfoModal
-              visible={true}
-              npc={selectedNPC}
-              onClose={() => setSelectedNPC(null)}
-              onStartDialog={(npcId) => {
-                setSelectedNPC(null);
-                Toast.info(`与NPC对话: ${npcId}`);
-              }}
-            />
-          )}
-          {/* NPC对话 — 通过Toast提示，完整弹窗需DialogSystem集成 */}
-        </>
-      );
-
-    case 'arena':
-      return (
-        <ArenaTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-        />
-      );
-
-    case 'expedition':
-      return (
-        <ExpeditionTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
-        />
-      );
-
-    case 'army':
-      return (
-        <ArmyTab
-          engine={engine}
-          snapshotVersion={snapshotVersion}
+          onOpenPanel={(id) => onOpenFeature(id as FeaturePanelId)}
         />
       );
 

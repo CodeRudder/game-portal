@@ -1,8 +1,8 @@
 /**
  * 核心层 — v15.0 事件引擎共享基础类型
  *
- * 提取自 event-v15.types.ts，供子模块（activity/chain/offline）直接引用，
- * 避免子模块反向导入 event-v15.types.ts 造成循环依赖。
+ * 提取自 event-engine.types.ts，供子模块（activity/chain/offline）直接引用，
+ * 避免子模块反向导入 event-engine.types.ts 造成循环依赖。
  *
  * 包含：
  *   - EventCategory — 事件分类（5类）
@@ -11,7 +11,7 @@
  *   - OptionConsequence — 选项后果
  *   - OptionSelectionResult — 选择结果
  *
- * @module core/event/event-v15-shared.types
+ * @module core/event/event-shared.types
  */
 
 // ─────────────────────────────────────────────

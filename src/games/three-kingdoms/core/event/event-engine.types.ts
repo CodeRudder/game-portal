@@ -5,12 +5,12 @@
  *       限时事件、奖励联动、存档数据
  *
  * 子模块：
- *   - event-v15-event.types — 基础事件类型
- *   - event-v15-activity.types — 活动/离线类型
- *   - event-v15-chain.types — 连锁事件v15类型
- *   - event-v15-offline.types — 离线事件处理类型
+ *   - event-encounter.types — 基础事件类型
+ *   - event-activity.types — 活动/离线类型
+ *   - event-chain.types — 连锁事件v15类型
+ *   - event-offline.types — 离线事件处理类型
  *
- * @module core/event/event-v15.types
+ * @module core/event/event-engine.types
  */
 
 import type { EventId, EventDef, EventConsequence, EventInstance } from './event.types';
@@ -33,10 +33,10 @@ export type {
   CooldownRecord,
   BranchOption,
   ChainBranch, ChainSnapshot,
-} from './event-v15-event.types';
+} from './event-encounter.types';
 
 // NotificationPriority 是枚举（值），需要值导出
-export { NotificationPriority } from './event-v15-event.types';
+export { NotificationPriority } from './event-encounter.types';
 
 // 重新导出活动/离线类型
 export type {
@@ -46,7 +46,7 @@ export type {
   TimedActivityPhase, TimedActivityFlow,
   FestivalType, FestivalActivityDef,
   ActivityOfflineSummary,
-} from './event-v15-activity.types';
+} from './event-activity.types';
 
 // 重新导出连锁事件类型
 export type {
@@ -57,7 +57,7 @@ export type {
   EventChainDefV15,
   ChainProgressV15,
   ChainAdvanceResultV15,
-} from './event-v15-chain.types';
+} from './event-chain.types';
 
 // 重新导出离线事件处理类型
 export type {
@@ -66,25 +66,25 @@ export type {
   AutoProcessRule,
   OfflineEventProcessResult,
   EventRetrospectiveData,
-} from './event-v15-offline.types';
+} from './event-offline.types';
 
 // 从离线类型子模块导入，用于本模块内引用
-import type { OfflineEventEntry, AutoProcessRule } from './event-v15-offline.types';
+import type { OfflineEventEntry, AutoProcessRule } from './event-offline.types';
 
 // 从共享基础模块导入（避免子模块循环依赖）
 export type {
   EventCategory,
   EventCategoryMeta,
-} from './event-v15-shared.types';
+} from './event-shared.types';
 export {
   EVENT_CATEGORY_META,
-} from './event-v15-shared.types';
+} from './event-shared.types';
 export type {
   OptionConsequence,
   OptionSelectionResult,
-} from './event-v15-shared.types';
+} from './event-shared.types';
 
-import type { EventCategory } from './event-v15-shared.types';
+import type { EventCategory } from './event-shared.types';
 
 // ─────────────────────────────────────────────
 // 19. v15 事件系统状态扩展
@@ -95,9 +95,9 @@ export interface EventV15State {
   /** 遭遇事件冷却 */
   encounterCooldowns: Map<string, number>;
   /** 通知队列 */
-  notifications: import('./event-v15-event.types').EventNotification[];
+  notifications: import('./event-encounter.types').EventNotification[];
   /** 离线事件堆积 */
-  offlineEventPiles: import('./event-v15-activity.types').OfflineEventPile[];
+  offlineEventPiles: import('./event-activity.types').OfflineEventPile[];
   /** 代币余额 */
   tokenBalance: number;
 }
@@ -106,13 +106,13 @@ export interface EventV15State {
 export interface EventV15SaveData {
   version: number;
   encounterCooldowns: Record<string, number>;
-  notifications: import('./event-v15-event.types').EventNotification[];
-  offlineEventPiles: import('./event-v15-activity.types').OfflineEventPile[];
+  notifications: import('./event-encounter.types').EventNotification[];
+  offlineEventPiles: import('./event-activity.types').OfflineEventPile[];
   tokenBalance: number;
 }
 
 // ─────────────────────────────────────────────
-// 20. 事件分类（5类）— 定义已移至 event-v15-shared.types.ts
+// 20. 事件分类（5类）— 定义已移至 event-shared.types.ts
 // ─────────────────────────────────────────────
 
 // ─────────────────────────────────────────────
@@ -224,7 +224,7 @@ export interface WeightedEventOption {
 }
 
 // ─────────────────────────────────────────────
-// 25. 选项后果与选择结果 — 定义已移至 event-v15-shared.types.ts
+// 25. 选项后果与选择结果 — 定义已移至 event-shared.types.ts
 // ─────────────────────────────────────────────
 
 // ─────────────────────────────────────────────

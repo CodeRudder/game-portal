@@ -35,6 +35,7 @@ export const RESOURCE_TYPES: readonly ResourceType[] = [
   'gold',
   'troops',
   'mandate',
+  'techPoint',
 ] as const;
 
 /** 资源中文名映射 */
@@ -43,6 +44,7 @@ export const RESOURCE_LABELS: Record<ResourceType, string> = {
   gold: '铜钱',
   troops: '兵力',
   mandate: '天命',
+  techPoint: '科技点',
 };
 
 /** 资源颜色标识（用于 UI 展示） */
@@ -51,6 +53,7 @@ export const RESOURCE_COLORS: Record<ResourceType, string> = {
   gold: '#C9A84C',
   troops: '#B8423A',
   mandate: '#7B5EA7',
+  techPoint: '#4A90D9',
 };
 
 // ─────────────────────────────────────────────
@@ -90,6 +93,7 @@ export interface ResourceCost {
   gold?: number;
   troops?: number;
   mandate?: number;
+  techPoint?: number;
 }
 
 /** 消耗检查结果 */

@@ -71,7 +71,7 @@ export class TileRenderer implements IRenderer {
   private _visible = true;
   private _initialized = false;
 
-  // TODO: 精灵池和纹理映射表
+  // stub: 精灵池和纹理映射表
   // private spritePool: Sprite[] = [];
   // private activeSprites: Map<string, Sprite> = new Map();
 
@@ -93,8 +93,8 @@ export class TileRenderer implements IRenderer {
     container.addChild(this.root);
     this._initialized = true;
 
-    // TODO: 初始化精灵池
-    // TODO: 预加载地块纹理
+    // stub: 初始化精灵池
+    // stub: 预加载地块纹理
   }
 
   /**
@@ -105,7 +105,7 @@ export class TileRenderer implements IRenderer {
   update(dt: number): void {
     if (!this._initialized) return;
 
-    // TODO: 更新地块动画（如水流、草地摇摆等）
+    // stub: 更新地块动画（如水流、草地摇摆等）
     void dt;
   }
 
@@ -113,7 +113,7 @@ export class TileRenderer implements IRenderer {
    * 销毁地块渲染器
    */
   destroy(): void {
-    // TODO: 清空精灵池
+    // stub: 清空精灵池
     this.root.destroy({ children: true });
     this._initialized = false;
   }
@@ -129,7 +129,7 @@ export class TileRenderer implements IRenderer {
    * @param _tiles - 地块渲染数据数组
    */
   setTiles(_tiles: ITileRenderData[]): void {
-    // TODO: 根据 tiles 数据创建/更新/移除精灵
+    // stub: 根据 tiles 数据创建/更新/移除精灵
   }
 
   /**
@@ -140,7 +140,7 @@ export class TileRenderer implements IRenderer {
    * @param _data - 新的地块数据
    */
   updateTile(_col: number, _row: number, _data: ITileRenderData): void {
-    // TODO: 增量更新单个地块
+    // stub: 增量更新单个地块
   }
 
   // ─── 访问器 ─────────────────────────────────

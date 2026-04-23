@@ -20,7 +20,7 @@ import type {
   EquipRecommendation,
   RecommendResult,
   SetId,
-} from '../../core/equipment/equipment-v10.types';
+} from '../../core/equipment/equipment-forge.types';
 import {
   EQUIPMENT_SLOTS,
   RARITY_ORDER,

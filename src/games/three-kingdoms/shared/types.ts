@@ -7,11 +7,82 @@
  */
 
 // ─────────────────────────────────────────────
+// 0. 武将域基础类型（与 engine/hero/hero.types.ts 保持同步）
+// ─────────────────────────────────────────────
+
+/** 武将阵营 */
+export type Faction = 'shu' | 'wei' | 'wu' | 'qun';
+
+/** 武将四维属性 */
+export interface GeneralStats {
+  /** 攻击（武力） */
+  attack: number;
+  /** 防御（统率） */
+  defense: number;
+  /** 智力 */
+  intelligence: number;
+  /** 速度（政治） */
+  speed: number;
+}
+
+// ─────────────────────────────────────────────
+// 0. 战斗域基础类型（与 engine/battle/battle.types.ts 保持同步）
+// ─────────────────────────────────────────────
+
+/** 战斗行动 */
+export interface BattleAction {
+  /** 回合号 */
+  turn: number;
+  /** 行动方阵营 */
+  side: 'ally' | 'enemy';
+  /** 行动类型 */
+  type: 'attack' | 'skill' | 'buff' | 'debuff' | 'move';
+  /** 行动者ID */
+  actorId: string;
+  /** 目标ID列表 */
+  targetIds: string[];
+  /** 伤害/治疗数值 */
+  value: number;
+  /** 附加描述 */
+  description: string;
+}
+
+/** 战斗状态 */
+export interface BattleState {
+  /** 战斗ID */
+  battleId: string;
+  /** 当前回合 */
+  currentTurn: number;
+  /** 最大回合 */
+  maxTurns: number;
+  /** 是否结束 */
+  isOver: boolean;
+  /** 行动日志 */
+  actionLog: BattleAction[];
+  /** 胜负结果 */
+  result: BattleResult | null;
+}
+
+/** 战斗结果 */
+export interface BattleResult {
+  /** 是否胜利 */
+  victory: boolean;
+  /** 总回合数 */
+  totalTurns: number;
+  /** 评价星级 */
+  stars: number;
+  /** 获得经验 */
+  expGained: number;
+  /** 掉落物品 */
+  drops: { itemId: string; count: number }[];
+}
+
+// ─────────────────────────────────────────────
 // 0. 资源域基础类型（与 engine/resource/resource.types.ts 保持同步）
 // ─────────────────────────────────────────────
 
-/** 四种核心资源类型 */
-export type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate';
+/** 五种核心资源类型 */
+export type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate' | 'techPoint';
 
 /** 资源数量集合 */
 export interface Resources {
@@ -19,6 +90,7 @@ export interface Resources {
   gold: number;
   troops: number;
   mandate: number;
+  techPoint: number;
 }
 
 /** 资源产出速率（每秒） */
@@ -27,6 +99,7 @@ export interface ProductionRate {
   gold: number;
   troops: number;
   mandate: number;
+  techPoint: number;
 }
 
 /** 资源上限（null 表示无上限） */
@@ -35,6 +108,7 @@ export interface ResourceCap {
   gold: null;
   troops: number;
   mandate: null;
+  techPoint: null;
 }
 
 /** 容量警告等级 */
@@ -188,9 +262,9 @@ export interface GameSaveData {
   /** 武将系统数据（可选，向后兼容旧存档） */
   hero?: import('../engine/hero/hero.types').HeroSaveData;
   /** 招募系统数据（可选，向后兼容旧存档） */
-  recruit?: import('../engine/hero/HeroRecruitSystem').RecruitSaveData;
+  recruit?: import('../engine/hero/recruit-types').RecruitSaveData;
   /** 编队系统数据（可选，向后兼容旧存档） */
-  formation?: import('../engine/hero/HeroFormation').FormationSaveData;
+  formation?: import('../engine/hero/formation-types').FormationSaveData;
   /** 关卡进度数据（可选，向后兼容旧存档） */
   campaign?: import('../engine/campaign/campaign.types').CampaignSaveData;
   /** 科技系统数据（可选，向后兼容旧存档） */
@@ -198,7 +272,7 @@ export interface GameSaveData {
   /** 装备系统数据（可选，v5.0+） */
   equipment?: import('../core/equipment/equipment.types').EquipmentSaveData;
   /** 装备炼制系统数据（可选，v10.0+） */
-  equipmentForge?: import('../core/equipment/equipment-v10.types').ForgeSaveData;
+  equipmentForge?: import('../core/equipment/equipment-forge.types').ForgeSaveData;
   /** 装备强化系统数据（可选，v10.0+） */
   equipmentEnhance?: { protectionCount: number };
   /** 贸易系统数据（可选，v5.0+） */
@@ -258,7 +332,7 @@ export interface EngineSnapshot {
   /** 全体武将总战力 */
   totalPower: number;
   /** 所有编队 */
-  formations: import('../engine/hero/HeroFormation').FormationData[];
+  formations: import('../engine/hero/formation-types').FormationData[];
   /** 当前激活编队ID */
   activeFormationId: string | null;
   /** 关卡进度 */

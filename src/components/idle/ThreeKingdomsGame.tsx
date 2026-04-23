@@ -206,9 +206,9 @@ const ThreeKingdomsGame: React.FC = () => {
         upgradeEndTime: null,
       });
       return {
-        resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 },
+        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 },
+        caps: { grain: 0, gold: null, troops: 0, mandate: null, techPoint: null },
         buildings: {
           castle: defaultBuildingState('castle'),
           farmland: defaultBuildingState('farmland'),
@@ -247,9 +247,9 @@ const ThreeKingdomsGame: React.FC = () => {
         upgradeEndTime: null,
       });
       return {
-        resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 },
+        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 },
+        caps: { grain: 0, gold: null, troops: 0, mandate: null, techPoint: null },
         buildings: {
           castle: defaultBuildingState('castle'),
           farmland: defaultBuildingState('farmland'),

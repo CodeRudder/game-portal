@@ -71,10 +71,11 @@ describe('HeroRecruitSystem — 招募历史', () => {
     });
 
     it('历史记录包含正确的消耗', () => {
+      // P0-5 修复后：普通招募 recruitToken×1
       recruit.recruitSingle('normal');
       const history = recruit.getRecruitHistory();
-      expect(history[0].cost.resourceType).toBe('gold');
-      expect(history[0].cost.amount).toBe(100);
+      expect(history[0].cost.resourceType).toBe('recruitToken');
+      expect(history[0].cost.amount).toBe(1);
     });
   });
 

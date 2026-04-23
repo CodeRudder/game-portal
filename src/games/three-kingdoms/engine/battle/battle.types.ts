@@ -24,7 +24,7 @@ import {
 
 export { BATTLE_CONFIG } from './battle-config';
 
-// 从基础模块重导出（避免与 battle-v4.types 循环依赖）
+// 从基础模块重导出（避免与 battle-ultimate.types 循环依赖）
 export {
   TroopType,
   TROOP_TYPE_LABELS,
@@ -296,14 +296,14 @@ export interface CreateUnitParams {
 }
 
 // ─────────────────────────────────────────────
-// 14~16. v4.0 扩展类型（从 battle-v4.types 导入）
+// 14~16. v4.0 扩展类型（从 battle-ultimate.types 导入）
 // ─────────────────────────────────────────────
 
 export {
   TimeStopState,
   BattleSpeed,
   BattleMode,
-} from './battle-v4.types';
+} from './battle-ultimate.types';
 
 export type {
   UltimateTimeStopEvent,
@@ -312,4 +312,4 @@ export type {
   BattleSpeedState,
   SpeedChangeEvent,
   IBattleEngineV4,
-} from './battle-v4.types';
+} from './battle-ultimate.types';

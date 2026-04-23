@@ -22,6 +22,7 @@ export const INITIAL_RESOURCES: Readonly<Resources> = {
   gold: 300,
   troops: 50,
   mandate: 0,
+  techPoint: 0,
 };
 
 // ─────────────────────────────────────────────
@@ -39,6 +40,7 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
   gold: 0,
   troops: 0,
   mandate: 0,
+  techPoint: 0,
 };
 
 // ─────────────────────────────────────────────
@@ -51,6 +53,7 @@ export const INITIAL_CAPS: Readonly<ResourceCap> = {
   gold: null,
   troops: 500,
   mandate: null,
+  techPoint: null,
 };
 
 // ─────────────────────────────────────────────
@@ -114,14 +117,14 @@ export const CAP_WARNING_THRESHOLDS = {
 /**
  * 离线收益衰减时段（v8.0 5档衰减）
  * 来源：PRD OFR-1 基础衰减系数表
- * 0~2h: 100% | 2~8h: 80% | 8~24h: 60% | 24~48h: 40% | 48~72h: 25%
+ * 0~2h: 100% | 2~8h: 80% | 8~24h: 60% | 24~48h: 40% | 48~72h: 20%
  */
 export const OFFLINE_TIERS: readonly OfflineTier[] = [
   { startSeconds: 0, endSeconds: 7200, efficiency: 1.0 }, // 0~2h: 100%
   { startSeconds: 7200, endSeconds: 28800, efficiency: 0.8 }, // 2~8h: 80%
   { startSeconds: 28800, endSeconds: 86400, efficiency: 0.6 }, // 8~24h: 60%
   { startSeconds: 86400, endSeconds: 172800, efficiency: 0.4 }, // 24~48h: 40%
-  { startSeconds: 172800, endSeconds: 259200, efficiency: 0.25 }, // 48~72h: 25%
+  { startSeconds: 172800, endSeconds: 259200, efficiency: 0.20 }, // 48~72h: 20%
 ] as const;
 
 /** 离线收益最大计算时长（72小时，秒） */

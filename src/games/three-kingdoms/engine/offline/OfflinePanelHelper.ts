@@ -155,7 +155,7 @@ export function estimateOfflineReward(
 
   // 计算各档位衰减明细
   const tierDetails: TierDetail[] = [];
-  let totalEarned: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0 };
+  let totalEarned: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
   let totalWeighted = 0;
 
   for (const tier of DECAY_TIERS) {
@@ -166,7 +166,7 @@ export function estimateOfflineReward(
     const secondsInTier = Math.min(offlineSeconds, tierEndSeconds) - tierStartSeconds;
     if (secondsInTier <= 0) continue;
 
-    const earned: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0 };
+    const earned: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
     for (const key of Object.keys(productionRates) as (keyof ProductionRate)[]) {
       earned[key] = productionRates[key] * secondsInTier * tier.efficiency;
     }
@@ -176,6 +176,7 @@ export function estimateOfflineReward(
     totalEarned.gold += earned.gold;
     totalEarned.troops += earned.troops;
     totalEarned.mandate += earned.mandate;
+    totalEarned.techPoint += earned.techPoint;
     totalWeighted += secondsInTier * tier.efficiency;
   }
 
@@ -188,6 +189,7 @@ export function estimateOfflineReward(
     gold: Math.floor(totalEarned.gold * bonusCoefficient),
     troops: Math.floor(totalEarned.troops * bonusCoefficient),
     mandate: Math.floor(totalEarned.mandate * bonusCoefficient),
+    techPoint: Math.floor(totalEarned.techPoint * bonusCoefficient),
   };
 
   const overallEfficiency = offlineSeconds > 0 ? totalWeighted / offlineSeconds : 1.0;

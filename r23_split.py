@@ -1,0 +1,94 @@
+# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+import re, os
+from pathlib import Path
+
+def rf(p):
+    with open(p, 'r', encoding='utf-8') as f:
+        return f.read()
+
+def wf(p, c):
+    with open(p, 'w', encoding='utf-8') as f:
+        f.write(c)
+
+def split_file(src_rel, new_name, doc):
+    fp = Path(src_rel)
+    content = rf(fp)
+    lines = content.split('\n')
+    cl = None
+    for i, ln in enumerate(lines):
+        if 'export class ' in ln and cl is None:
+            cl = i
+            break
+    if cl is None:
+        print(f"  SKIP: no class in {src_rel}")
+        return False
+    fe = None
+    for i, ln in enumerate(lines):
+        if i >= cl: break
+        if ln.startswith('export ') and not ln.startswith('export {') and not ln.startswith('export default'):
+            if fe is None:
+                fe = i
+    if fe is None or fe >= cl - 3:
+        print(f"  SKIP: too few exports in {src_rel} (fe={fe}, cl={cl})")
+        return False
+    imports = [ln for ln in lines[:fe] if ln.startswith('import ') or ln.strip().startswith('//')]
+    extracted = '\n'.join(lines[fe:cl])
+    new_path = fp.parent / new_name
+    new_content = '/**\n * ' + doc + '\n *\n * Extracted from ' + fp.name + '.\n */\n\n'
+    new_content += '\n'.join(imports) + '\n' + '\n' + extracted + '\n'
+    wi�new_path, new_content)
+    all_exp = re.findall(r'export\s+(?:type|interface|enum|const|function)\s+(\w+)', extracted)
+    if not all_exp:
+        print(f"  SKIP: no named exports in {src_rel}")
+        os.remove(new_path)
+        return False
+    type_exp = re.findall(r'export\s+(?:type|interface)\s+(\w)', extracted)
+    val_exp = [e for e in all_exp if e not in type_exp]
+    imp_parts = []
+    if type_exp:
+        imp_parts.append('import type {\n  ' + ',\n  '.join(type_exp) + ',\n} from \'./' + new_name.replace('.ts', '') + \';')
+    if val_exp:
+        imp_parts.append('import {\n  ' + ',\n  '.join(val_exp) + ',\n} from \'./' + new_name.replace('.ts', '') + \';')
+    needs_isys = 'ISubsystem' in content[content.find('export class'):]
+    if needs_isys:
+        imp_parts.insert(0, "import type { ISubsystem, ISystemDeps } from '../../core/types';")
+    new_imports = '\n'.join(imp_parts)
+    new_lines = lines[:9]
+    new_lines.append(new_imports)
+    new_lines.append('')
+    new_lines.extend(lines[cl:])
+    wf(fp, '\n'.join(new_lines))
+    print(f"  OK {fp.name}: {len(lines)} -> {len(new_lines)} lines")
+    return True
+
+splits = [
+    ('src/games/three-kingdoms/engine/social/LeaderboardSystem.ts', 'leaderboard-types.ts', '正秺 管理 — 技术符人发送'),
+    ('src/games/three-kingdoms/engine/event/ChainEventSystem.ts', 'chain-event-types.ts', '项目事现缠 技术符人发送'),
+    ('src/games/three-kingdoms/engine/guide/FirstLaunchDetector.ts', 'first-launch-types.ts', '頂要输出缺发送'),
+    ('src/games/three-kingdoms/engine/hero/HeroRecruitSystem.ts', 'recruit-types.ts',, '输关提醒缠 技术符人发送'),
+    ('src/games/three-kingdoms/engine/activity/TokenShopSystem.ts', 'token-shop-config.ts',  临国同抧 — 秺 e计算头发"),
+    ('src/games/three-kingdoms/engine/tech/TechDetailProvider.ts', 'tech-detail-types.ts', '直掁译息 技术符人发送'),
+    ('src/games/three-kingdoms/engine/offline/OfflineSnapshotSystem.ts', 'offline-snapshot-types.ts', '禁手序包 技术符人发送'),
+    ('src/games/three-kingdoms/engine/social/FriendSystem.ts', 'friend-config.ts',, '宁加缠 技术秺 e计信息发"),
+    ('src/games/three-kingdoms/engine/bond/BondSystem.ts', 'bond-types.ts', '红辚缠 技术符人发送'),
+    ('src/games/three-kingdoms/engine/campaign/CampaignProgressSystem.ts', 'campaign-types.ts',,'殤器运作 技术符人发送'),
+    ('src/games/three-kingdoms/engine/expedition/ExpeditionSystem.ts', 'expedition-helpers.ts', '走南缠 技术符人发送'),
+    ('src/games/three-kingdoms/engine/guide/TutorialMaskSystem.ts', 'tutorial-mask-types.ts', '姺'��橈缺 技术符撺发還'),
+    ('src/games/three-kingdoms/engine/guide/TutorialStateMachine.ts', 'tutorial-state-types.ts', /姺'��：9目词 技术符人发送'),
+    ('src/games/three-kingdoms/engine/settings/AudioManager.ts',, 'audio-config.ts', '高庎收能技术秺 e计等"),
+    ('src/games/three-kingdoms/engine/calendar/CalendarSystem.ts',, 'calendar-types.ts', '最日技术符人发送'),
+]
+
+ok = 0
+for i, (fp, nf, doc) in enumerate(splits):
+    print(f"\n[{i+1}] {fp}...")
+    try:
+        if split_file(fp, nf, doc):
+            ok += 1
+    except Exception as e:
+        print(f"  ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+
+print(f"\n=== Split complete: {ok}/{len(splits)} files split ===")

@@ -38,15 +38,17 @@ export {
 } from '../../core/pvp/pvp.types';
 
 // ArenaSystem
+export { ArenaSystem } from './ArenaSystem';
+
+// ArenaConfig (extracted from ArenaSystem)
 export {
-  ArenaSystem,
   DEFAULT_MATCH_CONFIG,
   DEFAULT_REFRESH_CONFIG,
   DEFAULT_CHALLENGE_CONFIG,
   ARENA_SAVE_VERSION,
   createDefaultDefenseFormation,
   createDefaultArenaPlayerState,
-} from './ArenaSystem';
+} from './ArenaConfig';
 
 // PvPBattleSystem
 export {

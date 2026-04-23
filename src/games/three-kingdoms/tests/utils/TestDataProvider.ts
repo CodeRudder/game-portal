@@ -184,8 +184,9 @@ export class TestDataProvider {
       gold: 3000,
       troops: 2000,
       mandate: 100,
-      ...overrides,
-    };
+      techPoint: 0,
+      ...(overrides ?? {}),
+    } as Resources;
   }
 
   // ── 建筑 ──

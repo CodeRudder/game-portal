@@ -20,7 +20,7 @@ import type {
   AutoEnhanceConfig,
   AutoEnhanceResult,
   EnhanceTransferResult,
-} from '../../core/equipment/equipment-v10.types';
+} from '../../core/equipment/equipment-forge.types';
 import {
   ENHANCE_CONFIG,
   ENHANCE_STAT_GROWTH,

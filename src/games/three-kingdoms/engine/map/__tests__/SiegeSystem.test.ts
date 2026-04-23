@@ -96,21 +96,21 @@ describe('SiegeSystem — #19 攻城条件校验', () => {
   });
 
   it('目标不存在时不可攻城', () => {
-    const result = siege.checkSiegeConditions('non-existent', 'player', 1000, 500);
+    const result = siege.checkSiegeConditions('non-existent', 'player', 10000, 500);
     expect(result.canSiege).toBe(false);
     expect(result.errorCode).toBe('TARGET_NOT_FOUND');
   });
 
   it('己方领土不可攻城', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    const result = siege.checkSiegeConditions('city-luoyang', 'player', 1000, 500);
+    const result = siege.checkSiegeConditions('city-luoyang', 'player', 10000, 500);
     expect(result.canSiege).toBe(false);
     expect(result.errorCode).toBe('TARGET_ALREADY_OWNED');
   });
 
   it('不相邻不可攻城', () => {
     // 没有己方领土，自然不相邻
-    const result = siege.checkSiegeConditions('city-xuchang', 'player', 1000, 500);
+    const result = siege.checkSiegeConditions('city-xuchang', 'player', 10000, 500);
     expect(result.canSiege).toBe(false);
     expect(result.errorCode).toBe('NOT_ADJACENT');
   });
@@ -120,21 +120,24 @@ describe('SiegeSystem — #19 攻城条件校验', () => {
     const cost = siege.getSiegeCostById('city-xuchang');
     expect(cost).not.toBeNull();
 
-    const result = siege.checkSiegeConditions('city-xuchang', 'player', 1, 500);
+    // city-xuchang: level=4, defenseValue=4000, troops=4000
+    const result = siege.checkSiegeConditions('city-xuchang', 'player', 100, 500);
     expect(result.canSiege).toBe(false);
     expect(result.errorCode).toBe('INSUFFICIENT_TROOPS');
   });
 
   it('粮草不足不可攻城', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    const result = siege.checkSiegeConditions('city-xuchang', 'player', 1000, 0);
+    // city-xuchang: level=4, defenseValue=4000, troops=4000, grain=500
+    const result = siege.checkSiegeConditions('city-xuchang', 'player', 10000, 0);
     expect(result.canSiege).toBe(false);
     expect(result.errorCode).toBe('INSUFFICIENT_GRAIN');
   });
 
   it('满足所有条件时可攻城', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    const result = siege.checkSiegeConditions('city-xuchang', 'player', 1000, 500);
+    // city-xuchang: level=4, defenseValue=4000, troops=4000, grain=500
+    const result = siege.checkSiegeConditions('city-xuchang', 'player', 5000, 500);
     expect(result.canSiege).toBe(true);
     expect(result.errorCode).toBeUndefined();
   });
@@ -175,7 +178,7 @@ describe('SiegeSystem — #20 占领规则', () => {
   it('攻城胜利后领土归属变更', () => {
     territory.captureTerritory('city-luoyang', 'player');
 
-    const result = siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
+    const result = siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
     expect(result.launched).toBe(true);
     expect(result.victory).toBe(true);
     expect(result.capture).toBeDefined();
@@ -190,7 +193,7 @@ describe('SiegeSystem — #20 占领规则', () => {
   it('攻城失败后领土归属不变', () => {
     territory.captureTerritory('city-luoyang', 'player');
 
-    const result = siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, false);
+    const result = siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
     expect(result.launched).toBe(true);
     expect(result.victory).toBe(false);
     expect(result.capture).toBeUndefined();
@@ -211,7 +214,7 @@ describe('SiegeSystem — #20 占领规则', () => {
     const emitSpy = jest.spyOn(deps.eventBus, 'emit');
     t.captureTerritory('city-luoyang', 'player');
 
-    s.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
+    s.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
     expect(emitSpy).toHaveBeenCalledWith('siege:victory', expect.objectContaining({
       territoryId: 'city-xuchang',
       newOwner: 'player',
@@ -223,7 +226,7 @@ describe('SiegeSystem — #20 占领规则', () => {
     const emitSpy = jest.spyOn(deps.eventBus, 'emit');
     t.captureTerritory('city-luoyang', 'player');
 
-    s.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, false);
+    s.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
     expect(emitSpy).toHaveBeenCalledWith('siege:defeat', expect.objectContaining({
       territoryId: 'city-xuchang',
     }));
@@ -234,17 +237,17 @@ describe('SiegeSystem — #20 占领规则', () => {
     territory.captureTerritory('city-luoyang', 'player');
 
     // 攻占许昌（与洛阳相邻）
-    siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
     expect(territory.getTerritoryById('city-xuchang')!.ownership).toBe('player');
 
     // 现在可以攻占虎牢关（与洛阳和许昌都相邻）
-    siege.executeSiegeWithResult('pass-hulao', 'player', 1000, 500, true);
+    siege.executeSiegeWithResult('pass-hulao', 'player', 5000, 500, true);
     expect(territory.getTerritoryById('pass-hulao')!.ownership).toBe('player');
   });
 
   it('占领后产出归己方', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
 
     const summary = territory.getPlayerProductionSummary();
     expect(summary.totalTerritories).toBe(2);
@@ -265,18 +268,20 @@ describe('SiegeSystem — 攻城消耗计算', () => {
   });
 
   it('城池消耗 > 关卡消耗（防御值更高）', () => {
-    const cityCost = siege.getSiegeCostById('city-luoyang');
-    const passCost = siege.getSiegeCostById('pass-hulao');
+    const cityCost = siege.getSiegeCostById('city-luoyang'); // level=5, defenseValue=5000
+    const passCost = siege.getSiegeCostById('pass-hulao'); // level=3, defenseValue=3000
     expect(cityCost).not.toBeNull();
     expect(passCost).not.toBeNull();
-    // 关卡防御值(120) > 洛阳防御值(100)，所以关卡兵力消耗更大
-    expect(passCost!.troops).toBeGreaterThan(cityCost!.troops);
+    // ⚠️ PRD MAP-4 统一声明：defenseValue=1000×level，洛阳(5000) > 虎牢关(3000)
+    expect(cityCost!.troops).toBeGreaterThan(passCost!.troops);
   });
 
-  it('高等级领土粮草消耗更多', () => {
+  it('粮草消耗为固定500（⚠️PRD MAP-4统一声明）', () => {
     const luoyangCost = siege.getSiegeCostById('city-luoyang'); // 5级
     const hanzhongCost = siege.getSiegeCostById('city-hanzhong'); // 3级
-    expect(luoyangCost!.grain).toBeGreaterThan(hanzhongCost!.grain);
+    // 粮草消耗固定500，不随等级变化
+    expect(luoyangCost!.grain).toBe(500);
+    expect(hanzhongCost!.grain).toBe(500);
   });
 
   it('不存在的领土消耗返回null', () => {
@@ -307,7 +312,7 @@ describe('SiegeSystem — 攻城执行', () => {
 
   it('executeSiege 返回完整结果', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    const result = siege.executeSiege('city-xuchang', 'player', 1000, 500);
+    const result = siege.executeSiege('city-xuchang', 'player', 5000, 500);
 
     expect(result).toHaveProperty('launched');
     expect(result).toHaveProperty('victory');
@@ -321,7 +326,7 @@ describe('SiegeSystem — 攻城执行', () => {
   it('兵力充足时简化战斗有胜算', () => {
     territory.captureTerritory('city-luoyang', 'player');
     // 大量兵力，胜率应该很高
-    const result = siege.executeSiege('city-xuchang', 'player', 10000, 5000);
+    const result = siege.executeSiege('city-xuchang', 'player', 50000, 5000);
     expect(result.launched).toBe(true);
   });
 
@@ -353,8 +358,8 @@ describe('SiegeSystem — 统计查询', () => {
 
   it('攻城后统计更新', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
-    siege.executeSiegeWithResult('city-ye', 'player', 1000, 500, false);
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+    siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
 
     expect(siege.getTotalSieges()).toBe(2);
     expect(siege.getVictories()).toBe(1);
@@ -364,7 +369,7 @@ describe('SiegeSystem — 统计查询', () => {
 
   it('攻城历史记录完整', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
 
     const history = siege.getHistory();
     expect(history).toHaveLength(1);
@@ -387,7 +392,7 @@ describe('SiegeSystem — 序列化', () => {
 
   it('序列化包含统计数据', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
 
     const data = siege.serialize();
     expect(data.totalSieges).toBe(1);
@@ -398,7 +403,7 @@ describe('SiegeSystem — 序列化', () => {
 
   it('反序列化恢复统计', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
 
     const data = siege.serialize();
     siege.reset();
@@ -411,7 +416,7 @@ describe('SiegeSystem — 序列化', () => {
 
   it('反序列化后历史清空（仅恢复统计）', () => {
     territory.captureTerritory('city-luoyang', 'player');
-    siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
 
     const data = siege.serialize();
     siege.deserialize(data);
@@ -438,7 +443,7 @@ describe('SiegeSystem — ISubsystem', () => {
   it('reset 恢复初始状态', () => {
     const { siege, territory } = createSystems();
     territory.captureTerritory('city-luoyang', 'player');
-    siege.executeSiegeWithResult('city-xuchang', 'player', 1000, 500, true);
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
     expect(siege.getTotalSieges()).toBe(1);
 
     siege.reset();

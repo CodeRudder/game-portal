@@ -242,8 +242,8 @@ describe('TerritorySystem — #17 产出汇总', () => {
     sys.captureTerritory('city-luoyang', 'player'); // 中原
     sys.captureTerritory('city-jianye', 'player');  // 江南
     const summary = sys.getPlayerProductionSummary();
-    expect(summary.territoriesByRegion.central_plains).toBe(1);
-    expect(summary.territoriesByRegion.jiangnan).toBe(1);
+    expect(summary.territoriesByRegion.wei).toBe(1);
+    expect(summary.territoriesByRegion.wu).toBe(1);
   });
 
   it('产出明细包含完整信息', () => {
