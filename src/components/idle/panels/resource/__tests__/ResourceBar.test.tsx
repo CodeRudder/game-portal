@@ -2,7 +2,7 @@
  * ResourceBar 单元测试
  *
  * 测试场景：
- * - 渲染4种资源（粮草/铜钱/兵力/天命）
+ * - 渲染5种资源（粮草/铜钱/兵力/天命/科技点）
  * - 显示数值+产出速率
  * - 容量进度条
  * - 接近上限时警告样式
@@ -22,6 +22,7 @@ vi.mock('@/games/three-kingdoms/engine', () => ({
     gold: '铜钱',
     troops: '兵力',
     mandate: '天命',
+    techPoint: '科技点',
   },
 }));
 
@@ -49,9 +50,9 @@ describe('ResourceBar', () => {
   });
 
   it('应渲染4种资源', () => {
-    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0.5 };
-    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0.5, techPoint: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null, techPoint: null };
 
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -63,23 +64,23 @@ describe('ResourceBar', () => {
   });
 
   it('应显示资源数值', () => {
-    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 0, gold: 0, troops: 0, mandate: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null };
+    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
+    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null };
 
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
-    // 验证数值显示（通过 title 属性）
-    expect(screen.getByTitle('粮草 1,000')).toBeInTheDocument();
+    // 验证数值显示（通过 title 属性，formatNumber 使用 K/M/B 格式）
+    expect(screen.getByTitle('粮草 1K')).toBeInTheDocument();
     expect(screen.getByTitle('铜钱 500')).toBeInTheDocument();
     expect(screen.getByTitle('兵力 200')).toBeInTheDocument();
     expect(screen.getByTitle('天命 10')).toBeInTheDocument();
   });
 
   it('应显示产出速率', () => {
-    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 5.5, gold: 2.3, troops: 1.0, mandate: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null };
+    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 5.5, gold: 2.3, troops: 1.0, mandate: 0, techPoint: 0 };
+    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null };
 
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -90,9 +91,9 @@ describe('ResourceBar', () => {
   });
 
   it('有容量上限的资源应显示容量进度条', () => {
-    const resources = { grain: 2500, gold: 1500, troops: 500, mandate: 10 };
-    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
-    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+    const resources = { grain: 2500, gold: 1500, troops: 500, mandate: 10, techPoint: 0 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0, techPoint: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null, techPoint: null };
 
     const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -103,9 +104,9 @@ describe('ResourceBar', () => {
 
   it('接近上限时进度条应变为红色警告', () => {
     // 粮草 95% → 红色警告
-    const resources = { grain: 4750, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
-    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+    const resources = { grain: 4750, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0, techPoint: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null, techPoint: null };
 
     const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -117,9 +118,9 @@ describe('ResourceBar', () => {
 
   it('容量80%-95%时应变为橙色警告', () => {
     // 粮草 85% → 橙色警告
-    const resources = { grain: 4250, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
-    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+    const resources = { grain: 4250, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0, techPoint: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null, techPoint: null };
 
     const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -129,9 +130,9 @@ describe('ResourceBar', () => {
   });
 
   it('应显示游戏标题', () => {
-    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 0, gold: 0, troops: 0, mandate: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null };
+    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
+    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null };
 
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -139,9 +140,9 @@ describe('ResourceBar', () => {
   });
 
   it('速率为0时不显示速率文本', () => {
-    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 0, gold: 0, troops: 0, mandate: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null };
+    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
+    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null };
 
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -151,9 +152,9 @@ describe('ResourceBar', () => {
 
   it('接近上限(>80%)时资源数值应显示警告样式', () => {
     // 粮草 85% → warning 级别
-    const resources = { grain: 4250, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
-    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+    const resources = { grain: 4250, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0, techPoint: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null, techPoint: null };
 
     const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -165,9 +166,9 @@ describe('ResourceBar', () => {
 
   it('接近上限(>80%)时应显示⚠️警告图标', () => {
     // 粮草 90% → warning 级别，显示 ⚠️
-    const resources = { grain: 4500, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
-    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+    const resources = { grain: 4500, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0, techPoint: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null, techPoint: null };
 
     const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -178,9 +179,9 @@ describe('ResourceBar', () => {
 
   it('资源远未达上限时不应显示警告样式', () => {
     // 粮草 20% → 无警告
-    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
-    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+    const resources = { grain: 1000, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0, techPoint: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null, techPoint: null };
 
     const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
@@ -195,9 +196,9 @@ describe('ResourceBar', () => {
 
   it('资源已满时应显示full级别警告样式', () => {
     // 粮草 100% → full 级别
-    const resources = { grain: 5000, gold: 500, troops: 200, mandate: 10 };
-    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0 };
-    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
+    const resources = { grain: 5000, gold: 500, troops: 200, mandate: 10, techPoint: 0 };
+    const rates = { grain: 5, gold: 2, troops: 1, mandate: 0, techPoint: 0 };
+    const caps = { grain: 5000, gold: 3000, troops: 1000, mandate: null, techPoint: null };
 
     const { container } = render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 

@@ -107,7 +107,10 @@ describe('RandomEncounterModal', () => {
 
   it('应渲染事件名称', () => {
     render(<RandomEncounterModal {...defaultProps} />);
-    expect(screen.getByText('流民潮')).toBeInTheDocument();
+    // event.name 同时出现在 SharedPanel 标题和内部 h3 中，使用 getAllByText
+    const nameElements = screen.getAllByText('流民潮');
+    expect(nameElements.length).toBeGreaterThanOrEqual(1);
+    expect(nameElements[0]).toBeInTheDocument();
   });
 
   it('应渲染事件描述', () => {
@@ -170,7 +173,7 @@ describe('RandomEncounterModal', () => {
 
   it('点击关闭按钮应调用 onClose', () => {
     render(<RandomEncounterModal {...defaultProps} />);
-    fireEvent.click(screen.getByLabelText('关闭'));
+    fireEvent.click(screen.getByLabelText('关闭面板'));
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 

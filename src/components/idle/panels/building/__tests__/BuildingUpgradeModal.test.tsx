@@ -46,6 +46,7 @@ vi.mock('@/games/three-kingdoms/engine', () => ({
   BUILDING_LABELS: mockBuildingLabels,
   BUILDING_ICONS: mockBuildingIcons,
   BUILDING_ZONES: mockBuildingZones,
+  BUILDING_DEFS: {},
 }));
 
 vi.mock('@/games/three-kingdoms/engine/ThreeKingdomsEngine', () => ({}));
@@ -118,8 +119,9 @@ describe('BuildingUpgradeModal', () => {
     // 弹窗应存在
     expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-    // 显示建筑名称
-    expect(screen.getByText(/农田/)).toBeInTheDocument();
+    // 显示建筑名称（SharedPanel 标题和组件内部都会出现"农田"）
+    const farmTexts = screen.getAllByText(/农田/);
+    expect(farmTexts.length).toBeGreaterThanOrEqual(1);
 
     // 显示当前等级
     expect(screen.getByText('Lv.3')).toBeInTheDocument();
@@ -260,8 +262,8 @@ describe('BuildingUpgradeModal', () => {
       />,
     );
 
-    // 点击遮罩层（overlay = 外层 div）
-    const overlay = container.querySelector('.tk-upgrade-overlay')!;
+    // 点击遮罩层（overlay = SharedPanel 的外层 div）
+    const overlay = container.querySelector('.tk-shared-panel-overlay')!;
     fireEvent.click(overlay);
 
     expect(onCancel).toHaveBeenCalledTimes(1);
