@@ -4,6 +4,8 @@
  * 从 ThreeKingdomsEngine 中拆分出的存档/读档流程。
  * 职责：序列化、反序列化、离线收益计算、旧格式兼容
  *
+ * 格式转换逻辑委托给 engine-save-migration.ts。
+ *
  * @module engine/engine-save
  */
 
@@ -23,21 +25,19 @@ import type { ConfigRegistry } from '../core/config/ConfigRegistry';
 import type {
   GameSaveData,
   OfflineEarnings,
-  ResourceSaveData,
-  BuildingSaveData,
 } from '../shared/types';
-import type { CalendarSaveData } from './calendar/calendar.types';
-import type { HeroSaveData } from './hero/hero.types';
-import type { RecruitSaveData } from './hero/HeroRecruitSystem';
-import type { FormationSaveData } from './hero/HeroFormation';
 import type { TechSaveData } from './tech/tech.types';
 import type { IGameState } from '../core/types/state';
 import type { ISystemDeps } from '../core/types/subsystem';
 import type { ArenaSystem } from './pvp/ArenaSystem';
 import type { ArenaShopSystem } from './pvp/ArenaShopSystem';
 import type { RankingSystem } from './pvp/RankingSystem';
-import { ENGINE_SAVE_VERSION, SAVE_KEY } from '../shared/constants';
+import { ENGINE_SAVE_VERSION } from '../shared/constants';
 import { syncBuildingToResource } from './engine-tick';
+import { toIGameState, fromIGameState, tryLoadLegacyFormat } from './engine-save-migration';
+
+// Re-export migration functions for backward compatibility
+export { toIGameState, fromIGameState, tryLoadLegacyFormat } from './engine-save-migration';
 
 // ─────────────────────────────────────────────
 // 存档上下文
@@ -58,41 +58,23 @@ export interface SaveContext {
   readonly bus: EventBus;
   readonly registry: SubsystemRegistry;
   readonly configRegistry: ConfigRegistry;
-  /** 装备系统（可选，v5.0+） */
   readonly equipment?: import('./equipment/EquipmentSystem').EquipmentSystem;
-  /** 装备炼制系统（可选，v10.0+） */
   readonly equipmentForge?: import('./equipment/EquipmentForgeSystem').EquipmentForgeSystem;
-  /** 装备强化系统（可选，v10.0+） */
   readonly equipmentEnhance?: import('./equipment/EquipmentEnhanceSystem').EquipmentEnhanceSystem;
-  /** 贸易系统（可选，v5.0+） */
   readonly trade?: import('./trade/TradeSystem').TradeSystem;
-  /** 商店系统（可选，v5.0+） */
   readonly shop?: import('./shop/ShopSystem').ShopSystem;
-  /** 声望系统（可选，v14.0+） */
   readonly prestige?: import('./prestige/PrestigeSystem').PrestigeSystem;
-  /** 传承系统（可选，v14.0+） */
   readonly heritage?: import('./heritage/HeritageSystem').HeritageSystem;
-  /** 成就系统（可选，v14.0+） */
   readonly achievement?: import('./achievement/AchievementSystem').AchievementSystem;
-  /** 竞技场系统（可选，v7.0+） */
   readonly arena?: ArenaSystem;
-  /** 竞技商店系统（可选，v7.0+） */
   readonly arenaShop?: ArenaShopSystem;
-  /** 排行榜系统（可选，v7.0+） */
   readonly ranking?: RankingSystem;
-  /** 事件触发系统（可选，v7.0+） */
   readonly eventTrigger?: import('./event/EventTriggerSystem').EventTriggerSystem;
-  /** 事件通知系统（可选，v7.0+） */
   readonly eventNotification?: import('./event/EventNotificationSystem').EventNotificationSystem;
-  /** 事件UI通知（可选，v7.0+） */
   readonly eventUI?: import('./event/EventUINotification').EventUINotification;
-  /** 事件链系统（可选，v7.0+） */
   readonly eventChain?: import('./event/EventChainSystem').EventChainSystem;
-  /** 事件日志系统（可选，v7.0+） */
   readonly eventLog?: import('./event/EventLogSystem').EventLogSystem;
-  /** 离线事件系统（可选，v15.0+） */
   readonly offlineEvent?: import('./event/OfflineEventSystem').OfflineEventSystem;
-  /** 在线时长（秒） */
   onlineSeconds: number;
 }
 
@@ -102,7 +84,6 @@ export interface SaveContext {
 
 /** 构建完整的 GameSaveData */
 export function buildSaveData(ctx: SaveContext): GameSaveData {
-  // 序列化科技系统
   const treeData = ctx.techTree.serialize();
   const researchData = ctx.techResearch.serialize();
   const pointData = ctx.techPoint.serialize();
@@ -134,94 +115,15 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     prestige: ctx.prestige?.getSaveData(),
     heritage: ctx.heritage?.getSaveData(),
     achievement: ctx.achievement?.getSaveData(),
-    // ── PvP 系统 v7.0 ──
     pvpArena: ctx.arena?.serialize(),
     pvpArenaShop: ctx.arenaShop?.serialize(),
     pvpRanking: ctx.ranking?.serialize(),
-
-    // ── 事件系统 v7.0+ ──
     eventTrigger: ctx.eventTrigger?.serialize(),
     eventNotification: ctx.eventNotification?.exportSaveData(),
     eventUI: ctx.eventUI?.serialize(),
     eventChain: ctx.eventChain?.serialize(),
     eventLog: ctx.eventLog?.exportSaveData(),
     offlineEvent: ctx.offlineEvent?.exportSaveData() as { version: number; offlineQueue: unknown[]; autoRules: unknown[] },
-  };
-}
-
-/** 将 GameSaveData 转换为 IGameState 格式（供 SaveManager 使用） */
-export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameState {
-  const subsystems: Record<string, unknown> = {
-    resource: data.resource,
-    building: data.building,
-    calendar: data.calendar,
-    hero: data.hero,
-    recruit: data.recruit,
-    formation: data.formation,
-    campaign: data.campaign,
-    tech: data.tech,
-  };
-  if (data.equipment) subsystems.equipment = data.equipment;
-  if (data.equipmentForge) subsystems.equipmentForge = data.equipmentForge;
-  if (data.equipmentEnhance) subsystems.equipmentEnhance = data.equipmentEnhance;
-  if (data.trade) subsystems.trade = data.trade;
-  if (data.shop) subsystems.shop = data.shop;
-  if (data.prestige) subsystems.prestige = data.prestige;
-  if (data.heritage) subsystems.heritage = data.heritage;
-  if (data.achievement) subsystems.achievement = data.achievement;
-  if (data.pvpArena) subsystems.pvpArena = data.pvpArena;
-  if (data.pvpArenaShop) subsystems.pvpArenaShop = data.pvpArenaShop;
-  if (data.pvpRanking) subsystems.pvpRanking = data.pvpRanking;
-  if (data.eventTrigger) subsystems.eventTrigger = data.eventTrigger;
-  if (data.eventNotification) subsystems.eventNotification = data.eventNotification;
-  if (data.eventUI) subsystems.eventUI = data.eventUI;
-  if (data.eventChain) subsystems.eventChain = data.eventChain;
-  if (data.eventLog) subsystems.eventLog = data.eventLog;
-  if (data.offlineEvent) subsystems.offlineEvent = data.offlineEvent;
-
-  return {
-    version: String(data.version),
-    timestamp: data.saveTime,
-    subsystems,
-    metadata: {
-      totalPlayTime: onlineSeconds,
-      saveCount: 0,
-      lastVersion: String(data.version),
-    },
-  };
-}
-
-/** 从 IGameState 提取 GameSaveData */
-export function fromIGameState(state: IGameState): GameSaveData {
-  const s = state.subsystems;
-  return {
-    version: Number(state.version),
-    saveTime: state.timestamp,
-    resource: s.resource as ResourceSaveData,
-    building: s.building as BuildingSaveData,
-    calendar: s.calendar as CalendarSaveData | undefined,
-    hero: s.hero as HeroSaveData | undefined,
-    recruit: s.recruit as RecruitSaveData | undefined,
-    formation: s.formation as FormationSaveData | undefined,
-    campaign: s.campaign as import('./campaign/campaign.types').CampaignSaveData | undefined,
-    tech: s.tech as TechSaveData | undefined,
-    equipment: s.equipment as import('../core/equipment/equipment.types').EquipmentSaveData | undefined,
-    equipmentForge: s.equipmentForge as import('../core/equipment/equipment-forge.types').ForgeSaveData | undefined,
-    equipmentEnhance: s.equipmentEnhance as { protectionCount: number } | undefined,
-    trade: s.trade as import('../core/trade/trade.types').TradeSaveData | undefined,
-    shop: s.shop as import('../core/shop/shop.types').ShopSaveData | undefined,
-    prestige: s.prestige as import('../core/prestige').PrestigeSaveData | undefined,
-    heritage: s.heritage as import('../core/heritage').HeritageSaveData | undefined,
-    achievement: s.achievement as import('../core/achievement').AchievementSaveData | undefined,
-    pvpArena: s.pvpArena as import('../core/pvp/pvp.types').ArenaSaveData | undefined,
-    pvpArenaShop: s.pvpArenaShop as import('./pvp/ArenaShopSystem').ArenaShopSaveData | undefined,
-    pvpRanking: s.pvpRanking as import('./pvp/RankingSystem').RankingSaveData | undefined,
-    eventTrigger: s.eventTrigger as import('../core/event').EventSystemSaveData | undefined,
-    eventNotification: s.eventNotification as import('./event/EventNotificationSystem').EventNotificationSaveData | undefined,
-    eventUI: s.eventUI as { expiredBanners: import('../core/events/event-system.types').EventBanner[] } | undefined,
-    eventChain: s.eventChain as import('./event/EventChainSystem').EventChainSaveData | undefined,
-    eventLog: s.eventLog as import('./event/EventLogSystem').EventLogSaveData | undefined,
-    offlineEvent: s.offlineEvent as { version: number; offlineQueue: unknown[]; autoRules: unknown[] } | undefined,
   };
 }
 
@@ -240,36 +142,10 @@ export function applyLoadedState(ctx: SaveContext, state: IGameState): OfflineEa
       );
     }
 
-    // v1.0 → v2.0 迁移：检测到旧版本存档时确保武将系统字段存在
-    // applySaveData 内部已对 hero/recruit 缺失做兼容处理
     applySaveData(ctx, data);
     return computeOfflineAndFinalize(ctx);
   } catch (e) {
     console.error('ThreeKingdomsEngine.load 失败:', e);
-    return null;
-  }
-}
-
-/** 尝试加载旧格式存档（直接 JSON，无 checksum 包装） */
-export function tryLoadLegacyFormat(): GameSaveData | null {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw);
-
-    // 新格式特征：外层有 v/checksum/data 字段
-    if (parsed.v !== undefined && parsed.checksum !== undefined && parsed.data !== undefined) {
-      return null;
-    }
-
-    // 旧格式特征：直接是 GameSaveData
-    if (typeof parsed.version === 'number' && parsed.resource && parsed.building) {
-      return parsed as GameSaveData;
-    }
-
-    return null;
-  } catch {
     return null;
   }
 }
@@ -303,35 +179,28 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.calendar.deserialize(data.calendar);
   }
 
-  // ── 武将系统 v1.0 → v2.0 迁移 ──
-  // v1.0 存档无 hero/recruit 字段，HeroSystem/HeroRecruitSystem 保持构造函数创建的空状态，
-  // 后续由 finalizeLoad() → initHeroSystems() 注入资源回调即可正常工作。
   if (data.hero) {
     ctx.hero.deserialize(data.hero);
   } else {
     console.info('[Save] v1.0 存档迁移：无武将数据，自动初始化空武将系统');
   }
 
-  // ── 招募系统 v1.0 → v2.0 迁移 ──
   if (data.recruit) {
     ctx.recruit.deserialize(data.recruit);
   } else {
     console.info('[Save] v1.0 存档迁移：无招募数据，保底计数器从 0 开始');
   }
 
-  // ── 编队系统 v2.0 ──
   if (data.formation) {
     ctx.formation.deserialize(data.formation);
   }
 
-  // ── 关卡系统 v3.0 ──
   if (data.campaign) {
     ctx.campaign.deserialize(data.campaign);
   } else {
     console.info('[Save] v2.0 存档迁移：无关卡数据，自动初始化空关卡进度');
   }
 
-  // ── 科技系统 v4.0 ──
   if (data.tech) {
     ctx.techTree.deserialize({
       completedTechIds: data.tech.completedTechIds,
@@ -348,91 +217,35 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     console.info('[Save] v3.0 存档迁移：无科技数据，自动初始化空科技系统');
   }
 
-  // ── 装备系统 v5.0 ──
-  if (data.equipment && ctx.equipment) {
-    ctx.equipment.deserialize(data.equipment);
-  }
+  // 可选系统恢复
+  if (data.equipment && ctx.equipment) ctx.equipment.deserialize(data.equipment);
+  if (data.equipmentForge && ctx.equipmentForge) ctx.equipmentForge.deserialize(data.equipmentForge);
+  if (data.equipmentEnhance && ctx.equipmentEnhance) ctx.equipmentEnhance.deserialize(data.equipmentEnhance);
+  if (data.trade && ctx.trade) ctx.trade.deserialize(data.trade);
+  if (data.shop && ctx.shop) ctx.shop.deserialize(data.shop);
+  if (data.prestige && ctx.prestige) ctx.prestige.loadSaveData(data.prestige);
+  if (data.heritage && ctx.heritage) ctx.heritage.loadSaveData(data.heritage);
+  if (data.achievement && ctx.achievement) ctx.achievement.loadSaveData(data.achievement);
 
-  // ── 装备炼制系统 v10.0 ──
-  if (data.equipmentForge && ctx.equipmentForge) {
-    ctx.equipmentForge.deserialize(data.equipmentForge);
-  }
-
-  // ── 装备强化系统 v10.0 ──
-  if (data.equipmentEnhance && ctx.equipmentEnhance) {
-    ctx.equipmentEnhance.deserialize(data.equipmentEnhance);
-  }
-
-  // ── 贸易系统 v5.0 ──
-  if (data.trade && ctx.trade) {
-    ctx.trade.deserialize(data.trade);
-  }
-
-  // ── 商店系统 v5.0 ──
-  if (data.shop && ctx.shop) {
-    ctx.shop.deserialize(data.shop);
-  }
-
-  // ── 声望系统 v14.0 ──
-  if (data.prestige && ctx.prestige) {
-    ctx.prestige.loadSaveData(data.prestige);
-  }
-
-  // ── 传承系统 v14.0 ──
-  if (data.heritage && ctx.heritage) {
-    ctx.heritage.loadSaveData(data.heritage);
-  }
-
-  // ── 成就系统 v14.0 ──
-  if (data.achievement && ctx.achievement) {
-    ctx.achievement.loadSaveData(data.achievement);
-  }
-
-  // ── PvP 竞技场系统 v7.0 ──
+  // PvP 系统 v7.0
   if (data.pvpArena && ctx.arena) {
     ctx.arena.deserialize(data.pvpArena);
   } else {
     console.info('[Save] v7.0 存档迁移：无竞技场数据，自动初始化默认状态');
   }
+  if (data.pvpArenaShop && ctx.arenaShop) ctx.arenaShop.deserialize(data.pvpArenaShop);
+  if (data.pvpRanking && ctx.ranking) ctx.ranking.deserialize(data.pvpRanking);
 
-  // ── 竞技商店系统 v7.0 ──
-  if (data.pvpArenaShop && ctx.arenaShop) {
-    ctx.arenaShop.deserialize(data.pvpArenaShop);
-  }
-
-  // ── 排行榜系统 v7.0 ──
-  if (data.pvpRanking && ctx.ranking) {
-    ctx.ranking.deserialize(data.pvpRanking);
-  }
-
-  // ── 事件触发系统 v7.0 ──
+  // 事件系统 v7.0+
   if (data.eventTrigger && ctx.eventTrigger) {
     ctx.eventTrigger.deserialize(data.eventTrigger);
   } else {
     console.info('[Save] v7.0 存档迁移：无事件触发数据，自动初始化默认事件');
   }
-
-  // ── 事件通知系统 v7.0 ──
-  if (data.eventNotification && ctx.eventNotification) {
-    ctx.eventNotification.importSaveData(data.eventNotification);
-  }
-
-  // ── 事件UI通知 v7.0 ──
-  if (data.eventUI && ctx.eventUI) {
-    ctx.eventUI.deserialize(data.eventUI);
-  }
-
-  // ── 事件链系统 v7.0 ──
-  if (data.eventChain && ctx.eventChain) {
-    ctx.eventChain.deserialize(data.eventChain);
-  }
-
-  // ── 事件日志系统 v7.0 ──
-  if (data.eventLog && ctx.eventLog) {
-    ctx.eventLog.importSaveData(data.eventLog);
-  }
-
-  // ── 离线事件系统 v15.0 ──
+  if (data.eventNotification && ctx.eventNotification) ctx.eventNotification.importSaveData(data.eventNotification);
+  if (data.eventUI && ctx.eventUI) ctx.eventUI.deserialize(data.eventUI);
+  if (data.eventChain && ctx.eventChain) ctx.eventChain.deserialize(data.eventChain);
+  if (data.eventLog && ctx.eventLog) ctx.eventLog.importSaveData(data.eventLog);
   if (data.offlineEvent && ctx.offlineEvent) {
     ctx.offlineEvent.importSaveData(data.offlineEvent as Parameters<typeof ctx.offlineEvent.importSaveData>[0]);
   }
@@ -470,7 +283,6 @@ function computeOfflineAndFinalize(ctx: SaveContext): OfflineEarnings | null {
     }
   }
 
-  // 初始化日历子系统依赖
   const calendarDeps: ISystemDeps = {
     eventBus: ctx.bus,
     config: ctx.configRegistry,

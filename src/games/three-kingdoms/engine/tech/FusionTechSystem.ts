@@ -8,6 +8,7 @@
  * - 融合科技效果汇总与查询
  *
  * 依赖：TechTreeSystem（查询已完成节点状态）
+ * 联动效果管理委托给 FusionLinkManager。
  *
  * @module engine/tech/FusionTechSystem
  */
@@ -28,6 +29,7 @@ import type {
 import { FUSION_TECH_DEFS, FUSION_TECH_MAP } from './fusion-tech.types';
 import type { TechTreeSystem } from './TechTreeSystem';
 import type { TechLinkSystem } from './TechLinkSystem';
+import { FusionLinkManager } from './FusionLinkManager';
 
 // ─────────────────────────────────────────────
 // 辅助函数
@@ -66,13 +68,12 @@ export class FusionTechSystem implements ISubsystem {
   private techTree: TechTreeSystem | null = null;
   /** 依赖的联动系统（v5.0） */
   private linkSystem: TechLinkSystem | null = null;
-  /** 融合科技联动效果（v5.0） */
-  private fusionLinks: Map<string, FusionLinkEffect>;
+  /** 联动效果管理器（委托） */
+  private linkMgr: FusionLinkManager;
 
   constructor() {
     this.nodes = createAllFusionNodeStates();
-    this.fusionLinks = new Map();
-    this.registerDefaultFusionLinks();
+    this.linkMgr = new FusionLinkManager();
   }
 
   // ── ISubsystem 接口 ──
@@ -111,67 +112,22 @@ export class FusionTechSystem implements ISubsystem {
   }
 
   // ─────────────────────────────────────────
-  // 融合科技联动效果（v5.0）
+  // 融合科技联动效果（v5.0，委托 FusionLinkManager）
   // ─────────────────────────────────────────
-
-  /** 注册默认融合科技联动效果 */
-  private registerDefaultFusionLinks(): void {
-    const defaultLinks: FusionLinkEffect[] = [
-      // ── 兵精粮足 → 建筑/资源联动 ──
-      { id: 'fl_mil_eco_1_barracks', fusionTechId: 'fusion_mil_eco_1', target: 'building', targetSub: 'barracks', description: '兵精粮足：兵营训练速度+10%', value: 10 },
-      { id: 'fl_mil_eco_1_grain', fusionTechId: 'fusion_mil_eco_1', target: 'resource', targetSub: 'grain', description: '兵精粮足：粮草产出+15%', value: 15 },
-      // ── 铁骑商路 → 建筑/资源联动 ──
-      { id: 'fl_mil_eco_2_stable', fusionTechId: 'fusion_mil_eco_2', target: 'building', targetSub: 'stable', description: '铁骑商路：马厩产出+20%', value: 20, unlockFeature: true, unlockDescription: '解锁精锐骑兵训练' },
-      { id: 'fl_mil_eco_2_gold', fusionTechId: 'fusion_mil_eco_2', target: 'resource', targetSub: 'gold', description: '铁骑商路：铜钱产出+20%', value: 20 },
-      // ── 兵法大家 → 武将联动 ──
-      { id: 'fl_mil_cul_1_hero', fusionTechId: 'fusion_mil_cul_1', target: 'hero', targetSub: 'all_skill_exp', description: '兵法大家：武将技能经验+20%', value: 20 },
-      { id: 'fl_mil_cul_1_academy', fusionTechId: 'fusion_mil_cul_1', target: 'building', targetSub: 'academy', description: '兵法大家：书院研究速度+10%', value: 10 },
-      // ── 名将传承 → 武将联动 ──
-      { id: 'fl_mil_cul_2_hero', fusionTechId: 'fusion_mil_cul_2', target: 'hero', targetSub: 'infantry_command', description: '名将传承：步兵指挥+25%', value: 25, unlockSkill: true },
-      { id: 'fl_mil_cul_2_research', fusionTechId: 'fusion_mil_cul_2', target: 'resource', targetSub: 'mandate', description: '名将传承：天命获取+15%', value: 15 },
-      // ── 文景之治 → 资源联动 ──
-      { id: 'fl_eco_cul_1_all_res', fusionTechId: 'fusion_eco_cul_1', target: 'resource', targetSub: 'grain', description: '文景之治：粮草产出+15%', value: 15 },
-      { id: 'fl_eco_cul_1_hero_exp', fusionTechId: 'fusion_eco_cul_1', target: 'hero', targetSub: 'all_skill_exp', description: '文景之治：武将经验+15%', value: 15 },
-      // ── 盛世华章 → 资源/武将联动 ──
-      { id: 'fl_eco_cul_2_gold', fusionTechId: 'fusion_eco_cul_2', target: 'resource', targetSub: 'gold', description: '盛世华章：铜钱产出+25%', value: 25 },
-      { id: 'fl_eco_cul_2_recruit', fusionTechId: 'fusion_eco_cul_2', target: 'hero', targetSub: 'recruit_quality', description: '盛世华章：招募折扣+15%', value: 15, unlockSkill: true },
-    ];
-    for (const link of defaultLinks) {
-      this.fusionLinks.set(link.id, link);
-    }
-  }
 
   /** 获取融合科技的联动效果列表 */
   getFusionLinkEffects(fusionTechId: string): FusionLinkEffect[] {
-    const result: FusionLinkEffect[] = [];
-    for (const link of this.fusionLinks.values()) {
-      if (link.fusionTechId === fusionTechId) {
-        result.push(link);
-      }
-    }
-    return result;
+    return this.linkMgr.getByFusionTechId(fusionTechId);
   }
 
   /** 获取所有已完成融合科技的联动效果 */
   getActiveFusionLinkEffects(): FusionLinkEffect[] {
-    const result: FusionLinkEffect[] = [];
-    for (const link of this.fusionLinks.values()) {
-      if (this.nodes[link.fusionTechId]?.status === 'completed') {
-        result.push(link);
-      }
-    }
-    return result;
+    return this.linkMgr.getActiveEffects((id) => this.nodes[id]?.status === 'completed');
   }
 
   /** 获取已完成融合科技对指定目标的联动加成总值 */
   getFusionLinkBonus(target: 'building' | 'hero' | 'resource', targetSub: string): number {
-    let total = 0;
-    for (const link of this.fusionLinks.values()) {
-      if (link.target !== target || link.targetSub !== targetSub) continue;
-      if (this.nodes[link.fusionTechId]?.status !== 'completed') continue;
-      total += link.value;
-    }
-    return total;
+    return this.linkMgr.getBonus(target, targetSub, (id) => this.nodes[id]?.status === 'completed');
   }
 
   // ─────────────────────────────────────────
@@ -225,8 +181,6 @@ export class FusionTechSystem implements ISubsystem {
 
   /**
    * 详细检查融合科技的前置条件（v5.0 扩展）
-   *
-   * 返回每组前置条件的完成状态，便于 UI 展示详细的解锁进度。
    */
   checkPrerequisitesDetailed(id: string): PrerequisiteCheckResult {
     const def = FUSION_TECH_MAP.get(id);
@@ -266,8 +220,6 @@ export class FusionTechSystem implements ISubsystem {
 
   /**
    * 检查指定路线组合的所有融合科技解锁进度（v5.0 扩展）
-   *
-   * 返回两条路线各有多少融合科技已解锁/可研究/锁定。
    */
   getPathPairProgress(pathA: string, pathB: string): {
     total: number;
@@ -332,7 +284,9 @@ export class FusionTechSystem implements ISubsystem {
     state.researchEndTime = null;
 
     // 同步联动效果到 TechLinkSystem（v5.0）
-    this.syncFusionLinksToLinkSystem(id);
+    if (this.linkSystem) {
+      this.linkMgr.syncToLinkSystem(id, this.linkSystem);
+    }
 
     // 发出事件
     this.deps?.eventBus.emit('economy:fusionTechCompleted', {
@@ -340,29 +294,6 @@ export class FusionTechSystem implements ISubsystem {
       techName: def.name,
       effects: def.effects,
     });
-  }
-
-  /** 同步融合科技联动效果到联动系统 */
-  private syncFusionLinksToLinkSystem(fusionTechId: string): void {
-    if (!this.linkSystem) return;
-    const links = this.getFusionLinkEffects(fusionTechId);
-    for (const fl of links) {
-      // 将融合科技联动注册为普通联动，techId 使用融合科技 ID
-      this.linkSystem.registerLink({
-        id: fl.id,
-        techId: fl.fusionTechId,
-        target: fl.target,
-        targetSub: fl.targetSub,
-        description: fl.description,
-        value: fl.value,
-        unlockFeature: fl.unlockFeature,
-        unlockDescription: fl.unlockDescription,
-        unlockSkill: fl.unlockSkill,
-        newSkillDescription: fl.newSkillDescription,
-      });
-      // 标记融合科技为已完成，使联动生效
-      this.linkSystem.addCompletedTech(fl.fusionTechId);
-    }
   }
 
   /** 取消研究 */
@@ -441,10 +372,8 @@ export class FusionTechSystem implements ISubsystem {
       const state = this.nodes[def.id];
       if (!state) continue;
 
-      // 已完成或研究中不改变
       if (state.status === 'completed' || state.status === 'researching') continue;
 
-      // 检查前置条件
       if (this.arePrerequisitesMet(def.id)) {
         state.status = 'available';
       } else {
@@ -457,7 +386,6 @@ export class FusionTechSystem implements ISubsystem {
   // 序列化
   // ─────────────────────────────────────────
 
-  /** 序列化 */
   serialize(): FusionTechSaveData {
     const completedFusionIds: string[] = [];
     for (const def of FUSION_TECH_DEFS) {
@@ -471,7 +399,6 @@ export class FusionTechSystem implements ISubsystem {
     };
   }
 
-  /** 反序列化 */
   deserialize(data: FusionTechSaveData): void {
     this.nodes = createAllFusionNodeStates();
 
