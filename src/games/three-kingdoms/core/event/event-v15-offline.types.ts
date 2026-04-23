@@ -7,7 +7,7 @@
  */
 
 import type { EventId, EventDef } from './event.types';
-import type { EventCategory, OptionConsequence } from './event-v15.types';
+import type { EventCategory, OptionConsequence } from './event-v15-shared.types';
 
 // ─────────────────────────────────────────────
 // 离线事件处理系统类型

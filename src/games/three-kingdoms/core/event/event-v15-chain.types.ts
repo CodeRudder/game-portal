@@ -7,7 +7,7 @@
  */
 
 import type { EventId } from './event.types';
-import type { EventCategory, OptionConsequence } from './event-v15.types';
+import type { EventCategory, OptionConsequence } from './event-v15-shared.types';
 
 // ─────────────────────────────────────────────
 // 连锁事件系统 v15 类型

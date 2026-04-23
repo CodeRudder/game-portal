@@ -15,7 +15,7 @@
  */
 
 import type { EventConsequence } from './event.types';
-import type { OfflineEventEntry } from './event-v15.types';
+import type { OfflineEventEntry } from './event-v15-offline.types';
 
 // ─────────────────────────────────────────────
 // 1. 离线事件堆积

@@ -45,9 +45,10 @@ export type {
 } from '../settings/AccountSystem';
 
 // ── unification 模块独有的子系统 ──
-export { AudioController } from './AudioController';
-export { AudioScene } from './AudioController';
-export type { VolumeOutput, AudioControllerConfig } from './AudioController';
+// AudioController 已统一到 AudioManager，此处仅做 re-export 以保持向后兼容
+export { AudioManager as AudioController } from '../settings/AudioManager';
+export { AudioScene } from '../settings/AudioManager';
+export type { VolumeOutput, AudioManagerConfig as AudioControllerConfig } from '../settings/AudioManager';
 export { GraphicsQualityManager } from './GraphicsQualityManager';
 export { BalanceValidator } from './BalanceValidator';
 export {
@@ -58,6 +59,8 @@ export {
   calcPower,
   calcRebirthMultiplier,
   generateResourceCurve,
+} from './BalanceUtils';
+export {
   DEFAULT_RESOURCE_CONFIGS,
   HERO_BASE_STATS,
   DEFAULT_BATTLE_CONFIG,

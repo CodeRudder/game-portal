@@ -28,7 +28,7 @@ import {
   REBIRTH_ACCELERATION,
   REBIRTH_UNLOCK_CONTENTS,
 } from '../../core/prestige';
-import { calcRebirthMultiplier as calcRebirthMultiplierCore } from '../unification/BalanceCalculator';
+import { calcRebirthMultiplier as calcRebirthMultiplierCore } from '../unification/BalanceUtils';
 import type { RebirthBalanceConfig } from '../../core/unification';
 import {
   getInitialGift,

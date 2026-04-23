@@ -116,13 +116,13 @@ export * from './settings';
 
 // ── 统一域 (v19.0) — 仅导出独有的，与settings重复的已通过settings域导出 ──
 export { BalanceValidator } from './unification/BalanceValidator';
-export { AudioController as UnificationAudioController } from './unification/AudioController';
-export type { VolumeOutput, AudioControllerConfig } from './unification/AudioController';
-export { AudioScene } from './unification/AudioController';
+export { AudioScene } from './settings/AudioManager';
 export { GraphicsQualityManager } from './unification/GraphicsQualityManager';
 export {
   inRange, calcDeviation, makeEntry, calcPower, calcRebirthMultiplier,
   generateResourceCurve,
+} from './unification/BalanceUtils';
+export {
   DEFAULT_RESOURCE_CONFIGS, HERO_BASE_STATS, DEFAULT_BATTLE_CONFIG,
   DEFAULT_ECONOMY_CONFIGS, DEFAULT_REBIRTH_CONFIG,
 } from './unification/BalanceCalculator';

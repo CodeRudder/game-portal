@@ -16,6 +16,19 @@ import type { AudioSettings } from '../../core/settings';
 import { VOLUME_STEP, VOLUME_MIN, VOLUME_MAX } from '../../core/settings';
 
 // ─────────────────────────────────────────────
+// 枚举
+// ─────────────────────────────────────────────
+
+/** 特殊音频场景（从 AudioController 迁移） */
+export enum AudioScene {
+  Normal = 'normal',
+  Background = 'background',       // 后台运行
+  IncomingCall = 'incomingCall',    // 来电/闹钟
+  FirstLaunch = 'firstLaunch',      // 首次启动
+  LowBattery = 'lowBattery',        // 低电量
+}
+
+// ─────────────────────────────────────────────
 // 类型
 // ─────────────────────────────────────────────
 
@@ -108,6 +121,7 @@ export class AudioManager implements ISubsystem {
   private batteryLevel = 100;
   private currentBGM: string | null = null;
   private bgmDelayTimer: ReturnType<typeof setTimeout> | null = null;
+  private _currentScene: AudioScene = AudioScene.Normal;
 
   constructor(config?: Partial<AudioManagerConfig>) {
     this.config = { ...DEFAULT_AUDIO_CONFIG, ...config };
@@ -500,6 +514,121 @@ export class AudioManager implements ISubsystem {
   }
 
   // ─────────────────────────────────────────
+  // 开关便捷方法（从 AudioController 合并）
+  // ─────────────────────────────────────────
+
+  /** 设置音效总开关 */
+  setMasterSwitch(enabled: boolean): void {
+    if (!this.settings) return;
+    this.settings.masterSwitch = enabled;
+  }
+
+  /** 设置BGM开关 */
+  setBgmSwitch(enabled: boolean): void {
+    if (!this.settings) return;
+    this.settings.bgmSwitch = enabled;
+  }
+
+  /** 设置语音开关 */
+  setVoiceSwitch(enabled: boolean): void {
+    if (!this.settings) return;
+    this.settings.voiceSwitch = enabled;
+  }
+
+  /** 设置战斗音效开关 */
+  setBattleSfxSwitch(enabled: boolean): void {
+    if (!this.settings) return;
+    this.settings.battleSfxSwitch = enabled;
+  }
+
+  // ─────────────────────────────────────────
+  // 场景便捷方法（从 AudioController 合并）
+  // ─────────────────────────────────────────
+
+  /**
+   * 设置当前音频场景
+   *
+   * 映射 AudioScene 到 AudioManager 的内部状态：
+   * - Background → enterBackground
+   * - IncomingCall → handleInterruption
+   * - Normal → 恢复正常
+   * - LowBattery → 低电量模式
+   * - FirstLaunch → 首次启动延迟
+   */
+  setScene(scene: AudioScene): void {
+    this._currentScene = scene;
+    switch (scene) {
+      case AudioScene.Background:
+        if (!this.isInBackground) this.enterBackground();
+        break;
+      case AudioScene.IncomingCall:
+        if (!this.isInCall) this.handleInterruption();
+        break;
+      case AudioScene.LowBattery:
+        // 低电量通过 updateBatteryLevel 自动处理
+        break;
+      case AudioScene.FirstLaunch:
+        // 首次启动通过 isFirstLaunch 标记处理
+        this.isFirstLaunch = true;
+        break;
+      case AudioScene.Normal:
+      default:
+        if (this.isInBackground) this.enterForeground();
+        if (this.isInCall) this.handleInterruptionEnd();
+        break;
+    }
+  }
+
+  /** 获取当前音频场景 */
+  getScene(): AudioScene {
+    return this._currentScene;
+  }
+
+  /** 获取场景音量乘数 */
+  getSceneVolumeMultiplier(): number {
+    if (this.isInCall) return 0;
+    if (this.isInBackground) return 0;
+    if (this.batteryLevel < this.config.lowBatteryThreshold) {
+      return this.config.lowBatteryBGMReduction;
+    }
+    return 1.0;
+  }
+
+  /**
+   * 设置电池电量（用于低电量检测）
+   *
+   * 同时自动切换场景。
+   */
+  setBatteryLevel(level: number): void {
+    this.updateBatteryLevel(level);
+    if (this.batteryLevel < this.config.lowBatteryThreshold
+        && this._currentScene === AudioScene.Normal) {
+      this._currentScene = AudioScene.LowBattery;
+    } else if (this.batteryLevel >= this.config.lowBatteryThreshold
+               && this._currentScene === AudioScene.LowBattery) {
+      this._currentScene = AudioScene.Normal;
+    }
+  }
+
+  /** 标记首次启动完成 */
+  markFirstLaunchComplete(): void {
+    this.isFirstLaunch = false;
+    if (this._currentScene === AudioScene.FirstLaunch) {
+      this._currentScene = AudioScene.Normal;
+    }
+  }
+
+  /** 是否首次启动 */
+  getIsFirstLaunch(): boolean {
+    return this.isFirstLaunch;
+  }
+
+  /** 获取配置 */
+  getConfig(): AudioManagerConfig {
+    return { ...this.config };
+  }
+
+  // ─────────────────────────────────────────
   // 重置
   // ─────────────────────────────────────────
 
@@ -512,6 +641,7 @@ export class AudioManager implements ISubsystem {
     this.batteryLevel = 100;
     this.settings = null;
     this.currentBGM = null;
+    this._currentScene = AudioScene.Normal;
   }
 
   // ─────────────────────────────────────────

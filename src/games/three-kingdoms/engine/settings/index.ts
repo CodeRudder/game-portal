@@ -44,7 +44,7 @@ export type {
   ISettingsStorage,
 } from './SettingsManager';
 
-export { AudioManager } from './AudioManager';
+export { AudioManager, AudioScene } from './AudioManager';
 export type {
   IAudioPlayer,
   AudioEventCallbacks,

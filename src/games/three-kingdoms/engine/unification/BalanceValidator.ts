@@ -36,12 +36,14 @@ import {
   HERO_BASE_STATS,
   DEFAULT_BATTLE_CONFIG,
   DEFAULT_REBIRTH_CONFIG,
+} from './BalanceCalculator';
+import {
   generateId,
   inRange,
   makeEntry,
   calcPower,
   generateResourceCurve,
-} from './BalanceCalculator';
+} from './BalanceUtils';
 import {
   calculateStagePoints,
   calculateRebirthPoints,

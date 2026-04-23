@@ -1,29 +1,38 @@
 /**
- * 引擎层 — 数值计算器
+ * 引擎层 — 数值计算器（配置常量 + 重导出）
  *
- * 提供数值验证所需的常量配置、工具函数和纯计算逻辑。
+ * 提供5大平衡维度的默认配置常量。
+ * 工具函数和纯计算函数已提取到 BalanceUtils.ts，此处通过重导出保持向后兼容。
  *
- * 包含：
- *   - 5大平衡维度的默认配置常量
- *   - 通用工具函数（范围判断、偏差计算、ID生成等）
- *   - 纯计算函数（战力计算、转生倍率计算、曲线生成等）
+ * 依赖关系（解耦后）：
+ *   BalanceUtils → core/unification (types only)
+ *   BalanceCalculator → BalanceUtils + core/unification (仅配置常量)
+ *   BalanceReport → BalanceUtils + core/unification (不再依赖 BalanceCalculator)
+ *   BalanceValidator → BalanceUtils + BalanceReport + BalanceCalculator
  *
  * @module engine/unification/BalanceCalculator
  */
 
 import type {
-  ValidationEntry,
-  ValidationLevel,
-  BalanceDimension,
-  NumericRange,
   ResourceBalanceConfig,
-  ResourceCurvePoint,
   HeroBaseStats,
   BattleDifficultyConfig,
   EconomyBalanceConfig,
   RebirthBalanceConfig,
-  RebirthMultiplierPoint,
 } from '../../core/unification';
+
+// ─────────────────────────────────────────────
+// 从 BalanceUtils 重导出（保持向后兼容）
+// ─────────────────────────────────────────────
+export {
+  generateId,
+  inRange,
+  calcDeviation,
+  makeEntry,
+  calcPower,
+  calcRebirthMultiplier,
+  generateResourceCurve,
+} from './BalanceUtils';
 
 // ─────────────────────────────────────────────
 // 默认配置常量
@@ -126,102 +135,3 @@ export const DEFAULT_REBIRTH_CONFIG: RebirthBalanceConfig = {
   curveType: 'diminishing',
   decayFactor: 0.92,
 };
-
-// ─────────────────────────────────────────────
-// 工具函数
-// ─────────────────────────────────────────────
-
-/** 生成唯一 ID */
-export function generateId(): string {
-  return `rpt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-/** 判断数值是否在范围内 */
-export function inRange(value: number, range: NumericRange): boolean {
-  return value >= range.min && value <= range.max;
-}
-
-/** 计算偏差百分比 */
-export function calcDeviation(actual: number, expected: number): number {
-  if (expected === 0) return actual === 0 ? 0 : 100;
-  return Math.abs((actual - expected) / expected) * 100;
-}
-
-/** 创建验证条目 */
-export function makeEntry(
-  featureId: string,
-  dimension: BalanceDimension,
-  level: ValidationLevel,
-  actual: number,
-  expected: number | NumericRange,
-  message: string,
-): ValidationEntry {
-  const expectedNum = typeof expected === 'number' ? expected : (expected.min + expected.max) / 2;
-  return {
-    featureId,
-    dimension,
-    level,
-    actual,
-    expected,
-    deviation: calcDeviation(actual, expectedNum),
-    message,
-  };
-}
-
-// ─────────────────────────────────────────────
-// 纯计算函数
-// ─────────────────────────────────────────────
-
-/** 计算战力 */
-export function calcPower(stats: HeroBaseStats, levelFactor: number, starFactor: number): number {
-  return Math.floor(
-    (stats.attack * 2 + stats.defense * 1.5 + stats.hp * 0.5 + stats.speed * 1) *
-    levelFactor * starFactor,
-  );
-}
-
-/** 计算转生倍率（递减曲线） */
-export function calcRebirthMultiplier(count: number, config: RebirthBalanceConfig): number {
-  if (count <= 0) return 1.0;
-  let multiplier = config.baseMultiplier;
-  for (let i = 1; i <= count; i++) {
-    const increment = config.perRebirthIncrement * Math.pow(config.decayFactor, i - 1);
-    multiplier = Math.min(multiplier + increment, config.maxMultiplier);
-  }
-  return Math.round(multiplier * 100) / 100;
-}
-
-/** 生成资源曲线数据点 */
-export function generateResourceCurve(config: ResourceBalanceConfig): ResourceCurvePoint[] {
-  const points: ResourceCurvePoint[] = [];
-  const days = [1, 7, 14, 30, 60, 90];
-  const earlyDaily = (config.earlyGameDailyRange.min + config.earlyGameDailyRange.max) / 2;
-  const growthRate = 1.08;
-
-  let totalProduced = 0;
-  let totalConsumed = 0;
-
-  for (const day of days) {
-    const productionRate = (earlyDaily / 86400) * Math.pow(growthRate, day - 1);
-    const consumptionRate = productionRate * 0.65;
-    totalProduced += productionRate * 86400;
-    totalConsumed += consumptionRate * 86400;
-
-    points.push({
-      day,
-      productionRate: Math.round(productionRate * 1000) / 1000,
-      totalProduced: Math.floor(totalProduced),
-      totalConsumed: Math.floor(totalConsumed),
-      netIncome: Math.floor(totalProduced - totalConsumed),
-    });
-  }
-
-  return points;
-}
-
-// ─────────────────────────────────────────────
-// 注意：验证函数已移至 BalanceReport.ts（消除循环依赖）
-// 如需使用 validateSingleResource / validateSingleHero /
-// calculateStagePoints / validateEconomy / validateRebirth /
-// calculateRebirthPoints，请直接从 BalanceReport 导入。
-// ─────────────────────────────────────────────

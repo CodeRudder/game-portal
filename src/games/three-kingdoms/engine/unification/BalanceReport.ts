@@ -39,7 +39,7 @@ import {
   calcPower,
   generateResourceCurve,
   calcRebirthMultiplier,
-} from './BalanceCalculator';
+} from './BalanceUtils';
 
 // ─────────────────────────────────────────────
 // 资源验证
