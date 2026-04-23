@@ -29,6 +29,7 @@ import {
   REGION_COLORS,
   TERRAIN_COLORS,
 } from '../../core/map';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // ─────────────────────────────────────────────
 // 渲染数据生成器
@@ -48,7 +49,17 @@ import {
  * // data.visibleLandmarks → 可见地标列表
  * ```
  */
-export class MapDataRenderer {
+export class MapDataRenderer implements ISubsystem {
+  readonly name = 'mapDataRenderer' as const;
+  private deps!: ISystemDeps;
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  init(deps: ISystemDeps): void { this.deps = deps; }
+  update(_dt: number): void { /* 纯计算渲染器，无帧更新逻辑 */ }
+  getState(): unknown { return { name: this.name }; }
+  reset(): void { /* 无状态，无需重置 */ }
+
   // ─── 视口计算（#9, #13）──────────────────────
 
   /**
