@@ -120,7 +120,11 @@ export default function SocialPanel({ engine, visible = true, onClose }: SocialP
 
   const friends: any[] = useMemo(() => {
     if (!socialState) return [];
-    return friendSystem?.getFriendList?.(socialState) ?? Object.values(socialState.friends ?? {});
+    try {
+      return friendSystem?.getFriendList?.(socialState) ?? Object.values(socialState.friends ?? {});
+    } catch {
+      return [];
+    }
   }, [friendSystem, socialState]);
 
   const onlineFriends = useMemo(

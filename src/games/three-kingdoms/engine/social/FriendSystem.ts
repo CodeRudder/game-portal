@@ -124,7 +124,7 @@ export class FriendSystem implements ISubsystem {
 
   init(deps: ISystemDeps): void { this.deps = deps; }
   update(_dt: number): void { /* 预留 */ }
-  getState(): unknown { return { friendConfig: this.friendConfig, interactionConfig: this.interactionConfig }; }
+  getState(): SocialState { return createDefaultSocialState(); }
   reset(): void { this.friendConfig = { ...DEFAULT_FRIEND_CONFIG }; this.interactionConfig = { ...DEFAULT_INTERACTION_CONFIG }; }
 
   // ── 好友管理 ──────────────────────────────

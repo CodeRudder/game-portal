@@ -1,0 +1,471 @@
+import {
+import type {
+import {
+
+      const dailyTask = resetState.activities['season_1'].tasks.find(t => t.defId === 'daily_1');
+      expect(dailyTask!.currentProgress).toBe(0);
+      expect(dailyTask!.status).toBe(ActivityTaskStatus.INCOMPLETE);
+
+      // 挑战任务不受影响
+      const challengeTask = resetState.activities['season_1'].tasks.find(t => t.defId === 'challenge_1');
+      expect(challengeTask!.currentProgress).toBe(10);
+    });
+
+    it('resetDailyTasks 不存在的活动返回原状态', () => {
+      const dailyDefs = createStandardTaskDefs().filter(d => d.taskType === ActivityTaskType.DAILY);
+      const result = system.resetDailyTasks(state, 'nonexistent', dailyDefs);
+      expect(result).toBe(state);
+    });
+
+    // ── 3类任务类型 ──────────────────────
+    it('每日任务(DAILY)可完成和领取', () => {
+      let s = system.updateTaskProgress(state, 'season_1', 'daily_1', 5);
+      const result = system.claimTaskReward(s, 'season_1', 'daily_1');
+      expect(result.points).toBeGreaterThan(0);
+    });
+
+    it('挑战任务(CHALLENGE)可完成和领取', () => {
+      let s = system.updateTaskProgress(state, 'season_1', 'challenge_1', 20);
+      const result = system.claimTaskReward(s, 'season_1', 'challenge_1');
+      expect(result.points).toBe(50);
+      expect(result.tokens).toBe(10);
+    });
+
+    it('累积任务(CUMULATIVE)可完成和领取', () => {
+      let s = system.updateTaskProgress(state, 'season_1', 'cumulative_1', 100);
+      const result = system.claimTaskReward(s, 'season_1', 'cumulative_1');
+      expect(result.points).toBe(100);
+      expect(result.tokens).toBe(30);
+    });
+
+    it('ActivityTaskType 枚举值正确', () => {
+      expect(ActivityTaskType.DAILY).toBe('DAILY');
+      expect(ActivityTaskType.CHALLENGE).toBe('CHALLENGE');
+      expect(ActivityTaskType.CUMULATIVE).toBe('CUMULATIVE');
+    });
+
+    it('ActivityTaskStatus 枚举值正确', () => {
+      expect(ActivityTaskStatus.INCOMPLETE).toBe('INCOMPLETE');
+      expect(ActivityTaskStatus.COMPLETED).toBe('COMPLETED');
+      expect(ActivityTaskStatus.CLAIMED).toBe('CLAIMED');
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 5. 里程碑奖励
+  // ═══════════════════════════════════════════
+  describe('里程碑奖励', () => {
+    let state: ActivityState;
+
+    beforeEach(() => {
+      state = createStartedState('season_1', ActivityType.SEASON, NOW, createStandardTaskDefs(), createStandardMilestones());
+    });
+
+    it('初始里程碑全部 LOCKED', () => {
+      const milestones = state.activities['season_1'].milestones;
+      for (const ms of milestones) {
+        expect(ms.status).toBe(MilestoneStatus.LOCKED);
+      }
+    });
+
+    it('checkMilestones 积分足够时解锁里程碑', () => {
+      // 先累积积分到 50（ms_1 需要 50）
+      let s = state;
+      for (let i = 0; i < 5; i++) {
+        s = system.updateTaskProgress(s, 'season_1', `daily_${i + 1}`, 5 + i);
+        s = system.claimTaskReward(s, 'season_1', `daily_${i + 1}`).state;
+      }
+
+      const checked = system.checkMilestones(s, 'season_1');
+      const ms1 = checked.activities['season_1'].milestones.find(m => m.id === 'ms_1');
+      expect(ms1!.status).toBe(MilestoneStatus.UNLOCKED);
+    });
+
+    it('checkMilestones 积分不足时保持 LOCKED', () => {
+      // 只累积少量积分
+      let s = system.updateTaskProgress(state, 'season_1', 'daily_1', 5);
+      s = system.claimTaskReward(s, 'season_1', 'daily_1').state;
+      // points = 10, 不足以解锁 ms_1(50)
+
+      const checked = system.checkMilestones(s, 'season_1');
+      const ms1 = checked.activities['season_1'].milestones.find(m => m.id === 'ms_1');
+      expect(ms1!.status).toBe(MilestoneStatus.LOCKED);
+    });
+
+    it('checkMilestones 线性推进：低分先解锁', () => {
+      // 积分到 150（解锁 ms_1 和 ms_2）
+      let s = state;
+      const tasks = createStandardTaskDefs();
+      // 只完成每日任务(5×10=50)和2个挑战任务(2×50=100)，总分150
+      const partialTasks = tasks.filter(t =>
+        t.taskType === ActivityTaskType.DAILY
+        || t.id === 'challenge_1'
+        || t.id === 'challenge_2',
+      );
+      for (const t of partialTasks) {
+        s = system.updateTaskProgress(s, 'season_1', t.id, t.targetCount);
+        s = system.claimTaskReward(s, 'season_1', t.id).state;
+      }
+
+      const checked = system.checkMilestones(s, 'season_1');
+      const milestones = checked.activities['season_1'].milestones;
+
+      // ms_1 (50) 和 ms_2 (150) 应该解锁
+      expect(milestones.find(m => m.id === 'ms_1')!.status).toBe(MilestoneStatus.UNLOCKED);
+      expect(milestones.find(m => m.id === 'ms_2')!.status).toBe(MilestoneStatus.UNLOCKED);
+      // ms_3 (300) 和 ms_final (500) 还未解锁
+      expect(milestones.find(m => m.id === 'ms_3')!.status).toBe(MilestoneStatus.LOCKED);
+      expect(milestones.find(m => m.id === 'ms_final')!.status).toBe(MilestoneStatus.LOCKED);
+    });
+
+    it('checkMilestones 已 CLAIMED 的里程碑不变', () => {
+      // 先解锁并领取 ms_1
+      let s = state;
+      for (let i = 0; i < 5; i++) {
+        s = system.updateTaskProgress(s, 'season_1', `daily_${i + 1}`, 5 + i);
+        s = system.claimTaskReward(s, 'season_1', `daily_${i + 1}`).state;
+      }
+      s = system.checkMilestones(s, 'season_1');
+      s = system.claimMilestone(s, 'season_1', 'ms_1').state;
+
+      // 再次检查，已领取的不变
+      const checked = system.checkMilestones(s, 'season_1');
+      const ms1 = checked.activities['season_1'].milestones.find(m => m.id === 'ms_1');
+      expect(ms1!.status).toBe(MilestoneStatus.CLAIMED);
+    });
+
+    it('checkMilestones 不存在的活动返回原状态', () => {
+      const checked = system.checkMilestones(state, 'nonexistent');
+      expect(checked).toBe(state);
+    });
+
+    it('claimMilestone 手动领取已解锁里程碑', () => {
+      // 累积积分并解锁
+      let s = state;
+      for (let i = 0; i < 5; i++) {
+        s = system.updateTaskProgress(s, 'season_1', `daily_${i + 1}`, 5 + i);
+        s = system.claimTaskReward(s, 'season_1', `daily_${i + 1}`).state;
+      }
+      s = system.checkMilestones(s, 'season_1');
+
+      const result = system.claimMilestone(s, 'season_1', 'ms_1');
+      expect(result.rewards).toEqual({ copper: 500 });
+      expect(result.state.activities['season_1'].milestones.find(m => m.id === 'ms_1')!.status).toBe(MilestoneStatus.CLAIMED);
+    });
+
+    it('claimMilestone 未解锁里程碑抛异常', () => {
+      expect(() => {
+        system.claimMilestone(state, 'season_1', 'ms_1');
+      }).toThrow('里程碑未解锁');
+    });
+
+    it('claimMilestone 已领取里程碑抛异常', () => {
+      // 先解锁并领取
+      let s = state;
+      for (let i = 0; i < 5; i++) {
+        s = system.updateTaskProgress(s, 'season_1', `daily_${i + 1}`, 5 + i);
+        s = system.claimTaskReward(s, 'season_1', `daily_${i + 1}`).state;
+      }
+      s = system.checkMilestones(s, 'season_1');
+      s = system.claimMilestone(s, 'season_1', 'ms_1').state;
+
+      // 再次领取
+      expect(() => {
+        system.claimMilestone(s, 'season_1', 'ms_1');
+      }).toThrow('已领取');
+    });
+
+    it('claimMilestone 活动不存在抛异常', () => {
+      expect(() => {
+        system.claimMilestone(state, 'nonexistent', 'ms_1');
+      }).toThrow('活动不存在');
+    });
+
+    it('claimMilestone 里程碑不存在抛异常', () => {
+      expect(() => {
+        system.claimMilestone(state, 'season_1', 'nonexistent');
+      }).toThrow('里程碑不存在');
+    });
+
+    it('MilestoneStatus 枚举值正确', () => {
+      expect(MilestoneStatus.LOCKED).toBe('LOCKED');
+      expect(MilestoneStatus.UNLOCKED).toBe('UNLOCKED');
+      expect(MilestoneStatus.CLAIMED).toBe('CLAIMED');
+    });
+
+    it('里程碑 isFinal 标记正确', () => {
+      const milestones = state.activities['season_1'].milestones;
+      expect(milestones.find(m => m.id === 'ms_final')!.isFinal).toBe(true);
+      expect(milestones.filter(m => !m.isFinal)).toHaveLength(3);
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 6. 离线进度
+  // ═══════════════════════════════════════════
+  describe('离线进度', () => {
+    it('calculateOfflineProgress 为活跃活动计算离线积分', () => {
+      const state = createStartedState('season_1', ActivityType.SEASON, NOW);
+      const results = system.calculateOfflineProgress(state, 3600000); // 1小时
+      expect(results).toHaveLength(1);
+      expect(results[0].activityId).toBe('season_1');
+      expect(results[0].pointsEarned).toBeGreaterThan(0);
+    });
+
+    it('calculateOfflineProgress 已结束活动不产生进度', () => {
+      let state = createStartedState('season_1', ActivityType.SEASON, NOW);
+      state = system.updateActivityStatus(state, 'season_1', NOW + 2000, NOW + 1000);
+      const results = system.calculateOfflineProgress(state, 3600000);
+      expect(results).toHaveLength(0);
+    });
+
+    it('calculateOfflineProgress 不同活动类型效率不同', () => {
+      let state = createDefaultActivityState();
+      state = system.startActivity(state, createActivityDef('season_1', ActivityType.SEASON), [], [], NOW);
+      state = system.startActivity(state, createActivityDef('limited_1', ActivityType.LIMITED_TIME), [], [], NOW);
+      state = system.startActivity(state, createActivityDef('daily_1', ActivityType.DAILY), [], [], NOW);
+
+      const results = system.calculateOfflineProgress(state, 3600000);
+      expect(results).toHaveLength(3);
+
+      // daily 效率 1.0 > season 0.5 > limited 0.3
+      const dailyResult = results.find(r => r.activityId === 'daily_1')!;
+      const seasonResult = results.find(r => r.activityId === 'season_1')!;
+      const limitedResult = results.find(r => r.activityId === 'limited_1')!;
+
+      expect(dailyResult.pointsEarned).toBeGreaterThan(seasonResult.pointsEarned);
+      expect(seasonResult.pointsEarned).toBeGreaterThan(limitedResult.pointsEarned);
+    });
+
+    it('applyOfflineProgress 应用离线进度到状态', () => {
+      const state = createStartedState('season_1', ActivityType.SEASON, NOW);
+      const results = system.calculateOfflineProgress(state, 3600000);
+      const updated = system.applyOfflineProgress(state, results);
+
+      expect(updated.activities['season_1'].points).toBeGreaterThan(0);
+      expect(updated.activities['season_1'].tokens).toBeGreaterThanOrEqual(0);
+    });
+
+    it('applyOfflineProgress 空结果不改变状态', () => {
+      const state = createDefaultActivityState();
+      const updated = system.applyOfflineProgress(state, []);
+      expect(updated).toEqual(state);
+    });
+
+    it('applyOfflineProgress 不存在的活动跳过', () => {
+      const state = createDefaultActivityState();
+      const results = [{ activityId: 'nonexistent', pointsEarned: 100, tokensEarned: 10, offlineDuration: 3600000 }];
+      const updated = system.applyOfflineProgress(state, results);
+      expect(updated).toEqual(state);
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 7. 赛季深化
+  // ═══════════════════════════════════════════
+  describe('赛季深化', () => {
+    it('getCurrentSeasonTheme 返回正确主题', () => {
+      const theme = system.getCurrentSeasonTheme(0);
+      expect(theme.id).toBe('theme_s1');
+      expect(theme.name).toBe('黄巾之乱');
+    });
+
+    it('getCurrentSeasonTheme 循环返回主题', () => {
+      const theme = system.getCurrentSeasonTheme(4); // 超出长度，应循环
+      expect(theme.id).toBe('theme_s1');
+    });
+
+    it('getSeasonThemes 返回全部主题', () => {
+      const themes = system.getSeasonThemes();
+      expect(themes).toHaveLength(4);
+    });
+
+    it('createSettlementAnimation 创建结算动画数据', () => {
+      const rewards = { copper: 1000, arenaCoin: 500, gold: 50, title: '测试称号' };
+      const animation = system.createSettlementAnimation(
+        's1', 'rank_gold', 'rank_platinum', 100, 50, rewards, true,
+      );
+      expect(animation.seasonId).toBe('s1');
+      expect(animation.oldRankId).toBe('rank_gold');
+      expect(animation.newRankId).toBe('rank_platinum');
+      expect(animation.oldRanking).toBe(100);
+      expect(animation.newRanking).toBe(50);
+      expect(animation.isServerAnnouncement).toBe(true);
+    });
+
+    it('updateSeasonRecord 胜场更新', () => {
+      const record = {
+        seasonId: 's1',
+        wins: 0,
+        losses: 0,
+        total: 0,
+        winRate: 0,
+        highestRank: '',
+        highestRanking: 0,
+      };
+      const updated = system.updateSeasonRecord(record, true, 'rank_gold', 50);
+      expect(updated.wins).toBe(1);
+      expect(updated.losses).toBe(0);
+      expect(updated.total).toBe(1);
+      expect(updated.winRate).toBe(100);
+    });
+
+    it('updateSeasonRecord 败场更新', () => {
+      const record = {
+        seasonId: 's1',
+        wins: 5,
+        losses: 3,
+        total: 8,
+        winRate: 63,
+        highestRank: 'rank_gold',
+        highestRanking: 50,
+      };
+      const updated = system.updateSeasonRecord(record, false, 'rank_gold', 60);
+      expect(updated.wins).toBe(5);
+      expect(updated.losses).toBe(4);
+      expect(updated.total).toBe(9);
+      expect(updated.winRate).toBe(56); // Math.round(5/9 * 100)
+    });
+
+    it('updateSeasonRecord 更新最高排名', () => {
+      const record = {
+        seasonId: 's1',
+        wins: 5,
+        losses: 3,
+        total: 8,
+        winRate: 63,
+        highestRank: 'rank_gold',
+        highestRanking: 100,
+      };
+      const updated = system.updateSeasonRecord(record, true, 'rank_gold', 30);
+      expect(updated.highestRanking).toBe(30);
+    });
+
+    it('generateSeasonRecordRanking 按胜场排序', () => {
+      const records = [
+        { playerId: 'p1', playerName: '玩家1', record: { seasonId: 's1', wins: 10, losses: 5, total: 15, winRate: 67, highestRank: 'rank_gold', highestRanking: 50 } },
+        { playerId: 'p2', playerName: '玩家2', record: { seasonId: 's1', wins: 15, losses: 3, total: 18, winRate: 83, highestRank: 'rank_platinum', highestRanking: 20 } },
+        { playerId: 'p3', playerName: '玩家3', record: { seasonId: 's1', wins: 10, losses: 8, total: 18, winRate: 56, highestRank: 'rank_silver', highestRanking: 100 } },
+      ];
+      const ranking = system.generateSeasonRecordRanking(records);
+      expect(ranking[0].playerId).toBe('p2');
+      expect(ranking[0].rank).toBe(1);
+      // p1 和 p3 同胜场，按胜率排序
+      expect(ranking[1].playerId).toBe('p1');
+      expect(ranking[1].rank).toBe(2);
+      expect(ranking[2].playerId).toBe('p3');
+      expect(ranking[2].rank).toBe(3);
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 8. 配置
+  // ═══════════════════════════════════════════
+  describe('配置', () => {
+    it('getConcurrencyConfig 返回默认配置', () => {
+      const config = system.getConcurrencyConfig();
+      expect(config.maxSeason).toBe(1);
+      expect(config.maxLimitedTime).toBe(2);
+      expect(config.maxDaily).toBe(1);
+      expect(config.maxFestival).toBe(1);
+      expect(config.maxAlliance).toBe(1);
+      expect(config.maxTotal).toBe(5);
+    });
+
+    it('自定义并发配置生效', () => {
+      const custom = new ActivitySystem({ maxTotal: 10 });
+      expect(custom.getConcurrencyConfig().maxTotal).toBe(10);
+    });
+
+    it('getOfflineEfficiency 返回默认配置', () => {
+      const eff = system.getOfflineEfficiency();
+      expect(eff.season).toBe(0.5);
+      expect(eff.limitedTime).toBe(0.3);
+      expect(eff.daily).toBe(1.0);
+      expect(eff.festival).toBe(0.5);
+      expect(eff.alliance).toBe(0.5);
+    });
+
+    it('自定义离线效率配置生效', () => {
+      const custom = new ActivitySystem(undefined, { season: 0.8 });
+      expect(custom.getOfflineEfficiency().season).toBe(0.8);
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 9. 序列化/反序列化
+  // ═══════════════════════════════════════════
+  describe('序列化/反序列化', () => {
+    it('serialize 返回正确结构', () => {
+      const state = createDefaultActivityState();
+      const data = system.serialize(state);
+      expect(data.version).toBe(ACTIVITY_SAVE_VERSION);
+      expect(data.state).toBeDefined();
+      expect(data.state.activities).toEqual({});
+    });
+
+    it('serialize/deserialize 往返一致（空状态）', () => {
+      const state = createDefaultActivityState();
+      const data = system.serialize(state);
+      const restored = system.deserialize(data);
+      expect(restored.activities).toEqual({});
+    });
+
+    it('serialize/deserialize 往返一致（有活动）', () => {
+      let state = createStartedState('season_1', ActivityType.SEASON, NOW, createStandardTaskDefs(), createStandardMilestones());
+      // 更新一些进度
+      state = system.updateTaskProgress(state, 'season_1', 'daily_1', 5);
+
+      const data = system.serialize(state);
+      const restored = system.deserialize(data);
+
+      expect(Object.keys(restored.activities)).toHaveLength(1);
+      expect(restored.activities['season_1'].tasks.find(t => t.defId === 'daily_1')!.currentProgress).toBe(5);
+    });
+
+    it('deserialize 版本不匹配返回默认状态', () => {
+      const restored = system.deserialize({ version: 999, state: createDefaultActivityState() });
+      expect(restored.activities).toEqual({});
+    });
+
+    it('deserialize null/undefined 返回默认状态', () => {
+      const restored = system.deserialize(null as any);
+      expect(restored.activities).toEqual({});
+    });
+
+    it('serialize 保留积分和代币', () => {
+      let state = createStartedState('season_1', ActivityType.SEASON, NOW);
+      state = {
+        ...state,
+        activities: {
+          ...state.activities,
+          season_1: { ...state.activities['season_1'], points: 500, tokens: 50 },
+        },
+      };
+
+      const data = system.serialize(state);
+      const restored = system.deserialize(data);
+      expect(restored.activities['season_1'].points).toBe(500);
+      expect(restored.activities['season_1'].tokens).toBe(50);
+    });
+
+    it('serialize 保留里程碑状态', () => {
+      let state = createStartedState('season_1', ActivityType.SEASON, NOW);
+      // 手动修改里程碑状态
+      const milestones = state.activities['season_1'].milestones.map((m, i) =>
+        i === 0 ? { ...m, status: MilestoneStatus.CLAIMED } : m,
+      );
+      state = {
+        ...state,
+        activities: {
+          ...state.activities,
+          season_1: { ...state.activities['season_1'], milestones },
+        },
+      };
+
+      const data = system.serialize(state);
+      const restored = system.deserialize(data);
+      expect(restored.activities['season_1'].milestones[0].status).toBe(MilestoneStatus.CLAIMED);
+    });
+  });
+});

@@ -47,6 +47,7 @@ import WelcomeModal from './three-kingdoms/WelcomeModal';
 import SceneRouter from './three-kingdoms/SceneRouter';
 import { useEngineEvents } from './three-kingdoms/useEngineEvents';
 import FeaturePanelOverlay, { type FeaturePanelId } from './three-kingdoms/FeaturePanelOverlay';
+import { GameErrorBoundary } from './three-kingdoms/GameErrorBoundary';
 
 // ── 样式 ──
 import './ThreeKingdomsGame.css';
@@ -71,8 +72,15 @@ const UI_REFRESH_INTERVAL = 1000;
 const ThreeKingdomsGame: React.FC = () => {
   // ── 引擎实例（单例，只创建一次） ──
   const engineRef = useRef<ThreeKingdomsEngine | null>(null);
-  if (!engineRef.current) {
-    engineRef.current = new ThreeKingdomsEngine();
+  const [engineError, setEngineError] = useState<Error | null>(null);
+
+  if (!engineRef.current && !engineError) {
+    try {
+      engineRef.current = new ThreeKingdomsEngine();
+    } catch (e) {
+      console.error('[ThreeKingdoms] 引擎创建失败:', e);
+      setEngineError(e instanceof Error ? e : new Error(String(e)));
+    }
   }
   const engine = engineRef.current;
 
@@ -121,6 +129,7 @@ const ThreeKingdomsGame: React.FC = () => {
   const initializedRef = useRef(false);
 
   useEffect(() => {
+    if (!engine) return;
     if (initializedRef.current) return;
     initializedRef.current = true;
 
@@ -147,6 +156,7 @@ const ThreeKingdomsGame: React.FC = () => {
 
   // ── 引擎 tick 循环 ──
   useEffect(() => {
+    if (!engine) return;
     const timer = setInterval(() => {
       try {
         engine.tick(TICK_INTERVAL);
@@ -186,6 +196,45 @@ const ThreeKingdomsGame: React.FC = () => {
   // ── 获取引擎快照 ──
   const snapshot: EngineSnapshot = useMemo(() => {
     void snapshotVersion;
+    if (!engine) {
+      // 返回默认快照，避免在引擎为 null 时崩溃
+      const defaultBuildingState = (type: BuildingType): BuildingState => ({
+        type,
+        level: 0,
+        status: 'locked',
+        upgradeStartTime: null,
+        upgradeEndTime: null,
+      });
+      return {
+        resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
+        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
+        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        buildings: {
+          castle: defaultBuildingState('castle'),
+          farmland: defaultBuildingState('farmland'),
+          market: defaultBuildingState('market'),
+          barracks: defaultBuildingState('barracks'),
+          smithy: defaultBuildingState('smithy'),
+          academy: defaultBuildingState('academy'),
+          clinic: defaultBuildingState('clinic'),
+          wall: defaultBuildingState('wall'),
+        },
+        calendar: {
+          date: { year: 1, month: 1, day: 1, season: 'spring', eraName: '建安', yearInEra: 1 },
+          weather: 'clear',
+          totalDays: 0,
+          paused: false,
+        },
+        onlineSeconds: 0,
+        heroes: [],
+        heroFragments: {},
+        totalPower: 0,
+        formations: [],
+        activeFormationId: null,
+        campaignProgress: { currentChapterId: '', stageStates: {}, lastClearTime: 0 },
+        techState: { nodes: {}, researchQueue: [], techPoints: { current: 0, totalEarned: 0, totalSpent: 0 }, chosenMutexNodes: {} },
+      } satisfies EngineSnapshot;
+    }
     try {
       return engine.getSnapshot();
     } catch (e) {
@@ -280,6 +329,7 @@ const ThreeKingdomsGame: React.FC = () => {
   const handleEncounterSelectOption = useCallback((instanceId: string, optionId: string) => {
     setActiveEncounter(null);
 
+    if (!engine) return;
     try {
       const registry = (engine as any).registry;
       const triggerSys = registry?.get?.('eventTrigger');
@@ -335,6 +385,7 @@ const ThreeKingdomsGame: React.FC = () => {
   // ── 首次启动欢迎弹窗回调 ──
   const handleWelcomeClose = useCallback(() => {
     setShowWelcome(false);
+    if (!engine) return;
     try {
       const registry = engine?.getSubsystemRegistry?.();
       const tutorialSM = registry?.get?.('tutorial') as any;
@@ -346,7 +397,45 @@ const ThreeKingdomsGame: React.FC = () => {
   }, [engine]);
 
   // ── 主渲染 ──
+  // 引擎创建失败 — 显示错误页面（必须在所有 hooks 之后）
+  if (!engine) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: '#0a0a1a',
+        color: '#e0e0e0',
+        fontFamily: 'Inter, sans-serif',
+      }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚔️</div>
+        <h2 style={{ color: '#ff6b6b' }}>引擎初始化失败</h2>
+        <p style={{ color: '#aaa', marginTop: '8px', maxWidth: '400px', textAlign: 'center' }}>
+          {engineError?.message || '未知错误'}
+        </p>
+        <button
+          onClick={() => { localStorage.clear(); window.location.reload(); }}
+          style={{
+            marginTop: '16px',
+            padding: '10px 24px',
+            background: '#4a90d9',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+          }}
+        >
+          🔄 清除数据并重试
+        </button>
+      </div>
+    );
+  }
+
   return (
+    <GameErrorBoundary>
     <div className="tk-game-root">
       <div className="tk-game-frame">
         {/* A区：资源栏 */}
@@ -442,6 +531,7 @@ const ThreeKingdomsGame: React.FC = () => {
         />
       )}
     </div>
+    </GameErrorBoundary>
   );
 };
 

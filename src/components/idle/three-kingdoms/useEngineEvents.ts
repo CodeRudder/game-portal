@@ -12,7 +12,7 @@ import { Toast } from '@/components/idle/common/Toast';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 
 interface UseEngineEventsParams {
-  engine: ThreeKingdomsEngine;
+  engine: ThreeKingdomsEngine | null;
   /** 触发 UI 重渲染的回调 */
   onRefresh: () => void;
   /** 设置急报横幅 */
@@ -34,6 +34,8 @@ export function useEngineEvents({
   onStoryCompleted,
 }: UseEngineEventsParams): void {
   useEffect(() => {
+    // 引擎未就绪时跳过事件注册
+    if (!engine) return;
     // ── 资源变化 / 建筑升级 → 刷新 UI ──
     const handleResourceChanged = () => { onRefresh(); };
     const handleBuildingUpgraded = () => { onRefresh(); };
