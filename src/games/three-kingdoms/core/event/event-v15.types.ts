@@ -72,9 +72,11 @@ export type {
 import type { OfflineEventEntry, AutoProcessRule } from './event-v15-offline.types';
 
 // 从共享基础模块导入（避免子模块循环依赖）
-export {
+export type {
   EventCategory,
   EventCategoryMeta,
+} from './event-v15-shared.types';
+export {
   EVENT_CATEGORY_META,
 } from './event-v15-shared.types';
 export type {

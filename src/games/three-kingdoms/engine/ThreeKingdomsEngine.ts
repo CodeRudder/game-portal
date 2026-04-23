@@ -383,6 +383,12 @@ export class ThreeKingdomsEngine {
       hero: this.hero, campaign: this.campaignSystems.campaignSystem,
       techTree: this.techSystems.treeSystem, techPoint: this.techSystems.pointSystem,
       techResearch: this.techSystems.researchSystem,
+      eventTrigger: this.eventSystems.trigger,
+      eventNotification: this.eventSystems.notification,
+      eventUI: this.eventSystems.uiNotification,
+      eventChain: this.eventSystems.chain,
+      eventLog: this.eventSystems.log,
+      offlineEvent: this.eventSystems.offline,
       bus: this.bus, prevResourcesJson: this.prevResourcesJson, prevRatesJson: this.prevRatesJson,
     };
   }
@@ -402,6 +408,12 @@ export class ThreeKingdomsEngine {
       arena: this.r11.arenaSystem,
       arenaShop: this.r11.arenaShopSystem,
       ranking: this.r11.rankingSystem,
+      eventTrigger: this.eventSystems.trigger,
+      eventNotification: this.eventSystems.notification,
+      eventUI: this.eventSystems.uiNotification,
+      eventChain: this.eventSystems.chain,
+      eventLog: this.eventSystems.log,
+      offlineEvent: this.eventSystems.offline,
       onlineSeconds: this.onlineSeconds,
     };
   }

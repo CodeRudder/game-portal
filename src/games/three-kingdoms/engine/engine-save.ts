@@ -80,6 +80,18 @@ export interface SaveContext {
   readonly arenaShop?: ArenaShopSystem;
   /** 排行榜系统（可选，v7.0+） */
   readonly ranking?: RankingSystem;
+  /** 事件触发系统（可选，v7.0+） */
+  readonly eventTrigger?: import('./event/EventTriggerSystem').EventTriggerSystem;
+  /** 事件通知系统（可选，v7.0+） */
+  readonly eventNotification?: import('./event/EventNotificationSystem').EventNotificationSystem;
+  /** 事件UI通知（可选，v7.0+） */
+  readonly eventUI?: import('./event/EventUINotification').EventUINotification;
+  /** 事件链系统（可选，v7.0+） */
+  readonly eventChain?: import('./event/EventChainSystem').EventChainSystem;
+  /** 事件日志系统（可选，v7.0+） */
+  readonly eventLog?: import('./event/EventLogSystem').EventLogSystem;
+  /** 离线事件系统（可选，v15.0+） */
+  readonly offlineEvent?: import('./event/OfflineEventSystem').OfflineEventSystem;
   /** 在线时长（秒） */
   onlineSeconds: number;
 }
@@ -126,6 +138,14 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     pvpArena: ctx.arena?.serialize(),
     pvpArenaShop: ctx.arenaShop?.serialize(),
     pvpRanking: ctx.ranking?.serialize(),
+
+    // ── 事件系统 v7.0+ ──
+    eventTrigger: ctx.eventTrigger?.serialize(),
+    eventNotification: ctx.eventNotification?.exportSaveData(),
+    eventUI: ctx.eventUI?.serialize(),
+    eventChain: ctx.eventChain?.serialize(),
+    eventLog: ctx.eventLog?.exportSaveData(),
+    offlineEvent: ctx.offlineEvent?.exportSaveData() as { version: number; offlineQueue: unknown[]; autoRules: unknown[] },
   };
 }
 
@@ -152,6 +172,12 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.pvpArena) subsystems.pvpArena = data.pvpArena;
   if (data.pvpArenaShop) subsystems.pvpArenaShop = data.pvpArenaShop;
   if (data.pvpRanking) subsystems.pvpRanking = data.pvpRanking;
+  if (data.eventTrigger) subsystems.eventTrigger = data.eventTrigger;
+  if (data.eventNotification) subsystems.eventNotification = data.eventNotification;
+  if (data.eventUI) subsystems.eventUI = data.eventUI;
+  if (data.eventChain) subsystems.eventChain = data.eventChain;
+  if (data.eventLog) subsystems.eventLog = data.eventLog;
+  if (data.offlineEvent) subsystems.offlineEvent = data.offlineEvent;
 
   return {
     version: String(data.version),
@@ -190,6 +216,12 @@ export function fromIGameState(state: IGameState): GameSaveData {
     pvpArena: s.pvpArena as import('../core/pvp/pvp.types').ArenaSaveData | undefined,
     pvpArenaShop: s.pvpArenaShop as import('./pvp/ArenaShopSystem').ArenaShopSaveData | undefined,
     pvpRanking: s.pvpRanking as import('./pvp/RankingSystem').RankingSaveData | undefined,
+    eventTrigger: s.eventTrigger as import('../core/event').EventSystemSaveData | undefined,
+    eventNotification: s.eventNotification as import('./event/EventNotificationSystem').EventNotificationSaveData | undefined,
+    eventUI: s.eventUI as { expiredBanners: import('../core/event').EventBanner[] } | undefined,
+    eventChain: s.eventChain as import('./event/EventChainSystem').EventChainSaveData | undefined,
+    eventLog: s.eventLog as import('./event/EventLogSystem').EventLogSaveData | undefined,
+    offlineEvent: s.offlineEvent as { version: number; offlineQueue: unknown[]; autoRules: unknown[] } | undefined,
   };
 }
 
@@ -371,6 +403,38 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   // ── 排行榜系统 v7.0 ──
   if (data.pvpRanking && ctx.ranking) {
     ctx.ranking.deserialize(data.pvpRanking);
+  }
+
+  // ── 事件触发系统 v7.0 ──
+  if (data.eventTrigger && ctx.eventTrigger) {
+    ctx.eventTrigger.deserialize(data.eventTrigger);
+  } else {
+    console.info('[Save] v7.0 存档迁移：无事件触发数据，自动初始化默认事件');
+  }
+
+  // ── 事件通知系统 v7.0 ──
+  if (data.eventNotification && ctx.eventNotification) {
+    ctx.eventNotification.importSaveData(data.eventNotification);
+  }
+
+  // ── 事件UI通知 v7.0 ──
+  if (data.eventUI && ctx.eventUI) {
+    ctx.eventUI.deserialize(data.eventUI);
+  }
+
+  // ── 事件链系统 v7.0 ──
+  if (data.eventChain && ctx.eventChain) {
+    ctx.eventChain.deserialize(data.eventChain);
+  }
+
+  // ── 事件日志系统 v7.0 ──
+  if (data.eventLog && ctx.eventLog) {
+    ctx.eventLog.importSaveData(data.eventLog);
+  }
+
+  // ── 离线事件系统 v15.0 ──
+  if (data.offlineEvent && ctx.offlineEvent) {
+    ctx.offlineEvent.importSaveData(data.offlineEvent as Parameters<typeof ctx.offlineEvent.importSaveData>[0]);
   }
 
   syncBuildingToResource({

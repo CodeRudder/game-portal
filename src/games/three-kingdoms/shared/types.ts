@@ -217,6 +217,20 @@ export interface GameSaveData {
   pvpArenaShop?: import('../engine/pvp/ArenaShopSystem').ArenaShopSaveData;
   /** 排行榜存档数据（可选，v7.0+） */
   pvpRanking?: import('../engine/pvp/RankingSystem').RankingSaveData;
+
+  // ── 事件系统 v7.0+ ──
+  /** 事件触发系统数据（可选，v7.0+） */
+  eventTrigger?: import('../core/event').EventSystemSaveData;
+  /** 事件通知系统数据（可选，v7.0+） */
+  eventNotification?: import('../engine/event/EventNotificationSystem').EventNotificationSaveData;
+  /** 事件UI通知数据（可选，v7.0+） */
+  eventUI?: { expiredBanners: import('../core/event').EventBanner[] };
+  /** 事件链系统数据（可选，v7.0+） */
+  eventChain?: import('../engine/event/EventChainSystem').EventChainSaveData;
+  /** 事件日志系统数据（可选，v7.0+） */
+  eventLog?: import('../engine/event/EventLogSystem').EventLogSaveData;
+  /** 离线事件系统数据（可选，v15.0+） */
+  offlineEvent?: { version: number; offlineQueue: unknown[]; autoRules: unknown[] };
 }
 
 // ─────────────────────────────────────────────

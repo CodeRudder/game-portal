@@ -8,6 +8,19 @@
  */
 
 import type { Faction, GeneralStats, SkillData } from '../hero/hero.types';
+import type {
+  BuffEffect,
+  BattleSkill,
+  Position,
+  BattleSide,
+  BattleUnit,
+} from './battle-base.types';
+import {
+  TroopType,
+  TROOP_TYPE_LABELS,
+  BuffType,
+  SkillTargetType,
+} from './battle-base.types';
 
 export { BATTLE_CONFIG } from './battle-config';
 

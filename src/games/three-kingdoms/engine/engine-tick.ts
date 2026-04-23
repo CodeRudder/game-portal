@@ -15,6 +15,12 @@ import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
 import type { TechTreeSystem } from './tech/TechTreeSystem';
 import type { TechPointSystem } from './tech/TechPointSystem';
 import type { TechResearchSystem } from './tech/TechResearchSystem';
+import type { EventTriggerSystem } from './event/EventTriggerSystem';
+import type { EventNotificationSystem } from './event/EventNotificationSystem';
+import type { EventUINotification } from './event/EventUINotification';
+import type { EventChainSystem } from './event/EventChainSystem';
+import type { EventLogSystem } from './event/EventLogSystem';
+import type { OfflineEventSystem } from './event/OfflineEventSystem';
 import type { EventBus } from '../core/events/EventBus';
 import type { Bonuses } from './resource/resource.types';
 import type { BuildingType } from './building/building.types';
@@ -37,6 +43,18 @@ export interface TickContext {
   readonly techTree: TechTreeSystem;
   readonly techPoint: TechPointSystem;
   readonly techResearch: TechResearchSystem;
+  /** 事件触发系统（v7.0+） */
+  readonly eventTrigger?: EventTriggerSystem;
+  /** 事件通知系统（v7.0+） */
+  readonly eventNotification?: EventNotificationSystem;
+  /** 事件UI通知（v7.0+） */
+  readonly eventUI?: EventUINotification;
+  /** 事件链系统（v7.0+） */
+  readonly eventChain?: EventChainSystem;
+  /** 事件日志系统（v7.0+） */
+  readonly eventLog?: EventLogSystem;
+  /** 离线事件系统（v15.0+） */
+  readonly offlineEvent?: OfflineEventSystem;
   readonly bus: EventBus;
   /** 变化检测用的缓存 JSON */
   prevResourcesJson: string;
@@ -108,7 +126,16 @@ export function executeTick(ctx: TickContext, dtSec: number): void {
   // 5.5 关卡进度系统更新（事件驱动，通常为空操作）
   ctx.campaign.update(dtSec);
 
-  // 6. 变化检测 → 发出事件
+  // 6. 事件系统更新（v7.0+ 集成）
+  //    事件触发检测、通知生命周期、事件链推进、日志维护
+  ctx.eventTrigger?.update(dtSec);
+  ctx.eventNotification?.update(dtSec);
+  ctx.eventUI?.update(dtSec);
+  ctx.eventChain?.update(dtSec);
+  ctx.eventLog?.update(dtSec);
+  ctx.offlineEvent?.update(dtSec);
+
+  // 7. 变化检测 → 发出事件
   detectAndEmitChanges(ctx);
 }
 
