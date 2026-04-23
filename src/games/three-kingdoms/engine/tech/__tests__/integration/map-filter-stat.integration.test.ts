@@ -288,9 +288,10 @@ describe('§6.1 统计面板查看', () => {
   it('资源产出(总产出/各领土明细)', () => {
     const summary = sys.territory.getPlayerProductionSummary();
     expect(summary).toBeDefined();
-    expect(summary).toHaveProperty('totalGrain');
-    expect(summary).toHaveProperty('totalCoins');
-    expect(summary).toHaveProperty('totalTroops');
+    expect(summary).toHaveProperty('totalProduction');
+    expect(summary.totalProduction).toHaveProperty('grain');
+    expect(summary.totalProduction).toHaveProperty('gold');
+    expect(summary.totalProduction).toHaveProperty('troops');
   });
 
   it('战斗统计维度存在', () => {
