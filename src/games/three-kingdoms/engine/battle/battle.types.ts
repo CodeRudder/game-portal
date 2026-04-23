@@ -195,7 +195,7 @@ export enum StarRating {
 /**
  * 战斗结果
  *
- * 包含胜负、星级评定、战斗统计等
+ * 包含胜负、星级评定、战斗统计、碎片奖励等
  */
 export interface BattleResult {
   /** 战斗胜负 */
@@ -218,6 +218,8 @@ export interface BattleResult {
   maxCombo: number;
   /** 战斗日志摘要 */
   summary: string;
+  /** 碎片奖励（胜利时按敌方配置产出，失败时为空） */
+  fragmentRewards: Record<string, number>;
 }
 
 // ─────────────────────────────────────────────

@@ -152,6 +152,7 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
             maxSingleDamage: 0,
             maxCombo: 0,
             summary: `扫荡成功！消耗${batchResult.ticketsUsed}扫荡令，获得${batchResult.totalExp}经验`,
+            fragmentRewards: {},
           };
           setSweepResult(result);
           setSweepStage(stage);

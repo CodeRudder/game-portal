@@ -27,6 +27,7 @@ import {
   STAR_UP_FRAGMENT_COST,
   SYNTHESIZE_REQUIRED_FRAGMENTS,
 } from './hero-config';
+import { getStarMultiplier } from './star-up-config';
 import { createEmptyState, cloneGeneral, serializeHeroState, deserializeHeroState } from './HeroSerializer';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 
@@ -127,16 +128,21 @@ export class HeroSystem implements ISubsystem {
   /**
    * 计算单个武将的战力
    *
-   * 公式：战力 = (ATK×2.0 + DEF×1.5 + INT×2.0 + SPD×1.0) × 等级系数 × 品质系数
+   * 公式：战力 = (ATK×2.0 + DEF×1.5 + INT×2.0 + SPD×1.0) × 等级系数 × 品质系数 × 星级系数
    * 等级系数 = 1 + 等级 × 0.05
+   * 星级系数 = getStarMultiplier(star)，每星递增（1星=1.0, 2星=1.15, 3星=1.35, ...）
+   *
+   * @param general - 武将数据
+   * @param star - 武将星级（默认1），由 HeroStarSystem.getStar() 提供
    */
-  calculatePower(general: GeneralData): number {
+  calculatePower(general: GeneralData, star = 1): number {
     const { attack, defense, intelligence, speed } = general.baseStats;
     const { attack: wA, defense: wD, intelligence: wI, speed: wS } = POWER_WEIGHTS;
     const statsPower = attack * wA + defense * wD + intelligence * wI + speed * wS;
     const levelCoeff = 1 + general.level * LEVEL_COEFFICIENT_PER_LEVEL;
     const qualityCoeff = QUALITY_MULTIPLIERS[general.quality];
-    return Math.floor(statsPower * levelCoeff * qualityCoeff);
+    const starCoeff = getStarMultiplier(star);
+    return Math.floor(statsPower * levelCoeff * qualityCoeff * starCoeff);
   }
 
   /** 计算全体武将总战力 */
