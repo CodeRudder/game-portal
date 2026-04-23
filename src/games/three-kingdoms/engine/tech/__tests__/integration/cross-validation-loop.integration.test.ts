@@ -44,7 +44,7 @@ function createDeps(): ISystemDeps {
     techTree, techPoint, () => 3, () => 100, () => true,
   );
   const techLink = new TechLinkSystem();
-  const techOffline = new TechOfflineSystem(techResearch);
+  const techOffline = new TechOfflineSystem(techTree, techResearch);
   const prestige = new PrestigeSystem();
 
   const registry = new Map<string, unknown>();
@@ -138,9 +138,10 @@ describe('§9.1 科技↔地图联动：科技影响地图渲染', () => {
 
     // 地图渲染器计算视口数据时，科技加成应纳入计算
     const vp = sys.map.getViewport();
-    const renderData = sys.renderer.computeViewportRenderData(vp, sys.map.getAllTiles());
+    const renderData = sys.renderer.computeViewportRenderData(sys.map.getAllTiles(), vp);
     expect(renderData).toBeDefined();
-    expect(Array.isArray(renderData)).toBe(true);
+    expect(renderData).toHaveProperty('tiles');
+    expect(renderData).toHaveProperty('visibleRange');
   });
 
   it('科技效果值可被地图系统查询', () => {
@@ -191,7 +192,7 @@ describe('§9.2 科技↔领土联动：科技加成领土产出', () => {
   it('科技效果系统提供资源加成查询', () => {
     const resourceBonus = sys.techLink.getResourceLinkBonus('grain');
     expect(resourceBonus).toBeDefined();
-    expect(resourceBonus.bonus).toBeGreaterThanOrEqual(0);
+    expect(resourceBonus.productionBonus).toBeGreaterThanOrEqual(0);
   });
 
   it('科技加成与领土产出乘法叠加', () => {
@@ -200,7 +201,7 @@ describe('§9.2 科技↔领土联动：科技加成领土产出', () => {
     const techBonus = sys.techLink.getResourceLinkBonus('grain');
     // 领土基础产出 × (1 + 科技加成) = 最终产出
     expect(summary.totalProduction.grain).toBeGreaterThanOrEqual(0);
-    expect(techBonus.bonus).toBeGreaterThanOrEqual(0);
+    expect(techBonus.productionBonus).toBeGreaterThanOrEqual(0);
   });
 });
 
@@ -339,8 +340,8 @@ describe('§9.7 科技↔声望联动：科技研究获得声望', () => {
   it('声望系统可查询当前面板数据', () => {
     const panel = sys.prestige.getPrestigePanel();
     expect(panel).toBeDefined();
-    expect(panel).toHaveProperty('level');
-    expect(panel).toHaveProperty('points');
+    expect(panel).toHaveProperty('currentLevel');
+    expect(panel).toHaveProperty('currentPoints');
   });
 });
 
