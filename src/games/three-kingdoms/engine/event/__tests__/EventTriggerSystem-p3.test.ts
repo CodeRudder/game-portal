@@ -14,6 +14,11 @@ import type {
   EventTriggerResult,
   EventChoiceResult,
 } from '../../../core/event';
+import type { ProbabilityCondition } from '../../../core/event/event-v15-event.types';
+import {
+  PREDEFINED_EVENTS,
+  DEFAULT_EVENT_TRIGGER_CONFIG,
+} from '../../../core/event';
 
 // ─────────────────────────────────────────────
 // 辅助工具
