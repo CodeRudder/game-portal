@@ -1,10 +1,72 @@
+/**
+ * 奖励分发器测试 (Part 2)
+ *
+ * 覆盖：预览、综合场景、星级加成边界、掉落表详细、分发回调详细、预览详细、关卡类型对比。
+ */
+
 import { RewardDistributor } from '../RewardDistributor';
 import type { ICampaignDataProvider, RewardDistributorDeps, StageReward } from '../campaign.types';
 import { getChapters, getChapter, getStage, getStagesByChapter } from '../campaign-config';
 
+// 使用实际配置作为数据提供者
+const dataProvider: ICampaignDataProvider = {
+  getChapters,
+  getChapter,
+  getStage,
+  getStagesByChapter,
+};
+
+// ─────────────────────────────────────────────
+// 辅助：创建带追踪的依赖
+// ─────────────────────────────────────────────
+
+function createTrackedDeps(): {
+  deps: RewardDistributorDeps;
+  resources: Record<string, number>;
+  fragments: Record<string, number>;
+  totalExp: number;
+} {
+  const resources: Record<string, number> = {};
+  const fragments: Record<string, number> = {};
+  let totalExp = 0;
+
+  return {
+    deps: {
+      addResource: (type: any, amount: number) => {
+        resources[type] = (resources[type] ?? 0) + amount;
+        return resources[type];
+      },
+      addFragment: (generalId: string, count: number) => {
+        fragments[generalId] = (fragments[generalId] ?? 0) + count;
+      },
+      addExp: (exp: number) => {
+        totalExp += exp;
+      },
+    },
+    resources,
+    fragments,
+    get totalExp() { return totalExp; },
+  };
+}
+
+// 固定随机数生成器
+function fixedRng(value: number): () => number {
+  return () => value;
+}
+
+// rng=1.0 确保所有掉落都不触发（rng > probability），用于测试纯基础奖励
+const noDropRng = fixedRng(1.0);
+
+// ─────────────────────────────────────────────
+// 5. 预览功能
+// ─────────────────────────────────────────────
+
+describe('RewardDistributor 预览功能', () => {
+  let distributor: RewardDistributor;
 
   beforeEach(() => {
     distributor = new RewardDistributor(dataProvider, createTrackedDeps().deps, fixedRng(0.5));
+  });
 
   it('previewBaseRewards 返回基础奖励', () => {
     const preview = distributor.previewBaseRewards('chapter1_stage1');

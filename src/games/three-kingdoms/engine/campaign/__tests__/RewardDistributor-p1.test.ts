@@ -283,10 +283,4 @@ describe('RewardDistributor 分发', () => {
   });
 });
 
-// ─────────────────────────────────────────────
-// 5. 预览
-// ─────────────────────────────────────────────
-
-describe('RewardDistributor 预览', () => {
-  let distributor: RewardDistributor;
-});
+// 5. 预览 → 已移至 RewardDistributor-p2.test.ts
