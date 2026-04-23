@@ -5,10 +5,12 @@
  * - NPC折扣覆盖
  * - 购买逻辑（验证 + 执行）
  * - 库存与限购
+ * - 收藏管理
+ * - 补货机制
  */
 
 import { ShopSystem } from '../ShopSystem';
-import type { BuyRequest } from '../../../core/shop/shop.types';
+import type { BuyRequest, GoodsFilter } from '../../../core/shop/shop.types';
 import type { ISystemDeps } from '../../../core/types/subsystem';
 import { SHOP_TYPES } from '../../../core/shop/shop.types';
 import {
@@ -313,4 +315,85 @@ describe('ShopSystem', () => {
     });
   });
 
+  // ═══════════════════════════════════════════
+  // 6. 收藏管理
+  // ═══════════════════════════════════════════
+  describe('收藏管理', () => {
+    it('toggleFavorite 添加收藏', () => {
+      const favId = getFavoritableGoodsId();
+      if (favId) {
+        const result = shop.toggleFavorite(favId);
+        expect(result).toBe(true);
+        expect(shop.isFavorite(favId)).toBe(true);
+      }
+    });
+
+    it('toggleFavorite 取消收藏', () => {
+      const favId = getFavoritableGoodsId();
+      if (favId) {
+        shop.toggleFavorite(favId);
+        const result = shop.toggleFavorite(favId);
+        expect(result).toBe(false);
+        expect(shop.isFavorite(favId)).toBe(false);
+      }
+    });
+
+    it('toggleFavorite 不可收藏商品返回 false', () => {
+      const nonFav = ALL_GOODS_DEFS.find(d => !d.favoritable);
+      if (nonFav) {
+        const result = shop.toggleFavorite(nonFav.id);
+        expect(result).toBe(false);
+      }
+    });
+
+    it('toggleFavorite 不存在的商品返回 false', () => {
+      const result = shop.toggleFavorite('nonexistent');
+      expect(result).toBe(false);
+    });
+
+    it('getFavorites 返回收藏列表', () => {
+      const favId = getFavoritableGoodsId();
+      if (favId) {
+        shop.toggleFavorite(favId);
+        const favs = shop.getFavorites();
+        expect(favs).toContain(favId);
+      }
+    });
+
+    it('isFavorite 未收藏返回 false', () => {
+      expect(shop.isFavorite('nonexistent')).toBe(false);
+    });
+
+    it('filterGoods favoritesOnly 过滤', () => {
+      const favId = getFavoritableGoodsId();
+      if (favId) {
+        shop.toggleFavorite(favId);
+        const filter: GoodsFilter = { favoritesOnly: true };
+        const items = shop.filterGoods('normal', filter);
+        for (const item of items) {
+          expect(shop.isFavorite(item.defId)).toBe(true);
+        }
+      }
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 7. 补货机制
+  // ═══════════════════════════════════════════
+  describe('补货机制', () => {
+    it('manualRefresh 后商品被重新生成', () => {
+      const before = shop.getShopGoods('normal').map(g => g.defId);
+      shop.manualRefresh();
+      const after = shop.getShopGoods('normal').map(g => g.defId);
+      expect(after.sort()).toEqual(before.sort());
+    });
+
+    it('manualRefresh 重置购买计数', () => {
+      const id = getNormalGoodsId();
+      shop.executeBuy({ goodsId: id, quantity: 1, shopType: 'normal' });
+      shop.manualRefresh();
+      const item = shop.getGoodsItem('normal', id);
+      expect(item!.dailyPurchased).toBe(0);
+    });
+  });
 });
