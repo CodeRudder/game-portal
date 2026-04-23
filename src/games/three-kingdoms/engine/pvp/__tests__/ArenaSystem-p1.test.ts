@@ -159,11 +159,11 @@ describe('ArenaSystem — 对手选择规则', () => {
     const opponents: ArenaOpponent[] = [];
     for (let i = 0; i < 5; i++) {
       opponents.push(createOpponent({
-        playerId: `wei_${i}`, power: 8500, ranking: 100 + i, faction: 'wei' as any,
+        playerId: `wei_${i}`, power: 8500, ranking: 100 + i, faction: 'wei' as Faction,
       }));
     }
-    opponents.push(createOpponent({ playerId: 'shu_0', power: 8500, ranking: 105, faction: 'shu' as any }));
-    opponents.push(createOpponent({ playerId: 'wu_0', power: 8500, ranking: 106, faction: 'wu' as any }));
+    opponents.push(createOpponent({ playerId: 'shu_0', power: 8500, ranking: 105, faction: 'shu' as Faction }));
+    opponents.push(createOpponent({ playerId: 'wu_0', power: 8500, ranking: 106, faction: 'wu' as Faction }));
 
     const result = system.generateOpponents(playerState, opponents);
     const factions = result.map((o) => o.faction);

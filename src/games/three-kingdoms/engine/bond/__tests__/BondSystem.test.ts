@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { BondSystem } from '../BondSystem';
 import type { GeneralData, Faction } from '../../hero/hero.types';
 import { Quality } from '../../hero/hero.types';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 
 // ─────────────────────────────────────────────
 // Mock EventBus
@@ -25,11 +26,11 @@ function createMockEventBus() {
   };
 }
 
-function createMockDeps() {
+function createMockDeps(): ISystemDeps {
   return {
-    eventBus: createMockEventBus() as any,
-    config: { get: () => undefined } as any,
-    registry: { get: () => null, has: () => false } as any,
+    eventBus: createMockEventBus() as unknown as ISystemDeps['eventBus'],
+    config: { get: () => undefined } as unknown as ISystemDeps['config'],
+    registry: { get: () => null, has: () => false } as unknown as ISystemDeps['registry'],
   };
 }
 

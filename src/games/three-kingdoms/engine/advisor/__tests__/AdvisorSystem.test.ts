@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AdvisorSystem } from '../AdvisorSystem';
 import type { GameStateSnapshot } from '../AdvisorSystem';
 import type { AdvisorTriggerType } from '../../../core/advisor';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 import {
   ADVISOR_MAX_DISPLAY,
   ADVISOR_DAILY_LIMIT,
@@ -30,11 +31,11 @@ function createMockEventBus() {
   };
 }
 
-function createMockDeps() {
+function createMockDeps(): ISystemDeps {
   return {
-    eventBus: createMockEventBus() as any,
-    config: { get: () => undefined } as any,
-    registry: { get: () => null, has: () => false } as any,
+    eventBus: createMockEventBus() as unknown as ISystemDeps['eventBus'],
+    config: { get: () => undefined } as unknown as ISystemDeps['config'],
+    registry: { get: () => null, has: () => false } as unknown as ISystemDeps['registry'],
   };
 }
 

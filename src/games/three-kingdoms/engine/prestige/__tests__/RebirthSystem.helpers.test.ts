@@ -30,9 +30,9 @@ function mockDeps(): ISystemDeps {
       emit: vi.fn(),
       off: vi.fn(),
       removeAllListeners: vi.fn(),
-    } as any,
-    config: { get: vi.fn(), set: vi.fn() } as any,
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() } as any,
+    } as unknown as ISystemDeps['eventBus'],
+    config: { get: vi.fn(), set: vi.fn() } as unknown as ISystemDeps['config'],
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() } as unknown as ISystemDeps['registry'],
   };
 }
 
@@ -190,7 +190,7 @@ describe('RebirthSystem v16.0 传承系统深化', () => {
       const contents = sys.getUnlockContentsV16();
       const mandate = contents.find(c => c.unlockId === 'mandate_system');
       expect(mandate).toBeDefined();
-      expect((mandate as any).unlocked).toBe(true);
+      expect(mandate!.unlocked).toBe(true);
     });
   });
 

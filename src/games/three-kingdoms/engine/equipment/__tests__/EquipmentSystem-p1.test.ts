@@ -20,6 +20,7 @@ import type {
   BagFilter,
   BagSortMode,
 } from '../../../core/equipment';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 import {
   EQUIPMENT_SLOTS,
   EQUIPMENT_RARITIES,
@@ -42,24 +43,25 @@ import {
   SLOT_SPECIAL_EFFECT_POOL,
 } from '../../../core/equipment';
 
+/** 创建满足 ISystemDeps 的 mock 依赖 */
+function createMockDeps(): ISystemDeps {
+  return {
+    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as unknown as ISystemDeps['eventBus'],
+    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+  };
+}
+
+/** 访问 EquipmentSystem 内部私有 deps（测试专用） */
+function getInternalDeps(sys: EquipmentSystem): ISystemDeps {
+  return (sys as unknown as { deps: ISystemDeps }).deps;
+}
+
 /** 创建带 mock deps 的 EquipmentSystem */
 function createSystem(): EquipmentSystem {
   resetUidCounter();
   const sys = new EquipmentSystem();
-  const mockEventBus = {
-    emit: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    once: jest.fn(),
-    removeAllListeners: jest.fn(),
-  };
-  const mockConfig = { get: jest.fn() };
-  const mockRegistry = { get: jest.fn() };
-  sys.init({
-    eventBus: mockEventBus as any,
-    config: mockConfig as any,
-    registry: mockRegistry as any,
-  });
+  sys.init(createMockDeps());
   return sys;
 }
 

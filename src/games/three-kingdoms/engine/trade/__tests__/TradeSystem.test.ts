@@ -15,6 +15,8 @@
 
 import { TradeSystem } from '../TradeSystem';
 import type { TradeCurrencyOps } from '../TradeSystem';
+import type { ISystemDeps } from '../../../core/types/subsystem';
+import type { TradeGoodsPrice } from '../../../core/trade/trade.types';
 import {
   CITY_IDS, CITY_LABELS, PROSPERITY_LABELS,
 } from '../../../core/trade/trade.types';
@@ -24,12 +26,17 @@ import {
   TRADE_EVENT_DEFS, TRADE_SAVE_VERSION,
 } from '../../../core/trade/trade-config';
 
-function createMockDeps() {
+function createMockDeps(): ISystemDeps {
   return {
-    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() },
-    config: { get: jest.fn() },
-    registry: { get: jest.fn() },
+    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as unknown as ISystemDeps['eventBus'],
+    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
   };
+}
+
+/** 访问 TradeSystem 内部私有 goodsPrices Map（测试专用） */
+function getInternalGoodsPrices(trade: TradeSystem): Map<string, TradeGoodsPrice> {
+  return (trade as unknown as { goodsPrices: Map<string, TradeGoodsPrice> }).goodsPrices;
 }
 
 function createMockCurrencyOps(): TradeCurrencyOps {
@@ -42,7 +49,7 @@ function createMockCurrencyOps(): TradeCurrencyOps {
 
 function createTrade(): TradeSystem {
   const trade = new TradeSystem();
-  trade.init(createMockDeps() as any);
+  trade.init(createMockDeps());
   return trade;
 }
 
@@ -170,12 +177,12 @@ describe('TradeSystem - 价格波动', () => {
   it('价格在基础价50%~200%之间', () => {
     // 通过手动修改 lastRefreshTime 来触发刷新
     for (const [id, price] of trade.getAllPrices()) {
-      (trade as any).goodsPrices.get(id).lastRefreshTime = 0;
+      getInternalGoodsPrices(trade).get(id)!.lastRefreshTime = 0;
     }
     // 多次刷新验证范围
     for (let i = 0; i < 50; i++) {
       for (const [id, price] of trade.getAllPrices()) {
-        (trade as any).goodsPrices.get(id).lastRefreshTime = 0;
+        getInternalGoodsPrices(trade).get(id)!.lastRefreshTime = 0;
       }
       trade.refreshPrices();
       for (const def of TRADE_GOODS_DEFS) {
@@ -390,7 +397,7 @@ describe('TradeSystem - 序列化', () => {
   it('deserialize 版本不匹配抛异常', () => {
     expect(() => trade.deserialize({
       routes: {}, prices: {}, caravans: [], activeEvents: [], npcMerchants: [], version: 999,
-    } as any)).toThrow();
+    } as unknown as Parameters<typeof trade.deserialize>[0])).toThrow();
   });
 
   it('reset 恢复初始状态', () => {

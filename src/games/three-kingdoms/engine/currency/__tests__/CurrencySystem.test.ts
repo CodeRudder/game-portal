@@ -15,6 +15,7 @@
  */
 
 import { CurrencySystem } from '../CurrencySystem';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 import {
   CURRENCY_TYPES,
   CURRENCY_LABELS,
@@ -28,19 +29,25 @@ import {
   CURRENCY_SAVE_VERSION,
 } from '../../../core/currency/currency-config';
 
+/** 创建满足 ISystemDeps 的 mock 依赖 */
+function createMockDeps(): ISystemDeps {
+  return {
+    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as unknown as ISystemDeps['eventBus'],
+    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+  };
+}
+
+/** 访问 CurrencySystem 内部私有 deps（测试专用） */
+function getInternalDeps(cs: CurrencySystem): ISystemDeps {
+  return (cs as unknown as { deps: ISystemDeps }).deps;
+}
+
 /** 创建带 mock eventBus 的 CurrencySystem */
 function createSystem(): CurrencySystem {
   const cs = new CurrencySystem();
-  const mockEventBus = {
-    emit: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    once: jest.fn(),
-    removeAllListeners: jest.fn(),
-  };
-  const mockConfig = { get: jest.fn() };
-  const mockRegistry = { get: jest.fn() };
-  cs.init({ eventBus: mockEventBus as any, config: mockConfig as any, registry: mockRegistry as any });
+  const deps = createMockDeps();
+  cs.init(deps);
   return cs;
 }
 
@@ -361,7 +368,7 @@ describe('CurrencySystem', () => {
       expect(data.wallet.mandate).toBe(10);
 
       const cs2 = new CurrencySystem();
-      cs2.init({ eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as any, config: { get: jest.fn() } as any, registry: { get: jest.fn() } as any });
+      cs2.init(createMockDeps());
       cs2.deserialize(data);
       expect(cs2.getBalance('copper')).toBe(1500);
       expect(cs2.getBalance('mandate')).toBe(10);
@@ -370,7 +377,7 @@ describe('CurrencySystem', () => {
     it('deserialize 版本不匹配时仍恢复数据', () => {
       const data = { wallet: { ...INITIAL_WALLET, copper: 5000 }, version: 99 };
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-      cs.deserialize(data as any);
+      cs.deserialize(data as unknown as Parameters<typeof cs.deserialize>[0]);
       expect(cs.getBalance('copper')).toBe(5000);
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
@@ -389,7 +396,7 @@ describe('CurrencySystem', () => {
   describe('事件监听', () => {
     it('addCurrency 触发 currency:changed 事件', () => {
       cs.addCurrency('copper', 100);
-      const mockEventBus = (cs as any).deps.eventBus;
+      const mockEventBus = getInternalDeps(cs).eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith('currency:changed', {
         type: 'copper',
         before: 1000,
@@ -399,7 +406,7 @@ describe('CurrencySystem', () => {
 
     it('spendCurrency 触发 currency:changed 事件', () => {
       cs.spendCurrency('copper', 100);
-      const mockEventBus = (cs as any).deps.eventBus;
+      const mockEventBus = getInternalDeps(cs).eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith('currency:changed', {
         type: 'copper',
         before: 1000,
