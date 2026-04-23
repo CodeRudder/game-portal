@@ -240,14 +240,15 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
     : 'tk-guide-tooltip--center';
 
   return (
-    <div className="tk-guide-overlay" role="dialog" aria-modal="true" aria-label="Tutorial">
+    <div className="tk-guide-overlay" role="dialog" aria-modal="true" aria-label="Tutorial" data-testid="guide-overlay">
       <div className="tk-guide-backdrop" onClick={handleSkip} />
-      <div className={`tk-guide-tooltip ${posClass}`}>
+      <div className={`tk-guide-tooltip ${posClass}`} data-testid={`guide-overlay-step-${currentStep}`}>
         <h3 className="tk-guide-tooltip__title">{step.title}</h3>
         <p className="tk-guide-tooltip__desc">{step.description}</p>
         <div className="tk-guide-tooltip__actions">
           <button
             className="tk-guide-btn tk-guide-btn--skip"
+            data-testid="guide-overlay-skip"
             onClick={handleSkip}
           >
             Skip
@@ -255,6 +256,7 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
           {currentStep > 0 && (
             <button
               className="tk-guide-btn tk-guide-btn--prev"
+              data-testid="guide-overlay-prev"
               onClick={handlePrev}
             >
               Previous
@@ -262,6 +264,7 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
           )}
           <button
             className="tk-guide-btn tk-guide-btn--next"
+            data-testid="guide-overlay-next"
             onClick={handleNext}
           >
             {isLastStep ? 'Finish' : 'Next'}

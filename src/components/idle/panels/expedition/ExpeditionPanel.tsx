@@ -59,17 +59,17 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
   return (
     <>
       <SharedPanel title="🗺️ 远征天下" visible={visible} onClose={onClose} width="400px">
-        <div style={s.container}>
-          {message && <div style={s.toast}>{message}</div>}
+        <div style={s.container} data-testid="expedition-panel">
+          {message && <div style={s.toast} data-testid="expedition-panel-toast">{message}</div>}
           {/* 概览 */}
-          <div style={s.overview}>
+          <div style={s.overview} data-testid="expedition-panel-overview">
             <span style={{ fontWeight: 600, color: '#d4a574' }}>🚀 远征队</span>
             <span style={{ fontSize: 12, color: '#a0a0a0' }}>活跃 {activeTeamCount}/{unlockedSlots} 队</span>
           </div>
           {/* 队伍 */}
           <div style={s.title}>👥 队伍</div>
           {teams.map((t: any) => (
-            <div key={t.id} style={s.teamCard}>
+            <div key={t.id} style={s.teamCard} data-testid={`expedition-panel-team-${t.id}`}>
               <div style={{ flex: 1 }}>
                 <div style={s.teamName}>{t.name}</div>
                 <div style={s.teamMeta}>⚔️{t.totalPower} · 兵力{t.troopCount}/{t.maxTroops}
@@ -78,10 +78,10 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
               </div>
               <div style={{ display: 'flex', gap: 4 }}>
                 {t.isExpeditioning ? (<>
-                  <button style={s.btn} onClick={() => handleAdvance(t.id)}>推进 ⏭</button>
-                  <button style={s.btn} onClick={() => handleComplete(t.id)}>完成 ✅</button>
+                  <button style={s.btn} data-testid={`expedition-panel-advance-${t.id}`} onClick={() => handleAdvance(t.id)}>推进 ⏭</button>
+                  <button style={s.btn} data-testid={`expedition-panel-complete-${t.id}`} onClick={() => handleComplete(t.id)}>完成 ✅</button>
                 </>) : selectedRouteId && (
-                  <button style={s.btn} onClick={() => handleDispatch(t.id, selectedRouteId)}>出发 🚀</button>
+                  <button style={s.btn} data-testid={`expedition-panel-dispatch-${t.id}`} onClick={() => handleDispatch(t.id, selectedRouteId)}>出发 🚀</button>
                 )}
               </div>
             </div>
@@ -97,7 +97,7 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
                 ...s.routeCard,
                 borderColor: selectedRouteId === r.id ? '#d4a574' : 'rgba(255,255,255,0.08)',
                 opacity: r.unlocked ? 1 : 0.4,
-              }} onClick={() => r.unlocked && setSelectedRouteId(r.id)}>
+              }} onClick={() => r.unlocked && setSelectedRouteId(r.id)} data-testid={`expedition-panel-route-${r.id}`}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{r.name ?? r.id}</span>
                   {cleared && <span style={{ color: '#7EC850', fontSize: 11 }}>✅ 通关</span>}

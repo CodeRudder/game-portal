@@ -70,9 +70,9 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
   return (
     <>
       <SharedPanel title="⚔️ 竞技场" visible={visible} onClose={onClose} width="380px">
-        <div style={s.container}>
+        <div style={s.container} data-testid="arena-panel">
           {/* 段位 */}
-          <div style={s.rankBanner}>
+          <div style={s.rankBanner} data-testid="arena-panel-rank">
             <span style={{ fontSize: 28 }}>{rank.icon}</span>
             <div style={{ flex: 1 }}>
               <div style={{ ...s.rankLabel, color: rank.color }}>{rank.full}</div>
@@ -88,15 +88,16 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
           {/* 挑战次数 */}
           <div style={s.infoRow}>
             <span>今日挑战：<b style={{ color: (ps?.dailyChallengesLeft ?? 0) > 0 ? '#7EC850' : '#ff6464' }}>{ps?.dailyChallengesLeft ?? 0}次</b></span>
-            <button style={s.smBtn} onClick={handleBuy}>+购买</button>
+            <button style={s.smBtn} data-testid="arena-panel-buy-challenge" onClick={handleBuy}>+购买</button>
           </div>
-          {message && <div style={s.toast}>{message}</div>}
+          {message && <div style={s.toast} data-testid="arena-panel-toast">{message}</div>}
           {/* 对手 */}
-          <div style={s.header}><span>挑战对手</span><button style={s.smBtn} onClick={handleRefresh}>🔄 刷新</button></div>
+          <div style={s.header}><span>挑战对手</span><button style={s.smBtn} data-testid="arena-panel-refresh" onClick={handleRefresh}>🔄 刷新</button></div>
           {opponents.length > 0 ? opponents.map((o: any) => (
-            <div key={o.playerId} style={s.oppCard}>
+            <div key={o.playerId} style={s.oppCard} data-testid={`arena-panel-opponent-${o.playerId}`}>
               <div><div style={s.oppName}>{o.playerName ?? '对手'}</div><div style={s.oppMeta}>⚔️{o.power ?? '?'} · #{o.ranking ?? '?'}</div></div>
               <button style={{ ...s.chalBtn, opacity: busyId === o.playerId ? 0.5 : 1 }} disabled={busyId === o.playerId}
+                data-testid={`arena-panel-challenge-${o.playerId}`}
                 onClick={() => handleChallenge(o)}>{busyId === o.playerId ? '...' : '挑战'}</button>
             </div>
           )) : <div style={s.empty}>暂无对手，请刷新</div>}

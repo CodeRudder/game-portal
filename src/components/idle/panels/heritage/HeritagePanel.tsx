@@ -73,11 +73,11 @@ export default function HeritagePanel({ engine, visible = true, onClose }: Herit
       onClose={onClose}
       width="520px"
     >
-    <div style={styles.container}>
-      {message && <div style={styles.toast}>{message}</div>}
+    <div style={styles.container} data-testid="heritage-panel">
+      {message && <div style={styles.toast} data-testid="heritage-panel-toast">{message}</div>}
 
       {/* 统计概览 */}
-      <div style={styles.overview}>
+      <div style={styles.overview} data-testid="heritage-panel-overview">
         <div style={styles.statItem}>
           <span style={styles.statValue}>{heroCount}</span>
           <span style={styles.statLabel}>武将传承</span>
@@ -99,12 +99,13 @@ export default function HeritagePanel({ engine, visible = true, onClose }: Herit
       </div>
 
       {/* Tab栏 */}
-      <div style={styles.tabBar}>
+      <div style={styles.tabBar} data-testid="heritage-panel-tabs">
         {TABS.map(t => (
           <button
             key={t.id}
             style={{ ...styles.tabBtn, ...(tab === t.id ? styles.activeTab : {}) }}
             onClick={() => setTab(t.id)}
+            data-testid={`heritage-panel-tab-${t.id}`}
           >{t.icon} {t.label}</button>
         ))}
       </div>

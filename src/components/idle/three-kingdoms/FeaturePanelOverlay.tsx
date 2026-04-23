@@ -99,7 +99,7 @@ const FeaturePanelOverlay: React.FC<FeaturePanelOverlayProps> = ({
   onClose,
 }) => {
   return (
-    <>
+    <div data-testid="feature-panel-overlay">
       {PANELS.map(({ id, Component, needsSnapshot }) => (
         <Component
           key={id}
@@ -107,9 +107,10 @@ const FeaturePanelOverlay: React.FC<FeaturePanelOverlayProps> = ({
           snapshotVersion={needsSnapshot ? snapshotVersion : undefined}
           visible={openFeature === id}
           onClose={onClose}
+          data-testid={`feature-panel-${id}`}
         />
       ))}
-    </>
+    </div>
   );
 };
 

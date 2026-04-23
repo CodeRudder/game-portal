@@ -42,7 +42,7 @@ describe('UI Regression', () => {
   });
 
   it('Tab按钮移动端有44px最小高度', () => {
-    const css = fs.readFileSync(path.join(IDLE_DIR, 'ThreeKingdomsGame.css'), 'utf-8');
+    const css = fs.readFileSync(path.join(IDLE_DIR, 'three-kingdoms/tab-bar.css'), 'utf-8');
     expect(css).toContain('min-height: 44px');
   });
 });

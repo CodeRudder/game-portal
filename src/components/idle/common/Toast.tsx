@@ -98,12 +98,13 @@ const TOAST_ICONS: Record<ToastType, string> = {
 
 function ToastContainer({ toasts }: { toasts: ToastItem[] }) {
   return (
-    <div className="tk-toast-container">
+    <div className="tk-toast-container" data-testid="toast-container">
       {toasts.map(toast => (
         <div
           key={toast.id}
           className={`tk-toast tk-toast--${toast.type} ${toast.visible ? 'tk-toast--visible' : 'tk-toast--exiting'} ${toast.className || ''}`}
           role="alert"
+          data-testid={`toast-item-${toast.id}`}
         >
           <span className="tk-toast-icon">{TOAST_ICONS[toast.type]}</span>
           <span className="tk-toast-message">{toast.message}</span>

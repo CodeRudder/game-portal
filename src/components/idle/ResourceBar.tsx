@@ -22,7 +22,7 @@ const RESOURCE_CONFIG = [
 
 export const ResourceBar: FC<ResourceBarProps> = ({ resources, rates, caps }) => {
   return (
-    <div className="resource-bar">
+    <div data-testid="tk-resource-bar" className="resource-bar">
       {RESOURCE_CONFIG.map(({ key, icon, label, hasCap }) => {
         const amount = resources[key];
         const rate = rates[key];

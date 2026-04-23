@@ -84,13 +84,14 @@ const Panel: React.FC<PanelProps> = ({
     .join(' ');
 
   return (
-    <div className={rootClass} onClick={showOverlay ? handleOverlayClick : undefined}>
+    <div className={rootClass} onClick={showOverlay ? handleOverlayClick : undefined} data-testid="panel">
       <div
         ref={panelRef}
         className={`tk-panel ${collapsed ? 'tk-panel--collapsed' : ''}`}
         style={{ width, height }}
         role="region"
         aria-label={title}
+        data-testid={`panel-${title}`}
       >
         {/* 标题栏 */}
         <div className="tk-panel-header">
@@ -100,6 +101,7 @@ const Panel: React.FC<PanelProps> = ({
                 className="tk-panel-collapse-btn"
                 onClick={handleToggleCollapse}
                 aria-label={collapsed ? '展开' : '折叠'}
+                data-testid="panel-collapse-btn"
               >
                 <span className={`tk-panel-collapse-icon ${collapsed ? 'tk-panel-collapse-icon--collapsed' : ''}`}>
                   ▼
@@ -111,7 +113,7 @@ const Panel: React.FC<PanelProps> = ({
           <div className="tk-panel-header-right">
             {headerExtra}
             {onClose && (
-              <button className="tk-panel-close-btn" onClick={onClose} aria-label="关闭">
+              <button className="tk-panel-close-btn" onClick={onClose} aria-label="关闭" data-testid="panel-close-btn">
                 ✕
               </button>
             )}

@@ -78,7 +78,7 @@ const HeroCompareModal: React.FC<HeroCompareModalProps> = ({
   const comparePower = compareGeneral ? heroSystem.calculatePower(compareGeneral) : 0;
 
   return (
-    <div className="tk-compare-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div data-testid="tk-hero-compare-modal" className="tk-compare-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="tk-compare-modal" role="dialog" aria-modal="true" aria-label="武将对比">
         <button className="tk-compare-close" onClick={onClose} aria-label="关闭">✕</button>
 

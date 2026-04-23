@@ -17,7 +17,7 @@ export default function IdleResourceBar({ resources, formatNumber }: IdleResourc
   if (unlocked.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-white/5 bg-gp-card/80 px-3 py-2 backdrop-blur-sm">
+    <div data-testid="tk-idle-resource-bar" className="rounded-xl border border-white/5 bg-gp-card/80 px-3 py-2 backdrop-blur-sm">
       {/* PC: 横排; 手机: 竖排 */}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-4">
         {unlocked.map((r) => (
