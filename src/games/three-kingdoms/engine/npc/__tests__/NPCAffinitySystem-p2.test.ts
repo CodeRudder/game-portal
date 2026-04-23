@@ -22,6 +22,43 @@ import type { GiftType } from '../NPCAffinitySystem';
 // ─────────────────────────────────────────────
 
 function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+function createAffinitySystem(config?: Record<string, unknown>): NPCAffinitySystem {
+  const sys = new NPCAffinitySystem(config);
+  sys.init(mockDeps());
+  return sys;
+}
+
+function createNPC(overrides: Partial<NPCData> = {}): NPCData {
+  return {
+    id: 'npc-test-001',
+    name: '测试商人',
+    profession: 'merchant',
+    affinity: 30,
+    position: { x: 5, y: 5 },
+    region: 'central_plains',
+    visible: true,
+    dialogId: 'dialog-test',
+    createdAt: 0,
+    lastInteractedAt: 0,
+    ...overrides,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+
 describe('NPCAffinitySystem', () => {
   let sys: NPCAffinitySystem;
 
@@ -346,6 +383,4 @@ describe('NPCAffinitySystem', () => {
       expect(newSys.getHistory().length).toBe(0);
     });
   });
-});
-
 });
