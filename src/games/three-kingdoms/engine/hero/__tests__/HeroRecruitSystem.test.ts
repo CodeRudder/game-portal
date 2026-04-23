@@ -354,7 +354,7 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('init() 不抛异常', () => {
-      expect(() => recruit.init({ eventBus: null as any, configRegistry: null as any })).not.toThrow();
+      expect(() => recruit.init({ eventBus: null as unknown as Record<string, unknown>, configRegistry: null as unknown as Record<string, unknown> })).not.toThrow();
     });
   });
 });

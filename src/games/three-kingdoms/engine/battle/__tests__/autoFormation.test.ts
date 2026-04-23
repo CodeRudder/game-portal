@@ -11,7 +11,7 @@ import { TroopType } from '../battle.types';
 function makeUnit(overrides: Partial<BattleUnit> & { id: string }): BattleUnit {
   const normalAttack: BattleSkill = {
     id: 'normal', name: '普攻', type: 'active', level: 1,
-    description: '', multiplier: 1.0, targetType: 'SINGLE_ENEMY' as any,
+    description: '', multiplier: 1.0, targetType: 'SINGLE_ENEMY' as unknown as Record<string, unknown>,
     rageCost: 0, cooldown: 0, currentCooldown: 0,
   };
   return {

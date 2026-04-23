@@ -398,7 +398,7 @@ describe('HeroFormation', () => {
 
     it('should handle deserialization with invalid data gracefully', () => {
       // Should not throw
-      expect(() => formation.deserialize({ version: 1, state: undefined as any })).not.toThrow();
+      expect(() => formation.deserialize({ version: 1, state: undefined as unknown as Record<string, unknown> })).not.toThrow();
     });
   });
 

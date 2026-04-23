@@ -177,7 +177,7 @@ describe('RenderStateBridge', () => {
 
   beforeEach(() => {
     adapter = createMockAdapter();
-    bridge = new RenderStateBridge(adapter as any);
+    bridge = new RenderStateBridge(adapter as unknown as Record<string, unknown>);
   });
 
   afterEach(() => {

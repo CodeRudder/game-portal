@@ -415,14 +415,14 @@ import {
 
         // undefined
         const undefDef = createFixedEventDef({ id: 'undef-cond' });
-        delete (undefDef as any).triggerConditions;
+        delete (undefDef as unknown as Record<string, unknown>).triggerConditions;
         sys.registerEvent(undefDef);
         expect(sys.canTrigger('undef-cond', 1)).toBe(true);
 
         // 未知类型
         const unkDef = createFixedEventDef({
           id: 'unknown-cond',
-          triggerConditions: [{ type: 'future_condition' as any, params: {} }],
+          triggerConditions: [{ type: 'future_condition' as unknown as Record<string, unknown>, params: {} }],
         });
         sys.registerEvent(unkDef);
         expect(sys.canTrigger('unknown-cond', 1)).toBe(true);

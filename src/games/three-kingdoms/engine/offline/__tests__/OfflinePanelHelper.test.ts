@@ -146,13 +146,13 @@ describe('estimateOfflineReward', () => {
   });
 
   it('预估1小时收益', () => {
-    const result = estimateOfflineReward(1, { grain: 10, gold: 0, troops: 0, mandate: 0 }, {}, mockCalculateSnapshot as any);
+    const result = estimateOfflineReward(1, { grain: 10, gold: 0, troops: 0, mandate: 0 }, {}, mockCalculateSnapshot as unknown as Record<string, unknown>);
     expect(result.offlineSeconds).toBe(3600);
     expect(result.totalEarned.grain).toBe(36000);
   });
 
   it('预估8小时收益', () => {
-    const result = estimateOfflineReward(8, { grain: 10, gold: 0, troops: 0, mandate: 0 }, {}, mockCalculateSnapshot as any);
+    const result = estimateOfflineReward(8, { grain: 10, gold: 0, troops: 0, mandate: 0 }, {}, mockCalculateSnapshot as unknown as Record<string, unknown>);
     expect(result.offlineSeconds).toBe(8 * 3600);
   });
 });

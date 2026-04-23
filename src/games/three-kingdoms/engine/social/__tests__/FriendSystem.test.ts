@@ -487,7 +487,7 @@ describe('FriendSystem — 序列化', () => {
   });
 
   test('反序列化无效数据返回默认状态', () => {
-    const restored = system.deserialize({ version: 999, state: {} as any });
+    const restored = system.deserialize({ version: 999, state: {} as unknown as Record<string, unknown> });
     expect(Object.keys(restored.friends).length).toBe(0);
   });
 });

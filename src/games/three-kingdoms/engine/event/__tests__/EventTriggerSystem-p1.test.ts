@@ -281,7 +281,7 @@ describe('EventTriggerSystem', () => {
 
     it('无过期时间的事件 expireTurn 为 null', () => {
       const def = createRandomEventDef();
-      delete (def as any).expireAfterTurns;
+      delete (def as unknown as Record<string, unknown>).expireAfterTurns;
       sys.registerEvent(def);
 
       const result = sys.forceTriggerEvent(def.id, 1);

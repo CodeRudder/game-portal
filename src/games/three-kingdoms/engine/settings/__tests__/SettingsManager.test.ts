@@ -354,8 +354,8 @@ describe('SettingsManager', () => {
     });
 
     test('restoreFromSaveData 无效数据返回 false', () => {
-      expect(manager.restoreFromSaveData(null as any)).toBe(false);
-      expect(manager.restoreFromSaveData({} as any)).toBe(false);
+      expect(manager.restoreFromSaveData(null as unknown as Record<string, unknown>)).toBe(false);
+      expect(manager.restoreFromSaveData({} as unknown as Record<string, unknown>)).toBe(false);
     });
 
     test('mergeRemoteSettings 远程更新时覆盖本地', () => {

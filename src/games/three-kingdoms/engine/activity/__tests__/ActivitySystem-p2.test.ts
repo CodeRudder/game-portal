@@ -429,7 +429,7 @@ import {
     });
 
     it('deserialize null/undefined 返回默认状态', () => {
-      const restored = system.deserialize(null as any);
+      const restored = system.deserialize(null as unknown as Record<string, unknown>);
       expect(restored.activities).toEqual({});
     });
 

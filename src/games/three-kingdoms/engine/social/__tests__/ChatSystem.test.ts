@@ -373,7 +373,7 @@ describe('ChatSystem — 序列化', () => {
   });
 
   test('反序列化空数据返回默认值', () => {
-    const restored = system.deserializeChat({} as any);
+    const restored = system.deserializeChat({} as unknown as Record<string, unknown>);
     expect(restored.muteRecords).toEqual([]);
     expect(restored.lastSendTime).toEqual({});
   });

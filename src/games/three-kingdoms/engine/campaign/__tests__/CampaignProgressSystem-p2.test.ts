@@ -308,7 +308,7 @@ describe('CampaignProgressSystem ISubsystem', () => {
   });
 
   it('init 注入依赖不报错', () => {
-    const mockDeps = { eventBus: { on: jest.fn(), off: jest.fn(), emit: jest.fn() } } as any;
+    const mockDeps = { eventBus: { on: jest.fn(), off: jest.fn(), emit: jest.fn() } } as unknown as Record<string, unknown>;
     expect(() => system.init(mockDeps)).not.toThrow();
   });
 

@@ -67,7 +67,7 @@ describe('TutorialStateMachine', () => {
   beforeEach(() => {
     sm = new TutorialStateMachine();
     deps = createMockDeps();
-    sm.init(deps as any);
+    sm.init(deps as unknown as Record<string, unknown>);
   });
 
   // ── #1 引导状态机 ──────────────────────

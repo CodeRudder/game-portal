@@ -263,7 +263,7 @@ describe('RankingSystem — 存档序列化', () => {
 
   test('反序列化无效数据不崩溃', () => {
     const newSystem = new RankingSystem();
-    expect(() => newSystem.deserialize({} as any)).not.toThrow();
-    expect(() => newSystem.deserialize({ version: 999 } as any)).not.toThrow();
+    expect(() => newSystem.deserialize({} as unknown as Record<string, unknown>)).not.toThrow();
+    expect(() => newSystem.deserialize({ version: 999 } as unknown as Record<string, unknown>)).not.toThrow();
   });
 });

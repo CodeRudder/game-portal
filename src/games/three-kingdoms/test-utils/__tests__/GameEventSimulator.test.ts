@@ -51,7 +51,7 @@ describe('GameEventSimulator — 资源操作', () => {
 
   it('addResources 应忽略零和负值', () => {
     const goldBefore = sim.getResource('gold');
-    sim.addResources({ gold: 0 } as any);
+    sim.addResources({ gold: 0 } as unknown as Record<string, unknown>);
     expect(sim.getResource('gold')).toBe(goldBefore);
   });
 
@@ -137,7 +137,7 @@ describe('GameEventSimulator — 武将操作', () => {
   it('addHeroDirectly 应添加指定武将', () => {
     const result = sim.addHeroDirectly('liubei');
     expect(result).not.toBeNull();
-    expect(result!.id ?? (result as any).generalId).toBeTruthy();
+    expect(result!.id ?? (result as unknown as Record<string, unknown>).generalId).toBeTruthy();
   });
 
   it('addHeroDirectly 不存在的武将应返回 null', () => {

@@ -440,7 +440,7 @@ describe('SiegeEnhancer', () => {
     it('反序列化缺失数据时默认为 0', () => {
       const newEnhancer = new SiegeEnhancer();
       newEnhancer.init(systems.deps);
-      newEnhancer.deserialize({ totalRewardsGranted: undefined, version: 1 } as any);
+      newEnhancer.deserialize({ totalRewardsGranted: undefined, version: 1 } as unknown as Record<string, unknown>);
 
       expect(newEnhancer.getTotalRewardsGranted()).toBe(0);
     });

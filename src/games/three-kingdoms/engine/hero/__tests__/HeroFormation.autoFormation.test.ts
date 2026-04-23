@@ -15,7 +15,7 @@ function makeGeneral(id: string, power: number): GeneralData {
   return {
     id,
     name: id,
-    quality: 'RARE' as any,
+    quality: 'RARE' as unknown as Record<string, unknown>,
     level: Math.floor(power / 100),
     exp: 0,
     faction: 'shu',

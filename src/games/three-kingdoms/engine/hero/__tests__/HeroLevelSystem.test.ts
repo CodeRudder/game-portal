@@ -398,7 +398,7 @@ describe('HeroLevelSystem', () => {
     });
 
     it('init() 不抛异常', () => {
-      expect(() => levelSys.init({ eventBus: null as any, configRegistry: null as any })).not.toThrow();
+      expect(() => levelSys.init({ eventBus: null as unknown as Record<string, unknown>, configRegistry: null as unknown as Record<string, unknown> })).not.toThrow();
     });
 
     it('reset() 不抛异常', () => {

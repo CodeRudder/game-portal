@@ -357,7 +357,7 @@ describe('BattleEngine v4.0', () => {
         isControlled: jest.fn().mockReturnValue(false),
       };
 
-      const customEngine = new BattleEngine(customCalculator as any);
+      const customEngine = new BattleEngine(customCalculator as unknown as Record<string, unknown>);
       const ally = createTeam('ally', 1, { troopType: TroopType.ARCHER });
       const enemy = createTeam('enemy', 1, { troopType: TroopType.ARCHER });
 

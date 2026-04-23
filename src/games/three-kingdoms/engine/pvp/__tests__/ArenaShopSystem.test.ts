@@ -241,8 +241,8 @@ describe('ArenaShopSystem — 存档序列化', () => {
 
   test('反序列化无效数据不崩溃', () => {
     const newShop = new ArenaShopSystem();
-    expect(() => newShop.deserialize({} as any)).not.toThrow();
-    expect(() => newShop.deserialize({ version: 999, items: [] } as any)).not.toThrow();
+    expect(() => newShop.deserialize({} as unknown as Record<string, unknown>)).not.toThrow();
+    expect(() => newShop.deserialize({ version: 999, items: [] } as unknown as Record<string, unknown>)).not.toThrow();
   });
 });
 

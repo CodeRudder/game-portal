@@ -34,7 +34,7 @@ function createTestAlliance(level = 1): AllianceData {
   const alliance = createAllianceData('ally_1', '蜀汉', '兴复汉室', 'p1', '刘备', NOW);
   alliance.level = level;
   alliance.members['p2'] = {
-    playerId: 'p2', playerName: '诸葛亮', role: 'ADVISOR' as any,
+    playerId: 'p2', playerName: '诸葛亮', role: 'ADVISOR' as unknown as Record<string, unknown>,
     power: 5000, joinTime: NOW, dailyContribution: 0, totalContribution: 100, dailyBossChallenges: 0,
   };
   return alliance;

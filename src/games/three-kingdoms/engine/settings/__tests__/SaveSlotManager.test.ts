@@ -268,7 +268,7 @@ describe('SaveSlotManager', () => {
     });
 
     test('importSaves 无效数据', () => {
-      const result = manager.importSaves(null as any);
+      const result = manager.importSaves(null as unknown as Record<string, unknown>);
       expect(result.success).toBe(false);
     });
 

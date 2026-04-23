@@ -364,7 +364,7 @@ describe('DefenseFormationSystem — 存档序列化', () => {
   });
 
   test('反序列化空数据返回默认值', () => {
-    const restored = system.deserialize({} as any);
+    const restored = system.deserialize({} as unknown as Record<string, unknown>);
     expect(restored.defenseFormation).toEqual(system.createDefaultFormation());
     expect(restored.defenseLogs).toEqual([]);
   });
