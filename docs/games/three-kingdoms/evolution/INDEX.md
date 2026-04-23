@@ -14,6 +14,7 @@
 - [Round 11复盘: data-testid全覆盖+死代码清理](./progress/evolution-progress-r11.md) — data-testid 100%覆盖(89/89)+LeaderboardSystem死代码清理(-348行)+EVO-063
 - [Round 12复盘: 预防性文件拆分](./progress/evolution-progress-r12.md) — ArenaSystem拆分(499→399)+settings预防性拆分(AnimationController 476→428+AccountSystem 466→429)+EVO-064
 - [Round 23复盘: 还债提质](./progress/evolution-progress-r23.md) — 3个P1修复(mail跨层/UP武将描述/每日免费招募)+TODO清零(40→0)+400+行文件拆分(5个)+jest残留清零+as any清零+四项指标全部归零
+- [Round 24复盘: v3.0第二轮全局审查](./progress/evolution-progress-r24.md) — 6个测试问题修复(BattleFormationModal选择器/BattleResultModal重复标题/BattleScene防御性检查/AudioController孤儿测试/ArenaSeason断言/quest-config)+200文件5980+用例全通过+封版通过
 
 ---
 
@@ -58,7 +59,7 @@
 
 ---
 
-*文档版本: v5.1 | 更新日期: 2026-04-24 | 新增 R23 复盘 + EVO-073~076（来自R22复盘）+ EVO-077~079（来自R23复盘）*
+*文档版本: v5.2 | 更新日期: 2026-04-24 | 新增 R24 复盘（v3.0第二轮全局审查）*
 
 ---
 
