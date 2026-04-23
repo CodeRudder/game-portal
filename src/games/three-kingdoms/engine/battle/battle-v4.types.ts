@@ -10,6 +10,8 @@
 import type {
   BattleSkill,
   BattleUnit,
+} from './battle-base.types';
+import type {
   IBattleEngine,
 } from './battle.types';
 

@@ -7,7 +7,6 @@
  * @module engine/campaign/campaign.types
  */
 
-import type { ResourceType, Resources } from '../../shared/types';
 import type { Faction } from '../hero/hero.types';
 import { type StarRating, TroopType } from '../battle/battle.types';
 
@@ -142,7 +141,7 @@ export interface DropTableEntry {
   /** 掉落类型 */
   type: DropItemType;
   /** 资源类型（type=resource时使用） */
-  resourceType?: ResourceType;
+  resourceType?: import('../../shared/types').ResourceType;
   /** 武将ID（type=fragment时使用） */
   generalId?: string;
   /** 掉落数量最小值 */
@@ -164,7 +163,7 @@ export interface DropTableEntry {
  */
 export interface StageReward {
   /** 基础资源奖励 */
-  resources: Partial<Resources>;
+  resources: Partial<import('../../shared/types').Resources>;
   /** 经验奖励 */
   exp: number;
   /** 武将碎片奖励 Map<generalId, count> */
@@ -198,11 +197,11 @@ export interface Stage {
   /** 敌方阵容 */
   enemyFormation: EnemyFormation;
   /** 基础资源奖励 */
-  baseRewards: Partial<Resources>;
+  baseRewards: Partial<import('../../shared/types').Resources>;
   /** 基础经验奖励 */
   baseExp: number;
   /** 首通额外奖励 */
-  firstClearRewards: Partial<Resources>;
+  firstClearRewards: Partial<import('../../shared/types').Resources>;
   /** 首通额外经验 */
   firstClearExp: number;
   /** 三星额外奖励倍率 */
@@ -298,7 +297,7 @@ export interface CampaignSaveData {
  *
  * 通过回调解耦资源系统，不直接依赖 ResourceSystem
  */
-export type AddResourceCallback = (type: ResourceType, amount: number) => number;
+export type AddResourceCallback = (type: import('../../shared/types').ResourceType, amount: number) => number;
 
 /**
  * 碎片增加回调
