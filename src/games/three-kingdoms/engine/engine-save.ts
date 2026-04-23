@@ -218,7 +218,7 @@ export function fromIGameState(state: IGameState): GameSaveData {
     pvpRanking: s.pvpRanking as import('./pvp/RankingSystem').RankingSaveData | undefined,
     eventTrigger: s.eventTrigger as import('../core/event').EventSystemSaveData | undefined,
     eventNotification: s.eventNotification as import('./event/EventNotificationSystem').EventNotificationSaveData | undefined,
-    eventUI: s.eventUI as { expiredBanners: import('../core/event').EventBanner[] } | undefined,
+    eventUI: s.eventUI as { expiredBanners: import('../core/events/event-system.types').EventBanner[] } | undefined,
     eventChain: s.eventChain as import('./event/EventChainSystem').EventChainSaveData | undefined,
     eventLog: s.eventLog as import('./event/EventLogSystem').EventLogSaveData | undefined,
     offlineEvent: s.offlineEvent as { version: number; offlineQueue: unknown[]; autoRules: unknown[] } | undefined,

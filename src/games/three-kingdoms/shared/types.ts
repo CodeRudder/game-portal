@@ -224,7 +224,7 @@ export interface GameSaveData {
   /** 事件通知系统数据（可选，v7.0+） */
   eventNotification?: import('../engine/event/EventNotificationSystem').EventNotificationSaveData;
   /** 事件UI通知数据（可选，v7.0+） */
-  eventUI?: { expiredBanners: import('../core/event').EventBanner[] };
+  eventUI?: { expiredBanners: import('../core/events/event-system.types').EventBanner[] };
   /** 事件链系统数据（可选，v7.0+） */
   eventChain?: import('../engine/event/EventChainSystem').EventChainSaveData;
   /** 事件日志系统数据（可选，v7.0+） */
