@@ -317,6 +317,7 @@ export class HeroRecruitSystem implements ISubsystem {
       this.upHero = {
         upGeneralId: data.upHero.upGeneralId ?? null,
         upRate: data.upHero.upRate ?? DEFAULT_UP_CONFIG.upRate,
+        description: data.upHero.description ?? '',
       };
     } else {
       this.upHero = createDefaultUpHero();

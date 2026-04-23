@@ -297,4 +297,16 @@ export class LeaderboardSystem implements ISubsystem {
 }
 
 // 重导出供测试和外部使用
-export { createDefaultLeaderboardState } from './leaderboard-types';
+export type {
+  LeaderboardEntry,
+  LeaderboardSeason,
+  LeaderboardRewardConfig,
+  LeaderboardQuery,
+  LeaderboardPageResult,
+  LeaderboardState,
+} from './leaderboard-types';
+export {
+  LeaderboardType,
+  LEADERBOARD_TYPE_LABELS,
+  createDefaultLeaderboardState,
+} from './leaderboard-types';

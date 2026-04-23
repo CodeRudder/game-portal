@@ -94,9 +94,11 @@ export * from './expedition';
 // 排行榜功能统一由 social/LeaderboardSystem（SocialLeaderboardSystem）提供。
 export {
   LeaderboardSystem,
+} from './social/LeaderboardSystem';
+export {
   LEADERBOARD_TYPE_LABELS,
   createDefaultLeaderboardState,
-} from './social/LeaderboardSystem';
+} from './social/leaderboard-types';
 export type {
   LeaderboardType as LeaderboardTypeEnum,
   LeaderboardEntry as SocialLeaderboardEntry,
@@ -105,7 +107,7 @@ export type {
   LeaderboardQuery,
   LeaderboardPageResult,
   LeaderboardState as SocialLeaderboardState,
-} from './social/LeaderboardSystem';
+} from './social/leaderboard-types';
 
 // ── 联盟域 (v13.0) ──
 export * from './alliance';
