@@ -58,7 +58,7 @@
 
 ---
 
-*文档版本: v5.0 | 更新日期: 2026-04-24 | 新增 R23 复盘 + EVO-073~076（来自R22复盘）*
+*文档版本: v5.1 | 更新日期: 2026-04-24 | 新增 R23 复盘 + EVO-073~076（来自R22复盘）+ EVO-077~079（来自R23复盘）*
 
 ---
 
@@ -130,3 +130,21 @@ CSS文件同样适用此规则，动画关键帧可拆分为独立 -anim.css 文
 P0降级为P1需要架构师+产品经理双人确认。
 确认内容：影响范围评估 + 替代方案 + 修复时间线。
 范例: R22 中2个P0降级为P1，缺乏量化标准，后续建立三门槛：影响<5%用户+有替代路径+下轮可修复。
+
+### EVO-077: 跨层引用检测（来自Round 23复盘）
+核心层(core/)不得引用引擎层(engine/)，共享定义提取到shared/层。
+跨层引用的共享类型必须在shared/目录中定义唯一来源，消除反向依赖。
+检查方法: `grep -rn "from.*engine/" src/games/three-kingdoms/core/ --include="*.ts"`
+范例: R23 中 mail.types.ts 被渲染层和引擎层同时引用，提取到 shared/mail-types.ts 解决。
+
+### EVO-078: TODO零容忍（来自Round 23复盘）
+生产代码TODO上限为0，必须标注版本号或直接实现。
+发现TODO时：要么标注计划版本号（如 `// TODO(R25): ...`），要么立即实现。
+检查方法: `grep -rn "TODO" src/games/three-kingdoms/ --include="*.ts" --include="*.tsx" | grep -v ".test." | grep -v ".spec."`
+范例: R23 一次性清零40个TODO，渲染层+生产代码全部归零。
+
+### EVO-079: as any精确类型替代（来自Round 23复盘）
+禁止使用 `as any`，应定义 interface 或使用 `unknown` + 类型守卫。
+每个 `as any` 的成因不同，需要理解上下文后设计正确的类型方案，无法批量处理。
+检查方法: `grep -rn "as any" src/games/three-kingdoms/ --include="*.ts" | grep -v ".test." | grep -v ".spec."`
+范例: R23 中 NPCPatrolSystem 和 GameEventSimulator 的 as any 通过定义 INPCSystemFacade 等精确接口替代。
