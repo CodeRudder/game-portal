@@ -2,6 +2,11 @@ import { NPCFavorabilitySystem } from '../NPCFavorabilitySystem';
 import { NPCSystem } from '../NPCSystem';
 import type { ISystemDeps } from '../../../core/types';
 import {
+  AFFINITY_LEVEL_EFFECTS,
+  DEFAULT_AFFINITY_GAIN_CONFIG,
+  BOND_SKILLS,
+} from '../../../core/npc';
+
 describe('NPCFavorabilitySystem', () => {
   let favSys: NPCFavorabilitySystem;
   let npcSys: NPCSystem;

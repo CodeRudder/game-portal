@@ -2,6 +2,55 @@ import { describe, it, expect } from 'vitest';
 import { UITreeDiffer } from '../UITreeDiffer';
 import { DiffType, UINodeType } from '../types';
 import type {
+  UITreeNode,
+  UITreeSnapshot,
+  UITreeDiff,
+  UITreeDiffNode,
+} from '../types';
+
+// ---------------------------------------------------------------------------
+// 辅助：创建 UI 树节点
+// ---------------------------------------------------------------------------
+
+function makeNode(
+  id: string,
+  overrides: Partial<UITreeNode> = {},
+): UITreeNode {
+  return {
+    id,
+    source: 'pixijs',
+    type: UINodeType.PixiContainer,
+    name: overrides.name ?? id,
+    bounds: { x: 0, y: 0, width: 100, height: 50 },
+    state: { visible: true },
+    children: [],
+    ...overrides,
+  };
+}
+
+/** 创建快照的辅助函数 */
+function makeSnapshot(root: UITreeNode, id = 'snap-0'): UITreeSnapshot {
+  return {
+    id,
+    timestamp: Date.now(),
+    root,
+    stats: {
+      totalNodes: 0,
+      reactNodes: 0,
+      pixiNodes: 0,
+      maxDepth: 0,
+      nodeTypeDistribution: {} as Record<UINodeType, number>,
+    },
+  };
+}
+
+const differ = new UITreeDiffer();
+
+// ---------------------------------------------------------------------------
+// 测试
+// ---------------------------------------------------------------------------
+
+describe('UITreeDiffer-p2', () => {
 describe('moved nodes', () => {
   it('should detect child position change', () => {
     const baseTree = makeNode('root', {
