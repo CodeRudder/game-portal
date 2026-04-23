@@ -19,14 +19,16 @@ import {
   StateAnimationType,
   FeedbackAnimationType,
   INK_WASH_TRANSITION_DURATION,
-  TRANSITION_DURATIONS,
-  STATE_ANIMATION_DURATIONS,
-  FEEDBACK_ANIMATION_DURATIONS,
 } from '../../core/settings';
 import type {
   AnimationConfig,
   AnimationSettings,
 } from '../../core/settings';
+import {
+  getDefaultTransitionConfig,
+  getDefaultStateAnimationConfig,
+  getDefaultFeedbackConfig,
+} from './animation-defaults';
 
 // ─────────────────────────────────────────────
 // 类型
@@ -199,7 +201,7 @@ export class AnimationController implements ISubsystem {
       return this.settings.transitions[type];
     }
     // 回退到默认配置
-    return this.getDefaultTransitionConfig(type);
+    return getDefaultTransitionConfig(type);
   }
 
   // ─────────────────────────────────────────
@@ -237,7 +239,7 @@ export class AnimationController implements ISubsystem {
     if (this.settings?.stateAnimations[type]) {
       return this.settings.stateAnimations[type];
     }
-    return this.getDefaultStateAnimationConfig(type);
+    return getDefaultStateAnimationConfig(type);
   }
 
   // ─────────────────────────────────────────
@@ -276,7 +278,7 @@ export class AnimationController implements ISubsystem {
     if (this.settings?.feedbackAnimations[type]) {
       return this.settings.feedbackAnimations[type];
     }
-    return this.getDefaultFeedbackConfig(type);
+    return getDefaultFeedbackConfig(type);
   }
 
   // ─────────────────────────────────────────
@@ -423,54 +425,4 @@ export class AnimationController implements ISubsystem {
     }
   }
 
-  /** 默认过渡动画配置 */
-  private getDefaultTransitionConfig(type: TransitionType): AnimationConfig {
-    const durations: Record<TransitionType, number> = {
-      [TransitionType.PanelOpen]: TRANSITION_DURATIONS.panelOpen,
-      [TransitionType.PanelClose]: TRANSITION_DURATIONS.panelClose,
-      [TransitionType.TabSwitch]: TRANSITION_DURATIONS.tabSwitch,
-      [TransitionType.PageTransition]: TRANSITION_DURATIONS.pageTransition,
-      [TransitionType.PopupAppear]: TRANSITION_DURATIONS.popupAppear,
-      [TransitionType.SceneSwitch]: TRANSITION_DURATIONS.sceneSwitch,
-    };
-    const easings: Record<TransitionType, EasingType> = {
-      [TransitionType.PanelOpen]: EasingType.EaseOut,
-      [TransitionType.PanelClose]: EasingType.EaseIn,
-      [TransitionType.TabSwitch]: EasingType.EaseInOut,
-      [TransitionType.PageTransition]: EasingType.Linear,
-      [TransitionType.PopupAppear]: EasingType.Spring,
-      [TransitionType.SceneSwitch]: EasingType.Linear,
-    };
-    return { duration: durations[type], easing: easings[type] };
-  }
-
-  /** 默认状态动画配置 */
-  private getDefaultStateAnimationConfig(type: StateAnimationType): AnimationConfig {
-    const durations: Record<StateAnimationType, number> = {
-      [StateAnimationType.ButtonHover]: STATE_ANIMATION_DURATIONS.hover,
-      [StateAnimationType.ButtonPress]: STATE_ANIMATION_DURATIONS.press,
-      [StateAnimationType.ButtonRelease]: STATE_ANIMATION_DURATIONS.release,
-      [StateAnimationType.ToggleSwitch]: STATE_ANIMATION_DURATIONS.toggleSwitch,
-      [StateAnimationType.CardSelect]: STATE_ANIMATION_DURATIONS.select,
-    };
-    const easings: Record<StateAnimationType, EasingType> = {
-      [StateAnimationType.ButtonHover]: EasingType.EaseOut,
-      [StateAnimationType.ButtonPress]: EasingType.EaseIn,
-      [StateAnimationType.ButtonRelease]: EasingType.EaseOut,
-      [StateAnimationType.ToggleSwitch]: EasingType.EaseInOut,
-      [StateAnimationType.CardSelect]: EasingType.EaseOut,
-    };
-    return { duration: durations[type], easing: easings[type] };
-  }
-
-  /** 默认反馈动画配置 */
-  private getDefaultFeedbackConfig(type: FeedbackAnimationType): AnimationConfig {
-    const durations: Record<FeedbackAnimationType, number> = {
-      [FeedbackAnimationType.ResourceFloat]: FEEDBACK_ANIMATION_DURATIONS.resourceFloat,
-      [FeedbackAnimationType.LevelUpGlow]: FEEDBACK_ANIMATION_DURATIONS.levelUpGlow,
-      [FeedbackAnimationType.ToastSlideIn]: FEEDBACK_ANIMATION_DURATIONS.toastSlideIn,
-      [FeedbackAnimationType.BattleResult]: FEEDBACK_ANIMATION_DURATIONS.battleResult,
-    };
-    return { duration: durations[type], easing: EasingType.EaseOut };
-  }
 }

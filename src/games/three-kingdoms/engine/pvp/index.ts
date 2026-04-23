@@ -40,7 +40,7 @@ export {
 // ArenaSystem
 export { ArenaSystem } from './ArenaSystem';
 
-// ArenaConfig (extracted from ArenaSystem)
+// ArenaConfig (extracted from ArenaSystem) + ArenaSystem.helpers
 export {
   DEFAULT_MATCH_CONFIG,
   DEFAULT_REFRESH_CONFIG,
@@ -48,7 +48,9 @@ export {
   ARENA_SAVE_VERSION,
   createDefaultDefenseFormation,
   createDefaultArenaPlayerState,
-} from './ArenaConfig';
+  selectByFactionBalance,
+  calculatePower,
+} from './ArenaSystem.helpers';
 
 // PvPBattleSystem
 export {

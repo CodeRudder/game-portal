@@ -16,7 +16,6 @@ import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   ArenaOpponent,
   ArenaPlayerState,
-  DefenseSnapshot,
   MatchConfig,
   RefreshConfig,
   ChallengeConfig,
@@ -30,10 +29,19 @@ import {
   createDefaultDefenseFormation,
   createDefaultArenaPlayerState,
 } from './ArenaConfig';
+import {
+  selectByFactionBalance,
+  calculatePower,
+} from './ArenaSystem.helpers';
 
-// ─────────────────────────────────────────────
-// ArenaSystem 类
-// ─────────────────────────────────────────────
+// 向后兼容重导出（外部测试直接 import from './ArenaSystem'）
+export {
+  DEFAULT_MATCH_CONFIG, DEFAULT_REFRESH_CONFIG, DEFAULT_CHALLENGE_CONFIG,
+  ARENA_SAVE_VERSION, createDefaultArenaPlayerState, createDefaultDefenseFormation,
+  selectByFactionBalance, calculatePower,
+};
+
+// ── ArenaSystem 类 ──────────────────────────
 
 /**
  * 竞技场系统
@@ -107,7 +115,7 @@ export class ArenaSystem implements ISubsystem {
     const { powerMinRatio, powerMaxRatio, rankMinOffset, rankMaxOffset, candidateCount } =
       this.matchConfig;
 
-    const myPower = this.calculatePower(playerState);
+    const myPower = calculatePower(playerState);
     const myRanking = playerState.ranking || 9999;
 
     // 战力范围筛选
@@ -126,7 +134,7 @@ export class ArenaSystem implements ISubsystem {
     });
 
     // 按阵营分布尽量均匀选取
-    const selected = this.selectByFactionBalance(eligible, candidateCount);
+    const selected = selectByFactionBalance(eligible, candidateCount);
 
     // 如果不够，从合格对手中补充（仅使用同时满足战力和排名范围的对手）
     if (selected.length < candidateCount) {
@@ -138,47 +146,6 @@ export class ArenaSystem implements ISubsystem {
     }
 
     return selected.slice(0, candidateCount);
-  }
-
-  /**
-   * 按阵营平衡选择对手
-   *
-   * 尽量从不同阵营中各选一个对手
-   */
-  private selectByFactionBalance(
-    candidates: ArenaOpponent[],
-    count: number,
-  ): ArenaOpponent[] {
-    if (candidates.length <= count) return [...candidates];
-
-    const result: ArenaOpponent[] = [];
-    const factions = new Map<string, ArenaOpponent[]>();
-
-    // 按阵营分组
-    for (const c of candidates) {
-      const list = factions.get(c.faction) || [];
-      list.push(c);
-      factions.set(c.faction, list);
-    }
-
-    // 轮流从各阵营选取
-    const factionKeys = Array.from(factions.keys());
-    let round = 0;
-    while (result.length < count) {
-      let added = false;
-      for (const key of factionKeys) {
-        if (result.length >= count) break;
-        const list = factions.get(key)!;
-        if (list.length > round) {
-          result.push(list[round]);
-          added = true;
-        }
-      }
-      if (!added) break; // 所有阵营都选完了
-      round++;
-    }
-
-    return result;
   }
 
   // ── 刷新机制 ──────────────────────────────
@@ -277,8 +244,6 @@ export class ArenaSystem implements ISubsystem {
       cost: this.challengeConfig.buyCostGold,
     };
   }
-
-  // ── 每日重置 ──────────────────────────────
 
   /**
    * 重置每日数据（0:00重置）
@@ -379,15 +344,6 @@ export class ArenaSystem implements ISubsystem {
   }
 
   // ── 工具方法 ──────────────────────────────
-
-  /**
-   * 计算玩家战力（简化版，基于积分和阵容）
-   */
-  private calculatePower(playerState: ArenaPlayerState): number {
-    // 基础战力 = 积分 × 10 + 阵容武将数 × 1000
-    const heroCount = playerState.defenseFormation.slots.filter((s) => s !== '').length;
-    return playerState.score * 10 + heroCount * 1000 + 5000; // 基础5000战力
-  }
 
   /**
    * 获取匹配配置（用于测试）
