@@ -15,7 +15,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { ISystemDeps } from '../../../core/types';
 import { CalendarSystem } from '../../../engine/calendar/CalendarSystem';
-import type { CalendarState, GameDate, Season, WeatherType } from '../../../engine/calendar/calendar.types';
+import type { GameDate, Season, WeatherType } from '../../../engine/calendar/calendar.types';
 import { SEASONS, WEATHERS } from '../../../engine/calendar/calendar.types';
 import { ChainEventSystem } from '../../../engine/event/ChainEventSystem';
 import type { EventChainDef, ChainNodeDef } from '../../../engine/event/chain-event-types';
@@ -39,32 +39,28 @@ function mockDeps(): ISystemDeps {
 }
 
 /** 创建事件链定义 */
-function makeChainDef(id: string, depth: number, nodes: ChainNodeDef[]): EventChainDef {
+function makeChainDef(id: string, maxDepth: number, nodes: ChainNodeDef[]): EventChainDef {
   return {
     id,
     name: `链-${id}`,
     description: `测试链-${id}`,
-    maxDepth: depth,
+    maxDepth,
     nodes,
-    rewards: [{ resource: 'gold', amount: 500 }],
   };
 }
 
 /** 创建链节点 */
-function makeChainNode(id: string, depth: number, nextNodeId?: string): ChainNodeDef {
+function makeChainNode(
+  id: string, depth: number,
+  parentNodeId?: string, parentOptionId?: string,
+): ChainNodeDef {
   return {
     id,
+    eventDefId: `evt-chain-${id}`,
     depth,
-    title: `节点-${id}`,
+    parentNodeId,
+    parentOptionId,
     description: `节点描述-${id}`,
-    options: [
-      {
-        id: `${id}-opt1`,
-        text: '推进',
-        nextNodeId: nextNodeId ?? null,
-        effects: [{ resource: 'gold', amount: 100 }],
-      },
-    ],
   };
 }
 
@@ -105,7 +101,7 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
     });
 
     it('日历推进后日期应正确更新', () => {
-      calendar.update(1000); // 推进一段时间
+      calendar.update(1000);
       const date = calendar.getDate();
       expect(date.day).toBeGreaterThanOrEqual(1);
     });
@@ -207,10 +203,10 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
 
     it('getState应返回完整日历状态', () => {
       const state = calendar.getState();
-      expect(state).toHaveProperty('totalDays');
-      expect(state).toHaveProperty('currentDate');
-      expect(state).toHaveProperty('season');
+      expect(state).toHaveProperty('date');
       expect(state).toHaveProperty('weather');
+      expect(state).toHaveProperty('totalDays');
+      expect(state).toHaveProperty('paused');
     });
   });
 
@@ -230,59 +226,60 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
     });
 
     it('时代推进应按历史顺序: 黄巾之乱→群雄割据→官渡之战→赤壁之战→三国鼎立', () => {
-      // 验证初始年号
       const eraName = calendar.getEraName();
       expect(typeof eraName).toBe('string');
-      // 年号名称应在ERA_TABLE中
     });
 
-    it('完成剧情链应推进时代进度', () => {
+    it('完成3环剧情链应推进时代进度', () => {
       const nodes = [
-        makeChainNode('n1', 1, 'n2'),
-        makeChainNode('n2', 2, 'n3'),
-        makeChainNode('n3', 3),
+        makeChainNode('n1', 0),
+        makeChainNode('n2', 1, 'n1', 'n1-opt1'),
+        makeChainNode('n3', 2, 'n2', 'n2-opt1'),
       ];
-      const chain = makeChainDef('era-chain-1', 3, nodes);
+      const chain = makeChainDef('era-chain-1', 2, nodes);
       chainSys.registerChain(chain);
 
-      // 启动链
-      const progress = chainSys.startChain('era-chain-1');
-      expect(progress).toBeDefined();
+      const rootNode = chainSys.startChain('era-chain-1');
+      expect(rootNode).toBeDefined();
 
-      // 推进链
+      // 推进第1环: n1 → n2
       const advance1 = chainSys.advanceChain('era-chain-1', 'n1-opt1');
       expect(advance1.success).toBe(true);
 
+      // 推进第2环: n2 → n3
       const advance2 = chainSys.advanceChain('era-chain-1', 'n2-opt1');
       expect(advance2.success).toBe(true);
 
+      // 推进第3环: n3 → 无后续 → 链完成
       const advance3 = chainSys.advanceChain('era-chain-1', 'n3-opt1');
       expect(advance3.success).toBe(true);
+
+      // 链应完成
+      expect(chainSys.isChainCompleted('era-chain-1')).toBe(true);
     });
 
     it('剧情链未完成不应推进时代', () => {
       const nodes = [
-        makeChainNode('p1', 1, 'p2'),
-        makeChainNode('p2', 2),
+        makeChainNode('p1', 0),
+        makeChainNode('p2', 1, 'p1', 'p1-opt1'),
       ];
-      const chain = makeChainDef('era-chain-partial', 2, nodes);
+      const chain = makeChainDef('era-chain-partial', 1, nodes);
       chainSys.registerChain(chain);
 
       chainSys.startChain('era-chain-partial');
       chainSys.advanceChain('era-chain-partial', 'p1-opt1');
 
-      // 只完成1/2，不应推进时代
-      const progress = chainSys.getChainProgress('era-chain-partial');
-      expect(progress).toBeDefined();
+      // 只完成1/2，链未完成
+      expect(chainSys.isChainCompleted('era-chain-partial')).toBe(false);
     });
 
     it('所有目标达成后应可触发时代变迁', () => {
-      // 验证链完成后状态
-      const nodes = [makeChainNode('g1', 1)];
+      const nodes = [makeChainNode('g1', 0)];
       const chain = makeChainDef('era-goal-chain', 1, nodes);
       chainSys.registerChain(chain);
 
       chainSys.startChain('era-goal-chain');
+      // 单节点链，startChain后 currentNode=g1，需advance完成
       const result = chainSys.advanceChain('era-goal-chain', 'g1-opt1');
       expect(result.success).toBe(true);
     });
@@ -301,14 +298,12 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
     });
 
     it('时代变迁后应解锁新年号', () => {
-      // 推进足够长时间
       calendar.update(999999999);
       const eraName = calendar.getEraName();
       expect(typeof eraName).toBe('string');
     });
 
     it('时代奖励应一次性发放', () => {
-      // 通过序列化验证状态一致性
       calendar.update(100000);
       const state = calendar.getState();
       const saved = calendar.serialize();
@@ -328,7 +323,6 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
       cal2.init(deps);
       cal2.deserialize(saved1);
 
-      // 再次序列化应一致
       const saved2 = cal2.serialize();
       expect(saved2.totalDays).toBe(saved1.totalDays);
     });
@@ -347,15 +341,11 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
     });
 
     it('时代加成因子: 黄巾之乱×1.0 / 群雄割据×1.1 / 官渡之战×1.2 / 赤壁之战×1.3 / 三国鼎立×1.5', () => {
-      // 验证初始时代为黄巾之乱(×1.0)
       const eraName = calendar.getEraName();
-      // 时代加成因子由外部系统根据年号查表
       expect(typeof eraName).toBe('string');
     });
 
     it('时代变迁后产出公式应包含时代加成', () => {
-      // 产出公式: 总产出 = 基础×地形×阵营×科技×声望×地标×驻防×时代加成
-      // 此处验证日历能提供正确的年号信息供外部计算
       const date = calendar.getDate();
       expect(date.eraName).toBeDefined();
     });
@@ -382,22 +372,16 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
     });
 
     it('时代变迁应解锁新NPC类型', () => {
-      // 时代变迁由日历系统年号变化驱动
-      // 新NPC类型由NPCSpawnSystem根据年号解锁
       const eraName = calendar.getEraName();
       expect(typeof eraName).toBe('string');
     });
 
     it('已有NPC好感度应在时代变迁后100%保留', () => {
-      // 好感度保留由NPCFavorabilitySystem保证
-      // 此处验证日历系统不会影响好感度数据
       const state = calendar.getState();
       expect(state).toBeDefined();
     });
 
     it('时代奖励可能包含全NPC好感度+20', () => {
-      // 时代奖励由EraProgressSystem发放
-      // 此处验证日历状态可被外部系统查询
       calendar.update(50000);
       const date = calendar.getDate();
       expect(date).toBeDefined();
@@ -418,60 +402,49 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
 
     it('剧情链每环完成应推进时代进度+5%', () => {
       const nodes = [
-        makeChainNode('lc1', 1, 'lc2'),
-        makeChainNode('lc2', 2, 'lc3'),
-        makeChainNode('lc3', 3),
+        makeChainNode('lc1', 0),
+        makeChainNode('lc2', 1, 'lc1', 'lc1-opt1'),
+        makeChainNode('lc3', 2, 'lc2', 'lc2-opt1'),
       ];
-      const chain = makeChainDef('era-link-1', 3, nodes);
+      const chain = makeChainDef('era-link-1', 2, nodes);
       chainSys.registerChain(chain);
 
       chainSys.startChain('era-link-1');
 
-      // 完成1环 → 时代+5%
       const r1 = chainSys.advanceChain('era-link-1', 'lc1-opt1');
       expect(r1.success).toBe(true);
 
-      // 完成2环 → 时代再+5%
       const r2 = chainSys.advanceChain('era-link-1', 'lc2-opt1');
       expect(r2.success).toBe(true);
     });
 
     it('整条剧情链完成应额外+10%', () => {
-      const nodes = [makeChainNode('fl1', 1)];
+      const nodes = [makeChainNode('fl1', 0)];
       const chain = makeChainDef('era-full-link', 1, nodes);
       chainSys.registerChain(chain);
 
       chainSys.startChain('era-full-link');
       const result = chainSys.advanceChain('era-full-link', 'fl1-opt1');
       expect(result.success).toBe(true);
-      // 链完成 → 额外+10%
     });
 
     it('时代进度满应触发时代变迁', () => {
-      // 综合验证: 多条链完成推进时代
-      const nodes = [makeChainNode('ep1', 1)];
+      const nodes = [makeChainNode('ep1', 0)];
       const chain = makeChainDef('era-progress-chain', 1, nodes);
       chainSys.registerChain(chain);
 
       chainSys.startChain('era-progress-chain');
       chainSys.advanceChain('era-progress-chain', 'ep1-opt1');
 
-      const progress = chainSys.getChainProgress('era-progress-chain');
+      const progress = chainSys.getProgress('era-progress-chain');
       expect(progress).toBeDefined();
     });
 
     it('链选择应影响后续时代NPC关系', () => {
       const nodes = [
-        {
-          id: 'choice-1',
-          depth: 1,
-          title: '关键选择',
-          description: '选择阵营',
-          options: [
-            { id: 'choice-wei', text: '投魏', nextNodeId: null, effects: [{ resource: 'gold', amount: 100 }] },
-            { id: 'choice-shu', text: '投蜀', nextNodeId: null, effects: [{ resource: 'grain', amount: 100 }] },
-          ],
-        },
+        { id: 'choice-1', eventDefId: 'evt-choice-1', depth: 0, description: '选择阵营' },
+        { id: 'choice-wei', eventDefId: 'evt-choice-wei', depth: 1, parentNodeId: 'choice-1', parentOptionId: 'choice-wei', description: '投魏' },
+        { id: 'choice-shu', eventDefId: 'evt-choice-shu', depth: 1, parentNodeId: 'choice-1', parentOptionId: 'choice-shu', description: '投蜀' },
       ];
       const chain = makeChainDef('choice-chain', 1, nodes);
       chainSys.registerChain(chain);
@@ -482,13 +455,12 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
     });
 
     it('链超时(24h)应自动终止', () => {
-      // 超时由外部定时器驱动，此处验证链状态可查询
-      const nodes = [makeChainNode('to1', 1)];
+      const nodes = [makeChainNode('to1', 0)];
       const chain = makeChainDef('timeout-chain', 1, nodes);
       chainSys.registerChain(chain);
 
       chainSys.startChain('timeout-chain');
-      const progress = chainSys.getChainProgress('timeout-chain');
+      const progress = chainSys.getProgress('timeout-chain');
       expect(progress).toBeDefined();
     });
   });
