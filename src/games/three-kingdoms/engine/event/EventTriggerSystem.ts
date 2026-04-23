@@ -9,7 +9,7 @@ import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   EventId, EventDef, EventInstance, EventTriggerType,
   EventTriggerResult, EventChoiceResult, EventCondition,
-  EventSystemSaveData, EventTriggerConfig,
+  EventConsequence, EventSystemSaveData, EventTriggerConfig,
 } from '../../core/event';
 import type {
   ProbabilityCondition, ProbabilityModifier, ProbabilityResult,
@@ -32,6 +32,7 @@ import {
   expireEvents as expireEventsLifecycle,
   type EventLifecycleState,
 } from './EventTriggerLifecycle';
+import { EventConditionEvaluator } from './EventConditionEvaluator';
 
 const ABSOLUTE_MAX_EVENTS = 20;
 
@@ -50,6 +51,8 @@ export class EventTriggerSystem implements ISubsystem {
   private probabilityConditions: Map<EventId, ProbabilityCondition> = new Map();
   /** 当前游戏回合（供条件评估使用） */
   private _currentTurn = 0;
+  /** 条件评估器（从本类拆分的条件评估逻辑） */
+  private readonly conditionEvaluator = new EventConditionEvaluator();
 
   // ─── ISubsystem 接口 ───────────────────────
 
@@ -82,65 +85,36 @@ export class EventTriggerSystem implements ISubsystem {
 
   // ─── 事件注册 ────────────────────────────
 
-  /**
-   * 注册事件定义
-   *
-   * @param def - 事件定义
-   */
+  /** 注册事件定义 */
   registerEvent(def: EventDef): void {
     this.eventDefs.set(def.id, def);
   }
 
-  /**
-   * 批量注册事件定义
-   *
-   * @param defs - 事件定义数组
-   */
+  /** 批量注册事件定义 */
   registerEvents(defs: EventDef[]): void {
     for (const def of defs) {
       this.registerEvent(def);
     }
   }
 
-  /**
-   * 获取事件定义
-   *
-   * @param id - 事件ID
-   * @returns 事件定义，不存在返回undefined
-   */
+  /** 获取事件定义，不存在返回undefined */
   getEventDef(id: EventId): EventDef | undefined {
     return this.eventDefs.get(id);
   }
 
-  /**
-   * 获取所有事件定义
-   *
-   * @returns 事件定义列表
-   */
+  /** 获取所有事件定义 */
   getAllEventDefs(): EventDef[] {
     return Array.from(this.eventDefs.values());
   }
 
-  /**
-   * 按触发类型获取事件定义
-   *
-   * @param triggerType - 触发类型
-   * @returns 事件定义列表
-   */
+  /** 按触发类型获取事件定义 */
   getEventDefsByType(triggerType: EventTriggerType): EventDef[] {
     return this.getAllEventDefs().filter((d) => d.triggerType === triggerType);
   }
 
   // ─── 事件触发判定（#21）───────────────────────
 
-  /**
-   * 每回合事件触发检查
-   *
-   * 检查所有事件是否满足触发条件，生成触发结果。
-   *
-   * @param currentTurn - 当前回合
-   * @returns 触发的事件实例列表
-   */
+  /** 每回合事件触发检查 — 检查所有事件是否满足触发条件，返回触发的实例列表 */
   checkAndTriggerEvents(currentTurn: number): EventInstance[] {
     this._currentTurn = currentTurn;
     const triggered: EventInstance[] = [];
@@ -194,13 +168,7 @@ export class EventTriggerSystem implements ISubsystem {
     return triggered;
   }
 
-  /**
-   * 强制触发指定事件（测试用）
-   *
-   * @param eventId - 事件ID
-   * @param currentTurn - 当前回合
-   * @returns 触发结果
-   */
+  /** 强制触发指定事件（测试用） */
   forceTriggerEvent(eventId: EventId, currentTurn: number): EventTriggerResult {
     return this.triggerEvent(eventId, currentTurn, true);
   }
@@ -210,40 +178,22 @@ export class EventTriggerSystem implements ISubsystem {
   /**
    * 计算最终触发概率
    * 公式：P = clamp(base + Σ(active_additive) × Π(active_multiplicative), 0, 1)
-   *
-   * @param probCondition - 概率条件（含基础概率和修正因子）
-   * @returns 概率计算结果
    */
   calculateProbability(probCondition: ProbabilityCondition): ProbabilityResult {
     return calculateProbability(probCondition);
   }
 
-  /**
-   * 注册概率条件（为指定事件绑定高级概率公式）
-   *
-   * @param eventId - 事件ID
-   * @param condition - 概率条件
-   */
+  /** 注册概率条件（为指定事件绑定高级概率公式） */
   registerProbabilityCondition(eventId: EventId, condition: ProbabilityCondition): void {
     this.probabilityConditions.set(eventId, condition);
   }
 
-  /**
-   * 获取指定事件的概率条件
-   *
-   * @param eventId - 事件ID
-   */
+  /** 获取指定事件的概率条件 */
   getProbabilityCondition(eventId: EventId): ProbabilityCondition | undefined {
     return this.probabilityConditions.get(eventId);
   }
 
-  /**
-   * 检查事件是否可以触发
-   *
-   * @param eventId - 事件ID
-   * @param currentTurn - 当前回合
-   * @returns 是否可以触发
-   */
+  /** 检查事件是否可以触发 */
   canTrigger(eventId: EventId, currentTurn: number): boolean {
     const def = this.eventDefs.get(eventId);
     if (!def) return false;
@@ -276,25 +226,19 @@ export class EventTriggerSystem implements ISubsystem {
 
   // ─── 事件选择处理（#23）───────────────────────
 
-  /** 处理事件选择（#23）— 委托给 EventTriggerLifecycle */
+  /** 处理事件选择（#23）— 委托给 EventTriggerLifecycle，失败返回null */
   resolveEvent(instanceId: string, optionId: string): EventChoiceResult | null {
     return resolveEventLifecycle(instanceId, optionId, this.getLifecycleState(), this.deps);
   }
 
   // ─── 活跃事件管理 ──────────────────────────
 
-  /**
-   * 获取所有活跃事件
-   */
+  /** 获取所有活跃事件 */
   getActiveEvents(): EventInstance[] {
     return Array.from(this.activeEvents.values());
   }
 
-  /**
-   * 检查是否有活跃事件
-   *
-   * @param eventDefId - 事件定义ID
-   */
+  /** 检查是否有活跃事件 */
   hasActiveEvent(eventDefId: EventId): boolean {
     for (const inst of this.activeEvents.values()) {
       if (inst.eventDefId === eventDefId) return true;
@@ -302,41 +246,29 @@ export class EventTriggerSystem implements ISubsystem {
     return false;
   }
 
-  /**
-   * 获取事件实例
-   *
-   * @param instanceId - 实例ID
-   */
+  /** 获取事件实例 */
   getInstance(instanceId: string): EventInstance | undefined {
     return this.activeEvents.get(instanceId);
   }
 
-  /**
-   * 获取活跃事件数量
-   */
+  /** 获取活跃事件数量 */
   getActiveEventCount(): number {
     return this.activeEvents.size;
   }
 
-  /**
-   * 检查事件是否已完成
-   *
-   * @param eventId - 事件ID
-   */
+  /** 检查事件是否已完成 */
   isEventCompleted(eventId: EventId): boolean {
     return this.completedEventIds.has(eventId);
   }
 
-  /**
-   * 获取所有已完成事件ID
-   */
+  /** 获取所有已完成事件ID */
   getCompletedEventIds(): EventId[] {
     return Array.from(this.completedEventIds);
   }
 
   // ─── 过期处理 ──────────────────────────────
 
-  /** 处理过期事件 — 委托给 EventTriggerLifecycle */
+  /** 处理过期事件 — 委托给 EventTriggerLifecycle，返回过期的事件实例列表 */
   expireEvents(currentTurn: number): EventInstance[] {
     return expireEventsLifecycle(currentTurn, this.getLifecycleState(), this.deps);
   }
@@ -451,6 +383,15 @@ export class EventTriggerSystem implements ISubsystem {
 
   /** 检查固定事件条件 — 委托给 EventTriggerConditions */
   private checkFixedConditions(def: EventDef, currentTurn: number): boolean {
+    // 优先使用 EventConditionEvaluator（R9新增，支持 ConditionContext）
+    if (this.conditionEvaluator) {
+      return this.conditionEvaluator.evaluateAll(def.triggerConditions, {
+        currentTurn,
+        completedEventIds: this.completedEventIds,
+      });
+    }
+
+    // 回退到 EventTriggerConditions 函数式评估（远程4模块拆分）
     if (!def.triggerConditions || def.triggerConditions.length === 0) {
       return true;
     }

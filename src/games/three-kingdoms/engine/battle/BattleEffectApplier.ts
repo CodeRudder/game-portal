@@ -14,6 +14,7 @@ import type { BattleUnit, DamageResult } from './battle.types';
 import { TroopType } from './battle.types';
 import type { TechEffectSystem, EffectCategory } from '../tech/TechEffectSystem';
 import type { EffectElement, EffectTrigger } from './battle-effect-presets';
+import type { ISubsystem, ISystemDeps } from '../../core/types';
 
 // Re-export from the canonical definition in battle-effect-presets
 export type { EffectElement, EffectTrigger } from './battle-effect-presets';
@@ -145,15 +146,48 @@ export interface EnhancedDamageResult extends DamageResult {
  * 将科技系统中的军事科技加成应用到战斗伤害计算中。
  * 通过依赖注入 TechEffectSystem 获取科技加成数据。
  */
-export class BattleEffectApplier {
+export class BattleEffectApplier implements ISubsystem {
+  /** @inheritdoc */
+  readonly name = 'battle-effect-applier';
+
   /** 科技效果系统引用 */
   private techEffect: TechEffectSystem | null = null;
 
   /** 武技特效配置表 */
   private skillEffects: ReadonlyMap<string, SkillEffectConfig>;
 
+  /** 系统依赖 */
+  private deps: ISystemDeps | null = null;
+
   constructor() {
     this.skillEffects = SKILL_EFFECT_MAP;
+  }
+
+  // ─── ISubsystem 接口 ───────────────────────
+
+  /** @inheritdoc */
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+  }
+
+  /** @inheritdoc */
+  update(_dt: number): void {
+    // 效果应用器按需调用，不在 update 中自动执行
+  }
+
+  /** @inheritdoc */
+  getState(): { techEffectBound: boolean; skillEffectCount: number } {
+    return {
+      techEffectBound: this.techEffect !== null,
+      skillEffectCount: this.skillEffects.size,
+    };
+  }
+
+  /** @inheritdoc */
+  reset(): void {
+    this.techEffect = null;
+    this.skillEffects = SKILL_EFFECT_MAP;
+    this.deps = null;
   }
 
   // ─────────────────────────────────────────

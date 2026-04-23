@@ -26,6 +26,8 @@ export {
   expireEvents,
   type EventLifecycleState,
 } from './EventTriggerLifecycle';
+export { EventConditionEvaluator } from './EventConditionEvaluator';
+export type { ConditionContext } from './EventConditionEvaluator';
 export { EventUINotification } from './EventUINotification';
 export type { EncounterOptionDisplay, EncounterModalData } from './EventUINotification';
 export { EventNotificationSystem } from './EventNotificationSystem';
