@@ -28,6 +28,7 @@ import {
   CURRENCY_CAPS,
   CURRENCY_SAVE_VERSION,
 } from '../../../core/currency/currency-config';
+import { gameLog } from '../../../core/logger';
 
 /** 创建带 mock eventBus 的 CurrencySystem */
 function createSystem(): CurrencySystem {
@@ -370,7 +371,7 @@ describe('CurrencySystem', () => {
 
     it('deserialize 版本不匹配时仍恢复数据', () => {
       const data = { wallet: { ...INITIAL_WALLET, copper: 5000 }, version: 99 };
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
       cs.deserialize(data as any);
       expect(cs.getBalance('copper')).toBe(5000);
       expect(consoleSpy).toHaveBeenCalled();

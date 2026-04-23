@@ -20,6 +20,7 @@ import {
   RECRUIT_SAVE_VERSION,
 } from '../hero-recruit-config';
 import { DUPLICATE_FRAGMENT_COUNT } from '../hero-config';
+import { gameLog } from '../../../core/logger';
 
 // ── 辅助 ──
 
@@ -203,7 +204,7 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('版本不匹配时打印警告', () => {
-      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
       recruit.deserialize({
         version: 999,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 },

@@ -8,6 +8,7 @@ import { BuildingSystem } from '../BuildingSystem';
 import type { BuildingType, BuildingState, BuildingSaveData, Resources } from '../../../shared/types';
 import { BUILDING_TYPES } from '../building.types';
 import { BUILDING_DEFS, BUILDING_MAX_LEVELS, BUILDING_UNLOCK_LEVELS, BUILDING_SAVE_VERSION, CANCEL_REFUND_RATIO } from '../building-config';
+import { gameLog } from '../../../core/logger';
 
 const RICH: Resources = { grain: 1e9, gold: 1e9, troops: 1e9, mandate: 0 };
 const ZERO: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0 };
@@ -385,7 +386,7 @@ describe('BuildingSystem', () => {
     });
 
     it('版本不匹配时仍能加载（打印警告）', () => {
-      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
       sys.deserialize({ version: 999, buildings: makeSave().buildings });
       expect(spy).toHaveBeenCalled();
       spy.mockRestore();

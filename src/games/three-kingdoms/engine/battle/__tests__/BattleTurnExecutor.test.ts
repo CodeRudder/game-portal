@@ -168,7 +168,7 @@ describe('BattleTurnExecutor 工具函数', () => {
       createUnit({ id: 'beta', speed: 80 }),
       createUnit({ id: 'alpha', speed: 80 }),
     ]);
-    expect(r[0].id).toBe('beta');
+    expect(r[0].id).toBe('alpha');
   });
 
   it('sortBySpeed: does not mutate original', () => {

@@ -16,6 +16,7 @@ import {
   SAVE_VERSION,
   OFFLINE_MAX_SECONDS,
 } from '../resource-config';
+import { gameLog } from '../../../core/logger';
 
 function createMockDeps() {
   return {
@@ -305,7 +306,7 @@ describe('ResourceSystem', () => {
       expect(rs.getAmount('grain')).toBeLessThanOrEqual(2000);
     });
     it('deserialize 版本不匹配时仍加载', () => {
-      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
       rs.deserialize({
         resources: { grain: 100, gold: 50, troops: 25, mandate: 0 },
         lastSaveTime: Date.now(),

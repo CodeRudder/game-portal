@@ -21,6 +21,7 @@ import type {
   BagFilter,
   BagSortMode,
 } from '../../../core/equipment';
+import { gameLog } from '../../../core/logger';
 import {
   EQUIPMENT_SLOTS,
   EQUIPMENT_RARITIES,
@@ -799,7 +800,7 @@ describe('EquipmentSystem — 序列化', () => {
       equipments: [],
       bagCapacity: 100,
     };
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
     sys.deserialize(data as any);
     expect(sys.getBagCapacity()).toBe(100);
     expect(consoleSpy).toHaveBeenCalled();

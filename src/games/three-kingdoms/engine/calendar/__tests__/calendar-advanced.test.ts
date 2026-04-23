@@ -12,6 +12,7 @@ import { CALENDAR_SAVE_VERSION } from '../calendar-config';
 import { DAYS_PER_YEAR, DEFAULT_TIME_SCALE } from '../calendar-config';
 import { SocialEvents, MapEvents } from '../../../core/events/EventTypes';
 import type { ISystemDeps } from '../../../core/types';
+import { gameLog } from '../../../core/logger';
 
 // ── Mock ISystemDeps — 类型安全的 mock 工厂 ──
 function createMockDeps(): ISystemDeps {
@@ -172,7 +173,7 @@ describe('CalendarSystem', () => {
     });
 
     it('deserialize 版本不匹配时仍加载并 warn', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
       calendar.deserialize({
         version: 999, totalDays: 50, weather: 'snow', weatherTimer: 2, paused: true,
       });

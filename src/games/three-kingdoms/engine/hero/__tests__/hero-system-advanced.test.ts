@@ -16,6 +16,7 @@ import {
   LEVEL_EXP_TABLE,
   DUPLICATE_FRAGMENT_COUNT,
 } from '../hero-config';
+import { gameLog } from '../../../core/logger';
 
 // ── 辅助：创建 mock ISystemDeps ──
 function makeMockDeps() {
@@ -115,7 +116,7 @@ describe('HeroSystem — 高级测试', () => {
     });
 
     it('should handle version mismatch gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
       sys.deserialize({ version: 999, state: { generals: {}, fragments: {} } });
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();

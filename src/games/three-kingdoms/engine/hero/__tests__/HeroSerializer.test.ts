@@ -15,6 +15,7 @@ import type { GeneralData, HeroState, HeroSaveData } from '../hero.types';
 import { Quality } from '../hero.types';
 import { HERO_SAVE_VERSION } from '../hero-config';
 import { HeroSystem } from '../HeroSystem';
+import { gameLog } from '../../../core/logger';
 
 // ── 测试数据 ──
 
@@ -244,7 +245,7 @@ describe('HeroSerializer', () => {
     });
 
     it('版本不匹配时打印警告', () => {
-      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
       const data: HeroSaveData = {
         version: 999,
         state: createEmptyState(),

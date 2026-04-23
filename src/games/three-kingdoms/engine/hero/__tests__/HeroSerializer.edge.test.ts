@@ -14,6 +14,7 @@ import {
 import type { GeneralData, HeroState, HeroSaveData } from '../hero.types';
 import { Quality } from '../hero.types';
 import { HERO_SAVE_VERSION } from '../hero-config';
+import { gameLog } from '../../../core/logger';
 
 // ── 测试数据 ──
 
@@ -342,7 +343,7 @@ describe('HeroSerializer — 补充边界测试', () => {
   // ───────────────────────────────────────────
   describe('版本兼容性', () => {
     it('当前版本序列化反序列化无警告', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
       const state = createEmptyState();
       const data = serializeHeroState(state);
       deserializeHeroState(data);
@@ -351,7 +352,7 @@ describe('HeroSerializer — 补充边界测试', () => {
     });
 
     it('旧版本数据仍可反序列化（向前兼容）', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
       const data: HeroSaveData = {
         version: 0, // 旧版本
         state: createEmptyState(),
