@@ -1,5 +1,28 @@
 import {
+  SignInSystem,
+  createDefaultSignInData,
+  DEFAULT_SIGN_IN_REWARDS,
+  DEFAULT_SIGN_IN_CONFIG,
+  SIGN_IN_CYCLE_DAYS,
+} from '../SignInSystem';
+
+import type { SignInData, SignInReward, SignInConfig } from '../../../core/activity/activity.types';
+
+function dayOffset(base: number, days: number): number {
+  return base + days * 24 * 60 * 60 * 1000;
+}
+
+const BASE_TIME = new Date('2024-01-01T00:00:00Z').getTime();
+
+// 模块级 system 实例，供所有 describe 块共享
+let system: SignInSystem;
+beforeEach(() => {
+  system = new SignInSystem();
+});
+
 describe('奖励查询', () => {
+  // system 由模块级 beforeEach 提供
+
   it('getReward 返回指定天数奖励', () => {
     const reward = system.getReward(1);
     expect(reward.day).toBe(1);
@@ -193,5 +216,4 @@ describe('边界条件', () => {
       system.retroactive(data, BASE_TIME, 49);
     }).toThrow('元宝不足');
   });
-});
 });

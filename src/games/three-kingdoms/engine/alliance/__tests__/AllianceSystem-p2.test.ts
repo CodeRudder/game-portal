@@ -1,11 +1,54 @@
 import {
+  AllianceSystem,
+} from '../AllianceSystem';
+import {
+  ALLIANCE_LEVEL_CONFIGS,
+  createDefaultAlliancePlayerState,
+  createAllianceData,
+} from '../alliance-constants';
+import { ApplicationStatus, AllianceRole } from '../../../core/alliance/alliance.types';
+import type {
+  AllianceData,
+  AlliancePlayerState,
+} from '../../../core/alliance/alliance.types';
+
+// ── 辅助函数（从 p1 复制） ──────────────────────────────
+
+const NOW = 1000000;
+
+function createState(overrides?: Partial<AlliancePlayerState>): AlliancePlayerState {
+  return { ...createDefaultAlliancePlayerState(), ...overrides };
+}
+
+function createTestAlliance(
+  leaderId = 'p1',
+  leaderName = '刘备',
+  name = '蜀汉',
+): AllianceData {
+  return createAllianceData('ally_1', name, '兴复汉室', leaderId, leaderName, NOW);
+}
+
+function createAllianceWithMembers(): AllianceData {
+  let alliance = createTestAlliance();
+  // 添加军师和成员
+  alliance.members['p2'] = {
+    playerId: 'p2', playerName: '诸葛亮', role: 'ADVISOR' as AllianceRole,
+    power: 5000, joinTime: NOW, dailyContribution: 0, totalContribution: 100, dailyBossChallenges: 0,
+  };
+  alliance.members['p3'] = {
+    playerId: 'p3', playerName: '关羽', role: 'MEMBER' as AllianceRole,
+    power: 3000, joinTime: NOW, dailyContribution: 0, totalContribution: 50, dailyBossChallenges: 0,
+  };
+  return alliance;
+}
+
+// 模块级 system 实例，供所有 describe 块共享
+let system: AllianceSystem;
+beforeEach(() => {
+  system = new AllianceSystem();
+});
+
 describe('AllianceSystem — 三级权限', () => {
-  let system: AllianceSystem;
-
-  beforeEach(() => {
-    system = new AllianceSystem();
-  });
-
   test('盟主拥有全部权限', () => {
     const alliance = createAllianceWithMembers();
     expect(system.hasPermission(alliance, 'p1', 'approve')).toBe(true);
@@ -34,12 +77,6 @@ describe('AllianceSystem — 三级权限', () => {
 // ── 频道与公告 ──────────────────────────────
 
 describe('AllianceSystem — 频道与公告', () => {
-  let system: AllianceSystem;
-
-  beforeEach(() => {
-    system = new AllianceSystem();
-  });
-
   test('发布普通公告', () => {
     const alliance = createTestAlliance();
     const result = system.postAnnouncement(alliance, 'p1', '刘备', '明天攻城', false, NOW);
@@ -111,12 +148,6 @@ describe('AllianceSystem — 频道与公告', () => {
 // ── 联盟等级与福利 ──────────────────────────
 
 describe('AllianceSystem — 联盟等级与福利', () => {
-  let system: AllianceSystem;
-
-  beforeEach(() => {
-    system = new AllianceSystem();
-  });
-
   test('初始等级为1', () => {
     const alliance = createTestAlliance();
     expect(alliance.level).toBe(1);
@@ -172,7 +203,6 @@ describe('AllianceSystem — 每日重置', () => {
     alliance.bossKilledToday = true;
 
     const state = createState({ dailyBossChallenges: 3, dailyContribution: 50 });
-    const system = new AllianceSystem();
     const result = system.dailyReset(alliance, state);
 
     expect(result.alliance.members['p2'].dailyContribution).toBe(0);
@@ -187,7 +217,6 @@ describe('AllianceSystem — 每日重置', () => {
 
 describe('AllianceSystem — 存档序列化', () => {
   test('序列化与反序列化', () => {
-    const system = new AllianceSystem();
     const state = createState({ allianceId: 'ally_1', guildCoins: 500 });
     const alliance = createTestAlliance();
 
@@ -203,7 +232,6 @@ describe('AllianceSystem — 存档序列化', () => {
   });
 
   test('无联盟时序列化', () => {
-    const system = new AllianceSystem();
     const state = createState();
     const saved = system.serialize(state, null);
     expect(saved.allianceData).toBeNull();
@@ -213,7 +241,6 @@ describe('AllianceSystem — 存档序列化', () => {
   });
 
   test('版本不匹配返回默认值', () => {
-    const system = new AllianceSystem();
     const loaded = system.deserialize({ version: 999, playerState: createState(), allianceData: null });
     expect(loaded.playerState.allianceId).toBe('');
     expect(loaded.alliance).toBeNull();
@@ -224,14 +251,12 @@ describe('AllianceSystem — 存档序列化', () => {
 
 describe('AllianceSystem — 工具方法', () => {
   test('获取成员列表', () => {
-    const system = new AllianceSystem();
     const alliance = createAllianceWithMembers();
     const members = system.getMemberList(alliance);
     expect(members).toHaveLength(3);
   });
 
   test('获取待审批申请', () => {
-    const system = new AllianceSystem();
     const alliance = createTestAlliance();
     const state = createState();
     const applied = system.applyToJoin(alliance, state, 'p2', '诸葛亮', 5000, NOW);
@@ -240,7 +265,6 @@ describe('AllianceSystem — 工具方法', () => {
   });
 
   test('搜索联盟', () => {
-    const system = new AllianceSystem();
     const alliances = [
       createAllianceData('a1', '蜀汉', '', 'p1', '刘备', NOW),
       createAllianceData('a2', '曹魏', '', 'p2', '曹操', NOW),
@@ -250,5 +274,4 @@ describe('AllianceSystem — 工具方法', () => {
     expect(results).toHaveLength(1);
     expect(results[0].name).toBe('蜀汉');
   });
-});
 });

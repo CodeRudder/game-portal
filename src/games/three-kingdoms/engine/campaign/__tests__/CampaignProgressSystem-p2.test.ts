@@ -2,6 +2,14 @@ import { CampaignProgressSystem } from '../CampaignProgressSystem';
 import type { ICampaignDataProvider, CampaignSaveData } from '../campaign.types';
 import { getChapters, getChapter, getStage, getStagesByChapter } from '../campaign-config';
 
+// 使用实际配置作为数据提供者（从 p1 复制）
+const dataProvider: ICampaignDataProvider = {
+  getChapters,
+  getChapter,
+  getStage,
+  getStagesByChapter,
+};
+
 describe('CampaignProgressSystem 边界情况', () => {
   let system: CampaignProgressSystem;
 

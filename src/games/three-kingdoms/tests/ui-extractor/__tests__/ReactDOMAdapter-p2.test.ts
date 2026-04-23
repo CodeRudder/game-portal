@@ -3,6 +3,52 @@ import { ReactDOMAdapter } from '../ReactDOMAdapter';
 import { UINodeType } from '../types';
 import type { UITreeNode, UITreeExtractorConfig } from '../types';
 
+// ---------------------------------------------------------------------------
+// 辅助：mock getBoundingClientRect
+// ---------------------------------------------------------------------------
+function mockBounds(el: HTMLElement, overrides: Partial<DOMRect> = {}) {
+  el.getBoundingClientRect = vi.fn().mockReturnValue({
+    x: 0, y: 0, width: 100, height: 50,
+    top: 0, right: 100, bottom: 50, left: 0,
+    toJSON: () => ({}),
+    ...overrides,
+  });
+}
+
+/** 快速创建带 mock 的 DOM 元素 */
+function createElement(
+  tag: string,
+  options: {
+    id?: string;
+    className?: string;
+    text?: string;
+    attrs?: Record<string, string>;
+    style?: Partial<CSSStyleDeclaration>;
+    children?: HTMLElement[];
+  } = {},
+): HTMLElement {
+  const el = document.createElement(tag);
+  if (options.id) el.id = options.id;
+  if (options.className) el.className = options.className;
+  if (options.text) el.textContent = options.text;
+  if (options.attrs) {
+    for (const [k, v] of Object.entries(options.attrs)) {
+      el.setAttribute(k, v);
+    }
+  }
+  if (options.style) {
+    for (const [k, v] of Object.entries(options.style)) {
+      if (v !== undefined) (el.style as Record<string, string>)[k] = v;
+    }
+  }
+  if (options.children) {
+    for (const child of options.children) {
+      el.appendChild(child);
+    }
+  }
+  mockBounds(el);
+  return el;
+}
 
 describe('maxDepth', () => {
   it('应在 maxDepth 限制处停止遍历', () => {
@@ -39,6 +85,13 @@ describe('maxDepth', () => {
 // ======================== includeHidden ========================
 
 describe('includeHidden', () => {
+  let adapter: ReactDOMAdapter;
+
+  beforeEach(() => {
+    adapter = new ReactDOMAdapter();
+    document.body.innerHTML = '';
+  });
+
   it('默认应过滤隐藏节点', () => {
     const hidden = createElement('div', { style: { display: 'none' } });
     const visible = createElement('div');
@@ -109,9 +162,12 @@ describe('custom filter', () => {
 // ======================== query ========================
 
 describe('query', () => {
+  let adapter: ReactDOMAdapter;
   let tree: UITreeNode;
 
   beforeEach(() => {
+    adapter = new ReactDOMAdapter();
+    document.body.innerHTML = '';
     const btn = createElement('button', { text: 'Click', className: 'primary' });
     const input = document.createElement('input') as HTMLInputElement;
     input.type = 'text';
@@ -182,6 +238,13 @@ describe('query', () => {
 // ======================== 非可视元素过滤 ========================
 
 describe('非可视元素过滤', () => {
+  let adapter: ReactDOMAdapter;
+
+  beforeEach(() => {
+    adapter = new ReactDOMAdapter();
+    document.body.innerHTML = '';
+  });
+
   it('应过滤 script 元素', () => {
     const script = document.createElement('script');
     script.textContent = 'console.log("test")';
@@ -224,6 +287,13 @@ describe('非可视元素过滤', () => {
 // ======================== 节点 ID 生成 ========================
 
 describe('generateNodeId', () => {
+  let adapter: ReactDOMAdapter;
+
+  beforeEach(() => {
+    adapter = new ReactDOMAdapter();
+    document.body.innerHTML = '';
+  });
+
   it('相同元素相同路径应生成相同 ID', () => {
     const el = createElement('div', { id: 'test' });
     const tree1 = adapter.extractFromDOM(el);
@@ -243,6 +313,13 @@ describe('generateNodeId', () => {
 // ======================== metadata ========================
 
 describe('metadata', () => {
+  let adapter: ReactDOMAdapter;
+
+  beforeEach(() => {
+    adapter = new ReactDOMAdapter();
+    document.body.innerHTML = '';
+  });
+
   it('应包含 path 和 tagName', () => {
     const child = createElement('span');
     const root = createElement('div', { children: [child] });

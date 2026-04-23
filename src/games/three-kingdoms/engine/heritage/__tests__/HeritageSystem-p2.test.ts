@@ -1,5 +1,113 @@
 import { HeritageSystem } from '../HeritageSystem';
 import type {
+  HeroHeritageRequest,
+  EquipmentHeritageRequest,
+  ExperienceHeritageRequest,
+} from '../../../core/heritage';
+import type { ISystemDeps } from '../../../core/types/subsystem';
+import {
+  HERO_HERITAGE_RULE,
+  EQUIPMENT_HERITAGE_RULE,
+  EXPERIENCE_HERITAGE_RULE,
+  DAILY_HERITAGE_LIMIT,
+} from '../../../core/heritage';
+
+/** Mock武将数据（从 p1 复制） */
+interface MockHero {
+  id: string;
+  level: number;
+  exp: number;
+  quality: number;
+  faction: 'shu' | 'wei' | 'wu' | 'qun';
+  skillLevels: number[];
+  favorability: number;
+}
+
+/** Mock装备数据（从 p1 复制） */
+interface MockEquip {
+  uid: string;
+  slot: string;
+  rarity: number;
+  enhanceLevel: number;
+}
+
+/** 创建带完整mock的HeritageSystem（从 p1 复制） */
+function createSystem(): {
+  sys: HeritageSystem;
+  heroes: Record<string, MockHero>;
+  equips: Record<string, MockEquip>;
+  resources: Record<string, number>;
+  upgradedBuildings: string[];
+  eventBus: any;
+} {
+  const heroes: Record<string, MockHero> = {};
+  const equips: Record<string, MockEquip> = {};
+  const resources: Record<string, number> = {};
+  const upgradedBuildings: string[] = [];
+
+  const sys = new HeritageSystem();
+  const mockEventBus = {
+    emit: jest.fn(),
+    on: jest.fn(),
+    off: jest.fn(),
+    once: jest.fn(),
+    removeAllListeners: jest.fn(),
+  };
+
+  sys.init({
+    eventBus: mockEventBus as unknown as ISystemDeps['eventBus'],
+    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+  });
+
+  sys.setCallbacks({
+    getHero: (id) => heroes[id] ?? null,
+    getEquip: (uid) => equips[uid] ?? null,
+    updateHero: (id, updates) => {
+      if (heroes[id]) Object.assign(heroes[id], updates);
+    },
+    removeEquip: (uid) => { delete equips[uid]; },
+    updateEquip: (uid, updates) => {
+      if (equips[uid]) Object.assign(equips[uid], updates);
+    },
+    addResources: (res) => {
+      for (const [k, v] of Object.entries(res)) {
+        resources[k] = (resources[k] ?? 0) + v;
+      }
+    },
+    upgradeBuilding: (id) => {
+      upgradedBuildings.push(id);
+      return true;
+    },
+    getRebirthCount: () => 2,
+  });
+
+  return { sys, heroes, equips, resources, upgradedBuildings, eventBus: mockEventBus };
+}
+
+/** 创建Mock武将（从 p1 复制） */
+function mockHero(overrides: Partial<MockHero> & { id: string }): MockHero {
+  return {
+    level: 30,
+    exp: 10000,
+    quality: 4, // 史诗
+    faction: 'shu',
+    skillLevels: [5, 3, 2],
+    favorability: 80,
+    ...overrides,
+  };
+}
+
+/** 创建Mock装备（从 p1 复制） */
+function mockEquip(overrides: Partial<MockEquip> & { uid: string }): MockEquip {
+  return {
+    slot: 'weapon',
+    rarity: 4, // 紫色
+    enhanceLevel: 10,
+    ...overrides,
+  };
+}
+
 describe('HeritageSystem — 经验传承', () => {
   it('成功传承部分经验', () => {
     const { sys, heroes } = createSystem();
@@ -263,6 +371,4 @@ describe('HeritageSystem — 每日限制和存档', () => {
       expect.objectContaining({ type: 'hero' }),
     );
   });
-});
-
 });

@@ -1,5 +1,19 @@
 import {
-  describe('触控反馈配置', () => {
+  GestureType,
+  GESTURE_THRESHOLDS,
+  FormationTouchAction,
+  DesktopInteractionType,
+  TouchFeedbackType,
+} from '../../../core/responsive/responsive.types';
+import { TouchInputSystem } from '../TouchInputSystem';
+
+describe('触控反馈配置', () => {
+  let system: TouchInputSystem;
+
+  beforeEach(() => {
+    system = new TouchInputSystem();
+  });
+
     it('默认配置应正确', () => {
       const config = system.feedbackConfig;
       expect(config.type).toBe(TouchFeedbackType.LightVibration);
@@ -290,5 +304,3 @@ describe('事件监听管理', () => {
     expect(desktops.length).toBe(0);
     expect(hotkeys.length).toBe(0);
   });
-});
-

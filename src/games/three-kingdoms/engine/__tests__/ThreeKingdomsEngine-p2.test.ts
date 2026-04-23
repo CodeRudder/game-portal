@@ -1,7 +1,30 @@
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
 import { SAVE_KEY, ENGINE_SAVE_VERSION } from '../../shared/constants';
 
+// ── localStorage mock ──
+const storage: Record<string, string> = {};
+const localStorageMock = {
+  getItem: (k: string) => storage[k] ?? null,
+  setItem: (k: string, v: string) => { storage[k] = v; },
+  removeItem: (k: string) => { delete storage[k]; },
+  clear: () => Object.keys(storage).forEach(k => delete storage[k]),
+  get length() { return Object.keys(storage).length; },
+  key: () => null as string | null,
+};
+Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
+
 describe('离线收益', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => {
+    Object.keys(storage).forEach(k => delete storage[k]);
+    jest.restoreAllMocks();
+    engine = new ThreeKingdomsEngine();
+  });
+
+  afterEach(() => {
+    engine.reset();
+  });
   it('加载时发出 game:loaded 事件', () => {
     engine.init();
     engine.save();
@@ -60,6 +83,18 @@ describe('离线收益', () => {
 // 9. 加成体系框架
 // ═══════════════════════════════════════════
 describe('加成体系框架', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => {
+    Object.keys(storage).forEach(k => delete storage[k]);
+    jest.restoreAllMocks();
+    engine = new ThreeKingdomsEngine();
+  });
+
+  afterEach(() => {
+    engine.reset();
+  });
+
   it('tick() 中 castle 加成正确传入（非零）', () => {
     engine.init();
     const snap1 = engine.getSnapshot();
@@ -103,6 +138,18 @@ describe('加成体系框架', () => {
 // 10. v1.0 存档迁移 → 武将系统自动初始化
 // ═══════════════════════════════════════════
 describe('v1.0 存档迁移（无武将数据）', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => {
+    Object.keys(storage).forEach(k => delete storage[k]);
+    jest.restoreAllMocks();
+    engine = new ThreeKingdomsEngine();
+  });
+
+  afterEach(() => {
+    engine.reset();
+  });
+
   /** 创建一个不含 hero/recruit 字段的 v1.0 旧格式存档 */
   function makeV1Save(): string {
     return JSON.stringify({

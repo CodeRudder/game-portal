@@ -1,5 +1,64 @@
 import { BattleEffectManager } from '../BattleEffectManager';
 import type {
+  SkillEffectData,
+  MobileLayoutConfig,
+  DamageAnimationData,
+  EffectElement,
+} from '../BattleEffectManager';
+import type { BattleUnit, BattleSkill, BattleAction, DamageResult } from '../battle.types';
+import { TroopType, BuffType, SkillTargetType } from '../battle.types';
+import { BattleSpeed } from '../battle-v4.types';
+import { DamageNumberType } from '../DamageNumberSystem';
+
+function createTestSkill(overrides: Partial<BattleSkill> = {}): BattleSkill {
+  return {
+    id: 'skill_1',
+    name: '测试技能',
+    damage: 100,
+    rageCost: 0,
+    targetType: SkillTargetType.SINGLE_ENEMY,
+    effects: [],
+    ...overrides,
+  };
+}
+
+function createTestUnit(overrides: Partial<BattleUnit> = {}): BattleUnit {
+  return {
+    id: 'unit_1',
+    name: '测试单位',
+    hp: 1000,
+    maxHp: 1000,
+    attack: 100,
+    defense: 50,
+    speed: 100,
+    rage: 0,
+    troopType: TroopType.INFANTRY,
+    skills: [createTestSkill()],
+    buffs: [],
+    ...overrides,
+  };
+}
+
+function createDamageResult(overrides: Partial<DamageResult> = {}): DamageResult {
+  return {
+    attackerId: 'unit_1',
+    targetId: 'unit_2',
+    damage: 100,
+    isCritical: false,
+    ...overrides,
+  };
+}
+
+function createTestAction(overrides: Partial<BattleAction> = {}): BattleAction {
+  return {
+    actorId: 'unit_1',
+    skillId: 'skill_1',
+    targetIds: ['unit_2'],
+    damageResults: [createDamageResult()],
+    ...overrides,
+  };
+}
+
 describe('BattleEffectManager P2', () => {
   let manager: BattleEffectManager;
 
@@ -273,6 +332,4 @@ describe('BattleEffectManager P2', () => {
       expect(effect.particles.count).toBeLessThan(30);
     });
   });
-});
-
 });

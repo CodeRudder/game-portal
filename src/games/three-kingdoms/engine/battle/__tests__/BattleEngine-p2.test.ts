@@ -1,5 +1,98 @@
 import { BattleEngine } from '../BattleEngine';
 import type {
+  BattleTeam,
+  BattleUnit,
+  BattleSkill,
+  BattleState,
+} from '../battle.types';
+import {
+  BATTLE_CONFIG,
+  BattleOutcome,
+  BattlePhase,
+  BuffType,
+  StarRating,
+  TroopType,
+} from '../battle.types';
+
+// ─────────────────────────────────────────────
+// 测试工具（从 p1 复制并扩展）
+// ─────────────────────────────────────────────
+
+const NORMAL_ATTACK: BattleSkill = {
+  id: 'normal',
+  name: '普攻',
+  type: 'active',
+  level: 1,
+  description: '普通攻击',
+  multiplier: 1.0,
+  targetType: 'SINGLE_ENEMY',
+  rageCost: 0,
+  cooldown: 0,
+  currentCooldown: 0,
+};
+
+const ULTIMATE_SKILL: BattleSkill = {
+  id: 'ultimate',
+  name: '大招',
+  type: 'active',
+  level: 1,
+  description: '强力技能',
+  multiplier: 2.0,
+  targetType: 'ALL_ENEMY',
+  rageCost: 100,
+  cooldown: 3,
+  currentCooldown: 0,
+};
+
+/** 创建测试用战斗单位 */
+function createUnit(overrides: Partial<BattleUnit> = {}): BattleUnit {
+  return {
+    id: `unit_${Math.random().toString(36).slice(2, 6)}`,
+    name: '测试武将',
+    faction: 'shu',
+    troopType: TroopType.CAVALRY,
+    position: 'front',
+    side: 'ally',
+    attack: 100,
+    baseAttack: 100,
+    defense: 50,
+    baseDefense: 50,
+    intelligence: 60,
+    speed: 80,
+    hp: 1000,
+    maxHp: 1000,
+    isAlive: true,
+    rage: 0,
+    maxRage: 100,
+    normalAttack: { ...NORMAL_ATTACK },
+    skills: [{ ...ULTIMATE_SKILL }],
+    buffs: [],
+    ...overrides,
+  };
+}
+
+/** 创建测试队伍 */
+function createTeam(
+  side: 'ally' | 'enemy',
+  count: number,
+  overrides: Partial<BattleUnit> = {},
+): BattleTeam {
+  const units: BattleUnit[] = [];
+  for (let i = 0; i < count; i++) {
+    const position = i < 3 ? 'front' as const : 'back' as const;
+    units.push(
+      createUnit({
+        id: `${side}_${i}`,
+        name: `${side === 'ally' ? '我方' : '敌方'}${i + 1}`,
+        side,
+        position,
+        ...overrides,
+      }),
+    );
+  }
+  return { units, side };
+}
+
 describe('BattleEngine P2', () => {
   let engine: BattleEngine;
 
@@ -106,7 +199,7 @@ describe('BattleEngine P2', () => {
       const customEngine = new BattleEngine(deterministicCalc as unknown as Record<string, unknown>);
 
       // 6个盟友，每次攻击50伤害，每回合300伤害
-      // HP=1800：6回合=1800刚好不够（需要>1800），7回合=2100够了
+      // HP=1801：6回合=1800不够，7回合=2100够了
       const ally = createTeam('ally', 6, { attack: 50, defense: 99999, hp: 99999, maxHp: 99999, speed: 0, troopType: TroopType.ARCHER });
       const enemy = createTeam('enemy', 1, { attack: 0, defense: 0, hp: 1801, maxHp: 1801, troopType: TroopType.ARCHER });
 
@@ -309,6 +402,4 @@ describe('BattleEngine P2', () => {
       expect(ally.units[0].skills[0].currentCooldown).toBe(1);
     });
   });
-});
-
 });

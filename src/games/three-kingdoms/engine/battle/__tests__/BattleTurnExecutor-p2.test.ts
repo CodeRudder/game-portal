@@ -8,7 +8,71 @@ import type { BattleState, BattleUnit, BattleSkill, IDamageCalculator } from '..
 import { BattlePhase, BuffType, TroopType, SkillTargetType } from '../battle.types';
 import { BATTLE_CONFIG } from '../battle-config';
 
+// ─────────────────────────────────────────────
+// 测试工具
+// ─────────────────────────────────────────────
+
 const NORMAL_ATTACK: BattleSkill = {
+  id: 'normal', name: '普攻', type: 'active', level: 1,
+  description: '普通攻击', multiplier: 1.0, targetType: SkillTargetType.SINGLE_ENEMY,
+  rageCost: 0, cooldown: 0, currentCooldown: 0,
+};
+
+const ULTIMATE_SKILL: BattleSkill = {
+  id: 'ultimate', name: '大招', type: 'active', level: 1,
+  description: '强力技能', multiplier: 2.0, targetType: SkillTargetType.ALL_ENEMY,
+  rageCost: 100, cooldown: 3, currentCooldown: 0,
+};
+
+const SINGLE_TARGET_SKILL: BattleSkill = {
+  id: 'single_skill', name: '单体技能', type: 'active', level: 1,
+  description: '单体攻击', multiplier: 1.8, targetType: SkillTargetType.SINGLE_ENEMY,
+  rageCost: 100, cooldown: 2, currentCooldown: 0,
+};
+
+function createUnit(overrides: Partial<BattleUnit> = {}): BattleUnit {
+  return {
+    id: `unit_${Math.random().toString(36).slice(2, 6)}`,
+    name: '测试武将', faction: 'shu', troopType: TroopType.CAVALRY,
+    position: 'front', side: 'ally', attack: 100, baseAttack: 100,
+    defense: 50, baseDefense: 50, intelligence: 60, speed: 80,
+    hp: 1000, maxHp: 1000, isAlive: true, rage: 0, maxRage: 100,
+    normalAttack: { ...NORMAL_ATTACK }, skills: [], buffs: [],
+    ...overrides,
+  };
+}
+
+function createState(overrides: Partial<BattleState> = {}): BattleState {
+  const allyUnit = createUnit({ id: 'ally1', side: 'ally', name: '我方武将' });
+  const enemyUnit = createUnit({ id: 'enemy1', side: 'enemy', name: '敌方武将' });
+  return {
+    id: 'test_battle', phase: BattlePhase.IN_PROGRESS, currentTurn: 1,
+    maxTurns: BATTLE_CONFIG.MAX_TURNS,
+    allyTeam: { units: [allyUnit], side: 'ally' },
+    enemyTeam: { units: [enemyUnit], side: 'enemy' },
+    turnOrder: [], currentActorIndex: 0, actionLog: [], result: null,
+    ...overrides,
+  };
+}
+
+function createMockCalculator(overrides: Partial<IDamageCalculator> = {}): IDamageCalculator {
+  return {
+    calculateDamage: jest.fn((_a, _d, m) => ({
+      damage: 100, baseDamage: 100, skillMultiplier: m, isCritical: false,
+      criticalMultiplier: 1.0, restraintMultiplier: 1.0, randomFactor: 1.0, isMinDamage: false,
+    })),
+    applyDamage: jest.fn((d, dmg) => {
+      const actual = Math.min(dmg, d.hp);
+      d.hp -= actual;
+      if (d.hp <= 0) { d.hp = 0; d.isAlive = false; }
+      return actual;
+    }),
+    calculateDotDamage: jest.fn(() => 0),
+    isControlled: jest.fn(() => false),
+    ...overrides,
+  };
+}
+
 describe('BattleTurnExecutor 目标选择（续）', () => {
   let executor: BattleTurnExecutor;
   beforeEach(() => { executor = new BattleTurnExecutor(createMockCalculator()); });

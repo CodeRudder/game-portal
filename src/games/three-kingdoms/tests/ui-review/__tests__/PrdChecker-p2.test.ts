@@ -1,6 +1,43 @@
 import { describe, it, expect } from 'vitest';
 import {
+  PrdChecker,
+  type PrdDocument,
+  type PrdRequirement,
+  type PrdCheckResult,
+} from '../PrdChecker';
+
+const MOCK_SOURCE_FILES = [
+  'src/engine/resource/ResourceSystem.ts',
+  'src/engine/resource/ResourceTypes.ts',
+];
+
+function createMockSourceContents(): Map<string, string> {
+  const map = new Map<string, string>();
+  map.set('src/engine/resource/ResourceSystem.ts', `
+    // 资源系统
+    export class ResourceSystem {
+      // 4种核心资源: 粮草, 铜钱, 兵力, 天命
+      private resources: Map<ResourceType, number> = new Map();
+      private productionRate: Map<ResourceType, number> = new Map();
+      // 资源产出 production rate 计算
+      calculateProduction() {}
+    }
+  `);
+  map.set('src/engine/resource/ResourceTypes.ts', `
+    // 资源类型定义
+    export interface Resource { id: string; }
+    // 核心资源定义 粮草 铜钱 兵力 天命
+  `);
+  return map;
+}
+
 describe('覆盖率计算', () => {
+  let checker: PrdChecker;
+
+  beforeEach(() => {
+    checker = new PrdChecker();
+  });
+
   it('应对空需求列表返回0%覆盖率', () => {
     const prd: PrdDocument = {
       module: '空模块',
@@ -88,6 +125,12 @@ describe('覆盖率计算', () => {
 
 // -------------------------------------------------------------------------
 describe('空文档和边界情况处理', () => {
+  let checker: PrdChecker;
+
+  beforeEach(() => {
+    checker = new PrdChecker();
+  });
+
   it('应处理空文档', () => {
     const prd = checker.parsePrdDocument('');
 
@@ -148,5 +191,4 @@ describe('空文档和边界情况处理', () => {
     expect(prd.requirements[0].id).toBe('EVT-1');
     expect(prd.requirements[1].id).toBe('EVT-2');
   });
-});
 });

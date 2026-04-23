@@ -1,4 +1,30 @@
 import {
+  ArenaSystem,
+  DEFAULT_MATCH_CONFIG,
+  DEFAULT_REFRESH_CONFIG,
+  DEFAULT_CHALLENGE_CONFIG,
+  createDefaultDefenseFormation,
+  createDefaultArenaPlayerState,
+} from '../ArenaSystem';
+import { FormationType, AIDefenseStrategy } from '../../../core/pvp/pvp.types';
+import type { ArenaOpponent, ArenaPlayerState } from '../../../core/pvp/pvp.types';
+import type { Faction } from '../../hero/hero.types';
+
+// ── 辅助：创建竞技场对手 ──
+function createOpponent(overrides: Partial<ArenaOpponent> = {}): ArenaOpponent {
+  return {
+    playerId: 'p1',
+    playerName: 'Player1',
+    power: 10000,
+    rankId: 'BRONZE_V',
+    score: 100,
+    ranking: 10,
+    faction: 'wei' as Faction,
+    defenseSnapshot: null,
+    ...overrides,
+  };
+}
+
 describe('ArenaSystem — 防守阵容', () => {
   let system: ArenaSystem;
 
@@ -196,6 +222,4 @@ describe('ArenaSystem — 默认配置', () => {
     expect(system.getRefreshConfig().manualCostCopper).toBe(1000);
     expect(system.getChallengeConfig().dailyFreeChallenges).toBe(10);
   });
-});
-
 });

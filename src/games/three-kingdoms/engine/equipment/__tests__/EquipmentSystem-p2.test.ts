@@ -1,6 +1,64 @@
 import { EquipmentSystem, resetUidCounter } from '../EquipmentSystem';
 import type {
-  describe('查询', () => {
+  EquipmentSlot,
+  EquipmentRarity,
+  EquipmentInstance,
+  BagFilter,
+  BagSortMode,
+} from '../../../core/equipment';
+import type { ISystemDeps } from '../../../core/types/subsystem';
+import {
+  EQUIPMENT_SLOTS,
+  EQUIPMENT_RARITIES,
+  RARITY_ORDER,
+  RARITY_ENHANCE_CAP,
+  RARITY_MAIN_STAT_MULTIPLIER,
+  RARITY_SUB_STAT_MULTIPLIER,
+  DEFAULT_BAG_CAPACITY,
+  MAX_BAG_CAPACITY,
+  BAG_EXPAND_INCREMENT,
+  DECOMPOSE_COPPER_BASE,
+  DECOMPOSE_STONE_BASE,
+  DECOMPOSE_ENHANCE_BONUS,
+} from '../../../core/equipment';
+
+function createMockDeps(): ISystemDeps {
+  return {
+    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as unknown as ISystemDeps['eventBus'],
+    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+  };
+}
+
+function getInternalDeps(sys: EquipmentSystem): ISystemDeps {
+  return (sys as unknown as { deps: ISystemDeps }).deps;
+}
+
+function createSystem(): EquipmentSystem {
+  resetUidCounter();
+  const sys = new EquipmentSystem();
+  sys.init(createMockDeps());
+  return sys;
+}
+
+function addRandomEquipment(
+  sys: EquipmentSystem,
+  slot?: EquipmentSlot,
+  rarity?: EquipmentRarity,
+  seed?: number,
+): EquipmentInstance {
+  const s = slot ?? EQUIPMENT_SLOTS[Math.floor(Math.random() * EQUIPMENT_SLOTS.length)];
+  const r = rarity ?? EQUIPMENT_RARITIES[Math.floor(Math.random() * EQUIPMENT_RARITIES.length)];
+  return sys.generateEquipment(s, r, 'campaign_drop', seed ?? 42);
+}
+
+describe('查询', () => {
+  let sys: EquipmentSystem;
+
+  beforeEach(() => {
+    resetUidCounter(); sys = createSystem();
+  });
+
     it('getEquipment 返回指定装备', () => {
       const eq = addRandomEquipment(sys);
       const found = sys.getEquipment(eq.uid);
@@ -18,7 +76,6 @@ import type {
       addRandomEquipment(sys, 'accessory', 'blue', 3);
       expect(sys.getAllEquipments()).toHaveLength(3);
     });
-  });
 
   describe('扩容', () => {
     it('expandBag 增加容量', () => {
