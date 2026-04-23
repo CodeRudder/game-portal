@@ -13,6 +13,8 @@ export type {
   StoryGameState,
   SkipConfirmResult,
 } from './StoryEventPlayer';
+export { StoryTriggerEvaluator } from './StoryTriggerEvaluator';
+export type { IStoryCompletionChecker } from './StoryTriggerEvaluator';
 export { TutorialStepManager } from './TutorialStepManager';
 export type {
   TutorialGameState,
