@@ -273,7 +273,7 @@ describe('§5.2 科技研究流程', () => {
       research.startResearch('mil_t1_attack');
       const result = research.startResearch('mil_t1_attack');
       expect(result.success).toBe(false);
-      expect(result.reason).toContain('已在研究队列中');
+      expect(result.reason).toContain('研究中');
     });
   });
 
@@ -454,15 +454,20 @@ describe('§5.4 科技融合', () => {
     });
 
     it('完成两条路线的前置节点后融合科技应解锁', () => {
-      // fusion_mil_eco_1 需要 mil_t1_attack + eco_t1_farming
+      // fusion_mil_eco_1 需要 mil_t2_charge + eco_t2_irrigation
+      // mil_t2_charge 依赖 mil_t1_attack
       tree.completeNode('mil_t1_attack');
+      tree.completeNode('mil_t2_charge');
+      // eco_t2_irrigation 依赖 eco_t1_farming
       tree.completeNode('eco_t1_farming');
+      tree.completeNode('eco_t2_irrigation');
       fusion.refreshAllAvailability();
       expect(fusion.arePrerequisitesMet('fusion_mil_eco_1')).toBe(true);
     });
 
     it('只完成一条路线的前置时融合科技仍应锁定', () => {
       tree.completeNode('mil_t1_attack');
+      tree.completeNode('mil_t2_charge');
       fusion.refreshAllAvailability();
       expect(fusion.arePrerequisitesMet('fusion_mil_eco_1')).toBe(false);
     });
@@ -475,7 +480,9 @@ describe('§5.4 科技融合', () => {
 
     it('完成前置后 getUnmetPrerequisites 应全部满足', () => {
       tree.completeNode('mil_t1_attack');
+      tree.completeNode('mil_t2_charge');
       tree.completeNode('eco_t1_farming');
+      tree.completeNode('eco_t2_irrigation');
       fusion.refreshAllAvailability();
       const unmet = fusion.getUnmetPrerequisites('fusion_mil_eco_1');
       expect(unmet.pathA).toBe(true);
@@ -486,7 +493,9 @@ describe('§5.4 科技融合', () => {
   describe('融合科技完成', () => {
     it('完成融合科技后状态应为 completed', () => {
       tree.completeNode('mil_t1_attack');
+      tree.completeNode('mil_t2_charge');
       tree.completeNode('eco_t1_farming');
+      tree.completeNode('eco_t2_irrigation');
       fusion.refreshAllAvailability();
       fusion.completeFusionNode('fusion_mil_eco_1');
       const state = fusion.getFusionState('fusion_mil_eco_1');
@@ -495,7 +504,9 @@ describe('§5.4 科技融合', () => {
 
     it('完成的融合科技效果应可查询', () => {
       tree.completeNode('mil_t1_attack');
+      tree.completeNode('mil_t2_charge');
       tree.completeNode('eco_t1_farming');
+      tree.completeNode('eco_t2_irrigation');
       fusion.refreshAllAvailability();
       fusion.completeFusionNode('fusion_mil_eco_1');
       const effects = fusion.getAllCompletedEffects();
@@ -506,7 +517,9 @@ describe('§5.4 科技融合', () => {
   describe('融合科技序列化', () => {
     it('序列化/反序列化应保持一致', () => {
       tree.completeNode('mil_t1_attack');
+      tree.completeNode('mil_t2_charge');
       tree.completeNode('eco_t1_farming');
+      tree.completeNode('eco_t2_irrigation');
       fusion.refreshAllAvailability();
       fusion.completeFusionNode('fusion_mil_eco_1');
 
