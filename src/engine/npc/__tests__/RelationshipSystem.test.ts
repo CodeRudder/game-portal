@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * RelationshipSystem 单元测试
  *
@@ -182,7 +183,7 @@ describe('RelationshipSystem', () => {
     });
 
     it('等级变化应触发事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       eventBus.on('relationshipLevelChanged', listener);
 
       system.changeRelationship('npc_1', 'gift', 20); // 0 → 20, STRANGER → ACQUAINTANCE
@@ -202,7 +203,7 @@ describe('RelationshipSystem', () => {
 
   describe('事件触发', () => {
     it('好感度变动应触发 relationshipChanged 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       eventBus.on('relationshipChanged', listener);
 
       system.changeRelationship('npc_1', 'dialogue');
@@ -285,7 +286,7 @@ describe('RelationshipSystem', () => {
     });
 
     it('解锁应触发 dialogueUnlocked 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       eventBus.on('dialogueUnlocked', listener);
 
       system.unlockDialogue('npc_1', 'special_dlg_1');

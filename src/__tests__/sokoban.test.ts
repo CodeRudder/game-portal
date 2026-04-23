@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { SokobanEngine } from '@/games/sokoban/SokobanEngine';
 
 // ========== 辅助函数 ==========
@@ -419,7 +420,7 @@ describe('SokobanEngine', () => {
   describe('事件系统', () => {
     it('移动触发 stateChange 事件', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('stateChange', cb);
 
       engine.handleKeyDown('ArrowUp');
@@ -429,7 +430,7 @@ describe('SokobanEngine', () => {
 
     it('stateChange 回调被调用', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('stateChange', cb);
 
       engine.handleKeyDown('ArrowUp');
@@ -440,7 +441,7 @@ describe('SokobanEngine', () => {
 
     it('不能移动时不触发 stateChange', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('stateChange', cb);
 
       // 向左移动是墙壁，不应该触发事件
@@ -451,7 +452,7 @@ describe('SokobanEngine', () => {
 
     it('off 取消事件监听', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('stateChange', cb);
       engine.off('stateChange', cb);
 
@@ -462,7 +463,7 @@ describe('SokobanEngine', () => {
 
     it('start 触发 statusChange 事件', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.start();
       expect(cb).toHaveBeenCalledWith('playing');

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { GomokuEngine } from '@/games/gomoku/GomokuEngine';
 import {
   BOARD_SIZE,
@@ -771,7 +772,7 @@ describe('GomokuEngine', () => {
   describe('事件发射', () => {
     it('start 触发 statusChange 事件为 playing', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.start();
       expect(cb).toHaveBeenCalledWith('playing');
@@ -779,7 +780,7 @@ describe('GomokuEngine', () => {
 
     it('reset 触发 statusChange 事件为 idle', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.reset();
       expect(cb).toHaveBeenCalledWith('idle');
@@ -787,7 +788,7 @@ describe('GomokuEngine', () => {
 
     it('pause 触发 statusChange 事件为 paused', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.pause();
       expect(cb).toHaveBeenCalledWith('paused');
@@ -796,7 +797,7 @@ describe('GomokuEngine', () => {
     it('resume 触发 statusChange 事件为 playing', () => {
       const engine = startEngine();
       engine.pause();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.resume();
       expect(cb).toHaveBeenCalledWith('playing');
@@ -804,7 +805,7 @@ describe('GomokuEngine', () => {
 
     it('scoreChange 事件在胜利时触发', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('scoreChange', cb);
 
       // 构造黑棋连五
@@ -821,7 +822,7 @@ describe('GomokuEngine', () => {
 
     it('off 取消事件监听', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.off('statusChange', cb);
       engine.start();
@@ -1031,7 +1032,7 @@ describe('GomokuEngine', () => {
 
     it('destroy 清除所有事件监听', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.destroy();
       // destroy 后再 start 不会触发回调（因为 listeners 已清空）

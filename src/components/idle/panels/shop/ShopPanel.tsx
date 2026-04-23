@@ -119,14 +119,15 @@ export default function ShopPanel({ engine, visible = true, onClose }: ShopPanel
       onClose={onClose}
       width="560px"
     >
-    <div style={styles.container}>
+    <div style={styles.container} data-testid="shop-panel">
       {/* 商店Tab */}
-      <div style={styles.tabBar}>
+      <div style={styles.tabBar} data-testid="shop-panel-tabs">
         {SHOP_TABS.map(tab => (
           <button
             key={tab.id}
             style={{ ...styles.tabBtn, ...(activeTab === tab.id ? styles.activeTab : {}) }}
             onClick={() => setActiveTab(tab.id)}
+            data-testid={`shop-panel-tab-${tab.id}`}
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
@@ -150,7 +151,7 @@ export default function ShopPanel({ engine, visible = true, onClose }: ShopPanel
 
       {/* 提示消息 */}
       {message && (
-        <div style={styles.toast}>{message}</div>
+        <div style={styles.toast} data-testid="shop-panel-toast">{message}</div>
       )}
 
       {/* 商品列表 */}
@@ -163,7 +164,7 @@ export default function ShopPanel({ engine, visible = true, onClose }: ShopPanel
           const finalPrice = shopSystem?.calculateFinalPrice?.(item.defId, activeTab) ?? def.basePrice;
 
           return (
-            <div key={item.defId} style={{ ...styles.goodsCard, opacity: outOfStock ? 0.5 : 1 }}>
+            <div key={item.defId} style={{ ...styles.goodsCard, opacity: outOfStock ? 0.5 : 1 }} data-testid={`shop-panel-goods-${item.defId}`}>
               <div style={styles.goodsIcon}>{def.icon ?? '📦'}</div>
               <div style={styles.goodsInfo}>
                 <div style={styles.goodsName}>{def.name}</div>
@@ -187,6 +188,7 @@ export default function ShopPanel({ engine, visible = true, onClose }: ShopPanel
               <button
                 style={{ ...styles.buyBtn, ...(outOfStock ? styles.buyBtnDisabled : {}) }}
                 disabled={outOfStock}
+                data-testid={`shop-panel-buy-${item.defId}`}
                 onClick={() => setBuyingId(item.defId)}
               >
                 {outOfStock ? '售罄' : '购买'}
@@ -202,12 +204,12 @@ export default function ShopPanel({ engine, visible = true, onClose }: ShopPanel
 
       {/* 购买确认弹窗 */}
       {buyingId && (
-        <div style={styles.overlay} onClick={() => setBuyingId(null)}>
-          <div style={styles.confirmPanel} onClick={e => e.stopPropagation()}>
+        <div style={styles.overlay} onClick={() => setBuyingId(null)} data-testid="shop-panel-confirm-overlay">
+          <div style={styles.confirmPanel} onClick={e => e.stopPropagation()} data-testid="shop-panel-confirm-dialog">
             <div style={styles.confirmTitle}>确认购买？</div>
             <div style={styles.confirmActions}>
-              <button style={styles.cancelBtn} onClick={() => setBuyingId(null)}>取消</button>
-              <button style={styles.confirmBtn} onClick={() => handleBuy(buyingId)}>确认</button>
+              <button style={styles.cancelBtn} data-testid="shop-panel-confirm-cancel" onClick={() => setBuyingId(null)}>取消</button>
+              <button style={styles.confirmBtn} data-testid="shop-panel-confirm-ok" onClick={() => handleBuy(buyingId)}>确认</button>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * AudioManager 测试套件
  *
@@ -14,12 +15,12 @@ function createMockGainNode(): GainNode {
   return {
     gain: {
       value: 1,
-      setValueAtTime: jest.fn(),
-      exponentialRampToValueAtTime: jest.fn(),
-      linearRampToValueAtTime: jest.fn(),
+      setValueAtTime: vi.fn(),
+      exponentialRampToValueAtTime: vi.fn(),
+      linearRampToValueAtTime: vi.fn(),
     },
-    connect: jest.fn(),
-    disconnect: jest.fn(),
+    connect: vi.fn(),
+    disconnect: vi.fn(),
   } as unknown as GainNode;
 }
 
@@ -28,14 +29,14 @@ function createMockOscillator(): OscillatorNode {
     type: 'sine' as OscillatorType,
     frequency: {
       value: 440,
-      setValueAtTime: jest.fn(),
-      exponentialRampToValueAtTime: jest.fn(),
-      linearRampToValueAtTime: jest.fn(),
+      setValueAtTime: vi.fn(),
+      exponentialRampToValueAtTime: vi.fn(),
+      linearRampToValueAtTime: vi.fn(),
     },
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
   } as unknown as OscillatorNode;
 }
 
@@ -43,13 +44,13 @@ function createMockAudioContext(): AudioContext {
   const ctx = {
     currentTime: 0,
     state: 'running' as AudioContextState,
-    createGain: jest.fn(() => createMockGainNode()),
-    createOscillator: jest.fn(() => createMockOscillator()),
+    createGain: vi.fn(() => createMockGainNode()),
+    createOscillator: vi.fn(() => createMockOscillator()),
     destination: {} as AudioDestinationNode,
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    close: jest.fn(),
-    resume: jest.fn(() => Promise.resolve()),
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    close: vi.fn(),
+    resume: vi.fn(() => Promise.resolve()),
   } as unknown as AudioContext;
   return ctx;
 }
@@ -66,19 +67,19 @@ describe('AudioManager', () => {
   let mockCtxInstance: any;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     // Mock AudioContext 构造函数 — 必须用 class 形式才能 `new`
     const MockAC = class {
       currentTime = 0;
       state: AudioContextState = 'running';
-      createGain = jest.fn(() => createMockGainNode());
-      createOscillator = jest.fn(() => createMockOscillator());
+      createGain = vi.fn(() => createMockGainNode());
+      createOscillator = vi.fn(() => createMockOscillator());
       destination = {};
-      connect = jest.fn();
-      disconnect = jest.fn();
-      close = jest.fn();
-      resume = jest.fn(() => Promise.resolve());
+      connect = vi.fn();
+      disconnect = vi.fn();
+      close = vi.fn();
+      resume = vi.fn(() => Promise.resolve());
     };
     globalThis.AudioContext = MockAC as unknown as typeof AudioContext;
 
@@ -93,7 +94,7 @@ describe('AudioManager', () => {
   afterEach(() => {
     audioManager.destroy();
     globalThis.AudioContext = originalAudioContext;
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   // ─── 初始化 ───────────────────────────────────────────
@@ -261,7 +262,7 @@ describe('AudioManager', () => {
       const ctx = getCtx();
 
       // 前进一个循环周期
-      jest.advanceTimersByTime(7000);
+      vi.advanceTimersByTime(7000);
 
       // 应该再次调用 createOscillator（新的循环）
       const callCount = ctx.createOscillator.mock.calls.length;

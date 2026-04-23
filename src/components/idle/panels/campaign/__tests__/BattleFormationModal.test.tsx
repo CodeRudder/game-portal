@@ -139,28 +139,30 @@ describe('BattleFormationModal', () => {
 
   it('应渲染弹窗遮罩层', () => {
     const { container } = render(<BattleFormationModal {...defaultProps} />);
-    expect(container.querySelector('.tk-bfm-overlay')).toBeInTheDocument();
+    expect(container.querySelector('.tk-shared-panel-overlay')).toBeInTheDocument();
   });
 
   it('应渲染标题栏，显示关卡名称', () => {
     render(<BattleFormationModal {...defaultProps} />);
-    expect(screen.getByText('黄巾之乱')).toBeInTheDocument();
+    // SharedPanel 标题格式: "战前布阵 - {关卡名}"
+    expect(screen.getByText(/战前布阵 - 黄巾之乱/)).toBeInTheDocument();
   });
 
   it('应渲染关闭按钮', () => {
     render(<BattleFormationModal {...defaultProps} />);
-    expect(screen.getByLabelText('关闭')).toBeInTheDocument();
+    // SharedPanel 的关闭按钮 aria-label 为 "关闭面板"
+    expect(screen.getByLabelText('关闭面板')).toBeInTheDocument();
   });
 
   it('点击关闭按钮应调用onClose', () => {
     render(<BattleFormationModal {...defaultProps} />);
-    fireEvent.click(screen.getByLabelText('关闭'));
+    fireEvent.click(screen.getByLabelText('关闭面板'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('点击遮罩层应调用onClose', () => {
     const { container } = render(<BattleFormationModal {...defaultProps} />);
-    fireEvent.click(container.querySelector('.tk-bfm-overlay')!);
+    fireEvent.click(container.querySelector('.tk-shared-panel-overlay')!);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * SkillCloseup 单元测试
  *
@@ -89,7 +90,7 @@ describe('SkillCloseup', () => {
     });
 
     it('应发射 closeup_started 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
       closeup.trigger('unit-1', { x: 500, y: 300 }, '烈焰斩', camera);
       expect(handler).toHaveBeenCalledWith({
@@ -109,7 +110,7 @@ describe('SkillCloseup', () => {
     });
 
     it('如果已有特写，应先取消再触发', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
 
       closeup.trigger('unit-1', { x: 500, y: 300 }, '技能A', camera);
@@ -156,7 +157,7 @@ describe('SkillCloseup', () => {
     });
 
     it('完整流程应发射所有事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
 
       closeup.trigger('unit-1', { x: 500, y: 300 }, '烈焰斩', camera);
@@ -173,7 +174,7 @@ describe('SkillCloseup', () => {
     });
 
     it('zooming_in 应发射带进度的事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
       closeup.trigger('unit-1', { x: 500, y: 300 }, '烈焰斩', camera);
       closeup.update(150); // 50% 进度
@@ -184,7 +185,7 @@ describe('SkillCloseup', () => {
     });
 
     it('showing 应发射带单位信息的事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
       closeup.trigger('unit-1', { x: 500, y: 300 }, '烈焰斩', camera);
       closeup.update(300); // 进入 showing
@@ -196,7 +197,7 @@ describe('SkillCloseup', () => {
     });
 
     it('zooming_out 应发射带进度的事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
       closeup.trigger('unit-1', { x: 500, y: 300 }, '烈焰斩', camera);
       closeup.update(300); // zooming_in
@@ -244,7 +245,7 @@ describe('SkillCloseup', () => {
     });
 
     it('应发射 closeup_finished 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
       closeup.trigger('unit-1', { x: 500, y: 300 }, '技能', camera);
       closeup.cancel();
@@ -254,7 +255,7 @@ describe('SkillCloseup', () => {
     });
 
     it('idle 状态取消不应发射事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
       closeup.cancel();
       expect(handler).not.toHaveBeenCalled();
@@ -347,14 +348,14 @@ describe('SkillCloseup', () => {
 
   describe('事件系统', () => {
     it('on 应注册监听器', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
       closeup.trigger('unit-1', { x: 500, y: 300 }, '技能', camera);
       expect(handler).toHaveBeenCalled();
     });
 
     it('off 应注销监听器', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       closeup.on(handler);
       closeup.off(handler);
       closeup.trigger('unit-1', { x: 500, y: 300 }, '技能', camera);
@@ -362,13 +363,13 @@ describe('SkillCloseup', () => {
     });
 
     it('off 不存在的监听器不应崩溃', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       expect(() => closeup.off(handler)).not.toThrow();
     });
 
     it('多个监听器都应收到事件', () => {
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       closeup.on(handler1);
       closeup.on(handler2);
       closeup.trigger('unit-1', { x: 500, y: 300 }, '技能', camera);

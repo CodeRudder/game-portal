@@ -21,7 +21,7 @@ import type { Season, WeatherType } from '@/games/three-kingdoms/engine';
  * 7个一级Tab: 天下/出征/武将/科技/建筑/声望/更多▼
  * 其他功能（装备/名士/竞技/远征/军队）通过"更多▼"下拉菜单访问
  */
-export type TabId = 'map' | 'campaign' | 'hero' | 'tech' | 'building' | 'prestige' | 'more';
+export type TabId = 'map' | 'campaign' | 'hero' | 'tech' | 'building' | 'prestige' | 'more' | 'equipment' | 'npc' | 'arena' | 'expedition' | 'army';
 
 /** Tab 配置 */
 export interface TabConfig {
@@ -117,7 +117,7 @@ const TabBar: React.FC<TabBarProps> = ({
   calendar,
 }) => {
   return (
-    <div className="tk-tab-bar">
+    <div className="tk-tab-bar" data-testid="tab-bar">
       {TABS.map(tab => (
         <button
           key={tab.id}
@@ -126,6 +126,7 @@ const TabBar: React.FC<TabBarProps> = ({
           aria-label={tab.label}
           aria-selected={activeTab === tab.id}
           role="tab"
+          data-testid={`tab-bar-${tab.id}`}
         >
           <span className="tk-tab-icon">{tab.icon}</span>
           <span className="tk-tab-label">{tab.label}</span>

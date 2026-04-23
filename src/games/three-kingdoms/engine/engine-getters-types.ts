@@ -99,6 +99,18 @@ export interface EngineGettersMixin {
   addToFormation(formationId: string, generalId: string): FormationData | null;
   removeFromFormation(formationId: string, generalId: string): FormationData | null;
   recruit(type: RecruitType, count?: 1 | 10): RecruitOutput | null;
+  /** 每日免费招募（单次，不消耗资源） */
+  freeRecruit(type: RecruitType): RecruitOutput | null;
+  /** 检查指定招募类型是否还有免费次数 */
+  canFreeRecruit(type: RecruitType): boolean;
+  /** 获取今日剩余免费招募次数 */
+  getRemainingFreeCount(type: RecruitType): number;
+  /** 获取免费招募状态（已用次数 + 上次重置日期） */
+  getFreeRecruitState(): ReturnType<HeroRecruitSystem['getFreeRecruitState']>;
+  /** 设置 UP 武将（仅高级招募生效） */
+  setUpHero(generalId: string | null, rate?: number, description?: string): void;
+  /** 获取 UP 武将状态（ID + 概率 + 描述） */
+  getUpHeroState(): ReturnType<HeroRecruitSystem['getUpHeroState']>;
   enhanceHero(id: string, lvl?: number): LevelUpResult | null;
   enhanceAllHeroes(lvl?: number): BatchEnhanceResult;
   getGenerals(): Readonly<GeneralData>[];

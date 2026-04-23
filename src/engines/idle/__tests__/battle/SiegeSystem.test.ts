@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * SiegeSystem 单元测试
  *
@@ -166,7 +167,7 @@ describe('SiegeSystem', () => {
     });
 
     it('城墙被摧毁应发射 wall_destroyed 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       siege.on(handler);
       siege.damageWall('wall-n', 500);
       expect(handler).toHaveBeenCalledWith(
@@ -192,7 +193,7 @@ describe('SiegeSystem', () => {
     });
 
     it('应发射 wall_damaged 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       siege.on(handler);
       siege.damageWall('wall-n', 30);
       expect(handler).toHaveBeenCalledWith(
@@ -276,7 +277,7 @@ describe('SiegeSystem', () => {
     });
 
     it('城门被摧毁应发射 gate_destroyed 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       siege.on(handler);
       siege.damageGate(500);
       expect(handler).toHaveBeenCalledWith(
@@ -309,7 +310,7 @@ describe('SiegeSystem', () => {
     });
 
     it('应发射 gate_opened 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       siege.on(handler);
       siege.openGate();
       expect(handler).toHaveBeenCalledWith(
@@ -364,7 +365,7 @@ describe('SiegeSystem', () => {
     });
 
     it('应发射 morale_changed 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       siege.on(handler);
       siege.modifyMorale('attacker', 5, '击杀');
       expect(handler).toHaveBeenCalledWith(
@@ -404,7 +405,7 @@ describe('SiegeSystem', () => {
     });
 
     it('士气低于阈值应触发溃逃', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       siege.on(handler);
       siege.modifyMorale('defender', -75, '大败'); // 90 - 75 = 15 < 20
       siege.updateMorale();
@@ -516,14 +517,14 @@ describe('SiegeSystem', () => {
 
   describe('事件系统', () => {
     it('应注册和调用事件监听器', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       siege.on(handler);
       siege.damageWall('wall-n', 30);
       expect(handler).toHaveBeenCalled();
     });
 
     it('应注销事件监听器', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       siege.on(handler);
       siege.off(handler);
       siege.damageWall('wall-n', 30);
@@ -531,8 +532,8 @@ describe('SiegeSystem', () => {
     });
 
     it('多个监听器都应被调用', () => {
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       siege.on(handler1);
       siege.on(handler2);
       siege.damageWall('wall-n', 30);

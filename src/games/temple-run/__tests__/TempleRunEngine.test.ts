@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { TempleRunEngine } from '../TempleRunEngine';
 import {
   CANVAS_WIDTH,
@@ -851,7 +852,7 @@ describe('TempleRunEngine - 游戏结束', () => {
 describe('TempleRunEngine - 事件', () => {
   it('触发 statusChange 事件', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -859,7 +860,7 @@ describe('TempleRunEngine - 事件', () => {
 
   it('触发 scoreChange 事件', () => {
     const engine = startEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     advanceUpdate(engine, 100);
     expect(handler).toHaveBeenCalled();
@@ -867,7 +868,7 @@ describe('TempleRunEngine - 事件', () => {
 
   it('gameover 触发 statusChange', () => {
     const engine = startEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     addObstacle(engine, ObstacleType.FULL, 1, PLAYER_Y - PLAYER_HEIGHT);
     advanceUpdate(engine, 16.667);

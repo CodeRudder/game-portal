@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * OfflineSnapshotSystem 单元测试
  *
@@ -18,12 +19,12 @@ import { OfflineSnapshotSystem } from '../OfflineSnapshotSystem';
 function createMockStorage(): Storage {
   const store: Record<string, string> = {};
   return {
-    getItem: jest.fn((key: string) => store[key] ?? null),
-    setItem: jest.fn((key: string, value: string) => { store[key] = value; }),
-    removeItem: jest.fn((key: string) => { delete store[key]; }),
-    clear: jest.fn(() => Object.keys(store).forEach(k => delete store[k])),
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
+    removeItem: vi.fn((key: string) => { delete store[key]; }),
+    clear: vi.fn(() => Object.keys(store).forEach(k => delete store[k])),
     get length() { return Object.keys(store).length; },
-    key: jest.fn(() => null),
+    key: vi.fn(() => null),
   };
 }
 

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { FishingMasterEngine } from '../FishingMasterEngine';
 import {
   CANVAS_WIDTH,
@@ -1142,14 +1143,14 @@ describe('FishingMasterEngine - 事件系统', () => {
   });
 
   it('start 应触发 statusChange 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
   });
 
   it('scoreChange 事件应在分数变化时触发', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('scoreChange', callback);
     engine.start();
     // 分数初始为 0
@@ -1158,7 +1159,7 @@ describe('FishingMasterEngine - 事件系统', () => {
 
   it('pause 应触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.pause();
     expect(callback).toHaveBeenCalledWith('paused');
@@ -1166,14 +1167,14 @@ describe('FishingMasterEngine - 事件系统', () => {
 
   it('reset 应触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.reset();
     expect(callback).toHaveBeenCalledWith('idle');
   });
 
   it('gameover 应触发 statusChange 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     engine.setRemainingTime(0);
@@ -1182,7 +1183,7 @@ describe('FishingMasterEngine - 事件系统', () => {
   });
 
   it('off 应移除事件监听', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * BUG-01 修复验证测试 — 建筑升级死锁预防
  *
@@ -17,18 +18,18 @@ import { BUILDING_DEFS, BUILDING_UNLOCK_LEVELS } from '../building/building-conf
 // ── localStorage mock ──
 const storage: Record<string, string> = {};
 const localStorageMock = {
-  getItem: jest.fn((k: string) => storage[k] ?? null),
-  setItem: jest.fn((k: string, v: string) => { storage[k] = v; }),
-  removeItem: jest.fn((k: string) => { delete storage[k]; }),
-  clear: jest.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
+  getItem: vi.fn((k: string) => storage[k] ?? null),
+  setItem: vi.fn((k: string, v: string) => { storage[k] = v; }),
+  removeItem: vi.fn((k: string) => { delete storage[k]; }),
+  clear: vi.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
   get length() { return Object.keys(storage).length; },
-  key: jest.fn(() => null),
+  key: vi.fn(() => null),
 };
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
 
 /** 辅助函数：推进真实时间以完成建筑升级 */
 function advanceTimeAndTick(engine: ThreeKingdomsEngine, ms: number): void {
-  jest.advanceTimersByTime(ms);
+  vi.advanceTimersByTime(ms);
   engine.tick(ms);
 }
 
@@ -37,14 +38,14 @@ describe('BUG-01 建筑升级死锁预防', () => {
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
-    jest.restoreAllMocks();
-    jest.useFakeTimers();
+    vi.restoreAllMocks();
+    vi.useFakeTimers();
     engine = new ThreeKingdomsEngine();
   });
 
   afterEach(() => {
     engine.reset();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   // ═══════════════════════════════════════════

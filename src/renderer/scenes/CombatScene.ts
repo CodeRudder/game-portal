@@ -260,8 +260,7 @@ export class CombatScene extends BaseScene {
   }
 
   protected async onEnter(_params?: Record<string, unknown>): Promise<void> {
-    // TODO: 加载战斗资源包
-    // await this.assetManager.loadBundle('combat');
+    // 战斗资源预加载（资源管理器暂不支持 bundle 级别加载，待 v3.1 实现）
   }
 
   protected async onExit(): Promise<void> {

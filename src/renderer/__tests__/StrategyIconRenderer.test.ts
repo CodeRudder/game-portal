@@ -15,7 +15,9 @@
 // Mock PixiJS v8
 // ---------------------------------------------------------------------------
 
-jest.mock('pixi.js', () => {
+import { vi } from 'vitest';
+
+vi.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0;
@@ -23,9 +25,9 @@ jest.mock('pixi.js', () => {
     visible = true;
     children: any[] = [];
     parent: any = null;
-    emit = jest.fn();
-    on = jest.fn();
-    off = jest.fn();
+    emit = vi.fn();
+    on = vi.fn();
+    off = vi.fn();
 
     constructor(opts?: { label?: string }) { this.label = opts?.label ?? ''; }
 
@@ -47,9 +49,9 @@ jest.mock('pixi.js', () => {
     y = 0;
     visible = true;
     parent: any = null;
-    emit = jest.fn();
-    on = jest.fn();
-    off = jest.fn();
+    emit = vi.fn();
+    on = vi.fn();
+    off = vi.fn();
 
     // Track drawing calls
     drawingCalls: string[] = [];
@@ -72,7 +74,7 @@ jest.mock('pixi.js', () => {
   class MockText {
     label = '';
     text: string;
-    anchor = { set: jest.fn(), x: 0, y: 0 };
+    anchor = { set: vi.fn(), x: 0, y: 0 };
     x = 0;
     y = 0;
     width = 50;
@@ -80,8 +82,8 @@ jest.mock('pixi.js', () => {
     visible = true;
     parent: any = null;
     style: any;
-    emit = jest.fn();
-    on = jest.fn();
+    emit = vi.fn();
+    on = vi.fn();
 
     constructor(opts?: { text?: string; style?: any }) {
       this.text = opts?.text ?? '';

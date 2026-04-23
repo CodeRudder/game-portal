@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { MazeEngine } from '@/games/maze/MazeEngine';
 import {
   CANVAS_WIDTH,
@@ -948,7 +949,7 @@ describe('MazeEngine', () => {
   describe('事件系统', () => {
     it('statusChange 事件在 start 时触发', () => {
       const engine = createEngine();
-      const fn = jest.fn();
+      const fn = vi.fn();
       engine.on('statusChange', fn);
       engine.start();
       expect(fn).toHaveBeenCalledWith('playing');
@@ -956,7 +957,7 @@ describe('MazeEngine', () => {
 
     it('scoreChange 事件在收集金币时触发', () => {
       const engine = startEngine();
-      const fn = jest.fn();
+      const fn = vi.fn();
       engine.on('scoreChange', fn);
       // 手动触发加分
       engine.addScore(COIN_SCORE);
@@ -965,7 +966,7 @@ describe('MazeEngine', () => {
 
     it('stateChange 事件在通关时触发', () => {
       const engine = startEngine();
-      const fn = jest.fn();
+      const fn = vi.fn();
       engine.on('stateChange', fn);
       (engine as any).winLevel();
       expect(fn).toHaveBeenCalled();
@@ -973,7 +974,7 @@ describe('MazeEngine', () => {
 
     it('off 取消事件监听', () => {
       const engine = createEngine();
-      const fn = jest.fn();
+      const fn = vi.fn();
       engine.on('statusChange', fn);
       engine.off('statusChange', fn);
       engine.start();

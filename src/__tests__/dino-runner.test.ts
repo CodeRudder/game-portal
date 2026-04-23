@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { DinoRunnerEngine } from '@/games/dino-runner/DinoRunnerEngine';
 import {
   CANVAS_WIDTH,
@@ -618,7 +619,7 @@ describe('DinoRunnerEngine', () => {
 
     it('scoreChange 事件在分数变化时触发', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('scoreChange', cb);
 
       advanceUpdate(engine, 16.667);
@@ -773,7 +774,7 @@ describe('DinoRunnerEngine', () => {
 
     it('gameover 触发 statusChange 事件', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
 
       addObstacle(engine, {
@@ -847,7 +848,7 @@ describe('DinoRunnerEngine', () => {
   describe('事件发射', () => {
     it('start 时发射 statusChange 为 playing', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
 
       engine.start();
@@ -856,7 +857,7 @@ describe('DinoRunnerEngine', () => {
 
     it('start 时发射 scoreChange 为 0', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('scoreChange', cb);
 
       engine.start();
@@ -865,7 +866,7 @@ describe('DinoRunnerEngine', () => {
 
     it('start 时发射 levelChange 为 1', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('levelChange', cb);
 
       engine.start();
@@ -874,7 +875,7 @@ describe('DinoRunnerEngine', () => {
 
     it('update 后 scoreChange 事件携带分数值', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('scoreChange', cb);
 
       advanceUpdate(engine, 16.667);
@@ -886,7 +887,7 @@ describe('DinoRunnerEngine', () => {
 
     it('off 取消事件监听', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.off('statusChange', cb);
 
@@ -896,7 +897,7 @@ describe('DinoRunnerEngine', () => {
 
     it('reset 时发射 statusChange 为 idle', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
 
       engine.reset();
@@ -995,7 +996,7 @@ describe('DinoRunnerEngine', () => {
 
     it('暂停时发射 statusChange 为 paused', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.pause();
       expect(cb).toHaveBeenCalledWith('paused');
@@ -1005,7 +1006,7 @@ describe('DinoRunnerEngine', () => {
       const engine = startEngine();
       engine.pause();
 
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.resume();
       expect(cb).toHaveBeenCalledWith('playing');
@@ -1133,7 +1134,7 @@ describe('DinoRunnerEngine', () => {
 
     it('destroy 后事件监听器被清除', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
 
       engine.destroy();

@@ -23,9 +23,9 @@ vi.mock('../BattleAnimation.css', () => ({}));
 
 // ── Mock BattleAnimation hook ──
 const mockLogs = [
-  { id: 1, html: '关羽 发起攻击', type: 'ally' as const },
-  { id: 2, html: '黄巾兵 受到 500 伤害', type: 'enemy' as const },
-  { id: 3, html: '暴击！', type: 'critical' as const },
+  { id: 1, html: '关羽 发起攻击', type: 'ally' as const, parts: [{ type: 'actor', text: '关羽' }, { type: 'text', text: ' 发起攻击' }] },
+  { id: 2, html: '黄巾兵 受到 500 伤害', type: 'enemy' as const, parts: [{ type: 'actor', text: '黄巾兵' }, { type: 'text', text: ' 受到 ' }, { type: 'damage', text: '500' }, { type: 'text', text: ' 伤害' }] },
+  { id: 3, html: '暴击！', type: 'critical' as const, parts: [{ type: 'crit', text: '暴击！' }] },
 ];
 
 const mockAllyUnit: BattleUnit = {

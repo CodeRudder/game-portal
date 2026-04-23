@@ -36,11 +36,11 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ visible, onClose }) => {
       onCancel={onClose}
       width="460px"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', color: '#e8e0d0', fontSize: '14px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', color: '#e8e0d0', fontSize: '14px' }} data-testid="welcome-modal">
         <p style={{ margin: 0, lineHeight: 1.6 }}>
           乱世纷争，群雄并起。你将作为一方诸侯，招募武将、发展城池，逐鹿天下！
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }} data-testid="welcome-modal-features">
           {([
             { icon: '🏰', label: '建筑', desc: '建造升级城池设施' },
             { icon: '🦸', label: '武将', desc: '招募培养三国名将' },
@@ -54,7 +54,7 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ visible, onClose }) => {
               padding: '10px',
               background: 'rgba(255,255,255,0.04)',
               borderRadius: 'var(--tk-radius-lg)' as any,
-            }}>
+            }} data-testid={`welcome-modal-feature-${label}`}>
               <span style={{ fontSize: '20px' }}>{icon}</span>
               <div>
                 <div style={{ fontWeight: 600, fontSize: '13px' }}>{label}</div>

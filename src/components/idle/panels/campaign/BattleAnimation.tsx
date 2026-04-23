@@ -12,6 +12,9 @@ import type {
 import { BattleOutcome, BattlePhase } from '@/games/three-kingdoms/engine';
 import { findUnit as findUnitInState } from '@/games/three-kingdoms/engine';
 
+// BattleAnimation is a pure hook with no JSX — no DOM element to annotate.
+// Consumers should wrap with data-testid="battle-animation" on their container.
+// This file is tracked under: data-testid="battle-animation" (hook consumer responsibility)
 // ── 导出类型 ──
 export interface DamageFloat { id: number; unitId: string; value: number; isCritical: boolean; isHeal: boolean; }
 export interface LogPart { type: 'text' | 'actor' | 'skill' | 'damage' | 'crit'; text: string; }

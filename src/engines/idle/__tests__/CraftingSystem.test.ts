@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * CraftingSystem 单元测试
  *
@@ -114,7 +115,7 @@ describe('CraftingSystem', () => {
     });
 
     it('应触发 recipe_learned 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       system.learnRecipe('potion-hp');
       expect(handler).toHaveBeenCalledWith(
@@ -207,7 +208,7 @@ describe('CraftingSystem', () => {
     });
 
     it('应触发 craft_started 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       const inventory = { herb: 10, water: 5 };
       system.craft('potion-hp', inventory);
@@ -321,7 +322,7 @@ describe('CraftingSystem', () => {
       const inventory = { herb: 10, water: 5 };
       const craft = system.craft('potion-hp', inventory);
 
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       system.completeCraft(craft!.instanceId);
 
@@ -338,7 +339,7 @@ describe('CraftingSystem', () => {
       const inventory = { gem: 10 };
       const craft = system.craft('rare-item', inventory);
 
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       system.completeCraft(craft!.instanceId);
 
@@ -355,7 +356,7 @@ describe('CraftingSystem', () => {
       const inventory = { herb: 10, water: 5 };
       const craft = system.craft('potion-hp', inventory);
 
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       system.completeCraft(craft!.instanceId);
 
@@ -583,14 +584,14 @@ describe('CraftingSystem', () => {
 
   describe('onEvent', () => {
     it('应返回取消监听函数', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       const unsub = system.onEvent(handler);
       expect(typeof unsub).toBe('function');
     });
 
     it('取消监听后不应再收到事件', () => {
       system = new CraftingSystem([createRecipeDef()]);
-      const handler = jest.fn();
+      const handler = vi.fn();
       const unsub = system.onEvent(handler);
       unsub();
 
@@ -600,8 +601,8 @@ describe('CraftingSystem', () => {
 
     it('应支持多个监听器', () => {
       system = new CraftingSystem([createRecipeDef()]);
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       system.onEvent(handler1);
       system.onEvent(handler2);
       system.learnRecipe('potion-hp');

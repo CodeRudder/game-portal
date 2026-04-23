@@ -10,12 +10,12 @@
  *   - 每日重置
  */
 
+import { FriendSystem } from '../FriendSystem';
 import {
-  FriendSystem,
   DEFAULT_FRIEND_CONFIG,
   DEFAULT_INTERACTION_CONFIG,
   createDefaultSocialState,
-} from '../FriendSystem';
+} from '../friend-config';
 import { FriendStatus, InteractionType as IT } from '../../../core/social/social.types';
 import type {
   FriendData,

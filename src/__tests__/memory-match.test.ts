@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Memory Match 引擎测试
  * 43 个测试用例覆盖全部核心逻辑
@@ -140,7 +141,7 @@ function getGridStartX(engine: MemoryMatchEngine): number {
 
 describe('MemoryMatchEngine', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // ===== 1. 初始化与生命周期 (6) =====
@@ -378,15 +379,15 @@ describe('MemoryMatchEngine', () => {
     it('全部匹配后应触发 gameOver', () => {
       const engine = startEngine();
       const cards = getCards(engine);
-      jest.useFakeTimers();
+      vi.useFakeTimers();
 
       matchAllPairs(engine, cards);
 
       // 推进 WIN_DELAY
-      jest.advanceTimersByTime(WIN_DELAY + 100);
+      vi.advanceTimersByTime(WIN_DELAY + 100);
 
       expect(engine.status).toBe('gameover');
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('时间奖励：elapsedTime < THRESHOLD 应获得额外分数', () => {
@@ -726,14 +727,14 @@ describe('MemoryMatchEngine', () => {
     it('游戏结束状态应反映 isWin', () => {
       const engine = startEngine();
       const cards = getCards(engine);
-      jest.useFakeTimers();
+      vi.useFakeTimers();
 
       matchAllPairs(engine, cards);
-      jest.advanceTimersByTime(WIN_DELAY + 100);
+      vi.advanceTimersByTime(WIN_DELAY + 100);
 
       const state = engine.getState() as any;
       expect(state.isWin).toBe(true);
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 

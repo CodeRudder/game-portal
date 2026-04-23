@@ -2,6 +2,7 @@
  * 引擎层 — NPC 巡逻系统
  *
  * 管理 NPC 巡逻行为与刷新规则。巡逻路径移动计算委托给 PatrolPathCalculator。
+ * NPC 刷新规则委托给 NPCSpawnManager。
  * 功能覆盖：#1 NPC巡逻路径（P0）、#2 NPC刷新规则（P0）
  *
  * @module engine/npc/NPCPatrolSystem
@@ -10,9 +11,7 @@
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   NPCId,
-  NPCData,
   RegionId,
-  GridPosition,
   PatrolPathId,
   PatrolPath,
   NPCSpawnTemplate,
@@ -22,7 +21,8 @@ import type {
   PatrolSaveData,
 } from '../../core/npc';
 import { PatrolPathCalculator, type RuntimePatrolState } from './PatrolPathCalculator';
-import { PATROL_SAVE_VERSION, DEFAULT_SPAWN_CONFIG } from './PatrolConfig';
+import { PATROL_SAVE_VERSION } from './PatrolConfig';
+import { NPCSpawnManager } from './NPCSpawnManager';
 
 // ─────────────────────────────────────────────
 // NPC 巡逻系统
@@ -33,6 +33,7 @@ import { PATROL_SAVE_VERSION, DEFAULT_SPAWN_CONFIG } from './PatrolConfig';
  *
  * 管理 NPC 沿预定义路径的巡逻行为，以及 NPC 的定时刷新规则。
  * 巡逻路径的移动计算委托给 PatrolPathCalculator。
+ * 刷新规则委托给 NPCSpawnManager。
  */
 export class NPCPatrolSystem implements ISubsystem {
   readonly name = 'npcPatrol';
@@ -45,23 +46,34 @@ export class NPCPatrolSystem implements ISubsystem {
   /** NPC 巡逻状态 */
   private patrolStates: Map<NPCId, RuntimePatrolState> = new Map();
 
-  /** 刷新模板 */
-  private spawnTemplates: Map<string, NPCSpawnTemplate> = new Map();
-
-  /** 刷新配置 */
-  private spawnConfig: NPCSpawnConfig = { ...DEFAULT_SPAWN_CONFIG };
-
-  /** 刷新记录 */
-  private spawnRecords: NPCSpawnRecord[] = [];
-
-  /** 刷新计时器 */
-  private spawnTimer: number = 0;
-
   /** NPC 位置更新回调 */
   private moveCallback?: (npcId: string, x: number, y: number) => void;
 
   /** 巡逻路径计算器 */
   private pathCalculator = new PatrolPathCalculator();
+
+  /** 刷新管理器（委托） */
+  private spawnMgr: NPCSpawnManager;
+
+  constructor() {
+    this.spawnMgr = new NPCSpawnManager();
+    this.spawnMgr.setDeps({
+      getNPCSystem: () => {
+        try {
+          const sys = this.deps?.registry?.get('npc');
+          return sys ? (sys as unknown as import('./NPCSpawnManager').INPCSystemFacade) : null;
+        } catch {
+          return null;
+        }
+      },
+      assignPatrol: (npcId, pathId) => this.assignPatrol(npcId, pathId),
+      getPathStartPosition: (pathId) => {
+        const path = this.paths.get(pathId);
+        return path ? { ...path.waypoints[0] } : null;
+      },
+      emitEvent: (event, data) => this.deps?.eventBus?.emit(event, data),
+    });
+  }
 
   // ─── ISubsystem 接口 ───────────────────────
 
@@ -77,7 +89,7 @@ export class NPCPatrolSystem implements ISubsystem {
       this.moveCallback,
       (event, data) => this.deps?.eventBus?.emit(event, data),
     );
-    this.updateSpawnTimer(dt);
+    this.spawnMgr.updateTimer(dt);
   }
 
   getState(): {
@@ -86,17 +98,14 @@ export class NPCPatrolSystem implements ISubsystem {
   } {
     return {
       patrolStates: Array.from(this.patrolStates.values()),
-      spawnRecords: [...this.spawnRecords],
+      spawnRecords: this.spawnMgr.getRecords(),
     };
   }
 
   reset(): void {
     this.patrolStates.clear();
-    this.spawnRecords = [];
-    this.spawnTimer = 0;
     this.paths.clear();
-    this.spawnTemplates.clear();
-    this.spawnConfig = { ...DEFAULT_SPAWN_CONFIG };
+    this.spawnMgr.fullReset();
   }
 
   // ─── 回调注入 ──────────────────────────────
@@ -258,131 +267,57 @@ export class NPCPatrolSystem implements ISubsystem {
   }
 
   // ═══════════════════════════════════════════
-  // #2 NPC 刷新规则
+  // #2 NPC 刷新规则（委托 NPCSpawnManager）
   // ═══════════════════════════════════════════
 
   /** 注册刷新模板 */
   registerSpawnTemplate(template: NPCSpawnTemplate): void {
-    this.spawnTemplates.set(template.id, { ...template });
+    this.spawnMgr.registerTemplate(template);
   }
 
   /** 批量注册刷新模板 */
   registerSpawnTemplates(templates: NPCSpawnTemplate[]): void {
-    templates.forEach((t) => this.registerSpawnTemplate(t));
+    this.spawnMgr.registerTemplates(templates);
   }
 
   /** 获取刷新模板 */
   getSpawnTemplate(id: string): NPCSpawnTemplate | undefined {
-    const t = this.spawnTemplates.get(id);
-    return t ? { ...t } : undefined;
+    return this.spawnMgr.getTemplate(id);
   }
 
   /** 获取所有刷新模板 */
   getAllSpawnTemplates(): NPCSpawnTemplate[] {
-    return Array.from(this.spawnTemplates.values()).map((t) => ({ ...t }));
+    return this.spawnMgr.getAllTemplates();
   }
 
   /** 获取刷新配置 */
   getSpawnConfig(): NPCSpawnConfig {
-    return { ...this.spawnConfig };
+    return this.spawnMgr.getConfig();
   }
 
   /** 更新刷新配置（局部更新） */
   setSpawnConfig(config: Partial<NPCSpawnConfig>): void {
-    this.spawnConfig = { ...this.spawnConfig, ...config };
+    this.spawnMgr.setConfig(config);
   }
 
   /** 获取刷新记录 */
   getSpawnRecords(): NPCSpawnRecord[] {
-    return [...this.spawnRecords];
+    return this.spawnMgr.getRecords();
   }
 
   /** 获取刷新计时器值 */
   getSpawnTimer(): number {
-    return this.spawnTimer;
+    return this.spawnMgr.getTimer();
   }
 
-  /**
-   * 尝试刷新一个 NPC
-   *
-   * 通过 registry 获取 NPCSystem 来创建 NPC。
-   */
+  /** 尝试刷新一个 NPC */
   trySpawnNPC(): SpawnResult {
-    if (this.spawnTemplates.size === 0) {
-      return { success: false, npcId: null, reason: '没有可用的刷新模板' };
-    }
-
-    const npcSys = this.getNPCSystem();
-
-    // 检查全局NPC数量上限
-    const currentCount = npcSys?.getNPCCount?.() ?? 0;
-    if (currentCount >= this.spawnConfig.maxNPCCount) {
-      return { success: false, npcId: null, reason: '已达全局NPC上限' };
-    }
-
-    // 按权重选择模板
-    const template = this.selectTemplateByWeight();
-    if (!template) {
-      return { success: false, npcId: null, reason: '没有可用的刷新模板' };
-    }
-
-    // 检查区域NPC数量上限
-    const regionNPCs = npcSys?.getNPCsByRegion?.(template.region) ?? [];
-    if (regionNPCs.length >= this.spawnConfig.maxNPCPerRegion) {
-      return { success: false, npcId: null, reason: '已达区域NPC上限' };
-    }
-
-    // 获取路径起始位置作为刷新位置
-    const path = this.paths.get(template.patrolPathId);
-    const spawnPosition: GridPosition = path
-      ? { ...path.waypoints[0] }
-      : { x: 0, y: 0 };
-
-    // 创建NPC
-    let npcData: NPCData | null = null;
-    if (npcSys?.createNPC) {
-      npcData = npcSys.createNPC(
-        template.name,
-        template.profession,
-        spawnPosition,
-        { affinity: template.initialAffinity },
-      );
-    }
-
-    if (!npcData) {
-      return { success: false, npcId: null, reason: 'NPC创建失败' };
-    }
-
-    // 记录刷新
-    this.spawnRecords.push({
-      npcId: npcData.id,
-      templateId: template.id,
-      spawnTime: this.spawnTimer,
-      spawnPosition: { ...spawnPosition },
-      expireTime: this.spawnConfig.npcLifetime > 0
-        ? this.spawnTimer + this.spawnConfig.npcLifetime
-        : 0,
-    });
-
-    // 分配巡逻路径
-    if (template.patrolPathId) {
-      this.assignPatrol(npcData.id, template.patrolPathId);
-    }
-
-    // 发出事件
-    this.deps?.eventBus?.emit('patrol:npc_spawned', {
-      npcId: npcData.id,
-      templateId: template.id,
-      region: template.region,
-      position: spawnPosition,
-    });
-
-    return { success: true, npcId: npcData.id };
+    return this.spawnMgr.trySpawn();
   }
 
   /** 强制刷新 */
   forceSpawn(): SpawnResult {
-    return this.trySpawnNPC();
+    return this.spawnMgr.forceSpawn();
   }
 
   // ═══════════════════════════════════════════
@@ -391,6 +326,7 @@ export class NPCPatrolSystem implements ISubsystem {
 
   /** 导出存档数据 */
   exportSaveData(): PatrolSaveData {
+    const spawnData = this.spawnMgr.exportSaveData();
     return {
       version: PATROL_SAVE_VERSION,
       patrolStates: Array.from(this.patrolStates.values()).map((s) => ({
@@ -402,16 +338,14 @@ export class NPCPatrolSystem implements ISubsystem {
         isPatrolling: s.isPatrolling,
         pauseTimer: s.pauseTimer,
       })),
-      spawnRecords: this.spawnRecords.map((r) => ({ ...r })),
-      spawnTimer: this.spawnTimer,
+      spawnRecords: spawnData.spawnRecords,
+      spawnTimer: spawnData.spawnTimer,
     };
   }
 
   /** 导入存档数据 */
   importSaveData(data: PatrolSaveData): void {
     this.patrolStates.clear();
-    this.spawnRecords = [];
-    this.spawnTimer = 0;
 
     if (data.patrolStates) {
       for (const s of data.patrolStates) {
@@ -427,55 +361,9 @@ export class NPCPatrolSystem implements ISubsystem {
       }
     }
 
-    if (data.spawnRecords) {
-      this.spawnRecords = data.spawnRecords.map((r) => ({ ...r }));
-    }
-
-    if (typeof data.spawnTimer === 'number') {
-      this.spawnTimer = data.spawnTimer;
-    }
-  }
-
-  // ═══════════════════════════════════════════
-  // 内部方法
-  // ═══════════════════════════════════════════
-
-  private updateSpawnTimer(dt: number): void {
-    if (!this.spawnConfig.autoSpawnEnabled) return;
-    if (this.spawnConfig.spawnInterval <= 0) return;
-
-    this.spawnTimer += dt;
-
-    if (this.spawnTimer >= this.spawnConfig.spawnInterval) {
-      this.spawnTimer = 0;
-      this.trySpawnNPC();
-    }
-  }
-
-  /** 通过注册表获取 NPCSystem */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getNPCSystem(): any {
-    try {
-      return this.deps?.registry?.get('npc') ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  /** 按权重随机选择模板 */
-  private selectTemplateByWeight(): NPCSpawnTemplate | undefined {
-    const templates = Array.from(this.spawnTemplates.values());
-    if (templates.length === 0) return undefined;
-
-    const totalWeight = templates.reduce((sum, t) => sum + t.weight, 0);
-    if (totalWeight <= 0) return templates[0];
-
-    let random = Math.random() * totalWeight;
-    for (const template of templates) {
-      random -= template.weight;
-      if (random <= 0) return template;
-    }
-
-    return templates[templates.length - 1];
+    this.spawnMgr.importSaveData({
+      spawnRecords: data.spawnRecords,
+      spawnTimer: data.spawnTimer,
+    });
   }
 }

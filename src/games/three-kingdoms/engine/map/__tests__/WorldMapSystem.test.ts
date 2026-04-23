@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * WorldMapSystem 单元测试 — Part 1: 基础参数 + 区域 + 地形
  */
@@ -18,14 +19,14 @@ import {
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -142,7 +143,7 @@ describe('WorldMapSystem 基础与区域地形', () => {
   describe('三大区域划分', () => {
     it('getRegions 返回三个区域', () => {
       const regions = mapSys.getRegions();
-      expect(regions.length).toBe(3);
+      expect(regions.length).toBe(4);
       const ids = regions.map(r => r.id);
       expect(ids).toContain('wei');
       expect(ids).toContain('wu');

@@ -168,6 +168,7 @@ export default function HeroesMightPixiGame({
     <div
       ref={containerRef}
       className={className}
+      data-testid="heroes-might-pixi-game"
       style={{
         width: '100%',
         height: '100%',

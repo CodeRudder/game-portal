@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { PacmanEngine } from '@/games/pacman/PacmanEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT, HUD_HEIGHT,
@@ -11,14 +12,14 @@ import {
 } from '@/games/pacman/constants';
 
 const mockCtx = {
-  fillRect: jest.fn(), clearRect: jest.fn(), fillText: jest.fn(),
-  beginPath: jest.fn(), arc: jest.fn(), fill: jest.fn(),
-  strokeRect: jest.fn(), stroke: jest.fn(), measureText: jest.fn(() => ({ width: 50 })),
+  fillRect: vi.fn(), clearRect: vi.fn(), fillText: vi.fn(),
+  beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn(),
+  strokeRect: vi.fn(), stroke: vi.fn(), measureText: vi.fn(() => ({ width: 50 })),
 };
 
 const mockCanvas = {
   width: CANVAS_WIDTH, height: CANVAS_HEIGHT,
-  getContext: jest.fn(() => mockCtx),
+  getContext: vi.fn(() => mockCtx),
 } as unknown as HTMLCanvasElement;
 
 function createEngine(): PacmanEngine {
@@ -302,7 +303,7 @@ describe('PacmanEngine', () => {
   describe('事件', () => {
     it('start 触发 statusChange', () => {
       const engine = createEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');
@@ -311,7 +312,7 @@ describe('PacmanEngine', () => {
     it('吃幽灵触发 eatGhost', () => {
       const engine = createEngine();
       engine.start();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('eatGhost', handler);
       const ghost = engine.ghosts[0];
       ghost.frightened = true; ghost.homeTimer = 0;
@@ -324,7 +325,7 @@ describe('PacmanEngine', () => {
     it('失去生命触发 loseLife', () => {
       const engine = createEngine();
       engine.start();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('loseLife', handler);
       const ghost = engine.ghosts[0];
       ghost.homeTimer = 0;

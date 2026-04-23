@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { BackgammonEngine } from '../BackgammonEngine';
 import {
   PLAYER_WHITE, PLAYER_BLACK,

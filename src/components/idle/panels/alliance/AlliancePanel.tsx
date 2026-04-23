@@ -64,13 +64,13 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
   const renderContent = () => {
     if (!isInAlliance) {
       return (
-        <div style={s.wrap}>
-          {message && <div style={s.toast}>{message}</div>}
+        <div style={s.wrap} data-testid="alliance-panel-content">
+          {message && <div style={s.toast} data-testid="alliance-panel-toast">{message}</div>}
           <div style={s.empty}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🏰</div>
             <div style={{ color: '#a0a0a0', marginBottom: 16 }}>你尚未加入联盟</div>
             {!showCreateForm ? (
-              <button style={s.btn} onClick={() => setShowCreateForm(true)}>创建联盟</button>
+              <button style={s.btn} data-testid="alliance-panel-create-btn" onClick={() => setShowCreateForm(true)}>创建联盟</button>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                 <input
@@ -79,10 +79,11 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
                   onChange={e => setAllianceName(e.target.value)}
                   placeholder="输入联盟名称（2-8字）"
                   maxLength={8}
+                  data-testid="alliance-panel-name-input"
                 />
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button style={s.btn} onClick={handleCreate}>确认创建</button>
-                  <button style={{ ...s.btn, background: 'transparent' }} onClick={() => setShowCreateForm(false)}>取消</button>
+                  <button style={s.btn} data-testid="alliance-panel-confirm-create" onClick={handleCreate}>确认创建</button>
+                  <button style={{ ...s.btn, background: 'transparent' }} data-testid="alliance-panel-cancel-create" onClick={() => setShowCreateForm(false)}>取消</button>
                 </div>
               </div>
             )}
@@ -92,18 +93,18 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
     }
 
     return (
-      <div style={s.wrap}>
-        {message && <div style={s.toast}>{message}</div>}
+      <div style={s.wrap} data-testid="alliance-panel-content">
+        {message && <div style={s.toast} data-testid="alliance-panel-toast">{message}</div>}
         {/* 联盟头部 */}
-        <div style={s.header}>
+        <div style={s.header} data-testid="alliance-panel-header">
           <div style={s.name}>{alliance?.name ?? '联盟'}</div>
           <div style={s.meta}>Lv.{alliance?.level ?? 1} · 成员 {members.length}/{allianceSystem?.getMaxMembers?.(alliance?.level ?? 1) ?? 20}</div>
           {bonuses && <div style={s.bonus}>资源+{bonuses.resourceBonus}% · 远征+{bonuses.expeditionBonus}%</div>}
         </div>
         {/* Tab */}
-        <div style={s.tabs}>
+        <div style={s.tabs} data-testid="alliance-panel-tabs">
           {(['info', 'members', 'tasks'] as const).map(t => (
-            <button key={t} style={{ ...s.tab, ...(tab === t ? s.tabOn : {}) }} onClick={() => setTab(t)}>
+            <button key={t} style={{ ...s.tab, ...(tab === t ? s.tabOn : {}) }} onClick={() => setTab(t)} data-testid={`alliance-panel-tab-${t}`}>
               {{ info: '📋 信息', members: '👥 成员', tasks: '🎯 任务' }[t]}
             </button>
           ))}
@@ -117,7 +118,7 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
         )}
         {/* 成员 */}
         {tab === 'members' && members.map((m: any) => (
-          <div key={m.playerId} style={s.row}>
+          <div key={m.playerId} style={s.row} data-testid={`alliance-panel-member-${m.playerId}`}>
             <span style={{ flex: 1, fontWeight: 600 }}>{m.playerName}</span>
             <span style={{ fontSize: 11, color: m.role === 'LEADER' ? '#d4a574' : m.role === 'ADVISOR' ? '#7EC850' : '#a0a0a0' }}>
               {({ LEADER: '盟主', ADVISOR: '军师', MEMBER: '成员' } as Record<string, string>)[m.role] ?? m.role}
@@ -131,7 +132,7 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
           const progress = taskSystem?.getTaskProgress?.(task.defId);
           const pct = progress?.percent ?? 0;
           return (
-            <div key={task.defId} style={s.card}>
+            <div key={task.defId} style={s.card} data-testid={`alliance-panel-task-${task.defId}`}>
               <div style={{ fontWeight: 600, marginBottom: 4 }}>{def?.name ?? task.defId}</div>
               <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>{def?.description ?? ''}</div>
               <div style={s.bar}><div style={{ ...s.fill, width: `${pct}%` }} /></div>

@@ -61,17 +61,17 @@ function createSystem(): {
 
   const sys = new HeritageSystem();
   const mockEventBus = {
-    emit: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    once: jest.fn(),
-    removeAllListeners: jest.fn(),
+    emit: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    once: vi.fn(),
+    removeAllListeners: vi.fn(),
   };
 
   sys.init({
     eventBus: mockEventBus as unknown as ISystemDeps['eventBus'],
-    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
-    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+    config: { get: vi.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: vi.fn() } as unknown as ISystemDeps['registry'],
   });
 
   sys.setCallbacks({

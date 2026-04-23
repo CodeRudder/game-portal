@@ -13,8 +13,8 @@
 
 import {
   ExpeditionSystem,
-  createDefaultExpeditionState,
 } from '../ExpeditionSystem';
+import { createDefaultExpeditionState } from '../expedition-helpers';
 import type { HeroBrief } from '../ExpeditionSystem';
 import {
   NodeStatus,

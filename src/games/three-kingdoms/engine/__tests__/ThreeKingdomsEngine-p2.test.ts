@@ -18,7 +18,7 @@ describe('离线收益', () => {
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     engine = new ThreeKingdomsEngine();
   });
 
@@ -30,7 +30,7 @@ describe('离线收益', () => {
     engine.save();
 
     const engine2 = new ThreeKingdomsEngine();
-    const listener = jest.fn();
+    const listener = vi.fn();
     engine2.on('game:loaded', listener);
     engine2.load();
     expect(listener).toHaveBeenCalled();
@@ -64,7 +64,7 @@ describe('离线收益', () => {
     storage[SAVE_KEY] = JSON.stringify(parsed);
 
     const engine2 = new ThreeKingdomsEngine();
-    const offlineListener = jest.fn();
+    const offlineListener = vi.fn();
     engine2.on('game:offline-earnings', offlineListener);
     engine2.load();
 
@@ -87,7 +87,7 @@ describe('加成体系框架', () => {
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     engine = new ThreeKingdomsEngine();
   });
 
@@ -142,7 +142,7 @@ describe('v1.0 存档迁移（无武将数据）', () => {
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     engine = new ThreeKingdomsEngine();
   });
 

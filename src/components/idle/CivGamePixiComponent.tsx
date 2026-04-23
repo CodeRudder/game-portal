@@ -332,6 +332,7 @@ export default function CivGamePixiComponent({
     <div
       ref={containerRef}
       className={className}
+      data-testid="civ-game-pixi-component"
       style={{
         width: '100%',
         height: '100%',

@@ -7,7 +7,7 @@
  *   - 拜访主城: 5次/天 → 铜钱×100/次
  *   - 切磋: 3次/天 → 胜友情点×20/败×5
  *
- * @module engine/social/FriendInteractionSubsystem
+ * @module engine/social/FriendInteractionHelper
  */
 
 import type {
@@ -54,7 +54,7 @@ function getTodayInteractions(state: SocialState, now: number): InteractionRecor
 /**
  * 好友互动子系统
  */
-export class FriendInteractionSubsystem {
+export class FriendInteractionHelper {
   constructor(private readonly config: InteractionConfig = DEFAULT_INTERACTION_CONFIG) {}
 
   /**

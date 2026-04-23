@@ -1,6 +1,15 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+// ── CanvasRenderingContext2D mock for PixiJS ──
+// jsdom does not provide CanvasRenderingContext2D as a global constructor.
+// PixiJS (v8) references it internally via BrowserAdapter, so we expose a
+// minimal stub on the global scope.  The actual 2d context returned by
+// HTMLCanvasElement.prototype.getContext is already mocked below.
+class CanvasRenderingContext2DMock {}
+(globalThis as any).CanvasRenderingContext2D = CanvasRenderingContext2DMock;
+(globalThis as any).OffscreenCanvasRenderingContext2D = CanvasRenderingContext2DMock;
+
 // ── jest → vi compatibility shim ──
 // Many test files use `jest.fn()`, `jest.spyOn()`, etc. but the project
 // runs on Vitest (which provides `vi.*`).  Expose `jest` as an alias so

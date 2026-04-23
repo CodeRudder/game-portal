@@ -82,14 +82,15 @@ export default function Leaderboard({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-testid="leaderboard">
       {/* 维度切换 */}
       {dimensions.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex gap-2 overflow-x-auto" data-testid="leaderboard-dimensions">
           {dimensions.map((dim) => (
             <button
               key={dim.key}
               onClick={() => setActiveDimension(dim.key)}
+              data-testid={`leaderboard-dimension-${dim.key}`}
               className={`shrink-0 rounded-lg px-3 py-1.5 text-xs transition ${
                 activeDimension === dim.key
                   ? 'bg-gp-accent text-white'
@@ -117,6 +118,7 @@ export default function Leaderboard({
                   ? 'border border-gp-accent/30 bg-gp-accent/10'
                   : 'bg-white/5'
               }`}
+              data-testid={`leaderboard-entry-${idx}`}
             >
               <span
                 className={`w-8 text-center font-game text-xs ${
@@ -152,6 +154,7 @@ export default function Leaderboard({
               submitScore(dim.key, currentValues[dim.key], dim.label);
             }
           }}
+          data-testid="leaderboard-submit"
           className="rounded-lg bg-gp-accent/20 px-3 py-2 text-xs text-gp-accent hover:bg-gp-accent/30"
         >
           📊 提交当前成绩

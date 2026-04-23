@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 战斗加速控制器 — 单元测试
  *
@@ -26,7 +27,7 @@ import { BattleSpeed, BATTLE_CONFIG } from '../battle.types';
 /** 创建模拟监听器 */
 function createMockListener(): ISpeedChangeListener {
   return {
-    onSpeedChange: jest.fn(),
+    onSpeedChange: vi.fn(),
   };
 }
 
@@ -205,7 +206,7 @@ describe('BattleSpeedController', () => {
       controller.setSpeed(BattleSpeed.X2);
 
       expect(listener.onSpeedChange).toHaveBeenCalledTimes(1);
-      const event = (listener.onSpeedChange as ReturnType<typeof jest.fn>).mock.calls[0][0] as SpeedChangeEvent;
+      const event = (listener.onSpeedChange as ReturnType<typeof vi.fn>).mock.calls[0][0] as SpeedChangeEvent;
       expect(event.previousSpeed).toBe(BattleSpeed.X1);
       expect(event.newSpeed).toBe(BattleSpeed.X2);
       expect(event.timestamp).toBeGreaterThan(0);

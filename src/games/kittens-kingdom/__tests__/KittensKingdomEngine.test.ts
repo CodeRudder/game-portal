@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Kittens Kingdom（猫咪王国）放置类游戏 — 完整测试套件
  *
@@ -99,7 +100,7 @@ function getGems(engine: KittensKingdomEngine): number {
 
 describe('KittensKingdomEngine', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorage.clear();
   });
 
@@ -341,7 +342,7 @@ describe('KittensKingdomEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       engine.click();
       expect(handler).toHaveBeenCalled();
@@ -414,7 +415,7 @@ describe('KittensKingdomEngine', () => {
 
     it('资源变化触发 resourceChange 事件', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('resourceChange', handler);
       addFish(engine, 10);
       expect(handler).toHaveBeenCalledWith(RESOURCE_IDS.FISH, expect.any(Number));
@@ -531,7 +532,7 @@ describe('KittensKingdomEngine', () => {
 
     it('购买触发 upgradePurchased 事件', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('upgradePurchased', handler);
       addFish(engine, 100);
       engine.purchaseBuilding(BUILDING_IDS.CAT_BED);
@@ -799,7 +800,7 @@ describe('KittensKingdomEngine', () => {
 
     it('解锁品种触发 breedUnlocked 事件', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('breedUnlocked', handler);
       addFish(engine, 100);
       engine.unlockBreed('british-shorthair');
@@ -997,7 +998,7 @@ describe('KittensKingdomEngine', () => {
 
     it('声望重置触发 prestigeReset 事件', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('prestigeReset', handler);
       addFish(engine, 10000);
       engine.prestigeReset();
@@ -1200,7 +1201,7 @@ describe('KittensKingdomEngine', () => {
 
     it('loadState 触发 stateChange', () => {
       const engine = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('stateChange', handler);
       engine.loadState(engine.getState());
       expect(handler).toHaveBeenCalled();

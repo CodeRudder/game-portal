@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * TurnBasedMode 单元测试
  *
@@ -63,20 +64,20 @@ function createMockContext(overrides?: {
   speed?: number;
 }): BattleModeContext {
   const units = overrides?.units ?? [];
-  const dealDamageMock = jest.fn().mockReturnValue({ damage: 20, isCrit: false, isMiss: false });
-  const healMock = jest.fn();
-  const addBuffMock = jest.fn();
-  const removeBuffMock = jest.fn();
-  const emitMock = jest.fn();
+  const dealDamageMock = vi.fn().mockReturnValue({ damage: 20, isCrit: false, isMiss: false });
+  const healMock = vi.fn();
+  const addBuffMock = vi.fn();
+  const removeBuffMock = vi.fn();
+  const emitMock = vi.fn();
 
   return {
     units,
-    getUnit: jest.fn((id: string) => units.find((u) => u.id === id)),
+    getUnit: vi.fn((id: string) => units.find((u) => u.id === id)),
     dealDamage: dealDamageMock,
     heal: healMock,
     addBuff: addBuffMock,
     removeBuff: removeBuffMock,
-    getAliveUnits: jest.fn((side?: 'attacker' | 'defender') => {
+    getAliveUnits: vi.fn((side?: 'attacker' | 'defender') => {
       if (side) return units.filter((u) => u.isAlive && u.side === side);
       return units.filter((u) => u.isAlive);
     }),
@@ -285,7 +286,7 @@ describe('TurnBasedMode', () => {
       mode.init(ctx);
       defender.isAlive = false;
       // 清空防守方存活单位
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -297,7 +298,7 @@ describe('TurnBasedMode', () => {
       const { ctx, attacker } = create1v1Scenario();
       mode.init(ctx);
       attacker.isAlive = false;
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'attacker') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -452,7 +453,7 @@ describe('TurnBasedMode', () => {
     it('checkWin — 所有防守方死亡时返回 true', () => {
       const { ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -468,7 +469,7 @@ describe('TurnBasedMode', () => {
     it('checkLose — 所有攻击方死亡时返回 true', () => {
       const { ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'attacker') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -593,7 +594,7 @@ describe('TurnBasedMode', () => {
     it('胜利时应返回 won=true', () => {
       const { ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -604,7 +605,7 @@ describe('TurnBasedMode', () => {
     it('失败时应返回 won=false', () => {
       const { ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'attacker') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -746,7 +747,7 @@ describe('TurnBasedMode', () => {
       // 标记当前行动单位死亡
       attacker.isAlive = false;
       attacker.stats.hp = 0;
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         const units = ctx.units.filter((u) => u.isAlive);
         if (side) return units.filter((u) => u.side === side);
         return units;

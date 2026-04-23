@@ -139,6 +139,7 @@ export default function CivChinaPixiGame({
     <div
       ref={containerRef}
       className={className}
+      data-testid="civ-china-pixi-game"
       style={{
         width: '100%',
         height: '100%',

@@ -20,20 +20,20 @@ import { TouchInputSystem } from '../TouchInputSystem';
 
 // ── 辅助：模拟时间流逝 ──
 function advanceTime(ms: number): void {
-  jest.advanceTimersByTime(ms);
+  vi.advanceTimersByTime(ms);
 }
 
 describe('TouchInputSystem', () => {
   let system: TouchInputSystem;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     system = new TouchInputSystem();
   });
 
   afterEach(() => {
     system.clearAllListeners();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   // ═══════════════════════════════════════════

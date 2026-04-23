@@ -45,20 +45,20 @@ export default function AchievementPanel({ engine, visible = true, onClose }: Ac
 
   return (
     <SharedPanel visible={visible} title="成就" icon="🏆" onClose={onClose} width="520px">
-    <div style={s.wrap}>
-      {message && <div style={s.toast}>{message}</div>}
+    <div style={s.wrap} data-testid="achievement-panel">
+      {message && <div style={s.toast} data-testid="achievement-panel-toast">{message}</div>}
       {/* 总览 */}
-      <div style={s.summary}>
+      <div style={s.summary} data-testid="achievement-panel-summary">
         <span style={{ fontSize: 14, fontWeight: 600, color: '#d4a574' }}>🏆 成就积分</span>
         <span style={{ fontSize: 22, fontWeight: 700 }}>{totalPts}</span>
         {claimable.length > 0 && <span style={s.badge}>{claimable.length}个可领</span>}
       </div>
       {/* 维度Tab */}
-      <div style={s.tabs}>
+      <div style={s.tabs} data-testid="achievement-panel-tabs">
         {DIMS.map(t => {
           const st = dimStats[t.id];
           return (
-            <button key={t.id} style={{ ...s.tab, ...(tab === t.id ? s.tabOn : {}) }} onClick={() => setTab(t.id)}>
+            <button key={t.id} style={{ ...s.tab, ...(tab === t.id ? s.tabOn : {}) }} onClick={() => setTab(t.id)} data-testid={`achievement-panel-tab-${t.id}`}>
               {t.icon} {t.label}
               {st && <span style={{ fontSize: 9, color: '#666', marginLeft: 2 }}>{st.completedCount}/{st.totalCount}</span>}
             </button>
@@ -76,7 +76,7 @@ export default function AchievementPanel({ engine, visible = true, onClose }: Ac
           ? conds.reduce((sum: number, c: any) => sum + Math.min(1, (inst?.progress?.[c.type] ?? 0) / c.targetValue), 0) / conds.length
           : 0;
         return (
-          <div key={a.id} style={{ ...s.card, opacity: isLocked ? 0.4 : 1 }}>
+          <div key={a.id} style={{ ...s.card, opacity: isLocked ? 0.4 : 1 }} data-testid={`achievement-panel-item-${a.id}`}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</span>
               <span style={{ fontSize: 11, color: isClaimed ? '#666' : isCompleted ? '#d4a574' : !isLocked ? '#7EC850' : '#888' }}>
@@ -86,7 +86,7 @@ export default function AchievementPanel({ engine, visible = true, onClose }: Ac
             <div style={{ fontSize: 12, color: '#888', marginTop: 3, marginBottom: 6 }}>{a.description}</div>
             {!isLocked && <div style={s.barBg}><div style={{ ...s.barFill, width: `${pct * 100}%` }} /></div>}
             <div style={{ fontSize: 11, color: '#d4a574', marginTop: 4 }}>积分: {a.rewards?.achievementPoints ?? 0}</div>
-            {isCompleted && !isClaimed && <button style={s.btn} onClick={() => handleClaim(a.id)}>领取奖励</button>}
+            {isCompleted && !isClaimed && <button style={s.btn} data-testid={`achievement-panel-claim-${a.id}`} onClick={() => handleClaim(a.id)}>领取奖励</button>}
           </div>
         );
       })}

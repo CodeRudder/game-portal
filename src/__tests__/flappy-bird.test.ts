@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { FlappyBirdEngine } from '@/games/flappy-bird/FlappyBirdEngine';
 import {
   CANVAS_WIDTH,
@@ -562,7 +563,7 @@ describe('FlappyBirdEngine', () => {
 
     it('start 触发 statusChange 事件为 playing', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.start();
       expect(cb).toHaveBeenCalledWith('playing');
@@ -570,7 +571,7 @@ describe('FlappyBirdEngine', () => {
 
     it('gameover 触发 statusChange 事件', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
 
       // 撞地面

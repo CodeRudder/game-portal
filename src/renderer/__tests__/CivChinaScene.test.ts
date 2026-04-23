@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 华夏文明渲染策略和场景测试
  *
@@ -12,18 +13,18 @@
 
 // ─── Mock PixiJS ──────────────────────────────────────────
 
-jest.mock('pixi.js', () => {
+vi.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0; y = 0; visible = true;
-    scale = { set: jest.fn(), x: 1, y: 1 };
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    scale = { set: vi.fn(), x: 1, y: 1 };
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
     children: any[] = [];
     parent: any = null;
-    emit = jest.fn();
-    on = jest.fn().mockReturnThis();
-    off = jest.fn();
-    once = jest.fn();
+    emit = vi.fn();
+    on = vi.fn().mockReturnThis();
+    off = vi.fn();
+    once = vi.fn();
     eventMode: string = 'passive';
     cursor: string = 'default';
 
@@ -37,8 +38,8 @@ jest.mock('pixi.js', () => {
 
   class MockGraphics {
     label = ''; x = 0; y = 0; visible = true; parent: any = null;
-    position = { set: jest.fn() };
-    emit = jest.fn(); on = jest.fn(); off = jest.fn();
+    position = { set: vi.fn() };
+    emit = vi.fn(); on = vi.fn(); off = vi.fn();
     clear() { return this; }
     circle(_x: number, _y: number, _r: number) { return this; }
     rect(_x: number, _y: number, _w: number, _h: number) { return this; }
@@ -56,10 +57,10 @@ jest.mock('pixi.js', () => {
 
   class MockText {
     label = ''; text: string;
-    anchor = { set: jest.fn(), x: 0, y: 0 };
+    anchor = { set: vi.fn(), x: 0, y: 0 };
     x = 0; y = 0; width = 50; height = 14; visible = true; parent: any = null;
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
-    emit = jest.fn(); on = jest.fn(); off = jest.fn();
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    emit = vi.fn(); on = vi.fn(); off = vi.fn();
     constructor(opts?: any) { this.text = opts?.text ?? ''; }
     destroy() {}
   }
@@ -182,7 +183,7 @@ describe('CivChinaScene', () => {
     });
 
     it('destroy should clear listeners', async () => {
-      scene.on('upgradeClick', jest.fn());
+      scene.on('upgradeClick', vi.fn());
       scene.destroy();
       expect((scene as any).listeners.size).toBe(0);
     });
@@ -277,28 +278,28 @@ describe('CivChinaScene', () => {
 
   describe('events', () => {
     it('should register event listeners', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       scene.on('upgradeClick', cb);
       expect((scene as any).listeners.has('upgradeClick')).toBe(true);
     });
 
     it('should unregister event listeners', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       scene.on('upgradeClick', cb);
       scene.off('upgradeClick', cb);
       expect((scene as any).listeners.get('upgradeClick')?.size).toBe(0);
     });
 
     it('should call listeners on emit', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       scene.on('upgradeClick', cb);
       (scene as any).emit('upgradeClick', 'upgrade-1');
       expect(cb).toHaveBeenCalledWith('upgrade-1');
     });
 
     it('should support multiple listeners', () => {
-      const cb1 = jest.fn();
-      const cb2 = jest.fn();
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
       scene.on('upgradeClick', cb1);
       scene.on('upgradeClick', cb2);
       (scene as any).emit('upgradeClick', 'id');
@@ -311,7 +312,7 @@ describe('CivChinaScene', () => {
     });
 
     it('should catch errors in listeners', () => {
-      const badCb = jest.fn(() => { throw new Error('test'); });
+      const badCb = vi.fn(() => { throw new Error('test'); });
       scene.on('upgradeClick', badCb);
       expect(() => (scene as any).emit('upgradeClick', 'id')).not.toThrow();
     });

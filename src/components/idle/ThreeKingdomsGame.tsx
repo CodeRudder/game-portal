@@ -436,7 +436,7 @@ const ThreeKingdomsGame: React.FC = () => {
 
   return (
     <GameErrorBoundary>
-    <div className="tk-game-root">
+    <div data-testid="tk-three-kingdoms-game" className="tk-game-root">
       <div className="tk-game-frame">
         {/* A区：资源栏 */}
         <ResourceBar

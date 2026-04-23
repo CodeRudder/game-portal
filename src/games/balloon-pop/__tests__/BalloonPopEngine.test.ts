@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * BalloonPopEngine 综合测试
  * 覆盖：初始化、气球生成/移动、准星控制、射击命中检测、不同气球类型得分、
@@ -250,7 +251,7 @@ describe('BalloonPopEngine - 气球生成', () => {
   });
 
   it('生成气球应触发 balloonSpawned 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('balloonSpawned', handler);
     setPrivate(engine, '_spawnTimer', 0);
     callUpdate(engine, 16);
@@ -258,7 +259,7 @@ describe('BalloonPopEngine - 气球生成', () => {
   });
 
   it('balloonSpawned 事件应包含气球数据', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('balloonSpawned', handler);
     setPrivate(engine, '_spawnTimer', 0);
     callUpdate(engine, 16);
@@ -391,7 +392,7 @@ describe('BalloonPopEngine - 气球移动', () => {
   });
 
   it('气球飘出顶部应触发 balloonEscaped 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('balloonEscaped', handler);
     addBalloon(engine, { y: -BALLOON_RADIUS_NORMAL - 1 });
     callUpdate(engine, 16);
@@ -647,7 +648,7 @@ describe('BalloonPopEngine - 射击命中检测', () => {
   });
 
   it('未命中应触发 miss 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('miss', handler);
     setPrivate(engine, '_crosshairX', 0);
     setPrivate(engine, '_crosshairY', 0);
@@ -711,7 +712,7 @@ describe('BalloonPopEngine - 不同气球类型得分', () => {
   });
 
   it('命中炸弹应触发 hitBomb 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('hitBomb', handler);
     addBalloon(engine, { x: 200, y: 300, radius: BALLOON_RADIUS_BOMB, type: BalloonType.BOMB });
     setPrivate(engine, '_crosshairX', 200);
@@ -723,7 +724,7 @@ describe('BalloonPopEngine - 不同气球类型得分', () => {
   });
 
   it('命中普通气球应触发 hitBalloon 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('hitBalloon', handler);
     addBalloon(engine, { x: 200, y: 300, radius: 25, type: BalloonType.NORMAL });
     setPrivate(engine, '_crosshairX', 200);
@@ -941,7 +942,7 @@ describe('BalloonPopEngine - 时间限制', () => {
   });
 
   it('时间耗尽应触发 statusChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     setPrivate(engine, '_gameTimer', 100);
     callUpdate(engine, 200);
@@ -1268,7 +1269,7 @@ describe('BalloonPopEngine - 事件系统', () => {
   });
 
   it('start 应触发 statusChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     const engine2 = new BalloonPopEngine();
     const canvas = createMockCanvas();
     engine2.init(canvas);
@@ -1278,7 +1279,7 @@ describe('BalloonPopEngine - 事件系统', () => {
   });
 
   it('start 应触发 scoreChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     const engine2 = new BalloonPopEngine();
     const canvas = createMockCanvas();
     engine2.init(canvas);
@@ -1288,7 +1289,7 @@ describe('BalloonPopEngine - 事件系统', () => {
   });
 
   it('start 应触发 levelChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     const engine2 = new BalloonPopEngine();
     const canvas = createMockCanvas();
     engine2.init(canvas);
@@ -1298,7 +1299,7 @@ describe('BalloonPopEngine - 事件系统', () => {
   });
 
   it('得分变化应触发 scoreChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     addBalloon(engine, { x: 200, y: 300, radius: 25, type: BalloonType.NORMAL });
     setPrivate(engine, '_crosshairX', 200);
@@ -1308,7 +1309,7 @@ describe('BalloonPopEngine - 事件系统', () => {
   });
 
   it('升级应触发 levelUp 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('levelUp', handler);
     setPrivate(engine, '_score', LEVEL_UP_SCORE);
     callUpdate(engine, 16);
@@ -1316,7 +1317,7 @@ describe('BalloonPopEngine - 事件系统', () => {
   });
 
   it('off 应取消事件监听', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     engine.off('scoreChange', handler);
     addBalloon(engine, { x: 200, y: 300, radius: 25, type: BalloonType.NORMAL });
@@ -1327,7 +1328,7 @@ describe('BalloonPopEngine - 事件系统', () => {
   });
 
   it('destroy 应清除所有事件监听', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     engine.destroy();
     // After destroy, events should not fire
@@ -1337,14 +1338,14 @@ describe('BalloonPopEngine - 事件系统', () => {
   });
 
   it('reset 应触发 statusChange 为 idle', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.reset();
     expect(handler).toHaveBeenCalledWith('idle');
   });
 
   it('gameOver 应触发 statusChange 为 gameover', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     setPrivate(engine, '_gameTimer', 100);
     callUpdate(engine, 200);
@@ -1352,7 +1353,7 @@ describe('BalloonPopEngine - 事件系统', () => {
   });
 
   it('hitBalloon 事件应包含完整信息', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('hitBalloon', handler);
     addBalloon(engine, { x: 200, y: 300, radius: 25, type: BalloonType.NORMAL });
     setPrivate(engine, '_crosshairX', 200);
@@ -1399,7 +1400,7 @@ describe('BalloonPopEngine - 等级系统', () => {
   });
 
   it('升级应触发 levelChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('levelChange', handler);
     setPrivate(engine, '_score', LEVEL_UP_SCORE);
     callUpdate(engine, 16);
@@ -1407,7 +1408,7 @@ describe('BalloonPopEngine - 等级系统', () => {
   });
 
   it('升级应触发 levelUp 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('levelUp', handler);
     setPrivate(engine, '_score', LEVEL_UP_SCORE);
     callUpdate(engine, 16);

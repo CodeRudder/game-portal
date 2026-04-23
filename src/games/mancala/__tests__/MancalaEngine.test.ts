@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   PITS_PER_SIDE, INITIAL_SEEDS, TOTAL_PITS,
   PLAYER_STORE, AI_STORE,
@@ -20,21 +21,21 @@ function createAndStartEngine(): MancalaEngine {
   const mockCanvas = {
     width: 480,
     height: 640,
-    getContext: jest.fn().mockReturnValue({
-      fillRect: jest.fn(),
-      fillText: jest.fn(),
-      strokeText: jest.fn(),
-      clearRect: jest.fn(),
-      beginPath: jest.fn(),
-      arc: jest.fn(),
-      fill: jest.fn(),
-      stroke: jest.fn(),
-      moveTo: jest.fn(),
-      lineTo: jest.fn(),
-      arcTo: jest.fn(),
-      closePath: jest.fn(),
-      setLineDash: jest.fn(),
-      measureText: jest.fn().mockReturnValue({ width: 0 }),
+    getContext: vi.fn().mockReturnValue({
+      fillRect: vi.fn(),
+      fillText: vi.fn(),
+      strokeText: vi.fn(),
+      clearRect: vi.fn(),
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      arcTo: vi.fn(),
+      closePath: vi.fn(),
+      setLineDash: vi.fn(),
+      measureText: vi.fn().mockReturnValue({ width: 0 }),
     }),
   } as any;
   engine.init(mockCanvas);
@@ -249,14 +250,14 @@ describe('MancalaEngine', () => {
       const e = createEngine();
       const mockCanvas = {
         width: 480, height: 640,
-        getContext: jest.fn().mockReturnValue({
-          fillRect: jest.fn(), clearRect: jest.fn(),
-          fillText: jest.fn(), strokeText: jest.fn(),
-          beginPath: jest.fn(), arc: jest.fn(), fill: jest.fn(),
-          stroke: jest.fn(), moveTo: jest.fn(), lineTo: jest.fn(),
-          arcTo: jest.fn(), closePath: jest.fn(),
-          setLineDash: jest.fn(),
-          measureText: jest.fn().mockReturnValue({ width: 0 }),
+        getContext: vi.fn().mockReturnValue({
+          fillRect: vi.fn(), clearRect: vi.fn(),
+          fillText: vi.fn(), strokeText: vi.fn(),
+          beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn(),
+          stroke: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(),
+          arcTo: vi.fn(), closePath: vi.fn(),
+          setLineDash: vi.fn(),
+          measureText: vi.fn().mockReturnValue({ width: 0 }),
         }),
       } as any;
       e.init(mockCanvas);
@@ -619,14 +620,14 @@ describe('MancalaEngine', () => {
 
   describe('事件系统', () => {
     it('应触发 statusChange 事件', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       engine.on('statusChange', callback);
       engine.reset();
       expect(callback).toHaveBeenCalledWith('idle');
     });
 
     it('额外回合应触发 extraTurn 事件', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       engine.on('extraTurn', callback);
       // 坑 2 有 4 颗 → 落在仓库
       simulateCompleteMove(engine, 2);
@@ -634,7 +635,7 @@ describe('MancalaEngine', () => {
     });
 
     it('吃子应触发 capture 事件', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       engine.on('capture', callback);
       setBoard(engine, [1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0]);
       simulateCompleteMove(engine, 0);
@@ -643,7 +644,7 @@ describe('MancalaEngine', () => {
     });
 
     it('吃子事件应携带正确信息', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       engine.on('capture', callback);
       // 坑 0 有 1 颗 → 坑 1（空），对面坑 11 有 5 颗
       setBoard(engine, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0]);
@@ -659,7 +660,7 @@ describe('MancalaEngine', () => {
     });
 
     it('游戏结束应触发 gameResult 事件', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       engine.on('gameResult', callback);
       setBoard(engine, [0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 10]);
       forceSetPlayer(engine, 'player');
@@ -706,7 +707,7 @@ describe('MancalaEngine', () => {
     });
 
     it('destroy 应清理所有事件', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       engine.on('statusChange', callback);
       engine.destroy();
       engine.emit('statusChange', 'test');

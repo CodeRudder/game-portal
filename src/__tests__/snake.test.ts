@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { SnakeEngine } from '@/games/snake/SnakeEngine';
 
 // ========== 辅助函数 ==========
@@ -372,7 +373,7 @@ describe('SnakeEngine', () => {
 
     it('destroy 清除所有事件监听', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.destroy();
       // destroy 后事件应被清除，不会触发
@@ -381,7 +382,7 @@ describe('SnakeEngine', () => {
 
     it('start 触发 statusChange 事件为 playing', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.start();
       expect(cb).toHaveBeenCalledWith('playing');

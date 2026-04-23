@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * BattleSystem 单元测试
  *
@@ -185,7 +186,7 @@ describe('BattleSystem', () => {
     });
 
     it('应触发 wave_started 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       system.startWave('wave-1');
       expect(handler).toHaveBeenCalledWith(
@@ -245,7 +246,7 @@ describe('BattleSystem', () => {
     });
 
     it('应触发 enemy_killed 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       const enemy = system.getCurrentState().aliveEnemies[0];
       system.attack(enemy.instanceId, 50);
@@ -257,7 +258,7 @@ describe('BattleSystem', () => {
     it('击杀 Boss 应触发 boss_defeated 事件', () => {
       system = new BattleSystem([createBossWaveDef()]);
       system.startWave('boss-wave');
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       const boss = system.getCurrentState().aliveEnemies[0];
       system.attack(boss.instanceId, 200);
@@ -274,7 +275,7 @@ describe('BattleSystem', () => {
         }),
       ]);
       system.startWave('wave-1');
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       const enemy = system.getCurrentState().aliveEnemies[0];
       system.attack(enemy.instanceId, 100);
@@ -331,7 +332,7 @@ describe('BattleSystem', () => {
     });
 
     it('应触发 player_damaged 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       system.enemyAttack('goblin', 0);
       expect(handler).toHaveBeenCalledWith(
@@ -495,7 +496,7 @@ describe('BattleSystem', () => {
       const enemy = system.getCurrentState().aliveEnemies[0];
       system.attack(enemy.instanceId, 100);
 
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       system.settleWave();
       expect(handler).toHaveBeenCalledWith(
@@ -507,7 +508,7 @@ describe('BattleSystem', () => {
       system = new BattleSystem([createWaveDef()]);
       system.startWave('wave-1');
 
-      const handler = jest.fn();
+      const handler = vi.fn();
       system.onEvent(handler);
       system.settleWave();
       expect(handler).toHaveBeenCalledWith(
@@ -663,13 +664,13 @@ describe('BattleSystem', () => {
 
   describe('onEvent', () => {
     it('应返回取消监听函数', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       const unsub = system.onEvent(handler);
       expect(typeof unsub).toBe('function');
     });
 
     it('取消监听后不应再收到事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       const unsub = system.onEvent(handler);
       unsub();
 
@@ -682,8 +683,8 @@ describe('BattleSystem', () => {
 
     it('应支持多个监听器', () => {
       system = new BattleSystem([createWaveDef()]);
-      const handler1 = jest.fn();
-      const handler2 = jest.fn();
+      const handler1 = vi.fn();
+      const handler2 = vi.fn();
       system.onEvent(handler1);
       system.onEvent(handler2);
       system.startWave('wave-1');

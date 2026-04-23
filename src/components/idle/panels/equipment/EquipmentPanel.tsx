@@ -102,7 +102,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
   }, [eqSystem, flash]);
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} data-testid="equipment-panel">
       {/* 顶部信息栏 */}
       <div style={styles.header}>
         <span style={styles.title}>🎒 装备背包</span>
@@ -110,7 +110,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
       </div>
 
       {/* 消息提示 */}
-      {toast && <div style={styles.toast}>{toast}</div>}
+      {toast && <div style={styles.toast} data-testid="equipment-panel-toast">{toast}</div>}
 
       {/* 筛选栏 */}
       <div style={styles.filterBar}>
@@ -148,6 +148,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
               borderColor: selectedUid === eq.uid ? '#d4a574' : RARITY_COLORS[eq.rarity] + '40',
             }}
             onClick={() => setSelectedUid(eq.uid)}
+            data-testid={`equipment-panel-item-${eq.uid}`}
           >
             <div style={{ ...styles.rarityBar, backgroundColor: RARITY_COLORS[eq.rarity] }} />
             <div style={styles.cardHeader}>
@@ -178,8 +179,8 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
 
       {/* 装备详情弹窗 */}
       {selectedEquip && (
-        <div style={styles.detailOverlay} onClick={() => setSelectedUid(null)}>
-          <div style={styles.detailPanel} onClick={e => e.stopPropagation()}>
+        <div style={styles.detailOverlay} onClick={() => setSelectedUid(null)} data-testid="equipment-panel-detail-overlay">
+          <div style={styles.detailPanel} onClick={e => e.stopPropagation()} data-testid="equipment-panel-detail">
             <div style={{ ...styles.detailTitle, color: RARITY_COLORS[selectedEquip.rarity] }}>
               {selectedEquip.name}
             </div>
@@ -208,6 +209,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
               {/* 强化按钮 — 调用 EquipmentEnhanceSystem */}
               <button
                 style={styles.enhanceBtn}
+                data-testid="equipment-panel-enhance"
                 onClick={() => {
                   try {
                     const enhanceSys = engine?.getEquipmentEnhanceSystem?.() ?? engine?.equipmentEnhance;
@@ -237,6 +239,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
               {!selectedEquip.isEquipped && (
                 <button
                   style={styles.forgeBtn}
+                  data-testid="equipment-panel-forge"
                   onClick={() => {
                   try {
                     const forgeSys = engine?.getEquipmentForgeSystem?.() ?? engine?.equipmentForge;
@@ -257,11 +260,11 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
                 >🔥 锻造</button>
               )}
               {!selectedEquip.isEquipped && (
-                <button style={styles.decomposeBtn} onClick={() => handleDecompose(selectedEquip.uid)}>
+                <button style={styles.decomposeBtn} data-testid="equipment-panel-decompose" onClick={() => handleDecompose(selectedEquip.uid)}>
                   分解
                 </button>
               )}
-              <button style={styles.closeBtn} onClick={() => setSelectedUid(null)}>关闭</button>
+              <button style={styles.closeBtn} data-testid="equipment-panel-close" onClick={() => setSelectedUid(null)}>关闭</button>
             </div>
           </div>
         </div>

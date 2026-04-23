@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * CanvasUIRenderer — Canvas UI 渲染工具类 单元测试
  *
@@ -39,7 +40,7 @@ function createMockCtx() {
   }
 
   const gradientMock = {
-    addColorStop: jest.fn(),
+    addColorStop: vi.fn(),
   };
 
   const ctx = {

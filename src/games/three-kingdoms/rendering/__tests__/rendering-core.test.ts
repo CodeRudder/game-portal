@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 渲染层核心逻辑测试
  *
@@ -14,17 +15,17 @@ import { RenderStateBridge } from '../adapters/RenderStateBridge';
 
 function createMockRenderer(overrides: Partial<{ visible: boolean }> = {}): {
   renderer: {
-    init: jest.Mock;
-    update: jest.Mock;
-    destroy: jest.Mock;
+    init: vi.Mock;
+    update: vi.Mock;
+    destroy: vi.Mock;
     visible: boolean;
   };
 } {
   return {
     renderer: {
-      init: jest.fn(),
-      update: jest.fn(),
-      destroy: jest.fn(),
+      init: vi.fn(),
+      update: vi.fn(),
+      destroy: vi.fn(),
       visible: overrides.visible ?? true,
     },
   };
@@ -36,14 +37,14 @@ function createMockAdapter() {
   let currentState: any = { timestamp: 0 };
 
   return {
-    subscribe: jest.fn((cb: (state: any) => void) => {
+    subscribe: vi.fn((cb: (state: any) => void) => {
       listeners.push(cb);
       return () => {
         const idx = listeners.indexOf(cb);
         if (idx >= 0) listeners.splice(idx, 1);
       };
     }),
-    getRenderState: jest.fn(() => currentState),
+    getRenderState: vi.fn(() => currentState),
     setState: (state: any) => {
       currentState = state;
       listeners.forEach((cb) => cb(state));
@@ -98,9 +99,9 @@ describe('RenderLoop', () => {
     const { renderer: r2 } = createMockRenderer();
     const { renderer: r3 } = createMockRenderer();
 
-    r1.update = jest.fn(() => order.push('r1'));
-    r2.update = jest.fn(() => order.push('r2'));
-    r3.update = jest.fn(() => order.push('r3'));
+    r1.update = vi.fn(() => order.push('r1'));
+    r2.update = vi.fn(() => order.push('r2'));
+    r3.update = vi.fn(() => order.push('r3'));
 
     // 注册顺序与优先级顺序不同
     loop.register({ name: 'r1', renderer: r1, priority: 10 });
@@ -143,12 +144,12 @@ describe('RenderLoop', () => {
   it('单个渲染器异常不影响其他渲染器', () => {
     const { renderer: good } = createMockRenderer();
     const { renderer: bad } = createMockRenderer();
-    bad.update = jest.fn(() => { throw new Error('渲染错误'); });
+    bad.update = vi.fn(() => { throw new Error('渲染错误'); });
 
     loop.register({ name: 'bad', renderer: bad, priority: 0 });
     loop.register({ name: 'good', renderer: good, priority: 1 });
 
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     loop.update(0.016);
     warnSpy.mockRestore();
 
@@ -185,13 +186,13 @@ describe('RenderStateBridge', () => {
   });
 
   it('注册渲染器后 size 增加', () => {
-    const cb = jest.fn();
+    const cb = vi.fn();
     bridge.register('map', cb);
     expect(bridge.size).toBe(1);
   });
 
   it('注销渲染器后 size 减少', () => {
-    const cb = jest.fn();
+    const cb = vi.fn();
     bridge.register('map', cb);
     bridge.unregister('map');
     expect(bridge.size).toBe(0);
@@ -216,8 +217,8 @@ describe('RenderStateBridge', () => {
   });
 
   it('状态变更时分发到所有已注册渲染器', () => {
-    const cb1 = jest.fn();
-    const cb2 = jest.fn();
+    const cb1 = vi.fn();
+    const cb2 = vi.fn();
     bridge.register('map', cb1);
     bridge.register('battle', cb2);
     bridge.start();
@@ -230,27 +231,27 @@ describe('RenderStateBridge', () => {
   });
 
   it('未启动时状态变更不分发', () => {
-    const cb = jest.fn();
+    const cb = vi.fn();
     bridge.register('map', cb);
     adapter.setState({ timestamp: 1000 });
     expect(cb).not.toHaveBeenCalled();
   });
 
   it('flush 手动触发一次状态分发', () => {
-    const cb = jest.fn();
+    const cb = vi.fn();
     bridge.register('map', cb);
     bridge.flush();
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
   it('单个渲染器回调异常不影响其他', () => {
-    const badCb = jest.fn(() => { throw new Error('回调错误'); });
-    const goodCb = jest.fn();
+    const badCb = vi.fn(() => { throw new Error('回调错误'); });
+    const goodCb = vi.fn();
     bridge.register('bad', badCb);
     bridge.register('good', goodCb);
     bridge.start();
 
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     adapter.setState({ timestamp: 1000 });
     warnSpy.mockRestore();
 
@@ -259,7 +260,7 @@ describe('RenderStateBridge', () => {
   });
 
   it('destroy 清空所有注册并停止监听', () => {
-    const cb = jest.fn();
+    const cb = vi.fn();
     bridge.register('map', cb);
     bridge.start();
     bridge.destroy();

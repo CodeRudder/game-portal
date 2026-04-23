@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * SiegeSystem 测试
  *
@@ -26,22 +27,22 @@ function createMockDeps(withTerritory = true): ISystemDeps {
   const territorySys = new TerritorySystem();
   const deps: ISystemDeps = {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
     registry: {
-      register: jest.fn(),
-      get: jest.fn().mockImplementation((name: string) => {
+      register: vi.fn(),
+      get: vi.fn().mockImplementation((name: string) => {
         if (name === 'territory' && withTerritory) return territorySys;
         throw new Error(`Subsystem ${name} not found`);
       }),
-      getAll: jest.fn().mockReturnValue(new Map()),
-      has: jest.fn().mockImplementation((name: string) => name === 'territory'),
-      unregister: jest.fn(),
+      getAll: vi.fn().mockReturnValue(new Map()),
+      has: vi.fn().mockImplementation((name: string) => name === 'territory'),
+      unregister: vi.fn(),
     } as unknown as ISubsystemRegistry,
   };
 
@@ -58,22 +59,22 @@ function createSystems(): { siege: SiegeSystem; territory: TerritorySystem; deps
 
   const deps: ISystemDeps = {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
     registry: {
-      register: jest.fn(),
-      get: jest.fn().mockImplementation((name: string) => {
+      register: vi.fn(),
+      get: vi.fn().mockImplementation((name: string) => {
         if (name === 'territory') return territory;
         throw new Error(`Subsystem ${name} not found`);
       }),
-      getAll: jest.fn().mockReturnValue(new Map()),
-      has: jest.fn().mockImplementation((name: string) => name === 'territory'),
-      unregister: jest.fn(),
+      getAll: vi.fn().mockReturnValue(new Map()),
+      has: vi.fn().mockImplementation((name: string) => name === 'territory'),
+      unregister: vi.fn(),
     } as unknown as ISubsystemRegistry,
   };
 
@@ -211,7 +212,7 @@ describe('SiegeSystem — #20 占领规则', () => {
 
   it('攻城胜利事件触发', () => {
     const { siege: s, territory: t, deps } = createSystems();
-    const emitSpy = jest.spyOn(deps.eventBus, 'emit');
+    const emitSpy = vi.spyOn(deps.eventBus, 'emit');
     t.captureTerritory('city-luoyang', 'player');
 
     s.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
@@ -223,7 +224,7 @@ describe('SiegeSystem — #20 占领规则', () => {
 
   it('攻城失败事件触发', () => {
     const { siege: s, territory: t, deps } = createSystems();
-    const emitSpy = jest.spyOn(deps.eventBus, 'emit');
+    const emitSpy = vi.spyOn(deps.eventBus, 'emit');
     t.captureTerritory('city-luoyang', 'player');
 
     s.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);

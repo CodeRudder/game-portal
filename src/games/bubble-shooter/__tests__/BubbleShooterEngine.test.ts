@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 
 /**
  * BubbleShooterEngine 全面测试
@@ -884,7 +885,7 @@ describe('消除计分详细', () => {
   });
 
   it('scoreChange 事件在消除时触发', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     engine.addBubbleToGrid(0, 0, 1);
     engine.addBubbleToGrid(0, 1, 1);
@@ -1217,7 +1218,7 @@ describe('getState 详细', () => {
 describe('事件系统详细', () => {
   it('destroy 后 emit 不触发', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('test', handler);
     engine.destroy();
     engine.emit('test');
@@ -1226,7 +1227,7 @@ describe('事件系统详细', () => {
 
   it('off 未注册的事件不崩溃', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     expect(() => engine.off('test', handler)).not.toThrow();
   });
 
@@ -1237,7 +1238,7 @@ describe('事件系统详细', () => {
 
   it('同一事件多个监听器都收到', () => {
     const engine = createEngine();
-    const handlers = [jest.fn(), jest.fn(), jest.fn()];
+    const handlers = [vi.fn(), vi.fn(), vi.fn()];
     handlers.forEach(h => engine.on('test', h));
     engine.emit('test', 'data');
     handlers.forEach(h => expect(h).toHaveBeenCalledWith('data'));
@@ -1245,8 +1246,8 @@ describe('事件系统详细', () => {
 
   it('off 只移除指定监听器', () => {
     const engine = createEngine();
-    const h1 = jest.fn();
-    const h2 = jest.fn();
+    const h1 = vi.fn();
+    const h2 = vi.fn();
     engine.on('test', h1);
     engine.on('test', h2);
     engine.off('test', h1);
@@ -1257,7 +1258,7 @@ describe('事件系统详细', () => {
 
   it('scoreChange 在 addScore 时触发', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     engine.addScore(100);
     expect(handler).toHaveBeenCalledWith(100);
@@ -1265,7 +1266,7 @@ describe('事件系统详细', () => {
 
   it('levelChange 在 setLevel 时触发', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('levelChange', handler);
     const proto = Object.getPrototypeOf(Object.getPrototypeOf(engine));
     proto.setLevel.call(engine, 3);

@@ -83,6 +83,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ general, engine, onClick }) => {
       role="button"
       tabIndex={0}
       aria-label={`${general.name} Lv.${general.level} 战力${power}`}
+      data-testid={`hero-card-${general.id}`}
     >
       {/* 品质标签 — 左上角 */}
       <span className="tk-hero-card-quality" style={{ background: borderColor }}>

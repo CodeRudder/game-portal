@@ -114,7 +114,7 @@ const BattleLog: React.FC<BattleLogProps> = React.memo(({ logs, logAreaRef }) =>
       <div className="tk-bs-log-content" ref={logAreaRef}>
         {logs.map((log) => (
           <div key={log.id} className={`tk-bs-log-entry tk-bs-log-entry--${log.type}`}>
-            {log.parts.map((part, i) => {
+            {(log.parts || []).map((part, i) => {
               if (part.type === 'actor') return <span key={i} className="tk-bs-log-actor">{part.text}</span>;
               if (part.type === 'skill') return <span key={i} className="tk-bs-log-skill">{part.text}</span>;
               if (part.type === 'damage') return <span key={i} className="tk-bs-log-damage">{part.text}</span>;

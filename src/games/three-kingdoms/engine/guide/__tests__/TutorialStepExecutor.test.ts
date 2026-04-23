@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * TutorialStepExecutor 单元测试
  * 覆盖：#10 加速机制、#11 不可跳过内容、#13 引导重玩
@@ -12,14 +13,14 @@ import { TutorialStateMachine } from '../TutorialStateMachine';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -42,7 +43,7 @@ describe('TutorialStepExecutor', () => {
   let deps: ISystemDeps;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     executor = new TutorialStepExecutor();
     sm = new TutorialStateMachine();
     deps = mockDeps();
@@ -53,7 +54,7 @@ describe('TutorialStepExecutor', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // ═══════════════════════════════════════════

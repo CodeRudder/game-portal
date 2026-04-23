@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 关卡集成流程 — 单元测试（第1部分：战斗流程 + 首通奖励 + 星级评定）
  *
@@ -126,7 +127,7 @@ describe('CampaignIntegration 完整战斗流程', () => {
     distributedExp = 0;
     const deps: RewardDistributorDeps = {
       addResource: (type, amount) => { distributedResources[type] = (distributedResources[type] ?? 0) + amount; return amount; },
-      addFragment: jest.fn(),
+      addFragment: vi.fn(),
       addExp: (exp) => { distributedExp += exp; },
     };
     reward = new RewardDistributor(campaignDataProvider, deps, () => 0.5);

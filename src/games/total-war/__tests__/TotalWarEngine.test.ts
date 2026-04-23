@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Total War（全面战争）放置类游戏 — 完整测试套件
  */
@@ -1127,7 +1128,7 @@ describe('TotalWarEngine', () => {
   describe('事件系统', () => {
     it('点击应触发 stateChange', () => {
       const eng = startEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       eng.on('stateChange', handler);
       eng.click();
       expect(handler).toHaveBeenCalled();
@@ -1136,7 +1137,7 @@ describe('TotalWarEngine', () => {
     it('购买建筑应触发 upgradePurchased', () => {
       const eng = startEngine();
       addGold(eng, 100);
-      const handler = jest.fn();
+      const handler = vi.fn();
       eng.on('upgradePurchased', handler);
       eng.purchaseBuilding(0);
       expect(handler).toHaveBeenCalledWith('gold_mine', 1);
@@ -1146,7 +1147,7 @@ describe('TotalWarEngine', () => {
       const eng = startEngine();
       setTroopState(eng, 'militia', { unlocked: true, count: 0 });
       addGold(eng, 100);
-      const handler = jest.fn();
+      const handler = vi.fn();
       eng.on('troopTrained', handler);
       eng.trainTroop('militia');
       expect(handler).toHaveBeenCalledWith('militia', 1);
@@ -1156,7 +1157,7 @@ describe('TotalWarEngine', () => {
       setTroopState(engine, 'militia', { unlocked: true, count: 1, upgradeLevel: 0 });
       addGold(engine, 200);
       addIron(engine, 100);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('troopUpgraded', handler);
       engine.upgradeTroop('militia');
       expect(handler).toHaveBeenCalledWith('militia', 1);
@@ -1165,7 +1166,7 @@ describe('TotalWarEngine', () => {
     it('征服领土应触发 territoryConquered', () => {
       const eng = startEngine();
       setTroopState(eng, 'militia', { unlocked: true, count: 5 });
-      const handler = jest.fn();
+      const handler = vi.fn();
       eng.on('territoryConquered', handler);
       eng.conquerTerritory('village');
       expect(handler).toHaveBeenCalledWith('village');
@@ -1173,7 +1174,7 @@ describe('TotalWarEngine', () => {
 
     it('声望应触发 prestige', () => {
       (engine as any)._stats.totalGoldEarned = MIN_PRESTIGE_GOLD * 4;
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('prestige', handler);
       engine.doPrestige();
       expect(handler).toHaveBeenCalled();

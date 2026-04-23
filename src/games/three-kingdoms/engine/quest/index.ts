@@ -5,6 +5,8 @@
  */
 
 export { QuestSystem } from './QuestSystem';
+export { QuestActivityManager, MAX_ACTIVITY_POINTS } from './QuestActivityManager';
+export { QuestDailyManager } from './QuestDailyManager';
 export { QuestTrackerSystem } from './QuestTrackerSystem';
 export type {
   QuestJumpTarget,

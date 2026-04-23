@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { BattleCityEngine, resetIdCounter } from '../BattleCityEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -736,7 +737,7 @@ describe('BattleCityEngine - 基地', () => {
   });
 
   it('基地被摧毁触发 baseDestroyed 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('baseDestroyed', callback);
     (engine as any)._player.x = BASE_X;
     (engine as any)._player.y = BASE_Y - TANK_SIZE;
@@ -947,7 +948,7 @@ describe('BattleCityEngine - 道具', () => {
   });
 
   it('拾取道具触发 powerUp 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('powerUp', callback);
     (engine as any)._powerUps = [{
       x: engine.playerX,
@@ -989,7 +990,7 @@ describe('BattleCityEngine - 生命与游戏结束', () => {
   });
 
   it('被击中后触发 loseLife 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('loseLife', callback);
     (engine as any)._bullets = [{
       x: engine.playerX + TANK_SIZE / 2,
@@ -1164,7 +1165,7 @@ describe('BattleCityEngine - 波次', () => {
   });
 
   it('新波次触发 waveChange 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('waveChange', callback);
     (engine as any)._enemiesRemaining = 0;
     tick(engine, 1);
@@ -1182,7 +1183,7 @@ describe('BattleCityEngine - 事件', () => {
   });
 
   it('start 触发 statusChange 事件', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1190,7 +1191,7 @@ describe('BattleCityEngine - 事件', () => {
 
   it('pause 触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.pause();
     expect(callback).toHaveBeenCalledWith('paused');
@@ -1199,7 +1200,7 @@ describe('BattleCityEngine - 事件', () => {
   it('resume 触发 statusChange 事件', () => {
     engine.start();
     engine.pause();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.resume();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1207,7 +1208,7 @@ describe('BattleCityEngine - 事件', () => {
 
   it('reset 触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.reset();
     expect(callback).toHaveBeenCalledWith('idle');
@@ -1215,7 +1216,7 @@ describe('BattleCityEngine - 事件', () => {
 
   it('game over 触发 statusChange 事件', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     (engine as any)._lives = 0;
     (engine as any)._player.alive = false;
@@ -1224,7 +1225,7 @@ describe('BattleCityEngine - 事件', () => {
   });
 
   it('off 可以取消事件监听', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();
@@ -1233,7 +1234,7 @@ describe('BattleCityEngine - 事件', () => {
 
   it('scoreChange 事件在分数变化时触发', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('scoreChange', callback);
     (engine as any).addScore(100);
     expect(callback).toHaveBeenCalledWith(100);
@@ -1241,7 +1242,7 @@ describe('BattleCityEngine - 事件', () => {
 
   it('levelChange 事件在等级变化时触发', () => {
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('levelChange', callback);
     (engine as any).setLevel(3);
     expect(callback).toHaveBeenCalledWith(3);

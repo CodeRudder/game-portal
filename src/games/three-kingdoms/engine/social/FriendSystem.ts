@@ -24,16 +24,16 @@ import {
   createDefaultSocialState,
   generateId,
 } from './friend-config';
-import { FriendInteractionSubsystem } from './FriendInteractionSubsystem';
-import { BorrowHeroSubsystem } from './BorrowHeroSubsystem';
+import { FriendInteractionHelper } from './FriendInteractionHelper';
+import { BorrowHeroHelper } from './BorrowHeroHelper';
 
 export class FriendSystem implements ISubsystem {
   readonly name = 'friend' as const;
   private deps!: ISystemDeps;
   private friendConfig: FriendConfig;
   private interactionConfig: InteractionConfig;
-  private readonly interactionSubsystem: FriendInteractionSubsystem;
-  private readonly borrowSubsystem: BorrowHeroSubsystem;
+  private readonly interactionHelper: FriendInteractionHelper;
+  private readonly borrowHelper: BorrowHeroHelper;
 
   constructor(
     friendConfig?: Partial<FriendConfig>,
@@ -41,8 +41,8 @@ export class FriendSystem implements ISubsystem {
   ) {
     this.friendConfig = { ...DEFAULT_FRIEND_CONFIG, ...friendConfig };
     this.interactionConfig = { ...DEFAULT_INTERACTION_CONFIG, ...interactionConfig };
-    this.interactionSubsystem = new FriendInteractionSubsystem(this.interactionConfig);
-    this.borrowSubsystem = new BorrowHeroSubsystem(this.interactionConfig);
+    this.interactionHelper = new FriendInteractionHelper(this.interactionConfig);
+    this.borrowHelper = new BorrowHeroHelper(this.interactionConfig);
   }
 
   // ─── ISubsystem 接口 ───────────────────────
@@ -187,39 +187,39 @@ export class FriendSystem implements ISubsystem {
   // ── 好友互动 ──────────────────────────────
 
   /**
-   * 赠送兵力（委托 FriendInteractionSubsystem）
+   * 赠送兵力（委托 FriendInteractionHelper）
    */
   giftTroops(state: SocialState, friendId: string, now: number): {
     state: SocialState;
     friendshipEarned: number;
   } {
-    const result = this.interactionSubsystem.giftTroops(state, friendId, now);
+    const result = this.interactionHelper.giftTroops(state, friendId, now);
     return { state: result.state, friendshipEarned: result.pointsEarned };
   }
 
   /**
-   * 拜访主城（委托 FriendInteractionSubsystem）
+   * 拜访主城（委托 FriendInteractionHelper）
    */
   visitCastle(state: SocialState, friendId: string, now: number): {
     state: SocialState;
     copperReward: number;
   } {
-    const result = this.interactionSubsystem.visitCastle(state, friendId, now);
+    const result = this.interactionHelper.visitCastle(state, friendId, now);
     return { state: result.state, copperReward: result.copperReward };
   }
 
   /**
-   * 切磋（委托 FriendInteractionSubsystem）
+   * 切磋（委托 FriendInteractionHelper）
    */
   spar(state: SocialState, friendId: string, won: boolean, now: number): {
     state: SocialState;
     friendshipEarned: number;
   } {
-    const result = this.interactionSubsystem.spar(state, friendId, won, now);
+    const result = this.interactionHelper.spar(state, friendId, won, now);
     return { state: result.state, friendshipEarned: result.pointsEarned };
   }
 
-  // ── 借将系统（委托 BorrowHeroSubsystem） ──
+  // ── 借将系统（委托 BorrowHeroHelper） ──
 
   /**
    * 借将
@@ -231,7 +231,7 @@ export class FriendSystem implements ISubsystem {
     borrowerPlayerId: string,
     now: number,
   ): { state: SocialState; powerRatio: number } {
-    return this.borrowSubsystem.borrowHero(
+    return this.borrowHelper.borrowHero(
       state, heroId, lenderPlayerId, borrowerPlayerId, now,
       (s: SocialState, pts: number) => this.calculateFriendshipEarned(s, pts),
     );
@@ -241,14 +241,14 @@ export class FriendSystem implements ISubsystem {
    * 归还借将
    */
   returnBorrowedHero(state: SocialState, borrowId: string): SocialState {
-    return this.borrowSubsystem.returnBorrowedHero(state, borrowId);
+    return this.borrowHelper.returnBorrowedHero(state, borrowId);
   }
 
   /**
    * 检查借将是否可用于PvP
    */
   isBorrowHeroAllowedInPvP(): boolean {
-    return this.borrowSubsystem.isBorrowHeroAllowedInPvP();
+    return this.borrowHelper.isBorrowHeroAllowedInPvP();
   }
 
   // ── 每日重置 ──────────────────────────────

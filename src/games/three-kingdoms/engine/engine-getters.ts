@@ -120,6 +120,12 @@ export function applyGetters(cls: any): void {
   p.addToFormation = function(this: EngineAny, formationId: string, generalId: string): FormationData | null { return this.heroFormation.addToFormation(formationId, generalId); };
   p.removeFromFormation = function(this: EngineAny, formationId: string, generalId: string): FormationData | null { return this.heroFormation.removeFromFormation(formationId, generalId); };
   p.recruit = function(this: EngineAny, type: RecruitType, count: 1 | 10 = 1): RecruitOutput | null { return count === 10 ? this.heroRecruit.recruitTen(type) : this.heroRecruit.recruitSingle(type); };
+  p.freeRecruit = function(this: EngineAny, type: RecruitType): RecruitOutput | null { return this.heroRecruit.freeRecruitSingle(type); };
+  p.canFreeRecruit = function(this: EngineAny, type: RecruitType): boolean { return this.heroRecruit.canFreeRecruit(type); };
+  p.getRemainingFreeCount = function(this: EngineAny, type: RecruitType): number { return this.heroRecruit.getRemainingFreeCount(type); };
+  p.getFreeRecruitState = function(this: EngineAny) { return this.heroRecruit.getFreeRecruitState(); };
+  p.setUpHero = function(this: EngineAny, generalId: string | null, rate?: number, description?: string) { return this.heroRecruit.setUpHero(generalId, rate, description); };
+  p.getUpHeroState = function(this: EngineAny) { return this.heroRecruit.getUpHeroState(); };
   p.enhanceHero = function(this: EngineAny, id: string, lvl?: number): LevelUpResult | null { return this.heroLevel.quickEnhance(id, lvl); };
   p.enhanceAllHeroes = function(this: EngineAny, lvl?: number): BatchEnhanceResult { return this.heroLevel.quickEnhanceAll(lvl); };
   p.getGenerals = function(this: EngineAny): Readonly<GeneralData>[] { return this.hero.getAllGenerals(); };

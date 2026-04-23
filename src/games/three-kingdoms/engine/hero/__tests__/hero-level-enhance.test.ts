@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * HeroLevelSystem 单元测试 — 一键强化 + 批量测试部分
  * 覆盖：quickEnhance、quickEnhanceAll、getEnhancePreview、getBatchEnhancePreview
@@ -21,12 +22,12 @@ function makeRichLevelDeps(heroSystem: HeroSystem): LevelDeps {
   const resources: Record<string, number> = { gold: 1e9, exp: 1e9 };
   return {
     heroSystem,
-    spendResource: jest.fn((type: string, amount: number) => {
+    spendResource: vi.fn((type: string, amount: number) => {
       resources[type] -= amount;
       return true;
     }),
-    canAffordResource: jest.fn((type: string, amount: number) => resources[type] >= amount),
-    getResourceAmount: jest.fn((type: string) => resources[type]),
+    canAffordResource: vi.fn((type: string, amount: number) => resources[type] >= amount),
+    getResourceAmount: vi.fn((type: string) => resources[type]),
   };
 }
 
@@ -39,13 +40,13 @@ function makeLevelDepsWithResources(
   const resources: Record<string, number> = { gold, exp };
   return {
     heroSystem,
-    spendResource: jest.fn((type: string, amount: number) => {
+    spendResource: vi.fn((type: string, amount: number) => {
       if (resources[type] < amount) return false;
       resources[type] -= amount;
       return true;
     }),
-    canAffordResource: jest.fn((type: string, amount: number) => resources[type] >= amount),
-    getResourceAmount: jest.fn((type: string) => resources[type]),
+    canAffordResource: vi.fn((type: string, amount: number) => resources[type] >= amount),
+    getResourceAmount: vi.fn((type: string) => resources[type]),
   };
 }
 

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * StrategyPreset 单元测试
  *
@@ -127,7 +128,7 @@ describe('StrategyPreset', () => {
     });
 
     it('重复 activate 不应重复发射事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       preset.on(listener);
       preset.activate();
       preset.activate();
@@ -135,7 +136,7 @@ describe('StrategyPreset', () => {
     });
 
     it('未激活时 deactivate 不应发射事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       preset.on(listener);
       preset.deactivate();
       expect(listener).not.toHaveBeenCalled();
@@ -160,7 +161,7 @@ describe('StrategyPreset', () => {
     });
 
     it('updateConfig 应发射 config_updated 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       preset.on(listener);
       preset.updateConfig({ name: '更新' });
       expect(listener).toHaveBeenCalledWith(
@@ -733,7 +734,7 @@ describe('StrategyPreset', () => {
 
   describe('事件系统', () => {
     it('activate 应发射 preset_activated 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       preset.on(listener);
       preset.activate();
       expect(listener).toHaveBeenCalledWith(
@@ -745,7 +746,7 @@ describe('StrategyPreset', () => {
     });
 
     it('deactivate 应发射 preset_deactivated 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       preset.on(listener);
       preset.activate();
       preset.deactivate();
@@ -755,7 +756,7 @@ describe('StrategyPreset', () => {
     });
 
     it('decide 应发射 decision_made 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       preset.on(listener);
       preset.activate();
       const ctx = createContext();
@@ -766,7 +767,7 @@ describe('StrategyPreset', () => {
     });
 
     it('off 应注销监听器', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       preset.on(listener);
       preset.off(listener);
       preset.activate();
@@ -774,13 +775,13 @@ describe('StrategyPreset', () => {
     });
 
     it('off 不存在的监听器不应报错', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       expect(() => preset.off(listener)).not.toThrow();
     });
 
     it('多个监听器都应收到事件', () => {
-      const listener1 = jest.fn();
-      const listener2 = jest.fn();
+      const listener1 = vi.fn();
+      const listener2 = vi.fn();
       preset.on(listener1);
       preset.on(listener2);
       preset.activate();

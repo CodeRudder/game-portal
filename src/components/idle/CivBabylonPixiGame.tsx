@@ -91,7 +91,7 @@ export default function CivBabylonPixiGame({
   }, [engine]);
 
   return (
-    <div ref={containerRef} className={className} style={{
+    <div ref={containerRef} className={className} data-testid="civ-babylon-pixi-game" style={{
       width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
       background: '#0a1218', ...style,
     }}>

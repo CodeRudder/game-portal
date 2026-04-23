@@ -110,7 +110,7 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
   return (
     <SharedPanel title={`${name}升级`} onClose={onCancel} visible={true}>
         {/* 建筑头部 */}
-        <div className="tk-upgrade-header">
+        <div className="tk-upgrade-header" data-testid="building-upgrade-header">
           <span className="tk-upgrade-icon">{icon}</span>
           <div className="tk-upgrade-header-info">
             <div className="tk-upgrade-name">{name} · {zone}建筑</div>
@@ -208,13 +208,14 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
 
         {/* 操作按钮 */}
         <div className="tk-upgrade-actions">
-          <button className="tk-upgrade-btn tk-upgrade-btn--cancel" onClick={onCancel}>
+          <button className="tk-upgrade-btn tk-upgrade-btn--cancel" data-testid="building-upgrade-cancel" onClick={onCancel}>
             取消
           </button>
           <button
             className={`tk-upgrade-btn tk-upgrade-btn--confirm ${!canAfford ? 'tk-upgrade-btn--disabled' : ''}`}
             onClick={() => canAfford && onConfirm(buildingType)}
             disabled={!canAfford}
+            data-testid="building-upgrade-confirm"
           >
             {canAfford ? `▲ 升级` : '资源不足'}
           </button>

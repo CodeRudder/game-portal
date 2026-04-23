@@ -28,7 +28,7 @@ import {
   NodeType,
   NodeStatus,
 } from '../../../core/expedition/expedition.types';
-import { createDefaultExpeditionState } from '../ExpeditionSystem';
+import { createDefaultExpeditionState } from '../expedition-helpers';
 
 // ── 辅助函数 ──────────────────────────────
 

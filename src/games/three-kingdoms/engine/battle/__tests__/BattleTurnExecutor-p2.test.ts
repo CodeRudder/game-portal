@@ -57,18 +57,18 @@ function createState(overrides: Partial<BattleState> = {}): BattleState {
 
 function createMockCalculator(overrides: Partial<IDamageCalculator> = {}): IDamageCalculator {
   return {
-    calculateDamage: jest.fn((_a, _d, m) => ({
+    calculateDamage: vi.fn((_a, _d, m) => ({
       damage: 100, baseDamage: 100, skillMultiplier: m, isCritical: false,
       criticalMultiplier: 1.0, restraintMultiplier: 1.0, randomFactor: 1.0, isMinDamage: false,
     })),
-    applyDamage: jest.fn((d, dmg) => {
+    applyDamage: vi.fn((d, dmg) => {
       const actual = Math.min(dmg, d.hp);
       d.hp -= actual;
       if (d.hp <= 0) { d.hp = 0; d.isAlive = false; }
       return actual;
     }),
-    calculateDotDamage: jest.fn(() => 0),
-    isControlled: jest.fn(() => false),
+    calculateDotDamage: vi.fn(() => 0),
+    isControlled: vi.fn(() => false),
     ...overrides,
   };
 }
@@ -257,7 +257,7 @@ describe('BattleTurnExecutor DOT', () => {
   let executor: BattleTurnExecutor;
   beforeEach(() => {
     executor = new BattleTurnExecutor(createMockCalculator({
-      calculateDotDamage: jest.fn((u) => u.buffs.some(b => b.type === BuffType.BURN) ? Math.floor(u.maxHp * 0.05) : 0),
+      calculateDotDamage: vi.fn((u) => u.buffs.some(b => b.type === BuffType.BURN) ? Math.floor(u.maxHp * 0.05) : 0),
     }));
   });
 
@@ -280,7 +280,7 @@ describe('BattleTurnExecutor 控制状态', () => {
   let executor: BattleTurnExecutor;
   beforeEach(() => {
     executor = new BattleTurnExecutor(createMockCalculator({
-      isControlled: jest.fn((u) => u.buffs.some(b => b.type === BuffType.STUN || b.type === BuffType.FREEZE)),
+      isControlled: vi.fn((u) => u.buffs.some(b => b.type === BuffType.STUN || b.type === BuffType.FREEZE)),
     }));
   });
 
@@ -298,7 +298,7 @@ describe('BattleTurnExecutor 控制状态', () => {
   });
 
   it('DOT + control: DOT first then control', () => {
-    const calc = createMockCalculator({ calculateDotDamage: jest.fn(() => 10), isControlled: jest.fn(() => true) });
+    const calc = createMockCalculator({ calculateDotDamage: vi.fn(() => 10), isControlled: vi.fn(() => true) });
     const exec = new BattleTurnExecutor(calc);
     const actor = createUnit({ id: 'a', side: 'ally', hp: 100, buffs: [{ type: BuffType.BURN, remainingTurns: 2, value: 0.05, sourceId: 's' }] });
     const s = createState({ allyTeam: { units: [actor], side: 'ally' }, enemyTeam: { units: [createUnit({ id: 'e', side: 'enemy' })], side: 'enemy' } });
@@ -307,7 +307,7 @@ describe('BattleTurnExecutor 控制状态', () => {
   });
 
   it('DOT kills before control check', () => {
-    const calc = createMockCalculator({ calculateDotDamage: jest.fn(() => 200), isControlled: jest.fn(() => true) });
+    const calc = createMockCalculator({ calculateDotDamage: vi.fn(() => 200), isControlled: vi.fn(() => true) });
     const exec = new BattleTurnExecutor(calc);
     const actor = createUnit({ id: 'a', side: 'ally', hp: 50, buffs: [{ type: BuffType.BURN, remainingTurns: 2, value: 0.05, sourceId: 's' }] });
     const s = createState({ allyTeam: { units: [actor], side: 'ally' }, enemyTeam: { units: [createUnit({ id: 'e', side: 'enemy' })], side: 'enemy' } });
@@ -391,7 +391,7 @@ describe('BattleTurnExecutor 伤害交互', () => {
     const alive = createUnit({ id: 'al', side: 'enemy' }); const dead = createUnit({ id: 'dd', side: 'enemy', isAlive: false, hp: 0 });
     const s = createState({ allyTeam: { units: [actor], side: 'ally' }, enemyTeam: { units: [alive, dead], side: 'enemy' } });
     executor.executeUnitAction(s, actor);
-    const aliveCalls = (calc.applyDamage as ReturnType<typeof jest.fn>).mock.calls.filter((c: any[]) => c[0].id === 'al');
+    const aliveCalls = (calc.applyDamage as ReturnType<typeof vi.fn>).mock.calls.filter((c: any[]) => c[0].id === 'al');
     expect(aliveCalls.length).toBe(1);
   });
 });
@@ -407,8 +407,8 @@ describe('BattleTurnExecutor 构造函数', () => {
 
   it('works with calculator returning 0 damage', () => {
     const zeroCalc = createMockCalculator({
-      calculateDamage: jest.fn(() => ({ damage: 0, baseDamage: 0, skillMultiplier: 1, isCritical: false, criticalMultiplier: 1, restraintMultiplier: 1, randomFactor: 1, isMinDamage: false })),
-      applyDamage: jest.fn(() => 0),
+      calculateDamage: vi.fn(() => ({ damage: 0, baseDamage: 0, skillMultiplier: 1, isCritical: false, criticalMultiplier: 1, restraintMultiplier: 1, randomFactor: 1, isMinDamage: false })),
+      applyDamage: vi.fn(() => 0),
     });
     const exec = new BattleTurnExecutor(zeroCalc); const actor = createUnit({ id: 'a', side: 'ally' });
     const s = createState({ allyTeam: { units: [actor], side: 'ally' }, enemyTeam: { units: [createUnit({ id: 'e', side: 'enemy' })], side: 'enemy' } });
@@ -417,7 +417,7 @@ describe('BattleTurnExecutor 构造函数', () => {
   });
 
   it('no DOT when calculateDotDamage returns 0', () => {
-    const calc = createMockCalculator({ calculateDotDamage: jest.fn(() => 0) });
+    const calc = createMockCalculator({ calculateDotDamage: vi.fn(() => 0) });
     const exec = new BattleTurnExecutor(calc);
     const actor = createUnit({ id: 'a', side: 'ally', hp: 100, buffs: [{ type: BuffType.BURN, remainingTurns: 2, value: 0.05, sourceId: 's' }] });
     const s = createState({ allyTeam: { units: [actor], side: 'ally' }, enemyTeam: { units: [createUnit({ id: 'e', side: 'enemy' })], side: 'enemy' } });
@@ -425,7 +425,7 @@ describe('BattleTurnExecutor 构造函数', () => {
   });
 
   it('no control when isControlled returns false', () => {
-    const calc = createMockCalculator({ isControlled: jest.fn(() => false) });
+    const calc = createMockCalculator({ isControlled: vi.fn(() => false) });
     const exec = new BattleTurnExecutor(calc);
     const actor = createUnit({ id: 'a', side: 'ally', buffs: [{ type: BuffType.ATK_UP, remainingTurns: 1, value: 0.1, sourceId: 's' }] });
     const s = createState({ allyTeam: { units: [actor], side: 'ally' }, enemyTeam: { units: [createUnit({ id: 'e', side: 'enemy' })], side: 'enemy' } });

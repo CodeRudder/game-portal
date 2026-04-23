@@ -207,11 +207,11 @@ const RESOURCE_ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
 export const ResourceIcon: React.FC<{ resourceId: string; size?: number }> = ({ resourceId, size = 20 }) => {
   const IconComponent = RESOURCE_ICON_MAP[resourceId];
   if (IconComponent) {
-    return <IconComponent size={size} />;
+    return <span data-testid={`resource-icon-${resourceId}`}><IconComponent size={size} /></span>;
   }
   // 兜底：显示通用资源图标
   return (
-    <svg width={size} height={size} viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <svg data-testid="resource-icon-default" width={size} height={size} viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
       <circle cx="10" cy="10" r="7" fill="#8B7355" stroke="#6b5a3a" strokeWidth="1" />
       <text x="10" y="13" textAnchor="middle" fontSize="8" fill="#d4a030">?</text>
     </svg>

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * HeroRecruitSystem 单元测试 — 保底机制部分
  * 覆盖：保底机制、序列化/反序列化保底计数器、注入确定性 RNG
@@ -26,8 +27,8 @@ import { DUPLICATE_FRAGMENT_COUNT } from '../hero-config';
 function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: jest.fn().mockReturnValue(true),
-    canAffordResource: jest.fn().mockReturnValue(true),
+    spendResource: vi.fn().mockReturnValue(true),
+    canAffordResource: vi.fn().mockReturnValue(true),
   };
 }
 
@@ -202,7 +203,7 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('版本不匹配时打印警告', () => {
-      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       recruit.deserialize({
         version: 999,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 },

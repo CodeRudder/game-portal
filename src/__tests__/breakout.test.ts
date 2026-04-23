@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { BreakoutEngine } from '@/games/breakout/BreakoutEngine';
 import {
   CANVAS_WIDTH,
@@ -30,20 +31,20 @@ function createMockCanvas() {
     width: CANVAS_WIDTH,
     height: CANVAS_HEIGHT,
     getContext: () => ({
-      fillRect: jest.fn(),
-      clearRect: jest.fn(),
-      fillText: jest.fn(),
-      beginPath: jest.fn(),
-      arc: jest.fn(),
-      fill: jest.fn(),
-      strokeRect: jest.fn(),
-      stroke: jest.fn(),
-      moveTo: jest.fn(),
-      lineTo: jest.fn(),
-      closePath: jest.fn(),
-      save: jest.fn(),
-      restore: jest.fn(),
-      measureText: jest.fn(() => ({ width: 10 })),
+      fillRect: vi.fn(),
+      clearRect: vi.fn(),
+      fillText: vi.fn(),
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      strokeRect: vi.fn(),
+      stroke: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      closePath: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      measureText: vi.fn(() => ({ width: 10 })),
     }),
   } as unknown as HTMLCanvasElement;
 }
@@ -947,7 +948,7 @@ describe('BreakoutEngine', () => {
   describe('事件系统', () => {
     it('start 触发 statusChange 为 playing', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.start();
       expect(cb).toHaveBeenCalledWith('playing');
@@ -955,7 +956,7 @@ describe('BreakoutEngine', () => {
 
     it('start 触发 scoreChange 为 0', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('scoreChange', cb);
       engine.start();
       expect(cb).toHaveBeenCalledWith(0);
@@ -963,7 +964,7 @@ describe('BreakoutEngine', () => {
 
     it('start 触发 levelChange 为 1', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('levelChange', cb);
       engine.start();
       expect(cb).toHaveBeenCalledWith(1);
@@ -971,7 +972,7 @@ describe('BreakoutEngine', () => {
 
     it('pause 触发 statusChange 为 paused', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.pause();
       expect(cb).toHaveBeenCalledWith('paused');
@@ -980,7 +981,7 @@ describe('BreakoutEngine', () => {
     it('resume 触发 statusChange 为 playing', () => {
       const engine = startEngine();
       engine.pause();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.resume();
       expect(cb).toHaveBeenCalledWith('playing');
@@ -988,7 +989,7 @@ describe('BreakoutEngine', () => {
 
     it('reset 触发 statusChange 为 idle', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.reset();
       expect(cb).toHaveBeenCalledWith('idle');
@@ -996,7 +997,7 @@ describe('BreakoutEngine', () => {
 
     it('reset 触发 scoreChange 为 0', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('scoreChange', cb);
       engine.reset();
       expect(cb).toHaveBeenCalledWith(0);
@@ -1004,7 +1005,7 @@ describe('BreakoutEngine', () => {
 
     it('reset 触发 levelChange 为 1', () => {
       const engine = startEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('levelChange', cb);
       engine.reset();
       expect(cb).toHaveBeenCalledWith(1);
@@ -1012,7 +1013,7 @@ describe('BreakoutEngine', () => {
 
     it('消除砖块触发 scoreChange', () => {
       const engine = startAndLaunch();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('scoreChange', cb);
       const bricks = getBricks(engine);
       const target = bricks[0];
@@ -1031,7 +1032,7 @@ describe('BreakoutEngine', () => {
 
     it('过关触发 levelChange', () => {
       const engine = startAndLaunch();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('levelChange', cb);
       setRemainingBricks(engine, 0);
       advance(engine);
@@ -1041,7 +1042,7 @@ describe('BreakoutEngine', () => {
     it('gameover 触发 statusChange 为 gameover', () => {
       const engine = startAndLaunch();
       setLives(engine, 1);
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       setBall(engine, {
         x: 240,
@@ -1057,7 +1058,7 @@ describe('BreakoutEngine', () => {
 
     it('off 取消监听后不再触发', () => {
       const engine = createEngine();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       engine.off('statusChange', cb);
       engine.start();
@@ -1288,7 +1289,7 @@ describe('BreakoutEngine', () => {
 
     it('球落底后 emit statusChange 为 playing（生命未耗尽）', () => {
       const engine = startAndLaunch();
-      const cb = jest.fn();
+      const cb = vi.fn();
       engine.on('statusChange', cb);
       setBall(engine, {
         x: 240,

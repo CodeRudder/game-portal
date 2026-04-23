@@ -138,12 +138,12 @@ describe('ArenaSeasonSystem — 赛季结算', () => {
   });
 
   test('结算时积分重置到当前段位最低值', () => {
-    // GOLD_IV: minScore = 1000
-    const player = createPlayerState(1500, 'GOLD_IV');
+    // GOLD_IV: minScore = 3400
+    const player = createPlayerState(3500, 'GOLD_IV');
     const result = system.settleSeason(player, 'GOLD_IV');
 
-    expect(result.resetScore).toBe(1000);
-    expect(result.state.score).toBe(1000);
+    expect(result.resetScore).toBe(3400);
+    expect(result.state.score).toBe(3400);
   });
 
   test('结算时按最高段位发放奖励', () => {

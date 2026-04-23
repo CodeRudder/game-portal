@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { GomokuEngine } from '@/games/gomoku/GomokuEngine';
 import {
   BOARD_SIZE,
@@ -610,7 +611,7 @@ describe('GomokuEngine', () => {
   describe('事件发射', () => {
     it('start 触发 statusChange 事件', () => {
       const engine = createEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.start();
       expect(listener).toHaveBeenCalledWith('playing');
@@ -618,7 +619,7 @@ describe('GomokuEngine', () => {
 
     it('pause 触发 statusChange 事件', () => {
       const engine = startEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.pause();
       expect(listener).toHaveBeenCalledWith('paused');
@@ -627,7 +628,7 @@ describe('GomokuEngine', () => {
     it('resume 触发 statusChange 事件', () => {
       const engine = startEngine();
       engine.pause();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.resume();
       expect(listener).toHaveBeenCalledWith('playing');
@@ -635,7 +636,7 @@ describe('GomokuEngine', () => {
 
     it('reset 触发 statusChange 事件', () => {
       const engine = startEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
       engine.reset();
       expect(listener).toHaveBeenCalledWith('idle');
@@ -643,7 +644,7 @@ describe('GomokuEngine', () => {
 
     it('scoreChange 事件在胜利时触发', () => {
       const engine = startEngine();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('scoreChange', listener);
       // 黑连五
       for (let i = 0; i < 5; i++) {

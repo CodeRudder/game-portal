@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 // ========== Make24Engine 测试 ==========
 // 纯逻辑测试，不依赖 DOM/Canvas
 
@@ -672,7 +673,7 @@ describe('提交表达式', () => {
 
   it('成功提交触发 solveSuccess 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('solveSuccess', handler);
     buildCorrectExpression(engine);
     engine.submitExpression();
@@ -683,7 +684,7 @@ describe('提交表达式', () => {
   it('失败提交触发 solveFail 事件', () => {
     const engine = createAndStartEngine();
     setCardValues(engine, [1, 1, 1, 1]);
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('solveFail', handler);
     engine.selectCard(0);
     engine.addOperator('+');
@@ -768,7 +769,7 @@ describe('提示功能', () => {
   it('提示触发 hintUsed 事件', () => {
     const engine = createAndStartEngine();
     setCardValues(engine, [6, 6, 6, 6]);
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('hintUsed', handler);
     engine.useHint();
     expect(handler).toHaveBeenCalled();
@@ -864,7 +865,7 @@ describe('键盘输入', () => {
   });
 
   it('N 键跳过当前轮', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('roundSkipped', handler);
     engine.handleKeyDown('n');
     expect(handler).toHaveBeenCalled();
@@ -910,70 +911,70 @@ describe('键盘输入', () => {
 
 describe('计时器', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('计时器每秒递减', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('timeChange', handler);
-    jest.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(1000);
     expect(engine.timeRemaining).toBe(DIFFICULTY_CONFIG.normal.timeLimit - 1);
     expect(handler).toHaveBeenCalledWith(DIFFICULTY_CONFIG.normal.timeLimit - 1);
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 
   it('计时器归零触发 gameover', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
-    jest.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
+    vi.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
     expect(engine.timeRemaining).toBe(0);
     expect(engine.status).toBe('gameover');
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 
   it('暂停时计时器不递减', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
     engine.pause();
-    jest.advanceTimersByTime(5000);
+    vi.advanceTimersByTime(5000);
     expect(engine.timeRemaining).toBe(DIFFICULTY_CONFIG.normal.timeLimit);
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 
   it('恢复后计时器继续递减', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
     engine.pause();
-    jest.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(3000);
     engine.resume();
-    jest.advanceTimersByTime(2000);
+    vi.advanceTimersByTime(2000);
     expect(engine.timeRemaining).toBe(DIFFICULTY_CONFIG.normal.timeLimit - 2);
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 
   it('timeChange 事件正确触发', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('timeChange', handler);
-    jest.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(3000);
     expect(handler).toHaveBeenCalledTimes(3);
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 });
@@ -985,7 +986,7 @@ describe('计时器', () => {
 describe('事件系统', () => {
   it('expressionChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('expressionChange', handler);
     engine.selectCard(0);
     expect(handler).toHaveBeenCalledWith(expect.any(String));
@@ -994,7 +995,7 @@ describe('事件系统', () => {
 
   it('cardsDealt 事件在 start 时触发', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('cardsDealt', handler);
     engine.start();
     expect(handler).toHaveBeenCalledTimes(1);
@@ -1003,7 +1004,7 @@ describe('事件系统', () => {
 
   it('scoreChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     buildCorrectExpression(engine);
     engine.submitExpression();
@@ -1013,7 +1014,7 @@ describe('事件系统', () => {
 
   it('statusChange 事件', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -1022,7 +1023,7 @@ describe('事件系统', () => {
 
   it('off 取消监听', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('expressionChange', handler);
     engine.off('expressionChange', handler);
     engine.selectCard(0);
@@ -1032,7 +1033,7 @@ describe('事件系统', () => {
 
   it('roundsChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('roundsChange', handler);
     buildCorrectExpression(engine);
     engine.submitExpression();
@@ -1104,7 +1105,7 @@ describe('getState', () => {
 describe('跳过轮次', () => {
   it('跳过发新牌', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('roundSkipped', handler);
     engine.skipRound();
     expect(handler).toHaveBeenCalled();
@@ -1115,7 +1116,7 @@ describe('跳过轮次', () => {
 
   it('非 playing 状态跳过无效', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('roundSkipped', handler);
     engine.skipRound();
     expect(handler).not.toHaveBeenCalled();
@@ -1177,7 +1178,7 @@ describe('发牌', () => {
 
   it('dealCards 触发 cardsDealt 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('cardsDealt', handler);
     engine.dealCards();
     expect(handler).toHaveBeenCalledTimes(1);
@@ -1230,24 +1231,24 @@ describe('边界情况', () => {
 
   it('gameover 后键盘输入处理', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
-    jest.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
+    vi.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
     expect(engine.status).toBe('gameover');
     engine.handleKeyDown('Enter');
     expect(engine.status).toBe('playing');
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 
   it('gameover 后 Space 重新开始', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
-    jest.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
+    vi.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
     engine.handleKeyDown(' ');
     expect(engine.status).toBe('playing');
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 
@@ -1339,56 +1340,56 @@ describe('消息系统', () => {
 
 describe('游戏结束', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('时间耗尽触发 gameover', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
-    jest.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
+    vi.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
     expect(engine.status).toBe('gameover');
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 
   it('gameover 触发 statusChange 事件', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
-    const handler = jest.fn();
+    vi.useFakeTimers();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.start();
-    jest.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
+    vi.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
     expect(handler).toHaveBeenCalledWith('gameover');
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 
   it('gameover 后时间不再递减', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
-    jest.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
+    vi.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
     const timeAtGameOver = engine.timeRemaining;
-    jest.advanceTimersByTime(5000);
+    vi.advanceTimersByTime(5000);
     expect(engine.timeRemaining).toBe(timeAtGameOver);
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 
   it('gameover 后重新开始分数重置', () => {
     const engine = createEngine();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     engine.start();
-    jest.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
+    vi.advanceTimersByTime(DIFFICULTY_CONFIG.normal.timeLimit * 1000);
     engine.handleKeyDown(' ');
     expect(engine.score).toBe(0);
     expect(engine.roundsSolved).toBe(0);
-    jest.useRealTimers();
+    vi.useRealTimers();
     engine.destroy();
   });
 });

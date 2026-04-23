@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * TutorialStepManager 单元测试
  * 覆盖：#2 核心引导、#3 扩展引导、#4 阶段奖励
@@ -10,14 +11,14 @@ import { TutorialStateMachine } from '../TutorialStateMachine';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -27,7 +28,7 @@ describe('TutorialStepManager', () => {
   let deps: ISystemDeps;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     stepMgr = new TutorialStepManager();
     sm = new TutorialStateMachine();
     deps = mockDeps();
@@ -38,7 +39,7 @@ describe('TutorialStepManager', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // ═══════════════════════════════════════════

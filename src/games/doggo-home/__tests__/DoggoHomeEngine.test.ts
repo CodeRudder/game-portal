@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 狗狗家园 (Doggo Home) — 放置类游戏完整测试套件
  *
@@ -54,7 +55,7 @@ function addTreats(engine: DoggoHomeEngine, amount: number): void {
 
 describe('DoggoHomeEngine', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // ========== 初始化测试 ==========

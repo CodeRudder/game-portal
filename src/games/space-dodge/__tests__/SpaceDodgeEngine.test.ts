@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { SpaceDodgeEngine } from '../SpaceDodgeEngine';
 import {
   CANVAS_WIDTH,
@@ -560,7 +561,7 @@ describe('SpaceDodgeEngine - 计分系统', () => {
 
   it('分数通过事件通知', () => {
     const engine = startEngine();
-    const scoreSpy = jest.fn();
+    const scoreSpy = vi.fn();
     engine.on('scoreChange', scoreSpy);
     simulateFrame(engine, 1000);
     expect(scoreSpy).toHaveBeenCalledWith(SCORE_PER_SECOND);
@@ -572,7 +573,7 @@ describe('SpaceDodgeEngine - 计分系统', () => {
 
   it('scoreChange 事件在收集能量球时触发', () => {
     const engine = startEngine();
-    const scoreSpy = jest.fn();
+    const scoreSpy = vi.fn();
     engine.on('scoreChange', scoreSpy);
     simulateFrame(engine, 1000);
     expect(scoreSpy).toHaveBeenCalled();
@@ -706,7 +707,7 @@ describe('SpaceDodgeEngine - 游戏结束', () => {
 
   it('游戏结束后 statusChange 事件触发', () => {
     const engine = startEngine();
-    const statusSpy = jest.fn();
+    const statusSpy = vi.fn();
     engine.on('statusChange', statusSpy);
 
     for (let i = 0; i < 1000; i++) {
@@ -908,7 +909,7 @@ describe('SpaceDodgeEngine - getState', () => {
 describe('SpaceDodgeEngine - 事件系统', () => {
   it('statusChange 事件在 start 时触发', () => {
     const engine = createEngine();
-    const spy = jest.fn();
+    const spy = vi.fn();
     engine.on('statusChange', spy);
     engine.start();
     expect(spy).toHaveBeenCalledWith('playing');
@@ -916,7 +917,7 @@ describe('SpaceDodgeEngine - 事件系统', () => {
 
   it('scoreChange 事件在得分时触发', () => {
     const engine = startEngine();
-    const spy = jest.fn();
+    const spy = vi.fn();
     engine.on('scoreChange', spy);
     simulateFrame(engine, 1000);
     expect(spy).toHaveBeenCalledWith(SCORE_PER_SECOND);
@@ -924,7 +925,7 @@ describe('SpaceDodgeEngine - 事件系统', () => {
 
   it('levelChange 事件在升级时触发', () => {
     const engine = startEngine();
-    const spy = jest.fn();
+    const spy = vi.fn();
     engine.on('levelChange', spy);
     simulateFrame(engine, SPEED_INCREASE_INTERVAL_SEC * 1000 + 10);
     expect(spy).toHaveBeenCalledWith(2);
@@ -932,7 +933,7 @@ describe('SpaceDodgeEngine - 事件系统', () => {
 
   it('off 取消事件监听', () => {
     const engine = startEngine();
-    const spy = jest.fn();
+    const spy = vi.fn();
     engine.on('scoreChange', spy);
     engine.off('scoreChange', spy);
     simulateFrame(engine, 1000);
@@ -941,8 +942,8 @@ describe('SpaceDodgeEngine - 事件系统', () => {
 
   it('多个监听器都收到事件', () => {
     const engine = startEngine();
-    const spy1 = jest.fn();
-    const spy2 = jest.fn();
+    const spy1 = vi.fn();
+    const spy2 = vi.fn();
     engine.on('scoreChange', spy1);
     engine.on('scoreChange', spy2);
     simulateFrame(engine, 1000);
@@ -1236,7 +1237,7 @@ describe('SpaceDodgeEngine - 升级系统', () => {
 
   it('levelChange 事件携带正确等级', () => {
     const engine = startEngine();
-    const spy = jest.fn();
+    const spy = vi.fn();
     engine.on('levelChange', spy);
     simulateFrame(engine, 10000);
     expect(spy).toHaveBeenCalledWith(2);
@@ -1349,7 +1350,7 @@ describe('SpaceDodgeEngine - 暂停恢复', () => {
 
   it('statusChange 事件在暂停时触发', () => {
     const engine = startEngine();
-    const spy = jest.fn();
+    const spy = vi.fn();
     engine.on('statusChange', spy);
     engine.pause();
     expect(spy).toHaveBeenCalledWith('paused');
@@ -1358,7 +1359,7 @@ describe('SpaceDodgeEngine - 暂停恢复', () => {
   it('statusChange 事件在恢复时触发', () => {
     const engine = startEngine();
     engine.pause();
-    const spy = jest.fn();
+    const spy = vi.fn();
     engine.on('statusChange', spy);
     engine.resume();
     expect(spy).toHaveBeenCalledWith('playing');

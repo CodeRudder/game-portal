@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * SaveSlotManager 单元测试
  *
@@ -31,9 +32,9 @@ function createMockStorage(): ISaveSlotStorage & { store: Record<string, string>
   const store: Record<string, string> = {};
   return {
     store,
-    getItem: jest.fn((key: string) => store[key] ?? null),
-    setItem: jest.fn((key: string, val: string) => { store[key] = val; }),
-    removeItem: jest.fn((key: string) => { delete store[key]; }),
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, val: string) => { store[key] = val; }),
+    removeItem: vi.fn((key: string) => { delete store[key]; }),
   };
 }
 
@@ -157,7 +158,7 @@ describe('SaveSlotManager', () => {
     });
 
     test('保存触发 onChange 回调', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       manager.onChange(cb);
       manager.saveToSlot(0, createGameData(0), 'test');
       expect(cb).toHaveBeenCalledWith(0, 'save');
@@ -165,7 +166,7 @@ describe('SaveSlotManager', () => {
 
     test('加载触发 onChange 回调', () => {
       manager.saveToSlot(0, createGameData(0), 'test');
-      const cb = jest.fn();
+      const cb = vi.fn();
       manager.onChange(cb);
       manager.loadFromSlot(0);
       expect(cb).toHaveBeenCalledWith(0, 'load');
@@ -173,7 +174,7 @@ describe('SaveSlotManager', () => {
 
     test('删除触发 onChange 回调', () => {
       manager.saveToSlot(0, createGameData(0), 'test');
-      const cb = jest.fn();
+      const cb = vi.fn();
       manager.onChange(cb);
       manager.deleteSlot(0);
       expect(cb).toHaveBeenCalledWith(0, 'delete');
@@ -192,7 +193,7 @@ describe('SaveSlotManager', () => {
 
   describe('付费槽位', () => {
     test('purchasePaidSlot 购买成功', () => {
-      const spendFn = jest.fn().mockReturnValue(true);
+      const spendFn = vi.fn().mockReturnValue(true);
       const result = manager.purchasePaidSlot(spendFn);
       expect(result.success).toBe(true);
       expect(spendFn).toHaveBeenCalledWith(PAID_SLOT_PRICE);
@@ -201,14 +202,14 @@ describe('SaveSlotManager', () => {
     });
 
     test('purchasePaidSlot 元宝不足', () => {
-      const spendFn = jest.fn().mockReturnValue(false);
+      const spendFn = vi.fn().mockReturnValue(false);
       const result = manager.purchasePaidSlot(spendFn);
       expect(result.success).toBe(false);
       expect(result.message).toContain('元宝不足');
     });
 
     test('购买后可保存到付费槽位', () => {
-      const spendFn = jest.fn().mockReturnValue(true);
+      const spendFn = vi.fn().mockReturnValue(true);
       manager.purchasePaidSlot(spendFn);
       const result = manager.saveToSlot(3, createGameData(3), '付费存档');
       expect(result.success).toBe(true);
@@ -219,20 +220,20 @@ describe('SaveSlotManager', () => {
 
   describe('自动存档', () => {
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     afterEach(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     test('startAutoSave 启动自动存档', () => {
-      const getState = jest.fn().mockReturnValue(createGameData(0));
+      const getState = vi.fn().mockReturnValue(createGameData(0));
       manager.startAutoSave(getState, 0);
       expect(manager.isAutoSaving()).toBe(true);
 
       // 快进 15 分钟
-      jest.advanceTimersByTime(15 * 60 * 1000);
+      vi.advanceTimersByTime(15 * 60 * 1000);
       expect(getState).toHaveBeenCalled();
       expect(manager.getLastAutoSaveTime()).toBeGreaterThan(0);
     });
@@ -354,7 +355,7 @@ describe('SaveSlotManager', () => {
     });
 
     test('取消注册后不再触发回调', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       const unsub = manager.onChange(cb);
       unsub();
       manager.saveToSlot(0, createGameData(0), 'test');

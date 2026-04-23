@@ -27,7 +27,7 @@ export default function IdleUpgradePanel({
 
   if (available.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+      <div className="flex flex-col items-center justify-center py-8 text-gray-500" data-testid="idle-upgrade-panel">
         <span className="text-3xl mb-2">🔒</span>
         <span className="text-sm">暂无可购买的升级</span>
       </div>
@@ -35,7 +35,7 @@ export default function IdleUpgradePanel({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-testid="idle-upgrade-panel">
       {available.map((upgrade) => {
         const cost = getUpgradeCost(upgrade.id);
         const affordable = canAfford(cost);

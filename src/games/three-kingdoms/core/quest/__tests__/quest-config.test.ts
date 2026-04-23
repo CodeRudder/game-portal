@@ -94,8 +94,8 @@ describe('quest.types', () => {
       expect(DEFAULT_DAILY_POOL_CONFIG.dailyPickCount).toBe(6);
     });
 
-    it('刷新时间为0点', () => {
-      expect(DEFAULT_DAILY_POOL_CONFIG.refreshHour).toBe(0);
+    it('刷新时间为凌晨5点', () => {
+      expect(DEFAULT_DAILY_POOL_CONFIG.refreshHour).toBe(5);
     });
   });
 

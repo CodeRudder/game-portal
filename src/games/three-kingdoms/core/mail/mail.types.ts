@@ -1,8 +1,8 @@
 /**
- * 邮件域 — 核心层类型（统一从 engine 层重导出）
+ * 邮件域 — 核心层类型（从 shared 层重导出）
  *
- * v9.0 邮件系统类型唯一定义源：engine/mail/mail.types.ts
- * core 层通过重导出使用，避免重复定义。
+ * v9.0 邮件系统类型唯一定义源：shared/mail-types.ts
+ * core 层通过重导出使用，避免重复定义和跨层引用。
  *
  * @module core/mail/mail.types
  */
@@ -32,4 +32,4 @@ export {
   DEFAULT_MAIL_EXPIRE_DAYS,
   MAIL_SAVE_VERSION,
   MAILS_PER_PAGE,
-} from '../../engine/mail/mail.types';
+} from '../../shared/mail-types';
