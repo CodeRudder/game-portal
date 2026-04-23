@@ -10,18 +10,17 @@ import type {
   QuestId, QuestCategory, QuestDef, QuestInstance,
   QuestObjective, QuestReward, QuestSystemSaveData,
 } from '../../core/quest';
-import {
-  DEFAULT_DAILY_POOL_CONFIG, DEFAULT_ACTIVITY_MILESTONES,
-  QUEST_SAVE_VERSION, DAILY_QUEST_TEMPLATES, PREDEFINED_QUESTS,
-} from '../../core/quest';
-import type { ActivityState, ActivityMilestone, QuestReward as QR } from '../../core/quest';
+import { QUEST_SAVE_VERSION, PREDEFINED_QUESTS } from '../../core/quest';
+import type { QuestReward as QR } from '../../core/quest';
 import { serializeQuestState, deserializeQuestState } from './QuestSerialization';
+import { QuestActivityManager, MAX_ACTIVITY_POINTS } from './QuestActivityManager';
+import { QuestDailyManager } from './QuestDailyManager';
 
 /** 最大追踪任务数 */
 export const MAX_TRACKED_QUESTS = 3;
 
-/** 最大活跃度点数 */
-export const MAX_ACTIVITY_POINTS = 100;
+// Re-export for backward compatibility
+export { MAX_ACTIVITY_POINTS } from './QuestActivityManager';
 
 /** 管理所有类型任务的注册、接受、进度追踪和奖励发放 */
 export class QuestSystem implements ISubsystem {
@@ -31,17 +30,35 @@ export class QuestSystem implements ISubsystem {
   private questDefs: Map<QuestId, QuestDef> = new Map();
   private activeQuests: Map<string, QuestInstance> = new Map();
   private completedQuestIds: Set<QuestId> = new Set();
-  private dailyQuestInstanceIds: string[] = [];
-  private dailyRefreshDate: string = '';
   private instanceCounter = 0;
   private trackedQuestIds: string[] = [];
-  private activityState: ActivityState = {
-    currentPoints: 0, maxPoints: MAX_ACTIVITY_POINTS,
-    milestones: DEFAULT_ACTIVITY_MILESTONES.map((m) => ({ ...m })),
-    lastResetDate: '',
-  };
   private rewardCallback?: (reward: QuestReward) => void;
   private activityAddCallback?: (points: number) => void;
+
+  /** 活跃度管理器（委托） */
+  private activityMgr: QuestActivityManager;
+
+  /** 日常任务管理器（委托） */
+  private dailyMgr: QuestDailyManager;
+
+  constructor() {
+    this.activityMgr = new QuestActivityManager();
+    this.dailyMgr = new QuestDailyManager();
+    this.dailyMgr.setDeps({
+      registerAndAccept: (def) => {
+        this.registerQuest(def);
+        return this.acceptQuest(def.id);
+      },
+      expireQuest: (instanceId) => {
+        const instance = this.activeQuests.get(instanceId);
+        if (instance && instance.status === 'active') {
+          instance.status = 'expired';
+          this.activeQuests.delete(instanceId);
+        }
+      },
+      emitEvent: (event, data) => this.deps?.eventBus.emit(event, data),
+    });
+  }
 
   // ─── ISubsystem ─────────────────────────────
 
@@ -60,15 +77,10 @@ export class QuestSystem implements ISubsystem {
   reset(): void {
     this.activeQuests.clear();
     this.completedQuestIds.clear();
-    this.dailyQuestInstanceIds = [];
-    this.dailyRefreshDate = '';
     this.instanceCounter = 0;
     this.trackedQuestIds = [];
-    this.activityState = {
-      currentPoints: 0, maxPoints: MAX_ACTIVITY_POINTS,
-      milestones: DEFAULT_ACTIVITY_MILESTONES.map((m) => ({ ...m })),
-      lastResetDate: '',
-    };
+    this.activityMgr.fullReset();
+    this.dailyMgr.fullReset();
   }
 
   // ─── 回调注入 ──────────────────────────────
@@ -83,42 +95,26 @@ export class QuestSystem implements ISubsystem {
     this.activityAddCallback = cb;
   }
 
-  // ─── 活跃度系统 ────────────────────────────
+  // ─── 活跃度系统（委托 QuestActivityManager）───
 
   /** 获取活跃度状态（返回副本） */
-  getActivityState(): ActivityState {
-    return {
-      currentPoints: this.activityState.currentPoints,
-      maxPoints: this.activityState.maxPoints,
-      milestones: this.activityState.milestones.map((m) => ({ ...m })),
-      lastResetDate: this.activityState.lastResetDate,
-    };
+  getActivityState() {
+    return this.activityMgr.getState();
   }
 
   /** 增加活跃度（不超过最大值） */
   addActivityPoints(points: number): void {
-    this.activityState.currentPoints = Math.min(
-      this.activityState.currentPoints + points,
-      this.activityState.maxPoints,
-    );
+    this.activityMgr.addPoints(points);
   }
 
   /** 领取活跃度里程碑宝箱 */
   claimActivityMilestone(index: number): QR | null {
-    const milestone = this.activityState.milestones[index];
-    if (!milestone) return null;
-    if (this.activityState.currentPoints < milestone.points) return null;
-    if (milestone.claimed) return null;
-
-    milestone.claimed = true;
-    return milestone.rewards;
+    return this.activityMgr.claimMilestone(index);
   }
 
   /** 重置每日活跃度 */
   resetDailyActivity(): void {
-    this.activityState.currentPoints = 0;
-    this.activityState.lastResetDate = new Date().toISOString().slice(0, 10);
-    this.activityState.milestones = DEFAULT_ACTIVITY_MILESTONES.map((m) => ({ ...m }));
+    this.activityMgr.resetDaily();
   }
 
   // ─── 任务注册 ──────────────────────────────
@@ -323,62 +319,28 @@ export class QuestSystem implements ISubsystem {
     return rewards;
   }
 
-  // ─── 日常任务（#17）──────────────────────────
+  // ─── 日常任务（委托 QuestDailyManager）───────
 
   /**
    * 刷新日常任务
    *
    * 每日0点从20个任务池中随机抽取6个。
-   * 如果当天已刷新则跳过。
+   * 如果当天已刷新则返回当前日常任务实例。
    */
   refreshDailyQuests(): QuestInstance[] {
-    const today = new Date().toISOString().slice(0, 10);
-    if (this.dailyRefreshDate === today) {
-      return this.dailyQuestInstanceIds
+    const newInstances = this.dailyMgr.refresh();
+    if (newInstances.length === 0 && this.dailyMgr.isRefreshedToday()) {
+      // 已刷新过，返回当前日常任务
+      return this.dailyMgr.getInstanceIds()
         .map((id) => this.activeQuests.get(id))
         .filter(Boolean) as QuestInstance[];
     }
-
-    // 清除旧的日常任务
-    for (const id of this.dailyQuestInstanceIds) {
-      const instance = this.activeQuests.get(id);
-      if (instance && instance.status === 'active') {
-        instance.status = 'expired';
-        this.activeQuests.delete(id);
-      }
-    }
-
-    // 随机抽取
-    const config = DEFAULT_DAILY_POOL_CONFIG;
-    const shuffled = [...DAILY_QUEST_TEMPLATES].sort(() => Math.random() - 0.5);
-    const picked = shuffled.slice(0, config.dailyPickCount);
-
-    // 注册并接受
-    const newInstances: QuestInstance[] = [];
-    this.dailyQuestInstanceIds = [];
-
-    for (const def of picked) {
-      this.registerQuest(def);
-      const instance = this.acceptQuest(def.id);
-      if (instance) {
-        this.dailyQuestInstanceIds.push(instance.instanceId);
-        newInstances.push(instance);
-      }
-    }
-
-    this.dailyRefreshDate = today;
-
-    this.deps?.eventBus.emit('quest:dailyRefreshed', {
-      date: today,
-      questIds: newInstances.map((i) => i.questDefId),
-    });
-
     return newInstances;
   }
 
   /** 获取当前日常任务 */
   getDailyQuests(): QuestInstance[] {
-    return this.dailyQuestInstanceIds
+    return this.dailyMgr.getInstanceIds()
       .map((id) => this.activeQuests.get(id))
       .filter((q) => q !== undefined) as QuestInstance[];
   }
@@ -461,16 +423,15 @@ export class QuestSystem implements ISubsystem {
       activeQuests: this.activeQuests,
       completedQuestIds: this.completedQuestIds,
       activityState: this.getActivityState(),
-      dailyRefreshDate: this.dailyRefreshDate,
-      dailyQuestInstanceIds: this.dailyQuestInstanceIds,
+      dailyRefreshDate: this.dailyMgr.getRefreshDate(),
+      dailyQuestInstanceIds: this.dailyMgr.getInstanceIds(),
     });
   }
 
   deserialize(data: QuestSystemSaveData): void {
     const result = deserializeQuestState(data, this.activeQuests, this.completedQuestIds);
-    this.dailyRefreshDate = result.dailyRefreshDate;
-    this.dailyQuestInstanceIds = result.dailyQuestInstanceIds;
-    this.activityState = result.activityState as typeof this.activityState;
+    this.dailyMgr.restoreState(result.dailyRefreshDate, result.dailyQuestInstanceIds);
+    this.activityMgr.restoreState(result.activityState as ReturnType<typeof this.activityMgr.getState>);
   }
 
   // ─── 内部方法 ──────────────────────────────
