@@ -8,18 +8,11 @@
  */
 
 import { ShopSystem } from '../ShopSystem';
-import type {
-  BuyRequest,
-  DiscountConfig,
-  GoodsFilter,
-  ShopSaveData,
-} from '../../../core/shop/shop.types';
+import type { BuyRequest } from '../../../core/shop/shop.types';
 import type { ISystemDeps } from '../../../core/types/subsystem';
 import { SHOP_TYPES } from '../../../core/shop/shop.types';
 import {
   DAILY_MANUAL_REFRESH_LIMIT,
-  SHOP_SAVE_VERSION,
-  CONFIRM_THRESHOLDS,
 } from '../../../core/shop/shop-config';
 import { GOODS_DEF_MAP, SHOP_GOODS_IDS, ALL_GOODS_DEFS } from '../../../core/shop/goods-data';
 import type { CurrencySystem } from '../../currency/CurrencySystem';
