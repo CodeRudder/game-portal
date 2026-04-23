@@ -13,6 +13,7 @@
 - [Round 10复盘: P2消化+质量扫描](./progress/evolution-progress-r10.md) — social命名修复+StoryEventPlayer拆分(499→331)+exports死代码删除(-202行)+全局质量扫描验证+EVO-061~062
 - [Round 11复盘: data-testid全覆盖+死代码清理](./progress/evolution-progress-r11.md) — data-testid 100%覆盖(89/89)+LeaderboardSystem死代码清理(-348行)+EVO-063
 - [Round 12复盘: 预防性文件拆分](./progress/evolution-progress-r12.md) — ArenaSystem拆分(499→399)+settings预防性拆分(AnimationController 476→428+AccountSystem 466→429)+EVO-064
+- [Round 23复盘: 还债提质](./progress/evolution-progress-r23.md) — 3个P1修复(mail跨层/UP武将描述/每日免费招募)+TODO清零(40→0)+400+行文件拆分(5个)+jest残留清零+as any清零+四项指标全部归零
 
 ---
 
@@ -57,11 +58,11 @@
 
 ---
 
-*文档版本: v4.0 | 更新日期: 2026-04-23 | 新增 evo-tools 评测工具索引*
+*文档版本: v5.0 | 更新日期: 2026-04-24 | 新增 R23 复盘 + EVO-073~076（来自R22复盘）*
 
 ---
 
-## 进化规则追加（EVO-059~064）
+## 进化规则追加（EVO-059~076）
 
 ### EVO-059: 测试框架统一（来自Round 8复盘）
 所有测试文件必须使用 vitest API（vi.fn / vi.mock / vi.spyOn / vi.advanceTimersByTime），禁止使用 jest API。
@@ -107,3 +108,25 @@
 3. 优先提取独立流程到独立模块（如 account-delete-flow.ts）
 检查方法: `find src/ -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -20`
 范例: Round 12 拆分 ArenaSystem(499→399)+AnimationController(476→428)+AccountSystem(466→429)。
+
+### EVO-073: 测试文件门面一致性（来自Round 22复盘）
+测试文件应通过域的 `index.ts` 门面导入类型和常量，避免直接引用内部文件。
+新增测试文件时 lint 检查 `from.*engine/[^i]` 模式。
+检查方法: `grep -rn "from.*engine/[^i]" src/ --include="*.test.*"`
+范例: R22 hero域测试中2处直接引用 hero.types 绕过门面。
+
+### EVO-074: 域文件行数预警线（来自Round 22复盘）
+单个域文件不超过480行（留20行缓冲），超过时触发拆分预警。
+CSS文件同样适用此规则，动画关键帧可拆分为独立 -anim.css 文件。
+检查方法: `find src/ -name "*.ts" -o -name "*.tsx" -o -name "*.css" | xargs wc -l | sort -rn | head -20`
+范例: HeroLevelSystem.ts（477行）+ HeroStarUpModal.css（489行）均逼近上限。
+
+### EVO-075: 新域测试覆盖密度（来自Round 22复盘）
+新增域的测试用例数应 ≥ 源码行数 × 0.15。
+测试文件与源码文件比应 ≥ 1.5:1。
+范例: hero域 3,362行 × 0.15 = 504，实际474，覆盖率 94%。
+
+### EVO-076: P0降级双人确认（来自Round 22复盘）
+P0降级为P1需要架构师+产品经理双人确认。
+确认内容：影响范围评估 + 替代方案 + 修复时间线。
+范例: R22 中2个P0降级为P1，缺乏量化标准，后续建立三门槛：影响<5%用户+有替代路径+下轮可修复。
