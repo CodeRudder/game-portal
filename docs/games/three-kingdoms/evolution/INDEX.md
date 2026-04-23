@@ -3,6 +3,17 @@
 > **用途**: 纯导航索引，所有详细内容在各子目录中。
 > **入口**: [进化规则](../process/evolution-rules.md) | [进化计划](./evo-plans/index.md) | [进化日志](./evo-logs/index.md) | [检查规则](./review-rules/index.md) | [进化知识库](./evo-knowledge/index.md) | [评测工具](./evo-tools/index.md)
 
+## 复盘记录
+- [Round 3复盘: P1修复](./progress/evolution-progress-r3.md) — Round 2发现的4个P1问题全部修复，0P0/0P1收官
+- [Round 4复盘: ISubsystem+大文件拆分](./evolution-r4-round.md) — ISubsystem覆盖率100%(91/91)+8大文件拆分至0超限+EVO-046~048
+- [Round 2全局复盘](./evolution-r11.md) — 20版本完成(14通过/6有条件)+P0:0/P1:~20+GameEventSimulator+门面精简616→138行+EVO-049~052
+- [Round 7复盘: P1修复+测试增强](./progress/evolution-progress-r7.md) — EventTriggerSystem增强+calcRebirthMultiplier签名统一+data-testid补全10组件+测试修复16文件+EVO-056~058
+- [Round 8复盘: 测试基础设施升级](./progress/evolution-progress-r8.md) — Jest→Vitest迁移261文件2976处替换+data-testid补全22组件+三国6158测试全通过+EVO-059~060
+- [Round 9复盘: 全版本审查验证](./progress/evolution-progress-r9.md) — 20版本技术审查+EventTriggerSystem拆分(697→468行)+废弃代码清理+BattleEffectApplier ISubsystem补全
+- [Round 10复盘: P2消化+质量扫描](./progress/evolution-progress-r10.md) — social命名修复+StoryEventPlayer拆分(499→331)+exports死代码删除(-202行)+全局质量扫描验证+EVO-061~062
+- [Round 11复盘: data-testid全覆盖+死代码清理](./progress/evolution-progress-r11.md) — data-testid 100%覆盖(89/89)+LeaderboardSystem死代码清理(-348行)+EVO-063
+- [Round 12复盘: 预防性文件拆分](./progress/evolution-progress-r12.md) — ArenaSystem拆分(499→399)+settings预防性拆分(AnimationController 476→428+AccountSystem 466→429)+EVO-064
+
 ---
 
 ## 核心文档
@@ -47,3 +58,52 @@
 ---
 
 *文档版本: v4.0 | 更新日期: 2026-04-23 | 新增 evo-tools 评测工具索引*
+
+---
+
+## 进化规则追加（EVO-059~064）
+
+### EVO-059: 测试框架统一（来自Round 8复盘）
+所有测试文件必须使用 vitest API（vi.fn / vi.mock / vi.spyOn / vi.advanceTimersByTime），禁止使用 jest API。
+批量迁移时使用 `sed -i 's/jest\.fn/vi.fn/g'` 等模式替换，替换后必须添加 `import { vi } from 'vitest'`。
+检查方法: `grep -rn "jest\.\(fn\|mock\|spyOn\|advanceTimersByTime\)" src/ --include="*.test.*"`
+发现残留 jest API 时立即替换为对应 vitest API。
+
+### EVO-060: 批量替换安全模式（来自Round 8复盘）
+批量 sed 替换后必须执行三步验证：
+1. 编译验证: `pnpm run build` 确认无构建错误
+2. 目标模块测试: `pnpm vitest run src/games/three-kingdoms/` 确认核心测试全通过
+3. 全局回归: `pnpm vitest run` 确认无连锁破坏
+替换前建议在单个文件上试跑，确认替换模式无误后再批量执行。
+范例: Round 8 迁移 261 文件 2976 处替换，三国 6158 测试全部通过。
+
+### EVO-061: 命名一致性（来自Round 10复盘）
+以 Subsystem 结尾的类必须实现 ISubsystem 接口（含 init/reset 生命周期方法）。
+纯工具类（无状态、无生命周期）应使用 Helper 后缀，不得使用 Subsystem 命名。
+检查方法: `grep -rn "class.*Subsystem" src/ --include="*.ts" | grep -v "implements ISubsystem"`
+发现违规时立即重命名（Subsystem→Helper）并更新所有引用。
+范例: Round 10 将 FriendInteractionSubsystem/BorrowHeroSubsystem 重命名为 Helper。
+
+### EVO-062: 孤立文件定期清理（来自Round 10复盘）
+每轮进化末尾执行孤立文件扫描，识别并删除无引用文件：
+1. 扫描方法: 对非 index.ts 文件执行 `grep -rn "import.*{filename}" src/` 检查引用
+2. 零引用文件确认后删除，删除前运行 `pnpm run build` 验证
+3. 重点关注: exports-v*.ts 残留、bak/ 目录、废弃版本文件
+范例: Round 10 删除 exports-v9.ts(88行) + exports-v12.ts(114行) = 202行死代码。
+
+### EVO-063: data-testid 完备性要求（来自Round 11复盘）
+所有 UI 组件(.tsx)必须有 data-testid 属性，新建组件必须同步添加。
+命名规范: kebab-case（如 `data-testid="hero-panel"`）。
+覆盖率目标: 100%。
+检查方法: `grep -rL "data-testid" src/ --include="*.tsx" | grep -v node_modules`
+范例: Round 11 补全21个组件，覆盖率从76.4%提升至100%(89/89)。
+
+### EVO-064: 预防性拆分阈值（来自Round 12复盘）
+引擎文件超过450行时触发预防性分析，超过480行时强制拆分。
+分析时优先提取纯函数/纯逻辑，不破坏类内聚性。
+拆分策略:
+1. 优先提取常量、工厂函数、纯辅助函数到 .helpers.ts 文件
+2. 优先提取配置/默认值到 -defaults.ts 文件
+3. 优先提取独立流程到独立模块（如 account-delete-flow.ts）
+检查方法: `find src/ -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -20`
+范例: Round 12 拆分 ArenaSystem(499→399)+AnimationController(476→428)+AccountSystem(466→429)。
