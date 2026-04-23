@@ -12,20 +12,32 @@ import { CaravanSystem } from '../CaravanSystem';
 import type { RouteInfoProvider } from '../CaravanSystem';
 import {
   CARAVAN_STATUS_LABELS,
+  type Caravan,
 } from '../../../core/trade/trade.types';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 import {
   INITIAL_CARAVAN_COUNT,
   MAX_CARAVAN_COUNT,
   BASE_CARAVAN_ATTRIBUTES,
 } from '../../../core/trade/trade-config';
 
+/** 创建满足 ISystemDeps 的 mock 依赖 */
+function createMockDeps(): ISystemDeps {
+  return {
+    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as unknown as ISystemDeps['eventBus'],
+    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+  };
+}
+
+/** 访问 CaravanSystem 内部私有 caravans Map（测试专用） */
+function getInternalCaravans(cs: CaravanSystem): Map<string, Caravan> {
+  return (cs as unknown as { caravans: Map<string, Caravan> }).caravans;
+}
+
 function createCaravan(): CaravanSystem {
   const caravan = new CaravanSystem();
-  caravan.init({
-    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as any,
-    config: { get: jest.fn() } as any,
-    registry: { get: jest.fn() } as any,
-  });
+  caravan.init(createMockDeps());
   return caravan;
 }
 
@@ -202,7 +214,7 @@ describe('CaravanSystem - update 状态流转', () => {
     cs.setRouteProvider(provider);
     const first = cs.getCaravans()[0];
     cs.dispatch({ caravanId: first.id, routeId: 'route_luoyang_xuchang', cargo: { silk: 5 } });
-    const caravan = (cs as any).caravans.get(first.id);
+    const caravan = getInternalCaravans(cs).get(first.id)!;
     caravan.arrivalTime = Date.now() - 1;
     cs.update(1);
     expect(caravan.status).toBe('returning');
@@ -214,7 +226,7 @@ describe('CaravanSystem - update 状态流转', () => {
     cs.setRouteProvider(provider);
     const first = cs.getCaravans()[0];
     cs.dispatch({ caravanId: first.id, routeId: 'route_luoyang_xuchang', cargo: { silk: 5 } });
-    const caravan = (cs as any).caravans.get(first.id);
+    const caravan = getInternalCaravans(cs).get(first.id)!;
     caravan.status = 'returning';
     caravan.arrivalTime = Date.now() - 1;
     cs.update(1);

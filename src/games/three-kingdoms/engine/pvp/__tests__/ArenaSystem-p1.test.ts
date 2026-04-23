@@ -20,6 +20,7 @@ import {
 } from '../ArenaSystem';
 import { FormationType, AIDefenseStrategy } from '../../../core/pvp/pvp.types';
 import type { ArenaOpponent, ArenaPlayerState } from '../../../core/pvp/pvp.types';
+import type { Faction } from '../../hero/hero.types';
 
 // ── 辅助函数 ──────────────────────────────
 
@@ -32,7 +33,7 @@ function createOpponent(overrides: Partial<ArenaOpponent> = {}): ArenaOpponent {
     rankId: 'BRONZE_V',
     score: 100,
     ranking: 10,
-    faction: 'wei' as any,
+    faction: 'wei' as Faction,
     defenseSnapshot: null,
     ...overrides,
   };
@@ -51,7 +52,7 @@ function createDiverseOpponents(count: number, basePower: number, baseRanking: n
         ranking: baseRanking + i,
         score: 100 + i * 50,
         rankId: 'BRONZE_V',
-        faction: factions[i % 3] as any,
+        faction: factions[i % 3] as Faction,
       }),
     );
   }

@@ -12,7 +12,8 @@
  */
 
 import { ThreeKingdomsEngine } from '../engine/ThreeKingdomsEngine';
-import type { ResourceType, BuildingType } from '../shared/types';
+import type { ResourceType, BuildingType, BuildingState } from '../shared/types';
+import type { QueueSlot } from '../engine/building/building.types';
 import type { RecruitType } from '../engine/hero/hero-recruit-config';
 import type { GeneralData } from '../engine/hero/hero.types';
 import type { BattleResult } from '../engine/battle/battle.types';
@@ -144,7 +145,7 @@ export class GameEventSimulator {
   private completePendingUpgrades(): void {
     const building = this.engine.building;
     // 直接访问内部 buildings 对象（非 clone）
-    const internalBuildings = (building as any).buildings as Record<string, any>;
+    const internalBuildings = (building as unknown as { buildings: Record<BuildingType, BuildingState> }).buildings;
     const completed: string[] = [];
 
     for (const [type, state] of Object.entries(internalBuildings)) {
@@ -158,7 +159,7 @@ export class GameEventSimulator {
     }
 
     // 清空升级队列
-    const queue = (building as any).upgradeQueue as any[];
+    const queue = (building as unknown as { upgradeQueue: QueueSlot[] }).upgradeQueue;
     if (queue && queue.length > 0) {
       queue.length = 0;
     }
