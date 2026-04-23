@@ -7,6 +7,24 @@ import {
 } from '../../../core/responsive/responsive.types';
 import { TouchInputSystem } from '../TouchInputSystem';
 
+// ── 辅助：模拟时间流逝 ──
+function advanceTime(ms: number): void {
+  jest.advanceTimersByTime(ms);
+}
+
+describe('TouchInputSystem', () => {
+  let system: TouchInputSystem;
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    system = new TouchInputSystem();
+  });
+
+  afterEach(() => {
+    system.clearAllListeners();
+    jest.useRealTimers();
+  });
+
 describe('触控反馈配置', () => {
   let system: TouchInputSystem;
 
@@ -14,18 +32,17 @@ describe('触控反馈配置', () => {
     system = new TouchInputSystem();
   });
 
-    it('默认配置应正确', () => {
-      const config = system.feedbackConfig;
-      expect(config.type).toBe(TouchFeedbackType.LightVibration);
-      expect(config.visualScaleValue).toBeCloseTo(0.96);
-      expect(config.vibrationEnabled).toBe(true);
-    });
+  it('默认配置应正确', () => {
+    const config = system.feedbackConfig;
+    expect(config.type).toBe(TouchFeedbackType.LightVibration);
+    expect(config.visualScaleValue).toBeCloseTo(0.96);
+    expect(config.vibrationEnabled).toBe(true);
+  });
 
-    it('setFeedbackConfig应更新配置', () => {
-      system.setFeedbackConfig({ vibrationEnabled: false });
-      expect(system.feedbackConfig.vibrationEnabled).toBe(false);
-      expect(system.feedbackConfig.type).toBe(TouchFeedbackType.LightVibration); // 未变
-    });
+  it('setFeedbackConfig应更新配置', () => {
+    system.setFeedbackConfig({ vibrationEnabled: false });
+    expect(system.feedbackConfig.vibrationEnabled).toBe(false);
+    expect(system.feedbackConfig.type).toBe(TouchFeedbackType.LightVibration); // 未变
   });
 });
 
@@ -304,3 +321,5 @@ describe('事件监听管理', () => {
     expect(desktops.length).toBe(0);
     expect(hotkeys.length).toBe(0);
   });
+});
+});

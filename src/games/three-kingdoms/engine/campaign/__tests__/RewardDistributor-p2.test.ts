@@ -10,6 +10,53 @@ import { getChapters, getChapter, getStage, getStagesByChapter } from '../campai
 
 // 使用实际配置作为数据提供者
 const dataProvider: ICampaignDataProvider = {
+  getChapters,
+  getChapter,
+  getStage,
+  getStagesByChapter,
+};
+
+// ─────────────────────────────────────────────
+// 辅助：创建带追踪的依赖
+// ─────────────────────────────────────────────
+
+function createTrackedDeps(): {
+  deps: RewardDistributorDeps;
+  resources: Record<string, number>;
+  fragments: Record<string, number>;
+  totalExp: number;
+} {
+  const resources: Record<string, number> = {};
+  const fragments: Record<string, number> = {};
+  let totalExp = 0;
+
+  return {
+    deps: {
+      addResource: (type: any, amount: number) => {
+        resources[type] = (resources[type] ?? 0) + amount;
+        return resources[type];
+      },
+      addFragment: (generalId: string, count: number) => {
+        fragments[generalId] = (fragments[generalId] ?? 0) + count;
+      },
+      addExp: (exp: number) => {
+        totalExp += exp;
+      },
+    },
+    resources,
+    fragments,
+    get totalExp() { return totalExp; },
+  };
+}
+
+// 固定随机数生成器
+function fixedRng(value: number): () => number {
+  return () => value;
+}
+
+// rng=1.0 确保所有掉落都不触发（rng > probability），用于测试纯基础奖励
+const noDropRng = fixedRng(1.0);
+
 describe('RewardDistributor 预览功能', () => {
   let distributor: RewardDistributor;
 
@@ -304,4 +351,3 @@ describe('RewardDistributor 关卡类型对比', () => {
   });
 });
 
-});
