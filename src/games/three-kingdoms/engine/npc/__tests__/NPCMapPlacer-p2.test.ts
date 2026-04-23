@@ -22,6 +22,62 @@ import { GRID_CONFIG } from '../../../core/map';
 // ─────────────────────────────────────────────
 
 function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+/** 创建一个 NPC 数据对象 */
+function createNPC(
+  overrides: Partial<NPCData> & { id: string },
+): NPCData {
+  return {
+    name: `NPC-${overrides.id}`,
+    profession: 'merchant' as NPCProfession,
+    affinity: 50,
+    position: { x: 0, y: 0 },
+    region: 'central_plains',
+    visible: true,
+    dialogId: 'dialog-merchant-default',
+    createdAt: 0,
+    lastInteractedAt: 0,
+    ...overrides,
+  };
+}
+
+/** 创建 NPCMapPlacer 实例并注入依赖 */
+function createPlacer(
+  options: {
+    npcs?: NPCData[];
+    visibleNPCs?: NPCData[];
+  } = {},
+): { placer: NPCMapPlacer; deps: ISystemDeps; placerDeps: NPCMapPlacerDeps } {
+  const deps = mockDeps();
+  const placer = new NPCMapPlacer();
+  placer.init(deps);
+
+  const npcs = options.npcs ?? [];
+  const visibleNPCs = options.visibleNPCs ?? npcs;
+
+  const placerDeps: NPCMapPlacerDeps = {
+    getAllNPCs: jest.fn().mockReturnValue(npcs),
+    getVisibleNPCs: jest.fn().mockReturnValue(visibleNPCs),
+  };
+
+  placer.setPlacerDeps(placerDeps);
+  return { placer, deps, placerDeps };
+}
+
+// ═══════════════════════════════════════════════════════════
+
 describe('NPCMapPlacer', () => {
   let placer: NPCMapPlacer;
   let deps: ISystemDeps;
@@ -381,6 +437,4 @@ describe('NPCMapPlacer', () => {
       expect(jnDisplays.length).toBe(3);
     });
   });
-});
-
 });

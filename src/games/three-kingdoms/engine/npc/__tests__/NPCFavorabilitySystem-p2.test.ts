@@ -7,6 +7,44 @@ import {
   BOND_SKILLS,
 } from '../../../core/npc';
 
+// ─────────────────────────────────────────────
+// 辅助工具
+// ─────────────────────────────────────────────
+
+function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+function createSystemWithNPC(): { favSys: NPCFavorabilitySystem; npcSys: NPCSystem; deps: ISystemDeps } {
+  const deps = mockDeps();
+
+  const npcSys = new NPCSystem();
+  npcSys.init(deps);
+
+  // 让 registry.get 返回 NPCSystem
+  (deps.registry.get as ReturnType<typeof jest.fn>).mockImplementation((name: string) => {
+    if (name === 'npc') return npcSys;
+    return null;
+  });
+
+  const favSys = new NPCFavorabilitySystem();
+  favSys.init(deps);
+
+  return { favSys, npcSys, deps };
+}
+
+// ═══════════════════════════════════════════════════════════
+
 describe('NPCFavorabilitySystem', () => {
   let favSys: NPCFavorabilitySystem;
   let npcSys: NPCSystem;
@@ -303,6 +341,4 @@ describe('NPCFavorabilitySystem', () => {
       expect(history.every((r) => r.npcId === 'npc-merchant-01')).toBe(true);
     });
   });
-});
-
 });
