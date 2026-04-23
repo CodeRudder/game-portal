@@ -1,16 +1,3 @@
-/**
- * BattleEffectManager — 单元测试 (P2)
- *
- * 覆盖：
- * - #4 手机端战斗全屏布局适配（续）
- * - #5 伤害数字动画数据生成
- * - 特效与战斗速度联动
- * - 生命周期管理
- * - 集成场景
- *
- * @module engine/battle/__tests__/BattleEffectManager-p2.test
- */
-
 import { BattleEffectManager } from '../BattleEffectManager';
 import type {
   SkillEffectData,

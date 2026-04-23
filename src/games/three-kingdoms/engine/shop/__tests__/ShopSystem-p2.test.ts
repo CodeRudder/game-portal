@@ -1,20 +1,142 @@
+/**
+ * ShopSystem 单元测试 (p2)
+ *
+ * 覆盖：
+ * - 购买逻辑（验证 + 执行）
+ * - 库存与限购
+ * - 收藏管理
+ * - 补货机制
+ * - 商店等级
+ * - 序列化/反序列化
+ * - ISubsystem 接口
+ * - 确认等级阈值
+ */
+
 import { ShopSystem } from '../ShopSystem';
 import type {
-  BuyRequest,
+  ShopType,
+  GoodsCategory,
+  GoodsDef,
   GoodsItem,
-  GoodsFilter,
+  BuyRequest,
+  BuyResult,
+  BuyValidation,
+  ConfirmLevel,
+  ShopState,
   ShopSaveData,
+  DiscountConfig,
+  GoodsFilter,
 } from '../../../core/shop/shop.types';
-import { SHOP_TYPES } from '../../../core/shop/shop.types';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 import {
-  SHOP_SAVE_VERSION,
+  SHOP_TYPES,
+  SHOP_TYPE_LABELS,
+  GOODS_CATEGORY_LABELS,
+  GOODS_RARITY_LABELS,
+} from '../../../core/shop/shop.types';
+import {
+  DEFAULT_RESTOCK_CONFIG,
   DAILY_MANUAL_REFRESH_LIMIT,
+  SHOP_SAVE_VERSION,
   CONFIRM_THRESHOLDS,
+  PERMANENT_GOODS_STOCK,
+  RANDOM_GOODS_STOCK,
+  DISCOUNT_GOODS_STOCK,
+  LIMITED_GOODS_STOCK,
 } from '../../../core/shop/shop-config';
 import { GOODS_DEF_MAP, SHOP_GOODS_IDS, ALL_GOODS_DEFS } from '../../../core/shop/goods-data';
 import type { CurrencySystem } from '../../currency/CurrencySystem';
-import type { ISystemDeps } from '../../../core/types/subsystem';
 
+// ─── 辅助 ────────────────────────────────────
+
+/** 创建带 mock deps 的 ShopSystem */
+function createShop(): ShopSystem {
+  const shop = new ShopSystem();
+  const mockEventBus = {
+    emit: jest.fn(),
+    on: jest.fn(),
+    off: jest.fn(),
+    once: jest.fn(),
+    removeAllListeners: jest.fn(),
+  };
+  const mockConfig = { get: jest.fn() };
+  const mockRegistry = { get: jest.fn() };
+  shop.init({
+    eventBus: mockEventBus as unknown as ISystemDeps['eventBus'],
+    config: mockConfig as unknown as ISystemDeps['config'],
+    registry: mockRegistry as unknown as ISystemDeps['registry'],
+  });
+  return shop;
+}
+
+/** 创建 mock CurrencySystem */
+function createMockCurrencySystem(): CurrencySystem & {
+  _checkResult: { canAfford: boolean; shortages: { currency: string; required: number; gap: number }[] };
+  _setAffordable: (v: boolean) => void;
+} {
+  let affordable = true;
+  const shortages = () => affordable
+    ? []
+    : [{ currency: 'copper', required: 1000, gap: 500 }];
+
+  return {
+    name: 'currency',
+    init: jest.fn(),
+    update: jest.fn(),
+    getState: jest.fn().mockReturnValue({}),
+    reset: jest.fn(),
+    checkAffordability: jest.fn().mockImplementation(() => ({
+      canAfford: affordable,
+      shortages: shortages(),
+    })),
+    spendByPriority: jest.fn().mockImplementation(() => {
+      if (!affordable) throw new Error('货币不足');
+      return {};
+    }),
+    _checkResult: { canAfford: true, shortages: [] },
+    _setAffordable: (v: boolean) => { affordable = v; },
+  } as unknown as CurrencySystem & {
+    _checkResult: { canAfford: boolean; shortages: { currency: string; required: number; gap: number }[] };
+    _setAffordable: (v: boolean) => void;
+  };
+}
+
+/** 获取一个存在于 normal 商店的商品ID */
+function getNormalGoodsId(): string {
+  const ids = SHOP_GOODS_IDS['normal'];
+  return ids.length > 0 ? ids[0] : 'res_copper_small';
+}
+
+/** 获取一个可收藏的商品ID */
+function getFavoritableGoodsId(): string | undefined {
+  for (const def of ALL_GOODS_DEFS) {
+    if (def.favoritable) return def.id;
+  }
+  return undefined;
+}
+
+// ═══════════════════════════════════════════════
+// 测试
+// ═══════════════════════════════════════════════
+
+describe('ShopSystem', () => {
+  let shop: ShopSystem;
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    shop = createShop();
+  });
+
+  // ═══════════════════════════════════════════
+  // 3b. NPC折扣覆盖（p1尾部延续）
+  // ═══════════════════════════════════════════
+  describe('定价与折扣（续）', () => {
+    it('setNPCDiscountProvider 设置后可覆盖', () => {
+      const id = getNormalGoodsId();
+      const def = GOODS_DEF_MAP[id];
+      const basePrice = Object.values(def!.basePrice)[0];
+
+      shop.setNPCDiscountProvider(() => 0.8);
+      const price1 = shop.calculateFinalPrice(id, 'normal', 'npc_001');
       const val1 = Object.values(price1)[0];
       expect(val1).toBe(Math.ceil(basePrice * 0.8));
 
@@ -22,6 +144,8 @@ import type { ISystemDeps } from '../../../core/types/subsystem';
       const price2 = shop.calculateFinalPrice(id, 'normal', 'npc_001');
       const val2 = Object.values(price2)[0];
       expect(val2).toBe(Math.ceil(basePrice * 0.5));
+    });
+  });
 
   // ═══════════════════════════════════════════
   // 4. 购买逻辑
@@ -32,6 +156,7 @@ import type { ISystemDeps } from '../../../core/types/subsystem';
       const result = shop.validateBuy(req);
       expect(result.canBuy).toBe(false);
       expect(result.errors).toContain('商品不存在');
+    });
 
     it('validateBuy 商品不在当前商店返回失败', () => {
       // limited_time 商品在 normal 商店中不存在

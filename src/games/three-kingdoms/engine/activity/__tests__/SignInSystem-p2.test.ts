@@ -1,93 +1,27 @@
 import {
+  SignInSystem,
+  createDefaultSignInData,
+  DEFAULT_SIGN_IN_REWARDS,
+  DEFAULT_SIGN_IN_CONFIG,
+  SIGN_IN_CYCLE_DAYS,
+} from '../SignInSystem';
+
 import type { SignInData, SignInReward, SignInConfig } from '../../../core/activity/activity.types';
 
-      expect(() => {
-        system.retroactive(signedData, BASE_TIME, 100);
-      }).toThrow('今日已签到');
+// ─── 辅助 ────────────────────────────────────
 
-    it('元宝不足时补签抛异常', () => {
-      const data = createDefaultSignInData();
-      expect(() => {
-        system.retroactive(data, BASE_TIME, 30); // 需要50，只有30
-      }).toThrow('元宝不足');
+/** 创建时间戳（从基准时间偏移 N 天） */
+function dayOffset(base: number, days: number): number {
+  return base + days * 24 * 60 * 60 * 1000;
+}
 
-    it('补签次数达到每周上限抛异常', () => {
-      let data = createDefaultSignInData();
-      // 补签2次（默认每周上限2次）
-      data = system.retroactive(data, dayOffset(BASE_TIME, 0), 100).data;
-      // 第二天补签
-      data.todaySigned = false; // 模拟新的一天未签到
-      data = system.retroactive(data, dayOffset(BASE_TIME, 1), 100).data;
+/** 基准时间：2024-01-01 00:00:00 UTC */
+const BASE_TIME = new Date('2024-01-01T00:00:00Z').getTime();
 
-      // 第三次补签
-      data.todaySigned = false;
-      expect(() => {
-        system.retroactive(data, dayOffset(BASE_TIME, 2), 100);
-      }).toThrow('本周补签次数已用完');
-    });
+// ═══════════════════════════════════════════════
+// 测试
+// ═══════════════════════════════════════════════
 
-    it('canSignIn 未签到返回 true', () => {
-      const data = createDefaultSignInData();
-      expect(system.canSignIn(data)).toBe(true);
-    });
-
-    it('canSignIn 已签到返回 false', () => {
-      const data = system.signIn(createDefaultSignInData(), BASE_TIME).data;
-      expect(system.canSignIn(data)).toBe(false);
-    });
-
-    it('canRetroactive 正常情况返回可以补签', () => {
-      const data = createDefaultSignInData();
-      const result = system.canRetroactive(data, BASE_TIME, 100);
-      expect(result.canRetroactive).toBe(true);
-      expect(result.reason).toBe('');
-    });
-
-    it('canRetroactive 已签到返回不可补签', () => {
-      const data = system.signIn(createDefaultSignInData(), BASE_TIME).data;
-      const result = system.canRetroactive(data, BASE_TIME, 100);
-      expect(result.canRetroactive).toBe(false);
-      expect(result.reason).toContain('已签到');
-    });
-
-    it('canRetroactive 元宝不足返回不可补签', () => {
-      const data = createDefaultSignInData();
-      const result = system.canRetroactive(data, BASE_TIME, 30);
-      expect(result.canRetroactive).toBe(false);
-      expect(result.reason).toContain('元宝不足');
-    });
-
-    it('getRemainingRetroactive 初始返回每周上限', () => {
-      const data = createDefaultSignInData();
-      expect(system.getRemainingRetroactive(data, BASE_TIME)).toBe(2);
-    });
-
-    it('getRemainingRetroactive 补签后减少', () => {
-      let data = createDefaultSignInData();
-      data = system.retroactive(data, BASE_TIME, 100).data;
-      expect(system.getRemainingRetroactive(data, BASE_TIME)).toBe(1);
-    });
-
-    it('自定义补签配置生效', () => {
-      const custom = new SignInSystem({
-        retroactiveCostGold: 100,
-        weeklyRetroactiveLimit: 5,
-      });
-      const config = custom.getConfig();
-      expect(config.retroactiveCostGold).toBe(100);
-      expect(config.weeklyRetroactiveLimit).toBe(5);
-    });
-
-    it('补签消耗正确金额', () => {
-      const data = createDefaultSignInData();
-      const result = system.retroactive(data, BASE_TIME, 100);
-      expect(result.goldCost).toBe(50);
-    });
-  });
-
-  // ═══════════════════════════════════════════
-  // 5. 奖励查询
-  // ═══════════════════════════════════════════
   describe('奖励查询', () => {
     it('getReward 返回指定天数奖励', () => {
       const reward = system.getReward(1);

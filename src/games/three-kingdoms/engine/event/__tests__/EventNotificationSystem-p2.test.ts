@@ -1,15 +1,3 @@
-/**
- * EventNotificationSystem 单元测试 (p2)
- *
- * 覆盖：
- * - 横幅排序与查询
- * - 随机遭遇弹窗
- * - 遭遇选择处理
- * - 后果预览生成
- * - 序列化
- * - 配置
- */
-
 import { EventNotificationSystem } from '../EventNotificationSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type {

@@ -1,27 +1,52 @@
 import {
+  MailSystem,
+  CATEGORY_LABELS,
+  STATUS_LABELS,
+  MAILS_PER_PAGE,
+  type MailData,
+  type MailCategory,
+  type MailStatus,
+  type MailSendRequest,
+  type MailFilter,
+  type BatchOperationResult,
+} from '../MailSystem';
 
-    const sys = new MailSystem();
-    sys.sendMail(createRewardMail([{ resourceType: 'gold', amount: 100 }]));
-    sys.sendMail(createRewardMail([{ resourceType: 'gold', amount: 200 }]));
-    sys.sendMail(createRewardMail([{ resourceType: 'grain', amount: 500 }]));
+// ── 辅助 ──
 
-    const result = sys.claimAllAttachments();
-    expect(result.count).toBe(3);
-    expect(result.claimedResources.gold).toBe(300);
-    expect(result.claimedResources.grain).toBe(500);
+function createMockStorage(): Storage {
+  const store: Record<string, string> = {};
+  return {
+    getItem: jest.fn((key: string) => store[key] ?? null),
+    setItem: jest.fn((key: string, value: string) => { store[key] = value; }),
+    removeItem: jest.fn((key: string) => { delete store[key]; }),
+    clear: jest.fn(() => Object.keys(store).forEach(k => delete store[k])),
+    get length() { return Object.keys(store).length; },
+    key: jest.fn(() => null),
+  };
+}
 
-  it('批量领取带分类过滤', () => {
-    const sys = new MailSystem();
-    sys.sendMail(createRewardMail([{ resourceType: 'gold', amount: 100 }]));
-    sys.sendMail({ category: 'system', title: '系统', content: '', sender: '系统' });
+function createSystemMail(overrides?: Partial<MailSendRequest>): MailSendRequest {
+  return {
+    category: 'system',
+    title: '系统通知',
+    content: '这是一封系统邮件',
+    sender: '系统',
+    ...overrides,
+  };
+}
 
-    const result = sys.claimAllAttachments({ category: 'reward' });
-    expect(result.count).toBe(1);
-  });
-});
+function createRewardMail(attachments?: Array<{ resourceType: string; amount: number }>): MailSendRequest {
+  return {
+    category: 'reward',
+    title: '奖励邮件',
+    content: '恭喜获得奖励',
+    sender: '系统',
+    attachments: attachments ?? [{ resourceType: 'gold', amount: 100 }],
+  };
+}
 
 // ═══════════════════════════════════════════════
-// 4. 邮件查询与分页
+// 1. 邮件创建
 // ═══════════════════════════════════════════════
 
 describe('MailSystem — 查询与分页', () => {

@@ -1,16 +1,3 @@
-/**
- * NPCFavorabilitySystem 单元测试 (p2)
- *
- * 覆盖：
- * - 好感度获取途径（续：历史记录）
- * - 好感度进度可视化（#19）
- * - 羁绊技能（#20）
- * - 好感度时间衰减
- * - 配置管理
- * - 存档序列化
- * - 历史记录管理
- */
-
 import { NPCFavorabilitySystem } from '../NPCFavorabilitySystem';
 import { NPCSystem } from '../NPCSystem';
 import type { ISystemDeps } from '../../../core/types';

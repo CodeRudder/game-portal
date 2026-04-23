@@ -1,9 +1,73 @@
+/**
+ * QuestSystem 单元测试 (p2)
+ *
+ * 覆盖：
+ * - 日常任务每日刷新 20选6
+ * - 活跃度系统累积与宝箱解锁
+ * - 任务追踪面板
+ * - 查询方法
+ * - 存档序列化
+ * - 事件发射
+ */
+
 import { QuestSystem } from '../QuestSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type { QuestDef, QuestReward, QuestInstance } from '../../../core/quest';
 import {
+  QUEST_MAIN_CHAPTER_1,
+  QUEST_MAIN_CHAPTER_2,
+  QUEST_MAIN_CHAPTER_3,
+  DAILY_QUEST_TEMPLATES,
+} from '../../../core/quest';
 
+// ─────────────────────────────────────────────
+// 辅助工具
+// ─────────────────────────────────────────────
+
+function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+function createQuestSystem(): QuestSystem {
+  const sys = new QuestSystem();
+  sys.init(mockDeps());
+  return sys;
+}
+
+// ═══════════════════════════════════════════════════════════
+
+describe('QuestSystem', () => {
+  let questSys: QuestSystem;
+
+  beforeEach(() => {
+    questSys = createQuestSystem();
+  });
+
+  // ═══════════════════════════════════════════
+  // 5b. 奖励领取（续）
+  // ═══════════════════════════════════════════
+  describe('任务奖励领取（续）', () => {
+    it('claimAllRewards 一键领取所有奖励', () => {
+      questSys.setRewardCallback(() => {});
+
+      const inst1 = questSys.acceptQuest('quest-main-001')!;
+      questSys.updateObjectiveProgress(inst1.instanceId, 'obj-001-1', 1);
+
+      const allRewards = questSys.claimAllRewards();
+      expect(allRewards).toHaveLength(1);
       expect(allRewards[0].resources!.gold).toBe(200);
+    });
+  });
 
   // ═══════════════════════════════════════════
   // 6. 日常任务每日刷新 20选6（#17）

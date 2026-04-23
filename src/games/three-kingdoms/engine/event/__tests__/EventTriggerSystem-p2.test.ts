@@ -1,18 +1,3 @@
-/**
- * EventTriggerSystem 单元测试 (p2)
- *
- * 覆盖：
- * - 事件过期
- * - 活跃事件管理
- * - 事件类型矩阵完整性
- * - 存档序列化
- * - 配置
- * - canTrigger 综合测试
- * - 概率计算
- * - 条件评估
- * - 概率公式集成触发
- */
-
 import { EventTriggerSystem } from '../EventTriggerSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type {

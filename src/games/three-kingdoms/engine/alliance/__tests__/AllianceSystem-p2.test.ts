@@ -1,35 +1,48 @@
 import {
+  AllianceSystem,
+} from '../AllianceSystem';
 import {
+  ALLIANCE_LEVEL_CONFIGS,
+  createDefaultAlliancePlayerState,
+  createAllianceData,
+} from '../alliance-constants';
 import { ApplicationStatus, AllianceRole } from '../../../core/alliance/alliance.types';
 import type {
+  AllianceData,
+  AlliancePlayerState,
+} from '../../../core/alliance/alliance.types';
 
-    const result = system.setRole(alliance, 'p1', 'p3', 'ADVISOR' as AllianceRole);
-    expect(result.members['p3'].role).toBe('ADVISOR');
-  });
+// ── 辅助函数 ──────────────────────────────
 
-  test('不能设置为LEADER角色', () => {
-    const alliance = createAllianceWithMembers();
-    expect(() => system.setRole(alliance, 'p1', 'p3', 'LEADER' as AllianceRole))
-      .toThrow('请使用转让盟主功能');
-  });
+const NOW = 1000000;
 
-  test('退出联盟', () => {
-    const alliance = createAllianceWithMembers();
-    const state = createState({ allianceId: alliance.id });
-    const result = system.leaveAlliance(alliance, state, 'p3');
-    expect(result.playerState.allianceId).toBe('');
-    expect(result.alliance!.members['p3']).toBeUndefined();
-  });
+function createState(overrides?: Partial<AlliancePlayerState>): AlliancePlayerState {
+  return { ...createDefaultAlliancePlayerState(), ...overrides };
+}
 
-  test('盟主不能退出', () => {
-    const alliance = createAllianceWithMembers();
-    const state = createState({ allianceId: alliance.id });
-    expect(() => system.leaveAlliance(alliance, state, 'p1'))
-      .toThrow('盟主需先转让');
-  });
-});
+function createTestAlliance(
+  leaderId = 'p1',
+  leaderName = '刘备',
+  name = '蜀汉',
+): AllianceData {
+  return createAllianceData('ally_1', name, '兴复汉室', leaderId, leaderName, NOW);
+}
 
-// ── 三级权限 ──────────────────────────────
+function createAllianceWithMembers(): AllianceData {
+  let alliance = createTestAlliance();
+  // 添加军师和成员
+  alliance.members['p2'] = {
+    playerId: 'p2', playerName: '诸葛亮', role: 'ADVISOR' as AllianceRole,
+    power: 5000, joinTime: NOW, dailyContribution: 0, totalContribution: 100, dailyBossChallenges: 0,
+  };
+  alliance.members['p3'] = {
+    playerId: 'p3', playerName: '关羽', role: 'MEMBER' as AllianceRole,
+    power: 3000, joinTime: NOW, dailyContribution: 0, totalContribution: 50, dailyBossChallenges: 0,
+  };
+  return alliance;
+}
+
+// ── 联盟创建 ──────────────────────────────
 
 describe('AllianceSystem — 三级权限', () => {
   let system: AllianceSystem;

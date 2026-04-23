@@ -1,18 +1,71 @@
 import { EquipmentSystem, resetUidCounter } from '../EquipmentSystem';
 import type {
+  EquipmentSlot,
+  EquipmentRarity,
+  EquipmentInstance,
+  BagFilter,
+  BagSortMode,
+} from '../../../core/equipment';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 import {
+  EQUIPMENT_SLOTS,
+  EQUIPMENT_RARITIES,
+  RARITY_ORDER,
+  RARITY_ENHANCE_CAP,
+  RARITY_MAIN_STAT_MULTIPLIER,
+  RARITY_SUB_STAT_MULTIPLIER,
+  RARITY_SUB_STAT_COUNT,
+  RARITY_SPECIAL_EFFECT_CHANCE,
+  ENHANCE_MAIN_STAT_FACTOR,
+  ENHANCE_SUB_STAT_FACTOR,
+  DEFAULT_BAG_CAPACITY,
+  MAX_BAG_CAPACITY,
+  BAG_EXPAND_INCREMENT,
+  DECOMPOSE_COPPER_BASE,
+  DECOMPOSE_STONE_BASE,
+  DECOMPOSE_ENHANCE_BONUS,
+  SLOT_MAIN_STAT_TYPE,
+  SLOT_SUB_STAT_POOL,
+  SLOT_SPECIAL_EFFECT_POOL,
+} from '../../../core/equipment';
 
+/** 创建满足 ISystemDeps 的 mock 依赖 */
+function createMockDeps(): ISystemDeps {
+  return {
+    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as unknown as ISystemDeps['eventBus'],
+    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+  };
+}
 
-    it('移除装备触发 equipment:removed 事件', () => {
-      const eq = addRandomEquipment(sys);
-      sys.removeFromBag(eq.uid);
-      const mockEventBus = (sys as unknown as { deps: import('../../../core/types/subsystem').ISystemDeps }).deps.eventBus;
-      expect(mockEventBus.emit).toHaveBeenCalledWith(
-        'equipment:removed',
-        expect.objectContaining({ uid: eq.uid }),
-      );
-    });
-  });
+/** 访问 EquipmentSystem 内部私有 deps（测试专用） */
+function getInternalDeps(sys: EquipmentSystem): ISystemDeps {
+  return (sys as unknown as { deps: ISystemDeps }).deps;
+}
+
+/** 创建带 mock deps 的 EquipmentSystem */
+function createSystem(): EquipmentSystem {
+  resetUidCounter();
+  const sys = new EquipmentSystem();
+  sys.init(createMockDeps());
+  return sys;
+}
+
+/** 生成并添加装备到背包 */
+function addRandomEquipment(
+  sys: EquipmentSystem,
+  slot: EquipmentSlot = 'weapon',
+  rarity: EquipmentRarity = 'white',
+  seed: number = 42,
+): EquipmentInstance {
+  const eq = sys.generateEquipment(slot, rarity, 'campaign_drop', seed);
+  sys.addToBag(eq);
+  return eq;
+}
+
+// ═══════════════════════════════════════════════════
+// 1. 装备生成
+// ═══════════════════════════════════════════════════
 
   describe('查询', () => {
     it('getEquipment 返回指定装备', () => {

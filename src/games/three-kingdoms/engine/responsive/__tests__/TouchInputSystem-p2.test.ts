@@ -1,22 +1,16 @@
 import {
+  GestureType,
+  GESTURE_THRESHOLDS,
+  FormationTouchAction,
+  DesktopInteractionType,
+  TouchFeedbackType,
+} from '../../../core/responsive/responsive.types';
 import { TouchInputSystem } from '../TouchInputSystem';
 
-      it('超过防误触间隔后应正常响应', () => {
-        const gestures: any[] = [];
-        system.onGesture((e) => gestures.push(e));
-
-        // 第一次点击
-        system.handleTouchStart(100, 100);
-        advanceTime(100);
-        system.handleTouchEnd(100, 100);
-
-        // 等待超过防误触间隔
-        advanceTime(400); // >300ms
-        system.handleTouchStart(100, 100);
-        advanceTime(100);
-        system.handleTouchEnd(100, 100);
-
-        expect(gestures.length).toBe(2);
+// ── 辅助：模拟时间流逝 ──
+function advanceTime(ms: number): void {
+  jest.advanceTimersByTime(ms);
+}
 
     describe('触控反馈配置', () => {
       it('默认配置应正确', () => {

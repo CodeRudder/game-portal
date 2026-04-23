@@ -1,84 +1,68 @@
 import {
+  ArenaSystem,
+  DEFAULT_MATCH_CONFIG,
+  DEFAULT_REFRESH_CONFIG,
+  DEFAULT_CHALLENGE_CONFIG,
+  createDefaultDefenseFormation,
+  createDefaultArenaPlayerState,
+} from '../ArenaSystem';
 import { FormationType, AIDefenseStrategy } from '../../../core/pvp/pvp.types';
 import type { ArenaOpponent, ArenaPlayerState } from '../../../core/pvp/pvp.types';
+import type { Faction } from '../../hero/hero.types';
 
+// ── 辅助函数 ──────────────────────────────
 
-  test('初始状态有5次挑战机会', () => {
-    const state = createDefaultArenaPlayerState();
-    expect(state.dailyChallengesLeft).toBe(5);
-    expect(system.canChallenge(state)).toBe(true);
-  });
+/** 创建测试用对手 */
+function createOpponent(overrides: Partial<ArenaOpponent> = {}): ArenaOpponent {
+  return {
+    playerId: 'p1',
+    playerName: 'Player1',
+    power: 10000,
+    rankId: 'BRONZE_V',
+    score: 100,
+    ranking: 10,
+    faction: 'wei' as Faction,
+    defenseSnapshot: null,
+    ...overrides,
+  };
+}
 
-  test('消耗挑战次数后递减', () => {
-    const state = createDefaultArenaPlayerState();
-    const after = system.consumeChallenge(state);
-    expect(after.dailyChallengesLeft).toBe(4);
-  });
+/** 创建一组不同阵营的对手 */
+function createDiverseOpponents(count: number, basePower: number, baseRanking: number): ArenaOpponent[] {
+  const factions = ['wei', 'shu', 'wu'] as const;
+  const result: ArenaOpponent[] = [];
+  for (let i = 0; i < count; i++) {
+    result.push(
+      createOpponent({
+        playerId: `player_${i}`,
+        playerName: `Player${i}`,
+        power: basePower + i * 500,
+        ranking: baseRanking + i,
+        score: 100 + i * 50,
+        rankId: 'BRONZE_V',
+        faction: factions[i % 3] as Faction,
+      }),
+    );
+  }
+  return result;
+}
 
-  test('挑战次数用完后不可挑战', () => {
-    const state: ArenaPlayerState = {
-      ...createDefaultArenaPlayerState(),
-      dailyChallengesLeft: 0,
-    };
-    expect(system.canChallenge(state)).toBe(false);
-  });
+/** 创建有阵容的玩家状态（影响战力计算） */
+function createPlayerWithHeroes(score: number, heroCount: number, ranking: number = 100): ArenaPlayerState {
+  const state = createDefaultArenaPlayerState();
+  const slots: [string, string, string, string, string] = ['', '', '', '', ''];
+  for (let i = 0; i < Math.min(heroCount, 5); i++) {
+    slots[i] = `hero_${i}`;
+  }
+  return {
+    ...state,
+    score,
+    ranking,
+    defenseFormation: { slots, formation: FormationType.FISH_SCALE, strategy: AIDefenseStrategy.BALANCED },
+  };
+}
 
-  test('次数为0时消耗应抛出异常', () => {
-    const state: ArenaPlayerState = {
-      ...createDefaultArenaPlayerState(),
-      dailyChallengesLeft: 0,
-    };
-    expect(() => system.consumeChallenge(state)).toThrow('今日挑战次数已用完');
-  });
-
-  test('购买挑战次数消耗50元宝', () => {
-    const config = system.getChallengeConfig();
-    expect(config.buyCostGold).toBe(50);
-  });
-
-  test('购买挑战次数应增加次数', () => {
-    const state: ArenaPlayerState = {
-      ...createDefaultArenaPlayerState(),
-      dailyChallengesLeft: 0,
-      dailyBoughtChallenges: 0,
-    };
-    const result = system.buyChallenge(state);
-    expect(result.state.dailyChallengesLeft).toBe(1);
-    expect(result.state.dailyBoughtChallenges).toBe(1);
-    expect(result.cost).toBe(50);
-  });
-
-  test('每日购买上限5次', () => {
-    const config = system.getChallengeConfig();
-    expect(config.dailyBuyLimit).toBe(5);
-  });
-
-  test('超过购买上限应抛出异常', () => {
-    const state: ArenaPlayerState = {
-      ...createDefaultArenaPlayerState(),
-      dailyBoughtChallenges: 5,
-    };
-    expect(() => system.buyChallenge(state)).toThrow('今日购买次数已达上限');
-  });
-
-  test('每日重置应恢复挑战次数', () => {
-    const state: ArenaPlayerState = {
-      ...createDefaultArenaPlayerState(),
-      dailyChallengesLeft: 0,
-      dailyBoughtChallenges: 3,
-      dailyManualRefreshes: 5,
-      opponents: [createOpponent()],
-    };
-
-    const reset = system.dailyReset(state);
-    expect(reset.dailyChallengesLeft).toBe(5);
-    expect(reset.dailyBoughtChallenges).toBe(0);
-    expect(reset.dailyManualRefreshes).toBe(0);
-    expect(reset.opponents).toEqual([]);
-  });
-});
-
-// ── 防守阵容 ──────────────────────────────
+// ── 对手选择规则 ──────────────────────────
 
 describe('ArenaSystem — 防守阵容', () => {
   let system: ArenaSystem;

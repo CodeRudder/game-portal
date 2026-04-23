@@ -1,19 +1,3 @@
-/**
- * 战斗引擎 — 单元测试 (P2)
- *
- * 覆盖：
- * - 怒气系统（受击/上限）
- * - 胜负判定
- * - 星级评定
- * - 完整战斗流程
- * - 控制效果
- * - Buff持续时间
- * - 依赖注入
- * - 技能冷却
- *
- * @module engine/battle/__tests__/BattleEngine-p2.test
- */
-
 import { BattleEngine } from '../BattleEngine';
 import type {
   BattleTeam,

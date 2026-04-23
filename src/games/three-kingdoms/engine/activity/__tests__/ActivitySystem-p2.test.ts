@@ -1,59 +1,128 @@
 import {
+  ActivitySystem,
+  createDefaultActivityState,
+  createActivityInstance,
+  createActivityTask,
+  createMilestone,
+  DEFAULT_CONCURRENCY_CONFIG,
+  DEFAULT_OFFLINE_EFFICIENCY,
+  ACTIVITY_SAVE_VERSION,
+  DEFAULT_SEASON_THEMES,
+} from '../ActivitySystem';
+
 import type {
+  ActivityDef,
+  ActivityTaskDef,
+  ActivityMilestone,
+  ActivityState,
+} from '../../../core/activity/activity.types';
+
 import {
+  ActivityType,
+  ActivityStatus,
+  ActivityTaskType,
+  ActivityTaskStatus,
+  MilestoneStatus,
+} from '../../../core/activity/activity.types';
 
-      const dailyTask = resetState.activities['season_1'].tasks.find(t => t.defId === 'daily_1');
-      expect(dailyTask!.currentProgress).toBe(0);
-      expect(dailyTask!.status).toBe(ActivityTaskStatus.INCOMPLETE);
+// ─── 辅助 ────────────────────────────────────
 
-      // 挑战任务不受影响
-      const challengeTask = resetState.activities['season_1'].tasks.find(t => t.defId === 'challenge_1');
-      expect(challengeTask!.currentProgress).toBe(10);
-    });
+/** 创建测试用活动定义 */
+function createActivityDef(
+  id: string,
+  type: ActivityType,
+  overrides?: Partial<ActivityDef>,
+): ActivityDef {
+  return {
+    id,
+    name: `活动_${id}`,
+    description: `测试活动 ${id}`,
+    type,
+    startTime: Date.now() - 1000,
+    endTime: Date.now() + 86400000,
+    icon: `icon_${id}`,
+    ...overrides,
+  };
+}
 
-    it('resetDailyTasks 不存在的活动返回原状态', () => {
-      const dailyDefs = createStandardTaskDefs().filter(d => d.taskType === ActivityTaskType.DAILY);
-      const result = system.resetDailyTasks(state, 'nonexistent', dailyDefs);
-      expect(result).toBe(state);
-    });
+/** 创建测试用任务定义 */
+function createTaskDef(
+  id: string,
+  taskType: ActivityTaskType,
+  overrides?: Partial<ActivityTaskDef>,
+): ActivityTaskDef {
+  return {
+    id,
+    name: `任务_${id}`,
+    description: `测试任务 ${id}`,
+    taskType,
+    targetCount: 10,
+    tokenReward: 5,
+    pointReward: 20,
+    resourceReward: { copper: 100 },
+    ...overrides,
+  };
+}
 
-    // ── 3类任务类型 ──────────────────────
-    it('每日任务(DAILY)可完成和领取', () => {
-      let s = system.updateTaskProgress(state, 'season_1', 'daily_1', 5);
-      const result = system.claimTaskReward(s, 'season_1', 'daily_1');
-      expect(result.points).toBeGreaterThan(0);
-    });
+/** 创建标准任务定义集（5每日 + 3挑战 + 1累积） */
+function createStandardTaskDefs(): ActivityTaskDef[] {
+  const daily = Array.from({ length: 5 }, (_, i) =>
+    createTaskDef(`daily_${i + 1}`, ActivityTaskType.DAILY, {
+      targetCount: 5 + i,
+      pointReward: 10,
+      tokenReward: 2,
+    }),
+  );
+  const challenge = Array.from({ length: 3 }, (_, i) =>
+    createTaskDef(`challenge_${i + 1}`, ActivityTaskType.CHALLENGE, {
+      targetCount: 20 + i * 10,
+      pointReward: 50,
+      tokenReward: 10,
+    }),
+  );
+  const cumulative = [
+    createTaskDef('cumulative_1', ActivityTaskType.CUMULATIVE, {
+      targetCount: 100,
+      pointReward: 100,
+      tokenReward: 30,
+    }),
+  ];
+  return [...daily, ...challenge, ...cumulative];
+}
 
-    it('挑战任务(CHALLENGE)可完成和领取', () => {
-      let s = system.updateTaskProgress(state, 'season_1', 'challenge_1', 20);
-      const result = system.claimTaskReward(s, 'season_1', 'challenge_1');
-      expect(result.points).toBe(50);
-      expect(result.tokens).toBe(10);
-    });
+/** 创建标准里程碑列表 */
+function createStandardMilestones(): ActivityMilestone[] {
+  return [
+    createMilestone('ms_1', 50, { copper: 500 }),
+    createMilestone('ms_2', 150, { gold: 10 }),
+    createMilestone('ms_3', 300, { heroFragment: 3 }),
+    createMilestone('ms_final', 500, { legendaryChest: 1 }, true),
+  ];
+}
 
-    it('累积任务(CUMULATIVE)可完成和领取', () => {
-      let s = system.updateTaskProgress(state, 'season_1', 'cumulative_1', 100);
-      const result = system.claimTaskReward(s, 'season_1', 'cumulative_1');
-      expect(result.points).toBe(100);
-      expect(result.tokens).toBe(30);
-    });
+/** 创建一个已启动活动的状态 */
+function createStartedState(
+  activityId: string,
+  type: ActivityType,
+  now: number,
+  taskDefs?: ActivityTaskDef[],
+  milestones?: ActivityMilestone[],
+): ActivityState {
+  const system = new ActivitySystem();
+  const state = createDefaultActivityState();
+  const def = createActivityDef(activityId, type);
+  const tasks = taskDefs ?? createStandardTaskDefs();
+  const ms = milestones ?? createStandardMilestones();
+  return system.startActivity(state, def, tasks, ms, now);
+}
 
-    it('ActivityTaskType 枚举值正确', () => {
-      expect(ActivityTaskType.DAILY).toBe('DAILY');
-      expect(ActivityTaskType.CHALLENGE).toBe('CHALLENGE');
-      expect(ActivityTaskType.CUMULATIVE).toBe('CUMULATIVE');
-    });
+/** 当前时间戳 */
+const NOW = Date.now();
 
-    it('ActivityTaskStatus 枚举值正确', () => {
-      expect(ActivityTaskStatus.INCOMPLETE).toBe('INCOMPLETE');
-      expect(ActivityTaskStatus.COMPLETED).toBe('COMPLETED');
-      expect(ActivityTaskStatus.CLAIMED).toBe('CLAIMED');
-    });
-  });
+// ═══════════════════════════════════════════════
+// 测试
+// ═══════════════════════════════════════════════
 
-  // ═══════════════════════════════════════════
-  // 5. 里程碑奖励
-  // ═══════════════════════════════════════════
   describe('里程碑奖励', () => {
     let state: ActivityState;
 

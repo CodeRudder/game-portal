@@ -4,31 +4,41 @@ import { EquipmentEnhanceSystem } from '../EquipmentEnhanceSystem';
 import { EquipmentSetSystem } from '../EquipmentSetSystem';
 import { EquipmentRecommendSystem } from '../EquipmentRecommendSystem';
 import type {
+  EquipmentSlot,
+  EquipmentRarity,
+  BagFilter,
+} from '../../../core/equipment/equipment.types';
 import {
+  EQUIPMENT_SLOTS,
+  EQUIPMENT_RARITIES,
+  RARITY_ORDER,
+} from '../../../core/equipment/equipment.types';
 import {
+  EQUIPMENT_TEMPLATES,
+  ENHANCE_CONFIG,
+  FORGE_PITY_THRESHOLDS,
+  EQUIPMENT_SETS,
+  SET_MAP,
+  TRANSFER_LEVEL_LOSS,
+} from '../../../core/equipment/equipment-config';
 
-      // 生成并穿戴4件战神套装备
-      const weapon = systems.equipment.generateEquipment('sword_iron', 'white');
-      // 战神套只有武器模板，所以需要其他方式凑
-      // 实际测试：穿戴不同套装装备
-      const armor = systems.equipment.generateEquipment('armor_leather', 'white');
-      systems.equipment.equipItem('hero1', weapon!.uid);
-      systems.equipment.equipItem('hero1', armor!.uid);
+// ─────────────────────────────────────────────
+// 辅助函数
+// ─────────────────────────────────────────────
 
-      const counts = systems.set.getSetCounts('hero1');
-      // weapon是warrior套，armor是guardian套
-      expect(counts.get('warrior')).toBe(1);
-      expect(counts.get('guardian')).toBe(1);
-    });
+function createSystems() {
+  const equipment = new EquipmentSystem();
+  const forge = new EquipmentForgeSystem(equipment);
+  const enhance = new EquipmentEnhanceSystem(equipment);
+  const set = new EquipmentSetSystem(equipment);
+  const recommend = new EquipmentRecommendSystem(equipment, set);
+  return { equipment, forge, enhance, set, recommend };
+}
 
-    it('获取套装定义', () => {
-      const warrior = systems.set.getSetDef('warrior');
-      expect(warrior).toBeDefined();
-      expect(warrior!.name).toBe('战神套');
-    });
-  });
+// ═══════════════════════════════════════════
+// 模块A: 装备类型与背包 (4项)
+// ═══════════════════════════════════════════
 
-  // 额外：属性计算一致性
   describe('属性计算一致性', () => {
     it('recalcStats保持uid不变', () => {
       const eq = systems.equipment.generateEquipment('sword_iron', 'white');
