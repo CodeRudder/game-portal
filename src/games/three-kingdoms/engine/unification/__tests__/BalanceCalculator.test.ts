@@ -21,8 +21,10 @@ import {
   calcPower,
   calcRebirthMultiplier,
   generateResourceCurve,
-  calculateRebirthPoints,
 } from '../BalanceCalculator';
+import {
+  calculateRebirthPoints,
+} from '../BalanceReport';
 import type {
   NumericRange,
   RebirthBalanceConfig,

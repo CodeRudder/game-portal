@@ -122,13 +122,13 @@ export { AudioScene } from './unification/AudioController';
 export { GraphicsQualityManager } from './unification/GraphicsQualityManager';
 export {
   inRange, calcDeviation, makeEntry, calcPower, calcRebirthMultiplier,
-  generateResourceCurve, calculateRebirthPoints,
+  generateResourceCurve,
   DEFAULT_RESOURCE_CONFIGS, HERO_BASE_STATS, DEFAULT_BATTLE_CONFIG,
   DEFAULT_ECONOMY_CONFIGS, DEFAULT_REBIRTH_CONFIG,
 } from './unification/BalanceCalculator';
 export {
   validateSingleResource, validateSingleHero, calculateStagePoints,
-  validateEconomy, validateRebirth,
+  validateEconomy, validateRebirth, calculateRebirthPoints,
 } from './unification/BalanceReport';
 
 // ── 军师域 (v20.0) ──

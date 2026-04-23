@@ -31,13 +31,14 @@ import type {
   CurrencyFlowPoint,
   RebirthBalanceConfig,
   RebirthBalanceResult,
+  RebirthMultiplierPoint,
 } from '../../core/unification';
 import {
   inRange,
   makeEntry,
   calcPower,
   generateResourceCurve,
-  calculateRebirthPoints,
+  calcRebirthMultiplier,
 } from './BalanceCalculator';
 
 // ─────────────────────────────────────────────
@@ -390,4 +391,32 @@ export function validateRebirth(cfg: RebirthBalanceConfig): RebirthBalanceResult
 
   const isBalanced = entries.every(e => e.level !== 'fail');
   return { multiplierPoints: points, isBalanced, entries };
+}
+
+// ─────────────────────────────────────────────
+// 转生数据点计算
+// ─────────────────────────────────────────────
+
+/** 计算每次转生的倍率数据点 */
+export function calculateRebirthPoints(cfg: RebirthBalanceConfig): RebirthMultiplierPoint[] {
+  const points: RebirthMultiplierPoint[] = [];
+  let cumulative = 0;
+
+  for (let i = 1; i <= cfg.maxRebirthCount; i++) {
+    const multiplier = Math.min(
+      calcRebirthMultiplier(i, cfg),
+      cfg.maxMultiplier,
+    );
+    const prevMultiplier = i > 1 ? points[i - 2].multiplier : 1;
+    const increment = multiplier - prevMultiplier;
+    cumulative += increment;
+    points.push({
+      rebirthCount: i,
+      multiplier,
+      increment,
+      cumulativeAcceleration: cumulative,
+    });
+  }
+
+  return points;
 }

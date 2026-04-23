@@ -11,12 +11,13 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AudioController, AudioScene } from '../AudioController';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 
-function createMockDeps() {
+function createMockDeps(): ISystemDeps {
   return {
-    eventBus: { on: () => {}, emit: () => {}, off: () => {} },
-    config: { get: () => null },
-    registry: { get: () => null, getAll: () => new Map(), has: () => false, register: () => {}, unregister: () => {} },
+    eventBus: { on: () => {}, emit: () => {}, off: () => {} } as unknown as ISystemDeps['eventBus'],
+    config: { get: () => null } as unknown as ISystemDeps['config'],
+    registry: { get: () => null, getAll: () => new Map(), has: () => false, register: () => {}, unregister: () => {} } as unknown as ISystemDeps['registry'],
   };
 }
 
@@ -25,7 +26,7 @@ describe('AudioController', () => {
 
   beforeEach(() => {
     audio = new AudioController();
-    audio.init(createMockDeps() as any);
+    audio.init(createMockDeps());
   });
 
   describe('ISubsystem 接口', () => {
@@ -34,7 +35,7 @@ describe('AudioController', () => {
     });
 
     it('init 不应抛错', () => {
-      expect(() => audio.init(createMockDeps() as any)).not.toThrow();
+      expect(() => audio.init(createMockDeps())).not.toThrow();
     });
 
     it('reset 应恢复默认设置', () => {

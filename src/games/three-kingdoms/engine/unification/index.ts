@@ -58,7 +58,6 @@ export {
   calcPower,
   calcRebirthMultiplier,
   generateResourceCurve,
-  calculateRebirthPoints,
   DEFAULT_RESOURCE_CONFIGS,
   HERO_BASE_STATS,
   DEFAULT_BATTLE_CONFIG,
@@ -71,4 +70,5 @@ export {
   calculateStagePoints,
   validateEconomy,
   validateRebirth,
+  calculateRebirthPoints,
 } from './BalanceReport';

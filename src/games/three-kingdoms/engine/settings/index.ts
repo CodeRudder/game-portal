@@ -49,6 +49,7 @@ export type {
   IAudioPlayer,
   AudioEventCallbacks,
   AudioManagerConfig,
+  VolumeOutput,
 } from './AudioManager';
 
 export { GraphicsManager } from './GraphicsManager';

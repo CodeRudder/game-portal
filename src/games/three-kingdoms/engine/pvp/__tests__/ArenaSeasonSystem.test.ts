@@ -17,7 +17,7 @@ import {
   SEASON_REWARDS,
 } from '../ArenaSeasonSystem';
 import { FormationType, AIDefenseStrategy } from '../../../core/pvp/pvp.types';
-import type { ArenaPlayerState, SeasonData } from '../../../core/pvp/pvp.types';
+import type { ArenaPlayerState, SeasonData, BattleReplay, DefenseLogEntry, ArenaOpponent } from '../../../core/pvp/pvp.types';
 import { createDefaultArenaPlayerState } from '../ArenaSystem';
 
 // ── 辅助函数 ──────────────────────────────
@@ -157,8 +157,8 @@ describe('ArenaSeasonSystem — 赛季结算', () => {
 
   test('结算后清理回放和日志', () => {
     const player = createPlayerState(500, 'SILVER_V');
-    player.replays = [{} as any];
-    player.defenseLogs = [{} as any];
+    player.replays = [{} as unknown as BattleReplay];
+    player.defenseLogs = [{} as unknown as DefenseLogEntry];
 
     const result = system.settleSeason(player, 'SILVER_V');
     expect(result.state.replays).toEqual([]);
@@ -171,7 +171,7 @@ describe('ArenaSeasonSystem — 赛季结算', () => {
       dailyChallengesLeft: 0,
       dailyBoughtChallenges: 5,
       dailyManualRefreshes: 10,
-      opponents: [{} as any],
+      opponents: [{} as unknown as ArenaOpponent],
     };
 
     const result = system.settleSeason(player, 'SILVER_V');

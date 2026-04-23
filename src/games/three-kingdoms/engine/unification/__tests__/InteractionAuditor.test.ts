@@ -26,7 +26,7 @@ describe('InteractionAuditor', () => {
 
   beforeEach(() => {
     auditor = new InteractionAuditor();
-    auditor.init(createMockDeps() as any);
+    auditor.init(createMockDeps());
   });
 
   describe('ISubsystem 接口', () => {
@@ -35,7 +35,7 @@ describe('InteractionAuditor', () => {
     });
 
     it('init 不应抛错', () => {
-      expect(() => auditor.init(createMockDeps() as any)).not.toThrow();
+      expect(() => auditor.init(createMockDeps())).not.toThrow();
     });
 
     it('update 不应抛错', () => {

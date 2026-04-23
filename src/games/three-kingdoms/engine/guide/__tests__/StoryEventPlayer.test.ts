@@ -12,9 +12,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StoryEventPlayer } from '../StoryEventPlayer';
 import { TutorialStateMachine } from '../TutorialStateMachine';
 import type { StoryEventId } from '../../../core/guide';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 import { TYPEWRITER_SPEED_MS } from '../../../core/guide';
 
-function createMockDeps() {
+function createMockDeps(): ISystemDeps {
   const listeners = new Map<string, Function[]>();
   return {
     eventBus: {
@@ -25,15 +26,17 @@ function createMockDeps() {
           const arr = listeners.get(event);
           if (arr) { const idx = arr.indexOf(handler); if (idx >= 0) arr.splice(idx, 1); }
         };
-      }),
+      }) as unknown as ISystemDeps['eventBus']['on'],
       emit: vi.fn((event: string, payload?: unknown) => {
         const handlers = listeners.get(event);
         if (handlers) handlers.forEach(h => h(payload));
-      }),
-      once: vi.fn(), off: vi.fn(),
+      }) as unknown as ISystemDeps['eventBus']['emit'],
+      once: vi.fn() as unknown as ISystemDeps['eventBus']['once'],
+      off: vi.fn() as unknown as ISystemDeps['eventBus']['off'],
+      removeAllListeners: vi.fn() as unknown as ISystemDeps['eventBus']['removeAllListeners'],
     },
-    config: { get: vi.fn(), set: vi.fn(), has: vi.fn() },
-    registry: { get: vi.fn(), register: vi.fn(), getAll: vi.fn(() => new Map()), has: vi.fn(), unregister: vi.fn() },
+    config: { get: vi.fn(), set: vi.fn(), has: vi.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: vi.fn(), register: vi.fn(), getAll: vi.fn(() => new Map()), has: vi.fn(), unregister: vi.fn() } as unknown as ISystemDeps['registry'],
   };
 }
 
@@ -41,8 +44,8 @@ function createSystem() {
   const sm = new TutorialStateMachine();
   const player = new StoryEventPlayer();
   const deps = createMockDeps();
-  sm.init(deps as any);
-  player.init(deps as any);
+  sm.init(deps);
+  player.init(deps);
   player.setStateMachine(sm);
   return { sm, player, deps };
 }
@@ -185,7 +188,7 @@ describe('StoryEventPlayer', () => {
       const fastChars = player.getPlayProgress().typewriter.charIndex;
 
       player.reset();
-      player.init(deps as any);
+      player.init(createMockDeps());
       player.setStateMachine(sm);
       player.startEvent('e1_peach_garden');
       player.setAccelerated(false);

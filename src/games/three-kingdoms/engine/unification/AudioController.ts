@@ -1,17 +1,17 @@
 /**
  * 引擎层 — 音频控制器
  *
+ * @deprecated 本模块已与 engine/settings/AudioManager 统一。
+ * AudioManager 已合并本模块的所有功能（VolumeOutput、stepUp/stepDown、
+ * clampAndSnap、isMuted、setChannelVolume 等）。
+ * 新代码请直接使用 AudioManager。
+ * 本文件仅为向后兼容保留。
+ *
  * 管理游戏音频的完整生命周期：
  *   - 4通道音量控制（BGM/音效/语音/战斗）
  *   - 实际音量计算（分类音量 × 主音量）
  *   - 4项独立开关
  *   - 特殊场景处理（后台/来电/首次启动/低电量）
- *
- * 功能覆盖：
- *   #4 音量控制 — 主音量 + BGM/音效/语音三分类 + 0~100% + 5%步进
- *   #5 音量计算规则 — 实际输出 = 分类音量 × 主音量
- *   #6 开关控制 — 音效总开关/BGM开关/语音开关/战斗音效开关
- *   #7 特殊音频规则 — 后台BGM渐弱/来电静音/首次启动延迟3s/低电量降BGM
  *
  * @module engine/unification/AudioController
  */
@@ -74,6 +74,8 @@ const DEFAULT_AUDIO_CONTROLLER_CONFIG: AudioControllerConfig = {
 
 /**
  * 音频控制器
+ *
+ * @deprecated 请使用 engine/settings/AudioManager 代替。
  *
  * 管理4通道音量、开关和特殊场景。
  * 音量计算规则：实际输出 = 分类音量% × 主音量% / 100
@@ -273,19 +275,15 @@ export class AudioController implements ISubsystem {
     this.currentScene = scene;
     switch (scene) {
       case AudioScene.Background:
-        // 后台BGM渐弱至静音
         this.sceneVolumeMultiplier = 0;
         break;
       case AudioScene.IncomingCall:
-        // 来电立即静音
         this.sceneVolumeMultiplier = 0;
         break;
       case AudioScene.LowBattery:
-        // 低电量BGM降低50%
         this.sceneVolumeMultiplier = this.config.lowBatteryBgmReduction;
         break;
       case AudioScene.FirstLaunch:
-        // 首次启动延迟3秒
         this.sceneVolumeMultiplier = 0;
         this.firstLaunchTimer = 0;
         break;

@@ -26,7 +26,7 @@ describe('VisualConsistencyChecker', () => {
 
   beforeEach(() => {
     checker = new VisualConsistencyChecker();
-    checker.init(createMockDeps() as any);
+    checker.init(createMockDeps());
   });
 
   describe('ISubsystem 接口', () => {
@@ -35,7 +35,7 @@ describe('VisualConsistencyChecker', () => {
     });
 
     it('init 不应抛错', () => {
-      expect(() => checker.init(createMockDeps() as any)).not.toThrow();
+      expect(() => checker.init(createMockDeps())).not.toThrow();
     });
 
     it('update 不应抛错', () => {

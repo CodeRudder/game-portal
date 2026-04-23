@@ -29,6 +29,7 @@ import type {
   DiscountConfig,
   GoodsFilter,
 } from '../../../core/shop/shop.types';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 import {
   SHOP_TYPES,
   SHOP_TYPE_LABELS,
@@ -62,7 +63,11 @@ function createShop(): ShopSystem {
   };
   const mockConfig = { get: jest.fn() };
   const mockRegistry = { get: jest.fn() };
-  shop.init({ eventBus: mockEventBus as any, config: mockConfig as any, registry: mockRegistry as any });
+  shop.init({
+    eventBus: mockEventBus as unknown as ISystemDeps['eventBus'],
+    config: mockConfig as unknown as ISystemDeps['config'],
+    registry: mockRegistry as unknown as ISystemDeps['registry'],
+  });
   return shop;
 }
 
@@ -92,7 +97,10 @@ function createMockCurrencySystem(): CurrencySystem & {
     }),
     _checkResult: { canAfford: true, shortages: [] },
     _setAffordable: (v: boolean) => { affordable = v; },
-  } as any;
+  } as unknown as CurrencySystem & {
+    _checkResult: { canAfford: boolean; shortages: { currency: string; required: number; gap: number }[] };
+    _setAffordable: (v: boolean) => void;
+  };
 }
 
 /** 获取一个存在于 normal 商店的商品ID */

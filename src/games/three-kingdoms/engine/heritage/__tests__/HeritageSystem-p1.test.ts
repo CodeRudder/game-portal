@@ -18,6 +18,7 @@ import type {
   EquipmentHeritageRequest,
   ExperienceHeritageRequest,
 } from '../../../core/heritage';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 import {
   HERO_HERITAGE_RULE,
   EQUIPMENT_HERITAGE_RULE,
@@ -68,9 +69,9 @@ function createSystem(): {
   };
 
   sys.init({
-    eventBus: mockEventBus as any,
-    config: { get: jest.fn() } as any,
-    registry: { get: jest.fn() } as any,
+    eventBus: mockEventBus as unknown as ISystemDeps['eventBus'],
+    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
   });
 
   sys.setCallbacks({

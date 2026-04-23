@@ -41,9 +41,11 @@ import {
   makeEntry,
   calcPower,
   generateResourceCurve,
+} from './BalanceCalculator';
+import {
   calculateStagePoints,
   calculateRebirthPoints,
-} from './BalanceCalculator';
+} from './BalanceReport';
 
 import {
   DEFAULT_ECONOMY_CONFIGS,

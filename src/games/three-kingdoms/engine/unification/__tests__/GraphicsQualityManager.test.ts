@@ -12,8 +12,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GraphicsQualityManager } from '../GraphicsQualityManager';
 import { GraphicsPreset } from '../../../core/settings';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 
-function createMockDeps() {
+function createMockDeps(): ISystemDeps {
   const emitted: Record<string, unknown[]> = {};
   return {
     eventBus: {
@@ -21,9 +22,9 @@ function createMockDeps() {
       emit: (event: string, data: unknown) => { (emitted[event] ??= []).push(data); },
       off: () => {},
       _emitted: emitted,
-    },
-    config: { get: () => null },
-    registry: { get: () => null, getAll: () => new Map(), has: () => false, register: () => {}, unregister: () => {} },
+    } as unknown as ISystemDeps['eventBus'],
+    config: { get: () => null } as unknown as ISystemDeps['config'],
+    registry: { get: () => null, getAll: () => new Map(), has: () => false, register: () => {}, unregister: () => {} } as unknown as ISystemDeps['registry'],
   };
 }
 
@@ -34,7 +35,7 @@ describe('GraphicsQualityManager', () => {
   beforeEach(() => {
     gqm = new GraphicsQualityManager();
     deps = createMockDeps();
-    gqm.init(deps as any);
+    gqm.init(deps);
   });
 
   describe('ISubsystem 接口', () => {
@@ -43,7 +44,7 @@ describe('GraphicsQualityManager', () => {
     });
 
     it('init 不应抛错', () => {
-      expect(() => gqm.init(deps as any)).not.toThrow();
+      expect(() => gqm.init(deps)).not.toThrow();
     });
 
     it('reset 应恢复默认', () => {

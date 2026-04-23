@@ -1,9 +1,19 @@
 import { ShopSystem } from '../ShopSystem';
 import type {
+  BuyRequest,
+  GoodsItem,
+  GoodsFilter,
+  ShopSaveData,
+} from '../../../core/shop/shop.types';
+import { SHOP_TYPES } from '../../../core/shop/shop.types';
 import {
-import {
+  SHOP_SAVE_VERSION,
+  DAILY_MANUAL_REFRESH_LIMIT,
+  CONFIRM_THRESHOLDS,
+} from '../../../core/shop/shop-config';
 import { GOODS_DEF_MAP, SHOP_GOODS_IDS, ALL_GOODS_DEFS } from '../../../core/shop/goods-data';
 import type { CurrencySystem } from '../../currency/CurrencySystem';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 
       const val1 = Object.values(price1)[0];
       expect(val1).toBe(Math.ceil(basePrice * 0.8));
@@ -361,7 +371,7 @@ import type { CurrencySystem } from '../../currency/CurrencySystem';
 
     it('deserialize 版本不匹配不抛异常（仅警告）', () => {
       const data: ShopSaveData = {
-        shops: {} as any,
+        shops: {} as ShopSaveData['shops'],
         favorites: [],
         version: 999,
       };
@@ -393,7 +403,11 @@ import type { CurrencySystem } from '../../currency/CurrencySystem';
 
     it('init 可多次调用', () => {
       expect(() => {
-        shop.init({ eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as any, config: { get: jest.fn() } as any, registry: { get: jest.fn() } as any });
+        shop.init({
+          eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as unknown as ISystemDeps['eventBus'],
+          config: { get: jest.fn() } as unknown as ISystemDeps['config'],
+          registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+        });
       }).not.toThrow();
     });
 

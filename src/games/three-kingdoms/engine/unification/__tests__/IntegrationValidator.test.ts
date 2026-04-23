@@ -43,7 +43,7 @@ describe('IntegrationValidator', () => {
 
   beforeEach(() => {
     validator = new IntegrationValidator();
-    validator.init(createMockDeps() as any);
+    validator.init(createMockDeps());
   });
 
   describe('ISubsystem 接口', () => {
@@ -52,7 +52,7 @@ describe('IntegrationValidator', () => {
     });
 
     it('init 不应抛错', () => {
-      expect(() => validator.init(createMockDeps() as any)).not.toThrow();
+      expect(() => validator.init(createMockDeps())).not.toThrow();
     });
 
     it('update 不应抛错', () => {

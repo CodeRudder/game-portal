@@ -6,7 +6,7 @@ import {
     it('移除装备触发 equipment:removed 事件', () => {
       const eq = addRandomEquipment(sys);
       sys.removeFromBag(eq.uid);
-      const mockEventBus = (sys as any).deps.eventBus;
+      const mockEventBus = (sys as unknown as { deps: import('../../../core/types/subsystem').ISystemDeps }).deps.eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith(
         'equipment:removed',
         expect.objectContaining({ uid: eq.uid }),
@@ -55,7 +55,7 @@ import {
 
     it('expandBag 触发 equipment:bag_expanded 事件', () => {
       sys.expandBag();
-      const mockEventBus = (sys as any).deps.eventBus;
+      const mockEventBus = (sys as unknown as { deps: import('../../../core/types/subsystem').ISystemDeps }).deps.eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith(
         'equipment:bag_expanded',
         expect.objectContaining({ capacity: DEFAULT_BAG_CAPACITY + BAG_EXPAND_INCREMENT }),
@@ -252,7 +252,7 @@ describe('EquipmentSystem — 装备分解', () => {
     it('分解触发 equipment:decomposed 事件', () => {
       const eq = addRandomEquipment(sys);
       sys.decompose(eq.uid);
-      const mockEventBus = (sys as any).deps.eventBus;
+      const mockEventBus = (sys as unknown as { deps: import('../../../core/types/subsystem').ISystemDeps }).deps.eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith(
         'equipment:decomposed',
         expect.objectContaining({
@@ -359,7 +359,7 @@ describe('EquipmentSystem — 序列化', () => {
       bagCapacity: 100,
     };
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    sys.deserialize(data as any);
+    sys.deserialize(data as unknown as Parameters<typeof sys.deserialize>[0]);
     expect(sys.getBagCapacity()).toBe(100);
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();

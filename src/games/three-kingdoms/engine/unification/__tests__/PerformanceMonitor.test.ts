@@ -10,6 +10,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PerformanceMonitor, ObjectPool, DirtyRectManager } from '../PerformanceMonitor';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 
 describe('PerformanceMonitor', () => {
   let monitor: PerformanceMonitor;
@@ -24,12 +25,12 @@ describe('PerformanceMonitor', () => {
     });
 
     it('init 不应抛错', () => {
-      const mockDeps = {
-        eventBus: { on: () => {}, emit: () => {}, off: () => {} },
-        config: { get: () => null },
-        registry: { get: () => null, getAll: () => new Map(), has: () => false, register: () => {}, unregister: () => {} },
+      const mockDeps: ISystemDeps = {
+        eventBus: { on: () => {}, emit: () => {}, off: () => {} } as unknown as ISystemDeps['eventBus'],
+        config: { get: () => null } as unknown as ISystemDeps['config'],
+        registry: { get: () => null, getAll: () => new Map(), has: () => false, register: () => {}, unregister: () => {} } as unknown as ISystemDeps['registry'],
       };
-      expect(() => monitor.init(mockDeps as any)).not.toThrow();
+      expect(() => monitor.init(mockDeps)).not.toThrow();
     });
 
     it('reset 应清除所有数据', () => {
