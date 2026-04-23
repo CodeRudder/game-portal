@@ -338,6 +338,9 @@ export class TerritorySystem implements ISubsystem {
       totalTerritories: playerTerritories.length,
       territoriesByRegion,
       totalProduction,
+      totalGrain: totalProduction.grain,
+      totalCoins: totalProduction.gold,
+      totalTroops: totalProduction.troops,
       details,
     };
   }

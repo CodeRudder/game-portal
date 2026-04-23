@@ -52,11 +52,12 @@ describe('MapFilterSystem', () => {
       expect(result.length).toBe(allTiles.length);
     });
 
-    it('三区域之和 = 总数', () => {
+    it('四区域之和 = 总数', () => {
       const cp = MapFilterSystem.filterByRegion(allTiles, ['wei']);
       const jn = MapFilterSystem.filterByRegion(allTiles, ['wu']);
       const ws = MapFilterSystem.filterByRegion(allTiles, ['shu']);
-      expect(cp.length + jn.length + ws.length).toBe(allTiles.length);
+      const zl = MapFilterSystem.filterByRegion(allTiles, ['neutral']);
+      expect(cp.length + jn.length + ws.length + zl.length).toBe(allTiles.length);
     });
   });
 
@@ -248,7 +249,7 @@ describe('MapFilterSystem', () => {
   describe('统计', () => {
     it('countByRegion 统计正确', () => {
       const counts = MapFilterSystem.countByRegion(allTiles);
-      const total = counts.wei + counts.wu + counts.shu;
+      const total = counts.wei + counts.wu + counts.shu + counts.neutral;
       expect(total).toBe(allTiles.length);
       expect(counts.wei).toBeGreaterThan(0);
       expect(counts.wu).toBeGreaterThan(0);
@@ -257,7 +258,7 @@ describe('MapFilterSystem', () => {
 
     it('countByTerrain 统计正确', () => {
       const counts = MapFilterSystem.countByTerrain(allTiles);
-      const total = counts.plain + counts.mountain + counts.water + counts.forest + counts.desert + counts.city;
+      const total = counts.plain + counts.mountain + counts.water + counts.forest + counts.pass + counts.city;
       expect(total).toBe(allTiles.length);
     });
 
@@ -278,7 +279,7 @@ describe('MapFilterSystem', () => {
 
     it('countByTerrain 与 filterByTerrain 一致', () => {
       const counts = MapFilterSystem.countByTerrain(allTiles);
-      const terrains = ['plain', 'mountain', 'water', 'forest', 'desert', 'city'] as const;
+      const terrains = ['plain', 'mountain', 'water', 'forest', 'pass', 'city'] as const;
       for (const terrain of terrains) {
         const filtered = MapFilterSystem.filterByTerrain(allTiles, [terrain]);
         expect(counts[terrain]).toBe(filtered.length);

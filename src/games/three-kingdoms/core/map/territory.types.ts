@@ -87,6 +87,12 @@ export interface TerritoryProductionSummary {
   territoriesByRegion: Record<RegionId, number>;
   /** 总产出/秒 */
   totalProduction: TerritoryProduction;
+  /** 总粮食产出（totalProduction.grain 的便捷访问） */
+  totalGrain: number;
+  /** 总金币产出（totalProduction.gold 的便捷访问） */
+  totalCoins: number;
+  /** 总兵力产出（totalProduction.troops 的便捷访问） */
+  totalTroops: number;
   /** 各领土产出明细 */
   details: Array<{
     id: string;

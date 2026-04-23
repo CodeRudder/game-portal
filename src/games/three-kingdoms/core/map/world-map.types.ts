@@ -72,6 +72,8 @@ export interface RegionDef {
   id: RegionId;
   /** 区域中文名 */
   label: string;
+  /** 区域名称（label 的别名，兼容旧接口） */
+  name: string;
   /** 区域描述 */
   description: string;
   /** 区域颜色（十六进制） */
@@ -102,7 +104,7 @@ export type TerrainType =
   | 'mountain'   // 山地
   | 'water'      // 水域
   | 'forest'     // 森林
-  | 'desert'     // 沙漠
+  | 'pass'       // 关隘
   | 'city';      // 城池
 
 /** 地形定义 */
@@ -127,6 +129,10 @@ export interface TerrainDef {
 export interface TileData {
   /** 格子坐标 */
   pos: GridPosition;
+  /** 列坐标（pos.x 的便捷访问） */
+  x: number;
+  /** 行坐标（pos.y 的便捷访问） */
+  y: number;
   /** 地形类型 */
   terrain: TerrainType;
   /** 所属区域 */

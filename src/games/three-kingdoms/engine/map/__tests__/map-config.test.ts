@@ -75,14 +75,15 @@ describe('地图基础参数 (#9)', () => {
 // ═══════════════════════════════════════════════
 describe('三大区域划分 (#10)', () => {
   describe('REGION_IDS', () => {
-    it('包含3个区域', () => {
-      expect(REGION_IDS).toHaveLength(3);
+    it('包含4个区域', () => {
+      expect(REGION_IDS).toHaveLength(4);
     });
 
-    it('包含中原/江南/西蜀', () => {
+    it('包含中原/江南/西蜀/中立', () => {
       expect(REGION_IDS).toContain('wei');
       expect(REGION_IDS).toContain('wu');
       expect(REGION_IDS).toContain('shu');
+      expect(REGION_IDS).toContain('neutral');
     });
   });
 
@@ -165,12 +166,12 @@ describe('地形类型 (#11)', () => {
       expect(TERRAIN_TYPES).toHaveLength(6);
     });
 
-    it('包含平原/山地/水域/森林/沙漠/城池', () => {
+    it('包含平原/山地/水域/森林/关隘/城池', () => {
       expect(TERRAIN_TYPES).toContain('plain');
       expect(TERRAIN_TYPES).toContain('mountain');
       expect(TERRAIN_TYPES).toContain('water');
       expect(TERRAIN_TYPES).toContain('forest');
-      expect(TERRAIN_TYPES).toContain('desert');
+      expect(TERRAIN_TYPES).toContain('pass');
       expect(TERRAIN_TYPES).toContain('city');
     });
   });
@@ -213,7 +214,7 @@ describe('地形类型 (#11)', () => {
       expect(TERRAIN_LABELS.mountain).toBe('山地');
       expect(TERRAIN_LABELS.water).toBe('水域');
       expect(TERRAIN_LABELS.forest).toBe('森林');
-      expect(TERRAIN_LABELS.desert).toBe('沙漠');
+      expect(TERRAIN_LABELS.pass).toBe('关隘');
       expect(TERRAIN_LABELS.city).toBe('城池');
     });
   });

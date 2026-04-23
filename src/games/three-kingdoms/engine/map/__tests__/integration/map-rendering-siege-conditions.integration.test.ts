@@ -194,7 +194,7 @@ describe('集成测试: 地图基础渲染 + 攻城条件 (Play §6, §7.1)', ()
       expect(TERRAIN_TYPES).toContain('mountain');
       expect(TERRAIN_TYPES).toContain('forest');
       expect(TERRAIN_TYPES).toContain('water');
-      expect(TERRAIN_TYPES).toContain('desert');
+      expect(TERRAIN_TYPES).toContain('pass');
       expect(TERRAIN_TYPES).toContain('city');
       expect(TERRAIN_TYPES).toHaveLength(6);
     });

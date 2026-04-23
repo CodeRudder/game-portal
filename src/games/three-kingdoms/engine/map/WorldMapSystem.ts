@@ -276,6 +276,11 @@ export class WorldMapSystem implements ISubsystem {
     this.viewport.offsetY = y;
   }
 
+  /** 设置视口偏移（setViewportOffset 的别名） */
+  setOffset(x: number, y: number): void {
+    this.setViewportOffset(x, y);
+  }
+
   /** 平移视口 */
   panViewport(dx: number, dy: number): void {
     this.viewport.offsetX += dx;

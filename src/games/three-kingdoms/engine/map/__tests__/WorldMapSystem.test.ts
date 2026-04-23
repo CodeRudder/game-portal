@@ -180,11 +180,12 @@ describe('WorldMapSystem 基础与区域地形', () => {
       }
     });
 
-    it('getRegionTileCount 三个区域总和等于总格子数', () => {
+    it('getRegionTileCount 四个区域总和等于总格子数', () => {
       const total =
         mapSys.getRegionTileCount('wei') +
         mapSys.getRegionTileCount('wu') +
-        mapSys.getRegionTileCount('shu');
+        mapSys.getRegionTileCount('shu') +
+        mapSys.getRegionTileCount('neutral');
       expect(total).toBe(mapSys.getTotalTiles());
     });
   });
@@ -201,7 +202,7 @@ describe('WorldMapSystem 基础与区域地形', () => {
       expect(types).toContain('mountain');
       expect(types).toContain('water');
       expect(types).toContain('forest');
-      expect(types).toContain('desert');
+      expect(types).toContain('pass');
       expect(types).toContain('city');
     });
 
@@ -224,7 +225,7 @@ describe('WorldMapSystem 基础与区域地形', () => {
     });
 
     it('所有地形格子总数等于总格子数', () => {
-      const types: TerrainType[] = ['plain', 'mountain', 'water', 'forest', 'desert', 'city'];
+      const types: TerrainType[] = ['plain', 'mountain', 'water', 'forest', 'pass', 'city'];
       const total = types.reduce((sum, t) => sum + mapSys.getTerrainTileCount(t), 0);
       expect(total).toBe(mapSys.getTotalTiles());
     });

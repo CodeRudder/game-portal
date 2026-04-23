@@ -56,11 +56,12 @@ export const MAP_PIXEL_SIZE = {
 // 2. 三大区域划分（#10）
 // ─────────────────────────────────────────────
 
-/** 区域ID列表（⚠️ PRD MAP-1: 魏/蜀/吴） */
+/** 区域ID列表（⚠️ PRD MAP-1: 魏/蜀/吴+中立） */
 export const REGION_IDS: readonly RegionId[] = [
   'wei',
   'shu',
   'wu',
+  'neutral',
 ] as const;
 
 /** 区域定义表 */
@@ -68,6 +69,7 @@ export const REGION_DEFS: Record<RegionId, RegionDef> = {
   wei: {
     id: 'wei',
     label: '魏',
+    name: '魏',
     description: '北方中原，曹魏基业，城池密集',
     color: '#2E5090',
     bounds: { startX: 10, endX: 50, startY: 0, endY: 19 },
@@ -75,6 +77,7 @@ export const REGION_DEFS: Record<RegionId, RegionDef> = {
   shu: {
     id: 'shu',
     label: '蜀',
+    name: '蜀',
     description: '西南山地，蜀汉险要，易守难攻',
     color: '#8B2500',
     bounds: { startX: 0, endX: 29, startY: 20, endY: 39 },
@@ -82,6 +85,7 @@ export const REGION_DEFS: Record<RegionId, RegionDef> = {
   wu: {
     id: 'wu',
     label: '吴',
+    name: '吴',
     description: '东南水乡，东吴水路，资源丰富',
     color: '#2E6B3E',
     bounds: { startX: 30, endX: 59, startY: 20, endY: 39 },
@@ -89,6 +93,7 @@ export const REGION_DEFS: Record<RegionId, RegionDef> = {
   neutral: {
     id: 'neutral',
     label: '中立',
+    name: '中立',
     description: '中立区域，各方势力交界',
     color: '#808080',
     bounds: { startX: 0, endX: 9, startY: 0, endY: 39 },
@@ -121,7 +126,7 @@ export const TERRAIN_TYPES: readonly TerrainType[] = [
   'mountain',
   'water',
   'forest',
-  'desert',
+  'pass',
   'city',
 ] as const;
 
@@ -163,13 +168,13 @@ export const TERRAIN_DEFS: Record<TerrainType, TerrainDef> = {
     defenseBonus: 0.15,
     passable: true,
   },
-  desert: {
-    type: 'desert',
-    label: '沙漠',
-    baseColor: '#DEB887',
-    icon: '🏜️',
-    moveCost: 1.8,
-    defenseBonus: -0.05,
+  pass: {
+    type: 'pass',
+    label: '关隘',
+    baseColor: '#8B6914',
+    icon: '🚩',
+    moveCost: 2.5,
+    defenseBonus: 0.4,
     passable: true,
   },
   city: {
@@ -189,7 +194,7 @@ export const TERRAIN_LABELS: Record<TerrainType, string> = {
   mountain: '山地',
   water: '水域',
   forest: '森林',
-  desert: '沙漠',
+  pass: '关隘',
   city: '城池',
 } as const;
 
@@ -199,7 +204,7 @@ export const TERRAIN_COLORS: Record<TerrainType, string> = {
   mountain: '#8B7355',
   water: '#5B9BD5',
   forest: '#2E7D32',
-  desert: '#DEB887',
+  pass: '#8B6914',
   city: '#C0392B',
 } as const;
 
@@ -287,7 +292,9 @@ export const LANDMARK_POSITIONS: Record<string, { x: number; y: number }> = {
  * @returns 区域ID
  */
 export function getRegionAtPosition(x: number, y: number): RegionId {
-  // 魏国（中原：y<20）
+  // 中立（左侧 x<10）
+  if (x < 10) return 'neutral';
+  // 魏国（中原：x>=10, y<20）
   if (y < 20) return 'wei';
   // 蜀国（左下：x<30, y>=20）
   if (x < 30) return 'shu';
@@ -329,22 +336,29 @@ export function getTerrainAtPosition(x: number, y: number): TerrainType {
       if (hash < 65) return 'plain';
       if (hash < 80) return 'forest';
       if (hash < 90) return 'mountain';
-      return 'desert';
+      return 'pass';
 
     case 'shu':
       // 蜀国：西南山地为主，少量平原和森林
       if (hash < 35) return 'mountain';
       if (hash < 55) return 'plain';
       if (hash < 75) return 'forest';
-      if (hash < 90) return 'mountain';
-      return 'desert';
+      if (hash < 90) return 'pass';
+      return 'mountain';
 
     case 'wu':
       // 吴国：东南水乡，水域较多
       if (hash < 40) return 'plain';
       if (hash < 65) return 'water';
       if (hash < 85) return 'forest';
-      return 'mountain';
+      return 'pass';
+
+    case 'neutral':
+      // 中立：混合地形
+      if (hash < 40) return 'plain';
+      if (hash < 60) return 'mountain';
+      if (hash < 80) return 'forest';
+      return 'pass';
 
     default:
       return 'plain';
@@ -377,6 +391,8 @@ export function generateAllTiles(): TileData[] {
 
       tiles.push({
         pos: { x, y },
+        x,
+        y,
         terrain,
         region,
         landmark: landmark ? { ...landmark } : undefined,

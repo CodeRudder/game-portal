@@ -68,11 +68,12 @@ describe('map-config', () => {
   // 2. 三大区域划分（#10）
   // ═══════════════════════════════════════════
   describe('三大区域划分', () => {
-    it('REGION_IDS 包含三个区域（⚠️ PRD MAP-1: 魏/蜀/吴）', () => {
-      expect(REGION_IDS).toHaveLength(3);
+    it('REGION_IDS 包含四个区域（⚠️ PRD MAP-1: 魏/蜀/吴+中立）', () => {
+      expect(REGION_IDS).toHaveLength(4);
       expect(REGION_IDS).toContain('wei');
       expect(REGION_IDS).toContain('wu');
       expect(REGION_IDS).toContain('shu');
+      expect(REGION_IDS).toContain('neutral');
     });
 
     it('REGION_DEFS 每个区域定义完整', () => {
@@ -132,7 +133,7 @@ describe('map-config', () => {
       expect(TERRAIN_TYPES).toContain('mountain');
       expect(TERRAIN_TYPES).toContain('water');
       expect(TERRAIN_TYPES).toContain('forest');
-      expect(TERRAIN_TYPES).toContain('desert');
+      expect(TERRAIN_TYPES).toContain('pass');
       expect(TERRAIN_TYPES).toContain('city');
     });
 
@@ -156,7 +157,7 @@ describe('map-config', () => {
       expect(TERRAIN_LABELS.mountain).toBe('山地');
       expect(TERRAIN_LABELS.water).toBe('水域');
       expect(TERRAIN_LABELS.forest).toBe('森林');
-      expect(TERRAIN_LABELS.desert).toBe('沙漠');
+      expect(TERRAIN_LABELS.pass).toBe('关隘');
       expect(TERRAIN_LABELS.city).toBe('城池');
     });
 
@@ -171,7 +172,7 @@ describe('map-config', () => {
     });
 
     it('其他地形均可通行', () => {
-      const passableTypes: TerrainType[] = ['plain', 'mountain', 'forest', 'desert', 'city'];
+      const passableTypes: TerrainType[] = ['plain', 'mountain', 'forest', 'pass', 'city'];
       for (const type of passableTypes) {
         expect(TERRAIN_DEFS[type].passable).toBe(true);
       }
@@ -291,7 +292,7 @@ describe('map-config', () => {
   // 5. getRegionAtPosition
   // ═══════════════════════════════════════════
   describe('getRegionAtPosition', () => {
-    it('魏国区域坐标（左上）', () => {
+    it('魏国区域坐标（中原）', () => {
       expect(getRegionAtPosition(15, 10)).toBe('wei');
     });
 
@@ -300,19 +301,23 @@ describe('map-config', () => {
     });
 
     it('蜀国区域坐标（左下）', () => {
-      expect(getRegionAtPosition(10, 25)).toBe('shu');
+      expect(getRegionAtPosition(15, 25)).toBe('shu');
     });
 
-    it('魏国区域坐标（中原）', () => {
+    it('魏国区域坐标（中原右）', () => {
       expect(getRegionAtPosition(40, 10)).toBe('wei');
     });
 
-    it('魏国区域左上角', () => {
-      expect(getRegionAtPosition(0, 0)).toBe('wei');
+    it('中立区域左上角', () => {
+      expect(getRegionAtPosition(0, 0)).toBe('neutral');
     });
 
-    it('边界外坐标默认为魏', () => {
-      expect(getRegionAtPosition(-1, -1)).toBe('wei');
+    it('中立区域坐标（左侧）', () => {
+      expect(getRegionAtPosition(5, 20)).toBe('neutral');
+    });
+
+    it('边界外坐标默认为中立', () => {
+      expect(getRegionAtPosition(-1, -1)).toBe('neutral');
     });
 
     it('区域边界值正确（起始坐标包含）', () => {

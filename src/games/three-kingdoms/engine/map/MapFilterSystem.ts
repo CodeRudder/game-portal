@@ -216,7 +216,7 @@ export class MapFilterSystem implements ISubsystem {
       mountain: 0,
       water: 0,
       forest: 0,
-      desert: 0,
+      pass: 0,
       city: 0,
     };
     for (const tile of tiles) {

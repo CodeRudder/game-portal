@@ -205,7 +205,7 @@ describe('territory-config', () => {
         expect(t.position).toBeDefined();
         expect(t.position.x).toBeGreaterThanOrEqual(0);
         expect(t.position.y).toBeGreaterThanOrEqual(0);
-        expect(['wei', 'wu', 'shu']).toContain(t.region);
+        expect(['wei', 'wu', 'shu', 'neutral']).toContain(t.region);
         expect(['player', 'enemy', 'neutral']).toContain(t.ownership);
         expect([1, 2, 3, 4, 5]).toContain(t.level);
         expect(t.baseProduction).toBeDefined();
