@@ -17,10 +17,25 @@ import type {
 } from '../../core/npc';
 import { DEFAULT_SPAWN_CONFIG } from './PatrolConfig';
 
+/**
+ * NPCSystem 对外暴露的方法子集（刷新管理器所需）
+ * 避免直接依赖 NPCSystem 具体类，降低耦合。
+ */
+export interface INPCSystemFacade {
+  getNPCCount(): number;
+  getNPCsByRegion(region: string): NPCData[];
+  createNPC(
+    name: string,
+    profession: string,
+    position: GridPosition,
+    options?: { affinity?: number; visible?: boolean; dialogId?: string },
+  ): NPCData | null;
+}
+
 /** 刷新管理器依赖 */
 export interface SpawnManagerDeps {
   /** 获取 NPCSystem 引用 */
-  getNPCSystem: () => unknown;
+  getNPCSystem: () => INPCSystemFacade | null;
   /** 分配巡逻路径 */
   assignPatrol: (npcId: string, pathId: string) => void;
   /** 获取路径起始位置 */
@@ -121,11 +136,10 @@ export class NPCSpawnManager {
       return { success: false, npcId: null, reason: '没有可用的刷新模板' };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const npcSys = this.deps.getNPCSystem() as any;
+    const npcSys = this.deps.getNPCSystem();
 
     // 检查全局NPC数量上限
-    const currentCount = npcSys?.getNPCCount?.() ?? 0;
+    const currentCount = npcSys?.getNPCCount() ?? 0;
     if (currentCount >= this.spawnConfig.maxNPCCount) {
       return { success: false, npcId: null, reason: '已达全局NPC上限' };
     }
@@ -137,7 +151,7 @@ export class NPCSpawnManager {
     }
 
     // 检查区域NPC数量上限
-    const regionNPCs = npcSys?.getNPCsByRegion?.(template.region) ?? [];
+    const regionNPCs = npcSys?.getNPCsByRegion(template.region) ?? [];
     if (regionNPCs.length >= this.spawnConfig.maxNPCPerRegion) {
       return { success: false, npcId: null, reason: '已达区域NPC上限' };
     }
@@ -148,7 +162,7 @@ export class NPCSpawnManager {
 
     // 创建NPC
     let npcData: NPCData | null = null;
-    if (npcSys?.createNPC) {
+    if (npcSys) {
       npcData = npcSys.createNPC(
         template.name,
         template.profession,
