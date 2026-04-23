@@ -192,7 +192,7 @@ export abstract class BaseScene implements IScene {
    * 仅调用一次。
    */
   protected async onCreate(): Promise<void> {
-    // TODO: 子类实现
+    // 可选覆写：构建 PixiJS 对象树
   }
 
   /**
@@ -202,7 +202,7 @@ export abstract class BaseScene implements IScene {
    * 可用于：加载场景资源、重置状态、播放进入动画。
    */
   protected async onEnter(_params?: Record<string, unknown>): Promise<void> {
-    // TODO: 子类实现
+    // 可选覆写：加载资源、重置状态、播放进入动画
   }
 
   /**
@@ -212,7 +212,7 @@ export abstract class BaseScene implements IScene {
    * 可用于：暂停动画、保存临时状态。
    */
   protected async onExit(): Promise<void> {
-    // TODO: 子类实现
+    // 可选覆写：暂停动画、保存临时状态
   }
 
   /**
@@ -221,7 +221,7 @@ export abstract class BaseScene implements IScene {
    * deltaTime 为毫秒。
    */
   protected onUpdate(_deltaTime: number): void {
-    // TODO: 子类实现
+    // 可选覆写：每帧更新逻辑
   }
 
   /**
@@ -230,7 +230,7 @@ export abstract class BaseScene implements IScene {
    * data 类型取决于场景类型，子类自行断言。
    */
   protected onSetData(_data: unknown): void {
-    // TODO: 子类实现
+    // 可选覆写：接收渲染数据
   }
 
   /**
@@ -239,6 +239,6 @@ export abstract class BaseScene implements IScene {
    * 在容器销毁前调用，用于清理定时器、事件监听等。
    */
   protected onDestroy(): void {
-    // TODO: 子类实现
+    // 可选覆写：清理定时器、事件监听等
   }
 }

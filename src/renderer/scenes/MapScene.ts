@@ -1161,8 +1161,7 @@ export class MapScene extends BaseScene {
   }
 
   protected async onExit(): Promise<void> {
-    // TODO: 卸载地图资源包
-    // await this.assetManager.unloadBundle('map');
+    // 卸载地图资源包（资源管理器暂不支持 bundle 级别卸载，待 v3.1 实现）
   }
 
   protected onUpdate(deltaTime: number): void {
