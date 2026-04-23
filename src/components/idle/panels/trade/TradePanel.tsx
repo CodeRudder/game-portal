@@ -120,7 +120,7 @@ const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose
   const handleOpenRoute = useCallback((routeId: string) => {
     if (!tradeSystem) return;
     try {
-      const castleLevel = 1; // TODO: 从引擎获取实际主城等级
+      const castleLevel = engine?.building?.getCastleLevel?.() ?? 1;
       const result = tradeSystem.openRoute?.(routeId, castleLevel);
       showMessage(result?.success ? '✅ 商路已开通！' : `❌ ${result?.reason ?? '开通失败'}`);
     } catch (e: any) {
