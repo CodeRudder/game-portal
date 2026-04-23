@@ -10,7 +10,6 @@
 1. evolution : three-kingdoms/process/evolution-rules.md
 2. 评测规范: three-kingdoms/checklist/ui-checklist.md, three-kingdoms/architecture/ddd-architecture.md.
 3. 进化规范: three-kingdoms/evolution/
-4. 评测工具： three-kingdoms/tools/ (二级索引)
 
 ### 2、按功能清单的每个功能点循环处理：
 #### 2.1、读取功能点关联的PRD/UI章节内容. 
