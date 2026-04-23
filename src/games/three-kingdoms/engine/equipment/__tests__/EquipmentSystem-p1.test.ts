@@ -403,7 +403,7 @@ describe('EquipmentSystem — 背包管理', () => {
     it('添加装备触发 equipment:added 事件', () => {
       const eq = sys.generateEquipment('weapon', 'white', 'campaign_drop', 42);
       sys.addToBag(eq);
-      const mockEventBus = (sys as any).deps.eventBus;
+      const mockEventBus = getInternalDeps(sys).eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith(
         'equipment:added',
         expect.objectContaining({ uid: eq.uid }),

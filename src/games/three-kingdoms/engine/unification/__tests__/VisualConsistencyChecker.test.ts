@@ -11,12 +11,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { VisualConsistencyChecker } from '../VisualConsistencyChecker';
 import type { AnimationSpec, QualityColorDef, FunctionalColorDef, StatusColorDef } from '../../../core/unification';
+import type { ISystemDeps } from '../../../core/types/subsystem';
 
-function createMockDeps() {
+function createMockDeps(): ISystemDeps {
   return {
-    eventBus: { on: () => {}, emit: () => {}, off: () => {} },
-    config: { get: () => null },
-    registry: { get: () => null, getAll: () => new Map(), has: () => false, register: () => {}, unregister: () => {} },
+    eventBus: { on: () => {}, emit: () => {}, off: () => {} } as unknown as ISystemDeps['eventBus'],
+    config: { get: () => null } as unknown as ISystemDeps['config'],
+    registry: { get: () => null, getAll: () => new Map(), has: () => false, register: () => {}, unregister: () => {} } as unknown as ISystemDeps['registry'],
   };
 }
 

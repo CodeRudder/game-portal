@@ -220,35 +220,8 @@ export function generateResourceCurve(config: ResourceBalanceConfig): ResourceCu
 }
 
 // ─────────────────────────────────────────────
-// 从 BalanceReport 重导出（保持向后兼容）
+// 注意：验证函数已移至 BalanceReport.ts（消除循环依赖）
+// 如需使用 validateSingleResource / validateSingleHero /
+// calculateStagePoints / validateEconomy / validateRebirth /
+// calculateRebirthPoints，请直接从 BalanceReport 导入。
 // ─────────────────────────────────────────────
-
-export {
-  validateSingleResource,
-  validateSingleHero,
-  calculateStagePoints,
-  validateEconomy,
-  validateRebirth,
-} from './BalanceReport';
-
-/** 计算转生倍率数据点 */
-export function calculateRebirthPoints(cfg: RebirthBalanceConfig): RebirthMultiplierPoint[] {
-  const points: RebirthMultiplierPoint[] = [];
-  let prevMultiplier = 1.0;
-
-  for (let count = 1; count <= cfg.maxRebirthCount; count++) {
-    const multiplier = calcRebirthMultiplier(count, cfg);
-    const increment = multiplier - prevMultiplier;
-
-    points.push({
-      rebirthCount: count,
-      multiplier,
-      increment: Math.round(increment * 1000) / 1000,
-      cumulativeAcceleration: multiplier,
-    });
-
-    prevMultiplier = multiplier;
-  }
-
-  return points;
-}
