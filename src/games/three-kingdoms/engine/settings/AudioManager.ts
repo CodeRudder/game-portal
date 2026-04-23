@@ -11,21 +11,22 @@
  */
 
 import type { ISubsystem, ISystemDeps } from '../../core/types';
-import { AudioChannel, AudioSwitch } from '../../core/settings';
+import { AudioChannel } from '../../core/settings';
 import type { AudioSettings } from '../../core/settings';
-import { VOLUME_STEP, VOLUME_MIN, VOLUME_MAX } from '../../core/settings';
+import { AudioSceneHelper } from './AudioSceneHelper';
+import type { AudioSceneContext } from './AudioSceneHelper';
 
 // ─────────────────────────────────────────────
 // 枚举
 // ─────────────────────────────────────────────
 
-/** 特殊音频场景（从 AudioController 迁移） */
+/** 特殊音频场景 */
 export enum AudioScene {
   Normal = 'normal',
-  Background = 'background',       // 后台运行
-  IncomingCall = 'incomingCall',    // 来电/闹钟
-  FirstLaunch = 'firstLaunch',      // 首次启动
-  LowBattery = 'lowBattery',        // 低电量
+  Background = 'background',
+  IncomingCall = 'incomingCall',
+  FirstLaunch = 'firstLaunch',
+  LowBattery = 'lowBattery',
 }
 
 // ─────────────────────────────────────────────
@@ -34,13 +35,9 @@ export enum AudioScene {
 
 /** 音量计算结果（0~100 范围） */
 export interface VolumeOutput {
-  /** BGM 实际输出音量 0~100 */
   bgm: number;
-  /** 音效实际输出音量 0~100 */
   sfx: number;
-  /** 语音实际输出音量 0~100 */
   voice: number;
-  /** 战斗实际输出音量 0~100 */
   battle: number;
 }
 
@@ -55,22 +52,17 @@ export interface IAudioPlayer {
 /** 音频事件回调 */
 export interface AudioEventCallbacks {
   onVolumeChange?: (channel: AudioChannel, effectiveVolume: number) => void;
-  onSwitchToggle?: (switchType: AudioSwitch, enabled: boolean) => void;
+  onSwitchToggle?: (switchType: import('../../core/settings').AudioSwitch, enabled: boolean) => void;
   onBGMStart?: (bgmId: string) => void;
   onBGMStop?: () => void;
 }
 
 /** 音频管理器配置 */
 export interface AudioManagerConfig {
-  /** 首次启动 BGM 延迟 (ms) */
   firstLaunchDelayMs: number;
-  /** 后台 BGM 渐弱时长 (ms) */
   backgroundFadeDurationMs: number;
-  /** 来电恢复后渐入时长 (ms) */
   callRecoverFadeMs: number;
-  /** 低电量阈值 (%) */
   lowBatteryThreshold: number;
-  /** 低电量 BGM 降低比例 */
   lowBatteryBGMReduction: number;
 }
 
@@ -94,19 +86,7 @@ const DEFAULT_AUDIO_CONFIG: AudioManagerConfig = {
  * 音效管理器
  *
  * 管理 4 个音频通道的音量、开关和特殊场景处理。
- * 音量计算规则：实际输出 = 分类音量 × 主音量 / 10000
- *
- * @example
- * ```ts
- * const audio = new AudioManager();
- * audio.applySettings(settings);
- *
- * // 播放 BGM
- * audio.playBGM('main-theme');
- *
- * // 获取实际音量
- * const vol = audio.getEffectiveVolume(AudioChannel.BGM); // 0~1
- * ```
+ * 纯逻辑委托给 AudioSceneHelper，本类负责状态持有和播放器调度。
  */
 export class AudioManager implements ISubsystem {
   readonly name = 'audio' as const;
@@ -129,9 +109,7 @@ export class AudioManager implements ISubsystem {
 
   // ─── ISubsystem 接口 ───────────────────────
 
-  init(deps: ISystemDeps): void {
-    this.deps = deps;
-  }
+  init(deps: ISystemDeps): void { this.deps = deps; }
 
   update(_dt: number): void { /* 音频系统无需每帧更新 */ }
 
@@ -146,84 +124,64 @@ export class AudioManager implements ISubsystem {
     };
   }
 
-  // ─────────────────────────────────────────
-  // 初始化
-  // ─────────────────────────────────────────
+  // ─── 内部：构建辅助上下文 ──────────────────
 
-  /**
-   * 设置音频播放器
-   *
-   * 注入实际的音频播放实现。不传入则使用静默模式。
-   */
-  setPlayer(player: IAudioPlayer): void {
-    this.player = player;
+  private buildCtx(): AudioSceneContext {
+    return {
+      settings: this.settings,
+      player: this.player,
+      callbacks: this.callbacks,
+      isInBackground: this.isInBackground,
+      isInCall: this.isInCall,
+      batteryLevel: this.batteryLevel,
+      lowBatteryThreshold: this.config.lowBatteryThreshold,
+      lowBatteryBGMReduction: this.config.lowBatteryBGMReduction,
+      getEffectiveVolume: (ch) => this.getEffectiveVolume(ch),
+    };
   }
 
-  /**
-   * 注册事件回调
-   */
+  // ─── 初始化 ──────────────────────────────
+
+  /** 设置音频播放器 */
+  setPlayer(player: IAudioPlayer): void { this.player = player; }
+
+  /** 注册事件回调 */
   setCallbacks(callbacks: AudioEventCallbacks): void {
     this.callbacks = { ...this.callbacks, ...callbacks };
   }
 
-  /**
-   * 应用音效设置
-   *
-   * 当设置变更时调用，更新内部状态并应用音量。
-   */
+  /** 应用音效设置 */
   applySettings(settings: AudioSettings): void {
     const prev = this.settings;
     this.settings = { ...settings };
 
     if (!prev) {
-      // 首次应用设置
-      this.applyAllVolumes();
+      AudioSceneHelper.applyAllVolumes(this.buildCtx());
       return;
     }
 
-    // 检测音量变化
-    this.detectVolumeChanges(prev, settings);
-
-    // 检测开关变化
-    this.detectSwitchChanges(prev, settings);
+    AudioSceneHelper.detectVolumeChanges(this.buildCtx(), prev, settings);
+    AudioSceneHelper.detectSwitchChanges(
+      this.buildCtx(), prev, settings,
+      this.currentBGM,
+      () => this.stopBGM(),
+      (id) => this.doPlayBGM(id),
+    );
   }
 
-  // ─────────────────────────────────────────
-  // 音量控制
-  // ─────────────────────────────────────────
+  // ─── 音量控制 ────────────────────────────
 
-  /**
-   * 获取通道实际音量
-   *
-   * 计算规则：实际输出 = 分类音量 × 主音量 / 10000
-   * 考虑开关、后台、来电、低电量等因素。
-   *
-   * @returns 0~1 范围的音量值
-   */
+  /** 获取通道实际音量（0~1 范围） */
   getEffectiveVolume(channel: AudioChannel): number {
     if (!this.settings) return 0;
-
-    // 总开关关闭
     if (!this.settings.masterSwitch) return 0;
+    if (!AudioSceneHelper.isChannelEnabled(this.settings, channel)) return 0;
 
-    // 通道开关检查
-    if (!this.isChannelEnabled(channel)) return 0;
-
-    // 获取通道基础音量
-    const channelVolume = this.getChannelVolume(channel);
-
-    // 计算实际音量
+    const channelVolume = AudioSceneHelper.getChannelVolume(this.settings, channel);
     let effective = (channelVolume / 100) * (this.settings.masterVolume / 100);
 
-    // 后台运行时 BGM 渐弱
-    if (this.isInBackground && channel === AudioChannel.BGM) {
-      effective = 0;
-    }
-
-    // 来电时全部静音
+    if (this.isInBackground && channel === AudioChannel.BGM) effective = 0;
     if (this.isInCall) return 0;
-
-    // 低电量降低 BGM
     if (this.batteryLevel < this.config.lowBatteryThreshold && channel === AudioChannel.BGM) {
       effective *= this.config.lowBatteryBGMReduction;
     }
@@ -231,33 +189,24 @@ export class AudioManager implements ISubsystem {
     return Math.max(0, Math.min(1, effective));
   }
 
-  /**
-   * 获取通道原始音量（不考虑特殊场景）
-   */
+  /** 获取通道原始音量（不考虑特殊场景） */
   getRawVolume(channel: AudioChannel): number {
     if (!this.settings) return 0;
     if (!this.settings.masterSwitch) return 0;
-    if (!this.isChannelEnabled(channel)) return 0;
-    const channelVolume = this.getChannelVolume(channel);
+    if (!AudioSceneHelper.isChannelEnabled(this.settings, channel)) return 0;
+    const channelVolume = AudioSceneHelper.getChannelVolume(this.settings, channel);
     return (channelVolume / 100) * (this.settings.masterVolume / 100);
   }
 
-  // ─────────────────────────────────────────
-  // BGM 管理
-  // ─────────────────────────────────────────
+  // ─── BGM 管理 ────────────────────────────
 
-  /**
-   * 播放 BGM
-   *
-   * 首次启动会延迟播放。
-   */
+  /** 播放 BGM（首次启动会延迟播放） */
   playBGM(bgmId: string): void {
     if (this.currentBGM === bgmId) return;
     this.stopBGM();
     this.currentBGM = bgmId;
 
     if (this.isFirstLaunch) {
-      // 首次启动延迟
       this.bgmDelayTimer = setTimeout(() => {
         this.isFirstLaunch = false;
         this.bgmDelayTimer = null;
@@ -280,19 +229,11 @@ export class AudioManager implements ISubsystem {
   }
 
   /** 获取当前 BGM ID */
-  getCurrentBGM(): string | null {
-    return this.currentBGM;
-  }
+  getCurrentBGM(): string | null { return this.currentBGM; }
 
-  // ─────────────────────────────────────────
-  // 特殊场景处理
-  // ─────────────────────────────────────────
+  // ─── 特殊场景处理 ────────────────────────
 
-  /**
-   * 应用进入后台
-   *
-   * BGM 渐弱至静音。
-   */
+  /** 应用进入后台（BGM 渐弱至静音） */
   enterBackground(): void {
     this.isInBackground = true;
     if (this.player && this.currentBGM) {
@@ -300,11 +241,7 @@ export class AudioManager implements ISubsystem {
     }
   }
 
-  /**
-   * 应用回到前台
-   *
-   * BGM 渐入恢复。
-   */
+  /** 应用回到前台（BGM 渐入恢复） */
   enterForeground(): void {
     this.isInBackground = false;
     if (this.player && this.currentBGM) {
@@ -313,11 +250,7 @@ export class AudioManager implements ISubsystem {
     }
   }
 
-  /**
-   * 来电/闹钟中断
-   *
-   * 立即静音所有通道。
-   */
+  /** 来电/闹钟中断（立即静音所有通道） */
   handleInterruption(): void {
     this.isInCall = true;
     this.player?.setVolume(AudioChannel.BGM, 0);
@@ -326,235 +259,101 @@ export class AudioManager implements ISubsystem {
     this.player?.setVolume(AudioChannel.Battle, 0);
   }
 
-  /**
-   * 来电/闹钟恢复
-   *
-   * 渐入恢复音量。
-   */
+  /** 来电/闹钟恢复（渐入恢复音量） */
   handleInterruptionEnd(): void {
     this.isInCall = false;
-    // 渐入恢复
-    this.applyAllVolumes();
+    AudioSceneHelper.applyAllVolumes(this.buildCtx());
     if (this.player && this.currentBGM) {
       const vol = this.getEffectiveVolume(AudioChannel.BGM);
       this.player.fade(AudioChannel.BGM, vol, this.config.callRecoverFadeMs);
     }
   }
 
-  /**
-   * 更新电池电量
-   *
-   * 低电量时自动降低 BGM 音量。
-   */
+  /** 更新电池电量（低电量时自动降低 BGM 音量） */
   updateBatteryLevel(level: number): void {
     this.batteryLevel = Math.max(0, Math.min(100, level));
-    // 如果当前正在播放 BGM，立即应用新音量
     if (this.player && this.currentBGM) {
       const vol = this.getEffectiveVolume(AudioChannel.BGM);
       this.player.setVolume(AudioChannel.BGM, vol);
     }
   }
 
-  // ─────────────────────────────────────────
-  // 音效播放
-  // ─────────────────────────────────────────
+  // ─── 音效播放 ────────────────────────────
 
   /** 播放音效 */
   playSFX(sfxId: string): void {
-    const vol = this.getEffectiveVolume(AudioChannel.SFX);
-    this.player?.play(AudioChannel.SFX, sfxId, vol);
+    this.player?.play(AudioChannel.SFX, sfxId, this.getEffectiveVolume(AudioChannel.SFX));
   }
 
   /** 播放语音 */
   playVoice(voiceId: string): void {
-    const vol = this.getEffectiveVolume(AudioChannel.Voice);
-    this.player?.play(AudioChannel.Voice, voiceId, vol);
+    this.player?.play(AudioChannel.Voice, voiceId, this.getEffectiveVolume(AudioChannel.Voice));
   }
 
   /** 播放战斗音效 */
   playBattleSFX(sfxId: string): void {
-    const vol = this.getEffectiveVolume(AudioChannel.Battle);
-    this.player?.play(AudioChannel.Battle, sfxId, vol);
+    this.player?.play(AudioChannel.Battle, sfxId, this.getEffectiveVolume(AudioChannel.Battle));
   }
 
-  // ─────────────────────────────────────────
-  // 状态查询
-  // ─────────────────────────────────────────
+  // ─── 状态查询 ────────────────────────────
 
-  /** 是否在后台 */
-  isBackground(): boolean {
-    return this.isInBackground;
-  }
+  isBackground(): boolean { return this.isInBackground; }
+  isInterrupted(): boolean { return this.isInCall; }
+  isFirstLaunchState(): boolean { return this.isFirstLaunch; }
+  getBatteryLevel(): number { return this.batteryLevel; }
 
-  /** 是否被中断 */
-  isInterrupted(): boolean {
-    return this.isInCall;
-  }
+  // ─── 从 AudioController 合并的方法 ───────
 
-  /** 是否首次启动 */
-  isFirstLaunchState(): boolean {
-    return this.isFirstLaunch;
-  }
-
-  /** 获取电池电量 */
-  getBatteryLevel(): number {
-    return this.batteryLevel;
-  }
-
-  // ─────────────────────────────────────────
-  // 从 AudioController 合并的方法
-  // ─────────────────────────────────────────
-
-  /**
-   * 计算实际输出音量（0~100 范围）
-   *
-   * 规则：实际输出 = 分类音量% × 主音量% / 100
-   * 考虑开关、后台、来电、低电量等因素。
-   */
+  /** 计算实际输出音量（0~100 范围） */
   calculateOutput(): VolumeOutput {
-    if (!this.settings) {
-      return { bgm: 0, sfx: 0, voice: 0, battle: 0 };
-    }
-
-    const master = this.settings.masterSwitch
-      ? this.settings.masterVolume / 100
-      : 0;
-
-    // 获取场景乘数（低电量等）
-    let sceneMultiplier = 1.0;
-    if (this.isInBackground) sceneMultiplier = 0;
-    if (this.isInCall) sceneMultiplier = 0;
-    if (this.batteryLevel < this.config.lowBatteryThreshold) {
-      sceneMultiplier = this.config.lowBatteryBGMReduction;
-    }
-
-    return {
-      bgm: this.settings.bgmSwitch
-        ? Math.round(this.settings.bgmVolume * master * sceneMultiplier)
-        : 0,
-      sfx: this.settings.masterSwitch
-        ? Math.round(this.settings.sfxVolume * master * (this.isInCall ? 0 : 1))
-        : 0,
-      voice: this.settings.voiceSwitch
-        ? Math.round(this.settings.voiceVolume * master * (this.isInCall ? 0 : 1))
-        : 0,
-      battle: this.settings.battleSfxSwitch
-        ? Math.round(this.settings.sfxVolume * master * (this.isInCall ? 0 : 1))
-        : 0,
-    };
+    return AudioSceneHelper.calculateOutput(this.buildCtx());
   }
 
   /** 判断指定通道是否静音 */
   isMuted(channel: AudioChannel): boolean {
-    if (!this.settings) return true;
-    switch (channel) {
-      case AudioChannel.BGM: return !this.settings.bgmSwitch || !this.settings.masterSwitch;
-      case AudioChannel.SFX: return !this.settings.masterSwitch;
-      case AudioChannel.Voice: return !this.settings.voiceSwitch || !this.settings.masterSwitch;
-      case AudioChannel.Battle: return !this.settings.battleSfxSwitch || !this.settings.masterSwitch;
-      default: return true;
-    }
+    return AudioSceneHelper.isMuted(this.settings, channel);
   }
 
-  /** 设置主音量（钳位到 0~100 并对齐步进值） */
-  setMasterVolume(volume: number): void {
-    if (!this.settings) return;
-    this.settings.masterVolume = this.clampAndSnap(volume);
-  }
+  /** 设置主音量 */
+  setMasterVolume(volume: number): void { AudioSceneHelper.setMasterVolume(this.settings, volume); }
 
   /** 设置BGM音量 */
-  setBgmVolume(volume: number): void {
-    if (!this.settings) return;
-    this.settings.bgmVolume = this.clampAndSnap(volume);
-  }
+  setBgmVolume(volume: number): void { AudioSceneHelper.setBgmVolume(this.settings, volume); }
 
   /** 设置音效音量 */
-  setSfxVolume(volume: number): void {
-    if (!this.settings) return;
-    this.settings.sfxVolume = this.clampAndSnap(volume);
-  }
+  setSfxVolume(volume: number): void { AudioSceneHelper.setSfxVolume(this.settings, volume); }
 
   /** 设置语音音量 */
-  setVoiceVolume(volume: number): void {
-    if (!this.settings) return;
-    this.settings.voiceVolume = this.clampAndSnap(volume);
-  }
+  setVoiceVolume(volume: number): void { AudioSceneHelper.setVoiceVolume(this.settings, volume); }
 
   /** 按通道设置音量 */
   setChannelVolume(channel: AudioChannel, volume: number): void {
-    if (!this.settings) return;
-    const snapped = this.clampAndSnap(volume);
-    switch (channel) {
-      case AudioChannel.BGM: this.settings.bgmVolume = snapped; break;
-      case AudioChannel.SFX: this.settings.sfxVolume = snapped; break;
-      case AudioChannel.Voice: this.settings.voiceVolume = snapped; break;
-      case AudioChannel.Battle: this.settings.sfxVolume = snapped; break;
-    }
+    AudioSceneHelper.setChannelVolume(this.settings, channel, volume);
   }
 
   /** 音量步进增加 */
-  stepUp(channel: AudioChannel | 'master', step: number = VOLUME_STEP): number {
-    const current = this.getChannelRawVolume(channel);
-    const next = Math.min(VOLUME_MAX, current + step);
-    this.setChannelVolumeDirect(channel, next);
-    return next;
+  stepUp(channel: AudioChannel | 'master', step?: number): number {
+    return AudioSceneHelper.stepUp(this.settings, channel, step);
   }
 
   /** 音量步进减少 */
-  stepDown(channel: AudioChannel | 'master', step: number = VOLUME_STEP): number {
-    const current = this.getChannelRawVolume(channel);
-    const next = Math.max(VOLUME_MIN, current - step);
-    this.setChannelVolumeDirect(channel, next);
-    return next;
+  stepDown(channel: AudioChannel | 'master', step?: number): number {
+    return AudioSceneHelper.stepDown(this.settings, channel, step);
   }
 
   /** 从外部同步音频设置 */
-  syncSettings(settings: AudioSettings): void {
-    this.settings = { ...settings };
-  }
+  syncSettings(settings: AudioSettings): void { this.settings = { ...settings }; }
 
-  // ─────────────────────────────────────────
-  // 开关便捷方法（从 AudioController 合并）
-  // ─────────────────────────────────────────
+  // ─── 开关便捷方法 ────────────────────────
 
-  /** 设置音效总开关 */
-  setMasterSwitch(enabled: boolean): void {
-    if (!this.settings) return;
-    this.settings.masterSwitch = enabled;
-  }
+  setMasterSwitch(enabled: boolean): void { AudioSceneHelper.setMasterSwitch(this.settings, enabled); }
+  setBgmSwitch(enabled: boolean): void { AudioSceneHelper.setBgmSwitch(this.settings, enabled); }
+  setVoiceSwitch(enabled: boolean): void { AudioSceneHelper.setVoiceSwitch(this.settings, enabled); }
+  setBattleSfxSwitch(enabled: boolean): void { AudioSceneHelper.setBattleSfxSwitch(this.settings, enabled); }
 
-  /** 设置BGM开关 */
-  setBgmSwitch(enabled: boolean): void {
-    if (!this.settings) return;
-    this.settings.bgmSwitch = enabled;
-  }
+  // ─── 场景便捷方法 ────────────────────────
 
-  /** 设置语音开关 */
-  setVoiceSwitch(enabled: boolean): void {
-    if (!this.settings) return;
-    this.settings.voiceSwitch = enabled;
-  }
-
-  /** 设置战斗音效开关 */
-  setBattleSfxSwitch(enabled: boolean): void {
-    if (!this.settings) return;
-    this.settings.battleSfxSwitch = enabled;
-  }
-
-  // ─────────────────────────────────────────
-  // 场景便捷方法（从 AudioController 合并）
-  // ─────────────────────────────────────────
-
-  /**
-   * 设置当前音频场景
-   *
-   * 映射 AudioScene 到 AudioManager 的内部状态：
-   * - Background → enterBackground
-   * - IncomingCall → handleInterruption
-   * - Normal → 恢复正常
-   * - LowBattery → 低电量模式
-   * - FirstLaunch → 首次启动延迟
-   */
+  /** 设置当前音频场景 */
   setScene(scene: AudioScene): void {
     this._currentScene = scene;
     switch (scene) {
@@ -565,10 +364,8 @@ export class AudioManager implements ISubsystem {
         if (!this.isInCall) this.handleInterruption();
         break;
       case AudioScene.LowBattery:
-        // 低电量通过 updateBatteryLevel 自动处理
         break;
       case AudioScene.FirstLaunch:
-        // 首次启动通过 isFirstLaunch 标记处理
         this.isFirstLaunch = true;
         break;
       case AudioScene.Normal:
@@ -579,26 +376,13 @@ export class AudioManager implements ISubsystem {
     }
   }
 
-  /** 获取当前音频场景 */
-  getScene(): AudioScene {
-    return this._currentScene;
-  }
+  getScene(): AudioScene { return this._currentScene; }
 
-  /** 获取场景音量乘数 */
   getSceneVolumeMultiplier(): number {
-    if (this.isInCall) return 0;
-    if (this.isInBackground) return 0;
-    if (this.batteryLevel < this.config.lowBatteryThreshold) {
-      return this.config.lowBatteryBGMReduction;
-    }
-    return 1.0;
+    return AudioSceneHelper.getSceneVolumeMultiplier(this.buildCtx());
   }
 
-  /**
-   * 设置电池电量（用于低电量检测）
-   *
-   * 同时自动切换场景。
-   */
+  /** 设置电池电量（同时自动切换场景） */
   setBatteryLevel(level: number): void {
     this.updateBatteryLevel(level);
     if (this.batteryLevel < this.config.lowBatteryThreshold
@@ -610,7 +394,6 @@ export class AudioManager implements ISubsystem {
     }
   }
 
-  /** 标记首次启动完成 */
   markFirstLaunchComplete(): void {
     this.isFirstLaunch = false;
     if (this._currentScene === AudioScene.FirstLaunch) {
@@ -618,21 +401,11 @@ export class AudioManager implements ISubsystem {
     }
   }
 
-  /** 是否首次启动 */
-  getIsFirstLaunch(): boolean {
-    return this.isFirstLaunch;
-  }
+  getIsFirstLaunch(): boolean { return this.isFirstLaunch; }
+  getConfig(): AudioManagerConfig { return { ...this.config }; }
 
-  /** 获取配置 */
-  getConfig(): AudioManagerConfig {
-    return { ...this.config };
-  }
+  // ─── 重置 ────────────────────────────────
 
-  // ─────────────────────────────────────────
-  // 重置
-  // ─────────────────────────────────────────
-
-  /** 重置到初始状态 */
   reset(): void {
     this.stopBGM();
     this.isFirstLaunch = true;
@@ -644,118 +417,9 @@ export class AudioManager implements ISubsystem {
     this._currentScene = AudioScene.Normal;
   }
 
-  // ─────────────────────────────────────────
-  // 内部方法
-  // ─────────────────────────────────────────
+  // ─── 内部方法 ────────────────────────────
 
-  /** 实际播放 BGM */
   private doPlayBGM(bgmId: string): void {
-    const vol = this.getEffectiveVolume(AudioChannel.BGM);
-    this.player?.play(AudioChannel.BGM, bgmId, vol);
-    this.callbacks.onBGMStart?.(bgmId);
-  }
-
-  /** 检查通道是否启用 */
-  private isChannelEnabled(channel: AudioChannel): boolean {
-    if (!this.settings) return false;
-    switch (channel) {
-      case AudioChannel.BGM:    return this.settings.bgmSwitch;
-      case AudioChannel.SFX:    return this.settings.masterSwitch;
-      case AudioChannel.Voice:  return this.settings.voiceSwitch;
-      case AudioChannel.Battle: return this.settings.battleSfxSwitch;
-      default: return false;
-    }
-  }
-
-  /** 获取通道音量设置值 */
-  private getChannelVolume(channel: AudioChannel): number {
-    if (!this.settings) return 0;
-    switch (channel) {
-      case AudioChannel.BGM:    return this.settings.bgmVolume;
-      case AudioChannel.SFX:    return this.settings.sfxVolume;
-      case AudioChannel.Voice:  return this.settings.voiceVolume;
-      case AudioChannel.Battle: return this.settings.sfxVolume; // 战斗音效使用音效音量
-      default: return 0;
-    }
-  }
-
-  /** 应用所有通道音量 */
-  private applyAllVolumes(): void {
-    if (!this.player) return;
-    for (const ch of Object.values(AudioChannel)) {
-      const vol = this.getEffectiveVolume(ch as AudioChannel);
-      this.player.setVolume(ch as AudioChannel, vol);
-    }
-  }
-
-  /** 检测音量变化并通知 */
-  private detectVolumeChanges(prev: AudioSettings, curr: AudioSettings): void {
-    const channels: [AudioChannel, 'masterVolume' | 'bgmVolume' | 'sfxVolume' | 'voiceVolume'][] = [
-      [AudioChannel.BGM, 'bgmVolume'],
-      [AudioChannel.SFX, 'sfxVolume'],
-      [AudioChannel.Voice, 'voiceVolume'],
-    ];
-    for (const [ch, key] of channels) {
-      if (prev[key] !== curr[key] || prev.masterVolume !== curr.masterVolume) {
-        const vol = this.getEffectiveVolume(ch);
-        this.player?.setVolume(ch, vol);
-        this.callbacks.onVolumeChange?.(ch, vol);
-      }
-    }
-    // 战斗通道跟随音效通道
-    if (prev.sfxVolume !== curr.sfxVolume || prev.masterVolume !== curr.masterVolume) {
-      const vol = this.getEffectiveVolume(AudioChannel.Battle);
-      this.player?.setVolume(AudioChannel.Battle, vol);
-    }
-  }
-
-  /** 检测开关变化并通知 */
-  private detectSwitchChanges(prev: AudioSettings, curr: AudioSettings): void {
-    if (prev.masterSwitch !== curr.masterSwitch) {
-      this.callbacks.onSwitchToggle?.(AudioSwitch.Master, curr.masterSwitch);
-      this.applyAllVolumes();
-    }
-    if (prev.bgmSwitch !== curr.bgmSwitch) {
-      this.callbacks.onSwitchToggle?.(AudioSwitch.BGM, curr.bgmSwitch);
-      if (!curr.bgmSwitch) this.stopBGM();
-      else if (this.currentBGM) this.doPlayBGM(this.currentBGM);
-    }
-    if (prev.voiceSwitch !== curr.voiceSwitch) {
-      this.callbacks.onSwitchToggle?.(AudioSwitch.Voice, curr.voiceSwitch);
-    }
-    if (prev.battleSfxSwitch !== curr.battleSfxSwitch) {
-      this.callbacks.onSwitchToggle?.(AudioSwitch.BattleSFX, curr.battleSfxSwitch);
-    }
-  }
-
-  /** 钳位并对齐到步进值 */
-  private clampAndSnap(volume: number): number {
-    const clamped = Math.max(VOLUME_MIN, Math.min(VOLUME_MAX, volume));
-    return Math.round(clamped / VOLUME_STEP) * VOLUME_STEP;
-  }
-
-  /** 获取通道原始音量（内部用，用于步进） */
-  private getChannelRawVolume(channel: AudioChannel | 'master'): number {
-    if (!this.settings) return 0;
-    switch (channel) {
-      case 'master': return this.settings.masterVolume;
-      case AudioChannel.BGM: return this.settings.bgmVolume;
-      case AudioChannel.SFX: return this.settings.sfxVolume;
-      case AudioChannel.Voice: return this.settings.voiceVolume;
-      case AudioChannel.Battle: return this.settings.sfxVolume;
-      default: return 0;
-    }
-  }
-
-  /** 直接设置通道音量（内部用，用于步进） */
-  private setChannelVolumeDirect(channel: AudioChannel | 'master', volume: number): void {
-    if (!this.settings) return;
-    switch (channel) {
-      case 'master': this.settings.masterVolume = volume; break;
-      case AudioChannel.BGM: this.settings.bgmVolume = volume; break;
-      case AudioChannel.SFX: this.settings.sfxVolume = volume; break;
-      case AudioChannel.Voice: this.settings.voiceVolume = volume; break;
-      case AudioChannel.Battle: this.settings.sfxVolume = volume; break;
-    }
+    AudioSceneHelper.doPlayBGM(this.buildCtx(), bgmId);
   }
 }
