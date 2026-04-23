@@ -149,3 +149,8 @@ P0降级为P1需要架构师+产品经理双人确认。
 每个 `as any` 的成因不同，需要理解上下文后设计正确的类型方案，无法批量处理。
 检查方法: `grep -rn "as any" src/games/three-kingdoms/ --include="*.ts" | grep -v ".test." | grep -v ".spec."`
 范例: R23 中 NPCPatrolSystem 和 GameEventSimulator 的 as any 通过定义 INPCSystemFacade 等精确接口替代。
+
+### R24 — v3.0 攻城略地(上) 第二轮全局审查
+- 日期: 2026-04-24
+- 修复: 6个问题(BattleFormationModal×5+BattleResultModal×3+BattleScene×4+AudioController删除+ArenaSeason断言+quest-config)
+- 封版: ✅ 通过 (P0=0, P1=0)
