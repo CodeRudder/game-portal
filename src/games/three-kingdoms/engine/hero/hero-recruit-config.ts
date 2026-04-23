@@ -164,12 +164,37 @@ export interface UpHeroConfig {
   upGeneralId: string | null;
   /** UP 武将触发概率（出 LEGENDARY 品质时） */
   upRate: number;
+  /** UP 武将独特描述文本（展示用，如历史典故、个人特点等） */
+  description: string;
 }
+
+/**
+ * 预定义 UP 武将独特描述模板
+ *
+ * 当设置 UP 武将时，可从此模板中选取对应描述，
+ * 也可自定义描述文本。
+ */
+export const UP_HERO_DESCRIPTIONS: Record<string, string> = {
+  // ── 蜀国 ──
+  liubei: '仁德之主，三顾茅庐请卧龙出山，以德服人，蜀汉开国之君。本期UP概率提升！',
+  guanyu: '武圣关公，温酒斩华雄，过五关斩六将，忠义无双，威震华夏。本期UP概率提升！',
+  zhangfei: '万人敌张翼德，长坂桥一声怒吼，吓退曹军百万，勇猛无双。本期UP概率提升！',
+  zhugeliang: '卧龙先生，三顾茅庐出山，草船借箭，七擒孟获，鞠躬尽瘁。本期UP概率提升！',
+  zhaoyun: '常山赵子龙，长坂坡七进七出，单骑救主，一身是胆。本期UP概率提升！',
+  // ── 魏国 ──
+  caocao: '魏武帝曹操，挟天子以令诸侯，统一北方，文武兼备的一代枭雄。本期UP概率提升！',
+  simayi: '隐忍谋略家司马懿，鹰视狼顾，与诸葛亮多次交锋，终成大业。本期UP概率提升！',
+  // ── 吴国 ──
+  zhouyu: '东吴大都督周公瑾，赤壁之战火烧连环船，雅量高致。本期UP概率提升！',
+  // ── 群雄 ──
+  lvbu: '天下第一猛将吕布，辕门射戟，三英战吕布，勇冠三军。本期UP概率提升！',
+};
 
 /** 默认 UP 武将配置（无 UP 武将） */
 export const DEFAULT_UP_CONFIG: UpHeroConfig = {
   upGeneralId: null,
   upRate: 0.50,
+  description: '',
 };
 
 // ─────────────────────────────────────────────

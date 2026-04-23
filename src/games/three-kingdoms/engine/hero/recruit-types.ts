@@ -56,6 +56,8 @@ export interface UpHeroState {
   upGeneralId: string | null;
   /** UP 触发概率 */
   upRate: number;
+  /** UP 武将独特描述文本 */
+  description: string;
 }
 
 /** 招募系统存档数据 */
@@ -118,6 +120,7 @@ export function createDefaultUpHero(): UpHeroState {
   return {
     upGeneralId: DEFAULT_UP_CONFIG.upGeneralId,
     upRate: DEFAULT_UP_CONFIG.upRate,
+    description: DEFAULT_UP_CONFIG.description,
   };
 }
 

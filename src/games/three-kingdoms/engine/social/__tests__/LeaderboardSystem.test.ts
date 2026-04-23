@@ -59,13 +59,15 @@ beforeEach(() => {
 // ═══════════════════════════════════════════
 
 describe('LeaderboardSystem — 状态初始化', () => {
-  test('默认状态包含4种排行榜', () => {
+  test('默认状态包含6种排行榜', () => {
     const state = system.getState();
-    expect(Object.keys(state.boards).length).toBe(4);
+    expect(Object.keys(state.boards).length).toBe(6);
     expect(state.boards[LeaderboardType.POWER]).toEqual([]);
     expect(state.boards[LeaderboardType.EXPEDITION]).toEqual([]);
     expect(state.boards[LeaderboardType.ARENA]).toEqual([]);
     expect(state.boards[LeaderboardType.WEALTH]).toEqual([]);
+    expect(state.boards[LeaderboardType.SEASON_RECORD]).toEqual([]);
+    expect(state.boards[LeaderboardType.GUILD]).toEqual([]);
   });
 
   test('默认赛季信息', () => {
@@ -398,7 +400,7 @@ describe('LeaderboardSystem — 批量更新', () => {
 describe('createDefaultLeaderboardState', () => {
   test('创建默认状态', () => {
     const state = createDefaultLeaderboardState();
-    expect(Object.keys(state.boards).length).toBe(4);
+    expect(Object.keys(state.boards).length).toBe(6);
     expect(state.currentSeason.isCurrent).toBe(true);
     expect(state.seasonHistory).toEqual([]);
   });

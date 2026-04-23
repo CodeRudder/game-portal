@@ -21,7 +21,7 @@ import {
   ReportType,
 } from '../../../core/social/social.types';
 import type { SocialState } from '../../../core/social/social.types';
-import { createDefaultSocialState } from '../FriendSystem';
+import { createDefaultSocialState } from '../friend-config';
 
 // ── 辅助函数 ──────────────────────────────
 

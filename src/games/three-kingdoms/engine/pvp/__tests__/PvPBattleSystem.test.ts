@@ -161,7 +161,7 @@ describe('PvPBattleSystem — 段位判定', () => {
     const bronzeV = system.getRankLevel('BRONZE_V');
     expect(bronzeV).toBeDefined();
     expect(bronzeV!.minScore).toBe(0);
-    expect(bronzeV!.maxScore).toBe(99);
+    expect(bronzeV!.maxScore).toBe(299);
   });
 
   test('不存在的段位ID返回undefined', () => {

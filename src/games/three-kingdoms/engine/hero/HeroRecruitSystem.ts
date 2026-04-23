@@ -53,6 +53,7 @@ import {
   RECRUIT_SAVE_VERSION,
   DEFAULT_UP_CONFIG,
   DAILY_FREE_CONFIG,
+  UP_HERO_DESCRIPTIONS,
 } from './hero-recruit-config';
 import type { RecruitType, QualityRate, PityConfig, UpHeroConfig } from './hero-recruit-config';
 
@@ -156,10 +157,18 @@ export class HeroRecruitSystem implements ISubsystem {
   // ─────────────────────────────────────────
 
   /** 设置当前 UP 武将（仅高级招募生效） */
-  setUpHero(generalId: string | null, rate?: number): void {
+  setUpHero(generalId: string | null, rate?: number, description?: string): void {
     this.upHero.upGeneralId = generalId;
     if (rate !== undefined) {
       this.upHero.upRate = rate;
+    }
+    if (description !== undefined) {
+      this.upHero.description = description;
+    } else if (generalId) {
+      // 自动从预定义模板中查找描述
+      this.upHero.description = UP_HERO_DESCRIPTIONS[generalId] ?? `本期UP武将：${generalId}，概率提升！`;
+    } else {
+      this.upHero.description = '';
     }
   }
 
@@ -316,6 +325,7 @@ export class HeroRecruitSystem implements ISubsystem {
       this.upHero = {
         upGeneralId: data.upHero.upGeneralId ?? null,
         upRate: data.upHero.upRate ?? DEFAULT_UP_CONFIG.upRate,
+        description: data.upHero.description ?? DEFAULT_UP_CONFIG.description,
       };
     } else {
       this.upHero = createDefaultUpHero();
