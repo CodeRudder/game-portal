@@ -9,15 +9,29 @@ import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type {
   EventId, EventDef, EventInstance, EventTriggerType,
   EventTriggerResult, EventChoiceResult, EventCondition,
-  EventConsequence, EventSystemSaveData, EventTriggerConfig,
+  EventSystemSaveData, EventTriggerConfig,
 } from '../../core/event';
 import type {
   ProbabilityCondition, ProbabilityModifier, ProbabilityResult,
   TimeCondition, StateCondition,
 } from '../../core/event/event-v15-event.types';
 import {
-  DEFAULT_EVENT_TRIGGER_CONFIG, PREDEFINED_EVENTS, EVENT_SAVE_VERSION,
+  DEFAULT_EVENT_TRIGGER_CONFIG, PREDEFINED_EVENTS,
 } from '../../core/event';
+import {
+  evaluateCondition,
+  type CompletedEventChecker,
+} from './EventTriggerConditions';
+import { calculateProbability } from './EventProbabilityCalculator';
+import {
+  serializeEventTriggerState,
+  deserializeEventTriggerState,
+} from './EventTriggerSerialization';
+import {
+  resolveEvent as resolveEventLifecycle,
+  expireEvents as expireEventsLifecycle,
+  type EventLifecycleState,
+} from './EventTriggerLifecycle';
 
 const ABSOLUTE_MAX_EVENTS = 20;
 
@@ -201,33 +215,7 @@ export class EventTriggerSystem implements ISubsystem {
    * @returns 概率计算结果
    */
   calculateProbability(probCondition: ProbabilityCondition): ProbabilityResult {
-    const { baseProbability, modifiers } = probCondition;
-
-    // 仅计算 active 的修正因子
-    const activeModifiers = modifiers.filter((m) => m.active);
-
-    // Σ(additive) — 所有活跃加法修正之和
-    const additiveTotal = activeModifiers.reduce(
-      (sum, m) => sum + m.additiveBonus, 0,
-    );
-
-    // Π(multiplicative) — 所有活跃乘法修正之积
-    const multiplicativeTotal = activeModifiers.reduce(
-      (product, m) => product * m.multiplicativeBonus, 1,
-    );
-
-    // P = clamp(base + Σ(add) × Π(mul), 0, 1)
-    const finalProbability = Math.max(
-      0, Math.min(1, (baseProbability + additiveTotal) * multiplicativeTotal),
-    );
-
-    return {
-      finalProbability,
-      baseProbability,
-      additiveTotal,
-      multiplicativeTotal,
-      triggered: Math.random() < finalProbability,
-    };
+    return calculateProbability(probCondition);
   }
 
   /**
@@ -288,52 +276,9 @@ export class EventTriggerSystem implements ISubsystem {
 
   // ─── 事件选择处理（#23）───────────────────────
 
-  /**
-   * 处理事件选择
-   *
-   * @param instanceId - 事件实例ID
-   * @param optionId - 选择的选项ID
-   * @returns 选择结果，失败返回null
-   */
+  /** 处理事件选择（#23）— 委托给 EventTriggerLifecycle */
   resolveEvent(instanceId: string, optionId: string): EventChoiceResult | null {
-    const instance = this.activeEvents.get(instanceId);
-    if (!instance) return null;
-    if (instance.status !== 'active') return null;
-
-    const def = this.eventDefs.get(instance.eventDefId);
-    if (!def) return null;
-
-    const option = def.options.find((o) => o.id === optionId);
-    if (!option) return null;
-
-    // 更新实例状态
-    instance.status = 'resolved';
-
-    // 记录完成
-    this.completedEventIds.add(instance.eventDefId);
-
-    // 设置冷却
-    if (def.cooldownTurns) {
-      this.cooldowns.set(instance.eventDefId, instance.triggeredTurn + def.cooldownTurns);
-    }
-
-    // 从活跃列表移除
-    this.activeEvents.delete(instanceId);
-
-    // 发出事件
-    this.deps?.eventBus.emit('event:resolved', {
-      instanceId,
-      eventDefId: instance.eventDefId,
-      optionId,
-      consequences: option.consequences,
-    });
-
-    return {
-      instanceId,
-      optionId,
-      consequences: option.consequences,
-      chainEventId: option.consequences.triggerEventId,
-    };
+    return resolveEventLifecycle(instanceId, optionId, this.getLifecycleState(), this.deps);
   }
 
   // ─── 活跃事件管理 ──────────────────────────
@@ -391,29 +336,9 @@ export class EventTriggerSystem implements ISubsystem {
 
   // ─── 过期处理 ──────────────────────────────
 
-  /**
-   * 处理过期事件
-   *
-   * @param currentTurn - 当前回合
-   * @returns 过期的事件实例列表
-   */
+  /** 处理过期事件 — 委托给 EventTriggerLifecycle */
   expireEvents(currentTurn: number): EventInstance[] {
-    const expired: EventInstance[] = [];
-
-    for (const [instanceId, instance] of this.activeEvents) {
-      if (instance.expireTurn !== null && currentTurn >= instance.expireTurn) {
-        instance.status = 'expired';
-        expired.push(instance);
-        this.activeEvents.delete(instanceId);
-
-        this.deps?.eventBus.emit('event:expired', {
-          instanceId,
-          eventDefId: instance.eventDefId,
-        });
-      }
-    }
-
-    return expired;
+    return expireEventsLifecycle(currentTurn, this.getLifecycleState(), this.deps);
   }
 
   // ─── 配置 ──────────────────────────────────
@@ -431,35 +356,42 @@ export class EventTriggerSystem implements ISubsystem {
   // ─── 序列化 ────────────────────────────────
 
   serialize(): EventSystemSaveData {
-    return {
-      activeEvents: this.getActiveEvents(),
-      completedEventIds: Array.from(this.completedEventIds),
-      banners: [],
-      cooldowns: Object.fromEntries(this.cooldowns),
-      version: EVENT_SAVE_VERSION,
-    };
+    return serializeEventTriggerState({
+      activeEvents: this.activeEvents,
+      completedEventIds: this.completedEventIds,
+      cooldowns: this.cooldowns,
+    });
   }
 
   deserialize(data: EventSystemSaveData): void {
+    const restored = deserializeEventTriggerState(data);
     this.activeEvents.clear();
-    for (const inst of data.activeEvents ?? []) {
-      this.activeEvents.set(inst.instanceId, inst);
+    for (const [k, v] of restored.activeEvents) {
+      this.activeEvents.set(k, v);
     }
 
     this.completedEventIds.clear();
-    for (const id of data.completedEventIds ?? []) {
+    for (const id of restored.completedEventIds) {
       this.completedEventIds.add(id);
     }
 
     this.cooldowns.clear();
-    if (data.cooldowns) {
-      for (const [eventId, turn] of Object.entries(data.cooldowns)) {
-        this.cooldowns.set(eventId, turn);
-      }
+    for (const [k, v] of restored.cooldowns) {
+      this.cooldowns.set(k, v);
     }
   }
 
   // ─── 内部方法 ──────────────────────────────
+
+  /** 获取生命周期操作所需的状态引用 */
+  private getLifecycleState(): EventLifecycleState {
+    return {
+      activeEvents: this.activeEvents,
+      completedEventIds: this.completedEventIds,
+      cooldowns: this.cooldowns,
+      eventDefs: this.eventDefs,
+    };
+  }
 
   /** 加载预定义事件 */
   private loadPredefinedEvents(): void {
@@ -517,15 +449,16 @@ export class EventTriggerSystem implements ISubsystem {
     };
   }
 
-  /** 检查固定事件条件 */
+  /** 检查固定事件条件 — 委托给 EventTriggerConditions */
   private checkFixedConditions(def: EventDef, currentTurn: number): boolean {
     if (!def.triggerConditions || def.triggerConditions.length === 0) {
       return true;
     }
 
     // 所有条件必须满足（AND 逻辑）
+    const completedChecker: CompletedEventChecker = (id) => this.completedEventIds.has(id);
     for (const cond of def.triggerConditions) {
-      if (!this.evaluateCondition(cond, currentTurn)) {
+      if (!evaluateCondition(cond, currentTurn, undefined, completedChecker)) {
         return false;
       }
     }
@@ -540,148 +473,6 @@ export class EventTriggerSystem implements ISubsystem {
     }
 
     return def.prerequisiteEventIds.every((id) => this.completedEventIds.has(id));
-  }
-
-  /**
-   * 评估单个条件
-   * 支持 turn_range、resource_threshold、affinity_level、building_level、event_completed 五种类型
-   *
-   * @param cond - 事件条件
-   * @param currentTurn - 当前回合
-   * @param gameState - 可选的游戏状态（用于状态条件评估）
-   */
-  private evaluateCondition(
-    cond: EventCondition,
-    currentTurn?: number,
-    gameState?: Record<string, number>,
-  ): boolean {
-    const turn = currentTurn ?? this._currentTurn;
-
-    switch (cond.type) {
-      case 'turn_range':
-        return this.evaluateTurnRangeCondition(cond.params, turn);
-
-      case 'resource_threshold':
-        return this.evaluateResourceCondition(cond.params, gameState);
-
-      case 'affinity_level':
-        return this.evaluateAffinityCondition(cond.params, gameState);
-
-      case 'building_level':
-        return this.evaluateBuildingCondition(cond.params, gameState);
-
-      case 'event_completed':
-        return this.evaluateEventCompletedCondition(cond.params);
-
-      default:
-        // 未知条件类型默认通过（向后兼容）
-        return true;
-    }
-  }
-
-  /**
-   * 评估时间条件（turn_range）
-   * 支持 minTurn / maxTurn / turnInterval 参数
-   */
-  private evaluateTurnRangeCondition(
-    params: Record<string, unknown>,
-    currentTurn: number,
-  ): boolean {
-    const minTurn = params['minTurn'] as number | undefined;
-    const maxTurn = params['maxTurn'] as number | undefined;
-    const turnInterval = params['turnInterval'] as number | undefined;
-
-    if (minTurn !== undefined && currentTurn < minTurn) return false;
-    if (maxTurn !== undefined && currentTurn > maxTurn) return false;
-    if (turnInterval !== undefined && currentTurn % turnInterval !== 0) return false;
-
-    return true;
-  }
-
-  /**
-   * 评估资源条件（resource_threshold）
-   * 支持 resource / minAmount / maxAmount / operator 参数
-   */
-  private evaluateResourceCondition(
-    params: Record<string, unknown>,
-    gameState?: Record<string, number>,
-  ): boolean {
-    if (!gameState) return true; // 无游戏状态时默认通过（兼容旧逻辑）
-
-    const target = params['resource'] as string;
-    const value = gameState[target] ?? 0;
-
-    return this.compareValue(value, params);
-  }
-
-  /**
-   * 评估好感度条件（affinity_level）
-   * 支持 target / value / operator 参数
-   */
-  private evaluateAffinityCondition(
-    params: Record<string, unknown>,
-    gameState?: Record<string, number>,
-  ): boolean {
-    if (!gameState) return true;
-
-    const target = params['target'] as string;
-    const value = gameState[target] ?? 0;
-
-    return this.compareValue(value, params);
-  }
-
-  /**
-   * 评估建筑等级条件（building_level）
-   * 支持 target / value / operator 参数
-   */
-  private evaluateBuildingCondition(
-    params: Record<string, unknown>,
-    gameState?: Record<string, number>,
-  ): boolean {
-    if (!gameState) return true;
-
-    const target = params['target'] as string;
-    const value = gameState[target] ?? 0;
-
-    return this.compareValue(value, params);
-  }
-
-  /**
-   * 评估事件完成条件（event_completed）
-   * 支持 eventId 参数
-   */
-  private evaluateEventCompletedCondition(
-    params: Record<string, unknown>,
-  ): boolean {
-    const eventId = params['eventId'] as EventId | undefined;
-    if (!eventId) return true;
-
-    return this.completedEventIds.has(eventId);
-  }
-
-  /**
-   * 通用比较运算（支持 6 种运算符）
-   * operator: '>=' | '<=' | '==' | '!=' | '>' | '<'
-   * 默认使用 '>='
-   */
-  private compareValue(
-    actual: number,
-    params: Record<string, unknown>,
-  ): boolean {
-    const expected = params['value'] as number | undefined
-      ?? params['minAmount'] as number | undefined
-      ?? 0;
-    const operator = (params['operator'] as string) ?? '>=';
-
-    switch (operator) {
-      case '>=': return actual >= expected;
-      case '<=': return actual <= expected;
-      case '==': return actual === expected;
-      case '!=': return actual !== expected;
-      case '>':  return actual > expected;
-      case '<':  return actual < expected;
-      default:   return actual >= expected;
-    }
   }
 
   /** 处理冷却 */

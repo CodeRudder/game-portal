@@ -5,6 +5,27 @@
  */
 
 export { EventTriggerSystem } from './EventTriggerSystem';
+export {
+  evaluateCondition,
+  evaluateTurnRangeCondition,
+  evaluateResourceCondition,
+  evaluateAffinityCondition,
+  evaluateBuildingCondition,
+  evaluateEventCompletedCondition,
+  compareValue,
+  type CompletedEventChecker,
+} from './EventTriggerConditions';
+export { calculateProbability } from './EventProbabilityCalculator';
+export {
+  serializeEventTriggerState,
+  deserializeEventTriggerState,
+  type EventTriggerStateSnapshot,
+} from './EventTriggerSerialization';
+export {
+  resolveEvent,
+  expireEvents,
+  type EventLifecycleState,
+} from './EventTriggerLifecycle';
 export { EventUINotification } from './EventUINotification';
 export type { EncounterOptionDisplay, EncounterModalData } from './EventUINotification';
 export { EventNotificationSystem } from './EventNotificationSystem';
