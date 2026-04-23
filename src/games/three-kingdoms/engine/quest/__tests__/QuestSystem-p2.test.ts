@@ -14,6 +14,38 @@ import { QuestSystem } from '../QuestSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type { QuestDef, QuestReward, QuestInstance } from '../../../core/quest';
 import {
+  QUEST_MAIN_CHAPTER_1,
+  QUEST_MAIN_CHAPTER_2,
+  QUEST_MAIN_CHAPTER_3,
+  DAILY_QUEST_TEMPLATES,
+} from '../../../core/quest';
+
+// ─────────────────────────────────────────────
+// 辅助工具
+// ─────────────────────────────────────────────
+
+function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+function createQuestSystem(): QuestSystem {
+  const sys = new QuestSystem();
+  sys.init(mockDeps());
+  return sys;
+}
+
+// ═══════════════════════════════════════════════════════════
+
 describe('QuestSystem', () => {
   let questSys: QuestSystem;
 
@@ -53,7 +85,6 @@ describe('QuestSystem', () => {
       const first = questSys.refreshDailyQuests();
       const second = questSys.refreshDailyQuests();
       expect(second).toHaveLength(6);
-      // 同一天返回相同任务
       expect(first.map((q) => q.instanceId).sort()).toEqual(
         second.map((q) => q.instanceId).sort(),
       );
@@ -97,12 +128,10 @@ describe('QuestSystem', () => {
       const first = dailies[0];
       const def = questSys.getQuestDef(first.questDefId);
 
-      // 完成目标
       for (const obj of first.objectives) {
         questSys.updateObjectiveProgress(first.instanceId, obj.id, obj.targetCount);
       }
 
-      // 领取奖励（触发活跃度）
       questSys.claimReward(first.instanceId);
 
       const state = questSys.getActivityState();
@@ -118,14 +147,14 @@ describe('QuestSystem', () => {
     it('领取活跃度宝箱', () => {
       questSys.addActivityPoints(25);
 
-      const reward = questSys.claimActivityMilestone(0); // 20分宝箱
+      const reward = questSys.claimActivityMilestone(0);
       expect(reward).not.toBeNull();
       expect(reward!.resources!.gold).toBe(100);
     });
 
     it('活跃度不够不能领取宝箱', () => {
       questSys.addActivityPoints(10);
-      const reward = questSys.claimActivityMilestone(0); // 需要20分
+      const reward = questSys.claimActivityMilestone(0);
       expect(reward).toBeNull();
     });
 
@@ -186,7 +215,6 @@ describe('QuestSystem', () => {
       const b = questSys.acceptQuest('q-b')!;
       const c = questSys.acceptQuest('q-c')!;
 
-      // 手动追踪 c（已被自动追踪的可能是 a,b 中前两个）
       questSys.untrackQuest(a.instanceId);
       const result = questSys.trackQuest(c.instanceId);
       expect(result).toBe(true);
@@ -327,6 +355,4 @@ describe('QuestSystem', () => {
       );
     });
   });
-});
-
 });

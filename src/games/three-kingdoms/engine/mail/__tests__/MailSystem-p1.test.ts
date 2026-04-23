@@ -270,7 +270,4 @@ describe('MailSystem — 附件领取', () => {
 
     expect(Object.keys(claimed)).toHaveLength(0);
   });
-
-  it('批量领取', () => {
-});
 });

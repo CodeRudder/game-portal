@@ -266,11 +266,4 @@ describe('ExpeditionSystem — 队伍编成', () => {
     // 羁绊加成10%，蜀国武将总power更高
     expect(withBond).toBeGreaterThan(withoutBond * 0.9);
   });
-
-  test('autoComposeTeam 选择最强武将', () => {
-    const heroes = [
-      createHero('h1', 'shu', 3000),
-      createHero('h2', 'shu', 2500),
-      createHero('h3', 'shu', 2000),
-});
 });

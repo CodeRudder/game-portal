@@ -293,6 +293,6 @@ describe('QuestSystem', () => {
 
       const allRewards = questSys.claimAllRewards();
       expect(allRewards).toHaveLength(1);
-});
-});
+    });
+  });
 });
