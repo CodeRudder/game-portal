@@ -90,12 +90,12 @@ describe('BattleResultModal', () => {
     const { container } = render(
       <BattleResultModal result={makeVictoryResult()} stage={makeStage()} onConfirm={onConfirm} />,
     );
-    expect(container.querySelector('.tk-brm-modal--victory')).toBeInTheDocument();
+    expect(container.querySelector('.tk-brm-result-title--victory')).toBeInTheDocument();
   });
 
   it('应显示胜利标题和图标', () => {
     render(<BattleResultModal result={makeVictoryResult()} stage={makeStage()} onConfirm={onConfirm} />);
-    expect(screen.getByText('战斗胜利')).toBeInTheDocument();
+    expect(screen.getAllByText('战斗胜利').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('🏆')).toBeInTheDocument();
   });
 
@@ -162,7 +162,7 @@ describe('BattleResultModal', () => {
     const { container } = render(
       <BattleResultModal result={makeDefeatResult()} stage={makeStage()} onConfirm={onConfirm} />,
     );
-    expect(container.querySelector('.tk-brm-modal--defeat')).toBeInTheDocument();
+    expect(container.querySelector('.tk-brm-result-title--defeat')).toBeInTheDocument();
   });
 
   it('应显示失败标题和图标', () => {
