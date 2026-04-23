@@ -1,0 +1,96 @@
+/**
+ * BattleSpeedControl — 战斗加速控件样式
+ *
+ * 三档速度按钮（1x / 2x / 4x），4x 特殊高亮
+ *
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* ═══════════════════════════════════════════
+   容器
+   ═══════════════════════════════════════════ */
+[data-testid="battle-speed-control"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ═══════════════════════════════════════════
+   速度按钮
+   ═══════════════════════════════════════════ */
+.tk-speed-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--tk-border-default, #8b7355);
+  border-radius: 6px;
+  background: var(--tk-bg-card, #2a2218);
+  color: var(--tk-text-secondary, #c4a882);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.tk-speed-btn:hover:not(:disabled) {
+  background: var(--tk-bg-hover, #3d3428);
+  border-color: var(--tk-border-highlight, #d4a853);
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-speed-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════
+   激活状态
+   ═══════════════════════════════════════════ */
+.tk-speed-btn--active {
+  background: var(--tk-bg-active, #4a3c2e);
+  border-color: var(--tk-accent-gold, #d4a853);
+  color: var(--tk-accent-gold, #d4a853);
+  box-shadow: 0 0 8px rgba(212, 168, 83, 0.3);
+}
+
+/* ═══════════════════════════════════════════
+   4x 快速特殊样式
+   ═══════════════════════════════════════════ */
+.tk-speed-btn--fast {
+  border-color: var(--tk-accent-red, #e74c3c);
+  color: var(--tk-accent-red, #e74c3c);
+}
+
+.tk-speed-btn--fast.tk-speed-btn--active {
+  background: linear-gradient(135deg, #5c1a1a, #3d1212);
+  border-color: var(--tk-accent-red, #e74c3c);
+  color: #ff6b6b;
+  box-shadow: 0 0 12px rgba(231, 76, 60, 0.4);
+  animation: tk-speed-fast-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes tk-speed-fast-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(231, 76, 60, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(231, 76, 60, 0.6); }
+}
+
+/* ═══════════════════════════════════════════
+   速度指示器
+   ═══════════════════════════════════════════ */
+.tk-speed-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  font-size: 13px;
+  color: var(--tk-text-secondary, #c4a882);
+}
+
+.tk-speed-indicator-value {
+  font-weight: 700;
+  color: var(--tk-accent-gold, #d4a853);
+}
