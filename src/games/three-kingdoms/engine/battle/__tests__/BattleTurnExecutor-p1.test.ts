@@ -91,18 +91,18 @@ function createState(overrides: Partial<BattleState> = {}): BattleState {
 
 function createMockCalculator(overrides: Partial<IDamageCalculator> = {}): IDamageCalculator {
   return {
-    calculateDamage: jest.fn((_a, _d, m) => ({
+    calculateDamage: vi.fn((_a, _d, m) => ({
       damage: 100, baseDamage: 100, skillMultiplier: m, isCritical: false,
       criticalMultiplier: 1.0, restraintMultiplier: 1.0, randomFactor: 1.0, isMinDamage: false,
     })),
-    applyDamage: jest.fn((d, dmg) => {
+    applyDamage: vi.fn((d, dmg) => {
       const actual = Math.min(dmg, d.hp);
       d.hp -= actual;
       if (d.hp <= 0) { d.hp = 0; d.isAlive = false; }
       return actual;
     }),
-    calculateDotDamage: jest.fn(() => 0),
-    isControlled: jest.fn(() => false),
+    calculateDotDamage: vi.fn(() => 0),
+    isControlled: vi.fn(() => false),
     ...overrides,
   };
 }

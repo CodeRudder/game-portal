@@ -20,14 +20,14 @@ import type { NPCData, NPCProfession, RegionId } from '../../../core/npc';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -66,19 +66,19 @@ function mockDepsWithNPC(npcs: NPCData[] = []): ISystemDeps {
 
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
     registry: {
-      register: jest.fn(),
-      get: jest.fn().mockReturnValue(mockNPCSys),
-      getAll: jest.fn(),
-      has: jest.fn(),
-      unregister: jest.fn(),
+      register: vi.fn(),
+      get: vi.fn().mockReturnValue(mockNPCSys),
+      getAll: vi.fn(),
+      has: vi.fn(),
+      unregister: vi.fn(),
     },
   } as unknown as ISystemDeps;
 }

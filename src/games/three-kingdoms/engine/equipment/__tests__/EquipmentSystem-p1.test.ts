@@ -46,9 +46,9 @@ import {
 /** 创建满足 ISystemDeps 的 mock 依赖 */
 function createMockDeps(): ISystemDeps {
   return {
-    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as unknown as ISystemDeps['eventBus'],
-    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
-    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+    eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() } as unknown as ISystemDeps['eventBus'],
+    config: { get: vi.fn() } as unknown as ISystemDeps['config'],
+    registry: { get: vi.fn() } as unknown as ISystemDeps['registry'],
   };
 }
 
