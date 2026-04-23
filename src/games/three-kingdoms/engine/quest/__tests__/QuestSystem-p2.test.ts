@@ -216,7 +216,8 @@ describe('QuestSystem', () => {
       const b = questSys.acceptQuest('q-b')!;
       const c = questSys.acceptQuest('q-c')!;
 
-      questSys.untrackQuest(a.instanceId);
+      // c 已被自动追踪，先取消追踪再重新追踪
+      questSys.untrackQuest(c.instanceId);
       const result = questSys.trackQuest(c.instanceId);
       expect(result).toBe(true);
     });

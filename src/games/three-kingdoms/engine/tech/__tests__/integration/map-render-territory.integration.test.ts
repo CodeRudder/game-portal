@@ -228,14 +228,14 @@ describe('§2.3 地形类型与战斗效果', () => {
     expect(terrains.length).toBe(6);
   });
 
-  it('包含plain/mountain/water/city/forest/desert', () => {
+  it('包含plain/mountain/water/city/forest/pass', () => {
     const types = sys.map.getTerrains().map(t => t.type);
     expect(types).toContain('plain');
     expect(types).toContain('mountain');
     expect(types).toContain('water');
     expect(types).toContain('city');
     expect(types).toContain('forest');
-    expect(types).toContain('desert');
+    expect(types).toContain('pass');
   });
 
   it('平原defenseBonus=0', () => {

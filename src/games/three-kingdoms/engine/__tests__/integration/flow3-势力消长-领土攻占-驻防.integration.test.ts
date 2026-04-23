@@ -197,8 +197,17 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
 
     it('兵力不足应拒绝攻城(需相邻领土)', () => {
       const all = territorySys.getAllTerritories();
+      // 找到一个 neutral 领土，其相邻领土中有玩家领土或先攻占一个相邻领土
       const neutral = all.find(t => t.ownership !== 'player');
       if (!neutral) return;
+      // 确保有相邻的玩家领土（先攻占一个相邻领土）
+      const adjIds = neutral.adjacentIds ?? [];
+      if (adjIds.length > 0) {
+        const adj = all.find(t => t.id === adjIds[0]);
+        if (adj && adj.ownership !== 'player') {
+          territorySys.captureTerritory(adj.id, 'player');
+        }
+      }
 
       // 先检查是否相邻（可能NOT_ADJACENT先于兵力检查）
       const cond = siegeSys.checkSiegeConditions(neutral.id, 'player', 10, 1000);
@@ -211,6 +220,14 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
       const all = territorySys.getAllTerritories();
       const neutral = all.find(t => t.ownership !== 'player');
       if (!neutral) return;
+      // 确保有相邻的玩家领土
+      const adjIds = neutral.adjacentIds ?? [];
+      if (adjIds.length > 0) {
+        const adj = all.find(t => t.id === adjIds[0]);
+        if (adj && adj.ownership !== 'player') {
+          territorySys.captureTerritory(adj.id, 'player');
+        }
+      }
 
       const cond = siegeSys.checkSiegeConditions(neutral.id, 'player', 5000, 10);
       expect(cond.canSiege).toBe(false);
@@ -274,6 +291,10 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
       territorySys = new TerritorySystem();
       deps = mockDepsWithTerritory(territorySys);
       territorySys.init(deps);
+      // 通过 registry mock 注入 TerritorySystem
+      (deps.registry.get as ReturnType<typeof vi.fn>).mockImplementation(
+        (name: string) => name === 'territory' ? territorySys : undefined
+      );
       siegeSys = new SiegeSystem();
       siegeSys.init(deps);
     });
@@ -313,6 +334,10 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
       territorySys = new TerritorySystem();
       deps = mockDepsWithTerritory(territorySys);
       territorySys.init(deps);
+      // 通过 registry mock 注入 TerritorySystem
+      (deps.registry.get as ReturnType<typeof vi.fn>).mockImplementation(
+        (name: string) => name === 'territory' ? territorySys : undefined
+      );
       garrisonSys = new GarrisonSystem();
       garrisonSys.init(deps);
     });
@@ -542,6 +567,10 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
       territorySys = new TerritorySystem();
       deps = mockDepsWithTerritory(territorySys);
       territorySys.init(deps);
+      // 通过 registry mock 注入 TerritorySystem
+      (deps.registry.get as ReturnType<typeof vi.fn>).mockImplementation(
+        (name: string) => name === 'territory' ? territorySys : undefined
+      );
       garrisonSys = new GarrisonSystem();
       garrisonSys.init(deps);
       siegeSys = new SiegeSystem();

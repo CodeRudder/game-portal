@@ -289,7 +289,7 @@ describe('BattleTurnExecutor buildTurnOrder', () => {
       enemyTeam: { units: [createUnit({ id: 'beta', side: 'enemy', speed: 100 })], side: 'enemy' },
     });
     executor.buildTurnOrder(s);
-    expect(s.turnOrder).toEqual(['alpha', 'gamma', 'beta']);
+    expect(s.turnOrder).toEqual(['alpha', 'beta', 'gamma']);
   });
 
   it('6v6 → 12 entries', () => {

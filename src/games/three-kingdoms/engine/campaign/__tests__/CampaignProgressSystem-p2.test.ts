@@ -216,8 +216,8 @@ describe('CampaignProgressSystem 章节推进', () => {
   });
 
   it('通关第1章所有关卡后推进到第2章', () => {
-    // 通关第1章全部8关
-    for (let i = 1; i <= 8; i++) {
+    // 通关第1章全部5关（3普通 + 1精英 + 1BOSS）
+    for (let i = 1; i <= 5; i++) {
       system.completeStage(`chapter1_stage${i}`, 1);
     }
     const chapter = system.getCurrentChapter();
@@ -226,14 +226,14 @@ describe('CampaignProgressSystem 章节推进', () => {
   });
 
   it('通关第1章BOSS后第2章第1关解锁', () => {
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 1; i <= 5; i++) {
       system.completeStage(`chapter1_stage${i}`, 1);
     }
     expect(system.getStageStatus('chapter2_stage1')).toBe('available');
   });
 
   it('未通关第1章BOSS时第2章锁定', () => {
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 1; i <= 4; i++) {
       system.completeStage(`chapter1_stage${i}`, 1);
     }
     expect(system.getStageStatus('chapter2_stage1')).toBe('locked');

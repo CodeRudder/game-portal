@@ -88,8 +88,8 @@ describe('ThreeKingdomsEngine — 战斗/关卡系统集成', () => {
     it('getStageList() 返回所有关卡', () => {
       const stages = engine.getStageList();
       expect(stages.length).toBeGreaterThan(0);
-      // 第1章有 8 个关卡（6普通 + 1精英 + 1BOSS）
-      expect(stages.filter(s => s.chapterId === 'chapter1').length).toBe(8);
+      // 第1章有 5 个关卡（3普通 + 1精英 + 1BOSS）
+      expect(stages.filter(s => s.chapterId === 'chapter1').length).toBe(5);
     });
 
     it('getStageInfo() 返回关卡详情', () => {

@@ -282,6 +282,7 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
       // 单节点链，startChain后 currentNode=g1，需advance完成
       const result = chainSys.advanceChain('era-goal-chain', 'g1-opt1');
       expect(result.success).toBe(true);
+      expect(result.chainCompleted).toBe(true);
     });
   });
 
@@ -438,6 +439,7 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
 
       const progress = chainSys.getProgress('era-progress-chain');
       expect(progress).toBeDefined();
+      expect(progress!.isCompleted).toBe(true);
     });
 
     it('链选择应影响后续时代NPC关系', () => {

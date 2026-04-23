@@ -584,7 +584,7 @@ describe('§6.1 统计面板查看', () => {
     expect(terrainCounts).toHaveProperty('mountain');
     expect(terrainCounts).toHaveProperty('water');
     expect(terrainCounts).toHaveProperty('forest');
-    expect(terrainCounts).toHaveProperty('desert');
+    expect(terrainCounts).toHaveProperty('pass');
     expect(terrainCounts).toHaveProperty('city');
   });
 

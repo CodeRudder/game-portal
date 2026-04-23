@@ -149,7 +149,9 @@ export class WorldMapSystem implements ISubsystem {
 
   /** 获取所有区域定义（仅魏蜀吴三大区域，不含 neutral） */
   getRegions(): RegionDef[] {
-    return REGION_IDS.map(id => ({ ...REGION_DEFS[id] }));
+    return REGION_IDS
+      .filter(id => id !== 'neutral')
+      .map(id => ({ ...REGION_DEFS[id] }));
   }
 
   /** 获取指定坐标的区域 */

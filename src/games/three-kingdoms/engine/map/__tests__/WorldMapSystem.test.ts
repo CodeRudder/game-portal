@@ -143,7 +143,7 @@ describe('WorldMapSystem 基础与区域地形', () => {
   describe('三大区域划分', () => {
     it('getRegions 返回三个区域', () => {
       const regions = mapSys.getRegions();
-      expect(regions.length).toBe(4);
+      expect(regions.length).toBe(3);
       const ids = regions.map(r => r.id);
       expect(ids).toContain('wei');
       expect(ids).toContain('wu');
