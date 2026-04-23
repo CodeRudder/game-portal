@@ -152,10 +152,12 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
       deps = mockDeps();
       territorySys = new TerritorySystem();
       territorySys.init(deps);
+      // 通过 registry mock 注入 TerritorySystem，让 SiegeSystem 的 getter 能正确获取
+      (deps.registry.get as ReturnType<typeof vi.fn>).mockImplementation(
+        (name: string) => name === 'territory' ? territorySys : undefined
+      );
       siegeSys = new SiegeSystem();
       siegeSys.init(deps);
-      // 注入领土系统依赖
-      (siegeSys as unknown as { territorySys: TerritorySystem }).territorySys = territorySys;
     });
 
     it('攻占后领土归属应变更', () => {
