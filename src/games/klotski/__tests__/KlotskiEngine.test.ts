@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * KlotskiEngine 综合测试
  * 覆盖：初始化、棋盘网格、棋子放置、移动逻辑、碰撞检测、
@@ -392,7 +393,7 @@ describe('棋子选择', () => {
   });
 
   it('selectPiece 触发 selectionChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('selectionChange', handler);
     engine.selectPiece('caocao');
     expect(handler).toHaveBeenCalledWith('caocao');
@@ -490,7 +491,7 @@ describe('棋子移动', () => {
   });
 
   it('movePiece 触发 move 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('move', handler);
     engine.selectPiece('soldier1');
     engine.moveSelectedPiece('down');
@@ -791,7 +792,7 @@ describe('状态管理', () => {
   });
 
   it('destroy 后清理所有事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.destroy();
     // 事件已被清理，不会有新的触发
@@ -1037,7 +1038,7 @@ describe('事件系统', () => {
   });
 
   it('start 触发 statusChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     const e = createEngine();
     e.on('statusChange', handler);
     e.start();
@@ -1045,14 +1046,14 @@ describe('事件系统', () => {
   });
 
   it('pause 触发 statusChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.pause();
     expect(handler).toHaveBeenCalledWith('paused');
   });
 
   it('resume 触发 statusChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.pause();
     engine.on('statusChange', handler);
     engine.resume();
@@ -1060,14 +1061,14 @@ describe('事件系统', () => {
   });
 
   it('reset 触发 statusChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.reset();
     expect(handler).toHaveBeenCalledWith('idle');
   });
 
   it('移动触发 move 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('move', handler);
     engine.selectPiece('soldier1');
     engine.moveSelectedPiece('down');
@@ -1075,7 +1076,7 @@ describe('事件系统', () => {
   });
 
   it('off 取消事件监听', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('move', handler);
     engine.off('move', handler);
     engine.selectPiece('soldier1');

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Ant Kingdom（蚂蚁王国）放置类游戏 — 完整测试套件
  *
@@ -379,7 +380,7 @@ describe('AntKingdomEngine', () => {
     });
 
     it('addResource 触发 resourceChange 事件', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('resourceChange', listener);
       addFood(engine, 50);
       expect(listener).toHaveBeenCalledWith(RESOURCE_IDS.FOOD, 50);
@@ -387,7 +388,7 @@ describe('AntKingdomEngine', () => {
 
     it('spendResource 触发 resourceChange 事件', () => {
       addFood(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('resourceChange', listener);
       (engine as any).spendResource(RESOURCE_IDS.FOOD, 30);
       expect(listener).toHaveBeenCalledWith(RESOURCE_IDS.FOOD, 70);
@@ -439,7 +440,7 @@ describe('AntKingdomEngine', () => {
 
     it('资源解锁触发 resourceUnlocked 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('resourceUnlocked', listener);
       addFood(engine, 60);
       tick(engine, 16);
@@ -490,7 +491,7 @@ describe('AntKingdomEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -600,7 +601,7 @@ describe('AntKingdomEngine', () => {
     it('购买建筑触发 upgradePurchased 事件', () => {
       engine.start();
       addFood(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseBuilding(BUILDING_IDS.NEST);
       expect(listener).toHaveBeenCalledWith(BUILDING_IDS.NEST, 1);
@@ -656,7 +657,7 @@ describe('AntKingdomEngine', () => {
     it('购买建筑触发 stateChange 事件', () => {
       engine.start();
       addFood(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(BUILDING_IDS.NEST);
       expect(listener).toHaveBeenCalled();
@@ -759,7 +760,7 @@ describe('AntKingdomEngine', () => {
 
     it('建筑解锁触发 buildingUnlocked 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('buildingUnlocked', listener);
       addFood(engine, 50);
       tick(engine, 16);
@@ -851,7 +852,7 @@ describe('AntKingdomEngine', () => {
     it('解锁兵种触发 antUnlocked 事件', () => {
       engine.start();
       addFood(engine, 600);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('antUnlocked', listener);
       engine.unlockAnt(ANT_IDS.SOLDIER);
       expect(listener).toHaveBeenCalledWith(ANT_IDS.SOLDIER);
@@ -1094,7 +1095,7 @@ describe('AntKingdomEngine', () => {
     it('声望重置触发 prestigeReset 事件', () => {
       engine.start();
       addFood(engine, MIN_PRESTIGE_FOOD * 4);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('prestigeReset', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

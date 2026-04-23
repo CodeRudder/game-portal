@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * TetrisBattleEngine 完整测试套件
  * 目标 80+ 测试用例，覆盖引擎所有核心功能
@@ -1175,7 +1176,7 @@ describe('TetrisBattleEngine', () => {
     });
 
     it('destroy 后引擎不再触发事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalled();
@@ -1339,14 +1340,14 @@ describe('TetrisBattleEngine', () => {
   // ================================================================
   describe('T20 - 事件系统', () => {
     it('start 触发 statusChange 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');
     });
 
     it('pause 触发 statusChange 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.start();
       handler.mockClear();
@@ -1355,7 +1356,7 @@ describe('TetrisBattleEngine', () => {
     });
 
     it('resume 触发 statusChange 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.start();
       engine.pause();
@@ -1365,7 +1366,7 @@ describe('TetrisBattleEngine', () => {
     });
 
     it('reset 触发 statusChange 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.start();
       handler.mockClear();
@@ -1374,7 +1375,7 @@ describe('TetrisBattleEngine', () => {
     });
 
     it('gameover 触发 statusChange 事件', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.start();
       const player = getPlayerState(engine);
@@ -1389,7 +1390,7 @@ describe('TetrisBattleEngine', () => {
     });
 
     it('off 取消事件监听后不再触发', () => {
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.off('statusChange', handler);
       engine.start();

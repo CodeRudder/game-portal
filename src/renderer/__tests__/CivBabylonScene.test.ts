@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 巴比伦文明渲染策略和场景测试
  *
@@ -9,13 +10,13 @@
  * - 事件系统
  */
 
-jest.mock('pixi.js', () => {
+vi.mock('pixi.js', () => {
   class MockContainer {
     label: string; x = 0; y = 0; visible = true;
-    scale = { set: jest.fn(), x: 1, y: 1 };
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    scale = { set: vi.fn(), x: 1, y: 1 };
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
     children: any[] = []; parent: any = null;
-    emit = jest.fn(); on = jest.fn().mockReturnThis(); off = jest.fn();
+    emit = vi.fn(); on = vi.fn().mockReturnThis(); off = vi.fn();
     eventMode: string = 'passive'; cursor: string = 'default';
     constructor(opts?: { label?: string }) { this.label = opts?.label ?? ''; }
     addChild(child: any) { this.children.push(child); if (child) child.parent = this; }
@@ -26,7 +27,7 @@ jest.mock('pixi.js', () => {
   }
   class MockGraphics {
     label = ''; x = 0; y = 0; visible = true; parent: any = null;
-    position = { set: jest.fn() }; emit = jest.fn(); on = jest.fn(); off = jest.fn();
+    position = { set: vi.fn() }; emit = vi.fn(); on = vi.fn(); off = vi.fn();
     clear() { return this; } circle() { return this; } rect() { return this; }
     ellipse() { return this; } moveTo() { return this; } lineTo() { return this; }
     arc() { return this; } closePath() { return this; } fill() { return this; } stroke() { return this; }
@@ -34,10 +35,10 @@ jest.mock('pixi.js', () => {
   }
   class MockText {
     label = ''; text: string;
-    anchor = { set: jest.fn(), x: 0, y: 0 };
+    anchor = { set: vi.fn(), x: 0, y: 0 };
     x = 0; y = 0; width = 50; height = 14; visible = true; parent: any = null;
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
-    emit = jest.fn(); on = jest.fn(); off = jest.fn();
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    emit = vi.fn(); on = vi.fn(); off = vi.fn();
     constructor(opts?: any) { this.text = opts?.text ?? ''; }
     destroy() {}
   }
@@ -107,7 +108,7 @@ describe('CivBabylonScene', () => {
     it('update should not throw when active', async () => { await scene.enter(); expect(() => scene.update(16.67)).not.toThrow(); });
     it('update should not throw when inactive', () => { expect(() => scene.update(16.67)).not.toThrow(); });
     it('destroy should clean up', async () => { await scene.enter(); scene.destroy(); expect(scene.isActive()).toBe(false); });
-    it('destroy should clear listeners', () => { scene.on('upgradeClick', jest.fn()); scene.destroy(); expect((scene as any).listeners.size).toBe(0); });
+    it('destroy should clear listeners', () => { scene.on('upgradeClick', vi.fn()); scene.destroy(); expect((scene as any).listeners.size).toBe(0); });
   });
 
   describe('updateState', () => {
@@ -131,10 +132,10 @@ describe('CivBabylonScene', () => {
   });
 
   describe('events', () => {
-    it('should register listeners', () => { const cb = jest.fn(); scene.on('upgradeClick', cb); expect((scene as any).listeners.has('upgradeClick')).toBe(true); });
-    it('should unregister listeners', () => { const cb = jest.fn(); scene.on('upgradeClick', cb); scene.off('upgradeClick', cb); expect((scene as any).listeners.get('upgradeClick')?.size).toBe(0); });
-    it('should call listeners on emit', () => { const cb = jest.fn(); scene.on('upgradeClick', cb); (scene as any).emit('upgradeClick', 'id'); expect(cb).toHaveBeenCalledWith('id'); });
-    it('should support multiple listeners', () => { const cb1 = jest.fn(), cb2 = jest.fn(); scene.on('upgradeClick', cb1); scene.on('upgradeClick', cb2); (scene as any).emit('upgradeClick', 'id'); expect(cb1).toHaveBeenCalled(); expect(cb2).toHaveBeenCalled(); });
+    it('should register listeners', () => { const cb = vi.fn(); scene.on('upgradeClick', cb); expect((scene as any).listeners.has('upgradeClick')).toBe(true); });
+    it('should unregister listeners', () => { const cb = vi.fn(); scene.on('upgradeClick', cb); scene.off('upgradeClick', cb); expect((scene as any).listeners.get('upgradeClick')?.size).toBe(0); });
+    it('should call listeners on emit', () => { const cb = vi.fn(); scene.on('upgradeClick', cb); (scene as any).emit('upgradeClick', 'id'); expect(cb).toHaveBeenCalledWith('id'); });
+    it('should support multiple listeners', () => { const cb1 = vi.fn(), cb2 = vi.fn(); scene.on('upgradeClick', cb1); scene.on('upgradeClick', cb2); (scene as any).emit('upgradeClick', 'id'); expect(cb1).toHaveBeenCalled(); expect(cb2).toHaveBeenCalled(); });
     it('should not throw on emit with no listeners', () => { expect(() => (scene as any).emit('nonexistent')).not.toThrow(); });
     it('should catch errors in listeners', () => { scene.on('upgradeClick', () => { throw new Error('test'); }); expect(() => (scene as any).emit('upgradeClick', 'id')).not.toThrow(); });
   });

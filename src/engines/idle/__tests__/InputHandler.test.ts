@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * InputHandler 单元测试
  *
@@ -658,7 +659,7 @@ describe('InputHandler', () => {
     });
 
     it('某个回调抛出异常不应影响后续回调', () => {
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const order: string[] = [];
 
       handler.on('click', () => order.push('before'));
@@ -677,7 +678,7 @@ describe('InputHandler', () => {
     });
 
     it('回调异常应输出错误信息到控制台', () => {
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       handler.on('click', () => {
         throw new Error('回调错误');
@@ -735,7 +736,7 @@ describe('InputHandler', () => {
     });
 
     it('custom 动作回调异常不应影响 custom:actionId 回调', () => {
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const { collect, events } = createCollector();
 
       handler.on('custom', () => {
@@ -753,7 +754,7 @@ describe('InputHandler', () => {
     });
 
     it('custom:actionId 回调异常不应影响 custom 回调', () => {
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const { collect, events } = createCollector();
 
       handler.on('custom', collect);

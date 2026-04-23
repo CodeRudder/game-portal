@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * FirstLaunchDetector 单元测试
  * 覆盖：#17 首次启动流程、#18 新手保护机制
@@ -11,14 +12,14 @@ import type { DeviceHardwareInfo } from '../FirstLaunchDetector';
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -29,9 +30,9 @@ describe('FirstLaunchDetector', () => {
   let baseTime: number;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     baseTime = 1_000_000_000_000;
-    jest.spyOn(Date, 'now').mockReturnValue(baseTime);
+    vi.spyOn(Date, 'now').mockReturnValue(baseTime);
 
     detector = new FirstLaunchDetector();
     sm = new TutorialStateMachine();
@@ -43,7 +44,7 @@ describe('FirstLaunchDetector', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // ═══════════════════════════════════════════
@@ -240,7 +241,7 @@ describe('FirstLaunchDetector', () => {
 
     it('30分钟后保护过期', async () => {
       await detector.executeFirstLaunchFlow();
-      jest.spyOn(Date, 'now').mockReturnValue(baseTime + 31 * 60 * 1000);
+      vi.spyOn(Date, 'now').mockReturnValue(baseTime + 31 * 60 * 1000);
       expect(detector.isNewbieProtectionActive()).toBe(false);
       expect(detector.getResourceCostDiscount()).toBe(1);
       expect(detector.getBattleDifficultyFactor()).toBe(1);

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { GeometryDashEngine } from '../GeometryDashEngine';
 import {
   CANVAS_WIDTH,
@@ -1244,7 +1245,7 @@ describe('GeometryDashEngine - Events', () => {
     const canvas = createMockCanvas();
     const engine = new GeometryDashEngine();
     engine.init(canvas);
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
@@ -1255,7 +1256,7 @@ describe('GeometryDashEngine - Events', () => {
     const engine = new GeometryDashEngine();
     engine.init(canvas);
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('scoreChange', callback);
     engine.update(16.667);
     expect(callback).toHaveBeenCalled();
@@ -1266,7 +1267,7 @@ describe('GeometryDashEngine - Events', () => {
     const engine = new GeometryDashEngine();
     engine.init(canvas);
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     // Force collision
     const obstacles = engine.getObstacles();
@@ -1284,7 +1285,7 @@ describe('GeometryDashEngine - Events', () => {
     const engine = new GeometryDashEngine();
     engine.init(canvas);
     engine.start();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.reset();
     expect(callback).toHaveBeenCalledWith('idle');
@@ -1292,7 +1293,7 @@ describe('GeometryDashEngine - Events', () => {
 
   it('should unsubscribe from events with off', () => {
     const engine = createEngine();
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     // No assertion needed - just verify no error

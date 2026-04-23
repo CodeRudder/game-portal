@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * GraphicsManager 单元测试
  *
@@ -106,7 +107,7 @@ describe('GraphicsManager', () => {
     });
 
     test('applyPreset 触发 onChange 回调', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       gfx.onChange(cb);
       gfx.applyPreset(GraphicsPreset.Low);
       expect(cb).toHaveBeenCalledTimes(1);
@@ -138,7 +139,7 @@ describe('GraphicsManager', () => {
     });
 
     test('高级选项修改触发 onChange', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       gfx.onChange(cb);
       gfx.setAdvancedOption('antiAliasing', true);
       expect(cb).toHaveBeenCalledTimes(1);
@@ -218,7 +219,7 @@ describe('GraphicsManager', () => {
 
   describe('事件监听', () => {
     test('取消注册后不再触发', () => {
-      const cb = jest.fn();
+      const cb = vi.fn();
       const unsub = gfx.onChange(cb);
       unsub();
       gfx.applyPreset(GraphicsPreset.High);
@@ -226,8 +227,8 @@ describe('GraphicsManager', () => {
     });
 
     test('removeAllListeners 清除所有回调', () => {
-      const cb1 = jest.fn();
-      const cb2 = jest.fn();
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
       gfx.onChange(cb1);
       gfx.onChange(cb2);
       gfx.removeAllListeners();

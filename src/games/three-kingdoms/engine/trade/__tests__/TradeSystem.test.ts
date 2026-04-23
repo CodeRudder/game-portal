@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * TradeSystem 单元测试
  *
@@ -15,8 +16,6 @@
 
 import { TradeSystem } from '../TradeSystem';
 import type { TradeCurrencyOps } from '../TradeSystem';
-import type { ISystemDeps } from '../../../core/types/subsystem';
-import type { TradeGoodsPrice } from '../../../core/trade/trade.types';
 import {
   CITY_IDS, CITY_LABELS, PROSPERITY_LABELS,
 } from '../../../core/trade/trade.types';
@@ -26,30 +25,25 @@ import {
   TRADE_EVENT_DEFS, TRADE_SAVE_VERSION,
 } from '../../../core/trade/trade-config';
 
-function createMockDeps(): ISystemDeps {
+function createMockDeps() {
   return {
-    eventBus: { emit: jest.fn(), on: jest.fn(), off: jest.fn(), once: jest.fn(), removeAllListeners: jest.fn() } as unknown as ISystemDeps['eventBus'],
-    config: { get: jest.fn() } as unknown as ISystemDeps['config'],
-    registry: { get: jest.fn() } as unknown as ISystemDeps['registry'],
+    eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() },
+    config: { get: vi.fn() },
+    registry: { get: vi.fn() },
   };
-}
-
-/** 访问 TradeSystem 内部私有 goodsPrices Map（测试专用） */
-function getInternalGoodsPrices(trade: TradeSystem): Map<string, TradeGoodsPrice> {
-  return (trade as unknown as { goodsPrices: Map<string, TradeGoodsPrice> }).goodsPrices;
 }
 
 function createMockCurrencyOps(): TradeCurrencyOps {
   return {
-    addCurrency: jest.fn(),
-    canAfford: jest.fn().mockReturnValue(true),
-    spendByPriority: jest.fn().mockReturnValue({ success: true }),
+    addCurrency: vi.fn(),
+    canAfford: vi.fn().mockReturnValue(true),
+    spendByPriority: vi.fn().mockReturnValue({ success: true }),
   };
 }
 
 function createTrade(): TradeSystem {
   const trade = new TradeSystem();
-  trade.init(createMockDeps());
+  trade.init(createMockDeps() as any);
   return trade;
 }
 
@@ -132,8 +126,8 @@ describe('TradeSystem - 商路开通', () => {
 
   it('openRoute 货币不足时失败', () => {
     const ops: TradeCurrencyOps = {
-      addCurrency: jest.fn(), canAfford: jest.fn().mockReturnValue(false),
-      spendByPriority: jest.fn().mockReturnValue({ success: false }),
+      addCurrency: vi.fn(), canAfford: vi.fn().mockReturnValue(false),
+      spendByPriority: vi.fn().mockReturnValue({ success: false }),
     };
     trade.setCurrencyOps(ops);
     const result = trade.openRoute(TRADE_ROUTE_DEFS[0].id, 1);
@@ -177,12 +171,12 @@ describe('TradeSystem - 价格波动', () => {
   it('价格在基础价50%~200%之间', () => {
     // 通过手动修改 lastRefreshTime 来触发刷新
     for (const [id, price] of trade.getAllPrices()) {
-      getInternalGoodsPrices(trade).get(id)!.lastRefreshTime = 0;
+      (trade as any).goodsPrices.get(id).lastRefreshTime = 0;
     }
     // 多次刷新验证范围
     for (let i = 0; i < 50; i++) {
       for (const [id, price] of trade.getAllPrices()) {
-        getInternalGoodsPrices(trade).get(id)!.lastRefreshTime = 0;
+        (trade as any).goodsPrices.get(id).lastRefreshTime = 0;
       }
       trade.refreshPrices();
       for (const def of TRADE_GOODS_DEFS) {
@@ -397,7 +391,7 @@ describe('TradeSystem - 序列化', () => {
   it('deserialize 版本不匹配抛异常', () => {
     expect(() => trade.deserialize({
       routes: {}, prices: {}, caravans: [], activeEvents: [], npcMerchants: [], version: 999,
-    } as unknown as Parameters<typeof trade.deserialize>[0])).toThrow();
+    } as any)).toThrow();
   });
 
   it('reset 恢复初始状态', () => {

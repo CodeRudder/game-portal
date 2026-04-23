@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Final Fantasy（最终幻想）放置类游戏 — 完整测试套件
  */
@@ -397,7 +398,7 @@ describe('FinalFantasyEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -526,7 +527,7 @@ describe('FinalFantasyEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addGold(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -535,7 +536,7 @@ describe('FinalFantasyEngine', () => {
     it('购买建筑触发 upgradePurchased 事件', () => {
       engine.start();
       addGold(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalledWith('tavern', 1);
@@ -656,7 +657,7 @@ describe('FinalFantasyEngine', () => {
     it('解锁职业触发 jobUnlocked 事件', () => {
       engine.start();
       addGold(engine, 500);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('jobUnlocked', listener);
       engine.unlockJob('mage');
       expect(listener).toHaveBeenCalledWith('mage');
@@ -742,7 +743,7 @@ describe('FinalFantasyEngine', () => {
       engine.start();
       addExp(engine, 100);
       addMana(engine, 50);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('jobPromoted', listener);
       engine.promoteJob('warrior');
       expect(listener).toHaveBeenCalledWith('warrior', 1);
@@ -818,7 +819,7 @@ describe('FinalFantasyEngine', () => {
     it('解锁召唤兽触发 summonUnlocked 事件', () => {
       engine.start();
       addMana(engine, 50);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('summonUnlocked', listener);
       engine.unlockSummon('ifrit');
       expect(listener).toHaveBeenCalledWith('ifrit');
@@ -1042,7 +1043,7 @@ describe('FinalFantasyEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalGoldEarned = MIN_PRESTIGE_GOLD * 4;
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

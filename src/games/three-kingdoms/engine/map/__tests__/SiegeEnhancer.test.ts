@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * SiegeEnhancer 测试
  *
@@ -55,16 +56,16 @@ function createSystems() {
 
   const deps: ISystemDeps = {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
     registry: {
-      register: jest.fn(),
-      get: jest.fn().mockImplementation((name: string) => {
+      register: vi.fn(),
+      get: vi.fn().mockImplementation((name: string) => {
         if (name === 'territory') return territory;
         if (name === 'siege') return siege;
         if (name === 'garrison') return garrison;
@@ -73,10 +74,10 @@ function createSystems() {
         if (name === 'formation') return { isGeneralInAnyFormation: () => false };
         throw new Error(`Subsystem ${name} not found`);
       }),
-      getAll: jest.fn().mockReturnValue(new Map()),
-      has: jest.fn().mockImplementation((name: string) =>
+      getAll: vi.fn().mockReturnValue(new Map()),
+      has: vi.fn().mockImplementation((name: string) =>
         ['territory', 'siege', 'garrison', 'siegeEnhancer', 'hero', 'formation'].includes(name)),
-      unregister: jest.fn(),
+      unregister: vi.fn(),
     } as unknown as ISubsystemRegistry,
   };
 

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * TechTreeSystem 单元测试
  *
@@ -107,12 +108,12 @@ describe('TechTreeSystem', () => {
   let system: TechTreeSystem;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     system = new TechTreeSystem([...BASIC_TECHS]);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   // ----------------------------------------------------------
@@ -171,7 +172,7 @@ describe('TechTreeSystem', () => {
 
     it('应在已研究过时返回 false', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       expect(system.research('mining_1', richResources())).toBe(false);
@@ -184,7 +185,7 @@ describe('TechTreeSystem', () => {
 
     it('前置满足后应可研究后续科技', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       expect(system.research('mining_2', richResources())).toBe(true);
@@ -202,7 +203,7 @@ describe('TechTreeSystem', () => {
 
     it('研究完成后应返回 true', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       expect(system.isResearched('mining_1')).toBe(true);
@@ -228,7 +229,7 @@ describe('TechTreeSystem', () => {
 
     it('已研究过时应返回 false', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       expect(system.canResearch('mining_1', richResources())).toBe(false);
@@ -240,7 +241,7 @@ describe('TechTreeSystem', () => {
 
     it('前置满足后应返回 true', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       expect(system.canResearch('mining_2', richResources())).toBe(true);
@@ -258,11 +259,11 @@ describe('TechTreeSystem', () => {
 
     it('应正确汇总 multiplier 效果（累乘）', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       system.research('mining_2', richResources());
-      jest.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(3000);
       system.update(0);
 
       const effects = system.getEffects();
@@ -272,17 +273,17 @@ describe('TechTreeSystem', () => {
 
     it('应正确汇总 unlock 和 ability 效果', () => {
       system.research('combat_1', richResources());
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
       system.update(0);
 
       expect(system.getEffects().combat).toBe(1);
 
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       system.research('combat_2', richResources());
-      jest.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(5000);
       system.update(0);
 
       const effects2 = system.getEffects();
@@ -292,15 +293,15 @@ describe('TechTreeSystem', () => {
 
     it('三项采矿科技全部完成后效果应正确累乘', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       system.research('mining_2', richResources());
-      jest.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(3000);
       system.update(0);
 
       system.research('mining_3', richResources());
-      jest.advanceTimersByTime(10000);
+      vi.advanceTimersByTime(10000);
       system.update(0);
 
       const effects = system.getEffects();
@@ -376,7 +377,7 @@ describe('TechTreeSystem', () => {
 
     it('不应允许已研究的科技入队', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       expect(system.enqueue('mining_1')).toBe(false);
@@ -402,14 +403,14 @@ describe('TechTreeSystem', () => {
       system.update(0);
       expect(system.getCurrentResearch()!.techId).toBe('mining_1');
 
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       expect(system.isResearched('mining_1')).toBe(true);
       expect(system.getCurrentResearch()).not.toBeNull();
       expect(system.getCurrentResearch()!.techId).toBe('mining_2');
 
-      jest.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(3000);
       system.update(0);
 
       expect(system.isResearched('mining_2')).toBe(true);
@@ -435,7 +436,7 @@ describe('TechTreeSystem', () => {
     it('应正确更新进度', () => {
       system.research('mining_1', richResources());
 
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
       system.update(0);
 
       expect(system.getCurrentResearch()!.progress).toBeCloseTo(0.5, 1);
@@ -443,7 +444,7 @@ describe('TechTreeSystem', () => {
 
     it('完成后应标记为已研究', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       expect(system.isResearched('mining_1')).toBe(true);
@@ -476,7 +477,7 @@ describe('TechTreeSystem', () => {
       system.onEvent((e) => events.push(e));
 
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       expect(events.length).toBeGreaterThanOrEqual(3);
@@ -534,7 +535,7 @@ describe('TechTreeSystem', () => {
 
     it('应正确序列化和反序列化有数据的状态', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
       system.update(0);
 
       system.enqueue('mining_2');
@@ -553,7 +554,7 @@ describe('TechTreeSystem', () => {
 
     it('应正确恢复已完成研究的状态', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
 
       const serialized = system.serialize();
@@ -594,7 +595,7 @@ describe('TechTreeSystem', () => {
   describe('reset', () => {
     it('应清除所有状态', () => {
       system.research('mining_1', richResources());
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       system.update(0);
       system.enqueue('mining_2');
 

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 2048 游戏引擎测试
  * 覆盖：初始化、滑动合并、方块生成、计分、游戏结束、胜利条件、键盘控制、生命周期、渲染
@@ -56,7 +57,7 @@ function sumGrid(grid: number[][]): number {
 
 describe('G2048Engine', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // ========== 1. 初始化 ==========
@@ -335,7 +336,7 @@ describe('G2048Engine', () => {
 
     it('scoreChange 事件在合并时触发', () => {
       const engine = startEngine();
-      const onScoreChange = jest.fn();
+      const onScoreChange = vi.fn();
       engine.on('scoreChange', onScoreChange);
 
       setGrid(engine, [
@@ -350,7 +351,7 @@ describe('G2048Engine', () => {
 
     it('连续移动计分正确', () => {
       const engine = startEngine();
-      const onScoreChange = jest.fn();
+      const onScoreChange = vi.fn();
       engine.on('scoreChange', onScoreChange);
 
       // 第一次合并
@@ -416,7 +417,7 @@ describe('G2048Engine', () => {
 
     it('gameover 后 statusChange 事件触发', () => {
       const engine = startEngine();
-      const onStatusChange = jest.fn();
+      const onStatusChange = vi.fn();
       engine.on('statusChange', onStatusChange);
 
       // 设置满网格无法移动，然后手动触发 gameOver
@@ -438,7 +439,7 @@ describe('G2048Engine', () => {
   describe('胜利条件', () => {
     it('达到 2048 方块触发 win 事件', () => {
       const engine = startEngine();
-      const onWin = jest.fn();
+      const onWin = vi.fn();
       engine.on('win', onWin);
 
       setGrid(engine, [
@@ -480,7 +481,7 @@ describe('G2048Engine', () => {
 
     it('win 事件只触发一次', () => {
       const engine = startEngine();
-      const onWin = jest.fn();
+      const onWin = vi.fn();
       engine.on('win', onWin);
 
       // 第一次达到 2048
@@ -614,7 +615,7 @@ describe('G2048Engine', () => {
 
     it('statusChange 事件正确触发', () => {
       const engine = createEngine();
-      const onStatusChange = jest.fn();
+      const onStatusChange = vi.fn();
       engine.on('statusChange', onStatusChange);
 
       engine.start();

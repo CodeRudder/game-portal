@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * EgyptMythEngine — 全面测试套件
  *
@@ -223,7 +224,7 @@ describe('EgyptMythEngine — 点击', () => {
   });
 
   it('click() 触发 stateChange 事件', () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     engine.on('stateChange', listener);
     engine.click();
     expect(listener).toHaveBeenCalled();
@@ -301,7 +302,7 @@ describe('EgyptMythEngine — 资源', () => {
   });
 
   it('addResource 触发 resourceChange 事件', () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     engine.on('resourceChange', listener);
     engine.addResource('gold', 50);
     expect(listener).toHaveBeenCalledWith('gold', 50);
@@ -442,7 +443,7 @@ describe('EgyptMythEngine — 神明', () => {
 
   it('解锁神明后触发 godUnlocked 事件', () => {
     engine.addResource('gold', 1000);
-    const listener = jest.fn();
+    const listener = vi.fn();
     engine.on('godUnlocked', listener);
     engine.unlockGod('isis');
     expect(listener).toHaveBeenCalledWith('isis');
@@ -531,7 +532,7 @@ describe('EgyptMythEngine — 木乃伊', () => {
     );
     engine.loadState(state);
 
-    const listener = jest.fn();
+    const listener = vi.fn();
     engine.on('mummySummoned', listener);
     engine.summonMummy('common_mummy');
     expect(listener).toHaveBeenCalledWith('common_mummy');
@@ -633,7 +634,7 @@ describe('EgyptMythEngine — 转生/声望', () => {
 
   it('doPrestige() 触发 prestige 事件', () => {
     setTotalGoldEarned(engine, 100000);
-    const listener = jest.fn();
+    const listener = vi.fn();
     engine.on('prestige', listener);
     engine.doPrestige();
     expect(listener).toHaveBeenCalled();
@@ -824,7 +825,7 @@ describe('EgyptMythEngine — 生命周期', () => {
 
   it('destroy() 后监听器被清除', () => {
     const engine = createAndStartEngine();
-    const listener = jest.fn();
+    const listener = vi.fn();
     engine.on('stateChange', listener);
     engine.destroy();
     // After destroy, emit should not reach listener
@@ -898,7 +899,7 @@ describe('EgyptMythEngine — 渲染', () => {
   it('render 使用 createLinearGradient', () => {
     const canvas = createMockCanvas();
     const ctx = canvas.getContext('2d')!;
-    const spy = jest.spyOn(ctx, 'createLinearGradient');
+    const spy = vi.spyOn(ctx, 'createLinearGradient');
     engine.onRender(ctx, 480, 640);
     expect(spy).toHaveBeenCalled();
   });
@@ -906,7 +907,7 @@ describe('EgyptMythEngine — 渲染', () => {
   it('render 使用 createRadialGradient', () => {
     const canvas = createMockCanvas();
     const ctx = canvas.getContext('2d')!;
-    const spy = jest.spyOn(ctx, 'createRadialGradient');
+    const spy = vi.spyOn(ctx, 'createRadialGradient');
     engine.onRender(ctx, 480, 640);
     expect(spy).toHaveBeenCalled();
   });
@@ -914,7 +915,7 @@ describe('EgyptMythEngine — 渲染', () => {
   it('render 使用 ellipse', () => {
     const canvas = createMockCanvas();
     const ctx = canvas.getContext('2d')!;
-    const spy = jest.spyOn(ctx, 'ellipse');
+    const spy = vi.spyOn(ctx, 'ellipse');
     engine.onRender(ctx, 480, 640);
     expect(spy).toHaveBeenCalled();
   });
@@ -922,7 +923,7 @@ describe('EgyptMythEngine — 渲染', () => {
   it('render 使用 arcTo', () => {
     const canvas = createMockCanvas();
     const ctx = canvas.getContext('2d')!;
-    const spy = jest.spyOn(ctx, 'arcTo');
+    const spy = vi.spyOn(ctx, 'arcTo');
     engine.onRender(ctx, 480, 640);
     expect(spy).toHaveBeenCalled();
   });

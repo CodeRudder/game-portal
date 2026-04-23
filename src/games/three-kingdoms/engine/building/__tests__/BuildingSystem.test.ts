@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * BuildingSystem 单元测试
  * 覆盖：初始化、升级检查、升级执行、取消升级、解锁系统、队列管理、产出计算、特殊属性、序列化/反序列化、reset
@@ -12,7 +13,7 @@ const RICH: Resources = { grain: 1e9, gold: 1e9, troops: 1e9, mandate: 0 };
 const ZERO: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0 };
 
 function mockNow(base: number, offset: number) {
-  jest.spyOn(Date, 'now').mockReturnValue(base + offset);
+  vi.spyOn(Date, 'now').mockReturnValue(base + offset);
 }
 
 function makeSave(overrides: Partial<Record<BuildingType, Partial<BuildingState>>> = {}): BuildingSaveData {
@@ -28,13 +29,13 @@ describe('BuildingSystem', () => {
   let base: number;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     base = 1_000_000_000_000;
-    jest.spyOn(Date, 'now').mockReturnValue(base);
+    vi.spyOn(Date, 'now').mockReturnValue(base);
     sys = new BuildingSystem();
   });
 
-  afterEach(() => { jest.restoreAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   // ═══════════════════════════════════════════
   // 1. 初始化
@@ -384,7 +385,7 @@ describe('BuildingSystem', () => {
     });
 
     it('版本不匹配时仍能加载（打印警告）', () => {
-      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       sys.deserialize({ version: 999, buildings: makeSave().buildings });
       expect(spy).toHaveBeenCalled();
       spy.mockRestore();

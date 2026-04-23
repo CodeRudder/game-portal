@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * DailyScheduleSystem 单元测试
  *
@@ -292,7 +293,7 @@ describe('DailyScheduleSystem', () => {
         { startHour: 6, endHour: 12, state: NPCState.WORKING, label: '工作', interactable: false },
       ]);
 
-      const listener = jest.fn();
+      const listener = vi.fn();
       eventBus.on('scheduleStateChange', listener);
 
       system.update([npc], 8);
@@ -305,7 +306,7 @@ describe('DailyScheduleSystem', () => {
         { startHour: 6, endHour: 12, state: NPCState.WORKING, label: '工作', interactable: false },
       ]);
 
-      const listener = jest.fn();
+      const listener = vi.fn();
       eventBus.on('scheduleStateChange', listener);
 
       system.update([npc], 8);

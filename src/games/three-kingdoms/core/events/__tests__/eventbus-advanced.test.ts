@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * EventBus 高级单元测试
  *
@@ -25,9 +26,9 @@ describe('EventBus — removeAllListeners', () => {
   });
 
   it('不传参数应移除所有监听器', () => {
-    const h1 = jest.fn();
-    const h2 = jest.fn();
-    const h3 = jest.fn();
+    const h1 = vi.fn();
+    const h2 = vi.fn();
+    const h3 = vi.fn();
 
     bus.on('a:event', h1);
     bus.on('b:event', h2);
@@ -45,8 +46,8 @@ describe('EventBus — removeAllListeners', () => {
   });
 
   it('指定事件名应只移除该事件的监听器', () => {
-    const h1 = jest.fn();
-    const h2 = jest.fn();
+    const h1 = vi.fn();
+    const h2 = vi.fn();
 
     bus.on('keep:this', h1);
     bus.on('remove:this', h2);
@@ -61,8 +62,8 @@ describe('EventBus — removeAllListeners', () => {
   });
 
   it('指定事件名应同时移除 on 和 once 监听器', () => {
-    const onHandler = jest.fn();
-    const onceHandler = jest.fn();
+    const onHandler = vi.fn();
+    const onceHandler = vi.fn();
 
     bus.on('target:event', onHandler);
     bus.once('target:event', onceHandler);
@@ -76,7 +77,7 @@ describe('EventBus — removeAllListeners', () => {
   });
 
   it('指定事件名应移除匹配的通配符监听器', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     bus.on('wild:*', handler);
 
     bus.removeAllListeners('wild:something');
@@ -88,9 +89,9 @@ describe('EventBus — removeAllListeners', () => {
   });
 
   it('removeAllListeners 后 listenerCount 应为 0', () => {
-    bus.on('x:1', jest.fn());
-    bus.on('x:2', jest.fn());
-    bus.once('x:3', jest.fn());
+    bus.on('x:1', vi.fn());
+    bus.on('x:2', vi.fn());
+    bus.once('x:3', vi.fn());
 
     bus.removeAllListeners();
 
@@ -115,23 +116,23 @@ describe('EventBus — listenerCount / eventNames', () => {
   });
 
   it('listenerCount 应返回精确匹配的 on + once handler 数量', () => {
-    bus.on('count:event', jest.fn());
-    bus.on('count:event', jest.fn());
-    bus.once('count:event', jest.fn());
+    bus.on('count:event', vi.fn());
+    bus.on('count:event', vi.fn());
+    bus.once('count:event', vi.fn());
 
     expect(bus.listenerCount('count:event')).toBe(3);
   });
 
   it('listenerCount 应包含通配符匹配的 handler', () => {
-    bus.on('count:*', jest.fn());
-    bus.once('count:*', jest.fn());
+    bus.on('count:*', vi.fn());
+    bus.once('count:*', vi.fn());
 
     // 'count:test' startsWith 'count:' => 2 wildcard handlers
     expect(bus.listenerCount('count:test')).toBe(2);
   });
 
   it('listenerCount 在 handler 移除后应正确更新', () => {
-    const h = jest.fn();
+    const h = vi.fn();
     bus.on('remove:count', h);
 
     expect(bus.listenerCount('remove:count')).toBe(1);
@@ -142,9 +143,9 @@ describe('EventBus — listenerCount / eventNames', () => {
   });
 
   it('eventNames 应返回所有已注册的事件名', () => {
-    bus.on('alpha:event', jest.fn());
-    bus.on('beta:event', jest.fn());
-    bus.once('gamma:event', jest.fn());
+    bus.on('alpha:event', vi.fn());
+    bus.on('beta:event', vi.fn());
+    bus.once('gamma:event', vi.fn());
 
     const names = bus.eventNames();
 
@@ -155,8 +156,8 @@ describe('EventBus — listenerCount / eventNames', () => {
   });
 
   it('eventNames 不应包含通配符模式', () => {
-    bus.on('wild:*', jest.fn());
-    bus.on('exact:event', jest.fn());
+    bus.on('wild:*', vi.fn());
+    bus.on('exact:event', vi.fn());
 
     const names = bus.eventNames();
 
@@ -170,8 +171,8 @@ describe('EventBus — listenerCount / eventNames', () => {
   });
 
   it('eventNames 去重（on 和 once 同名事件只出现一次）', () => {
-    bus.on('dup:event', jest.fn());
-    bus.once('dup:event', jest.fn());
+    bus.on('dup:event', vi.fn());
+    bus.once('dup:event', vi.fn());
 
     const names = bus.eventNames();
 
@@ -221,7 +222,7 @@ describe('EventBus — 边界条件', () => {
   });
 
   it('空字符串事件名应正常工作', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     bus.on('', handler);
 
     bus.emit('', 'data');
@@ -234,7 +235,7 @@ describe('EventBus — 边界条件', () => {
   });
 
   it('重复 off 同一 handler 应安全', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     bus.on('dup:off', handler);
     bus.off('dup:off', handler);
     bus.off('dup:off', handler);
@@ -244,7 +245,7 @@ describe('EventBus — 边界条件', () => {
   });
 
   it('void payload 应正常工作', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     bus.on('void:event', handler);
 
     bus.emit('void:event', undefined);
@@ -253,7 +254,7 @@ describe('EventBus — 边界条件', () => {
   });
 
   it('同一 handler 注册两次应触发两次', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     bus.on('double:register', handler);
     bus.on('double:register', handler);
 
@@ -264,17 +265,17 @@ describe('EventBus — 边界条件', () => {
   });
 
   it('off 不存在的通配符应安全', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     expect(() => bus.off('no:wild:*', handler)).not.toThrow();
   });
 
   it('removeAllListeners 不存在的通配符前缀应安全', () => {
-    bus.on('exact:only', jest.fn());
+    bus.on('exact:only', vi.fn());
     expect(() => bus.removeAllListeners('exact:only')).not.toThrow();
   });
 
   it('once 通配符触发后再次 emit 不应再触发', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     bus.once('once:wild:*', handler);
 
     bus.emit('once:wild:a', 1);
@@ -284,7 +285,7 @@ describe('EventBus — 边界条件', () => {
   });
 
   it('off 通配符 once 应正确移除', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     bus.once('off:wild:*', handler);
     bus.off('off:wild:*', handler);
 

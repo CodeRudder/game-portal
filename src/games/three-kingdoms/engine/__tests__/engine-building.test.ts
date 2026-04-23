@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * ThreeKingdomsEngine 编排层单元测试 — 建筑域
  * 覆盖：建筑升级、取消升级、升级检查
@@ -8,12 +9,12 @@ import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
 // ── localStorage mock ──
 const storage: Record<string, string> = {};
 const localStorageMock = {
-  getItem: jest.fn((k: string) => storage[k] ?? null),
-  setItem: jest.fn((k: string, v: string) => { storage[k] = v; }),
-  removeItem: jest.fn((k: string) => { delete storage[k]; }),
-  clear: jest.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
+  getItem: vi.fn((k: string) => storage[k] ?? null),
+  setItem: vi.fn((k: string, v: string) => { storage[k] = v; }),
+  removeItem: vi.fn((k: string) => { delete storage[k]; }),
+  clear: vi.fn(() => Object.keys(storage).forEach(k => delete storage[k])),
   get length() { return Object.keys(storage).length; },
-  key: jest.fn(() => null),
+  key: vi.fn(() => null),
 };
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
 
@@ -22,7 +23,7 @@ describe('ThreeKingdomsEngine — 建筑域', () => {
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     engine = new ThreeKingdomsEngine();
   });
 
@@ -55,7 +56,7 @@ describe('ThreeKingdomsEngine — 建筑域', () => {
 
     it('发出 building:upgrade-start 事件', () => {
       engine.init();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('building:upgrade-start', listener);
       const check = engine.checkUpgrade('farmland');
       if (check.canUpgrade) {

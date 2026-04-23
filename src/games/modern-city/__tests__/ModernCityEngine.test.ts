@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Modern City（现代都市）放置类游戏 — 完整测试套件
  */
@@ -354,7 +355,7 @@ describe('ModernCityEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -483,7 +484,7 @@ describe('ModernCityEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addCoin(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -631,7 +632,7 @@ describe('ModernCityEngine', () => {
     it('升级城市触发 cityUpgraded 事件', () => {
       engine.start();
       addCoin(engine, 1000);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('cityUpgraded', listener);
       engine.upgradeCity();
       expect(listener).toHaveBeenCalledWith(2);
@@ -734,7 +735,7 @@ describe('ModernCityEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalCoinEarned = MIN_PRESTIGE_COIN * 4;
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

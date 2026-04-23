@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 四大文明·印度 (Civ Babylon) — v3.0 引擎测试套件
  *
@@ -537,7 +538,7 @@ describe('渲染', () => {
   it('render 调用 Canvas API（fillRect 被调用）', () => {
     const canvas = (engine as any).canvas as HTMLCanvasElement;
     const ctx = canvas.getContext('2d')!;
-    const fillRectSpy = jest.spyOn(ctx, 'fillRect');
+    const fillRectSpy = vi.spyOn(ctx, 'fillRect');
     (engine as any).onRender(ctx, canvas.width, canvas.height);
     expect(fillRectSpy).toHaveBeenCalled();
     fillRectSpy.mockRestore();

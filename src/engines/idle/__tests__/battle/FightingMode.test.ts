@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * FightingMode 单元测试
  *
@@ -60,20 +61,20 @@ function createMockContext(overrides?: {
   speed?: number;
 }): BattleModeContext {
   const units = overrides?.units ?? [];
-  const dealDamageMock = jest.fn().mockReturnValue({ damage: 20, isCrit: false, isMiss: false });
-  const healMock = jest.fn();
-  const addBuffMock = jest.fn();
-  const removeBuffMock = jest.fn();
-  const emitMock = jest.fn();
+  const dealDamageMock = vi.fn().mockReturnValue({ damage: 20, isCrit: false, isMiss: false });
+  const healMock = vi.fn();
+  const addBuffMock = vi.fn();
+  const removeBuffMock = vi.fn();
+  const emitMock = vi.fn();
 
   return {
     units,
-    getUnit: jest.fn((id: string) => units.find((u) => u.id === id)),
+    getUnit: vi.fn((id: string) => units.find((u) => u.id === id)),
     dealDamage: dealDamageMock,
     heal: healMock,
     addBuff: addBuffMock,
     removeBuff: removeBuffMock,
-    getAliveUnits: jest.fn((side?: 'attacker' | 'defender') => {
+    getAliveUnits: vi.fn((side?: 'attacker' | 'defender') => {
       if (side) return units.filter((u) => u.isAlive && u.side === side);
       return units.filter((u) => u.isAlive);
     }),
@@ -448,7 +449,7 @@ describe('FightingMode', () => {
     it('checkWin — 所有防守方死亡时返回 true', () => {
       const { mode, ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -464,7 +465,7 @@ describe('FightingMode', () => {
     it('checkLose — 所有攻击方死亡时返回 true', () => {
       const { mode, ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'attacker') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -480,7 +481,7 @@ describe('FightingMode', () => {
     it('胜利后应转为 finished', () => {
       const { mode, ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -491,7 +492,7 @@ describe('FightingMode', () => {
     it('失败后应转为 finished', () => {
       const { mode, ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'attacker') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -529,7 +530,7 @@ describe('FightingMode', () => {
     it('胜利时应返回 won=true', () => {
       const { mode, ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -540,7 +541,7 @@ describe('FightingMode', () => {
     it('失败时应返回 won=false', () => {
       const { mode, ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'attacker') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -569,7 +570,7 @@ describe('FightingMode', () => {
     it('应计算 MVP', () => {
       const { mode, ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn((side?: string) => {
+      ctx.getAliveUnits = vi.fn((side?: string) => {
         if (side === 'defender') return [];
         return ctx.units.filter((u) => u.isAlive);
       });
@@ -580,7 +581,7 @@ describe('FightingMode', () => {
     it('无存活单位时 MVP 应为 null', () => {
       const { mode, ctx } = create1v1Scenario();
       mode.init(ctx);
-      ctx.getAliveUnits = jest.fn(() => []);
+      ctx.getAliveUnits = vi.fn(() => []);
       const result = mode.settle(ctx, 1000);
       expect(result.mvp).toBeNull();
     });

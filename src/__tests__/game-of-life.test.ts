@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Conway's Game of Life 引擎测试
  *
@@ -954,14 +955,14 @@ describe('T10: 事件系统', () => {
   });
 
   it('start 触发 statusChange 为 playing', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     expect(callback).toHaveBeenCalledWith('playing');
   });
 
   it('pause 触发 statusChange 为 paused', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     engine.pause();
@@ -969,7 +970,7 @@ describe('T10: 事件系统', () => {
   });
 
   it('resume 触发 statusChange 为 playing', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     engine.pause();
@@ -979,7 +980,7 @@ describe('T10: 事件系统', () => {
   });
 
   it('reset 触发 statusChange 为 idle', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.start();
     callback.mockClear();
@@ -988,7 +989,7 @@ describe('T10: 事件系统', () => {
   });
 
   it('step 触发 scoreChange', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('scoreChange', callback);
     doStep(engine);
     expect(callback).toHaveBeenCalledWith(1);
@@ -997,21 +998,21 @@ describe('T10: 事件系统', () => {
   });
 
   it('speedUp 触发 levelChange', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('levelChange', callback);
     (engine as any).speedUp();
     expect(callback).toHaveBeenCalledWith(3);
   });
 
   it('speedDown 触发 levelChange', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('levelChange', callback);
     (engine as any).speedDown();
     expect(callback).toHaveBeenCalledWith(1);
   });
 
   it('destroy 清理所有事件监听', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.destroy();
     // destroy 后 listeners 已清空，再 start 不会触发回调
@@ -1024,7 +1025,7 @@ describe('T10: 事件系统', () => {
   });
 
   it('off 取消事件监听', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     engine.on('statusChange', callback);
     engine.off('statusChange', callback);
     engine.start();

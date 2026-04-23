@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { Pong2PEngine } from '../Pong2PEngine';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT, HUD_HEIGHT,
@@ -168,7 +169,7 @@ describe('Pong2PEngine', () => {
 
     it('启动后应触发 statusChange 事件', () => {
       const engine = createEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith('playing');
@@ -806,7 +807,7 @@ describe('Pong2PEngine', () => {
     it('获胜后应触发 statusChange gameover 事件', () => {
       const engine = createEngine();
       startAndWaitForServe(engine);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       (engine as any)._p1Score = 10;
       (engine as any)._p2Score = 9;
@@ -1015,7 +1016,7 @@ describe('Pong2PEngine', () => {
     it('重置后应触发 statusChange idle', () => {
       const engine = createEngine();
       startAndWaitForServe(engine);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('statusChange', handler);
       engine.reset();
       expect(handler).toHaveBeenCalledWith('idle');
@@ -1087,7 +1088,7 @@ describe('Pong2PEngine', () => {
     it('应能监听 scoreChange 事件', () => {
       const engine = createEngine();
       startAndWaitForServe(engine);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('scoreChange', handler);
       setBall(engine, CANVAS_WIDTH + BALL_RADIUS + 1, CANVAS_HEIGHT / 2, BALL_INITIAL_SPEED, 0);
       tick(engine);
@@ -1097,7 +1098,7 @@ describe('Pong2PEngine', () => {
     it('应能取消事件监听', () => {
       const engine = createEngine();
       startAndWaitForServe(engine);
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('scoreChange', handler);
       engine.off('scoreChange', handler);
       setBall(engine, CANVAS_WIDTH + BALL_RADIUS + 1, CANVAS_HEIGHT / 2, BALL_INITIAL_SPEED, 0);
@@ -1107,7 +1108,7 @@ describe('Pong2PEngine', () => {
 
     it('应能监听 levelChange 事件', () => {
       const engine = createEngine();
-      const handler = jest.fn();
+      const handler = vi.fn();
       engine.on('levelChange', handler);
       engine.start();
       expect(handler).toHaveBeenCalledWith(1);

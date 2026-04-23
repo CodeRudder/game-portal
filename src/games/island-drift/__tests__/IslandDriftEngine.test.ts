@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Island Drift（海岛漂流）放置类游戏 — 完整测试套件
  */
@@ -374,7 +375,7 @@ describe('IslandDriftEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -503,7 +504,7 @@ describe('IslandDriftEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addWood(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -639,7 +640,7 @@ describe('IslandDriftEngine', () => {
     it('解锁岛屿触发 islandUnlocked 事件', () => {
       engine.start();
       addWood(engine, 500);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('islandUnlocked', listener);
       engine.unlockIsland('forest_island');
       expect(listener).toHaveBeenCalledWith('forest_island');
@@ -717,7 +718,7 @@ describe('IslandDriftEngine', () => {
     it('探险触发 expeditionStarted 事件', () => {
       engine.start();
       addFood(engine, 10);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('expeditionStarted', listener);
       engine.startExpedition('beach_island');
       expect(listener).toHaveBeenCalledWith('beach_island');
@@ -895,7 +896,7 @@ describe('IslandDriftEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalWoodEarned = MIN_PRESTIGE_WOOD * 4;
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

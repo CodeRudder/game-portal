@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * GalagaEngine 综合测试
  * 覆盖：初始化、玩家移动、射击、敌机编队、俯冲攻击、碰撞检测、
@@ -188,7 +189,7 @@ describe('GalagaEngine - 启动', () => {
 
   it('start 发出 statusChange 事件', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith('playing');
@@ -196,7 +197,7 @@ describe('GalagaEngine - 启动', () => {
 
   it('start 发出 scoreChange 事件', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(0);
@@ -204,7 +205,7 @@ describe('GalagaEngine - 启动', () => {
 
   it('start 发出 levelChange 事件', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('levelChange', handler);
     engine.start();
     expect(handler).toHaveBeenCalledWith(1);
@@ -566,7 +567,7 @@ describe('GalagaEngine - 子弹击中敌机', () => {
   });
 
   it('击杀敌机发出 scoreChange 事件', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('scoreChange', handler);
     const enemy = engine.enemies[10];
     const bullet = { x: enemy.x + ENEMY_WIDTH / 2, y: enemy.y, active: true };
@@ -1116,7 +1117,7 @@ describe('GalagaEngine - 状态管理', () => {
 
   it('destroy 清除所有事件监听', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.destroy();
     const callCount = handler.mock.calls.length;
@@ -1126,7 +1127,7 @@ describe('GalagaEngine - 状态管理', () => {
 
   it('pause/resume 发出 statusChange 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.pause();
     expect(handler).toHaveBeenCalledWith('paused');
@@ -1136,7 +1137,7 @@ describe('GalagaEngine - 状态管理', () => {
 
   it('reset 发出 statusChange idle 事件', () => {
     const engine = createAndStartEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('statusChange', handler);
     engine.reset();
     expect(handler).toHaveBeenCalledWith('idle');
@@ -1329,7 +1330,7 @@ describe('GalagaEngine - getState', () => {
 describe('GalagaEngine - 事件系统', () => {
   it('on 注册事件监听', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('test', handler);
     engine.emit('test');
     expect(handler).toHaveBeenCalled();
@@ -1337,7 +1338,7 @@ describe('GalagaEngine - 事件系统', () => {
 
   it('off 取消事件监听', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('test', handler);
     engine.off('test', handler);
     engine.emit('test');
@@ -1346,7 +1347,7 @@ describe('GalagaEngine - 事件系统', () => {
 
   it('emit 传递参数', () => {
     const engine = createEngine();
-    const handler = jest.fn();
+    const handler = vi.fn();
     engine.on('test', handler);
     engine.emit('test', 'arg1', 42);
     expect(handler).toHaveBeenCalledWith('arg1', 42);
@@ -1354,8 +1355,8 @@ describe('GalagaEngine - 事件系统', () => {
 
   it('多次 on 同一事件注册多个监听', () => {
     const engine = createEngine();
-    const h1 = jest.fn();
-    const h2 = jest.fn();
+    const h1 = vi.fn();
+    const h2 = vi.fn();
     engine.on('test', h1);
     engine.on('test', h2);
     engine.emit('test');

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * BuildingSystem 新增功能测试
  * 覆盖：C19 建筑升级路线推荐、B13 批量升级
@@ -24,13 +25,13 @@ describe('BuildingSystem — C19 升级路线推荐', () => {
   let base: number;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     base = 1_000_000_000_000;
-    jest.spyOn(Date, 'now').mockReturnValue(base);
+    vi.spyOn(Date, 'now').mockReturnValue(base);
     sys = new BuildingSystem();
   });
 
-  afterEach(() => { jest.restoreAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   it('初始状态下主城排在推荐首位', () => {
     const rec = sys.getUpgradeRouteRecommendation(RICH);
@@ -99,13 +100,13 @@ describe('BuildingSystem — getUpgradeRecommendation 简化版', () => {
   let base: number;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     base = 1_000_000_000_000;
-    jest.spyOn(Date, 'now').mockReturnValue(base);
+    vi.spyOn(Date, 'now').mockReturnValue(base);
     sys = new BuildingSystem();
   });
 
-  afterEach(() => { jest.restoreAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   it('返回 type 和 reason 字段', () => {
     const rec = sys.getUpgradeRecommendation(RICH);
@@ -147,13 +148,13 @@ describe('BuildingSystem — B13 批量升级', () => {
   let base: number;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     base = 1_000_000_000_000;
-    jest.spyOn(Date, 'now').mockReturnValue(base);
+    vi.spyOn(Date, 'now').mockReturnValue(base);
     sys = new BuildingSystem();
   });
 
-  afterEach(() => { jest.restoreAllMocks(); });
+  afterEach(() => { vi.restoreAllMocks(); });
 
   it('批量升级可升级的建筑', () => {
     const result = sys.batchUpgrade(['castle'], RICH);

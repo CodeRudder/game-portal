@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * HeroRecruitSystem 补充边界测试 — 空池、零资源、保底线、连续招募
  * 覆盖：招募池为空、铜钱/求贤令为0、保底必定触发、碎片数量验证、连续招募100次
@@ -23,16 +24,16 @@ import { DUPLICATE_FRAGMENT_COUNT } from '../hero-config';
 function makeRichDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: jest.fn().mockReturnValue(true),
-    canAffordResource: jest.fn().mockReturnValue(true),
+    spendResource: vi.fn().mockReturnValue(true),
+    canAffordResource: vi.fn().mockReturnValue(true),
   };
 }
 
 function makePoorDeps(heroSystem: HeroSystem): RecruitDeps {
   return {
     heroSystem,
-    spendResource: jest.fn().mockReturnValue(false),
-    canAffordResource: jest.fn().mockReturnValue(false),
+    spendResource: vi.fn().mockReturnValue(false),
+    canAffordResource: vi.fn().mockReturnValue(false),
   };
 }
 
@@ -55,12 +56,12 @@ function makeTrackedDeps(heroSystem: HeroSystem, gold: number, token: number): R
   return {
     resources,
     heroSystem,
-    spendResource: jest.fn((type: string, amount: number) => {
+    spendResource: vi.fn((type: string, amount: number) => {
       if ((resources[type] ?? 0) < amount) return false;
       resources[type] -= amount;
       return true;
     }),
-    canAffordResource: jest.fn((type: string, amount: number) => (resources[type] ?? 0) >= amount),
+    canAffordResource: vi.fn((type: string, amount: number) => (resources[type] ?? 0) >= amount),
   };
 }
 

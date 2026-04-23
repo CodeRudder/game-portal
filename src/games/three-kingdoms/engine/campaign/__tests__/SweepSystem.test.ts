@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * 扫荡系统测试 — 扫荡解锁条件 + 扫荡令管理
  *
@@ -53,16 +54,16 @@ function createSweepDeps(starMap: StarMap = {}, options?: {
   const battleResults = options?.battleResults ?? {};
   const farthestStageId = options?.farthestStageId ?? null;
   return {
-    simulateBattle: jest.fn((stageId: string) => {
+    simulateBattle: vi.fn((stageId: string) => {
       if (battleResults[stageId]) return battleResults[stageId];
       return { victory: true, stars: 3 };
     }),
-    getStageStars: jest.fn((stageId: string) => starMap[stageId] ?? 0),
-    canChallenge: jest.fn((stageId: string) => {
+    getStageStars: vi.fn((stageId: string) => starMap[stageId] ?? 0),
+    canChallenge: vi.fn((stageId: string) => {
       return (starMap[stageId] ?? 0) > 0 || stageId === farthestStageId;
     }),
-    getFarthestStageId: jest.fn(() => farthestStageId),
-    completeStage: jest.fn(),
+    getFarthestStageId: vi.fn(() => farthestStageId),
+    completeStage: vi.fn(),
   } satisfies SweepDeps;
 }
 

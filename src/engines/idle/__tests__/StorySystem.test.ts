@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * StorySystem 单元测试
  */
@@ -166,7 +167,7 @@ describe('StorySystem', () => {
 
   it('应正确触发事件', () => {
     system.registerChapters([createChapter()]);
-    const handler = jest.fn();
+    const handler = vi.fn();
     system.onEvent(handler);
     system.startChapter('ch1');
     system.advanceDialogue();

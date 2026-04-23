@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * CalendarSystem 核心单元测试
  *
@@ -13,16 +14,16 @@ import type { ISystemDeps } from '../../../core/types';
 function createMockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn(),
-      once: jest.fn(),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn(),
+      once: vi.fn(),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn(), has: jest.fn(() => false) },
+    config: { get: vi.fn(), set: vi.fn(), has: vi.fn(() => false) },
     registry: {
-      register: jest.fn(), get: jest.fn(), getAll: jest.fn(() => new Map()),
-      has: jest.fn(() => false), unregister: jest.fn(),
+      register: vi.fn(), get: vi.fn(), getAll: vi.fn(() => new Map()),
+      has: vi.fn(() => false), unregister: vi.fn(),
     },
   };
 }
@@ -32,7 +33,7 @@ describe('CalendarSystem', () => {
   let deps: ReturnType<typeof createMockDeps>;
 
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     calendar = new CalendarSystem();
     deps = createMockDeps();
   });

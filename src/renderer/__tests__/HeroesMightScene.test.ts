@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * HeroesMightScene 测试
  *
@@ -17,21 +18,21 @@
 // Mock PixiJS v8
 // ---------------------------------------------------------------------------
 
-jest.mock('pixi.js', () => {
+vi.mock('pixi.js', () => {
   class MockContainer {
     label: string;
     x = 0;
     y = 0;
     visible = true;
-    scale = { set: jest.fn(), x: 1, y: 1 };
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    scale = { set: vi.fn(), x: 1, y: 1 };
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
     children: any[] = [];
     parent: any = null;
-    emit = jest.fn();
-    on = jest.fn().mockReturnThis();
-    off = jest.fn();
-    once = jest.fn();
-    removeAllListeners = jest.fn();
+    emit = vi.fn();
+    on = vi.fn().mockReturnThis();
+    off = vi.fn();
+    once = vi.fn();
+    removeAllListeners = vi.fn();
     eventMode: string = 'passive';
     cursor: string = 'default';
 
@@ -58,9 +59,9 @@ jest.mock('pixi.js', () => {
     y = 0;
     visible = true;
     parent: any = null;
-    position = { set: jest.fn() };
-    emit = jest.fn();
-    on = jest.fn();
+    position = { set: vi.fn() };
+    emit = vi.fn();
+    on = vi.fn();
 
     clear() { return this; }
     circle(_x: number, _y: number, _r: number) { return this; }
@@ -77,17 +78,17 @@ jest.mock('pixi.js', () => {
   class MockText {
     label = '';
     text: string;
-    anchor = { set: jest.fn(), x: 0, y: 0 };
+    anchor = { set: vi.fn(), x: 0, y: 0 };
     x = 0;
     y = 0;
     width = 50;
     height = 14;
     visible = true;
     parent: any = null;
-    position = { set: jest.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
-    emit = jest.fn();
-    on = jest.fn();
-    off = jest.fn();
+    position = { set: vi.fn((x: number, y: number) => { this.x = x; this.y = y; }) };
+    emit = vi.fn();
+    on = vi.fn();
+    off = vi.fn();
 
     constructor(opts?: any) { this.text = opts?.text ?? ''; }
     destroy() {}
@@ -210,7 +211,7 @@ describe('HeroesMightScene', () => {
     });
 
     it('destroy should clear listeners', async () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('heroClick', callback);
       scene.destroy();
       expect((scene as any).listeners.size).toBe(0);
@@ -296,27 +297,27 @@ describe('HeroesMightScene', () => {
 
   describe('events', () => {
     it('should register event listeners', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('heroClick', callback);
       expect((scene as any).listeners.has('heroClick')).toBe(true);
     });
 
     it('should unregister event listeners', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('heroClick', callback);
       scene.off('heroClick', callback);
       expect((scene as any).listeners.get('heroClick')?.size).toBe(0);
     });
 
     it('should call event listeners when emitted', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('heroClick', callback);
       (scene as any).emit('heroClick', 'hero-knight');
       expect(callback).toHaveBeenCalledWith('hero-knight');
     });
 
     it('should support spellCast event', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       scene.on('spellCast', callback);
       (scene as any).emit('spellCast', 'fireball');
       expect(callback).toHaveBeenCalledWith('fireball');
@@ -327,7 +328,7 @@ describe('HeroesMightScene', () => {
     });
 
     it('should catch errors in listeners', () => {
-      const badCallback = jest.fn(() => { throw new Error('test'); });
+      const badCallback = vi.fn(() => { throw new Error('test'); });
       scene.on('heroClick', badCallback);
       expect(() => (scene as any).emit('heroClick', 'id')).not.toThrow();
     });

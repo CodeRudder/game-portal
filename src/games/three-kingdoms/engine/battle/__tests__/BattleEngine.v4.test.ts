@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * BattleEngine v4.0 集成测试 — 大招时停 + 战斗加速
  *
@@ -111,10 +112,10 @@ function createTeam(
 /** 创建模拟时停处理器 */
 function createMockHandler() {
   return {
-    onUltimateReady: jest.fn(),
-    onBattlePaused: jest.fn(),
-    onUltimateConfirmed: jest.fn(),
-    onUltimateCancelled: jest.fn(),
+    onUltimateReady: vi.fn(),
+    onBattlePaused: vi.fn(),
+    onUltimateConfirmed: vi.fn(),
+    onUltimateCancelled: vi.fn(),
   } as IUltimateTimeStopHandler;
 }
 
@@ -334,7 +335,7 @@ describe('BattleEngine v4.0', () => {
 
     it('原有依赖注入应正常工作', () => {
       const customCalculator = {
-        calculateDamage: jest.fn().mockReturnValue({
+        calculateDamage: vi.fn().mockReturnValue({
           damage: 999,
           baseDamage: 999,
           skillMultiplier: 1.0,
@@ -344,7 +345,7 @@ describe('BattleEngine v4.0', () => {
           randomFactor: 1.0,
           isMinDamage: false,
         }),
-        applyDamage: jest.fn().mockImplementation((_defender: BattleUnit, damage: number) => {
+        applyDamage: vi.fn().mockImplementation((_defender: BattleUnit, damage: number) => {
           const actual = Math.min(damage, _defender.hp);
           _defender.hp -= actual;
           if (_defender.hp <= 0) {
@@ -353,8 +354,8 @@ describe('BattleEngine v4.0', () => {
           }
           return actual;
         }),
-        calculateDotDamage: jest.fn().mockReturnValue(0),
-        isControlled: jest.fn().mockReturnValue(false),
+        calculateDotDamage: vi.fn().mockReturnValue(0),
+        isControlled: vi.fn().mockReturnValue(false),
       };
 
       const customEngine = new BattleEngine(customCalculator as unknown as Record<string, unknown>);

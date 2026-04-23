@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Dino Ranch（恐龙牧场）放置类游戏 — 完整测试套件
  */
@@ -341,7 +342,7 @@ describe('DinoRanchEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -475,7 +476,7 @@ describe('DinoRanchEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addMeat(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -584,7 +585,7 @@ describe('DinoRanchEngine', () => {
     it('解锁恐龙触发 dinoUnlocked 事件', () => {
       engine.start();
       addMeat(engine, 800);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('dinoUnlocked', listener);
       engine.unlockDino('triceratops');
       expect(listener).toHaveBeenCalledWith('triceratops');
@@ -642,7 +643,7 @@ describe('DinoRanchEngine', () => {
       engine.start();
       addEggs(engine, 100);
       addFossils(engine, 50);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('dinoEvolved', listener);
       engine.evolveDino('velociraptor');
       expect(listener).toHaveBeenCalledWith('velociraptor', 1);
@@ -791,7 +792,7 @@ describe('DinoRanchEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalMeatEarned = PRESTIGE_MIN_TOTAL_MEAT * 4;
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

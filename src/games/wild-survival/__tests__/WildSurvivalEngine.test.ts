@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Wild Survival（野外求生）放置类游戏 — 完整测试套件
  */
@@ -454,7 +455,7 @@ describe('WildSurvivalEngine', () => {
 
     it('点击触发 stateChange 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.click();
       expect(listener).toHaveBeenCalled();
@@ -569,7 +570,7 @@ describe('WildSurvivalEngine', () => {
     it('购买建筑触发 stateChange', () => {
       engine.start();
       addStone(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('stateChange', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalled();
@@ -578,7 +579,7 @@ describe('WildSurvivalEngine', () => {
     it('购买建筑触发 upgradePurchased', () => {
       engine.start();
       addStone(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('upgradePurchased', listener);
       engine.purchaseBuilding(0);
       expect(listener).toHaveBeenCalledWith('campfire', 1);
@@ -756,7 +757,7 @@ describe('WildSurvivalEngine', () => {
     it('学习技能触发 skillLearned 事件', () => {
       engine.start();
       addStone(engine, 100);
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('skillLearned', listener);
       engine.learnSkill('stone_mastery');
       expect(listener).toHaveBeenCalledWith('stone_mastery', 1);
@@ -927,7 +928,7 @@ describe('WildSurvivalEngine', () => {
 
     it('季节变化触发 seasonChange 事件', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('seasonChange', listener);
       tick(engine, SEASON_DURATION + 100);
       // 季节变化时 emit 的是新季节名
@@ -1024,7 +1025,7 @@ describe('WildSurvivalEngine', () => {
     it('声望触发 prestige 事件', () => {
       engine.start();
       (engine as any)._stats.totalStoneEarned = MIN_PRESTIGE_STONE * 4;
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('prestige', listener);
       engine.doPrestige();
       expect(listener).toHaveBeenCalled();

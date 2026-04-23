@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 // ========== Mahjong Solitaire 测试 ==========
 
 import { MahjongSolitaireEngine } from '../MahjongSolitaireEngine';
@@ -994,7 +995,7 @@ describe('MahjongSolitaireEngine', () => {
   describe('事件系统', () => {
     it('statusChange 事件应该在胜利时触发', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('statusChange', listener);
 
       // 消除所有牌模拟胜利
@@ -1012,7 +1013,7 @@ describe('MahjongSolitaireEngine', () => {
 
     it('scoreChange 事件应该在消除时触发', () => {
       engine.start();
-      const listener = jest.fn();
+      const listener = vi.fn();
       engine.on('scoreChange', listener);
 
       const freeTiles = engine.getFreeTiles();
