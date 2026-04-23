@@ -14,11 +14,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TechTreeSystem } from '../../TechTreeSystem';
 import { TechPointSystem } from '../../TechPointSystem';
+import { TechResearchSystem } from '../../TechResearchSystem';
 import { TechOfflineSystem } from '../../TechOfflineSystem';
 import { TechLinkSystem } from '../../TechLinkSystem';
 import { FusionTechSystem } from '../../FusionTechSystem';
 import { TECH_NODE_DEFS } from '../../tech-config';
-import { OFFLINE_RESEARCH_DECAY_TIERS, MAX_OFFLINE_RESEARCH_SECONDS } from '../../../../../core/tech/offline-research.types';
+import { OFFLINE_RESEARCH_DECAY_TIERS, MAX_OFFLINE_RESEARCH_SECONDS } from '../../../../core/tech/offline-research.types';
 import type { ISystemDeps } from '../../../../core/types';
 import type { ISubsystemRegistry } from '../../../../core/types/subsystem';
 
@@ -31,13 +32,15 @@ function createTechDeps(): ISystemDeps {
   const points = new TechPointSystem();
   const link = new TechLinkSystem();
   const fusion = new FusionTechSystem();
-  const offline = new TechOfflineSystem(tree, points);
+  const research = new TechResearchSystem(tree, points, () => 5);
+  const offline = new TechOfflineSystem(tree, research);
 
   const registry = new Map<string, unknown>();
   registry.set('techTree', tree);
   registry.set('techPoint', points);
   registry.set('techLink', link);
   registry.set('fusionTech', fusion);
+  registry.set('techResearch', research);
   registry.set('techOffline', offline);
 
   const deps: ISystemDeps = {
@@ -205,9 +208,9 @@ describe('§1.9 科技重置（转生时）规则', () => {
       chosenMutexNodes: {},
     });
 
-    // 验证保留的科技
-    const state = sys.tree.getState();
-    expect(state.completedTechIds.length).toBe(2);
+    // 验证保留的科技 - use serialize() to check completed count
+    const afterReset = sys.tree.serialize();
+    expect(afterReset.completedTechIds.length).toBe(2);
   });
 
   it('互斥分支转生可重选', () => {
@@ -235,9 +238,13 @@ describe('§1.9 科技重置（转生时）规则', () => {
     sys.fusion.setTechTree(sys.tree);
     const saved = sys.fusion.serialize();
 
-    // 重置
+    // 重置 - reset() reinitializes all fusion nodes to locked state
     sys.fusion.reset();
-    expect(Object.keys(sys.fusion.getAllFusionStates()).length).toBe(0);
+    const states = sys.fusion.getAllFusionStates();
+    expect(Object.keys(states).length).toBeGreaterThan(0);
+    // All should be locked after reset
+    const allLocked = Object.values(states).every(s => s.status === 'locked');
+    expect(allLocked).toBe(true);
   });
 });
 

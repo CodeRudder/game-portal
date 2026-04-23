@@ -231,22 +231,14 @@ describe('§1.6 融合科技', () => {
   });
 
   it('完成跨路线前置后融合科技解锁', () => {
-    // 找到军经合一
-    const fusion = FUSION_TECH_DEFS.find(d => d.name === '军经合一');
+    // 找到兵精粮足
+    const fusion = FUSION_TECH_DEFS.find(d => d.name === '兵精粮足');
     if (!fusion) return;
 
     // 完成前置节点
-    const militaryNodes = sys.tree.getPathNodes('military');
-    const economyNodes = sys.tree.getPathNodes('economy');
-
-    // 完成军事路线前3层
-    for (let i = 0; i < Math.min(3, militaryNodes.length); i++) {
-      sys.tree.completeNode(militaryNodes[i].id);
-    }
-    // 完成经济路线前3层
-    for (let i = 0; i < Math.min(3, economyNodes.length); i++) {
-      sys.tree.completeNode(economyNodes[i].id);
-    }
+    const prereqs = fusion.prerequisites;
+    sys.tree.completeNode(prereqs.pathA);
+    sys.tree.completeNode(prereqs.pathB);
 
     // 检查前置是否满足
     const met = sys.fusion.arePrerequisitesMet(fusion.id);

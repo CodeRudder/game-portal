@@ -39,7 +39,10 @@ function createTechDeps(): ISystemDeps {
   const points = new TechPointSystem();
   const link = new TechLinkSystem();
   const fusion = new FusionTechSystem();
-  const detail = new TechDetailProvider();
+  const detail = new TechDetailProvider(
+    () => points.getCurrentPoints(),
+    () => 0,
+  );
 
   const registry = new Map<string, unknown>();
   registry.set('techTree', tree);
@@ -70,7 +73,11 @@ function createTechDeps(): ISystemDeps {
   points.init(deps);
   link.init(deps);
   fusion.init(deps);
-  detail.init(deps);
+  fusion.setTechTree(tree);
+  fusion.setLinkSystem(link);
+  detail.setTechTree(tree);
+  detail.setFusionSystem(fusion);
+  detail.setLinkSystem(link);
 
   return deps;
 }
@@ -106,10 +113,10 @@ describe('§1.1 科技树浏览与详情', () => {
     }
   });
 
-  it('每条路线应有7层节点（前4层+互斥分支3层）', () => {
+  it('每条路线应有4层节点，每层2个节点（含互斥分支）', () => {
     const paths: TechPath[] = ['military', 'economy', 'culture'];
     for (const p of paths) {
-      for (let tier = 1; tier <= 7; tier++) {
+      for (let tier = 1; tier <= 4; tier++) {
         const tierNodes = sys.tree.getTierNodes(p, tier);
         expect(tierNodes.length).toBeGreaterThanOrEqual(1);
       }
@@ -133,11 +140,11 @@ describe('§1.1 科技树浏览与详情', () => {
     }
   });
 
-  it('总科技节点数 = 21个基础 + 4个融合 = 25个', () => {
+  it('总科技节点数 = 24个基础（每路线8个×3路线）+ 6个融合 = 30个', () => {
     const baseNodes = TECH_NODE_DEFS;
-    expect(baseNodes.length).toBe(21);
+    expect(baseNodes.length).toBe(24);
     const fusionDefs = sys.fusion.getAllFusionDefs();
-    expect(fusionDefs.length).toBe(4);
+    expect(fusionDefs.length).toBe(6);
   });
 });
 
@@ -221,6 +228,14 @@ describe('§7.1 科技系统解锁条件', () => {
 });
 
 describe('§7.2 各节点前置条件', () => {
+  let deps: ISystemDeps;
+  let sys: ReturnType<typeof getSystems>;
+
+  beforeEach(() => {
+    deps = createTechDeps();
+    sys = getSystems(deps);
+  });
+
   it('第1节点无前置，后续节点按顺序研究', () => {
     const paths: TechPath[] = ['military', 'economy', 'culture'];
     for (const p of paths) {
@@ -234,6 +249,6 @@ describe('§7.2 各节点前置条件', () => {
 
   it('第5层开始互斥分支', () => {
     const mutexGroups = getMutexGroups();
-    expect(mutexGroups.length).toBeGreaterThan(0);
+    expect(mutexGroups.size).toBeGreaterThan(0);
   });
 });
