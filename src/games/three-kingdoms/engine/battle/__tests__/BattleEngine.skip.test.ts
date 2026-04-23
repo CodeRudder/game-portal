@@ -483,7 +483,7 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
   describe('SKIP 监听器', () => {
     it('切换到 SKIP 应触发监听器', () => {
       const controller = new BattleSpeedController();
-      const listener = { onSpeedChange: jest.fn() };
+      const listener = { onSpeedChange: vi.fn() };
       controller.addListener(listener);
 
       controller.setSpeed(BattleSpeed.SKIP);
@@ -493,7 +493,7 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
 
     it('SKIP 变更事件应正确', () => {
       const controller = new BattleSpeedController();
-      const listener = { onSpeedChange: jest.fn() };
+      const listener = { onSpeedChange: vi.fn() };
       controller.addListener(listener);
 
       controller.setSpeed(BattleSpeed.SKIP);

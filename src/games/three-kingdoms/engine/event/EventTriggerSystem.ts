@@ -144,13 +144,14 @@ export class EventTriggerSystem implements ISubsystem {
    */
   checkAndTriggerEvents(currentTurn: number): EventInstance[] {
     this._currentTurn = currentTurn;
-    return checkAndTriggerEventsLogic({
+    const counterRef = { value: this.instanceCounter };
+    const result = checkAndTriggerEventsLogic({
       eventDefs: this.eventDefs,
       activeEvents: this.activeEvents,
       completedEventIds: this.completedEventIds,
       cooldowns: this.cooldowns,
       config: this.config,
-      instanceCounter: { value: this.instanceCounter },
+      instanceCounter: counterRef,
       deps: this.deps,
       canTrigger: (id: EventId, turn: number) => this.canTrigger(id, turn),
       getEventDefsByType: (type: string) => this.getEventDefsByType(type as EventTriggerType),
@@ -158,6 +159,9 @@ export class EventTriggerSystem implements ISubsystem {
       calculateProbability: (cond: ProbabilityCondition) => this.calculateProbability(cond),
       tickCooldowns: (turn: number) => this.tickCooldowns(turn),
     }, currentTurn);
+    // 同步 counter：内部可能通过 triggerEventLogic 递增了 counterRef.value
+    this.instanceCounter = counterRef.value;
+    return result;
   }
 
   /**
@@ -353,16 +357,20 @@ export class EventTriggerSystem implements ISubsystem {
 
   /** 触发事件 */
   private triggerEvent(eventId: EventId, currentTurn: number, force = false): EventTriggerResult {
-    return triggerEventLogic(eventId, currentTurn, {
+    const counterRef = { value: this.instanceCounter };
+    const result = triggerEventLogic(eventId, currentTurn, {
       eventDefs: this.eventDefs,
       activeEvents: this.activeEvents,
       completedEventIds: this.completedEventIds,
       cooldowns: this.cooldowns,
       config: this.config,
-      instanceCounter: { value: this.instanceCounter },
+      instanceCounter: counterRef,
       deps: this.deps,
       canTrigger: (id, turn) => this.canTrigger(id, turn),
     }, force);
+    // 同步 counter：triggerEventLogic 内部 createEventInstance 会递增 counterRef.value
+    this.instanceCounter = counterRef.value;
+    return result;
   }
 
   /** 创建事件实例 */

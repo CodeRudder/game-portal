@@ -355,7 +355,7 @@ describe('§3.8 调整战斗速度', () => {
 
   it('速度变更通知监听器', () => {
     const listener = {
-      onSpeedChange: jest.fn(),
+      onSpeedChange: vi.fn(),
     };
 
     controller.addListener(listener);
@@ -369,7 +369,7 @@ describe('§3.8 调整战斗速度', () => {
 
   it('移除监听器后不再收到通知', () => {
     const listener = {
-      onSpeedChange: jest.fn(),
+      onSpeedChange: vi.fn(),
     };
 
     controller.addListener(listener);
@@ -486,10 +486,10 @@ describe('§3.9 大招时停机制（半自动）', () => {
 
   it('pauseForUltimate 触发时停暂停', () => {
     const handler = {
-      onUltimateReady: jest.fn(),
-      onBattlePaused: jest.fn(),
-      onUltimateConfirmed: jest.fn(),
-      onUltimateCancelled: jest.fn(),
+      onUltimateReady: vi.fn(),
+      onBattlePaused: vi.fn(),
+      onUltimateConfirmed: vi.fn(),
+      onUltimateCancelled: vi.fn(),
     };
     ultimateSystem.registerHandler(handler);
 
@@ -508,10 +508,10 @@ describe('§3.9 大招时停机制（半自动）', () => {
 
   it('confirmUltimate 恢复战斗并触发确认回调', () => {
     const handler = {
-      onUltimateReady: jest.fn(),
-      onBattlePaused: jest.fn(),
-      onUltimateConfirmed: jest.fn(),
-      onUltimateCancelled: jest.fn(),
+      onUltimateReady: vi.fn(),
+      onBattlePaused: vi.fn(),
+      onUltimateConfirmed: vi.fn(),
+      onUltimateCancelled: vi.fn(),
     };
     ultimateSystem.registerHandler(handler);
 
@@ -529,10 +529,10 @@ describe('§3.9 大招时停机制（半自动）', () => {
 
   it('cancelUltimate 取消大招释放', () => {
     const handler = {
-      onUltimateReady: jest.fn(),
-      onBattlePaused: jest.fn(),
-      onUltimateConfirmed: jest.fn(),
-      onUltimateCancelled: jest.fn(),
+      onUltimateReady: vi.fn(),
+      onBattlePaused: vi.fn(),
+      onUltimateConfirmed: vi.fn(),
+      onUltimateCancelled: vi.fn(),
     };
     ultimateSystem.registerHandler(handler);
 
@@ -556,10 +556,10 @@ describe('§3.9 大招时停机制（半自动）', () => {
 
   it('单位ID或技能ID不匹配时 confirmUltimate 返回 false', () => {
     const handler = {
-      onUltimateReady: jest.fn(),
-      onBattlePaused: jest.fn(),
-      onUltimateConfirmed: jest.fn(),
-      onUltimateCancelled: jest.fn(),
+      onUltimateReady: vi.fn(),
+      onBattlePaused: vi.fn(),
+      onUltimateConfirmed: vi.fn(),
+      onUltimateCancelled: vi.fn(),
     };
     ultimateSystem.registerHandler(handler);
 
@@ -604,10 +604,10 @@ describe('§3.9 大招时停机制（半自动）', () => {
     engine.setBattleMode(BattleMode.SEMI_AUTO);
 
     const handler = {
-      onUltimateReady: jest.fn(),
-      onBattlePaused: jest.fn(),
-      onUltimateConfirmed: jest.fn(),
-      onUltimateCancelled: jest.fn(),
+      onUltimateReady: vi.fn(),
+      onBattlePaused: vi.fn(),
+      onUltimateConfirmed: vi.fn(),
+      onUltimateCancelled: vi.fn(),
     };
     engine.registerTimeStopHandler(handler);
 

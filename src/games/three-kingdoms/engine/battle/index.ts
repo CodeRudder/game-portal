@@ -107,3 +107,6 @@ export type {
   MergedDamageNumber,
   DamageNumberConfig,
 } from './DamageNumberSystem';
+
+// 碎片奖励计算
+export { calculateFragmentRewards, simpleHash } from './BattleFragmentRewards';

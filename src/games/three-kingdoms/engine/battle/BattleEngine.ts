@@ -44,6 +44,7 @@ import { UltimateSkillSystem } from './UltimateSkillSystem';
 import { BattleSpeedController } from './BattleSpeedController';
 import { calculateBattleStats, generateSummary } from './BattleStatistics';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
+import { calculateFragmentRewards } from './BattleFragmentRewards';
 
 // 工具函数
 
@@ -93,9 +94,7 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     this.speedController = new BattleSpeedController();
   }
 
-  // ─────────────────────────────────────────
   // 公共API（v3.0 兼容）
-  // ─────────────────────────────────────────
 
   /**
    * 初始化战斗
@@ -224,7 +223,7 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     const stats = calculateBattleStats(state);
 
     // 碎片奖励：胜利时从敌方队伍中收集碎片掉落
-    const fragmentRewards = this.calculateFragmentRewards(
+    const fragmentRewards = calculateFragmentRewards(
       outcome, state.enemyTeam, allyAlive,
     );
 
@@ -271,9 +270,7 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     return result;
   }
 
-  // ─────────────────────────────────────────
   // v4.0 新增API — 战斗模式
-  // ─────────────────────────────────────────
 
   /**
    * 设置战斗模式
@@ -291,9 +288,7 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     return this.battleMode;
   }
 
-  // ─────────────────────────────────────────
   // v4.0 新增API — 大招时停
-  // ─────────────────────────────────────────
 
   /**
    * 确认释放大招（半自动模式）
@@ -329,9 +324,7 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     return this.ultimateSystem.isPaused();
   }
 
-  // ─────────────────────────────────────────
   // v4.0 新增API — 战斗加速
-  // ─────────────────────────────────────────
 
   /**
    * 设置战斗速度
@@ -362,9 +355,7 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     return this.speedController.getAnimationSpeedScale();
   }
 
-  // ─────────────────────────────────────────
   // v4.0 新增API — 跳过战斗（Plan #49）
-  // ─────────────────────────────────────────
 
   /**
    * 跳过战斗
@@ -433,9 +424,7 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     return this.speedController.getSpeed() === BattleSpeed.SKIP;
   }
 
-  // ─────────────────────────────────────────
   // 回合内部流程
-  // ─────────────────────────────────────────
 
   /** 回合结束处理 */
   private endTurn(state: BattleState): void {
@@ -448,9 +437,7 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     }
   }
 
-  // ─────────────────────────────────────────
   // 星级评定
-  // ─────────────────────────────────────────
 
   /**
    * 计算星级
@@ -482,65 +469,7 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     return StarRating.ONE;
   }
 
-  // ─────────────────────────────────────────
-  // 碎片奖励计算
-  // ─────────────────────────────────────────
-
-  /**
-   * 计算战斗碎片奖励
-   *
-   * 胜利时从敌方队伍的单位中产出碎片。
-   * 掉落以敌方单位的 id 作为 key（通常为武将ID或敌人定义ID）。
-   * 上层系统（Campaign/RewardDistributor）可据此分发碎片。
-   * 失败/平局时无碎片产出。
-   *
-   * @param outcome - 战斗结果
-   * @param enemyTeam - 敌方队伍
-   * @param allySurvivors - 我方存活人数（影响掉落数量）
-   */
-  private calculateFragmentRewards(
-    outcome: BattleOutcome,
-    enemyTeam: BattleTeam,
-    allySurvivors: number,
-  ): Record<string, number> {
-    // 非胜利无碎片
-    if (outcome !== BattleOutcome.VICTORY) {
-      return {};
-    }
-
-    const fragments: Record<string, number> = {};
-
-    for (const unit of enemyTeam.units) {
-      // 确定性掉落判定：基于单位ID的哈希
-      // 基础掉率30%，存活4人以上额外+20%
-      const baseDropRate = 0.3;
-      const starBonus = allySurvivors >= 4 ? 0.2 : 0;
-      const dropChance = baseDropRate + starBonus;
-
-      const hash = this.simpleHash(unit.id);
-      if ((hash % 100) < Math.floor(dropChance * 100)) {
-        const count = allySurvivors >= 4 ? 2 : 1;
-        fragments[unit.id] = (fragments[unit.id] ?? 0) + count;
-      }
-    }
-
-    return fragments;
-  }
-
-  /** 简单确定性哈希（用于碎片掉落判定，保持战斗引擎纯函数特性） */
-  private simpleHash(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash);
-  }
-
-  // ─────────────────────────────────────────
   // ISubsystem 适配层
-  // ─────────────────────────────────────────
 
   /** ISubsystem.init — 注入依赖 */
   init(deps: ISystemDeps): void {

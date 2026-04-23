@@ -449,10 +449,10 @@ describe('§3.1c 战斗中交互操作 — 引擎响应交互', () => {
 
     // 注册 mock handler
     const handler = {
-      onUltimateReady: jest.fn(),
-      onBattlePaused: jest.fn(),
-      onUltimateConfirmed: jest.fn(),
-      onUltimateCancelled: jest.fn(),
+      onUltimateReady: vi.fn(),
+      onBattlePaused: vi.fn(),
+      onUltimateConfirmed: vi.fn(),
+      onUltimateCancelled: vi.fn(),
     };
     engine.registerTimeStopHandler(handler);
 

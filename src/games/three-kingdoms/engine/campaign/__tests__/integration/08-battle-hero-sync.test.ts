@@ -161,17 +161,17 @@ function createMockResources(initialGold = 999999, initialExp = 999999) {
   let exp = initialExp;
 
   return {
-    spendResource: jest.fn((type: string, amount: number) => {
+    spendResource: vi.fn((type: string, amount: number) => {
       if (type === 'gold') { gold -= amount; return true; }
       if (type === 'exp') { exp -= amount; return true; }
       return true;
     }),
-    canAffordResource: jest.fn((type: string, amount: number) => {
+    canAffordResource: vi.fn((type: string, amount: number) => {
       if (type === 'gold') return gold >= amount;
       if (type === 'exp') return exp >= amount;
       return true;
     }),
-    getResourceAmount: jest.fn((type: string) => {
+    getResourceAmount: vi.fn((type: string) => {
       if (type === 'gold') return gold;
       if (type === 'exp') return exp;
       return 0;
