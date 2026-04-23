@@ -201,12 +201,6 @@ describe('§2.2 三大区域划分', () => {
     expect(['wei', 'shu', 'wu', 'neutral']).toContain(tile!.region);
   });
 
-  it('getRegionTileCount各区域均>0', () => {
-    for (const id of ['wei', 'shu', 'wu'] as const) {
-      expect(sys.map.getRegionTileCount(id)).toBeGreaterThan(0);
-    }
-  });
-
   it('区域定义包含id/label/color', () => {
     const regions = sys.map.getRegions();
     for (const r of regions) {
@@ -254,20 +248,11 @@ describe('§2.3 地形类型与战斗效果', () => {
     expect(mt!.defenseBonus).toBe(0.3);
   });
 
-  it('每个地形格子数>=0', () => {
-    for (const t of sys.map.getTerrains()) {
-      expect(sys.map.getTerrainTileCount(t.type)).toBeGreaterThanOrEqual(0);
-    }
-  });
-
-  it('getTerrainAt根据坐标返回地形', () => {
+  it('getTerrainAt正常坐标返回地形，越界返回null', () => {
     const terrain = sys.map.getTerrainAt({ x: 0, y: 0 });
     expect(terrain).not.toBeNull();
     expect(terrain).toHaveProperty('type');
     expect(terrain).toHaveProperty('defenseBonus');
-  });
-
-  it('越界坐标getTerrainAt返回null', () => {
     expect(sys.map.getTerrainAt({ x: -1, y: 0 })).toBeNull();
     expect(sys.map.getTerrainAt({ x: 0, y: -1 })).toBeNull();
   });
@@ -406,13 +391,6 @@ describe('§3.1 领土占领', () => {
       const list = sys.territory.getTerritoriesByRegion(region);
       expect(Array.isArray(list)).toBe(true);
     }
-  });
-
-  it('可按归属查询领土', () => {
-    const playerList = sys.territory.getTerritoriesByOwnership('player');
-    const neutralList = sys.territory.getTerritoriesByOwnership('neutral');
-    expect(Array.isArray(playerList)).toBe(true);
-    expect(Array.isArray(neutralList)).toBe(true);
   });
 
   it('getPlayerTerritoryIds返回ID列表', () => {

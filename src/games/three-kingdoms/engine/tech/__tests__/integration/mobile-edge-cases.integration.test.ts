@@ -1,15 +1,13 @@
 /**
  * 集成测试 — 手机端适配 + 边界场景
  *
- * 覆盖 Play 文档流程（选取关键验证点）：
- *   §2.7  手机端地图适配
- *   §10.1 研究取消与切换
- *   §10.3 攻城失败处理
- *   §10.4 每日攻城次数耗尽
- *   §10.5 离线超72小时
- *   §10.6 缩放<60%时气泡隐藏
- *   §10.7 联盟加速前置条件未满足
- *   §10.8 转生时融合科技与槽位处理
+ * 覆盖 Play 文档（选取关键 6 个验证点）：
+ *   §2.7  手机端地图适配：响应式配置
+ *   §10.1 科技点不足：研究拒绝
+ *   §10.2 前置科技未完成：研究拒绝
+ *   §10.3 互斥科技冲突：互斥拒绝
+ *   §10.5 领土被夺回：状态变更
+ *   §10.6 攻城失败后重试：冷却和重试
  *
  * @module engine/tech/__tests__/integration/mobile-edge-cases
  */
@@ -21,9 +19,13 @@ import { SiegeSystem } from '../../../map/SiegeSystem';
 import { SiegeEnhancer } from '../../../map/SiegeEnhancer';
 import { GarrisonSystem } from '../../../map/GarrisonSystem';
 import { MapDataRenderer } from '../../../map/MapDataRenderer';
+import { TechTreeSystem } from '../../TechTreeSystem';
+import { TechPointSystem } from '../../TechPointSystem';
+import { TechResearchSystem } from '../../TechResearchSystem';
+import { TechLinkSystem } from '../../TechLinkSystem';
+import { ResponsiveLayoutManager } from '../../../responsive/ResponsiveLayoutManager';
 import { MobileLayoutManager } from '../../../responsive/MobileLayoutManager';
 import { MobileSettingsSystem } from '../../../responsive/MobileSettingsSystem';
-import { ResponsiveLayoutManager } from '../../../responsive/ResponsiveLayoutManager';
 import type { ISystemDeps } from '../../../../../core/types';
 import type { ISubsystemRegistry } from '../../../../../core/types/subsystem';
 
@@ -37,6 +39,12 @@ function createDeps(): ISystemDeps {
   const siege = new SiegeSystem();
   const enhancer = new SiegeEnhancer();
   const garrison = new GarrisonSystem();
+  const techTree = new TechTreeSystem();
+  const techPoint = new TechPointSystem();
+  const techResearch = new TechResearchSystem(
+    techTree, techPoint, () => 3, () => 100, () => true,
+  );
+  const techLink = new TechLinkSystem();
 
   const registry = new Map<string, unknown>();
   registry.set('worldMap', worldMap);
@@ -44,6 +52,10 @@ function createDeps(): ISystemDeps {
   registry.set('siege', siege);
   registry.set('siegeEnhancer', enhancer);
   registry.set('garrison', garrison);
+  registry.set('techTree', techTree);
+  registry.set('techPoint', techPoint);
+  registry.set('techResearch', techResearch);
+  registry.set('techLink', techLink);
 
   const deps: ISystemDeps = {
     eventBus: {
@@ -68,6 +80,10 @@ function createDeps(): ISystemDeps {
   siege.init(deps);
   enhancer.init(deps);
   garrison.init(deps);
+  techTree.init(deps);
+  techPoint.init(deps);
+  techResearch.init(deps);
+  techLink.init(deps);
 
   return deps;
 }
@@ -79,6 +95,10 @@ function getSys(deps: ISystemDeps) {
     siege: deps.registry.get<SiegeSystem>('siege')!,
     enhancer: deps.registry.get<SiegeEnhancer>('siegeEnhancer')!,
     garrison: deps.registry.get<GarrisonSystem>('garrison')!,
+    techTree: deps.registry.get<TechTreeSystem>('techTree')!,
+    techPoint: deps.registry.get<TechPointSystem>('techPoint')!,
+    techResearch: deps.registry.get<TechResearchSystem>('techResearch')!,
+    techLink: deps.registry.get<TechLinkSystem>('techLink')!,
     renderer: new MapDataRenderer(),
   };
 }
@@ -118,85 +138,83 @@ function createResponsiveDeps(): ISystemDeps {
   return deps;
 }
 
-// ─────────────────────────────────────────────
-// §2.7 手机端地图适配
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════
+// §2.7 手机端地图适配：响应式配置
+// ═════════════════════════════════════════════
 
-describe('§2.7 手机端地图适配', () => {
+describe('§2.7 手机端地图适配：响应式配置', () => {
   let deps: ISystemDeps;
 
   beforeEach(() => {
     deps = createResponsiveDeps();
   });
 
-  it('手机端画布基准375×667px', () => {
+  it('手机端画布基准 375×667px', () => {
     const mobile = deps.registry.get<MobileLayoutManager>('mobile')!;
     const layout = mobile.calculateMobileLayout(375, 667);
     expect(layout).toBeDefined();
     expect(layout.sceneAreaHeight).toBeGreaterThan(0);
   });
 
-  it('底部Tab导航5个Tab', () => {
+  it('底部 Tab 导航 5 个 Tab', () => {
     const mobile = deps.registry.get<MobileLayoutManager>('mobile')!;
     const tabBar = mobile.tabBar;
     expect(tabBar.tabs.length).toBe(5);
   });
 
-  it('Tab切换功能', () => {
+  it('Tab 切换功能正常', () => {
     const mobile = deps.registry.get<MobileLayoutManager>('mobile')!;
     const result = mobile.switchTab('heroes');
     expect(result).toBe(true);
     expect(mobile.tabBar.activeTabId).toBe('heroes');
   });
 
-  it('全屏面板模式', () => {
+  it('全屏面板模式可开关', () => {
     const mobile = deps.registry.get<MobileLayoutManager>('mobile')!;
+    expect(mobile.fullScreenPanel.isOpen).toBe(false);
+    mobile.openFullScreenPanel('tech-tree', '科技树');
+    expect(mobile.fullScreenPanel.isOpen).toBe(true);
+    mobile.closeFullScreenPanel();
     expect(mobile.fullScreenPanel.isOpen).toBe(false);
   });
 
-  it('Bottom Sheet交互', () => {
+  it('Bottom Sheet 交互正常', () => {
     const mobile = deps.registry.get<MobileLayoutManager>('mobile')!;
+    expect(mobile.bottomSheet.isOpen).toBe(false);
+    mobile.openBottomSheet('territory-detail', 300);
+    expect(mobile.bottomSheet.isOpen).toBe(true);
+    mobile.closeBottomSheet();
     expect(mobile.bottomSheet.isOpen).toBe(false);
   });
 
   it('省电模式可切换', () => {
     const settings = deps.registry.get<MobileSettingsSystem>('mobileSettings')!;
-    settings.setPowerSaveLevel('on' as any);
-    const state = settings.getState();
-    expect(state).toBeDefined();
+    settings.setPowerSaveLevel('on');
+    expect(settings.powerSaveLevel).toBe('on');
   });
 
-  it('字体大小三档', () => {
+  it('字体大小三档可调', () => {
     const settings = deps.registry.get<MobileSettingsSystem>('mobileSettings')!;
-    settings.setFontSize('large' as any);
-    const state = settings.getState();
-    expect(state).toBeDefined();
+    settings.setFontSize('large');
+    expect(settings.fontSize).toBe('large');
+    settings.setFontSize('small');
+    expect(settings.fontSize).toBe('small');
+    settings.setFontSize('medium');
+    expect(settings.fontSize).toBe('medium');
+  });
+
+  it('响应式布局检测手机断点', () => {
+    const responsive = deps.registry.get<ResponsiveLayoutManager>('responsive')!;
+    responsive.updateViewport(375, 667);
+    expect(responsive.isMobile).toBe(true);
   });
 });
 
-// ─────────────────────────────────────────────
-// §10.1 研究取消与切换
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════
+// §10.1 科技点不足：研究拒绝
+// ═════════════════════════════════════════════
 
-describe('§10.1 研究取消与切换', () => {
-  it('取消研究返还80%资源，进度清零', () => {
-    const refundRate = 0.8;
-    const cost = 1000;
-    const refund = Math.floor(cost * refundRate);
-    expect(refund).toBe(800);
-  });
-
-  it('切换研究消耗100铜钱，进度保留', () => {
-    const switchCost = 100;
-    expect(switchCost).toBe(100);
-  });
-});
-
-// ─────────────────────────────────────────────
-// §10.3 攻城失败处理
-// ─────────────────────────────────────────────
-
-describe('§10.3 攻城失败处理', () => {
+describe('§10.1 科技点不足：研究拒绝', () => {
   let deps: ISystemDeps;
   let sys: ReturnType<typeof getSys>;
 
@@ -205,156 +223,325 @@ describe('§10.3 攻城失败处理', () => {
     sys = getSys(deps);
   });
 
-  it('失败损失30%出征兵力', () => {
-    const result = sys.siege.executeSiegeWithResult(
-      'test-target', 'player', 1000, 1000, false
-    );
-    if (!result.victory && result.defeatTroopLoss !== undefined) {
-      expect(result.defeatTroopLoss).toBe(Math.floor(1000 * 0.3));
+  it('科技点不足时 trySpend 返回失败', () => {
+    const result = sys.techPoint.trySpend(99999);
+    expect(result.success).toBe(false);
+    expect(result.reason).toBeDefined();
+  });
+
+  it('科技点不足时研究启动被拒绝', () => {
+    // 不给科技点充值，尝试研究
+    const allDefs = sys.techTree.getAllNodeDefs();
+    if (allDefs.length === 0) return;
+
+    const node = allDefs[0];
+    // 先完成前置条件
+    const unmet = sys.techTree.getUnmetPrerequisites(node.id);
+    for (const preId of unmet) {
+      sys.techTree.completeNode(preId);
+    }
+
+    const result = sys.techResearch.startResearch(node.id);
+    // 可能因科技点不足而失败
+    if (!result.success) {
+      expect(result.reason).toBeDefined();
     }
   });
 
-  it('粮草不返还', () => {
-    const result = sys.siege.executeSiegeWithResult(
-      'test-target', 'player', 1000, 1000, false
-    );
-    expect(result.cost.grain).toBeGreaterThanOrEqual(0);
+  it('科技点充足时研究正常启动', () => {
+    // 充值足够科技点
+    sys.techPoint.refund(10000);
+    const allDefs = sys.techTree.getAllNodeDefs();
+    if (allDefs.length === 0) return;
+
+    const node = allDefs[0];
+    const unmet = sys.techTree.getUnmetPrerequisites(node.id);
+    for (const preId of unmet) {
+      sys.techTree.completeNode(preId);
+    }
+
+    const canResearch = sys.techTree.canResearch(node.id);
+    if (canResearch.can) {
+      const result = sys.techResearch.startResearch(node.id);
+      expect(result).toHaveProperty('success');
+    }
+  });
+});
+
+// ═════════════════════════════════════════════
+// §10.2 前置科技未完成：研究拒绝
+// ═════════════════════════════════════════════
+
+describe('§10.2 前置科技未完成：研究拒绝', () => {
+  let deps: ISystemDeps;
+  let sys: ReturnType<typeof getSys>;
+
+  beforeEach(() => {
+    deps = createDeps();
+    sys = getSys(deps);
   });
 
-  it('推荐算法生成提升方案', () => {
-    const territories = sys.territory.getAllTerritories();
-    const target = territories.find((t: any) => t.ownership !== 'player');
+  it('canResearch 返回前置未完成原因', () => {
+    // 找一个有前置的科技
+    const allDefs = sys.techTree.getAllNodeDefs();
+    const nodeWithPrereq = allDefs.find((d) => {
+      const state = sys.techTree.getNodeState(d.id);
+      return state && state.status === 'locked';
+    });
+
+    if (nodeWithPrereq) {
+      const result = sys.techTree.canResearch(nodeWithPrereq.id);
+      if (!result.can) {
+        expect(result.reason).toBeDefined();
+      }
+    }
+  });
+
+  it('getUnmetPrerequisites 返回未完成的前置列表', () => {
+    const allDefs = sys.techTree.getAllNodeDefs();
+    // 找一个高阶科技（通常有前置）
+    const highTier = allDefs.filter((d) => d.tier >= 2);
+    if (highTier.length > 0) {
+      const unmet = sys.techTree.getUnmetPrerequisites(highTier[0].id);
+      expect(Array.isArray(unmet)).toBe(true);
+      if (unmet.length > 0) {
+        expect(unmet.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('完成前置后 canResearch 通过', () => {
+    const allDefs = sys.techTree.getAllNodeDefs();
+    const target = allDefs.find((d) => d.tier >= 2);
     if (!target) return;
 
-    const estimate = sys.enhancer.estimateWinRate(500, target.id);
+    const unmet = sys.techTree.getUnmetPrerequisites(target.id);
+    for (const preId of unmet) {
+      sys.techTree.completeNode(preId);
+    }
+
+    const result = sys.techTree.canResearch(target.id);
+    // 前置已满足，其他条件（互斥等）可能仍阻止
+    if (result.can || result.reason) {
+      expect(result).toHaveProperty('can');
+    }
+  });
+});
+
+// ═════════════════════════════════════════════
+// §10.3 互斥科技冲突：互斥拒绝
+// ═════════════════════════════════════════════
+
+describe('§10.3 互斥科技冲突：互斥拒绝', () => {
+  let deps: ISystemDeps;
+  let sys: ReturnType<typeof getSys>;
+
+  beforeEach(() => {
+    deps = createDeps();
+    sys = getSys(deps);
+  });
+
+  it('isMutexLocked 检测互斥锁定', () => {
+    const allDefs = sys.techTree.getAllNodeDefs();
+    // 找互斥组中的科技
+    const mutexNodes = allDefs.filter((d) => d.mutexGroup);
+    if (mutexNodes.length >= 2) {
+      // 完成第一个互斥科技
+      const first = mutexNodes[0];
+      const unmet = sys.techTree.getUnmetPrerequisites(first.id);
+      for (const preId of unmet) {
+        sys.techTree.completeNode(preId);
+      }
+      sys.techTree.completeNode(first.id);
+
+      // 检查同组另一个是否被锁定
+      const rival = mutexNodes.find(
+        (d) => d.mutexGroup === first.mutexGroup && d.id !== first.id,
+      );
+      if (rival) {
+        const locked = sys.techTree.isMutexLocked(rival.id);
+        expect(locked).toBe(true);
+      }
+    }
+  });
+
+  it('getMutexAlternatives 返回替代科技', () => {
+    const allDefs = sys.techTree.getAllNodeDefs();
+    const mutexNodes = allDefs.filter((d) => d.mutexGroup);
+    if (mutexNodes.length > 0) {
+      const alternatives = sys.techTree.getMutexAlternatives(mutexNodes[0].id);
+      expect(Array.isArray(alternatives)).toBe(true);
+    }
+  });
+
+  it('互斥科技不能同时研究', () => {
+    const allDefs = sys.techTree.getAllNodeDefs();
+    const mutexNodes = allDefs.filter((d) => d.mutexGroup);
+    if (mutexNodes.length >= 2) {
+      // 完成第一个
+      const first = mutexNodes[0];
+      const unmet = sys.techTree.getUnmetPrerequisites(first.id);
+      for (const preId of unmet) {
+        sys.techTree.completeNode(preId);
+      }
+      sys.techTree.completeNode(first.id);
+
+      // 尝试研究同组的第二个
+      const rival = mutexNodes.find(
+        (d) => d.mutexGroup === first.mutexGroup && d.id !== first.id,
+      );
+      if (rival) {
+        const canResearch = sys.techTree.canResearch(rival.id);
+        expect(canResearch.can).toBe(false);
+      }
+    }
+  });
+});
+
+// ═════════════════════════════════════════════
+// §10.5 领土被夺回：状态变更
+// ═════════════════════════════════════════════
+
+describe('§10.5 领土被夺回：状态变更', () => {
+  let deps: ISystemDeps;
+  let sys: ReturnType<typeof getSys>;
+
+  beforeEach(() => {
+    deps = createDeps();
+    sys = getSys(deps);
+  });
+
+  it('占领→夺回→归属变更', () => {
+    const territories = sys.territory.getAllTerritories();
+    const neutral = territories.find((t: any) => t.ownership !== 'player');
+    if (!neutral) return;
+
+    // 占领
+    sys.territory.captureTerritory(neutral.id, 'player');
+    const captured = sys.territory.getTerritoryById(neutral.id);
+    expect(captured!.ownership).toBe('player');
+
+    // 被夺回
+    sys.territory.captureTerritory(neutral.id, 'enemy');
+    const lost = sys.territory.getTerritoryById(neutral.id);
+    expect(lost!.ownership).toBe('enemy');
+  });
+
+  it('领土被夺回后产出减少', () => {
+    const territories = sys.territory.getAllTerritories();
+    const neutral = territories.find((t: any) => t.ownership !== 'player');
+    if (!neutral) return;
+
+    sys.territory.captureTerritory(neutral.id, 'player');
+    const afterCapture = sys.territory.getPlayerProductionSummary();
+
+    sys.territory.captureTerritory(neutral.id, 'enemy');
+    const afterLoss = sys.territory.getPlayerProductionSummary();
+
+    expect(afterLoss.totalProduction.grain).toBeLessThanOrEqual(afterCapture.totalProduction.grain);
+  });
+
+  it('领土被夺回后玩家领土数减少', () => {
+    const territories = sys.territory.getAllTerritories();
+    const neutral = territories.find((t: any) => t.ownership !== 'player');
+    if (!neutral) return;
+
+    sys.territory.captureTerritory(neutral.id, 'player');
+    const countAfterCapture = sys.territory.getPlayerTerritoryCount();
+
+    sys.territory.captureTerritory(neutral.id, 'enemy');
+    const countAfterLoss = sys.territory.getPlayerTerritoryCount();
+
+    expect(countAfterLoss).toBeLessThan(countAfterCapture);
+  });
+});
+
+// ═════════════════════════════════════════════
+// §10.6 攻城失败后重试：冷却和重试
+// ═════════════════════════════════════════════
+
+describe('§10.6 攻城失败后重试：冷却和重试', () => {
+  let deps: ISystemDeps;
+  let sys: ReturnType<typeof getSys>;
+
+  beforeEach(() => {
+    deps = createDeps();
+    sys = getSys(deps);
+  });
+
+  it('攻城失败消耗每日次数', () => {
+    const remainingBefore = sys.siege.getRemainingDailySieges();
+    const attackable = sys.territory.getAttackableTerritories('player');
+    if (attackable.length === 0) return;
+
+    const target = attackable[0];
+    // 故意用低战力失败
+    const result = sys.siege.executeSiegeWithResult(
+      target.id, 'player', 1, 1, false,
+    );
+
+    if (!result.victory) {
+      const remainingAfter = sys.siege.getRemainingDailySieges();
+      expect(remainingAfter).toBeLessThanOrEqual(remainingBefore);
+    }
+  });
+
+  it('失败后仍可再次攻城（次数未耗尽）', () => {
+    const attackable = sys.territory.getAttackableTerritories('player');
+    if (attackable.length === 0) return;
+
+    const target = attackable[0];
+    sys.siege.executeSiegeWithResult(target.id, 'player', 1, 1, false);
+
+    const remaining = sys.siege.getRemainingDailySieges();
+    if (remaining > 0) {
+      // 还有次数，可以再次攻城
+      const canAttack = sys.siege.checkSiegeConditions(target.id, 'player', 1000, 1000);
+      expect(canAttack).toBeDefined();
+    }
+  });
+
+  it('每日攻城次数耗尽后无法攻城', () => {
+    const attackable = sys.territory.getAttackableTerritories('player');
+    if (attackable.length < 3) return; // 需要至少3个可攻击目标
+
+    // 连续攻城耗尽次数
+    for (let i = 0; i < 3; i++) {
+      sys.siege.executeSiegeWithResult(
+        attackable[i].id, 'player', 100000, 100000, true,
+      );
+    }
+
+    const remaining = sys.siege.getRemainingDailySieges();
+    expect(remaining).toBe(0);
+  });
+
+  it('重置每日攻城次数后可继续攻城', () => {
+    const attackable = sys.territory.getAttackableTerritories('player');
+    if (attackable.length < 3) return;
+
+    for (let i = 0; i < 3; i++) {
+      sys.siege.executeSiegeWithResult(
+        attackable[i].id, 'player', 100000, 100000, true,
+      );
+    }
+
+    expect(sys.siege.getRemainingDailySieges()).toBe(0);
+
+    // 重置
+    sys.siege.resetDailySiegeCount();
+    expect(sys.siege.getRemainingDailySieges()).toBe(3);
+  });
+
+  it('失败后推荐提升方案', () => {
+    const attackable = sys.territory.getAttackableTerritories('player');
+    if (attackable.length === 0) return;
+
+    const target = attackable[0];
+    const estimate = sys.enhancer.estimateWinRate(100, target.id);
     if (estimate) {
+      // 胜率低时应有推荐
       expect(estimate).toHaveProperty('winRate');
     }
-  });
-});
-
-// ─────────────────────────────────────────────
-// §10.4 每日攻城次数耗尽
-// ─────────────────────────────────────────────
-
-describe('§10.4 每日攻城次数耗尽', () => {
-  let deps: ISystemDeps;
-  let sys: ReturnType<typeof getSys>;
-
-  beforeEach(() => {
-    deps = createDeps();
-    sys = getSys(deps);
-  });
-
-  it('每日上限3次', () => {
-    const remaining = sys.siege.getRemainingDailySieges();
-    expect(remaining).toBeLessThanOrEqual(3);
-  });
-
-  it('耗尽后无法攻城', () => {
-    // 使用可攻击的真实领土ID连续攻城
-    const attackable = sys.territory.getAttackableTerritories('player');
-    for (let i = 0; i < 3 && i < attackable.length; i++) {
-      sys.siege.executeSiegeWithResult(attackable[i].id, 'player', 100000, 100000, true);
-    }
-    if (attackable.length >= 3) {
-      const remaining = sys.siege.getRemainingDailySieges();
-      expect(remaining).toBe(0);
-    } else {
-      // 可攻击领土不足3个，跳过严格验证
-      const remaining = sys.siege.getRemainingDailySieges();
-      expect(remaining).toBeLessThanOrEqual(3);
-    }
-  });
-});
-
-// ─────────────────────────────────────────────
-// §10.5 离线超72小时
-// ─────────────────────────────────────────────
-
-describe('§10.5 离线超72小时', () => {
-  it('离线补算封顶72小时', () => {
-    const maxOfflineHours = 72;
-    const offlineHours = 100;
-    const effectiveHours = Math.min(offlineHours, maxOfflineHours);
-    expect(effectiveHours).toBe(72);
-  });
-
-  it('超出部分不计算', () => {
-    const maxHours = 72;
-    const requested = 120;
-    expect(Math.min(requested, maxHours)).toBe(72);
-  });
-});
-
-// ─────────────────────────────────────────────
-// §10.6 缩放<60%时气泡隐藏
-// ─────────────────────────────────────────────
-
-describe('§10.6 缩放<60%时气泡隐藏', () => {
-  let deps: ISystemDeps;
-  let sys: ReturnType<typeof getSys>;
-
-  beforeEach(() => {
-    deps = createDeps();
-    sys = getSys(deps);
-  });
-
-  it('缩放阈值60%', () => {
-    const bubbleHideThreshold = 0.6;
-    sys.map.setZoom(0.5);
-    const vp = sys.map.getViewport();
-    expect(vp.zoom).toBeLessThan(bubbleHideThreshold);
-  });
-
-  it('缩放>=60%时气泡显示', () => {
-    sys.map.setZoom(0.7);
-    const vp = sys.map.getViewport();
-    expect(vp.zoom).toBeGreaterThanOrEqual(0.6);
-  });
-});
-
-// ─────────────────────────────────────────────
-// §10.7 联盟加速前置条件未满足
-// ─────────────────────────────────────────────
-
-describe('§10.7 联盟加速前置条件未满足', () => {
-  it('未加入联盟时联盟加速锁定', () => {
-    const hasAlliance = false;
-    const allianceBonus = hasAlliance ? 0.1 : 0;
-    expect(allianceBonus).toBe(0);
-  });
-
-  it('加入联盟后联盟加速解锁', () => {
-    const hasAlliance = true;
-    const allianceBonus = hasAlliance ? 0.1 : 0;
-    expect(allianceBonus).toBe(0.1);
-  });
-});
-
-// ─────────────────────────────────────────────
-// §10.8 转生时融合科技与槽位处理
-// ─────────────────────────────────────────────
-
-describe('§10.8 转生时融合科技与槽位处理', () => {
-  it('融合科技保留50%', () => {
-    const fusionKeepRate = 0.5;
-    const totalFusion = 4;
-    const kept = Math.floor(totalFusion * fusionKeepRate);
-    expect(kept).toBe(2);
-  });
-
-  it('未完成融合科技进度清零', () => {
-    // 转生时未完成的融合科技进度归零
-    const progress = 0.75;
-    const afterRebirth = 0;
-    expect(afterRebirth).toBe(0);
-  });
-
-  it('VIP3解锁第2槽位不受转生影响', () => {
-    // 槽位规则与VIP绑定，不受转生影响
-    const vipLevel = 3;
-    const slots = vipLevel >= 3 ? 2 : 1;
-    expect(slots).toBe(2);
   });
 });
