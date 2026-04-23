@@ -47,6 +47,15 @@ export type {
   EventChainSaveData,
 } from './event-chain.types';
 
+import {
+  createReturnAlert,
+  createOfflineAlerts,
+  filterUnreadAlerts,
+  markAlertRead as markAlertReadHelper,
+  markAllAlertsRead as markAllAlertsReadHelper,
+  clearReadAlerts as clearReadAlertsHelper,
+} from './ReturnAlertHelpers';
+
 // ─────────────────────────────────────────────
 // 事件深化系统
 // ─────────────────────────────────────────────
@@ -314,55 +323,46 @@ export class EventChainSystem implements ISubsystem {
 
   /** 添加急报 */
   addReturnAlert(alert: Omit<ReturnAlert, 'id' | 'timestamp' | 'read'>): ReturnAlert {
-    const newAlert: ReturnAlert = {
-      ...alert,
-      id: `alert-${++this.alertIdCounter}`,
-      timestamp: Date.now(),
-      read: false,
-    };
-    this.returnAlerts.push(newAlert);
-    return newAlert;
+    const result = createReturnAlert(alert, this.alertIdCounter);
+    this.alertIdCounter = result.newCounter;
+    this.returnAlerts.push(result.alert);
+    return result.alert;
   }
 
   /** 批量添加急报（离线回归时） */
   addOfflineAlerts(events: Array<{ title: string; description: string; urgency: 'low' | 'medium' | 'high' | 'critical' }>): ReturnAlert[] {
-    return events.map((e) => this.addReturnAlert({
-      title: e.title,
-      description: e.description,
-      urgency: e.urgency,
-      alertType: 'event',
-    }));
+    const result = createOfflineAlerts(events, this.alertIdCounter);
+    this.alertIdCounter = result.newCounter;
+    this.returnAlerts.push(...result.alerts);
+    return result.alerts;
   }
 
   /** 获取所有急报 */
   getReturnAlerts(unreadOnly?: boolean): ReturnAlert[] {
     if (unreadOnly) {
-      return this.returnAlerts.filter((a) => !a.read);
+      return filterUnreadAlerts(this.returnAlerts);
     }
     return [...this.returnAlerts];
   }
 
   /** 标记急报已读 */
   markAlertRead(alertId: string): boolean {
-    const alert = this.returnAlerts.find((a) => a.id === alertId);
-    if (!alert) return false;
-    alert.read = true;
-    return true;
+    return markAlertReadHelper(this.returnAlerts, alertId);
   }
 
   /** 全部标记已读 */
   markAllAlertsRead(): void {
-    this.returnAlerts.forEach((a) => { a.read = true; });
+    markAllAlertsReadHelper(this.returnAlerts);
   }
 
   /** 清除已读急报 */
   clearReadAlerts(): void {
-    this.returnAlerts = this.returnAlerts.filter((a) => !a.read);
+    this.returnAlerts = clearReadAlertsHelper(this.returnAlerts);
   }
 
   /** 获取未读急报数量 */
   getUnreadAlertCount(): number {
-    return this.returnAlerts.filter((a) => !a.read).length;
+    return filterUnreadAlerts(this.returnAlerts).length;
   }
 
   // ─── 序列化 ────────────────────────────────

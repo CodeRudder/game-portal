@@ -45,7 +45,7 @@ export function getAliveBackUnits(team: BattleTeam): BattleUnit[] {
 export function sortBySpeed(units: BattleUnit[]): BattleUnit[] {
   return [...units].sort((a, b) => {
     if (b.speed !== a.speed) return b.speed - a.speed;
-    return a.id.localeCompare(a.id);
+    return a.id.localeCompare(b.id);
   });
 }
 

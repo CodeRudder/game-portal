@@ -14,6 +14,7 @@
  */
 
 import { Texture, Assets } from 'pixi.js';
+import { gameLog } from '../../core/logger';
 
 // ─────────────────────────────────────────────
 // 类型定义
@@ -97,7 +98,7 @@ export class TextureManager {
       return { key, texture, success: true };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.warn(`[TextureManager] Failed to load "${key}" from ${url}:`, msg);
+      gameLog.warn(`[TextureManager] Failed to load "${key}" from ${url}:`, msg);
       return {
         key,
         texture: Texture.EMPTY,

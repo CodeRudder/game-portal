@@ -34,21 +34,8 @@ import { EquipmentBagManager } from './EquipmentBagManager';
 import { EquipmentDecomposer } from './EquipmentDecomposer';
 import * as genHelper from './EquipmentGenHelper';
 import { weightedPickRarity, seedPick } from './EquipmentGenHelper';
-
-// ─────────────────────────────────────────────
-// 关卡掉落权重
-// ─────────────────────────────────────────────
-
-const CAMPAIGN_DROP_WEIGHTS: Record<CampaignType, Record<EquipmentRarity, number>> = {
-  normal: { white: 60, green: 30, blue: 8, purple: 2, gold: 0 },
-  elite: { white: 30, green: 40, blue: 22, purple: 7, gold: 1 },
-  boss: { white: 10, green: 25, blue: 35, purple: 22, gold: 8 },
-};
-
-const SOURCE_RARITY_WEIGHTS: Record<string, Record<EquipmentRarity, number>> = {
-  equipment_box: { white: 0, green: 0, blue: 20, purple: 55, gold: 25 },
-  event: { white: 0, green: 0, blue: 40, purple: 45, gold: 15 },
-};
+import { CAMPAIGN_DROP_WEIGHTS, SOURCE_RARITY_WEIGHTS } from './EquipmentDropWeights';
+import { gameLog } from '../../core/logger';
 
 // ─────────────────────────────────────────────
 // 重新导出生成辅助函数（保持向后兼容）
@@ -366,7 +353,7 @@ export class EquipmentSystem implements ISubsystem {
       this.updateCodex(eq);
     }
     if (data.version !== EQUIPMENT_SAVE_VERSION) {
-      console.warn(`EquipmentSystem: 存档版本 ${data.version} ≠ 当前版本 ${EQUIPMENT_SAVE_VERSION}`);
+      gameLog.warn(`EquipmentSystem: 存档版本 ${data.version} ≠ 当前版本 ${EQUIPMENT_SAVE_VERSION}`);
     }
   }
 

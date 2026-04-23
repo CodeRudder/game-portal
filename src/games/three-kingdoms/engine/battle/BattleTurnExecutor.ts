@@ -28,6 +28,7 @@ import {
   getEnemyTeam,
   getAllyTeam,
 } from './battle-helpers';
+import { selectTargets } from './BattleTargetSelector';
 
 // 重导出辅助函数，保持向后兼容
 export {
@@ -245,64 +246,7 @@ export class BattleTurnExecutor implements ISubsystem {
     actor: BattleUnit,
     skill: BattleSkill,
   ): BattleUnit[] {
-    const enemyTeam = getEnemyTeam(state, actor.side);
-    const allyTeam = getAllyTeam(state, actor.side);
-
-    switch (skill.targetType) {
-      case 'SINGLE_ENEMY':
-        return this.selectSingleTarget(enemyTeam);
-
-      case 'FRONT_ROW':
-        return this.selectFrontRowTargets(enemyTeam);
-
-      case 'BACK_ROW':
-        return this.selectBackRowTargets(enemyTeam);
-
-      case 'ALL_ENEMY':
-        return getAliveUnits(enemyTeam);
-
-      case 'SELF':
-        return actor.isAlive ? [actor] : [];
-
-      case 'SINGLE_ALLY': {
-        const allies = getAliveUnits(allyTeam);
-        const lowest = allies.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
-        return lowest.length > 0 ? [lowest[0]] : [];
-      }
-
-      case 'ALL_ALLY':
-        return getAliveUnits(allyTeam);
-
-      default:
-        return this.selectSingleTarget(enemyTeam);
-    }
-  }
-
-  /** 选择单体目标 — 优先前排 */
-  private selectSingleTarget(team: BattleTeam): BattleUnit[] {
-    const front = getAliveFrontUnits(team);
-    if (front.length > 0) {
-      return [front[Math.floor(Math.random() * front.length)]];
-    }
-
-    const back = getAliveBackUnits(team);
-    if (back.length > 0) {
-      return [back[Math.floor(Math.random() * back.length)]];
-    }
-
-    return [];
-  }
-
-  /** 选择前排目标 */
-  private selectFrontRowTargets(team: BattleTeam): BattleUnit[] {
-    const front = getAliveFrontUnits(team);
-    return front.length > 0 ? front : getAliveBackUnits(team);
-  }
-
-  /** 选择后排目标 */
-  private selectBackRowTargets(team: BattleTeam): BattleUnit[] {
-    const back = getAliveBackUnits(team);
-    return back.length > 0 ? back : getAliveFrontUnits(team);
+    return selectTargets(state, actor, skill);
   }
 
   // ─────────────────────────────────────────

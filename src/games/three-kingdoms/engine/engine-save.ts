@@ -37,6 +37,7 @@ import type { ArenaSystem } from './pvp/ArenaSystem';
 import type { ArenaShopSystem } from './pvp/ArenaShopSystem';
 import type { RankingSystem } from './pvp/RankingSystem';
 import { ENGINE_SAVE_VERSION, SAVE_KEY } from '../shared/constants';
+import { gameLog } from '../core/logger';
 import { syncBuildingToResource } from './engine-tick';
 
 // ─────────────────────────────────────────────
@@ -235,7 +236,7 @@ export function applyLoadedState(ctx: SaveContext, state: IGameState): OfflineEa
     const data = fromIGameState(state);
 
     if (data.version !== ENGINE_SAVE_VERSION) {
-      console.warn(
+      gameLog.warn(
         `Engine: 存档版本不匹配 (期望 ${ENGINE_SAVE_VERSION}，实际 ${data.version})，尝试兼容加载`,
       );
     }
@@ -245,7 +246,7 @@ export function applyLoadedState(ctx: SaveContext, state: IGameState): OfflineEa
     applySaveData(ctx, data);
     return computeOfflineAndFinalize(ctx);
   } catch (e) {
-    console.error('ThreeKingdomsEngine.load 失败:', e);
+    gameLog.error('ThreeKingdomsEngine.load 失败:', e);
     return null;
   }
 }
@@ -280,7 +281,7 @@ export function applyLegacyState(ctx: SaveContext, data: GameSaveData): OfflineE
     applySaveData(ctx, data);
     return computeOfflineAndFinalize(ctx);
   } catch (e) {
-    console.error('ThreeKingdomsEngine.load 旧格式加载失败:', e);
+    gameLog.error('ThreeKingdomsEngine.load 旧格式加载失败:', e);
     return null;
   }
 }
@@ -309,14 +310,14 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   if (data.hero) {
     ctx.hero.deserialize(data.hero);
   } else {
-    console.info('[Save] v1.0 存档迁移：无武将数据，自动初始化空武将系统');
+    gameLog.info('[Save] v1.0 存档迁移：无武将数据，自动初始化空武将系统');
   }
 
   // ── 招募系统 v1.0 → v2.0 迁移 ──
   if (data.recruit) {
     ctx.recruit.deserialize(data.recruit);
   } else {
-    console.info('[Save] v1.0 存档迁移：无招募数据，保底计数器从 0 开始');
+    gameLog.info('[Save] v1.0 存档迁移：无招募数据，保底计数器从 0 开始');
   }
 
   // ── 编队系统 v2.0 ──
@@ -328,7 +329,7 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   if (data.campaign) {
     ctx.campaign.deserialize(data.campaign);
   } else {
-    console.info('[Save] v2.0 存档迁移：无关卡数据，自动初始化空关卡进度');
+    gameLog.info('[Save] v2.0 存档迁移：无关卡数据，自动初始化空关卡进度');
   }
 
   // ── 科技系统 v4.0 ──
@@ -345,7 +346,7 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
       techPoints: data.tech.techPoints,
     });
   } else {
-    console.info('[Save] v3.0 存档迁移：无科技数据，自动初始化空科技系统');
+    gameLog.info('[Save] v3.0 存档迁移：无科技数据，自动初始化空科技系统');
   }
 
   // ── 装备系统 v5.0 ──
@@ -392,7 +393,7 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   if (data.pvpArena && ctx.arena) {
     ctx.arena.deserialize(data.pvpArena);
   } else {
-    console.info('[Save] v7.0 存档迁移：无竞技场数据，自动初始化默认状态');
+    gameLog.info('[Save] v7.0 存档迁移：无竞技场数据，自动初始化默认状态');
   }
 
   // ── 竞技商店系统 v7.0 ──
@@ -409,7 +410,7 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   if (data.eventTrigger && ctx.eventTrigger) {
     ctx.eventTrigger.deserialize(data.eventTrigger);
   } else {
-    console.info('[Save] v7.0 存档迁移：无事件触发数据，自动初始化默认事件');
+    gameLog.info('[Save] v7.0 存档迁移：无事件触发数据，自动初始化默认事件');
   }
 
   // ── 事件通知系统 v7.0 ──

@@ -357,6 +357,77 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
   }
 
   // ─────────────────────────────────────────
+  // v4.0 新增API — 跳过战斗（Plan #49）
+  // ─────────────────────────────────────────
+
+  /**
+   * 跳过战斗
+   *
+   * 对正在进行的战斗，直接计算最终结果，跳过所有动画。
+   * 仅在 BattlePhase.IN_PROGRESS 时有效。
+   *
+   * 实现方式：以最快速度运行完所有剩余回合（无动画间隔），
+   * 然后返回战斗结果。
+   *
+   * @param state - 当前战斗状态
+   * @returns 战斗结果（战斗已结束时返回已有结果）
+   */
+  skipBattle(state: BattleState): BattleResult {
+    // 已结束的战斗直接返回结果
+    if (state.phase === BattlePhase.FINISHED) {
+      return state.result ?? this.getBattleResult(state);
+    }
+
+    // 设置 SKIP 速度
+    this.speedController.setSpeed(BattleSpeed.SKIP);
+
+    // 快速执行所有剩余回合
+    while (
+      state.phase === BattlePhase.IN_PROGRESS &&
+      state.currentTurn <= state.maxTurns
+    ) {
+      this.executeTurn(state);
+
+      if (this.isBattleOver(state)) {
+        break;
+      }
+
+      state.currentTurn++;
+    }
+
+    // 标记战斗结束
+    state.phase = BattlePhase.FINISHED;
+
+    // 生成结果
+    const result = this.getBattleResult(state);
+    state.result = result;
+
+    return result;
+  }
+
+  /**
+   * 快速战斗（便捷方法）
+   *
+   * 初始化并立即跳过整个战斗，直接返回结果。
+   * 等价于 initBattle + skipBattle。
+   *
+   * @param allyTeam - 我方队伍
+   * @param enemyTeam - 敌方队伍
+   * @returns 战斗结果
+   */
+  quickBattle(allyTeam: BattleTeam, enemyTeam: BattleTeam): BattleResult {
+    const state = this.initBattle(allyTeam, enemyTeam);
+    return this.skipBattle(state);
+  }
+
+  /**
+   * 检查当前是否处于跳过战斗模式
+   */
+  isSkipMode(): boolean {
+    return this.speedController.getSpeed() === BattleSpeed.SKIP;
+  }
+
+  // ─────────────────────────────────────────
   // 回合内部流程
   // ─────────────────────────────────────────
 

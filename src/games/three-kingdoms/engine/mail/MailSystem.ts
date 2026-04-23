@@ -33,11 +33,17 @@ import type {
   MailSaveData,
 } from './mail.types';
 import {
-  MAIL_CATEGORY_LABELS as CATEGORY_LABELS,
-  MAIL_STATUS_LABELS as STATUS_LABELS,
+  MAIL_CATEGORY_LABELS,
+  MAIL_STATUS_LABELS,
   MAILS_PER_PAGE,
 } from './mail.types';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
+import {
+  DEFAULT_RETAIN_SECONDS,
+  SYSTEM_RETAIN_SECONDS,
+  REWARD_RETAIN_SECONDS,
+} from './MailConstants';
+import { filterMails, getDefaultRetainSeconds } from './MailFilterHelpers';
 
 // Re-export types for backward compatibility
 export type {
@@ -51,24 +57,11 @@ export type {
   MailSaveData,
 } from './mail.types';
 
-// ─────────────────────────────────────────────
-// 2. 常量配置
-// ─────────────────────────────────────────────
-
-/** 默认邮件保留时长（7天） */
-const DEFAULT_RETAIN_SECONDS = 7 * 24 * 3600;
-
-/** 系统邮件保留时长（30天） */
-const SYSTEM_RETAIN_SECONDS = 30 * 24 * 3600;
-
-/** 奖励邮件保留时长（14天） */
-const REWARD_RETAIN_SECONDS = 14 * 24 * 3600;
-
 // Re-export constants for backward compatibility
-export { CATEGORY_LABELS, STATUS_LABELS, MAILS_PER_PAGE };
+export { MAIL_CATEGORY_LABELS as CATEGORY_LABELS, MAIL_STATUS_LABELS as STATUS_LABELS, MAILS_PER_PAGE } from './mail.types';
 
 // ─────────────────────────────────────────────
-// 3. 邮件系统实现
+// 邮件系统实现
 // ─────────────────────────────────────────────
 
 /**
@@ -347,14 +340,6 @@ export class MailSystem implements ISubsystem {
     });
   }
 
-  /** 标记为已读（别名） */
-  markAsRead(mailId: string): boolean { return this.markRead(mailId); }
-
-  /** 设置星标（预留接口） */
-  setStarred(_mailId: string, _starred: boolean): boolean { return true; }
-
-  // ── 模板邮件发送 ──
-
   /** 使用模板发送邮件 */
   sendTemplateMail(
     templateId: string,
@@ -390,12 +375,6 @@ export class MailSystem implements ISubsystem {
     this.persist();
   }
 
-  /** 序列化（别名） */
-  serialize(): MailSaveData { return this.getSaveData(); }
-
-  /** 反序列化（别名） */
-  deserialize(data: MailSaveData): void { this.loadFromSaveData(data); }
-
   /** 重置邮件系统 */
   reset(): void {
     this.mails.clear();
@@ -406,21 +385,14 @@ export class MailSystem implements ISubsystem {
   // ── 私有方法 ──
 
   private getFilteredMails(filter?: MailFilter): MailData[] {
-    const result: MailData[] = [];
-    for (const mail of this.mails.values()) {
-      if (filter?.category && filter.category !== 'all' && mail.category !== filter.category) continue;
-      if (filter?.status && mail.status !== filter.status) continue;
-      if (filter?.hasAttachment && mail.attachments.length === 0) continue;
-      result.push(mail);
-    }
-    return result;
+    return filterMails(this.mails.values(), filter);
   }
 
   private getDefaultRetainSeconds(category: MailCategory): number | null {
-    switch (category) {
-      case 'system': return SYSTEM_RETAIN_SECONDS;
-      case 'reward': return REWARD_RETAIN_SECONDS;
-      default: return DEFAULT_RETAIN_SECONDS;
-    }
+    return getDefaultRetainSeconds(category, {
+      system: SYSTEM_RETAIN_SECONDS,
+      reward: REWARD_RETAIN_SECONDS,
+      default_: DEFAULT_RETAIN_SECONDS,
+    });
   }
 }

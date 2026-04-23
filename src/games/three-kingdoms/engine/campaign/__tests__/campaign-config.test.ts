@@ -2,6 +2,7 @@
  * 关卡配置测试
  *
  * 验证 campaign-config.ts 中的关卡数据完整性。
+ * 对齐 Play v3.0：6章×5关 = 30关，章节名称与战力范围。
  */
 
 import {
@@ -9,6 +10,9 @@ import {
   CHAPTER_1,
   CHAPTER_2,
   CHAPTER_3,
+  CHAPTER_4,
+  CHAPTER_5,
+  CHAPTER_6,
   getChapters,
   getChapter,
   getStage,
@@ -56,6 +60,15 @@ describe('campaign-config 章节数据', () => {
       expect(ch.description.length).toBeGreaterThan(0);
     }
   });
+
+  it('章节名称对齐Play文档（黄巾之乱→一统天下）', () => {
+    expect(CHAPTER_1.name).toBe('黄巾之乱');
+    expect(CHAPTER_2.name).toBe('群雄割据');
+    expect(CHAPTER_3.name).toBe('官渡之战');
+    expect(CHAPTER_4.name).toBe('赤壁之战');
+    expect(CHAPTER_5.name).toBe('三国鼎立');
+    expect(CHAPTER_6.name).toBe('一统天下');
+  });
 });
 
 // ─────────────────────────────────────────────
@@ -63,15 +76,15 @@ describe('campaign-config 章节数据', () => {
 // ─────────────────────────────────────────────
 
 describe('campaign-config 关卡数据', () => {
-  it('每章应有8关', () => {
+  it('每章应有5关', () => {
     for (const ch of ALL_CHAPTERS) {
-      expect(ch.stages).toHaveLength(8);
+      expect(ch.stages).toHaveLength(5);
     }
   });
 
-  it('总关卡数应为48', () => {
+  it('总关卡数应为30', () => {
     const total = ALL_CHAPTERS.reduce((sum, ch) => sum + ch.stages.length, 0);
-    expect(total).toBe(48);
+    expect(total).toBe(30);
   });
 
   it('关卡ID格式正确', () => {
@@ -97,24 +110,24 @@ describe('campaign-config 关卡数据', () => {
     }
   });
 
-  it('第1章：6普通+1精英+1BOSS', () => {
+  it('第1章：3普通+1精英+1BOSS', () => {
     const types = CHAPTER_1.stages.map((s) => s.type);
-    expect(types.filter((t) => t === 'normal')).toHaveLength(6);
+    expect(types.filter((t) => t === 'normal')).toHaveLength(3);
     expect(types.filter((t) => t === 'elite')).toHaveLength(1);
     expect(types.filter((t) => t === 'boss')).toHaveLength(1);
   });
 
-  it('第2章：5普通+2精英+1BOSS', () => {
+  it('第2章：3普通+1精英+1BOSS', () => {
     const types = CHAPTER_2.stages.map((s) => s.type);
-    expect(types.filter((t) => t === 'normal')).toHaveLength(5);
-    expect(types.filter((t) => t === 'elite')).toHaveLength(2);
+    expect(types.filter((t) => t === 'normal')).toHaveLength(3);
+    expect(types.filter((t) => t === 'elite')).toHaveLength(1);
     expect(types.filter((t) => t === 'boss')).toHaveLength(1);
   });
 
-  it('第3章：5普通+2精英+1BOSS', () => {
+  it('第3章：3普通+1精英+1BOSS', () => {
     const types = CHAPTER_3.stages.map((s) => s.type);
-    expect(types.filter((t) => t === 'normal')).toHaveLength(5);
-    expect(types.filter((t) => t === 'elite')).toHaveLength(2);
+    expect(types.filter((t) => t === 'normal')).toHaveLength(3);
+    expect(types.filter((t) => t === 'elite')).toHaveLength(1);
     expect(types.filter((t) => t === 'boss')).toHaveLength(1);
   });
 
@@ -217,6 +230,56 @@ describe('campaign-config 关卡数据', () => {
 });
 
 // ─────────────────────────────────────────────
+// 2a. 战力范围验证（P0-4: Play §1.1）
+// ─────────────────────────────────────────────
+
+describe('campaign-config 战力范围（Play v3.0 §1.1）', () => {
+  it('第1章黄巾之乱：100~500', () => {
+    const powers = CHAPTER_1.stages.map((s) => s.recommendedPower);
+    expect(powers[0]).toBeGreaterThanOrEqual(100);
+    expect(powers[powers.length - 1]).toBeLessThanOrEqual(500);
+  });
+
+  it('第2章群雄割据：500~1,200', () => {
+    const powers = CHAPTER_2.stages.map((s) => s.recommendedPower);
+    expect(powers[0]).toBeGreaterThanOrEqual(500);
+    expect(powers[powers.length - 1]).toBeLessThanOrEqual(1200);
+  });
+
+  it('第3章官渡之战：1,200~2,500', () => {
+    const powers = CHAPTER_3.stages.map((s) => s.recommendedPower);
+    expect(powers[0]).toBeGreaterThanOrEqual(1200);
+    expect(powers[powers.length - 1]).toBeLessThanOrEqual(2500);
+  });
+
+  it('第4章赤壁之战：2,500~5,000', () => {
+    const powers = CHAPTER_4.stages.map((s) => s.recommendedPower);
+    expect(powers[0]).toBeGreaterThanOrEqual(2500);
+    expect(powers[powers.length - 1]).toBeLessThanOrEqual(5000);
+  });
+
+  it('第5章三国鼎立：5,000~10,000', () => {
+    const powers = CHAPTER_5.stages.map((s) => s.recommendedPower);
+    expect(powers[0]).toBeGreaterThanOrEqual(5000);
+    expect(powers[powers.length - 1]).toBeLessThanOrEqual(10000);
+  });
+
+  it('第6章一统天下：10,000~20,000', () => {
+    const powers = CHAPTER_6.stages.map((s) => s.recommendedPower);
+    expect(powers[0]).toBeGreaterThanOrEqual(10000);
+    expect(powers[powers.length - 1]).toBeLessThanOrEqual(20000);
+  });
+
+  it('全局战力范围覆盖 100~20,000', () => {
+    const allPowers = ALL_CHAPTERS.flatMap((ch) =>
+      ch.stages.map((s) => s.recommendedPower),
+    );
+    expect(Math.min(...allPowers)).toBeGreaterThanOrEqual(100);
+    expect(Math.max(...allPowers)).toBeLessThanOrEqual(20000);
+  });
+});
+
+// ─────────────────────────────────────────────
 // 3. 查询函数
 // ─────────────────────────────────────────────
 
@@ -238,7 +301,7 @@ describe('campaign-config 查询函数', () => {
   it('getStage 返回正确关卡', () => {
     const stage = getStage('chapter1_stage1');
     expect(stage).toBeDefined();
-    expect(stage!.name).toBe('黄巾前哨');
+    expect(stage!.name).toBe('张角');
   });
 
   it('getStage 不存在返回 undefined', () => {
@@ -247,9 +310,9 @@ describe('campaign-config 查询函数', () => {
 
   it('getStagesByChapter 返回章节内所有关卡', () => {
     const stages = getStagesByChapter('chapter1');
-    expect(stages).toHaveLength(8);
+    expect(stages).toHaveLength(5);
     expect(stages[0].id).toBe('chapter1_stage1');
-    expect(stages[7].id).toBe('chapter1_stage8');
+    expect(stages[4].id).toBe('chapter1_stage5');
   });
 
   it('getStagesByChapter 不存在返回空数组', () => {
@@ -264,6 +327,6 @@ describe('campaign-config 查询函数', () => {
         ids.add(st.id);
       }
     }
-    expect(ids.size).toBe(48);
+    expect(ids.size).toBe(30);
   });
 });

@@ -32,6 +32,12 @@ import {
   expireEvents as expireEventsLifecycle,
   type EventLifecycleState,
 } from './EventTriggerLifecycle';
+import {
+  triggerEventLogic,
+  checkFixedConditions as checkFixedConditionsHelper,
+  checkChainPrerequisites as checkChainPrerequisitesHelper,
+  checkAndTriggerEventsLogic,
+} from './EventTriggerSystem.helpers';
 
 const ABSOLUTE_MAX_EVENTS = 20;
 
@@ -135,63 +141,23 @@ export class EventTriggerSystem implements ISubsystem {
 
   /**
    * 每回合事件触发检查
-   *
-   * 检查所有事件是否满足触发条件，生成触发结果。
-   *
-   * @param currentTurn - 当前回合
-   * @returns 触发的事件实例列表
    */
   checkAndTriggerEvents(currentTurn: number): EventInstance[] {
     this._currentTurn = currentTurn;
-    const triggered: EventInstance[] = [];
-
-    // 检查冷却
-    this.tickCooldowns(currentTurn);
-
-    // 1. 检查固定事件（条件触发）
-    const fixedEvents = this.getEventDefsByType('fixed');
-    for (const def of fixedEvents) {
-      if (this.canTrigger(def.id, currentTurn)) {
-        const result = this.triggerEvent(def.id, currentTurn);
-        if (result.triggered && result.instance) {
-          triggered.push(result.instance);
-        }
-      }
-    }
-
-    // 2. 检查连锁事件（前置事件完成触发）
-    const chainEvents = this.getEventDefsByType('chain');
-    for (const def of chainEvents) {
-      if (this.canTrigger(def.id, currentTurn)) {
-        const result = this.triggerEvent(def.id, currentTurn);
-        if (result.triggered && result.instance) {
-          triggered.push(result.instance);
-        }
-      }
-    }
-
-    // 3. 检查随机事件（概率触发）
-    const randomEvents = this.getEventDefsByType('random');
-    for (const def of randomEvents) {
-      if (this.canTrigger(def.id, currentTurn)) {
-        // 优先使用概率公式，否则回退到简单概率判定
-        const probCondition = this.probabilityConditions.get(def.id);
-        if (probCondition) {
-          const probResult = this.calculateProbability(probCondition);
-          if (!probResult.triggered) continue;
-        } else {
-          const probability = def.triggerProbability ?? this.config.randomEventProbability;
-          if (Math.random() >= probability) continue;
-        }
-
-        const result = this.triggerEvent(def.id, currentTurn);
-        if (result.triggered && result.instance) {
-          triggered.push(result.instance);
-        }
-      }
-    }
-
-    return triggered;
+    return checkAndTriggerEventsLogic({
+      eventDefs: this.eventDefs,
+      activeEvents: this.activeEvents,
+      completedEventIds: this.completedEventIds,
+      cooldowns: this.cooldowns,
+      config: this.config,
+      instanceCounter: { value: this.instanceCounter },
+      deps: this.deps,
+      canTrigger: (id: EventId, turn: number) => this.canTrigger(id, turn),
+      getEventDefsByType: (type: string) => this.getEventDefsByType(type as EventTriggerType),
+      probabilityConditions: this.probabilityConditions,
+      calculateProbability: (cond: ProbabilityCondition) => this.calculateProbability(cond),
+      tickCooldowns: (turn: number) => this.tickCooldowns(turn),
+    }, currentTurn);
   }
 
   /**
@@ -283,18 +249,10 @@ export class EventTriggerSystem implements ISubsystem {
 
   // ─── 活跃事件管理 ──────────────────────────
 
-  /**
-   * 获取所有活跃事件
-   */
   getActiveEvents(): EventInstance[] {
     return Array.from(this.activeEvents.values());
   }
 
-  /**
-   * 检查是否有活跃事件
-   *
-   * @param eventDefId - 事件定义ID
-   */
   hasActiveEvent(eventDefId: EventId): boolean {
     for (const inst of this.activeEvents.values()) {
       if (inst.eventDefId === eventDefId) return true;
@@ -302,34 +260,18 @@ export class EventTriggerSystem implements ISubsystem {
     return false;
   }
 
-  /**
-   * 获取事件实例
-   *
-   * @param instanceId - 实例ID
-   */
   getInstance(instanceId: string): EventInstance | undefined {
     return this.activeEvents.get(instanceId);
   }
 
-  /**
-   * 获取活跃事件数量
-   */
   getActiveEventCount(): number {
     return this.activeEvents.size;
   }
 
-  /**
-   * 检查事件是否已完成
-   *
-   * @param eventId - 事件ID
-   */
   isEventCompleted(eventId: EventId): boolean {
     return this.completedEventIds.has(eventId);
   }
 
-  /**
-   * 获取所有已完成事件ID
-   */
   getCompletedEventIds(): EventId[] {
     return Array.from(this.completedEventIds);
   }
@@ -400,37 +342,27 @@ export class EventTriggerSystem implements ISubsystem {
     }
   }
 
+  /** 清理已过期的冷却 */
+  private tickCooldowns(currentTurn: number): void {
+    for (const [eventId, endTurn] of this.cooldowns) {
+      if (currentTurn >= endTurn) {
+        this.cooldowns.delete(eventId);
+      }
+    }
+  }
+
   /** 触发事件 */
   private triggerEvent(eventId: EventId, currentTurn: number, force = false): EventTriggerResult {
-    const def = this.eventDefs.get(eventId);
-    if (!def) {
-      return { triggered: false, reason: `事件 ${eventId} 不存在` };
-    }
-
-    // 已有同类型活跃事件时不可重复触发（即使 force）
-    if (this.hasActiveEvent(eventId)) {
-      return { triggered: false, reason: `事件 ${eventId} 已有活跃实例` };
-    }
-
-    if (!force && !this.canTrigger(eventId, currentTurn)) {
-      return { triggered: false, reason: `事件 ${eventId} 不满足触发条件` };
-    }
-
-    // 创建实例
-    const instance = this.createInstance(def, currentTurn);
-
-    // 添加到活跃列表
-    this.activeEvents.set(instance.instanceId, instance);
-
-    // 发出事件
-    this.deps?.eventBus.emit('event:triggered', {
-      instanceId: instance.instanceId,
-      eventDefId: def.id,
-      title: def.title,
-      urgency: def.urgency,
-    });
-
-    return { triggered: true, instance };
+    return triggerEventLogic(eventId, currentTurn, {
+      eventDefs: this.eventDefs,
+      activeEvents: this.activeEvents,
+      completedEventIds: this.completedEventIds,
+      cooldowns: this.cooldowns,
+      config: this.config,
+      instanceCounter: { value: this.instanceCounter },
+      deps: this.deps,
+      canTrigger: (id, turn) => this.canTrigger(id, turn),
+    }, force);
   }
 
   /** 创建事件实例 */
@@ -449,40 +381,13 @@ export class EventTriggerSystem implements ISubsystem {
     };
   }
 
-  /** 检查固定事件条件 — 委托给 EventTriggerConditions */
+  /** 检查固定事件条件 */
   private checkFixedConditions(def: EventDef, currentTurn: number): boolean {
-    if (!def.triggerConditions || def.triggerConditions.length === 0) {
-      return true;
-    }
-
-    // 所有条件必须满足（AND 逻辑）
-    const completedChecker: CompletedEventChecker = (id) => this.completedEventIds.has(id);
-    for (const cond of def.triggerConditions) {
-      if (!evaluateCondition(cond, currentTurn, undefined, completedChecker)) {
-        return false;
-      }
-    }
-
-    return true;
+    return checkFixedConditionsHelper(def, currentTurn, this.completedEventIds);
   }
 
   /** 检查连锁事件前置条件 */
   private checkChainPrerequisites(def: EventDef): boolean {
-    if (!def.prerequisiteEventIds || def.prerequisiteEventIds.length === 0) {
-      return true;
-    }
-
-    return def.prerequisiteEventIds.every((id) => this.completedEventIds.has(id));
-  }
-
-  /** 处理冷却 */
-  private tickCooldowns(_currentTurn: number): void {
-    // 冷却检查在 canTrigger 中处理
-  }
-
-  /** 生成唯一ID */
-  private generateInstanceId(): string {
-    this.instanceCounter++;
-    return `event-inst-${this.instanceCounter}`;
+    return checkChainPrerequisitesHelper(def, this.completedEventIds);
   }
 }

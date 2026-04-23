@@ -94,6 +94,8 @@ export interface UltimateReadyResult {
  * 战斗速度档位
  */
 export enum BattleSpeed {
+  /** 跳过战斗 — 直接计算结果，跳过所有动画 */
+  SKIP = 0,
   /** 正常速度 */
   X1 = 1,
   /** 2倍速 */

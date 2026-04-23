@@ -34,6 +34,7 @@ import {
 } from './BuildingRecommender';
 // 拆分模块
 import { getAppearanceStage, createAllStates } from './BuildingStateHelpers';
+import { gameLog } from '../../core/logger';
 import { batchUpgrade } from './BuildingBatchOps';
 import type { BatchUpgradeResult } from './BuildingBatchOps';
 
@@ -359,7 +360,7 @@ export class BuildingSystem implements ISubsystem {
 
   deserialize(data: BuildingSaveData): void {
     if (data.version !== BUILDING_SAVE_VERSION) {
-      console.warn(`BuildingSystem: 存档版本不匹配 (期望 ${BUILDING_SAVE_VERSION}，实际 ${data.version})`);
+      gameLog.warn(`BuildingSystem: 存档版本不匹配 (期望 ${BUILDING_SAVE_VERSION}，实际 ${data.version})`);
     }
 
     for (const t of BUILDING_TYPES) {

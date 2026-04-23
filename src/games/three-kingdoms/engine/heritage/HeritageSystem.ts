@@ -47,33 +47,7 @@ import {
   simulateEarnings,
   type RebirthAccelCallbacks,
 } from './HeritageSimulation';
-
-// ─────────────────────────────────────────────
-// 常量
-// ─────────────────────────────────────────────
-
-const EVENT_PREFIX = 'heritage';
-
-// ─────────────────────────────────────────────
-// 辅助函数
-// ─────────────────────────────────────────────
-
-/** 创建初始传承状态 */
-function createInitialHeritageState(): HeritageState {
-  return {
-    heroHeritageCount: 0,
-    equipmentHeritageCount: 0,
-    experienceHeritageCount: 0,
-    dailyHeritageCount: 0,
-    lastDailyReset: new Date().toISOString().slice(0, 10),
-    heritageHistory: [],
-  };
-}
-
-/** 获取今天日期字符串 */
-function getTodayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { EVENT_PREFIX, createInitialHeritageState, getTodayStr } from './HeritageHelpers';
 
 // ─────────────────────────────────────────────
 // 外部数据接口（回调获取）

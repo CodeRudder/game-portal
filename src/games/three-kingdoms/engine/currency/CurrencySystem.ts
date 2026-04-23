@@ -28,6 +28,7 @@ import type {
   CurrencyShortage,
   CurrencySaveData,
 } from '../../core/currency';
+import { gameLog } from '../../core/logger';
 import {
   CURRENCY_TYPES,
   CURRENCY_LABELS,
@@ -354,7 +355,7 @@ export class CurrencySystem implements ISubsystem {
 
   deserialize(data: CurrencySaveData): void {
     if (data.version !== CURRENCY_SAVE_VERSION) {
-      console.warn(
+      gameLog.warn(
         `CurrencySystem: 存档版本不匹配 (期望 ${CURRENCY_SAVE_VERSION}，实际 ${data.version})`,
       );
     }

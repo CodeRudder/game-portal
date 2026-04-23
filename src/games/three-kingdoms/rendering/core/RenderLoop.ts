@@ -14,6 +14,7 @@
  */
 
 import type { IRenderer } from '../adapters/RenderStateBridge';
+import { gameLog } from '../../core/logger';
 
 // ─────────────────────────────────────────────
 // 类型定义
@@ -130,7 +131,7 @@ export class RenderLoop {
           entry.renderer.update(dt);
         }
       } catch (e) {
-        console.warn(`[RenderLoop] Renderer "${entry.name}" update error:`, e);
+        gameLog.warn(`[RenderLoop] Renderer "${entry.name}" update error:`, e);
       }
     }
   }

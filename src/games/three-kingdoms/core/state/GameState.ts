@@ -14,6 +14,7 @@
  */
 
 import type { IGameState } from '../types/state';
+import { gameLog } from '../logger';
 
 // ─────────────────────────────────────────────
 // 默认值与版本
@@ -190,7 +191,7 @@ export function migrateGameState(
   while (current.version !== targetVersion && iterations < MAX_ITERATIONS) {
     const migration = MIGRATIONS[current.version];
     if (!migration) {
-      console.warn(
+      gameLog.warn(
         `[GameState] No migration path from v${current.version} to v${targetVersion}. ` +
           'Returning state as-is.',
       );
@@ -199,7 +200,7 @@ export function migrateGameState(
     try {
       current = migration.migrate(current);
     } catch (err) {
-      console.error(
+      gameLog.error(
         `[GameState] Migration failed at v${current.version}:`,
         err,
       );
@@ -209,7 +210,7 @@ export function migrateGameState(
   }
 
   if (iterations >= MAX_ITERATIONS) {
-    console.warn('[GameState] Migration loop detected, aborting.');
+    gameLog.warn('[GameState] Migration loop detected, aborting.');
     return state;
   }
 

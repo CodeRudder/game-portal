@@ -21,6 +21,7 @@ import {
   RESOURCE_TYPE_GOLD, RESOURCE_TYPE_BREAKTHROUGH_STONE, MAX_STAR_LEVEL,
 } from './star-up-config';
 import { GENERAL_DEF_MAP } from './hero-config';
+import { gameLog } from '../../core/logger';
 
 // ── 导出类型 ──
 
@@ -340,7 +341,7 @@ export class HeroStarSystem implements ISubsystem {
 
   deserialize(data: StarSystemSaveData): void {
     if (data.version !== STAR_SYSTEM_SAVE_VERSION) {
-      console.warn(`HeroStarSystem: 存档版本不匹配 (期望 ${STAR_SYSTEM_SAVE_VERSION}，实际 ${data.version})`);
+      gameLog.warn(`HeroStarSystem: 存档版本不匹配 (期望 ${STAR_SYSTEM_SAVE_VERSION}，实际 ${data.version})`);
     }
     this.state = {
       stars: { ...(data.state.stars ?? {}) },

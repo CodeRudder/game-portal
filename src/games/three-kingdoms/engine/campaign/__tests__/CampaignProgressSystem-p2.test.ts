@@ -73,20 +73,20 @@ describe('CampaignProgressSystem 逐关解锁链路', () => {
   });
 
   it('第2章第1关需要第1章BOSS通关', () => {
-    // 通关第1章前7关，但不是BOSS
-    for (let i = 1; i <= 7; i++) {
+    // 通关第1章前4关，但不是BOSS
+    for (let i = 1; i <= 4; i++) {
       system.completeStage(`chapter1_stage${i}`, 3);
     }
     expect(system.getStageStatus('chapter2_stage1')).toBe('locked');
 
     // 通关BOSS
-    system.completeStage('chapter1_stage8', 1);
+    system.completeStage('chapter1_stage5', 1);
     expect(system.getStageStatus('chapter2_stage1')).toBe('available');
   });
 
   it('第2章内逐关解锁', () => {
     // 先通关第1章全部
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 1; i <= 5; i++) {
       system.completeStage(`chapter1_stage${i}`, 1);
     }
     expect(system.getStageStatus('chapter2_stage2')).toBe('locked');
@@ -97,16 +97,16 @@ describe('CampaignProgressSystem 逐关解锁链路', () => {
 
   it('第3章需要第2章BOSS通关', () => {
     // 通关第1章
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 1; i <= 5; i++) {
       system.completeStage(`chapter1_stage${i}`, 1);
     }
-    // 通关第2章前7关
-    for (let i = 1; i <= 7; i++) {
+    // 通关第2章前4关
+    for (let i = 1; i <= 4; i++) {
       system.completeStage(`chapter2_stage${i}`, 1);
     }
     expect(system.getStageStatus('chapter3_stage1')).toBe('locked');
 
-    system.completeStage('chapter2_stage8', 1);
+    system.completeStage('chapter2_stage5', 1);
     expect(system.getStageStatus('chapter3_stage1')).toBe('available');
   });
 });
@@ -237,7 +237,7 @@ describe('CampaignProgressSystem 序列化边界', () => {
   });
 
   it('反序列化后章节推进状态保持', () => {
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 1; i <= 5; i++) {
       system.completeStage(`chapter1_stage${i}`, 1);
     }
     const saved = system.serialize();
@@ -271,14 +271,14 @@ describe('CampaignProgressSystem getCurrentChapter', () => {
   });
 
   it('通关第1章BOSS后推进到第2章', () => {
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 1; i <= 5; i++) {
       system.completeStage(`chapter1_stage${i}`, 1);
     }
     expect(system.getCurrentChapter()!.id).toBe('chapter2');
   });
 
   it('未通关第1章BOSS不推进', () => {
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 1; i <= 4; i++) {
       system.completeStage(`chapter1_stage${i}`, 1);
     }
     expect(system.getCurrentChapter()!.id).toBe('chapter1');

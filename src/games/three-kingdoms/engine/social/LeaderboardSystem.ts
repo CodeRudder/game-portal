@@ -295,3 +295,6 @@ export class LeaderboardSystem implements ISubsystem {
     }
   }
 }
+
+// 重导出供测试和外部使用
+export { createDefaultLeaderboardState } from './leaderboard-types';

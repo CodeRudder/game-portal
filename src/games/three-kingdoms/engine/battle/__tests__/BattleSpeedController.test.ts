@@ -368,8 +368,8 @@ describe('BattleSpeedController', () => {
         expect(BattleSpeedController.isValidSpeed(3)).toBe(false);
       });
 
-      it('0应不合法', () => {
-        expect(BattleSpeedController.isValidSpeed(0)).toBe(false);
+      it('0应合法（SKIP模式）', () => {
+        expect(BattleSpeedController.isValidSpeed(0)).toBe(true);
       });
 
       it('负数应不合法', () => {

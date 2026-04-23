@@ -16,12 +16,25 @@ import {
 } from '../../core/quest';
 import type { ActivityState, ActivityMilestone, QuestReward as QR } from '../../core/quest';
 import { serializeQuestState, deserializeQuestState } from './QuestSerialization';
+import {
+  MAX_TRACKED_QUESTS,
+  MAX_ACTIVITY_POINTS,
+  refreshDailyQuestsLogic,
+  getTrackedQuests as getTrackedQuestsHelper,
+  trackQuest as trackQuestHelper,
+  untrackQuest as untrackQuestHelper,
+  getDailyQuests as getDailyQuestsHelper,
+  getActiveQuestsByCategory as getActiveQuestsByCategoryHelper,
+  getActivityState as getActivityStateHelper,
+  addActivityPoints as addActivityPointsHelper,
+  claimActivityMilestone as claimActivityMilestoneHelper,
+  resetDailyActivity as resetDailyActivityHelper,
+  updateProgressByTypeLogic as updateProgressByTypeHelper,
+  claimRewardLogic,
+  claimAllRewardsLogic,
+} from './QuestSystem.helpers';
 
-/** 最大追踪任务数 */
-export const MAX_TRACKED_QUESTS = 3;
-
-/** 最大活跃度点数 */
-export const MAX_ACTIVITY_POINTS = 100;
+export { MAX_TRACKED_QUESTS, MAX_ACTIVITY_POINTS } from './QuestSystem.helpers';
 
 /** 管理所有类型任务的注册、接受、进度追踪和奖励发放 */
 export class QuestSystem implements ISubsystem {
@@ -87,38 +100,22 @@ export class QuestSystem implements ISubsystem {
 
   /** 获取活跃度状态（返回副本） */
   getActivityState(): ActivityState {
-    return {
-      currentPoints: this.activityState.currentPoints,
-      maxPoints: this.activityState.maxPoints,
-      milestones: this.activityState.milestones.map((m) => ({ ...m })),
-      lastResetDate: this.activityState.lastResetDate,
-    };
+    return getActivityStateHelper(this.activityState);
   }
 
   /** 增加活跃度（不超过最大值） */
   addActivityPoints(points: number): void {
-    this.activityState.currentPoints = Math.min(
-      this.activityState.currentPoints + points,
-      this.activityState.maxPoints,
-    );
+    addActivityPointsHelper(this.activityState, points);
   }
 
   /** 领取活跃度里程碑宝箱 */
   claimActivityMilestone(index: number): QR | null {
-    const milestone = this.activityState.milestones[index];
-    if (!milestone) return null;
-    if (this.activityState.currentPoints < milestone.points) return null;
-    if (milestone.claimed) return null;
-
-    milestone.claimed = true;
-    return milestone.rewards;
+    return claimActivityMilestoneHelper(this.activityState, index);
   }
 
   /** 重置每日活跃度 */
   resetDailyActivity(): void {
-    this.activityState.currentPoints = 0;
-    this.activityState.lastResetDate = new Date().toISOString().slice(0, 10);
-    this.activityState.milestones = DEFAULT_ACTIVITY_MILESTONES.map((m) => ({ ...m }));
+    resetDailyActivityHelper(this.activityState);
   }
 
   // ─── 任务注册 ──────────────────────────────
@@ -205,40 +202,13 @@ export class QuestSystem implements ISubsystem {
 
   /**
    * 按目标类型更新进度（批量）
-   *
-   * 遍历所有活跃任务，匹配目标类型并更新进度。
    */
   updateProgressByType(objectiveType: string, count: number, params?: Record<string, unknown>): void {
-    for (const instance of this.activeQuests.values()) {
-      if (instance.status !== 'active') continue;
-
-      for (const objective of instance.objectives) {
-        if (objective.type !== objectiveType) continue;
-        if (objective.currentCount >= objective.targetCount) continue;
-
-        // 参数匹配
-        if (params && objective.params) {
-          const match = Object.entries(params).every(
-            ([key, val]) => objective.params![key] === val,
-          );
-          if (!match) continue;
-        }
-
-        objective.currentCount = Math.min(objective.currentCount + count, objective.targetCount);
-
-        this.deps?.eventBus.emit('quest:progress', {
-          instanceId: instance.instanceId,
-          objectiveId: objective.id,
-          currentCount: objective.currentCount,
-          targetCount: objective.targetCount,
-        });
-      }
-
-      // 检查完成
-      if (this.checkQuestCompletion(instance)) {
-        this.completeQuest(instance.instanceId);
-      }
-    }
+    updateProgressByTypeHelper(objectiveType, count, this.activeQuests, {
+      emit: (event: string, data: unknown) => this.deps?.eventBus.emit(event, data),
+      completeQuest: (id: string) => this.completeQuest(id),
+      checkQuestCompletion: (inst: QuestInstance) => this.checkQuestCompletion(inst),
+    }, params);
   }
 
   // ─── 任务完成与奖励 ────────────────────────
@@ -273,54 +243,21 @@ export class QuestSystem implements ISubsystem {
 
   /**
    * 领取任务奖励
-   *
-   * @param instanceId - 任务实例 ID
-   * @returns 奖励数据，失败返回 null
    */
   claimReward(instanceId: string): QuestReward | null {
-    const instance = this.activeQuests.get(instanceId);
-    if (!instance) return null;
-    if (instance.status !== 'completed') return null;
-    if (instance.rewardClaimed) return null;
-
-    const def = this.questDefs.get(instance.questDefId);
-    if (!def) return null;
-
-    instance.rewardClaimed = true;
-
-    // 活跃度奖励（日常任务）
-    if (def.category === 'daily' && def.rewards.activityPoints) {
-      this.addActivityPoints(def.rewards.activityPoints);
-      this.activityAddCallback?.(def.rewards.activityPoints);
-    }
-
-    // 发放奖励
-    this.rewardCallback?.(def.rewards);
-
-    this.deps?.eventBus.emit('quest:rewardClaimed', {
-      instanceId,
-      questId: instance.questDefId,
-      rewards: def.rewards,
+    return claimRewardLogic(instanceId, {
+      questDefs: this.questDefs,
+      activeQuests: this.activeQuests,
+      addActivityPoints: (pts) => this.addActivityPoints(pts),
+      activityAddCallback: this.activityAddCallback,
+      rewardCallback: this.rewardCallback,
+      emit: (event, data) => this.deps?.eventBus.emit(event, data),
     });
-
-    // 移除已领取的完成任务
-    this.activeQuests.delete(instanceId);
-
-    return def.rewards;
   }
 
   /** 一键领取所有已完成任务的奖励 */
   claimAllRewards(): QuestReward[] {
-    const rewards: QuestReward[] = [];
-    const completedInstances = Array.from(this.activeQuests.values())
-      .filter((q) => q.status === 'completed' && !q.rewardClaimed);
-
-    for (const instance of completedInstances) {
-      const reward = this.claimReward(instance.instanceId);
-      if (reward) rewards.push(reward);
-    }
-
-    return rewards;
+    return claimAllRewardsLogic(this.activeQuests, (id) => this.claimReward(id));
   }
 
   // ─── 日常任务（#17）──────────────────────────
@@ -332,84 +269,55 @@ export class QuestSystem implements ISubsystem {
    * 如果当天已刷新则跳过。
    */
   refreshDailyQuests(): QuestInstance[] {
-    const today = new Date().toISOString().slice(0, 10);
-    if (this.dailyRefreshDate === today) {
-      return this.dailyQuestInstanceIds
-        .map((id) => this.activeQuests.get(id))
-        .filter(Boolean) as QuestInstance[];
-    }
-
-    // 清除旧的日常任务
-    for (const id of this.dailyQuestInstanceIds) {
-      const instance = this.activeQuests.get(id);
-      if (instance && instance.status === 'active') {
-        instance.status = 'expired';
-        this.activeQuests.delete(id);
-      }
-    }
-
-    // 随机抽取
-    const config = DEFAULT_DAILY_POOL_CONFIG;
-    const shuffled = [...DAILY_QUEST_TEMPLATES].sort(() => Math.random() - 0.5);
-    const picked = shuffled.slice(0, config.dailyPickCount);
-
-    // 注册并接受
-    const newInstances: QuestInstance[] = [];
-    this.dailyQuestInstanceIds = [];
-
-    for (const def of picked) {
-      this.registerQuest(def);
-      const instance = this.acceptQuest(def.id);
-      if (instance) {
-        this.dailyQuestInstanceIds.push(instance.instanceId);
-        newInstances.push(instance);
-      }
-    }
-
-    this.dailyRefreshDate = today;
+    const result = refreshDailyQuestsLogic({
+      activeQuests: this.activeQuests,
+      dailyQuestInstanceIds: this.dailyQuestInstanceIds,
+      dailyRefreshDate: this.dailyRefreshDate,
+      registerQuest: (def) => this.registerQuest(def),
+      acceptQuest: (id) => this.acceptQuest(id),
+      emit: (event, data) => this.deps?.eventBus.emit(event, data),
+    });
+    this.dailyQuestInstanceIds = result.dailyQuestInstanceIds;
+    this.dailyRefreshDate = result.dailyRefreshDate;
 
     this.deps?.eventBus.emit('quest:dailyRefreshed', {
-      date: today,
-      questIds: newInstances.map((i) => i.questDefId),
+      date: result.dailyRefreshDate,
+      questIds: result.newInstances.map((i) => i.questDefId),
     });
 
-    return newInstances;
+    return result.newInstances;
   }
 
   /** 获取当前日常任务 */
   getDailyQuests(): QuestInstance[] {
-    return this.dailyQuestInstanceIds
-      .map((id) => this.activeQuests.get(id))
-      .filter((q) => q !== undefined) as QuestInstance[];
+    return getDailyQuestsHelper(this.dailyQuestInstanceIds, this.activeQuests);
   }
 
   // ─── 任务追踪（#19）──────────────────────────
 
   /** 获取追踪中的任务 */
   getTrackedQuests(): QuestInstance[] {
-    return this.trackedQuestIds
-      .map((id) => this.activeQuests.get(id))
-      .filter((q) => q !== undefined && q.status === 'active') as QuestInstance[];
+    return getTrackedQuestsHelper(this.trackedQuestIds, this.activeQuests);
   }
 
   /** 添加任务到追踪 */
   trackQuest(instanceId: string): boolean {
-    if (this.trackedQuestIds.includes(instanceId)) return true;
-    if (this.trackedQuestIds.length >= MAX_TRACKED_QUESTS) return false;
-
-    const instance = this.activeQuests.get(instanceId);
-    if (!instance || instance.status !== 'active') return false;
-
-    this.trackedQuestIds.push(instanceId);
-    return true;
+    const result = trackQuestHelper(instanceId, this.trackedQuestIds, this.activeQuests);
+    if (result) {
+      this.trackedQuestIds = result;
+      return true;
+    }
+    return false;
   }
 
   /** 取消追踪 */
   untrackQuest(instanceId: string): boolean {
-    const idx = this.trackedQuestIds.indexOf(instanceId);
-    if (idx === -1) return false;
-    this.trackedQuestIds.splice(idx, 1);
-    return true;
+    const result = untrackQuestHelper(instanceId, this.trackedQuestIds);
+    if (result) {
+      this.trackedQuestIds = result;
+      return true;
+    }
+    return false;
   }
 
   /** 获取追踪上限 */
@@ -426,10 +334,7 @@ export class QuestSystem implements ISubsystem {
 
   /** 按类型获取活跃任务 */
   getActiveQuestsByCategory(category: QuestCategory): QuestInstance[] {
-    return this.getActiveQuests().filter((q) => {
-      const def = this.questDefs.get(q.questDefId);
-      return def?.category === category;
-    });
+    return getActiveQuestsByCategoryHelper(category, this.activeQuests, this.questDefs);
   }
 
   /** 检查任务是否激活 */

@@ -20,6 +20,7 @@ import { AUTO_SAVE_INTERVAL_SECONDS, SAVE_KEY, ENGINE_SAVE_VERSION } from '../sh
 import type { IGameState } from '../core/types/state';
 import type { ISystemDeps } from '../core/types/subsystem';
 import { EventBus } from '../core/events/EventBus';
+import { gameLog } from '../core/logger';
 import { SubsystemRegistry } from '../core/engine/SubsystemRegistry';
 import { SaveManager } from '../core/save/SaveManager';
 import { ConfigRegistry } from '../core/config/ConfigRegistry';
@@ -249,7 +250,7 @@ export class ThreeKingdomsEngine {
     const state: IGameState = toIGameState(data, this.onlineSeconds);
     const ok = this.saveManager.save(state);
     if (ok) { this.resource.touchSaveTime(); this.bus.emit('game:saved', { timestamp: data.saveTime }); }
-    else { console.error('ThreeKingdomsEngine.save 失败'); }
+    else { gameLog.error('ThreeKingdomsEngine.save 失败'); }
   }
 
   load(): OfflineEarnings | null {

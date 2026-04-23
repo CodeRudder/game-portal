@@ -68,14 +68,14 @@ describe('RewardDistributor 预览功能', () => {
     const preview = distributor.previewBaseRewards('chapter1_stage1');
     expect(preview.resources.grain).toBe(80);
     expect(preview.resources.gold).toBe(40);
-    expect(preview.exp).toBe(30);
+    expect(preview.exp).toBe(50);
   });
 
   it('previewFirstClearRewards 返回首通奖励', () => {
     const preview = distributor.previewFirstClearRewards('chapter1_stage1');
     expect(preview.resources.grain).toBe(200);
     expect(preview.resources.gold).toBe(100);
-    expect(preview.exp).toBe(80);
+    expect(preview.exp).toBe(150);
   });
 
   it('preview 不存在的关卡抛出异常', () => {
@@ -94,18 +94,18 @@ describe('RewardDistributor 综合场景', () => {
     // rng=0 触发所有掉落
     const distributor = new RewardDistributor(dataProvider, tracked.deps, fixedRng(0));
 
-    const reward = distributor.calculateRewards('chapter1_stage8', 3, true);
+    const reward = distributor.calculateRewards('chapter1_stage5', 3, true);
 
     // 3星: multiplier = 2.0
-    // baseRewards: { grain: 400, gold: 200, troops: 80, mandate: 15 }
-    // base * 2.0 = { grain: 800, gold: 400, troops: 160, mandate: 30 }
-    // firstClearRewards: { grain: 1000, gold: 500, troops: 200, mandate: 30 }
+    // baseRewards: { grain: 300, gold: 150, troops: 50, mandate: 10 }
+    // base * 2.0 = { grain: 600, gold: 300, troops: 100, mandate: 20 }
+    // firstClearRewards: { grain: 800, gold: 400, troops: 120, mandate: 20 }
     // + drops (rng=0 triggers all)
-    expect(reward.resources.grain).toBeGreaterThanOrEqual(1800); // 800 + 1000 + drops
+    expect(reward.resources.grain).toBeGreaterThanOrEqual(1400); // 600 + 800 + drops
     expect(reward.isFirstClear).toBe(true);
     expect(reward.starMultiplier).toBe(2.0);
-    // exp: baseExp * 2.0 + firstClearExp = 200 * 2 + 500 = 900
-    expect(reward.exp).toBe(900);
+    // exp: baseExp * 2.0 + firstClearExp = 100 * 2 + 300 = 500
+    expect(reward.exp).toBe(500);
   });
 
   it('重复通关（非首通）奖励较少', () => {
@@ -300,11 +300,11 @@ describe('RewardDistributor 预览详细', () => {
   it('previewFirstClearRewards 返回原始首通配置', () => {
     const preview = distributor.previewFirstClearRewards('chapter1_stage1');
     expect(preview.resources.grain).toBe(200);
-    expect(preview.exp).toBe(80);
+    expect(preview.exp).toBe(150);
   });
 
   it('BOSS关预览包含troops和mandate', () => {
-    const preview = distributor.previewBaseRewards('chapter1_stage8');
+    const preview = distributor.previewBaseRewards('chapter1_stage5');
     expect(preview.resources.troops).toBeDefined();
     expect(preview.resources.mandate).toBeDefined();
   });
@@ -332,20 +332,20 @@ describe('RewardDistributor 关卡类型对比', () => {
 
   it('BOSS关基础奖励高于普通关', () => {
     const normal = distributor.calculateRewards('chapter1_stage1', 1, false);
-    const boss = distributor.calculateRewards('chapter1_stage8', 1, false);
+    const boss = distributor.calculateRewards('chapter1_stage5', 1, false);
     expect(boss.resources.grain!).toBeGreaterThan(normal.resources.grain!);
   });
 
   it('精英关经验高于普通关', () => {
     const normal = distributor.calculateRewards('chapter1_stage1', 1, false);
-    const elite = distributor.calculateRewards('chapter1_stage7', 1, false);
+    const elite = distributor.calculateRewards('chapter1_stage4', 1, false);
     expect(elite.exp).toBeGreaterThan(normal.exp);
   });
 
   it('BOSS关3星首通获得最多资源', () => {
     const tracked = createTrackedDeps();
     const dist = new RewardDistributor(dataProvider, tracked.deps, fixedRng(0));
-    const reward = dist.calculateRewards('chapter1_stage8', 3, true);
+    const reward = dist.calculateRewards('chapter1_stage5', 3, true);
     const normalReward = distributor.calculateRewards('chapter1_stage1', 1, false);
     expect(reward.resources.grain!).toBeGreaterThan(normalReward.resources.grain! * 10);
   });

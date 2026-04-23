@@ -14,6 +14,7 @@ import type {
   SkillData,
 } from './hero.types';
 import { HERO_SAVE_VERSION } from './hero-config';
+import { gameLog } from '../../core/logger';
 
 // ─────────────────────────────────────────────
 // 深拷贝辅助
@@ -73,7 +74,7 @@ export function serializeHeroState(state: HeroState): HeroSaveData {
  */
 export function deserializeHeroState(data: HeroSaveData): HeroState {
   if (data.version !== HERO_SAVE_VERSION) {
-    console.warn(
+    gameLog.warn(
       `HeroSystem: 存档版本不匹配 (期望 ${HERO_SAVE_VERSION}，实际 ${data.version})`,
     );
   }

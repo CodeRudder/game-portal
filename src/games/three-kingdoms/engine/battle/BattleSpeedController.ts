@@ -146,10 +146,17 @@ export class BattleSpeedController implements ISubsystem {
    * 切换到下一个速度档位
    *
    * 循环切换：1x → 2x → 4x → 1x
+   * 注意：SKIP 不参与循环，需通过 setSpeed(BattleSpeed.SKIP) 显式设置
    *
    * @returns 切换后的速度档位
    */
   cycleSpeed(): BattleSpeed {
+    // SKIP 不参与循环，如果当前是 SKIP，切回 X1
+    if (this.speedState.speed === BattleSpeed.SKIP) {
+      this.setSpeed(BattleSpeed.X1);
+      return BattleSpeed.X1;
+    }
+
     const speeds = BATTLE_CONFIG.AVAILABLE_SPEEDS as readonly number[];
     const currentIndex = speeds.indexOf(this.speedState.speed);
     const nextIndex = (currentIndex + 1) % speeds.length;
@@ -163,10 +170,14 @@ export class BattleSpeedController implements ISubsystem {
    * 获取调整后的回合间隔（ms）
    *
    * 实际间隔 = 基础间隔 / 速度倍率
+   * SKIP 模式下间隔为 0（无动画）
    *
    * @returns 调整后的回合间隔
    */
   getAdjustedTurnInterval(): number {
+    if (this.speedState.speed === BattleSpeed.SKIP) {
+      return 0;
+    }
     return Math.floor(
       BATTLE_CONFIG.BASE_TURN_INTERVAL_MS / this.speedState.speed,
     );
@@ -261,6 +272,8 @@ export class BattleSpeedController implements ISubsystem {
    * 验证速度档位是否合法
    */
   static isValidSpeed(speed: number): boolean {
+    // SKIP 是合法的特殊速度档位
+    if (speed === BattleSpeed.SKIP) return true;
     return (BATTLE_CONFIG.AVAILABLE_SPEEDS as readonly number[]).includes(speed);
   }
 
@@ -279,6 +292,16 @@ export class BattleSpeedController implements ISubsystem {
    * 创建速度状态
    */
   private createSpeedState(speed: BattleSpeed): BattleSpeedState {
+    // SKIP 模式：回合间隔为0，动画速度无限大，强制简化特效
+    if (speed === BattleSpeed.SKIP) {
+      return {
+        speed: BattleSpeed.SKIP,
+        turnIntervalScale: 0,
+        animationSpeedScale: Infinity,
+        simplifiedEffects: true,
+      };
+    }
+
     return {
       speed,
       turnIntervalScale: 1 / speed,

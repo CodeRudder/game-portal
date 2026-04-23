@@ -94,19 +94,18 @@ describe('RewardDistributor 基础奖励', () => {
   it('基础经验随星级加成', () => {
     const r1 = distributor.calculateRewards('chapter1_stage1', 1, false);
     const r3 = distributor.calculateRewards('chapter1_stage1', 3, false);
-    // baseExp = 30
-    expect(r1.exp).toBe(30);
-    expect(r3.exp).toBe(45); // 30 * 1.5
+    // baseExp = 50
+    expect(r1.exp).toBe(50);
+    expect(r3.exp).toBe(75); // 50 * 1.5
   });
 
   it('BOSS关3星倍率为2.0', () => {
-    const reward = distributor.calculateRewards('chapter1_stage8', 3, false);
+    const reward = distributor.calculateRewards('chapter1_stage5', 3, false);
     expect(reward.starMultiplier).toBe(2.0);
-    // baseRewards: { grain: 400, gold: 200, troops: 80, mandate: 15 }
-    // BOSS关有概率1.0的掉落（即使rng=1.0也会触发，因为 1.0 > 1.0 为 false）
-    // 所以 grain = 800 + drop(200~350) = 1000~1150
-    expect(reward.resources.grain).toBeGreaterThanOrEqual(800);
-    expect(reward.resources.gold).toBeGreaterThanOrEqual(400);
+    // baseRewards: { grain: 300, gold: 150, troops: 50, mandate: 10 }
+    // BOSS关有概率1.0的掉落
+    expect(reward.resources.grain).toBeGreaterThanOrEqual(450);
+    expect(reward.resources.gold).toBeGreaterThanOrEqual(230);
   });
 
   it('不存在的关卡抛出异常', () => {
@@ -149,9 +148,9 @@ describe('RewardDistributor 首通奖励', () => {
     const normal = distributor.calculateRewards('chapter1_stage1', 1, false);
     const first = distributor.calculateRewards('chapter1_stage1', 1, true);
 
-    // baseExp = 30, firstClearExp = 80
-    expect(normal.exp).toBe(30);
-    expect(first.exp).toBe(110); // 30 + 80
+    // baseExp = 50, firstClearExp = 150
+    expect(normal.exp).toBe(50);
+    expect(first.exp).toBe(200); // 50 + 150
   });
 
   it('非首通不包含首通奖励', () => {
@@ -173,9 +172,9 @@ describe('RewardDistributor 掉落表', () => {
       createTrackedDeps().deps,
       fixedRng(0.5),
     );
-    const reward = distributor.calculateRewards('chapter1_stage8', 1, false);
-    // chapter1_stage8 dropTable前两项概率1.0
-    expect(reward.resources.grain).toBeGreaterThan(400); // base 400 + drop
+    const reward = distributor.calculateRewards('chapter1_stage5', 1, false);
+    // chapter1_stage5 dropTable前两项概率1.0
+    expect(reward.resources.grain).toBeGreaterThan(450); // base 300 + drop
     expect(reward.resources.gold).toBeGreaterThan(200); // base 200 + drop
   });
 
@@ -198,8 +197,8 @@ describe('RewardDistributor 掉落表', () => {
       fixedRng(0),
     );
     const reward = distributor.calculateRewards('chapter1_stage3', 1, false);
-    // chapter1_stage3 有 guanyu 碎片掉落 probability: 0.1
-    expect(reward.fragments['guanyu']).toBeGreaterThanOrEqual(1);
+    // chapter1_stage3 有 chengyuanzhi 碎片掉落 probability: 0.1
+    expect(reward.fragments['chengyuanzhi']).toBeGreaterThanOrEqual(1);
   });
 
   it('掉落数量在范围内', () => {
@@ -252,7 +251,7 @@ describe('RewardDistributor 分发', () => {
     const reward = distributor.calculateRewards('chapter1_stage3', 1, false);
     distributor.distribute(reward);
 
-    // guanyu 碎片
+    // chengyuanzhi 碎片
     if (Object.keys(reward.fragments).length > 0) {
       expect(Object.keys(tracked.fragments).length).toBeGreaterThan(0);
     }

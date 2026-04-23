@@ -35,6 +35,7 @@ import type {
 import {
   MAP_SIZE,
   VIEWPORT_CONFIG,
+  REGION_IDS,
   REGION_DEFS,
   TERRAIN_DEFS,
   DEFAULT_LANDMARKS,
@@ -146,9 +147,9 @@ export class WorldMapSystem implements ISubsystem {
 
   // ─── 三大区域划分（#10）──────────────────────
 
-  /** 获取所有区域定义 */
+  /** 获取所有区域定义（仅魏蜀吴三大区域，不含 neutral） */
   getRegions(): RegionDef[] {
-    return Object.values(REGION_DEFS).map(r => ({ ...r }));
+    return REGION_IDS.map(id => ({ ...REGION_DEFS[id] }));
   }
 
   /** 获取指定坐标的区域 */

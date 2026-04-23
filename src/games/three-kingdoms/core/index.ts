@@ -84,3 +84,6 @@ export {
   mergeSubsystemStates,
   updateMetadata,
 } from './state';
+
+// ─── 日志系统 ─────────────────────────────────────────────────────
+export { GameLogger, gameLog, LogLevel } from './logger';

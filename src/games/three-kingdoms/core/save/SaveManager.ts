@@ -17,6 +17,7 @@ import type { IGameState } from '../types/state';
 import type { ISaveManager } from '../types/save';
 import type { IConfigRegistry } from '../types/config';
 import { StateSerializer } from './StateSerializer';
+import { gameLog } from '../logger';
 
 // ─────────────────────────────────────────────
 // 默认配置
@@ -128,7 +129,7 @@ export class SaveManager implements ISaveManager {
 
       return true;
     } catch (err) {
-      console.error('[SaveManager] Save failed:', err);
+      gameLog.error('[SaveManager] Save failed:', err);
       return false;
     }
   }
@@ -164,7 +165,7 @@ export class SaveManager implements ISaveManager {
       // 由 ThreeKingdomsEngine.tryLoadLegacyFormat() 处理
       return null;
     } catch (err) {
-      console.error('[SaveManager] Load failed:', err);
+      gameLog.error('[SaveManager] Load failed:', err);
       return null;
     }
   }
@@ -220,7 +221,7 @@ export class SaveManager implements ISaveManager {
       this.saveCount = 0;
       this.lastSaveTime = null;
     } catch (err) {
-      console.error('[SaveManager] Delete failed:', err);
+      gameLog.error('[SaveManager] Delete failed:', err);
     }
   }
 

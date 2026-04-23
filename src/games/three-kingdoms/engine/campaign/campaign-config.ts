@@ -4,10 +4,13 @@
  * 将各章节关卡数据组装为完整章节配置，并提供查找函数。
  * 实现 ICampaignDataProvider 接口，供 CampaignProgressSystem 使用。
  *
- * 章节概览：
- *   第1章：黄巾之乱（6普通 + 1精英 + 1BOSS）
- *   第2章：讨伐董卓（5普通 + 2精英 + 1BOSS）
- *   第3章：群雄割据（5普通 + 2精英 + 1BOSS）
+ * 章节概览（对齐 Play v3.0 §1.1）：
+ *   第1章：黄巾之乱（推荐战力 100~500）
+ *   第2章：群雄割据（推荐战力 500~1,200）
+ *   第3章：官渡之战（推荐战力 1,200~2,500）
+ *   第4章：赤壁之战（推荐战力 2,500~5,000）
+ *   第5章：三国鼎立（推荐战力 5,000~10,000）
+ *   第6章：一统天下（推荐战力 10,000~20,000）
  *
  * @module engine/campaign/campaign-config
  */
@@ -39,10 +42,10 @@ export const CHAPTER_1: Chapter = {
   description: '东汉末年，张角率黄巾军起义，天下大乱。刘备、关羽、张飞桃园结义，开始平定黄巾之乱的征程。',
 };
 
-/** 第2章：讨伐董卓 */
+/** 第2章：群雄割据 */
 export const CHAPTER_2: Chapter = {
   id: 'chapter2',
-  name: '讨伐董卓',
+  name: '群雄割据',
   subtitle: '十八路诸侯讨董卓',
   order: 2,
   stages: CHAPTER2_STAGES,
@@ -50,10 +53,10 @@ export const CHAPTER_2: Chapter = {
   description: '董卓入京把持朝政，十八路诸侯联合讨伐。虎牢关前，吕布英勇无敌，关羽温酒斩华雄。',
 };
 
-/** 第3章：群雄割据 */
+/** 第3章：官渡之战 */
 export const CHAPTER_3: Chapter = {
   id: 'chapter3',
-  name: '群雄割据',
+  name: '官渡之战',
   subtitle: '官渡之战定北方',
   order: 3,
   stages: CHAPTER3_STAGES,
@@ -72,26 +75,26 @@ export const CHAPTER_4: Chapter = {
   description: '曹操率八十万大军南下，孙刘联军在赤壁以火攻大破曹军，奠定三分天下之局。',
 };
 
-/** 第5章：取西川 */
+/** 第5章：三国鼎立 */
 export const CHAPTER_5: Chapter = {
   id: 'chapter5',
-  name: '取西川',
-  subtitle: '隆中对第二步',
+  name: '三国鼎立',
+  subtitle: '三分天下',
   order: 5,
   stages: CHAPTER5_STAGES,
   prerequisiteChapterId: 'chapter4',
-  description: '刘备入川取益州，历经涪城、雒城、成都诸战，终得益州基业。',
+  description: '魏蜀吴三国鼎立，群雄逐鹿，各路英雄尽显风采。',
 };
 
-/** 第6章：汉中争夺 */
+/** 第6章：一统天下 */
 export const CHAPTER_6: Chapter = {
   id: 'chapter6',
-  name: '汉中争夺',
-  subtitle: '进位汉中王',
+  name: '一统天下',
+  subtitle: '天下归一',
   order: 6,
   stages: CHAPTER6_STAGES,
   prerequisiteChapterId: 'chapter5',
-  description: '刘备与曹操在汉中展开决战，黄忠定军山斩夏侯渊，赵云汉水退敌，终取汉中。',
+  description: '司马氏篡魏建晋，一统天下，三国终局。',
 };
 
 /** 所有章节配置（按 order 排序） */

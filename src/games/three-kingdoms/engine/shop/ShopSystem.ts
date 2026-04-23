@@ -32,6 +32,7 @@ import {
 } from '../../core/shop';
 import { GOODS_DEF_MAP, SHOP_GOODS_IDS } from '../../core/shop';
 import type { CurrencySystem } from '../currency/CurrencySystem';
+import { gameLog } from '../../core/logger';
 
 // ─── 辅助函数 ────────────────────────────────
 
@@ -337,7 +338,7 @@ export class ShopSystem implements ISubsystem {
   }
 
   deserialize(data: ShopSaveData): void {
-    if (data.version !== SHOP_SAVE_VERSION) console.warn(`ShopSystem: 存档版本不匹配 (期望 ${SHOP_SAVE_VERSION}，实际 ${data.version})`);
+    if (data.version !== SHOP_SAVE_VERSION) gameLog.warn(`ShopSystem: 存档版本不匹配 (期望 ${SHOP_SAVE_VERSION}，实际 ${data.version})`);
     for (const type of SHOP_TYPES) { if (data.shops[type]) this.shops[type] = data.shops[type]; }
     this.favorites.clear();
     if (data.favorites) for (const id of data.favorites) this.favorites.add(id);

@@ -27,6 +27,9 @@ import type {
   DialogHistoryEntry,
 } from '../../core/npc';
 import { DIALOG_TREES } from '../../core/npc';
+import type { NPCDialogDeps, DialogSelectResult } from './NPCDialogHelpers';
+
+export type { NPCDialogDeps, DialogSelectResult } from './NPCDialogHelpers';
 
 // ─────────────────────────────────────────────
 // 对话系统
@@ -34,18 +37,6 @@ import { DIALOG_TREES } from '../../core/npc';
 
 /** 会话ID类型 */
 type SessionId = string;
-
-/** 对话系统依赖（外部注入） */
-export interface NPCDialogDeps {
-  /** 获取 NPC 好感度 */
-  getAffinity: (npcId: NPCId) => number;
-  /** 获取 NPC 职业 */
-  getProfession: (npcId: NPCId) => NPCProfession | null;
-  /** 修改好感度（返回修改后的值） */
-  changeAffinity: (npcId: NPCId, delta: number) => number | null;
-  /** 获取当前回合数 */
-  getCurrentTurn: () => number;
-}
 
 /**
  * NPC 对话系统
@@ -404,20 +395,4 @@ export class NPCDialogSystem implements ISubsystem {
       session.accumulatedEffects.push(effect);
     }
   }
-}
-
-// ─────────────────────────────────────────────
-// 类型定义
-// ─────────────────────────────────────────────
-
-/** 选项选择结果 */
-export interface DialogSelectResult {
-  /** 是否成功 */
-  success: boolean;
-  /** 失败原因 */
-  reason?: 'session_not_found' | 'session_ended' | 'node_not_found' | 'option_not_found' | 'option_not_available';
-  /** 对话是否已结束 */
-  ended?: boolean;
-  /** 触发的效果列表 */
-  effects: DialogEffect[];
 }

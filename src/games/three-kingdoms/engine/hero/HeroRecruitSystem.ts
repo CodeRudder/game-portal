@@ -55,6 +55,7 @@ import {
   DAILY_FREE_CONFIG,
 } from './hero-recruit-config';
 import type { RecruitType, QualityRate, PityConfig, UpHeroConfig } from './hero-recruit-config';
+import { gameLog } from '../../core/logger';
 
 export class HeroRecruitSystem implements ISubsystem {
   readonly name = 'heroRecruit' as const;
@@ -289,7 +290,7 @@ export class HeroRecruitSystem implements ISubsystem {
   /** 反序列化恢复保底计数器、免费招募状态、UP武将状态和招募历史 */
   deserialize(data: RecruitSaveData): void {
     if (data.version !== RECRUIT_SAVE_VERSION) {
-      console.warn(
+      gameLog.warn(
         `HeroRecruitSystem: 存档版本不匹配 (期望 ${RECRUIT_SAVE_VERSION}，实际 ${data.version})`,
       );
     }

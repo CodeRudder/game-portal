@@ -27,41 +27,9 @@ import {
   ISimulationDataProvider,
   DefaultSimulationDataProvider,
 } from './SimulationDataProvider';
-
-// 重新导出以保持向后兼容
-export type { ISimulationDataProvider } from './SimulationDataProvider';
-export { DefaultSimulationDataProvider } from './SimulationDataProvider';
+import { makeStep } from './IntegrationValidatorHelper';
 
 // ─────────────────────────────────────────────
-// 工具函数
-// ─────────────────────────────────────────────
-
-/** 创建检查步骤 */
-function makeStep(
-  stepId: string,
-  description: string,
-  checkFn: () => boolean,
-  errorPrefix: string,
-): IntegrationStep {
-  const start = performance.now();
-  let passed = false;
-  let error: string | undefined;
-  try {
-    passed = checkFn();
-    if (!passed) {
-      error = `${errorPrefix}: Check returned false`;
-    }
-  } catch (e) {
-    error = `${errorPrefix}: ${e instanceof Error ? e.message : String(e)}`;
-  }
-  return {
-    stepId,
-    description,
-    passed,
-    error,
-    durationMs: performance.now() - start,
-  };
-}
 
 // ─────────────────────────────────────────────
 // 全系统联调验证器

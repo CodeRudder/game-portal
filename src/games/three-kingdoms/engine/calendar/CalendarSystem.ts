@@ -36,6 +36,7 @@ import {
   CALENDAR_SAVE_VERSION,
 } from './calendar-config';
 import { SocialEvents, MapEvents } from '../../core/events/EventTypes';
+import { gameLog } from '../../core/logger';
 
 // ─────────────────────────────────────────────
 // 辅助函数
@@ -321,7 +322,7 @@ export class CalendarSystem implements ISubsystem {
   /** 从存档数据恢复 */
   deserialize(data: CalendarSaveData): void {
     if (data.version !== CALENDAR_SAVE_VERSION) {
-      console.warn(
+      gameLog.warn(
         `CalendarSystem: 存档版本不匹配 (期望 ${CALENDAR_SAVE_VERSION}，实际 ${data.version})`,
       );
     }

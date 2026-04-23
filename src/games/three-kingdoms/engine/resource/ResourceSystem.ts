@@ -40,6 +40,7 @@ import {
   formatOfflineTime,
   getOfflineEfficiencyPercent,
 } from './OfflineEarningsCalculator';
+import { gameLog } from '../../core/logger';
 
 // ─────────────────────────────────────────────
 // 辅助函数（仅本模块使用）
@@ -380,7 +381,7 @@ export class ResourceSystem implements ISubsystem {
   deserialize(data: ResourceSaveData): void {
     // 版本检查
     if (data.version !== SAVE_VERSION) {
-      console.warn(
+      gameLog.warn(
         `ResourceSystem: 存档版本不匹配 (期望 ${SAVE_VERSION}，实际 ${data.version})，尝试兼容加载`
       );
     }

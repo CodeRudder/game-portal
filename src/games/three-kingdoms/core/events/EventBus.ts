@@ -198,7 +198,10 @@ export class EventBus implements IEventBus {
       try {
         handler(payload);
       } catch (err) {
-        console.error('[EventBus] handler error:', err);
+        // 错误隔离：单个监听器异常不影响后续监听器
+        if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+          console.error('[EventBus] handler error:', err);
+        }
       }
     }
   }

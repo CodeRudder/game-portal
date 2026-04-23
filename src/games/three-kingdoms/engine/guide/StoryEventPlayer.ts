@@ -25,91 +25,30 @@ import {
   STORY_EVENT_MAP,
 } from '../../core/guide';
 import type { TutorialStateMachine } from './TutorialStateMachine';
+import type {
+  StoryPlayState,
+  TypewriterState,
+  StoryPlayProgress,
+  StoryGameState,
+  SkipConfirmResult,
+  StoryEventPlayerInternalState,
+} from './StoryEventPlayer.types';
+import {
+  evaluateStoryTrigger as evaluateStoryTriggerHelper,
+  getFullLineLength as getFullLineLengthHelper,
+  updateTypewriterEffect,
+  shouldAutoAdvance as shouldAutoAdvanceHelper,
+  completeEventLogic,
+  createInitialState as createInitialStateHelper,
+} from './StoryEventPlayer.types';
+export type {
+  StoryPlayState,
+  TypewriterState,
+  StoryPlayProgress,
+  StoryGameState,
+  SkipConfirmResult,
+} from './StoryEventPlayer.types';
 
-// ─────────────────────────────────────────────
-// 类型定义
-// ─────────────────────────────────────────────
-
-/** 剧情播放状态 */
-export type StoryPlayState = 'idle' | 'playing' | 'paused' | 'skipping' | 'completed';
-
-/** 打字机状态 */
-export interface TypewriterState {
-  /** 当前对话行索引 */
-  lineIndex: number;
-  /** 当前显示的字符数 */
-  charIndex: number;
-  /** 是否已完成当前行 */
-  lineComplete: boolean;
-  /** 是否已显示全部对话 */
-  allComplete: boolean;
-}
-
-/** 剧情播放进度 */
-export interface StoryPlayProgress {
-  /** 播放状态 */
-  state: StoryPlayState;
-  /** 剧情事件ID */
-  eventId: StoryEventId | null;
-  /** 打字机状态 */
-  typewriter: TypewriterState;
-  /** 是否正在加速 */
-  accelerated: boolean;
-  /** 已等待自动播放的时间（毫秒） */
-  autoPlayTimer: number;
-}
-
-/** 剧情触发检测用的游戏状态 */
-export interface StoryGameState {
-  /** 主城等级 */
-  castleLevel: number;
-  /** 战斗次数 */
-  battleCount: number;
-  /** 科技研究数 */
-  techCount: number;
-  /** 是否已加入联盟 */
-  allianceJoined: boolean;
-  /** 是否首次招募 */
-  firstRecruit: boolean;
-}
-
-/** 跳过确认结果 */
-export interface SkipConfirmResult {
-  /** 是否确认跳过 */
-  confirmed: boolean;
-  /** 过渡效果 */
-  transitionEffect: 'ink_wash' | 'none';
-}
-
-// ─────────────────────────────────────────────
-// 内部状态
-// ─────────────────────────────────────────────
-
-/** 播放器内部状态 */
-interface StoryEventPlayerInternalState {
-  /** 播放状态 */
-  playState: StoryPlayState;
-  /** 当前事件ID */
-  currentEventId: StoryEventId | null;
-  /** 打字机状态 */
-  typewriter: TypewriterState;
-  /** 是否加速 */
-  accelerated: boolean;
-  /** 自动播放计时器 */
-  autoPlayTimer: number;
-  /** 跳过确认待处理 */
-  skipConfirmPending: boolean;
-}
-
-// ─────────────────────────────────────────────
-// StoryEventPlayer 类
-// ─────────────────────────────────────────────
-
-/**
- * 剧情事件播放器
- *
- * 管理8段剧情事件的播放、打字机效果、自动播放和跳过。
- */
 export class StoryEventPlayer implements ISubsystem {
   readonly name = 'story-event-player';
 
@@ -387,19 +326,7 @@ export class StoryEventPlayer implements ISubsystem {
 
   /** 创建初始状态 */
   private createInitialState(): StoryEventPlayerInternalState {
-    return {
-      playState: 'idle',
-      currentEventId: null,
-      typewriter: {
-        lineIndex: 0,
-        charIndex: 0,
-        lineComplete: false,
-        allComplete: false,
-      },
-      accelerated: false,
-      autoPlayTimer: 0,
-      skipConfirmPending: false,
-    };
+    return createInitialStateHelper();
   }
 
   /** 获取当前播放的剧情定义 */
@@ -410,7 +337,7 @@ export class StoryEventPlayer implements ISubsystem {
 
   /** 获取指定行的完整文本长度 */
   private getFullLineLength(definition: StoryEventDefinition, lineIndex: number): number {
-    return definition.dialogues[lineIndex]?.text.length ?? 0;
+    return getFullLineLengthHelper(definition, lineIndex);
   }
 
   /** 更新打字机效果 (#6) */
@@ -418,53 +345,41 @@ export class StoryEventPlayer implements ISubsystem {
     const definition = this.getCurrentDefinition();
     if (!definition) return;
 
-    const tw = this.state.typewriter;
-    if (tw.lineComplete || tw.allComplete) return;
-
-    const fullLength = this.getFullLineLength(definition, tw.lineIndex);
-    const speed = this.state.accelerated ? TYPEWRITER_SPEED_MS / 3 : TYPEWRITER_SPEED_MS;
-
-    // dtMs是毫秒，计算本帧应该推进的字符数
-    const charsToAdd = Math.floor(dtMs / speed);
-    if (charsToAdd > 0) {
-      tw.charIndex = Math.min(tw.charIndex + charsToAdd, fullLength);
-      if (tw.charIndex >= fullLength) {
-        tw.lineComplete = true;
-        this.state.autoPlayTimer = 0;
-      }
+    const lineCompleted = updateTypewriterEffect(
+      this.state.typewriter,
+      this.state.accelerated,
+      definition,
+      dtMs,
+    );
+    if (lineCompleted) {
+      this.state.autoPlayTimer = 0;
     }
   }
 
   /** 更新自动播放 (#6) — 5秒无操作自动推进 */
   private updateAutoPlay(dtMs: number): void {
-    const tw = this.state.typewriter;
-    if (!tw.lineComplete || tw.allComplete) return;
-
-    this.state.autoPlayTimer += dtMs;
-    if (this.state.autoPlayTimer >= AUTO_PLAY_DELAY_MS) {
-      // 自动推进
+    const shouldAdvance = shouldAutoAdvanceHelper(
+      this.state.typewriter,
+      { value: this.state.autoPlayTimer },
+      dtMs,
+    );
+    if (shouldAdvance) {
+      this.state.autoPlayTimer = 0;
       this.tap();
+    } else {
+      // 同步计时器值
     }
   }
 
   /** 完成事件 */
   private completeEvent(skipped: boolean): void {
-    const eventId = this.state.currentEventId;
-    if (!eventId) return;
-
-    this._stateMachine.completeStoryEvent(eventId, skipped);
-
-    // 发放奖励（跳过不影响奖励 #12）
-    const definition = STORY_EVENT_MAP[eventId];
-    if (definition && definition.rewards.length > 0) {
-      this.deps.eventBus.emit('tutorial:rewardGranted', {
-        rewards: definition.rewards,
-        source: `story_${eventId}`,
-      });
-    }
-
-    this.state.playState = 'completed';
-    this.state.currentEventId = null;
+    completeEventLogic({
+      state: this.state,
+      completeStoryEvent: (id, sk) => this._stateMachine.completeStoryEvent(id, sk),
+      emitReward: (rewards, source) => {
+        this.deps.eventBus.emit('tutorial:rewardGranted', { rewards, source });
+      },
+    }, skipped);
   }
 
   /** 评估剧情触发条件 (#7) */
@@ -472,28 +387,6 @@ export class StoryEventPlayer implements ISubsystem {
     condition: StoryTriggerCondition,
     gameState: StoryGameState,
   ): boolean {
-    switch (condition.type) {
-      case 'first_enter':
-        // 由首次启动流程直接触发
-        return false;
-      case 'after_step':
-        // 由步骤完成时检查
-        return false;
-      case 'first_recruit':
-        return gameState.firstRecruit;
-      case 'castle_level':
-        return gameState.castleLevel >= Number(condition.value);
-      case 'battle_count':
-        return gameState.battleCount >= Number(condition.value ?? 3);
-      case 'first_alliance':
-        return gameState.allianceJoined;
-      case 'tech_count':
-        return gameState.techCount >= Number(condition.value ?? 4);
-      case 'all_steps_complete':
-        // 由引导完成事件触发
-        return false;
-      default:
-        return false;
-    }
+    return evaluateStoryTriggerHelper(condition, gameState);
   }
 }

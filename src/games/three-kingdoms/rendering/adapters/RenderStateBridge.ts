@@ -13,6 +13,7 @@
 import { Container } from 'pixi.js';
 import type { IRenderState, IRenderStateAdapter } from '../../core/state/RenderStateAdapter';
 import type { Unsubscribe } from '../../core/types/events';
+import { gameLog } from '../../core/logger';
 
 // ─────────────────────────────────────────────
 // 渲染器基接口
@@ -128,7 +129,7 @@ export class RenderStateBridge {
       try {
         entry.onStateChange(state);
       } catch (e) {
-        console.warn(`[RenderStateBridge] Renderer "${entry.name}" state callback error:`, e);
+        gameLog.warn(`[RenderStateBridge] Renderer "${entry.name}" state callback error:`, e);
       }
     }
   }
