@@ -410,6 +410,3 @@ describe('SettingsManager', () => {
     });
   });
 });
-});
-});
-});

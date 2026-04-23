@@ -334,6 +334,14 @@
     padding: 8px 12px !important;
   }
 
+  /* Tab按钮移动端44px最小高度（可访问性标准） */
+  [class*="tab"] button,
+  [class*="Tab"] button,
+  button[class*="tab"],
+  button[class*="Tab"] {
+    min-height: 44px !important;
+  }
+
   /* 列表项间距缩小 */
   [class*="list"] > *, [class*="List"] > * {
     padding: 6px 8px !important;

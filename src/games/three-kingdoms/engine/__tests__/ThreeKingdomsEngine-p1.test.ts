@@ -299,10 +299,9 @@ describe('ThreeKingdomsEngine', () => {
       engine.save();
 
       const engine2 = new ThreeKingdomsEngine();
-      engine2.load();
-});
-});
-});
-});
-});
+      const result = engine2.load();
+      expect(result).not.toBeNull();
+      expect(engine2.isInitialized()).toBe(true);
+    });
+  });
 });

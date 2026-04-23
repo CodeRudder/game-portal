@@ -319,13 +319,27 @@ export class GameEventSimulator {
     });
     // 交错升级：先升主城到4，再升一个建筑到4，然后主城到5，最后其余建筑到5
     // 城堡 Lv5 需要：至少一座其他建筑达到 Lv4
+    // 注意：completePendingUpgrades 会调用 updateCaps 重置资源上限
+    // 所以每次升级后需要重新移除上限并补充资源
     this.upgradeBuildingTo('castle', 4);
+    this.engine.resource.setCap('grain', null);
+    this.engine.resource.setCap('troops', null);
+    this.addResources({ grain: 10000000, gold: 10000000, troops: 5000000 });
     this.upgradeBuildingTo('farmland', 4);
+    this.engine.resource.setCap('grain', null);
+    this.engine.resource.setCap('troops', null);
+    this.addResources({ grain: 10000000, gold: 10000000, troops: 5000000 });
     this.upgradeBuildingTo('castle', 5);
+    this.engine.resource.setCap('grain', null);
+    this.engine.resource.setCap('troops', null);
+    this.addResources({ grain: 10000000, gold: 10000000, troops: 5000000 });
     // 其余建筑升级到5
     const midBuildings: BuildingType[] = ['market', 'barracks', 'smithy', 'academy'];
     for (const bt of midBuildings) {
       this.upgradeBuildingTo(bt, 5);
+      this.engine.resource.setCap('grain', null);
+      this.engine.resource.setCap('troops', null);
+      this.addResources({ grain: 5000000, gold: 5000000, troops: 2000000 });
     }
     this.upgradeBuildingTo('farmland', 5);
     // 添加核心武将

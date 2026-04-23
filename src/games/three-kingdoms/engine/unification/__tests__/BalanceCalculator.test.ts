@@ -378,7 +378,10 @@ describe('BalanceCalculator — 纯计算函数', () => {
     it('increment 应体现递减', () => {
       const points = calculateRebirthPoints(DEFAULT_REBIRTH_CONFIG);
       for (let i = 1; i < points.length; i++) {
-        expect(points[i].increment).toBeLessThanOrEqual(points[i - 1].increment);
+        // 使用 toBeCloseTo 容差比较，避免浮点精度问题
+        // increment 应递减或相等（容差 1e-10）
+        const diff = points[i].increment - points[i - 1].increment;
+        expect(diff).toBeLessThanOrEqual(1e-10);
       }
     });
 
