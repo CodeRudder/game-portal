@@ -440,4 +440,3 @@ describe('BattleTurnExecutor 构造函数', () => {
   });
 });
 
-});
