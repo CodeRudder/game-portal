@@ -308,4 +308,6 @@ describe('TouchInputSystem', () => {
         expect(gestures[0].type).toBe(GestureType.Tap);
         expect(gestures[1].type).toBe(GestureType.DoubleTap);
       });
-
+});
+});
+});

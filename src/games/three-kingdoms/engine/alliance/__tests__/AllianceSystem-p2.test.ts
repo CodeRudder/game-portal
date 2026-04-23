@@ -283,3 +283,4 @@ describe('AllianceSystem — 工具方法', () => {
     expect(results[0].name).toBe('蜀汉');
   });
 });
+});

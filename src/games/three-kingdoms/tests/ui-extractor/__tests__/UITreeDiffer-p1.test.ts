@@ -252,3 +252,6 @@ describe('UITreeDiffer', () => {
     });
 
     it('should detect alpha change', () => {
+});
+});
+});

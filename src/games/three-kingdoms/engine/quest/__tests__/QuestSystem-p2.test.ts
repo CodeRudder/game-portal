@@ -4,8 +4,6 @@ import type { QuestDef, QuestReward, QuestInstance } from '../../../core/quest';
 import {
 
       expect(allRewards[0].resources!.gold).toBe(200);
-    });
-  });
 
   // ═══════════════════════════════════════════
   // 6. 日常任务每日刷新 20选6（#17）

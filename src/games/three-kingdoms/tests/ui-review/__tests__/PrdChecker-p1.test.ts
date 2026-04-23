@@ -249,3 +249,6 @@ describe('PrdChecker', () => {
       expect(result.coveragePercent).toBe(100);
       expect(result.satisfiedRequirements).toBe(1);
       expect(result.unsatisfied).toHaveLength(0);
+});
+});
+});

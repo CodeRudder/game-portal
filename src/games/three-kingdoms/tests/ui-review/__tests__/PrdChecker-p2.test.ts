@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
 
-    });
 
     it('应检测未实现的需求', () => {
       const prd: PrdDocument = {
@@ -28,7 +27,6 @@ import {
       expect(result.unsatisfied).toHaveLength(1);
       expect(result.unsatisfied[0].requirement.id).toBe('QTU-99');
       expect(result.unsatisfied[0].reason).toContain('QTU-99');
-    });
 
     it('应正确计算部分覆盖率', () => {
       const prd: PrdDocument = {

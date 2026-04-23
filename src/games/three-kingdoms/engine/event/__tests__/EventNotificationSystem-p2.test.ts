@@ -23,7 +23,6 @@ import type {
       expect(banners[0].urgency).toBe('critical');
       expect(banners[1].urgency).toBe('high');
       expect(banners[2].urgency).toBe('low');
-    });
 
     it('getUnreadBanners 只返回未读', () => {
       const b1 = sys.createBanner(

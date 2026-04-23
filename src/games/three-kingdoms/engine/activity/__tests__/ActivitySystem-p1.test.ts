@@ -465,3 +465,6 @@ describe('ActivitySystem', () => {
       const resetState = system.resetDailyTasks(s, 'season_1', dailyDefs);
 
       // 每日任务被重置
+});
+});
+});

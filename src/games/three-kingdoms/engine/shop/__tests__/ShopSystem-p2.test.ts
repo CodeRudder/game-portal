@@ -22,8 +22,6 @@ import type { ISystemDeps } from '../../../core/types/subsystem';
       const price2 = shop.calculateFinalPrice(id, 'normal', 'npc_001');
       const val2 = Object.values(price2)[0];
       expect(val2).toBe(Math.ceil(basePrice * 0.5));
-    });
-  });
 
   // ═══════════════════════════════════════════
   // 4. 购买逻辑
@@ -34,7 +32,6 @@ import type { ISystemDeps } from '../../../core/types/subsystem';
       const result = shop.validateBuy(req);
       expect(result.canBuy).toBe(false);
       expect(result.errors).toContain('商品不存在');
-    });
 
     it('validateBuy 商品不在当前商店返回失败', () => {
       // limited_time 商品在 normal 商店中不存在

@@ -272,3 +272,5 @@ describe('ExpeditionSystem — 队伍编成', () => {
       createHero('h1', 'shu', 3000),
       createHero('h2', 'shu', 2500),
       createHero('h3', 'shu', 2000),
+});
+});

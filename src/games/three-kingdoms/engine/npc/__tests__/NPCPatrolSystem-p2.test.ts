@@ -4,7 +4,6 @@ import type { PatrolPath, NPCSpawnTemplate, NPCSpawnConfig } from '../../../core
 import type { NPCData, NPCProfession, RegionId } from '../../../core/npc';
 
       expect(patrolSys.getNPCExactPosition('non-existent')).toBeNull();
-    });
 
     it('getPatrolState 返回副本', () => {
       patrolSys.assignPatrol('npc-1', 'test-path-1');
@@ -12,8 +11,6 @@ import type { NPCData, NPCProfession, RegionId } from '../../../core/npc';
       state1!.direction = -1;
       const state2 = patrolSys.getPatrolState('npc-1');
       expect(state2!.direction).toBe(1);
-    });
-  });
 
   // ═══════════════════════════════════════════
   // 4. #1 巡逻移动与折返

@@ -5,7 +5,6 @@ import {
       sourceUid: 'src',
       targetUid: 'tgt',
       options: { transferEnhanceLevel: true, transferSubStats: false, transferSpecialEffect: false, enhanceEfficiency: 1.0 },
-    });
 
     expect(result.success).toBe(false);
     expect(result.reason).toContain('同部位');

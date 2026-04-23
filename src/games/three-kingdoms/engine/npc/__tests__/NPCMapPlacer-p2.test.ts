@@ -11,7 +11,6 @@ import { GRID_CONFIG } from '../../../core/map';
       expect(result.placed).toContain('npc-1');
       expect(result.placed).toContain('npc-2');
       expect(result.unplaced).toHaveLength(0);
-    });
 
     it('同位置多个 NPC 超过上限时产生溢出', () => {
       const npcs = Array.from({ length: 5 }, (_, i) =>
@@ -22,7 +21,6 @@ import { GRID_CONFIG } from '../../../core/map';
       // 默认 maxNPCsPerTile 为 3
       const result = p.computePlacement(npcs);
       expect(result.placed.length).toBeGreaterThan(0);
-    });
 
     it('返回的 clusters 包含聚合展示数据', () => {
       // 创建很多同位置 NPC 以触发聚合
@@ -40,7 +38,6 @@ import { GRID_CONFIG } from '../../../core/map';
         expect(cluster.clusteredNPCIds.length).toBeGreaterThan(0);
         expect(cluster.icon).toBe('👥');
       }
-    });
 
     it('空 NPC 列表返回空结果', () => {
       const result = placer.computePlacement([]);

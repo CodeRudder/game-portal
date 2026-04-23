@@ -2,7 +2,6 @@ import {
 import { FormationType, AIDefenseStrategy } from '../../../core/pvp/pvp.types';
 import type { ArenaOpponent, ArenaPlayerState } from '../../../core/pvp/pvp.types';
 
-  });
 
   test('初始状态有5次挑战机会', () => {
     const state = createDefaultArenaPlayerState();

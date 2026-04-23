@@ -276,3 +276,5 @@ describe('ArenaSystem — 挑战次数', () => {
   test('默认每日5次免费挑战', () => {
     const config = system.getChallengeConfig();
     expect(config.dailyFreeChallenges).toBe(5);
+});
+});

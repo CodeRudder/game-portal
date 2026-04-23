@@ -8,7 +8,6 @@ import type { GiftType } from '../NPCAffinitySystem';
       expect(record.newAffinity).toBe(0);
       expect(record.delta).toBe(-2);
       expect(npc.affinity).toBe(0);
-    });
 
     it('好感度衰减', () => {
       const npc = createNPC({ affinity: 50 });
@@ -16,14 +15,12 @@ import type { GiftType } from '../NPCAffinitySystem';
       expect(record).not.toBeNull();
       expect(record!.delta).toBe(-0.5);
       expect(record!.source).toBe('time_decay');
-    });
 
     it('衰减量为0时返回null', () => {
       const sysNoDecay = createAffinitySystem({ decayPerTurn: 0 });
       const npc = createNPC({ affinity: 50 });
       const record = sysNoDecay.applyDecay(npc.id, npc);
       expect(record).toBeNull();
-    });
 
     it('等级提升时发出事件', () => {
       const npc = createNPC({ affinity: 38 }); // neutral 上限附近

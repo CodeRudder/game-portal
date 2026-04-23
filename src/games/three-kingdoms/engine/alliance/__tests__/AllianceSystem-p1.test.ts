@@ -278,3 +278,5 @@ describe('AllianceSystem — 成员管理', () => {
 
   test('设置角色', () => {
     const alliance = createAllianceWithMembers();
+});
+});

@@ -320,3 +320,5 @@ describe('CampaignProgressSystem 序列化', () => {
     newSystem.deserialize(saved);
 
     expect(newSystem.canChallenge('chapter1_stage1')).toBe(true);
+});
+});

@@ -9,7 +9,6 @@ import {
     expect(result.count).toBe(3);
     expect(result.claimedResources.gold).toBe(300);
     expect(result.claimedResources.grain).toBe(500);
-  });
 
   it('批量领取带分类过滤', () => {
     const sys = new MailSystem();

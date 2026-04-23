@@ -294,3 +294,6 @@ describe('ReactDOMAdapter', () => {
 
       const tree = adapter.extractFromDOM(input);
       expect(tree.state.enabled).toBe(true);
+});
+});
+});

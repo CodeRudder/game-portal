@@ -262,3 +262,6 @@ describe('BattleEffectManager', () => {
       const layout = manager.getMobileLayout(768, 1024);
       expect(layout.screenClass).toBe('large');
       expect(layout.skillButtonSize).toBe(64);
+});
+});
+});

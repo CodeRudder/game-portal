@@ -17,8 +17,6 @@ import { TouchInputSystem } from '../TouchInputSystem';
         system.handleTouchEnd(100, 100);
 
         expect(gestures.length).toBe(2);
-      });
-    });
 
     describe('触控反馈配置', () => {
       it('默认配置应正确', () => {

@@ -444,3 +444,5 @@ describe('EquipmentSystem — 背包管理', () => {
       expect(result.success).toBe(false);
       expect(result.reason).toContain('已穿戴');
     });
+});
+});

@@ -4,8 +4,6 @@ import { getChapters, getChapter, getStage, getStagesByChapter } from '../campai
 
     expect(newSystem.canChallenge('chapter1_stage2')).toBe(true);
     expect(newSystem.canChallenge('chapter1_stage3')).toBe(false);
-  });
-});
 
 // ─────────────────────────────────────────────
 // 6. 边界情况

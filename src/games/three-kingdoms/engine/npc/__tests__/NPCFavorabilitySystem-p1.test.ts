@@ -280,4 +280,5 @@ describe('NPCFavorabilitySystem', () => {
       expect(npc!.affinity).toBe(100);
       expect(result).toBe(1); // 实际只增加了1（被clamp到100）
     });
-
+});
+});

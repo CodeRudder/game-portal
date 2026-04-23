@@ -5,10 +5,8 @@ import type {
 
       const baseTree = makeNode('root', {
         state: { visible: true, alpha: 1 },
-      });
       const targetTree = makeNode('root', {
         state: { visible: true, alpha: 0.5 },
-      });
 
       const result = differ.diff(
         makeSnapshot(baseTree, 'b'),

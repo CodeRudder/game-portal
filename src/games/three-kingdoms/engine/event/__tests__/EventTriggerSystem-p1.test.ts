@@ -472,3 +472,6 @@ describe('EventTriggerSystem', () => {
       const def = createRandomEventDef({ expireAfterTurns: 3 });
       sys.registerEvent(def);
       sys.forceTriggerEvent(def.id, 1);
+});
+});
+});

@@ -289,3 +289,4 @@ describe('RewardDistributor 分发', () => {
 
 describe('RewardDistributor 预览', () => {
   let distributor: RewardDistributor;
+});

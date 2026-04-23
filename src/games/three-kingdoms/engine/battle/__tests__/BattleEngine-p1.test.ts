@@ -304,3 +304,6 @@ describe('BattleEngine', () => {
       const enemy = createTeam('enemy', 1, { attack: 0, defense: 0, hp: 10000, maxHp: 10000, troopType: TroopType.ARCHER });
 
       const state = engine.initBattle(ally, enemy);
+});
+});
+});

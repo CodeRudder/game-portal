@@ -5,7 +5,6 @@ import { getChapters, getChapter, getStage, getStagesByChapter } from '../campai
 
   beforeEach(() => {
     distributor = new RewardDistributor(dataProvider, createTrackedDeps().deps, fixedRng(0.5));
-  });
 
   it('previewBaseRewards 返回基础奖励', () => {
     const preview = distributor.previewBaseRewards('chapter1_stage1');

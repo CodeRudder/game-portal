@@ -7,7 +7,6 @@ import {
 
       const expired = sys.expireEvents(5);
       expect(expired.length).toBeGreaterThanOrEqual(1);
-    });
 
     it('expireEvents 不清理未过期事件', () => {
       const def = createRandomEventDef({ expireAfterTurns: 10 });

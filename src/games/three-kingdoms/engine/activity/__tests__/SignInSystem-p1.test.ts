@@ -283,3 +283,6 @@ describe('SignInSystem', () => {
     it('今日已签到时补签抛异常', () => {
       const data = createDefaultSignInData();
       const signedData = system.signIn(data, BASE_TIME).data;
+});
+});
+});

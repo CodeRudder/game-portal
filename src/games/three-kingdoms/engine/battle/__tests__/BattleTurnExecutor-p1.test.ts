@@ -446,3 +446,5 @@ describe('BattleTurnExecutor 目标选择', () => {
     const s = createState({ allyTeam: { units: [actor], side: 'ally' }, enemyTeam: { units: [createUnit({ id: 'f1', side: 'enemy', position: 'front' }), createUnit({ id: 'b1', side: 'enemy', position: 'back' }), createUnit({ id: 'b2', side: 'enemy', position: 'back' })], side: 'enemy' } });
     const t = executor.executeUnitAction(s, actor)!.targetIds;
     expect(t).toHaveLength(2);
+});
+});

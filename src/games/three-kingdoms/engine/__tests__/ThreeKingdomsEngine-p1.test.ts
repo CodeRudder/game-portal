@@ -300,3 +300,9 @@ describe('ThreeKingdomsEngine', () => {
 
       const engine2 = new ThreeKingdomsEngine();
       engine2.load();
+});
+});
+});
+});
+});
+});

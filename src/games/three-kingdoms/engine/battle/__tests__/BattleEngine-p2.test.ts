@@ -6,7 +6,6 @@ import {
 
       // 攻击者怒气应增加（普攻+25，可能受击+15）
       expect(ally.units[0].rage).toBeGreaterThanOrEqual(BATTLE_CONFIG.RAGE_GAIN_ATTACK);
-    });
 
     it('受击后应增加怒气', () => {
       const ally = createTeam('ally', 1, { attack: 500, defense: 0, troopType: TroopType.ARCHER });

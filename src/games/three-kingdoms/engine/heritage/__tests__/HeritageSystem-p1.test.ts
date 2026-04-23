@@ -302,3 +302,6 @@ describe('HeritageSystem — 装备传承', () => {
     equips['tgt'] = mockEquip({ uid: 'tgt', slot: 'armor', enhanceLevel: 3 });
 
     const result = sys.executeEquipmentHeritage({
+});
+});
+});

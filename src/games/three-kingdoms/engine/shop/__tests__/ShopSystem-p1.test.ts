@@ -421,3 +421,6 @@ describe('ShopSystem', () => {
 
       shop.setNPCDiscountProvider(() => 0.8);
       const price1 = shop.calculateFinalPrice(id, 'normal', 'npc_001');
+});
+});
+});

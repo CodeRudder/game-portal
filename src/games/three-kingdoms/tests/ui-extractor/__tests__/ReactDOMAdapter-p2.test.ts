@@ -7,13 +7,11 @@ import type { UITreeNode, UITreeExtractorConfig } from '../types';
       input.disabled = true;
       const tree2 = adapter.extractFromDOM(input);
       expect(tree2.state.enabled).toBe(false);
-    });
 
     it('应采集 opacity 作为 alpha', () => {
       const el = createElement('div', { style: { opacity: '0.5' } });
       const tree = adapter.extractFromDOM(el);
       expect(tree.state.alpha).toBe(0.5);
-    });
 
     it('应采集常用 attributes', () => {
       const el = createElement('div', {
@@ -22,7 +20,6 @@ import type { UITreeNode, UITreeExtractorConfig } from '../types';
           role: 'button',
           'data-testid': 'submit-btn',
         },
-      });
       const tree = adapter.extractFromDOM(el);
       expect(tree.state.attributes).toBeDefined();
       expect(tree.state.attributes!['id']).toBe('my-el');

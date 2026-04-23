@@ -338,3 +338,6 @@ describe('NPCMapPlacer', () => {
       const npcs = [
         createNPC({ id: 'npc-1', position: { x: 5, y: 5 } }),
         createNPC({ id: 'npc-2', position: { x: 6, y: 6 } }),
+});
+});
+});

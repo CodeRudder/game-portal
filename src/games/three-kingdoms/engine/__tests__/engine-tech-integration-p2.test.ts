@@ -10,8 +10,6 @@ import { TECH_PATHS } from '../tech/tech.types';
       const result = treeSys.canResearch('eco_t1_trade');
       expect(result.can).toBe(false);
       expect(result.reason).toContain('互斥');
-    });
-  });
 
   // ═══════════════════════════════════════════
   // 6. 前置依赖
@@ -29,7 +27,6 @@ import { TECH_PATHS } from '../tech/tech.types';
 
       // Tier 2 解锁
       expect(treeSys.getNodeState('mil_t2_charge')?.status).toBe('available');
-    });
 
     it('部分前置完成时节点仍为 locked', () => {
       engine.init();

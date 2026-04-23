@@ -4,14 +4,12 @@ import type { SignInData, SignInReward, SignInConfig } from '../../../core/activ
       expect(() => {
         system.retroactive(signedData, BASE_TIME, 100);
       }).toThrow('今日已签到');
-    });
 
     it('元宝不足时补签抛异常', () => {
       const data = createDefaultSignInData();
       expect(() => {
         system.retroactive(data, BASE_TIME, 30); // 需要50，只有30
       }).toThrow('元宝不足');
-    });
 
     it('补签次数达到每周上限抛异常', () => {
       let data = createDefaultSignInData();

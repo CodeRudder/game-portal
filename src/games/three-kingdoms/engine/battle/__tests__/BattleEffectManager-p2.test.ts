@@ -5,12 +5,10 @@ import { TroopType, BuffType, SkillTargetType } from '../battle.types';
 import { BattleSpeed } from '../battle-v4.types';
 import { DamageNumberType } from '../DamageNumberSystem';
 
-    });
 
     it('触摸热区大于按钮尺寸', () => {
       const layout = manager.getMobileLayout(375, 667);
       expect(layout.touchPadding).toBeGreaterThan(0);
-    });
 
     it('getSkillButtonLayout 返回正确数量的按钮位置', () => {
       manager.getMobileLayout(375, 667);

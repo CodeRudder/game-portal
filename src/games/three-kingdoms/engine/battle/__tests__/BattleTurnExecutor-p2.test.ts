@@ -452,3 +452,4 @@ describe('BattleTurnExecutor 构造函数', () => {
     expect(action!.actorSide).toBe('enemy');
   });
 });
+});

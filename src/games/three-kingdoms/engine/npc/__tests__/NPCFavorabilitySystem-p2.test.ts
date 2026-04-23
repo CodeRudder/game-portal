@@ -9,7 +9,6 @@ import {
       expect(history.length).toBe(1);
       expect(history[0].source).toBe('dialog');
       expect(history[0].delta).toBe(DEFAULT_AFFINITY_GAIN_CONFIG.dialogBase);
-    });
 
     it('getNPCChangeHistory 按NPC过滤', () => {
       favSys.addDialogAffinity('npc-merchant-01', 1);

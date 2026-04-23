@@ -309,3 +309,6 @@ describe('NPCAffinitySystem', () => {
 
     it('好感度下限为0', () => {
       const npc = createNPC({ affinity: 2 });
+});
+});
+});
