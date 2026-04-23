@@ -49,7 +49,7 @@ export const BuildingPanel: FC<BuildingPanelProps> = ({
   );
 
   return (
-    <div className="building-panel" style={{ position: 'relative' }}>
+    <div className="building-panel" data-testid="building-panel" style={{ position: 'relative' }}>
       {/* 升级队列 */}
       {upgradingBuildings.length > 0 && (
         <div className="upgrade-queue">

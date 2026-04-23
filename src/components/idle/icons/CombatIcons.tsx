@@ -169,11 +169,11 @@ const SKILL_ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
 export const SkillIcon: React.FC<{ skillType: string; size?: number }> = ({ skillType, size = 20 }) => {
   const IconComponent = SKILL_ICON_MAP[skillType];
   if (IconComponent) {
-    return <IconComponent size={size} />;
+    return <span data-testid={`combat-icon-skill-${skillType}`}><IconComponent size={size} /></span>;
   }
   // 兜底：通用技能图标
   return (
-    <svg width={size} height={size} viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <svg data-testid="combat-icon-skill-default" width={size} height={size} viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
       <circle cx="10" cy="10" r="7" fill="#d4a030" opacity="0.3" />
       <text x="10" y="13" textAnchor="middle" fontSize="8" fill="#d4a030">✦</text>
     </svg>
@@ -226,10 +226,10 @@ const EQUIP_ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
 export const EquipSlotIcon: React.FC<{ slotType: string; size?: number }> = ({ slotType, size = 20 }) => {
   const IconComponent = EQUIP_ICON_MAP[slotType];
   if (IconComponent) {
-    return <IconComponent size={size} />;
+    return <span data-testid={`combat-icon-equip-${slotType}`}><IconComponent size={size} /></span>;
   }
   return (
-    <svg width={size} height={size} viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <svg data-testid="combat-icon-equip-default" width={size} height={size} viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
       <rect x="4" y="4" width="12" height="12" rx="2" fill="none" stroke="#8B7355" strokeWidth="0.8" strokeDasharray="2 2" />
     </svg>
   );
@@ -261,7 +261,7 @@ export const BuildingProgressBar: React.FC<{
   else if (pct >= 30) barColor = '#d4a030'; // 黄
 
   return (
-    <div style={{ width, display: 'flex', flexDirection: 'column', gap: 1 }}>
+    <div data-testid="combat-icon-building-progress" style={{ width, display: 'flex', flexDirection: 'column', gap: 1 }}>
       {/* 竹简卷轴进度条 */}
       <div style={{
         width: '100%', height,

@@ -168,6 +168,7 @@ export default function AgeOfEmpiresPixiGame({
     <div
       ref={containerRef}
       className={className}
+      data-testid="age-of-empires-pixi-game"
       style={{
         width: '100%',
         height: '100%',

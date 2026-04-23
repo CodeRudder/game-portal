@@ -138,7 +138,7 @@ export default function IdleGamePlayer({
   }, [engine]);
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row">
+    <div className="flex flex-col gap-4 lg:flex-row" data-testid="idle-game-player">
       {/* 左侧/上方: Canvas */}
       <div className="flex flex-col gap-3 lg:w-1/2">
         {/* 资源栏（PC 上方常驻） */}

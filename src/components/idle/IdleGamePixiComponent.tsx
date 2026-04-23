@@ -233,6 +233,7 @@ export default function IdleGamePixiComponent({
     <div
       ref={containerRef}
       className={className}
+      data-testid="idle-game-pixi-component"
       style={{
         width: '100%',
         height: '100%',

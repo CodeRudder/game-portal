@@ -219,11 +219,11 @@ const TECH_ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
 export const TechIcon: React.FC<{ techId: string; size?: number }> = ({ techId, size = 28 }) => {
   const IconComponent = TECH_ICON_MAP[techId];
   if (IconComponent) {
-    return <IconComponent size={size} />;
+    return <span data-testid={`tech-icon-${techId}`}><IconComponent size={size} /></span>;
   }
   // 兜底：通用科技图标
   return (
-    <svg width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+    <svg data-testid="tech-icon-default" width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
       <circle cx="14" cy="14" r="10" fill="#4a6fa5" stroke="#2e4a7a" strokeWidth="0.8" />
       <text x="14" y="17" textAnchor="middle" fontSize="10" fill="#d4a030" fontFamily="serif">?</text>
     </svg>
@@ -232,7 +232,7 @@ export const TechIcon: React.FC<{ techId: string; size?: number }> = ({ techId, 
 
 /** 锁定状态图标 — 古风铜锁 (替代通用 🔒) */
 export const TechLockedIcon: React.FC<{ size?: number }> = ({ size = 28 }) => (
-  <svg width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+  <svg data-testid="tech-icon-locked" width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
     {/* 锁体 */}
     <rect x="7" y="13" width="14" height="11" rx="2" fill="#5a4a3a" stroke="#3a2a1a" strokeWidth="0.8" />
     {/* 锁环 */}
@@ -247,7 +247,7 @@ export const TechLockedIcon: React.FC<{ size?: number }> = ({ size = 28 }) => (
 
 /** 研究中旋转动画图标 */
 export const TechResearchingIcon: React.FC<{ size?: number }> = ({ size = 28 }) => (
-  <svg width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" className="tk-tech-research-spin">
+  <svg data-testid="tech-icon-researching" width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" className="tk-tech-research-spin">
     {/* 外环 */}
     <circle cx="14" cy="14" r="11" fill="none" stroke="#d4a030" strokeWidth="1" strokeDasharray="4 3" opacity="0.6" />
     {/* 内环 */}

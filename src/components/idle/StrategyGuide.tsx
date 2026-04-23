@@ -31,7 +31,7 @@ export default function StrategyGuide({ phases }: StrategyGuideProps) {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-testid="strategy-guide">
       {/* 操作按钮 */}
       <div className="flex gap-2">
         <button
