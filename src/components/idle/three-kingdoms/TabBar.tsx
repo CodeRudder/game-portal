@@ -21,7 +21,7 @@ import type { Season, WeatherType } from '@/games/three-kingdoms/engine';
  * 7个一级Tab: 天下/出征/武将/科技/建筑/声望/更多▼
  * 其他功能（装备/名士/竞技/远征/军队）通过"更多▼"下拉菜单访问
  */
-export type TabId = 'map' | 'campaign' | 'hero' | 'tech' | 'building' | 'prestige' | 'more';
+export type TabId = 'map' | 'campaign' | 'hero' | 'tech' | 'building' | 'prestige' | 'more' | 'equipment' | 'npc' | 'arena' | 'expedition' | 'army';
 
 /** Tab 配置 */
 export interface TabConfig {

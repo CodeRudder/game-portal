@@ -11,8 +11,8 @@ import type {
   FriendData,
 } from '../../core/social/social.types';
 import { FriendStatus, InteractionType as IT } from '../../core/social/social.types';
-import { FriendInteractionSubsystem } from './FriendInteractionSubsystem';
-import { BorrowHeroSubsystem } from './BorrowHeroSubsystem';
+import { FriendInteractionHelper } from './FriendInteractionHelper';
+import { BorrowHeroHelper } from './BorrowHeroHelper';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 // ─────────────────────────────────────────────
 // 常量

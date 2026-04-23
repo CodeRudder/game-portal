@@ -21,19 +21,8 @@ import ArmyTab from '@/components/idle/panels/army/ArmyTab';
 import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
 import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import NPCInfoModal from '@/components/idle/panels/npc/NPCInfoModal';
+import type { NPCData } from '@/games/three-kingdoms/core/npc';
 import type { TabId, FeaturePanelId } from './TabBar';
-
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
-
-interface NPCData {
-  id: string;
-  name: string;
-  title?: string;
-  portrait?: string;
-  description?: string;
-}
 
 // ─────────────────────────────────────────────
 // Props
