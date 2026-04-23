@@ -15,16 +15,12 @@ import {
   ExpeditionSystem,
   createDefaultExpeditionState,
 } from '../ExpeditionSystem';
-import type { HeroBrief, TeamValidationResult } from '../ExpeditionSystem';
-import type { ExpeditionState, ExpeditionTeam } from '../../../core/expedition/expedition.types';
+import type { HeroBrief } from '../ExpeditionSystem';
 import {
   NodeStatus,
-  NodeType,
-  RouteDifficulty,
   FormationType,
   SweepType,
   MilestoneType,
-  BattleGrade,
 } from '../../../core/expedition/expedition.types';
 
 // ── 辅助函数 ──────────────────────────────
@@ -64,7 +60,7 @@ beforeEach(() => {
 });
 
 // ═══════════════════════════════════════════
-// 4. 队伍编成（续）
+// 4b. 队伍编成（续）
 // ═══════════════════════════════════════════
 
 describe('ExpeditionSystem — 队伍编成（续）', () => {
@@ -113,7 +109,7 @@ describe('ExpeditionSystem — 远征推进', () => {
   beforeEach(() => {
     const heroes = createShuHeroes(3);
     const heroMap = createHeroMap(heroes);
-    const result = system.createTeam('远征队', ['shu_0', 'shu_1', 'shu_2'], FormationType.STANDARD, heroMap);
+    system.createTeam('远征队', ['shu_0', 'shu_1', 'shu_2'], FormationType.STANDARD, heroMap);
     teamId = Object.keys(system.getState().teams)[0];
     system.updateSlots(5);
   });
@@ -146,7 +142,6 @@ describe('ExpeditionSystem — 远征推进', () => {
 
   test('休息点恢复兵力', () => {
     system.dispatchTeam(teamId, 'route_hulao_easy');
-    // 推进到休息点（第5个节点 route_hulao_easy_n5）
     const route = system.getRoute('route_hulao_easy')!;
     const team = system.getTeam(teamId)!;
     team.currentNodeId = 'route_hulao_easy_n5';
@@ -185,7 +180,6 @@ describe('ExpeditionSystem — 远征推进', () => {
     system.dispatchTeam(teamId, 'route_hulao_easy');
     system.completeRoute(teamId, 2);
 
-    // 再次通关同一路线
     system.dispatchTeam(teamId, 'route_hulao_easy');
     system.completeRoute(teamId, 3);
 
@@ -291,7 +285,6 @@ describe('ExpeditionSystem — 兵力恢复', () => {
 
     const team = system.getTeam(teamId)!;
     const before = team.troopCount;
-    // 恢复5分钟 = 300秒 = 1个恢复周期 = 1点兵力
     system.recoverTroops(300);
     expect(team.troopCount).toBe(Math.min(team.maxTroops, before + 1));
   });

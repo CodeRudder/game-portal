@@ -1,3 +1,18 @@
+/**
+ * EventTriggerSystem 单元测试 — p2
+ *
+ * 覆盖：
+ * - 事件过期
+ * - 活跃事件管理
+ * - 事件类型矩阵完整性
+ * - 存档序列化
+ * - 配置
+ * - canTrigger 综合测试
+ * - 概率计算（v15 迁移）
+ * - 条件评估
+ * - 概率公式集成触发
+ */
+
 import { EventTriggerSystem } from '../EventTriggerSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type {
@@ -91,32 +106,9 @@ function createFixedEventDef(overrides?: Partial<EventDef>): EventDef {
   };
 }
 
-function createChainEventDef(overrides?: Partial<EventDef>): EventDef {
-  return {
-    id: 'test-chain-01',
-    title: '测试连锁事件',
-    description: '这是一个测试用的连锁事件',
-    triggerType: 'chain',
-    urgency: 'critical',
-    scope: 'global',
-    prerequisiteEventIds: [],
-    options: [
-      {
-        id: 'opt-a',
-        text: '选项A',
-        consequences: {
-          description: '选择了A',
-          triggerEventId: 'test-chain-02',
-        },
-      },
-    ],
-    ...overrides,
-  };
-}
-
 // ═══════════════════════════════════════════════════════════
 
-describe('EventTriggerSystem', () => {
+describe('EventTriggerSystem p2', () => {
   let sys: EventTriggerSystem;
 
   beforeEach(() => {

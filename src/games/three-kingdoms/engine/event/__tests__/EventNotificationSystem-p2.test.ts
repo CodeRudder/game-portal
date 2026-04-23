@@ -7,10 +7,6 @@ import type {
   EncounterPopup,
 } from '../../../core/event';
 
-// ─────────────────────────────────────────────
-// 辅助工具
-// ─────────────────────────────────────────────
-
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
@@ -34,27 +30,27 @@ function createSystem(): EventNotificationSystem {
 function createTestEventDef(overrides?: Partial<EventDef>): EventDef {
   return {
     id: 'test-event-01',
-    title: '测试事件',
-    description: '这是一个测试事件',
+    title: 'test-event',
+    description: 'test event desc',
     triggerType: 'random',
     urgency: 'medium',
     scope: 'global',
     options: [
       {
         id: 'opt-a',
-        text: '选项A',
-        description: '选择A',
+        text: 'A',
+        description: 'choose A',
         consequences: {
-          description: '获得金币',
+          description: 'get gold',
           resourceChanges: { gold: 100 },
         },
       },
       {
         id: 'opt-b',
-        text: '选项B',
+        text: 'B',
         isDefault: true,
         consequences: {
-          description: '获得粮草',
+          description: 'get grain',
           resourceChanges: { grain: 50 },
         },
       },
@@ -74,9 +70,7 @@ function createTestInstance(overrides?: Partial<EventInstance>): EventInstance {
   };
 }
 
-// ═══════════════════════════════════════════════════════════
-
-describe('EventNotificationSystem', () => {
+describe('EventNotificationSystem p2', () => {
   let sys: EventNotificationSystem;
 
   beforeEach(() => {
@@ -377,7 +371,7 @@ describe('EventNotificationSystem', () => {
 
       const data = sys.serializeBanners();
       expect(data.length).toBe(1);
-      expect(data[0].title).toBe('测试事件');
+      expect(data[0].title).toBe('test-event');
     });
 
     it('deserializeBanners 恢复横幅数据', () => {

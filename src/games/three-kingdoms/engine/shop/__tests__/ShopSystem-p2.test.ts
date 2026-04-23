@@ -2,6 +2,7 @@
  * ShopSystem 单元测试 (p2)
  *
  * 覆盖：
+ * - NPC折扣覆盖
  * - 购买逻辑（验证 + 执行）
  * - 库存与限购
  * - 收藏管理
@@ -14,35 +15,17 @@
 
 import { ShopSystem } from '../ShopSystem';
 import type {
-  ShopType,
-  GoodsCategory,
-  GoodsDef,
-  GoodsItem,
   BuyRequest,
-  BuyResult,
-  BuyValidation,
-  ConfirmLevel,
-  ShopState,
-  ShopSaveData,
   DiscountConfig,
   GoodsFilter,
+  ShopSaveData,
 } from '../../../core/shop/shop.types';
 import type { ISystemDeps } from '../../../core/types/subsystem';
+import { SHOP_TYPES } from '../../../core/shop/shop.types';
 import {
-  SHOP_TYPES,
-  SHOP_TYPE_LABELS,
-  GOODS_CATEGORY_LABELS,
-  GOODS_RARITY_LABELS,
-} from '../../../core/shop/shop.types';
-import {
-  DEFAULT_RESTOCK_CONFIG,
   DAILY_MANUAL_REFRESH_LIMIT,
   SHOP_SAVE_VERSION,
   CONFIRM_THRESHOLDS,
-  PERMANENT_GOODS_STOCK,
-  RANDOM_GOODS_STOCK,
-  DISCOUNT_GOODS_STOCK,
-  LIMITED_GOODS_STOCK,
 } from '../../../core/shop/shop-config';
 import { GOODS_DEF_MAP, SHOP_GOODS_IDS, ALL_GOODS_DEFS } from '../../../core/shop/goods-data';
 import type { CurrencySystem } from '../../currency/CurrencySystem';
@@ -127,7 +110,7 @@ describe('ShopSystem', () => {
   });
 
   // ═══════════════════════════════════════════
-  // 3b. NPC折扣覆盖（p1尾部延续）
+  // 3b. NPC折扣覆盖
   // ═══════════════════════════════════════════
   describe('定价与折扣（续）', () => {
     it('setNPCDiscountProvider 设置后可覆盖', () => {
@@ -159,7 +142,6 @@ describe('ShopSystem', () => {
     });
 
     it('validateBuy 商品不在当前商店返回失败', () => {
-      // limited_time 商品在 normal 商店中不存在
       const ltdIds = SHOP_GOODS_IDS['limited_time'];
       if (ltdIds.length > 0) {
         const req: BuyRequest = { goodsId: ltdIds[0], quantity: 1, shopType: 'normal' };
@@ -173,7 +155,6 @@ describe('ShopSystem', () => {
       const id = getNormalGoodsId();
       const req: BuyRequest = { goodsId: id, quantity: 1, shopType: 'normal' };
       const result = shop.validateBuy(req);
-      // permanent 商品无限库存，无限购
       expect(result.canBuy).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
@@ -235,7 +216,6 @@ describe('ShopSystem', () => {
     });
 
     it('executeBuy 有库存商品购买后库存减少', () => {
-      // 找一个有库存的商品（非 permanent = stock !== -1）
       const bmIds = SHOP_GOODS_IDS['black_market'];
       if (bmIds.length > 0) {
         const id = bmIds[0];
@@ -268,9 +248,6 @@ describe('ShopSystem', () => {
       const req: BuyRequest = { goodsId: id, quantity: 1, shopType: 'normal' };
       shop.executeBuy(req);
 
-      // eventBus.emit should have been called (we mock it in createShop)
-      // Since init was called with mockEventBus, we can check indirectly
-      // by verifying the buy succeeded
       const item = shop.getGoodsItem('normal', id);
       expect(item!.dailyPurchased).toBe(1);
     });
@@ -326,7 +303,6 @@ describe('ShopSystem', () => {
     });
 
     it('manualRefresh 超过次数限制后失败', () => {
-      // 刷新到上限
       for (let i = 0; i < DAILY_MANUAL_REFRESH_LIMIT; i++) {
         shop.manualRefresh();
       }
@@ -336,13 +312,11 @@ describe('ShopSystem', () => {
     });
 
     it('库存不足时 validateBuy 失败', () => {
-      // 找一个库存有限的商品
       const bmIds = SHOP_GOODS_IDS['black_market'];
       if (bmIds.length > 0) {
         const id = bmIds[0];
         const item = shop.getGoodsItem('black_market', id);
         if (item && item.stock > 0 && item.stock !== -1) {
-          // 尝试购买超过库存的数量
           const req: BuyRequest = { goodsId: id, quantity: item.stock + 100, shopType: 'black_market' };
           const result = shop.validateBuy(req);
           expect(result.canBuy).toBe(false);
@@ -360,7 +334,7 @@ describe('ShopSystem', () => {
       const favId = getFavoritableGoodsId();
       if (favId) {
         const result = shop.toggleFavorite(favId);
-        expect(result).toBe(true); // true = 已添加
+        expect(result).toBe(true);
         expect(shop.isFavorite(favId)).toBe(true);
       }
     });
@@ -368,15 +342,14 @@ describe('ShopSystem', () => {
     it('toggleFavorite 取消收藏', () => {
       const favId = getFavoritableGoodsId();
       if (favId) {
-        shop.toggleFavorite(favId); // 添加
-        const result = shop.toggleFavorite(favId); // 取消
-        expect(result).toBe(false); // false = 已移除
+        shop.toggleFavorite(favId);
+        const result = shop.toggleFavorite(favId);
+        expect(result).toBe(false);
         expect(shop.isFavorite(favId)).toBe(false);
       }
     });
 
     it('toggleFavorite 不可收藏商品返回 false', () => {
-      // 找一个不可收藏的商品
       const nonFav = ALL_GOODS_DEFS.find(d => !d.favoritable);
       if (nonFav) {
         const result = shop.toggleFavorite(nonFav.id);
@@ -423,7 +396,6 @@ describe('ShopSystem', () => {
       const before = shop.getShopGoods('normal').map(g => g.defId);
       shop.manualRefresh();
       const after = shop.getShopGoods('normal').map(g => g.defId);
-      // 商品ID列表应该不变（同一商店的固定商品）
       expect(after.sort()).toEqual(before.sort());
     });
 
@@ -497,7 +469,6 @@ describe('ShopSystem', () => {
         favorites: [],
         version: 999,
       };
-      // 不应抛异常，仅 console.warn
       expect(() => shop.deserialize(data)).not.toThrow();
     });
 

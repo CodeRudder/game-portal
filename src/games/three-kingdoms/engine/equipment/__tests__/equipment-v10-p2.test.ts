@@ -4,41 +4,6 @@ import { EquipmentEnhanceSystem } from '../EquipmentEnhanceSystem';
 import { EquipmentSetSystem } from '../EquipmentSetSystem';
 import { EquipmentRecommendSystem } from '../EquipmentRecommendSystem';
 import type {
-  EquipmentSlot,
-  EquipmentRarity,
-  BagFilter,
-} from '../../../core/equipment/equipment.types';
-import {
-  EQUIPMENT_SLOTS,
-  EQUIPMENT_RARITIES,
-  RARITY_ORDER,
-} from '../../../core/equipment/equipment.types';
-import {
-  EQUIPMENT_TEMPLATES,
-  ENHANCE_CONFIG,
-  FORGE_PITY_THRESHOLDS,
-  EQUIPMENT_SETS,
-  SET_MAP,
-  TRANSFER_LEVEL_LOSS,
-} from '../../../core/equipment/equipment-config';
-
-// ─────────────────────────────────────────────
-// 辅助函数
-// ─────────────────────────────────────────────
-
-function createSystems() {
-  const equipment = new EquipmentSystem();
-  const forge = new EquipmentForgeSystem(equipment);
-  const enhance = new EquipmentEnhanceSystem(equipment);
-  const set = new EquipmentSetSystem(equipment);
-  const recommend = new EquipmentRecommendSystem(equipment, set);
-  return { equipment, forge, enhance, set, recommend };
-}
-
-// ═══════════════════════════════════════════
-// 模块A: 装备类型与背包 (4项)
-// ═══════════════════════════════════════════
-
   describe('属性计算一致性', () => {
     it('recalcStats保持uid不变', () => {
       const eq = systems.equipment.generateEquipment('sword_iron', 'white');

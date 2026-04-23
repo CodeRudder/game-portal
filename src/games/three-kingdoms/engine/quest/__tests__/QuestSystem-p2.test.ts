@@ -14,38 +14,6 @@ import { QuestSystem } from '../QuestSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type { QuestDef, QuestReward, QuestInstance } from '../../../core/quest';
 import {
-  QUEST_MAIN_CHAPTER_1,
-  QUEST_MAIN_CHAPTER_2,
-  QUEST_MAIN_CHAPTER_3,
-  DAILY_QUEST_TEMPLATES,
-} from '../../../core/quest';
-
-// ─────────────────────────────────────────────
-// 辅助工具
-// ─────────────────────────────────────────────
-
-function mockDeps(): ISystemDeps {
-  return {
-    eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
-    },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
-  } as unknown as ISystemDeps;
-}
-
-function createQuestSystem(): QuestSystem {
-  const sys = new QuestSystem();
-  sys.init(mockDeps());
-  return sys;
-}
-
-// ═══════════════════════════════════════════════════════════
-
 describe('QuestSystem', () => {
   let questSys: QuestSystem;
 
@@ -359,4 +327,6 @@ describe('QuestSystem', () => {
       );
     });
   });
+});
+
 });

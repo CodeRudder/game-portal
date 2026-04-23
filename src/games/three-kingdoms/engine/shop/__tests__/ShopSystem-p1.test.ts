@@ -414,13 +414,5 @@ describe('ShopSystem', () => {
       expect(finalVal).toBe(Math.ceil(basePrice * 0.9));
     });
 
-    it('setNPCDiscountProvider 设置后可覆盖', () => {
-      const id = getNormalGoodsId();
-      const def = GOODS_DEF_MAP[id];
-      const basePrice = Object.values(def!.basePrice)[0];
-
-      shop.setNPCDiscountProvider(() => 0.8);
-      const price1 = shop.calculateFinalPrice(id, 'normal', 'npc_001');
-});
-});
+  });
 });

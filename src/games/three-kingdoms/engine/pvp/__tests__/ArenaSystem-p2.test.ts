@@ -1,69 +1,4 @@
 import {
-  ArenaSystem,
-  DEFAULT_MATCH_CONFIG,
-  DEFAULT_REFRESH_CONFIG,
-  DEFAULT_CHALLENGE_CONFIG,
-  createDefaultDefenseFormation,
-  createDefaultArenaPlayerState,
-} from '../ArenaSystem';
-import { FormationType, AIDefenseStrategy } from '../../../core/pvp/pvp.types';
-import type { ArenaOpponent, ArenaPlayerState } from '../../../core/pvp/pvp.types';
-import type { Faction } from '../../hero/hero.types';
-
-// ── 辅助函数 ──────────────────────────────
-
-/** 创建测试用对手 */
-function createOpponent(overrides: Partial<ArenaOpponent> = {}): ArenaOpponent {
-  return {
-    playerId: 'p1',
-    playerName: 'Player1',
-    power: 10000,
-    rankId: 'BRONZE_V',
-    score: 100,
-    ranking: 10,
-    faction: 'wei' as Faction,
-    defenseSnapshot: null,
-    ...overrides,
-  };
-}
-
-/** 创建一组不同阵营的对手 */
-function createDiverseOpponents(count: number, basePower: number, baseRanking: number): ArenaOpponent[] {
-  const factions = ['wei', 'shu', 'wu'] as const;
-  const result: ArenaOpponent[] = [];
-  for (let i = 0; i < count; i++) {
-    result.push(
-      createOpponent({
-        playerId: `player_${i}`,
-        playerName: `Player${i}`,
-        power: basePower + i * 500,
-        ranking: baseRanking + i,
-        score: 100 + i * 50,
-        rankId: 'BRONZE_V',
-        faction: factions[i % 3] as Faction,
-      }),
-    );
-  }
-  return result;
-}
-
-/** 创建有阵容的玩家状态（影响战力计算） */
-function createPlayerWithHeroes(score: number, heroCount: number, ranking: number = 100): ArenaPlayerState {
-  const state = createDefaultArenaPlayerState();
-  const slots: [string, string, string, string, string] = ['', '', '', '', ''];
-  for (let i = 0; i < Math.min(heroCount, 5); i++) {
-    slots[i] = `hero_${i}`;
-  }
-  return {
-    ...state,
-    score,
-    ranking,
-    defenseFormation: { slots, formation: FormationType.FISH_SCALE, strategy: AIDefenseStrategy.BALANCED },
-  };
-}
-
-// ── 对手选择规则 ──────────────────────────
-
 describe('ArenaSystem — 防守阵容', () => {
   let system: ArenaSystem;
 
@@ -261,4 +196,6 @@ describe('ArenaSystem — 默认配置', () => {
     expect(system.getRefreshConfig().manualCostCopper).toBe(1000);
     expect(system.getChallengeConfig().dailyFreeChallenges).toBe(10);
   });
+});
+
 });

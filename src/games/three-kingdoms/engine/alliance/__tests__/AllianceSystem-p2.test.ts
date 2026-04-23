@@ -1,49 +1,4 @@
 import {
-  AllianceSystem,
-} from '../AllianceSystem';
-import {
-  ALLIANCE_LEVEL_CONFIGS,
-  createDefaultAlliancePlayerState,
-  createAllianceData,
-} from '../alliance-constants';
-import { ApplicationStatus, AllianceRole } from '../../../core/alliance/alliance.types';
-import type {
-  AllianceData,
-  AlliancePlayerState,
-} from '../../../core/alliance/alliance.types';
-
-// ── 辅助函数 ──────────────────────────────
-
-const NOW = 1000000;
-
-function createState(overrides?: Partial<AlliancePlayerState>): AlliancePlayerState {
-  return { ...createDefaultAlliancePlayerState(), ...overrides };
-}
-
-function createTestAlliance(
-  leaderId = 'p1',
-  leaderName = '刘备',
-  name = '蜀汉',
-): AllianceData {
-  return createAllianceData('ally_1', name, '兴复汉室', leaderId, leaderName, NOW);
-}
-
-function createAllianceWithMembers(): AllianceData {
-  let alliance = createTestAlliance();
-  // 添加军师和成员
-  alliance.members['p2'] = {
-    playerId: 'p2', playerName: '诸葛亮', role: 'ADVISOR' as AllianceRole,
-    power: 5000, joinTime: NOW, dailyContribution: 0, totalContribution: 100, dailyBossChallenges: 0,
-  };
-  alliance.members['p3'] = {
-    playerId: 'p3', playerName: '关羽', role: 'MEMBER' as AllianceRole,
-    power: 3000, joinTime: NOW, dailyContribution: 0, totalContribution: 50, dailyBossChallenges: 0,
-  };
-  return alliance;
-}
-
-// ── 联盟创建 ──────────────────────────────
-
 describe('AllianceSystem — 三级权限', () => {
   let system: AllianceSystem;
 

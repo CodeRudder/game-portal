@@ -2,13 +2,6 @@ import { CampaignProgressSystem } from '../CampaignProgressSystem';
 import type { ICampaignDataProvider, CampaignSaveData } from '../campaign.types';
 import { getChapters, getChapter, getStage, getStagesByChapter } from '../campaign-config';
 
-    expect(newSystem.canChallenge('chapter1_stage2')).toBe(true);
-    expect(newSystem.canChallenge('chapter1_stage3')).toBe(false);
-
-// ─────────────────────────────────────────────
-// 6. 边界情况
-// ─────────────────────────────────────────────
-
 describe('CampaignProgressSystem 边界情况', () => {
   let system: CampaignProgressSystem;
 

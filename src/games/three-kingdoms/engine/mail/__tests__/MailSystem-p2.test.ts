@@ -1,3 +1,15 @@
+/**
+ * MailSystem 单元测试 (p2)
+ *
+ * 覆盖：
+ * - 附件领取（批量）
+ * - 邮件查询与分页
+ * - 批量操作（一键已读+批量领取+删除）
+ * - 过期处理
+ * - 存档序列化
+ * - 常量验证
+ */
+
 import {
   MailSystem,
   CATEGORY_LABELS,
@@ -46,7 +58,34 @@ function createRewardMail(attachments?: Array<{ resourceType: string; amount: nu
 }
 
 // ═══════════════════════════════════════════════
-// 1. 邮件创建
+// 3b. 附件领取（批量）
+// ═══════════════════════════════════════════════
+
+describe('MailSystem — 附件领取（批量）', () => {
+  it('批量领取', () => {
+    const sys = new MailSystem();
+    sys.sendMail(createRewardMail([{ resourceType: 'gold', amount: 100 }]));
+    sys.sendMail(createRewardMail([{ resourceType: 'gold', amount: 200 }]));
+    sys.sendMail(createRewardMail([{ resourceType: 'grain', amount: 500 }]));
+
+    const result = sys.claimAllAttachments();
+    expect(result.count).toBe(3);
+    expect(result.claimedResources.gold).toBe(300);
+    expect(result.claimedResources.grain).toBe(500);
+  });
+
+  it('批量领取带分类过滤', () => {
+    const sys = new MailSystem();
+    sys.sendMail(createRewardMail([{ resourceType: 'gold', amount: 100 }]));
+    sys.sendMail({ category: 'system', title: '系统', content: '', sender: '系统' });
+
+    const result = sys.claimAllAttachments({ category: 'reward' });
+    expect(result.count).toBe(1);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 4. 邮件查询与分页
 // ═══════════════════════════════════════════════
 
 describe('MailSystem — 查询与分页', () => {

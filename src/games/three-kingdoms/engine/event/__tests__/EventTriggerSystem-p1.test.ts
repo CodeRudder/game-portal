@@ -464,14 +464,4 @@ describe('EventTriggerSystem', () => {
     });
   });
 
-  // ═══════════════════════════════════════════
-  // 7. 事件过期
-  // ═══════════════════════════════════════════
-  describe('事件过期', () => {
-    it('expireEvents 清理过期事件', () => {
-      const def = createRandomEventDef({ expireAfterTurns: 3 });
-      sys.registerEvent(def);
-      sys.forceTriggerEvent(def.id, 1);
-});
-});
 });

@@ -1,96 +1,5 @@
 import { BattleEffectManager } from '../BattleEffectManager';
 import type {
-  SkillEffectData,
-  MobileLayoutConfig,
-  DamageAnimationData,
-  EffectElement,
-} from '../BattleEffectManager';
-import type { BattleUnit, BattleSkill, BattleAction, DamageResult } from '../battle.types';
-import { TroopType, BuffType, SkillTargetType } from '../battle.types';
-import { BattleSpeed } from '../battle-v4.types';
-import { DamageNumberType } from '../DamageNumberSystem';
-
-// ─────────────────────────────────────────────
-// 测试工具
-// ─────────────────────────────────────────────
-
-function createTestSkill(overrides: Partial<BattleSkill> = {}): BattleSkill {
-  return {
-    id: 'fire_slash',
-    name: '烈焰斩',
-    type: 'active',
-    level: 1,
-    description: '火属性攻击',
-    multiplier: 1.5,
-    targetType: SkillTargetType.SINGLE_ENEMY,
-    rageCost: 50,
-    cooldown: 3,
-    currentCooldown: 0,
-    ...overrides,
-  };
-}
-
-function createTestUnit(overrides: Partial<BattleUnit> = {}): BattleUnit {
-  return {
-    id: 'test-unit',
-    name: '测试武将',
-    faction: 'shu',
-    troopType: TroopType.CAVALRY,
-    position: 'front',
-    side: 'ally',
-    attack: 100,
-    baseAttack: 100,
-    defense: 50,
-    baseDefense: 50,
-    intelligence: 60,
-    speed: 80,
-    hp: 1000,
-    maxHp: 1000,
-    isAlive: true,
-    rage: 0,
-    maxRage: 100,
-    normalAttack: {
-      id: 'normal', name: '普攻', type: 'active', level: 1,
-      description: '普通攻击', multiplier: 1.0, targetType: SkillTargetType.SINGLE_ENEMY,
-      rageCost: 0, cooldown: 0, currentCooldown: 0,
-    },
-    skills: [],
-    buffs: [],
-    ...overrides,
-  };
-}
-
-function createDamageResult(overrides: Partial<DamageResult> = {}): DamageResult {
-  return {
-    damage: 100,
-    baseDamage: 80,
-    skillMultiplier: 1.5,
-    isCritical: false,
-    criticalMultiplier: 1.0,
-    restraintMultiplier: 1.0,
-    randomFactor: 1.0,
-    isMinDamage: false,
-    ...overrides,
-  };
-}
-
-function createTestAction(overrides: Partial<BattleAction> = {}): BattleAction {
-  return {
-    turn: 1,
-    actorId: 'test-unit',
-    actorName: '测试武将',
-    actorSide: 'ally',
-    skill: createTestSkill(),
-    targetIds: ['enemy-1'],
-    damageResults: { 'enemy-1': createDamageResult() },
-    description: '测试行动',
-    isNormalAttack: false,
-    ...overrides,
-  };
-}
-
-// ═══════════════════════════════════════════════
-
 describe('BattleEffectManager P2', () => {
   let manager: BattleEffectManager;
 
@@ -364,4 +273,6 @@ describe('BattleEffectManager P2', () => {
       expect(effect.particles.count).toBeLessThan(30);
     });
   });
+});
+
 });
