@@ -1,7 +1,104 @@
+/**
+ * EventNotificationSystem 单元测试 (p2)
+ *
+ * 覆盖：
+ * - 横幅排序与查询
+ * - 随机遭遇弹窗
+ * - 遭遇选择处理
+ * - 后果预览生成
+ * - 序列化
+ * - 配置
+ */
+
 import { EventNotificationSystem } from '../EventNotificationSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type {
+  EventDef,
+  EventInstance,
+  EventBanner,
+  EncounterPopup,
+} from '../../../core/event';
 
+// ─────────────────────────────────────────────
+// 辅助工具
+// ─────────────────────────────────────────────
+
+function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+function createSystem(): EventNotificationSystem {
+  const sys = new EventNotificationSystem();
+  sys.init(mockDeps());
+  return sys;
+}
+
+function createTestEventDef(overrides?: Partial<EventDef>): EventDef {
+  return {
+    id: 'test-event-01',
+    title: '测试事件',
+    description: '这是一个测试事件',
+    triggerType: 'random',
+    urgency: 'medium',
+    scope: 'global',
+    options: [
+      {
+        id: 'opt-a',
+        text: '选项A',
+        description: '选择A',
+        consequences: {
+          description: '获得金币',
+          resourceChanges: { gold: 100 },
+        },
+      },
+      {
+        id: 'opt-b',
+        text: '选项B',
+        isDefault: true,
+        consequences: {
+          description: '获得粮草',
+          resourceChanges: { grain: 50 },
+        },
+      },
+    ],
+    ...overrides,
+  };
+}
+
+function createTestInstance(overrides?: Partial<EventInstance>): EventInstance {
+  return {
+    instanceId: 'inst-001',
+    eventDefId: 'test-event-01',
+    triggeredTurn: 1,
+    expireTurn: 5,
+    status: 'active',
+    ...overrides,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+
+describe('EventNotificationSystem', () => {
+  let sys: EventNotificationSystem;
+
+  beforeEach(() => {
+    sys = createSystem();
+  });
+
+  // ═══════════════════════════════════════════
+  // 5. 横幅排序与查询
+  // ═══════════════════════════════════════════
+  describe('横幅排序与查询', () => {
     it('横幅按优先级降序排列', () => {
       sys.createBanner(
         createTestInstance({ instanceId: 'i1' }),
@@ -23,6 +120,7 @@ import type {
       expect(banners[0].urgency).toBe('critical');
       expect(banners[1].urgency).toBe('high');
       expect(banners[2].urgency).toBe('low');
+    });
 
     it('getUnreadBanners 只返回未读', () => {
       const b1 = sys.createBanner(

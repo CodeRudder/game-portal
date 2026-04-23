@@ -338,6 +338,13 @@ describe('NPCMapPlacer', () => {
       const npcs = [
         createNPC({ id: 'npc-1', position: { x: 5, y: 5 } }),
         createNPC({ id: 'npc-2', position: { x: 6, y: 6 } }),
-});
-});
+      ];
+      const { placer: p } = createPlacer({ npcs });
+      const result = p.computePlacement(npcs);
+
+      expect(result.placed).toContain('npc-1');
+      expect(result.placed).toContain('npc-2');
+      expect(result.unplaced).toHaveLength(0);
+    });
+  });
 });

@@ -309,6 +309,10 @@ describe('NPCAffinitySystem', () => {
 
     it('好感度下限为0', () => {
       const npc = createNPC({ affinity: 2 });
-});
-});
+      const record = sys.applyAffinityChange(npc.id, npc, -10, 'time_decay', '测试');
+      expect(record.newAffinity).toBe(0);
+      expect(record.delta).toBe(-2);
+      expect(npc.affinity).toBe(0);
+    });
+  });
 });

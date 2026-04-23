@@ -1,12 +1,155 @@
+/**
+ * EventTriggerSystem 单元测试 (p2)
+ *
+ * 覆盖：
+ * - 事件过期
+ * - 活跃事件管理
+ * - 事件类型矩阵完整性
+ * - 存档序列化
+ * - 配置
+ * - canTrigger 综合测试
+ * - 概率计算
+ * - 条件评估
+ * - 概率公式集成触发
+ */
+
 import { EventTriggerSystem } from '../EventTriggerSystem';
 import type { ISystemDeps } from '../../../core/types';
 import type {
+  EventDef,
+  EventInstance,
+  EventTriggerResult,
+  EventChoiceResult,
+} from '../../../core/event';
 import type { ProbabilityCondition } from '../../../core/event/event-v15-event.types';
 import {
+  PREDEFINED_EVENTS,
+  DEFAULT_EVENT_TRIGGER_CONFIG,
+} from '../../../core/event';
 
+// ─────────────────────────────────────────────
+// 辅助工具
+// ─────────────────────────────────────────────
+
+function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+function createSystem(): EventTriggerSystem {
+  const sys = new EventTriggerSystem();
+  sys.init(mockDeps());
+  return sys;
+}
+
+function createRandomEventDef(overrides?: Partial<EventDef>): EventDef {
+  return {
+    id: 'test-random-01',
+    title: '测试随机事件',
+    description: '这是一个测试用的随机事件',
+    triggerType: 'random',
+    urgency: 'medium',
+    scope: 'global',
+    triggerProbability: 0.5,
+    options: [
+      {
+        id: 'opt-a',
+        text: '选项A',
+        description: '选择A',
+        consequences: {
+          description: '获得金币',
+          resourceChanges: { gold: 100 },
+        },
+      },
+      {
+        id: 'opt-b',
+        text: '选项B',
+        isDefault: true,
+        consequences: {
+          description: '获得粮草',
+          resourceChanges: { grain: 50 },
+        },
+      },
+    ],
+    ...overrides,
+  };
+}
+
+function createFixedEventDef(overrides?: Partial<EventDef>): EventDef {
+  return {
+    id: 'test-fixed-01',
+    title: '测试固定事件',
+    description: '这是一个测试用的固定事件',
+    triggerType: 'fixed',
+    urgency: 'high',
+    scope: 'global',
+    triggerConditions: [],
+    options: [
+      {
+        id: 'opt-a',
+        text: '选项A',
+        consequences: {
+          description: '固定事件结果',
+        },
+      },
+    ],
+    ...overrides,
+  };
+}
+
+function createChainEventDef(overrides?: Partial<EventDef>): EventDef {
+  return {
+    id: 'test-chain-01',
+    title: '测试连锁事件',
+    description: '这是一个测试用的连锁事件',
+    triggerType: 'chain',
+    urgency: 'critical',
+    scope: 'global',
+    prerequisiteEventIds: [],
+    options: [
+      {
+        id: 'opt-a',
+        text: '选项A',
+        consequences: {
+          description: '选择了A',
+          triggerEventId: 'test-chain-02',
+        },
+      },
+    ],
+    ...overrides,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+
+describe('EventTriggerSystem', () => {
+  let sys: EventTriggerSystem;
+
+  beforeEach(() => {
+    sys = createSystem();
+  });
+
+  // ═══════════════════════════════════════════
+  // 7. 事件过期
+  // ═══════════════════════════════════════════
+  describe('事件过期', () => {
+    it('expireEvents 清理过期事件', () => {
+      const def = createRandomEventDef({ expireAfterTurns: 3 });
+      sys.registerEvent(def);
+      sys.forceTriggerEvent(def.id, 1);
 
       const expired = sys.expireEvents(5);
       expect(expired.length).toBeGreaterThanOrEqual(1);
+    });
 
     it('expireEvents 不清理未过期事件', () => {
       const def = createRandomEventDef({ expireAfterTurns: 10 });

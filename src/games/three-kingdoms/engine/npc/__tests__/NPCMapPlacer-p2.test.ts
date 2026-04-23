@@ -1,9 +1,103 @@
+/**
+ * NPCMapPlacer 单元测试 (p2)
+ *
+ * 覆盖：
+ * - 位置分配（computePlacement）
+ * - 聚合配置
+ * - 拥挤管理配置
+ * - 缓存机制
+ * - 依赖注入
+ * - 边界情况
+ * - 完整流程测试
+ */
+
 import { NPCMapPlacer } from '../NPCMapPlacer';
 import type { NPCMapPlacerDeps } from '../NPCMapPlacer';
 import type { ISystemDeps } from '../../../core/types';
 import type { NPCData, NPCProfession, NPCMapDisplay } from '../../../core/npc';
 import { GRID_CONFIG } from '../../../core/map';
 
+// ─────────────────────────────────────────────
+// 辅助工具
+// ─────────────────────────────────────────────
+
+function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+/** 创建一个 NPC 数据对象 */
+function createNPC(
+  overrides: Partial<NPCData> & { id: string },
+): NPCData {
+  return {
+    name: `NPC-${overrides.id}`,
+    profession: 'merchant' as NPCProfession,
+    affinity: 50,
+    position: { x: 0, y: 0 },
+    region: 'central_plains',
+    visible: true,
+    dialogId: 'dialog-merchant-default',
+    createdAt: 0,
+    lastInteractedAt: 0,
+    ...overrides,
+  };
+}
+
+/** 创建 NPCMapPlacer 实例并注入依赖 */
+function createPlacer(
+  options: {
+    npcs?: NPCData[];
+    visibleNPCs?: NPCData[];
+  } = {},
+): { placer: NPCMapPlacer; deps: ISystemDeps; placerDeps: NPCMapPlacerDeps } {
+  const deps = mockDeps();
+  const placer = new NPCMapPlacer();
+  placer.init(deps);
+
+  const npcs = options.npcs ?? [];
+  const visibleNPCs = options.visibleNPCs ?? npcs;
+
+  const placerDeps: NPCMapPlacerDeps = {
+    getAllNPCs: jest.fn().mockReturnValue(npcs),
+    getVisibleNPCs: jest.fn().mockReturnValue(visibleNPCs),
+  };
+
+  placer.setPlacerDeps(placerDeps);
+  return { placer, deps, placerDeps };
+}
+
+// ═══════════════════════════════════════════════════════════
+
+describe('NPCMapPlacer', () => {
+  let placer: NPCMapPlacer;
+  let deps: ISystemDeps;
+  let placerDeps: NPCMapPlacerDeps;
+
+  beforeEach(() => {
+    const result = createPlacer();
+    placer = result.placer;
+    deps = result.deps;
+    placerDeps = result.placerDeps;
+  });
+
+  // ═══════════════════════════════════════════
+  // 6. 位置分配
+  // ═══════════════════════════════════════════
+  describe('computePlacement', () => {
+    it('少量 NPC 全部放置成功', () => {
+      const npcs = [
+        createNPC({ id: 'npc-1', position: { x: 5, y: 5 } }),
+        createNPC({ id: 'npc-2', position: { x: 6, y: 6 } }),
       ];
       const { placer: p } = createPlacer({ npcs });
       const result = p.computePlacement(npcs);
@@ -11,6 +105,7 @@ import { GRID_CONFIG } from '../../../core/map';
       expect(result.placed).toContain('npc-1');
       expect(result.placed).toContain('npc-2');
       expect(result.unplaced).toHaveLength(0);
+    });
 
     it('同位置多个 NPC 超过上限时产生溢出', () => {
       const npcs = Array.from({ length: 5 }, (_, i) =>
@@ -21,6 +116,7 @@ import { GRID_CONFIG } from '../../../core/map';
       // 默认 maxNPCsPerTile 为 3
       const result = p.computePlacement(npcs);
       expect(result.placed.length).toBeGreaterThan(0);
+    });
 
     it('返回的 clusters 包含聚合展示数据', () => {
       // 创建很多同位置 NPC 以触发聚合
@@ -38,6 +134,7 @@ import { GRID_CONFIG } from '../../../core/map';
         expect(cluster.clusteredNPCIds.length).toBeGreaterThan(0);
         expect(cluster.icon).toBe('👥');
       }
+    });
 
     it('空 NPC 列表返回空结果', () => {
       const result = placer.computePlacement([]);

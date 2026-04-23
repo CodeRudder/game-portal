@@ -321,6 +321,7 @@ describe('NPCPatrolSystem', () => {
     });
 
     it('getNPCExactPosition 不存在的NPC返回 null', () => {
-});
-});
+      expect(patrolSys.getNPCExactPosition('non-existent')).toBeNull();
+    });
+  });
 });

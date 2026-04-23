@@ -1,13 +1,82 @@
+/**
+ * NPCAffinitySystem 单元测试 (p2)
+ *
+ * 覆盖：
+ * - #18 好感度获取途径（续：衰减、通用方法）
+ * - #20 羁绊技能
+ * - #19 好感度进度可视化
+ * - 历史记录与统计
+ * - 回合管理
+ * - 配置管理
+ * - 序列化
+ */
+
 import { NPCAffinitySystem } from '../NPCAffinitySystem';
 import type { ISystemDeps } from '../../../core/types';
 import type { NPCData, NPCProfession, AffinityLevel } from '../../../core/npc';
 import { AFFINITY_THRESHOLDS, BOND_SKILLS } from '../../../core/npc';
 import type { GiftType } from '../NPCAffinitySystem';
 
+// ─────────────────────────────────────────────
+// 辅助工具
+// ─────────────────────────────────────────────
+
+function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+function createAffinitySystem(config?: Record<string, unknown>): NPCAffinitySystem {
+  const sys = new NPCAffinitySystem(config);
+  sys.init(mockDeps());
+  return sys;
+}
+
+function createNPC(overrides: Partial<NPCData> = {}): NPCData {
+  return {
+    id: 'npc-test-001',
+    name: '测试商人',
+    profession: 'merchant',
+    affinity: 30,
+    position: { x: 5, y: 5 },
+    region: 'central_plains',
+    visible: true,
+    dialogId: 'dialog-test',
+    createdAt: 0,
+    lastInteractedAt: 0,
+    ...overrides,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+
+describe('NPCAffinitySystem', () => {
+  let sys: NPCAffinitySystem;
+
+  beforeEach(() => {
+    sys = createAffinitySystem();
+  });
+
+  // ═══════════════════════════════════════════
+  // 3. #18 好感度获取途径（续）
+  // ═══════════════════════════════════════════
+  describe('#18 好感度获取途径', () => {
+    it('好感度下限为0', () => {
+      const npc = createNPC({ affinity: 2 });
       const record = sys.applyAffinityChange(npc.id, npc, -10, 'time_decay', '测试');
       expect(record.newAffinity).toBe(0);
       expect(record.delta).toBe(-2);
       expect(npc.affinity).toBe(0);
+    });
 
     it('好感度衰减', () => {
       const npc = createNPC({ affinity: 50 });
@@ -15,12 +84,14 @@ import type { GiftType } from '../NPCAffinitySystem';
       expect(record).not.toBeNull();
       expect(record!.delta).toBe(-0.5);
       expect(record!.source).toBe('time_decay');
+    });
 
     it('衰减量为0时返回null', () => {
       const sysNoDecay = createAffinitySystem({ decayPerTurn: 0 });
       const npc = createNPC({ affinity: 50 });
       const record = sysNoDecay.applyDecay(npc.id, npc);
       expect(record).toBeNull();
+    });
 
     it('等级提升时发出事件', () => {
       const npc = createNPC({ affinity: 38 }); // neutral 上限附近

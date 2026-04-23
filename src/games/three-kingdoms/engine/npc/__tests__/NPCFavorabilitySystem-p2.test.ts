@@ -1,14 +1,84 @@
+/**
+ * NPCFavorabilitySystem 单元测试 (p2)
+ *
+ * 覆盖：
+ * - 好感度获取途径（续：历史记录）
+ * - 好感度进度可视化（#19）
+ * - 羁绊技能（#20）
+ * - 好感度时间衰减
+ * - 配置管理
+ * - 存档序列化
+ * - 历史记录管理
+ */
+
 import { NPCFavorabilitySystem } from '../NPCFavorabilitySystem';
 import { NPCSystem } from '../NPCSystem';
 import type { ISystemDeps } from '../../../core/types';
 import {
+  AFFINITY_LEVEL_EFFECTS,
+  DEFAULT_AFFINITY_GAIN_CONFIG,
+  BOND_SKILLS,
+} from '../../../core/npc';
 
+// ─────────────────────────────────────────────
+// 辅助工具
+// ─────────────────────────────────────────────
+
+function mockDeps(): ISystemDeps {
+  return {
+    eventBus: {
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
+    },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+  } as unknown as ISystemDeps;
+}
+
+function createSystemWithNPC(): { favSys: NPCFavorabilitySystem; npcSys: NPCSystem; deps: ISystemDeps } {
+  const deps = mockDeps();
+
+  const npcSys = new NPCSystem();
+  npcSys.init(deps);
+
+  // 让 registry.get 返回 NPCSystem
+  (deps.registry.get as ReturnType<typeof jest.fn>).mockImplementation((name: string) => {
+    if (name === 'npc') return npcSys;
+    return null;
+  });
+
+  const favSys = new NPCFavorabilitySystem();
+  favSys.init(deps);
+
+  return { favSys, npcSys, deps };
+}
+
+// ═══════════════════════════════════════════════════════════
+
+describe('NPCFavorabilitySystem', () => {
+  let favSys: NPCFavorabilitySystem;
+  let npcSys: NPCSystem;
+
+  beforeEach(() => {
+    const ctx = createSystemWithNPC();
+    favSys = ctx.favSys;
+    npcSys = ctx.npcSys;
+  });
+
+  // ═══════════════════════════════════════════
+  // 3. 好感度获取途径（续：历史记录）
+  // ═══════════════════════════════════════════
+  describe('好感度获取途径（#18）', () => {
     it('好感度变化被记录', () => {
       favSys.addDialogAffinity('npc-merchant-01', 1);
       const history = favSys.getChangeHistory();
       expect(history.length).toBe(1);
       expect(history[0].source).toBe('dialog');
       expect(history[0].delta).toBe(DEFAULT_AFFINITY_GAIN_CONFIG.dialogBase);
+    });
 
     it('getNPCChangeHistory 按NPC过滤', () => {
       favSys.addDialogAffinity('npc-merchant-01', 1);
