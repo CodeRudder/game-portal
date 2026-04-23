@@ -60,7 +60,8 @@ export class NPCPatrolSystem implements ISubsystem {
     this.spawnMgr.setDeps({
       getNPCSystem: () => {
         try {
-          return this.deps?.registry?.get('npc') ?? null;
+          const sys = this.deps?.registry?.get('npc');
+          return sys ? (sys as unknown as import('./NPCSpawnManager').INPCSystemFacade) : null;
         } catch {
           return null;
         }

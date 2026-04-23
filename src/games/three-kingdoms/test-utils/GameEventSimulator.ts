@@ -165,8 +165,8 @@ export class GameEventSimulator {
    */
   private completePendingUpgrades(): void {
     const building = this.engine.building;
-    // 直接访问内部 buildings 对象（非 clone）
-    const internalBuildings = (building as any).buildings as Record<string, any>;
+    // 直接访问内部 buildings 对象（非 clone）— 测试工具需要操作内部状态
+    const internalBuildings = (building as unknown as { buildings: Record<string, { status: string; level: number; upgradeStartTime: number | null; upgradeEndTime: number | null }> }).buildings;
     const completed: string[] = [];
 
     for (const [type, state] of Object.entries(internalBuildings)) {
@@ -180,7 +180,7 @@ export class GameEventSimulator {
     }
 
     // 清空升级队列
-    const queue = (building as any).upgradeQueue as any[];
+    const queue = (building as unknown as { upgradeQueue: unknown[] }).upgradeQueue;
     if (queue && queue.length > 0) {
       queue.length = 0;
     }
