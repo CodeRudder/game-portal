@@ -148,15 +148,15 @@ describe('HeroRecruitSystem — 边界测试', () => {
       );
     });
 
-    it('hardPity 达到 99 时下次触发硬保底', () => {
-      // 设计规格：hardPityThreshold=100, hardPityMinQuality=LEGENDARY
+    it('hardPity 达到 99 时高级池下次触发硬保底', () => {
+      // PRD: 普通池无硬保底(hardPityThreshold=Infinity)，仅高级池有100抽硬保底
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
-        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 99, advancedHardPity: 0 },
+        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 99 },
       });
-      const rng = makeConstantRng(0.88); // RARE
+      const rng = makeConstantRng(0.15); // COMMON in advanced
       recruit.setRng(rng);
-      const result = recruit.recruitSingle('normal')!;
+      const result = recruit.recruitSingle('advanced')!;
       expect(QUALITY_ORDER[result.results[0].quality]).toBeGreaterThanOrEqual(
         QUALITY_ORDER[Quality.LEGENDARY],
       );
@@ -198,13 +198,13 @@ describe('HeroRecruitSystem — 边界测试', () => {
     });
 
     it('getNextHardPity 返回正确的剩余次数', () => {
-      // 设计规格：hardPityThreshold=100
+      // PRD: 普通池无硬保底(Infinity)，高级池hardPityThreshold=100
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 30, advancedHardPity: 45 },
       });
-      expect(recruit.getNextHardPity('normal')).toBe(70);
-      expect(recruit.getNextHardPity('advanced')).toBe(55);
+      expect(recruit.getNextHardPity('normal')).toBe(Infinity); // 普通池无硬保底
+      expect(recruit.getNextHardPity('advanced')).toBe(55); // 高级池100-45=55
     });
   });
 

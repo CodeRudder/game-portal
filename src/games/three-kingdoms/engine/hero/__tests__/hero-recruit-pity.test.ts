@@ -103,17 +103,17 @@ describe('HeroRecruitSystem — 保底机制', () => {
       );
     });
 
-    it('硬保底：第100次必出传说+', () => {
-      // P0-1 修复后：100抽保底 LEGENDARY+
+    it('硬保底：高级池第100次必出传说+', () => {
+      // PRD: 普通池无硬保底，仅高级池100抽保底 LEGENDARY+
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
-        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 99, advancedHardPity: 0 },
+        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 99 },
       });
 
-      // 第100次保底应提升到 LEGENDARY+
-      const rng = makeConstantRng(0.93); // RARE in normal → 保底提升到 LEGENDARY+
+      // 高级池第100次保底应提升到 LEGENDARY+
+      const rng = makeConstantRng(0.15); // COMMON in advanced → 保底提升到 LEGENDARY+
       recruit.setRng(rng);
-      const result = recruit.recruitSingle('normal')!;
+      const result = recruit.recruitSingle('advanced')!;
       expect(QUALITY_ORDER[result.results[0].quality]).toBeGreaterThanOrEqual(
         QUALITY_ORDER[Quality.LEGENDARY],
       );
@@ -151,12 +151,13 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('getNextHardPity 返回剩余次数', () => {
-      // P0-2 修复后：hardPityThreshold=100
+      // PRD: 普通池无硬保底(Infinity)，高级池hardPityThreshold=100
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 20, advancedHardPity: 0 },
       });
-      expect(recruit.getNextHardPity('normal')).toBe(80);
+      expect(recruit.getNextHardPity('normal')).toBe(Infinity); // 普通池无硬保底
+      expect(recruit.getNextHardPity('advanced')).toBe(100); // 高级池100-0=100
     });
 
     it('保底计数器在多次 RARE 抽取后 hardPity 递增', () => {
@@ -215,23 +216,23 @@ describe('HeroRecruitSystem — 保底机制', () => {
       spy.mockRestore();
     });
 
-    it('反序列化恢复保底计数器后招募继续计数', () => {
-      // P0-1 修复后：hardPityThreshold=100, hardPityMinQuality=LEGENDARY
-      // 设置 normalHardPity=98，再抽2次应触发硬保底
+    it('反序列化恢复保底计数器后高级池招募继续计数', () => {
+      // PRD: 普通池无硬保底(Infinity)，高级池hardPityThreshold=100
+      // 设置 advancedHardPity=98，再抽2次应触发硬保底
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
-        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 98, advancedHardPity: 0 },
+        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 98 },
       });
 
-      // 抽一次 RARE → hardPity=99 (rng=0.93 → RARE in normal [0.88, 0.97))
-      const rng = makeConstantRng(0.93);
+      // 抽一次 RARE → advancedHardPity=99 (rng=0.80 → RARE in advanced [0.72, 0.90))
+      const rng = makeConstantRng(0.80);
       recruit.setRng(rng);
-      recruit.recruitSingle('normal');
-      expect(recruit.getGachaState().normalHardPity).toBe(99);
+      recruit.recruitSingle('advanced');
+      expect(recruit.getGachaState().advancedHardPity).toBe(99);
 
-      // 再抽一次 → hardPity 达到 100，保底提升到 LEGENDARY
+      // 再抽一次 → advancedHardPity 达到 100，保底提升到 LEGENDARY
       recruit.setRng(rng);
-      const result = recruit.recruitSingle('normal')!;
+      const result = recruit.recruitSingle('advanced')!;
       expect(QUALITY_ORDER[result.results[0].quality]).toBeGreaterThanOrEqual(
         QUALITY_ORDER[Quality.LEGENDARY],
       );

@@ -49,26 +49,26 @@ function createMockHeroSystem(generals: GeneralData[]): HeroSystem {
 
 function createMockResources(
   gold: number,
-  exp: number,
+  grain: number,
   spendFail = false,
 ) {
   let curGold = gold;
-  let curExp = exp;
+  let curGrain = grain;
   return {
     spendResource: vi.fn((type: string, amount: number) => {
       if (spendFail) return false;
       if (type === 'gold') { curGold -= amount; return true; }
-      if (type === 'exp') { curExp -= amount; return true; }
+      if (type === 'grain') { curGrain -= amount; return true; }
       return true;
     }),
     canAffordResource: vi.fn((type: string, amount: number) => {
       if (type === 'gold') return curGold >= amount;
-      if (type === 'exp') return curExp >= amount;
+      if (type === 'grain') return curGrain >= amount;
       return true;
     }),
     getResourceAmount: vi.fn((type: string) => {
       if (type === 'gold') return curGold;
-      if (type === 'exp') return curExp;
+      if (type === 'grain') return curGrain;
       return 0;
     }),
   };

@@ -117,20 +117,29 @@ export const SYNTHESIZE_REQUIRED_FRAGMENTS: Record<Quality, number> = {
  *
  * 来源：PRD HER-1-3 战力计算
  *
- * 单将战力 = (ATK × w_atk + DEF × w_def + INT × w_int + SPD × w_spd)
- *            × 等级系数 × 品质系数
+ * 单将战力 = (ATK × w_atk + CMD × w_cmd + INT × w_int + POL × w_pol)
+ *            × 等级系数 × 星级系数
+ *
+ * PRD属性映射（HER-heroes-prd.md）:
+ *   attack  ↔ ATK (攻击力) — 权重 2.0
+ *   defense ↔ CMD (统率)   — 权重 1.5  [PRD原定义: CMD×1.5]
+ *   intelligence ↔ INT (智力) — 权重 2.0
+ *   speed   ↔ POL (政治)   — 权重 1.0  [PRD原定义: POL×1.0]
+ *
+ * 注: 源码属性名(defense/speed)与PRD(CMD/POL)语义不同，
+ *     当前权重已对齐PRD(2.0/1.5/2.0/1.0)，属性命名重构待后续版本统一。
  *
  * 等级系数 = 1 + 等级 × 0.05
- * 品质系数 = QUALITY_MULTIPLIERS[quality]
+ * 星级系数 = getStarMultiplier(star)
  */
 export const POWER_WEIGHTS = {
-  /** 攻击力权重 */
+  /** 攻击力权重 (PRD: ATK × 2.0) */
   attack: 2.0,
-  /** 防御力权重 */
+  /** 统率权重 (PRD: CMD × 1.5, 源码字段名defense待重构为command) */
   defense: 1.5,
-  /** 智力权重 */
+  /** 智力权重 (PRD: INT × 2.0) */
   intelligence: 2.0,
-  /** 速度权重 */
+  /** 政治权重 (PRD: POL × 1.0, 源码字段名speed待重构为politics) */
   speed: 1.0,
 } as const;
 

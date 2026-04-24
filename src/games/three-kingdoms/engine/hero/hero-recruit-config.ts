@@ -67,32 +67,32 @@ export interface QualityRate {
 /**
  * 普通招募概率表
  *
- * 来源：v2.0-Play文档对齐 — [60, 28, 9, 2.5, 0.5]
- * 普通(Uncommon) 60% / 精良(Rare) 28% / 稀有(Epic) 9% / 史诗(Legendary) 2.5% / 传说(Mythic) 0.5%
+ * 来源：PRD HER-heroes-prd.md — [60, 30, 8, 2, 0]
+ * 普通(Uncommon) 60% / 精良(Rare) 30% / 稀有(Epic) 8% / 史诗(Legendary) 2% / 传说(Mythic) 0%
  *
  * 品质映射：COMMON↔Uncommon, FINE↔Rare, RARE↔Epic, EPIC↔Legendary, LEGENDARY↔Mythic
  */
 export const NORMAL_RATES: readonly QualityRate[] = [
   { quality: Q.COMMON, rate: 0.60 },
-  { quality: Q.FINE, rate: 0.28 },
-  { quality: Q.RARE, rate: 0.09 },
-  { quality: Q.EPIC, rate: 0.025 },
-  { quality: Q.LEGENDARY, rate: 0.005 },
+  { quality: Q.FINE, rate: 0.30 },
+  { quality: Q.RARE, rate: 0.08 },
+  { quality: Q.EPIC, rate: 0.02 },
+  { quality: Q.LEGENDARY, rate: 0 },
 ] as const;
 
 /**
  * 高级招募概率表
  *
- * 来源：v2.0-Play文档对齐 — [40, 32, 18, 8, 2]
- * 普通(Uncommon) 40% / 精良(Rare) 32% / 稀有(Epic) 18% / 史诗(Legendary) 8% / 传说(Mythic) 2%
+ * 来源：PRD HER-heroes-prd.md — [20, 40, 25, 13, 2]
+ * 普通(Uncommon) 20% / 精良(Rare) 40% / 稀有(Epic) 25% / 史诗(Legendary) 13% / 传说(Mythic) 2%
  *
  * 品质映射：COMMON↔Uncommon, FINE↔Rare, RARE↔Epic, EPIC↔Legendary, LEGENDARY↔Mythic
  */
 export const ADVANCED_RATES: readonly QualityRate[] = [
-  { quality: Q.COMMON, rate: 0.40 },
-  { quality: Q.FINE, rate: 0.32 },
-  { quality: Q.RARE, rate: 0.18 },
-  { quality: Q.EPIC, rate: 0.08 },
+  { quality: Q.COMMON, rate: 0.20 },
+  { quality: Q.FINE, rate: 0.40 },
+  { quality: Q.RARE, rate: 0.25 },
+  { quality: Q.EPIC, rate: 0.13 },
   { quality: Q.LEGENDARY, rate: 0.02 },
 ] as const;
 
@@ -126,11 +126,11 @@ export interface PityConfig {
   hardPityMinQuality: Quality;
 }
 
-/** 普通招募保底配置（v2.0 修正：100抽必出LEGENDARY+） */
+/** 普通招募保底配置（PRD: 普通招贤无保底，仅保留十连保底） */
 export const NORMAL_PITY: PityConfig = {
   tenPullThreshold: 10,
   tenPullMinQuality: Q.RARE,
-  hardPityThreshold: 100,
+  hardPityThreshold: Infinity, // PRD: 普通池无硬保底
   hardPityMinQuality: Q.LEGENDARY,
 };
 

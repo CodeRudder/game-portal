@@ -121,21 +121,8 @@ describe('HeroRecruitSystem — 补充边界测试', () => {
       );
     });
 
-    it('硬保底在第 100 次必定触发传说+', () => {
-      // 设计规格：hardPityThreshold=100, hardPityMinQuality=LEGENDARY
-      recruit.deserialize({
-        version: RECRUIT_SAVE_VERSION,
-        pity: { normalPity: 0, advancedPity: 0, normalHardPity: 99, advancedHardPity: 0 },
-      });
-      const rng = makeConstantRng(0.3); // COMMON
-      recruit.setRng(rng);
-      const result = recruit.recruitSingle('normal')!;
-      expect(QUALITY_ORDER[result.results[0].quality]).toBeGreaterThanOrEqual(
-        QUALITY_ORDER[Quality.LEGENDARY],
-      );
-    });
-
-    it('高级招募硬保底在第 100 次必定触发', () => {
+    it('高级招募硬保底在第 100 次必定触发传说+', () => {
+      // PRD: 普通池无硬保底，仅高级池有100抽硬保底
       recruit.deserialize({
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 99 },
