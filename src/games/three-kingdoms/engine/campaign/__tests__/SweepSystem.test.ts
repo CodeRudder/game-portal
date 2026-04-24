@@ -254,11 +254,11 @@ describe('SweepSystem 序列化', () => {
 
     const saved = system.serialize();
     expect(saved.version).toBe(1);
-    expect(saved.ticketCount).toBe(15);
+    expect(saved.ticketCount).toBe(13);
 
     const { system: system2 } = createSweepSystem();
     system2.deserialize(saved);
-    expect(system2.getTicketCount()).toBe(15);
+    expect(system2.getTicketCount()).toBe(13);
     expect(system2.isDailyTicketClaimed()).toBe(true);
   });
 

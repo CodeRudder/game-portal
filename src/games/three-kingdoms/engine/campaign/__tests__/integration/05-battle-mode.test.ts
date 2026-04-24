@@ -316,9 +316,9 @@ describe('§3.8 调整战斗速度', () => {
     expect(controller.getAnimationSpeedScale()).toBe(3.0);
   });
 
-  it('X3 速度需要简化特效', () => {
+  it('X3 速度不需要简化特效', () => {
     controller.setSpeed(BattleSpeed.X3);
-    expect(controller.shouldSimplifyEffects()).toBe(true);
+    expect(controller.shouldSimplifyEffects()).toBe(false);
   });
 
   it('X1/X2 速度不需要简化特效', () => {

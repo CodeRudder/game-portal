@@ -3,7 +3,7 @@ import { vi } from 'vitest';
  * 战斗加速控制器 — 单元测试
  *
  * 覆盖：
- * - 速度档位切换（1x/2x/4x）
+ * - 速度档位切换（1x/2x/3x）
  * - 回合间隔缩放
  * - 动画速度缩放
  * - 简化特效判定
@@ -87,11 +87,11 @@ describe('BattleSpeedController', () => {
       expect(controller.getSpeed()).toBe(BattleSpeed.X2);
     });
 
-    it('切换到4x应成功', () => {
-      const result = controller.setSpeed(BattleSpeed.X4);
+    it('切换到3x应成功', () => {
+      const result = controller.setSpeed(BattleSpeed.X3);
 
       expect(result).toBe(true);
-      expect(controller.getSpeed()).toBe(BattleSpeed.X4);
+      expect(controller.getSpeed()).toBe(BattleSpeed.X3);
     });
 
     it('切换到相同速度应返回false', () => {
@@ -106,7 +106,7 @@ describe('BattleSpeedController', () => {
     });
 
     it('切换到1x应正确计算缩放', () => {
-      controller.setSpeed(BattleSpeed.X4); // 先切到4x
+      controller.setSpeed(BattleSpeed.X3); // 先切到3x
       controller.setSpeed(BattleSpeed.X1); // 再切回1x
 
       const state = controller.getSpeedState();
@@ -130,9 +130,9 @@ describe('BattleSpeedController', () => {
       expect(controller.getAdjustedTurnInterval()).toBe(500);
     });
 
-    it('4x时间隔为1/4', () => {
-      controller.setSpeed(BattleSpeed.X4);
-      expect(controller.getAdjustedTurnInterval()).toBe(250);
+    it('3x时间隔为1/3', () => {
+      controller.setSpeed(BattleSpeed.X3);
+      expect(controller.getAdjustedTurnInterval()).toBe(Math.floor(1000 / 3));
     });
 
     it('间隔缩放系数应正确', () => {
@@ -154,9 +154,9 @@ describe('BattleSpeedController', () => {
       expect(controller.getAnimationSpeedScale()).toBe(2);
     });
 
-    it('4x时动画速度为4', () => {
-      controller.setSpeed(BattleSpeed.X4);
-      expect(controller.getAnimationSpeedScale()).toBe(4);
+    it('3x时动画速度为3', () => {
+      controller.setSpeed(BattleSpeed.X3);
+      expect(controller.getAnimationSpeedScale()).toBe(3);
     });
   });
 
@@ -173,23 +173,23 @@ describe('BattleSpeedController', () => {
       expect(controller.shouldSimplifyEffects()).toBe(false);
     });
 
-    it('4x应简化特效', () => {
-      controller.setSpeed(BattleSpeed.X4);
-      expect(controller.shouldSimplifyEffects()).toBe(true);
+    it('3x不应简化特效', () => {
+      controller.setSpeed(BattleSpeed.X3);
+      expect(controller.shouldSimplifyEffects()).toBe(false);
     });
   });
 
   // ── 循环切换 ──
 
   describe('cycleSpeed', () => {
-    it('应按 1x → 2x → 4x → 1x 循环', () => {
+    it('应按 1x → 2x → 3x → 1x 循环', () => {
       expect(controller.getSpeed()).toBe(BattleSpeed.X1);
 
       controller.cycleSpeed();
       expect(controller.getSpeed()).toBe(BattleSpeed.X2);
 
       controller.cycleSpeed();
-      expect(controller.getSpeed()).toBe(BattleSpeed.X4);
+      expect(controller.getSpeed()).toBe(BattleSpeed.X3);
 
       controller.cycleSpeed();
       expect(controller.getSpeed()).toBe(BattleSpeed.X1);
@@ -228,7 +228,7 @@ describe('BattleSpeedController', () => {
       controller.addListener(listener1);
       controller.addListener(listener2);
 
-      controller.setSpeed(BattleSpeed.X4);
+      controller.setSpeed(BattleSpeed.X3);
 
       expect(listener1.onSpeedChange).toHaveBeenCalledTimes(1);
       expect(listener2.onSpeedChange).toHaveBeenCalledTimes(1);
@@ -257,7 +257,7 @@ describe('BattleSpeedController', () => {
   describe('变更历史', () => {
     it('应记录所有速度变更', () => {
       controller.setSpeed(BattleSpeed.X2);
-      controller.setSpeed(BattleSpeed.X4);
+      controller.setSpeed(BattleSpeed.X3);
 
       const history = controller.getChangeHistory();
       expect(history).toHaveLength(2);
@@ -266,7 +266,7 @@ describe('BattleSpeedController', () => {
       expect(history[0].newSpeed).toBe(BattleSpeed.X2);
 
       expect(history[1].previousSpeed).toBe(BattleSpeed.X2);
-      expect(history[1].newSpeed).toBe(BattleSpeed.X4);
+      expect(history[1].newSpeed).toBe(BattleSpeed.X3);
     });
 
     it('相同速度不应记录', () => {
@@ -293,7 +293,7 @@ describe('BattleSpeedController', () => {
 
   describe('reset', () => {
     it('应重置为默认速度', () => {
-      controller.setSpeed(BattleSpeed.X4);
+      controller.setSpeed(BattleSpeed.X3);
       controller.reset();
 
       expect(controller.getSpeed()).toBe(BATTLE_CONFIG.DEFAULT_BATTLE_SPEED);
@@ -301,7 +301,7 @@ describe('BattleSpeedController', () => {
 
     it('应清除变更历史', () => {
       controller.setSpeed(BattleSpeed.X2);
-      controller.setSpeed(BattleSpeed.X4);
+      controller.setSpeed(BattleSpeed.X3);
       controller.reset();
 
       expect(controller.getChangeHistory()).toHaveLength(0);
@@ -320,30 +320,30 @@ describe('BattleSpeedController', () => {
       expect(state.simplifiedEffects).toBe(false);
     });
 
-    it('应正确序列化4x状态', () => {
-      controller.setSpeed(BattleSpeed.X4);
+    it('应正确序列化3x状态', () => {
+      controller.setSpeed(BattleSpeed.X3);
       const state = controller.serialize();
 
-      expect(state.speed).toBe(BattleSpeed.X4);
+      expect(state.speed).toBe(BattleSpeed.X3);
       expect(state.turnIntervalScale).toBeCloseTo(0.25);
       expect(state.animationSpeedScale).toBe(4);
       expect(state.simplifiedEffects).toBe(true);
     });
 
     it('应正确反序列化', () => {
-      controller.setSpeed(BattleSpeed.X4);
+      controller.setSpeed(BattleSpeed.X3);
       const serialized = controller.serialize();
 
       const newController = new BattleSpeedController();
       newController.deserialize(serialized);
 
-      expect(newController.getSpeed()).toBe(BattleSpeed.X4);
+      expect(newController.getSpeed()).toBe(BattleSpeed.X3);
       expect(newController.getAnimationSpeedScale()).toBe(4);
     });
 
     it('序列化应为副本', () => {
       const state = controller.serialize();
-      state.speed = BattleSpeed.X4;
+      state.speed = BattleSpeed.X3;
 
       expect(controller.getSpeed()).toBe(BattleSpeed.X1);
     });
@@ -361,12 +361,12 @@ describe('BattleSpeedController', () => {
         expect(BattleSpeedController.isValidSpeed(2)).toBe(true);
       });
 
-      it('4x应合法', () => {
-        expect(BattleSpeedController.isValidSpeed(4)).toBe(true);
+      it('3x应合法', () => {
+        expect(BattleSpeedController.isValidSpeed(3)).toBe(true);
       });
 
-      it('3x应不合法', () => {
-        expect(BattleSpeedController.isValidSpeed(3)).toBe(false);
+      it('4x应不合法', () => {
+        expect(BattleSpeedController.isValidSpeed(4)).toBe(false);
       });
 
       it('0应合法（SKIP模式）', () => {
@@ -391,7 +391,7 @@ describe('BattleSpeedController', () => {
   describe('状态持久化', () => {
     it('多次切换后状态应正确', () => {
       controller.setSpeed(BattleSpeed.X2);
-      controller.setSpeed(BattleSpeed.X4);
+      controller.setSpeed(BattleSpeed.X3);
       controller.setSpeed(BattleSpeed.X1);
       controller.setSpeed(BattleSpeed.X2);
 
@@ -403,7 +403,7 @@ describe('BattleSpeedController', () => {
 
     it('速度状态对象应为副本', () => {
       const state = controller.getSpeedState();
-      state.speed = BattleSpeed.X4;
+      state.speed = BattleSpeed.X3;
 
       expect(controller.getSpeed()).toBe(BattleSpeed.X1);
     });

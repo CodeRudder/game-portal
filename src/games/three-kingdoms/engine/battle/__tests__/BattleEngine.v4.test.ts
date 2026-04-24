@@ -236,9 +236,9 @@ describe('BattleEngine v4.0', () => {
     });
 
     it('应能设置4x速度', () => {
-      engine.setSpeed(BattleSpeed.X4);
+      engine.setSpeed(BattleSpeed.X3);
       const state = engine.getSpeedState();
-      expect(state.speed).toBe(BattleSpeed.X4);
+      expect(state.speed).toBe(BattleSpeed.X3);
     });
 
     it('速度切换不应影响战斗结果', () => {
@@ -260,7 +260,7 @@ describe('BattleEngine v4.0', () => {
       engine.setSpeed(BattleSpeed.X1);
       const result1 = runBattle();
 
-      engine.setSpeed(BattleSpeed.X4);
+      engine.setSpeed(BattleSpeed.X3);
       const result2 = runBattle();
 
       // 速度只影响动画和间隔，不影响逻辑结果
@@ -274,7 +274,7 @@ describe('BattleEngine v4.0', () => {
       engine.setSpeed(BattleSpeed.X2);
       expect(engine.getAdjustedTurnInterval()).toBe(500);
 
-      engine.setSpeed(BattleSpeed.X4);
+      engine.setSpeed(BattleSpeed.X3);
       expect(engine.getAdjustedTurnInterval()).toBe(250);
     });
 
@@ -382,7 +382,7 @@ describe('BattleEngine v4.0', () => {
   describe('模式 + 速度组合', () => {
     it('半自动 + 4x加速应正常工作', () => {
       engine.setBattleMode(BattleMode.SEMI_AUTO);
-      engine.setSpeed(BattleSpeed.X4);
+      engine.setSpeed(BattleSpeed.X3);
 
       const ally = createTeam('ally', 3, { attack: 500, defense: 0, troopType: TroopType.ARCHER });
       const enemy = createTeam('enemy', 3, { attack: 0, defense: 0, hp: 500, maxHp: 500, troopType: TroopType.ARCHER });
@@ -390,7 +390,7 @@ describe('BattleEngine v4.0', () => {
       const result = engine.runFullBattle(ally, enemy);
 
       expect(result.outcome).toBe(BattleOutcome.VICTORY);
-      expect(engine.getSpeedState().speed).toBe(BattleSpeed.X4);
+      expect(engine.getSpeedState().speed).toBe(BattleSpeed.X3);
     });
 
     it('全自动 + 1x应正常工作', () => {
@@ -407,7 +407,7 @@ describe('BattleEngine v4.0', () => {
 
     it('多次切换模式和速度应正常工作', () => {
       engine.setBattleMode(BattleMode.SEMI_AUTO);
-      engine.setSpeed(BattleSpeed.X4);
+      engine.setSpeed(BattleSpeed.X3);
       engine.setBattleMode(BattleMode.AUTO);
       engine.setSpeed(BattleSpeed.X2);
       engine.setBattleMode(BattleMode.SEMI_AUTO);
@@ -444,20 +444,20 @@ describe('BattleEngine v4.0', () => {
 
   describe('速度持久化', () => {
     it('速度在多次战斗间应保持', () => {
-      engine.setSpeed(BattleSpeed.X4);
+      engine.setSpeed(BattleSpeed.X3);
 
       const ally = createTeam('ally', 1, { attack: 99999, defense: 0, troopType: TroopType.ARCHER });
       const enemy = createTeam('enemy', 1, { attack: 0, defense: 0, hp: 1, maxHp: 1, troopType: TroopType.ARCHER });
 
       engine.runFullBattle(ally, enemy);
-      expect(engine.getSpeedState().speed).toBe(BattleSpeed.X4);
+      expect(engine.getSpeedState().speed).toBe(BattleSpeed.X3);
 
       // 第二场战斗
       const ally2 = createTeam('ally', 1, { attack: 99999, defense: 0, troopType: TroopType.ARCHER });
       const enemy2 = createTeam('enemy', 1, { attack: 0, defense: 0, hp: 1, maxHp: 1, troopType: TroopType.ARCHER });
 
       engine.runFullBattle(ally2, enemy2);
-      expect(engine.getSpeedState().speed).toBe(BattleSpeed.X4);
+      expect(engine.getSpeedState().speed).toBe(BattleSpeed.X3);
     });
   });
 });
