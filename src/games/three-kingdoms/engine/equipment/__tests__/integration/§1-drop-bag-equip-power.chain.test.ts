@@ -30,8 +30,10 @@ import {
   EQUIPMENT_SLOTS,
   EQUIPMENT_RARITIES,
   RARITY_ORDER,
-  DEFAULT_BAG_CAPACITY,
 } from '../../../../core/equipment/equipment.types';
+import {
+  DEFAULT_BAG_CAPACITY,
+} from '../../../../core/equipment/equipment-config';
 import {
   EQUIPMENT_TEMPLATES,
   RARITY_MAIN_STAT_MULTIPLIER,

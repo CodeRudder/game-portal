@@ -8,9 +8,9 @@
  * 4. 升级中状态测试（进度条、不可再次升级）
  */
 import React from 'react';
-import { render, screen, within, waitFor } from '@testing-library/react';
+import { render, screen, within, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { BuildingType, BuildingState, Resources, ProductionRate, ResourceCap, UpgradeCost, UpgradeCheckResult } from '@/games/three-kingdoms/engine';
 import { BUILDING_TYPES, BUILDING_LABELS } from '@/games/three-kingdoms/engine';
 import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
@@ -215,6 +215,10 @@ function getModalCloseButton() {
 describe('BuildingPanel 核心交互测试', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   // 1. 渲染测试

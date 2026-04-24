@@ -1,5 +1,13 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import { vi, afterEach } from 'vitest';
+
+// ── Global cleanup after each test ──
+// In singleFork mode all tests share one process, so DOM elements from
+// previous test files persist unless we explicitly clean them up.
+afterEach(() => {
+  cleanup();
+});
 
 // ── CanvasRenderingContext2D mock for PixiJS ──
 // jsdom does not provide CanvasRenderingContext2D as a global constructor.
