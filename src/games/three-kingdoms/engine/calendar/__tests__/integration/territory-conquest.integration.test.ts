@@ -14,8 +14,8 @@ import { TerritorySystem } from '../../../map/TerritorySystem';
 import { SiegeSystem } from '../../../map/SiegeSystem';
 import { SiegeEnhancer } from '../../../map/SiegeEnhancer';
 import { GarrisonSystem } from '../../../map/GarrisonSystem';
-import type { ISystemDeps } from '../../../../../../core/types';
-import type { ISubsystemRegistry } from '../../../../../../core/types/subsystem';
+import type { ISystemDeps } from '../../../../core/types';
+import type { ISubsystemRegistry } from '../../../../core/types/subsystem';
 
 // ─────────────────────────────────────────────
 // 辅助工具
