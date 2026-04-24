@@ -31,13 +31,13 @@ export default defineConfig({
     testTimeout: 15000,
 
     // ── 并行池配置 ──
-    // 使用 forks 池（每个文件独立进程，避免内存累积）
-    // 注意：singleFork 在443文件下会OOM，改用多进程+限制并发
     pool: 'forks',
     poolOptions: {
       forks: {
-        maxForks: 2,
+        // 多进程模式，每个文件独立进程避免内存累积
+        // 注意：UI组件测试可能有跨文件DOM污染，已通过afterEach(cleanup)修复
         minForks: 1,
+        maxForks: 2,
       },
     },
 
