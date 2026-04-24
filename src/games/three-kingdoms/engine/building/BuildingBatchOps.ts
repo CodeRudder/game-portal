@@ -67,6 +67,7 @@ export function batchUpgrade(
       troops: remainingTroops,
       mandate: resources.mandate,
       techPoint: resources.techPoint,
+      recruitToken: resources.recruitToken,
     };
     const check = ctx.checkUpgrade(t, currentResources);
     if (!check.canUpgrade) {

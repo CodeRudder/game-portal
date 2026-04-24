@@ -190,6 +190,7 @@ export function estimateOfflineReward(
     troops: Math.floor(totalEarned.troops * bonusCoefficient),
     mandate: Math.floor(totalEarned.mandate * bonusCoefficient),
     techPoint: Math.floor(totalEarned.techPoint * bonusCoefficient),
+    recruitToken: Math.floor(totalEarned.recruitToken * bonusCoefficient),
   };
 
   const overallEfficiency = offlineSeconds > 0 ? totalWeighted / offlineSeconds : 1.0;

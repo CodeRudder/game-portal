@@ -35,6 +35,7 @@ const RESOURCE_ICONS: Record<ResourceType, string> = {
   troops: '⚔️',
   mandate: '👑',
   techPoint: '🔬',
+  recruitToken: '📜',
 };
 
 /** 资源颜色映射 — [SPEC-1] */
@@ -44,10 +45,11 @@ const RESOURCE_COLORS: Record<ResourceType, string> = {
   troops: '#B8423A',
   mandate: '#7B5EA7',
   techPoint: '#4FC3F7',
+  recruitToken: '#E8A030',
 };
 
 /** 资源排列顺序 */
-const RESOURCE_ORDER: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint'];
+const RESOURCE_ORDER: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint', 'recruitToken'];
 
 /** 资源脉冲动画颜色 — 功能点#12 粒子效果 */
 const RESOURCE_PULSE_COLORS: Record<ResourceType, string> = {
@@ -56,6 +58,7 @@ const RESOURCE_PULSE_COLORS: Record<ResourceType, string> = {
   troops: 'rgba(184, 66, 58, 0.6)',    // 红色
   mandate: 'rgba(123, 94, 167, 0.6)',  // 紫色
   techPoint: 'rgba(79, 195, 247, 0.6)', // 蓝色
+  recruitToken: 'rgba(232, 160, 48, 0.6)', // 橙色
 };
 
 /** 格式化数值：使用统一 formatNumber，compact 模式同标准模式 */

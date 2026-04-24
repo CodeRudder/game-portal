@@ -205,6 +205,7 @@ export class OfflineSnapshotSystem implements ISubsystem {
       troops: Math.floor(productionRates.troops * addedSeconds * bonusMultiplier),
       mandate: Math.floor(productionRates.mandate * addedSeconds * bonusMultiplier),
       techPoint: Math.floor(productionRates.techPoint * addedSeconds * bonusMultiplier),
+      recruitToken: Math.floor((productionRates.recruitToken ?? 0) * addedSeconds * bonusMultiplier),
     };
 
     return {
