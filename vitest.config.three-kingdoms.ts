@@ -34,10 +34,8 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
-        // 多进程模式，每个文件独立进程避免内存累积
-        // 注意：UI组件测试可能有跨文件DOM污染，已通过afterEach(cleanup)修复
-        minForks: 1,
-        maxForks: 2,
+        // 单进程模式，配合 scripts/test.sh 分批运行避免OOM
+        singleFork: true,
       },
     },
 
