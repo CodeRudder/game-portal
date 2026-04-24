@@ -194,7 +194,10 @@ export class GameEventSimulator {
 
   /** 招募武将（通过招募系统） */
   recruitHero(type: RecruitType = 'normal', count: 1 | 10 = 1): this {
-    this.engine.recruit(type, count);
+    const result = this.engine.recruit(type, count);
+    if (result === null) {
+      throw new Error(`招募失败：资源不足（recruitToken 不足或招募系统未就绪）`);
+    }
     this.log('recruitHero', `${type} x${count}`);
     return this;
   }
