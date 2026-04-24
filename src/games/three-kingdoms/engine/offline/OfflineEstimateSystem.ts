@@ -174,7 +174,7 @@ export class OfflineEstimateSystem implements ISubsystem {
     const points: Array<{ hours: number; efficiency: number }> = [];
 
     for (let h = 1; h <= maxHours; h++) {
-      const { efficiency } = calculateEarnedForHours(h, { grain: 1, gold: 0, troops: 0, mandate: 0, techPoint: 0 });
+      const { efficiency } = calculateEarnedForHours(h, { grain: 1, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 });
       points.push({ hours: h, efficiency });
     }
 

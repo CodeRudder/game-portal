@@ -36,6 +36,7 @@ export const RESOURCE_TYPES: readonly ResourceType[] = [
   'troops',
   'mandate',
   'techPoint',
+  'recruitToken',
 ] as const;
 
 /** 资源中文名映射 */
@@ -45,6 +46,7 @@ export const RESOURCE_LABELS: Record<ResourceType, string> = {
   troops: '兵力',
   mandate: '天命',
   techPoint: '科技点',
+  recruitToken: '招贤榜',
 };
 
 /** 资源颜色标识（用于 UI 展示） */
@@ -54,6 +56,7 @@ export const RESOURCE_COLORS: Record<ResourceType, string> = {
   troops: '#B8423A',
   mandate: '#7B5EA7',
   techPoint: '#4A90D9',
+  recruitToken: '#E8A030',
 };
 
 // ─────────────────────────────────────────────
@@ -94,6 +97,7 @@ export interface ResourceCost {
   troops?: number;
   mandate?: number;
   techPoint?: number;
+  recruitToken?: number;
 }
 
 /** 消耗检查结果 */

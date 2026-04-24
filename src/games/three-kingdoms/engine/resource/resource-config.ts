@@ -23,6 +23,7 @@ export const INITIAL_RESOURCES: Readonly<Resources> = {
   troops: 50,
   mandate: 0,
   techPoint: 0,
+  recruitToken: 0,
 };
 
 // ─────────────────────────────────────────────
@@ -41,6 +42,7 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
   troops: 0,
   mandate: 0,
   techPoint: 0,
+  recruitToken: 0,
 };
 
 // ─────────────────────────────────────────────

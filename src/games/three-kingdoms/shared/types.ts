@@ -82,7 +82,7 @@ export interface BattleResult {
 // ─────────────────────────────────────────────
 
 /** 五种核心资源类型 */
-export type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate' | 'techPoint';
+export type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate' | 'techPoint' | 'recruitToken';
 
 /** 资源数量集合 */
 export interface Resources {
@@ -91,6 +91,7 @@ export interface Resources {
   troops: number;
   mandate: number;
   techPoint: number;
+  recruitToken: number;
 }
 
 /** 资源产出速率（每秒） */
@@ -100,6 +101,7 @@ export interface ProductionRate {
   troops: number;
   mandate: number;
   techPoint: number;
+  recruitToken: number;
 }
 
 /** 资源上限（null 表示无上限） */
@@ -109,6 +111,7 @@ export interface ResourceCap {
   troops: number;
   mandate: null;
   techPoint: null;
+  recruitToken: null;
 }
 
 /** 容量警告等级 */
