@@ -1,77 +1,134 @@
-# Round 27 — Quick Evolution Progress Report
+# Round 27 — v6.0 天下大势 第二轮全局审查报告
 
-> **Date**: 2025-07-17  
-> **Type**: Quick Evolution (全版本快速进化)
+> **生成时间**: 2026-04-24 UTC
+> **基线HEAD**: 8b99929 (R26封版)
+> **当前HEAD**: 3f153d9 (R27封版)
+> **审查版本**: v6.0 — 天下大势（世界地图深化/NPC展示与交互/事件系统/时代推进/势力消长）
 
----
+## 📊 核心指标一览
 
-## Build Status
-
-| Metric | Value |
-|---|---|
-| **Build Result** | ✅ SUCCESS |
-| **Build Time** | ~31–41s |
-| **Dist Size** | 5.9 MB |
-| **Warnings** | 1 (chunk size, non-blocking) |
-
----
-
-## Codebase Scale
-
-| Metric | Value |
-|---|---|
-| **Total Files (.ts/.tsx)** | 690 |
-| **Test Files** | 230 |
-| **Source Files (non-test)** | 460 |
-| **Total Lines** | 176,458 |
-| **Source Lines (non-test)** | 98,340 |
-| **Test Lines** | 78,118 |
-| **Source/Test Ratio** | 1.26 : 1 |
+| 指标 | R27 数值 | R26 | 变化 | 状态 |
+|------|----------|-----|------|------|
+| **编译结果** | ✅ 成功 (23.72s) | 26.40s | ⬇️ -10% | 🟢 |
+| **as any (生产代码)** | **0** | 0 | → 持平 | 🟢 零容忍达标 |
+| **超500行文件** | **0** | 1 | ⬇️ -1 | 🟢 全部达标 |
+| **ISubsystem 实现数** | **121** | 123 | ⬇️ -2 | 🟡 需确认 |
+| **jest 残留** | **0** | 0 | → 持平 | 🟢 |
+| **@deprecated 残留** | **0** | 0 | → 持平 | 🟢 |
+| **TODO 残留** | **0** | 2 | ⬇️ 清零 | 🟢 |
+| **测试文件数** | **264** | 229 | ⬆️ +35 | 🟢 |
+| **测试通过率** | **100%** (7457/7457) | 99.1% | ⬆️ +0.9% | 🟢 全绿 |
 
 ---
 
-## Type Safety
+## 🏗️ v6.0 模块测试详情
 
-| Metric | Value |
-|---|---|
-| **Files with `as any` (non-test)** | **0** ✅ |
-| **Total `as any` occurrences** | 0 |
+v6.0"天下大势"涉及7个核心模块，全部测试通过：
 
-> 🎯 **Zero `as any` across entire codebase** — full type safety achieved.
-
----
-
-## Architecture: Subsystem Coverage
-
-| Metric | Value |
-|---|---|
-| **ISubsystem Implementations** | **123** |
-| **Unique Subsystem Files** | 122 |
-
-> 123 classes implement the `ISubsystem` interface, demonstrating a robust and consistent plugin architecture.
+| 模块 | 用例数 | 状态 |
+|------|--------|------|
+| npc (NPC系统) | 376 | ✅ 全通过 |
+| event (事件系统) | 354 | ✅ 全通过 |
+| social (社交系统) | 119 | ✅ 全通过 |
+| mail (邮件系统) | 85 | ✅ 全通过 |
+| guide (引导系统) | 188 | ✅ 全通过 |
+| prestige (声望系统) | 117 | ✅ 全通过 |
+| achievement (成就系统) | 34 | ✅ 全通过 |
+| **小计** | **1,273** | **✅** |
 
 ---
 
-## Largest Files (by line count)
+## 🔍 全量引擎测试（31模块）
 
-| File | Lines |
-|---|---|
-| `08-battle-hero-sync.test.ts` | 786 |
-| `04-battle-combat.test.ts` | 744 |
-| **Total codebase** | 176,458 |
-
-> Largest files are integration tests — production code is well-modularized.
+| 模块 | 用例数 | 状态 |
+|------|--------|------|
+| achievement | 34 | ✅ |
+| activity | 120 | ✅ |
+| advisor | 22 | ✅ |
+| alliance | 108 | ✅ |
+| battle | 524 | ✅ |
+| bond | 18 | ✅ |
+| building | 91 | ✅ |
+| calendar | 96 | ✅ |
+| campaign | 917 | ✅ |
+| currency | 52 | ✅ |
+| equipment | 185 | ✅ |
+| event | 354 | ✅ |
+| expedition | 140 | ✅ |
+| guide | 188 | ✅ |
+| heritage | 43 | ✅ |
+| hero | 474 | ✅ |
+| mail | 85 | ✅ |
+| map | 771 | ✅ |
+| npc | 376 | ✅ |
+| offline | 273 | ✅ |
+| prestige | 117 | ✅ |
+| pvp | 186 | ✅ |
+| quest | 105 | ✅ |
+| resource | 64 | ✅ |
+| responsive | 260 | ✅ |
+| settings | 236 | ✅ |
+| shop | 185 | ✅ |
+| social | 119 | ✅ |
+| tech | 883 | ✅ |
+| trade | 148 | ✅ |
+| unification | 283 | ✅ |
+| **总计** | **7,457** | **✅ 100%** |
 
 ---
 
-## Summary
+## 🔧 本轮修复内容
 
-| Category | Status | Grade |
-|---|---|---|
-| Build | ✅ Clean | A |
-| Type Safety | ✅ Zero `as any` | A+ |
-| Architecture | ✅ 123 subsystems | A |
-| Test Coverage | ✅ 78K test lines | A |
-| Codebase Health | ✅ Excellent | A+ |
+### 提交1: 605ba37 — 修复三国引擎测试失败
+- 修复 BattleTurnExecutor 测试断言
+- 修复 CampaignProgressSystem-p2 测试
+- 修复 WorldMapSystem 源码+测试
+- 修复 QuestSystem-p2 测试
+- 新增 campaign 集成测试（推进/驻防）
+- 修复 map 集成测试（筛选统计/领土渲染）
 
-**Round 27 Verdict**: Codebase is in excellent shape — zero type escapes, strong subsystem architecture, and healthy test-to-source ratio.
+### 提交2: 3f153d9 — 修复UI组件测试
+- 修复 BuildingUpgradeModal 测试
+- 修复 ResourceBar 测试（79行重写）
+- 修复 RandomEncounterModal 测试
+
+---
+
+## 📊 R26→R27 关键变化
+
+| 变化项 | 说明 |
+|--------|------|
+| 🔥 **超500行文件清零** | R26遗留1个超500行文件，本轮已不存在 |
+| 🧹 **TODO清零** | R26遗留2个TODO，本轮已清理 |
+| ✅ **测试通过率100%** | 7457/7457全绿，R26遗留9个失败已全部修复 |
+| 📈 **测试文件+35** | 229→264个测试文件，覆盖更全面 |
+| ⚡ **编译速度提升** | 26.40s→23.72s |
+
+---
+
+## ✅ R27 封版评估
+
+| 评估项 | 结果 |
+|--------|------|
+| P0问题 | 0个 ✅ |
+| P1问题 | 0个 ✅ |
+| 编译 | 成功 ✅ |
+| 测试通过率 | 100% ✅ |
+| as any | 0 ✅ |
+| 超500行 | 0 ✅ |
+| jest残留 | 0 ✅ |
+| @deprecated | 0 ✅ |
+| TODO | 0 ✅ |
+
+**结论: R27 v6.0 第二轮全局审查封版通过 ✅**
+
+- HEAD: 3f153d9
+- 已推送: origin/main
+
+---
+
+## 🎯 R28 建议（v7.0 草木皆兵）
+
+1. **ISubsystem确认**: 121 vs 123，需确认是否因重构合并导致减少
+2. **继续逐版本审查**: R28进入v7.0"草木皆兵"（可能涉及tech/装备强化/兵种等）
+3. **chunk优化**: games-idle/games-arcade超大chunk可考虑动态import拆分
