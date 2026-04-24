@@ -463,7 +463,7 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
     it('正常循环不应包含 SKIP', () => {
       const controller = new BattleSpeedController();
 
-      // 循环 1x → 2x → 4x → 1x，不应出现 SKIP
+      // 循环 1x → 2x → 3x → 1x，不应出现 SKIP
       const speeds: BattleSpeed[] = [];
       for (let i = 0; i < 4; i++) {
         speeds.push(controller.cycleSpeed());
@@ -471,7 +471,7 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
 
       expect(speeds).toEqual([
         BattleSpeed.X2,
-        BattleSpeed.X4,
+        BattleSpeed.X3,
         BattleSpeed.X1,
         BattleSpeed.X2,
       ]);

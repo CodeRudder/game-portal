@@ -100,7 +100,7 @@ describe('BattleSpeedController', () => {
     });
 
     it('无效速度不应切换', () => {
-      const result = controller.setSpeed(3 as BattleSpeed);
+      const result = controller.setSpeed(5 as BattleSpeed);
       expect(result).toBe(false);
       expect(controller.getSpeed()).toBe(BattleSpeed.X1);
     });
@@ -325,9 +325,9 @@ describe('BattleSpeedController', () => {
       const state = controller.serialize();
 
       expect(state.speed).toBe(BattleSpeed.X3);
-      expect(state.turnIntervalScale).toBeCloseTo(0.25);
-      expect(state.animationSpeedScale).toBe(4);
-      expect(state.simplifiedEffects).toBe(true);
+      expect(state.turnIntervalScale).toBeCloseTo(1 / 3);
+      expect(state.animationSpeedScale).toBe(3);
+      expect(state.simplifiedEffects).toBe(false);
     });
 
     it('应正确反序列化', () => {
@@ -338,7 +338,7 @@ describe('BattleSpeedController', () => {
       newController.deserialize(serialized);
 
       expect(newController.getSpeed()).toBe(BattleSpeed.X3);
-      expect(newController.getAnimationSpeedScale()).toBe(4);
+      expect(newController.getAnimationSpeedScale()).toBe(3);
     });
 
     it('序列化应为副本', () => {

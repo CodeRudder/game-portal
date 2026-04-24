@@ -235,7 +235,7 @@ describe('BattleEngine v4.0', () => {
       expect(state.speed).toBe(BattleSpeed.X2);
     });
 
-    it('应能设置4x速度', () => {
+    it('应能设置3x速度', () => {
       engine.setSpeed(BattleSpeed.X3);
       const state = engine.getSpeedState();
       expect(state.speed).toBe(BattleSpeed.X3);
@@ -275,7 +275,7 @@ describe('BattleEngine v4.0', () => {
       expect(engine.getAdjustedTurnInterval()).toBe(500);
 
       engine.setSpeed(BattleSpeed.X3);
-      expect(engine.getAdjustedTurnInterval()).toBe(250);
+      expect(engine.getAdjustedTurnInterval()).toBe(Math.floor(1000 / 3));
     });
 
     it('应能获取动画速度缩放', () => {
@@ -380,7 +380,7 @@ describe('BattleEngine v4.0', () => {
   // ── 模式 + 速度组合 ──
 
   describe('模式 + 速度组合', () => {
-    it('半自动 + 4x加速应正常工作', () => {
+    it('半自动 + 3x加速应正常工作', () => {
       engine.setBattleMode(BattleMode.SEMI_AUTO);
       engine.setSpeed(BattleSpeed.X3);
 
