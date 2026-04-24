@@ -290,70 +290,13 @@ evolution/
 
 ## 七、游戏流程集成测试
 
-> 与 UI 评测（Phase 2/3）并行的**引擎层测试**，站在玩家视角验证游戏流程的可玩性。
-> 详细方法论：[game-flow-integration-test-methodology.md](../testing/game-flow-integration-test-methodology.md)
+与 UI 评测（Phase 2/3）并行的**引擎层测试**，站在玩家视角验证游戏逻辑、资源流、解锁条件，发现 UI 问题、逻辑漏洞、升级堵塞、未实现功能等问题。
 
-### 7.1 定位与目的
-
-| 测试类型 | 层次 | 目的 |
-|---------|------|------|
-| UI 评测（Phase 2/3） | 浏览器 + UI | 验证界面显示、交互行为 |
-| **流程集成测试** | Engine Only | 验证游戏逻辑、资源流、解锁条件 |
-| 单元测试 | 单个函数 | 验证算法正确性 |
-
-**发现的问题类型**：UI 问题、逻辑漏洞、升级堵塞、未实现功能。
-
-### 7.2 核心原则：时间加速，禁止状态捏造
-
-```typescript
-// ✅ 允许：时间加速让资源自然累积
-sim.fastForwardHours(24);
-sim.upgradeBuilding('castle');   // 检查条件 + 消耗资源
-sim.recruitHero('normal', 1);    // 检查条件 + 消耗求贤令
-
-// ❌ 禁止：直接捏造游戏状态
-resource.setResource('gold', 999999);
-building.buildings.castle.level = 10;
-```
-
-### 7.3 测试基础设施
-
-| 工具 | 路径 | 说明 |
-|------|------|------|
-| `GameEventSimulator` | `test-utils/GameEventSimulator.ts` | 封装引擎操作的测试工具 |
-| `GameMilestone` | `test-utils/GameMilestone.ts` | 游戏里程碑枚举（主城Lv5、招贤馆解锁等） |
-| `TimeAccelerator` | `test-utils/TimeAccelerator.ts` | 推进到指定里程碑，内部通过时间加速实现 |
-
-```typescript
-const sim = new GameEventSimulator();
-sim.init();
-const acc = new TimeAccelerator(sim);
-
-acc.advanceTo(GameMilestone.RECRUIT_HALL_UNLOCKED); // 推进到招贤馆解锁
-sim.recruitHero('normal', 1);                       // 执行招募
-expect(sim.getGeneralCount()).toBeGreaterThan(0);
-```
-
-### 7.4 与 Play 流程的关联
-
-集成测试用例按 Play 文档的流程 ID 组织，便于追溯：
-
-```typescript
-describe('[RECRUIT-FLOW-1] 普通招募单抽', () => {
-  it('[步骤3-4] 检查招募功能前置条件', () => { ... });
-  it('[步骤5-6] 尝试招募（预期失败）', () => { ... });
-});
-```
-
-### 7.5 何时运行
-
-| 时机 | 说明 |
-|------|------|
-| Phase 1 准备后 | 新版本开始前，验证引擎层基础流程 |
-| Phase 4 修复后 | 引擎逻辑修复后，回归集成测试 |
-| Phase 6 封版前 | 封版条件之一：集成测试全部通过 |
+核心原则：通过 `tick()` 时间加速推进游戏状态，禁止直接捏造资源/等级等状态值。测试用例按 Play 文档的流程 ID 组织，便于追溯。运行时机：Phase 4 引擎逻辑修复后回归，Phase 6 封版前全量通过。
 
 测试命令：`pnpm test --project=three-kingdoms`
+
+详细方法论、基础设施说明、测试案例：[game-flow-integration-test-methodology.md](../testing/game-flow-integration-test-methodology.md)
 
 ---
 
