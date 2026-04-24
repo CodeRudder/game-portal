@@ -125,7 +125,7 @@
 }
 
 /* ═══════════════════════════════════════════
-   功能点#12: 资源产出脉冲动画
+   功能点#12: 资源产出脉冲动画 — 已禁用
    资源数值增加时的视觉反馈：短暂放大+发光+恢复
    不同资源颜色通过 --tk-pulse-color CSS变量传入
    ═══════════════════════════════════════════ */
@@ -145,7 +145,7 @@
 }
 
 .tk-res-item--pulse {
-  animation: resource-pulse 0.4s ease-out;
+  /* animation: resource-pulse 0.4s ease-out; */
   z-index: 1;
 }
 
@@ -162,13 +162,13 @@
 .tk-res-item--urgent {
   border: 1px solid rgba(231, 76, 60, 0.5);
   background: rgba(231, 76, 60, 0.08);
-  animation: tk-res-pulse-urgent 2s ease-in-out infinite;
+  /* animation: tk-res-pulse-urgent 2s ease-in-out infinite; */
 }
 
 .tk-res-item--full {
   border: 1px solid rgba(231, 76, 60, 0.7);
   background: rgba(231, 76, 60, 0.12);
-  animation: tk-res-pulse-full 1.5s ease-in-out infinite;
+  /* animation: tk-res-pulse-full 1.5s ease-in-out infinite; */
 }
 
 @keyframes tk-res-pulse-urgent {
@@ -187,7 +187,7 @@
   line-height: 1;
   margin-left: 2px;
   cursor: help;
-  animation: tk-res-blink 1.5s ease-in-out infinite;
+  /* animation: tk-res-blink 1.5s ease-in-out infinite; */
 }
 
 @keyframes tk-res-blink {
@@ -206,7 +206,7 @@
 
 .tk-res-value--full {
   color: var(--tk-danger) !important; /* 红色 */
-  animation: tk-res-blink 1.5s ease-in-out infinite;
+  /* animation: tk-res-blink 1.5s ease-in-out infinite; */
 }
 
 /* 接近上限警告图标（非溢出场景） */
@@ -214,7 +214,7 @@
   font-size: 11px;
   line-height: 1;
   margin-left: 2px;
-  animation: tk-res-blink 2s ease-in-out infinite;
+  /* animation: tk-res-blink 2s ease-in-out infinite; */
 }
 
 /* 容量警告文本 */
