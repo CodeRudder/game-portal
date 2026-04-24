@@ -404,15 +404,15 @@ describe('SiegeEnhancer', () => {
     });
 
     it('驻防降低攻击方胜率', () => {
-      const territory = systems.territory.getTerritoryById('city-luoyang')!;
-      const estimateBefore = systems.enhancer.estimateWinRate(500, 'city-luoyang');
+      // 使用较高攻击力确保胜率不在5%下限，以便观察驻防效果
+      const estimateBefore = systems.enhancer.estimateWinRate(5000, 'city-luoyang');
 
       // 驻防
       systems.territory.captureTerritory('city-luoyang', 'player');
       systems.garrison.assignGarrison('city-luoyang', 'guanyu');
       systems.territory.captureTerritory('city-luoyang', 'enemy');
 
-      const estimateAfter = systems.enhancer.estimateWinRate(500, 'city-luoyang');
+      const estimateAfter = systems.enhancer.estimateWinRate(5000, 'city-luoyang');
       expect(estimateAfter!.winRate).toBeLessThan(estimateBefore!.winRate);
     });
   });

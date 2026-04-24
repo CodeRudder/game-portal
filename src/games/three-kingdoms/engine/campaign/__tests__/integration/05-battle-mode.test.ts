@@ -277,9 +277,9 @@ describe('§3.8 调整战斗速度', () => {
     expect(controller.getSpeed()).toBe(BattleSpeed.X2);
   });
 
-  it('可设置 X4 速度', () => {
-    controller.setSpeed(BattleSpeed.X4);
-    expect(controller.getSpeed()).toBe(BattleSpeed.X4);
+  it('可设置 X3 速度', () => {
+    controller.setSpeed(BattleSpeed.X3);
+    expect(controller.getSpeed()).toBe(BattleSpeed.X3);
   });
 
   it('X1 速度：回合间隔为基准值', () => {
@@ -294,10 +294,10 @@ describe('§3.8 调整战斗速度', () => {
     );
   });
 
-  it('X4 速度：回合间隔为1/4', () => {
-    controller.setSpeed(BattleSpeed.X4);
+  it('X3 速度：回合间隔为1/3', () => {
+    controller.setSpeed(BattleSpeed.X3);
     expect(controller.getAdjustedTurnInterval()).toBe(
-      Math.floor(BATTLE_CONFIG.BASE_TURN_INTERVAL_MS / 4),
+      Math.floor(BATTLE_CONFIG.BASE_TURN_INTERVAL_MS / 3),
     );
   });
 
@@ -311,13 +311,13 @@ describe('§3.8 调整战斗速度', () => {
     expect(controller.getAnimationSpeedScale()).toBe(2.0);
   });
 
-  it('X4 动画缩放系数为 4.0', () => {
-    controller.setSpeed(BattleSpeed.X4);
-    expect(controller.getAnimationSpeedScale()).toBe(4.0);
+  it('X3 动画缩放系数为 3.0', () => {
+    controller.setSpeed(BattleSpeed.X3);
+    expect(controller.getAnimationSpeedScale()).toBe(3.0);
   });
 
-  it('X4 速度需要简化特效', () => {
-    controller.setSpeed(BattleSpeed.X4);
+  it('X3 速度需要简化特效', () => {
+    controller.setSpeed(BattleSpeed.X3);
     expect(controller.shouldSimplifyEffects()).toBe(true);
   });
 
@@ -340,14 +340,14 @@ describe('§3.8 调整战斗速度', () => {
     expect(result).toBe(true);
   });
 
-  it('cycleSpeed 循环：X1 → X2 → X4 → X1', () => {
+  it('cycleSpeed 循环：X1 → X2 → X3 → X1', () => {
     expect(controller.getSpeed()).toBe(BattleSpeed.X1);
 
     controller.cycleSpeed();
     expect(controller.getSpeed()).toBe(BattleSpeed.X2);
 
     controller.cycleSpeed();
-    expect(controller.getSpeed()).toBe(BattleSpeed.X4);
+    expect(controller.getSpeed()).toBe(BattleSpeed.X3);
 
     controller.cycleSpeed();
     expect(controller.getSpeed()).toBe(BattleSpeed.X1);
@@ -381,18 +381,18 @@ describe('§3.8 调整战斗速度', () => {
 
   it('速度变更记录在历史中', () => {
     controller.setSpeed(BattleSpeed.X2);
-    controller.setSpeed(BattleSpeed.X4);
+    controller.setSpeed(BattleSpeed.X3);
 
     const history = controller.getChangeHistory();
     expect(history).toHaveLength(2);
     expect(history[0].previousSpeed).toBe(BattleSpeed.X1);
     expect(history[0].newSpeed).toBe(BattleSpeed.X2);
     expect(history[1].previousSpeed).toBe(BattleSpeed.X2);
-    expect(history[1].newSpeed).toBe(BattleSpeed.X4);
+    expect(history[1].newSpeed).toBe(BattleSpeed.X3);
   });
 
   it('reset 恢复默认速度并清空历史', () => {
-    controller.setSpeed(BattleSpeed.X4);
+    controller.setSpeed(BattleSpeed.X3);
     controller.reset();
 
     expect(controller.getSpeed()).toBe(BattleSpeed.X1);

@@ -72,10 +72,10 @@ export interface SweepConfig {
 
 /** 默认扫荡配置 */
 export const DEFAULT_SWEEP_CONFIG: SweepConfig = {
-  dailyTicketReward: 5,
+  dailyTicketReward: 3,
   sweepCostPerRun: 1,
   maxSweepCount: 10,
-  autoPushMaxAttempts: 50,
+  autoPushMaxAttempts: 3,
 } as const;
 
 // ─────────────────────────────────────────────

@@ -25,7 +25,7 @@ import type { TerritoryData } from '../../core/map';
 export type SiegeErrorCode =
   | 'TARGET_NOT_FOUND' | 'TARGET_ALREADY_OWNED' | 'NOT_ADJACENT'
   | 'INSUFFICIENT_TROOPS' | 'INSUFFICIENT_GRAIN' | 'NO_TROOPS_AVAILABLE'
-  | 'DAILY_LIMIT_REACHED';
+  | 'DAILY_LIMIT_REACHED' | 'CAPTURE_COOLDOWN';
 
 /** 攻城条件校验结果 */
 export interface SiegeConditionResult {
@@ -68,6 +68,10 @@ export interface SiegeSaveData {
   totalSieges: number;
   victories: number;
   defeats: number;
+  /** 今日已攻城次数 */
+  dailySiegeCount: number;
+  /** 最后攻城日期（YYYY-MM-DD），用于跨天重置判断 */
+  lastSiegeDate: string;
   version: number;
 }
 
@@ -88,6 +92,11 @@ const GRAIN_FIXED_COST = 500;
 const DAILY_SIEGE_LIMIT = 3;
 /** 攻城存档版本 */
 const SIEGE_SAVE_VERSION = 1;
+/**
+ * 占领冷却时间（PRD §7.5: 24小时）
+ * 攻占后24小时内不可被反攻
+ */
+const CAPTURE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 // ─────────────────────────────────────────────
 // 攻城战系统
@@ -109,6 +118,13 @@ export class SiegeSystem implements ISubsystem {
   private defeats = 0;
   /** 今日已攻城次数 */
   private dailySiegeCount = 0;
+  /** 最后攻城日期（YYYY-MM-DD），用于跨天重置判断 */
+  private lastSiegeDate = '';
+  /**
+   * 领土占领时间戳（PRD §7.5: 24h冷却）
+   * key: territoryId, value: 占领时的时间戳(ms)
+   */
+  private captureTimestamps: Map<string, number> = new Map();
 
   // ─── ISubsystem 接口 ───────────────────────
 
@@ -118,6 +134,7 @@ export class SiegeSystem implements ISubsystem {
     this.totalSieges = 0;
     this.victories = 0;
     this.defeats = 0;
+    this.captureTimestamps.clear();
   }
 
   update(_dt: number): void { /* 预留 */ }
@@ -136,6 +153,7 @@ export class SiegeSystem implements ISubsystem {
     this.totalSieges = 0;
     this.victories = 0;
     this.defeats = 0;
+    this.captureTimestamps.clear();
   }
 
   // ─── 攻城条件校验（#19）──────────────────────
@@ -172,6 +190,17 @@ export class SiegeSystem implements ISubsystem {
     }
     if (this.dailySiegeCount >= DAILY_SIEGE_LIMIT) {
       return { canSiege: false, errorCode: 'DAILY_LIMIT_REACHED', errorMessage: `今日攻城次数已用完(${DAILY_SIEGE_LIMIT}次)` };
+    }
+
+    // PRD §7.5: 攻占后24小时内不可被反攻
+    if (this.isInCaptureCooldown(targetId)) {
+      const remaining = this.getRemainingCooldown(targetId);
+      const hours = Math.ceil(remaining / (60 * 60 * 1000));
+      return {
+        canSiege: false,
+        errorCode: 'CAPTURE_COOLDOWN',
+        errorMessage: `${territory.name} 刚被攻占，${hours}小时后方可被攻击`,
+      };
     }
 
     return { canSiege: true };
@@ -245,15 +274,42 @@ export class SiegeSystem implements ISubsystem {
 
   // ─── 战斗模拟 ──────────────────────────────
 
-  /** 简化版战斗：基于兵力对比和防御加成（概率判定） */
-  private simulateBattle(attackerTroops: number, target: TerritoryData): boolean {
+  /**
+   * 战斗模拟：基于攻防战力对比的概率判定（PRD §7.6 线性比率公式）
+   *
+   * 公式: min(95%, max(5%, (攻方战力/防方战力) × 50%))
+   * 与 SiegeEnhancer.computeWinRate 保持一致
+   *
+   * ⚠️ 战斗判定权归属 SiegeSystem（单一权威源），SiegeEnhancer 应调用此方法
+   */
+  simulateBattle(attackerTroops: number, target: TerritoryData): boolean {
     // ⚠️ PRD MAP-4 统一声明：defenseValue 已按"基础(1000)×城市等级"生成
     const defenderPower = target.defenseValue;
     const cost = this.calculateSiegeCost(target);
     const effectiveTroops = attackerTroops - cost.troops;
     if (effectiveTroops <= 0) return false;
-    const winRate = effectiveTroops / (effectiveTroops + defenderPower);
+    const winRate = this.computeWinRate(effectiveTroops, defenderPower);
     return Math.random() < winRate;
+  }
+
+  /**
+   * 核心胜率计算公式（PRD §7.6 线性比率公式）
+   *
+   * 公式: min(95%, max(5%, (attackerPower / defenderPower) × 50%))
+   * - 线性比率，直观易懂
+   * - 攻防相等时胜率 = 50%
+   */
+  private computeWinRate(attackerPower: number, defenderPower: number): number {
+    const WIN_RATE_MIN = 0.05;
+    const WIN_RATE_MAX = 0.95;
+    const WIN_RATE_BASE = 0.5;
+
+    if (attackerPower <= 0) return WIN_RATE_MIN;
+    if (defenderPower <= 0) return WIN_RATE_MAX;
+
+    const ratio = attackerPower / defenderPower;
+    const rawRate = ratio * WIN_RATE_BASE;
+    return Math.min(WIN_RATE_MAX, Math.max(WIN_RATE_MIN, rawRate));
   }
 
   // ─── 统计查询 ──────────────────────────────
@@ -276,6 +332,35 @@ export class SiegeSystem implements ISubsystem {
   /** 重置每日攻城次数（每日刷新调用） */
   resetDailySiegeCount(): void {
     this.dailySiegeCount = 0;
+    this.lastSiegeDate = '';
+  }
+
+  // ─── 占领冷却（PRD §7.5）─────────────────────
+
+  /**
+   * 检查领土是否在占领冷却期内
+   * 攻占后24小时内不可被反攻
+   */
+  isInCaptureCooldown(territoryId: string): boolean {
+    const timestamp = this.captureTimestamps.get(territoryId);
+    if (!timestamp) return false;
+    return Date.now() - timestamp < CAPTURE_COOLDOWN_MS;
+  }
+
+  /**
+   * 获取领土冷却剩余时间（毫秒）
+   */
+  getRemainingCooldown(territoryId: string): number {
+    const timestamp = this.captureTimestamps.get(territoryId);
+    if (!timestamp) return 0;
+    return Math.max(0, CAPTURE_COOLDOWN_MS - (Date.now() - timestamp));
+  }
+
+  /**
+   * 设置领土占领时间戳（供外部或测试调用）
+   */
+  setCaptureTimestamp(territoryId: string, timestamp: number): void {
+    this.captureTimestamps.set(territoryId, timestamp);
   }
 
   // ─── 序列化 ────────────────────────────────
@@ -285,6 +370,8 @@ export class SiegeSystem implements ISubsystem {
       totalSieges: this.totalSieges,
       victories: this.victories,
       defeats: this.defeats,
+      dailySiegeCount: this.dailySiegeCount,
+      lastSiegeDate: this.lastSiegeDate,
       version: SIEGE_SAVE_VERSION,
     };
   }
@@ -293,6 +380,8 @@ export class SiegeSystem implements ISubsystem {
     this.totalSieges = data.totalSieges;
     this.victories = data.victories;
     this.defeats = data.defeats;
+    this.dailySiegeCount = data.dailySiegeCount ?? 0;
+    this.lastSiegeDate = data.lastSiegeDate ?? '';
     this.history = [];
   }
 
@@ -313,10 +402,15 @@ export class SiegeSystem implements ISubsystem {
 
     this.totalSieges++;
     this.dailySiegeCount++;
+    this.lastSiegeDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
     if (victory) {
       this.victories++;
       this.territorySys?.captureTerritory(targetId, attackerOwner);
+      // PRD §7.5: 记录占领时间戳，24h冷却
+      this.captureTimestamps.set(targetId, Date.now());
+      // PRD §7.5: 自动驻防（50%兵力上限）
+      this.autoGarrison(targetId, attackerOwner, cost.troops);
       result.capture = { territoryId: targetId, newOwner: attackerOwner, previousOwner };
       this.deps?.eventBus.emit('siege:victory', {
         territoryId: targetId, territoryName: territory.name,
@@ -343,5 +437,28 @@ export class SiegeSystem implements ISubsystem {
     try {
       return this.deps?.registry?.get<import('./TerritorySystem').TerritorySystem>('territory') ?? null;
     } catch { return null; }
+  }
+
+  /**
+   * 自动驻防（PRD §7.5: 50%兵力上限）
+   *
+   * 占领成功后自动将50%剩余兵力部署为驻防。
+   * 由于驻防系统基于武将派遣，此处以事件通知上层处理。
+   * 实际兵力扣减由上层消费 siege:autoGarrison 事件完成。
+   *
+   * @param territoryId - 领土ID
+   * @param owner - 占领方
+   * @param troopsUsed - 攻城消耗兵力
+   */
+  private autoGarrison(territoryId: string, owner: OwnershipStatus, troopsUsed: number): void {
+    const garrisonTroops = Math.floor(troopsUsed * 0.5);
+    if (garrisonTroops <= 0) return;
+
+    this.deps?.eventBus.emit('siege:autoGarrison', {
+      territoryId,
+      owner,
+      garrisonTroops,
+      timestamp: Date.now(),
+    });
   }
 }

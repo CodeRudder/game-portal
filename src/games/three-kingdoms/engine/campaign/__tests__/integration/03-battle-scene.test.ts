@@ -387,7 +387,7 @@ describe('§3.1b 战斗HUD布局 — 引擎提供HUD所需数据', () => {
 // ═══════════════════════════════════════════════
 
 describe('§3.1c 战斗中交互操作 — 引擎响应交互', () => {
-  it('引擎响应速度切换：1x → 2x → 4x', () => {
+  it('引擎响应速度切换：1x → 2x → 3x', () => {
     const engine = new BattleEngine();
 
     // 初始速度 X1
@@ -397,9 +397,9 @@ describe('§3.1c 战斗中交互操作 — 引擎响应交互', () => {
     engine.setSpeed(BattleSpeed.X2);
     expect(engine.getSpeedState().speed).toBe(BattleSpeed.X2);
 
-    // 切换到 X4
-    engine.setSpeed(BattleSpeed.X4);
-    expect(engine.getSpeedState().speed).toBe(BattleSpeed.X4);
+    // 切换到 X3
+    engine.setSpeed(BattleSpeed.X3);
+    expect(engine.getSpeedState().speed).toBe(BattleSpeed.X3);
   });
 
   it('引擎响应速度循环切换', () => {
@@ -410,11 +410,11 @@ describe('§3.1c 战斗中交互操作 — 引擎响应交互', () => {
     controller.cycleSpeed();
     expect(controller.getSpeed()).toBe(BattleSpeed.X2);
 
-    // X2 → X4
+    // X2 → X3
     controller.cycleSpeed();
-    expect(controller.getSpeed()).toBe(BattleSpeed.X4);
+    expect(controller.getSpeed()).toBe(BattleSpeed.X3);
 
-    // X4 → X1 (循环)
+    // X3 → X1 (循环)
     controller.cycleSpeed();
     expect(controller.getSpeed()).toBe(BattleSpeed.X1);
   });

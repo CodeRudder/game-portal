@@ -106,7 +106,7 @@ describe('SweepSystem ISubsystem 接口', () => {
   it('reset 清空扫荡令和每日状态', () => {
     system.addTickets(10);
     system.claimDailyTickets();
-    expect(system.getTicketCount()).toBe(15);
+    expect(system.getTicketCount()).toBe(13);
 
     system.reset();
     expect(system.getTicketCount()).toBe(0);

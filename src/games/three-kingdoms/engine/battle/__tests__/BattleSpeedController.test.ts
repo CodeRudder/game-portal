@@ -381,7 +381,7 @@ describe('BattleSpeedController', () => {
     describe('getAvailableSpeeds', () => {
       it('应返回所有可用速度', () => {
         const speeds = BattleSpeedController.getAvailableSpeeds();
-        expect(speeds).toEqual([1, 2, 4]);
+        expect(speeds).toEqual([1, 2, 3]);
       });
     });
   });

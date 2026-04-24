@@ -30,8 +30,17 @@ import type { TerritoryData, OwnershipStatus } from '../../core/map';
 // 配置常量
 // ─────────────────────────────────────────────
 
-/** 胜率公式中的幂次参数（控制曲线陡峭度） */
-const WIN_RATE_EXPONENT = 1.2;
+/**
+ * 胜率公式常量（PRD §7.6 线性比率公式）
+ *
+ * 公式: min(95%, max(5%, (攻方战力/防方战力) × 50% + 地形修正))
+ * - 胜率下限 5%，上限 95%
+ * - 攻防相等时胜率 = 50%（无地形修正时）
+ * - 地形修正由驻防加成等提供
+ */
+const WIN_RATE_MIN = 0.05;
+const WIN_RATE_MAX = 0.95;
+const WIN_RATE_BASE = 0.5;
 
 /** 损失率基础值（胜利时） */
 const BASE_LOSS_RATE = 0.3;
@@ -82,10 +91,10 @@ export class SiegeEnhancer implements ISubsystem {
   // ─── 胜率预估（#3）──────────────────────────
 
   /**
-   * 计算胜率预估
+   * 计算胜率预估（PRD §7.6）
    *
    * 公式：
-   *   winRate = attackerPower^α / (attackerPower^α + defenderPower^α)
+   *   winRate = min(95%, max(5%, (攻方战力/防方战力) × 50%))
    *   defenderPower = 基础防御 + 驻防加成
    *   estimatedLossRate = baseLoss × (1 - winRate)
    *
@@ -129,17 +138,20 @@ export class SiegeEnhancer implements ISubsystem {
   }
 
   /**
-   * 核心胜率计算公式
+   * 核心胜率计算公式（PRD §7.6）
    *
-   * 使用幂函数变换的比率公式
+   * 公式: min(95%, max(5%, (attackerPower / defenderPower) × 50% + terrainBonus))
+   * - 线性比率，直观易懂
+   * - 攻防相等时胜率 = 50%（无地形修正时）
+   * - 驻防加成已计入 defenderPower，地形修正由外部传入
    */
-  private computeWinRate(attackerPower: number, defenderPower: number): number {
-    if (attackerPower <= 0) return 0;
-    if (defenderPower <= 0) return 1;
+  private computeWinRate(attackerPower: number, defenderPower: number, terrainBonus = 0): number {
+    if (attackerPower <= 0) return WIN_RATE_MIN;
+    if (defenderPower <= 0) return WIN_RATE_MAX;
 
-    const a = Math.pow(attackerPower, WIN_RATE_EXPONENT);
-    const d = Math.pow(defenderPower, WIN_RATE_EXPONENT);
-    return a / (a + d);
+    const ratio = attackerPower / defenderPower;
+    const rawRate = ratio * WIN_RATE_BASE + terrainBonus;
+    return Math.min(WIN_RATE_MAX, Math.max(WIN_RATE_MIN, rawRate));
   }
 
   /**
@@ -279,10 +291,13 @@ export class SiegeEnhancer implements ISubsystem {
     // 阶段2：胜率预估
     const winRateEstimate = this.estimateWinRate(attackerPower, targetId);
 
-    // 阶段3：战斗（使用 SiegeSystem 执行）
+    // 阶段3：战斗（委托 SiegeSystem 执行战斗判定，单一权威源）
+    const battleVictory = this.siegeSys
+      ? this.siegeSys.simulateBattle(availableTroops, territory)
+      : this.determineBattleOutcome(attackerPower, territory);
     const siegeResult = this.siegeSys?.executeSiegeWithResult(
       targetId, attackerOwner, availableTroops, availableGrain,
-      this.determineBattleOutcome(attackerPower, territory),
+      battleVictory,
     );
 
     if (!siegeResult?.launched) {
@@ -336,9 +351,10 @@ export class SiegeEnhancer implements ISubsystem {
   }
 
   /**
-   * 基于战力对比判定战斗结果
+   * 基于战力对比判定战斗结果（PRD §7.6 线性比率公式）
    *
-   * 使用胜率作为概率阈值
+   * ⚠️ 仅作为 fallback：当 siegeSys 不可用时使用。
+   * 正常流程应通过 SiegeSystem.simulateBattle（单一权威源）
    */
   private determineBattleOutcome(attackerPower: number, territory: TerritoryData): boolean {
     const defenderPower = this.calculateDefenderPower(territory);
