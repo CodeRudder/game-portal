@@ -433,6 +433,39 @@ export class BuildingSystem implements ISubsystem {
     });
   }
 
+  // ── 13. 测试基础设施 ──
+
+  /**
+   * 即时完成所有待处理的建筑升级（含队列清空）。
+   *
+   * 仅用于测试工具（GameEventSimulator），生产代码禁止调用。
+   *
+   * @internal
+   */
+  forceCompleteUpgrades(): BuildingType[] {
+    const completed: BuildingType[] = [];
+
+    for (const [type, state] of Object.entries(this.buildings) as [BuildingType, BuildingState][]) {
+      if (state.status === 'upgrading') {
+        state.level += 1;
+        state.status = 'idle';
+        state.upgradeStartTime = null;
+        state.upgradeEndTime = null;
+        completed.push(type);
+      }
+    }
+
+    // 清空升级队列
+    this.upgradeQueue.length = 0;
+
+    // 主城升级后检查新建筑解锁
+    if (completed.includes('castle')) {
+      this.checkAndUnlockBuildings();
+    }
+
+    return completed;
+  }
+
   // ── 私有 ──
 
   private cloneBuildings(): Record<BuildingType, BuildingState> {

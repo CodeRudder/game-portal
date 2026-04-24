@@ -116,15 +116,7 @@ export interface CostCheckResult {
 // 6. 离线收益 — OfflineEarnings, OfflineTierBreakdown 已移至 shared/types.ts
 // ─────────────────────────────────────────────
 
-/** 离线收益时段配置（引擎域配置类型） */
-export interface OfflineTier {
-  /** 时段起始秒数 */
-  startSeconds: number;
-  /** 时段结束秒数（Infinity 表示无上限） */
-  endSeconds: number;
-  /** 效率系数 0~1 */
-  efficiency: number;
-}
+export type { OfflineTier } from '../../shared/types';
 
 // ─────────────────────────────────────────────
 // 7. 序列化 — ResourceSaveData 已移至 shared/types.ts

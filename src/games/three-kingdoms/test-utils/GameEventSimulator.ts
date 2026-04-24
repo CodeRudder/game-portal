@@ -161,34 +161,11 @@ export class GameEventSimulator {
 
   /**
    * 即时完成所有待处理的建筑升级。
-   * 建筑升级基于 Date.now() 计时，此方法直接操作内部状态完成升级。
+   * 委托 BuildingSystem.forceCompleteUpgrades()，避免直接操作内部状态。
    */
   private completePendingUpgrades(): void {
     const building = this.engine.building;
-    // 直接访问内部 buildings 对象（非 clone）— 测试工具需要操作内部状态
-    const internalBuildings = (building as unknown as { buildings: Record<string, { status: string; level: number; upgradeStartTime: number | null; upgradeEndTime: number | null }> }).buildings;
-    const completed: string[] = [];
-
-    for (const [type, state] of Object.entries(internalBuildings)) {
-      if (state.status === 'upgrading') {
-        state.level += 1;
-        state.status = 'idle';
-        state.upgradeStartTime = null;
-        state.upgradeEndTime = null;
-        completed.push(type);
-      }
-    }
-
-    // 清空升级队列
-    const queue = (building as unknown as { upgradeQueue: unknown[] }).upgradeQueue;
-    if (queue && queue.length > 0) {
-      queue.length = 0;
-    }
-
-    // 主城升级后检查新建筑解锁
-    if (completed.includes('castle')) {
-      building.checkAndUnlockBuildings();
-    }
+    const completed = building.forceCompleteUpgrades();
 
     // 同步建筑产出到资源系统
     this.engine.resource.recalculateProduction(
