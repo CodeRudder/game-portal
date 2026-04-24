@@ -81,7 +81,7 @@ export interface BattleResult {
 // 0. 资源域基础类型（与 engine/resource/resource.types.ts 保持同步）
 // ─────────────────────────────────────────────
 
-/** 五种核心资源类型 */
+/** 核心资源类型 */
 export type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate' | 'techPoint' | 'recruitToken';
 
 /** 资源数量集合 */

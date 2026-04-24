@@ -274,10 +274,14 @@ export class ResourceSystem implements ISubsystem {
     // 累加各资源类型的产出值（已由 BuildingSystem 从 levelTable 查表计算）
     for (const [resourceType, rate] of Object.entries(buildingProductions)) {
       if (resourceType === 'grain' || resourceType === 'gold' ||
-          resourceType === 'troops' || resourceType === 'mandate') {
+          resourceType === 'troops' || resourceType === 'mandate' ||
+          resourceType === 'techPoint' || resourceType === 'recruitToken') {
         newRates[resourceType as ResourceType] += rate;
       }
     }
+
+    // 保留 recruitToken 基础被动产出（日常积累）
+    newRates.recruitToken += INITIAL_PRODUCTION_RATES.recruitToken;
 
     this.productionRates = newRates;
   }

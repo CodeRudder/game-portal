@@ -176,7 +176,7 @@ export class TechEffectApplier {
   getResourceBonuses(): ResourceTechBonuses {
     if (!this.techEffect) return defaultResourceBonuses();
 
-    const types: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint'];
+    const types: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint', 'recruitToken'];
     const productionMultipliers: Record<ResourceType, number> = {} as Record<ResourceType, number>;
     const storageMultipliers: Record<ResourceType, number> = {} as Record<ResourceType, number>;
 
@@ -213,7 +213,7 @@ export class TechEffectApplier {
 
     // 取所有资源类型产出乘数的平均值作为 tech 加成
     // 如果有特定资源需要精确加成，应使用 getResourceBonuses() 直接获取
-    const types: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint'];
+    const types: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint', 'recruitToken'];
     let totalProdBonus = 0;
     for (const rt of types) {
       totalProdBonus += (resourceBonuses.productionMultipliers[rt] - 1) * 100;

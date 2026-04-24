@@ -187,7 +187,7 @@ export class OfflineSnapshotSystem implements ISubsystem {
     const item = items.find(i => i.id === itemId);
     if (!item) {
       return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 }, remainingCount: 0, reason: '道具不存在' };
-      // ... (line 192 also needs update)
+
     }
     if (item.count <= 0) {
       return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 }, remainingCount: 0, reason: '道具数量不足' };

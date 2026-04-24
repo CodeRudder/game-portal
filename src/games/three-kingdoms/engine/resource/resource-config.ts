@@ -42,7 +42,7 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
   troops: 0,
   mandate: 0,
   techPoint: 0,
-  recruitToken: 0,
+  recruitToken: 0.001,
 };
 
 // ─────────────────────────────────────────────
@@ -56,6 +56,7 @@ export const INITIAL_CAPS: Readonly<ResourceCap> = {
   troops: 500,
   mandate: null,
   techPoint: null,
+  recruitToken: null,
 };
 
 // ─────────────────────────────────────────────

@@ -427,6 +427,7 @@ export const BUILDING_DEFS: Record<BuildingType, BuildingDef> = {
     type: 'wall',
     maxLevel: 20,
     unlockCastleLevel: 5,
+    production: { resourceType: 'recruitToken', baseValue: 0.01, perLevel: 0 },
     levelTable: WALL_LEVEL_TABLE,
   },
 };

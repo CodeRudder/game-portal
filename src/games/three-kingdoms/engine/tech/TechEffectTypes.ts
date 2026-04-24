@@ -11,7 +11,7 @@
 // ─────────────────────────────────────────────
 
 /** 资源类型（与 shared/types 对齐） */
-export type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate' | 'techPoint';
+export type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate' | 'techPoint' | 'recruitToken';
 
 /** 资源类型到科技效果 target 的映射 */
 export const RESOURCE_TARGET_MAP: Record<ResourceType, string> = {
@@ -20,10 +20,11 @@ export const RESOURCE_TARGET_MAP: Record<ResourceType, string> = {
   troops: 'troops',
   mandate: 'mandate',
   techPoint: 'techPoint',
+  recruitToken: 'recruitToken',
 };
 
 /** 资源类型到产出速率字段名的映射 */
-export type ProductionField = 'grainPerSec' | 'goldPerSec' | 'troopsPerSec' | 'mandatePerSec' | 'techPointPerSec';
+export type ProductionField = 'grainPerSec' | 'goldPerSec' | 'troopsPerSec' | 'mandatePerSec' | 'techPointPerSec' | 'recruitTokenPerSec';
 
 /** 资源类型 → 产出字段 */
 export const RESOURCE_PRODUCTION_MAP: Record<ResourceType, ProductionField> = {
@@ -32,6 +33,7 @@ export const RESOURCE_PRODUCTION_MAP: Record<ResourceType, ProductionField> = {
   troops: 'troopsPerSec',
   mandate: 'mandatePerSec',
   techPoint: 'techPointPerSec',
+  recruitToken: 'recruitTokenPerSec',
 };
 
 /** 战斗科技加成快照 */
@@ -96,8 +98,8 @@ export function defaultBattleBonuses(): BattleTechBonuses {
 /** 创建默认资源加成 */
 export function defaultResourceBonuses(): ResourceTechBonuses {
   return {
-    productionMultipliers: { grain: 1, gold: 1, troops: 1, mandate: 1, techPoint: 1 },
-    storageMultipliers: { grain: 1, gold: 1, troops: 1, mandate: 1, techPoint: 1 },
+    productionMultipliers: { grain: 1, gold: 1, troops: 1, mandate: 1, techPoint: 1, recruitToken: 1 },
+    storageMultipliers: { grain: 1, gold: 1, troops: 1, mandate: 1, techPoint: 1, recruitToken: 1 },
     tradeBonus: 0,
   };
 }

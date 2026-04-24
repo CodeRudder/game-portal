@@ -66,7 +66,7 @@ export interface LevelSaveData { version: number; }
 // ── 常量 ──
 
 const GOLD_TYPE = 'gold';
-const EXP_TYPE = 'exp';
+const EXP_TYPE = 'grain';
 const LEVEL_SAVE_VERSION = 1;
 /** 每级属性成长率 3% */
 const STAT_GROWTH_RATE = 0.03;
