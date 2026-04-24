@@ -21,6 +21,8 @@ export interface RecruitResult {
   /** 转化碎片数（重复时 > 0） */
   fragmentCount: number;
   quality: Quality;
+  /** 招募池为空时标记（极端情况） */
+  isEmpty?: boolean;
 }
 
 /** 招募执行结果（单抽或十连） */

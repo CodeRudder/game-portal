@@ -178,8 +178,8 @@ export class ResourceSystem implements ISubsystem {
       return amount;
     }
 
-    // 通用消耗
-    if (current < amount) {
+    // 通用消耗（防御 NaN / undefined：Number.isFinite 对 NaN/undefined 返回 false）
+    if (!Number.isFinite(current) || current < amount) {
       throw new Error(
         `${type} 资源不足：需要 ${amount}，当前 ${current}`
       );

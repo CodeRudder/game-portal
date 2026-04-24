@@ -250,7 +250,7 @@ describe('§6+§11+§12 数值平衡+招募保底+色盲纹理+PRD 集成测试'
       // 固定RNG: 0.0 → 第一个区间 COMMON
       const q1 = rollQuality(NORMAL_RATES, () => 0.0);
       expect(q1).toBe(Quality.COMMON);
-      // 固定RNG: 0.95 → 应在 EPIC 区间 (0.9~0.98)
+      // 固定RNG: 0.95 → 应在 EPIC 区间 (0.90~0.98 in advanced)
       const q2 = rollQuality(ADVANCED_RATES, () => 0.95);
       expect(q2).toBe(Quality.EPIC);
     });

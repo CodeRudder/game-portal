@@ -8,9 +8,10 @@
 
 import type {
   StarUpResult, StarUpPreview, StarUpCost, FragmentProgress,
-  FragmentSource, BreakthroughResult, BreakthroughPreview,
+  BreakthroughResult, BreakthroughPreview,
   StarSystemState, StarSystemSaveData, StarSystemDeps,
 } from './star-up.types';
+import { FragmentSource } from './star-up.types';
 import type { GeneralStats, GeneralData } from './hero.types';
 import type { HeroSystem } from './HeroSystem';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
@@ -90,7 +91,7 @@ export class HeroStarSystem implements ISubsystem {
   /** 招募重复武将 → 碎片转化（碎片数量由品质决定） */
   handleDuplicateFragments(generalId: string, quality: import('./hero.types').Quality): FragmentGainResult {
     const count = this.heroSystem.handleDuplicate(generalId, quality);
-    return { generalId, count, source: 'DUPLICATE' as FragmentSource };
+    return { generalId, count, source: FragmentSource.DUPLICATE };
   }
 
   /** 关卡掉落碎片（根据关卡ID查找掉落表） */
@@ -102,7 +103,7 @@ export class HeroStarSystem implements ISubsystem {
       const count = min + Math.floor(rng() * (max - min + 1));
       if (count > 0) {
         this.heroSystem.addFragment(drop.generalId, count);
-        results.push({ generalId: drop.generalId, count, source: 'STAGE_DROP' as FragmentSource });
+        results.push({ generalId: drop.generalId, count, source: FragmentSource.STAGE_DROP });
       }
     }
     return results;

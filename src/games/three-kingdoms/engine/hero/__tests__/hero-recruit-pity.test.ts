@@ -64,8 +64,8 @@ describe('HeroRecruitSystem — 保底机制', () => {
   // ───────────────────────────────────────────
   describe('保底机制', () => {
     it('每次招募保底计数 +1', () => {
-      // P0-1 修复后：Normal COMMON=0.60, FINE=0.30, RARE=0.08
-      // rng=0.93 → 0.90 <= 0.93 < 0.98 命中 RARE
+      // P0 概率表对齐后：Normal COMMON=0.60, FINE=0.28, RARE=0.09
+      // rng=0.93 → 0.88 <= 0.93 < 0.97 命中 RARE
       // RARE >= RARE → tenPullPity 重置为 0
       // RARE < LEGENDARY → hardPity 不重置，保持 1
       const rng = makeConstantRng(0.93);
@@ -77,7 +77,7 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('出 EPIC 品质重置十连保底但不重置硬保底', () => {
-      // P0-1 修复后：Normal EPIC 区间 [0.98, 1.00)
+      // P0 概率表对齐后：Normal EPIC 区间 [0.97, 0.995)
       // rng=0.985 → EPIC in normal
       // EPIC >= RARE → 重置 tenPullPity
       // EPIC < LEGENDARY → 不重置 hardPity
@@ -120,15 +120,17 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('普通和高级招募保底独立计数', () => {
-      // P0-1 修复后概率：
-      // Normal: COMMON=0.60, FINE=0.30, RARE=0.08, EPIC=0.02, LEGENDARY=0.00
-      // Advanced: COMMON=0.20, FINE=0.40, RARE=0.25, EPIC=0.13, LEGENDARY=0.02
-      // EPIC in normal: rng=0.985 → 0.98 <= 0.985 < 1.00 命中 EPIC
+      // P0 概率表对齐后概率：
+      // Normal: COMMON=0.60, FINE=0.28, RARE=0.09, EPIC=0.025, LEGENDARY=0.005
+      // Advanced: COMMON=0.40, FINE=0.32, RARE=0.18, EPIC=0.08, LEGENDARY=0.02
+      // EPIC in normal: rng=0.985 → 0.97 <= 0.985 < 0.995 命中 EPIC
       const epicRng = makeConstantRng(0.985);
       recruit.setRng(epicRng);
       recruit.recruitSingle('normal');
-      // RARE in advanced: rng=0.70 → 0.60 <= 0.70 < 0.85 命中 RARE
-      const rareAdvRng = makeConstantRng(0.70);
+      // RARE in advanced: rng=0.70 → 0.40 <= 0.70 < 0.72 命中 FINE
+      // Wait, 0.70 < 0.72 → FINE, not RARE. Need rng >= 0.72 for RARE in advanced
+      // Let's use rng=0.80 → 0.72 <= 0.80 < 0.90 命中 RARE
+      const rareAdvRng = makeConstantRng(0.80);
       recruit.setRng(rareAdvRng);
       recruit.recruitSingle('advanced');
       const pity = recruit.getGachaState();
@@ -158,7 +160,7 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('保底计数器在多次 RARE 抽取后 hardPity 递增', () => {
-      const rng = makeConstantRng(0.93); // RARE in normal (P0-1 fix: 0.90-0.98)
+      const rng = makeConstantRng(0.93); // RARE in normal (P0 对齐: [0.88, 0.97))
       recruit.setRng(rng);
       for (let i = 0; i < 3; i++) {
         recruit.recruitSingle('normal');
@@ -221,7 +223,7 @@ describe('HeroRecruitSystem — 保底机制', () => {
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 98, advancedHardPity: 0 },
       });
 
-      // 抽一次 RARE → hardPity=99 (rng=0.93 → RARE in normal)
+      // 抽一次 RARE → hardPity=99 (rng=0.93 → RARE in normal [0.88, 0.97))
       const rng = makeConstantRng(0.93);
       recruit.setRng(rng);
       recruit.recruitSingle('normal');
@@ -251,7 +253,7 @@ describe('HeroRecruitSystem — 保底机制', () => {
   // ───────────────────────────────────────────
   describe('注入确定性 RNG', () => {
     it('构造函数注入 RNG', () => {
-      // P0-1 修复后：Normal RARE 区间 [0.90, 0.98)
+      // P0 概率表对齐后：Normal RARE 区间 [0.88, 0.97)
       const rng = makeConstantRng(0.93); // RARE
       const r = new HeroRecruitSystem(rng);
       r.setRecruitDeps(makeRichDeps(heroSystem));
@@ -260,12 +262,12 @@ describe('HeroRecruitSystem — 保底机制', () => {
     });
 
     it('setRng 运行时替换 RNG', () => {
-      // P0-1 修复后：Normal RARE 区间 [0.90, 0.98)
+      // P0 概率表对齐后：Normal RARE 区间 [0.88, 0.97)
       recruit.setRng(makeConstantRng(0.93)); // RARE
       const r1 = recruit.recruitSingle('normal')!;
       expect(r1.results[0].quality).toBe(Quality.RARE);
 
-      // P0-1 修复后：Advanced LEGENDARY 区间 [0.98, 1.00)
+      // P0 概率表对齐后：Advanced LEGENDARY 区间 [0.98, 1.00)
       recruit.setRng(makeConstantRng(0.99));
       const r2 = recruit.recruitSingle('advanced')!;
       expect(r2.results[0].quality).toBe(Quality.LEGENDARY);
@@ -273,8 +275,8 @@ describe('HeroRecruitSystem — 保底机制', () => {
 
     it('多次招募使用序列 RNG', () => {
       // 每次 pull 消耗 2 次 rng（rollQuality + pickGeneralByQuality）
-      // P0-1 修复后概率：
-      // Normal: COMMON=0.60, FINE=0.30, RARE=0.08, EPIC=0.02, LEGENDARY=0.00
+      // P0 概率表对齐后概率：
+      // Normal: COMMON=0.60, FINE=0.28, RARE=0.09, EPIC=0.025, LEGENDARY=0.005
       const values = [
         0.93, 0.5,   // pull 1: quality=RARE, pick dianwei
         0.985, 0.5,  // pull 2: quality=EPIC, pick one of EPIC generals

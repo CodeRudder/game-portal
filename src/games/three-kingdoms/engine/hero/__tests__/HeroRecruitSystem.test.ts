@@ -187,7 +187,7 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('确定性 RNG 抽到 EPIC 品质（普通招募）', () => {
-      // P0-1 修复后：0.60+0.30+0.08=0.98, rng=0.985 命中 EPIC
+      // P0 概率表对齐后：0.60+0.28+0.09=0.97, rng=0.985 命中 EPIC [0.97, 0.995)
       const rng = makeConstantRng(0.985);
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
@@ -195,7 +195,7 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('确定性 RNG 抽到 LEGENDARY 品质（高级招募）', () => {
-      // P0-1 修复后：0.20+0.40+0.25+0.13=0.98, rng=0.99 命中 LEGENDARY
+      // P0 概率表对齐后：0.40+0.32+0.18+0.08=0.98, rng=0.99 命中 LEGENDARY [0.98, 1.0)
       const rng = makeConstantRng(0.99);
       recruit.setRng(rng);
       const result = recruit.recruitSingle('advanced')!;
@@ -203,7 +203,7 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('RARE rng 值命中 RARE 品质（普通招募）', () => {
-      // P0-1 修复后：0.60+0.30=0.90, rng=0.93 命中 RARE
+      // P0 概率表对齐后：0.60+0.28=0.88, rng=0.93 命中 RARE [0.88, 0.97)
       const rng = makeConstantRng(0.93);
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;
@@ -230,7 +230,7 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('重复招募同一武将 isDuplicate=true（RARE 品质只有1个武将）', () => {
-      // P0-1 修复后：Normal RARE 区间 [0.90, 0.98)
+      // P0 概率表对齐后：Normal RARE 区间 [0.88, 0.97)
       // RARE 品质只有 dianwei，连续抽两次 RARE 必重复
       const rng = makeConstantRng(0.93); // RARE
       recruit.setRng(rng);
@@ -255,7 +255,7 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('EPIC 品质武将首次招募不重复', () => {
-      // P0-1 修复后：Normal EPIC 区间 [0.98, 1.00)
+      // P0 概率表对齐后：Normal EPIC 区间 [0.97, 0.995)
       const rng = makeConstantRng(0.985); // EPIC in normal
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;

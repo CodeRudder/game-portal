@@ -75,7 +75,7 @@ describe('HeroRecruitSystem — 边界测试', () => {
     });
 
     it('FINE 品质有武将可直接抽取', () => {
-      // normal: 0.60+0.28=0.88, rng=0.70 → FINE
+      // P0 概率表对齐后：normal: 0.60+0.28=0.88, rng=0.70 → FINE [0.60, 0.88)
       const rng = makeConstantRng(0.70);
       recruit.setRng(rng);
       const result = recruit.recruitSingle('normal')!;

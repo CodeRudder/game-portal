@@ -399,13 +399,14 @@ export class HeroRecruitSystem implements ISubsystem {
         ?? this.fallbackPick(heroSystem, finalQuality);
     }
 
-    // 极端情况：完全无武将可用
+    // 极端情况：完全无武将可用 — 返回明确的错误结果对象
     if (!generalId) {
       return {
         general: null as unknown as GeneralData,
         isDuplicate: false,
         fragmentCount: 0,
         quality: finalQuality,
+        isEmpty: true,
       };
     }
 

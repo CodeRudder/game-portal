@@ -40,6 +40,8 @@ export function safeSpendResource(resource: ResourceSystem, type: string, amount
 export function safeCanAfford(resource: ResourceSystem, type: string, amount: number): boolean {
   if (!isResourceType(type)) return false;
   const current = resource.getAmount(type);
+  // 防御 NaN / undefined：非有限数值一律视为不足
+  if (!Number.isFinite(current)) return false;
   // 粮草需要扣除保留量（MIN_GRAIN_RESERVE = 10）
   if (type === 'grain') {
     return Math.max(0, current - 10) >= amount;
