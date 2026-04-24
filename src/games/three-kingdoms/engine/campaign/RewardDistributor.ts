@@ -25,12 +25,16 @@ import type { ISubsystem, ISystemDeps } from '../../core/types';
 // 常量
 // ─────────────────────────────────────────────
 
-/** 各星级对应的加成倍率 */
+/**
+ * 各星级对应的加成倍率（PRD v3.0 §4.2）
+ *
+ * ★×1.0 / ★★×1.5 / ★★★×2.0
+ */
 const STAR_MULTIPLIERS: Record<number, number> = {
   0: 0,   // 未通关，无奖励
   1: 1.0, // 1星：基础倍率
-  2: 1.0, // 2星：基础倍率
-  3: 1.5, // 3星：1.5倍加成（使用关卡自身 threeStarBonusMultiplier 覆盖）
+  2: 1.5, // 2星：1.5倍加成
+  3: 2.0, // 3星：2.0倍加成
 } as const;
 
 /** 默认随机数生成器（使用 Math.random） */
@@ -55,12 +59,15 @@ function randomInt(min: number, max: number, rng: () => number): number {
 /**
  * 计算星级加成倍率
  *
+ * PRD v3.0 §4.2：★×1.0 / ★★×1.5 / ★★★×2.0
+ * 统一使用 STAR_MULTIPLIERS 常量，不再使用关卡配置的 threeStarBonusMultiplier。
+ *
  * @param stars - 星级
- * @param threeStarBonusMultiplier - 关卡配置的三星额外倍率
+ * @param _threeStarBonusMultiplier - 已废弃，保留参数签名兼容性
  * @returns 加成倍率
  */
-function getStarMultiplier(stars: number, threeStarBonusMultiplier: number): number {
-  if (stars >= MAX_STARS) return threeStarBonusMultiplier;
+function getStarMultiplier(stars: number, _threeStarBonusMultiplier?: number): number {
+  if (stars >= MAX_STARS) return STAR_MULTIPLIERS[MAX_STARS] ?? 2.0;
   return STAR_MULTIPLIERS[stars] ?? 1.0;
 }
 
@@ -157,8 +164,10 @@ export class RewardDistributor implements ISubsystem {
       this.mergeResources(resources, stage.firstClearRewards);
     }
 
-    // 4. 掉落物品
-    const { fragments, bonusExp } = this.rollDropTable(stage.dropTable, resources);
+    // 4. 掉落物品（首通时碎片必掉）
+    const { fragments, bonusExp } = this.rollDropTable(
+      stage.dropTable, resources, isFirstClear,
+    );
 
     // 5. 总经验 = 基础经验 × 倍率 + 首通额外经验 + 掉落经验
     const totalExp = isFirstClear
@@ -311,18 +320,33 @@ export class RewardDistributor implements ISubsystem {
    * 资源类掉落合并到 resources，碎片类掉落返回 fragments Map，
    * 经验类掉落返回额外经验值。
    *
+   * PRD v3.0 §4.3a：
+   *   - 首通时关联武将碎片必掉（100%概率）
+   *   - 非首通时碎片按 dropTable 配置的概率掉落
+   *
    * @param dropTable - 掉落表
    * @param resources - 资源累加目标（就地修改）
+   * @param isFirstClear - 是否首通（首通时碎片必掉）
    * @returns 碎片掉落和额外经验 { fragments, bonusExp }
    */
   private rollDropTable(
     dropTable: DropTableEntry[],
     resources: Partial<Record<string, number>>,
+    isFirstClear = false,
   ): { fragments: Record<string, number>; bonusExp: number } {
     const fragments: Record<string, number> = {};
     let bonusExp = 0;
 
+    // P0-4: 首通时收集所有碎片类掉落条目，确保必掉
+    const firstClearFragmentEntries: DropTableEntry[] = [];
+
     for (const entry of dropTable) {
+      // 首通时收集碎片条目，跳过概率判定
+      if (isFirstClear && entry.type === 'fragment') {
+        firstClearFragmentEntries.push(entry);
+        continue;
+      }
+
       // 概率判定
       if (this.rng() > entry.probability) continue;
 
@@ -344,9 +368,18 @@ export class RewardDistributor implements ISubsystem {
           break;
 
         case 'exp':
-          // 经验掉落直接累加，通过 addExp 回调分发
           bonusExp += amount;
           break;
+      }
+    }
+
+    // P0-4: 首通必掉碎片 — 使用掉落表中的 minAmount 确保必掉
+    if (isFirstClear) {
+      for (const entry of firstClearFragmentEntries) {
+        if (entry.generalId) {
+          const amount = entry.minAmount; // 首通使用最小数量，确保必掉
+          fragments[entry.generalId] = (fragments[entry.generalId] ?? 0) + amount;
+        }
       }
     }
 

@@ -255,14 +255,14 @@ describe('§7.2 战斗奖励→资源入账', () => {
     expect(resource.getAmount('grain') - grainBefore).toBe(expectedGrain);
   });
 
-  it('should apply 3-star multiplier (1.5x) to base rewards', () => {
+  it('should apply 3-star multiplier (2.0x) to base rewards', () => {
     const stage = getStage('chapter1_stage1')!;
     const goldBefore = resource.getAmount('gold');
 
     const noDrop = createSeededRng([0.99, 0.99, 0.99]);
     const reward = distributeRewards(resource, 'chapter1_stage1', 3, false, noDrop);
 
-    const expectedGold = Math.floor(stage.baseRewards.gold! * 1.5);
+    const expectedGold = Math.floor(stage.baseRewards.gold! * 2.0);
     expect(resource.getAmount('gold') - goldBefore).toBe(expectedGold);
   });
 
@@ -316,7 +316,7 @@ describe('§7.3 首通奖励→资源暴击', () => {
     const reward = dist.calculateRewards('chapter1_stage1', 3, true);
 
     // 首通资源应包含 firstClearRewards
-    const expectedGrain = Math.floor(stage.baseRewards.grain! * 1.5) + (stage.firstClearRewards.grain ?? 0);
+    const expectedGrain = Math.floor(stage.baseRewards.grain! * 2.0) + (stage.firstClearRewards.grain ?? 0);
     expect(reward.resources.grain).toBe(expectedGrain);
   });
 
@@ -326,8 +326,8 @@ describe('§7.3 首通奖励→资源暴击', () => {
 
     const reward = dist.calculateRewards('chapter1_stage1', 3, true);
 
-    // 总经验 = 基础经验*1.5 + 首通经验
-    const baseExp = Math.floor(stage.baseExp * 1.5);
+    // 总经验 = 基础经验*2.0 + 首通经验
+    const baseExp = Math.floor(stage.baseExp * 2.0);
     const expectedMinExp = baseExp + stage.firstClearExp;
     expect(reward.exp).toBeGreaterThanOrEqual(expectedMinExp);
   });
@@ -339,7 +339,7 @@ describe('§7.3 首通奖励→资源暴击', () => {
     const reward = dist.calculateRewards('chapter1_stage1', 3, false);
 
     // 非首通不应包含 firstClearRewards
-    const expectedGrain = Math.floor(stage.baseRewards.grain! * 1.5);
+    const expectedGrain = Math.floor(stage.baseRewards.grain! * 2.0);
     expect(reward.resources.grain).toBe(expectedGrain);
     expect(reward.isFirstClear).toBe(false);
   });
@@ -424,7 +424,7 @@ describe('§7.4 重复奖励→日常资源获取', () => {
     const reward2 = dist.calculateRewards('chapter1_stage1', 3, false);
 
     expect(reward1.starMultiplier).toBe(reward2.starMultiplier);
-    expect(reward1.starMultiplier).toBe(1.5);
+    expect(reward1.starMultiplier).toBe(2.0);
   });
 
   it('should give lower rewards for lower star rating', () => {
@@ -435,7 +435,7 @@ describe('§7.4 重复奖励→日常资源获取', () => {
     const reward3star = dist.calculateRewards('chapter1_stage1', 3, false);
     const reward1star = dist.calculateRewards('chapter1_stage1', 1, false);
 
-    // 3星倍率 1.5 > 1星倍率 1.0
+    // 3星倍率 2.0 > 1星倍率 1.0
     expect(reward3star.resources.grain!).toBeGreaterThan(reward1star.resources.grain!);
     expect(reward3star.exp).toBeGreaterThan(reward1star.exp);
   });

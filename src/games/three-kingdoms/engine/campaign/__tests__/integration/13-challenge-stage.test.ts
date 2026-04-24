@@ -303,9 +303,9 @@ describe('§11.2 挑战关卡结算', () => {
 
     const stage = getStage(eliteStageId)!;
 
-    // 三星通关奖励
+    // 三星通关奖励（PRD: ★★★×2.0）
     const reward3Star = env.rewardDistributor.calculateRewards(eliteStageId, 3, true);
-    expect(reward3Star.starMultiplier).toBe(stage.threeStarBonusMultiplier);
+    expect(reward3Star.starMultiplier).toBe(2.0);
     expect(reward3Star.isFirstClear).toBe(true);
 
     // 一星通关奖励

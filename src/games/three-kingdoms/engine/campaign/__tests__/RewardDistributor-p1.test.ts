@@ -77,18 +77,19 @@ describe('RewardDistributor 基础奖励', () => {
     expect(reward.starMultiplier).toBe(1.0);
   });
 
-  it('2星基础奖励无加成', () => {
+  it('2星基础奖励有1.5倍加成', () => {
     const reward = distributor.calculateRewards('chapter1_stage1', 2, false);
-    expect(reward.starMultiplier).toBe(1.0);
-    expect(reward.resources.grain).toBe(80);
-  });
-
-  it('3星基础奖励有加成（1.5倍）', () => {
-    const reward = distributor.calculateRewards('chapter1_stage1', 3, false);
     expect(reward.starMultiplier).toBe(1.5);
     // 80 * 1.5 = 120
     expect(reward.resources.grain).toBe(120);
-    expect(reward.resources.gold).toBe(60);
+  });
+
+  it('3星基础奖励有2.0倍加成', () => {
+    const reward = distributor.calculateRewards('chapter1_stage1', 3, false);
+    expect(reward.starMultiplier).toBe(2.0);
+    // 80 * 2.0 = 160
+    expect(reward.resources.grain).toBe(160);
+    expect(reward.resources.gold).toBe(80);
   });
 
   it('基础经验随星级加成', () => {
@@ -96,16 +97,17 @@ describe('RewardDistributor 基础奖励', () => {
     const r3 = distributor.calculateRewards('chapter1_stage1', 3, false);
     // baseExp = 50
     expect(r1.exp).toBe(50);
-    expect(r3.exp).toBe(75); // 50 * 1.5
+    expect(r3.exp).toBe(100); // 50 * 2.0
   });
 
   it('BOSS关3星倍率为2.0', () => {
     const reward = distributor.calculateRewards('chapter1_stage5', 3, false);
     expect(reward.starMultiplier).toBe(2.0);
     // baseRewards: { grain: 300, gold: 150, troops: 50, mandate: 10 }
+    // * 2.0 = { grain: 600, gold: 300, troops: 100, mandate: 20 }
     // BOSS关有概率1.0的掉落
-    expect(reward.resources.grain).toBeGreaterThanOrEqual(450);
-    expect(reward.resources.gold).toBeGreaterThanOrEqual(230);
+    expect(reward.resources.grain).toBeGreaterThanOrEqual(600);
+    expect(reward.resources.gold).toBeGreaterThanOrEqual(300);
   });
 
   it('不存在的关卡抛出异常', () => {
@@ -174,8 +176,9 @@ describe('RewardDistributor 掉落表', () => {
     );
     const reward = distributor.calculateRewards('chapter1_stage5', 1, false);
     // chapter1_stage5 dropTable前两项概率1.0
-    expect(reward.resources.grain).toBeGreaterThan(450); // base 300 + drop
-    expect(reward.resources.gold).toBeGreaterThan(200); // base 200 + drop
+    // base grain=300, drop grain 150~280 (rng=0.5 → randomInt(150,280)=215)
+    expect(reward.resources.grain).toBeGreaterThan(300); // base 300 + drop
+    expect(reward.resources.gold).toBeGreaterThan(150); // base 150 + drop
   });
 
   it('概率为0的掉落不触发（rng始终返回1）', () => {

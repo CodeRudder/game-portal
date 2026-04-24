@@ -6,6 +6,14 @@
  * 上层系统（Campaign/RewardDistributor）可据此分发碎片。
  * 失败/平局时无碎片产出。
  *
+ * PRD v3.0 §4.3a：
+ *   - 基础碎片掉率 10%
+ *   - 首通时关联武将碎片必掉（100%概率）
+ *
+ * 注意：碎片掉落的权威来源是 RewardDistributor 的 dropTable。
+ * 本模块仅作为 BattleEngine 的独立碎片计算路径，
+ * Campaign 系统应使用 RewardDistributor.dropTable 进行掉落判定。
+ *
  * @module engine/battle/BattleFragmentRewards
  */
 
@@ -17,13 +25,15 @@ import { BattleOutcome } from './battle.types';
  *
  * @param outcome - 战斗结果
  * @param enemyTeam - 敌方队伍
- * @param allySurvivors - 我方存活人数（影响掉落数量）
+ * @param allySurvivors - 我方存活人数
+ * @param isFirstClear - 是否首通（首通时碎片必掉）
  * @returns 碎片奖励映射（单位ID → 碎片数量）
  */
 export function calculateFragmentRewards(
   outcome: BattleOutcome,
   enemyTeam: BattleTeam,
   allySurvivors: number,
+  isFirstClear?: boolean,
 ): Record<string, number> {
   // 非胜利无碎片
   if (outcome !== BattleOutcome.VICTORY) {
@@ -32,17 +42,21 @@ export function calculateFragmentRewards(
 
   const fragments: Record<string, number> = {};
 
-  for (const unit of enemyTeam.units) {
-    // 确定性掉落判定：基于单位ID的哈希
-    // 基础掉率30%，存活4人以上额外+20%
-    const baseDropRate = 0.3;
-    const starBonus = allySurvivors >= 4 ? 0.2 : 0;
-    const dropChance = baseDropRate + starBonus;
+  // PRD v3.0 §4.3a：首通时关联武将碎片必掉（100%概率）
+  if (isFirstClear) {
+    for (const unit of enemyTeam.units) {
+      fragments[unit.id] = (fragments[unit.id] ?? 0) + 1;
+    }
+    return fragments;
+  }
 
+  // 非首通：基础掉率 10%（PRD v3.0 §4.3a）
+  const baseDropRate = 0.1;
+
+  for (const unit of enemyTeam.units) {
     const hash = simpleHash(unit.id);
-    if ((hash % 100) < Math.floor(dropChance * 100)) {
-      const count = allySurvivors >= 4 ? 2 : 1;
-      fragments[unit.id] = (fragments[unit.id] ?? 0) + count;
+    if ((hash % 100) < Math.floor(baseDropRate * 100)) {
+      fragments[unit.id] = (fragments[unit.id] ?? 0) + 1;
     }
   }
 

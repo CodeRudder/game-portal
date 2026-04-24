@@ -213,7 +213,7 @@ describe('§4.1 胜利结算', () => {
 
     expect(reward).toBeDefined();
     expect(reward.isFirstClear).toBe(true);
-    expect(reward.starMultiplier).toBe(1.5); // 3星倍率
+    expect(reward.starMultiplier).toBe(2.0); // 3星倍率（PRD: ★★★×2.0）
     expect(reward.exp).toBeGreaterThan(0);
     expect(reward.resources).toBeDefined();
   });
@@ -225,12 +225,12 @@ describe('§4.1 胜利结算', () => {
     const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, noDrop);
     const reward = dist.calculateRewards('chapter1_stage1', 3, true);
 
-    // 3星 = threeStarBonusMultiplier(1.5), 基础资源 * 1.5 + 首通额外资源
-    const expectedGrain = Math.floor(stage.baseRewards.grain! * 1.5) + (stage.firstClearRewards.grain ?? 0);
+    // 3星 = 2.0倍率（PRD: ★★★×2.0）, 基础资源 * 2.0 + 首通额外资源
+    const expectedGrain = Math.floor(stage.baseRewards.grain! * 2.0) + (stage.firstClearRewards.grain ?? 0);
     expect(reward.resources.grain).toBe(expectedGrain);
 
     // 首通额外奖励直接叠加
-    const totalGold = Math.floor(stage.baseRewards.gold! * 1.5) + stage.firstClearRewards.gold!;
+    const totalGold = Math.floor(stage.baseRewards.gold! * 2.0) + stage.firstClearRewards.gold!;
     expect(reward.resources.gold).toBe(totalGold);
   });
 
@@ -239,7 +239,7 @@ describe('§4.1 胜利结算', () => {
     const reward = distributor.calculateRewards('chapter1_stage1', 3, true);
 
     // 总经验 = 基础经验*倍率 + 首通经验 + 掉落经验
-    const baseExp = Math.floor(stage.baseExp * 1.5);
+    const baseExp = Math.floor(stage.baseExp * 2.0);
     const expectedMinExp = baseExp + stage.firstClearExp;
     expect(reward.exp).toBeGreaterThanOrEqual(expectedMinExp);
   });
@@ -253,7 +253,7 @@ describe('§4.1 胜利结算', () => {
 
     expect(reward.isFirstClear).toBe(false);
     // 不应包含首通额外资源
-    const expectedGrain = Math.floor(stage.baseRewards.grain! * 1.5);
+    const expectedGrain = Math.floor(stage.baseRewards.grain! * 2.0);
     expect(reward.resources.grain).toBe(expectedGrain);
   });
 
@@ -268,7 +268,7 @@ describe('§4.1 胜利结算', () => {
     const rewardOver = distributor.calculateRewards('chapter1_stage1', 99, false);
 
     expect(rewardNeg.starMultiplier).toBe(0); // 0 stars = 0 multiplier
-    expect(rewardOver.starMultiplier).toBe(1.5); // clamped to 3 stars
+    expect(rewardOver.starMultiplier).toBe(2.0); // clamped to 3 stars → 2.0
   });
 });
 

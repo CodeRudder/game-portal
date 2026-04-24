@@ -106,6 +106,10 @@ describe('RewardDistributor 综合场景', () => {
     expect(reward.starMultiplier).toBe(2.0);
     // exp: baseExp * 2.0 + firstClearExp = 100 * 2 + 300 = 500
     expect(reward.exp).toBe(500);
+
+    // P0-4: 首通碎片必掉（chapter1_stage5 有 guanyu 和 zhangjiao 碎片）
+    expect(reward.fragments['guanyu']).toBeGreaterThanOrEqual(1);
+    expect(reward.fragments['zhangjiao']).toBeGreaterThanOrEqual(1);
   });
 
   it('重复通关（非首通）奖励较少', () => {
@@ -153,7 +157,7 @@ describe('RewardDistributor 星级加成边界', () => {
 
   it('星级超出3被截断为3星倍率', () => {
     const reward = distributor.calculateRewards('chapter1_stage1', 5, false);
-    expect(reward.starMultiplier).toBe(1.5);
+    expect(reward.starMultiplier).toBe(2.0);
   });
 
   it('负星级按0星处理', () => {
@@ -163,13 +167,13 @@ describe('RewardDistributor 星级加成边界', () => {
 
   it('小数星级被截断', () => {
     const reward = distributor.calculateRewards('chapter1_stage1', 2.9, false);
-    expect(reward.starMultiplier).toBe(1.0); // 截断为2星
+    expect(reward.starMultiplier).toBe(1.5); // 截断为2星 → 1.5倍
   });
 
-  it('1星和2星倍率相同', () => {
+  it('1星和2星倍率不同（PRD: ★×1.0 / ★★×1.5）', () => {
     const r1 = distributor.calculateRewards('chapter1_stage1', 1, false);
     const r2 = distributor.calculateRewards('chapter1_stage1', 2, false);
-    expect(r1.starMultiplier).toBe(r2.starMultiplier);
+    expect(r2.starMultiplier).toBeGreaterThan(r1.starMultiplier);
   });
 });
 

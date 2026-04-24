@@ -170,7 +170,7 @@ describe('SweepSystem 扫荡产出', () => {
     const { system } = createSweepSystem({ chapter1_stage1: 3 }, { initialTickets: 10 });
     const result = system.sweep('chapter1_stage1', 1);
     expect(result.results[0].stars).toBe(3);
-    expect(result.results[0].reward.starMultiplier).toBe(1.5);
+    expect(result.results[0].reward.starMultiplier).toBe(2.0);
   });
 
   it('二星关卡不可扫荡，即使有扫荡令', () => {
