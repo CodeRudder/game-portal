@@ -109,20 +109,21 @@ describe('§3 套装→推荐→分解→资源循环全链路', () => {
     });
 
     it('穿戴2件同套装激活2件套效果', () => {
-      // warrior套装有 sword_iron(weapon) + armor_leather(armor)
-      // 但 armor_leather 属于 guardian，需要找同套装的模板
-      // 查看模板找到同套装组合
-      const warriorTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'warrior');
-      if (warriorTemplates.length >= 2) {
-        const eq1 = equipment.generateEquipment(warriorTemplates[0].id, 'white');
-        const eq2 = equipment.generateEquipment(warriorTemplates[1].id, 'white');
+      // dragon套装有 sword_dragon(weapon) + armor_dragon(armor) + ring_dragon(accessory)
+      // 使用dragon套装，其模板跨多个部位，可同时穿戴
+      const dragonTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'dragon');
+      if (dragonTemplates.length >= 2) {
+        // dragon模板最低品质为blue
+        const eq1 = equipment.generateEquipment(dragonTemplates[0].id, 'blue');
+        const eq2 = equipment.generateEquipment(dragonTemplates[1].id, 'blue');
         if (eq1 && eq2) {
           equipment.equipItem('hero1', eq1.uid);
           equipment.equipItem('hero1', eq2.uid);
           const bonuses = set.getActiveSetBonuses('hero1');
           expect(bonuses.length).toBeGreaterThanOrEqual(1);
-          const twoPiece = bonuses.find(b => b.tier === 2);
-          expect(twoPiece).toBeDefined();
+          const dragonBonus = bonuses.find(b => b.setId === 'dragon');
+          expect(dragonBonus).toBeDefined();
+          expect(dragonBonus!.activeTiers).toContain(2);
         }
       }
     });
@@ -145,24 +146,24 @@ describe('§3 套装→推荐→分解→资源循环全链路', () => {
     });
 
     it('套装件数统计正确', () => {
-      const warriorTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'warrior');
-      if (warriorTemplates.length >= 2) {
-        const eq1 = equipment.generateEquipment(warriorTemplates[0].id, 'white');
-        const eq2 = equipment.generateEquipment(warriorTemplates[1].id, 'white');
+      const dragonTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'dragon');
+      if (dragonTemplates.length >= 2) {
+        const eq1 = equipment.generateEquipment(dragonTemplates[0].id, 'blue');
+        const eq2 = equipment.generateEquipment(dragonTemplates[1].id, 'blue');
         if (eq1 && eq2) {
           equipment.equipItem('hero1', eq1.uid);
           equipment.equipItem('hero1', eq2.uid);
           const counts = set.getSetCounts('hero1');
-          expect(counts.get('warrior')).toBe(2);
+          expect(counts.get('dragon')).toBe(2);
         }
       }
     });
 
     it('卸下装备后套装效果消失', () => {
-      const warriorTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'warrior');
-      if (warriorTemplates.length >= 2) {
-        const eq1 = equipment.generateEquipment(warriorTemplates[0].id, 'white');
-        const eq2 = equipment.generateEquipment(warriorTemplates[1].id, 'white');
+      const dragonTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'dragon');
+      if (dragonTemplates.length >= 2) {
+        const eq1 = equipment.generateEquipment(dragonTemplates[0].id, 'blue');
+        const eq2 = equipment.generateEquipment(dragonTemplates[1].id, 'blue');
         if (eq1 && eq2) {
           equipment.equipItem('hero1', eq1.uid);
           equipment.equipItem('hero1', eq2.uid);
@@ -171,9 +172,8 @@ describe('§3 套装→推荐→分解→资源循环全链路', () => {
           equipment.unequipItem('hero1', eq1.slot);
           // 1件不满足2件套
           const bonuses = set.getActiveSetBonuses('hero1');
-          // 可能还有其他套装激活
-          const warriorBonus = bonuses.find(b => b.setId === 'warrior');
-          expect(warriorBonus).toBeUndefined();
+          const dragonBonus = bonuses.find(b => b.setId === 'dragon');
+          expect(dragonBonus).toBeUndefined();
         }
       }
     });
@@ -190,10 +190,10 @@ describe('§3 套装→推荐→分解→资源循环全链路', () => {
     });
 
     it('不同武将穿戴同套装互不干扰', () => {
-      const warriorTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'warrior');
-      if (warriorTemplates.length >= 2) {
-        const eq1 = equipment.generateEquipment(warriorTemplates[0].id, 'white');
-        const eq2 = equipment.generateEquipment(warriorTemplates[1].id, 'white');
+      const dragonTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'dragon');
+      if (dragonTemplates.length >= 2) {
+        const eq1 = equipment.generateEquipment(dragonTemplates[0].id, 'blue');
+        const eq2 = equipment.generateEquipment(dragonTemplates[1].id, 'blue');
 
         if (eq1 && eq2) {
           equipment.equipItem('heroA', eq1.uid);
@@ -211,10 +211,10 @@ describe('§3 套装→推荐→分解→资源循环全链路', () => {
     });
 
     it('卸下武将A装备不影响武将B', () => {
-      const warriorTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'warrior');
-      if (warriorTemplates.length >= 2) {
-        const eq1 = equipment.generateEquipment(warriorTemplates[0].id, 'white');
-        const eq2 = equipment.generateEquipment(warriorTemplates[1].id, 'white');
+      const dragonTemplates = EQUIPMENT_TEMPLATES.filter(t => t.setId === 'dragon');
+      if (dragonTemplates.length >= 2) {
+        const eq1 = equipment.generateEquipment(dragonTemplates[0].id, 'blue');
+        const eq2 = equipment.generateEquipment(dragonTemplates[1].id, 'blue');
 
         if (eq1 && eq2) {
           equipment.equipItem('heroA', eq1.uid);
@@ -224,8 +224,8 @@ describe('§3 套装→推荐→分解→资源循环全链路', () => {
           equipment.unequipItem('heroA', eq1.slot);
 
           // heroA 套装效果消失
-          const warriorBonusA = set.getActiveSetBonuses('heroA').find(b => b.setId === 'warrior');
-          expect(warriorBonusA).toBeUndefined();
+          const dragonBonusA = set.getActiveSetBonuses('heroA').find(b => b.setId === 'dragon');
+          expect(dragonBonusA).toBeUndefined();
         }
       }
     });
@@ -341,8 +341,8 @@ describe('§3 套装→推荐→分解→资源循环全链路', () => {
     it('批量分解多件装备', () => {
       const items = generateN(equipment, 5, 'white');
       const result = equipment.batchDecompose(items.map(i => i.uid));
-      expect(result.totalCopper).toBeGreaterThan(0);
-      expect(result.decomposedCount).toBe(5);
+      expect(result.total.copper).toBeGreaterThan(0);
+      expect(result.decomposedUids.length).toBe(5);
     });
 
     it('已穿戴装备不可分解', () => {
@@ -361,7 +361,7 @@ describe('§3 套装→推荐→分解→资源循环全链路', () => {
       equipment.equipItem('hero1', all[0].uid);
 
       const result = equipment.decomposeAllUnequipped();
-      expect(result.decomposedCount).toBe(9);
+      expect(result.decomposedUids.length).toBe(9);
       expect(equipment.getBagUsedCount()).toBe(1); // 仅剩穿戴的那件
     });
 
@@ -431,8 +431,8 @@ describe('§3 套装→推荐→分解→资源循环全链路', () => {
 
       // 2. 批量分解5件获取资源
       const decomposeResult = equipment.batchDecompose(whites.slice(0, 5).map(i => i.uid));
-      expect(decomposeResult.decomposedCount).toBe(5);
-      expect(decomposeResult.totalCopper).toBeGreaterThan(0);
+      expect(decomposeResult.decomposedUids.length).toBe(5);
+      expect(decomposeResult.total.copper).toBeGreaterThan(0);
 
       // 3. 剩余5件中取3件炼制
       const remaining = whites.slice(5);
