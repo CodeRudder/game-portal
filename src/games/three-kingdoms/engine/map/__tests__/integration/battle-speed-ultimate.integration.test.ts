@@ -169,9 +169,9 @@ describe('§1.1 战斗速度控制', () => {
     expect(controller.getSpeed()).toBe(BattleSpeed.X2);
   });
 
-  it('切换到 4x 速度', () => {
-    controller.setSpeed(BattleSpeed.X4);
-    expect(controller.getSpeed()).toBe(BattleSpeed.X4);
+  it('切换到 3x 速度', () => {
+    controller.setSpeed(BattleSpeed.X3);
+    expect(controller.getSpeed()).toBe(BattleSpeed.X3);
   });
 
   it('相同速度切换返回 false', () => {
@@ -179,9 +179,9 @@ describe('§1.1 战斗速度控制', () => {
     expect(result).toBe(false);
   });
 
-  it('cycleSpeed 循环切换：1x → 2x → 4x → 1x', () => {
+  it('cycleSpeed 循环切换：1x → 2x → 3x → 1x', () => {
     expect(controller.cycleSpeed()).toBe(BattleSpeed.X2);
-    expect(controller.cycleSpeed()).toBe(BattleSpeed.X4);
+    expect(controller.cycleSpeed()).toBe(BattleSpeed.X3);
     expect(controller.cycleSpeed()).toBe(BattleSpeed.X1);
   });
 
@@ -202,10 +202,10 @@ describe('§1.1 战斗速度控制', () => {
     );
   });
 
-  it('4x 回合间隔 = BASE / 4', () => {
-    controller.setSpeed(BattleSpeed.X4);
+  it('3x 回合间隔 = BASE / 3', () => {
+    controller.setSpeed(BattleSpeed.X3);
     expect(controller.getAdjustedTurnInterval()).toBe(
-      Math.floor(BATTLE_CONFIG.BASE_TURN_INTERVAL_MS / 4),
+      Math.floor(BATTLE_CONFIG.BASE_TURN_INTERVAL_MS / 3),
     );
   });
 
@@ -224,9 +224,9 @@ describe('§1.1 战斗速度控制', () => {
     expect(controller.getAnimationSpeedScale()).toBe(2.0);
   });
 
-  it('4x 动画速度缩放系数 = 4.0', () => {
-    controller.setSpeed(BattleSpeed.X4);
-    expect(controller.getAnimationSpeedScale()).toBe(4.0);
+  it('3x 动画速度缩放系数 = 3.0', () => {
+    controller.setSpeed(BattleSpeed.X3);
+    expect(controller.getAnimationSpeedScale()).toBe(3.0);
   });
 
   it('速度状态快照包含完整信息', () => {
