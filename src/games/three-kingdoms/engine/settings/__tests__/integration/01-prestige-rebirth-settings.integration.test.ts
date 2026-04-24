@@ -52,8 +52,17 @@ function createMockStorage() {
 
 /** 快速提升声望等级 */
 function levelUpTo(sys: PrestigeSystem, targetLevel: number): void {
-  while (sys.getState().currentLevel < targetLevel) {
-    sys.addPrestigePoints('main_quest', 50000);
+  const clampedTarget = Math.min(targetLevel, MAX_PRESTIGE_LEVEL);
+  let safety = 0;
+  while (sys.getState().currentLevel < clampedTarget && safety < 200) {
+    // 计算升到下一级所需点数，并多给一些余量确保能升级
+    const nextLevel = sys.getState().currentLevel + 1;
+    const required = calcRequiredPoints(nextLevel);
+    const currentPoints = sys.getState().currentPoints;
+    const deficit = Math.max(0, required - currentPoints);
+    const pointsToAdd = deficit + 1000; // 额外 1000 点余量
+    sys.addPrestigePoints('main_quest', pointsToAdd);
+    safety++;
   }
 }
 
