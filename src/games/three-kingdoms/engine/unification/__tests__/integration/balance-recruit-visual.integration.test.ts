@@ -224,10 +224,10 @@ describe('§6+§11+§12 数值平衡+招募保底+色盲纹理+PRD 集成测试'
       expect(advancedSum).toBeCloseTo(1.0, 6);
     });
 
-    it('十连保底阈值均为10，硬保底阈值均为100', () => {
+    it('十连保底阈值均为10，高级池硬保底100，普通池无硬保底', () => {
       expect(RECRUIT_PITY.normal.tenPullThreshold).toBe(10);
       expect(RECRUIT_PITY.advanced.tenPullThreshold).toBe(10);
-      expect(RECRUIT_PITY.normal.hardPityThreshold).toBe(100);
+      expect(RECRUIT_PITY.normal.hardPityThreshold).toBe(Infinity); // PRD: 普通池无硬保底
       expect(RECRUIT_PITY.advanced.hardPityThreshold).toBe(100);
     });
 
@@ -239,9 +239,9 @@ describe('§6+§11+§12 数值平衡+招募保底+色盲纹理+PRD 集成测试'
       expect(state.advancedHardPity).toBe(0);
     });
 
-    it('getNextTenPullPity/ getNextHardPity 初始值等于阈值', () => {
+    it('getNextTenPullPity/ getNextHardPity 初始值正确', () => {
       expect(recruit.getNextTenPullPity('normal')).toBe(10);
-      expect(recruit.getNextHardPity('normal')).toBe(100);
+      expect(recruit.getNextHardPity('normal')).toBe(Infinity); // 普通池无硬保底
       expect(recruit.getNextTenPullPity('advanced')).toBe(10);
       expect(recruit.getNextHardPity('advanced')).toBe(100);
     });
@@ -263,8 +263,8 @@ describe('§6+§11+§12 数值平衡+招募保底+色盲纹理+PRD 集成测试'
       expect([Quality.RARE, Quality.EPIC, Quality.LEGENDARY]).toContain(result);
     });
 
-    it('applyPity 硬保底触发时强制提升品质', () => {
-      const config = RECRUIT_PITY.normal;
+    it('applyPity 高级池硬保底触发时强制提升品质', () => {
+      const config = RECRUIT_PITY.advanced; // PRD: 仅高级池有硬保底
       // 模拟已抽99次未出史诗+，第100次硬保底
       const result = applyPity(Quality.COMMON, 0, 99, config);
       expect([Quality.LEGENDARY]).toContain(result);
