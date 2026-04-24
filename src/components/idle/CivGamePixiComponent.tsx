@@ -505,6 +505,7 @@ function extractCivState(engine: IdleGameEngine, civId: CivilizationId): Civiliz
   });
 
   // 提取声望
+  // TODO: prestige/statistics 是 protected，stages/techs/units 是子类特有，暂用 as any
   const prestige = (engine as any).prestige ?? { currency: 0, count: 0 };
   const statistics = (engine as any).statistics ?? {};
 
@@ -533,6 +534,7 @@ function extractCivState(engine: IdleGameEngine, civId: CivilizationId): Civiliz
   }));
 
   // 提取科技
+  // TODO: techs/units 是子类引擎特有属性，暂用 as any
   const techs = (engine as any).techs?.getAllTechs?.()?.map((t: any) => ({
     id: t.id,
     name: t.name,

@@ -3,10 +3,16 @@
  *
  * 路由: /idle/:gameId
  * 根据 gameId 创建对应的引擎并渲染 IdleGamePlayer。
+ *
+ * 注意: PixiJS 游戏组件（如 ThreeKingdomsGame）在此处使用 lazy import，
+ * 确保只有真正访问该游戏时才加载对应的 chunk。
  */
+import { lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
-import ThreeKingdomsGame from '@/components/idle/ThreeKingdomsGame';
+
+// ── 三国霸业 — lazy import，独立 chunk ──
+const ThreeKingdomsGame = lazy(() => import('@/components/idle/ThreeKingdomsGame'));
 
 /** 放置游戏注册信息 */
 interface IdleGameConfig {
@@ -213,6 +219,18 @@ const IDLE_GAME_REGISTRY: Record<string, IdleGameConfig> = {
   },
 };
 
+/** 游戏加载 fallback */
+function GameLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gp-dark">
+      <div className="text-center">
+        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gp-accent border-t-transparent" />
+        <p className="text-sm text-gray-400">正在加载游戏引擎…</p>
+      </div>
+    </div>
+  );
+}
+
 export default function IdleGamePage() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
@@ -238,8 +256,13 @@ export default function IdleGamePage() {
   }
 
   // 三国霸业：全屏模式，不显示 Header / 标题区
+  // 使用 Suspense 包裹 lazy-loaded 组件
   if (config.pixiComponent && gameId === 'three-kingdoms') {
-    return <ThreeKingdomsGame />;
+    return (
+      <Suspense fallback={<GameLoader />}>
+        <ThreeKingdomsGame />
+      </Suspense>
+    );
   }
 
   return (

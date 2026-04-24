@@ -127,7 +127,7 @@ export default function ActivityPanel({ engine, visible = true, onClose }: Activ
               key={act.id}
               style={{
                 ...styles.activityCard,
-                borderColor: selectedActivityId === act.id ? '#d4a574' : 'rgba(255,255,255,0.08)',
+                border: selectedActivityId === act.id ? '1px solid #d4a574' : '1px solid rgba(255,255,255,0.08)',
               }}
               onClick={() => setSelectedActivityId(act.id)}
               data-testid={`activity-panel-card-${act.id}`}
@@ -203,7 +203,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '6px 20px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 13, cursor: 'pointer',
   },
-  signInBtnDone: { background: 'transparent', color: '#666', borderColor: 'rgba(255,255,255,0.06)', cursor: 'default' },
+  signInBtnDone: { background: 'transparent', color: '#666', border: '1px solid rgba(255,255,255,0.06)', cursor: 'default' },
   section: { marginBottom: 16 },
   sectionHeader: { fontSize: 14, fontWeight: 600, color: '#d4a574', marginBottom: 8 },
   activityList: { display: 'flex', flexDirection: 'column', gap: 8 },

@@ -19,6 +19,7 @@ import EquipmentTab from '@/components/idle/panels/equipment/EquipmentTab';
 import ArenaTab from '@/components/idle/panels/arena/ArenaTab';
 import ArmyTab from '@/components/idle/panels/army/ArmyTab';
 import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
+import PrestigePanel from '@/components/idle/panels/prestige/PrestigePanel';
 import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import NPCInfoModal from '@/components/idle/panels/npc/NPCInfoModal';
 import type { NPCData } from '@/games/three-kingdoms/core/npc';
@@ -69,10 +70,11 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
   }, [engine, snapshotVersion]);
 
   // ── NPC 数据 ──
-  const npcData = React.useMemo(() => {
-    const npcSys = (engine as any).npcSystem;
+  const npcData: NPCData[] = React.useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const npcSys = engine?.getSubsystemRegistry?.()?.get?.('npc') as any;
     if (npcSys && typeof npcSys.getAllNPCs === 'function') {
-      return npcSys.getAllNPCs();
+      return (npcSys.getAllNPCs() as NPCData[]) ?? [];
     }
     return [];
   }, [engine, snapshotVersion]);
@@ -81,7 +83,7 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
   const [selectedNPC, setSelectedNPC] = React.useState<NPCData | null>(null);
 
   const handleSelectNPC = React.useCallback((npcId: string) => {
-    const npc = npcData.find((n: NPCData) => n.id === npcId);
+    const npc = npcData.find((n) => n.id === npcId);
     if (npc) setSelectedNPC(npc);
   }, [npcData]);
 
@@ -203,12 +205,10 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
             );
 
           case 'prestige':
-            // 声望Tab — 通过FeaturePanelOverlay渲染，这里作为Tab占位
             return (
-              <MoreTab
+              <PrestigePanel
                 engine={engine}
-                snapshotVersion={snapshotVersion}
-                onOpenPanel={(id) => onOpenFeature(id as FeaturePanelId)}
+                visible={true}
               />
             );
 

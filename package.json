@@ -13,7 +13,19 @@
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "npx playwright test e2e/ --config e2e/playwright.config.ts",
+
+    "test:tk": "vitest run --config vitest.config.three-kingdoms.ts",
+    "test:tk:watch": "vitest --config vitest.config.three-kingdoms.ts",
+    "test:tk:coverage": "vitest run --config vitest.config.three-kingdoms.ts --coverage",
+    "test:idle": "vitest run --config vitest.idle.config.ts",
+    "test:arcade": "vitest run --config vitest.arcade.config.ts",
+
+    "build:tk": "vite build --config vite.config.three-kingdoms.ts",
+    "build:three-kingdoms": "vite build --config vite.config.three-kingdoms.ts",
+    "typecheck:three-kingdoms": "tsc --noEmit -p tsconfig.three-kingdoms.json",
+    "check:three-kingdoms": "tsc --noEmit -p tsconfig.three-kingdoms.json && vitest run --config vitest.config.three-kingdoms.ts"
   },
   "dependencies": {
     "@pixi/tilemap": "^5.0.2",

@@ -18,6 +18,10 @@ import React, { useState, useMemo, useCallback } from 'react';
 interface ExpeditionTabProps {
   engine: any;
   snapshotVersion?: number;
+  /** 是否显示（弹窗模式） */
+  visible?: boolean;
+  /** 关闭回调（弹窗模式） */
+  onClose?: () => void;
 }
 
 // ─── 节点类型图标 ────────────────────────────
@@ -38,7 +42,8 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 };
 
 // ─── 主组件 ─────────────────────────────────
-const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine }) => {
+const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine, visible = true, onClose }) => {
+  if (!visible) return null;
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showResult, setShowResult] = useState(false);
@@ -163,7 +168,7 @@ const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine }) => {
             const cleared = clearedIds.has(route.id);
             const selected = selectedRouteId === route.id;
             return (
-              <div key={route.id} style={{ ...S.routeCard, borderColor: selected ? '#d4a574' : 'rgba(255,255,255,0.08)', opacity: route.unlocked ? 1 : 0.4 }}
+              <div key={route.id} style={{ ...S.routeCard, border: selected ? '1px solid #d4a574' : '1px solid rgba(255,255,255,0.08)', opacity: route.unlocked ? 1 : 0.4 }}
                 onClick={() => route.unlocked && setSelectedRouteId(route.id)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontWeight: 600, color: '#e8e0d0' }}>{route.name ?? route.id}</span>
@@ -193,7 +198,7 @@ const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine }) => {
                   {idx > 0 && <div style={S.nodeArrow}>→</div>}
                   <div style={{
                     ...S.nodeItem,
-                    borderColor: isCleared ? '#7EC850' : isCurrent ? '#d4a574' : 'rgba(255,255,255,0.15)',
+                    border: isCleared ? '1px solid #7EC850' : isCurrent ? '1px solid #d4a574' : '1px solid rgba(255,255,255,0.15)',
                     background: isCurrent ? 'rgba(212,165,116,0.12)' : 'rgba(255,255,255,0.03)',
                   }}>
                     <span style={{ fontSize: 18 }}>{NODE_ICONS[node.type] ?? '❓'}</span>
@@ -291,10 +296,10 @@ const S: Record<string, React.CSSProperties> = {
   section: { marginBottom: 14 },
   sectionTitle: { fontSize: 14, fontWeight: 600, color: '#d4a574', marginBottom: 8 },
   routeList: { display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', maxHeight: '60vh' },
-  routeCard: { padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid', borderRadius: 'var(--tk-radius-lg)' as any, cursor: 'pointer', transition: 'border-color 0.2s' },
+  routeCard: { padding: '8px 10px', background: 'rgba(255,255,255,0.04)', borderWidth: '1px', borderStyle: 'solid', borderRadius: 'var(--tk-radius-lg)' as any, cursor: 'pointer', transition: 'border-color 0.2s' },
   empty: { textAlign: 'center', color: '#a0a0a0', fontSize: 13, padding: 16 },
   nodeChain: { display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', padding: '6px 0' },
-  nodeItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 8px', borderRadius: 'var(--tk-radius-md)' as any, border: '1px solid', minWidth: 52, flexShrink: 0 },
+  nodeItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 8px', borderRadius: 'var(--tk-radius-md)' as any, borderWidth: '1px', borderStyle: 'solid', minWidth: 52, flexShrink: 0 },
   nodeArrow: { color: '#a0a0a0', fontSize: 14, flexShrink: 0 },
   teamCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 10, marginBottom: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-lg)' as any },
   btnPrimary: { padding: '6px 14px', borderRadius: 'var(--tk-radius-md)' as any, border: 'none', background: 'linear-gradient(135deg,#d4a574,#b8864a)', color: '#fff', fontSize: 13, cursor: 'pointer', fontWeight: 600 },

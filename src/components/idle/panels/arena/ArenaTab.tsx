@@ -12,6 +12,10 @@ import React, { useState, useMemo, useCallback } from 'react';
 interface ArenaTabProps {
   engine: any;
   snapshotVersion?: number;
+  /** 是否显示（弹窗模式） */
+  visible?: boolean;
+  /** 关闭回调（弹窗模式） */
+  onClose?: () => void;
 }
 
 // ─── 段位配置 ────────────────────────────────
@@ -33,7 +37,8 @@ function getRankMeta(rankId: string) {
 }
 
 // ─── 主组件 ─────────────────────────────────
-const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion }) => {
+const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion, visible = true, onClose }) => {
+  if (!visible) return null;
   const [message, setMessage] = useState<string | null>(null);
   const [battleResult, setBattleResult] = useState<any>(null);
   const [showRanking, setShowRanking] = useState(false);
@@ -230,7 +235,7 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion }) => {
               {(ps?.defenseFormation?.slots ?? ['','','','','']).map((heroId: string, i: number) => (
                 <div key={i} style={{
                   ...S.slot,
-                  ...(heroId ? { borderColor: '#d4a574', background: 'rgba(212,165,116,0.1)' } : {}),
+                  ...(heroId ? { border: '1px solid #d4a574', background: 'rgba(212,165,116,0.1)' } : {}),
                 }}>
                   {heroId ? `武将${i + 1}` : `空位${i + 1}`}
                 </div>

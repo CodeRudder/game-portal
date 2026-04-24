@@ -12,7 +12,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import type { GameType, GameStatus } from '@/types';
 import { GameType as GameTypeEnum } from '@/types';
 import { createEngine } from '@/games/createEngine';
-import { SokobanEngine } from '@/games/sokoban/SokobanEngine';
+import type { SokobanEngine } from '@/games/sokoban/SokobanEngine';
 import { RecordService, HighScoreService } from '@/services/StorageService';
 
 interface Props {
@@ -23,11 +23,12 @@ interface Props {
 export default function GameContainer({ gameType, onStatusChange }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const engineRef = useRef<ReturnType<typeof createEngine> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const engineRef = useRef<any>(null);
   const [status, setStatus] = useState<GameStatus>('idle');
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
-  const [showOverlay, setShowOverlay] = useState<'start' | 'paused' | 'gameover' | null>('start');
+  const [showOverlay, setShowOverlay] = useState<'start' | 'paused' | 'gameover' | 'loading' | null>('loading');
   const [isWin, setIsWin] = useState(false);
   // Sokoban 专用状态
   const [moveCount, setMoveCount] = useState(0);
@@ -37,57 +38,70 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
   const BASE_W = 480;
   const BASE_H = 640;
 
-  // 初始化引擎
+  // 初始化引擎（异步）
   useEffect(() => {
     if (!canvasRef.current) return;
-    const engine = createEngine(gameType);
-    engine.setCanvas(canvasRef.current);
-    engineRef.current = engine;
+    let cancelled = false;
 
-    engine.on('statusChange', (s: GameStatus) => {
-      setStatus(s);
-      onStatusChange?.(s);
-      if (s === 'playing') setShowOverlay(null);
-      else if (s === 'paused') setShowOverlay('paused');
-      else if (s === 'gameover') {
-        setShowOverlay('gameover');
-        const eng = engineRef.current!;
-        const win = (eng as any).isWin ?? false;
-        setIsWin(win);
-        // 保存记录
-        RecordService.add({
-          gameType,
-          score: eng.score,
-          level: eng.level,
-          duration: Math.round(eng.elapsedTime),
-          isWin: win,
-          metadata: eng.getState() as Record<string, unknown>,
-        });
-        HighScoreService.update(gameType, eng.score);
-      }
-    });
+    createEngine(gameType).then((engine: any) => {
+      if (cancelled || !canvasRef.current) return;
+      engine.setCanvas(canvasRef.current);
+      engineRef.current = engine;
 
-    engine.on('scoreChange', (v: number) => setScore(v));
-    engine.on('levelChange', (v: number) => setLevel(v));
-
-    // Sokoban 专用：监听 move 变化
-    if (gameType === GameTypeEnum.SOKOBAN) {
-      engine.on('stateChange', () => {
-        const sok = engineRef.current as SokobanEngine | null;
-        if (sok) {
-          setMoveCount(sok.moveCount);
-          setSokobanLevel(sok.currentLevelIndex + 1);
-          setSokobanTotal(sok.totalLevels);
+      engine.on('statusChange', (s: GameStatus) => {
+        setStatus(s);
+        onStatusChange?.(s);
+        if (s === 'playing') setShowOverlay(null);
+        else if (s === 'paused') setShowOverlay('paused');
+        else if (s === 'gameover') {
+          setShowOverlay('gameover');
+          const eng = engineRef.current!;
+          const win = (eng as any).isWin ?? false;
+          setIsWin(win);
+          // 保存记录
+          RecordService.add({
+            gameType,
+            score: eng.score,
+            level: eng.level,
+            duration: Math.round(eng.elapsedTime),
+            isWin: win,
+            metadata: eng.getState() as Record<string, unknown>,
+          });
+          HighScoreService.update(gameType, eng.score);
         }
       });
-      // 初始化 Sokoban 状态
-      const sok = engine as SokobanEngine;
-      setSokobanTotal(sok.totalLevels);
-      setSokobanLevel(sok.currentLevelIndex + 1);
-    }
 
-    engine.init();
-    return () => engine.destroy();
+      engine.on('scoreChange', (v: number) => setScore(v));
+      engine.on('levelChange', (v: number) => setLevel(v));
+
+      // Sokoban 专用：监听 move 变化
+      if (gameType === GameTypeEnum.SOKOBAN) {
+        engine.on('stateChange', () => {
+          const sok = engineRef.current as SokobanEngine | null;
+          if (sok) {
+            setMoveCount(sok.moveCount);
+            setSokobanLevel(sok.currentLevelIndex + 1);
+            setSokobanTotal(sok.totalLevels);
+          }
+        });
+        // 初始化 Sokoban 状态
+        const sok = engine as SokobanEngine;
+        setSokobanTotal(sok.totalLevels);
+        setSokobanLevel(sok.currentLevelIndex + 1);
+      }
+
+      engine.init();
+      setShowOverlay('start');
+    }).catch((err) => {
+      console.error('Failed to load engine:', err);
+      setShowOverlay('start');
+    });
+
+    return () => {
+      cancelled = true;
+      engineRef.current?.destroy();
+      engineRef.current = null;
+    };
   }, [gameType]);
 
   // 键盘事件
@@ -250,6 +264,12 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
         {/* 叠加层 */}
         {showOverlay && (
           <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/70 backdrop-blur-sm p-4">
+            {showOverlay === 'loading' && (
+              <>
+                <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gp-accent border-t-transparent" />
+                <p className="text-sm text-gray-400">正在加载游戏引擎…</p>
+              </>
+            )}
             {showOverlay === 'start' && (
               <>
                 <div className="mb-2 text-4xl sm:text-5xl">🎮</div>
@@ -284,9 +304,9 @@ export default function GameContainer({ gameType, onStatusChange }: Props) {
                   <button onClick={() => { reset(); setTimeout(start, 100); }} className="btn-pulse rounded-xl bg-gradient-to-r from-gp-accent to-gp-neon px-5 py-2.5 text-sm font-bold text-white shadow-lg sm:px-6 sm:py-3">
                     再来一局
                   </button>
-                  {isSokoban && isWin && (engineRef.current as SokobanEngine)?.nextLevel && (
+                  {isSokoban && isWin && (engineRef.current as any)?.nextLevel && (
                     <button onClick={() => {
-                      (engineRef.current as SokobanEngine).nextLevel!();
+                      (engineRef.current as any).nextLevel!();
                       setShowOverlay('start');
                       setScore(0);
                       setMoveCount(0);

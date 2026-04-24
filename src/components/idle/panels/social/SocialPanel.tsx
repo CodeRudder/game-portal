@@ -253,7 +253,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1, padding: '6px 8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 12, cursor: 'pointer', textAlign: 'center',
   },
-  activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
+  activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
   friendList: { display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', maxHeight: '60vh' },
   friendCard: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',

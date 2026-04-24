@@ -19,6 +19,33 @@ interface AlliancePanelProps {
 
 type AllianceTab = 'info' | 'members' | 'tasks';
 
+
+const s: Record<string, React.CSSProperties> = {
+  wrap: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
+  empty: { padding: '40px 20px', textAlign: 'center' },
+  emptySmall: { textAlign: 'center', padding: 20, color: '#666', fontSize: 13 },
+  btn: { padding: '10px 24px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 14, cursor: 'pointer' },
+  input: {
+    padding: '8px 12px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
+    background: 'rgba(255,255,255,0.06)', color: '#e8e0d0', fontSize: 14, width: 200, outline: 'none',
+  },
+  toast: { padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
+  header: { padding: 12, marginBottom: 12, borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)' },
+  name: { fontSize: 18, fontWeight: 600, color: '#d4a574' },
+  meta: { fontSize: 12, color: '#a0a0a0', marginTop: 4 },
+  bonus: { fontSize: 12, color: '#7EC850', marginTop: 6 },
+  tabs: { display: 'flex', gap: 4, marginBottom: 12 },
+  tab: { flex: 1, padding: '6px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any, background: 'transparent', color: '#a0a0a0', fontSize: 12, cursor: 'pointer', textAlign: 'center' },
+  tabOn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
+  block: { padding: 8 },
+  label: { fontSize: 12, color: '#d4a574', marginBottom: 2, marginTop: 8 },
+  val: { fontSize: 13, color: '#e8e0d0' },
+  row: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any, fontSize: 13, marginBottom: 4 },
+  card: { padding: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-lg)' as any, marginBottom: 6 },
+  bar: { height: 4, borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 4 },
+  fill: { height: '100%', borderRadius: 'var(--tk-radius-sm)' as any, background: '#7EC850' },
+};
+
 export default function AlliancePanel({ engine, visible = true, onClose }: AlliancePanelProps) {
   const [tab, setTab] = useState<AllianceTab>('info');
   const [message, setMessage] = useState<string | null>(null);
@@ -156,29 +183,3 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
     </SharedPanel>
   );
 }
-
-const s: Record<string, React.CSSProperties> = {
-  wrap: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
-  empty: { padding: '40px 20px', textAlign: 'center' },
-  emptySmall: { textAlign: 'center', padding: 20, color: '#666', fontSize: 13 },
-  btn: { padding: '10px 24px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 14, cursor: 'pointer' },
-  input: {
-    padding: '8px 12px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
-    background: 'rgba(255,255,255,0.06)', color: '#e8e0d0', fontSize: 14, width: 200, outline: 'none',
-  },
-  toast: { padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
-  header: { padding: 12, marginBottom: 12, borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)' },
-  name: { fontSize: 18, fontWeight: 600, color: '#d4a574' },
-  meta: { fontSize: 12, color: '#a0a0a0', marginTop: 4 },
-  bonus: { fontSize: 12, color: '#7EC850', marginTop: 6 },
-  tabs: { display: 'flex', gap: 4, marginBottom: 12 },
-  tab: { flex: 1, padding: '6px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any, background: 'transparent', color: '#a0a0a0', fontSize: 12, cursor: 'pointer', textAlign: 'center' },
-  tabOn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
-  block: { padding: 8 },
-  label: { fontSize: 12, color: '#d4a574', marginBottom: 2, marginTop: 8 },
-  val: { fontSize: 13, color: '#e8e0d0' },
-  row: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any, fontSize: 13, marginBottom: 4 },
-  card: { padding: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-lg)' as any, marginBottom: 6 },
-  bar: { height: 4, borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 4 },
-  fill: { height: '100%', borderRadius: 'var(--tk-radius-sm)' as any, background: '#7EC850' },
-};

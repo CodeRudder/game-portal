@@ -1,282 +1,187 @@
 /**
- * 游戏引擎工厂函数
+ * 游戏引擎工厂函数（动态 import 版本）
  *
  * 根据游戏类型创建对应的引擎实例。
- * 此文件将所有引擎的 import 集中管理，避免组件文件过于臃肿。
+ * 使用动态 import() 实现按需加载，每个游戏引擎独立 chunk，
+ * 避免所有引擎代码打包到同一个 chunk 中。
+ *
+ * 性能影响：
+ * - 首次访问某个游戏时需要额外的网络请求加载对应 chunk
+ * - 后续访问同一游戏直接使用缓存，无额外开销
+ * - 首屏 bundle 体积大幅减小
  */
 import type { GameType } from '@/types';
 import { GameType as GameTypeEnum } from '@/types';
-import { TetrisEngine } from '@/games/tetris/TetrisEngine';
-import { SnakeEngine } from '@/games/snake/SnakeEngine';
-import { SokobanEngine } from '@/games/sokoban/SokobanEngine';
-import { FlappyBirdEngine } from '@/games/flappy-bird/FlappyBirdEngine';
-import { G2048Engine } from '@/games/g2048/G2048Engine';
-import { TicTacToeEngine } from '@/games/tic-tac-toe/TicTacToeEngine';
-import { TronEngine } from '@/games/tron/TronEngine';
-import { BreakoutEngine } from '@/games/breakout/BreakoutEngine';
-import { PacmanEngine } from '@/games/pacman/PacmanEngine';
-import { SpaceInvadersEngine } from '@/games/space-invaders/SpaceInvadersEngine';
-import { OthelloEngine } from '@/games/othello/OthelloEngine';
-import { CheckersEngine } from '@/games/checkers/CheckersEngine';
-import { PinballEngine } from '@/games/pinball/PinballEngine';
-import { TetrisBattleEngine } from '@/games/tetris-battle/TetrisBattleEngine';
-import { FroggerEngine } from '@/games/frogger/FroggerEngine';
-import { PongEngine } from '@/games/pong/PongEngine';
-import { ConnectFourEngine } from '@/games/connect-four/ConnectFourEngine';
-import { LightsOutEngine } from '@/games/lights-out/LightsOutEngine';
-import { WhackAMoleEngine } from '@/games/whack-a-mole/WhackAMoleEngine';
-import { KlotskiEngine } from '@/games/klotski/KlotskiEngine';
-import { SolitaireEngine } from '@/games/solitaire/SolitaireEngine';
-import { AsteroidsEngine } from '@/games/asteroids/AsteroidsEngine';
-import { AirHockeyEngine } from '@/games/air-hockey/AirHockeyEngine';
-import { FruitNinjaEngine } from '@/games/fruit-ninja/FruitNinjaEngine';
-import { GalagaEngine } from '@/games/galaga/GalagaEngine';
-import { BubbleShooterEngine } from '@/games/bubble-shooter/BubbleShooterEngine';
-import { Snake2PEngine } from '@/games/snake-2p/Snake2PEngine';
-import { MancalaEngine } from '@/games/mancala/MancalaEngine';
-import { EightQueensEngine } from '@/games/eight-queens/EightQueensEngine';
-import { CentipedeEngine } from '@/games/centipede/CentipedeEngine';
-import { MissileCommandEngine } from '@/games/missile-command/MissileCommandEngine';
-import { LunarLanderEngine } from '@/games/lunar-lander/LunarLanderEngine';
-import { SliderPuzzleEngine } from '@/games/slider-puzzle/SliderPuzzleEngine';
-import { TowerOfHanoiEngine } from '@/games/tower-of-hanoi/TowerOfHanoiEngine';
-import { DonkeyKongEngine } from '@/games/donkey-kong/DonkeyKongEngine';
-import { DigDugEngine } from '@/games/dig-dug/DigDugEngine';
-import { BattleCityEngine } from '@/games/battle-city/BattleCityEngine';
-import { MastermindEngine } from '@/games/mastermind/MastermindEngine';
-import { Make24Engine } from '@/games/make-24/Make24Engine';
-import { CookieClickerEngine } from '@/games/cookie-clicker/CookieClickerEngine';
-import { ReactionTestEngine } from '@/games/reaction-test/ReactionTestEngine';
-import { ZumaEngine } from '@/games/zuma/ZumaEngine';
-import { PixelArtEngine } from '@/games/pixel-art/PixelArtEngine';
-import { SpirographEngine } from '@/games/spirograph/SpirographEngine';
-import { WordleEngine } from '@/games/wordle/WordleEngine';
-import { GeometryDashEngine } from '@/games/geometry-dash/GeometryDashEngine';
-import { FallDownEngine } from '@/games/fall-down/FallDownEngine';
-import { CaveFlyerEngine } from '@/games/cave-flyer/CaveFlyerEngine';
-import { GravityFlipEngine } from '@/games/gravity-flip/GravityFlipEngine';
-import { KnightsTourEngine } from '@/games/knights-tour/KnightsTourEngine';
-import { VirtualPetEngine } from '@/games/virtual-pet/VirtualPetEngine';
-import { ZTypeEngine } from '@/games/ztype/ZTypeEngine';
-import { WaterSortEngine } from '@/games/water-sort/WaterSortEngine';
-import { ScrewPuzzleEngine } from '@/games/screw-puzzle/ScrewPuzzleEngine';
-import { SandSimulationEngine } from '@/games/sand-simulation/SandSimulationEngine';
-import { VideoPokerEngine } from '@/games/video-poker/VideoPokerEngine';
-import { BlackjackEngine } from '@/games/blackjack/BlackjackEngine';
-import { SpaceDodgeEngine } from '@/games/space-dodge/SpaceDodgeEngine';
-import { BalloonPopEngine } from '@/games/balloon-pop/BalloonPopEngine';
-import { MiniGoEngine } from '@/games/mini-go/MiniGoEngine';
-import { HexEngine } from '@/games/hex/HexEngine';
-import { RhythmEngine } from '@/games/rhythm/RhythmEngine';
-import { DoodleGodEngine } from '@/games/doodle-god/DoodleGodEngine';
-import { SlitherIoEngine } from '@/games/slither-io/SlitherIoEngine';
-import { ChessEngine } from '@/games/chess/ChessEngine';
-import { StickFighterEngine } from '@/games/stick-fighter/StickFighterEngine';
-import { FreeCellEngine } from '@/games/freecell/FreeCellEngine';
-import { FoldPuzzleEngine } from '@/games/fold-puzzle/FoldPuzzleEngine';
-import { SlopeBallEngine } from '@/games/slope-ball/SlopeBallEngine';
-import { TankDuelEngine } from '@/games/tank-duel/TankDuelEngine';
-import { ChineseChessEngine } from '@/games/chinese-chess/ChineseChessEngine';
-import { TempleRunEngine } from '@/games/temple-run/TempleRunEngine';
-import { SenetEngine } from '@/games/senet/SenetEngine';
-import { BasketballHoopsEngine } from '@/games/basketball-hoops/BasketballHoopsEngine';
-import { FlappyPlaneEngine } from '@/games/flappy-plane/FlappyPlaneEngine';
-import { JigsawPuzzleEngine } from '@/games/jigsaw-puzzle/JigsawPuzzleEngine';
-import { BloonsEngine } from '@/games/bloons/BloonsEngine';
-import { CTFEngine } from '@/games/ctf/CTFEngine';
-import { BackgammonEngine } from '@/games/backgammon/BackgammonEngine';
-import { Pong2PEngine } from '@/games/pong-2p/Pong2PEngine';
-import { HeadSoccerEngine } from '@/games/head-soccer/HeadSoccerEngine';
-import { MahjongSolitaireEngine } from '@/games/mahjong-solitaire/MahjongSolitaireEngine';
-import { SpaceWarEngine } from '@/games/space-war/SpaceWarEngine';
-import { DuckHuntEngine } from '@/games/duck-hunt/DuckHuntEngine';
-import { FishingMasterEngine } from '@/games/fishing-master/FishingMasterEngine';
-import { NinjaJumpEngine } from '@/games/ninja-jump/NinjaJumpEngine';
-import { NonogramEngine } from '@/games/nonogram/NonogramEngine';
-import { SkiFreeEngine } from '@/games/ski-free/SkiFreeEngine';
-import { ChipsChallengeEngine } from '@/games/chips-challenge/ChipsChallengeEngine';
-import { DotsAndBoxesEngine } from '@/games/dots-and-boxes/DotsAndBoxesEngine';
-import { MazeEngine } from '@/games/maze/MazeEngine';
-import { DoggoHomeEngine } from '@/games/doggo-home/DoggoHomeEngine';
-import { KittensKingdomEngine } from '@/games/kittens-kingdom/KittensKingdomEngine';
-import { PenguinEmpireEngine } from '@/games/penguin-empire/PenguinEmpireEngine';
-import { AntKingdomEngine } from '@/games/ant-kingdom/AntKingdomEngine';
-import { DinoRanchEngine } from '@/games/dino-ranch/DinoRanchEngine';
-import { IdleXianxiaEngine } from '@/games/idle-xianxia/IdleXianxiaEngine';
-import { SectRiseEngine } from '@/games/sect-rise/SectRiseEngine';
-import { AlchemyMasterEngine } from '@/games/alchemy-master/AlchemyMasterEngine';
-import { CivBabylonEngine } from '@/games/civ-babylon/CivBabylonEngine';
-import { CivChinaEngine } from '@/games/civ-china/CivChinaEngine';
-import { CivEgyptEngine } from '@/games/civ-egypt/CivEgyptEngine';
-import { CivIndiaEngine } from '@/games/civ-india/CivIndiaEngine';
-import { ClanSagaEngine } from '@/games/clan-saga/ClanSagaEngine';
-import { DoomsdayEngine } from '@/games/doomsday/DoomsdayEngine';
-import { DungeonExploreEngine } from '@/games/dungeon-explore/DungeonExploreEngine';
-import { IslandDriftEngine } from '@/games/island-drift/IslandDriftEngine';
-import { ModernCityEngine } from '@/games/modern-city/ModernCityEngine';
-import { SpaceDriftEngine } from '@/games/space-drift/SpaceDriftEngine';
-import { TribulationEngine } from '@/games/tribulation/TribulationEngine';
-import { WildSurvivalEngine } from '@/games/wild-survival/WildSurvivalEngine';
-import { AgeOfEmpiresEngine } from '@/games/age-of-empires/AgeOfEmpiresEngine';
-import { BaldursGateEngine } from '@/games/baldurs-gate/BaldursGateEngine';
-import { EgyptMythEngine } from '@/games/egypt-myth/EgyptMythEngine';
-import { FinalFantasyEngine } from '@/games/final-fantasy/FinalFantasyEngine';
-import { GreekGodsEngine } from '@/games/greek-gods/GreekGodsEngine';
-import { HeroesMightEngine } from '@/games/heroes-might/HeroesMightEngine';
-import { NorseValkyrieEngine } from '@/games/norse-valkyrie/NorseValkyrieEngine';
-import { RedAlertEngine } from '@/games/red-alert/RedAlertEngine';
-import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import { TotalWarEngine } from '@/games/total-war/TotalWarEngine';
-import { YokaiNightEngine } from '@/games/yokai-night/YokaiNightEngine';
-import { MemoryMatchEngine } from '@/games/memory-match/MemoryMatchEngine';
-import { GameOfLifeEngine } from '@/games/game-of-life/GameOfLifeEngine';
-import { MinesweeperEngine } from '@/games/minesweeper/MinesweeperEngine';
-import { GomokuEngine } from '@/games/gomoku/GomokuEngine';
-import { DinoRunnerEngine } from '@/games/dino-runner/DinoRunnerEngine';
-import { PipeManiaEngine } from '@/games/pipe-mania/PipeManiaEngine';
-import { MahjongConnectEngine } from '@/games/mahjong-connect/MahjongConnectEngine';
-import { Match3Engine } from '@/games/match-3/Match3Engine';
-import { SudokuEngine } from '@/games/sudoku/SudokuEngine';
 
 /**
- * 根据游戏类型创建对应的引擎实例
- * @param type 游戏类型枚举值
- * @returns 对应的游戏引擎实例
- * @throws 当传入未知的游戏类型时抛出错误
+ * 引擎动态导入映射表
+ *
+ * key: GameType 枚举值
+ * value: 返回引擎类的动态 import 函数
+ *
+ * 注意：每个 import() 会被 Vite 自动生成独立 chunk
  */
-export function createEngine(type: GameType) {
-  switch (type) {
-    case GameTypeEnum.TETRIS: return new TetrisEngine();
-    case GameTypeEnum.SNAKE: return new SnakeEngine();
-    case GameTypeEnum.SOKOBAN: return new SokobanEngine();
-    case GameTypeEnum.FLAPPY_BIRD: return new FlappyBirdEngine();
-    case GameTypeEnum.G2048: return new G2048Engine();
-    case GameTypeEnum.MEMORY_MATCH: return new MemoryMatchEngine();
-    case GameTypeEnum.TIC_TAC_TOE: return new TicTacToeEngine();
-    case GameTypeEnum.GAME_OF_LIFE: return new GameOfLifeEngine();
-    case GameTypeEnum.MINESWEEPER: return new MinesweeperEngine();
-    case GameTypeEnum.GOMOKU: return new GomokuEngine();
-    case GameTypeEnum.DINO_RUNNER: return new DinoRunnerEngine();
-    case GameTypeEnum.TRON: return new TronEngine();
-    case GameTypeEnum.PIPE_MANIA: return new PipeManiaEngine();
-    case GameTypeEnum.BREAKOUT: return new BreakoutEngine();
-    case GameTypeEnum.PACMAN: return new PacmanEngine();
-    case GameTypeEnum.SPACE_INVADERS: return new SpaceInvadersEngine();
-    case GameTypeEnum.OTHELLO: return new OthelloEngine();
-    case GameTypeEnum.CHECKERS: return new CheckersEngine();
-    case GameTypeEnum.PINBALL: return new PinballEngine();
-    case GameTypeEnum.MAHJONG_CONNECT: return new MahjongConnectEngine();
-    case GameTypeEnum.MATCH_3: return new Match3Engine();
-    case GameTypeEnum.SUDOKU: return new SudokuEngine();
-    case GameTypeEnum.TETRIS_BATTLE: return new TetrisBattleEngine();
-    case GameTypeEnum.FROGGER: return new FroggerEngine();
-    case GameTypeEnum.PONG: return new PongEngine();
-    case GameTypeEnum.CONNECT_FOUR: return new ConnectFourEngine();
-    case GameTypeEnum.LIGHTS_OUT: return new LightsOutEngine();
-    case GameTypeEnum.WHACK_A_MOLE: return new WhackAMoleEngine();
-    case GameTypeEnum.KLOTSKI: return new KlotskiEngine();
-    case GameTypeEnum.SOLITAIRE: return new SolitaireEngine();
-    case GameTypeEnum.ASTEROIDS: return new AsteroidsEngine();
-    case GameTypeEnum.AIR_HOCKEY: return new AirHockeyEngine();
-    case GameTypeEnum.FRUIT_NINJA: return new FruitNinjaEngine();
-    case GameTypeEnum.GALAGA: return new GalagaEngine();
-    case GameTypeEnum.BUBBLE_SHOOTER: return new BubbleShooterEngine();
-    case GameTypeEnum.SNAKE_2P: return new Snake2PEngine();
-    case GameTypeEnum.MANCALA: return new MancalaEngine();
-    case GameTypeEnum.EIGHT_QUEENS: return new EightQueensEngine();
-    case GameTypeEnum.CENTIPEDE: return new CentipedeEngine();
-    case GameTypeEnum.MISSILE_COMMAND: return new MissileCommandEngine();
-    case GameTypeEnum.LUNAR_LANDER: return new LunarLanderEngine();
-    case GameTypeEnum.SLIDER_PUZZLE: return new SliderPuzzleEngine();
-    case GameTypeEnum.TOWER_OF_HANOI: return new TowerOfHanoiEngine();
-    case GameTypeEnum.DONKEY_KONG: return new DonkeyKongEngine();
-    case GameTypeEnum.DIG_DUG: return new DigDugEngine();
-    case GameTypeEnum.BATTLE_CITY: return new BattleCityEngine();
-    case GameTypeEnum.MASTERMIND: return new MastermindEngine();
-    case GameTypeEnum.MAKE_24: return new Make24Engine();
-    case GameTypeEnum.COOKIE_CLICKER: return new CookieClickerEngine();
-    case GameTypeEnum.REACTION_TEST: return new ReactionTestEngine();
-    case GameTypeEnum.ZUMA: return new ZumaEngine();
-    case GameTypeEnum.PIXEL_ART: return new PixelArtEngine();
-    case GameTypeEnum.SPIROGRAPH: return new SpirographEngine();
-    case GameTypeEnum.WORDLE: return new WordleEngine();
-    case GameTypeEnum.GEOMETRY_DASH: return new GeometryDashEngine();
-    case GameTypeEnum.FALL_DOWN: return new FallDownEngine();
-    case GameTypeEnum.CAVE_FLYER: return new CaveFlyerEngine();
-    case GameTypeEnum.GRAVITY_FLIP: return new GravityFlipEngine();
-    case GameTypeEnum.KNIGHTS_TOUR: return new KnightsTourEngine();
-    case GameTypeEnum.VIRTUAL_PET: return new VirtualPetEngine();
-    case GameTypeEnum.ZTYPE: return new ZTypeEngine();
-    case GameTypeEnum.WATER_SORT: return new WaterSortEngine();
-    case GameTypeEnum.SCREW_PUZZLE: return new ScrewPuzzleEngine();
-    case GameTypeEnum.SAND_SIMULATION: return new SandSimulationEngine();
-    case GameTypeEnum.VIDEO_POKER: return new VideoPokerEngine();
-    case GameTypeEnum.BLACKJACK: return new BlackjackEngine();
-    case GameTypeEnum.SPACE_DODGE: return new SpaceDodgeEngine();
-    case GameTypeEnum.BALLOON_POP: return new BalloonPopEngine();
-    case GameTypeEnum.MINI_GO: return new MiniGoEngine();
-    case GameTypeEnum.HEX: return new HexEngine();
-    case GameTypeEnum.RHYTHM: return new RhythmEngine();
-    case GameTypeEnum.DOODLE_GOD: return new DoodleGodEngine();
-    case GameTypeEnum.SLITHER_IO: return new SlitherIoEngine();
-    case GameTypeEnum.CHESS: return new ChessEngine();
-    case GameTypeEnum.STICK_FIGHTER: return new StickFighterEngine();
-    case GameTypeEnum.FREECELL: return new FreeCellEngine();
-    case GameTypeEnum.FOLD_PUZZLE: return new FoldPuzzleEngine();
-    case GameTypeEnum.SLOPE_BALL: return new SlopeBallEngine();
-    case GameTypeEnum.TANK_DUEL: return new TankDuelEngine();
-    case GameTypeEnum.CHINESE_CHESS: return new ChineseChessEngine();
-    case GameTypeEnum.TEMPLE_RUN: return new TempleRunEngine();
-    case GameTypeEnum.SENET: return new SenetEngine();
-    case GameTypeEnum.BASKETBALL_HOOPS: return new BasketballHoopsEngine();
-    case GameTypeEnum.FLAPPY_PLANE: return new FlappyPlaneEngine();
-    case GameTypeEnum.JIGSAW_PUZZLE: return new JigsawPuzzleEngine();
-    case GameTypeEnum.BLOONS: return new BloonsEngine();
-    case GameTypeEnum.CTF: return new CTFEngine();
-    case GameTypeEnum.BACKGAMMON: return new BackgammonEngine();
-    case GameTypeEnum.PONG_2P: return new Pong2PEngine();
-    case GameTypeEnum.HEAD_SOCCER: return new HeadSoccerEngine();
-    case GameTypeEnum.MAHJONG_SOLITAIRE: return new MahjongSolitaireEngine();
-    case GameTypeEnum.SPACE_WAR: return new SpaceWarEngine();
-    case GameTypeEnum.DUCK_HUNT: return new DuckHuntEngine();
-    case GameTypeEnum.FISHING_MASTER: return new FishingMasterEngine();
-    case GameTypeEnum.NINJA_JUMP: return new NinjaJumpEngine();
-    case GameTypeEnum.NONOGRAM: return new NonogramEngine();
-    case GameTypeEnum.SKI_FREE: return new SkiFreeEngine();
-    case GameTypeEnum.CHIPS_CHALLENGE: return new ChipsChallengeEngine();
-    case GameTypeEnum.DOTS_AND_BOXES: return new DotsAndBoxesEngine();
-    case GameTypeEnum.MAZE: return new MazeEngine();
-    case GameTypeEnum.DOGGO_HOME: return new DoggoHomeEngine();
-    case GameTypeEnum.KITTENS_KINGDOM: return new KittensKingdomEngine();
-    case GameTypeEnum.PENGUIN_EMPIRE: return new PenguinEmpireEngine();
-    case GameTypeEnum.ANT_KINGDOM: return new AntKingdomEngine();
-    case GameTypeEnum.DINO_RANCH: return new DinoRanchEngine();
-    case GameTypeEnum.IDLE_XIANXIA: return new IdleXianxiaEngine();
-    case GameTypeEnum.SECT_RISE: return new SectRiseEngine();
-    case GameTypeEnum.ALCHEMY_MASTER: return new AlchemyMasterEngine();
-    case GameTypeEnum.CIV_BABYLON: return new CivBabylonEngine();
-    case GameTypeEnum.CIV_CHINA: return new CivChinaEngine();
-    case GameTypeEnum.CIV_EGYPT: return new CivEgyptEngine();
-    case GameTypeEnum.CIV_INDIA: return new CivIndiaEngine();
-    case GameTypeEnum.CLAN_SAGA: return new ClanSagaEngine();
-    case GameTypeEnum.DOOMSDAY: return new DoomsdayEngine();
-    case GameTypeEnum.DUNGEON_EXPLORE: return new DungeonExploreEngine();
-    case GameTypeEnum.ISLAND_DRIFT: return new IslandDriftEngine();
-    case GameTypeEnum.MODERN_CITY: return new ModernCityEngine();
-    case GameTypeEnum.SPACE_DRIFT: return new SpaceDriftEngine();
-    case GameTypeEnum.TRIBULATION: return new TribulationEngine();
-    case GameTypeEnum.WILD_SURVIVAL: return new WildSurvivalEngine();
-    case GameTypeEnum.AGE_OF_EMPIRES: return new AgeOfEmpiresEngine();
-    case GameTypeEnum.BALDURS_GATE: return new BaldursGateEngine();
-    case GameTypeEnum.EGYPT_MYTH: return new EgyptMythEngine();
-    case GameTypeEnum.FINAL_FANTASY: return new FinalFantasyEngine();
-    case GameTypeEnum.GREEK_GODS: return new GreekGodsEngine();
-    case GameTypeEnum.HEROES_MIGHT: return new HeroesMightEngine();
-    case GameTypeEnum.NORSE_VALKYRIE: return new NorseValkyrieEngine();
-    case GameTypeEnum.RED_ALERT: return new RedAlertEngine();
-    case GameTypeEnum.THREE_KINGDOMS: return new ThreeKingdomsEngine();
-    case GameTypeEnum.TOTAL_WAR: return new TotalWarEngine();
-    case GameTypeEnum.YOKAI_NIGHT: return new YokaiNightEngine();
-    default: throw new Error(`Unknown game type: ${type}`);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ENGINE_IMPORTERS: Record<string, () => Promise<any>> = {
+  // ── 经典街机 ──
+  [GameTypeEnum.TETRIS]: () => import('@/games/tetris/TetrisEngine'),
+  [GameTypeEnum.SNAKE]: () => import('@/games/snake/SnakeEngine'),
+  [GameTypeEnum.SOKOBAN]: () => import('@/games/sokoban/SokobanEngine'),
+  [GameTypeEnum.FLAPPY_BIRD]: () => import('@/games/flappy-bird/FlappyBirdEngine'),
+  [GameTypeEnum.G2048]: () => import('@/games/g2048/G2048Engine'),
+  [GameTypeEnum.MEMORY_MATCH]: () => import('@/games/memory-match/MemoryMatchEngine'),
+  [GameTypeEnum.TIC_TAC_TOE]: () => import('@/games/tic-tac-toe/TicTacToeEngine'),
+  [GameTypeEnum.GAME_OF_LIFE]: () => import('@/games/game-of-life/GameOfLifeEngine'),
+  [GameTypeEnum.MINESWEEPER]: () => import('@/games/minesweeper/MinesweeperEngine'),
+  [GameTypeEnum.GOMOKU]: () => import('@/games/gomoku/GomokuEngine'),
+  [GameTypeEnum.DINO_RUNNER]: () => import('@/games/dino-runner/DinoRunnerEngine'),
+  [GameTypeEnum.TRON]: () => import('@/games/tron/TronEngine'),
+  [GameTypeEnum.PIPE_MANIA]: () => import('@/games/pipe-mania/PipeManiaEngine'),
+  [GameTypeEnum.BREAKOUT]: () => import('@/games/breakout/BreakoutEngine'),
+  [GameTypeEnum.PACMAN]: () => import('@/games/pacman/PacmanEngine'),
+  [GameTypeEnum.SPACE_INVADERS]: () => import('@/games/space-invaders/SpaceInvadersEngine'),
+  [GameTypeEnum.OTHELLO]: () => import('@/games/othello/OthelloEngine'),
+  [GameTypeEnum.CHECKERS]: () => import('@/games/checkers/CheckersEngine'),
+  [GameTypeEnum.PINBALL]: () => import('@/games/pinball/PinballEngine'),
+  [GameTypeEnum.MAHJONG_CONNECT]: () => import('@/games/mahjong-connect/MahjongConnectEngine'),
+  [GameTypeEnum.MATCH_3]: () => import('@/games/match-3/Match3Engine'),
+  [GameTypeEnum.SUDOKU]: () => import('@/games/sudoku/SudokuEngine'),
+  [GameTypeEnum.TETRIS_BATTLE]: () => import('@/games/tetris-battle/TetrisBattleEngine'),
+  [GameTypeEnum.FROGGER]: () => import('@/games/frogger/FroggerEngine'),
+  [GameTypeEnum.PONG]: () => import('@/games/pong/PongEngine'),
+  [GameTypeEnum.CONNECT_FOUR]: () => import('@/games/connect-four/ConnectFourEngine'),
+  [GameTypeEnum.LIGHTS_OUT]: () => import('@/games/lights-out/LightsOutEngine'),
+  [GameTypeEnum.WHACK_A_MOLE]: () => import('@/games/whack-a-mole/WhackAMoleEngine'),
+  [GameTypeEnum.KLOTSKI]: () => import('@/games/klotski/KlotskiEngine'),
+  [GameTypeEnum.SOLITAIRE]: () => import('@/games/solitaire/SolitaireEngine'),
+  [GameTypeEnum.ASTEROIDS]: () => import('@/games/asteroids/AsteroidsEngine'),
+  [GameTypeEnum.AIR_HOCKEY]: () => import('@/games/air-hockey/AirHockeyEngine'),
+  [GameTypeEnum.FRUIT_NINJA]: () => import('@/games/fruit-ninja/FruitNinjaEngine'),
+  [GameTypeEnum.GALAGA]: () => import('@/games/galaga/GalagaEngine'),
+  [GameTypeEnum.BUBBLE_SHOOTER]: () => import('@/games/bubble-shooter/BubbleShooterEngine'),
+  [GameTypeEnum.SNAKE_2P]: () => import('@/games/snake-2p/Snake2PEngine'),
+  [GameTypeEnum.MANCALA]: () => import('@/games/mancala/MancalaEngine'),
+  [GameTypeEnum.EIGHT_QUEENS]: () => import('@/games/eight-queens/EightQueensEngine'),
+  [GameTypeEnum.CENTIPEDE]: () => import('@/games/centipede/CentipedeEngine'),
+  [GameTypeEnum.MISSILE_COMMAND]: () => import('@/games/missile-command/MissileCommandEngine'),
+  [GameTypeEnum.LUNAR_LANDER]: () => import('@/games/lunar-lander/LunarLanderEngine'),
+  [GameTypeEnum.SLIDER_PUZZLE]: () => import('@/games/slider-puzzle/SliderPuzzleEngine'),
+  [GameTypeEnum.TOWER_OF_HANOI]: () => import('@/games/tower-of-hanoi/TowerOfHanoiEngine'),
+  [GameTypeEnum.DONKEY_KONG]: () => import('@/games/donkey-kong/DonkeyKongEngine'),
+  [GameTypeEnum.DIG_DUG]: () => import('@/games/dig-dug/DigDugEngine'),
+  [GameTypeEnum.BATTLE_CITY]: () => import('@/games/battle-city/BattleCityEngine'),
+  [GameTypeEnum.MASTERMIND]: () => import('@/games/mastermind/MastermindEngine'),
+  [GameTypeEnum.MAKE_24]: () => import('@/games/make-24/Make24Engine'),
+  [GameTypeEnum.COOKIE_CLICKER]: () => import('@/games/cookie-clicker/CookieClickerEngine'),
+  [GameTypeEnum.REACTION_TEST]: () => import('@/games/reaction-test/ReactionTestEngine'),
+  [GameTypeEnum.ZUMA]: () => import('@/games/zuma/ZumaEngine'),
+  [GameTypeEnum.PIXEL_ART]: () => import('@/games/pixel-art/PixelArtEngine'),
+  [GameTypeEnum.SPIROGRAPH]: () => import('@/games/spirograph/SpirographEngine'),
+  [GameTypeEnum.WORDLE]: () => import('@/games/wordle/WordleEngine'),
+  [GameTypeEnum.GEOMETRY_DASH]: () => import('@/games/geometry-dash/GeometryDashEngine'),
+  [GameTypeEnum.FALL_DOWN]: () => import('@/games/fall-down/FallDownEngine'),
+  [GameTypeEnum.CAVE_FLYER]: () => import('@/games/cave-flyer/CaveFlyerEngine'),
+  [GameTypeEnum.GRAVITY_FLIP]: () => import('@/games/gravity-flip/GravityFlipEngine'),
+  [GameTypeEnum.KNIGHTS_TOUR]: () => import('@/games/knights-tour/KnightsTourEngine'),
+  [GameTypeEnum.VIRTUAL_PET]: () => import('@/games/virtual-pet/VirtualPetEngine'),
+  [GameTypeEnum.ZTYPE]: () => import('@/games/ztype/ZTypeEngine'),
+  [GameTypeEnum.WATER_SORT]: () => import('@/games/water-sort/WaterSortEngine'),
+  [GameTypeEnum.SCREW_PUZZLE]: () => import('@/games/screw-puzzle/ScrewPuzzleEngine'),
+  [GameTypeEnum.SAND_SIMULATION]: () => import('@/games/sand-simulation/SandSimulationEngine'),
+  [GameTypeEnum.VIDEO_POKER]: () => import('@/games/video-poker/VideoPokerEngine'),
+  [GameTypeEnum.BLACKJACK]: () => import('@/games/blackjack/BlackjackEngine'),
+  [GameTypeEnum.SPACE_DODGE]: () => import('@/games/space-dodge/SpaceDodgeEngine'),
+  [GameTypeEnum.BALLOON_POP]: () => import('@/games/balloon-pop/BalloonPopEngine'),
+  [GameTypeEnum.MINI_GO]: () => import('@/games/mini-go/MiniGoEngine'),
+  [GameTypeEnum.HEX]: () => import('@/games/hex/HexEngine'),
+  [GameTypeEnum.RHYTHM]: () => import('@/games/rhythm/RhythmEngine'),
+  [GameTypeEnum.DOODLE_GOD]: () => import('@/games/doodle-god/DoodleGodEngine'),
+  [GameTypeEnum.SLITHER_IO]: () => import('@/games/slither-io/SlitherIoEngine'),
+  [GameTypeEnum.CHESS]: () => import('@/games/chess/ChessEngine'),
+  [GameTypeEnum.STICK_FIGHTER]: () => import('@/games/stick-fighter/StickFighterEngine'),
+  [GameTypeEnum.FREECELL]: () => import('@/games/freecell/FreeCellEngine'),
+  [GameTypeEnum.FOLD_PUZZLE]: () => import('@/games/fold-puzzle/FoldPuzzleEngine'),
+  [GameTypeEnum.SLOPE_BALL]: () => import('@/games/slope-ball/SlopeBallEngine'),
+  [GameTypeEnum.TANK_DUEL]: () => import('@/games/tank-duel/TankDuelEngine'),
+  [GameTypeEnum.CHINESE_CHESS]: () => import('@/games/chinese-chess/ChineseChessEngine'),
+  [GameTypeEnum.TEMPLE_RUN]: () => import('@/games/temple-run/TempleRunEngine'),
+  [GameTypeEnum.SENET]: () => import('@/games/senet/SenetEngine'),
+  [GameTypeEnum.BASKETBALL_HOOPS]: () => import('@/games/basketball-hoops/BasketballHoopsEngine'),
+  [GameTypeEnum.FLAPPY_PLANE]: () => import('@/games/flappy-plane/FlappyPlaneEngine'),
+  [GameTypeEnum.JIGSAW_PUZZLE]: () => import('@/games/jigsaw-puzzle/JigsawPuzzleEngine'),
+  [GameTypeEnum.BLOONS]: () => import('@/games/bloons/BloonsEngine'),
+  [GameTypeEnum.CTF]: () => import('@/games/ctf/CTFEngine'),
+  [GameTypeEnum.BACKGAMMON]: () => import('@/games/backgammon/BackgammonEngine'),
+  [GameTypeEnum.PONG_2P]: () => import('@/games/pong-2p/Pong2PEngine'),
+  [GameTypeEnum.HEAD_SOCCER]: () => import('@/games/head-soccer/HeadSoccerEngine'),
+  [GameTypeEnum.MAHJONG_SOLITAIRE]: () => import('@/games/mahjong-solitaire/MahjongSolitaireEngine'),
+  [GameTypeEnum.SPACE_WAR]: () => import('@/games/space-war/SpaceWarEngine'),
+  [GameTypeEnum.DUCK_HUNT]: () => import('@/games/duck-hunt/DuckHuntEngine'),
+  [GameTypeEnum.FISHING_MASTER]: () => import('@/games/fishing-master/FishingMasterEngine'),
+  [GameTypeEnum.NINJA_JUMP]: () => import('@/games/ninja-jump/NinjaJumpEngine'),
+  [GameTypeEnum.NONOGRAM]: () => import('@/games/nonogram/NonogramEngine'),
+  [GameTypeEnum.SKI_FREE]: () => import('@/games/ski-free/SkiFreeEngine'),
+  [GameTypeEnum.CHIPS_CHALLENGE]: () => import('@/games/chips-challenge/ChipsChallengeEngine'),
+  [GameTypeEnum.DOTS_AND_BOXES]: () => import('@/games/dots-and-boxes/DotsAndBoxesEngine'),
+  [GameTypeEnum.MAZE]: () => import('@/games/maze/MazeEngine'),
+
+  // ── 放置游戏 ──
+  [GameTypeEnum.DOGGO_HOME]: () => import('@/games/doggo-home/DoggoHomeEngine'),
+  [GameTypeEnum.KITTENS_KINGDOM]: () => import('@/games/kittens-kingdom/KittensKingdomEngine'),
+  [GameTypeEnum.PENGUIN_EMPIRE]: () => import('@/games/penguin-empire/PenguinEmpireEngine'),
+  [GameTypeEnum.ANT_KINGDOM]: () => import('@/games/ant-kingdom/AntKingdomEngine'),
+  [GameTypeEnum.DINO_RANCH]: () => import('@/games/dino-ranch/DinoRanchEngine'),
+  [GameTypeEnum.IDLE_XIANXIA]: () => import('@/games/idle-xianxia/IdleXianxiaEngine'),
+  [GameTypeEnum.SECT_RISE]: () => import('@/games/sect-rise/SectRiseEngine'),
+  [GameTypeEnum.ALCHEMY_MASTER]: () => import('@/games/alchemy-master/AlchemyMasterEngine'),
+  [GameTypeEnum.CIV_BABYLON]: () => import('@/games/civ-babylon/CivBabylonEngine'),
+  [GameTypeEnum.CIV_CHINA]: () => import('@/games/civ-china/CivChinaEngine'),
+  [GameTypeEnum.CIV_EGYPT]: () => import('@/games/civ-egypt/CivEgyptEngine'),
+  [GameTypeEnum.CIV_INDIA]: () => import('@/games/civ-india/CivIndiaEngine'),
+  [GameTypeEnum.CLAN_SAGA]: () => import('@/games/clan-saga/ClanSagaEngine'),
+  [GameTypeEnum.DOOMSDAY]: () => import('@/games/doomsday/DoomsdayEngine'),
+  [GameTypeEnum.DUNGEON_EXPLORE]: () => import('@/games/dungeon-explore/DungeonExploreEngine'),
+  [GameTypeEnum.ISLAND_DRIFT]: () => import('@/games/island-drift/IslandDriftEngine'),
+  [GameTypeEnum.MODERN_CITY]: () => import('@/games/modern-city/ModernCityEngine'),
+  [GameTypeEnum.SPACE_DRIFT]: () => import('@/games/space-drift/SpaceDriftEngine'),
+  [GameTypeEnum.TRIBULATION]: () => import('@/games/tribulation/TribulationEngine'),
+  [GameTypeEnum.WILD_SURVIVAL]: () => import('@/games/wild-survival/WildSurvivalEngine'),
+  [GameTypeEnum.AGE_OF_EMPIRES]: () => import('@/games/age-of-empires/AgeOfEmpiresEngine'),
+  [GameTypeEnum.BALDURS_GATE]: () => import('@/games/baldurs-gate/BaldursGateEngine'),
+  [GameTypeEnum.EGYPT_MYTH]: () => import('@/games/egypt-myth/EgyptMythEngine'),
+  [GameTypeEnum.FINAL_FANTASY]: () => import('@/games/final-fantasy/FinalFantasyEngine'),
+  [GameTypeEnum.GREEK_GODS]: () => import('@/games/greek-gods/GreekGodsEngine'),
+  [GameTypeEnum.HEROES_MIGHT]: () => import('@/games/heroes-might/HeroesMightEngine'),
+  [GameTypeEnum.NORSE_VALKYRIE]: () => import('@/games/norse-valkyrie/NorseValkyrieEngine'),
+  [GameTypeEnum.RED_ALERT]: () => import('@/games/red-alert/RedAlertEngine'),
+  [GameTypeEnum.THREE_KINGDOMS]: () => import('@/games/three-kingdoms/engine/ThreeKingdomsEngine'),
+  [GameTypeEnum.TOTAL_WAR]: () => import('@/games/total-war/TotalWarEngine'),
+  [GameTypeEnum.YOKAI_NIGHT]: () => import('@/games/yokai-night/YokaiNightEngine'),
+};
+
+/**
+ * 根据游戏类型异步创建对应的引擎实例
+ *
+ * @param type 游戏类型枚举值
+ * @returns 对应的游戏引擎实例的 Promise
+ * @throws 当传入未知的游戏类型时抛出错误
+ *
+ * @example
+ * ```ts
+ * // 异步创建引擎
+ * const engine = await createEngine(GameType.TETRIS);
+ * engine.init(canvas);
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createEngine(type: GameType): Promise<any> {
+  const importer = ENGINE_IMPORTERS[type];
+  if (!importer) {
+    throw new Error(`Unknown game type: ${type}`);
   }
+
+  const mod = await importer();
+  // 动态 import 返回模块对象，取第一个导出的构造函数
+  const EngineClass = Object.values(mod)[0] as new () => unknown;
+  return new EngineClass();
 }

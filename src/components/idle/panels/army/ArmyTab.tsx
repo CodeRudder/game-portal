@@ -16,6 +16,10 @@ import React, { useState, useMemo, useCallback } from 'react';
 interface ArmyTabProps {
   engine: any;
   snapshotVersion?: number;
+  /** 是否显示（弹窗模式） */
+  visible?: boolean;
+  /** 关闭回调（弹窗模式） */
+  onClose?: () => void;
 }
 
 // ─── 阵位配置 ────────────────────────────────
@@ -37,7 +41,8 @@ import { HERO_QUALITY_COLORS } from '../../common/constants';
 const QUALITY_COLORS = HERO_QUALITY_COLORS;
 
 // ─── 主组件 ─────────────────────────────────
-const ArmyTab: React.FC<ArmyTabProps> = ({ engine }) => {
+const ArmyTab: React.FC<ArmyTabProps> = ({ engine, visible = true, onClose }) => {
+  if (!visible) return null;
   // 本地阵位状态：string[] 长度5，空字符串=空位
   const [slots, setSlots] = useState<string[]>(['', '', '', '', '']);
   const [message, setMessage] = useState<string | null>(null);
@@ -225,7 +230,7 @@ interface SlotCardProps {
 const SlotCard: React.FC<SlotCardProps> = ({ slot, heroId, heroMap, onRemove }) => {
   const hero = heroId ? heroMap[heroId] : null;
   return (
-    <div style={{ ...S.slotCard, borderColor: hero ? (QUALITY_COLORS[hero.quality] ?? '#d4a574') : 'rgba(255,255,255,0.1)' }}
+    <div style={{ ...S.slotCard, border: hero ? `1px solid ${QUALITY_COLORS[hero.quality] ?? '#d4a574'}` : '1px solid rgba(255,255,255,0.1)' }}
       className="tk-army-slot-card"
       onClick={hero ? onRemove : undefined}>
       {hero ? (
@@ -257,7 +262,7 @@ const S: Record<string, React.CSSProperties> = {
   formationTitle: { fontSize: 13, fontWeight: 600, color: '#d4a574', marginBottom: 10, textAlign: 'center' },
   backRow: { display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 8 },
   frontRow: { display: 'flex', justifyContent: 'center', gap: 8 },
-  slotCard: { width: 90, height: 56, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--tk-radius-lg)' as any, border: '1px solid', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', transition: 'border-color 0.2s' },
+  slotCard: { width: 90, height: 56, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--tk-radius-lg)' as any, borderWidth: '1px', borderStyle: 'solid', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', transition: 'border-color 0.2s' },
   section: { marginBottom: 14 },
   sectionTitle: { fontSize: 14, fontWeight: 600, color: '#d4a574', marginBottom: 8 },
   heroGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 6 },

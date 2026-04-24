@@ -26,6 +26,22 @@ const DIMS: { id: Dim; label: string; icon: string }[] = [
   { id: 'rebirth', label: '转生', icon: '🔄' },
 ];
 
+
+const s: Record<string, React.CSSProperties> = {
+  wrap: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
+  toast: { padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
+  summary: { display: 'flex', alignItems: 'center', gap: 10, padding: 10, marginBottom: 12, borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)' },
+  badge: { marginLeft: 'auto', padding: '2px 8px', borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 11 },
+  tabs: { display: 'flex', gap: 3, marginBottom: 12, flexWrap: 'wrap' },
+  tab: { display: 'flex', alignItems: 'center', gap: 3, padding: '5px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any, background: 'transparent', color: '#a0a0a0', fontSize: 11, cursor: 'pointer' },
+  tabOn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
+  card: { padding: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-lg)' as any, marginBottom: 6 },
+  barBg: { height: 4, borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' },
+  barFill: { height: '100%', borderRadius: 'var(--tk-radius-sm)' as any, background: '#7EC850' },
+  btn: { marginTop: 6, padding: '4px 12px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 11, cursor: 'pointer' },
+  empty: { textAlign: 'center', padding: 24, color: '#666', fontSize: 13 },
+};
+
 export default function AchievementPanel({ engine, visible = true, onClose }: AchievementPanelProps) {
   const [tab, setTab] = useState<Dim>('battle');
   const [message, setMessage] = useState<string | null>(null);
@@ -95,18 +111,3 @@ export default function AchievementPanel({ engine, visible = true, onClose }: Ac
     </SharedPanel>
   );
 }
-
-const s: Record<string, React.CSSProperties> = {
-  wrap: { padding: 12, color: '#e8e0d0', minHeight: '100%' },
-  toast: { padding: '8px 12px', marginBottom: 8, borderRadius: 'var(--tk-radius-md)' as any, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 12, textAlign: 'center' },
-  summary: { display: 'flex', alignItems: 'center', gap: 10, padding: 10, marginBottom: 12, borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)' },
-  badge: { marginLeft: 'auto', padding: '2px 8px', borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(212,165,116,0.2)', color: '#d4a574', fontSize: 11 },
-  tabs: { display: 'flex', gap: 3, marginBottom: 12, flexWrap: 'wrap' },
-  tab: { display: 'flex', alignItems: 'center', gap: 3, padding: '5px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any, background: 'transparent', color: '#a0a0a0', fontSize: 11, cursor: 'pointer' },
-  tabOn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
-  card: { padding: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-lg)' as any, marginBottom: 6 },
-  barBg: { height: 4, borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' },
-  barFill: { height: '100%', borderRadius: 'var(--tk-radius-sm)' as any, background: '#7EC850' },
-  btn: { marginTop: 6, padding: '4px 12px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 11, cursor: 'pointer' },
-  empty: { textAlign: 'center', padding: 24, color: '#666', fontSize: 13 },
-};

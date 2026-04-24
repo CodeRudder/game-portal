@@ -331,8 +331,8 @@ const ThreeKingdomsGame: React.FC = () => {
 
     if (!engine) return;
     try {
-      const registry = (engine as any).registry;
-      const triggerSys = registry?.get?.('eventTrigger');
+      const registry = engine.getSubsystemRegistry();
+      const triggerSys = registry?.get?.('eventTrigger') as any;
       const result = triggerSys?.resolveEvent?.(instanceId, optionId);
 
       if (result?.consequences) {
@@ -375,7 +375,7 @@ const ThreeKingdomsGame: React.FC = () => {
         badge = activeEvents?.length ?? 0;
       }
       if (item.id === 'mail') {
-        const mailSys = (engine as any).mail ?? (engine as any).getMailSystem?.();
+        const mailSys = engine?.getSubsystemRegistry?.()?.get?.('mail') as any;
         badge = mailSys?.getUnreadCount?.() ?? 0;
       }
       return { ...item, badge };
@@ -510,8 +510,8 @@ const ThreeKingdomsGame: React.FC = () => {
         <StoryEventModal
           event={activeStoryEvent}
           onSelect={(choiceId: string) => {
-            const registry = (engine as any).registry;
-            const storySys = registry?.get?.('storyEvent');
+            const registry = engine?.getSubsystemRegistry?.();
+            const storySys = registry?.get?.('storyEventPlayer') as any;
             if (storySys) {
               const state = storySys.getState?.();
               const progresses = state?.progresses;

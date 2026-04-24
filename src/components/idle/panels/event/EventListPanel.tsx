@@ -52,7 +52,7 @@ export default function EventListPanel({ engine, snapshotVersion, visible = true
   // 从引擎获取活跃事件和事件定义
   const { activeEvents, eventDefs, completedIds } = useMemo(() => {
     void snapshotVersion; // 触发重渲染
-    const registry = (engine as any).registry;
+    const registry = engine?.getSubsystemRegistry?.();
 
     // 尝试从 EventTriggerSystem 获取数据
     const triggerSys = registry?.get?.('eventTrigger');

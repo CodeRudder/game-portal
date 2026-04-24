@@ -228,7 +228,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
   },
-  activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
+  activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
   currencyBar: {
     display: 'flex', gap: 12, padding: '6px 10px', marginBottom: 8,
     background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any, flexWrap: 'wrap',

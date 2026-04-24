@@ -124,6 +124,7 @@ export default function IdleGamePixiComponent({
         // 如果传入了自定义策略，合并到配置
         if (strategy) {
           const { RenderStrategyRegistry } = await import('@/renderer/RenderStrategyRegistry');
+          // TODO: gameId 未在 ThreeKingdomsEngine 类型上暴露，暂用 as any
           const baseStrategy = RenderStrategyRegistry.get((engine as any).gameId ?? 'default');
           adapterConfig.strategy = {
             ...baseStrategy,

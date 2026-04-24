@@ -83,9 +83,10 @@ describe('路由与导航', () => {
     expect(h1).toBeDefined();
   });
 
-  it('有效游戏类型渲染 GameContainer', () => {
+  it('有效游戏类型渲染 GameContainer', async () => {
     renderWithRouter(<App />, ['/game/tetris']);
-    expect(screen.getByText('开始游戏')).toBeDefined();
+    // GamePage 通过 React.lazy 加载，需等待 Suspense 结束后再断言
+    expect(await screen.findByText('开始游戏')).toBeDefined();
   });
 
   it('无效游戏类型显示未找到提示', () => {
@@ -98,11 +99,12 @@ describe('路由与导航', () => {
     expect(screen.getByText(/返回首页/i)).toBeDefined();
   });
 
-  it('三个游戏类型均可访问', () => {
+  it('三个游戏类型均可访问', async () => {
     const types = ['tetris', 'snake', 'sokoban'];
     for (const type of types) {
       const { unmount } = renderWithRouter(<App />, [`/game/${type}`]);
-      expect(screen.getByText('开始游戏')).toBeDefined();
+      // GamePage 通过 React.lazy 加载，需等待 Suspense 结束后再断言
+      expect(await screen.findByText('开始游戏')).toBeDefined();
       unmount();
     }
   });

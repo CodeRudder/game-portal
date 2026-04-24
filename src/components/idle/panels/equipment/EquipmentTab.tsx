@@ -26,6 +26,10 @@ import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKin
 interface EquipmentTabProps {
   engine: ThreeKingdomsEngine;
   snapshotVersion: number;
+  /** 是否显示（弹窗模式） */
+  visible?: boolean;
+  /** 关闭回调（弹窗模式） */
+  onClose?: () => void;
 }
 
 type SubTab = 'bag' | 'forge' | 'enhance';
@@ -45,7 +49,8 @@ function fmt(n: number): string {
 }
 
 // ─── 主组件 ─────────────────────────────────
-const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) => {
+const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, visible = true, onClose }) => {
+  if (!visible) return null;
   const [subTab, setSubTab] = useState<SubTab>('bag');
   const [slotFilter, setSlotFilter] = useState<EquipmentSlot | null>(null);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
@@ -54,9 +59,10 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) 
   const [message, setMessage] = useState<string | null>(null);
 
   // ── 引擎子系统引用 ──
-  const eqSys = (engine as any)?.equipment ?? (engine as any)?.getEquipmentSystem?.();
-  const forgeSys = (engine as any)?.equipmentForge ?? (engine as any)?.getEquipmentForgeSystem?.();
-  const enhanceSys = (engine as any)?.equipmentEnhance ?? (engine as any)?.getEquipmentEnhanceSystem?.();
+  const _registry = engine?.getSubsystemRegistry?.();
+  const eqSys = _registry?.get?.('equipment') as any;
+  const forgeSys = _registry?.get?.('equipmentForge') as any;
+  const enhanceSys = _registry?.get?.('equipmentEnhance') as any;
 
   // ── 数据 ──
   const allItems: EquipmentInstance[] = useMemo(
@@ -79,9 +85,8 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) 
     try {
       if (!forgeSys) return setMessage('锻造系统未就绪');
       const forgeCost = forgeSys.getForgeCost?.(forgeType);
-      const currentGold = (engine as any)?.getResources?.()?.gold ?? (engine as any)?.getCurrencySystem?.()?.getBalance?.('copper') ?? 0;
+      const currentGold = engine?.resource?.getResources?.()?.gold ?? 0;
       if (forgeCost && currentGold < forgeCost) {
-        setMessage('💰 铜钱不足，无法锻造');
         setTimeout(() => setMessage(null), 2000);
         return;
       }
@@ -100,7 +105,7 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) 
       if (!selectedUid) return setMessage('请先选择装备');
       if (!enhanceSys) return setMessage('强化系统未就绪');
       const enhanceCost = enhanceSys.getEnhanceCost?.(selected);
-      const currentGold = (engine as any)?.getResources?.()?.gold ?? (engine as any)?.getCurrencySystem?.()?.getBalance?.('copper') ?? 0;
+      const currentGold = engine?.resource?.getResources?.()?.gold ?? 0;
       if (enhanceCost && currentGold < enhanceCost) {
         setMessage('💰 铜钱不足，无法强化');
         setTimeout(() => setMessage(null), 2000);
@@ -161,7 +166,7 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) 
           </div>
           <div style={S.grid} className="tk-equipment-grid">
             {displayItems.map(eq => (
-              <div key={eq.uid} style={{ ...S.card, borderColor: RARITY_COLORS[eq.rarity] + '40' }}
+              <div key={eq.uid} style={{ ...S.card, border: `1px solid ${RARITY_COLORS[eq.rarity]}40` }}
                 onClick={() => setSelectedUid(eq.uid)}>
                 <div style={{ ...S.rarityBar, backgroundColor: RARITY_COLORS[eq.rarity] }} />
                 <div style={S.cardHead}>
@@ -212,7 +217,7 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion }) 
               <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 8 }}>选择要强化的装备：</div>
               <div style={S.grid}>
                 {allItems.filter(e => !e.isEquipped || true).map(eq => (
-                  <div key={eq.uid} style={{ ...S.card, borderColor: RARITY_COLORS[eq.rarity] + '40' }}
+                  <div key={eq.uid} style={{ ...S.card, border: `1px solid ${RARITY_COLORS[eq.rarity]}40` }}
                     onClick={() => setSelectedUid(eq.uid)}>
                     <div style={{ ...S.rarityBar, backgroundColor: RARITY_COLORS[eq.rarity] }} />
                     <div style={{ color: RARITY_COLORS[eq.rarity], fontSize: 13, fontWeight: 600 }}>{eq.name}</div>
@@ -292,7 +297,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: '6px 14px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 13, cursor: 'pointer',
   },
-  subBtnActive: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
+  subBtnActive: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
   msgBar: {
     padding: '6px 12px', marginBottom: 8, background: 'rgba(212,165,116,0.15)',
     borderRadius: 'var(--tk-radius-md)' as any, fontSize: 12, color: '#d4a574', cursor: 'pointer', textAlign: 'center',
@@ -303,7 +308,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: '4px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 11, cursor: 'pointer',
   },
-  activeBtn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
+  activeBtn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 8 },
   card: {
     display: 'flex', flexDirection: 'column', gap: 4, padding: 8,
@@ -321,7 +326,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: '8px 16px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 13, cursor: 'pointer',
   },
-  forgeBtnActive: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
+  forgeBtnActive: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
   actionBtn: {
     padding: '10px 24px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 14, cursor: 'pointer', fontWeight: 600,

@@ -1,0 +1,44 @@
+/**
+ * 三国霸业 — 独立 TypeScript 类型检查配置
+ *
+ * 用途：
+ *   pnpm run typecheck:three-kingdoms
+ *
+ * 仅检查 src/games/three-kingdoms/ 下的类型正确性，
+ * 不影响主项目的 tsc --noEmit。
+ */
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": [
+    "src/games/three-kingdoms/**/*.ts",
+    "src/games/three-kingdoms/shared/**/*.ts",
+    "src/games/three-kingdoms/core/**/*.ts",
+    "src/games/three-kingdoms/engine/**/*.ts",
+    "src/games/three-kingdoms/rendering/**/*.ts"
+  ],
+  "exclude": [
+    "src/games/three-kingdoms/bak/**",
+    "src/games/three-kingdoms/**/__tests__/**",
+    "src/games/three-kingdoms/tests/**",
+    "src/games/three-kingdoms/test-utils/**"
+  ]
+}

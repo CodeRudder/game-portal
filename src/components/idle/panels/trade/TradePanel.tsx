@@ -216,7 +216,7 @@ const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose
                   return (
                     <div key={def.id ?? i} style={{
                       ...styles.routeCard,
-                      borderColor: isOpened ? 'rgba(212,165,116,0.3)' : 'rgba(255,255,255,0.1)',
+                      border: isOpened ? '1px solid rgba(212,165,116,0.3)' : '1px solid rgba(255,255,255,0.1)',
                     }}>
                       <div style={styles.routeInfo}>
                         <div style={styles.routeName}>
@@ -378,7 +378,7 @@ const styles: Record<string, React.CSSProperties> = {
   activeTab: {
     background: 'rgba(212,165,116,0.2)',
     color: '#d4a574',
-    borderColor: '#d4a574',
+    border: '1px solid #d4a574',
   },
   tabContent: {
     overflowY: 'auto' as const,

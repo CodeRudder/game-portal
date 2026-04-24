@@ -30,7 +30,7 @@ import { Toast } from '@/components/idle/common/Toast';
 /** NPCTab包装器 — 适配FeaturePanelOverlay的engine/snapshotVersion/visible/onClose接口 */
 const NPCPanelWrapper: React.FC<any> = ({ engine, visible, onClose }) => {
   const npcData: NPCData[] = React.useMemo(() => {
-    const npcSys = (engine as any)?.npcSystem;
+    const npcSys = engine?.getSubsystemRegistry?.()?.get?.('npc');
     if (npcSys && typeof npcSys.getAllNPCs === 'function') {
       return npcSys.getAllNPCs();
     }

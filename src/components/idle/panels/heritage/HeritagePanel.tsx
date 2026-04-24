@@ -216,7 +216,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '5px 8px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#888', fontSize: 11, cursor: 'pointer',
   },
-  activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
+  activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
   placeholder: {
     padding: 30, textAlign: 'center', borderRadius: 'var(--tk-radius-lg)' as any,
     background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.08)',
@@ -241,7 +241,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '6px 16px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 12, cursor: 'pointer',
   },
-  accelBtnDone: { background: 'transparent', color: '#666', borderColor: 'rgba(255,255,255,0.06)', cursor: 'default' },
+  accelBtnDone: { background: 'transparent', color: '#666', border: '1px solid rgba(255,255,255,0.06)', cursor: 'default' },
   unlockSection: { marginTop: 8 },
   sectionHeader: { fontSize: 14, fontWeight: 600, color: '#d4a574', marginBottom: 8 },
   unlockItem: {

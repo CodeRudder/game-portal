@@ -145,7 +145,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
             key={eq.uid}
             style={{
               ...styles.card,
-              borderColor: selectedUid === eq.uid ? '#d4a574' : RARITY_COLORS[eq.rarity] + '40',
+              border: selectedUid === eq.uid ? '1px solid #d4a574' : `1px solid ${RARITY_COLORS[eq.rarity]}40`,
             }}
             onClick={() => setSelectedUid(eq.uid)}
             data-testid={`equipment-panel-item-${eq.uid}`}
@@ -289,12 +289,12 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '4px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 11, cursor: 'pointer',
   },
-  activeBtn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', borderColor: '#d4a574' },
+  activeBtn: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
   sortBtn: {
     padding: '3px 6px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 'var(--tk-radius-sm)' as any,
     background: 'transparent', color: '#666', fontSize: 10, cursor: 'pointer',
   },
-  activeSortBtn: { background: 'rgba(212,165,116,0.1)', color: '#d4a574', borderColor: 'rgba(212,165,116,0.3)' },
+  activeSortBtn: { background: 'rgba(212,165,116,0.1)', color: '#d4a574', border: '1px solid rgba(212,165,116,0.3)' },
   grid: {
     display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8,
   },

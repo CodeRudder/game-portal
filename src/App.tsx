@@ -1,17 +1,26 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import GamePage from './pages/GamePage';
-import IdleGameZone from './pages/IdleGameZone';
-import IdleGamePage from './pages/IdleGamePage';
-import { PixiPOC } from './poc/pixi-poc';
-import { SpritePOC } from './poc/sprite-poc';
-import ThreeKingdomsGame from './components/idle/ThreeKingdomsGame';
-import { GameErrorBoundary } from './components/idle/three-kingdoms/GameErrorBoundary';
 
 // ═══════════════════════════════════════════════════════════════
-// Lazy-loaded PixiJS 游戏组件 — 减小首屏 bundle 体积
+// Eager-loaded — 仅路由框架本身（无页面组件）
 // ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// Lazy-loaded 页面 — 所有页面按需加载，减小首屏 bundle 体积
+// ═══════════════════════════════════════════════════════════════
+
+// ── 核心页面 ──
+const HomePage = lazy(() => import('./pages/HomePage'));
+const GamePage = lazy(() => import('./pages/GamePage'));
+const IdleGameZone = lazy(() => import('./pages/IdleGameZone'));
+const IdleGamePage = lazy(() => import('./pages/IdleGamePage'));
+
+// ── POC 页面 ──
+const PixiPOC = lazy(() => import('./poc/pixi-poc/PixiPOC'));
+const SpritePOC = lazy(() => import('./poc/sprite-poc/SpritePOC'));
+
+// ── PixiJS 高品质放置游戏 — 每个游戏独立路由，独立 chunk ──
+const ThreeKingdomsGame = lazy(() => import('./components/idle/ThreeKingdomsGame'));
 const CivChinaPixiGame = lazy(() => import('./components/idle/CivChinaPixiGame'));
 const CivEgyptPixiGame = lazy(() => import('./components/idle/CivEgyptPixiGame'));
 const CivBabylonPixiGame = lazy(() => import('./components/idle/CivBabylonPixiGame'));
@@ -35,46 +44,33 @@ function GameLoader() {
 function App() {
   return (
     <div className="min-h-screen bg-gp-dark stars-bg">
-      <Routes>
-        {/* 原有路由 */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/game/:gameType" element={<GamePage />} />
-        <Route path="/idle" element={<IdleGameZone />} />
-        <Route path="/idle/:gameId" element={<IdleGamePage />} />
-        <Route path="/poc/pixi" element={<PixiPOC />} />
-        <Route path="/poc/sprite-demo" element={<SpritePOC />} />
-        <Route path="/games/three-kingdoms-pixi" element={<GameErrorBoundary><ThreeKingdomsGame /></GameErrorBoundary>} />
+      <Suspense fallback={<GameLoader />}>
+        <Routes>
+          {/* ── 首页 & 列表页 ── */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/game/:gameType" element={<GamePage />} />
+          <Route path="/idle" element={<IdleGameZone />} />
 
-        {/* PixiJS 文明 & 策略游戏路由 — lazy loaded */}
-        <Route
-          path="/games/civ-china-pixi"
-          element={<Suspense fallback={<GameLoader />}><CivChinaPixiGame /></Suspense>}
-        />
-        <Route
-          path="/games/civ-egypt-pixi"
-          element={<Suspense fallback={<GameLoader />}><CivEgyptPixiGame /></Suspense>}
-        />
-        <Route
-          path="/games/civ-babylon-pixi"
-          element={<Suspense fallback={<GameLoader />}><CivBabylonPixiGame /></Suspense>}
-        />
-        <Route
-          path="/games/civ-india-pixi"
-          element={<Suspense fallback={<GameLoader />}><CivIndiaPixiGame /></Suspense>}
-        />
-        <Route
-          path="/games/total-war-pixi"
-          element={<Suspense fallback={<GameLoader />}><TotalWarPixiGame /></Suspense>}
-        />
-        <Route
-          path="/games/heroes-might-pixi"
-          element={<Suspense fallback={<GameLoader />}><HeroesMightPixiGame /></Suspense>}
-        />
-        <Route
-          path="/games/age-of-empires-pixi"
-          element={<Suspense fallback={<GameLoader />}><AgeOfEmpiresPixiGame /></Suspense>}
-        />
-      </Routes>
+          {/* ── 放置游戏详情页（通用动态路由，兼容旧链接） ── */}
+          <Route path="/idle/:gameId" element={<IdleGamePage />} />
+
+          {/* ── POC 页面 ── */}
+          <Route path="/poc/pixi" element={<PixiPOC />} />
+          <Route path="/poc/sprite-demo" element={<SpritePOC />} />
+
+          {/* ── 三国霸业 — 独立路由，独立 chunk ── */}
+          <Route path="/games/three-kingdoms-pixi" element={<ThreeKingdomsGame />} />
+
+          {/* ── PixiJS 文明 & 策略游戏 — 独立路由，独立 chunk ── */}
+          <Route path="/games/civ-china-pixi" element={<CivChinaPixiGame />} />
+          <Route path="/games/civ-egypt-pixi" element={<CivEgyptPixiGame />} />
+          <Route path="/games/civ-babylon-pixi" element={<CivBabylonPixiGame />} />
+          <Route path="/games/civ-india-pixi" element={<CivIndiaPixiGame />} />
+          <Route path="/games/total-war-pixi" element={<TotalWarPixiGame />} />
+          <Route path="/games/heroes-might-pixi" element={<HeroesMightPixiGame />} />
+          <Route path="/games/age-of-empires-pixi" element={<AgeOfEmpiresPixiGame />} />
+        </Routes>
+      </Suspense>
     </div>
   );
 }

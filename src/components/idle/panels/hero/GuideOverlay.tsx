@@ -69,7 +69,7 @@ function getTutorialSM(engine?: ThreeKingdomsEngine | null): TutorialStateMachin
   try {
     // ThreeKingdomsEngine 没有直接的 getTutorialStateMachine 方法，
     // 但通过 registry 可以获取已注册的子系统
-    const registry = (engine as any).registry;
+    const registry = engine.getSubsystemRegistry();
     if (!registry) return null;
     const sm = registry.get('tutorial-state') as TutorialStateMachine | undefined;
     // TutorialStateMachine.name === 'tutorial-state'

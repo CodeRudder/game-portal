@@ -164,6 +164,7 @@ export default function StrategyGamePixiComponent({
       };
     });
 
+    // TODO: prestige/statistics 是 protected，策略特有属性暂用 as any
     const prestige = (engine as any).prestige ?? { currency: 0, count: 0 };
     const statistics = (engine as any).statistics ?? {};
 
@@ -181,7 +182,7 @@ export default function StrategyGamePixiComponent({
       diplomacy: [],
     };
 
-    // 从引擎提取策略特有数据
+    // TODO: territories/troops/techs 是策略引擎特有属性，暂用 as any
     const eng = engine as any;
 
     // 领土数据
