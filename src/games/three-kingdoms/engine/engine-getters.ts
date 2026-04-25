@@ -18,6 +18,8 @@ import type { BondSystem } from './bond/BondSystem';
 import type { FormationRecommendSystem } from './hero/FormationRecommendSystem';
 import type { HeroDispatchSystem } from './hero/HeroDispatchSystem';
 import type { SweepSystem } from './campaign/SweepSystem';
+import type { VIPSystem } from './campaign/VIPSystem';
+import type { ChallengeStageSystem } from './campaign/ChallengeStageSystem';
 import type { BattleEngine } from './battle/BattleEngine';
 import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
 import type { RewardDistributor } from './campaign/RewardDistributor';
@@ -120,6 +122,8 @@ export function applyGetters(cls: any): void {
   p.getFormationRecommendSystem = function(this: EngineAny): FormationRecommendSystem { return this.formationRecommendSystem; };
   p.getHeroDispatchSystem = function(this: EngineAny): HeroDispatchSystem { return this.heroDispatchSystem; };
   p.getSweepSystem = function(this: EngineAny): SweepSystem { return this.sweepSystem; };
+  p.getVIPSystem = function(this: EngineAny): VIPSystem { return this.vipSystem; };
+  p.getChallengeStageSystem = function(this: EngineAny): ChallengeStageSystem { return this.challengeStageSystem; };
 
   p.getResourceAmount = function(this: EngineAny, type: string): number {
     return this.resource.getAmount(type as import('../shared/types').ResourceType);

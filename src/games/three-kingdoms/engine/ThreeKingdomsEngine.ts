@@ -39,6 +39,8 @@ import {
   type CampaignSystems,
 } from './engine-campaign-deps';
 import { SweepSystem } from './campaign/SweepSystem';
+import { VIPSystem } from './campaign/VIPSystem';
+import { ChallengeStageSystem } from './campaign/ChallengeStageSystem';
 import { campaignDataProvider } from './campaign/campaign-config';
 import {
   checkBuildingUpgrade, getBuildingUpgradeCost,
@@ -84,6 +86,8 @@ export class ThreeKingdomsEngine {
   private readonly heroDispatchSystem: HeroDispatchSystem;
   private readonly campaignSystems: CampaignSystems;
   private readonly sweepSystem: SweepSystem;
+  private readonly vipSystem: VIPSystem;
+  private readonly challengeStageSystem: ChallengeStageSystem;
   private readonly techSystems: TechSystems;
   private readonly mapSystems: MapSystems;
   private readonly eventSystems: EventSystems;
@@ -151,6 +155,22 @@ export class ThreeKingdomsEngine {
         completeStage: (stageId: string, stars: number) => self.campaignSystems.campaignSystem.completeStage(stageId, stars),
       },
     );
+    this.vipSystem = new VIPSystem();
+    this.challengeStageSystem = new ChallengeStageSystem({
+      getResourceAmount: (type: string) => self.resource.getAmount(type as import('../shared/types').ResourceType),
+      consumeResource: (type: string, amount: number) => {
+        try { self.resource.consumeResource(type as import('../shared/types').ResourceType, amount); return true; } catch { return false; }
+      },
+      addResource: (type: string, amount: number) => self.resource.addResource(type as import('../shared/types').ResourceType, amount),
+      addFragment: (id: string, count: number) => self.hero.addFragment(id, count),
+      addExp: (exp: number) => {
+        const gs = self.hero.getAllGenerals();
+        if (!gs.length) return;
+        const per = Math.floor(exp / gs.length);
+        if (per <= 0) return;
+        for (const g of gs) self.hero.addExp(g.id, per);
+      },
+    });
     this.techSystems = createTechSystems(this.building);
     this.mapSystems = createMapSystems();
     this.eventSystems = createEventSystems();
@@ -184,6 +204,8 @@ export class ThreeKingdomsEngine {
     r.register('campaignSystem', this.campaignSystems.campaignSystem);
     r.register('rewardDistributor', this.campaignSystems.rewardDistributor);
     r.register('sweepSystem', this.sweepSystem);
+    r.register('vipSystem', this.vipSystem);
+    r.register('challengeStageSystem', this.challengeStageSystem);
     r.register('techTree', this.techSystems.treeSystem);
     r.register('techPoint', this.techSystems.pointSystem);
     r.register('techResearch', this.techSystems.researchSystem);
@@ -303,6 +325,7 @@ export class ThreeKingdomsEngine {
     this.heroFormation.reset(); this.heroStarSystem.reset(); this.skillUpgradeSystem.reset(); this.bondSystem.reset();
     this.formationRecommendSystem.reset(); this.heroDispatchSystem.reset();
     this.campaignSystems.campaignSystem.reset(); this.sweepSystem.reset();
+    this.vipSystem.reset(); this.challengeStageSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
     this.techSystems.researchSystem.reset(); this.techSystems.fusionSystem.reset();
     this.techSystems.linkSystem.reset(); this.techSystems.offlineSystem.reset();

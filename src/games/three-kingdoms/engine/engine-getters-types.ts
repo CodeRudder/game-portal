@@ -16,6 +16,8 @@ import type { BondSystem } from './bond/BondSystem';
 import type { FormationRecommendSystem } from './hero/FormationRecommendSystem';
 import type { HeroDispatchSystem } from './hero/HeroDispatchSystem';
 import type { SweepSystem } from './campaign/SweepSystem';
+import type { VIPSystem } from './campaign/VIPSystem';
+import type { ChallengeStageSystem } from './campaign/ChallengeStageSystem';
 import type { BattleEngine } from './battle/BattleEngine';
 import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
 import type { RewardDistributor } from './campaign/RewardDistributor';
@@ -101,6 +103,8 @@ export interface EngineGettersMixin {
   getFormationRecommendSystem(): FormationRecommendSystem;
   getHeroDispatchSystem(): HeroDispatchSystem;
   getSweepSystem(): SweepSystem;
+  getVIPSystem(): VIPSystem;
+  getChallengeStageSystem(): ChallengeStageSystem;
   getResourceAmount(type: string): number;
   createFormation(id?: string): FormationData | null;
   setFormation(id: string, generalIds: string[]): FormationData | null;

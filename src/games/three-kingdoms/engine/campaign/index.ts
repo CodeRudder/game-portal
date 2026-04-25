@@ -73,3 +73,27 @@ export { RewardDistributor } from './RewardDistributor';
 // 扫荡系统
 export { SweepSystem } from './SweepSystem';
 export { AutoPushExecutor } from './AutoPushExecutor';
+
+// VIP系统
+export { VIPSystem } from './VIPSystem';
+export type {
+  VIPLevelConfig,
+  VIPPrivilege,
+  VIPState,
+  VIPSaveData,
+} from './VIPSystem';
+
+// 挑战关卡系统
+export { ChallengeStageSystem } from './ChallengeStageSystem';
+export type {
+  ChallengeStageConfig,
+  ChallengeReward,
+  ChallengeRandomDrop,
+  ChallengeStageStatus,
+  ChallengeStageProgress,
+  ChallengeSystemState,
+  ChallengeCheckResult,
+  ChallengeResult,
+  ChallengeSaveData,
+  ChallengeDeps,
+} from './ChallengeStageSystem';

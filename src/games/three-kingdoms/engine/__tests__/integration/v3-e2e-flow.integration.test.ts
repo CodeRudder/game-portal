@@ -648,16 +648,39 @@ describe('§5.3 交叉验证', () => {
 // §9.4 VIP系统依赖说明
 // ─────────────────────────────────────────
 describe('§9.4 VIP系统依赖说明', () => {
-  it.todo('[引擎未实现] should have VIP level system', () => {
-    // VIP系统尚未完整实现
+  it('should have VIP level system', () => {
+    const sim = initBattleReadyState();
+    const vip = sim.engine.getVIPSystem();
+    expect(vip).toBeDefined();
+    expect(vip.getEffectiveLevel()).toBe(0);
+    expect(vip.getExp()).toBe(0);
   });
 
-  it.todo('[引擎未实现] should unlock 3x speed at VIP3+', () => {
-    // VIP特权校验尚未实现
+  it('should unlock 3x speed at VIP3+', () => {
+    const sim = initBattleReadyState();
+    const vip = sim.engine.getVIPSystem();
+
+    // VIP0 → 不能使用3×倍速
+    expect(vip.canUseSpeed3x()).toBe(false);
+
+    // 充值获得600经验 → VIP3
+    vip.addExp(600);
+    expect(vip.getEffectiveLevel()).toBe(3);
+    expect(vip.canUseSpeed3x()).toBe(true);
   });
 
-  it.todo('[引擎未实现] should unlock free sweep at VIP5+', () => {
-    // VIP免费扫荡尚未实现
+  it('should unlock free sweep at VIP5+', () => {
+    const sim = initBattleReadyState();
+    const vip = sim.engine.getVIPSystem();
+
+    // VIP0 → 不能免费扫荡
+    expect(vip.canUseFreeSweep()).toBe(false);
+
+    // 充值获得1500经验 → VIP5
+    vip.addExp(1500);
+    expect(vip.getEffectiveLevel()).toBe(5);
+    expect(vip.canUseFreeSweep()).toBe(true);
+    expect(vip.getFreeSweepRemaining()).toBe(3);
   });
 });
 
@@ -731,16 +754,56 @@ describe('§9.5 关卡↔扫荡↔离线统一状态机', () => {
 // §9.6 VIP等级校验端到端流程
 // ─────────────────────────────────────────
 describe('§9.6 VIP等级校验端到端流程', () => {
-  it.todo('[引擎未实现] should accumulate VIP experience from purchases', () => {
-    // VIP经验累积尚未实现
+  it('should accumulate VIP experience from purchases', () => {
+    const sim = initBattleReadyState();
+    const vip = sim.engine.getVIPSystem();
+
+    expect(vip.getExp()).toBe(0);
+    expect(vip.getEffectiveLevel()).toBe(0);
+
+    // 充值100元 = 1000 VIP经验
+    vip.addExp(1000);
+    expect(vip.getExp()).toBe(1000);
+    expect(vip.getEffectiveLevel()).toBe(4);
+
+    // 再充值50元 = 500 VIP经验
+    vip.addExp(500);
+    expect(vip.getExp()).toBe(1500);
+    expect(vip.getEffectiveLevel()).toBe(5);
   });
 
-  it.todo('[引擎未实现] should validate VIP level for battle speed features', () => {
-    // VIP等级校验尚未实现
+  it('should validate VIP level for battle speed features', () => {
+    const sim = initBattleReadyState();
+    const vip = sim.engine.getVIPSystem();
+
+    // VIP0: 基础功能
+    expect(vip.canUseSpeed3x()).toBe(false);
+    expect(vip.canUseSpeedInstant()).toBe(false);
+
+    // VIP3: 解锁3×倍速
+    vip.addExp(600);
+    expect(vip.canUseSpeed3x()).toBe(true);
+    expect(vip.canUseSpeedInstant()).toBe(false);
+
+    // VIP5: 解锁极速模式
+    vip.addExp(900);
+    expect(vip.canUseSpeedInstant()).toBe(true);
   });
 
-  it.todo('[引擎未实现] should support GM command to set VIP level for testing', () => {
-    // GM命令尚未实现
+  it('should support GM command to set VIP level for testing', () => {
+    const sim = initBattleReadyState();
+    const vip = sim.engine.getVIPSystem();
+
+    // GM设置VIP5
+    vip.gmSetLevel(5);
+    expect(vip.isGMMode()).toBe(true);
+    expect(vip.getEffectiveLevel()).toBe(5);
+    expect(vip.canUseFreeSweep()).toBe(true);
+
+    // GM重置
+    vip.gmResetLevel();
+    expect(vip.isGMMode()).toBe(false);
+    expect(vip.getEffectiveLevel()).toBe(0);
   });
 });
 
@@ -794,16 +857,55 @@ describe('§10.3 自动连续战斗', () => {
 // §11.3 挑战关卡资源串联
 // ─────────────────────────────────────────
 describe('§11.3 挑战关卡资源串联', () => {
-  it.todo('[引擎未实现] should deduct army and stamina on challenge stage entry', () => {
-    // 挑战关卡资源扣减尚未实现
+  it('should deduct army and stamina on challenge stage entry', () => {
+    const sim = initBattleReadyState();
+    sim.addResources({ gold: 100000, grain: 100000, troops: 50000, mandate: 5000 });
+    const challenge = sim.engine.getChallengeStageSystem();
+    const troopsBefore = sim.engine.getResourceAmount('troops');
+
+    // 检查前置条件
+    const check = challenge.checkCanChallenge('challenge_1');
+    expect(check.canChallenge).toBe(true);
+
+    // 预锁资源
+    const locked = challenge.preLockResources('challenge_1');
+    expect(locked).toBe(true);
+
+    // 兵力应已扣减
+    const troopsAfter = sim.engine.getResourceAmount('troops');
+    expect(troopsAfter).toBeLessThan(troopsBefore);
   });
 
-  it.todo('[引擎未实现] should give special materials on challenge stage victory', () => {
-    // 挑战关卡特殊材料掉落尚未实现
+  it('should give special materials on challenge stage victory', () => {
+    const sim = initBattleReadyState();
+    sim.addResources({ gold: 100000, grain: 100000, troops: 50000, mandate: 5000 });
+    const challenge = sim.engine.getChallengeStageSystem();
+
+    // 预锁并完成（胜利）
+    challenge.preLockResources('challenge_1');
+    const result = challenge.completeChallenge('challenge_1', true);
+
+    expect(result.victory).toBe(true);
+    expect(result.rewards.length).toBeGreaterThan(0);
+    expect(result.firstClear).toBe(true);
   });
 
-  it.todo('[引擎未实现] should refund resources on challenge stage failure', () => {
-    // 挑战关卡失败资源返还尚未实现
+  it('should refund resources on challenge stage failure', () => {
+    const sim = initBattleReadyState();
+    sim.addResources({ gold: 100000, grain: 100000, troops: 50000, mandate: 5000 });
+    const challenge = sim.engine.getChallengeStageSystem();
+    const troopsBefore = sim.engine.getResourceAmount('troops');
+
+    // 预锁并完成（失败）
+    challenge.preLockResources('challenge_1');
+    const result = challenge.completeChallenge('challenge_1', false);
+
+    expect(result.victory).toBe(false);
+    expect(result.armyCost).toBe(0); // 失败时返还，实际消耗为0
+
+    // 兵力应返还
+    const troopsAfter = sim.engine.getResourceAmount('troops');
+    expect(troopsAfter).toBe(troopsBefore);
   });
 });
 
