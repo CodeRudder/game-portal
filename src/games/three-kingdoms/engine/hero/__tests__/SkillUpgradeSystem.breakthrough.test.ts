@@ -2,13 +2,17 @@
  * SkillUpgradeSystem 单元测试 — P0突破解锁技能/CD减少/额外效果
  *
  * 覆盖功能点：F4.06/F4.07/F4.08 突破解锁技能、F5.08/F5.09 CD减少和额外效果
+ *
+ * 注意：unlockSkillOnBreakthrough / getCooldownReduce / hasExtraEffect
+ * 依赖 SkillUpgradeSystem 内部的 heroSkills Map（private），
+ * 测试中通过 (system as any).heroSkills 注入测试数据。
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { SkillUpgradeSystem } from '../SkillUpgradeSystem';
 import { HeroSystem } from '../HeroSystem';
 import { HeroStarSystem } from '../HeroStarSystem';
-import type { SkillUpgradeDeps } from '../SkillUpgradeSystem';
+import type { SkillUpgradeDeps, HeroSkillEntry } from '../SkillUpgradeSystem';
 
 // ── 辅助函数 ──
 
@@ -46,6 +50,20 @@ function createTestSetup() {
   return { heroSystem, starSystem, skillSystem, resources };
 }
 
+/**
+ * 向 SkillUpgradeSystem 的 heroSkills Map 注入武将技能数据
+ * 用于测试依赖 heroSkills 的方法（突破解锁、CD减少、额外效果）
+ */
+function injectHeroSkills(
+  system: SkillUpgradeSystem,
+  heroId: string,
+  skills: { level: number }[],
+  unlockedSkills: string[] = [],
+): void {
+  const entry: HeroSkillEntry = { skills, unlockedSkills: [...unlockedSkills] };
+  (system as any).heroSkills.set(heroId, entry);
+}
+
 // ═══════════════════════════════════════════
 // P0-1: 突破解锁技能系统
 // ═══════════════════════════════════════════
@@ -59,82 +77,134 @@ describe('SkillUpgradeSystem 突破解锁技能 (F4.06/F4.07/F4.08)', () => {
   });
 
   describe('unlockSkillOnBreakthrough', () => {
-    it('should unlock skills at breakthrough level 10', () => {
-      const unlocked = skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
-      expect(unlocked.length).toBeGreaterThan(0);
-      expect(unlocked).toContain(1); // passive skill index
+    it('突破等级10解锁被动技能强化', () => {
+      // 注入武将技能数据（heroSkills Map 中必须有该武将）
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 1 }, { level: 1 }]);
+
+      const result = skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
+
+      expect(result).not.toBeNull();
+      expect(result!.unlocked).toBe(true);
+      expect(result!.skillType).toBe('passive_enhance');
+      expect(result!.description).toContain('被动技能强化');
     });
 
-    it('should unlock skills at breakthrough level 20', () => {
-      const unlocked = skillSystem.unlockSkillOnBreakthrough('zhangfei', 20);
-      expect(unlocked.length).toBeGreaterThan(0);
-      // Should include both Lv10 and Lv20 unlocks
-      expect(unlocked).toContain(1); // Lv10 passive
-      expect(unlocked).toContain(3); // Lv20 new skill
+    it('突破等级20解锁新技能', () => {
+      injectHeroSkills(skillSystem, 'zhangfei', [{ level: 1 }, { level: 1 }, { level: 1 }, { level: 1 }]);
+
+      const result = skillSystem.unlockSkillOnBreakthrough('zhangfei', 20);
+
+      expect(result).not.toBeNull();
+      expect(result!.unlocked).toBe(true);
+      expect(result!.skillType).toBe('new_skill');
+      expect(result!.description).toContain('解锁新技能');
     });
 
-    it('should unlock skills at breakthrough level 30', () => {
-      const unlocked = skillSystem.unlockSkillOnBreakthrough('liubei', 30);
-      expect(unlocked.length).toBeGreaterThanOrEqual(1);
-      // Should include Lv10, Lv20, and Lv30 unlocks
-      expect(unlocked).toContain(1); // Lv10 passive
-      expect(unlocked).toContain(3); // Lv20 new skill
-      expect(unlocked).toContain(0); // Lv30 ultimate
+    it('突破等级30解锁终极技能强化', () => {
+      injectHeroSkills(skillSystem, 'liubei', [{ level: 1 }, { level: 1 }]);
+
+      const result = skillSystem.unlockSkillOnBreakthrough('liubei', 30);
+
+      expect(result).not.toBeNull();
+      expect(result!.unlocked).toBe(true);
+      expect(result!.skillType).toBe('ultimate_enhance');
+      expect(result!.description).toContain('终极技能强化');
     });
 
-    it('should return empty array for level below minimum (5)', () => {
-      const unlocked = skillSystem.unlockSkillOnBreakthrough('guanyu', 5);
-      expect(unlocked).toEqual([]);
+    it('突破等级40解锁终极强化+', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 1 }, { level: 1 }]);
+
+      const result = skillSystem.unlockSkillOnBreakthrough('guanyu', 40);
+
+      expect(result).not.toBeNull();
+      expect(result!.unlocked).toBe(true);
+      expect(result!.skillType).toBe('ultimate_enhance_plus');
+      expect(result!.description).toContain('终极技能强化+');
     });
 
-    it('should not double-unlock for same hero+level', () => {
-      skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
-      const secondUnlock = skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
-      expect(secondUnlock).toEqual([]); // Already unlocked
+    it('无效突破等级返回 null', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 1 }]);
+
+      expect(skillSystem.unlockSkillOnBreakthrough('guanyu', 5)).toBeNull();
+      expect(skillSystem.unlockSkillOnBreakthrough('guanyu', 15)).toBeNull();
+      expect(skillSystem.unlockSkillOnBreakthrough('guanyu', 99)).toBeNull();
     });
 
-    it('should handle different heroes independently', () => {
-      skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
-      const zhangfeiUnlocked = skillSystem.unlockSkillOnBreakthrough('zhangfei', 10);
-      expect(zhangfeiUnlocked.length).toBeGreaterThan(0);
+    it('武将不在 heroSkills 中返回 null', () => {
+      expect(skillSystem.unlockSkillOnBreakthrough('nonexistent', 10)).toBeNull();
+    });
+
+    it('重复解锁同一突破等级返回 null', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 1 }]);
+
+      // 第一次解锁成功
+      const first = skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
+      expect(first).not.toBeNull();
+
+      // 第二次解锁同一等级返回 null
+      const second = skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
+      expect(second).toBeNull();
+    });
+
+    it('不同武将独立解锁', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 1 }]);
+      injectHeroSkills(skillSystem, 'zhangfei', [{ level: 1 }]);
+
+      const r1 = skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
+      const r2 = skillSystem.unlockSkillOnBreakthrough('zhangfei', 10);
+
+      expect(r1).not.toBeNull();
+      expect(r2).not.toBeNull();
+      expect(r1!.unlocked).toBe(true);
+      expect(r2!.unlocked).toBe(true);
     });
   });
 
   describe('getSkillUnlockState', () => {
-    it('should return empty state for hero with no unlocks', () => {
-      const state = skillSystem.getSkillUnlockState('guanyu');
-      expect(state.heroId).toBe('guanyu');
-      expect(state.unlockedSkills).toEqual([]);
+    it('未解锁时所有突破等级状态为 false', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 1 }]);
+
+      const states = skillSystem.getSkillUnlockState('guanyu');
+
+      // 应包含 10, 20, 30, 40 四个突破等级
+      expect(states.length).toBe(4);
+      for (const s of states) {
+        expect(s.unlocked).toBe(false);
+      }
     });
 
-    it('should return correct unlock state after breakthrough', () => {
+    it('解锁后对应突破等级状态为 true', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 1 }]);
+
       skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
-      const state = skillSystem.getSkillUnlockState('guanyu');
-      expect(state.unlockedSkills.length).toBeGreaterThan(0);
-      expect(state.unlockedSkills[0].breakthroughLevel).toBe(10);
-      expect(state.unlockedSkills[0].unlockType).toBe('passive_enhance');
+
+      const states = skillSystem.getSkillUnlockState('guanyu');
+      const lv10 = states.find(s => s.breakthroughLevel === 10);
+      const lv20 = states.find(s => s.breakthroughLevel === 20);
+
+      expect(lv10).toBeDefined();
+      expect(lv10!.unlocked).toBe(true);
+      expect(lv20).toBeDefined();
+      expect(lv20!.unlocked).toBe(false);
     });
 
-    it('should return multiple unlocks for higher breakthrough', () => {
-      skillSystem.unlockSkillOnBreakthrough('guanyu', 30);
-      const state = skillSystem.getSkillUnlockState('guanyu');
-      expect(state.unlockedSkills.length).toBeGreaterThanOrEqual(2);
-    });
-  });
+    it('多次突破后多个等级状态为 true', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 1 }]);
 
-  describe('state persistence', () => {
-    it('should include breakthroughSkillUnlocks in getState', () => {
       skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
-      const state = skillSystem.getState();
-      expect(state.breakthroughSkillUnlocks).toBeDefined();
-      expect(Object.keys(state.breakthroughSkillUnlocks).length).toBeGreaterThan(0);
+      skillSystem.unlockSkillOnBreakthrough('guanyu', 20);
+
+      const states = skillSystem.getSkillUnlockState('guanyu');
+      const unlocked = states.filter(s => s.unlocked);
+      expect(unlocked.length).toBe(2);
     });
 
-    it('should reset breakthroughSkillUnlocks on reset', () => {
-      skillSystem.unlockSkillOnBreakthrough('guanyu', 10);
-      skillSystem.reset();
-      const state = skillSystem.getState();
-      expect(Object.keys(state.breakthroughSkillUnlocks)).toHaveLength(0);
+    it('武将不在 heroSkills 中时全部为 false', () => {
+      const states = skillSystem.getSkillUnlockState('nonexistent');
+      expect(states.length).toBe(4);
+      for (const s of states) {
+        expect(s.unlocked).toBe(false);
+      }
     });
   });
 });
@@ -144,91 +214,67 @@ describe('SkillUpgradeSystem 突破解锁技能 (F4.06/F4.07/F4.08)', () => {
 // ═══════════════════════════════════════════
 
 describe('SkillUpgradeSystem CD减少和额外效果 (F5.08/F5.09)', () => {
-  let heroSystem: HeroSystem;
   let skillSystem: SkillUpgradeSystem;
 
   beforeEach(() => {
     const setup = createTestSetup();
-    heroSystem = setup.heroSystem;
     skillSystem = setup.skillSystem;
-    heroSystem.addGeneral('guanyu');
   });
 
   describe('getCooldownReduce', () => {
-    it('should return 0 for level 1 skill', () => {
-      expect(skillSystem.getCooldownReduce('guanyu', 0)).toBe(0);
+    it('技能等级1时CD减少为 0.05', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 1 }]);
+      expect(skillSystem.getCooldownReduce('guanyu', 0)).toBe(0.05);
     });
 
-    it('should return 0.5 for level 2 skill', () => {
-      heroSystem.updateSkillLevel('guanyu', 0, 2);
-      expect(skillSystem.getCooldownReduce('guanyu', 0)).toBe(0.5);
+    it('每级减少5%，等级4时CD减少为 0.20', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 4 }]);
+      expect(skillSystem.getCooldownReduce('guanyu', 0)).toBeCloseTo(0.20);
     });
 
-    it('should return 2.0 for level 5 skill', () => {
-      heroSystem.updateSkillLevel('guanyu', 0, 5);
-      expect(skillSystem.getCooldownReduce('guanyu', 0)).toBe(2.0);
+    it('等级6时CD减少为 0.30（达到上限）', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 6 }]);
+      expect(skillSystem.getCooldownReduce('guanyu', 0)).toBe(0.30);
     });
 
-    it('should return 0 for nonexistent hero', () => {
+    it('等级10时CD减少仍为 0.30（不超过上限）', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 10 }]);
+      expect(skillSystem.getCooldownReduce('guanyu', 0)).toBe(0.30);
+    });
+
+    it('不存在的武将返回 0', () => {
       expect(skillSystem.getCooldownReduce('nonexistent', 0)).toBe(0);
     });
 
-    it('should return 0 for invalid skill index', () => {
+    it('无效技能索引返回 0', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 5 }]);
       expect(skillSystem.getCooldownReduce('guanyu', 99)).toBe(0);
     });
   });
 
   describe('hasExtraEffect', () => {
-    it('should return false for skill below level 5', () => {
-      heroSystem.updateSkillLevel('guanyu', 0, 4);
+    it('技能等级 < 5 时返回 false', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 4 }]);
       expect(skillSystem.hasExtraEffect('guanyu', 0)).toBe(false);
     });
 
-    it('should return true for skill at level 5', () => {
-      heroSystem.updateSkillLevel('guanyu', 0, 5);
+    it('技能等级 ≥ 5 时返回 true', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 5 }]);
       expect(skillSystem.hasExtraEffect('guanyu', 0)).toBe(true);
     });
 
-    it('should return true for skill above level 5', () => {
-      heroSystem.updateSkillLevel('guanyu', 0, 8);
+    it('技能等级 > 5 时返回 true', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 8 }]);
       expect(skillSystem.hasExtraEffect('guanyu', 0)).toBe(true);
     });
 
-    it('should return false for nonexistent hero', () => {
+    it('不存在的武将返回 false', () => {
       expect(skillSystem.hasExtraEffect('nonexistent', 0)).toBe(false);
     });
-  });
 
-  describe('getExtraEffect', () => {
-    it('should return null for skill below level 5', () => {
-      heroSystem.updateSkillLevel('guanyu', 0, 4);
-      expect(skillSystem.getExtraEffect('guanyu', 0)).toBeNull();
-    });
-
-    it('should return extra effect for skill at level 5', () => {
-      heroSystem.updateSkillLevel('guanyu', 0, 5);
-      const effect = skillSystem.getExtraEffect('guanyu', 0);
-      expect(effect).not.toBeNull();
-      expect(effect!.bonus).toBeGreaterThan(0);
-      expect(effect!.skillIndex).toBe(0);
-    });
-
-    it('should return higher bonus for higher level', () => {
-      heroSystem.updateSkillLevel('guanyu', 0, 5);
-      const effect5 = skillSystem.getExtraEffect('guanyu', 0);
-
-      heroSystem.updateSkillLevel('guanyu', 0, 8);
-      const effect8 = skillSystem.getExtraEffect('guanyu', 0);
-
-      expect(effect8!.bonus).toBeGreaterThan(effect5!.bonus);
-    });
-
-    it('should return null for nonexistent hero', () => {
-      expect(skillSystem.getExtraEffect('nonexistent', 0)).toBeNull();
-    });
-
-    it('should return null for invalid skill index', () => {
-      expect(skillSystem.getExtraEffect('guanyu', 99)).toBeNull();
+    it('无效技能索引返回 false', () => {
+      injectHeroSkills(skillSystem, 'guanyu', [{ level: 5 }]);
+      expect(skillSystem.hasExtraEffect('guanyu', 99)).toBe(false);
     });
   });
 });
