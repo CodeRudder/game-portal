@@ -125,13 +125,9 @@ describe('V2 E2E-FLOW: 端到端 + 交叉验证集成测试', () => {
   // E2E-FLOW-2: 30秒可理解性验证 [UI层测试]
   // ─────────────────────────────────────────
   describe('E2E-FLOW-2: 30秒可理解性验证', () => {
-    it.skip('[UI层测试] should show intuitive recruit button', () => {
-      // UI直觉性测试属于UI层
-    });
+    it.todo('[UI层测试] should show intuitive recruit button — UI直觉性测试属于UI层');
 
-    it.skip('[UI层测试] should display quality and stats clearly on general card', () => {
-      // 信息自解释属于UI层
-    });
+    it.todo('[UI层测试] should display quality and stats clearly on general card — 信息自解释属于UI层');
   });
 
   // ─────────────────────────────────────────

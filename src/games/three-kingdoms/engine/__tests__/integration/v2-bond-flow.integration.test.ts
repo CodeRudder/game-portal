@@ -312,13 +312,9 @@ describe('V2 BOND-FLOW: 羁绊与编队流程集成测试', () => {
   // FORM-FLOW-5: 智能编队推荐 [引擎未实现]
   // ─────────────────────────────────────────
   describe('FORM-FLOW-5: 智能编队推荐', () => {
-    it.skip('[引擎未实现] should recommend formations based on stage characteristics', () => {
-      // 智能编队推荐系统尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should recommend formations based on stage characteristics — 智能编队推荐系统尚未在引擎层实现');
 
-    it.skip('[引擎未实现] should show 1~3 recommendation plans', () => {
-      // 推荐方案展示属于UI层 + 引擎未实现
-    });
+    it.todo('[引擎未实现] should show 1~3 recommendation plans — 推荐方案展示属于UI层+引擎未实现');
   });
 
   // ─────────────────────────────────────────
@@ -416,31 +412,23 @@ describe('V2 BOND-FLOW: 羁绊与编队流程集成测试', () => {
   // CROSS-FLOW-5: 武将→建筑派驻联动 [引擎未实现]
   // ─────────────────────────────────────────
   describe('CROSS-FLOW-5: 武将→建筑派驻联动', () => {
-    it.skip('[引擎未实现] should dispatch hero to building for production bonus', () => {
-      // 武将派驻建筑系统尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should dispatch hero to building for production bonus — 武将派驻建筑系统尚未在引擎层实现');
 
-    it.skip('[引擎未实现] should increase building output based on hero stats', () => {
-      // 建筑产出加成系统尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should increase building output based on hero stats — 建筑产出加成系统尚未在引擎层实现');
   });
 
   // ─────────────────────────────────────────
   // CROSS-FLOW-7: 武将升级→资源消耗→建筑产出联动 [引擎未实现]
   // ─────────────────────────────────────────
   describe('CROSS-FLOW-7: 武将升级→资源消耗→建筑产出联动', () => {
-    it.skip('[引擎未实现] should update building output when dispatched hero levels up', () => {
-      // 派驻武将升级联动尚未实现
-    });
+    it.todo('[引擎未实现] should update building output when dispatched hero levels up — 派驻武将升级联动尚未实现');
   });
 
   // ─────────────────────────────────────────
   // CROSS-FLOW-8: 技能升级→战力→编队联动 [引擎未实现]
   // ─────────────────────────────────────────
   describe('CROSS-FLOW-8: 技能升级→战力→编队联动', () => {
-    it.skip('[引擎未实现] should update formation power after skill upgrade', () => {
-      // 技能升级系统尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should update formation power after skill upgrade — 技能升级系统尚未在引擎层实现');
   });
 });
 

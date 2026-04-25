@@ -471,13 +471,9 @@ describe('V2 FORM-FLOW: 编队管理集成测试', () => {
   // ─────────────────────────────────────────
 
   describe('FORM-FLOW-5: 智能编队推荐', () => {
-    it.skip('[引擎未实现] should recommend formations based on stage characteristics', () => {
-      // Play FORM-FLOW-5 步骤2: 推荐面板展开
-    });
+    it.todo('[引擎未实现] should recommend formations based on stage characteristics — 智能编队推荐系统尚未在引擎层实现');
 
-    it.skip('[引擎未实现] should show 1~3 recommendation plans', () => {
-      // Play FORM-FLOW-5 步骤3~4: 显示1~3套推荐方案
-    });
+    it.todo('[引擎未实现] should show 1~3 recommendation plans — 推荐方案展示属于UI层+引擎未实现');
   });
 
   // ─────────────────────────────────────────
@@ -590,13 +586,9 @@ describe('V2 FORM-FLOW: 编队管理集成测试', () => {
   // ─────────────────────────────────────────
 
   describe('CROSS-FLOW-5: 武将→建筑派驻联动', () => {
-    it.skip('[引擎未实现] should dispatch hero to building for production bonus', () => {
-      // Play CROSS-FLOW-5 步骤3: 武将派驻建筑
-    });
+    it.todo('[引擎未实现] should dispatch hero to building for production bonus — 武将派驻建筑系统尚未在引擎层实现');
 
-    it.skip('[引擎未实现] should increase building output based on hero stats', () => {
-      // Play CROSS-FLOW-5 步骤5~6: 建筑产出增加
-    });
+    it.todo('[引擎未实现] should increase building output based on hero stats — 建筑产出加成系统尚未在引擎层实现');
   });
 
   // ─────────────────────────────────────────
@@ -604,8 +596,6 @@ describe('V2 FORM-FLOW: 编队管理集成测试', () => {
   // ─────────────────────────────────────────
 
   describe('CROSS-FLOW-7: 武将升级→资源消耗→建筑产出联动', () => {
-    it.skip('[引擎未实现] should update building output when dispatched hero levels up', () => {
-      // Play CROSS-FLOW-7 步骤2~3: 升级后产出联动提升
-    });
+    it.todo('[引擎未实现] should update building output when dispatched hero levels up — 派驻武将升级联动尚未实现');
   });
 });

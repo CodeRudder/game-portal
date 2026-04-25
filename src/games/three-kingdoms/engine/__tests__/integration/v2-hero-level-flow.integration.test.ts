@@ -376,13 +376,9 @@ describe('V2 LEVEL-FLOW: 武将升级流程集成测试', () => {
       expect(progress!.canStarUp).toBe(true);
     });
 
-    it.skip('[UI层测试] should show blue progress bar at 0~50%', () => {
-      // 进度条颜色属于UI层
-    });
+    it.todo('[UI层测试] should show blue progress bar at 0~50% — 进度条颜色属于UI层');
 
-    it.skip('[UI层测试] should show golden pulse at 80~100%', () => {
-      // 进度条特效属于UI层
-    });
+    it.todo('[UI层测试] should show golden pulse at 80~100% — 进度条特效属于UI层');
   });
 
   // ─────────────────────────────────────────
