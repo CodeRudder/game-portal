@@ -11,7 +11,7 @@
  * @module engine/campaign/ChallengeStageSystem
  */
 
-import type { ISubsystem, ISystemDeps } from '../../../core/types/subsystem';
+import type { ISubsystem, ISystemDeps } from '../../core/types/subsystem';
 import { DEFAULT_CHALLENGE_STAGES } from './challenge-stages';
 
 // ─────────────────────────────────────────────

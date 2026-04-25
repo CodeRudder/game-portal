@@ -255,7 +255,7 @@ export class HeroDispatchSystem implements ISubsystem {
     const levelBonus = general.level * LEVEL_BONUS_PER_LEVEL;
 
     // 攻击属性加成
-    const attackBonus = (general.attack ?? 0) * ATTACK_BONUS_COEFFICIENT;
+    const attackBonus = (general.baseStats?.attack ?? 0) * ATTACK_BONUS_COEFFICIENT;
 
     // 综合加成
     const totalBonus = (qualityBonus + levelBonus) * (1 + attackBonus);

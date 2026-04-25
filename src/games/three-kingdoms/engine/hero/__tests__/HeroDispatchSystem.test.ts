@@ -53,12 +53,11 @@ const QUALITY_BONUS: Record<string, number> = {
 };
 
 /** 手动计算期望加成 */
-function expectedBonus(level: number, quality: string, _attack?: number): number {
+function expectedBonus(level: number, quality: string, attack?: number): number {
   const qualityBonus = QUALITY_BONUS[quality] ?? 1;
   const levelBonus = level * 0.5;
-  // 注意：源码使用 general.attack（GeneralData 上不存在该属性，运行时为 undefined→0）
-  // 因此攻击加成系数在当前实现中始终为 0
-  const attackBonus = 0;
+  // 源码使用 general.baseStats?.attack ?? 0，攻击加成系数 = attack * 0.01
+  const attackBonus = (attack ?? 0) * 0.01;
   const total = (qualityBonus + levelBonus) * (1 + attackBonus);
   return Math.round(total * 10) / 10;
 }
@@ -126,33 +125,33 @@ describe('HeroDispatchSystem', () => {
     it('RARE品质 Lv10 攻击100 的加成应正确', () => {
       const result = system.dispatchHero('hero1', 'barracks');
       expect(result.success).toBe(true);
-      // 品质加成=3, 等级加成=10*0.5=5, 攻击加成=0（general.attack不存在于GeneralData接口）
-      // 总加成 = (3 + 5) * (1 + 0) = 8.0
-      expect(result.bonusPercent).toBe(8.0);
+      // 品质加成=3, 等级加成=10*0.5=5, 攻击加成=100*0.01=1
+      // 总加成 = (3 + 5) * (1 + 1) = 16.0
+      expect(result.bonusPercent).toBe(16.0);
     });
 
     it('EPIC品质 Lv20 攻击200 的加成应正确', () => {
       const result = system.dispatchHero('hero2', 'market');
       expect(result.success).toBe(true);
-      // 品质加成=5, 等级加成=20*0.5=10, 攻击加成=0（general.attack不存在于GeneralData接口）
-      // 总加成 = (5 + 10) * (1 + 0) = 15.0
-      expect(result.bonusPercent).toBe(15.0);
+      // 品质加成=5, 等级加成=20*0.5=10, 攻击加成=200*0.01=2
+      // 总加成 = (5 + 10) * (1 + 2) = 45.0
+      expect(result.bonusPercent).toBe(45.0);
     });
 
     it('COMMON品质 Lv5 攻击50 的加成应正确', () => {
       const result = system.dispatchHero('hero3', 'farmland');
       expect(result.success).toBe(true);
-      // 品质加成=1, 等级加成=5*0.5=2.5, 攻击加成=0
-      // 总加成 = (1 + 2.5) * (1 + 0) = 3.5
-      expect(result.bonusPercent).toBe(3.5);
+      // 品质加成=1, 等级加成=5*0.5=2.5, 攻击加成=50*0.01=0.5
+      // 总加成 = (1 + 2.5) * (1 + 0.5) = 5.25 → Math.round(5.25*10)/10 = 5.3
+      expect(result.bonusPercent).toBe(5.3);
     });
 
     it('LEGENDARY品质 Lv30 攻击300 的加成应正确', () => {
       const result = system.dispatchHero('hero4', 'academy');
       expect(result.success).toBe(true);
-      // 品质加成=8, 等级加成=30*0.5=15, 攻击加成=0
-      // 总加成 = (8 + 15) * (1 + 0) = 23.0
-      expect(result.bonusPercent).toBe(23.0);
+      // 品质加成=8, 等级加成=30*0.5=15, 攻击加成=300*0.01=3
+      // 总加成 = (8 + 15) * (1 + 3) = 92.0
+      expect(result.bonusPercent).toBe(92.0);
     });
 
     it('使用 expectedBonus 辅助函数交叉验证', () => {
@@ -171,8 +170,8 @@ describe('HeroDispatchSystem', () => {
       system.dispatchHero('hero2', 'market');
       const bonuses = system.getAllDispatchBonuses();
       expect(Object.keys(bonuses)).toHaveLength(2);
-      expect(bonuses['barracks']).toBe(8.0);
-      expect(bonuses['market']).toBe(15.0);
+      expect(bonuses['barracks']).toBe(16.0);
+      expect(bonuses['market']).toBe(45.0);
     });
   });
 

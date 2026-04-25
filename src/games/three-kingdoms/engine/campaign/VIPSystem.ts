@@ -10,7 +10,7 @@
  * @module engine/campaign/VIPSystem
  */
 
-import type { ISubsystem, ISystemDeps } from '../../../core/types/subsystem';
+import type { ISubsystem, ISystemDeps } from '../../core/types/subsystem';
 
 // ─────────────────────────────────────────────
 // 类型定义
