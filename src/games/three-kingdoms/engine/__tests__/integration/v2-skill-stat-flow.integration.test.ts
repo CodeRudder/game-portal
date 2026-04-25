@@ -136,24 +136,13 @@ describe('V2 SKILL-STAT-FLOW: 技能与属性系统集成测试', () => {
   // ─────────────────────────────────────────
 
   describe('SKILL-FLOW-2: 技能升级', () => {
-    it.skip('[引擎未实现] should upgrade skill with skill books and gold', () => {
-      // Play SKILL-FLOW-2 步骤6: 铜钱+技能书扣除
-      // 技能升级系统尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should upgrade skill with skill books and gold — 技能升级系统尚未在引擎层实现');
 
-    it.skip('[引擎未实现] should increase skill effect after upgrade', () => {
-      // Play SKILL-FLOW-2 步骤8: 检查效果提升
-      // 技能效果增强尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should increase skill effect after upgrade — 技能效果增强尚未在引擎层实现');
 
-    it.skip('[引擎未实现] should respect skill level cap based on star level', () => {
-      // Play SKILL-FLOW-2 边界: 技能等级上限受武将星级影响
-      // 升星可提升技能等级上限
-    });
+    it.todo('[引擎未实现] should respect skill level cap based on star level — 技能等级上限受武将星级影响，升星可提升技能等级上限');
 
-    it.skip('[引擎未实现] should require breakthrough for awaken skill upgrade', () => {
-      // Play SKILL-FLOW-2 边界: 觉醒技能需突破后才可升级
-    });
+    it.todo('[引擎未实现] should require breakthrough for awaken skill upgrade — 觉醒技能需突破后才可升级');
   });
 
   // ─────────────────────────────────────────
@@ -161,17 +150,11 @@ describe('V2 SKILL-STAT-FLOW: 技能与属性系统集成测试', () => {
   // ─────────────────────────────────────────
 
   describe('SKILL-FLOW-3: 技能搭配推荐验证', () => {
-    it.skip('[引擎未实现] should recommend strategy for burn-heavy enemies', () => {
-      // Play SKILL-FLOW-3 步骤3: 多灼烧敌人→高智力+治疗型
-    });
+    it.todo('[引擎未实现] should recommend strategy for burn-heavy enemies — 多灼烧敌人→高智力+治疗型推荐');
 
-    it.skip('[引擎未实现] should recommend strategy for physical enemies', () => {
-      // Play SKILL-FLOW-3 步骤4: 多物理敌人→高防+坦克型
-    });
+    it.todo('[引擎未实现] should recommend strategy for physical enemies — 多物理敌人→高防+坦克型推荐');
 
-    it.skip('[引擎未实现] should recommend strategy for BOSS stage', () => {
-      // Play SKILL-FLOW-3 步骤5: BOSS关→高爆发+控制型
-    });
+    it.todo('[引擎未实现] should recommend strategy for BOSS stage — BOSS关→高爆发+控制型推荐');
   });
 
   // ─────────────────────────────────────────
@@ -379,12 +362,8 @@ describe('V2 SKILL-STAT-FLOW: 技能与属性系统集成测试', () => {
   // ─────────────────────────────────────────
 
   describe('CROSS-FLOW-8: 技能升级→战力→编队联动', () => {
-    it.skip('[引擎未实现] should update formation power after skill upgrade', () => {
-      // Play CROSS-FLOW-8 步骤3: 技能升级后战力增加
-    });
+    it.todo('[引擎未实现] should update formation power after skill upgrade — 技能升级后战力增加');
 
-    it.skip('[引擎未实现] should recalculate formation total power after any skill change', () => {
-      // Play CROSS-FLOW-8 步骤4: 编队总战力更新
-    });
+    it.todo('[引擎未实现] should recalculate formation total power after any skill change — 编队总战力更新');
   });
 });

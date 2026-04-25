@@ -571,17 +571,11 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
   // ANIM-FLOW-1: 招募动画 [UI层测试]
   // ─────────────────────────────────────────
   describe('ANIM-FLOW-1: 招募动画详细验收', () => {
-    it.skip('[UI层测试] should play scroll animation on single recruit', () => {
-      // 动画属于UI层，引擎测试无法覆盖
-    });
+    it.todo('[UI层测试] should play scroll animation on single recruit — 动画属于UI层，引擎测试无法覆盖');
 
-    it.skip('[UI层测试] should show quality-specific light effects', () => {
-      // 品质特效属于UI层渲染
-    });
+    it.todo('[UI层测试] should show quality-specific light effects — 品质特效属于UI层渲染');
 
-    it.skip('[UI层测试] should allow skipping animation after 0.3s', () => {
-      // 跳过动画属于UI交互层
-    });
+    it.todo('[UI层测试] should allow skipping animation after 0.3s — 跳过动画属于UI交互层');
   });
 
   // ─────────────────────────────────────────
@@ -626,21 +620,15 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
   // LIST-FLOW-4: 红点提示系统 [UI层测试]
   // ─────────────────────────────────────────
   describe('LIST-FLOW-4: 红点提示系统验证', () => {
-    it.skip('[UI层测试] should show red dot on general card when upgradeable', () => {
-      // 红点属于UI层渲染逻辑
-    });
+    it.todo('[UI层测试] should show red dot on general card when upgradeable — 红点属于UI层渲染逻辑');
 
-    it.skip('[UI层测试] should show golden badge on tab when star-up available', () => {
-      // 角标属于UI层渲染逻辑
-    });
+    it.todo('[UI层测试] should show golden badge on tab when star-up available — 角标属于UI层渲染逻辑');
   });
 
   // ─────────────────────────────────────────
   // LIST-FLOW-5: 今日待办聚合 [UI层测试]
   // ─────────────────────────────────────────
   describe('LIST-FLOW-5: 今日待办聚合验证', () => {
-    it.skip('[UI层测试] should show today todo banner when actions available', () => {
-      // 今日待办属于UI层聚合展示
-    });
+    it.todo('[UI层测试] should show today todo banner when actions available — 今日待办属于UI层聚合展示');
   });
 });

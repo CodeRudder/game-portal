@@ -505,51 +505,35 @@ describe('V2 LEVEL-FLOW: 武将升级流程集成测试', () => {
   // SKILL-FLOW-2: 技能升级 [引擎未实现]
   // ─────────────────────────────────────────
   describe('SKILL-FLOW-2: 技能升级', () => {
-    it.skip('[引擎未实现] should upgrade skill with skill books and gold', () => {
-      // 技能升级系统尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should upgrade skill with skill books and gold — 技能升级系统尚未在引擎层实现');
 
-    it.skip('[引擎未实现] should increase skill effect after upgrade', () => {
-      // 技能效果增强尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should increase skill effect after upgrade — 技能效果增强尚未在引擎层实现');
   });
 
   // ─────────────────────────────────────────
   // SKILL-FLOW-3: 技能搭配推荐 [引擎未实现]
   // ─────────────────────────────────────────
   describe('SKILL-FLOW-3: 技能搭配推荐验证', () => {
-    it.skip('[引擎未实现] should recommend strategy for burn-heavy enemies', () => {
-      // 技能推荐系统尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should recommend strategy for burn-heavy enemies — 技能推荐系统尚未在引擎层实现');
 
-    it.skip('[引擎未实现] should recommend strategy for physical enemies', () => {
-      // 技能推荐系统尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should recommend strategy for physical enemies — 技能推荐系统尚未在引擎层实现');
 
-    it.skip('[引擎未实现] should recommend strategy for BOSS stage', () => {
-      // 技能推荐系统尚未在引擎层实现
-    });
+    it.todo('[引擎未实现] should recommend strategy for BOSS stage — 技能推荐系统尚未在引擎层实现');
   });
 
   // ─────────────────────────────────────────
   // LIST-FLOW-2: 武将详情面板 [UI层测试]
   // ─────────────────────────────────────────
   describe('LIST-FLOW-2: 武将详情面板', () => {
-    it.skip('[UI层测试] should show detail modal at 800x700 on PC', () => {
-      // 详情弹窗尺寸属于UI层
-    });
+    it.todo('[UI层测试] should show detail modal at 800x700 on PC — 详情弹窗尺寸属于UI层');
 
-    it.skip('[UI层测试] should render radar chart for stats', () => {
-      // 雷达图渲染属于UI层
-    });
+    it.todo('[UI层测试] should render radar chart for stats — 雷达图渲染属于UI层');
   });
 
   // ─────────────────────────────────────────
   // LIST-FLOW-3: 手机端适配 [UI层测试]
   // ─────────────────────────────────────────
   describe('LIST-FLOW-3: 手机端适配', () => {
-    it.skip('[UI层测试] should show 2-column compact layout on mobile', () => {
-      // 手机端布局属于UI层
-    });
+    it.todo('[UI层测试] should show 2-column compact layout on mobile — 手机端布局属于UI层');
   });
 });
