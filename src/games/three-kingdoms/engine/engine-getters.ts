@@ -15,6 +15,8 @@ import type { HeroFormation, FormationData } from './hero/HeroFormation';
 import type { HeroStarSystem } from './hero/HeroStarSystem';
 import type { SkillUpgradeSystem } from './hero/SkillUpgradeSystem';
 import type { BondSystem } from './bond/BondSystem';
+import type { FormationRecommendSystem } from './hero/FormationRecommendSystem';
+import type { HeroDispatchSystem } from './hero/HeroDispatchSystem';
 import type { SweepSystem } from './campaign/SweepSystem';
 import type { BattleEngine } from './battle/BattleEngine';
 import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
@@ -115,6 +117,8 @@ export function applyGetters(cls: any): void {
   p.getHeroStarSystem = function(this: EngineAny): HeroStarSystem { return this.heroStarSystem; };
   p.getSkillUpgradeSystem = function(this: EngineAny): SkillUpgradeSystem { return this.skillUpgradeSystem; };
   p.getBondSystem = function(this: EngineAny): BondSystem { return this.bondSystem; };
+  p.getFormationRecommendSystem = function(this: EngineAny): FormationRecommendSystem { return this.formationRecommendSystem; };
+  p.getHeroDispatchSystem = function(this: EngineAny): HeroDispatchSystem { return this.heroDispatchSystem; };
   p.getSweepSystem = function(this: EngineAny): SweepSystem { return this.sweepSystem; };
 
   p.getResourceAmount = function(this: EngineAny, type: string): number {

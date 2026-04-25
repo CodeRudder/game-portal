@@ -467,13 +467,72 @@ describe('V2 FORM-FLOW: 编队管理集成测试', () => {
   });
 
   // ─────────────────────────────────────────
-  // FORM-FLOW-5: 智能编队推荐 [引擎未实现]
+  // FORM-FLOW-5: 智能编队推荐
   // ─────────────────────────────────────────
 
   describe('FORM-FLOW-5: 智能编队推荐', () => {
-    it.todo('[引擎未实现] should recommend formations based on stage characteristics — 智能编队推荐系统尚未在引擎层实现');
+    it('should recommend formations based on stage characteristics', () => {
+      // 添加多名武将作为可用池
+      sim.addHeroDirectly('liubei');
+      sim.addHeroDirectly('guanyu');
+      sim.addHeroDirectly('zhangfei');
+      sim.addHeroDirectly('zhugeliang');
+      sim.addHeroDirectly('zhaoyun');
 
-    it.todo('[引擎未实现] should show 1~3 recommendation plans — 推荐方案展示属于UI层+引擎未实现');
+      const recommendSystem = sim.engine.getFormationRecommendSystem();
+      const heroes = sim.engine.hero.getAllGenerals();
+
+      const result = recommendSystem.recommend(
+        'boss',
+        heroes,
+        (g) => sim.engine.hero.calculatePower(g),
+        5000,
+        5,
+      );
+
+      expect(result).toBeDefined();
+      expect(result.characteristics).toBeDefined();
+      expect(result.characteristics.stageType).toBe('boss');
+      expect(result.characteristics.recommendedPower).toBe(5000);
+      expect(result.characteristics.enemySize).toBe(5);
+      expect(result.characteristics.difficultyLevel).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should show 1~3 recommendation plans', () => {
+      // 添加足够多的武将以生成多个方案
+      sim.addHeroDirectly('liubei');
+      sim.addHeroDirectly('guanyu');
+      sim.addHeroDirectly('zhangfei');
+      sim.addHeroDirectly('zhugeliang');
+      sim.addHeroDirectly('zhaoyun');
+      sim.addHeroDirectly('machao');
+      sim.addHeroDirectly('huangzhong');
+
+      const recommendSystem = sim.engine.getFormationRecommendSystem();
+      const heroes = sim.engine.hero.getAllGenerals();
+
+      const result = recommendSystem.recommend(
+        'normal',
+        heroes,
+        (g) => sim.engine.hero.calculatePower(g),
+        3000,
+        3,
+      );
+
+      expect(result.plans.length).toBeGreaterThanOrEqual(1);
+      expect(result.plans.length).toBeLessThanOrEqual(3);
+
+      // 验证每个方案的结构
+      for (const plan of result.plans) {
+        expect(plan.name).toBeTruthy();
+        expect(plan.description).toBeTruthy();
+        expect(plan.heroIds.length).toBeGreaterThanOrEqual(1);
+        expect(plan.estimatedPower).toBeGreaterThan(0);
+        expect(plan.score).toBeGreaterThanOrEqual(0);
+        expect(plan.score).toBeLessThanOrEqual(100);
+        expect(plan.tags.length).toBeGreaterThan(0);
+      }
+    });
   });
 
   // ─────────────────────────────────────────
@@ -582,20 +641,72 @@ describe('V2 FORM-FLOW: 编队管理集成测试', () => {
   });
 
   // ─────────────────────────────────────────
-  // CROSS-FLOW-5: 武将→建筑派驻联动 [引擎未实现]
+  // CROSS-FLOW-5: 武将→建筑派驻联动
   // ─────────────────────────────────────────
 
   describe('CROSS-FLOW-5: 武将→建筑派驻联动', () => {
-    it.todo('[引擎未实现] should dispatch hero to building for production bonus — 武将派驻建筑系统尚未在引擎层实现');
+    it('should dispatch hero to building for production bonus', () => {
+      sim.addHeroDirectly('liubei');
 
-    it.todo('[引擎未实现] should increase building output based on hero stats — 建筑产出加成系统尚未在引擎层实现');
+      const dispatchSystem = sim.engine.getHeroDispatchSystem();
+      const result = dispatchSystem.dispatchHero('liubei', 'farmland');
+
+      expect(result.success).toBe(true);
+      expect(result.bonusPercent).toBeGreaterThan(0);
+
+      // 验证派驻关系
+      expect(dispatchSystem.getBuildingDispatchHero('farmland')).toBe('liubei');
+      expect(dispatchSystem.getHeroDispatchBuilding('liubei')).toBe('farmland');
+    });
+
+    it('should increase building output based on hero stats', () => {
+      sim.addHeroDirectly('liubei');
+      sim.addHeroDirectly('guanyu');
+
+      const dispatchSystem = sim.engine.getHeroDispatchSystem();
+
+      // 派驻刘备到农田
+      const result1 = dispatchSystem.dispatchHero('liubei', 'farmland');
+      expect(result1.success).toBe(true);
+      const bonus1 = dispatchSystem.getDispatchBonus('farmland');
+      expect(bonus1).toBeGreaterThan(0);
+
+      // 派驻关羽到市场（关羽品质更高，加成应更高）
+      const result2 = dispatchSystem.dispatchHero('guanyu', 'market');
+      expect(result2.success).toBe(true);
+      const bonus2 = dispatchSystem.getDispatchBonus('market');
+      expect(bonus2).toBeGreaterThan(0);
+
+      // 获取所有加成
+      const allBonuses = dispatchSystem.getAllDispatchBonuses();
+      expect(Object.keys(allBonuses).length).toBe(2);
+    });
   });
 
   // ─────────────────────────────────────────
-  // CROSS-FLOW-7: 武将升级→资源消耗→建筑产出联动 [引擎未实现]
+  // CROSS-FLOW-7: 武将升级→资源消耗→建筑产出联动
   // ─────────────────────────────────────────
 
   describe('CROSS-FLOW-7: 武将升级→资源消耗→建筑产出联动', () => {
-    it.todo('[引擎未实现] should update building output when dispatched hero levels up — 派驻武将升级联动尚未实现');
+    it('should update building output when dispatched hero levels up', () => {
+      sim.addHeroDirectly('liubei');
+      sim.addResources({ gold: 500000, grain: 500000 });
+
+      const dispatchSystem = sim.engine.getHeroDispatchSystem();
+
+      // 派驻刘备到农田
+      const dispatchResult = dispatchSystem.dispatchHero('liubei', 'farmland');
+      expect(dispatchResult.success).toBe(true);
+      const bonusBefore = dispatchSystem.getDispatchBonus('farmland');
+
+      // 升级刘备
+      sim.engine.enhanceHero('liubei', 10);
+
+      // 刷新派驻加成
+      const bonusAfter = dispatchSystem.refreshDispatchBonus('liubei');
+
+      // 升级后加成应更高
+      expect(bonusAfter).toBeGreaterThan(bonusBefore);
+    });
   });
 });

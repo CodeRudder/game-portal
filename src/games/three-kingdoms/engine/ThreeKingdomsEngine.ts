@@ -14,6 +14,8 @@ import { HeroFormation } from './hero/HeroFormation';
 import { HeroStarSystem } from './hero/HeroStarSystem';
 import { SkillUpgradeSystem } from './hero/SkillUpgradeSystem';
 import { BondSystem } from './bond/BondSystem';
+import { FormationRecommendSystem } from './hero/FormationRecommendSystem';
+import { HeroDispatchSystem } from './hero/HeroDispatchSystem';
 import type { CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type { EngineEventType, EngineEventMap, EngineSnapshot } from '../shared/types';
@@ -78,6 +80,8 @@ export class ThreeKingdomsEngine {
   private readonly heroStarSystem: HeroStarSystem;
   private readonly skillUpgradeSystem: SkillUpgradeSystem;
   private readonly bondSystem: BondSystem;
+  private readonly formationRecommendSystem: FormationRecommendSystem;
+  private readonly heroDispatchSystem: HeroDispatchSystem;
   private readonly campaignSystems: CampaignSystems;
   private readonly sweepSystem: SweepSystem;
   private readonly techSystems: TechSystems;
@@ -106,6 +110,8 @@ export class ThreeKingdomsEngine {
     this.heroStarSystem = new HeroStarSystem(this.hero);
     this.skillUpgradeSystem = new SkillUpgradeSystem();
     this.bondSystem = new BondSystem();
+    this.formationRecommendSystem = new FormationRecommendSystem();
+    this.heroDispatchSystem = new HeroDispatchSystem();
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
     const self = this;
     this.sweepSystem = new SweepSystem(
@@ -172,6 +178,8 @@ export class ThreeKingdomsEngine {
     r.register('heroStarSystem', this.heroStarSystem);
     r.register('skillUpgradeSystem', this.skillUpgradeSystem);
     r.register('bond', this.bondSystem);
+    r.register('formationRecommend', this.formationRecommendSystem);
+    r.register('heroDispatch', this.heroDispatchSystem);
     r.register('battleEngine', this.campaignSystems.battleEngine);
     r.register('campaignSystem', this.campaignSystems.campaignSystem);
     r.register('rewardDistributor', this.campaignSystems.rewardDistributor);
@@ -205,6 +213,9 @@ export class ThreeKingdomsEngine {
     syncBuildingToResource(this.buildTickCtx());
     const deps = this.buildDeps();
     this.calendar.init(deps); this.initHeroSystems(deps); this.bondSystem.init(deps);
+    this.formationRecommendSystem.init(deps);
+    this.heroDispatchSystem.init(deps);
+    this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
@@ -273,6 +284,9 @@ export class ThreeKingdomsEngine {
     applyDeserialize(this.buildSaveCtx(), json);
     const deps = this.buildDeps();
     this.initHeroSystems(deps); this.bondSystem.init(deps);
+    this.formationRecommendSystem.init(deps);
+    this.heroDispatchSystem.init(deps);
+    this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
@@ -287,6 +301,7 @@ export class ThreeKingdomsEngine {
     this.resource.reset(); this.building.reset(); this.calendar.reset();
     this.hero.reset(); this.heroRecruit.reset(); this.heroLevel.reset();
     this.heroFormation.reset(); this.heroStarSystem.reset(); this.skillUpgradeSystem.reset(); this.bondSystem.reset();
+    this.formationRecommendSystem.reset(); this.heroDispatchSystem.reset();
     this.campaignSystems.campaignSystem.reset(); this.sweepSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
     this.techSystems.researchSystem.reset(); this.techSystems.fusionSystem.reset();
@@ -448,6 +463,9 @@ export class ThreeKingdomsEngine {
   private finalizeLoad(): void {
     const deps = this.buildDeps();
     this.initHeroSystems(deps); this.bondSystem.init(deps);
+    this.formationRecommendSystem.init(deps);
+    this.heroDispatchSystem.init(deps);
+    this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
