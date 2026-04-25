@@ -101,6 +101,8 @@ export interface RecruitDeps {
   spendResource: ResourceSpendFn;
   /** 资源检查回调 — 返回 true 表示资源充足 */
   canAffordResource: ResourceCheckFn;
+  /** 资源添加回调 — 用于碎片溢出转化铜钱等场景 */
+  addResource?: (type: string, amount: number) => void;
 }
 
 // ─────────────────────────────────────────────

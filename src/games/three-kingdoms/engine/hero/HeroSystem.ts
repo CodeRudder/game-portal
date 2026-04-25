@@ -154,10 +154,31 @@ export class HeroSystem implements ISubsystem {
 
   // ── 3. 碎片管理 ──
 
-  /** 添加武将碎片（count 必须 > 0） */
-  addFragment(generalId: string, count: number): void {
-    if (count <= 0) return;
-    this.state.fragments[generalId] = (this.state.fragments[generalId] ?? 0) + count;
+  /** 碎片上限常量 */
+  static readonly FRAGMENT_CAP = 999;
+
+  /** 溢出碎片→铜钱转化比率（1碎片 = 100铜钱） */
+  static readonly FRAGMENT_TO_GOLD_RATE = 100;
+
+  /**
+   * 添加武将碎片（count 必须 > 0）
+   *
+   * 碎片上限 999，超出部分返回给调用方转化为铜钱。
+   * @returns 溢出的碎片数量（用于转化为铜钱：1碎片 = 100铜钱）
+   */
+  addFragment(generalId: string, count: number): number {
+    if (count <= 0) return 0;
+    const current = this.state.fragments[generalId] ?? 0;
+    const newTotal = current + count;
+    const cap = HeroSystem.FRAGMENT_CAP;
+
+    if (newTotal <= cap) {
+      this.state.fragments[generalId] = newTotal;
+      return 0;
+    }
+
+    this.state.fragments[generalId] = cap;
+    return newTotal - cap;
   }
 
   /** 消耗武将碎片，碎片不足返回 false */

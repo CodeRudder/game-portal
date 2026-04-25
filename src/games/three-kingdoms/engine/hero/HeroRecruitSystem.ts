@@ -45,6 +45,8 @@ import {
 import type { Quality, GeneralData } from './hero.types';
 import { Quality as Q, QUALITY_ORDER } from './hero.types';
 import type { HeroSystem } from './HeroSystem';
+import { HeroSystem as HeroSystemClass } from './HeroSystem';
+import { DUPLICATE_FRAGMENT_COUNT } from './hero-config';
 import {
   RECRUIT_COSTS,
   TEN_PULL_DISCOUNT,
@@ -347,6 +349,16 @@ export class HeroRecruitSystem implements ISubsystem {
       results.push(this.executeSinglePull(type));
     }
 
+    // 十连结果按品质升序排列（低→高），同品质按武将ID升序
+    if (count > 1) {
+      results.sort((a, b) => {
+        const qa = QUALITY_ORDER[a.quality];
+        const qb = QUALITY_ORDER[b.quality];
+        if (qa !== qb) return qa - qb;
+        return (a.general?.id ?? '').localeCompare(b.general?.id ?? '');
+      });
+    }
+
     const output: RecruitOutput = { type, results, cost };
 
     // 记录到招募历史
@@ -419,7 +431,15 @@ export class HeroRecruitSystem implements ISubsystem {
     let fragmentCount = 0;
 
     if (isDuplicate) {
+      const fragmentsBefore = heroSystem.getFragments(generalId);
+      const expectedFragments = DUPLICATE_FRAGMENT_COUNT[resolvedQuality];
       fragmentCount = heroSystem.handleDuplicate(generalId, resolvedQuality);
+      // 碎片溢出→铜钱转化：如果实际增量 < 预期增量，差值为溢出
+      const actualGain = heroSystem.getFragments(generalId) - fragmentsBefore;
+      const overflow = expectedFragments - actualGain;
+      if (overflow > 0 && this.recruitDeps!.addResource) {
+        this.recruitDeps!.addResource('gold', overflow * HeroSystemClass.FRAGMENT_TO_GOLD_RATE);
+      }
     } else {
       heroSystem.addGeneral(generalId);
     }

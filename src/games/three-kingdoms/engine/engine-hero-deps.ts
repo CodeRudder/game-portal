@@ -81,6 +81,7 @@ export function initHeroSystems(
     heroSystem: systems.hero,
     spendResource: (type, amount) => safeSpendResource(resource, type, amount),
     canAffordResource: (type, amount) => safeCanAfford(resource, type, amount),
+    addResource: (type, amount) => { if (isResourceType(type)) resource.addResource(type, amount); },
   });
 
   // 升级系统 — 注入资源查询/消耗回调

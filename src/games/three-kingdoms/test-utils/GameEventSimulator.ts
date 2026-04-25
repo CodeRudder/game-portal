@@ -12,6 +12,7 @@
  */
 
 import { ThreeKingdomsEngine } from '../engine/ThreeKingdomsEngine';
+import { HeroSystem } from '../engine/hero/HeroSystem';
 import type { ResourceType, BuildingType } from '../shared/types';
 import type { RecruitType } from '../engine/hero/hero-recruit-config';
 import type { GeneralData } from '../engine/hero/hero.types';
@@ -226,10 +227,16 @@ export class GameEventSimulator {
     return this.engine.hero.calculateTotalPower();
   }
 
-  /** 增加武将碎片 */
+  /** 增加武将碎片（溢出部分自动转化为铜钱：1碎片=100铜钱） */
   addHeroFragments(generalId: string, count: number): this {
-    this.engine.hero.addFragment(generalId, count);
-    this.log('addHeroFragments', `${generalId} x${count}`);
+    const overflow = this.engine.hero.addFragment(generalId, count);
+    if (overflow > 0) {
+      const gold = overflow * HeroSystem.FRAGMENT_TO_GOLD_RATE;
+      this.engine.resource.addResource('gold', gold);
+      this.log('addHeroFragments', `${generalId} x${count} (overflow ${overflow} → ${gold} gold)`);
+    } else {
+      this.log('addHeroFragments', `${generalId} x${count}`);
+    }
     return this;
   }
 

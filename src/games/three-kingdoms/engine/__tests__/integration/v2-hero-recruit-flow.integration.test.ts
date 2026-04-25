@@ -200,7 +200,7 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
         .toBeGreaterThanOrEqual(stateBefore.advancedPity + stateBefore.advancedHardPity);
     });
 
-    it.skip('[引擎未实现] should sort ten-pull results by quality (low to high)', () => {
+    it('should sort ten-pull results by quality (low to high)', () => {
       // P1-3: 十连结果应按品质从低到高排序
       // 品质排序：COMMON(1) < FINE(2) < RARE(3) < EPIC(4) < LEGENDARY(5)
       // 引擎当前 executeRecruit() 按抽取顺序返回结果，未做品质排序
@@ -253,7 +253,7 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
       expect(DUPLICATE_FRAGMENT_COUNT[Quality.LEGENDARY]).toBe(80);
     });
 
-    it.skip('[引擎未实现] should convert overflow fragments to gold when fragments hit 999 cap', () => {
+    it('should convert overflow fragments to gold when fragments hit 999 cap', () => {
       // P1-1: 碎片达到999上限后，再次获得碎片应转化为铜钱
       // 引擎当前 addFragment() 无上限检查，碎片可无限累加
       // 预期行为：碎片 ≥ 999 时，新增碎片按比例转化为 gold
