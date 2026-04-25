@@ -199,6 +199,21 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
       expect(stateAfter.advancedPity + stateAfter.advancedHardPity)
         .toBeGreaterThanOrEqual(stateBefore.advancedPity + stateBefore.advancedHardPity);
     });
+
+    it('should sort ten-pull results by quality (low to high)', () => {
+      // P1-3: 十连结果应按品质从低到高排序
+      // 品质排序：COMMON(1) < FINE(2) < RARE(3) < EPIC(4) < LEGENDARY(5)
+      addRecruitResources(sim, 'advanced', 10);
+      const result = sim.engine.recruit('advanced', 10);
+      expect(result).not.toBeNull();
+      expect(result!.results.length).toBe(10);
+
+      // 验证结果按品质升序排列
+      const qualityValues = result!.results.map(r => QUALITY_ORDER[r.quality]);
+      for (let i = 1; i < qualityValues.length; i++) {
+        expect(qualityValues[i]).toBeGreaterThanOrEqual(qualityValues[i - 1]);
+      }
+    });
   });
 
   // ─────────────────────────────────────────
