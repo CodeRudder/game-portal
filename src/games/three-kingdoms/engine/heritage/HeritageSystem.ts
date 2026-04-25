@@ -389,4 +389,33 @@ export class HeritageSystem implements ISubsystem {
     this.state.dailyHeritageCount = 0;
     this.state.lastDailyReset = getTodayStr();
   }
+
+  // ─── v20.0 纪念记录 API ──────────────────
+
+  /**
+   * 获取统一纪念记录
+   *
+   * 返回当前传承系统的纪念数据快照，用于统一结局展示。
+   * 包含传承历史、转生次数等关键数据。
+   */
+  getMemorialRecord(): {
+    totalHeritageCount: number;
+    heroHeritageCount: number;
+    equipmentHeritageCount: number;
+    experienceHeritageCount: number;
+    heritageHistory: Array<{ type: string; timestamp: number }>;
+  } {
+    return {
+      totalHeritageCount: this.state.heroHeritageCount
+        + this.state.equipmentHeritageCount
+        + this.state.experienceHeritageCount,
+      heroHeritageCount: this.state.heroHeritageCount,
+      equipmentHeritageCount: this.state.equipmentHeritageCount,
+      experienceHeritageCount: this.state.experienceHeritageCount,
+      heritageHistory: this.state.heritageHistory.map(h => ({
+        type: h.type,
+        timestamp: h.timestamp,
+      })),
+    };
+  }
 }

@@ -46,6 +46,8 @@ import { CaravanSystem } from './trade/CaravanSystem';
 import { ResourceTradeEngine } from './trade/ResourceTradeEngine';
 import { SettingsManager } from './settings/SettingsManager';
 import { AccountSystem } from './settings/AccountSystem';
+import { EndingSystem } from './unification/EndingSystem';
+import { GlobalStatisticsSystem } from './unification/GlobalStatisticsSystem';
 import type { EquipmentSystem as EquipmentSystemType } from './equipment/EquipmentSystem';
 import type { SubsystemRegistry } from '../core/engine/SubsystemRegistry';
 import type { ISystemDeps } from '../core/types';
@@ -95,6 +97,8 @@ export interface R11Systems {
   resourceTradeEngine: ResourceTradeEngine;
   settingsManager: SettingsManager;
   accountSystem: AccountSystem;
+  endingSystem: EndingSystem;
+  globalStatisticsSystem: GlobalStatisticsSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -147,6 +151,8 @@ export function createR11Systems(equipmentSystem?: EquipmentSystemType): R11Syst
     resourceTradeEngine: new ResourceTradeEngine(),
     settingsManager: new SettingsManager(),
     accountSystem: new AccountSystem(),
+    endingSystem: new EndingSystem(),
+    globalStatisticsSystem: new GlobalStatisticsSystem(),
   };
 }
 
@@ -198,6 +204,8 @@ export function registerR11Systems(registry: SubsystemRegistry, systems: R11Syst
   r.register('resourceTrade', systems.resourceTradeEngine);
   r.register('settings', systems.settingsManager);
   r.register('account', systems.accountSystem);
+  r.register('endingSystem', systems.endingSystem);
+  r.register('globalStatistics', systems.globalStatisticsSystem);
 }
 
 /**
@@ -218,6 +226,8 @@ export function initR11Systems(systems: R11Systems, deps: ISystemDeps): void {
   systems.prestigeShopSystem.init(deps);
   systems.heritageSystem.init(deps);
   systems.timedActivitySystem.init(deps);
+  systems.endingSystem.init(deps);
+  systems.globalStatisticsSystem.init(deps);
 }
 
 /**
@@ -244,4 +254,6 @@ export function resetR11Systems(systems: R11Systems): void {
   systems.timedActivitySystem.reset();
   systems.advisorSystem.reset();
   systems.accountSystem.reset();
+  systems.endingSystem.reset();
+  systems.globalStatisticsSystem.reset();
 }

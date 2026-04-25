@@ -361,4 +361,43 @@ export class AchievementSystem implements ISubsystem {
       }
     }
   }
+
+  // ─── v20.0 统一成就汇总 API ──────────────
+
+  /**
+   * 获取已解锁成就汇总
+   *
+   * 返回所有成就的解锁统计，用于统一结局展示。
+   */
+  getUnlockedSummary(): {
+    totalAchievements: number;
+    unlockedCount: number;
+    completedChains: string[];
+    byDimension: Record<string, { total: number; unlocked: number }>;
+  } {
+    const all = this.getAllAchievements();
+    const totalAchievements = all.length;
+    const unlockedCount = all.filter(
+      a => a.instance.status === 'completed' || a.instance.status === 'claimed',
+    ).length;
+
+    // 按维度统计
+    const byDimension: Record<string, { total: number; unlocked: number }> = {};
+    for (const a of all) {
+      if (!byDimension[a.dimension]) {
+        byDimension[a.dimension] = { total: 0, unlocked: 0 };
+      }
+      byDimension[a.dimension].total++;
+      if (a.instance.status === 'completed' || a.instance.status === 'claimed') {
+        byDimension[a.dimension].unlocked++;
+      }
+    }
+
+    return {
+      totalAchievements,
+      unlockedCount,
+      completedChains: [...this.state.completedChains],
+      byDimension,
+    };
+  }
 }

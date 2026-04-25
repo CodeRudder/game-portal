@@ -83,7 +83,7 @@ describe('v20.0 天下一统(下) — §1 最终战役', () => {
       expect(progress.stageStates).toBeDefined();
     });
 
-    it.skip('should have ultimate boss encounter data in final stage [引擎未实现]', () => {
+    it('should have ultimate boss encounter data in final stage', () => {
       // 终极Boss数据（Boss属性/技能/阶段）应由最终关卡配置提供
       const sim = createSim();
       const chapters = sim.engine.getChapters();
@@ -139,7 +139,7 @@ describe('v20.0 天下一统(下) — §2 统一结局', () => {
 
   describe('§2.1 结局系统访问', () => {
 
-    it.skip('should access ending system via engine getter [引擎未实现]', () => {
+    it('should access ending system via engine getter', () => {
       const sim = createSim();
       const ending = sim.engine.getEndingSystem();
       expect(ending).toBeDefined();
@@ -155,7 +155,7 @@ describe('v20.0 天下一统(下) — §2 统一结局', () => {
 
   describe('§2.2 结局类型与条件', () => {
 
-    it.skip('should enumerate available ending types [引擎未实现]', () => {
+    it('should enumerate available ending types', () => {
       // 结局类型（霸业统一/仁德天下/武道巅峰等）应可列举
       const sim = createSim();
       const ending = sim.engine.getEndingSystem();
@@ -164,7 +164,7 @@ describe('v20.0 天下一统(下) — §2 统一结局', () => {
       expect(types.length).toBeGreaterThan(0);
     });
 
-    it.skip('should evaluate ending conditions based on game state [引擎未实现]', () => {
+    it('should evaluate ending conditions based on game state', () => {
       // 根据当前游戏状态评估可达成结局
       const sim = createSim();
       const ending = sim.engine.getEndingSystem();
@@ -172,7 +172,7 @@ describe('v20.0 天下一统(下) — §2 统一结局', () => {
       expect(conditions).toBeDefined();
     });
 
-    it.skip('should determine primary ending from multiple satisfied conditions [引擎未实现]', () => {
+    it('should determine primary ending from multiple satisfied conditions', () => {
       // 多个结局条件满足时，确定主结局
       const sim = createSim();
       const ending = sim.engine.getEndingSystem();
@@ -184,7 +184,7 @@ describe('v20.0 天下一统(下) — §2 统一结局', () => {
 
   describe('§2.3 结局触发与展示', () => {
 
-    it.skip('should trigger ending when all territories are conquered [引擎未实现]', () => {
+    it('should trigger ending when all territories are conquered', () => {
       // 所有领土被征服后触发统一结局
       const sim = createSim();
       const territory = sim.engine.getTerritorySystem();
@@ -200,7 +200,7 @@ describe('v20.0 天下一统(下) — §2 统一结局', () => {
       expect(typeof isTriggered).toBe('boolean');
     });
 
-    it.skip('should serialize ending state for save/load [引擎未实现]', () => {
+    it('should serialize ending state for save/load', () => {
       const sim = createSim();
       const ending = sim.engine.getEndingSystem();
       const saved = ending.serialize();
@@ -224,7 +224,7 @@ describe('v20.0 天下一统(下) — §3 统一奖励', () => {
       expect(reward).toBeDefined();
     });
 
-    it.skip('should grant unification completion rewards [引擎未实现]', () => {
+    it('should grant unification completion rewards', () => {
       // 天下一统完成奖励（专属称号/头像/资源）
       const sim = createSim();
       const reward = sim.engine.getRewardDistributor();
@@ -233,7 +233,7 @@ describe('v20.0 天下一统(下) — §3 统一奖励', () => {
       expect(Array.isArray(unificationRewards)).toBe(true);
     });
 
-    it.skip('should grant final stage clear rewards with bonus [引擎未实现]', () => {
+    it('should grant final stage clear rewards with bonus', () => {
       // 最终关卡通关奖励（含星级加成）
       const sim = createSim();
       const reward = sim.engine.getRewardDistributor();
@@ -257,7 +257,7 @@ describe('v20.0 天下一统(下) — §3 统一奖励', () => {
       expect(heritage).toBeDefined();
     });
 
-    it.skip('should create memorial record upon unification [引擎未实现]', () => {
+    it('should create memorial record upon unification', () => {
       // 统一后创建纪念记录
       const sim = createSim();
       const heritage = sim.engine.getHeritageSystem();
@@ -288,7 +288,7 @@ describe('v20.0 天下一统(下) — §4 统计数据', () => {
       expect(quest).toBeDefined();
     });
 
-    it.skip('should provide global statistics summary [引擎未实现]', () => {
+    it('should provide global statistics summary', () => {
       // 全局统计汇总（总战力/领土/资源/时间等）
       const sim = createSim();
       const snapshot = sim.engine.getSnapshot();
@@ -298,7 +298,7 @@ describe('v20.0 天下一统(下) — §4 统计数据', () => {
       expect(snapshot.calendar).toBeDefined();
     });
 
-    it.skip('should track play time statistics [引擎未实现]', () => {
+    it('should track play time statistics', () => {
       const sim = createSim();
       const stats = sim.engine.getGlobalStatistics();
       expect(stats).toBeDefined();
@@ -317,7 +317,7 @@ describe('v20.0 天下一统(下) — §4 统计数据', () => {
       expect(typeof achievement.getState).toBe('function');
     });
 
-    it.skip('should summarize all unlocked achievements at unification [引擎未实现]', () => {
+    it('should summarize all unlocked achievements at unification', () => {
       // 统一时成就汇总
       const sim = createSim();
       const achievement = sim.engine.getAchievementSystem();
@@ -398,7 +398,7 @@ describe('v20.0 天下一统(下) — §5 跨系统联动', () => {
     expect(heritageSave).toBeDefined();
   });
 
-  it.skip('should trigger ending, rewards and statistics in correct order upon unification [引擎未实现]', () => {
+  it('should trigger ending, rewards and statistics in correct order upon unification', () => {
     // 统一时：结局→奖励→统计 顺序触发
     const sim = createSim();
     const territory = sim.engine.getTerritorySystem();

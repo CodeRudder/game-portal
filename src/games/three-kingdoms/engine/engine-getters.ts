@@ -65,6 +65,8 @@ import type { CaravanSystem } from './trade/CaravanSystem';
 import type { ResourceTradeEngine } from './trade/ResourceTradeEngine';
 import type { SettingsManager } from './settings/SettingsManager';
 import type { AccountSystem } from './settings/AccountSystem';
+import type { EndingSystem } from './unification/EndingSystem';
+import type { GlobalStatisticsSystem } from './unification/GlobalStatisticsSystem';
 import type { EventTriggerSystem } from './event/EventTriggerSystem';
 import type { EventNotificationSystem } from './event/EventNotificationSystem';
 import type { EventUINotification } from './event/EventUINotification';
@@ -253,6 +255,14 @@ export function applyGetters(cls: any): void {
   p.getResourceTradeEngine = function(this: EngineAny): ResourceTradeEngine { return this.r11.resourceTradeEngine; };
   p.getSettingsManager = function(this: EngineAny): SettingsManager { return this.r11.settingsManager; };
   p.getAccountSystem = function(this: EngineAny): AccountSystem { return this.r11.accountSystem; };
+
+  // ── v20.0: 结局与全局统计 getter ──
+
+  p.getEndingSystem = function(this: EngineAny): EndingSystem { return this.r11.endingSystem; };
+  p.getGlobalStatisticsSystem = function(this: EngineAny): GlobalStatisticsSystem { return this.r11.globalStatisticsSystem; };
+
+  /** 获取全局统计快照（便捷方法） */
+  p.getGlobalStatistics = function(this: EngineAny) { return this.r11.globalStatisticsSystem.getSnapshot(); };
 
   // ── v6.0: 事件子系统 getter ──
 

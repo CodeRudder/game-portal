@@ -400,6 +400,68 @@ export class RewardDistributor implements ISubsystem {
     // 奖励分发器按需调用，不需要每帧更新
   }
 
+  // ─────────────────────────────────────────────
+  // v20.0 统一奖励 API
+  // ─────────────────────────────────────────────
+
+  /**
+   * 获取天下一统完成奖励
+   *
+   * 返回统一完成时的奖励列表（专属称号/头像/资源）。
+   * 奖励内容根据结局等级不同：
+   * - S级: 帝王称号 + 专属头像框 + 天命×3000 + 神话武将碎片×10
+   * - A级: 霸主称号 + 天命×2000 + 传说装备图纸×3
+   * - B级: 诸侯称号 + 天命×1000
+   * - C级: 英雄称号 + 天命×500
+   *
+   * @param grade - 结局等级
+   */
+  getUnificationRewards(grade: string = 'C'): Array<{ type: string; id: string; name: string; amount: number }> {
+    const rewards: Array<{ type: string; id: string; name: string; amount: number }> = [];
+
+    switch (grade) {
+      case 'S':
+        rewards.push({ type: 'title', id: 'title-emperor', name: '帝王称号', amount: 1 });
+        rewards.push({ type: 'avatar', id: 'avatar-emperor-frame', name: '专属头像框', amount: 1 });
+        rewards.push({ type: 'currency', id: 'mandate', name: '天命', amount: 3000 });
+        rewards.push({ type: 'fragment', id: 'mythic-hero-frag', name: '神话武将碎片', amount: 10 });
+        break;
+      case 'A':
+        rewards.push({ type: 'title', id: 'title-hegemon', name: '霸主称号', amount: 1 });
+        rewards.push({ type: 'currency', id: 'mandate', name: '天命', amount: 2000 });
+        rewards.push({ type: 'blueprint', id: 'legendary-equip-bp', name: '传说装备图纸', amount: 3 });
+        break;
+      case 'B':
+        rewards.push({ type: 'title', id: 'title-warlord', name: '诸侯称号', amount: 1 });
+        rewards.push({ type: 'currency', id: 'mandate', name: '天命', amount: 1000 });
+        break;
+      case 'C':
+      default:
+        rewards.push({ type: 'title', id: 'title-hero', name: '英雄称号', amount: 1 });
+        rewards.push({ type: 'currency', id: 'mandate', name: '天命', amount: 500 });
+        break;
+    }
+
+    return rewards;
+  }
+
+  /**
+   * 获取最终关卡通关奖励加成
+   *
+   * 最终关卡通关时额外奖励，含星级加成。
+   *
+   * @param stars - 通关星级（0~3）
+   */
+  getFinalStageBonus(stars: number = 3): { bonusGold: number; bonusGrain: number; bonusMandate: number; starMultiplier: number } {
+    const starMultiplier = Math.max(1, stars);
+    return {
+      bonusGold: 5000 * starMultiplier,
+      bonusGrain: 8000 * starMultiplier,
+      bonusMandate: 100 * starMultiplier,
+      starMultiplier,
+    };
+  }
+
   /** ISubsystem.getState — 返回状态快照 */
   getState(): { name: string } {
     return { name: this.name };

@@ -75,3 +75,20 @@ export {
   validateRebirth,
   calculateRebirthPoints,
 } from './BalanceReport';
+
+// ── v20.0 天下一统(下) 子系统 ──
+export { EndingSystem } from './EndingSystem';
+export type {
+  EndingGrade,
+  EndingType,
+  EndingScore,
+  EndingContext,
+  EndingResult,
+  EndingSaveData,
+} from './EndingSystem';
+
+export { GlobalStatisticsSystem } from './GlobalStatisticsSystem';
+export type {
+  GlobalStatistics,
+  GlobalStatisticsSaveData,
+} from './GlobalStatisticsSystem';
