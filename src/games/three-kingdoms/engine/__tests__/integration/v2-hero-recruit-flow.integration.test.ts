@@ -394,9 +394,27 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
       expect(castleLevel).toBeLessThan(5);
     });
 
-    it('should upgrade castle to level 5 with sufficient resources', () => {
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+    it('should upgrade castle to level 5 with sufficient resources and prerequisites', () => {
+      // 城堡Lv5需要至少一座其他建筑达到Lv4
+      // 必须交错升级：先升城堡→再升农田→再升城堡
+      sim.engine.resource.setCap('grain', 50_000_000);
+      sim.engine.resource.setCap('troops', 10_000_000);
+      sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
+
+      // 交错升级到城堡Lv5（参考 initMidGameState 的做法）
+      // castle Lv1→4
+      sim.upgradeBuildingTo('castle', 4);
+      // farmland Lv1→4
+      sim.engine.resource.setCap('grain', 50_000_000);
+      sim.engine.resource.setCap('troops', 10_000_000);
+      sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
+      sim.upgradeBuildingTo('farmland', 4);
+      // castle Lv4→5
+      sim.engine.resource.setCap('grain', 50_000_000);
+      sim.engine.resource.setCap('troops', 10_000_000);
+      sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
       sim.upgradeBuildingTo('castle', 5);
+
       expect(sim.getBuildingLevel('castle')).toBe(5);
     });
   });

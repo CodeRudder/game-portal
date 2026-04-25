@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createSim } from '../../../test-utils/test-helpers';
 import { Quality, QUALITY_ORDER } from '../../hero/hero.types';
-import { RECRUIT_COSTS, ADVANCED_PITY } from '../../hero/hero-recruit-config';
+import { RECRUIT_COSTS, ADVANCED_PITY, NORMAL_PITY } from '../../hero/hero-recruit-config';
 import { HERO_MAX_LEVEL, POWER_WEIGHTS, LEVEL_COEFFICIENT_PER_LEVEL, QUALITY_MULTIPLIERS } from '../../hero/hero-config';
 import { getStarMultiplier } from '../../hero/star-up-config';
 import type { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
@@ -96,22 +96,25 @@ describe('V2 E2E-FLOW: 端到端 + 交叉验证集成测试', () => {
       sim.engine.setFormation('1', heroIds);
 
       const hero = sim.engine.hero;
+      const starSystem = sim.engine.getHeroStarSystem();
       const formationSys = sim.engine.getFormationSystem();
+
+      // 计算编队战力时需要传入star参数
       const powerBefore = formationSys.calculateFormationPower(
         formationSys.getFormation('1')!,
         (id) => hero.getGeneral(id),
-        (g) => hero.calculatePower(g),
+        (g) => hero.calculatePower(g, starSystem.getStar(g.id)),
       );
 
       // 升星刘备
       sim.addHeroFragments('liubei', 30);
       sim.addResources({ gold: 500000 });
-      sim.engine.getHeroStarSystem().starUp('liubei');
+      starSystem.starUp('liubei');
 
       const powerAfter = formationSys.calculateFormationPower(
         formationSys.getFormation('1')!,
         (id) => hero.getGeneral(id),
-        (g) => hero.calculatePower(g),
+        (g) => hero.calculatePower(g, starSystem.getStar(g.id)),
       );
 
       expect(powerAfter).toBeGreaterThan(powerBefore);
@@ -183,7 +186,6 @@ describe('V2 E2E-FLOW: 端到端 + 交叉验证集成测试', () => {
     });
 
     it('should verify normal pool has no hard pity', () => {
-      const { NORMAL_PITY } = require('../../hero/hero-recruit-config');
       expect(NORMAL_PITY.hardPityThreshold).toBe(Infinity);
     });
   });
@@ -194,7 +196,7 @@ describe('V2 E2E-FLOW: 端到端 + 交叉验证集成测试', () => {
   describe('CROSS-FLOW-1: 招募→资源消耗验证', () => {
     it('should deduct correct resources for each recruit type', () => {
       // 普通招募
-      sim.addResources({ recruitToken: 100 });
+      sim.addResources({ recruitToken: 1000 });
       const tokenBefore1 = sim.getResource('recruitToken');
       sim.recruitHero('normal', 1);
       expect(sim.getResource('recruitToken')).toBe(tokenBefore1 - RECRUIT_COSTS.normal.amount);
