@@ -59,6 +59,7 @@ import type { ActivitySystem } from './activity/ActivitySystem';
 import type { SignInSystem } from './activity/SignInSystem';
 import type { TradeSystem } from './trade/TradeSystem';
 import type { CaravanSystem } from './trade/CaravanSystem';
+import type { ResourceTradeEngine } from './trade/ResourceTradeEngine';
 import type { SettingsManager } from './settings/SettingsManager';
 import type { AccountSystem } from './settings/AccountSystem';
 import type { OfflineRewardSystem } from './offline/OfflineRewardSystem';
@@ -189,6 +190,7 @@ export interface EngineGettersMixin {
   getSignInSystem(): SignInSystem;
   getTradeSystem(): TradeSystem;
   getCaravanSystem(): CaravanSystem;
+  getResourceTradeEngine(): ResourceTradeEngine;
   getSettingsManager(): SettingsManager;
   getAccountSystem(): AccountSystem;
 

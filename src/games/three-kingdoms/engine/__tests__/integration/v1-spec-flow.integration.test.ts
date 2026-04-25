@@ -362,5 +362,74 @@ describe('V1 SPEC-FLOW 全局规范', () => {
       // 验证 API 不崩溃，返回有效结果
       expect(snapshot.totalEarned).toBeDefined();
     });
+
+    it('should verify 2h boundary as 100%→80% decay transition [SPEC-FLOW-6 TC-5]', () => {
+      // PRD TC-5: 2小时边界（100%→80%衰减转折点）
+      // 0-2h 为 100% 效率，2h 后进入 80% 效率区间
+      const sim = createSim();
+      const offlineReward = sim.engine.getOfflineRewardSystem();
+      const productionRates = sim.engine.resource.getProductionRates();
+
+      // 恰好 2 小时（7200秒）— 只有 tier1（100%）
+      const snapshot2h = offlineReward.calculateSnapshot(2 * 3600, productionRates);
+      expect(snapshot2h.tierDetails.length).toBe(1);
+      expect(snapshot2h.tierDetails[0].efficiency).toBe(1.0);
+      expect(snapshot2h.tierDetails[0].tierId).toBe('tier1');
+      expect(snapshot2h.overallEfficiency).toBeCloseTo(1.0, 2);
+
+      // 略超 2 小时（7210秒）— 触发 tier2（80%）
+      const snapshot2hPlus = offlineReward.calculateSnapshot(7210, productionRates);
+      expect(snapshot2hPlus.tierDetails.length).toBe(2);
+      expect(snapshot2hPlus.tierDetails[1].efficiency).toBe(0.8);
+      expect(snapshot2hPlus.tierDetails[1].tierId).toBe('tier2');
+      // 整体效率应略低于 100%
+      expect(snapshot2hPlus.overallEfficiency).toBeLessThan(1.0);
+    });
+
+    it('should verify 8h boundary as 80%→60% decay transition [SPEC-FLOW-6 TC-7]', () => {
+      // PRD TC-7: 8小时边界（80%→60%衰减转折点）
+      // 2-8h 为 80% 效率，8h 后进入 60% 效率区间
+      const sim = createSim();
+      const offlineReward = sim.engine.getOfflineRewardSystem();
+      const productionRates = sim.engine.resource.getProductionRates();
+
+      // 恰好 8 小时 — tier1(100%) + tier2(80%)
+      const snapshot8h = offlineReward.calculateSnapshot(8 * 3600, productionRates);
+      expect(snapshot8h.tierDetails.length).toBe(2);
+      expect(snapshot8h.tierDetails[0].efficiency).toBe(1.0);
+      expect(snapshot8h.tierDetails[1].efficiency).toBe(0.8);
+      // 8h 整体效率: (2h*1.0 + 6h*0.8) / 8h = (2+4.8)/8 = 0.85
+      expect(snapshot8h.overallEfficiency).toBeCloseTo(0.85, 1);
+
+      // 略超 8 小时 — 触发 tier3(60%)
+      const snapshot8hPlus = offlineReward.calculateSnapshot(8 * 3600 + 10, productionRates);
+      expect(snapshot8hPlus.tierDetails.length).toBe(3);
+      expect(snapshot8hPlus.tierDetails[2].efficiency).toBe(0.6);
+      expect(snapshot8hPlus.tierDetails[2].tierId).toBe('tier3');
+      expect(snapshot8hPlus.overallEfficiency).toBeLessThan(0.85);
+    });
+
+    it('should verify 48h boundary as 40%→20% decay transition [SPEC-FLOW-6 TC-10]', () => {
+      // PRD TC-10: 48小时边界（40%→20%衰减转折点）
+      // 24-48h 为 40% 效率，48h 后进入 20% 效率区间
+      const sim = createSim();
+      const offlineReward = sim.engine.getOfflineRewardSystem();
+      const productionRates = sim.engine.resource.getProductionRates();
+
+      // 恰好 48 小时 — tier1(100%) + tier2(80%) + tier3(60%) + tier4(40%)
+      const snapshot48h = offlineReward.calculateSnapshot(48 * 3600, productionRates);
+      expect(snapshot48h.tierDetails.length).toBe(4);
+      expect(snapshot48h.tierDetails[3].efficiency).toBe(0.4);
+      expect(snapshot48h.tierDetails[3].tierId).toBe('tier4');
+      // 48h 整体效率: (2*1.0 + 6*0.8 + 16*0.6 + 24*0.4) / 48 = (2+4.8+9.6+9.6)/48 = 0.5417
+      expect(snapshot48h.overallEfficiency).toBeCloseTo(0.5417, 2);
+
+      // 略超 48 小时 — 触发 tier5(20%)
+      const snapshot48hPlus = offlineReward.calculateSnapshot(48 * 3600 + 10, productionRates);
+      expect(snapshot48hPlus.tierDetails.length).toBe(5);
+      expect(snapshot48hPlus.tierDetails[4].efficiency).toBe(0.2);
+      expect(snapshot48hPlus.tierDetails[4].tierId).toBe('tier5');
+      expect(snapshot48hPlus.overallEfficiency).toBeLessThan(0.5417);
+    });
   });
 });

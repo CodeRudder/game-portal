@@ -42,6 +42,7 @@ import { ActivitySystem } from './activity/ActivitySystem';
 import { SignInSystem } from './activity/SignInSystem';
 import { TradeSystem } from './trade/TradeSystem';
 import { CaravanSystem } from './trade/CaravanSystem';
+import { ResourceTradeEngine } from './trade/ResourceTradeEngine';
 import { SettingsManager } from './settings/SettingsManager';
 import { AccountSystem } from './settings/AccountSystem';
 import type { EquipmentSystem as EquipmentSystemType } from './equipment/EquipmentSystem';
@@ -89,6 +90,7 @@ export interface R11Systems {
   signInSystem: SignInSystem;
   tradeSystem: TradeSystem;
   caravanSystem: CaravanSystem;
+  resourceTradeEngine: ResourceTradeEngine;
   settingsManager: SettingsManager;
   accountSystem: AccountSystem;
 }
@@ -139,6 +141,7 @@ export function createR11Systems(equipmentSystem?: EquipmentSystemType): R11Syst
     signInSystem: new SignInSystem(),
     tradeSystem: new TradeSystem(),
     caravanSystem: new CaravanSystem(),
+    resourceTradeEngine: new ResourceTradeEngine(),
     settingsManager: new SettingsManager(),
     accountSystem: new AccountSystem(),
   };
@@ -188,6 +191,7 @@ export function registerR11Systems(registry: SubsystemRegistry, systems: R11Syst
   r.register('signIn', systems.signInSystem);
   r.register('trade', systems.tradeSystem);
   r.register('caravan', systems.caravanSystem);
+  r.register('resourceTrade', systems.resourceTradeEngine);
   r.register('settings', systems.settingsManager);
   r.register('account', systems.accountSystem);
 }
@@ -203,6 +207,7 @@ export function initR11Systems(systems: R11Systems, deps: ISystemDeps): void {
   systems.advisorSystem.init(deps);
   systems.currencySystem.init(deps);
   systems.tradeSystem.init(deps);
+  systems.resourceTradeEngine.init(deps);
 }
 
 /**
@@ -215,6 +220,7 @@ export function resetR11Systems(systems: R11Systems): void {
   systems.currencySystem.reset();
   systems.tradeSystem.reset();
   systems.caravanSystem.reset();
+  systems.resourceTradeEngine.reset();
   systems.npcSystem.reset();
   systems.equipmentSystem.reset();
   systems.equipmentForgeSystem.reset();

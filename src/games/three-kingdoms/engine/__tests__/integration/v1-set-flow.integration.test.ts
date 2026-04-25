@@ -350,6 +350,148 @@ describe('V1 SET-FLOW 设置系统', () => {
 
       expect(sim2.getBuildingLevel('castle')).toBe(2);
     });
+
+    // ── SET-FLOW-4 补充: 存档管理深度验证 ──
+
+    it('[SET-FLOW-4] serialize→deserialize 循环不丢失数据', () => {
+      // 验证完整的序列化/反序列化循环后所有数据完整
+      const sim = createSim();
+      sim.addResources(SUFFICIENT_RESOURCES);
+      sim.upgradeBuilding('castle');
+      sim.upgradeBuilding('farmland');
+
+      // 记录完整状态
+      const resourcesBefore = sim.getAllResources();
+      const levelsBefore = sim.getAllBuildingLevels();
+      const ratesBefore = sim.engine.resource.getProductionRates();
+
+      // 序列化 → 反序列化
+      const json = sim.engine.serialize();
+      sim.reset();
+      sim.engine.deserialize(json);
+
+      // 验证资源恢复（grain受上限截断，用gold验证）
+      expect(sim.getResource('gold')).toBeCloseTo(resourcesBefore.gold, 0);
+
+      // 验证建筑等级恢复
+      expect(sim.getBuildingLevel('castle')).toBe(levelsBefore.castle);
+      expect(sim.getBuildingLevel('farmland')).toBe(levelsBefore.farmland);
+
+      // 验证产出速率恢复
+      const ratesAfter = sim.engine.resource.getProductionRates();
+      expect(ratesAfter.grain).toBeCloseTo(ratesBefore.grain, 3);
+      expect(ratesAfter.gold).toBeCloseTo(ratesBefore.gold, 3);
+    });
+
+    it('[SET-FLOW-4] 多次 save 不覆盖关键数据', () => {
+      // 验证多次保存不会丢失或覆盖关键数据
+      const sim = createSim();
+      sim.addResources(SUFFICIENT_RESOURCES);
+
+      // 第一次保存：castle=1
+      const json1 = sim.engine.serialize();
+      const parsed1 = JSON.parse(json1);
+
+      // 升级 castle
+      sim.upgradeBuilding('castle');
+
+      // 第二次保存：castle=2
+      const json2 = sim.engine.serialize();
+      const parsed2 = JSON.parse(json2);
+
+      // 两次保存的建筑等级应不同
+      expect(parsed2.building).not.toEqual(parsed1.building);
+
+      // 验证第二次保存包含最新数据
+      const sim2 = createSim();
+      sim2.engine.deserialize(json2);
+      expect(sim2.getBuildingLevel('castle')).toBe(2);
+
+      // 验证第一次保存的数据仍可恢复
+      const sim3 = createSim();
+      sim3.engine.deserialize(json1);
+      expect(sim3.getBuildingLevel('castle')).toBe(1);
+    });
+
+    it('[SET-FLOW-4] save 后资源/建筑/武将数据完整恢复', () => {
+      // 验证存档后资源、建筑、武将数据完整恢复
+      const sim = createSim();
+      sim.addResources(SUFFICIENT_RESOURCES);
+
+      // 操作：升级多个建筑
+      sim.upgradeBuilding('castle');
+      sim.upgradeBuilding('farmland');
+
+      // 记录状态
+      const goldBefore = sim.getResource('gold');
+      const castleLevel = sim.getBuildingLevel('castle');
+      const farmlandLevel = sim.getBuildingLevel('farmland');
+
+      // 保存并恢复
+      const json = sim.engine.serialize();
+      sim.reset();
+      sim.engine.deserialize(json);
+
+      // 验证资源恢复（gold无上限，精确匹配）
+      expect(sim.getResource('gold')).toBeCloseTo(goldBefore, 0);
+
+      // 验证建筑等级恢复
+      expect(sim.getBuildingLevel('castle')).toBe(castleLevel);
+      expect(sim.getBuildingLevel('farmland')).toBe(farmlandLevel);
+
+      // 验证建筑状态恢复（已解锁建筑仍为解锁状态）
+      const buildings = sim.engine.building.getAllBuildings();
+      expect(buildings.castle.status).not.toBe('locked');
+      expect(buildings.farmland.status).not.toBe('locked');
+    });
+
+    it('should preserve building levels after serialize/deserialize cycle', () => {
+      // SET-FLOW-4 边界测试: 升级多个建筑 → serialize → 新引擎 deserialize → 验证等级
+      const sim = createSim();
+      sim.addResources(SUFFICIENT_RESOURCES);
+
+      // 升级多个建筑（先升级主城解锁更多建筑）
+      sim.upgradeBuilding('castle');
+      sim.upgradeBuilding('farmland');
+      sim.upgradeBuilding('market');
+
+      // 记录所有建筑等级
+      const levelsBefore = sim.getAllBuildingLevels();
+
+      // 序列化
+      const json = sim.engine.serialize();
+
+      // 新引擎反序列化
+      const sim2 = createSim();
+      sim2.engine.deserialize(json);
+
+      // 验证所有建筑等级恢复
+      const levelsAfter = sim2.getAllBuildingLevels();
+      for (const [key, level] of Object.entries(levelsBefore)) {
+        expect(levelsAfter[key as keyof typeof levelsAfter]).toBe(level);
+      }
+    });
+
+    it('should preserve resources after multiple save cycles', () => {
+      // SET-FLOW-4 边界测试: 操作→save→操作更多→save→load→验证最新状态
+      const sim = createSim();
+
+      // 第一轮操作
+      sim.addResources({ gold: 1000 });
+      sim.engine.save();
+
+      // 第二轮操作
+      sim.addResources({ gold: 2000 });
+      sim.engine.save();
+
+      // 加载最新存档到新引擎
+      const sim2 = createSim();
+      sim2.engine.load();
+
+      // 验证最新状态（gold 无上限，精确匹配）
+      // 初始 300 + 1000 + 2000 = 3300
+      expect(sim2.getResource('gold')).toBeCloseTo(3300, 0);
+    });
   });
 
   // ═══════════════════════════════════════════════

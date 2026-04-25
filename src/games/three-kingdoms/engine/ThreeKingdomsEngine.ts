@@ -204,6 +204,7 @@ export class ThreeKingdomsEngine {
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
+    this.initResourceTradeDeps();
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
     this.initialized = true; this.lastTickTime = Date.now();
@@ -395,6 +396,15 @@ export class ThreeKingdomsEngine {
   }
   private syncTickCtx(ctx: TickContext): void { this.prevResourcesJson = ctx.prevResourcesJson; this.prevRatesJson = ctx.prevRatesJson; }
   private buildingCtx(): BuildingOpsContext { return { resource: this.resource, building: this.building, bus: this.bus }; }
+  /** 注入 ResourceTradeEngine 的资源操作依赖 */
+  private initResourceTradeDeps(): void {
+    this.r11.resourceTradeEngine.setDeps({
+      getResourceAmount: (type) => this.resource.getAmount(type),
+      consumeResource: (type, amount) => this.resource.consumeResource(type, amount),
+      addResource: (type, amount) => this.resource.addResource(type, amount),
+      getMarketLevel: () => this.building.getLevel('market'),
+    });
+  }
   private buildSaveCtx(): SaveContext {
     return {
       resource: this.resource, building: this.building, calendar: this.calendar,
@@ -424,6 +434,7 @@ export class ThreeKingdomsEngine {
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
+    this.initResourceTradeDeps();
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;

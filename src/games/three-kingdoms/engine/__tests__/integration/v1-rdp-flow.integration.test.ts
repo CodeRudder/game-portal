@@ -342,5 +342,144 @@ describe('V1 RDP-FLOW 红点系统', () => {
       const completedIds = questSystem.getCompletedQuestIds();
       expect(Array.isArray(completedIds)).toBe(true);
     });
+
+    it('[RDP-FLOW-4] 创建任务→完成条件→验证红点→领取奖励→验证红点消失', () => {
+      // RDP-FLOW-4 端到端: 完整任务红点生命周期
+      // 1. 注册并接受一个自定义任务
+      // 2. 更新目标进度至完成
+      // 3. 验证任务状态变为 completed（红点出现条件）
+      // 4. 领取奖励
+      // 5. 验证任务从活跃列表移除（红点消失）
+      const sim = createSim();
+      const questSystem = sim.engine.getQuestSystem();
+
+      // 步骤1: 注册自定义任务
+      const testQuestId = 'test_red_dot_quest' as import('../../../core/quest/quest.types').QuestId;
+      questSystem.registerQuest({
+        id: testQuestId,
+        title: '红点测试任务',
+        description: '用于验证红点生命周期的测试任务',
+        category: 'main' as import('../../../core/quest/quest.types').QuestCategory,
+        objectives: [
+          {
+            id: 'obj_upgrade_farmland',
+            type: 'upgrade_building',
+            description: '升级农田1次',
+            targetCount: 1,
+            currentCount: 0,
+          },
+        ],
+        rewards: { resources: { grain: 100, gold: 50 }, experience: 10 },
+      });
+
+      // 接受任务
+      const instance = questSystem.acceptQuest(testQuestId);
+      expect(instance).not.toBeNull();
+      expect(instance!.status).toBe('active');
+
+      // 步骤2: 验证红点条件 — 任务未完成，无红点
+      const activeQuests = questSystem.getActiveQuests();
+      const testQuest = activeQuests.find(q => q.questDefId === testQuestId);
+      expect(testQuest).toBeDefined();
+      const allComplete = testQuest!.objectives.every(
+        o => o.currentCount >= o.targetCount,
+      );
+      expect(allComplete).toBe(false); // 未完成 → 无红点
+
+      // 步骤3: 完成任务条件（更新目标进度）
+      questSystem.updateObjectiveProgress(instance!.instanceId, 'obj_upgrade_farmland', 1);
+
+      // 验证任务已自动完成（红点出现条件）
+      const updatedQuest = questSystem.getQuestInstance(instance!.instanceId);
+      // 任务完成后状态变为 completed，从 activeQuests 中移除
+      expect(updatedQuest?.status).toBe('completed');
+
+      // 红点判断：completed 且未领取奖励 → 应有红点
+      const canClaim = updatedQuest?.status === 'completed' && !updatedQuest?.rewardClaimed;
+      expect(canClaim).toBe(true); // 红点出现
+
+      // 步骤4: 领取奖励
+      const reward = questSystem.claimReward(instance!.instanceId);
+      expect(reward).not.toBeNull();
+      expect(reward!.resources?.grain).toBe(100);
+      expect(reward!.resources?.gold).toBe(50);
+
+      // 步骤5: 验证红点消失（奖励已领取，任务从活跃列表移除）
+      // claimReward 会将任务从 activeQuests 中删除
+      const claimedQuest = questSystem.getQuestInstance(instance!.instanceId);
+      expect(claimedQuest).toBeUndefined(); // 已从活跃列表移除
+
+      // 红点判断：任务不在活跃列表中 → 无红点
+      const activeAfterClaim = questSystem.getActiveQuests();
+      const foundInActive = activeAfterClaim.find(q => q.instanceId === instance!.instanceId);
+      expect(foundInActive).toBeUndefined(); // 红点消失
+
+      // 验证任务在已完成列表中
+      expect(questSystem.isQuestCompleted(testQuestId)).toBe(true);
+    });
+
+    it('should have red dot appear when quest completable and disappear after claiming', () => {
+      // RDP-FLOW-4 端到端: 红点出现（任务可领取）→ 领取 → 红点消失
+      const sim = createSim();
+      const questSystem = sim.engine.getQuestSystem();
+
+      // 1. 注册并接受自定义任务
+      const testQuestId = 'test_red_dot_lifecycle' as import('../../../core/quest/quest.types').QuestId;
+      questSystem.registerQuest({
+        id: testQuestId,
+        title: '红点生命周期测试',
+        description: '验证红点出现和消失',
+        category: 'daily' as import('../../../core/quest/quest.types').QuestCategory,
+        objectives: [
+          {
+            id: 'obj_collect_grain',
+            type: 'collect_resource',
+            description: '收集粮食1次',
+            targetCount: 1,
+            currentCount: 0,
+          },
+        ],
+        rewards: { resources: { grain: 200, gold: 100 }, experience: 20 },
+      });
+
+      const instance = questSystem.acceptQuest(testQuestId);
+      expect(instance).not.toBeNull();
+      expect(instance!.status).toBe('active');
+
+      // 2. 任务未完成 → 无红点
+      const activeBefore = questSystem.getActiveQuests();
+      const questBefore = activeBefore.find(q => q.questDefId === testQuestId);
+      expect(questBefore).toBeDefined();
+      const incompleteBefore = questBefore!.objectives.every(
+        o => o.currentCount >= o.targetCount,
+      );
+      expect(incompleteBefore).toBe(false); // 未完成，无红点
+
+      // 3. 完成任务条件 → 红点出现
+      questSystem.updateObjectiveProgress(instance!.instanceId, 'obj_collect_grain', 1);
+
+      const updatedQuest = questSystem.getQuestInstance(instance!.instanceId);
+      expect(updatedQuest?.status).toBe('completed'); // 已完成 → 红点出现条件
+
+      // 红点判断: completed 且未领取 → 红点出现
+      const hasRedDot = updatedQuest?.status === 'completed' && !updatedQuest?.rewardClaimed;
+      expect(hasRedDot).toBe(true);
+
+      // 4. 领取奖励 → 红点消失
+      const reward = questSystem.claimReward(instance!.instanceId);
+      expect(reward).not.toBeNull();
+      expect(reward!.resources?.grain).toBe(200);
+      expect(reward!.resources?.gold).toBe(100);
+
+      // 5. 验证红点消失
+      const claimedQuest = questSystem.getQuestInstance(instance!.instanceId);
+      expect(claimedQuest).toBeUndefined(); // 已从活跃列表移除 → 红点消失
+
+      const activeAfterClaim = questSystem.getActiveQuests();
+      const foundAfterClaim = activeAfterClaim.find(q => q.instanceId === instance!.instanceId);
+      expect(foundAfterClaim).toBeUndefined(); // 红点消失
+
+      expect(questSystem.isQuestCompleted(testQuestId)).toBe(true);
+    });
   });
 });

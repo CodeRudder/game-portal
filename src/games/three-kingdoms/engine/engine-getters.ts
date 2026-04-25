@@ -61,6 +61,7 @@ import type { ActivitySystem } from './activity/ActivitySystem';
 import type { SignInSystem } from './activity/SignInSystem';
 import type { TradeSystem } from './trade/TradeSystem';
 import type { CaravanSystem } from './trade/CaravanSystem';
+import type { ResourceTradeEngine } from './trade/ResourceTradeEngine';
 import type { SettingsManager } from './settings/SettingsManager';
 import type { AccountSystem } from './settings/AccountSystem';
 import type { EventTriggerSystem } from './event/EventTriggerSystem';
@@ -247,6 +248,7 @@ export function applyGetters(cls: any): void {
   p.getSignInSystem = function(this: EngineAny): SignInSystem { return this.r11.signInSystem; };
   p.getTradeSystem = function(this: EngineAny): TradeSystem { return this.r11.tradeSystem; };
   p.getCaravanSystem = function(this: EngineAny): CaravanSystem { return this.r11.caravanSystem; };
+  p.getResourceTradeEngine = function(this: EngineAny): ResourceTradeEngine { return this.r11.resourceTradeEngine; };
   p.getSettingsManager = function(this: EngineAny): SettingsManager { return this.r11.settingsManager; };
   p.getAccountSystem = function(this: EngineAny): AccountSystem { return this.r11.accountSystem; };
 

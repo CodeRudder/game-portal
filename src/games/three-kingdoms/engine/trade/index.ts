@@ -4,6 +4,8 @@
 export { TradeSystem } from './TradeSystem';
 export type { TradeCurrencyOps } from './TradeSystem';
 export { CaravanSystem } from './CaravanSystem';
+export { ResourceTradeEngine } from './ResourceTradeEngine';
+export type { ResourceTradeDeps, ResourceTradeResult, CanTradeResult, TradePairInfo, TradePairKey } from './ResourceTradeEngine';
 export type { RouteInfoProvider } from './CaravanSystem';
 export {
   createDefaultRouteState,

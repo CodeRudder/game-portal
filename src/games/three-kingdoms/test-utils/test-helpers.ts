@@ -63,3 +63,38 @@ export const MASSIVE_RESOURCES: ResourceMap = { grain: 5000000, gold: 5000000, t
 
 /** 初始资源值（PRD 定义） */
 export const INITIAL_RESOURCES = { grain: 500, gold: 300, troops: 50, mandate: 0 };
+
+/**
+ * 创建一个市集等级 ≥ 5 的 GameEventSimulator（用于资源交易测试）。
+ * 交错升级：castle→4, farmland→4, castle→5, market→5。
+ * 每次升级前自动补充充足资源并提高上限。
+ */
+export function createSimWithMarketLevel5(): GameEventSimulator {
+  const sim = new GameEventSimulator();
+  sim.init();
+
+  // 提高上限避免资源被截断
+  sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('troops', 10_000_000);
+
+  // 交错升级到 castle Lv5 + market Lv5
+  // castle Lv4→5 需要至少一座其他建筑达到 Lv4
+  sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
+  sim.upgradeBuildingTo('castle', 4);
+  sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('troops', 10_000_000);
+  sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
+  sim.upgradeBuildingTo('farmland', 4);
+  sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('troops', 10_000_000);
+  sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
+  sim.upgradeBuildingTo('castle', 5);
+  sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('troops', 10_000_000);
+  sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
+  sim.upgradeBuildingTo('market', 5);
+  sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('troops', 10_000_000);
+
+  return sim;
+}

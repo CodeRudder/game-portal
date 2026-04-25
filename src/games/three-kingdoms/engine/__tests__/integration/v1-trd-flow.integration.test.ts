@@ -19,20 +19,14 @@
  * - 以实际代码行为为准
  *
  * 关键说明：
- * - 引擎的"资源交易"通过 CurrencySystem.exchange() 实现
+ * - 引擎的"资源交易"通过 CurrencySystem.exchange() 实现货币兑换
+ * - PRD 定义的 grain↔gold/grain→troops/gold→techPoints 资源交易通过 ResourceTradeEngine 实现
  * - TradeSystem 管理商路/商品/繁荣度等贸易玩法
  * - 汇率以铜钱(copper)为基准: mandate→copper(1:100), ingot→copper(1:1000)
- *
- * [P0-1 说明] PRD 定义了 4 个资源交易方向（粮草→铜钱 10:1 / 铜钱→粮草 1:8 /
- * 粮草→兵力 20:1 / 铜钱→科技点 100:1），但引擎实际未实现此 ResourceTrade 模型。
- * 引擎使用 CurrencySystem 的货币兑换体系（mandate↔copper / ingot↔copper /
- * reputation↔copper），TradeSystem 则管理商路/繁荣度等高级贸易玩法。
- * 本测试以引擎实际 API 为准，PRD 定义的资源交易模型需后续版本实现或更新 PRD。
- * PRD 定义的汇率测试已用 it.skip 标注在 TRD-FLOW-1/2/3 各 describe 末尾。
  */
 
 import { describe, it, expect } from 'vitest';
-import { createSim } from '../../../test-utils/test-helpers';
+import { createSim, createSimWithMarketLevel5 } from '../../../test-utils/test-helpers';
 import type { AdvisorTriggerType } from '../../../core/advisor/advisor.types';
 // [P1-5 说明] 直接导入 SettingsManager/SaveSlotManager 用于模拟重启/存档场景。
 // 引擎已暴露 getSettingsManager()/getAccountSystem()，但跨实例持久化测试和
@@ -163,47 +157,69 @@ describe('V1 TRD-FLOW 资源交易系统', () => {
       }
     });
 
-    // ── PRD 定义的资源交易汇率（引擎未实现，skip 标注）──
+    // ── PRD 定义的资源交易汇率（通过 ResourceTradeEngine 实现）──
     //
-    // [P0-1] PRD 定义了以下资源交易汇率，但引擎 TradeSystem/CurrencySystem
-    // 均未实现 grain↔gold / grain→troops / gold→techPoints 的交易模型。
-    // 引擎的 CurrencySystem 仅支持 mandate/ingot/reputation→copper 的货币兑换，
-    // TradeSystem 管理商路/繁荣度等高级贸易玩法。
-    // 以下测试在引擎实现 PRD 资源交易模型后取消 skip。
+    // PRD 定义了以下资源交易汇率，通过 ResourceTradeEngine 实现。
+    // grain↔gold / grain→troops / gold→techPoints 的交易模型。
+    // 解锁条件：市集(market)等级 ≥ 5
 
-    it.skip('[PRD] should exchange grain to gold at rate 10:1 (grain→gold 未实现)', () => {
+    it('[PRD] should exchange grain to gold at rate 10:1', () => {
       // TRD-FLOW-1 PRD步骤: 粮草→铜钱 (10:1)
-      // PRD 定义：10 粮草 → 1 铜钱
-      // 引擎 CurrencySystem 不支持 grain→gold 兑换
-      const sim = createSim();
-      const currencySystem = sim.engine.getCurrencySystem();
-      const rate = currencySystem.getExchangeRate('grain', 'gold');
-      expect(rate).toBe(0.1); // 1/10
+      // PRD 定义：10 粮草 → 1 铜钱（含5%手续费）
+      const sim = createSimWithMarketLevel5();
+      sim.addResources({ grain: 10000 });
+
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('grain', 'gold', 1000);
+
+      expect(result.success).toBe(true);
+      expect(result.received).toBe(95);  // 1000 * 0.1 * 0.95 = 95
+      expect(result.fee).toBe(5);        // 1000 * 0.1 * 0.05 = 5
     });
 
-    it.skip('[PRD] should exchange gold to grain at rate 1:8 (gold→grain 未实现)', () => {
+    it('[PRD] should exchange gold to grain at rate 1:8', () => {
       // TRD-FLOW-1 PRD步骤: 铜钱→粮草 (1:8)
-      // PRD 定义：1 铜钱 → 8 粮草（反向汇率不同，含5%手续费）
-      const sim = createSim();
-      const currencySystem = sim.engine.getCurrencySystem();
-      const rate = currencySystem.getExchangeRate('gold', 'grain');
-      expect(rate).toBe(8);
+      // PRD 定义：1 铜钱 → 8 粮草（含5%手续费）
+      const sim = createSimWithMarketLevel5();
+      sim.addResources({ gold: 10000 });
+
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('gold', 'grain', 1000);
+
+      expect(result.success).toBe(true);
+      // 1000 * 8 = 8000 gross, fee = floor(8000 * 0.05) = 400, received = 8000 - 400 = 7600
+      expect(result.received).toBe(7600);
+      expect(result.fee).toBe(400);
     });
 
-    it.skip('[PRD] should exchange grain to troops at rate 20:1 (grain→troops 未实现)', () => {
+    it('[PRD] should exchange grain to troops at rate 20:1', () => {
       // TRD-FLOW-1 PRD步骤: 粮草→兵力 (20:1)
-      const sim = createSim();
-      const currencySystem = sim.engine.getCurrencySystem();
-      const rate = currencySystem.getExchangeRate('grain', 'troops');
-      expect(rate).toBe(1 / 20);
+      // PRD 定义：20 粮草 → 1 兵力（含5%手续费）
+      const sim = createSimWithMarketLevel5();
+      sim.addResources({ grain: 10000 });
+
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('grain', 'troops', 1000);
+
+      expect(result.success).toBe(true);
+      // 1000 * 0.05 = 50 gross, fee = floor(50 * 0.05) = 2, received = 50 - 2 = 48
+      expect(result.received).toBe(48);
+      expect(result.fee).toBe(2);
     });
 
-    it.skip('[PRD] should exchange gold to techPoints at rate 100:1 (gold→techPoints 未实现)', () => {
+    it('[PRD] should exchange gold to techPoint at rate 100:1', () => {
       // TRD-FLOW-1 PRD步骤: 铜钱→科技点 (100:1)
-      const sim = createSim();
-      const currencySystem = sim.engine.getCurrencySystem();
-      const rate = currencySystem.getExchangeRate('gold', 'techPoints');
-      expect(rate).toBe(1 / 100);
+      // PRD 定义：100 铜钱 → 1 科技点（含5%手续费）
+      const sim = createSimWithMarketLevel5();
+      sim.addResources({ gold: 10000 });
+
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('gold', 'techPoint', 1000);
+
+      expect(result.success).toBe(true);
+      // 1000 * 0.01 = 10 gross, fee = floor(10 * 0.05) = 0, received = 10 - 0 = 10
+      expect(result.received).toBe(10);
+      expect(result.fee).toBe(0);
     });
   });
 
@@ -291,29 +307,24 @@ describe('V1 TRD-FLOW 资源交易系统', () => {
       expect(typeof rate).toBe('number');
     });
 
-    // ── PRD 定义的5%手续费验证（引擎未实现，skip 标注）──
+    // ── PRD 定义的5%手续费验证（通过 ResourceTradeEngine 实现）──
     //
-    // [P0-1] PRD 定义交易手续费为 5%，实际到账 = 交易量 × 汇率 × (1 - 0.05)。
-    // 引擎 CurrencySystem.exchange() 当前无手续费概念，到账 = floor(amount * rate)。
-    // 以下测试在引擎实现手续费后取消 skip。
+    // PRD 定义交易手续费为 5%，实际到账 = 交易量 × 汇率 × (1 - 0.05)。
+    // 通过 ResourceTradeEngine.tradeResource() 实现。
 
-    it.skip('[PRD] should deduct 5% commission on exchange (手续费未实现)', () => {
+    it('[PRD] should deduct 5% commission on resource trade', () => {
       // TRD-FLOW-2 PRD步骤: 实际到账 = 交易量 × 汇率 × (1 - 0.05)
-      const sim = createSim();
-      const currencySystem = sim.engine.getCurrencySystem();
+      const sim = createSimWithMarketLevel5();
+      sim.addResources({ grain: 10000 });
 
-      currencySystem.addCurrency('mandate', 100);
-
-      const result = currencySystem.exchange({
-        from: 'mandate',
-        to: 'copper',
-        amount: 10,
-      });
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('grain', 'gold', 1000);
 
       expect(result.success).toBe(true);
-      // PRD 预期: 10 * 100 * 0.95 = 950
-      // 引擎当前: 10 * 100 = 1000（无手续费）
-      expect(result.received).toBe(950);
+      // PRD 预期: 1000 * 0.1 * 0.95 = 95
+      expect(result.received).toBe(95);
+      // 手续费: 1000 * 0.1 * 0.05 = 5
+      expect(result.fee).toBe(5);
     });
   });
 
@@ -399,25 +410,47 @@ describe('V1 TRD-FLOW 资源交易系统', () => {
       expect(result.success).toBe(true);
     });
 
-    // ── PRD 定义的资源保护线（引擎未实现，skip 标注）──
+    // ── PRD 定义的资源保护线（通过 ResourceTradeEngine 实现）──
     //
-    // [P0-1] PRD 定义资源保护：最低粮草10、铜钱<500安全线。
-    // 引擎 CurrencySystem 当前无资源保护线概念。
-    // 以下测试在引擎实现资源保护线后取消 skip。
+    // PRD 定义资源保护：最低粮草10、铜钱<500安全线。
+    // 通过 ResourceTradeEngine 实现。
 
-    it.skip('[PRD] should enforce minimum grain reserve of 10 after trade (资源保护线未实现)', () => {
+    it('[PRD] should enforce minimum grain reserve of 10 after trade', () => {
       // TRD-FLOW-3 PRD步骤: 交易后粮草不低于10
-      const sim = createSim();
-      // PRD 定义：资源交易后最低粮草保留 10
-      // 引擎 CurrencySystem 不管理 grain（由 ResourceSystem 管理）
-      // 需 ResourceTrade 模型实现后验证
+      const sim = createSimWithMarketLevel5();
+      // 设置粮草为 100（交易后应保留 10，最多可交易 90）
+      sim.setResource('grain', 100);
+
+      const trade = sim.engine.getResourceTradeEngine();
+
+      // 交易 90 应成功（剩余 10）
+      const result1 = trade.tradeResource('grain', 'gold', 90);
+      expect(result1.success).toBe(true);
+      expect(sim.getResource('grain')).toBe(10);
+
+      // 交易 1 应失败（粮草保护：交易后不能低于 10）
+      const result2 = trade.tradeResource('grain', 'gold', 1);
+      expect(result2.success).toBe(false);
+      expect(result2.error).toContain('粮草保护');
     });
 
-    it.skip('[PRD] should enforce gold safety line of 500 (铜钱安全线未实现)', () => {
+    it('[PRD] should enforce gold safety line of 500', () => {
       // TRD-FLOW-3 PRD步骤: 铜钱<500安全线保护
-      const sim = createSim();
-      // PRD 定义：铜钱低于500时限制交易
-      // 引擎 CurrencySystem 当前无安全线概念
+      const sim = createSimWithMarketLevel5();
+      // 设置铜钱为 400（低于安全线 500）
+      sim.setResource('gold', 400);
+
+      const trade = sim.engine.getResourceTradeEngine();
+
+      // 铜钱低于 500 时不能交易铜钱
+      const result = trade.canTradeResource('gold', 'grain', 100);
+      expect(result.canTrade).toBe(false);
+      expect(result.reason).toContain('安全线');
+
+      // 设置铜钱为 600（高于安全线），应可交易
+      sim.setResource('gold', 600);
+      const result2 = trade.canTradeResource('gold', 'grain', 100);
+      expect(result2.canTrade).toBe(true);
     });
   });
 });
