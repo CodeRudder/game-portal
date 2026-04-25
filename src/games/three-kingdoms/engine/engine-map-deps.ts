@@ -19,6 +19,7 @@ import { TerritorySystem } from './map/TerritorySystem';
 import { SiegeSystem } from './map/SiegeSystem';
 import { GarrisonSystem } from './map/GarrisonSystem';
 import { SiegeEnhancer } from './map/SiegeEnhancer';
+import { MapEventSystem } from './map/MapEventSystem';
 import type { ISystemDeps } from '../core/types';
 
 // ─────────────────────────────────────────────
@@ -32,6 +33,7 @@ export interface MapSystems {
   readonly siege: SiegeSystem;
   readonly garrison: GarrisonSystem;
   readonly siegeEnhancer: SiegeEnhancer;
+  readonly mapEvent: MapEventSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -57,8 +59,9 @@ export function createMapSystems(): MapSystems {
   const siege = new SiegeSystem();
   const garrison = new GarrisonSystem();
   const siegeEnhancer = new SiegeEnhancer();
+  const mapEvent = new MapEventSystem();
 
-  return { worldMap, territory, siege, garrison, siegeEnhancer };
+  return { worldMap, territory, siege, garrison, siegeEnhancer, mapEvent };
 }
 
 /**
@@ -72,4 +75,5 @@ export function initMapSystems(systems: MapSystems, deps: ISystemDeps): void {
   systems.garrison.init(deps);
   systems.siege.init(deps);
   systems.siegeEnhancer.init(deps);
+  systems.mapEvent.init(deps);
 }

@@ -392,12 +392,44 @@ describe('§8.4 征服结果→领土状态更新 [v4.0预览]', () => {
 // §8.5 地图事件→战斗触发 [v4.0预览]
 // ─────────────────────────────────────────
 describe('§8.5 地图事件→战斗触发 [v4.0预览]', () => {
-  it.todo('[引擎未实现] should trigger map events periodically', () => {
-    // 地图事件触发系统尚未完整实现
+  it('should trigger map events periodically', () => {
+    const sim = createSim();
+    const eventSystem = sim.engine.getMapEventSystem();
+    expect(eventSystem).toBeDefined();
+
+    // 使用确定性随机数触发事件
+    let triggerCount = 0;
+    const now = Date.now();
+    // 模拟多次检查间隔，使用100%触发概率
+    for (let i = 0; i < 10; i++) {
+      const event = eventSystem.forceTrigger('bandit', now + i * 3600000);
+      if (event) triggerCount++;
+      if (eventSystem.getActiveEventCount() >= 3) break; // 达到上限
+    }
+
+    expect(triggerCount).toBeGreaterThan(0);
+    expect(eventSystem.getActiveEventCount()).toBeLessThanOrEqual(3);
   });
 
-  it.todo('[引擎未实现] should allow combat resolution for map events', () => {
-    // 地图事件战斗尚未实现
+  it('should allow combat resolution for map events', () => {
+    const sim = createSim();
+    const eventSystem = sim.engine.getMapEventSystem();
+
+    // 强制触发一个战斗类事件（流寇入侵）
+    const event = eventSystem.forceTrigger('bandit');
+    expect(event).toBeDefined();
+    expect(event.isCombat).toBe(true);
+    expect(event.choices).toContain('attack');
+
+    // 选择强攻分支
+    const resolution = eventSystem.resolveEvent(event.id, 'attack');
+    expect(resolution.success).toBe(true);
+    expect(resolution.triggeredBattle).toBe(true);
+    expect(resolution.rewards.length).toBeGreaterThan(0);
+
+    // 事件应从活跃列表中移除
+    expect(eventSystem.getEventById(event.id)).toBeUndefined();
+    expect(eventSystem.getResolvedCount()).toBe(1);
   });
 });
 

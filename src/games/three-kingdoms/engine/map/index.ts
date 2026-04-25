@@ -11,6 +11,7 @@ export { TerritorySystem } from './TerritorySystem';
 export { SiegeSystem } from './SiegeSystem';
 export { GarrisonSystem } from './GarrisonSystem';
 export { SiegeEnhancer } from './SiegeEnhancer';
+export { MapEventSystem } from './MapEventSystem';
 
 export type {
   SiegeErrorCode,

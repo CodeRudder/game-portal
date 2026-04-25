@@ -31,6 +31,7 @@ import type { TerritorySystem } from './map/TerritorySystem';
 import type { SiegeSystem } from './map/SiegeSystem';
 import type { GarrisonSystem } from './map/GarrisonSystem';
 import type { SiegeEnhancer } from './map/SiegeEnhancer';
+import type { MapEventSystem } from './map/MapEventSystem';
 import type { MailSystem } from './mail/MailSystem';
 import type { MailTemplateSystem } from './mail/MailTemplateSystem';
 import type { ShopSystem } from './shop/ShopSystem';
@@ -216,6 +217,7 @@ export function applyGetters(cls: any): void {
   p.getSiegeSystem = function(this: EngineAny): SiegeSystem { return this.mapSystems.siege; };
   p.getGarrisonSystem = function(this: EngineAny): GarrisonSystem { return this.mapSystems.garrison; };
   p.getSiegeEnhancer = function(this: EngineAny): SiegeEnhancer { return this.mapSystems.siegeEnhancer; };
+  p.getMapEventSystem = function(this: EngineAny): MapEventSystem { return this.mapSystems.mapEvent; };
 
   // ── 科技子系统扩展 ──
 

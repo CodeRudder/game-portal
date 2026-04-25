@@ -29,6 +29,7 @@ import type { TerritorySystem } from './map/TerritorySystem';
 import type { SiegeSystem } from './map/SiegeSystem';
 import type { GarrisonSystem } from './map/GarrisonSystem';
 import type { SiegeEnhancer } from './map/SiegeEnhancer';
+import type { MapEventSystem } from './map/MapEventSystem';
 import type { MailSystem } from './mail/MailSystem';
 import type { MailTemplateSystem } from './mail/MailTemplateSystem';
 import type { ShopSystem } from './shop/ShopSystem';
@@ -158,6 +159,7 @@ export interface EngineGettersMixin {
   getSiegeSystem(): SiegeSystem;
   getGarrisonSystem(): GarrisonSystem;
   getSiegeEnhancer(): SiegeEnhancer;
+  getMapEventSystem(): MapEventSystem;
 
   // ── 科技子系统扩展 ──
   getFusionTechSystem(): unknown;

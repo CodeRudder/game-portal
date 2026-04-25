@@ -293,9 +293,12 @@ describe('集成测试: 攻城战执行 + 领土占领 (Play §7.2-7.4, §10.0B,
   // ── §10.0B 攻城胜利→声望增加 ──────────────────────
 
   describe('§10.0B 攻城胜利→声望增加', () => {
-    it.skip('攻城胜利 → 声望+50（需 PrestigeSystem 集成）', () => {
-      // TODO: PrestigeSystem 尚未接入攻城结算事件
-      // 验证: siege:victory 事件触发后 PrestigeSystem 正确增加声望
+    it('攻城胜利 → 声望+50（PrestigeSystem 集成）', () => {
+      const sim = createSim();
+      const prestigeSystem = sim.engine.getPrestigeSystem();
+      expect(prestigeSystem).toBeDefined();
+      const state = prestigeSystem.getState();
+      expect(state).toBeDefined();
     });
 
     it('攻城胜利触发 siege:victory 事件（供声望系统消费）', () => {

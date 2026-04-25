@@ -217,6 +217,7 @@ export class ThreeKingdomsEngine {
     r.register('siege', this.mapSystems.siege);
     r.register('garrison', this.mapSystems.garrison);
     r.register('siegeEnhancer', this.mapSystems.siegeEnhancer);
+    r.register('mapEventSystem', this.mapSystems.mapEvent);
     r.register('eventTrigger', this.eventSystems.trigger);
     r.register('eventNotification', this.eventSystems.notification);
     r.register('eventUI', this.eventSystems.uiNotification);
@@ -330,7 +331,7 @@ export class ThreeKingdomsEngine {
     this.techSystems.researchSystem.reset(); this.techSystems.fusionSystem.reset();
     this.techSystems.linkSystem.reset(); this.techSystems.offlineSystem.reset();
     this.mapSystems.worldMap.reset(); this.mapSystems.territory.reset();
-    this.mapSystems.siege.reset(); this.mapSystems.garrison.reset(); this.mapSystems.siegeEnhancer.reset();
+    this.mapSystems.siege.reset(); this.mapSystems.garrison.reset(); this.mapSystems.siegeEnhancer.reset(); this.mapSystems.mapEvent.reset();
     this.eventSystems.trigger.reset(); this.eventSystems.notification.reset();
     this.eventSystems.uiNotification.reset(); this.eventSystems.chain.reset();
     this.eventSystems.log.reset(); this.eventSystems.offline.reset();

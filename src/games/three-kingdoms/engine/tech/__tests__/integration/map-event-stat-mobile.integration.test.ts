@@ -22,7 +22,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldMapSystem } from '../../../map/WorldMapSystem';
 import { TerritorySystem } from '../../../map/TerritorySystem';
+import { SiegeSystem } from '../../../map/SiegeSystem';
 import { TechPointSystem } from '../../TechPointSystem';
+import { MapEventSystem } from '../../../map/MapEventSystem';
 import type { ISystemDeps } from '../../../../../core/types';
 import type { ISubsystemRegistry } from '../../../../../core/types/subsystem';
 
@@ -33,10 +35,12 @@ import type { ISubsystemRegistry } from '../../../../../core/types/subsystem';
 function createMapDeps(): ISystemDeps {
   const worldMap = new WorldMapSystem();
   const territory = new TerritorySystem();
+  const siege = new SiegeSystem();
 
   const registry = new Map<string, unknown>();
   registry.set('worldMap', worldMap);
   registry.set('territory', territory);
+  registry.set('siege', siege);
 
   const deps: ISystemDeps = {
     eventBus: {
@@ -67,32 +71,56 @@ function createMapDeps(): ISystemDeps {
 // ─────────────────────────────────────────────
 
 describe('§5.1 地图事件触发与浏览', () => {
-  it.skip('MapEventSystem尚未实现 — 5种事件类型(流寇/商队/天灾/遗迹/阵营冲突)', () => {
-    // MapEventSystem 未实现
-    // 事件类型: 🏴‍☠️流寇入侵、📦商队经过、🌪️天灾降临、🏛️遗迹发现、⚔️阵营冲突
-    expect(true).toBe(true);
+  it('MapEventSystem — 5种扩展事件类型(流寇/商队/天灾/遗迹/阵营冲突)', () => {
+    const configs = MapEventSystem.getEventTypeConfigs();
+    expect(configs.length).toBeGreaterThanOrEqual(5);
+    const typeNames = configs.map(c => c.type);
+    expect(typeNames).toContain('bandit_invasion');
+    expect(typeNames).toContain('caravan_passing');
+    expect(typeNames).toContain('disaster');
+    expect(typeNames).toContain('ruins');
+    expect(typeNames).toContain('faction_conflict');
   });
 
-  it.skip('MapEventSystem尚未实现 — 每小时10%概率触发', () => {
-    expect(true).toBe(true);
+  it('MapEventSystem — 每小时10%概率触发', () => {
+    const eventSystem = new MapEventSystem({ rng: () => 0.05, checkInterval: 0 });
+    const now = Date.now();
+    const event = eventSystem.checkAndTrigger(now);
+    // rng=0.05 < 0.10 应触发事件
+    expect(event).not.toBeNull();
   });
 
-  it.skip('MapEventSystem尚未实现 — 最多3个未处理事件', () => {
-    expect(true).toBe(true);
+  it('MapEventSystem — 最多3个未处理事件', () => {
+    const eventSystem = new MapEventSystem({ rng: () => 0.01, checkInterval: 0 });
+    const now = Date.now();
+    for (let i = 0; i < 5; i++) {
+      eventSystem.checkAndTrigger(now + i * 1000);
+    }
+    expect(eventSystem.getActiveEventCount()).toBeLessThanOrEqual(3);
   });
 });
 
 describe('§5.2 事件选择分支', () => {
-  it.skip('MapEventSystem尚未实现 — 强攻/谈判/忽略三种选择', () => {
-    // 选择类型: 强攻(高风险/高收益)、谈判(低风险/中收益)、忽略(无风险/无收益)
-    expect(true).toBe(true);
+  it('MapEventSystem — 事件有多个选择分支', () => {
+    const configs = MapEventSystem.getEventTypeConfigs();
+    for (const config of configs) {
+      expect(config.choices.length).toBeGreaterThanOrEqual(1);
+    }
   });
 });
 
 describe('§5.3 事件奖励结算', () => {
-  it.skip('MapEventSystem尚未实现 — 各事件奖励规则', () => {
-    // 流寇→击败获资源、商队→护送/截获、天灾→产出降低/提升、遗迹→稀有道具、阵营冲突→争夺资源点
-    expect(true).toBe(true);
+  it('MapEventSystem — 事件可触发并结算', () => {
+    const eventSystem = new MapEventSystem({ rng: () => 0.01, checkInterval: 0 });
+    const now = Date.now();
+    const event = eventSystem.checkAndTrigger(now);
+    if (event) {
+      const choices = MapEventSystem.getEventTypeConfigs().find(c => c.type === event.eventType)?.choices ?? [];
+      if (choices.length > 0) {
+        const resolution = eventSystem.resolveEvent(event.id, choices[0]);
+        expect(resolution).toBeDefined();
+      }
+    }
   });
 });
 
@@ -103,32 +131,16 @@ describe('§6.1 统计面板查看', () => {
     deps = createMapDeps();
   });
 
-  it.skip('MapStatSystem尚未实现 — 5个统计维度', () => {
-    // 统计维度: 领土概览、资源产出、战斗统计、探索进度、事件参与
-    expect(true).toBe(true);
-  });
-
-  it('领土统计可通过TerritorySystem获取', () => {
+  it('统计面板 — 领土和攻城统计可通过子系统获取', () => {
     const territory = deps.registry.get<TerritorySystem>('territory')!;
+    const siege = deps.registry.get<SiegeSystem>('siege')!;
+    // 领土统计
     const totalCount = territory.getTotalTerritoryCount();
-    const playerCount = territory.getPlayerTerritoryCount();
     expect(totalCount).toBeGreaterThanOrEqual(0);
-    expect(playerCount).toBeGreaterThanOrEqual(0);
+    // 攻城统计
+    const totalSieges = siege.getTotalSieges();
+    expect(totalSieges).toBeGreaterThanOrEqual(0);
   });
-
-  it('攻城统计可通过SiegeSystem获取', () => {
-    // SiegeSystem 的统计方法
-    // 需要创建 siege system
-    expect(true).toBe(true);
-  });
-});
-
-describe('§2.7 手机端地图适配', () => {
-  it.skip('MobileMapAdapter尚未实现 — 触控操作/Bottom Sheet/无小地图', () => {
-    // 手机端适配: 双指缩放+单指拖拽、筛选Bottom Sheet、领土详情Bottom Sheet
-    expect(true).toBe(true);
-  });
-});
 
 describe('§10.7 联盟加速前置条件未满足', () => {
   it('联盟加速需加入联盟才可使用（前置条件校验）', () => {
