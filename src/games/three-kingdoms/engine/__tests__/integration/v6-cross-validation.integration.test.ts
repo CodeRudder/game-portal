@@ -216,7 +216,7 @@ describe('v6.0 集成测试: §8 交叉验证', () => {
 
     it('地图事件标记：9类事件完整', () => {
       const basicEvents = ['merchant_distress', 'refugees', 'treasure', 'bandits'];
-      const extendedEvents = ['bandit_invasion', 'caravan_passing', 'disaster', 'ruins', 'faction_conflict'];
+      const extendedEvents = ['bandit', 'caravan', 'disaster', 'ruins', 'conflict'];
       expect([...basicEvents, ...extendedEvents]).toHaveLength(9);
     });
   });

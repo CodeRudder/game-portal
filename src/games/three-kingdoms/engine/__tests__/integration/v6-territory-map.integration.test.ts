@@ -376,7 +376,7 @@ describe('v6.0 集成测试: §3 势力消长 + §4 世界地图交互', () => {
     it('§4.1 地图事件标记：事件类型与概率', () => {
       // 验证事件类型定义完整
       const basicEvents = ['merchant_distress', 'refugees', 'treasure', 'bandits'];
-      const extendedEvents = ['bandit_invasion', 'caravan_passing', 'disaster', 'ruins', 'faction_conflict'];
+      const extendedEvents = ['bandit', 'caravan', 'disaster', 'ruins', 'conflict'];
       expect(basicEvents).toHaveLength(4);
       expect(extendedEvents).toHaveLength(5);
       expect([...basicEvents, ...extendedEvents]).toHaveLength(9);

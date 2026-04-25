@@ -42,11 +42,11 @@ const BASIC_EVENT_TYPES = [
 
 /** 扩展事件类型（5类） */
 const EXTENDED_EVENT_TYPES = [
-  { id: 'bandit_invasion', name: '流寇入侵', duration: 2, unit: 'hours', frequency: '2~3/day', options: ['fight', 'ignore'] },
-  { id: 'caravan_passing', name: '商队经过', duration: 1.5, unit: 'hours', frequency: '1~2/day', options: ['escort', 'intercept', 'ignore'] },
+  { id: 'bandit', name: '流寇入侵', duration: 2, unit: 'hours', frequency: '2~3/day', options: ['fight', 'ignore'] },
+  { id: 'caravan', name: '商队经过', duration: 1.5, unit: 'hours', frequency: '1~2/day', options: ['escort', 'intercept', 'ignore'] },
   { id: 'disaster', name: '天灾降临', duration: 24, unit: 'hours', frequency: '1/week', options: ['relief', 'ignore'] },
   { id: 'ruins', name: '遗迹发现', duration: 4, unit: 'hours', frequency: '2/week', options: ['explore', 'abandon'] },
-  { id: 'faction_conflict', name: '阵营冲突', duration: 48, unit: 'hours', frequency: '1/week', options: ['participate', 'neutral'] },
+  { id: 'conflict', name: '阵营冲突', duration: 48, unit: 'hours', frequency: '1/week', options: ['participate', 'neutral'] },
 ] as const;
 
 /** 事件选择分支效果定义（§8.4） */
@@ -63,11 +63,11 @@ const EVENT_BRANCH_EFFECTS = {
     fight: { equipment: 1, prestige: 5 },
     bypass: {},
   },
-  bandit_invasion: {
+  bandit: {
     fight: { grain: 500, gold: 500, prestige: 15 },
     ignore: { production_debuff: 0.1, duration: '24h' },
   },
-  caravan_passing: {
+  caravan: {
     escort: { gold: 2000 },
     intercept: { gold: 5000, prestige: -10 },
     ignore: {},
@@ -80,7 +80,7 @@ const EVENT_BRANCH_EFFECTS = {
     explore: { rare_items: true },
     abandon: {},
   },
-  faction_conflict: {
+  conflict: {
     participate: { resources: true, prestige: 25 },
     neutral: {},
   },
@@ -263,7 +263,7 @@ describe('集成测试: 地图事件系统 (Play §8.1-8.4, §10.0C)', () => {
 
   describe('§8.3 扩展事件类型验证（5类）', () => {
     it('流寇入侵: 每日2~3次，持续2小时', () => {
-      const event = EXTENDED_EVENT_TYPES.find(e => e.id === 'bandit_invasion')!;
+      const event = EXTENDED_EVENT_TYPES.find(e => e.id === 'bandit')!;
       expect(event).toBeDefined();
       expect(event.duration).toBe(2);
       expect(event.options).toContain('fight');
@@ -271,7 +271,7 @@ describe('集成测试: 地图事件系统 (Play §8.1-8.4, §10.0C)', () => {
     });
 
     it('商队经过: 每日1~2次，持续1.5小时', () => {
-      const event = EXTENDED_EVENT_TYPES.find(e => e.id === 'caravan_passing')!;
+      const event = EXTENDED_EVENT_TYPES.find(e => e.id === 'caravan')!;
       expect(event).toBeDefined();
       expect(event.duration).toBe(1.5);
       expect(event.options).toContain('escort');
@@ -296,7 +296,7 @@ describe('集成测试: 地图事件系统 (Play §8.1-8.4, §10.0C)', () => {
     });
 
     it('阵营冲突: 每周1次，持续48小时', () => {
-      const event = EXTENDED_EVENT_TYPES.find(e => e.id === 'faction_conflict')!;
+      const event = EXTENDED_EVENT_TYPES.find(e => e.id === 'conflict')!;
       expect(event).toBeDefined();
       expect(event.duration).toBe(48);
       expect(event.options).toContain('participate');
@@ -326,14 +326,14 @@ describe('集成测试: 地图事件系统 (Play §8.1-8.4, §10.0C)', () => {
     });
 
     it('流寇入侵: 战斗获得资源+声望，忽略导致产出debuff', () => {
-      const effects = EVENT_BRANCH_EFFECTS.bandit_invasion;
+      const effects = EVENT_BRANCH_EFFECTS.bandit;
       expect(effects.fight).toHaveProperty('grain');
       expect(effects.fight).toHaveProperty('prestige');
       expect(effects.ignore).toHaveProperty('production_debuff');
     });
 
     it('商队经过: 截获获得更多金币但声望降低', () => {
-      const effects = EVENT_BRANCH_EFFECTS.caravan_passing;
+      const effects = EVENT_BRANCH_EFFECTS.caravan;
       expect(effects.intercept).toHaveProperty('gold');
       expect(effects.intercept).toHaveProperty('prestige');
       expect((effects.intercept as { prestige: number }).prestige).toBeLessThan(0);
@@ -351,7 +351,7 @@ describe('集成测试: 地图事件系统 (Play §8.1-8.4, §10.0C)', () => {
     });
 
     it('阵营冲突: 参战获得声望+25', () => {
-      const effects = EVENT_BRANCH_EFFECTS.faction_conflict;
+      const effects = EVENT_BRANCH_EFFECTS.conflict;
       expect(effects.participate).toHaveProperty('prestige');
       expect((effects.participate as { prestige: number }).prestige).toBe(25);
     });
@@ -362,15 +362,15 @@ describe('集成测试: 地图事件系统 (Play §8.1-8.4, §10.0C)', () => {
   describe('§10.0C 地图事件→声望/民心影响', () => {
     it('事件分支效果定义覆盖声望变化', () => {
       // 流寇入侵 → 出兵剿灭 → 声望+15
-      const invasion = EVENT_BRANCH_EFFECTS.bandit_invasion;
+      const invasion = EVENT_BRANCH_EFFECTS.bandit;
       expect((invasion.fight as { prestige: number }).prestige).toBe(15);
 
       // 商队经过 → 截获 → 声望-10
-      const caravan = EVENT_BRANCH_EFFECTS.caravan_passing;
+      const caravan = EVENT_BRANCH_EFFECTS.caravan;
       expect((caravan.intercept as { prestige: number }).prestige).toBe(-10);
 
       // 阵营冲突 → 参战 → 声望+25
-      const conflict = EVENT_BRANCH_EFFECTS.faction_conflict;
+      const conflict = EVENT_BRANCH_EFFECTS.conflict;
       expect((conflict.participate as { prestige: number }).prestige).toBe(25);
     });
 
@@ -395,7 +395,7 @@ describe('集成测试: 地图事件系统 (Play §8.1-8.4, §10.0C)', () => {
       // 验证事件效果定义包含民心变化
       const disaster = EVENT_BRANCH_EFFECTS.disaster;
       expect((disaster.relief as { morale: number }).morale).toBe(20);
-      expect((disaster.ignore as { productionPenalty: number }).productionPenalty).toBe(0.2);
+      expect((disaster.ignore as { production_debuff: number }).production_debuff).toBe(0.2);
     });
   });
 });

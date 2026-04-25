@@ -375,7 +375,7 @@ describe('集成测试: 攻城战执行 + 领土占领 (Play §7.2-7.4, §10.0B,
       // 验证事件类型定义存在
       // MapEventSystem 尚未实现，此处验证配置数据完整性
       const basicEvents = ['merchant_distress', 'refugees', 'treasure', 'bandits'];
-      const extendedEvents = ['bandit_invasion', 'caravan_passing', 'disaster', 'ruins', 'faction_conflict'];
+      const extendedEvents = ['bandit', 'caravan', 'disaster', 'ruins', 'conflict'];
       expect(basicEvents).toHaveLength(4);
       expect(extendedEvents).toHaveLength(5);
       expect([...basicEvents, ...extendedEvents]).toHaveLength(9);

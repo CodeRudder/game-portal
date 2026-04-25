@@ -411,7 +411,7 @@ describe('集成测试: 交叉验证 (Play §13.1-13.4)', () => {
 
     it('地图事件统一: 9类（4基础+5扩展）', () => {
       const basicEvents = ['merchant_distress', 'refugees', 'treasure', 'bandits'];
-      const extendedEvents = ['bandit_invasion', 'caravan_passing', 'disaster', 'ruins', 'faction_conflict'];
+      const extendedEvents = ['bandit', 'caravan', 'disaster', 'ruins', 'conflict'];
       expect(basicEvents).toHaveLength(4);
       expect(extendedEvents).toHaveLength(5);
       expect([...basicEvents, ...extendedEvents]).toHaveLength(9);
@@ -488,7 +488,7 @@ describe('集成测试: 交叉验证 (Play §13.1-13.4)', () => {
 
     it('事件类型: 9类（非4类）', () => {
       const basicEvents = ['merchant_distress', 'refugees', 'treasure', 'bandits'];
-      const extendedEvents = ['bandit_invasion', 'caravan_passing', 'disaster', 'ruins', 'faction_conflict'];
+      const extendedEvents = ['bandit', 'caravan', 'disaster', 'ruins', 'conflict'];
       const allEvents = [...basicEvents, ...extendedEvents];
       expect(allEvents).toHaveLength(9);
       expect(allEvents).toHaveLength(4 + 5);
