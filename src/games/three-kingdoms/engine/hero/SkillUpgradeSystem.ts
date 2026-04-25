@@ -1,9 +1,10 @@
 /**
  * 技能升级系统 — 聚合根
  *
- * 职责：技能升级消耗计算、技能效果增强、技能等级上限、觉醒技能突破前置、策略推荐
+ * 职责：技能升级消耗计算、技能效果增强、技能等级上限、觉醒技能突破前置
  * 规则：依赖 HeroSystem，通过回调解耦 ResourceSystem
- * 功能点：技能升级消耗、技能效果增强、技能等级上限（受星级影响）、觉醒技能突破前置、策略推荐
+ *
+ * 策略推荐已拆分到 SkillStrategyRecommender.ts，通过依赖注入调用。
  *
  * @module engine/hero/SkillUpgradeSystem
  */
@@ -12,6 +13,13 @@ import type { GeneralData, SkillData, SkillType } from './hero.types';
 import type { HeroSystem } from './HeroSystem';
 import type { HeroStarSystem } from './HeroStarSystem';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
+import { SkillStrategyRecommender } from './SkillStrategyRecommender';
+// Re-export types from SkillStrategyRecommender for backward compatibility
+export type {
+  EnemyType,
+  StrategyRecommendation,
+} from './SkillStrategyRecommender';
+import type { EnemyType, StrategyRecommendation } from './SkillStrategyRecommender';
 import { gameLog } from '../../core/logger';
 
 // ── 类型 ──
@@ -49,76 +57,39 @@ export interface SkillUpgradeResult {
   effectAfter: number;
 }
 
-/** 敌人类型 */
-export type EnemyType = 'burn-heavy' | 'physical' | 'boss';
-
-/** 策略推荐结果 */
-export interface StrategyRecommendation {
-  enemyType: EnemyType;
-  /** 推荐的技能类型优先级 */
-  prioritySkillTypes: SkillType[];
-  /** 推荐的属性侧重 */
-  focusStats: string[];
-  /** 策略描述 */
-  description: string;
-}
-
 /** 技能升级系统状态 */
 export interface SkillUpgradeState {
-  /** 各武将各技能的升级次数记录 */
-  upgradeHistory: Record<string, number>; // `${generalId}_${skillIndex}` → totalUpgrades
-  /** 突破解锁的技能记录 Map<`${generalId}_${breakthroughLevel}`, skillIndex[]> */
+  upgradeHistory: Record<string, number>;
   breakthroughSkillUnlocks: Record<string, number[]>;
-}
-
-/** 技能解锁状态 */
-export interface SkillUnlockState {
-  /** 武将ID */
-  heroId: string;
-  /** 已解锁的突破技能列表 */
-  unlockedSkills: {
-    /** 突破等级 */
-    breakthroughLevel: number;
-    /** 解锁的技能索引 */
-    skillIndex: number;
-    /** 解锁类型 */
-    unlockType: 'passive_enhance' | 'new_skill' | 'ultimate_enhance';
-    /** 解锁描述 */
-    description: string;
-  }[];
 }
 
 /** 武将技能条目（heroSkills Map 的 value 类型） */
 export interface HeroSkillEntry {
-  /** 技能列表 */
   skills: { level: number }[];
-  /** 已解锁的突破技能 key 列表 */
   unlockedSkills?: string[];
 }
 
 /** 额外效果描述 */
 export interface ExtraEffect {
-  /** 技能索引 */
   skillIndex: number;
-  /** 额外效果名称 */
   name: string;
-  /** 额外效果描述 */
   description: string;
-  /** 效果数值加成 */
   bonus: number;
+}
+
+/** 技能解锁状态 */
+export interface SkillUnlockState {
+  heroId: string;
+  unlockedSkills: {
+    breakthroughLevel: number;
+    skillIndex: number;
+    unlockType: 'passive_enhance' | 'new_skill' | 'ultimate_enhance';
+    description: string;
+  }[];
 }
 
 // ── 常量 ──
 
-/**
- * 技能升级消耗阶梯表（对齐PRD）
- *
- * currentLevel → 升到下一级所需消耗
- * Lv1→Lv2: 500铜钱 + 1技能书
- * Lv2→Lv3: 1500铜钱 + 1技能书
- * Lv3→Lv4: 4000铜钱 + 2技能书
- * Lv4→Lv5: 10000铜钱 + 2技能书
- */
 const SKILL_UPGRADE_COST_TABLE: Record<number, { copper: number; skillBook: number }> = {
   1: { copper: 500, skillBook: 1 },
   2: { copper: 1500, skillBook: 1 },
@@ -126,42 +97,15 @@ const SKILL_UPGRADE_COST_TABLE: Record<number, { copper: number; skillBook: numb
   4: { copper: 10000, skillBook: 2 },
 };
 
-/** 超出查表范围时的默认消耗（取最高级） */
 const DEFAULT_SKILL_UPGRADE_COST = { copper: 10000, skillBook: 2 };
-
-/** 基础技能效果值（从技能描述中的百分比提取的基数） */
 const BASE_SKILL_EFFECT = 1.0;
-
-/** 每级技能效果增量 */
 const SKILL_EFFECT_PER_LEVEL = 0.1;
-
-/** 默认技能等级上限 */
 const DEFAULT_SKILL_LEVEL_CAP = 5;
-
-/** 星级→技能等级上限映射 */
-const STAR_SKILL_CAP: Record<number, number> = {
-  1: 3,
-  2: 4,
-  3: 5,
-  4: 6,
-  5: 8,
-  6: 10,
-};
-
-/** 觉醒技能最低突破阶段要求 */
 const AWAKEN_BREAKTHROUGH_REQUIREMENT = 1;
-
-/** 每级CD减少百分比（0.05 = 5%） */
-const CD_REDUCE_PERCENT_PER_LEVEL = 0.05;
-
-/** CD减少上限（0.30 = 30%） */
-const CD_REDUCE_MAX = 0.30;
-
-/** 触发额外效果的最低技能等级 */
 const EXTRA_EFFECT_MIN_LEVEL = 5;
-
-/** 额外效果加成比例 */
 const EXTRA_EFFECT_BONUS = 0.2;
+
+const STAR_SKILL_CAP: Record<number, number> = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 8, 6: 10 };
 
 /** 突破等级→技能解锁映射配置 */
 const BREAKTHROUGH_SKILL_MAP: Record<number, {
@@ -169,48 +113,10 @@ const BREAKTHROUGH_SKILL_MAP: Record<number, {
   skillIndex: number;
   description: string;
 }> = {
-  10: {
-    unlockType: 'passive_enhance',
-    skillIndex: 1,
-    description: '突破Lv10：被动技能强化，效果提升20%',
-  },
-  20: {
-    unlockType: 'new_skill',
-    skillIndex: 3,
-    description: '突破Lv20：解锁新技能',
-  },
-  30: {
-    unlockType: 'ultimate_enhance',
-    skillIndex: 0,
-    description: '突破Lv30：终极技能强化，伤害提升20%',
-  },
-  40: {
-    unlockType: 'ultimate_enhance',
-    skillIndex: 0,
-    description: '突破Lv40：终极技能强化+，伤害提升35%',
-  },
-};
-
-/** 策略推荐配置 */
-const STRATEGY_CONFIG: Record<EnemyType, StrategyRecommendation> = {
-  'burn-heavy': {
-    enemyType: 'burn-heavy',
-    prioritySkillTypes: ['passive', 'active'],
-    focusStats: ['intelligence', 'defense'],
-    description: '多灼烧敌人→高智力+治疗型推荐',
-  },
-  'physical': {
-    enemyType: 'physical',
-    prioritySkillTypes: ['passive', 'faction'],
-    focusStats: ['defense', 'speed'],
-    description: '多物理敌人→高防+坦克型推荐',
-  },
-  'boss': {
-    enemyType: 'boss',
-    prioritySkillTypes: ['active', 'awaken'],
-    focusStats: ['attack', 'intelligence'],
-    description: 'BOSS关→高爆发+控制型推荐',
-  },
+  10: { unlockType: 'passive_enhance', skillIndex: 1, description: '突破Lv10：被动技能强化，效果提升20%' },
+  20: { unlockType: 'new_skill', skillIndex: 3, description: '突破Lv20：解锁新技能' },
+  30: { unlockType: 'ultimate_enhance', skillIndex: 0, description: '突破Lv30：终极技能强化，伤害提升20%' },
+  40: { unlockType: 'ultimate_enhance', skillIndex: 0, description: '突破Lv40：终极技能强化+，伤害提升35%' },
 };
 
 // ── 辅助函数 ──
@@ -225,19 +131,15 @@ function historyKey(generalId: string, skillIndex: number): string {
 
 // ── SkillUpgradeSystem ──
 
-/**
- * 技能升级系统
- *
- * 管理武将技能升级、技能效果计算、技能等级上限（受星级影响）、觉醒技能突破前置、策略推荐。
- */
 export class SkillUpgradeSystem implements ISubsystem {
   readonly name = 'skillUpgrade' as const;
   private coreDeps: ISystemDeps | null = null;
   private deps: SkillUpgradeDeps | null = null;
   private state: SkillUpgradeState;
   private heroSkills = new Map<string, HeroSkillEntry>();
+  /** 策略推荐子系统（依赖注入） */
+  private readonly strategyRecommender: SkillStrategyRecommender;
 
-  /** 突破等级对应的技能解锁配置 */
   private static readonly BREAKTHROUGH_SKILL_MAP: Record<number, { type: string; description: string }> = {
     10: { type: 'passive_enhance', description: '被动技能强化' },
     20: { type: 'new_skill', description: '解锁新技能' },
@@ -247,18 +149,18 @@ export class SkillUpgradeSystem implements ISubsystem {
 
   constructor() {
     this.state = createEmptyState();
+    this.strategyRecommender = new SkillStrategyRecommender();
   }
 
   // ── ISubsystem 接口 ──
 
   init(deps: ISystemDeps): void {
     this.coreDeps = deps;
+    this.strategyRecommender.init(deps);
     gameLog.info('[SkillUpgradeSystem] initialized');
   }
 
-  update(_dt: number): void {
-    // 技能升级系统无需每帧更新
-  }
+  update(_dt: number): void { /* 无需每帧更新 */ }
 
   getState(): SkillUpgradeState {
     return {
@@ -268,38 +170,23 @@ export class SkillUpgradeSystem implements ISubsystem {
     };
   }
 
-  reset(): void {
-    this.state = createEmptyState();
-  }
+  reset(): void { this.state = createEmptyState(); }
 
   // ── 依赖注入 ──
 
-  /** 注入业务依赖（资源回调 + HeroSystem + HeroStarSystem） */
-  setSkillUpgradeDeps(deps: SkillUpgradeDeps): void {
-    this.deps = deps;
-  }
+  setSkillUpgradeDeps(deps: SkillUpgradeDeps): void { this.deps = deps; }
+
+  /** 获取策略推荐子系统 */
+  getStrategyRecommender(): SkillStrategyRecommender { return this.strategyRecommender; }
 
   // ── 核心功能 ──
 
-  /**
-   * 升级技能
-   *
-   * 消耗技能书和铜钱，提升技能等级。
-   * 受星级等级上限约束，觉醒技能需要突破前置。
-   *
-   * @param generalId - 武将ID
-   * @param skillIndex - 技能索引
-   * @param materials - 提供的材料
-   * @returns 升级结果
-   */
   upgradeSkill(
     generalId: string,
     skillIndex: number,
     materials: SkillUpgradeMaterials,
   ): SkillUpgradeResult {
-    if (!this.deps) {
-      return this.failResult(generalId, skillIndex);
-    }
+    if (!this.deps) return this.failResult(generalId, skillIndex);
 
     const { heroSystem, heroStarSystem } = this.deps;
     const general = heroSystem.getGeneral(generalId);
@@ -308,7 +195,6 @@ export class SkillUpgradeSystem implements ISubsystem {
       return this.failResult(generalId, skillIndex);
     }
 
-    // 检查技能索引是否有效
     if (skillIndex < 0 || skillIndex >= general.skills.length) {
       gameLog.info(`[SkillUpgradeSystem] invalid skill index: ${skillIndex}`);
       return this.failResult(generalId, skillIndex);
@@ -317,13 +203,11 @@ export class SkillUpgradeSystem implements ISubsystem {
     const skill = general.skills[skillIndex];
     const currentLevel = skill.level;
 
-    // 检查觉醒技能是否需要突破
     if (skill.type === 'awaken' && !this.canUpgradeAwakenSkill(generalId)) {
       gameLog.info(`[SkillUpgradeSystem] awaken skill requires breakthrough: ${generalId}`);
       return this.failResult(generalId, skillIndex, currentLevel);
     }
 
-    // 检查技能等级上限
     const star = heroStarSystem.getStar(generalId);
     const levelCap = this.getSkillLevelCap(star);
     if (currentLevel >= levelCap) {
@@ -331,57 +215,41 @@ export class SkillUpgradeSystem implements ISubsystem {
       return this.failResult(generalId, skillIndex, currentLevel);
     }
 
-    // 计算升级消耗
     const cost = this.calculateUpgradeCost(currentLevel);
 
-    // 检查材料是否充足
     if (materials.skillBooks < cost.skillBooks || materials.gold < cost.gold) {
       gameLog.info(`[SkillUpgradeSystem] insufficient materials: need ${JSON.stringify(cost)}, got ${JSON.stringify(materials)}`);
       return this.failResult(generalId, skillIndex, currentLevel);
     }
 
-    // 检查实际资源是否充足
     if (!this.deps.canAffordResource('gold', cost.gold)) {
       gameLog.info('[SkillUpgradeSystem] insufficient gold resource');
       return this.failResult(generalId, skillIndex, currentLevel);
     }
 
-    // 消耗资源
     if (!this.deps.spendResource('gold', cost.gold)) {
       gameLog.info('[SkillUpgradeSystem] failed to spend gold');
       return this.failResult(generalId, skillIndex, currentLevel);
     }
 
-    // 计算效果
     const effectBefore = this.getSkillEffect(generalId, skillIndex);
     const newLevel = currentLevel + 1;
 
-    // 更新技能等级到 HeroSystem
     heroSystem.updateSkillLevel(generalId, skillIndex, newLevel);
 
-    // 记录升级历史
     const key = historyKey(generalId, skillIndex);
     this.state.upgradeHistory[key] = (this.state.upgradeHistory[key] || 0) + 1;
 
     const effectAfter = this.getSkillEffect(generalId, skillIndex);
-
     gameLog.info(`[SkillUpgradeSystem] skill upgraded: ${generalId}[${skillIndex}] Lv${currentLevel}→${newLevel}`);
 
     return {
-      success: true,
-      generalId,
-      skillIndex,
-      previousLevel: currentLevel,
-      currentLevel: newLevel,
-      materialsUsed: cost,
-      effectBefore,
-      effectAfter,
+      success: true, generalId, skillIndex,
+      previousLevel: currentLevel, currentLevel: newLevel,
+      materialsUsed: cost, effectBefore, effectAfter,
     };
   }
 
-  /**
-   * 获取技能等级
-   */
   getSkillLevel(generalId: string, skillIndex: number): number {
     if (!this.deps) return 0;
     const general = this.deps.heroSystem.getGeneral(generalId);
@@ -389,12 +257,6 @@ export class SkillUpgradeSystem implements ISubsystem {
     return general.skills[skillIndex].level;
   }
 
-  /**
-   * 获取技能效果值
-   *
-   * 效果 = 基础效果 + (技能等级 - 1) × 每级增量
-   * 例如 Lv1 = 1.0, Lv2 = 1.1, Lv3 = 1.2 ...
-   */
   getSkillEffect(generalId: string, skillIndex: number): number {
     if (!this.deps) return BASE_SKILL_EFFECT;
     const general = this.deps.heroSystem.getGeneral(generalId);
@@ -403,65 +265,35 @@ export class SkillUpgradeSystem implements ISubsystem {
     return BASE_SKILL_EFFECT + (level - 1) * SKILL_EFFECT_PER_LEVEL;
   }
 
-  /**
-   * 获取技能等级上限（受星级影响）
-   *
-   * 星级越高，技能等级上限越高。
-   * @param starLevel - 武将星级
-   */
   getSkillLevelCap(starLevel: number): number {
     if (starLevel < 1) return STAR_SKILL_CAP[1] ?? DEFAULT_SKILL_LEVEL_CAP;
     return STAR_SKILL_CAP[starLevel] ?? DEFAULT_SKILL_LEVEL_CAP;
   }
 
-  /**
-   * 检查觉醒技能是否可以升级（需要突破）
-   *
-   * 觉醒技能需要武将完成至少1次突破才能升级。
-   */
   canUpgradeAwakenSkill(generalId: string): boolean {
     if (!this.deps) return false;
     const breakthroughStage = this.deps.heroStarSystem.getBreakthroughStage(generalId);
     return breakthroughStage >= AWAKEN_BREAKTHROUGH_REQUIREMENT;
   }
 
-  /**
-   * 根据敌人类型推荐策略
-   *
-   * @param enemyType - 敌人类型
-   */
+  /** 根据敌人类型推荐策略（委托给 SkillStrategyRecommender） */
   recommendStrategy(enemyType: EnemyType): StrategyRecommendation {
-    return { ...STRATEGY_CONFIG[enemyType] };
+    return this.strategyRecommender.recommendStrategy(enemyType);
   }
 
   // ═══════════════════════════════════════════
-  // P0-1: 突破解锁技能系统（F4.06/F4.07/F4.08）
+  // P0-1: 突破解锁技能系统
   // ═══════════════════════════════════════════
 
-  /**
-   * 突破时解锁技能
-   *
-   * 根据突破等级映射表解锁对应的技能强化/新技能/终极强化。
-   * Lv10→被动技能强化、Lv20→新技能、Lv30→终极技能强化
-   *
-   * @param heroId - 武将ID
-   * @param breakthroughLevel - 突破等级
-   * @returns 解锁结果，null 表示无对应配置或武将不存在
-   */
   unlockSkillOnBreakthrough(heroId: string, breakthroughLevel: number): { unlocked: boolean; skillType: string; description: string } | null {
     const mapping = SkillUpgradeSystem.BREAKTHROUGH_SKILL_MAP[breakthroughLevel];
     if (!mapping) return null;
 
-    // 自动初始化 heroSkills 条目（确保从 HeroSystem 同步过来的武将也能触发解锁）
     let state = this.heroSkills.get(heroId);
     if (!state) {
-      // 从 HeroSystem 获取武将技能数据初始化
       const general = this.deps?.heroSystem.getGeneral(heroId);
-      if (!general) return null; // 武将不存在于 HeroSystem，无法解锁
-      state = {
-        skills: general.skills.map(s => ({ level: s.level })),
-        unlockedSkills: [],
-      };
+      if (!general) return null;
+      state = { skills: general.skills.map(s => ({ level: s.level })), unlockedSkills: [] };
       this.heroSkills.set(heroId, state);
     }
 
@@ -470,7 +302,6 @@ export class SkillUpgradeSystem implements ISubsystem {
     if (!state.unlockedSkills) state.unlockedSkills = [];
     state.unlockedSkills.push(key);
 
-    // 记录到 state 的突破解锁历史
     const bkKey = `${heroId}_${breakthroughLevel}`;
     if (!this.state.breakthroughSkillUnlocks[bkKey]) {
       this.state.breakthroughSkillUnlocks[bkKey] = [mapping.type === 'passive_enhance' ? 1 : mapping.type === 'new_skill' ? 3 : 0];
@@ -480,12 +311,6 @@ export class SkillUpgradeSystem implements ISubsystem {
     return { unlocked: true, skillType: mapping.type, description: mapping.description };
   }
 
-  /**
-   * 查询技能解锁状态
-   *
-   * @param heroId - 武将ID
-   * @returns 各突破等级的技能解锁状态列表
-   */
   getSkillUnlockState(heroId: string): { breakthroughLevel: number; unlocked: boolean; skillType: string; description: string }[] {
     const state = this.heroSkills.get(heroId);
     const results: { breakthroughLevel: number; unlocked: boolean; skillType: string; description: string }[] = [];
@@ -502,17 +327,9 @@ export class SkillUpgradeSystem implements ISubsystem {
   }
 
   // ═══════════════════════════════════════════
-  // P0-2: 技能CD减少和额外效果（F5.08/F5.09）
+  // P0-2: 技能CD减少和额外效果
   // ═══════════════════════════════════════════
 
-  /**
-   * 获取技能CD减少量
-   *
-   * 每级技能减少5%CD，最大30%。
-   * @param heroId - 武将ID
-   * @param skillIndex - 技能索引
-   * @returns CD减少量（比例）
-   */
   getCooldownReduce(heroId: string, skillIndex: number): number {
     const state = this.heroSkills.get(heroId);
     if (!state) return 0;
@@ -521,13 +338,6 @@ export class SkillUpgradeSystem implements ISubsystem {
     return Math.min(skill.level * 0.05, 0.30);
   }
 
-  /**
-   * 是否有额外效果（技能等级≥5）
-   *
-   * @param heroId - 武将ID
-   * @param skillIndex - 技能索引
-   * @returns 是否有额外效果
-   */
   hasExtraEffect(heroId: string, skillIndex: number): boolean {
     const state = this.heroSkills.get(heroId);
     if (!state) return false;
@@ -535,17 +345,8 @@ export class SkillUpgradeSystem implements ISubsystem {
     return skill ? skill.level >= 5 : false;
   }
 
-  /**
-   * 获取额外效果描述
-   *
-   * 技能等级≥5时解锁额外效果，提供额外伤害/治疗加成。
-   * @param heroId - 武将ID
-   * @param skillIndex - 技能索引
-   * @returns 额外效果描述，或 null（未达到条件）
-   */
   getExtraEffect(heroId: string, skillIndex: number): ExtraEffect | null {
     if (!this.hasExtraEffect(heroId, skillIndex)) return null;
-
     if (!this.deps) return null;
     const general = this.deps.heroSystem.getGeneral(heroId);
     if (!general || skillIndex < 0 || skillIndex >= general.skills.length) return null;
@@ -564,27 +365,18 @@ export class SkillUpgradeSystem implements ISubsystem {
 
   // ── 内部方法 ──
 
-  /** 计算升级到下一级的材料消耗（阶梯查表，对齐PRD） */
   private calculateUpgradeCost(currentLevel: number): SkillUpgradeMaterials {
     const entry = SKILL_UPGRADE_COST_TABLE[currentLevel] ?? DEFAULT_SKILL_UPGRADE_COST;
-    return {
-      skillBooks: entry.skillBook,
-      gold: entry.copper,
-    };
+    return { skillBooks: entry.skillBook, gold: entry.copper };
   }
 
-  /** 生成失败结果 */
   private failResult(generalId: string, skillIndex: number, level = 0): SkillUpgradeResult {
     return {
-      success: false,
-      generalId,
-      skillIndex,
-      previousLevel: level,
-      currentLevel: level,
+      success: false, generalId, skillIndex,
+      previousLevel: level, currentLevel: level,
       materialsUsed: { skillBooks: 0, gold: 0 },
       effectBefore: BASE_SKILL_EFFECT + (level - 1) * SKILL_EFFECT_PER_LEVEL,
       effectAfter: BASE_SKILL_EFFECT + (level - 1) * SKILL_EFFECT_PER_LEVEL,
     };
   }
-
 }

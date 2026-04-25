@@ -7,9 +7,11 @@
 // 核心系统
 export { HeroSystem } from './HeroSystem';
 export { HeroRecruitSystem } from './HeroRecruitSystem';
+export { HeroRecruitUpManager } from './HeroRecruitUpManager';
 export { HeroLevelSystem } from './HeroLevelSystem';
 export { HeroStarSystem } from './HeroStarSystem';
 export { SkillUpgradeSystem } from './SkillUpgradeSystem';
+export { SkillStrategyRecommender } from './SkillStrategyRecommender';
 export { HeroFormation, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './HeroFormation';
 export { HeroBadgeSystem } from './HeroBadgeSystem';
 export { HeroAttributeCompare } from './HeroAttributeCompare';
@@ -43,6 +45,10 @@ export type {
 export type {
   SkillUnlockState, ExtraEffect,
 } from './SkillUpgradeSystem';
+export type {
+  EnemyType as SkillEnemyType,
+  StrategyRecommendation as SkillStrategyRecommendation,
+} from './SkillStrategyRecommender';
 export type {
   TodayTodoItem, QuickActionResult, BadgeSystemState, BadgeSystemDeps,
 } from './HeroBadgeSystem';

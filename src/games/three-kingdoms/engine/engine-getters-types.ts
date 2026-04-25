@@ -12,6 +12,8 @@ import type { HeroLevelSystem, LevelUpResult, BatchEnhanceResult, EnhancePreview
 import type { HeroFormation, FormationData } from './hero/HeroFormation';
 import type { HeroStarSystem } from './hero/HeroStarSystem';
 import type { SkillUpgradeSystem } from './hero/SkillUpgradeSystem';
+import type { HeroRecruitUpManager } from './hero/HeroRecruitUpManager';
+import type { SkillStrategyRecommender } from './hero/SkillStrategyRecommender';
 import type { BondSystem } from './bond/BondSystem';
 import type { FormationRecommendSystem } from './hero/FormationRecommendSystem';
 import type { HeroDispatchSystem } from './hero/HeroDispatchSystem';
@@ -102,6 +104,10 @@ export interface EngineGettersMixin {
   getActiveFormation(): FormationData | null;
   getHeroStarSystem(): HeroStarSystem;
   getSkillUpgradeSystem(): SkillUpgradeSystem;
+  /** 获取 UP 武将管理子系统 */
+  getHeroRecruitUpManager(): HeroRecruitUpManager;
+  /** 获取技能策略推荐子系统 */
+  getSkillStrategyRecommender(): SkillStrategyRecommender;
   getBondSystem(): BondSystem;
   getFormationRecommendSystem(): FormationRecommendSystem;
   getHeroDispatchSystem(): HeroDispatchSystem;

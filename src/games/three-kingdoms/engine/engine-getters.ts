@@ -14,6 +14,8 @@ import type { HeroLevelSystem, LevelUpResult, BatchEnhanceResult, EnhancePreview
 import type { HeroFormation, FormationData } from './hero/HeroFormation';
 import type { HeroStarSystem } from './hero/HeroStarSystem';
 import type { SkillUpgradeSystem } from './hero/SkillUpgradeSystem';
+import type { HeroRecruitUpManager } from './hero/HeroRecruitUpManager';
+import type { SkillStrategyRecommender } from './hero/SkillStrategyRecommender';
 import type { BondSystem } from './bond/BondSystem';
 import type { FormationRecommendSystem } from './hero/FormationRecommendSystem';
 import type { HeroDispatchSystem } from './hero/HeroDispatchSystem';
@@ -121,6 +123,8 @@ export function applyGetters(cls: any): void {
   p.getActiveFormation = function(this: EngineAny): FormationData | null { return this.heroFormation.getActiveFormation(); };
   p.getHeroStarSystem = function(this: EngineAny): HeroStarSystem { return this.heroStarSystem; };
   p.getSkillUpgradeSystem = function(this: EngineAny): SkillUpgradeSystem { return this.skillUpgradeSystem; };
+  p.getHeroRecruitUpManager = function(this: EngineAny): HeroRecruitUpManager { return this.heroRecruit.getUpManager(); };
+  p.getSkillStrategyRecommender = function(this: EngineAny): SkillStrategyRecommender { return this.skillUpgradeSystem.getStrategyRecommender(); };
   p.getBondSystem = function(this: EngineAny): BondSystem { return this.bondSystem; };
   p.getFormationRecommendSystem = function(this: EngineAny): FormationRecommendSystem { return this.formationRecommendSystem; };
   p.getHeroDispatchSystem = function(this: EngineAny): HeroDispatchSystem { return this.heroDispatchSystem; };
