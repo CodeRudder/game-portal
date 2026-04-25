@@ -64,7 +64,7 @@ export function calcRebirthMultiplier(count: number): number {
     baseMultiplier: REBIRTH_MULTIPLIER.base,
     perRebirthIncrement: REBIRTH_MULTIPLIER.perRebirth,
     maxMultiplier: REBIRTH_MULTIPLIER.max,
-    curveType: 'linear',
+    curveType: 'logarithmic',
     decayFactor: 1.0,
   };
   return calcRebirthMultiplierCore(count, config);

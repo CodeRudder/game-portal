@@ -79,6 +79,16 @@ export function calcPower(stats: HeroBaseStats, levelFactor: number, starFactor:
 /** 计算转生倍率（递减曲线） */
 export function calcRebirthMultiplier(count: number, config: RebirthBalanceConfig): number {
   if (count <= 0) return 1.0;
+
+  if (config.curveType === 'logarithmic') {
+    // 对数衰减曲线：multiplier = base + perRebirth × ln(1 + count) / ln(2)
+    // 高转生次数时倍率增长自然放缓，避免线性失控
+    const logIncrement = config.perRebirthIncrement * Math.log(1 + count) / Math.log(2);
+    const multiplier = Math.min(config.baseMultiplier + logIncrement, config.maxMultiplier);
+    return Math.round(multiplier * 100) / 100;
+  }
+
+  // 原有递减曲线逻辑（linear / diminishing / accelerating）
   let multiplier = config.baseMultiplier;
   for (let i = 1; i <= count; i++) {
     const increment = config.perRebirthIncrement * Math.pow(config.decayFactor, i - 1);

@@ -302,7 +302,7 @@ export interface RebirthBalanceConfig {
   /** 最大倍率 */
   maxMultiplier: number;
   /** 倍率增长曲线类型 */
-  curveType: 'linear' | 'diminishing' | 'accelerating';
+  curveType: 'linear' | 'diminishing' | 'accelerating' | 'logarithmic';
   /** 衰减因子（diminishing 曲线时使用） */
   decayFactor: number;
 }

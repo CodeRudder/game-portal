@@ -101,10 +101,12 @@ describe('RebirthSystem', () => {
     });
 
     test('calcRebirthMultiplier: 不超过 max', () => {
-      // 给一个很大的次数
+      // 给一个很大的次数 — 对数衰减曲线下高转生次数不会线性失控
       const result = calcRebirthMultiplier(999);
       expect(result).toBeLessThanOrEqual(REBIRTH_MULTIPLIER.max);
-      expect(result).toBeCloseTo(REBIRTH_MULTIPLIER.max);
+      // 对数曲线：count=999 时 multiplier ≈ base + perRebirth * ln(1000)/ln(2) ≈ 1 + 0.5*9.97 ≈ 5.98
+      expect(result).toBeGreaterThan(REBIRTH_MULTIPLIER.base);
+      expect(result).toBeLessThanOrEqual(REBIRTH_MULTIPLIER.max);
     });
 
     test('倍率随次数递增', () => {
