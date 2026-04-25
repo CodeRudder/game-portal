@@ -922,10 +922,10 @@ describe('v16.0 传承有序 — §7 转生条件完整验证', () => {
 
     // 第1次转生: 1.0 + 1*0.5 = 1.5
     expect(calcRebirthMultiplier(1)).toBeCloseTo(1.5, 2);
-    // 第2次转生: 1.0 + 2*0.5 = 2.0
-    expect(calcRebirthMultiplier(2)).toBeCloseTo(2.0, 2);
-    // 第5次转生: 1.0 + 5*0.5 = 3.5
-    expect(calcRebirthMultiplier(5)).toBeCloseTo(3.5, 2);
+    // 第2次转生: 1.0 + 0.5 * log2(3) ≈ 1.79 (对数衰减)
+    expect(calcRebirthMultiplier(2)).toBeCloseTo(1.0 + 0.5 * Math.log2(3), 2);
+    // 第5次转生: 1.0 + 0.5 * log2(6) ≈ 2.29 (对数衰减)
+    expect(calcRebirthMultiplier(5)).toBeCloseTo(1.0 + 0.5 * Math.log2(6), 2);
     // 上限：第20次转生应被截断为10.0
     expect(calcRebirthMultiplier(20)).toBeLessThanOrEqual(10.0);
   });
@@ -973,7 +973,8 @@ describe('v16.0 传承有序 — §7 转生条件完整验证', () => {
       expect(r.success).toBe(true);
     }
 
-    expect(rebirth.getCurrentMultiplier()).toBeCloseTo(2.5, 2); // 1.0 + 3*0.5
+    // 3次转生: count=3 → 1.0 + 0.5 * log2(4) = 2.0 (对数衰减)
+    expect(rebirth.getCurrentMultiplier()).toBeCloseTo(1.0 + 0.5 * Math.log2(4), 2);
   });
 
   // ── 7.3 转生后属性重置与保留 ──
