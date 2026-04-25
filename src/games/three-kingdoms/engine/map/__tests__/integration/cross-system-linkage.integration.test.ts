@@ -29,6 +29,7 @@ import { TechPointSystem } from '../../../tech/TechPointSystem';
 import { TechResearchSystem } from '../../../tech/TechResearchSystem';
 import { TechEffectSystem } from '../../../tech/TechEffectSystem';
 import { MapEventSystem } from '../../MapEventSystem';
+import { STAR_UP_FRAGMENT_COST } from '../../../hero/star-up-config';
 import { createSim } from '../../../../test-utils/test-helpers';
 import { SUFFICIENT_RESOURCES } from '../../../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../../../test-utils/GameEventSimulator';
@@ -160,7 +161,6 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
 
       // 升星关羽
       const starSystem = sim.engine.getHeroStarSystem();
-      const { STAR_UP_FRAGMENT_COST } = require('../../../hero/star-up-config');
       sim.addHeroFragments('guanyu', STAR_UP_FRAGMENT_COST[1]);
       const result = starSystem.starUp('guanyu');
       expect(result.success).toBe(true);
@@ -253,7 +253,6 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
 
       // 模拟碎片积累并升星
       const starSystem = sim.engine.getHeroStarSystem();
-      const { STAR_UP_FRAGMENT_COST } = require('../../../hero/star-up-config');
       sim.addHeroFragments('guanyu', STAR_UP_FRAGMENT_COST[1]);
       const result = starSystem.starUp('guanyu');
       expect(result.success).toBe(true);
@@ -272,7 +271,7 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       effects.setTechTree(tree);
 
       // 查找军事路线第一个节点（兵法入门）
-      const militaryNodes = tree.getNodesByPath('military');
+      const militaryNodes = tree.getPathNodes('military');
       expect(militaryNodes.length).toBeGreaterThan(0);
       const firstNode = militaryNodes[0];
 
@@ -317,7 +316,7 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       effects.setTechTree(tree);
 
       // 查找经济路线第一个节点（农耕改良）
-      const economyNodes = tree.getNodesByPath('economy');
+      const economyNodes = tree.getPathNodes('economy');
       expect(economyNodes.length).toBeGreaterThan(0);
       const firstNode = economyNodes[0];
 
@@ -360,7 +359,7 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       effects.setTechTree(tree);
 
       // 查找文化路线节点
-      const cultureNodes = tree.getNodesByPath('culture');
+      const cultureNodes = tree.getPathNodes('culture');
       expect(cultureNodes.length).toBeGreaterThan(0);
       const firstNode = cultureNodes[0];
 
@@ -388,7 +387,7 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       expect(atkBefore).toBe(0);
 
       // 查找仁者无敌节点（文化6A）
-      const cultureNodes = tree.getNodesByPath('culture');
+      const cultureNodes = tree.getPathNodes('culture');
       const benevolenceNode = cultureNodes.find(n => n.id.includes('benevolence') || n.id.includes('6a'));
       // 节点存在性验证（如果节点不存在则跳过不报错）
       if (benevolenceNode) {
@@ -421,7 +420,6 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       sim.addHeroDirectly('guanyu');
 
       const starSystem = sim.engine.getHeroStarSystem();
-      const { STAR_UP_FRAGMENT_COST } = require('../../../hero/star-up-config');
 
       // 添加足够碎片
       sim.addHeroFragments('guanyu', STAR_UP_FRAGMENT_COST[1]);

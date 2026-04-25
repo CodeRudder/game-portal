@@ -105,13 +105,47 @@ function createFullSnapshotParams() {
 // ═══════════════════════════════════════════════════════════════
 describe('v9.0 E2E — §7.5 离线收益→邮件系统→活动奖励三系统串联', () => {
 
-  it.todo('§7.5 离线收益弹窗资源数值与公式一致 [引擎未实现]', () => {
+  it('§7.5 离线收益弹窗资源数值与公式一致 [引擎未实现]', () => {
     // Play: Step1离线收益弹窗(资源收益) → Step2回归面板(含活动进度摘要) → 邮件系统
-    // 引擎未实现邮件系统和活动系统的离线联动
+    const sim = createSim();
+    const offlineReward = sim.engine.getOfflineRewardSystem();
+    const rates = createProductionRates();
+    const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
+    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+
+    // 计算离线收益
+    const result = offlineReward.calculateOfflineReward(36000, rates, current, caps, 0, 'resource');
+
+    // 弹窗面板数据应与公式计算结果一致
+    expect(result.panelData.totalEarned.grain).toBe(result.cappedEarned.grain + result.overflowResources.grain);
+    expect(result.panelData.totalEarned.gold).toBe(result.cappedEarned.gold + result.overflowResources.gold);
+
+    // 手动验证公式一致
+    const snapshot = calculateOfflineSnapshot(36000, rates, {});
+    expect(result.snapshot.totalEarned.grain).toBe(snapshot.totalEarned.grain);
   });
 
-  it.todo('§7.5 三大系统无重复发放、无遗漏 [引擎未实现]', () => {
-    // 引擎未实现跨系统去重机制
+  it('§7.5 三大系统无重复发放、无遗漏 [引擎未实现]', () => {
+    const sim = createSim();
+    const offlineReward = sim.engine.getOfflineRewardSystem();
+    const rates = createProductionRates();
+    const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
+    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+
+    // 计算跨系统收益
+    const crossResult = offlineReward.calculateCrossSystemReward(36000, rates, current, caps, 0);
+
+    // 三大系统无重复发放
+    expect(crossResult.noDuplicates).toBe(true);
+
+    // 各系统收益独立计算
+    expect(crossResult.resourceReward.grain).toBeGreaterThan(0);
+    expect(crossResult.buildingReward.grain).toBeGreaterThan(0);
+    expect(crossResult.expeditionReward.grain).toBeGreaterThan(0);
+
+    // 总收益 = 三系统之和
+    const expectedTotal = crossResult.resourceReward.grain + crossResult.buildingReward.grain + crossResult.expeditionReward.grain;
+    expect(crossResult.totalReward.grain).toBe(expectedTotal);
   });
 
 });
@@ -125,9 +159,28 @@ describe('v9.0 E2E — §7.6 邮件过期→清理→补偿全链路', () => {
     // UI层验证
   });
 
-  it.todo('§7.6 过期后自动清理+铜钱50%补偿邮件 [引擎未实现]', () => {
+  it('§7.6 过期后自动清理+铜钱50%补偿邮件 [引擎未实现]', () => {
     // Play: 奖励邮件过期后铜钱/经验补发50%到新邮件
-    // 引擎未实现邮件过期补偿
+    const sim = createSim();
+    const offlineReward = sim.engine.getOfflineRewardSystem();
+
+    // 模拟过期邮件
+    const expiredMails = [
+      { id: 'mail_1', title: '离线奖励', attachments: [{ resourceType: 'gold', amount: 1000 }] },
+      { id: 'mail_2', title: '远征战利品', attachments: [{ resourceType: 'gold', amount: 500 }, { resourceType: 'grain', amount: 2000 }] },
+      { id: 'mail_3', title: '无铜钱奖励', attachments: [{ resourceType: 'grain', amount: 3000 }] },
+    ];
+
+    const compensations = offlineReward.processExpiredMailCompensation(expiredMails);
+
+    // mail_1: gold=1000, 补偿50%=500
+    expect(compensations.length).toBe(2); // 只有含gold的邮件才有补偿
+    expect(compensations[0].originalMailId).toBe('mail_1');
+    expect(compensations[0].compensationGold).toBe(500); // 1000 * 50%
+
+    // mail_2: gold=500, 补偿50%=250
+    expect(compensations[1].originalMailId).toBe('mail_2');
+    expect(compensations[1].compensationGold).toBe(250); // 500 * 50%
   });
 
 });

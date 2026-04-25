@@ -291,7 +291,154 @@ export interface OfflineRewardResultV9 {
 }
 
 // ─────────────────────────────────────────────
-// 10. 存档数据
+// 10. 暂存邮件队列
+// ─────────────────────────────────────────────
+
+/** 暂存邮件数据 */
+export interface StagedMail {
+  /** 邮件ID */
+  id: string;
+  /** 邮件分类 */
+  category: string;
+  /** 邮件标题 */
+  title: string;
+  /** 邮件内容 */
+  content: string;
+  /** 发送者 */
+  sender: string;
+  /** 附件列表 */
+  attachments: Array<{ resourceType: string; amount: number }>;
+  /** 入队时间戳 */
+  enqueuedAt: number;
+}
+
+/** 暂存队列溢出结果 */
+export interface StagingOverflowResult {
+  /** 成功入队的邮件 */
+  accepted: StagedMail[];
+  /** 因队列满而被丢弃的邮件 */
+  discarded: StagedMail[];
+}
+
+// ─────────────────────────────────────────────
+// 11. 离线经验系统
+// ─────────────────────────────────────────────
+
+/** 经验等级配置 */
+export interface ExpLevelConfig {
+  /** 等级 */
+  level: number;
+  /** 升级所需经验 */
+  expRequired: number;
+  /** 升级奖励 */
+  rewards: Resources;
+}
+
+/** 离线经验计算结果 */
+export interface OfflineExpResult {
+  /** 获得的基础经验 */
+  baseExp: number;
+  /** 衰减后的经验 */
+  decayedExp: number;
+  /** 加成后的经验 */
+  bonusExp: number;
+  /** 最终获得经验 */
+  finalExp: number;
+  /** 是否升级 */
+  didLevelUp: boolean;
+  /** 升级前的等级 */
+  previousLevel: number;
+  /** 升级后的等级 */
+  newLevel: number;
+  /** 升级奖励列表（可能跨多级） */
+  levelUpRewards: Array<{ level: number; rewards: Resources }>;
+}
+
+// ─────────────────────────────────────────────
+// 12. 活动离线积分
+// ─────────────────────────────────────────────
+
+/** 活动积分类型 */
+export type ActivityPointsType = 'season' | 'timed';
+
+/** 活动积分累积结果 */
+export interface ActivityPointsResult {
+  /** 活动ID */
+  activityId: string;
+  /** 活动类型 */
+  type: ActivityPointsType;
+  /** 离线效率 */
+  offlineEfficiency: number;
+  /** 获得的积分 */
+  points: number;
+  /** 获得的代币 */
+  tokens: number;
+}
+
+/** 活动积分配置 */
+export interface ActivityPointsConfig {
+  /** 活动ID */
+  activityId: string;
+  /** 活动类型 */
+  type: ActivityPointsType;
+  /** 基础积分速率（每小时） */
+  basePointsPerHour: number;
+  /** 基础代币速率（每小时） */
+  baseTokensPerHour: number;
+}
+
+// ─────────────────────────────────────────────
+// 13. 快照降级通知
+// ─────────────────────────────────────────────
+
+/** 降级通知结果 */
+export interface DegradationNotice {
+  /** 是否触发了弹窗通知 */
+  popupTriggered: boolean;
+  /** 是否发送了邮件通知 */
+  mailSent: boolean;
+  /** 邮件ID（如果发送了邮件） */
+  mailId: string | null;
+  /** 是否为重复通知（不重复发送邮件） */
+  isDuplicate: boolean;
+}
+
+// ─────────────────────────────────────────────
+// 14. 攻城结算结果
+// ─────────────────────────────────────────────
+
+/** 攻城结算结果 */
+export interface SiegeResult {
+  /** 是否成功 */
+  success: boolean;
+  /** 出征兵力 */
+  dispatchedTroops: number;
+  /** 损失兵力（失败时为30%出征兵力） */
+  lostTroops: number;
+  /** 剩余兵力 */
+  remainingTroops: number;
+  /** 战利品（成功时） */
+  loot: Resources | null;
+}
+
+// ─────────────────────────────────────────────
+// 15. 科技产出更新
+// ─────────────────────────────────────────────
+
+/** 科技产出更新结果 */
+export interface TechProductionUpdate {
+  /** 科技ID */
+  techId: number;
+  /** 完成时间戳 */
+  completedAt: number;
+  /** 产出加成变化 */
+  productionBonus: number;
+  /** 更新后的产出速率 */
+  updatedRates: Resources;
+}
+
+// ─────────────────────────────────────────────
+// 16. 存档数据
 // ─────────────────────────────────────────────
 
 /** 离线系统存档数据 */

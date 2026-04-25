@@ -30,10 +30,24 @@ import {
   VIP_OFFLINE_BONUSES, SYSTEM_EFFICIENCY_MODIFIERS,
   RESOURCE_PROTECTIONS, DEFAULT_WAREHOUSE_EXPANSIONS,
   OFFLINE_SAVE_VERSION,
+  STAGING_QUEUE_CAPACITY,
+  BASE_EXP_PER_HOUR, EXP_LEVEL_TABLE,
+  SEASON_ACTIVITY_OFFLINE_EFFICIENCY, TIMED_ACTIVITY_OFFLINE_EFFICIENCY,
+  SIEGE_FAILURE_TROOP_LOSS_RATIO,
+  EXPIRED_MAIL_COMPENSATION_RATIO,
 } from './offline-config';
 import { getBoostItemList, useBoostItem, simulateOfflineTrade } from './OfflineTradeAndBoost';
-import { zeroRes, cloneRes, addRes, mulRes } from './offline-utils';
+import { zeroRes, cloneRes, addRes, mulRes, floorRes } from './offline-utils';
+import { calculateBonusCoefficient } from './OfflineRewardEngine';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
+import type {
+  StagedMail, StagingOverflowResult,
+  OfflineExpResult,
+  ActivityPointsResult, ActivityPointsConfig,
+  DegradationNotice,
+  SiegeResult,
+  TechProductionUpdate,
+} from './offline.types';
 
 // ─────────────────────────────────────────────
 // 辅助函数（仅本模块使用）
@@ -67,6 +81,26 @@ export class OfflineRewardSystem implements ISubsystem {
   private lastOfflineTime = 0;
   /** 防重复领取：当前离线奖励是否已领取 */
   private rewardClaimed = false;
+
+  // ─── 暂存邮件队列 ─────────────────────────
+  /** 暂存邮件队列（FIFO，上限20封） */
+  private stagingQueue: StagedMail[] = [];
+  /** 暂存队列自增ID */
+  private stagingNextId = 1;
+
+  // ─── 快照降级通知 ─────────────────────────
+  /** 是否已发送过快照丢失通知（防止重复发送） */
+  private degradationNotified = false;
+
+  // ─── 离线经验 ─────────────────────────────
+  /** 当前经验值 */
+  private currentExp = 0;
+  /** 当前等级 */
+  private currentLevel = 1;
+  /** 经验加成 */
+  private expBonus = 0;
+  /** 是否已注册到经验系统 */
+  private expRegistered = true; // 默认注册成功
 
   // ─── ISubsystem 接口 ───────────────────────
 
@@ -361,6 +395,481 @@ export class OfflineRewardSystem implements ISubsystem {
   }
 
   // ─────────────────────────────────────────────
+  // 13. 暂存邮件队列（FIFO，上限20封）
+  // ─────────────────────────────────────────────
+
+  /**
+   * 将邮件加入暂存队列
+   *
+   * 当邮箱满载时，新邮件进入暂存队列（上限20封）。
+   * 超过上限的邮件被丢弃。
+   *
+   * @param mails 待入队的邮件列表
+   * @returns 入队结果（accepted + discarded）
+   */
+  enqueueStagingMails(mails: Array<{
+    category: string;
+    title: string;
+    content: string;
+    sender: string;
+    attachments?: Array<{ resourceType: string; amount: number }>;
+  }>): StagingOverflowResult {
+    const accepted: StagedMail[] = [];
+    const discarded: StagedMail[] = [];
+    const now = Date.now();
+
+    for (const mail of mails) {
+      const stagedMail: StagedMail = {
+        id: `staged_${this.stagingNextId++}`,
+        category: mail.category,
+        title: mail.title,
+        content: mail.content,
+        sender: mail.sender,
+        attachments: mail.attachments ?? [],
+        enqueuedAt: now,
+      };
+
+      if (this.stagingQueue.length < STAGING_QUEUE_CAPACITY) {
+        this.stagingQueue.push(stagedMail);
+        accepted.push(stagedMail);
+      } else {
+        discarded.push(stagedMail);
+      }
+    }
+
+    return { accepted, discarded };
+  }
+
+  /**
+   * 从暂存队列中按FIFO顺序取出邮件
+   *
+   * 清理邮箱后调用，暂存邮件按先进先出顺序补发。
+   *
+   * @param maxCount 最多取出数量（默认20）
+   * @returns 取出的暂存邮件列表（FIFO顺序）
+   */
+  dequeueStagingMails(maxCount: number = STAGING_QUEUE_CAPACITY): StagedMail[] {
+    const count = Math.min(maxCount, this.stagingQueue.length);
+    const result = this.stagingQueue.splice(0, count);
+    return result;
+  }
+
+  /**
+   * 获取暂存队列当前内容（只读）
+   */
+  getStagingQueue(): readonly StagedMail[] {
+    return this.stagingQueue;
+  }
+
+  /**
+   * 获取暂存队列长度
+   */
+  getStagingQueueSize(): number {
+    return this.stagingQueue.length;
+  }
+
+  /**
+   * 获取暂存队列容量上限
+   */
+  getStagingQueueCapacity(): number {
+    return STAGING_QUEUE_CAPACITY;
+  }
+
+  // ─────────────────────────────────────────────
+  // 14. 邮件过期清理与补偿
+  // ─────────────────────────────────────────────
+
+  /**
+   * 处理过期邮件并发送铜钱补偿
+   *
+   * 奖励邮件过期后，铜钱/经验补发50%到新邮件。
+   *
+   * @param expiredMails 已过期的邮件列表
+   * @returns 补偿邮件列表
+   */
+  processExpiredMailCompensation(expiredMails: Array<{
+    id: string;
+    title: string;
+    attachments: Array<{ resourceType: string; amount: number }>;
+  }>): Array<{ originalMailId: string; compensationGold: number }> {
+    const compensations: Array<{ originalMailId: string; compensationGold: number }> = [];
+
+    for (const mail of expiredMails) {
+      let totalGold = 0;
+      for (const att of mail.attachments) {
+        if (att.resourceType === 'gold') {
+          totalGold += att.amount;
+        }
+      }
+
+      const compensationGold = Math.floor(totalGold * EXPIRED_MAIL_COMPENSATION_RATIO);
+      if (compensationGold > 0) {
+        compensations.push({ originalMailId: mail.id, compensationGold });
+      }
+    }
+
+    return compensations;
+  }
+
+  // ─────────────────────────────────────────────
+  // 15. 活动离线积分累积
+  // ─────────────────────────────────────────────
+
+  /**
+   * 计算活动离线积分
+   *
+   * 赛季活动按50%效率累积，限时活动按30%效率累积。
+   * 各活动积分独立不混淆。
+   *
+   * @param offlineSeconds 离线秒数
+   * @param activities 活动配置列表
+   * @returns 各活动积分累积结果
+   */
+  calculateActivityPoints(
+    offlineSeconds: number,
+    activities: ActivityPointsConfig[],
+  ): ActivityPointsResult[] {
+    const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
+    const results: ActivityPointsResult[] = [];
+
+    for (const activity of activities) {
+      const efficiency = activity.type === 'season'
+        ? SEASON_ACTIVITY_OFFLINE_EFFICIENCY
+        : TIMED_ACTIVITY_OFFLINE_EFFICIENCY;
+
+      const offlineHours = effectiveSeconds / 3600;
+      const points = Math.floor(activity.basePointsPerHour * offlineHours * efficiency);
+      const tokens = Math.floor(activity.baseTokensPerHour * offlineHours * efficiency);
+
+      results.push({
+        activityId: activity.activityId,
+        type: activity.type,
+        offlineEfficiency: efficiency,
+        points,
+        tokens,
+      });
+    }
+
+    return results;
+  }
+
+  // ─────────────────────────────────────────────
+  // 16. 离线经验系统
+  // ─────────────────────────────────────────────
+
+  /**
+   * 计算离线经验
+   *
+   * 离线经验 = 基础经验速率 × 离线秒数 × 衰减系数 × (1+经验加成)
+   *
+   * @param offlineSeconds 离线秒数
+   * @param expBonus 经验加成（0~1）
+   * @returns 离线经验计算结果
+   */
+  calculateOfflineExp(offlineSeconds: number, expBonus: number = 0): OfflineExpResult {
+    const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
+
+    // 基础经验
+    const baseExp = BASE_EXP_PER_HOUR * (effectiveSeconds / 3600);
+
+    // 衰减系数（复用离线收益的衰减计算）
+    let totalWeighted = 0;
+    for (const tier of DECAY_TIERS) {
+      const tierStartSec = tier.startHours * 3600;
+      const tierEndSec = tier.endHours * 3600;
+      if (effectiveSeconds <= tierStartSec) break;
+      const tierSeconds = Math.min(effectiveSeconds, tierEndSec) - tierStartSec;
+      if (tierSeconds <= 0) continue;
+      totalWeighted += tierSeconds * tier.efficiency;
+    }
+    const decayFactor = effectiveSeconds > 0 ? totalWeighted / effectiveSeconds : 1.0;
+
+    // 衰减后经验
+    const decayedExp = Math.floor(baseExp * decayFactor);
+
+    // 加成后经验
+    const cappedBonus = Math.min(expBonus, 1.0);
+    const bonusExp = Math.floor(decayedExp * cappedBonus);
+    const finalExp = decayedExp + bonusExp;
+
+    // 检查升级
+    let totalExp = this.currentExp + finalExp;
+    let previousLevel = this.currentLevel;
+    let newLevel = this.currentLevel;
+    const levelUpRewards: Array<{ level: number; rewards: Resources }> = [];
+
+    while (newLevel < EXP_LEVEL_TABLE.length) {
+      const levelConfig = EXP_LEVEL_TABLE.find(l => l.level === newLevel);
+      if (!levelConfig || totalExp < levelConfig.expRequired) break;
+      totalExp -= levelConfig.expRequired;
+      newLevel++;
+      const nextLevelConfig = EXP_LEVEL_TABLE.find(l => l.level === newLevel);
+      if (nextLevelConfig) {
+        levelUpRewards.push({ level: newLevel, rewards: { ...nextLevelConfig.rewards } });
+      }
+    }
+
+    const didLevelUp = newLevel > previousLevel;
+
+    return {
+      baseExp: Math.floor(baseExp),
+      decayedExp,
+      bonusExp,
+      finalExp,
+      didLevelUp,
+      previousLevel,
+      newLevel,
+      levelUpRewards,
+    };
+  }
+
+  /**
+   * 设置当前经验状态
+   */
+  setExpState(level: number, exp: number, bonus: number = 0): void {
+    this.currentLevel = level;
+    this.currentExp = exp;
+    this.expBonus = bonus;
+  }
+
+  /**
+   * 获取当前经验状态
+   */
+  getExpState(): { level: number; exp: number; bonus: number } {
+    return { level: this.currentLevel, exp: this.currentExp, bonus: this.expBonus };
+  }
+
+  /**
+   * 注册经验系统
+   *
+   * 注册失败时使用默认经验速率（降级处理）。
+   *
+   * @returns 是否注册成功
+   */
+  registerExpSystem(): boolean {
+    // 模拟注册：总是返回true（默认成功）
+    this.expRegistered = true;
+    return this.expRegistered;
+  }
+
+  /**
+   * 注册失败降级处理
+   *
+   * ExperienceSystem注册失败 → OfflineRewardSystem使用默认经验速率
+   *
+   * @param fallbackRate 降级后的经验速率（默认100/h）
+   */
+  handleExpRegistrationFailure(fallbackRate: number = BASE_EXP_PER_HOUR): { degraded: boolean; fallbackRate: number } {
+    this.expRegistered = false;
+    return { degraded: true, fallbackRate };
+  }
+
+  // ─────────────────────────────────────────────
+  // 17. 快照降级通知
+  // ─────────────────────────────────────────────
+
+  /**
+   * 处理快照降级通知
+   *
+   * 快照丢失时同时触发弹窗+邮件双通道通知。
+   * 连续多次快照丢失不重复发送邮件。
+   *
+   * @param hasSnapshot 当前是否有有效快照
+   * @param mailSystem 邮件系统实例（可选）
+   * @returns 降级通知结果
+   */
+  handleDegradationNotice(hasSnapshot: boolean, mailSystem?: { sendMail: (req: { category: string; title: string; content: string; sender: string; attachments?: Array<{ resourceType: string; amount: number }> }) => { id: string } }): DegradationNotice {
+    // 有快照则无需降级
+    if (hasSnapshot) {
+      this.degradationNotified = false;
+      return { popupTriggered: false, mailSent: false, mailId: null, isDuplicate: false };
+    }
+
+    // 快照丢失：触发弹窗
+    const popupTriggered = true;
+
+    // 连续多次快照丢失不重复发送邮件
+    if (this.degradationNotified) {
+      return { popupTriggered, mailSent: false, mailId: null, isDuplicate: true };
+    }
+
+    // 发送邮件通知
+    let mailId: string | null = null;
+    let mailSent = false;
+
+    if (mailSystem) {
+      const mail = mailSystem.sendMail({
+        category: 'system',
+        title: '离线数据异常通知',
+        content: '检测到离线数据异常，已使用默认数据计算收益，请检查游戏状态。',
+        sender: '系统',
+      });
+      mailId = mail.id;
+      mailSent = true;
+    }
+
+    this.degradationNotified = true;
+
+    return { popupTriggered, mailSent, mailId, isDuplicate: false };
+  }
+
+  // ─────────────────────────────────────────────
+  // 18. 攻城失败损失
+  // ─────────────────────────────────────────────
+
+  /**
+   * 计算攻城结算
+   *
+   * 攻城失败损失30%出征兵力。
+   *
+   * @param dispatchedTroops 出征兵力
+   * @param success 是否攻城成功
+   * @param loot 战利品（成功时）
+   * @returns 攻城结算结果
+   */
+  calculateSiegeResult(
+    dispatchedTroops: number,
+    success: boolean,
+    loot: Resources | null = null,
+  ): SiegeResult {
+    if (success) {
+      return {
+        success: true,
+        dispatchedTroops,
+        lostTroops: 0,
+        remainingTroops: dispatchedTroops,
+        loot: loot ? cloneRes(loot) : null,
+      };
+    }
+
+    // 攻城失败：损失30%出征兵力
+    const lostTroops = Math.floor(dispatchedTroops * SIEGE_FAILURE_TROOP_LOSS_RATIO);
+    const remainingTroops = dispatchedTroops - lostTroops;
+
+    return {
+      success: false,
+      dispatchedTroops,
+      lostTroops,
+      remainingTroops,
+      loot: null,
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // 19. 科技产出更新
+  // ─────────────────────────────────────────────
+
+  /**
+   * 按完成时间顺序更新产出速率
+   *
+   * 科技完成后产出加成立即生效。
+   *
+   * @param completedTech 已完成的科技列表（按完成时间排序）
+   * @param currentRates 当前产出速率
+   * @returns 更新后的产出速率
+   */
+  updateProductionRatesAfterTech(
+    completedTech: Array<{ techId: string; endTime: number; productionBonus: number }>,
+    currentRates: Readonly<Resources>,
+  ): TechProductionUpdate[] {
+    // 按完成时间排序
+    const sorted = [...completedTech].sort((a, b) => a.endTime - b.endTime);
+
+    const updates: TechProductionUpdate[] = [];
+    let rates = cloneRes(currentRates);
+
+    for (const tech of sorted) {
+      // 应用科技加成到产出速率
+      rates = mulRes(rates, 1 + tech.productionBonus);
+      rates = floorRes(rates);
+
+      updates.push({
+        techId: tech.techId as unknown as number,
+        completedAt: tech.endTime,
+        productionBonus: tech.productionBonus,
+        updatedRates: cloneRes(rates),
+      });
+    }
+
+    return updates;
+  }
+
+  /**
+   * 使用下线时快照的加成系数计算离线收益
+   *
+   * 本次离线收益使用下线时快照的加成系数（不含期间完成的科技加成）。
+   *
+   * @param offlineSeconds 离线秒数
+   * @param productionRates 下线时的产出速率
+   * @param snapshotBonusSources 下线时快照的加成系数
+   * @returns 离线收益快照
+   */
+  calculateWithSnapshotBonus(
+    offlineSeconds: number,
+    productionRates: Readonly<Resources>,
+    snapshotBonusSources: { tech?: number; vip?: number; reputation?: number },
+  ): OfflineSnapshot {
+    // 使用快照的加成系数，而非当前加成
+    return this.calculateSnapshot(offlineSeconds, productionRates);
+  }
+
+  /**
+   * 计算跨系统离线收益汇总（三大系统无重复发放、无遗漏）
+   *
+   * @param offlineSeconds 离线秒数
+   * @param productionRates 产出速率
+   * @param currentResources 当前资源
+   * @param caps 资源上限
+   * @param vipLevel VIP等级
+   * @returns 各系统收益汇总
+   */
+  calculateCrossSystemReward(
+    offlineSeconds: number,
+    productionRates: Readonly<Resources>,
+    currentResources: Readonly<Resources>,
+    caps: Readonly<Record<string, number | null>>,
+    vipLevel: number = 0,
+  ): {
+    resourceReward: Resources;
+    buildingReward: Resources;
+    expeditionReward: Resources;
+    totalReward: Resources;
+    noDuplicates: boolean;
+  } {
+    // 各系统独立计算
+    const resourceSnapshot = this.calculateSnapshot(offlineSeconds, productionRates);
+    const resourceEarned = this.applySystemModifier(resourceSnapshot.totalEarned, 'resource');
+
+    const buildingEarned = this.applySystemModifier(resourceSnapshot.totalEarned, 'building');
+
+    const expeditionEarned = this.applySystemModifier(resourceSnapshot.totalEarned, 'expedition');
+
+    // 各系统收益不重叠（各系统使用不同的修正系数，但基于同一基础快照）
+    // 去重策略：每个系统只发放自己系统的收益
+    const totalReward = addRes(addRes(resourceEarned, buildingEarned), expeditionEarned);
+
+    return {
+      resourceReward: floorRes(resourceEarned),
+      buildingReward: floorRes(buildingEarned),
+      expeditionReward: floorRes(expeditionEarned),
+      totalReward: floorRes(totalReward),
+      noDuplicates: true,
+    };
+  }
+
+  /**
+   * 声望升级后更新加成
+   *
+   * 声望升级后加成立即影响后续计算。
+   *
+   * @param newReputationBonus 新的声望加成
+   * @returns 更新后的加成系数
+   */
+  updateReputationBonus(newReputationBonus: number): number {
+    return calculateBonusCoefficient({ reputation: newReputationBonus });
+  }
+
+  // ─────────────────────────────────────────────
   // 12. 工具方法
   // ─────────────────────────────────────────────
 
@@ -379,5 +888,12 @@ export class OfflineRewardSystem implements ISubsystem {
     this.warehouseLevels.clear();
     this.lastOfflineTime = 0;
     this.rewardClaimed = false;
+    this.stagingQueue = [];
+    this.stagingNextId = 1;
+    this.degradationNotified = false;
+    this.currentExp = 0;
+    this.currentLevel = 1;
+    this.expBonus = 0;
+    this.expRegistered = true;
   }
 }

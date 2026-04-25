@@ -36,6 +36,12 @@ export type {
   OverflowStrategy, OverflowRule, ResourceProtection,
   WarehouseExpansion, ExpansionResult,
   OfflineRewardResultV9, OfflineSaveData,
+  StagedMail, StagingOverflowResult,
+  OfflineExpResult,
+  ActivityPointsResult, ActivityPointsConfig,
+  DegradationNotice,
+  SiegeResult,
+  TechProductionUpdate,
 } from './offline.types';
 
 export {
@@ -47,4 +53,9 @@ export {
   DEFAULT_WAREHOUSE_EXPANSIONS,
   OFFLINE_TRADE_EFFICIENCY, MAX_OFFLINE_TRADES,
   OFFLINE_TRADE_DURATION,
+  STAGING_QUEUE_CAPACITY,
+  BASE_EXP_PER_HOUR, EXP_LEVEL_TABLE,
+  SEASON_ACTIVITY_OFFLINE_EFFICIENCY, TIMED_ACTIVITY_OFFLINE_EFFICIENCY,
+  SIEGE_FAILURE_TROOP_LOSS_RATIO,
+  EXPIRED_MAIL_COMPENSATION_RATIO,
 } from './offline-config';

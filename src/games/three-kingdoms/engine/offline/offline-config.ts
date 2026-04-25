@@ -167,7 +167,62 @@ export const MAX_OFFLINE_TRADES = 3;
 export const OFFLINE_TRADE_DURATION = 3600;
 
 // ─────────────────────────────────────────────
-// 9. 存档版本
+// 9. 暂存邮件队列配置
+// ─────────────────────────────────────────────
+
+/** 暂存队列上限 */
+export const STAGING_QUEUE_CAPACITY = 20;
+
+// ─────────────────────────────────────────────
+// 10. 离线经验配置
+// ─────────────────────────────────────────────
+
+/** 基础经验速率（每小时） */
+export const BASE_EXP_PER_HOUR = 100;
+
+/** 经验加成上限 */
+export const EXP_BONUS_CAP = 1.0;
+
+/** 经验等级表 */
+export const EXP_LEVEL_TABLE: readonly { level: number; expRequired: number; rewards: { grain: number; gold: number; troops: number; mandate: number; techPoint: number; recruitToken: number } }[] = [
+  { level: 1, expRequired: 100, rewards: { grain: 500, gold: 200, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0 } },
+  { level: 2, expRequired: 300, rewards: { grain: 1000, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0 } },
+  { level: 3, expRequired: 600, rewards: { grain: 2000, gold: 1000, troops: 200, mandate: 0, techPoint: 0, recruitToken: 0 } },
+  { level: 4, expRequired: 1000, rewards: { grain: 4000, gold: 2000, troops: 400, mandate: 0, techPoint: 0, recruitToken: 0 } },
+  { level: 5, expRequired: 1500, rewards: { grain: 8000, gold: 4000, troops: 800, mandate: 0, techPoint: 0, recruitToken: 0 } },
+  { level: 6, expRequired: 2100, rewards: { grain: 15000, gold: 8000, troops: 1500, mandate: 0, techPoint: 0, recruitToken: 0 } },
+  { level: 7, expRequired: 2800, rewards: { grain: 30000, gold: 15000, troops: 3000, mandate: 0, techPoint: 0, recruitToken: 0 } },
+  { level: 8, expRequired: 3600, rewards: { grain: 50000, gold: 30000, troops: 5000, mandate: 0, techPoint: 0, recruitToken: 0 } },
+  { level: 9, expRequired: 4500, rewards: { grain: 80000, gold: 50000, troops: 8000, mandate: 0, techPoint: 0, recruitToken: 0 } },
+  { level: 10, expRequired: 5500, rewards: { grain: 120000, gold: 80000, troops: 12000, mandate: 0, techPoint: 0, recruitToken: 0 } },
+];
+
+// ─────────────────────────────────────────────
+// 11. 活动离线效率配置
+// ─────────────────────────────────────────────
+
+/** 赛季活动离线效率 */
+export const SEASON_ACTIVITY_OFFLINE_EFFICIENCY = 0.5;
+
+/** 限时活动离线效率 */
+export const TIMED_ACTIVITY_OFFLINE_EFFICIENCY = 0.3;
+
+// ─────────────────────────────────────────────
+// 12. 攻城失败损失配置
+// ─────────────────────────────────────────────
+
+/** 攻城失败兵力损失比例 */
+export const SIEGE_FAILURE_TROOP_LOSS_RATIO = 0.3;
+
+// ─────────────────────────────────────────────
+// 13. 邮件过期补偿配置
+// ─────────────────────────────────────────────
+
+/** 过期补偿比例（铜钱50%） */
+export const EXPIRED_MAIL_COMPENSATION_RATIO = 0.5;
+
+// ─────────────────────────────────────────────
+// 14. 存档版本
 // ─────────────────────────────────────────────
 
 /** 离线系统存档版本 */
