@@ -810,7 +810,21 @@ export class OfflineRewardSystem implements ISubsystem {
     snapshotBonusSources: { tech?: number; vip?: number; reputation?: number },
   ): OfflineSnapshot {
     // 使用快照的加成系数，而非当前加成
-    return this.calculateSnapshot(offlineSeconds, productionRates);
+    const baseSnapshot = this.calculateSnapshot(offlineSeconds, productionRates);
+    const totalBonus = (snapshotBonusSources.tech ?? 0) + (snapshotBonusSources.vip ?? 0) + (snapshotBonusSources.reputation ?? 0);
+    if (totalBonus > 0) {
+      const multiplier = 1 + totalBonus;
+      const boostedEarned: Resources = {
+        grain: Math.floor(baseSnapshot.totalEarned.grain * multiplier),
+        gold: Math.floor(baseSnapshot.totalEarned.gold * multiplier),
+        troops: Math.floor(baseSnapshot.totalEarned.troops * multiplier),
+        mandate: Math.floor(baseSnapshot.totalEarned.mandate * multiplier),
+        techPoint: Math.floor(baseSnapshot.totalEarned.techPoint * multiplier),
+        recruitToken: Math.floor(baseSnapshot.totalEarned.recruitToken * multiplier),
+      };
+      return { ...baseSnapshot, totalEarned: boostedEarned };
+    }
+    return baseSnapshot;
   }
 
   /**
