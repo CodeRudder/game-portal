@@ -196,7 +196,7 @@ describe('§7.2 老玩家跳过+重玩+同步+加速 集成测试', () => {
       expect(progress.state).toBe('playing');
     });
 
-    it.skip('未请求跳过直接确认应失败', () => {
+    it('未请求跳过直接确认应失败', () => {
       // 二次确认边界条件：未requestSkip直接confirmSkip
       bundle.storyPlayer.startEvent('e1_peach_garden');
       const result = bundle.storyPlayer.confirmSkip();

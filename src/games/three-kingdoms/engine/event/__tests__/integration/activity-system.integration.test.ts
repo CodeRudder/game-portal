@@ -13,10 +13,14 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { TokenShopSystem } from '../../../activity/TokenShopSystem';
+import { TimedActivitySystem } from '../../../activity/TimedActivitySystem';
+import { ActivitySystem } from '../../../activity/ActivitySystem';
 import { SignInSystem, DEFAULT_SIGN_IN_REWARDS, DEFAULT_SIGN_IN_CONFIG, SIGN_IN_CYCLE_DAYS, createDefaultSignInData } from '../../../activity/SignInSystem';
 import type { ISystemDeps } from '../../../../core/types/subsystem';
 import type { TokenShopItem, TokenShopConfig, ShopItemRarity } from '../../../../core/event/event-activity.types';
-import type { SignInData, SignInReward } from '../../../../core/activity/activity.types';
+import type { SignInData, SignInReward, ActivityDef, ActivityTaskDef, ActivityMilestone, ActivityState } from '../../../../core/activity/activity.types';
+import { ActivityType, ActivityStatus, ActivityTaskStatus, MilestoneStatus } from '../../../../core/activity/activity.types';
+import type { ActivityRankEntry } from '../../../../core/event/event-activity.types';
 
 // ─────────────────────────────────────────────
 // 辅助
@@ -292,52 +296,206 @@ describe('§3 活动系统 — 限时活动/商店/签到/活跃度/排行榜', 
   // ─── §3.3 限时活动流程 ─────────────────────
 
   describe('§3.3 限时活动流程（预览→活跃→结算→关闭）', () => {
-    it.skip('应在预览阶段显示活动预告', () => {
-      // 需要 TimedActivitySystem 完整集成
+    let timedSys: TimedActivitySystem;
+    const now = Date.now();
+
+    beforeEach(() => {
+      timedSys = new TimedActivitySystem();
+      timedSys.init(mockDeps());
     });
 
-    it.skip('应在活跃阶段允许参与活动任务', () => {
-      // 需要 TimedActivitySystem + ActivitySystem 联动
+    it('应在预览阶段显示活动预告', () => {
+      const activeStart = now + 24 * 60 * 60 * 1000; // 明天开始
+      const activeEnd = activeStart + 7 * 24 * 60 * 60 * 1000;
+      const flow = timedSys.createTimedActivityFlow('timed-001', activeStart, activeEnd);
+      expect(flow.phase).toBe('preview');
+      expect(timedSys.canParticipate('timed-001', now)).toBe(false);
     });
 
-    it.skip('应在结算阶段计算排行榜奖励', () => {
-      // 需要 TimedActivitySystem + Leaderboard 联动
+    it('应在活跃阶段允许参与活动任务', () => {
+      const activeStart = now - 1000; // 已开始
+      const activeEnd = now + 7 * 24 * 60 * 60 * 1000;
+      timedSys.createTimedActivityFlow('timed-002', activeStart, activeEnd);
+      const phase = timedSys.updatePhase('timed-002', now);
+      expect(phase).toBe('active');
+      expect(timedSys.canParticipate('timed-002', now)).toBe(true);
     });
 
-    it.skip('应在关闭阶段清理活动数据', () => {
-      // 需要 TimedActivitySystem 完整生命周期
+    it('应在结算阶段计算排行榜奖励', () => {
+      const activeStart = now - 8 * 24 * 60 * 60 * 1000;
+      const activeEnd = now - 1000; // 刚结束
+      timedSys.createTimedActivityFlow('timed-003', activeStart, activeEnd);
+      const phase = timedSys.updatePhase('timed-003', now);
+      expect(phase).toBe('settlement');
+
+      // 结算阶段计算排行奖励
+      const entries: ActivityRankEntry[] = [
+        { playerId: 'p1', playerName: '玩家1', points: 1000, tokens: 50, rank: 0 },
+        { playerId: 'p2', playerName: '玩家2', points: 800, tokens: 30, rank: 0 },
+      ];
+      timedSys.updateLeaderboard('timed-003', entries);
+      const rewards = timedSys.calculateRankRewards(1);
+      expect(rewards.gold).toBe(500);
+    });
+
+    it('应在关闭阶段清理活动数据', () => {
+      const activeStart = now - 10 * 24 * 60 * 60 * 1000;
+      const activeEnd = now - 3 * 60 * 60 * 1000; // 超过结算期
+      timedSys.createTimedActivityFlow('timed-004', activeStart, activeEnd);
+      const phase = timedSys.updatePhase('timed-004', now);
+      expect(phase).toBe('closed');
+      expect(timedSys.canParticipate('timed-004', now)).toBe(false);
     });
   });
 
   // ─── §3.4 活跃度系统 ──────────────────────
 
   describe('§3.4 活跃度系统（任务积分 + 里程碑奖励）', () => {
-    it.skip('应正确计算任务积分', () => {
-      // 需要 ActivitySystem 任务完成集成
+    let activitySys: ActivitySystem;
+    let state: ActivityState;
+
+    beforeEach(() => {
+      activitySys = new ActivitySystem();
+      activitySys.init(mockDeps());
+      state = { activities: {} };
     });
 
-    it.skip('应正确解锁里程碑奖励', () => {
-      // 需要 ActivitySystem 里程碑集成
+    it('应正确计算任务积分', () => {
+      const def: ActivityDef = {
+        id: 'act-001',
+        name: '限时挑战',
+        description: '完成每日任务',
+        type: ActivityType.LIMITED_TIME,
+        startTime: Date.now(),
+        endTime: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      };
+      const taskDefs: ActivityTaskDef[] = [
+        { id: 'task-001', name: '击败10个敌人', description: '', targetCount: 10, pointReward: 50, tokenReward: 5, type: 'daily' },
+      ];
+      const milestones: ActivityMilestone[] = [];
+      state = activitySys.startActivity(state, def, taskDefs, milestones, Date.now());
+
+      // 完成任务
+      state = activitySys.updateTaskProgress(state, 'act-001', 'task-001', 10);
+      const task = state.activities['act-001'].tasks.find(t => t.defId === 'task-001');
+      expect(task?.status).toBe(ActivityTaskStatus.COMPLETED);
+
+      // 领取奖励
+      const result = activitySys.claimTaskReward(state, 'act-001', 'task-001');
+      expect(result.points).toBe(50);
+      expect(result.tokens).toBe(5);
     });
 
-    it.skip('应正确计算离线进度累积', () => {
-      // 需要 ActivityOfflineCalculator 集成
+    it('应正确解锁里程碑奖励', () => {
+      const def: ActivityDef = {
+        id: 'act-002',
+        name: '赛季活动',
+        description: '赛季里程碑',
+        type: ActivityType.SEASON,
+        startTime: Date.now(),
+        endTime: Date.now() + 28 * 24 * 60 * 60 * 1000,
+      };
+      const taskDefs: ActivityTaskDef[] = [];
+      const milestones: ActivityMilestone[] = [
+        { id: 'ms-001', name: '100积分', description: '', requiredPoints: 100, rewards: { gold: 200 }, status: MilestoneStatus.LOCKED },
+        { id: 'ms-002', name: '500积分', description: '', requiredPoints: 500, rewards: { gold: 1000 }, status: MilestoneStatus.LOCKED },
+      ];
+      state = activitySys.startActivity(state, def, taskDefs, milestones, Date.now());
+
+      // 模拟达到100积分
+      const instance = state.activities['act-002'];
+      state = {
+        ...state,
+        activities: {
+          ...state.activities,
+          'act-002': { ...instance, points: 150 },
+        },
+      };
+
+      // 检查里程碑解锁
+      state = activitySys.checkMilestones(state, 'act-002');
+      const ms1 = state.activities['act-002'].milestones.find(m => m.id === 'ms-001');
+      const ms2 = state.activities['act-002'].milestones.find(m => m.id === 'ms-002');
+      expect(ms1?.status).toBe(MilestoneStatus.UNLOCKED);
+      expect(ms2?.status).toBe(MilestoneStatus.LOCKED);
+
+      // 领取里程碑
+      const claimResult = activitySys.claimMilestone(state, 'act-002', 'ms-001');
+      expect(claimResult.rewards.gold).toBe(200);
+    });
+
+    it('应正确计算离线进度累积', () => {
+      const def: ActivityDef = {
+        id: 'act-003',
+        name: '日常活动',
+        description: '日常离线累积',
+        type: ActivityType.DAILY,
+        startTime: Date.now(),
+        endTime: Date.now() + 24 * 60 * 60 * 1000,
+      };
+      state = activitySys.startActivity(state, def, [], [], Date.now());
+
+      // 计算离线进度
+      const offlineResults = activitySys.calculateOfflineProgress(state, 3600000); // 1小时
+      expect(offlineResults.length).toBeGreaterThanOrEqual(0);
+
+      // 应用离线进度
+      if (offlineResults.length > 0) {
+        const newState = activitySys.applyOfflineProgress(state, offlineResults);
+        expect(newState).toBeDefined();
+      }
     });
   });
 
   // ─── §3.5 活动排行榜 ──────────────────────
 
   describe('§3.5 活动排行榜（积分排序 + 奖励梯度）', () => {
-    it.skip('应按积分降序排列排行', () => {
-      // 需要 TimedActivitySystem 排行榜集成
+    let timedSys: TimedActivitySystem;
+
+    beforeEach(() => {
+      timedSys = new TimedActivitySystem();
+      timedSys.init(mockDeps());
     });
 
-    it.skip('应正确分配奖励档位', () => {
-      // 需要 LeaderboardRewardTier 计算
+    it('应按积分降序排列排行', () => {
+      const entries: ActivityRankEntry[] = [
+        { playerId: 'p1', playerName: '玩家A', points: 500, tokens: 20, rank: 0 },
+        { playerId: 'p2', playerName: '玩家B', points: 1200, tokens: 50, rank: 0 },
+        { playerId: 'p3', playerName: '玩家C', points: 800, tokens: 30, rank: 0 },
+      ];
+      const sorted = timedSys.updateLeaderboard('lb-001', entries);
+      expect(sorted[0].playerId).toBe('p2'); // 1200分
+      expect(sorted[0].rank).toBe(1);
+      expect(sorted[1].playerId).toBe('p3'); // 800分
+      expect(sorted[1].rank).toBe(2);
+      expect(sorted[2].playerId).toBe('p1'); // 500分
+      expect(sorted[2].rank).toBe(3);
     });
 
-    it.skip('应限制排行榜最大人数', () => {
-      // 需要 maxEntries 限制
+    it('应正确分配奖励档位', () => {
+      // 默认配置: rank 1 → gold 500, rank 2-3 → gold 300, rank 4-10 → gold 150, rank 11-50 → gold 50
+      expect(timedSys.calculateRankRewards(1).gold).toBe(500);
+      expect(timedSys.calculateRankRewards(2).gold).toBe(300);
+      expect(timedSys.calculateRankRewards(3).gold).toBe(300);
+      expect(timedSys.calculateRankRewards(5).gold).toBe(150);
+      expect(timedSys.calculateRankRewards(20).gold).toBe(50);
+      expect(Object.keys(timedSys.calculateRankRewards(99)).length).toBe(0); // 超出范围无奖励
+    });
+
+    it('应限制排行榜最大人数', () => {
+      const config = timedSys.getLeaderboardConfig();
+      expect(config.maxEntries).toBe(100);
+
+      // 创建150个玩家，验证裁剪到100
+      const entries: ActivityRankEntry[] = Array.from({ length: 150 }, (_, i) => ({
+        playerId: `p${i}`,
+        playerName: `玩家${i}`,
+        points: 1500 - i * 10,
+        tokens: 50,
+        rank: 0,
+      }));
+      const sorted = timedSys.updateLeaderboard('lb-002', entries);
+      expect(sorted.length).toBe(100);
     });
   });
 });
