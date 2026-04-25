@@ -254,12 +254,12 @@ describe('v16.0 羁绊+军师+传承深化 — §2 羁绊可视化', () => {
 // ═══════════════════════════════════════════════════════════════
 describe('v16.0 羁绊+军师+传承深化 — §3 军师推荐系统', () => {
 
-  it('should detect resource_overflow trigger when resource > 80% cap', () => {
+  it('should detect resource_overflow trigger when resource > 90% cap', () => {
     const advisor = new AdvisorSystem();
     advisor.init(createDeps());
 
     const snapshot = createDefaultSnapshot({
-      resources: { grain: 9000, gold: 3000, troops: 1000, mandate: 50 },
+      resources: { grain: 9500, gold: 3000, troops: 1000, mandate: 50 },
       resourceCaps: { grain: 10000, gold: 10000, troops: 5000, mandate: 100 },
     });
 
