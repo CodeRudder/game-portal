@@ -252,6 +252,110 @@ it('招贤馆需要主城5级才能解锁', () => {
 });
 ```
 
+### 5.5 反模式：测试通过 ≠ 功能正常
+
+#### 🚨 严重反模式：用 `it.skip` 或 `console.error` 代替断言
+
+**问题描述**：
+
+功能未实现时，测试代码用 `it.skip` 跳过、或只打印 `console.error` 而不让测试失败。这导致：
+- CI 显示绿色，但功能实际缺失
+- 测试失去了"发现问题"的核心价值
+- 未实现的功能被静默掩盖，永远不会被修复
+
+**反模式示例 ❌**：
+
+```typescript
+// ❌ 反模式1：发现问题只打日志，不让测试失败
+it('[CROSS-FLOW-6] 完成日常任务应获得招贤榜', () => {
+  const tokenBefore = sim.getResource('recruitToken');
+  sim.fastForwardHours(24);
+  const tokenAfter = sim.getResource('recruitToken');
+
+  if (tokenAfter === tokenBefore) {
+    console.error('[BUG发现] 日常任务没有奖励招贤榜'); // ❌ 只打日志，测试仍然通过
+  }
+});
+
+// ❌ 反模式2：功能未实现就直接跳过
+it.skip('[E2E] 完整招募流程', () => {
+  // TODO: 招贤榜获取途径尚未实现，待实现后启用
+  // ❌ 跳过 = 永远不会发现问题
+});
+
+// ❌ 反模式3：发现问题后提前 return，让测试通过
+it('[BUILD-FLOW-1] 招贤馆解锁后检查招募入口', () => {
+  const recruitToken = sim.getResource('recruitToken');
+  if (recruitToken === undefined) {
+    console.error('[BUG发现] recruitToken 未定义');
+    return; // ❌ 提前 return，测试通过，问题被掩盖
+  }
+});
+```
+
+**正确模式 ✅**：
+
+```typescript
+// ✅ 正确：发现问题必须让测试失败
+it('[CROSS-FLOW-6] 完成日常任务应获得招贤榜', () => {
+  const tokenBefore = sim.getResource('recruitToken');
+  sim.fastForwardHours(24);
+  const tokenAfter = sim.getResource('recruitToken');
+
+  // 断言失败 = 测试失败 = CI 红色 = 问题被发现
+  expect(tokenAfter).toBeGreaterThan(tokenBefore);
+});
+
+// ✅ 正确：功能未实现 → 测试失败 → 记录为已知问题 → 修复后解除
+it('[E2E] 完整招募流程', () => {
+  acc.advanceTo(GameMilestone.RECRUIT_HALL_UNLOCKED);
+  sim.fastForwardHours(7 * 24);
+
+  const token = sim.getResource('recruitToken');
+  // 功能未实现时此断言失败，这正是我们想要的
+  expect(token).toBeGreaterThan(0); // 7天后必须能获得求贤令
+  sim.recruitHero('normal', 1);
+  expect(sim.getGeneralCount()).toBeGreaterThan(0);
+});
+
+// ✅ 正确：资源类型未定义 → 断言失败
+it('[BUILD-FLOW-1] 招贤馆解锁后检查招募入口', () => {
+  acc.advanceTo(GameMilestone.RECRUIT_HALL_UNLOCKED);
+  const recruitToken = sim.getResource('recruitToken');
+
+  // 不用 undefined 判断，直接断言
+  expect(recruitToken).toBeDefined();
+  expect(recruitToken).toBeGreaterThanOrEqual(0);
+});
+```
+
+#### 反模式对比表
+
+| 行为 | 反模式 ❌ | 正确模式 ✅ |
+|------|---------|-----------|
+| 功能未实现 | `it.skip(...)` 跳过 | 保留测试，让其失败，记录为已知问题 |
+| 发现问题 | `console.error(...)` 打日志 | `expect(...).toBe(...)` 断言失败 |
+| 资源为 undefined | `if (x === undefined) return` | `expect(x).toBeDefined()` |
+| 功能待开发 | `// TODO: 待实现后启用` | 写好断言，功能实现后自然通过 |
+| 测试结果 | CI 绿色，问题被掩盖 | CI 红色，问题被暴露 |
+
+#### 已知问题的正确处理方式
+
+当功能确实尚未实现，且短期内不会修复时，正确做法是：
+
+1. **保留断言，让测试失败** — 这是测试的本职工作
+2. **在 CI 中标记为已知失败** — 而不是跳过测试
+3. **记录到问题追踪系统** — 明确修复优先级
+4. **修复后测试自动变绿** — 无需手动解除 skip
+
+```typescript
+// ✅ 如果确实需要标记已知失败（而非跳过），使用 todo 而非 skip
+it.todo('[E2E] 完整招募流程 — 待实现：招贤榜获取途径');
+// it.todo 会在测试报告中显示为"待实现"，而非静默跳过
+```
+
+---
+
 ## 6. TimeAccelerator 设计
 
 ### 6.1 接口定义
