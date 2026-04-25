@@ -85,17 +85,16 @@ function createBattleUnit(
   return {
     id,
     name,
+    faction: 'shu',
     troopType,
     side,
     position,
-    stats: {
-      attack: stats.attack,
-      baseAttack: stats.attack,
-      defense: stats.defense,
-      baseDefense: stats.defense,
-      intelligence: stats.intelligence,
-      speed: stats.speed,
-    },
+    attack: stats.attack,
+    baseAttack: stats.attack,
+    defense: stats.defense,
+    baseDefense: stats.defense,
+    intelligence: stats.intelligence,
+    speed: stats.speed,
     maxHp: stats.maxHp,
     hp: stats.maxHp,
     isAlive: true,
@@ -120,7 +119,7 @@ function createStandardTeam(side: BattleSide, power: number = 1000): BattleTeam 
       [TroopType.CAVALRY, TroopType.INFANTRY, TroopType.SPEARMAN][i],
       side,
       'front',
-      { attack: baseStat, defense: baseStat * 0.8, intelligence: baseStat * 0.5, speed: 50 + i * 10, maxHp: baseStat * 10 },
+      { attack: baseStat, defense: Math.floor(baseStat * 0.3), intelligence: Math.floor(baseStat * 0.5), speed: 50 + i * 10, maxHp: baseStat * 5 },
     ));
   }
 
@@ -132,7 +131,7 @@ function createStandardTeam(side: BattleSide, power: number = 1000): BattleTeam 
       [TroopType.ARCHER, TroopType.STRATEGIST, TroopType.ARCHER][i],
       side,
       'back',
-      { attack: baseStat * 0.9, defense: baseStat * 0.5, intelligence: baseStat * 0.8, speed: 60 + i * 10, maxHp: baseStat * 8 },
+      { attack: Math.floor(baseStat * 0.9), defense: Math.floor(baseStat * 0.2), intelligence: Math.floor(baseStat * 0.8), speed: 60 + i * 10, maxHp: baseStat * 4 },
     ));
   }
 
@@ -144,7 +143,7 @@ function createWeakTeam(side: BattleSide): BattleTeam {
   return {
     units: [
       createBattleUnit(`${side}_w1`, `弱方1`, TroopType.INFANTRY, side, 'front',
-        { attack: 10, defense: 5, intelligence: 3, speed: 10, maxHp: 50 }),
+        { attack: 1, defense: 1, intelligence: 1, speed: 1, maxHp: 1 }),
     ],
     side,
   };
@@ -160,7 +159,7 @@ function createStrongTeam(side: BattleSide): BattleTeam {
       TroopType.CAVALRY,
       side,
       i < 3 ? 'front' : 'back',
-      { attack: 500, defense: 300, intelligence: 200, speed: 80 + i, maxHp: 5000 },
+      { attack: 500, defense: 100, intelligence: 200, speed: 80 + i, maxHp: 5000 },
     ));
   }
   return { units, side };
@@ -637,7 +636,7 @@ describe('V3 BATTLE-FLOW: 战斗流程集成测试', () => {
       const slowUnit = createBattleUnit('slow', '慢将', TroopType.INFANTRY, 'ally', 'front',
         { attack: 100, defense: 50, intelligence: 30, speed: 10, maxHp: 1000 });
 
-      expect(fastUnit.stats.speed).toBeGreaterThan(slowUnit.stats.speed);
+      expect(fastUnit.speed).toBeGreaterThan(slowUnit.speed);
     });
   });
 
@@ -826,11 +825,8 @@ describe('V3 BATTLE-FLOW: 战斗流程集成测试', () => {
 
       const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
 
-      expect(result.outcome).toBe(BattleOutcome.VICTORY);
-      // 注意：从ally视角看是DEFEAT，但BattleEngine的结果是从allyTeam参数视角返回的
-      // ally先手攻击但只有1HP，enemy反击时ally已死
-      // 实际结果取决于引擎的战斗逻辑
-      expect([BattleOutcome.VICTORY, BattleOutcome.DEFEAT, BattleOutcome.DRAW]).toContain(result.outcome);
+      expect(result.outcome).toBe(BattleOutcome.DEFEAT);
+      // 极弱盟军 vs 极强敌军，盟军全灭 → DEFEAT
     });
 
     it('should have 0 stars on defeat', () => {
