@@ -41,6 +41,9 @@ export interface ShopExchangeResult {
   goldSpent: number;
 }
 
+/** 突破后技能解锁回调 */
+export type SkillUnlockCallback = (heroId: string, breakthroughLevel: number) => number[];
+
 // ── 辅助函数 ──
 
 function createEmptyStarState(): StarSystemState {
@@ -71,6 +74,8 @@ export class HeroStarSystem implements ISubsystem {
   private deps: StarSystemDeps | null = null;
   private heroSystem: HeroSystem;
   private state: StarSystemState;
+  /** 突破后技能解锁回调（由引擎层注入 SkillUpgradeSystem.unlockSkillOnBreakthrough） */
+  private skillUnlockCallback: SkillUnlockCallback | null = null;
 
   constructor(heroSystem: HeroSystem) {
     this.heroSystem = heroSystem;
@@ -83,6 +88,11 @@ export class HeroStarSystem implements ISubsystem {
   getState(): unknown { return this.serialize(); }
   reset(): void { this.state = createEmptyStarState(); }
   setDeps(deps: StarSystemDeps): void { this.deps = deps; }
+
+  /** 设置突破后技能解锁回调 */
+  setSkillUnlockCallback(callback: SkillUnlockCallback): void {
+    this.skillUnlockCallback = callback;
+  }
 
   // ═══════════════════════════════════════════
   // 1. 碎片获取途径（功能点 #11）
@@ -309,6 +319,11 @@ export class HeroStarSystem implements ISubsystem {
 
     const newStage = currentStage + 1;
     this.state.breakthroughStages[generalId] = newStage;
+
+    // P0-1: 突破成功后调用技能解锁回调
+    if (this.skillUnlockCallback) {
+      this.skillUnlockCallback(generalId, newStage);
+    }
 
     return {
       success: true, generalId, previousLevelCap: currentLevelCap,

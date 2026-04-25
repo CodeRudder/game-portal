@@ -33,6 +33,10 @@ export enum FragmentSource {
   STAGE_DROP = 'STAGE_DROP',
   /** 商店兑换 */
   SHOP_EXCHANGE = 'SHOP_EXCHANGE',
+  /** 活动获取 */
+  ACTIVITY = 'ACTIVITY',
+  /** 远征获取 */
+  EXPEDITION = 'EXPEDITION',
 }
 
 /** 碎片获取记录 */

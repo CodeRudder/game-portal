@@ -399,6 +399,142 @@ export class SkillUpgradeSystem implements ISubsystem {
     return { ...STRATEGY_CONFIG[enemyType] };
   }
 
+  // ═══════════════════════════════════════════
+  // P0-1: 突破解锁技能系统（F4.06/F4.07/F4.08）
+  // ═══════════════════════════════════════════
+
+  /**
+   * 突破时解锁技能
+   *
+   * 根据突破等级映射表解锁对应的技能强化/新技能/终极强化。
+   * Lv10→被动技能强化、Lv20→新技能、Lv30→终极技能强化
+   *
+   * @param heroId - 武将ID
+   * @param breakthroughLevel - 突破等级
+   * @returns 解锁的技能索引数组
+   */
+  unlockSkillOnBreakthrough(heroId: string, breakthroughLevel: number): number[] {
+    const key = `${heroId}_${breakthroughLevel}`;
+
+    // 避免重复解锁
+    if (this.state.breakthroughSkillUnlocks[key]) {
+      gameLog.info(`[SkillUpgradeSystem] skills already unlocked for ${key}`);
+      return this.state.breakthroughSkillUnlocks[key];
+    }
+
+    const unlocked: number[] = [];
+
+    // 遍历所有 <= 当前突破等级的配置，解锁对应技能
+    for (const [levelStr, config] of Object.entries(BREAKTHROUGH_SKILL_MAP)) {
+      const level = Number(levelStr);
+      if (level <= breakthroughLevel) {
+        const subKey = `${heroId}_${level}`;
+        if (!this.state.breakthroughSkillUnlocks[subKey]) {
+          this.state.breakthroughSkillUnlocks[subKey] = [config.skillIndex];
+          unlocked.push(config.skillIndex);
+          gameLog.info(
+            `[SkillUpgradeSystem] breakthrough unlock: ${heroId} Lv${level} → skill[${config.skillIndex}] (${config.unlockType})`,
+          );
+        }
+      }
+    }
+
+    // 记录当前突破等级的解锁
+    if (unlocked.length > 0 && !this.state.breakthroughSkillUnlocks[key]) {
+      const config = BREAKTHROUGH_SKILL_MAP[breakthroughLevel];
+      if (config) {
+        this.state.breakthroughSkillUnlocks[key] = [config.skillIndex];
+      }
+    }
+
+    return unlocked;
+  }
+
+  /**
+   * 查询技能解锁状态
+   *
+   * @param heroId - 武将ID
+   * @returns 技能解锁状态
+   */
+  getSkillUnlockState(heroId: string): SkillUnlockState {
+    const unlockedSkills: SkillUnlockState['unlockedSkills'] = [];
+
+    for (const [key, skillIndices] of Object.entries(this.state.breakthroughSkillUnlocks)) {
+      if (!key.startsWith(`${heroId}_`)) continue;
+      const breakthroughLevel = Number(key.split('_')[1]);
+      const config = BREAKTHROUGH_SKILL_MAP[breakthroughLevel];
+      if (!config) continue;
+
+      for (const skillIndex of skillIndices) {
+        unlockedSkills.push({
+          breakthroughLevel,
+          skillIndex,
+          unlockType: config.unlockType,
+          description: config.description,
+        });
+      }
+    }
+
+    return { heroId, unlockedSkills };
+  }
+
+  // ═══════════════════════════════════════════
+  // P0-2: 技能CD减少和额外效果（F5.08/F5.09）
+  // ═══════════════════════════════════════════
+
+  /**
+   * 获取技能CD减少量
+   *
+   * 每级技能减少0.5秒CD。
+   * @param heroId - 武将ID
+   * @param skillIndex - 技能索引
+   * @returns CD减少量（秒）
+   */
+  getCooldownReduce(heroId: string, skillIndex: number): number {
+    const level = this.getSkillLevel(heroId, skillIndex);
+    if (level <= 1) return 0;
+    return (level - 1) * CD_REDUCE_PER_LEVEL;
+  }
+
+  /**
+   * 是否有额外效果（技能等级≥5）
+   *
+   * @param heroId - 武将ID
+   * @param skillIndex - 技能索引
+   * @returns 是否有额外效果
+   */
+  hasExtraEffect(heroId: string, skillIndex: number): boolean {
+    const level = this.getSkillLevel(heroId, skillIndex);
+    return level >= EXTRA_EFFECT_MIN_LEVEL;
+  }
+
+  /**
+   * 获取额外效果描述
+   *
+   * 技能等级≥5时解锁额外效果，提供额外伤害/治疗加成。
+   * @param heroId - 武将ID
+   * @param skillIndex - 技能索引
+   * @returns 额外效果描述，或 null（未达到条件）
+   */
+  getExtraEffect(heroId: string, skillIndex: number): ExtraEffect | null {
+    if (!this.hasExtraEffect(heroId, skillIndex)) return null;
+
+    if (!this.deps) return null;
+    const general = this.deps.heroSystem.getGeneral(heroId);
+    if (!general || skillIndex < 0 || skillIndex >= general.skills.length) return null;
+
+    const skill = general.skills[skillIndex];
+    const level = skill.level;
+    const bonus = EXTRA_EFFECT_BONUS * (level - EXTRA_EFFECT_MIN_LEVEL + 1);
+
+    return {
+      skillIndex,
+      name: `${skill.name}·额外效果`,
+      description: `技能等级${level}时解锁，额外提升${Math.round(bonus * 100)}%效果`,
+      bonus,
+    };
+  }
+
   // ── 内部方法 ──
 
   /** 计算升级到下一级的材料消耗 */
