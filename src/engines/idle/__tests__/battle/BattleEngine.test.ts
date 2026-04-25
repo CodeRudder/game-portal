@@ -195,8 +195,10 @@ describe('BattleEngine', () => {
 
     it('应解析 rewards 配置', () => {
       engine.init(createBattleConfig({ rewards: { gold: 200 } }));
-      // rewards 在 quickSettle 中使用
+      // rewards 在 quickSettle 中使用 — mock random 确保胜利 (won = random < winRate)
+      const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
       const result = engine.quickSettle();
+      randomSpy.mockRestore();
       expect(result.rewards).toEqual({ gold: 200 });
     });
 

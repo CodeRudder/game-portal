@@ -67,8 +67,8 @@ function formatAmount(value: number, _compact: boolean = false): string {
 }
 
 /** 格式化产出速率 */
-function formatRate(rate: number): string {
-  if (rate === 0) return '';
+function formatRate(rate: number | undefined): string {
+  if (rate === undefined || rate === 0) return '';
   const sign = rate > 0 ? '+' : '';
   return `${sign}${rate.toFixed(1)}/秒`;
 }
@@ -256,16 +256,20 @@ export default function ResourceBar({ resources, rates, caps, pendingGains, buil
       <div className="tk-res-title" data-testid="resource-bar-title">三国霸业</div>
 
       {/* 资源列表 */}
-      {RESOURCE_ORDER.map(type => (
-        <ResourceItem
-          key={type}
-          type={type}
-          value={resources[type]}
-          rate={rates[type]}
-          cap={caps[type]}
-          pendingGain={pendingGains?.[type]}
-        />
-      ))}
+      {RESOURCE_ORDER.map(type => {
+        const value = resources[type];
+        if (value === undefined) return null;
+        return (
+          <ResourceItem
+            key={type}
+            type={type}
+            value={value}
+            rate={rates[type] ?? 0}
+            cap={caps[type] ?? null}
+            pendingGain={pendingGains?.[type]}
+          />
+        );
+      })}
 
       {/* RES-CAP-02: 全局溢出警告横幅 */}
       {overflowWarnings.length > 0 && (

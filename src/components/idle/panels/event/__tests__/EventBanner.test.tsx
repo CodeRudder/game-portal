@@ -54,12 +54,12 @@ describe('EventBanner', () => {
 
   it('banner=null 时不渲染', () => {
     render(<EventBanner banner={null} />);
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('event-banner')).not.toBeInTheDocument();
   });
 
   it('应渲染横幅容器', () => {
     render(<EventBanner banner={makeBanner()} onClick={mockOnClick} onDismiss={mockOnDismiss} />);
-    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByTestId('event-banner')).toBeInTheDocument();
   });
 
   it('应渲染横幅标题', () => {
@@ -83,19 +83,19 @@ describe('EventBanner', () => {
 
   it('normal优先级应添加对应CSS类', () => {
     render(<EventBanner banner={makeBanner({ priority: 'normal' })} />);
-    const banner = screen.getByRole('alert');
+    const banner = screen.getByTestId('event-banner');
     expect(banner.className).toContain('tk-ebanner--normal');
   });
 
   it('urgent优先级应添加对应CSS类', () => {
     render(<EventBanner banner={makeBanner({ priority: 'urgent' })} />);
-    const banner = screen.getByRole('alert');
+    const banner = screen.getByTestId('event-banner');
     expect(banner.className).toContain('tk-ebanner--urgent');
   });
 
   it('high优先级应添加对应CSS类', () => {
     render(<EventBanner banner={makeBanner({ priority: 'high' })} />);
-    const banner = screen.getByRole('alert');
+    const banner = screen.getByTestId('event-banner');
     expect(banner.className).toContain('tk-ebanner--high');
   });
 
@@ -132,7 +132,7 @@ describe('EventBanner', () => {
 
   it('横幅应添加入场动画CSS类', () => {
     render(<EventBanner banner={makeBanner()} />);
-    const banner = screen.getByRole('alert');
+    const banner = screen.getByTestId('event-banner');
     expect(banner.className).toContain('tk-ebanner--entering');
   });
 });
