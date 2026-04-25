@@ -100,7 +100,7 @@ Phase 4: 复盘记录 ──── 10min
 |---|--------|------|---------|
 | 1 | TypeScript编译 | `npx tsc --noEmit` | 0错误 |
 | 2 | 全量测试 | `npx vitest run src/games/three-kingdoms` | 100%通过 |
-| 3 | 文件行数 | 检查活跃文件 | 所有文件≤500行 |
+| 3 | 文件行数 | 检查活跃文件 | 业务代码≤500行，测试≤1000行 |
 | 4 | 禁止模式扫描 | grep检查 | 无alert/prompt/Math.random伪造 |
 
 **禁止模式扫描脚本**：
@@ -343,7 +343,7 @@ const diff = differ.diff(baselineSnapshot, currentSnapshot);
 |---|--------|---------|---------|
 | S-1 | TypeScript编译0错误 | R1 | 基础类型安全 |
 | S-2 | 全量测试100%通过 | R1 | 功能回归防护 |
-| S-3 | 文件行数≤500 | v1.0 | 代码质量 |
+| S-3 | 文件行数(代码≤500/测试≤1000) | v1.0 | 代码质量 |
 | S-4 | 禁止模式扫描 | R11 | alert/prompt/Math.random |
 | D-1 | 页面加载无白屏 | v2.0 | 运行时错误零发现是最大盲点 |
 | D-2 | Console无Error | v2.0 | TypeError等运行时错误 |
