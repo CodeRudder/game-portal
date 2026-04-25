@@ -269,4 +269,70 @@ describe('HeroStarSystem 突破系统 #14', () => {
       expect(starSystem.getNextBreakthroughTier('guanyu')).toBeNull();
     });
   });
+
+  // ═══════════════════════════════════════════
+  // P0-1: 突破→技能联动集成测试
+  // ═══════════════════════════════════════════
+  describe('突破→技能联动 (P0-1)', () => {
+    it('突破成功时应调用 skillUnlockCallback', () => {
+      const callbackCalls: Array<{ heroId: string; level: number }> = [];
+      starSystem.setSkillUnlockCallback((heroId, level) => {
+        callbackCalls.push({ heroId, level });
+        return { unlocked: true, skillType: 'passive_enhance', description: 'test' };
+      });
+
+      heroSystem.setLevelAndExp('guanyu', INITIAL_LEVEL_CAP, 0);
+      heroSystem.addFragment('guanyu', BREAKTHROUGH_TIERS[0].fragmentCost);
+
+      const r = starSystem.breakthrough('guanyu');
+      expect(r.success).toBe(true);
+      expect(callbackCalls.length).toBe(1);
+      expect(callbackCalls[0].heroId).toBe('guanyu');
+      expect(callbackCalls[0].level).toBe(1); // 突破阶段1
+    });
+
+    it('突破失败时不应调用 skillUnlockCallback', () => {
+      const callbackCalls: Array<{ heroId: string; level: number }> = [];
+      starSystem.setSkillUnlockCallback((heroId, level) => {
+        callbackCalls.push({ heroId, level });
+        return null;
+      });
+
+      // 等级不够，突破应失败
+      const r = starSystem.breakthrough('guanyu');
+      expect(r.success).toBe(false);
+      expect(callbackCalls.length).toBe(0);
+    });
+
+    it('未设置回调时突破仍可正常执行', () => {
+      heroSystem.setLevelAndExp('guanyu', INITIAL_LEVEL_CAP, 0);
+      heroSystem.addFragment('guanyu', BREAKTHROUGH_TIERS[0].fragmentCost);
+
+      // 不设置回调，突破不应报错
+      const r = starSystem.breakthrough('guanyu');
+      expect(r.success).toBe(true);
+    });
+
+    it('连续突破应多次触发回调', () => {
+      const callbackCalls: Array<{ heroId: string; level: number }> = [];
+      starSystem.setSkillUnlockCallback((heroId, level) => {
+        callbackCalls.push({ heroId, level });
+        return { unlocked: true, skillType: 'test', description: 'test' };
+      });
+
+      // 第一次突破
+      heroSystem.setLevelAndExp('guanyu', INITIAL_LEVEL_CAP, 0);
+      heroSystem.addFragment('guanyu', BREAKTHROUGH_TIERS[0].fragmentCost);
+      starSystem.breakthrough('guanyu');
+
+      // 第二次突破
+      heroSystem.setLevelAndExp('guanyu', BREAKTHROUGH_TIERS[0].levelCapAfter, 0);
+      heroSystem.addFragment('guanyu', BREAKTHROUGH_TIERS[1].fragmentCost);
+      starSystem.breakthrough('guanyu');
+
+      expect(callbackCalls.length).toBe(2);
+      expect(callbackCalls[0].level).toBe(1);
+      expect(callbackCalls[1].level).toBe(2);
+    });
+  });
 });

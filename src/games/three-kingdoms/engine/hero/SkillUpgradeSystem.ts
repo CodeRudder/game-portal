@@ -110,14 +110,24 @@ export interface ExtraEffect {
 
 // ── 常量 ──
 
-/** 每级技能书消耗 */
-const SKILL_BOOK_COST_PER_LEVEL = 1;
+/**
+ * 技能升级消耗阶梯表（对齐PRD）
+ *
+ * currentLevel → 升到下一级所需消耗
+ * Lv1→Lv2: 500铜钱 + 1技能书
+ * Lv2→Lv3: 1500铜钱 + 1技能书
+ * Lv3→Lv4: 4000铜钱 + 2技能书
+ * Lv4→Lv5: 10000铜钱 + 2技能书
+ */
+const SKILL_UPGRADE_COST_TABLE: Record<number, { copper: number; skillBook: number }> = {
+  1: { copper: 500, skillBook: 1 },
+  2: { copper: 1500, skillBook: 1 },
+  3: { copper: 4000, skillBook: 2 },
+  4: { copper: 10000, skillBook: 2 },
+};
 
-/** 每级铜钱消耗基数 */
-const GOLD_COST_BASE = 100;
-
-/** 每级铜钱消耗增长系数 */
-const GOLD_COST_GROWTH = 50;
+/** 超出查表范围时的默认消耗（取最高级） */
+const DEFAULT_SKILL_UPGRADE_COST = { copper: 10000, skillBook: 2 };
 
 /** 基础技能效果值（从技能描述中的百分比提取的基数） */
 const BASE_SKILL_EFFECT = 1.0;
@@ -441,12 +451,32 @@ export class SkillUpgradeSystem implements ISubsystem {
   unlockSkillOnBreakthrough(heroId: string, breakthroughLevel: number): { unlocked: boolean; skillType: string; description: string } | null {
     const mapping = SkillUpgradeSystem.BREAKTHROUGH_SKILL_MAP[breakthroughLevel];
     if (!mapping) return null;
-    const state = this.heroSkills.get(heroId);
-    if (!state) return null;
+
+    // 自动初始化 heroSkills 条目（确保从 HeroSystem 同步过来的武将也能触发解锁）
+    let state = this.heroSkills.get(heroId);
+    if (!state) {
+      // 从 HeroSystem 获取武将技能数据初始化
+      const general = this.deps?.heroSystem.getGeneral(heroId);
+      if (!general) return null; // 武将不存在于 HeroSystem，无法解锁
+      state = {
+        skills: general.skills.map(s => ({ level: s.level })),
+        unlockedSkills: [],
+      };
+      this.heroSkills.set(heroId, state);
+    }
+
     const key = `breakthrough_${breakthroughLevel}`;
     if (state.unlockedSkills?.includes(key)) return null;
     if (!state.unlockedSkills) state.unlockedSkills = [];
     state.unlockedSkills.push(key);
+
+    // 记录到 state 的突破解锁历史
+    const bkKey = `${heroId}_${breakthroughLevel}`;
+    if (!this.state.breakthroughSkillUnlocks[bkKey]) {
+      this.state.breakthroughSkillUnlocks[bkKey] = [mapping.type === 'passive_enhance' ? 1 : mapping.type === 'new_skill' ? 3 : 0];
+    }
+
+    gameLog.info(`[SkillUpgradeSystem] breakthrough skill unlocked: ${heroId} Lv${breakthroughLevel} → ${mapping.description}`);
     return { unlocked: true, skillType: mapping.type, description: mapping.description };
   }
 
@@ -534,11 +564,12 @@ export class SkillUpgradeSystem implements ISubsystem {
 
   // ── 内部方法 ──
 
-  /** 计算升级到下一级的材料消耗 */
+  /** 计算升级到下一级的材料消耗（阶梯查表，对齐PRD） */
   private calculateUpgradeCost(currentLevel: number): SkillUpgradeMaterials {
+    const entry = SKILL_UPGRADE_COST_TABLE[currentLevel] ?? DEFAULT_SKILL_UPGRADE_COST;
     return {
-      skillBooks: SKILL_BOOK_COST_PER_LEVEL,
-      gold: GOLD_COST_BASE + (currentLevel - 1) * GOLD_COST_GROWTH,
+      skillBooks: entry.skillBook,
+      gold: entry.copper,
     };
   }
 
