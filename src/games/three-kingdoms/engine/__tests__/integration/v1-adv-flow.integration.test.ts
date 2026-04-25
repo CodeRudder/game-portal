@@ -48,17 +48,15 @@ describe('V1 ADV-FLOW 军师建议系统', () => {
       expect(advisorSystem).toBeDefined();
     });
 
-    it('should detect resource overflow trigger when resource > 80% cap', () => {
+    it('should detect resource overflow trigger when resource > 90% cap', () => {
       // ADV-FLOW-1 步骤2: 资源溢出场景 → 应触发建议
-      // [P1-3 说明] PRD 定义资源溢出阈值为 >90%，但引擎 AdvisorTriggerDetector
-      // 的 findOverflowResource() 使用 >80% (value/cap > 0.8)。
-      // 本测试以引擎实际行为为准。PRD 阈值需后续对齐。
+      // [P1-3 PRD对齐] PRD 定义资源溢出阈值为 >90%，引擎已对齐。
       const sim = createSim();
       const advisorSystem = sim.engine.getAdvisorSystem();
 
-      // grain=900, cap=1000 → 90% > 80%（引擎阈值）
+      // grain=950, cap=1000 → 95% > 90%（PRD阈值）
       const snapshot = createSnapshot({
-        resources: { grain: 900, gold: 300, troops: 200, mandate: 100 },
+        resources: { grain: 950, gold: 300, troops: 200, mandate: 100 },
         resourceCaps: { grain: 1000, gold: 0, troops: 500, mandate: 0 },
       });
 
@@ -192,14 +190,14 @@ describe('V1 ADV-FLOW 军师建议系统', () => {
       }
     });
 
-    it('should not trigger resource overflow when resource < 80% cap', () => {
+    it('should not trigger resource overflow when resource < 90% cap', () => {
       // ADV-FLOW-1 步骤11: 资源未溢出 → 不触发
-      // [P1-3 说明] 引擎溢出阈值为 >80%，grain=500/1000=50% < 80%，不应触发
+      // [P1-3 PRD对齐] 引擎溢出阈值已对齐PRD为 >90%，grain=850/1000=85% < 90%，不应触发
       const sim = createSim();
       const advisorSystem = sim.engine.getAdvisorSystem();
 
       const snapshot = createSnapshot({
-        resources: { grain: 500, gold: 300, troops: 200, mandate: 100 },
+        resources: { grain: 850, gold: 300, troops: 200, mandate: 100 },
         resourceCaps: { grain: 1000, gold: 0, troops: 500, mandate: 0 },
       });
 
@@ -209,11 +207,9 @@ describe('V1 ADV-FLOW 军师建议系统', () => {
       expect(overflowTrigger).toBeUndefined();
     });
 
-    it.skip('[PRD对齐] should trigger resource overflow at PRD threshold >90% cap (引擎当前使用80%)', () => {
-      // [P1-3 PRD对齐测试] PRD 定义资源溢出阈值为 >90%，但引擎 AdvisorTriggerDetector
-      // 的 findOverflowResource() 使用 >80% (value/cap > 0.8)。
-      // 当引擎阈值对齐PRD后，此测试应通过。
-      // 当前skip原因：grain=950/1000=95% > 80% 引擎会触发，但PRD要求阈值是90%
+    it('[PRD对齐] should trigger resource overflow at PRD threshold >90% cap', () => {
+      // [P1-3 PRD对齐测试] PRD 定义资源溢出阈值为 >90%，引擎已对齐。
+      // 验证85%不触发（<90%），95%触发（>90%）
       const sim = createSim();
       const advisorSystem = sim.engine.getAdvisorSystem();
 

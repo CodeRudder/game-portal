@@ -52,7 +52,7 @@ export function findOverflowResource(snapshot: GameStateSnapshot): string | null
   const caps = snapshot.resourceCaps as unknown as Record<string, number>;
   for (const [key, value] of Object.entries(snapshot.resources)) {
     const cap = caps[key] ?? 0;
-    if (cap > 0 && value / cap > 0.8) return key;
+    if (cap > 0 && value / cap > 0.9) return key;
   }
   return null;
 }

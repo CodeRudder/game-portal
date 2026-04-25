@@ -29,7 +29,7 @@ describe('V1 SPEC-FLOW 全局规范', () => {
   // SPEC-FLOW-1: 配色/字体规范验证
   // ═══════════════════════════════════════════════
   describe('SPEC-FLOW-1: 配色/字体规范验证', () => {
-    it.skip('[UI层测试] should apply correct color scheme and font styles', () => {
+    it.todo('[UI层测试] should apply correct color scheme and font styles', () => {
       // SPEC-FLOW-1: 引擎层无法验证CSS配色和字体，需要UI层测试
       // 此测试应在 Playwright/CSS 测试环境中执行
     });
@@ -71,11 +71,11 @@ describe('V1 SPEC-FLOW 全局规范', () => {
   // SPEC-FLOW-2: 面板组件验证
   // ═══════════════════════════════════════════════
   describe('SPEC-FLOW-2: 面板组件验证', () => {
-    it.skip('[UI层测试] should render panel components with correct animation', () => {
+    it.todo('[UI层测试] should render panel components with correct animation', () => {
       // SPEC-FLOW-2: 引擎层无法验证面板动画，需要UI层测试
     });
 
-    it.skip('[UI层测试] should handle panel open/close transitions', () => {
+    it.todo('[UI层测试] should handle panel open/close transitions', () => {
       // SPEC-FLOW-2: 引擎层无法验证面板开关动画
     });
   });
@@ -84,11 +84,11 @@ describe('V1 SPEC-FLOW 全局规范', () => {
   // SPEC-FLOW-3: 弹窗组件验证
   // ═══════════════════════════════════════════════
   describe('SPEC-FLOW-3: 弹窗组件验证', () => {
-    it.skip('[UI层测试] should display modal dialogs correctly', () => {
+    it.todo('[UI层测试] should display modal dialogs correctly', () => {
       // SPEC-FLOW-3: 引擎层无法验证弹窗显示，需要UI层测试
     });
 
-    it.skip('[UI层测试] should handle modal overlay and close behavior', () => {
+    it.todo('[UI层测试] should handle modal overlay and close behavior', () => {
       // SPEC-FLOW-3: 引擎层无法验证弹窗覆盖层和关闭行为
     });
   });
@@ -97,7 +97,7 @@ describe('V1 SPEC-FLOW 全局规范', () => {
   // SPEC-FLOW-4: Toast提示验证
   // ═══════════════════════════════════════════════
   describe('SPEC-FLOW-4: Toast提示验证', () => {
-    it.skip('[UI层测试] should display toast notifications with correct style', () => {
+    it.todo('[UI层测试] should display toast notifications with correct style', () => {
       // SPEC-FLOW-4: 引擎层无法验证Toast样式，需要UI层测试
     });
 
