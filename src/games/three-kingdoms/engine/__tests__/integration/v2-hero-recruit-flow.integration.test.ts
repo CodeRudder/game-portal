@@ -103,6 +103,8 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
   // ─────────────────────────────────────────
   describe('RECRUIT-FLOW-1: 普通招募（单抽）', () => {
     it('should fail recruit without resources', () => {
+      // R5: 初始值从0改为10，需要先消耗完才能测试资源不足场景
+      sim.setResource('recruitToken', 0);
       expect(() => sim.recruitHero('normal', 1)).toThrow();
     });
 
@@ -493,7 +495,7 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
     });
 
     it('should fail recruit when recruitToken depleted', () => {
-      sim.addResources({ recruitToken: 1 });
+      sim.setResource('recruitToken', 1); // R5: 使用setResource确保精确值（初始值不再是0）
       sim.recruitHero('normal', 1);
       expect(sim.getResource('recruitToken')).toBe(0);
       expect(() => sim.recruitHero('normal', 1)).toThrow();
@@ -506,7 +508,7 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
   describe('CROSS-FLOW-6: 招募代币获取路径验证', () => {
     it('should be able to add recruitToken resource', () => {
       sim.addResources({ recruitToken: 100 });
-      expect(sim.getResource('recruitToken')).toBe(100);
+      expect(sim.getResource('recruitToken')).toBe(110); // R5: 初始10 + 添加100 = 110
     });
 
     it('should use recruitToken for normal recruit', () => {

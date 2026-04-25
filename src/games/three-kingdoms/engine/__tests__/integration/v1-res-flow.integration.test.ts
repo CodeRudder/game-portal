@@ -108,7 +108,7 @@ describe('V1 RES-FLOW 资源系统', () => {
     });
 
     it('should accumulate recruitToken over time (passive production)', () => {
-      // recruitToken 有基础被动产出（INITIAL_PRODUCTION_RATES.recruitToken = 0.001）
+      // recruitToken 有基础被动产出（INITIAL_PRODUCTION_RATES.recruitToken = 0.003）
       const sim = createSim();
 
       const tokenBefore = sim.getResource('recruitToken');
@@ -120,14 +120,12 @@ describe('V1 RES-FLOW 资源系统', () => {
       expect(tokenAfter).toBeGreaterThan(tokenBefore);
     });
 
-    it('should have recruitToken initial value of 0 [RES-FLOW-1 步骤8]', () => {
-      // PRD: 元宝(recruitToken)初始0无产出
-      // 注意：recruitToken 是付费货币关联的招募令，初始值为0
-      // 区别于被动产出的 recruitToken（INITIAL_PRODUCTION_RATES.recruitToken = 0.001）
-      // 此处验证初始状态下 recruitToken 数值为 0
+    it('should have recruitToken initial value of 10 (newbie pack) [RES-FLOW-1 步骤8]', () => {
+      // R5: 新手礼包 +10 个求贤令，让新玩家立即体验招募功能
+      // recruitToken 初始值从 0 改为 10
       const sim = createSim();
 
-      expect(sim.getResource('recruitToken')).toBe(0);
+      expect(sim.getResource('recruitToken')).toBe(10);
     });
   });
 

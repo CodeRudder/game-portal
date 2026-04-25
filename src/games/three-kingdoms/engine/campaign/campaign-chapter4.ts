@@ -36,7 +36,7 @@ const ch4_stage1: Stage = {
   },
   baseRewards: { grain: 500, gold: 300 },
   baseExp: 500,
-  firstClearRewards: { grain: 1200, gold: 800 },
+  firstClearRewards: { grain: 1200, gold: 800, recruitToken: 10 }, // R5: 大关卡首通奖励 +10 求贤令
   firstClearExp: 1500,
   threeStarBonusMultiplier: 1.5,
   dropTable: [
