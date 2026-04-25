@@ -341,7 +341,7 @@ export class EndingSystem implements ISubsystem {
       if (!registry) return ctx;
 
       // 从英雄系统获取战力和收集数据
-      const hero = registry.find('hero') as {
+      const hero = registry.get('hero') as {
         calculateTotalPower?: () => number;
         getAllGenerals?: () => { id: string }[];
       } | null;
@@ -355,7 +355,7 @@ export class EndingSystem implements ISubsystem {
       }
 
       // 从领土系统获取领土数据
-      const territory = registry.find('territory') as {
+      const territory = registry.get('territory') as {
         getPlayerTerritoryCount?: () => number;
         getTotalTerritoryCount?: () => number;
       } | null;
@@ -369,7 +369,7 @@ export class EndingSystem implements ISubsystem {
       }
 
       // 从声望系统获取声望等级
-      const prestige = registry.find('prestige') as {
+      const prestige = registry.get('prestige') as {
         getState?: () => { level?: number };
       } | null;
       if (prestige && typeof prestige.getState === 'function') {

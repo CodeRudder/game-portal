@@ -89,7 +89,7 @@ export class GlobalStatisticsSystem implements ISubsystem {
     try {
       if (registry) {
         // 英雄系统
-        const hero = registry.find('hero') as {
+        const hero = registry.get('hero') as {
           calculateTotalPower?: () => number;
           getAllGenerals?: () => { id: string }[];
         } | null;
@@ -103,7 +103,7 @@ export class GlobalStatisticsSystem implements ISubsystem {
         }
 
         // 领土系统
-        const territory = registry.find('territory') as {
+        const territory = registry.get('territory') as {
           getPlayerTerritoryCount?: () => number;
           getTotalTerritoryCount?: () => number;
         } | null;
@@ -117,7 +117,7 @@ export class GlobalStatisticsSystem implements ISubsystem {
         }
 
         // 声望系统
-        const prestige = registry.find('prestige') as {
+        const prestige = registry.get('prestige') as {
           getState?: () => { level?: number };
         } | null;
         if (prestige && typeof prestige.getState === 'function') {
@@ -128,7 +128,7 @@ export class GlobalStatisticsSystem implements ISubsystem {
         }
 
         // 成就系统
-        const achievement = registry.find('achievement') as {
+        const achievement = registry.get('achievement') as {
           getAllAchievements?: () => { instance: { status: string } }[];
         } | null;
         if (achievement && typeof achievement.getAllAchievements === 'function') {
