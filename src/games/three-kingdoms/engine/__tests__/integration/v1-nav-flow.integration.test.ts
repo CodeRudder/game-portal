@@ -176,6 +176,8 @@ describe('V1 NAV-FLOW 导航系统', () => {
       // 引擎层验证：各子系统状态在跨子系统操作后保持不变
       const sim = createSim();
       sim.addResources(SUFFICIENT_RESOURCES);
+      // 先升级主城（farmland等级不能超过主城等级）
+      sim.upgradeBuilding('castle');
       sim.upgradeBuilding('farmland');
       const levelBefore = sim.getBuildingLevel('farmland');
 
