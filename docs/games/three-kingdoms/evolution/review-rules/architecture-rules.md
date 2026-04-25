@@ -8,8 +8,15 @@
 ## P1 规则
 
 ### ARCH-01: 文件行数限制
-- 硬限制 ≤500 行，预警线 400 行
-- 检查: `find src/ -name "*.ts" -o -name "*.tsx" | xargs wc -l | sort -rn | head -20`
+- **业务代码文件**（`*.ts`）：硬限制 ≤500 行，预警线 400 行
+- **测试脚本文件**（`*.test.ts` / `*.spec.ts`）：硬限制 ≤1000 行，预警线 800 行
+- 检查:
+  ```bash
+  # 业务代码超标（>500行）
+  find src/ -name "*.ts" -not -name "*.test.ts" -not -name "*.spec.ts" | xargs wc -l | sort -rn | head -20
+  # 测试脚本超标（>1000行）
+  find src/ -name "*.test.ts" -o -name "*.spec.ts" | xargs wc -l | sort -rn | head -20
+  ```
 - **来源**: EVO-009, EVO-047
 
 ### ARCH-02: DDD 单向依赖
@@ -83,3 +90,4 @@ find src/ -name "exports-v*" -type f
 | 日期 | 变更 | 来源 |
 |------|------|------|
 | 2026-04-23 | 从进化规则抽取 | 文档重构 |
+| 2026-04-25 | ARCH-01 区分代码(≤500)和测试(≤1000)行数限制 | R5迭代规范修正 |
