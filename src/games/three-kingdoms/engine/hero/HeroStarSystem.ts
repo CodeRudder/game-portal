@@ -42,7 +42,7 @@ export interface ShopExchangeResult {
 }
 
 /** 突破后技能解锁回调 */
-export type SkillUnlockCallback = (heroId: string, breakthroughLevel: number) => number[];
+export type SkillUnlockCallback = (heroId: string, breakthroughLevel: number) => { unlocked: boolean; skillType: string; description: string } | null;
 
 // ── 辅助函数 ──
 

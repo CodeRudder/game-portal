@@ -88,6 +88,14 @@ export interface SkillUnlockState {
   }[];
 }
 
+/** 武将技能条目（heroSkills Map 的 value 类型） */
+export interface HeroSkillEntry {
+  /** 技能列表 */
+  skills: { level: number }[];
+  /** 已解锁的突破技能 key 列表 */
+  unlockedSkills?: string[];
+}
+
 /** 额外效果描述 */
 export interface ExtraEffect {
   /** 技能索引 */
@@ -217,6 +225,15 @@ export class SkillUpgradeSystem implements ISubsystem {
   private coreDeps: ISystemDeps | null = null;
   private deps: SkillUpgradeDeps | null = null;
   private state: SkillUpgradeState;
+  private heroSkills = new Map<string, HeroSkillEntry>();
+
+  /** 突破等级对应的技能解锁配置 */
+  private static readonly BREAKTHROUGH_SKILL_MAP: Record<number, { type: string; description: string }> = {
+    10: { type: 'passive_enhance', description: '被动技能强化' },
+    20: { type: 'new_skill', description: '解锁新技能' },
+    30: { type: 'ultimate_enhance', description: '终极技能强化' },
+    40: { type: 'ultimate_enhance_plus', description: '终极技能强化+' },
+  };
 
   constructor() {
     this.state = createEmptyState();
@@ -419,71 +436,39 @@ export class SkillUpgradeSystem implements ISubsystem {
    *
    * @param heroId - 武将ID
    * @param breakthroughLevel - 突破等级
-   * @returns 解锁的技能索引数组
+   * @returns 解锁结果，null 表示无对应配置或武将不存在
    */
-  unlockSkillOnBreakthrough(heroId: string, breakthroughLevel: number): number[] {
-    const key = `${heroId}_${breakthroughLevel}`;
-
-    // 避免重复解锁
-    if (this.state.breakthroughSkillUnlocks[key]) {
-      gameLog.info(`[SkillUpgradeSystem] skills already unlocked for ${key}`);
-      return this.state.breakthroughSkillUnlocks[key];
-    }
-
-    const unlocked: number[] = [];
-
-    // 遍历所有 <= 当前突破等级的配置，解锁对应技能
-    for (const [levelStr, config] of Object.entries(BREAKTHROUGH_SKILL_MAP)) {
-      const level = Number(levelStr);
-      if (level <= breakthroughLevel) {
-        const subKey = `${heroId}_${level}`;
-        if (!this.state.breakthroughSkillUnlocks[subKey]) {
-          this.state.breakthroughSkillUnlocks[subKey] = [config.skillIndex];
-          unlocked.push(config.skillIndex);
-          gameLog.info(
-            `[SkillUpgradeSystem] breakthrough unlock: ${heroId} Lv${level} → skill[${config.skillIndex}] (${config.unlockType})`,
-          );
-        }
-      }
-    }
-
-    // 记录当前突破等级的解锁
-    if (unlocked.length > 0 && !this.state.breakthroughSkillUnlocks[key]) {
-      const config = BREAKTHROUGH_SKILL_MAP[breakthroughLevel];
-      if (config) {
-        this.state.breakthroughSkillUnlocks[key] = [config.skillIndex];
-      }
-    }
-
-    return unlocked;
+  unlockSkillOnBreakthrough(heroId: string, breakthroughLevel: number): { unlocked: boolean; skillType: string; description: string } | null {
+    const mapping = SkillUpgradeSystem.BREAKTHROUGH_SKILL_MAP[breakthroughLevel];
+    if (!mapping) return null;
+    const state = this.heroSkills.get(heroId);
+    if (!state) return null;
+    const key = `breakthrough_${breakthroughLevel}`;
+    if (state.unlockedSkills?.includes(key)) return null;
+    if (!state.unlockedSkills) state.unlockedSkills = [];
+    state.unlockedSkills.push(key);
+    return { unlocked: true, skillType: mapping.type, description: mapping.description };
   }
 
   /**
    * 查询技能解锁状态
    *
    * @param heroId - 武将ID
-   * @returns 技能解锁状态
+   * @returns 各突破等级的技能解锁状态列表
    */
-  getSkillUnlockState(heroId: string): SkillUnlockState {
-    const unlockedSkills: SkillUnlockState['unlockedSkills'] = [];
-
-    for (const [key, skillIndices] of Object.entries(this.state.breakthroughSkillUnlocks)) {
-      if (!key.startsWith(`${heroId}_`)) continue;
-      const breakthroughLevel = Number(key.split('_')[1]);
-      const config = BREAKTHROUGH_SKILL_MAP[breakthroughLevel];
-      if (!config) continue;
-
-      for (const skillIndex of skillIndices) {
-        unlockedSkills.push({
-          breakthroughLevel,
-          skillIndex,
-          unlockType: config.unlockType,
-          description: config.description,
-        });
-      }
+  getSkillUnlockState(heroId: string): { breakthroughLevel: number; unlocked: boolean; skillType: string; description: string }[] {
+    const state = this.heroSkills.get(heroId);
+    const results: { breakthroughLevel: number; unlocked: boolean; skillType: string; description: string }[] = [];
+    for (const [level, mapping] of Object.entries(SkillUpgradeSystem.BREAKTHROUGH_SKILL_MAP)) {
+      const key = `breakthrough_${level}`;
+      results.push({
+        breakthroughLevel: Number(level),
+        unlocked: state?.unlockedSkills?.includes(key) ?? false,
+        skillType: mapping.type,
+        description: mapping.description,
+      });
     }
-
-    return { heroId, unlockedSkills };
+    return results;
   }
 
   // ═══════════════════════════════════════════
@@ -493,16 +478,17 @@ export class SkillUpgradeSystem implements ISubsystem {
   /**
    * 获取技能CD减少量
    *
-   * 每级技能减少0.5秒CD。
+   * 每级技能减少5%CD，最大30%。
    * @param heroId - 武将ID
    * @param skillIndex - 技能索引
-   * @returns CD减少量（秒）
+   * @returns CD减少量（比例）
    */
   getCooldownReduce(heroId: string, skillIndex: number): number {
-    const level = this.getSkillLevel(heroId, skillIndex);
-    if (level <= 1) return 0;
-    const raw = (level - 1) * CD_REDUCE_PERCENT_PER_LEVEL;
-    return Math.min(raw, CD_REDUCE_MAX);
+    const state = this.heroSkills.get(heroId);
+    if (!state) return 0;
+    const skill = state.skills[skillIndex];
+    if (!skill) return 0;
+    return Math.min(skill.level * 0.05, 0.30);
   }
 
   /**
@@ -513,8 +499,10 @@ export class SkillUpgradeSystem implements ISubsystem {
    * @returns 是否有额外效果
    */
   hasExtraEffect(heroId: string, skillIndex: number): boolean {
-    const level = this.getSkillLevel(heroId, skillIndex);
-    return level >= EXTRA_EFFECT_MIN_LEVEL;
+    const state = this.heroSkills.get(heroId);
+    if (!state) return false;
+    const skill = state.skills[skillIndex];
+    return skill ? skill.level >= 5 : false;
   }
 
   /**
@@ -567,4 +555,5 @@ export class SkillUpgradeSystem implements ISubsystem {
       effectAfter: BASE_SKILL_EFFECT + (level - 1) * SKILL_EFFECT_PER_LEVEL,
     };
   }
+
 }

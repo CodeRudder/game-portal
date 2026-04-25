@@ -448,16 +448,58 @@ export class ThreeKingdomsEngine {
     // P0-3/P0-4: 初始化角标系统和属性对比系统
     this.heroBadgeSystem.init(deps);
     this.heroBadgeSystem.setBadgeSystemDeps({
-      heroSystem: this.hero,
-      heroStarSystem: this.heroStarSystem,
-      heroLevelSystem: this.heroLevel,
-      getResourceAmount: (type: string) => this.resource.getAmount(type as import('../shared/types').ResourceType),
-      getLevelCap: (heroId: string) => this.heroStarSystem.getLevelCap(heroId),
+      getGeneralIds: () => this.hero.getAllGenerals().map(g => g.id),
+      canLevelUp: (heroId: string) => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return false;
+        const goldAmount = this.resource.getAmount('gold' as import('../shared/types').ResourceType);
+        return g.level < this.heroStarSystem.getLevelCap(heroId) && goldAmount >= this.hero.getGoldRequired(g.level);
+      },
+      canStarUp: (heroId: string) => !!this.heroStarSystem.getFragmentProgress(heroId)?.canStarUp,
+      canEquip: (heroId: string) => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return false;
+        return g.level >= 10;
+      },
     });
     this.heroAttributeCompare.init(deps);
     this.heroAttributeCompare.setAttributeCompareDeps({
-      heroSystem: this.hero,
-      heroStarSystem: this.heroStarSystem,
+      getHeroAttrs: (heroId: string): Record<string, number> => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const s = g.baseStats;
+        return { attack: s.attack, defense: s.defense, intelligence: s.intelligence, speed: s.speed };
+      },
+      getEquipBonus: (heroId: string): Record<string, number> => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const s = g.baseStats;
+        return { attack: Math.floor(s.attack * 0.1), defense: Math.floor(s.defense * 0.1), intelligence: Math.floor(s.intelligence * 0.1), speed: Math.floor(s.speed * 0.1) };
+      },
+      getTechBonus: (heroId: string): Record<string, number> => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const s = g.baseStats;
+        return { attack: Math.floor(s.attack * 0.05), defense: Math.floor(s.defense * 0.05), intelligence: Math.floor(s.intelligence * 0.05), speed: Math.floor(s.speed * 0.05) };
+      },
+      getBuffBonus: (heroId: string): Record<string, number> => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const s = g.baseStats;
+        return { attack: Math.floor(s.attack * 0.03), defense: Math.floor(s.defense * 0.03), intelligence: Math.floor(s.intelligence * 0.03), speed: Math.floor(s.speed * 0.03) };
+      },
+      simulateLevel: (heroId: string, level: number): Record<string, number> => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const levelCoeff = 1 + level * 0.05;
+        const s = g.baseStats;
+        return {
+          attack: Math.floor(s.attack * levelCoeff),
+          defense: Math.floor(s.defense * levelCoeff),
+          intelligence: Math.floor(s.intelligence * levelCoeff),
+          speed: Math.floor(s.speed * levelCoeff),
+        };
+      },
     });
     this.sweepSystem.init(deps);
   }
