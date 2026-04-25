@@ -67,6 +67,37 @@ export interface StrategyRecommendation {
 export interface SkillUpgradeState {
   /** 各武将各技能的升级次数记录 */
   upgradeHistory: Record<string, number>; // `${generalId}_${skillIndex}` → totalUpgrades
+  /** 突破解锁的技能记录 Map<`${generalId}_${breakthroughLevel}`, skillIndex[]> */
+  breakthroughSkillUnlocks: Record<string, number[]>;
+}
+
+/** 技能解锁状态 */
+export interface SkillUnlockState {
+  /** 武将ID */
+  heroId: string;
+  /** 已解锁的突破技能列表 */
+  unlockedSkills: {
+    /** 突破等级 */
+    breakthroughLevel: number;
+    /** 解锁的技能索引 */
+    skillIndex: number;
+    /** 解锁类型 */
+    unlockType: 'passive_enhance' | 'new_skill' | 'ultimate_enhance';
+    /** 解锁描述 */
+    description: string;
+  }[];
+}
+
+/** 额外效果描述 */
+export interface ExtraEffect {
+  /** 技能索引 */
+  skillIndex: number;
+  /** 额外效果名称 */
+  name: string;
+  /** 额外效果描述 */
+  description: string;
+  /** 效果数值加成 */
+  bonus: number;
 }
 
 // ── 常量 ──
@@ -102,6 +133,38 @@ const STAR_SKILL_CAP: Record<number, number> = {
 /** 觉醒技能最低突破阶段要求 */
 const AWAKEN_BREAKTHROUGH_REQUIREMENT = 1;
 
+/** 每级CD减少量（秒） */
+const CD_REDUCE_PER_LEVEL = 0.5;
+
+/** 触发额外效果的最低技能等级 */
+const EXTRA_EFFECT_MIN_LEVEL = 5;
+
+/** 额外效果加成比例 */
+const EXTRA_EFFECT_BONUS = 0.2;
+
+/** 突破等级→技能解锁映射配置 */
+const BREAKTHROUGH_SKILL_MAP: Record<number, {
+  unlockType: 'passive_enhance' | 'new_skill' | 'ultimate_enhance';
+  skillIndex: number;
+  description: string;
+}> = {
+  10: {
+    unlockType: 'passive_enhance',
+    skillIndex: 1,
+    description: '突破Lv10：被动技能强化，效果提升20%',
+  },
+  20: {
+    unlockType: 'new_skill',
+    skillIndex: 3,
+    description: '突破Lv20：解锁新技能',
+  },
+  30: {
+    unlockType: 'ultimate_enhance',
+    skillIndex: 0,
+    description: '突破Lv30：终极技能强化，伤害提升20%',
+  },
+};
+
 /** 策略推荐配置 */
 const STRATEGY_CONFIG: Record<EnemyType, StrategyRecommendation> = {
   'burn-heavy': {
@@ -127,7 +190,7 @@ const STRATEGY_CONFIG: Record<EnemyType, StrategyRecommendation> = {
 // ── 辅助函数 ──
 
 function createEmptyState(): SkillUpgradeState {
-  return { upgradeHistory: {} };
+  return { upgradeHistory: {}, breakthroughSkillUnlocks: {} };
 }
 
 function historyKey(generalId: string, skillIndex: number): string {
@@ -163,7 +226,11 @@ export class SkillUpgradeSystem implements ISubsystem {
   }
 
   getState(): SkillUpgradeState {
-    return { ...this.state, upgradeHistory: { ...this.state.upgradeHistory } };
+    return {
+      ...this.state,
+      upgradeHistory: { ...this.state.upgradeHistory },
+      breakthroughSkillUnlocks: { ...this.state.breakthroughSkillUnlocks },
+    };
   }
 
   reset(): void {

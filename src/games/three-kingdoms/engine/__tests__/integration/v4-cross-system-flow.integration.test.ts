@@ -62,8 +62,8 @@ describe('V4 跨系统串联流程', () => {
       const deps = createDeps();
       territory.init(deps);
 
-      territory.captureTerritory('t_01_01', { owner: 'player' });
-      const count = territory.getTerritoryCount();
+      territory.captureTerritory('city-ye', 'player');
+      const count = territory.getPlayerTerritoryCount();
       expect(count).toBeGreaterThan(0);
     });
 
@@ -72,11 +72,11 @@ describe('V4 跨系统串联流程', () => {
       const deps = createDeps();
       territory.init(deps);
 
-      territory.captureTerritory('t_01_01', { owner: 'player' });
-      territory.captureTerritory('t_01_02', { owner: 'player' });
+      territory.captureTerritory('city-ye', 'player');
+      territory.captureTerritory('city-xuchang', 'player');
       territory.update(3600);
 
-      const production = territory.getTotalProduction();
+      const production = territory.getPlayerProductionSummary();
       expect(production).toBeDefined();
     });
 
@@ -85,12 +85,12 @@ describe('V4 跨系统串联流程', () => {
       const deps = createDeps();
       territory.init(deps);
 
-      territory.captureTerritory('t_01_01', { owner: 'player' });
-      territory.captureTerritory('t_01_02', { owner: 'player' });
-      const countAfter = territory.getTerritoryCount();
+      territory.captureTerritory('city-ye', 'player');
+      territory.captureTerritory('city-xuchang', 'player');
+      const countAfter = territory.getPlayerTerritoryCount();
 
-      territory.loseTerritory('t_01_01');
-      const countAfterLoss = territory.getTerritoryCount();
+      territory.captureTerritory('city-ye', 'neutral');
+      const countAfterLoss = territory.getPlayerTerritoryCount();
       expect(countAfterLoss).toBeLessThan(countAfter);
     });
   });
@@ -102,7 +102,7 @@ describe('V4 跨系统串联流程', () => {
       prestige.init(deps);
 
       prestige.addPrestigePoints('siege_victory', 500);
-      const panel = prestige.getPanel();
+      const panel = prestige.getPrestigePanel();
       expect(panel.currentPoints).toBeGreaterThanOrEqual(0);
     });
 
@@ -115,7 +115,7 @@ describe('V4 跨系统串联流程', () => {
       prestige.addPrestigePoints('siege_victory', 1000);
       prestige.addPrestigePoints('siege_victory', 1000);
 
-      const panel = prestige.getPanel();
+      const panel = prestige.getPrestigePanel();
       expect(panel.currentLevel).toBeGreaterThanOrEqual(1);
     });
 
@@ -134,8 +134,8 @@ describe('V4 跨系统串联流程', () => {
       const deps = createDeps();
       prestige.init(deps);
 
-      const before = prestige.getPanel().currentPoints;
-      const after = prestige.getPanel().currentPoints;
+      const before = prestige.getPrestigePanel().currentPoints;
+      const after = prestige.getPrestigePanel().currentPoints;
       expect(after).toBe(before);
     });
   });
@@ -146,11 +146,11 @@ describe('V4 跨系统串联流程', () => {
       const deps = createDeps();
       resource.init(deps);
 
-      resource.addResource('copper', 1000);
-      expect(resource.getResource('copper')).toBeGreaterThanOrEqual(1000);
+      resource.addResource('gold', 1000);
+      expect(resource.getResources().gold).toBeGreaterThanOrEqual(1000);
 
-      resource.removeResource('copper', 500);
-      expect(resource.getResource('copper')).toBeGreaterThanOrEqual(500);
+      resource.consumeResource('gold', 500);
+      expect(resource.getResources().gold).toBeGreaterThanOrEqual(500);
     });
 
     it('资源产出随领土扩张增长', () => {
@@ -158,10 +158,10 @@ describe('V4 跨系统串联流程', () => {
       const deps = createDeps();
       territory.init(deps);
 
-      territory.captureTerritory('t_01_01', { owner: 'player' });
+      territory.captureTerritory('city-ye', 'player');
       territory.update(3600);
 
-      const production = territory.getTotalProduction();
+      const production = territory.getPlayerProductionSummary();
       expect(production).toBeDefined();
     });
 
@@ -193,7 +193,7 @@ describe('V4 跨系统串联流程', () => {
       tree.init(deps);
 
       tree.completeNode('mil_t1_attack');
-      const effects = tree.getCompletedEffects();
+      const effects = tree.getAllCompletedEffects();
       expect(effects).toBeDefined();
     });
 
@@ -213,7 +213,7 @@ describe('V4 跨系统串联流程', () => {
       tree.init(deps);
 
       tree.completeNode('eco_t1_farming');
-      const effects = tree.getCompletedEffects();
+      const effects = tree.getAllCompletedEffects();
       expect(effects).toBeDefined();
     });
 
@@ -223,7 +223,7 @@ describe('V4 跨系统串联流程', () => {
       tree.init(deps);
 
       tree.completeNode('cul_t1_education');
-      const effects = tree.getCompletedEffects();
+      const effects = tree.getAllCompletedEffects();
       expect(effects).toBeDefined();
     });
   });

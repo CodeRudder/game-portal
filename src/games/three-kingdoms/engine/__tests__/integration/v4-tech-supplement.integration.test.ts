@@ -31,6 +31,8 @@ function initFullState(): GameEventSimulator {
   sim.engine.resource.setCap('gold', 10_000_000);
   sim.engine.resource.setCap('troops', 10_000_000);
   sim.addResources(MASSIVE_RESOURCES);
+  // 升级主城到3级以解锁书院(academy)
+  sim.upgradeBuildingTo('castle', 3);
   const heroIds = ['liubei', 'guanyu', 'zhangfei', 'zhugeliang', 'zhaoyun', 'caocao'];
   for (const id of heroIds) {
     sim.addHeroDirectly(id);
