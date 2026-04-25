@@ -502,23 +502,57 @@ describe('V2 LEVEL-FLOW: 武将升级流程集成测试', () => {
   });
 
   // ─────────────────────────────────────────
-  // SKILL-FLOW-2: 技能升级 [引擎未实现]
+  // SKILL-FLOW-2: 技能升级
   // ─────────────────────────────────────────
   describe('SKILL-FLOW-2: 技能升级', () => {
-    it.todo('[引擎未实现] should upgrade skill with skill books and gold — 技能升级系统尚未在引擎层实现');
+    it('should upgrade skill with skill books and gold', () => {
+      sim.addHeroDirectly('liubei');
+      sim.addResources({ gold: 500000 });
+      const skillSys = sim.engine.getSkillUpgradeSystem();
+      const result = skillSys.upgradeSkill('liubei', 0, { skillBooks: 1, gold: 200 });
+      expect(result.success).toBe(true);
+      expect(result.currentLevel).toBe(2);
+      expect(result.previousLevel).toBe(1);
+    });
 
-    it.todo('[引擎未实现] should increase skill effect after upgrade — 技能效果增强尚未在引擎层实现');
+    it('should increase skill effect after upgrade', () => {
+      sim.addHeroDirectly('liubei');
+      sim.addResources({ gold: 500000 });
+      const skillSys = sim.engine.getSkillUpgradeSystem();
+      const effectBefore = skillSys.getSkillEffect('liubei', 0);
+      skillSys.upgradeSkill('liubei', 0, { skillBooks: 1, gold: 200 });
+      const effectAfter = skillSys.getSkillEffect('liubei', 0);
+      expect(effectAfter).toBeGreaterThan(effectBefore);
+    });
   });
 
   // ─────────────────────────────────────────
-  // SKILL-FLOW-3: 技能搭配推荐 [引擎未实现]
+  // SKILL-FLOW-3: 技能搭配推荐
   // ─────────────────────────────────────────
   describe('SKILL-FLOW-3: 技能搭配推荐验证', () => {
-    it.todo('[引擎未实现] should recommend strategy for burn-heavy enemies — 技能推荐系统尚未在引擎层实现');
+    it('should recommend strategy for burn-heavy enemies', () => {
+      const skillSys = sim.engine.getSkillUpgradeSystem();
+      const rec = skillSys.recommendStrategy('burn-heavy');
+      expect(rec).toBeDefined();
+      expect(rec.enemyType).toBe('burn-heavy');
+      expect(rec.description).toContain('智力');
+    });
 
-    it.todo('[引擎未实现] should recommend strategy for physical enemies — 技能推荐系统尚未在引擎层实现');
+    it('should recommend strategy for physical enemies', () => {
+      const skillSys = sim.engine.getSkillUpgradeSystem();
+      const rec = skillSys.recommendStrategy('physical');
+      expect(rec).toBeDefined();
+      expect(rec.enemyType).toBe('physical');
+      expect(rec.description).toContain('防');
+    });
 
-    it.todo('[引擎未实现] should recommend strategy for BOSS stage — 技能推荐系统尚未在引擎层实现');
+    it('should recommend strategy for BOSS stage', () => {
+      const skillSys = sim.engine.getSkillUpgradeSystem();
+      const rec = skillSys.recommendStrategy('boss');
+      expect(rec).toBeDefined();
+      expect(rec.enemyType).toBe('boss');
+      expect(rec.description).toContain('爆发');
+    });
   });
 
   // ─────────────────────────────────────────

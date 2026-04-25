@@ -9,6 +9,7 @@ export { HeroSystem } from './HeroSystem';
 export { HeroRecruitSystem } from './HeroRecruitSystem';
 export { HeroLevelSystem } from './HeroLevelSystem';
 export { HeroStarSystem } from './HeroStarSystem';
+export { SkillUpgradeSystem } from './SkillUpgradeSystem';
 export { HeroFormation, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './HeroFormation';
 
 // 类型
@@ -33,6 +34,10 @@ export type {
 export type {
   FormationData, FormationState, FormationSaveData,
 } from './HeroFormation';
+export type {
+  SkillUpgradeResult, SkillUpgradeMaterials, SkillUpgradeDeps,
+  SkillUpgradeState, EnemyType, StrategyRecommendation,
+} from './SkillUpgradeSystem';
 
 // 配置
 export { HERO_MAX_LEVEL, GENERAL_DEF_MAP, DUPLICATE_FRAGMENT_COUNT } from './hero-config';

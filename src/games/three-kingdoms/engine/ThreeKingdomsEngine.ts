@@ -12,6 +12,7 @@ import { HeroRecruitSystem } from './hero/HeroRecruitSystem';
 import { HeroLevelSystem } from './hero/HeroLevelSystem';
 import { HeroFormation } from './hero/HeroFormation';
 import { HeroStarSystem } from './hero/HeroStarSystem';
+import { SkillUpgradeSystem } from './hero/SkillUpgradeSystem';
 import { BondSystem } from './bond/BondSystem';
 import type { CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
@@ -75,6 +76,7 @@ export class ThreeKingdomsEngine {
   readonly heroLevel: HeroLevelSystem;
   private readonly heroFormation: HeroFormation;
   private readonly heroStarSystem: HeroStarSystem;
+  private readonly skillUpgradeSystem: SkillUpgradeSystem;
   private readonly bondSystem: BondSystem;
   private readonly campaignSystems: CampaignSystems;
   private readonly sweepSystem: SweepSystem;
@@ -102,6 +104,7 @@ export class ThreeKingdomsEngine {
     this.heroLevel = new HeroLevelSystem();
     this.heroFormation = new HeroFormation();
     this.heroStarSystem = new HeroStarSystem(this.hero);
+    this.skillUpgradeSystem = new SkillUpgradeSystem();
     this.bondSystem = new BondSystem();
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
     const self = this;
@@ -167,6 +170,7 @@ export class ThreeKingdomsEngine {
     r.register('heroLevel', this.heroLevel);
     r.register('heroFormation', this.heroFormation);
     r.register('heroStarSystem', this.heroStarSystem);
+    r.register('skillUpgradeSystem', this.skillUpgradeSystem);
     r.register('bond', this.bondSystem);
     r.register('battleEngine', this.campaignSystems.battleEngine);
     r.register('campaignSystem', this.campaignSystems.campaignSystem);
@@ -282,7 +286,7 @@ export class ThreeKingdomsEngine {
   reset(): void {
     this.resource.reset(); this.building.reset(); this.calendar.reset();
     this.hero.reset(); this.heroRecruit.reset(); this.heroLevel.reset();
-    this.heroFormation.reset(); this.heroStarSystem.reset(); this.bondSystem.reset();
+    this.heroFormation.reset(); this.heroStarSystem.reset(); this.skillUpgradeSystem.reset(); this.bondSystem.reset();
     this.campaignSystems.campaignSystem.reset(); this.sweepSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
     this.techSystems.researchSystem.reset(); this.techSystems.fusionSystem.reset();
@@ -367,6 +371,19 @@ export class ThreeKingdomsEngine {
     this.heroStarSystem.setDeps({
       spendFragments: (generalId: string, count: number) => this.hero.useFragments(generalId, count),
       getFragments: (generalId: string) => this.hero.getFragments(generalId),
+      spendResource: (type: string, amount: number) => {
+        try { this.resource.consumeResource(type as import('../shared/types').ResourceType, amount); return true; } catch { return false; }
+      },
+      canAffordResource: (type: string, amount: number) => {
+        const current = this.resource.getAmount(type as import('../shared/types').ResourceType);
+        return current >= amount;
+      },
+      getResourceAmount: (type: string) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+    });
+    this.skillUpgradeSystem.init(deps);
+    this.skillUpgradeSystem.setSkillUpgradeDeps({
+      heroSystem: this.hero,
+      heroStarSystem: this.heroStarSystem,
       spendResource: (type: string, amount: number) => {
         try { this.resource.consumeResource(type as import('../shared/types').ResourceType, amount); return true; } catch { return false; }
       },

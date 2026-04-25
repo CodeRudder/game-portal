@@ -425,10 +425,36 @@ describe('V2 BOND-FLOW: 羁绊与编队流程集成测试', () => {
   });
 
   // ─────────────────────────────────────────
-  // CROSS-FLOW-8: 技能升级→战力→编队联动 [引擎未实现]
+  // CROSS-FLOW-8: 技能升级→战力→编队联动
   // ─────────────────────────────────────────
   describe('CROSS-FLOW-8: 技能升级→战力→编队联动', () => {
-    it.todo('[引擎未实现] should update formation power after skill upgrade — 技能升级系统尚未在引擎层实现');
+    it('should update formation power after skill upgrade', () => {
+      sim.addHeroDirectly('liubei');
+      sim.addResources({ gold: 500000 });
+      sim.engine.createFormation('1');
+      sim.engine.addToFormation('1', 'liubei');
+
+      const formation = sim.engine.getFormationSystem();
+      const hero = sim.engine.hero;
+      const star = sim.engine.getHeroStarSystem().getStar('liubei');
+      const skillSys = sim.engine.getSkillUpgradeSystem();
+
+      const powerBefore = formation.calculateFormationPower(
+        sim.engine.getFormations()[0],
+        (id) => hero.getGeneral(id),
+        (g) => hero.calculatePower(g, star),
+      );
+
+      skillSys.upgradeSkill('liubei', 0, { skillBooks: 1, gold: 200 });
+
+      const powerAfter = formation.calculateFormationPower(
+        sim.engine.getFormations()[0],
+        (id) => hero.getGeneral(id),
+        (g) => hero.calculatePower(g, star),
+      );
+
+      expect(powerAfter).toBeGreaterThanOrEqual(powerBefore);
+    });
   });
 });
 

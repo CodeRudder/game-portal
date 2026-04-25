@@ -306,6 +306,21 @@ export class HeroSystem implements ISubsystem {
   }
 
   /**
+   * 更新指定武将的技能等级（供 SkillUpgradeSystem 使用）
+   * @param generalId - 武将ID
+   * @param skillIndex - 技能索引
+   * @param newLevel - 新的技能等级
+   * @returns 更新后的武将数据，或 undefined
+   */
+  updateSkillLevel(generalId: string, skillIndex: number, newLevel: number): Readonly<GeneralData> | undefined {
+    const general = this.state.generals[generalId];
+    if (!general) return undefined;
+    if (skillIndex < 0 || skillIndex >= general.skills.length) return undefined;
+    general.skills[skillIndex] = { ...general.skills[skillIndex], level: newLevel };
+    return cloneGeneral(general);
+  }
+
+  /**
    * 给武将增加经验，自动处理升级
    * @returns 升级后的武将数据和升级次数，或 null（不存在/已满级）
    */
