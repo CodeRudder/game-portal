@@ -19,15 +19,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { createSim } from '../../../test-utils/test-helpers';
 import { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
 import type { BuildingType } from '../../../shared/types';
-
-// ── 辅助：创建全新的模拟器实例 ──
-function createSim(): GameEventSimulator {
-  const sim = new GameEventSimulator();
-  sim.init();
-  return sim;
-}
 
 /**
  * 辅助：升级 castle 后再升级 farmland

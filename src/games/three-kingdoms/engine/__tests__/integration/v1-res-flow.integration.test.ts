@@ -16,19 +16,17 @@
  * 关键约束：
  * - 非主城建筑等级不能超过主城等级（初始 castle=1, farmland=1）
  * - 升级 farmland 前必须先升级 castle
- * - 容量警告阈值：safe(<90%) → notice(90%~95%) → warning(95%~100%) → full(100%)
+ * - [P1-2 说明] 容量警告阈值（见 resource-config.ts CAP_WARNING_THRESHOLDS）：
+ *   PRD 定义5级（安全0-70%/注意70-90%/警告90-95%/紧急95-100%/已满100%）。
+ *   引擎 CAP_WARNING_THRESHOLDS 定义了 safe=0.7/notice=0.9/warning=0.95/urgent=1.0，
+ *   但 getWarningLevel() 中 safe=0.7 仅作为 notice(>=0.9) 的隐式边界，
+ *   urgent(>=1.0) 被 full(>=1.0) 先拦截。实际可触发的4级：
+ *   safe(<90%) → notice(90%~95%) → warning(95%~100%) → full(100%)
  */
 
 import { describe, it, expect } from 'vitest';
-import { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
+import { createSim } from '../../../test-utils/test-helpers';
 import type { ResourceType } from '../../../shared/types';
-
-// ── 辅助：创建全新的模拟器实例 ──
-function createSim(): GameEventSimulator {
-  const sim = new GameEventSimulator();
-  sim.init();
-  return sim;
-}
 
 // ═══════════════════════════════════════════════
 // RES-FLOW-1: 资源自动增长验证
@@ -219,7 +217,7 @@ describe('V1 RES-FLOW 资源系统', () => {
       const sim = createSim();
 
       // 初始 grain 上限为 2000（农田 Lv1）
-      // 设置 grain 到 92%（1840），触发 notice 级别
+      // 设置 grain 到 92%（1840），触发 warning 级别（阈值 90%）
       sim.setResource('grain', 1840);
 
       const warnings = sim.engine.getCapWarnings();
@@ -230,11 +228,14 @@ describe('V1 RES-FLOW 资源系统', () => {
 
     it('should detect different warning levels: safe, notice, warning, full', () => {
       // 容量警告阈值（来自 resource-calculator.ts getWarningLevel）：
+      // [P1-2 说明] CAP_WARNING_THRESHOLDS 定义了5个阈值（safe=0.7, notice=0.9,
+      // warning=0.95, urgent=1.0），但 getWarningLevel() 中 safe 阈值仅作为
+      // notice 判断的隐式边界（< notice 即 safe），urgent 被 full 先拦截。
+      // 实际可触发的4级：
       // safe: percentage < 0.9
       // notice: 0.9 <= percentage < 0.95
       // warning: 0.95 <= percentage < 1.0
       // full: percentage >= 1.0
-      // 注意：urgent 阈值为 1.0，但被 full 判断先拦截，所以 urgent 实际不会触发
       const sim = createSim();
 
       // 初始 grain 上限 = 2000

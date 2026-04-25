@@ -13,15 +13,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
+import { createSim } from '../../../test-utils/test-helpers';
 import type { AdvisorTriggerType } from '../../../core/advisor/advisor.types';
-
-// ── 辅助：创建全新的模拟器实例 ──
-function createSim(): GameEventSimulator {
-  const sim = new GameEventSimulator();
-  sim.init();
-  return sim;
-}
 
 // ── 辅助：创建游戏状态快照 ──
 function createSnapshot(overrides: Partial<import('../../advisor/AdvisorSystem').GameStateSnapshot> = {}): import('../../advisor/AdvisorSystem').GameStateSnapshot {
@@ -57,10 +50,13 @@ describe('V1 ADV-FLOW 军师建议系统', () => {
 
     it('should detect resource overflow trigger when resource > 80% cap', () => {
       // ADV-FLOW-1 步骤2: 资源溢出场景 → 应触发建议
+      // [P1-3 说明] PRD 定义资源溢出阈值为 >90%，但引擎 AdvisorTriggerDetector
+      // 的 findOverflowResource() 使用 >80% (value/cap > 0.8)。
+      // 本测试以引擎实际行为为准。PRD 阈值需后续对齐。
       const sim = createSim();
       const advisorSystem = sim.engine.getAdvisorSystem();
 
-      // grain=900, cap=1000 → 90% > 80%
+      // grain=900, cap=1000 → 90% > 80%（引擎阈值）
       const snapshot = createSnapshot({
         resources: { grain: 900, gold: 300, troops: 200, mandate: 100 },
         resourceCaps: { grain: 1000, gold: 0, troops: 500, mandate: 0 },
@@ -198,6 +194,7 @@ describe('V1 ADV-FLOW 军师建议系统', () => {
 
     it('should not trigger resource overflow when resource < 80% cap', () => {
       // ADV-FLOW-1 步骤11: 资源未溢出 → 不触发
+      // [P1-3 说明] 引擎溢出阈值为 >80%，grain=500/1000=50% < 80%，不应触发
       const sim = createSim();
       const advisorSystem = sim.engine.getAdvisorSystem();
 

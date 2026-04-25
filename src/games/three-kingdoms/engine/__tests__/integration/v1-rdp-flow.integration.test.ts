@@ -23,15 +23,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
+import { createSim } from '../../../test-utils/test-helpers';
 import type { BuildingType } from '../../../shared/types';
-
-// ── 辅助：创建全新的模拟器实例 ──
-function createSim(): GameEventSimulator {
-  const sim = new GameEventSimulator();
-  sim.init();
-  return sim;
-}
 
 // ── 所有建筑类型 ──
 const ALL_BUILDING_TYPES: BuildingType[] = [

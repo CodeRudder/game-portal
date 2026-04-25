@@ -18,15 +18,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
+import { createSim } from '../../../test-utils/test-helpers';
+// [P1-5 说明] 直接导入 SettingsManager 用于模拟重启场景（new SettingsManager + restoreFromSaveData）。
+// 引擎已暴露 sim.engine.getSettingsManager()，但跨实例持久化测试需要独立创建新实例。
 import { SettingsManager } from '../../settings/SettingsManager';
-
-// ── 辅助：创建全新的模拟器实例 ──
-function createSim(): GameEventSimulator {
-  const sim = new GameEventSimulator();
-  sim.init();
-  return sim;
-}
 
 // ═══════════════════════════════════════════════
 // V1 SET-FLOW 设置系统

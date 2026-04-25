@@ -22,20 +22,22 @@
  * - 引擎的"资源交易"通过 CurrencySystem.exchange() 实现
  * - TradeSystem 管理商路/商品/繁荣度等贸易玩法
  * - 汇率以铜钱(copper)为基准: mandate→copper(1:100), ingot→copper(1:1000)
+ *
+ * [P1-1 说明] PRD 定义了 4 个资源交易方向（粮草→铜钱 10:1 / 铜钱→粮草 1:8 /
+ * 粮草→兵力 20:1 / 铜钱→科技点 100:1），但引擎实际未实现此 ResourceTrade 模型。
+ * 引擎使用 CurrencySystem 的货币兑换体系（mandate↔copper / ingot↔copper /
+ * reputation↔copper），TradeSystem 则管理商路/繁荣度等高级贸易玩法。
+ * 本测试以引擎实际 API 为准，PRD 定义的资源交易模型需后续版本实现或更新 PRD。
  */
 
 import { describe, it, expect } from 'vitest';
-import { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
+import { createSim } from '../../../test-utils/test-helpers';
 import type { AdvisorTriggerType } from '../../../core/advisor/advisor.types';
+// [P1-5 说明] 直接导入 SettingsManager/SaveSlotManager 用于模拟重启/存档场景。
+// 引擎已暴露 getSettingsManager()/getAccountSystem()，但跨实例持久化测试和
+// SaveSlotManager（引擎未暴露 getter）需要独立创建实例。
 import { SettingsManager } from '../../settings/SettingsManager';
 import { SaveSlotManager } from '../../settings/SaveSlotManager';
-
-// ── 辅助：创建全新的模拟器实例 ──
-function createSim(): GameEventSimulator {
-  const sim = new GameEventSimulator();
-  sim.init();
-  return sim;
-}
 
 // ═══════════════════════════════════════════════
 // V1 TRD-FLOW 资源交易系统

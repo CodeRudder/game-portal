@@ -16,15 +16,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
+import { createSim } from '../../../test-utils/test-helpers';
 import type { ResourceType, BuildingType } from '../../../shared/types';
-
-// ── 辅助：创建全新的模拟器实例 ──
-function createSim(): GameEventSimulator {
-  const sim = new GameEventSimulator();
-  sim.init();
-  return sim;
-}
 
 // ═══════════════════════════════════════════════
 // V1 NAV-FLOW 导航系统
@@ -68,8 +61,7 @@ describe('V1 NAV-FLOW 导航系统', () => {
 
     it('should not throw during init and snapshot operations', () => {
       // NAV-FLOW-1: 无异常验证
-      const sim = new GameEventSimulator();
-      expect(() => sim.init()).not.toThrow();
+      const sim = createSim();
       expect(() => sim.getSnapshot()).not.toThrow();
     });
   });
