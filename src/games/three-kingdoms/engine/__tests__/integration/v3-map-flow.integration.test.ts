@@ -392,11 +392,11 @@ describe('§8.4 征服结果→领土状态更新 [v4.0预览]', () => {
 // §8.5 地图事件→战斗触发 [v4.0预览]
 // ─────────────────────────────────────────
 describe('§8.5 地图事件→战斗触发 [v4.0预览]', () => {
-  it.skip('[引擎未实现] should trigger map events periodically', () => {
+  it.todo('[引擎未实现] should trigger map events periodically', () => {
     // 地图事件触发系统尚未完整实现
   });
 
-  it.skip('[引擎未实现] should allow combat resolution for map events', () => {
+  it.todo('[引擎未实现] should allow combat resolution for map events', () => {
     // 地图事件战斗尚未实现
   });
 });
@@ -405,11 +405,11 @@ describe('§8.5 地图事件→战斗触发 [v4.0预览]', () => {
 // §13.1 手机端关卡地图 [UI层测试]
 // ─────────────────────────────────────────
 describe('§13.1 手机端关卡地图', () => {
-  it.skip('[UI层测试] should switch to vertical scroll on mobile', () => {
+  it.todo('[UI层测试] should switch to vertical scroll on mobile', () => {
     // 手机端布局属于UI层
   });
 
-  it.skip('[UI层测试] should support touch gestures for chapter switch', () => {
+  it.todo('[UI层测试] should support touch gestures for chapter switch', () => {
     // 触控手势属于UI层
   });
 });
@@ -418,7 +418,7 @@ describe('§13.1 手机端关卡地图', () => {
 // §13.2 手机端战前布阵 [UI层测试]
 // ─────────────────────────────────────────
 describe('§13.2 手机端战前布阵', () => {
-  it.skip('[UI层测试] should show Bottom Sheet for formation on mobile', () => {
+  it.todo('[UI层测试] should show Bottom Sheet for formation on mobile', () => {
     // Bottom Sheet属于UI层
   });
 });
@@ -427,7 +427,7 @@ describe('§13.2 手机端战前布阵', () => {
 // §13.3 手机端战斗场景 [UI层测试]
 // ─────────────────────────────────────────
 describe('§13.3 手机端战斗场景', () => {
-  it.skip('[UI层测试] should adapt battle HUD for mobile screen', () => {
+  it.todo('[UI层测试] should adapt battle HUD for mobile screen', () => {
     // 手机端战斗布局属于UI层
   });
 });
@@ -436,7 +436,7 @@ describe('§13.3 手机端战斗场景', () => {
 // §13.4 手机端结算面板 [UI层测试]
 // ─────────────────────────────────────────
 describe('§13.4 手机端结算面板', () => {
-  it.skip('[UI层测试] should show Bottom Sheet settlement on mobile', () => {
+  it.todo('[UI层测试] should show Bottom Sheet settlement on mobile', () => {
     // 手机端结算面板属于UI层
   });
 });
@@ -445,7 +445,7 @@ describe('§13.4 手机端结算面板', () => {
 // §13.5 手机端手势操作汇总 [UI层测试]
 // ─────────────────────────────────────────
 describe('§13.5 手机端手势操作汇总', () => {
-  it.skip('[UI层测试] should support long press + drag for formation', () => {
+  it.todo('[UI层测试] should support long press + drag for formation', () => {
     // 手势操作属于UI层
   });
 });

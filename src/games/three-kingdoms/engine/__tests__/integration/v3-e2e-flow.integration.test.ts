@@ -648,15 +648,15 @@ describe('§5.3 交叉验证', () => {
 // §9.4 VIP系统依赖说明
 // ─────────────────────────────────────────
 describe('§9.4 VIP系统依赖说明', () => {
-  it.skip('[引擎未实现] should have VIP level system', () => {
+  it.todo('[引擎未实现] should have VIP level system', () => {
     // VIP系统尚未完整实现
   });
 
-  it.skip('[引擎未实现] should unlock 3x speed at VIP3+', () => {
+  it.todo('[引擎未实现] should unlock 3x speed at VIP3+', () => {
     // VIP特权校验尚未实现
   });
 
-  it.skip('[引擎未实现] should unlock free sweep at VIP5+', () => {
+  it.todo('[引擎未实现] should unlock free sweep at VIP5+', () => {
     // VIP免费扫荡尚未实现
   });
 });
@@ -731,15 +731,15 @@ describe('§9.5 关卡↔扫荡↔离线统一状态机', () => {
 // §9.6 VIP等级校验端到端流程
 // ─────────────────────────────────────────
 describe('§9.6 VIP等级校验端到端流程', () => {
-  it.skip('[引擎未实现] should accumulate VIP experience from purchases', () => {
+  it.todo('[引擎未实现] should accumulate VIP experience from purchases', () => {
     // VIP经验累积尚未实现
   });
 
-  it.skip('[引擎未实现] should validate VIP level for battle speed features', () => {
+  it.todo('[引擎未实现] should validate VIP level for battle speed features', () => {
     // VIP等级校验尚未实现
   });
 
-  it.skip('[引擎未实现] should support GM command to set VIP level for testing', () => {
+  it.todo('[引擎未实现] should support GM command to set VIP level for testing', () => {
     // GM命令尚未实现
   });
 });
@@ -748,11 +748,11 @@ describe('§9.6 VIP等级校验端到端流程', () => {
 // §10.2a 离线收益领取弹窗流程 [UI层测试]
 // ─────────────────────────────────────────
 describe('§10.2a 离线收益领取弹窗流程', () => {
-  it.skip('[UI层测试] should show offline earnings popup on login', () => {
+  it.todo('[UI层测试] should show offline earnings popup on login', () => {
     // 离线收益弹窗属于UI层
   });
 
-  it.skip('[UI层测试] should display earnings breakdown in popup', () => {
+  it.todo('[UI层测试] should display earnings breakdown in popup', () => {
     // 收益明细展示属于UI层
   });
 });
@@ -794,15 +794,15 @@ describe('§10.3 自动连续战斗', () => {
 // §11.3 挑战关卡资源串联
 // ─────────────────────────────────────────
 describe('§11.3 挑战关卡资源串联', () => {
-  it.skip('[引擎未实现] should deduct army and stamina on challenge stage entry', () => {
+  it.todo('[引擎未实现] should deduct army and stamina on challenge stage entry', () => {
     // 挑战关卡资源扣减尚未实现
   });
 
-  it.skip('[引擎未实现] should give special materials on challenge stage victory', () => {
+  it.todo('[引擎未实现] should give special materials on challenge stage victory', () => {
     // 挑战关卡特殊材料掉落尚未实现
   });
 
-  it.skip('[引擎未实现] should refund resources on challenge stage failure', () => {
+  it.todo('[引擎未实现] should refund resources on challenge stage failure', () => {
     // 挑战关卡失败资源返还尚未实现
   });
 });
