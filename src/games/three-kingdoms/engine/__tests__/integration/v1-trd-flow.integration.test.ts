@@ -23,11 +23,12 @@
  * - TradeSystem 管理商路/商品/繁荣度等贸易玩法
  * - 汇率以铜钱(copper)为基准: mandate→copper(1:100), ingot→copper(1:1000)
  *
- * [P1-1 说明] PRD 定义了 4 个资源交易方向（粮草→铜钱 10:1 / 铜钱→粮草 1:8 /
+ * [P0-1 说明] PRD 定义了 4 个资源交易方向（粮草→铜钱 10:1 / 铜钱→粮草 1:8 /
  * 粮草→兵力 20:1 / 铜钱→科技点 100:1），但引擎实际未实现此 ResourceTrade 模型。
  * 引擎使用 CurrencySystem 的货币兑换体系（mandate↔copper / ingot↔copper /
  * reputation↔copper），TradeSystem 则管理商路/繁荣度等高级贸易玩法。
  * 本测试以引擎实际 API 为准，PRD 定义的资源交易模型需后续版本实现或更新 PRD。
+ * PRD 定义的汇率测试已用 it.skip 标注在 TRD-FLOW-1/2/3 各 describe 末尾。
  */
 
 import { describe, it, expect } from 'vitest';
@@ -161,6 +162,49 @@ describe('V1 TRD-FLOW 资源交易系统', () => {
         expect(typeof check.canOpen).toBe('boolean');
       }
     });
+
+    // ── PRD 定义的资源交易汇率（引擎未实现，skip 标注）──
+    //
+    // [P0-1] PRD 定义了以下资源交易汇率，但引擎 TradeSystem/CurrencySystem
+    // 均未实现 grain↔gold / grain→troops / gold→techPoints 的交易模型。
+    // 引擎的 CurrencySystem 仅支持 mandate/ingot/reputation→copper 的货币兑换，
+    // TradeSystem 管理商路/繁荣度等高级贸易玩法。
+    // 以下测试在引擎实现 PRD 资源交易模型后取消 skip。
+
+    it.skip('[PRD] should exchange grain to gold at rate 10:1 (grain→gold 未实现)', () => {
+      // TRD-FLOW-1 PRD步骤: 粮草→铜钱 (10:1)
+      // PRD 定义：10 粮草 → 1 铜钱
+      // 引擎 CurrencySystem 不支持 grain→gold 兑换
+      const sim = createSim();
+      const currencySystem = sim.engine.getCurrencySystem();
+      const rate = currencySystem.getExchangeRate('grain', 'gold');
+      expect(rate).toBe(0.1); // 1/10
+    });
+
+    it.skip('[PRD] should exchange gold to grain at rate 1:8 (gold→grain 未实现)', () => {
+      // TRD-FLOW-1 PRD步骤: 铜钱→粮草 (1:8)
+      // PRD 定义：1 铜钱 → 8 粮草（反向汇率不同，含5%手续费）
+      const sim = createSim();
+      const currencySystem = sim.engine.getCurrencySystem();
+      const rate = currencySystem.getExchangeRate('gold', 'grain');
+      expect(rate).toBe(8);
+    });
+
+    it.skip('[PRD] should exchange grain to troops at rate 20:1 (grain→troops 未实现)', () => {
+      // TRD-FLOW-1 PRD步骤: 粮草→兵力 (20:1)
+      const sim = createSim();
+      const currencySystem = sim.engine.getCurrencySystem();
+      const rate = currencySystem.getExchangeRate('grain', 'troops');
+      expect(rate).toBe(1 / 20);
+    });
+
+    it.skip('[PRD] should exchange gold to techPoints at rate 100:1 (gold→techPoints 未实现)', () => {
+      // TRD-FLOW-1 PRD步骤: 铜钱→科技点 (100:1)
+      const sim = createSim();
+      const currencySystem = sim.engine.getCurrencySystem();
+      const rate = currencySystem.getExchangeRate('gold', 'techPoints');
+      expect(rate).toBe(1 / 100);
+    });
   });
 
   // ═══════════════════════════════════════════════
@@ -246,6 +290,31 @@ describe('V1 TRD-FLOW 资源交易系统', () => {
       const rate = currencySystem.getExchangeRate('mandate', 'ingot');
       expect(typeof rate).toBe('number');
     });
+
+    // ── PRD 定义的5%手续费验证（引擎未实现，skip 标注）──
+    //
+    // [P0-1] PRD 定义交易手续费为 5%，实际到账 = 交易量 × 汇率 × (1 - 0.05)。
+    // 引擎 CurrencySystem.exchange() 当前无手续费概念，到账 = floor(amount * rate)。
+    // 以下测试在引擎实现手续费后取消 skip。
+
+    it.skip('[PRD] should deduct 5% commission on exchange (手续费未实现)', () => {
+      // TRD-FLOW-2 PRD步骤: 实际到账 = 交易量 × 汇率 × (1 - 0.05)
+      const sim = createSim();
+      const currencySystem = sim.engine.getCurrencySystem();
+
+      currencySystem.addCurrency('mandate', 100);
+
+      const result = currencySystem.exchange({
+        from: 'mandate',
+        to: 'copper',
+        amount: 10,
+      });
+
+      expect(result.success).toBe(true);
+      // PRD 预期: 10 * 100 * 0.95 = 950
+      // 引擎当前: 10 * 100 = 1000（无手续费）
+      expect(result.received).toBe(950);
+    });
   });
 
   // ═══════════════════════════════════════════════
@@ -328,6 +397,27 @@ describe('V1 TRD-FLOW 资源交易系统', () => {
 
       // amount=0 时 from===to 的逻辑不适用，但应该不会出错
       expect(result.success).toBe(true);
+    });
+
+    // ── PRD 定义的资源保护线（引擎未实现，skip 标注）──
+    //
+    // [P0-1] PRD 定义资源保护：最低粮草10、铜钱<500安全线。
+    // 引擎 CurrencySystem 当前无资源保护线概念。
+    // 以下测试在引擎实现资源保护线后取消 skip。
+
+    it.skip('[PRD] should enforce minimum grain reserve of 10 after trade (资源保护线未实现)', () => {
+      // TRD-FLOW-3 PRD步骤: 交易后粮草不低于10
+      const sim = createSim();
+      // PRD 定义：资源交易后最低粮草保留 10
+      // 引擎 CurrencySystem 不管理 grain（由 ResourceSystem 管理）
+      // 需 ResourceTrade 模型实现后验证
+    });
+
+    it.skip('[PRD] should enforce gold safety line of 500 (铜钱安全线未实现)', () => {
+      // TRD-FLOW-3 PRD步骤: 铜钱<500安全线保护
+      const sim = createSim();
+      // PRD 定义：铜钱低于500时限制交易
+      // 引擎 CurrencySystem 当前无安全线概念
     });
   });
 });

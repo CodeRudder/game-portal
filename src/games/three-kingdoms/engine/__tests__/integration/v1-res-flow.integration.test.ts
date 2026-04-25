@@ -25,7 +25,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createSim } from '../../../test-utils/test-helpers';
+import { createSim, SUFFICIENT_RESOURCES } from '../../../test-utils/test-helpers';
 import type { ResourceType } from '../../../shared/types';
 
 // ═══════════════════════════════════════════════
@@ -119,6 +119,16 @@ describe('V1 RES-FLOW 资源系统', () => {
       const tokenAfter = sim.getResource('recruitToken');
       expect(tokenAfter).toBeGreaterThan(tokenBefore);
     });
+
+    it('should have recruitToken initial value of 0 [RES-FLOW-1 步骤8]', () => {
+      // PRD: 元宝(recruitToken)初始0无产出
+      // 注意：recruitToken 是付费货币关联的招募令，初始值为0
+      // 区别于被动产出的 recruitToken（INITIAL_PRODUCTION_RATES.recruitToken = 0.001）
+      // 此处验证初始状态下 recruitToken 数值为 0
+      const sim = createSim();
+
+      expect(sim.getResource('recruitToken')).toBe(0);
+    });
   });
 
   // ═══════════════════════════════════════════════
@@ -160,7 +170,7 @@ describe('V1 RES-FLOW 资源系统', () => {
       const sim = createSim();
 
       // 先升级主城到 Lv2 解锁兵营
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuildingTo('castle', 2);
 
       // 获取兵营升级费用
@@ -168,7 +178,7 @@ describe('V1 RES-FLOW 资源系统', () => {
       expect(cost).not.toBeNull();
 
       // 重新补充资源（升级主城消耗了一部分）
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
 
       const troopsBefore = sim.getResource('troops');
       const grainBefore = sim.getResource('grain');

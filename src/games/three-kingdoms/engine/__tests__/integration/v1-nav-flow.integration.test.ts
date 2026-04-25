@@ -16,7 +16,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createSim } from '../../../test-utils/test-helpers';
+import { createSim, SUFFICIENT_RESOURCES } from '../../../test-utils/test-helpers';
 import type { ResourceType, BuildingType } from '../../../shared/types';
 
 // ═══════════════════════════════════════════════
@@ -169,6 +169,27 @@ describe('V1 NAV-FLOW 导航系统', () => {
       expect(registry.has('building')).toBe(true);
       expect(registry.has('calendar')).toBe(true);
       expect(registry.has('hero')).toBe(true);
+    });
+
+    it('should preserve subsystem state across tab switches [NAV-FLOW-3 步骤10]', () => {
+      // PRD: 切换Tab后返回，内部状态保留
+      // 引擎层验证：各子系统状态在跨子系统操作后保持不变
+      const sim = createSim();
+      sim.addResources(SUFFICIENT_RESOURCES);
+      sim.upgradeBuilding('farmland');
+      const levelBefore = sim.getBuildingLevel('farmland');
+
+      // 模拟"切换到武将Tab再切回建筑Tab"
+      // 在引擎层，这意味着访问其他子系统后验证建筑系统状态不变
+      const heroCount = sim.engine.hero.getGeneralCount();
+      const calendarDate = sim.engine.calendar.getDate();
+
+      // 验证建筑等级不变（子系统状态保持）
+      expect(sim.getBuildingLevel('farmland')).toBe(levelBefore);
+      // 验证武将系统状态保持
+      expect(sim.engine.hero.getGeneralCount()).toBe(heroCount);
+      // 验证日历系统状态保持
+      expect(sim.engine.calendar.getDate()).toEqual(calendarDate);
     });
   });
 

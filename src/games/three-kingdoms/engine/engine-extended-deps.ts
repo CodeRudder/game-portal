@@ -199,6 +199,10 @@ export function initR11Systems(systems: R11Systems, deps: ISystemDeps): void {
   systems.npcSystem.init(deps);
   systems.equipmentSystem.init(deps);
   systems.equipmentForgeSystem.init(deps);
+  // 注入 eventBus 给需要事件总线的系统
+  systems.advisorSystem.init(deps);
+  systems.currencySystem.init(deps);
+  systems.tradeSystem.init(deps);
 }
 
 /**

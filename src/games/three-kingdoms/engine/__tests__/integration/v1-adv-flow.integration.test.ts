@@ -300,10 +300,9 @@ describe('V1 ADV-FLOW 军师建议系统', () => {
   // ADV-FLOW-3: 玩家采纳/忽略建议流程
   // ═══════════════════════════════════════════════
   describe('ADV-FLOW-3: 玩家采纳/忽略建议流程', () => {
-    it('should execute suggestion and remove it from list', () => {
-      // ADV-FLOW-3 步骤1: 执行建议 → 自动移除
-      // 注意: executeSuggestion 需要 eventBus (通过 init(deps) 注入)
-      // 通过引擎获取的 AdvisorSystem 已正确初始化
+    it('should have AdvisorSystem fully operational after engine.init()', () => {
+      // ADV-FLOW-3 步骤0: 验证 engine.init() 后 AdvisorSystem 可正常执行操作
+      // 确保引擎初始化正确注入 eventBus，executeSuggestion/dismissSuggestion 不会崩溃
       const sim = createSim();
       const advisorSystem = sim.engine.getAdvisorSystem();
 
@@ -311,20 +310,31 @@ describe('V1 ADV-FLOW 军师建议系统', () => {
       advisorSystem.updateSuggestions(snapshot);
 
       const displayed = advisorSystem.getDisplayedSuggestions();
-      if (displayed.length > 0) {
-        // executeSuggestion 内部使用 this.deps.eventBus
-        // 如果 deps 未初始化会报错，这是引擎初始化顺序问题
-        try {
-          const result = advisorSystem.executeSuggestion(displayed[0].id);
-          if (result.success) {
-            const displayedAfter = advisorSystem.getDisplayedSuggestions();
-            expect(displayedAfter.find(s => s.id === displayed[0].id)).toBeUndefined();
-          }
-        } catch {
-          // 如果 eventBus 未初始化，验证建议数据本身有效即可
-          expect(displayed[0].id).toBeDefined();
-        }
-      }
+      expect(displayed.length).toBeGreaterThan(0);
+
+      // executeSuggestion 应正常工作（不抛异常）
+      const result = advisorSystem.executeSuggestion(displayed[0].id);
+      expect(result.success).toBe(true);
+    });
+
+    it('should execute suggestion and remove it from list', () => {
+      // ADV-FLOW-3 步骤1: 执行建议 → 自动移除
+      // executeSuggestion 通过 engine.init() 已正确注入 eventBus
+      const sim = createSim();
+      const advisorSystem = sim.engine.getAdvisorSystem();
+
+      const snapshot = createSnapshot({ buildingQueueIdle: true });
+      advisorSystem.updateSuggestions(snapshot);
+
+      const displayed = advisorSystem.getDisplayedSuggestions();
+      expect(displayed.length).toBeGreaterThan(0);
+
+      const result = advisorSystem.executeSuggestion(displayed[0].id);
+      expect(result.success).toBe(true);
+
+      // 执行后应从列表中移除
+      const displayedAfter = advisorSystem.getDisplayedSuggestions();
+      expect(displayedAfter.find(s => s.id === displayed[0].id)).toBeUndefined();
     });
 
     it('should return failure when executing non-existent suggestion', () => {
@@ -332,16 +342,9 @@ describe('V1 ADV-FLOW 军师建议系统', () => {
       const sim = createSim();
       const advisorSystem = sim.engine.getAdvisorSystem();
 
-      try {
-        const result = advisorSystem.executeSuggestion('non_existent_id');
-        expect(result.success).toBe(false);
-        expect(result.reason).toContain('不存在');
-      } catch {
-        // eventBus 未初始化时，验证 detectTriggers 仍可正常工作
-        const snapshot = createSnapshot({ buildingQueueIdle: true });
-        const triggers = advisorSystem.detectTriggers(snapshot);
-        expect(Array.isArray(triggers)).toBe(true);
-      }
+      const result = advisorSystem.executeSuggestion('non_existent_id');
+      expect(result.success).toBe(false);
+      expect(result.reason).toContain('不存在');
     });
 
     it('should dismiss suggestion and enter cooldown for same trigger type', () => {
@@ -353,19 +356,14 @@ describe('V1 ADV-FLOW 军师建议系统', () => {
       advisorSystem.updateSuggestions(snapshot);
 
       const displayed = advisorSystem.getDisplayedSuggestions();
-      if (displayed.length > 0) {
-        const triggerType = displayed[0].triggerType;
-        try {
-          const result = advisorSystem.dismissSuggestion(displayed[0].id);
-          if (result.success) {
-            // 同类型应进入冷却
-            expect(advisorSystem.isInCooldown(triggerType)).toBe(true);
-          }
-        } catch {
-          // eventBus 未初始化时，验证建议可被检测
-          expect(triggerType).toBeDefined();
-        }
-      }
+      expect(displayed.length).toBeGreaterThan(0);
+
+      const triggerType = displayed[0].triggerType;
+      const result = advisorSystem.dismissSuggestion(displayed[0].id);
+      expect(result.success).toBe(true);
+
+      // 同类型应进入冷却
+      expect(advisorSystem.isInCooldown(triggerType)).toBe(true);
     });
 
     it('should not add same trigger type during cooldown', () => {

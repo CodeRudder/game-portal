@@ -69,11 +69,12 @@ export const QUALITY_BORDER_COLORS: Record<Quality, string> = {
 };
 
 // ─────────────────────────────────────────────
-// 2. 阵营
+// 2. 阵营（基础类型 Faction 定义在 shared/types.ts，此处 re-export）
 // ─────────────────────────────────────────────
 
-/** 武将阵营 */
-export type Faction = 'shu' | 'wei' | 'wu' | 'qun';
+export type { Faction } from '../../shared/types';
+
+import type { Faction } from '../../shared/types';
 
 /** 阵营中文名映射 */
 export const FACTION_LABELS: Record<Faction, string> = {
@@ -87,26 +88,21 @@ export const FACTION_LABELS: Record<Faction, string> = {
 export const FACTIONS: readonly Faction[] = ['shu', 'wei', 'wu', 'qun'] as const;
 
 // ─────────────────────────────────────────────
-// 3. 四维属性
+// 3. 四维属性（基础类型 GeneralStats 定义在 shared/types.ts，此处 re-export）
 // ─────────────────────────────────────────────
+
+export type { GeneralStats } from '../../shared/types';
+
+import type { GeneralStats } from '../../shared/types';
 
 /**
  * 武将四维属性
  *
  * 对应 PRD 中的：武力(ATK)、统率(CMD)、智力(INT)、政治(POL)
- * 此处使用 attack/defense/intelligence/speed 命名，
  * 映射关系：attack↔武力, defense↔统率, intelligence↔智力, speed↔政治
+ *
+ * 详细字段说明见 shared/types.ts
  */
-export interface GeneralStats {
-  /** 攻击（武力）— 影响普攻伤害、物理技能伤害 */
-  attack: number;
-  /** 防御（统率）— 影响带兵量、防御、部队生存 */
-  defense: number;
-  /** 智力 — 影响技能伤害、策略效果 */
-  intelligence: number;
-  /** 速度（政治）— 影响行动顺序、内政效果 */
-  speed: number;
-}
 
 // ─────────────────────────────────────────────
 // 4. 技能

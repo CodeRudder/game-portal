@@ -23,14 +23,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createSim } from '../../../test-utils/test-helpers';
+import { createSim, ALL_BUILDING_TYPES, SUFFICIENT_RESOURCES } from '../../../test-utils/test-helpers';
 import type { BuildingType } from '../../../shared/types';
-
-// ── 所有建筑类型 ──
-const ALL_BUILDING_TYPES: BuildingType[] = [
-  'castle', 'farmland', 'market', 'barracks',
-  'smithy', 'academy', 'clinic', 'wall',
-];
 
 // ═══════════════════════════════════════════════
 // V1 RDP-FLOW 红点系统
@@ -45,7 +39,7 @@ describe('V1 RDP-FLOW 红点系统', () => {
       // RDP-FLOW-1 步骤1: 资源充足 + 建筑未满级 → 红点
       // 使用 checkUpgrade.canUpgrade 作为红点数据源
       const sim = createSim();
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
 
       // castle Lv1 → 可升级（资源充足）
       const check = sim.engine.checkUpgrade('castle');
@@ -80,7 +74,7 @@ describe('V1 RDP-FLOW 红点系统', () => {
     it('should count upgradable buildings as red dot indicators', () => {
       // RDP-FLOW-1 步骤4: 统计可升级建筑数量
       const sim = createSim();
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
 
       let upgradableCount = 0;
       for (const bt of ALL_BUILDING_TYPES) {
@@ -97,7 +91,7 @@ describe('V1 RDP-FLOW 红点系统', () => {
     it('should update red dot status after upgrade', () => {
       // RDP-FLOW-1 步骤5: 升级后红点状态变化
       const sim = createSim();
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
 
       // 升级前可升级
       expect(sim.engine.checkUpgrade('castle').canUpgrade).toBe(true);
@@ -219,7 +213,7 @@ describe('V1 RDP-FLOW 红点系统', () => {
     it('should unlock new buildings when castle levels up', () => {
       // RDP-FLOW-3 步骤2: 主城升级 → 新建筑解锁 → 红点
       const sim = createSim();
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
 
       // 初始: market 锁定
       expect(sim.engine.building.getBuilding('market').status).toBe('locked');
@@ -234,7 +228,7 @@ describe('V1 RDP-FLOW 红点系统', () => {
     it('should track newly unlocked buildings as red dot candidates', () => {
       // RDP-FLOW-3 步骤3: 跟踪新解锁建筑
       const sim = createSim();
-      sim.addResources({ grain: 500000, gold: 500000, troops: 500000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
 
       // 升级主城到 Lv3
       sim.upgradeBuildingTo('castle', 3);

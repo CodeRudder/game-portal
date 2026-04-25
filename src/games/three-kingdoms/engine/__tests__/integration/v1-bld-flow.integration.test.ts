@@ -22,14 +22,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createSim } from '../../../test-utils/test-helpers';
+import { createSim, ALL_BUILDING_TYPES, SUFFICIENT_RESOURCES, MASSIVE_RESOURCES } from '../../../test-utils/test-helpers';
 import type { BuildingType } from '../../../shared/types';
-
-// ── 所有 8 种建筑类型 ──
-const ALL_BUILDING_TYPES: BuildingType[] = [
-  'castle', 'farmland', 'market', 'barracks',
-  'smithy', 'academy', 'clinic', 'wall',
-];
 
 // ═══════════════════════════════════════════════
 // BLD-FLOW-1: 8座建筑展示与总览
@@ -98,6 +92,132 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       ];
       for (const bt of lockedTypes) {
         expect(buildings[bt].status).toBe('locked');
+      }
+    });
+
+    // ── BLD-FLOW-1 筛选栏测试 ──
+    //
+    // PRD 定义了建筑面板筛选栏功能：全部/已解锁/可升级/升级中 + 按等级/产出/名称排序。
+    // 引擎 BuildingSystem 未提供专用筛选/排序 API，但提供了 getAllBuildings() 返回
+    // 完整建筑数据。以下测试通过客户端侧筛选逻辑验证 PRD 定义的筛选需求。
+
+    it('should filter "全部" to return all 8 buildings', () => {
+      // BLD-FLOW-1 筛选步骤1: 筛选"全部"返回8座建筑
+      const sim = createSim();
+
+      const buildings = sim.engine.building.getAllBuildings();
+      const allTypes = Object.keys(buildings) as BuildingType[];
+
+      // 全部筛选应返回8座建筑
+      expect(allTypes.length).toBe(8);
+      for (const bt of ALL_BUILDING_TYPES) {
+        expect(allTypes).toContain(bt);
+      }
+    });
+
+    it('should filter "已解锁" to return only unlocked buildings', () => {
+      // BLD-FLOW-1 筛选步骤2: 筛选"已解锁"只返回 status !== 'locked' 的建筑
+      const sim = createSim();
+
+      const buildings = sim.engine.building.getAllBuildings();
+      const unlockedTypes = (Object.entries(buildings) as [BuildingType, { status: string }][] )
+        .filter(([, state]) => state.status !== 'locked')
+        .map(([type]) => type);
+
+      // 初始状态只有 castle 和 farmland 解锁
+      expect(unlockedTypes).toEqual(expect.arrayContaining(['castle', 'farmland']));
+      expect(unlockedTypes.length).toBe(2);
+    });
+
+    it('should filter "可升级" to return only buildings with sufficient resources and unlocked', () => {
+      // BLD-FLOW-1 筛选步骤3: 筛选"可升级"只返回资源足够+已解锁的建筑
+      const sim = createSim();
+
+      // 给予充足资源
+      sim.addResources({ grain: 5000, gold: 5000, troops: 5000 });
+
+      const resources = sim.engine.resource.getResources();
+      const buildings = sim.engine.building.getAllBuildings();
+
+      const upgradeableTypes = (Object.keys(buildings) as BuildingType[])
+        .filter(type => {
+          const state = buildings[type];
+          if (state.status === 'locked') return false;
+          const check = sim.engine.building.checkUpgrade(type, resources);
+          return check.canUpgrade;
+        });
+
+      // 初始状态 castle=1, farmland=1，资源充足时 castle 可升级
+      // farmland 等级不能超过 castle，所以 farmland 不可升级
+      expect(upgradeableTypes).toContain('castle');
+    });
+
+    it('should filter "升级中" to return only buildings with upgrading status', () => {
+      // BLD-FLOW-1 筛选步骤4: 筛选"升级中"只返回 status === 'upgrading' 的建筑
+      const sim = createSim();
+
+      // 初始状态没有建筑在升级
+      const buildings = sim.engine.building.getAllBuildings();
+      const upgradingTypes = (Object.entries(buildings) as [BuildingType, { status: string }][] )
+        .filter(([, state]) => state.status === 'upgrading')
+        .map(([type]) => type);
+
+      expect(upgradingTypes.length).toBe(0);
+
+      // 开始升级一个建筑后验证
+      sim.addResources({ grain: 5000, gold: 5000, troops: 5000 });
+      sim.engine.building.startUpgrade('castle', sim.engine.resource.getResources());
+
+      const buildingsAfter = sim.engine.building.getAllBuildings();
+      const upgradingAfter = (Object.entries(buildingsAfter) as [BuildingType, { status: string }][] )
+        .filter(([, state]) => state.status === 'upgrading')
+        .map(([type]) => type);
+
+      expect(upgradingAfter).toContain('castle');
+      expect(upgradingAfter.length).toBe(1);
+    });
+
+    it('should sort buildings by level ascending', () => {
+      // BLD-FLOW-1 筛选步骤5: 按等级排序（升序）
+      const sim = createSim();
+
+      // 升级主城到 Lv3，解锁更多建筑
+      sim.addResources(SUFFICIENT_RESOURCES);
+      sim.upgradeBuildingTo('castle', 3);
+
+      const buildings = sim.engine.building.getAllBuildings();
+      const sortedByLevel = (Object.entries(buildings) as [BuildingType, { level: number }][] )
+        .filter(([, state]) => state.level > 0)
+        .sort(([, a], [, b]) => a.level - b.level);
+
+      // 验证排序结果按等级升序
+      for (let i = 1; i < sortedByLevel.length; i++) {
+        expect(sortedByLevel[i][1].level).toBeGreaterThanOrEqual(sortedByLevel[i - 1][1].level);
+      }
+    });
+
+    it('should sort buildings by production output', () => {
+      // BLD-FLOW-1 筛选步骤6: 按产出排序
+      const sim = createSim();
+
+      // 升级主城到 Lv3，解锁更多建筑
+      sim.addResources(SUFFICIENT_RESOURCES);
+      sim.upgradeBuildingTo('castle', 3);
+
+      const buildings = sim.engine.building.getAllBuildings();
+      const sortedByProduction = (Object.keys(buildings) as BuildingType[])
+        .filter(type => buildings[type].level > 0 && type !== 'castle')
+        .map(type => ({
+          type,
+          production: sim.engine.building.getProduction(type),
+        }))
+        .sort((a, b) => b.production - a.production);
+
+      // 验证排序结果按产出降序
+      for (let i = 1; i < sortedByProduction.length; i++) {
+        expect(sortedByProduction[i - 1].production).toBeGreaterThanOrEqual(
+          sortedByProduction[i].production,
+        );
       }
     });
   });
@@ -230,7 +350,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       const sim = createSim();
 
       // 先升级主城到 Lv2 解锁市集
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuildingTo('castle', 2);
 
       // 升级市集到 Lv1
@@ -255,18 +375,18 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       const sim = createSim();
 
       // 先升级主城到 Lv2 解锁兵营
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuildingTo('castle', 2);
 
       // 升级兵营到 Lv1
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuilding('barracks');
 
       const rateAfterLv1 = sim.getSnapshot().productionRates.troops;
 
       // 再升级兵营到 Lv2（需要主城 >= Lv3）
       sim.upgradeBuildingTo('castle', 3);
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuilding('barracks');
 
       const rateAfterLv2 = sim.getSnapshot().productionRates.troops;
@@ -283,7 +403,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       expect(snapshotBefore.productionRates.gold).toBe(0); // 市集未解锁
 
       // 解锁并升级市集
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuildingTo('castle', 2);
       sim.addResources({ grain: 50000, gold: 50000 });
       sim.upgradeBuilding('market');
@@ -320,7 +440,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       // BLD-FLOW-4: upgradeBuildingTo('castle', 2) → market 和 barracks 解锁
       const sim = createSim();
 
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuildingTo('castle', 2);
 
       const buildings = sim.engine.building.getAllBuildings();
@@ -338,7 +458,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       // BLD-FLOW-4: upgradeBuildingTo('castle', 3) → smithy 和 academy 解锁
       const sim = createSim();
 
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuildingTo('castle', 3);
 
       const buildings = sim.engine.building.getAllBuildings();
@@ -358,7 +478,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       // BLD-FLOW-4: upgradeBuildingTo('castle', 4) → clinic 解锁
       const sim = createSim();
 
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuildingTo('castle', 4);
 
       const buildings = sim.engine.building.getAllBuildings();
@@ -446,7 +566,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       // 使用 setCap 避免资源被截断
       sim.engine.resource.setCap('grain', 50_000_000);
       sim.engine.resource.setCap('troops', 10_000_000);
-      sim.addResources({ grain: 5000000, gold: 5000000, troops: 5000000 });
+      sim.addResources(MASSIVE_RESOURCES);
 
       // 升级到主城 Lv6（需要先满足前置条件）
       sim.upgradeBuildingTo('castle', 4);
@@ -456,11 +576,11 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       sim.upgradeBuildingTo('farmland', 4);
       sim.engine.resource.setCap('grain', 50_000_000);
       sim.engine.resource.setCap('troops', 10_000_000);
-      sim.addResources({ grain: 5000000, gold: 5000000, troops: 5000000 });
+      sim.addResources(MASSIVE_RESOURCES);
       sim.upgradeBuildingTo('castle', 5);
       sim.engine.resource.setCap('grain', 50_000_000);
       sim.engine.resource.setCap('troops', 10_000_000);
-      sim.addResources({ grain: 5000000, gold: 5000000, troops: 5000000 });
+      sim.addResources(MASSIVE_RESOURCES);
       sim.upgradeBuildingTo('castle', 6);
 
       expect(sim.engine.building.getMaxQueueSlots()).toBe(2);

@@ -8,7 +8,7 @@
  */
 
 import type { Faction } from '../../shared/types';
-import type { BattleAction, BattleResult, BattleState } from '../../shared/types';
+import type { BattleAction, BattleResult, BattleState } from '../../engine/battle/battle.types';
 
 // 从段位子模块重新导出
 export {

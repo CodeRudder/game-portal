@@ -18,7 +18,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createSim } from '../../../test-utils/test-helpers';
+import { createSim, SUFFICIENT_RESOURCES } from '../../../test-utils/test-helpers';
 // [P1-5 说明] 直接导入 SettingsManager 用于模拟重启场景（new SettingsManager + restoreFromSaveData）。
 // 引擎已暴露 sim.engine.getSettingsManager()，但跨实例持久化测试需要独立创建新实例。
 import { SettingsManager } from '../../settings/SettingsManager';
@@ -266,6 +266,24 @@ describe('V1 SET-FLOW 设置系统', () => {
       const result = accountSystem.unbind('phone' as const);
       expect(result.success).toBe(false);
     });
+
+    it('should reject rebind within 7-day cooldown [SET-FLOW-3 步骤8]', () => {
+      // PRD: 7天内尝试重新绑定同类型 → 无法绑定
+      // 引擎 AccountSystem 在同一绑定方法上只允许绑定一次
+      // 验证：绑定手机后，再次绑定另一个手机号应被拒绝
+      const sim = createSim();
+      const accountSystem = sim.engine.getAccountSystem();
+      const settingsManager = sim.engine.getSettingsManager();
+      accountSystem.initialize(settingsManager.getAccountSettings());
+
+      // 第一次绑定手机号
+      const bindResult = accountSystem.bind('phone' as const, '138****1234');
+      expect(bindResult.success).toBe(true);
+
+      // 7天内尝试重新绑定同类型（另一个手机号）→ 应被拒绝
+      const rebindResult = accountSystem.bind('phone' as const, '139****5678');
+      expect(rebindResult.success).toBe(false);
+    });
   });
 
   // ═══════════════════════════════════════════════
@@ -322,7 +340,7 @@ describe('V1 SET-FLOW 设置系统', () => {
     it('should save/load round-trip preserves building levels', () => {
       // SET-FLOW-4 步骤5: save → load → 建筑等级一致
       const sim = createSim();
-      sim.addResources({ grain: 50000, gold: 50000, troops: 50000 });
+      sim.addResources(SUFFICIENT_RESOURCES);
       sim.upgradeBuilding('castle');
 
       const json = sim.engine.serialize();

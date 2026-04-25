@@ -7,7 +7,7 @@
  */
 
 // ─────────────────────────────────────────────
-// 0. 武将域基础类型（与 engine/hero/hero.types.ts 保持同步）
+// 0. 武将域基础类型（唯一真相源，engine/hero/hero.types.ts re-export）
 // ─────────────────────────────────────────────
 
 /** 武将阵营 */
@@ -26,59 +26,18 @@ export interface GeneralStats {
 }
 
 // ─────────────────────────────────────────────
-// 0. 战斗域基础类型（与 engine/battle/battle.types.ts 保持同步）
+// 0. 战斗域基础类型（唯一真相源：engine/battle/battle.types.ts）
 // ─────────────────────────────────────────────
 
-/** 战斗行动 */
-export interface BattleAction {
-  /** 回合号 */
-  turn: number;
-  /** 行动方阵营 */
-  side: 'ally' | 'enemy';
-  /** 行动类型 */
-  type: 'attack' | 'skill' | 'buff' | 'debuff' | 'move';
-  /** 行动者ID */
-  actorId: string;
-  /** 目标ID列表 */
-  targetIds: string[];
-  /** 伤害/治疗数值 */
-  value: number;
-  /** 附加描述 */
-  description: string;
-}
-
-/** 战斗状态 */
-export interface BattleState {
-  /** 战斗ID */
-  battleId: string;
-  /** 当前回合 */
-  currentTurn: number;
-  /** 最大回合 */
-  maxTurns: number;
-  /** 是否结束 */
-  isOver: boolean;
-  /** 行动日志 */
-  actionLog: BattleAction[];
-  /** 胜负结果 */
-  result: BattleResult | null;
-}
-
-/** 战斗结果 */
-export interface BattleResult {
-  /** 是否胜利 */
-  victory: boolean;
-  /** 总回合数 */
-  totalTurns: number;
-  /** 评价星级 */
-  stars: number;
-  /** 获得经验 */
-  expGained: number;
-  /** 掉落物品 */
-  drops: { itemId: string; count: number }[];
-}
+// 战斗域类型定义在 engine/battle/battle.types.ts，此处 re-export 供跨域使用
+export type {
+  BattleAction,
+  BattleState,
+  BattleResult,
+} from '../engine/battle/battle.types';
 
 // ─────────────────────────────────────────────
-// 0. 资源域基础类型（与 engine/resource/resource.types.ts 保持同步）
+// 0. 资源域基础类型（唯一真相源，engine/resource/resource.types.ts re-export）
 // ─────────────────────────────────────────────
 
 /** 核心资源类型 */
@@ -164,7 +123,7 @@ export interface ResourceSaveData {
 }
 
 // ─────────────────────────────────────────────
-// 0. 建筑域基础类型（与 engine/building/building.types.ts 保持同步）
+// 0. 建筑域基础类型（唯一真相源，engine/building/building.types.ts re-export）
 // ─────────────────────────────────────────────
 
 /** 8 种建筑类型标识 */
