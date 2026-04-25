@@ -141,8 +141,7 @@ describe('§6.1 统计面板查看', () => {
     const totalSieges = siege.getTotalSieges();
     expect(totalSieges).toBeGreaterThanOrEqual(0);
   });
-
-describe('§10.7 联盟加速前置条件未满足', () => {
+});('§10.7 联盟加速前置条件未满足', () => {
   it('联盟加速需加入联盟才可使用（前置条件校验）', () => {
     // 联盟系统未就绪时功能不可用
     // 引擎层验证: 联盟加速通过接口解耦
@@ -181,3 +180,4 @@ describe('§10.6 缩放<60%时气泡隐藏', () => {
     expect(map.getViewport().zoom).toBe(2.0);
   });
 });
+
