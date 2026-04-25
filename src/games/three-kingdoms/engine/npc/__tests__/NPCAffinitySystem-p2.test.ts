@@ -79,12 +79,10 @@ describe('NPCAffinitySystem', () => {
       expect(npc.affinity).toBe(0);
     });
 
-    it('好感度衰减', () => {
+    it('好感度衰减已禁用（decayPerTurn=0，对齐Play文档§5.1）', () => {
       const npc = createNPC({ affinity: 50 });
       const record = sys.applyDecay(npc.id, npc);
-      expect(record).not.toBeNull();
-      expect(record!.delta).toBe(-0.5);
-      expect(record!.source).toBe('time_decay');
+      expect(record).toBeNull(); // decayPerTurn=0，不衰减
     });
 
     it('衰减量为0时返回null', () => {
@@ -285,12 +283,12 @@ describe('NPCAffinitySystem', () => {
 
     it('getChangeStats 统计各来源变化', () => {
       const npc = createNPC({ affinity: 30 });
-      sys.gainFromDialog(npc.id, npc);     // +3
-      sys.gainFromDialog(npc.id, npc);     // +3
+      sys.gainFromDialog(npc.id, npc);     // +5
+      sys.gainFromDialog(npc.id, npc);     // +5
       sys.gainFromGift(npc.id, npc, 'normal'); // +5
 
       const stats = sys.getChangeStats(npc.id);
-      expect(stats.dialog).toBe(6);
+      expect(stats.dialog).toBe(10);
       expect(stats.gift).toBe(5);
       expect(stats.quest_complete).toBe(0);
     });
@@ -328,7 +326,7 @@ describe('NPCAffinitySystem', () => {
   describe('配置管理', () => {
     it('使用默认配置', () => {
       const config = sys.getConfig();
-      expect(config.dialogBase).toBe(3);
+      expect(config.dialogBase).toBe(5);
       expect(config.questComplete).toBe(15);
     });
 

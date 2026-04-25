@@ -141,13 +141,13 @@ export interface AffinityGainConfig {
 
 /** 默认好感度获取配置 */
 export const DEFAULT_AFFINITY_GAIN_CONFIG: AffinityGainConfig = {
-  dialogBase: 3,
-  giftPreferredMultiplier: 2.0,
+  dialogBase: 5,
+  giftPreferredMultiplier: 1.5,
   giftNormalMultiplier: 1.0,
   questComplete: 15,
   tradeBase: 2,
   battleAssist: 8,
-  decayPerTurn: 0.5,
+  decayPerTurn: 0,
 } as const;
 
 // ─────────────────────────────────────────────

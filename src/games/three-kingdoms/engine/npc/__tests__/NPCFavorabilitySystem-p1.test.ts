@@ -225,14 +225,14 @@ describe('NPCFavorabilitySystem', () => {
       expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + 10);
     });
 
-    it('addGiftAffinity 赠送偏好物品加倍好感度', () => {
+    it('addGiftAffinity 赠送偏好物品加成好感度', () => {
       const npc = npcSys.getNPCById('npc-merchant-01');
       const prevAffinity = npc!.affinity;
 
       const result = favSys.addGiftAffinity('npc-merchant-01', true, 10, 1);
       expect(result).not.toBeNull();
-      expect(result).toBe(20); // 10 * 2.0
-      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + 20);
+      expect(result).toBe(15); // 10 * 1.5
+      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + 15);
     });
 
     it('addQuestCompleteAffinity 完成任务增加好感度', () => {

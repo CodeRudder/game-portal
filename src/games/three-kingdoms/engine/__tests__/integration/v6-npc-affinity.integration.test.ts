@@ -167,10 +167,9 @@ describe('v6.0 集成测试: §5 NPC好感度 + §6 NPC高级交互', () => {
   // ── §5.2 好感度获取途径 ──────────────────────
 
   describe('§5.2 好感度获取途径', () => {
-    it('日常对话：+3/NPC/天（实际实现值，Play文档标称+5）', () => {
+    it('日常对话：+5/NPC/天（已对齐Play文档§5.2）', () => {
       const config = sys.npcFavor.getGainConfig();
-      // ⚠️ 实际值 dialogBase=3，Play文档标称+5，记录差异
-      expect(config.dialogBase).toBe(3);
+      expect(config.dialogBase).toBe(5);
     });
 
     it('赠送普通礼物：有倍率配置', () => {
@@ -178,10 +177,9 @@ describe('v6.0 集成测试: §5 NPC好感度 + §6 NPC高级交互', () => {
       expect(config.giftNormalMultiplier).toBeGreaterThan(0);
     });
 
-    it('偏好物品加成：好感度×2.0（实际实现值，Play文档标称×1.5）', () => {
+    it('偏好物品加成：好感度×1.5（已对齐Play文档§5.2）', () => {
       const config = sys.npcFavor.getGainConfig();
-      // ⚠️ 实际值 giftPreferredMultiplier=2.0，Play文档标称×1.5，记录差异
-      expect(config.giftPreferredMultiplier).toBe(2.0);
+      expect(config.giftPreferredMultiplier).toBe(1.5);
     });
 
     it('NPC职业偏好定义完整', () => {
@@ -257,10 +255,9 @@ describe('v6.0 集成测试: §5 NPC好感度 + §6 NPC高级交互', () => {
       expect(config.giftPreferredMultiplier).toBeGreaterThan(config.giftNormalMultiplier);
     });
 
-    it('偏好加成：赠送偏好物品×2.0（实际值，Play文档标称×1.5）', () => {
+    it('偏好加成：赠送偏好物品×1.5（已对齐Play文档§5.2）', () => {
       const config = sys.npcFavor.getGainConfig();
-      // ⚠️ 实际值=2.0，Play文档标称=1.5
-      expect(config.giftPreferredMultiplier).toBe(2.0);
+      expect(config.giftPreferredMultiplier).toBe(1.5);
     });
   });
 

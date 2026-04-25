@@ -232,20 +232,20 @@ describe('NPCAffinitySystem', () => {
   // 3. #18 好感度获取途径
   // ═══════════════════════════════════════════
   describe('#18 好感度获取途径', () => {
-    it('对话增加好感度（默认+3）', () => {
+    it('对话增加好感度（默认+5）', () => {
       const npc = createNPC({ affinity: 30 });
       const record = sys.gainFromDialog(npc.id, npc);
-      expect(record.delta).toBe(3);
-      expect(record.newAffinity).toBe(33);
+      expect(record.delta).toBe(5);
+      expect(record.newAffinity).toBe(35);
       expect(record.source).toBe('dialog');
-      expect(npc.affinity).toBe(33);
+      expect(npc.affinity).toBe(35);
     });
 
     it('对话可加成', () => {
       const npc = createNPC({ affinity: 30 });
       const record = sys.gainFromDialog(npc.id, npc, 5);
-      expect(record.delta).toBe(8); // 3 + 5
-      expect(npc.affinity).toBe(38);
+      expect(record.delta).toBe(10); // 5 + 5
+      expect(npc.affinity).toBe(40);
     });
 
     it('赠送普通礼物增加好感度', () => {
@@ -256,11 +256,11 @@ describe('NPCAffinitySystem', () => {
       expect(npc.affinity).toBe(35);
     });
 
-    it('赠送偏好礼物获得双倍好感度', () => {
+    it('赠送偏好礼物获得加成好感度', () => {
       const npc = createNPC({ affinity: 30 });
       const record = sys.gainFromGift(npc.id, npc, 'preferred');
-      expect(record.delta).toBe(30); // 15 * 2.0
-      expect(npc.affinity).toBe(60);
+      expect(record.delta).toBe(22); // Math.floor(15 * 1.5)
+      expect(npc.affinity).toBe(52);
     });
 
     it('赠送稀有礼物获得高额好感度', () => {

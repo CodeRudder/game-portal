@@ -226,14 +226,14 @@ describe('NPCFavorabilitySystem', () => {
       expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + 10);
     });
 
-    it('addGiftAffinity 赠送偏好物品加倍好感度', () => {
+    it('addGiftAffinity 赠送偏好物品加成好感度', () => {
       const npc = npcSys.getNPCById('npc-merchant-01');
       const prevAffinity = npc!.affinity;
 
       const result = favSys.addGiftAffinity('npc-merchant-01', true, 10, 1);
       expect(result).not.toBeNull();
-      expect(result).toBe(20); // 10 * 2.0
-      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + 20);
+      expect(result).toBe(15); // 10 * 1.5
+      expect(npcSys.getNPCById('npc-merchant-01')!.affinity).toBe(prevAffinity + 15);
     });
 
     it('addQuestCompleteAffinity 完成任务增加好感度', () => {
@@ -453,13 +453,13 @@ describe('NPCFavorabilitySystem', () => {
   // 6. 好感度时间衰减
   // ═══════════════════════════════════════════
   describe('好感度时间衰减', () => {
-    it('超过10回合未交互的好感度衰减', () => {
-      // 设置 lastInteractedAt 为 0，当前回合 12
+    it('decayPerTurn=0，好感度只增不减（对齐Play文档§5.1）', () => {
+      // decayPerTurn 已设为 0，符合"好感度只增不减"规则
       npcSys.setAffinity('npc-merchant-01', 50);
       favSys.processDecay(['npc-merchant-01'], 12);
 
       const npc = npcSys.getNPCById('npc-merchant-01');
-      expect(npc!.affinity).toBeLessThan(50);
+      expect(npc!.affinity).toBe(50);
     });
 
     it('10回合内不衰减', () => {
