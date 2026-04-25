@@ -28,7 +28,7 @@ const ch3_stage1: Stage = {
     ],
   },
   baseRewards: { grain: 300, gold: 160, troops: 50 }, baseExp: 250,
-  firstClearRewards: { grain: 750, gold: 400, troops: 120 }, firstClearExp: 750,
+  firstClearRewards: { grain: 750, gold: 400, troops: 120, recruitToken: 10 }, firstClearExp: 750, // R5: 大关卡首通奖励 +10 求贤令
   threeStarBonusMultiplier: 1.5,
   dropTable: [
     { type: 'resource', resourceType: 'grain', minAmount: 120, maxAmount: 220, probability: 0.8 },

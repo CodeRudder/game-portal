@@ -23,7 +23,7 @@ export const INITIAL_RESOURCES: Readonly<Resources> = {
   troops: 50,
   mandate: 0,
   techPoint: 0,
-  recruitToken: 0,
+  recruitToken: 10, // R5: 新手礼包 +10 个求贤令，让新玩家立即体验招募功能
 };
 
 // ─────────────────────────────────────────────
@@ -42,7 +42,7 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
   troops: 0,
   mandate: 0,
   techPoint: 0,
-  recruitToken: 0.001,
+  recruitToken: 0.003, // R5: 被动产出速率 3 倍提升（0.001 → 0.003），缩短等待时间
 };
 
 // ─────────────────────────────────────────────
