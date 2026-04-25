@@ -56,6 +56,7 @@ import type { LeaderboardSystem as SocialLeaderboardSystem } from './social/Lead
 import type { HeritageSystem } from './heritage/HeritageSystem';
 import type { AdvisorSystem } from './advisor/AdvisorSystem';
 import type { ActivitySystem } from './activity/ActivitySystem';
+import type { TimedActivitySystem } from './activity/TimedActivitySystem';
 import type { SignInSystem } from './activity/SignInSystem';
 import type { TradeSystem } from './trade/TradeSystem';
 import type { CaravanSystem } from './trade/CaravanSystem';
@@ -185,6 +186,7 @@ export interface EngineGettersMixin {
   getChatSystem(): ChatSystem;
   getSocialLeaderboardSystem(): SocialLeaderboardSystem;
   getHeritageSystem(): HeritageSystem;
+  getTimedActivitySystem(): TimedActivitySystem;
   getAdvisorSystem(): AdvisorSystem;
   getActivitySystem(): ActivitySystem;
   getSignInSystem(): SignInSystem;

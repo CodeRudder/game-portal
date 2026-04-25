@@ -58,6 +58,7 @@ import type { LeaderboardSystem as SocialLeaderboardSystem } from './social/Lead
 import type { HeritageSystem } from './heritage/HeritageSystem';
 import type { AdvisorSystem } from './advisor/AdvisorSystem';
 import type { ActivitySystem } from './activity/ActivitySystem';
+import type { TimedActivitySystem } from './activity/TimedActivitySystem';
 import type { SignInSystem } from './activity/SignInSystem';
 import type { TradeSystem } from './trade/TradeSystem';
 import type { CaravanSystem } from './trade/CaravanSystem';
@@ -243,6 +244,7 @@ export function applyGetters(cls: any): void {
   p.getChatSystem = function(this: EngineAny): ChatSystem { return this.r11.chatSystem; };
   p.getSocialLeaderboardSystem = function(this: EngineAny): SocialLeaderboardSystem { return this.r11.socialLeaderboardSystem; };
   p.getHeritageSystem = function(this: EngineAny): HeritageSystem { return this.r11.heritageSystem; };
+  p.getTimedActivitySystem = function(this: EngineAny): TimedActivitySystem { return this.r11.timedActivitySystem; };
   p.getAdvisorSystem = function(this: EngineAny): AdvisorSystem { return this.r11.advisorSystem; };
   p.getActivitySystem = function(this: EngineAny): ActivitySystem { return this.r11.activitySystem; };
   p.getSignInSystem = function(this: EngineAny): SignInSystem { return this.r11.signInSystem; };

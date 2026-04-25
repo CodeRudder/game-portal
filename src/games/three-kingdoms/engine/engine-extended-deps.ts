@@ -37,6 +37,7 @@ import { FriendSystem } from './social/FriendSystem';
 import { ChatSystem } from './social/ChatSystem';
 import { LeaderboardSystem as SocialLeaderboardSystem } from './social/LeaderboardSystem';
 import { HeritageSystem } from './heritage/HeritageSystem';
+import { TimedActivitySystem } from './activity/TimedActivitySystem';
 import { AdvisorSystem } from './advisor/AdvisorSystem';
 import { ActivitySystem } from './activity/ActivitySystem';
 import { SignInSystem } from './activity/SignInSystem';
@@ -85,6 +86,7 @@ export interface R11Systems {
   chatSystem: ChatSystem;
   socialLeaderboardSystem: SocialLeaderboardSystem;
   heritageSystem: HeritageSystem;
+  timedActivitySystem: TimedActivitySystem;
   advisorSystem: AdvisorSystem;
   activitySystem: ActivitySystem;
   signInSystem: SignInSystem;
@@ -136,6 +138,7 @@ export function createR11Systems(equipmentSystem?: EquipmentSystemType): R11Syst
     chatSystem: new ChatSystem(),
     socialLeaderboardSystem: new SocialLeaderboardSystem(),
     heritageSystem: new HeritageSystem(),
+    timedActivitySystem: new TimedActivitySystem(),
     advisorSystem: new AdvisorSystem(),
     activitySystem: new ActivitySystem(),
     signInSystem: new SignInSystem(),
@@ -186,6 +189,7 @@ export function registerR11Systems(registry: SubsystemRegistry, systems: R11Syst
   r.register('chat', systems.chatSystem);
   r.register('socialLeaderboard', systems.socialLeaderboardSystem);
   r.register('heritage', systems.heritageSystem);
+  r.register('timedActivity', systems.timedActivitySystem);
   r.register('advisor', systems.advisorSystem);
   r.register('activity', systems.activitySystem);
   r.register('signIn', systems.signInSystem);
@@ -212,6 +216,8 @@ export function initR11Systems(systems: R11Systems, deps: ISystemDeps): void {
   systems.prestigeSystem.init(deps);
   systems.rebirthSystem.init(deps);
   systems.prestigeShopSystem.init(deps);
+  systems.heritageSystem.init(deps);
+  systems.timedActivitySystem.init(deps);
 }
 
 /**
@@ -235,6 +241,7 @@ export function resetR11Systems(systems: R11Systems): void {
   systems.questSystem.reset();
   systems.achievementSystem.reset();
   systems.heritageSystem.reset();
+  systems.timedActivitySystem.reset();
   systems.advisorSystem.reset();
   systems.accountSystem.reset();
 }
