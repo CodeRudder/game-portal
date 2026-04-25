@@ -459,7 +459,13 @@ export class ThreeKingdomsEngine {
       canEquip: (heroId: string) => {
         const g = this.hero.getGeneral(heroId);
         if (!g) return false;
-        return g.level >= 10;
+        // 检查装备系统中是否有该武将可穿戴的未装备物品
+        const equips = this.r11.equipmentSystem.getHeroEquips(heroId);
+        const hasEmptySlot = !equips.weapon || !equips.armor || !equips.accessory || !equips.mount;
+        if (!hasEmptySlot) return false;
+        // 检查背包中是否有未穿戴的装备
+        const allItems = this.r11.equipmentSystem.getAllEquipments();
+        return allItems.some(item => !item.isEquipped);
       },
     });
     this.heroAttributeCompare.init(deps);

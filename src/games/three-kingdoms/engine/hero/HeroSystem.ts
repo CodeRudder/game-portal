@@ -128,22 +128,25 @@ export class HeroSystem implements ISubsystem {
   /**
    * 计算单个武将的战力
    *
-   * 公式：战力 = (ATK×2.0 + CMD×1.5 + INT×2.0 + POL×1.0) × 等级系数 × 星级系数
+   * 公式：战力 = (ATK×2.0 + CMD×1.5 + INT×2.0 + POL×1.0) × 等级系数 × 星级系数 × 装备系数
    * 等级系数 = 1 + 等级 × 0.05
    * 星级系数 = getStarMultiplier(star)，每星递增（1星=1.0, 2星=1.15, 3星=1.35, ...）
+   * 装备系数 = 1 + totalEquipmentPower / 1000
    * 注: 源码字段 defense↔CMD, speed↔POL, 属性命名待后续统一
    *
    * @param general - 武将数据
    * @param star - 武将星级（默认1），由 HeroStarSystem.getStar() 提供
+   * @param totalEquipmentPower - 武将装备总战力（默认0），由 EquipmentSystem.getHeroEquipments() 聚合
    */
-  calculatePower(general: GeneralData, star = 1): number {
+  calculatePower(general: GeneralData, star = 1, totalEquipmentPower = 0): number {
     const { attack, defense, intelligence, speed } = general.baseStats;
     const { attack: wA, defense: wD, intelligence: wI, speed: wS } = POWER_WEIGHTS;
     const statsPower = attack * wA + defense * wD + intelligence * wI + speed * wS;
     const levelCoeff = 1 + general.level * LEVEL_COEFFICIENT_PER_LEVEL;
     const qualityCoeff = QUALITY_MULTIPLIERS[general.quality];
     const starCoeff = getStarMultiplier(star);
-    return Math.floor(statsPower * levelCoeff * qualityCoeff * starCoeff);
+    const equipmentCoeff = 1 + totalEquipmentPower / 1000;
+    return Math.floor(statsPower * levelCoeff * qualityCoeff * starCoeff * equipmentCoeff);
   }
 
   /** 计算全体武将总战力 */
