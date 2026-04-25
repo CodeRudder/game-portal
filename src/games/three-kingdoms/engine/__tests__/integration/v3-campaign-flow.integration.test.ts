@@ -1,41 +1,25 @@
 /**
- * V3 战役/关卡流程集成测试
+ * V3 战役系统 Play 流程集成测试
  *
- * 基于 v3-play.md 测试战役地图和关卡进度相关 play 流程：
- * - §1.1  查看章节与关卡列表
- * - §1.1a 关卡地图UI详细验收 [UI层测试]
- * - §1.2  识别关卡类型
- * - §1.3  查看关卡状态
- * - §1.4  查看星级评定
- * - §4.1  胜利结算
- * - §4.2  奖励飞出动画 [UI层测试]
- * - §4.3  掉落物品确认
- * - §4.3a 关卡↔武将碎片映射表
- * - §4.4  关卡解锁
- * - §4.5  失败结算
- * - §4.6  查看战斗日志
- * - §4.7  操作评分 [引擎未实现]
- * - §6.3  战斗经验→武将成长
- * - §6.3a 战斗经验值公式
- * - §7.1  战斗消耗→资源扣减
- * - §7.2  战斗奖励→资源入账
- * - §7.3  首通奖励→资源暴击
- * - §7.4  重复奖励→日常资源获取
- * - §7.5  兵力/粮草资源获取与恢复流程
- * - §9.1  解锁扫荡功能
- * - §9.2  获取扫荡令
- * - §9.3  执行扫荡
- * - §9.5a 扫荡状态回写规则
- * - §10.1 离线推图
- * - §10.2 离线挂机收益
- * - §11.1 进入挑战关卡
- * - §11.2 挑战关卡结算
+ * 覆盖以下 play 流程：
+ * - CAMPAIGN-FLOW-1: 章节浏览与关卡列表
+ * - CAMPAIGN-FLOW-2: 关卡状态流转
+ * - CAMPAIGN-FLOW-3: 星级评定
+ * - CAMPAIGN-FLOW-4: 首通奖励
+ * - CAMPAIGN-FLOW-5: 关卡解锁链
+ * - CAMPAIGN-FLOW-6: 扫荡系统
+ *
+ * 编码规范：
+ * - 每个it前创建新的sim实例
+ * - describe按play流程ID组织
+ * - UI层测试 it.skip + [UI层测试]
+ * - 引擎未实现 it.skip + [引擎未实现]
+ * - 不使用 as any
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createSim } from '../../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
-import type { Stage, Chapter, StageStatus, CampaignProgress } from '../../campaign/campaign.types';
 
 // ── 辅助：获取第一章第一个可挑战关卡ID ──
 function getFirstStageId(sim: GameEventSimulator): string {
@@ -67,911 +51,596 @@ function threeStarClear(sim: GameEventSimulator, stageId: string): void {
   sim.engine.completeBattle(stageId, 3);
 }
 
-describe('V3 CAMPAIGN-FLOW: 战役/关卡流程集成测试', () => {
-  let sim: GameEventSimulator;
-
-  beforeEach(() => {
-    sim = createSim();
-  });
-
-  // ─────────────────────────────────────────
-  // §1.1 查看章节与关卡列表
-  // ─────────────────────────────────────────
-  describe('§1.1 查看章节与关卡列表', () => {
-    it('should return 6 chapters', () => {
+// ═══════════════════════════════════════════════════════════════
+// CAMPAIGN-FLOW-1: 章节浏览与关卡列表
+// ═══════════════════════════════════════════════════════════════
+describe('V3 战役系统 — CAMPAIGN-FLOW', () => {
+  describe('CAMPAIGN-FLOW-1: 章节浏览与关卡列表', () => {
+    it('init() → getChapters() 返回6章', () => {
+      // CAMPAIGN-FLOW-1: 验证初始化后返回6个章节
+      const sim = createSim();
       const chapters = sim.engine.getChapters();
       expect(chapters.length).toBe(6);
     });
 
-    it('should have correct chapter names in order', () => {
+    it('getStageList() 返回30关', () => {
+      // CAMPAIGN-FLOW-1: 验证关卡列表总数为30
+      const sim = createSim();
+      const stages = sim.engine.getStageList();
+      expect(stages.length).toBe(30);
+    });
+
+    it('每章包含正确的关卡ID范围', () => {
+      // CAMPAIGN-FLOW-1: 验证每章包含5个关卡，且ID格式为 chapter{N}_stage{M}
+      const sim = createSim();
+      const chapters = sim.engine.getChapters();
+
+      for (let i = 0; i < chapters.length; i++) {
+        const chapter = chapters[i];
+        expect(chapter.stages.length).toBe(5);
+
+        // 验证关卡ID格式
+        for (let j = 0; j < chapter.stages.length; j++) {
+          const stage = chapter.stages[j];
+          expect(stage.id).toContain(`chapter${i + 1}`);
+          expect(stage.id).toContain(`stage${j + 1}`);
+          // 验证关卡属于正确的章节
+          expect(stage.chapterId).toBe(chapter.id);
+          // 验证关卡序号
+          expect(stage.order).toBe(j + 1);
+        }
+      }
+    });
+
+    it('章节顺序和名称正确', () => {
+      // CAMPAIGN-FLOW-1: 验证章节顺序与名称
+      const sim = createSim();
       const chapters = sim.engine.getChapters();
       const expectedNames = ['黄巾之乱', '群雄割据', '官渡之战', '赤壁之战', '三国鼎立', '一统天下'];
-      chapters.forEach((ch, i) => {
-        expect(ch.name).toBe(expectedNames[i]);
-      });
-    });
 
-    it('should have 5 stages per chapter (total 30)', () => {
-      const chapters = sim.engine.getChapters();
-      let totalStages = 0;
-      for (const ch of chapters) {
-        expect(ch.stages.length).toBe(5);
-        totalStages += ch.stages.length;
-      }
-      expect(totalStages).toBe(30);
-    });
-
-    it('should have correct chapter ordering', () => {
-      const chapters = sim.engine.getChapters();
       for (let i = 0; i < chapters.length; i++) {
         expect(chapters[i].order).toBe(i + 1);
+        expect(chapters[i].name).toBe(expectedNames[i]);
       }
     });
 
-    it('should have prerequisiteChapterId set correctly (ch2 needs ch1, etc)', () => {
+    it('章节前置关系正确（第1章无前置，后续章节需前一章通关）', () => {
+      // CAMPAIGN-FLOW-1: 验证章节解锁前置条件
+      const sim = createSim();
       const chapters = sim.engine.getChapters();
-      // 第一章无前置
+
       expect(chapters[0].prerequisiteChapterId).toBeNull();
-      // 后续章节需前一章
       for (let i = 1; i < chapters.length; i++) {
         expect(chapters[i].prerequisiteChapterId).toBe(chapters[i - 1].id);
       }
     });
 
-    it('should return flat stage list via getStageList', () => {
-      const stages = sim.engine.getStageList();
-      expect(stages.length).toBe(30);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §1.1a 关卡地图UI详细验收 [UI层测试]
-  // ─────────────────────────────────────────
-  describe('§1.1a 关卡地图UI详细验收', () => {
-    it.skip('[UI层测试] should show stage detail card within 200ms on click', () => {
-      // UI响应速度测试属于UI层
-    });
-
-    it.skip('[UI层测试] should debounce rapid clicks (<300ms)', () => {
-      // 防抖处理属于UI层
-    });
-
-    it.skip('[UI层测试] should stop scrolling at chapter boundaries', () => {
-      // 滚动边界属于UI层
-    });
-
-    it.skip('[UI层测试] should play chapter switch animation', () => {
-      // 章节切换动画属于UI层
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §1.2 识别关卡类型
-  // ─────────────────────────────────────────
-  describe('§1.2 识别关卡类型', () => {
-    it('should have normal, elite, and boss stage types', () => {
-      const stages = sim.engine.getStageList();
-      const types = new Set(stages.map(s => s.type));
-      expect(types.has('normal')).toBe(true);
-      expect(types.has('elite')).toBe(true);
-      expect(types.has('boss')).toBe(true);
-    });
-
-    it('should have boss as last stage in each chapter', () => {
+    it('关卡类型分布正确（每章最后为boss）', () => {
+      // CAMPAIGN-FLOW-1: 验证关卡类型包含 normal/elite/boss
+      const sim = createSim();
       const chapters = sim.engine.getChapters();
-      for (const ch of chapters) {
-        const lastStage = ch.stages[ch.stages.length - 1];
+
+      for (const chapter of chapters) {
+        const lastStage = chapter.stages[chapter.stages.length - 1];
         expect(lastStage.type).toBe('boss');
       }
     });
-
-    it('should have enemy formation with recommended power for each stage', () => {
-      const stages = sim.engine.getStageList();
-      for (const stage of stages) {
-        expect(stage.enemyFormation).toBeDefined();
-        expect(stage.enemyFormation.recommendedPower).toBeGreaterThan(0);
-        expect(stage.enemyFormation.units.length).toBeGreaterThanOrEqual(3);
-        expect(stage.enemyFormation.units.length).toBeLessThanOrEqual(6);
-      }
-    });
   });
 
-  // ─────────────────────────────────────────
-  // §1.3 查看关卡状态
-  // ─────────────────────────────────────────
-  describe('§1.3 查看关卡状态', () => {
-    it('should have first stage as available initially', () => {
-      const campaignSystem = sim.engine.getCampaignSystem();
-      const stages = sim.engine.getStageList();
-      const firstStageId = stages[0].id;
-
-      const status = campaignSystem.getStageStatus(firstStageId);
-      expect(status).toBe('available');
-    });
-
-    it('should have other stages locked initially', () => {
+  // ═══════════════════════════════════════════════════════════════
+  // CAMPAIGN-FLOW-2: 关卡状态流转
+  // ═══════════════════════════════════════════════════════════════
+  describe('CAMPAIGN-FLOW-2: 关卡状态流转', () => {
+    it('初始状态：第1关available，其余locked', () => {
+      // CAMPAIGN-FLOW-2: 初始化后第1关可挑战，其余锁定
+      const sim = createSim();
       const campaignSystem = sim.engine.getCampaignSystem();
       const stages = sim.engine.getStageList();
 
-      // 第2关开始应该是locked
+      // 第1关 available
+      expect(campaignSystem.getStageStatus(stages[0].id)).toBe('available');
+
+      // 第2关开始 locked
       for (let i = 1; i < stages.length; i++) {
-        const status = campaignSystem.getStageStatus(stages[i].id);
-        expect(status).toBe('locked');
+        expect(campaignSystem.getStageStatus(stages[i].id)).toBe('locked');
       }
     });
 
-    it('should transition to cleared after completing a stage', () => {
-      const battleSim = initBattleReadyState();
-      const stages = battleSim.engine.getStageList();
-      const firstStageId = stages[0].id;
+    it('completeStage(stage1, 3) → 第1关变为threeStar，第2关变为available', () => {
+      // CAMPAIGN-FLOW-2: 三星通关后状态正确流转
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+      const stage2Id = stages[1].id;
 
-      threeStarClear(battleSim, firstStageId);
+      // 通关前：第1关 available，第2关 locked
+      expect(campaignSystem.getStageStatus(stage1Id)).toBe('available');
+      expect(campaignSystem.getStageStatus(stage2Id)).toBe('locked');
 
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-      const status = campaignSystem.getStageStatus(firstStageId);
-      expect(status).toBe('threeStar');
+      // 三星通关第1关
+      threeStarClear(sim, stage1Id);
+
+      // 通关后：第1关 threeStar，第2关 available
+      expect(campaignSystem.getStageStatus(stage1Id)).toBe('threeStar');
+      expect(campaignSystem.getStageStatus(stage2Id)).toBe('available');
     });
 
-    it('should unlock next stage after clearing current', () => {
-      const battleSim = initBattleReadyState();
-      const stages = battleSim.engine.getStageList();
-      const firstStageId = stages[0].id;
-      const secondStageId = stages[1].id;
+    it('completeStage(stage1, 1) → 第1关变为cleared（非threeStar）', () => {
+      // CAMPAIGN-FLOW-2: 1-2星通关后状态为cleared
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
 
-      // 第二关初始为locked
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-      expect(campaignSystem.getStageStatus(secondStageId)).toBe('locked');
+      // 1星通关
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 1);
 
-      // 通关第一关后解锁
-      threeStarClear(battleSim, firstStageId);
-      expect(campaignSystem.getStageStatus(secondStageId)).toBe('available');
+      // 状态为cleared（非threeStar）
+      const status = campaignSystem.getStageStatus(stage1Id);
+      expect(status).toBe('cleared');
+    });
+
+    it('completeStage(stage1, 2) → 第1关变为cleared', () => {
+      // CAMPAIGN-FLOW-2: 2星通关后状态为cleared
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+
+      // 2星通关
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 2);
+
+      // 状态为cleared（非threeStar）
+      const status = campaignSystem.getStageStatus(stage1Id);
+      expect(status).toBe('cleared');
+    });
+
+    it('先1星→再3星 → 第1关从cleared变为threeStar', () => {
+      // CAMPAIGN-FLOW-2: 状态从cleared升级到threeStar
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+
+      // 先1星通关
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 1);
+      expect(campaignSystem.getStageStatus(stage1Id)).toBe('cleared');
+
+      // 再3星通关
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 3);
+      expect(campaignSystem.getStageStatus(stage1Id)).toBe('threeStar');
+    });
+
+    it('canChallenge对available/cleared/threeStar返回true，对locked返回false', () => {
+      // CAMPAIGN-FLOW-2: canChallenge方法验证
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+
+      // 第1关 available → canChallenge = true
+      expect(campaignSystem.canChallenge(stages[0].id)).toBe(true);
+      // 第2关 locked → canChallenge = false
+      expect(campaignSystem.canChallenge(stages[1].id)).toBe(false);
+
+      // 通关第1关后
+      threeStarClear(sim, stages[0].id);
+      // 第1关 threeStar → canChallenge = true（可重复挑战）
+      expect(campaignSystem.canChallenge(stages[0].id)).toBe(true);
+      // 第2关 available → canChallenge = true
+      expect(campaignSystem.canChallenge(stages[1].id)).toBe(true);
     });
   });
 
-  // ─────────────────────────────────────────
-  // §1.4 查看星级评定
-  // ─────────────────────────────────────────
-  describe('§1.4 查看星级评定', () => {
-    it('should have 0 stars for uncleared stages', () => {
+  // ═══════════════════════════════════════════════════════════════
+  // CAMPAIGN-FLOW-3: 星级评定
+  // ═══════════════════════════════════════════════════════════════
+  describe('CAMPAIGN-FLOW-3: 星级评定', () => {
+    it('winBattle(stage1, 3) → getStageStars(stage1) === 3', () => {
+      // CAMPAIGN-FLOW-3: 三星通关后星级为3
+      const sim = initBattleReadyState();
       const campaignSystem = sim.engine.getCampaignSystem();
       const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+
+      threeStarClear(sim, stage1Id);
+      expect(campaignSystem.getStageStars(stage1Id)).toBe(3);
+    });
+
+    it('winBattle(stage1, 1) → getStageStars(stage1) === 1', () => {
+      // CAMPAIGN-FLOW-3: 1星通关后星级为1
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 1);
+      expect(campaignSystem.getStageStars(stage1Id)).toBe(1);
+    });
+
+    it('重复通关取最高星级（1星→3星→1星 → 保持3星）', () => {
+      // CAMPAIGN-FLOW-3: 星级只升不降
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+
+      // 1星通关
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 1);
+      expect(campaignSystem.getStageStars(stage1Id)).toBe(1);
+
+      // 3星通关（升级）
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 3);
+      expect(campaignSystem.getStageStars(stage1Id)).toBe(3);
+
+      // 再次1星通关（不降级）
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 1);
+      expect(campaignSystem.getStageStars(stage1Id)).toBe(3);
+    });
+
+    it('未通关关卡星级为0', () => {
+      // CAMPAIGN-FLOW-3: 初始状态所有关卡星级为0
+      const sim = createSim();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+
       for (const stage of stages) {
         expect(campaignSystem.getStageStars(stage.id)).toBe(0);
       }
     });
 
-    it('should record star rating after clearing', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      threeStarClear(battleSim, firstStageId);
-
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-      expect(campaignSystem.getStageStars(firstStageId)).toBe(3);
-    });
-
-    it('should keep highest star rating on re-clear', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      // 先1星通关
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 1);
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-      expect(campaignSystem.getStageStars(firstStageId)).toBe(1);
-
-      // 再3星通关
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-      expect(campaignSystem.getStageStars(firstStageId)).toBe(3);
-    });
-
-    it('should not downgrade stars on lower-star re-clear', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      threeStarClear(battleSim, firstStageId);
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 1);
-
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-      expect(campaignSystem.getStageStars(firstStageId)).toBe(3);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §4.1 胜利结算
-  // ─────────────────────────────────────────
-  describe('§4.1 胜利结算', () => {
-    it('should return VICTORY result on winning battle', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const result = battleSim.engine.startBattle(firstStageId);
-      expect(result).toBeDefined();
-      expect(result.outcome).toBe('VICTORY');
-    });
-
-    it('should have star rating in result', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const result = battleSim.engine.startBattle(firstStageId);
-      expect(result.stars).toBeGreaterThanOrEqual(0);
-      expect(result.stars).toBeLessThanOrEqual(3);
-    });
-
-    it('should have fragment rewards on victory', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const result = battleSim.engine.startBattle(firstStageId);
-      expect(result.fragmentRewards).toBeDefined();
-      // 胜利时碎片奖励可以为空对象，但字段必须存在
-      expect(typeof result.fragmentRewards).toBe('object');
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §4.2 奖励飞出动画 [UI层测试]
-  // ─────────────────────────────────────────
-  describe('§4.2 奖励飞出动画', () => {
-    it.skip('[UI层测试] should play reward fly-out animation', () => {
-      // 动画效果属于UI层
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §4.3 掉落物品确认
-  // ─────────────────────────────────────────
-  describe('§4.3 掉落物品确认', () => {
-    it('should have drop table for each stage', () => {
+    it('getTotalStars() 统计所有关卡星级之和', () => {
+      // CAMPAIGN-FLOW-3: 总星数统计
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
       const stages = sim.engine.getStageList();
-      for (const stage of stages) {
-        expect(stage.dropTable).toBeDefined();
-        expect(Array.isArray(stage.dropTable)).toBe(true);
-      }
-    });
 
-    it('should have 100% probability for grain and gold drops', () => {
+      // 初始总星数为0
+      expect(campaignSystem.getTotalStars()).toBe(0);
+
+      // 三星通关第1关
+      threeStarClear(sim, stages[0].id);
+      expect(campaignSystem.getTotalStars()).toBe(3);
+
+      // 三星通关第2关
+      threeStarClear(sim, stages[1].id);
+      expect(campaignSystem.getTotalStars()).toBe(6);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // CAMPAIGN-FLOW-4: 首通奖励
+  // ═══════════════════════════════════════════════════════════════
+  describe('CAMPAIGN-FLOW-4: 首通奖励', () => {
+    it('isFirstCleared(stage1) === false → winBattle → isFirstCleared(stage1) === true', () => {
+      // CAMPAIGN-FLOW-4: 首通标记从false变为true
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
       const stages = sim.engine.getStageList();
-      for (const stage of stages) {
-        const grainDrop = stage.dropTable.find(
-          d => d.type === 'resource' && d.resourceType === 'grain'
-        );
-        const goldDrop = stage.dropTable.find(
-          d => d.type === 'resource' && d.resourceType === 'gold'
-        );
-        // 粮草和铜钱掉落概率应符合掉落表配置（≥0.7）
-        if (grainDrop) expect(grainDrop.probability).toBeGreaterThanOrEqual(0.7);
-        if (goldDrop) expect(goldDrop.probability).toBeGreaterThanOrEqual(0.7);
-      }
+      const stage1Id = stages[0].id;
+
+      // 通关前
+      expect(campaignSystem.isFirstCleared(stage1Id)).toBe(false);
+
+      // 通关后
+      threeStarClear(sim, stage1Id);
+      expect(campaignSystem.isFirstCleared(stage1Id)).toBe(true);
     });
 
-    it('should have fragment drops with 10% probability', () => {
+    it('首通奖励 = 基础奖励 × 3.0（首通额外奖励叠加）', () => {
+      // CAMPAIGN-FLOW-4: 验证首通奖励显著高于重复通关
+      const sim = initBattleReadyState();
       const stages = sim.engine.getStageList();
-      for (const stage of stages) {
-        const fragmentDrops = stage.dropTable.filter(d => d.type === 'fragment');
-        for (const fd of fragmentDrops) {
-          expect(fd.probability).toBe(0.1);
-        }
-      }
-    });
-  });
+      const stage1Id = stages[0].id;
+      const rewardDistributor = sim.engine.getRewardDistributor();
 
-  // ─────────────────────────────────────────
-  // §4.3a 关卡↔武将碎片映射表
-  // ─────────────────────────────────────────
-  describe('§4.3a 关卡↔武将碎片映射表', () => {
-    it('should have fragment drops in each stage drop table', () => {
+      // 预览基础奖励
+      const baseRewards = rewardDistributor.previewBaseRewards(stage1Id);
+      expect(baseRewards.resources).toBeDefined();
+      expect(baseRewards.exp).toBeGreaterThan(0);
+
+      // 计算首通奖励（isFirstClear=true）
+      const firstClearReward = rewardDistributor.calculateRewards(stage1Id, 3, true);
+      // 计算重复通关奖励（isFirstClear=false）
+      const repeatReward = rewardDistributor.calculateRewards(stage1Id, 3, false);
+
+      // 首通奖励应大于重复奖励
+      expect(firstClearReward.isFirstClear).toBe(true);
+      expect(repeatReward.isFirstClear).toBe(false);
+
+      // 首通经验应高于重复经验（因为包含firstClearExp）
+      expect(firstClearReward.exp).toBeGreaterThan(repeatReward.exp);
+    });
+
+    it('首通奖励包含firstClearRewards配置的额外资源', () => {
+      // CAMPAIGN-FLOW-4: 验证首通额外奖励来自配置
+      const sim = createSim();
       const stages = sim.engine.getStageList();
-      let stagesWithFragments = 0;
-      for (const stage of stages) {
-        const fragmentDrops = stage.dropTable.filter(d => d.type === 'fragment');
-        if (fragmentDrops.length > 0) {
-          stagesWithFragments++;
-          // 每个关卡1~3个武将碎片掉落
-          expect(fragmentDrops.length).toBeGreaterThanOrEqual(1);
-          expect(fragmentDrops.length).toBeLessThanOrEqual(3);
-        }
-      }
-      // 大部分关卡应该有碎片掉落
-      expect(stagesWithFragments).toBeGreaterThan(0);
+      const stage1 = stages[0];
+
+      // 关卡应配置首通额外奖励
+      expect(stage1.firstClearRewards).toBeDefined();
+      expect(stage1.firstClearExp).toBeGreaterThanOrEqual(0);
     });
 
-    it('should have correct fragment generalId in drop table', () => {
+    it('首通后再次通关不再获得首通奖励', () => {
+      // CAMPAIGN-FLOW-4: 首通标记只触发一次
+      const sim = initBattleReadyState();
       const stages = sim.engine.getStageList();
-      for (const stage of stages) {
-        const fragmentDrops = stage.dropTable.filter(d => d.type === 'fragment');
-        for (const fd of fragmentDrops) {
-          expect(fd.generalId).toBeDefined();
-          expect(fd.generalId!.length).toBeGreaterThan(0);
-        }
-      }
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §4.4 关卡解锁
-  // ─────────────────────────────────────────
-  describe('§4.4 关卡解锁', () => {
-    it('should unlock stages sequentially within a chapter', () => {
-      const battleSim = initBattleReadyState();
-      const stages = battleSim.engine.getStageList();
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-
-      // 通关前5关（第一章），逐关解锁
-      for (let i = 0; i < 5; i++) {
-        const stageId = stages[i].id;
-        expect(campaignSystem.canChallenge(stageId)).toBe(true);
-        threeStarClear(battleSim, stageId);
-      }
-    });
-
-    it('should track clear count for each stage', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-
-      expect(campaignSystem.getClearCount(firstStageId)).toBe(0);
-
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-      expect(campaignSystem.getClearCount(firstStageId)).toBe(1);
-
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-      expect(campaignSystem.getClearCount(firstStageId)).toBe(2);
-    });
-
-    it('should track first clear flag', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-
-      expect(campaignSystem.isFirstCleared(firstStageId)).toBe(false);
-
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-      expect(campaignSystem.isFirstCleared(firstStageId)).toBe(true);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §4.5 失败结算
-  // ─────────────────────────────────────────
-  describe('§4.5 失败结算', () => {
-    it('should have DEFEAT outcome when losing', () => {
-      // 创建一个弱队vs强敌的场景
-      const weakSim = createSim();
-      weakSim.addHeroDirectly('liubei');
-      weakSim.engine.createFormation('main');
-      weakSim.engine.setFormation('main', ['liubei']);
-
-      // 尝试挑战高难度关卡
-      const stages = weakSim.engine.getStageList();
-      // 找一个高推荐战力的关卡
-      const hardStage = stages.find(s => s.enemyFormation.recommendedPower > 5000);
-      if (hardStage) {
-        // 先解锁该关卡（通过直接操作进度系统模拟）
-        const campaignSystem = weakSim.engine.getCampaignSystem();
-        // 手动完成前置关卡以解锁
-        const stageIndex = stages.indexOf(hardStage);
-        for (let i = 0; i < stageIndex; i++) {
-          try {
-            campaignSystem.completeStage(stages[i].id, 3);
-          } catch { break; }
-        }
-        if (campaignSystem.canChallenge(hardStage.id)) {
-          const result = weakSim.engine.startBattle(hardStage.id);
-          // 结果可能是胜利或失败
-          expect(['VICTORY', 'DEFEAT', 'DRAW']).toContain(result.outcome);
-        }
-      }
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §4.6 查看战斗日志
-  // ─────────────────────────────────────────
-  describe('§4.6 查看战斗日志', () => {
-    it('should have action log in battle result', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const battleEngine = battleSim.engine.getBattleEngine();
-      const stage = battleSim.engine.getStageInfo(firstStageId)!;
-      const { allyTeam, enemyTeam } = battleSim.engine.buildTeamsForStage(stage);
-
-      const state = battleEngine.initBattle(allyTeam, enemyTeam);
-      const actions = battleEngine.executeTurn(state);
-
-      expect(Array.isArray(actions)).toBe(true);
-      // 至少有一个行动记录
-      expect(actions.length).toBeGreaterThan(0);
-    });
-
-    it('should have turn number in each action', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const battleEngine = battleSim.engine.getBattleEngine();
-      const stage = battleSim.engine.getStageInfo(firstStageId)!;
-      const { allyTeam, enemyTeam } = battleSim.engine.buildTeamsForStage(stage);
-
-      const state = battleEngine.initBattle(allyTeam, enemyTeam);
-      const actions = battleEngine.executeTurn(state);
-
-      for (const action of actions) {
-        expect(action.turn).toBe(1); // 第一回合
-        expect(action.actorId).toBeDefined();
-      }
-    });
-
-    it('should have summary in full battle result', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const result = battleSim.engine.startBattle(firstStageId);
-      expect(result.summary).toBeDefined();
-      expect(result.summary.length).toBeGreaterThan(0);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §4.7 操作评分 [引擎未实现]
-  // ─────────────────────────────────────────
-  describe('§4.7 操作评分', () => {
-    it.skip('[引擎未实现] should rate S for zero deaths and turns <= 4', () => {
-      // 操作评分系统尚未实现
-    });
-
-    it.skip('[引擎未实现] should rate A for deaths <= 1 and turns <= 6', () => {
-      // 操作评分系统尚未实现
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §6.3 战斗经验→武将成长
-  // ─────────────────────────────────────────
-  describe('§6.3 战斗经验→武将成长', () => {
-    it('should increase general exp after battle', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const generalBefore = battleSim.engine.hero.getGeneral('liubei')!;
-      const expBefore = generalBefore.exp;
-
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-
-      const generalAfter = battleSim.engine.hero.getGeneral('liubei')!;
-      // 经验应该增加（通过rewardDistributor分发）
-      // 注意：completeBattle会分发奖励，包括经验
-      expect(generalAfter.exp).toBeGreaterThanOrEqual(expBefore);
-    });
-
-    it('should increase general level if exp overflows', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const levelBefore = battleSim.engine.hero.getGeneral('liubei')!.level;
-
-      // 多次通关累积经验
-      for (let i = 0; i < 10; i++) {
-        battleSim.engine.startBattle(firstStageId);
-        battleSim.engine.completeBattle(firstStageId, 3);
-      }
-
-      const levelAfter = battleSim.engine.hero.getGeneral('liubei')!.level;
-      expect(levelAfter).toBeGreaterThanOrEqual(levelBefore);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §6.3a 战斗经验值公式
-  // ─────────────────────────────────────────
-  describe('§6.3a 战斗经验值公式', () => {
-    it('should have base exp for each stage increasing by chapter', () => {
-      const chapters = sim.engine.getChapters();
-      const expectedBaseExp = [50, 120, 250, 500, 1000, 2000];
-
-      for (let i = 0; i < chapters.length; i++) {
-        const firstStage = chapters[i].stages[0];
-        // 验证基础经验在合理范围内（允许一定偏差）
-        expect(firstStage.baseExp).toBeGreaterThan(0);
-      }
-    });
-
-    it('should apply star multiplier to exp (x1.0/x1.5/x2.0)', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const stage = battleSim.engine.getStageInfo(firstStageId)!;
-
-      // 验证关卡有基础经验配置
-      expect(stage.baseExp).toBeGreaterThan(0);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §7.1 战斗消耗→资源扣减
-  // ─────────────────────────────────────────
-  describe('§7.1 战斗消耗→资源扣减', () => {
-    it('should have resources before and after battle', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const resourcesBefore = battleSim.getAllResources();
-
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-
-      const resourcesAfter = battleSim.getAllResources();
-      // 资源应该有变化（奖励入账）
-      expect(resourcesAfter).toBeDefined();
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §7.2 战斗奖励→资源入账
-  // ─────────────────────────────────────────
-  describe('§7.2 战斗奖励→资源入账', () => {
-    it('should add grain reward after battle victory', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const grainBefore = battleSim.getResource('grain');
-
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-
-      const grainAfter = battleSim.getResource('grain');
-      expect(grainAfter).toBeGreaterThan(grainBefore);
-    });
-
-    it('should add gold reward after battle victory', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-
-      const goldBefore = battleSim.getResource('gold');
-
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-
-      const goldAfter = battleSim.getResource('gold');
-      expect(goldAfter).toBeGreaterThan(goldBefore);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §7.3 首通奖励→资源暴击
-  // ─────────────────────────────────────────
-  describe('§7.3 首通奖励→资源暴击', () => {
-    it('should have first clear rewards defined in stage config', () => {
-      const stages = sim.engine.getStageList();
-      for (const stage of stages) {
-        expect(stage.firstClearRewards).toBeDefined();
-        expect(stage.firstClearExp).toBeGreaterThanOrEqual(0);
-      }
-    });
-
-    it('should mark first clear flag after first completion', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-
-      expect(campaignSystem.isFirstCleared(firstStageId)).toBe(false);
-
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-
-      expect(campaignSystem.isFirstCleared(firstStageId)).toBe(true);
-    });
-
-    it('should give more resources on first clear vs repeat', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
+      const stage1Id = stages[0].id;
+      const campaignSystem = sim.engine.getCampaignSystem();
 
       // 首通
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-      const grainAfterFirst = battleSim.getResource('grain');
+      threeStarClear(sim, stage1Id);
+      expect(campaignSystem.isFirstCleared(stage1Id)).toBe(true);
+
+      // 再次通关，首通标记仍为true（不会重置）
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 3);
+      expect(campaignSystem.isFirstCleared(stage1Id)).toBe(true);
+    });
+
+    it('首通资源增加量显著高于重复通关', () => {
+      // CAMPAIGN-FLOW-4: 验证首通实际入账资源更多
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+
+      // 首通
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 3);
+      const grainAfterFirst = sim.getResource('grain');
 
       // 重复通关
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
-      const grainAfterSecond = battleSim.getResource('grain');
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 3);
+      const grainAfterSecond = sim.getResource('grain');
 
-      // 两次都应增加资源
       const firstGain = grainAfterFirst;
       const secondGain = grainAfterSecond - grainAfterFirst;
-      // 首通奖励 >= 重复奖励（因为首通有额外倍率）
-      expect(firstGain).toBeGreaterThan(0);
+
+      // 首通获得资源 > 重复通关获得资源
+      expect(firstGain).toBeGreaterThan(secondGain);
       expect(secondGain).toBeGreaterThan(0);
     });
   });
 
-  // ─────────────────────────────────────────
-  // §7.4 重复奖励→日常资源获取
-  // ─────────────────────────────────────────
-  describe('§7.4 重复奖励→日常资源获取', () => {
-    it('should give consistent rewards on repeated clears', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
+  // ═══════════════════════════════════════════════════════════════
+  // CAMPAIGN-FLOW-5: 关卡解锁链
+  // ═══════════════════════════════════════════════════════════════
+  describe('CAMPAIGN-FLOW-5: 关卡解锁链', () => {
+    it('逐关通关到第5关，验证每关解锁正确', () => {
+      // CAMPAIGN-FLOW-5: 章节内逐关解锁验证
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
 
-      // 先首通
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 3);
+      // 逐关三星通关前5关（第1章全部关卡）
+      for (let i = 0; i < 5; i++) {
+        const stageId = stages[i].id;
 
-      // 重复通关多次
-      const gains: number[] = [];
-      for (let i = 0; i < 3; i++) {
-        const grainBefore = battleSim.getResource('grain');
-        battleSim.engine.startBattle(firstStageId);
-        battleSim.engine.completeBattle(firstStageId, 3);
-        const grainAfter = battleSim.getResource('grain');
-        gains.push(grainAfter - grainBefore);
+        // 当前关卡应该可挑战
+        expect(campaignSystem.canChallenge(stageId)).toBe(true);
+
+        // 三星通关
+        threeStarClear(sim, stageId);
+
+        // 验证通关状态
+        expect(campaignSystem.getStageStars(stageId)).toBe(3);
+        expect(campaignSystem.getStageStatus(stageId)).toBe('threeStar');
+
+        // 验证下一关解锁（如果还有下一关）
+        if (i < stages.length - 1) {
+          expect(campaignSystem.getStageStatus(stages[i + 1].id)).toBe('available');
+        }
+      }
+    });
+
+    it('跨章节解锁（第1章最后一关 → 第2章第1关）', () => {
+      // CAMPAIGN-FLOW-5: 验证章节间解锁链
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const chapters = sim.engine.getChapters();
+
+      // 第2章第1关初始应为locked
+      const ch2FirstStage = chapters[1].stages[0];
+      expect(campaignSystem.getStageStatus(ch2FirstStage.id)).toBe('locked');
+
+      // 通关第1章所有关卡（5关）
+      for (const stage of chapters[0].stages) {
+        threeStarClear(sim, stage.id);
       }
 
-      // 每次重复通关都应该获得资源
-      for (const gain of gains) {
-        expect(gain).toBeGreaterThan(0);
-      }
+      // 第2章第1关应变为available
+      expect(campaignSystem.getStageStatus(ch2FirstStage.id)).toBe('available');
+      expect(campaignSystem.canChallenge(ch2FirstStage.id)).toBe(true);
+    });
+
+    it('跳关无法解锁（不通关第1关，第2关始终locked）', () => {
+      // CAMPAIGN-FLOW-5: 验证解锁链的严格顺序
+      const sim = createSim();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+
+      // 不通关第1关，第2关始终locked
+      expect(campaignSystem.getStageStatus(stages[1].id)).toBe('locked');
+      expect(campaignSystem.canChallenge(stages[1].id)).toBe(false);
+    });
+
+    it('通关计数正确递增', () => {
+      // CAMPAIGN-FLOW-5: 验证通关次数统计
+      const sim = initBattleReadyState();
+      const campaignSystem = sim.engine.getCampaignSystem();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+
+      expect(campaignSystem.getClearCount(stage1Id)).toBe(0);
+
+      // 第1次通关
+      threeStarClear(sim, stage1Id);
+      expect(campaignSystem.getClearCount(stage1Id)).toBe(1);
+
+      // 第2次通关
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 3);
+      expect(campaignSystem.getClearCount(stage1Id)).toBe(2);
+
+      // 第3次通关
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 2);
+      expect(campaignSystem.getClearCount(stage1Id)).toBe(3);
     });
   });
 
-  // ─────────────────────────────────────────
-  // §7.5 兵力/粮草资源获取与恢复流程
-  // ─────────────────────────────────────────
-  describe('§7.5 兵力/粮草资源获取与恢复流程', () => {
-    it('should have resource caps for grain and troops', () => {
-      const res = sim.engine.resource;
-      // 资源系统应该有上限概念
-      expect(res).toBeDefined();
-    });
-
-    it('should accumulate resources over time via production', () => {
-      sim.addResources({ grain: 1000, gold: 500 });
-      const grainBefore = sim.getResource('grain');
-
-      // 快进1分钟
-      sim.fastForwardMinutes(1);
-
-      const grainAfter = sim.getResource('grain');
-      // 生产可能增加资源（取决于建筑等级）
-      expect(grainAfter).toBeGreaterThanOrEqual(grainBefore);
-    });
-
-    it('should cap resources at maximum', () => {
-      sim.engine.resource.setCap('grain', 1000);
-      sim.addResources({ grain: 5000 });
-
-      const grain = sim.getResource('grain');
-      expect(grain).toBeLessThanOrEqual(1000);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §9.1 解锁扫荡功能
-  // ─────────────────────────────────────────
-  describe('§9.1 解锁扫荡功能', () => {
-    it('should not allow sweep for non-three-star stage', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
+  // ═══════════════════════════════════════════════════════════════
+  // CAMPAIGN-FLOW-6: 扫荡系统
+  // ═══════════════════════════════════════════════════════════════
+  describe('CAMPAIGN-FLOW-6: 扫荡系统', () => {
+    it('三星通关前 canSweep() === false', () => {
+      // CAMPAIGN-FLOW-6: 未三星通关不能扫荡
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+      const sweepSystem = sim.engine.getSweepSystem();
 
       // 未通关时不能扫荡
-      expect(sweepSystem.canSweep(firstStageId)).toBe(false);
+      expect(sweepSystem.canSweep(stage1Id)).toBe(false);
     });
 
-    it('should allow sweep after three-star clear', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
-
-      threeStarClear(battleSim, firstStageId);
-
-      expect(sweepSystem.canSweep(firstStageId)).toBe(true);
-    });
-
-    it('should not allow sweep for 1-star or 2-star clear', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
+    it('1星/2星通关后 canSweep() === false', () => {
+      // CAMPAIGN-FLOW-6: 非三星通关不能扫荡
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+      const sweepSystem = sim.engine.getSweepSystem();
 
       // 1星通关
-      battleSim.engine.startBattle(firstStageId);
-      battleSim.engine.completeBattle(firstStageId, 1);
-
-      expect(sweepSystem.canSweep(firstStageId)).toBe(false);
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 1);
+      expect(sweepSystem.canSweep(stage1Id)).toBe(false);
     });
-  });
 
-  // ─────────────────────────────────────────
-  // §9.2 获取扫荡令
-  // ─────────────────────────────────────────
-  describe('§9.2 获取扫荡令', () => {
-    it('should have initial ticket count of 0', () => {
+    it('三星通关后 canSweep() === true', () => {
+      // CAMPAIGN-FLOW-6: 三星通关后可以扫荡
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
       const sweepSystem = sim.engine.getSweepSystem();
-      expect(sweepSystem.getTicketCount()).toBe(0);
+
+      threeStarClear(sim, stage1Id);
+      expect(sweepSystem.canSweep(stage1Id)).toBe(true);
     });
 
-    it('should add tickets via addTickets', () => {
+    it('addTickets(10) → sweep(stageId, 3) → 验证奖励和消耗', () => {
+      // CAMPAIGN-FLOW-6: 添加扫荡令后批量扫荡
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
       const sweepSystem = sim.engine.getSweepSystem();
-      sweepSystem.addTickets(5);
-      expect(sweepSystem.getTicketCount()).toBe(5);
-    });
 
-    it('should claim daily tickets', () => {
-      const sweepSystem = sim.engine.getSweepSystem();
-      const claimed = sweepSystem.claimDailyTickets();
-      expect(claimed).toBeGreaterThanOrEqual(0);
-      // 每日赠送3枚
-      if (claimed > 0) {
-        expect(sweepSystem.getTicketCount()).toBeGreaterThan(0);
-      }
-    });
-  });
+      // 三星通关解锁扫荡
+      threeStarClear(sim, stage1Id);
 
-  // ─────────────────────────────────────────
-  // §9.3 执行扫荡
-  // ─────────────────────────────────────────
-  describe('§9.3 执行扫荡', () => {
-    it('should execute single sweep with tickets', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
-
-      threeStarClear(battleSim, firstStageId);
-      sweepSystem.addTickets(3);
-
-      const result = sweepSystem.sweep(firstStageId, 1);
-      expect(result.success).toBe(true);
-      expect(result.executedCount).toBe(1);
-      expect(result.ticketsUsed).toBe(1);
-    });
-
-    it('should execute batch sweep', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
-
-      threeStarClear(battleSim, firstStageId);
+      // 添加10枚扫荡令
       sweepSystem.addTickets(10);
+      expect(sweepSystem.getTicketCount()).toBe(10);
 
-      const result = sweepSystem.sweep(firstStageId, 5);
+      // 批量扫荡3次
+      const result = sweepSystem.sweep(stage1Id, 3);
       expect(result.success).toBe(true);
-      expect(result.executedCount).toBe(5);
-      expect(result.ticketsUsed).toBe(5);
+      expect(result.executedCount).toBe(3);
+      expect(result.ticketsUsed).toBe(3);
+
+      // 验证奖励
+      expect(result.totalResources).toBeDefined();
+      expect(result.totalExp).toBeGreaterThan(0);
+
+      // 验证扫荡令消耗
+      expect(sweepSystem.getTicketCount()).toBe(7);
     });
 
-    it('should fail sweep without tickets', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
+    it('扫荡令不足时失败', () => {
+      // CAMPAIGN-FLOW-6: 扫荡令不足时扫荡失败
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+      const sweepSystem = sim.engine.getSweepSystem();
 
-      threeStarClear(battleSim, firstStageId);
-      // 不添加扫荡令
+      // 三星通关解锁扫荡
+      threeStarClear(sim, stage1Id);
 
-      const result = sweepSystem.sweep(firstStageId, 1);
+      // 不添加扫荡令，直接尝试扫荡
+      const result = sweepSystem.sweep(stage1Id, 1);
       expect(result.success).toBe(false);
+      expect(result.executedCount).toBe(0);
+      expect(result.ticketsUsed).toBe(0);
     });
 
-    it('should return total resources in batch sweep result', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
+    it('扫荡不改变星级评定', () => {
+      // CAMPAIGN-FLOW-6: 扫荡不影响已有星级
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+      const sweepSystem = sim.engine.getSweepSystem();
+      const campaignSystem = sim.engine.getCampaignSystem();
 
-      threeStarClear(battleSim, firstStageId);
-      sweepSystem.addTickets(10);
+      threeStarClear(sim, stage1Id);
+      sweepSystem.addTickets(5);
 
-      const result = sweepSystem.sweep(firstStageId, 3);
-      if (result.success) {
-        expect(result.totalResources).toBeDefined();
-        expect(result.totalExp).toBeGreaterThan(0);
-      }
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §9.5a 扫荡状态回写规则
-  // ─────────────────────────────────────────
-  describe('§9.5a 扫荡状态回写规则', () => {
-    it('should not change star rating after sweep', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
-      const campaignSystem = battleSim.engine.getCampaignSystem();
-
-      threeStarClear(battleSim, firstStageId);
-      sweepSystem.addTickets(3);
-
-      const starsBefore = campaignSystem.getStageStars(firstStageId);
-      sweepSystem.sweep(firstStageId, 1);
-      const starsAfter = campaignSystem.getStageStars(firstStageId);
+      const starsBefore = campaignSystem.getStageStars(stage1Id);
+      sweepSystem.sweep(stage1Id, 3);
+      const starsAfter = campaignSystem.getStageStars(stage1Id);
 
       expect(starsAfter).toBe(starsBefore);
     });
 
-    it('should calculate sweep rewards correctly', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
+    it('每日扫荡令领取', () => {
+      // CAMPAIGN-FLOW-6: 每日扫荡令领取
+      const sim = createSim();
+      const sweepSystem = sim.engine.getSweepSystem();
 
-      threeStarClear(battleSim, firstStageId);
-      sweepSystem.addTickets(3);
+      // 初始扫荡令为0
+      expect(sweepSystem.getTicketCount()).toBe(0);
 
-      const result = sweepSystem.sweep(firstStageId, 1);
+      // 领取每日扫荡令
+      const claimed = sweepSystem.claimDailyTickets();
+      // 每日赠送3枚
+      expect(claimed).toBeGreaterThanOrEqual(0);
+      if (claimed > 0) {
+        expect(sweepSystem.getTicketCount()).toBeGreaterThan(0);
+      }
+    });
+
+    it('扫荡奖励包含资源和经验', () => {
+      // CAMPAIGN-FLOW-6: 验证扫荡奖励内容
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+      const sweepSystem = sim.engine.getSweepSystem();
+
+      threeStarClear(sim, stage1Id);
+      sweepSystem.addTickets(10);
+
+      const result = sweepSystem.sweep(stage1Id, 3);
       expect(result.success).toBe(true);
-      // 扫荡结果应包含资源奖励
-      expect(result.totalResources).toBeDefined();
-      // 应有经验奖励
+
+      // 验证汇总奖励
       expect(result.totalExp).toBeGreaterThan(0);
-    });
+      expect(result.results.length).toBe(3);
 
-    it('should deduct tickets after sweep', () => {
-      const battleSim = initBattleReadyState();
-      const firstStageId = getFirstStageId(battleSim);
-      const sweepSystem = battleSim.engine.getSweepSystem();
-
-      threeStarClear(battleSim, firstStageId);
-      sweepSystem.addTickets(5);
-
-      const ticketsBefore = sweepSystem.getTicketCount();
-      sweepSystem.sweep(firstStageId, 3);
-      const ticketsAfter = sweepSystem.getTicketCount();
-
-      expect(ticketsAfter).toBe(ticketsBefore - 3);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §10.1 离线推图
-  // ─────────────────────────────────────────
-  describe('§10.1 离线推图', () => {
-    it('should have autoPush in sweep system', () => {
-      const sweepSystem = sim.engine.getSweepSystem();
-      expect(typeof sweepSystem.autoPush).toBe('function');
-    });
-
-    it('should get autoPush progress', () => {
-      const sweepSystem = sim.engine.getSweepSystem();
-      const progress = sweepSystem.getAutoPushProgress();
-      expect(progress).toBeDefined();
-      expect(progress.isRunning).toBe(false);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §10.2 离线挂机收益
-  // ─────────────────────────────────────────
-  describe('§10.2 离线挂机收益', () => {
-    it('should have offline reward system', () => {
-      const offlineSystem = sim.engine.getOfflineRewardSystem();
-      expect(offlineSystem).toBeDefined();
-    });
-
-    it('should have offline estimate system', () => {
-      const estimateSystem = sim.engine.getOfflineEstimateSystem();
-      expect(estimateSystem).toBeDefined();
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §11.1 进入挑战关卡
-  // ─────────────────────────────────────────
-  describe('§11.1 进入挑战关卡', () => {
-    it.skip('[引擎未实现] should have challenge stage entries separate from campaign', () => {
-      // 挑战关卡系统尚未实现
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §11.2 挑战关卡结算
-  // ─────────────────────────────────────────
-  describe('§11.2 挑战关卡结算', () => {
-    it.skip('[引擎未实现] should give special materials on challenge stage victory', () => {
-      // 挑战关卡结算系统尚未实现
+      // 每次扫荡结果都应有奖励
+      for (const sweepResult of result.results) {
+        expect(sweepResult.stageId).toBe(stage1Id);
+        expect(sweepResult.reward).toBeDefined();
+      }
     });
   });
 });

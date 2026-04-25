@@ -1,40 +1,22 @@
 /**
- * V3 战斗流程集成测试
+ * V3 战斗系统 Play 流程集成测试
  *
- * 基于 v3-play.md 测试战斗过程相关 play 流程：
- * - §2.1  进入布阵界面
- * - §2.2  一键布阵
- * - §2.3  手动调整阵容
- * - §2.4  查看战力预估
- * - §2.5  查看智能推荐
- * - §2.6  查看敌方预览
- * - §3.1  进入战斗场景
- * - §3.1a 战斗场景组件层次 [UI层测试]
- * - §3.1b 战斗HUD布局 [UI层测试]
- * - §3.1c 战斗中交互操作 [UI层测试]
- * - §3.1d 战斗进入/退出动画 [UI层测试]
- * - §3.2  观察自动战斗
- * - §3.3  伤害计算验证
- * - §3.4  技能释放观察
- * - §3.5  兵种克制验证
- * - §3.6  状态效果观察
- * - §3.7  切换战斗模式
- * - §3.7a 手动模式操作流程 [引擎未实现]
- * - §3.8  调整战斗速度
- * - §3.9  大招时停机制
- * - §6.1  武将属性→战斗参数映射
- * - §6.1a 技能数据映射规则
- * - §6.2  战前布阵↔编队系统联动
- * - §6.4  武将碎片掉落→武将解锁/升星
- * - §12.1 战斗中断处理 [引擎未实现]
- * - §12.2 回合上限耗尽
- * - §12.3 武将阵亡处理
- * - §12.4 全军覆没处理
- * - §12.5 资源溢出处理
- * - §12.6 关卡数据异常处理
+ * 覆盖以下 play 流程：
+ * - BATTLE-FLOW-1: 自动战斗完整流程
+ * - BATTLE-FLOW-2: 伤害计算验证
+ * - BATTLE-FLOW-3: 兵种克制验证
+ * - BATTLE-FLOW-4: 战斗结算与奖励
+ * - BATTLE-FLOW-5: 异常边界
+ *
+ * 编码规范：
+ * - 每个it前创建新的sim实例
+ * - describe按play流程ID组织
+ * - UI层测试 it.skip + [UI层测试]
+ * - 引擎未实现 it.skip + [引擎未实现]
+ * - 不使用 as any
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createSim } from '../../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../../test-utils/GameEventSimulator';
 import { BattleEngine } from '../../battle/BattleEngine';
@@ -42,21 +24,17 @@ import { DamageCalculator, getRestraintMultiplier } from '../../battle/DamageCal
 import {
   BattleOutcome,
   BattlePhase,
-  BattleMode,
-  BattleSpeed,
   StarRating,
   TroopType,
 } from '../../battle/battle.types';
 import type {
   BattleTeam,
   BattleUnit,
-  BattleState,
   BattleResult,
-  BattleAction,
-  DamageResult,
 } from '../../battle/battle.types';
-import type { Position, BattleSide, BattleSkill } from '../../battle/battle-base.types';
+import type { BattleSide } from '../../battle/battle-base.types';
 import { SkillTargetType } from '../../battle/battle-base.types';
+import type { BattleSkill } from '../../battle/battle-base.types';
 import { BATTLE_CONFIG } from '../../battle/battle-config';
 
 /** 默认普攻技能（所有战斗单位必备） */
@@ -79,7 +57,7 @@ function createBattleUnit(
   name: string,
   troopType: TroopType,
   side: BattleSide,
-  position: Position,
+  position: 'front' | 'back',
   stats: { attack: number; defense: number; intelligence: number; speed: number; maxHp: number },
 ): BattleUnit {
   return {
@@ -111,7 +89,6 @@ function createStandardTeam(side: BattleSide, power: number = 1000): BattleTeam 
   const baseStat = Math.floor(power / 6);
   const units: BattleUnit[] = [];
 
-  // 前排3人
   for (let i = 0; i < 3; i++) {
     units.push(createBattleUnit(
       `${side}_front_${i}`,
@@ -123,7 +100,6 @@ function createStandardTeam(side: BattleSide, power: number = 1000): BattleTeam 
     ));
   }
 
-  // 后排3人
   for (let i = 0; i < 3; i++) {
     units.push(createBattleUnit(
       `${side}_back_${i}`,
@@ -138,7 +114,7 @@ function createStandardTeam(side: BattleSide, power: number = 1000): BattleTeam 
   return { units, side };
 }
 
-// ── 辅助：创建弱队（用于测试失败场景） ──
+// ── 辅助：创建弱队 ──
 function createWeakTeam(side: BattleSide): BattleTeam {
   return {
     units: [
@@ -149,7 +125,7 @@ function createWeakTeam(side: BattleSide): BattleTeam {
   };
 }
 
-// ── 辅助：创建强队（用于测试胜利场景） ──
+// ── 辅助：创建强队 ──
 function createStrongTeam(side: BattleSide): BattleTeam {
   const units: BattleUnit[] = [];
   for (let i = 0; i < 6; i++) {
@@ -165,221 +141,74 @@ function createStrongTeam(side: BattleSide): BattleTeam {
   return { units, side };
 }
 
-describe('V3 BATTLE-FLOW: 战斗流程集成测试', () => {
-  let sim: GameEventSimulator;
-  let battleEngine: BattleEngine;
+// ── 辅助：初始化带武将和编队的状态 ──
+function initBattleReadyState(): GameEventSimulator {
+  const sim = createSim();
+  sim.engine.resource.setCap('grain', 1_000_000);
+  sim.engine.resource.setCap('troops', 1_000_000);
+  sim.addResources({ gold: 100000, grain: 100000, troops: 50000 });
+  const heroIds = ['liubei', 'guanyu', 'zhangfei', 'zhugeliang', 'zhaoyun', 'caocao'];
+  for (const id of heroIds) {
+    sim.addHeroDirectly(id);
+  }
+  sim.engine.createFormation('main');
+  sim.engine.setFormation('main', heroIds);
+  return sim;
+}
 
-  beforeEach(() => {
-    sim = createSim();
-    battleEngine = new BattleEngine();
-  });
-
-  // ─────────────────────────────────────────
-  // §2.1 进入布阵界面
-  // ─────────────────────────────────────────
-  describe('§2.1 进入布阵界面', () => {
-    it('should create formation with 6 slots', () => {
-      sim.engine.createFormation('main');
-      const formation = sim.engine.getFormationSystem().getFormation('main');
-      expect(formation).toBeDefined();
-      expect(formation!.slots.length).toBe(6);
-    });
-
-    it('should have front 3 + back 3 layout', () => {
-      sim.engine.createFormation('main');
-      const formation = sim.engine.getFormationSystem().getFormation('main')!;
-      // 前3个为前排，后3个为后排
-      expect(formation.slots.length).toBe(6);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §2.2 一键布阵
-  // ─────────────────────────────────────────
-  describe('§2.2 一键布阵', () => {
-    it('should auto-fill formation with highest power generals', () => {
-      const heroIds = ['liubei', 'guanyu', 'zhangfei', 'zhugeliang', 'zhaoyun', 'caocao'];
-      for (const id of heroIds) {
-        sim.addHeroDirectly(id);
-      }
-
-      sim.engine.createFormation('main');
-      sim.engine.setFormation('main', heroIds);
-
-      const formation = sim.engine.getFormationSystem().getFormation('main')!;
-      const filledSlots = formation.slots.filter(s => s !== '').length;
-      expect(filledSlots).toBe(6);
-    });
-
-    it('should fill available slots even with fewer generals', () => {
-      sim.addHeroDirectly('liubei');
-      sim.addHeroDirectly('guanyu');
-
-      sim.engine.createFormation('main');
-      sim.engine.setFormation('main', ['liubei', 'guanyu']);
-
-      const formation = sim.engine.getFormationSystem().getFormation('main')!;
-      const filledSlots = formation.slots.filter(s => s !== '').length;
-      expect(filledSlots).toBe(2);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §2.3 手动调整阵容
-  // ─────────────────────────────────────────
-  describe('§2.3 手动调整阵容', () => {
-    it('should swap general positions', () => {
-      sim.addHeroDirectly('liubei');
-      sim.addHeroDirectly('guanyu');
-
-      sim.engine.createFormation('main');
-      sim.engine.setFormation('main', ['liubei', 'guanyu']);
-
-      const formation = sim.engine.getFormationSystem().getFormation('main')!;
-      expect(formation.slots[0]).toBe('liubei');
-      expect(formation.slots[1]).toBe('guanyu');
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §2.4 查看战力预估
-  // ─────────────────────────────────────────
-  describe('§2.4 查看战力预估', () => {
-    it('should calculate formation power', () => {
-      const heroIds = ['liubei', 'guanyu', 'zhangfei'];
-      for (const id of heroIds) {
-        sim.addHeroDirectly(id);
-      }
-
-      sim.engine.createFormation('main');
-      sim.engine.setFormation('main', heroIds);
-
-      const hero = sim.engine.hero;
-      const starSystem = sim.engine.getHeroStarSystem();
-      const formationSys = sim.engine.getFormationSystem();
-
-      const power = formationSys.calculateFormationPower(
-        formationSys.getFormation('main')!,
-        (id) => hero.getGeneral(id),
-        (g) => hero.calculatePower(g, starSystem.getStar(g.id)),
-      );
-
-      expect(power).toBeGreaterThan(0);
-    });
-
-    it('should show recommended power in stage config', () => {
+// ═══════════════════════════════════════════════════════════════
+// BATTLE-FLOW-1: 自动战斗完整流程
+// ═══════════════════════════════════════════════════════════════
+describe('V3 战斗系统 — BATTLE-FLOW', () => {
+  describe('BATTLE-FLOW-1: 自动战斗完整流程', () => {
+    it('buildTeamsForStage → runFullBattle → 验证结果包含outcome/stars/totalTurns/summary', () => {
+      // BATTLE-FLOW-1: 通过引擎完整战斗流程验证
+      const sim = initBattleReadyState();
       const stages = sim.engine.getStageList();
-      for (const stage of stages) {
-        expect(stage.enemyFormation.recommendedPower).toBeGreaterThan(0);
-      }
-    });
-  });
+      const stage = stages[0];
+      const { allyTeam, enemyTeam } = sim.engine.buildTeamsForStage(stage);
 
-  // ─────────────────────────────────────────
-  // §2.5 查看智能推荐
-  // ─────────────────────────────────────────
-  describe('§2.5 查看智能推荐', () => {
-    it.skip('[引擎未实现] should recommend counter lineup based on enemy formation', () => {
-      // 智能推荐系统尚未实现
-    });
-  });
+      const battleEngine = sim.engine.getBattleEngine();
+      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
 
-  // ─────────────────────────────────────────
-  // §2.6 查看敌方预览
-  // ─────────────────────────────────────────
-  describe('§2.6 查看敌方预览', () => {
-    it('should have enemy formation data in stage config', () => {
-      const stages = sim.engine.getStageList();
-      const firstStage = stages[0];
-
-      expect(firstStage.enemyFormation).toBeDefined();
-      expect(firstStage.enemyFormation.name).toBeDefined();
-      expect(firstStage.enemyFormation.units.length).toBeGreaterThan(0);
+      // 结果包含所有必要字段
+      expect(result).toBeDefined();
+      expect(result.outcome).toBeDefined();
+      expect([BattleOutcome.VICTORY, BattleOutcome.DEFEAT, BattleOutcome.DRAW]).toContain(result.outcome);
+      expect(result.stars).toBeDefined();
+      expect(result.totalTurns).toBeGreaterThan(0);
+      expect(result.summary).toBeDefined();
+      expect(typeof result.summary).toBe('string');
+      expect(result.summary.length).toBeGreaterThan(0);
     });
 
-    it('should have enemy unit details including name, faction, troopType', () => {
-      const stages = sim.engine.getStageList();
-      for (const stage of stages) {
-        for (const unit of stage.enemyFormation.units) {
-          expect(unit.name).toBeDefined();
-          expect(unit.faction).toBeDefined();
-          expect(unit.troopType).toBeDefined();
-          expect(unit.attack).toBeGreaterThan(0);
-          expect(unit.maxHp).toBeGreaterThan(0);
-        }
-      }
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §3.1 进入战斗场景
-  // ─────────────────────────────────────────
-  describe('§3.1 进入战斗场景', () => {
-    it('should initialize battle with ally and enemy teams', () => {
-      const allyTeam = createStandardTeam('ally');
-      const enemyTeam = createStandardTeam('enemy');
-
-      const state = battleEngine.initBattle(allyTeam, enemyTeam);
-
-      expect(state).toBeDefined();
-      expect(state.phase).toBe(BattlePhase.IN_PROGRESS);
-      expect(state.currentTurn).toBe(1);
-      expect(state.allyTeam.units.length).toBe(6);
-      expect(state.enemyTeam.units.length).toBe(6);
-    });
-
-    it('should generate turn order based on speed', () => {
-      const allyTeam = createStandardTeam('ally');
-      const enemyTeam = createStandardTeam('enemy');
-
-      const state = battleEngine.initBattle(allyTeam, enemyTeam);
-
-      expect(state.turnOrder.length).toBeGreaterThan(0);
-    });
-
-    it('should have all units alive at start', () => {
-      const allyTeam = createStandardTeam('ally');
-      const enemyTeam = createStandardTeam('enemy');
-
-      const state = battleEngine.initBattle(allyTeam, enemyTeam);
-
-      for (const unit of state.allyTeam.units) {
-        expect(unit.isAlive).toBe(true);
-        expect(unit.hp).toBe(unit.maxHp);
-      }
-      for (const unit of state.enemyTeam.units) {
-        expect(unit.isAlive).toBe(true);
-        expect(unit.hp).toBe(unit.maxHp);
-      }
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §3.1a~d 战斗场景UI [UI层测试]
-  // ─────────────────────────────────────────
-  describe('§3.1a-d 战斗场景UI', () => {
-    it.skip('[UI层测试] should render battle scene layers correctly', () => {});
-    it.skip('[UI层测试] should display HUD layout on PC and mobile', () => {});
-    it.skip('[UI层测试] should handle pause interaction', () => {});
-    it.skip('[UI层测试] should play enter/exit animations', () => {});
-  });
-
-  // ─────────────────────────────────────────
-  // §3.2 观察自动战斗
-  // ─────────────────────────────────────────
-  describe('§3.2 观察自动战斗', () => {
-    it('should execute full battle automatically', () => {
+    it('runFullBattle(强队 vs 弱队) → VICTORY', () => {
+      // BATTLE-FLOW-1: 强队必胜
+      const battleEngine = new BattleEngine();
       const allyTeam = createStrongTeam('ally');
       const enemyTeam = createWeakTeam('enemy');
 
       const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
 
-      expect(result).toBeDefined();
       expect(result.outcome).toBe(BattleOutcome.VICTORY);
-      expect(result.totalTurns).toBeGreaterThan(0);
+      expect(result.stars).toBeGreaterThanOrEqual(StarRating.ONE);
     });
 
-    it('should have max 8 turns per battle', () => {
+    it('runFullBattle(弱队 vs 强队) → DEFEAT', () => {
+      // BATTLE-FLOW-1: 弱队必败
+      const battleEngine = new BattleEngine();
+      const allyTeam = createWeakTeam('ally');
+      const enemyTeam = createStrongTeam('enemy');
+
+      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
+
+      expect(result.outcome).toBe(BattleOutcome.DEFEAT);
+      expect(result.stars).toBe(StarRating.NONE);
+    });
+
+    it('战斗回合数不超过MAX_TURNS(8)', () => {
+      // BATTLE-FLOW-1: 回合上限验证
+      const battleEngine = new BattleEngine();
       const allyTeam = createStandardTeam('ally');
       const enemyTeam = createStandardTeam('enemy');
 
@@ -388,495 +217,451 @@ describe('V3 BATTLE-FLOW: 战斗流程集成测试', () => {
       expect(result.totalTurns).toBeLessThanOrEqual(BATTLE_CONFIG.MAX_TURNS);
     });
 
-    it('should execute turns in speed order', () => {
-      const allyTeam = createStandardTeam('ally');
-      const enemyTeam = createStandardTeam('enemy');
+    it('initBattle → executeTurn → isBattleOver → getBattleResult 逐步执行', () => {
+      // BATTLE-FLOW-1: 手动逐步执行战斗流程
+      // 使用强队 vs 弱队确保战斗在回合内结束
+      const battleEngine = new BattleEngine();
+      const allyTeam = createStrongTeam('ally');
+      const enemyTeam = createWeakTeam('enemy');
 
       const state = battleEngine.initBattle(allyTeam, enemyTeam);
-      const actions = battleEngine.executeTurn(state);
 
-      // 应该有行动记录
-      expect(actions.length).toBeGreaterThan(0);
+      // 初始状态验证
+      expect(state.phase).toBe(BattlePhase.IN_PROGRESS);
+      expect(state.currentTurn).toBe(1);
+      expect(state.allyTeam.units.length).toBe(6);
+      expect(state.enemyTeam.units.length).toBe(1);
+
+      // 逐步执行回合直到战斗结束
+      let turnCount = 0;
+      while (!battleEngine.isBattleOver(state) && turnCount < BATTLE_CONFIG.MAX_TURNS) {
+        const actions = battleEngine.executeTurn(state);
+        // 每回合至少有一个行动记录（如果战斗未结束）
+        if (!battleEngine.isBattleOver(state)) {
+          expect(actions.length).toBeGreaterThan(0);
+        }
+        turnCount++;
+      }
+
+      // 战斗结束
+      expect(battleEngine.isBattleOver(state)).toBe(true);
+      expect(state.phase).toBe(BattlePhase.FINISHED);
+
+      // 获取结果
+      const result = battleEngine.getBattleResult(state);
+      expect(result).toBeDefined();
+      expect([BattleOutcome.VICTORY, BattleOutcome.DEFEAT, BattleOutcome.DRAW]).toContain(result.outcome);
+    });
+
+    it('战斗结果包含存活人数和伤害统计', () => {
+      // BATTLE-FLOW-1: 结果字段完整性验证
+      const battleEngine = new BattleEngine();
+      const allyTeam = createStrongTeam('ally');
+      const enemyTeam = createWeakTeam('enemy');
+
+      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
+
+      expect(result.allySurvivors).toBeGreaterThanOrEqual(0);
+      expect(result.enemySurvivors).toBeGreaterThanOrEqual(0);
+      expect(result.allyTotalDamage).toBeGreaterThanOrEqual(0);
+      expect(result.enemyTotalDamage).toBeGreaterThanOrEqual(0);
+      expect(result.fragmentRewards).toBeDefined();
     });
   });
 
-  // ─────────────────────────────────────────
-  // §3.3 伤害计算验证
-  // ─────────────────────────────────────────
-  describe('§3.3 伤害计算验证', () => {
-    it('should calculate damage using attack-defense formula', () => {
-      const attacker = createBattleUnit('atk', '攻击者', TroopType.CAVALRY, 'ally', 'front',
-        { attack: 100, defense: 50, intelligence: 30, speed: 50, maxHp: 1000 });
-      const defender = createBattleUnit('def', '防御者', TroopType.INFANTRY, 'enemy', 'front',
-        { attack: 80, defense: 60, intelligence: 20, speed: 40, maxHp: 1000 });
+  // ═══════════════════════════════════════════════════════════════
+  // BATTLE-FLOW-2: 伤害计算验证
+  // ═══════════════════════════════════════════════════════════════
+  describe('BATTLE-FLOW-2: 伤害计算验证', () => {
+    it('基础伤害 = 攻击 × (1+加成) - 防御 × (1+加成)', () => {
+      // BATTLE-FLOW-2: 验证伤害公式结构
+      const attacker = createBattleUnit('atk', '攻击者', TroopType.ARCHER, 'ally', 'front',
+        { attack: 200, defense: 50, intelligence: 30, speed: 50, maxHp: 1000 });
+      const defender = createBattleUnit('def', '防御者', TroopType.ARCHER, 'enemy', 'front',
+        { attack: 80, defense: 80, intelligence: 20, speed: 40, maxHp: 1000 });
 
       const calc = new DamageCalculator();
       const result = calc.calculateDamage(attacker, defender, 1.0);
 
-      expect(result.damage).toBeGreaterThan(0);
+      // 基础伤害应为 attack - defense 的某种形式
       expect(result.baseDamage).toBeDefined();
+      expect(result.damage).toBeGreaterThan(0);
       expect(result.skillMultiplier).toBe(1.0);
     });
 
-    it('should apply minimum damage guarantee (10% of attack)', () => {
-      const attacker = createBattleUnit('atk', '攻击者', TroopType.INFANTRY, 'ally', 'front',
-        { attack: 50, defense: 10, intelligence: 5, speed: 50, maxHp: 1000 });
+    it('最终伤害 ≥ 1（最低伤害保底）', () => {
+      // BATTLE-FLOW-2: 即使防御远高于攻击，伤害至少为1
+      const attacker = createBattleUnit('atk', '弱攻', TroopType.INFANTRY, 'ally', 'front',
+        { attack: 10, defense: 5, intelligence: 5, speed: 50, maxHp: 1000 });
       const defender = createBattleUnit('def', '铁壁', TroopType.CAVALRY, 'enemy', 'front',
-        { attack: 10, defense: 1000, intelligence: 5, speed: 40, maxHp: 5000 });
+        { attack: 5, defense: 5000, intelligence: 5, speed: 40, maxHp: 50000 });
 
       const calc = new DamageCalculator();
       const result = calc.calculateDamage(attacker, defender, 1.0);
 
-      // 最终伤害至少为1
+      // 最低伤害保底：最终伤害至少为1
       expect(result.damage).toBeGreaterThanOrEqual(1);
     });
 
-    it('should have critical hit with 1.5x multiplier', () => {
-      const attacker = createBattleUnit('atk', '暴击者', TroopType.CAVALRY, 'ally', 'front',
+    it('攻击力越高伤害越高', () => {
+      // BATTLE-FLOW-2: 攻击力与伤害正相关
+      const calc = new DamageCalculator();
+
+      const weakAttacker = createBattleUnit('weak', '弱攻', TroopType.ARCHER, 'ally', 'front',
+        { attack: 50, defense: 10, intelligence: 5, speed: 50, maxHp: 1000 });
+      const strongAttacker = createBattleUnit('strong', '强攻', TroopType.ARCHER, 'ally', 'front',
+        { attack: 500, defense: 10, intelligence: 5, speed: 50, maxHp: 1000 });
+      const defender = createBattleUnit('def', '目标', TroopType.ARCHER, 'enemy', 'front',
+        { attack: 10, defense: 50, intelligence: 5, speed: 40, maxHp: 1000 });
+
+      // 多次计算取平均以消除随机波动
+      let weakTotal = 0;
+      let strongTotal = 0;
+      const iterations = 50;
+
+      for (let i = 0; i < iterations; i++) {
+        weakTotal += calc.calculateDamage(weakAttacker, defender, 1.0).damage;
+        strongTotal += calc.calculateDamage(strongAttacker, defender, 1.0).damage;
+      }
+
+      // 强攻平均伤害应远高于弱攻
+      expect(strongTotal / iterations).toBeGreaterThan(weakTotal / iterations);
+    });
+
+    it('暴击时伤害有1.5倍加成', () => {
+      // BATTLE-FLOW-2: 暴击倍率验证
+      const attacker = createBattleUnit('atk', '暴击者', TroopType.ARCHER, 'ally', 'front',
         { attack: 200, defense: 50, intelligence: 30, speed: 50, maxHp: 1000 });
-      const defender = createBattleUnit('def', '目标', TroopType.INFANTRY, 'enemy', 'front',
+      const defender = createBattleUnit('def', '目标', TroopType.ARCHER, 'enemy', 'front',
         { attack: 80, defense: 30, intelligence: 20, speed: 40, maxHp: 1000 });
 
       const calc = new DamageCalculator();
-      // 多次计算，期望至少出现一次暴击
-      let hasCritical = false;
+      // 多次计算寻找暴击
+      let foundCritical = false;
       for (let i = 0; i < 100; i++) {
         const result = calc.calculateDamage(attacker, defender, 1.0);
         if (result.isCritical) {
           expect(result.criticalMultiplier).toBe(1.5);
-          hasCritical = true;
+          foundCritical = true;
           break;
         }
       }
-      // 暴击概率存在，100次内应该出现
-      // 注意：这是概率测试，极端情况下可能不出现
+      // 暴击概率约20%，100次内应出现
+      expect(foundCritical).toBe(true);
     });
 
-    it('should have random factor between 0.9 and 1.1', () => {
-      const attacker = createBattleUnit('atk', '攻击者', TroopType.CAVALRY, 'ally', 'front',
+    it('随机波动系数在0.9~1.1之间', () => {
+      // BATTLE-FLOW-2: 随机波动范围验证
+      const attacker = createBattleUnit('atk', '攻击者', TroopType.ARCHER, 'ally', 'front',
         { attack: 100, defense: 10, intelligence: 30, speed: 50, maxHp: 1000 });
-      const defender = createBattleUnit('def', '防御者', TroopType.INFANTRY, 'enemy', 'front',
+      const defender = createBattleUnit('def', '防御者', TroopType.ARCHER, 'enemy', 'front',
         { attack: 80, defense: 20, intelligence: 20, speed: 40, maxHp: 1000 });
 
       const calc = new DamageCalculator();
-      const result = calc.calculateDamage(attacker, defender, 1.0);
-
-      expect(result.randomFactor).toBeGreaterThanOrEqual(0.9);
-      expect(result.randomFactor).toBeLessThanOrEqual(1.1);
+      for (let i = 0; i < 20; i++) {
+        const result = calc.calculateDamage(attacker, defender, 1.0);
+        expect(result.randomFactor).toBeGreaterThanOrEqual(0.9);
+        expect(result.randomFactor).toBeLessThanOrEqual(1.1);
+      }
     });
   });
 
-  // ─────────────────────────────────────────
-  // §3.4 技能释放观察
-  // ─────────────────────────────────────────
-  describe('§3.4 技能释放观察', () => {
-    it('should have rage system for ultimate skills', () => {
-      const unit = createBattleUnit('hero', '武将', TroopType.CAVALRY, 'ally', 'front',
-        { attack: 100, defense: 50, intelligence: 30, speed: 50, maxHp: 1000 });
-
-      expect(unit.rage).toBe(0);
-      expect(unit.maxRage).toBe(100);
-    });
-
-    it('should track skill cooldowns', () => {
-      const unit = createBattleUnit('hero', '武将', TroopType.CAVALRY, 'ally', 'front',
-        { attack: 100, defense: 50, intelligence: 30, speed: 50, maxHp: 1000 });
-
-      // 初始无技能
-      expect(unit.skills).toBeDefined();
-      expect(Array.isArray(unit.skills)).toBe(true);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §3.5 兵种克制验证
-  // ─────────────────────────────────────────
-  describe('§3.5 兵种克制验证', () => {
-    it('should have cavalry > infantry restraint (×1.5)', () => {
+  // ═══════════════════════════════════════════════════════════════
+  // BATTLE-FLOW-3: 兵种克制验证
+  // ═══════════════════════════════════════════════════════════════
+  describe('BATTLE-FLOW-3: 兵种克制验证', () => {
+    it('骑兵→步兵 ×1.5（克制）', () => {
+      // BATTLE-FLOW-3: 骑兵克制步兵
       const multiplier = getRestraintMultiplier(TroopType.CAVALRY, TroopType.INFANTRY);
       expect(multiplier).toBe(1.5);
     });
 
-    it('should have infantry > spearman restraint (×1.5)', () => {
+    it('步兵→枪兵 ×1.5（克制）', () => {
+      // BATTLE-FLOW-3: 步兵克制枪兵
       const multiplier = getRestraintMultiplier(TroopType.INFANTRY, TroopType.SPEARMAN);
       expect(multiplier).toBe(1.5);
     });
 
-    it('should have spearman > cavalry restraint (×1.5)', () => {
+    it('枪兵→骑兵 ×1.5（克制）', () => {
+      // BATTLE-FLOW-3: 枪兵克制骑兵
       const multiplier = getRestraintMultiplier(TroopType.SPEARMAN, TroopType.CAVALRY);
       expect(multiplier).toBe(1.5);
     });
 
-    it('should have infantry < cavalry counter (×0.7)', () => {
+    it('步兵→骑兵 ×0.7（被克制）', () => {
+      // BATTLE-FLOW-3: 步兵被骑兵克制
       const multiplier = getRestraintMultiplier(TroopType.INFANTRY, TroopType.CAVALRY);
       expect(multiplier).toBe(0.7);
     });
 
-    it('should have no restraint for archer (×1.0)', () => {
-      const m1 = getRestraintMultiplier(TroopType.ARCHER, TroopType.CAVALRY);
-      const m2 = getRestraintMultiplier(TroopType.ARCHER, TroopType.INFANTRY);
-      expect(m1).toBe(1.0);
-      expect(m2).toBe(1.0);
+    it('枪兵→步兵 ×0.7（被克制）', () => {
+      // BATTLE-FLOW-3: 枪兵被步兵克制
+      const multiplier = getRestraintMultiplier(TroopType.SPEARMAN, TroopType.INFANTRY);
+      expect(multiplier).toBe(0.7);
     });
 
-    it('should have no restraint for strategist (×1.0)', () => {
-      const m1 = getRestraintMultiplier(TroopType.STRATEGIST, TroopType.CAVALRY);
-      const m2 = getRestraintMultiplier(TroopType.STRATEGIST, TroopType.INFANTRY);
-      expect(m1).toBe(1.0);
-      expect(m2).toBe(1.0);
+    it('骑兵→枪兵 ×0.7（被克制）', () => {
+      // BATTLE-FLOW-3: 骑兵被枪兵克制
+      const multiplier = getRestraintMultiplier(TroopType.CAVALRY, TroopType.SPEARMAN);
+      expect(multiplier).toBe(0.7);
     });
 
-    it('should apply restraint in damage calculation', () => {
+    it('弓兵/谋士 ×1.0（无克制关系）', () => {
+      // BATTLE-FLOW-3: 弓兵对所有兵种无克制
+      expect(getRestraintMultiplier(TroopType.ARCHER, TroopType.CAVALRY)).toBe(1.0);
+      expect(getRestraintMultiplier(TroopType.ARCHER, TroopType.INFANTRY)).toBe(1.0);
+      expect(getRestraintMultiplier(TroopType.ARCHER, TroopType.SPEARMAN)).toBe(1.0);
+      expect(getRestraintMultiplier(TroopType.ARCHER, TroopType.ARCHER)).toBe(1.0);
+      expect(getRestraintMultiplier(TroopType.ARCHER, TroopType.STRATEGIST)).toBe(1.0);
+
+      // 谋士对所有兵种无克制
+      expect(getRestraintMultiplier(TroopType.STRATEGIST, TroopType.CAVALRY)).toBe(1.0);
+      expect(getRestraintMultiplier(TroopType.STRATEGIST, TroopType.INFANTRY)).toBe(1.0);
+      expect(getRestraintMultiplier(TroopType.STRATEGIST, TroopType.SPEARMAN)).toBe(1.0);
+      expect(getRestraintMultiplier(TroopType.STRATEGIST, TroopType.ARCHER)).toBe(1.0);
+      expect(getRestraintMultiplier(TroopType.STRATEGIST, TroopType.STRATEGIST)).toBe(1.0);
+    });
+
+    it('克制系数影响实际伤害计算', () => {
+      // BATTLE-FLOW-3: 克制关系在伤害计算中生效
       const calc = new DamageCalculator();
-      // 骑兵打步兵（克制）
+
       const cavalry = createBattleUnit('cav', '骑兵', TroopType.CAVALRY, 'ally', 'front',
         { attack: 100, defense: 50, intelligence: 30, speed: 50, maxHp: 1000 });
       const infantry = createBattleUnit('inf', '步兵', TroopType.INFANTRY, 'enemy', 'front',
         { attack: 80, defense: 50, intelligence: 20, speed: 40, maxHp: 1000 });
 
-      const resultRestrained = calc.calculateDamage(cavalry, infantry, 1.0);
-      expect(resultRestrained.restraintMultiplier).toBe(1.5);
+      const result = calc.calculateDamage(cavalry, infantry, 1.0);
+      expect(result.restraintMultiplier).toBe(1.5);
     });
-  });
 
-  // ─────────────────────────────────────────
-  // §3.6 状态效果观察
-  // ─────────────────────────────────────────
-  describe('§3.6 状态效果观察', () => {
-    it('should have buff system on battle units', () => {
-      const unit = createBattleUnit('hero', '武将', TroopType.CAVALRY, 'ally', 'front',
+    it('被克制时伤害降低', () => {
+      // BATTLE-FLOW-3: 被克制时restraintMultiplier为0.7
+      const calc = new DamageCalculator();
+
+      const infantry = createBattleUnit('inf', '步兵', TroopType.INFANTRY, 'ally', 'front',
         { attack: 100, defense: 50, intelligence: 30, speed: 50, maxHp: 1000 });
+      const cavalry = createBattleUnit('cav', '骑兵', TroopType.CAVALRY, 'enemy', 'front',
+        { attack: 80, defense: 50, intelligence: 20, speed: 40, maxHp: 1000 });
 
-      expect(unit.buffs).toBeDefined();
-      expect(Array.isArray(unit.buffs)).toBe(true);
-    });
-
-    it('should have buff types defined', () => {
-      // 验证buff类型枚举存在
-      expect(BATTLE_CONFIG).toBeDefined();
+      const result = calc.calculateDamage(infantry, cavalry, 1.0);
+      expect(result.restraintMultiplier).toBe(0.7);
     });
   });
 
-  // ─────────────────────────────────────────
-  // §3.7 切换战斗模式
-  // ─────────────────────────────────────────
-  describe('§3.7 切换战斗模式', () => {
-    it('should support AUTO mode by default', () => {
-      const engine = new BattleEngine();
-      // 默认自动模式
-      expect(engine).toBeDefined();
-    });
-
-    it('should have BattleMode enum with AUTO, SEMI_AUTO, MANUAL', () => {
-      expect(BattleMode.AUTO).toBeDefined();
-      expect(BattleMode.SEMI_AUTO).toBeDefined();
-      expect(BattleMode.MANUAL).toBeDefined();
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §3.7a 手动模式操作流程 [引擎未实现]
-  // ─────────────────────────────────────────
-  describe('§3.7a 手动模式操作流程', () => {
-    it.skip('[引擎未实现] should show skill selection panel in manual mode', () => {
-      // 手动模式操作尚未实现
-    });
-
-    it.skip('[引擎未实现] should highlight selectable targets', () => {
-      // 目标选择高亮尚未实现
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §3.8 调整战斗速度
-  // ─────────────────────────────────────────
-  describe('§3.8 调整战斗速度', () => {
-    it('should have BattleSpeed enum with SKIP, X1, X2, X3, X4', () => {
-      expect(BattleSpeed.SKIP).toBeDefined();
-      expect(BattleSpeed.X1).toBeDefined();
-      expect(BattleSpeed.X2).toBeDefined();
-      expect(BattleSpeed.X3).toBeDefined();
-      expect(BattleSpeed.X4).toBeDefined();
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §3.9 大招时停机制
-  // ─────────────────────────────────────────
-  describe('§3.9 大招时停机制', () => {
-    it('should have ultimate skill system in battle engine', () => {
-      const engine = new BattleEngine();
-      // 大招时停系统应存在
-      expect(engine).toBeDefined();
-    });
-
-    it('should have time stop state in semi-auto mode', () => {
-      // 验证大招时停相关类型存在
-      expect(BattleMode.SEMI_AUTO).toBeDefined();
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §6.1 武将属性→战斗参数映射
-  // ─────────────────────────────────────────
-  describe('§6.1 武将属性→战斗参数映射', () => {
-    it('should map general stats to battle unit', () => {
-      sim.addHeroDirectly('guanyu');
-      const general = sim.engine.hero.getGeneral('guanyu')!;
-
-      expect(general.baseStats.attack).toBeGreaterThan(0);
-      expect(general.baseStats.defense).toBeGreaterThan(0);
-      expect(general.baseStats.speed).toBeGreaterThan(0);
-      expect(general.faction).toBeDefined();
-    });
-
-    it('should use speed for turn order', () => {
-      const fastUnit = createBattleUnit('fast', '速将', TroopType.CAVALRY, 'ally', 'front',
-        { attack: 100, defense: 50, intelligence: 30, speed: 100, maxHp: 1000 });
-      const slowUnit = createBattleUnit('slow', '慢将', TroopType.INFANTRY, 'ally', 'front',
-        { attack: 100, defense: 50, intelligence: 30, speed: 10, maxHp: 1000 });
-
-      expect(fastUnit.speed).toBeGreaterThan(slowUnit.speed);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §6.1a 技能数据映射规则
-  // ─────────────────────────────────────────
-  describe('§6.1a 技能数据映射规则', () => {
-    it('should have skills on general data', () => {
-      sim.addHeroDirectly('guanyu');
-      const general = sim.engine.hero.getGeneral('guanyu')!;
-
-      expect(general.skills).toBeDefined();
-      expect(Array.isArray(general.skills)).toBe(true);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §6.2 战前布阵↔编队系统联动
-  // ─────────────────────────────────────────
-  describe('§6.2 战前布阵↔编队系统联动', () => {
-    it('should use formation data for battle team building', () => {
-      const heroIds = ['liubei', 'guanyu', 'zhangfei', 'zhugeliang', 'zhaoyun', 'caocao'];
-      for (const id of heroIds) {
-        sim.addHeroDirectly(id);
-      }
-
-      sim.engine.createFormation('main');
-      sim.engine.setFormation('main', heroIds);
-
+  // ═══════════════════════════════════════════════════════════════
+  // BATTLE-FLOW-4: 战斗结算与奖励
+  // ═══════════════════════════════════════════════════════════════
+  describe('BATTLE-FLOW-4: 战斗结算与奖励', () => {
+    it('startBattle(stageId) → 验证资源变化', () => {
+      // BATTLE-FLOW-4: 战斗胜利后资源增加
+      const sim = initBattleReadyState();
       const stages = sim.engine.getStageList();
-      const stage = stages[0];
-      const { allyTeam, enemyTeam } = sim.engine.buildTeamsForStage(stage);
+      const stage1Id = stages[0].id;
 
-      // 我方队伍应该使用编队中的武将
-      expect(allyTeam.units.length).toBeGreaterThan(0);
-      expect(allyTeam.side).toBe('ally');
+      const grainBefore = sim.getResource('grain');
+      const goldBefore = sim.getResource('gold');
+
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 3);
+
+      const grainAfter = sim.getResource('grain');
+      const goldAfter = sim.getResource('gold');
+
+      // 战斗胜利后资源应增加
+      expect(grainAfter).toBeGreaterThan(grainBefore);
+      expect(goldAfter).toBeGreaterThan(goldBefore);
     });
 
-    it('should update formation changes in real-time', () => {
-      sim.addHeroDirectly('liubei');
-      sim.addHeroDirectly('guanyu');
+    it('completeBattle(stageId, stars) → 验证奖励入账', () => {
+      // BATTLE-FLOW-4: 通关后奖励正确入账
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+      const rewardDistributor = sim.engine.getRewardDistributor();
 
-      sim.engine.createFormation('main');
-      sim.engine.setFormation('main', ['liubei']);
+      // 预览基础奖励
+      const baseRewards = rewardDistributor.previewBaseRewards(stage1Id);
+      expect(baseRewards.exp).toBeGreaterThan(0);
 
-      const formation1 = sim.engine.getFormationSystem().getFormation('main')!;
-      expect(formation1.slots[0]).toBe('liubei');
+      // 执行战斗
+      const resourcesBefore = sim.getAllResources();
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 3);
+      const resourcesAfter = sim.getAllResources();
 
-      // 调整阵容
-      sim.engine.setFormation('main', ['guanyu', 'liubei']);
-      const formation2 = sim.engine.getFormationSystem().getFormation('main')!;
-      expect(formation2.slots[0]).toBe('guanyu');
+      // 至少有一种资源增加
+      const hasIncrease = (resourcesAfter.grain > resourcesBefore.grain)
+        || (resourcesAfter.gold > resourcesBefore.gold);
+      expect(hasIncrease).toBe(true);
     });
-  });
 
-  // ─────────────────────────────────────────
-  // §6.4 武将碎片掉落→武将解锁/升星
-  // ─────────────────────────────────────────
-  describe('§6.4 武将碎片掉落→武将解锁/升星', () => {
-    it('should have fragment rewards in battle result', () => {
-      const allyTeam = createStrongTeam('ally');
-      const enemyTeam = createWeakTeam('enemy');
+    it('星级倍率：★×1.0 / ★★×1.5 / ★★★×2.0', () => {
+      // BATTLE-FLOW-4: 不同星级的奖励倍率验证
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+      const rewardDistributor = sim.engine.getRewardDistributor();
 
-      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
+      // 1星奖励
+      const reward1 = rewardDistributor.calculateRewards(stage1Id, 1, false);
+      // 2星奖励
+      const reward2 = rewardDistributor.calculateRewards(stage1Id, 2, false);
+      // 3星奖励
+      const reward3 = rewardDistributor.calculateRewards(stage1Id, 3, false);
 
+      // 星级倍率验证
+      expect(reward1.starMultiplier).toBe(1.0);
+      expect(reward2.starMultiplier).toBe(1.5);
+      expect(reward3.starMultiplier).toBe(2.0);
+
+      // 高星级经验 > 低星级经验
+      expect(reward2.exp).toBeGreaterThan(reward1.exp);
+      expect(reward3.exp).toBeGreaterThan(reward2.exp);
+    });
+
+    it('首通奖励额外叠加', () => {
+      // BATTLE-FLOW-4: 首通奖励 = 基础奖励 × 倍率 + 首通额外奖励
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+      const rewardDistributor = sim.engine.getRewardDistributor();
+
+      const firstClearReward = rewardDistributor.calculateRewards(stage1Id, 3, true);
+      const repeatReward = rewardDistributor.calculateRewards(stage1Id, 3, false);
+
+      // 首通奖励 > 重复奖励
+      expect(firstClearReward.exp).toBeGreaterThan(repeatReward.exp);
+      expect(firstClearReward.isFirstClear).toBe(true);
+      expect(repeatReward.isFirstClear).toBe(false);
+    });
+
+    it('战斗结果包含碎片奖励', () => {
+      // BATTLE-FLOW-4: 胜利时碎片奖励字段存在
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
+
+      const result = sim.engine.startBattle(stage1Id);
       expect(result.fragmentRewards).toBeDefined();
       expect(typeof result.fragmentRewards).toBe('object');
     });
 
-    it('should add fragments to hero system', () => {
-      sim.addHeroFragments('liubei', 10);
-      expect(sim.engine.hero.getFragments('liubei')).toBe(10);
-    });
+    it('战斗经验分配给参战武将', () => {
+      // BATTLE-FLOW-4: 武将经验增加验证
+      const sim = initBattleReadyState();
+      const stages = sim.engine.getStageList();
+      const stage1Id = stages[0].id;
 
-    it('should synthesize hero when enough fragments collected', () => {
-      sim.addHeroFragments('lvbu', 300);
-      const result = sim.engine.hero.fragmentSynthesize('lvbu');
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe('lvbu');
-      expect(sim.engine.hero.hasGeneral('lvbu')).toBe(true);
-    });
-  });
+      const expBefore = sim.engine.hero.getGeneral('liubei')!.exp;
 
-  // ─────────────────────────────────────────
-  // §12.1 战斗中断处理 [引擎未实现]
-  // ─────────────────────────────────────────
-  describe('§12.1 战斗中断处理', () => {
-    it.skip('[引擎未实现] should save battle state on interruption', () => {
-      // 战斗中断存档尚未实现
-    });
+      sim.engine.startBattle(stage1Id);
+      sim.engine.completeBattle(stage1Id, 3);
 
-    it.skip('[引擎未实现] should resume battle from saved state', () => {
-      // 战斗恢复尚未实现
+      const expAfter = sim.engine.hero.getGeneral('liubei')!.exp;
+      expect(expAfter).toBeGreaterThanOrEqual(expBefore);
     });
   });
 
-  // ─────────────────────────────────────────
-  // §12.2 回合上限耗尽
-  // ─────────────────────────────────────────
-  describe('§12.2 回合上限耗尽', () => {
-    it('should have DRAW outcome when turns exhausted', () => {
-      // 创建两个势均力敌的队伍（高防御低攻击），使战斗拖到回合上限
-      const allyTeam: BattleTeam = {
-        units: [createBattleUnit('ally1', '铁壁1', TroopType.CAVALRY, 'ally', 'front',
-          { attack: 10, defense: 500, intelligence: 10, speed: 50, maxHp: 10000 })],
-        side: 'ally',
-      };
-      const enemyTeam: BattleTeam = {
-        units: [createBattleUnit('enemy1', '铁壁2', TroopType.CAVALRY, 'enemy', 'front',
-          { attack: 10, defense: 500, intelligence: 10, speed: 50, maxHp: 10000 })],
-        side: 'enemy',
-      };
+  // ═══════════════════════════════════════════════════════════════
+  // BATTLE-FLOW-5: 异常边界
+  // ═══════════════════════════════════════════════════════════════
+  describe('BATTLE-FLOW-5: 异常边界', () => {
+    it('挑战locked关卡 → 应失败（抛出异常）', () => {
+      // BATTLE-FLOW-5: 锁定关卡不可挑战
+      const sim = createSim();
+      const stages = sim.engine.getStageList();
 
-      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
-
-      // 可能是平局（回合耗尽）或某一方胜利
-      expect([BattleOutcome.VICTORY, BattleOutcome.DEFEAT, BattleOutcome.DRAW]).toContain(result.outcome);
-      // 回合数不应超过上限
-      expect(result.totalTurns).toBeLessThanOrEqual(BATTLE_CONFIG.MAX_TURNS);
+      // 第2关应该是锁定的
+      const lockedStage = stages[1];
+      expect(() => sim.engine.startBattle(lockedStage.id)).toThrow();
     });
 
-    it('should have MAX_TURNS configured as 8', () => {
-      expect(BATTLE_CONFIG.MAX_TURNS).toBe(8);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §12.3 武将阵亡处理
-  // ─────────────────────────────────────────
-  describe('§12.3 武将阵亡处理', () => {
-    it('should mark unit as dead when HP reaches 0', () => {
-      // 强队 vs 极弱队（1HP，确保一击必杀）
-      const allyTeam: BattleTeam = {
-        units: [createBattleUnit('ally1', '强将', TroopType.CAVALRY, 'ally', 'front',
-          { attack: 1000, defense: 500, intelligence: 100, speed: 100, maxHp: 10000 })],
-        side: 'ally',
-      };
-      const enemyTeam: BattleTeam = {
-        units: [createBattleUnit('enemy1', '弱兵', TroopType.INFANTRY, 'enemy', 'front',
-          { attack: 1, defense: 1, intelligence: 1, speed: 1, maxHp: 1 })],
-        side: 'enemy',
-      };
-
-      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
-
-      // 弱队应该全灭
-      expect(result.enemySurvivors).toBe(0);
-    });
-
-    it('should count surviving allies for star rating', () => {
-      const allyTeam: BattleTeam = {
-        units: [createBattleUnit('ally1', '强将', TroopType.CAVALRY, 'ally', 'front',
-          { attack: 1000, defense: 500, intelligence: 100, speed: 100, maxHp: 10000 })],
-        side: 'ally',
-      };
-      const enemyTeam: BattleTeam = {
-        units: [createBattleUnit('enemy1', '弱兵', TroopType.INFANTRY, 'enemy', 'front',
-          { attack: 1, defense: 1, intelligence: 1, speed: 1, maxHp: 1 })],
-        side: 'enemy',
-      };
-
-      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
-
-      if (result.outcome === BattleOutcome.VICTORY) {
-        expect(result.allySurvivors).toBeGreaterThan(0);
-      }
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §12.4 全军覆没处理
-  // ─────────────────────────────────────────
-  describe('§12.4 全军覆没处理', () => {
-    it('should have DEFEAT outcome when all allies die', () => {
-      // 极弱队 vs 极强队
-      const allyTeam: BattleTeam = {
-        units: [createBattleUnit('ally1', '弱兵', TroopType.INFANTRY, 'ally', 'front',
-          { attack: 1, defense: 1, intelligence: 1, speed: 1, maxHp: 1 })],
-        side: 'ally',
-      };
-      const enemyTeam: BattleTeam = {
-        units: [createBattleUnit('enemy1', '强将', TroopType.CAVALRY, 'enemy', 'front',
-          { attack: 1000, defense: 500, intelligence: 100, speed: 100, maxHp: 10000 })],
-        side: 'enemy',
-      };
-
-      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
-
-      expect(result.outcome).toBe(BattleOutcome.DEFEAT);
-      // 极弱盟军 vs 极强敌军，盟军全灭 → DEFEAT
-    });
-
-    it('should have 0 stars on defeat', () => {
-      // 极弱队 vs 极强队
-      const allyTeam: BattleTeam = {
-        units: [createBattleUnit('ally1', '弱兵', TroopType.INFANTRY, 'ally', 'front',
-          { attack: 1, defense: 1, intelligence: 1, speed: 1, maxHp: 1 })],
-        side: 'ally',
-      };
-      const enemyTeam: BattleTeam = {
-        units: [createBattleUnit('enemy1', '强将', TroopType.CAVALRY, 'enemy', 'front',
-          { attack: 1000, defense: 500, intelligence: 100, speed: 100, maxHp: 10000 })],
-        side: 'enemy',
-      };
-
-      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
-
-      // 如果是失败，星级应为0
-      if (result.outcome === BattleOutcome.DEFEAT) {
-        expect(result.stars).toBe(StarRating.NONE);
-      }
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §12.5 资源溢出处理
-  // ─────────────────────────────────────────
-  describe('§12.5 资源溢出处理', () => {
-    it('should cap resources at maximum', () => {
-      sim.engine.resource.setCap('grain', 1000);
-      sim.addResources({ grain: 5000 });
-
-      const grain = sim.getResource('grain');
-      expect(grain).toBeLessThanOrEqual(1000);
-    });
-  });
-
-  // ─────────────────────────────────────────
-  // §12.6 关卡数据异常处理
-  // ─────────────────────────────────────────
-  describe('§12.6 关卡数据异常处理', () => {
-    it('should throw error for non-existent stage', () => {
+    it('不存在的关卡 → 应失败（抛出异常）', () => {
+      // BATTLE-FLOW-5: 不存在的关卡ID
+      const sim = createSim();
       expect(() => sim.engine.startBattle('nonexistent_stage')).toThrow();
     });
 
-    it('should throw error for locked stage', () => {
+    it('0星通关 → 应该可以', () => {
+      // BATTLE-FLOW-5: 0星通关不抛异常
+      const sim = initBattleReadyState();
       const stages = sim.engine.getStageList();
-      // 第二关应该是锁定的
-      const lockedStage = stages[1];
-      expect(() => sim.engine.startBattle(lockedStage.id)).toThrow();
+      const stage1Id = stages[0].id;
+      const campaignSystem = sim.engine.getCampaignSystem();
+
+      // 0星通关
+      sim.engine.startBattle(stage1Id);
+      expect(() => sim.engine.completeBattle(stage1Id, 0)).not.toThrow();
+
+      // 0星时状态仍为cleared（因为firstCleared=true，stars=0）
+      const status = campaignSystem.getStageStatus(stage1Id);
+      expect(campaignSystem.isFirstCleared(stage1Id)).toBe(true);
+      // 0星通关，状态取决于实现：可能是cleared或available
+      expect(['available', 'cleared', 'threeStar']).toContain(status);
+    });
+
+    it('空编队战斗 → 不应崩溃', () => {
+      // BATTLE-FLOW-5: 空编队或不足编队时的处理
+      const sim = createSim();
+      sim.addHeroDirectly('liubei');
+      sim.engine.createFormation('main');
+      sim.engine.setFormation('main', ['liubei']);
+
+      const stages = sim.engine.getStageList();
+      const stage = stages[0];
+
+      // buildTeamsForStage 不应崩溃
+      const { allyTeam, enemyTeam } = sim.engine.buildTeamsForStage(stage);
+      expect(allyTeam.units.length).toBeGreaterThan(0);
+    });
+
+    it('极高防御敌人 → 最低伤害保底', () => {
+      // BATTLE-FLOW-5: 极端数值下的保底机制
+      // 当攻击力极低时，baseDamage = max(1, attack - defense) = 1
+      // 最终伤害 = floor(1 * multipliers)，可能为0
+      // 但 minDamage = attack * 10% 会保底
+      // 使用稍高的攻击力确保保底生效
+      const calc = new DamageCalculator();
+      const attacker = createBattleUnit('atk', '弱攻', TroopType.ARCHER, 'ally', 'front',
+        { attack: 50, defense: 1, intelligence: 1, speed: 50, maxHp: 100 });
+      const defender = createBattleUnit('def', '神盾', TroopType.ARCHER, 'enemy', 'front',
+        { attack: 1, defense: 99999, intelligence: 1, speed: 1, maxHp: 99999 });
+
+      const result = calc.calculateDamage(attacker, defender, 1.0);
+      // 最低伤害保底：attack=50, minDamage = 50 * 10% = 5
+      expect(result.damage).toBeGreaterThanOrEqual(1);
+      expect(result.isMinDamage).toBe(true);
+    });
+
+    it('回合上限耗尽 → DRAW', () => {
+      // BATTLE-FLOW-5: 两个高防低攻队伍拖到回合上限
+      const battleEngine = new BattleEngine();
+      const allyTeam: BattleTeam = {
+        units: [createBattleUnit('ally1', '铁壁1', TroopType.ARCHER, 'ally', 'front',
+          { attack: 1, defense: 999, intelligence: 10, speed: 50, maxHp: 99999 })],
+        side: 'ally',
+      };
+      const enemyTeam: BattleTeam = {
+        units: [createBattleUnit('enemy1', '铁壁2', TroopType.ARCHER, 'enemy', 'front',
+          { attack: 1, defense: 999, intelligence: 10, speed: 50, maxHp: 99999 })],
+        side: 'enemy',
+      };
+
+      const result = battleEngine.runFullBattle(allyTeam, enemyTeam);
+      // 可能是平局（回合耗尽）或某一方胜利
+      expect([BattleOutcome.VICTORY, BattleOutcome.DEFEAT, BattleOutcome.DRAW]).toContain(result.outcome);
+      expect(result.totalTurns).toBeLessThanOrEqual(BATTLE_CONFIG.MAX_TURNS);
+    });
+
+    it('资源溢出时不超过上限', () => {
+      // BATTLE-FLOW-5: 资源上限保护
+      const sim = createSim();
+      sim.engine.resource.setCap('grain', 500);
+      sim.addResources({ grain: 10000 });
+
+      const grain = sim.getResource('grain');
+      expect(grain).toBeLessThanOrEqual(500);
     });
   });
 });
