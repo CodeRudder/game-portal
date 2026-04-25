@@ -208,6 +208,10 @@ export function initR11Systems(systems: R11Systems, deps: ISystemDeps): void {
   systems.currencySystem.init(deps);
   systems.tradeSystem.init(deps);
   systems.resourceTradeEngine.init(deps);
+  systems.achievementSystem.init(deps);
+  systems.prestigeSystem.init(deps);
+  systems.rebirthSystem.init(deps);
+  systems.prestigeShopSystem.init(deps);
 }
 
 /**
