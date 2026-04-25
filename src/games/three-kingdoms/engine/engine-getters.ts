@@ -17,6 +17,8 @@ import type { SkillUpgradeSystem } from './hero/SkillUpgradeSystem';
 import type { BondSystem } from './bond/BondSystem';
 import type { FormationRecommendSystem } from './hero/FormationRecommendSystem';
 import type { HeroDispatchSystem } from './hero/HeroDispatchSystem';
+import type { HeroBadgeSystem } from './hero/HeroBadgeSystem';
+import type { HeroAttributeCompare } from './hero/HeroAttributeCompare';
 import type { SweepSystem } from './campaign/SweepSystem';
 import type { VIPSystem } from './campaign/VIPSystem';
 import type { ChallengeStageSystem } from './campaign/ChallengeStageSystem';
@@ -122,6 +124,8 @@ export function applyGetters(cls: any): void {
   p.getBondSystem = function(this: EngineAny): BondSystem { return this.bondSystem; };
   p.getFormationRecommendSystem = function(this: EngineAny): FormationRecommendSystem { return this.formationRecommendSystem; };
   p.getHeroDispatchSystem = function(this: EngineAny): HeroDispatchSystem { return this.heroDispatchSystem; };
+  p.getHeroBadgeSystem = function(this: EngineAny): HeroBadgeSystem { return this.heroBadgeSystem; };
+  p.getHeroAttributeCompare = function(this: EngineAny): HeroAttributeCompare { return this.heroAttributeCompare; };
   p.getSweepSystem = function(this: EngineAny): SweepSystem { return this.sweepSystem; };
   p.getVIPSystem = function(this: EngineAny): VIPSystem { return this.vipSystem; };
   p.getChallengeStageSystem = function(this: EngineAny): ChallengeStageSystem { return this.challengeStageSystem; };

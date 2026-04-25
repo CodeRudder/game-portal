@@ -15,6 +15,8 @@ import type { SkillUpgradeSystem } from './hero/SkillUpgradeSystem';
 import type { BondSystem } from './bond/BondSystem';
 import type { FormationRecommendSystem } from './hero/FormationRecommendSystem';
 import type { HeroDispatchSystem } from './hero/HeroDispatchSystem';
+import type { HeroBadgeSystem } from './hero/HeroBadgeSystem';
+import type { HeroAttributeCompare } from './hero/HeroAttributeCompare';
 import type { SweepSystem } from './campaign/SweepSystem';
 import type { VIPSystem } from './campaign/VIPSystem';
 import type { ChallengeStageSystem } from './campaign/ChallengeStageSystem';
@@ -103,6 +105,8 @@ export interface EngineGettersMixin {
   getBondSystem(): BondSystem;
   getFormationRecommendSystem(): FormationRecommendSystem;
   getHeroDispatchSystem(): HeroDispatchSystem;
+  getHeroBadgeSystem(): HeroBadgeSystem;
+  getHeroAttributeCompare(): HeroAttributeCompare;
   getSweepSystem(): SweepSystem;
   getVIPSystem(): VIPSystem;
   getChallengeStageSystem(): ChallengeStageSystem;

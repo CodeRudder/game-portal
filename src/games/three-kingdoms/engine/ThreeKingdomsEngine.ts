@@ -16,6 +16,8 @@ import { SkillUpgradeSystem } from './hero/SkillUpgradeSystem';
 import { BondSystem } from './bond/BondSystem';
 import { FormationRecommendSystem } from './hero/FormationRecommendSystem';
 import { HeroDispatchSystem } from './hero/HeroDispatchSystem';
+import { HeroBadgeSystem } from './hero/HeroBadgeSystem';
+import { HeroAttributeCompare } from './hero/HeroAttributeCompare';
 import type { CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type { EngineEventType, EngineEventMap, EngineSnapshot } from '../shared/types';
@@ -84,6 +86,8 @@ export class ThreeKingdomsEngine {
   private readonly bondSystem: BondSystem;
   private readonly formationRecommendSystem: FormationRecommendSystem;
   private readonly heroDispatchSystem: HeroDispatchSystem;
+  private readonly heroBadgeSystem: HeroBadgeSystem;
+  private readonly heroAttributeCompare: HeroAttributeCompare;
   private readonly campaignSystems: CampaignSystems;
   private readonly sweepSystem: SweepSystem;
   private readonly vipSystem: VIPSystem;
@@ -116,6 +120,8 @@ export class ThreeKingdomsEngine {
     this.bondSystem = new BondSystem();
     this.formationRecommendSystem = new FormationRecommendSystem();
     this.heroDispatchSystem = new HeroDispatchSystem();
+    this.heroBadgeSystem = new HeroBadgeSystem();
+    this.heroAttributeCompare = new HeroAttributeCompare();
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
     const self = this;
     this.sweepSystem = new SweepSystem(
@@ -200,6 +206,8 @@ export class ThreeKingdomsEngine {
     r.register('bond', this.bondSystem);
     r.register('formationRecommend', this.formationRecommendSystem);
     r.register('heroDispatch', this.heroDispatchSystem);
+    r.register('heroBadge', this.heroBadgeSystem);
+    r.register('heroAttributeCompare', this.heroAttributeCompare);
     r.register('battleEngine', this.campaignSystems.battleEngine);
     r.register('campaignSystem', this.campaignSystems.campaignSystem);
     r.register('rewardDistributor', this.campaignSystems.rewardDistributor);
@@ -325,6 +333,7 @@ export class ThreeKingdomsEngine {
     this.hero.reset(); this.heroRecruit.reset(); this.heroLevel.reset();
     this.heroFormation.reset(); this.heroStarSystem.reset(); this.skillUpgradeSystem.reset(); this.bondSystem.reset();
     this.formationRecommendSystem.reset(); this.heroDispatchSystem.reset();
+    this.heroBadgeSystem.reset(); this.heroAttributeCompare.reset();
     this.campaignSystems.campaignSystem.reset(); this.sweepSystem.reset();
     this.vipSystem.reset(); this.challengeStageSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
@@ -431,6 +440,24 @@ export class ThreeKingdomsEngine {
         return current >= amount;
       },
       getResourceAmount: (type: string) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+    });
+    // P0-1: 注入突破后技能解锁回调
+    this.heroStarSystem.setSkillUnlockCallback((heroId, level) => {
+      return this.skillUpgradeSystem.unlockSkillOnBreakthrough(heroId, level);
+    });
+    // P0-3/P0-4: 初始化角标系统和属性对比系统
+    this.heroBadgeSystem.init(deps);
+    this.heroBadgeSystem.setBadgeSystemDeps({
+      heroSystem: this.hero,
+      heroStarSystem: this.heroStarSystem,
+      heroLevelSystem: this.heroLevel,
+      getResourceAmount: (type: string) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+      getLevelCap: (heroId: string) => this.heroStarSystem.getLevelCap(heroId),
+    });
+    this.heroAttributeCompare.init(deps);
+    this.heroAttributeCompare.setAttributeCompareDeps({
+      heroSystem: this.hero,
+      heroStarSystem: this.heroStarSystem,
     });
     this.sweepSystem.init(deps);
   }

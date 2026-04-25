@@ -11,6 +11,8 @@ export { HeroLevelSystem } from './HeroLevelSystem';
 export { HeroStarSystem } from './HeroStarSystem';
 export { SkillUpgradeSystem } from './SkillUpgradeSystem';
 export { HeroFormation, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './HeroFormation';
+export { HeroBadgeSystem } from './HeroBadgeSystem';
+export { HeroAttributeCompare } from './HeroAttributeCompare';
 
 // 类型
 export type {
@@ -38,6 +40,16 @@ export type {
   SkillUpgradeResult, SkillUpgradeMaterials, SkillUpgradeDeps,
   SkillUpgradeState, EnemyType, StrategyRecommendation,
 } from './SkillUpgradeSystem';
+export type {
+  SkillUnlockState, ExtraEffect,
+} from './SkillUpgradeSystem';
+export type {
+  TodayTodoItem, QuickActionResult, BadgeSystemState, BadgeSystemDeps,
+} from './HeroBadgeSystem';
+export type {
+  AttributeComparison, AttributeContribution, AttributeBreakdown,
+  AttributeCompareState, AttributeCompareDeps,
+} from './HeroAttributeCompare';
 
 // 配置
 export { HERO_MAX_LEVEL, GENERAL_DEF_MAP, DUPLICATE_FRAGMENT_COUNT } from './hero-config';

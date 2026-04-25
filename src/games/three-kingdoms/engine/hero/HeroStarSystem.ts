@@ -137,6 +137,43 @@ export class HeroStarSystem implements ISubsystem {
   }
 
   // ═══════════════════════════════════════════
+  // 1b. 碎片获取途径扩展（F3.04 P0-5）
+  // ═══════════════════════════════════════════
+
+  /**
+   * 活动获取碎片
+   *
+   * 通过限时活动、签到活动等途径获取武将碎片。
+   * @param heroId - 武将ID
+   * @param source - 活动来源描述（如 '限时活动·赤壁之战'）
+   * @param amount - 碎片数量
+   * @returns 碎片获取结果
+   */
+  addFragmentFromActivity(heroId: string, source: string, amount: number): FragmentGainResult {
+    if (amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.ACTIVITY };
+    const overflow = this.heroSystem.addFragment(heroId, amount);
+    const actual = amount - overflow;
+    gameLog.info(`[HeroStarSystem] activity fragment: ${heroId} +${actual} from "${source}"`);
+    return { generalId: heroId, count: actual, source: FragmentSource.ACTIVITY };
+  }
+
+  /**
+   * 远征获取碎片
+   *
+   * 通过远征系统挂机获取武将碎片。
+   * @param heroId - 武将ID
+   * @param amount - 碎片数量
+   * @returns 碎片获取结果
+   */
+  addFragmentFromExpedition(heroId: string, amount: number): FragmentGainResult {
+    if (amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.EXPEDITION };
+    const overflow = this.heroSystem.addFragment(heroId, amount);
+    const actual = amount - overflow;
+    gameLog.info(`[HeroStarSystem] expedition fragment: ${heroId} +${actual}`);
+    return { generalId: heroId, count: actual, source: FragmentSource.EXPEDITION };
+  }
+
+  // ═══════════════════════════════════════════
   // 2. 升星消耗与效果（功能点 #12）
   // ═══════════════════════════════════════════
 
