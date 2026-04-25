@@ -133,8 +133,11 @@ const STAR_SKILL_CAP: Record<number, number> = {
 /** 觉醒技能最低突破阶段要求 */
 const AWAKEN_BREAKTHROUGH_REQUIREMENT = 1;
 
-/** 每级CD减少量（秒） */
-const CD_REDUCE_PER_LEVEL = 0.5;
+/** 每级CD减少百分比（0.05 = 5%） */
+const CD_REDUCE_PERCENT_PER_LEVEL = 0.05;
+
+/** CD减少上限（0.30 = 30%） */
+const CD_REDUCE_MAX = 0.30;
 
 /** 触发额外效果的最低技能等级 */
 const EXTRA_EFFECT_MIN_LEVEL = 5;
@@ -162,6 +165,11 @@ const BREAKTHROUGH_SKILL_MAP: Record<number, {
     unlockType: 'ultimate_enhance',
     skillIndex: 0,
     description: '突破Lv30：终极技能强化，伤害提升20%',
+  },
+  40: {
+    unlockType: 'ultimate_enhance',
+    skillIndex: 0,
+    description: '突破Lv40：终极技能强化+，伤害提升35%',
   },
 };
 
@@ -493,7 +501,8 @@ export class SkillUpgradeSystem implements ISubsystem {
   getCooldownReduce(heroId: string, skillIndex: number): number {
     const level = this.getSkillLevel(heroId, skillIndex);
     if (level <= 1) return 0;
-    return (level - 1) * CD_REDUCE_PER_LEVEL;
+    const raw = (level - 1) * CD_REDUCE_PERCENT_PER_LEVEL;
+    return Math.min(raw, CD_REDUCE_MAX);
   }
 
   /**
