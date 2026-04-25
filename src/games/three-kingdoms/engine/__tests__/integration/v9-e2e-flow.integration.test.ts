@@ -699,10 +699,13 @@ describe('E2E-FLOW 交叉验证补充', () => {
     const sim = createSim();
     sim.addResources(MASSIVE_RESOURCES);
 
-    // 初始产出
+    // 先升级主城到3（其他建筑等级不能超过主城）
+    sim.upgradeBuildingTo('castle', 3);
+
+    // 初始产出（农田Lv1）
     const ratesLv1 = { ...sim.engine.resource.getProductionRates() };
 
-    // 升级农田多次
+    // 升级农田到3
     sim.upgradeBuildingTo('farmland', 3);
     const ratesLv3 = { ...sim.engine.resource.getProductionRates() };
 

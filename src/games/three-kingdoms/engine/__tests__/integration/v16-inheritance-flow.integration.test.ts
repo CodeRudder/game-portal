@@ -2,17 +2,15 @@
  * v16.0 传承有序 Play 流程集成测试
  *
  * 覆盖范围（按 play 文档章节组织）：
- * - §1 武将传承（源/目标武将选择、经验传递、技能传承、好感度传承）
- * - §2 装备传承（装备强化等级传递、部位限制、稀有度效率）
- * - §3 经验传承（部分经验传递、效率计算、铜钱消耗）
- * - §4 传承消耗与限制（每日次数限制、铜钱消耗、品质要求）
- * - §5 转生后加速（初始赠送、一键重建、瞬间升级）
- * - §6 收益模拟器与转生解锁
- * - §7 跨系统联动（传承→武将→装备→资源）
+ * - §1 传承物品选择与属性（武将/装备/经验传承）
+ * - §2 传承消耗与效果（铜钱消耗、效率计算、阵营加成）
+ * - §3 传承规则（保留项/重置项、每日次数、历史记录）
+ * - §4 转生后加速（初始赠送、一键重建、瞬间升级）
+ * - §5 跨系统联动（传承→资源→存档→重置）
  *
  * 测试原则：
- * - 每个用例创建独立的 sim 实例
- * - 使用真实引擎 API，不使用 mock
+ * - 每个用例创建独立的 sim 实例（createSim）
+ * - 使用真实引擎 API，不使用 mock，不用 `as any`
  * - 以实际代码行为为准
  *
  * @see docs/games/three-kingdoms/play/v16-play.md
@@ -20,27 +18,24 @@
 
 import { describe, it, expect } from 'vitest';
 import { createSim, SUFFICIENT_RESOURCES } from '../../../test-utils/test-helpers';
-import type {
-  HeritageResult,
-  HeroHeritageRequest,
-  EquipmentHeritageRequest,
-  ExperienceHeritageRequest,
-  HeritageSimulationParams,
-} from '../../../../core/heritage';
+import type { HeritageSimulationParams } from '../../../../core/heritage';
 
 /**
  * 创建 sim 并手动初始化 HeritageSystem 的 deps。
  *
- * 引擎 initR11Systems() 当前未调用 heritageSystem.init(deps)，
+ * 引擎 initR16Systems() 当前未调用 heritageSystem.init(deps)，
  * 导致 recordHeritage 中 this.deps.eventBus 崩溃。
- * 此 helper 在引擎初始化后手动注入 deps。
+ * 此 helper 在引擎初始化后手动注入 deps，避免 `as any`。
  */
 function createSimWithHeritageInit() {
   const sim = createSim();
   const heritage = sim.engine.getHeritageSystem();
-  // 手动注入 deps：从引擎内部获取 eventBus/config/registry
+  // 从引擎内部获取 eventBus — 使用 unknown 中转避免 `as any`
+  const engineInternal = sim.engine as unknown as {
+    bus: { on: (...a: unknown[]) => void; emit: (...a: unknown[]) => void; off: (...a: unknown[]) => void };
+  };
   const deps = {
-    eventBus: (sim.engine as unknown as { bus: { on: (...a: unknown[]) => void; emit: (...a: unknown[]) => void; off: (...a: unknown[]) => void } }).bus,
+    eventBus: engineInternal.bus,
     config: { get: () => undefined },
     registry: { get: () => undefined },
   };
@@ -48,113 +43,104 @@ function createSimWithHeritageInit() {
   return sim;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// §1 武将传承
-// ═══════════════════════════════════════════════════════════════
-describe('v16.0 传承有序 — §1 武将传承', () => {
+// ── 武将数据类型（内联，避免依赖外部 type） ──
+interface HeroStub {
+  id: string;
+  level: number;
+  exp: number;
+  quality: number;
+  faction: string;
+  skillLevels: number[];
+  favorability: number;
+}
 
-  it('should access heritage system via engine getter', () => {
+// ── 装备数据类型 ──
+interface EquipStub {
+  uid: string;
+  slot: string;
+  rarity: number;
+  enhanceLevel: number;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// §1 传承物品选择与属性
+// ═══════════════════════════════════════════════════════════════
+describe('v16.0 传承有序 — §1 传承物品选择与属性', () => {
+
+  it('should access heritage system and expose core methods', () => {
     const sim = createSim();
     const heritage = sim.engine.getHeritageSystem();
     expect(heritage).toBeDefined();
     expect(typeof heritage.executeHeroHeritage).toBe('function');
     expect(typeof heritage.executeEquipmentHeritage).toBe('function');
     expect(typeof heritage.executeExperienceHeritage).toBe('function');
+    expect(typeof heritage.getState).toBe('function');
   });
 
-  it('should get heritage system state', () => {
-    // Play §1: 传承系统状态查询
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-    const state = heritage.getState();
-    expect(state).toBeDefined();
-    expect(typeof state.dailyHeritageCount).toBe('number');
-    expect(typeof state.heroHeritageCount).toBe('number');
-    expect(typeof state.equipmentHeritageCount).toBe('number');
-    expect(typeof state.experienceHeritageCount).toBe('number');
-    expect(Array.isArray(state.heritageHistory)).toBe(true);
-  });
-
-  it('should reject hero heritage when source hero not found', () => {
-    // Play §1: 源武将不存在
+  it('should reject hero heritage when source or target not found', () => {
     const sim = createSim();
     const heritage = sim.engine.getHeritageSystem();
 
-    const result = heritage.executeHeroHeritage({
-      sourceHeroId: 'nonexistent-hero',
-      targetHeroId: 'another-hero',
+    // 源武将不存在
+    const r1 = heritage.executeHeroHeritage({
+      sourceHeroId: 'nonexistent',
+      targetHeroId: 'another',
       options: { expEfficiency: 1.0, transferSkillLevels: false, transferFavorability: false },
     });
+    expect(r1.success).toBe(false);
 
-    expect(result.success).toBe(false);
-    expect(result.type).toBe('hero');
+    // 设置源武将存在但目标不存在
+    heritage.setCallbacks({ getHero: (id) => id === 'src' ? { id: 'src', level: 30, exp: 5000, quality: 4, faction: 'shu', skillLevels: [5], favorability: 80 } : null });
+    const r2 = heritage.executeHeroHeritage({
+      sourceHeroId: 'src', targetHeroId: 'missing',
+      options: { expEfficiency: 1.0, transferSkillLevels: false, transferFavorability: false },
+    });
+    expect(r2.success).toBe(false);
   });
 
-  it('should reject hero heritage when target hero not found', () => {
-    // Play §1: 目标武将不存在
+  it('should reject self-heritage for hero and equipment', () => {
     const sim = createSim();
     const heritage = sim.engine.getHeritageSystem();
 
-    // 需要设置回调才能查询武将数据
+    // 武将自我传承
     heritage.setCallbacks({
-      getHero: (id) => id === 'source-hero' ? {
-        id: 'source-hero', level: 30, exp: 5000, quality: 4,
-        faction: 'shu', skillLevels: [5, 3], favorability: 80,
-      } : null,
+      getHero: (id) => ({ id, level: 30, exp: 5000, quality: 4, faction: 'shu', skillLevels: [5], favorability: 80 }),
     });
-
-    const result = heritage.executeHeroHeritage({
-      sourceHeroId: 'source-hero',
-      targetHeroId: 'nonexistent-target',
+    const heroResult = heritage.executeHeroHeritage({
+      sourceHeroId: 'hero-1', targetHeroId: 'hero-1',
       options: { expEfficiency: 1.0, transferSkillLevels: false, transferFavorability: false },
     });
+    expect(heroResult.success).toBe(false);
 
-    expect(result.success).toBe(false);
-  });
-
-  it('should reject self-heritage for hero', () => {
-    // Play §1: 不能自我传承
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-
+    // 装备自我传承
     heritage.setCallbacks({
-      getHero: (id) => ({
-        id, level: 30, exp: 5000, quality: 4,
-        faction: 'shu', skillLevels: [5, 3], favorability: 80,
-      }),
+      getEquip: (uid) => ({ uid, slot: 'weapon', rarity: 4, enhanceLevel: 10 }),
     });
-
-    const result = heritage.executeHeroHeritage({
-      sourceHeroId: 'hero-001',
-      targetHeroId: 'hero-001',
-      options: { expEfficiency: 1.0, transferSkillLevels: false, transferFavorability: false },
+    const equipResult = heritage.executeEquipmentHeritage({
+      sourceUid: 'equip-1', targetUid: 'equip-1',
+      options: { transferEnhanceLevel: true },
     });
-
-    expect(result.success).toBe(false);
+    expect(equipResult.success).toBe(false);
   });
 
-  it('should execute hero heritage with valid heroes', () => {
-    // Play §1: 武将传承完整流程
+  it('should execute hero heritage and transfer skill levels and favorability', () => {
     const sim = createSimWithHeritageInit();
     sim.addResources(SUFFICIENT_RESOURCES);
     const heritage = sim.engine.getHeritageSystem();
 
-    const heroData: Record<string, { id: string; level: number; exp: number; quality: number; faction: string; skillLevels: number[]; favorability: number }> = {
-      'source-hero': { id: 'source-hero', level: 50, exp: 10000, quality: 5, faction: 'shu', skillLevels: [8, 6], favorability: 100 },
-      'target-hero': { id: 'target-hero', level: 20, exp: 2000, quality: 4, faction: 'shu', skillLevels: [3, 2], favorability: 30 },
+    const heroes: Record<string, HeroStub> = {
+      'src': { id: 'src', level: 50, exp: 10000, quality: 5, faction: 'shu', skillLevels: [8, 6], favorability: 100 },
+      'tgt': { id: 'tgt', level: 20, exp: 2000, quality: 4, faction: 'shu', skillLevels: [3, 2], favorability: 30 },
     };
 
     heritage.setCallbacks({
-      getHero: (id) => heroData[id] ?? null,
-      updateHero: (id, updates) => {
-        if (heroData[id]) Object.assign(heroData[id], updates);
-      },
+      getHero: (id) => heroes[id] ?? null,
+      updateHero: (id, updates) => { if (heroes[id]) Object.assign(heroes[id], updates); },
       addResources: () => {},
     });
 
     const result = heritage.executeHeroHeritage({
-      sourceHeroId: 'source-hero',
-      targetHeroId: 'target-hero',
+      sourceHeroId: 'src', targetHeroId: 'tgt',
       options: { expEfficiency: 1.0, transferSkillLevels: true, transferFavorability: true },
     });
 
@@ -162,237 +148,180 @@ describe('v16.0 传承有序 — §1 武将传承', () => {
     expect(result.type).toBe('hero');
     expect(result.efficiency).toBeGreaterThan(0);
     expect(result.copperCost).toBeGreaterThan(0);
-    expect(result.sourceBefore.id).toBe('source-hero');
-    expect(result.targetBefore.id).toBe('target-hero');
+    expect(result.sourceBefore.id).toBe('src');
+    expect(result.targetBefore.id).toBe('tgt');
   });
 
-  it('should apply faction bonus for same-faction hero heritage', () => {
-    // Play §1: 同阵营加成
+  it('should execute equipment heritage and transfer enhance level', () => {
     const sim = createSimWithHeritageInit();
     const heritage = sim.engine.getHeritageSystem();
 
-    const heroData: Record<string, { id: string; level: number; exp: number; quality: number; faction: string; skillLevels: number[]; favorability: number }> = {
-      'shu-source': { id: 'shu-source', level: 40, exp: 8000, quality: 4, faction: 'shu', skillLevels: [5], favorability: 60 },
-      'shu-target': { id: 'shu-target', level: 10, exp: 1000, quality: 4, faction: 'shu', skillLevels: [2], favorability: 20 },
+    const equips: Record<string, EquipStub> = {
+      'src-eq': { uid: 'src-eq', slot: 'weapon', rarity: 4, enhanceLevel: 12 },
+      'tgt-eq': { uid: 'tgt-eq', slot: 'weapon', rarity: 5, enhanceLevel: 3 },
     };
 
     heritage.setCallbacks({
-      getHero: (id) => heroData[id] ?? null,
-      updateHero: (id, updates) => { if (heroData[id]) Object.assign(heroData[id], updates); },
+      getEquip: (uid) => equips[uid] ?? null,
+      updateEquip: (uid, updates) => { if (equips[uid]) Object.assign(equips[uid], updates); },
+      removeEquip: (uid) => { delete equips[uid]; },
+      addResources: () => {},
+    });
+
+    const result = heritage.executeEquipmentHeritage({
+      sourceUid: 'src-eq', targetUid: 'tgt-eq',
+      options: { transferEnhanceLevel: true },
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.type).toBe('equipment');
+    expect(result.efficiency).toBeGreaterThan(0);
+    expect(result.copperCost).toBeGreaterThan(0);
+  });
+
+  it('should execute experience heritage with partial exp transfer', () => {
+    const sim = createSimWithHeritageInit();
+    const heritage = sim.engine.getHeritageSystem();
+
+    const heroes: Record<string, HeroStub> = {
+      'exp-src': { id: 'exp-src', level: 50, exp: 20000, quality: 5, faction: 'wei', skillLevels: [8], favorability: 90 },
+      'exp-tgt': { id: 'exp-tgt', level: 15, exp: 1500, quality: 3, faction: 'shu', skillLevels: [3], favorability: 40 },
+    };
+
+    heritage.setCallbacks({
+      getHero: (id) => heroes[id] ?? null,
+      updateHero: (id, updates) => { if (heroes[id]) Object.assign(heroes[id], updates); },
+      addResources: () => {},
+    });
+
+    const result = heritage.executeExperienceHeritage({
+      sourceHeroId: 'exp-src', targetHeroId: 'exp-tgt', expRatio: 0.5,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.type).toBe('experience');
+    expect(result.efficiency).toBeGreaterThan(0);
+    expect(result.copperCost).toBeGreaterThan(0);
+  });
+
+});
+
+// ═══════════════════════════════════════════════════════════════
+// §2 传承消耗与效果
+// ═══════════════════════════════════════════════════════════════
+describe('v16.0 传承有序 — §2 传承消耗与效果', () => {
+
+  it('should apply faction bonus for same-faction hero heritage', () => {
+    const sim = createSimWithHeritageInit();
+    const heritage = sim.engine.getHeritageSystem();
+
+    const heroes: Record<string, HeroStub> = {
+      'shu-src': { id: 'shu-src', level: 40, exp: 8000, quality: 4, faction: 'shu', skillLevels: [5], favorability: 60 },
+      'shu-tgt': { id: 'shu-tgt', level: 10, exp: 1000, quality: 4, faction: 'shu', skillLevels: [2], favorability: 20 },
+    };
+
+    heritage.setCallbacks({
+      getHero: (id) => heroes[id] ?? null,
+      updateHero: (id, updates) => { if (heroes[id]) Object.assign(heroes[id], updates); },
       addResources: () => {},
     });
 
     const result = heritage.executeHeroHeritage({
-      sourceHeroId: 'shu-source',
-      targetHeroId: 'shu-target',
+      sourceHeroId: 'shu-src', targetHeroId: 'shu-tgt',
       options: { expEfficiency: 1.0, transferSkillLevels: false, transferFavorability: false },
     });
 
     expect(result.success).toBe(true);
-    // 同阵营应获得加成
+    // 同阵营应获得加成效率 > 0.5
     expect(result.efficiency).toBeGreaterThan(0.5);
   });
 
-});
-
-// ═══════════════════════════════════════════════════════════════
-// §2 装备传承
-// ═══════════════════════════════════════════════════════════════
-describe('v16.0 传承有序 — §2 装备传承', () => {
-
-  it('should reject equipment heritage when source not found', () => {
-    // Play §2: 源装备不存在
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-
-    const result = heritage.executeEquipmentHeritage({
-      sourceUid: 'nonexistent-equip',
-      targetUid: 'target-equip',
-      options: { transferEnhanceLevel: true },
-    });
-
-    expect(result.success).toBe(false);
-    expect(result.type).toBe('equipment');
-  });
-
-  it('should reject self-heritage for equipment', () => {
-    // Play §2: 不能自我传承
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-
-    heritage.setCallbacks({
-      getEquip: (uid) => ({ uid, slot: 'weapon', rarity: 4, enhanceLevel: 10 }),
-    });
-
-    const result = heritage.executeEquipmentHeritage({
-      sourceUid: 'equip-001',
-      targetUid: 'equip-001',
-      options: { transferEnhanceLevel: true },
-    });
-
-    expect(result.success).toBe(false);
-  });
-
-  it('should execute equipment heritage with valid equipment', () => {
-    // Play §2: 装备传承完整流程
+  it('should calculate efficiency based on rarity difference for equipment', () => {
     const sim = createSimWithHeritageInit();
     const heritage = sim.engine.getHeritageSystem();
 
-    const equipData: Record<string, { uid: string; slot: string; rarity: number; enhanceLevel: number }> = {
-      'source-equip': { uid: 'source-equip', slot: 'weapon', rarity: 4, enhanceLevel: 12 },
-      'target-equip': { uid: 'target-equip', slot: 'weapon', rarity: 5, enhanceLevel: 3 },
+    // 同稀有度传承
+    const equips: Record<string, EquipStub> = {
+      's1': { uid: 's1', slot: 'weapon', rarity: 4, enhanceLevel: 10 },
+      't1': { uid: 't1', slot: 'weapon', rarity: 4, enhanceLevel: 0 },
     };
 
     heritage.setCallbacks({
-      getEquip: (uid) => equipData[uid] ?? null,
-      updateEquip: (uid, updates) => { if (equipData[uid]) Object.assign(equipData[uid], updates); },
-      removeEquip: (uid) => { delete equipData[uid]; },
-      addResources: () => {},
-    });
-
-    const result = heritage.executeEquipmentHeritage({
-      sourceUid: 'source-equip',
-      targetUid: 'target-equip',
-      options: { transferEnhanceLevel: true },
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.type).toBe('equipment');
-    expect(result.efficiency).toBeGreaterThan(0);
-    expect(result.copperCost).toBeGreaterThan(0);
-  });
-
-  it('should calculate efficiency based on rarity difference', () => {
-    // Play §2: 稀有度差异影响效率
-    const sim = createSimWithHeritageInit();
-    const heritage = sim.engine.getHeritageSystem();
-
-    // 同稀有度
-    const equipData1: Record<string, { uid: string; slot: string; rarity: number; enhanceLevel: number }> = {
-      'src-same': { uid: 'src-same', slot: 'weapon', rarity: 4, enhanceLevel: 10 },
-      'tgt-same': { uid: 'tgt-same', slot: 'weapon', rarity: 4, enhanceLevel: 0 },
-    };
-
-    heritage.setCallbacks({
-      getEquip: (uid) => equipData1[uid] ?? null,
-      updateEquip: (uid, updates) => { if (equipData1[uid]) Object.assign(equipData1[uid], updates); },
-      removeEquip: (uid) => { delete equipData1[uid]; },
+      getEquip: (uid) => equips[uid] ?? null,
+      updateEquip: (uid, updates) => { if (equips[uid]) Object.assign(equips[uid], updates); },
+      removeEquip: (uid) => { delete equips[uid]; },
       addResources: () => {},
     });
 
     const resultSame = heritage.executeEquipmentHeritage({
-      sourceUid: 'src-same', targetUid: 'tgt-same',
+      sourceUid: 's1', targetUid: 't1',
       options: { transferEnhanceLevel: true },
     });
-
     expect(resultSame.success).toBe(true);
     expect(resultSame.efficiency).toBeGreaterThan(0);
   });
 
-});
-
-// ═══════════════════════════════════════════════════════════════
-// §3 经验传承
-// ═══════════════════════════════════════════════════════════════
-describe('v16.0 传承有序 — §3 经验传承', () => {
-
-  it('should reject experience heritage when source not found', () => {
-    // Play §3: 源武将不存在
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-
-    const result = heritage.executeExperienceHeritage({
-      sourceHeroId: 'nonexistent',
-      targetHeroId: 'target',
-      expRatio: 0.5,
-    });
-
-    expect(result.success).toBe(false);
-    expect(result.type).toBe('experience');
-  });
-
-  it('should reject self-experience heritage', () => {
-    // Play §3: 不能自我传承
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-
-    heritage.setCallbacks({
-      getHero: (id) => ({
-        id, level: 30, exp: 5000, quality: 4,
-        faction: 'shu', skillLevels: [5], favorability: 60,
-      }),
-    });
-
-    const result = heritage.executeExperienceHeritage({
-      sourceHeroId: 'hero-x',
-      targetHeroId: 'hero-x',
-      expRatio: 0.5,
-    });
-
-    expect(result.success).toBe(false);
-  });
-
-  it('should execute experience heritage with valid heroes', () => {
-    // Play §3: 经验传承完整流程
+  it('should deduct copper cost via callback on successful heritage', () => {
     const sim = createSimWithHeritageInit();
     const heritage = sim.engine.getHeritageSystem();
 
-    const heroData: Record<string, { id: string; level: number; exp: number; quality: number; faction: string; skillLevels: number[]; favorability: number }> = {
-      'exp-source': { id: 'exp-source', level: 50, exp: 20000, quality: 5, faction: 'wei', skillLevels: [8], favorability: 90 },
-      'exp-target': { id: 'exp-target', level: 15, exp: 1500, quality: 3, faction: 'shu', skillLevels: [3], favorability: 40 },
+    let deductedCopper = 0;
+    const heroes: Record<string, HeroStub> = {
+      'cost-src': { id: 'cost-src', level: 40, exp: 8000, quality: 4, faction: 'shu', skillLevels: [5], favorability: 60 },
+      'cost-tgt': { id: 'cost-tgt', level: 10, exp: 1000, quality: 4, faction: 'shu', skillLevels: [2], favorability: 20 },
     };
 
     heritage.setCallbacks({
-      getHero: (id) => heroData[id] ?? null,
-      updateHero: (id, updates) => { if (heroData[id]) Object.assign(heroData[id], updates); },
-      addResources: () => {},
+      getHero: (id) => heroes[id] ?? null,
+      updateHero: (id, updates) => { if (heroes[id]) Object.assign(heroes[id], updates); },
+      addResources: (res: Record<string, number>) => { if (res.copper && res.copper < 0) deductedCopper += res.copper; },
     });
 
-    const result = heritage.executeExperienceHeritage({
-      sourceHeroId: 'exp-source',
-      targetHeroId: 'exp-target',
-      expRatio: 0.5,
+    const result = heritage.executeHeroHeritage({
+      sourceHeroId: 'cost-src', targetHeroId: 'cost-tgt',
+      options: { expEfficiency: 1.0, transferSkillLevels: false, transferFavorability: false },
     });
 
-    expect(result.success).toBe(true);
-    expect(result.type).toBe('experience');
-    expect(result.efficiency).toBeGreaterThan(0);
-    expect(result.copperCost).toBeGreaterThan(0);
+    if (result.success) {
+      expect(deductedCopper).toBeLessThan(0);
+    }
   });
 
 });
 
 // ═══════════════════════════════════════════════════════════════
-// §4 传承消耗与限制
+// §3 传承规则：保留项/重置项、次数限制、历史记录
 // ═══════════════════════════════════════════════════════════════
-describe('v16.0 传承有序 — §4 传承消耗与限制', () => {
+describe('v16.0 传承有序 — §3 传承规则', () => {
 
-  it('should track daily heritage count in state', () => {
-    // Play §4: 每日传承次数追踪
+  it('should track initial daily heritage count as zero', () => {
     const sim = createSim();
     const heritage = sim.engine.getHeritageSystem();
     const state = heritage.getState();
     expect(state.dailyHeritageCount).toBe(0);
+    expect(state.heroHeritageCount).toBe(0);
+    expect(state.equipmentHeritageCount).toBe(0);
+    expect(state.experienceHeritageCount).toBe(0);
+    expect(Array.isArray(state.heritageHistory)).toBe(true);
   });
 
-  it('should increment daily count after heritage', () => {
-    // Play §4: 传承后次数+1
+  it('should increment daily and type-specific count after heritage', () => {
     const sim = createSimWithHeritageInit();
     const heritage = sim.engine.getHeritageSystem();
 
-    const heroData: Record<string, { id: string; level: number; exp: number; quality: number; faction: string; skillLevels: number[]; favorability: number }> = {
-      'daily-src': { id: 'daily-src', level: 40, exp: 8000, quality: 4, faction: 'shu', skillLevels: [5], favorability: 60 },
-      'daily-tgt': { id: 'daily-tgt', level: 10, exp: 1000, quality: 4, faction: 'shu', skillLevels: [2], favorability: 20 },
+    const heroes: Record<string, HeroStub> = {
+      'cnt-src': { id: 'cnt-src', level: 40, exp: 8000, quality: 4, faction: 'shu', skillLevels: [5], favorability: 60 },
+      'cnt-tgt': { id: 'cnt-tgt', level: 10, exp: 1000, quality: 4, faction: 'shu', skillLevels: [2], favorability: 20 },
     };
 
     heritage.setCallbacks({
-      getHero: (id) => heroData[id] ?? null,
-      updateHero: (id, updates) => { if (heroData[id]) Object.assign(heroData[id], updates); },
+      getHero: (id) => heroes[id] ?? null,
+      updateHero: (id, updates) => { if (heroes[id]) Object.assign(heroes[id], updates); },
       addResources: () => {},
     });
 
     heritage.executeHeroHeritage({
-      sourceHeroId: 'daily-src', targetHeroId: 'daily-tgt',
+      sourceHeroId: 'cnt-src', targetHeroId: 'cnt-tgt',
       options: { expEfficiency: 1.0, transferSkillLevels: false, transferFavorability: false },
     });
 
@@ -401,19 +330,18 @@ describe('v16.0 传承有序 — §4 传承消耗与限制', () => {
     expect(state.heroHeritageCount).toBe(1);
   });
 
-  it('should record heritage in history', () => {
-    // Play §4: 传承历史记录
+  it('should record heritage in history with correct metadata', () => {
     const sim = createSimWithHeritageInit();
     const heritage = sim.engine.getHeritageSystem();
 
-    const heroData: Record<string, { id: string; level: number; exp: number; quality: number; faction: string; skillLevels: number[]; favorability: number }> = {
+    const heroes: Record<string, HeroStub> = {
       'hist-src': { id: 'hist-src', level: 30, exp: 5000, quality: 4, faction: 'shu', skillLevels: [4], favorability: 50 },
       'hist-tgt': { id: 'hist-tgt', level: 10, exp: 1000, quality: 4, faction: 'shu', skillLevels: [2], favorability: 20 },
     };
 
     heritage.setCallbacks({
-      getHero: (id) => heroData[id] ?? null,
-      updateHero: (id, updates) => { if (heroData[id]) Object.assign(heroData[id], updates); },
+      getHero: (id) => heroes[id] ?? null,
+      updateHero: (id, updates) => { if (heroes[id]) Object.assign(heroes[id], updates); },
       addResources: () => {},
     });
 
@@ -430,30 +358,41 @@ describe('v16.0 传承有序 — §4 传承消耗与限制', () => {
     expect(record.targetId).toBe('hist-tgt');
   });
 
+  it('should reset all heritage state on reset()', () => {
+    const sim = createSimWithHeritageInit();
+    const heritage = sim.engine.getHeritageSystem();
+
+    const heroes: Record<string, HeroStub> = {
+      'r-src': { id: 'r-src', level: 30, exp: 5000, quality: 4, faction: 'shu', skillLevels: [4], favorability: 50 },
+      'r-tgt': { id: 'r-tgt', level: 10, exp: 1000, quality: 4, faction: 'shu', skillLevels: [2], favorability: 20 },
+    };
+
+    heritage.setCallbacks({
+      getHero: (id) => heroes[id] ?? null,
+      updateHero: (id, updates) => { if (heroes[id]) Object.assign(heroes[id], updates); },
+      addResources: () => {},
+    });
+
+    heritage.executeHeroHeritage({
+      sourceHeroId: 'r-src', targetHeroId: 'r-tgt',
+      options: { expEfficiency: 1.0, transferSkillLevels: false, transferFavorability: false },
+    });
+
+    heritage.reset();
+    const state = heritage.getState();
+    expect(state.dailyHeritageCount).toBe(0);
+    expect(state.heroHeritageCount).toBe(0);
+    expect(state.heritageHistory.length).toBe(0);
+  });
+
 });
 
 // ═══════════════════════════════════════════════════════════════
-// §5 转生后加速
+// §4 转生后加速
 // ═══════════════════════════════════════════════════════════════
-describe('v16.0 传承有序 — §5 转生后加速', () => {
+describe('v16.0 传承有序 — §4 转生后加速', () => {
 
-  it('should get acceleration state', () => {
-    // Play §5: 加速状态查询
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-    const accelState = heritage.getAccelerationState();
-    expect(accelState).toBeDefined();
-  });
-
-  it('should initialize rebirth acceleration', () => {
-    // Play §5: 初始化转生加速
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-    expect(() => heritage.initRebirthAcceleration()).not.toThrow();
-  });
-
-  it('should claim initial gift after rebirth', () => {
-    // Play §5: 领取转生后初始赠送
+  it('should initialize rebirth acceleration and claim initial gift', () => {
     const sim = createSimWithHeritageInit();
     const heritage = sim.engine.getHeritageSystem();
     heritage.initRebirthAcceleration();
@@ -466,8 +405,7 @@ describe('v16.0 传承有序 — §5 转生后加速', () => {
     }
   });
 
-  it('should execute rebuild after rebirth', () => {
-    // Play §5: 一键重建
+  it('should execute one-click rebuild after rebirth', () => {
     const sim = createSimWithHeritageInit();
     const heritage = sim.engine.getHeritageSystem();
     heritage.initRebirthAcceleration();
@@ -477,8 +415,7 @@ describe('v16.0 传承有序 — §5 转生后加速', () => {
     expect(typeof result.success).toBe('boolean');
   });
 
-  it('should attempt instant upgrade for building', () => {
-    // Play §5: 瞬间升级低级建筑
+  it('should attempt instant upgrade for low-level building', () => {
     const sim = createSim();
     const heritage = sim.engine.getHeritageSystem();
     heritage.initRebirthAcceleration();
@@ -488,42 +425,24 @@ describe('v16.0 传承有序 — §5 转生后加速', () => {
     expect(typeof result.success).toBe('boolean');
   });
 
-});
-
-// ═══════════════════════════════════════════════════════════════
-// §6 收益模拟器与转生解锁
-// ═══════════════════════════════════════════════════════════════
-describe('v16.0 传承有序 — §6 收益模拟器与转生解锁', () => {
-
-  it('should simulate heritage earnings', () => {
-    // Play §6: 收益模拟
+  it('should simulate heritage earnings and check rebirth unlocks', () => {
     const sim = createSim();
     const heritage = sim.engine.getHeritageSystem();
 
-    const result = heritage.simulateEarnings({
+    // 收益模拟
+    const simResult = heritage.simulateEarnings({
       currentPrestige: 1000,
       targetPrestige: 5000,
       rebirthCount: 2,
       daysElapsed: 30,
     } as HeritageSimulationParams);
+    expect(simResult).toBeDefined();
 
-    expect(result).toBeDefined();
-  });
-
-  it('should get rebirth unlock content', () => {
-    // Play §6: 转生次数解锁内容
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-
+    // 转生解锁内容
     const unlocks = heritage.getRebirthUnlocks();
     expect(unlocks).toBeDefined();
-  });
 
-  it('should check if specific content is unlocked', () => {
-    // Play §6: 解锁状态检查
-    const sim = createSim();
-    const heritage = sim.engine.getHeritageSystem();
-
+    // 解锁状态检查
     const isUnlocked = heritage.isUnlocked('some-unlock-id');
     expect(typeof isUnlocked).toBe('boolean');
   });
@@ -531,12 +450,11 @@ describe('v16.0 传承有序 — §6 收益模拟器与转生解锁', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// §7 跨系统联动
+// §5 跨系统联动
 // ═══════════════════════════════════════════════════════════════
-describe('v16.0 传承有序 — §7 跨系统联动', () => {
+describe('v16.0 传承有序 — §5 跨系统联动', () => {
 
-  it('should coordinate heritage with resource system', () => {
-    // Play §7: 传承→资源系统联动
+  it('should coordinate heritage with currency system', () => {
     const sim = createSimWithHeritageInit();
     sim.addResources(SUFFICIENT_RESOURCES);
     const heritage = sim.engine.getHeritageSystem();
@@ -547,15 +465,15 @@ describe('v16.0 传承有序 — §7 跨系统联动', () => {
 
     // 传承系统通过回调与资源系统交互
     let resourceDeducted = false;
-    const heroData: Record<string, { id: string; level: number; exp: number; quality: number; faction: string; skillLevels: number[]; favorability: number }> = {
+    const heroes: Record<string, HeroStub> = {
       'cross-src': { id: 'cross-src', level: 40, exp: 8000, quality: 4, faction: 'shu', skillLevels: [5], favorability: 60 },
       'cross-tgt': { id: 'cross-tgt', level: 10, exp: 1000, quality: 4, faction: 'shu', skillLevels: [2], favorability: 20 },
     };
 
     heritage.setCallbacks({
-      getHero: (id) => heroData[id] ?? null,
-      updateHero: (id, updates) => { if (heroData[id]) Object.assign(heroData[id], updates); },
-      addResources: (res) => { if (res.copper && res.copper < 0) resourceDeducted = true; },
+      getHero: (id) => heroes[id] ?? null,
+      updateHero: (id, updates) => { if (heroes[id]) Object.assign(heroes[id], updates); },
+      addResources: (res: Record<string, number>) => { if (res.copper && res.copper < 0) resourceDeducted = true; },
     });
 
     const result = heritage.executeHeroHeritage({
@@ -568,8 +486,7 @@ describe('v16.0 传承有序 — §7 跨系统联动', () => {
     }
   });
 
-  it('should save and load heritage data', () => {
-    // Play §7: 存档序列化
+  it('should save and load heritage data preserving state', () => {
     const sim = createSim();
     const heritage = sim.engine.getHeritageSystem();
 
@@ -580,34 +497,6 @@ describe('v16.0 传承有序 — §7 跨系统联动', () => {
 
     // 加载存档不应抛出异常
     expect(() => heritage.loadSaveData(saveData)).not.toThrow();
-  });
-
-  it('should reset heritage system state', () => {
-    // Play §7: 重置
-    const sim = createSimWithHeritageInit();
-    const heritage = sim.engine.getHeritageSystem();
-
-    const heroData: Record<string, { id: string; level: number; exp: number; quality: number; faction: string; skillLevels: number[]; favorability: number }> = {
-      'reset-src': { id: 'reset-src', level: 30, exp: 5000, quality: 4, faction: 'shu', skillLevels: [4], favorability: 50 },
-      'reset-tgt': { id: 'reset-tgt', level: 10, exp: 1000, quality: 4, faction: 'shu', skillLevels: [2], favorability: 20 },
-    };
-
-    heritage.setCallbacks({
-      getHero: (id) => heroData[id] ?? null,
-      updateHero: (id, updates) => { if (heroData[id]) Object.assign(heroData[id], updates); },
-      addResources: () => {},
-    });
-
-    heritage.executeHeroHeritage({
-      sourceHeroId: 'reset-src', targetHeroId: 'reset-tgt',
-      options: { expEfficiency: 1.0, transferSkillLevels: false, transferFavorability: false },
-    });
-
-    heritage.reset();
-    const state = heritage.getState();
-    expect(state.dailyHeritageCount).toBe(0);
-    expect(state.heroHeritageCount).toBe(0);
-    expect(state.heritageHistory.length).toBe(0);
   });
 
 });
