@@ -75,11 +75,11 @@ describe('§5.1 地图事件触发与浏览', () => {
     const configs = MapEventSystem.getEventTypeConfigs();
     expect(configs.length).toBeGreaterThanOrEqual(5);
     const typeNames = configs.map(c => c.type);
-    expect(typeNames).toContain('bandit_invasion');
-    expect(typeNames).toContain('caravan_passing');
+    expect(typeNames).toContain('bandit');
+    expect(typeNames).toContain('caravan');
     expect(typeNames).toContain('disaster');
     expect(typeNames).toContain('ruins');
-    expect(typeNames).toContain('faction_conflict');
+    expect(typeNames).toContain('conflict');
   });
 
   it('MapEventSystem — 每小时10%概率触发', () => {
