@@ -12,7 +12,7 @@
  * - 每个用例创建独立的 sim 实例
  * - 使用真实引擎 API，不使用 mock
  * - 以实际代码行为为准
- * - UI 层功能用 it.skip 标注
+ * - UI 层功能用 it.todo 标注
  *
  * @see docs/games/three-kingdoms/play/v20-play.md
  */

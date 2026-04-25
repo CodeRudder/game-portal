@@ -19,7 +19,7 @@
  * 测试原则：
  * - 每个it前创建新的sim实例
  * - describe按play流程ID组织
- * - 引擎未实现 it.skip + [引擎未实现]
+ * - 引擎未实现 it.todo + [引擎未实现]
  * - 不使用 as any
  *
  * @see docs/games/three-kingdoms/play/v9-play.md
@@ -736,7 +736,7 @@ describe('v9.0 离线收益核心 — §4 回归奖励', () => {
     expect(completedExpeditions.length).toBe(1);
   });
 
-  it.skip('§4.2 回归流程时间预算 (~5.2s) [UI层测试]', () => {
+  it.todo('§4.2 回归流程时间预算 (~5.2s) [UI层测试]', () => {
     // Play: Step1+Step2总计约5.2s
     // UI层验证
   });

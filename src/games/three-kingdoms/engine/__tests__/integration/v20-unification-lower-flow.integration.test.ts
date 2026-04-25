@@ -11,7 +11,7 @@
  * 测试原则：
  * - 每个用例创建独立的 sim 实例（createSim）
  * - 使用真实引擎 API，不使用 mock，不使用 as any
- * - 引擎未实现的 API 用 it.skip 标注 [引擎未实现]
+ * - 引擎未实现的 API 用 it.todo 标注 [引擎未实现]
  * - 以实际代码行为为准
  *
  * @see docs/games/three-kingdoms/play/v20-play.md
