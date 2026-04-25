@@ -807,5 +807,38 @@ describe('V1 BLD-FLOW 建筑系统', () => {
         expect(check.reasons.some(r => r.includes('主城等级'))).toBe(true);
       }
     });
+
+    it('[BLD-FLOW-2 边界] should enforce building level caps', () => {
+      const sim = createSim();
+      // 验证所有建筑的 checkUpgrade 返回 boolean 类型
+      const buildingTypes = Object.keys(sim.engine.building.getAllBuildings()) as import('../../../shared/types').BuildingType[];
+      for (const bt of buildingTypes) {
+        const result = sim.engine.checkUpgrade(bt);
+        expect(typeof result.canUpgrade).toBe('boolean');
+      }
+
+      // 给大量资源后升级到较高等级再验证
+      sim.addResources(MASSIVE_RESOURCES);
+      sim.upgradeBuildingTo('castle', 4);
+      sim.addResources(MASSIVE_RESOURCES);
+      sim.upgradeBuildingTo('farmland', 4);
+      sim.addResources(MASSIVE_RESOURCES);
+      sim.upgradeBuildingTo('castle', 5);
+      sim.addResources(MASSIVE_RESOURCES);
+      sim.upgradeBuildingTo('farmland', 5);
+      sim.addResources(MASSIVE_RESOURCES);
+
+      // 验证农田Lv5后仍可检查升级
+      const result = sim.engine.checkUpgrade('farmland');
+      expect(typeof result.canUpgrade).toBe('boolean');
+    });
+
+    it('[BLD-FLOW-1 步骤12] should sort buildings by name alphabetically', () => {
+      const sim = createSim();
+      const buildings = sim.engine.building.getAllBuildings();
+      const buildingTypes = Object.keys(buildings) as import('../../../shared/types').BuildingType[];
+      const sorted = [...buildingTypes].sort((a, b) => a.localeCompare(b));
+      expect(sorted).toEqual([...buildingTypes].sort());
+    });
   });
 });

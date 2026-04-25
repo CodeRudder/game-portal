@@ -453,6 +453,124 @@ describe('V1 TRD-FLOW 资源交易系统', () => {
       expect(result2.canTrade).toBe(true);
     });
   });
+
+  // ═══════════════════════════════════════════════
+  // ResourceTradeEngine PRD 汇率验证（补充）
+  // ═══════════════════════════════════════════════
+  describe('ResourceTradeEngine PRD 汇率验证', () => {
+    // 辅助函数：准备市场Lv5+充足资源
+    function prepareForTrade() {
+      return createSimWithMarketLevel5();
+    }
+
+    it('[TRD-FLOW-1] should trade grain to gold at 10:1 rate with 5% fee', () => {
+      const sim = prepareForTrade();
+      sim.addResources({ grain: 500000 });
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('grain', 'gold', 1000);
+      expect(result.success).toBe(true);
+      // gross = 1000 * 0.1 = 100, fee = floor(100*0.05) = 5, received = floor(100) - 5 = 95
+      expect(result.received).toBeCloseTo(95, 0);
+      expect(result.fee).toBeCloseTo(5, 0);
+    });
+
+    it('[TRD-FLOW-1] should trade gold to grain at 1:8 rate with 5% fee', () => {
+      const sim = prepareForTrade();
+      sim.addResources({ gold: 500000 });
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('gold', 'grain', 100);
+      expect(result.success).toBe(true);
+      // gross = 100 * 8 = 800, fee = floor(800*0.05) = 40, received = floor(800) - 40 = 760
+      expect(result.received).toBeCloseTo(760, 0);
+    });
+
+    it('[TRD-FLOW-1] should trade grain to troops at 20:1 rate with 5% fee', () => {
+      const sim = prepareForTrade();
+      sim.addResources({ grain: 500000 });
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('grain', 'troops', 2000);
+      expect(result.success).toBe(true);
+      // gross = 2000 * 0.05 = 100, fee = floor(100*0.05) = 5, received = floor(100) - 5 = 95
+      expect(result.received).toBeCloseTo(95, 0);
+    });
+
+    it('[TRD-FLOW-1] should trade gold to techPoint at 100:1 rate with 5% fee', () => {
+      const sim = prepareForTrade();
+      sim.addResources({ gold: 500000 });
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('gold', 'techPoint', 10000);
+      expect(result.success).toBe(true);
+      // gross = 10000 * 0.01 = 100, fee = floor(100*0.05) = 5, received = floor(100) - 5 = 95
+      expect(result.received).toBeCloseTo(95, 0);
+    });
+
+    it('[TRD-FLOW-2] should apply 5% fee correctly', () => {
+      const sim = prepareForTrade();
+      sim.addResources({ grain: 500000 });
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('grain', 'gold', 1000);
+      expect(result.success).toBe(true);
+      expect(result.fee).toBeGreaterThan(0);
+      // fee = floor(1000 * 0.1 * 0.05) = floor(5) = 5
+      expect(result.fee).toBeCloseTo(5, 1);
+    });
+
+    it('[TRD-FLOW-3] should enforce minimum grain reserve of 10', () => {
+      const sim = prepareForTrade();
+      const trade = sim.engine.getResourceTradeEngine();
+      // 设置粮草为15
+      sim.setResource('grain', 15);
+      // 尝试交易10粮草（交易后剩余5 < 10）
+      const result = trade.tradeResource('grain', 'gold', 10);
+      // 应该失败（低于最低保留量）
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    it('[TRD-FLOW-3] should enforce gold safety line of 500', () => {
+      const sim = prepareForTrade();
+      const trade = sim.engine.getResourceTradeEngine();
+      // 设置铜钱为400（低于安全线500）
+      sim.setResource('gold', 400);
+      // 尝试用铜钱换粮草
+      const result = trade.tradeResource('gold', 'grain', 100);
+      // 应该失败（低于安全线）
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    it('[TRD-FLOW-1] should reject trade when market level < 5', () => {
+      const sim = createSim();
+      sim.addResources({ grain: 500000 });
+      // 市场等级 < 5（默认初始等级为1）
+      const trade = sim.engine.getResourceTradeEngine();
+      const result = trade.tradeResource('grain', 'gold', 1000);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('市集等级');
+    });
+
+    it('[TRD-FLOW-2] should return correct exchange rates', () => {
+      const sim = prepareForTrade();
+      const trade = sim.engine.getResourceTradeEngine();
+      expect(trade.getResourceTradeRate('grain', 'gold')).toBe(0.1);
+      expect(trade.getResourceTradeRate('gold', 'grain')).toBe(8);
+      expect(trade.getResourceTradeRate('grain', 'troops')).toBe(0.05);
+      expect(trade.getResourceTradeRate('gold', 'techPoint')).toBe(0.01);
+    });
+
+    it('[TRD-FLOW-2] should return supported trade pairs', () => {
+      const sim = prepareForTrade();
+      const trade = sim.engine.getResourceTradeEngine();
+      const pairs = trade.getSupportedTradePairs();
+      expect(pairs.length).toBe(4);
+      // 验证每个交易对的信息
+      const pairKeys = pairs.map(p => `${p.from}->${p.to}`);
+      expect(pairKeys).toContain('grain->gold');
+      expect(pairKeys).toContain('gold->grain');
+      expect(pairKeys).toContain('grain->troops');
+      expect(pairKeys).toContain('gold->techPoint');
+    });
+  });
 });
 
 // ═══════════════════════════════════════════════
