@@ -31,16 +31,18 @@ interface StoryEventDef {
   id: string;
   title: string;
   requiredHeroes: string[];
+  /** 中文名映射（用于UI显示） */
+  heroNames: string[];
   minFavorability: number;
   minLevel: number;
 }
 
 const STORY_EVENTS: StoryEventDef[] = [
-  { id: 'story_001', title: '桃园结义', requiredHeroes: ['刘备', '关羽', '张飞'], minFavorability: 50, minLevel: 5 },
-  { id: 'story_002', title: '三顾茅庐', requiredHeroes: ['刘备', '诸葛亮'], minFavorability: 60, minLevel: 10 },
-  { id: 'story_003', title: '赤壁之战', requiredHeroes: ['周瑜', '诸葛亮', '曹操'], minFavorability: 70, minLevel: 15 },
-  { id: 'story_004', title: '过五关斩六将', requiredHeroes: ['关羽'], minFavorability: 80, minLevel: 20 },
-  { id: 'story_005', title: '草船借箭', requiredHeroes: ['诸葛亮', '曹操'], minFavorability: 55, minLevel: 12 },
+  { id: 'story_001', title: '桃园结义', requiredHeroes: ['liubei', 'guanyu', 'zhangfei'], heroNames: ['刘备', '关羽', '张飞'], minFavorability: 50, minLevel: 5 },
+  { id: 'story_002', title: '三顾茅庐', requiredHeroes: ['liubei', 'zhugeliang'], heroNames: ['刘备', '诸葛亮'], minFavorability: 60, minLevel: 10 },
+  { id: 'story_003', title: '赤壁之战', requiredHeroes: ['zhouyu', 'zhugeliang', 'caocao'], heroNames: ['周瑜', '诸葛亮', '曹操'], minFavorability: 70, minLevel: 15 },
+  { id: 'story_004', title: '过五关斩六将', requiredHeroes: ['guanyu'], heroNames: ['关羽'], minFavorability: 80, minLevel: 20 },
+  { id: 'story_005', title: '草船借箭', requiredHeroes: ['zhugeliang', 'caocao'], heroNames: ['诸葛亮', '曹操'], minFavorability: 55, minLevel: 12 },
 ];
 
 // ─────────────────────────────────────────────
@@ -338,6 +340,7 @@ const BondPanel: React.FC<BondPanelProps> = ({
 
   // ── 4. 计算编队羁绊总加成 ──
   // 使用 safeAdd 浮点安全累加，避免 0.1+0.2=0.30000000000000004
+  // 阵营羁绊只取最高等级效果（不累加低等级），与引擎 FactionBondSystem 保持一致
   const totalBonus = useMemo(() => {
     const bonus: Record<string, number> = {
       attackBonus: 0,
@@ -348,18 +351,23 @@ const BondPanel: React.FC<BondPanelProps> = ({
     };
     // 遍历所有激活的羁绊，累加效果
     for (const bond of activeBonds) {
-      // 阵营羁绊：从 FACTION_TIER_MAP 获取精确效果
+      // 阵营羁绊：直接使用 bondCard 上已计算的最高等级效果
+      // （allBonds 构建时已通过 bestActiveTier 取最高等级，不累加低等级）
       if (bond.type === 'faction' && bond.faction) {
         const tiers = FACTION_TIER_MAP[bond.faction];
-        const factionCount = factionCounts[bond.faction] ?? 0;
+        // 只取最高匹配的 tier（与 allBonds 构建逻辑一致）
+        let bestTier: FactionTierDef | null = null;
         for (const tier of tiers) {
-          if (factionCount >= tier.requiredCount) {
-            bonus.attackBonus = safeAdd(bonus.attackBonus, tier.effect.attackBonus);
-            bonus.defenseBonus = safeAdd(bonus.defenseBonus, tier.effect.defenseBonus);
-            bonus.hpBonus = safeAdd(bonus.hpBonus, tier.effect.hpBonus);
-            bonus.critBonus = safeAdd(bonus.critBonus, tier.effect.critBonus);
-            bonus.strategyBonus = safeAdd(bonus.strategyBonus, tier.effect.strategyBonus);
+          if ((factionCounts[bond.faction] ?? 0) >= tier.requiredCount) {
+            bestTier = tier;
           }
+        }
+        if (bestTier) {
+          bonus.attackBonus = safeAdd(bonus.attackBonus, bestTier.effect.attackBonus);
+          bonus.defenseBonus = safeAdd(bonus.defenseBonus, bestTier.effect.defenseBonus);
+          bonus.hpBonus = safeAdd(bonus.hpBonus, bestTier.effect.hpBonus);
+          bonus.critBonus = safeAdd(bonus.critBonus, bestTier.effect.critBonus);
+          bonus.strategyBonus = safeAdd(bonus.strategyBonus, bestTier.effect.strategyBonus);
         }
       }
       // 搭档羁绊：从 PARTNER_BOND_CONFIGS 获取精确效果
@@ -541,10 +549,10 @@ const BondPanel: React.FC<BondPanelProps> = ({
                   data-testid={`bond-story-event-${event.id}`}>
                   <span className="bond-panel__story-event-name">{event.title}</span>
                   <span className="bond-panel__story-event-heroes">
-                    {event.requiredHeroes.join(' + ')}
+                    {event.heroNames.join(' + ')}
                   </span>
                   <span className="bond-panel__story-event-requirement">
-                    {hasHeroes ? '✅ 武将已齐' : `需 ${event.requiredHeroes.filter(h => !heroIdSet.has(h)).join('、')}`}
+                    {hasHeroes ? '✅ 武将已齐' : `需 ${event.requiredHeroes.filter(h => !heroIdSet.has(h)).map((h, i) => event.heroNames[event.requiredHeroes.indexOf(h)] || h).join('、')}`}
                   </span>
                   {event.minLevel > 0 && (
                     <span className="bond-panel__story-event-level">等级≥{event.minLevel}</span>

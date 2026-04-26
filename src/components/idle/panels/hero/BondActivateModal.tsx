@@ -38,6 +38,7 @@ export interface BondActivateModalProps {
     defenseBonus: number;
     hpBonus: number;
     critBonus: number;
+    strategyBonus?: number;
   };
   /** 是否已激活 */
   isActive: boolean;
@@ -171,6 +172,7 @@ const BondActivateModal: React.FC<BondActivateModalProps> = ({
             <EffectRow label="防御加成" value={effect.defenseBonus} suffix="%" />
             <EffectRow label="生命加成" value={effect.hpBonus} suffix="%" />
             <EffectRow label="暴击加成" value={effect.critBonus} suffix="%" />
+            <EffectRow label="策略加成" value={effect.strategyBonus ?? 0} suffix="%" />
           </div>
         </div>
 
