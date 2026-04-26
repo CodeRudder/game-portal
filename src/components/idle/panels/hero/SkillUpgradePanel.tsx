@@ -99,16 +99,16 @@ const SKILL_TYPE_ICONS: Record<SkillType, string> = {
 };
 
 /** 技能等级 → 消耗表（与引擎对齐） */
-const UPGRADE_COST_TABLE: Record<number, { copper: number; skillBook: number }> = {
-  1: { copper: 500, skillBook: 1 },
-  2: { copper: 1500, skillBook: 1 },
-  3: { copper: 4000, skillBook: 2 },
-  4: { copper: 10000, skillBook: 2 },
+const UPGRADE_COST_TABLE: Record<number, SkillUpgradeCost> = {
+  1: { skillBook: 1, gold: 500 },
+  2: { skillBook: 1, gold: 1500 },
+  3: { skillBook: 2, gold: 4000 },
+  4: { skillBook: 2, gold: 10000 },
 };
-const DEFAULT_COST = { copper: 10000, skillBook: 2 };
+const DEFAULT_COST: SkillUpgradeCost = { skillBook: 2, gold: 10000 };
 
 /** 获取升级消耗 */
-function getUpgradeCost(level: number): { copper: number; skillBook: number } {
+function getUpgradeCost(level: number): SkillUpgradeCost {
   return UPGRADE_COST_TABLE[level] ?? DEFAULT_COST;
 }
 

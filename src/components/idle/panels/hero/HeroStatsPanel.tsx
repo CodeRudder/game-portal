@@ -21,7 +21,7 @@ export interface HeroStatsPanelProps {
   hero: {
     id: string;
     name: string;
-    quality: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+    quality: 'COMMON' | 'FINE' | 'RARE' | 'EPIC' | 'LEGENDARY';
     faction: 'wei' | 'shu' | 'wu' | 'neutral';
     level: number;
     maxLevel: number;
@@ -55,7 +55,7 @@ const FACTION_ICONS: Record<string, string> = {
 /** 品质色映射 */
 const QUALITY_COLORS: Record<string, string> = {
   COMMON: '#9e9e9e',
-  UNCOMMON: '#4caf50',
+  FINE: '#4caf50',
   RARE: '#2196f3',
   EPIC: '#9c27b0',
   LEGENDARY: '#ffc107',

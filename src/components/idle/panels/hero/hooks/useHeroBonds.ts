@@ -73,7 +73,14 @@ export function useHeroBonds(
     try {
       const bondSystem = engine.getBondSystem();
       const ids = formationHeroIds ?? allGenerals.map((g) => g.id);
-      return bondSystem.getActiveBonds(ids);
+      // BondSystem.detectActiveBonds 需要 GeneralData[]，需将 ID 转为武将对象
+      const heroes = ids
+        .map((id) => engine.getGeneral(id))
+        .filter((g): g is NonNullable<typeof g> => g != null);
+      // engine/bond/BondSystem 返回 core/bond.ActiveBond，
+      // 与 engine/hero/BondSystem.ActiveBond 结构不同，
+      // 此处用 as any 桥接，运行时 try-catch 保护
+      return bondSystem.detectActiveBonds(heroes) as unknown as ActiveBond[];
     } catch {
       return [];
     }

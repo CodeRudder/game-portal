@@ -62,7 +62,7 @@ export function useHeroDispatch(params: UseHeroEngineParams): UseHeroDispatchRet
       return Object.entries(allBuildings).map(
         ([id, bld]): BuildingBrief => ({
           id,
-          name: buildingSystem.getBuildingDef?.(id)?.name ?? id,
+          name: id,
           level: bld.level,
           dispatchHeroId: dispatchState?.buildingDispatch?.[id]?.heroId ?? null,
         }),

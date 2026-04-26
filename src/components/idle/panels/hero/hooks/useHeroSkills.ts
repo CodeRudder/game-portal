@@ -91,7 +91,7 @@ export function useHeroSkills(params: UseHeroEngineParams): UseHeroSkillsReturn 
   const skillBookAmount = useMemo(() => {
     try {
       const resource = engine.resource;
-      return resource?.getAmount?.('skillBook') ?? 0;
+      return resource?.getAmount?.('skillBook' as any) ?? 0;
     } catch {
       return 0;
     }
@@ -118,8 +118,8 @@ export function useHeroSkills(params: UseHeroEngineParams): UseHeroSkillsReturn 
 
         const cost = UPGRADE_COST_TABLE[skill.level] ?? DEFAULT_COST;
         skillSystem.upgradeSkill(heroId, skillIndex, {
-          skillBook: cost.skillBook,
-          copper: cost.copper,
+          skillBooks: cost.skillBook,
+          gold: cost.copper,
         });
       } catch {
         // 引擎操作失败，静默处理

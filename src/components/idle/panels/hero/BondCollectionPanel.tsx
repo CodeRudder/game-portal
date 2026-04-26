@@ -18,12 +18,12 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import type {
-  ActiveBond,
   FactionBondDefinition,
   PartnerBondDefinition,
   BondEffect,
 } from '@/games/three-kingdoms/engine/hero/bond-config';
 import { BondType, FACTION_BONDS, PARTNER_BONDS } from '@/games/three-kingdoms/engine/hero/bond-config';
+import type { ActiveBond } from '@/games/three-kingdoms/engine/hero/BondSystem';
 import { FACTION_ICONS, STAT_LABELS } from './BondCard';
 import BondCard from './BondCard';
 import { BondDetailPopup } from './BondCard';

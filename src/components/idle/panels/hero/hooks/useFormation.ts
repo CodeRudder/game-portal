@@ -101,7 +101,7 @@ export function useFormation(
         const formations = engine.getFormations();
         if (formations.length > 0) {
           const validIds = heroIds.filter((id): id is string => id != null);
-          engine.getFormationSystem().setFormation(0, validIds);
+          engine.getFormationSystem().setFormation('0', validIds);
         }
       } catch {
         // 引擎操作失败，静默处理
@@ -138,9 +138,14 @@ export function useFormation(
       const bondNames: string[] = [];
       try {
         const bondSystem = engine.getBondSystem();
-        const bonds = bondSystem.getActiveBonds(ids);
+        // BondSystem.detectActiveBonds 需要 GeneralData[]，需将 ID 转为武将对象
+        const heroes = ids
+          .map((id) => engine.getGeneral(id))
+          .filter((g): g is NonNullable<typeof g> => g != null);
+        const bonds = bondSystem.detectActiveBonds(heroes);
         for (const bond of bonds) {
-          bondNames.push(bond.name);
+          // core/bond.ActiveBond 使用 faction 字段作为标识
+          bondNames.push(bond.faction ?? String(bond.type));
         }
       } catch {
         // 回退：简易阵营羁绊检测
