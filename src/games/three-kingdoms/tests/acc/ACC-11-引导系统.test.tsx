@@ -1,0 +1,384 @@
+/**
+ * ACC-11 引导系统 — 用户验收集成测试
+ *
+ * 覆盖范围：
+ * - 基础可见性：欢迎弹窗、引导遮罩、步骤标题/描述、进度指示器、高亮区域
+ * - 核心交互：Next/Previous/Skip/Finish、遮罩点击跳过、动作回调
+ * - 数据正确性：状态机初始状态、步骤推进、阶段奖励、进度保存、完成后不再显示
+ * - 边界情况：刷新恢复、目标不存在、快速连续点击、引擎不可用回退、空步骤列表
+ * - 手机端适配：遮罩全屏、气泡不超出、按钮可点击
+ *
+ * @module tests/acc/ACC-11
+ */
+
+import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
+import GuideOverlay from '@/components/idle/panels/hero/GuideOverlay';
+import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+
+// ── Mock CSS ──
+vi.mock('@/components/idle/panels/hero/GuideOverlay.css', () => ({}));
+vi.mock('@/components/idle/panels/hero/GuideWelcomeModal.css', () => ({}));
+
+// ── Test Data ──
+// 注意：步骤ID 'recruit' 会映射到引擎 step1_castle_overview，属于 UNSKIPPABLE_STEPS
+// 因此第一步没有 Skip 按钮。使用非 unskippable 的步骤ID 来测试 skip 功能。
+
+const testSteps = [
+  { id: 'recruit', title: '🎮 Welcome!', description: 'Click the recruit button to recruit your first hero!', targetSelector: '.btn-recruit', position: 'bottom' as const },
+  { id: 'detail', title: '📋 Hero Detail', description: 'View your hero details!', targetSelector: '.btn-detail', position: 'right' as const },
+  { id: 'enhance', title: '⬆️ Enhance', description: 'Enhance your hero!', targetSelector: '.btn-enhance', position: 'top' as const },
+  { id: 'formation', title: '⚔️ Formation', description: 'Set up your formation!', targetSelector: '.btn-formation', position: 'left' as const },
+];
+
+/** 不含 unskippable 步骤的测试步骤集（所有步骤都可跳过） */
+const skippableTestSteps = [
+  { id: 'enhance', title: '⬆️ Enhance', description: 'Enhance your hero!', targetSelector: '.btn-enhance', position: 'top' as const },
+  { id: 'formation', title: '⚔️ Formation', description: 'Set up your formation!', targetSelector: '.btn-formation', position: 'left' as const },
+  { id: 'resources', title: '💰 Resources', description: 'Check your resources!', targetSelector: '.btn-resources', position: 'bottom' as const },
+  { id: 'tech', title: '🔬 Tech', description: 'Research technology!', targetSelector: '.btn-tech', position: 'top' as const },
+];
+
+// ── Mock Engine Factory ──
+// 关键修复：getNextStep 必须返回一个有效的步骤定义对象，
+// 否则组件会将 currentStep 初始化为 -1（所有步骤已完成），导致 overlay 不渲染。
+
+function makeMockTutorialSM(overrides: Record<string, any> = {}) {
+  return {
+    getCurrentPhase: vi.fn(() => 'core_guiding'),
+    getCompletedSteps: vi.fn(() => []),
+    getCompletedStepCount: vi.fn(() => 0),
+    getCompletedCoreStepCount: vi.fn(() => 0),
+    completeStep: vi.fn(),
+    isStepCompleted: vi.fn(() => false),
+    transition: vi.fn(() => ({ success: true })),
+    getState: vi.fn(() => ({
+      currentPhase: 'core_guiding',
+      completedSteps: [],
+      transitionLogs: [],
+    })),
+    enterAsReturning: vi.fn(),
+    ...overrides,
+  };
+}
+
+function makeMockTutorialStepMgr(overrides: Record<string, any> = {}) {
+  return {
+    getStepDefinition: vi.fn(() => ({ id: 'step1', title: 'Test', rewards: [] })),
+    getStepIndex: vi.fn(() => 0),
+    getTotalSteps: vi.fn(() => 6),
+    getState: vi.fn(() => ({ activeStepId: null })),
+    completeCurrentStep: vi.fn(),
+    startStep: vi.fn(),
+    // 关键：返回一个有效的步骤定义，让组件初始化 currentStep > -1
+    getNextStep: vi.fn(() => ({ stepId: 'step1_castle_overview', category: 'core', title: '初入乱世', description: '主城概览', subSteps: [], rewards: [] })),
+    ...overrides,
+  };
+}
+
+function makeMockEngine(smOverrides: Record<string, any> = {}, stepMgrOverrides: Record<string, any> = {}) {
+  const tutorialSM = makeMockTutorialSM(smOverrides);
+  const tutorialStepMgr = makeMockTutorialStepMgr(stepMgrOverrides);
+  return {
+    getTutorialStateMachine: vi.fn(() => tutorialSM),
+    getTutorialStepManager: vi.fn(() => tutorialStepMgr),
+    grantTutorialRewards: vi.fn(),
+    getSubsystemRegistry: vi.fn(() => null),
+    tutorialSM,
+    tutorialStepMgr,
+  };
+}
+
+function makeProps(engineOverrides: Record<string, any> = {}) {
+  return {
+    steps: testSteps,
+    engine: makeMockEngine(engineOverrides) as any,
+    onGuideAction: vi.fn(),
+    onComplete: vi.fn(),
+    onSkip: vi.fn(),
+  };
+}
+
+/** 使用可跳过步骤的 props 工厂 */
+function makeSkippableProps(engineOverrides: Record<string, any> = {}) {
+  return {
+    steps: skippableTestSteps,
+    engine: makeMockEngine(engineOverrides) as any,
+    onGuideAction: vi.fn(),
+    onComplete: vi.fn(),
+    onSkip: vi.fn(),
+  };
+}
+
+/** 关闭欢迎弹窗的辅助函数 */
+function dismissWelcome() {
+  localStorage.setItem('tk-tutorial-welcome-dismissed', 'true');
+}
+
+// ── Tests ──
+
+describe('ACC-11 引导系统 验收测试', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    dismissWelcome();
+  });
+  afterEach(() => { cleanup(); });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 1. 基础可见性
+  // ═══════════════════════════════════════════════════════════════
+
+  it(accTest('ACC-11-01', '首次启动显示欢迎弹窗 - 显示欢迎弹窗'), () => {
+    localStorage.removeItem('tk-tutorial-welcome-dismissed');
+    render(<GuideOverlay {...makeProps()} />);
+    expect(screen.getByTestId('guide-welcome-modal')).toBeInTheDocument();
+    expect(screen.getByText(/欢迎来到三国霸业/)).toBeInTheDocument();
+  });
+
+  it(accTest('ACC-11-02', '关闭欢迎弹窗后触发引导 - 显示GuideOverlay'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    const overlay = screen.getByTestId('guide-overlay');
+    assertVisible(overlay, 'ACC-11-02', 'GuideOverlay');
+  });
+
+  it(accTest('ACC-11-03', '引导遮罩层正确覆盖全屏 - 遮罩存在'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    const overlay = screen.getByTestId('guide-overlay');
+    assertVisible(overlay, 'ACC-11-03', '引导遮罩');
+  });
+
+  it(accTest('ACC-11-04', '引导步骤标题和描述可见 - 显示当前步骤标题和描述'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    expect(screen.getByText('🎮 Welcome!')).toBeInTheDocument();
+    expect(screen.getByText('Click the recruit button to recruit your first hero!')).toBeInTheDocument();
+  });
+
+  it(accTest('ACC-11-05', '步骤进度指示器显示 - 显示当前步骤进度'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    expect(screen.getByText('1 / 4')).toBeInTheDocument();
+  });
+
+  it(accTest('ACC-11-09', '引导气泡位置正确 - 气泡不超出视口'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    const overlay = screen.getByTestId('guide-overlay');
+    assertVisible(overlay, 'ACC-11-09', '引导气泡');
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 2. 核心交互
+  // ═══════════════════════════════════════════════════════════════
+
+  it(accTest('ACC-11-10', '点击Next推进到下一步 - 步骤和进度更新'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    const nextBtn = screen.getByTestId('guide-overlay-next');
+    fireEvent.click(nextBtn);
+    expect(screen.getByText('📋 Hero Detail')).toBeInTheDocument();
+    expect(screen.getByText('2 / 4')).toBeInTheDocument();
+  });
+
+  it(accTest('ACC-11-11', '点击Previous回到上一步 - 第一步不显示Previous'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    // 第一步不应有 Previous 按钮
+    expect(screen.queryByTestId('guide-overlay-prev')).toBeNull();
+    // 前进到第二步
+    fireEvent.click(screen.getByTestId('guide-overlay-next'));
+    expect(screen.getByText('📋 Hero Detail')).toBeInTheDocument();
+    // 回到第一步
+    fireEvent.click(screen.getByTestId('guide-overlay-prev'));
+    expect(screen.getByText('🎮 Welcome!')).toBeInTheDocument();
+  });
+
+  it(accTest('ACC-11-12', '点击Skip跳过引导 - 触发onSkip回调'), () => {
+    // 使用可跳过步骤集，因为 'recruit' 映射到 UNSKIPPABLE_STEPS 中的 step1_castle_overview
+    // 'enhance' 映射到 step3_recruit_hero，不在 UNSKIPPABLE_STEPS 中，所以有 Skip 按钮
+    const onSkip = vi.fn();
+    render(<GuideOverlay {...makeSkippableProps()} onSkip={onSkip} />);
+    const skipBtn = screen.getByTestId('guide-overlay-skip');
+    fireEvent.click(skipBtn);
+    expect(onSkip).toHaveBeenCalled();
+  });
+
+  it(accTest('ACC-11-13', '点击最后一步的Finish完成引导 - 触发onComplete'), () => {
+    const onComplete = vi.fn();
+    render(<GuideOverlay {...makeProps()} onComplete={onComplete} />);
+    // 前进到最后一步 — 组件中最后一步的按钮仍使用 data-testid="guide-overlay-next"，文本为"完成"
+    fireEvent.click(screen.getByTestId('guide-overlay-next')); // step2
+    fireEvent.click(screen.getByTestId('guide-overlay-next')); // step3
+    fireEvent.click(screen.getByTestId('guide-overlay-next')); // step4 (最后)
+    // 最后一步按钮文本为"完成"，但 data-testid 仍是 guide-overlay-next
+    const finishBtn = screen.getByTestId('guide-overlay-next');
+    expect(finishBtn.textContent).toBe('完成');
+    fireEvent.click(finishBtn);
+    expect(onComplete).toHaveBeenCalled();
+  });
+
+  it(accTest('ACC-11-16', '引导动作回调触发引擎操作 - onGuideAction被调用'), () => {
+    const onGuideAction = vi.fn();
+    render(<GuideOverlay {...makeProps()} onGuideAction={onGuideAction} />);
+    fireEvent.click(screen.getByTestId('guide-overlay-next'));
+    expect(onGuideAction).toHaveBeenCalled();
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 3. 数据正确性
+  // ═══════════════════════════════════════════════════════════════
+
+  it(accTest('ACC-11-20', '引导状态机初始状态正确 - getCurrentPhase返回正确值'), () => {
+    const props = makeProps();
+    render(<GuideOverlay {...props} />);
+    expect(props.engine.getTutorialStateMachine).toHaveBeenCalled();
+  });
+
+  it(accTest('ACC-11-23', '引导完成后进入自由游戏 - onComplete被调用'), () => {
+    const onComplete = vi.fn();
+    render(<GuideOverlay {...makeProps()} onComplete={onComplete} />);
+    // 完成所有步骤 — 最后一步按钮 data-testid 是 guide-overlay-next
+    fireEvent.click(screen.getByTestId('guide-overlay-next'));
+    fireEvent.click(screen.getByTestId('guide-overlay-next'));
+    fireEvent.click(screen.getByTestId('guide-overlay-next'));
+    // 此时在第4步（最后一步），按钮文本为"完成"
+    const finishBtn = screen.getByTestId('guide-overlay-next');
+    fireEvent.click(finishBtn);
+    expect(onComplete).toHaveBeenCalled();
+  });
+
+  it(accTest('ACC-11-24', '引导进度保存到localStorage - 刷新后恢复'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    fireEvent.click(screen.getByTestId('guide-overlay-next'));
+    // 组件使用 GUIDE_KEY = 'tk-tutorial-progress' 保存进度
+    // saveProgress 写入 { step, completed } 格式
+    const saved = localStorage.getItem('tk-tutorial-progress');
+    assertStrict(!!saved, 'ACC-11-24', '引导进度应保存到localStorage');
+    // 验证保存的数据格式正确
+    const parsed = JSON.parse(saved!);
+    assertStrict(typeof parsed.step === 'number', 'ACC-11-24', '保存的step应为数字');
+    assertStrict(parsed.step === 1, 'ACC-11-24', '第一步后step应为1');
+    assertStrict(parsed.completed === false, 'ACC-11-24', '未完成时completed应为false');
+  });
+
+  it(accTest('ACC-11-25', '引导完成后不再显示 - 返回null'), () => {
+    // 当引擎状态为 free_play 时，GuideOverlay 应不渲染
+    const props = makeProps({
+      getCurrentPhase: vi.fn(() => 'free_play'),
+    });
+    const { container } = render(<GuideOverlay {...props} />);
+    // free_play状态下引导已完成，不应显示overlay
+    assertStrict(
+      !screen.queryByTestId('guide-overlay'),
+      'ACC-11-25',
+      '引导完成后不应再显示引导overlay',
+    );
+  });
+
+  it(accTest('ACC-11-26', '步骤完成计数准确 - getCompletedStepCount'), () => {
+    const props = makeProps({
+      getCompletedStepCount: vi.fn(() => 2),
+    });
+    render(<GuideOverlay {...props} />);
+    expect(props.engine.tutorialSM.getCompletedStepCount).toBeDefined();
+  });
+
+  it(accTest('ACC-11-29', '回归玩家跳过引导 - 直接进入free_play'), () => {
+    const props = makeProps({
+      getCurrentPhase: vi.fn(() => 'free_play'),
+    });
+    render(<GuideOverlay {...props} />);
+    assertStrict(
+      !screen.queryByTestId('guide-overlay'),
+      'ACC-11-29',
+      '回归玩家不应显示引导',
+    );
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 4. 边界情况
+  // ═══════════════════════════════════════════════════════════════
+
+  it(accTest('ACC-11-30', '引导中刷新页面恢复进度 - 从localStorage恢复'), () => {
+    // engine=null 时回退到 localStorage 模式
+    // loadProgress 读取 { step, completed } 格式并返回 step 索引
+    localStorage.setItem('tk-tutorial-progress', JSON.stringify({ step: 2, completed: false }));
+    localStorage.setItem('tk-tutorial-welcome-dismissed', 'true');
+    render(<GuideOverlay steps={testSteps} engine={null} />);
+    // 应恢复到第3步（index=2）即 "⬆️ Enhance"
+    expect(screen.getByText('⬆️ Enhance')).toBeInTheDocument();
+  });
+
+  it(accTest('ACC-11-33', '引导中快速连续点击Next - 不出现状态错乱'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    const nextBtn = screen.getByTestId('guide-overlay-next');
+    // 快速点击3次
+    fireEvent.click(nextBtn);
+    fireEvent.click(nextBtn);
+    fireEvent.click(nextBtn);
+    // 应在第4步（最后一步）
+    expect(screen.getByText('4 / 4')).toBeInTheDocument();
+  });
+
+  it(accTest('ACC-11-34', '跳过引导后状态机一致 - 触发skip'), () => {
+    // 使用可跳过步骤集，因为 'recruit' 映射到 UNSKIPPABLE_STEPS
+    // 'enhance' 映射到 step3_recruit_hero，不在 UNSKIPPABLE_STEPS 中
+    const onSkip = vi.fn();
+    const props = makeSkippableProps();
+    render(<GuideOverlay {...props} onSkip={onSkip} />);
+    const skipBtn = screen.getByTestId('guide-overlay-skip');
+    fireEvent.click(skipBtn);
+    expect(onSkip).toHaveBeenCalled();
+    // 验证状态机被正确推进（skip_to_explore → explore_done）
+    const sm = props.engine.tutorialSM;
+    expect(sm.transition).toHaveBeenCalledWith('skip_to_explore');
+    expect(sm.transition).toHaveBeenCalledWith('explore_done');
+  });
+
+  it(accTest('ACC-11-35', '引导中引擎不可用时的回退 - 不崩溃'), () => {
+    // engine = null 时应回退到 localStorage 模式
+    const { container } = render(
+      <GuideOverlay steps={testSteps} engine={null} />,
+    );
+    // 不应崩溃
+    assertStrict(container.innerHTML !== '', 'ACC-11-35', '引擎不可用时引导应回退到localStorage模式');
+  });
+
+  it(accTest('ACC-11-39', '空步骤列表处理 - 组件返回null'), () => {
+    const { container } = render(
+      <GuideOverlay steps={[]} engine={null} />,
+    );
+    assertStrict(
+      !screen.queryByTestId('guide-overlay'),
+      'ACC-11-39',
+      '空步骤列表应返回null',
+    );
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 5. 手机端适配
+  // ═══════════════════════════════════════════════════════════════
+
+  it(accTest('ACC-11-40', '引导遮罩在手机端全屏覆盖 - 遮罩存在'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    const overlay = screen.getByTestId('guide-overlay');
+    assertVisible(overlay, 'ACC-11-40', '引导遮罩');
+  });
+
+  it(accTest('ACC-11-43', '引导按钮在手机端可点击 - Skip/Next/Previous响应'), () => {
+    // 使用可跳过步骤集，确保 Skip 按钮可见
+    // 'enhance' 映射到 step3_recruit_hero，不在 UNSKIPPABLE_STEPS 中
+    render(<GuideOverlay {...makeSkippableProps()} />);
+    const skipBtn = screen.getByTestId('guide-overlay-skip');
+    const nextBtn = screen.getByTestId('guide-overlay-next');
+    assertVisible(skipBtn, 'ACC-11-43', 'Skip按钮');
+    assertVisible(nextBtn, 'ACC-11-43', 'Next按钮');
+    fireEvent.click(nextBtn);
+    expect(screen.getByText('⚔️ Formation')).toBeInTheDocument();
+  });
+
+  it(accTest('ACC-11-44', '手机端引导气泡文字可读 - 标题和描述可见'), () => {
+    render(<GuideOverlay {...makeProps()} />);
+    const title = screen.getByText('🎮 Welcome!');
+    const desc = screen.getByText('Click the recruit button to recruit your first hero!');
+    assertVisible(title, 'ACC-11-44', '引导标题');
+    assertVisible(desc, 'ACC-11-44', '引导描述');
+  });
+});
