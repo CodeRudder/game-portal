@@ -36,6 +36,7 @@ function makeDefaultResources(overrides: Partial<Resources> = {}): Resources {
     mandate: 0,
     techPoint: 0,
     recruitToken: 10,
+    skillBook: 0,
     ...overrides,
   };
 }
@@ -48,6 +49,7 @@ function makeDefaultRates(overrides: Partial<ProductionRate> = {}): ProductionRa
     mandate: 0,
     techPoint: 0,
     recruitToken: 0,
+    skillBook: 0,
     ...overrides,
   };
 }
@@ -60,6 +62,7 @@ function makeDefaultCaps(overrides: Partial<ResourceCap> = {}): ResourceCap {
     mandate: null,
     techPoint: null,
     recruitToken: null,
+    skillBook: null,
     ...overrides,
   };
 }
@@ -74,6 +77,7 @@ function makeOfflineEarnings(overrides: Partial<OfflineEarnings> = {}): OfflineE
       mandate: 10,
       techPoint: 0,
       recruitToken: 0,
+      skillBook: 0,
     },
     isCapped: false,
     ...overrides,
@@ -348,7 +352,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
   it(accTest('ACC-03-23', '离线收益计算结果正确传递 — earned数据与弹窗显示一致'), () => {
     const reward = makeOfflineEarnings({
       offlineSeconds: 600,
-      earned: { grain: 480, gold: 780, troops: 0, mandate: 10, techPoint: 0, recruitToken: 0 },
+      earned: { grain: 480, gold: 780, troops: 0, mandate: 10, techPoint: 0, recruitToken: 0, skillBook: 0 },
     });
     const onClaim = vi.fn();
     render(<OfflineRewardModal reward={reward} onClaim={onClaim} />);
@@ -502,7 +506,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
 
   it(accTest('ACC-03-44', '手机端离线收益弹窗适配 — 资源卡片网格显示'), () => {
     const reward = makeOfflineEarnings({
-      earned: { grain: 100, gold: 200, troops: 50, mandate: 10, techPoint: 0, recruitToken: 0 },
+      earned: { grain: 100, gold: 200, troops: 50, mandate: 10, techPoint: 0, recruitToken: 0, skillBook: 0 },
     });
     const onClaim = vi.fn();
     render(<OfflineRewardModal reward={reward} onClaim={onClaim} />);

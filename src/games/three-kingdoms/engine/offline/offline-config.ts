@@ -184,17 +184,17 @@ export const BASE_EXP_PER_HOUR = 100;
 export const EXP_BONUS_CAP = 1.0;
 
 /** 经验等级表 */
-export const EXP_LEVEL_TABLE: readonly { level: number; expRequired: number; rewards: { grain: number; gold: number; troops: number; mandate: number; techPoint: number; recruitToken: number } }[] = [
-  { level: 1, expRequired: 100, rewards: { grain: 500, gold: 200, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0 } },
-  { level: 2, expRequired: 300, rewards: { grain: 1000, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0 } },
-  { level: 3, expRequired: 600, rewards: { grain: 2000, gold: 1000, troops: 200, mandate: 0, techPoint: 0, recruitToken: 0 } },
-  { level: 4, expRequired: 1000, rewards: { grain: 4000, gold: 2000, troops: 400, mandate: 0, techPoint: 0, recruitToken: 0 } },
-  { level: 5, expRequired: 1500, rewards: { grain: 8000, gold: 4000, troops: 800, mandate: 0, techPoint: 0, recruitToken: 0 } },
-  { level: 6, expRequired: 2100, rewards: { grain: 15000, gold: 8000, troops: 1500, mandate: 0, techPoint: 0, recruitToken: 0 } },
-  { level: 7, expRequired: 2800, rewards: { grain: 30000, gold: 15000, troops: 3000, mandate: 0, techPoint: 0, recruitToken: 0 } },
-  { level: 8, expRequired: 3600, rewards: { grain: 50000, gold: 30000, troops: 5000, mandate: 0, techPoint: 0, recruitToken: 0 } },
-  { level: 9, expRequired: 4500, rewards: { grain: 80000, gold: 50000, troops: 8000, mandate: 0, techPoint: 0, recruitToken: 0 } },
-  { level: 10, expRequired: 5500, rewards: { grain: 120000, gold: 80000, troops: 12000, mandate: 0, techPoint: 0, recruitToken: 0 } },
+export const EXP_LEVEL_TABLE: readonly { level: number; expRequired: number; rewards: { grain: number; gold: number; troops: number; mandate: number; techPoint: number; recruitToken: number; skillBook: number } }[] = [
+  { level: 1, expRequired: 100, rewards: { grain: 500, gold: 200, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 2, expRequired: 300, rewards: { grain: 1000, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 3, expRequired: 600, rewards: { grain: 2000, gold: 1000, troops: 200, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 4, expRequired: 1000, rewards: { grain: 4000, gold: 2000, troops: 400, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 5, expRequired: 1500, rewards: { grain: 8000, gold: 4000, troops: 800, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 6, expRequired: 2100, rewards: { grain: 15000, gold: 8000, troops: 1500, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 7, expRequired: 2800, rewards: { grain: 30000, gold: 15000, troops: 3000, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 8, expRequired: 3600, rewards: { grain: 50000, gold: 30000, troops: 5000, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 9, expRequired: 4500, rewards: { grain: 80000, gold: 50000, troops: 8000, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 10, expRequired: 5500, rewards: { grain: 120000, gold: 80000, troops: 12000, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
 ];
 
 // ─────────────────────────────────────────────

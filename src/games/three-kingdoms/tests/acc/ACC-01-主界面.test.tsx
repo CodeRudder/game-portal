@@ -95,15 +95,15 @@ vi.mock('@/components/idle/common/constants', () => ({
 // ─────────────────────────────────────────────
 
 const DEFAULT_RESOURCES: Resources = {
-  grain: 500, gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 10,
+  grain: 500, gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 10, skillBook: 0,
 };
 
 const DEFAULT_RATES: ProductionRate = {
-  grain: 0.8, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0,
+  grain: 0.8, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0,
 };
 
 const DEFAULT_CAPS: ResourceCap = {
-  grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null,
+  grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null,
 };
 
 function makeBuildings(overrides?: Partial<Record<BuildingType, Partial<BuildingState>>>): Record<BuildingType, BuildingState> {
@@ -233,7 +233,7 @@ describe('ACC-01 主界面', () => {
       render(
         <ResourceBar
           resources={DEFAULT_RESOURCES}
-          rates={{ grain: 1.5, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 }}
+          rates={{ grain: 1.5, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 }}
           caps={DEFAULT_CAPS}
         />
       );
@@ -425,7 +425,7 @@ describe('ACC-01 主界面', () => {
     });
 
     it(accTest('ACC-01-21', '资源产出速率与建筑等级匹配'), () => {
-      const rates: ProductionRate = { grain: 2.0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
+      const rates: ProductionRate = { grain: 2.0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
       render(
         <ResourceBar
           resources={DEFAULT_RESOURCES}
@@ -453,7 +453,7 @@ describe('ACC-01 主界面', () => {
     it(accTest('ACC-01-23', '离线收益弹窗数据正确'), () => {
       const reward: OfflineEarnings = {
         offlineSeconds: 300,
-        earned: { grain: 240, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 },
+        earned: { grain: 240, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
         isCapped: false,
       };
       render(<OfflineRewardModal reward={reward} onClaim={vi.fn()} />);
@@ -470,7 +470,7 @@ describe('ACC-01 主界面', () => {
       const onClaim = vi.fn();
       const reward: OfflineEarnings = {
         offlineSeconds: 300,
-        earned: { grain: 240, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 },
+        earned: { grain: 240, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
         isCapped: false,
       };
       render(<OfflineRewardModal reward={reward} onClaim={onClaim} />);
@@ -543,7 +543,7 @@ describe('ACC-01 主界面', () => {
     it(accTest('ACC-01-31', '长时间离线收益上限 — 显示已达上限'), () => {
       const reward: OfflineEarnings = {
         offlineSeconds: 86400 * 3, // 3天
-        earned: { grain: 50000, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 },
+        earned: { grain: 50000, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
         isCapped: true,
       };
       render(<OfflineRewardModal reward={reward} onClaim={vi.fn()} />);
@@ -552,7 +552,7 @@ describe('ACC-01 主界面', () => {
     });
 
     it(accTest('ACC-01-32', '资源为零时的显示'), () => {
-      const zeroResources: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
+      const zeroResources: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
       render(
         <ResourceBar
           resources={zeroResources}
@@ -570,7 +570,7 @@ describe('ACC-01 主界面', () => {
       render(
         <ResourceBar
           resources={{ ...DEFAULT_RESOURCES, grain: 2000 }}
-          rates={{ grain: 0.8, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 }}
+          rates={{ grain: 0.8, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 }}
           caps={{ ...DEFAULT_CAPS, grain: 2000 }}
         />
       );
@@ -720,7 +720,7 @@ describe('ACC-01 主界面', () => {
     it(accTest('ACC-01-47', '离线收益弹窗手机端'), () => {
       const reward: OfflineEarnings = {
         offlineSeconds: 300,
-        earned: { grain: 240, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 },
+        earned: { grain: 240, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
         isCapped: false,
       };
       render(<OfflineRewardModal reward={reward} onClaim={vi.fn()} />);

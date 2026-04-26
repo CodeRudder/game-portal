@@ -186,11 +186,11 @@ export class OfflineSnapshotSystem implements ISubsystem {
   ): BoostUseResult {
     const item = items.find(i => i.id === itemId);
     if (!item) {
-      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 }, remainingCount: 0, reason: '道具不存在' };
+      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 }, remainingCount: 0, reason: '道具不存在' };
 
     }
     if (item.count <= 0) {
-      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 }, remainingCount: 0, reason: '道具数量不足' };
+      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 }, remainingCount: 0, reason: '道具数量不足' };
     }
 
     const addedSeconds = item.boostHours * 3600;
@@ -206,6 +206,7 @@ export class OfflineSnapshotSystem implements ISubsystem {
       mandate: Math.floor(productionRates.mandate * addedSeconds * bonusMultiplier),
       techPoint: Math.floor(productionRates.techPoint * addedSeconds * bonusMultiplier),
       recruitToken: Math.floor((productionRates.recruitToken ?? 0) * addedSeconds * bonusMultiplier),
+      skillBook: Math.floor((productionRates.skillBook ?? 0) * addedSeconds * bonusMultiplier),
     };
 
     return {

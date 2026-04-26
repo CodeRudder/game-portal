@@ -62,6 +62,7 @@ function makeResources(overrides: Partial<Resources> = {}): Resources {
     mandate: 10,
     techPoint: 50,
     recruitToken: 20,
+    skillBook: 0,
     ...overrides,
   };
 }
@@ -74,6 +75,7 @@ function makeRates(overrides: Partial<ProductionRate> = {}): ProductionRate {
     mandate: 0,
     techPoint: 0.1,
     recruitToken: 0,
+    skillBook: 0,
     ...overrides,
   };
 }
@@ -86,6 +88,7 @@ function makeCaps(overrides: Partial<ResourceCap> = {}): ResourceCap {
     mandate: null,
     techPoint: null,
     recruitToken: null,
+    skillBook: null,
     ...overrides,
   };
 }

@@ -334,7 +334,7 @@ export class OfflineRewardSystem implements ISubsystem {
     const vipBoostedEarned = this.applyVipBonus(snapshot.totalEarned, vipLevel);
     const systemModifiedEarned = this.applySystemModifier(vipBoostedEarned, primarySystem);
     const { cappedEarned, overflowResources } = this.applyCapAndOverflow(systemModifiedEarned, currentResources, caps);
-    const tradeSummary = this.simulateOfflineTrade(offlineSeconds, { grain: 0, gold: 10, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 });
+    const tradeSummary = this.simulateOfflineTrade(offlineSeconds, { grain: 0, gold: 10, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 });
     const panelData = this.generateReturnPanel(offlineSeconds, productionRates, vipLevel);
     return { snapshot, vipBoostedEarned, systemModifiedEarned, cappedEarned, overflowResources, tradeSummary, panelData };
   }
@@ -821,6 +821,7 @@ export class OfflineRewardSystem implements ISubsystem {
         mandate: Math.floor(baseSnapshot.totalEarned.mandate * multiplier),
         techPoint: Math.floor(baseSnapshot.totalEarned.techPoint * multiplier),
         recruitToken: Math.floor(baseSnapshot.totalEarned.recruitToken * multiplier),
+        skillBook: Math.floor(baseSnapshot.totalEarned.skillBook * multiplier),
       };
       return { ...baseSnapshot, totalEarned: boostedEarned };
     }

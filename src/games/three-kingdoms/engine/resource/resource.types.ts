@@ -101,6 +101,7 @@ export interface ResourceCost {
   mandate?: number;
   techPoint?: number;
   recruitToken?: number;
+  skillBook?: number;
 }
 
 /** 消耗检查结果 */
