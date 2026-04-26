@@ -166,8 +166,8 @@ describe('useHeroSkills — 操作方法', () => {
     });
 
     expect(mockSkillSystem.upgradeSkill).toHaveBeenCalledWith('guanyu', 0, {
-      skillBook: 1,
-      copper: 500,
+      skillBooks: 1,
+      gold: 500,
     });
   });
 });

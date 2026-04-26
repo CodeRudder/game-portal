@@ -31,9 +31,9 @@ describe('V2 DATA-FLOW: 武将数据完整性集成测试', () => {
   // ─────────────────────────────────────────
 
   describe('DATA-FLOW-1: 武将数据完整性验证', () => {
-    it('should have correct general count (14)', () => {
-      // Play DATA-FLOW-1 步骤2: 验证武将数量=14
-      expect(GENERAL_DEFS.length).toBe(14);
+    it('should have correct general count (20)', () => {
+      // Play DATA-FLOW-1 步骤2: 验证武将数量=20
+      expect(GENERAL_DEFS.length).toBe(20);
     });
 
     it('should have all generals with valid four-dimensional stats (ATK/INT/CMD/POL > 0)', () => {
@@ -218,14 +218,14 @@ describe('V2 DATA-FLOW: 武将数据完整性集成测试', () => {
       expect(result).toBeNull();
     });
 
-    it('should add all 14 generals without error', () => {
-      // 验证全部14个武将都可以被引擎正确添加
+    it('should add all 20 generals without error', () => {
+      // 验证全部20个武将都可以被引擎正确添加
       const ids = GENERAL_DEFS.map(d => d.id);
       for (const id of ids) {
         const result = sim.addHeroDirectly(id);
         expect(result, `Failed to add general ${id}`).not.toBeNull();
       }
-      expect(sim.getGeneralCount()).toBe(14);
+      expect(sim.getGeneralCount()).toBe(20);
     });
 
     it('should handle duplicate add gracefully', () => {

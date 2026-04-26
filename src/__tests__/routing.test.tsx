@@ -109,9 +109,10 @@ describe('路由与导航', () => {
     }
   });
 
-  it('GamePage 直接渲染有效类型（通过 Route 包裹）', () => {
+  it('GamePage 直接渲染有效类型（通过 Route 包裹）', async () => {
     renderGamePageWithRoute('/game/snake');
     // GamePage 通过 useParams 获取 gameType="snake"，应渲染 GameContainer
-    expect(screen.getByText('开始游戏')).toBeDefined();
+    // createEngine 是异步的，需等待 loading → start overlay 转换
+    expect(await screen.findByText('开始游戏')).toBeDefined();
   });
 });

@@ -138,7 +138,7 @@ describe('V2 SKILL-STAT-FLOW: 技能与属性系统集成测试', () => {
   describe('SKILL-FLOW-2: 技能升级', () => {
     it('should upgrade skill with skill books and gold', () => {
       sim.addHeroDirectly('liubei');
-      sim.addResources({ gold: 500000 });
+      sim.addResources({ gold: 500000, skillBook: 100 });
       const skillSys = sim.engine.getSkillUpgradeSystem();
       const result = skillSys.upgradeSkill('liubei', 0, { skillBooks: 1, gold: 500 });
       expect(result.success).toBe(true);
@@ -148,7 +148,7 @@ describe('V2 SKILL-STAT-FLOW: 技能与属性系统集成测试', () => {
 
     it('should increase skill effect after upgrade', () => {
       sim.addHeroDirectly('liubei');
-      sim.addResources({ gold: 500000 });
+      sim.addResources({ gold: 500000, skillBook: 100 });
       const skillSys = sim.engine.getSkillUpgradeSystem();
       const effectBefore = skillSys.getSkillEffect('liubei', 0);
       skillSys.upgradeSkill('liubei', 0, { skillBooks: 1, gold: 500 });

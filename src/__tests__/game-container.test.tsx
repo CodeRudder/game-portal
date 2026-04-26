@@ -19,16 +19,20 @@ describe('GameContainer', () => {
     localStorage.clear();
   });
 
-  it('渲染开始界面覆盖层', () => {
+  it('渲染开始界面覆盖层', async () => {
     render(<GameContainer gameType={GameType.TETRIS} />);
-    expect(screen.getByText('准备开始')).toBeDefined();
+    // createEngine 是异步的，先显示 loading，再显示 start overlay
+    expect(screen.getByText('正在加载游戏引擎…')).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText('准备开始')).toBeDefined();
+    });
     expect(screen.getByText('开始游戏')).toBeDefined();
   });
 
-  it('点击开始游戏按钮触发引擎 start', () => {
+  it('点击开始游戏按钮触发引擎 start', async () => {
     render(<GameContainer gameType={GameType.TETRIS} />);
 
-    const startBtn = screen.getByText('开始游戏');
+    const startBtn = await screen.findByText('开始游戏');
     fireEvent.click(startBtn);
 
     // 点击后覆盖层应消失（status 变为 playing）

@@ -24,6 +24,7 @@ export const INITIAL_RESOURCES: Readonly<Resources> = {
   mandate: 0,
   techPoint: 0,
   recruitToken: 10, // R5: 新手礼包 +10 个求贤令，让新玩家立即体验招募功能
+  skillBook: 0,
 };
 
 // ─────────────────────────────────────────────
@@ -43,6 +44,7 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
   mandate: 0,
   techPoint: 0,
   recruitToken: 0.002, // PRD v1.5 HER-10.2: 被动产出速率 0.002/秒（引擎实际值，4h在线/天经济模型）
+  skillBook: 0,
 };
 
 // ─────────────────────────────────────────────
@@ -57,6 +59,7 @@ export const INITIAL_CAPS: Readonly<ResourceCap> = {
   mandate: null,
   techPoint: null,
   recruitToken: null,
+  skillBook: null,
 };
 
 // ─────────────────────────────────────────────

@@ -198,7 +198,7 @@ describe('useFormation — 操作方法', () => {
       result.current.applyRecommend(['guanyu', 'liubei', null]);
     });
 
-    expect(mockFormationSystem.setFormation).toHaveBeenCalledWith(0, ['guanyu', 'liubei']);
+    expect(mockFormationSystem.setFormation).toHaveBeenCalledWith('0', ['guanyu', 'liubei']);
   });
 
   it('applyRecommend 无编队时不应调用 setFormation', () => {

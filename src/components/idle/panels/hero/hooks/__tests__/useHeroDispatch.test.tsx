@@ -66,7 +66,7 @@ describe('useHeroDispatch — 数据获取', () => {
       undeployHero: vi.fn(),
       getState: vi.fn().mockReturnValue({
         buildingDispatch: {
-          farmland: { heroId: 'guanyu' },
+          farm: { heroId: 'guanyu' },
         },
       }),
     };
@@ -78,7 +78,7 @@ describe('useHeroDispatch — 数据获取', () => {
       useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
-    const farm = result.current.buildings.find((b) => b.id === 'farmland');
+    const farm = result.current.buildings.find((b) => b.id === 'farm');
     expect(farm?.dispatchHeroId).toBe('guanyu');
   });
 

@@ -37,6 +37,7 @@ export const RESOURCE_TYPES: readonly ResourceType[] = [
   'mandate',
   'techPoint',
   'recruitToken',
+  'skillBook',
 ] as const;
 
 /** 资源中文名映射 */
@@ -47,6 +48,7 @@ export const RESOURCE_LABELS: Record<ResourceType, string> = {
   mandate: '天命',
   techPoint: '科技点',
   recruitToken: '招贤令',
+  skillBook: '技能书',
 };
 
 /** 资源颜色标识（用于 UI 展示） */
@@ -57,6 +59,7 @@ export const RESOURCE_COLORS: Record<ResourceType, string> = {
   mandate: '#7B5EA7',
   techPoint: '#4A90D9',
   recruitToken: '#E8A030',
+  skillBook: '#9B59B6',
 };
 
 // ─────────────────────────────────────────────

@@ -22,6 +22,7 @@ import { SiegeEnhancer } from '../../SiegeEnhancer';
 import { GarrisonSystem } from '../../GarrisonSystem';
 import type { ISystemDeps } from '../../../../core/types';
 import type { ISubsystemRegistry } from '../../../../core/types/subsystem';
+import { createSim } from '../../../../test-utils/test-helpers';
 
 // ─────────────────────────────────────────────
 // 辅助工具

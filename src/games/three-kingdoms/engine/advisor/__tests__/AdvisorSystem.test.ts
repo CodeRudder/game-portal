@@ -75,7 +75,7 @@ describe('AdvisorSystem', () => {
   describe('#14 建议触发规则 (9种)', () => {
     it('资源溢出检测: 资源>80%上限', () => {
       const snapshot = createSnapshot({
-        resources: { grain: 900, gold: 300, troops: 200, mandate: 10 },
+        resources: { grain: 950, gold: 300, troops: 200, mandate: 10 },
         resourceCaps: { grain: 1000, gold: 0, troops: 500, mandate: 0 },
       });
       const suggestions = system.detectTriggers(snapshot);

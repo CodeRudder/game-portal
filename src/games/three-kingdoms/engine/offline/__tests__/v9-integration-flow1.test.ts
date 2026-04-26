@@ -42,7 +42,7 @@ function makeRates(overrides: Partial<ProductionRate> = {}): ProductionRate {
 }
 
 function makeCaps(overrides: Partial<ResourceCap> = {}): ResourceCap {
-  return { grain: 5000, gold: null, troops: 1000, mandate: null, techPoint: null, ...overrides };
+  return { grain: 5000, gold: null, troops: 1000, mandate: null, techPoint: null, recruitToken: null, skillBook: null, ...overrides };
 }
 
 // ─────────────────────────────────────────────
