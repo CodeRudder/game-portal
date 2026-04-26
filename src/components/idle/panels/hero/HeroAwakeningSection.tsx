@@ -153,6 +153,8 @@ export const HeroAwakeningSection: React.FC<HeroAwakeningSectionProps> = ({
 
   // 觉醒二次确认弹窗
   const [showAwakenConfirm, setShowAwakenConfirm] = useState(false);
+  // 弹窗可见状态（控制动画）
+  const [awakenVisible, setAwakenVisible] = useState(false);
   // 关闭动画状态（弹窗关闭时先播放动画再移除DOM）
   const [awakenClosing, setAwakenClosing] = useState(false);
 
@@ -165,10 +167,20 @@ export const HeroAwakeningSection: React.FC<HeroAwakeningSectionProps> = ({
   /** 关闭觉醒确认弹窗（带关闭动画） */
   const closeAwakenConfirm = useCallback(() => {
     setAwakenClosing(true);
+    setAwakenVisible(false);
     setTimeout(() => {
       setShowAwakenConfirm(false);
       setAwakenClosing(false);
     }, 200);
+  }, []);
+
+  /** 打开觉醒确认弹窗（带打开动画） */
+  const openAwakenConfirm = useCallback(() => {
+    setShowAwakenConfirm(true);
+    // 下一帧触发动画，确保DOM已挂载
+    requestAnimationFrame(() => {
+      setAwakenVisible(true);
+    });
   }, []);
 
   // 觉醒操作
@@ -186,8 +198,8 @@ export const HeroAwakeningSection: React.FC<HeroAwakeningSectionProps> = ({
 
   const handleAwakenClick = useCallback(() => {
     if (!canAwaken) return;
-    setShowAwakenConfirm(true);
-  }, [canAwaken]);
+    openAwakenConfirm();
+  }, [canAwaken, openAwakenConfirm]);
 
   // 未满足条件数量
   const unmetCount = Object.values(eligibility.details).filter(
@@ -281,12 +293,12 @@ export const HeroAwakeningSection: React.FC<HeroAwakeningSectionProps> = ({
           {/* 觉醒二次确认弹窗 */}
           {showAwakenConfirm && (
             <div
-              className={`tk-hero-detail-awakening-confirm-overlay${awakenClosing ? ' tk-hero-detail-awakening-confirm-overlay--closing' : ''}`}
+              className={`tk-hero-detail-awakening-confirm-overlay${awakenClosing ? ' tk-hero-detail-awakening-confirm-overlay--closing' : ''}${awakenVisible ? ' tk-hero-detail-awakening-confirm-overlay--visible' : ''}`}
               data-testid="awakening-confirm-overlay"
               onClick={closeAwakenConfirm}
             >
               <div
-                className={`tk-hero-detail-awakening-confirm-dialog${awakenClosing ? ' tk-hero-detail-awakening-confirm-dialog--closing' : ''}`}
+                className={`tk-hero-detail-awakening-confirm-dialog${awakenClosing ? ' tk-hero-detail-awakening-confirm-dialog--closing' : ''}${awakenVisible ? ' tk-hero-detail-awakening-confirm-dialog--visible' : ''}`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="tk-hero-detail-awakening-confirm-title">⚠️ 确认觉醒</div>

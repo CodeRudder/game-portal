@@ -446,6 +446,12 @@
   background: rgba(255, 152, 0, 0.06);
   border: 1px solid rgba(255, 152, 0, 0.15);
   border-radius: 8px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.bond-panel__favorability-hint:hover {
+  border-color: rgba(255, 152, 0, 0.3);
+  background: rgba(255, 152, 0, 0.08);
 }
 
 .bond-panel__favorability-hint-icon {
@@ -470,4 +476,31 @@
   font-size: 11px;
   color: #999;
   line-height: 1.4;
+}
+
+/* 好感度关联羁绊标签 */
+.bond-panel__favorability-hint-bonds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.bond-panel__favorability-bond-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  background: rgba(255, 152, 0, 0.08);
+  border: 1px solid rgba(255, 152, 0, 0.15);
+  color: #d4a574;
+  white-space: nowrap;
+}
+
+.bond-panel__favorability-bond-more {
+  font-size: 10px;
+  color: #888;
+  padding: 2px 4px;
 }

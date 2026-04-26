@@ -373,6 +373,13 @@
 /* ═══════════════════════════════════════════
    商品列表
    ═══════════════════════════════════════════ */
+
+/* 商品卡片入场动画 */
+@keyframes tk-shop-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .tk-shop-goods-grid {
   display: flex;
   flex-direction: column;
@@ -381,6 +388,19 @@
   max-height: 60vh;
   -webkit-overflow-scrolling: touch;
 }
+
+/* 每个商品卡片依次入场 */
+.tk-shop-goods-card {
+  animation: tk-shop-card-in 0.3s ease-out both;
+}
+
+.tk-shop-goods-card:nth-child(1) { animation-delay: 0ms; }
+.tk-shop-goods-card:nth-child(2) { animation-delay: 40ms; }
+.tk-shop-goods-card:nth-child(3) { animation-delay: 80ms; }
+.tk-shop-goods-card:nth-child(4) { animation-delay: 120ms; }
+.tk-shop-goods-card:nth-child(5) { animation-delay: 160ms; }
+.tk-shop-goods-card:nth-child(6) { animation-delay: 200ms; }
+.tk-shop-goods-card:nth-child(n+7) { animation-delay: 240ms; }
 
 /* ═══════════════════════════════════════════
    商品卡片
@@ -407,6 +427,7 @@
 .tk-shop-goods-card:hover {
   border-color: rgba(212, 165, 116, 0.3);
   background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .tk-shop-goods-icon {
@@ -541,12 +562,18 @@
   min-width: 60px;
   font-weight: 500;
   flex-shrink: 0;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 
 .tk-shop-buy-btn:hover:not(:disabled) {
   background: rgba(212, 165, 116, 0.25);
   border-color: rgba(212, 165, 116, 0.5);
+  box-shadow: 0 0 8px rgba(212, 165, 116, 0.15);
+}
+
+.tk-shop-buy-btn:active:not(:disabled) {
+  transform: scale(0.96);
+  background: rgba(212, 165, 116, 0.35);
 }
 
 .tk-shop-buy-btn--disabled {

@@ -488,6 +488,18 @@ const BondPanel: React.FC<BondPanelProps> = ({
             <span className="bond-panel__favorability-hint-desc">
               特定武将组合达到好感度要求后可触发专属故事事件（如「桃园结义」需刘备+关羽+张飞好感度≥50且等级≥5）
             </span>
+            <div className="bond-panel__favorability-hint-bonds" data-testid="bond-favorability-bonds">
+              {activeBonds.filter(b => b.type === 'partner').slice(0, 3).map(bond => (
+                <span key={bond.id} className="bond-panel__favorability-bond-tag">
+                  {bond.isActive ? '✅' : '🔓'} {bond.name}
+                </span>
+              ))}
+              {activeBonds.filter(b => b.type === 'partner').length > 3 && (
+                <span className="bond-panel__favorability-bond-more">
+                  +{activeBonds.filter(b => b.type === 'partner').length - 3} 更多
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )}
