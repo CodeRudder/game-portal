@@ -5,47 +5,25 @@
  */
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import type { GeneralData, Quality, SkillData } from '@/games/three-kingdoms/engine';
+import type { GeneralData } from '@/games/three-kingdoms/engine';
 import {
-  QUALITY_LABELS,
   QUALITY_BORDER_COLORS,
-  FACTION_LABELS,
   HERO_MAX_LEVEL,
   GENERAL_DEF_MAP,
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import type { EnhancePreview } from '@/games/three-kingdoms/engine';
 import { Toast } from '@/components/idle/common/Toast';
-import { HERO_QUALITY_BG_COLORS } from '../../common/constants';
-import { formatNumber } from '@/components/idle/utils/formatNumber';
 import RadarChart from './RadarChart';
 import HeroStarUpModal from './HeroStarUpModal';
+import {
+  HeroDetailHeader,
+  HeroDetailLeftPanel,
+  HeroDetailSkills,
+  HeroDetailBonds,
+  HeroDetailBreakthrough,
+} from './HeroDetailSections';
 import './HeroDetailModal.css';
 import './HeroDetailModal-chart.css';
-
-// ─────────────────────────────────────────────
-// 羁绊标签数据（从引擎配置获取）
-// ─────────────────────────────────────────────
-import { FACTION_BONDS, PARTNER_BONDS, BondType } from '@/games/three-kingdoms/engine/hero/bond-config';
-
-/** 获取武将参与的羁绊列表 */
-function getHeroBondTags(heroId: string): ReadonlyArray<{ id: string; name: string; type: BondType }> {
-  const bonds: { id: string; name: string; type: BondType }[] = [];
-
-  // 阵营羁绊（所有武将都参与阵营羁绊）
-  for (const fb of FACTION_BONDS) {
-    bonds.push({ id: fb.id, name: fb.name, type: fb.type });
-  }
-
-  // 搭档羁绊（检查是否包含该武将）
-  for (const pb of PARTNER_BONDS) {
-    if (pb.generalIds.includes(heroId)) {
-      bonds.push({ id: pb.id, name: pb.name, type: pb.type });
-    }
-  }
-
-  return bonds;
-}
 
 // ─────────────────────────────────────────────
 // Props
@@ -72,26 +50,11 @@ const STAT_LABELS: Record<string, string> = {
 const STAT_COLORS: Record<string, string> = {
   attack: '#E53935', defense: '#1E88E5', intelligence: '#AB47BC', speed: '#43A047',
 };
-// ─────────────────────────────────────────────
-// 品质对应的头像背景渐变（使用统一常量）
-// ─────────────────────────────────────────────
-const QUALITY_BG: Record<Quality, string> = {
-  COMMON: `linear-gradient(135deg, rgba(158,158,158,0.4) 0%, rgba(158,158,158,0.2) 100%)`,
-  FINE: `linear-gradient(135deg, rgba(33,150,243,0.4) 0%, rgba(33,150,243,0.2) 100%)`,
-  RARE: `linear-gradient(135deg, rgba(156,39,176,0.4) 0%, rgba(156,39,176,0.2) 100%)`,
-  EPIC: `linear-gradient(135deg, rgba(244,67,54,0.4) 0%, rgba(244,67,54,0.2) 100%)`,
-  LEGENDARY: `linear-gradient(135deg, rgba(255,152,0,0.4) 0%, rgba(255,152,0,0.2) 100%)`,
-};
 
 /** 计算动态属性上限（当前武将最大属性值 × 1.2，向上取整到10的倍数） */
 function computeStatMax(stats: { attack: number; defense: number; intelligence: number; speed: number }): number {
   const maxVal = Math.max(stats.attack, stats.defense, stats.intelligence, stats.speed);
   return Math.ceil(maxVal * 1.2 / 10) * 10;
-}
-
-/** 格式化数值 */
-function formatNum(n: number): string {
-  return formatNumber(n);
 }
 
 // ─────────────────────────────────────────────
@@ -153,12 +116,8 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
     [general.id],
   );
 
-  const borderColor = QUALITY_BORDER_COLORS[general.quality];
-  const qualityLabel = QUALITY_LABELS[general.quality];
-  const factionLabel = FACTION_LABELS[general.faction];
-
   // 升级预览
-  const enhancePreview: EnhancePreview | null = useMemo(() => {
+  const enhancePreview = useMemo(() => {
     if (targetLevel <= general.level) return null;
     try {
       return engine.getEnhancePreview(general.id, targetLevel);
@@ -230,34 +189,11 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
         <button className="tk-hero-detail-close" data-testid="hero-detail-modal-close" onClick={onClose} aria-label="关闭">✕</button>
 
         {/* 标题栏 */}
-        <div className="tk-hero-detail-header" style={{ borderBottomColor: borderColor }}>
-          <span className="tk-hero-detail-title-name" data-testid="hero-detail-modal-name">{general.name}</span>
-          <span className="tk-hero-detail-title-faction" data-testid="hero-detail-modal-faction">{factionLabel}</span>
-          <span
-            className="tk-hero-detail-title-quality"
-            style={{ background: borderColor }}
-          >
-            {qualityLabel}
-          </span>
-          {/* P1-01: 与其他武将对比按钮 */}
-          {onCompare && (
-            <button
-              className="tk-hero-detail-compare-btn"
-              onClick={() => onCompare(general)}
-              title="与其他武将对比"
-            >
-              ⚖️ 对比
-            </button>
-          )}
-          {/* P0: 升星按钮 — 打开升星弹窗 */}
-          <button
-            className="tk-hero-detail-compare-btn"
-            onClick={() => setShowStarUp(true)}
-            title="武将升星"
-          >
-            ⭐ 升星
-          </button>
-        </div>
+        <HeroDetailHeader
+          general={general}
+          onCompare={onCompare}
+          onStarUp={() => setShowStarUp(true)}
+        />
 
         {/* 武将传记 */}
         {biography && (
@@ -266,106 +202,24 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
 
         {/* 主体：左右分栏 */}
         <div className="tk-hero-detail-body">
-          {/* 左侧：画像 + 等级 + 经验条 */}
-          <div className="tk-hero-detail-left">
-            <div
-              className="tk-hero-detail-portrait"
-              style={{ background: QUALITY_BG[general.quality], borderColor }}
-            >
-              <span className="tk-hero-detail-portrait-char">{general.name}</span>
-            </div>
-            <div className="tk-hero-detail-level-badge" style={{ borderColor }}>
-              Lv.{general.level}
-            </div>
-
-            {/* 经验条 */}
-            {expProgress && expProgress.required > 0 && (
-              <div className="tk-hero-detail-exp-section">
-                <div className="tk-hero-detail-exp-label">
-                  经验 {expProgress.current}/{expProgress.required}
-                </div>
-                <div className="tk-hero-detail-exp-bar">
-                  <div
-                    className="tk-hero-detail-exp-fill"
-                    style={{ width: `${expProgress.percentage}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* 战力 */}
-            <div className="tk-hero-detail-power" data-testid="hero-detail-modal-power">
-              ⚔️ 战力 <strong>{power.toLocaleString('zh-CN')}</strong>
-            </div>
-
-            {/* 碎片 + 合成 */}
-            <div className="tk-hero-detail-fragments">
-              <div className="tk-hero-detail-fragments-header">
-                <span>💎 碎片 {fragments}/{synthesizeProgress.required}</span>
-              </div>
-              <div className="tk-hero-detail-fragments-bar">
-                <div
-                  className="tk-hero-detail-fragments-fill"
-                  style={{ width: `${Math.min(100, (synthesizeProgress.current / synthesizeProgress.required) * 100)}%` }}
-                />
-              </div>
-              <button
-                className={`tk-hero-detail-synthesize-btn ${canSynth ? 'tk-hero-detail-synthesize-btn--active' : ''}`}
-                disabled={!canSynth || isSynthesizing}
-                onClick={handleSynthesize}
-              >
-                {isSynthesizing ? '合成中...' : canSynth ? '✨ 碎片合成' : `碎片合成 (${synthesizeProgress.current}/${synthesizeProgress.required})`}
-              </button>
-            </div>
-
-            {/* 升级操作区 */}
-            <div className="tk-hero-detail-enhance">
-              <div className="tk-hero-detail-enhance-header">
-                <span className="tk-hero-detail-enhance-title">强化升级</span>
-                <button
-                  className="tk-hero-detail-enhance-max-btn"
-                  onClick={handleEnhanceMax}
-                >
-                  +5级
-                </button>
-              </div>
-
-              {/* 目标等级选择 */}
-              <div className="tk-hero-detail-enhance-target">
-                <span className="tk-hero-detail-enhance-label">
-                  目标等级: Lv.{targetLevel}
-                </span>
-              </div>
-
-              {/* 升级预览 */}
-              {enhancePreview && (
-                <div className="tk-hero-detail-enhance-preview">
-                  <div className="tk-hero-detail-enhance-cost">
-                    💰 {formatNum(enhancePreview.totalGold)} 铜钱
-                  </div>
-                  <div className="tk-hero-detail-enhance-power-diff">
-                    战力: {formatNum(enhancePreview.powerBefore)} → {formatNum(enhancePreview.powerAfter)}
-                    <span className="tk-hero-detail-enhance-power-gain">
-                      (+{formatNum(enhancePreview.powerAfter - enhancePreview.powerBefore)})
-                    </span>
-                  </div>
-                  <div className="tk-hero-detail-enhance-affordable">
-                    {enhancePreview.affordable ? '✅ 资源充足' : '❌ 资源不足'}
-                  </div>
-                </div>
-              )}
-
-              {/* 升级按钮 */}
-              <button
-                className="tk-hero-detail-enhance-btn"
-                data-testid="hero-detail-modal-enhance-btn"
-                disabled={!enhancePreview?.affordable || isEnhancing || targetLevel <= general.level}
-                onClick={handleEnhance}
-              >
-                {isEnhancing ? '升级中...' : `升级至 Lv.${targetLevel}`}
-              </button>
-            </div>
-          </div>
+          {/* 左侧面板 */}
+          <HeroDetailLeftPanel
+            general={general}
+            engine={engine}
+            power={power}
+            expProgress={expProgress}
+            fragments={fragments}
+            synthesizeProgress={synthesizeProgress}
+            canSynth={canSynth}
+            targetLevel={targetLevel}
+            enhancePreview={enhancePreview}
+            isEnhancing={isEnhancing}
+            isSynthesizing={isSynthesizing}
+            onTargetLevelChange={setTargetLevel}
+            onEnhanceMax={handleEnhanceMax}
+            onEnhance={handleEnhance}
+            onSynthesize={handleSynthesize}
+          />
 
           {/* 右侧：雷达图 + 属性条 + 技能列表 */}
           <div className="tk-hero-detail-right">
@@ -398,83 +252,17 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
             </div>
 
             {/* 技能列表 */}
-            <div className="tk-hero-detail-skills">
-              <h4 className="tk-hero-detail-section-title">技能</h4>
-              {general.skills.length === 0 ? (
-                <div className="tk-hero-detail-skill-empty">暂无技能</div>
-              ) : (
-                general.skills.map((skill: SkillData) => (
-                  <div key={skill.id} className="tk-hero-detail-skill-item">
-                    <div className="tk-hero-detail-skill-header">
-                      <span className="tk-hero-detail-skill-name">{skill.name}</span>
-                      <span className="tk-hero-detail-skill-type">
-                        {skill.type === 'active' ? '主动' :
-                          skill.type === 'passive' ? '被动' :
-                            skill.type === 'faction' ? '阵营' : '觉醒'}
-                      </span>
-                      <span className="tk-hero-detail-skill-level">Lv.{skill.level}</span>
-                    </div>
-                    <div className="tk-hero-detail-skill-desc">{skill.description}</div>
-                  </div>
-                ))
-              )}
-            </div>
+            <HeroDetailSkills skills={general.skills} />
 
-            {/* ── 羁绊标签 ── */}
-            <div className="tk-hero-detail-bonds" data-testid="hero-detail-bonds">
-              <h4 className="tk-hero-detail-section-title">参与羁绊</h4>
-              {(() => {
-                const bondTags = getHeroBondTags(general.id);
-                if (bondTags.length === 0) {
-                  return <div className="tk-hero-detail-skill-empty">暂无羁绊</div>;
-                }
-                return (
-                  <div className="tk-hero-detail-bond-tags">
-                    {bondTags.map((bond) => (
-                      <span
-                        key={bond.id}
-                        className={`tk-hero-detail-bond-tag tk-hero-detail-bond-tag--${bond.type === BondType.FACTION ? 'faction' : 'partner'}`}
-                        data-testid={`hero-bond-tag-${bond.id}`}
-                      >
-                        {bond.type === BondType.FACTION ? '🏛️' : '🤝'} {bond.name}
-                      </span>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>
+            {/* 羁绊标签 */}
+            <HeroDetailBonds heroId={general.id} />
 
-            {/* ── 突破状态 ── */}
-            {(() => {
-              const starSystem = engine.getHeroStarSystem?.();
-              if (!starSystem) return null;
-              const stage = starSystem.getBreakthroughStage(general.id);
-              const levelCap = starSystem.getLevelCap(general.id);
-              return (
-                <div className="tk-hero-detail-breakthrough" data-testid="hero-detail-breakthrough">
-                  <h4 className="tk-hero-detail-section-title">突破状态</h4>
-                  <div className="tk-hero-detail-breakthrough-info">
-                    <div className="tk-hero-detail-breakthrough-row">
-                      <span className="tk-hero-detail-breakthrough-label">突破阶段</span>
-                      <span className="tk-hero-detail-breakthrough-value" data-testid="breakthrough-stage">
-                        {stage > 0 ? `第${stage}阶` : '未突破'}
-                      </span>
-                    </div>
-                    <div className="tk-hero-detail-breakthrough-row">
-                      <span className="tk-hero-detail-breakthrough-label">等级上限</span>
-                      <span className="tk-hero-detail-breakthrough-value" data-testid="breakthrough-level-cap">
-                        Lv.{levelCap}
-                      </span>
-                    </div>
-                    {general.level >= levelCap && (
-                      <div className="tk-hero-detail-breakthrough-hint" data-testid="breakthrough-hint">
-                        ⚠️ 已达等级上限，需突破才能继续升级
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
+            {/* 突破状态 */}
+            <HeroDetailBreakthrough
+              engine={engine}
+              generalId={general.id}
+              currentLevel={general.level}
+            />
           </div>
         </div>
 
