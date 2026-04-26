@@ -1,8 +1,8 @@
 /**
  * HeroCard — 武将卡片样式
  *
- * 品质边框色：普通灰 / 精良蓝 / 稀有紫 / 史诗赤 / 传说金
- * PC端：160×200 卡片，品质发光边框
+ * 品质边框色：普通灰 / 精良绿 / 稀有蓝 / 史诗紫 / 传说橙 / 神话红
+ * PC端：160×200 卡片，品质边框 + 内嵌渐变
  * 手机端：2列紧凑网格卡片
  */
 
@@ -12,8 +12,8 @@
 .tk-hero-card {
   width: 160px;
   height: 200px;
-  background: rgba(26, 35, 50, 0.85);
-  border: 2px solid rgba(200, 168, 76, 0.3);
+  background: linear-gradient(170deg, rgba(30, 40, 58, 0.92) 0%, rgba(20, 28, 42, 0.95) 100%);
+  border: 2px solid rgba(200, 168, 76, 0.2);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -22,71 +22,92 @@
   position: relative;
   cursor: pointer;
   box-sizing: border-box;
-  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.2s var(--tk-ease-out), border-color 0.2s, box-shadow 0.2s;
   overflow: hidden;
 }
 
+/* 卡片内部纹理层 */
+.tk-hero-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 1;
+}
+
 .tk-hero-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 /* ═══════════════════════════════════════════
-   品质发光效果 — 默认状态微光 + 悬停增强
+   品质边框效果 — 鲜明品质色 + 悬停加深
    ═══════════════════════════════════════════ */
 
-/* 传说 — 金色光芒 */
+/* 神话 — 赤红 */
+.tk-hero-card--mythic {
+  border-color: rgba(244, 67, 54, 0.55);
+  background: linear-gradient(170deg, rgba(50, 25, 25, 0.92) 0%, rgba(30, 18, 18, 0.95) 100%);
+}
+
+.tk-hero-card--mythic:hover {
+  box-shadow: 0 8px 28px rgba(244, 67, 54, 0.2), 0 8px 24px rgba(0, 0, 0, 0.45);
+  border-color: rgba(244, 67, 54, 0.8);
+}
+
+/* 传说 — 金橙 */
 .tk-hero-card--legendary {
-  border-color: rgba(201, 168, 76, 0.5);
-  box-shadow: 0 0 8px rgba(201, 168, 76, 0.15);
+  border-color: rgba(255, 152, 0, 0.5);
+  background: linear-gradient(170deg, rgba(45, 38, 22, 0.92) 0%, rgba(30, 25, 15, 0.95) 100%);
 }
 
 .tk-hero-card--legendary:hover {
-  box-shadow: 0 0 24px rgba(201, 168, 76, 0.5), 0 0 48px rgba(201, 168, 76, 0.15), 0 8px 24px rgba(0, 0, 0, 0.4);
-  border-color: rgba(201, 168, 76, 0.8);
+  box-shadow: 0 8px 28px rgba(255, 152, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.45);
+  border-color: rgba(255, 152, 0, 0.75);
 }
 
-/* 史诗 — 赤色光芒 */
+/* 史诗 — 深紫 */
 .tk-hero-card--epic {
-  border-color: rgba(212, 85, 58, 0.45);
-  box-shadow: 0 0 6px rgba(212, 85, 58, 0.12);
+  border-color: rgba(156, 39, 176, 0.45);
+  background: linear-gradient(170deg, rgba(38, 25, 50, 0.92) 0%, rgba(25, 18, 35, 0.95) 100%);
 }
 
 .tk-hero-card--epic:hover {
-  box-shadow: 0 0 20px rgba(212, 85, 58, 0.45), 0 0 40px rgba(212, 85, 58, 0.12), 0 8px 24px rgba(0, 0, 0, 0.4);
-  border-color: rgba(212, 85, 58, 0.7);
+  box-shadow: 0 8px 24px rgba(156, 39, 176, 0.2), 0 8px 24px rgba(0, 0, 0, 0.45);
+  border-color: rgba(156, 39, 176, 0.7);
 }
 
-/* 稀有 — 紫色光芒 */
+/* 稀有 — 蓝色 */
 .tk-hero-card--rare {
-  border-color: rgba(155, 109, 191, 0.4);
-  box-shadow: 0 0 5px rgba(155, 109, 191, 0.1);
+  border-color: rgba(33, 150, 243, 0.4);
+  background: linear-gradient(170deg, rgba(22, 35, 55, 0.92) 0%, rgba(18, 28, 45, 0.95) 100%);
 }
 
 .tk-hero-card--rare:hover {
-  box-shadow: 0 0 16px rgba(155, 109, 191, 0.4), 0 8px 20px rgba(0, 0, 0, 0.4);
-  border-color: rgba(155, 109, 191, 0.65);
+  box-shadow: 0 8px 24px rgba(33, 150, 243, 0.18), 0 8px 24px rgba(0, 0, 0, 0.45);
+  border-color: rgba(33, 150, 243, 0.65);
 }
 
-/* 精良 — 蓝色微光 */
+/* 精良 — 绿色 */
 .tk-hero-card--fine {
-  border-color: rgba(91, 139, 212, 0.35);
-  box-shadow: 0 0 4px rgba(91, 139, 212, 0.08);
+  border-color: rgba(76, 175, 80, 0.4);
+  background: linear-gradient(170deg, rgba(22, 40, 28, 0.92) 0%, rgba(18, 32, 22, 0.95) 100%);
 }
 
 .tk-hero-card--fine:hover {
-  box-shadow: 0 0 14px rgba(91, 139, 212, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
-  border-color: rgba(91, 139, 212, 0.6);
+  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.18), 0 8px 24px rgba(0, 0, 0, 0.45);
+  border-color: rgba(76, 175, 80, 0.65);
 }
 
 /* 普通 — 灰色 */
 .tk-hero-card--common {
-  border-color: rgba(139, 154, 107, 0.3);
+  border-color: rgba(158, 158, 158, 0.25);
 }
 
 .tk-hero-card--common:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-  border-color: rgba(139, 154, 107, 0.5);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  border-color: rgba(158, 158, 158, 0.45);
 }
 
 /* ═══════════════════════════════════════════
@@ -98,23 +119,29 @@
   left: 0;
   padding: 2px 8px;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
   border-radius: 0 0 6px 0;
   z-index: 2;
   letter-spacing: 1px;
   line-height: 1.4;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* ═══════════════════════════════════════════
-   星级显示 — 右上角
+   星级显示 — 右上角（金色醒目）
    ═══════════════════════════════════════════ */
 .tk-hero-card-stars {
   position: absolute;
-  top: 2px;
+  top: 3px;
   right: 4px;
   z-index: 2;
   line-height: 1;
+  font-size: 11px;
+  letter-spacing: -0.5px;
+  color: #FFD54F;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  filter: saturate(1.2) brightness(1.1);
 }
 
 /* ═══════════════════════════════════════════
@@ -129,14 +156,15 @@
   justify-content: center;
   margin-top: 14px;
   margin-bottom: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
 }
 
 .tk-hero-card-portrait-char {
   font-size: 28px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.92);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   font-family: 'STXingkai', '华文行楷', 'KaiTi', serif;
 }
@@ -189,7 +217,6 @@
   color: var(--tk-green);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 8px rgba(76, 175, 80, 0.25);
 }
 
 /* ═══════════════════════════════════════════
@@ -203,8 +230,7 @@
   height: 8px;
   background: #E53935;
   border-radius: 50%;
-  box-shadow: 0 0 4px rgba(229, 57, 53, 0.6);
-  z-index: 2;
+  z-index: 3;
 }
 
 /* ═══════════════════════════════════════════
@@ -244,6 +270,7 @@
   .tk-hero-card-stars {
     top: 1px;
     right: 2px;
+    font-size: 9px;
   }
 
   .tk-hero-card-name {

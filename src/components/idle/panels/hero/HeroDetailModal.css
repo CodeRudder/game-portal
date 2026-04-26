@@ -26,8 +26,8 @@
   width: 800px;
   max-width: 95vw;
   max-height: 90vh;
-  background: rgba(20, 28, 40, 0.98);
-  border: 2px solid rgba(200, 168, 76, 0.5);
+  background: linear-gradient(175deg, rgba(22, 30, 46, 0.98) 0%, rgba(16, 22, 34, 0.99) 100%);
+  border: 2px solid rgba(200, 168, 76, 0.4);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -68,7 +68,8 @@
   align-items: center;
   gap: 10px;
   padding: 14px 20px;
-  border-bottom: 2px solid rgba(200, 168, 76, 0.3);
+  border-bottom: 2px solid rgba(200, 168, 76, 0.25);
+  background: rgba(200, 168, 76, 0.03);
 }
 .tk-hero-detail-title-name {
   font-size: 20px;
@@ -96,7 +97,7 @@
   font-style: italic;
   color: var(--tk-text-secondary);
   line-height: 1.6;
-  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
 }
 
 /* 主体：左右分栏 */
@@ -121,15 +122,16 @@
   width: 160px;
   height: 180px;
   border-radius: 12px;
-  border: 3px solid rgba(200, 168, 76, 0.5);
+  border: 3px solid rgba(200, 168, 76, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(170deg, rgba(30, 38, 55, 0.6) 0%, rgba(18, 24, 36, 0.8) 100%);
 }
 .tk-hero-detail-portrait-char {
   font-size: 56px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.92);
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   font-family: 'STXingkai', '华文行楷', 'KaiTi', serif;
   line-height: 1.2;
@@ -145,8 +147,7 @@
   border: 2px solid var(--tk-gold);
   border-radius: 20px;
   font-variant-numeric: tabular-nums;
-  background: rgba(200, 168, 76, 0.1);
-  box-shadow: 0 0 8px rgba(200, 168, 76, 0.2);
+  background: rgba(200, 168, 76, 0.08);
 }
 
 /* 经验条 */
@@ -160,14 +161,14 @@
 .tk-hero-detail-exp-bar {
   width: 100%;
   height: 8px;
-  background: rgba(240, 230, 211, 0.1);
+  background: rgba(240, 230, 211, 0.08);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .tk-hero-detail-exp-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--tk-blue), var(--tk-green));
+  background: linear-gradient(90deg, #2196F3, #43A047);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -181,7 +182,6 @@
 .tk-hero-detail-power strong {
   font-size: 22px;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
 }
 
 /* 碎片 */
@@ -198,13 +198,13 @@
 .tk-hero-detail-fragments-bar {
   width: 100%;
   height: 8px;
-  background: rgba(240, 230, 211, 0.1);
+  background: rgba(240, 230, 211, 0.08);
   border-radius: 4px;
   overflow: hidden;
 }
 .tk-hero-detail-fragments-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--tk-purple, #9B59B6), var(--tk-purple, #C39BD3));
+  background: linear-gradient(90deg, #9C27B0, #CE93D8);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -212,9 +212,9 @@
 .tk-hero-detail-synthesize-btn {
   width: 100%;
   padding: 8px 12px;
-  background: rgba(155, 89, 182, 0.12);
-  border: 1px solid rgba(155, 89, 182, 0.3);
-  border-radius: 6px;
+  background: rgba(156, 39, 176, 0.1);
+  border: 1px solid rgba(156, 39, 176, 0.25);
+  border-radius: 8px;
   color: var(--tk-text-secondary);
   font-size: 12px;
   font-weight: 600;
@@ -224,20 +224,14 @@
 }
 
 .tk-hero-detail-synthesize-btn--active {
-  background: rgba(155, 89, 182, 0.2);
-  border-color: var(--tk-purple, #9B59B6);
-  color: var(--tk-purple, #C39BD3);
+  background: rgba(156, 39, 176, 0.18);
+  border-color: rgba(156, 39, 176, 0.5);
+  color: #CE93D8;
   cursor: pointer;
-  animation: tk-synth-glow 1.5s ease-in-out infinite;
-}
-
-@keyframes tk-synth-glow {
-  0%, 100% { box-shadow: 0 0 4px rgba(155, 89, 182, 0.2); }
-  50% { box-shadow: 0 0 12px rgba(155, 89, 182, 0.5); }
 }
 
 .tk-hero-detail-synthesize-btn--active:hover {
-  background: rgba(155, 89, 182, 0.35);
+  background: rgba(156, 39, 176, 0.3);
   color: var(--tk-text-primary, #fff);
 }
 
@@ -248,8 +242,8 @@
 /* 升级操作区 */
 .tk-hero-detail-enhance {
   width: 100%;
-  background: rgba(240, 230, 211, 0.04);
-  border: 1px solid rgba(200, 168, 76, 0.15);
+  background: rgba(240, 230, 211, 0.03);
+  border: 1px solid rgba(200, 168, 76, 0.12);
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
@@ -269,8 +263,8 @@
 }
 .tk-hero-detail-enhance-max-btn {
   padding: 2px 8px;
-  background: rgba(200, 168, 76, 0.12);
-  border: 1px solid rgba(200, 168, 76, 0.3);
+  background: rgba(200, 168, 76, 0.1);
+  border: 1px solid rgba(200, 168, 76, 0.25);
   border-radius: 4px;
   color: var(--tk-gold-light);
   font-size: 11px;
@@ -280,7 +274,7 @@
 }
 
 .tk-hero-detail-enhance-max-btn:hover {
-  background: rgba(200, 168, 76, 0.25);
+  background: rgba(200, 168, 76, 0.22);
 }
 .tk-hero-detail-enhance-target {
   display: flex;
@@ -313,19 +307,22 @@
 .tk-hero-detail-enhance-btn {
   width: 100%;
   padding: 8px 16px;
-  background: rgba(200, 168, 76, 0.2);
-  border: 2px solid var(--tk-gold);
-  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(200, 168, 76, 0.15) 0%, rgba(200, 168, 76, 0.25) 100%);
+  border: 2px solid rgba(200, 168, 76, 0.5);
+  border-radius: 8px;
   color: var(--tk-gold-light);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
 
-.tk-hero-detail-enhance-btn:hover:not(:disabled) { background: rgba(200, 168, 76, 0.35); }
-.tk-hero-detail-enhance-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.tk-hero-detail-enhance-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(200, 168, 76, 0.28) 0%, rgba(200, 168, 76, 0.4) 100%);
+  border-color: rgba(200, 168, 76, 0.7);
+}
+.tk-hero-detail-enhance-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* 右侧：雷达图 + 属性 + 技能 — 见 HeroDetailModal-chart.css */
 
@@ -375,14 +372,15 @@
 .tk-hero-detail-compare-btn {
   margin-left: auto;
   padding: 4px 12px;
-  background: rgba(212, 165, 116, 0.2);
+  background: rgba(212, 165, 116, 0.15);
   color: var(--tk-gold-soft, #d4a574);
-  border: 1px solid rgba(212, 165, 116, 0.4);
+  border: 1px solid rgba(212, 165, 116, 0.3);
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
 .tk-hero-detail-compare-btn:hover {
-  background: rgba(212, 165, 116, 0.35);
+  background: rgba(212, 165, 116, 0.3);
+  border-color: rgba(212, 165, 116, 0.5);
 }

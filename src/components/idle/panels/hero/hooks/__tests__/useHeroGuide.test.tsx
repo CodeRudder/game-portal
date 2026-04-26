@@ -187,3 +187,69 @@ describe('useHeroGuide — 边界条件', () => {
     }).not.toThrow();
   });
 });
+
+// ═══════════════════════════════════════════════
+// 状态更新测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroGuide — 状态更新', () => {
+  it('引擎数据变化后 handleGuideAction 应使用最新武将', () => {
+    const generals1 = makeMultipleGenerals();
+    const engine = createMockEngine({
+      getGenerals: vi.fn().mockReturnValue(generals1),
+    });
+
+    const { result } = renderHook(() => useHeroGuide(engine as any));
+
+    act(() => {
+      result.current.handleGuideAction({
+        type: 'enhance',
+        stepIndex: 1,
+        stepId: 'enhance',
+      });
+    });
+
+    expect(engine.enhanceHero).toHaveBeenCalledWith(generals1[0].id, 1);
+  });
+
+  it('多次调用 handleGuideAction 不应累积副作用', () => {
+    const engine = createMockEngine();
+    const { result } = renderHook(() => useHeroGuide(engine as any));
+
+    for (let i = 0; i < 5; i++) {
+      act(() => {
+        result.current.handleGuideAction({
+          type: 'recruit',
+          stepIndex: i,
+          stepId: `recruit-${i}`,
+        });
+      });
+    }
+
+    // 应调用 5 次 recruit
+    expect(engine.recruit).toHaveBeenCalledTimes(5);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 清理测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroGuide — 清理', () => {
+  it('unmount 后不应有副作用残留', () => {
+    const engine = createMockEngine();
+    const { unmount, result } = renderHook(() => useHeroGuide(engine as any));
+
+    expect(result.current.handleGuideAction).toBeDefined();
+    expect(() => unmount()).not.toThrow();
+  });
+
+  it('多次 mount/unmount 不应泄漏', () => {
+    for (let i = 0; i < 3; i++) {
+      const engine = createMockEngine();
+      const { unmount, result } = renderHook(() => useHeroGuide(engine as any));
+      expect(result.current.handleGuideAction).toBeDefined();
+      unmount();
+    }
+  });
+});

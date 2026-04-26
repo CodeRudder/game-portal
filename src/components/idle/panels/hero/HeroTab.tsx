@@ -47,6 +47,11 @@ type SortKey = 'power' | 'level' | 'quality';
 type FactionFilter = 'all' | Faction;
 type SubTab = 'list' | 'formation';
 
+/** 分页阈值：武将数超过此值启用分页 */
+const PAGINATION_THRESHOLD = 100;
+/** 每页显示武将数 */
+const PAGE_SIZE = 40;
+
 const SORT_LABELS: Record<SortKey, string> = {
   power: '战力', level: '等级', quality: '品质',
 };
@@ -67,6 +72,9 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
   const [factionFilter, setFactionFilter] = useState<FactionFilter>('all');
   const [qualityFilter, setQualityFilter] = useState<Quality | 'all'>('all');
   const [sortKey, setSortKey] = useState<SortKey>('power');
+
+  // ── 分页状态 ──
+  const [currentPage, setCurrentPage] = useState(1);
 
   // ── 弹窗状态 ──
   const [selectedGeneral, setSelectedGeneral] = useState<GeneralData | null>(null);
@@ -113,6 +121,25 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
       }
     });
   }, [allGenerals, factionFilter, qualityFilter, sortKey, engine]);
+
+  // ── 分页：超过阈值时启用分页 ──
+  const needsPagination = filteredGenerals.length > PAGINATION_THRESHOLD;
+  const totalPages = useMemo(
+    () => needsPagination ? Math.ceil(filteredGenerals.length / PAGE_SIZE) : 1,
+    [filteredGenerals.length, needsPagination],
+  );
+
+  // 筛选条件变化时重置页码
+  const safePage = Math.min(currentPage, totalPages);
+  if (safePage !== currentPage && currentPage > 1) {
+    setCurrentPage(1);
+  }
+
+  const pagedGenerals = useMemo(() => {
+    if (!needsPagination) return filteredGenerals;
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filteredGenerals.slice(start, start + PAGE_SIZE);
+  }, [filteredGenerals, needsPagination, safePage]);
 
   // ── 总战力 ──
   const totalPower = useMemo(() => engine.getHeroSystem().calculateTotalPower(), [engine, allGenerals]);
@@ -238,10 +265,34 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
                 </button>
               )}
               <div className="tk-hero-grid" data-testid="hero-tab-grid">
-              {filteredGenerals.map((general) => (
+              {pagedGenerals.map((general) => (
                 <HeroCard key={general.id} general={general} engine={engine} onClick={handleCardClick} />
               ))}
             </div>
+            {/* 分页控件 */}
+            {needsPagination && (
+              <div className="tk-hero-pagination" data-testid="hero-pagination">
+                <button
+                  className="tk-hero-page-btn"
+                  disabled={safePage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  data-testid="hero-page-prev"
+                >
+                  ‹ 上一页
+                </button>
+                <span className="tk-hero-page-info" data-testid="hero-page-info">
+                  {safePage} / {totalPages}
+                </span>
+                <button
+                  className="tk-hero-page-btn"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  data-testid="hero-page-next"
+                >
+                  下一页 ›
+                </button>
+              </div>
+            )}
             </>
           )}
 

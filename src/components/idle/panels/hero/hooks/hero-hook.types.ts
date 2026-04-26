@@ -23,12 +23,35 @@ import type { BondCatalogItem } from '../BondCollectionPanel';
 export interface UseHeroEngineParams {
   /** ThreeKingdomsEngine 实例 */
   engine: ThreeKingdomsEngine;
-  /** 快照版本号，用于触发重渲染 */
+  /**
+   * 快照版本号，用于触发重渲染（向后兼容）
+   * @deprecated 优先使用细粒度版本号 heroVersion / bondVersion / formationVersion / dispatchVersion
+   */
   snapshotVersion: number;
   /** 当前选中的武将ID（用于技能面板等） */
   selectedHeroId?: string;
   /** 编队中的武将ID列表 */
   formationHeroIds?: string[];
+  /**
+   * 细粒度版本号 — 武将列表/星级变更时递增
+   * 影响子Hook: useHeroList, useHeroSkills
+   */
+  heroVersion?: number;
+  /**
+   * 细粒度版本号 — 羁绊/阵营数据变更时递增
+   * 影响子Hook: useHeroBonds
+   */
+  bondVersion?: number;
+  /**
+   * 细粒度版本号 — 编队数据变更时递增
+   * 影响子Hook: useFormation
+   */
+  formationVersion?: number;
+  /**
+   * 细粒度版本号 — 派遣/建筑数据变更时递增
+   * 影响子Hook: useHeroDispatch
+   */
+  dispatchVersion?: number;
 }
 
 // ─────────────────────────────────────────────

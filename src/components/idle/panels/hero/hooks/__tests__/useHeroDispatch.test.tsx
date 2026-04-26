@@ -218,3 +218,54 @@ describe('useHeroDispatch — 边界条件', () => {
     }).not.toThrow();
   });
 });
+
+// ═══════════════════════════════════════════════
+// 状态更新测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroDispatch — 状态更新', () => {
+  it('snapshotVersion 变化应触发建筑数据重计算', () => {
+    const engine = createMockEngine();
+
+    const { result, rerender } = renderHook(
+      ({ snapshotVersion }) =>
+        useHeroDispatch({ engine: engine as any, snapshotVersion }),
+      { initialProps: { snapshotVersion: 0 } },
+    );
+
+    const firstBuildings = result.current.buildings;
+    expect(firstBuildings.length).toBeGreaterThan(0);
+
+    rerender({ snapshotVersion: 1 });
+    // 应重新获取数据
+    expect(engine.getHeroDispatchSystem).toHaveBeenCalled();
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 清理测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroDispatch — 清理', () => {
+  it('unmount 后不应有副作用残留', () => {
+    const engine = createMockEngine();
+    const { unmount, result } = renderHook(() =>
+      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+    );
+
+    expect(result.current.buildings).toBeDefined();
+    expect(() => unmount()).not.toThrow();
+  });
+
+  it('多次 mount/unmount 不应泄漏', () => {
+    const engine = createMockEngine();
+
+    for (let i = 0; i < 3; i++) {
+      const { unmount, result } = renderHook(() =>
+        useHeroDispatch({ engine: engine as any, snapshotVersion: i }),
+      );
+      expect(result.current.buildings).toBeDefined();
+      unmount();
+    }
+  });
+});

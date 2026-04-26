@@ -1,11 +1,13 @@
 /**
  * HeroDetailModal UI 交互测试
  *
- * 覆盖场景（≥10个用例）：
+ * 覆盖场景（≥15个用例）：
  * - 详情弹窗正确渲染（武将名/品质/等级/属性/技能）
  * - 属性条显示正确
  * - 升级按钮功能
  * - 关闭弹窗功能
+ * - [增强] 羁绊标签显示
+ * - [增强] 突破状态显示
  */
 
 import React from 'react';
@@ -22,6 +24,7 @@ import * as EngineModule from '@/games/three-kingdoms/engine';
 // Mock CSS imports
 // ─────────────────────────────────────────────
 vi.mock('../HeroDetailModal.css', () => ({}));
+vi.mock('../HeroDetailModal-chart.css', () => ({}));
 vi.mock('@/components/idle/common/Toast', () => ({
   Toast: {
     show: vi.fn(),
@@ -80,10 +83,14 @@ function makeMockEngine(options: {
   affordable?: boolean;
   enhanceResult?: any;
   canSynthesize?: boolean;
+  breakthroughStage?: number;
+  levelCap?: number;
 } = {}) {
   const general = options.general ?? baseGeneral;
   const affordable = options.affordable ?? true;
   const preview = { ...enhancePreview, affordable };
+  const breakthroughStage = options.breakthroughStage ?? 0;
+  const levelCap = options.levelCap ?? 50;
 
   const heroSystem = {
     calculatePower: vi.fn(() => 1082),
@@ -93,11 +100,23 @@ function makeMockEngine(options: {
     fragmentSynthesize: vi.fn(() => null),
   };
 
+  const starSystem = {
+    getStar: vi.fn(() => 1),
+    getLevelCap: vi.fn(() => levelCap),
+    getBreakthroughStage: vi.fn(() => breakthroughStage),
+    getFragmentProgress: vi.fn(() => ({ canStarUp: false })),
+    getStarUpPreview: vi.fn(() => null),
+    getBreakthroughPreview: vi.fn(() => null),
+    starUp: vi.fn(() => ({ success: false, previousStar: 1, currentStar: 1 })),
+    breakthrough: vi.fn(() => ({ success: false, newLevelCap: levelCap })),
+  };
+
   return {
     getHeroSystem: vi.fn(() => heroSystem),
     getLevelSystem: vi.fn(() => ({
       getExpProgress: vi.fn(() => ({ current: 500, required: 1000, percentage: 50 })),
     })),
+    getHeroStarSystem: vi.fn(() => starSystem),
     getEnhancePreview: vi.fn(() => preview),
     enhanceHero: vi.fn(() =>
       options.enhanceResult ?? {
@@ -109,6 +128,7 @@ function makeMockEngine(options: {
       }
     ),
     getGeneral: vi.fn(() => ({ ...general, level: 11 })),
+    getResourceAmount: vi.fn(() => 1000),
   } as unknown as ThreeKingdomsEngine;
 }
 
@@ -385,5 +405,89 @@ describe('HeroDetailModal', () => {
     expect(bioEl).not.toBeInTheDocument();
 
     vi.restoreAllMocks();
+  });
+
+  // ═══════════════════════════════════════════
+  // 10. [增强] 羁绊标签显示
+  // ═══════════════════════════════════════════
+
+  it('应渲染羁绊标签区域', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    expect(screen.getByTestId('hero-detail-bonds')).toBeInTheDocument();
+  });
+
+  it('应显示"参与羁绊"标题', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    expect(screen.getByText('参与羁绊')).toBeInTheDocument();
+  });
+
+  it('关羽应显示桃园结义羁绊标签', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    expect(screen.getByTestId('hero-bond-tag-partner_taoyuan')).toBeInTheDocument();
+    expect(screen.getByTestId('hero-bond-tag-partner_taoyuan').textContent).toContain('桃园结义');
+  });
+
+  it('关羽应显示五虎上将羁绊标签', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    expect(screen.getByTestId('hero-bond-tag-partner_wuhu')).toBeInTheDocument();
+    expect(screen.getByTestId('hero-bond-tag-partner_wuhu').textContent).toContain('五虎上将');
+  });
+
+  it('关羽应显示三英战吕布羁绊标签', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    expect(screen.getByTestId('hero-bond-tag-partner_sanying_lvbu')).toBeInTheDocument();
+  });
+
+  it('应显示阵营羁绊标签', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    // 关羽属于蜀国，应显示蜀国阵营羁绊
+    expect(screen.getByTestId('hero-bond-tag-faction_shu')).toBeInTheDocument();
+  });
+
+  // ═══════════════════════════════════════════
+  // 11. [增强] 突破状态显示
+  // ═══════════════════════════════════════════
+
+  it('应渲染突破状态区域', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    expect(screen.getByTestId('hero-detail-breakthrough')).toBeInTheDocument();
+  });
+
+  it('应显示"突破状态"标题', () => {
+    render(<HeroDetailModal {...defaultProps} />);
+    expect(screen.getByText('突破状态')).toBeInTheDocument();
+  });
+
+  it('未突破时应显示"未突破"', () => {
+    const engine = makeMockEngine({ breakthroughStage: 0 });
+    render(<HeroDetailModal {...defaultProps} engine={engine} />);
+    expect(screen.getByTestId('breakthrough-stage').textContent).toBe('未突破');
+  });
+
+  it('已突破时应显示突破阶段', () => {
+    const engine = makeMockEngine({ breakthroughStage: 2 });
+    render(<HeroDetailModal {...defaultProps} engine={engine} />);
+    expect(screen.getByTestId('breakthrough-stage').textContent).toBe('第2阶');
+  });
+
+  it('应显示等级上限', () => {
+    const engine = makeMockEngine({ levelCap: 50 });
+    render(<HeroDetailModal {...defaultProps} engine={engine} />);
+    expect(screen.getByTestId('breakthrough-level-cap').textContent).toBe('Lv.50');
+  });
+
+  it('达到等级上限时应显示提示', () => {
+    // 武将等级10，上限10
+    const engine = makeMockEngine({ levelCap: 10 });
+    render(<HeroDetailModal {...defaultProps} engine={engine} />);
+    expect(screen.getByTestId('breakthrough-hint')).toBeInTheDocument();
+    expect(screen.getByTestId('breakthrough-hint').textContent).toContain('已达等级上限');
+  });
+
+  it('未达到等级上限时不应显示提示', () => {
+    // 武将等级10，上限50
+    const engine = makeMockEngine({ levelCap: 50 });
+    render(<HeroDetailModal {...defaultProps} engine={engine} />);
+    expect(screen.queryByTestId('breakthrough-hint')).not.toBeInTheDocument();
   });
 });

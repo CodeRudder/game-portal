@@ -216,3 +216,88 @@ describe('useHeroSkills — 边界条件', () => {
     expect(result.current.goldAmount).toBe(0);
   });
 });
+
+// ═══════════════════════════════════════════════
+// 状态更新测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroSkills — 状态更新', () => {
+  it('selectedHeroId 变化应更新技能列表', () => {
+    const guanyu = makeGeneralData({
+      id: 'guanyu',
+      skills: [{ id: 's1', name: '青龙偃月', type: 'active', level: 1, description: '描述' }],
+    });
+    const liubei = makeGeneralData({
+      id: 'liubei',
+      skills: [{ id: 's2', name: '仁德', type: 'active', level: 2, description: '描述' }],
+    });
+    const mockStarSystem = {
+      getStar: vi.fn().mockReturnValue(3),
+      getLevelCap: vi.fn().mockReturnValue(100),
+      getBreakthroughStage: vi.fn().mockReturnValue(0),
+    };
+    const engine = createMockEngine({
+      getGeneral: vi.fn().mockImplementation((id: string) =>
+        id === 'guanyu' ? guanyu : id === 'liubei' ? liubei : undefined,
+      ),
+      getHeroStarSystem: vi.fn().mockReturnValue(mockStarSystem),
+    });
+
+    const { result, rerender } = renderHook(
+      ({ selectedHeroId }) =>
+        useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId }),
+      { initialProps: { selectedHeroId: 'guanyu' as string | undefined } },
+    );
+
+    expect(result.current.skills[0].id).toBe('s1');
+
+    // 切换到刘备
+    rerender({ selectedHeroId: 'liubei' });
+    expect(result.current.skills[0].id).toBe('s2');
+
+    // 取消选择
+    rerender({ selectedHeroId: undefined });
+    expect(result.current.skills).toEqual([]);
+  });
+
+  it('snapshotVersion 变化应触发资源数据重计算', () => {
+    const engine = createMockEngine();
+
+    const { rerender } = renderHook(
+      ({ snapshotVersion }) =>
+        useHeroSkills({ engine: engine as any, snapshotVersion, selectedHeroId: 'guanyu' }),
+      { initialProps: { snapshotVersion: 0 } },
+    );
+
+    rerender({ snapshotVersion: 1 });
+    // resource.getAmount 应被调用
+    expect(engine.resource.getAmount).toHaveBeenCalled();
+  });
+})
+
+// ═══════════════════════════════════════════════
+// 清理测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroSkills — 清理', () => {
+  it('unmount 后不应有副作用残留', () => {
+    const engine = createMockEngine();
+    const { unmount, result } = renderHook(() =>
+      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+    );
+
+    expect(result.current.skills).toBeDefined();
+    expect(() => unmount()).not.toThrow();
+  });
+
+  it('多次 mount/unmount 不应泄漏', () => {
+    for (let i = 0; i < 3; i++) {
+      const engine = createMockEngine();
+      const { unmount, result } = renderHook(() =>
+        useHeroSkills({ engine: engine as any, snapshotVersion: i, selectedHeroId: 'guanyu' }),
+      );
+      expect(result.current.skills).toBeDefined();
+      unmount();
+    }
+  });
+});

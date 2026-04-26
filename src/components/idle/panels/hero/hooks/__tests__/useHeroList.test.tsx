@@ -13,7 +13,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useHeroList } from '../useHeroList';
-import { createMockEngine, makeMultipleGenerals } from './hero-hooks-test-utils';
+import { createMockEngine, makeMultipleGenerals, makeGeneralData } from './hero-hooks-test-utils';
 import { Quality } from '@/games/three-kingdoms/engine/hero/hero.types';
 
 // ═══════════════════════════════════════════════
@@ -166,5 +166,77 @@ describe('useHeroList — 边界条件', () => {
     );
 
     expect(result.current.allGenerals).toHaveLength(generals.length);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 状态更新测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroList — 状态更新', () => {
+  it('snapshotVersion 变化应触发武将列表重计算', () => {
+    const generals = makeMultipleGenerals();
+    const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
+
+    const { result, rerender } = renderHook(
+      ({ snapshotVersion }) =>
+        useHeroList({ engine: engine as any, snapshotVersion }),
+      { initialProps: { snapshotVersion: 0 } },
+    );
+
+    expect(result.current.allGenerals).toHaveLength(generals.length);
+
+    // 更新 snapshotVersion
+    rerender({ snapshotVersion: 1 });
+    expect(engine.getGenerals).toHaveBeenCalledTimes(2);
+    expect(result.current.allGenerals).toHaveLength(generals.length);
+  });
+
+  it('引擎数据变化后列表应更新', () => {
+    const generals1 = makeMultipleGenerals();
+    const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals1) });
+
+    const { result, rerender } = renderHook(
+      ({ snapshotVersion }) =>
+        useHeroList({ engine: engine as any, snapshotVersion }),
+      { initialProps: { snapshotVersion: 0 } },
+    );
+
+    expect(result.current.allGenerals).toHaveLength(4);
+
+    // 模拟引擎数据变化（更多武将）
+    const generals2 = [...generals1, makeGeneralData({ id: 'zhugeliang', name: '诸葛亮', faction: 'shu' })];
+    engine.getGenerals = vi.fn().mockReturnValue(generals2);
+
+    rerender({ snapshotVersion: 1 });
+    expect(result.current.allGenerals).toHaveLength(5);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 清理测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroList — 清理', () => {
+  it('unmount 后不应有副作用残留', () => {
+    const engine = createMockEngine();
+    const { unmount, result } = renderHook(() =>
+      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+    );
+
+    expect(result.current.allGenerals).toBeDefined();
+    expect(() => unmount()).not.toThrow();
+  });
+
+  it('多次 mount/unmount 不应泄漏', () => {
+    const engine = createMockEngine();
+
+    for (let i = 0; i < 3; i++) {
+      const { unmount, result } = renderHook(() =>
+        useHeroList({ engine: engine as any, snapshotVersion: i }),
+      );
+      expect(result.current.allGenerals).toBeDefined();
+      unmount();
+    }
   });
 });

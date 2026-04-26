@@ -24,6 +24,30 @@ import './HeroDetailModal.css';
 import './HeroDetailModal-chart.css';
 
 // ─────────────────────────────────────────────
+// 羁绊标签数据（从引擎配置获取）
+// ─────────────────────────────────────────────
+import { FACTION_BONDS, PARTNER_BONDS, BondType } from '@/games/three-kingdoms/engine/hero/bond-config';
+
+/** 获取武将参与的羁绊列表 */
+function getHeroBondTags(heroId: string): ReadonlyArray<{ id: string; name: string; type: BondType }> {
+  const bonds: { id: string; name: string; type: BondType }[] = [];
+
+  // 阵营羁绊（所有武将都参与阵营羁绊）
+  for (const fb of FACTION_BONDS) {
+    bonds.push({ id: fb.id, name: fb.name, type: fb.type });
+  }
+
+  // 搭档羁绊（检查是否包含该武将）
+  for (const pb of PARTNER_BONDS) {
+    if (pb.generalIds.includes(heroId)) {
+      bonds.push({ id: pb.id, name: pb.name, type: pb.type });
+    }
+  }
+
+  return bonds;
+}
+
+// ─────────────────────────────────────────────
 // Props
 // ─────────────────────────────────────────────
 interface HeroDetailModalProps {
@@ -395,6 +419,62 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
                 ))
               )}
             </div>
+
+            {/* ── 羁绊标签 ── */}
+            <div className="tk-hero-detail-bonds" data-testid="hero-detail-bonds">
+              <h4 className="tk-hero-detail-section-title">参与羁绊</h4>
+              {(() => {
+                const bondTags = getHeroBondTags(general.id);
+                if (bondTags.length === 0) {
+                  return <div className="tk-hero-detail-skill-empty">暂无羁绊</div>;
+                }
+                return (
+                  <div className="tk-hero-detail-bond-tags">
+                    {bondTags.map((bond) => (
+                      <span
+                        key={bond.id}
+                        className={`tk-hero-detail-bond-tag tk-hero-detail-bond-tag--${bond.type === BondType.FACTION ? 'faction' : 'partner'}`}
+                        data-testid={`hero-bond-tag-${bond.id}`}
+                      >
+                        {bond.type === BondType.FACTION ? '🏛️' : '🤝'} {bond.name}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* ── 突破状态 ── */}
+            {(() => {
+              const starSystem = engine.getHeroStarSystem?.();
+              if (!starSystem) return null;
+              const stage = starSystem.getBreakthroughStage(general.id);
+              const levelCap = starSystem.getLevelCap(general.id);
+              return (
+                <div className="tk-hero-detail-breakthrough" data-testid="hero-detail-breakthrough">
+                  <h4 className="tk-hero-detail-section-title">突破状态</h4>
+                  <div className="tk-hero-detail-breakthrough-info">
+                    <div className="tk-hero-detail-breakthrough-row">
+                      <span className="tk-hero-detail-breakthrough-label">突破阶段</span>
+                      <span className="tk-hero-detail-breakthrough-value" data-testid="breakthrough-stage">
+                        {stage > 0 ? `第${stage}阶` : '未突破'}
+                      </span>
+                    </div>
+                    <div className="tk-hero-detail-breakthrough-row">
+                      <span className="tk-hero-detail-breakthrough-label">等级上限</span>
+                      <span className="tk-hero-detail-breakthrough-value" data-testid="breakthrough-level-cap">
+                        Lv.{levelCap}
+                      </span>
+                    </div>
+                    {general.level >= levelCap && (
+                      <div className="tk-hero-detail-breakthrough-hint" data-testid="breakthrough-hint">
+                        ⚠️ 已达等级上限，需突破才能继续升级
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

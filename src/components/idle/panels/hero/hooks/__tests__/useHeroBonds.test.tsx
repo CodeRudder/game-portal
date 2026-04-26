@@ -205,3 +205,83 @@ describe('useHeroBonds — 边界条件', () => {
     expect(mockBondSystem.getActiveBonds).toHaveBeenCalledWith(['liubei']);
   });
 });
+
+// ═══════════════════════════════════════════════
+// 状态更新测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroBonds — 状态更新', () => {
+  it('allGenerals 变化应触发 heroFactionMap 重计算', () => {
+    const engine = createMockEngine();
+    const generals1 = makeMultipleGenerals();
+
+    const { result, rerender } = renderHook(
+      ({ allGenerals }) =>
+        useHeroBonds(
+          { engine: engine as any, snapshotVersion: 0 },
+          { allGenerals, ownedHeroIds: allGenerals.map((g) => g.id) },
+        ),
+      { initialProps: { allGenerals: generals1 } },
+    );
+
+    expect(Object.keys(result.current.heroFactionMap).length).toBe(4);
+
+    // 更新为只有两个武将
+    const generals2 = generals1.slice(0, 2);
+    rerender({ allGenerals: generals2 });
+    expect(Object.keys(result.current.heroFactionMap).length).toBe(2);
+  });
+
+  it('snapshotVersion 变化应触发 activeBonds 重计算', () => {
+    const generals = makeMultipleGenerals();
+    const engine = createMockEngine();
+
+    const { rerender } = renderHook(
+      ({ snapshotVersion }) =>
+        useHeroBonds(
+          { engine: engine as any, snapshotVersion },
+          { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
+        ),
+      { initialProps: { snapshotVersion: 0 } },
+    );
+
+    rerender({ snapshotVersion: 1 });
+    expect(engine.getBondSystem).toHaveBeenCalled();
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 清理测试
+// ═══════════════════════════════════════════════
+
+describe('useHeroBonds — 清理', () => {
+  it('unmount 后不应有副作用残留', () => {
+    const engine = createMockEngine();
+    const generals = makeMultipleGenerals();
+    const { unmount, result } = renderHook(() =>
+      useHeroBonds(
+        { engine: engine as any, snapshotVersion: 0 },
+        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
+      ),
+    );
+
+    expect(result.current.activeBonds).toBeDefined();
+    expect(() => unmount()).not.toThrow();
+  });
+
+  it('多次 mount/unmount 不应泄漏', () => {
+    const engine = createMockEngine();
+    const generals = makeMultipleGenerals();
+
+    for (let i = 0; i < 3; i++) {
+      const { unmount, result } = renderHook(() =>
+        useHeroBonds(
+          { engine: engine as any, snapshotVersion: i },
+          { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
+        ),
+      );
+      expect(result.current.bondCatalog).toBeDefined();
+      unmount();
+    }
+  });
+});

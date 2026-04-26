@@ -8,6 +8,9 @@
  * - 招募结果显示正确（新武将/重复碎片）
  * - 资源不足时按钮灰显
  * - 关闭弹窗功能
+ * - [增强] 资源余额显示
+ * - [增强] 概率表展示
+ * - [增强] 招募历史记录
  */
 
 import React from 'react';
@@ -78,14 +81,21 @@ function makeMockRecruitSystem(canAfford = true) {
 function makeMockEngine(options: {
   canAfford?: boolean;
   recruitOutput?: RecruitOutput | null;
+  goldAmount?: number;
+  tokenAmount?: number;
 } = {}) {
-  const { canAfford = true, recruitOutput = makeRecruitOutput(1) } = options;
+  const { canAfford = true, recruitOutput = makeRecruitOutput(1), goldAmount = 10000, tokenAmount = 500 } = options;
 
   return {
     getRecruitSystem: vi.fn(() => makeMockRecruitSystem(canAfford)),
     recruit: vi.fn(() => recruitOutput),
     getHeroSystem: vi.fn(),
     getLevelSystem: vi.fn(),
+    getResourceAmount: vi.fn((type: string) => {
+      if (type === 'gold') return goldAmount;
+      if (type === 'recruitToken') return tokenAmount;
+      return 0;
+    }),
   } as unknown as ThreeKingdomsEngine;
 }
 
@@ -370,6 +380,7 @@ describe('RecruitModal', () => {
       recruit: vi.fn(() => makeRecruitOutput(1)),
       getHeroSystem: vi.fn(),
       getLevelSystem: vi.fn(),
+      getResourceAmount: vi.fn(() => 1000),
     } as unknown as ThreeKingdomsEngine;
 
     render(<RecruitModal {...defaultProps} engine={engine} />);
@@ -381,5 +392,97 @@ describe('RecruitModal', () => {
     // 普通招贤标签在历史区域中也有一个
     const normalLabels = screen.getAllByText('普通招贤');
     expect(normalLabels.length).toBeGreaterThanOrEqual(2); // 类型选择 + 历史记录
+  });
+
+  // ═══════════════════════════════════════════
+  // 9. [增强] 资源余额显示
+  // ═══════════════════════════════════════════
+
+  it('应显示资源余额区域', () => {
+    render(<RecruitModal {...defaultProps} />);
+    expect(screen.getByTestId('recruit-modal-balance')).toBeInTheDocument();
+  });
+
+  it('应显示铜钱余额', () => {
+    render(<RecruitModal {...defaultProps} />);
+    expect(screen.getByTestId('recruit-balance-gold')).toBeInTheDocument();
+    expect(screen.getByTestId('recruit-balance-gold').textContent).toContain('10,000');
+  });
+
+  it('应显示求贤令余额', () => {
+    render(<RecruitModal {...defaultProps} />);
+    expect(screen.getByTestId('recruit-balance-token')).toBeInTheDocument();
+    expect(screen.getByTestId('recruit-balance-token').textContent).toContain('500');
+  });
+
+  it('资源余额为零时应正确显示', () => {
+    const engine = makeMockEngine({ goldAmount: 0, tokenAmount: 0 });
+    render(<RecruitModal {...defaultProps} engine={engine} />);
+    expect(screen.getByTestId('recruit-balance-gold').textContent).toContain('0');
+    expect(screen.getByTestId('recruit-balance-token').textContent).toContain('0');
+  });
+
+  // ═══════════════════════════════════════════
+  // 10. [增强] 概率表展示
+  // ═══════════════════════════════════════════
+
+  it('应渲染概率表折叠按钮', () => {
+    render(<RecruitModal {...defaultProps} />);
+    expect(screen.getByTestId('recruit-rates-toggle')).toBeInTheDocument();
+    expect(screen.getByText('📊 概率一览')).toBeInTheDocument();
+  });
+
+  it('默认应不展开概率表', () => {
+    render(<RecruitModal {...defaultProps} />);
+    expect(screen.queryByTestId('recruit-rates-table')).not.toBeInTheDocument();
+  });
+
+  it('点击概率表按钮应展开概率表', async () => {
+    render(<RecruitModal {...defaultProps} />);
+    const toggleBtn = screen.getByTestId('recruit-rates-toggle');
+    await userEvent.click(toggleBtn);
+    expect(screen.getByTestId('recruit-rates-table')).toBeInTheDocument();
+  });
+
+  it('概率表应显示所有品质的概率', async () => {
+    render(<RecruitModal {...defaultProps} />);
+    const toggleBtn = screen.getByTestId('recruit-rates-toggle');
+    await userEvent.click(toggleBtn);
+
+    // 普通招募概率表
+    expect(screen.getByText('60%')).toBeInTheDocument(); // COMMON 60%
+    expect(screen.getByText('30%')).toBeInTheDocument(); // FINE 30%
+    expect(screen.getByText('8%')).toBeInTheDocument();  // RARE 8%
+    expect(screen.getByText('2%')).toBeInTheDocument();  // EPIC 2%
+  });
+
+  it('切换到高级招贤后概率表应更新', async () => {
+    render(<RecruitModal {...defaultProps} />);
+    // 展开概率表
+    const toggleBtn = screen.getByTestId('recruit-rates-toggle');
+    await userEvent.click(toggleBtn);
+
+    // 切换到高级招贤
+    const advancedBtn = screen.getByText('高级招贤').closest('button')!;
+    await userEvent.click(advancedBtn);
+
+    // 高级招募概率：COMMON 20%, FINE 40%, RARE 25%, EPIC 13%, LEGENDARY 2%
+    expect(screen.getByText('20%')).toBeInTheDocument();
+    expect(screen.getByText('40%')).toBeInTheDocument();
+    expect(screen.getByText('25%')).toBeInTheDocument();
+    expect(screen.getByText('13%')).toBeInTheDocument();
+  });
+
+  it('展开后再点击应折叠概率表', async () => {
+    render(<RecruitModal {...defaultProps} />);
+    const toggleBtn = screen.getByTestId('recruit-rates-toggle');
+
+    // 展开
+    await userEvent.click(toggleBtn);
+    expect(screen.getByTestId('recruit-rates-table')).toBeInTheDocument();
+
+    // 折叠
+    await userEvent.click(toggleBtn);
+    expect(screen.queryByTestId('recruit-rates-table')).not.toBeInTheDocument();
   });
 });

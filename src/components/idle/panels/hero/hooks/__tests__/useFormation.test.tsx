@@ -253,3 +253,91 @@ describe('useFormation — 边界条件', () => {
     expect(power).toBeGreaterThan(0);
   });
 });
+
+// ═══════════════════════════════════════════════
+// 状态更新测试
+// ═══════════════════════════════════════════════
+
+describe('useFormation — 状态更新', () => {
+  it('snapshotVersion 变化应触发编队数据重计算', () => {
+    const engine = createMockEngine({
+      getFormations: vi.fn().mockReturnValue([
+        { slots: [{ heroId: 'guanyu' }, null, null, null, null, null] },
+      ]),
+    });
+    const heroInfos = makeHeroInfos();
+
+    const { result, rerender } = renderHook(
+      ({ snapshotVersion }) =>
+        useFormation(
+          { engine: engine as any, snapshotVersion },
+          { heroInfos },
+        ),
+      { initialProps: { snapshotVersion: 0 } },
+    );
+
+    expect(result.current.currentFormation[0]).toBe('guanyu');
+
+    // 更新 snapshotVersion
+    rerender({ snapshotVersion: 1 });
+    expect(engine.getFormations).toHaveBeenCalledTimes(2);
+  });
+
+  it('heroInfos 变化应更新推荐方案', () => {
+    const engine = createMockEngine();
+    const heroInfos1 = makeHeroInfos();
+
+    const { result, rerender } = renderHook(
+      ({ heroInfos }) =>
+        useFormation(
+          { engine: engine as any, snapshotVersion: 0 },
+          { heroInfos },
+        ),
+      { initialProps: { heroInfos: heroInfos1 } },
+    );
+
+    const plans1 = result.current.generateRecommendations();
+    expect(plans1.length).toBeGreaterThan(0);
+
+    // 更新 heroInfos 为空
+    rerender({ heroInfos: [] });
+    const plans2 = result.current.generateRecommendations();
+    expect(plans2).toEqual([]);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 清理测试
+// ═══════════════════════════════════════════════
+
+describe('useFormation — 清理', () => {
+  it('unmount 后不应有副作用残留', () => {
+    const engine = createMockEngine();
+    const heroInfos = makeHeroInfos();
+    const { unmount, result } = renderHook(() =>
+      useFormation(
+        { engine: engine as any, snapshotVersion: 0 },
+        { heroInfos },
+      ),
+    );
+
+    expect(result.current.currentFormation).toBeDefined();
+    expect(() => unmount()).not.toThrow();
+  });
+
+  it('多次 mount/unmount 不应泄漏', () => {
+    const engine = createMockEngine();
+    const heroInfos = makeHeroInfos();
+
+    for (let i = 0; i < 3; i++) {
+      const { unmount, result } = renderHook(() =>
+        useFormation(
+          { engine: engine as any, snapshotVersion: i },
+          { heroInfos },
+        ),
+      );
+      expect(result.current.currentFormation).toBeDefined();
+      unmount();
+    }
+  });
+});

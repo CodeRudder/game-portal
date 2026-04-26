@@ -7,6 +7,8 @@
  * - 已激活羁绊高亮显示，未激活灰色
  * - 点击羁绊卡片展示详情（参与武将列表+属性加成数值）
  * - 阵营羁绊和历史羁绊分组展示
+ * - [增强] 当前编队阵营分布可视化
+ * - [增强] 羁绊详情弹窗（点击查看完整效果+激活条件）
  *
  * 嵌入位置：武将详情弹窗的"羁绊"Tab 或独立入口
  * 引擎依赖：BondSystem / bond-config
@@ -23,6 +25,9 @@ import type {
 } from '@/games/three-kingdoms/engine/hero/bond-config';
 import { BondType, FACTION_BONDS, PARTNER_BONDS } from '@/games/three-kingdoms/engine/hero/bond-config';
 import type { ActiveBondWithFaction } from './hero-ui.types';
+import { FACTION_ICONS, STAT_LABELS } from './BondCard';
+import BondCard from './BondCard';
+import { BondDetailPopup } from './BondCard';
 import './BondCollectionPanel.css';
 
 // ─────────────────────────────────────────────
@@ -85,26 +90,6 @@ export interface BondCollectionPanelProps {
 // ─────────────────────────────────────────────
 // 常量
 // ─────────────────────────────────────────────
-
-const STAT_LABELS: Record<string, string> = {
-  attack: '攻击',
-  defense: '防御',
-  intelligence: '智力',
-  speed: '速度',
-  hp: '生命',
-  critRate: '暴击率',
-  critDamage: '暴击伤害',
-  skillDamage: '技能伤害',
-  passiveTriggerRate: '被动触发率',
-  skillRange: '技能范围',
-};
-
-const FACTION_ICONS: Record<string, string> = {
-  shu: '🟢',
-  wei: '🔵',
-  wu: '🔴',
-  qun: '🟡',
-};
 
 const TAB_KEYS = {
   active: 'active',
@@ -209,101 +194,6 @@ function buildBondCatalog(
 }
 
 // ─────────────────────────────────────────────
-// 子组件：羁绊卡片
-// ─────────────────────────────────────────────
-
-interface BondCardProps {
-  bond: BondCatalogItem;
-  ownedHeroIds: string[];
-  isExpanded: boolean;
-  onToggle: (bondId: string) => void;
-}
-
-const BondCard: React.FC<BondCardProps> = ({
-  bond,
-  ownedHeroIds,
-  isExpanded,
-  onToggle,
-}) => {
-  const { id, name, type, faction, heroIds, heroNames, description, level, effects, isActive, minRequired } = bond;
-
-  const cardClass = [
-    'tk-bond-card',
-    isActive ? 'tk-bond-card--active' : 'tk-bond-card--inactive',
-  ].filter(Boolean).join(' ');
-
-  const icon = type === BondType.FACTION
-    ? (faction ? FACTION_ICONS[faction] ?? '🏛️' : '🏛️')
-    : '🤝';
-
-  return (
-    <div
-      className={cardClass}
-      onClick={() => onToggle(id)}
-      data-testid={`bond-card-${id}`}
-      role="button"
-      tabIndex={0}
-      aria-expanded={isExpanded}
-    >
-      {/* 头部 */}
-      <div className="tk-bond-card__header">
-        <div className="tk-bond-card__name-row">
-          <span className="tk-bond-card__icon">{icon}</span>
-          <span className="tk-bond-card__name">{name}</span>
-          {level > 0 && <span className="tk-bond-card__level">Lv.{level}</span>}
-        </div>
-        <span className={`tk-bond-card__status-tag ${isActive ? 'tk-bond-card__status-tag--active' : 'tk-bond-card__status-tag--inactive'}`}>
-          {isActive ? '已激活' : '未激活'}
-        </span>
-      </div>
-
-      {/* 描述 */}
-      <div className="tk-bond-card__desc">{description}</div>
-
-      {/* 参与武将标签 */}
-      {heroIds.length > 0 && (
-        <div className="tk-bond-card__heroes">
-          {heroIds.map((heroId, i) => {
-            const owned = ownedHeroIds.includes(heroId);
-            const displayName = heroNames[i] || heroId;
-            return (
-              <span
-                key={heroId}
-                className={`tk-bond-hero-tag ${owned ? 'tk-bond-hero-tag--owned' : 'tk-bond-hero-tag--missing'}`}
-              >
-                {owned ? '✓' : '✗'} {displayName}
-              </span>
-            );
-          })}
-        </div>
-      )}
-
-      {/* 展开详情 */}
-      {isExpanded && (
-        <div className="tk-bond-card__detail" data-testid={`bond-detail-${id}`}>
-          {effects.map((eff, i) => (
-            <div key={i} className="tk-bond-detail-row">
-              <span className="tk-bond-detail-label">{STAT_LABELS[eff.stat] ?? eff.stat}</span>
-              <span className={`tk-bond-detail-value ${!isActive ? 'tk-bond-detail-value--inactive' : ''}`}>
-                {isActive ? `+${Math.round(eff.value * 100)}%` : `+${Math.round(eff.value * 100)}% (未激活)`}
-              </span>
-            </div>
-          ))}
-          {!isActive && minRequired > 0 && (
-            <div className="tk-bond-detail-row">
-              <span className="tk-bond-detail-label">激活条件</span>
-              <span className="tk-bond-detail-value--inactive" style={{ fontWeight: 500, color: 'var(--tk-text-muted)' }}>
-                需要 {minRequired} 名武将
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────
 // 主组件
 // ─────────────────────────────────────────────
 
@@ -344,7 +234,7 @@ const BondCollectionPanel: React.FC<BondCollectionPanelProps> = ({
       return externalCatalog.filter((item) =>
         item.id && typeof item.id === 'string' &&
         item.name && typeof item.name === 'string' &&
-        typeof item.type === 'number' &&
+        typeof item.type === 'string' &&
         Array.isArray(item.effects) &&
         typeof item.isActive === 'boolean',
       );
@@ -379,8 +269,52 @@ const BondCollectionPanel: React.FC<BondCollectionPanelProps> = ({
     setExpandedBondId((prev) => (prev === bondId ? null : bondId));
   }, []);
 
+  // ── 阵营分布统计 ──
+  const factionDistribution = useMemo(() => {
+    const dist: Record<string, number> = {};
+    for (const heroId of formationHeroIds) {
+      // 尝试从 heroFactionMap 获取阵营
+      const faction = heroFactionMap?.[heroId];
+      if (faction) {
+        dist[faction] = (dist[faction] || 0) + 1;
+      }
+    }
+    return dist;
+  }, [formationHeroIds, heroFactionMap]);
+
+  const totalFormationHeroes = formationHeroIds.length;
+
   return (
     <div className="tk-bond-panel" role="region" aria-label="羁绊图鉴" data-testid="bond-collection-panel">
+      {/* ── 阵营分布可视化 ── */}
+      {totalFormationHeroes > 0 && (
+        <div className="tk-bond-faction-dist" data-testid="bond-faction-distribution">
+          <div className="tk-bond-faction-dist-title">编队阵营分布</div>
+          <div className="tk-bond-faction-dist-bar">
+            {Object.entries(factionDistribution).map(([faction, count]) => {
+              const pct = totalFormationHeroes > 0 ? (count / totalFormationHeroes) * 100 : 0;
+              return (
+                <div
+                  key={faction}
+                  className={`tk-bond-faction-segment tk-bond-faction-segment--${faction}`}
+                  style={{ width: `${pct}%` }}
+                  title={`${FACTION_ICONS[faction] ?? ''} ${faction}: ${count}人`}
+                  data-testid={`faction-segment-${faction}`}
+                />
+              );
+            })}
+          </div>
+          <div className="tk-bond-faction-dist-legend">
+            {Object.entries(factionDistribution).map(([faction, count]) => (
+              <span key={faction} className="tk-bond-faction-legend-item" data-testid={`faction-legend-${faction}`}>
+                <span className={`tk-bond-faction-dot tk-bond-faction-dot--${faction}`} />
+                {FACTION_ICONS[faction] ?? ''} {count}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tab 切换 */}
       <div className="tk-bond-tabs" role="tablist">
         <button
@@ -443,6 +377,19 @@ const BondCollectionPanel: React.FC<BondCollectionPanelProps> = ({
           )}
         </div>
       )}
+
+      {/* ── 羁绊详情弹窗 ── */}
+      {expandedBondId && (() => {
+        const bond = catalog.find((b) => b.id === expandedBondId);
+        if (!bond) return null;
+        return (
+          <BondDetailPopup
+            bond={bond}
+            ownedHeroIds={ownedHeroIds}
+            onClose={() => setExpandedBondId(null)}
+          />
+        );
+      })()}
     </div>
   );
 };

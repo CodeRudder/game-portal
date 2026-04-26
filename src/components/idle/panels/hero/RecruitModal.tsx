@@ -51,6 +51,27 @@ const RECRUIT_TYPE_ICONS: Record<RecruitType, string> = {
 };
 
 // ─────────────────────────────────────────────
+// 概率表数据
+// ─────────────────────────────────────────────
+
+const RATE_TABLE_DATA: Record<RecruitType, ReadonlyArray<{ quality: string; label: string; rate: number }>> = {
+  normal: [
+    { quality: 'COMMON', label: '普通', rate: 0.60 },
+    { quality: 'FINE', label: '精良', rate: 0.30 },
+    { quality: 'RARE', label: '稀有', rate: 0.08 },
+    { quality: 'EPIC', label: '史诗', rate: 0.02 },
+    { quality: 'LEGENDARY', label: '传说', rate: 0 },
+  ],
+  advanced: [
+    { quality: 'COMMON', label: '普通', rate: 0.20 },
+    { quality: 'FINE', label: '精良', rate: 0.40 },
+    { quality: 'RARE', label: '稀有', rate: 0.25 },
+    { quality: 'EPIC', label: '史诗', rate: 0.13 },
+    { quality: 'LEGENDARY', label: '传说', rate: 0.02 },
+  ],
+};
+
+// ─────────────────────────────────────────────
 // 品质揭示动画 CSS class 映射
 // ─────────────────────────────────────────────
 const QUALITY_REVEAL_ANIM: Record<Quality, string> = {
@@ -93,6 +114,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
   const [isRecruiting, setIsRecruiting] = useState(false);
   const [revealPhase, setRevealPhase] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState(false);
+  const [showRates, setShowRates] = useState(false);
 
   const recruitSystem = engine.getRecruitSystem();
 
@@ -180,6 +202,61 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
               <span className="tk-recruit-type-desc">{RECRUIT_TYPE_DESC[type]}</span>
             </button>
           ))}
+        </div>
+
+        {/* ── 资源余额 ── */}
+        <div className="tk-recruit-balance" data-testid="recruit-modal-balance">
+          {(() => {
+            const goldBalance = engine.getResourceAmount?.('gold') ?? 0;
+            const tokenBalance = engine.getResourceAmount?.('recruitToken') ?? 0;
+            return (
+              <>
+                <span className="tk-recruit-balance-item" data-testid="recruit-balance-gold">
+                  💰 铜钱: <strong>{goldBalance.toLocaleString('zh-CN')}</strong>
+                </span>
+                <span className="tk-recruit-balance-item" data-testid="recruit-balance-token">
+                  🎫 求贤令: <strong>{tokenBalance.toLocaleString('zh-CN')}</strong>
+                </span>
+              </>
+            );
+          })()}
+        </div>
+
+        {/* ── 概率表 ── */}
+        <div className="tk-recruit-rates" data-testid="recruit-modal-rates">
+          <button
+            className="tk-recruit-rates-toggle"
+            onClick={() => setShowRates((prev) => !prev)}
+            aria-expanded={showRates}
+            data-testid="recruit-rates-toggle"
+          >
+            <span>📊 概率一览</span>
+            <span className={`tk-recruit-rates-arrow ${showRates ? 'tk-recruit-rates-arrow--expanded' : ''}`}>▼</span>
+          </button>
+          {showRates && (
+            <div className="tk-recruit-rates-table" data-testid="recruit-rates-table">
+              {RATE_TABLE_DATA[recruitType].map((row) => (
+                <div key={row.quality} className="tk-recruit-rate-row">
+                  <span
+                    className="tk-recruit-rate-quality"
+                    style={{ borderColor: QUALITY_BORDER_COLORS[row.quality as Quality] }}
+                  >
+                    {row.label}
+                  </span>
+                  <div className="tk-recruit-rate-bar-wrap">
+                    <div
+                      className="tk-recruit-rate-bar-fill"
+                      style={{
+                        width: `${row.rate * 100}%`,
+                        background: QUALITY_BORDER_COLORS[row.quality as Quality],
+                      }}
+                    />
+                  </div>
+                  <span className="tk-recruit-rate-pct">{(row.rate * 100).toFixed(0)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 保底进度 */}

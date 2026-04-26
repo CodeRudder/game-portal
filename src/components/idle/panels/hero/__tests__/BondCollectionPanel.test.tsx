@@ -7,6 +7,8 @@
  * - 羁绊卡片展示（名称、状态标签、描述、武将标签）
  * - 交互测试（点击卡片展开详情）
  * - 边界测试（无羁绊/无激活羁绊）
+ * - [增强] 阵营分布可视化测试
+ * - [增强] 羁绊详情弹窗测试
  */
 
 import React from 'react';
@@ -217,8 +219,11 @@ describe('BondCollectionPanel', () => {
     render(<BondCollectionPanel {...makeProps({ bondCatalog: catalog, onClose })} />);
     fireEvent.click(screen.getByTestId('bond-card-faction_shu'));
 
-    expect(screen.getByText('攻击')).toBeInTheDocument();
-    expect(screen.getByText('+5%')).toBeInTheDocument();
+    // 卡片内展开详情和弹窗中都显示属性加成，使用 getAllByText
+    const attackLabels = screen.getAllByText('攻击');
+    expect(attackLabels.length).toBeGreaterThanOrEqual(1);
+    const bonusValues = screen.getAllByText('+5%');
+    expect(bonusValues.length).toBeGreaterThanOrEqual(1);
   });
 
   // ═══════════════════════════════════════════
@@ -343,5 +348,184 @@ describe('BondCollectionPanel', () => {
     fireEvent.click(screen.getByTestId('tab-all-bonds'));
     fireEvent.click(screen.getByTestId('bond-card-partner_wuhu'));
     expect(screen.getByText('需要 3 名武将')).toBeInTheDocument();
+  });
+
+  // ═══════════════════════════════════════════
+  // 9. [增强] 阵营分布可视化
+  // ═══════════════════════════════════════════
+
+  it('有编队武将时应渲染阵营分布区域', () => {
+    render(
+      <BondCollectionPanel
+        {...makeProps({
+          formationHeroIds: ['liubei', 'guanyu', 'zhangfei'],
+          heroFactionMap: {
+            liubei: 'shu',
+            guanyu: 'shu',
+            zhangfei: 'shu',
+          },
+          onClose,
+        })}
+      />,
+    );
+    expect(screen.getByTestId('bond-faction-distribution')).toBeInTheDocument();
+    expect(screen.getByText('编队阵营分布')).toBeInTheDocument();
+  });
+
+  it('阵营分布应显示正确的阵营段', () => {
+    render(
+      <BondCollectionPanel
+        {...makeProps({
+          formationHeroIds: ['liubei', 'caocao'],
+          heroFactionMap: {
+            liubei: 'shu',
+            caocao: 'wei',
+          },
+          onClose,
+        })}
+      />,
+    );
+    expect(screen.getByTestId('faction-segment-shu')).toBeInTheDocument();
+    expect(screen.getByTestId('faction-segment-wei')).toBeInTheDocument();
+  });
+
+  it('阵营分布应显示阵营图例', () => {
+    render(
+      <BondCollectionPanel
+        {...makeProps({
+          formationHeroIds: ['liubei', 'guanyu'],
+          heroFactionMap: {
+            liubei: 'shu',
+            guanyu: 'shu',
+          },
+          onClose,
+        })}
+      />,
+    );
+    expect(screen.getByTestId('faction-legend-shu')).toBeInTheDocument();
+  });
+
+  it('无编队武将时不应渲染阵营分布', () => {
+    const { container } = render(
+      <BondCollectionPanel
+        {...makeProps({
+          formationHeroIds: [],
+          onClose,
+        })}
+      />,
+    );
+    expect(container.querySelector('.tk-bond-faction-dist')).not.toBeInTheDocument();
+  });
+
+  // ═══════════════════════════════════════════
+  // 10. [增强] 羁绊详情弹窗
+  // ═══════════════════════════════════════════
+
+  it('点击羁绊卡片应打开详情弹窗', () => {
+    const catalog: BondCatalogItem[] = [
+      makeBondCatalogItem({
+        id: 'faction_shu',
+        name: '蜀国',
+        effects: [{ stat: 'attack', value: 0.05 }],
+        isActive: true,
+        level: 1,
+      }),
+    ];
+    render(<BondCollectionPanel {...makeProps({ bondCatalog: catalog, onClose })} />);
+
+    // 点击卡片展开
+    fireEvent.click(screen.getByTestId('bond-card-faction_shu'));
+
+    // 应该显示详情弹窗
+    expect(screen.getByTestId('bond-detail-popup')).toBeInTheDocument();
+  });
+
+  it('详情弹窗应显示羁绊名称和状态', () => {
+    const catalog: BondCatalogItem[] = [
+      makeBondCatalogItem({
+        id: 'faction_shu',
+        name: '蜀国',
+        effects: [{ stat: 'attack', value: 0.05 }],
+        isActive: true,
+        level: 2,
+      }),
+    ];
+    render(<BondCollectionPanel {...makeProps({ bondCatalog: catalog, onClose })} />);
+    fireEvent.click(screen.getByTestId('bond-card-faction_shu'));
+
+    // 弹窗中应显示羁绊名称
+    const popup = screen.getByTestId('bond-detail-popup');
+    expect(popup).toBeInTheDocument();
+  });
+
+  it('详情弹窗点击关闭按钮应关闭', () => {
+    const catalog: BondCatalogItem[] = [
+      makeBondCatalogItem({
+        id: 'faction_shu',
+        name: '蜀国',
+        effects: [{ stat: 'attack', value: 0.05 }],
+        isActive: true,
+      }),
+    ];
+    render(<BondCollectionPanel {...makeProps({ bondCatalog: catalog, onClose })} />);
+    fireEvent.click(screen.getByTestId('bond-card-faction_shu'));
+
+    // 关闭弹窗
+    const closeBtn = screen.getByRole('button', { name: '关闭' });
+    fireEvent.click(closeBtn);
+    expect(screen.queryByTestId('bond-detail-popup')).not.toBeInTheDocument();
+  });
+
+  it('未激活羁绊详情弹窗应显示激活条件', () => {
+    const catalog: BondCatalogItem[] = [
+      makeBondCatalogItem({
+        id: 'partner_wuhu',
+        name: '五虎上将',
+        type: BondType.PARTNER,
+        heroIds: ['guanyu', 'zhangfei'],
+        heroNames: ['关羽', '张飞'],
+        effects: [{ stat: 'critRate', value: 0.1 }],
+        isActive: false,
+        level: 0,
+        minRequired: 3,
+      }),
+    ];
+    render(<BondCollectionPanel {...makeProps({ bondCatalog: catalog, activeBonds: [], onClose })} />);
+    fireEvent.click(screen.getByTestId('tab-all-bonds'));
+    fireEvent.click(screen.getByTestId('bond-card-partner_wuhu'));
+
+    expect(screen.getByText('需要 3 名武将同时上阵')).toBeInTheDocument();
+  });
+
+  it('详情弹窗应显示参与武将列表', () => {
+    const catalog: BondCatalogItem[] = [
+      makeBondCatalogItem({
+        id: 'partner_taoyuan',
+        name: '桃园结义',
+        type: BondType.PARTNER,
+        heroIds: ['liubei', 'guanyu', 'zhangfei'],
+        heroNames: ['刘备', '关羽', '张飞'],
+        effects: [{ stat: 'attack', value: 0.15 }],
+        isActive: true,
+        minRequired: 3,
+      }),
+    ];
+    render(
+      <BondCollectionPanel
+        {...makeProps({
+          bondCatalog: catalog,
+          ownedHeroIds: ['liubei', 'guanyu'],
+          onClose,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('bond-card-partner_taoyuan'));
+
+    // 弹窗中应显示武将名
+    expect(screen.getByText('刘备')).toBeInTheDocument();
+    expect(screen.getByText('关羽')).toBeInTheDocument();
+    expect(screen.getByText('张飞')).toBeInTheDocument();
+    // 未拥有的武将应显示"未拥有"提示
+    expect(screen.getByText('未拥有')).toBeInTheDocument();
   });
 });

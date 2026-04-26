@@ -138,8 +138,9 @@ describe('HeroUpgradePanel', () => {
     const general = makeGeneral({ level: 10 });
     const engine = makeMockEngine();
     render(<HeroUpgradePanel general={general} engine={engine} />);
-    // 经验显示 500/1000
-    expect(screen.getByText(/经验/)).toBeInTheDocument();
+    // 经验标签区域应存在（包含 "经验" 文本和数值）
+    const expLabels = screen.getAllByText(/经验/);
+    expect(expLabels.length).toBeGreaterThanOrEqual(1);
   });
 
   it('应渲染标题"强化升级"', () => {
