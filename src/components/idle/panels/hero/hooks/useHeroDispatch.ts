@@ -96,7 +96,7 @@ export function useHeroDispatch(params: UseHeroEngineParams): UseHeroDispatchRet
         const state = dispatchSystem.getState() as DispatchState;
         const record = state?.buildingDispatch?.[buildingId];
         if (record?.heroId) {
-          dispatchSystem.undispatchHero(record.heroId);
+          dispatchSystem.undeployHero(record.heroId);
         }
       } catch {
         // 引擎操作失败，静默处理

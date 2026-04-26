@@ -63,10 +63,10 @@ describe('useHeroDispatch — 数据获取', () => {
   it('应正确显示已派遣武将', () => {
     const mockDispatchSystem = {
       dispatchHero: vi.fn(),
-      undispatchHero: vi.fn(),
+      undeployHero: vi.fn(),
       getState: vi.fn().mockReturnValue({
         buildingDispatch: {
-          farm: { heroId: 'guanyu' },
+          farmland: { heroId: 'guanyu' },
         },
       }),
     };
@@ -78,7 +78,7 @@ describe('useHeroDispatch — 数据获取', () => {
       useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
     );
 
-    const farm = result.current.buildings.find((b) => b.id === 'farm');
+    const farm = result.current.buildings.find((b) => b.id === 'farmland');
     expect(farm?.dispatchHeroId).toBe('guanyu');
   });
 
@@ -102,7 +102,7 @@ describe('useHeroDispatch — 操作方法', () => {
   it('dispatchHero 应调用引擎派遣方法', () => {
     const mockDispatchSystem = {
       dispatchHero: vi.fn(),
-      undispatchHero: vi.fn(),
+      undeployHero: vi.fn(),
       getState: vi.fn().mockReturnValue({}),
     };
     const engine = createMockEngine({
@@ -114,19 +114,19 @@ describe('useHeroDispatch — 操作方法', () => {
     );
 
     act(() => {
-      result.current.dispatchHero('guanyu', 'farm');
+      result.current.dispatchHero('guanyu', 'farmland');
     });
 
-    expect(mockDispatchSystem.dispatchHero).toHaveBeenCalledWith('guanyu', 'farm');
+    expect(mockDispatchSystem.dispatchHero).toHaveBeenCalledWith('guanyu', 'farmland');
   });
 
   it('recallHero 应调用引擎召回方法', () => {
     const mockDispatchSystem = {
       dispatchHero: vi.fn(),
-      undispatchHero: vi.fn(),
+      undeployHero: vi.fn(),
       getState: vi.fn().mockReturnValue({
         buildingDispatch: {
-          farm: { heroId: 'guanyu' },
+          farmland: { heroId: 'guanyu' },
         },
       }),
     };
@@ -139,10 +139,32 @@ describe('useHeroDispatch — 操作方法', () => {
     );
 
     act(() => {
-      result.current.recallHero('farm');
+      result.current.recallHero('farmland');
     });
 
-    expect(mockDispatchSystem.undispatchHero).toHaveBeenCalledWith('guanyu');
+    expect(mockDispatchSystem.undeployHero).toHaveBeenCalledWith('guanyu');
+  });
+
+  it('无效建筑类型应被静默忽略', () => {
+    const mockDispatchSystem = {
+      dispatchHero: vi.fn(),
+      undeployHero: vi.fn(),
+      getState: vi.fn().mockReturnValue({}),
+    };
+    const engine = createMockEngine({
+      getHeroDispatchSystem: vi.fn().mockReturnValue(mockDispatchSystem),
+    });
+
+    const { result } = renderHook(() =>
+      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+    );
+
+    act(() => {
+      result.current.dispatchHero('guanyu', 'invalid_building_type');
+    });
+
+    // 无效建筑类型不应调用引擎
+    expect(mockDispatchSystem.dispatchHero).not.toHaveBeenCalled();
   });
 });
 
@@ -173,10 +195,10 @@ describe('useHeroDispatch — 边界条件', () => {
     expect(result.current.buildings).toEqual([]);
   });
 
-  it('recallHero 无派遣记录时不应调用 undispatchHero', () => {
+  it('recallHero 无派遣记录时不应调用 undeployHero', () => {
     const mockDispatchSystem = {
       dispatchHero: vi.fn(),
-      undispatchHero: vi.fn(),
+      undeployHero: vi.fn(),
       getState: vi.fn().mockReturnValue({
         buildingDispatch: {},
       }),
@@ -190,16 +212,16 @@ describe('useHeroDispatch — 边界条件', () => {
     );
 
     act(() => {
-      result.current.recallHero('farm');
+      result.current.recallHero('farmland');
     });
 
-    expect(mockDispatchSystem.undispatchHero).not.toHaveBeenCalled();
+    expect(mockDispatchSystem.undeployHero).not.toHaveBeenCalled();
   });
 
   it('dispatchHero 引擎异常时应静默处理', () => {
     const mockDispatchSystem = {
       dispatchHero: vi.fn().mockImplementation(() => { throw new Error('fail'); }),
-      undispatchHero: vi.fn(),
+      undeployHero: vi.fn(),
       getState: vi.fn().mockReturnValue({}),
     };
     const engine = createMockEngine({
@@ -213,7 +235,7 @@ describe('useHeroDispatch — 边界条件', () => {
     // 不应抛出异常
     expect(() => {
       act(() => {
-        result.current.dispatchHero('guanyu', 'farm');
+        result.current.dispatchHero('guanyu', 'farmland');
       });
     }).not.toThrow();
   });

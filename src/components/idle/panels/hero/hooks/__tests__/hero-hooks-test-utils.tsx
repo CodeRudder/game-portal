@@ -88,6 +88,7 @@ export function createMockEngine(overrides: Record<string, unknown> = {}) {
   const mockHeroDispatchSystem = {
     dispatchHero: vi.fn(),
     undispatchHero: vi.fn(),
+    undeployHero: vi.fn(),
     getState: vi.fn().mockReturnValue({}),
   };
 

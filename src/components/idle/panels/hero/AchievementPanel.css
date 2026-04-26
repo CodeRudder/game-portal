@@ -1,0 +1,61 @@
+/**
+ * AchievementPanel — 成就系统面板样式
+ */
+
+/* ── 面板容器 ── */
+.ach-panel { padding: 16px; color: var(--tk-text-primary, rgba(240, 230, 211, 0.9)); }
+.ach-panel__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ach-panel__title { font-size: 18px; font-weight: 700; margin: 0; }
+.ach-panel__stats { font-size: 13px; color: var(--tk-gold, #C9A84C); font-weight: 600; }
+
+/* ── 筛选按钮组 ── */
+.ach-panel__filters { display: flex; gap: 8px; margin-bottom: 16px; }
+.ach-filter-btn {
+  padding: 4px 12px; border: 1px solid rgba(240, 230, 211, 0.15); border-radius: 16px;
+  background: rgba(240, 230, 211, 0.05); color: var(--tk-text-secondary, rgba(240, 230, 211, 0.6));
+  font-size: 12px; cursor: pointer;
+}
+.ach-filter-btn--active {
+  background: var(--tk-gold, #C9A84C); color: #1a1a2e;
+  border-color: var(--tk-gold, #C9A84C); font-weight: 600;
+}
+
+/* ── 类别分组 ── */
+.ach-category { margin-bottom: 16px; }
+.ach-category__title {
+  font-size: 14px; font-weight: 600; color: var(--tk-text-secondary, rgba(240, 230, 211, 0.7));
+  margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(240, 230, 211, 0.08);
+}
+
+/* ── 成就卡片 ── */
+.ach-item {
+  padding: 12px; margin-bottom: 8px; border: 1px solid rgba(240, 230, 211, 0.08);
+  border-radius: 8px; background: rgba(240, 230, 211, 0.03);
+}
+.ach-item--claimed { opacity: 0.6; }
+.ach-item--completed { border-color: rgba(201, 168, 76, 0.3); }
+.ach-item__header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.ach-item__icon { font-size: 20px; flex-shrink: 0; }
+.ach-item__info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ach-item__name { font-size: 14px; font-weight: 600; }
+.ach-item__desc { font-size: 12px; color: var(--tk-text-secondary, rgba(240, 230, 211, 0.5)); }
+.ach-item__badge { font-size: 11px; flex-shrink: 0; padding: 2px 6px; border-radius: 4px; }
+.ach-item__badge--gold { color: var(--tk-gold, #C9A84C); font-size: 16px; }
+.ach-item__badge--claimed { color: var(--tk-success, #4CAF50); }
+
+/* ── 进度条 ── */
+.ach-item__progress { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ach-progress-bar { flex: 1; height: 6px; background: rgba(240, 230, 211, 0.06); border-radius: 3px; overflow: hidden; }
+.ach-progress-fill { height: 100%; border-radius: 3px; background: var(--tk-gold, #C9A84C); }
+.ach-progress-fill--completed { background: var(--tk-success, #4CAF50); }
+.ach-progress-fill--claimed { background: rgba(240, 230, 211, 0.2); }
+.ach-progress-text { font-size: 11px; color: var(--tk-text-secondary, rgba(240, 230, 211, 0.5)); min-width: 60px; text-align: right; }
+
+/* ── 奖励与按钮 ── */
+.ach-item__rewards { font-size: 12px; color: var(--tk-text-secondary, rgba(240, 230, 211, 0.5)); margin-bottom: 6px; }
+.ach-claim-btn {
+  padding: 4px 16px; border: none; border-radius: 4px;
+  background: var(--tk-gold, #C9A84C); color: #1a1a2e; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.ach-claim-btn:active { transform: scale(0.97); }
+.ach-panel__empty { text-align: center; padding: 32px 0; color: var(--tk-text-muted, rgba(240, 230, 211, 0.3)); font-size: 14px; }

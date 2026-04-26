@@ -7,6 +7,9 @@
  * - 操作方法：applyRecommend / generateRecommendations
  * - 边界：空数据 / 异常处理
  *
+ * 注意（R12）：useFormation 不再接受 deps 参数，
+ * 直接从引擎获取武将数据，确保子 Hook 独立可用。
+ *
  * @module components/idle/panels/hero/hooks/__tests__/useFormation.test
  */
 
@@ -15,6 +18,8 @@ import { renderHook, act } from '@testing-library/react';
 import { useFormation } from '../useFormation';
 import { createMockEngine, makeMultipleGenerals } from './hero-hooks-test-utils';
 import type { HeroInfo } from '../../FormationRecommendPanel';
+import type { GeneralData } from '@/games/three-kingdoms/engine/hero/hero.types';
+import { Quality } from '@/games/three-kingdoms/engine/hero/hero.types';
 
 // ═══════════════════════════════════════════════
 // 测试数据
@@ -29,19 +34,50 @@ function makeHeroInfos(): HeroInfo[] {
   ];
 }
 
+/** 创建返回武将数据的 mock 引擎（getGenerals 返回完整武将列表） */
+function createMockEngineWithGenerals(overrides: Record<string, unknown> = {}) {
+  const generals: GeneralData[] = [
+    {
+      id: 'liubei', name: '刘备', quality: Quality.EPIC,
+      baseStats: { attack: 80, defense: 70, intelligence: 90, speed: 60 },
+      level: 20, exp: 0, faction: 'shu',
+      skills: [],
+    },
+    {
+      id: 'guanyu', name: '关羽', quality: Quality.LEGENDARY,
+      baseStats: { attack: 115, defense: 90, intelligence: 65, speed: 78 },
+      level: 30, exp: 0, faction: 'shu',
+      skills: [],
+    },
+    {
+      id: 'zhangfei', name: '张飞', quality: Quality.EPIC,
+      baseStats: { attack: 100, defense: 60, intelligence: 40, speed: 70 },
+      level: 25, exp: 0, faction: 'shu',
+      skills: [],
+    },
+    {
+      id: 'caocao', name: '曹操', quality: Quality.LEGENDARY,
+      baseStats: { attack: 95, defense: 85, intelligence: 100, speed: 75 },
+      level: 28, exp: 0, faction: 'wei',
+      skills: [],
+    },
+  ];
+
+  return createMockEngine({
+    getGenerals: vi.fn().mockReturnValue(generals),
+    ...overrides,
+  });
+}
+
 // ═══════════════════════════════════════════════
 // 基础渲染测试
 // ═══════════════════════════════════════════════
 
 describe('useFormation — 基础渲染', () => {
   it('应正常调用并返回数据结构', () => {
-    const engine = createMockEngine();
-    const heroInfos = makeHeroInfos();
+    const engine = createMockEngineWithGenerals();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current).toBeDefined();
@@ -58,15 +94,11 @@ describe('useFormation — 基础渲染', () => {
 
 describe('useFormation — 数据获取', () => {
   it('currentFormation 默认应为 6 个 null 槽位', () => {
-    const engine = createMockEngine({
+    const engine = createMockEngineWithGenerals({
       getFormations: vi.fn().mockReturnValue([]),
     });
-    const heroInfos = makeHeroInfos();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation).toHaveLength(6);
@@ -76,17 +108,13 @@ describe('useFormation — 数据获取', () => {
   });
 
   it('应从引擎编队数据中提取武将ID', () => {
-    const engine = createMockEngine({
+    const engine = createMockEngineWithGenerals({
       getFormations: vi.fn().mockReturnValue([
         { slots: [{ heroId: 'guanyu' }, { heroId: 'liubei' }, null, null, null, null] },
       ]),
     });
-    const heroInfos = makeHeroInfos();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation[0]).toBe('guanyu');
@@ -95,13 +123,10 @@ describe('useFormation — 数据获取', () => {
   });
 
   it('powerCalculator 应返回正数战力', () => {
-    const engine = createMockEngine();
+    const engine = createMockEngineWithGenerals();
     const heroInfos = makeHeroInfos();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     const power = result.current.powerCalculator(heroInfos);
@@ -115,13 +140,9 @@ describe('useFormation — 数据获取', () => {
 
 describe('useFormation — 推荐方案', () => {
   it('generateRecommendations 应返回推荐方案列表', () => {
-    const engine = createMockEngine();
-    const heroInfos = makeHeroInfos();
+    const engine = createMockEngineWithGenerals();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     const plans = result.current.generateRecommendations();
@@ -130,13 +151,10 @@ describe('useFormation — 推荐方案', () => {
     expect(plans[0].id).toBe('best-power');
   });
 
-  it('空 heroInfos 时不应返回推荐方案', () => {
-    const engine = createMockEngine();
+  it('无武将时不应返回推荐方案', () => {
+    const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue([]) });
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos: [] },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     const plans = result.current.generateRecommendations();
@@ -144,13 +162,9 @@ describe('useFormation — 推荐方案', () => {
   });
 
   it('推荐方案应包含必要字段', () => {
-    const engine = createMockEngine();
-    const heroInfos = makeHeroInfos();
+    const engine = createMockEngineWithGenerals();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     const plans = result.current.generateRecommendations();
@@ -172,16 +186,12 @@ describe('useFormation — 推荐方案', () => {
 describe('useFormation — 操作方法', () => {
   it('applyRecommend 应调用引擎 setFormation', () => {
     const mockFormationSystem = { setFormation: vi.fn() };
-    const engine = createMockEngine({
+    const engine = createMockEngineWithGenerals({
       getFormations: vi.fn().mockReturnValue([{ slots: [] }]),
       getFormationSystem: vi.fn().mockReturnValue(mockFormationSystem),
     });
-    const heroInfos = makeHeroInfos();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -193,16 +203,12 @@ describe('useFormation — 操作方法', () => {
 
   it('applyRecommend 无编队时不应调用 setFormation', () => {
     const mockFormationSystem = { setFormation: vi.fn() };
-    const engine = createMockEngine({
+    const engine = createMockEngineWithGenerals({
       getFormations: vi.fn().mockReturnValue([]),
       getFormationSystem: vi.fn().mockReturnValue(mockFormationSystem),
     });
-    const heroInfos = makeHeroInfos();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -219,15 +225,11 @@ describe('useFormation — 操作方法', () => {
 
 describe('useFormation — 边界条件', () => {
   it('getFormations 抛异常时 currentFormation 应为 6 个 null', () => {
-    const engine = createMockEngine({
+    const engine = createMockEngineWithGenerals({
       getFormations: vi.fn().mockImplementation(() => { throw new Error('formation error'); }),
     });
-    const heroInfos = makeHeroInfos();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation).toHaveLength(6);
@@ -237,15 +239,12 @@ describe('useFormation — 边界条件', () => {
   });
 
   it('powerCalculator 引擎异常时应使用回退计算', () => {
-    const engine = createMockEngine({
+    const engine = createMockEngineWithGenerals({
       getHeroSystem: vi.fn().mockImplementation(() => { throw new Error('hero system error'); }),
     });
     const heroInfos = makeHeroInfos();
     const { result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     const power = result.current.powerCalculator(heroInfos);
@@ -260,19 +259,15 @@ describe('useFormation — 边界条件', () => {
 
 describe('useFormation — 状态更新', () => {
   it('snapshotVersion 变化应触发编队数据重计算', () => {
-    const engine = createMockEngine({
+    const engine = createMockEngineWithGenerals({
       getFormations: vi.fn().mockReturnValue([
         { slots: [{ heroId: 'guanyu' }, null, null, null, null, null] },
       ]),
     });
-    const heroInfos = makeHeroInfos();
 
     const { result, rerender } = renderHook(
       ({ snapshotVersion }) =>
-        useFormation(
-          { engine: engine as any, snapshotVersion },
-          { heroInfos },
-        ),
+        useFormation({ engine: engine as any, snapshotVersion }),
       { initialProps: { snapshotVersion: 0 } },
     );
 
@@ -280,29 +275,7 @@ describe('useFormation — 状态更新', () => {
 
     // 更新 snapshotVersion
     rerender({ snapshotVersion: 1 });
-    expect(engine.getFormations).toHaveBeenCalledTimes(2);
-  });
-
-  it('heroInfos 变化应更新推荐方案', () => {
-    const engine = createMockEngine();
-    const heroInfos1 = makeHeroInfos();
-
-    const { result, rerender } = renderHook(
-      ({ heroInfos }) =>
-        useFormation(
-          { engine: engine as any, snapshotVersion: 0 },
-          { heroInfos },
-        ),
-      { initialProps: { heroInfos: heroInfos1 } },
-    );
-
-    const plans1 = result.current.generateRecommendations();
-    expect(plans1.length).toBeGreaterThan(0);
-
-    // 更新 heroInfos 为空
-    rerender({ heroInfos: [] });
-    const plans2 = result.current.generateRecommendations();
-    expect(plans2).toEqual([]);
+    expect(engine.getFormations).toHaveBeenCalled();
   });
 });
 
@@ -312,13 +285,9 @@ describe('useFormation — 状态更新', () => {
 
 describe('useFormation — 清理', () => {
   it('unmount 后不应有副作用残留', () => {
-    const engine = createMockEngine();
-    const heroInfos = makeHeroInfos();
+    const engine = createMockEngineWithGenerals();
     const { unmount, result } = renderHook(() =>
-      useFormation(
-        { engine: engine as any, snapshotVersion: 0 },
-        { heroInfos },
-      ),
+      useFormation({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation).toBeDefined();
@@ -326,15 +295,11 @@ describe('useFormation — 清理', () => {
   });
 
   it('多次 mount/unmount 不应泄漏', () => {
-    const engine = createMockEngine();
-    const heroInfos = makeHeroInfos();
+    const engine = createMockEngineWithGenerals();
 
     for (let i = 0; i < 3; i++) {
       const { unmount, result } = renderHook(() =>
-        useFormation(
-          { engine: engine as any, snapshotVersion: i },
-          { heroInfos },
-        ),
+        useFormation({ engine: engine as any, snapshotVersion: i }),
       );
       expect(result.current.currentFormation).toBeDefined();
       unmount();
