@@ -65,8 +65,12 @@ const thirdGeneral: GeneralData = {
 function makeMockEngine(generals: GeneralData[] = [baseGeneral, compareGeneral, thirdGeneral]) {
   const generalMap = new Map(generals.map((g) => [g.id, g]));
 
+  const heroStarSystem = {
+    getStar: vi.fn((_id: string) => 1),
+  };
+
   const heroSystem = {
-    calculatePower: vi.fn((g: GeneralData) => {
+    calculatePower: vi.fn((g: GeneralData, _star = 1) => {
       const s = g.baseStats;
       return s.attack * 10 + s.defense * 8 + s.intelligence * 5 + s.speed * 3 + g.level * 100;
     }),
@@ -75,6 +79,7 @@ function makeMockEngine(generals: GeneralData[] = [baseGeneral, compareGeneral, 
 
   return {
     getHeroSystem: vi.fn(() => heroSystem),
+    getHeroStarSystem: vi.fn(() => heroStarSystem),
     getGenerals: vi.fn(() => generals),
   } as unknown as ThreeKingdomsEngine;
 }

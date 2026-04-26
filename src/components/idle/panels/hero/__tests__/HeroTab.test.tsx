@@ -84,13 +84,21 @@ function makeMockEngine(generalList: GeneralData[] = generals) {
     getGenerals: vi.fn(() => [...generalList]),
     getGeneral: vi.fn((id: string) => generalList.find((g) => g.id === id)),
     getHeroSystem: vi.fn(() => ({
-      calculatePower: vi.fn((g: GeneralData) => powerMap[g.id] ?? 0),
+      calculatePower: vi.fn((g: GeneralData, _star = 1) => powerMap[g.id] ?? 0),
       calculateTotalPower: vi.fn(() => totalPower),
       getFragments: vi.fn(() => 0),
       getSynthesizeProgress: vi.fn(() => ({ current: 0, required: 80 })),
       canSynthesize: vi.fn(() => false),
       fragmentSynthesize: vi.fn(() => null),
       getGeneralDef: vi.fn(() => ({ biography: '测试传记' })),
+    })),
+    getHeroStarSystem: vi.fn(() => ({
+      getStar: vi.fn((_id: string) => 1),
+      getBreakthroughStage: vi.fn((_id: string) => 0),
+      getLevelCap: vi.fn((_id: string) => 100),
+      getFragmentProgress: vi.fn((_id: string) => ({ current: 0, required: 50 })),
+      getStarUpPreview: vi.fn((_id: string) => null),
+      getBreakthroughPreview: vi.fn((_id: string) => null),
     })),
     getLevelSystem: vi.fn(() => ({
       getExpProgress: vi.fn(() => ({ current: 500, required: 1000, percentage: 50 })),
@@ -114,6 +122,9 @@ function makeMockEngine(generalList: GeneralData[] = generals) {
       canRecruit: vi.fn(() => true),
       getGachaState: vi.fn(() => ({ normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 })),
       getRecruitHistory: vi.fn(() => []),
+      getRemainingFreeCount: vi.fn(() => 0),
+      canFreeRecruit: vi.fn(() => false),
+      freeRecruitSingle: vi.fn(() => null),
     })),
   } as unknown as ThreeKingdomsEngine;
 }
