@@ -293,9 +293,16 @@ describe('HeroDispatchPanel', () => {
   // 8. 边界测试
   // ═══════════════════════════════════════════
 
-  it('无建筑时建筑列表应为空', () => {
+  it('无建筑时应显示"暂无建筑"空状态', () => {
     render(<HeroDispatchPanel {...makeProps({ buildings: [] })} />);
-    expect(screen.queryByTestId(/^dispatch-building-/)).not.toBeInTheDocument();
+    expect(screen.getByTestId('dispatch-building-empty')).toBeInTheDocument();
+    expect(screen.getByText('暂无建筑')).toBeInTheDocument();
+  });
+
+  it('无武将时应显示"暂无武将"空状态', () => {
+    render(<HeroDispatchPanel {...makeProps({ heroes: [] })} />);
+    expect(screen.getByTestId('dispatch-hero-empty')).toBeInTheDocument();
+    expect(screen.getByText('暂无武将')).toBeInTheDocument();
   });
 
   it('未选择武将时点击建筑不应触发任何操作', () => {

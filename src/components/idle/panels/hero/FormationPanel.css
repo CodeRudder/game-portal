@@ -136,12 +136,12 @@
 }
 
 .tk-formation-delete-btn {
-  color: #E53935;
+  color: var(--tk-danger, #E53935);
   border-color: rgba(229, 57, 53, 0.2);
 }
 
 .tk-formation-delete-btn:hover {
-  border-color: #E53935;
+  border-color: var(--tk-danger, #E53935);
   background: rgba(229, 57, 53, 0.1);
 }
 
@@ -207,7 +207,7 @@
   right: -6px;
   width: 16px;
   height: 16px;
-  background: #E53935;
+  background: var(--tk-danger, #E53935);
   border: none;
   border-radius: 50%;
   color: white;

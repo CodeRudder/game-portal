@@ -25,6 +25,8 @@ interface HeroCardProps {
   engine: ThreeKingdomsEngine;
   /** 点击回调 */
   onClick?: (general: GeneralData) => void;
+  /** 是否显示红点提示 */
+  showRedDot?: boolean;
 }
 
 // ─────────────────────────────────────────────
@@ -58,7 +60,7 @@ function formatPower(n: number): string {
 // ─────────────────────────────────────────────
 // 主组件
 // ─────────────────────────────────────────────
-const HeroCard: React.FC<HeroCardProps> = ({ general, engine, onClick }) => {
+const HeroCard: React.FC<HeroCardProps> = ({ general, engine, onClick, showRedDot }) => {
   const power = useMemo(() => {
     try {
       return engine?.getHeroSystem?.()?.calculatePower?.(general) ?? 0;
@@ -86,6 +88,9 @@ const HeroCard: React.FC<HeroCardProps> = ({ general, engine, onClick }) => {
       aria-label={`${general.name} Lv.${general.level} 战力${power}`}
       data-testid={`hero-card-${general.id}`}
     >
+      {/* 红点提示 */}
+      {showRedDot && <span className="tk-hero-card-red-dot" />}
+
       {/* 品质标签 — 左上角（使用原子组件） */}
       <QualityBadge quality={general.quality} size="small" className="tk-hero-card-quality" />
 

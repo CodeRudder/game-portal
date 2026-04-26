@@ -29,6 +29,7 @@ import RecruitModal from './RecruitModal';
 import GuideOverlay from './GuideOverlay';
 import HeroCompareModal from './HeroCompareModal';
 import FormationPanel from './FormationPanel';
+import { useHeroGuide } from './hooks';
 import './HeroTab.css';
 
 // ─────────────────────────────────────────────
@@ -143,6 +144,9 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
   const handleGuideComplete = useCallback(() => setShowGuide(false), []);
   const handleGuideSkip = useCallback(() => setShowGuide(false), []);
 
+  // ── 引导操作（通过 useHeroGuide 桥接层） ──
+  const { handleGuideAction } = useHeroGuide(engine);
+
   // ── 渲染 ──
   return (
     <div className="tk-hero-tab" data-testid="hero-tab">
@@ -251,9 +255,9 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
         <FormationPanel engine={engine} snapshotVersion={snapshotVersion} />
       )}
 
-      {/* 新手引导 — 对接引擎 TutorialStateMachine */}
+      {/* 新手引导 — 对接引擎 TutorialStateMachine + useHeroEngine 操作 */}
       {showGuide && subTab === 'list' && (
-        <GuideOverlay engine={engine} onComplete={handleGuideComplete} onSkip={handleGuideSkip} />
+        <GuideOverlay engine={engine} onGuideAction={handleGuideAction} onComplete={handleGuideComplete} onSkip={handleGuideSkip} />
       )}
 
       {/* 武将详情弹窗 */}

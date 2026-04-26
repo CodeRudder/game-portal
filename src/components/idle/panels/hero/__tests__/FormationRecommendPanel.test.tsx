@@ -206,7 +206,24 @@ describe('FormationRecommendPanel', () => {
       />,
     );
     expect(screen.getByTestId('recommend-empty')).toBeInTheDocument();
-    expect(screen.getByText('暂无可用武将，无法生成推荐编队')).toBeInTheDocument();
+    expect(screen.getByText('暂无武将')).toBeInTheDocument();
+  });
+
+  it('currentFormation不足6位时应自动补齐', () => {
+    const onApplyRecommend = vi.fn();
+    render(
+      <FormationRecommendPanel
+        {...makeProps({
+          currentFormation: ['h-guanyu', 'h-zhangfei'],
+          onApplyRecommend,
+        })}
+      />,
+    );
+    // 应用编队应正常工作，内部 currentFormation 已补齐到6位
+    fireEvent.click(screen.getByTestId('apply-btn-best-power'));
+    expect(onApplyRecommend).toHaveBeenCalledTimes(1);
+    const calledArg = onApplyRecommend.mock.calls[0][0] as (string | null)[];
+    expect(calledArg.length).toBe(6);
   });
 
   it('武将不足3人时应只生成战力最优方案', () => {

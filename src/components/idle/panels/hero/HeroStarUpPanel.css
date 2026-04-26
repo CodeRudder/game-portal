@@ -41,10 +41,10 @@
   border-radius: 4px; overflow: hidden; margin-bottom: 6px;
 }
 .tk-star-progress-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease-out, background 0.3s; min-width: 0; }
-.tk-star-progress-fill--low { background: linear-gradient(90deg, #42A5F5, #64B5F6); }
-.tk-star-progress-fill--mid { background: linear-gradient(90deg, #AB47BC, #CE93D8); }
-.tk-star-progress-fill--high { background: linear-gradient(90deg, #FFD700, #FFE082); }
-.tk-star-progress-fill--full { background: linear-gradient(90deg, #7EC850, #A5D6A7); }
+.tk-star-progress-fill--low { background: linear-gradient(90deg, var(--tk-blue, #42A5F5), var(--tk-blue, #64B5F6)); }
+.tk-star-progress-fill--mid { background: linear-gradient(90deg, var(--tk-purple, #AB47BC), var(--tk-purple, #CE93D8)); }
+.tk-star-progress-fill--high { background: linear-gradient(90deg, var(--tk-gold, #FFD700), var(--tk-gold-light, #FFE082)); }
+.tk-star-progress-fill--full { background: linear-gradient(90deg, var(--tk-green, #7EC850), var(--tk-green, #A5D6A7)); }
 .tk-star-progress-fill--max {
   background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-light));
   animation: tk-progress-glow 1.5s ease-in-out infinite;
@@ -129,18 +129,18 @@
   font-family: inherit; letter-spacing: 1px;
 }
 .tk-star-btn--star-up {
-  background: linear-gradient(135deg, #c9a84c, #dbb85c);
-  color: #1a2332; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, var(--tk-gold, #c9a84c), var(--tk-gold-light, #dbb85c));
+  color: var(--tk-bg-dark, #1a2332); text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 .tk-star-btn--star-up:hover:not(:disabled) {
-  background: linear-gradient(135deg, #dbb85c, #e8cc70);
+  background: linear-gradient(135deg, var(--tk-gold-light, #dbb85c), var(--tk-gold-bright, #e8cc70));
   transform: translateY(-1px); box-shadow: 0 4px 16px rgba(200, 168, 76, 0.4);
 }
 .tk-star-btn--breakthrough {
-  background: linear-gradient(135deg, #7B5EA7, #9575CD); color: #fff;
+  background: linear-gradient(135deg, var(--tk-purple, #7B5EA7), var(--tk-purple, #9575CD)); color: #fff;
 }
 .tk-star-btn--breakthrough:hover:not(:disabled) {
-  background: linear-gradient(135deg, #9575CD, #B39DDB);
+  background: linear-gradient(135deg, var(--tk-purple, #9575CD), var(--tk-purple, #B39DDB));
   transform: translateY(-1px); box-shadow: 0 4px 16px rgba(123, 94, 167, 0.4);
 }
 .tk-star-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }

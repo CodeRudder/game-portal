@@ -39,10 +39,10 @@
 .tk-recruit-close {
   position: absolute; top: 10px; right: 12px;
   background: none; border: none; cursor: pointer;
-  padding: 4px 8px; color: #a0a0a0; font-size: 16px;
+  padding: 4px 8px; color: var(--tk-text-secondary, #a0a0a0); font-size: 16px;
   border-radius: 4px; z-index: 10; transition: color 0.15s, background 0.15s;
 }
-.tk-recruit-close:hover { color: #f0e6d3; background: rgba(255, 255, 255, 0.08); }
+.tk-recruit-close:hover { color: var(--tk-text-primary, #f0e6d3); background: rgba(255, 255, 255, 0.08); }
 
 /* ═══════════════════════════════════════════
    标题
@@ -83,12 +83,12 @@
 }
 .tk-recruit-pity-fill--ten {
   height: 100%;
-  background: linear-gradient(90deg, #3498DB, #5DADE2); border-radius: 5px;
+  background: linear-gradient(90deg, var(--tk-blue, #3498DB), var(--tk-blue, #5DADE2)); border-radius: 5px;
   transition: width 0.3s ease;
 }
 .tk-recruit-pity-fill--hard {
   height: 100%;
-  background: linear-gradient(90deg, #C9A84C, #E8D48B); border-radius: 5px;
+  background: linear-gradient(90deg, var(--tk-gold, #C9A84C), var(--tk-gold-light, #E8D48B)); border-radius: 5px;
   transition: width 0.3s ease;
 }
 .tk-recruit-pity-count {
@@ -126,9 +126,9 @@
 }
 .tk-recruit-results-close {
   background: none; border: none; cursor: pointer;
-  color: #a0a0a0; font-size: 14px; padding: 2px 6px; border-radius: 3px;
+  color: var(--tk-text-secondary, #a0a0a0); font-size: 14px; padding: 2px 6px; border-radius: 3px;
 }
-.tk-recruit-results-close:hover { color: #f0e6d3; }
+.tk-recruit-results-close:hover { color: var(--tk-text-primary, #f0e6d3); }
 
 /* 结果卡片 */
 .tk-recruit-result-card {
@@ -235,7 +235,7 @@
 }
 .tk-recruit-result-quality {
   position: absolute; top: 0; left: 0; padding: 1px 6px;
-  font-size: 9px; font-weight: 600; color: #fff;
+  font-size: 9px; font-weight: 600; color: var(--tk-text-primary, #fff);
   border-radius: 0 0 4px 0; z-index: 2;
 }
 .tk-recruit-result-name {

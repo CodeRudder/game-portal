@@ -227,7 +227,11 @@ const HeroDispatchPanel: React.FC<HeroDispatchPanelProps> = ({
             可派遣武将（等级≥20 品质≥稀有）
           </div>
 
-          {dispatchableHeroes.length === 0 ? (
+          {validHeroes.length === 0 ? (
+            <div className="tk-dispatch-empty" data-testid="dispatch-hero-empty">
+              暂无武将
+            </div>
+          ) : dispatchableHeroes.length === 0 ? (
             <div className="tk-dispatch-empty" data-testid="dispatch-hero-empty">
               暂无满足条件的武将
             </div>
@@ -262,69 +266,75 @@ const HeroDispatchPanel: React.FC<HeroDispatchPanelProps> = ({
         <div className="tk-dispatch-building-list">
           <div className="tk-dispatch-section-title">建筑列表</div>
 
-          {validBuildings.map((building) => {
-            const hero = building.dispatchHeroId
-              ? heroMap.get(building.dispatchHeroId)
-              : null;
-            const isOccupied = !!building.dispatchHeroId;
-            const isBuildingSelected = selectedBuildingId === building.id;
-            const coolingDown = isInCooldown(cooldownMap[building.id]);
+          {validBuildings.length === 0 ? (
+            <div className="tk-dispatch-empty" data-testid="dispatch-building-empty">
+              暂无建筑
+            </div>
+          ) : (
+            validBuildings.map((building) => {
+              const hero = building.dispatchHeroId
+                ? heroMap.get(building.dispatchHeroId)
+                : null;
+              const isOccupied = !!building.dispatchHeroId;
+              const isBuildingSelected = selectedBuildingId === building.id;
+              const coolingDown = isInCooldown(cooldownMap[building.id]);
 
-            return (
-              <div
-                key={building.id}
-                className={[
-                  'tk-dispatch-building-item',
-                  isOccupied ? 'tk-dispatch-building-item--occupied' : '',
-                  isBuildingSelected ? 'tk-dispatch-building-item--selected' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                data-testid={`dispatch-building-${building.id}`}
-              >
-                {/* 建筑头部 */}
-                <div className="tk-dispatch-building-header">
-                  <span className="tk-dispatch-building-name">{building.name}</span>
-                  <span className="tk-dispatch-building-level">Lv.{building.level}</span>
-                </div>
+              return (
+                <div
+                  key={building.id}
+                  className={[
+                    'tk-dispatch-building-item',
+                    isOccupied ? 'tk-dispatch-building-item--occupied' : '',
+                    isBuildingSelected ? 'tk-dispatch-building-item--selected' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  data-testid={`dispatch-building-${building.id}`}
+                >
+                  {/* 建筑头部 */}
+                  <div className="tk-dispatch-building-header">
+                    <span className="tk-dispatch-building-name">{building.name}</span>
+                    <span className="tk-dispatch-building-level">Lv.{building.level}</span>
+                  </div>
 
-                {/* 已派遣武将 */}
-                {hero ? (
-                  <div className="tk-dispatch-building-hero">
-                    <span className="tk-dispatch-building-hero-name">{hero.name}</span>
-                    <span className="tk-dispatch-building-bonus">
-                      +{calcBonus(hero.id)}%
-                    </span>
-                    <button
-                      className="tk-dispatch-recall-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRecall(building.id);
-                      }}
-                      data-testid={`recall-btn-${building.id}`}
+                  {/* 已派遣武将 */}
+                  {hero ? (
+                    <div className="tk-dispatch-building-hero">
+                      <span className="tk-dispatch-building-hero-name">{hero.name}</span>
+                      <span className="tk-dispatch-building-bonus">
+                        +{calcBonus(hero.id)}%
+                      </span>
+                      <button
+                        className="tk-dispatch-recall-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRecall(building.id);
+                        }}
+                        data-testid={`recall-btn-${building.id}`}
+                      >
+                        召回
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="tk-dispatch-building-empty"
+                      onClick={() => handleSelectBuilding(building.id)}
+                      data-testid={`dispatch-empty-${building.id}`}
                     >
-                      召回
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    className="tk-dispatch-building-empty"
-                    onClick={() => handleSelectBuilding(building.id)}
-                    data-testid={`dispatch-empty-${building.id}`}
-                  >
-                    {coolingDown ? '冷却中...' : '点击派遣'}
-                  </div>
-                )}
+                      {coolingDown ? '冷却中...' : '点击派遣'}
+                    </div>
+                  )}
 
-                {/* 冷却提示 */}
-                {coolingDown && !hero && (
-                  <div className="tk-dispatch-cooldown-tip" data-testid={`cooldown-tip-${building.id}`}>
-                    ⏳ 24小时内不可重复派驻
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  {/* 冷却提示 */}
+                  {coolingDown && !hero && (
+                    <div className="tk-dispatch-cooldown-tip" data-testid={`cooldown-tip-${building.id}`}>
+                      ⏳ 24小时内不可重复派驻
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

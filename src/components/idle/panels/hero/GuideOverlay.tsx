@@ -21,6 +21,24 @@ export interface GuideStep {
   position?: 'top' | 'bottom' | 'left' | 'right' | 'center';
 }
 
+/**
+ * 引导动作类型 — 每个步骤对应的引擎操作
+ *
+ * 当用户在引导中点击 Next/Finish 时，GuideOverlay 通过 onGuideAction
+ * 回调通知父组件执行对应的引擎操作（招募、升级、编队等），
+ * 实现引导系统与引擎的完整对接。
+ */
+export type GuideActionType = 'recruit' | 'detail' | 'enhance' | 'formation';
+
+export interface GuideAction {
+  /** 动作类型 */
+  type: GuideActionType;
+  /** 步骤索引 */
+  stepIndex: number;
+  /** 步骤ID */
+  stepId: string;
+}
+
 const DEFAULT_STEPS: GuideStep[] = [
   {
     id: 'recruit',
@@ -172,6 +190,27 @@ interface GuideOverlayProps {
   steps?: GuideStep[];
   /** 引擎实例，用于对接 TutorialStateMachine */
   engine?: ThreeKingdomsEngine | null;
+  /**
+   * 引导动作回调 — 当引导步骤完成时触发引擎操作
+   *
+   * 父组件（如 HeroTab）通过此回调将引导动作桥接到 useHeroEngine，
+   * 确保引导中的操作（招募、升级、编队）通过引擎执行。
+   *
+   * @example
+   * ```tsx
+   * <GuideOverlay
+   *   engine={engine}
+   *   onGuideAction={(action) => {
+   *     switch (action.type) {
+   *       case 'recruit': engine.recruitHero('normal', 1); break;
+   *       case 'enhance': engine.enhanceHero(heroId, 1); break;
+   *       case 'formation': engine.setFormation('0', heroIds); break;
+   *     }
+   *   }}
+   * />
+   * ```
+   */
+  onGuideAction?: (action: GuideAction) => void;
   onComplete?: () => void;
   onSkip?: () => void;
 }
@@ -183,6 +222,7 @@ interface GuideOverlayProps {
 const GuideOverlay: React.FC<GuideOverlayProps> = ({
   steps = DEFAULT_STEPS,
   engine,
+  onGuideAction,
   onComplete,
   onSkip,
 }) => {
@@ -218,6 +258,10 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
   const handleNext = () => {
     if (isLastStep) {
       // 完成引导：通知 StepManager → StateMachine → 回退存储
+      // 先触发当前步骤的引擎动作
+      if (onGuideAction && step) {
+        onGuideAction({ type: step.id as GuideActionType, stepIndex: currentStep, stepId: step.id });
+      }
       if (tutorialStepMgr) {
         // 通过 StepManager 完成当前活跃步骤
         const activeId = tutorialStepMgr.getState().activeStepId;
@@ -242,6 +286,10 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
       onComplete?.();
     } else {
       const next = currentStep + 1;
+      // 触发当前步骤的引擎动作（招募/升级/编队等）
+      if (onGuideAction && step) {
+        onGuideAction({ type: step.id as GuideActionType, stepIndex: currentStep, stepId: step.id });
+      }
       // 通知 StepManager 完成当前步骤
       if (tutorialStepMgr) {
         const activeId = tutorialStepMgr.getState().activeStepId;

@@ -50,7 +50,7 @@
   border: none;
   cursor: pointer;
   padding: 4px 8px;
-  color: #a0a0a0;
+  color: var(--tk-text-secondary, #a0a0a0);
   font-size: 16px;
   border-radius: 4px;
   z-index: 10;
@@ -58,7 +58,7 @@
 }
 
 .tk-hero-detail-close:hover {
-  color: #f0e6d3;
+  color: var(--tk-text-primary, #f0e6d3);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -85,7 +85,7 @@
   border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
+  color: var(--tk-text-primary, #fff);
 }
 
 /* 武将传记 */
@@ -204,7 +204,7 @@
 }
 .tk-hero-detail-fragments-fill {
   height: 100%;
-  background: linear-gradient(90deg, #9B59B6, #C39BD3);
+  background: linear-gradient(90deg, var(--tk-purple, #9B59B6), var(--tk-purple, #C39BD3));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -225,8 +225,8 @@
 
 .tk-hero-detail-synthesize-btn--active {
   background: rgba(155, 89, 182, 0.2);
-  border-color: #9B59B6;
-  color: #C39BD3;
+  border-color: var(--tk-purple, #9B59B6);
+  color: var(--tk-purple, #C39BD3);
   cursor: pointer;
   animation: tk-synth-glow 1.5s ease-in-out infinite;
 }
@@ -238,7 +238,7 @@
 
 .tk-hero-detail-synthesize-btn--active:hover {
   background: rgba(155, 89, 182, 0.35);
-  color: #fff;
+  color: var(--tk-text-primary, #fff);
 }
 
 .tk-hero-detail-synthesize-btn:disabled {
@@ -376,7 +376,7 @@
   margin-left: auto;
   padding: 4px 12px;
   background: rgba(212, 165, 116, 0.2);
-  color: #d4a574;
+  color: var(--tk-gold-soft, #d4a574);
   border: 1px solid rgba(212, 165, 116, 0.4);
   border-radius: 6px;
   font-size: 12px;

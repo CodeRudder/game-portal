@@ -21,6 +21,7 @@ import { HeroBadgeSystem } from './hero/HeroBadgeSystem';
 import { HeroAttributeCompare } from './hero/HeroAttributeCompare';
 import { RecruitTokenEconomySystem } from './hero/recruit-token-economy-system';
 import { CopperEconomySystem } from './resource/copper-economy-system';
+import { MaterialEconomySystem } from './resource/material-economy-system';
 import type { CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type { EngineEventType, EngineEventMap, EngineSnapshot } from '../shared/types';
@@ -67,6 +68,7 @@ import {
   createGuideSystems, registerGuideSystems, initGuideSystems, resetGuideSystems,
   type GuideSystems,
 } from './engine-guide-deps';
+import { TutorialSystem } from './tutorial/tutorial-system';
 import { applyGetters } from './engine-getters';
 import type { EngineGettersMixin } from './engine-getters-types';
 
@@ -94,6 +96,7 @@ export class ThreeKingdomsEngine {
   private readonly heroAttributeCompare: HeroAttributeCompare;
   private readonly recruitTokenEconomy: RecruitTokenEconomySystem;
   private readonly copperEconomy: CopperEconomySystem;
+  private readonly materialEconomy: MaterialEconomySystem;
   private readonly campaignSystems: CampaignSystems;
   private readonly sweepSystem: SweepSystem;
   private readonly vipSystem: VIPSystem;
@@ -104,6 +107,7 @@ export class ThreeKingdomsEngine {
   private readonly r11: R11Systems;
   private readonly offline: OfflineSystems;
   private readonly guide: GuideSystems;
+  private readonly tutorialGuide: TutorialSystem;
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
@@ -131,6 +135,7 @@ export class ThreeKingdomsEngine {
     this.heroAttributeCompare = new HeroAttributeCompare();
     this.recruitTokenEconomy = new RecruitTokenEconomySystem();
     this.copperEconomy = new CopperEconomySystem();
+    this.materialEconomy = new MaterialEconomySystem();
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
     const self = this;
     this.sweepSystem = new SweepSystem(
@@ -192,6 +197,7 @@ export class ThreeKingdomsEngine {
     this.r11 = createR11Systems();
     this.offline = createOfflineSystems();
     this.guide = createGuideSystems();
+    this.tutorialGuide = new TutorialSystem();
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
@@ -220,6 +226,7 @@ export class ThreeKingdomsEngine {
     r.register('heroAttributeCompare', this.heroAttributeCompare);
     r.register('recruitTokenEconomy', this.recruitTokenEconomy);
     r.register('copperEconomy', this.copperEconomy);
+    r.register('materialEconomy', this.materialEconomy);
     r.register('battleEngine', this.campaignSystems.battleEngine);
     r.register('campaignSystem', this.campaignSystems.campaignSystem);
     r.register('rewardDistributor', this.campaignSystems.rewardDistributor);
@@ -247,6 +254,7 @@ export class ThreeKingdomsEngine {
     registerR11Systems(r, this.r11);
     registerOfflineSystems(r, this.offline);
     registerGuideSystems(r, this.guide);
+    r.register('tutorialGuide', this.tutorialGuide);
   }
 
   // ── 初始化 ──
@@ -265,8 +273,10 @@ export class ThreeKingdomsEngine {
     this.initResourceTradeDeps();
     this.initRecruitTokenEconomyDeps();
     this.initCopperEconomyDeps();
+    this.initMaterialEconomyDeps();
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
+    this.tutorialGuide.init(deps);
     this.initialized = true; this.lastTickTime = Date.now();
     this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
     this.bus.emit('game:initialized', { isNewGame: true });
@@ -338,8 +348,10 @@ export class ThreeKingdomsEngine {
     this.initResourceTradeDeps();
     this.initRecruitTokenEconomyDeps();
     this.initCopperEconomyDeps();
+    this.initMaterialEconomyDeps();
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
+    this.tutorialGuide.init(deps);
     this.initialized = true; this.lastTickTime = Date.now();
   }
 
@@ -353,6 +365,7 @@ export class ThreeKingdomsEngine {
     this.heroBadgeSystem.reset(); this.heroAttributeCompare.reset();
     this.recruitTokenEconomy.reset();
     this.copperEconomy.reset();
+    this.materialEconomy.reset();
     this.campaignSystems.campaignSystem.reset(); this.sweepSystem.reset();
     this.vipSystem.reset(); this.challengeStageSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
@@ -366,6 +379,7 @@ export class ThreeKingdomsEngine {
     resetR11Systems(this.r11);
     resetOfflineSystems(this.offline);
     resetGuideSystems(this.guide);
+    this.tutorialGuide.reset();
     this.initialized = false; this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0; this.prevResourcesJson = ''; this.prevRatesJson = '';
     this.saveManager.deleteSave(); this.bus.removeAllListeners();
@@ -579,6 +593,26 @@ export class ThreeKingdomsEngine {
       getGoldAmount: () => self.resource.getAmount('gold'),
     });
   }
+
+  /** 注入 MaterialEconomySystem 的资源操作依赖 */
+  private initMaterialEconomyDeps(): void {
+    const self = this;
+    this.materialEconomy.init(this.buildDeps());
+    this.materialEconomy.setMaterialDeps({
+      consumeGold: (amount: number) => {
+        try { self.resource.consumeResource('gold', amount); return true; } catch { return false; }
+      },
+      getGoldAmount: () => self.resource.getAmount('gold'),
+      addBreakthroughStone: (count: number) => { /* TODO: 接入物品背包 */ },
+      addSkillBook: (count: number) => { /* TODO: 接入物品背包 */ },
+      getClearedStages: () => {
+        const progress = self.campaignSystems.campaignSystem.getProgress();
+        return Object.entries(progress.stageStates)
+          .filter(([, s]) => s.firstCleared)
+          .map(([id]) => id);
+      },
+    });
+  }
   private buildSaveCtx(): SaveContext {
     return {
       resource: this.resource, building: this.building, calendar: this.calendar,
@@ -614,8 +648,10 @@ export class ThreeKingdomsEngine {
     this.initResourceTradeDeps();
     this.initRecruitTokenEconomyDeps();
     this.initCopperEconomyDeps();
+    this.initMaterialEconomyDeps();
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
+    this.tutorialGuide.init(deps);
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
   }
 }

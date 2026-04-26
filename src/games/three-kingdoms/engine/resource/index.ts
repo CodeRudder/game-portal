@@ -9,6 +9,10 @@ export { CopperEconomySystem } from './copper-economy-system';
 export type {
   CopperEconomySaveData, CopperEconomyDeps, ShopItem, SpendCategory,
 } from './copper-economy-system';
+export { MaterialEconomySystem } from './material-economy-system';
+export type {
+  MaterialEconomySaveData, MaterialEconomyDeps,
+} from './material-economy-system';
 export type {
   BonusType, Bonus, ResourceType, Resources, ProductionRate,
   ResourceCap, ResourceCost, CostCheckResult, CapWarning, CapWarningLevel,

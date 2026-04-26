@@ -275,7 +275,7 @@ const FormationRecommendPanel: React.FC<FormationRecommendPanelProps> = ({
 }) => {
   // 优先使用外部传入数据，否则使用引擎数据源
   const rawOwnedHeroes = externalOwnedHeroes ?? engineDataSource?.ownedHeroes ?? [];
-  const currentFormation = externalCurrentFormation ?? engineDataSource?.currentFormation ?? Array(6).fill(null);
+  const rawCurrentFormation = externalCurrentFormation ?? engineDataSource?.currentFormation ?? Array(6).fill(null);
   const onApplyRecommend = externalOnApplyRecommend ?? engineDataSource?.onApplyRecommend ?? (() => {});
   const powerCalculator = externalPowerCalculator ?? engineDataSource?.powerCalculator;
   const generateRecommendations = externalGenerateRecommendations ?? engineDataSource?.generateRecommendations;
@@ -291,6 +291,13 @@ const FormationRecommendPanel: React.FC<FormationRecommendPanelProps> = ({
       h.faction && typeof h.faction === 'string',
     ),
   [rawOwnedHeroes]);
+
+  // ── 自动补齐 currentFormation 到 6 位 ──
+  const currentFormation = useMemo(() => {
+    const padded = [...rawCurrentFormation];
+    while (padded.length < 6) padded.push(null);
+    return padded.slice(0, 6);
+  }, [rawCurrentFormation]);
   // ── 武将ID → 武将映射 ──
   const heroMap = useMemo(() => {
     const map = new Map<string, HeroInfo>();
@@ -350,7 +357,11 @@ const FormationRecommendPanel: React.FC<FormationRecommendPanelProps> = ({
       </div>
 
       {/* 推荐方案列表 */}
-      {plans.length === 0 ? (
+      {ownedHeroes.length === 0 ? (
+        <div className="tk-recommend-empty" data-testid="recommend-empty">
+          暂无武将
+        </div>
+      ) : plans.length === 0 ? (
         <div className="tk-recommend-empty" data-testid="recommend-empty">
           暂无可用武将，无法生成推荐编队
         </div>

@@ -1,4 +1,45 @@
-/* GuideOverlay — Tutorial step-by-step overlay */
+/**
+ * GuideOverlay — Tutorial step-by-step overlay
+ *
+ * 颜色规范：所有颜色通过 CSS 变量引用，便于全局换肤。
+ */
+
+/* ── 组件级 CSS 变量 ── */
+:root {
+  /* 遮罩层 */
+  --tk-guide-overlay-bg: rgba(0, 0, 0, 0.55);
+
+  /* 提示框主体 */
+  --tk-guide-tooltip-bg: var(--tk-bg, #1a1a2e);
+  --tk-guide-tooltip-border: rgba(255, 255, 255, 0.12);
+  --tk-guide-tooltip-radius: 12px;
+  --tk-guide-tooltip-shadow: var(--tk-shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.5));
+
+  /* 标题 */
+  --tk-guide-title-color: var(--tk-text-primary, #fff);
+
+  /* 描述文字 */
+  --tk-guide-desc-color: var(--tk-text-secondary, #b0b0b0);
+
+  /* Skip 按钮 */
+  --tk-guide-skip-color: var(--tk-text-muted, #888);
+  --tk-guide-skip-border: var(--tk-border-dark, #444);
+  --tk-guide-skip-hover-bg: rgba(255, 255, 255, 0.05);
+  --tk-guide-skip-hover-color: var(--tk-text-secondary, #aaa);
+
+  /* Previous 按钮 */
+  --tk-guide-prev-bg: var(--tk-disabled, #333);
+  --tk-guide-prev-color: var(--tk-text-secondary, #ddd);
+  --tk-guide-prev-hover-bg: var(--tk-border-dark, #444);
+
+  /* Next 按钮 */
+  --tk-guide-next-bg: var(--tk-blue, #4a6cf7);
+  --tk-guide-next-color: var(--tk-text-primary, #fff);
+  --tk-guide-next-hover-bg: var(--tk-blue, #3b5de7);
+
+  /* 进度文字 */
+  --tk-guide-progress-color: var(--tk-text-muted, #666);
+}
 
 .tk-guide-overlay {
   position: fixed;
@@ -12,20 +53,20 @@
 .tk-guide-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--tk-guide-overlay-bg);
 }
 
 .tk-guide-tooltip {
   position: relative;
   z-index: 1;
-  background: #1a1a2e;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  background: var(--tk-guide-tooltip-bg);
+  border: 1px solid var(--tk-guide-tooltip-border);
+  border-radius: var(--tk-guide-tooltip-radius);
   padding: 20px 24px;
   max-width: 360px;
   width: 90%;
-  color: #e0e0e0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  color: var(--tk-text-secondary, #e0e0e0);
+  box-shadow: var(--tk-guide-tooltip-shadow);
 }
 
 /* Position variants */
@@ -65,14 +106,14 @@
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 8px;
-  color: #fff;
+  color: var(--tk-guide-title-color);
 }
 
 .tk-guide-tooltip__desc {
   font-size: 13px;
   line-height: 1.5;
   margin: 0 0 16px;
-  color: #b0b0b0;
+  color: var(--tk-guide-desc-color);
 }
 
 .tk-guide-tooltip__actions {
@@ -92,38 +133,38 @@
 
 .tk-guide-btn--skip {
   background: transparent;
-  color: #888;
-  border: 1px solid #444;
+  color: var(--tk-guide-skip-color);
+  border: 1px solid var(--tk-guide-skip-border);
 }
 
 .tk-guide-btn--skip:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #aaa;
+  background: var(--tk-guide-skip-hover-bg);
+  color: var(--tk-guide-skip-hover-color);
 }
 
 .tk-guide-btn--prev {
-  background: #333;
-  color: #ddd;
+  background: var(--tk-guide-prev-bg);
+  color: var(--tk-guide-prev-color);
 }
 
 .tk-guide-btn--prev:hover {
-  background: #444;
+  background: var(--tk-guide-prev-hover-bg);
 }
 
 .tk-guide-btn--next {
-  background: #4a6cf7;
-  color: #fff;
+  background: var(--tk-guide-next-bg);
+  color: var(--tk-guide-next-color);
 }
 
 .tk-guide-btn--next:hover {
-  background: #3b5de7;
+  background: var(--tk-guide-next-hover-bg);
 }
 
 .tk-guide-tooltip__progress {
   margin-top: 12px;
   text-align: center;
   font-size: 11px;
-  color: #666;
+  color: var(--tk-guide-progress-color);
 }
 
 /* ═══════════════════════════════════════════

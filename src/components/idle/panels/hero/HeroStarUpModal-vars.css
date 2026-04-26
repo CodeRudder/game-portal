@@ -1,0 +1,88 @@
+/**
+ * HeroStarUpModal — 武将升星弹窗 CSS 变量定义
+ *
+ * 从 HeroStarUpModal.css 拆分而来，便于独立维护和全局换肤。
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* ── 组件级 CSS 变量 ── */
+:root {
+  /* 遮罩层 */
+  --tk-starup-overlay-bg: rgba(0, 0, 0, 0.7);
+
+  /* 弹窗主体 */
+  --tk-starup-modal-bg: linear-gradient(180deg, rgba(26, 35, 50, 0.98) 0%, rgba(18, 22, 32, 0.99) 100%);
+  --tk-starup-border: rgba(200, 168, 76, 0.3);
+
+  /* 分割线 */
+  --tk-starup-divider: rgba(200, 168, 76, 0.15);
+  --tk-starup-divider-light: rgba(200, 168, 76, 0.08);
+
+  /* 标题栏 */
+  --tk-starup-header-bg: rgba(200, 168, 76, 0.04);
+
+  /* 关闭按钮 */
+  --tk-starup-close-border: rgba(200, 168, 76, 0.2);
+  --tk-starup-close-hover-bg: rgba(200, 168, 76, 0.15);
+
+  /* 滚动条 */
+  --tk-starup-scrollbar-thumb: rgba(200, 168, 76, 0.2);
+
+  /* 星级 */
+  --tk-starup-star-empty: rgba(100, 100, 100, 0.25);
+  --tk-starup-star-glow: rgba(200, 168, 76, 0.4);
+  --tk-starup-star-max: var(--tk-gold-bright);
+  --tk-starup-star-max-glow: rgba(232, 196, 104, 0.6);
+  --tk-starup-star-max-glow-dim: rgba(232, 196, 104, 0.4);
+  --tk-starup-star-max-glow-bright: rgba(232, 196, 104, 0.8);
+
+  /* 进度条 */
+  --tk-starup-progress-bg: rgba(200, 168, 76, 0.08);
+  --tk-starup-progress-low: #c0392b;
+  --tk-starup-progress-mid: #e67e22;
+  --tk-starup-progress-high: #2ecc71;
+  --tk-starup-progress-max: #8e44ad;
+
+  /* 标签 */
+  --tk-starup-tag-bg: rgba(200, 168, 76, 0.08);
+  --tk-starup-tag-border: rgba(200, 168, 76, 0.15);
+  --tk-starup-tag-hover-bg: rgba(200, 168, 76, 0.2);
+
+  /* 属性预览 */
+  --tk-starup-preview-bg: rgba(52, 152, 219, 0.06);
+  --tk-starup-preview-border: rgba(52, 152, 219, 0.15);
+
+  /* 消耗区 */
+  --tk-starup-cost-bg: rgba(200, 168, 76, 0.04);
+  --tk-starup-cost-border: rgba(200, 168, 76, 0.1);
+
+  /* 突破区 */
+  --tk-starup-bt-bg: rgba(124, 58, 237, 0.06);
+  --tk-starup-bt-border: rgba(124, 58, 237, 0.15);
+  --tk-starup-bt-text: var(--tk-purple);
+
+  /* 突破标签 */
+  --tk-starup-bt-tag-ok-bg: rgba(39, 174, 96, 0.1);
+  --tk-starup-bt-tag-ok-border: rgba(39, 174, 96, 0.2);
+  --tk-starup-bt-tag-fail-bg: rgba(231, 76, 60, 0.1);
+  --tk-starup-bt-tag-fail-border: rgba(231, 76, 60, 0.2);
+
+  /* 操作栏 */
+  --tk-starup-actions-border: rgba(200, 168, 76, 0.12);
+  --tk-starup-actions-bg: rgba(200, 168, 76, 0.03);
+
+  /* 升星按钮 */
+  --tk-starup-btn-starup-from: rgba(232, 196, 104, 0.3);
+  --tk-starup-btn-starup-to: rgba(200, 168, 76, 0.15);
+  --tk-starup-btn-starup-hover-from: rgba(232, 196, 104, 0.45);
+  --tk-starup-btn-starup-hover-to: rgba(200, 168, 76, 0.25);
+  --tk-starup-btn-starup-glow: rgba(200, 168, 76, 0.3);
+
+  /* 突破按钮 */
+  --tk-starup-btn-bt-from: rgba(124, 58, 237, 0.3);
+  --tk-starup-btn-bt-to: rgba(124, 58, 237, 0.15);
+  --tk-starup-btn-bt-border: rgba(124, 58, 237, 0.5);
+  --tk-starup-btn-bt-hover-from: rgba(124, 58, 237, 0.45);
+  --tk-starup-btn-bt-hover-to: rgba(124, 58, 237, 0.25);
+  --tk-starup-btn-bt-glow: rgba(124, 58, 237, 0.3);
+}
