@@ -2130,34 +2130,19 @@ describe('SolitaireEngine', () => {
       const row0ExposedY = TABLEAU_Y + 5; // 120
       engine.handleMouseDown(TAB1_CX, row0ExposedY);
 
-      // DEBUG
-      console.log('DEBUG _isDragging:', (engine as any)._isDragging);
-      console.log('DEBUG _dragCards length:', (engine as any)._dragCards.length);
-      console.log('DEBUG _dragCards:', (engine as any)._dragCards.map((c: any) => c.rank + c.suit));
-      console.log('DEBUG _dragSource:', JSON.stringify((engine as any)._dragSource));
-      console.log('DEBUG _selection:', JSON.stringify((engine as any)._selection));
-      console.log('DEBUG _selectedCards length:', (engine as any)._selectedCards.length);
-
       expect((engine as any)._isDragging).toBe(true);
       expect((engine as any)._dragCards.length).toBe(2); // Q♠ + J♥
 
       // 拖到 tableau[0]（目标位置是 K♥ 下方）
       // K♥ 在 tableau[0] 的 row 0，下方区域 Y > TABLEAU_Y + CARD_HEIGHT
       const targetY = TABLEAU_Y + TABLEAU_OVERLAP_FACE_UP + 42;
-      console.log('DEBUG targetY:', targetY);
-      console.log('DEBUG TAB0_CX:', TAB0_CX);
 
       // Check hitTest at target
       const hitResult = (engine as any).hitTest(TAB0_CX, targetY);
-      console.log('DEBUG hitTest result:', JSON.stringify(hitResult));
 
       engine.handleMouseMove(TAB0_CX, targetY);
       engine.handleMouseUp(TAB0_CX, targetY);
 
-      console.log('DEBUG after mouseUp tab0 length:', getTableau(engine)[0].length);
-      console.log('DEBUG after mouseUp tab0:', getTableau(engine)[0].map((c: any) => c.rank + c.suit));
-      console.log('DEBUG after mouseUp tab1 length:', getTableau(engine)[1].length);
-      console.log('DEBUG after mouseUp _isDragging:', (engine as any)._isDragging);
 
       // 拖拽状态应重置
       expect((engine as any)._isDragging).toBe(false);

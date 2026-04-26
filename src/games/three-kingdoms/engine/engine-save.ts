@@ -38,6 +38,9 @@ import type { ArenaShopSystem } from './pvp/ArenaShopSystem';
 import type { RankingSystem } from './pvp/RankingSystem';
 import { ENGINE_SAVE_VERSION, SAVE_KEY } from '../shared/constants';
 import { gameLog } from '../core/logger';
+import { GameDataValidator } from '../core/save/GameDataValidator';
+import { GameDataFixer } from '../core/save/GameDataFixer';
+import { SaveBackupManager } from '../core/save/SaveBackupManager';
 import { syncBuildingToResource } from './engine-tick';
 
 // ─────────────────────────────────────────────
@@ -245,6 +248,27 @@ export function applyLoadedState(ctx: SaveContext, state: IGameState): OfflineEa
       gameLog.warn(
         `Engine: 存档版本不匹配 (期望 ${ENGINE_SAVE_VERSION}，实际 ${data.version})，尝试兼容加载`,
       );
+    }
+
+    // 数据校验
+    const validator = new GameDataValidator();
+    const report = validator.validate(data);
+
+    if (!report.valid) {
+      gameLog.warn('[engine-save] 存档数据校验发现问题:', report.stats);
+      for (const issue of report.issues) {
+        if (issue.severity === 'error') {
+          gameLog.error(`  [${issue.severity}] ${issue.field}: ${issue.message}`);
+        }
+      }
+
+      // 尝试修正数据
+      const fixer = new GameDataFixer(new SaveBackupManager());
+      const { data: fixedData } = fixer.fix(data);
+      if (fixedData) {
+        applySaveData(ctx, fixedData);
+        return computeOfflineAndFinalize(ctx);
+      }
     }
 
     // v1.0 → v2.0 迁移：检测到旧版本存档时确保武将系统字段存在

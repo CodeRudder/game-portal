@@ -33,6 +33,8 @@ import { EventBus } from '../core/events/EventBus';
 import { gameLog } from '../core/logger';
 import { SubsystemRegistry } from '../core/engine/SubsystemRegistry';
 import { SaveManager } from '../core/save/SaveManager';
+import type { FixReport } from '../core/save/GameDataFixer';
+import { GameDataFixer } from '../core/save/GameDataFixer';
 import { ConfigRegistry } from '../core/config/ConfigRegistry';
 import { executeTick, syncBuildingToResource, type TickContext } from './engine-tick';
 import {
@@ -115,6 +117,7 @@ export class ThreeKingdomsEngine {
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
+  private readonly fixer: GameDataFixer;
   private readonly configRegistry: ConfigRegistry;
   private initialized = false;
   private onlineSeconds = 0;
@@ -210,6 +213,7 @@ export class ThreeKingdomsEngine {
     this.configRegistry.set('SAVE_KEY', SAVE_KEY);
     this.configRegistry.set('SAVE_VERSION', String(ENGINE_SAVE_VERSION));
     this.saveManager = new SaveManager(this.configRegistry);
+    this.fixer = this.saveManager.getFixer();
     this.registerSubsystems();
   }
 
@@ -350,6 +354,16 @@ export class ThreeKingdomsEngine {
     if (state) { const r = applyLoadedState(ctx, state); this.finalizeLoad(); return r; }
     const legacy = tryLoadLegacyFormat();
     if (legacy) { const r = applyLegacyState(ctx, legacy); this.finalizeLoad(); return r; }
+
+    // 所有常规加载方式失败，尝试通过修正器恢复
+    const recovered = this.fixer.tryRecoverSave();
+    if (recovered) {
+      gameLog.info('[ThreeKingdomsEngine] 通过数据修正器恢复了存档');
+      const r = applyLegacyState(ctx, recovered);
+      this.finalizeLoad();
+      return r;
+    }
+
     return null;
   }
 
@@ -376,6 +390,54 @@ export class ThreeKingdomsEngine {
   }
 
   hasSaveData(): boolean { return this.saveManager.hasSaveData(); }
+
+  /**
+   * 修正存档数据
+   *
+   * 供 UI 层调用的数据修正入口。
+   * 执行校验 → 迁移 → 修复流程，并返回修正报告。
+   * 修正成功后自动重新保存。
+   *
+   * @returns 修正报告
+   */
+  fixSaveData(): FixReport {
+    const raw = this.serialize();
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return {
+        success: false,
+        actions: [{ type: 'remove_corrupt', field: 'root', description: '当前存档数据无法解析' }],
+        originalValid: false,
+        fixedValid: false,
+      };
+    }
+
+    const { data, report } = this.fixer.fix(parsed);
+    if (data && report.success) {
+      // 修正成功，重新保存
+      try {
+        applyDeserialize(this.buildSaveCtx(), JSON.stringify(data));
+        this.save();
+        gameLog.info('[ThreeKingdomsEngine] 存档数据已修正并保存');
+      } catch (err) {
+        gameLog.error('[ThreeKingdomsEngine] 修正后保存失败:', err);
+        return { ...report, success: false };
+      }
+    }
+
+    return report;
+  }
+
+  /**
+   * 诊断当前存档问题
+   *
+   * @returns 修正报告（不执行修复）
+   */
+  diagnoseSaveData(): FixReport {
+    return this.fixer.diagnose();
+  }
 
   reset(): void {
     this.resource.reset(); this.building.reset(); this.calendar.reset();
