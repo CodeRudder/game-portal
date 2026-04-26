@@ -408,7 +408,7 @@ describe('ACC-01 主界面', () => {
 
     it(accTest('ACC-01-20', '资源数值与引擎同步'), () => {
       const engine = makeMockEngine();
-      const resources = engine.getResources();
+      const resources = (engine as any).getResources();
       render(
         <ResourceBar
           resources={resources}
@@ -417,7 +417,7 @@ describe('ACC-01 主界面', () => {
         />
       );
       // 验证资源栏显示的数值与引擎一致
-      expect(engine.getResources).toHaveBeenCalled();
+      expect((engine as any).getResources).toHaveBeenCalled();
       // 粮草 500 — 使用 data-testid 精确定位
       const grainEl = screen.getByTestId('resource-bar-grain-value');
       assertVisible(grainEl, 'ACC-01-20', '粮草数值');
@@ -481,13 +481,13 @@ describe('ACC-01 主界面', () => {
 
     it(accTest('ACC-01-25', '日历季节与游戏时间一致'), () => {
       const engine = makeMockEngine();
-      const season = engine.getCalendarSystem().getSeason();
+      const season = (engine as any).getCalendarSystem().getSeason();
       expect(season).toBe('spring');
     });
 
     it(accTest('ACC-01-26', '日历天气随机变化'), () => {
       const engine = makeMockEngine();
-      const weather = engine.getCalendarSystem().getWeather();
+      const weather = (engine as any).getCalendarSystem().getWeather();
       expect(['clear', 'rain', 'snow', 'wind']).toContain(weather);
     });
 
