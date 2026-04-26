@@ -457,10 +457,10 @@ describe('FactionBondSystem — getActiveBonds', () => {
 // 5. getAllBondConfigs
 // ═══════════════════════════════════════════════════════════════
 describe('FactionBondSystem — getAllBondConfigs', () => {
-  it('返回所有羁绊配置（4阵营×4等级+12搭档=28）', () => {
+  it('返回所有羁绊配置（4阵营×4等级+14搭档=30）', () => {
     const configs = system.getAllBondConfigs();
-    // 4 factions × 4 tiers = 16 + 12 partner bonds = 28
-    expect(configs).toHaveLength(28);
+    // 4 factions × 4 tiers = 16 + 14 partner bonds = 30
+    expect(configs).toHaveLength(30);
   });
 
   it('包含阵营羁绊配置', () => {
@@ -472,7 +472,7 @@ describe('FactionBondSystem — getAllBondConfigs', () => {
   it('包含搭档羁绊配置', () => {
     const configs = system.getAllBondConfigs();
     const partnerConfigs = configs.filter(c => c.type === 'partner');
-    expect(partnerConfigs).toHaveLength(12);
+    expect(partnerConfigs).toHaveLength(14);
   });
 
   it('每个配置都有有效的效果', () => {
@@ -676,8 +676,8 @@ describe('FactionBondSystem — 配置常量', () => {
     }
   });
 
-  it('搭档羁绊配置有12个', () => {
-    expect(PARTNER_BOND_CONFIGS).toHaveLength(12);
+  it('搭档羁绊配置有14个', () => {
+    expect(PARTNER_BOND_CONFIGS).toHaveLength(14);
   });
 
   it('桃园结义全属性+10%', () => {

@@ -421,6 +421,39 @@ export const PARTNER_BOND_CONFIGS: ReadonlyArray<BondConfig> = [
     },
     description: '田丰、沮授袁绍谋士，策略+12%',
   },
+  // ═══════════════════════════════════════════
+  // PRD v1.3 HER-11 新增搭档羁绊（2组）
+  // ═══════════════════════════════════════════
+  {
+    id: 'partner_kurou_lianhuan',
+    name: '苦肉连环',
+    type: 'partner',
+    requiredHeroes: ['huanggai', 'zhouyu'],
+    minCount: 2,
+    effect: {
+      attackBonus: 0,
+      defenseBonus: 0.15,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0,
+    },
+    description: '黄盖、周瑜苦肉连环，防御+15%',
+  },
+  {
+    id: 'partner_weizhi_shuangbi',
+    name: '魏之双壁',
+    type: 'partner',
+    requiredHeroes: ['zhangliao', 'xuhuang'],
+    minCount: 2,
+    effect: {
+      attackBonus: 0.10,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0,
+    },
+    description: '张辽、徐晃魏之双壁，攻击+10%',
+  },
 ];
 
 // ─────────────────────────────────────────────
@@ -443,6 +476,7 @@ export const HERO_FACTION_MAP: Readonly<Record<string, FactionId>> = {
   huangzhong: 'shu',
   zhugeliang: 'shu',
   pangtong: 'shu',
+  weiyan: 'shu',
 
   // ── 魏国 ──
   caocao: 'wei',
@@ -470,6 +504,8 @@ export const HERO_FACTION_MAP: Readonly<Record<string, FactionId>> = {
   sunce: 'wu',
   sunjian: 'wu',
   lusu: 'wu',
+  lushu: 'wu',
+  huanggai: 'wu',
 
   // ── 群雄 ──
   lvbu: 'neutral',

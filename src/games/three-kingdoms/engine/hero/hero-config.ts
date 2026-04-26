@@ -374,6 +374,84 @@ export const GENERAL_DEFS: readonly GeneralDef[] = [
     ],
     biography: '字奉先，天下第一猛将。辕门射戟，三英战吕布，勇冠三军。',
   },
+
+  // ═══════════════════════════════════════════
+  // PRD v1.3 HER-11 新增武将（6名，均为稀有品质）
+  // 解决：传说36% vs 稀有仅7%（1名）的品质分布不均
+  // 解决：吴国仅2名武将无法触发3人羁绊
+  // ═══════════════════════════════════════════
+
+  // ── 吴国新增（3名） ──
+  {
+    id: 'lushu',
+    name: '鲁肃',
+    quality: Q.RARE,
+    faction: 'wu',
+    baseStats: { attack: 60, defense: 75, intelligence: 90, speed: 65 },
+    skills: [
+      { id: 'lushu_01', name: '联盟策略', type: 'active', level: 1, description: '增加友方全体防御力15%' },
+    ],
+    biography: '字子敬，东吴名臣，外交家。力主孙刘联盟抗曹，赤壁之战的关键推动者。',
+  },
+  {
+    id: 'huanggai',
+    name: '黄盖',
+    quality: Q.RARE,
+    faction: 'wu',
+    baseStats: { attack: 70, defense: 85, intelligence: 50, speed: 55 },
+    skills: [
+      { id: 'huanggai_01', name: '苦肉计', type: 'active', level: 1, description: '牺牲10%生命值，增加攻击力30%持续3回合' },
+    ],
+    biography: '字公覆，东吴老将。赤壁之战中施苦肉计，为火烧连环船立下大功。',
+  },
+  {
+    id: 'ganning',
+    name: '甘宁',
+    quality: Q.RARE,
+    faction: 'wu',
+    baseStats: { attack: 90, defense: 55, intelligence: 40, speed: 85 },
+    skills: [
+      { id: 'ganning_01', name: '夜袭', type: 'active', level: 1, description: '对敌方后排造成攻击力150%的物理伤害' },
+    ],
+    biography: '字兴霸，锦帆贼出身。百骑劫魏营，威震逍遥津，东吴猛将。',
+  },
+
+  // ── 魏国新增（2名） ──
+  {
+    id: 'xuhuang',
+    name: '徐晃',
+    quality: Q.RARE,
+    faction: 'wei',
+    baseStats: { attack: 75, defense: 80, intelligence: 55, speed: 70 },
+    skills: [
+      { id: 'xuhuang_01', name: '坚守', type: 'active', level: 1, description: '增加自身防御力20%，持续2回合' },
+    ],
+    biography: '字公明，曹魏名将。治军严明，樊城之战击败关羽，用兵如神。',
+  },
+  {
+    id: 'zhangliao',
+    name: '张辽',
+    quality: Q.RARE,
+    faction: 'wei',
+    baseStats: { attack: 88, defense: 70, intelligence: 60, speed: 90 },
+    skills: [
+      { id: 'zhangliao_01', name: '突袭', type: 'active', level: 1, description: '先手攻击，造成攻击力120%的物理伤害' },
+    ],
+    biography: '字文远，威震逍遥津。以八百勇士破孙权十万大军，曹魏五子良将之首。',
+  },
+
+  // ── 蜀国新增（1名） ──
+  {
+    id: 'weiyan',
+    name: '魏延',
+    quality: Q.RARE,
+    faction: 'shu',
+    baseStats: { attack: 85, defense: 60, intelligence: 45, speed: 80 },
+    skills: [
+      { id: 'weiyan_01', name: '狂攻', type: 'active', level: 1, description: '连续攻击2次，每次造成攻击力80%的物理伤害' },
+    ],
+    biography: '字文长，蜀汉猛将。镇守汉中十余年，屡立战功，勇猛过人。',
+  },
 ] as const;
 
 /**

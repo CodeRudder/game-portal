@@ -6,7 +6,7 @@ import { vi } from 'vitest';
  * GENERAL_DEFS 中品质分布：
  * - COMMON: minbingduizhang, xiangyongtoumu (2个)
  * - FINE: junshou, xiaowei (2个)
- * - RARE: dianwei (1个)
+ * - RARE: dianwei, lushu, huanggai, ganning, xuhuang, zhangliao, weiyan (7个)
  * - EPIC: liubei, zhangfei, simayi, zhouyu (4个)
  * - LEGENDARY: guanyu, zhugeliang, zhaoyun, caocao, lvbu (5个)
  *
@@ -68,7 +68,7 @@ function makeSequenceRng(values: number[]): () => number {
  * GENERAL_DEFS 中品质分布：
  * - COMMON: minbingduizhang(shu), xiangyongtoumu(wu) (2个)
  * - FINE: junshou(wei), xiaowei(qun) (2个)
- * - RARE: dianwei(wei) (1个)
+ * - RARE: dianwei(wei), lushu(wu), huanggai(wu), ganning(wu), xuhuang(wei), zhangliao(wei), weiyan(shu) (7个)
  * - EPIC: liubei(shu), zhangfei(shu), simayi(wei), zhouyu(wu) (4个)
  * - LEGENDARY: guanyu(shu), zhugeliang(shu), zhaoyun(shu), caocao(wei), lvbu(qun) (5个)
  *
@@ -229,9 +229,9 @@ describe('HeroRecruitSystem', () => {
       expect(result.results[0].fragmentCount).toBe(0);
     });
 
-    it('重复招募同一武将 isDuplicate=true（RARE 品质只有1个武将）', () => {
+    it('重复招募同一武将 isDuplicate=true（RARE 品质连续抽到同一武将）', () => {
       // P0 概率表对齐后：Normal RARE 区间 [0.88, 0.97)
-      // RARE 品质只有 dianwei，连续抽两次 RARE 必重复
+      // RARE 品质有多个武将，使用固定 rng 连续抽两次 RARE 必抽到同一武将（重复）
       const rng = makeConstantRng(0.93); // RARE
       recruit.setRng(rng);
       const first = recruit.recruitSingle('normal')!;
@@ -246,12 +246,13 @@ describe('HeroRecruitSystem', () => {
     it('重复武将碎片数量与品质对应', () => {
       const rng = makeConstantRng(0.93); // RARE (P0-1 fix)
       recruit.setRng(rng);
-      recruit.recruitSingle('normal'); // 首次
+      const first = recruit.recruitSingle('normal')!;
+      const generalId = first.results[0].general.id;
       recruit.setRng(rng);
       recruit.recruitSingle('normal'); // 重复
 
-      // dianwei 是唯一的 RARE 武将
-      expect(heroSystem.getFragments('dianwei')).toBe(DUPLICATE_FRAGMENT_COUNT[Quality.RARE]);
+      // 使用固定 rng，两次必抽到同一 RARE 武将
+      expect(heroSystem.getFragments(generalId)).toBe(DUPLICATE_FRAGMENT_COUNT[Quality.RARE]);
     });
 
     it('EPIC 品质武将首次招募不重复', () => {

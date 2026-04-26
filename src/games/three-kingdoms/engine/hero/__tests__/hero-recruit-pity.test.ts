@@ -279,9 +279,9 @@ describe('HeroRecruitSystem — 保底机制', () => {
       // P0 概率表对齐后概率：
       // Normal: COMMON=0.60, FINE=0.28, RARE=0.09, EPIC=0.025, LEGENDARY=0.005
       const values = [
-        0.93, 0.5,   // pull 1: quality=RARE, pick dianwei
+        0.93, 0.5,   // pull 1: quality=RARE, pick a RARE general
         0.985, 0.5,  // pull 2: quality=EPIC, pick one of EPIC generals
-        0.93, 0.5,   // pull 3: quality=RARE, pick dianwei (duplicate)
+        0.93, 0.5,   // pull 3: quality=RARE, pick same RARE general (duplicate)
       ];
       const rng = makeSequenceRng(values);
       recruit.setRng(rng);
