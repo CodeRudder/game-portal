@@ -11,6 +11,7 @@ import {
   HERO_MAX_LEVEL,
   GENERAL_DEF_MAP,
 } from '@/games/three-kingdoms/engine';
+import { statsAtLevel } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { Toast } from '@/components/idle/common/Toast';
 import RadarChart from './RadarChart';
@@ -127,16 +128,16 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
     }
   }, [engine, general.id, targetLevel, general.level]);
 
-  // 属性列表
+  // 属性列表（使用 statsAtLevel 计算当前等级实际属性）
   const stats = useMemo(() => {
-    const { baseStats } = general;
-    const statMax = computeStatMax(baseStats);
+    const effectiveStats = statsAtLevel(general.baseStats, general.level);
+    const statMax = computeStatMax(effectiveStats);
     return (['attack', 'defense', 'intelligence', 'speed'] as const).map((key) => ({
       key,
       label: STAT_LABELS[key],
-      value: baseStats[key],
+      value: effectiveStats[key],
       color: STAT_COLORS[key],
-      percentage: Math.min(100, Math.floor((baseStats[key] / statMax) * 100)),
+      percentage: Math.min(100, Math.floor((effectiveStats[key] / statMax) * 100)),
     }));
   }, [general]);
 
@@ -228,7 +229,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
             <div className="tk-hero-detail-radar-section">
               <h4 className="tk-hero-detail-section-title">属性总览</h4>
               <div className="tk-hero-detail-radar-wrap">
-                <RadarChart stats={stats} quality={general.quality} statMax={computeStatMax(general.baseStats)} />
+                <RadarChart stats={stats} quality={general.quality} statMax={computeStatMax(statsAtLevel(general.baseStats, general.level))} />
               </div>
             </div>
 

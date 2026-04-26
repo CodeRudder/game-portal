@@ -8,7 +8,7 @@ import { vi } from 'vitest';
  * 测试中需要确保两个系统共享同一个 HeroSystem 实例。
  */
 
-import { HeroLevelSystem } from '../HeroLevelSystem';
+import { HeroLevelSystem, statsAtLevel } from '../HeroLevelSystem';
 import type { LevelDeps, LevelUpResult, EnhancePreview, BatchEnhanceResult } from '../HeroLevelSystem';
 import { HeroSystem } from '../HeroSystem';
 import { Quality } from '../hero.types';
@@ -404,6 +404,66 @@ describe('HeroLevelSystem', () => {
 
     it('reset() 不抛异常', () => {
       expect(() => levelSys.reset()).not.toThrow();
+    });
+  });
+
+  // ───────────────────────────────────────────
+  // 8. statsAtLevel 属性计算
+  // ───────────────────────────────────────────
+  describe('statsAtLevel 属性计算', () => {
+    const baseStats = { attack: 115, defense: 90, intelligence: 65, speed: 78 };
+
+    it('level=1 时属性等于 baseStats', () => {
+      const stats = statsAtLevel(baseStats, 1);
+      // m = 1 + (1-1) * 0.03 = 1.0
+      expect(stats).toEqual({
+        attack: 115,
+        defense: 90,
+        intelligence: 65,
+        speed: 78,
+      });
+    });
+
+    it('level=10 时属性 = baseStats × 1.27', () => {
+      const stats = statsAtLevel(baseStats, 10);
+      // m = 1 + (10-1) * 0.03 = 1.27
+      expect(stats.attack).toBe(Math.floor(115 * 1.27));   // 146
+      expect(stats.defense).toBe(Math.floor(90 * 1.27));    // 114
+      expect(stats.intelligence).toBe(Math.floor(65 * 1.27)); // 82
+      expect(stats.speed).toBe(Math.floor(78 * 1.27));      // 99
+    });
+
+    it('level=50 时属性 = baseStats × 2.47', () => {
+      const stats = statsAtLevel(baseStats, 50);
+      // m = 1 + (50-1) * 0.03 = 1 + 1.47 = 2.47
+      expect(stats.attack).toBe(Math.floor(115 * 2.47));    // 284
+      expect(stats.defense).toBe(Math.floor(90 * 2.47));    // 222
+      expect(stats.intelligence).toBe(Math.floor(65 * 2.47)); // 160
+      expect(stats.speed).toBe(Math.floor(78 * 2.47));      // 192
+    });
+
+    it('level=100 时属性 = baseStats × 3.97', () => {
+      const stats = statsAtLevel(baseStats, 100);
+      // m = 1 + (100-1) * 0.03 = 1 + 2.97 = 3.97
+      expect(stats.attack).toBe(Math.floor(115 * 3.97));    // 456
+      expect(stats.defense).toBe(Math.floor(90 * 3.97));    // 357
+      expect(stats.intelligence).toBe(Math.floor(65 * 3.97)); // 258
+      expect(stats.speed).toBe(Math.floor(78 * 3.97));      // 309
+    });
+
+    it('升级前后属性差异验证：statsDiff.after > statsDiff.before', () => {
+      // 先给 guanyu 加足够经验触发自动升级
+      const expReq = levelSys.calculateExpToNextLevel(1);
+      const result = levelSys.addExp('guanyu', expReq)!;
+      expect(result).not.toBeNull();
+      expect(result.levelsGained).toBeGreaterThanOrEqual(1);
+
+      const { before, after } = result.statsDiff;
+      // 升级后所有属性应严格大于升级前
+      expect(after.attack).toBeGreaterThan(before.attack);
+      expect(after.defense).toBeGreaterThan(before.defense);
+      expect(after.intelligence).toBeGreaterThan(before.intelligence);
+      expect(after.speed).toBeGreaterThan(before.speed);
     });
   });
 });

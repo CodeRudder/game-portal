@@ -8,6 +8,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { GeneralData, Quality } from '@/games/three-kingdoms/engine';
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS, FACTION_LABELS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import { statsAtLevel } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 import './HeroCompareModal.css';
 
 // ─────────────────────────────────────────────
@@ -64,12 +65,14 @@ const HeroCompareModal: React.FC<HeroCompareModalProps> = ({
 
   // 计算属性最大值
   const statMax = useMemo(() => {
-    if (!compareGeneral) return computeStatMax(baseGeneral.baseStats);
+    const baseEffective = statsAtLevel(baseGeneral.baseStats, baseGeneral.level);
+    if (!compareGeneral) return computeStatMax(baseEffective);
+    const compEffective = statsAtLevel(compareGeneral.baseStats, compareGeneral.level);
     return computeStatMax({
-      attack: Math.max(baseGeneral.baseStats.attack, compareGeneral.baseStats.attack),
-      defense: Math.max(baseGeneral.baseStats.defense, compareGeneral.baseStats.defense),
-      intelligence: Math.max(baseGeneral.baseStats.intelligence, compareGeneral.baseStats.intelligence),
-      speed: Math.max(baseGeneral.baseStats.speed, compareGeneral.baseStats.speed),
+      attack: Math.max(baseEffective.attack, compEffective.attack),
+      defense: Math.max(baseEffective.defense, compEffective.defense),
+      intelligence: Math.max(baseEffective.intelligence, compEffective.intelligence),
+      speed: Math.max(baseEffective.speed, compEffective.speed),
     });
   }, [baseGeneral, compareGeneral]);
 
@@ -146,8 +149,10 @@ const HeroCompareModal: React.FC<HeroCompareModalProps> = ({
           <div className="tk-compare-stats">
             <h4 className="tk-compare-stats-title">属性对比</h4>
             {STAT_KEYS.map((key) => {
-              const baseVal = baseGeneral.baseStats[key];
-              const compVal = compareGeneral.baseStats[key];
+              const baseEffective = statsAtLevel(baseGeneral.baseStats, baseGeneral.level);
+              const compEffective = compareGeneral ? statsAtLevel(compareGeneral.baseStats, compareGeneral.level) : baseEffective;
+              const baseVal = baseEffective[key];
+              const compVal = compEffective[key];
               const diff = baseVal - compVal;
               const basePct = Math.min(100, Math.floor((baseVal / statMax) * 100));
               const compPct = Math.min(100, Math.floor((compVal / statMax) * 100));

@@ -66,7 +66,7 @@ const enhancePreview: EnhancePreview = {
   totalExp: 100,
   totalGold: 50,
   statsDiff: {
-    before: { attack: 115, defense: 90, intelligence: 65, speed: 78 },
+    before: { attack: 146, defense: 114, intelligence: 82, speed: 99 },
     after: { attack: 118, defense: 93, intelligence: 67, speed: 80 },
   },
   powerBefore: 1000,
@@ -189,11 +189,13 @@ describe('HeroDetailModal', () => {
 
   it('应渲染属性数值', () => {
     render(<HeroDetailModal {...defaultProps} />);
-    // 雷达图和属性条都渲染数值，使用 getAllByText
-    expect(screen.getAllByText('115').length).toBeGreaterThanOrEqual(1); // attack
-    expect(screen.getAllByText('90').length).toBeGreaterThanOrEqual(1);  // defense
-    expect(screen.getAllByText('65').length).toBeGreaterThanOrEqual(1);  // intelligence
-    expect(screen.getAllByText('78').length).toBeGreaterThanOrEqual(1);  // speed
+    // level=10, m=1+(10-1)*0.03=1.27
+    // attack=Math.floor(115*1.27)=146, defense=Math.floor(90*1.27)=114,
+    // intelligence=Math.floor(65*1.27)=82, speed=Math.floor(78*1.27)=99
+    expect(screen.getAllByText('146').length).toBeGreaterThanOrEqual(1); // attack
+    expect(screen.getAllByText('114').length).toBeGreaterThanOrEqual(1);  // defense
+    expect(screen.getAllByText('82').length).toBeGreaterThanOrEqual(1);  // intelligence
+    expect(screen.getAllByText('99').length).toBeGreaterThanOrEqual(1);  // speed
   });
 
   // ═══════════════════════════════════════════
@@ -489,5 +491,59 @@ describe('HeroDetailModal', () => {
     const engine = makeMockEngine({ levelCap: 50 });
     render(<HeroDetailModal {...defaultProps} engine={engine} />);
     expect(screen.queryByTestId('breakthrough-hint')).not.toBeInTheDocument();
+  });
+
+  // ═══════════════════════════════════════════
+  // 12. 升级后属性展示
+  // ═══════════════════════════════════════════
+
+  describe('升级后属性展示', () => {
+    it('level=1 时属性值等于 baseStats', () => {
+      const lv1General: GeneralData = {
+        ...baseGeneral,
+        level: 1,
+      };
+      const engine = makeMockEngine({ general: lv1General });
+      render(
+        <HeroDetailModal
+          general={lv1General}
+          engine={engine}
+          onClose={vi.fn()}
+          onEnhanceComplete={vi.fn()}
+        />,
+      );
+
+      // m = 1 + (1-1) * 0.03 = 1.0，属性等于 baseStats
+      expect(screen.getAllByText('115').length).toBeGreaterThanOrEqual(1); // attack
+      expect(screen.getAllByText('90').length).toBeGreaterThanOrEqual(1);  // defense
+      expect(screen.getAllByText('65').length).toBeGreaterThanOrEqual(1);  // intelligence
+      expect(screen.getAllByText('78').length).toBeGreaterThanOrEqual(1);  // speed
+    });
+
+    it('level=10 时属性值大于 baseStats（验证 statsAtLevel 被调用）', () => {
+      // baseGeneral 默认 level=10，m=1.27
+      render(<HeroDetailModal {...defaultProps} />);
+
+      // 所有属性值应大于 baseStats 原始值
+      expect(screen.getAllByText('146').length).toBeGreaterThanOrEqual(1); // attack > 115
+      expect(screen.getAllByText('114').length).toBeGreaterThanOrEqual(1); // defense > 90
+      expect(screen.getAllByText('82').length).toBeGreaterThanOrEqual(1);  // intelligence > 65
+      expect(screen.getAllByText('99').length).toBeGreaterThanOrEqual(1);  // speed > 78
+    });
+
+    it('level=10 时具体属性值验证（attack 应为 Math.floor(115 × 1.27) = 146）', () => {
+      render(<HeroDetailModal {...defaultProps} />);
+
+      // 精确验证每个属性值 = Math.floor(base × 1.27)
+      const expectedAttack = Math.floor(115 * 1.27);   // 146
+      const expectedDefense = Math.floor(90 * 1.27);    // 114
+      const expectedIntelligence = Math.floor(65 * 1.27); // 82
+      const expectedSpeed = Math.floor(78 * 1.27);      // 99
+
+      expect(screen.getAllByText(String(expectedAttack)).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(String(expectedDefense)).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(String(expectedIntelligence)).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(String(expectedSpeed)).length).toBeGreaterThanOrEqual(1);
+    });
   });
 });

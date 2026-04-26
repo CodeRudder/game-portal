@@ -175,12 +175,13 @@ describe('HeroCompareModal', () => {
 
   it('应显示属性数值', () => {
     render(<HeroCompareModal baseGeneral={baseGeneral} engine={makeMockEngine()} onClose={onClose} />);
-    // 关羽武力115 vs 张飞武力120
+    // 关羽level=30: m=1.87, attack=Math.floor(115*1.87)=215
+    // 张飞level=25: m=1.72, attack=Math.floor(120*1.72)=206
     const modal = screen.getByTestId('tk-hero-compare-modal');
     const statValues = modal.querySelectorAll('.tk-compare-stat-value');
     const values = Array.from(statValues).map((el) => el.textContent);
-    expect(values).toContain('115');
-    expect(values).toContain('120');
+    expect(values).toContain('215');
+    expect(values).toContain('206');
   });
 
   it('应高亮优势属性（胜方标绿）', () => {
@@ -195,9 +196,9 @@ describe('HeroCompareModal', () => {
     render(<HeroCompareModal baseGeneral={baseGeneral} engine={makeMockEngine()} onClose={onClose} />);
     const modal = screen.getByTestId('tk-hero-compare-modal');
     const diffs = modal.querySelectorAll('.tk-compare-stat-diff');
-    // 关羽武力115 - 张飞武力120 = -5
+    // 关羽attack=215 - 张飞attack=206 = +9
     const diffTexts = Array.from(diffs).map((el) => el.textContent);
-    expect(diffTexts).toContain('-5');
+    expect(diffTexts).toContain('+9');
   });
 
   it('优势方差值应显示正数', () => {
@@ -205,8 +206,8 @@ describe('HeroCompareModal', () => {
     const modal = screen.getByTestId('tk-hero-compare-modal');
     const diffs = modal.querySelectorAll('.tk-compare-stat-diff');
     const diffTexts = Array.from(diffs).map((el) => el.textContent);
-    // 关羽防御90 - 张飞防御70 = +20
-    expect(diffTexts).toContain('+20');
+    // 关羽defense=168 - 张飞defense=120 = +48
+    expect(diffTexts).toContain('+48');
   });
 
   it('应显示战力对比', () => {

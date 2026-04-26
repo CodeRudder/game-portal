@@ -12,6 +12,7 @@
 import React, { useMemo, useState } from 'react';
 import type { GeneralData, Quality } from '@/games/three-kingdoms/engine';
 import { QUALITY_LABELS, QUALITY_BORDER_COLORS, FACTION_LABELS } from '@/games/three-kingdoms/engine';
+import { statsAtLevel } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 import RadarChart from './RadarChart';
 import './HeroComparePanel.css';
 
@@ -48,8 +49,8 @@ const STAT_COLORS: Record<string, string> = {
 
 /** 计算属性最大值（用于雷达图） */
 function computeStatMax(a: GeneralData, b: GeneralData | null): number {
-  const stats = [a.baseStats];
-  if (b) stats.push(b.baseStats);
+  const stats = [statsAtLevel(a.baseStats, a.level)];
+  if (b) stats.push(statsAtLevel(b.baseStats, b.level));
   const maxVal = Math.max(
     ...stats.map(s => Math.max(s.attack, s.defense, s.intelligence, s.speed)),
   );
@@ -121,15 +122,17 @@ const HeroComparePanel: React.FC<HeroComparePanelProps> = ({
   // 雷达图数据
   const leftRadarStats = useMemo(() => {
     if (!leftHero) return [];
+    const effectiveStats = statsAtLevel(leftHero.baseStats, leftHero.level);
     return STAT_KEYS.map(key => ({
-      key, label: STAT_LABELS[key], value: leftHero.baseStats[key], color: STAT_COLORS[key],
+      key, label: STAT_LABELS[key], value: effectiveStats[key], color: STAT_COLORS[key],
     }));
   }, [leftHero]);
 
   const rightRadarStats = useMemo(() => {
     if (!rightHero) return [];
+    const effectiveStats = statsAtLevel(rightHero.baseStats, rightHero.level);
     return STAT_KEYS.map(key => ({
-      key, label: STAT_LABELS[key], value: rightHero.baseStats[key], color: STAT_COLORS[key],
+      key, label: STAT_LABELS[key], value: effectiveStats[key], color: STAT_COLORS[key],
     }));
   }, [rightHero]);
 
@@ -216,16 +219,20 @@ const HeroComparePanel: React.FC<HeroComparePanelProps> = ({
       {leftHero && rightHero && (
         <div className="hcp-stats-section" data-testid="hcp-stats-section">
           <h4 className="hcp-section-title">属性对比</h4>
-          {STAT_KEYS.map(key => (
+          {STAT_KEYS.map(key => {
+            const leftStats = statsAtLevel(leftHero.baseStats, leftHero.level);
+            const rightStats = statsAtLevel(rightHero.baseStats, rightHero.level);
+            return (
             <StatCompareRow
               key={key}
               label={STAT_LABELS[key]}
-              leftVal={leftHero.baseStats[key]}
-              rightVal={rightHero.baseStats[key]}
+              leftVal={leftStats[key]}
+              rightVal={rightStats[key]}
               color={STAT_COLORS[key]}
               max={statMax}
             />
-          ))}
+          );
+          })}
         </div>
       )}
 

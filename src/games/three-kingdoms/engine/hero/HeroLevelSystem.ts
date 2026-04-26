@@ -113,7 +113,7 @@ function totalGoldBetween(from: number, to: number): number {
 }
 
 /** 计算指定等级的属性：baseStats × (1 + (level-1) × 0.03) */
-function statsAtLevel(base: GeneralStats, level: number): GeneralStats {
+export function statsAtLevel(base: GeneralStats, level: number): GeneralStats {
   const m = 1 + (level - 1) * STAT_GROWTH_RATE;
   return {
     attack: Math.floor(base.attack * m),
