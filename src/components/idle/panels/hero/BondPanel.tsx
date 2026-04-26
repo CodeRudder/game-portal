@@ -24,6 +24,26 @@ import type { BondCardData, BondTierComparison } from './BondCardItem';
 import './BondPanel.css';
 
 // ─────────────────────────────────────────────
+// 故事事件配置（N-12-5: 好感度UI入口增强）
+// ─────────────────────────────────────────────
+
+interface StoryEventDef {
+  id: string;
+  title: string;
+  requiredHeroes: string[];
+  minFavorability: number;
+  minLevel: number;
+}
+
+const STORY_EVENTS: StoryEventDef[] = [
+  { id: 'story_001', title: '桃园结义', requiredHeroes: ['刘备', '关羽', '张飞'], minFavorability: 50, minLevel: 5 },
+  { id: 'story_002', title: '三顾茅庐', requiredHeroes: ['刘备', '诸葛亮'], minFavorability: 60, minLevel: 10 },
+  { id: 'story_003', title: '赤壁之战', requiredHeroes: ['周瑜', '诸葛亮', '曹操'], minFavorability: 70, minLevel: 15 },
+  { id: 'story_004', title: '过五关斩六将', requiredHeroes: ['关羽'], minFavorability: 80, minLevel: 20 },
+  { id: 'story_005', title: '草船借箭', requiredHeroes: ['诸葛亮', '曹操'], minFavorability: 55, minLevel: 12 },
+];
+
+// ─────────────────────────────────────────────
 // Props
 // ─────────────────────────────────────────────
 
@@ -181,6 +201,7 @@ const BondPanel: React.FC<BondPanelProps> = ({
 
   // ── 0. 对 heroIds 去重，避免重复ID导致阵营计数错误 ──
   const uniqueHeroIds = useMemo(() => [...new Set(heroIds)], [heroIds]);
+  const heroIdSet = useMemo(() => new Set(uniqueHeroIds), [uniqueHeroIds]);
 
   // ── 羁绊卡片展开状态 ──
   const [expandedBondId, setExpandedBondId] = useState<string | null>(null);
@@ -215,7 +236,6 @@ const BondPanel: React.FC<BondPanelProps> = ({
 
   // ── 2. 构建羁绊列表（阵营 + 搭档） ──
   const allBonds = useMemo(() => {
-    const heroIdSet = new Set(uniqueHeroIds);
     const bonds: BondCardData[] = [];
 
     // 阵营羁绊（每个阵营取最高激活等级）
@@ -310,7 +330,7 @@ const BondPanel: React.FC<BondPanelProps> = ({
     }
 
     return bonds;
-  }, [uniqueHeroIds, factionCounts, externalBondCatalog]);
+  }, [uniqueHeroIds, heroIdSet, factionCounts, externalBondCatalog]);
 
   // ── 3. 分组：已激活 / 未激活 ──
   const activeBonds = useMemo(() => allBonds.filter(b => b.isActive), [allBonds]);
@@ -479,7 +499,7 @@ const BondPanel: React.FC<BondPanelProps> = ({
         </div>
       )}
 
-      {/* 好感度与故事事件入口提示 */}
+      {/* 好感度与故事事件入口 */}
       {uniqueHeroIds.length > 0 && (
         <div className="bond-panel__favorability-hint" data-testid="bond-favorability-hint">
           <div className="bond-panel__favorability-hint-icon">💝</div>
@@ -489,17 +509,52 @@ const BondPanel: React.FC<BondPanelProps> = ({
               特定武将组合达到好感度要求后可触发专属故事事件（如「桃园结义」需刘备+关羽+张飞好感度≥50且等级≥5）
             </span>
             <div className="bond-panel__favorability-hint-bonds" data-testid="bond-favorability-bonds">
-              {activeBonds.filter(b => b.type === 'partner').slice(0, 3).map(bond => (
+              {/* 显示搭档羁绊的好感度状态标签 */}
+              {allBonds.filter(b => b.type === 'partner').slice(0, 3).map(bond => (
                 <span key={bond.id} className="bond-panel__favorability-bond-tag">
                   {bond.isActive ? '✅' : '🔓'} {bond.name}
                 </span>
               ))}
-              {activeBonds.filter(b => b.type === 'partner').length > 3 && (
+              {allBonds.filter(b => b.type === 'partner').length > 3 && (
                 <span className="bond-panel__favorability-bond-more">
-                  +{activeBonds.filter(b => b.type === 'partner').length - 3} 更多
+                  +{allBonds.filter(b => b.type === 'partner').length - 3} 更多
                 </span>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 故事事件入口（N-12-5: 好感度UI入口增强） */}
+      {uniqueHeroIds.length > 0 && (
+        <div className="bond-panel__story-events" data-testid="bond-story-events">
+          <div className="bond-panel__story-events-header">
+            <span className="bond-panel__story-events-icon">📜</span>
+            <span className="bond-panel__story-events-title">故事事件</span>
+          </div>
+          <div className="bond-panel__story-events-list">
+            {STORY_EVENTS.map(event => {
+              const hasHeroes = event.requiredHeroes.every(h => heroIdSet.has(h));
+              return (
+                <div key={event.id}
+                  className={`bond-panel__story-event ${hasHeroes ? 'bond-panel__story-event--available' : 'bond-panel__story-event--locked'}`}
+                  data-testid={`bond-story-event-${event.id}`}>
+                  <span className="bond-panel__story-event-name">{event.title}</span>
+                  <span className="bond-panel__story-event-heroes">
+                    {event.requiredHeroes.join(' + ')}
+                  </span>
+                  <span className="bond-panel__story-event-requirement">
+                    {hasHeroes ? '✅ 武将已齐' : `需 ${event.requiredHeroes.filter(h => !heroIdSet.has(h)).join('、')}`}
+                  </span>
+                  {event.minLevel > 0 && (
+                    <span className="bond-panel__story-event-level">等级≥{event.minLevel}</span>
+                  )}
+                  {event.minFavorability > 0 && (
+                    <span className="bond-panel__story-event-favor">好感≥{event.minFavorability}</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

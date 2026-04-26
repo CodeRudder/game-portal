@@ -159,19 +159,25 @@ describe('useHeroBonds — 边界条件', () => {
   });
 
   it('formationHeroIds 应优先于 ownedHeroIds', () => {
+    // Mock 武将数据，确保 engine.getGeneral('liubei') 返回有效对象
+    const liubei = { id: 'liubei', name: '刘备', faction: 'shu' };
     const mockBondSystem = {
       getActiveBonds: vi.fn().mockReturnValue([]),
+      detectActiveBonds: vi.fn().mockReturnValue([]),
     };
     const engine = createMockEngine({
       getBondSystem: vi.fn().mockReturnValue(mockBondSystem),
+      getGeneral: vi.fn().mockImplementation((id: string) =>
+        id === 'liubei' ? liubei : undefined,
+      ),
     });
 
     renderHook(() =>
       useHeroBonds({ engine: engine, snapshotVersion: 0, formationHeroIds: ['liubei'] }),
     );
 
-    // getActiveBonds 应被调用且传入 formationHeroIds
-    expect(mockBondSystem.getActiveBonds).toHaveBeenCalledWith(['liubei']);
+    // detectActiveBonds 应被调用且传入包含 liubei 武将对象的数组
+    expect(mockBondSystem.detectActiveBonds).toHaveBeenCalledWith([liubei]);
   });
 });
 

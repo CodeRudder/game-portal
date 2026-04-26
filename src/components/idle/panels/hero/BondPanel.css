@@ -504,3 +504,105 @@
   color: #888;
   padding: 2px 4px;
 }
+
+/* ── 故事事件区域（N-12-5: 好感度UI入口增强） ── */
+.bond-panel__story-events {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(155, 89, 182, 0.06);
+  border: 1px solid rgba(155, 89, 182, 0.15);
+  border-radius: 8px;
+}
+
+.bond-panel__story-events-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.bond-panel__story-events-icon {
+  font-size: 16px;
+}
+
+.bond-panel__story-events-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #bb86fc;
+}
+
+.bond-panel__story-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bond-panel__story-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+
+.bond-panel__story-event--available {
+  background: rgba(76, 175, 80, 0.08);
+  border: 1px solid rgba(76, 175, 80, 0.15);
+}
+
+.bond-panel__story-event--locked {
+  background: rgba(128, 128, 128, 0.06);
+  border: 1px solid rgba(128, 128, 128, 0.1);
+  opacity: 0.7;
+}
+
+.bond-panel__story-event-name {
+  font-weight: 600;
+  color: #e0e0e0;
+  min-width: 80px;
+}
+
+.bond-panel__story-event--locked .bond-panel__story-event-name {
+  color: #999;
+}
+
+.bond-panel__story-event-heroes {
+  color: #aaa;
+  font-size: 10px;
+}
+
+.bond-panel__story-event-requirement {
+  color: #7ec850;
+  font-size: 10px;
+}
+
+.bond-panel__story-event--locked .bond-panel__story-event-requirement {
+  color: #e74c3c;
+}
+
+.bond-panel__story-event-level,
+.bond-panel__story-event-favor {
+  font-size: 10px;
+  color: #888;
+  padding: 1px 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 3px;
+}
+
+@media (max-width: 480px) {
+  .bond-panel__story-event {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .bond-panel__story-event-name {
+    min-width: auto;
+    font-size: 10px;
+  }
+
+  .bond-panel__story-event-heroes {
+    font-size: 9px;
+  }
+}

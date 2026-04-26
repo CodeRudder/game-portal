@@ -664,7 +664,12 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: tk-awaken-fade-in 200ms ease-out;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.tk-hero-detail-awakening-confirm-overlay--visible {
+  opacity: 1;
 }
 
 @keyframes tk-awaken-fade-in {
@@ -680,7 +685,14 @@
   min-width: 280px;
   max-width: 360px;
   text-align: center;
-  animation: tk-awaken-scale-in 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: scale(0.85);
+  opacity: 0;
+  transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease-out;
+}
+
+.tk-hero-detail-awakening-confirm-dialog--visible {
+  transform: scale(1);
+  opacity: 1;
 }
 
 @keyframes tk-awaken-scale-in {
@@ -745,21 +757,14 @@
 
 /* ── 觉醒确认弹窗关闭动画 ── */
 .tk-hero-detail-awakening-confirm-overlay--closing {
-  animation: tk-awaken-fade-out 200ms ease-in forwards;
-}
-
-@keyframes tk-awaken-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  opacity: 0;
+  transition: opacity 200ms ease-in;
 }
 
 .tk-hero-detail-awakening-confirm-dialog--closing {
-  animation: tk-awaken-scale-out 200ms ease-in forwards;
-}
-
-@keyframes tk-awaken-scale-out {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.85); }
+  transform: scale(0.85);
+  opacity: 0;
+  transition: transform 200ms ease-in, opacity 200ms ease-in;
 }
 
 /* ── 觉醒材料获取途径 ── */

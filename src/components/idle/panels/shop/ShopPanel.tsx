@@ -54,6 +54,7 @@ const BUY_QUANTITY_OPTIONS = [1, 5, 10] as const;
 
 /** localStorage key */
 const FAVORITES_KEY = 'tk-shop-favorites';
+const SORT_KEY = 'tk-shop-sort';
 
 const skeletonKeyframe = `
 @keyframes shop-skeleton-pulse {
@@ -96,7 +97,13 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
       return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
     } catch { return new Set(); }
   });
-  const [sortBy, setSortBy] = useState<SortOption>('default');
+  const [sortBy, setSortBy] = useState<SortOption>(() => {
+    try {
+      const saved = localStorage.getItem(SORT_KEY);
+      if (saved && SORT_OPTIONS.some(o => o.id === saved)) return saved as SortOption;
+    } catch { /* ignore */ }
+    return 'default';
+  });
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [buySuccessId, setBuySuccessId] = useState<string | null>(null);
   const [refreshCooldown, setRefreshCooldown] = useState(0);
@@ -126,6 +133,11 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
   useEffect(() => {
     try { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites])); } catch { /* 静默 */ }
   }, [favorites]);
+
+  // ── 排序状态持久化 ──
+  useEffect(() => {
+    try { localStorage.setItem(SORT_KEY, sortBy); } catch { /* 静默 */ }
+  }, [sortBy]);
 
   // ── 骨架屏加载条件 ──
   useEffect(() => {
@@ -390,14 +402,25 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
             ? Object.fromEntries(Object.entries(bPrice).map(([c, a]) => [c, (a as number) * buyQuantity]))
             : null;
           const details = multipliedPrice ? formatPriceWithBalance(multipliedPrice) : [];
-          // 计算最大可购买数量
+          // 计算最大可购买数量（考虑限购、库存、货币余额）
           const maxQty = (() => {
             if (!bItem) return 1;
             const dailyRemain = bItem.dailyLimit > 0 ? bItem.dailyLimit - bItem.dailyPurchased : 99;
             const lifetimeRemain = (bItem.lifetimeLimit > 0 && bItem.lifetimeLimit !== -1)
               ? bItem.lifetimeLimit - bItem.lifetimePurchased : 99;
             const stockRemain = bItem.stock !== -1 ? bItem.stock : 99;
-            return Math.max(1, Math.min(dailyRemain, lifetimeRemain, stockRemain));
+            // 货币余额限制：计算每种货币能支持的最大购买数量
+            let currencyRemain = 99;
+            if (bPrice) {
+              for (const [c, a] of Object.entries(bPrice)) {
+                if ((a as number) > 0) {
+                  const bal = currencies[c] ?? 0;
+                  const maxByCurrency = Math.floor(bal / (a as number));
+                  currencyRemain = Math.min(currencyRemain, maxByCurrency);
+                }
+              }
+            }
+            return Math.max(1, Math.min(dailyRemain, lifetimeRemain, stockRemain, currencyRemain));
           })();
           const closeConfirm = () => { setConfirmVisible(false); setTimeout(() => setBuyingId(null), 200); };
           return (
