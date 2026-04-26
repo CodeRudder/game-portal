@@ -66,7 +66,7 @@ export const CORE_STEP_DEFINITIONS: TutorialStepDefinition[] = [
       { id: '3-5', text: '武将已就位，准备出征！', targetSelector: '#hero-detail', unskippable: false, completionType: 'auto' },
     ],
     prerequisite: 'step2_build_farm',
-    rewards: [{ type: 'item', rewardId: 'recruit_ticket', name: '招贤榜', amount: 1 }],
+    rewards: [{ type: 'item', rewardId: 'recruit_ticket', name: '招贤令', amount: 1 }],
   },
   {
     stepId: 'step4_first_battle',
@@ -113,7 +113,7 @@ export const CORE_STEP_DEFINITIONS: TutorialStepDefinition[] = [
     rewards: [
       { type: 'currency', rewardId: 'copper', name: '铜钱', amount: 2000 },
       { type: 'currency', rewardId: 'grain', name: '粮草', amount: 1000 },
-      { type: 'item', rewardId: 'recruit_ticket', name: '招贤榜', amount: 1 },
+      { type: 'item', rewardId: 'recruit_ticket', name: '招贤令', amount: 1 },
     ],
   },
 ];
@@ -243,7 +243,7 @@ export const STORY_EVENT_DEFINITIONS: StoryEventDefinition[] = [
     ],
     estimatedDurationMs: 35000,
     triggerCondition: { type: 'first_recruit' },
-    rewards: [{ type: 'item', rewardId: 'recruit_ticket', name: '招贤榜', amount: 1 }],
+    rewards: [{ type: 'item', rewardId: 'recruit_ticket', name: '招贤令', amount: 1 }],
   },
   {
     eventId: 'e4_borrow_arrows',
@@ -306,7 +306,7 @@ export const STORY_EVENT_DEFINITIONS: StoryEventDefinition[] = [
     triggerCondition: { type: 'all_steps_complete' },
     rewards: [
       { type: 'currency', rewardId: 'copper', name: '铜钱', amount: 1000 },
-      { type: 'item', rewardId: 'recruit_ticket', name: '招贤榜', amount: 2 },
+      { type: 'item', rewardId: 'recruit_ticket', name: '招贤令', amount: 2 },
     ],
   },
 ];
@@ -324,7 +324,7 @@ export const TUTORIAL_PHASE_REWARDS: TutorialPhaseReward[] = [
     rewards: [
       { type: 'currency', rewardId: 'copper', name: '铜钱', amount: 2000 },
       { type: 'currency', rewardId: 'grain', name: '粮草', amount: 1000 },
-      { type: 'item', rewardId: 'recruit_ticket', name: '招贤榜', amount: 1 },
+      { type: 'item', rewardId: 'recruit_ticket', name: '招贤令', amount: 1 },
     ],
   },
   {

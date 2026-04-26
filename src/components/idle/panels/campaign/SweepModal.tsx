@@ -41,6 +41,27 @@ export interface SweepModalProps {
 /** 单次扫荡消耗扫荡令数量 */
 const COST_PER_RUN = 1;
 
+/** 资源英文key → 中文名称映射 */
+const RESOURCE_NAMES_ZH: Record<string, string> = {
+  copper: '铜钱',
+  gold: '金币',
+  grain: '粮草',
+  wood: '木材',
+  iron: '铁矿',
+  exp: '经验',
+  fragment: '碎片',
+  recruitTicket: '招贤令',
+  sweepTicket: '扫荡令',
+  breakthroughStone: '突破石',
+  mandate: '天命',
+  troops: '兵力',
+};
+
+/** 格式化资源名称（中文化） */
+function formatResourceName(key: string): string {
+  return RESOURCE_NAMES_ZH[key] || key;
+}
+
 const SweepModal: React.FC<SweepModalProps> = ({
   stageId,
   stageName,
@@ -70,7 +91,8 @@ const SweepModal: React.FC<SweepModalProps> = ({
   }, []);
 
   const handleMax = useCallback(() => {
-    setCount(maxCount);
+    // 当扫荡令为0时，MAX应设置最小值1而非0，避免无意义操作
+    setCount(Math.max(1, maxCount));
   }, [maxCount]);
 
   const handleConfirm = useCallback(() => {
@@ -175,12 +197,12 @@ const SweepModal: React.FC<SweepModalProps> = ({
             <div className="tk-sweep-preview-resources">
               {Object.entries(previewResources).map(([key, value]) => (
                 <span key={key} className="tk-sweep-preview-item">
-                  {key}: {typeof value === 'number' ? value * count : value}
+                  {formatResourceName(key)}: {typeof value === 'number' ? value * count : value}
                 </span>
               ))}
               {previewExp && (
                 <span className="tk-sweep-preview-item">
-                  exp: {previewExp * count}
+                  经验: {previewExp * count}
                 </span>
               )}
             </div>
@@ -195,9 +217,9 @@ const SweepModal: React.FC<SweepModalProps> = ({
                 <span>扫荡完成！执行 {result.executedCount} 次</span>
                 <div className="tk-sweep-result-details">
                   {Object.entries(result.totalResources).map(([key, value]) => (
-                    <span key={key}>{key}: {value}</span>
+                    <span key={key}>{formatResourceName(key)}: {value}</span>
                   ))}
-                  {result.totalExp > 0 && <span>exp: {result.totalExp}</span>}
+                  {result.totalExp > 0 && <span>经验: {result.totalExp}</span>}
                 </div>
               </div>
             ) : (

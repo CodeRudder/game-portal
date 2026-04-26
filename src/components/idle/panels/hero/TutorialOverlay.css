@@ -3,7 +3,16 @@
  * 设计风格：水墨江山·铜纹霸业 | 古铜金配色 #C4956A
  */
 
-.tk-tutorial-overlay { position: fixed; inset: 0; z-index: 9998; pointer-events: auto; }
+.tk-tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: auto;
+  /* 防止手机端遮罩层穿透 */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .tk-tutorial-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); }
 
 .tk-tutorial-tooltip {
@@ -14,7 +23,21 @@
   max-width: 320px; width: 90%;
   color: var(--tk-text-primary, #e0e0e0);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  /* 步骤切换动画 */
+  animation: tk-tutorial-tooltip-enter 0.3s ease forwards;
 }
+
+@keyframes tk-tutorial-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .tk-tutorial-tooltip--centered { position: relative; margin: 35vh auto 0; }
 
 /* 箭头 */
@@ -46,10 +69,139 @@
 .tk-tutorial-tooltip__title { font-size: 16px; font-weight: 600; margin: 0 0 6px; color: var(--tk-text-primary, #fff); }
 .tk-tutorial-tooltip__desc { font-size: 13px; line-height: 1.6; margin: 0 0 14px; color: var(--tk-text-secondary, #b0b0b0); }
 .tk-tutorial-tooltip__actions { display: flex; gap: 8px; justify-content: flex-end; }
-.tk-tutorial-btn { padding: 6px 16px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.tk-tutorial-btn { padding: 6px 16px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.tk-tutorial-btn:active { transform: scale(0.97); transition: transform 0.1s; }
 .tk-tutorial-btn--skip { background: transparent; color: var(--tk-text-muted, #888); border: 1px solid var(--tk-border-dark, #444); }
+.tk-tutorial-btn--skip:hover { color: var(--tk-text-secondary, #aaa); background: rgba(255, 255, 255, 0.03); }
 .tk-tutorial-btn--next {
   background: linear-gradient(135deg, var(--tk-gold-soft, #C4956A), var(--tk-gold-bright, #d4a87a));
   color: var(--tk-bg-dark, #1a2332); font-weight: 600;
 }
 .tk-tutorial-btn--next:hover { box-shadow: 0 3px 12px rgba(196, 149, 106, 0.35); }
+
+/* ═══════════════════════════════════════════
+   手机端适配 (≤ 480px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .tk-tutorial-tooltip {
+    /* 手机端：tooltip 固定在底部 */
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    max-width: 100%;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 14px 16px;
+    /* 安全区域适配（iPhone X+ 底部） */
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    /* 底部弹出动效 */
+    animation: tk-tutorial-mobile-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .tk-tutorial-tooltip--centered {
+    margin: 0;
+  }
+
+  .tk-tutorial-tooltip__title {
+    font-size: 14px;
+  }
+
+  .tk-tutorial-tooltip__desc {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .tk-tutorial-tooltip__actions {
+    gap: 10px;
+  }
+
+  .tk-tutorial-btn {
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 13px;
+    /* 增大触摸目标区域 */
+    min-width: 60px;
+    flex: 1;
+  }
+
+  .tk-tutorial-step-indicator {
+    font-size: 10px;
+  }
+}
+
+/* 手机端 tooltip 底部滑入动画 */
+@keyframes tk-tutorial-mobile-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 极小屏幕 (≤ 360px) */
+@media (max-width: 360px) {
+  .tk-tutorial-tooltip {
+    padding: 12px 14px;
+  }
+
+  .tk-tutorial-tooltip__title {
+    font-size: 13px;
+  }
+
+  .tk-tutorial-tooltip__desc {
+    font-size: 11px;
+  }
+
+  .tk-tutorial-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+    min-height: 36px;
+  }
+}
+
+/* 横屏适配 */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-tutorial-tooltip {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: auto !important;
+    right: 0 !important;
+    top: auto !important;
+    max-width: 50vw;
+    width: 50vw;
+    border-radius: 12px 0 0 0;
+    padding: 10px 12px;
+    animation: tk-tutorial-landscape-slide-in 0.3s ease forwards;
+  }
+
+  .tk-tutorial-tooltip__title {
+    font-size: 13px;
+  }
+
+  .tk-tutorial-tooltip__desc {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .tk-tutorial-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    min-height: 32px;
+  }
+}
+
+@keyframes tk-tutorial-landscape-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

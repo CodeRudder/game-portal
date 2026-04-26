@@ -225,7 +225,7 @@ export class HeroFormation implements ISubsystem {
    * @param getGeneral - 获取武将数据的函数
    * @param calcPower - 计算战力的函数
    * @param formationId - 目标编队ID（默认 '1'）
-   * @param maxSlots - 最大选择数量（默认 5）
+   * @param maxSlots - 最大选择数量（默认 MAX_SLOTS_PER_FORMATION=6）
    * @param allowOverlap - 是否允许与其他编队重叠（默认 false）
    * @returns 编队数据，或 null（无可用武将）
    */
@@ -233,7 +233,7 @@ export class HeroFormation implements ISubsystem {
     getGeneral: (id: string) => GeneralData | undefined,
     calcPower: (g: GeneralData) => number,
     formationId = '1',
-    maxSlots = 5,
+    maxSlots = MAX_SLOTS_PER_FORMATION,
     allowOverlap = false,
   ): FormationData | null {
     // 确保编队存在
@@ -274,7 +274,7 @@ export class HeroFormation implements ISubsystem {
    * @param getGeneral - 获取武将数据的函数
    * @param calcPower - 计算战力的函数
    * @param formationId - 目标编队ID（默认 '1'）
-   * @param maxSlots - 最大选择数量（默认 5）
+   * @param maxSlots - 最大选择数量（默认 MAX_SLOTS_PER_FORMATION=6）
    * @param allowOverlap - 是否允许与其他编队重叠（默认 false）
    * @returns 编队数据，或 null（无可用武将）
    */
@@ -283,7 +283,7 @@ export class HeroFormation implements ISubsystem {
     getGeneral: (id: string) => GeneralData | undefined,
     calcPower: (g: GeneralData) => number,
     formationId = '1',
-    maxSlots = 5,
+    maxSlots = MAX_SLOTS_PER_FORMATION,
     allowOverlap = false,
   ): FormationData | null {
     // 确保编队存在

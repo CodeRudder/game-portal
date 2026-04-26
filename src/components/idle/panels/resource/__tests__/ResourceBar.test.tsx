@@ -70,8 +70,8 @@ describe('ResourceBar', () => {
 
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
 
-    // 验证数值显示（通过 title 属性，formatNumber 使用 K/M/B 格式）
-    expect(screen.getByTitle('粮草 1K')).toBeInTheDocument();
+    // 验证数值显示（通过 title 属性，formatNumber 使用中文万/亿格式）
+    expect(screen.getByTitle('粮草 1000')).toBeInTheDocument();
     expect(screen.getByTitle('铜钱 500')).toBeInTheDocument();
     expect(screen.getByTitle('兵力 200')).toBeInTheDocument();
     expect(screen.getByTitle('天命 10')).toBeInTheDocument();

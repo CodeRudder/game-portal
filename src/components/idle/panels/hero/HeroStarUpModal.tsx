@@ -14,7 +14,7 @@
  * @module components/idle/panels/hero/HeroStarUpModal
  */
 
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import type {
   StarUpPreview,
   FragmentProgress,
@@ -51,12 +51,20 @@ export interface HeroStarUpModalProps {
   goldAmount: number;
   /** 突破石数量 */
   breakthroughStoneAmount: number;
+  /** 是否满足觉醒条件 */
+  canAwaken?: boolean;
+  /** 觉醒条件检查详情（未满足时显示缺失项） */
+  awakenFailures?: string[];
+  /** 是否已觉醒 */
+  isAwakened?: boolean;
   /** 关闭回调 */
   onClose: () => void;
   /** 升星回调 */
   onStarUp: (generalId: string) => StarUpResult;
   /** 突破回调 */
   onBreakthrough: (generalId: string) => BreakthroughResult;
+  /** 觉醒回调 */
+  onAwaken?: (generalId: string) => { success: boolean; reason?: string };
   /** 来源点击回调 */
   onSourceClick?: (source: string) => void;
 }
@@ -99,9 +107,13 @@ const HeroStarUpModal: React.FC<HeroStarUpModalProps> = ({
   levelCap,
   goldAmount,
   breakthroughStoneAmount,
+  canAwaken = false,
+  awakenFailures = [],
+  isAwakened = false,
   onClose,
   onStarUp,
   onBreakthrough,
+  onAwaken,
   onSourceClick,
 }) => {
   // ── ESC 键关闭 ──
@@ -112,6 +124,10 @@ const HeroStarUpModal: React.FC<HeroStarUpModalProps> = ({
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
+
+  // ── 防抖锁（防止快速连点） ──
+  const isOperatingRef = useRef(false);
+  const [isOperating, setIsOperating] = useState(false);
 
   const isMaxStar = currentStar >= MAX_STAR_LEVEL;
 
@@ -129,12 +145,55 @@ const HeroStarUpModal: React.FC<HeroStarUpModalProps> = ({
 
   // ── 事件处理 ──
   const handleStarUp = useCallback(() => {
-    onStarUp(generalId);
-  }, [onStarUp, generalId]);
+    // 防抖前置检查
+    if (isOperating || isOperatingRef.current) return;
+    isOperatingRef.current = true;
+    setIsOperating(true);
+    try {
+      onStarUp(generalId);
+    } finally {
+      // 延迟释放防抖锁，确保引擎操作和状态更新在同一帧完成后才允许下次操作
+      requestAnimationFrame(() => {
+        setIsOperating(false);
+        isOperatingRef.current = false;
+      });
+    }
+  }, [onStarUp, generalId, isOperating]);
 
   const handleBreakthrough = useCallback(() => {
-    onBreakthrough(generalId);
-  }, [onBreakthrough, generalId]);
+    // 防抖前置检查
+    if (isOperating || isOperatingRef.current) return;
+    isOperatingRef.current = true;
+    setIsOperating(true);
+    try {
+      onBreakthrough(generalId);
+    } finally {
+      // 延迟释放防抖锁，确保引擎操作和状态更新在同一帧完成后才允许下次操作
+      requestAnimationFrame(() => {
+        setIsOperating(false);
+        isOperatingRef.current = false;
+      });
+    }
+  }, [onBreakthrough, generalId, isOperating]);
+
+  const handleAwaken = useCallback(() => {
+    if (isOperating || isOperatingRef.current) return;
+    if (!onAwaken) return;
+    isOperatingRef.current = true;
+    setIsOperating(true);
+    try {
+      const result = onAwaken(generalId);
+      if (!result.success) {
+        console.warn('觉醒失败:', result.reason);
+      }
+    } finally {
+      // 延迟释放防抖锁，确保引擎操作和状态更新在同一帧完成后才允许下次操作
+      requestAnimationFrame(() => {
+        setIsOperating(false);
+        isOperatingRef.current = false;
+      });
+    }
+  }, [onAwaken, generalId, isOperating]);
 
   // ── 渲染星级 ──
   const renderStars = () => {
@@ -312,7 +371,42 @@ const HeroStarUpModal: React.FC<HeroStarUpModalProps> = ({
 
   // ── 渲染操作按钮 ──
   const renderActions = () => {
+    if (isAwakened) {
+      return (
+        <div className="tk-starup-maxed">
+          ✨ {generalName} 已觉醒 — 最高境界
+        </div>
+      );
+    }
     if (isMaxStar && breakthroughStage >= 4) {
+      // 满星满突：检查是否可以觉醒
+      if (canAwaken && onAwaken) {
+        return (
+          <div className="tk-starup-actions">
+            <button
+              className="tk-starup-btn tk-starup-btn--awaken"
+              onClick={handleAwaken}
+              disabled={isOperating}
+              data-testid="btn-awaken"
+            >
+              ✨ 觉醒
+            </button>
+          </div>
+        );
+      }
+      // 不满足觉醒条件：显示条件列表
+      if (onAwaken && awakenFailures.length > 0) {
+        return (
+          <div className="tk-starup-actions">
+            <div className="tk-starup-awaken-conditions">
+              <span className="tk-starup-awaken-title">✨ 觉醒条件</span>
+              {awakenFailures.map((f, i) => (
+                <span key={i} className="tk-starup-awaken-failure">❌ {f}</span>
+              ))}
+            </div>
+          </div>
+        );
+      }
       return (
         <div className="tk-starup-maxed">
           ✨ {generalName} 已达最高境界
@@ -325,7 +419,7 @@ const HeroStarUpModal: React.FC<HeroStarUpModalProps> = ({
           <button
             className="tk-starup-btn tk-starup-btn--star-up"
             onClick={handleStarUp}
-            disabled={!starUpAffordable}
+            disabled={!starUpAffordable || isOperating}
           >
             ⭐ 升星 ({currentStar}→{currentStar + 1})
           </button>
@@ -334,7 +428,7 @@ const HeroStarUpModal: React.FC<HeroStarUpModalProps> = ({
           <button
             className="tk-starup-btn tk-starup-btn--breakthrough"
             onClick={handleBreakthrough}
-            disabled={!btAffordable}
+            disabled={!btAffordable || isOperating}
           >
             🔮 突破
           </button>

@@ -4,6 +4,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import SharedPanel from '@/components/idle/components/SharedPanel';
 import Modal from '@/components/idle/common/Modal';
+import './ExpeditionPanel.css';
 
 const NODE_ICONS: Record<string, string> = { BANDIT: '🗡️', HAZARD: '⛰️', BOSS: '👹', TREASURE: '📦', REST: '🏕️' };
 const STATUS_ICONS: Record<string, string> = { CLEARED: '✅', MARCHING: '🏃', AVAILABLE: '⏳', LOCKED: '🔒' };
@@ -74,24 +75,52 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
   return (
     <>
       <SharedPanel title="🗺️ 远征天下" visible={visible} onClose={onClose} width="400px">
-        <div style={s.container} data-testid="expedition-panel">
+        <div style={s.container} className="tk-expedition-panel" data-testid="expedition-panel">
           {message && <div style={s.toast} data-testid="expedition-panel-toast">{message}</div>}
           {/* 概览 */}
-          <div style={s.overview} data-testid="expedition-panel-overview">
+          <div style={s.overview} className="tk-expedition-overview" data-testid="expedition-panel-overview">
             <span style={{ fontWeight: 600, color: '#d4a574' }}>🚀 远征队</span>
             <span style={{ fontSize: 12, color: '#a0a0a0' }}>活跃 {activeTeamCount}/{unlockedSlots} 队</span>
           </div>
+          {/* 路线完成进度条 */}
+          {routes.length > 0 && (
+            <div style={{
+              marginBottom: 8, padding: '8px 10px',
+              background: 'rgba(212,165,116,0.06)',
+              border: '1px solid rgba(212,165,116,0.15)',
+              borderRadius: 'var(--tk-radius-md)' as any,
+            }} data-testid="expedition-panel-progress">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 12, color: '#d4a574', fontWeight: 600 }}>🗺️ 路线进度</span>
+                <span style={{ fontSize: 12, color: '#a0a0a0' }} data-testid="expedition-panel-progress-text">
+                  {clearedIds.size}/{routes.length} 通关
+                </span>
+              </div>
+              <div style={{
+                height: 6, borderRadius: 3,
+                background: 'rgba(255,255,255,0.08)',
+                overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%', borderRadius: 3,
+                  background: 'linear-gradient(90deg, #7EC850, #d4a574)',
+                  width: `${routes.length > 0 ? (clearedIds.size / routes.length) * 100 : 0}%`,
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+            </div>
+          )}
           {/* 队伍 */}
           <div style={s.title}>👥 队伍</div>
           {teams.map((t: any) => (
-            <div key={t.id} style={s.teamCard} data-testid={`expedition-panel-team-${t.id}`}>
+            <div key={t.id} style={s.teamCard} className="tk-expedition-team-card" data-testid={`expedition-panel-team-${t.id}`}>
               <div style={{ flex: 1 }}>
                 <div style={s.teamName}>{t.name}</div>
                 <div style={s.teamMeta}>⚔️{t.totalPower} · 兵力{t.troopCount}/{t.maxTroops}
                   {t.isExpeditioning && <span style={{ color: '#7EC850', marginLeft: 4 }}>● 远征中</span>}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 4 }}>
+              <div style={{ display: 'flex', gap: 4 }} className="tk-expedition-team-actions">
                 {t.isExpeditioning ? (<>
                   <button style={s.btn} data-testid={`expedition-panel-advance-${t.id}`} onClick={() => handleAdvance(t.id)}>推进 ⏭</button>
                   <button style={s.btn} data-testid={`expedition-panel-complete-${t.id}`} onClick={() => handleComplete(t.id)}>完成 ✅</button>
@@ -112,7 +141,7 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
                 ...s.routeCard,
                 border: selectedRouteId === r.id ? '1px solid #d4a574' : '1px solid rgba(255,255,255,0.08)',
                 opacity: r.unlocked ? 1 : 0.4,
-              }} onClick={() => r.unlocked && setSelectedRouteId(r.id)} data-testid={`expedition-panel-route-${r.id}`}>
+              }} className="tk-expedition-route-card" onClick={() => r.unlocked && setSelectedRouteId(r.id)} data-testid={`expedition-panel-route-${r.id}`}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{r.name ?? r.id}</span>
                   {cleared && <span style={{ color: '#7EC850', fontSize: 11 }}>✅ 通关</span>}

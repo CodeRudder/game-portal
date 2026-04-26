@@ -79,7 +79,7 @@ const COPPER_RATES: Record<string, number> = {
 
 /** 货币中文名 */
 const CUR_LABELS: Record<string, string> = {
-  copper: '铜钱', mandate: '天命', recruit: '招贤榜', summon: '求贤令',
+  copper: '铜钱', mandate: '天命', recruit: '招贤令', summon: '求贤令',
   expedition: '远征币', guild: '公会币', reputation: '声望值', ingot: '元宝',
 };
 

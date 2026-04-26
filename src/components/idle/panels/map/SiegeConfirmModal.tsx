@@ -11,7 +11,7 @@
  * @module components/idle/panels/map/SiegeConfirmModal
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Modal from '../../common/Modal';
 import type { TerritoryData } from '@/games/three-kingdoms/core/map';
 import './SiegeConfirmModal.css';
@@ -36,6 +36,10 @@ export interface SiegeConfirmModalProps {
   availableTroops: number;
   /** 当前可用粮草 */
   availableGrain: number;
+  /** 今日剩余攻城次数（null表示不限制） */
+  dailySiegesRemaining?: number | null;
+  /** 攻城冷却剩余毫秒数（0表示无冷却） */
+  cooldownRemainingMs?: number;
   /** 确认攻城 */
   onConfirm: () => void;
   /** 取消 */
@@ -56,8 +60,31 @@ function getConditions(
   cost: SiegeConfirmModalProps['cost'],
   availableTroops: number,
   availableGrain: number,
+  dailySiegesRemaining?: number | null,
+  cooldownRemainingMs?: number,
 ): ConditionItem[] {
   const items: ConditionItem[] = [];
+
+  // 每日攻城次数检查
+  const hasDailyLimit = dailySiegesRemaining != null;
+  const hasDailyLeft = !hasDailyLimit || dailySiegesRemaining > 0;
+  if (hasDailyLimit) {
+    items.push({
+      label: '今日攻城次数',
+      passed: hasDailyLeft,
+      detail: hasDailyLeft ? `剩余 ${dailySiegesRemaining} 次` : '今日次数已用完',
+    });
+  }
+
+  // 攻城冷却检查
+  const hasCooldown = (cooldownRemainingMs ?? 0) > 0;
+  if (hasCooldown) {
+    items.push({
+      label: '攻城冷却',
+      passed: false,
+      detail: '冷却中，请稍后再试',
+    });
+  }
 
   // 相邻检查
   const isAdjacent = conditionResult?.errorCode !== 'NOT_ADJACENT';
@@ -104,13 +131,41 @@ const SiegeConfirmModal: React.FC<SiegeConfirmModalProps> = ({
   conditionResult,
   availableTroops,
   availableGrain,
+  dailySiegesRemaining,
+  cooldownRemainingMs = 0,
   onConfirm,
   onCancel,
 }) => {
+  // ── 攻城冷却倒计时 ──
+  const [cooldownText, setCooldownText] = useState('');
+  useEffect(() => {
+    if (!visible || cooldownRemainingMs <= 0) {
+      setCooldownText('');
+      return;
+    }
+    // 记录组件挂载时的时间戳，作为冷却计算的基准点
+    const startTimestamp = Date.now();
+    const updateCooldown = () => {
+      const elapsed = Date.now() - startTimestamp;
+      const remaining = Math.max(0, cooldownRemainingMs - elapsed);
+      if (remaining <= 0) {
+        setCooldownText('');
+        return;
+      }
+      const hours = Math.floor(remaining / 3600000);
+      const minutes = Math.floor((remaining % 3600000) / 60000);
+      const seconds = Math.floor((remaining % 60000) / 1000);
+      setCooldownText(`⏳ 冷却中: ${hours}时${minutes}分${seconds}秒`);
+    };
+    updateCooldown();
+    const timer = setInterval(updateCooldown, 1000);
+    return () => clearInterval(timer);
+  }, [visible, cooldownRemainingMs]);
+
   // ── 条件检查列表 ──
   const conditions = useMemo(
-    () => getConditions(conditionResult, cost, availableTroops, availableGrain),
-    [conditionResult, cost, availableTroops, availableGrain],
+    () => getConditions(conditionResult, cost, availableTroops, availableGrain, dailySiegesRemaining, cooldownRemainingMs),
+    [conditionResult, cost, availableTroops, availableGrain, dailySiegesRemaining, cooldownRemainingMs],
   );
 
   const allPassed = conditions.every((c) => c.passed);
@@ -131,6 +186,20 @@ const SiegeConfirmModal: React.FC<SiegeConfirmModalProps> = ({
       width="480px"
     >
       <div className="tk-siege-confirm" data-testid="siege-confirm">
+        {/* ── 每日攻城次数 & 冷却倒计时 ── */}
+        {(dailySiegesRemaining != null || cooldownText) && (
+          <div className="tk-siege-status-bar">
+            {dailySiegesRemaining != null && (
+              <span className={`tk-siege-daily-count ${dailySiegesRemaining > 0 ? 'tk-siege-daily-count--available' : 'tk-siege-daily-count--exhausted'}`}>
+                ⚔️ 今日攻城: {dailySiegesRemaining}次
+              </span>
+            )}
+            {cooldownText && (
+              <span className="tk-siege-cooldown">{cooldownText}</span>
+            )}
+          </div>
+        )}
+
         {/* ── 目标信息 ── */}
         <div className="tk-siege-target-info">
           <div className="tk-siege-target-row">

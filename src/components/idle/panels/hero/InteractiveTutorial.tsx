@@ -98,11 +98,22 @@ const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
   const isFirst = currentStep === 0;
   const isLast = currentStep === steps.length - 1;
 
-  // 定位高亮目标元素
-  useEffect(() => {
+  /** 重新计算高亮目标元素位置 */
+  const updateHighlightRect = useCallback(() => {
     if (!step) return;
     const el = document.querySelector(step.targetSelector) as HTMLElement | null;
     if (el) {
+      // 手机端适配：先确保目标元素在可视区域内
+      const rect0 = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      const isInViewport = rect0.top >= 0 && rect0.bottom <= vh;
+      if (!isInViewport) {
+        try {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        } catch {
+          el.scrollIntoView(false);
+        }
+      }
       const { top, left, width, height } = el.getBoundingClientRect();
       setHighlightRect({ top, left, width, height });
     } else {
@@ -110,6 +121,64 @@ const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
       setHighlightRect({ top: window.innerHeight / 2 - 30, left: window.innerWidth / 2 - 60, width: 120, height: 60 });
     }
   }, [step]);
+
+  // 定位高亮目标元素（步骤切换时重新计算）
+  useEffect(() => {
+    updateHighlightRect();
+
+    // 延迟重取：scrollIntoView 后滚动动画完成，位置更准确
+    const scrollRetryTimer = setTimeout(() => {
+      updateHighlightRect();
+    }, 350);
+
+    // MutationObserver：目标元素可能延迟渲染（如异步加载的组件）
+    const observer = new MutationObserver(() => {
+      updateHighlightRect();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // 定时重试（目标元素可能延迟挂载）
+    const retryTimer = setInterval(() => {
+      updateHighlightRect();
+    }, 500);
+
+    return () => {
+      clearTimeout(scrollRetryTimer);
+      observer.disconnect();
+      clearInterval(retryTimer);
+    };
+  }, [updateHighlightRect]);
+
+  // 横竖屏切换 / 窗口大小变化 / 滚动 / visualViewport 变化时重新计算高亮位置
+  useEffect(() => {
+    window.addEventListener('resize', updateHighlightRect);
+    // 屏幕旋转事件（移动设备）
+    window.addEventListener('orientationchange', updateHighlightRect);
+    // 页面滚动时更新高亮位置（capture 模式捕获所有滚动事件）
+    window.addEventListener('scroll', updateHighlightRect, true);
+
+    // 手机端可视区域变化（虚拟键盘弹出/收起）时更新位置
+    const handleVHChange = () => updateHighlightRect();
+    if (typeof visualViewport !== 'undefined' && visualViewport) {
+      visualViewport.addEventListener('resize', handleVHChange);
+    }
+
+    // DOM变化监听（目标元素延迟渲染时自动更新高亮位置）
+    const observer = new MutationObserver(() => {
+      requestAnimationFrame(updateHighlightRect);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      window.removeEventListener('resize', updateHighlightRect);
+      window.removeEventListener('orientationchange', updateHighlightRect);
+      window.removeEventListener('scroll', updateHighlightRect, true);
+      if (typeof visualViewport !== 'undefined' && visualViewport) {
+        visualViewport.removeEventListener('resize', handleVHChange);
+      }
+      observer.disconnect();
+    };
+  }, [updateHighlightRect]);
 
   // 完成动画
   const handleComplete = useCallback(() => {
@@ -228,4 +297,5 @@ const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
   );
 };
 
+InteractiveTutorial.displayName = 'InteractiveTutorial';
 export default InteractiveTutorial;

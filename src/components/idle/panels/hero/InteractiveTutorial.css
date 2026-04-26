@@ -1,20 +1,50 @@
 /* InteractiveTutorial — 交互式新手教程样式 */
 
+/* ── 组件级 CSS 变量 ── */
+:root {
+  --it-overlay-bg: rgba(0, 0, 0, 0.6);
+  --it-highlight-glow: rgba(255, 255, 255, 0.9);
+  --it-highlight-glow-outer: rgba(255, 255, 255, 0.5);
+  --it-tooltip-bg: #fff;
+  --it-tooltip-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --it-tooltip-radius: 12px;
+  --it-title-color: #1a1a2e;
+  --it-desc-color: #555;
+  --it-dot-bg: #ddd;
+  --it-dot-active-bg: #4a6cf7;
+  --it-progress-color: #999;
+  --it-btn-next-bg: #4a6cf7;
+  --it-btn-next-hover-bg: #3b5de7;
+  --it-btn-next-color: #fff;
+  --it-btn-prev-bg: #f0f0f0;
+  --it-btn-prev-color: #555;
+  --it-btn-skip-color: #999;
+  --it-complete-color: #fff;
+}
+
 /* 全屏遮罩 */
 .it-overlay {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--it-overlay-bg);
+  /* 防止手机端遮罩层穿透 */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 高亮区域（白色发光 box-shadow） */
 .it-highlight {
   position: absolute;
   border-radius: 6px;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 0 20px rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 0 0 4px var(--it-highlight-glow),
+    0 0 20px var(--it-highlight-glow-outer);
   z-index: 10001;
   pointer-events: none;
+  /* 平滑过渡 */
+  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
+  will-change: top, left, width, height;
 }
 
 /* 引导气泡 */
@@ -24,29 +54,70 @@
   min-width: 240px;
   max-width: 340px;
   padding: 16px 20px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  background: var(--it-tooltip-bg);
+  border-radius: var(--it-tooltip-radius);
+  box-shadow: var(--it-tooltip-shadow);
   color: #333;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* 步骤切换动画 */
+  animation: it-tooltip-enter 0.3s ease forwards;
 }
 
-.it-tooltip__title { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #1a1a2e; }
-.it-tooltip__desc { margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: #555; }
+@keyframes it-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.it-tooltip__title { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: var(--it-title-color); }
+.it-tooltip__desc { margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: var(--it-desc-color); }
 
 /* 步骤进度指示器 */
 .it-progress { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
-.it-progress__dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; }
-.it-progress__dot--active { background: #4a6cf7; }
-.it-progress__text { margin-left: 8px; font-size: 12px; color: #999; }
+.it-progress__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--it-dot-bg);
+  transition: all 0.2s ease;
+}
+.it-progress__dot--active {
+  background: var(--it-dot-active-bg);
+  transform: scale(1.3);
+  box-shadow: 0 0 6px rgba(74, 108, 247, 0.4);
+}
+.it-progress__text { margin-left: 8px; font-size: 12px; color: var(--it-progress-color); font-variant-numeric: tabular-nums; }
 
 /* 操作按钮区 */
 .it-actions { display: flex; justify-content: flex-end; gap: 8px; }
-.it-btn { padding: 6px 16px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
-.it-btn--skip { background: transparent; color: #999; }
-.it-btn--prev { background: #f0f0f0; color: #555; }
-.it-btn--next, .it-btn--complete { background: #4a6cf7; color: #fff; }
-.it-btn--next:hover, .it-btn--complete:hover { background: #3b5de7; }
+.it-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.it-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}
+.it-btn--skip { background: transparent; color: var(--it-btn-skip-color); }
+.it-btn--skip:hover { color: #777; }
+.it-btn--prev { background: var(--it-btn-prev-bg); color: var(--it-btn-prev-color); }
+.it-btn--prev:hover { background: #e5e5e5; }
+.it-btn--next, .it-btn--complete {
+  background: var(--it-btn-next-bg);
+  color: var(--it-btn-next-color);
+  font-weight: 500;
+}
+.it-btn--next:hover, .it-btn--complete:hover { background: var(--it-btn-next-hover-bg); }
 
 /* 完成动画 */
 .it-complete-animation {
@@ -59,10 +130,161 @@
 }
 
 .it-complete-icon { display: inline-block; font-size: 48px; }
-.it-complete-text { margin-top: 12px; font-size: 18px; font-weight: 700; color: #fff; }
+.it-complete-text { margin-top: 12px; font-size: 18px; font-weight: 700; color: var(--it-complete-color); }
 
 @keyframes it-complete-pop {
-  0% { transform: translate(-50%, -50%) scale(0.5); }
-  60% { transform: translate(-50%, -50%) scale(1.1); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  60% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配 (≤ 480px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .it-overlay {
+    /* 安全区域适配 */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .it-tooltip {
+    min-width: 200px;
+    max-width: calc(100vw - 32px);
+    padding: 12px 14px;
+    /* 手机端：tooltip 固定在底部 */
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    transform: none !important;
+    border-radius: 16px 16px 0 0;
+    max-width: 100%;
+    width: 100%;
+    /* 安全区域适配（iPhone X+ 底部） */
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    /* 底部弹出动效 */
+    animation: it-mobile-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .it-tooltip__title {
+    font-size: 14px;
+  }
+
+  .it-tooltip__desc {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .it-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .it-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    min-height: 40px;
+    /* 增大触摸目标区域 */
+    min-width: 60px;
+    flex: 1;
+  }
+
+  .it-progress__dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .it-progress__text {
+    font-size: 11px;
+  }
+
+  .it-complete-icon {
+    font-size: 40px;
+  }
+
+  .it-complete-text {
+    font-size: 16px;
+  }
+}
+
+/* 手机端 tooltip 底部滑入动画 */
+@keyframes it-mobile-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 极小屏幕 (≤ 360px) */
+@media (max-width: 360px) {
+  .it-tooltip {
+    min-width: 180px;
+    max-width: calc(100vw - 24px);
+    padding: 10px 12px;
+  }
+
+  .it-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-height: 36px;
+  }
+
+  .it-tooltip__title {
+    font-size: 13px;
+  }
+
+  .it-tooltip__desc {
+    font-size: 11px;
+  }
+}
+
+/* 横屏适配 */
+@media (max-width: 767px) and (orientation: landscape) {
+  .it-tooltip {
+    min-width: 180px;
+    max-width: calc(100vw - 24px);
+    padding: 10px 12px;
+    /* 横屏时固定在右侧 */
+    position: fixed !important;
+    bottom: 0 !important;
+    left: auto !important;
+    right: 0 !important;
+    top: auto !important;
+    transform: none !important;
+    border-radius: 12px 0 0 0;
+    max-width: 50vw;
+    width: 50vw;
+    animation: it-landscape-slide-in 0.3s ease forwards;
+  }
+
+  .it-tooltip__title {
+    font-size: 13px;
+  }
+
+  .it-tooltip__desc {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .it-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    min-height: 32px;
+  }
+}
+
+@keyframes it-landscape-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

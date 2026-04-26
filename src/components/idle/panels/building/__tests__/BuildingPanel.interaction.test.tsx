@@ -70,6 +70,8 @@ const defaultRates: ProductionRate = {
   gold: 5,
   troops: 2,
   mandate: 0,
+  techPoint: 0,
+  recruitToken: 0,
 };
 
 const defaultCaps: ResourceCap = {
@@ -129,6 +131,10 @@ function createMockEngine(options: {
     })),
     on: vi.fn(() => () => {}),
     off: vi.fn(),
+    cancelUpgrade: vi.fn(() => null),
+    building: {
+      getProduction: vi.fn(() => 1.0),
+    },
   } as any;
 }
 
@@ -315,7 +321,8 @@ describe('BuildingPanel 核心交互测试', () => {
       // 弹窗中的确认按钮应被 disabled
       const confirmBtn = getModalConfirmButton();
       expect(confirmBtn).toBeDisabled();
-      expect(confirmBtn.textContent).toContain('资源不足');
+      // BUG-2 fix: canUpgrade=false 时显示"无法升级"而非"资源不足"
+      expect(confirmBtn.textContent).toContain('无法升级');
     });
 
     it('点击确认升级应调用 engine.upgradeBuilding()', async () => {

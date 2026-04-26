@@ -93,12 +93,15 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-function getProductionText(type: BuildingType, rates: ProductionRate): string {
+/** 获取单建筑的实际产出文字（而非全局总产出） */
+function getProductionText(type: BuildingType, engine: ThreeKingdomsEngine): string {
+  // 尝试通过引擎获取单建筑产出
+  const prod = engine.building?.getProduction?.(type) ?? 0;
   switch (type) {
-    case 'farmland': return `+${rates.grain.toFixed(1)} 粮草/s`;
-    case 'market': return `+${rates.gold.toFixed(1)} 铜钱/s`;
-    case 'barracks': return `+${rates.troops.toFixed(1)} 兵力/s`;
-    case 'academy': return `+${rates.mandate.toFixed(1)} 科技点/s`;
+    case 'farmland': return `+${prod.toFixed(1)} 粮草/s`;
+    case 'market': return `+${prod.toFixed(1)} 铜钱/s`;
+    case 'barracks': return `+${prod.toFixed(1)} 兵力/s`;
+    case 'academy': return `+${prod.toFixed(1)} 科技点/s`;
     default: return BUILDING_EFFECTS[type];
   }
 }
@@ -178,6 +181,17 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
     }
   }, [engine, onUpgradeComplete, onUpgradeError]);
 
+  // P1: 处理取消升级（80%资源返还）
+  const handleCancelUpgrade = useCallback((type: BuildingType) => {
+    try {
+      engine.cancelUpgrade(type);
+    } catch (e: any) {
+      if (onUpgradeError) {
+        onUpgradeError(e instanceof Error ? e : new Error(e?.message || '取消升级失败'));
+      }
+    }
+  }, [engine, onUpgradeError]);
+
   // 处理建筑点击
   const handleBuildingClick = useCallback((type: BuildingType) => {
     const state = buildings[type];
@@ -206,6 +220,14 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
             <div key={type} className="tk-bld-queue-item">
               <span>{BUILDING_ICONS[type]} {BUILDING_LABELS[type]}→Lv.{buildings[type].level + 1}</span>
               <span className="tk-bld-queue-time">{formatTime(buildingInfo[type].remaining)}</span>
+              <button
+                className="tk-bld-queue-cancel"
+                data-testid={`building-queue-cancel-${type}`}
+                onClick={(e) => { e.stopPropagation(); handleCancelUpgrade(type); }}
+                title="取消升级（返还80%资源）"
+              >
+                ✕
+              </button>
             </div>
           ))}
         </div>
@@ -274,13 +296,25 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
                 </div>
               ) : (
                 <div className="tk-bld-pin-status">
-                  {getProductionText(type, rates)}
+                  {getProductionText(type, engine)}
                 </div>
               )}
 
               {/* 可升级指示器 */}
               {canUpgrade && !isUpgrading && (
                 <div className="tk-bld-pin-upgrade-indicator">▲</div>
+              )}
+
+              {/* P1: 升级中显示取消按钮 */}
+              {isUpgrading && (
+                <button
+                  className="tk-bld-pin-cancel-btn"
+                  data-testid={`building-map-cancel-${type}`}
+                  onClick={(e) => { e.stopPropagation(); handleCancelUpgrade(type); }}
+                  title="取消升级（返还80%资源）"
+                >
+                  ✕ 取消
+                </button>
               )}
             </div>
           );
@@ -320,7 +354,7 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
                   </div>
                 ) : (
                   <div className="tk-bld-list-detail">
-                    {getProductionText(type, rates)}
+                    {getProductionText(type, engine)}
                   </div>
                 )}
                 {!isLocked && !isUpgrading && info.costText && (
@@ -337,6 +371,17 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
                   }}
                 >
                   ▲
+                </button>
+              )}
+              {/* P1: 升级中显示取消按钮 */}
+              {isUpgrading && (
+                <button
+                  className="tk-bld-list-btn tk-bld-list-btn--cancel"
+                  data-testid={`building-list-cancel-${type}`}
+                  onClick={e => { e.stopPropagation(); handleCancelUpgrade(type); }}
+                  title="取消升级（返还80%资源）"
+                >
+                  ✕
                 </button>
               )}
             </div>

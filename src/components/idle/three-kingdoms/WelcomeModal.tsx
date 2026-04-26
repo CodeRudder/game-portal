@@ -34,7 +34,7 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ visible, onClose }) => {
       confirmText="开始游戏"
       onConfirm={onClose}
       onCancel={onClose}
-      width="460px"
+      width="min(460px, 90vw)"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', color: '#e8e0d0', fontSize: '14px' }} data-testid="welcome-modal">
         <p style={{ margin: 0, lineHeight: 1.6 }}>

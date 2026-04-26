@@ -74,10 +74,11 @@ export function useFormation(
     (heroes: HeroInfo[]): number => {
       try {
         const heroSystem = engine.getHeroSystem();
+        const starSystem = engine.getHeroStarSystem();
         return heroes.reduce((sum, h) => {
           const general = engine.getGeneral(h.id);
           if (general) {
-            return sum + heroSystem.calculatePower(general);
+            return sum + heroSystem.calculatePower(general, starSystem.getStar(general.id));
           }
           // 回退：简易估算
           const qWeight = QUALITY_ORDER[h.quality] ?? 1;
@@ -118,9 +119,10 @@ export function useFormation(
     const calcTeamPower = (ids: string[]): number => {
       try {
         const heroSystem = engine.getHeroSystem();
+        const starSystem = engine.getHeroStarSystem();
         return ids.reduce((sum, id) => {
           const general = engine.getGeneral(id);
-          if (general) return sum + heroSystem.calculatePower(general);
+          if (general) return sum + heroSystem.calculatePower(general, starSystem.getStar(general.id));
           return sum;
         }, 0);
       } catch {

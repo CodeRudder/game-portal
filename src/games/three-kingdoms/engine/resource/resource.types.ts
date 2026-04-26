@@ -46,7 +46,7 @@ export const RESOURCE_LABELS: Record<ResourceType, string> = {
   troops: '兵力',
   mandate: '天命',
   techPoint: '科技点',
-  recruitToken: '招贤榜',
+  recruitToken: '招贤令',
 };
 
 /** 资源颜色标识（用于 UI 展示） */

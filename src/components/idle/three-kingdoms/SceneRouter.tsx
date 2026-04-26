@@ -147,11 +147,9 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
                 territories={worldMapData.territories}
                 productionSummary={worldMapData.productionSummary}
                 snapshotVersion={snapshotVersion}
+                engine={engine}
                 onSelectTerritory={(id) => {
                   Toast.info(`选中领土: ${id}`);
-                }}
-                onSiegeTerritory={(id) => {
-                  Toast.info(`发起攻城: ${id}`);
                 }}
               />
             );

@@ -42,7 +42,7 @@ interface BuildingIncomeModalProps {
 // ─────────────────────────────────────────────
 // 资源类型列表（遍历用）
 // ─────────────────────────────────────────────
-const RESOURCE_TYPES = ['grain', 'gold', 'troops', 'mandate'] as const;
+const RESOURCE_TYPES = ['grain', 'gold', 'troops', 'mandate', 'techPoint', 'recruitToken'] as const;
 
 // ─────────────────────────────────────────────
 // 主组件
@@ -106,7 +106,7 @@ const BuildingIncomeModal: React.FC<BuildingIncomeModalProps> = ({
         {BUILDING_TYPES.map((type) => {
           const state = buildings[type];
           if (!state || state.level <= 0 || type === 'castle') return null;
-          const prod = engine.building?.getProduction?.(type) ?? 0;
+          const prod = engine.building.getProduction(type) ?? 0;
           if (prod <= 0) return null;
           return (
             <div key={type} className="tk-income-row">

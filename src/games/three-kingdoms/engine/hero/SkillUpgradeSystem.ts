@@ -232,6 +232,12 @@ export class SkillUpgradeSystem implements ISubsystem {
       return this.failResult(generalId, skillIndex, currentLevel);
     }
 
+    // Bug-3修复：扣除技能书
+    if (!this.deps.spendResource('skillBook', cost.skillBooks)) {
+      gameLog.info('[SkillUpgradeSystem] failed to spend skillBook');
+      return this.failResult(generalId, skillIndex, currentLevel);
+    }
+
     const effectBefore = this.getSkillEffect(generalId, skillIndex);
     const newLevel = currentLevel + 1;
 

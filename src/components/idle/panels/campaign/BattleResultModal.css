@@ -449,3 +449,20 @@
   transform: scale(0.97);
   transition: transform 0.1s;
 }
+
+/* ═══════════════════════════════════════════
+   扫荡摘要
+   ═══════════════════════════════════════════ */
+.tk-brm-sweep-summary {
+  padding: 8px 12px;
+  background: rgba(212, 168, 83, 0.08);
+  border: 1px solid rgba(212, 168, 83, 0.15);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.tk-brm-sweep-summary-text {
+  font-size: 12px;
+  color: #d4a574;
+  font-weight: 500;
+}

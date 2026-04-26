@@ -173,11 +173,13 @@ const TechNodeDetailModal: React.FC<TechNodeDetailModalProps> = ({
   }, [status, canAfford, allPrereqsMet, isMutexLocked]);
 
   // ── 处理开始研究 ──
+  const [researching, setResearching] = React.useState(false);
   const handleStart = useCallback(() => {
-    if (!canStart) return;
+    if (!canStart || researching) return;
+    setResearching(true);
     onStartResearch(nodeDef.id);
     onClose();
-  }, [canStart, nodeDef.id, onStartResearch, onClose]);
+  }, [canStart, researching, nodeDef.id, onStartResearch, onClose]);
 
   // ── 处理加速 ──
   const handleSpeedUp = useCallback(
@@ -352,11 +354,11 @@ const TechNodeDetailModal: React.FC<TechNodeDetailModalProps> = ({
           {status === 'available' && (
             <button
               className="tk-tech-detail-btn tk-tech-detail-btn--primary"
-              disabled={!canStart}
+              disabled={!canStart || researching}
               onClick={handleStart}
               data-testid="tech-detail-start"
             >
-              开始研究 {nodeDef.icon}
+              {researching ? '研究中...' : `开始研究 ${nodeDef.icon}`}
             </button>
           )}
 
@@ -389,12 +391,20 @@ const TechNodeDetailModal: React.FC<TechNodeDetailModalProps> = ({
           )}
 
           {status === 'completed' && (
-            <button
-              className="tk-tech-detail-btn tk-tech-detail-btn--secondary"
-              disabled
-            >
-              已完成 ✅
-            </button>
+            <>
+              <button
+                className="tk-tech-detail-btn tk-tech-detail-btn--secondary"
+                disabled
+              >
+                已完成 ✅
+              </button>
+              <div
+                className="tk-tech-detail-effect-active-hint"
+                data-testid="tech-detail-effect-active"
+              >
+                ✨ 效果已生效 — 以下加成已应用到您的势力
+              </div>
+            </>
           )}
 
           {status === 'locked' && (

@@ -243,6 +243,22 @@
 }
 .tk-recruit-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
 
+/* 免费招募按钮（ACC-05 P1 修复） */
+.tk-recruit-cost--free {
+  color: var(--tk-green, #7EC850);
+  font-weight: 600;
+}
+
+.tk-recruit-btn--free {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.18) 0%, rgba(76, 175, 80, 0.32) 100%);
+  border-color: rgba(76, 175, 80, 0.6);
+}
+
+.tk-recruit-btn--free:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.3) 0%, rgba(76, 175, 80, 0.5) 100%);
+  border-color: rgba(76, 175, 80, 0.85);
+}
+
 /* ═══════════════════════════════════════════
    结果展示区
    ═══════════════════════════════════════════ */

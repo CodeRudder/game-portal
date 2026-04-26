@@ -62,6 +62,7 @@ export type {
 // 配置
 export { HERO_MAX_LEVEL, GENERAL_DEF_MAP, DUPLICATE_FRAGMENT_COUNT } from './hero-config';
 export type { RecruitType } from './hero-recruit-config';
+export { RECRUIT_RATES, DAILY_FREE_CONFIG, RECRUIT_PITY, RECRUIT_COSTS, TEN_PULL_DISCOUNT } from './hero-recruit-config';
 export { MAX_STAR_LEVEL } from './star-up-config';
 export {
   BondType,

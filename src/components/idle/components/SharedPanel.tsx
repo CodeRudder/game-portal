@@ -102,7 +102,7 @@ const SharedPanel: React.FC<SharedPanelProps> = ({
       <div
         ref={panelRef}
         className="tk-shared-panel"
-        style={{ width }}
+        style={{ '--tk-panel-width': width } as React.CSSProperties}
         tabIndex={-1}
         data-testid={dataTestIdPanel ?? (dataTestId ? `${dataTestId}-panel` : undefined)}
       >

@@ -1,21 +1,10 @@
 /**
  * BondPanel — 武将羁绊面板
- *
- * 功能：
- * - 显示当前编队的阵营分布（魏/蜀/吴/群雄各几人）
- * - 显示已激活的羁绊列表（阵营羁绊 + 搭档羁绊）
- * - 每个羁绊显示名称、效果描述、激活状态
- * - 未激活羁绊灰色显示
- *
- * Props:
- * - heroIds: 当前编队武将ID列表
- * - heroFactionMap: 武将→阵营映射（可选，默认使用内置映射）
- * - bondCatalog: 全部羁绊配置列表（可选，默认使用内置配置）
- *
+ * 阵营分布 + 羁绊列表 + 总加成预览 + 好感度提示
  * @module components/idle/panels/hero/BondPanel
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   HERO_FACTION_MAP,
   FACTION_TIER_MAP,
@@ -29,6 +18,9 @@ import type {
   FactionTierDef,
   BondEffect,
 } from '@/games/three-kingdoms/engine/hero/faction-bond-config';
+import BondCollectionProgress from './BondCollectionProgress';
+import BondCardItem from './BondCardItem';
+import type { BondCardData, BondTierComparison } from './BondCardItem';
 import './BondPanel.css';
 
 // ─────────────────────────────────────────────
@@ -42,6 +34,8 @@ export interface BondPanelProps {
   heroFactionMap?: Readonly<Record<string, FactionId>>;
   /** 全部羁绊配置列表（可选，默认从阵营+搭档配置构建） */
   bondCatalog?: BondConfig[];
+  /** 查看羁绊图鉴回调 — 点击后切换到 BondCollectionPanel */
+  onViewCollection?: () => void;
 }
 
 // ─────────────────────────────────────────────
@@ -78,7 +72,25 @@ const STAT_LABELS: Record<string, string> = {
 // ─────────────────────────────────────────────
 
 /**
+ * 安全的浮点数加法 — 避免浮点精度丢失
+ *
+ * 例如 0.1 + 0.2 = 0.30000000000000004 → 修正为 0.3
+ * 使用「转为整数运算再转回」的方式确保精度。
+ */
+function safeAdd(a: number, b: number): number {
+  // 取两者小数位数中的最大值
+  const precision = Math.max(
+    (String(a).split('.')[1] || '').length,
+    (String(b).split('.')[1] || '').length,
+  );
+  const factor = Math.pow(10, precision);
+  return (Math.round(a * factor) + Math.round(b * factor)) / factor;
+}
+
+/**
  * 格式化加成效果为可读字符串
+ *
+ * 使用 safeAdd 累加后 Math.round 取整，确保显示精度。
  */
 function formatEffect(effect: BondEffect): string {
   const parts: string[] = [];
@@ -155,49 +167,6 @@ FactionDistributionBar.displayName = 'FactionDistributionBar';
 // 子组件：羁绊卡片
 // ─────────────────────────────────────────────
 
-interface BondCardData {
-  id: string;
-  name: string;
-  type: 'faction' | 'partner';
-  description: string;
-  effectText: string;
-  isActive: boolean;
-  faction?: FactionId;
-  minRequired: number;
-  currentCount: number;
-}
-
-const BondCardItem: React.FC<{ bond: BondCardData }> = React.memo(({ bond }) => (
-  <div
-    className={`bond-card ${bond.isActive ? 'bond-card--active' : 'bond-card--inactive'}`}
-    data-testid={`bond-card-${bond.id}`}
-  >
-    <div className="bond-card__header">
-      <span className="bond-card__name">{bond.name}</span>
-      <span
-        className={`bond-card__status ${bond.isActive ? 'bond-card__status--active' : ''}`}
-        data-testid={`bond-status-${bond.id}`}
-      >
-        {bond.isActive ? '已激活' : '未激活'}
-      </span>
-    </div>
-    <div className="bond-card__effect" data-testid={`bond-effect-${bond.id}`}>
-      {bond.effectText}
-    </div>
-    <div className="bond-card__progress">
-      <span data-testid={`bond-progress-${bond.id}`}>
-        {bond.currentCount}/{bond.minRequired}
-      </span>
-    </div>
-    {bond.faction && (
-      <span className={`bond-card__faction-tag ${FACTION_CLASS[bond.faction]}`}>
-        {FACTION_NAMES[bond.faction]}
-      </span>
-    )}
-  </div>
-));
-BondCardItem.displayName = 'BondCardItem';
-
 // ─────────────────────────────────────────────
 // 主组件
 // ─────────────────────────────────────────────
@@ -206,8 +175,19 @@ const BondPanel: React.FC<BondPanelProps> = ({
   heroIds,
   heroFactionMap,
   bondCatalog: externalBondCatalog,
+  onViewCollection,
 }) => {
   const factionMap = heroFactionMap ?? HERO_FACTION_MAP;
+
+  // ── 0. 对 heroIds 去重，避免重复ID导致阵营计数错误 ──
+  const uniqueHeroIds = useMemo(() => [...new Set(heroIds)], [heroIds]);
+
+  // ── 羁绊卡片展开状态 ──
+  const [expandedBondId, setExpandedBondId] = useState<string | null>(null);
+  const handleToggleBond = useMemo(
+    () => (id: string) => setExpandedBondId(prev => prev === id ? null : id),
+    [],
+  );
 
   // ── 1. 计算阵营分布 ──
   const { factionCounts, distributionItems } = useMemo(() => {
@@ -215,7 +195,7 @@ const BondPanel: React.FC<BondPanelProps> = ({
     for (const f of ALL_FACTIONS) {
       counts[f] = 0;
     }
-    for (const id of heroIds) {
+    for (const id of uniqueHeroIds) {
       const faction = factionMap[id];
       if (faction) {
         counts[faction] = (counts[faction] ?? 0) + 1;
@@ -231,11 +211,11 @@ const BondPanel: React.FC<BondPanelProps> = ({
     }));
 
     return { factionCounts: counts, distributionItems: items };
-  }, [heroIds, factionMap]);
+  }, [uniqueHeroIds, factionMap]);
 
   // ── 2. 构建羁绊列表（阵营 + 搭档） ──
   const allBonds = useMemo(() => {
-    const heroIdSet = new Set(heroIds);
+    const heroIdSet = new Set(uniqueHeroIds);
     const bonds: BondCardData[] = [];
 
     // 阵营羁绊（每个阵营取最高激活等级）
@@ -245,11 +225,36 @@ const BondPanel: React.FC<BondPanelProps> = ({
 
       // 找到最高匹配的 tier
       let bestActiveTier: FactionTierDef | null = null;
-      for (const tier of tiers) {
-        if (factionCount >= tier.requiredCount) {
-          bestActiveTier = tier;
+      let bestActiveTierIndex = -1;
+      for (let ti = 0; ti < tiers.length; ti++) {
+        if (factionCount >= tiers[ti].requiredCount) {
+          bestActiveTier = tiers[ti];
+          bestActiveTierIndex = ti;
         }
       }
+
+      // 构建羁绊等级效果对比
+      const tierComparison: BondTierComparison | undefined = (() => {
+        if (bestActiveTier) {
+          const nextTier = bestActiveTierIndex < tiers.length - 1 ? tiers[bestActiveTierIndex + 1] : null;
+          return {
+            currentTier: bestActiveTier.tierName,
+            currentEffect: formatEffect(bestActiveTier.effect),
+            nextTier: nextTier?.tierName ?? null,
+            nextEffect: nextTier ? formatEffect(nextTier.effect) : null,
+            nextRequired: nextTier?.requiredCount ?? null,
+          };
+        }
+        // 未激活：显示第一级信息
+        const firstTier = tiers[0];
+        return {
+          currentTier: '未激活',
+          currentEffect: '无效果',
+          nextTier: firstTier.tierName,
+          nextEffect: formatEffect(firstTier.effect),
+          nextRequired: firstTier.requiredCount,
+        };
+      })();
 
       // 如果有激活的 tier，只显示最高等级
       if (bestActiveTier) {
@@ -263,6 +268,7 @@ const BondPanel: React.FC<BondPanelProps> = ({
           faction,
           minRequired: bestActiveTier.requiredCount,
           currentCount: factionCount,
+          tierComparison,
         });
       } else {
         // 未激活：显示最低等级门槛
@@ -277,6 +283,7 @@ const BondPanel: React.FC<BondPanelProps> = ({
           faction,
           minRequired: firstTier.requiredCount,
           currentCount: factionCount,
+          tierComparison,
         });
       }
     }
@@ -303,11 +310,66 @@ const BondPanel: React.FC<BondPanelProps> = ({
     }
 
     return bonds;
-  }, [heroIds, factionCounts, externalBondCatalog]);
+  }, [uniqueHeroIds, factionCounts, externalBondCatalog]);
 
   // ── 3. 分组：已激活 / 未激活 ──
   const activeBonds = useMemo(() => allBonds.filter(b => b.isActive), [allBonds]);
   const inactiveBonds = useMemo(() => allBonds.filter(b => !b.isActive), [allBonds]);
+
+  // ── 4. 计算编队羁绊总加成 ──
+  // 使用 safeAdd 浮点安全累加，避免 0.1+0.2=0.30000000000000004
+  const totalBonus = useMemo(() => {
+    const bonus: Record<string, number> = {
+      attackBonus: 0,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0,
+    };
+    // 遍历所有激活的羁绊，累加效果
+    for (const bond of activeBonds) {
+      // 阵营羁绊：从 FACTION_TIER_MAP 获取精确效果
+      if (bond.type === 'faction' && bond.faction) {
+        const tiers = FACTION_TIER_MAP[bond.faction];
+        const factionCount = factionCounts[bond.faction] ?? 0;
+        for (const tier of tiers) {
+          if (factionCount >= tier.requiredCount) {
+            bonus.attackBonus = safeAdd(bonus.attackBonus, tier.effect.attackBonus);
+            bonus.defenseBonus = safeAdd(bonus.defenseBonus, tier.effect.defenseBonus);
+            bonus.hpBonus = safeAdd(bonus.hpBonus, tier.effect.hpBonus);
+            bonus.critBonus = safeAdd(bonus.critBonus, tier.effect.critBonus);
+            bonus.strategyBonus = safeAdd(bonus.strategyBonus, tier.effect.strategyBonus);
+          }
+        }
+      }
+      // 搭档羁绊：从 PARTNER_BOND_CONFIGS 获取精确效果
+      if (bond.type === 'partner') {
+        const partnerBonds = externalBondCatalog
+          ? externalBondCatalog.filter(b => b.type === 'partner')
+          : PARTNER_BOND_CONFIGS;
+        const config = partnerBonds.find(b => b.id === bond.id);
+        if (config) {
+          bonus.attackBonus = safeAdd(bonus.attackBonus, config.effect.attackBonus);
+          bonus.defenseBonus = safeAdd(bonus.defenseBonus, config.effect.defenseBonus);
+          bonus.hpBonus = safeAdd(bonus.hpBonus, config.effect.hpBonus);
+          bonus.critBonus = safeAdd(bonus.critBonus, config.effect.critBonus);
+          bonus.strategyBonus = safeAdd(bonus.strategyBonus, config.effect.strategyBonus);
+        }
+      }
+    }
+    return bonus;
+  }, [activeBonds, factionCounts, externalBondCatalog]);
+
+  // 格式化总加成为可读文本
+  const totalBonusText = useMemo(() => {
+    const parts: string[] = [];
+    if (totalBonus.attackBonus > 0) parts.push(`攻击+${Math.round(totalBonus.attackBonus * 100)}%`);
+    if (totalBonus.defenseBonus > 0) parts.push(`防御+${Math.round(totalBonus.defenseBonus * 100)}%`);
+    if (totalBonus.hpBonus > 0) parts.push(`生命+${Math.round(totalBonus.hpBonus * 100)}%`);
+    if (totalBonus.critBonus > 0) parts.push(`暴击+${Math.round(totalBonus.critBonus * 100)}%`);
+    if (totalBonus.strategyBonus > 0) parts.push(`策略+${Math.round(totalBonus.strategyBonus * 100)}%`);
+    return parts.join('，');
+  }, [totalBonus]);
 
   // ── 渲染 ──
   return (
@@ -315,16 +377,76 @@ const BondPanel: React.FC<BondPanelProps> = ({
       {/* 标题 */}
       <div className="bond-panel__title">
         <h3>羁绊面板</h3>
-        <span className="bond-panel__count" data-testid="bond-active-count">
-          已激活 {activeBonds.length}/{allBonds.length}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="bond-panel__count" data-testid="bond-active-count">
+            已激活 {activeBonds.length}/{allBonds.length}
+          </span>
+          {onViewCollection && (
+            <button
+              className="bond-panel__collection-btn"
+              data-testid="bond-panel-view-collection"
+              onClick={onViewCollection}
+              title="查看羁绊图鉴"
+            >
+              📖 图鉴
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 阵营分布 */}
       <FactionDistributionBar
         items={distributionItems}
-        total={heroIds.length}
+        total={uniqueHeroIds.length}
       />
+
+      {/* 羁绊收集进度总览 */}
+      <BondCollectionProgress
+        totalBonds={allBonds.length}
+        activatedBonds={activeBonds.length}
+        factionActivated={activeBonds.filter(b => b.type === 'faction').length}
+        factionTotal={allBonds.filter(b => b.type === 'faction').length}
+        partnerActivated={activeBonds.filter(b => b.type === 'partner').length}
+        partnerTotal={allBonds.filter(b => b.type === 'partner').length}
+      />
+
+      {/* 编队羁绊总加成预览 */}
+      {activeBonds.length > 0 && totalBonusText && (
+        <div className="bond-panel__total-bonus" data-testid="bond-total-bonus">
+          <div className="bond-panel__total-bonus-header">
+            <span className="bond-panel__total-bonus-icon">⚔️</span>
+            <span className="bond-panel__total-bonus-title">编队羁绊总加成</span>
+            <span className="bond-panel__total-bonus-count">{activeBonds.length} 个羁绊生效</span>
+          </div>
+          <div className="bond-panel__total-bonus-effects" data-testid="bond-total-bonus-effects">
+            {totalBonus.attackBonus > 0 && (
+              <span className="bond-panel__bonus-item bond-panel__bonus-item--attack">
+                🗡️ 攻击 +{Math.round(totalBonus.attackBonus * 100)}%
+              </span>
+            )}
+            {totalBonus.defenseBonus > 0 && (
+              <span className="bond-panel__bonus-item bond-panel__bonus-item--defense">
+                🛡️ 防御 +{Math.round(totalBonus.defenseBonus * 100)}%
+              </span>
+            )}
+            {totalBonus.hpBonus > 0 && (
+              <span className="bond-panel__bonus-item bond-panel__bonus-item--hp">
+                ❤️ 生命 +{Math.round(totalBonus.hpBonus * 100)}%
+              </span>
+            )}
+            {totalBonus.critBonus > 0 && (
+              <span className="bond-panel__bonus-item bond-panel__bonus-item--crit">
+                ⚡ 暴击 +{Math.round(totalBonus.critBonus * 100)}%
+              </span>
+            )}
+            {totalBonus.strategyBonus > 0 && (
+              <span className="bond-panel__bonus-item bond-panel__bonus-item--strategy">
+                🔮 策略 +{Math.round(totalBonus.strategyBonus * 100)}%
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 已激活羁绊 */}
       {activeBonds.length > 0 && (
@@ -332,7 +454,7 @@ const BondPanel: React.FC<BondPanelProps> = ({
           <div className="bond-section__title">已激活羁绊</div>
           <div className="bond-grid" data-testid="bond-grid-active">
             {activeBonds.map(bond => (
-              <BondCardItem key={bond.id} bond={bond} />
+              <BondCardItem key={bond.id} bond={bond} isExpanded={expandedBondId === bond.id} onToggle={handleToggleBond} />
             ))}
           </div>
         </div>
@@ -344,16 +466,29 @@ const BondPanel: React.FC<BondPanelProps> = ({
           <div className="bond-section__title bond-section__title--inactive">未激活羁绊</div>
           <div className="bond-grid" data-testid="bond-grid-inactive">
             {inactiveBonds.map(bond => (
-              <BondCardItem key={bond.id} bond={bond} />
+              <BondCardItem key={bond.id} bond={bond} isExpanded={expandedBondId === bond.id} onToggle={handleToggleBond} />
             ))}
           </div>
         </div>
       )}
 
       {/* 空编队提示 */}
-      {heroIds.length === 0 && (
+      {uniqueHeroIds.length === 0 && (
         <div className="bond-panel__empty" data-testid="bond-panel-empty">
           当前编队为空，请先添加武将
+        </div>
+      )}
+
+      {/* 好感度与故事事件入口提示 */}
+      {uniqueHeroIds.length > 0 && (
+        <div className="bond-panel__favorability-hint" data-testid="bond-favorability-hint">
+          <div className="bond-panel__favorability-hint-icon">💝</div>
+          <div className="bond-panel__favorability-hint-text">
+            <span className="bond-panel__favorability-hint-title">好感度系统</span>
+            <span className="bond-panel__favorability-hint-desc">
+              特定武将组合达到好感度要求后可触发专属故事事件（如「桃园结义」需刘备+关羽+张飞好感度≥50且等级≥5）
+            </span>
+          </div>
         </div>
       )}
     </div>

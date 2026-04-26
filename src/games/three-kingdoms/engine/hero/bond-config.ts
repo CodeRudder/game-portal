@@ -181,18 +181,18 @@ export const FACTION_BONDS: ReadonlyArray<FactionBondDefinition> = [
 ] as const;
 
 // ─────────────────────────────────────────────
-// 6. 搭档羁绊配置（12组：蜀3/魏3/吴3/群3）
+// 6. 搭档羁绊配置（14组：蜀3/魏4/吴4/群3）
 // ─────────────────────────────────────────────
 
 /**
- * 搭档羁绊配置 — 12组
+ * 搭档羁绊配置 — 14组
  *
- * 来源：hero-bond-system.md §2.2 + P1-3 扩充
- * 设计原则：每阵营3组搭档羁绊，覆盖不同收集难度和策略方向
+ * 来源：hero-bond-system.md §2.2 + P1-3 扩充 + P0修复
+ * 设计原则：覆盖不同收集难度和策略方向
  *
  * 蜀国：桃园结义(刘关张)、五虎上将(关张赵马黄)、卧龙凤雏(诸葛亮庞统)
- * 魏国：五子良将(张辽徐晃于禁张郃乐进)、曹氏宗族(曹仁曹洪夏侯惇夏侯渊)、虎痴双雄(许褚典韦)
- * 吴国：江东双璧(孙策周瑜)、东吴四英(鲁肃吕蒙陆逊)、孙氏父子(孙坚孙策孙权)
+ * 魏国：五子良将(张辽徐晃于禁张郃乐进)、曹氏宗族(曹仁曹洪夏侯惇夏侯渊)、虎痴双雄(许褚典韦)、魏之双壁(张辽徐晃)
+ * 吴国：江东双璧(孙策周瑜)、东吴四英(鲁肃吕蒙陆逊)、孙氏父子(孙坚孙策孙权)、苦肉连环(黄盖周瑜)
  * 群雄：三英战吕布(刘关张+吕布)、董卓之乱(董卓吕布貂蝉)、袁绍谋士(田丰沮授)
  */
 export const PARTNER_BONDS: ReadonlyArray<PartnerBondDefinition> = [
@@ -321,6 +321,29 @@ export const PARTNER_BONDS: ReadonlyArray<PartnerBondDefinition> = [
     name: '袁绍谋士',
     generalIds: ['tianfeng', 'jushou'],
     effects: [{ stat: 'intelligence', value: 0.12 }, { stat: 'skillRange', value: 1 }],
+    minRequired: 2,
+  },
+
+  // ═══════════════════════════════════════════
+  // 扩充搭档羁绊（P0 修复：12→14组）
+  // ═══════════════════════════════════════════
+
+  // ── 苦肉连环：黄盖+周瑜（吴国） ──
+  {
+    id: 'partner_kurou_lianhuan',
+    type: BondType.PARTNER,
+    name: '苦肉连环',
+    generalIds: ['huanggai', 'zhouyu'],
+    effects: [{ stat: 'skillDamage', value: 0.15 }, { stat: 'critRate', value: 0.08 }],
+    minRequired: 2,
+  },
+  // ── 魏之双壁：张辽+徐晃（魏国） ──
+  {
+    id: 'partner_wei_shuangbi',
+    type: BondType.PARTNER,
+    name: '魏之双壁',
+    generalIds: ['zhangliao', 'xuhuang'],
+    effects: [{ stat: 'attack', value: 0.10 }, { stat: 'defense', value: 0.10 }],
     minRequired: 2,
   },
 ] as const;

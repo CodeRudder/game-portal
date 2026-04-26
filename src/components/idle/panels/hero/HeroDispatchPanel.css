@@ -290,20 +290,50 @@
 }
 
 /* ═══════════════════════════════════════════
-   响应式：手机端上下排列
+   响应式：手机端上下排列（ACC-06 P1 修复）
    ═══════════════════════════════════════════ */
-@media (max-width: 640px) {
+@media (max-width: 767px) {
+  .tk-dispatch-panel {
+    padding: 8px 0;
+  }
+
+  .tk-dispatch-header {
+    margin-bottom: 8px;
+  }
+
+  .tk-dispatch-title {
+    font-size: 14px;
+  }
+
   .tk-dispatch-body {
     flex-direction: column;
     gap: 12px;
   }
 
+  .tk-dispatch-section-title {
+    font-size: 12px;
+  }
+
   .tk-dispatch-hero-item {
     padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .tk-dispatch-hero-name {
+    font-size: 12px;
   }
 
   .tk-dispatch-building-item {
     padding: 8px 10px;
+  }
+
+  .tk-dispatch-building-name {
+    font-size: 12px;
+  }
+
+  .tk-dispatch-building-hero {
+    padding: 4px 6px;
+    gap: 6px;
   }
 
   .tk-dispatch-confirm-bar {
@@ -311,5 +341,51 @@
     gap: 8px;
     align-items: stretch;
     text-align: center;
+    padding: 8px 10px;
+  }
+
+  .tk-dispatch-confirm-info {
+    font-size: 11px;
+  }
+
+  .tk-dispatch-confirm-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    min-height: 40px;
+  }
+
+  .tk-dispatch-close-btn {
+    padding: 6px 12px;
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .tk-dispatch-recall-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+    min-height: 32px;
+  }
+
+  .tk-dispatch-hero-item {
+    min-height: 40px;
+  }
+
+  .tk-dispatch-building-empty {
+    padding: 10px;
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  /* 触摸反馈 */
+  .tk-dispatch-hero-item:active:not(.tk-dispatch-hero-item--dispatched) {
+    transform: scale(0.97);
+  }
+
+  .tk-dispatch-confirm-btn:active {
+    transform: scale(0.97);
+  }
+
+  .tk-dispatch-recall-btn:active {
+    transform: scale(0.97);
   }
 }

@@ -7,6 +7,7 @@
  * @module panels/arena/ArenaTab
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import './ArenaTab.css';
 
 // ─── Props ──────────────────────────────────
 interface ArenaTabProps {
@@ -160,7 +161,8 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion, visible = 
                     </div>
                   </div>
                   <button
-                    style={{ ...S.challengeBtn, ...((ps?.dailyChallengesLeft ?? 0) <= 0 ? S.disabled : {}) }}
+                    className={`tk-arena-challenge-btn ${((ps?.dailyChallengesLeft ?? 0) <= 0) ? 'tk-arena-challenge-btn--disabled' : ''}`}
+                    style={S.challengeBtn}
                     disabled={(ps?.dailyChallengesLeft ?? 0) <= 0}
                     onClick={() => handleChallenge(opp.playerId)}
                   >挑战</button>

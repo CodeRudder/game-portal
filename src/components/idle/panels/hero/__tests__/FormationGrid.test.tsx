@@ -35,9 +35,10 @@ const makeSlots = (
     { id: 'hero-3', name: '赵云', quality: 'RARE' as const },
     { id: 'hero-4', name: '马超', quality: 'UNCOMMON' as const },
     { id: 'hero-5', name: '黄忠', quality: 'COMMON' as const },
+    { id: 'hero-6', name: '魏延', quality: 'UNCOMMON' as const },
   ];
-  const slots: FormationGridProps['slots'] = Array(5).fill(null);
-  for (let i = 0; i < Math.min(count, 5); i++) {
+  const slots: FormationGridProps['slots'] = Array(6).fill(null);
+  for (let i = 0; i < Math.min(count, 6); i++) {
     slots[i] = heroes[i];
   }
   return slots;
@@ -72,9 +73,9 @@ describe('FormationGrid', () => {
     expect(screen.getByText('⚔️ 编队')).toBeInTheDocument();
   });
 
-  it('应渲染5个槽位', () => {
+  it('应渲染6个槽位', () => {
     render(<FormationGrid {...defaultProps} />);
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
       expect(screen.getByTestId(`formation-slot-${i}`)).toBeInTheDocument();
     }
   });
@@ -90,18 +91,18 @@ describe('FormationGrid', () => {
 
   it('空槽位应显示 + 按钮', () => {
     render(<FormationGrid {...defaultProps} slots={makeSlots(2)} />);
-    // slot 2, 3, 4 为空
+    // slot 2, 3, 4, 5 为空
     const emptySlot = screen.getByTestId('formation-slot-2');
     expect(emptySlot.textContent).toContain('+');
   });
 
   it('空槽位应显示前排/后排标签', () => {
     render(<FormationGrid {...defaultProps} slots={makeSlots(0)} />);
-    // 前排 slot 0,1
+    // 前排 slot 0,1,2
     const frontSlot = screen.getByTestId('formation-slot-0');
     expect(frontSlot.textContent).toContain('前排');
-    // 后排 slot 2
-    const backSlot = screen.getByTestId('formation-slot-2');
+    // 后排 slot 3
+    const backSlot = screen.getByTestId('formation-slot-3');
     expect(backSlot.textContent).toContain('后排');
   });
 
@@ -151,8 +152,8 @@ describe('FormationGrid', () => {
 
   it('应显示总战力', () => {
     render(<FormationGrid {...defaultProps} totalPower={8500} />);
-    // 8500 / 1000 = 8.5K
-    expect(screen.getByTestId('formation-grid-power')).toHaveTextContent('8.5K');
+    // 8500 < 10000，不缩写
+    expect(screen.getByTestId('formation-grid-power')).toHaveTextContent('8500');
   });
 
   it('应正确格式化万级战力', () => {
@@ -186,12 +187,12 @@ describe('FormationGrid', () => {
     expect(screen.queryByTestId('formation-grid-bonds')).not.toBeInTheDocument();
   });
 
-  it('slots 不足5个时自动补齐空槽位', () => {
+  it('slots 不足6个时自动补齐空槽位', () => {
     render(<FormationGrid {...defaultProps} slots={[{ id: 'h1', name: '关羽', quality: 'LEGENDARY' }]} />);
-    // 应有5个槽位
+    // 应有6个槽位
     expect(screen.getByTestId('formation-slot-0')).toBeInTheDocument();
-    expect(screen.getByTestId('formation-slot-4')).toBeInTheDocument();
-    // 槽位4应为空
-    expect(screen.getByTestId('formation-slot-4').textContent).toContain('+');
+    expect(screen.getByTestId('formation-slot-5')).toBeInTheDocument();
+    // 槽位5应为空
+    expect(screen.getByTestId('formation-slot-5').textContent).toContain('+');
   });
 });

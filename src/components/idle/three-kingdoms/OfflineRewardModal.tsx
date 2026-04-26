@@ -70,6 +70,8 @@ const OfflineRewardModal: React.FC<OfflineRewardModalProps> = ({ reward, onClaim
             { key: 'gold' as const, label: '铜钱', icon: '💰', color: '#C9A84C' },
             { key: 'troops' as const, label: '兵力', icon: '⚔️', color: '#B8423A' },
             { key: 'mandate' as const, label: '天命', icon: '✨', color: '#7B5EA7' },
+            { key: 'techPoint' as const, label: '科技点', icon: '🔬', color: '#4FC3F7' },
+            { key: 'recruitToken' as const, label: '招贤令', icon: '📜', color: '#E8A030' },
           ]).map(({ key, label, icon, color }) => {
             const val = reward.earned[key];
             if (val <= 0) return null;

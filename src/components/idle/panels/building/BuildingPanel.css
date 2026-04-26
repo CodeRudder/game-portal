@@ -408,3 +408,55 @@
 .tk-bld-list-detail--upgrading {
   color: #7EC850;
 }
+
+/* ═══════════════════════════════════════════
+   取消升级按钮
+   ═══════════════════════════════════════════ */
+
+/* 队列中的取消按钮 */
+.tk-bld-queue-cancel {
+  background: none;
+  border: none;
+  color: var(--tk-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+  font-family: inherit;
+}
+
+.tk-bld-queue-cancel:hover {
+  color: #E53935;
+  background: rgba(229, 57, 53, 0.12);
+}
+
+/* 地图上升级中建筑的取消按钮 */
+.tk-bld-pin-cancel-btn {
+  margin-top: 2px;
+  padding: 1px 6px;
+  background: rgba(229, 57, 53, 0.12);
+  border: 1px solid rgba(229, 57, 53, 0.3);
+  border-radius: 3px;
+  color: #E53935;
+  font-size: 9px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.tk-bld-pin-cancel-btn:hover {
+  background: rgba(229, 57, 53, 0.25);
+  border-color: rgba(229, 57, 53, 0.5);
+}
+
+/* 手机端列表中的取消按钮 */
+.tk-bld-list-btn--cancel {
+  background: rgba(229, 57, 53, 0.1);
+  border-color: rgba(229, 57, 53, 0.4);
+  color: #E53935;
+}
+
+.tk-bld-list-btn--cancel:hover {
+  background: rgba(229, 57, 53, 0.2);
+}

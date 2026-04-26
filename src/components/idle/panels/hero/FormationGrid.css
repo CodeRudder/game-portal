@@ -141,6 +141,20 @@
   background: #f44336;
 }
 
+/* ── 前排/后排视觉区分 ── */
+.tk-formation-grid-slot--front {
+  border-top: 2px solid rgba(229, 115, 115, 0.4);
+}
+.tk-formation-grid-slot--back {
+  border-top: 2px solid rgba(100, 181, 246, 0.4);
+}
+.tk-formation-grid-slot--empty.tk-formation-grid-slot--front {
+  border-top: 2px dashed rgba(229, 115, 115, 0.25);
+}
+.tk-formation-grid-slot--empty.tk-formation-grid-slot--back {
+  border-top: 2px dashed rgba(100, 181, 246, 0.25);
+}
+
 /* ── 总战力 ── */
 .tk-formation-grid-power {
   display: flex;
@@ -200,4 +214,149 @@
   background: rgba(255, 255, 255, 0.04);
   color: #666;
   border: 1px solid #2a2a4a;
+}
+
+/* ── 移动端适配 ── */
+@media (max-width: 767px) {
+  .tk-formation-grid {
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .tk-formation-grid-title {
+    font-size: 14px;
+  }
+
+  .tk-formation-grid-row-label {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+
+  .tk-formation-grid-row-slots {
+    gap: 4px;
+  }
+
+  .tk-formation-grid-slot {
+    padding: 6px 4px;
+    border-radius: 6px;
+  }
+
+  .tk-formation-grid-slot-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .tk-formation-grid-slot-char {
+    font-size: 13px;
+  }
+
+  .tk-formation-grid-slot-name {
+    font-size: 10px;
+  }
+
+  .tk-formation-grid-slot-plus {
+    font-size: 18px;
+  }
+
+  .tk-formation-grid-slot-label {
+    font-size: 9px;
+  }
+
+  .tk-formation-grid-power-value {
+    font-size: 15px;
+  }
+
+  .tk-formation-grid-bond {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+}
+
+@media (max-width: 374px) {
+  .tk-formation-grid {
+    padding: 8px;
+  }
+
+  .tk-formation-grid-slot {
+    padding: 4px 2px;
+  }
+
+  .tk-formation-grid-slot-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .tk-formation-grid-slot-char {
+    font-size: 11px;
+  }
+
+  .tk-formation-grid-slot-name {
+    font-size: 9px;
+  }
+
+  .tk-formation-grid-slot-remove {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+}
+
+/* ── 横屏适配（手机横屏） ── */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-formation-grid {
+    padding: 8px;
+    max-width: 100%;
+  }
+
+  .tk-formation-grid-title {
+    font-size: 13px;
+  }
+
+  .tk-formation-grid-row {
+    margin-bottom: 6px;
+  }
+
+  .tk-formation-grid-row-slots {
+    gap: 3px;
+  }
+
+  .tk-formation-grid-slot {
+    padding: 4px 3px;
+    border-radius: 5px;
+  }
+
+  .tk-formation-grid-slot-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .tk-formation-grid-slot-char {
+    font-size: 11px;
+  }
+
+  .tk-formation-grid-slot-name {
+    font-size: 9px;
+  }
+
+  .tk-formation-grid-slot-plus {
+    font-size: 15px;
+  }
+
+  .tk-formation-grid-slot-label {
+    font-size: 8px;
+  }
+
+  .tk-formation-grid-power {
+    padding: 6px 0;
+    margin-top: 8px;
+  }
+
+  .tk-formation-grid-power-value {
+    font-size: 13px;
+  }
+
+  .tk-formation-grid-bond {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
 }

@@ -1,10 +1,20 @@
 /**
- * 引擎层 — 武将羁绊系统
+ * 引擎层 — 武将羁绊系统（故事事件 & 好感度）
  *
- * 管理阵营羁绊检测、效果计算、编队实时预览、武将故事事件：
- *   #1 阵营羁绊效果 — 同乡之谊(2同)/同仇敌忾(3同)/众志成城(6同)/混搭协作(3+3)
- *   #2 羁绊可视化 — 编队界面实时显示激活羁绊+属性加成预览
- *   #3 武将故事事件 — 好感度触发专属剧情+历史典故+奖励
+ * ⚠️ 注意：此系统与 FactionBondSystem（hero/faction-bond-system）并存，职责分工如下：
+ *
+ * BondSystem（本文件）：
+ *   - 武将故事事件 — 好感度触发专属剧情+历史典故+奖励
+ *   - 编队羁绊预览 — getFormationPreview() 提供编队界面实时预览数据
+ *   - 阵营羁绊检测（旧规则：2/3/6/混搭）— 仅用于故事事件判定
+ *
+ * FactionBondSystem（hero/faction-bond-system）：
+ *   - 阵营羁绊计算（新规则：2/3/4/5人逐级增强）— UI 层 BondPanel 使用
+ *   - 搭档羁绊计算（14组特殊组合）— UI 层 BondPanel 使用
+ *   - 羁绊系数计算（第5乘区）— 战力公式使用
+ *
+ * UI 层（BondPanel/BondCollectionPanel）通过 faction-bond-config.ts 的数据驱动，
+ * 不直接依赖本系统。本系统主要服务于编队预览和故事事件功能。
  *
  * @module engine/bond/BondSystem
  */

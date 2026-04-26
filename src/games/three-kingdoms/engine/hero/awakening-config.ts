@@ -138,6 +138,13 @@ for (const tier of AWAKENING_EXP_TIERS) {
  */
 export const AWAKENING_STAT_MULTIPLIER = 1.5;
 
+/**
+ * 觉醒效果描述文本（从配置动态生成，避免硬编码）
+ *
+ * 用于 UI 展示：确认弹窗、效果预览、Toast 消息等
+ */
+export const AWAKENING_EFFECT_TEXT = `全属性 +${Math.round((AWAKENING_STAT_MULTIPLIER - 1) * 100)}%，等级上限 → Lv.${AWAKENING_MAX_LEVEL}` as const;
+
 // ─────────────────────────────────────────────
 // 6. 觉醒技能模板
 // ─────────────────────────────────────────────

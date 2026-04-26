@@ -55,6 +55,7 @@ const CARAVAN_STATUS_COLORS: Record<string, string> = {
 // ─── 主组件 ──────────────────────────────────
 const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose }) => {
   const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'routes' | 'caravans' | 'prices'>('routes');
 
@@ -110,9 +111,10 @@ const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose
     try { return caravanSystem.getIdleCaravans?.() ?? []; } catch { return []; }
   }, [caravanSystem, message]);
 
-  // 显示消息
-  const showMessage = useCallback((msg: string) => {
+  // 显示消息（支持成功/错误分级样式）
+  const showMessage = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
     setMessage(msg);
+    setMessageType(type);
     setTimeout(() => setMessage(null), 2500);
   }, []);
 
@@ -122,16 +124,16 @@ const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose
     try {
       const castleLevel = engine?.building?.getCastleLevel?.() ?? 1;
       const result = tradeSystem.openRoute?.(routeId, castleLevel);
-      showMessage(result?.success ? '✅ 商路已开通！' : `❌ ${result?.reason ?? '开通失败'}`);
+      showMessage(result?.success ? '✅ 商路已开通！' : `❌ ${result?.reason ?? '开通失败'}`, result?.success ? 'success' : 'error');
     } catch (e: any) {
-      showMessage(`❌ ${e?.message ?? '操作失败'}`);
+      showMessage(`❌ ${e?.message ?? '操作失败'}`, 'error');
     }
   }, [tradeSystem, showMessage]);
 
   // 派遣商队
   const handleDispatch = useCallback((routeId: string) => {
     if (!caravanSystem || idleCaravans.length === 0) {
-      showMessage('❌ 没有空闲商队');
+      showMessage('❌ 没有空闲商队', 'error');
       return;
     }
     try {
@@ -143,10 +145,11 @@ const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose
       });
       showMessage(result?.success
         ? `🚃 商队已出发！预计利润: ${result.estimatedProfit ?? '???'} 铜钱`
-        : `❌ ${result?.reason ?? '派遣失败'}`
+        : `❌ ${result?.reason ?? '派遣失败'}`,
+        result?.success ? 'success' : 'error'
       );
     } catch (e: any) {
-      showMessage(`❌ ${e?.message ?? '操作失败'}`);
+      showMessage(`❌ ${e?.message ?? '操作失败'}`, 'error');
     }
   }, [caravanSystem, idleCaravans, showMessage]);
 
@@ -155,9 +158,9 @@ const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose
     if (!tradeSystem) return;
     try {
       tradeSystem.refreshPrices?.();
-      showMessage('🔄 价格已刷新');
+      showMessage('🔄 价格已刷新', 'success');
     } catch (e: any) {
-      showMessage(`❌ ${e?.message ?? '刷新失败'}`);
+      showMessage(`❌ ${e?.message ?? '刷新失败'}`, 'error');
     }
   }, [tradeSystem, showMessage]);
 
@@ -167,12 +170,17 @@ const TradePanel: React.FC<TradePanelProps> = ({ engine, visible = true, onClose
       title="商贸"
       icon="🚃"
       onClose={onClose}
-      width="560px"
+      width="min(560px, 95vw)"
     >
       <div style={styles.wrap} data-testid="trade-panel">
-        {/* 操作反馈消息 */}
+        {/* 操作反馈消息 — Toast 分级样式 */}
         {message && (
-          <div style={styles.message}>{message}</div>
+          <div style={{
+            ...styles.message,
+            ...(messageType === 'success'
+              ? { background: 'rgba(126, 200, 80, 0.15)', color: '#7EC850', border: '1px solid rgba(126, 200, 80, 0.25)' }
+              : { background: 'rgba(255, 100, 100, 0.15)', color: '#ff6464', border: '1px solid rgba(255, 100, 100, 0.25)' }),
+          }}>{message}</div>
         )}
 
         {/* Tab切换 */}
@@ -386,7 +394,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   message: {
     padding: '8px 12px',
-    background: 'rgba(212,165,116,0.2)',
     borderRadius: 'var(--tk-radius-lg)' as any,
     marginBottom: 12,
     fontSize: 13,

@@ -141,4 +141,63 @@ describe('SiegeConfirmModal', () => {
     );
     expect(screen.getByText('中立')).toBeTruthy();
   });
+
+  // ── 每日攻城次数 ──
+  it('显示今日攻城剩余次数', () => {
+    render(
+      <SiegeConfirmModal
+        {...defaultProps}
+        dailySiegesRemaining={2}
+      />,
+    );
+    expect(screen.getByText(/今日攻城.*2次/)).toBeTruthy();
+  });
+
+  it('今日次数用完时条件失败', () => {
+    render(
+      <SiegeConfirmModal
+        {...defaultProps}
+        dailySiegesRemaining={0}
+      />,
+    );
+    const condition = screen.getByTestId('siege-condition-今日攻城次数');
+    expect(condition.className).toContain('tk-siege-condition--fail');
+  });
+
+  // ── 冷却倒计时 ──
+  it('有冷却时间时显示冷却提示', () => {
+    render(
+      <SiegeConfirmModal
+        {...defaultProps}
+        cooldownRemainingMs={3600000} // 1小时
+      />,
+    );
+    // 验证冷却状态栏存在
+    const panel = screen.getByTestId('siege-confirm');
+    expect(panel).toBeTruthy();
+  });
+
+  // ── 移动端响应式 ──
+  describe('移动端响应式', () => {
+    it('弹窗在移动端正常渲染', () => {
+      const originalInnerWidth = window.innerWidth;
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 });
+      window.dispatchEvent(new Event('resize'));
+
+      render(<SiegeConfirmModal {...defaultProps} />);
+      expect(screen.getByTestId('siege-confirm')).toBeTruthy();
+      expect(screen.getByText(/攻城确认.*许昌/)).toBeTruthy();
+
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: originalInnerWidth });
+    });
+
+    it('弹窗取消按钮在移动端可点击', () => {
+      render(<SiegeConfirmModal {...defaultProps} />);
+      // 使用取消按钮文本定位
+      const cancelBtn = screen.getByText('取消');
+      expect(cancelBtn).toBeTruthy();
+      fireEvent.click(cancelBtn);
+      expect(defaultProps.onCancel).toHaveBeenCalled();
+    });
+  });
 });

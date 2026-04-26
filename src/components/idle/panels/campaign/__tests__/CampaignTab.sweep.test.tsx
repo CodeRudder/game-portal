@@ -36,6 +36,22 @@ vi.mock('../BattleResultModal', () => ({
     );
   },
 }));
+vi.mock('../SweepModal.css', () => ({}));
+vi.mock('../SweepModal', () => ({
+  default: function MockSweepModal({ onClose, onSweep }: { onClose: () => void; onSweep: (stageId: string, count: number) => any }) {
+    return (
+      <div data-testid="sweep-modal">
+        扫荡弹窗
+        <button onClick={() => {
+          onSweep('s_three_star', 1);
+        }}>
+          确认扫荡
+        </button>
+        <button onClick={onClose}>关闭</button>
+      </div>
+    );
+  },
+}));
 
 // ── 测试数据 ──
 
@@ -103,6 +119,15 @@ function makeMockEngine() {
     summary: '扫荡胜利',
   }));
 
+  const mockSweep = vi.fn((_stageId: string, _count: number) => ({
+    success: true,
+    executedCount: 1,
+    totalResources: { grain: 100, gold: 50 },
+    totalExp: 200,
+    totalFragments: {},
+    ticketsUsed: 1,
+  }));
+
   const engine = {
     getChapters: vi.fn(() => chapters),
     getCampaignSystem: vi.fn(() => ({
@@ -136,9 +161,13 @@ function makeMockEngine() {
     getGenerals: vi.fn(() => []),
     startBattle: mockStartBattle,
     completeBattle: vi.fn(),
+    getSweepSystem: vi.fn(() => ({
+      sweep: mockSweep,
+      getTicketCount: vi.fn(() => 10),
+    })),
   } as unknown as ThreeKingdomsEngine;
 
-  return { engine, mockStartBattle };
+  return { engine, mockStartBattle, mockSweep };
 }
 
 // ── 测试 ──
@@ -180,22 +209,23 @@ describe('CampaignTab — 扫荡功能', () => {
   // 2. 扫荡交互
   // ═══════════════════════════════════════════
 
-  it('点击扫荡按钮应触发 handleSweep 调用 engine.startBattle', () => {
+  it('点击扫荡按钮应打开 SweepModal', () => {
     render(<CampaignTab {...defaultProps} />);
     const sweepBtn = screen.getByLabelText('扫荡 三星关卡');
     fireEvent.click(sweepBtn);
-    expect(mockStartBattle).toHaveBeenCalledTimes(1);
-    expect(mockStartBattle).toHaveBeenCalledWith('s_three_star');
+    // 应显示 SweepModal
+    expect(screen.getByTestId('sweep-modal')).toBeInTheDocument();
   });
 
-  it('扫荡后应显示 BattleResultModal 结算弹窗', () => {
+  it('SweepModal 确认扫荡后应显示 BattleResultModal 结算弹窗', () => {
     render(<CampaignTab {...defaultProps} />);
-    // 初始不应显示结算弹窗
-    expect(screen.queryByTestId('result-modal')).not.toBeInTheDocument();
-
-    // 点击扫荡
+    // 点击扫荡按钮打开 SweepModal
     const sweepBtn = screen.getByLabelText('扫荡 三星关卡');
     fireEvent.click(sweepBtn);
+    expect(screen.getByTestId('sweep-modal')).toBeInTheDocument();
+
+    // 在 SweepModal 中点击确认扫荡
+    fireEvent.click(screen.getByText('确认扫荡'));
 
     // 应显示结算弹窗
     expect(screen.getByTestId('result-modal')).toBeInTheDocument();
@@ -204,8 +234,9 @@ describe('CampaignTab — 扫荡功能', () => {
 
   it('点击结算弹窗确认后应关闭弹窗', () => {
     render(<CampaignTab {...defaultProps} />);
-    // 点击扫荡
+    // 点击扫荡 → SweepModal → 确认扫荡
     fireEvent.click(screen.getByLabelText('扫荡 三星关卡'));
+    fireEvent.click(screen.getByText('确认扫荡'));
     expect(screen.getByTestId('result-modal')).toBeInTheDocument();
 
     // 点击确认

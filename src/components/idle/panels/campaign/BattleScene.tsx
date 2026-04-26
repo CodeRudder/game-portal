@@ -27,6 +27,8 @@ import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine';
 import { useBattleAnimation } from './BattleAnimation';
 import type { LogEntry, LogPart } from './BattleAnimation';
 import { getHpLevel, formatHp } from './battle-scene-utils';
+import BattleSpeedControl from './BattleSpeedControl';
+import type { BattleSpeedLevel } from './BattleSpeedControl';
 import './BattleScene.css';
 
 // ─────────────────────────────────────────────
@@ -141,7 +143,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     battleState, battleResult, isFinished,
     actingUnitId, actingUnitSide, hitUnitIds, dyingUnitIds,
     skillActiveUnitId, critShake, damageFloats,
-    logs, logAreaRef, speed, toggleSpeed, skip,
+    logs, logAreaRef, speed, setSpeed, toggleSpeed, skip,
   } = useBattleAnimation(battleEngine, allyTeam, enemyTeam, onBattleEnd);
 
   // ── 渲染武将行 ──
@@ -152,7 +154,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
       if (!unit) return <div key={`empty-${side}-${position}-${idx}`} className="tk-bs-unit-empty" />;
       const floats = damageFloats.filter((f) => f.unitId === unit.id);
       return (
-        <div key={unit.id} style={{ position: 'relative' }}>
+        <div key={unit.id} className="tk-bs-unit-wrapper">
           <UnitCard
             unit={unit}
             side={side}
@@ -189,7 +191,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   if (!battleState) {
     return (
       <div className="tk-bs-overlay" data-testid="battle-scene-loading">
-        <div style={{ color: 'var(--tk-text-secondary)', textAlign: 'center', marginTop: '40vh' }}>
+        <div className="tk-bs-loading-text">
           正在准备战斗...
         </div>
       </div>
@@ -214,9 +216,11 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
           回合 {battleState.currentTurn}/{battleState.maxTurns}
         </div>
         <div className="tk-bs-controls">
-          <button className={`tk-bs-speed-btn ${speed === 2 ? 'tk-bs-speed-btn--active' : ''}`} onClick={toggleSpeed} data-testid="battle-speed-btn">
-            {speed}x
-          </button>
+          <BattleSpeedControl
+            currentSpeed={speed as BattleSpeedLevel}
+            onSpeedChange={(newSpeed) => setSpeed(newSpeed)}
+            disabled={isFinished}
+          />
           {!isFinished && <button className="tk-bs-skip-btn" onClick={skip} data-testid="battle-skip-btn">跳过</button>}
         </div>
       </div>

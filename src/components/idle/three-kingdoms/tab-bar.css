@@ -32,10 +32,165 @@
   display: none;
 }
 
-.tk-tab-bar .tk-feature-menu {
+/* ── 「更多▼」Tab 下拉菜单容器 ── */
+.tk-tab-btn-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
-  margin-left: 4px;
+  flex: 1;
+  max-width: 120px;
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.tk-tab-btn-wrapper .tk-tab-btn {
+  width: 100%;
+}
+
+/* ── 「更多▼」下拉面板 ── */
+.tk-more-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  width: 260px;
+  max-height: 420px;
+  background: rgba(20, 25, 35, 0.98);
+  border: 1px solid rgba(200, 168, 76, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: tk-more-dropdown-enter 0.15s ease-out;
+  z-index: var(--tk-z-dropdown, 100);
+}
+
+@keyframes tk-more-dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tk-more-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+}
+
+.tk-more-dropdown-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-gold, #C9A84C);
+  letter-spacing: 1px;
+}
+
+.tk-more-dropdown-count {
+  font-size: 10px;
+  color: var(--tk-text-muted, #666);
+}
+
+.tk-more-dropdown-list {
+  overflow-y: auto;
+  padding: 4px 6px 6px;
+}
+
+.tk-more-dropdown-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tk-more-dropdown-list::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 76, 0.2);
+  border-radius: 2px;
+}
+
+.tk-more-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tk-text-primary, #F0E6D3);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  text-align: left;
+  font-family: inherit;
+  position: relative;
+}
+
+.tk-more-dropdown-item:hover {
+  background: rgba(200, 168, 76, 0.1);
+}
+
+.tk-more-dropdown-item:active {
+  background: rgba(200, 168, 76, 0.18);
+}
+
+.tk-more-dropdown-item--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tk-more-dropdown-item--disabled:hover {
+  background: transparent;
+}
+
+.tk-more-dropdown-item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.tk-more-dropdown-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-more-dropdown-item-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tk-text-primary, #F0E6D3);
+}
+
+.tk-more-dropdown-item-desc {
+  font-size: 10px;
+  color: var(--tk-text-muted, #666);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tk-more-dropdown-item-badge {
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--tk-red, #B8423A);
+  border-radius: 9px;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+
+.tk-more-dropdown-item-locked {
+  font-size: 12px;
+  flex-shrink: 0;
 }
 
 .tk-tab-btn {
@@ -85,6 +240,51 @@
 
 .tk-tab-icon {
   font-size: 16px;
+}
+
+/* ── Tab 红点 Badge ── */
+.tk-tab-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.tk-tab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 纯圆点 badge：8px */
+.tk-tab-badge--dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FF4444;
+  box-shadow: 0 0 0 1px rgba(20, 25, 35, 0.6);
+}
+
+/* 数字 badge：最小 16px 圆形 */
+.tk-tab-badge--count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #FF4444;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 0 0 1px rgba(20, 25, 35, 0.6);
 }
 
 .tk-tab-label {
@@ -147,7 +347,53 @@
   }
 
   .tk-calendar {
+    /* ACC-01-48 修复：手机端日历改为紧凑模式 */
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 4px;
+    font-size: 9px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .tk-calendar-era {
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .tk-calendar-season {
+    font-size: 9px;
+    padding: 1px 3px;
+  }
+
+  .tk-calendar-weather {
+    font-size: 9px;
+    padding: 1px 3px;
+  }
+
+  /* 手机端隐藏日期详情，仅保留年号+季节+天气 */
+  .tk-calendar-date {
     display: none;
+  }
+
+  /* ── 手机端「更多▼」下拉菜单 ── */
+  .tk-tab-btn-wrapper {
+    flex: 1;
+    max-width: none;
+    min-width: 44px;
+  }
+
+  .tk-more-dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 44px;
+    left: 4px;
+    right: 4px;
+    width: auto;
+    max-height: 50vh;
+    border-radius: 12px 12px 4px 4px;
   }
 }
 

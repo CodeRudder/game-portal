@@ -19,8 +19,8 @@
  */
 
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, cleanup, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import InteractiveTutorial from '../InteractiveTutorial';
 import type { TutorialStep } from '../InteractiveTutorial';
@@ -67,7 +67,12 @@ function renderTutorial(overrides: Partial<{ currentStep: number; steps: Tutoria
     onComplete: vi.fn(),
     ...overrides,
   };
-  return render(<InteractiveTutorial {...props} />);
+  // 使用 act 包裹渲染，避免 MutationObserver/setInterval 导致的异步状态更新警告
+  let result: ReturnType<typeof render>;
+  act(() => {
+    result = render(<InteractiveTutorial {...props} />);
+  });
+  return result!;
 }
 
 // ─────────────────────────────────────────────
@@ -84,6 +89,10 @@ describe('InteractiveTutorial', () => {
       <div class="recruit-btn" style="position:absolute;top:200px;left:10px;width:120px;height:40px;"></div>
       <div class="hero-card" style="position:absolute;top:300px;left:10px;width:150px;height:200px;"></div>
     `;
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   // 1. 渲染遮罩
@@ -206,16 +215,18 @@ describe('InteractiveTutorial', () => {
     const { rerender } = renderTutorial({ currentStep: 0 });
     expect(screen.getByTestId('tutorial-title').textContent).toBe('欢迎来到三国霸业');
 
-    rerender(
-      <InteractiveTutorial
-        steps={mockSteps}
-        currentStep={2}
-        onNext={vi.fn()}
-        onPrev={vi.fn()}
-        onSkip={vi.fn()}
-        onComplete={vi.fn()}
-      />
-    );
+    act(() => {
+      rerender(
+        <InteractiveTutorial
+          steps={mockSteps}
+          currentStep={2}
+          onNext={vi.fn()}
+          onPrev={vi.fn()}
+          onSkip={vi.fn()}
+          onComplete={vi.fn()}
+        />,
+      );
+    });
     expect(screen.getByTestId('tutorial-title').textContent).toBe('招募你的第一位武将');
     expect(screen.getByTestId('tutorial-description').textContent).toBe('点击招募按钮获取武将');
   });

@@ -200,12 +200,12 @@ describe('ResourceCost', () => {
   // 6. 数量格式化
   // ═══════════════════════════════════════════
 
-  it('千位以上数量应显示K格式', () => {
+  it('千位以上数量应正常显示', () => {
     const items = [makeItem({ type: 'copper', name: '铜钱', required: 1500, current: 2000 })];
     render(<ResourceCost items={items} />);
-    // formatResourceAmount(2000) => "2.0K"
-    expect(screen.getByText('2.0K')).toBeInTheDocument();
-    expect(screen.getByText('1.5K')).toBeInTheDocument();
+    // formatResourceAmount(2000) => "2000"
+    expect(screen.getByText('2000')).toBeInTheDocument();
+    expect(screen.getByText('1500')).toBeInTheDocument();
   });
 
   it('万位以上数量应显示万格式', () => {
@@ -216,12 +216,12 @@ describe('ResourceCost', () => {
     expect(screen.getByText('1.5万')).toBeInTheDocument();
   });
 
-  it('百万以上数量应显示M格式', () => {
-    const items = [makeItem({ type: 'copper', name: '铜钱', required: 1500000, current: 2000000 })];
+  it('亿级以上数量应显示亿格式', () => {
+    const items = [makeItem({ type: 'copper', name: '铜钱', required: 150000000, current: 200000000 })];
     render(<ResourceCost items={items} />);
-    // formatResourceAmount(2000000) => "2.0M"
-    expect(screen.getByText('2.0M')).toBeInTheDocument();
-    expect(screen.getByText('1.5M')).toBeInTheDocument();
+    // formatResourceAmount(200000000) => "2.0亿"
+    expect(screen.getByText('2.0亿')).toBeInTheDocument();
+    expect(screen.getByText('1.5亿')).toBeInTheDocument();
   });
 
   // ═══════════════════════════════════════════

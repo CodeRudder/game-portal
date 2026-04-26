@@ -31,6 +31,7 @@ import type {
   TerritoryProductionSummary,
 } from '@/games/three-kingdoms/core/map';
 import TerritoryInfoPanel from './TerritoryInfoPanel';
+import SiegeConfirmModal from './SiegeConfirmModal';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import './WorldMapTab.css';
 
@@ -44,10 +45,14 @@ export interface WorldMapTabProps {
   productionSummary: TerritoryProductionSummary | null;
   /** 快照版本号（用于触发重渲染） */
   snapshotVersion: number;
+  /** 引擎实例（用于攻城条件检查和执行） */
+  engine?: any;
   /** 选中领土回调 */
   onSelectTerritory?: (id: string) => void;
-  /** 发起攻城回调 */
+  /** 发起攻城回调（若不传则WorldMapTab内部集成攻城流程） */
   onSiegeTerritory?: (id: string) => void;
+  /** 升级领土回调 */
+  onUpgradeTerritory?: (id: string) => void;
 }
 
 // ─────────────────────────────────────────────
@@ -89,8 +94,10 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
   territories,
   productionSummary,
   snapshotVersion,
+  engine,
   onSelectTerritory,
   onSiegeTerritory,
+  onUpgradeTerritory,
 }) => {
   // ── 筛选状态 ──
   const [regionFilter, setRegionFilter] = useState<RegionId | 'all'>('all');
@@ -100,6 +107,10 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
 
   // ── 选中领土 ──
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // ── 攻城确认弹窗状态 ──
+  const [siegeTarget, setSiegeTarget] = useState<TerritoryData | null>(null);
+  const [siegeVisible, setSiegeVisible] = useState(false);
 
   // ── 筛选后的领土 ──
   const filteredTerritories = useMemo(() => {
@@ -149,9 +160,93 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
 
   const handleSiege = useCallback(
     (id: string) => {
-      onSiegeTerritory?.(id);
+      if (onSiegeTerritory) {
+        // 外部管理攻城流程时透传回调
+        onSiegeTerritory(id);
+        return;
+      }
+      // 内部集成攻城确认弹窗
+      const target = territories.find((t) => t.id === id);
+      if (target) {
+        setSiegeTarget(target);
+        setSiegeVisible(true);
+      }
     },
-    [onSiegeTerritory],
+    [onSiegeTerritory, territories],
+  );
+
+  // ── 攻城确认弹窗：条件校验 ──
+  const siegeConditionResult = useMemo(() => {
+    if (!siegeTarget || !engine) return null;
+    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
+    if (!mapSystem?.checkSiegeConditions) return null;
+    try {
+      return mapSystem.checkSiegeConditions(siegeTarget.id);
+    } catch {
+      return { canSiege: true };
+    }
+  }, [siegeTarget, engine, snapshotVersion]);
+
+  // ── 攻城确认弹窗：消耗预估 ──
+  const siegeCost = useMemo(() => {
+    if (!siegeTarget || !engine) return null;
+    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
+    if (!mapSystem?.calculateSiegeCost) return null;
+    try {
+      return mapSystem.calculateSiegeCost(siegeTarget.id);
+    } catch {
+      return { troops: 0, grain: 0 };
+    }
+  }, [siegeTarget, engine, snapshotVersion]);
+
+  // ── 攻城确认弹窗：可用兵力/粮草 ──
+  const availableTroops = useMemo(() => {
+    if (!engine) return 0;
+    return engine.getResourceAmount?.('troops') ?? 0;
+  }, [engine, snapshotVersion]);
+
+  const availableGrain = useMemo(() => {
+    if (!engine) return 0;
+    return engine.getResourceAmount?.('grain') ?? 0;
+  }, [engine, snapshotVersion]);
+
+  // ── 攻城确认弹窗：每日次数和冷却 ──
+  const dailySiegesRemaining = useMemo(() => {
+    if (!engine) return null;
+    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
+    return mapSystem?.getDailySiegesRemaining?.() ?? null;
+  }, [engine, snapshotVersion]);
+
+  const cooldownRemainingMs = useMemo(() => {
+    if (!engine) return 0;
+    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
+    return mapSystem?.getCooldownRemaining?.() ?? 0;
+  }, [engine, snapshotVersion]);
+
+  // ── 确认攻城执行 ──
+  const handleSiegeConfirm = useCallback(() => {
+    if (!siegeTarget || !engine) return;
+    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
+    if (mapSystem?.executeSiege) {
+      const result = mapSystem.executeSiege(siegeTarget.id);
+      // 攻城后清除选中状态，避免残留旧数据
+      setSelectedId(null);
+    }
+    setSiegeVisible(false);
+    setSiegeTarget(null);
+  }, [siegeTarget, engine]);
+
+  // ── 取消攻城弹窗 ──
+  const handleSiegeCancel = useCallback(() => {
+    setSiegeVisible(false);
+    setSiegeTarget(null);
+  }, []);
+
+  const handleUpgrade = useCallback(
+    (id: string) => {
+      onUpgradeTerritory?.(id);
+    },
+    [onUpgradeTerritory],
   );
 
   // ── 网格列数 ──
@@ -326,10 +421,25 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
             <TerritoryInfoPanel
               territory={selectedTerritory}
               onSiege={handleSiege}
+              onUpgrade={handleUpgrade}
             />
           )}
         </div>
       </div>
+
+      {/* ── 攻城确认弹窗 ── */}
+      <SiegeConfirmModal
+        visible={siegeVisible}
+        target={siegeTarget}
+        cost={siegeCost}
+        conditionResult={siegeConditionResult}
+        availableTroops={availableTroops}
+        availableGrain={availableGrain}
+        dailySiegesRemaining={dailySiegesRemaining}
+        cooldownRemainingMs={cooldownRemainingMs}
+        onConfirm={handleSiegeConfirm}
+        onCancel={handleSiegeCancel}
+      />
     </div>
   );
 };

@@ -56,6 +56,104 @@
   background: var(--tk-guide-overlay-bg);
 }
 
+/* ── 高亮镂空区域 ── */
+.tk-guide-highlight {
+  position: absolute;
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 215, 0, 0.6);
+  z-index: 1;
+  pointer-events: none;
+  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+  animation: guide-highlight-pulse 2s ease-in-out infinite;
+}
+
+@keyframes guide-highlight-pulse {
+  0%, 100% { border-color: rgba(255, 215, 0, 0.6); }
+  50% { border-color: rgba(255, 215, 0, 0.9); }
+}
+
+/* ── 步骤指示器 dots ── */
+.tk-guide-tooltip__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.tk-guide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
+}
+
+.tk-guide-dot--active {
+  background: var(--tk-guide-next-bg, #4a6cf7);
+  transform: scale(1.3);
+  box-shadow: 0 0 6px rgba(74, 108, 247, 0.4);
+}
+
+.tk-guide-dot--done {
+  background: var(--tk-gold, #c9a84c);
+}
+
+/* ── 奖励确认弹窗 ── */
+.tk-guide-overlay--reward {
+  z-index: calc(var(--tk-z-guide-mask) + 1);
+}
+
+.tk-guide-reward-confirm {
+  position: relative;
+  z-index: 1;
+  background: var(--tk-guide-tooltip-bg);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 300px;
+  width: 85%;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.15);
+  animation: guide-reward-appear 0.4s ease forwards;
+}
+
+@keyframes guide-reward-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tk-guide-reward-confirm__icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+  animation: guide-reward-bounce 0.6s ease 0.3s;
+}
+
+@keyframes guide-reward-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.tk-guide-reward-confirm__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFD700;
+  margin-bottom: 8px;
+}
+
+.tk-guide-reward-confirm__text {
+  font-size: 13px;
+  color: var(--tk-text-secondary, #b0b0b0);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
 .tk-guide-tooltip {
   position: relative;
   z-index: 1;
@@ -67,6 +165,18 @@
   width: 90%;
   color: var(--tk-text-secondary, #e0e0e0);
   box-shadow: var(--tk-guide-tooltip-shadow);
+  animation: tk-guide-step-enter 0.3s ease forwards;
+}
+
+@keyframes tk-guide-step-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Position variants */
@@ -112,8 +222,27 @@
 .tk-guide-tooltip__desc {
   font-size: 13px;
   line-height: 1.5;
-  margin: 0 0 16px;
+  margin: 0 0 8px;
   color: var(--tk-guide-desc-color);
+}
+
+/* 奖励展示 */
+.tk-guide-tooltip__reward {
+  padding: 6px 12px;
+  margin: 0 0 16px;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #FFD700;
+  text-align: center;
+  font-weight: 500;
+  animation: tk-guide-reward-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes tk-guide-reward-pulse {
+  0%, 100% { background: rgba(255, 215, 0, 0.08); }
+  50% { background: rgba(255, 215, 0, 0.14); }
 }
 
 .tk-guide-tooltip__actions {
@@ -160,20 +289,47 @@
   background: var(--tk-guide-next-hover-bg);
 }
 
+/* 触控反馈 */
+.tk-guide-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}
+
 .tk-guide-tooltip__progress {
   margin-top: 12px;
   text-align: center;
   font-size: 11px;
   color: var(--tk-guide-progress-color);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ═══════════════════════════════════════════
    响应式 — 手机端
    ═══════════════════════════════════════════ */
 @media (max-width: 767px) {
+  .tk-guide-overlay {
+    /* 防止手机端遮罩层穿透 */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .tk-guide-tooltip {
     max-width: 92vw;
     padding: 14px 16px;
+    /* 手机端：tooltip 固定在底部，避免被高亮元素遮挡 */
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    transform: none !important;
+    border-radius: 16px 16px 0 0;
+    max-width: 100%;
+    width: 100%;
+    /* 安全区域适配（iPhone X+ 底部） */
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    /* 底部弹出动效 */
+    animation: tk-guide-mobile-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
   .tk-guide-tooltip__title {
@@ -185,8 +341,636 @@
   }
 
   .tk-guide-btn {
-    min-height: 36px;
-    padding: 8px 12px;
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 13px;
+    /* 增大触摸目标区域 */
+    min-width: 60px;
+  }
+
+  .tk-guide-tooltip__actions {
+    gap: 10px;
+  }
+
+  /* 手机端高亮区域触摸穿透优化 */
+  .tk-guide-highlight {
+    transition: top 0.15s ease, left 0.15s ease, width 0.15s ease, height 0.15s ease;
+  }
+
+  /* 手机端步骤指示器 dots 增大触摸区域 */
+  .tk-guide-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* 手机端奖励确认弹窗适配 */
+  .tk-guide-reward-confirm {
+    max-width: 95vw;
+    width: 90%;
+    border-radius: 12px;
+    padding: 20px 16px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* 手机端 tooltip 底部滑入动画 */
+@keyframes tk-guide-mobile-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── 重玩引导按钮 ── */
+.tk-guide-btn--replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(200, 168, 76, 0.1);
+  border: 1px solid rgba(200, 168, 76, 0.3);
+  border-radius: 6px;
+  color: var(--tk-gold-light, #e8d48b);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tk-guide-btn--replay:hover {
+  background: rgba(200, 168, 76, 0.2);
+  border-color: var(--tk-gold, #c9a84c);
+}
+
+.tk-guide-btn--replay:active {
+  transform: scale(0.97);
+  background: rgba(200, 168, 76, 0.25);
+}
+
+/* ── 策略引导面板 ── */
+.tk-strategy-guide {
+  background: var(--tk-bg, #1a1a2e);
+  border: 1px solid var(--tk-guide-tooltip-border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--tk-guide-tooltip-radius, 12px);
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.tk-strategy-guide__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: var(--tk-text-primary, #fff);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tk-strategy-guide__header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tk-strategy-guide__header-icon {
+  font-size: 16px;
+}
+
+.tk-strategy-guide__header-title {
+  flex: 1;
+  text-align: left;
+  font-weight: 600;
+}
+
+.tk-strategy-guide__header-progress {
+  font-size: 12px;
+  color: var(--tk-text-muted, #888);
+}
+
+.tk-strategy-guide__header-arrow {
+  font-size: 12px;
+  color: var(--tk-text-muted, #888);
+  transition: transform 0.2s;
+}
+
+.tk-strategy-guide__header-arrow--expanded {
+  transform: rotate(90deg);
+}
+
+/* ── 策略引导面板展开/折叠过渡 ── */
+.tk-strategy-guide__content-wrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease;
+  opacity: 0;
+}
+
+.tk-strategy-guide__content-wrapper--expanded {
+  max-height: 600px;
+  border-top: 1px solid var(--tk-guide-tooltip-border, rgba(255, 255, 255, 0.08));
+  opacity: 1;
+}
+
+.tk-strategy-guide__content {
+  padding: 0 16px 16px;
+  overflow: hidden;
+  animation: tk-strategy-content-fade 0.2s ease forwards;
+}
+
+@keyframes tk-strategy-content-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 总进度 */
+.tk-strategy-guide__overview {
+  margin: 12px 0;
+}
+
+.tk-strategy-guide__progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tk-strategy-guide__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tk-gold, #c9a84c), var(--tk-gold-light, #e8d48b));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.tk-strategy-guide__progress-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--tk-text-muted, #888);
+}
+
+/* 阶段列表 */
+.tk-strategy-guide__phases {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tk-strategy-guide__phase {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+
+.tk-strategy-guide__phase--completed {
+  border-color: rgba(76, 175, 80, 0.2);
+  background: rgba(76, 175, 80, 0.05);
+}
+
+.tk-strategy-guide__phase--locked {
+  opacity: 0.5;
+}
+
+.tk-strategy-guide__phase-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tk-strategy-guide__phase-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tk-strategy-guide__phase-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-text-primary, #fff);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tk-strategy-guide__phase-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+  font-weight: 400;
+}
+
+.tk-strategy-guide__phase-badge--locked {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--tk-text-muted, #888);
+}
+
+.tk-strategy-guide__phase-desc {
+  font-size: 11px;
+  color: var(--tk-text-secondary, #b0b0b0);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.tk-strategy-guide__actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── 引导遮罩滚动支持 ── */
+.tk-guide-overlay {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 高亮镂空区域跟随滚动优化 */
+.tk-guide-highlight {
+  will-change: top, left, width, height;
+}
+
+/* ── 引导步骤切换过渡动画 ── */
+.tk-guide-tooltip {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* ── 策略引导面板手机端适配增强 ── */
+@media (max-width: 767px) {
+  .tk-guide-overlay {
+    /* 防止手机端遮罩层穿透 */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tk-guide-tooltip {
+    max-width: 95vw;
+    padding: 12px 14px;
+  }
+
+  .tk-guide-tooltip__actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tk-guide-btn {
+    flex: 1;
+    min-width: 0;
+    min-height: 38px;
+    padding: 8px 10px;
     font-size: 12px;
+  }
+
+  .tk-guide-reward-confirm {
+    max-width: 92vw;
+    padding: 18px 16px;
+  }
+
+  .tk-guide-reward-confirm__icon {
+    font-size: 32px;
+  }
+
+  .tk-guide-reward-confirm__title {
+    font-size: 14px;
+  }
+
+  .tk-guide-reward-confirm__text {
+    font-size: 12px;
+  }
+
+  /* 策略引导面板手机端 */
+  .tk-strategy-guide {
+    border-radius: 10px;
+  }
+
+  .tk-strategy-guide__header {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .tk-strategy-guide__content {
+    padding: 0 12px 12px;
+    animation: tk-strategy-content-expand-mobile 0.2s ease forwards;
+  }
+
+  @keyframes tk-strategy-content-expand-mobile {
+    from {
+      opacity: 0;
+      max-height: 0;
+    }
+    to {
+      opacity: 1;
+      max-height: 500px;
+    }
+  }
+
+  .tk-strategy-guide__phase {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .tk-strategy-guide__phase-icon {
+    font-size: 18px;
+  }
+
+  .tk-strategy-guide__phase-title {
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+
+  .tk-strategy-guide__phase-desc {
+    font-size: 10px;
+  }
+
+  .tk-strategy-guide__actions {
+    padding-top: 6px;
+  }
+
+  .tk-guide-btn--replay {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 12px;
+    min-height: 36px;
+  }
+
+  /* 手机端高亮区域触摸穿透优化 */
+  .tk-guide-highlight {
+    transition: top 0.15s ease, left 0.15s ease, width 0.15s ease, height 0.15s ease;
+  }
+
+  /* 手机端步骤指示器 dots 增大触摸区域 */
+  .tk-guide-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* 手机端步骤进度文字适配 */
+  .tk-guide-tooltip__progress {
+    font-size: 10px;
+  }
+}
+
+/* ── 超小屏幕适配（≤360px） ── */
+@media (max-width: 360px) {
+  .tk-guide-tooltip {
+    max-width: 98vw;
+    padding: 10px 12px;
+  }
+
+  .tk-guide-tooltip__title {
+    font-size: 13px;
+  }
+
+  .tk-guide-tooltip__desc {
+    font-size: 11px;
+  }
+
+  .tk-guide-tooltip__reward {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .tk-strategy-guide__phase-desc {
+    display: none;
+  }
+
+  /* 欢迎弹窗超小屏适配 */
+  .tk-guide-welcome {
+    padding: 16px 14px;
+  }
+
+  .tk-guide-welcome__title {
+    font-size: 16px;
+  }
+
+  .tk-guide-welcome__desc {
+    font-size: 11px;
+  }
+
+  .tk-guide-welcome__preview-item {
+    font-size: 10px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   欢迎弹窗 (GuideWelcomeModal)
+   ═══════════════════════════════════════════ */
+
+/* 欢迎弹窗遮罩层级（高于引导步骤遮罩） */
+.tk-guide-overlay--welcome {
+  z-index: calc(var(--tk-z-guide-mask) + 2);
+  background: rgba(0, 0, 0, 0.7);
+  /* 毛玻璃背景效果 */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.tk-guide-welcome {
+  position: relative;
+  z-index: 1;
+  background: var(--tk-guide-tooltip-bg);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 88%;
+  text-align: center;
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.08);
+  animation: tk-guide-welcome-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes tk-guide-welcome-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 装饰区域 */
+.tk-guide-welcome__decor {
+  margin-bottom: 12px;
+}
+
+.tk-guide-welcome__decor-icon {
+  display: inline-block;
+  font-size: 48px;
+  animation: tk-guide-welcome-float 3s ease-in-out infinite;
+}
+
+@keyframes tk-guide-welcome-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.tk-guide-welcome__decor-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--tk-gold, #c9a84c);
+  letter-spacing: 4px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* 欢迎标题 */
+.tk-guide-welcome__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tk-text-primary, #fff);
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+/* 引导介绍 */
+.tk-guide-welcome__desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--tk-text-secondary, #b0b0b0);
+  margin: 0 0 16px;
+}
+
+.tk-guide-welcome__desc strong {
+  color: var(--tk-gold, #FFD700);
+  font-weight: 600;
+}
+
+/* 步骤预览网格 */
+.tk-guide-welcome__preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tk-guide-welcome__preview-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--tk-text-secondary, #b0b0b0);
+  white-space: nowrap;
+}
+
+.tk-guide-welcome__preview-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* 操作按钮 */
+.tk-guide-welcome__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tk-guide-welcome__btn-start {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 44px;
+  /* 渐变按钮效果 */
+  background: linear-gradient(135deg, var(--tk-guide-next-bg, #4a6cf7), #6b8cff);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.tk-guide-welcome__btn-start:hover {
+  background: linear-gradient(135deg, #3b5de7, #5a7def);
+  box-shadow: 0 4px 16px rgba(74, 108, 247, 0.4);
+  transform: translateY(-1px);
+}
+
+.tk-guide-welcome__btn-start:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.tk-guide-welcome__btn-skip {
+  width: 100%;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--tk-text-muted, #888);
+  border: none;
+  background: transparent;
+}
+
+.tk-guide-welcome__btn-skip:hover {
+  color: var(--tk-text-secondary, #aaa);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ── 欢迎弹窗手机端适配 ── */
+@media (max-width: 767px) {
+  .tk-guide-welcome {
+    max-width: 95vw;
+    width: 92%;
+    padding: 24px 18px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    border-radius: 14px;
+  }
+
+  .tk-guide-welcome__decor-icon {
+    font-size: 40px;
+  }
+
+  .tk-guide-welcome__title {
+    font-size: 18px;
+  }
+
+  .tk-guide-welcome__desc {
+    font-size: 12px;
+  }
+
+  .tk-guide-welcome__preview {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .tk-guide-welcome__preview-item {
+    font-size: 10px;
+  }
+
+  .tk-guide-welcome__btn-start {
+    padding: 14px 20px;
+    font-size: 14px;
+    min-height: 48px;
+  }
+}
+
+/* 欢迎弹窗横屏适配 */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-guide-welcome {
+    max-width: 80vw;
+    padding: 16px 18px;
+  }
+
+  .tk-guide-welcome__preview {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .tk-guide-welcome__decor-icon {
+    font-size: 32px;
   }
 }

@@ -249,4 +249,25 @@ describe('BattleFormationModal', () => {
     const fightBtn = screen.getByText(/出征/);
     expect(fightBtn).toBeDisabled();
   });
+
+  it('一键布阵应按防御降序分配前排后排', () => {
+    // 3个武将：关羽(防御90)、刘备(防御85)、张飞(防御80)
+    // 期望：关羽、刘备、张飞 按防御降序填入编队
+    const engine = makeMockEngine(generals);
+    render(<BattleFormationModal engine={engine} stage={makeStage()} onClose={onClose} snapshotVersion={1} />);
+
+    fireEvent.click(screen.getByTestId('bfm-auto-btn'));
+
+    // 验证 setFormation 被调用
+    expect(engine.setFormation).toHaveBeenCalled();
+
+    // 获取传入的武将ID顺序 — 应按防御降序排列
+    const callArgs = (engine.setFormation as ReturnType<typeof vi.fn>).mock.calls[0];
+    const [, generalIds] = callArgs;
+
+    // 防御降序：关羽(90) > 刘备(85) > 张飞(80)
+    expect(generalIds[0]).toBe('guanyu');   // 防御90 → 前排 slot 0
+    expect(generalIds[1]).toBe('liubei');   // 防御85 → 前排 slot 1
+    expect(generalIds[2]).toBe('zhangfei'); // 防御80 → 前排 slot 2
+  });
 });

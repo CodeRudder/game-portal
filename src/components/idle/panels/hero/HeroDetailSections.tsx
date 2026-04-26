@@ -9,7 +9,7 @@
  * - HeroDetailBreakthrough: 突破状态
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { GeneralData, Quality, SkillData } from '@/games/three-kingdoms/engine';
 import {
   QUALITY_LABELS,
@@ -19,9 +19,9 @@ import {
 } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { EnhancePreview } from '@/games/three-kingdoms/engine';
-import { Toast } from '@/components/idle/common/Toast';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import { FACTION_BONDS, PARTNER_BONDS, BondType } from '@/games/three-kingdoms/engine/hero/bond-config';
+import { HeroAwakeningSection } from './HeroAwakeningSection';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -65,12 +65,14 @@ function formatNum(n: number): string {
 // ─────────────────────────────────────────────
 interface HeroDetailHeaderProps {
   general: GeneralData;
+  currentStar: number;
   onCompare?: (general: GeneralData) => void;
   onStarUp: () => void;
 }
 
 export const HeroDetailHeader: React.FC<HeroDetailHeaderProps> = ({
   general,
+  currentStar,
   onCompare,
   onStarUp,
 }) => {
@@ -95,14 +97,16 @@ export const HeroDetailHeader: React.FC<HeroDetailHeaderProps> = ({
           ⚖️ 对比
         </button>
       )}
-      {/* P0: 升星按钮 — 打开升星弹窗 */}
-      <button
-        className="tk-hero-detail-compare-btn"
-        onClick={onStarUp}
-        title="武将升星"
-      >
-        ⭐ 升星
-      </button>
+      {/* Bug-4修复：满星武将隐藏升星按钮 */}
+      {currentStar < 6 && (
+        <button
+          className="tk-hero-detail-compare-btn"
+          onClick={onStarUp}
+          title="武将升星"
+        >
+          ⭐ 升星
+        </button>
+      )}
     </div>
   );
 };
@@ -252,16 +256,35 @@ HeroDetailLeftPanel.displayName = 'HeroDetailLeftPanel';
 // ─────────────────────────────────────────────
 interface HeroDetailSkillsProps {
   skills: readonly SkillData[];
+  /** 点击技能卡片的回调（打开技能升级面板） */
+  onSkillClick?: () => void;
 }
 
-export const HeroDetailSkills: React.FC<HeroDetailSkillsProps> = ({ skills }) => (
+export const HeroDetailSkills: React.FC<HeroDetailSkillsProps> = ({ skills, onSkillClick }) => (
   <div className="tk-hero-detail-skills">
-    <h4 className="tk-hero-detail-section-title">技能</h4>
+    <h4 className="tk-hero-detail-section-title">
+      技能
+      {onSkillClick && (
+        <button
+          className="tk-hero-detail-skill-upgrade-entry"
+          onClick={onSkillClick}
+          data-testid="btn-open-skill-upgrade"
+        >
+          ⚒️ 升级
+        </button>
+      )}
+    </h4>
     {skills.length === 0 ? (
       <div className="tk-hero-detail-skill-empty">暂无技能</div>
     ) : (
       skills.map((skill: SkillData) => (
-        <div key={skill.id} className="tk-hero-detail-skill-item">
+        <div
+          key={skill.id}
+          className={['tk-hero-detail-skill-item', onSkillClick ? 'tk-hero-detail-skill-item--clickable' : ''].filter(Boolean).join(' ')}
+          onClick={onSkillClick}
+          role={onSkillClick ? 'button' : undefined}
+          tabIndex={onSkillClick ? 0 : undefined}
+        >
           <div className="tk-hero-detail-skill-header">
             <span className="tk-hero-detail-skill-name">{skill.name}</span>
             <span className="tk-hero-detail-skill-type">
@@ -319,18 +342,41 @@ interface HeroDetailBreakthroughProps {
   engine: ThreeKingdomsEngine;
   generalId: string;
   currentLevel: number;
+  /** Bug-6 修复：觉醒成功回调，通知父组件刷新数据 */
+  onAwakenComplete?: () => void;
 }
 
 export const HeroDetailBreakthrough: React.FC<HeroDetailBreakthroughProps> = ({
   engine,
   generalId,
   currentLevel,
+  onAwakenComplete,
 }) => {
   const starSystem = engine.getHeroStarSystem?.();
   if (!starSystem) return null;
 
   const stage = starSystem.getBreakthroughStage(generalId);
   const levelCap = starSystem.getLevelCap(generalId);
+
+  // ── 觉醒系统数据 ──
+  const awakeningSys = engine.getAwakeningSystem?.();
+  const isAwakened = awakeningSys?.isAwakened(generalId) ?? false;
+  const awakenedLevelCap = awakeningSys?.getAwakenedLevelCap(generalId) ?? levelCap;
+
+  // 觉醒条件检查
+  const eligibility = awakeningSys?.checkAwakeningEligible(generalId);
+
+  // 觉醒资源检查
+  const awakeningResources = useMemo(() => {
+    if (!awakeningSys || isAwakened) return null;
+    return {
+      copper: engine.getResourceAmount('gold'),
+      breakthroughStones: engine.getResourceAmount('breakthroughStone'),
+      skillBooks: engine.getResourceAmount('skillBook'),
+      awakeningStones: engine.getResourceAmount('awakeningStone'),
+      fragments: engine.getHeroSystem().getFragments(generalId),
+    };
+  }, [awakeningSys, isAwakened, engine, generalId]);
 
   return (
     <div className="tk-hero-detail-breakthrough" data-testid="hero-detail-breakthrough">
@@ -345,15 +391,31 @@ export const HeroDetailBreakthrough: React.FC<HeroDetailBreakthroughProps> = ({
         <div className="tk-hero-detail-breakthrough-row">
           <span className="tk-hero-detail-breakthrough-label">等级上限</span>
           <span className="tk-hero-detail-breakthrough-value" data-testid="breakthrough-level-cap">
-            Lv.{levelCap}
+            Lv.{isAwakened ? awakenedLevelCap : levelCap}
+            {isAwakened && <span style={{ color: '#ff9800', marginLeft: 4 }}>已觉醒</span>}
           </span>
         </div>
-        {currentLevel >= levelCap && (
+        {currentLevel >= levelCap && !isAwakened && (
           <div className="tk-hero-detail-breakthrough-hint" data-testid="breakthrough-hint">
             ⚠️ 已达等级上限，需突破才能继续升级
           </div>
         )}
       </div>
+
+      {/* 觉醒区域 — 委托给 HeroAwakeningSection 组件 */}
+      {eligibility && (
+        <HeroAwakeningSection
+          engine={engine}
+          generalId={generalId}
+          isAvailable={false}
+          eligibility={eligibility}
+          resources={awakeningResources}
+          awakeningSys={awakeningSys}
+          isAwakened={isAwakened}
+          awakenedLevelCap={awakenedLevelCap}
+          onAwakenComplete={onAwakenComplete}
+        />
+      )}
     </div>
   );
 };

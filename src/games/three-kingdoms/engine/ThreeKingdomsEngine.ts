@@ -468,6 +468,47 @@ export class ThreeKingdomsEngine {
   /** 获取觉醒系统实例 */
   getAwakeningSystem(): AwakeningSystem { return this.awakeningSystem; }
 
+  /**
+   * 发放引导奖励 — 将 TutorialReward[] 实际写入玩家资源
+   *
+   * 引导步骤完成时 TutorialStepManager 会 emit tutorial:rewardGranted 事件，
+   * 但事件本身不修改资源。此方法由 UI 层（GuideOverlay）在引导步骤完成时调用，
+   * 将奖励实际发放到玩家资源系统。
+   *
+   * 支持的奖励类型：
+   * - currency: 铜钱(copper)、粮草(grain) 等 → resource.addResource
+   * - item: 招贤令(recruit_ticket)、科技点等 → resource.addResource
+   * - title/package: 仅记录，不涉及资源修改
+   *
+   * @param rewards - 奖励列表
+   * @returns 实际发放的奖励列表（跳过无法识别的类型）
+   */
+  grantTutorialRewards(rewards: ReadonlyArray<{ type: string; rewardId: string; name: string; amount: number }>): Array<{ rewardId: string; name: string; amount: number }> {
+    const granted: Array<{ rewardId: string; name: string; amount: number }> = [];
+    for (const r of rewards) {
+      if (r.type === 'currency' || r.type === 'item') {
+        // 货币和道具都通过 resource 系统发放
+        // rewardId 映射到 ResourceType：copper→gold, grain→grain, recruit_ticket→recruitToken
+        const resourceTypeMap: Record<string, string> = {
+          copper: 'gold',
+          grain: 'grain',
+          recruit_ticket: 'recruitToken',
+          skill_point: 'skillPoint',
+          tech_point: 'techPoint',
+        };
+        const resourceType = resourceTypeMap[r.rewardId] ?? r.rewardId;
+        try {
+          this.resource.addResource(resourceType as import('../shared/types').ResourceType, r.amount);
+          granted.push({ rewardId: r.rewardId, name: r.name, amount: r.amount });
+        } catch {
+          gameLog.warn(`[grantTutorialRewards] 无法发放资源 ${resourceType}×${r.amount}`);
+        }
+      }
+      // title/package 类型仅记录，不涉及资源修改
+    }
+    return granted;
+  }
+
   // ── 私有方法 ──
 
   private get heroSystems(): HeroSystems {

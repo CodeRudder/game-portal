@@ -10,6 +10,9 @@
  * - 满突状态
  * - 等级上限变化提示
  * - 突破回调调用
+ *
+ * 等级上限数据来源：engine/hero/star-up-config.ts
+ * INITIAL_LEVEL_CAP=50, BREAKTHROUGH_TIERS: [60, 70, 80, 100]
  */
 
 import React from 'react';
@@ -21,11 +24,12 @@ import HeroBreakthroughPanel from '../HeroBreakthroughPanel';
 vi.mock('../HeroBreakthroughPanel.css', () => ({}));
 
 // ── 默认 Props ──
+// 对齐引擎配置：初始50级，一阶突破后60级
 const defaultProps = {
   heroId: 'guanyu',
   currentBreakthrough: 0,
-  levelCap: 30,
-  materials: { fragments: 20, copper: 5000, breakthroughStones: 5 },
+  levelCap: 50,
+  materials: { fragments: 30, copper: 20000, breakthroughStones: 5 },
   onBreakthrough: vi.fn(),
 };
 
@@ -41,7 +45,7 @@ describe('HeroBreakthroughPanel', () => {
   });
 
   it('renders breakthrough stage 2/4', () => {
-    render(<HeroBreakthroughPanel {...defaultProps} currentBreakthrough={2} levelCap={50} />);
+    render(<HeroBreakthroughPanel {...defaultProps} currentBreakthrough={2} levelCap={70} />);
     expect(screen.getByTestId('breakthrough-stage')).toHaveTextContent('2 / 4');
   });
 
@@ -58,7 +62,8 @@ describe('HeroBreakthroughPanel', () => {
   it('shows correct required amounts for stage 0', () => {
     render(<HeroBreakthroughPanel {...defaultProps} />);
     const materialsSection = screen.getByTestId('breakthrough-materials');
-    expect(materialsSection).toHaveTextContent('20');
+    // 一阶突破碎片需求 = 30（来自 star-up-config.ts）
+    expect(materialsSection).toHaveTextContent('30');
   });
 
   // 3. 突破按钮可点击
@@ -82,7 +87,7 @@ describe('HeroBreakthroughPanel', () => {
     render(
       <HeroBreakthroughPanel
         {...defaultProps}
-        materials={{ fragments: 5, copper: 5000, breakthroughStones: 5 }}
+        materials={{ fragments: 5, copper: 20000, breakthroughStones: 5 }}
       />,
     );
     const btn = screen.getByTestId('breakthrough-btn');
@@ -94,7 +99,7 @@ describe('HeroBreakthroughPanel', () => {
     render(
       <HeroBreakthroughPanel
         {...defaultProps}
-        materials={{ fragments: 20, copper: 1000, breakthroughStones: 5 }}
+        materials={{ fragments: 30, copper: 1000, breakthroughStones: 5 }}
       />,
     );
     const btn = screen.getByTestId('breakthrough-btn');
@@ -105,7 +110,7 @@ describe('HeroBreakthroughPanel', () => {
     render(
       <HeroBreakthroughPanel
         {...defaultProps}
-        materials={{ fragments: 20, copper: 5000, breakthroughStones: 1 }}
+        materials={{ fragments: 30, copper: 20000, breakthroughStones: 1 }}
       />,
     );
     const btn = screen.getByTestId('breakthrough-btn');
@@ -122,25 +127,26 @@ describe('HeroBreakthroughPanel', () => {
     expect(roadmap).toHaveTextContent('四阶');
   });
 
-  it('displays level caps in roadmap nodes (30→40→50→60→70)', () => {
+  it('displays level caps in roadmap nodes (50→60→70→80→100)', () => {
     render(<HeroBreakthroughPanel {...defaultProps} />);
     const roadmap = screen.getByTestId('breakthrough-roadmap');
-    expect(roadmap).toHaveTextContent('Lv.30');
-    expect(roadmap).toHaveTextContent('Lv.40');
     expect(roadmap).toHaveTextContent('Lv.50');
     expect(roadmap).toHaveTextContent('Lv.60');
     expect(roadmap).toHaveTextContent('Lv.70');
+    expect(roadmap).toHaveTextContent('Lv.80');
+    expect(roadmap).toHaveTextContent('Lv.100');
   });
 
   // 6. 等级上限变化提示
   it('shows next level cap hint when not maxed', () => {
     render(<HeroBreakthroughPanel {...defaultProps} />);
-    expect(screen.getByTestId('breakthrough-next-cap')).toHaveTextContent('→ Lv.40');
+    // 一阶突破后等级上限 = 60（来自 star-up-config.ts）
+    expect(screen.getByTestId('breakthrough-next-cap')).toHaveTextContent('→ Lv.60');
   });
 
   it('shows current level cap value', () => {
-    render(<HeroBreakthroughPanel {...defaultProps} levelCap={30} />);
-    expect(screen.getByTestId('breakthrough-level-cap')).toHaveTextContent('Lv.30');
+    render(<HeroBreakthroughPanel {...defaultProps} levelCap={50} />);
+    expect(screen.getByTestId('breakthrough-level-cap')).toHaveTextContent('Lv.50');
   });
 
   // 7. 满突状态
@@ -149,7 +155,7 @@ describe('HeroBreakthroughPanel', () => {
       <HeroBreakthroughPanel
         {...defaultProps}
         currentBreakthrough={4}
-        levelCap={70}
+        levelCap={100}
       />,
     );
     expect(screen.getByTestId('breakthrough-stage')).toHaveTextContent('已满突');
@@ -162,7 +168,7 @@ describe('HeroBreakthroughPanel', () => {
       <HeroBreakthroughPanel
         {...defaultProps}
         currentBreakthrough={4}
-        levelCap={70}
+        levelCap={100}
       />,
     );
     expect(screen.queryByTestId('breakthrough-materials')).not.toBeInTheDocument();

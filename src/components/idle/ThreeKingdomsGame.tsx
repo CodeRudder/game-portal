@@ -21,7 +21,7 @@
  */
 
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
+import { ThreeKingdomsEngine, shouldShowOfflinePopup } from '@/games/three-kingdoms/engine';
 import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine';
 import type {
   EngineSnapshot,
@@ -39,6 +39,7 @@ import StoryEventModal from '@/components/idle/panels/event/StoryEventModal';
 import TabBar, {
   type TabId,
   type TabConfig,
+  type TabBadges,
   FEATURE_ITEMS,
   FEATURE_TO_TAB,
 } from './three-kingdoms/TabBar';
@@ -92,6 +93,13 @@ const ThreeKingdomsGame: React.FC = () => {
   // ── 功能面板状态 ──
   const [openFeature, setOpenFeature] = useState<FeaturePanelId | null>(null);
 
+  // ── 「更多▼」下拉菜单状态 ──
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+
+  const handleMoreToggle = useCallback((open: boolean) => {
+    setMoreMenuOpen(open);
+  }, []);
+
   // ── 首次启动欢迎弹窗 ──
   const [showWelcome, setShowWelcome] = useState(false);
 
@@ -138,11 +146,8 @@ const ThreeKingdomsGame: React.FC = () => {
       if (!offlineEarnings) {
         engine.init();
       } else {
-        const hasEarnings = offlineEarnings.earned.grain > 0
-          || offlineEarnings.earned.gold > 0
-          || offlineEarnings.earned.troops > 0
-          || offlineEarnings.earned.mandate > 0;
-        if (hasEarnings) {
+        // 只有离线超过 300 秒（5分钟）才弹出离线收益弹窗
+        if (shouldShowOfflinePopup(offlineEarnings.offlineSeconds)) {
           setOfflineReward(offlineEarnings);
         }
       }
@@ -280,6 +285,26 @@ const ThreeKingdomsGame: React.FC = () => {
 
   const { resources, productionRates, caps, buildings, calendar } = snapshot;
 
+  // ── ACC-03 P0: 溢出预判 — 计算即将到来的资源收益（pendingGains） ──
+  // 从生产速率推算下一个周期（60秒）内即将入账的资源量，
+  // 用于 ResourceBar 的 overflowWarnings 横幅预判。
+  const pendingGains = useMemo(() => {
+    if (!engine) return undefined;
+    try {
+      const gains: Partial<Record<string, number>> = {};
+      // 使用 snapshot 中已有的 productionRates，推算 60 秒内的产出
+      for (const [resType, rate] of Object.entries(productionRates)) {
+        if (typeof rate === 'number' && rate > 0) {
+          // 60 秒内的预期收益
+          gains[resType] = rate * 60;
+        }
+      }
+      return Object.keys(gains).length > 0 ? gains : undefined;
+    } catch {
+      return undefined;
+    }
+  }, [engine, productionRates]);
+
   // ── 建筑升级完成回调 ──
   const handleUpgradeComplete = useCallback((type: BuildingType) => {
     setSnapshotVersion(v => v + 1);
@@ -304,6 +329,10 @@ const ThreeKingdomsGame: React.FC = () => {
       return;
     }
     setActiveTab(tab.id);
+    // ACC-01-35 修复：切换Tab时自动关闭功能面板，避免内容重叠
+    setOpenFeature(null);
+    // Bug-5修复：切换Tab时关闭更多菜单
+    setMoreMenuOpen(false);
   }, []);
 
   // ── 功能菜单选择 ──
@@ -314,6 +343,8 @@ const ThreeKingdomsGame: React.FC = () => {
     } else {
       setOpenFeature(id as FeaturePanelId);
     }
+    // 关闭「更多▼」下拉菜单
+    setMoreMenuOpen(false);
   }, []);
 
   // ── 功能面板关闭 ──
@@ -382,6 +413,32 @@ const ThreeKingdomsGame: React.FC = () => {
     });
   }, [snapshotVersion]);
 
+  // ── Tab 红点 badge（由引擎 HeroBadgeSystem 驱动） ──
+  const tabBadges: TabBadges = useMemo(() => {
+    if (!engine) return {};
+
+    try {
+      const badgeSystem = engine.getHeroBadgeSystem();
+      const state = badgeSystem.getState();
+      const badges: TabBadges = {};
+
+      // 武将 Tab：聚合可升级 + 可升星数量
+      const heroBadgeCount = state.tabLevelBadge + state.tabStarBadge;
+      if (heroBadgeCount > 0) {
+        badges.hero = { count: heroBadgeCount };
+      }
+
+      // 主界面入口红点 — 映射到"天下"Tab
+      if (state.mainEntryRedDot) {
+        badges.map = { dot: true };
+      }
+
+      return badges;
+    } catch {
+      return {};
+    }
+  }, [engine, snapshotVersion]);
+
   // ── 首次启动欢迎弹窗回调 ──
   const handleWelcomeClose = useCallback(() => {
     setShowWelcome(false);
@@ -444,6 +501,7 @@ const ThreeKingdomsGame: React.FC = () => {
           rates={productionRates}
           caps={caps}
           buildings={buildings}
+          pendingGains={pendingGains}
         />
 
         {/* 急报横幅（资源栏下方） */}
@@ -471,7 +529,10 @@ const ThreeKingdomsGame: React.FC = () => {
           onTabChange={handleTabChange}
           featureMenuItems={featureMenuItems}
           onFeatureSelect={handleFeatureSelect}
+          onMoreToggle={handleMoreToggle}
+          moreMenuOpen={moreMenuOpen}
           calendar={calendar}
+          tabBadges={tabBadges}
         />
       </div>
 

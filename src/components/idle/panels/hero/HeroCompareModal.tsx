@@ -52,6 +52,7 @@ const HeroCompareModal: React.FC<HeroCompareModalProps> = ({
   }, [onClose]);
 
   const heroSystem = engine.getHeroSystem();
+  const heroStarSystem = engine.getHeroStarSystem();
   const allGenerals = engine.getGenerals().filter((g) => g.id !== baseGeneral.id);
 
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -77,8 +78,8 @@ const HeroCompareModal: React.FC<HeroCompareModalProps> = ({
   }, [baseGeneral, compareGeneral]);
 
   // 战力
-  const basePower = heroSystem.calculatePower(baseGeneral);
-  const comparePower = compareGeneral ? heroSystem.calculatePower(compareGeneral) : 0;
+  const basePower = heroSystem.calculatePower(baseGeneral, heroStarSystem.getStar(baseGeneral.id));
+  const comparePower = compareGeneral ? heroSystem.calculatePower(compareGeneral, heroStarSystem.getStar(compareGeneral.id)) : 0;
 
   return (
     <div data-testid="tk-hero-compare-modal" className="tk-compare-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>

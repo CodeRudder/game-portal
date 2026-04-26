@@ -7,6 +7,7 @@
  * - 互斥分支可视化（锁定状态）
  * - 当前研究进度条
  * - 点击节点打开详情弹窗
+ * - 离线研究收益面板
  *
  * PC端：三路线并排展示
  * 手机端：Tab切换+竖向时间轴
@@ -31,6 +32,7 @@ import {
 } from '@/games/three-kingdoms/engine';
 import TechNodeDetailModal from './TechNodeDetailModal';
 import TechResearchPanel from './TechResearchPanel';
+import TechOfflinePanel from './TechOfflinePanel';
 import './TechTab.css';
 
 // ─────────────────────────────────────────────
@@ -72,14 +74,24 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
   const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [showOfflinePanel, setShowOfflinePanel] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
-  // 每秒刷新研究进度
+  // ── 引擎引用（必须在 useEffect 之前声明，避免 block-scoped 变量先使用后声明） ──
+  const treeSystem = engine.getTechTreeSystem();
+  const researchSystem = engine.getTechResearchSystem();
+  const pointSystem = engine.getTechPointSystem();
+
+  // 每秒刷新研究进度（仅在有活跃研究时计时，节省性能）
   useEffect(() => {
+    const hasActive = researchSystem.getQueue().length > 0;
+    if (!hasActive) {
+      return;
+    }
     timerRef.current = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(timerRef.current);
-  }, []);
+  }, [engine, snapshotVersion, researchSystem]);
 
   // 响应式：监听窗口宽度变化
   useEffect(() => {
@@ -90,11 +102,6 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
-
-  // ── 引擎引用 ──
-  const treeSystem = engine.getTechTreeSystem();
-  const researchSystem = engine.getTechResearchSystem();
-  const pointSystem = engine.getTechPointSystem();
 
   // ── 数据获取 ──
   const allNodeStates = useMemo(
@@ -265,7 +272,7 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
           {/* 按层级渲染 */}
           {tiers.map(([tier, nodes], tierIdx) => (
             <React.Fragment key={tier}>
-              {/* 层间连线 */}
+              {/* 层间连线 — SVG升级 */}
               {tierIdx > 0 && (
                 <div
                   className={`tk-tech-tier-connector ${
@@ -273,7 +280,11 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
                       ? 'tk-tech-tier-connector--active'
                       : 'tk-tech-tier-connector--locked'
                   }`}
-                />
+                >
+                  <svg viewBox="0 0 200 24" preserveAspectRatio="none">
+                    <line x1="100" y1="0" x2="100" y2="24" />
+                  </svg>
+                </div>
               )}
 
               {/* 节点行 */}
@@ -299,7 +310,6 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
       try {
         const result = researchSystem.startResearch(techId);
         if (!result.success) {
-          // 可通过 toast 提示，此处简单处理
           console.warn('研究失败:', result.reason);
         }
       } catch (e) {
@@ -348,7 +358,6 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
 
       {/* 科技树画布 */}
       <div className="tk-tech-canvas" data-testid="tech-canvas">
-        {/* PC端：显示所有路线 / 手机端：仅显示选中路线 */}
         {(isMobile ? [activePath] : TECH_PATHS).map((path) => (
           <React.Fragment key={path}>{renderPathColumn(path)}</React.Fragment>
         ))}
@@ -395,6 +404,34 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
           onStartResearch={handleStartResearch}
           snapshotVersion={snapshotVersion}
           tick={tick}
+        />
+      )}
+
+      {/* 离线研究面板入口按钮 */}
+      <button
+        className="tk-tech-offline-btn"
+        data-testid="tech-offline-btn"
+        onClick={() => setShowOfflinePanel(true)}
+        title="离线研究"
+      >
+        📦 离线收益
+      </button>
+
+      {/* 离线研究面板弹窗 */}
+      {showOfflinePanel && (
+        <TechOfflinePanel
+          visible={showOfflinePanel}
+          report={null}
+          researchedTechs={Object.entries(allNodeStates)
+            .filter(([, s]) => s.status === 'completed')
+            .map(([id]) => ({ id, name: TECH_NODE_MAP.get(id)?.name ?? id }))}
+          onResetTech={() => {
+            try { treeSystem.reset(); } catch { /* 引擎不支持重置 */ }
+          }}
+          onClose={() => setShowOfflinePanel(false)}
+          onAllocatePoints={(points) => {
+            try { pointSystem.refund(points); } catch { /* 忽略 */ }
+          }}
         />
       )}
     </div>

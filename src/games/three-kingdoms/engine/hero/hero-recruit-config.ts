@@ -17,7 +17,7 @@ import { Quality as Q } from './hero.types';
 /**
  * 招募方式
  *
- * - normal: 普通招募（招贤榜），消耗招贤榜×1
+ * - normal: 普通招募（招贤令），消耗招贤令×1
  * - advanced: 高级招募（求贤令），消耗求贤令×100
  */
 export type RecruitType = 'normal' | 'advanced';
@@ -29,14 +29,14 @@ export type RecruitType = 'normal' | 'advanced';
 /**
  * 招募消耗配置
  *
- * 普通招募：1 招贤榜/次（v2.0 修正：原铜钱×100）
+ * 普通招募：1 招贤令/次（v2.0 修正：原铜钱×100）
  * 高级招募：100 求贤令/次（v2.0 修正：原×1）
  *
  * 消耗通过回调函数解耦，此处定义消耗参数。
  */
 export const RECRUIT_COSTS: Record<RecruitType, { resourceType: string; amount: number }> = {
   normal: {
-    /** 普通招募消耗招贤榜（R3 修正：1→5，解决经济通胀问题） */
+    /** 普通招募消耗招贤令（R3 修正：1→5，解决经济通胀问题） */
     resourceType: 'recruitToken',
     amount: 5,
   },

@@ -74,6 +74,10 @@ function makeMockRecruitSystem(canAfford = true) {
       advancedHardPity: 20,
     })),
     getRecruitHistory: vi.fn(() => []),
+    // 免费招募相关方法（ACC-05 P1 修复）
+    getRemainingFreeCount: vi.fn((type: string) => (type === 'normal' ? 1 : 0)),
+    canFreeRecruit: vi.fn((type: string) => type === 'normal'),
+    freeRecruitSingle: vi.fn(() => makeRecruitOutput(1)),
   } as unknown as HeroRecruitSystem;
 }
 
@@ -143,7 +147,16 @@ describe('RecruitModal', () => {
     render(<RecruitModal {...defaultProps} />);
     // 保底进度标签
     expect(screen.getByText('十连保底（稀有+）')).toBeInTheDocument();
-    expect(screen.getByText('硬保底（史诗+）')).toBeInTheDocument();
+    // 普通池无硬保底（hardPityThreshold=Infinity），不显示硬保底进度条
+    expect(screen.queryByText('硬保底（史诗+）')).not.toBeInTheDocument();
+  });
+
+  it('高级招贤应显示硬保底进度', async () => {
+    render(<RecruitModal {...defaultProps} />);
+    const advancedBtn = screen.getByText('高级招贤').closest('button')!;
+    await userEvent.click(advancedBtn);
+    // 高级池有硬保底（100次必出传说+），应显示硬保底进度条
+    expect(screen.getByText('硬保底（传说+）')).toBeInTheDocument();
   });
 
   it('应渲染关闭按钮', () => {

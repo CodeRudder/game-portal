@@ -122,6 +122,10 @@ function createMockEngine(overrides?: {
     getUpgradeProgress: vi.fn().mockReturnValue(overrides?.progress ?? 0),
     getUpgradeRemainingTime: vi.fn().mockReturnValue(overrides?.remaining ?? 0),
     upgradeBuilding: vi.fn(),
+    cancelUpgrade: vi.fn().mockReturnValue(null),
+    building: {
+      getProduction: vi.fn().mockReturnValue(1.0),
+    },
     getSnapshot: vi.fn().mockReturnValue({
       buildings: createMockBuildings(),
       resources: { grain: 1000, gold: 500, troops: 200, mandate: 10 },
@@ -134,7 +138,7 @@ function createMockEngine(overrides?: {
 
 // ── 默认 props ──
 const defaultResources = { grain: 1000, gold: 500, troops: 200, mandate: 10 };
-const defaultRates = { grain: 1, gold: 0.5, troops: 0.2, mandate: 0 };
+const defaultRates = { grain: 1, gold: 0.5, troops: 0.2, mandate: 0, techPoint: 0, recruitToken: 0 };
 const defaultCaps = { grain: 5000, gold: 3000, troops: 1000, mandate: null };
 
 // ── 测试 ──

@@ -4,15 +4,18 @@
  * 功能：雷达图、属性条、技能列表、升级操作、武将传记
  */
 
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { GeneralData } from '@/games/three-kingdoms/engine';
 import {
   QUALITY_BORDER_COLORS,
   HERO_MAX_LEVEL,
   GENERAL_DEF_MAP,
 } from '@/games/three-kingdoms/engine';
+import { AWAKENING_EFFECT_TEXT } from '@/games/three-kingdoms/engine/hero/awakening-config';
 import { statsAtLevel } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import type { SkillItem } from './SkillUpgradePanel';
+import SkillUpgradePanel from './SkillUpgradePanel';
 import { Toast } from '@/components/idle/common/Toast';
 import RadarChart from './RadarChart';
 import HeroStarUpModal from './HeroStarUpModal';
@@ -80,16 +83,34 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
 
   const heroSystem = engine.getHeroSystem();
   const levelSystem = engine.getLevelSystem();
+  const heroStarSystem = engine.getHeroStarSystem();
 
   // 升级目标等级（默认+1）
   const [targetLevel, setTargetLevel] = useState(general.level + 1);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [showStarUp, setShowStarUp] = useState(false);
+  const [showSkillUpgrade, setShowSkillUpgrade] = useState(false);
+
+  // ── 防抖锁：防止快速连续操作（ACC-04 P2 修复） ──
+  const actionLockRef = useRef(false);
+
+  /** 防抖包装器：500ms 内防止重复触发 */
+  const withDebounce = useCallback(<T extends (...args: unknown[]) => void>(fn: T): T => {
+    return ((...args: unknown[]) => {
+      if (actionLockRef.current) return;
+      actionLockRef.current = true;
+      try {
+        fn(...args);
+      } finally {
+        setTimeout(() => { actionLockRef.current = false; }, 500);
+      }
+    }) as T;
+  }, []);
 
   const power = useMemo(
-    () => heroSystem.calculatePower(general),
-    [heroSystem, general],
+    () => heroSystem.calculatePower(general, heroStarSystem.getStar(general.id)),
+    [heroSystem, general, heroStarSystem],
   );
 
   const expProgress = useMemo(
@@ -141,9 +162,11 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
     }));
   }, [general]);
 
-  // 升级操作
+  // 升级操作（带防抖）
   const handleEnhance = useCallback(() => {
     if (targetLevel <= general.level) return;
+    if (actionLockRef.current) return;
+    actionLockRef.current = true;
     setIsEnhancing(true);
     try {
       const result = engine.enhanceHero(general.id, targetLevel);
@@ -156,6 +179,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
       Toast.danger(message);
     } finally {
       setIsEnhancing(false);
+      setTimeout(() => { actionLockRef.current = false; }, 500);
     }
   }, [engine, general.id, general.level, general.name, targetLevel, onEnhanceComplete]);
 
@@ -165,8 +189,10 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
     setTargetLevel(maxTarget);
   }, [general.level]);
 
-  // 碎片合成
+  // 碎片合成（带防抖）
   const handleSynthesize = useCallback(() => {
+    if (actionLockRef.current) return;
+    actionLockRef.current = true;
     setIsSynthesizing(true);
     try {
       const result = heroSystem.fragmentSynthesize(general.id);
@@ -181,8 +207,61 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
       Toast.danger(message);
     } finally {
       setIsSynthesizing(false);
+      setTimeout(() => { actionLockRef.current = false; }, 500);
     }
   }, [heroSystem, general.id, general.name, onEnhanceComplete]);
+
+  // ── Bug-02: 技能升级面板数据 ──
+  const skillUpgradeData = useMemo(() => {
+    try {
+      const skillSystem = engine.getSkillUpgradeSystem();
+      const starSystem = engine.getHeroStarSystem();
+      const star = starSystem.getStar(general.id);
+      const levelCap = skillSystem.getSkillLevelCap(star);
+
+      const skills: SkillItem[] = general.skills.map((skill, index) => {
+        const upgradeCost = skill.level < levelCap
+          ? { skillBook: skill.level < 2 ? 1 : skill.level < 4 ? 2 : 2, gold: skill.level === 1 ? 500 : skill.level === 2 ? 1500 : skill.level === 3 ? 4000 : 10000 }
+          : undefined;
+        const breakthroughStage = starSystem.getBreakthroughStage(general.id);
+        const unlocked = skill.type !== 'awaken' || breakthroughStage >= 1;
+        return {
+          id: skill.id,
+          name: skill.name,
+          type: skill.type,
+          level: skill.level,
+          description: skill.description,
+          levelCap,
+          unlocked,
+          upgradeCost,
+        };
+      });
+
+      return {
+        skills,
+        skillBookAmount: engine.getResourceAmount('skillBook'),
+        goldAmount: engine.getResourceAmount('gold'),
+        upgradeSkill: (heroId: string, skillIndex: number) => {
+          const currentLevel = general.skills[skillIndex]?.level ?? 0;
+          if (currentLevel >= levelCap) return;
+          const cost = skills[skillIndex]?.upgradeCost;
+          if (!cost) return;
+          const result = skillSystem.upgradeSkill(heroId, skillIndex, {
+            skillBooks: cost.skillBook,
+            gold: cost.gold,
+          });
+          if (result.success) {
+            Toast.success(`⚔️ ${skills[skillIndex]?.name} 升级至 Lv.${result.currentLevel}`);
+            onEnhanceComplete?.();
+          } else {
+            Toast.danger('技能升级失败：资源不足或已达上限');
+          }
+        },
+      };
+    } catch {
+      return null;
+    }
+  }, [engine, general.id, general.skills, onEnhanceComplete]);
 
   return (
     <div className="tk-hero-detail-overlay" data-testid="hero-detail-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -193,6 +272,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
         {/* 标题栏 */}
         <HeroDetailHeader
           general={general}
+          currentStar={heroStarSystem.getStar(general.id)}
           onCompare={onCompare}
           onStarUp={() => setShowStarUp(true)}
         />
@@ -254,7 +334,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
             </div>
 
             {/* 技能列表 */}
-            <HeroDetailSkills skills={general.skills} />
+            <HeroDetailSkills skills={general.skills} onSkillClick={() => setShowSkillUpgrade(true)} />
 
             {/* 羁绊标签 */}
             <HeroDetailBonds heroId={general.id} />
@@ -264,48 +344,87 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
               engine={engine}
               generalId={general.id}
               currentLevel={general.level}
+              onAwakenComplete={onEnhanceComplete}
             />
           </div>
         </div>
 
         {/* P0: 升星弹窗 */}
-        {showStarUp && (
-          <HeroStarUpModal
-            generalId={general.id}
-            generalName={general.name}
-            level={general.level}
-            currentStar={engine.getHeroStarSystem().getStar(general.id)}
-            fragmentProgress={engine.getHeroStarSystem().getFragmentProgress(general.id)}
-            starUpPreview={engine.getHeroStarSystem().getStarUpPreview(general.id)}
-            breakthroughPreview={engine.getHeroStarSystem().getBreakthroughPreview(general.id)}
-            breakthroughStage={engine.getHeroStarSystem().getBreakthroughStage(general.id)}
-            levelCap={engine.getHeroStarSystem().getLevelCap(general.id)}
-            goldAmount={engine.getResourceAmount('gold')}
-            breakthroughStoneAmount={engine.getResourceAmount('breakthroughStone')}
-            onClose={() => setShowStarUp(false)}
-            onStarUp={(id) => {
-              const result = engine.getHeroStarSystem().starUp(id);
-              if (result.success) {
-                Toast.success(`⭐ ${general.name} 升星成功！${result.previousStar}→${result.currentStar}`);
-                onEnhanceComplete?.();
-              } else {
-                Toast.danger('升星失败：资源不足');
-              }
-              setShowStarUp(false);
-              return result;
-            }}
-            onBreakthrough={(id) => {
-              const result = engine.getHeroStarSystem().breakthrough(id);
-              if (result.success) {
-                Toast.success(`🔮 ${general.name} 突破成功！等级上限 → Lv.${result.newLevelCap}`);
-                onEnhanceComplete?.();
-              } else {
-                Toast.danger('突破失败：资源不足或条件未满足');
-              }
-              setShowStarUp(false);
-              return result;
-            }}
-          />
+        {showStarUp && (() => {
+          const awakeningSystem = engine.getAwakeningSystem();
+          const eligibility = awakeningSystem.checkAwakeningEligible(general.id);
+          const awakened = awakeningSystem.isAwakened(general.id);
+
+          return (
+            <HeroStarUpModal
+              generalId={general.id}
+              generalName={general.name}
+              level={general.level}
+              currentStar={engine.getHeroStarSystem().getStar(general.id)}
+              fragmentProgress={engine.getHeroStarSystem().getFragmentProgress(general.id)}
+              starUpPreview={engine.getHeroStarSystem().getStarUpPreview(general.id)}
+              breakthroughPreview={engine.getHeroStarSystem().getBreakthroughPreview(general.id)}
+              breakthroughStage={engine.getHeroStarSystem().getBreakthroughStage(general.id)}
+              levelCap={engine.getHeroStarSystem().getLevelCap(general.id)}
+              goldAmount={engine.getResourceAmount('gold')}
+              breakthroughStoneAmount={engine.getResourceAmount('breakthroughStone')}
+              canAwaken={eligibility.eligible}
+              awakenFailures={eligibility.failures}
+              isAwakened={awakened}
+              onClose={() => setShowStarUp(false)}
+              onStarUp={(id) => {
+                const result = engine.getHeroStarSystem().starUp(id);
+                if (result.success) {
+                  Toast.success(`⭐ ${general.name} 升星成功！${result.previousStar}→${result.currentStar}`);
+                  onEnhanceComplete?.();
+                } else {
+                  Toast.danger('升星失败：资源不足');
+                }
+                setShowStarUp(false);
+                return result;
+              }}
+              onBreakthrough={(id) => {
+                const result = engine.getHeroStarSystem().breakthrough(id);
+                if (result.success) {
+                  Toast.success(`🔮 ${general.name} 突破成功！等级上限 → Lv.${result.newLevelCap}`);
+                  onEnhanceComplete?.();
+                } else {
+                  Toast.danger('突破失败：资源不足或条件未满足');
+                }
+                setShowStarUp(false);
+                return result;
+              }}
+              onAwaken={(id) => {
+                const result = engine.getAwakeningSystem().awaken(id);
+                if (result.success) {
+                  Toast.success(`✨ ${general.name} 觉醒成功！${AWAKENING_EFFECT_TEXT}`);
+                  onEnhanceComplete?.();
+                } else {
+                  Toast.danger(`觉醒失败：${result.reason ?? '条件未满足'}`);
+                }
+                setShowStarUp(false);
+                return { success: result.success, reason: result.reason };
+              }}
+            />
+          );
+        })()}
+
+        {/* Bug-02: 技能升级面板 */}
+        {showSkillUpgrade && skillUpgradeData && (
+          <div className="tk-hero-detail-skill-upgrade-overlay" data-testid="skill-upgrade-overlay" onClick={(e) => e.target === e.currentTarget && setShowSkillUpgrade(false)}>
+            <div className="tk-hero-detail-skill-upgrade-panel">
+              <SkillUpgradePanel
+                heroId={general.id}
+                engineDataSource={{
+                  skills: skillUpgradeData.skills,
+                  skillBookAmount: skillUpgradeData.skillBookAmount,
+                  goldAmount: skillUpgradeData.goldAmount,
+                  upgradeSkill: skillUpgradeData.upgradeSkill,
+                }}
+                onClose={() => setShowSkillUpgrade(false)}
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>

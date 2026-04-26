@@ -79,7 +79,7 @@ const PANELS: Array<{
   { id: 'heritage', Component: HeritagePanel },
   { id: 'activity', Component: ActivityPanel },
   { id: 'quest', Component: QuestPanel },
-  { id: 'shop', Component: ShopPanel },
+  { id: 'shop', Component: ShopPanel, needsSnapshot: true },
   { id: 'achievement', Component: AchievementPanel },
   { id: 'alliance', Component: AlliancePanel },
   { id: 'prestige', Component: PrestigePanel },

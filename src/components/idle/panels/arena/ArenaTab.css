@@ -1,0 +1,28 @@
+/**
+ * ArenaTab — 竞技场面板样式
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* 挑战按钮禁用状态 */
+.tk-arena-challenge-btn--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 手机端适配 */
+@media (max-width: 480px) {
+  .tk-arena-modal {
+    min-width: auto;
+    width: 90vw;
+    max-width: none;
+  }
+
+  .tk-arena-actions {
+    flex-wrap: wrap;
+  }
+
+  .tk-arena-action-btn {
+    min-height: 38px;
+    font-size: 11px;
+  }
+}

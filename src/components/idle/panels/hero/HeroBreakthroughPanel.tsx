@@ -3,7 +3,7 @@
  *
  * 功能：
  * - 显示武将当前突破阶段（0/4）
- * - 显示突破路线：30→40→50→60→70
+ * - 显示突破路线：从引擎配置动态读取（50→60→70→80→100）
  * - 显示每次突破所需材料（碎片+铜钱+突破石）
  * - 突破按钮（材料足够时可点击）
  * - 突破后等级上限变化提示
@@ -13,6 +13,11 @@
  */
 
 import React, { useMemo } from 'react';
+import {
+  BREAKTHROUGH_TIERS,
+  INITIAL_LEVEL_CAP,
+  MAX_BREAKTHROUGH_STAGE,
+} from '@/games/three-kingdoms/engine/hero/star-up-config';
 import './HeroBreakthroughPanel.css';
 
 // ─────────────────────────────────────────────
@@ -37,22 +42,25 @@ export interface HeroBreakthroughPanelProps {
 }
 
 // ─────────────────────────────────────────────
-// 常量
+// 从引擎配置派生的常量（不再硬编码）
 // ─────────────────────────────────────────────
 
-/** 突破路线：每阶段对应的等级上限 */
-const BREAKTHROUGH_LEVEL_CAPS = [30, 40, 50, 60, 70];
-
-/** 每阶段所需材料（递增） */
-const BREAKTHROUGH_COSTS = [
-  { fragments: 20, copper: 5000, breakthroughStones: 5 },
-  { fragments: 40, copper: 12000, breakthroughStones: 10 },
-  { fragments: 80, copper: 25000, breakthroughStones: 20 },
-  { fragments: 150, copper: 50000, breakthroughStones: 40 },
+/** 突破路线：每阶段对应的等级上限（初始 + 各阶突破后） */
+const BREAKTHROUGH_LEVEL_CAPS: readonly number[] = [
+  INITIAL_LEVEL_CAP,
+  ...BREAKTHROUGH_TIERS.map((t) => t.levelCapAfter),
 ];
 
-/** 阶段标签 */
-const STAGE_LABELS = ['一阶', '二阶', '三阶', '四阶'];
+/** 每阶段所需材料（从引擎配置读取） */
+const BREAKTHROUGH_COSTS: readonly { fragments: number; copper: number; breakthroughStones: number }[] =
+  BREAKTHROUGH_TIERS.map((t) => ({
+    fragments: t.fragmentCost,
+    copper: t.goldCost,
+    breakthroughStones: t.breakthroughStoneCost,
+  }));
+
+/** 阶段标签：与 BREAKTHROUGH_LEVEL_CAPS 的 5 个节点对应 */
+const STAGE_LABELS = ['初始', '一阶', '二阶', '三阶', '四阶'];
 
 // ─────────────────────────────────────────────
 // 子组件：突破路线节点
@@ -135,7 +143,7 @@ const HeroBreakthroughPanel: React.FC<HeroBreakthroughPanelProps> = ({
   onBreakthrough,
 }) => {
   /** 是否已满突 */
-  const isMaxBreakthrough = currentBreakthrough >= 4;
+  const isMaxBreakthrough = currentBreakthrough >= MAX_BREAKTHROUGH_STAGE;
 
   /** 当前阶段所需材料 */
   const currentCost = useMemo(() => {
@@ -189,7 +197,7 @@ const HeroBreakthroughPanel: React.FC<HeroBreakthroughPanelProps> = ({
                 isLocked={isLocked}
                 levelCap={cap}
               />
-              {i < 3 && (
+              {i < BREAKTHROUGH_LEVEL_CAPS.length - 1 && (
                 <div
                   className={`tk-bt-connector ${i < currentBreakthrough ? 'tk-bt-connector--completed' : ''}`}
                 />
@@ -238,7 +246,7 @@ const HeroBreakthroughPanel: React.FC<HeroBreakthroughPanelProps> = ({
       {/* ── 满突提示 ── */}
       {isMaxBreakthrough && (
         <div className="tk-bt-max-hint" data-testid="breakthrough-max-hint">
-          已达最高突破阶段，等级上限 Lv.70
+          已达最高突破阶段，等级上限 Lv.{BREAKTHROUGH_LEVEL_CAPS[BREAKTHROUGH_LEVEL_CAPS.length - 1]}
         </div>
       )}
 

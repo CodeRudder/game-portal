@@ -147,6 +147,14 @@ const createMockEngine = (options: MockEngineOptions = {}) => {
     getHeroSystem: vi.fn().mockReturnValue(heroSystem),
     getBondSystem: vi.fn().mockReturnValue(bondSystem),
     getGenerals: vi.fn().mockReturnValue(generals),
+    // ACC-06-38: 派遣系统mock
+    getHeroDispatchSystem: vi.fn().mockReturnValue({
+      getHeroDispatchBuilding: vi.fn().mockReturnValue(null),
+    }),
+    // 一键编队需要星级系统
+    getHeroStarSystem: vi.fn().mockReturnValue({
+      getStar: vi.fn().mockReturnValue(1),
+    }),
   };
 };
 
@@ -418,11 +426,16 @@ describe('FormationPanel', () => {
       expect(engine.getFormationSystem().removeFromFormation).toHaveBeenCalledWith('1', 'guanyu');
     });
 
-    it('所有武将已在编队中时应显示提示', () => {
+    it('所有武将已在其他编队中时应显示提示', () => {
       const formations = [
         makeFormation({
           id: '1',
           name: '第一队',
+          slots: ['', '', '', '', '', ''],
+        }),
+        makeFormation({
+          id: '2',
+          name: '第二队',
           slots: ['guanyu', 'zhangfei', '', '', '', ''],
         }),
       ];
@@ -438,7 +451,7 @@ describe('FormationPanel', () => {
       const editBtn = card.querySelector('.tk-formation-edit-btn') as HTMLElement;
       fireEvent.click(editBtn);
 
-      // 所有武将已在编队中
+      // 所有武将已在其他编队中
       expect(screen.getByText('所有武将已在编队中')).toBeInTheDocument();
     });
   });
@@ -557,6 +570,83 @@ describe('FormationPanel', () => {
   });
 
   // ═══════════════════════════════════════════
+  // 9. 一键编队
+  // ═══════════════════════════════════════════
+
+  describe('一键编队', () => {
+    it('编辑模式下应显示一键编队按钮', () => {
+      const formations = [makeFormation({ id: '1', name: '第一队' })];
+      const generals = [
+        makeGeneral({ id: 'guanyu', name: '关羽' }),
+        makeGeneral({ id: 'zhangfei', name: '张飞' }),
+      ];
+      const engine = createMockEngine({ formations, activeFormationId: '1', generals });
+      renderPanel(engine);
+
+      // 进入编辑模式
+      const card = screen.getByTestId('formation-panel-card-1');
+      const editBtn = card.querySelector('.tk-formation-edit-btn') as HTMLElement;
+      fireEvent.click(editBtn);
+
+      // 应显示一键编队按钮
+      expect(screen.getByTestId('formation-panel-auto-btn-1')).toBeInTheDocument();
+      expect(screen.getByText(/一键编队/)).toBeInTheDocument();
+    });
+
+    it('点击一键编队按钮应调用 addToFormation 填入武将', () => {
+      const formations = [makeFormation({ id: '1', name: '第一队' })];
+      const generals = [
+        makeGeneral({ id: 'guanyu', name: '关羽' }),
+        makeGeneral({ id: 'zhangfei', name: '张飞' }),
+      ];
+      const engine = createMockEngine({ formations, activeFormationId: '1', generals });
+      renderPanel(engine);
+
+      // 进入编辑模式
+      const card = screen.getByTestId('formation-panel-card-1');
+      const editBtn = card.querySelector('.tk-formation-edit-btn') as HTMLElement;
+      fireEvent.click(editBtn);
+
+      // 点击一键编队
+      const autoBtn = screen.getByTestId('formation-panel-auto-btn-1');
+      fireEvent.click(autoBtn);
+
+      // 应调用 addToFormation 填入武将（关羽和张飞）
+      expect(engine.getFormationSystem().addToFormation).toHaveBeenCalled();
+    });
+
+    it('无可用武将时一键编队按钮应禁用', () => {
+      const formations = [
+        makeFormation({
+          id: '1',
+          name: '第一队',
+          slots: ['', '', '', '', '', ''],
+        }),
+        makeFormation({
+          id: '2',
+          name: '第二队',
+          slots: ['guanyu', 'zhangfei', '', '', '', ''],
+        }),
+      ];
+      const generals = [
+        makeGeneral({ id: 'guanyu', name: '关羽' }),
+        makeGeneral({ id: 'zhangfei', name: '张飞' }),
+      ];
+      const engine = createMockEngine({ formations, activeFormationId: '1', generals });
+      renderPanel(engine);
+
+      // 进入编辑模式
+      const card = screen.getByTestId('formation-panel-card-1');
+      const editBtn = card.querySelector('.tk-formation-edit-btn') as HTMLElement;
+      fireEvent.click(editBtn);
+
+      // 所有武将已在其他编队中，按钮应禁用
+      const autoBtn = screen.getByTestId('formation-panel-auto-btn-1');
+      expect(autoBtn).toBeDisabled();
+    });
+  });
+
+  // ═══════════════════════════════════════════
   // 8. 重命名编队
   // ═══════════════════════════════════════════
 
@@ -593,6 +683,87 @@ describe('FormationPanel', () => {
       fireEvent.keyDown(input, { key: 'Enter' });
 
       expect(engine.getFormationSystem().renameFormation).toHaveBeenCalledWith('1', '蜀国主力');
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // 10. ACC-06-38: 武将派遣状态标记
+  // ═══════════════════════════════════════════
+
+  describe('ACC-06-38: 武将派遣状态标记', () => {
+    it('编队槽位中被派遣的武将应显示派遣标记', () => {
+      const formations = [
+        makeFormation({
+          id: '1',
+          name: '第一队',
+          slots: ['guanyu', '', '', '', '', ''],
+        }),
+      ];
+      const generals = [makeGeneral({ id: 'guanyu', name: '关羽' })];
+      const engine = createMockEngine({ formations, activeFormationId: '1', generals });
+      // 模拟关羽被派遣到农田
+      (engine.getHeroDispatchSystem().getHeroDispatchBuilding as ReturnType<typeof vi.fn>)
+        .mockImplementation((heroId: string) => heroId === 'guanyu' ? 'farmland' : null);
+
+      renderPanel(engine);
+
+      // 关羽槽位应有派遣标记
+      const card = screen.getByTestId('formation-panel-card-1');
+      const dispatchedSlot = card.querySelector('.tk-formation-slot--dispatched');
+      expect(dispatchedSlot).toBeTruthy();
+
+      // 应显示派遣徽章
+      const badge = card.querySelector('.tk-formation-slot-dispatch-badge');
+      expect(badge).toBeTruthy();
+    });
+
+    it('可添加武将列表中被派遣的武将应显示派遣标记', () => {
+      const formations = [makeFormation({ id: '1', name: '第一队' })];
+      const generals = [
+        makeGeneral({ id: 'guanyu', name: '关羽' }),
+        makeGeneral({ id: 'zhangfei', name: '张飞' }),
+      ];
+      const engine = createMockEngine({ formations, activeFormationId: '1', generals });
+      // 模拟关羽被派遣到农田，张飞未派遣
+      (engine.getHeroDispatchSystem().getHeroDispatchBuilding as ReturnType<typeof vi.fn>)
+        .mockImplementation((heroId: string) => heroId === 'guanyu' ? 'farmland' : null);
+
+      renderPanel(engine);
+
+      // 进入编辑模式
+      const card = screen.getByTestId('formation-panel-card-1');
+      const editBtn = card.querySelector('.tk-formation-edit-btn') as HTMLElement;
+      fireEvent.click(editBtn);
+
+      // 关羽按钮应有派遣样式
+      const dispatchedBtn = card.querySelector('.tk-formation-add-hero--dispatched');
+      expect(dispatchedBtn).toBeTruthy();
+
+      // 张飞按钮不应有派遣样式
+      const allAddBtns = card.querySelectorAll('.tk-formation-add-hero');
+      const zhangfeiBtn = Array.from(allAddBtns).find(
+        (btn) => btn.textContent?.includes('张飞')
+      );
+      expect(zhangfeiBtn?.classList.contains('tk-formation-add-hero--dispatched')).toBe(false);
+    });
+
+    it('未被派遣的武将不应显示派遣标记', () => {
+      const formations = [
+        makeFormation({
+          id: '1',
+          name: '第一队',
+          slots: ['guanyu', '', '', '', '', ''],
+        }),
+      ];
+      const generals = [makeGeneral({ id: 'guanyu', name: '关羽' })];
+      const engine = createMockEngine({ formations, activeFormationId: '1', generals });
+      // 默认 mock 返回 null（未派遣）
+
+      renderPanel(engine);
+
+      const card = screen.getByTestId('formation-panel-card-1');
+      const dispatchedSlot = card.querySelector('.tk-formation-slot--dispatched');
+      expect(dispatchedSlot).toBeFalsy();
     });
   });
 });

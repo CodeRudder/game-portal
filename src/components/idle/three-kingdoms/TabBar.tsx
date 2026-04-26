@@ -5,8 +5,7 @@
  * 从 ThreeKingdomsGame.tsx 拆分出来
  */
 
-import React from 'react';
-import FeatureMenu from '@/components/idle/FeatureMenu';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { FeatureMenuItem } from '@/components/idle/FeatureMenu';
 import CalendarDisplay from './CalendarDisplay';
 import type { Season, WeatherType } from '@/games/three-kingdoms/engine';
@@ -80,18 +79,43 @@ export const FEATURE_TO_TAB: Record<string, TabId> = {
 };
 
 // ─────────────────────────────────────────────
+// Badge 类型
+// ─────────────────────────────────────────────
+
+/**
+ * Tab 红点 badge 数据
+ *
+ * count > 0 时显示数字 badge（超过 99 显示 "99+"）
+ * count === 0 且 dot === true 时显示纯圆点
+ * count === 0 且 dot === false 时不显示
+ */
+export interface TabBadge {
+  /** 是否显示纯圆点（无数字） */
+  dot?: boolean;
+  /** badge 数字（0 表示无数字，默认 0） */
+  count?: number;
+}
+
+/** 各 Tab 的 badge 映射 */
+export type TabBadges = Partial<Record<TabId, TabBadge>>;
+
+// ─────────────────────────────────────────────
 // Props
 // ─────────────────────────────────────────────
 
 interface TabBarProps {
   /** 当前激活的 Tab */
   activeTab: TabId;
-  /** Tab 切换回调 */
+  /** Tab 切换回调（非「更多▼」Tab 时触发） */
   onTabChange: (tab: TabConfig) => void;
   /** 功能菜单项（含动态 badge） */
   featureMenuItems: FeatureMenuItem[];
   /** 功能菜单选择回调 */
   onFeatureSelect: (id: string) => void;
+  /** 「更多▼」Tab 下拉菜单开关回调（打开/关闭时触发） */
+  onMoreToggle?: (open: boolean) => void;
+  /** 「更多▼」下拉菜单是否打开（受控模式） */
+  moreMenuOpen?: boolean;
   /** 日历数据 */
   calendar: {
     date?: {
@@ -103,7 +127,50 @@ interface TabBarProps {
     };
     weather: WeatherType;
   } | null;
+  /** Tab 红点 badge 数据（由引擎 HeroBadgeSystem 驱动） */
+  tabBadges?: TabBadges;
 }
+
+// ─────────────────────────────────────────────
+// Badge 渲染辅助
+// ─────────────────────────────────────────────
+
+/**
+ * 渲染 Tab 红点 badge
+ *
+ * 规格参考：
+ * - 纯圆点：8px 直径，#FF4444
+ * - 数字 badge：16px 圆形，>99 显示 "99+"
+ * - 位置：图标右上角，偏移 (-4px, -4px)
+ */
+const TabBadgeIndicator: React.FC<{ badge: TabBadge }> = ({ badge }) => {
+  const count = badge.count ?? 0;
+
+  if (count > 0) {
+    const display = count > 99 ? '99+' : String(count);
+    return (
+      <span
+        className="tk-tab-badge tk-tab-badge--count"
+        data-testid="tab-badge-count"
+        aria-label={`${count}条待处理`}
+      >
+        {display}
+      </span>
+    );
+  }
+
+  if (badge.dot) {
+    return (
+      <span
+        className="tk-tab-badge tk-tab-badge--dot"
+        data-testid="tab-badge-dot"
+        aria-label="有新内容"
+      />
+    );
+  }
+
+  return null;
+};
 
 // ─────────────────────────────────────────────
 // 组件
@@ -114,31 +181,153 @@ const TabBar: React.FC<TabBarProps> = ({
   onTabChange,
   featureMenuItems,
   onFeatureSelect,
+  onMoreToggle,
+  moreMenuOpen = false,
   calendar,
+  tabBadges = {},
 }) => {
+  // ── 「更多▼」下拉菜单状态 ──
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // ── 点击外部关闭下拉菜单 ──
+  useEffect(() => {
+    if (!moreMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onMoreToggle?.(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [moreMenuOpen, onMoreToggle]);
+
+  // ── ESC 关闭下拉菜单 ──
+  useEffect(() => {
+    if (!moreMenuOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onMoreToggle?.(false);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [moreMenuOpen, onMoreToggle]);
+
+  // ── 「更多▼」Tab 点击处理 ──
+  const handleMoreClick = useCallback(() => {
+    onMoreToggle?.(!moreMenuOpen);
+  }, [moreMenuOpen, onMoreToggle]);
+
+  // ── 功能项选择 ──
+  const handleItemSelect = useCallback((id: string) => {
+    onFeatureSelect(id);
+    onMoreToggle?.(false);
+  }, [onFeatureSelect, onMoreToggle]);
+
+  // 计算总角标数
+  const totalBadge = featureMenuItems.reduce((sum, item) => sum + (item.badge ?? 0), 0);
+
   return (
     <div className="tk-tab-bar" data-testid="tab-bar">
-      {TABS.map(tab => (
-        <button
-          key={tab.id}
-          className={`tk-tab-btn ${activeTab === tab.id ? 'tk-tab-btn--active' : ''}`}
-          onClick={() => onTabChange(tab)}
-          aria-label={tab.label}
-          aria-selected={activeTab === tab.id}
-          role="tab"
-          data-testid={`tab-bar-${tab.id}`}
-        >
-          <span className="tk-tab-icon">{tab.icon}</span>
-          <span className="tk-tab-label">{tab.label}</span>
-          {!tab.available && <span className="tk-tab-soon">即将开放</span>}
-        </button>
-      ))}
+      {TABS.map(tab => {
+        const badge = tabBadges[tab.id];
+        const showBadge = badge && ((badge.count ?? 0) > 0 || badge.dot);
 
-      {/* 功能菜单按钮 */}
-      <FeatureMenu
-        items={featureMenuItems}
-        onSelect={onFeatureSelect}
-      />
+        // 「更多▼」Tab — 特殊处理：点击弹出下拉菜单
+        if (tab.id === 'more') {
+          return (
+            <div
+              key={tab.id}
+              ref={menuRef}
+              className={`tk-tab-btn-wrapper ${moreMenuOpen ? 'tk-tab-btn-wrapper--open' : ''}`}
+            >
+              <button
+                className={`tk-tab-btn ${moreMenuOpen ? 'tk-tab-btn--active' : ''}`}
+                onClick={handleMoreClick}
+                aria-label={tab.label}
+                aria-selected={moreMenuOpen}
+                aria-expanded={moreMenuOpen}
+                aria-haspopup="menu"
+                role="tab"
+                data-testid={`tab-bar-${tab.id}`}
+              >
+                <span className="tk-tab-icon-wrap">
+                  <span className="tk-tab-icon">{tab.icon}</span>
+                  {totalBadge > 0 && (
+                    <span
+                      className="tk-tab-badge tk-tab-badge--count"
+                      data-testid="tab-badge-count"
+                      aria-label={`${totalBadge}项待处理`}
+                    >
+                      {totalBadge > 99 ? '99+' : totalBadge}
+                    </span>
+                  )}
+                </span>
+                <span className="tk-tab-label">{tab.label}</span>
+              </button>
+
+              {/* 下拉功能菜单面板 */}
+              {moreMenuOpen && (
+                <div
+                  className="tk-more-dropdown"
+                  role="menu"
+                  aria-label="功能列表"
+                  data-testid="feature-menu-dropdown"
+                >
+                  <div className="tk-more-dropdown-header">
+                    <span className="tk-more-dropdown-title">功能大厅</span>
+                    <span className="tk-more-dropdown-count">{featureMenuItems.length}项功能</span>
+                  </div>
+                  <div className="tk-more-dropdown-list">
+                    {featureMenuItems.map(item => (
+                      <button
+                        key={item.id}
+                        className={`tk-more-dropdown-item ${!item.available ? 'tk-more-dropdown-item--disabled' : ''}`}
+                        onClick={() => handleItemSelect(item.id)}
+                        role="menuitem"
+                        disabled={!item.available}
+                        data-testid={`feature-menu-item-${item.id}`}
+                      >
+                        <span className="tk-more-dropdown-item-icon">{item.icon}</span>
+                        <div className="tk-more-dropdown-item-info">
+                          <span className="tk-more-dropdown-item-label">{item.label}</span>
+                          {item.description && (
+                            <span className="tk-more-dropdown-item-desc">{item.description}</span>
+                          )}
+                        </div>
+                        {item.badge && item.badge > 0 ? (
+                          <span className="tk-more-dropdown-item-badge">{item.badge}</span>
+                        ) : null}
+                        {!item.available && (
+                          <span className="tk-more-dropdown-item-locked">🔒</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // 普通 Tab 按钮
+        return (
+          <button
+            key={tab.id}
+            className={`tk-tab-btn ${activeTab === tab.id ? 'tk-tab-btn--active' : ''}`}
+            onClick={() => onTabChange(tab)}
+            aria-label={tab.label}
+            aria-selected={activeTab === tab.id}
+            role="tab"
+            data-testid={`tab-bar-${tab.id}`}
+          >
+            <span className="tk-tab-icon-wrap">
+              <span className="tk-tab-icon">{tab.icon}</span>
+              {showBadge && <TabBadgeIndicator badge={badge!} />}
+            </span>
+            <span className="tk-tab-label">{tab.label}</span>
+            {!tab.available && <span className="tk-tab-soon">即将开放</span>}
+          </button>
+        );
+      })}
 
       {/* 日历信息（右侧） */}
       <CalendarDisplay calendar={calendar} />

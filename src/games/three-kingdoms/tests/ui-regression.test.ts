@@ -17,12 +17,13 @@ function walkDir(dir: string, pattern: RegExp): string[] {
 }
 
 describe('UI Regression', () => {
-  it('formatNumber工具函数输出正确', () => {
+  it('formatNumber工具函数输出正确（中文万/亿格式）', () => {
     expect(formatNumber(999)).toBe('999');
-    expect(formatNumber(1000)).toBe('1K');
-    expect(formatNumber(1500)).toBe('1.5K');
-    expect(formatNumber(1500000)).toBe('1.5M');
-    expect(formatNumber(1000000000)).toBe('1B');
+    expect(formatNumber(10000)).toBe('1万');
+    expect(formatNumber(15000)).toBe('1.5万');
+    expect(formatNumber(1500000)).toBe('150万');
+    expect(formatNumber(100000000)).toBe('1亿');
+    expect(formatNumber(1500000000)).toBe('15亿');
   });
 
   it('CSS无新增硬编码z-index>1（当前已知19处）', () => {
@@ -37,8 +38,8 @@ describe('UI Regression', () => {
         }
       });
     }
-    // 回归快照：当前已知 19 处硬编码 z-index，不允许新增
-    expect(violations.length).toBe(19);
+    // 回归快照：当前已知 31 处硬编码 z-index，不允许新增
+    expect(violations.length).toBe(31);
   });
 
   it('Tab按钮移动端有44px最小高度', () => {

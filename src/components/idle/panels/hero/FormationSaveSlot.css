@@ -51,3 +51,12 @@
   .tk-formation-slot { padding: 10px; gap: 10px; }
   .tk-formation-slot__item { padding: 8px 10px; }
 }
+
+/* ── 横屏适配（手机横屏） ── */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-formation-slot { padding: 6px; gap: 6px; }
+  .tk-formation-slot__item { padding: 6px 8px; }
+  .tk-formation-slot__title { font-size: 12px; }
+  .tk-formation-slot__btn { padding: 3px 8px; font-size: 10px; }
+  .tk-formation-slot__input { padding: 4px 8px; font-size: 11px; }
+}

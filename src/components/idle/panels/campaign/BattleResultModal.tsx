@@ -231,6 +231,28 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
                 </div>
               </div>
             )}
+
+            {/* 碎片奖励（扫荡结果） */}
+            {isVictory && result.fragmentRewards && Object.keys(result.fragmentRewards).length > 0 && (
+              <div className="tk-brm-rewards-section">
+                <div className="tk-brm-rewards-title">💎 碎片奖励</div>
+                <div className="tk-brm-rewards-list">
+                  {Object.entries(result.fragmentRewards).map(([key, amount]) => (
+                    <div key={key} className="tk-brm-reward-item">
+                      <span className="tk-brm-reward-label">{key}</span>
+                      <span className="tk-brm-reward-value">+{typeof amount === 'number' ? amount.toLocaleString() : amount}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 扫荡摘要信息 */}
+            {isVictory && result.summary && result.summary.includes('扫荡') && (
+              <div className="tk-brm-sweep-summary">
+                <span className="tk-brm-sweep-summary-text">{result.summary}</span>
+              </div>
+            )}
           </>
         )}
 

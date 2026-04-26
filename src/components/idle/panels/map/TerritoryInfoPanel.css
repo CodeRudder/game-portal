@@ -50,6 +50,12 @@
   color: #e8a0a0;
 }
 
+.tk-territory-info--neutral .tk-territory-info-ownership {
+  background: rgba(100, 100, 100, 0.15);
+  color: #b0b0b0;
+  font-style: italic;
+}
+
 /* 属性区 */
 .tk-territory-info-attrs {
   display: flex;
@@ -158,6 +164,18 @@
   background: rgba(184, 66, 58, 0.25);
 }
 
+.tk-territory-info-btn--neutral-siege {
+  background: rgba(100, 100, 100, 0.15);
+  border-color: rgba(100, 100, 100, 0.4);
+  color: #b0b0b0;
+}
+
+.tk-territory-info-btn--neutral-siege:hover {
+  background: rgba(212, 165, 116, 0.2);
+  border-color: rgba(212, 165, 116, 0.4);
+  color: #d4a574;
+}
+
 /* 移动端 */
 @media (max-width: 767px) {
   .tk-territory-info {
@@ -171,6 +189,27 @@
 
   .tk-territory-info-attrs {
     gap: 8px;
+  }
+}
+
+/* 中立领土提示 */
+.tk-territory-info-neutral-hint {
+  font-size: 11px;
+  color: #a0a0a0;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: rgba(255, 215, 0, 0.04);
+  border: 1px dashed rgba(255, 215, 0, 0.15);
+  border-radius: 6px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* 手机端中立领土增强 */
+@media (max-width: 767px) {
+  .tk-territory-info-neutral-hint {
+    font-size: 10px;
+    padding: 4px 6px;
   }
 }
 

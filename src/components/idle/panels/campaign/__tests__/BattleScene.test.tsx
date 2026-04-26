@@ -72,6 +72,7 @@ vi.mock('../BattleAnimation', () => ({
     logs: mockLogs,
     logAreaRef: { current: null },
     speed: 1 as const,
+    setSpeed: vi.fn(),
     toggleSpeed: vi.fn(),
     skip: vi.fn(),
   })),

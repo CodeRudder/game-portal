@@ -2,7 +2,7 @@
  * FormationGrid — 编队网格面板
  *
  * 功能：
- * - 5个武将槽位（2前排 + 3后排）
+ * - 6个武将槽位（3前排 + 3后排）
  * - 每个槽位显示武将头像 + 名字 + 品质
  * - 空槽位显示 "+" 添加按钮
  * - 底部显示编队总战力
@@ -32,7 +32,7 @@ export interface BondSummary {
 }
 
 export interface FormationGridProps {
-  /** 5个槽位数据，null 表示空槽 */
+  /** 6个槽位数据，null 表示空槽 */
   slots: (FormationSlotHero | null)[];
   /** 编队总战力 */
   totalPower: number;
@@ -58,16 +58,16 @@ const QUALITY_COLORS: Record<string, string> = {
 };
 
 /** 前排数量 */
-const FRONT_COUNT = 2;
+const FRONT_COUNT = 3;
 
 // ─────────────────────────────────────────────
 // 工具函数
 // ─────────────────────────────────────────────
 
-/** 格式化战力数值 */
+/** 格式化战力数值（中文万/亿） */
 function formatPower(n: number): string {
+  if (n >= 1_0000_0000) return `${(n / 1_0000_0000).toFixed(1)}亿`;
   if (n >= 10000) return `${(n / 10000).toFixed(1)}万`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return String(n);
 }
 
@@ -84,9 +84,10 @@ interface SlotProps {
 
 const FormationSlot: React.FC<SlotProps> = ({ hero, index, onAdd, onRemove }) => {
   if (!hero) {
+    const rowClass = index < FRONT_COUNT ? 'tk-formation-grid-slot--front' : 'tk-formation-grid-slot--back';
     return (
       <button
-        className="tk-formation-grid-slot tk-formation-grid-slot--empty"
+        className={`tk-formation-grid-slot tk-formation-grid-slot--empty ${rowClass}`}
         onClick={onAdd}
         data-testid={`formation-slot-${index}`}
         aria-label={`槽位${index + 1} 添加武将`}
@@ -100,10 +101,11 @@ const FormationSlot: React.FC<SlotProps> = ({ hero, index, onAdd, onRemove }) =>
   }
 
   const color = QUALITY_COLORS[hero.quality] ?? '#9e9e9e';
+  const rowClass = index < FRONT_COUNT ? 'tk-formation-grid-slot--front' : 'tk-formation-grid-slot--back';
 
   return (
     <div
-      className="tk-formation-grid-slot tk-formation-grid-slot--filled"
+      className={`tk-formation-grid-slot tk-formation-grid-slot--filled ${rowClass}`}
       style={{ borderColor: color }}
       data-testid={`formation-slot-${index}`}
     >
@@ -135,12 +137,12 @@ const FormationGrid: React.FC<FormationGridProps> = ({
   onAddHero,
   onRemoveHero,
 }) => {
-  // 确保 slots 为 5 个
+  // 确保 slots 为 6 个
   const paddedSlots = useMemo(
     () => {
       const s = [...slots];
-      while (s.length < 5) s.push(null);
-      return s.slice(0, 5);
+      while (s.length < 6) s.push(null);
+      return s.slice(0, 6);
     },
     [slots],
   );

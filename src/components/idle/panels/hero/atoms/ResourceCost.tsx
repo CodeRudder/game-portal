@@ -52,11 +52,10 @@ const RESOURCE_ICONS: Record<ResourceCostItem['type'], string> = {
 // 工具函数
 // ─────────────────────────────────────────────
 
-/** 格式化数量 */
+/** 格式化数量（中文万/亿） */
 function formatResourceAmount(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1_0000_0000) return `${(n / 1_0000_0000).toFixed(1)}亿`;
   if (n >= 10000) return `${(n / 10000).toFixed(1)}万`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return String(n);
 }
 

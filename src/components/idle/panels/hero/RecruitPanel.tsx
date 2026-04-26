@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { RECRUIT_COSTS, TEN_PULL_DISCOUNT } from '@/games/three-kingdoms/engine';
 import './RecruitPanel.css';
 
 // ─────────────────────────────────────────────
@@ -45,17 +46,20 @@ export interface RecruitPanelProps {
   normalRates: RateEntry[];
   /** 高级招募概率表 */
   advancedRates: RateEntry[];
+  /** ACC-05 P1: 招募结果（由外部传入，如引擎返回值） */
+  results?: RecruitResultEntry[];
 }
 
 // ─────────────────────────────────────────────
 // 常量
 // ─────────────────────────────────────────────
 
-/** 招募消耗配置 */
-const RECRUIT_COST = {
-  normal: { single: 5, multi: 45 },
-  advanced: { single: 100, multi: 900 },
-} as const;
+/** 从引擎配置计算招募消耗（单抽/十连） */
+function getRecruitCostConfig(mode: 'normal' | 'advanced') {
+  const cfg = RECRUIT_COSTS[mode];
+  const multiAmount = Math.floor(cfg.amount * 10 * TEN_PULL_DISCOUNT);
+  return { single: cfg.amount, multi: multiAmount };
+}
 
 /** 模式标签 */
 const MODE_LABELS: Record<'normal' | 'advanced', { label: string; icon: string; desc: string }> = {
@@ -191,7 +195,7 @@ const RecruitButtons: React.FC<{
   recruitToken: number;
   onRecruit: (mode: 'normal' | 'advanced', count: 1 | 10) => void;
 }> = ({ mode, recruitToken, onRecruit }) => {
-  const costs = RECRUIT_COST[mode];
+  const costs = getRecruitCostConfig(mode);
   const canSingle = recruitToken >= costs.single;
   const canMulti = recruitToken >= costs.multi;
 
@@ -221,7 +225,6 @@ const RecruitButtons: React.FC<{
       >
         <span className="tk-rp-btn-label">十连</span>
         <span className="tk-rp-btn-cost">🪙 {costs.multi}</span>
-        <span className="tk-rp-btn-discount">9折</span>
       </button>
     </div>
   );
@@ -267,9 +270,13 @@ const RecruitPanel: React.FC<RecruitPanelProps> = ({
   pityThreshold,
   normalRates,
   advancedRates,
+  results: externalResults,
 }) => {
   const [mode, setMode] = useState<'normal' | 'advanced'>('normal');
-  const [results, setResults] = useState<RecruitResultEntry[]>([]);
+  const [internalResults, setInternalResults] = useState<RecruitResultEntry[]>([]);
+
+  // ACC-05 P1: 优先使用外部传入的results，否则使用内部状态
+  const results = externalResults ?? internalResults;
 
   /** 当前模式的概率表 */
   const currentRates = useMemo(
@@ -280,8 +287,8 @@ const RecruitPanel: React.FC<RecruitPanelProps> = ({
   /** 处理招募 */
   const handleRecruit = (m: 'normal' | 'advanced', count: 1 | 10) => {
     onRecruit(m, count);
-    // 结果由外部通过 props 更新，这里仅清空旧结果
-    setResults([]);
+    // 清空内部旧结果（外部results由调用方管理）
+    setInternalResults([]);
   };
 
   return (

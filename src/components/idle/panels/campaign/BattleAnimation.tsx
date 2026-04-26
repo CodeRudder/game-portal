@@ -32,7 +32,8 @@ export interface BattleAnimationState {
   damageFloats: DamageFloat[];
   logs: LogEntry[];
   logAreaRef: React.RefObject<HTMLDivElement>;
-  speed: 1 | 2;
+  speed: 1 | 2 | 4;
+  setSpeed: (speed: 1 | 2 | 4) => void;
   toggleSpeed: () => void;
   skip: () => void;
 }
@@ -72,7 +73,7 @@ export function useBattleAnimation(
   enemyTeam: { units: BattleUnit[] },
   onBattleEnd: (result: BattleResult) => void,
 ): BattleAnimationState {
-  const [speed, setSpeed] = useState<1 | 2>(1);
+  const [speed, setSpeed] = useState<1 | 2 | 4>(1);
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [battleResult, setBattleResult] = useState<BattleResult | null>(null);
   const [isFinished, setIsFinished] = useState(false);
@@ -221,7 +222,7 @@ export function useBattleAnimation(
   return {
     battleState, battleResult, isFinished, actingUnitId, actingUnitSide,
     hitUnitIds, dyingUnitIds, skillActiveUnitId, critShake, damageFloats,
-    logs, logAreaRef, speed, toggleSpeed: useCallback(() => setSpeed((p) => (p === 1 ? 2 : 1)), []),
+    logs, logAreaRef, speed, setSpeed: setSpeed as (s: 1 | 2 | 4) => void, toggleSpeed: useCallback(() => setSpeed((p) => (p === 1 ? 2 : p === 2 ? 4 : 1)), []),
     skip: useCallback(() => { skipRef.current = true; }, []),
   };
 }

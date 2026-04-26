@@ -1,0 +1,378 @@
+/**
+ * ArenaPanel — 竞技场面板样式
+ *
+ * 设计风格：水墨江山·铜纹霸业
+ * 响应式适配：小屏设备上优化布局
+ *
+ * 样式从内联 style 对象提取为 CSS 类，提升可维护性
+ */
+
+/* ── 容器 ── */
+.tk-arena-panel {
+  padding: 8px;
+  color: #e8e0d0;
+}
+
+/* ── 段位横幅 ── */
+.tk-arena-rank-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.12), rgba(255, 215, 0, 0.08));
+  border-radius: var(--tk-radius-lg, 10px);
+  margin-bottom: 8px;
+}
+
+.tk-arena-rank-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.tk-arena-rank-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tk-arena-rank-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tk-rank-color, #FFD700);
+}
+
+.tk-arena-score-text {
+  font-size: 12px;
+  color: #a0a0a0;
+  margin-top: 2px;
+}
+
+/* ── 信息栏（赛季/竞技币） ── */
+.tk-arena-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--tk-radius-md, 6px);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.tk-arena-bar-secondary {
+  color: #a0a0a0;
+}
+
+/* ── 挑战次数行 ── */
+.tk-arena-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.tk-arena-challenges-left {
+  font-weight: 700;
+}
+
+.tk-arena-challenges-left--available {
+  color: #7EC850;
+}
+
+.tk-arena-challenges-left--exhausted {
+  color: #ff6464;
+}
+
+/* ── 小按钮（购买/刷新） ── */
+.tk-arena-sm-btn {
+  padding: 3px 8px;
+  border: 1px solid rgba(212, 165, 116, 0.3);
+  border-radius: var(--tk-radius-sm, 4px);
+  background: transparent;
+  color: #d4a574;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tk-arena-sm-btn:hover {
+  background: rgba(212, 165, 116, 0.1);
+}
+
+.tk-arena-sm-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}
+
+/* ── Toast 消息 ── */
+.tk-arena-toast {
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  border-radius: var(--tk-radius-md, 6px);
+  background: rgba(212, 165, 116, 0.2);
+  color: #d4a574;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── 对手区域标题 ── */
+.tk-arena-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #d4a574;
+  margin-bottom: 6px;
+}
+
+/* ── 对手卡片 ── */
+.tk-arena-opp-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--tk-radius-md, 6px);
+  margin-bottom: 4px;
+  transition: background 0.15s;
+}
+
+.tk-arena-opp-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tk-arena-opp-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tk-arena-opp-meta {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* ── 挑战按钮 ── */
+.tk-arena-chal-btn {
+  padding: 5px 14px;
+  border: none;
+  border-radius: var(--tk-radius-sm, 4px);
+  background: #B8423A;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.tk-arena-chal-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.tk-arena-chal-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* 挑战按钮禁用状态（战斗中/次数耗尽） */
+.tk-arena-chal-btn--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── 空状态 ── */
+.tk-arena-empty {
+  text-align: center;
+  padding: 16px;
+  color: #666;
+  font-size: 12px;
+}
+
+/* ── 防守日志 ── */
+.tk-arena-log-section {
+  margin-top: 6px;
+}
+
+.tk-arena-log-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--tk-radius-sm, 4px);
+  margin-bottom: 2px;
+}
+
+.tk-arena-log-result--win {
+  color: #7EC850;
+}
+
+.tk-arena-log-result--lose {
+  color: #ff6464;
+}
+
+/* ── 结算弹窗内容 ── */
+.tk-arena-result {
+  text-align: center;
+}
+
+.tk-arena-result-score {
+  font-size: 14px;
+  color: #a0a0a0;
+}
+
+.tk-arena-result-change--positive {
+  color: #7EC850;
+}
+
+.tk-arena-result-change--negative {
+  color: #ff6464;
+}
+
+.tk-arena-result-turns {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* ── 移动端适配 ── */
+@media (max-width: 767px) {
+  .tk-arena-panel {
+    padding: 6px;
+  }
+
+  .tk-arena-rank-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .tk-arena-rank-info {
+    text-align: center;
+  }
+
+  .tk-arena-opp-card {
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .tk-arena-opp-card > div {
+    text-align: center;
+  }
+
+  .tk-arena-chal-btn {
+    width: 100%;
+    padding: 8px;
+  }
+
+  .tk-arena-bar {
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .tk-arena-info-row {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tk-arena-sm-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .tk-arena-rank-label {
+    font-size: 16px;
+  }
+
+  .tk-arena-header {
+    font-size: 12px;
+  }
+}
+
+/* ── 超小屏适配 ── */
+@media (max-width: 360px) {
+  .tk-arena-rank-icon {
+    font-size: 24px;
+  }
+
+  .tk-arena-rank-label {
+    font-size: 14px;
+  }
+
+  .tk-arena-score-text {
+    font-size: 11px;
+  }
+
+  .tk-arena-opp-name {
+    font-size: 12px;
+  }
+
+  .tk-arena-opp-meta {
+    font-size: 10px;
+  }
+
+  .tk-arena-bar {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  .tk-arena-info-row {
+    font-size: 11px;
+  }
+
+  .tk-arena-sm-btn {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+}
+
+/* ── 横屏适配 ── */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-arena-rank-banner {
+    flex-direction: row;
+    padding: 6px 10px;
+    gap: 8px;
+  }
+
+  .tk-arena-rank-info {
+    text-align: left;
+  }
+
+  .tk-arena-opp-card {
+    flex-direction: row;
+  }
+
+  .tk-arena-chal-btn {
+    width: auto;
+    padding: 5px 14px;
+  }
+}
+
+/* ── 触控设备优化 ── */
+@media (hover: none) and (pointer: coarse) {
+  .tk-arena-chal-btn {
+    min-height: 44px;
+  }
+
+  .tk-arena-chal-btn:active:not(:disabled):not(.tk-arena-chal-btn--disabled) {
+    transform: scale(0.97);
+    transition: transform 0.1s;
+  }
+
+  .tk-arena-sm-btn {
+    min-height: 36px;
+  }
+
+  .tk-arena-opp-card {
+    min-height: 48px;
+  }
+}
+
+/* ── iOS safe-area 支持 ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .tk-arena-panel {
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+}

@@ -213,11 +213,27 @@
 }
 
 /* ═══════════════════════════════════════════
-   响应式
+   响应式 — 手机端适配（ACC-06 P1 修复）
    ═══════════════════════════════════════════ */
-@media (max-width: 640px) {
+@media (max-width: 767px) {
+  .tk-recommend-panel {
+    padding: 8px 0;
+  }
+
+  .tk-recommend-header {
+    margin-bottom: 8px;
+  }
+
+  .tk-recommend-title {
+    font-size: 14px;
+  }
+
   .tk-recommend-card {
-    padding: 10px 12px;
+    padding: 8px 10px;
+  }
+
+  .tk-recommend-card-name {
+    font-size: 13px;
   }
 
   .tk-recommend-slots {
@@ -225,13 +241,92 @@
   }
 
   .tk-recommend-slot {
-    min-width: 48px;
-    height: 28px;
-    font-size: 11px;
+    min-width: 44px;
+    height: 26px;
+    font-size: 10px;
+    padding: 0 4px;
   }
 
   .tk-recommend-power-row {
     flex-wrap: wrap;
     gap: 6px;
+  }
+
+  .tk-recommend-bonds {
+    gap: 3px;
+  }
+
+  .tk-recommend-bond-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  .tk-recommend-basis {
+    font-size: 10px;
+  }
+
+  .tk-recommend-apply-btn {
+    padding: 8px 0;
+    font-size: 13px;
+    min-height: 40px;
+  }
+
+  .tk-recommend-close-btn {
+    padding: 6px 12px;
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .tk-recommend-empty {
+    padding: 16px;
+    font-size: 12px;
+  }
+
+  /* 触摸反馈 */
+  .tk-recommend-apply-btn:active {
+    transform: scale(0.97);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   横屏适配（手机横屏）— ACC-06-49
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-recommend-panel {
+    padding: 4px 0;
+  }
+
+  .tk-recommend-card {
+    padding: 6px 8px;
+  }
+
+  .tk-recommend-card-name {
+    font-size: 12px;
+  }
+
+  .tk-recommend-slots {
+    gap: 3px;
+  }
+
+  .tk-recommend-slot {
+    min-width: 38px;
+    height: 22px;
+    font-size: 9px;
+    padding: 0 3px;
+  }
+
+  .tk-recommend-bond-tag {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .tk-recommend-apply-btn {
+    padding: 6px 0;
+    font-size: 11px;
+    min-height: 32px;
+  }
+
+  .tk-recommend-basis {
+    font-size: 9px;
   }
 }

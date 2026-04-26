@@ -130,15 +130,139 @@
   line-height: 1.5;
 }
 
+/* ── 每日攻城次数 & 冷却倒计时 ── */
+.tk-siege-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(200, 168, 76, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tk-siege-daily-count {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tk-siege-daily-count--available {
+  color: #7EC850;
+}
+
+.tk-siege-daily-count--exhausted {
+  color: #ff6464;
+}
+
+.tk-siege-cooldown {
+  font-size: 12px;
+  color: #D4A574;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 触控反馈 ── */
+.tk-siege-condition:active {
+  opacity: 0.85;
+  transition: opacity 0.1s;
+}
+
 /* 移动端 */
 @media (max-width: 767px) {
   .tk-siege-target-info {
     flex-wrap: wrap;
     gap: 8px;
+    padding: 6px 10px;
+  }
+
+  .tk-siege-target-value {
+    font-size: 13px;
   }
 
   .tk-siege-cost-grid {
     flex-direction: column;
     gap: 4px;
+  }
+
+  .tk-siege-condition {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .tk-siege-condition-label {
+    min-width: 50px;
+  }
+
+  .tk-siege-status-bar {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .tk-siege-error {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+/* ── 超小屏适配 ── */
+@media (max-width: 360px) {
+  .tk-siege-target-info {
+    gap: 6px;
+    padding: 4px 8px;
+  }
+
+  .tk-siege-target-label {
+    font-size: 9px;
+  }
+
+  .tk-siege-target-value {
+    font-size: 12px;
+  }
+
+  .tk-siege-section-title {
+    font-size: 11px;
+  }
+
+  .tk-siege-condition {
+    padding: 4px 6px;
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .tk-siege-condition-label {
+    min-width: 44px;
+    font-size: 10px;
+  }
+
+  .tk-siege-condition-detail {
+    font-size: 10px;
+  }
+
+  .tk-siege-cost-item {
+    padding: 3px 6px;
+  }
+
+  .tk-siege-cost-label {
+    font-size: 10px;
+  }
+
+  .tk-siege-cost-value {
+    font-size: 11px;
+  }
+}
+
+/* ── 横屏适配 ── */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-siege-confirm {
+    gap: 8px;
+  }
+
+  .tk-siege-target-info {
+    padding: 4px 8px;
+  }
+
+  .tk-siege-condition {
+    padding: 3px 6px;
   }
 }

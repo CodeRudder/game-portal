@@ -26,6 +26,7 @@ import type { BattleResult } from '@/games/three-kingdoms/engine';
 import { BattleOutcome } from '@/games/three-kingdoms/engine';
 import BattleFormationModal from './BattleFormationModal';
 import BattleResultModal from './BattleResultModal';
+import SweepModal from './SweepModal';
 import './CampaignTab.css';
 
 // ─────────────────────────────────────────────
@@ -66,6 +67,9 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
 
   // ── 战前布阵弹窗 ──
   const [battleSetupStage, setBattleSetupStage] = useState<Stage | null>(null);
+
+  // ── 扫荡弹窗 ──
+  const [sweepTarget, setSweepTarget] = useState<Stage | null>(null);
 
   // ── 扫荡结算弹窗 ──
   const [sweepResult, setSweepResult] = useState<BattleResult | null>(null);
@@ -128,49 +132,69 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
     [getStageStatus],
   );
 
-  // ── 扫荡三星关卡 ──
+  // ── 扫荡三星关卡（打开SweepModal让玩家选择次数） ──
   const handleSweep = useCallback(
     (stage: Stage) => {
+      setSweepTarget(stage);
+    },
+    [],
+  );
+
+  // ── SweepModal 执行扫荡回调 ──
+  const handleSweepExecute = useCallback(
+    (stageId: string, count: number) => {
       try {
-        // 优先调用 SweepSystem 扫荡 API
         const sweepSystem = engine.getSweepSystem?.();
         if (sweepSystem?.sweep) {
-          const batchResult = sweepSystem.sweep(stage.id, 1);
+          const batchResult = sweepSystem.sweep(stageId, count);
           if (!batchResult.success) {
             console.warn('扫荡失败:', batchResult.failureReason ?? '未知原因');
-            return;
+            return batchResult;
           }
           // 将 SweepBatchResult 转换为 BattleResult 格式以复用弹窗
           const result: BattleResult = {
             outcome: BattleOutcome.VICTORY,
             stars: 3 as any,
-            totalTurns: 0,
+            totalTurns: batchResult.executedCount ?? count,
             allySurvivors: 0,
             enemySurvivors: 0,
             allyTotalDamage: 0,
             enemyTotalDamage: 0,
             maxSingleDamage: 0,
             maxCombo: 0,
-            summary: `扫荡成功！消耗${batchResult.ticketsUsed}扫荡令，获得${batchResult.totalExp}经验`,
-            fragmentRewards: {},
+            summary: `扫荡成功！执行${batchResult.executedCount ?? count}次，消耗${batchResult.ticketsUsed}扫荡令`,
+            fragmentRewards: batchResult.totalFragments ?? {},
           };
           setSweepResult(result);
-          setSweepStage(stage);
+          const stage = sweepTarget;
+          if (stage) setSweepStage(stage);
+          setSweepTarget(null);
+          return batchResult;
         } else {
           // 降级：走普通战斗流程
-          const result = engine.startBattle(stage.id);
+          const result = engine.startBattle(stageId);
           if (result.outcome === BattleOutcome.VICTORY) {
-            engine.completeBattle(stage.id, result.stars as number);
+            engine.completeBattle(stageId, result.stars as number);
           }
           setSweepResult(result);
-          setSweepStage(stage);
+          const stage = sweepTarget;
+          if (stage) setSweepStage(stage);
+          setSweepTarget(null);
+          return null as any;
         }
       } catch (e) {
         console.error('扫荡失败:', e);
+        setSweepTarget(null);
+        return null as any;
       }
     },
-    [engine],
+    [engine, sweepTarget],
   );
+
+  // ── 关闭 SweepModal ──
+  const handleCloseSweepModal = useCallback(() => {
+    setSweepTarget(null);
+  }, []);
 
   // ── 扫荡结算确认 ──
   const handleSweepResultConfirm = useCallback(() => {
@@ -323,8 +347,7 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
         <div className="tk-campaign-progress-text">
           <span>进度 {cleared}/{total}关</span>
           <span className="tk-campaign-progress-stars">
-            {renderStars(0, 0)}
-            {' '}{totalStars}/{maxStars} ★
+            {renderStars(totalStars, maxStars)}
           </span>
         </div>
         <div className="tk-campaign-progress-bar">
@@ -389,6 +412,25 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
           result={sweepResult}
           stage={sweepStage}
           onConfirm={handleSweepResultConfirm}
+        />
+      )}
+
+      {/* 扫荡弹窗（选择次数） */}
+      {sweepTarget && (
+        <SweepModal
+          stageId={sweepTarget.id}
+          stageName={sweepTarget.name}
+          chapterName={currentChapter?.name ?? ''}
+          stars={getStageStars(sweepTarget.id)}
+          ticketCount={(() => {
+            try {
+              const sweepSystem = engine.getSweepSystem?.();
+              return sweepSystem?.getTicketCount?.() ?? 0;
+            } catch { return 0; }
+          })()}
+          canSweep={getStageStars(sweepTarget.id) >= 3}
+          onClose={handleCloseSweepModal}
+          onSweep={handleSweepExecute}
         />
       )}
     </div>

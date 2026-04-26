@@ -97,19 +97,19 @@ describe('HeroCard', () => {
   it('应渲染战力数值', () => {
     const general = makeGeneral();
     render(<HeroCard general={general} engine={makeMockEngine(8888)} />);
-    // formatNumber(8888) -> "8.9K"
+    // formatNumber(8888) -> "8888"（< 10000 不缩写）
     const card = screen.getByTestId('hero-card-test-hero');
     expect(card).toBeInTheDocument();
-    expect(card.textContent).toContain('8.9K');
+    expect(card.textContent).toContain('8888');
   });
 
-  it('应渲染大数字战力（使用K单位）', () => {
+  it('应渲染大数字战力（使用万单位）', () => {
     const general = makeGeneral();
     render(<HeroCard general={general} engine={makeMockEngine(15000)} />);
     const card = screen.getByTestId('hero-card-test-hero');
     expect(card).toBeInTheDocument();
-    // formatNumber(15000) -> "15K"
-    expect(card.textContent).toContain('15K');
+    // formatNumber(15000) -> "1.5万"
+    expect(card.textContent).toContain('1.5万');
   });
 
   it('应渲染阵营信息', () => {

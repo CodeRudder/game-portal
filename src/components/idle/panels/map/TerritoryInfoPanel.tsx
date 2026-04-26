@@ -60,6 +60,8 @@ const TerritoryInfoPanel: React.FC<TerritoryInfoPanelProps> = ({
 
   const isPlayerOwned = ownership === 'player';
   const isEnemy = ownership === 'enemy';
+  const isNeutral = ownership === 'neutral';
+  const canSiege = isEnemy || isNeutral;
 
   return (
     <div
@@ -71,6 +73,7 @@ const TerritoryInfoPanel: React.FC<TerritoryInfoPanelProps> = ({
         <h4 className="tk-territory-info-name">{name}</h4>
         <span className="tk-territory-info-ownership">
           {OWNERSHIP_LABELS[ownership] ?? ownership}
+          {isNeutral && ' · 未占领'}
         </span>
       </div>
 
@@ -93,27 +96,35 @@ const TerritoryInfoPanel: React.FC<TerritoryInfoPanelProps> = ({
       {/* ── 产出详情 ── */}
       <div className="tk-territory-info-production">
         <h5 className="tk-territory-info-section-title">每秒产出</h5>
-        <div className="tk-territory-info-prod-grid">
-          <div className="tk-territory-info-prod-item">
-            <span className="tk-territory-info-prod-icon">🌾</span>
-            <span className="tk-territory-info-prod-value">{currentProduction.grain.toFixed(1)}</span>
+        {isNeutral ? (
+          <div className="tk-territory-info-neutral-hint">
+            💡 占领后可获得产出
           </div>
-          <div className="tk-territory-info-prod-item">
-            <span className="tk-territory-info-prod-icon">💰</span>
-            <span className="tk-territory-info-prod-value">{currentProduction.gold.toFixed(1)}</span>
-          </div>
-          <div className="tk-territory-info-prod-item">
-            <span className="tk-territory-info-prod-icon">⚔️</span>
-            <span className="tk-territory-info-prod-value">{currentProduction.troops.toFixed(1)}</span>
-          </div>
-          <div className="tk-territory-info-prod-item">
-            <span className="tk-territory-info-prod-icon">👑</span>
-            <span className="tk-territory-info-prod-value">{currentProduction.mandate.toFixed(1)}</span>
-          </div>
-        </div>
-        <div className="tk-territory-info-total">
-          总产出: <strong>{totalProduction.toFixed(1)}</strong>/s
-        </div>
+        ) : (
+          <>
+            <div className="tk-territory-info-prod-grid">
+              <div className="tk-territory-info-prod-item">
+                <span className="tk-territory-info-prod-icon">🌾</span>
+                <span className="tk-territory-info-prod-value">{currentProduction.grain.toFixed(1)}</span>
+              </div>
+              <div className="tk-territory-info-prod-item">
+                <span className="tk-territory-info-prod-icon">💰</span>
+                <span className="tk-territory-info-prod-value">{currentProduction.gold.toFixed(1)}</span>
+              </div>
+              <div className="tk-territory-info-prod-item">
+                <span className="tk-territory-info-prod-icon">⚔️</span>
+                <span className="tk-territory-info-prod-value">{currentProduction.troops.toFixed(1)}</span>
+              </div>
+              <div className="tk-territory-info-prod-item">
+                <span className="tk-territory-info-prod-icon">👑</span>
+                <span className="tk-territory-info-prod-value">{currentProduction.mandate.toFixed(1)}</span>
+              </div>
+            </div>
+            <div className="tk-territory-info-total">
+              总产出: <strong>{totalProduction.toFixed(1)}</strong>/s
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── 操作按钮 ── */}
@@ -134,6 +145,15 @@ const TerritoryInfoPanel: React.FC<TerritoryInfoPanelProps> = ({
             onClick={() => onSiege?.(id)}
           >
             ⚔️ 攻城
+          </button>
+        )}
+        {isNeutral && (
+          <button
+            className="tk-territory-info-btn tk-territory-info-btn--siege tk-territory-info-btn--neutral-siege"
+            data-testid={`btn-siege-${id}`}
+            onClick={() => onSiege?.(id)}
+          >
+            🏳️ 占领
           </button>
         )}
       </div>

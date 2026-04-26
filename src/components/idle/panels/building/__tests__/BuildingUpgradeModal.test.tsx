@@ -46,7 +46,16 @@ vi.mock('@/games/three-kingdoms/engine', () => ({
   BUILDING_LABELS: mockBuildingLabels,
   BUILDING_ICONS: mockBuildingIcons,
   BUILDING_ZONES: mockBuildingZones,
-  BUILDING_DEFS: {},
+  BUILDING_DEFS: {
+    castle: { type: 'castle', maxLevel: 30, levelTable: [] },
+    farmland: { type: 'farmland', maxLevel: 25, levelTable: [] },
+    market: { type: 'market', maxLevel: 25, levelTable: [] },
+    barracks: { type: 'barracks', maxLevel: 25, levelTable: [] },
+    smithy: { type: 'smithy', maxLevel: 20, levelTable: [] },
+    academy: { type: 'academy', maxLevel: 20, levelTable: [] },
+    clinic: { type: 'clinic', maxLevel: 20, levelTable: [] },
+    wall: { type: 'wall', maxLevel: 20, levelTable: [] },
+  },
 }));
 
 vi.mock('@/games/three-kingdoms/engine/ThreeKingdomsEngine', () => ({}));
@@ -193,8 +202,8 @@ describe('BuildingUpgradeModal', () => {
       />,
     );
 
-    // 确认按钮应显示 "资源不足"
-    const confirmBtn = screen.getByText('资源不足');
+    // 确认按钮应显示 "无法升级"（因为 canUpgrade=false 优先于 canAfford 检查）
+    const confirmBtn = screen.getByText('无法升级');
     expect(confirmBtn).toBeInTheDocument();
 
     // 按钮应该是 disabled 的

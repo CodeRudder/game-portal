@@ -63,11 +63,22 @@ function formatPower(n: number): string {
 const HeroCard: React.FC<HeroCardProps> = ({ general, engine, onClick, showRedDot }) => {
   const power = useMemo(() => {
     try {
-      return engine?.getHeroSystem?.()?.calculatePower?.(general) ?? 0;
+      const heroStarSystem = engine?.getHeroStarSystem?.();
+      const star = heroStarSystem?.getStar?.(general.id) ?? 1;
+      return engine?.getHeroSystem?.()?.calculatePower?.(general, star) ?? 0;
     } catch {
       return 0;
     }
   }, [engine, general]);
+
+  // Bug-01 修复：从引擎获取真实星级，而非从等级推算
+  const star = useMemo(() => {
+    try {
+      return engine?.getHeroStarSystem?.()?.getStar?.(general.id) ?? 1;
+    } catch {
+      return 1;
+    }
+  }, [engine, general.id]);
 
   const borderColor = QUALITY_BORDER_COLORS[general.quality];
   const factionLabel = FACTION_LABELS[general.faction];
@@ -85,7 +96,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ general, engine, onClick, showRedDo
       onClick={handleClick}
       role="button"
       tabIndex={0}
-      aria-label={`${general.name} Lv.${general.level} 战力${power}`}
+      aria-label={`${general.name} Lv.${general.level} ${star}星 战力${power}`}
       data-testid={`hero-card-${general.id}`}
     >
       {/* 红点提示 */}
@@ -94,9 +105,9 @@ const HeroCard: React.FC<HeroCardProps> = ({ general, engine, onClick, showRedDo
       {/* 品质标签 — 左上角（使用原子组件） */}
       <QualityBadge quality={general.quality} size="small" className="tk-hero-card-quality" />
 
-      {/* 星级显示 */}
+      {/* 星级显示 — 使用引擎真实星级 */}
       <div className="tk-hero-card-stars">
-        <StarDisplay stars={general.level >= 40 ? 5 : general.level >= 30 ? 4 : general.level >= 20 ? 3 : general.level >= 10 ? 2 : 1} size="small" />
+        <StarDisplay stars={star} size="small" />
       </div>
 
       {/* 头像区 */}

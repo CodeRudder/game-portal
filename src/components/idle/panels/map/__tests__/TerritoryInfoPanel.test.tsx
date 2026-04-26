@@ -118,6 +118,71 @@ describe('TerritoryInfoPanel', () => {
 
   it('中立领土显示中立标签', () => {
     render(<TerritoryInfoPanel territory={makeTerritory({ ownership: 'neutral' })} />);
-    expect(screen.getByText('中立领土')).toBeTruthy();
+    // 标签包含"中立领土 · 未占领"
+    expect(screen.getByText(/中立领土/)).toBeTruthy();
+  });
+
+  it('中立领土显示未占领提示', () => {
+    render(<TerritoryInfoPanel territory={makeTerritory({ ownership: 'neutral' })} />);
+    expect(screen.getByText(/占领后可获得产出/)).toBeTruthy();
+  });
+
+  it('中立领土不显示产出数值', () => {
+    const { container } = render(
+      <TerritoryInfoPanel territory={makeTerritory({ ownership: 'neutral' })} />,
+    );
+    // 中立领土不应显示产出网格和总产出
+    expect(container.querySelector('.tk-territory-info-prod-grid')).toBeNull();
+    expect(container.querySelector('.tk-territory-info-total')).toBeNull();
+  });
+
+  // ── 中立领土操作 ──
+  it('中立领土显示占领按钮', () => {
+    const onSiege = vi.fn();
+    render(
+      <TerritoryInfoPanel
+        territory={makeTerritory({ ownership: 'neutral' })}
+        onSiege={onSiege}
+      />,
+    );
+    const btn = screen.getByTestId('btn-siege-city-luoyang');
+    expect(btn).toBeTruthy();
+    expect(btn.textContent).toContain('占领');
+    fireEvent.click(btn);
+    expect(onSiege).toHaveBeenCalledWith('city-luoyang');
+  });
+
+  it('中立领土不显示升级按钮', () => {
+    render(<TerritoryInfoPanel territory={makeTerritory({ ownership: 'neutral' })} />);
+    expect(screen.queryByTestId('btn-upgrade-city-luoyang')).toBeNull();
+  });
+
+  // ── 移动端响应式 ──
+  describe('移动端响应式', () => {
+    it('面板在移动端正常渲染', () => {
+      const originalInnerWidth = window.innerWidth;
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 });
+      window.dispatchEvent(new Event('resize'));
+
+      render(<TerritoryInfoPanel territory={makeTerritory()} />);
+      expect(screen.getByTestId('territory-info-city-luoyang')).toBeTruthy();
+      expect(screen.getByText('洛阳')).toBeTruthy();
+
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: originalInnerWidth });
+    });
+
+    it('中立领土在移动端显示占领提示', () => {
+      render(<TerritoryInfoPanel territory={makeTerritory({ ownership: 'neutral' })} />);
+      expect(screen.getByText(/占领后可获得产出/)).toBeTruthy();
+    });
+
+    it('操作按钮在移动端可点击', () => {
+      const onUpgrade = vi.fn();
+      render(<TerritoryInfoPanel territory={makeTerritory()} onUpgrade={onUpgrade} />);
+      const btn = screen.getByTestId('btn-upgrade-city-luoyang');
+      expect(btn).toBeTruthy();
+      fireEvent.click(btn);
+      expect(onUpgrade).toHaveBeenCalledWith('city-luoyang');
+    });
   });
 });

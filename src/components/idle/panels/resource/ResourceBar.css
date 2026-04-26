@@ -145,7 +145,7 @@
 }
 
 .tk-res-item--pulse {
-  /* animation: resource-pulse 0.4s ease-out; */
+  animation: resource-pulse 0.4s ease-out;
   z-index: 1;
 }
 
@@ -162,13 +162,13 @@
 .tk-res-item--urgent {
   border: 1px solid rgba(231, 76, 60, 0.5);
   background: rgba(231, 76, 60, 0.08);
-  /* animation: tk-res-pulse-urgent 2s ease-in-out infinite; */
+  animation: tk-res-pulse-urgent 2s ease-in-out infinite;
 }
 
 .tk-res-item--full {
   border: 1px solid rgba(231, 76, 60, 0.7);
   background: rgba(231, 76, 60, 0.12);
-  /* animation: tk-res-pulse-full 1.5s ease-in-out infinite; */
+  animation: tk-res-pulse-full 1.5s ease-in-out infinite;
 }
 
 @keyframes tk-res-pulse-urgent {
@@ -187,7 +187,7 @@
   line-height: 1;
   margin-left: 2px;
   cursor: help;
-  /* animation: tk-res-blink 1.5s ease-in-out infinite; */
+  animation: tk-res-blink 1.5s ease-in-out infinite;
 }
 
 @keyframes tk-res-blink {
@@ -206,7 +206,7 @@
 
 .tk-res-value--full {
   color: var(--tk-danger) !important; /* 红色 */
-  /* animation: tk-res-blink 1.5s ease-in-out infinite; */
+  animation: tk-res-blink 1.5s ease-in-out infinite;
 }
 
 /* 接近上限警告图标（非溢出场景） */
@@ -214,7 +214,7 @@
   font-size: 11px;
   line-height: 1;
   margin-left: 2px;
-  /* animation: tk-res-blink 2s ease-in-out infinite; */
+  animation: tk-res-blink 2s ease-in-out infinite;
 }
 
 /* 容量警告文本 */
@@ -250,7 +250,7 @@
   font-size: 12px;
   font-weight: 500;
   text-align: center;
-  z-index: 1;
+  z-index: var(--tk-z-overflow-banner, 10);
   animation: tk-res-banner-slide 0.3s ease-out;
 }
 
@@ -313,6 +313,20 @@
     right: 6px;
     height: 2px;
   }
+
+  /* ACC-03 P2: 手机端溢出横幅定位 */
+  .tk-res-overflow-banner {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 8px 12px;
+    font-size: 11px;
+    border-bottom: none;
+    border-top: 1px solid rgba(230, 126, 34, 0.3);
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -329,6 +343,11 @@
   flex-shrink: 0;
   transition: background 0.2s;
   line-height: 1;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .tk-res-detail-btn:hover {
   background: rgba(200, 169, 110, 0.12);

@@ -1,0 +1,1123 @@
+/**
+ * ShopPanel — 商店面板样式
+ * 设计风格：水墨江山·铜纹霸业
+ *
+ * R5 增强：
+ * - 商品卡片购买成功动画
+ * - 空状态引导提示
+ * - 手机端适配增强：触控区域增大、Tab滚动优化
+ * - 收藏星标样式
+ * - 确认弹窗余额对比样式
+ */
+
+/* ── 骨架屏闪烁动画 ── */
+@keyframes shop-skeleton-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* ── 购买成功动画 ── */
+@keyframes shop-buy-success {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(126, 200, 80, 0); }
+  30% { transform: scale(1.02); box-shadow: 0 0 12px rgba(126, 200, 80, 0.3); }
+  100% { transform: scale(1); box-shadow: 0 0 0 rgba(126, 200, 80, 0); }
+}
+
+/* ═══════════════════════════════════════════
+   容器
+   ═══════════════════════════════════════════ */
+.tk-shop-container {
+  padding: 12px;
+  color: #e8e0d0;
+  min-height: 100%;
+}
+
+/* ═══════════════════════════════════════════
+   Tab栏
+   ═══════════════════════════════════════════ */
+.tk-shop-tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  position: relative;
+  padding-bottom: 6px;
+  /* 滚动渐变遮罩 */
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+/* Tab底部指示线 */
+.tk-shop-tab-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tk-shop-tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tk-shop-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--tk-radius-md, 6px);
+  background: transparent;
+  color: #a0a0a0;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 38px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.tk-shop-tab-btn--active {
+  background: rgba(212, 165, 116, 0.2);
+  color: #d4a574;
+  border-color: #d4a574;
+  position: relative;
+}
+
+/* 活跃Tab底部高亮线 */
+.tk-shop-tab-btn--active::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: #d4a574;
+  border-radius: 1px;
+  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), right 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══════════════════════════════════════════
+   工具栏（货币 + 刷新 + 排序）
+   ═══════════════════════════════════════════ */
+.tk-shop-toolbar {
+  margin-bottom: 8px;
+}
+
+/* ── 排序行 ── */
+.tk-shop-sort-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tk-shop-sort-row::-webkit-scrollbar {
+  display: none;
+}
+
+.tk-shop-sort-label {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tk-shop-sort-options {
+  display: flex;
+  gap: 3px;
+}
+
+.tk-shop-sort-btn {
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  background: transparent;
+  color: #888;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.tk-shop-sort-btn:hover {
+  color: #d4a574;
+  border-color: rgba(212, 165, 116, 0.3);
+}
+
+.tk-shop-sort-btn--active {
+  color: #d4a574;
+  border-color: rgba(212, 165, 116, 0.4);
+  background: rgba(212, 165, 116, 0.1);
+}
+
+/* ── 限购完成标记 ── */
+.tk-shop-limit-done {
+  color: #ff6464;
+  font-weight: 500;
+}
+
+/* ── 收藏卡片高亮 ── */
+.tk-shop-goods-card--favorite {
+  border-color: rgba(255, 193, 7, 0.25);
+  background: rgba(255, 193, 7, 0.03);
+}
+
+/* ── 折扣角标 ── */
+.tk-shop-discount-badge {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #ff6464, #ff4444);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 0 var(--tk-radius-lg, 10px) 0 var(--tk-radius-lg, 10px);
+  z-index: 1;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+}
+
+/* ── 刷新冷却动画 ── */
+@keyframes shop-cooldown-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.tk-shop-refresh-btn[disabled]:not(.tk-shop-refresh-btn--disabled) {
+  animation: shop-cooldown-pulse 1s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════
+   货币行
+   ═══════════════════════════════════════════ */
+.tk-shop-toolbar {
+  margin-bottom: 8px;
+}
+
+.tk-shop-currency-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.tk-shop-currency-bar {
+  display: flex;
+  gap: 12px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--tk-radius-md, 6px);
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.tk-shop-currency-item {
+  font-size: 12px;
+  color: #d4a574;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════
+   排序行
+   ═══════════════════════════════════════════ */
+.tk-shop-sort-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.tk-shop-sort-label {
+  font-size: 11px;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.tk-shop-sort-options {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tk-shop-sort-options::-webkit-scrollbar {
+  display: none;
+}
+
+.tk-shop-sort-btn {
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  background: transparent;
+  color: #888;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.tk-shop-sort-btn--active {
+  background: rgba(212, 165, 116, 0.15);
+  color: #d4a574;
+  border-color: rgba(212, 165, 116, 0.3);
+}
+
+/* ═══════════════════════════════════════════
+   刷新按钮
+   ═══════════════════════════════════════════ */
+.tk-shop-refresh-btn {
+  padding: 5px 10px;
+  border: 1px solid rgba(212, 165, 116, 0.3);
+  border-radius: var(--tk-radius-md, 6px);
+  background: rgba(212, 165, 116, 0.12);
+  color: #d4a574;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.tk-shop-refresh-btn:hover:not(:disabled) {
+  background: rgba(212, 165, 116, 0.2);
+}
+
+.tk-shop-refresh-btn--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 刷新按钮进度条（显示已用次数比例） */
+.tk-shop-refresh-btn::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: #d4a574;
+  border-radius: 0 0 var(--tk-radius-md, 6px) var(--tk-radius-md, 6px);
+  transition: width 0.3s ease;
+}
+
+.tk-shop-refresh-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   Toast 消息
+   ═══════════════════════════════════════════ */
+@keyframes tk-shop-toast-in {
+  0% { opacity: 0; transform: translateY(-8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tk-shop-toast-out {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+.tk-shop-toast {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: var(--tk-radius-md, 6px);
+  font-size: 12px;
+  text-align: center;
+  font-weight: 500;
+  line-height: 1.5;
+  animation: tk-shop-toast-in 250ms ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Toast底部进度条（自动消失倒计时） */
+.tk-shop-toast::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.3;
+  animation: tk-shop-toast-progress 2500ms linear forwards;
+}
+
+@keyframes tk-shop-toast-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.tk-shop-toast--success {
+  background: rgba(126, 200, 80, 0.15);
+  color: #7ec850;
+  border: 1px solid rgba(126, 200, 80, 0.25);
+}
+
+.tk-shop-toast--error {
+  background: rgba(255, 100, 100, 0.15);
+  color: #ff6464;
+  border: 1px solid rgba(255, 100, 100, 0.25);
+}
+
+/* ═══════════════════════════════════════════
+   商品列表
+   ═══════════════════════════════════════════ */
+.tk-shop-goods-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 60vh;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ═══════════════════════════════════════════
+   商品卡片
+   ═══════════════════════════════════════════ */
+.tk-shop-goods-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 165, 116, 0.15);
+  border-radius: var(--tk-radius-lg, 10px);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tk-shop-goods-card--out-of-stock {
+  opacity: 0.5;
+}
+
+.tk-shop-goods-card--success {
+  animation: shop-buy-success 0.6s ease-out;
+}
+
+.tk-shop-goods-card:hover {
+  border-color: rgba(212, 165, 116, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tk-shop-goods-icon {
+  font-size: 28px;
+  width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tk-shop-goods-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tk-shop-goods-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tk-shop-goods-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e8e0d0;
+}
+
+.tk-shop-goods-desc {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 收藏按钮 ── */
+.tk-shop-fav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+  color: #d4a574;
+  transition: transform 0.15s;
+}
+
+.tk-shop-fav-btn:active {
+  transform: scale(1.3);
+}
+
+/* ── 价格行 ── */
+.tk-shop-price-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.tk-shop-original-price {
+  text-decoration: line-through;
+  color: #666;
+  font-size: 11px;
+}
+
+.tk-shop-price {
+  color: #d4a574;
+  font-weight: 600;
+}
+
+.tk-shop-price--discount {
+  color: #ff6464;
+}
+
+/* ── 限购信息 ── */
+.tk-shop-limit-info {
+  font-size: 10px;
+  color: #888;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+}
+
+/* ── 限购完成标记 ── */
+.tk-shop-limit-done {
+  color: #ff6464;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+/* ── 售罄卡片遮罩层 ── */
+.tk-shop-goods-card--out-of-stock::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(255, 100, 100, 0.04) 8px,
+    rgba(255, 100, 100, 0.04) 16px
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.tk-shop-goods-card {
+  position: relative;
+}
+
+/* ── 收藏卡片高亮 ── */
+.tk-shop-goods-card--favorite {
+  border-color: rgba(255, 193, 7, 0.25);
+  background: rgba(255, 193, 7, 0.03);
+}
+
+/* ═══════════════════════════════════════════
+   购买按钮
+   ═══════════════════════════════════════════ */
+.tk-shop-buy-btn {
+  padding: 10px 20px;
+  border: 1px solid rgba(212, 165, 116, 0.3);
+  border-radius: var(--tk-radius-md, 6px);
+  background: rgba(212, 165, 116, 0.15);
+  color: #d4a574;
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 42px;
+  min-width: 60px;
+  font-weight: 500;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tk-shop-buy-btn:hover:not(:disabled) {
+  background: rgba(212, 165, 116, 0.25);
+  border-color: rgba(212, 165, 116, 0.5);
+}
+
+.tk-shop-buy-btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════
+   空状态
+   ═══════════════════════════════════════════ */
+.tk-shop-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #666;
+  font-size: 13px;
+}
+
+.tk-shop-empty-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.tk-shop-empty-hint {
+  font-size: 11px;
+  color: #555;
+  margin-top: 6px;
+}
+
+/* ═══════════════════════════════════════════
+   骨架屏
+   ═══════════════════════════════════════════ */
+.tk-shop-skeleton-block {
+  background: rgba(212, 165, 116, 0.12);
+  animation: shop-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.tk-shop-skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(212, 165, 116, 0.08);
+  border-radius: var(--tk-radius-lg, 10px);
+}
+
+/* ═══════════════════════════════════════════
+   确认弹窗
+   ═══════════════════════════════════════════ */
+.tk-shop-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--tk-z-modal, 100);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.tk-shop-overlay--visible {
+  opacity: 1;
+}
+
+.tk-shop-confirm-panel {
+  background: #1a1a2e;
+  border: 1px solid #d4a574;
+  border-radius: var(--tk-radius-xl, 12px);
+  padding: 24px;
+  min-width: 280px;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  transform: scale(0.85);
+  opacity: 0;
+  transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease-out;
+}
+
+.tk-shop-confirm-panel--visible {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.tk-shop-confirm-title {
+  font-size: 15px;
+  color: #e8e0d0;
+  margin-bottom: 12px;
+}
+
+.tk-shop-confirm-goods-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.tk-shop-confirm-goods-name {
+  font-size: 14px;
+  color: #e8e0d0;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.tk-shop-confirm-goods-desc {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.tk-shop-confirm-limit-info {
+  font-size: 11px;
+  color: #d4a574;
+  margin-bottom: 10px;
+  padding: 4px 8px;
+  background: rgba(212, 165, 116, 0.08);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 价格明细 + 余额对比 ── */
+.tk-shop-confirm-price-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  text-align: left;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.tk-shop-confirm-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.tk-shop-confirm-price-label {
+  min-width: 50px;
+  color: #a0a0a0;
+  font-weight: 500;
+}
+
+.tk-shop-confirm-price-amount {
+  font-weight: 600;
+  min-width: 60px;
+}
+
+.tk-shop-confirm-price-balance {
+  font-size: 11px;
+  flex: 1;
+  text-align: right;
+}
+
+.tk-shop-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.tk-shop-cancel-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--tk-radius-md, 6px);
+  background: transparent;
+  color: #a0a0a0;
+  cursor: pointer;
+  min-height: 40px;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+
+.tk-shop-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tk-shop-confirm-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid rgba(212, 165, 116, 0.3);
+  border-radius: var(--tk-radius-md, 6px);
+  background: rgba(212, 165, 116, 0.2);
+  color: #d4a574;
+  cursor: pointer;
+  min-height: 40px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.tk-shop-confirm-btn:hover {
+  background: rgba(212, 165, 116, 0.3);
+}
+
+/* 确认按钮禁用态（余额不足时） */
+.tk-shop-confirm-btn--insufficient {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgba(255, 100, 100, 0.3);
+  color: #ff6464;
+  background: rgba(255, 100, 100, 0.08);
+}
+
+/* ═══════════════════════════════════════════
+   购买数量选择器
+   ═══════════════════════════════════════════ */
+.tk-shop-quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+
+.tk-shop-quantity-label {
+  font-size: 12px;
+  color: #a0a0a0;
+}
+
+.tk-shop-quantity-btn {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: transparent;
+  color: #a0a0a0;
+  font-size: 12px;
+  cursor: pointer;
+  min-height: 30px;
+  transition: all 0.15s;
+}
+
+.tk-shop-quantity-btn--active {
+  background: rgba(212, 165, 116, 0.2);
+  color: #d4a574;
+  border-color: rgba(212, 165, 116, 0.4);
+}
+
+.tk-shop-quantity-btn:hover:not(.tk-shop-quantity-btn--active) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配 (≤ 480px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .tk-shop-container {
+    padding: 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Tab栏增强：增大触控区域和底部指示 */
+  .tk-shop-tab-bar {
+    gap: 2px;
+    padding-bottom: 8px;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .tk-shop-tab-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+    min-height: 40px;
+    border-radius: 8px 8px 0 0;
+    flex: 1;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  .tk-shop-tab-btn--active {
+    background: rgba(212, 165, 116, 0.15);
+    border-bottom: 2px solid #d4a574;
+  }
+
+  .tk-shop-tab-btn--active::after {
+    display: none;
+  }
+
+  .tk-shop-sort-row {
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .tk-shop-sort-label {
+    font-size: 10px;
+  }
+
+  .tk-shop-sort-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    min-height: 28px;
+  }
+
+  .tk-shop-goods-card {
+    padding: 10px 8px;
+    gap: 8px;
+    min-height: 52px;
+    border-radius: 8px;
+  }
+
+  .tk-shop-goods-icon {
+    font-size: 24px;
+    width: 36px;
+  }
+
+  .tk-shop-goods-name {
+    font-size: 13px;
+  }
+
+  .tk-shop-goods-desc {
+    font-size: 10px;
+  }
+
+  .tk-shop-buy-btn {
+    padding: 8px 14px;
+    min-height: 44px;
+    font-size: 12px;
+    min-width: 54px;
+    border-radius: 8px;
+  }
+
+  .tk-shop-currency-bar {
+    gap: 8px;
+    padding: 4px 8px;
+  }
+
+  .tk-shop-currency-item {
+    font-size: 11px;
+  }
+
+  /* 手机端售罄卡片更明显的视觉区分 */
+  .tk-shop-goods-card--out-of-stock {
+    opacity: 0.35;
+    filter: grayscale(0.3);
+  }
+
+  /* 手机端限购信息增大触控友好间距 */
+  .tk-shop-limit-info {
+    font-size: 10px;
+    margin-top: 4px;
+    gap: 4px;
+  }
+
+  /* 确认弹窗：手机端底部弹出样式 */
+  .tk-shop-overlay {
+    align-items: flex-end;
+  }
+
+  .tk-shop-confirm-panel {
+    min-width: 100%;
+    max-width: 100vw;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 16px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(100%);
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease-out;
+  }
+
+  .tk-shop-confirm-panel--visible {
+    transform: translateY(0);
+  }
+
+  .tk-shop-confirm-price-row {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tk-shop-confirm-price-balance {
+    font-size: 10px;
+    width: 100%;
+    text-align: left;
+    padding-left: 58px;
+  }
+
+  .tk-shop-goods-grid {
+    max-height: 55vh;
+  }
+
+  .tk-shop-quantity-selector {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .tk-shop-quantity-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    min-height: 32px;
+  }
+
+  /* 手机端空状态优化 */
+  .tk-shop-empty {
+    padding: 24px 12px;
+  }
+
+  .tk-shop-empty-icon {
+    font-size: 32px;
+  }
+
+  /* 手机端折扣角标 */
+  .tk-shop-discount-badge {
+    font-size: 9px;
+    padding: 1px 6px;
+  }
+
+  /* 手机端货币行自适应换行 */
+  .tk-shop-currency-row {
+    flex-wrap: wrap;
+  }
+
+  /* 手机端刷新按钮进度条 */
+  .tk-shop-refresh-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-height: 36px;
+    border-radius: 8px;
+  }
+
+  /* 手机端Toast消息 */
+  .tk-shop-toast {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  /* 手机端收藏按钮触控增大 */
+  .tk-shop-fav-btn {
+    font-size: 16px;
+    padding: 4px;
+    min-width: 28px;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 手机端价格行优化 */
+  .tk-shop-price-row {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  /* 手机端商品名称行优化 */
+  .tk-shop-goods-name-row {
+    gap: 4px;
+  }
+
+  /* 手机端确认弹窗按钮 */
+  .tk-shop-cancel-btn,
+  .tk-shop-confirm-btn {
+    min-height: 44px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   极小屏幕 (≤ 360px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 360px) {
+  .tk-shop-tab-btn span:last-child {
+    display: none;
+  }
+
+  .tk-shop-goods-desc {
+    display: none;
+  }
+
+  .tk-shop-confirm-panel {
+    min-width: auto;
+    max-width: 96vw;
+    padding: 14px;
+  }
+
+  .tk-shop-goods-icon {
+    font-size: 20px;
+    width: 28px;
+  }
+
+  .tk-shop-buy-btn {
+    padding: 6px 10px;
+    min-height: 36px;
+    font-size: 11px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   触控设备优化
+   ═══════════════════════════════════════════ */
+@media (hover: none) {
+  .tk-shop-goods-card:active {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(212, 165, 116, 0.3);
+  }
+
+  .tk-shop-buy-btn:active:not(:disabled) {
+    background: rgba(212, 165, 116, 0.35);
+    transform: scale(0.97);
+  }
+
+  .tk-shop-tab-btn:active {
+    background: rgba(212, 165, 116, 0.15);
+  }
+
+  .tk-shop-refresh-btn:active:not(:disabled) {
+    background: rgba(212, 165, 116, 0.25);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   横屏适配
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-shop-container {
+    padding: 6px;
+  }
+
+  .tk-shop-tab-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    min-height: 30px;
+  }
+
+  .tk-shop-sort-row {
+    margin-top: 4px;
+    gap: 3px;
+  }
+
+  .tk-shop-sort-label {
+    font-size: 9px;
+  }
+
+  .tk-shop-sort-btn {
+    padding: 1px 5px;
+    font-size: 9px;
+  }
+
+  .tk-shop-goods-card {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .tk-shop-goods-icon {
+    font-size: 20px;
+    width: 28px;
+  }
+
+  .tk-shop-goods-name {
+    font-size: 12px;
+  }
+
+  .tk-shop-buy-btn {
+    padding: 6px 12px;
+    min-height: 34px;
+    font-size: 11px;
+  }
+
+  .tk-shop-goods-grid {
+    max-height: 50vh;
+  }
+
+  .tk-shop-confirm-panel {
+    padding: 12px;
+    min-width: 240px;
+  }
+
+  .tk-shop-quantity-btn {
+    padding: 2px 6px;
+    font-size: 10px;
+    min-height: 24px;
+  }
+}

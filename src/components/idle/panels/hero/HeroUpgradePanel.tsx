@@ -10,7 +10,7 @@
  *   - 升级后属性变化预览（AttributeBar 原子组件）
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import type { GeneralData } from '@/games/three-kingdoms/engine';
 import { HERO_MAX_LEVEL } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
@@ -136,9 +136,15 @@ const HeroUpgradePanel: React.FC<HeroUpgradePanelProps> = ({
     setTargetLevel(level);
   }, []);
 
+  // 防抖锁（同步锁，防止快速连点重复提交）
+  const isEnhancingRef = useRef(false);
+
   // 执行升级
   const handleEnhance = useCallback(() => {
     if (targetLevel <= general.level) return;
+    // 防抖前置检查：使用 ref 同步锁避免竞态
+    if (isEnhancing || isEnhancingRef.current) return;
+    isEnhancingRef.current = true;
     setIsEnhancing(true);
     try {
       const result = engine.enhanceHero(general.id, targetLevel);
@@ -153,8 +159,9 @@ const HeroUpgradePanel: React.FC<HeroUpgradePanelProps> = ({
       Toast.danger(message);
     } finally {
       setIsEnhancing(false);
+      isEnhancingRef.current = false;
     }
-  }, [engine, general, targetLevel, onUpgradeComplete]);
+  }, [engine, general, targetLevel, onUpgradeComplete, isEnhancing]);
 
   return (
     <div className="tk-upgrade-panel" data-testid="hero-upgrade-panel">

@@ -5,7 +5,7 @@
  * 居中弹窗，显示升级预览 + 费用 + 操作按钮
  * 关闭方式：[×] / 点击遮罩 / ESC
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { BuildingType, Resources } from '@/games/three-kingdoms/engine';
 import {
   BUILDING_LABELS,
@@ -105,7 +105,24 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
     };
   }, [info.cost, resources]);
 
+  // BUG-1: 满级判断
+  const maxLevel = BUILDING_DEFS[buildingType]?.maxLevel ?? 0;
+  const isMaxLevel = info.level >= maxLevel;
+
+  // Bug-04: 防重复点击保护
+  const [upgrading, setUpgrading] = useState(false);
+
   const canAfford = affordability.grain && affordability.gold && affordability.troops;
+
+  // BUG-2: 使用引擎综合判断（canUpgrade）+ 资源检查（canAfford）+ 满级检查
+  const isConfirmDisabled = !info.canUpgrade || !canAfford || upgrading || isMaxLevel;
+
+  // 防重复点击的升级确认处理
+  const handleConfirm = () => {
+    if (isConfirmDisabled) return;
+    setUpgrading(true);
+    onConfirm(buildingType);
+  };
 
   return (
     <SharedPanel title={`${name}升级`} onClose={onCancel} visible={true}>
@@ -118,83 +135,94 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
           </div>
         </div>
 
-        {/* 升级预览 */}
-        <div className="tk-upgrade-section">
-          <div className="tk-upgrade-section-title">升级预览</div>
-          <div className="tk-upgrade-level-change">
-            Lv.{info.level} → Lv.{info.level + 1}
-          </div>
-          {/* 产出变化预览 */}
-          {(() => {
-            const def = BUILDING_DEFS[buildingType];
-            const currentLevelData = def?.levelTable?.[info.level];
-            const nextLevelData = def?.levelTable?.[info.level + 1];
-            if (!def?.production || !currentLevelData) return null;
-            const prod = def.production;
-            const currentProd = currentLevelData.production;
-            const nextProd = nextLevelData?.production ?? currentProd;
-            const resIcon: Record<string, string> = { grain: '🌾', gold: '💰', troops: '⚔️', mandate: '👑', material: '🔨', techPoint: '📜' };
-            return (
-              <div className="tk-upgrade-production">
-                <span className="tk-upgrade-prod-icon">{resIcon[prod.resourceType] || '📊'}</span>
-                <span className="tk-upgrade-prod-label">产出</span>
-                <span className="tk-upgrade-prod-current">{formatNum(currentProd)}/秒</span>
-                <span className="tk-upgrade-prod-arrow">→</span>
-                <span className="tk-upgrade-prod-next">{formatNum(nextProd)}/秒</span>
-              </div>
-            );
-          })()}
-          {/* 特殊属性变化预览 */}
-          {(() => {
-            const def = BUILDING_DEFS[buildingType];
-            const currentLevelData = def?.levelTable?.[info.level];
-            const nextLevelData = def?.levelTable?.[info.level + 1];
-            if (!def?.specialAttribute || !currentLevelData) return null;
-            const currentVal = currentLevelData.specialValue ?? 0;
-            const nextVal = nextLevelData?.specialValue ?? currentVal;
-            return (
-              <div className="tk-upgrade-production">
-                <span className="tk-upgrade-prod-icon">📊</span>
-                <span className="tk-upgrade-prod-label">{def.specialAttribute.name}</span>
-                <span className="tk-upgrade-prod-current">{currentVal}%</span>
-                <span className="tk-upgrade-prod-arrow">→</span>
-                <span className="tk-upgrade-prod-next">{nextVal}%</span>
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* 升级消耗 */}
-        {info.cost && (
+        {/* BUG-1: 满级建筑显示"已满级"，非满级显示升级预览 */}
+        {isMaxLevel ? (
           <div className="tk-upgrade-section">
-            <div className="tk-upgrade-section-title">升级消耗</div>
-            <div className="tk-upgrade-costs">
-              <div className={`tk-upgrade-cost-item ${affordability.grain ? 'tk-upgrade-cost--enough' : 'tk-upgrade-cost--short'}`}>
-                <span className="tk-upgrade-cost-icon">🌾</span>
-                <span className="tk-upgrade-cost-value">{formatNum(info.cost.grain)}</span>
-                <span className="tk-upgrade-cost-current">/ {formatNum(resources.grain)}</span>
-                <span className="tk-upgrade-cost-status">{affordability.grain ? '✅' : '❌'}</span>
-              </div>
-              <div className={`tk-upgrade-cost-item ${affordability.gold ? 'tk-upgrade-cost--enough' : 'tk-upgrade-cost--short'}`}>
-                <span className="tk-upgrade-cost-icon">💰</span>
-                <span className="tk-upgrade-cost-value">{formatNum(info.cost.gold)}</span>
-                <span className="tk-upgrade-cost-current">/ {formatNum(resources.gold)}</span>
-                <span className="tk-upgrade-cost-status">{affordability.gold ? '✅' : '❌'}</span>
-              </div>
-              {info.cost.troops > 0 && (
-                <div className={`tk-upgrade-cost-item ${affordability.troops ? 'tk-upgrade-cost--enough' : 'tk-upgrade-cost--short'}`}>
-                  <span className="tk-upgrade-cost-icon">⚔️</span>
-                  <span className="tk-upgrade-cost-value">{formatNum(info.cost.troops)}</span>
-                  <span className="tk-upgrade-cost-current">/ {formatNum(resources.troops)}</span>
-                  <span className="tk-upgrade-cost-status">{affordability.troops ? '✅' : '❌'}</span>
-                </div>
-              )}
-              <div className="tk-upgrade-cost-item tk-upgrade-cost-time">
-                <span className="tk-upgrade-cost-icon">⏱️</span>
-                <span className="tk-upgrade-cost-value">{formatTime(info.cost.timeSeconds)}</span>
-              </div>
+            <div className="tk-upgrade-section-title" style={{ textAlign: 'center', color: 'var(--tk-gold, #D4A017)' }}>
+              🏆 已达最高等级
             </div>
           </div>
+        ) : (
+          <>
+            {/* 升级预览 */}
+            <div className="tk-upgrade-section">
+              <div className="tk-upgrade-section-title">升级预览</div>
+              <div className="tk-upgrade-level-change">
+                Lv.{info.level} → Lv.{info.level + 1}
+              </div>
+              {/* 产出变化预览 */}
+              {(() => {
+                const def = BUILDING_DEFS[buildingType];
+                const currentLevelData = def?.levelTable?.[info.level - 1];
+                const nextLevelData = def?.levelTable?.[info.level];
+                if (!def?.production || !currentLevelData) return null;
+                const prod = def.production;
+                const currentProd = currentLevelData.production;
+                const nextProd = nextLevelData?.production ?? currentProd;
+                const resIcon: Record<string, string> = { grain: '🌾', gold: '💰', troops: '⚔️', mandate: '👑', material: '🔨', techPoint: '📜' };
+                return (
+                  <div className="tk-upgrade-production">
+                    <span className="tk-upgrade-prod-icon">{resIcon[prod.resourceType] || '📊'}</span>
+                    <span className="tk-upgrade-prod-label">产出</span>
+                    <span className="tk-upgrade-prod-current">{formatNum(currentProd)}/秒</span>
+                    <span className="tk-upgrade-prod-arrow">→</span>
+                    <span className="tk-upgrade-prod-next">{formatNum(nextProd)}/秒</span>
+                  </div>
+                );
+              })()}
+              {/* 特殊属性变化预览 */}
+              {(() => {
+                const def = BUILDING_DEFS[buildingType];
+                const currentLevelData = def?.levelTable?.[info.level - 1];
+                const nextLevelData = def?.levelTable?.[info.level];
+                if (!def?.specialAttribute || !currentLevelData) return null;
+                const currentVal = currentLevelData.specialValue ?? 0;
+                const nextVal = nextLevelData?.specialValue ?? currentVal;
+                return (
+                  <div className="tk-upgrade-production">
+                    <span className="tk-upgrade-prod-icon">📊</span>
+                    <span className="tk-upgrade-prod-label">{def.specialAttribute.name}</span>
+                    <span className="tk-upgrade-prod-current">{currentVal}%</span>
+                    <span className="tk-upgrade-prod-arrow">→</span>
+                    <span className="tk-upgrade-prod-next">{nextVal}%</span>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* 升级消耗 */}
+            {info.cost && (
+              <div className="tk-upgrade-section">
+                <div className="tk-upgrade-section-title">升级消耗</div>
+                <div className="tk-upgrade-costs">
+                  <div className={`tk-upgrade-cost-item ${affordability.grain ? 'tk-upgrade-cost--enough' : 'tk-upgrade-cost--short'}`}>
+                    <span className="tk-upgrade-cost-icon">🌾</span>
+                    <span className="tk-upgrade-cost-value">{formatNum(info.cost.grain)}</span>
+                    <span className="tk-upgrade-cost-current">/ {formatNum(resources.grain)}</span>
+                    <span className="tk-upgrade-cost-status">{affordability.grain ? '✅' : '❌'}</span>
+                  </div>
+                  <div className={`tk-upgrade-cost-item ${affordability.gold ? 'tk-upgrade-cost--enough' : 'tk-upgrade-cost--short'}`}>
+                    <span className="tk-upgrade-cost-icon">💰</span>
+                    <span className="tk-upgrade-cost-value">{formatNum(info.cost.gold)}</span>
+                    <span className="tk-upgrade-cost-current">/ {formatNum(resources.gold)}</span>
+                    <span className="tk-upgrade-cost-status">{affordability.gold ? '✅' : '❌'}</span>
+                  </div>
+                  {info.cost.troops > 0 && (
+                    <div className={`tk-upgrade-cost-item ${affordability.troops ? 'tk-upgrade-cost--enough' : 'tk-upgrade-cost--short'}`}>
+                      <span className="tk-upgrade-cost-icon">⚔️</span>
+                      <span className="tk-upgrade-cost-value">{formatNum(info.cost.troops)}</span>
+                      <span className="tk-upgrade-cost-current">/ {formatNum(resources.troops)}</span>
+                      <span className="tk-upgrade-cost-status">{affordability.troops ? '✅' : '❌'}</span>
+                    </div>
+                  )}
+                  <div className="tk-upgrade-cost-item tk-upgrade-cost-time">
+                    <span className="tk-upgrade-cost-icon">⏱️</span>
+                    <span className="tk-upgrade-cost-value">{formatTime(info.cost.timeSeconds)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* 失败原因 */}
@@ -212,12 +240,12 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
             取消
           </button>
           <button
-            className={`tk-upgrade-btn tk-upgrade-btn--confirm ${!canAfford ? 'tk-upgrade-btn--disabled' : ''}`}
-            onClick={() => canAfford && onConfirm(buildingType)}
-            disabled={!canAfford}
+            className={`tk-upgrade-btn tk-upgrade-btn--confirm ${isConfirmDisabled ? 'tk-upgrade-btn--disabled' : ''}`}
+            onClick={handleConfirm}
+            disabled={isConfirmDisabled}
             data-testid="building-upgrade-confirm"
           >
-            {canAfford ? `▲ 升级` : '资源不足'}
+            {isMaxLevel ? '已满级' : upgrading ? '升级中...' : !info.canUpgrade ? '无法升级' : canAfford ? '▲ 升级' : '资源不足'}
           </button>
         </div>
     </SharedPanel>

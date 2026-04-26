@@ -30,6 +30,7 @@
   flex-direction: column;
   max-height: 90vh;
   max-width: 95vw;
+  width: min(var(--tk-panel-width, 520px), 95vw);
   animation: tk-shared-panel-enter 300ms ease-out;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   outline: none;
@@ -114,7 +115,6 @@
 /* 移动端适配 */
 @media (max-width: 767px) {
   .tk-shared-panel {
-    width: 95vw !important;
     max-height: 85vh;
   }
 }

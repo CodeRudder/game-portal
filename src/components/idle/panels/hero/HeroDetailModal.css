@@ -386,3 +386,478 @@
   background: var(--tk-hero-compare-hover-bg);
   border-color: var(--tk-hero-compare-hover-border);
 }
+
+/* ── Bug-02: 技能升级入口按钮 ── */
+.tk-hero-detail-skill-upgrade-entry {
+  float: right;
+  padding: 2px 10px;
+  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.tk-hero-detail-skill-upgrade-entry:hover {
+  background: linear-gradient(135deg, #5a9fe9 0%, #4589cd 100%);
+  transform: translateY(-1px);
+}
+.tk-hero-detail-skill-upgrade-entry:active {
+  transform: translateY(0);
+}
+
+/* ── Bug-02: 技能卡片可点击态 ── */
+.tk-hero-detail-skill-item--clickable {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+.tk-hero-detail-skill-item--clickable:hover {
+  background: rgba(74, 144, 217, 0.08);
+  border-color: rgba(74, 144, 217, 0.25);
+}
+
+/* ── Bug-02: 技能升级面板浮层 ── */
+.tk-hero-detail-skill-upgrade-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  animation: tk-detail-fade-in 200ms ease-out;
+}
+.tk-hero-detail-skill-upgrade-panel {
+  width: 90%;
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--tk-hero-panel-bg, #1a1a2e);
+  border-radius: 12px;
+  border: 1px solid var(--tk-hero-border-color, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACC-13: 觉醒按钮样式
+   ═══════════════════════════════════════════════════════════ */
+
+/* 觉醒区域容器 */
+.tk-hero-detail-awakening {
+  margin-top: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.08) 0%, rgba(255, 87, 34, 0.05) 100%);
+  border: 1px solid rgba(255, 152, 0, 0.2);
+  border-radius: 8px;
+}
+
+.tk-hero-detail-awakening-header {
+  margin-bottom: 8px;
+}
+
+.tk-hero-detail-awakening-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff9800;
+}
+
+/* 觉醒条件列表 */
+.tk-hero-detail-awakening-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.tk-hero-detail-awakening-condition {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.tk-hero-detail-awakening-condition-label {
+  color: #aaa;
+  min-width: 40px;
+}
+
+.tk-hero-detail-awakening-condition-value {
+  flex: 1;
+  text-align: right;
+  margin-right: 6px;
+}
+
+.tk-hero-detail-awakening-met {
+  color: #4caf50;
+}
+
+.tk-hero-detail-awakening-unmet {
+  color: #f44336;
+}
+
+/* 觉醒资源消耗 */
+.tk-hero-detail-awakening-costs {
+  margin-bottom: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+}
+
+.tk-hero-detail-awakening-cost-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ccc;
+  margin-bottom: 4px;
+}
+
+.tk-hero-detail-awakening-cost-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  padding: 2px 0;
+  color: #bbb;
+}
+
+/* 觉醒效果预览 */
+.tk-hero-detail-awakening-effect {
+  font-size: 11px;
+  color: #ff9800;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 152, 0, 0.06);
+  border-radius: 4px;
+}
+
+/* 觉醒按钮 */
+.tk-hero-detail-awakening-btn {
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 152, 0, 0.15);
+  color: #888;
+  border: 1px solid rgba(255, 152, 0, 0.2);
+}
+
+.tk-hero-detail-awakening-btn--active {
+  background: linear-gradient(135deg, #ff9800, #ff5722);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 12px rgba(255, 152, 0, 0.3);
+}
+
+.tk-hero-detail-awakening-btn--active:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255, 152, 0, 0.4);
+}
+
+.tk-hero-detail-awakening-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 觉醒按钮包装器 */
+.tk-hero-detail-awakening-btn-wrapper {
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* 觉醒按钮不可用提示 */
+.tk-hero-detail-awakening-btn-hint {
+  font-size: 11px;
+  color: #888;
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* 已觉醒状态 */
+.tk-hero-detail-awakening-awakened {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.12) 0%, rgba(255, 87, 34, 0.08) 100%);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #ff9800;
+  font-weight: 600;
+  text-align: center;
+  animation: tk-awakened-shimmer 2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes tk-awakened-shimmer {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 152, 0, 0.15); }
+  50% { box-shadow: 0 0 12px rgba(255, 152, 0, 0.3); }
+}
+
+/* ── 已觉醒状态中的终极技能展示 ── */
+.tk-hero-detail-awakening-awakened-skill {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 152, 0, 0.2);
+  font-size: 11px;
+  color: #c39bd3;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.tk-hero-detail-awakening-awakened-skill-label {
+  color: #9b59b6;
+  font-weight: 600;
+}
+
+.tk-hero-detail-awakening-awakened-skill-name {
+  color: #d4a574;
+  font-weight: 700;
+}
+
+.tk-hero-detail-awakening-awakened-skill-desc {
+  color: #b0b0b0;
+}
+
+/* ── 觉醒终极技能预览 ── */
+.tk-hero-detail-awakening-skill-preview {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.08) 0%, rgba(142, 68, 173, 0.04) 100%);
+  border: 1px solid rgba(155, 89, 182, 0.2);
+  border-radius: 6px;
+}
+
+.tk-hero-detail-awakening-skill-preview-title {
+  font-size: 11px;
+  color: #9b59b6;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.tk-hero-detail-awakening-skill-preview-name {
+  font-size: 13px;
+  color: #c39bd3;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.tk-hero-detail-awakening-skill-preview-desc {
+  font-size: 11px;
+  color: #b0b0b0;
+  line-height: 1.4;
+}
+
+/* ── 觉醒二次确认弹窗 ── */
+.tk-hero-detail-awakening-confirm-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: tk-awaken-fade-in 200ms ease-out;
+}
+
+@keyframes tk-awaken-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tk-hero-detail-awakening-confirm-dialog {
+  background: #1a1a2e;
+  border: 1px solid #d4a574;
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 280px;
+  max-width: 360px;
+  text-align: center;
+  animation: tk-awaken-scale-in 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tk-awaken-scale-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.tk-hero-detail-awakening-confirm-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ff9800;
+  margin-bottom: 10px;
+}
+
+.tk-hero-detail-awakening-confirm-desc {
+  font-size: 13px;
+  color: #ccc;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.tk-hero-detail-awakening-confirm-effect {
+  font-size: 12px;
+  color: #d4a574;
+  margin-bottom: 16px;
+  padding: 6px 10px;
+  background: rgba(212, 165, 116, 0.08);
+  border-radius: 6px;
+}
+
+.tk-hero-detail-awakening-confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.tk-hero-detail-awakening-confirm-cancel {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  color: #a0a0a0;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tk-hero-detail-awakening-confirm-ok {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid rgba(255, 152, 0, 0.4);
+  border-radius: 6px;
+  background: rgba(255, 152, 0, 0.15);
+  color: #ff9800;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tk-hero-detail-awakening-confirm-ok:hover {
+  background: rgba(255, 152, 0, 0.25);
+}
+
+/* ── 觉醒确认弹窗关闭动画 ── */
+.tk-hero-detail-awakening-confirm-overlay--closing {
+  animation: tk-awaken-fade-out 200ms ease-in forwards;
+}
+
+@keyframes tk-awaken-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.tk-hero-detail-awakening-confirm-dialog--closing {
+  animation: tk-awaken-scale-out 200ms ease-in forwards;
+}
+
+@keyframes tk-awaken-scale-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.85); }
+}
+
+/* ── 觉醒材料获取途径 ── */
+.tk-hero-detail-awakening-sources {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+}
+
+.tk-hero-detail-awakening-sources-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4a574;
+  margin-bottom: 8px;
+}
+
+.tk-hero-detail-awakening-source-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 11px;
+  color: #b0b0b0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tk-hero-detail-awakening-source-item:last-child {
+  border-bottom: none;
+}
+
+.tk-hero-detail-awakening-source-item span:first-child {
+  color: #ccc;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.tk-hero-detail-awakening-source-item span:last-child {
+  text-align: right;
+  color: #999;
+  font-size: 10px;
+}
+
+/* ── 觉醒区域手机端适配 ── */
+@media (max-width: 767px) {
+  .tk-hero-detail-awakening {
+    padding: 10px;
+  }
+
+  .tk-hero-detail-awakening-condition {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tk-hero-detail-awakening-cost-item {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tk-hero-detail-awakening-confirm-dialog {
+    min-width: 260px;
+    max-width: 92vw;
+    padding: 16px;
+  }
+
+  .tk-hero-detail-awakening-sources {
+    padding: 8px 10px;
+  }
+
+  .tk-hero-detail-awakening-source-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .tk-hero-detail-awakening-source-item span:last-child {
+    text-align: left;
+    font-size: 10px;
+  }
+
+  .tk-hero-detail-awakening-skill-preview {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .tk-hero-detail-awakening-confirm-dialog {
+    min-width: auto;
+    max-width: 96vw;
+    padding: 14px;
+  }
+
+  .tk-hero-detail-awakening-confirm-title {
+    font-size: 14px;
+  }
+
+  .tk-hero-detail-awakening-confirm-desc {
+    font-size: 12px;
+  }
+}

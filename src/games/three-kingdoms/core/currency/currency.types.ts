@@ -13,7 +13,7 @@
 export type CurrencyType =
   | 'copper'       // 铜钱 — 基础货币
   | 'mandate'      // 天命 — 稀有货币
-  | 'recruit'      // 招贤榜 — 武将招募
+  | 'recruit'      // 招贤令 — 武将招募
   | 'summon'       // 求贤令 — 高级招募
   | 'expedition'   // 远征币 — 远征商店
   | 'guild'        // 公会币 — 公会商店
@@ -36,7 +36,7 @@ export const CURRENCY_TYPES: readonly CurrencyType[] = [
 export const CURRENCY_LABELS: Record<CurrencyType, string> = {
   copper: '铜钱',
   mandate: '天命',
-  recruit: '招贤榜',
+  recruit: '招贤令',
   summon: '求贤令',
   expedition: '远征币',
   guild: '公会币',

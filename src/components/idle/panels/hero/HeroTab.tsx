@@ -86,7 +86,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
   // ── 引导状态 ──
   const [showGuide, setShowGuide] = useState(() => {
     try {
-      const raw = localStorage.getItem('tk-guide-progress');
+      const raw = localStorage.getItem('tk-tutorial-progress');
       if (raw) {
         const data = JSON.parse(raw);
         return !data.completed;
@@ -113,9 +113,10 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
     if (qualityFilter !== 'all') list = list.filter((g) => g.quality === qualityFilter);
 
     const heroSystem = engine.getHeroSystem();
+    const starSystem = engine.getHeroStarSystem();
     return [...list].sort((a, b) => {
       switch (sortKey) {
-        case 'power': return heroSystem.calculatePower(b) - heroSystem.calculatePower(a);
+        case 'power': return heroSystem.calculatePower(b, starSystem.getStar(b.id)) - heroSystem.calculatePower(a, starSystem.getStar(a.id));
         case 'level': return b.level - a.level;
         case 'quality': return (QUALITY_ORDER[b.quality as Quality] ?? 0) - (QUALITY_ORDER[a.quality as Quality] ?? 0);
         default: return 0;

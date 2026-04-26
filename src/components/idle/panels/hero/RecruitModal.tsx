@@ -15,7 +15,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { RecruitType, RecruitOutput, RecruitResult, Quality, RecruitHistoryEntry } from '@/games/three-kingdoms/engine';
-import { QUALITY_LABELS, QUALITY_BORDER_COLORS } from '@/games/three-kingdoms/engine';
+import { QUALITY_LABELS, QUALITY_BORDER_COLORS, RECRUIT_RATES, DAILY_FREE_CONFIG, RECRUIT_PITY } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { Toast } from '@/components/idle/common/Toast';
 import './RecruitModal.css';
@@ -51,25 +51,28 @@ const RECRUIT_TYPE_ICONS: Record<RecruitType, string> = {
 };
 
 // ─────────────────────────────────────────────
-// 概率表数据
+// 概率表数据 — 从引擎 RECRUIT_RATES 动态生成
 // ─────────────────────────────────────────────
 
-const RATE_TABLE_DATA: Record<RecruitType, ReadonlyArray<{ quality: string; label: string; rate: number }>> = {
-  normal: [
-    { quality: 'COMMON', label: '普通', rate: 0.60 },
-    { quality: 'FINE', label: '精良', rate: 0.30 },
-    { quality: 'RARE', label: '稀有', rate: 0.08 },
-    { quality: 'EPIC', label: '史诗', rate: 0.02 },
-    { quality: 'LEGENDARY', label: '传说', rate: 0 },
-  ],
-  advanced: [
-    { quality: 'COMMON', label: '普通', rate: 0.20 },
-    { quality: 'FINE', label: '精良', rate: 0.40 },
-    { quality: 'RARE', label: '稀有', rate: 0.25 },
-    { quality: 'EPIC', label: '史诗', rate: 0.13 },
-    { quality: 'LEGENDARY', label: '传说', rate: 0.02 },
-  ],
+const QUALITY_RATE_LABELS: Record<string, string> = {
+  COMMON: '普通', FINE: '精良', RARE: '稀有', EPIC: '史诗', LEGENDARY: '传说',
 };
+
+/** 从引擎 RECRUIT_RATES 生成概率表展示数据 */
+function buildRateTableData(): Record<RecruitType, ReadonlyArray<{ quality: string; label: string; rate: number }>> {
+  const build = (type: RecruitType) =>
+    RECRUIT_RATES[type].map((r) => ({
+      quality: r.quality,
+      label: QUALITY_RATE_LABELS[r.quality] ?? r.quality,
+      rate: r.rate,
+    }));
+  return {
+    normal: build('normal'),
+    advanced: build('advanced'),
+  };
+}
+
+const RATE_TABLE_DATA = buildRateTableData();
 
 // ─────────────────────────────────────────────
 // 品质揭示动画 CSS class 映射
@@ -116,6 +119,9 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const [showRates, setShowRates] = useState(false);
 
+  // 防抖同步锁（防止快速连点导致重复招募）
+  const isRecruitingRef = useRef(false);
+
   const recruitSystem = engine.getRecruitSystem();
 
   // 计算消耗
@@ -132,10 +138,21 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
     const isNormal = recruitType === 'normal';
     const tenPity = isNormal ? state.normalPity : state.advancedPity;
     const hardPity = isNormal ? state.normalHardPity : state.advancedHardPity;
+    // 从引擎配置获取硬保底阈值（Infinity 表示该池无硬保底）
+    const hardPityMax = RECRUIT_PITY[recruitType].hardPityThreshold;
+    const hasHardPity = hardPityMax !== Infinity;
     return {
       tenPull: { current: tenPity, max: 10 },
-      hardPity: { current: hardPity, max: 50 },
+      hardPity: hasHardPity ? { current: hardPity, max: hardPityMax as number } : null,
     };
+  }, [recruitSystem, recruitType]);
+
+  // 免费招募状态（ACC-05 P1 修复）
+  const freeRecruitInfo = useMemo(() => {
+    const remaining = recruitSystem.getRemainingFreeCount(recruitType);
+    const maxFree = DAILY_FREE_CONFIG[recruitType].freeCount;
+    const canFree = recruitSystem.canFreeRecruit(recruitType);
+    return { remaining, maxFree, canFree };
   }, [recruitSystem, recruitType]);
 
   // 招募历史（最近10条）
@@ -146,6 +163,9 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
 
   // 执行招募
   const handleRecruit = useCallback((count: 1 | 10) => {
+    // 防抖前置检查：使用 ref 同步锁避免竞态
+    if (isRecruiting || isRecruitingRef.current) return;
+    isRecruitingRef.current = true;
     setIsRecruiting(true);
     setRevealPhase(false);
     try {
@@ -162,8 +182,34 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
       Toast.danger(message);
     } finally {
       setIsRecruiting(false);
+      isRecruitingRef.current = false;
     }
-  }, [engine, recruitType, onRecruitComplete]);
+  }, [engine, recruitType, onRecruitComplete, isRecruiting]);
+
+  // 免费招募（ACC-05 P1 修复）
+  const handleFreeRecruit = useCallback(() => {
+    if (isRecruiting || isRecruitingRef.current) return;
+    isRecruitingRef.current = true;
+    setIsRecruiting(true);
+    setRevealPhase(false);
+    try {
+      const output = recruitSystem.freeRecruitSingle(recruitType);
+      if (output) {
+        setResults(output);
+        setRevealPhase(true);
+        Toast.success('🎉 免费招募成功！');
+        onRecruitComplete?.();
+      } else {
+        Toast.danger('今日免费次数已用完');
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : '免费招募失败';
+      Toast.danger(message);
+    } finally {
+      setIsRecruiting(false);
+      isRecruitingRef.current = false;
+    }
+  }, [recruitSystem, recruitType, isRecruiting, onRecruitComplete]);
 
   // 关闭结果面板
   const handleCloseResults = useCallback(() => {
@@ -273,22 +319,43 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
               {pityInfo.tenPull.current}/{pityInfo.tenPull.max}
             </span>
           </div>
-          <div className="tk-recruit-pity-item" title="每50次招募必出史诗或更高品质武将">
-            <span className="tk-recruit-pity-label">硬保底（史诗+）</span>
-            <div className="tk-recruit-pity-bar">
-              <div
-                className="tk-recruit-pity-fill tk-recruit-pity-fill--hard"
-                style={{ width: `${(pityInfo.hardPity.current / pityInfo.hardPity.max) * 100}%` }}
-              />
+          {pityInfo.hardPity && (
+            <div className="tk-recruit-pity-item" title={`每${pityInfo.hardPity.max}次招募必出${recruitType === 'advanced' ? '传说' : '史诗'}或更高品质武将`}>
+              <span className="tk-recruit-pity-label">
+                硬保底（{recruitType === 'advanced' ? '传说+' : '史诗+'}）
+              </span>
+              <div className="tk-recruit-pity-bar">
+                <div
+                  className="tk-recruit-pity-fill tk-recruit-pity-fill--hard"
+                  style={{ width: `${(pityInfo.hardPity.current / pityInfo.hardPity.max) * 100}%` }}
+                />
+              </div>
+              <span className="tk-recruit-pity-count">
+                {pityInfo.hardPity.current}/{pityInfo.hardPity.max}
+              </span>
             </div>
-            <span className="tk-recruit-pity-count">
-              {pityInfo.hardPity.current}/{pityInfo.hardPity.max}
-            </span>
-          </div>
+          )}
         </div>
 
         {/* 消耗 + 按钮 */}
         <div className="tk-recruit-actions">
+          {/* 免费招募按钮（仅当有免费次数时显示） */}
+          {freeRecruitInfo.maxFree > 0 && (
+            <div className="tk-recruit-action-item">
+              <div className="tk-recruit-cost tk-recruit-cost--free">
+                🎁 每日免费 ({freeRecruitInfo.remaining}/{freeRecruitInfo.maxFree})
+              </div>
+              <button
+                className="tk-recruit-btn tk-recruit-btn--free"
+                data-testid="recruit-modal-free-btn"
+                disabled={!freeRecruitInfo.canFree || isRecruiting}
+                onClick={handleFreeRecruit}
+              >
+                {isRecruiting ? '招募中...' : freeRecruitInfo.canFree ? '🎁 免费招募' : '今日已用'}
+              </button>
+            </div>
+          )}
+
           {/* 单抽 */}
           <div className="tk-recruit-action-item">
             <div className="tk-recruit-cost">
@@ -428,9 +495,13 @@ const RecruitResultCard: React.FC<RecruitResultCardProps> = ({ result, reveal, d
         {qualityLabel}
       </div>
       <div className="tk-recruit-result-name">
-        {result.general?.name ?? '???'}
+        {result.isEmpty ? '武将池为空' : (result.general?.name ?? '???')}
       </div>
-      {result.isDuplicate ? (
+      {result.isEmpty ? (
+        <div className="tk-recruit-result-dup" style={{ color: '#999' }}>
+          请等待武将池补充
+        </div>
+      ) : result.isDuplicate ? (
         <div className="tk-recruit-result-dup">
           已拥有 → 碎片×{result.fragmentCount}
         </div>

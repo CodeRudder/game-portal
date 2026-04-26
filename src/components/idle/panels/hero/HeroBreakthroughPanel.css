@@ -41,7 +41,11 @@
 .tk-bt-node--completed .tk-bt-node__cap, .tk-bt-node--current .tk-bt-node__cap { color: var(--tk-gold, #c8a84c); }
 
 /* 连接线 */
-.tk-bt-connector { flex: 1; height: 2px; background: rgba(100, 100, 100, 0.25); margin: 0 4px; margin-bottom: 28px; }
+.tk-bt-connector {
+  flex: 1; height: 2px; background: rgba(100, 100, 100, 0.25);
+  margin: 0 4px; align-self: center;
+  transform: translateY(-14px);
+}
 .tk-bt-connector--completed { background: var(--tk-hero-gold-40, rgba(200, 168, 76, 0.4)); }
 
 /* 等级上限 */
@@ -83,3 +87,144 @@
 }
 .tk-bt-btn--active { background: linear-gradient(135deg, var(--tk-gold, #c8a84c), var(--tk-gold-light, #e8c468)); color: #1a1a2e; }
 .tk-bt-btn--disabled { background: rgba(80, 80, 80, 0.3); color: var(--tk-text-muted, rgba(240, 230, 211, 0.35)); cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════
+   手机端适配 (≤ 480px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .tk-bt-panel {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .tk-bt-title {
+    font-size: 14px;
+  }
+
+  .tk-bt-stage {
+    font-size: 12px;
+  }
+
+  .tk-bt-roadmap {
+    padding: 8px 4px;
+    gap: 2px;
+  }
+
+  .tk-bt-node__dot {
+    width: 26px;
+    height: 26px;
+    font-size: 10px;
+  }
+
+  .tk-bt-node__label {
+    font-size: 9px;
+  }
+
+  .tk-bt-node__cap {
+    font-size: 9px;
+  }
+
+  .tk-bt-connector {
+    transform: translateY(-10px);
+  }
+
+  .tk-bt-level-cap {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .tk-bt-level-cap__label {
+    font-size: 12px;
+  }
+
+  .tk-bt-level-cap__value {
+    font-size: 13px;
+  }
+
+  .tk-bt-level-cap__next {
+    font-size: 11px;
+  }
+
+  .tk-bt-materials {
+    padding: 8px;
+  }
+
+  .tk-bt-materials__title {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .tk-bt-material {
+    font-size: 12px;
+    padding: 4px 0;
+  }
+
+  .tk-bt-material__icon {
+    font-size: 14px;
+  }
+
+  .tk-bt-btn {
+    padding: 10px;
+    font-size: 14px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   超小屏幕 (≤ 360px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 360px) {
+  .tk-bt-node__dot {
+    width: 22px;
+    height: 22px;
+    font-size: 9px;
+  }
+
+  .tk-bt-node__label {
+    font-size: 8px;
+  }
+
+  .tk-bt-node__cap {
+    font-size: 8px;
+  }
+
+  .tk-bt-connector {
+    transform: translateY(-8px);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   横屏适配（手机横屏）
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-bt-panel {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .tk-bt-title {
+    font-size: 13px;
+  }
+
+  .tk-bt-roadmap {
+    padding: 6px 4px;
+  }
+
+  .tk-bt-node__dot {
+    width: 24px;
+    height: 24px;
+    font-size: 9px;
+  }
+
+  .tk-bt-node__label {
+    font-size: 8px;
+  }
+
+  .tk-bt-node__cap {
+    font-size: 8px;
+  }
+
+  .tk-bt-btn {
+    padding: 8px;
+    font-size: 13px;
+  }
+}

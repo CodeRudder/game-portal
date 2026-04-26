@@ -46,7 +46,7 @@ describe('HeroFormation.autoFormationByIds — 一键布阵', () => {
     calcPower = vi.fn((g: GeneralData) => g.baseStats.attack);
   });
 
-  it('自动按战力排序选前5个武将编队', () => {
+  it('自动按战力排序选前6个武将编队（默认 maxSlots）', () => {
     const result = formation.autoFormationByIds(
       heroes.map((h) => h.id),
       getGeneral,
@@ -54,15 +54,14 @@ describe('HeroFormation.autoFormationByIds — 一键布阵', () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.slots.filter((s) => s !== '')).toHaveLength(5);
-    // 战力最高的5个
+    expect(result!.slots.filter((s) => s !== '')).toHaveLength(6);
+    // 战力最高的6个
     expect(result!.slots[0]).toBe('guanyu');
     expect(result!.slots[1]).toBe('zhangfei');
     expect(result!.slots[2]).toBe('zhaoyun');
     expect(result!.slots[3]).toBe('machao');
     expect(result!.slots[4]).toBe('huangzhong');
-    // 第6个空位
-    expect(result!.slots[5]).toBe('');
+    expect(result!.slots[5]).toBe('liubei');
   });
 
   it('编队不存在时自动创建', () => {

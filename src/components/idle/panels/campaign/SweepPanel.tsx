@@ -155,8 +155,12 @@ const SweepPanel: React.FC<SweepPanelProps> = ({
             >
               +
             </button>
-            <button className="tk-sweep-max-btn" onClick={handleMax}>
-              MAX
+            <button
+              className={`tk-sweep-max-btn ${ticketCount < COST_PER_RUN ? 'tk-sweep-max-btn--disabled' : ''}`}
+              disabled={ticketCount < COST_PER_RUN}
+              onClick={ticketCount >= COST_PER_RUN ? handleMax : undefined}
+            >
+              {ticketCount < COST_PER_RUN ? '扫荡令不足' : 'MAX'}
             </button>
           </div>
         )}

@@ -488,3 +488,63 @@
   transform: scale(0.97);
   transition: transform 0.1s;
 }
+
+/* ═══════════════════════════════════════════
+   横屏适配（手机横屏）— ACC-06-49
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tk-bfm-modal {
+    max-height: 85vh;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .tk-bfm-header {
+    padding: 8px 12px 6px;
+  }
+
+  .tk-bfm-stage-name {
+    font-size: 13px;
+  }
+
+  .tk-bfm-section {
+    padding: 6px 12px;
+  }
+
+  .tk-bfm-ally-row {
+    gap: 3px;
+    margin-bottom: 6px;
+  }
+
+  .tk-bfm-ally-slot {
+    padding: 4px 2px;
+    min-height: 56px;
+  }
+
+  .tk-bfm-ally-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .tk-bfm-ally-avatar-text {
+    font-size: 10px;
+  }
+
+  .tk-bfm-ally-name {
+    font-size: 9px;
+    max-width: 48px;
+  }
+
+  .tk-bfm-actions {
+    padding: 8px 12px;
+    gap: 4px;
+  }
+
+  .tk-bfm-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .tk-bfm-power-value {
+    font-size: 13px;
+  }
+}

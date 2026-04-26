@@ -137,9 +137,10 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
   // ── 出征 → 打开战斗场景 ──
   const handleBattle = useCallback(() => {
     if (isBattling) return;
+    if (formationGenerals.length === 0) return; // 空编队校验
     setIsBattling(true);
     setShowBattleScene(true);
-  }, [isBattling]);
+  }, [isBattling, formationGenerals.length]);
 
   // ── 战斗场景结束回调 ──
   const handleBattleSceneEnd = useCallback((result: BattleResult) => {
@@ -159,16 +160,39 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
     onClose();
   }, [battleResult, engine, stage.id, onClose]);
 
-  // ── 一键布阵 ──
+  // ── 一键布阵（防御排序：防御最高的3人放前排，其余放后排） ──
   const handleAutoFormation = useCallback(() => {
     const sorted = heroSystem.getGeneralsSortedByPower(true);
-    const top6 = sorted.slice(0, MAX_SLOTS_PER_FORMATION).map((g) => g.id);
+    const top6 = sorted.slice(0, MAX_SLOTS_PER_FORMATION);
+
+    if (top6.length === 0) return;
+
+    // 与引擎 autoFormation.ts 策略一致：
+    // 按防御降序 → 同防御按等级降序排序
+    const defenseSorted = [...top6].sort((a, b) => {
+      const defA = a.baseStats?.defense ?? 0;
+      const defB = b.baseStats?.defense ?? 0;
+      const defDiff = defB - defA;
+      if (defDiff !== 0) return defDiff;
+      return b.level - a.level;
+    });
+
+    // 防御最高的3人放前排（slots 0-2），其余放后排（slots 3-5）
+    const frontCount = Math.min(3, defenseSorted.length);
+    const orderedIds: string[] = [];
+    for (let i = 0; i < frontCount; i++) {
+      orderedIds.push(defenseSorted[i].id);
+    }
+    for (let i = frontCount; i < defenseSorted.length; i++) {
+      orderedIds.push(defenseSorted[i].id);
+    }
+
     if (activeFormation) {
-      engine.setFormation(activeFormation.id, top6);
+      engine.setFormation(activeFormation.id, orderedIds);
     } else {
       const newFormation = engine.createFormation();
       if (newFormation) {
-        engine.setFormation(newFormation.id, top6);
+        engine.setFormation(newFormation.id, orderedIds);
       }
     }
   }, [heroSystem, activeFormation, engine]);
