@@ -152,3 +152,6 @@ export * from './advisor';
 
 // ── 成就域 (v20.0) ──
 export * from './achievement';
+
+// ── 赛季域 (v21.0) ──
+export * from './season';

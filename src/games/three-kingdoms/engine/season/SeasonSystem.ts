@@ -348,6 +348,13 @@ export class SeasonSystem implements ISubsystem {
   // ─── 存档 ───────────────────────────────
 
   /**
+   * 序列化（ISubsystem 兼容别名）
+   */
+  serialize(): SeasonSaveData {
+    return this.getSaveData();
+  }
+
+  /**
    * 获取存档数据
    */
   getSaveData(): SeasonSaveData {

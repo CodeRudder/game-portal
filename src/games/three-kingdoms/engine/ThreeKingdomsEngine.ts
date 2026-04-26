@@ -200,6 +200,7 @@ export class ThreeKingdomsEngine {
     this.offline = createOfflineSystems();
     this.guide = createGuideSystems();
     this.tutorialGuide = new TutorialSystem();
+    this.season = new SeasonSystem();
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
@@ -257,6 +258,7 @@ export class ThreeKingdomsEngine {
     registerOfflineSystems(r, this.offline);
     registerGuideSystems(r, this.guide);
     r.register('tutorialGuide', this.tutorialGuide);
+    r.register('season', this.season);
   }
 
   // ── 初始化 ──
@@ -279,6 +281,7 @@ export class ThreeKingdomsEngine {
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
     this.tutorialGuide.init(deps);
+    this.season.init(deps);
     this.initialized = true; this.lastTickTime = Date.now();
     this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
     this.bus.emit('game:initialized', { isNewGame: true });
@@ -382,6 +385,7 @@ export class ThreeKingdomsEngine {
     resetOfflineSystems(this.offline);
     resetGuideSystems(this.guide);
     this.tutorialGuide.reset();
+    this.season.reset();
     this.initialized = false; this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0; this.prevResourcesJson = ''; this.prevRatesJson = '';
     this.saveManager.deleteSave(); this.bus.removeAllListeners();
@@ -636,6 +640,7 @@ export class ThreeKingdomsEngine {
       eventLog: this.eventSystems.log,
       offlineEvent: this.eventSystems.offline,
       onlineSeconds: this.onlineSeconds,
+      season: this.season,
     };
   }
   private finalizeLoad(): void {

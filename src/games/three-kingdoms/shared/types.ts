@@ -267,6 +267,8 @@ export interface GameSaveData {
   eventLog?: import('../engine/event/EventLogSystem').EventLogSaveData;
   /** 离线事件系统数据（可选，v15.0+） */
   offlineEvent?: { version: number; offlineQueue: unknown[]; autoRules: unknown[] };
+  /** 赛季系统数据（可选，v16.0+） */
+  season?: import('../engine/season/SeasonSystem').SeasonSaveData;
 }
 
 // ─────────────────────────────────────────────

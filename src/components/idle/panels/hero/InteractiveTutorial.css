@@ -1,0 +1,68 @@
+/* InteractiveTutorial — 交互式新手教程样式 */
+
+/* 全屏遮罩 */
+.it-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* 高亮区域（白色发光 box-shadow） */
+.it-highlight {
+  position: absolute;
+  border-radius: 6px;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 0 20px rgba(255, 255, 255, 0.5);
+  z-index: 10001;
+  pointer-events: none;
+}
+
+/* 引导气泡 */
+.it-tooltip {
+  position: absolute;
+  z-index: 10002;
+  min-width: 240px;
+  max-width: 340px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.it-tooltip__title { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #1a1a2e; }
+.it-tooltip__desc { margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: #555; }
+
+/* 步骤进度指示器 */
+.it-progress { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
+.it-progress__dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; }
+.it-progress__dot--active { background: #4a6cf7; }
+.it-progress__text { margin-left: 8px; font-size: 12px; color: #999; }
+
+/* 操作按钮区 */
+.it-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.it-btn { padding: 6px 16px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+.it-btn--skip { background: transparent; color: #999; }
+.it-btn--prev { background: #f0f0f0; color: #555; }
+.it-btn--next, .it-btn--complete { background: #4a6cf7; color: #fff; }
+.it-btn--next:hover, .it-btn--complete:hover { background: #3b5de7; }
+
+/* 完成动画 */
+.it-complete-animation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  animation: it-complete-pop 0.6s ease-out;
+}
+
+.it-complete-icon { display: inline-block; font-size: 48px; }
+.it-complete-text { margin-top: 12px; font-size: 18px; font-weight: 700; color: #fff; }
+
+@keyframes it-complete-pop {
+  0% { transform: translate(-50%, -50%) scale(0.5); }
+  60% { transform: translate(-50%, -50%) scale(1.1); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}

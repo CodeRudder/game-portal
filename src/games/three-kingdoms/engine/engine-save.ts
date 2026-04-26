@@ -95,6 +95,8 @@ export interface SaveContext {
   readonly offlineEvent?: import('./event/OfflineEventSystem').OfflineEventSystem;
   /** 在线时长（秒） */
   onlineSeconds: number;
+  /** 赛季系统（可选，v16.0+） */
+  readonly season?: import('./season/SeasonSystem').SeasonSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -147,6 +149,8 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     eventChain: ctx.eventChain?.serialize(),
     eventLog: ctx.eventLog?.exportSaveData(),
     offlineEvent: ctx.offlineEvent?.exportSaveData() as { version: number; offlineQueue: unknown[]; autoRules: unknown[] },
+    // ── 赛季系统 v16.0 ──
+    season: ctx.season?.getSaveData(),
   };
 }
 
@@ -179,6 +183,7 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.eventChain) subsystems.eventChain = data.eventChain;
   if (data.eventLog) subsystems.eventLog = data.eventLog;
   if (data.offlineEvent) subsystems.offlineEvent = data.offlineEvent;
+  if (data.season) subsystems.season = data.season;
 
   return {
     version: String(data.version),
@@ -223,6 +228,7 @@ export function fromIGameState(state: IGameState): GameSaveData {
     eventChain: s.eventChain as import('./event/EventChainSystem').EventChainSaveData | undefined,
     eventLog: s.eventLog as import('./event/EventLogSystem').EventLogSaveData | undefined,
     offlineEvent: s.offlineEvent as { version: number; offlineQueue: unknown[]; autoRules: unknown[] } | undefined,
+    season: s.season as import('./season/SeasonSystem').SeasonSaveData | undefined,
   };
 }
 
@@ -436,6 +442,11 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   // ── 离线事件系统 v15.0 ──
   if (data.offlineEvent && ctx.offlineEvent) {
     ctx.offlineEvent.importSaveData(data.offlineEvent as Parameters<typeof ctx.offlineEvent.importSaveData>[0]);
+  }
+
+  // ── 赛季系统 v16.0 ──
+  if (data.season && ctx.season) {
+    ctx.season.loadSaveData(data.season);
   }
 
   syncBuildingToResource({

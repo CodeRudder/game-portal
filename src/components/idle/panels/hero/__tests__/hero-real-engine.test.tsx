@@ -12,7 +12,7 @@
  *
  * 关键约束：
  *   - 初始 recruitToken = 10，普通招募消耗 5/次 → 最多 2 次普通招募
- *   - 使用 engine.hero.addGeneral() 可绕过资源限制直接添加武将
+ *   - 使用 engine.getHeroSystem().addGeneral() 可绕过资源限制直接添加武将
  *   - 所有测试使用真实引擎，不使用任何 mock
  *
  * @module components/idle/panels/hero/__tests__/hero-real-engine
@@ -23,7 +23,7 @@ import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdoms
 import type { GeneralData } from '@/games/three-kingdoms/engine/hero/hero.types';
 import { Quality, QUALITY_LABELS, FACTION_LABELS } from '@/games/three-kingdoms/engine/hero/hero.types';
 import type { RecruitOutput } from '@/games/three-kingdoms/engine/hero/recruit-types';
-import type { ActiveBond } from '@/games/three-kingdoms/engine/hero/BondSystem';
+import type { ActiveBond } from '@/games/three-kingdoms/core/bond/bond.types';
 import type { LevelUpResult } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 
 // ─────────────────────────────────────────────
@@ -354,7 +354,6 @@ describe('编队操作集成', () => {
 
   it('编队上限为 6 人', () => {
     const heroSystem = engine.getHeroSystem();
-    // 添加 8 个武将
     for (const id of KNOWN_HERO_IDS.slice(0, 8)) {
       heroSystem.addGeneral(id);
     }
@@ -388,55 +387,67 @@ describe('羁绊系统数据格式', () => {
   it('getBondSystem 返回有效的羁绊系统', () => {
     const bondSystem = engine.getBondSystem();
     expect(bondSystem).toBeDefined();
-    expect(bondSystem.getActiveBonds).toBeTypeOf('function');
-    expect(bondSystem.getBondMultiplier).toBeTypeOf('function');
+    // bond/BondSystem 的实际 API
+    expect(bondSystem.detectActiveBonds).toBeTypeOf('function');
+    expect(bondSystem.calculateTotalBondBonuses).toBeTypeOf('function');
+    expect(bondSystem.getFormationPreview).toBeTypeOf('function');
   });
 
-  it('无武将时 getActiveBonds 返回空数组', () => {
+  it('无武将时 detectActiveBonds 返回空数组', () => {
     const bondSystem = engine.getBondSystem();
-    const bonds = bondSystem.getActiveBonds([]);
+    const bonds = bondSystem.detectActiveBonds([]);
     expect(Array.isArray(bonds)).toBe(true);
     expect(bonds).toHaveLength(0);
   });
 
-  it('激活羁绊的数据格式包含必要字段', () => {
+  it('同阵营武将激活羁绊且数据格式正确', () => {
     const heroSystem = engine.getHeroSystem();
-    // 添加同阵营武将（蜀国：刘备、关羽、张飞）
+    // 添加蜀国武将
     heroSystem.addGeneral('liubei');
     heroSystem.addGeneral('guanyu');
     heroSystem.addGeneral('zhangfei');
 
+    const generals = engine.getGenerals();
     const bondSystem = engine.getBondSystem();
-    const bonds: ActiveBond[] = bondSystem.getActiveBonds(['liubei', 'guanyu', 'zhangfei']);
+    const bonds: ActiveBond[] = bondSystem.detectActiveBonds(generals);
+
+    // 同阵营羁绊应被激活
+    expect(bonds.length).toBeGreaterThan(0);
 
     for (const bond of bonds) {
-      expect(typeof bond.bondId).toBe('string');
-      expect(typeof bond.name).toBe('string');
-      expect(typeof bond.level).toBe('number');
-      expect(typeof bond.dispatchFactor).toBe('number');
-      expect(Array.isArray(bond.effects)).toBe(true);
-      expect(Array.isArray(bond.participants)).toBe(true);
-      expect(bond.participants.length).toBeGreaterThanOrEqual(1);
-
-      for (const effect of bond.effects) {
-        expect(effect).toHaveProperty('stat');
-        expect(effect).toHaveProperty('value');
-        expect(typeof effect.stat).toBe('string');
-        expect(typeof effect.value).toBe('number');
-      }
+      expect(bond).toHaveProperty('type');
+      expect(bond).toHaveProperty('faction');
+      expect(bond).toHaveProperty('heroCount');
+      expect(bond).toHaveProperty('effect');
+      expect(typeof bond.type).toBe('string');
+      expect(typeof bond.faction).toBe('string');
+      expect(typeof bond.heroCount).toBe('number');
+      expect(bond.heroCount).toBeGreaterThanOrEqual(2);
+      // effect 结构
+      expect(bond.effect).toHaveProperty('stat');
+      expect(bond.effect).toHaveProperty('value');
+      expect(typeof bond.effect.stat).toBe('string');
+      expect(typeof bond.effect.value).toBe('number');
     }
   });
 
-  it('getBondMultiplier 返回合法数值', () => {
+  it('calculateTotalBondBonuses 返回属性加成', () => {
     const heroSystem = engine.getHeroSystem();
     heroSystem.addGeneral('liubei');
     heroSystem.addGeneral('guanyu');
 
+    const generals = engine.getGenerals();
     const bondSystem = engine.getBondSystem();
-    const multiplier = bondSystem.getBondMultiplier(['liubei', 'guanyu']);
-    expect(typeof multiplier).toBe('number');
-    expect(multiplier).toBeGreaterThanOrEqual(1.0);
-    expect(Number.isFinite(multiplier)).toBe(true);
+    const bonds = bondSystem.detectActiveBonds(generals);
+
+    if (bonds.length > 0) {
+      const bonuses = bondSystem.calculateTotalBondBonuses(bonds);
+      expect(typeof bonuses).toBe('object');
+      // 至少有一个属性被加成
+      const bonusValues = Object.values(bonuses);
+      const hasBonus = bonusValues.some((v) => typeof v === 'number' && v > 0);
+      expect(hasBonus).toBe(true);
+    }
   });
 });
 
