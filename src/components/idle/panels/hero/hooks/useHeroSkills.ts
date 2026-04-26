@@ -10,10 +10,25 @@
  */
 
 import { useMemo, useCallback } from 'react';
+import type { SkillData } from '@/games/three-kingdoms/engine';
 import type { SkillUpgradeCost, SkillUnlockCondition } from '../SkillUpgradePanel';
-import type { SkillDataWithCooldown } from '../hero-ui.types';
 import type { UseHeroEngineParams, UseHeroSkillsReturn } from './hero-hook.types';
 import { UPGRADE_COST_TABLE, DEFAULT_COST } from './hero-constants';
+
+/**
+ * 安全获取技能冷却时间
+ *
+ * 引擎 SkillData 接口不包含 cooldown 字段，
+ * 但运行时部分技能数据可能携带 cooldown 属性。
+ * 使用 in 操作符检测，避免类型断言。
+ */
+function getSkillCooldown(skill: SkillData): number {
+  if ('cooldown' in skill && typeof skill.cooldown === 'number') {
+    return skill.cooldown;
+  }
+  // 默认冷却：主动技能 8 秒，被动技能 0 秒
+  return skill.type === 'active' ? 8 : 0;
+}
 
 /**
  * 技能数据 + 升级操作 Hook
@@ -51,18 +66,19 @@ export function useHeroSkills(params: UseHeroEngineParams): UseHeroSkillsReturn 
           gold: costTable.copper,
         };
 
-        // 安全获取 cooldown（SkillData 兼容 SkillDataWithCooldown）
-        const cooldown = (skill as SkillDataWithCooldown).cooldown ?? (skill.type === 'active' ? 8 : 0);
+        const cooldown = getSkillCooldown(skill);
+
+        const unlockCondition: SkillUnlockCondition | undefined = !unlocked ? {
+          breakthroughStage: unlockStage,
+          description: `突破阶段 ${unlockStage} 解锁`,
+        } : undefined;
 
         return {
           ...skill,
           upgradeCost,
           levelCap: skillCap,
           unlocked: index < 2 || unlocked,
-          unlockCondition: !unlocked ? {
-            breakthroughStage: unlockStage,
-            description: `突破阶段 ${unlockStage} 解锁`,
-          } as SkillUnlockCondition : undefined,
+          unlockCondition,
           cooldown,
         };
       });

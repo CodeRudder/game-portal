@@ -15,17 +15,14 @@
  *     ├─ useFormation       编队数据+推荐      ← formationVersion
  *     └─ useHeroGuide       引导操作
  *
- * 性能优化（R11）：
- * - 将单一 snapshotVersion 拆分为 heroVersion / bondVersion /
- *   formationVersion / dispatchVersion 四个细粒度版本号
- * - 未传入细粒度版本号时，自动 fallback 到 snapshotVersion（向后兼容）
- * - 每个子Hook只在自己关心的版本号变化时重计算
+ * 解耦说明（R12）：
+ * - useHeroBonds 和 useFormation 不再依赖 useHeroList 的返回值
+ * - 各子 Hook 直接从引擎获取所需数据，独立可用
  *
  * @module components/idle/panels/hero/hooks/useHeroEngine
  */
 
 import { useMemo } from 'react';
-import type { GeneralData } from '@/games/three-kingdoms/engine';
 import type { UseHeroEngineParams, UseHeroEngineReturn } from './hero-hook.types';
 import { useHeroList } from './useHeroList';
 import { useHeroSkills } from './useHeroSkills';
@@ -85,22 +82,14 @@ export function useHeroEngine(params: UseHeroEngineParams): UseHeroEngineReturn 
     snapshotVersion: formationVersion,
   }), [params.engine, formationVersion, params.selectedHeroId, params.formationHeroIds]);
 
-  // ── 子 Hook 调用 ──
+  // ── 子 Hook 调用（各子 Hook 独立，不传递其他 Hook 的返回值） ──
   const heroList = useHeroList(heroListParams);
   const heroSkills = useHeroSkills(heroSkillsParams);
-
-  // useHeroBonds 依赖 heroList 的数据
-  const heroBonds = useHeroBonds(heroBondsParams, useMemo(() => ({
-    allGenerals: heroList.allGenerals,
-    ownedHeroIds: heroList.ownedHeroIds,
-  }), [heroList.allGenerals, heroList.ownedHeroIds]));
-
+  // useHeroBonds 直接从引擎获取武将数据，不依赖 heroList 返回值
+  const heroBonds = useHeroBonds(heroBondsParams);
   const heroDispatch = useHeroDispatch(heroDispatchParams);
-
-  // useFormation 依赖 heroInfos
-  const formation = useFormation(formationParams, useMemo(() => ({
-    heroInfos: heroList.heroInfos,
-  }), [heroList.heroInfos]));
+  // useFormation 直接从引擎获取武将数据，不依赖 heroList 返回值
+  const formation = useFormation(formationParams);
 
   return {
     ...heroList,

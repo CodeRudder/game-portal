@@ -53,6 +53,9 @@ export function useHeroList(params: UseHeroEngineParams): UseHeroListReturn {
       const raw = engine?.getGenerals?.() ?? [];
       if (Array.isArray(raw)) return raw;
       // 引擎可能返回 Record<string, GeneralData>，手动提取 values
+      // 类型断言原因：getGenerals() 返回类型为 Readonly<GeneralData>[]，
+      // 但运行时可能返回 Record 格式（旧版存档兼容），此处已通过
+      // typeof raw === 'object' 校验，断言安全
       if (raw && typeof raw === 'object') {
         return Object.values(raw as Record<string, GeneralData>);
       }

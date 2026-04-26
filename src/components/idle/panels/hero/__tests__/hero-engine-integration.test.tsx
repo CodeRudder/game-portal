@@ -1,732 +1,665 @@
 /**
- * hero-engine-integration — UI组件与引擎端到端集成测试
+ * hero-engine-integration — 真实引擎集成测试
  *
- * 测试场景：
- * 1. 招募流程：点击招募→引擎创建武将→UI更新列表
- * 2. 升级流程：点击升级→引擎扣除资源→UI更新属性
- * 3. 编队流程：拖拽武将→引擎更新编队→UI显示羁绊
- * 4. 派遣流程：选择武将+建筑→引擎执行派遣→UI显示加成
+ * 使用真实 ThreeKingdomsEngine 实例（非 mock），验证：
+ *   1. 初始化引擎 → 获取武将数据 → 验证数据格式
+ *   2. 招募武将 → 验证武将加入列表
+ *   3. 升级武将 → 验证属性变化
+ *   4. 编队操作 → 验证编队更新
+ *   5. 羁绊检测 → 验证羁绊激活
  *
- * 策略：使用 mock 引擎对象验证 UI→引擎→UI 数据流闭环，
- * 而非启动完整引擎实例（避免依赖过多子系统）。
+ * 每个 test 独立初始化引擎，不使用任何 mock。
  *
  * @module components/idle/panels/hero/__tests__/hero-engine-integration
  */
 
-import React, { useState, useCallback } from 'react';
-import { describe, it, expect, vi, beforeEach, fn } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
-
-// ─────────────────────────────────────────────
-// Mock CSS（所有组件的样式文件）
-// ─────────────────────────────────────────────
-vi.mock('../FormationRecommendPanel.css', () => ({}));
-vi.mock('../BondCollectionPanel.css', () => ({}));
-vi.mock('../HeroUpgradePanel.css', () => ({}));
-vi.mock('../HeroDispatchPanel.css', () => ({}));
-vi.mock('../atoms/AttributeBar.css', () => ({}));
-vi.mock('../atoms/ResourceCost.css', () => ({}));
-vi.mock('../atoms/QualityBadge.css', () => ({}));
-vi.mock('../atoms/StarDisplay.css', () => ({}));
-vi.mock('@/components/idle/common/Toast', () => ({
-  Toast: {
-    success: vi.fn(),
-    danger: vi.fn(),
-    warning: vi.fn(),
-    info: vi.fn(),
-    show: vi.fn(),
-  },
-}));
-
-// ─────────────────────────────────────────────
-// Mock 原子组件
-// ─────────────────────────────────────────────
-vi.mock('../atoms', () => ({
-  QualityBadge: ({ quality }: { quality: string }) => (
-    <span data-testid={`quality-${quality}`}>{quality}</span>
-  ),
-  StarDisplay: ({ stars }: { stars: number }) => (
-    <span data-testid={`stars-${stars}`}>★{stars}</span>
-  ),
-  AttributeBar: ({ label, value, max }: { label: string; value: number; max: number }) => (
-    <div data-testid={`attr-${label}`}>{label}: {value}/{max}</div>
-  ),
-  ResourceCost: ({ costs }: { costs: Array<{ type: string; amount: number }> }) => (
-    <div data-testid="resource-cost">{JSON.stringify(costs)}</div>
-  ),
-}));
-
-// ─────────────────────────────────────────────
-// 组件导入
-// ─────────────────────────────────────────────
-import FormationRecommendPanel from '../FormationRecommendPanel';
-import type { HeroInfo } from '../FormationRecommendPanel';
-import BondCollectionPanel from '../BondCollectionPanel';
-import type { BondCatalogItem } from '../BondCollectionPanel';
-import HeroUpgradePanel from '../HeroUpgradePanel';
-import type { HeroUpgradePanelProps } from '../HeroUpgradePanel';
-import HeroDispatchPanel from '../HeroDispatchPanel';
-import type { HeroBrief, BuildingBrief } from '../HeroDispatchPanel';
-
-// ─────────────────────────────────────────────
-// 引擎类型导入
-// ─────────────────────────────────────────────
+import { describe, it, expect, beforeEach } from 'vitest';
+import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { GeneralData } from '@/games/three-kingdoms/engine/hero/hero.types';
 import { Quality } from '@/games/three-kingdoms/engine/hero/hero.types';
+import type { RecruitOutput } from '@/games/three-kingdoms/engine/hero/recruit-types';
+import type { LevelUpResult } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 import type { ActiveBond } from '@/games/three-kingdoms/engine/hero/BondSystem';
 import { BondType } from '@/games/three-kingdoms/engine/hero/bond-config';
-import type { EnhancePreview } from '@/games/three-kingdoms/engine';
-import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+
+// ─────────────────────────────────────────────
+// localStorage mock（引擎 SaveManager 依赖）
+// ─────────────────────────────────────────────
+const storage: Record<string, string> = {};
+beforeEach(() => {
+  Object.keys(storage).forEach((k) => delete storage[k]);
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: {
+      getItem: (k: string) => storage[k] ?? null,
+      setItem: (k: string, v: string) => { storage[k] = v; },
+      removeItem: (k: string) => { delete storage[k]; },
+      clear: () => Object.keys(storage).forEach((k) => delete storage[k]),
+      get length() { return Object.keys(storage).length; },
+      key: () => null,
+    },
+    writable: true,
+    configurable: true,
+  });
+});
+
+// ─────────────────────────────────────────────
+// 引擎工厂函数
+// ─────────────────────────────────────────────
+
+/** 创建并初始化一个真实 ThreeKingdomsEngine 实例 */
+function createEngine(): ThreeKingdomsEngine {
+  const engine = new ThreeKingdomsEngine();
+  engine.init();
+  return engine;
+}
+
+/** 验证 GeneralData 必要字段完整性 */
+function assertValidGeneralData(g: GeneralData): void {
+  expect(g).toHaveProperty('id');
+  expect(g).toHaveProperty('name');
+  expect(g).toHaveProperty('quality');
+  expect(g).toHaveProperty('baseStats');
+  expect(g).toHaveProperty('level');
+  expect(g).toHaveProperty('faction');
+  expect(g).toHaveProperty('skills');
+  expect(typeof g.id).toBe('string');
+  expect(typeof g.name).toBe('string');
+  expect(typeof g.level).toBe('number');
+  expect(typeof g.faction).toBe('string');
+  expect(Array.isArray(g.skills)).toBe(true);
+}
 
 // ═══════════════════════════════════════════════
-// 测试数据工厂
+// 1. 初始化引擎 → 获取武将数据 → 验证数据格式
 // ═══════════════════════════════════════════════
 
-const makeGeneralData = (overrides: Partial<GeneralData> = {}): GeneralData => ({
-  id: 'guanyu',
-  name: '关羽',
-  quality: Quality.LEGENDARY,
-  baseStats: { attack: 115, defense: 90, intelligence: 65, speed: 78 },
-  level: 10,
-  exp: 500,
-  faction: 'shu',
-  skills: [],
-  ...overrides,
-});
-
-const makeHeroInfo = (overrides: Partial<HeroInfo> = {}): HeroInfo => ({
-  id: 'guanyu',
-  name: '关羽',
-  level: 30,
-  quality: 'EPIC',
-  stars: 4,
-  faction: 'shu',
-  ...overrides,
-});
-
-const makeActiveBond = (overrides: Partial<ActiveBond> = {}): ActiveBond => ({
-  bondId: 'faction_shu',
-  name: '蜀国',
-  type: BondType.FACTION,
-  level: 1,
-  levelMultiplier: 1.0,
-  effects: [{ stat: 'attack', value: 0.05 }],
-  participants: ['liubei', 'guanyu'],
-  dispatchFactor: 1.0,
-  ...overrides,
-});
-
-const makeEnhancePreview = (overrides: Partial<EnhancePreview> = {}): EnhancePreview => ({
-  generalId: 'guanyu',
-  generalName: '关羽',
-  currentLevel: 10,
-  targetLevel: 11,
-  totalExp: 200,
-  totalGold: 1000,
-  statsDiff: {
-    before: { attack: 115, defense: 90, intelligence: 65, speed: 78 },
-    after: { attack: 120, defense: 93, intelligence: 67, speed: 79 },
-  },
-  powerBefore: 1000,
-  powerAfter: 1100,
-  affordable: true,
-  ...overrides,
-});
-
-const makeHeroBrief = (overrides: Partial<HeroBrief> = {}): HeroBrief => ({
-  id: 'hero-1',
-  name: '关羽',
-  level: 30,
-  quality: 'EPIC',
-  stars: 4,
-  ...overrides,
-});
-
-const makeBuildingBrief = (overrides: Partial<BuildingBrief> = {}): BuildingBrief => ({
-  id: 'building-farm',
-  name: '农田',
-  level: 3,
-  dispatchHeroId: null,
-  ...overrides,
-});
-
-// ═══════════════════════════════════════════════
-// 1. 招募流程集成测试
-// ═══════════════════════════════════════════════
-
-describe('招募流程集成', () => {
-  /**
-   * 场景：模拟招募流程
-   * 1. 初始状态：无武将
-   * 2. 调用引擎招募→返回新武将
-   * 3. UI 列表更新显示新武将
-   */
-  it('招募后UI列表应包含新武将', () => {
-    const recruitedHeroes: HeroInfo[] = [];
-    const mockRecruit = vi.fn().mockReturnValue({
-      success: true,
-      general: makeGeneralData({ id: 'zhangfei', name: '张飞', faction: 'shu' }),
-    });
-
-    // 模拟招募回调
-    const handleRecruit = () => {
-      const result = mockRecruit();
-      if (result.success) {
-        recruitedHeroes.push({
-          id: result.general.id,
-          name: result.general.name,
-          level: result.general.level,
-          quality: result.general.quality,
-          stars: 1,
-          faction: result.general.faction,
-        });
-      }
-    };
-
-    // 执行招募
-    handleRecruit();
-
-    // 验证引擎被调用
-    expect(mockRecruit).toHaveBeenCalledTimes(1);
-
-    // 验证列表更新
-    expect(recruitedHeroes).toHaveLength(1);
-    expect(recruitedHeroes[0].id).toBe('zhangfei');
-    expect(recruitedHeroes[0].name).toBe('张飞');
-    expect(recruitedHeroes[0].faction).toBe('shu');
+describe('引擎初始化与武将数据格式', () => {
+  it('引擎应成功初始化', () => {
+    const engine = createEngine();
+    expect(engine).toBeDefined();
+    expect(engine.getGenerals).toBeDefined();
+    expect(engine.getGeneral).toBeDefined();
+    expect(engine.recruit).toBeDefined();
+    expect(engine.enhanceHero).toBeDefined();
+    expect(engine.setFormation).toBeDefined();
+    expect(engine.getFormations).toBeDefined();
+    expect(engine.getBondSystem).toBeDefined();
+    expect(engine.getHeroDispatchSystem).toBeDefined();
+    expect(engine.getHeroSystem).toBeDefined();
+    expect(engine.getHeroStarSystem).toBeDefined();
+    expect(engine.getFormationSystem).toBeDefined();
   });
 
-  it('招募失败时UI列表不变', () => {
-    const heroes = [makeHeroInfo({ id: 'existing' })];
-    const mockRecruit = vi.fn().mockReturnValue({ success: false });
-
-    const handleRecruit = () => {
-      const result = mockRecruit();
-      if (result.success) {
-        heroes.push(result.general);
-      }
-    };
-
-    handleRecruit();
-
-    expect(mockRecruit).toHaveBeenCalledTimes(1);
-    expect(heroes).toHaveLength(1); // 不变
+  it('初始武将列表应为空数组', () => {
+    const engine = createEngine();
+    const generals = engine.getGenerals();
+    expect(Array.isArray(generals)).toBe(true);
+    expect(generals.length).toBe(0);
   });
 
-  it('连续招募多次应累积到列表', () => {
-    const recruitedHeroes: HeroInfo[] = [];
-    const mockGenerals = [
-      makeGeneralData({ id: 'zhangfei', name: '张飞' }),
-      makeGeneralData({ id: 'liubei', name: '刘备' }),
-      makeGeneralData({ id: 'zhaoyun', name: '赵云' }),
-    ];
+  it('getGeneral 对不存在的ID应返回undefined', () => {
+    const engine = createEngine();
+    const result = engine.getGeneral('nonexistent_id');
+    expect(result).toBeUndefined();
+  });
 
-    let callIndex = 0;
-    const mockRecruit = vi.fn().mockImplementation(() => ({
-      success: true,
-      general: mockGenerals[callIndex++],
-    }));
+  it('getHeroSystem 应返回有效的武将系统', () => {
+    const engine = createEngine();
+    const heroSystem = engine.getHeroSystem();
+    expect(heroSystem).toBeDefined();
+    expect(typeof heroSystem.calculatePower).toBe('function');
+    expect(typeof heroSystem.getAllGenerals).toBe('function');
+  });
 
-    const handleRecruit = () => {
-      const result = mockRecruit();
-      if (result.success) {
-        recruitedHeroes.push({
-          id: result.general.id,
-          name: result.general.name,
-          level: result.general.level,
-          quality: result.general.quality,
-          stars: 1,
-          faction: result.general.faction,
-        });
-      }
-    };
-
-    // 执行3次招募
-    handleRecruit();
-    handleRecruit();
-    handleRecruit();
-
-    expect(mockRecruit).toHaveBeenCalledTimes(3);
-    expect(recruitedHeroes).toHaveLength(3);
-    expect(recruitedHeroes.map((h) => h.id)).toEqual(['zhangfei', 'liubei', 'zhaoyun']);
+  it('getHeroStarSystem 应返回有效的星级系统', () => {
+    const engine = createEngine();
+    const starSystem = engine.getHeroStarSystem();
+    expect(starSystem).toBeDefined();
+    expect(typeof starSystem.getStar).toBe('function');
   });
 });
 
 // ═══════════════════════════════════════════════
-// 2. 升级流程集成测试
+// 2. 招募武将 → 验证武将加入列表
 // ═══════════════════════════════════════════════
 
-describe('升级流程集成', () => {
-  /**
-   * 场景：模拟升级流程
-   * 1. 引擎计算升级消耗和属性变化
-   * 2. 扣除资源
-   * 3. UI 更新显示新属性
-   */
-  it('升级成功后属性应更新', () => {
-    const general = makeGeneralData({ level: 10 });
-    const preview = makeEnhancePreview({
-      currentLevel: 10,
-      targetLevel: 11,
-      statsDiff: {
-        before: { attack: 115, defense: 90, intelligence: 65, speed: 78 },
-        after: { attack: 120, defense: 93, intelligence: 67, speed: 79 },
-      },
+describe('招募武将集成', () => {
+  it('普通招募应返回有效的RecruitOutput', () => {
+    const engine = createEngine();
+    const result: RecruitOutput | null = engine.recruit('normal', 1);
+    expect(result).not.toBeNull();
+    expect(result!.type).toBe('normal');
+    expect(result!.results).toHaveLength(1);
+    expect(result!.results[0].general).toBeDefined();
+    assertValidGeneralData(result!.results[0].general);
+  });
+
+  it('招募后武将应出现在getGenerals列表中', () => {
+    const engine = createEngine();
+    const result = engine.recruit('normal', 1);
+    expect(result).not.toBeNull();
+
+    const recruitedId = result!.results[0].general.id;
+    const generals = engine.getGenerals();
+    expect(generals.length).toBe(1);
+    expect(generals[0].id).toBe(recruitedId);
+  });
+
+  it('招募后getGeneral应能通过ID获取武将', () => {
+    const engine = createEngine();
+    const result = engine.recruit('normal', 1);
+    const recruitedId = result!.results[0].general.id;
+
+    const general = engine.getGeneral(recruitedId);
+    expect(general).toBeDefined();
+    expect(general!.id).toBe(recruitedId);
+  });
+
+  it('多次招募应累积武将到列表', () => {
+    const engine = createEngine();
+    engine.recruit('normal', 1);
+    engine.recruit('normal', 1);
+    engine.recruit('normal', 1);
+
+    const generals = engine.getGenerals();
+    expect(generals.length).toBe(3);
+    // ID 应唯一
+    const ids = generals.map((g) => g.id);
+    const uniqueIds = new Set(ids);
+    expect(uniqueIds.size).toBe(ids.length);
+  });
+
+  it('十连招募应返回10个结果', () => {
+    const engine = createEngine();
+    const result = engine.recruit('normal', 10);
+    expect(result).not.toBeNull();
+    expect(result!.results).toHaveLength(10);
+
+    const generals = engine.getGenerals();
+    expect(generals.length).toBe(10);
+  });
+
+  it('招募武将应包含合法品质', () => {
+    const engine = createEngine();
+    const result = engine.recruit('normal', 1);
+    const quality = result!.results[0].quality;
+    expect(Object.values(Quality)).toContain(quality);
+  });
+
+  it('招募武将应包含合法阵营', () => {
+    const engine = createEngine();
+    const result = engine.recruit('normal', 1);
+    const faction = result!.results[0].general.faction;
+    expect(['shu', 'wei', 'wu', 'qun']).toContain(faction);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 3. 升级武将 → 验证属性变化
+// ═══════════════════════════════════════════════
+
+describe('升级武将集成', () => {
+  it('enhanceHero应返回有效的LevelUpResult', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
+
+    const result: LevelUpResult | null = engine.enhanceHero(heroId, 1);
+    expect(result).not.toBeNull();
+    expect(result!.general.id).toBe(heroId);
+    expect(result!.levelsGained).toBeGreaterThanOrEqual(1);
+  });
+
+  it('升级后武将等级应增加', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
+    const levelBefore = engine.getGeneral(heroId)!.level;
+
+    engine.enhanceHero(heroId, 1);
+    const levelAfter = engine.getGeneral(heroId)!.level;
+
+    expect(levelAfter).toBeGreaterThan(levelBefore);
+  });
+
+  it('升级后属性应发生变化', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
+    const statsBefore = { ...engine.getGeneral(heroId)!.baseStats };
+
+    const result = engine.enhanceHero(heroId, 5);
+    expect(result).not.toBeNull();
+
+    const statsAfter = engine.getGeneral(heroId)!.baseStats;
+    // 至少有一个属性发生变化
+    const changed = (
+      statsAfter.attack !== statsBefore.attack ||
+      statsAfter.defense !== statsBefore.defense ||
+      statsAfter.intelligence !== statsBefore.intelligence ||
+      statsAfter.speed !== statsBefore.speed
+    );
+    expect(changed).toBe(true);
+  });
+
+  it('多次升级应累积等级', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
+
+    engine.enhanceHero(heroId, 1);
+    engine.enhanceHero(heroId, 1);
+    engine.enhanceHero(heroId, 1);
+
+    const general = engine.getGeneral(heroId);
+    expect(general!.level).toBeGreaterThanOrEqual(4);
+  });
+
+  it('升级后战力应增加', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
+    const heroSystem = engine.getHeroSystem();
+
+    const generalBefore = engine.getGeneral(heroId)!;
+    const powerBefore = heroSystem.calculatePower(generalBefore);
+
+    engine.enhanceHero(heroId, 3);
+
+    const generalAfter = engine.getGeneral(heroId)!;
+    const powerAfter = heroSystem.calculatePower(generalAfter);
+
+    expect(powerAfter).toBeGreaterThan(powerBefore);
+  });
+
+  it('对不存在的武将升级应返回null', () => {
+    const engine = createEngine();
+    const result = engine.enhanceHero('nonexistent_id', 1);
+    expect(result).toBeNull();
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 4. 编队操作 → 验证编队更新
+// ═══════════════════════════════════════════════
+
+describe('编队操作集成', () => {
+  it('初始编队应为空', () => {
+    const engine = createEngine();
+    const formations = engine.getFormations();
+    // 引擎初始化后可能有默认编队
+    if (formations.length > 0) {
+      const active = formations[0];
+      const heroIds = active.slots.filter((s) =>
+        typeof s === 'string' ? s : s?.heroId
+      );
+      expect(heroIds.length).toBe(0);
+    }
+  });
+
+  it('设置编队后getFormations应返回更新后的编队', () => {
+    const engine = createEngine();
+    // 招募3个武将
+    engine.recruit('normal', 1);
+    engine.recruit('normal', 1);
+    engine.recruit('normal', 1);
+    const generals = engine.getGenerals();
+    const ids = generals.map((g) => g.id);
+
+    // 设置编队
+    engine.setFormation('0', ids);
+
+    const formations = engine.getFormations();
+    expect(formations.length).toBeGreaterThan(0);
+    const active = formations[0];
+    const slotIds = active.slots.map((s: { heroId?: string | null } | string | null) =>
+      (s != null && typeof s === 'object' && 'heroId' in s) ? s.heroId : typeof s === 'string' ? s : null
+    ).filter((id: string | null): id is string => id != null);
+    expect(slotIds.length).toBe(3);
+  });
+
+  it('编队应包含已招募的武将ID', () => {
+    const engine = createEngine();
+    engine.recruit('normal', 1);
+    engine.recruit('normal', 1);
+    const generals = engine.getGenerals();
+    const ids = generals.map((g) => g.id).slice(0, 2);
+
+    engine.setFormation('0', ids);
+
+    const formations = engine.getFormations();
+    const active = formations[0];
+    const slotIds = active.slots.map((s: { heroId?: string | null } | string | null) =>
+      (s != null && typeof s === 'object' && 'heroId' in s) ? s.heroId : typeof s === 'string' ? s : null
+    ).filter((id: string | null): id is string => id != null);
+
+    for (const id of ids) {
+      expect(slotIds).toContain(id);
+    }
+  });
+
+  it('getFormationSystem应返回有效的编队系统', () => {
+    const engine = createEngine();
+    const formationSystem = engine.getFormationSystem();
+    expect(formationSystem).toBeDefined();
+    expect(typeof formationSystem.setFormation).toBe('function');
+  });
+
+  it('通过FormationSystem设置编队应生效', () => {
+    const engine = createEngine();
+    engine.recruit('normal', 1);
+    engine.recruit('normal', 1);
+    const ids = engine.getGenerals().map((g) => g.id);
+
+    const formationSystem = engine.getFormationSystem();
+    formationSystem.setFormation(0, ids);
+
+    const formations = engine.getFormations();
+    expect(formations.length).toBeGreaterThan(0);
+  });
+
+  it('编队超过6人时引擎应截断或报错', () => {
+    const engine = createEngine();
+    // 招募8个武将
+    for (let i = 0; i < 8; i++) {
+      engine.recruit('normal', 1);
+    }
+    const ids = engine.getGenerals().map((g) => g.id);
+
+    // 尝试设置8人编队
+    expect(() => {
+      engine.setFormation('0', ids);
+    }).not.toThrow();
+
+    // 编队中最多6人
+    const formations = engine.getFormations();
+    const active = formations[0];
+    const slotIds = active.slots.filter((s) => {
+      const id = typeof s === 'string' ? s : s?.heroId;
+      return id != null;
     });
+    expect(slotIds.length).toBeLessThanOrEqual(6);
+  });
+});
 
-    // 模拟引擎升级
-    const mockLevelUp = vi.fn().mockReturnValue({
-      success: true,
-      newLevel: 11,
-      statsDiff: preview.statsDiff,
-    });
+// ═══════════════════════════════════════════════
+// 5. 羁绊检测 → 验证羁绊激活
+// ═══════════════════════════════════════════════
 
-    const result = mockLevelUp(general.id);
+describe('羁绊检测集成', () => {
+  it('getBondSystem应返回有效的羁绊系统', () => {
+    const engine = createEngine();
+    const bondSystem = engine.getBondSystem();
+    expect(bondSystem).toBeDefined();
+    expect(typeof bondSystem.getActiveBonds).toBe('function');
+  });
 
-    expect(mockLevelUp).toHaveBeenCalledWith('guanyu');
+  it('无武将时getActiveBonds应返回空数组', () => {
+    const engine = createEngine();
+    const bondSystem = engine.getBondSystem();
+    const bonds = bondSystem.getActiveBonds([]);
+    expect(Array.isArray(bonds)).toBe(true);
+    expect(bonds.length).toBe(0);
+  });
+
+  it('单个武将不应激活阵营羁绊', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
+
+    const bondSystem = engine.getBondSystem();
+    const bonds = bondSystem.getActiveBonds([heroId]);
+    // 阵营羁绊通常需要2人以上，单人不激活
+    const factionBonds = bonds.filter((b) => b.type === BondType.FACTION);
+    expect(factionBonds.length).toBe(0);
+  });
+
+  it('同阵营2人应激活阵营羁绊', () => {
+    const engine = createEngine();
+    // 招募多个武将，寻找同阵营的2人
+    const recruited: GeneralData[] = [];
+    for (let i = 0; i < 20; i++) {
+      const result = engine.recruit('normal', 1);
+      if (result) recruited.push(result.results[0].general);
+    }
+
+    // 按阵营分组
+    const byFaction: Record<string, string[]> = {};
+    for (const g of recruited) {
+      if (!byFaction[g.faction]) byFaction[g.faction] = [];
+      byFaction[g.faction].push(g.id);
+    }
+
+    // 找到第一个有2人以上的阵营
+    const factionEntry = Object.entries(byFaction).find(([, ids]) => ids.length >= 2);
+    if (!factionEntry) {
+      // 如果没找到同阵营2人，跳过（概率极低）
+      return;
+    }
+
+    const [, factionIds] = factionEntry;
+    const bondSystem = engine.getBondSystem();
+    const bonds: ActiveBond[] = bondSystem.getActiveBonds(factionIds);
+
+    // 应至少激活一个阵营羁绊
+    const factionBonds = bonds.filter((b) => b.type === BondType.FACTION);
+    expect(factionBonds.length).toBeGreaterThan(0);
+  });
+
+  it('羁绊效果应包含合法属性', () => {
+    const engine = createEngine();
+    const recruited: GeneralData[] = [];
+    for (let i = 0; i < 20; i++) {
+      const result = engine.recruit('normal', 1);
+      if (result) recruited.push(result.results[0].general);
+    }
+
+    const byFaction: Record<string, string[]> = {};
+    for (const g of recruited) {
+      if (!byFaction[g.faction]) byFaction[g.faction] = [];
+      byFaction[g.faction].push(g.id);
+    }
+
+    const factionEntry = Object.entries(byFaction).find(([, ids]) => ids.length >= 2);
+    if (!factionEntry) return;
+
+    const bondSystem = engine.getBondSystem();
+    const bonds = bondSystem.getActiveBonds(factionEntry[1]);
+
+    for (const bond of bonds) {
+      expect(bond).toHaveProperty('bondId');
+      expect(bond).toHaveProperty('name');
+      expect(bond).toHaveProperty('type');
+      expect(bond).toHaveProperty('effects');
+      expect(Array.isArray(bond.effects)).toBe(true);
+
+      for (const effect of bond.effects) {
+        expect(effect).toHaveProperty('stat');
+        expect(effect).toHaveProperty('value');
+        expect(typeof effect.stat).toBe('string');
+        expect(typeof effect.value).toBe('number');
+      }
+    }
+  });
+
+  it('搭档羁绊需要特定武将组合', () => {
+    const engine = createEngine();
+    // 招募大量武将以增加搭档组合概率
+    const recruited: GeneralData[] = [];
+    for (let i = 0; i < 30; i++) {
+      const result = engine.recruit('normal', 1);
+      if (result) recruited.push(result.results[0].general);
+    }
+
+    const allIds = recruited.map((g) => g.id);
+    const bondSystem = engine.getBondSystem();
+    const bonds = bondSystem.getActiveBonds(allIds);
+
+    // 检查是否有搭档羁绊（概率性，不强制要求）
+    const partnerBonds = bonds.filter((b) => b.type === BondType.PARTNER);
+    // 验证搭档羁绊数据格式正确
+    for (const bond of partnerBonds) {
+      expect(bond.participants.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('getActiveBonds返回值应包含必要字段', () => {
+    const engine = createEngine();
+    engine.recruit('normal', 1);
+    engine.recruit('normal', 1);
+    const ids = engine.getGenerals().map((g) => g.id);
+
+    const bondSystem = engine.getBondSystem();
+    const bonds = bondSystem.getActiveBonds(ids);
+
+    for (const bond of bonds) {
+      expect(typeof bond.bondId).toBe('string');
+      expect(typeof bond.name).toBe('string');
+      expect(typeof bond.level).toBe('number');
+      expect(typeof bond.dispatchFactor).toBe('number');
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 6. 派遣系统集成（额外覆盖）
+// ═══════════════════════════════════════════════
+
+describe('派遣系统集成', () => {
+  it('getHeroDispatchSystem应返回有效的派遣系统', () => {
+    const engine = createEngine();
+    const dispatchSystem = engine.getHeroDispatchSystem();
+    expect(dispatchSystem).toBeDefined();
+    expect(typeof dispatchSystem.dispatchHero).toBe('function');
+    expect(typeof dispatchSystem.undispatchHero).toBe('function');
+    expect(typeof dispatchSystem.getState).toBe('function');
+  });
+
+  it('派遣武将到建筑应成功', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
+
+    const dispatchSystem = engine.getHeroDispatchSystem();
+    const result = dispatchSystem.dispatchHero(heroId, 'barracks');
     expect(result.success).toBe(true);
-    expect(result.newLevel).toBe(11);
-    expect(result.statsDiff.after.attack).toBe(120);
-    expect(result.statsDiff.after.defense).toBe(93);
   });
 
-  it('资源不足时升级应失败', () => {
-    const mockLevelUp = vi.fn().mockReturnValue({
-      success: false,
-      reason: 'gold_not_enough',
-    });
+  it('派遣后getState应包含派遣记录', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
 
-    const result = mockLevelUp('guanyu');
+    const dispatchSystem = engine.getHeroDispatchSystem();
+    dispatchSystem.dispatchHero(heroId, 'barracks');
 
-    expect(result.success).toBe(false);
-    expect(result.reason).toBe('gold_not_enough');
+    const state = dispatchSystem.getState();
+    expect(state).toHaveProperty('buildingDispatch');
+    const buildingDispatch = (state as Record<string, Record<string, { heroId: string }>>).buildingDispatch;
+    expect(buildingDispatch).toHaveProperty('barracks');
+    expect(buildingDispatch.barracks.heroId).toBe(heroId);
   });
 
-  it('升级面板应正确显示升级预览', () => {
-    const general = makeGeneralData({ level: 10 });
-    const preview = makeEnhancePreview();
-    const onUpgrade = vi.fn();
+  it('召回武将应成功', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
 
-    // HeroUpgradePanel 需要 engine 实例，模拟最小 engine
-    const mockEngine = {
-      getLevelSystem: vi.fn().mockReturnValue({
-        getEnhancePreview: vi.fn().mockReturnValue(preview),
-        enhance: vi.fn().mockReturnValue({ success: true }),
-        getMaxLevel: vi.fn().mockReturnValue(100),
-        getExpToNextLevel: vi.fn().mockReturnValue(200),
-        getExpProgress: vi.fn().mockReturnValue({ current: 500, required: 1000, ratio: 0.5 }),
-      }),
-      getHeroSystem: vi.fn().mockReturnValue({
-        getGeneral: vi.fn().mockReturnValue(general),
-      }),
-      getEnhancePreview: vi.fn().mockReturnValue(preview),
-      getResourceAmount: vi.fn().mockReturnValue(5000),
-    } as unknown as ThreeKingdomsEngine;
+    const dispatchSystem = engine.getHeroDispatchSystem();
+    dispatchSystem.dispatchHero(heroId, 'barracks');
+    const result = dispatchSystem.undispatchHero(heroId);
+    expect(result).toBe(true);
+  });
 
-    render(
-      <HeroUpgradePanel
-        general={general}
-        engine={mockEngine}
-        onUpgradeComplete={onUpgrade}
-        onClose={vi.fn()}
-      />,
-    );
+  it('召回后派遣记录应清除', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
 
-    // 面板应渲染升级面板
-    expect(screen.getByTestId('hero-upgrade-panel')).toBeInTheDocument();
-    // 应显示当前等级
-    expect(screen.getByText(/当前等级/)).toBeInTheDocument();
+    const dispatchSystem = engine.getHeroDispatchSystem();
+    dispatchSystem.dispatchHero(heroId, 'barracks');
+    dispatchSystem.undispatchHero(heroId);
+
+    const dispatchedHero = dispatchSystem.getBuildingDispatchHero('barracks');
+    expect(dispatchedHero).toBeNull();
   });
 });
 
 // ═══════════════════════════════════════════════
-// 3. 编队流程集成测试
+// 7. 跨系统端到端集成（综合场景）
 // ═══════════════════════════════════════════════
 
-describe('编队流程集成', () => {
-  /**
-   * 场景：编队推荐面板使用引擎战力计算
-   * 1. FormationRecommendPanel 接收 powerCalculator
-   * 2. 战力计算使用引擎 API 而非简单求和
-   * 3. 应用编队后引擎更新编队数据
-   */
-  it('FormationRecommendPanel 使用引擎战力计算器', () => {
-    const mockPowerCalculator = vi.fn().mockImplementation((heroes: HeroInfo[]) => {
-      // 模拟引擎的 calculateFormationPower：使用更复杂的公式
-      return heroes.reduce((sum, h) => {
-        // 引擎公式：基础战力 × 品质系数 × 羁绊加成
-        const basePower = h.level * 100;
-        const qualityMultiplier = h.quality === 'LEGENDARY' ? 2.0 : h.quality === 'EPIC' ? 1.5 : 1.0;
-        return sum + Math.round(basePower * qualityMultiplier);
-      }, 0);
-    });
+describe('跨系统端到端集成', () => {
+  it('招募→升级→编队→羁绊 全流程', () => {
+    const engine = createEngine();
 
-    const heroes = [
-      makeHeroInfo({ id: 'liubei', name: '刘备', level: 35, quality: 'LEGENDARY', faction: 'shu' }),
-      makeHeroInfo({ id: 'guanyu', name: '关羽', level: 30, quality: 'EPIC', faction: 'shu' }),
-      makeHeroInfo({ id: 'zhangfei', name: '张飞', level: 28, quality: 'RARE', faction: 'shu' }),
-      makeHeroInfo({ id: 'caocao', name: '曹操', level: 32, quality: 'LEGENDARY', faction: 'wei' }),
-      makeHeroInfo({ id: 'zhaoyun', name: '赵云', level: 27, quality: 'EPIC', faction: 'shu' }),
-      makeHeroInfo({ id: 'sunquan', name: '孙权', level: 26, quality: 'RARE', faction: 'wu' }),
-    ];
+    // 1. 招募多个武将
+    for (let i = 0; i < 6; i++) {
+      engine.recruit('normal', 1);
+    }
+    const generals = engine.getGenerals();
+    expect(generals.length).toBe(6);
 
-    render(
-      <FormationRecommendPanel
-        ownedHeroes={heroes}
-        currentFormation={[null, null, null, null, null, null]}
-        onApplyRecommend={vi.fn()}
-        onClose={vi.fn()}
-        powerCalculator={mockPowerCalculator}
-      />,
-    );
+    // 2. 升级所有武将
+    for (const g of generals) {
+      const result = engine.enhanceHero(g.id, 5);
+      expect(result).not.toBeNull();
+    }
 
-    // 验证 powerCalculator 被调用（至少为当前编队和推荐方案调用）
-    expect(mockPowerCalculator).toHaveBeenCalled();
+    // 3. 验证等级提升
+    for (const g of generals) {
+      const updated = engine.getGeneral(g.id)!;
+      expect(updated.level).toBeGreaterThan(1);
+    }
 
-    // 验证面板渲染
-    expect(screen.getByTestId('formation-recommend-panel')).toBeInTheDocument();
-    expect(screen.getByTestId('recommend-card-best-power')).toBeInTheDocument();
+    // 4. 设置编队
+    const ids = generals.map((g) => g.id);
+    engine.setFormation('0', ids);
+    const formations = engine.getFormations();
+    expect(formations.length).toBeGreaterThan(0);
+
+    // 5. 检测羁绊
+    const bondSystem = engine.getBondSystem();
+    const bonds = bondSystem.getActiveBonds(ids);
+    // 羁绊数量 >= 0（不强制要求特定羁绊）
+    expect(Array.isArray(bonds)).toBe(true);
   });
 
-  it('应用编队后引擎应更新编队数据', () => {
-    const onApplyRecommend = vi.fn();
-    const heroes = [
-      makeHeroInfo({ id: 'liubei', name: '刘备' }),
-      makeHeroInfo({ id: 'guanyu', name: '关羽' }),
-      makeHeroInfo({ id: 'zhangfei', name: '张飞' }),
-      makeHeroInfo({ id: 'caocao', name: '曹操' }),
-    ];
+  it('招募→派遣→召回 全流程', () => {
+    const engine = createEngine();
 
-    render(
-      <FormationRecommendPanel
-        ownedHeroes={heroes}
-        currentFormation={[null, null, null, null, null, null]}
-        onApplyRecommend={onApplyRecommend}
-        onClose={vi.fn()}
-      />,
-    );
+    // 1. 招募武将
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
 
-    // 点击应用按钮
-    const applyBtn = screen.getByTestId('apply-btn-best-power');
-    fireEvent.click(applyBtn);
+    // 2. 派遣到建筑
+    const dispatchSystem = engine.getHeroDispatchSystem();
+    const dispatchResult = dispatchSystem.dispatchHero(heroId, 'market');
+    expect(dispatchResult.success).toBe(true);
 
-    // 验证回调被调用，传入了编队数据
-    expect(onApplyRecommend).toHaveBeenCalledTimes(1);
-    const calledWith = onApplyRecommend.mock.calls[0][0];
-    // 应该是6个位置（补齐null）
-    expect(calledWith).toHaveLength(6);
-    // 前4个应该是武将ID
-    expect(calledWith[0]).toBeTruthy();
+    // 3. 验证派遣状态
+    const dispatchedHero = dispatchSystem.getBuildingDispatchHero('market');
+    expect(dispatchedHero).toBe(heroId);
+
+    // 4. 召回
+    const recallResult = dispatchSystem.undispatchHero(heroId);
+    expect(recallResult).toBe(true);
+
+    // 5. 验证召回状态
+    const afterRecall = dispatchSystem.getBuildingDispatchHero('market');
+    expect(afterRecall).toBeNull();
   });
 
-  it('羁绊面板应根据阵营过滤武将', () => {
-    const heroFactionMap: Record<string, string> = {
-      liubei: 'shu',
-      guanyu: 'shu',
-      zhangfei: 'shu',
-      caocao: 'wei',
-    };
+  it('战力计算应与武将等级正相关', () => {
+    const engine = createEngine();
+    const recruitResult = engine.recruit('normal', 1);
+    const heroId = recruitResult!.results[0].general.id;
+    const heroSystem = engine.getHeroSystem();
 
-    const activeBonds: ActiveBond[] = [
-      makeActiveBond({
-        bondId: 'faction_shu',
-        name: '蜀国',
-        participants: ['liubei', 'guanyu', 'zhangfei'],
-      }),
-    ];
+    const powerBefore = heroSystem.calculatePower(engine.getGeneral(heroId)!);
+    engine.enhanceHero(heroId, 10);
+    const powerAfter = heroSystem.calculatePower(engine.getGeneral(heroId)!);
 
-    render(
-      <BondCollectionPanel
-        ownedHeroIds={['liubei', 'guanyu', 'zhangfei', 'caocao']}
-        activeBonds={activeBonds}
-        formationHeroIds={['liubei', 'guanyu', 'zhangfei', 'caocao']}
-        heroFactionMap={heroFactionMap}
-        onClose={vi.fn()}
-      />,
-    );
-
-    // 验证面板渲染
-    expect(screen.getByTestId('bond-collection-panel')).toBeInTheDocument();
-
-    // 蜀国羁绊卡片应只显示蜀国武将（liubei, guanyu, zhangfei），不应包含 caocao
-    const shuCard = screen.getByTestId('bond-card-faction_shu');
-    expect(shuCard).toBeInTheDocument();
-    // 卡片内应显示蜀国武将标签
-    const heroTags = shuCard.querySelectorAll('.tk-bond-hero-tag');
-    // 应该只有3个蜀国武将标签（不含魏国 caocao）
-    expect(heroTags.length).toBe(3);
-  });
-
-  it('羁绊面板无阵营映射时从 activeBonds 推断', () => {
-    const activeBonds: ActiveBond[] = [
-      makeActiveBond({
-        bondId: 'faction_shu',
-        name: '蜀国',
-        participants: ['liubei', 'guanyu'],
-      }),
-    ];
-
-    render(
-      <BondCollectionPanel
-        ownedHeroIds={['liubei', 'guanyu', 'caocao']}
-        activeBonds={activeBonds}
-        formationHeroIds={['liubei', 'guanyu', 'caocao']}
-        onClose={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByTestId('bond-collection-panel')).toBeInTheDocument();
-    // 蜀国羁绊卡片应存在
-    expect(screen.getByTestId('bond-card-faction_shu')).toBeInTheDocument();
-  });
-});
-
-// ═══════════════════════════════════════════════
-// 4. 派遣流程集成测试
-// ═══════════════════════════════════════════════
-
-describe('派遣流程集成', () => {
-  /**
-   * 场景：派遣武将到建筑
-   * 1. 选择武将和建筑
-   * 2. 引擎执行派遣
-   * 3. UI 显示派遣加成
-   */
-  it('派遣成功后UI应显示武将派遣状态', () => {
-    const onDispatch = vi.fn().mockReturnValue({
-      success: true,
-      bonus: { productionSpeed: 0.15 },
-    });
-    const onRecall = vi.fn();
-
-    const heroes = [
-      makeHeroBrief({ id: 'hero-1', name: '关羽', level: 30, quality: 'EPIC' }),
-      makeHeroBrief({ id: 'hero-2', name: '张飞', level: 25, quality: 'RARE' }),
-    ];
-
-    const buildings = [
-      makeBuildingBrief({ id: 'b-farm', name: '农田', level: 3 }),
-      makeBuildingBrief({ id: 'b-lumber', name: '伐木场', level: 2 }),
-    ];
-
-    render(
-      <HeroDispatchPanel
-        heroes={heroes}
-        buildings={buildings}
-        onDispatch={onDispatch}
-        onRecall={onRecall}
-        onClose={vi.fn()}
-      />,
-    );
-
-    // 面板应渲染
-    expect(screen.getByTestId('hero-dispatch-panel')).toBeInTheDocument();
-
-    // 应显示武将和建筑
-    expect(screen.getByText('关羽')).toBeInTheDocument();
-    expect(screen.getByText('农田')).toBeInTheDocument();
-  });
-
-  it('召回武将后UI应更新', () => {
-    const onDispatch = vi.fn();
-    const onRecall = vi.fn().mockReturnValue({ success: true });
-
-    const heroes = [
-      makeHeroBrief({ id: 'hero-1', name: '关羽', level: 30, quality: 'EPIC' }),
-    ];
-
-    const buildings = [
-      makeBuildingBrief({ id: 'b-farm', name: '农田', level: 3, dispatchHeroId: 'hero-1' }),
-    ];
-
-    render(
-      <HeroDispatchPanel
-        heroes={heroes}
-        buildings={buildings}
-        onDispatch={onDispatch}
-        onRecall={onRecall}
-        onClose={vi.fn()}
-      />,
-    );
-
-    // 已派遣的建筑应显示召回按钮
-    expect(screen.getByText('农田')).toBeInTheDocument();
-  });
-
-  it('引擎派遣应验证武将等级和品质', () => {
-    // 模拟引擎的派遣验证逻辑
-    const mockDispatch = vi.fn().mockImplementation((heroId: string, buildingType: string) => {
-      const hero = { id: heroId, level: 10, quality: 'COMMON' };
-      if (hero.level < 20) return { success: false, reason: 'level_too_low' };
-      if (hero.quality === 'COMMON') return { success: false, reason: 'quality_too_low' };
-      return { success: true, bonus: { productionSpeed: 0.1 } };
-    });
-
-    // 低等级武将派遣应失败
-    const result = mockDispatch('low-level-hero', 'farm');
-    expect(result.success).toBe(false);
-    expect(result.reason).toBe('level_too_low');
-  });
-});
-
-// ═══════════════════════════════════════════════
-// 5. 战力计算集成测试（P1-1 验证）
-// ═══════════════════════════════════════════════
-
-describe('战力计算集成', () => {
-  it('无 powerCalculator 时应使用简易估算', () => {
-    const heroes = [
-      makeHeroInfo({ id: 'h1', level: 30, quality: 'EPIC', stars: 4 }),
-    ];
-
-    render(
-      <FormationRecommendPanel
-        ownedHeroes={heroes}
-        currentFormation={[null, null, null, null, null, null]}
-        onApplyRecommend={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
-
-    // 面板应正常渲染
-    expect(screen.getByTestId('formation-recommend-panel')).toBeInTheDocument();
-    // 应显示战力数值
-    const powerTexts = screen.getAllByText(/战力 [\d,]+/);
-    expect(powerTexts.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('有 powerCalculator 时应使用引擎计算', () => {
-    const enginePower = 99999;
-    const mockPowerCalculator = vi.fn().mockReturnValue(enginePower);
-
-    const heroes = [
-      makeHeroInfo({ id: 'h1', level: 30, quality: 'EPIC', stars: 4, faction: 'shu' }),
-      makeHeroInfo({ id: 'h2', level: 28, quality: 'RARE', stars: 3, faction: 'shu' }),
-      makeHeroInfo({ id: 'h3', level: 35, quality: 'LEGENDARY', stars: 5, faction: 'shu' }),
-      makeHeroInfo({ id: 'h4', level: 32, quality: 'LEGENDARY', stars: 5, faction: 'wei' }),
-    ];
-
-    render(
-      <FormationRecommendPanel
-        ownedHeroes={heroes}
-        currentFormation={[null, null, null, null, null, null]}
-        onApplyRecommend={vi.fn()}
-        onClose={vi.fn()}
-        powerCalculator={mockPowerCalculator}
-      />,
-    );
-
-    expect(mockPowerCalculator).toHaveBeenCalled();
-    // 验证面板渲染
-    expect(screen.getByTestId('formation-recommend-panel')).toBeInTheDocument();
-    // 引擎战力值应显示在面板中（至少一个方案显示此值）
-    const powerTexts = screen.getAllByText(/战力 [\d,]+/);
-    expect(powerTexts.length).toBeGreaterThanOrEqual(1);
-    // 验证引擎战力值（99999）出现在某个方案中
-    const allPowerText = powerTexts.map((el) => el.textContent).join(' ');
-    expect(allPowerText).toContain(enginePower.toLocaleString());
-  });
-
-  it('引擎计算和简易计算结果应不同', () => {
-    const heroes = [
-      makeHeroInfo({ id: 'h1', level: 30, quality: 'EPIC', stars: 4 }),
-      makeHeroInfo({ id: 'h2', level: 28, quality: 'RARE', stars: 3 }),
-    ];
-
-    // 简易计算
-    const simplePower = heroes.reduce((sum, h) => {
-      const qWeight = { LEGENDARY: 5, EPIC: 4, RARE: 3, FINE: 2, COMMON: 1 }[h.quality] ?? 1;
-      const starFactor = 1 + h.stars * 0.15;
-      return sum + Math.round(h.level * qWeight * starFactor * 10);
-    }, 0);
-
-    // 引擎计算（模拟更复杂的公式）
-    const enginePower = heroes.reduce((sum, h) => {
-      return sum + h.level * 100 * (h.quality === 'EPIC' ? 1.5 : 1.0);
-    }, 0);
-
-    // 两者应该不同
-    expect(enginePower).not.toBe(simplePower);
-  });
-});
-
-// ═══════════════════════════════════════════════
-// 6. 羁绊过滤集成测试（P1-2 验证）
-// ═══════════════════════════════════════════════
-
-describe('羁绊过滤集成', () => {
-  it('阵营羁绊应只显示该阵营的武将', () => {
-    const heroFactionMap: Record<string, string> = {
-      liubei: 'shu',
-      guanyu: 'shu',
-      zhangfei: 'shu',
-      caocao: 'wei',
-      sunquan: 'wu',
-    };
-
-    const activeBonds: ActiveBond[] = [
-      makeActiveBond({
-        bondId: 'faction_shu',
-        name: '蜀国',
-        participants: ['liubei', 'guanyu', 'zhangfei'],
-      }),
-    ];
-
-    render(
-      <BondCollectionPanel
-        ownedHeroIds={['liubei', 'guanyu', 'zhangfei', 'caocao', 'sunquan']}
-        activeBonds={activeBonds}
-        formationHeroIds={['liubei', 'guanyu', 'zhangfei', 'caocao', 'sunquan']}
-        heroFactionMap={heroFactionMap}
-        onClose={vi.fn()}
-      />,
-    );
-
-    // 切换到全部图鉴 tab
-    fireEvent.click(screen.getByTestId('tab-all-bonds'));
-
-    // 蜀国羁绊卡片应只包含蜀国武将
-    const shuCard = screen.getByTestId('bond-card-faction_shu');
-    const heroTags = shuCard.querySelectorAll('.tk-bond-hero-tag');
-    const tagTexts = Array.from(heroTags).map((el) => el.textContent);
-
-    // 不应包含 wei/wu 武将
-    expect(tagTexts.some((t) => t?.includes('caocao'))).toBe(false);
-    expect(tagTexts.some((t) => t?.includes('sunquan'))).toBe(false);
-  });
-
-  it('搭档羁绊应显示所有参与武将', () => {
-    const catalog: BondCatalogItem[] = [
-      {
-        id: 'partner_taoyuan',
-        name: '桃园结义',
-        type: BondType.PARTNER,
-        heroIds: ['liubei', 'guanyu', 'zhangfei'],
-        heroNames: ['刘备', '关羽', '张飞'],
-        description: '攻击+15%',
-        level: 1,
-        effects: [{ stat: 'attack', value: 0.15 }],
-        isActive: true,
-        minRequired: 3,
-      },
-    ];
-
-    render(
-      <BondCollectionPanel
-        ownedHeroIds={['liubei', 'guanyu', 'zhangfei']}
-        activeBonds={[]}
-        formationHeroIds={['liubei', 'guanyu', 'zhangfei']}
-        bondCatalog={catalog}
-        onClose={vi.fn()}
-      />,
-    );
-
-    // 桃园结义卡片应显示
-    const card = screen.getByTestId('bond-card-partner_taoyuan');
-    expect(card).toBeInTheDocument();
-    // 武将名称应显示在卡片中（带 ✓ 前缀表示已拥有）
-    expect(card.textContent).toContain('刘备');
-    expect(card.textContent).toContain('关羽');
-    expect(card.textContent).toContain('张飞');
+    expect(powerAfter).toBeGreaterThan(powerBefore);
   });
 });

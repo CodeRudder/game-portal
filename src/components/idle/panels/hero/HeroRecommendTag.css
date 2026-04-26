@@ -1,0 +1,55 @@
+/**
+ * HeroRecommendTag — 推荐武将标记样式
+ * 设计风格：水墨江山·铜纹霸业 | 古铜金配色 #C4956A
+ */
+
+/* ── 根容器 ── */
+.tk-hero-recommend-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--tk-font-body);
+  white-space: nowrap;
+  border: 1px solid rgba(200, 168, 76, 0.3);
+  background: rgba(200, 168, 76, 0.1);
+  color: var(--tk-gold-soft, #C4956A);
+}
+
+/* ── 优先级变体 ── */
+.tk-hero-recommend-tag--high {
+  border-color: rgba(255, 152, 0, 0.5);
+  background: rgba(255, 152, 0, 0.12);
+  color: #FFB74D;
+}
+.tk-hero-recommend-tag--medium {
+  border-color: rgba(200, 168, 76, 0.35);
+  background: rgba(200, 168, 76, 0.1);
+}
+.tk-hero-recommend-tag--low {
+  border-color: rgba(158, 158, 158, 0.25);
+  background: rgba(158, 158, 158, 0.08);
+  color: var(--tk-text-muted);
+}
+
+/* ── 图标 ── */
+.tk-hero-recommend-tag__icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* ── 原因文本 ── */
+.tk-hero-recommend-tag__reason {
+  line-height: 1.4;
+}
+
+/* ── 手机端适配 ── */
+@media (max-width: 767px) {
+  .tk-hero-recommend-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+}

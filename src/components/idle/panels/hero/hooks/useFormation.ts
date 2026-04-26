@@ -7,6 +7,10 @@
  * - 引擎驱动的推荐方案生成（战力最优 / 羁绊最优 / 平衡编队）
  * - 应用推荐编队操作
  *
+ * 解耦说明（R12）：
+ * - 不再依赖 useHeroList 的 heroInfos 返回值
+ * - 直接从引擎获取武将数据，确保子 Hook 独立可用
+ *
  * @module components/idle/panels/hero/hooks/useFormation
  */
 
@@ -14,22 +18,42 @@ import { useMemo, useCallback } from 'react';
 import type { HeroInfo, RecommendPlan } from '../FormationRecommendPanel';
 import type { UseHeroEngineParams, UseFormationReturn } from './hero-hook.types';
 import { QUALITY_ORDER, MAX_FORMATION_SLOTS } from './hero-constants';
+import { FACTIONS } from '@/games/three-kingdoms/engine/hero/hero.types';
+
+/** FACTIONS 只读数组，用于 Set 快速查找 */
+const FACTION_SET: ReadonlySet<string> = new Set(FACTIONS);
 
 /**
  * 编队数据 + 推荐 Hook
  *
  * 从引擎 FormationSystem 获取当前编队，结合引擎战力计算和
  * 羁绊检测生成3套推荐方案。
+ * 不依赖其他子 Hook 的返回值，直接从引擎获取所需数据。
  */
 export function useFormation(
   params: UseHeroEngineParams,
-  deps: {
-    /** 武将详细信息（来自 useHeroList） */
-    heroInfos: HeroInfo[];
-  },
 ): UseFormationReturn {
   const { engine, snapshotVersion } = params;
-  const { heroInfos } = deps;
+
+  // ── 从引擎直接获取武将数据并转换为 HeroInfo（不依赖 useHeroList） ──
+  const heroInfos = useMemo((): HeroInfo[] => {
+    try {
+      const generals = engine.getGenerals();
+      let starSystem = null;
+      try { starSystem = engine.getHeroStarSystem(); } catch { /* ignore */ }
+
+      return generals.map((g): HeroInfo => ({
+        id: g.id,
+        name: g.name,
+        level: g.level,
+        quality: String(g.quality),
+        stars: starSystem?.getStar(g.id) ?? 1,
+        faction: FACTION_SET.has(g.faction) ? g.faction : String(g.faction),
+      }));
+    } catch {
+      return [];
+    }
+  }, [engine, snapshotVersion]);
 
   // ── 当前编队 ──
   const currentFormation = useMemo((): (string | null)[] => {

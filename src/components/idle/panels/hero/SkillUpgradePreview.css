@@ -17,107 +17,34 @@
 }
 
 /* ── 头部 ── */
-.tk-skill-preview__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.tk-skill-preview__name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--tk-gold-soft, #C4956A);
-}
-.tk-skill-preview__level {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--tk-gold-soft, #C4956A);
-  font-family: var(--tk-font-num);
-}
+.tk-skill-preview__header { display: flex; justify-content: space-between; align-items: center; }
+.tk-skill-preview__name { font-size: 14px; font-weight: 600; color: var(--tk-gold-soft, #C4956A); }
+.tk-skill-preview__level { font-size: 12px; font-weight: 600; color: var(--tk-gold-soft, #C4956A); font-family: var(--tk-font-num); }
 
-/* ── 效果对比区域 ── */
-.tk-skill-preview__compare {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-}
-.tk-skill-preview__effect {
-  flex: 1;
-  padding: 10px;
-  border-radius: var(--tk-radius-md);
-  border: 1px solid rgba(196, 149, 106, 0.08);
-}
-.tk-skill-preview__effect--current {
-  background: rgba(0, 0, 0, 0.15);
-}
-.tk-skill-preview__effect--next {
-  background: rgba(196, 149, 106, 0.08);
-  border-color: rgba(196, 149, 106, 0.2);
-}
-.tk-skill-preview__effect-label {
-  font-size: 10px;
-  color: var(--tk-text-muted);
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-.tk-skill-preview__effect-text {
-  font-size: 12px;
-  color: var(--tk-text-secondary);
-  line-height: 1.5;
-}
-.tk-skill-preview__arrow {
-  display: flex;
-  align-items: center;
-  font-size: 16px;
-  color: var(--tk-gold-soft, #C4956A);
-  flex-shrink: 0;
-}
+/* ── 效果对比 ── */
+.tk-skill-preview__compare { display: flex; align-items: stretch; gap: 8px; }
+.tk-skill-preview__effect { flex: 1; padding: 10px; border-radius: var(--tk-radius-md); border: 1px solid rgba(196, 149, 106, 0.08); }
+.tk-skill-preview__effect--current { background: rgba(0, 0, 0, 0.15); }
+.tk-skill-preview__effect--next { background: rgba(196, 149, 106, 0.08); border-color: rgba(196, 149, 106, 0.2); }
+.tk-skill-preview__effect-label { font-size: 10px; color: var(--tk-text-muted); margin-bottom: 4px; font-weight: 500; }
+.tk-skill-preview__effect-text { font-size: 12px; color: var(--tk-text-secondary); line-height: 1.5; }
+.tk-skill-preview__arrow { display: flex; align-items: center; font-size: 16px; color: var(--tk-gold-soft, #C4956A); flex-shrink: 0; }
 
 /* ── 升级消耗 ── */
-.tk-skill-preview__cost {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: var(--tk-radius-md);
-}
-.tk-skill-preview__cost-label {
-  font-size: 11px;
-  color: var(--tk-text-muted);
-}
-.tk-skill-preview__cost-items {
-  display: flex;
-  gap: 12px;
-}
-.tk-skill-preview__cost-item {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 12px;
-}
-.tk-skill-preview__cost-value {
-  font-family: var(--tk-font-num);
-  font-weight: 600;
-  color: var(--tk-text-primary);
-}
+.tk-skill-preview__cost { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: rgba(0, 0, 0, 0.12); border-radius: var(--tk-radius-md); }
+.tk-skill-preview__cost-label { font-size: 11px; color: var(--tk-text-muted); }
+.tk-skill-preview__cost-items { display: flex; gap: 12px; }
+.tk-skill-preview__cost-item { display: flex; align-items: center; gap: 3px; font-size: 12px; }
+.tk-skill-preview__cost-value { font-family: var(--tk-font-num); font-weight: 600; color: var(--tk-text-primary); }
 
 /* ── 升级按钮 ── */
 .tk-skill-preview__btn {
-  width: 100%;
-  padding: 8px;
-  border: none;
-  border-radius: var(--tk-radius-md);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
+  width: 100%; padding: 8px; border: none; border-radius: var(--tk-radius-md);
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
   background: linear-gradient(135deg, var(--tk-gold-soft, #C4956A), var(--tk-gold-bright, #d4a87a));
   color: var(--tk-bg-dark, #1a2332);
 }
-.tk-skill-preview__btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
+.tk-skill-preview__btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── 手机端适配 ── */
 @media (max-width: 767px) {

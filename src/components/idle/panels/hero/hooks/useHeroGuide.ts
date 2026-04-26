@@ -11,7 +11,7 @@
 
 import { useCallback } from 'react';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
-import type { GuideAction, GuideActionType } from '../GuideOverlay';
+import type { GuideAction } from '../GuideOverlay';
 
 /** useHeroGuide 返回类型 */
 export interface UseHeroGuideReturn {
@@ -33,7 +33,7 @@ export function useHeroGuide(engine: ThreeKingdomsEngine): UseHeroGuideReturn {
 
   const handleGuideAction = useCallback((action: GuideAction) => {
     try {
-      switch (action.type as GuideActionType) {
+      switch (action.type) {
         case 'recruit': {
           // 通过引擎 recruit() API 执行普通招募
           engine.recruit('normal', 1);

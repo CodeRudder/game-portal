@@ -1,0 +1,88 @@
+/**
+ * EconomyOverview — 经济总览样式
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* 面板根容器 */
+.eo-panel {
+  display: flex; flex-direction: column; gap: 16px; padding: 16px;
+  color: var(--tk-text-primary, #f0e6d3); font-family: var(--tk-font-body, inherit);
+}
+
+/* 标题栏 */
+.eo-header { display: flex; justify-content: space-between; align-items: center; }
+.eo-title { font-size: 16px; font-weight: 700; color: var(--tk-gold, #c8a84c); margin: 0; }
+
+/* 资源卡片网格 */
+.eo-cards {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+}
+.eo-card {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 12px 8px; background: var(--tk-hero-gold-4, rgba(200,168,76,0.04));
+  border-radius: var(--tk-radius-md, 8px); border: 1px solid var(--tk-hero-gold-10, rgba(200,168,76,0.1));
+}
+.eo-card__icon { font-size: 22px; }
+.eo-card__label { font-size: 12px; color: var(--tk-text-secondary, rgba(240,230,211,0.6)); }
+.eo-card__amount { font-size: 16px; font-weight: 700; color: var(--tk-gold, #c8a84c); font-family: var(--tk-font-num, monospace); }
+
+/* 日产出/日消耗面板 */
+.eo-flows {
+  padding: 12px; background: var(--tk-hero-gold-4, rgba(200,168,76,0.04));
+  border-radius: var(--tk-radius-lg, 10px); border: 1px solid var(--tk-hero-gold-8, rgba(200,168,76,0.08));
+}
+.eo-flows__header {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 4px;
+  font-size: 11px; color: var(--tk-text-muted, rgba(240,230,211,0.35)); padding-bottom: 6px;
+  border-bottom: 1px solid rgba(100,100,100,0.15); margin-bottom: 6px;
+}
+.eo-flow-row {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 4px;
+  font-size: 13px; padding: 4px 0; font-family: var(--tk-font-num, monospace);
+}
+.eo-flow-row__key { color: var(--tk-text-secondary, rgba(240,230,211,0.6)); font-family: var(--tk-font-body, inherit); }
+.eo-flow-row__prod { color: var(--tk-green, #7ec850); }
+.eo-flow-row__cons { color: var(--tk-red, #e53935); }
+.eo-flow-row__balance--positive { color: var(--tk-green, #7ec850); }
+.eo-flow-row__balance--negative { color: var(--tk-red, #e53935); }
+
+/* 经济平衡指示器 */
+.eo-balance-indicator {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  border-radius: var(--tk-radius-md, 8px); font-size: 14px; font-weight: 600;
+}
+.eo-balance-indicator--positive {
+  background: rgba(126,200,80,0.06); border: 1px solid rgba(126,200,80,0.15);
+  color: var(--tk-green, #7ec850);
+}
+.eo-balance-indicator--negative {
+  background: rgba(229,57,53,0.06); border: 1px solid rgba(229,57,53,0.15);
+  color: var(--tk-red, #e53935);
+}
+.eo-balance-indicator__icon { font-size: 18px; }
+
+/* 快捷入口 */
+.eo-entries {
+  padding: 12px; background: var(--tk-hero-gold-4, rgba(200,168,76,0.04));
+  border-radius: var(--tk-radius-lg, 10px); border: 1px solid var(--tk-hero-gold-8, rgba(200,168,76,0.08));
+}
+.eo-entries__title { font-size: 13px; font-weight: 600; color: var(--tk-text-secondary, rgba(240,230,211,0.6)); margin-bottom: 8px; }
+.eo-entries__list { display: flex; gap: 8px; flex-wrap: wrap; }
+.eo-entry-btn {
+  display: flex; align-items: center; gap: 4px; padding: 8px 14px;
+  background: var(--tk-hero-gold-10, rgba(200,168,76,0.1)); border: 1px solid var(--tk-hero-gold-20, rgba(200,168,76,0.2));
+  border-radius: var(--tk-radius-md, 8px); color: var(--tk-gold, #c8a84c); font-size: 13px;
+  cursor: pointer; font-family: var(--tk-font-body, inherit);
+}
+.eo-entry-btn:hover { background: var(--tk-hero-gold-15, rgba(200,168,76,0.15)); }
+
+/* 推荐操作 */
+.eo-recommendations {
+  padding: 12px; background: var(--tk-hero-gold-4, rgba(200,168,76,0.04));
+  border-radius: var(--tk-radius-lg, 10px); border: 1px solid var(--tk-hero-gold-8, rgba(200,168,76,0.08));
+}
+.eo-recommendations__title { font-size: 13px; font-weight: 600; color: var(--tk-text-secondary, rgba(240,230,211,0.6)); margin-bottom: 8px; }
+.eo-rec-item { font-size: 13px; padding: 6px 0; color: var(--tk-text-primary, #f0e6d3); }
+.eo-rec-item--urgent { color: var(--tk-red, #e53935); }
+.eo-rec-item--warning { color: var(--tk-gold, #c8a84c); }
+.eo-rec-item--info { color: var(--tk-text-secondary, rgba(240,230,211,0.6)); }

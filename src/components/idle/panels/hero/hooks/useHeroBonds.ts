@@ -6,41 +6,64 @@
  * - 生成羁绊图鉴数据（阵营羁绊 + 搭档羁绊）
  * - 提供武将→阵营映射
  *
+ * 解耦说明（R12）：
+ * - 不再依赖 useHeroList 的返回值（allGenerals、ownedHeroIds）
+ * - 直接从引擎获取武将数据，确保子 Hook 独立可用
+ *
  * @module components/idle/panels/hero/hooks/useHeroBonds
  */
 
 import { useMemo } from 'react';
 import type { ActiveBond } from '@/games/three-kingdoms/engine/hero/BondSystem';
 import type { BondCatalogItem } from '../BondCollectionPanel';
-import type { GeneralData } from '@/games/three-kingdoms/engine';
 import type { UseHeroEngineParams, UseHeroBondsReturn } from './hero-hook.types';
 import { BondType, FACTION_BONDS, PARTNER_BONDS } from '@/games/three-kingdoms/engine/hero/bond-config';
 import { adaptBondEffects as adaptEffects } from '../hero-ui.types';
 import { STAT_LABELS } from './hero-constants';
+import { FACTIONS } from '@/games/three-kingdoms/engine/hero/hero.types';
+
+/** FACTIONS 只读数组，用于 Set 快速查找 */
+const FACTION_SET: ReadonlySet<string> = new Set(FACTIONS);
 
 /**
  * 羁绊数据 Hook
  *
- * 从引擎 BondSystem 获取激活羁绊，并结合配置表
- * 生成完整的羁绊图鉴数据。
+ * 从引擎获取武将和羁绊数据，生成完整的羁绊图鉴。
+ * 不依赖其他子 Hook 的返回值，直接从引擎获取所需数据。
  */
 export function useHeroBonds(
   params: UseHeroEngineParams,
-  deps: {
-    /** 所有武将数据（来自 useHeroList） */
-    allGenerals: GeneralData[];
-    /** 已拥有武将ID列表（来自 useHeroList） */
-    ownedHeroIds: string[];
-  },
 ): UseHeroBondsReturn {
   const { engine, snapshotVersion, formationHeroIds } = params;
-  const { allGenerals, ownedHeroIds } = deps;
+
+  // ── 从引擎直接获取武将数据（不依赖 useHeroList） ──
+  const allGenerals = useMemo(() => {
+    try {
+      const raw = engine?.getGenerals?.() ?? [];
+      if (Array.isArray(raw)) return raw;
+      // 类型断言原因：getGenerals() 返回类型为 Readonly<GeneralData>[]，
+      // 但运行时可能返回 Record 格式（旧版存档兼容），此处已通过
+      // typeof raw === 'object' 校验，断言安全
+      if (raw && typeof raw === 'object') {
+        return Object.values(raw as Record<string, typeof raw[number]>);
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }, [engine, snapshotVersion]);
+
+  const ownedHeroIds = useMemo(
+    () => allGenerals.map((g) => g.id),
+    [allGenerals],
+  );
 
   // ── 武将→阵营映射 ──
   const heroFactionMap = useMemo(() => {
     const map: Record<string, string> = {};
     allGenerals.forEach((g) => {
-      map[g.id] = g.faction as string;
+      // Faction 为联合类型，直接取值
+      map[g.id] = FACTION_SET.has(g.faction) ? g.faction : String(g.faction);
     });
     return map;
   }, [allGenerals]);
@@ -56,7 +79,7 @@ export function useHeroBonds(
     }
   }, [engine, formationHeroIds, allGenerals, snapshotVersion]);
 
-  // ── 武将ID→名称映射（从 allGenerals 构建） ──
+  // ── 武将ID→名称映射（从引擎数据构建） ──
   const heroNameMap = useMemo(() => {
     const map: Record<string, string> = {};
     allGenerals.forEach((g) => {

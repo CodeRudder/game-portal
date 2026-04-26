@@ -1,0 +1,53 @@
+/**
+ * FormationSaveSlot — 阵容收藏样式
+ * 设计风格：水墨江山·铜纹霸业 | 古铜金配色 #C4956A
+ */
+
+/* ── 根容器 ── */
+.tk-formation-slot {
+  display: flex; flex-direction: column; gap: 12px; padding: 14px;
+  background: rgba(196, 149, 106, 0.04); border-radius: var(--tk-radius-lg);
+  border: 1px solid rgba(196, 149, 106, 0.1); color: var(--tk-text-primary); font-family: var(--tk-font-body);
+}
+
+/* ── 头部 ── */
+.tk-formation-slot__header { display: flex; justify-content: space-between; align-items: center; }
+.tk-formation-slot__title { font-size: 14px; font-weight: 600; color: var(--tk-gold-soft, #C4956A); }
+.tk-formation-slot__count { font-size: 12px; font-family: var(--tk-font-num); font-weight: 600; color: var(--tk-text-muted); }
+
+/* ── 方案列表 ── */
+.tk-formation-slot__list { display: flex; flex-direction: column; gap: 8px; }
+.tk-formation-slot__item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; background: rgba(0, 0, 0, 0.12); border-radius: var(--tk-radius-md);
+  border: 1px solid rgba(196, 149, 106, 0.06);
+}
+.tk-formation-slot__item-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tk-formation-slot__item-name { font-size: 13px; font-weight: 600; color: var(--tk-text-primary); }
+.tk-formation-slot__item-heroes { font-size: 11px; color: var(--tk-text-muted); }
+.tk-formation-slot__item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── 按钮 ── */
+.tk-formation-slot__btn { padding: 4px 12px; border: none; border-radius: var(--tk-radius-md); font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.tk-formation-slot__btn--load { background: rgba(196, 149, 106, 0.15); color: var(--tk-gold-soft, #C4956A); border: 1px solid rgba(196, 149, 106, 0.2); }
+.tk-formation-slot__btn--delete { background: rgba(229, 57, 53, 0.1); color: #E57373; border: 1px solid rgba(229, 57, 53, 0.15); }
+.tk-formation-slot__btn--save { padding: 6px 16px; background: linear-gradient(135deg, var(--tk-gold-soft, #C4956A), var(--tk-gold-bright, #d4a87a)); color: var(--tk-bg-dark, #1a2332); font-size: 12px; }
+.tk-formation-slot__btn--save:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── 新建区域 ── */
+.tk-formation-slot__new { display: flex; gap: 8px; }
+.tk-formation-slot__input {
+  flex: 1; padding: 6px 10px; border: 1px solid rgba(196, 149, 106, 0.15);
+  border-radius: var(--tk-radius-md); background: rgba(0, 0, 0, 0.15);
+  color: var(--tk-text-primary); font-size: 12px; font-family: inherit; outline: none;
+}
+.tk-formation-slot__input::placeholder { color: var(--tk-text-muted); }
+
+/* ── 空状态/已满提示 ── */
+.tk-formation-slot__empty, .tk-formation-slot__full-hint { text-align: center; padding: 12px; font-size: 12px; color: var(--tk-text-muted); }
+
+/* ── 手机端适配 ── */
+@media (max-width: 767px) {
+  .tk-formation-slot { padding: 10px; gap: 10px; }
+  .tk-formation-slot__item { padding: 8px 10px; }
+}

@@ -1,0 +1,34 @@
+/**
+ * BondCollectionProgress — 羁绊收集进度样式
+ * 设计风格：水墨江山·铜纹霸业 | 古铜金配色 #C4956A
+ */
+
+/* ── 根容器 ── */
+.tk-bond-progress {
+  display: flex; flex-direction: column; gap: 14px; padding: 14px;
+  background: rgba(196, 149, 106, 0.04); border-radius: var(--tk-radius-lg);
+  border: 1px solid rgba(196, 149, 106, 0.1); color: var(--tk-text-primary); font-family: var(--tk-font-body);
+}
+
+/* ── 总进度 ── */
+.tk-bond-progress__total-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.tk-bond-progress__total-label { font-size: 14px; font-weight: 600; color: var(--tk-gold-soft, #C4956A); }
+.tk-bond-progress__total-count { font-size: 12px; color: var(--tk-text-secondary); flex: 1; }
+.tk-bond-progress__total-percent { font-size: 14px; font-weight: 700; color: var(--tk-gold-soft, #C4956A); font-family: var(--tk-font-num); }
+
+/* ── 进度条 ── */
+.tk-bond-progress__bar-track { height: 6px; background: rgba(0, 0, 0, 0.25); border-radius: 3px; overflow: hidden; }
+.tk-bond-progress__bar-track--total { height: 8px; border-radius: 4px; }
+.tk-bond-progress__bar-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--tk-gold-soft, #C4956A), var(--tk-gold-bright, #d4a87a)); }
+.tk-bond-progress__bar-fill--total { background: linear-gradient(90deg, #C4956A, #e8c87a); }
+
+/* ── 分类进度 ── */
+.tk-bond-progress__categories { display: flex; flex-direction: column; gap: 10px; }
+.tk-bond-progress__category { display: flex; flex-direction: column; gap: 4px; }
+.tk-bond-progress__category-header { display: flex; align-items: center; gap: 6px; }
+.tk-bond-progress__category-icon { font-size: 13px; }
+.tk-bond-progress__category-label { font-size: 12px; color: var(--tk-text-secondary); flex: 1; }
+.tk-bond-progress__category-count { font-size: 11px; font-family: var(--tk-font-num); font-weight: 600; color: var(--tk-text-muted); }
+
+/* ── 手机端适配 ── */
+@media (max-width: 767px) { .tk-bond-progress { padding: 10px; gap: 10px; } }
