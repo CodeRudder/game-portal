@@ -1,0 +1,497 @@
+/**
+ * hero-real-engine — 武将系统真实引擎集成测试
+ *
+ * 使用真实 ThreeKingdomsEngine 实例（零 mock），验证：
+ *   1. 引擎初始化 → 武将系统可用性
+ *   2. 直接添加武将 → 数据格式与 Hook 期望一致
+ *   3. 招募武将 → 资源消耗 + 武将入队
+ *   4. 升级武将 → 属性/战力变化
+ *   5. 编队操作 → 编队数据更新
+ *   6. 羁绊系统 → 激活与数据格式
+ *   7. 派遣系统 → 派驻与召回
+ *
+ * 关键约束：
+ *   - 初始 recruitToken = 10，普通招募消耗 5/次 → 最多 2 次普通招募
+ *   - 使用 engine.hero.addGeneral() 可绕过资源限制直接添加武将
+ *   - 所有测试使用真实引擎，不使用任何 mock
+ *
+ * @module components/idle/panels/hero/__tests__/hero-real-engine
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import type { GeneralData } from '@/games/three-kingdoms/engine/hero/hero.types';
+import { Quality, QUALITY_LABELS, FACTION_LABELS } from '@/games/three-kingdoms/engine/hero/hero.types';
+import type { RecruitOutput } from '@/games/three-kingdoms/engine/hero/recruit-types';
+import type { ActiveBond } from '@/games/three-kingdoms/engine/hero/BondSystem';
+import type { LevelUpResult } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
+
+// ─────────────────────────────────────────────
+// localStorage mock（引擎 SaveManager 依赖）
+// ─────────────────────────────────────────────
+const storage: Record<string, string> = {};
+
+beforeEach(() => {
+  Object.keys(storage).forEach((k) => delete storage[k]);
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: {
+      getItem: (k: string) => storage[k] ?? null,
+      setItem: (k: string, v: string) => { storage[k] = v; },
+      removeItem: (k: string) => { delete storage[k]; },
+      clear: () => Object.keys(storage).forEach((k) => delete storage[k]),
+      get length() { return Object.keys(storage).length; },
+      key: () => null,
+    },
+    writable: true,
+    configurable: true,
+  });
+});
+
+// ─────────────────────────────────────────────
+// 引擎工厂
+// ─────────────────────────────────────────────
+
+/** 创建并初始化一个真实 ThreeKingdomsEngine 实例 */
+function createEngine(): ThreeKingdomsEngine {
+  const engine = new ThreeKingdomsEngine();
+  engine.init();
+  return engine;
+}
+
+/** 验证 GeneralData 必要字段完整性 */
+function assertValidGeneral(g: GeneralData): void {
+  expect(g).toHaveProperty('id');
+  expect(g).toHaveProperty('name');
+  expect(g).toHaveProperty('quality');
+  expect(g).toHaveProperty('baseStats');
+  expect(g).toHaveProperty('level');
+  expect(g).toHaveProperty('faction');
+  expect(g).toHaveProperty('skills');
+  expect(typeof g.id).toBe('string');
+  expect(typeof g.name).toBe('string');
+  expect(typeof g.level).toBe('number');
+  expect(typeof g.faction).toBe('string');
+  expect(Array.isArray(g.skills)).toBe(true);
+}
+
+/** 已知武将ID列表（来自 hero-config.ts） */
+const KNOWN_HERO_IDS = [
+  'liubei', 'guanyu', 'zhangfei', 'zhugeliang', 'zhaoyun',  // 蜀
+  'caocao', 'dianwei', 'simayi',                              // 魏
+  'zhouyu',                                                    // 吴
+  'lvbu',                                                      // 群
+];
+
+// ═══════════════════════════════════════════════
+// 1. 引擎初始化 → 武将系统可用性
+// ═══════════════════════════════════════════════
+
+describe('引擎初始化与武将系统可用性', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => { engine = createEngine(); });
+  afterEach(() => { engine.reset(); });
+
+  it('引擎初始化成功，核心武将API均可用', () => {
+    expect(engine.getHeroSystem).toBeTypeOf('function');
+    expect(engine.getHeroStarSystem).toBeTypeOf('function');
+    expect(engine.getFormationSystem).toBeTypeOf('function');
+    expect(engine.getBondSystem).toBeTypeOf('function');
+    expect(engine.getHeroDispatchSystem).toBeTypeOf('function');
+    expect(engine.getGenerals).toBeTypeOf('function');
+    expect(engine.getGeneral).toBeTypeOf('function');
+    expect(engine.recruit).toBeTypeOf('function');
+    expect(engine.enhanceHero).toBeTypeOf('function');
+    expect(engine.setFormation).toBeTypeOf('function');
+    expect(engine.getFormations).toBeTypeOf('function');
+  });
+
+  it('初始武将列表为空', () => {
+    const generals = engine.getGenerals();
+    expect(Array.isArray(generals)).toBe(true);
+    expect(generals).toHaveLength(0);
+  });
+
+  it('getGeneral 对不存在的ID返回 undefined', () => {
+    expect(engine.getGeneral('nonexistent_id')).toBeUndefined();
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 2. 直接添加武将 → 数据格式验证
+// ═══════════════════════════════════════════════
+
+describe('武将数据格式验证', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => { engine = createEngine(); });
+  afterEach(() => { engine.reset(); });
+
+  it('通过 hero.addGeneral 添加已知武将，返回完整数据', () => {
+    const heroSystem = engine.getHeroSystem();
+    const general = heroSystem.addGeneral('guanyu');
+    expect(general).not.toBeNull();
+    expect(general!.id).toBe('guanyu');
+    expect(general!.name).toBe('关羽');
+    assertValidGeneral(general!);
+  });
+
+  it('武将初始等级为1，经验为0', () => {
+    const heroSystem = engine.getHeroSystem();
+    const general = heroSystem.addGeneral('liubei');
+    expect(general!.level).toBe(1);
+    expect(general!.exp).toBe(0);
+  });
+
+  it('武将品质属于合法枚举值', () => {
+    const heroSystem = engine.getHeroSystem();
+    const legalQualities = Object.values(Quality);
+    for (const id of KNOWN_HERO_IDS) {
+      const g = heroSystem.addGeneral(id);
+      expect(g).not.toBeNull();
+      expect(legalQualities).toContain(g!.quality);
+    }
+  });
+
+  it('武将阵营属于合法值且可映射中文', () => {
+    const heroSystem = engine.getHeroSystem();
+    const legalFactions = ['shu', 'wei', 'wu', 'qun'] as const;
+    for (const id of KNOWN_HERO_IDS) {
+      const g = heroSystem.addGeneral(id);
+      expect(g).not.toBeNull();
+      expect(legalFactions).toContain(g!.faction);
+      // 中文名映射不抛异常
+      expect(() => FACTION_LABELS[g!.faction]).not.toThrow();
+    }
+  });
+
+  it('武将四维属性 baseStats 均为正数', () => {
+    const heroSystem = engine.getHeroSystem();
+    for (const id of KNOWN_HERO_IDS) {
+      const g = heroSystem.addGeneral(id);
+      const { attack, defense, intelligence, speed } = g!.baseStats;
+      expect(attack).toBeGreaterThan(0);
+      expect(defense).toBeGreaterThan(0);
+      expect(intelligence).toBeGreaterThan(0);
+      expect(speed).toBeGreaterThan(0);
+    }
+  });
+
+  it('getGenerals 与 getGeneral 数据一致', () => {
+    const heroSystem = engine.getHeroSystem();
+    heroSystem.addGeneral('guanyu');
+    heroSystem.addGeneral('zhaoyun');
+
+    const all = engine.getGenerals();
+    expect(all).toHaveLength(2);
+
+    for (const g of all) {
+      const single = engine.getGeneral(g.id);
+      expect(single).toBeDefined();
+      expect(single!.id).toBe(g.id);
+      expect(single!.name).toBe(g.name);
+      expect(single!.level).toBe(g.level);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 3. 招募武将 → 资源消耗 + 武将入队
+// ═══════════════════════════════════════════════
+
+describe('招募武将集成', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => { engine = createEngine(); });
+  afterEach(() => { engine.reset(); });
+
+  it('普通招募返回有效 RecruitOutput', () => {
+    const result: RecruitOutput | null = engine.recruit('normal', 1);
+    expect(result).not.toBeNull();
+    expect(result!.type).toBe('normal');
+    expect(result!.results).toHaveLength(1);
+    expect(result!.results[0].general).toBeDefined();
+    assertValidGeneral(result!.results[0].general);
+  });
+
+  it('招募后武将出现在 getGenerals 列表中', () => {
+    const result = engine.recruit('normal', 1);
+    expect(result).not.toBeNull();
+
+    const recruitedId = result!.results[0].general.id;
+    const generals = engine.getGenerals();
+    expect(generals).toHaveLength(1);
+    expect(generals[0].id).toBe(recruitedId);
+  });
+
+  it('招募消耗 recruitToken 资源', () => {
+    const resource = engine.resource;
+    const before = resource.getAmount('recruitToken');
+    engine.recruit('normal', 1);
+    const after = resource.getAmount('recruitToken');
+    // 普通招募消耗 5 recruitToken
+    expect(before - after).toBeGreaterThanOrEqual(5);
+  });
+
+  it('资源不足时招募返回 null', () => {
+    // 初始 recruitToken = 10，普通招募消耗 5
+    // 2 次招募后耗尽
+    engine.recruit('normal', 1);
+    engine.recruit('normal', 1);
+    // 第3次应失败
+    const result = engine.recruit('normal', 1);
+    expect(result).toBeNull();
+  });
+
+  it('招募武将品质为合法枚举值', () => {
+    const result = engine.recruit('normal', 1);
+    const quality = result!.results[0].quality;
+    expect(Object.values(Quality)).toContain(quality);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 4. 升级武将 → 属性/战力变化
+// ═══════════════════════════════════════════════
+
+describe('升级武将集成', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => { engine = createEngine(); });
+  afterEach(() => { engine.reset(); });
+
+  it('enhanceHero 返回有效的 LevelUpResult', () => {
+    const heroSystem = engine.getHeroSystem();
+    heroSystem.addGeneral('guanyu');
+    const heroId = 'guanyu';
+
+    const result: LevelUpResult | null = engine.enhanceHero(heroId, 5);
+    expect(result).not.toBeNull();
+    expect(result!.general.id).toBe(heroId);
+    expect(result!.levelsGained).toBeGreaterThanOrEqual(1);
+  });
+
+  it('升级后武将等级增加', () => {
+    const heroSystem = engine.getHeroSystem();
+    heroSystem.addGeneral('zhaoyun');
+    const levelBefore = engine.getGeneral('zhaoyun')!.level;
+
+    engine.enhanceHero('zhaoyun', 3);
+    const levelAfter = engine.getGeneral('zhaoyun')!.level;
+    expect(levelAfter).toBeGreaterThan(levelBefore);
+  });
+
+  it('升级后战力增加', () => {
+    const heroSystem = engine.getHeroSystem();
+    heroSystem.addGeneral('zhangfei');
+
+    const before = engine.getGeneral('zhangfei')!;
+    const powerBefore = heroSystem.calculatePower(before);
+
+    engine.enhanceHero('zhangfei', 5);
+
+    const after = engine.getGeneral('zhangfei')!;
+    const powerAfter = heroSystem.calculatePower(after);
+    expect(powerAfter).toBeGreaterThan(powerBefore);
+  });
+
+  it('对不存在的武将 enhanceHero 返回 null', () => {
+    const result = engine.enhanceHero('nonexistent_id', 1);
+    expect(result).toBeNull();
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 5. 编队操作 → 编队数据更新
+// ═══════════════════════════════════════════════
+
+describe('编队操作集成', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => { engine = createEngine(); });
+  afterEach(() => { engine.reset(); });
+
+  it('初始编队存在且为空', () => {
+    const formations = engine.getFormations();
+    expect(formations.length).toBeGreaterThanOrEqual(1);
+    const active = formations[0];
+    const filledSlots = active.slots.filter((s: unknown) => {
+      if (s == null) return false;
+      if (typeof s === 'string') return s.length > 0;
+      if (typeof s === 'object' && 'heroId' in (s as Record<string, unknown>)) {
+        return (s as { heroId: string | null }).heroId != null;
+      }
+      return false;
+    });
+    expect(filledSlots).toHaveLength(0);
+  });
+
+  it('setFormation 后编队包含指定武将', () => {
+    const heroSystem = engine.getHeroSystem();
+    heroSystem.addGeneral('guanyu');
+    heroSystem.addGeneral('zhangfei');
+    heroSystem.addGeneral('zhaoyun');
+
+    engine.setFormation('0', ['guanyu', 'zhangfei', 'zhaoyun']);
+
+    const formations = engine.getFormations();
+    expect(formations.length).toBeGreaterThan(0);
+    const active = formations[0];
+    const slotIds = active.slots
+      .map((s: unknown) => {
+        if (typeof s === 'string') return s;
+        if (s != null && typeof s === 'object' && 'heroId' in (s as Record<string, unknown>)) {
+          return (s as { heroId: string | null }).heroId;
+        }
+        return null;
+      })
+      .filter((id: string | null): id is string => id != null);
+
+    expect(slotIds).toContain('guanyu');
+    expect(slotIds).toContain('zhangfei');
+    expect(slotIds).toContain('zhaoyun');
+  });
+
+  it('编队上限为 6 人', () => {
+    const heroSystem = engine.getHeroSystem();
+    // 添加 8 个武将
+    for (const id of KNOWN_HERO_IDS.slice(0, 8)) {
+      heroSystem.addGeneral(id);
+    }
+    const ids = KNOWN_HERO_IDS.slice(0, 8);
+
+    expect(() => engine.setFormation('0', ids)).not.toThrow();
+
+    const formations = engine.getFormations();
+    const active = formations[0];
+    const filledSlots = active.slots.filter((s: unknown) => {
+      if (typeof s === 'string') return s.length > 0;
+      if (s != null && typeof s === 'object' && 'heroId' in (s as Record<string, unknown>)) {
+        return (s as { heroId: string | null }).heroId != null;
+      }
+      return false;
+    });
+    expect(filledSlots.length).toBeLessThanOrEqual(6);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 6. 羁绊系统 → 激活与数据格式
+// ═══════════════════════════════════════════════
+
+describe('羁绊系统数据格式', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => { engine = createEngine(); });
+  afterEach(() => { engine.reset(); });
+
+  it('getBondSystem 返回有效的羁绊系统', () => {
+    const bondSystem = engine.getBondSystem();
+    expect(bondSystem).toBeDefined();
+    expect(bondSystem.getActiveBonds).toBeTypeOf('function');
+    expect(bondSystem.getBondMultiplier).toBeTypeOf('function');
+  });
+
+  it('无武将时 getActiveBonds 返回空数组', () => {
+    const bondSystem = engine.getBondSystem();
+    const bonds = bondSystem.getActiveBonds([]);
+    expect(Array.isArray(bonds)).toBe(true);
+    expect(bonds).toHaveLength(0);
+  });
+
+  it('激活羁绊的数据格式包含必要字段', () => {
+    const heroSystem = engine.getHeroSystem();
+    // 添加同阵营武将（蜀国：刘备、关羽、张飞）
+    heroSystem.addGeneral('liubei');
+    heroSystem.addGeneral('guanyu');
+    heroSystem.addGeneral('zhangfei');
+
+    const bondSystem = engine.getBondSystem();
+    const bonds: ActiveBond[] = bondSystem.getActiveBonds(['liubei', 'guanyu', 'zhangfei']);
+
+    for (const bond of bonds) {
+      expect(typeof bond.bondId).toBe('string');
+      expect(typeof bond.name).toBe('string');
+      expect(typeof bond.level).toBe('number');
+      expect(typeof bond.dispatchFactor).toBe('number');
+      expect(Array.isArray(bond.effects)).toBe(true);
+      expect(Array.isArray(bond.participants)).toBe(true);
+      expect(bond.participants.length).toBeGreaterThanOrEqual(1);
+
+      for (const effect of bond.effects) {
+        expect(effect).toHaveProperty('stat');
+        expect(effect).toHaveProperty('value');
+        expect(typeof effect.stat).toBe('string');
+        expect(typeof effect.value).toBe('number');
+      }
+    }
+  });
+
+  it('getBondMultiplier 返回合法数值', () => {
+    const heroSystem = engine.getHeroSystem();
+    heroSystem.addGeneral('liubei');
+    heroSystem.addGeneral('guanyu');
+
+    const bondSystem = engine.getBondSystem();
+    const multiplier = bondSystem.getBondMultiplier(['liubei', 'guanyu']);
+    expect(typeof multiplier).toBe('number');
+    expect(multiplier).toBeGreaterThanOrEqual(1.0);
+    expect(Number.isFinite(multiplier)).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// 7. 派遣系统 → 派驻与召回
+// ═══════════════════════════════════════════════
+
+describe('派遣系统集成', () => {
+  let engine: ThreeKingdomsEngine;
+
+  beforeEach(() => { engine = createEngine(); });
+  afterEach(() => { engine.reset(); });
+
+  it('getHeroDispatchSystem 返回有效系统', () => {
+    const dispatch = engine.getHeroDispatchSystem();
+    expect(dispatch).toBeDefined();
+    expect(dispatch.dispatchHero).toBeTypeOf('function');
+    expect(dispatch.undeployHero).toBeTypeOf('function');
+    expect(dispatch.getBuildingDispatchHero).toBeTypeOf('function');
+    expect(dispatch.getState).toBeTypeOf('function');
+  });
+
+  it('派遣武将到建筑成功', () => {
+    const heroSystem = engine.getHeroSystem();
+    heroSystem.addGeneral('guanyu');
+
+    const dispatch = engine.getHeroDispatchSystem();
+    const result = dispatch.dispatchHero('guanyu', 'barracks');
+    expect(result.success).toBe(true);
+  });
+
+  it('派遣后可查询到派驻记录', () => {
+    const heroSystem = engine.getHeroSystem();
+    heroSystem.addGeneral('zhaoyun');
+
+    const dispatch = engine.getHeroDispatchSystem();
+    dispatch.dispatchHero('zhaoyun', 'barracks');
+
+    const heroId = dispatch.getBuildingDispatchHero('barracks');
+    expect(heroId).toBe('zhaoyun');
+  });
+
+  it('召回武将成功并清除记录', () => {
+    const heroSystem = engine.getHeroSystem();
+    heroSystem.addGeneral('zhaoyun');
+
+    const dispatch = engine.getHeroDispatchSystem();
+    dispatch.dispatchHero('zhaoyun', 'barracks');
+
+    // 召回
+    const recallResult = dispatch.undeployHero('zhaoyun');
+    expect(recallResult).toBe(true);
+
+    // 验证清除
+    const heroId = dispatch.getBuildingDispatchHero('barracks');
+    expect(heroId).toBeNull();
+  });
+});

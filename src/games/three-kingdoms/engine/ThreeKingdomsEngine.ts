@@ -69,6 +69,7 @@ import {
   type GuideSystems,
 } from './engine-guide-deps';
 import { TutorialSystem } from './tutorial/tutorial-system';
+import { SeasonSystem } from './season/SeasonSystem';
 import { applyGetters } from './engine-getters';
 import type { EngineGettersMixin } from './engine-getters-types';
 
@@ -108,6 +109,7 @@ export class ThreeKingdomsEngine {
   private readonly offline: OfflineSystems;
   private readonly guide: GuideSystems;
   private readonly tutorialGuide: TutorialSystem;
+  readonly season: SeasonSystem;
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
