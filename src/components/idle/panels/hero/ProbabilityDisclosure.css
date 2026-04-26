@@ -1,0 +1,53 @@
+/**
+ * ProbabilityDisclosure — 概率公示合规样式
+ * 设计风格：水墨江山·铜纹霸业 | 古铜金配色 #C4956A
+ */
+
+/* ── 根容器 ── */
+.tk-prob-disc {
+  display: flex; flex-direction: column; gap: 14px; padding: 14px;
+  background: rgba(196, 149, 106, 0.04); border-radius: var(--tk-radius-lg);
+  border: 1px solid rgba(196, 149, 106, 0.1); color: var(--tk-text-primary); font-family: var(--tk-font-body);
+}
+
+/* ── 标题栏 ── */
+.tk-prob-disc__header { display: flex; align-items: center; gap: 8px; }
+.tk-prob-disc__header-icon { font-size: 18px; }
+.tk-prob-disc__header-title { font-size: 15px; font-weight: 700; color: var(--tk-gold-soft, #C4956A); }
+.tk-prob-disc__header-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: rgba(76,175,80,0.15); color: #66bb6a; }
+
+/* ── Tab 切换 ── */
+.tk-prob-disc__tabs { display: flex; gap: 6px; }
+.tk-prob-disc__tab { flex: 1; padding: 7px 0; border: 1px solid rgba(196,149,106,0.15); border-radius: 6px; background: transparent; color: var(--tk-text-secondary); font-size: 12px; cursor: pointer; transition: all 0.2s; }
+.tk-prob-disc__tab--active { background: rgba(196,149,106,0.12); border-color: rgba(196,149,106,0.4); color: var(--tk-gold-soft, #C4956A); font-weight: 600; }
+
+/* ── 概率表格 ── */
+.tk-prob-disc__table { display: flex; flex-direction: column; gap: 8px; }
+.tk-prob-disc__table-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--tk-text-primary); }
+.tk-prob-disc__table-grid { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tk-prob-disc__table-grid th { text-align: left; padding: 4px 6px; color: var(--tk-text-muted); font-weight: 400; border-bottom: 1px solid rgba(196,149,106,0.1); }
+.tk-prob-disc__table-grid td { padding: 5px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.tk-prob-disc__table-grid tfoot td { font-weight: 600; border-top: 1px solid rgba(196,149,106,0.15); }
+.tk-prob-disc__quality-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.tk-prob-disc__rate-value { font-family: var(--tk-font-num); font-weight: 600; }
+
+/* ── 概率条 ── */
+.tk-prob-disc__bar-track { height: 5px; background: rgba(0,0,0,0.25); border-radius: 3px; overflow: hidden; min-width: 60px; }
+.tk-prob-disc__bar-fill { height: 100%; border-radius: inherit; transition: width 0.3s; }
+
+/* ── 保底机制 ── */
+.tk-prob-disc__pity { display: flex; flex-direction: column; gap: 8px; padding: 10px; background: rgba(196,149,106,0.06); border-radius: 8px; border: 1px solid rgba(196,149,106,0.1); }
+.tk-prob-disc__pity-title { font-size: 13px; font-weight: 600; color: var(--tk-gold-soft, #C4956A); }
+.tk-prob-disc__pity-desc { font-size: 11px; color: var(--tk-text-secondary); line-height: 1.5; margin: 0; }
+.tk-prob-disc__pity-progress { display: flex; flex-direction: column; gap: 4px; }
+.tk-prob-disc__pity-header { display: flex; justify-content: space-between; font-size: 11px; color: var(--tk-text-secondary); }
+.tk-prob-disc__pity-count { font-family: var(--tk-font-num); font-weight: 600; color: var(--tk-gold-soft, #C4956A); }
+.tk-prob-disc__bar-track--pity { height: 7px; border-radius: 4px; }
+.tk-prob-disc__bar-fill--pity { background: linear-gradient(90deg, #C4956A, #e8c87a); }
+.tk-prob-disc__pity-remaining { font-size: 11px; color: var(--tk-text-muted); text-align: right; }
+
+/* ── 合规声明 ── */
+.tk-prob-disc__footer p { font-size: 10px; color: var(--tk-text-muted); margin: 0; line-height: 1.5; }
+
+/* ── 手机端适配 ── */
+@media (max-width: 767px) { .tk-prob-disc { padding: 10px; gap: 10px; } }

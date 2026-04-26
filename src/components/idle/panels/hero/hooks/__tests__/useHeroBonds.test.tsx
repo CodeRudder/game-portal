@@ -7,6 +7,9 @@
  * - heroNames 非空：验证修复后 heroNames 不再为空数组
  * - 边界：空数据 / 异常处理
  *
+ * 注意（R12）：useHeroBonds 不再接受 deps 参数，
+ * 直接从引擎获取武将数据，确保子 Hook 独立可用。
+ *
  * @module components/idle/panels/hero/hooks/__tests__/useHeroBonds.test
  */
 
@@ -22,12 +25,8 @@ import { createMockEngine, makeMultipleGenerals } from './hero-hooks-test-utils'
 describe('useHeroBonds — 基础渲染', () => {
   it('应正常调用并返回数据结构', () => {
     const engine = createMockEngine();
-    const generals = makeMultipleGenerals();
     const { result } = renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0 },
-        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current).toBeDefined();
@@ -43,13 +42,9 @@ describe('useHeroBonds — 基础渲染', () => {
 
 describe('useHeroBonds — 数据获取', () => {
   it('heroFactionMap 应正确映射武将→阵营', () => {
-    const generals = makeMultipleGenerals();
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0 },
-        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current.heroFactionMap['liubei']).toBe('shu');
@@ -58,26 +53,18 @@ describe('useHeroBonds — 数据获取', () => {
   });
 
   it('bondCatalog 应包含羁绊条目', () => {
-    const generals = makeMultipleGenerals();
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0 },
-        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current.bondCatalog.length).toBeGreaterThan(0);
   });
 
   it('bondCatalog 中每个条目应包含必要字段', () => {
-    const generals = makeMultipleGenerals();
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0 },
-        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     result.current.bondCatalog.forEach((item) => {
@@ -98,13 +85,9 @@ describe('useHeroBonds — 数据获取', () => {
 
 describe('useHeroBonds — heroNames 不应为空', () => {
   it('阵营羁绊的 heroNames 应包含武将名称', () => {
-    const generals = makeMultipleGenerals();
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0 },
-        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     // 找到蜀国阵营羁绊
@@ -120,13 +103,10 @@ describe('useHeroBonds — heroNames 不应为空', () => {
   });
 
   it('搭档羁绊的 heroNames 应包含武将名称', () => {
-    const generals = makeMultipleGenerals();
     const engine = createMockEngine();
+    const generals = makeMultipleGenerals();
     const { result } = renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0 },
-        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     // 找到搭档羁绊（type 为 PARTNER）
@@ -140,7 +120,7 @@ describe('useHeroBonds — heroNames 不应为空', () => {
         expect(bond.heroNames).toHaveLength(bond.heroIds.length);
         // heroNames 不应全为 ID（应该有中文名）
         bond.heroNames.forEach((name, i) => {
-          // 如果武将在 allGenerals 中，名称应匹配
+          // 如果武将在 generals 中，名称应匹配
           const general = generals.find((g) => g.id === bond.heroIds[i]);
           if (general) {
             expect(name).toBe(general.name);
@@ -157,12 +137,9 @@ describe('useHeroBonds — heroNames 不应为空', () => {
 
 describe('useHeroBonds — 边界条件', () => {
   it('空武将列表时应安全处理', () => {
-    const engine = createMockEngine();
+    const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue([]) });
     const { result } = renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0 },
-        { allGenerals: [], ownedHeroIds: [] },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current.activeBonds).toEqual([]);
@@ -174,19 +151,14 @@ describe('useHeroBonds — 边界条件', () => {
     const engine = createMockEngine({
       getBondSystem: vi.fn().mockImplementation(() => { throw new Error('bond error'); }),
     });
-    const generals = makeMultipleGenerals();
     const { result } = renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0 },
-        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current.activeBonds).toEqual([]);
   });
 
   it('formationHeroIds 应优先于 ownedHeroIds', () => {
-    const generals = makeMultipleGenerals();
     const mockBondSystem = {
       getActiveBonds: vi.fn().mockReturnValue([]),
     };
@@ -195,10 +167,7 @@ describe('useHeroBonds — 边界条件', () => {
     });
 
     renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0, formationHeroIds: ['liubei'] },
-        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0, formationHeroIds: ['liubei'] }),
     );
 
     // getActiveBonds 应被调用且传入 formationHeroIds
@@ -211,37 +180,12 @@ describe('useHeroBonds — 边界条件', () => {
 // ═══════════════════════════════════════════════
 
 describe('useHeroBonds — 状态更新', () => {
-  it('allGenerals 变化应触发 heroFactionMap 重计算', () => {
-    const engine = createMockEngine();
-    const generals1 = makeMultipleGenerals();
-
-    const { result, rerender } = renderHook(
-      ({ allGenerals }) =>
-        useHeroBonds(
-          { engine: engine as any, snapshotVersion: 0 },
-          { allGenerals, ownedHeroIds: allGenerals.map((g) => g.id) },
-        ),
-      { initialProps: { allGenerals: generals1 } },
-    );
-
-    expect(Object.keys(result.current.heroFactionMap).length).toBe(4);
-
-    // 更新为只有两个武将
-    const generals2 = generals1.slice(0, 2);
-    rerender({ allGenerals: generals2 });
-    expect(Object.keys(result.current.heroFactionMap).length).toBe(2);
-  });
-
   it('snapshotVersion 变化应触发 activeBonds 重计算', () => {
-    const generals = makeMultipleGenerals();
     const engine = createMockEngine();
 
     const { rerender } = renderHook(
       ({ snapshotVersion }) =>
-        useHeroBonds(
-          { engine: engine as any, snapshotVersion },
-          { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-        ),
+        useHeroBonds({ engine: engine as any, snapshotVersion }),
       { initialProps: { snapshotVersion: 0 } },
     );
 
@@ -257,12 +201,8 @@ describe('useHeroBonds — 状态更新', () => {
 describe('useHeroBonds — 清理', () => {
   it('unmount 后不应有副作用残留', () => {
     const engine = createMockEngine();
-    const generals = makeMultipleGenerals();
     const { unmount, result } = renderHook(() =>
-      useHeroBonds(
-        { engine: engine as any, snapshotVersion: 0 },
-        { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-      ),
+      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
     );
 
     expect(result.current.activeBonds).toBeDefined();
@@ -271,14 +211,10 @@ describe('useHeroBonds — 清理', () => {
 
   it('多次 mount/unmount 不应泄漏', () => {
     const engine = createMockEngine();
-    const generals = makeMultipleGenerals();
 
     for (let i = 0; i < 3; i++) {
       const { unmount, result } = renderHook(() =>
-        useHeroBonds(
-          { engine: engine as any, snapshotVersion: i },
-          { allGenerals: generals, ownedHeroIds: generals.map((g) => g.id) },
-        ),
+        useHeroBonds({ engine: engine as any, snapshotVersion: i }),
       );
       expect(result.current.bondCatalog).toBeDefined();
       unmount();
