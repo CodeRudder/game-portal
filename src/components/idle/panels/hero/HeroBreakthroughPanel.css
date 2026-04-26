@@ -1,0 +1,85 @@
+/**
+ * HeroBreakthroughPanel — 武将突破面板样式
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* 面板根容器 */
+.tk-bt-panel {
+  display: flex; flex-direction: column; gap: 16px; padding: 16px;
+  color: var(--tk-text-primary, #f0e6d3); font-family: var(--tk-font-body, inherit);
+}
+
+/* 标题栏 */
+.tk-bt-header { display: flex; justify-content: space-between; align-items: center; }
+.tk-bt-title { font-size: 16px; font-weight: 700; color: var(--tk-gold, #c8a84c); margin: 0; }
+.tk-bt-stage { font-size: 13px; color: var(--tk-text-secondary, rgba(240, 230, 211, 0.6)); font-family: var(--tk-font-num, monospace); }
+
+/* 突破路线 */
+.tk-bt-roadmap {
+  display: flex; align-items: center; justify-content: space-between; padding: 12px 8px;
+  background: var(--tk-hero-gold-4, rgba(200, 168, 76, 0.04));
+  border-radius: var(--tk-radius-lg, 10px); border: 1px solid var(--tk-hero-gold-10, rgba(200, 168, 76, 0.1));
+}
+
+/* 路线节点 */
+.tk-bt-node { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.tk-bt-node__dot {
+  width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; background: rgba(0, 0, 0, 0.3);
+  color: var(--tk-text-muted, rgba(240, 230, 211, 0.35)); border: 2px solid rgba(100, 100, 100, 0.3);
+}
+.tk-bt-node--completed .tk-bt-node__dot {
+  background: var(--tk-hero-gold-20, rgba(200, 168, 76, 0.2));
+  color: var(--tk-gold, #c8a84c); border-color: var(--tk-hero-gold-50, rgba(200, 168, 76, 0.5));
+}
+.tk-bt-node--current .tk-bt-node__dot {
+  background: var(--tk-hero-gold-30, rgba(200, 168, 76, 0.3));
+  color: var(--tk-gold, #ffd700); border-color: var(--tk-gold, #c8a84c); box-shadow: 0 0 8px rgba(200, 168, 76, 0.4);
+}
+.tk-bt-node__label { font-size: 11px; color: var(--tk-text-secondary, rgba(240, 230, 211, 0.6)); }
+.tk-bt-node__cap { font-size: 11px; font-family: var(--tk-font-num, monospace); color: var(--tk-text-muted, rgba(240, 230, 211, 0.35)); }
+.tk-bt-node--completed .tk-bt-node__cap, .tk-bt-node--current .tk-bt-node__cap { color: var(--tk-gold, #c8a84c); }
+
+/* 连接线 */
+.tk-bt-connector { flex: 1; height: 2px; background: rgba(100, 100, 100, 0.25); margin: 0 4px; margin-bottom: 28px; }
+.tk-bt-connector--completed { background: var(--tk-hero-gold-40, rgba(200, 168, 76, 0.4)); }
+
+/* 等级上限 */
+.tk-bt-level-cap {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  background: var(--tk-hero-gold-4, rgba(200, 168, 76, 0.04));
+  border-radius: var(--tk-radius-md, 8px); border: 1px solid var(--tk-hero-gold-8, rgba(200, 168, 76, 0.08));
+}
+.tk-bt-level-cap__label { font-size: 13px; color: var(--tk-text-secondary, rgba(240, 230, 211, 0.6)); }
+.tk-bt-level-cap__value { font-size: 15px; font-weight: 700; color: var(--tk-gold, #c8a84c); font-family: var(--tk-font-num, monospace); }
+.tk-bt-level-cap__next { font-size: 13px; color: var(--tk-green, #7ec850); font-family: var(--tk-font-num, monospace); }
+
+/* 材料需求区 */
+.tk-bt-materials {
+  padding: 12px; background: var(--tk-hero-gold-4, rgba(200, 168, 76, 0.04));
+  border-radius: var(--tk-radius-lg, 10px); border: 1px solid var(--tk-hero-gold-8, rgba(200, 168, 76, 0.08));
+}
+.tk-bt-materials__title { font-size: 13px; font-weight: 600; color: var(--tk-text-secondary, rgba(240, 230, 211, 0.6)); margin-bottom: 10px; }
+
+/* 材料条目 */
+.tk-bt-material { display: flex; align-items: center; gap: 6px; padding: 6px 0; font-size: 13px; }
+.tk-bt-material__icon { font-size: 16px; }
+.tk-bt-material__label { flex: 1; color: var(--tk-text-secondary, rgba(240, 230, 211, 0.6)); }
+.tk-bt-material__count { font-family: var(--tk-font-num, monospace); color: var(--tk-text-muted, rgba(240, 230, 211, 0.35)); }
+.tk-bt-material__owned--ok { color: var(--tk-green, #7ec850); }
+.tk-bt-material__owned--lack { color: var(--tk-red, #e53935); }
+
+/* 满突提示 */
+.tk-bt-max-hint {
+  text-align: center; padding: 12px; font-size: 14px; color: var(--tk-gold, #c8a84c);
+  background: var(--tk-hero-gold-6, rgba(200, 168, 76, 0.06));
+  border-radius: var(--tk-radius-md, 8px); border: 1px solid var(--tk-hero-gold-15, rgba(200, 168, 76, 0.15));
+}
+
+/* 突破按钮 */
+.tk-bt-btn {
+  width: 100%; padding: 12px; border: none; border-radius: var(--tk-radius-md, 8px);
+  font-size: 15px; font-weight: 700; cursor: pointer; font-family: var(--tk-font-body, inherit);
+}
+.tk-bt-btn--active { background: linear-gradient(135deg, var(--tk-gold, #c8a84c), var(--tk-gold-light, #e8c468)); color: #1a1a2e; }
+.tk-bt-btn--disabled { background: rgba(80, 80, 80, 0.3); color: var(--tk-text-muted, rgba(240, 230, 211, 0.35)); cursor: not-allowed; }

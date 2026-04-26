@@ -1,0 +1,176 @@
+/**
+ * StarUpPanel — 升星面板样式
+ * 设计规范：水墨江山·铜纹霸业
+ */
+
+/* ── 面板容器 ── */
+.tk-starup-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  color: #e0e0e0;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+/* ── 武将名字 ── */
+.tk-starup-hero-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff9800;
+}
+
+/* ── 星级展示 ── */
+.tk-starup-stars {
+  display: flex;
+  gap: 8px;
+}
+
+.tk-starup-star {
+  font-size: 32px;
+  line-height: 1;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.tk-starup-star--filled {
+  color: #f59e0b;
+}
+
+.tk-starup-star--empty {
+  color: #333;
+}
+
+/* 星星点亮动画 */
+.tk-starup-star--animating {
+  color: #f59e0b;
+  transform: scale(1.4);
+}
+
+/* ── 属性预览 ── */
+.tk-starup-preview {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.tk-starup-preview-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f59e0b;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.tk-starup-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tk-starup-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.tk-starup-stat-name {
+  width: 40px;
+  color: #aaa;
+}
+
+.tk-starup-stat-before {
+  color: #ccc;
+}
+
+.tk-starup-stat-arrow {
+  color: #666;
+}
+
+.tk-starup-stat-after {
+  color: #fff;
+  font-weight: 600;
+}
+
+.tk-starup-stat-diff {
+  color: #4caf50;
+  font-size: 12px;
+}
+
+/* ── 材料列表 ── */
+.tk-starup-materials {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.tk-starup-material-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.tk-starup-material-icon {
+  font-size: 16px;
+}
+
+.tk-starup-material-label {
+  width: 40px;
+  color: #aaa;
+}
+
+.tk-starup-material-value {
+  font-weight: 600;
+}
+
+.tk-starup-material-value--sufficient {
+  color: #4caf50;
+}
+
+.tk-starup-material-value--insufficient {
+  color: #f44336;
+}
+
+/* ── 升星按钮 ── */
+.tk-starup-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.tk-starup-btn--active {
+  background: linear-gradient(135deg, #f59e0b, #ff9800);
+  color: #1a1a2e;
+}
+
+.tk-starup-btn--active:hover {
+  transform: scale(1.02);
+}
+
+.tk-starup-btn--disabled {
+  background: #333;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* ── 满星提示 ── */
+.tk-starup-maxed {
+  font-size: 16px;
+  color: #f59e0b;
+  text-align: center;
+  padding: 12px;
+}
