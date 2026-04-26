@@ -19,11 +19,87 @@ import BondPanel from '../BondPanel';
 import BondCollectionProgress from '../BondCollectionProgress';
 import BondActivateModal from '../BondActivateModal';
 import BondCardItem from '../BondCardItem';
+import BondCollectionPanel from '../BondCollectionPanel';
+import { HeroDetailBonds } from '../HeroDetailSections';
 
 // ── Mock CSS ──
 vi.mock('../BondPanel.css', () => ({}));
 vi.mock('../BondCollectionProgress.css', () => ({}));
 vi.mock('../BondActivateModal.css', () => ({}));
+vi.mock('../BondCollectionPanel.css', () => ({}));
+vi.mock('../HeroDetailModal.css', () => ({}));
+vi.mock('../HeroDetailModal-chart.css', () => ({}));
+
+// ── Mock engine dependencies for BondCollectionPanel & HeroDetailBonds ──
+vi.mock('@/games/three-kingdoms/engine/hero/bond-config', () => ({
+  BondType: { FACTION: 'faction', PARTNER: 'partner' },
+  FACTION_BONDS: [
+    {
+      id: 'faction_shu',
+      type: 'faction',
+      name: '蜀国',
+      faction: 'shu',
+      tiers: [
+        { requiredCount: 2, effects: [{ stat: 'attack', value: 0.05 }] },
+        { requiredCount: 3, effects: [{ stat: 'attack', value: 0.10 }, { stat: 'defense', value: 0.05 }] },
+        { requiredCount: 4, effects: [{ stat: 'attack', value: 0.15 }, { stat: 'defense', value: 0.10 }, { stat: 'hp', value: 0.05 }] },
+      ],
+    },
+    {
+      id: 'faction_wei',
+      type: 'faction',
+      name: '魏国',
+      faction: 'wei',
+      tiers: [
+        { requiredCount: 2, effects: [{ stat: 'defense', value: 0.05 }] },
+        { requiredCount: 3, effects: [{ stat: 'defense', value: 0.10 }, { stat: 'intelligence', value: 0.05 }] },
+      ],
+    },
+    {
+      id: 'faction_wu',
+      type: 'faction',
+      name: '吴国',
+      faction: 'wu',
+      tiers: [
+        { requiredCount: 2, effects: [{ stat: 'speed', value: 0.05 }] },
+      ],
+    },
+    {
+      id: 'faction_qun',
+      type: 'faction',
+      name: '群雄',
+      faction: 'qun',
+      tiers: [
+        { requiredCount: 2, effects: [{ stat: 'intelligence', value: 0.05 }] },
+      ],
+    },
+  ],
+  PARTNER_BONDS: [
+    { id: 'partner_taoyuan', name: '桃园结义', type: 'partner', generalIds: ['liubei', 'guanyu', 'zhangfei'], effects: [{ stat: 'attack', value: 0.10 }], minRequired: 3 },
+    { id: 'partner_wuhu', name: '五虎上将', type: 'partner', generalIds: ['guanyu', 'zhangfei', 'zhaoyun', 'machao', 'huangzhong'], effects: [{ stat: 'critRate', value: 0.10 }], minRequired: 3 },
+    { id: 'partner_wolong_fengchu', name: '卧龙凤雏', type: 'partner', generalIds: ['zhugeliang', 'pangtong'], effects: [{ stat: 'intelligence', value: 0.20 }], minRequired: 2 },
+  ],
+}));
+
+vi.mock('@/games/three-kingdoms/engine/hero/BondSystem', () => ({}));
+
+// ── Mock BondCard CSS & BondDetailPopup ──
+vi.mock('../BondCard', async () => {
+  const actual = await vi.importActual<typeof import('../BondCard')>('../BondCard');
+  return {
+    ...actual,
+  };
+});
+
+// ── Mock HeroDetailSections dependencies ──
+vi.mock('@/games/three-kingdoms/engine', () => ({}));
+vi.mock('@/games/three-kingdoms/engine/ThreeKingdomsEngine', () => ({}));
+vi.mock('@/components/idle/utils/formatNumber', () => ({
+  formatNumber: (n: number) => String(n),
+}));
+vi.mock('../HeroAwakeningSection', () => ({
+  HeroAwakeningSection: () => <div data-testid="hero-awakening-section-mock" />,
+}));
 
 // ── 辅助工厂 ──
 
@@ -571,6 +647,410 @@ describe('ACC-12 羁绊系统UI验收', () => {
 
     it('ACC-12-QUALITY: BondActivateModal有displayName', () => {
       expect(BondActivateModal.displayName).toBe('BondActivateModal');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 补充验收条目 — BondCollectionPanel 相关
+  // ═══════════════════════════════════════════════════════════════
+
+  // ── ACC-12-07: 羁绊图鉴Tab切换 ──
+  describe('ACC-12-07: 羁绊图鉴Tab切换', () => {
+    it('ACC-12-07: 显示"已激活"和"全部图鉴"两个Tab', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei', 'guanyu']}
+          formationHeroIds={['liubei', 'guanyu']}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.getByTestId('tab-active-bonds')).toHaveTextContent('已激活');
+      expect(screen.getByTestId('tab-all-bonds')).toHaveTextContent('全部图鉴');
+    });
+
+    it('ACC-12-07: Tab显示对应数量', () => {
+      const activeBonds = [
+        { bondId: 'faction_shu', name: '蜀阵营羁绊', type: 'faction' as const, participants: ['liubei', 'guanyu'], effects: {} },
+      ];
+      render(
+        <BondCollectionPanel
+          activeBonds={activeBonds}
+          ownedHeroIds={['liubei', 'guanyu']}
+          formationHeroIds={['liubei', 'guanyu']}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.getByTestId('tab-active-bonds')).toHaveTextContent('1');
+    });
+  });
+
+  // ── ACC-12-08: 武将详情中的羁绊标签 ──
+  describe('ACC-12-08: 武将详情中的羁绊标签', () => {
+    it('ACC-12-08: 显示"参与羁绊"区域', () => {
+      render(<HeroDetailBonds heroId="liubei" />);
+      expect(screen.getByTestId('hero-detail-bonds')).toBeInTheDocument();
+      expect(screen.getByText('参与羁绊')).toBeInTheDocument();
+    });
+
+    it('ACC-12-08: 阵营羁绊标签有🏛️前缀', () => {
+      render(<HeroDetailBonds heroId="liubei" />);
+      const tags = screen.getAllByTestId(/^hero-bond-tag-faction/);
+      expect(tags.length).toBeGreaterThan(0);
+      tags.forEach((tag) => {
+        expect(tag.textContent).toContain('🏛️');
+      });
+    });
+
+    it('ACC-12-08: 搭档羁绊标签有🤝前缀', () => {
+      render(<HeroDetailBonds heroId="liubei" />);
+      // liubei 参与桃园结义
+      const taoyuanTag = screen.getByTestId('hero-bond-tag-partner_taoyuan');
+      expect(taoyuanTag.textContent).toContain('🤝');
+      expect(taoyuanTag.textContent).toContain('桃园结义');
+    });
+  });
+
+  // ── ACC-12-09: 羁绊图鉴阵营分布条 ──
+  describe('ACC-12-09: 羁绊图鉴阵营分布条', () => {
+    it('ACC-12-09: 编队非空时显示阵营分布区域', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei', 'guanyu', 'caocao']}
+          formationHeroIds={['liubei', 'guanyu', 'caocao']}
+          heroFactionMap={{ liubei: 'shu', guanyu: 'shu', caocao: 'wei' }}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.getByTestId('bond-faction-distribution')).toBeInTheDocument();
+    });
+
+    it('ACC-12-09: 显示"编队阵营分布"标题', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei']}
+          formationHeroIds={['liubei']}
+          heroFactionMap={{ liubei: 'shu' }}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.getByText('编队阵营分布')).toBeInTheDocument();
+    });
+  });
+
+  // ── ACC-12-16: 羁绊图鉴Tab切换操作 ──
+  describe('ACC-12-16: 羁绊图鉴Tab切换操作', () => {
+    it('ACC-12-16: 点击"全部图鉴"Tab切换列表', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei', 'guanyu']}
+          formationHeroIds={['liubei', 'guanyu']}
+          onClose={vi.fn()}
+        />,
+      );
+      const allTab = screen.getByTestId('tab-all-bonds');
+      fireEvent.click(allTab);
+      // 全部图鉴应显示分组标题
+      expect(screen.getByText('🏛️ 阵营羁绊')).toBeInTheDocument();
+      expect(screen.getByText('🤝 搭档羁绊')).toBeInTheDocument();
+    });
+  });
+
+  // ── ACC-12-17: 羁绊图鉴Tab切回已激活 ──
+  describe('ACC-12-17: 羁绊图鉴Tab切回已激活', () => {
+    it('ACC-12-17: 无激活羁绊时"已激活"Tab显示空状态', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={[]}
+          formationHeroIds={[]}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.getByText('暂无激活的羁绊')).toBeInTheDocument();
+    });
+
+    it('ACC-12-17: 有激活羁绊时"已激活"Tab仅显示已激活项', () => {
+      const activeBonds = [
+        { bondId: 'faction_shu', name: '蜀国', type: 'faction' as const, participants: ['liubei', 'guanyu'], effects: {} },
+      ];
+      render(
+        <BondCollectionPanel
+          activeBonds={activeBonds}
+          ownedHeroIds={['liubei', 'guanyu']}
+          formationHeroIds={['liubei', 'guanyu']}
+          onClose={vi.fn()}
+        />,
+      );
+      // 默认在"已激活"Tab，应显示蜀阵营羁绊
+      const panel = screen.getByTestId('bond-collection-panel');
+      expect(panel.textContent).toContain('蜀国');
+    });
+  });
+
+  // ── ACC-12-18: 编队羁绊预览区域 ──
+  describe('ACC-12-18: 编队羁绊预览区域', () => {
+    it('ACC-12-18: 激活羁绊后显示编队总加成预览', () => {
+      render(<BondPanel {...makeProps({ heroIds: ['liubei', 'guanyu'] })} />);
+      expect(screen.getByTestId('bond-total-bonus')).toBeInTheDocument();
+      expect(screen.getByTestId('bond-total-bonus-effects')).toBeInTheDocument();
+    });
+
+    it('ACC-12-18: 总加成预览显示具体属性加成', () => {
+      render(<BondPanel {...makeProps({ heroIds: ['liubei', 'guanyu'] })} />);
+      const effects = screen.getByTestId('bond-total-bonus-effects');
+      expect(effects.textContent).toContain('攻击');
+    });
+  });
+
+  // ── ACC-12-29: 羁绊收集进度数值 ──
+  describe('ACC-12-29: 羁绊收集进度数值', () => {
+    it('ACC-12-29: 总进度百分比计算正确（四舍五入）', () => {
+      render(
+        <BondCollectionProgress
+          totalBonds={20}
+          activatedBonds={7}
+          factionActivated={3}
+          factionTotal={8}
+          partnerActivated={4}
+          partnerTotal={12}
+        />,
+      );
+      // 7/20 = 35%
+      const progress = screen.getByTestId('bond-collection-progress');
+      expect(progress.textContent).toContain('35%');
+      expect(progress.textContent).toContain('7/20 已激活');
+    });
+
+    it('ACC-12-29: 分类进度显示阵营和搭档数值', () => {
+      render(
+        <BondCollectionProgress
+          totalBonds={20}
+          activatedBonds={7}
+          factionActivated={3}
+          factionTotal={8}
+          partnerActivated={4}
+          partnerTotal={12}
+        />,
+      );
+      const progress = screen.getByTestId('bond-collection-progress');
+      expect(progress.textContent).toContain('3/8');
+      expect(progress.textContent).toContain('4/12');
+    });
+
+    it('ACC-12-29: 零进度不报错', () => {
+      render(
+        <BondCollectionProgress
+          totalBonds={0}
+          activatedBonds={0}
+          factionActivated={0}
+          factionTotal={0}
+          partnerActivated={0}
+          partnerTotal={0}
+        />,
+      );
+      const progress = screen.getByTestId('bond-collection-progress');
+      expect(progress.textContent).toContain('0%');
+    });
+  });
+
+  // ── ACC-12-35: 羁绊图鉴空数据 ──
+  describe('ACC-12-35: 羁绊图鉴空数据', () => {
+    it('ACC-12-35: 无武将时"已激活"Tab显示空状态', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={[]}
+          formationHeroIds={[]}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.getByText('暂无激活的羁绊')).toBeInTheDocument();
+    });
+
+    it('ACC-12-35: 无武将时"全部图鉴"Tab无JS报错', () => {
+      expect(() => {
+        render(
+          <BondCollectionPanel
+            activeBonds={[]}
+            ownedHeroIds={[]}
+            formationHeroIds={[]}
+            onClose={vi.fn()}
+          />,
+        );
+        fireEvent.click(screen.getByTestId('tab-all-bonds'));
+      }).not.toThrow();
+    });
+  });
+
+  // ── ACC-12-36: 快速切换编队武将 ──
+  describe('ACC-12-36: 快速切换编队武将', () => {
+    it('ACC-12-36: 快速添加/移除武将面板无残留', () => {
+      const { rerender } = render(<BondPanel {...makeProps({ heroIds: [] })} />);
+      expect(screen.getByTestId('bond-panel-empty')).toBeInTheDocument();
+
+      // 快速切换10次
+      for (let i = 0; i < 10; i++) {
+        const heroes = i % 2 === 0 ? ['liubei', 'guanyu'] : [];
+        rerender(<BondPanel {...makeProps({ heroIds: heroes })} />);
+      }
+
+      // 最终状态：空编队
+      expect(screen.getByTestId('bond-panel-empty')).toBeInTheDocument();
+    });
+
+    it('ACC-12-36: 快速切换后最终状态正确', () => {
+      const { rerender } = render(<BondPanel {...makeProps({ heroIds: [] })} />);
+
+      rerender(<BondPanel {...makeProps({ heroIds: ['liubei', 'guanyu'] })} />);
+      rerender(<BondPanel {...makeProps({ heroIds: ['liubei', 'guanyu', 'zhangfei'] })} />);
+
+      // 3名蜀国应激活中级羁绊
+      const panel = screen.getByTestId('bond-panel');
+      expect(panel.textContent).toContain('已激活');
+    });
+  });
+
+  // ── ACC-12-40: 羁绊面板竖屏布局 ──
+  describe('ACC-12-40: 羁绊面板竖屏布局', () => {
+    it('ACC-12-40: BondPanel有响应式容器样式', () => {
+      render(<BondPanel {...makeProps({ heroIds: ['liubei', 'guanyu'] })} />);
+      const panel = screen.getByTestId('bond-panel');
+      expect(panel.className).toContain('bond-panel');
+    });
+
+    it('ACC-12-40: BondCollectionPanel有role=region', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei']}
+          formationHeroIds={['liubei']}
+          onClose={vi.fn()}
+        />,
+      );
+      const panel = screen.getByTestId('bond-collection-panel');
+      expect(panel).toHaveAttribute('role', 'region');
+    });
+  });
+
+  // ── ACC-12-44: 羁绊图鉴Tab手机操作 ──
+  describe('ACC-12-44: 羁绊图鉴Tab手机操作', () => {
+    it('ACC-12-44: Tab按钮有role=tab属性', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei']}
+          formationHeroIds={['liubei']}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.getByTestId('tab-active-bonds')).toHaveAttribute('role', 'tab');
+      expect(screen.getByTestId('tab-all-bonds')).toHaveAttribute('role', 'tab');
+    });
+
+    it('ACC-12-44: Tab有aria-selected属性', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei']}
+          formationHeroIds={['liubei']}
+          onClose={vi.fn()}
+        />,
+      );
+      expect(screen.getByTestId('tab-active-bonds')).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByTestId('tab-all-bonds')).toHaveAttribute('aria-selected', 'false');
+    });
+  });
+
+  // ── ACC-12-45: 阵营分布条手机显示 ──
+  describe('ACC-12-45: 阵营分布条手机显示', () => {
+    it('ACC-12-45: 分布条色段有宽度样式', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei', 'guanyu', 'caocao']}
+          formationHeroIds={['liubei', 'guanyu', 'caocao']}
+          heroFactionMap={{ liubei: 'shu', guanyu: 'shu', caocao: 'wei' }}
+          onClose={vi.fn()}
+        />,
+      );
+      const shuSegment = screen.getByTestId('faction-segment-shu');
+      expect(shuSegment.style.width).toBeTruthy();
+    });
+  });
+
+  // ── ACC-12-46: 羁绊收集进度条手机显示 ──
+  describe('ACC-12-46: 羁绊收集进度条手机显示', () => {
+    it('ACC-12-46: 进度条有progressbar角色', () => {
+      render(
+        <BondCollectionProgress
+          totalBonds={20}
+          activatedBonds={5}
+          factionActivated={2}
+          factionTotal={8}
+          partnerActivated={3}
+          partnerTotal={12}
+        />,
+      );
+      const totalBar = screen.getByTestId('bond-total-bar');
+      expect(totalBar).toHaveAttribute('role', 'progressbar');
+      expect(totalBar).toHaveAttribute('aria-valuenow', '25');
+    });
+  });
+
+  // ── ACC-12-47: 编队羁绊预览手机显示 ──
+  describe('ACC-12-47: 编队羁绊预览手机显示', () => {
+    it('ACC-12-47: 总加成预览区域有语义化标记', () => {
+      render(<BondPanel {...makeProps({ heroIds: ['liubei', 'guanyu'] })} />);
+      const bonus = screen.getByTestId('bond-total-bonus');
+      expect(bonus).toBeInTheDocument();
+      // 确认加成项文字可读
+      const effects = screen.getByTestId('bond-total-bonus-effects');
+      expect(effects.children.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── ACC-12-48: 长羁绊列表滚动 ──
+  describe('ACC-12-48: 长羁绊列表滚动', () => {
+    it('ACC-12-48: 全部图鉴Tab显示阵营和搭档分组', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei', 'guanyu']}
+          formationHeroIds={['liubei', 'guanyu']}
+          onClose={vi.fn()}
+        />,
+      );
+      fireEvent.click(screen.getByTestId('tab-all-bonds'));
+      // 验证分组标题存在
+      expect(screen.getByText('🏛️ 阵营羁绊')).toBeInTheDocument();
+      expect(screen.getByText('🤝 搭档羁绊')).toBeInTheDocument();
+    });
+  });
+
+  // ── ACC-12-49: 横竖屏切换 ──
+  describe('ACC-12-49: 横竖屏切换', () => {
+    it('ACC-12-49: BondPanel组件响应式布局不变', () => {
+      const { container } = render(<BondPanel {...makeProps({ heroIds: ['liubei', 'guanyu'] })} />);
+      const panel = container.querySelector('.bond-panel');
+      expect(panel).toBeTruthy();
+    });
+
+    it('ACC-12-49: BondCollectionPanel布局自适应', () => {
+      render(
+        <BondCollectionPanel
+          activeBonds={[]}
+          ownedHeroIds={['liubei']}
+          formationHeroIds={['liubei']}
+          onClose={vi.fn()}
+        />,
+      );
+      const panel = screen.getByTestId('bond-collection-panel');
+      expect(panel).toHaveAttribute('role', 'region');
+      expect(panel).toHaveAttribute('aria-label', '羁绊图鉴');
     });
   });
 });

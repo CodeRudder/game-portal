@@ -21,6 +21,7 @@ import {
   FACTION_NAMES,
   EMPTY_BOND_EFFECT,
 } from '../../hero/faction-bond-config';
+import { STORY_EVENTS } from '../bond-config';
 import type { FactionId, BondConfig } from '../../hero/faction-bond-config';
 
 // ── 辅助函数 ──
@@ -314,17 +315,34 @@ describe('ACC-12 羁绊系统引擎验收', () => {
   // ── ACC-12-39: 故事事件配置验证 ──
   describe('ACC-12-39: 故事事件配置验证', () => {
     it('ACC-12-39: 故事事件配置完整（5个事件）', () => {
-      // 验证BondPanel中的STORY_EVENTS配置
-      const STORY_EVENTS = [
-        { id: 'story_001', title: '桃园结义', requiredHeroes: ['刘备', '关羽', '张飞'], minFavorability: 50, minLevel: 5 },
-        { id: 'story_002', title: '三顾茅庐', requiredHeroes: ['刘备', '诸葛亮'], minFavorability: 60, minLevel: 10 },
-        { id: 'story_003', title: '赤壁之战', requiredHeroes: ['周瑜', '诸葛亮', '曹操'], minFavorability: 70, minLevel: 15 },
-        { id: 'story_004', title: '过五关斩六将', requiredHeroes: ['关羽'], minFavorability: 80, minLevel: 20 },
-        { id: 'story_005', title: '草船借箭', requiredHeroes: ['诸葛亮', '曹操'], minFavorability: 55, minLevel: 12 },
-      ];
       expect(STORY_EVENTS).toHaveLength(5);
       expect(STORY_EVENTS[0].id).toBe('story_001');
+      expect(STORY_EVENTS[0].title).toBe('桃园结义');
       expect(STORY_EVENTS[4].id).toBe('story_005');
+      expect(STORY_EVENTS[4].title).toBe('草船借箭');
+    });
+
+    it('ACC-12-39: 桃园结义事件奖励正确（好感+20，三人各3碎片，声望+100）', () => {
+      const story001 = STORY_EVENTS.find(e => e.id === 'story_001')!;
+      expect(story001.rewards.favorability).toBe(20);
+      expect(story001.rewards.fragments.liubei).toBe(3);
+      expect(story001.rewards.fragments.guanyu).toBe(3);
+      expect(story001.rewards.fragments.zhangfei).toBe(3);
+      expect(story001.rewards.prestigePoints).toBe(100);
+    });
+
+    it('ACC-12-39: 所有故事事件不可重复', () => {
+      for (const event of STORY_EVENTS) {
+        expect(event.repeatable).toBe(false);
+      }
+    });
+
+    it('ACC-12-39: 故事事件有所需武将和好感度条件', () => {
+      for (const event of STORY_EVENTS) {
+        expect(event.condition.heroIds.length).toBeGreaterThan(0);
+        expect(event.condition.minFavorability).toBeGreaterThan(0);
+        expect(event.condition.minLevel).toBeGreaterThan(0);
+      }
     });
   });
 
