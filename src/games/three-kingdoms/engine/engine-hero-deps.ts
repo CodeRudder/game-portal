@@ -66,6 +66,8 @@ export interface HeroSystems {
   heroLevel: HeroLevelSystem;
   /** 升星/突破系统（提供动态等级上限） */
   heroStar: import('./hero/HeroStarSystem').HeroStarSystem;
+  /** 觉醒系统（提供觉醒后等级上限120） */
+  awakening?: import('./hero/AwakeningSystem').AwakeningSystem;
 }
 
 /** 初始化武将子系统（注入依赖和回调） */
@@ -87,15 +89,27 @@ export function initHeroSystems(
   });
 
   // 升级系统 — 注入资源查询/消耗回调 + 等级上限回调
+  // 等级上限优先级：觉醒(120) > 突破阶段(50/60/70/80/100) > 默认(50)
   systems.heroLevel.init(deps);
   systems.heroLevel.setLevelDeps({
     heroSystem: systems.hero,
     spendResource: (type, amount) => safeSpendResource(resource, type, amount),
     canAffordResource: (type, amount) => safeCanAfford(resource, type, amount),
     getResourceAmount: (type) => safeGetAmount(resource, type),
-    getLevelCap: (generalId: string) => systems.heroStar.getLevelCap(generalId),
+    getLevelCap: (generalId: string) => {
+      // 觉醒武将等级上限120，否则取突破阶段上限
+      if (systems.awakening?.isAwakened(generalId)) {
+        return 120;
+      }
+      return systems.heroStar.getLevelCap(generalId);
+    },
   });
 
-  // 武将系统 — 注入等级上限回调（突破阶段 → 等级上限联动）
-  systems.hero.setLevelCapGetter((generalId: string) => systems.heroStar.getLevelCap(generalId));
+  // 武将系统 — 注入等级上限回调（觉醒(120) > 突破阶段 → 等级上限联动）
+  systems.hero.setLevelCapGetter((generalId: string) => {
+    if (systems.awakening?.isAwakened(generalId)) {
+      return 120;
+    }
+    return systems.heroStar.getLevelCap(generalId);
+  });
 }

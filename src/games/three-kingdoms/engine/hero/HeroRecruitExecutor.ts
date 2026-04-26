@@ -74,7 +74,7 @@ export class HeroRecruitExecutor {
     // 极端情况：完全无武将可用
     if (!generalId) {
       return {
-        general: null as unknown as GeneralData,
+        general: null,
         isDuplicate: false,
         fragmentCount: 0,
         quality: finalQuality,

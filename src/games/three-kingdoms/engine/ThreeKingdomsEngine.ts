@@ -19,6 +19,7 @@ import { FormationRecommendSystem } from './hero/FormationRecommendSystem';
 import { HeroDispatchSystem } from './hero/HeroDispatchSystem';
 import { HeroBadgeSystem } from './hero/HeroBadgeSystem';
 import { HeroAttributeCompare } from './hero/HeroAttributeCompare';
+import { AwakeningSystem } from './hero/AwakeningSystem';
 import { RecruitTokenEconomySystem } from './hero/recruit-token-economy-system';
 import { CopperEconomySystem } from './resource/copper-economy-system';
 import { MaterialEconomySystem } from './resource/material-economy-system';
@@ -95,6 +96,7 @@ export class ThreeKingdomsEngine {
   private readonly heroDispatchSystem: HeroDispatchSystem;
   private readonly heroBadgeSystem: HeroBadgeSystem;
   private readonly heroAttributeCompare: HeroAttributeCompare;
+  private readonly awakeningSystem: AwakeningSystem;
   private readonly recruitTokenEconomy: RecruitTokenEconomySystem;
   private readonly copperEconomy: CopperEconomySystem;
   private readonly materialEconomy: MaterialEconomySystem;
@@ -135,6 +137,7 @@ export class ThreeKingdomsEngine {
     this.heroDispatchSystem = new HeroDispatchSystem();
     this.heroBadgeSystem = new HeroBadgeSystem();
     this.heroAttributeCompare = new HeroAttributeCompare();
+    this.awakeningSystem = new AwakeningSystem(this.hero, this.heroStarSystem);
     this.recruitTokenEconomy = new RecruitTokenEconomySystem();
     this.copperEconomy = new CopperEconomySystem();
     this.materialEconomy = new MaterialEconomySystem();
@@ -227,6 +230,7 @@ export class ThreeKingdomsEngine {
     r.register('heroDispatch', this.heroDispatchSystem);
     r.register('heroBadge', this.heroBadgeSystem);
     r.register('heroAttributeCompare', this.heroAttributeCompare);
+    r.register('awakening', this.awakeningSystem);
     r.register('recruitTokenEconomy', this.recruitTokenEconomy);
     r.register('copperEconomy', this.copperEconomy);
     r.register('materialEconomy', this.materialEconomy);
@@ -271,6 +275,17 @@ export class ThreeKingdomsEngine {
     this.formationRecommendSystem.init(deps);
     this.heroDispatchSystem.init(deps);
     this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
+    this.awakeningSystem.init(deps);
+    this.awakeningSystem.setDeps({
+      canAffordResource: (type, amount) => {
+        const current = this.resource.getAmount(type as import('../shared/types').ResourceType);
+        return current >= amount;
+      },
+      spendResource: (type, amount) => {
+        try { this.resource.consumeResource(type as import('../shared/types').ResourceType, amount); return true; } catch { return false; }
+      },
+      getResourceAmount: (type) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+    });
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
@@ -368,6 +383,7 @@ export class ThreeKingdomsEngine {
     this.heroFormation.reset(); this.heroStarSystem.reset(); this.skillUpgradeSystem.reset(); this.bondSystem.reset(); this.factionBondSystem.reset();
     this.formationRecommendSystem.reset(); this.heroDispatchSystem.reset();
     this.heroBadgeSystem.reset(); this.heroAttributeCompare.reset();
+    this.awakeningSystem.reset();
     this.recruitTokenEconomy.reset();
     this.copperEconomy.reset();
     this.materialEconomy.reset();
@@ -431,6 +447,8 @@ export class ThreeKingdomsEngine {
   get elapsedTime(): number { return this.onlineSeconds; }
   get status(): string { return this.initialized ? 'playing' : 'idle'; }
   setCanvas(_c: HTMLCanvasElement): void { /* no-op */ }
+  // IGameEngine 兼容层：EngineSnapshot 是结构化类型，与 Record<string, unknown> 不兼容，
+  // 但语义上 EngineSnapshot 确实是 string→unknown 的映射，此处断言安全。
   getState(): Record<string, unknown> { return this.getSnapshot() as unknown as Record<string, unknown>; }
   start(): void { this.init(); }
   pause(): void { /* no-op */ }
@@ -447,10 +465,13 @@ export class ThreeKingdomsEngine {
 
   getSubsystemRegistry(): SubsystemRegistry { return this.registry; }
 
+  /** 获取觉醒系统实例 */
+  getAwakeningSystem(): AwakeningSystem { return this.awakeningSystem; }
+
   // ── 私有方法 ──
 
   private get heroSystems(): HeroSystems {
-    return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel, heroStar: this.heroStarSystem };
+    return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel, heroStar: this.heroStarSystem, awakening: this.awakeningSystem };
   }
   private initHeroSystems(deps: ISystemDeps): void {
     initHeroSystems(this.heroSystems, this.resource, deps);

@@ -356,7 +356,7 @@ export class HeroRecruitSystem implements ISubsystem {
 
     if (!generalId) {
       return {
-        general: null as unknown as GeneralData,
+        general: null,
         isDuplicate: false,
         fragmentCount: 0,
         quality: finalQuality,

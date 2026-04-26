@@ -15,7 +15,7 @@ import { DEFAULT_UP_CONFIG } from './hero-recruit-config';
 // ─────────────────────────────────────────────
 
 export interface RecruitResult {
-  general: GeneralData;
+  general: GeneralData | null;
   /** 是否为重复武将 */
   isDuplicate: boolean;
   /** 转化碎片数（重复时 > 0） */
