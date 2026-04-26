@@ -15,4 +15,6 @@ export {
   type TutorialGuideStepId,
   type TutorialGuideSaveData,
   type TutorialGuideReward,
+  type HighlightStyle,
+  type TooltipPosition,
 } from './tutorial-config';

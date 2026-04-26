@@ -18,6 +18,12 @@ export type TutorialGuideStepId =
   | 'view_hero'           // 查看武将
   | 'add_to_formation';   // 编队上阵
 
+/** 高亮目标元素样式 */
+export type HighlightStyle = 'pulse' | 'border' | 'glow';
+
+/** 提示框位置 */
+export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
+
 /** 引导步骤定义 */
 export interface TutorialGuideStep {
   /** 步骤ID */
@@ -32,6 +38,14 @@ export interface TutorialGuideStep {
   triggerAction: string;
   /** 完成奖励 */
   rewards: TutorialGuideReward[];
+  /** 高亮目标元素ID（可选） */
+  targetElement?: string;
+  /** 提示框位置（可选） */
+  tooltipPosition?: TooltipPosition;
+  /** 高亮样式（可选） */
+  highlightStyle?: HighlightStyle;
+  /** 步骤提示信息（可选） */
+  hint?: string;
 }
 
 /** 引导奖励 */
@@ -79,6 +93,10 @@ export const TUTORIAL_GUIDE_STEPS: TutorialGuideStep[] = [
       { resource: 'copper', amount: 5000 },
       { resource: 'skillBook', amount: 1 },
     ],
+    targetElement: 'btn-claim-pack',
+    tooltipPosition: 'bottom',
+    highlightStyle: 'pulse',
+    hint: '点击闪烁的领取按钮即可获得丰厚新手奖励！',
   },
   {
     id: 'first_recruit',
@@ -87,6 +105,10 @@ export const TUTORIAL_GUIDE_STEPS: TutorialGuideStep[] = [
     description: '打开招募面板，执行一次普通招募',
     triggerAction: 'first_recruit',
     rewards: [],
+    targetElement: 'btn-recruit',
+    tooltipPosition: 'right',
+    highlightStyle: 'glow',
+    hint: '点击招募按钮，消耗招贤令招募一位武将吧！',
   },
   {
     id: 'view_hero',
@@ -95,6 +117,10 @@ export const TUTORIAL_GUIDE_STEPS: TutorialGuideStep[] = [
     description: '打开武将列表，查看刚招募的武将详情',
     triggerAction: 'view_hero',
     rewards: [],
+    targetElement: 'btn-hero-list',
+    tooltipPosition: 'left',
+    highlightStyle: 'border',
+    hint: '打开武将列表，查看你刚招募到的武将属性和技能！',
   },
   {
     id: 'add_to_formation',
@@ -103,6 +129,10 @@ export const TUTORIAL_GUIDE_STEPS: TutorialGuideStep[] = [
     description: '将武将添加到编队中',
     triggerAction: 'add_to_formation',
     rewards: [],
+    targetElement: 'btn-formation',
+    tooltipPosition: 'top',
+    highlightStyle: 'pulse',
+    hint: '将武将拖入编队槽位，组建你的第一支战斗队伍！',
   },
 ];
 

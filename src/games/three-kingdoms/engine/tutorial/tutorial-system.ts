@@ -42,6 +42,10 @@ interface TutorialGuideInternalState {
   completedSteps: TutorialGuideStepId[];
   /** 是否已跳过 */
   skipped: boolean;
+  /** 每步完成时间戳（步骤ID → 完成时的 Unix ms） */
+  stepCompletionTimes: Record<string, number>;
+  /** 引导开始时间（首次调用 getCurrentStep 时记录） */
+  startedAt: number | null;
 }
 
 // ─────────────────────────────────────────────
@@ -111,6 +115,11 @@ export class TutorialSystem implements ISubsystem {
     if (this.state.skipped) return null;
     if (this.isTutorialComplete()) return null;
 
+    // 首次获取步骤时记录引导开始时间
+    if (this.state.startedAt === null) {
+      this.state.startedAt = Date.now();
+    }
+
     for (const step of TUTORIAL_GUIDE_STEPS) {
       if (!this.isStepCompleted(step.id)) {
         return step;
@@ -156,6 +165,7 @@ export class TutorialSystem implements ISubsystem {
 
     // 标记完成
     this.state.completedSteps.push(currentStep.id);
+    this.state.stepCompletionTimes[currentStep.id] = Date.now();
 
     // 发射步骤完成事件
     this.deps.eventBus.emit('tutorial-guide:stepCompleted', {
@@ -268,6 +278,55 @@ export class TutorialSystem implements ISubsystem {
     return current.order;
   }
 
+  // ─── 交互式引导 API ──────────────────────
+
+  /**
+   * 获取当前步骤需要执行的动作类型
+   *
+   * @returns 当前步骤的 triggerAction，无待完成步骤时返回 null
+   */
+  getCurrentStepAction(): string | null {
+    const current = this.getCurrentStep();
+    return current?.triggerAction ?? null;
+  }
+
+  /**
+   * 获取指定步骤的提示信息
+   *
+   * @param stepId - 步骤ID
+   * @returns 提示文本，步骤不存在时返回 null
+   */
+  getStepHint(stepId: TutorialGuideStepId): string | null {
+    const step = TUTORIAL_GUIDE_STEP_MAP[stepId];
+    return step?.hint ?? null;
+  }
+
+  /**
+   * 获取引导完成统计
+   *
+   * @returns 统计信息：总步骤数、完成数、跳过率、平均完成时间(ms)
+   */
+  getTutorialStats(): {
+    totalSteps: number;
+    completedSteps: number;
+    skipRate: number;
+    avgCompletionTimeMs: number;
+  } {
+    const totalSteps = TUTORIAL_GUIDE_TOTAL_STEPS;
+    const completedSteps = this.state.completedSteps.length;
+    const skipRate = this.state.skipped ? 1 : 0;
+
+    // 计算已完成步骤的平均完成时间
+    const times = Object.values(this.state.stepCompletionTimes);
+    let avgCompletionTimeMs = 0;
+    if (this.state.startedAt !== null && times.length > 0) {
+      const totalTime = times.reduce((sum, t) => sum + (t - this.state.startedAt!), 0);
+      avgCompletionTimeMs = Math.round(totalTime / times.length);
+    }
+
+    return { totalSteps, completedSteps, skipRate, avgCompletionTimeMs };
+  }
+
   // ─── 序列化 / 反序列化 ────────────────────
 
   /**
@@ -296,6 +355,8 @@ export class TutorialSystem implements ISubsystem {
     return {
       completedSteps: [],
       skipped: false,
+      stepCompletionTimes: {},
+      startedAt: null,
     };
   }
 }

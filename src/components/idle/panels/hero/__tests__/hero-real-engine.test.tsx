@@ -1,20 +1,8 @@
 /**
- * hero-real-engine — 武将系统真实引擎集成测试
+ * hero-real-engine — 武将系统真实引擎集成测试（零 mock）
  *
- * 使用真实 ThreeKingdomsEngine 实例（零 mock），验证：
- *   1. 引擎初始化 → 武将系统可用性
- *   2. 直接添加武将 → 数据格式与 Hook 期望一致
- *   3. 招募武将 → 资源消耗 + 武将入队
- *   4. 升级武将 → 属性/战力变化
- *   5. 编队操作 → 编队数据更新
- *   6. 羁绊系统 → 激活与数据格式
- *   7. 派遣系统 → 派驻与召回
- *
- * 关键约束：
- *   - 初始 recruitToken = 10，普通招募消耗 5/次 → 最多 2 次普通招募
- *   - 使用 engine.getHeroSystem().addGeneral() 可绕过资源限制直接添加武将
- *   - 所有测试使用真实引擎，不使用任何 mock
- *
+ * 覆盖：引擎初始化、武将数据格式、招募、升级、编队、羁绊、派遣
+ * 约束：初始 recruitToken=10，普通招募消耗 5/次
  * @module components/idle/panels/hero/__tests__/hero-real-engine
  */
 
@@ -26,11 +14,8 @@ import type { RecruitOutput } from '@/games/three-kingdoms/engine/hero/recruit-t
 import type { ActiveBond } from '@/games/three-kingdoms/core/bond/bond.types';
 import type { LevelUpResult } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 
-// ─────────────────────────────────────────────
 // localStorage mock（引擎 SaveManager 依赖）
-// ─────────────────────────────────────────────
 const storage: Record<string, string> = {};
-
 beforeEach(() => {
   Object.keys(storage).forEach((k) => delete storage[k]);
   Object.defineProperty(globalThis, 'localStorage', {
@@ -47,11 +32,7 @@ beforeEach(() => {
   });
 });
 
-// ─────────────────────────────────────────────
 // 引擎工厂
-// ─────────────────────────────────────────────
-
-/** 创建并初始化一个真实 ThreeKingdomsEngine 实例 */
 function createEngine(): ThreeKingdomsEngine {
   const engine = new ThreeKingdomsEngine();
   engine.init();
@@ -82,9 +63,7 @@ const KNOWN_HERO_IDS = [
   'lvbu',                                                      // 群
 ];
 
-// ═══════════════════════════════════════════════
-// 1. 引擎初始化 → 武将系统可用性
-// ═══════════════════════════════════════════════
+// 1. 引擎初始化与武将系统可用性
 
 describe('引擎初始化与武将系统可用性', () => {
   let engine: ThreeKingdomsEngine;
@@ -265,6 +244,10 @@ describe('升级武将集成', () => {
     heroSystem.addGeneral('guanyu');
     const heroId = 'guanyu';
 
+    // 补充资源确保升级成功
+    engine.resource.addResource('gold', 5000);
+    engine.resource.addResource('grain', 5000);
+
     const result: LevelUpResult | null = engine.enhanceHero(heroId, 5);
     expect(result).not.toBeNull();
     expect(result!.general.id).toBe(heroId);
@@ -276,6 +259,10 @@ describe('升级武将集成', () => {
     heroSystem.addGeneral('zhaoyun');
     const levelBefore = engine.getGeneral('zhaoyun')!.level;
 
+    // 补充资源
+    engine.resource.addResource('gold', 5000);
+    engine.resource.addResource('grain', 5000);
+
     engine.enhanceHero('zhaoyun', 3);
     const levelAfter = engine.getGeneral('zhaoyun')!.level;
     expect(levelAfter).toBeGreaterThan(levelBefore);
@@ -284,6 +271,10 @@ describe('升级武将集成', () => {
   it('升级后战力增加', () => {
     const heroSystem = engine.getHeroSystem();
     heroSystem.addGeneral('zhangfei');
+
+    // 补充资源
+    engine.resource.addResource('gold', 5000);
+    engine.resource.addResource('grain', 5000);
 
     const before = engine.getGeneral('zhangfei')!;
     const powerBefore = heroSystem.calculatePower(before);
@@ -311,26 +302,21 @@ describe('编队操作集成', () => {
   beforeEach(() => { engine = createEngine(); });
   afterEach(() => { engine.reset(); });
 
-  it('初始编队存在且为空', () => {
+  it('初始编队列表为空，需手动创建', () => {
     const formations = engine.getFormations();
-    expect(formations.length).toBeGreaterThanOrEqual(1);
-    const active = formations[0];
-    const filledSlots = active.slots.filter((s: unknown) => {
-      if (s == null) return false;
-      if (typeof s === 'string') return s.length > 0;
-      if (typeof s === 'object' && 'heroId' in (s as Record<string, unknown>)) {
-        return (s as { heroId: string | null }).heroId != null;
-      }
-      return false;
-    });
-    expect(filledSlots).toHaveLength(0);
+    expect(Array.isArray(formations)).toBe(true);
+    expect(formations).toHaveLength(0);
   });
 
-  it('setFormation 后编队包含指定武将', () => {
+  it('创建编队后 setFormation 可设置武将', () => {
     const heroSystem = engine.getHeroSystem();
     heroSystem.addGeneral('guanyu');
     heroSystem.addGeneral('zhangfei');
     heroSystem.addGeneral('zhaoyun');
+
+    // 先创建编队
+    const formationSystem = engine.getFormationSystem();
+    formationSystem.createFormation('0');
 
     engine.setFormation('0', ['guanyu', 'zhangfei', 'zhaoyun']);
 
@@ -358,6 +344,10 @@ describe('编队操作集成', () => {
       heroSystem.addGeneral(id);
     }
     const ids = KNOWN_HERO_IDS.slice(0, 8);
+
+    // 先创建编队
+    const formationSystem = engine.getFormationSystem();
+    formationSystem.createFormation('0');
 
     expect(() => engine.setFormation('0', ids)).not.toThrow();
 
@@ -423,11 +413,13 @@ describe('羁绊系统数据格式', () => {
       expect(typeof bond.faction).toBe('string');
       expect(typeof bond.heroCount).toBe('number');
       expect(bond.heroCount).toBeGreaterThanOrEqual(2);
-      // effect 结构
-      expect(bond.effect).toHaveProperty('stat');
-      expect(bond.effect).toHaveProperty('value');
-      expect(typeof bond.effect.stat).toBe('string');
-      expect(typeof bond.effect.value).toBe('number');
+      // effect 结构（bond/BondSystem 的 BondEffect）
+      expect(bond.effect).toHaveProperty('type');
+      expect(bond.effect).toHaveProperty('name');
+      expect(bond.effect).toHaveProperty('bonuses');
+      expect(typeof bond.effect.type).toBe('string');
+      expect(typeof bond.effect.name).toBe('string');
+      expect(typeof bond.effect.bonuses).toBe('object');
     }
   });
 
