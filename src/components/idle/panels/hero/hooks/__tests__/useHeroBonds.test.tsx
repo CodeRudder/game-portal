@@ -26,7 +26,7 @@ describe('useHeroBonds — 基础渲染', () => {
   it('应正常调用并返回数据结构', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current).toBeDefined();
@@ -44,7 +44,7 @@ describe('useHeroBonds — 数据获取', () => {
   it('heroFactionMap 应正确映射武将→阵营', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.heroFactionMap['liubei']).toBe('shu');
@@ -55,7 +55,7 @@ describe('useHeroBonds — 数据获取', () => {
   it('bondCatalog 应包含羁绊条目', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.bondCatalog.length).toBeGreaterThan(0);
@@ -64,7 +64,7 @@ describe('useHeroBonds — 数据获取', () => {
   it('bondCatalog 中每个条目应包含必要字段', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0 }),
     );
 
     result.current.bondCatalog.forEach((item) => {
@@ -87,7 +87,7 @@ describe('useHeroBonds — heroNames 不应为空', () => {
   it('阵营羁绊的 heroNames 应包含武将名称', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0 }),
     );
 
     // 找到蜀国阵营羁绊
@@ -106,7 +106,7 @@ describe('useHeroBonds — heroNames 不应为空', () => {
     const engine = createMockEngine();
     const generals = makeMultipleGenerals();
     const { result } = renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0 }),
     );
 
     // 找到搭档羁绊（type 为 PARTNER）
@@ -139,7 +139,7 @@ describe('useHeroBonds — 边界条件', () => {
   it('空武将列表时应安全处理', () => {
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue([]) });
     const { result } = renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.activeBonds).toEqual([]);
@@ -152,7 +152,7 @@ describe('useHeroBonds — 边界条件', () => {
       getBondSystem: vi.fn().mockImplementation(() => { throw new Error('bond error'); }),
     });
     const { result } = renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.activeBonds).toEqual([]);
@@ -167,7 +167,7 @@ describe('useHeroBonds — 边界条件', () => {
     });
 
     renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0, formationHeroIds: ['liubei'] }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0, formationHeroIds: ['liubei'] }),
     );
 
     // getActiveBonds 应被调用且传入 formationHeroIds
@@ -185,7 +185,7 @@ describe('useHeroBonds — 状态更新', () => {
 
     const { rerender } = renderHook(
       ({ snapshotVersion }) =>
-        useHeroBonds({ engine: engine as any, snapshotVersion }),
+        useHeroBonds({ engine: engine, snapshotVersion }),
       { initialProps: { snapshotVersion: 0 } },
     );
 
@@ -202,7 +202,7 @@ describe('useHeroBonds — 清理', () => {
   it('unmount 后不应有副作用残留', () => {
     const engine = createMockEngine();
     const { unmount, result } = renderHook(() =>
-      useHeroBonds({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroBonds({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.activeBonds).toBeDefined();
@@ -214,7 +214,7 @@ describe('useHeroBonds — 清理', () => {
 
     for (let i = 0; i < 3; i++) {
       const { unmount, result } = renderHook(() =>
-        useHeroBonds({ engine: engine as any, snapshotVersion: i }),
+        useHeroBonds({ engine: engine, snapshotVersion: i }),
       );
       expect(result.current.bondCatalog).toBeDefined();
       unmount();

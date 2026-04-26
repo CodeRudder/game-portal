@@ -465,4 +465,91 @@ describe('等级上限联动 — HeroLevelSystem + HeroStarSystem', () => {
       expect(fallbackLevelSys.getHeroMaxLevel('guanyu')).toBe(HERO_MAX_LEVEL);
     });
   });
+
+  // ───────────────────────────────────────────
+  // 9. 觉醒等级上限联动（100→120）
+  // ───────────────────────────────────────────
+  describe('觉醒等级上限联动（100→120）', () => {
+    /** 创建带觉醒感知 getLevelCap 的测试环境 */
+    function createAwakenedEnv(awakened: boolean) {
+      const hs = new HeroSystem();
+      hs.init(makeMockCoreDeps());
+      hs.addGeneral('guanyu');
+      const ss = new HeroStarSystem(hs);
+      ss.init(makeMockCoreDeps());
+      const sd = makeRichStarDeps();
+      sd.getFragments = (id: string) => hs.getFragments(id);
+      sd.spendFragments = (id: string, count: number) => hs.useFragments(id, count);
+      ss.setDeps(sd);
+      // 四阶突破（上限100）
+      setBreakthroughStage(ss, 'guanyu', 4);
+      hs.setLevelCapGetter((id) => {
+        if (awakened) return 120;
+        return ss.getLevelCap(id);
+      });
+      const ls = new HeroLevelSystem();
+      ls.setLevelDeps({
+        heroSystem: hs,
+        spendResource: vi.fn((type: string, amount: number) => true),
+        canAffordResource: vi.fn(() => true),
+        getResourceAmount: vi.fn(() => 1e12),
+        getLevelCap: (id: string) => {
+          if (awakened) return 120;
+          return ss.getLevelCap(id);
+        },
+      });
+      return { heroSystem: hs, starSystem: ss, levelSystem: ls };
+    }
+
+    it('觉醒武将等级上限为 120', () => {
+      const { levelSystem } = createAwakenedEnv(true);
+      expect(levelSystem.getHeroMaxLevel('guanyu')).toBe(120);
+    });
+
+    it('未觉醒武将等级上限仍为 100（四阶突破）', () => {
+      const { levelSystem } = createAwakenedEnv(false);
+      expect(levelSystem.getHeroMaxLevel('guanyu')).toBe(100);
+    });
+
+    it('觉醒后可从 100 升级到 120', () => {
+      const { heroSystem: hs, levelSystem: ls } = createAwakenedEnv(true);
+      setGeneralLevel(hs, 'guanyu', 100);
+      const result = ls.addExp('guanyu', 100_000_000_000)!;
+      expect(result.general.level).toBe(120);
+      expect(result.levelsGained).toBe(20);
+    });
+
+    it('觉醒后 120 级为最终上限', () => {
+      const { heroSystem: hs, levelSystem: ls } = createAwakenedEnv(true);
+      setGeneralLevel(hs, 'guanyu', 120);
+      expect(ls.addExp('guanyu', 100_000_000_000)).toBeNull();
+    });
+
+    it('觉醒后 quickEnhance 目标超过 120 时截断到 120', () => {
+      const { heroSystem: hs, levelSystem: ls } = createAwakenedEnv(true);
+      setGeneralLevel(hs, 'guanyu', 100);
+      const result = ls.quickEnhance('guanyu', 150)!;
+      expect(result.general.level).toBe(120);
+    });
+
+    it('觉醒后 getEnhancePreview 目标超过 120 时截断', () => {
+      const { heroSystem: hs, levelSystem: ls } = createAwakenedEnv(true);
+      setGeneralLevel(hs, 'guanyu', 100);
+      const preview = ls.getEnhancePreview('guanyu', 200)!;
+      expect(preview.targetLevel).toBe(120);
+    });
+
+    it('觉醒后 canLevelUp 在 120 级时返回 false', () => {
+      const { heroSystem: hs, levelSystem: ls } = createAwakenedEnv(true);
+      setGeneralLevel(hs, 'guanyu', 120);
+      expect(ls.canLevelUp('guanyu')).toBe(false);
+    });
+
+    it('觉醒后 getExpProgress 在 120 级时返回 percentage=100', () => {
+      const { heroSystem: hs, levelSystem: ls } = createAwakenedEnv(true);
+      setGeneralLevel(hs, 'guanyu', 120);
+      const progress = ls.getExpProgress('guanyu')!;
+      expect(progress.percentage).toBe(100);
+    });
+  });
 });

@@ -23,7 +23,7 @@ describe('useHeroDispatch — 基础渲染', () => {
   it('应正常调用并返回数据结构', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current).toBeDefined();
@@ -41,7 +41,7 @@ describe('useHeroDispatch — 数据获取', () => {
   it('应返回建筑列表', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.buildings.length).toBeGreaterThan(0);
@@ -50,7 +50,7 @@ describe('useHeroDispatch — 数据获取', () => {
   it('建筑条目应包含必要字段', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     const firstBuilding = result.current.buildings[0];
@@ -75,7 +75,7 @@ describe('useHeroDispatch — 数据获取', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     const farm = result.current.buildings.find((b) => b.id === 'farmland');
@@ -85,7 +85,7 @@ describe('useHeroDispatch — 数据获取', () => {
   it('未派遣建筑 dispatchHeroId 应为 null', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     result.current.buildings.forEach((b) => {
@@ -110,7 +110,7 @@ describe('useHeroDispatch — 操作方法', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -135,7 +135,7 @@ describe('useHeroDispatch — 操作方法', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -156,7 +156,7 @@ describe('useHeroDispatch — 操作方法', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -178,7 +178,7 @@ describe('useHeroDispatch — 边界条件', () => {
       building: null,
     });
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.buildings).toEqual([]);
@@ -189,7 +189,7 @@ describe('useHeroDispatch — 边界条件', () => {
       getHeroDispatchSystem: vi.fn().mockImplementation(() => { throw new Error('dispatch error'); }),
     });
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.buildings).toEqual([]);
@@ -208,7 +208,7 @@ describe('useHeroDispatch — 边界条件', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -229,7 +229,7 @@ describe('useHeroDispatch — 边界条件', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     // 不应抛出异常
@@ -251,7 +251,7 @@ describe('useHeroDispatch — 状态更新', () => {
 
     const { result, rerender } = renderHook(
       ({ snapshotVersion }) =>
-        useHeroDispatch({ engine: engine as any, snapshotVersion }),
+        useHeroDispatch({ engine: engine, snapshotVersion }),
       { initialProps: { snapshotVersion: 0 } },
     );
 
@@ -272,7 +272,7 @@ describe('useHeroDispatch — 清理', () => {
   it('unmount 后不应有副作用残留', () => {
     const engine = createMockEngine();
     const { unmount, result } = renderHook(() =>
-      useHeroDispatch({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroDispatch({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.buildings).toBeDefined();
@@ -284,7 +284,7 @@ describe('useHeroDispatch — 清理', () => {
 
     for (let i = 0; i < 3; i++) {
       const { unmount, result } = renderHook(() =>
-        useHeroDispatch({ engine: engine as any, snapshotVersion: i }),
+        useHeroDispatch({ engine: engine, snapshotVersion: i }),
       );
       expect(result.current.buildings).toBeDefined();
       unmount();

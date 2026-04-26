@@ -21,7 +21,7 @@ import { createMockEngine, makeMultipleGenerals } from './hero-hooks-test-utils'
 describe('useHeroGuide — 基础渲染', () => {
   it('应正常调用并返回 handleGuideAction', () => {
     const engine = createMockEngine();
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     expect(result.current).toBeDefined();
     expect(typeof result.current.handleGuideAction).toBe('function');
@@ -35,7 +35,7 @@ describe('useHeroGuide — 基础渲染', () => {
 describe('useHeroGuide — recruit 动作', () => {
   it('应调用引擎 recruit 方法', () => {
     const engine = createMockEngine();
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     act(() => {
       result.current.handleGuideAction({
@@ -55,7 +55,7 @@ describe('useHeroGuide — enhance 动作', () => {
     const engine = createMockEngine({
       getGenerals: vi.fn().mockReturnValue(generals),
     });
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     act(() => {
       result.current.handleGuideAction({
@@ -72,7 +72,7 @@ describe('useHeroGuide — enhance 动作', () => {
     const engine = createMockEngine({
       getGenerals: vi.fn().mockReturnValue([]),
     });
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     act(() => {
       result.current.handleGuideAction({
@@ -92,7 +92,7 @@ describe('useHeroGuide — formation 动作', () => {
     const engine = createMockEngine({
       getGenerals: vi.fn().mockReturnValue(generals),
     });
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     act(() => {
       result.current.handleGuideAction({
@@ -112,7 +112,7 @@ describe('useHeroGuide — formation 动作', () => {
     const engine = createMockEngine({
       getGenerals: vi.fn().mockReturnValue([]),
     });
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     act(() => {
       result.current.handleGuideAction({
@@ -129,7 +129,7 @@ describe('useHeroGuide — formation 动作', () => {
 describe('useHeroGuide — detail 动作', () => {
   it('detail 动作不应调用任何引擎方法', () => {
     const engine = createMockEngine();
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     act(() => {
       result.current.handleGuideAction({
@@ -154,7 +154,7 @@ describe('useHeroGuide — 边界条件', () => {
     const engine = createMockEngine({
       recruit: vi.fn().mockImplementation(() => { throw new Error('recruit fail'); }),
     });
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     // 不应抛出异常
     expect(() => {
@@ -174,7 +174,7 @@ describe('useHeroGuide — 边界条件', () => {
       getGenerals: vi.fn().mockReturnValue(generals),
       enhanceHero: vi.fn().mockImplementation(() => { throw new Error('enhance fail'); }),
     });
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     expect(() => {
       act(() => {
@@ -199,7 +199,7 @@ describe('useHeroGuide — 状态更新', () => {
       getGenerals: vi.fn().mockReturnValue(generals1),
     });
 
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     act(() => {
       result.current.handleGuideAction({
@@ -214,7 +214,7 @@ describe('useHeroGuide — 状态更新', () => {
 
   it('多次调用 handleGuideAction 不应累积副作用', () => {
     const engine = createMockEngine();
-    const { result } = renderHook(() => useHeroGuide(engine as any));
+    const { result } = renderHook(() => useHeroGuide(engine));
 
     for (let i = 0; i < 5; i++) {
       act(() => {
@@ -238,7 +238,7 @@ describe('useHeroGuide — 状态更新', () => {
 describe('useHeroGuide — 清理', () => {
   it('unmount 后不应有副作用残留', () => {
     const engine = createMockEngine();
-    const { unmount, result } = renderHook(() => useHeroGuide(engine as any));
+    const { unmount, result } = renderHook(() => useHeroGuide(engine));
 
     expect(result.current.handleGuideAction).toBeDefined();
     expect(() => unmount()).not.toThrow();
@@ -247,7 +247,7 @@ describe('useHeroGuide — 清理', () => {
   it('多次 mount/unmount 不应泄漏', () => {
     for (let i = 0; i < 3; i++) {
       const engine = createMockEngine();
-      const { unmount, result } = renderHook(() => useHeroGuide(engine as any));
+      const { unmount, result } = renderHook(() => useHeroGuide(engine));
       expect(result.current.handleGuideAction).toBeDefined();
       unmount();
     }

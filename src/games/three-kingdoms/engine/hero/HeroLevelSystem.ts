@@ -25,8 +25,9 @@ export interface LevelDeps {
   canAffordResource: ResourceCheckFn;
   getResourceAmount: ResourceGetFn;
   /**
-   * 获取武将当前等级上限（由突破阶段决定）。
-   * 返回值：50 / 60 / 70 / 80 / 100。
+   * 获取武将当前等级上限（由觉醒状态和突破阶段共同决定）。
+   * 返回值：50 / 60 / 70 / 80 / 100 / 120（觉醒）。
+   * 觉醒优先级最高：已觉醒武将直接返回 120。
    * 如未注入，fallback 到 HERO_MAX_LEVEL(50)。
    */
   getLevelCap?: (generalId: string) => number;
@@ -165,10 +166,13 @@ export class HeroLevelSystem implements ISubsystem {
   /**
    * 获取武将的当前等级上限。
    *
-   * 优先从 HeroStarSystem.getLevelCap() 动态获取（突破阶段决定），
+   * 优先从注入的 getLevelCap 回调动态获取（觉醒 > 突破阶段 > 默认），
    * 若未注入回调则 fallback 到 HERO_MAX_LEVEL(50)。
    *
-   * 突破阶段 → 等级上限：0→50, 1→60, 2→70, 3→80, 4→100
+   * 等级上限规则：
+   *   - 觉醒武将：120
+   *   - 突破阶段 0→50, 1→60, 2→70, 3→80, 4→100
+   *   - 未注入回调：50
    */
   private getMaxLevel(generalId: string): number {
     if (this.levelDeps?.getLevelCap) {

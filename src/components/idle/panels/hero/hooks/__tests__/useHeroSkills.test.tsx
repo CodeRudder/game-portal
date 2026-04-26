@@ -24,7 +24,7 @@ describe('useHeroSkills — 基础渲染', () => {
   it('应正常调用并返回数据结构', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
     );
 
     expect(result.current).toBeDefined();
@@ -37,7 +37,7 @@ describe('useHeroSkills — 基础渲染', () => {
   it('未选中武将时 skills 应为空数组', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.skills).toEqual([]);
@@ -68,7 +68,7 @@ describe('useHeroSkills — 数据获取', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
     );
 
     expect(result.current.skills).toHaveLength(2);
@@ -94,7 +94,7 @@ describe('useHeroSkills — 数据获取', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
     );
 
     const skill = result.current.skills[0];
@@ -106,7 +106,7 @@ describe('useHeroSkills — 数据获取', () => {
   it('应正确获取资源数量', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
     );
 
     expect(result.current.skillBookAmount).toBe(1000);
@@ -132,7 +132,7 @@ describe('useHeroSkills — 数据获取', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
     );
 
     // 主动技能默认 cooldown=8，被动技能默认 cooldown=0
@@ -158,7 +158,7 @@ describe('useHeroSkills — 操作方法', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
     );
 
     act(() => {
@@ -180,7 +180,7 @@ describe('useHeroSkills — 边界条件', () => {
   it('getGeneral 返回 undefined 时 skills 应为空', () => {
     const engine = createMockEngine({ getGeneral: vi.fn().mockReturnValue(undefined) });
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'nonexistent' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'nonexistent' }),
     );
 
     expect(result.current.skills).toEqual([]);
@@ -197,7 +197,7 @@ describe('useHeroSkills — 边界条件', () => {
     });
 
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
     );
 
     // 整个 skills useMemo 被 try-catch 包裹，异常时返回空数组
@@ -209,7 +209,7 @@ describe('useHeroSkills — 边界条件', () => {
       resource: { getAmount: vi.fn().mockImplementation(() => { throw new Error('no resource'); }) },
     });
     const { result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
     );
 
     expect(result.current.skillBookAmount).toBe(0);
@@ -245,7 +245,7 @@ describe('useHeroSkills — 状态更新', () => {
 
     const { result, rerender } = renderHook(
       ({ selectedHeroId }) =>
-        useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId }),
+        useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId }),
       { initialProps: { selectedHeroId: 'guanyu' as string | undefined } },
     );
 
@@ -265,7 +265,7 @@ describe('useHeroSkills — 状态更新', () => {
 
     const { rerender } = renderHook(
       ({ snapshotVersion }) =>
-        useHeroSkills({ engine: engine as any, snapshotVersion, selectedHeroId: 'guanyu' }),
+        useHeroSkills({ engine: engine, snapshotVersion, selectedHeroId: 'guanyu' }),
       { initialProps: { snapshotVersion: 0 } },
     );
 
@@ -283,7 +283,7 @@ describe('useHeroSkills — 清理', () => {
   it('unmount 后不应有副作用残留', () => {
     const engine = createMockEngine();
     const { unmount, result } = renderHook(() =>
-      useHeroSkills({ engine: engine as any, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
+      useHeroSkills({ engine: engine, snapshotVersion: 0, selectedHeroId: 'guanyu' }),
     );
 
     expect(result.current.skills).toBeDefined();
@@ -294,7 +294,7 @@ describe('useHeroSkills — 清理', () => {
     for (let i = 0; i < 3; i++) {
       const engine = createMockEngine();
       const { unmount, result } = renderHook(() =>
-        useHeroSkills({ engine: engine as any, snapshotVersion: i, selectedHeroId: 'guanyu' }),
+        useHeroSkills({ engine: engine, snapshotVersion: i, selectedHeroId: 'guanyu' }),
       );
       expect(result.current.skills).toBeDefined();
       unmount();

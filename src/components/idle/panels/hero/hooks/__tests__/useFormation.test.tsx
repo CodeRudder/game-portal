@@ -77,7 +77,7 @@ describe('useFormation — 基础渲染', () => {
   it('应正常调用并返回数据结构', () => {
     const engine = createMockEngineWithGenerals();
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current).toBeDefined();
@@ -98,7 +98,7 @@ describe('useFormation — 数据获取', () => {
       getFormations: vi.fn().mockReturnValue([]),
     });
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation).toHaveLength(6);
@@ -114,7 +114,7 @@ describe('useFormation — 数据获取', () => {
       ]),
     });
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation[0]).toBe('guanyu');
@@ -126,7 +126,7 @@ describe('useFormation — 数据获取', () => {
     const engine = createMockEngineWithGenerals();
     const heroInfos = makeHeroInfos();
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     const power = result.current.powerCalculator(heroInfos);
@@ -142,7 +142,7 @@ describe('useFormation — 推荐方案', () => {
   it('generateRecommendations 应返回推荐方案列表', () => {
     const engine = createMockEngineWithGenerals();
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     const plans = result.current.generateRecommendations();
@@ -154,7 +154,7 @@ describe('useFormation — 推荐方案', () => {
   it('无武将时不应返回推荐方案', () => {
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue([]) });
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     const plans = result.current.generateRecommendations();
@@ -164,7 +164,7 @@ describe('useFormation — 推荐方案', () => {
   it('推荐方案应包含必要字段', () => {
     const engine = createMockEngineWithGenerals();
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     const plans = result.current.generateRecommendations();
@@ -191,7 +191,7 @@ describe('useFormation — 操作方法', () => {
       getFormationSystem: vi.fn().mockReturnValue(mockFormationSystem),
     });
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -208,7 +208,7 @@ describe('useFormation — 操作方法', () => {
       getFormationSystem: vi.fn().mockReturnValue(mockFormationSystem),
     });
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -229,7 +229,7 @@ describe('useFormation — 边界条件', () => {
       getFormations: vi.fn().mockImplementation(() => { throw new Error('formation error'); }),
     });
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation).toHaveLength(6);
@@ -244,7 +244,7 @@ describe('useFormation — 边界条件', () => {
     });
     const heroInfos = makeHeroInfos();
     const { result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     const power = result.current.powerCalculator(heroInfos);
@@ -267,7 +267,7 @@ describe('useFormation — 状态更新', () => {
 
     const { result, rerender } = renderHook(
       ({ snapshotVersion }) =>
-        useFormation({ engine: engine as any, snapshotVersion }),
+        useFormation({ engine: engine, snapshotVersion }),
       { initialProps: { snapshotVersion: 0 } },
     );
 
@@ -287,7 +287,7 @@ describe('useFormation — 清理', () => {
   it('unmount 后不应有副作用残留', () => {
     const engine = createMockEngineWithGenerals();
     const { unmount, result } = renderHook(() =>
-      useFormation({ engine: engine as any, snapshotVersion: 0 }),
+      useFormation({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation).toBeDefined();
@@ -299,7 +299,7 @@ describe('useFormation — 清理', () => {
 
     for (let i = 0; i < 3; i++) {
       const { unmount, result } = renderHook(() =>
-        useFormation({ engine: engine as any, snapshotVersion: i }),
+        useFormation({ engine: engine, snapshotVersion: i }),
       );
       expect(result.current.currentFormation).toBeDefined();
       unmount();

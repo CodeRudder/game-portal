@@ -24,7 +24,7 @@ describe('useHeroList — 基础渲染', () => {
   it('应正常调用并返回数据结构', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current).toBeDefined();
@@ -38,7 +38,7 @@ describe('useHeroList — 基础渲染', () => {
     const generals = makeMultipleGenerals();
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.allGenerals).toHaveLength(generals.length);
@@ -57,7 +57,7 @@ describe('useHeroList — 数据获取', () => {
     const generals = makeMultipleGenerals();
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     const expectedIds = generals.map((g) => g.id);
@@ -68,7 +68,7 @@ describe('useHeroList — 数据获取', () => {
     const generals = makeMultipleGenerals();
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     const firstBrief = result.current.heroBriefs[0];
@@ -84,7 +84,7 @@ describe('useHeroList — 数据获取', () => {
     const generals = makeMultipleGenerals();
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     const firstInfo = result.current.heroInfos[0];
@@ -106,7 +106,7 @@ describe('useHeroList — 数据获取', () => {
       getHeroStarSystem: vi.fn().mockReturnValue(mockStarSystem),
     });
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.heroBriefs[0].stars).toBe(5);
@@ -122,7 +122,7 @@ describe('useHeroList — 边界条件', () => {
   it('引擎返回空数组时应安全处理', () => {
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue([]) });
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.allGenerals).toEqual([]);
@@ -136,7 +136,7 @@ describe('useHeroList — 边界条件', () => {
       getGenerals: vi.fn().mockImplementation(() => { throw new Error('engine error'); }),
     });
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.allGenerals).toEqual([]);
@@ -149,7 +149,7 @@ describe('useHeroList — 边界条件', () => {
       getHeroStarSystem: vi.fn().mockImplementation(() => { throw new Error('no star system'); }),
     });
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     result.current.heroBriefs.forEach((brief) => {
@@ -162,7 +162,7 @@ describe('useHeroList — 边界条件', () => {
     const objFormat = Object.fromEntries(generals.map((g) => [g.id, g]));
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(objFormat) });
     const { result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.allGenerals).toHaveLength(generals.length);
@@ -180,7 +180,7 @@ describe('useHeroList — 状态更新', () => {
 
     const { result, rerender } = renderHook(
       ({ snapshotVersion }) =>
-        useHeroList({ engine: engine as any, snapshotVersion }),
+        useHeroList({ engine: engine, snapshotVersion }),
       { initialProps: { snapshotVersion: 0 } },
     );
 
@@ -198,7 +198,7 @@ describe('useHeroList — 状态更新', () => {
 
     const { result, rerender } = renderHook(
       ({ snapshotVersion }) =>
-        useHeroList({ engine: engine as any, snapshotVersion }),
+        useHeroList({ engine: engine, snapshotVersion }),
       { initialProps: { snapshotVersion: 0 } },
     );
 
@@ -221,7 +221,7 @@ describe('useHeroList — 清理', () => {
   it('unmount 后不应有副作用残留', () => {
     const engine = createMockEngine();
     const { unmount, result } = renderHook(() =>
-      useHeroList({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroList({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.allGenerals).toBeDefined();
@@ -233,7 +233,7 @@ describe('useHeroList — 清理', () => {
 
     for (let i = 0; i < 3; i++) {
       const { unmount, result } = renderHook(() =>
-        useHeroList({ engine: engine as any, snapshotVersion: i }),
+        useHeroList({ engine: engine, snapshotVersion: i }),
       );
       expect(result.current.allGenerals).toBeDefined();
       unmount();

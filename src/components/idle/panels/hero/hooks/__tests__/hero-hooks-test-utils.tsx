@@ -11,6 +11,7 @@
 
 import { vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { GeneralData } from '@/games/three-kingdoms/engine/hero/hero.types';
 import { Quality } from '@/games/three-kingdoms/engine/hero/hero.types';
 
@@ -54,8 +55,12 @@ export function makeMultipleGenerals(): GeneralData[] {
  *
  * 包含所有子Hook所需的基本方法。
  * 每个测试可按需覆盖特定方法的返回值。
+ *
+ * [TYPE-SAFE] 原因: 测试 mock 对象仅实现 Hook 所需的最小接口子集，
+ * 无法完整满足 ThreeKingdomsEngine 的庞大接口（含 80+ 子系统 getter），
+ * 因此在工厂内部集中做一次类型断言，调用方无需再使用 `as any`。
  */
-export function createMockEngine(overrides: Record<string, unknown> = {}) {
+export function createMockEngine(overrides: Record<string, unknown> = {}): ThreeKingdomsEngine {
   const generals = makeMultipleGenerals();
 
   const mockHeroStarSystem = {
@@ -125,7 +130,8 @@ export function createMockEngine(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 
-  return engine;
+  // [TYPE-SAFE] 集中类型断言：mock 仅实现最小接口子集
+  return engine as unknown as ThreeKingdomsEngine;
 }
 
 /**

@@ -24,7 +24,6 @@ import type {
   BondEffect,
 } from '@/games/three-kingdoms/engine/hero/bond-config';
 import { BondType, FACTION_BONDS, PARTNER_BONDS } from '@/games/three-kingdoms/engine/hero/bond-config';
-import type { ActiveBondWithFaction } from './hero-ui.types';
 import { FACTION_ICONS, STAT_LABELS } from './BondCard';
 import BondCard from './BondCard';
 import { BondDetailPopup } from './BondCard';
@@ -121,9 +120,14 @@ function buildBondCatalog(
     }
   } else {
     // 从已激活羁绊的 participants 反推阵营归属
+    // 通过 FACTION_BONDS 定义查找阵营（引擎 ActiveBond 不携带 faction 字段）
+    const bondIdToFaction = new Map<string, string>();
+    for (const fb of FACTION_BONDS) {
+      bondIdToFaction.set(fb.id, fb.faction);
+    }
     for (const bond of activeBonds) {
       if (bond.type === BondType.FACTION) {
-        const faction = (bond as unknown as ActiveBondWithFaction).faction;
+        const faction = bondIdToFaction.get(bond.bondId);
         if (faction) {
           if (!factionHeroMap[faction]) factionHeroMap[faction] = new Set();
           bond.participants.forEach((id) => factionHeroMap[faction].add(id));

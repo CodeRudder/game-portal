@@ -26,7 +26,7 @@ describe('useHeroEngine — 基础渲染', () => {
   it('应正常调用并返回聚合数据结构', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     const ret = result.current;
@@ -64,7 +64,7 @@ describe('useHeroEngine — 基础渲染', () => {
   it('返回的各字段类型应正确', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(Array.isArray(result.current.allGenerals)).toBe(true);
@@ -97,7 +97,7 @@ describe('useHeroEngine — 子Hook聚合', () => {
     const generals = makeMultipleGenerals();
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.allGenerals).toHaveLength(generals.length);
@@ -108,7 +108,7 @@ describe('useHeroEngine — 子Hook聚合', () => {
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
       useHeroEngine({
-        engine: engine as any,
+        engine: engine,
         snapshotVersion: 0,
         selectedHeroId: 'guanyu',
       }),
@@ -121,7 +121,7 @@ describe('useHeroEngine — 子Hook聚合', () => {
   it('selectedHeroId 未传入时 skills 应为空数组', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.skills).toEqual([]);
@@ -130,7 +130,7 @@ describe('useHeroEngine — 子Hook聚合', () => {
   it('currentFormation 默认应为 6 个 null 槽位', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation).toHaveLength(6);
@@ -143,7 +143,7 @@ describe('useHeroEngine — 子Hook聚合', () => {
     const generals = makeMultipleGenerals();
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     const map = result.current.heroFactionMap;
@@ -155,7 +155,7 @@ describe('useHeroEngine — 子Hook聚合', () => {
     const generals = makeMultipleGenerals();
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.bondCatalog.length).toBeGreaterThan(0);
@@ -171,7 +171,7 @@ describe('useHeroEngine — 数据传递', () => {
     const generals = makeMultipleGenerals();
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     // heroInfos 非空时，generateRecommendations 应能生成方案
@@ -187,13 +187,13 @@ describe('useHeroEngine — 数据传递', () => {
 
     // 不传 formationHeroIds
     const { result: result1 } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     // 传 formationHeroIds
     const { result: result2 } = renderHook(() =>
       useHeroEngine({
-        engine: engine as any,
+        engine: engine,
         snapshotVersion: 0,
         formationHeroIds: ['liubei', 'guanyu', 'zhangfei'],
       }),
@@ -215,7 +215,7 @@ describe('useHeroEngine — 状态更新', () => {
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
 
     const { result, rerender } = renderHook(
-      ({ snapshotVersion }) => useHeroEngine({ engine: engine as any, snapshotVersion }),
+      ({ snapshotVersion }) => useHeroEngine({ engine: engine, snapshotVersion }),
       { initialProps: { snapshotVersion: 0 } },
     );
 
@@ -237,7 +237,7 @@ describe('useHeroEngine — 状态更新', () => {
 
     const { result, rerender } = renderHook(
       ({ selectedHeroId }) => useHeroEngine({
-        engine: engine as any,
+        engine: engine,
         snapshotVersion: 0,
         selectedHeroId,
       }),
@@ -265,7 +265,7 @@ describe('useHeroEngine — 边界条件', () => {
   it('引擎返回空武将列表时应安全处理', () => {
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue([]) });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.allGenerals).toEqual([]);
@@ -283,7 +283,7 @@ describe('useHeroEngine — 边界条件', () => {
       getGenerals: vi.fn().mockImplementation(() => { throw new Error('engine error'); }),
     });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.allGenerals).toEqual([]);
@@ -299,7 +299,7 @@ describe('useHeroEngine — 边界条件', () => {
       getBondSystem: vi.fn().mockImplementation(() => { throw new Error('bond error'); }),
     });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.activeBonds).toEqual([]);
@@ -310,7 +310,7 @@ describe('useHeroEngine — 边界条件', () => {
       getHeroDispatchSystem: vi.fn().mockImplementation(() => { throw new Error('dispatch error'); }),
     });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.buildings).toEqual([]);
@@ -321,7 +321,7 @@ describe('useHeroEngine — 边界条件', () => {
       getFormations: vi.fn().mockImplementation(() => { throw new Error('formation error'); }),
     });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     expect(result.current.currentFormation).toEqual([null, null, null, null, null, null]);
@@ -334,7 +334,7 @@ describe('useHeroEngine — 边界条件', () => {
       getHeroStarSystem: vi.fn().mockImplementation(() => { throw new Error('no star'); }),
     });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     result.current.heroBriefs.forEach((brief) => {
@@ -352,7 +352,7 @@ describe('useHeroEngine — 操作方法', () => {
     const generals = makeMultipleGenerals();
     const engine = createMockEngine({ getGenerals: vi.fn().mockReturnValue(generals) });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -365,7 +365,7 @@ describe('useHeroEngine — 操作方法', () => {
   it('dispatchHero 应调用引擎派遣方法', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -378,7 +378,7 @@ describe('useHeroEngine — 操作方法', () => {
   it('recallHero 应调用引擎召回方法', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -394,7 +394,7 @@ describe('useHeroEngine — 操作方法', () => {
       getFormations: vi.fn().mockReturnValue([{ id: '0', slots: [] }]),
     });
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     act(() => {
@@ -408,7 +408,7 @@ describe('useHeroEngine — 操作方法', () => {
   it('applyRecommend 无编队时不应调用 setFormation', () => {
     const engine = createMockEngine();
     const { result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     const formationSystem = engine.getFormationSystem();
@@ -430,7 +430,7 @@ describe('useHeroEngine — 清理', () => {
   it('unmount 后不应有副作用残留', () => {
     const engine = createMockEngine();
     const { unmount, result } = renderHook(() =>
-      useHeroEngine({ engine: engine as any, snapshotVersion: 0 }),
+      useHeroEngine({ engine: engine, snapshotVersion: 0 }),
     );
 
     // 确认数据正常
@@ -445,7 +445,7 @@ describe('useHeroEngine — 清理', () => {
 
     for (let i = 0; i < 3; i++) {
       const { unmount, result } = renderHook(() =>
-        useHeroEngine({ engine: engine as any, snapshotVersion: i }),
+        useHeroEngine({ engine: engine, snapshotVersion: i }),
       );
       expect(result.current.allGenerals).toBeDefined();
       unmount();
