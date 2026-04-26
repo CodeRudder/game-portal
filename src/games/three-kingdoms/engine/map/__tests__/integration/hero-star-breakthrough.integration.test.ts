@@ -245,12 +245,12 @@ describe('§4.2 升星属性增长：属性倍率提升', () => {
 // ═══════════════════════════════════════════════
 
 describe('§4.3 突破机制', () => {
-  it('初始等级上限为 30', () => {
-    expect(INITIAL_LEVEL_CAP).toBe(30);
+  it('初始等级上限为 50', () => {
+    expect(INITIAL_LEVEL_CAP).toBe(50);
   });
 
-  it('最终等级上限为 70', () => {
-    expect(FINAL_LEVEL_CAP).toBe(70);
+  it('最终等级上限为 100', () => {
+    expect(FINAL_LEVEL_CAP).toBe(100);
   });
 
   it('共4个突破阶段', () => {
@@ -273,12 +273,12 @@ describe('§4.3 突破机制', () => {
     const tier = starSystem.getNextBreakthroughTier('liubei');
     expect(tier).not.toBeNull();
     expect(tier!.name).toBe('一阶突破');
-    expect(tier!.levelCapAfter).toBe(40);
+    expect(tier!.levelCapAfter).toBe(60);
   });
 
   it('突破预览显示完整信息', () => {
     const { heroSystem, starSystem } = createStarSystem();
-    // 添加武将并设置等级为满级30
+    // 添加武将并设置等级为满级50
     heroSystem.addFragment('liubei', 1);
     const general = heroSystem.getGeneral('liubei');
 
@@ -286,14 +286,14 @@ describe('§4.3 突破机制', () => {
     // liubei 可能不在初始列表中，preview 可能为 null
     if (preview) {
       expect(preview.currentLevelCap).toBe(INITIAL_LEVEL_CAP);
-      expect(preview.nextLevelCap).toBe(40);
+      expect(preview.nextLevelCap).toBe(60);
       expect(preview.fragmentCost).toBeGreaterThan(0);
     }
   });
 
-  it('突破阶段递增：30→40→50→60→70', () => {
+  it('突破阶段递增：50→60→70→80→100', () => {
     const caps = BREAKTHROUGH_TIERS.map((t) => t.levelCapAfter);
-    expect(caps).toEqual([40, 50, 60, 70]);
+    expect(caps).toEqual([60, 70, 80, 100]);
   });
 });
 

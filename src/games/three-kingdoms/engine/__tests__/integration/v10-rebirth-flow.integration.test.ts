@@ -135,10 +135,10 @@ describe('v10.0 转生系统 — §2 转生倍率计算', () => {
     expect(mult).toBeCloseTo(1.5, 4);
   });
 
-  it('REBIRTH-MULT-3: 第五次转生倍率应为 1.0+0.5×5=3.5', () => {
-    // Play §2: 5次转生倍率
+  it('REBIRTH-MULT-3: 第五次转生倍率应为 1.0+0.5×ln(6)/ln(2)≈2.29', () => {
+    // Play §2: 5次转生倍率（对数衰减曲线）
     const mult = calcRebirthMultiplier(5);
-    expect(mult).toBeCloseTo(3.5, 4);
+    expect(mult).toBeCloseTo(2.29, 2);
   });
 
   it('REBIRTH-MULT-4: 倍率不应超过最大值10.0', () => {

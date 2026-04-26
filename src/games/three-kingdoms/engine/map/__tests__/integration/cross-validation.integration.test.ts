@@ -38,6 +38,7 @@ import {
 } from '../../../../core/map';
 import type { ISystemDeps } from '../../../../core/types';
 import type { ISubsystemRegistry } from '../../../../core/types/subsystem';
+import { STAR_UP_FRAGMENT_COST } from '../../../hero/star-up-config';
 
 // ─────────────────────────────────────────────
 // 辅助工具
@@ -174,12 +175,13 @@ describe('集成测试: 交叉验证 (Play §13.1-13.4)', () => {
       expect(sweepResult.success).toBe(true);
 
       // 碎片积累→升星→战力提升
-      const { STAR_UP_FRAGMENT_COST } = require('../../../hero/star-up-config');
-      const powerBefore = sim.engine.hero.calculateTotalPower();
+      // 注意: calculateTotalPower() 不含星级系数，需使用 calculateFormationPower 并传入 starGetter
+      const getStar = (id: string) => starSystem.getStar(id);
+      const powerBefore = sim.engine.hero.calculateFormationPower(['guanyu'], getStar);
       sim.addHeroFragments('guanyu', STAR_UP_FRAGMENT_COST[1]);
       const starResult = starSystem.starUp('guanyu');
       if (starResult.success) {
-        const powerAfter = sim.engine.hero.calculateTotalPower();
+        const powerAfter = sim.engine.hero.calculateFormationPower(['guanyu'], getStar);
         expect(powerAfter).toBeGreaterThan(powerBefore);
       }
     });
@@ -195,13 +197,13 @@ describe('集成测试: 交叉验证 (Play §13.1-13.4)', () => {
       expect(effects.getEffectBonus('military', 'attack')).toBe(0);
 
       // 研究第一个军事科技
-      const militaryNodes = tree.getNodesByPath('military');
+      const militaryNodes = tree.getPathNodes('military');
       const firstNode = militaryNodes[0];
       points.syncAcademyLevel(10);
       points.update(3600);
-      if (points.getState().techPoints.current >= firstNode.cost) {
+      if (points.getState().current >= firstNode.costPoints) {
         research.startResearch(firstNode.id);
-        research.completeResearch(firstNode.id);
+        tree.completeNode(firstNode.id);
         // 验证加成生效
         const atkBonus = effects.getEffectBonus('military', 'attack');
         expect(atkBonus).toBeGreaterThanOrEqual(0);

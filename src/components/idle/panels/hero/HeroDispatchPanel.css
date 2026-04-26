@@ -1,0 +1,315 @@
+/**
+ * HeroDispatchPanel — 武将派遣面板样式
+ *
+ * 配色：古铜金主题，与 FormationPanel / HeroCard 一致
+ * 布局：PC 端左右分栏，手机端上下排列
+ */
+
+/* ═══════════════════════════════════════════
+   面板容器
+   ═══════════════════════════════════════════ */
+.tk-dispatch-panel {
+  width: 100%;
+  padding: 12px 0;
+}
+
+.tk-dispatch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.tk-dispatch-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+}
+
+.tk-dispatch-close-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tk-dispatch-close-btn:hover {
+  border-color: var(--tk-gold);
+  color: var(--tk-gold-light);
+}
+
+/* ═══════════════════════════════════════════
+   主体双栏布局
+   ═══════════════════════════════════════════ */
+.tk-dispatch-body {
+  display: flex;
+  gap: 16px;
+}
+
+.tk-dispatch-hero-list {
+  flex: 1;
+  min-width: 0;
+}
+
+.tk-dispatch-building-list {
+  flex: 1;
+  min-width: 0;
+}
+
+.tk-dispatch-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-text-secondary);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.1);
+}
+
+/* ═══════════════════════════════════════════
+   武将列表项
+   ═══════════════════════════════════════════ */
+.tk-dispatch-hero-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: rgba(240, 230, 211, 0.04);
+  border: 1px solid rgba(200, 168, 76, 0.12);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tk-dispatch-hero-item:hover {
+  border-color: var(--tk-gold);
+  background: rgba(200, 168, 76, 0.08);
+}
+
+.tk-dispatch-hero-item--selected {
+  border-color: var(--tk-gold);
+  background: rgba(200, 168, 76, 0.12);
+  box-shadow: 0 0 6px rgba(200, 168, 76, 0.15);
+}
+
+.tk-dispatch-hero-item--dispatched {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.tk-dispatch-hero-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--tk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tk-dispatch-hero-level {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   建筑列表项
+   ═══════════════════════════════════════════ */
+.tk-dispatch-building-item {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: rgba(240, 230, 211, 0.04);
+  border: 1px solid rgba(200, 168, 76, 0.12);
+  border-radius: 8px;
+  transition: border-color 0.15s;
+}
+
+.tk-dispatch-building-item--occupied {
+  border-color: color-mix(in srgb, var(--tk-green, #7EC850) 30%, transparent);
+}
+
+.tk-dispatch-building-item--selected {
+  border-color: var(--tk-gold);
+  box-shadow: 0 0 6px rgba(200, 168, 76, 0.15);
+}
+
+.tk-dispatch-building-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.tk-dispatch-building-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+}
+
+.tk-dispatch-building-level {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+}
+
+/* 空建筑 — 点击派遣引导 */
+.tk-dispatch-building-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  color: var(--tk-text-muted);
+  font-size: 12px;
+  border: 1px dashed rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tk-dispatch-building-empty:hover {
+  color: var(--tk-gold-light);
+  border-color: var(--tk-gold);
+}
+
+/* 已派遣武将信息 */
+.tk-dispatch-building-hero {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--tk-green, #7EC850) 8%, transparent);
+  border-radius: 4px;
+}
+
+.tk-dispatch-building-hero-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--tk-text-primary);
+}
+
+.tk-dispatch-building-bonus {
+  font-size: 11px;
+  color: var(--tk-green);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* 召回按钮 */
+.tk-dispatch-recall-btn {
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid rgba(229, 57, 53, 0.2);
+  border-radius: 4px;
+  color: var(--tk-red);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tk-dispatch-recall-btn:hover {
+  border-color: var(--tk-red);
+  background: rgba(229, 57, 53, 0.1);
+}
+
+.tk-dispatch-recall-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════
+   确认派遣区域
+   ═══════════════════════════════════════════ */
+.tk-dispatch-confirm-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(200, 168, 76, 0.08);
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 8px;
+}
+
+.tk-dispatch-confirm-info {
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+}
+
+.tk-dispatch-confirm-info strong {
+  color: var(--tk-gold-light);
+}
+
+.tk-dispatch-confirm-btn {
+  padding: 6px 18px;
+  background: rgba(200, 168, 76, 0.2);
+  border: 1px solid var(--tk-gold);
+  border-radius: 4px;
+  color: var(--tk-gold-light);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tk-dispatch-confirm-btn:hover:not(:disabled) {
+  background: rgba(200, 168, 76, 0.35);
+}
+
+.tk-dispatch-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════
+   冷却提示
+   ═══════════════════════════════════════════ */
+.tk-dispatch-cooldown-tip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--tk-orange);
+}
+
+/* ═══════════════════════════════════════════
+   空状态
+   ═══════════════════════════════════════════ */
+.tk-dispatch-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--tk-text-muted);
+  font-size: 13px;
+}
+
+/* ═══════════════════════════════════════════
+   响应式：手机端上下排列
+   ═══════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .tk-dispatch-body {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tk-dispatch-hero-item {
+    padding: 6px 8px;
+  }
+
+  .tk-dispatch-building-item {
+    padding: 8px 10px;
+  }
+
+  .tk-dispatch-confirm-bar {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    text-align: center;
+  }
+}

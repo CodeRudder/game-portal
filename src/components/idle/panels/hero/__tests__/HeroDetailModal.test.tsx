@@ -374,7 +374,10 @@ describe('HeroDetailModal', () => {
     const mockMap = new Map(ORIGINAL_GENERAL_DEF_MAP);
     mockMap.set('guanyu', { ...mockMap.get('guanyu')!, biography: '' });
 
-    vi.spyOn(EngineModule, 'GENERAL_DEF_MAP', 'get').mockReturnValue(mockMap as any);
+    // mockMap 是可变 Map，GENERAL_DEF_MAP 类型为 Readonly<Map>，需通过 unknown 桥接
+    vi.spyOn(EngineModule, 'GENERAL_DEF_MAP', 'get').mockReturnValue(
+      mockMap as unknown as typeof EngineModule.GENERAL_DEF_MAP,
+    );
 
     render(<HeroDetailModal {...defaultProps} />);
     // biography='' 是 falsy，所以不应渲染

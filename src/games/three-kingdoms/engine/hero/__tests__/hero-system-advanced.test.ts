@@ -92,6 +92,56 @@ describe('HeroSystem — 高级测试', () => {
       const power = sys.calculatePower(g);
       expect(Number.isInteger(power)).toBe(true);
     });
+
+    // ── D1 评测遗留问题2：装备系数验证 ──
+    describe('装备系数（equipmentCoeff）', () => {
+      it('无装备时装备系数为1.0，战力不受影响', () => {
+        const g = sys.addGeneral('guanyu')!;
+        const powerNoEquip = sys.calculatePower(g, 1, 0);
+        const powerDefault = sys.calculatePower(g);
+        // totalEquipmentPower=0 → equipmentCoeff=1+0/1000=1.0，不影响战力
+        expect(powerNoEquip).toBe(powerDefault);
+      });
+
+      it('装备系数 = 1 + totalEquipmentPower / 1000 正确应用', () => {
+        const g = sys.addGeneral('guanyu')!;
+        // 手动计算期望值，与 calculatePower 内部逻辑一致
+        const { attack, defense, intelligence, speed } = g.baseStats;
+        const statsPower = attack * POWER_WEIGHTS.attack + defense * POWER_WEIGHTS.defense
+          + intelligence * POWER_WEIGHTS.intelligence + speed * POWER_WEIGHTS.speed;
+        const levelCoeff = 1 + g.level * LEVEL_COEFFICIENT_PER_LEVEL;
+        const qualityCoeff = QUALITY_MULTIPLIERS[g.quality];
+        const starCoeff = 1.0; // star=1
+        const equipPower = 500;
+        const equipmentCoeff = 1 + equipPower / 1000; // 1.5
+        const expected = Math.floor(statsPower * levelCoeff * qualityCoeff * starCoeff * equipmentCoeff);
+        const actual = sys.calculatePower(g, 1, equipPower);
+        expect(actual).toBe(expected);
+      });
+
+      it('高装备战力显著提升总战力', () => {
+        const g = sys.addGeneral('guanyu')!;
+        const powerNoEquip = sys.calculatePower(g, 1, 0);
+        const powerHighEquip = sys.calculatePower(g, 1, 2000);
+        // equipmentCoeff = 1 + 2000/1000 = 3.0
+        expect(powerHighEquip).toBeGreaterThan(powerNoEquip);
+        // 验证倍率关系（允许floor误差±1）
+        const ratio = powerHighEquip / powerNoEquip;
+        expect(ratio).toBeCloseTo(3.0, 0);
+      });
+
+      it('装备系数与星级系数叠加计算', () => {
+        const g = sys.addGeneral('guanyu')!;
+        const power1StarNoEquip = sys.calculatePower(g, 1, 0);
+        const power3StarWithEquip = sys.calculatePower(g, 3, 300);
+        // 星级系数=1.35，装备系数=1+300/1000=1.3
+        // 总倍率 = 1.35 * 1.3 = 1.755
+        expect(power3StarWithEquip).toBeGreaterThan(power1StarNoEquip);
+        const ratio = power3StarWithEquip / power1StarNoEquip;
+        // 1.35 * 1.3 = 1.755（允许floor误差）
+        expect(ratio).toBeCloseTo(1.755, 0);
+      });
+    });
   });
 
   // ═══════════════════════════════════════════

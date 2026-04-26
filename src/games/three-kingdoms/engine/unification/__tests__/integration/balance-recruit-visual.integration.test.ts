@@ -279,13 +279,13 @@ describe('§6+§11+§12 数值平衡+招募保底+色盲纹理+PRD 集成测试'
     it('招募消耗计算正确，十连无折扣', () => {
       const singleCost = recruit.getRecruitCost('normal', 1);
       expect(singleCost.resourceType).toBe('recruitToken');
-      expect(singleCost.amount).toBe(1);
+      expect(singleCost.amount).toBe(RECRUIT_COSTS.normal.amount);
 
       const tenCost = recruit.getRecruitCost('normal', 10);
-      expect(tenCost.amount).toBe(10 * TEN_PULL_DISCOUNT);
+      expect(tenCost.amount).toBe(RECRUIT_COSTS.normal.amount * 10 * TEN_PULL_DISCOUNT);
 
       const advCost = recruit.getRecruitCost('advanced', 1);
-      expect(advCost.amount).toBe(100);
+      expect(advCost.amount).toBe(RECRUIT_COSTS.advanced.amount);
     });
 
     it('序列化/反序列化保底计数器完整还原', () => {

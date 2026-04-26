@@ -40,7 +40,7 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
   const formations = useMemo(() => {
     void snapshotVersion;
     const raw = formationSystem.getAllFormations();
-    return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, any>) : [];
+    return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, FormationData>) : [];
   }, [formationSystem, snapshotVersion]);
 
   const activeId = formationSystem.getActiveFormationId();

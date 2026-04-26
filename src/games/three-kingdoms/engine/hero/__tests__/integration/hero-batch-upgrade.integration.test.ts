@@ -37,15 +37,17 @@ describe('§6.11 武将批量升级', () => {
   it('[BATCH-UPGRADE-3] 批量升级跳过满级武将', () => {
     // 通过反复强化模拟玩家长期培养到满级
     const heroId = sim.getGenerals()[0].id;
+    // 未突破武将等级上限为 30（由 HeroStarSystem.getLevelCap 决定）
+    const levelCap = sim.engine.hero.getMaxLevel(heroId);
     for (let i = 0; i < 50; i++) {
       sim.addResources({ gold: 500000, grain: 500000 });
-      const r = sim.engine.heroLevel.quickEnhance(heroId, HERO_MAX_LEVEL);
+      const r = sim.engine.heroLevel.quickEnhance(heroId, levelCap);
       if (!r) break;
     }
     const g = sim.engine.hero.getGeneral(heroId);
-    expect(g?.level).toBe(HERO_MAX_LEVEL);
+    expect(g?.level).toBe(levelCap);
 
-    const result = sim.engine.heroLevel.batchUpgrade([heroId], HERO_MAX_LEVEL);
+    const result = sim.engine.heroLevel.batchUpgrade([heroId], levelCap);
     expect(result.skipped).toContain(heroId);
   });
 
@@ -339,8 +341,9 @@ describe('§6.14 资源预估与预览', () => {
 
   it('[PREVIEW-5] 目标等级超过上限时自动截断', () => {
     const heroId = sim.getGenerals()[0].id;
+    const levelCap = sim.engine.hero.getMaxLevel(heroId);
     const preview = sim.engine.heroLevel.getEnhancePreview(heroId, 999);
-    expect(preview!.targetLevel).toBe(HERO_MAX_LEVEL);
+    expect(preview!.targetLevel).toBe(levelCap);
   });
 
   it('[PREVIEW-6] 当前等级已等于目标等级时预览显示无消耗', () => {

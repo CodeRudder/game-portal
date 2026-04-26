@@ -1,0 +1,214 @@
+/**
+ * BondCollectionPanel — 羁绊图鉴面板样式
+ * 设计风格：水墨江山·铜纹霸业 | 响应式：PC 嵌入武将详情 / 手机端全屏 Tab
+ */
+
+/* ── 面板根容器 ── */
+.tk-bond-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  color: var(--tk-text-primary);
+  font-family: var(--tk-font-body);
+}
+
+/* ── Tab 切换 ── */
+.tk-bond-tabs {
+  display: flex;
+  gap: 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--tk-radius-lg);
+  overflow: hidden;
+  border: 1px solid rgba(196, 149, 106, 0.1);
+}
+.tk-bond-tab {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--tk-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.tk-bond-tab--active {
+  background: rgba(196, 149, 106, 0.15);
+  color: var(--tk-gold-soft, #C4956A);
+  font-weight: 600;
+}
+.tk-bond-tab:hover:not(.tk-bond-tab--active) {
+  background: rgba(196, 149, 106, 0.06);
+}
+
+/* ── 分组标题 ── */
+.tk-bond-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-text-secondary);
+  padding: 6px 0 4px;
+  border-bottom: 1px solid rgba(196, 149, 106, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── 羁绊列表 ── */
+.tk-bond-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── 羁绊卡片 ── */
+.tk-bond-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(196, 149, 106, 0.04);
+  border-radius: var(--tk-radius-lg);
+  border: 1px solid rgba(196, 149, 106, 0.1);
+  cursor: pointer;
+  transition: border-color 0.15s ease-out, background 0.15s ease-out;
+}
+.tk-bond-card:hover {
+  border-color: rgba(196, 149, 106, 0.25);
+  background: rgba(196, 149, 106, 0.07);
+}
+
+/* 已激活 */
+.tk-bond-card--active {
+  border-color: rgba(196, 149, 106, 0.25);
+  background: rgba(196, 149, 106, 0.08);
+}
+
+/* 未激活（灰色） */
+.tk-bond-card--inactive {
+  opacity: 0.55;
+  filter: grayscale(0.3);
+}
+
+/* ── 羁绊卡片头部 ── */
+.tk-bond-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tk-bond-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tk-bond-card__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.tk-bond-card__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.tk-bond-card__level {
+  font-size: 12px;
+  font-family: var(--tk-font-num);
+  font-weight: 600;
+  color: var(--tk-gold-soft, #C4956A);
+  padding: 2px 8px;
+  background: rgba(196, 149, 106, 0.12);
+  border-radius: 10px;
+}
+.tk-bond-card__status-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.tk-bond-card__status-tag--active {
+  background: rgba(76, 175, 80, 0.12);
+  color: var(--tk-quality-uncommon, #4caf50);
+}
+.tk-bond-card__status-tag--inactive {
+  background: rgba(158, 158, 158, 0.1);
+  color: var(--tk-quality-common, #9e9e9e);
+}
+
+/* ── 羁绊描述 ── */
+.tk-bond-card__desc {
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+  line-height: 1.5;
+}
+
+/* ── 羁绊参与武将 ── */
+.tk-bond-card__heroes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.tk-bond-hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.15);
+  color: var(--tk-text-secondary);
+}
+.tk-bond-hero-tag--owned {
+  background: rgba(196, 149, 106, 0.12);
+  color: var(--tk-gold-soft, #C4956A);
+}
+.tk-bond-hero-tag--missing {
+  background: rgba(231, 76, 60, 0.08);
+  color: var(--tk-text-muted);
+}
+
+/* ── 羁绊详情展开 ── */
+.tk-bond-card__detail {
+  padding-top: 8px;
+  border-top: 1px solid rgba(196, 149, 106, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tk-bond-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.tk-bond-detail-label {
+  color: var(--tk-text-muted);
+}
+.tk-bond-detail-value {
+  font-family: var(--tk-font-num);
+  font-weight: 600;
+  color: var(--tk-green);
+}
+.tk-bond-detail-value--inactive {
+  color: var(--tk-text-muted);
+}
+
+/* ── 空状态 ── */
+.tk-bond-panel__empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--tk-text-muted);
+  font-size: 13px;
+}
+
+/* ── 手机端适配（≤480px） ── */
+@media (max-width: 767px) {
+  .tk-bond-panel { gap: 10px; }
+  .tk-bond-card { padding: 10px; }
+  .tk-bond-card__name { font-size: 13px; }
+  .tk-bond-tab { padding: 7px 10px; font-size: 12px; }
+}
+
+/* ── 平板适配（481px~768px） ── */
+@media (min-width: 481px) and (max-width: 768px) {
+  .tk-bond-card { padding: 10px; }
+}

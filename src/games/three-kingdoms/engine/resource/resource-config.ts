@@ -42,7 +42,7 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
   troops: 0,
   mandate: 0,
   techPoint: 0,
-  recruitToken: 0.003, // R5: 被动产出速率 3 倍提升（0.001 → 0.003），缩短等待时间
+  recruitToken: 0.002, // PRD v1.5 HER-10.2: 被动产出速率 0.002/秒（引擎实际值，4h在线/天经济模型）
 };
 
 // ─────────────────────────────────────────────
@@ -153,7 +153,40 @@ export const GOLD_SAFETY_LINE = 500;
 export const MANDATE_CONFIRM_THRESHOLD = 100;
 
 // ─────────────────────────────────────────────
-// 9. 存档版本
+// 9. 铜钱经济模型配置（PRD v1.3 HER-10.3）
+// ─────────────────────────────────────────────
+
+/**
+ * 铜钱被动产出速率（铜钱/秒）
+ *
+ * 来源：PRD v1.3 HER-10.3 铜钱经济模型
+ * 设计目标：4h 在线/天 → 日产出约 19,000~22,000 铜钱
+ *
+ * 计算公式：
+ * - 被动产出：1.3/秒 × 14400秒 = 18,720
+ * - 日常任务：2000/天
+ * - 关卡通关：约 2000（~20 关）
+ * - 合计 ≈ 22,720
+ *
+ * 注意：此为建筑基础产出，实际铜钱产出由 CopperEconomySystem 管理。
+ * 此值用于 ResourceSystem 的 gold 产出速率同步。
+ */
+export const COPPER_PASSIVE_RATE = 1.3;
+
+/** 日常任务铜钱奖励 */
+export const COPPER_DAILY_TASK_REWARD = 2000;
+
+/** 关卡通关铜钱基础奖励 */
+export const COPPER_STAGE_CLEAR_BASE = 100;
+
+/** 关卡通关铜钱每级额外奖励 */
+export const COPPER_STAGE_CLEAR_PER_LEVEL = 20;
+
+/** 商店每日铜钱消耗上限（占日产出 ~40%） */
+export const COPPER_SHOP_DAILY_SPEND_LIMIT = 9000;
+
+// ─────────────────────────────────────────────
+// 10. 存档版本
 // ─────────────────────────────────────────────
 
 /** 当前存档数据版本号 */

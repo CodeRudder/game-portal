@@ -4,7 +4,7 @@ import { vi } from 'vitest';
  * 覆盖：极端场景、保底计数器边界、资源不足、序列化边界
  *
  * 设计规格（hero-system-design.md）：
- * - 普通招募：recruitToken×1，高级招募：recruitToken×100
+ * - 普通招募：recruitToken×5（R3修正），高级招募：recruitToken×100
  * - 十连折扣：1.0（无折扣）
  * - 硬保底：100抽必出 LEGENDARY+
  */
@@ -213,9 +213,9 @@ describe('HeroRecruitSystem — 边界测试', () => {
   // ───────────────────────────────────────────
   describe('消耗计算边界', () => {
     it('十连折扣正确计算', () => {
-      // 设计规格：普通招募 recruitToken×1，TEN_PULL_DISCOUNT=1.0
+      // 设计规格：普通招募 recruitToken×5（R3修正），TEN_PULL_DISCOUNT=1.0
       const cost = recruit.getRecruitCost('normal', 10);
-      expect(cost.amount).toBe(Math.floor(1 * 10 * TEN_PULL_DISCOUNT));
+      expect(cost.amount).toBe(Math.floor(5 * 10 * TEN_PULL_DISCOUNT));
       expect(cost.resourceType).toBe('recruitToken');
     });
 
@@ -226,14 +226,14 @@ describe('HeroRecruitSystem — 边界测试', () => {
     });
 
     it('单抽消耗无折扣', () => {
-      // 设计规格：普通招募 recruitToken×1
+      // 设计规格：普通招募 recruitToken×5（R3修正）
       const cost = recruit.getRecruitCost('normal', 1);
-      expect(cost.amount).toBe(1);
+      expect(cost.amount).toBe(5);
     });
 
     it('招募输出记录正确的消耗', () => {
       const result = recruit.recruitTen('normal')!;
-      expect(result.cost.amount).toBe(Math.floor(1 * 10 * TEN_PULL_DISCOUNT));
+      expect(result.cost.amount).toBe(Math.floor(5 * 10 * TEN_PULL_DISCOUNT));
       expect(result.cost.resourceType).toBe('recruitToken');
     });
   });

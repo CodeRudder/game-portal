@@ -5,7 +5,7 @@
  */
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import type { GeneralData, Quality } from '@/games/three-kingdoms/engine';
+import type { GeneralData, Quality, SkillData } from '@/games/three-kingdoms/engine';
 import {
   QUALITY_LABELS,
   QUALITY_BORDER_COLORS,
@@ -166,8 +166,9 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
         Toast.success(`${general.name} 升级至 Lv.${result.levelsGained > 1 ? targetLevel : general.level + 1}，战力 +${result.levelsGained}`);
         onEnhanceComplete?.();
       }
-    } catch (e: any) {
-      Toast.danger(e?.message || '升级失败');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : '升级失败';
+      Toast.danger(message);
     } finally {
       setIsEnhancing(false);
     }
@@ -190,8 +191,9 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
       } else {
         Toast.danger('合成失败：碎片不足或已拥有该武将');
       }
-    } catch (e: any) {
-      Toast.danger(e?.message || '合成失败');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : '合成失败';
+      Toast.danger(message);
     } finally {
       setIsSynthesizing(false);
     }
@@ -377,7 +379,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
               {general.skills.length === 0 ? (
                 <div className="tk-hero-detail-skill-empty">暂无技能</div>
               ) : (
-                general.skills.map((skill: any) => (
+                general.skills.map((skill: SkillData) => (
                   <div key={skill.id} className="tk-hero-detail-skill-item">
                     <div className="tk-hero-detail-skill-header">
                       <span className="tk-hero-detail-skill-name">{skill.name}</span>

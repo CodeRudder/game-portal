@@ -90,7 +90,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
     void snapshotVersion;
     try {
       const raw = engine?.getGenerals?.() ?? [];
-      return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, any>) : [];
+      return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, GeneralData>) : [];
     } catch {
       return [];
     }
@@ -124,7 +124,11 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
   const handleEnhanceComplete = useCallback(() => {
     if (selectedGeneral) {
       const updated = engine.getGeneral(selectedGeneral.id);
-      if (updated) setSelectedGeneral({ ...updated } as any);
+      if (updated) {
+        // 浅拷贝将 Readonly<GeneralData> 转为可变 GeneralData
+        const mutable: GeneralData = { ...updated, baseStats: { ...updated.baseStats }, skills: [...updated.skills] };
+        setSelectedGeneral(mutable);
+      }
     }
   }, [engine, selectedGeneral]);
 

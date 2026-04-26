@@ -51,9 +51,23 @@ export const LEVEL_EXP_TABLE: readonly LevelExpTier[] = [
   { levelMin: 21, levelMax: 30, expPerLevel: 250, goldPerLevel: 100 },
   { levelMin: 31, levelMax: 40, expPerLevel: 500, goldPerLevel: 200 },
   { levelMin: 41, levelMax: 50, expPerLevel: 1000, goldPerLevel: 400 },
+  { levelMin: 51, levelMax: 60, expPerLevel: 1500, goldPerLevel: 600 },
+  { levelMin: 61, levelMax: 70, expPerLevel: 2500, goldPerLevel: 1000 },
+  { levelMin: 71, levelMax: 80, expPerLevel: 4000, goldPerLevel: 1600 },
+  { levelMin: 81, levelMax: 90, expPerLevel: 6000, goldPerLevel: 2500 },
+  { levelMin: 91, levelMax: 100, expPerLevel: 9000, goldPerLevel: 4000 },
 ] as const;
 
-/** 武将等级上限 */
+/**
+ * 基础经验表覆盖的最大等级
+ *
+ * 注意：这不是武将的实际等级上限！实际等级上限由突破阶段决定：
+ *   HeroStarSystem.getLevelCap(generalId) → 50 / 60 / 70 / 80 / 100
+ * 此常量仅用于 LEVEL_EXP_TABLE 的覆盖范围（1~100级有分段配置），
+ * 以及 HeroLevelSystem 中未注入 HeroStarSystem 时的 fallback 上限。
+ *
+ * @see star-up-config.ts INITIAL_LEVEL_CAP / FINAL_LEVEL_CAP / BREAKTHROUGH_TIERS
+ */
 export const HERO_MAX_LEVEL = 50;
 
 // ─────────────────────────────────────────────

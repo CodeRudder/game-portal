@@ -90,9 +90,9 @@
 }
 
 /* ═══════════════════════════════════════════
-   品质标签 — 左上角
+   品质标签 — 左上角（QualityBadge 原子组件）
    ═══════════════════════════════════════════ */
-.tk-hero-card-quality {
+.tk-hero-card .tk-quality-badge.tk-hero-card-quality {
   position: absolute;
   top: 0;
   left: 0;
@@ -103,6 +103,18 @@
   border-radius: 0 0 6px 0;
   z-index: 2;
   letter-spacing: 1px;
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════
+   星级显示 — 右上角
+   ═══════════════════════════════════════════ */
+.tk-hero-card-stars {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  z-index: 2;
+  line-height: 1;
 }
 
 /* ═══════════════════════════════════════════
@@ -212,6 +224,11 @@
     padding: 1px 5px;
     font-size: 8px;
     border-radius: 0 0 4px 0;
+  }
+
+  .tk-hero-card-stars {
+    top: 1px;
+    right: 2px;
   }
 
   .tk-hero-card-name {

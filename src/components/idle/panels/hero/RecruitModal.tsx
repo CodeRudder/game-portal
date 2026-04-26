@@ -135,8 +135,9 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
       } else {
         Toast.danger('资源不足，无法招募');
       }
-    } catch (e: any) {
-      Toast.danger(e?.message || '招募失败');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : '招募失败';
+      Toast.danger(message);
     } finally {
       setIsRecruiting(false);
     }
@@ -253,7 +254,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
               <button className="tk-recruit-results-close" onClick={handleCloseResults}>✕</button>
             </div>
             <div className="tk-recruit-results-grid">
-              {results.results.map((result: any, idx: number) => (
+              {results.results.map((result: RecruitResult, idx: number) => (
                 <RecruitResultCard
                   key={`${result.general?.id ?? idx}-${idx}`}
                   result={result}
@@ -296,7 +297,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
                       </span>
                     </div>
                     <div className="tk-recruit-history-item-right">
-                      {entry.results.map((r: any, rIdx: number) => (
+                      {entry.results.map((r: RecruitResult, rIdx: number) => (
                         <span
                           key={`${r.general?.id ?? rIdx}-${rIdx}`}
                           className="tk-recruit-history-hero"

@@ -64,6 +64,8 @@ export interface HeroSystems {
   hero: HeroSystem;
   heroRecruit: HeroRecruitSystem;
   heroLevel: HeroLevelSystem;
+  /** 升星/突破系统（提供动态等级上限） */
+  heroStar: import('./hero/HeroStarSystem').HeroStarSystem;
 }
 
 /** 初始化武将子系统（注入依赖和回调） */
@@ -84,12 +86,16 @@ export function initHeroSystems(
     addResource: (type, amount) => { if (isResourceType(type)) resource.addResource(type, amount); },
   });
 
-  // 升级系统 — 注入资源查询/消耗回调
+  // 升级系统 — 注入资源查询/消耗回调 + 等级上限回调
   systems.heroLevel.init(deps);
   systems.heroLevel.setLevelDeps({
     heroSystem: systems.hero,
     spendResource: (type, amount) => safeSpendResource(resource, type, amount),
     canAffordResource: (type, amount) => safeCanAfford(resource, type, amount),
     getResourceAmount: (type) => safeGetAmount(resource, type),
+    getLevelCap: (generalId: string) => systems.heroStar.getLevelCap(generalId),
   });
+
+  // 武将系统 — 注入等级上限回调（突破阶段 → 等级上限联动）
+  systems.hero.setLevelCapGetter((generalId: string) => systems.heroStar.getLevelCap(generalId));
 }

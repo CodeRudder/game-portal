@@ -1,0 +1,53 @@
+/**
+ * StarDisplay — 星级显示样式
+ *
+ * 使用 Unicode 字符 ★ / ☆，金色 #F59E0B。
+ * 纯 CSS 实现，无动画。
+ */
+
+/* ═══════════════════════════════════════════
+   基础样式
+   ═══════════════════════════════════════════ */
+.tk-star-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+  user-select: none;
+}
+
+/* 单个星星 */
+.tk-star-display__star {
+  display: inline-block;
+  font-style: normal;
+  line-height: 1;
+}
+
+/* 实心星（已激活） */
+.tk-star-display__star--filled {
+  color: #F59E0B;
+}
+
+/* 空心星（未激活） */
+.tk-star-display__star--empty {
+  color: rgba(245, 158, 11, 0.3);
+}
+
+/* ═══════════════════════════════════════════
+   尺寸变体
+   ═══════════════════════════════════════════ */
+
+/* small — 12px */
+.tk-star-display--small .tk-star-display__star {
+  font-size: 12px;
+}
+
+/* normal — 16px */
+.tk-star-display--normal .tk-star-display__star {
+  font-size: 16px;
+}
+
+/* large — 20px */
+.tk-star-display--large .tk-star-display__star {
+  font-size: 20px;
+}

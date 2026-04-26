@@ -40,9 +40,44 @@ export class HeroSystem implements ISubsystem {
   readonly name = 'hero' as const;
   private deps: ISystemDeps | null = null;
   private state: HeroState;
+  /**
+   * 等级上限回调（由引擎层注入 HeroStarSystem.getLevelCap）。
+   * 未注入时 fallback 到 HERO_MAX_LEVEL(50)。
+   */
+  private _getLevelCap: ((generalId: string) => number) | null = null;
+  /**
+   * 装备战力回调（由引擎层注入 EquipmentSystem 聚合）。
+   * 返回指定武将的装备总战力，未注入时 fallback 到 0。
+   */
+  private _getEquipmentPower: ((generalId: string) => number) | null = null;
+  /**
+   * 羁绊系数回调（由引擎层注入 BondSystem.getBondMultiplier）。
+   * 返回编队羁绊总系数，未注入时 fallback 到 1.0（无羁绊加成）。
+   */
+  private _getBondMultiplier: ((generalIds: string[]) => number) | null = null;
 
   constructor() {
     this.state = createEmptyState();
+  }
+
+  /** 注入等级上限回调 */
+  setLevelCapGetter(fn: (generalId: string) => number): void {
+    this._getLevelCap = fn;
+  }
+
+  /** 注入装备战力回调（PRD: 装备系数 = 1 + 装备总战力 / 1000） */
+  setEquipmentPowerGetter(fn: (generalId: string) => number): void {
+    this._getEquipmentPower = fn;
+  }
+
+  /** 注入羁绊系数回调（PRD: 羁绊系数 = BondSystem.getBondMultiplier，1.0~2.0） */
+  setBondMultiplierGetter(fn: (generalIds: string[]) => number): void {
+    this._getBondMultiplier = fn;
+  }
+
+  /** 获取武将当前等级上限 */
+  getMaxLevel(generalId: string): number {
+    return this._getLevelCap ? this._getLevelCap(generalId) : HERO_MAX_LEVEL;
   }
 
   // ── ISubsystem 适配层 ──
@@ -128,31 +163,66 @@ export class HeroSystem implements ISubsystem {
   /**
    * 计算单个武将的战力
    *
-   * 公式：战力 = (ATK×2.0 + CMD×1.5 + INT×2.0 + POL×1.0) × 等级系数 × 星级系数 × 装备系数
+   * 公式：战力 = (ATK×2.0 + CMD×1.5 + INT×2.0 + POL×1.0) × 等级系数 × 星级系数 × 装备系数 × 羁绊系数
    * 等级系数 = 1 + 等级 × 0.05
    * 星级系数 = getStarMultiplier(star)，每星递增（1星=1.0, 2星=1.15, 3星=1.35, ...）
    * 装备系数 = 1 + totalEquipmentPower / 1000
+   * 羁绊系数 = BondSystem.getBondMultiplier(formationIds)，默认 1.0（无羁绊）
    * 注: 源码字段 defense↔CMD, speed↔POL, 属性命名待后续统一
    *
    * @param general - 武将数据
    * @param star - 武将星级（默认1），由 HeroStarSystem.getStar() 提供
-   * @param totalEquipmentPower - 武将装备总战力（默认0），由 EquipmentSystem.getHeroEquipments() 聚合
+   * @param totalEquipmentPower - 武将装备总战力，默认使用注入的装备战力回调；未注入时 fallback 到 0
+   * @param bondMultiplier - 羁绊系数，默认使用注入的羁绊回调；未注入时 fallback 到 1.0
    */
-  calculatePower(general: GeneralData, star = 1, totalEquipmentPower = 0): number {
+  calculatePower(general: GeneralData, star = 1, totalEquipmentPower?: number, bondMultiplier?: number): number {
     const { attack, defense, intelligence, speed } = general.baseStats;
     const { attack: wA, defense: wD, intelligence: wI, speed: wS } = POWER_WEIGHTS;
     const statsPower = attack * wA + defense * wD + intelligence * wI + speed * wS;
     const levelCoeff = 1 + general.level * LEVEL_COEFFICIENT_PER_LEVEL;
     const qualityCoeff = QUALITY_MULTIPLIERS[general.quality];
     const starCoeff = getStarMultiplier(star);
-    const equipmentCoeff = 1 + totalEquipmentPower / 1000;
-    return Math.floor(statsPower * levelCoeff * qualityCoeff * starCoeff * equipmentCoeff);
+    // P0-2: 优先使用显式传入的装备战力，否则从注入的回调获取，最终 fallback 到 0
+    const equipPower = totalEquipmentPower ?? this._getEquipmentPower?.(general.id) ?? 0;
+    const equipmentCoeff = 1 + equipPower / 1000;
+    // P0-R6-1: 羁绊系数作为第5乘区，优先使用显式传入值，否则 fallback 到 1.0
+    const bondCoeff = bondMultiplier ?? 1.0;
+    return Math.floor(statsPower * levelCoeff * qualityCoeff * starCoeff * equipmentCoeff * bondCoeff);
   }
 
-  /** 计算全体武将总战力 */
+  /**
+   * 计算全体武将总战力（不含羁绊系数）
+   *
+   * 语义说明：羁绊是编队级概念（依赖编队中武将组合），而此方法
+   * 遍历全体武将，不存在"编队"上下文，因此不含羁绊系数。
+   * 如需含羁绊的编队战力，请使用 calculateFormationPower()。
+   */
   calculateTotalPower(): number {
     return Object.values(this.state.generals)
       .reduce((sum, g) => sum + this.calculatePower(g), 0);
+  }
+
+  /**
+   * 计算编队武将总战力（含羁绊系数）
+   *
+   * 羁绊系数基于编队整体计算，乘以编队总战力。
+   * 羁绊系数优先级：显式参数 > 注入回调 > 默认1.0（与 calculatePower 设计一致）
+   *
+   * @param generalIds - 编队中的武将ID列表
+   * @param getStar - 获取武将星级的回调
+   * @param bondMultiplier - 羁绊系数（可选），优先级高于注入回调；未传入时使用 setBondMultiplierGetter 注入的回调
+   */
+  calculateFormationPower(generalIds: string[], getStar?: (id: string) => number, bondMultiplier?: number): number {
+    const starGetter = getStar ?? (() => 1);
+    // 计算编队基础战力（不含羁绊）
+    let basePower = 0;
+    for (const id of generalIds) {
+      const g = this.state.generals[id];
+      if (g) basePower += this.calculatePower(g, starGetter(id));
+    }
+    // 羁绊系数优先级：显式参数 > 注入回调 > 默认 1.0（与 calculatePower 一致）
+    const bondCoeff = bondMultiplier ?? this._getBondMultiplier?.(generalIds) ?? 1.0;
+    return Math.floor(basePower * bondCoeff);
   }
 
   // ── 3. 碎片管理 ──
@@ -330,12 +400,13 @@ export class HeroSystem implements ISubsystem {
   addExp(generalId: string, exp: number): { general: GeneralData; levelsGained: number } | null {
     const general = this.state.generals[generalId];
     if (!general) return null;
-    if (general.level >= HERO_MAX_LEVEL) return null;
+    const maxLevel = this.getMaxLevel(generalId);
+    if (general.level >= maxLevel) return null;
 
     let levelsGained = 0;
     let remainingExp = exp;
 
-    while (remainingExp > 0 && general.level < HERO_MAX_LEVEL) {
+    while (remainingExp > 0 && general.level < maxLevel) {
       const required = this.getExpRequired(general.level);
       const currentExp = general.exp + remainingExp;
       if (currentExp >= required) {

@@ -12,6 +12,7 @@ import { QUALITY_LABELS, QUALITY_BORDER_COLORS, FACTION_LABELS } from '@/games/t
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { HERO_QUALITY_BG_COLORS } from '../../common/constants';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
+import { QualityBadge, StarDisplay } from './atoms';
 import './HeroCard.css';
 
 // ─────────────────────────────────────────────
@@ -85,10 +86,13 @@ const HeroCard: React.FC<HeroCardProps> = ({ general, engine, onClick }) => {
       aria-label={`${general.name} Lv.${general.level} 战力${power}`}
       data-testid={`hero-card-${general.id}`}
     >
-      {/* 品质标签 — 左上角 */}
-      <span className="tk-hero-card-quality" style={{ background: borderColor }}>
-        {qualityLabel}
-      </span>
+      {/* 品质标签 — 左上角（使用原子组件） */}
+      <QualityBadge quality={general.quality} size="small" className="tk-hero-card-quality" />
+
+      {/* 星级显示 */}
+      <div className="tk-hero-card-stars">
+        <StarDisplay stars={general.level >= 40 ? 5 : general.level >= 30 ? 4 : general.level >= 20 ? 3 : general.level >= 10 ? 2 : 1} size="small" />
+      </div>
 
       {/* 头像区 */}
       <div

@@ -1,0 +1,237 @@
+/**
+ * FormationRecommendPanel — 编队推荐面板样式
+ *
+ * 配色：古铜金主题
+ * 布局：纵向排列推荐方案卡片
+ */
+
+/* ═══════════════════════════════════════════
+   面板容器
+   ═══════════════════════════════════════════ */
+.tk-recommend-panel {
+  width: 100%;
+  padding: 12px 0;
+}
+
+.tk-recommend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.tk-recommend-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tk-gold-light);
+}
+
+.tk-recommend-close-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  color: var(--tk-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tk-recommend-close-btn:hover {
+  border-color: var(--tk-gold);
+  color: var(--tk-gold-light);
+}
+
+/* ═══════════════════════════════════════════
+   推荐方案卡片
+   ═══════════════════════════════════════════ */
+.tk-recommend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tk-recommend-card {
+  background: rgba(240, 230, 211, 0.04);
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 8px;
+  padding: 12px 14px;
+  transition: border-color 0.15s;
+}
+
+.tk-recommend-card--best {
+  border-color: color-mix(in srgb, var(--tk-quality-legendary, #ff9800) 40%, transparent);
+}
+
+.tk-recommend-card--balanced {
+  border-color: color-mix(in srgb, var(--tk-blue, #3498DB) 40%, transparent);
+}
+
+.tk-recommend-card--synergy {
+  border-color: color-mix(in srgb, var(--tk-green, #7EC850) 40%, transparent);
+}
+
+/* 卡片头部 */
+.tk-recommend-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.tk-recommend-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+}
+
+.tk-recommend-card-score {
+  font-size: 12px;
+  color: var(--tk-gold-light);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 战力与差值 */
+.tk-recommend-power-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.tk-recommend-power {
+  color: var(--tk-green);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-recommend-power-diff--positive {
+  color: var(--tk-green);
+  font-size: 11px;
+}
+
+.tk-recommend-power-diff--negative {
+  color: var(--tk-red);
+  font-size: 11px;
+}
+
+.tk-recommend-power-diff--zero {
+  color: var(--tk-text-muted);
+  font-size: 11px;
+}
+
+/* 羁绊列表 */
+.tk-recommend-bonds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.tk-recommend-bond-tag {
+  padding: 2px 8px;
+  background: color-mix(in srgb, var(--tk-green, #7EC850) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tk-green, #7EC850) 25%, transparent);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--tk-green);
+}
+
+/* 武将槽位 */
+.tk-recommend-slots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.tk-recommend-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  height: 32px;
+  padding: 0 8px;
+  background: rgba(240, 230, 211, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--tk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tk-recommend-slot--empty {
+  color: var(--tk-text-muted);
+  border-style: dashed;
+  font-size: 14px;
+}
+
+/* 推荐依据 */
+.tk-recommend-basis {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+/* 应用按钮 */
+.tk-recommend-apply-btn {
+  width: 100%;
+  padding: 6px 0;
+  background: rgba(200, 168, 76, 0.15);
+  border: 1px solid var(--tk-gold);
+  border-radius: 4px;
+  color: var(--tk-gold-light);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tk-recommend-apply-btn:hover:not(:disabled) {
+  background: rgba(200, 168, 76, 0.3);
+}
+
+.tk-recommend-apply-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════
+   空状态
+   ═══════════════════════════════════════════ */
+.tk-recommend-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--tk-text-muted);
+  font-size: 13px;
+}
+
+/* ═══════════════════════════════════════════
+   响应式
+   ═══════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .tk-recommend-card {
+    padding: 10px 12px;
+  }
+
+  .tk-recommend-slots {
+    gap: 4px;
+  }
+
+  .tk-recommend-slot {
+    min-width: 48px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .tk-recommend-power-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}

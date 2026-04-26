@@ -36,9 +36,9 @@ export type RecruitType = 'normal' | 'advanced';
  */
 export const RECRUIT_COSTS: Record<RecruitType, { resourceType: string; amount: number }> = {
   normal: {
-    /** 普通招募消耗招贤榜（v2.0 修正：铜钱×100 → 招贤榜×1） */
+    /** 普通招募消耗招贤榜（R3 修正：1→5，解决经济通胀问题） */
     resourceType: 'recruitToken',
-    amount: 1,
+    amount: 5,
   },
   advanced: {
     /** 高级招募消耗求贤令（v2.0 修正：×1 → ×100） */

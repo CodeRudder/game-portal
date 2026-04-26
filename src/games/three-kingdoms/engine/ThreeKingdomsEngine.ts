@@ -14,10 +14,13 @@ import { HeroFormation } from './hero/HeroFormation';
 import { HeroStarSystem } from './hero/HeroStarSystem';
 import { SkillUpgradeSystem } from './hero/SkillUpgradeSystem';
 import { BondSystem } from './bond/BondSystem';
+import { FactionBondSystem } from './hero/faction-bond-system';
 import { FormationRecommendSystem } from './hero/FormationRecommendSystem';
 import { HeroDispatchSystem } from './hero/HeroDispatchSystem';
 import { HeroBadgeSystem } from './hero/HeroBadgeSystem';
 import { HeroAttributeCompare } from './hero/HeroAttributeCompare';
+import { RecruitTokenEconomySystem } from './hero/recruit-token-economy-system';
+import { CopperEconomySystem } from './resource/copper-economy-system';
 import type { CapWarning, OfflineEarnings } from './resource/resource.types';
 import type { BuildingType, UpgradeCost, UpgradeCheckResult } from './building/building.types';
 import type { EngineEventType, EngineEventMap, EngineSnapshot } from '../shared/types';
@@ -84,10 +87,13 @@ export class ThreeKingdomsEngine {
   private readonly heroStarSystem: HeroStarSystem;
   private readonly skillUpgradeSystem: SkillUpgradeSystem;
   private readonly bondSystem: BondSystem;
+  private readonly factionBondSystem: FactionBondSystem;
   private readonly formationRecommendSystem: FormationRecommendSystem;
   private readonly heroDispatchSystem: HeroDispatchSystem;
   private readonly heroBadgeSystem: HeroBadgeSystem;
   private readonly heroAttributeCompare: HeroAttributeCompare;
+  private readonly recruitTokenEconomy: RecruitTokenEconomySystem;
+  private readonly copperEconomy: CopperEconomySystem;
   private readonly campaignSystems: CampaignSystems;
   private readonly sweepSystem: SweepSystem;
   private readonly vipSystem: VIPSystem;
@@ -118,10 +124,13 @@ export class ThreeKingdomsEngine {
     this.heroStarSystem = new HeroStarSystem(this.hero);
     this.skillUpgradeSystem = new SkillUpgradeSystem();
     this.bondSystem = new BondSystem();
+    this.factionBondSystem = new FactionBondSystem();
     this.formationRecommendSystem = new FormationRecommendSystem();
     this.heroDispatchSystem = new HeroDispatchSystem();
     this.heroBadgeSystem = new HeroBadgeSystem();
     this.heroAttributeCompare = new HeroAttributeCompare();
+    this.recruitTokenEconomy = new RecruitTokenEconomySystem();
+    this.copperEconomy = new CopperEconomySystem();
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
     const self = this;
     this.sweepSystem = new SweepSystem(
@@ -204,10 +213,13 @@ export class ThreeKingdomsEngine {
     r.register('heroStarSystem', this.heroStarSystem);
     r.register('skillUpgradeSystem', this.skillUpgradeSystem);
     r.register('bond', this.bondSystem);
+    r.register('factionBond', this.factionBondSystem);
     r.register('formationRecommend', this.formationRecommendSystem);
     r.register('heroDispatch', this.heroDispatchSystem);
     r.register('heroBadge', this.heroBadgeSystem);
     r.register('heroAttributeCompare', this.heroAttributeCompare);
+    r.register('recruitTokenEconomy', this.recruitTokenEconomy);
+    r.register('copperEconomy', this.copperEconomy);
     r.register('battleEngine', this.campaignSystems.battleEngine);
     r.register('campaignSystem', this.campaignSystems.campaignSystem);
     r.register('rewardDistributor', this.campaignSystems.rewardDistributor);
@@ -243,7 +255,7 @@ export class ThreeKingdomsEngine {
     if (this.initialized) return;
     syncBuildingToResource(this.buildTickCtx());
     const deps = this.buildDeps();
-    this.calendar.init(deps); this.initHeroSystems(deps); this.bondSystem.init(deps);
+    this.calendar.init(deps); this.initHeroSystems(deps); this.bondSystem.init(deps); this.factionBondSystem.init(deps);
     this.formationRecommendSystem.init(deps);
     this.heroDispatchSystem.init(deps);
     this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
@@ -251,6 +263,8 @@ export class ThreeKingdomsEngine {
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
     this.initResourceTradeDeps();
+    this.initRecruitTokenEconomyDeps();
+    this.initCopperEconomyDeps();
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
     this.initialized = true; this.lastTickTime = Date.now();
@@ -314,13 +328,16 @@ export class ThreeKingdomsEngine {
   deserialize(json: string): void {
     applyDeserialize(this.buildSaveCtx(), json);
     const deps = this.buildDeps();
-    this.initHeroSystems(deps); this.bondSystem.init(deps);
+    this.initHeroSystems(deps); this.bondSystem.init(deps); this.factionBondSystem.init(deps);
     this.formationRecommendSystem.init(deps);
     this.heroDispatchSystem.init(deps);
     this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
+    this.initResourceTradeDeps();
+    this.initRecruitTokenEconomyDeps();
+    this.initCopperEconomyDeps();
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
     this.initialized = true; this.lastTickTime = Date.now();
@@ -331,9 +348,11 @@ export class ThreeKingdomsEngine {
   reset(): void {
     this.resource.reset(); this.building.reset(); this.calendar.reset();
     this.hero.reset(); this.heroRecruit.reset(); this.heroLevel.reset();
-    this.heroFormation.reset(); this.heroStarSystem.reset(); this.skillUpgradeSystem.reset(); this.bondSystem.reset();
+    this.heroFormation.reset(); this.heroStarSystem.reset(); this.skillUpgradeSystem.reset(); this.bondSystem.reset(); this.factionBondSystem.reset();
     this.formationRecommendSystem.reset(); this.heroDispatchSystem.reset();
     this.heroBadgeSystem.reset(); this.heroAttributeCompare.reset();
+    this.recruitTokenEconomy.reset();
+    this.copperEconomy.reset();
     this.campaignSystems.campaignSystem.reset(); this.sweepSystem.reset();
     this.vipSystem.reset(); this.challengeStageSystem.reset();
     this.techSystems.treeSystem.reset(); this.techSystems.pointSystem.reset();
@@ -411,7 +430,7 @@ export class ThreeKingdomsEngine {
   // ── 私有方法 ──
 
   private get heroSystems(): HeroSystems {
-    return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel };
+    return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel, heroStar: this.heroStarSystem };
   }
   private initHeroSystems(deps: ISystemDeps): void {
     initHeroSystems(this.heroSystems, this.resource, deps);
@@ -536,6 +555,30 @@ export class ThreeKingdomsEngine {
       getMarketLevel: () => this.building.getLevel('market'),
     });
   }
+  /** 注入 RecruitTokenEconomySystem 的资源操作依赖 */
+  private initRecruitTokenEconomyDeps(): void {
+    const self = this;
+    this.recruitTokenEconomy.init(this.buildDeps());
+    this.recruitTokenEconomy.setEconomyDeps({
+      addRecruitToken: (amount: number) => self.resource.addResource('recruitToken', amount),
+      consumeGold: (amount: number) => {
+        try { self.resource.consumeResource('gold', amount); return true; } catch { return false; }
+      },
+      getGoldAmount: () => self.resource.getAmount('gold'),
+    });
+  }
+  /** 注入 CopperEconomySystem 的资源操作依赖 */
+  private initCopperEconomyDeps(): void {
+    const self = this;
+    this.copperEconomy.init(this.buildDeps());
+    this.copperEconomy.setEconomyDeps({
+      addGold: (amount: number) => self.resource.addResource('gold', amount),
+      consumeGold: (amount: number) => {
+        try { self.resource.consumeResource('gold', amount); return true; } catch { return false; }
+      },
+      getGoldAmount: () => self.resource.getAmount('gold'),
+    });
+  }
   private buildSaveCtx(): SaveContext {
     return {
       resource: this.resource, building: this.building, calendar: this.calendar,
@@ -561,7 +604,7 @@ export class ThreeKingdomsEngine {
   }
   private finalizeLoad(): void {
     const deps = this.buildDeps();
-    this.initHeroSystems(deps); this.bondSystem.init(deps);
+    this.initHeroSystems(deps); this.bondSystem.init(deps); this.factionBondSystem.init(deps);
     this.formationRecommendSystem.init(deps);
     this.heroDispatchSystem.init(deps);
     this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
@@ -569,6 +612,8 @@ export class ThreeKingdomsEngine {
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
     this.initResourceTradeDeps();
+    this.initRecruitTokenEconomyDeps();
+    this.initCopperEconomyDeps();
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;

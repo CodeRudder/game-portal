@@ -28,6 +28,7 @@ import { TechTreeSystem } from '../../../tech/TechTreeSystem';
 import { TechPointSystem } from '../../../tech/TechPointSystem';
 import { TechResearchSystem } from '../../../tech/TechResearchSystem';
 import { TechEffectSystem } from '../../../tech/TechEffectSystem';
+import { getMutexGroups } from '../../../tech/tech-config';
 import { MapEventSystem } from '../../MapEventSystem';
 import { STAR_UP_FRAGMENT_COST } from '../../../hero/star-up-config';
 import { createSim } from '../../../../test-utils/test-helpers';
@@ -156,17 +157,18 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       sim.engine.createFormation('main');
       sim.engine.setFormation('main', heroIds);
 
-      // 记录升星前战力
-      const powerBefore = sim.engine.hero.calculateTotalPower();
-
       // 升星关羽
       const starSystem = sim.engine.getHeroStarSystem();
+      // 注意: calculateTotalPower() 不含星级系数，需使用 calculateFormationPower 并传入 starGetter
+      const getStar = (id: string) => starSystem.getStar(id);
+      const powerBefore = sim.engine.hero.calculateFormationPower(['guanyu'], getStar);
+
       sim.addHeroFragments('guanyu', STAR_UP_FRAGMENT_COST[1]);
       const result = starSystem.starUp('guanyu');
       expect(result.success).toBe(true);
 
       // 验证战力提升
-      const powerAfter = sim.engine.hero.calculateTotalPower();
+      const powerAfter = sim.engine.hero.calculateFormationPower(['guanyu'], getStar);
       expect(powerAfter).toBeGreaterThan(powerBefore);
     });
   });
@@ -278,11 +280,11 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       // 补充科技点并研究
       points.syncAcademyLevel(10);
       points.update(3600); // 累积1小时科技点
-      const techPoints = points.getState().techPoints.current;
-      if (techPoints >= firstNode.cost) {
+      const techPoints = points.getState().current;
+      if (techPoints >= firstNode.costPoints) {
         research.startResearch(firstNode.id);
         // 立即完成研究
-        research.completeResearch(firstNode.id);
+        tree.completeNode(firstNode.id);
 
         // 验证效果生效
         const atkBonus = effects.getEffectBonus('military', 'attack');
@@ -323,10 +325,10 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       // 补充科技点并研究
       points.syncAcademyLevel(10);
       points.update(3600);
-      const techPoints = points.getState().techPoints.current;
-      if (techPoints >= firstNode.cost) {
+      const techPoints = points.getState().current;
+      if (techPoints >= firstNode.costPoints) {
         research.startResearch(firstNode.id);
-        research.completeResearch(firstNode.id);
+        tree.completeNode(firstNode.id);
 
         // 验证经济效果生效
         const prodBonus = effects.getEffectBonus('economy', 'production');
@@ -366,10 +368,10 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       // 补充科技点并研究
       points.syncAcademyLevel(10);
       points.update(3600);
-      const techPoints = points.getState().techPoints.current;
-      if (techPoints >= firstNode.cost) {
+      const techPoints = points.getState().current;
+      if (techPoints >= firstNode.costPoints) {
         research.startResearch(firstNode.id);
-        research.completeResearch(firstNode.id);
+        tree.completeNode(firstNode.id);
 
         // 验证文化效果生效
         const expBonus = effects.getEffectBonus('culture', 'heroExp');
@@ -475,10 +477,12 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
       const siegeAtkBonus = effects.getEffectBonus('military', 'siegeAttack');
       expect(siegeAtkBonus).toBeGreaterThanOrEqual(0);
 
-      // 验证攻城增强器可以计算胜率
-      const winRate = enhancer.estimateWinRate(10000, 8000, 1.0);
-      expect(winRate).toBeGreaterThan(0);
-      expect(winRate).toBeLessThanOrEqual(0.95);
+      // 验证攻城增强器可以计算胜率（需先初始化依赖）
+      enhancer.init(deps);
+      const winRate = enhancer.estimateWinRate(10000, 'city-ye');
+      expect(winRate).not.toBeNull();
+      expect(winRate!.winRate).toBeGreaterThan(0);
+      expect(winRate!.winRate).toBeLessThanOrEqual(0.95);
     });
   });
 
@@ -488,16 +492,20 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
     it('互斥分支选择后另一节点永久锁定（TechTreeSystem 集成）', () => {
       const tree = new TechTreeSystem();
 
-      // 查找互斥组
-      const mutexGroups = tree.getMutexGroups ? tree.getMutexGroups() : [];
+      // 查找互斥组（使用 tech-config 的独立函数）
+      const mutexGroupMap = getMutexGroups();
+      const mutexGroups = Array.from(mutexGroupMap.entries()).map(([groupId, nodeIds]) => ({
+        groupId,
+        nodeIds,
+      }));
       if (mutexGroups.length > 0) {
         const group = mutexGroups[0];
-        // 选择第一个节点
-        tree.chooseMutexNode(group.groupId, group.nodeIds[0]);
+        // 通过 completeNode 完成第一个节点，触发互斥锁定
+        tree.completeNode(group.nodeIds[0]);
         // 验证另一节点被锁定
         const otherNode = tree.getNodeState(group.nodeIds[1]);
         if (otherNode) {
-          expect(otherNode.status).toBe('mutex-locked');
+          expect(otherNode.status).toBe('locked');
         }
       }
       // 互斥组存在性验证

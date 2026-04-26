@@ -18,12 +18,18 @@ export type ResourceSpendFn = (resourceType: string, amount: number) => boolean;
 export type ResourceCheckFn = (resourceType: string, amount: number) => boolean;
 export type ResourceGetFn = (resourceType: string) => number;
 
-/** 升级系统业务依赖（通过回调解耦 ResourceSystem） */
+/** 升级系统业务依赖（通过回调解耦 ResourceSystem / HeroStarSystem） */
 export interface LevelDeps {
   heroSystem: HeroSystem;
   spendResource: ResourceSpendFn;
   canAffordResource: ResourceCheckFn;
   getResourceAmount: ResourceGetFn;
+  /**
+   * 获取武将当前等级上限（由突破阶段决定）。
+   * 返回值：50 / 60 / 70 / 80 / 100。
+   * 如未注入，fallback 到 HERO_MAX_LEVEL(50)。
+   */
+  getLevelCap?: (generalId: string) => number;
 }
 
 /** 属性变化快照 */
@@ -73,7 +79,8 @@ const STAT_GROWTH_RATE = 0.03;
 
 // ── 辅助函数 ──
 
-/** 查表获取升到下一级所需经验（PRD HER-3） */
+/** 查表获取升到下一级所需经验（PRD HER-3）
+ *  1~70 级均有分段配置，超出范围使用最后一段的系数 */
 function lookupExpRequired(level: number): number {
   for (const tier of LEVEL_EXP_TABLE) {
     if (level >= tier.levelMin && level <= tier.levelMax) return level * tier.expPerLevel;
@@ -81,7 +88,8 @@ function lookupExpRequired(level: number): number {
   return level * LEVEL_EXP_TABLE[LEVEL_EXP_TABLE.length - 1].expPerLevel;
 }
 
-/** 查表获取升级所需铜钱（PRD HER-3） */
+/** 查表获取升级所需铜钱（PRD HER-3）
+ *  1~70 级均有分段配置，超出范围使用最后一段的系数 */
 function lookupGoldRequired(level: number): number {
   for (const tier of LEVEL_EXP_TABLE) {
     if (level >= tier.levelMin && level <= tier.levelMax) return level * tier.goldPerLevel;
@@ -152,28 +160,54 @@ export class HeroLevelSystem implements ISubsystem {
   /** 设置业务依赖 */
   setLevelDeps(deps: LevelDeps): void { this.levelDeps = deps; }
 
+  // ── 动态等级上限 ──
+
+  /**
+   * 获取武将的当前等级上限。
+   *
+   * 优先从 HeroStarSystem.getLevelCap() 动态获取（突破阶段决定），
+   * 若未注入回调则 fallback 到 HERO_MAX_LEVEL(50)。
+   *
+   * 突破阶段 → 等级上限：0→50, 1→60, 2→70, 3→80, 4→100
+   */
+  private getMaxLevel(generalId: string): number {
+    if (this.levelDeps?.getLevelCap) {
+      return this.levelDeps.getLevelCap(generalId);
+    }
+    return HERO_MAX_LEVEL;
+  }
+
+  /** 获取武将的等级上限（公开方法，供外部查询） */
+  getHeroMaxLevel(generalId: string): number {
+    return this.getMaxLevel(generalId);
+  }
+
   // ── 1. 消耗计算（纯函数） ──
 
   /** 升到下一级所需经验；满级返回 0 */
-  calculateExpToNextLevel(level: number): number {
-    return level >= HERO_MAX_LEVEL ? 0 : lookupExpRequired(level);
+  calculateExpToNextLevel(level: number, generalId?: string): number {
+    const cap = generalId ? this.getMaxLevel(generalId) : HERO_MAX_LEVEL;
+    return level >= cap ? 0 : lookupExpRequired(level);
   }
 
   /** 升到下一级所需铜钱；满级返回 0 */
-  calculateLevelUpCost(level: number): number {
-    return level >= HERO_MAX_LEVEL ? 0 : lookupGoldRequired(level);
+  calculateLevelUpCost(level: number, generalId?: string): number {
+    const cap = generalId ? this.getMaxLevel(generalId) : HERO_MAX_LEVEL;
+    return level >= cap ? 0 : lookupGoldRequired(level);
   }
 
   /** 从 fromLevel 到 toLevel 的总经验 */
-  calculateTotalExp(from: number, to: number): number {
-    if (to <= from || from >= HERO_MAX_LEVEL) return 0;
-    return totalExpBetween(from, Math.min(to, HERO_MAX_LEVEL));
+  calculateTotalExp(from: number, to: number, generalId?: string): number {
+    const cap = generalId ? this.getMaxLevel(generalId) : HERO_MAX_LEVEL;
+    if (to <= from || from >= cap) return 0;
+    return totalExpBetween(from, Math.min(to, cap));
   }
 
   /** 从 fromLevel 到 toLevel 的总铜钱 */
-  calculateTotalGold(from: number, to: number): number {
-    if (to <= from || from >= HERO_MAX_LEVEL) return 0;
-    return totalGoldBetween(from, Math.min(to, HERO_MAX_LEVEL));
+  calculateTotalGold(from: number, to: number, generalId?: string): number {
+    const cap = generalId ? this.getMaxLevel(generalId) : HERO_MAX_LEVEL;
+    if (to <= from || from >= cap) return 0;
+    return totalGoldBetween(from, Math.min(to, cap));
   }
 
   // ── 2. 经验获取（功能点9） ──
@@ -186,14 +220,15 @@ export class HeroLevelSystem implements ISubsystem {
     if (!this.levelDeps || amount <= 0) return null;
     const { heroSystem } = this.levelDeps;
     const general = heroSystem.getGeneral(generalId);
-    if (!general || general.level >= HERO_MAX_LEVEL) return null;
+    const maxLevel = this.getMaxLevel(generalId);
+    if (!general || general.level >= maxLevel) return null;
 
     const beforeLevel = general.level;
     const beforeStats = statsAtLevel(general.baseStats, beforeLevel);
     let curLv = general.level, curExp = general.exp, rem = amount;
     let goldSpent = 0, gained = 0;
 
-    while (rem > 0 && curLv < HERO_MAX_LEVEL) {
+    while (rem > 0 && curLv < maxLevel) {
       const expReq = lookupExpRequired(curLv);
       const goldReq = lookupGoldRequired(curLv);
       const acc = curExp + rem;
@@ -232,7 +267,8 @@ export class HeroLevelSystem implements ISubsystem {
     if (!this.levelDeps) return null;
     const { heroSystem } = this.levelDeps;
     const general = heroSystem.getGeneral(generalId);
-    if (!general || general.level >= HERO_MAX_LEVEL) return null;
+    const maxLevel = this.getMaxLevel(generalId);
+    if (!general || general.level >= maxLevel) return null;
 
     const expReq = this.calculateExpToNextLevel(general.level);
     const goldReq = this.calculateLevelUpCost(general.level);
@@ -260,7 +296,8 @@ export class HeroLevelSystem implements ISubsystem {
     const general = heroSystem.getGeneral(generalId);
     if (!general) return null;
 
-    const capped = Math.min(targetLevel, HERO_MAX_LEVEL);
+    const maxLevel = this.getMaxLevel(generalId);
+    const capped = Math.min(targetLevel, maxLevel);
     const cur = general.level;
 
     if (cur >= capped) {
@@ -295,11 +332,12 @@ export class HeroLevelSystem implements ISubsystem {
     if (!this.levelDeps) return null;
     const { heroSystem } = this.levelDeps;
     const general = heroSystem.getGeneral(generalId);
-    if (!general || general.level >= HERO_MAX_LEVEL) return null;
+    const maxLevel = this.getMaxLevel(generalId);
+    if (!general || general.level >= maxLevel) return null;
 
     const maxLv = this.calculateMaxAffordableLevel(general);
     const final = targetLevel !== undefined
-      ? Math.min(targetLevel, maxLv, HERO_MAX_LEVEL) : maxLv;
+      ? Math.min(targetLevel, maxLv, maxLevel) : maxLv;
     if (final <= general.level) return null;
 
     const beforeLv = general.level;
@@ -327,7 +365,7 @@ export class HeroLevelSystem implements ISubsystem {
 
     const { heroSystem } = this.levelDeps;
     const sorted = sortByPriority(
-      heroSystem, heroSystem.getAllGenerals().filter((g) => g.level < HERO_MAX_LEVEL),
+      heroSystem, heroSystem.getAllGenerals().filter((g) => g.level < this.getMaxLevel(g.id)),
     );
     if (sorted.length === 0) return empty;
 
@@ -373,7 +411,7 @@ export class HeroLevelSystem implements ISubsystem {
 
     for (const id of heroIds) {
       const general = heroSystem.getGeneral(id);
-      if (!general || general.level >= HERO_MAX_LEVEL) {
+      if (!general || general.level >= this.getMaxLevel(id)) {
         skipped.push(id);
         continue;
       }
@@ -399,7 +437,7 @@ export class HeroLevelSystem implements ISubsystem {
     if (!this.levelDeps) return [];
     const { heroSystem } = this.levelDeps;
     const sorted = sortByPriority(
-      heroSystem, heroSystem.getAllGenerals().filter((g) => g.level < HERO_MAX_LEVEL),
+      heroSystem, heroSystem.getAllGenerals().filter((g) => g.level < this.getMaxLevel(g.id)),
     );
     const previews: EnhancePreview[] = [];
     for (const g of sorted) {
@@ -415,12 +453,13 @@ export class HeroLevelSystem implements ISubsystem {
 
   /** 计算资源允许的最高可达等级 */
   calculateMaxAffordableLevel(general: GeneralData): number {
-    if (!this.levelDeps || general.level >= HERO_MAX_LEVEL) return general.level;
+    const maxLevel = this.getMaxLevel(general.id);
+    if (!this.levelDeps || general.level >= maxLevel) return general.level;
     let remExp = this.levelDeps.getResourceAmount(EXP_TYPE) + general.exp;
     let remGold = this.levelDeps.getResourceAmount(GOLD_TYPE);
     let lv = general.level;
 
-    while (lv < HERO_MAX_LEVEL) {
+    while (lv < maxLevel) {
       const eR = lookupExpRequired(lv), gR = lookupGoldRequired(lv);
       if (remExp < eR || remGold < gR) break;
       remExp -= eR; remGold -= gR; lv += 1;
@@ -433,8 +472,9 @@ export class HeroLevelSystem implements ISubsystem {
     if (!this.levelDeps) return null;
     const g = this.levelDeps.heroSystem.getGeneral(generalId);
     if (!g) return null;
-    if (g.level >= HERO_MAX_LEVEL) return { current: 0, required: 0, percentage: 100 };
-    const req = this.calculateExpToNextLevel(g.level);
+    const maxLevel = this.getMaxLevel(generalId);
+    if (g.level >= maxLevel) return { current: 0, required: 0, percentage: 100 };
+    const req = this.calculateExpToNextLevel(g.level, generalId);
     return {
       current: g.exp, required: req,
       percentage: req > 0 ? Math.min(100, Math.floor((g.exp / req) * 100)) : 0,
@@ -445,16 +485,17 @@ export class HeroLevelSystem implements ISubsystem {
   canLevelUp(generalId: string): boolean {
     if (!this.levelDeps) return false;
     const g = this.levelDeps.heroSystem.getGeneral(generalId);
-    if (!g || g.level >= HERO_MAX_LEVEL) return false;
-    return g.exp >= this.calculateExpToNextLevel(g.level)
-      && this.levelDeps.canAffordResource(GOLD_TYPE, this.calculateLevelUpCost(g.level));
+    const maxLevel = this.getMaxLevel(generalId);
+    if (!g || g.level >= maxLevel) return false;
+    return g.exp >= this.calculateExpToNextLevel(g.level, generalId)
+      && this.levelDeps.canAffordResource(GOLD_TYPE, this.calculateLevelUpCost(g.level, generalId));
   }
 
   /** 获取所有可升级的武将ID */
   getUpgradableGeneralIds(): string[] {
     if (!this.levelDeps) return [];
     return this.levelDeps.heroSystem.getAllGenerals()
-      .filter((g) => g.level < HERO_MAX_LEVEL && this.canLevelUp(g.id))
+      .filter((g) => g.level < this.getMaxLevel(g.id) && this.canLevelUp(g.id))
       .map((g) => g.id);
   }
 

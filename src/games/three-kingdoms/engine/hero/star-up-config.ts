@@ -76,32 +76,32 @@ export function getStarMultiplier(star: number): number {
 export const BREAKTHROUGH_TIERS: readonly BreakthroughTier[] = [
   {
     name: '一阶突破',
-    levelCapBefore: 30,
-    levelCapAfter: 40,
+    levelCapBefore: 50,
+    levelCapAfter: 60,
     fragmentCost: 30,
     goldCost: 20000,
     breakthroughStoneCost: 5,
   },
   {
     name: '二阶突破',
-    levelCapBefore: 40,
-    levelCapAfter: 50,
+    levelCapBefore: 60,
+    levelCapAfter: 70,
     fragmentCost: 50,
     goldCost: 50000,
     breakthroughStoneCost: 10,
   },
   {
     name: '三阶突破',
-    levelCapBefore: 50,
-    levelCapAfter: 60,
+    levelCapBefore: 70,
+    levelCapAfter: 80,
     fragmentCost: 80,
     goldCost: 100000,
     breakthroughStoneCost: 20,
   },
   {
     name: '四阶突破',
-    levelCapBefore: 60,
-    levelCapAfter: 70,
+    levelCapBefore: 80,
+    levelCapAfter: 100,
     fragmentCost: 120,
     goldCost: 200000,
     breakthroughStoneCost: 40,
@@ -111,8 +111,8 @@ export const BREAKTHROUGH_TIERS: readonly BreakthroughTier[] = [
 /** 最大突破阶段数 */
 export const MAX_BREAKTHROUGH_STAGE = BREAKTHROUGH_TIERS.length;
 
-/** 初始等级上限（未突破） */
-export const INITIAL_LEVEL_CAP = 30;
+/** 初始等级上限（未突破）— PRD v1.5: 初始50级 */
+export const INITIAL_LEVEL_CAP = 50;
 
 /** 最终等级上限（全部突破后） */
 export const FINAL_LEVEL_CAP = BREAKTHROUGH_TIERS[BREAKTHROUGH_TIERS.length - 1].levelCapAfter;

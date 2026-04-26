@@ -1,0 +1,89 @@
+/**
+ * QualityBadge — 品质标签样式
+ *
+ * 品质色使用 CSS 变量 --hero-quality-*，与全局设计系统解耦。
+ * 禁止闪烁/渐变动画，保持纯静态展示。
+ */
+
+/* ═══════════════════════════════════════════
+   品质色彩变量（组件级作用域）
+   ═══════════════════════════════════════════ */
+.tk-quality-badge {
+  --hero-quality-common: #9CA3AF;
+  --hero-quality-fine: #10B981;
+  --hero-quality-rare: #3B82F6;
+  --hero-quality-epic: #8B5CF6;
+  --hero-quality-legendary: #F59E0B;
+}
+
+/* ═══════════════════════════════════════════
+   基础样式
+   ═══════════════════════════════════════════ */
+.tk-quality-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  border-radius: var(--tk-radius-sm, 4px);
+  white-space: nowrap;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+
+/* ═══════════════════════════════════════════
+   尺寸变体
+   ═══════════════════════════════════════════ */
+
+/* small — 标签模式 */
+.tk-quality-badge--small {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* normal — 徽章模式 */
+.tk-quality-badge--normal {
+  font-size: 14px;
+  padding: 3px 10px;
+  border-radius: var(--tk-radius-sm, 4px);
+}
+
+/* ═══════════════════════════════════════════
+   品质色变体
+   ═══════════════════════════════════════════ */
+
+/* 普通 — 灰色 */
+.tk-quality-badge--common {
+  color: var(--hero-quality-common);
+  background: rgba(156, 163, 175, 0.15);
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+/* 精良 — 绿色 */
+.tk-quality-badge--fine {
+  color: var(--hero-quality-fine);
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* 稀有 — 蓝色 */
+.tk-quality-badge--rare {
+  color: var(--hero-quality-rare);
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* 史诗 — 紫色 */
+.tk-quality-badge--epic {
+  color: var(--hero-quality-epic);
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+/* 传说 — 金色 */
+.tk-quality-badge--legendary {
+  color: var(--hero-quality-legendary);
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}

@@ -108,7 +108,7 @@ describe('V1 RES-FLOW 资源系统', () => {
     });
 
     it('should accumulate recruitToken over time (passive production)', () => {
-      // recruitToken 有基础被动产出（INITIAL_PRODUCTION_RATES.recruitToken = 0.003）
+      // recruitToken 有基础被动产出（INITIAL_PRODUCTION_RATES.recruitToken = 0.002）
       const sim = createSim();
 
       const tokenBefore = sim.getResource('recruitToken');

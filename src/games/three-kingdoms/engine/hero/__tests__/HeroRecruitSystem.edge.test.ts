@@ -4,7 +4,7 @@ import { vi } from 'vitest';
  * 覆盖：招募池为空、铜钱/求贤令为0、保底必定触发、碎片数量验证、连续招募100次
  *
  * 设计规格（hero-system-design.md）：
- * - 普通招募：recruitToken×1，高级招募：recruitToken×100
+ * - 普通招募：recruitToken×5（R3修正），高级招募：recruitToken×100
  * - 硬保底：100抽必出 LEGENDARY+
  */
 
@@ -81,7 +81,7 @@ describe('HeroRecruitSystem — 补充边界测试', () => {
   // ───────────────────────────────────────────
   describe('零资源场景', () => {
     it('招贤榜为 0 时普通招募失败', () => {
-      // 设计规格：普通招募消耗 recruitToken×1
+      // 设计规格：普通招募消耗 recruitToken×5（R3修正）
       const tracked = makeTrackedDeps(heroSystem, 0, 0);
       recruit.setRecruitDeps(tracked);
       expect(recruit.canRecruit('normal', 1)).toBe(false);
@@ -89,7 +89,7 @@ describe('HeroRecruitSystem — 补充边界测试', () => {
     });
 
     it('求贤令为 0 时高级招募失败', () => {
-      // 设计规格：高级招募消耗 recruitToken×1
+      // 设计规格：高级招募消耗 recruitToken×100
       const tracked = makeTrackedDeps(heroSystem, 1000, 0);
       recruit.setRecruitDeps(tracked);
       expect(recruit.canRecruit('advanced', 1)).toBe(false);
@@ -97,8 +97,8 @@ describe('HeroRecruitSystem — 补充边界测试', () => {
     });
 
     it('十连资源不足时返回 null', () => {
-      // 设计规格：十连普通 = recruitToken×1×10×1.0=10，5 不够
-      const tracked = makeTrackedDeps(heroSystem, 0, 5);
+      // 设计规格：十连普通 = recruitToken×5×10×1.0=50，40 不够
+      const tracked = makeTrackedDeps(heroSystem, 0, 40);
       recruit.setRecruitDeps(tracked);
       expect(recruit.recruitTen('normal')).toBeNull();
     });
@@ -171,12 +171,12 @@ describe('HeroRecruitSystem — 补充边界测试', () => {
   // ───────────────────────────────────────────
   describe('招募后资源正确扣除', () => {
     it('普通招募正确扣除招贤榜', () => {
-      // 设计规格：普通招募 recruitToken×1
+      // 设计规格：普通招募 recruitToken×5（R3修正）
       const tracked = makeTrackedDeps(heroSystem, 10000, 100);
       recruit.setRecruitDeps(tracked);
       const result = recruit.recruitSingle('normal')!;
       expect(result).not.toBeNull();
-      expect(tracked.resources.recruitToken).toBe(100 - 1);
+      expect(tracked.resources.recruitToken).toBe(100 - 5);
     });
 
     it('高级招募正确扣除求贤令', () => {
@@ -189,12 +189,12 @@ describe('HeroRecruitSystem — 补充边界测试', () => {
     });
 
     it('十连招募正确扣除折扣后的资源', () => {
-      // 设计规格：普通招募 recruitToken×1，TEN_PULL_DISCOUNT=1.0
+      // 设计规格：普通招募 recruitToken×5（R3修正），TEN_PULL_DISCOUNT=1.0
       const tracked = makeTrackedDeps(heroSystem, 10000, 100);
       recruit.setRecruitDeps(tracked);
       const result = recruit.recruitTen('normal')!;
       expect(result).not.toBeNull();
-      const expectedCost = Math.floor(1 * 10 * TEN_PULL_DISCOUNT);
+      const expectedCost = Math.floor(5 * 10 * TEN_PULL_DISCOUNT);
       expect(tracked.resources.recruitToken).toBe(100 - expectedCost);
     });
   });

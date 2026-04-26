@@ -4,13 +4,15 @@
  * PC端(1280×696)：居中弹窗
  * 手机端(375×507)：底部抽屉式弹窗
  * 设计风格：水墨江山·铜纹霸业
+ *
+ * 颜色规范：所有颜色通过 CSS 变量引用，便于全局换肤。
  */
 
 /* ── 遮罩层 ── */
 .tk-starup-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--tk-starup-overlay-bg, rgba(0, 0, 0, 0.7));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -30,8 +32,8 @@
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(26, 35, 50, 0.98) 0%, rgba(18, 22, 32, 0.99) 100%);
-  border: 1px solid rgba(200, 168, 76, 0.3);
+  background: var(--tk-starup-modal-bg, linear-gradient(180deg, rgba(26, 35, 50, 0.98) 0%, rgba(18, 22, 32, 0.99) 100%));
+  border: 1px solid var(--tk-starup-border, rgba(200, 168, 76, 0.3));
   border-radius: 12px;
   overflow: hidden;
   animation: tk-starup-slide-up 0.25s ease-out;
@@ -48,8 +50,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
-  background: rgba(200, 168, 76, 0.04);
+  border-bottom: 1px solid var(--tk-starup-divider, rgba(200, 168, 76, 0.15));
+  background: var(--tk-starup-header-bg, rgba(200, 168, 76, 0.04));
 }
 
 .tk-starup-title {
@@ -72,7 +74,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(200, 168, 76, 0.2);
+  border: 1px solid var(--tk-starup-close-border, rgba(200, 168, 76, 0.2));
   border-radius: 50%;
   background: transparent;
   color: var(--tk-text-secondary);
@@ -83,7 +85,7 @@
 }
 
 .tk-starup-close:hover {
-  background: rgba(200, 168, 76, 0.15);
+  background: var(--tk-starup-close-hover-bg, rgba(200, 168, 76, 0.15));
   color: var(--tk-text-primary);
 }
 
@@ -99,7 +101,7 @@
 }
 
 .tk-starup-body::-webkit-scrollbar-thumb {
-  background: rgba(200, 168, 76, 0.2);
+  background: var(--tk-starup-scrollbar-thumb, rgba(200, 168, 76, 0.2));
   border-radius: 2px;
 }
 
@@ -111,29 +113,29 @@
   gap: 4px;
   padding: 12px 0;
   margin-bottom: 12px;
-  border-bottom: 1px solid rgba(200, 168, 76, 0.08);
+  border-bottom: 1px solid var(--tk-starup-divider-light, rgba(200, 168, 76, 0.08));
 }
 
 .tk-starup-star {
   font-size: 24px;
-  color: rgba(100, 100, 100, 0.25);
+  color: var(--tk-starup-star-empty, rgba(100, 100, 100, 0.25));
   transition: all 0.3s;
 }
 
 .tk-starup-star--filled {
   color: var(--tk-gold);
-  text-shadow: 0 0 8px rgba(200, 168, 76, 0.4);
+  text-shadow: 0 0 8px var(--tk-starup-star-glow, rgba(200, 168, 76, 0.4));
 }
 
 .tk-starup-star--max {
-  color: #f1c40f;
-  text-shadow: 0 0 12px rgba(241, 196, 15, 0.6);
+  color: var(--tk-starup-star-max, var(--tk-gold-bright, #e8c468));
+  text-shadow: 0 0 12px var(--tk-starup-star-max-glow, rgba(232, 196, 104, 0.6));
   animation: tk-starup-star-glow 2s ease-in-out infinite;
 }
 
 @keyframes tk-starup-star-glow {
-  0%, 100% { text-shadow: 0 0 8px rgba(241, 196, 15, 0.4); }
-  50% { text-shadow: 0 0 16px rgba(241, 196, 15, 0.8); }
+  0%, 100% { text-shadow: 0 0 8px var(--tk-starup-star-max-glow-dim, rgba(232, 196, 104, 0.4)); }
+  50% { text-shadow: 0 0 16px var(--tk-starup-star-max-glow-bright, rgba(232, 196, 104, 0.8)); }
 }
 
 .tk-starup-level {
@@ -168,11 +170,11 @@
 }
 
 .tk-starup-fragment-count--sufficient {
-  color: #2ecc71;
+  color: var(--tk-success);
 }
 
 .tk-starup-fragment-count--insufficient {
-  color: #e74c3c;
+  color: var(--tk-danger);
 }
 
 .tk-starup-fragment-count--max {
@@ -182,7 +184,7 @@
 .tk-starup-progress-bar {
   width: 100%;
   height: 8px;
-  background: rgba(200, 168, 76, 0.08);
+  background: var(--tk-starup-progress-bg, rgba(200, 168, 76, 0.08));
   border-radius: 4px;
   overflow: hidden;
 }
@@ -193,11 +195,11 @@
   transition: width 0.4s ease-out;
 }
 
-.tk-starup-progress-fill--low { background: linear-gradient(90deg, #e74c3c, #c0392b); }
-.tk-starup-progress-fill--mid { background: linear-gradient(90deg, #f39c12, #e67e22); }
-.tk-starup-progress-fill--high { background: linear-gradient(90deg, #27ae60, #2ecc71); }
-.tk-starup-progress-fill--full { background: linear-gradient(90deg, var(--tk-gold), #f1c40f); }
-.tk-starup-progress-fill--max { background: linear-gradient(90deg, #9b59b6, #8e44ad); }
+.tk-starup-progress-fill--low { background: linear-gradient(90deg, var(--tk-danger), var(--tk-starup-progress-low, #c0392b)); }
+.tk-starup-progress-fill--mid { background: linear-gradient(90deg, var(--tk-orange), var(--tk-starup-progress-mid, #e67e22)); }
+.tk-starup-progress-fill--high { background: linear-gradient(90deg, var(--tk-success), var(--tk-starup-progress-high, #2ecc71)); }
+.tk-starup-progress-fill--full { background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-bright)); }
+.tk-starup-progress-fill--max { background: linear-gradient(90deg, var(--tk-purple), var(--tk-starup-progress-max, #8e44ad)); }
 
 .tk-starup-progress-text {
   font-size: 11px;
@@ -215,8 +217,8 @@
 
 .tk-starup-source-tag {
   padding: 3px 10px;
-  background: rgba(200, 168, 76, 0.08);
-  border: 1px solid rgba(200, 168, 76, 0.15);
+  background: var(--tk-starup-tag-bg, rgba(200, 168, 76, 0.08));
+  border: 1px solid var(--tk-starup-tag-border, rgba(200, 168, 76, 0.15));
   border-radius: 4px;
   font-size: 11px;
   color: var(--tk-text-secondary);
@@ -226,7 +228,7 @@
 }
 
 .tk-starup-source-tag:hover {
-  background: rgba(200, 168, 76, 0.2);
+  background: var(--tk-starup-tag-hover-bg, rgba(200, 168, 76, 0.2));
   border-color: var(--tk-gold);
   color: var(--tk-gold-light);
 }
@@ -235,15 +237,15 @@
 .tk-starup-preview {
   margin-bottom: 14px;
   padding: 12px;
-  background: rgba(52, 152, 219, 0.06);
-  border: 1px solid rgba(52, 152, 219, 0.15);
+  background: var(--tk-starup-preview-bg, rgba(52, 152, 219, 0.06));
+  border: 1px solid var(--tk-starup-preview-border, rgba(52, 152, 219, 0.15));
   border-radius: 8px;
 }
 
 .tk-starup-preview-title {
   font-size: 13px;
   font-weight: 600;
-  color: #3498db;
+  color: var(--tk-blue);
   margin-bottom: 8px;
 }
 
@@ -278,7 +280,7 @@
 .tk-starup-stat-before { color: var(--tk-text-muted); }
 .tk-starup-stat-arrow { color: var(--tk-text-secondary); font-size: 10px; }
 .tk-starup-stat-after { color: var(--tk-text-primary); font-weight: 600; }
-.tk-starup-stat-diff { color: #2ecc71; font-size: 11px; font-weight: 600; }
+.tk-starup-stat-diff { color: var(--tk-success); font-size: 11px; font-weight: 600; }
 
 /* ── 消耗区 ── */
 .tk-starup-cost-section {
@@ -293,23 +295,23 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: rgba(200, 168, 76, 0.04);
-  border: 1px solid rgba(200, 168, 76, 0.1);
+  background: var(--tk-starup-cost-bg, rgba(200, 168, 76, 0.04));
+  border: 1px solid var(--tk-starup-cost-border, rgba(200, 168, 76, 0.1));
   border-radius: 6px;
 }
 
 .tk-starup-cost-icon { font-size: 16px; }
 .tk-starup-cost-label { font-size: 11px; color: var(--tk-text-secondary); }
 .tk-starup-cost-value { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.tk-starup-cost-value--sufficient { color: #2ecc71; }
-.tk-starup-cost-value--insufficient { color: #e74c3c; }
+.tk-starup-cost-value--sufficient { color: var(--tk-success); }
+.tk-starup-cost-value--insufficient { color: var(--tk-danger); }
 
 /* ── 突破状态 ── */
 .tk-starup-breakthrough {
   margin-bottom: 14px;
   padding: 12px;
-  background: rgba(124, 58, 237, 0.06);
-  border: 1px solid rgba(124, 58, 237, 0.15);
+  background: var(--tk-starup-bt-bg, rgba(124, 58, 237, 0.06));
+  border: 1px solid var(--tk-starup-bt-border, rgba(124, 58, 237, 0.15));
   border-radius: 8px;
 }
 
@@ -323,7 +325,7 @@
 .tk-starup-bt-title {
   font-size: 13px;
   font-weight: 600;
-  color: #c4b5fd;
+  color: var(--tk-starup-bt-text, var(--tk-purple));
 }
 
 .tk-starup-bt-stage {
@@ -346,8 +348,8 @@
 
 .tk-starup-bt-row-label { color: var(--tk-text-secondary); }
 .tk-starup-bt-row-value { color: var(--tk-text-primary); font-variant-numeric: tabular-nums; }
-.tk-starup-bt-row-value--highlight { color: #c4b5fd; font-weight: 600; }
-.tk-starup-bt-row-value--warning { color: #e74c3c; }
+.tk-starup-bt-row-value--highlight { color: var(--tk-starup-bt-text, var(--tk-purple)); font-weight: 600; }
+.tk-starup-bt-row-value--warning { color: var(--tk-danger); }
 
 .tk-starup-bt-costs {
   display: flex;
@@ -363,15 +365,15 @@
 }
 
 .tk-starup-bt-cost-tag--sufficient {
-  background: rgba(39, 174, 96, 0.1);
-  border: 1px solid rgba(39, 174, 96, 0.2);
-  color: #2ecc71;
+  background: var(--tk-starup-bt-tag-ok-bg, rgba(39, 174, 96, 0.1));
+  border: 1px solid var(--tk-starup-bt-tag-ok-border, rgba(39, 174, 96, 0.2));
+  color: var(--tk-success);
 }
 
 .tk-starup-bt-cost-tag--insufficient {
-  background: rgba(231, 76, 60, 0.1);
-  border: 1px solid rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
+  background: var(--tk-starup-bt-tag-fail-bg, rgba(231, 76, 60, 0.1));
+  border: 1px solid var(--tk-starup-bt-tag-fail-border, rgba(231, 76, 60, 0.2));
+  color: var(--tk-danger);
 }
 
 .tk-starup-bt-max {
@@ -387,8 +389,8 @@
   display: flex;
   gap: 10px;
   padding: 14px 18px;
-  border-top: 1px solid rgba(200, 168, 76, 0.12);
-  background: rgba(200, 168, 76, 0.03);
+  border-top: 1px solid var(--tk-starup-actions-border, rgba(200, 168, 76, 0.12));
+  background: var(--tk-starup-actions-bg, rgba(200, 168, 76, 0.03));
 }
 
 .tk-starup-btn {
@@ -404,25 +406,25 @@
 }
 
 .tk-starup-btn--star-up {
-  background: linear-gradient(135deg, rgba(241, 196, 15, 0.3), rgba(200, 168, 76, 0.15));
+  background: linear-gradient(135deg, var(--tk-starup-btn-starup-from, rgba(232, 196, 104, 0.3)), var(--tk-starup-btn-starup-to, rgba(200, 168, 76, 0.15)));
   border: 1px solid var(--tk-gold);
   color: var(--tk-gold-light);
 }
 
 .tk-starup-btn--star-up:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(241, 196, 15, 0.45), rgba(200, 168, 76, 0.25));
-  box-shadow: 0 0 12px rgba(200, 168, 76, 0.3);
+  background: linear-gradient(135deg, var(--tk-starup-btn-starup-hover-from, rgba(232, 196, 104, 0.45)), var(--tk-starup-btn-starup-hover-to, rgba(200, 168, 76, 0.25)));
+  box-shadow: 0 0 12px var(--tk-starup-btn-starup-glow, rgba(200, 168, 76, 0.3));
 }
 
 .tk-starup-btn--breakthrough {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(124, 58, 237, 0.15));
-  border: 1px solid rgba(124, 58, 237, 0.5);
-  color: #c4b5fd;
+  background: linear-gradient(135deg, var(--tk-starup-btn-bt-from, rgba(124, 58, 237, 0.3)), var(--tk-starup-btn-bt-to, rgba(124, 58, 237, 0.15)));
+  border: 1px solid var(--tk-starup-btn-bt-border, rgba(124, 58, 237, 0.5));
+  color: var(--tk-starup-bt-text, var(--tk-purple));
 }
 
 .tk-starup-btn--breakthrough:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.45), rgba(124, 58, 237, 0.25));
-  box-shadow: 0 0 12px rgba(124, 58, 237, 0.3);
+  background: linear-gradient(135deg, var(--tk-starup-btn-bt-hover-from, rgba(124, 58, 237, 0.45)), var(--tk-starup-btn-bt-hover-to, rgba(124, 58, 237, 0.25)));
+  box-shadow: 0 0 12px var(--tk-starup-btn-bt-glow, rgba(124, 58, 237, 0.3));
 }
 
 .tk-starup-btn:disabled {

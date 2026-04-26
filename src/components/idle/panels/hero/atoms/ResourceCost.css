@@ -1,0 +1,109 @@
+/**
+ * ResourceCost — 资源消耗展示样式
+ *
+ * 支持横向 (horizontal) 和纵向 (vertical) 布局。
+ * 不足时标红显示。
+ */
+
+/* ═══════════════════════════════════════════
+   基础容器
+   ═══════════════════════════════════════════ */
+.tk-resource-cost {
+  display: flex;
+  gap: 8px;
+}
+
+/* 纵向布局（默认） */
+.tk-resource-cost--vertical {
+  flex-direction: column;
+}
+
+/* 横向布局 */
+.tk-resource-cost--horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ═══════════════════════════════════════════
+   单个资源项
+   ═══════════════════════════════════════════ */
+.tk-resource-cost__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--tk-radius-sm, 4px);
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 150ms ease-out;
+}
+
+/* 不足状态 — 红色背景提示 */
+.tk-resource-cost__item--insufficient {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+/* 横向布局下的资源项宽度 */
+.tk-resource-cost--horizontal .tk-resource-cost__item {
+  flex: 0 0 auto;
+}
+
+/* ═══════════════════════════════════════════
+   图标
+   ═══════════════════════════════════════════ */
+.tk-resource-cost__icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   名称 + 数量
+   ═══════════════════════════════════════════ */
+.tk-resource-cost__info {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* 资源名称 */
+.tk-resource-cost__name {
+  font-size: 12px;
+  color: var(--tk-text-secondary, #A0A0A0);
+  white-space: nowrap;
+}
+
+/* 数量区域 */
+.tk-resource-cost__amount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 13px;
+  font-family: var(--tk-font-num, 'Impact', 'Arial Narrow', monospace);
+  white-space: nowrap;
+}
+
+/* 当前持有量 */
+.tk-resource-cost__current {
+  color: var(--tk-text-primary, #F0E6D3);
+  font-weight: 600;
+}
+
+/* 不足时 — 红色 */
+.tk-resource-cost__current--lack {
+  color: var(--tk-danger, #e74c3c);
+}
+
+/* 分隔符 */
+.tk-resource-cost__separator {
+  color: var(--tk-text-muted, #666);
+  font-size: 11px;
+}
+
+/* 需求数量 */
+.tk-resource-cost__required {
+  color: var(--tk-text-secondary, #A0A0A0);
+  font-weight: 500;
+}

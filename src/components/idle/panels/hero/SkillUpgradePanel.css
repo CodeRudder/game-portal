@@ -1,0 +1,253 @@
+/**
+ * SkillUpgradePanel — 技能升级面板样式
+ * 设计风格：水墨江山·铜纹霸业 | 古铜金配色 #C4956A
+ * 响应式：PC 嵌入武将详情 / 手机端全屏 Tab
+ */
+
+/* ── 面板根容器 ── */
+.tk-skill-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  color: var(--tk-text-primary);
+  font-family: var(--tk-font-body);
+}
+
+/* ── 面板头部 ── */
+.tk-skill-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(196, 149, 106, 0.06);
+  border-radius: var(--tk-radius-lg);
+  border: 1px solid rgba(196, 149, 106, 0.12);
+}
+.tk-skill-panel__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tk-gold-soft, #C4956A);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tk-skill-panel__cap-hint {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  font-family: var(--tk-font-num);
+}
+
+/* ── 技能列表 ── */
+.tk-skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── 单个技能卡片 ── */
+.tk-skill-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(196, 149, 106, 0.04);
+  border-radius: var(--tk-radius-lg);
+  border: 1px solid rgba(196, 149, 106, 0.1);
+  transition: border-color 0.15s ease-out;
+}
+.tk-skill-card:hover {
+  border-color: rgba(196, 149, 106, 0.25);
+}
+
+/* 技能卡片 — 锁定状态 */
+.tk-skill-card--locked {
+  opacity: 0.5;
+  filter: grayscale(0.4);
+}
+
+/* ── 技能图标区域 ── */
+.tk-skill-card__icon-wrap {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--tk-radius-md);
+  border: 1px solid rgba(196, 149, 106, 0.15);
+  font-size: 24px;
+}
+.tk-skill-card__lock-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  font-size: 10px;
+  color: var(--tk-text-muted);
+}
+
+/* ── 技能信息区域 ── */
+.tk-skill-card__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tk-skill-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tk-skill-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+}
+.tk-skill-card__type-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.tk-skill-card__type-tag--active {
+  background: rgba(196, 149, 106, 0.15);
+  color: var(--tk-gold-soft, #C4956A);
+}
+.tk-skill-card__type-tag--passive {
+  background: rgba(76, 175, 80, 0.12);
+  color: var(--tk-quality-uncommon, #4caf50);
+}
+.tk-skill-card__type-tag--faction {
+  background: rgba(33, 150, 243, 0.12);
+  color: var(--tk-quality-rare, #2196f3);
+}
+.tk-skill-card__type-tag--awaken {
+  background: rgba(156, 39, 176, 0.12);
+  color: var(--tk-quality-epic, #9c27b0);
+}
+.tk-skill-card__level {
+  font-size: 12px;
+  color: var(--tk-gold-soft, #C4956A);
+  font-family: var(--tk-font-num);
+  font-weight: 600;
+}
+.tk-skill-card__desc {
+  font-size: 12px;
+  color: var(--tk-text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tk-skill-card__meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  margin-top: 2px;
+}
+
+/* ── 技能操作区域（升级按钮+消耗） ── */
+.tk-skill-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 升级消耗 */
+.tk-skill-cost {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  align-items: center;
+}
+.tk-skill-cost__item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.tk-skill-cost__value {
+  font-family: var(--tk-font-num);
+  font-weight: 600;
+}
+.tk-skill-cost__value--sufficient { color: var(--tk-green); }
+.tk-skill-cost__value--insufficient { color: var(--tk-danger); }
+
+/* 升级按钮 */
+.tk-skill-upgrade-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--tk-radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  font-family: inherit;
+  background: linear-gradient(135deg, var(--tk-gold-soft, #C4956A), var(--tk-gold-bright, #d4a87a));
+  color: var(--tk-bg-dark, #1a2332);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.tk-skill-upgrade-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(196, 149, 106, 0.35);
+}
+.tk-skill-upgrade-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 满级状态 */
+.tk-skill-max-label {
+  font-size: 12px;
+  color: var(--tk-gold-soft, #C4956A);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 锁定提示 */
+.tk-skill-lock-hint {
+  font-size: 11px;
+  color: var(--tk-text-muted);
+  text-align: right;
+  max-width: 100px;
+}
+
+/* ── 空状态 ── */
+.tk-skill-panel__empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--tk-text-muted);
+  font-size: 13px;
+}
+
+/* ── 手机端适配（≤480px） ── */
+@media (max-width: 767px) {
+  .tk-skill-panel { gap: 10px; }
+  .tk-skill-panel__header { padding: 8px 10px; }
+  .tk-skill-card { padding: 10px; gap: 10px; }
+  .tk-skill-card__icon-wrap { width: 40px; height: 40px; font-size: 20px; }
+  .tk-skill-card__name { font-size: 13px; }
+  .tk-skill-card__actions { align-items: center; }
+  .tk-skill-upgrade-btn { padding: 5px 12px; font-size: 11px; }
+  .tk-skill-cost { gap: 6px; font-size: 10px; }
+}
+
+/* ── 平板适配（481px~768px） ── */
+@media (min-width: 481px) and (max-width: 768px) {
+  .tk-skill-card { gap: 10px; }
+}

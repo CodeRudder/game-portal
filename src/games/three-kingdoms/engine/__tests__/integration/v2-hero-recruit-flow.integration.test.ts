@@ -491,11 +491,11 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
       sim.addResources({ recruitToken: 5 });
       const tokenBefore = sim.getResource('recruitToken');
       sim.recruitHero('normal', 1);
-      expect(sim.getResource('recruitToken')).toBe(tokenBefore - 1);
+      expect(sim.getResource('recruitToken')).toBe(tokenBefore - RECRUIT_COSTS.normal.amount);
     });
 
     it('should fail recruit when recruitToken depleted', () => {
-      sim.setResource('recruitToken', 1); // R5: 使用setResource确保精确值（初始值不再是0）
+      sim.setResource('recruitToken', RECRUIT_COSTS.normal.amount); // R5: 使用setResource确保精确值
       sim.recruitHero('normal', 1);
       expect(sim.getResource('recruitToken')).toBe(0);
       expect(() => sim.recruitHero('normal', 1)).toThrow();

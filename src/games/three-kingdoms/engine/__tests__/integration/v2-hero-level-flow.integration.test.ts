@@ -298,7 +298,7 @@ describe('V2 LEVEL-FLOW: 武将升级流程集成测试', () => {
   // STAR-FLOW-3: 突破系统
   // ─────────────────────────────────────────
   describe('STAR-FLOW-3: 突破系统', () => {
-    it('should have initial level cap at 30', () => {
+    it('should have initial level cap at 50', () => {
       sim.addHeroDirectly('liubei');
       const starSystem = sim.engine.getHeroStarSystem();
       expect(starSystem.getLevelCap('liubei')).toBe(INITIAL_LEVEL_CAP);
@@ -319,10 +319,10 @@ describe('V2 LEVEL-FLOW: 武将升级流程集成测试', () => {
       // 设置高资源上限并添加大量资源
       sim.engine.resource.setCap('grain', 50_000_000);
       sim.addResources({ gold: 50000000, grain: 50000000 });
-      // 先升级到30
-      sim.engine.enhanceHero('liubei', 30);
+      // 先升级到50（PRD v1.5 初始等级上限）
+      sim.engine.enhanceHero('liubei', 50);
       const general = sim.engine.hero.getGeneral('liubei')!;
-      expect(general.level).toBeGreaterThanOrEqual(30);
+      expect(general.level).toBeGreaterThanOrEqual(50);
 
       // 添加突破所需碎片和铜钱
       sim.addHeroFragments('liubei', 100);
@@ -346,8 +346,8 @@ describe('V2 LEVEL-FLOW: 武将升级流程集成测试', () => {
 
     it('should verify breakthrough tier configs', () => {
       expect(BREAKTHROUGH_TIERS.length).toBe(4);
-      expect(BREAKTHROUGH_TIERS[0].levelCapAfter).toBe(40);
-      expect(BREAKTHROUGH_TIERS[1].levelCapAfter).toBe(50);
+      expect(BREAKTHROUGH_TIERS[0].levelCapAfter).toBe(60);
+      expect(BREAKTHROUGH_TIERS[1].levelCapAfter).toBe(70);
     });
   });
 
@@ -509,7 +509,7 @@ describe('V2 LEVEL-FLOW: 武将升级流程集成测试', () => {
       sim.addHeroDirectly('liubei');
       sim.addResources({ gold: 500000 });
       const skillSys = sim.engine.getSkillUpgradeSystem();
-      const result = skillSys.upgradeSkill('liubei', 0, { skillBooks: 1, gold: 200 });
+      const result = skillSys.upgradeSkill('liubei', 0, { skillBooks: 1, gold: 500 });
       expect(result.success).toBe(true);
       expect(result.currentLevel).toBe(2);
       expect(result.previousLevel).toBe(1);
@@ -520,7 +520,7 @@ describe('V2 LEVEL-FLOW: 武将升级流程集成测试', () => {
       sim.addResources({ gold: 500000 });
       const skillSys = sim.engine.getSkillUpgradeSystem();
       const effectBefore = skillSys.getSkillEffect('liubei', 0);
-      skillSys.upgradeSkill('liubei', 0, { skillBooks: 1, gold: 200 });
+      skillSys.upgradeSkill('liubei', 0, { skillBooks: 1, gold: 500 });
       const effectAfter = skillSys.getSkillEffect('liubei', 0);
       expect(effectAfter).toBeGreaterThan(effectBefore);
     });

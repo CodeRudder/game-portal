@@ -15,6 +15,8 @@ export { SkillStrategyRecommender } from './SkillStrategyRecommender';
 export { HeroFormation, MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './HeroFormation';
 export { HeroBadgeSystem } from './HeroBadgeSystem';
 export { HeroAttributeCompare } from './HeroAttributeCompare';
+export { BondSystem } from './BondSystem';
+export { FactionBondSystem } from './faction-bond-system';
 
 // 类型
 export type {
@@ -61,3 +63,54 @@ export type {
 export { HERO_MAX_LEVEL, GENERAL_DEF_MAP, DUPLICATE_FRAGMENT_COUNT } from './hero-config';
 export type { RecruitType } from './hero-recruit-config';
 export { MAX_STAR_LEVEL } from './star-up-config';
+export {
+  BondType,
+  BOND_MULTIPLIER_CAP,
+  DISPATCH_FACTOR,
+  ACTIVE_FACTOR,
+  BOND_STAR_LEVEL_MAP,
+  FACTION_BONDS,
+  PARTNER_BONDS,
+  getBondLevelByMinStar,
+  getBondLevelMultiplier,
+} from './bond-config';
+export type {
+  BondEffect,
+  BondTier,
+  FactionBondDefinition,
+  PartnerBondDefinition,
+  BondDefinition,
+} from './bond-config';
+export type {
+  ActiveBond,
+  GeneralMeta,
+  BondSystemDeps,
+  BondActivatedPayload,
+  BondDeactivatedPayload,
+  BondLevelUpPayload,
+} from './BondSystem';
+
+// 阵营羁绊系统
+export {
+  EMPTY_BOND_EFFECT,
+  SHU_TIERS,
+  WEI_TIERS,
+  WU_TIERS,
+  NEUTRAL_TIERS,
+  FACTION_TIER_MAP,
+  PARTNER_BOND_CONFIGS,
+  HERO_FACTION_MAP,
+  ALL_FACTIONS,
+  FACTION_NAMES,
+} from './faction-bond-config';
+export type {
+  BondEffect as FactionBondEffect,
+  BondConfig as FactionBondConfig,
+  FactionId,
+  FactionTierDef,
+  BondType as FactionBondType,
+} from './faction-bond-config';
+export type {
+  ActiveFactionBond,
+  HeroFactionResolver,
+} from './faction-bond-system';

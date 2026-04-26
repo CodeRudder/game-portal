@@ -7,9 +7,9 @@
  *
  * @module components/idle/panels/hero/GuideOverlay
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
-import { TutorialStateMachine } from '@/games/three-kingdoms/engine';
+import { TutorialStateMachine, TutorialStepManager } from '@/games/three-kingdoms/engine';
 import type { TutorialPhase } from '@/games/three-kingdoms/core/guide';
 import './GuideOverlay.css';
 
@@ -54,6 +54,19 @@ const DEFAULT_STEPS: GuideStep[] = [
 
 const GUIDE_KEY = 'tk-guide-progress';
 
+/**
+ * Overlay 步骤ID → 引擎 TutorialStepId 映射
+ *
+ * GuideOverlay 使用简短的语义ID（recruit/detail/enhance/formation），
+ * 引擎使用 stepN_xxx 格式。此映射确保两者正确对接。
+ */
+const OVERLAY_TO_ENGINE_STEP: Record<string, import('@/games/three-kingdoms/core/guide/guide.types').TutorialStepId> = {
+  recruit: 'step3_recruit_hero',
+  detail: 'step3_recruit_hero',
+  enhance: 'step3_recruit_hero',
+  formation: 'step4_first_battle',
+};
+
 // ─────────────────────────────────────────────
 // 引擎 TutorialStateMachine 适配
 // ─────────────────────────────────────────────
@@ -67,13 +80,38 @@ const GUIDE_KEY = 'tk-guide-progress';
 function getTutorialSM(engine?: ThreeKingdomsEngine | null): TutorialStateMachine | null {
   if (!engine) return null;
   try {
-    // ThreeKingdomsEngine 没有直接的 getTutorialStateMachine 方法，
-    // 但通过 registry 可以获取已注册的子系统
+    // ThreeKingdomsEngine 有 getTutorialStateMachine getter
+    if (typeof engine.getTutorialStateMachine === 'function') {
+      return engine.getTutorialStateMachine();
+    }
+    // 回退：通过 registry 获取
     const registry = engine.getSubsystemRegistry();
     if (!registry) return null;
     const sm = registry.get('tutorial-state') as TutorialStateMachine | undefined;
-    // TutorialStateMachine.name === 'tutorial-state'
     return sm && typeof sm.getCurrentPhase === 'function' ? sm : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 尝试从引擎获取 TutorialStepManager 实例
+ *
+ * TutorialStepManager 管理步骤的执行、完成判定和奖励发放，
+ * 是 GuideOverlay 推进引导步骤的推荐 API。
+ */
+function getTutorialStepMgr(engine?: ThreeKingdomsEngine | null): TutorialStepManager | null {
+  if (!engine) return null;
+  try {
+    if (typeof engine.getTutorialStepManager === 'function') {
+      const mgr = engine.getTutorialStepManager();
+      return mgr && typeof mgr.getNextStep === 'function' ? mgr : null;
+    }
+    // 回退：通过 registry 获取
+    const registry = engine.getSubsystemRegistry();
+    if (!registry) return null;
+    const mgr = registry.get('tutorial-steps') as TutorialStepManager | undefined;
+    return mgr && typeof mgr.getNextStep === 'function' ? mgr : null;
   } catch {
     return null;
   }
@@ -148,11 +186,21 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
   onComplete,
   onSkip,
 }) => {
-  // 获取引擎 TutorialStateMachine（可能为 null）
+  // 获取引擎 TutorialStateMachine 和 TutorialStepManager
   const tutorialSM = useMemo(() => getTutorialSM(engine), [engine]);
+  const tutorialStepMgr = useMemo(() => getTutorialStepMgr(engine), [engine]);
 
-  // 初始化步骤索引：优先引擎，回退 localStorage
+  // 初始化步骤索引：优先引擎 StepManager → StateMachine → localStorage
   const [currentStep, setCurrentStep] = useState<number>(() => {
+    // 优先使用 StepManager 获取下一个未完成步骤
+    if (tutorialStepMgr) {
+      const nextStep = tutorialStepMgr.getNextStep();
+      if (!nextStep) return -1; // 所有步骤已完成
+      // 将引擎步骤索引映射到 overlay 步骤索引
+      const stepIndex = DEFAULT_STEPS.findIndex((s) => s.id === nextStep.stepId);
+      if (stepIndex >= 0) return stepIndex;
+    }
+    // 回退到 StateMachine
     if (tutorialSM) {
       return getEngineStepIndex(tutorialSM, steps.length);
     }
@@ -169,7 +217,14 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
 
   const handleNext = () => {
     if (isLastStep) {
-      // 完成引导：通知引擎 + 回退存储
+      // 完成引导：通知 StepManager → StateMachine → 回退存储
+      if (tutorialStepMgr) {
+        // 通过 StepManager 完成当前活跃步骤
+        const activeId = tutorialStepMgr.getState().activeStepId;
+        if (activeId) {
+          tutorialStepMgr.completeCurrentStep();
+        }
+      }
       if (tutorialSM) {
         // 如果还在 core_guiding，推进到 free_explore → free_play
         const phase = tutorialSM.getCurrentPhase();
@@ -187,22 +242,32 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
       onComplete?.();
     } else {
       const next = currentStep + 1;
-      // 通知引擎步骤完成
+      // 通知 StepManager 完成当前步骤
+      if (tutorialStepMgr) {
+        const activeId = tutorialStepMgr.getState().activeStepId;
+        if (activeId) {
+          tutorialStepMgr.completeCurrentStep();
+        }
+        // 尝试启动下一步骤
+        const nextOverlayStepId = steps[next]?.id;
+        if (nextOverlayStepId) {
+          const mappedId = OVERLAY_TO_ENGINE_STEP[nextOverlayStepId];
+          if (mappedId) {
+            tutorialStepMgr.startStep(mappedId);
+          }
+        }
+      }
+      // 通知 StateMachine 步骤完成
       if (tutorialSM) {
         const phase = tutorialSM.getCurrentPhase();
         if (phase === 'not_started') {
           tutorialSM.transition('first_enter');
         }
-        // 将 overlay 步骤映射到引擎步骤 ID（近似映射）
-        const engineStepIds = [
-          'step3_recruit_hero' as const,
-          'step1_castle_overview' as const,
-          'step3_recruit_hero' as const,
-          'step4_first_battle' as const,
-        ];
-        const stepId = engineStepIds[currentStep];
-        if (stepId) {
-          tutorialSM.completeStep(stepId);
+        // 将 overlay 步骤映射到引擎步骤 ID
+        const overlayStepId = steps[currentStep]?.id;
+        const engineStepId = overlayStepId ? OVERLAY_TO_ENGINE_STEP[overlayStepId] : undefined;
+        if (engineStepId) {
+          tutorialSM.completeStep(engineStepId);
         }
       }
       setCurrentStep(next);
@@ -219,7 +284,13 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
   };
 
   const handleSkip = () => {
-    // 跳过引导：通知引擎加速跳过 + 回退存储
+    // 跳过引导：通知 StepManager → StateMachine → 回退存储
+    if (tutorialStepMgr) {
+      const activeId = tutorialStepMgr.getState().activeStepId;
+      if (activeId) {
+        tutorialStepMgr.completeCurrentStep();
+      }
+    }
     if (tutorialSM) {
       const phase = tutorialSM.getCurrentPhase();
       if (phase === 'not_started') {
