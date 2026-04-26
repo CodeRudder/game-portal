@@ -1,0 +1,141 @@
+/**
+ * BondPanel — 武将羁绊面板样式
+ *
+ * 布局：羁绊卡片2列网格
+ * 激活状态：金色边框 (#D4A017)
+ * 未激活状态：灰色半透明 (rgba(128,128,128,0.3))
+ * 阵营颜色：魏=蓝 / 蜀=绿 / 吴=红 / 群雄=紫
+ * 无明暗变化效果
+ */
+
+/* ── 面板容器 ── */
+.bond-panel {
+  padding: 16px;
+  background: #1a1a2e;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.bond-panel__title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bond-panel__title h3 { margin: 0; font-size: 18px; color: #f0f0f0; }
+.bond-panel__count { font-size: 13px; color: #aaa; }
+
+.bond-panel__empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: #888;
+  font-size: 14px;
+}
+
+/* ── 阵营分布条 ── */
+.bond-faction-distribution { margin-bottom: 20px; }
+
+.bond-faction-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bond-faction-segment { min-width: 0; transition: width 0.2s ease; }
+
+.bond-faction-labels { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.bond-faction-label { font-size: 12px; white-space: nowrap; }
+
+/* ── 阵营颜色：魏=蓝、蜀=绿、吴=红、群雄=紫 ── */
+.bond-faction-wei { color: #4a90d9; }
+.bond-faction-shu { color: #4caf50; }
+.bond-faction-wu { color: #e74c3c; }
+.bond-faction-qun { color: #9b59b6; }
+
+.bond-faction-bar .bond-faction-wei { background: #4a90d9; }
+.bond-faction-bar .bond-faction-shu { background: #4caf50; }
+.bond-faction-bar .bond-faction-wu { background: #e74c3c; }
+.bond-faction-bar .bond-faction-qun { background: #9b59b6; }
+
+/* ── 羁绊分组标题 ── */
+.bond-section { margin-bottom: 16px; }
+
+.bond-section__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d4a017;
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+
+.bond-section__title--inactive { color: #777; }
+
+/* ── 羁绊卡片网格（2列） ── */
+.bond-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+/* ── 羁绊卡片 ── */
+.bond-card { padding: 12px; border-radius: 6px; position: relative; }
+
+/* 激活状态：金色边框 */
+.bond-card--active {
+  border: 2px solid #d4a017;
+  background: rgba(212, 160, 23, 0.08);
+}
+
+/* 未激活状态：灰色半透明 */
+.bond-card--inactive {
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  background: rgba(128, 128, 128, 0.08);
+  opacity: 0.6;
+}
+
+.bond-card__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.bond-card__name { font-size: 14px; font-weight: 600; color: #f0f0f0; }
+.bond-card--inactive .bond-card__name { color: #999; }
+
+.bond-card__status {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #888;
+  background: rgba(128, 128, 128, 0.2);
+}
+
+.bond-card__status--active { color: #d4a017; background: rgba(212, 160, 23, 0.15); }
+
+.bond-card__effect { font-size: 12px; color: #ccc; margin-bottom: 6px; line-height: 1.4; }
+.bond-card--inactive .bond-card__effect { color: #777; }
+
+.bond-card__progress { font-size: 11px; color: #aaa; }
+.bond-card--active .bond-card__progress { color: #d4a017; }
+
+/* ── 阵营标签 ── */
+.bond-card__faction-tag {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.bond-card__faction-tag.bond-faction-wei { background: rgba(74, 144, 217, 0.15); color: #4a90d9; }
+.bond-card__faction-tag.bond-faction-shu { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+.bond-card__faction-tag.bond-faction-wu { background: rgba(231, 76, 60, 0.15); color: #e74c3c; }
+.bond-card__faction-tag.bond-faction-qun { background: rgba(155, 89, 182, 0.15); color: #9b59b6; }
+
+/* ── 响应式 ── */
+@media (max-width: 480px) {
+  .bond-grid { grid-template-columns: 1fr; }
+}
