@@ -3,6 +3,8 @@
  *
  * PC端：4列卡片网格 + 筛选/排序工具栏
  * 手机端：2列紧凑网格 + 紧凑工具栏
+ *
+ * 颜色变量定义见 hero-design-tokens.css
  */
 
 /* ═══════════════════════════════════════════
@@ -26,7 +28,7 @@
   align-items: center;
   gap: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(200, 168, 76, 0.1);
+  border-bottom: 1px solid var(--tk-hero-gold-10);
   flex-shrink: 0;
   flex-wrap: wrap;
 }
@@ -40,7 +42,7 @@
 .tk-hero-sub-tab {
   padding: 5px 14px;
   background: transparent;
-  border: 1px solid rgba(200, 168, 76, 0.12);
+  border: 1px solid var(--tk-hero-gold-12);
   border-radius: 4px;
   color: var(--tk-text-secondary);
   font-size: 12px;
@@ -50,13 +52,13 @@
 }
 
 .tk-hero-sub-tab:hover {
-  border-color: rgba(200, 168, 76, 0.35);
+  border-color: var(--tk-hero-gold-35);
   color: var(--tk-text-primary);
 }
 
 .tk-hero-sub-tab--active {
-  background: rgba(200, 168, 76, 0.12);
-  border-color: rgba(200, 168, 76, 0.5);
+  background: var(--tk-hero-gold-12);
+  border-color: var(--tk-hero-gold-50);
   color: var(--tk-gold-light);
   font-weight: 600;
 }
@@ -70,7 +72,7 @@
 .tk-hero-filter-btn {
   padding: 5px 12px;
   background: transparent;
-  border: 1px solid rgba(200, 168, 76, 0.12);
+  border: 1px solid var(--tk-hero-gold-12);
   border-radius: 4px;
   color: var(--tk-text-secondary);
   font-size: 12px;
@@ -80,13 +82,13 @@
 }
 
 .tk-hero-filter-btn:hover {
-  border-color: rgba(200, 168, 76, 0.35);
+  border-color: var(--tk-hero-gold-35);
   color: var(--tk-text-primary);
 }
 
 .tk-hero-filter-btn--active {
-  background: rgba(200, 168, 76, 0.12);
-  border-color: rgba(200, 168, 76, 0.5);
+  background: var(--tk-hero-gold-12);
+  border-color: var(--tk-hero-gold-50);
   color: var(--tk-gold-light);
   font-weight: 600;
 }
@@ -94,8 +96,8 @@
 /* 下拉选择器 */
 .tk-hero-select {
   padding: 5px 10px;
-  background: rgba(240, 230, 211, 0.04);
-  border: 1px solid rgba(200, 168, 76, 0.15);
+  background: var(--tk-hero-linen-4);
+  border: 1px solid var(--tk-hero-gold-15);
   border-radius: 4px;
   color: var(--tk-text-primary);
   font-size: 12px;
@@ -106,11 +108,11 @@
 }
 
 .tk-hero-select:focus {
-  border-color: rgba(200, 168, 76, 0.5);
+  border-color: var(--tk-hero-gold-50);
 }
 
 .tk-hero-select option {
-  background: var(--tk-bg, #1A2332);
+  background: var(--tk-bg);
   color: var(--tk-text-primary);
 }
 
@@ -134,8 +136,8 @@
 /* 招募按钮 */
 .tk-hero-recruit-btn {
   padding: 6px 16px;
-  background: linear-gradient(135deg, rgba(200, 168, 76, 0.12) 0%, rgba(200, 168, 76, 0.22) 100%);
-  border: 1px solid rgba(200, 168, 76, 0.45);
+  background: linear-gradient(135deg, var(--tk-hero-gold-12) 0%, var(--tk-hero-gold-22) 100%);
+  border: 1px solid var(--tk-hero-gold-45);
   border-radius: 6px;
   color: var(--tk-gold-light);
   font-size: 13px;
@@ -147,15 +149,15 @@
 }
 
 .tk-hero-recruit-btn:hover {
-  background: linear-gradient(135deg, rgba(200, 168, 76, 0.22) 0%, rgba(200, 168, 76, 0.35) 100%);
-  border-color: rgba(200, 168, 76, 0.65);
+  background: linear-gradient(135deg, var(--tk-hero-gold-22) 0%, var(--tk-hero-gold-35) 100%);
+  border-color: var(--tk-hero-gold-65);
 }
 
 /* 对比按钮 */
 .tk-hero-compare-btn {
   padding: 6px 14px;
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.25);
+  background: var(--tk-hero-green-10);
+  border: 1px solid var(--tk-hero-green-25);
   border-radius: 6px;
   color: var(--tk-green);
   font-size: 13px;
@@ -167,8 +169,8 @@
 }
 
 .tk-hero-compare-btn:hover {
-  background: rgba(76, 175, 80, 0.2);
-  border-color: rgba(76, 175, 80, 0.45);
+  background: var(--tk-hero-green-20);
+  border-color: var(--tk-hero-green-45);
 }
 
 /* 武将对比入口按钮（列表顶部） */
@@ -177,8 +179,8 @@
   width: 100%;
   padding: 10px 0;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(200, 168, 76, 0.08));
-  border: 1px dashed rgba(76, 175, 80, 0.35);
+  background: linear-gradient(135deg, var(--tk-hero-green-8), var(--tk-hero-gold-8));
+  border: 1px dashed var(--tk-hero-green-35);
   border-radius: 8px;
   color: var(--tk-green);
   font-size: 14px;
@@ -189,8 +191,8 @@
   text-align: center;
 }
 .tk-hero-compare-entry:hover {
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.16), rgba(200, 168, 76, 0.16));
-  border-color: rgba(76, 175, 80, 0.6);
+  background: linear-gradient(135deg, var(--tk-hero-green-16), var(--tk-hero-gold-16));
+  border-color: var(--tk-hero-green-60);
 }
 
 /* ═══════════════════════════════════════════
@@ -214,16 +216,16 @@
 }
 
 .tk-hero-grid::-webkit-scrollbar-track {
-  background: rgba(20, 25, 35, 0.5);
+  background: var(--tk-hero-dark-bg);
 }
 
 .tk-hero-grid::-webkit-scrollbar-thumb {
-  background: rgba(200, 169, 110, 0.25);
+  background: var(--tk-hero-copper-25);
   border-radius: 3px;
 }
 
 .tk-hero-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(200, 169, 110, 0.4);
+  background: var(--tk-hero-copper-40);
 }
 
 /* ═══════════════════════════════════════════
@@ -257,8 +259,8 @@
 .tk-hero-empty-btn {
   margin-top: 8px;
   padding: 10px 28px;
-  background: linear-gradient(135deg, rgba(200, 168, 76, 0.15) 0%, rgba(200, 168, 76, 0.28) 100%);
-  border: 2px solid rgba(200, 168, 76, 0.5);
+  background: linear-gradient(135deg, var(--tk-hero-gold-15) 0%, var(--tk-hero-gold-28) 100%);
+  border: 2px solid var(--tk-hero-gold-50);
   border-radius: 8px;
   color: var(--tk-gold-light);
   font-size: 15px;
@@ -269,8 +271,8 @@
 }
 
 .tk-hero-empty-btn:hover {
-  background: linear-gradient(135deg, rgba(200, 168, 76, 0.28) 0%, rgba(200, 168, 76, 0.4) 100%);
-  border-color: rgba(200, 168, 76, 0.7);
+  background: linear-gradient(135deg, var(--tk-hero-gold-28) 0%, var(--tk-hero-gold-40) 100%);
+  border-color: var(--tk-hero-gold-70);
   transform: translateY(-1px);
 }
 
@@ -279,7 +281,7 @@
    ═══════════════════════════════════════════ */
 .tk-hero-footer {
   padding-top: 8px;
-  border-top: 1px solid rgba(200, 168, 76, 0.08);
+  border-top: 1px solid var(--tk-hero-gold-8);
   flex-shrink: 0;
 }
 
@@ -359,22 +361,22 @@
   gap: 12px;
   padding: 12px 0 8px;
   margin-top: 8px;
-  border-top: 1px solid var(--tk-border, rgba(255, 255, 255, 0.1));
+  border-top: 1px solid var(--tk-border);
 }
 
 .tk-hero-page-btn {
   padding: 6px 16px;
-  border: 1px solid var(--tk-border, rgba(255, 255, 255, 0.2));
+  border: 1px solid var(--tk-border);
   border-radius: 6px;
-  background: var(--tk-surface, rgba(255, 255, 255, 0.05));
-  color: var(--tk-text, #e0e0e0);
+  background: var(--tk-card-bg);
+  color: var(--tk-text-primary);
   font-size: 13px;
   cursor: pointer;
   transition: background 0.2s, opacity 0.2s;
 }
 
 .tk-hero-page-btn:hover:not(:disabled) {
-  background: var(--tk-surface-hover, rgba(255, 255, 255, 0.1));
+  background: var(--tk-hero-white-10);
 }
 
 .tk-hero-page-btn:disabled {
@@ -384,7 +386,7 @@
 
 .tk-hero-page-info {
   font-size: 13px;
-  color: var(--tk-text-muted, #999);
+  color: var(--tk-text-muted);
   min-width: 60px;
   text-align: center;
 }

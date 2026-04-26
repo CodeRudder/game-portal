@@ -1,0 +1,55 @@
+/**
+ * TutorialOverlay — 新手引导遮罩层样式
+ * 设计风格：水墨江山·铜纹霸业 | 古铜金配色 #C4956A
+ */
+
+.tk-tutorial-overlay { position: fixed; inset: 0; z-index: 9998; pointer-events: auto; }
+.tk-tutorial-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); }
+
+.tk-tutorial-tooltip {
+  position: relative; z-index: 11;
+  background: var(--tk-bg, #1a1a2e);
+  border: 1px solid rgba(196, 149, 106, 0.25);
+  border-radius: 12px; padding: 18px 20px;
+  max-width: 320px; width: 90%;
+  color: var(--tk-text-primary, #e0e0e0);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+.tk-tutorial-tooltip--centered { position: relative; margin: 35vh auto 0; }
+
+/* 箭头 */
+.tk-tutorial-tooltip--arrow-up::before {
+  content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  border-left: 8px solid transparent; border-right: 8px solid transparent;
+  border-bottom: 8px solid rgba(196, 149, 106, 0.25);
+}
+.tk-tutorial-tooltip--arrow-down::before {
+  content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+  border-left: 8px solid transparent; border-right: 8px solid transparent;
+  border-top: 8px solid rgba(196, 149, 106, 0.25);
+}
+.tk-tutorial-tooltip--arrow-left::before {
+  content: ''; position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
+  border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+  border-right: 8px solid rgba(196, 149, 106, 0.25);
+}
+.tk-tutorial-tooltip--arrow-right::before {
+  content: ''; position: absolute; right: -8px; top: 50%; transform: translateY(-50%);
+  border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+  border-left: 8px solid rgba(196, 149, 106, 0.25);
+}
+
+.tk-tutorial-step-indicator {
+  font-size: 11px; color: var(--tk-gold-soft, #C4956A);
+  font-weight: 600; margin-bottom: 6px; font-family: var(--tk-font-num, monospace);
+}
+.tk-tutorial-tooltip__title { font-size: 16px; font-weight: 600; margin: 0 0 6px; color: var(--tk-text-primary, #fff); }
+.tk-tutorial-tooltip__desc { font-size: 13px; line-height: 1.6; margin: 0 0 14px; color: var(--tk-text-secondary, #b0b0b0); }
+.tk-tutorial-tooltip__actions { display: flex; gap: 8px; justify-content: flex-end; }
+.tk-tutorial-btn { padding: 6px 16px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.tk-tutorial-btn--skip { background: transparent; color: var(--tk-text-muted, #888); border: 1px solid var(--tk-border-dark, #444); }
+.tk-tutorial-btn--next {
+  background: linear-gradient(135deg, var(--tk-gold-soft, #C4956A), var(--tk-gold-bright, #d4a87a));
+  color: var(--tk-bg-dark, #1a2332); font-weight: 600;
+}
+.tk-tutorial-btn--next:hover { box-shadow: 0 3px 12px rgba(196, 149, 106, 0.35); }

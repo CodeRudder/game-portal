@@ -1,6 +1,8 @@
 /**
  * HeroDetailModal — 雷达图 / 属性条 / 技能列表样式
  * 从 HeroDetailModal.css 拆分，保持主文件 ≤500 行
+ *
+ * 颜色变量定义见 hero-design-tokens.css
  */
 
 /* 右侧：雷达图 + 属性 + 技能 */
@@ -18,7 +20,7 @@
   color: var(--tk-gold-light);
   margin: 0 0 10px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+  border-bottom: 1px solid var(--tk-hero-gold-12);
 }
 
 /* 雷达图 */
@@ -62,7 +64,7 @@
 .tk-hero-detail-stat-bar {
   flex: 1;
   height: 16px;
-  background: rgba(240, 230, 211, 0.06);
+  background: var(--tk-hero-linen-6);
   border-radius: 4px;
   overflow: hidden;
   position: relative;
@@ -77,32 +79,32 @@
 /* 属性条渐变色 — 按属性类型 */
 /* 攻击 — 红橙渐变 */
 .tk-hero-detail-stat-fill--atk {
-  background: linear-gradient(90deg, #D4654A, #E8915A);
+  background: linear-gradient(90deg, var(--tk-hero-stat-attack-light), var(--tk-hero-stat-attack-end));
 }
 
 /* 防御 — 蓝色渐变 */
 .tk-hero-detail-stat-fill--def {
-  background: linear-gradient(90deg, #3A8FD4, #5AAFE8);
+  background: linear-gradient(90deg, var(--tk-hero-stat-defense-light), var(--tk-hero-stat-defense-end));
 }
 
 /* 速度 — 绿色渐变 */
 .tk-hero-detail-stat-fill--spd {
-  background: linear-gradient(90deg, #43A047, #66BB6A);
+  background: linear-gradient(90deg, var(--tk-hero-stat-speed), var(--tk-hero-stat-speed-end));
 }
 
 /* 智力 — 紫色渐变 */
 .tk-hero-detail-stat-fill--int {
-  background: linear-gradient(90deg, #8E24AA, #AB47BC);
+  background: linear-gradient(90deg, var(--tk-hero-stat-intelligence-end), var(--tk-hero-stat-intelligence));
 }
 
 /* 统率 — 金色渐变 */
 .tk-hero-detail-stat-fill--cmd {
-  background: linear-gradient(90deg, #C9A84C, #E8D48B);
+  background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-light));
 }
 
 /* 默认/通用 */
 .tk-hero-detail-stat-fill {
-  background: linear-gradient(90deg, #546E7A, #78909C);
+  background: linear-gradient(90deg, var(--tk-hero-stat-default-from, #546E7A), var(--tk-hero-stat-default-to, #78909C));
 }
 
 .tk-hero-detail-stat-value {
@@ -120,16 +122,16 @@
 .tk-hero-detail-skill-empty { font-size: 13px; color: var(--tk-text-muted); padding: 8px 0; }
 
 .tk-hero-detail-skill-item {
-  background: rgba(240, 230, 211, 0.03);
-  border: 1px solid rgba(200, 168, 76, 0.1);
+  background: var(--tk-hero-linen-3);
+  border: 1px solid var(--tk-hero-gold-10);
   border-radius: 8px;
   padding: 10px 12px;
   margin-bottom: 8px;
   transition: border-color 0.15s, background 0.15s;
 }
 .tk-hero-detail-skill-item:hover {
-  border-color: rgba(200, 168, 76, 0.2);
-  background: rgba(240, 230, 211, 0.05);
+  border-color: var(--tk-hero-gold-20);
+  background: var(--tk-hero-linen-5);
 }
 .tk-hero-detail-skill-header {
   display: flex;
@@ -142,7 +144,7 @@
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 3px;
-  background: rgba(200, 168, 76, 0.12);
+  background: var(--tk-hero-gold-12);
   color: var(--tk-gold-light);
   font-weight: 600;
 }
@@ -165,7 +167,7 @@
   color: var(--tk-gold-light);
   margin: 0 0 8px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+  border-bottom: 1px solid var(--tk-hero-gold-12);
 }
 
 .tk-hero-detail-breakthrough-nodes {
@@ -179,8 +181,8 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid rgba(200, 168, 76, 0.2);
-  background: rgba(240, 230, 211, 0.04);
+  border: 2px solid var(--tk-hero-gold-20);
+  background: var(--tk-hero-linen-4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -193,14 +195,14 @@
 /* 已激活节点 */
 .tk-hero-detail-breakthrough-node--active {
   border-color: var(--tk-gold);
-  background: rgba(200, 168, 76, 0.2);
+  background: var(--tk-hero-gold-20);
   color: var(--tk-gold-light);
 }
 
 /* 当前节点 */
 .tk-hero-detail-breakthrough-node--current {
   border-color: var(--tk-gold);
-  background: rgba(200, 168, 76, 0.3);
+  background: var(--tk-hero-gold-30);
   color: var(--tk-gold-light);
   font-weight: 700;
 }
@@ -209,12 +211,12 @@
 .tk-hero-detail-breakthrough-line {
   flex: 1;
   height: 2px;
-  background: rgba(200, 168, 76, 0.15);
+  background: var(--tk-hero-gold-15);
   min-width: 16px;
 }
 
 .tk-hero-detail-breakthrough-line--active {
-  background: rgba(200, 168, 76, 0.4);
+  background: var(--tk-hero-gold-40);
 }
 
 /* 手机端 — 图表区域响应式覆盖 */

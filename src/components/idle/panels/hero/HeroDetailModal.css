@@ -1,6 +1,8 @@
 /**
  * HeroDetailModal — 武将详情弹窗样式
  * PC端：800×700 弹窗，左右分栏，含雷达图 | 手机端：全屏从右侧滑入
+ *
+ * 颜色变量定义见 hero-design-tokens.css
  */
 
 /* 遮罩层 */
@@ -11,7 +13,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--tk-hero-overlay-bg);
   animation: tk-detail-fade-in 200ms ease-out;
 }
 
@@ -26,13 +28,13 @@
   width: 800px;
   max-width: 95vw;
   max-height: 90vh;
-  background: linear-gradient(175deg, rgba(22, 30, 46, 0.98) 0%, rgba(16, 22, 34, 0.99) 100%);
-  border: 2px solid rgba(200, 168, 76, 0.4);
+  background: var(--tk-hero-modal-bg);
+  border: 2px solid var(--tk-hero-modal-border);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   animation: tk-detail-enter 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--tk-hero-modal-shadow);
   overflow: hidden;
 }
 
@@ -50,7 +52,7 @@
   border: none;
   cursor: pointer;
   padding: 4px 8px;
-  color: var(--tk-text-secondary, #a0a0a0);
+  color: var(--tk-text-secondary);
   font-size: 16px;
   border-radius: 4px;
   z-index: 10;
@@ -58,8 +60,8 @@
 }
 
 .tk-hero-detail-close:hover {
-  color: var(--tk-text-primary, #f0e6d3);
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--tk-text-primary);
+  background: var(--tk-hero-white-8);
 }
 
 /* 标题栏 */
@@ -68,8 +70,8 @@
   align-items: center;
   gap: 10px;
   padding: 14px 20px;
-  border-bottom: 2px solid rgba(200, 168, 76, 0.25);
-  background: rgba(200, 168, 76, 0.03);
+  border-bottom: 2px solid var(--tk-hero-gold-25);
+  background: var(--tk-hero-gold-3);
 }
 .tk-hero-detail-title-name {
   font-size: 20px;
@@ -86,7 +88,7 @@
   border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--tk-text-primary, #fff);
+  color: var(--tk-text-primary);
 }
 
 /* 武将传记 */
@@ -97,7 +99,7 @@
   font-style: italic;
   color: var(--tk-text-secondary);
   line-height: 1.6;
-  border-bottom: 1px solid rgba(200, 168, 76, 0.12);
+  border-bottom: 1px solid var(--tk-hero-gold-12);
 }
 
 /* 主体：左右分栏 */
@@ -122,17 +124,17 @@
   width: 160px;
   height: 180px;
   border-radius: 12px;
-  border: 3px solid rgba(200, 168, 76, 0.4);
+  border: 3px solid var(--tk-hero-gold-40);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(170deg, rgba(30, 38, 55, 0.6) 0%, rgba(18, 24, 36, 0.8) 100%);
+  background: linear-gradient(170deg, var(--tk-hero-portrait-bg-from) 0%, var(--tk-hero-portrait-bg-to) 100%);
 }
 .tk-hero-detail-portrait-char {
   font-size: 56px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  color: var(--tk-hero-white-92);
+  text-shadow: 0 2px 8px var(--tk-hero-black-50);
   font-family: 'STXingkai', '华文行楷', 'KaiTi', serif;
   line-height: 1.2;
   text-align: center;
@@ -147,7 +149,7 @@
   border: 2px solid var(--tk-gold);
   border-radius: 20px;
   font-variant-numeric: tabular-nums;
-  background: rgba(200, 168, 76, 0.08);
+  background: var(--tk-hero-gold-8);
 }
 
 /* 经验条 */
@@ -161,14 +163,14 @@
 .tk-hero-detail-exp-bar {
   width: 100%;
   height: 8px;
-  background: rgba(240, 230, 211, 0.08);
+  background: var(--tk-hero-linen-8);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .tk-hero-detail-exp-fill {
   height: 100%;
-  background: linear-gradient(90deg, #2196F3, #43A047);
+  background: linear-gradient(90deg, var(--tk-hero-exp-fill-from), var(--tk-hero-exp-fill-to));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -198,13 +200,13 @@
 .tk-hero-detail-fragments-bar {
   width: 100%;
   height: 8px;
-  background: rgba(240, 230, 211, 0.08);
+  background: var(--tk-hero-linen-8);
   border-radius: 4px;
   overflow: hidden;
 }
 .tk-hero-detail-fragments-fill {
   height: 100%;
-  background: linear-gradient(90deg, #9C27B0, #CE93D8);
+  background: linear-gradient(90deg, var(--tk-hero-fragment-fill-from), var(--tk-hero-fragment-fill-to));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -212,8 +214,8 @@
 .tk-hero-detail-synthesize-btn {
   width: 100%;
   padding: 8px 12px;
-  background: rgba(156, 39, 176, 0.1);
-  border: 1px solid rgba(156, 39, 176, 0.25);
+  background: var(--tk-hero-fragment-bg);
+  border: 1px solid var(--tk-hero-fragment-border);
   border-radius: 8px;
   color: var(--tk-text-secondary);
   font-size: 12px;
@@ -224,15 +226,15 @@
 }
 
 .tk-hero-detail-synthesize-btn--active {
-  background: rgba(156, 39, 176, 0.18);
-  border-color: rgba(156, 39, 176, 0.5);
-  color: #CE93D8;
+  background: var(--tk-hero-fragment-active-bg);
+  border-color: var(--tk-hero-fragment-active-border);
+  color: var(--tk-hero-fragment-text);
   cursor: pointer;
 }
 
 .tk-hero-detail-synthesize-btn--active:hover {
-  background: rgba(156, 39, 176, 0.3);
-  color: var(--tk-text-primary, #fff);
+  background: var(--tk-hero-fragment-hover-bg);
+  color: var(--tk-text-primary);
 }
 
 .tk-hero-detail-synthesize-btn:disabled {
@@ -242,8 +244,8 @@
 /* 升级操作区 */
 .tk-hero-detail-enhance {
   width: 100%;
-  background: rgba(240, 230, 211, 0.03);
-  border: 1px solid rgba(200, 168, 76, 0.12);
+  background: var(--tk-hero-linen-3);
+  border: 1px solid var(--tk-hero-gold-12);
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
@@ -263,8 +265,8 @@
 }
 .tk-hero-detail-enhance-max-btn {
   padding: 2px 8px;
-  background: rgba(200, 168, 76, 0.1);
-  border: 1px solid rgba(200, 168, 76, 0.25);
+  background: var(--tk-hero-gold-10);
+  border: 1px solid var(--tk-hero-gold-25);
   border-radius: 4px;
   color: var(--tk-gold-light);
   font-size: 11px;
@@ -274,7 +276,7 @@
 }
 
 .tk-hero-detail-enhance-max-btn:hover {
-  background: rgba(200, 168, 76, 0.22);
+  background: var(--tk-hero-gold-22);
 }
 .tk-hero-detail-enhance-target {
   display: flex;
@@ -307,8 +309,8 @@
 .tk-hero-detail-enhance-btn {
   width: 100%;
   padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(200, 168, 76, 0.15) 0%, rgba(200, 168, 76, 0.25) 100%);
-  border: 2px solid rgba(200, 168, 76, 0.5);
+  background: linear-gradient(135deg, var(--tk-hero-gold-15) 0%, var(--tk-hero-gold-25) 100%);
+  border: 2px solid var(--tk-hero-gold-50);
   border-radius: 8px;
   color: var(--tk-gold-light);
   font-size: 13px;
@@ -319,8 +321,8 @@
 }
 
 .tk-hero-detail-enhance-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(200, 168, 76, 0.28) 0%, rgba(200, 168, 76, 0.4) 100%);
-  border-color: rgba(200, 168, 76, 0.7);
+  background: linear-gradient(135deg, var(--tk-hero-gold-28) 0%, var(--tk-hero-gold-40) 100%);
+  border-color: var(--tk-hero-gold-70);
 }
 .tk-hero-detail-enhance-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
@@ -372,15 +374,15 @@
 .tk-hero-detail-compare-btn {
   margin-left: auto;
   padding: 4px 12px;
-  background: rgba(212, 165, 116, 0.15);
-  color: var(--tk-gold-soft, #d4a574);
-  border: 1px solid rgba(212, 165, 116, 0.3);
+  background: var(--tk-hero-compare-bg);
+  color: var(--tk-gold-soft);
+  border: 1px solid var(--tk-hero-compare-border);
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 .tk-hero-detail-compare-btn:hover {
-  background: rgba(212, 165, 116, 0.3);
-  border-color: rgba(212, 165, 116, 0.5);
+  background: var(--tk-hero-compare-hover-bg);
+  border-color: var(--tk-hero-compare-hover-border);
 }

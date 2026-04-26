@@ -30,6 +30,7 @@ import GuideOverlay from './GuideOverlay';
 import HeroCompareModal from './HeroCompareModal';
 import FormationPanel from './FormationPanel';
 import { useHeroGuide } from './hooks';
+import './hero-design-tokens.css';
 import './HeroTab.css';
 
 // ─────────────────────────────────────────────

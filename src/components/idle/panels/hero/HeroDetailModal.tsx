@@ -22,6 +22,7 @@ import {
   HeroDetailBonds,
   HeroDetailBreakthrough,
 } from './HeroDetailSections';
+import './hero-design-tokens.css';
 import './HeroDetailModal.css';
 import './HeroDetailModal-chart.css';
 

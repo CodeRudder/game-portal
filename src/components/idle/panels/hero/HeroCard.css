@@ -4,6 +4,8 @@
  * 品质边框色：普通灰 / 精良绿 / 稀有蓝 / 史诗紫 / 传说橙 / 神话红
  * PC端：160×200 卡片，品质边框 + 内嵌渐变
  * 手机端：2列紧凑网格卡片
+ *
+ * 颜色变量定义见 hero-design-tokens.css
  */
 
 /* ═══════════════════════════════════════════
@@ -12,8 +14,8 @@
 .tk-hero-card {
   width: 160px;
   height: 200px;
-  background: linear-gradient(170deg, rgba(30, 40, 58, 0.92) 0%, rgba(20, 28, 42, 0.95) 100%);
-  border: 2px solid rgba(200, 168, 76, 0.2);
+  background: linear-gradient(170deg, var(--tk-hero-default-bg-from) 0%, var(--tk-hero-default-bg-to) 100%);
+  border: 2px solid var(--tk-hero-gold-20);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -31,14 +33,14 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 40%);
+  background: linear-gradient(180deg, var(--tk-hero-white-3) 0%, transparent 40%);
   pointer-events: none;
   z-index: 1;
 }
 
 .tk-hero-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px var(--tk-hero-black-45);
 }
 
 /* ═══════════════════════════════════════════
@@ -47,67 +49,67 @@
 
 /* 神话 — 赤红 */
 .tk-hero-card--mythic {
-  border-color: rgba(244, 67, 54, 0.55);
-  background: linear-gradient(170deg, rgba(50, 25, 25, 0.92) 0%, rgba(30, 18, 18, 0.95) 100%);
+  border-color: var(--tk-hero-mythic-border);
+  background: linear-gradient(170deg, var(--tk-hero-mythic-bg-from) 0%, var(--tk-hero-mythic-bg-to) 100%);
 }
 
 .tk-hero-card--mythic:hover {
-  box-shadow: 0 8px 28px rgba(244, 67, 54, 0.2), 0 8px 24px rgba(0, 0, 0, 0.45);
-  border-color: rgba(244, 67, 54, 0.8);
+  box-shadow: 0 8px 28px var(--tk-hero-mythic-shadow), 0 8px 24px var(--tk-hero-black-45);
+  border-color: var(--tk-hero-mythic-border-hover);
 }
 
 /* 传说 — 金橙 */
 .tk-hero-card--legendary {
-  border-color: rgba(255, 152, 0, 0.5);
-  background: linear-gradient(170deg, rgba(45, 38, 22, 0.92) 0%, rgba(30, 25, 15, 0.95) 100%);
+  border-color: var(--tk-hero-legendary-border);
+  background: linear-gradient(170deg, var(--tk-hero-legendary-bg-from) 0%, var(--tk-hero-legendary-bg-to) 100%);
 }
 
 .tk-hero-card--legendary:hover {
-  box-shadow: 0 8px 28px rgba(255, 152, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.45);
-  border-color: rgba(255, 152, 0, 0.75);
+  box-shadow: 0 8px 28px var(--tk-hero-legendary-shadow), 0 8px 24px var(--tk-hero-black-45);
+  border-color: var(--tk-hero-legendary-border-hover);
 }
 
 /* 史诗 — 深紫 */
 .tk-hero-card--epic {
-  border-color: rgba(156, 39, 176, 0.45);
-  background: linear-gradient(170deg, rgba(38, 25, 50, 0.92) 0%, rgba(25, 18, 35, 0.95) 100%);
+  border-color: var(--tk-hero-epic-border);
+  background: linear-gradient(170deg, var(--tk-hero-epic-bg-from) 0%, var(--tk-hero-epic-bg-to) 100%);
 }
 
 .tk-hero-card--epic:hover {
-  box-shadow: 0 8px 24px rgba(156, 39, 176, 0.2), 0 8px 24px rgba(0, 0, 0, 0.45);
-  border-color: rgba(156, 39, 176, 0.7);
+  box-shadow: 0 8px 24px var(--tk-hero-epic-shadow), 0 8px 24px var(--tk-hero-black-45);
+  border-color: var(--tk-hero-epic-border-hover);
 }
 
 /* 稀有 — 蓝色 */
 .tk-hero-card--rare {
-  border-color: rgba(33, 150, 243, 0.4);
-  background: linear-gradient(170deg, rgba(22, 35, 55, 0.92) 0%, rgba(18, 28, 45, 0.95) 100%);
+  border-color: var(--tk-hero-rare-border);
+  background: linear-gradient(170deg, var(--tk-hero-rare-bg-from) 0%, var(--tk-hero-rare-bg-to) 100%);
 }
 
 .tk-hero-card--rare:hover {
-  box-shadow: 0 8px 24px rgba(33, 150, 243, 0.18), 0 8px 24px rgba(0, 0, 0, 0.45);
-  border-color: rgba(33, 150, 243, 0.65);
+  box-shadow: 0 8px 24px var(--tk-hero-rare-shadow), 0 8px 24px var(--tk-hero-black-45);
+  border-color: var(--tk-hero-rare-border-hover);
 }
 
 /* 精良 — 绿色 */
 .tk-hero-card--fine {
-  border-color: rgba(76, 175, 80, 0.4);
-  background: linear-gradient(170deg, rgba(22, 40, 28, 0.92) 0%, rgba(18, 32, 22, 0.95) 100%);
+  border-color: var(--tk-hero-uncommon-border);
+  background: linear-gradient(170deg, var(--tk-hero-uncommon-bg-from) 0%, var(--tk-hero-uncommon-bg-to) 100%);
 }
 
 .tk-hero-card--fine:hover {
-  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.18), 0 8px 24px rgba(0, 0, 0, 0.45);
-  border-color: rgba(76, 175, 80, 0.65);
+  box-shadow: 0 8px 24px var(--tk-hero-uncommon-shadow), 0 8px 24px var(--tk-hero-black-45);
+  border-color: var(--tk-hero-uncommon-border-hover);
 }
 
 /* 普通 — 灰色 */
 .tk-hero-card--common {
-  border-color: rgba(158, 158, 158, 0.25);
+  border-color: var(--tk-hero-common-border);
 }
 
 .tk-hero-card--common:hover {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  border-color: rgba(158, 158, 158, 0.45);
+  box-shadow: 0 8px 20px var(--tk-hero-black-40);
+  border-color: var(--tk-hero-common-border-hover);
 }
 
 /* ═══════════════════════════════════════════
@@ -120,12 +122,12 @@
   padding: 2px 8px;
   font-size: 10px;
   font-weight: 700;
-  color: #fff;
+  color: var(--tk-text-primary);
   border-radius: 0 0 6px 0;
   z-index: 2;
   letter-spacing: 1px;
   line-height: 1.4;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 2px var(--tk-hero-black-40);
 }
 
 /* ═══════════════════════════════════════════
@@ -139,8 +141,8 @@
   line-height: 1;
   font-size: 11px;
   letter-spacing: -0.5px;
-  color: #FFD54F;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  color: var(--tk-gold-bright);
+  text-shadow: 0 1px 3px var(--tk-hero-black-60);
   filter: saturate(1.2) brightness(1.1);
 }
 
@@ -156,16 +158,16 @@
   justify-content: center;
   margin-top: 14px;
   margin-bottom: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--tk-hero-white-12);
+  background: var(--tk-hero-black-20);
   flex-shrink: 0;
 }
 
 .tk-hero-card-portrait-char {
   font-size: 28px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  color: var(--tk-hero-white-92);
+  text-shadow: 0 1px 4px var(--tk-hero-black-50);
   font-family: 'STXingkai', '华文行楷', 'KaiTi', serif;
 }
 
@@ -203,10 +205,10 @@
   color: var(--tk-gold-light);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  background: rgba(200, 168, 76, 0.12);
+  background: var(--tk-hero-gold-12);
   padding: 1px 6px;
   border-radius: 3px;
-  border: 1px solid rgba(200, 168, 76, 0.2);
+  border: 1px solid var(--tk-hero-gold-20);
 }
 
 /* ═══════════════════════════════════════════
@@ -228,7 +230,7 @@
   right: 6px;
   width: 8px;
   height: 8px;
-  background: #E53935;
+  background: var(--tk-hero-danger-fill);
   border-radius: 50%;
   z-index: 3;
 }

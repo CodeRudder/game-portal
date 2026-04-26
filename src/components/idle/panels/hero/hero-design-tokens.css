@@ -1,0 +1,161 @@
+/**
+ * hero-design-tokens.css — 武将系统全局设计令牌
+ *
+ * 集中定义武将 UI 中常用的颜色变量，消除各组件 CSS 中的硬编码色值。
+ * 优先复用 ThreeKingdomsGame.css 中的全局 --tk-* 变量，
+ * 此处仅定义组件级语义变量。
+ *
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+:root {
+  /* ── 遮罩层 ── */
+  --tk-hero-overlay-bg: rgba(0, 0, 0, 0.65);
+
+  /* ── 弹窗主体 ── */
+  --tk-hero-modal-bg: linear-gradient(175deg, rgba(22, 30, 46, 0.98) 0%, rgba(16, 22, 34, 0.99) 100%);
+  --tk-hero-modal-border: rgba(200, 168, 76, 0.4);
+  --tk-hero-modal-shadow: 0 16px 64px rgba(0, 0, 0, 0.7);
+
+  /* ── 金色系（铜纹主题色） ── */
+  --tk-hero-gold-3: rgba(200, 168, 76, 0.03);
+  --tk-hero-gold-4: rgba(200, 168, 76, 0.04);
+  --tk-hero-gold-6: rgba(200, 168, 76, 0.06);
+  --tk-hero-gold-8: rgba(200, 168, 76, 0.08);
+  --tk-hero-gold-10: rgba(200, 168, 76, 0.1);
+  --tk-hero-gold-12: rgba(200, 168, 76, 0.12);
+  --tk-hero-gold-15: rgba(200, 168, 76, 0.15);
+  --tk-hero-gold-18: rgba(200, 168, 76, 0.18);
+  --tk-hero-gold-20: rgba(200, 168, 76, 0.2);
+  --tk-hero-gold-22: rgba(200, 168, 76, 0.22);
+  --tk-hero-gold-25: rgba(200, 168, 76, 0.25);
+  --tk-hero-gold-28: rgba(200, 168, 76, 0.28);
+  --tk-hero-gold-30: rgba(200, 168, 76, 0.3);
+  --tk-hero-gold-35: rgba(200, 168, 76, 0.35);
+  --tk-hero-gold-40: rgba(200, 168, 76, 0.4);
+  --tk-hero-gold-45: rgba(200, 168, 76, 0.45);
+  --tk-hero-gold-50: rgba(200, 168, 76, 0.5);
+  --tk-hero-gold-65: rgba(200, 168, 76, 0.65);
+  --tk-hero-gold-70: rgba(200, 168, 76, 0.7);
+
+  /* ── 米色系（文字色淡化） ── */
+  --tk-hero-linen-3: rgba(240, 230, 211, 0.03);
+  --tk-hero-linen-4: rgba(240, 230, 211, 0.04);
+  --tk-hero-linen-5: rgba(240, 230, 211, 0.05);
+  --tk-hero-linen-6: rgba(240, 230, 211, 0.06);
+  --tk-hero-linen-8: rgba(240, 230, 211, 0.08);
+
+  /* ── 白色系 ── */
+  --tk-hero-white-3: rgba(255, 255, 255, 0.03);
+  --tk-hero-white-5: rgba(255, 255, 255, 0.05);
+  --tk-hero-white-8: rgba(255, 255, 255, 0.08);
+  --tk-hero-white-10: rgba(255, 255, 255, 0.1);
+  --tk-hero-white-12: rgba(255, 255, 255, 0.12);
+  --tk-hero-white-15: rgba(255, 255, 255, 0.15);
+  --tk-hero-white-92: rgba(255, 255, 255, 0.92);
+
+  /* ── 黑色系（阴影/文字） ── */
+  --tk-hero-black-20: rgba(0, 0, 0, 0.2);
+  --tk-hero-black-40: rgba(0, 0, 0, 0.4);
+  --tk-hero-black-45: rgba(0, 0, 0, 0.45);
+  --tk-hero-black-50: rgba(0, 0, 0, 0.5);
+  --tk-hero-black-60: rgba(0, 0, 0, 0.6);
+  --tk-hero-black-70: rgba(0, 0, 0, 0.7);
+
+  /* ── 品质色系（卡牌边框/背景） ── */
+  --tk-hero-epic-border: rgba(156, 39, 176, 0.45);
+  --tk-hero-epic-border-hover: rgba(156, 39, 176, 0.7);
+  --tk-hero-epic-shadow: rgba(156, 39, 176, 0.2);
+  --tk-hero-epic-bg-from: rgba(38, 25, 50, 0.92);
+  --tk-hero-epic-bg-to: rgba(25, 18, 35, 0.95);
+
+  --tk-hero-legendary-border: rgba(255, 152, 0, 0.5);
+  --tk-hero-legendary-border-hover: rgba(255, 152, 0, 0.75);
+  --tk-hero-legendary-shadow: rgba(255, 152, 0, 0.2);
+  --tk-hero-legendary-bg-from: rgba(45, 38, 22, 0.92);
+  --tk-hero-legendary-bg-to: rgba(30, 25, 15, 0.95);
+
+  --tk-hero-mythic-border: rgba(244, 67, 54, 0.55);
+  --tk-hero-mythic-border-hover: rgba(244, 67, 54, 0.8);
+  --tk-hero-mythic-shadow: rgba(244, 67, 54, 0.2);
+  --tk-hero-mythic-bg-from: rgba(50, 25, 25, 0.92);
+  --tk-hero-mythic-bg-to: rgba(30, 18, 18, 0.95);
+
+  --tk-hero-rare-border: rgba(33, 150, 243, 0.4);
+  --tk-hero-rare-border-hover: rgba(33, 150, 243, 0.65);
+  --tk-hero-rare-shadow: rgba(33, 150, 243, 0.18);
+  --tk-hero-rare-bg-from: rgba(22, 35, 55, 0.92);
+  --tk-hero-rare-bg-to: rgba(18, 28, 45, 0.95);
+
+  --tk-hero-uncommon-border: rgba(76, 175, 80, 0.4);
+  --tk-hero-uncommon-border-hover: rgba(76, 175, 80, 0.65);
+  --tk-hero-uncommon-shadow: rgba(76, 175, 80, 0.18);
+  --tk-hero-uncommon-bg-from: rgba(22, 40, 28, 0.92);
+  --tk-hero-uncommon-bg-to: rgba(18, 32, 22, 0.95);
+
+  --tk-hero-common-border: rgba(158, 158, 158, 0.25);
+  --tk-hero-common-border-hover: rgba(158, 158, 158, 0.45);
+
+  --tk-hero-default-bg-from: rgba(30, 40, 58, 0.92);
+  --tk-hero-default-bg-to: rgba(20, 28, 42, 0.95);
+
+  /* ── 碎片/合成（紫色系） ── */
+  --tk-hero-fragment-bg: rgba(156, 39, 176, 0.1);
+  --tk-hero-fragment-border: rgba(156, 39, 176, 0.25);
+  --tk-hero-fragment-active-bg: rgba(156, 39, 176, 0.18);
+  --tk-hero-fragment-active-border: rgba(156, 39, 176, 0.5);
+  --tk-hero-fragment-hover-bg: rgba(156, 39, 176, 0.3);
+  --tk-hero-fragment-fill-from: #9C27B0;
+  --tk-hero-fragment-fill-to: #CE93D8;
+  --tk-hero-fragment-text: #CE93D8;
+
+  /* ── 经验条渐变 ── */
+  --tk-hero-exp-fill-from: #2196F3;
+  --tk-hero-exp-fill-to: #43A047;
+
+  /* ── 属性条渐变 ── */
+  --tk-hero-stat-attack: #E53935;
+  --tk-hero-stat-attack-light: #D4654A;
+  --tk-hero-stat-attack-end: #E8915A;
+  --tk-hero-stat-defense: #1E88E5;
+  --tk-hero-stat-defense-light: #3A8FD4;
+  --tk-hero-stat-defense-end: #5AAFE8;
+  --tk-hero-stat-intelligence: #AB47BC;
+  --tk-hero-stat-intelligence-end: #8E24AA;
+  --tk-hero-stat-speed: #43A047;
+  --tk-hero-stat-speed-end: #66BB6A;
+
+  /* ── 对比按钮（铜色系） ── */
+  --tk-hero-compare-bg: rgba(212, 165, 116, 0.15);
+  --tk-hero-compare-border: rgba(212, 165, 116, 0.3);
+  --tk-hero-compare-hover-bg: rgba(212, 165, 116, 0.3);
+  --tk-hero-compare-hover-border: rgba(212, 165, 116, 0.5);
+
+  /* ── 绿色系（筛选/成功） ── */
+  --tk-hero-green-8: rgba(76, 175, 80, 0.08);
+  --tk-hero-green-10: rgba(76, 175, 80, 0.1);
+  --tk-hero-green-12: rgba(76, 175, 80, 0.12);
+  --tk-hero-green-15: rgba(76, 175, 80, 0.15);
+  --tk-hero-green-16: rgba(76, 175, 80, 0.16);
+  --tk-hero-green-20: rgba(76, 175, 80, 0.2);
+  --tk-hero-green-25: rgba(76, 175, 80, 0.25);
+  --tk-hero-green-35: rgba(76, 175, 80, 0.35);
+  --tk-hero-green-45: rgba(76, 175, 80, 0.45);
+  --tk-hero-green-60: rgba(76, 175, 80, 0.6);
+
+  /* ── 红色系（危险/卸下） ── */
+  --tk-hero-danger-fill: #E53935;
+  --tk-hero-danger-10: rgba(229, 57, 53, 0.1);
+  --tk-hero-danger-20: rgba(229, 57, 53, 0.2);
+
+  /* ── 暗色系（深背景） ── */
+  --tk-hero-dark-bg: rgba(20, 25, 35, 0.5);
+
+  /* ── 铜色系（筛选器高亮） ── */
+  --tk-hero-copper-25: rgba(200, 169, 110, 0.25);
+  --tk-hero-copper-40: rgba(200, 169, 110, 0.4);
+
+  /* ── 画像背景渐变 ── */
+  --tk-hero-portrait-bg-from: rgba(30, 38, 55, 0.6);
+  --tk-hero-portrait-bg-to: rgba(18, 24, 36, 0.8);
+}
