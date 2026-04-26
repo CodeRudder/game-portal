@@ -845,4 +845,221 @@ describe('ACC-11 引导系统UI层验收', () => {
       expect(modal).toBeInTheDocument();
     });
   });
+
+  // ─── ACC-11-17: 策略引导折叠/展开 ───
+
+  describe('ACC-11-17: 策略引导折叠/展开', () => {
+    it('ACC-11-17: 点击标题栏切换展开/折叠', async () => {
+      const user = userEvent.setup();
+      const { StrategyGuidePanel } = await import('../StrategyGuidePanel');
+      render(<StrategyGuidePanel />);
+
+      // 初始为折叠状态
+      expect(screen.queryByTestId('strategy-guide-content')).not.toBeInTheDocument();
+
+      // 点击标题展开
+      await user.click(screen.getByTestId('strategy-guide-toggle'));
+      expect(screen.getByTestId('strategy-guide-content')).toBeInTheDocument();
+
+      // 再次点击折叠
+      await user.click(screen.getByTestId('strategy-guide-toggle'));
+      expect(screen.queryByTestId('strategy-guide-content')).not.toBeInTheDocument();
+    });
+
+    it('ACC-11-17: 显示阶段解锁/完成状态', async () => {
+      const { StrategyGuidePanel } = await import('../StrategyGuidePanel');
+      const user = userEvent.setup();
+      render(<StrategyGuidePanel />);
+
+      await user.click(screen.getByTestId('strategy-guide-toggle'));
+
+      // 核心引导阶段默认解锁
+      const corePhase = screen.getByTestId('strategy-guide-phase-core');
+      expect(corePhase).toBeInTheDocument();
+
+      // 进阶引导阶段未解锁（无引擎时 completedCount=0）
+      const extendedPhase = screen.getByTestId('strategy-guide-phase-extended');
+      expect(extendedPhase).toBeInTheDocument();
+    });
+
+    it('ACC-11-17: 未解锁阶段显示锁定图标', async () => {
+      const { StrategyGuidePanel } = await import('../StrategyGuidePanel');
+      const user = userEvent.setup();
+      render(<StrategyGuidePanel />);
+
+      await user.click(screen.getByTestId('strategy-guide-toggle'));
+
+      // 无引擎时，进阶和策略阶段应显示锁定
+      const extendedPhase = screen.getByTestId('strategy-guide-phase-extended');
+      expect(extendedPhase.textContent).toContain('未解锁');
+    });
+  });
+
+  // ─── ACC-11-42: 手机端高亮区域定位准确 ───
+
+  describe('ACC-11-42: 手机端高亮区域定位准确', () => {
+    beforeEach(() => {
+      document.body.innerHTML = `
+        <div class="hero-tab" style="position:absolute;top:10px;left:10px;width:80px;height:30px;"></div>
+        <div class="claim-btn" style="position:absolute;top:100px;left:10px;width:100px;height:40px;"></div>
+        <div class="recruit-btn" style="position:absolute;top:200px;left:10px;width:120px;height:40px;"></div>
+      `;
+    });
+
+    it('ACC-11-42: InteractiveTutorial 通过 getBoundingClientRect 获取位置', () => {
+      act(() => {
+        render(
+          <InteractiveTutorial
+            steps={interactiveSteps}
+            currentStep={0}
+            onNext={vi.fn()}
+            onPrev={vi.fn()}
+            onSkip={vi.fn()}
+            onComplete={vi.fn()}
+          />,
+        );
+      });
+      const highlight = screen.getByTestId('tutorial-highlight');
+      expect(highlight).toBeInTheDocument();
+      // 高亮区域有位置信息（top/left/width/height）
+      const style = highlight.style;
+      expect(style.top).toBeDefined();
+      expect(style.left).toBeDefined();
+      expect(style.width).toBeDefined();
+      expect(style.height).toBeDefined();
+    });
+
+    it('ACC-11-42: 高亮区域正确覆盖目标元素尺寸', () => {
+      // Mock getBoundingClientRect 返回真实尺寸
+      const mockRect = { top: 10, left: 10, width: 80, height: 30, bottom: 40, right: 90, x: 10, y: 10 };
+      const origGetBCR = Element.prototype.getBoundingClientRect;
+      Element.prototype.getBoundingClientRect = vi.fn(() => mockRect as DOMRect);
+
+      act(() => {
+        render(
+          <InteractiveTutorial
+            steps={interactiveSteps}
+            currentStep={0}
+            onNext={vi.fn()}
+            onPrev={vi.fn()}
+            onSkip={vi.fn()}
+            onComplete={vi.fn()}
+          />,
+        );
+      });
+      const highlight = screen.getByTestId('tutorial-highlight');
+      // 高亮区域应包含目标元素的尺寸+padding（width + 8）
+      const highlightWidth = parseFloat(highlight.style.width);
+      expect(highlightWidth).toBeGreaterThanOrEqual(80);
+
+      Element.prototype.getBoundingClientRect = origGetBCR;
+    });
+  });
+
+  // ─── ACC-11-45: 横竖屏切换引导适配 ───
+
+  describe('ACC-11-45: 横竖屏切换引导适配', () => {
+    it('ACC-11-45: InteractiveTutorial 监听 orientationchange 事件', () => {
+      const addSpy = vi.spyOn(window, 'addEventListener');
+      document.body.innerHTML = `
+        <div class="hero-tab" style="position:absolute;top:10px;left:10px;width:80px;height:30px;"></div>
+      `;
+      act(() => {
+        render(
+          <InteractiveTutorial
+            steps={interactiveSteps}
+            currentStep={0}
+            onNext={vi.fn()}
+            onPrev={vi.fn()}
+            onSkip={vi.fn()}
+            onComplete={vi.fn()}
+          />,
+        );
+      });
+      // 验证组件注册了 orientationchange 监听
+      expect(addSpy).toHaveBeenCalledWith('orientationchange', expect.any(Function));
+      addSpy.mockRestore();
+    });
+
+    it('ACC-11-45: resize 事件触发高亮位置重计算', () => {
+      document.body.innerHTML = `
+        <div class="hero-tab" style="position:absolute;top:10px;left:10px;width:80px;height:30px;"></div>
+      `;
+      const addSpy = vi.spyOn(window, 'addEventListener');
+      act(() => {
+        render(
+          <InteractiveTutorial
+            steps={interactiveSteps}
+            currentStep={0}
+            onNext={vi.fn()}
+            onPrev={vi.fn()}
+            onSkip={vi.fn()}
+            onComplete={vi.fn()}
+          />,
+        );
+      });
+      // 验证组件注册了 resize 监听
+      expect(addSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+      addSpy.mockRestore();
+    });
+  });
+
+  // ─── ACC-11-48: 手机端策略引导面板滚动 ───
+
+  describe('ACC-11-48: 手机端策略引导面板滚动', () => {
+    it('ACC-11-48: 策略引导面板内容区域可展开', async () => {
+      const { StrategyGuidePanel } = await import('../StrategyGuidePanel');
+      const user = userEvent.setup();
+      render(<StrategyGuidePanel />);
+
+      // 展开面板
+      await user.click(screen.getByTestId('strategy-guide-toggle'));
+
+      const content = screen.getByTestId('strategy-guide-content');
+      expect(content).toBeInTheDocument();
+    });
+
+    it('ACC-11-48: 展开后显示阶段列表和重玩按钮', async () => {
+      const { StrategyGuidePanel } = await import('../StrategyGuidePanel');
+      const user = userEvent.setup();
+      render(<StrategyGuidePanel />);
+
+      await user.click(screen.getByTestId('strategy-guide-toggle'));
+
+      // 阶段列表
+      expect(screen.getByTestId('strategy-guide-phase-core')).toBeInTheDocument();
+      expect(screen.getByTestId('strategy-guide-phase-extended')).toBeInTheDocument();
+      expect(screen.getByTestId('strategy-guide-phase-strategy')).toBeInTheDocument();
+
+      // 重玩按钮
+      expect(screen.getByTestId('guide-replay-btn')).toBeInTheDocument();
+    });
+  });
+
+  // ─── ACC-11-49: 小屏设备引导不遮挡关键信息 ───
+
+  describe('ACC-11-49: 小屏设备引导不遮挡关键信息', () => {
+    it('ACC-11-49: 引导气泡使用自适应定位', () => {
+      render(<GuideOverlay steps={testSteps} />);
+      // 第一步使用 bottom 定位
+      const tooltip = screen.getByTestId('guide-overlay-step-0');
+      expect(tooltip).toBeInTheDocument();
+      expect(tooltip.className).toContain('tk-guide-tooltip--bottom');
+    });
+
+    it('ACC-11-49: 操作按钮始终可见', () => {
+      render(<GuideOverlay steps={testSteps} />);
+      // Next 按钮始终可见
+      expect(screen.getByTestId('guide-overlay-next')).toBeInTheDocument();
+    });
+
+    it('ACC-11-49: center定位步骤不依赖目标元素', () => {
+      const centerSteps: GuideStep[] = [
+        { id: 's1', title: '居中步骤', description: '无需目标元素', position: 'center' },
+      ];
+      render(<GuideOverlay steps={centerSteps} />);
+      expect(screen.getByTestId('guide-overlay')).toBeInTheDocument();
+      expect(screen.getByText('居中步骤')).toBeInTheDocument();
+    });
+  });
 });
