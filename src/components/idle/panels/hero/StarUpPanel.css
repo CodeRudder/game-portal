@@ -17,17 +17,10 @@
 }
 
 /* ── 武将名字 ── */
-.tk-starup-hero-name {
-  font-size: 18px;
-  font-weight: bold;
-  color: #ff9800;
-}
+.tk-starup-hero-name { font-size: 18px; font-weight: bold; color: #ff9800; }
 
 /* ── 星级展示 ── */
-.tk-starup-stars {
-  display: flex;
-  gap: 8px;
-}
+.tk-starup-stars { display: flex; gap: 8px; }
 
 .tk-starup-star {
   font-size: 32px;
@@ -35,19 +28,11 @@
   transition: transform 0.3s ease, color 0.3s ease;
 }
 
-.tk-starup-star--filled {
-  color: #f59e0b;
-}
+.tk-starup-star--filled { color: #f59e0b; }
+.tk-starup-star--empty { color: #333; }
 
-.tk-starup-star--empty {
-  color: #333;
-}
-
-/* 星星点亮动画 */
-.tk-starup-star--animating {
-  color: #f59e0b;
-  transform: scale(1.4);
-}
+/* 星星点亮动画（缩放效果，无明暗变化） */
+.tk-starup-star--animating { color: #f59e0b; transform: scale(1.4); }
 
 /* ── 属性预览 ── */
 .tk-starup-preview {
@@ -65,41 +50,14 @@
   text-align: center;
 }
 
-.tk-starup-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.tk-starup-stats { display: flex; flex-direction: column; gap: 6px; }
 
-.tk-starup-stat-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.tk-starup-stat-name {
-  width: 40px;
-  color: #aaa;
-}
-
-.tk-starup-stat-before {
-  color: #ccc;
-}
-
-.tk-starup-stat-arrow {
-  color: #666;
-}
-
-.tk-starup-stat-after {
-  color: #fff;
-  font-weight: 600;
-}
-
-.tk-starup-stat-diff {
-  color: #4caf50;
-  font-size: 12px;
-}
+.tk-starup-stat-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.tk-starup-stat-name { width: 40px; color: #aaa; }
+.tk-starup-stat-before { color: #ccc; }
+.tk-starup-stat-arrow { color: #666; }
+.tk-starup-stat-after { color: #fff; font-weight: 600; }
+.tk-starup-stat-diff { color: #4caf50; font-size: 12px; }
 
 /* ── 材料列表 ── */
 .tk-starup-materials {
@@ -112,33 +70,12 @@
   border-radius: 8px;
 }
 
-.tk-starup-material-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.tk-starup-material-icon {
-  font-size: 16px;
-}
-
-.tk-starup-material-label {
-  width: 40px;
-  color: #aaa;
-}
-
-.tk-starup-material-value {
-  font-weight: 600;
-}
-
-.tk-starup-material-value--sufficient {
-  color: #4caf50;
-}
-
-.tk-starup-material-value--insufficient {
-  color: #f44336;
-}
+.tk-starup-material-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.tk-starup-material-icon { font-size: 16px; }
+.tk-starup-material-label { width: 40px; color: #aaa; }
+.tk-starup-material-value { font-weight: 600; }
+.tk-starup-material-value--sufficient { color: #4caf50; }
+.tk-starup-material-value--insufficient { color: #f44336; }
 
 /* ── 升星按钮 ── */
 .tk-starup-btn {
@@ -157,9 +94,7 @@
   color: #1a1a2e;
 }
 
-.tk-starup-btn--active:hover {
-  transform: scale(1.02);
-}
+.tk-starup-btn--active:hover { transform: scale(1.02); }
 
 .tk-starup-btn--disabled {
   background: #333;
@@ -168,9 +103,4 @@
 }
 
 /* ── 满星提示 ── */
-.tk-starup-maxed {
-  font-size: 16px;
-  color: #f59e0b;
-  text-align: center;
-  padding: 12px;
-}
+.tk-starup-maxed { font-size: 16px; color: #f59e0b; text-align: center; padding: 12px; }

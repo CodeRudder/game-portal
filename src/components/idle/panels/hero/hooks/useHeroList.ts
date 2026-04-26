@@ -11,9 +11,31 @@
 
 import { useMemo } from 'react';
 import type { GeneralData, HeroStarSystem } from '@/games/three-kingdoms/engine';
+import type { Faction } from '@/games/three-kingdoms/shared/types';
+import { FACTIONS } from '@/games/three-kingdoms/engine/hero/hero.types';
 import type { HeroBrief } from '../HeroDispatchPanel';
 import type { HeroInfo } from '../FormationRecommendPanel';
 import type { UseHeroEngineParams, UseHeroListReturn } from './hero-hook.types';
+
+/** FACTIONS 只读数组，用于 Set 快速查找 */
+const FACTION_SET: ReadonlySet<string> = new Set(FACTIONS);
+
+/**
+ * 将引擎枚举/联合类型安全转换为字符串
+ *
+ * Quality 枚举值为字符串字面量（如 'COMMON'），
+ * Faction 为联合类型（如 'shu'），均可用 String() 转换。
+ */
+function toString(value: string): string {
+  return String(value);
+}
+
+/**
+ * 安全判断值是否为合法 Faction
+ */
+function toFactionString(value: string): string {
+  return FACTION_SET.has(value) ? value : String(value);
+}
 
 /**
  * 武将列表数据 Hook
@@ -29,7 +51,12 @@ export function useHeroList(params: UseHeroEngineParams): UseHeroListReturn {
     void snapshotVersion;
     try {
       const raw = engine?.getGenerals?.() ?? [];
-      return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, GeneralData>) : [];
+      if (Array.isArray(raw)) return raw;
+      // 引擎可能返回 Record<string, GeneralData>，手动提取 values
+      if (raw && typeof raw === 'object') {
+        return Object.values(raw as Record<string, GeneralData>);
+      }
+      return [];
     } catch {
       return [];
     }
@@ -51,7 +78,7 @@ export function useHeroList(params: UseHeroEngineParams): UseHeroListReturn {
       id: g.id,
       name: g.name,
       level: g.level,
-      quality: g.quality as string,
+      quality: toString(g.quality),
       stars: starSystem?.getStar(g.id) ?? 1,
     }));
   }, [allGenerals, engine]);
@@ -67,9 +94,9 @@ export function useHeroList(params: UseHeroEngineParams): UseHeroListReturn {
       id: g.id,
       name: g.name,
       level: g.level,
-      quality: g.quality as string,
+      quality: toString(g.quality),
       stars: starSystem?.getStar(g.id) ?? 1,
-      faction: g.faction as string,
+      faction: toFactionString(g.faction),
     }));
   }, [allGenerals, engine]);
 
