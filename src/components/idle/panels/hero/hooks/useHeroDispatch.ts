@@ -10,7 +10,6 @@
 
 import { useMemo, useCallback } from 'react';
 import type { BuildingBrief } from '../HeroDispatchPanel';
-import type { BuildingSystemLike } from '../hero-ui.types';
 import type { UseHeroEngineParams, UseHeroDispatchReturn } from './hero-hook.types';
 
 /**
@@ -25,7 +24,7 @@ export function useHeroDispatch(params: UseHeroEngineParams): UseHeroDispatchRet
   // ── 建筑数据 ──
   const buildings = useMemo((): BuildingBrief[] => {
     try {
-      const buildingSystem = (engine as unknown as { readonly building: BuildingSystemLike }).building;
+      const buildingSystem = engine.building;
       if (!buildingSystem) return [];
       const allBuildings = buildingSystem.getAllBuildings();
       const dispatchSystem = engine.getHeroDispatchSystem();

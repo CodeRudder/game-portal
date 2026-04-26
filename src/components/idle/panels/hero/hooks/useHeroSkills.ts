@@ -11,7 +11,7 @@
 
 import { useMemo, useCallback } from 'react';
 import type { SkillUpgradeCost, SkillUnlockCondition } from '../SkillUpgradePanel';
-import type { SkillDataWithCooldown, ResourceSystemLike } from '../hero-ui.types';
+import type { SkillDataWithCooldown } from '../hero-ui.types';
 import type { UseHeroEngineParams, UseHeroSkillsReturn } from './hero-hook.types';
 import { UPGRADE_COST_TABLE, DEFAULT_COST } from './hero-constants';
 
@@ -31,7 +31,7 @@ export function useHeroSkills(params: UseHeroEngineParams): UseHeroSkillsReturn 
       const general = engine.getGeneral(selectedHeroId);
       if (!general) return [];
 
-      const heroStarSystem = (engine as unknown as { getHeroStarSystem(): SkillDataWithCooldown & { getStar(id: string): number; getLevelCap(id: string): number; getBreakthroughStage(id: string): number } }).getHeroStarSystem();
+      const heroStarSystem = engine.getHeroStarSystem();
 
       return (general.skills ?? []).map((skill, index) => {
         const levelCap = heroStarSystem
@@ -51,9 +51,8 @@ export function useHeroSkills(params: UseHeroEngineParams): UseHeroSkillsReturn 
           gold: costTable.copper,
         };
 
-        // 安全获取 cooldown
-        const skillExt = skill as unknown as SkillDataWithCooldown;
-        const cooldown = skillExt.cooldown ?? (skill.type === 'active' ? 8 : 0);
+        // 安全获取 cooldown（SkillData 兼容 SkillDataWithCooldown）
+        const cooldown = (skill as SkillDataWithCooldown).cooldown ?? (skill.type === 'active' ? 8 : 0);
 
         return {
           ...skill,
@@ -75,7 +74,7 @@ export function useHeroSkills(params: UseHeroEngineParams): UseHeroSkillsReturn 
   // ── 资源数量 ──
   const skillBookAmount = useMemo(() => {
     try {
-      const resource = (engine as unknown as { readonly resource: ResourceSystemLike }).resource;
+      const resource = engine.resource;
       return resource?.getAmount?.('skillBook') ?? 0;
     } catch {
       return 0;
@@ -84,7 +83,7 @@ export function useHeroSkills(params: UseHeroEngineParams): UseHeroSkillsReturn 
 
   const goldAmount = useMemo(() => {
     try {
-      const resource = (engine as unknown as { readonly resource: ResourceSystemLike }).resource;
+      const resource = engine.resource;
       return resource?.getAmount?.('gold') ?? 0;
     } catch {
       return 0;

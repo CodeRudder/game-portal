@@ -1,0 +1,93 @@
+/**
+ * RecruitPanel — 招募面板样式
+ *
+ * 配色：铜色(普通) #b87333 / 金色(高级) #d4a843
+ * 保底进度条：渐变色 / 余额数字：金色大字
+ */
+
+/* 面板主体 */
+.tk-rp-panel {
+  width: 100%; max-width: 480px; padding: 16px 20px;
+  background: linear-gradient(175deg, rgba(24,32,48,0.98), rgba(18,24,36,0.99));
+  border: 2px solid rgba(200,168,76,0.4); border-radius: 12px;
+  display: flex; flex-direction: column; gap: 14px;
+  font-family: 'STXingkai','华文行楷','KaiTi',serif; color: #f0e6d3;
+}
+
+/* 标题 */
+.tk-rp-header { text-align: center; padding-bottom: 8px; border-bottom: 1px solid rgba(200,168,76,0.2); }
+.tk-rp-title { margin: 0; font-size: 20px; font-weight: 700; color: var(--tk-gold-light, #f0d68a); }
+
+/* 余额显示 — 金色大字 */
+.tk-rp-balance { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 0; }
+.tk-rp-balance-icon { font-size: 24px; }
+.tk-rp-balance-label { font-size: 14px; color: #a0a0a0; }
+.tk-rp-balance-value {
+  font-size: 32px; font-weight: 800; color: #ffd700;
+  text-shadow: 0 0 8px rgba(255,215,0,0.3); font-family: 'Georgia',serif;
+}
+
+/* 模式切换 */
+.tk-rp-mode-switch { display: flex; gap: 10px; }
+.tk-rp-mode-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 12px; border: 2px solid transparent; border-radius: 8px;
+  cursor: pointer; font-size: 14px; font-weight: 600;
+  background: rgba(255,255,255,0.05); color: #a0a0a0; font-family: inherit;
+}
+.tk-rp-mode-btn--copper.tk-rp-mode-btn--active { border-color: #b87333; color: #e8c49a; background: rgba(184,115,51,0.15); }
+.tk-rp-mode-btn--gold.tk-rp-mode-btn--active { border-color: #d4a843; color: #f0d68a; background: rgba(212,168,67,0.15); }
+.tk-rp-mode-icon { font-size: 18px; }
+
+/* 概率表 */
+.tk-rp-rate-table { display: flex; flex-direction: column; gap: 6px; }
+.tk-rp-rate-title { font-size: 13px; color: #a0a0a0; margin-bottom: 2px; }
+.tk-rp-rate-row { display: flex; align-items: center; gap: 8px; }
+.tk-rp-rate-quality { width: 40px; font-size: 12px; font-weight: 600; text-align: right; }
+.tk-rp-rate-bar-track { flex: 1; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+.tk-rp-rate-bar-fill { height: 100%; border-radius: 4px; }
+.tk-rp-rate-value { width: 42px; font-size: 12px; color: #ccc; text-align: right; font-family: 'Georgia',serif; }
+
+/* 保底进度条 — 渐变色 */
+.tk-rp-pity { display: flex; flex-direction: column; gap: 4px; }
+.tk-rp-pity-header { display: flex; justify-content: space-between; align-items: center; }
+.tk-rp-pity-label { font-size: 13px; color: #a0a0a0; }
+.tk-rp-pity-count { font-size: 13px; color: #f0d68a; font-family: 'Georgia',serif; }
+.tk-rp-pity-track { height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; }
+.tk-rp-pity-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #4caf50, #ffc107, #ff5722); }
+.tk-rp-pity-hint { font-size: 11px; color: #888; text-align: center; }
+.tk-rp-pity-hint strong { color: #ffc107; }
+
+/* 招募按钮 */
+.tk-rp-buttons { display: flex; gap: 12px; }
+.tk-rp-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 12px 8px; border: none; border-radius: 8px; cursor: pointer;
+  font-family: inherit; position: relative;
+}
+.tk-rp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.tk-rp-btn--copper { background: linear-gradient(135deg, #b87333, #8b5e2b); color: #f0e6d3; }
+.tk-rp-btn--copper:hover:not(:disabled) { background: linear-gradient(135deg, #c9873f, #9b6e33); }
+.tk-rp-btn--gold { background: linear-gradient(135deg, #d4a843, #b8912e); color: #3a2a0a; }
+.tk-rp-btn--gold:hover:not(:disabled) { background: linear-gradient(135deg, #e0b84f, #c49e38); }
+.tk-rp-btn-label { font-size: 16px; font-weight: 700; }
+.tk-rp-btn-cost { font-size: 12px; }
+.tk-rp-btn-discount {
+  position: absolute; top: 4px; right: 6px; font-size: 10px;
+  background: #e53935; color: #fff; padding: 1px 5px; border-radius: 3px; font-weight: 700;
+}
+
+/* 招募结果展示区 */
+.tk-rp-results { border-top: 1px solid rgba(200,168,76,0.15); padding-top: 10px; }
+.tk-rp-results-title { font-size: 13px; color: #a0a0a0; margin-bottom: 8px; }
+.tk-rp-results-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.tk-rp-result-card {
+  display: flex; align-items: center; gap: 4px; padding: 4px 8px;
+  border-radius: 6px; background: rgba(255,255,255,0.06); font-size: 12px;
+}
+.tk-rp-result-quality-dot { width: 8px; height: 8px; border-radius: 50%; }
+.tk-rp-result-name { color: #f0e6d3; }
+.tk-rp-result-dup {
+  font-size: 10px; color: #ff9800; background: rgba(255,152,0,0.12);
+  padding: 0 4px; border-radius: 3px;
+}

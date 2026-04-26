@@ -10,10 +10,9 @@
  */
 
 import { useMemo } from 'react';
-import type { GeneralData } from '@/games/three-kingdoms/engine';
+import type { GeneralData, HeroStarSystem } from '@/games/three-kingdoms/engine';
 import type { HeroBrief } from '../HeroDispatchPanel';
 import type { HeroInfo } from '../FormationRecommendPanel';
-import type { HeroStarSystemLike } from '../hero-ui.types';
 import type { UseHeroEngineParams, UseHeroListReturn } from './hero-hook.types';
 
 /**
@@ -43,9 +42,9 @@ export function useHeroList(params: UseHeroEngineParams): UseHeroListReturn {
 
   // ── 2. 武将简要数据（HeroBrief） ──
   const heroBriefs = useMemo((): HeroBrief[] => {
-    let starSystem: HeroStarSystemLike | null = null;
+    let starSystem: HeroStarSystem | null = null;
     try {
-      starSystem = (engine as unknown as { getHeroStarSystem(): HeroStarSystemLike }).getHeroStarSystem() ?? null;
+      starSystem = engine.getHeroStarSystem() ?? null;
     } catch { /* 引擎未初始化 */ }
 
     return allGenerals.map((g): HeroBrief => ({
@@ -59,9 +58,9 @@ export function useHeroList(params: UseHeroEngineParams): UseHeroListReturn {
 
   // ── 3. 武将详细信息（HeroInfo） ──
   const heroInfos = useMemo((): HeroInfo[] => {
-    let starSystem: HeroStarSystemLike | null = null;
+    let starSystem: HeroStarSystem | null = null;
     try {
-      starSystem = (engine as unknown as { getHeroStarSystem(): HeroStarSystemLike }).getHeroStarSystem() ?? null;
+      starSystem = engine.getHeroStarSystem() ?? null;
     } catch { /* 引擎未初始化 */ }
 
     return allGenerals.map((g): HeroInfo => ({
