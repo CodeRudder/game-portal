@@ -245,7 +245,12 @@ export class ShopSystem implements ISubsystem {
     const finalPrice = this.calculateFinalPrice(goodsId, shopType, npcId);
 
     if (this.currencySystem) {
-      const check = this.currencySystem.checkAffordability(finalPrice);
+      // ACC-10-20 fix: 货币检查金额 = 单价 × 数量
+      const totalCost: Record<string, number> = {};
+      for (const [cur, price] of Object.entries(finalPrice)) {
+        totalCost[cur] = price * quantity;
+      }
+      const check = this.currencySystem.checkAffordability(totalCost);
       if (!check.canAfford) {
         for (const s of check.shortages) errors.push(`${CUR_LABELS[s.currency]}不足：需要 ${s.required}，缺少 ${s.gap}`);
       }
@@ -262,7 +267,12 @@ export class ShopSystem implements ISubsystem {
     const { goodsId, quantity, shopType } = request;
 
     if (this.currencySystem) {
-      try { this.currencySystem.spendByPriority(shopType, validation.finalPrice); }
+      // ACC-10-20 fix: 扣费金额 = 单价 × 数量
+      const totalCost: Record<string, number> = {};
+      for (const [cur, price] of Object.entries(validation.finalPrice)) {
+        totalCost[cur] = price * quantity;
+      }
+      try { this.currencySystem.spendByPriority(shopType, totalCost); }
       catch (e) { return { success: false, reason: (e as Error).message, confirmLevel: validation.confirmLevel }; }
     }
 
@@ -277,7 +287,12 @@ export class ShopSystem implements ISubsystem {
       this.deps?.eventBus?.emit('shop:goods_purchased', { goodsId, quantity, shopType, cost: validation.finalPrice });
     } catch { /* ok */ }
 
-    return { success: true, goodsId, quantity, cost: validation.finalPrice, confirmLevel: validation.confirmLevel };
+    // ACC-10-20 fix: 返回总价而非单价
+    const totalCostResult: Record<string, number> = {};
+    for (const [cur, price] of Object.entries(validation.finalPrice)) {
+      totalCostResult[cur] = price * quantity;
+    }
+    return { success: true, goodsId, quantity, cost: totalCostResult, confirmLevel: validation.confirmLevel };
   }
 
   // ─── 4. 库存与限购（#9）────────────────────
