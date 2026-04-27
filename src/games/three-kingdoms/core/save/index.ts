@@ -17,3 +17,5 @@ export { DataMigrator } from './DataMigrator';
 export type { MigrationStep } from './DataMigrator';
 export { GameDataFixer } from './GameDataFixer';
 export type { FixAction, FixReport, FixStrategy, FixerOptions } from './GameDataFixer';
+export { repairWithBlueprint } from './SaveDataRepair';
+export type { RepairLog, RepairResult } from './SaveDataRepair';

@@ -41,6 +41,7 @@ import { gameLog } from '../core/logger';
 import { GameDataValidator } from '../core/save/GameDataValidator';
 import { GameDataFixer } from '../core/save/GameDataFixer';
 import { SaveBackupManager } from '../core/save/SaveBackupManager';
+import { repairWithBlueprint } from '../core/save/SaveDataRepair';
 import { syncBuildingToResource } from './engine-tick';
 
 // ─────────────────────────────────────────────
@@ -242,7 +243,18 @@ export function fromIGameState(state: IGameState): GameSaveData {
 /** 应用从 SaveManager 加载的 IGameState */
 export function applyLoadedState(ctx: SaveContext, state: IGameState): OfflineEarnings | null {
   try {
-    const data = fromIGameState(state);
+    let data = fromIGameState(state);
+
+    // 蓝图修复：用引擎默认数据补全存档缺失/错误字段
+    const blueprint = buildSaveData(ctx);
+    const repairResult = repairWithBlueprint(data, blueprint);
+    if (repairResult.repaired) {
+      gameLog.info(`[SaveRepair] 存档修复完成，共 ${repairResult.logs.length} 处修正`);
+      for (const log of repairResult.logs) {
+        gameLog.info(`[SaveRepair] ${log.action}: ${log.field}`);
+      }
+      data = repairResult.data;
+    }
 
     if (data.version !== ENGINE_SAVE_VERSION) {
       gameLog.warn(
@@ -308,6 +320,17 @@ export function tryLoadLegacyFormat(): GameSaveData | null {
 /** 应用旧格式存档 */
 export function applyLegacyState(ctx: SaveContext, data: GameSaveData): OfflineEarnings | null {
   try {
+    // 蓝图修复：用引擎默认数据补全旧格式存档缺失/错误字段
+    const blueprint = buildSaveData(ctx);
+    const repairResult = repairWithBlueprint(data, blueprint);
+    if (repairResult.repaired) {
+      gameLog.info(`[SaveRepair] 旧格式存档修复完成，共 ${repairResult.logs.length} 处修正`);
+      for (const log of repairResult.logs) {
+        gameLog.info(`[SaveRepair] ${log.action}: ${log.field}`);
+      }
+      data = repairResult.data;
+    }
+
     applySaveData(ctx, data);
     return computeOfflineAndFinalize(ctx);
   } catch (e) {
@@ -318,7 +341,19 @@ export function applyLegacyState(ctx: SaveContext, data: GameSaveData): OfflineE
 
 /** 从 JSON 字符串反序列化（不从 localStorage 读取） */
 export function applyDeserialize(ctx: SaveContext, json: string): void {
-  const data: GameSaveData = JSON.parse(json);
+  let data: GameSaveData = JSON.parse(json);
+
+  // 蓝图修复：用引擎默认数据补全反序列化数据缺失/错误字段
+  const blueprint = buildSaveData(ctx);
+  const repairResult = repairWithBlueprint(data, blueprint);
+  if (repairResult.repaired) {
+    gameLog.info(`[SaveRepair] 反序列化数据修复完成，共 ${repairResult.logs.length} 处修正`);
+    for (const log of repairResult.logs) {
+      gameLog.info(`[SaveRepair] ${log.action}: ${log.field}`);
+    }
+    data = repairResult.data;
+  }
+
   applySaveData(ctx, data);
 }
 
