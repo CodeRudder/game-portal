@@ -58,7 +58,7 @@ export class TutorialStepExecutor implements ISubsystem {
   readonly name = 'TutorialStepExecutor' as const;
 
   private deps!: ISystemDeps;
-  private _stateMachine!: TutorialStateMachine;
+  private _stateMachine: TutorialStateMachine | null = null;
 
   // ─── 依赖注入 ───────────────────────────
 
@@ -166,6 +166,7 @@ export class TutorialStepExecutor implements ISubsystem {
    * 检查扩展引导是否应该触发
    */
   checkExtendedStepTriggers(gameState: TutorialGameState): TutorialStepDefinition | null {
+    if (!this._stateMachine) return null;
     for (const step of EXTENDED_STEP_DEFINITIONS) {
       if (this._stateMachine.isStepCompleted(step.stepId)) continue;
       if (!step.triggerCondition) continue;

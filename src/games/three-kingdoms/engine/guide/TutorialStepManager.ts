@@ -90,7 +90,7 @@ export class TutorialStepManager implements ISubsystem {
   readonly name = 'tutorial-steps';
 
   private deps!: ISystemDeps;
-  private _stateMachine!: TutorialStateMachine;
+  private _stateMachine: TutorialStateMachine | null = null;
   private state: StepManagerInternalState = this.createInitialState();
 
   /** 步骤执行器 — 加速/不可跳过/重玩/触发检测 */
@@ -127,6 +127,7 @@ export class TutorialStepManager implements ISubsystem {
 
   /** 获取下一个应该执行的步骤 */
   getNextStep(): TutorialStepDefinition | null {
+    if (!this._stateMachine) return null;
     for (const step of CORE_STEP_DEFINITIONS) {
       if (!this._stateMachine.isStepCompleted(step.stepId)) {
         if (step.prerequisite && !this._stateMachine.isStepCompleted(step.prerequisite)) {
@@ -145,6 +146,7 @@ export class TutorialStepManager implements ISubsystem {
 
   /** 获取下一个核心步骤 */
   getNextCoreStep(): TutorialStepDefinition | null {
+    if (!this._stateMachine) return null;
     for (const step of CORE_STEP_DEFINITIONS) {
       if (!this._stateMachine.isStepCompleted(step.stepId)) {
         if (step.prerequisite && !this._stateMachine.isStepCompleted(step.prerequisite)) {
@@ -158,6 +160,7 @@ export class TutorialStepManager implements ISubsystem {
 
   /** 开始执行一个步骤 */
   startStep(stepId: TutorialStepId): { success: boolean; reason?: string; step?: TutorialStepDefinition } {
+    if (!this._stateMachine) return { success: false, reason: '引导系统未初始化' };
     const definition = STEP_DEFINITION_MAP[stepId];
     if (!definition) {
       return { success: false, reason: `步骤 ${stepId} 不存在` };
@@ -189,6 +192,10 @@ export class TutorialStepManager implements ISubsystem {
       return { completed: false, stepId, subStepIndex: 0, rewards: [] };
     }
 
+    if (!this._stateMachine) {
+      return { completed: false, stepId, subStepIndex: 0, rewards: [] };
+    }
+
     const totalSubSteps = definition.subSteps.length;
     const result = this._stateMachine.advanceSubStep(totalSubSteps);
 
@@ -210,7 +217,7 @@ export class TutorialStepManager implements ISubsystem {
     const definition = STEP_DEFINITION_MAP[stepId];
 
     if (!this.state.replayMode) {
-      this._stateMachine.completeStep(stepId);
+      this._stateMachine?.completeStep(stepId);
     }
 
     const rewards = [...definition.rewards];

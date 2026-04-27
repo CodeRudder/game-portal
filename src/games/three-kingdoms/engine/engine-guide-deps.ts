@@ -84,6 +84,14 @@ export function initGuideSystems(systems: GuideSystems, deps: ISystemDeps): void
   systems.tutorialMaskSystem.init(deps);
   systems.tutorialStorage.init(deps);
   systems.firstLaunchDetector.init(deps);
+
+  // 注入状态机依赖 — TutorialStepManager/StoryEventPlayer/TutorialStorage/FirstLaunchDetector
+  // 都需要引用 TutorialStateMachine，通过 setStateMachine 延迟注入避免构造时循环依赖
+  const sm = systems.tutorialStateMachine;
+  systems.tutorialStepManager.setStateMachine(sm);
+  systems.storyEventPlayer.setStateMachine(sm);
+  systems.tutorialStorage.setStateMachine(sm);
+  systems.firstLaunchDetector.setStateMachine(sm);
 }
 
 // ─────────────────────────────────────────────
