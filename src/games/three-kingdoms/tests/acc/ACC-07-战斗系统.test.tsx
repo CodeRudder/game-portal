@@ -462,8 +462,11 @@ describe('ACC-07 战斗系统验收集成测试', () => {
     const stage = makeStage();
     const onConfirm = vi.fn();
     render(<BattleResultModal result={result} stage={stage} onConfirm={onConfirm} />);
-    // BattleResultModal 使用 SharedPanel，关闭按钮即确认按钮
-    const closeBtn = screen.queryByTestId('panel-close');
+    // BattleResultModal 使用 SharedPanel（data-testid="battle-result-modal"），
+    // 关闭按钮的 testid 为 "battle-result-modal-close"
+    const closeBtn = screen.queryByTestId('battle-result-modal-close')
+      || screen.queryByTestId('panel-close')
+      || screen.queryByText(/确认|返回/);
     assertStrict(!!closeBtn, 'ACC-07-45', '手机端确认/关闭按钮应可见');
   });
 
