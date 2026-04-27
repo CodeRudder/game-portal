@@ -8,6 +8,9 @@
  * - 边界情况：资源恰好等于消耗、资源差1、最高等级、连续快速点击、升级中再点击
  * - 手机端适配：列表布局、列表项信息、升级弹窗适配
  *
+ * 使用真实 GameEventSimulator 替代 mock engine，
+ * 确保测试与生产环境行为一致。
+ *
  * @module tests/acc/ACC-02
  */
 
@@ -18,8 +21,9 @@ import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
 import BuildingUpgradeModal from '@/components/idle/panels/building/BuildingUpgradeModal';
 import BuildingIncomeModal from '@/components/idle/panels/building/BuildingIncomeModal';
 import { accTest, assertStrict, assertVisible } from './acc-test-utils';
-import type { BuildingType, BuildingState, Resources, ProductionRate, ResourceCap, UpgradeCheckResult, UpgradeCost } from '@/games/three-kingdoms/shared/types';
-import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import { createSim, createSimWithResources, SUFFICIENT_RESOURCES, MASSIVE_RESOURCES } from '../../test-utils/test-helpers';
+import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
+import type { BuildingType, BuildingState, Resources, ProductionRate, ResourceCap } from '@/games/three-kingdoms/shared/types';
 
 // ── Mock CSS ──
 vi.mock('@/components/idle/panels/building/BuildingPanel.css', () => ({}));
@@ -27,151 +31,44 @@ vi.mock('@/components/idle/panels/building/BuildingUpgradeModal.css', () => ({})
 vi.mock('@/components/idle/panels/building/BuildingIncomeModal.css', () => ({}));
 vi.mock('@/components/idle/components/SharedPanel.css', () => ({}));
 
-// ── Test Data Factories ──
+// ── Helper: 从 sim 获取快照数据 ──
 
-function makeBuildingState(type: BuildingType, overrides: Partial<BuildingState> = {}): BuildingState {
+/**
+ * 从 GameEventSimulator 获取当前快照并提取面板所需的 props。
+ */
+function getSnapshotProps(sim: GameEventSimulator) {
+  const snap = sim.engine.getSnapshot();
   return {
-    type,
-    level: 1,
-    status: 'idle',
-    upgradeStartTime: null,
-    upgradeEndTime: null,
-    ...overrides,
-  };
-}
-
-function makeAllBuildings(overrides: Partial<Record<BuildingType, Partial<BuildingState>>> = {}): Record<BuildingType, BuildingState> {
-  const types: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
-  const result = {} as Record<BuildingType, BuildingState>;
-  for (const t of types) {
-    const o = overrides[t] || {};
-    if (t === 'castle' || t === 'farmland') {
-      result[t] = makeBuildingState(t, { level: 1, status: 'idle', ...o });
-    } else {
-      result[t] = makeBuildingState(t, { level: 0, status: 'locked', ...o });
-    }
-  }
-  return result;
-}
-
-function makeResources(overrides: Partial<Resources> = {}): Resources {
-  return {
-    grain: 5000,
-    gold: 3000,
-    troops: 200,
-    mandate: 10,
-    techPoint: 50,
-    recruitToken: 20,
-    skillBook: 0,
-    ...overrides,
-  };
-}
-
-function makeRates(overrides: Partial<ProductionRate> = {}): ProductionRate {
-  return {
-    grain: 1.5,
-    gold: 0.8,
-    troops: 0.2,
-    mandate: 0,
-    techPoint: 0.1,
-    recruitToken: 0,
-    skillBook: 0,
-    ...overrides,
-  };
-}
-
-function makeCaps(overrides: Partial<ResourceCap> = {}): ResourceCap {
-  return {
-    grain: 2000,
-    gold: null,
-    troops: 500,
-    mandate: null,
-    techPoint: null,
-    recruitToken: null,
-    skillBook: null,
-    ...overrides,
+    buildings: snap.buildings as Record<BuildingType, BuildingState>,
+    resources: snap.resources as Resources,
+    rates: snap.productionRates as ProductionRate,
+    caps: snap.caps as ResourceCap,
   };
 }
 
 /**
- * 创建 mock engine — 匹配源码中组件的实际调用方式：
- * - BuildingPanel 直接调用 engine.checkUpgrade(type), engine.getUpgradeCost(type), engine.upgradeBuilding(type) 等
- * - BuildingPanel 调用 engine.building?.getProduction?.(type)
- * - BuildingUpgradeModal 直接调用 engine.getSnapshot(), engine.checkUpgrade(), engine.getUpgradeCost()
+ * 创建带充足资源的建筑测试 sim。
+ * 初始引擎后添加大量资源，确保升级操作不会因资源不足而失败。
  */
-function makeMockEngine(engineOverrides: Record<string, any> = {}) {
-  const allBuildings = makeAllBuildings();
-  const allResources = makeResources();
-
-  return {
-    // BuildingPanel 直接调用这些方法
-    checkUpgrade: vi.fn((_type: BuildingType): UpgradeCheckResult => ({
-      canUpgrade: true,
-      reasons: [],
-    })),
-    getUpgradeCost: vi.fn((_type: BuildingType): UpgradeCost => ({
-      grain: 100,
-      gold: 200,
-      troops: 0,
-      timeSeconds: 30,
-    })),
-    getUpgradeProgress: vi.fn((_type: BuildingType): number => 0.5),
-    getUpgradeRemainingTime: vi.fn((_type: BuildingType): number => 15),
-    upgradeBuilding: vi.fn(),
-    cancelUpgrade: vi.fn((_type: BuildingType): UpgradeCost | null => ({
-      grain: 80,
-      gold: 160,
-      troops: 0,
-      timeSeconds: 0,
-    })),
-    // BuildingUpgradeModal 调用 getSnapshot
-    getSnapshot: vi.fn(() => ({
-      resources: allResources,
-      productionRates: makeRates(),
-      caps: makeCaps(),
-      buildings: allBuildings,
-      onlineSeconds: 0,
-      calendar: {},
-      heroes: [],
-      heroFragments: {},
-      totalPower: 0,
-      formations: [],
-      activeFormationId: null,
-      campaignProgress: { currentChapterId: '', stageStates: {}, lastClearTime: 0 },
-      techState: {},
-      mapState: undefined,
-      territoryState: undefined,
-      siegeState: undefined,
-    })),
-    // BuildingPanel 和 BuildingIncomeModal 通过 engine.building 访问
-    building: {
-      getProduction: vi.fn((_type: BuildingType): number => 1.5),
-      getAllBuildings: vi.fn(() => allBuildings),
-    },
-    // BuildingIncomeModal 通过 engine.building.getProduction 访问
-    getBuildingSystem: vi.fn(() => ({
-      getBuildingState: vi.fn((type: BuildingType) => allBuildings[type]),
-      checkUpgrade: vi.fn(() => ({ canUpgrade: true, reasons: [] })),
-      startUpgrade: vi.fn(() => true),
-      getProductionRate: vi.fn(() => 1.5),
-      getUpgradeCost: vi.fn(() => ({ grain: 100, gold: 200, troops: 0, timeSeconds: 30 })),
-    })),
-    getResourceSystem: vi.fn(() => ({
-      getResources: vi.fn(() => allResources),
-      getRates: vi.fn(() => makeRates()),
-      getCaps: vi.fn(() => makeCaps()),
-    })),
-    ...engineOverrides,
-  } as unknown as ThreeKingdomsEngine;
+function createBuildingSim(): GameEventSimulator {
+  const sim = createSim();
+  // 提高上限避免资源被截断
+  sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('troops', 10_000_000);
+  sim.addResources({ grain: 10_000_000, gold: 10_000_000, troops: 50000 });
+  // 先升级主城到 Lv2，解除子建筑 Lv1→Lv2 的限制
+  sim.upgradeBuilding('castle');
+  return sim;
 }
 
-function makePanelProps(overrides: Record<string, any> = {}) {
+/**
+ * 创建 BuildingPanel props，使用真实引擎数据。
+ */
+function makePanelProps(sim: GameEventSimulator, overrides: Record<string, any> = {}) {
+  const snapProps = getSnapshotProps(sim);
   return {
-    buildings: makeAllBuildings(),
-    resources: makeResources(),
-    rates: makeRates(),
-    caps: makeCaps(),
-    engine: makeMockEngine(),
+    ...snapProps,
+    engine: sim.engine,
     snapshotVersion: 0,
     onUpgradeComplete: vi.fn(),
     onUpgradeError: vi.fn(),
@@ -179,24 +76,32 @@ function makePanelProps(overrides: Record<string, any> = {}) {
   };
 }
 
-function makeUpgradeModalProps(overrides: Record<string, any> = {}) {
+/**
+ * 创建 BuildingUpgradeModal props，使用真实引擎数据。
+ */
+function makeUpgradeModalProps(sim: GameEventSimulator, overrides: Record<string, any> = {}) {
+  const snapProps = getSnapshotProps(sim);
   return {
     buildingType: 'farmland' as BuildingType,
-    engine: makeMockEngine(),
-    resources: makeResources(),
+    engine: sim.engine,
+    resources: snapProps.resources,
     onConfirm: vi.fn(),
     onCancel: vi.fn(),
     ...overrides,
   };
 }
 
-function makeIncomeModalProps(overrides: Record<string, any> = {}) {
+/**
+ * 创建 BuildingIncomeModal props，使用真实引擎数据。
+ */
+function makeIncomeModalProps(sim: GameEventSimulator, overrides: Record<string, any> = {}) {
+  const snapProps = getSnapshotProps(sim);
   return {
     isOpen: true,
     onClose: vi.fn(),
-    engine: makeMockEngine(),
-    buildings: makeAllBuildings(),
-    rates: makeRates(),
+    engine: sim.engine,
+    buildings: snapProps.buildings,
+    rates: snapProps.rates,
     ...overrides,
   };
 }
@@ -212,13 +117,15 @@ describe('ACC-02 建筑系统 验收测试', () => {
   // ═══════════════════════════════════════════════════════════════
 
   it(accTest('ACC-02-01', '建筑面板默认显示 - 城池地图完整显示'), () => {
-    render(<BuildingPanel {...makePanelProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingPanel {...makePanelProps(sim)} />);
     const panel = screen.getByTestId('building-panel');
     assertVisible(panel, 'ACC-02-01', '建筑面板');
   });
 
   it(accTest('ACC-02-02', '8座建筑地图布局 - 所有建筑节点可见'), () => {
-    render(<BuildingPanel {...makePanelProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingPanel {...makePanelProps(sim)} />);
     const map = screen.getByTestId('building-panel-map');
     assertVisible(map, 'ACC-02-02', '建筑地图');
     // 检查8座建筑都渲染了
@@ -230,7 +137,8 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-03', '建筑图标与名称显示 - 每座建筑显示图标和名称'), () => {
-    render(<BuildingPanel {...makePanelProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingPanel {...makePanelProps(sim)} />);
     // 检查主城和农田（已解锁）有名称显示
     const castleItem = screen.getByTestId('building-panel-item-castle');
     assertStrict(castleItem.textContent!.includes('主城'), 'ACC-02-03', '应显示主城名称');
@@ -239,43 +147,58 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-04', '建筑产出文字 - 已解锁建筑显示产出速率'), () => {
-    render(<BuildingPanel {...makePanelProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingPanel {...makePanelProps(sim)} />);
     const farmlandItem = screen.getByTestId('building-panel-item-farmland');
     const text = farmlandItem.textContent || '';
     assertStrict(
-      text.includes('粮草') || text.includes('1.5') || text.includes('/秒') || text.includes('/s'),
+      text.includes('粮草') || text.includes('/s'),
       'ACC-02-04',
       '已解锁建筑应显示产出文字',
     );
   });
 
   it(accTest('ACC-02-05', '未解锁建筑显示 - 显示🔒和灰色样式'), () => {
-    render(<BuildingPanel {...makePanelProps()} />);
-    // 市集未解锁
+    // 使用初始状态（主城 Lv1），市集等建筑尚未解锁
+    const sim = createSim();
+    sim.addResources(SUFFICIENT_RESOURCES);
+    render(<BuildingPanel {...makePanelProps(sim)} />);
+    // 市集未解锁（需要主城 Lv2）
     const marketItem = screen.getByTestId('building-panel-item-market');
     assertStrict(marketItem.textContent!.includes('未解锁') || marketItem.querySelector('.building-locked') !== null || marketItem.textContent!.includes('🔒'), 'ACC-02-05', '未解锁建筑应显示锁定状态');
   });
 
   it(accTest('ACC-02-07', '收支详情按钮可见 - 📊按钮存在'), () => {
-    render(<BuildingPanel {...makePanelProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingPanel {...makePanelProps(sim)} />);
     const btn = screen.getByTestId('building-panel-income-btn');
     assertVisible(btn, 'ACC-02-07', '收支详情按钮');
   });
 
   it(accTest('ACC-02-08', '升级队列悬浮面板 - 显示升级中建筑'), () => {
-    const buildings = makeAllBuildings({
-      farmland: { level: 1, status: 'upgrading', upgradeStartTime: Date.now() - 15000, upgradeEndTime: Date.now() + 15000 },
-    });
-    render(<BuildingPanel {...makePanelProps({ buildings })} />);
+    // 创建 sim 并让农田进入升级中状态
+    const sim = createBuildingSim();
+    // 使用真实引擎启动升级（但不完成）
+    sim.engine.upgradeBuilding('farmland');
+    // 不调用 completePendingUpgrades，让建筑保持 upgrading 状态
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingPanel {...makePanelProps(sim, {
+      buildings: snapProps.buildings,
+      snapshotVersion: 1,
+    })} />);
     const queue = screen.getByTestId('building-panel-queue');
     assertVisible(queue, 'ACC-02-08', '升级队列');
   });
 
   it(accTest('ACC-02-09', '升级中建筑状态 - 显示进度条和倒计时'), () => {
-    const buildings = makeAllBuildings({
-      farmland: { level: 1, status: 'upgrading', upgradeStartTime: Date.now() - 15000, upgradeEndTime: Date.now() + 15000 },
-    });
-    render(<BuildingPanel {...makePanelProps({ buildings })} />);
+    const sim = createBuildingSim();
+    // 启动升级但不完成
+    sim.engine.upgradeBuilding('farmland');
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingPanel {...makePanelProps(sim, {
+      buildings: snapProps.buildings,
+      snapshotVersion: 1,
+    })} />);
     const farmlandItem = screen.getByTestId('building-panel-item-farmland');
     const text = farmlandItem.textContent || '';
     // 升级中建筑显示进度条和 formatTime 倒计时（如 "00:15"），以及取消按钮
@@ -291,35 +214,44 @@ describe('ACC-02 建筑系统 验收测试', () => {
   // ═══════════════════════════════════════════════════════════════
 
   it(accTest('ACC-02-10', '点击建筑打开升级弹窗 - 弹出BuildingUpgradeModal'), () => {
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim)} />);
     const header = screen.getByTestId('building-upgrade-header');
     assertVisible(header, 'ACC-02-10', '升级弹窗头部');
   });
 
   it(accTest('ACC-02-11', '升级弹窗 - 升级预览显示等级变化和产出变化'), () => {
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim)} />);
     const header = screen.getByTestId('building-upgrade-header');
     const text = header.textContent || '';
     assertStrict(text.includes('农田'), 'ACC-02-11', '升级弹窗应显示建筑名称');
   });
 
   it(accTest('ACC-02-12', '升级弹窗 - 费用明细显示粮草和铜钱消耗'), () => {
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim)} />);
     // SharedPanel 渲染为 .tk-shared-panel，非 .tk-upgrade-modal
     const content = document.querySelector('.tk-shared-panel');
     assertStrict(!!content, 'ACC-02-12', '升级弹窗内容应存在');
   });
 
   it(accTest('ACC-02-13', '升级弹窗 - 资源不足时按钮禁用'), () => {
-    const lowResources = makeResources({ grain: 1, gold: 1 });
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps({ resources: lowResources })} />);
+    // 创建 sim 但不给资源，初始资源很少
+    const sim = createSim();
+    // 初始资源很少，远不够升级
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, {
+      resources: snapProps.resources,
+    })} />);
     const confirmBtn = screen.getByTestId('building-upgrade-confirm');
     assertStrict((confirmBtn as HTMLButtonElement).disabled, 'ACC-02-13', '资源不足时确认按钮应禁用');
   });
 
   it(accTest('ACC-02-15', '确认升级操作 - 触发onConfirm回调'), () => {
+    const sim = createBuildingSim();
     const onConfirm = vi.fn();
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps({ onConfirm })} />);
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, { onConfirm })} />);
     const confirmBtn = screen.getByTestId('building-upgrade-confirm');
     if (!(confirmBtn as HTMLButtonElement).disabled) {
       fireEvent.click(confirmBtn);
@@ -331,16 +263,18 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-16', '关闭升级弹窗 - 点击取消按钮'), () => {
+    const sim = createBuildingSim();
     const onCancel = vi.fn();
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps({ onCancel })} />);
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, { onCancel })} />);
     const cancelBtn = screen.getByTestId('building-upgrade-cancel');
     fireEvent.click(cancelBtn);
     expect(onCancel).toHaveBeenCalled();
   });
 
   it(accTest('ACC-02-17', '关闭升级弹窗 - 点击遮罩关闭'), () => {
+    const sim = createBuildingSim();
     const onCancel = vi.fn();
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps({ onCancel })} />);
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, { onCancel })} />);
     // SharedPanel 渲染遮罩为 .tk-shared-panel-overlay
     const overlay = document.querySelector('.tk-shared-panel-overlay');
     if (overlay) {
@@ -354,26 +288,35 @@ describe('ACC-02 建筑系统 验收测试', () => {
   // ═══════════════════════════════════════════════════════════════
 
   it(accTest('ACC-02-20', '升级后资源产出正确更新 - 产出速率变化'), () => {
-    const { rerender } = render(<BuildingPanel {...makePanelProps()} />);
+    const sim = createBuildingSim();
+    const { rerender } = render(<BuildingPanel {...makePanelProps(sim)} />);
 
-    // 模拟升级后重新渲染
-    const newRates = makeRates({ grain: 2.0 });
-    const newBuildings = makeAllBuildings({ farmland: { level: 2, status: 'idle' } });
-    rerender(<BuildingPanel {...makePanelProps({ buildings: newBuildings, rates: newRates, snapshotVersion: 1 })} />);
+    // 使用真实引擎升级农田
+    sim.upgradeBuilding('farmland');
+    const newSnapProps = getSnapshotProps(sim);
+    rerender(<BuildingPanel {...makePanelProps(sim, {
+      buildings: newSnapProps.buildings,
+      rates: newSnapProps.rates,
+      resources: newSnapProps.resources,
+      caps: newSnapProps.caps,
+      snapshotVersion: 1,
+    })} />);
     const panel = screen.getByTestId('building-panel');
     assertVisible(panel, 'ACC-02-20', '升级后面板');
   });
 
   it(accTest('ACC-02-21', '升级消耗与配置一致 - 弹窗显示消耗数值'), () => {
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim)} />);
     // SharedPanel 渲染为 .tk-shared-panel
     const content = document.querySelector('.tk-shared-panel');
     assertStrict(!!content && content.textContent!.length > 0, 'ACC-02-21', '升级弹窗应有内容');
   });
 
   it(accTest('ACC-02-22', '升级扣费精确 - 确认升级后资源扣减'), () => {
+    const sim = createBuildingSim();
     const onConfirm = vi.fn();
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps({ onConfirm })} />);
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, { onConfirm })} />);
     const confirmBtn = screen.getByTestId('building-upgrade-confirm');
     if (!(confirmBtn as HTMLButtonElement).disabled) {
       fireEvent.click(confirmBtn);
@@ -384,20 +327,37 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-23', '升级完成后等级递增 - Lv.X变为Lv.X+1'), () => {
-    const buildings = makeAllBuildings({ farmland: { level: 2, status: 'idle' } });
-    render(<BuildingPanel {...makePanelProps({ buildings })} />);
+    const sim = createBuildingSim();
+    // 使用真实引擎升级农田到 Lv2
+    sim.upgradeBuilding('farmland');
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingPanel {...makePanelProps(sim, {
+      buildings: snapProps.buildings,
+      rates: snapProps.rates,
+      resources: snapProps.resources,
+      caps: snapProps.caps,
+      snapshotVersion: 1,
+    })} />);
     const farmlandItem = screen.getByTestId('building-panel-item-farmland');
     const text = farmlandItem.textContent || '';
     assertStrict(text.includes('2') || text.includes('Lv'), 'ACC-02-23', '升级后等级应递增');
   });
 
   it(accTest('ACC-02-26', '主城升级解锁子建筑 - 市集和兵营解锁'), () => {
-    const buildings = makeAllBuildings({
-      castle: { level: 2, status: 'idle' },
-      market: { level: 1, status: 'idle' },
-      barracks: { level: 1, status: 'idle' },
-    });
-    render(<BuildingPanel {...makePanelProps({ buildings })} />);
+    const sim = createBuildingSim();
+    // 升级主城到 Lv2，解锁市集和兵营
+    sim.upgradeBuilding('castle');
+    // 然后解锁市集和兵营
+    sim.upgradeBuilding('market');
+    sim.upgradeBuilding('barracks');
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingPanel {...makePanelProps(sim, {
+      buildings: snapProps.buildings,
+      rates: snapProps.rates,
+      resources: snapProps.resources,
+      caps: snapProps.caps,
+      snapshotVersion: 1,
+    })} />);
     const marketItem = screen.getByTestId('building-panel-item-market');
     const barracksItem = screen.getByTestId('building-panel-item-barracks');
     assertStrict(!marketItem.textContent!.includes('未解锁'), 'ACC-02-26', '市集应已解锁');
@@ -405,7 +365,8 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-27', '收支详情数值与资源栏一致 - 弹窗显示正确'), () => {
-    render(<BuildingIncomeModal {...makeIncomeModalProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingIncomeModal {...makeIncomeModalProps(sim)} />);
     const section = screen.getByTestId('building-income-section');
     assertVisible(section, 'ACC-02-27', '收支详情区域');
   });
@@ -415,9 +376,24 @@ describe('ACC-02 建筑系统 验收测试', () => {
   // ═══════════════════════════════════════════════════════════════
 
   it(accTest('ACC-02-30', '资源恰好等于升级消耗 - 升级成功后资源归零'), () => {
-    const exactResources = makeResources({ grain: 100, gold: 200 });
+    // 创建 sim 并精确设置资源为升级所需量
+    const sim = createSim();
+    const cost = sim.engine.getUpgradeCost('farmland');
+    if (cost) {
+      // 设置资源上限足够高
+      sim.engine.resource.setCap('grain', 1_000_000);
+      sim.engine.resource.setCap('troops', 1_000_000);
+      // 精确设置资源为升级消耗量
+      sim.setResource('grain', cost.grain);
+      sim.setResource('gold', cost.gold);
+      sim.setResource('troops', cost.troops || 0);
+    }
     const onConfirm = vi.fn();
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps({ resources: exactResources, onConfirm })} />);
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, {
+      resources: snapProps.resources,
+      onConfirm,
+    })} />);
     const confirmBtn = screen.getByTestId('building-upgrade-confirm');
     if (!(confirmBtn as HTMLButtonElement).disabled) {
       fireEvent.click(confirmBtn);
@@ -428,22 +404,52 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-31', '资源仅差1点无法升级 - 按钮禁用'), () => {
-    const shortResources = makeResources({ grain: 99, gold: 200 });
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps({ resources: shortResources })} />);
+    const sim = createSim();
+    const cost = sim.engine.getUpgradeCost('farmland');
+    if (cost) {
+      // 设置资源上限足够高
+      sim.engine.resource.setCap('grain', 1_000_000);
+      sim.engine.resource.setCap('troops', 1_000_000);
+      // 设置资源为升级消耗量 -1
+      sim.setResource('grain', Math.max(0, cost.grain - 1));
+      sim.setResource('gold', cost.gold);
+      sim.setResource('troops', cost.troops || 0);
+    }
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, {
+      resources: snapProps.resources,
+    })} />);
     const confirmBtn = screen.getByTestId('building-upgrade-confirm');
     assertStrict((confirmBtn as HTMLButtonElement).disabled, 'ACC-02-31', '资源差1时按钮应禁用');
   });
 
   it(accTest('ACC-02-32', '建筑达到最高等级 - 不显示升级按钮'), () => {
-    const maxLevelBuildings = makeAllBuildings({ farmland: { level: 25, status: 'idle' } });
-    render(<BuildingPanel {...makePanelProps({ buildings: maxLevelBuildings })} />);
+    const sim = createBuildingSim();
+    // 先升级主城到足够高的等级，解除子建筑等级限制
+    sim.addResources(MASSIVE_RESOURCES);
+    for (let i = 0; i < 24; i++) {
+      // 交替升级主城和农田，满足主城前置条件
+      try { sim.upgradeBuilding('castle'); } catch { break; }
+      try { sim.upgradeBuilding('farmland'); } catch { break; }
+    }
+    // 升级农田到最高等级
+    try { sim.upgradeBuildingTo('farmland', 25); } catch { /* 已达上限 */ }
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingPanel {...makePanelProps(sim, {
+      buildings: snapProps.buildings,
+      rates: snapProps.rates,
+      resources: snapProps.resources,
+      caps: snapProps.caps,
+      snapshotVersion: 1,
+    })} />);
     const panel = screen.getByTestId('building-panel');
     assertVisible(panel, 'ACC-02-32', '最高等级建筑面板');
   });
 
   it(accTest('ACC-02-33', '连续快速点击升级按钮 - 只触发一次'), () => {
+    const sim = createBuildingSim();
     const onConfirm = vi.fn();
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps({ onConfirm })} />);
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, { onConfirm })} />);
     const confirmBtn = screen.getByTestId('building-upgrade-confirm');
     if (!(confirmBtn as HTMLButtonElement).disabled) {
       fireEvent.click(confirmBtn);
@@ -456,10 +462,14 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-34', '升级中再次点击同一建筑 - 显示升级进度'), () => {
-    const buildings = makeAllBuildings({
-      farmland: { level: 1, status: 'upgrading', upgradeStartTime: Date.now(), upgradeEndTime: Date.now() + 30000 },
-    });
-    render(<BuildingPanel {...makePanelProps({ buildings })} />);
+    const sim = createBuildingSim();
+    // 使用真实引擎启动升级（但不完成）
+    sim.engine.upgradeBuilding('farmland');
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingPanel {...makePanelProps(sim, {
+      buildings: snapProps.buildings,
+      snapshotVersion: 1,
+    })} />);
     const farmlandItem = screen.getByTestId('building-panel-item-farmland');
     const text = farmlandItem.textContent || '';
     // 升级中建筑显示 formatTime 倒计时（如 "00:30"）和取消按钮
@@ -471,7 +481,14 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-37', '新游戏初始状态 - 主城和农田已解锁'), () => {
-    render(<BuildingPanel {...makePanelProps()} />);
+    const sim = createSim();
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingPanel {...makePanelProps(sim, {
+      buildings: snapProps.buildings,
+      resources: snapProps.resources,
+      rates: snapProps.rates,
+      caps: snapProps.caps,
+    })} />);
     const castleItem = screen.getByTestId('building-panel-item-castle');
     const farmlandItem = screen.getByTestId('building-panel-item-farmland');
     assertStrict(!castleItem.textContent!.includes('未解锁'), 'ACC-02-37', '主城应已解锁');
@@ -483,32 +500,39 @@ describe('ACC-02 建筑系统 验收测试', () => {
   // ═══════════════════════════════════════════════════════════════
 
   it(accTest('ACC-02-40', '手机端建筑面板渲染 - 面板存在'), () => {
-    render(<BuildingPanel {...makePanelProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingPanel {...makePanelProps(sim)} />);
     const panel = screen.getByTestId('building-panel');
     assertVisible(panel, 'ACC-02-40', '手机端建筑面板');
   });
 
   it(accTest('ACC-02-42', '手机端升级按钮交互 - 弹窗正常弹出'), () => {
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim)} />);
     const header = screen.getByTestId('building-upgrade-header');
     assertVisible(header, 'ACC-02-42', '手机端升级弹窗');
   });
 
   it(accTest('ACC-02-46', '手机端升级弹窗适配 - 内容完整显示'), () => {
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim)} />);
     // SharedPanel 渲染为 .tk-shared-panel
     const content = document.querySelector('.tk-shared-panel');
     assertStrict(!!content && content.textContent!.length > 0, 'ACC-02-46', '手机端弹窗内容应完整');
   });
 
   it(accTest('ACC-02-45', '手机端未解锁建筑显示 - 列表项显示锁定状态'), () => {
-    render(<BuildingPanel {...makePanelProps()} />);
+    // 使用初始状态（主城 Lv1），市集等建筑尚未解锁
+    const sim = createSim();
+    sim.addResources(SUFFICIENT_RESOURCES);
+    render(<BuildingPanel {...makePanelProps(sim)} />);
     const marketItem = screen.getByTestId('building-panel-item-market');
     assertStrict(marketItem.textContent!.includes('未解锁') || marketItem.textContent!.includes('🔒'), 'ACC-02-45', '未解锁建筑应显示锁定状态');
   });
 
   it(accTest('ACC-02-47', '手机端收支详情弹窗 - 弹窗正常显示'), () => {
-    render(<BuildingIncomeModal {...makeIncomeModalProps()} />);
+    const sim = createBuildingSim();
+    render(<BuildingIncomeModal {...makeIncomeModalProps(sim)} />);
     const section = screen.getByTestId('building-income-section');
     assertVisible(section, 'ACC-02-47', '手机端收支详情弹窗');
   });

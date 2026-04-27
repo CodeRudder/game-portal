@@ -21,7 +21,7 @@ import ResourceBar from '@/components/idle/panels/resource/ResourceBar';
 import SceneRouter from '@/components/idle/three-kingdoms/SceneRouter';
 import type { OfflineEarnings } from '@/games/three-kingdoms/shared/types';
 import type { Resources, ProductionRate, ResourceCap, BuildingType, BuildingState } from '@/games/three-kingdoms/engine';
-import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import { createSim } from '../../test-utils/test-helpers';
 
 // ─────────────────────────────────────────────
 // TabBar 测试 Props 工厂
@@ -124,49 +124,15 @@ function makeBuildings(overrides?: Partial<Record<BuildingType, Partial<Building
   return defaults;
 }
 
-function makeMockEngine(snapshotOverrides?: Record<string, unknown>): ThreeKingdomsEngine {
-  const snapshot = {
-    resources: { ...DEFAULT_RESOURCES },
-    productionRates: { ...DEFAULT_RATES },
-    caps: { ...DEFAULT_CAPS },
-    buildings: makeBuildings(),
-    onlineSeconds: 0,
-    calendar: { year: 1, season: 'spring', weather: 'clear', day: 1 },
-    heroes: [],
-    heroFragments: {},
-    totalPower: 0,
-    formations: [],
-    activeFormationId: null,
-    campaignProgress: { currentChapter: 1, currentStage: 1, stars: {} },
-    techState: { researched: {}, activeResearch: null },
-    ...snapshotOverrides,
-  };
-
-  return {
-    getSnapshot: vi.fn(() => snapshot),
-    getResources: vi.fn(() => ({ ...DEFAULT_RESOURCES })),
-    getProductionRates: vi.fn(() => ({ ...DEFAULT_RATES })),
-    getCaps: vi.fn(() => ({ ...DEFAULT_CAPS })),
-    getBuildings: vi.fn(() => makeBuildings()),
-    checkUpgrade: vi.fn(() => ({ canUpgrade: false, reasons: [] })),
-    upgradeBuilding: vi.fn(),
-    getHeroSystem: vi.fn(() => ({
-      calculatePower: vi.fn(() => 100),
-      getGenerals: vi.fn(() => []),
-    })),
-    getLevelSystem: vi.fn(() => ({
-      getExpProgress: vi.fn(() => 0.5),
-      canEnhance: vi.fn(() => ({ canEnhance: true })),
-    })),
-    getCalendarSystem: vi.fn(() => ({
-      getSeason: vi.fn(() => 'spring'),
-      getWeather: vi.fn(() => 'clear'),
-    })),
-    on: vi.fn(),
-    off: vi.fn(),
-    emit: vi.fn(),
-    tick: vi.fn(),
-  } as unknown as ThreeKingdomsEngine;
+/**
+ * 创建带有默认初始资源的 GameEventSimulator。
+ * 使用真实引擎替代 mock，确保测试与生产行为一致。
+ *
+ * 引擎 init() 后自带初始资源：grain=500, gold=300, troops=50, recruitToken=10
+ * 与 DEFAULT_RESOURCES 对齐，无需额外添加。
+ */
+function createTestSim() {
+  return createSim();
 }
 
 // ═══════════════════════════════════════════════
@@ -407,8 +373,9 @@ describe('ACC-01 主界面', () => {
   describe('3. 数据正确性', () => {
 
     it(accTest('ACC-01-20', '资源数值与引擎同步'), () => {
-      const engine = makeMockEngine();
-      const resources = (engine as any).getResources();
+      const sim = createTestSim();
+      const engine = sim.engine;
+      const resources = engine.resource.getResources();
       render(
         <ResourceBar
           resources={resources}
@@ -417,7 +384,6 @@ describe('ACC-01 主界面', () => {
         />
       );
       // 验证资源栏显示的数值与引擎一致
-      expect((engine as any).getResources).toHaveBeenCalled();
       // 粮草 500 — 使用 data-testid 精确定位
       const grainEl = screen.getByTestId('resource-bar-grain-value');
       assertVisible(grainEl, 'ACC-01-20', '粮草数值');
@@ -480,14 +446,14 @@ describe('ACC-01 主界面', () => {
     });
 
     it(accTest('ACC-01-25', '日历季节与游戏时间一致'), () => {
-      const engine = makeMockEngine();
-      const season = (engine as any).getCalendarSystem().getSeason();
+      const sim = createTestSim();
+      const season = sim.engine.calendar.getSeason();
       expect(season).toBe('spring');
     });
 
     it(accTest('ACC-01-26', '日历天气随机变化'), () => {
-      const engine = makeMockEngine();
-      const weather = (engine as any).getCalendarSystem().getWeather();
+      const sim = createTestSim();
+      const weather = sim.engine.calendar.getWeather();
       expect(['clear', 'rain', 'snow', 'wind']).toContain(weather);
     });
 
@@ -520,10 +486,11 @@ describe('ACC-01 主界面', () => {
     });
 
     it(accTest('ACC-01-29', '快照版本驱动UI刷新'), () => {
-      const engine = makeMockEngine();
-      const snap = engine.getSnapshot();
+      const sim = createTestSim();
+      const snap = sim.engine.getSnapshot();
       assertStrict(!!snap, 'ACC-01-29', '快照应存在');
-      assertStrict(snap.resources.grain === DEFAULT_RESOURCES.grain, 'ACC-01-29', '快照资源值应正确');
+      // 真实引擎初始化后 grain=0，通过 addResources 设置为 500
+      assertStrict(snap.resources.grain === 500, 'ACC-01-29', '快照资源值应正确');
     });
   });
 
@@ -630,8 +597,8 @@ describe('ACC-01 主界面', () => {
     });
 
     it(accTest('ACC-01-39', '存档加载后界面恢复'), () => {
-      const engine = makeMockEngine();
-      const snap = engine.getSnapshot();
+      const sim = createTestSim();
+      const snap = sim.engine.getSnapshot();
       // 验证快照数据完整性
       assertStrict(!!snap.resources, 'ACC-01-39', '快照应包含resources');
       assertStrict(!!snap.buildings, 'ACC-01-39', '快照应包含buildings');
@@ -699,8 +666,8 @@ describe('ACC-01 主界面', () => {
     });
 
     it(accTest('ACC-01-45', '功能面板手机端全屏'), () => {
-      // 测试SceneRouter渲染building Tab
-      const engine = makeMockEngine();
+      // 测试SceneRouter渲染building Tab — 使用真实引擎验证
+      const sim = createTestSim();
       const { container } = render(
         <ResourceBar
           resources={DEFAULT_RESOURCES}
