@@ -26,7 +26,7 @@ MODULE_NAMES=(
   "编队系统" "战斗系统" "科技系统" "地图关卡" "商店系统"
   "引导系统" "羁绊系统" "觉醒系统"
 )
-STRICT=false
+STRICT=true
 JSON_OUTPUT=false
 TMP_DIR=$(mktemp -d)
 trap "rm -rf $TMP_DIR" EXIT
@@ -43,12 +43,13 @@ NC='\033[0m'
 # ── 参数解析 ──
 for arg in "$@"; do
   case $arg in
-    --strict) STRICT=true ;;
+    --no-strict) STRICT=false ;;
     --json)   JSON_OUTPUT=true ;;
     --help|-h)
-      echo "用法: bash scripts/acc-check.sh [--strict] [--json]"
-      echo "  --strict  严格模式：skip/todo/遗漏视为失败"
-      echo "  --json    输出JSON格式报告"
+      echo "用法: bash scripts/acc-check.sh [--no-strict] [--json]"
+      echo "  默认严格模式：skip/todo/遗漏视为失败"
+      echo "  --no-strict  宽松模式：仅失败视为失败"
+      echo "  --json       输出JSON格式报告"
       exit 0
       ;;
   esac
@@ -428,7 +429,7 @@ print_summary() {
     echo -e "  ${GREEN}${BOLD}║   ✓ ACC 验收检查全部通过 — 可以提交    ║${NC}"
     echo -e "  ${GREEN}${BOLD}╚══════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "  ${DIM}提示: 使用 --strict 开启严格模式（skip/todo视为失败）${NC}"
+    echo -e "  ${DIM}提示: 使用 --no-strict 切换为宽松模式${NC}"
   else
     echo -e "  ${RED}${BOLD}╔══════════════════════════════════════════╗${NC}"
     echo -e "  ${RED}${BOLD}║   ✗ ACC 验收检查未通过 — 禁止提交       ║${NC}"
