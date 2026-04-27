@@ -7,11 +7,13 @@
  * - 数据正确性（战力对比、HP血条、星级评定、奖励计算）
  * - 边界情况（锁定关卡、空编队、扫荡令不足）
  * - 手机端适配
+ *
+ * 使用真实 ThreeKingdomsEngine（通过 createSim()），不再使用 mock engine。
  */
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CampaignTab from '@/components/idle/panels/campaign/CampaignTab';
 import BattleFormationModal from '@/components/idle/panels/campaign/BattleFormationModal';
@@ -22,6 +24,8 @@ import type { Stage, Chapter, BattleResult, StageState } from '@/games/three-kin
 import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
 import type { SweepBatchResult } from '@/games/three-kingdoms/engine/campaign/sweep.types';
 import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { createSim } from '../../test-utils/test-helpers';
+import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
 // ─────────────────────────────────────────────
 // Mock CSS imports
@@ -56,6 +60,9 @@ vi.mock('@/components/idle/common/Modal', () => ({
 // ─────────────────────────────────────────────
 // Test Data Factory
 // ─────────────────────────────────────────────
+
+/** 可用武将 ID 列表（与引擎配置一致） */
+const HERO_IDS = ['liubei', 'guanyu', 'zhangfei', 'zhaoyun', 'machao', 'huangzhong'];
 
 function makeStage(overrides: Partial<Stage> = {}): Stage {
   return {
@@ -128,80 +135,58 @@ function makeSweepBatchResult(overrides: Partial<SweepBatchResult> = {}): SweepB
   };
 }
 
-function makeMockCampaignEngine(options: {
-  chapters?: Chapter[];
-  stageStates?: Record<string, StageState>;
-  battleResult?: BattleResult;
-  heroes?: any[];
-} = {}) {
-  const chapters = options.chapters || [makeChapter()];
-  const stageStates = options.stageStates || {};
-  const battleResult = options.battleResult || makeBattleResult();
-  const heroes = options.heroes || [];
+// ─────────────────────────────────────────────
+// Real Engine Factory (replaces mock)
+// ─────────────────────────────────────────────
 
-  const campaignSystem = {
-    getChapters: vi.fn(() => chapters),
-    getStageState: vi.fn((stageId: string) =>
-      stageStates[stageId] || { stageId, stars: 0, firstCleared: false, clearCount: 0 }
-    ),
-    getStageStatus: vi.fn((stageId: string) =>
-      stageStates[stageId]?.stars === 3 ? 'threeStar'
-      : stageStates[stageId]?.firstCleared ? 'cleared'
-      : stageId === chapters[0]?.stages[0]?.id ? 'available'
-      : 'locked'
-    ),
-    getProgressSummary: vi.fn(() => ({
-      totalStages: chapters.reduce((sum, ch) => sum + ch.stages.length, 0),
-      clearedStages: Object.keys(stageStates).length,
-      totalStars: Object.values(stageStates).reduce((sum: number, s: any) => sum + (s.stars || 0), 0),
-      maxStars: chapters.reduce((sum, ch) => sum + ch.stages.length, 0) * 3,
-    })),
-    getStageStars: vi.fn((stageId: string) => stageStates[stageId]?.stars ?? 0),
-    getProgress: vi.fn(() => ({
-      stageStates,
-      totalStages: chapters.reduce((sum, ch) => sum + ch.stages.length, 0),
-      clearedStages: Object.keys(stageStates).length,
-    })),
-  };
+/**
+ * 创建真实引擎并添加指定数量的武将和资源。
+ *
+ * 不再使用 `as unknown as ThreeKingdomsEngine` 类型强转，
+ * 返回的 engine 就是真实的 ThreeKingdomsEngine 实例。
+ */
+function makeEngine(options: {
+  heroCount?: number;
+  goldAmount?: number;
+} = {}): { engine: ThreeKingdomsEngine; sim: GameEventSimulator } {
+  const { heroCount = 0, goldAmount = 99999 } = options;
+  const sim = createSim();
+  const engine = sim.engine;
 
-  const heroSystem = {
-    getAllHeroes: vi.fn(() => heroes),
-    calculatePower: vi.fn(() => 5000),
-    getGeneral: vi.fn((id: string) => heroes.find((h: any) => h.id === id)),
-    getGeneralsSortedByPower: vi.fn(() => heroes),
-  };
+  // 添加充足资源
+  engine.resource.addResource('gold', goldAmount);
+  engine.resource.addResource('grain', 50000);
+  engine.resource.addResource('troops', 50000);
 
-  return {
-    // CampaignTab uses these directly on engine
-    getChapters: vi.fn(() => chapters),
-    getCampaignSystem: vi.fn(() => campaignSystem),
-    getCampaignProgress: vi.fn(() => campaignSystem.getProgress()),
-    getHeroSystem: vi.fn(() => heroSystem),
-    getBattleEngine: vi.fn(() => ({
-      initBattle: vi.fn(),
-      executeBattle: vi.fn(() => battleResult),
-    })),
-    getFormationSystem: vi.fn(() => ({
-      getActiveFormation: vi.fn(() => ({ slots: heroes.slice(0, 6), name: '第一队' })),
-      autoFormation: vi.fn(() => heroes.slice(0, 6)),
-    })),
-    // BattleFormationModal uses these directly on engine
-    getGenerals: vi.fn(() => heroes),
-    getActiveFormation: vi.fn(() => ({ id: 'f1', slots: heroes.slice(0, 6), name: '第一队' })),
-    getResourceAmount: vi.fn((type: string) => {
-      if (type === 'sweepTicket') return 10;
-      return 1000;
-    }),
-    getSweepSystem: vi.fn(() => ({
-      sweep: vi.fn(() => ({ success: true, executedCount: 1, ticketsUsed: 1, totalResources: { gold: 100 }, totalFragments: {} })),
-      getTicketCount: vi.fn(() => 10),
-    })),
-    startBattle: vi.fn(() => battleResult),
-    completeBattle: vi.fn(),
-    setFormation: vi.fn(),
-    createFormation: vi.fn(() => ({ id: 'f1', slots: [], name: '新编队' })),
-    recruit: vi.fn(),
-  } as unknown as ThreeKingdomsEngine;
+  // 添加武将（用于编队和战斗）
+  for (let i = 0; i < Math.min(heroCount, HERO_IDS.length); i++) {
+    sim.addHeroDirectly(HERO_IDS[i]);
+  }
+
+  return { engine, sim };
+}
+
+/**
+ * 创建引擎并设置编队（用于需要战斗的测试场景）。
+ * 添加武将后创建编队并填入武将 ID。
+ */
+function makeEngineWithFormation(heroCount = 3): { engine: ThreeKingdomsEngine; sim: GameEventSimulator } {
+  const { engine, sim } = makeEngine({ heroCount });
+  if (heroCount > 0) {
+    const heroIds = HERO_IDS.slice(0, heroCount);
+    engine.createFormation('main');
+    engine.setFormation('main', heroIds);
+  }
+  return { engine, sim };
+}
+
+/**
+ * 获取引擎中第一个关卡的 Stage 对象。
+ * 从真实引擎配置中获取，确保与引擎数据一致。
+ */
+function getFirstStage(engine: ThreeKingdomsEngine): Stage {
+  const stages = engine.getStageList();
+  return stages[0];
 }
 
 // ─────────────────────────────────────────────
@@ -222,24 +207,26 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   // ═══════════════════════════════════════════
 
   it(accTest('ACC-07-01', '出征Tab关卡地图显示 — 章节选择器'), () => {
-    const engine = makeMockCampaignEngine();
+    const { engine } = makeEngine();
     render(<CampaignTab engine={engine} snapshotVersion={0} />);
     const chapterText = screen.queryByText(/第.*章/);
     assertStrict(!!chapterText, 'ACC-07-01', '章节选择器应显示');
   });
 
   it(accTest('ACC-07-02', '关卡节点状态区分 — 关卡节点显示'), () => {
-    const engine = makeMockCampaignEngine();
+    const { engine } = makeEngine();
     render(<CampaignTab engine={engine} snapshotVersion={0} />);
-    const stageName = screen.queryAllByText('黄巾之乱');
-    assertStrict(stageName.length > 0, 'ACC-07-02', '关卡名称应显示');
+    // 真实引擎的关卡数据来自 campaign-config，检查是否有关卡节点
+    const stageNodes = screen.queryAllByTestId(/stage-node/);
+    const stageTexts = screen.queryAllByText(/黄巾之乱|第.*关/);
+    assertStrict(stageNodes.length > 0 || stageTexts.length > 0, 'ACC-07-02', '关卡节点应显示');
   });
 
   it(accTest('ACC-07-03', '战前布阵弹窗展示 — 弹窗标题'), () => {
-    const engine = makeMockCampaignEngine();
-    const stage = makeStage();
+    const { engine } = makeEngine();
+    const stage = getFirstStage(engine);
     render(<BattleFormationModal engine={engine} stage={stage} onClose={vi.fn()} snapshotVersion={0} />);
-    const title = screen.queryByText(/战前布阵/) || screen.queryByText(/黄巾之乱/);
+    const title = screen.queryByText(/战前布阵/) || screen.queryByText(new RegExp(stage.name));
     assertStrict(!!title, 'ACC-07-03', '战前布阵弹窗标题应显示');
   });
 
@@ -258,7 +245,6 @@ describe('ACC-07 战斗系统验收集成测试', () => {
     const stage = makeStage();
     const onConfirm = vi.fn();
     render(<BattleResultModal result={result} stage={stage} onConfirm={onConfirm} />);
-    // BattleResultModal 使用 SharedPanel，标题为"战斗失败"
     const defeatText = screen.queryAllByText(/失败/);
     assertStrict(defeatText.length > 0, 'ACC-07-07', '失败结算弹窗应显示失败信息');
   });
@@ -286,14 +272,7 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   // ═══════════════════════════════════════════
 
   it(accTest('ACC-07-10', '章节切换 — 点击箭头切换章节'), async () => {
-    const ch1 = makeChapter([makeStage({ chapterId: 'chapter1' })]);
-    ch1.id = 'chapter1';
-    ch1.name = '第一章';
-    const ch2 = makeChapter([makeStage({ id: 'chapter2_stage1', chapterId: 'chapter2', name: '董卓讨伐' })]);
-    ch2.id = 'chapter2';
-    ch2.name = '第二章';
-    ch2.order = 2;
-    const engine = makeMockCampaignEngine({ chapters: [ch1, ch2] });
+    const { engine } = makeEngine();
     render(<CampaignTab engine={engine} snapshotVersion={0} />);
     // 查找章节导航箭头
     const nextBtn = screen.queryByText('▶') || screen.queryByLabelText('下一章');
@@ -304,12 +283,8 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   });
 
   it(accTest('ACC-07-12', '一键布阵 — 自动填入武将'), async () => {
-    const heroes = [
-      { id: 'h1', name: '关羽', quality: 'LEGENDARY', baseStats: { attack: 100, defense: 80, intelligence: 60, speed: 70 }, level: 10, exp: 0, faction: 'shu', skills: [] },
-      { id: 'h2', name: '张飞', quality: 'EPIC', baseStats: { attack: 90, defense: 70, intelligence: 40, speed: 60 }, level: 8, exp: 0, faction: 'shu', skills: [] },
-    ];
-    const engine = makeMockCampaignEngine({ heroes });
-    const stage = makeStage();
+    const { engine } = makeEngine({ heroCount: 3 });
+    const stage = getFirstStage(engine);
     render(<BattleFormationModal engine={engine} stage={stage} onClose={vi.fn()} snapshotVersion={0} />);
     const autoBtn = screen.queryByText(/一键布阵/) || screen.queryByText(/🤖/);
     if (autoBtn) {
@@ -319,8 +294,8 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   });
 
   it(accTest('ACC-07-13', '出征按钮状态 — 编队为空时禁用'), () => {
-    const engine = makeMockCampaignEngine({ heroes: [] });
-    const stage = makeStage();
+    const { engine } = makeEngine({ heroCount: 0 });
+    const stage = getFirstStage(engine);
     render(<BattleFormationModal engine={engine} stage={stage} onClose={vi.fn()} snapshotVersion={0} />);
     const attackBtn = screen.queryByText(/出征/) || screen.queryByText(/⚔️/);
     // 出征按钮应存在
@@ -354,10 +329,11 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   // ═══════════════════════════════════════════
 
   it(accTest('ACC-07-20', '战力对比等级判定 — 战力数据可获取'), () => {
-    const engine = makeMockCampaignEngine();
-    const stage = makeStage({ recommendedPower: 1000 });
+    const { engine } = makeEngine({ heroCount: 3 });
+    const stage = getFirstStage(engine);
     render(<BattleFormationModal engine={engine} stage={stage} onClose={vi.fn()} snapshotVersion={0} />);
-    assertStrict(stage.recommendedPower === 1000, 'ACC-07-20', '关卡推荐战力应为1000');
+    // 真实引擎的关卡数据有 recommendedPower
+    assertStrict(stage.recommendedPower > 0, 'ACC-07-20', `关卡推荐战力应为正数，实际=${stage.recommendedPower}`);
   });
 
   it(accTest('ACC-07-21', '战斗回合数显示 — 回合数在结果中'), () => {
@@ -373,9 +349,10 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   });
 
   it(accTest('ACC-07-25', '奖励计算正确性 — 基础奖励与配置一致'), () => {
-    const stage = makeStage({ baseRewards: { gold: 100, grain: 50 } });
-    assertStrict(stage.baseRewards.gold === 100, 'ACC-07-25', '基础金币奖励应为100');
-    assertStrict(stage.baseRewards.grain === 50, 'ACC-07-25', '基础粮草奖励应为50');
+    const { engine } = makeEngine();
+    const stage = getFirstStage(engine);
+    // 真实引擎的关卡有 baseRewards
+    assertStrict(!!stage.baseRewards, 'ACC-07-25', '关卡应有基础奖励配置');
   });
 
   it(accTest('ACC-07-26', '扫荡奖励与消耗 — SweepBatchResult数据正确'), () => {
@@ -390,14 +367,17 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   });
 
   it(accTest('ACC-07-27', '关卡进度更新 — 引擎getCampaignProgress被调用'), () => {
-    const engine = makeMockCampaignEngine();
+    const { engine } = makeEngine();
+    // 使用 vi.spyOn 监听真实引擎方法
+    const spy = vi.spyOn(engine, 'getCampaignProgress');
     render(<CampaignTab engine={engine} snapshotVersion={0} />);
     // CampaignTab calls engine.getCampaignProgress() for progress data
     assertStrict(
-      (engine as any).getCampaignProgress.mock.calls.length >= 1,
+      spy.mock.calls.length >= 1,
       'ACC-07-27',
       'getCampaignProgress 应被调用',
     );
+    spy.mockRestore();
   });
 
   // ═══════════════════════════════════════════
@@ -405,19 +385,15 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   // ═══════════════════════════════════════════
 
   it(accTest('ACC-07-30', '锁定关卡不可点击 — 锁定状态节点存在'), () => {
-    const lockedStage = makeStage({ id: 'chapter1_stage2', name: '锁定关卡' });
-    const chapter = makeChapter([makeStage(), lockedStage]);
-    const engine = makeMockCampaignEngine({
-      chapters: [chapter],
-      stageStates: { 'chapter1_stage1': { stageId: 'chapter1_stage1', stars: 0, firstCleared: false, clearCount: 0 } },
-    });
+    const { engine } = makeEngine();
     render(<CampaignTab engine={engine} snapshotVersion={0} />);
+    // 真实引擎中，未通关前一关的后续关卡为锁定状态
     assertStrict(true, 'ACC-07-30', '锁定关卡渲染检查完成');
   });
 
   it(accTest('ACC-07-31', '编队为空时出征禁用 — 出征按钮存在但状态正确'), () => {
-    const engine = makeMockCampaignEngine({ heroes: [] });
-    const stage = makeStage();
+    const { engine } = makeEngine({ heroCount: 0 });
+    const stage = getFirstStage(engine);
     render(<BattleFormationModal engine={engine} stage={stage} onClose={vi.fn()} snapshotVersion={0} />);
     const attackBtn = screen.queryByText(/出征/);
     assertStrict(!!attackBtn, 'ACC-07-31', '出征按钮应存在');
@@ -443,11 +419,13 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   });
 
   it(accTest('ACC-07-34', '未三星关卡不可扫荡 — 非三星关卡不显示扫荡按钮'), () => {
-    const engine = makeMockCampaignEngine({
-      stageStates: {
-        'chapter1_stage1': { stageId: 'chapter1_stage1', stars: 1, firstCleared: true, clearCount: 1 },
-      },
-    });
+    const { engine, sim } = makeEngine();
+    // 通关第一个关卡但只给 1 星
+    const stages = engine.getStageList();
+    if (stages.length > 0) {
+      engine.startBattle(stages[0].id);
+      engine.completeBattle(stages[0].id, 1);
+    }
     render(<CampaignTab engine={engine} snapshotVersion={0} />);
     // 非三星关卡不应有扫荡按钮
     const sweepBtn = screen.queryByText(/⚡扫荡/);
@@ -464,15 +442,17 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   // ═══════════════════════════════════════════
 
   it(accTest('ACC-07-40', '关卡地图竖屏滚动 — 关卡节点显示'), () => {
-    const engine = makeMockCampaignEngine();
+    const { engine } = makeEngine();
     render(<CampaignTab engine={engine} snapshotVersion={0} />);
-    const stageName = screen.queryAllByText('黄巾之乱');
-    assertStrict(stageName.length > 0, 'ACC-07-40', '手机端关卡名称应显示');
+    // 真实引擎渲染关卡节点
+    const stageNodes = screen.queryAllByTestId(/stage-node/);
+    const stageTexts = screen.queryAllByText(/黄巾之乱|第.*关/);
+    assertStrict(stageNodes.length > 0 || stageTexts.length > 0, 'ACC-07-40', '手机端关卡节点应显示');
   });
 
   it(accTest('ACC-07-41', '布阵弹窗手机端适配 — 弹窗渲染成功'), () => {
-    const engine = makeMockCampaignEngine();
-    const stage = makeStage();
+    const { engine } = makeEngine();
+    const stage = getFirstStage(engine);
     render(<BattleFormationModal engine={engine} stage={stage} onClose={vi.fn()} snapshotVersion={0} />);
     assertStrict(true, 'ACC-07-41', '手机端布阵弹窗渲染检查完成');
   });
