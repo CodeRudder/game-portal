@@ -413,6 +413,34 @@ export class GameEventSimulator {
   }
 
   // ─────────────────────────────────────────
+  // 静态工厂方法（合并自 EngineFactory）
+  // ─────────────────────────────────────────
+
+  private static sharedInstance: GameEventSimulator | null = null;
+
+  /**
+   * 创建或获取共享的 GameEventSimulator 实例。
+   * 测试间复用同一个引擎实例，适合只读验证（如契约测试）。
+   */
+  static createShared(): GameEventSimulator {
+    if (!GameEventSimulator.sharedInstance) {
+      GameEventSimulator.sharedInstance = new GameEventSimulator();
+      GameEventSimulator.sharedInstance.init();
+    }
+    return GameEventSimulator.sharedInstance;
+  }
+
+  /**
+   * 清除共享实例缓存。用于 afterEach/afterAll 全局清理。
+   */
+  static clearCache(): void {
+    if (GameEventSimulator.sharedInstance) {
+      GameEventSimulator.sharedInstance.reset();
+      GameEventSimulator.sharedInstance = null;
+    }
+  }
+
+  // ─────────────────────────────────────────
   // 内部工具
   // ─────────────────────────────────────────
 

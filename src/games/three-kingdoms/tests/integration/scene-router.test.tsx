@@ -11,7 +11,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import React from 'react';
-import { ThreeKingdomsEngine } from '../../engine/ThreeKingdomsEngine';
+import { GameEventSimulator } from '../../test-utils/GameEventSimulator';
+import type { ThreeKingdomsEngine } from '../../engine/ThreeKingdomsEngine';
 
 // ── 导入真实组件 ──
 // ShopPanel 使用 export default，需要匹配默认导出
@@ -28,8 +29,9 @@ import ShopPanel from '@/components/idle/panels/shop/ShopPanel';
  * 使组件可以正常渲染而不崩溃。
  */
 function createEngineWithShopStub(): { engine: ThreeKingdomsEngine; shopStub: Record<string, unknown> } {
-  const engine = new ThreeKingdomsEngine();
-  engine.init();
+  const sim = new GameEventSimulator();
+  sim.init();
+  const engine = sim.engine;
 
   /** 最小化的 ShopSystem stub */
   const shopStub = {
@@ -68,16 +70,16 @@ function createEngineWithShopStub(): { engine: ThreeKingdomsEngine; shopStub: Re
 // ═══════════════════════════════════════════════════════════════
 
 describe('组件集成测试 (IC)', () => {
-  let engine: ThreeKingdomsEngine;
+  let sim: GameEventSimulator;
 
   beforeEach(() => {
-    engine = new ThreeKingdomsEngine();
-    engine.init();
+    sim = new GameEventSimulator();
+    sim.init();
   });
 
   afterEach(() => {
     cleanup();
-    engine.reset();
+    sim.reset();
   });
 
   // ── IC-01: ShopPanel 集成测试 ──
@@ -164,7 +166,7 @@ describe('组件集成测试 (IC)', () => {
   // ── IC-02: Engine Snapshot 集成测试 ──
   describe('IC-02: Engine Snapshot 集成测试', () => {
     it('IC-02-01: engine.getSnapshot() 返回有效结构化数据', () => {
-      const snapshot = engine.getSnapshot();
+      const snapshot = sim.engine.getSnapshot();
 
       // 基本存在性
       expect(snapshot).toBeTruthy();
@@ -178,7 +180,7 @@ describe('组件集成测试 (IC)', () => {
     });
 
     it('IC-02-02: engine.getSnapshot() resources 包含必要字段', () => {
-      const snapshot = engine.getSnapshot();
+      const snapshot = sim.engine.getSnapshot();
 
       // resources 应该是对象
       expect(typeof snapshot.resources).toBe('object');
@@ -189,12 +191,12 @@ describe('组件集成测试 (IC)', () => {
     });
 
     it('IC-02-03: engine.isInitialized() 返回 true', () => {
-      expect(engine.isInitialized()).toBe(true);
+      expect(sim.engine.isInitialized()).toBe(true);
     });
 
     it('IC-02-04: engine.getState() 返回与 getSnapshot() 一致的类型', () => {
-      const snapshot = engine.getSnapshot();
-      const state = engine.getState();
+      const snapshot = sim.engine.getSnapshot();
+      const state = sim.engine.getState();
 
       // getState() 应该返回一个对象
       expect(typeof state).toBe('object');
@@ -208,9 +210,9 @@ describe('组件集成测试 (IC)', () => {
   // ── IC-03: Engine + 组件生命周期集成 ──
   describe('IC-03: Engine 生命周期集成', () => {
     it('IC-03-01: engine reset 后 snapshot 仍然有效', () => {
-      engine.reset();
+      sim.engine.reset();
 
-      const snapshot = engine.getSnapshot();
+      const snapshot = sim.engine.getSnapshot();
       expect(snapshot).toBeTruthy();
       expect(typeof snapshot.resources).toBe('object');
     });
@@ -218,8 +220,8 @@ describe('组件集成测试 (IC)', () => {
     it('IC-03-02: engine 多次 init 不崩溃', () => {
       // 重复初始化应该是幂等的
       expect(() => {
-        engine.init();
-        engine.init();
+        sim.engine.init();
+        sim.engine.init();
       }).not.toThrow();
     });
 

@@ -22,7 +22,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, waitFor, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { ThreeKingdomsEngine } from '../../engine/ThreeKingdomsEngine';
+import { GameEventSimulator } from '../../test-utils/GameEventSimulator';
+import type { ThreeKingdomsEngine } from '../../engine/ThreeKingdomsEngine';
 
 // ── 导入真实组件 ──
 import ShopPanel from '@/components/idle/panels/shop/ShopPanel';
@@ -89,8 +90,9 @@ function getFinalPrice(defId: string): Record<string, number> {
  * 使组件可以正常渲染而不崩溃。
  */
 function createEngineWithShopStub(options?: { balance?: number }) {
-  const engine = new ThreeKingdomsEngine();
-  engine.init();
+  const sim = new GameEventSimulator();
+  sim.init();
+  const engine = sim.engine;
 
   const balance = options?.balance ?? 9999;
 
@@ -404,10 +406,10 @@ describe('ShopPanel 深度集成测试 (IC-10)', () => {
   // ── IC-10-05: Engine 级别集成验证 ──
   describe('IC-10-05: Engine 级别集成验证', () => {
     it('IC-10-05-01: 真实 engine 初始化后 snapshot 包含必要字段', () => {
-      const engine = new ThreeKingdomsEngine();
-      engine.init();
+      const sim = new GameEventSimulator();
+      sim.init();
 
-      const snapshot = engine.getSnapshot();
+      const snapshot = sim.engine.getSnapshot();
       expect(snapshot).toBeTruthy();
       expect(snapshot).toHaveProperty('resources');
       expect(snapshot).toHaveProperty('buildings');
@@ -415,24 +417,24 @@ describe('ShopPanel 深度集成测试 (IC-10)', () => {
     });
 
     it('IC-10-05-02: engine init 后 isInitialized 返回 true', () => {
-      const engine = new ThreeKingdomsEngine();
-      expect(engine.isInitialized()).toBe(false);
+      const sim = new GameEventSimulator();
+      expect(sim.engine.isInitialized()).toBe(false);
 
-      engine.init();
-      expect(engine.isInitialized()).toBe(true);
+      sim.init();
+      expect(sim.engine.isInitialized()).toBe(true);
     });
 
     it('IC-10-05-03: engine reset + reinit 后仍然正常工作', () => {
-      const engine = new ThreeKingdomsEngine();
-      engine.init();
+      const sim = new GameEventSimulator();
+      sim.init();
 
-      const snapshot1 = engine.getSnapshot();
+      const snapshot1 = sim.engine.getSnapshot();
       expect(snapshot1).toBeTruthy();
 
-      engine.reset();
-      engine.init();
+      sim.reset();
+      sim.init();
 
-      const snapshot2 = engine.getSnapshot();
+      const snapshot2 = sim.engine.getSnapshot();
       expect(snapshot2).toBeTruthy();
       expect(snapshot2).toHaveProperty('resources');
     });

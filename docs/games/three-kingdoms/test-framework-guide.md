@@ -91,21 +91,34 @@
 
 #### 文件结构
 ```
-src/games/three-kingdoms/tests/
-├── lib/                              ← 共享测试基础设施
-│   ├── index.ts                      ← 统一导出
-│   ├── engine-factory.ts             ← 真实 Engine 创建工厂
-│   ├── engine-contract.ts            ← 契约常量定义
-│   └── vitest-helpers.ts             ← test.extend fixture
-└── contract/
-    └── engine-contract.test.ts       ← 契约测试用例
+src/games/three-kingdoms/
+├── test-utils/                            ← 共享测试工具（81+文件使用）
+│   ├── GameEventSimulator.ts              ← 真实引擎封装（含createShared/clearCache）
+│   ├── engine-contracts.ts                ← 契约常量定义
+│   ├── test-helpers.ts                    ← 工厂函数+常量re-export
+│   ├── TimeAccelerator.ts                 ← 时间加速器
+│   ├── GameMilestone.ts                   ← 里程碑枚举
+│   └── test-constants.ts                  ← 语义化常量
+├── tests/
+│   ├── contract/
+│   │   └── engine-contract.test.ts        ← 契约测试用例
+│   └── integration/
+│       ├── scene-router.test.tsx          ← Tab切换集成测试
+│       └── shop-integration.test.tsx      ← 商店深度集成测试
 ```
 
-#### 契约常量（`engine-contract.ts`）
+#### 契约常量（`test-utils/engine-contracts.ts`）
 
-集中管理 UI 对 Engine 的所有依赖关系，**任何变更都必须在此处更新**：
+集中管理 UI 对 Engine 的所有依赖关系，通过 `test-helpers.ts` 统一导出，**任何变更都必须在此处更新**：
 
 ```typescript
+import {
+  ENGINE_GETTER_CONTRACT,      // 106 个 getter 方法名
+  ENGINE_DEPENDENCY_CONTRACT,  // 子系统间依赖关系
+  REGISTRY_KEY_CONTRACT,       // 51 个 registry key
+  TAB_ID_CONTRACT,             // 前端 Tab ID 映射
+} from '../../test-utils/test-helpers';
+
 // 1. Getter 契约 — 106 个 getter 方法，init() 后必须返回非 null
 export const ENGINE_GETTER_CONTRACT = [
   'getHeroSystem', 'getShopSystem', 'getCurrencySystem',
@@ -118,11 +131,11 @@ export const ENGINE_DEPENDENCY_CONTRACT = [
   { system: 'ShopSystem', dependency: 'CurrencySystem', via: 'setCurrencySystem' },
 ] as const;
 
-// 3. Registry Key 契约 — 49 个注册键，前后端必须一致
+// 3. Registry Key 契约 — 51 个注册键，前后端必须一致
 export const REGISTRY_KEY_CONTRACT = [
   { subsystem: 'ShopSystem', registeredKey: 'shop' },
   { subsystem: 'TutorialStateMachine', registeredKey: 'tutorialStateMachine' },
-  // ... 共 49 个
+  // ... 共 51 个
 ] as const;
 
 // 4. Tab ID 契约 — 前端 Tab ID 与后端枚举的映射
@@ -277,69 +290,56 @@ pnpm preview &  pnpm test:e2e
 
 ## 三、共享测试基础设施
 
-### 3.1 EngineFactory（`tests/lib/engine-factory.ts`）
+### 3.1 GameEventSimulator（`test-utils/GameEventSimulator.ts`）
 
-提供三种创建模式：
+项目核心测试工具，封装真实 ThreeKingdomsEngine，提供高层 API。已被 81+ 个测试文件使用。
 
 ```typescript
-import { EngineFactory } from '../lib';
+import { GameEventSimulator } from '../../test-utils/GameEventSimulator';
+import { createSim } from '../../test-utils/test-helpers';
 
-// 模式 1: 共享实例（适合契约测试，性能最优）
-const engine = EngineFactory.create();
-// 第二次调用返回同一实例
+// 方式 1: 独立实例（每次创建新实例，测试间隔离）
+const sim = createSim();  // 等价于 new GameEventSimulator() + sim.init()
 
-// 模式 2: 全新实例（适合状态敏感测试）
-const freshEngine = EngineFactory.createFresh();
+// 方式 2: 共享实例（测试间复用，适合只读验证）
+const sim = GameEventSimulator.createShared();
 
-// 模式 3: 清除缓存（用于全局清理）
-EngineFactory.resetCache();
+// 方式 3: 清除缓存
+GameEventSimulator.clearCache();
+
+// 使用
+sim.addResources({ gold: 5000 });
+sim.upgradeBuilding('farmland');
+sim.engine.getShopSystem();  // 直接访问真实引擎
 ```
 
 | 方法 | 说明 | 适用场景 |
 |------|------|---------|
-| `create()` | 创建或复用已初始化的实例 | 契约测试（只读验证） |
-| `createFresh()` | 每次创建全新实例 | 需要干净状态的测试 |
-| `resetCache()` | 清除缓存并重置实例 | `afterAll` 全局清理 |
+| `createSim()` | 创建独立实例并初始化 | 一般测试（test-helpers.ts） |
+| `GameEventSimulator.createShared()` | 创建或获取共享实例 | 只读验证（契约测试） |
+| `GameEventSimulator.clearCache()` | 清除共享实例缓存 | afterAll 全局清理 |
+| `sim.initBeginnerState()` | 初始化新手状态 | 需要基础游戏进度 |
+| `sim.initMidGameState()` | 初始化中期状态 | 需要高级游戏进度 |
 
-### 3.2 Vitest Fixture（`tests/lib/vitest-helpers.ts`）
+### 3.2 契约常量（`test-utils/engine-contracts.ts`）
 
-基于 `test.extend` 提供自定义 fixture：
+集中管理 UI 对 Engine 的所有依赖关系。通过 `test-helpers.ts` 统一导出：
 
 ```typescript
-import { contractTest, integrationTest } from '../lib';
-
-// 契约测试 — 使用共享 engine
-contractTest('getter 应返回非 null', ({ realEngine }) => {
-  expect(realEngine.getHeroSystem()).toBeTruthy();
-});
-
-// 契约测试 — 使用独立 engine
-contractTest('reset 后可重新 init', ({ cleanEngine }) => {
-  cleanEngine.reset();
-  expect(() => cleanEngine.init()).not.toThrow();
-});
-
-// 集成测试 — 额外提供 DOM 容器
-integrationTest('组件渲染不崩溃', ({ cleanEngine, container }) => {
-  render(<ShopPanel engine={cleanEngine} visible={true} onClose={vi.fn()} />, { container });
-  expect(container.innerHTML).not.toBe('');
-});
+import {
+  ENGINE_GETTER_CONTRACT,      // 106 个 getter 方法名
+  ENGINE_DEPENDENCY_CONTRACT,  // 子系统间依赖关系
+  REGISTRY_KEY_CONTRACT,       // 51 个 registry key
+  TAB_ID_CONTRACT,             // 前端 Tab ID 映射
+} from '../../test-utils/test-helpers';
 ```
-
-| Fixture | 类型 | 说明 |
-|---------|------|------|
-| `realEngine` | 共享实例 | 测试间复用，性能最优 |
-| `cleanEngine` | 独立实例 | 每次测试创建新实例 |
-| `container` | HTMLElement | DOM 容器（仅 integrationTest） |
-
-### 3.3 契约常量（`tests/lib/engine-contract.ts`）
 
 **维护规则**：
 1. 新增 getter → 在 `ENGINE_GETTER_CONTRACT` 中添加
 2. 新增子系统注册 → 在 `REGISTRY_KEY_CONTRACT` 中添加
 3. 新增子系统间依赖 → 在 `ENGINE_DEPENDENCY_CONTRACT` 中添加
 4. 新增 Tab ID 映射 → 在 `TAB_ID_CONTRACT` 中添加
-5. **每次修改后运行 `pnpm test:contract` 验证**
+5. 每次修改后运行 `pnpm test:contract` 验证
 
 ---
 
@@ -376,7 +376,7 @@ CI 流水线：
 
 ### 5.1 新增引擎子系统
 
-**步骤 1**：在 `engine-contract.ts` 中注册
+**步骤 1**：在 `engine-contracts.ts` 中注册
 
 ```typescript
 // 1. 添加到 ENGINE_GETTER_CONTRACT
@@ -453,7 +453,7 @@ describe('NewPanel 集成测试 (IC-XX)', () => {
 
 ### 5.3 新增 Tab ID 映射
 
-**步骤 1**：在 `engine-contract.ts` 中注册
+**步骤 1**：在 `engine-contracts.ts` 中注册
 
 ```typescript
 export const TAB_ID_CONTRACT = {
@@ -503,7 +503,7 @@ describe('NewModule Tab ID 契约 (EC-XX)', () => {
 如果未来需要将 ACC 测试从 mock engine 迁移到真实 engine：
 
 1. **Phase 1**（已完成）：新增 L1 契约测试 + L2 集成测试，覆盖核心链路
-2. **Phase 2**（可选）：逐步将 ACC 测试中的 `makeMockEngine()` 替换为 `EngineFactory.create()`
+2. **Phase 2**（可选）：逐步将 ACC 测试中的 `makeMockEngine()` 替换为 `GameEventSimulator.createShared()`
 3. **Phase 3**（可选）：移除 ACC 测试中的 `vi.mock()` 子组件替换
 
 > **注意**：Phase 2/3 是可选的，当前 L1+L2 已经覆盖了 ACC 测试的盲区。
@@ -514,7 +514,7 @@ describe('NewModule Tab ID 契约 (EC-XX)', () => {
 
 ### Q1: 为什么不把所有测试都改成用真实 Engine？
 
-**性能和维护成本的权衡**。真实 Engine 初始化需要 ~50ms，如果 468 个 ACC 用例每个都创建新实例，总耗时会从 30 秒增加到 ~25 秒（使用 `EngineFactory.create()` 共享实例可以缓解）。而且某些 ACC 测试需要特定的数据状态（如"武将满级"），用 mock 更容易构造。
+**性能和维护成本的权衡**。真实 Engine 初始化需要 ~50ms，如果 468 个 ACC 用例每个都创建新实例，总耗时会从 30 秒增加到 ~25 秒（使用 `GameEventSimulator.createShared()` 共享实例可以缓解）。而且某些 ACC 测试需要特定的数据状态（如"武将满级"），用 mock 更容易构造。
 
 ### Q2: 为什么 L2 集成测试中 ShopSystem 还是用 stub？
 
@@ -547,7 +547,7 @@ L3 是唯一能在真实浏览器环境中运行的测试层级。
 
 ### Q5: 契约常量如何保持与代码同步？
 
-**手动维护 + 测试守护**。当添加新的 getter/registry key 时，需要同步更新 `engine-contract.ts`。如果忘记更新，L1 契约测试不会失败（它只验证已注册的契约），但 L2 集成测试或 L3 E2E 测试可能会发现新功能未被覆盖。
+**手动维护 + 测试守护**。当添加新的 getter/registry key 时，需要同步更新 `engine-contracts.ts`。如果忘记更新，L1 契约测试不会失败（它只验证已注册的契约），但 L2 集成测试或 L3 E2E 测试可能会发现新功能未被覆盖。
 
 建议在 Code Review 中检查：新增 getter → 是否更新了 `ENGINE_GETTER_CONTRACT`。
 
@@ -557,14 +557,14 @@ L3 是唯一能在真实浏览器环境中运行的测试层级。
 
 | 文件 | 行数 | 说明 |
 |------|------|------|
-| `tests/lib/engine-factory.ts` | 73 | Engine 创建工厂 |
-| `tests/lib/engine-contract.ts` | 122 | 契约常量定义（106 getter + 49 registry key） |
-| `tests/lib/vitest-helpers.ts` | 80 | test.extend fixture（contractTest / integrationTest） |
-| `tests/lib/index.ts` | 18 | 统一导出 |
-| `tests/contract/engine-contract.test.ts` | 335 | L1 契约测试（20 用例） |
+| `test-utils/GameEventSimulator.ts` | ~400 | 引擎封装 + createShared/clearCache |
+| `test-utils/engine-contracts.ts` | 122 | 契约常量定义 |
+| `test-utils/test-helpers.ts` | ~110 | 工厂函数 + 常量 re-export |
+| `test-utils/TimeAccelerator.ts` | 259 | 时间加速器 |
+| `tests/contract/engine-contract.test.ts` | 350 | L1 契约测试（20 用例） |
 | `tests/integration/scene-router.test.tsx` | 257 | L2 Tab 切换集成测试（11 用例） |
 | `tests/integration/shop-integration.test.tsx` | 440 | L2 商店深度集成测试（13 用例） |
-| `e2e/three-kingdoms-smoke.test.ts` | 479 | L3 E2E 冒烟测试（5 用例） |
+| `e2e/three-kingdoms-smoke.test.ts` | 479 | L3 E2E 冒烟测试（6 用例） |
 | `vitest.config.three-kingdoms.ts` | 55 | 三国专用 Vitest 配置 |
 | `scripts/acc-check.sh` | — | ACC 验收检查脚本 |
 | `scripts/test.sh` | — | 分层测试执行脚本 |

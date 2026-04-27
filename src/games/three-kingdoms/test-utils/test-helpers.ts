@@ -98,3 +98,11 @@ export function createSimWithMarketLevel5(): GameEventSimulator {
 
   return sim;
 }
+
+// ── 契约常量（合并自 tests/lib/engine-contract.ts） ──
+export {
+  ENGINE_GETTER_CONTRACT,
+  ENGINE_DEPENDENCY_CONTRACT,
+  REGISTRY_KEY_CONTRACT,
+  TAB_ID_CONTRACT,
+} from './engine-contracts';

@@ -1,5 +1,7 @@
 /**
- * Engine 契约定义 — 集中管理 UI 组件对 Engine 的所有依赖关系。
+ * 引擎契约常量 — 集中管理 UI 组件对 Engine 的所有依赖关系
+ *
+ * 从 tests/lib/engine-contract.ts 迁移到 test-utils/ 统一管理
  *
  * 任何 getter / 子系统 / registry key 变更都必须在此处更新，
  * 契约测试会自动验证，确保前后端不会因重构而断裂。
@@ -9,7 +11,7 @@
  *   registry     ← engine-extended-deps.ts / engine-offline-deps.ts / engine-guide-deps.ts
  *   依赖注入     ← initR11Systems / initGuideSystems 等函数中的 setXxx 调用
  *
- * @module tests/lib/engine-contract
+ * @module test-utils/engine-contracts
  */
 
 /** 返回子系统实例的 getter 方法名（不含参数化查询方法），必须返回非 null */
