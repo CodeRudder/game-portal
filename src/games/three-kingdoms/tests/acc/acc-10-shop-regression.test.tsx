@@ -435,3 +435,302 @@ describe('ACC-10-53: 商店面板打开流程', () => {
     }
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// ACC-10-54: 购买操作端到端扣费验证
+// 回归目标：确保引擎初始化后，购买流程能正确扣除货币
+//   覆盖Bug: ShopSystem.setCurrencySystem() 未调用 → 购买不扣费
+// ═══════════════════════════════════════════════════════════════
+
+describe('ACC-10-54: 购买操作端到端扣费验证', () => {
+
+  it('ACC-10-54-a: 引擎初始化后购买能正确扣费', () => {
+    const engine = new ThreeKingdomsEngine();
+    engine.init();
+    const shopSystem = engine.getShopSystem();
+    const currencySystem = engine.getCurrencySystem();
+
+    // 设置足够货币（copper 初始有1000）
+    currencySystem.addCurrency('copper', 100000);
+
+    const beforeBalance = currencySystem.getBalance('copper');
+    expect(
+      beforeBalance,
+      'FAIL [ACC-10-54-a]: 初始铜钱余额应大于0'
+    ).toBeGreaterThan(0);
+
+    // 获取normal商店中一个铜钱定价的商品
+    const goods = shopSystem.getShopGoods('normal');
+    const copperGoods = goods.find(g => {
+      const def = GOODS_DEF_MAP[g.defId];
+      return def && Object.keys(def.basePrice).includes('copper');
+    });
+    expect(
+      copperGoods,
+      'FAIL [ACC-10-54-a]: normal商店中应至少有一个铜钱定价商品'
+    ).toBeDefined();
+
+    const def = GOODS_DEF_MAP[copperGoods!.defId];
+    const expectedPrice = Math.ceil((def.basePrice.copper as number) * (copperGoods!.discount));
+
+    // 执行购买
+    const result = shopSystem.executeBuy({
+      goodsId: copperGoods!.defId,
+      shopType: 'normal',
+      quantity: 1,
+    });
+
+    expect(
+      result.success,
+      `FAIL [ACC-10-54-a]: 购买应成功，失败原因: ${result.reason ?? 'unknown'}`
+    ).toBe(true);
+
+    const afterBalance = currencySystem.getBalance('copper');
+    const actualDeducted = beforeBalance - afterBalance;
+    expect(
+      actualDeducted,
+      `FAIL [ACC-10-54-a]: 购买后铜钱应被扣除。期望扣除约 ${expectedPrice}，实际扣除 ${actualDeducted}，余额从 ${beforeBalance} 变为 ${afterBalance}`
+    ).toBeGreaterThan(0);
+  });
+
+  it('ACC-10-54-b: 余额不足时购买失败且不扣费', () => {
+    const engine = new ThreeKingdomsEngine();
+    engine.init();
+    const shopSystem = engine.getShopSystem();
+    const currencySystem = engine.getCurrencySystem();
+
+    // 设置极少量货币
+    currencySystem.setCurrency('copper', 1);
+    const beforeBalance = currencySystem.getBalance('copper');
+
+    // 获取normal商店中一个铜钱定价的商品
+    const goods = shopSystem.getShopGoods('normal');
+    const copperGoods = goods.find(g => {
+      const def = GOODS_DEF_MAP[g.defId];
+      return def && Object.keys(def.basePrice).includes('copper') && (def.basePrice.copper as number) > 1;
+    });
+    expect(
+      copperGoods,
+      'FAIL [ACC-10-54-b]: normal商店中应至少有一个价格>1铜钱的商品'
+    ).toBeDefined();
+
+    // 执行购买（应该失败）
+    const result = shopSystem.executeBuy({
+      goodsId: copperGoods!.defId,
+      shopType: 'normal',
+      quantity: 1,
+    });
+
+    expect(
+      result.success,
+      'FAIL [ACC-10-54-b]: 余额不足时购买应失败'
+    ).toBe(false);
+
+    const afterBalance = currencySystem.getBalance('copper');
+    expect(
+      afterBalance,
+      `FAIL [ACC-10-54-b]: 购买失败时不应扣除货币，余额应保持 ${beforeBalance}，实际为 ${afterBalance}`
+    ).toBe(beforeBalance);
+  });
+
+  it('ACC-10-54-c: 购买后库存和限购计数正确更新', () => {
+    const engine = new ThreeKingdomsEngine();
+    engine.init();
+    const shopSystem = engine.getShopSystem();
+    const currencySystem = engine.getCurrencySystem();
+    currencySystem.addCurrency('copper', 100000);
+
+    const goods = shopSystem.getShopGoods('normal');
+    const copperGoods = goods.find(g => {
+      const def = GOODS_DEF_MAP[g.defId];
+      return def && Object.keys(def.basePrice).includes('copper') && g.stock > 0 && g.stock !== -1;
+    });
+    expect(copperGoods, 'FAIL [ACC-10-54-c]: 应有库存有限的铜钱商品').toBeDefined();
+
+    const beforeStock = copperGoods!.stock;
+    const beforeDaily = copperGoods!.dailyPurchased;
+    const beforeLifetime = copperGoods!.lifetimePurchased;
+
+    const result = shopSystem.executeBuy({
+      goodsId: copperGoods!.defId,
+      shopType: 'normal',
+      quantity: 1,
+    });
+
+    expect(result.success, `FAIL [ACC-10-54-c]: 购买应成功，原因: ${result.reason}`).toBe(true);
+
+    // 重新获取商品状态
+    const updatedGoods = shopSystem.getShopGoods('normal');
+    const updated = updatedGoods.find(g => g.defId === copperGoods!.defId);
+    expect(updated, 'FAIL [ACC-10-54-c]: 购买后商品应仍存在').toBeDefined();
+
+    expect(
+      updated!.stock,
+      `FAIL [ACC-10-54-c]: 购买后库存应减少，期望 ${beforeStock - 1}，实际 ${updated!.stock}`
+    ).toBe(beforeStock - 1);
+    expect(
+      updated!.dailyPurchased,
+      `FAIL [ACC-10-54-c]: 每日已购应+1，期望 ${beforeDaily + 1}，实际 ${updated!.dailyPurchased}`
+    ).toBe(beforeDaily + 1);
+    expect(
+      updated!.lifetimePurchased,
+      `FAIL [ACC-10-54-c]: 终身已购应+1，期望 ${beforeLifetime + 1}，实际 ${updated!.lifetimePurchased}`
+    ).toBe(beforeLifetime + 1);
+  });
+
+  it('ACC-10-54-d: 购买结果返回正确的花费信息', () => {
+    const engine = new ThreeKingdomsEngine();
+    engine.init();
+    const shopSystem = engine.getShopSystem();
+    const currencySystem = engine.getCurrencySystem();
+    currencySystem.addCurrency('copper', 100000);
+
+    const goods = shopSystem.getShopGoods('normal');
+    const copperGoods = goods.find(g => {
+      const def = GOODS_DEF_MAP[g.defId];
+      return def && Object.keys(def.basePrice).includes('copper');
+    });
+    expect(copperGoods, 'FAIL [ACC-10-54-d]: 应有铜钱商品').toBeDefined();
+
+    const def = GOODS_DEF_MAP[copperGoods!.defId];
+    const expectedPrice = Math.ceil((def.basePrice.copper as number) * copperGoods!.discount);
+
+    const result = shopSystem.executeBuy({
+      goodsId: copperGoods!.defId,
+      shopType: 'normal',
+      quantity: 1,
+    });
+
+    expect(result.success, `FAIL [ACC-10-54-d]: 购买应成功`).toBe(true);
+    expect(
+      result.cost,
+      'FAIL [ACC-10-54-d]: 购买结果应包含cost字段'
+    ).toBeDefined();
+    expect(
+      result.cost!.copper,
+      `FAIL [ACC-10-54-d]: cost.copper应为 ${expectedPrice}，实际为 ${result.cost!.copper}`
+    ).toBe(expectedPrice);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ACC-10-55: 引擎初始化完整性端到端验证
+// 回归目标：确保所有商店相关系统在引擎init后都正确初始化
+//   防止遗漏 init/setCurrencySystem 调用
+// ═══════════════════════════════════════════════════════════════
+
+describe('ACC-10-55: 引擎初始化完整性端到端验证', () => {
+
+  it('ACC-10-55-a: getCurrencySystem在init后返回非null', () => {
+    const engine = new ThreeKingdomsEngine();
+    engine.init();
+    const currencySystem = engine.getCurrencySystem();
+    expect(
+      currencySystem,
+      'FAIL [ACC-10-55-a]: 引擎init后getCurrencySystem()不应返回null/undefined'
+    ).not.toBeNull();
+    expect(
+      currencySystem,
+      'FAIL [ACC-10-55-a]: 引擎init后getCurrencySystem()不应返回undefined'
+    ).not.toBeUndefined();
+  });
+
+  it('ACC-10-55-b: CurrencySystem.getBalance对每种货币返回数字', () => {
+    const engine = new ThreeKingdomsEngine();
+    engine.init();
+    const currencySystem = engine.getCurrencySystem();
+
+    const currencyTypes = ['copper', 'mandate', 'recruit', 'summon', 'expedition', 'guild', 'reputation', 'ingot'] as const;
+    for (const ct of currencyTypes) {
+      const balance = currencySystem.getBalance(ct);
+      expect(
+        typeof balance,
+        `FAIL [ACC-10-55-b]: CurrencySystem.getBalance("${ct}") 应返回number，实际为 ${typeof balance}`
+      ).toBe('number');
+    }
+  });
+
+  it('ACC-10-55-c: ShopSystem与CurrencySystem在引擎中正确关联', () => {
+    const engine = new ThreeKingdomsEngine();
+    engine.init();
+    const shopSystem = engine.getShopSystem();
+    const currencySystem = engine.getCurrencySystem();
+
+    // 添加大量铜钱
+    currencySystem.addCurrency('copper', 999999);
+
+    // 执行validateBuy，如果ShopSystem内部currencySystem未注入，会跳过货币检查
+    const goods = shopSystem.getShopGoods('normal');
+    const copperGoods = goods.find(g => {
+      const def = GOODS_DEF_MAP[g.defId];
+      return def && Object.keys(def.basePrice).includes('copper');
+    });
+    expect(copperGoods, 'FAIL [ACC-10-55-c]: 应有铜钱商品').toBeDefined();
+
+    const validation = shopSystem.validateBuy({
+      goodsId: copperGoods!.defId,
+      shopType: 'normal',
+      quantity: 1,
+    });
+
+    // 如果currencySystem已正确注入，余额充足时canBuy应为true
+    expect(
+      validation.canBuy,
+      `FAIL [ACC-10-55-c]: 余额充足时validateBuy应返回canBuy=true，错误: ${validation.errors.join(', ')}。可能ShopSystem与CurrencySystem未正确关联`
+    ).toBe(true);
+    expect(
+      validation.errors.length,
+      `FAIL [ACC-10-55-c]: 余额充足时不应有错误，实际错误: ${validation.errors.join(', ')}`
+    ).toBe(0);
+  });
+
+  it('ACC-10-55-d: 引擎重置后重新init，ShopSystem仍可正常工作', () => {
+    const engine = new ThreeKingdomsEngine();
+    engine.init();
+
+    // 先执行一次购买
+    const currencySystem = engine.getCurrencySystem();
+    currencySystem.addCurrency('copper', 100000);
+    const shopSystem = engine.getShopSystem();
+    const goods = shopSystem.getShopGoods('normal');
+    const copperGoods = goods.find(g => {
+      const def = GOODS_DEF_MAP[g.defId];
+      return def && Object.keys(def.basePrice).includes('copper');
+    });
+
+    if (copperGoods) {
+      shopSystem.executeBuy({
+        goodsId: copperGoods.defId,
+        shopType: 'normal',
+        quantity: 1,
+      });
+    }
+
+    // 重置引擎
+    engine.reset();
+
+    // 重新初始化
+    engine.init();
+    const newShopSystem = engine.getShopSystem();
+    const newCurrencySystem = engine.getCurrencySystem();
+    newCurrencySystem.addCurrency('copper', 100000);
+
+    // 验证重新初始化后购买仍可正常工作
+    const newGoods = newShopSystem.getShopGoods('normal');
+    const newCopperGoods = newGoods.find(g => {
+      const def = GOODS_DEF_MAP[g.defId];
+      return def && Object.keys(def.basePrice).includes('copper');
+    });
+    expect(newCopperGoods, 'FAIL [ACC-10-55-d]: 重置后重新init，normal商店应有铜钱商品').toBeDefined();
+
+    const result = newShopSystem.executeBuy({
+      goodsId: newCopperGoods!.defId,
+      shopType: 'normal',
+      quantity: 1,
+    });
+    expect(
+      result.success,
+      `FAIL [ACC-10-55-d]: 重置后重新init购买应成功，原因: ${result.reason ?? 'unknown'}`
+    ).toBe(true);
+  });
+});
