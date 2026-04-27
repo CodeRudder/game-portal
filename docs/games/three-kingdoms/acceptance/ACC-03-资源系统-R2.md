@@ -68,6 +68,8 @@
 
 ### 🟡 R1 补充：脉冲/闪烁动画被注释 — **未修复**
 
+> ⚠️ [需求变更] 资源增加脉冲动画已移除（避免持续动画影响注意力）。`.tk-res-item--pulse` 的资源增加脉冲不再需要启用。容量警告脉冲/闪烁动画（`.tk-res-item--urgent`、`.tk-res-item--full`）保留，仍需启用。
+
 | 属性 | R1 问题 | R2 修复验证 |
 |------|---------|------------|
 | **问题描述** | CSS `.tk-res-item--pulse`、`.tk-res-item--urgent`、`.tk-res-item--full` 中的 `animation` 属性全部被注释 | ❌ **未修复** |
@@ -220,12 +222,14 @@
 
 ### 🟢 遗留-4 [P2] 脉冲/闪烁动画被注释
 
+> ⚠️ [需求变更] 资源增加脉冲动画已移除（避免持续动画影响注意力）。`.tk-res-item--pulse` 不再需要启用。容量警告脉冲/闪烁（`.tk-res-item--urgent`、`.tk-res-item--full`）保留，仍需启用。
+
 | 属性 | 详情 |
 |------|------|
 | **问题** | ResourceBar.css 中所有 animation 属性被注释 |
-| **影响** | 资源产出无脉冲反馈，容量警告无闪烁效果 |
-| **修复方案** | 取消注释 `.tk-res-item--pulse`、`.tk-res-item--urgent`、`.tk-res-item--full` 中的 animation 属性 |
-| **预估工作量** | 0.5h |
+| **影响** | ~~资源产出无脉冲反馈~~ [已移除]，容量警告无闪烁效果 [保留，需修复] |
+| **修复方案** | ~~取消注释 `.tk-res-item--pulse`~~ [不再需要]，取消注释 `.tk-res-item--urgent`、`.tk-res-item--full` 中的 animation 属性 |
+| **预估工作量** | 0.3h |
 
 ---
 
@@ -272,9 +276,12 @@ const pendingGains = useMemo(() => {
 - `ShopSystem.ts:82`
 - 其他引用处
 
-### 4. [P2] 启用脉冲动画（遗留-4）
+### 4. [P2] 启用容量警告动画（遗留-4，更新）
 
-取消注释 ResourceBar.css 中第 148/165/171/190/209/217 行的 animation 属性。
+> ⚠️ [需求变更] 资源增加脉冲动画（`.tk-res-item--pulse`）已移除，不再启用。
+> 仅取消注释容量警告相关动画：`.tk-res-item--urgent`、`.tk-res-item--full` 中的 animation 属性。
+
+取消注释 ResourceBar.css 中容量警告相关的 animation 属性（第165/171/190/209/217行）。
 
 ---
 
@@ -316,7 +323,7 @@ const pendingGains = useMemo(() => {
 
 **遗留低优先级项（2项）：**
 - ⚠️ ACC-03-02：recruitToken 标签不一致（招贤榜 vs 招贤令）— P2
-- ⚠️ 脉冲/闪烁动画被注释 — P2
+- ⚠️ 脉冲/闪烁动画被注释 — P2（⚠️ [需求变更] 资源增加脉冲已移除，仅容量警告脉冲保留）
 
 ### 判定理由
 
@@ -339,7 +346,7 @@ R2 修复了 R1 中 4 项 FAIL，综合评分从 7.7 提升至 8.2。但仍有 2
 - [ ] 修复 ACC-03-33：传递 pendingGains prop 到 ResourceBar
 - [ ] 修复 ACC-03-48：手机端收支详情按钮触摸区域 ≥ 44px
 - [ ] 建议：统一 recruitToken 标签为「招贤令」
-- [ ] 建议：启用脉冲/闪烁动画 CSS
+- [ ] 建议：启用容量警告脉冲/闪烁动画 CSS（⚠️ [需求变更] 资源增加脉冲已移除，仅启用 urgent/full 容量警告动画）
 
 ---
 

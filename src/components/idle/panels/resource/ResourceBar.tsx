@@ -9,7 +9,7 @@
  * 响应式：PC 1280×56px / 手机 375×48px
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { Resources, ProductionRate, ResourceCap, ResourceType } from '@/games/three-kingdoms/engine';
 import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine';
 import { BUILDING_LABELS, BUILDING_ICONS } from '@/games/three-kingdoms/engine';
@@ -53,16 +53,7 @@ const RESOURCE_COLORS: Record<ResourceType, string> = {
 /** 资源排列顺序 */
 const RESOURCE_ORDER: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint', 'recruitToken', 'skillBook'];
 
-/** 资源脉冲动画颜色 — 功能点#12 粒子效果 */
-const RESOURCE_PULSE_COLORS: Record<ResourceType, string> = {
-  grain: 'rgba(126, 200, 80, 0.6)',   // 绿色
-  gold: 'rgba(201, 168, 76, 0.6)',     // 金色
-  troops: 'rgba(184, 66, 58, 0.6)',    // 红色
-  mandate: 'rgba(123, 94, 167, 0.6)',  // 紫色
-  techPoint: 'rgba(79, 195, 247, 0.6)', // 蓝色
-  recruitToken: 'rgba(232, 160, 48, 0.6)', // 橙色
-  skillBook: 'rgba(255, 107, 157, 0.6)', // 粉色
-};
+/* [需求变更] 移除资源产出脉冲动画 — 避免持续脉冲影响用户注意力 */
 
 /** 格式化数值：使用统一 formatNumber，compact 模式同标准模式 */
 function formatAmount(value: number, _compact: boolean = false): string {
@@ -98,22 +89,7 @@ function ResourceItem({
   const percentage = hasCap ? Math.min(value / cap!, 1) : 0;
   const rateText = formatRate(rate);
 
-  // ── 功能点#12: 资源产出脉冲动画 ──
-  const prevValueRef = useRef(value);
-  const [pulsing, setPulsing] = useState(false);
-  const pulseColor = RESOURCE_PULSE_COLORS[type];
-
-  useEffect(() => {
-    if (prevValueRef.current !== value) {
-      // 仅在数值增加时触发脉冲（产出反馈）
-      if (value > prevValueRef.current) {
-        setPulsing(true);
-        const timer = setTimeout(() => setPulsing(false), 400);
-        return () => clearTimeout(timer);
-      }
-      prevValueRef.current = value;
-    }
-  }, [value]);
+  // [需求变更] 移除功能点#12: 资源产出脉冲动画 — 避免持续脉冲影响注意力
 
   // RES-CAP-02: 计算溢出情况
   const overflowInfo = useMemo(() => {
@@ -143,9 +119,8 @@ function ResourceItem({
 
   return (
     <div
-      className={`tk-res-item ${warningLevel ? `tk-res-item--${warningLevel}` : ''} ${pulsing ? 'tk-res-item--pulse' : ''}`}
+      className={`tk-res-item ${warningLevel ? `tk-res-item--${warningLevel}` : ''}`}
       data-testid={`resource-bar-item-${type}`}
-      style={pulsing ? { '--tk-pulse-color': pulseColor } as React.CSSProperties : undefined}
       title={`${label} ${formatAmount(value)}${overflowInfo ? `（溢出 ${formatAmount(overflowInfo.wasted)}）` : ''}`}
     >
       {/* 图标 */}
