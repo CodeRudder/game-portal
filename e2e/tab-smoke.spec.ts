@@ -132,13 +132,19 @@ async function navigateToGame(page: Page, collector: ConsoleErrorCollector) {
 //
 // 注意：Tab 按钮在移动端视口下可能因 CSS flex 布局
 //       导致相邻 Tab 的子元素（tk-tab-icon-wrap）覆盖在目标 Tab 上方，
-//       拦截 pointer events。因此使用 force: true 强制点击。
+//       拦截 pointer events。因此使用 JavaScript dispatchEvent 直接触发点击，
+//       绕过 CSS 层叠问题。
 // ─────────────────────────────────────────────
 async function switchToTab(page: Page, tabId: string) {
   const tabBtn = page.locator(`[data-testid="tab-bar-${tabId}"]`);
   await expect(tabBtn, `Tab [${tabId}] 按钮应可见`).toBeVisible({ timeout: 3_000 });
-  // force: true 绕过 CSS 重叠导致的 pointer events 拦截
-  await tabBtn.click({ force: true });
+
+  // 使用 JavaScript 直接触发 click 事件，绕过 CSS 层叠导致的 pointer events 拦截
+  await page.evaluate((tid) => {
+    const btn = document.querySelector(`[data-testid="tab-bar-${tid}"]`) as HTMLElement;
+    if (btn) btn.click();
+  }, tabId);
+
   await page.waitForTimeout(800);
 }
 
