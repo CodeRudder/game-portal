@@ -89,7 +89,7 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
       const raw = localStorage.getItem('tk-tutorial-progress');
       if (raw) {
         const data = JSON.parse(raw);
-        return !data.completed;
+        return typeof data.completed === 'boolean' ? !data.completed : true;
       }
     } catch { /* ignore */ }
     return true;

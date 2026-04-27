@@ -40,7 +40,7 @@ export function getTutorialSM(engine?: ThreeKingdomsEngine | null): TutorialStat
     // 回退：通过 registry 获取
     const registry = engine.getSubsystemRegistry();
     if (!registry) return null;
-    const sm = registry.get('tutorial-state') as TutorialStateMachine | undefined;
+    const sm = registry.get('tutorialStateMachine') as TutorialStateMachine | undefined;
     return sm && typeof sm.getCurrentPhase === 'function' ? sm : null;
   } catch {
     return null;
@@ -63,7 +63,7 @@ export function getTutorialStepMgr(engine?: ThreeKingdomsEngine | null): Tutoria
     // 回退：通过 registry 获取
     const registry = engine.getSubsystemRegistry();
     if (!registry) return null;
-    const mgr = registry.get('tutorial-steps') as TutorialStepManager | undefined;
+    const mgr = registry.get('tutorialStepManager') as TutorialStepManager | undefined;
     return mgr && typeof mgr.getNextStep === 'function' ? mgr : null;
   } catch {
     return null;
