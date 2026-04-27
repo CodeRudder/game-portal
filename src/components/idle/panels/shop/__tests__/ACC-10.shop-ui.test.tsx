@@ -149,7 +149,7 @@ function createMockEngine(options: {
   } = options;
 
   let _refreshCount = refreshCount;
-  let _goods = { general: [...goods], arena: [], expedition: [], guild: [] };
+  let _goods = { normal: [...goods], black_market: [], limited_time: [], vip: [] };
 
   return {
     getShopSystem: () => ({
@@ -165,10 +165,10 @@ function createMockEngine(options: {
         return { success: true, goodsId: req.goodsId, quantity: req.quantity, cost: goodsDefs[req.goodsId]?.basePrice ?? {} };
       }),
       getState: () => ({
-        general: { manualRefreshCount: _refreshCount, manualRefreshLimit: refreshLimit },
-        arena: { manualRefreshCount: _refreshCount, manualRefreshLimit: refreshLimit },
-        expedition: { manualRefreshCount: _refreshCount, manualRefreshLimit: refreshLimit },
-        guild: { manualRefreshCount: _refreshCount, manualRefreshLimit: refreshLimit },
+        normal: { manualRefreshCount: _refreshCount, manualRefreshLimit: refreshLimit },
+        black_market: { manualRefreshCount: _refreshCount, manualRefreshLimit: refreshLimit },
+        limited_time: { manualRefreshCount: _refreshCount, manualRefreshLimit: refreshLimit },
+        vip: { manualRefreshCount: _refreshCount, manualRefreshLimit: refreshLimit },
       }),
       manualRefresh: vi.fn().mockImplementation(() => {
         if (_refreshCount >= refreshLimit) return { success: false, reason: '今日刷新次数已用完' };
@@ -275,18 +275,18 @@ describe('ACC-10 商店系统UI层验收', () => {
       renderShopPanel();
       await act(async () => { vi.advanceTimersByTime(400); });
 
-      expect(screen.getByTestId('shop-panel-tab-general')).toBeInTheDocument();
-      expect(screen.getByTestId('shop-panel-tab-arena')).toBeInTheDocument();
-      expect(screen.getByTestId('shop-panel-tab-expedition')).toBeInTheDocument();
-      expect(screen.getByTestId('shop-panel-tab-guild')).toBeInTheDocument();
+      expect(screen.getByTestId('shop-panel-tab-normal')).toBeInTheDocument();
+      expect(screen.getByTestId('shop-panel-tab-black_market')).toBeInTheDocument();
+      expect(screen.getByTestId('shop-panel-tab-limited_time')).toBeInTheDocument();
+      expect(screen.getByTestId('shop-panel-tab-vip')).toBeInTheDocument();
     });
 
     it('ACC-10-03: 默认选中杂货铺', async () => {
       renderShopPanel();
       await act(async () => { vi.advanceTimersByTime(400); });
 
-      const generalTab = screen.getByTestId('shop-panel-tab-general');
-      expect(generalTab.classList.contains('tk-shop-tab-btn--active')).toBe(true);
+      const normalTab = screen.getByTestId('shop-panel-tab-normal');
+      expect(normalTab.classList.contains('tk-shop-tab-btn--active')).toBe(true);
     });
   });
 
@@ -397,16 +397,16 @@ describe('ACC-10 商店系统UI层验收', () => {
       renderShopPanel();
       await act(async () => { vi.advanceTimersByTime(400); });
 
-      const arenaTab = screen.getByTestId('shop-panel-tab-arena');
-      fireEvent.click(arenaTab);
+      const blackMarketTab = screen.getByTestId('shop-panel-tab-black_market');
+      fireEvent.click(blackMarketTab);
 
       // 等待骨架屏
       await act(async () => { vi.advanceTimersByTime(400); });
 
-      expect(arenaTab.classList.contains('tk-shop-tab-btn--active')).toBe(true);
-      // general 不再高亮
-      const generalTab = screen.getByTestId('shop-panel-tab-general');
-      expect(generalTab.classList.contains('tk-shop-tab-btn--active')).toBe(false);
+      expect(blackMarketTab.classList.contains('tk-shop-tab-btn--active')).toBe(true);
+      // normal 不再高亮
+      const normalTab = screen.getByTestId('shop-panel-tab-normal');
+      expect(normalTab.classList.contains('tk-shop-tab-btn--active')).toBe(false);
     });
   });
 

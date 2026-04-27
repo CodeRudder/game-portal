@@ -32,10 +32,10 @@ const CUR_LABELS: Record<string, string> = {
 };
 
 const SHOP_TABS = [
-  { id: 'general', label: '杂货铺', icon: '🏪' },
-  { id: 'arena', label: '竞技商店', icon: '⚔️' },
-  { id: 'expedition', label: '远征商店', icon: '🚀' },
-  { id: 'guild', label: '联盟商店', icon: '🏰' },
+  { id: 'normal', label: '杂货铺', icon: '🏪' },
+  { id: 'black_market', label: '竞技商店', icon: '⚔️' },
+  { id: 'limited_time', label: '远征商店', icon: '🚀' },
+  { id: 'vip', label: '联盟商店', icon: '🏰' },
 ] as const;
 
 /** 排序选项 */
@@ -85,7 +85,7 @@ function SkeletonCard() {
 
 // ─── 主组件 ─────────────────────────────────
 export default function ShopPanel({ engine, visible = true, onClose, snapshotVersion }: ShopPanelProps) {
-  const [activeTab, setActiveTab] = useState<string>('general');
+  const [activeTab, setActiveTab] = useState<string>('normal');
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [buyQuantity, setBuyQuantity] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
@@ -387,8 +387,17 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
         {!isLoading && sortedGoods.length === 0 && (
           <div className="tk-shop-empty">
             <div className="tk-shop-empty-icon">🏪</div>
-            <div>暂无商品</div>
-            <div className="tk-shop-empty-hint">尝试刷新商店或切换其他商店类型</div>
+            {!shopSystem ? (
+              <>
+                <div>商店系统未加载</div>
+                <div className="tk-shop-empty-hint">请稍后再试或刷新页面</div>
+              </>
+            ) : (
+              <>
+                <div>暂无商品</div>
+                <div className="tk-shop-empty-hint">尝试刷新商店或切换其他商店类型</div>
+              </>
+            )}
           </div>
         )}
 

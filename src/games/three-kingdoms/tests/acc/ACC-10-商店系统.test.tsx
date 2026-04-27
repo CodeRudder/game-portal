@@ -102,7 +102,7 @@ function makeMockShopSystem(overrides: Record<string, any> = {}) {
   };
 
   return {
-    getShopGoods: vi.fn((shopType: string) => shopType === 'general' ? goods : []),
+    getShopGoods: vi.fn((shopType: string) => shopType === 'normal' ? goods : []),
     getGoodsDef: vi.fn((defId: string) => goodsDefs[defId] ?? undefined),
     calculateFinalPrice: vi.fn((defId: string, shopType: string) => {
       const def = goodsDefs[defId];
@@ -126,10 +126,10 @@ function makeMockShopSystem(overrides: Record<string, any> = {}) {
     }),
     validateBuy: vi.fn(() => ({ valid: true })),
     getState: vi.fn(() => ({
-      general: { manualRefreshCount: 0, manualRefreshLimit: 5 },
-      arena: { manualRefreshCount: 0, manualRefreshLimit: 5 },
-      expedition: { manualRefreshCount: 0, manualRefreshLimit: 5 },
-      guild: { manualRefreshCount: 0, manualRefreshLimit: 5 },
+      normal: { manualRefreshCount: 0, manualRefreshLimit: 5 },
+      black_market: { manualRefreshCount: 0, manualRefreshLimit: 5 },
+      limited_time: { manualRefreshCount: 0, manualRefreshLimit: 5 },
+      vip: { manualRefreshCount: 0, manualRefreshLimit: 5 },
     })),
     manualRefresh: vi.fn(() => ({ success: true })),
     resetDailyLimits: vi.fn(),
@@ -209,12 +209,12 @@ describe('ACC-10 商店系统 验收测试', () => {
     render(<ShopPanel {...makeProps()} />);
     const tabs = screen.getByTestId('shop-panel-tabs');
     assertVisible(tabs, 'ACC-10-03', 'Tab栏');
-    expect(screen.getByTestId('shop-panel-tab-general')).toBeInTheDocument();
-    expect(screen.getByTestId('shop-panel-tab-arena')).toBeInTheDocument();
-    expect(screen.getByTestId('shop-panel-tab-expedition')).toBeInTheDocument();
-    expect(screen.getByTestId('shop-panel-tab-guild')).toBeInTheDocument();
-    const generalTab = screen.getByTestId('shop-panel-tab-general');
-    expect(generalTab.className).toContain('active');
+    expect(screen.getByTestId('shop-panel-tab-normal')).toBeInTheDocument();
+    expect(screen.getByTestId('shop-panel-tab-black_market')).toBeInTheDocument();
+    expect(screen.getByTestId('shop-panel-tab-limited_time')).toBeInTheDocument();
+    expect(screen.getByTestId('shop-panel-tab-vip')).toBeInTheDocument();
+    const normalTab = screen.getByTestId('shop-panel-tab-normal');
+    expect(normalTab.className).toContain('active');
   });
 
   it(accTest('ACC-10-04', '货币余额栏显示 - 显示余额>0的货币'), () => {
@@ -262,7 +262,7 @@ describe('ACC-10 商店系统 验收测试', () => {
 
   it(accTest('ACC-10-09', '空商店提示 - 切换到无商品的商店Tab显示暂无商品'), async () => {
     render(<ShopPanel {...makeProps()} />);
-    fireEvent.click(screen.getByTestId('shop-panel-tab-arena'));
+    fireEvent.click(screen.getByTestId('shop-panel-tab-black_market'));
     await waitFor(() => {
       expect(screen.getByText('暂无商品')).toBeInTheDocument();
     });
@@ -274,10 +274,10 @@ describe('ACC-10 商店系统 验收测试', () => {
 
   it(accTest('ACC-10-10', '切换商店Tab - Tab高亮切换，商品列表刷新'), async () => {
     render(<ShopPanel {...makeProps()} />);
-    const arenaTab = screen.getByTestId('shop-panel-tab-arena');
-    fireEvent.click(arenaTab);
+    const blackMarketTab = screen.getByTestId('shop-panel-tab-black_market');
+    fireEvent.click(blackMarketTab);
     await waitFor(() => {
-      expect(arenaTab.className).toContain('active');
+      expect(blackMarketTab.className).toContain('active');
     });
   });
 
@@ -381,10 +381,10 @@ describe('ACC-10 商店系统 验收测试', () => {
     const tabBar = screen.getByTestId('shop-panel-tabs');
     assertVisible(tabBar, 'ACC-10-19', 'Tab栏');
     // Tab栏使用overflow-x: auto，4个Tab均可访问
-    expect(screen.getByTestId('shop-panel-tab-general')).toBeInTheDocument();
-    expect(screen.getByTestId('shop-panel-tab-arena')).toBeInTheDocument();
-    expect(screen.getByTestId('shop-panel-tab-expedition')).toBeInTheDocument();
-    expect(screen.getByTestId('shop-panel-tab-guild')).toBeInTheDocument();
+    expect(screen.getByTestId('shop-panel-tab-normal')).toBeInTheDocument();
+    expect(screen.getByTestId('shop-panel-tab-black_market')).toBeInTheDocument();
+    expect(screen.getByTestId('shop-panel-tab-limited_time')).toBeInTheDocument();
+    expect(screen.getByTestId('shop-panel-tab-vip')).toBeInTheDocument();
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -434,7 +434,7 @@ describe('ACC-10 商店系统 验收测试', () => {
     // 构造一个已达到每日限购的商品
     const props = makeProps({
       getShopGoods: vi.fn((shopType: string) =>
-        shopType === 'general'
+        shopType === 'normal'
           ? [{
               defId: 'goods_daily_maxed', stock: 5, maxStock: 5, discount: 1,
               dailyPurchased: 3, lifetimePurchased: 3, dailyLimit: 3, lifetimeLimit: -1,
@@ -497,12 +497,12 @@ describe('ACC-10 商店系统 验收测试', () => {
     await waitForGoodsLoaded();
     expect(screen.getByText('铜钱包')).toBeInTheDocument();
     // 切到竞技商店
-    fireEvent.click(screen.getByTestId('shop-panel-tab-arena'));
+    fireEvent.click(screen.getByTestId('shop-panel-tab-black_market'));
     await waitFor(() => {
       expect(screen.getByText('暂无商品')).toBeInTheDocument();
     });
     // 切回杂货铺
-    fireEvent.click(screen.getByTestId('shop-panel-tab-general'));
+    fireEvent.click(screen.getByTestId('shop-panel-tab-normal'));
     await waitFor(() => {
       expect(screen.getByText('铜钱包')).toBeInTheDocument();
     });
@@ -593,10 +593,10 @@ describe('ACC-10 商店系统 验收测试', () => {
   it(accTest('ACC-10-34', '手动刷新次数耗尽 - 按钮禁用'), () => {
     const props = makeProps({
       getState: vi.fn(() => ({
-        general: { manualRefreshCount: 5, manualRefreshLimit: 5 },
-        arena: { manualRefreshCount: 0, manualRefreshLimit: 5 },
-        expedition: { manualRefreshCount: 0, manualRefreshLimit: 5 },
-        guild: { manualRefreshCount: 0, manualRefreshLimit: 5 },
+        normal: { manualRefreshCount: 5, manualRefreshLimit: 5 },
+        black_market: { manualRefreshCount: 0, manualRefreshLimit: 5 },
+        limited_time: { manualRefreshCount: 0, manualRefreshLimit: 5 },
+        vip: { manualRefreshCount: 0, manualRefreshLimit: 5 },
       })),
     });
     render(<ShopPanel {...props} />);
@@ -642,7 +642,7 @@ describe('ACC-10 商店系统 验收测试', () => {
     await waitForGoodsLoaded();
     // goods_discount_stack: basePrice={copper:1000}, discount=0.8 → 800
     const shopSystem = props.engine.getShopSystem();
-    const finalPrice = shopSystem.calculateFinalPrice('goods_discount_stack', 'general');
+    const finalPrice = shopSystem.calculateFinalPrice('goods_discount_stack', 'normal');
     expect(finalPrice).toEqual({ copper: 800 });
   });
 
@@ -684,10 +684,10 @@ describe('ACC-10 商店系统 验收测试', () => {
     const tabBar = screen.getByTestId('shop-panel-tabs');
     assertVisible(tabBar, 'ACC-10-41', 'Tab栏');
     // Tab栏使用CSS overflow-x: auto，验证4个Tab均可访问
-    expect(screen.getByTestId('shop-panel-tab-general')).toBeVisible();
-    expect(screen.getByTestId('shop-panel-tab-arena')).toBeVisible();
-    expect(screen.getByTestId('shop-panel-tab-expedition')).toBeVisible();
-    expect(screen.getByTestId('shop-panel-tab-guild')).toBeVisible();
+    expect(screen.getByTestId('shop-panel-tab-normal')).toBeVisible();
+    expect(screen.getByTestId('shop-panel-tab-black_market')).toBeVisible();
+    expect(screen.getByTestId('shop-panel-tab-limited_time')).toBeVisible();
+    expect(screen.getByTestId('shop-panel-tab-vip')).toBeVisible();
   });
 
   it(accTest('ACC-10-42', '商品卡片布局 - 卡片包含图标、名称、价格、购买按钮'), async () => {

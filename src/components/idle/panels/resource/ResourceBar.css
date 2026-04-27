@@ -139,24 +139,14 @@
 .tk-res-item--urgent {
   border: 1px solid rgba(231, 76, 60, 0.5);
   background: rgba(231, 76, 60, 0.08);
-  animation: tk-res-pulse-urgent 2s ease-in-out infinite;
 }
 
 .tk-res-item--full {
   border: 1px solid rgba(231, 76, 60, 0.7);
   background: rgba(231, 76, 60, 0.12);
-  animation: tk-res-pulse-full 1.5s ease-in-out infinite;
 }
 
-@keyframes tk-res-pulse-urgent {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-  50% { box-shadow: 0 0 6px 1px rgba(231, 76, 60, 0.25); }
-}
-
-@keyframes tk-res-pulse-full {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-  50% { box-shadow: 0 0 8px 2px rgba(231, 76, 60, 0.35); }
-}
+/* [需求变更] 容量警告改为静态红框 — 移除所有脉冲动画避免持续干扰 */
 
 /* 溢出徽章 */
 .tk-res-overflow-badge {
@@ -164,12 +154,6 @@
   line-height: 1;
   margin-left: 2px;
   cursor: help;
-  animation: tk-res-blink 1.5s ease-in-out infinite;
-}
-
-@keyframes tk-res-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
 }
 
 /* 接近上限时数值颜色警告 */
@@ -183,7 +167,6 @@
 
 .tk-res-value--full {
   color: var(--tk-danger) !important; /* 红色 */
-  animation: tk-res-blink 1.5s ease-in-out infinite;
 }
 
 /* 接近上限警告图标（非溢出场景） */
@@ -191,7 +174,6 @@
   font-size: 11px;
   line-height: 1;
   margin-left: 2px;
-  animation: tk-res-blink 2s ease-in-out infinite;
 }
 
 /* 容量警告文本 */

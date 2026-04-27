@@ -218,6 +218,8 @@ export function initR11Systems(systems: R11Systems, deps: ISystemDeps): void {
   // 注入 eventBus 给需要事件总线的系统
   systems.advisorSystem.init(deps);
   systems.currencySystem.init(deps);
+  systems.shopSystem.init(deps);
+  systems.shopSystem.setCurrencySystem(systems.currencySystem);
   systems.tradeSystem.init(deps);
   systems.resourceTradeEngine.init(deps);
   systems.achievementSystem.init(deps);
