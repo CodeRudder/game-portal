@@ -14,6 +14,7 @@ export default defineConfig({
     // ── 测试文件匹配范围 ──
     include: [
       'src/games/three-kingdoms/**/*.test.ts',
+      'src/games/three-kingdoms/**/*.test.tsx',
       'src/components/idle/**/*.test.tsx',
     ],
     // 排除备份目录

@@ -171,6 +171,32 @@ check_tsc() {
   fi
 }
 
+# 步骤3.5：Engine 契约测试（真实 Engine 完整性验证）
+run_contract_tests() {
+  if [[ "$JSON_OUTPUT" == "false" ]]; then
+    echo -e "${CYAN}[步骤3.5] Engine 契约测试（真实 Engine 完整性验证）...${NC}"
+  fi
+
+  cd "$PROJECT_ROOT" && npx vitest run \
+    --config vitest.config.three-kingdoms.ts \
+    'src/games/three-kingdoms/tests/contract/' \
+    --reporter=verbose 2>&1 | tail -5
+
+  if [ $? -ne 0 ]; then
+    if [[ "$JSON_OUTPUT" == "false" ]]; then
+      echo -e "  ${RED}✗ Engine 契约测试失败！请检查引擎初始化完整性${NC}"
+    fi
+    TOTAL_FAIL=$((TOTAL_FAIL + 1))
+    FAILURES+=("contract: Engine 契约测试失败")
+    exit 1
+  fi
+
+  if [[ "$JSON_OUTPUT" == "false" ]]; then
+    echo -e "  ${GREEN}✓ Engine 契约测试通过${NC}"
+    echo ""
+  fi
+}
+
 # 步骤4：运行ACC测试并解析结果
 run_acc_tests() {
   if [[ "$JSON_OUTPUT" == "false" ]]; then
@@ -463,6 +489,7 @@ main() {
   check_docs
   check_test_files
   check_tsc
+  run_contract_tests
   run_acc_tests
   check_coverage
   print_summary

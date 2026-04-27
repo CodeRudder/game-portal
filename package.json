@@ -19,6 +19,8 @@
     "test:tk": "vitest run --config vitest.config.three-kingdoms.ts",
     "test:tk:watch": "vitest --config vitest.config.three-kingdoms.ts",
     "test:tk:coverage": "vitest run --config vitest.config.three-kingdoms.ts --coverage",
+    "test:contract": "vitest run --config vitest.config.three-kingdoms.ts 'src/games/three-kingdoms/tests/contract/'",
+    "test:integration": "vitest run --config vitest.config.three-kingdoms.ts 'src/games/three-kingdoms/tests/integration/'",
     "test:idle": "vitest run --config vitest.idle.config.ts",
     "test:arcade": "vitest run --config vitest.arcade.config.ts",
 
