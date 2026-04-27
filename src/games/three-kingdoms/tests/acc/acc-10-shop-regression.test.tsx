@@ -1,5 +1,7 @@
 /**
- * ACC-10 商店系统 — 回归测试（ACC-10-50 ~ ACC-10-53）
+ * ACC-10 商店系统 — 回归测试（ACC-10-50 ~ ACC-10-55）
+ *
+ * 使用真实 ThreeKingdomsEngine（通过 createSim()），不再使用 mock engine。
  *
  * 针对3个已修复bug的回归测试：
  *   P0: 前端Tab ID与后端ShopType不匹配（'general'→'normal'等）
@@ -10,6 +12,8 @@
  * ACC-10-51: 引擎初始化ShopSystem验证
  * ACC-10-52: 商店商品非空验证
  * ACC-10-53: 商店面板打开流程
+ * ACC-10-54: 购买操作端到端扣费验证
+ * ACC-10-55: 引擎初始化完整性端到端验证
  *
  * @module tests/acc/acc-10-shop-regression
  */
@@ -18,15 +22,15 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import ShopPanel from '@/components/idle/panels/shop/ShopPanel';
-import { ShopSystem } from '@/games/three-kingdoms/engine/shop/ShopSystem';
 import { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import {
   SHOP_TYPES,
   SHOP_TYPE_LABELS,
 } from '@/games/three-kingdoms/core/shop';
 import type { ShopType } from '@/games/three-kingdoms/core/shop';
-import type { ISystemDeps } from '@/games/three-kingdoms/core/types/subsystem';
 import { GOODS_DEF_MAP, SHOP_GOODS_IDS } from '@/games/three-kingdoms/core/shop';
+import { createSim } from '../../test-utils/test-helpers';
+import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
 // ── Mock CSS ──
 vi.mock('@/components/idle/panels/shop/ShopPanel.css', () => ({}));
@@ -54,63 +58,24 @@ beforeEach(() => {
 
 // ─── 辅助函数 ────────────────────────────────
 
-/** 创建最小化的 ISystemDeps mock */
-function createMockDeps(): ISystemDeps {
-  return {
-    eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() } as any,
-    config: { get: vi.fn() } as any,
-    registry: { get: vi.fn() } as any,
-  };
-}
-
-/** 创建已初始化的 ShopSystem 实例 */
-function createInitializedShopSystem(): ShopSystem {
-  const shop = new ShopSystem();
-  const deps = createMockDeps();
-  shop.init(deps);
-  return shop;
+/** 创建真实引擎并添加充足货币 */
+function makeEngineForRegression(): { engine: ThreeKingdomsEngine; sim: GameEventSimulator } {
+  const sim = createSim();
+  const engine = sim.engine;
+  const cs = engine.getCurrencySystem();
+  cs.addCurrency('copper', 999999);
+  cs.addCurrency('mandate', 99999);
+  cs.addCurrency('ingot', 99999);
+  cs.addCurrency('recruit', 9999);
+  cs.addCurrency('summon', 9999);
+  cs.addCurrency('expedition', 99999);
+  cs.addCurrency('guild', 99999);
+  cs.addCurrency('reputation', 99999);
+  return { engine, sim };
 }
 
 /** ShopPanel 中定义的 SHOP_TABS（与前端保持一致） */
 const FRONTEND_TAB_IDS = ['normal', 'black_market', 'limited_time', 'vip'] as const;
-
-/** 创建用于 ShopPanel 的 mock engine */
-function makeMockEngineForPanel(shopSystem: ShopSystem) {
-  // 构造商品定义映射
-  const goodsDefs: Record<string, any> = {};
-  for (const [id, def] of Object.entries(GOODS_DEF_MAP)) {
-    goodsDefs[id] = def;
-  }
-
-  return {
-    getShopSystem: vi.fn(() => ({
-      getShopGoods: vi.fn((shopType: string) => shopSystem.getShopGoods(shopType as ShopType)),
-      getGoodsDef: vi.fn((defId: string) => GOODS_DEF_MAP[defId] ?? undefined),
-      calculateFinalPrice: vi.fn((defId: string, shopType: string) => {
-        const def = GOODS_DEF_MAP[defId];
-        if (!def) return {};
-        const items = shopSystem.getShopGoods(shopType as ShopType);
-        const item = items.find(g => g.defId === defId);
-        const discount = item?.discount ?? 1;
-        const result: Record<string, number> = {};
-        for (const [c, a] of Object.entries(def.basePrice)) {
-          result[c] = Math.ceil((a as number) * discount);
-        }
-        return result;
-      }),
-      executeBuy: vi.fn(() => ({ success: true })),
-      validateBuy: vi.fn(() => ({ valid: true })),
-      getState: vi.fn(() => shopSystem.getState()),
-      manualRefresh: vi.fn(() => ({ success: true })),
-      resetDailyLimits: vi.fn(),
-      cleanupExpiredDiscounts: vi.fn(),
-    })),
-    getCurrencySystem: vi.fn(() => ({
-      getBalance: vi.fn((currencyId: string) => 99999),
-      spend: vi.fn(() => true),
-    })),
-  };
-}
 
 // ═══════════════════════════════════════════════════════════════
 // ACC-10-50: 商店Tab ID与后端ShopType一致性
@@ -118,14 +83,10 @@ function makeMockEngineForPanel(shopSystem: ShopSystem) {
 // ═══════════════════════════════════════════════════════════════
 
 describe('ACC-10-50: 商店Tab ID与后端ShopType一致性', () => {
-  let shopSystem: ShopSystem;
-
-  beforeEach(() => {
-    shopSystem = createInitializedShopSystem();
-  });
 
   it('ACC-10-50-a: ShopPanel的SHOP_TABS每个id对应有效的ShopType', () => {
-    // 验证前端每个Tab ID都能在后端ShopType中找到，且getShopGoods返回数组
+    const { engine } = makeEngineForRegression();
+    const shopSystem = engine.getShopSystem();
     for (const tabId of FRONTEND_TAB_IDS) {
       const goods = shopSystem.getShopGoods(tabId as ShopType);
       expect(
@@ -136,7 +97,8 @@ describe('ACC-10-50: 商店Tab ID与后端ShopType一致性', () => {
   });
 
   it('ACC-10-50-b: 默认activeTab对应的商店有商品', () => {
-    // 默认activeTab为 'normal'，验证该商店有商品
+    const { engine } = makeEngineForRegression();
+    const shopSystem = engine.getShopSystem();
     const normalGoods = shopSystem.getShopGoods('normal');
     expect(
       Array.isArray(normalGoods),
@@ -149,11 +111,9 @@ describe('ACC-10-50: 商店Tab ID与后端ShopType一致性', () => {
   });
 
   it('ACC-10-50-c: 前端Tab ID集合完全覆盖后端SHOP_TYPES', () => {
-    // 确保前端Tab ID集合与后端SHOP_TYPES完全一致
     const backendTypes = [...SHOP_TYPES];
     const frontendIds = [...FRONTEND_TAB_IDS];
 
-    // 检查每个后端类型在前端都有对应Tab
     for (const bt of backendTypes) {
       expect(
         frontendIds.includes(bt as any),
@@ -161,7 +121,6 @@ describe('ACC-10-50: 商店Tab ID与后端ShopType一致性', () => {
       ).toBe(true);
     }
 
-    // 检查每个前端Tab在后端都有对应类型
     for (const ft of frontendIds) {
       expect(
         backendTypes.includes(ft as any),
@@ -171,7 +130,6 @@ describe('ACC-10-50: 商店Tab ID与后端ShopType一致性', () => {
   });
 
   it('ACC-10-50-d: 不存在旧的错误Tab ID（general等）', () => {
-    // 回归验证：确保旧的错误Tab ID不再出现
     const wrongIds = ['general', 'market', 'shop', 'premium', 'special'];
     for (const wrongId of wrongIds) {
       expect(
@@ -190,8 +148,7 @@ describe('ACC-10-50: 商店Tab ID与后端ShopType一致性', () => {
 describe('ACC-10-51: 引擎初始化ShopSystem验证', () => {
 
   it('ACC-10-51-a: 引擎init后getShopSystem返回非null', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const shopSystem = engine.getShopSystem();
     expect(
       shopSystem,
@@ -204,17 +161,13 @@ describe('ACC-10-51: 引擎初始化ShopSystem验证', () => {
   });
 
   it('ACC-10-51-b: ShopSystem.init(deps)被调用 — deps已注入', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const shopSystem = engine.getShopSystem();
 
-    // ShopSystem.init(deps) 会将deps赋值给 this.deps
-    // 验证方式：调用依赖deps的方法（如getShopGoods），如果不报错说明deps已注入
     expect(() => {
       shopSystem.getShopGoods('normal');
     }, 'FAIL [ACC-10-51-b]: ShopSystem.init(deps)未正确调用，getShopGoods报错').not.toThrow();
 
-    // 进一步验证：getState()返回的对象包含所有商店类型
     const state = shopSystem.getState();
     for (const shopType of SHOP_TYPES) {
       expect(
@@ -225,33 +178,25 @@ describe('ACC-10-51: 引擎初始化ShopSystem验证', () => {
   });
 
   it('ACC-10-51-c: ShopSystem.setCurrencySystem被调用 — currencySystem已注入', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const shopSystem = engine.getShopSystem();
 
-    // setCurrencySystem 注入后，购买验证流程中会使用 currencySystem
-    // 验证方式：调用 calculateFinalPrice，如果currencySystem未注入，某些内部逻辑可能失败
-    // 更直接的验证：尝试执行一个完整的购买验证流程
     const goods = shopSystem.getShopGoods('normal');
     if (goods.length > 0) {
       const firstGoods = goods[0];
-      // calculateFinalPrice 不依赖 currencySystem，但 validateBuy 依赖
       const price = shopSystem.calculateFinalPrice(firstGoods.defId, 'normal');
       expect(
         price,
         'FAIL [ACC-10-51-c]: calculateFinalPrice返回null/undefined，currencySystem可能未注入'
       ).toBeDefined();
 
-      // 验证 validateBuy 不抛出异常（内部会使用 currencySystem）
       try {
         shopSystem.validateBuy({
           goodsId: firstGoods.defId,
           shopType: 'normal',
           quantity: 1,
         });
-        // 如果没有抛出异常，说明 currencySystem 已正确注入
       } catch (e: any) {
-        // 如果抛出的异常与 currencySystem 为 null 有关，说明 setCurrencySystem 未调用
         expect(
           false,
           `FAIL [ACC-10-51-c]: validateBuy抛出异常，可能currencySystem未注入: ${e.message}`
@@ -261,17 +206,11 @@ describe('ACC-10-51: 引擎初始化ShopSystem验证', () => {
   });
 
   it('ACC-10-51-d: 单独创建ShopSystem后init(deps)可正常工作', () => {
-    // 验证ShopSystem的init方法本身没有问题
-    const shop = new ShopSystem();
-    const deps = createMockDeps();
+    const { engine } = makeEngineForRegression();
+    const shopSystem = engine.getShopSystem();
 
-    expect(() => {
-      shop.init(deps);
-    }, 'FAIL [ACC-10-51-d]: ShopSystem.init(deps)调用失败').not.toThrow();
-
-    // 验证init后getShopGoods正常工作
     for (const shopType of SHOP_TYPES) {
-      const goods = shop.getShopGoods(shopType);
+      const goods = shopSystem.getShopGoods(shopType);
       expect(
         Array.isArray(goods),
         `FAIL [ACC-10-51-d]: init后getShopGoods("${shopType}")应返回数组`
@@ -286,13 +225,10 @@ describe('ACC-10-51: 引擎初始化ShopSystem验证', () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe('ACC-10-52: 商店商品非空验证', () => {
-  let shopSystem: ShopSystem;
-
-  beforeEach(() => {
-    shopSystem = createInitializedShopSystem();
-  });
 
   it('ACC-10-52-a: 每个ShopType的商店都有goods数组', () => {
+    const { engine } = makeEngineForRegression();
+    const shopSystem = engine.getShopSystem();
     for (const shopType of SHOP_TYPES) {
       const goods = shopSystem.getShopGoods(shopType);
       expect(
@@ -303,6 +239,8 @@ describe('ACC-10-52: 商店商品非空验证', () => {
   });
 
   it('ACC-10-52-b: 默认商店(normal)有商品', () => {
+    const { engine } = makeEngineForRegression();
+    const shopSystem = engine.getShopSystem();
     const normalGoods = shopSystem.getShopGoods('normal');
     expect(
       normalGoods.length,
@@ -311,11 +249,13 @@ describe('ACC-10-52: 商店商品非空验证', () => {
   });
 
   it('ACC-10-52-c: 商品有必要的字段', () => {
+    const { engine } = makeEngineForRegression();
+    const shopSystem = engine.getShopSystem();
     const requiredFields = ['defId', 'stock', 'maxStock', 'discount', 'dailyPurchased', 'lifetimePurchased', 'dailyLimit', 'lifetimeLimit'];
 
     for (const shopType of SHOP_TYPES) {
       const goods = shopSystem.getShopGoods(shopType);
-      if (goods.length === 0) continue; // 空商店跳过字段检查
+      if (goods.length === 0) continue;
 
       for (const item of goods) {
         for (const field of requiredFields) {
@@ -329,6 +269,8 @@ describe('ACC-10-52: 商店商品非空验证', () => {
   });
 
   it('ACC-10-52-d: 商品的defId能在GOODS_DEF_MAP中找到对应定义', () => {
+    const { engine } = makeEngineForRegression();
+    const shopSystem = engine.getShopSystem();
     for (const shopType of SHOP_TYPES) {
       const goods = shopSystem.getShopGoods(shopType);
       for (const item of goods) {
@@ -342,6 +284,8 @@ describe('ACC-10-52: 商店商品非空验证', () => {
   });
 
   it('ACC-10-52-e: 每个ShopType的SHOP_GOODS_IDS与实际商品数量一致', () => {
+    const { engine } = makeEngineForRegression();
+    const shopSystem = engine.getShopSystem();
     for (const shopType of SHOP_TYPES) {
       const expectedIds = SHOP_GOODS_IDS[shopType] ?? [];
       const goods = shopSystem.getShopGoods(shopType);
@@ -359,45 +303,29 @@ describe('ACC-10-52: 商店商品非空验证', () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe('ACC-10-53: 商店面板打开流程', () => {
-  let shopSystem: ShopSystem;
-
-  beforeEach(() => {
-    shopSystem = createInitializedShopSystem();
-  });
-
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
   });
 
   it('ACC-10-53-a: ShopPanel能获取到shopSystem', () => {
-    const engine = makeMockEngineForPanel(shopSystem);
-    render(<ShopPanel engine={engine as any} visible={true} onClose={vi.fn()} />);
+    const { engine } = makeEngineForRegression();
+    render(<ShopPanel engine={engine} visible={true} onClose={vi.fn()} />);
 
-    // 验证engine.getShopSystem被调用
-    expect(
-      engine.getShopSystem,
-      'FAIL [ACC-10-53-a]: ShopPanel未调用engine.getShopSystem()'
-    ).toHaveBeenCalled();
-
-    const panelShopSystem = engine.getShopSystem();
-    expect(
-      panelShopSystem,
-      'FAIL [ACC-10-53-a]: engine.getShopSystem()返回null/undefined'
-    ).toBeDefined();
+    // 验证面板渲染正常（真实引擎的 getShopSystem 自动被调用）
+    const panel = screen.getByTestId('shop-panel');
+    expect(panel, 'FAIL [ACC-10-53-a]: ShopPanel面板未渲染').toBeDefined();
   });
 
   it('ACC-10-53-b: ShopPanel商品列表不为空', async () => {
-    const engine = makeMockEngineForPanel(shopSystem);
-    render(<ShopPanel engine={engine as any} visible={true} onClose={vi.fn()} />);
+    const { engine } = makeEngineForRegression();
+    render(<ShopPanel engine={engine} visible={true} onClose={vi.fn()} />);
 
-    // 等待骨架屏加载完成（ShopPanel有300ms骨架屏延迟）
     await waitFor(() => {
       const panel = screen.getByTestId('shop-panel');
       expect(panel, 'FAIL [ACC-10-53-b]: ShopPanel面板未渲染').toBeDefined();
     }, { timeout: 2000 });
 
-    // 验证面板中有商品卡片（通过buy按钮存在性判断）
     await waitFor(() => {
       const buyButtons = screen.queryAllByTestId(/^shop-panel-buy-/);
       expect(
@@ -408,24 +336,19 @@ describe('ACC-10-53: 商店面板打开流程', () => {
   });
 
   it('ACC-10-53-c: ShopPanel Tab按钮文本与后端SHOP_TYPE_LABELS一致', async () => {
-    const engine = makeMockEngineForPanel(shopSystem);
-    render(<ShopPanel engine={engine as any} visible={true} onClose={vi.fn()} />);
+    const { engine } = makeEngineForRegression();
+    render(<ShopPanel engine={engine} visible={true} onClose={vi.fn()} />);
 
-    // 等待面板渲染完成
     await waitFor(() => {
       expect(screen.getByTestId('shop-panel')).toBeDefined();
     }, { timeout: 2000 });
 
-    // 验证Tab按钮文本包含对应商店名称
-    // 前端SHOP_TABS的label与后端SHOP_TYPE_LABELS可能不同（UI显示名 vs 后端标签名）
-    // 关键是Tab ID必须与后端一致
     const tabContainer = screen.getByTestId('shop-panel-tabs');
     expect(
       tabContainer,
       'FAIL [ACC-10-53-c]: Tab容器未找到'
     ).toBeDefined();
 
-    // 验证每个Tab按钮存在（ShopPanel使用 data-testid="shop-panel-tab-${tab.id}"）
     for (const tabId of FRONTEND_TAB_IDS) {
       const tabBtn = screen.queryByTestId(`shop-panel-tab-${tabId}`);
       expect(
@@ -445,13 +368,9 @@ describe('ACC-10-53: 商店面板打开流程', () => {
 describe('ACC-10-54: 购买操作端到端扣费验证', () => {
 
   it('ACC-10-54-a: 引擎初始化后购买能正确扣费', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const shopSystem = engine.getShopSystem();
     const currencySystem = engine.getCurrencySystem();
-
-    // 设置足够货币（copper 初始有1000）
-    currencySystem.addCurrency('copper', 100000);
 
     const beforeBalance = currencySystem.getBalance('copper');
     expect(
@@ -459,7 +378,6 @@ describe('ACC-10-54: 购买操作端到端扣费验证', () => {
       'FAIL [ACC-10-54-a]: 初始铜钱余额应大于0'
     ).toBeGreaterThan(0);
 
-    // 获取normal商店中一个铜钱定价的商品
     const goods = shopSystem.getShopGoods('normal');
     const copperGoods = goods.find(g => {
       const def = GOODS_DEF_MAP[g.defId];
@@ -473,7 +391,6 @@ describe('ACC-10-54: 购买操作端到端扣费验证', () => {
     const def = GOODS_DEF_MAP[copperGoods!.defId];
     const expectedPrice = Math.ceil((def.basePrice.copper as number) * (copperGoods!.discount));
 
-    // 执行购买
     const result = shopSystem.executeBuy({
       goodsId: copperGoods!.defId,
       shopType: 'normal',
@@ -494,16 +411,13 @@ describe('ACC-10-54: 购买操作端到端扣费验证', () => {
   });
 
   it('ACC-10-54-b: 余额不足时购买失败且不扣费', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const shopSystem = engine.getShopSystem();
     const currencySystem = engine.getCurrencySystem();
 
-    // 设置极少量货币
     currencySystem.setCurrency('copper', 1);
     const beforeBalance = currencySystem.getBalance('copper');
 
-    // 获取normal商店中一个铜钱定价的商品
     const goods = shopSystem.getShopGoods('normal');
     const copperGoods = goods.find(g => {
       const def = GOODS_DEF_MAP[g.defId];
@@ -514,7 +428,6 @@ describe('ACC-10-54: 购买操作端到端扣费验证', () => {
       'FAIL [ACC-10-54-b]: normal商店中应至少有一个价格>1铜钱的商品'
     ).toBeDefined();
 
-    // 执行购买（应该失败）
     const result = shopSystem.executeBuy({
       goodsId: copperGoods!.defId,
       shopType: 'normal',
@@ -534,11 +447,8 @@ describe('ACC-10-54: 购买操作端到端扣费验证', () => {
   });
 
   it('ACC-10-54-c: 购买后库存和限购计数正确更新', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const shopSystem = engine.getShopSystem();
-    const currencySystem = engine.getCurrencySystem();
-    currencySystem.addCurrency('copper', 100000);
 
     const goods = shopSystem.getShopGoods('normal');
     const copperGoods = goods.find(g => {
@@ -559,7 +469,6 @@ describe('ACC-10-54: 购买操作端到端扣费验证', () => {
 
     expect(result.success, `FAIL [ACC-10-54-c]: 购买应成功，原因: ${result.reason}`).toBe(true);
 
-    // 重新获取商品状态
     const updatedGoods = shopSystem.getShopGoods('normal');
     const updated = updatedGoods.find(g => g.defId === copperGoods!.defId);
     expect(updated, 'FAIL [ACC-10-54-c]: 购买后商品应仍存在').toBeDefined();
@@ -579,11 +488,8 @@ describe('ACC-10-54: 购买操作端到端扣费验证', () => {
   });
 
   it('ACC-10-54-d: 购买结果返回正确的花费信息', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const shopSystem = engine.getShopSystem();
-    const currencySystem = engine.getCurrencySystem();
-    currencySystem.addCurrency('copper', 100000);
 
     const goods = shopSystem.getShopGoods('normal');
     const copperGoods = goods.find(g => {
@@ -622,8 +528,7 @@ describe('ACC-10-54: 购买操作端到端扣费验证', () => {
 describe('ACC-10-55: 引擎初始化完整性端到端验证', () => {
 
   it('ACC-10-55-a: getCurrencySystem在init后返回非null', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const currencySystem = engine.getCurrencySystem();
     expect(
       currencySystem,
@@ -636,8 +541,7 @@ describe('ACC-10-55: 引擎初始化完整性端到端验证', () => {
   });
 
   it('ACC-10-55-b: CurrencySystem.getBalance对每种货币返回数字', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const currencySystem = engine.getCurrencySystem();
 
     const currencyTypes = ['copper', 'mandate', 'recruit', 'summon', 'expedition', 'guild', 'reputation', 'ingot'] as const;
@@ -651,15 +555,9 @@ describe('ACC-10-55: 引擎初始化完整性端到端验证', () => {
   });
 
   it('ACC-10-55-c: ShopSystem与CurrencySystem在引擎中正确关联', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const { engine } = makeEngineForRegression();
     const shopSystem = engine.getShopSystem();
-    const currencySystem = engine.getCurrencySystem();
 
-    // 添加大量铜钱
-    currencySystem.addCurrency('copper', 999999);
-
-    // 执行validateBuy，如果ShopSystem内部currencySystem未注入，会跳过货币检查
     const goods = shopSystem.getShopGoods('normal');
     const copperGoods = goods.find(g => {
       const def = GOODS_DEF_MAP[g.defId];
@@ -673,7 +571,6 @@ describe('ACC-10-55: 引擎初始化完整性端到端验证', () => {
       quantity: 1,
     });
 
-    // 如果currencySystem已正确注入，余额充足时canBuy应为true
     expect(
       validation.canBuy,
       `FAIL [ACC-10-55-c]: 余额充足时validateBuy应返回canBuy=true，错误: ${validation.errors.join(', ')}。可能ShopSystem与CurrencySystem未正确关联`
@@ -685,8 +582,8 @@ describe('ACC-10-55: 引擎初始化完整性端到端验证', () => {
   });
 
   it('ACC-10-55-d: 引擎重置后重新init，ShopSystem仍可正常工作', () => {
-    const engine = new ThreeKingdomsEngine();
-    engine.init();
+    const sim = createSim();
+    const engine = sim.engine;
 
     // 先执行一次购买
     const currencySystem = engine.getCurrencySystem();
@@ -715,7 +612,6 @@ describe('ACC-10-55: 引擎初始化完整性端到端验证', () => {
     const newCurrencySystem = engine.getCurrencySystem();
     newCurrencySystem.addCurrency('copper', 100000);
 
-    // 验证重新初始化后购买仍可正常工作
     const newGoods = newShopSystem.getShopGoods('normal');
     const newCopperGoods = newGoods.find(g => {
       const def = GOODS_DEF_MAP[g.defId];
