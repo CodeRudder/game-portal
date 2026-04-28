@@ -649,7 +649,7 @@ describe('FLOW-09 装备Tab集成测试', () => {
   // 12. 背包管理（FLOW-09-45 ~ FLOW-09-48）
   // ═══════════════════════════════════════════════════════════════
 
-  it(accTest('FLOW-09-45', '背包容量管理 — getBagCapacity返回默认100'), () => {
+  it(accTest('FLOW-09-45', '背包容量管理 — getBagCapacity返回默认50'), () => {
     const sim = createEquipSim();
     const eqSys = sim.engine.getEquipmentSystem();
     assertStrict(eqSys.getBagCapacity() === 50, 'FLOW-09-45', '默认容量应为50');
