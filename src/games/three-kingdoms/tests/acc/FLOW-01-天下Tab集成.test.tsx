@@ -96,7 +96,6 @@ function createMapSim(): GameEventSimulator {
   sim.engine.resource.setCap('grain', 1_000_000);
   sim.engine.resource.setCap('troops', 1_000_000);
   sim.addResources({ grain: 100000, gold: 100000, troops: 50000 });
-  console.log('DEBUG createMapSim troops:', sim.engine.getResourceAmount('troops'), 'grain:', sim.engine.getResourceAmount('grain'));
   return sim;
 }
 
