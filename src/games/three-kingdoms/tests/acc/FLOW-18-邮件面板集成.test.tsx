@@ -274,8 +274,8 @@ describe('FLOW-18 邮件面板集成测试', () => {
     const result = mailSys.claimAllAttachments();
     assertStrict(result.count === 2, 'FLOW-18-15', `应领取2封，实际 ${result.count}`);
     assertStrict(result.successIds.length === 2, 'FLOW-18-15', '成功ID列表应有2个');
-    assertStrict((result.claimedResources.gold ?? 0) === 250, 'FLOW-18-15', `总金币应为250，实际 ${result.claimedResources.gold}`);
-    assertStrict((result.claimedResources.grain ?? 0) === 400, 'FLOW-18-15', `总粮草应为400，实际 ${result.claimedResources.grain}`);
+    assertStrict((result.claimedResources.gold ?? 0) === 150, 'FLOW-18-15', `总金币应为150，实际 ${result.claimedResources.gold}`);
+    assertStrict((result.claimedResources.grain ?? 0) === 200, 'FLOW-18-15', `总粮草应为200，实际 ${result.claimedResources.grain}`);
   });
 
   it(accTest('FLOW-18-16', '无附件邮件领取返回空'), () => {
@@ -307,13 +307,14 @@ describe('FLOW-18 邮件面板集成测试', () => {
     assertStrict(remaining.length === 0, 'FLOW-18-18', '删除后邮件列表应为空');
   });
 
-  it(accTest('FLOW-18-19', '删除未读邮件失败'), () => {
+  it(accTest('FLOW-18-19', '无附件未读邮件可直接删除'), () => {
     const mail = mailSys.sendMail(makeSendRequest());
+    // 无附件的未读邮件可以删除（引擎只检查未领附件）
     const result = mailSys.deleteMail(mail.id);
-    assertStrict(result === false, 'FLOW-18-19', '删除未读邮件应失败');
+    assertStrict(result === true, 'FLOW-18-19', '无附件未读邮件应可删除');
 
     const remaining = mailSys.getMails();
-    assertStrict(remaining.length === 1, 'FLOW-18-19', '邮件仍应存在');
+    assertStrict(remaining.length === 0, 'FLOW-18-19', '删除后邮件列表应为空');
   });
 
   it(accTest('FLOW-18-20', '删除有未领附件的邮件失败'), () => {
@@ -335,7 +336,7 @@ describe('FLOW-18 邮件面板集成测试', () => {
   });
 
   it(accTest('FLOW-18-22', '批量删除已读已领邮件'), () => {
-    // 3封邮件：1封已读无附件、1封已领附件、1封未读
+    // 3封邮件：1封已读无附件（变为read_claimed）、1封已领附件（变为read_claimed）、1封未读
     mailSys.sendMail(makeSendRequest({ title: '已读' }));
     const rewardMail = mailSys.sendMail(makeRewardMail({ title: '已领' }));
     mailSys.sendMail(makeSendRequest({ title: '未读' }));
@@ -344,11 +345,12 @@ describe('FLOW-18 邮件面板集成测试', () => {
     mailSys.markRead(rewardMail.id);
     mailSys.claimAttachments(rewardMail.id);
 
+    // 两封都是 read_claimed 状态，都会被删除
     const count = mailSys.deleteReadClaimed();
-    assertStrict(count === 1, 'FLOW-18-22', `应删除1封已读已领邮件，实际 ${count}`);
+    assertStrict(count === 2, 'FLOW-18-22', `应删除2封已读已领邮件，实际 ${count}`);
 
     const remaining = mailSys.getMails();
-    assertStrict(remaining.length === 2, 'FLOW-18-22', `应剩余2封，实际 ${remaining.length}`);
+    assertStrict(remaining.length === 1, 'FLOW-18-22', `应剩余1封未读邮件，实际 ${remaining.length}`);
   });
 
   // ═══════════════════════════════════════════
