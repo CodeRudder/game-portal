@@ -1,0 +1,52 @@
+=========================================
+  FLOW Integration Test Statistics Report
+  Generated: 2026-04-29 03:16:31
+=========================================
+
+--- FLOW Test Files ---
+  FLOW-14-远征系统集成: 530 lines, 26 cases
+  FLOW-15-军队系统集成: 537 lines, 24 cases
+  FLOW-16-活动系统集成: 573 lines, 28 cases
+
+--- FLOW Summary ---
+  Files: 3
+  Cases: 78
+  Lines: 1640
+
+--- ACC Unit Test Files ---
+  ACC-01-主界面: 390 lines, 25 cases
+  ACC-02-建筑系统: 425 lines, 28 cases
+  ACC-03-资源系统: 421 lines, 34 cases
+  ACC-04-武将系统: 392 lines, 16 cases
+  ACC-05-招贤馆: 556 lines, 38 cases
+  ACC-06-编队系统: 501 lines, 14 cases
+  ACC-09-地图关卡: 575 lines, 23 cases
+
+--- ACC Summary ---
+  Files: 7
+  Cases: 178
+  Lines: 3260
+
+=========================================
+  Grand Total
+=========================================
+  FLOW Integration: 3 files, 78 cases, 1640 lines
+  ACC  Unit Tests:  7 files, 178 cases, 3260 lines
+  Total:            10 files, 256 cases, 4900 lines
+
+=========================================
+  Quality Checks
+=========================================
+
+1. File Size Check (>1000 lines):
+  PASS: All FLOW files within 1000 line limit
+
+2. Always-Pass Pattern Check:
+  PASS: No always-pass patterns found
+
+3. GameEventSimulator Coverage:
+  PASS: All FLOW tests use GameEventSimulator
+
+=========================================
+  Report Complete
+=========================================

@@ -1,0 +1,22 @@
+=== Find in script ===
+src/games/three-kingdoms/tests/acc/FLOW-01-天下Tab集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-02-建筑Tab集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-03-武将Tab集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-04-出征Tab集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-05-招贤馆集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-06-科技Tab集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-07-编队Tab集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-08-商店Tab集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-09-装备系统集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-10-声望系统集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-11-羁绊系统集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-12-觉醒系统集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-13-竞技场集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-14-远征系统集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-15-军队系统集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-16-活动系统集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-17-事件面板集成.test.tsx
+src/games/three-kingdoms/tests/acc/FLOW-20-成就面板集成.test.tsx
+
+=== Count ===
+18
