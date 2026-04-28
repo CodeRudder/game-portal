@@ -753,7 +753,8 @@ describe('FLOW-05 招贤馆集成测试', () => {
   });
 
   it(accTest('FLOW-05-54', '端到端 — 招募资源管理完整流程'), async () => {
-    const sim = createRecruitSim({ tokenAmount: 200 });
+    // 使用较少资源(20)避免循环抽卡超时，同时足够验证免费+单抽+资源不足流程
+    const sim = createRecruitSim({ tokenAmount: 20 });
     const tokenInitial = sim.engine.getResourceAmount('recruitToken');
 
     renderModal(sim);
@@ -768,7 +769,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
     const afterSingle = sim.engine.getResourceAmount('recruitToken');
     assertStrict(afterSingle === tokenInitial - 5, 'FLOW-05-54', `单抽后应减少5，实际: ${afterSingle}`);
 
-    // 3. 再抽几次直到资源不足
+    // 3. 再抽几次直到资源不足（最多3次即可耗尽）
     while (sim.engine.getResourceAmount('recruitToken') >= 5) {
       await userEvent.click(screen.getByTestId('recruit-modal-single-btn'));
     }
