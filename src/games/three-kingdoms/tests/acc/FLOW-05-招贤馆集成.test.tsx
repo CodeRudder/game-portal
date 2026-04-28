@@ -297,16 +297,17 @@ describe('FLOW-05 招贤馆集成测试', () => {
 
   it(accTest('FLOW-05-20', '免费招募也计入保底 — 保底计数有变化'), async () => {
     const sim = createRecruitSim();
+    // 注入固定 RNG：rng()=0.3 → COMMON 品质，确保不出 RARE+ 导致 normalPity 重置为 0
+    sim.engine.getRecruitSystem().setRng(() => 0.3);
     const pityBefore = sim.engine.getRecruitSystem().getGachaState().normalPity;
 
     renderModal(sim);
     await userEvent.click(screen.getByTestId('recruit-modal-free-btn'));
 
     const pityAfter = sim.engine.getRecruitSystem().getGachaState().normalPity;
-    // 免费招募执行 executeSinglePull → updatePityCounters，保底计数应有变化
-    // 如果出稀有+品质则计数重置为0（也是一种变化）
-    assertStrict(pityAfter !== pityBefore, 'FLOW-05-20',
-      `免费招募后保底计数应有变化（前: ${pityBefore}, 后: ${pityAfter}）`);
+    // 固定 RNG 下：出 COMMON → normalPity 从 0 递增到 1
+    assertStrict(pityAfter === pityBefore + 1, 'FLOW-05-20',
+      `免费招募后保底计数应递增1（前: ${pityBefore}, 后: ${pityAfter}）`);
   });
 
   // ── 5. 保底机制（FLOW-05-21 ~ FLOW-05-25） ──
@@ -354,6 +355,9 @@ describe('FLOW-05 招贤馆集成测试', () => {
 
   it(accTest('FLOW-05-24', '保底进度条UI同步 — 招募后引擎保底状态变化'), async () => {
     const sim = createRecruitSim({ tokenAmount: 5000 });
+    // 注入固定 RNG：rng()=0.3 → COMMON 品质，确保不出 RARE+ 导致 normalPity 重置为 0
+    // 消除随机性：初始 normalPity=0，出 COMMON → normalPity 递增为 1（确定性）
+    sim.engine.getRecruitSystem().setRng(() => 0.3);
     const pityBefore = sim.engine.getRecruitSystem().getGachaState().normalPity;
 
     renderModal(sim);
@@ -361,9 +365,9 @@ describe('FLOW-05 招贤馆集成测试', () => {
 
     await userEvent.click(screen.getByTestId('recruit-modal-single-btn'));
     const pityAfter = sim.engine.getRecruitSystem().getGachaState().normalPity;
-    // 保底计数应有变化（递增或因出稀有+重置为0）
-    assertStrict(pityAfter !== pityBefore, 'FLOW-05-24',
-      `招募后保底计数应有变化（前: ${pityBefore}, 后: ${pityAfter}）`);
+    // 固定 RNG 下：出 COMMON → normalPity 从 0 递增到 1
+    assertStrict(pityAfter === pityBefore + 1, 'FLOW-05-24',
+      `招募后保底计数应递增1（前: ${pityBefore}, 后: ${pityAfter}）`);
   });
 
   it(accTest('FLOW-05-25', '保底状态持久化 — serialize/deserialize'), () => {
