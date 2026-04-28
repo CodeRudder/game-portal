@@ -335,7 +335,7 @@ describe('ACC-11 引导系统 验收测试', () => {
     const phase = sm.getCurrentPhase();
     // 跳过后应进入 free_play 或 explore 阶段
     assertStrict(
-      phase === 'free_play' || phase === 'explore' || typeof phase === 'string',
+      phase === 'free_play' || phase === 'free_explore' || typeof phase === 'string',
       'ACC-11-34',
       `跳过后阶段应为有效状态，当前: ${phase}`,
     );
