@@ -2,7 +2,6 @@
  * FLOW-07 编队Tab集成测试 — 渲染/创建编队/武将上阵下阵/战力计算/一键编队/编队保存/羁绊预览/编队切换/边界。
  * 使用真实引擎（GameEventSimulator），不 mock engine。
  */
-
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
@@ -19,16 +18,12 @@ import {
 import { accTest, assertStrict, assertVisible } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
-
-// ─────────────────────────────────────────────
 // Mock CSS imports
-// ─────────────────────────────────────────────
 vi.mock('@/components/idle/panels/hero/FormationPanel.css', () => ({}));
 vi.mock('@/components/idle/panels/hero/FormationGrid.css', () => ({}));
 vi.mock('@/components/idle/panels/hero/FormationSaveSlot.css', () => ({}));
 vi.mock('@/components/idle/panels/hero/hero-design-tokens.css', () => ({}));
 vi.mock('@/components/idle/panels/hero/atoms.css', () => ({}));
-
 // Mock localStorage for FormationSaveSlot
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -40,7 +35,6 @@ const localStorageMock = (() => {
   };
 })();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -55,11 +49,7 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   })),
 });
-
-// ─────────────────────────────────────────────
 // Test Helpers
-// ─────────────────────────────────────────────
-
 /** 创建带充足资源和武将的编队测试 sim */
 function createFormationSim(): GameEventSimulator {
   const sim = createSim();
@@ -68,7 +58,6 @@ function createFormationSim(): GameEventSimulator {
   sim.addResources({ grain: 5000000, gold: 10000000, troops: 500000 });
   return sim;
 }
-
 /** 创建 sim 并添加核心武将（6名以上） */
 function createSimWithHeroes(heroCount: number = 8): GameEventSimulator {
   const sim = createFormationSim();
@@ -82,12 +71,10 @@ function createSimWithHeroes(heroCount: number = 8): GameEventSimulator {
   }
   return sim;
 }
-
 /** 渲染 FormationPanel 的快捷方法 */
 function renderFormationPanel(sim: GameEventSimulator) {
   return render(<FormationPanel engine={sim.engine} snapshotVersion={0} />);
 }
-
 /** 创建 FormationGrid 的测试数据 */
 function makeSlotHero(overrides: Partial<FormationSlotHero> = {}): FormationSlotHero {
   return {
@@ -97,7 +84,6 @@ function makeSlotHero(overrides: Partial<FormationSlotHero> = {}): FormationSlot
     ...overrides,
   };
 }
-
 function makeSlots(count: number): (FormationSlotHero | null)[] {
   const slots: (FormationSlotHero | null)[] = Array(6).fill(null);
   for (let i = 0; i < Math.min(count, 6); i++) {
@@ -105,7 +91,6 @@ function makeSlots(count: number): (FormationSlotHero | null)[] {
   }
   return slots;
 }
-
 function makeBonds(count: number): BondSummary[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `bond_${i}`,
@@ -114,10 +99,7 @@ function makeBonds(count: number): BondSummary[] {
     description: `羁绊描述${i}`,
   }));
 }
-
-// ═══════════════════════════════════════════════════════════
 // FLOW-07 编队Tab集成测试
-// ═══════════════════════════════════════════════════════════
 
 describe('FLOW-07 编队Tab集成测试', () => {
   beforeEach(() => {
@@ -126,19 +108,14 @@ describe('FLOW-07 编队Tab集成测试', () => {
   });
   afterEach(() => { cleanup(); });
 
-  // ── 1. 编队面板渲染（FLOW-07-01 ~ FLOW-07-05） ──
-
   it(accTest('FLOW-07-01', '编队面板整体渲染 — 容器、标题、创建按钮'), () => {
     const sim = createSimWithHeroes();
     renderFormationPanel(sim);
-
     const panel = screen.getByTestId('formation-panel');
     assertVisible(panel, 'FLOW-07-01', '编队面板容器');
-
     // 标题
     const title = screen.getByText('⚔️ 编队管理');
     assertVisible(title, 'FLOW-07-01', '编队管理标题');
-
     // 创建按钮
     const createBtn = screen.getByTestId('formation-panel-create-btn');
     assertVisible(createBtn, 'FLOW-07-01', '创建编队按钮');
@@ -147,7 +124,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-02', '编队面板 — 初始无编队时显示空状态'), () => {
     const sim = createSimWithHeroes();
     renderFormationPanel(sim);
-
     // 初始状态无编队
     const formationSystem = sim.engine.getFormationSystem();
     const formations = formationSystem.getAllFormations();
@@ -161,7 +137,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const onAddHero = vi.fn();
     const onRemoveHero = vi.fn();
     const slots = makeSlots(0);
-
     render(
       <FormationGrid
         slots={slots}
@@ -171,7 +146,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
         onRemoveHero={onRemoveHero}
       />
     );
-
     // 6个空槽位
     const addButtons = screen.queryAllByText('+');
     assertStrict(addButtons.length === 6, 'FLOW-07-03', `应显示6个空槽位，实际: ${addButtons.length}`);
@@ -181,7 +155,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const onAddHero = vi.fn();
     const onRemoveHero = vi.fn();
     const slots = makeSlots(3);
-
     render(
       <FormationGrid
         slots={slots}
@@ -191,7 +164,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
         onRemoveHero={onRemoveHero}
       />
     );
-
     // 武将名称
     const hero0 = screen.getByText('武将0');
     const hero1 = screen.getByText('武将1');
@@ -205,7 +177,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const onAddHero = vi.fn();
     const onRemoveHero = vi.fn();
     const slots = makeSlots(3);
-
     render(
       <FormationGrid
         slots={slots}
@@ -215,22 +186,17 @@ describe('FLOW-07 编队Tab集成测试', () => {
         onRemoveHero={onRemoveHero}
       />
     );
-
     // formatPower(15800) = "1.6万" 或 "15,800"
     const powerEl = screen.getByText(/1\.6万|15,?800/);
     assertVisible(powerEl, 'FLOW-07-05', '编队战力');
   });
 
-  // ── 2. 创建编队（FLOW-07-06 ~ FLOW-07-10） ──
-
   it(accTest('FLOW-07-06', '创建编队 — 点击创建按钮生成新编队'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const beforeCount = formationSystem.getFormationCount();
     formationSystem.createFormation();
     const afterCount = formationSystem.getFormationCount();
-
     assertStrict(
       afterCount === beforeCount + 1,
       'FLOW-07-06',
@@ -241,7 +207,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-07', '创建编队 — 新编队有6个空槽位'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     assertStrict(!!formation, 'FLOW-07-07', '创建编队应返回有效数据');
     assertStrict(
@@ -249,7 +214,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
       'FLOW-07-07',
       `新编队应有${MAX_SLOTS_PER_FORMATION}个槽位，实际: ${formation!.slots.length}`,
     );
-
     // 所有槽位应为空
     const emptySlots = formation!.slots.filter(s => s === '');
     assertStrict(
@@ -262,19 +226,16 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-08', '创建编队 — 最多创建MAX_FORMATIONS个'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     // 创建到上限
     for (let i = 0; i < MAX_FORMATIONS; i++) {
       formationSystem.createFormation();
     }
-
     const count = formationSystem.getFormationCount();
     assertStrict(
       count === MAX_FORMATIONS,
       'FLOW-07-08',
       `编队数应为${MAX_FORMATIONS}，实际: ${count}`,
     );
-
     // 尝试再创建应失败
     const result = formationSystem.createFormation();
     assertStrict(result === null, 'FLOW-07-08', '超过上限时应返回 null');
@@ -283,14 +244,11 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-09', '创建编队 — UI按钮达到上限后禁用'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     // 创建到上限
     for (let i = 0; i < MAX_FORMATIONS; i++) {
       formationSystem.createFormation();
     }
-
     renderFormationPanel(sim);
-
     const createBtn = screen.getByTestId('formation-panel-create-btn');
     assertStrict(
       createBtn.hasAttribute('disabled'),
@@ -302,7 +260,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-10', '创建编队 — 默认编队名称'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     assertStrict(
       !!formation!.name,
@@ -311,19 +268,14 @@ describe('FLOW-07 编队Tab集成测试', () => {
     );
   });
 
-  // ── 3. 武将上阵/下阵（FLOW-07-11 ~ FLOW-07-15） ──
-
   it(accTest('FLOW-07-11', '武将上阵 — addToFormation 添加武将到编队'), () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const fid = formation!.id;
     const generals = sim.getGenerals();
-
     const result = formationSystem.addToFormation(fid, generals[0].id);
     assertStrict(!!result, 'FLOW-07-11', '添加武将应成功');
-
     const updated = formationSystem.getFormation(fid);
     const members = updated!.slots.filter(s => s !== '');
     assertStrict(members.length === 1, 'FLOW-07-11', `编队应有1名武将，实际: ${members.length}`);
@@ -338,7 +290,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const onAddHero = vi.fn();
     const onRemoveHero = vi.fn();
     const slots = makeSlots(0);
-
     render(
       <FormationGrid
         slots={slots}
@@ -348,7 +299,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
         onRemoveHero={onRemoveHero}
       />
     );
-
     const addButtons = screen.getAllByText('+');
     await userEvent.click(addButtons[0]);
     assertStrict(onAddHero.mock.calls.length === 1, 'FLOW-07-12', 'onAddHero 应被调用');
@@ -357,15 +307,12 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-13', '武将下阵 — removeFromFormation 移除武将'), () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const fid = formation!.id;
     const generals = sim.getGenerals();
-
     formationSystem.addToFormation(fid, generals[0].id);
     const membersBefore = formationSystem.getFormation(fid)!.slots.filter(s => s !== '');
     assertStrict(membersBefore.length === 1, 'FLOW-07-13', '添加后应有1名武将');
-
     formationSystem.removeFromFormation(fid, generals[0].id);
     const membersAfter = formationSystem.getFormation(fid)!.slots.filter(s => s !== '');
     assertStrict(membersAfter.length === 0, 'FLOW-07-13', '移除后编队应为空');
@@ -375,7 +322,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const onAddHero = vi.fn();
     const onRemoveHero = vi.fn();
     const slots = makeSlots(1);
-
     render(
       <FormationGrid
         slots={slots}
@@ -385,7 +331,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
         onRemoveHero={onRemoveHero}
       />
     );
-
     // 查找移除按钮
     const removeButtons = screen.queryAllByRole('button', { name: /移除|✕/ });
     if (removeButtons.length > 0) {
@@ -401,14 +346,11 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-15', '武将上阵 — 同一武将不能同时在两个编队'), () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
-
     const f1 = formationSystem.createFormation();
     const f2 = formationSystem.createFormation();
     const generals = sim.getGenerals();
-
     // 将武将加入编队1
     formationSystem.addToFormation(f1!.id, generals[0].id);
-
     // 尝试将同一武将加入编队2（引擎可能允许，取决于实现）
     const result = formationSystem.addToFormation(f2!.id, generals[0].id);
     // 无论是否成功，验证行为一致
@@ -418,17 +360,13 @@ describe('FLOW-07 编队Tab集成测试', () => {
     }
   });
 
-  // ── 4. 编队战力计算（FLOW-07-16 ~ FLOW-07-20） ──
-
   it(accTest('FLOW-07-16', '编队战力 — 空编队战力为0'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
     const heroSystem = sim.engine.getHeroSystem();
-
     const formation = formationSystem.createFormation();
     const getG = (id: string) => heroSystem.getGeneral(id) as GeneralData | undefined;
     const calcP = (g: GeneralData) => heroSystem.calculatePower(g, sim.engine.getHeroStarSystem().getStar(g.id));
-
     const power = formationSystem.calculateFormationPower(formation!, getG, calcP);
     assertStrict(power === 0, 'FLOW-07-16', `空编队战力应为0，实际: ${power}`);
   });
@@ -437,21 +375,17 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes(1);
     const formationSystem = sim.engine.getFormationSystem();
     const heroSystem = sim.engine.getHeroSystem();
-
     const formation = formationSystem.createFormation();
     const generals = sim.getGenerals();
     formationSystem.addToFormation(formation!.id, generals[0].id);
-
     const getG = (id: string) => heroSystem.getGeneral(id) as GeneralData | undefined;
     const calcP = (g: GeneralData) => heroSystem.calculatePower(g, sim.engine.getHeroStarSystem().getStar(g.id));
     const heroPower = calcP(generals[0] as GeneralData);
-
     const formationPower = formationSystem.calculateFormationPower(
       formationSystem.getFormation(formation!.id)!,
       getG,
       calcP,
     );
-
     assertStrict(
       formationPower === heroPower,
       'FLOW-07-17',
@@ -463,25 +397,20 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
     const heroSystem = sim.engine.getHeroSystem();
-
     const formation = formationSystem.createFormation();
     const generals = sim.getGenerals();
-
     const getG = (id: string) => heroSystem.getGeneral(id) as GeneralData | undefined;
     const calcP = (g: GeneralData) => heroSystem.calculatePower(g, sim.engine.getHeroStarSystem().getStar(g.id));
-
     let totalHeroPower = 0;
     for (let i = 0; i < 3; i++) {
       formationSystem.addToFormation(formation!.id, generals[i].id);
       totalHeroPower += calcP(generals[i] as GeneralData);
     }
-
     const formationPower = formationSystem.calculateFormationPower(
       formationSystem.getFormation(formation!.id)!,
       getG,
       calcP,
     );
-
     assertStrict(
       formationPower === totalHeroPower,
       'FLOW-07-18',
@@ -492,15 +421,12 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-19', '编队战力 — FormationPanel 显示战力数值'), () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const generals = sim.getGenerals();
     for (let i = 0; i < 3; i++) {
       formationSystem.addToFormation(formation!.id, generals[i].id);
     }
-
     renderFormationPanel(sim);
-
     // 战力文本
     const powerEl = screen.getByText(/战力:/);
     assertVisible(powerEl, 'FLOW-07-19', '编队战力显示');
@@ -510,48 +436,37 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
     const heroSystem = sim.engine.getHeroSystem();
-
     const formation = formationSystem.createFormation();
     const generals = sim.getGenerals();
-
     const getG = (id: string) => heroSystem.getGeneral(id) as GeneralData | undefined;
     const calcP = (g: GeneralData) => heroSystem.calculatePower(g, sim.engine.getHeroStarSystem().getStar(g.id));
-
     const power0 = formationSystem.calculateFormationPower(
       formationSystem.getFormation(formation!.id)!,
       getG,
       calcP,
     );
-
     formationSystem.addToFormation(formation!.id, generals[0].id);
-
     const power1 = formationSystem.calculateFormationPower(
       formationSystem.getFormation(formation!.id)!,
       getG,
       calcP,
     );
-
     assertStrict(power1 > power0, 'FLOW-07-20', `添加武将后战力应增加：${power0} → ${power1}`);
   });
-
-  // ── 5. 一键编队（FLOW-07-21 ~ FLOW-07-25） ──
 
   it(accTest('FLOW-07-21', '一键编队 — autoFormation 自动选择最强阵容'), () => {
     const sim = createSimWithHeroes(8);
     const formationSystem = sim.engine.getFormationSystem();
     const heroSystem = sim.engine.getHeroSystem();
-
     const formation = formationSystem.createFormation();
     const getG = (id: string) => heroSystem.getGeneral(id) as GeneralData | undefined;
     const calcP = (g: GeneralData) => heroSystem.calculatePower(g, sim.engine.getHeroStarSystem().getStar(g.id));
-
     // autoFormation 签名: (getGeneral, calcPower, formationId, maxSlots, allowOverlap)
     formationSystem.autoFormation(
       getG,
       calcP,
       formation!.id,
     );
-
     // autoFormation 内部调用 autoFormationByIds([])，所以需要用 autoFormationByIds 直接传ID
     const heroIds = sim.getGenerals().map(g => g.id);
     formationSystem.autoFormationByIds(
@@ -560,7 +475,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
       calcP,
       formation!.id,
     );
-
     const updated = formationSystem.getFormation(formation!.id);
     const members = updated!.slots.filter(s => s !== '');
     assertStrict(
@@ -574,11 +488,9 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes(8);
     const formationSystem = sim.engine.getFormationSystem();
     const heroSystem = sim.engine.getHeroSystem();
-
     const formation = formationSystem.createFormation();
     const getG = (id: string) => heroSystem.getGeneral(id) as GeneralData | undefined;
     const calcP = (g: GeneralData) => heroSystem.calculatePower(g, sim.engine.getHeroStarSystem().getStar(g.id));
-
     const heroIds = sim.getGenerals().slice(0, 4).map(g => g.id);
     // autoFormationByIds 签名: (candidateIds, getGeneral, calcPower, formationId, maxSlots)
     formationSystem.autoFormationByIds(
@@ -587,7 +499,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
       calcP,
       formation!.id,
     );
-
     const updated = formationSystem.getFormation(formation!.id);
     const members = updated!.slots.filter(s => s !== '');
     assertStrict(
@@ -601,14 +512,11 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes(8);
     const formationSystem = sim.engine.getFormationSystem();
     formationSystem.createFormation();
-
     renderFormationPanel(sim);
-
     // 点击编辑按钮
     const editBtns = screen.queryAllByText('编辑');
     if (editBtns.length > 0) {
       fireEvent.click(editBtns[0]);
-
       // 一键编队按钮应出现
       const autoBtn = screen.queryByTestId(/formation-panel-auto-btn-/);
       if (autoBtn) {
@@ -621,11 +529,9 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes(6);
     const formationSystem = sim.engine.getFormationSystem();
     const heroSystem = sim.engine.getHeroSystem();
-
     const formation = formationSystem.createFormation();
     const getG = (id: string) => heroSystem.getGeneral(id) as GeneralData | undefined;
     const calcP = (g: GeneralData) => heroSystem.calculatePower(g, sim.engine.getHeroStarSystem().getStar(g.id));
-
     const heroIds = sim.getGenerals().map(g => g.id);
     formationSystem.autoFormationByIds(
       heroIds,
@@ -633,25 +539,20 @@ describe('FLOW-07 编队Tab集成测试', () => {
       calcP,
       formation!.id,
     );
-
     const updated = formationSystem.getFormation(formation!.id);
     assertStrict(!!updated, 'FLOW-07-24', '编队应存在');
-
     // 前排武将（slots[0..2]）防御应 >= 后排武将（slots[3..5]）
     const frontSlots = updated!.slots.slice(0, 3).filter(s => s !== '');
     const backSlots = updated!.slots.slice(3, 6).filter(s => s !== '');
-
     if (frontSlots.length > 0 && backSlots.length > 0) {
       const frontAvgDef = frontSlots.reduce((sum, id) => {
         const g = getG(id);
         return sum + (g?.baseStats?.defense ?? 0);
       }, 0) / frontSlots.length;
-
       const backAvgDef = backSlots.reduce((sum, id) => {
         const g = getG(id);
         return sum + (g?.baseStats?.defense ?? 0);
       }, 0) / backSlots.length;
-
       assertStrict(
         frontAvgDef >= backAvgDef,
         'FLOW-07-24',
@@ -663,35 +564,27 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-25', '一键编队 — 无可用武将时不操作'), () => {
     const sim = createFormationSim(); // 无武将
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const heroSystem = sim.engine.getHeroSystem();
     const getG = (id: string) => heroSystem.getGeneral(id) as GeneralData | undefined;
     const calcP = (g: GeneralData) => heroSystem.calculatePower(g, sim.engine.getHeroStarSystem().getStar(g.id));
-
     formationSystem.autoFormationByIds(
       [],
       getG,
       calcP,
       formation!.id,
     );
-
     const updated = formationSystem.getFormation(formation!.id);
     const members = updated!.slots.filter(s => s !== '');
     assertStrict(members.length === 0, 'FLOW-07-25', '无可用武将时编队应为空');
   });
 
-  // ── 6. 编队激活与切换（FLOW-07-26 ~ FLOW-07-30） ──
-
   it(accTest('FLOW-07-26', '编队激活 — setActiveFormation 设置激活编队'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const f1 = formationSystem.createFormation();
     const f2 = formationSystem.createFormation();
-
     formationSystem.setActiveFormation(f2!.id);
-
     const activeId = formationSystem.getActiveFormationId();
     assertStrict(
       activeId === f2!.id,
@@ -703,10 +596,8 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-27', '编队激活 — getActiveFormation 返回激活编队数据'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const f1 = formationSystem.createFormation();
     formationSystem.setActiveFormation(f1!.id);
-
     const active = formationSystem.getActiveFormation();
     assertStrict(!!active, 'FLOW-07-27', '应返回激活编队');
     assertStrict(
@@ -719,14 +610,11 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-28', '编队切换 — FormationPanel 显示激活标记'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     formationSystem.createFormation();
     formationSystem.createFormation();
     const formations = formationSystem.getAllFormations();
     formationSystem.setActiveFormation(formations[1].id);
-
     renderFormationPanel(sim);
-
     // 激活的编队应显示"当前"标记
     const activeBadge = screen.getByText('当前');
     assertVisible(activeBadge, 'FLOW-07-28', '激活编队标记');
@@ -735,13 +623,10 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-29', '编队切换 — 点击激活按钮切换编队'), async () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     formationSystem.createFormation();
     formationSystem.createFormation();
     const formations = formationSystem.getAllFormations();
-
     renderFormationPanel(sim);
-
     // 点击第二个编队的激活按钮
     const activateBtn = screen.queryByTestId(`formation-panel-activate-btn-${formations[1].id}`);
     if (activateBtn) {
@@ -758,20 +643,15 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-30', '编队切换 — 激活非存在编队失败'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const result = formationSystem.setActiveFormation('nonexistent');
     assertStrict(!result, 'FLOW-07-30', '激活不存在的编队应失败');
   });
 
-  // ── 7. 编队编辑与重命名（FLOW-07-31 ~ FLOW-07-35） ──
-
   it(accTest('FLOW-07-31', '编队重命名 — renameFormation 修改编队名称'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const result = formationSystem.renameFormation(formation!.id, '精锐部队');
-
     assertStrict(!!result, 'FLOW-07-31', '重命名应成功');
     assertStrict(
       result!.name === '精锐部队',
@@ -783,9 +663,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-32', '编队重命名 — 名称长度限制为10字符'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
-
     // 超长名称应被截断为10字符
     const longName = '一二三四五六七八九十十一';
     const result = formationSystem.renameFormation(formation!.id, longName);
@@ -801,14 +679,11 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes(5);
     const formationSystem = sim.engine.getFormationSystem();
     formationSystem.createFormation();
-
     renderFormationPanel(sim);
-
     // 点击编辑
     const editBtns = screen.queryAllByText('编辑');
     if (editBtns.length > 0) {
       fireEvent.click(editBtns[0]);
-
       // 可用武将列表
       const addSection = screen.queryByText(/添加武将/);
       if (addSection) {
@@ -821,13 +696,10 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes(5);
     const formationSystem = sim.engine.getFormationSystem();
     formationSystem.createFormation();
-
     renderFormationPanel(sim);
-
     const editBtns = screen.queryAllByText('编辑');
     if (editBtns.length > 0) {
       fireEvent.click(editBtns[0]);
-
       // 查找武将添加按钮
       const generals = sim.getGenerals();
       const heroBtn = screen.queryAllByRole('button').find(
@@ -846,15 +718,12 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-35', '编队编辑 — 武将上限检查'), () => {
     const sim = createSimWithHeroes(8);
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const generals = sim.getGenerals();
-
     // 添加到上限
     for (let i = 0; i < MAX_SLOTS_PER_FORMATION; i++) {
       formationSystem.addToFormation(formation!.id, generals[i].id);
     }
-
     // 尝试添加第7个应失败
     if (generals.length > MAX_SLOTS_PER_FORMATION) {
       const result = formationSystem.addToFormation(formation!.id, generals[MAX_SLOTS_PER_FORMATION].id);
@@ -862,18 +731,13 @@ describe('FLOW-07 编队Tab集成测试', () => {
     }
   });
 
-  // ── 8. 编队删除（FLOW-07-36 ~ FLOW-07-40） ──
-
   it(accTest('FLOW-07-36', '编队删除 — deleteFormation 删除编队'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const beforeCount = formationSystem.getFormationCount();
-
     const result = formationSystem.deleteFormation(formation!.id);
     assertStrict(result, 'FLOW-07-36', '删除应成功');
-
     const afterCount = formationSystem.getFormationCount();
     assertStrict(
       afterCount === beforeCount - 1,
@@ -885,7 +749,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-37', '编队删除 — 删除不存在的编队失败'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const result = formationSystem.deleteFormation('nonexistent');
     assertStrict(!result, 'FLOW-07-37', '删除不存在的编队应失败');
   });
@@ -893,20 +756,16 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-38', '编队删除 — 删除后武将释放'), () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const generals = sim.getGenerals();
     formationSystem.addToFormation(formation!.id, generals[0].id);
-
     // 验证武将在编队中
     assertStrict(
       formationSystem.isGeneralInAnyFormation(generals[0].id),
       'FLOW-07-38',
       '武将应在编队中',
     );
-
     formationSystem.deleteFormation(formation!.id);
-
     // 删除编队后武将应被释放
     assertStrict(
       !formationSystem.isGeneralInAnyFormation(generals[0].id),
@@ -919,9 +778,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
     formationSystem.createFormation();
-
     renderFormationPanel(sim);
-
     const deleteBtns = screen.queryAllByText('✕');
     // 删除按钮应存在（编队卡片上的 ✕ 按钮）
     assertStrict(deleteBtns.length >= 1, 'FLOW-07-39', '应有删除按钮');
@@ -930,11 +787,9 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-40', '编队删除 — 查询武将所在编队'), () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
-
     const f1 = formationSystem.createFormation();
     const generals = sim.getGenerals();
     formationSystem.addToFormation(f1!.id, generals[0].id);
-
     const containing = formationSystem.getFormationsContainingGeneral(generals[0].id);
     assertStrict(
       containing.includes(f1!.id),
@@ -943,14 +798,11 @@ describe('FLOW-07 编队Tab集成测试', () => {
     );
   });
 
-  // ── 9. 羁绊预览（FLOW-07-41 ~ FLOW-07-45） ──
-
   it(accTest('FLOW-07-41', '羁绊预览 — FormationGrid 显示羁绊标签'), () => {
     const onAddHero = vi.fn();
     const onRemoveHero = vi.fn();
     const slots = makeSlots(3);
     const bonds = makeBonds(2);
-
     render(
       <FormationGrid
         slots={slots}
@@ -960,7 +812,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
         onRemoveHero={onRemoveHero}
       />
     );
-
     const bond0 = screen.getByTestId('formation-bond-bond_0');
     assertVisible(bond0, 'FLOW-07-41', '羁绊标签');
     assertStrict(bond0.textContent!.includes('羁绊0'), 'FLOW-07-41', '羁绊名称应包含羁绊0');
@@ -969,7 +820,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-42', '羁绊预览 — FormationPanel 显示羁绊信息'), () => {
     const sim = createSimWithHeroes(5);
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     // 添加刘关张（桃园结义羁绊）
     const heroIds = ['liubei', 'guanyu', 'zhangfei'];
@@ -977,9 +827,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
       sim.addHeroDirectly(id);
       formationSystem.addToFormation(formation!.id, id);
     }
-
     renderFormationPanel(sim);
-
     // 编队面板应渲染（包含羁绊信息区域）
     const panel = screen.getByTestId('formation-panel');
     assertVisible(panel, 'FLOW-07-42', '编队面板');
@@ -988,18 +836,15 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-43', '编队成员数 — getFormationMemberCount'), () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     assertStrict(
       formationSystem.getFormationMemberCount(formation!.id) === 0,
       'FLOW-07-43',
       '初始编队成员数应为0',
     );
-
     const generals = sim.getGenerals();
     formationSystem.addToFormation(formation!.id, generals[0].id);
     formationSystem.addToFormation(formation!.id, generals[1].id);
-
     assertStrict(
       formationSystem.getFormationMemberCount(formation!.id) === 2,
       'FLOW-07-43',
@@ -1010,21 +855,17 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-44', '编队序列化 — serialize/deserialize 数据一致'), () => {
     const sim = createSimWithHeroes(3);
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const generals = sim.getGenerals();
     formationSystem.addToFormation(formation!.id, generals[0].id);
     formationSystem.setActiveFormation(formation!.id);
-
     const serialized = formationSystem.serialize();
     assertStrict(!!serialized, 'FLOW-07-44', '序列化数据应存在');
     assertStrict(serialized.version > 0, 'FLOW-07-44', '序列化版本应>0');
     assertStrict(!!serialized.state, 'FLOW-07-44', '序列化应包含 state');
-
     // 反序列化到新系统
     formationSystem.reset();
     formationSystem.deserialize(serialized);
-
     const restored = formationSystem.getFormation(formation!.id);
     assertStrict(!!restored, 'FLOW-07-44', '反序列化后编队应存在');
     const members = restored!.slots.filter(s => s !== '');
@@ -1034,14 +875,10 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-45', '编队重置 — reset 清空所有编队'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     formationSystem.createFormation();
     formationSystem.createFormation();
-
     assertStrict(formationSystem.getFormationCount() === 2, 'FLOW-07-45', '重置前应有2个编队');
-
     formationSystem.reset();
-
     assertStrict(
       formationSystem.getFormationCount() === 0,
       'FLOW-07-45',
@@ -1054,17 +891,13 @@ describe('FLOW-07 编队Tab集成测试', () => {
     );
   });
 
-  // ── 10. 边界情况与完整流程（FLOW-07-46 ~ FLOW-07-50） ──
-
   it(accTest('FLOW-07-46', '完整流程 — 创建→添加武将→计算战力→激活→删除'), () => {
     const sim = createSimWithHeroes(6);
     const formationSystem = sim.engine.getFormationSystem();
     const heroSystem = sim.engine.getHeroSystem();
-
     // 1. 创建编队
     const f1 = formationSystem.createFormation();
     assertStrict(!!f1, 'FLOW-07-46', '步骤1: 创建编队成功');
-
     // 2. 添加武将
     const generals = sim.getGenerals();
     for (let i = 0; i < 3; i++) {
@@ -1072,7 +905,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
     }
     const members = formationSystem.getFormation(f1!.id)!.slots.filter(s => s !== '');
     assertStrict(members.length === 3, 'FLOW-07-46', '步骤2: 添加3名武将');
-
     // 3. 计算战力
     const getG = (id: string) => heroSystem.getGeneral(id) as GeneralData | undefined;
     const calcP = (g: GeneralData) => heroSystem.calculatePower(g, sim.engine.getHeroStarSystem().getStar(g.id));
@@ -1082,7 +914,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
       calcP,
     );
     assertStrict(power > 0, 'FLOW-07-46', `步骤3: 战力应>0，实际: ${power}`);
-
     // 4. 激活编队
     formationSystem.setActiveFormation(f1!.id);
     assertStrict(
@@ -1090,7 +921,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
       'FLOW-07-46',
       '步骤4: 激活编队成功',
     );
-
     // 5. 删除编队
     formationSystem.deleteFormation(f1!.id);
     assertStrict(
@@ -1103,30 +933,23 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-47', '完整流程 — 多编队管理'), () => {
     const sim = createSimWithHeroes(8);
     const formationSystem = sim.engine.getFormationSystem();
-
     // 创建2个编队
     const f1 = formationSystem.createFormation();
     const f2 = formationSystem.createFormation();
-
     const generals = sim.getGenerals();
-
     // 编队1：前3名武将
     for (let i = 0; i < 3; i++) {
       formationSystem.addToFormation(f1!.id, generals[i].id);
     }
-
     // 编队2：后3名武将
     for (let i = 3; i < 6; i++) {
       formationSystem.addToFormation(f2!.id, generals[i].id);
     }
-
     // 验证互不干扰
     const f1Members = formationSystem.getFormation(f1!.id)!.slots.filter(s => s !== '');
     const f2Members = formationSystem.getFormation(f2!.id)!.slots.filter(s => s !== '');
-
     assertStrict(f1Members.length === 3, 'FLOW-07-47', '编队1应有3名武将');
     assertStrict(f2Members.length === 3, 'FLOW-07-47', '编队2应有3名武将');
-
     // 验证武将不重复
     const allMembers = [...f1Members, ...f2Members];
     const uniqueMembers = new Set(allMembers);
@@ -1140,7 +963,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-48', '边界 — 向不存在的编队添加武将'), () => {
     const sim = createSimWithHeroes();
     const formationSystem = sim.engine.getFormationSystem();
-
     const result = formationSystem.addToFormation('nonexistent', 'liubei');
     assertStrict(result === null, 'FLOW-07-48', '向不存在的编队添加武将应失败');
   });
@@ -1148,14 +970,11 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-49', '边界 — setFormation 批量设置编队'), () => {
     const sim = createSimWithHeroes(6);
     const formationSystem = sim.engine.getFormationSystem();
-
     const formation = formationSystem.createFormation();
     const generals = sim.getGenerals();
     const heroIds = generals.slice(0, 3).map(g => g.id);
-
     const result = formationSystem.setFormation(formation!.id, heroIds);
     assertStrict(!!result, 'FLOW-07-49', '批量设置编队应成功');
-
     const members = formationSystem.getFormation(formation!.id)!.slots.filter(s => s !== '');
     assertStrict(members.length === 3, 'FLOW-07-49', `批量设置后应有3名武将，实际: ${members.length}`);
   });
@@ -1163,7 +982,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
   it(accTest('FLOW-07-50', '边界 — FormationGrid 羁绊预览空编队'), () => {
     const onAddHero = vi.fn();
     const onRemoveHero = vi.fn();
-
     render(
       <FormationGrid
         slots={Array(6).fill(null)}
@@ -1173,7 +991,6 @@ describe('FLOW-07 编队Tab集成测试', () => {
         onRemoveHero={onRemoveHero}
       />
     );
-
     // 空编队应正常渲染
     const addButtons = screen.queryAllByText('+');
     assertStrict(addButtons.length === 6, 'FLOW-07-50', '空编队应显示6个空槽位');

@@ -373,25 +373,20 @@ describe('FLOW-09 装备系统集成测试', () => {
   it(accTest('FLOW-09-21', '属性 — 强化后属性增加'), () => {
     const sim = createEquipSim();
     const eqSys = sim.engine.getEquipmentSystem();
-    const enhanceSys = sim.engine.getEquipmentEnhanceSystem();
-    enhanceSys.setResourceDeductor(() => true);
 
-    const eq = generateEquipment(sim.engine, 'weapon', 'blue');
+    const eq = generateEquipment(sim.engine, 'weapon', 'purple');
     assertStrict(!!eq, 'FLOW-09-21', '应成功生成装备');
 
     const powerBefore = eqSys.calculatePower(eq!);
 
-    // 强化一次（如果成功）
-    const result = enhanceSys.enhance(eq!.uid, false);
-    if (result.outcome === 'success') {
-      const updated = eqSys.getEquipment(eq!.uid);
-      const powerAfter = eqSys.calculatePower(updated!);
-      assertStrict(
-        powerAfter > powerBefore,
-        'FLOW-09-21',
-        `强化成功后战力(${powerAfter})应 > 强化前(${powerBefore})`,
-      );
-    }
+    // 直接用 recalcStats 模拟强化到+5，验证属性公式正确递增
+    const enhanced = eqSys.recalcStats({ ...eq!, enhanceLevel: 5 });
+    const powerAfter = eqSys.calculatePower(enhanced);
+    assertStrict(
+      powerAfter > powerBefore,
+      'FLOW-09-21',
+      `强化+5后战力(${powerAfter})应 > 强化前(${powerBefore})`,
+    );
   });
 
   it(accTest('FLOW-09-22', '属性 — 品质比较功能'), () => {
