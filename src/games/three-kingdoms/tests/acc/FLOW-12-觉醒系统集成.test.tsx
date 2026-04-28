@@ -450,4 +450,130 @@ describe('FLOW-12 觉醒系统集成测试', () => {
     assertStrict(stats.attack === general.baseStats.attack, 'FLOW-12-35', `未觉醒攻击应等于基础攻击 ${general.baseStats.attack}，实际 ${stats.attack}`);
     assertStrict(stats.defense === general.baseStats.defense, 'FLOW-12-35', '未觉醒防御应等于基础防御');
   });
+
+  // ── 7. 补充覆盖（FLOW-12-36 ~ FLOW-12-46） ──
+
+  it(accTest('FLOW-12-36', '技能预览 — 不存在的武将返回null'), () => {
+    const skill = awakening.getAwakeningSkillPreview('nonexistent_hero');
+    assertStrict(skill === null, 'FLOW-12-36', `不存在武将技能应为 null，实际 ${skill}`);
+  });
+
+  it(accTest('FLOW-12-37', '觉醒执行 — 资源不足时觉醒失败'), () => {
+    prepareHeroForAwakening(sim, 'guanyu');
+    // 注入空资源（不满足消耗）
+    awakening.setDeps({
+      canAffordResource: () => false,
+      spendResource: () => false,
+      getResourceAmount: () => 0,
+    });
+    const result = awakening.awaken('guanyu');
+    assertStrict(!result.success, 'FLOW-12-37', '资源不足时觉醒应失败');
+    assertStrict(result.reason!.includes('资源不足'), 'FLOW-12-37', `原因应包含"资源不足"，实际: ${result.reason}`);
+  });
+
+  it(accTest('FLOW-12-38', '觉醒执行 — 碎片不足时觉醒失败'), () => {
+    // 准备武将但不加碎片（碎片=0，不够200）
+    prepareHeroPartial(sim, 'guanyu', { level: 100, star: 6, breakthrough: 4 });
+    injectAwakeningResources(awakening);
+    const result = awakening.awaken('guanyu');
+    assertStrict(!result.success, 'FLOW-12-38', '碎片不足时觉醒应失败');
+    assertStrict(result.reason!.includes('资源不足'), 'FLOW-12-38', `原因应包含"资源不足"，实际: ${result.reason}`);
+  });
+
+  it(accTest('FLOW-12-39', '觉醒技能 — 赵云有觉醒技能'), () => {
+    const skill = awakening.getAwakeningSkillPreview('zhaoyun');
+    assertStrict(!!skill, 'FLOW-12-39', '赵云应有觉醒技能');
+    assertStrict(skill!.id === 'zhaoyun_awaken', 'FLOW-12-39', `技能ID应为 zhaoyun_awaken，实际 ${skill!.id}`);
+    assertStrict(skill!.name === '常胜·七进七出', 'FLOW-12-39', `技能名应为"常胜·七进七出"，实际 "${skill!.name}"`);
+    assertStrict(skill!.cooldown === 6, 'FLOW-12-39', `冷却应为 6，实际 ${skill!.cooldown}`);
+  });
+
+  it(accTest('FLOW-12-40', '觉醒技能 — 吕布有觉醒技能'), () => {
+    const skill = awakening.getAwakeningSkillPreview('lvbu');
+    assertStrict(!!skill, 'FLOW-12-40', '吕布应有觉醒技能');
+    assertStrict(skill!.id === 'lvbu_awaken', 'FLOW-12-40', `技能ID应为 lvbu_awaken，实际 ${skill!.id}`);
+    assertStrict(skill!.name === '飞将·天下无双', 'FLOW-12-40', `技能名应为"飞将·天下无双"，实际 "${skill!.name}"`);
+    assertStrict(skill!.damageMultiplier === 4.0, 'FLOW-12-40', `伤害倍率应为 4.0，实际 ${skill!.damageMultiplier}`);
+  });
+
+  it(accTest('FLOW-12-41', '觉醒属性 — 智力和速度也提升50%'), () => {
+    prepareHeroForAwakening(sim, 'zhugeliang');
+    injectAwakeningResources(awakening);
+    const general = heroSystem.getGeneral('zhugeliang')!;
+    const baseInt = general.baseStats.intelligence;
+    const baseSpd = general.baseStats.speed;
+    awakening.awaken('zhugeliang');
+    const awakenedStats = awakening.calculateAwakenedStats('zhugeliang');
+    const expectedInt = Math.floor(baseInt * AWAKENING_STAT_MULTIPLIER);
+    const expectedSpd = Math.floor(baseSpd * AWAKENING_STAT_MULTIPLIER);
+    assertStrict(awakenedStats.intelligence === expectedInt, 'FLOW-12-41', `智力应为 ${expectedInt}，实际 ${awakenedStats.intelligence}`);
+    assertStrict(awakenedStats.speed === expectedSpd, 'FLOW-12-41', `速度应为 ${expectedSpd}，实际 ${awakenedStats.speed}`);
+  });
+
+  it(accTest('FLOW-12-42', '觉醒被动 — 资源加成和经验加成独立叠加'), () => {
+    prepareHeroForAwakening(sim, 'guanyu');
+    prepareHeroForAwakening(sim, 'zhugeliang');
+    injectAwakeningResources(awakening);
+    awakening.awaken('guanyu');
+    awakening.awaken('zhugeliang');
+    const summary = awakening.getPassiveSummary();
+    const expectedResourceBonus = AWAKENING_PASSIVE.resourceBonus * 2;
+    const expectedExpBonus = AWAKENING_PASSIVE.expBonus * 2;
+    assertStrict(summary.resourceBonus === expectedResourceBonus, 'FLOW-12-42', `资源加成应为 ${expectedResourceBonus}，实际 ${summary.resourceBonus}`);
+    assertStrict(summary.expBonus === expectedExpBonus, 'FLOW-12-42', `经验加成应为 ${expectedExpBonus}，实际 ${summary.expBonus}`);
+  });
+
+  it(accTest('FLOW-12-43', '觉醒被动 — 不同阵营武将各计阵营叠加'), () => {
+    prepareHeroForAwakening(sim, 'guanyu');   // 蜀
+    prepareHeroForAwakening(sim, 'caocao');   // 魏
+    injectAwakeningResources(awakening);
+    awakening.awaken('guanyu');
+    awakening.awaken('caocao');
+    const summary = awakening.getPassiveSummary();
+    assertStrict(summary.awakenedCount === 2, 'FLOW-12-43', `觉醒数量应为2，实际 ${summary.awakenedCount}`);
+    const shuFaction = heroSystem.getGeneral('guanyu')!.faction;
+    const weiFaction = heroSystem.getGeneral('caocao')!.faction;
+    assertStrict(summary.factionStacks[shuFaction] === 1, 'FLOW-12-43', `蜀阵营叠加应为1`);
+    assertStrict(summary.factionStacks[weiFaction] === 1, 'FLOW-12-43', `魏阵营叠加应为1`);
+  });
+
+  it(accTest('FLOW-12-44', '觉醒经验表 — 111~120级经验递增'), () => {
+    const exp111 = awakening.getAwakeningExpRequired(111);
+    const exp115 = awakening.getAwakeningExpRequired(115);
+    const exp116 = awakening.getAwakeningExpRequired(116);
+    const exp120 = awakening.getAwakeningExpRequired(120);
+    assertStrict(exp111 > 0, 'FLOW-12-44', '111级经验应 > 0');
+    assertStrict(exp115 > exp111, 'FLOW-12-44', '115级经验应 > 111级');
+    assertStrict(exp116 > exp115, 'FLOW-12-44', '116级经验应 > 115级');
+    assertStrict(exp120 > exp116, 'FLOW-12-44', '120级经验应 > 116级');
+    assertStrict(exp111 === 111 * 20000, 'FLOW-12-44', `111级经验应为 ${111 * 20000}，实际 ${exp111}`);
+    assertStrict(exp116 === 116 * 25000, 'FLOW-12-44', `116级经验应为 ${116 * 25000}，实际 ${exp116}`);
+  });
+
+  it(accTest('FLOW-12-45', '序列化 — 多武将觉醒状态完整保存'), () => {
+    prepareHeroForAwakening(sim, 'guanyu');
+    prepareHeroForAwakening(sim, 'zhugeliang');
+    injectAwakeningResources(awakening);
+    awakening.awaken('guanyu');
+    awakening.awaken('zhugeliang');
+    const data = awakening.serialize();
+    assertStrict(Object.keys(data.state.heroes).length === 2, 'FLOW-12-45', `应有2个武将数据，实际 ${Object.keys(data.state.heroes).length}`);
+    assertStrict(data.state.heroes['guanyu'].isAwakened, 'FLOW-12-45', '关羽应已觉醒');
+    assertStrict(data.state.heroes['guanyu'].awakeningLevel === 1, 'FLOW-12-45', '关羽觉醒等级应为1');
+    assertStrict(data.state.heroes['zhugeliang'].isAwakened, 'FLOW-12-45', '诸葛亮应已觉醒');
+  });
+
+  it(accTest('FLOW-12-46', '重置 — 清空后被动效果全归0'), () => {
+    prepareHeroForAwakening(sim, 'guanyu');
+    injectAwakeningResources(awakening);
+    awakening.awaken('guanyu');
+    assertStrict(awakening.isAwakened('guanyu'), 'FLOW-12-46', '觉醒前验证');
+    awakening.reset();
+    const summary = awakening.getPassiveSummary();
+    assertStrict(!awakening.isAwakened('guanyu'), 'FLOW-12-46', '重置后应未觉醒');
+    assertStrict(summary.awakenedCount === 0, 'FLOW-12-46', '觉醒数量应为0');
+    assertStrict(summary.globalStatBonus === 0, 'FLOW-12-46', '全局属性加成应为0');
+    assertStrict(summary.resourceBonus === 0, 'FLOW-12-46', '资源加成应为0');
+    assertStrict(summary.expBonus === 0, 'FLOW-12-46', '经验加成应为0');
+  });
 });
