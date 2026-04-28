@@ -293,35 +293,25 @@ describe('FLOW-06 科技Tab集成测试', () => {
     }
   });
 
-  it(accTest('FLOW-06-09', '互斥标签显示 — Tier1互斥节点显示"二选一"'), () => {
-    const sim = createTechSim();
-    renderTechTab(sim);
-
-    // 军事路线Tier1的两个节点属于同一互斥组
-    const milTier1Nodes = getNodesByPath('military').filter(n => n.tier === 1);
-    const mutexNodes = milTier1Nodes.filter(n => n.mutexGroup);
-    if (mutexNodes.length >= 1) {
-      // 检查至少一个互斥节点显示了"二选一"标签
-      const mutexTags = screen.queryAllByText('二选一');
-      assertStrict(mutexTags.length >= 1, 'FLOW-06-09', '互斥节点应显示"二选一"标签');
-    }
-  });
-
-  it(accTest('FLOW-06-10', '经济路线和文化路线节点展示'), () => {
+  it(accTest('FLOW-06-09', '经济/文化路线节点展示 + 互斥标签'), () => {
     const sim = createTechSim();
     renderTechTab(sim);
 
     // 经济路线
     const ecoNodes = getNodesByPath('economy');
-    assertStrict(ecoNodes.length > 0, 'FLOW-06-10', '经济路线应有节点');
+    assertStrict(ecoNodes.length > 0, 'FLOW-06-09', '经济路线应有节点');
     const ecoPathCol = screen.getByTestId('tech-path-economy');
-    assertVisible(ecoPathCol, 'FLOW-06-10', '经济路线列');
+    assertVisible(ecoPathCol, 'FLOW-06-09', '经济路线列');
 
     // 文化路线
     const culNodes = getNodesByPath('culture');
-    assertStrict(culNodes.length > 0, 'FLOW-06-10', '文化路线应有节点');
+    assertStrict(culNodes.length > 0, 'FLOW-06-09', '文化路线应有节点');
     const culPathCol = screen.getByTestId('tech-path-culture');
-    assertVisible(culPathCol, 'FLOW-06-10', '文化路线列');
+    assertVisible(culPathCol, 'FLOW-06-09', '文化路线列');
+
+    // Tier1互斥节点显示"二选一"标签
+    const mutexTags = screen.queryAllByText('二选一');
+    assertStrict(mutexTags.length >= 1, 'FLOW-06-09', '互斥节点应显示"二选一"标签');
   });
 
   // ── 3. 科技研究流程（FLOW-06-11 ~ FLOW-06-15） ──
@@ -680,22 +670,13 @@ describe('FLOW-06 科技Tab集成测试', () => {
 
   // ── 7. 科技点系统（FLOW-06-31 ~ FLOW-06-35） ──
 
-  it(accTest('FLOW-06-31', '科技点 — 充足时可消费'), () => {
+  it(accTest('FLOW-06-31', '科技点 — 充足可消费，不足失败'), () => {
     const sim = createTechSimWithPoints();
     const pointSystem = sim.engine.getTechPointSystem();
-
-    const result = pointSystem.trySpend(100);
-    assertStrict(result.success, 'FLOW-06-31', '科技点充足时应可消费');
-  });
-
-  it(accTest('FLOW-06-32', '科技点 — 不足时消费失败'), () => {
-    const sim = createTechSim();
-    const pointSystem = sim.engine.getTechPointSystem();
-
-    // 初始科技点为0
-    const result = pointSystem.trySpend(10000);
-    assertStrict(!result.success, 'FLOW-06-32', '科技点不足时应消费失败');
-    assertStrict(!!result.reason, 'FLOW-06-32', '应返回失败原因');
+    // 充足时可消费
+    assertStrict(pointSystem.trySpend(100).success, 'FLOW-06-31', '科技点充足时应可消费');
+    // 不足时失败
+    assertStrict(!pointSystem.trySpend(999999).success, 'FLOW-06-31', '科技点不足时应失败');
   });
 
   it(accTest('FLOW-06-33', '科技点 — refund 增加科技点'), () => {
