@@ -21,6 +21,7 @@ import type { GeneralData, Faction } from '@/games/three-kingdoms/engine';
 import { Quality as Q } from '@/games/three-kingdoms/engine';
 import type { EnhancePreview } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 import { statsAtLevel } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
+import { getStarMultiplier } from '@/games/three-kingdoms/engine/hero/star-up-config';
 import { accTest, assertStrict, assertVisible } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
@@ -369,9 +370,24 @@ describe('ACC-04 武将系统验收集成测试', () => {
     const { engine, sim } = makeEngineForEnhance('guanyu');
     sim.addHeroFragments('guanyu', 50);
     const starSystem = engine.getHeroStarSystem();
+    const g = engine.getGeneral('guanyu')!;
+    const starBefore = starSystem.getStar('guanyu');
+    // 记录升星前的属性值
+    const statsBefore = statsAtLevel(g.baseStats, g.level);
+    const mulBefore = 1.0; // getStarMultiplier(1) = 1.0
+    const attackBefore = Math.floor(statsBefore.attack * mulBefore);
+
     const result = starSystem.starUp('guanyu');
     assertStrict(result.success === true, 'ACC-04-23', '升星应成功');
     assertStrict(result.currentStar > result.previousStar, 'ACC-04-23', '星级应增加');
+
+    // 验证属性值随星级增加而增大（LL-007 回归）
+    const starAfter = starSystem.getStar('guanyu');
+    assertStrict(starAfter > starBefore, 'ACC-04-23', '星级应大于升星前');
+    // getStarMultiplier(2) = 1.15 > 1.0
+    const mulAfter = getStarMultiplier(starAfter);
+    const attackAfter = Math.floor(statsBefore.attack * mulAfter);
+    assertStrict(attackAfter > attackBefore, 'ACC-04-23', `升星后攻击力应增大: ${attackAfter} > ${attackBefore}`);
   });
 
   it(accTest('ACC-04-24', '升星后星级显示立即更新 — getStar被调用'), () => {

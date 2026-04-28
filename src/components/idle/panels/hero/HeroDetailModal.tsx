@@ -13,6 +13,7 @@ import {
 } from '@/games/three-kingdoms/engine';
 import { AWAKENING_EFFECT_TEXT } from '@/games/three-kingdoms/engine/hero/awakening-config';
 import { statsAtLevel } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
+import { getStarMultiplier } from '@/games/three-kingdoms/engine/hero/star-up-config';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import type { SkillItem } from './SkillUpgradePanel';
 import SkillUpgradePanel from './SkillUpgradePanel';
@@ -149,9 +150,17 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
     }
   }, [engine, general.id, targetLevel, general.level]);
 
-  // 属性列表（使用 statsAtLevel 计算当前等级实际属性）
+  // 属性列表（使用 statsAtLevel + 星级倍率 计算当前实际属性）
   const stats = useMemo(() => {
-    const effectiveStats = statsAtLevel(general.baseStats, general.level);
+    const levelStats = statsAtLevel(general.baseStats, general.level);
+    const star = heroStarSystem.getStar(general.id);
+    const starMul = getStarMultiplier(star);
+    const effectiveStats = {
+      attack: Math.floor(levelStats.attack * starMul),
+      defense: Math.floor(levelStats.defense * starMul),
+      intelligence: Math.floor(levelStats.intelligence * starMul),
+      speed: Math.floor(levelStats.speed * starMul),
+    };
     const statMax = computeStatMax(effectiveStats);
     return (['attack', 'defense', 'intelligence', 'speed'] as const).map((key) => ({
       key,
@@ -160,7 +169,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
       color: STAT_COLORS[key],
       percentage: Math.min(100, Math.floor((effectiveStats[key] / statMax) * 100)),
     }));
-  }, [general]);
+  }, [general, heroStarSystem]);
 
   // 升级操作（带防抖）
   const handleEnhance = useCallback(() => {
@@ -309,7 +318,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
             <div className="tk-hero-detail-radar-section">
               <h4 className="tk-hero-detail-section-title">属性总览</h4>
               <div className="tk-hero-detail-radar-wrap">
-                <RadarChart stats={stats} quality={general.quality} statMax={computeStatMax(statsAtLevel(general.baseStats, general.level))} />
+                <RadarChart stats={stats} quality={general.quality} statMax={computeStatMax({ attack: stats[0].value, defense: stats[1].value, intelligence: stats[2].value, speed: stats[3].value })} />
               </div>
             </div>
 

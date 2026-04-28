@@ -545,5 +545,59 @@ describe('HeroDetailModal', () => {
       expect(screen.getAllByText(String(expectedIntelligence)).length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText(String(expectedSpeed)).length).toBeGreaterThanOrEqual(1);
     });
+
+    it('升星后属性值应乘以星级倍率（LL-007 回归）', () => {
+      // level=1, star=2 → starMultiplier=1.15
+      // attack: floor(115 * 1.0 * 1.15) = floor(132.25) = 132
+      // defense: floor(90 * 1.0 * 1.15) = floor(103.5) = 103
+      // intelligence: floor(65 * 1.0 * 1.15) = floor(74.75) = 74
+      // speed: floor(78 * 1.0 * 1.15) = floor(89.7) = 89
+      const lv1General: GeneralData = { ...baseGeneral, level: 1 };
+      const engine = makeMockEngine({ general: lv1General });
+      // 覆盖 starSystem.getStar 返回 2 星
+      const starSys = (engine as any).getHeroStarSystem();
+      starSys.getStar = vi.fn(() => 2);
+
+      render(
+        <HeroDetailModal
+          general={lv1General}
+          engine={engine}
+          onClose={vi.fn()}
+          onEnhanceComplete={vi.fn()}
+        />,
+      );
+
+      expect(screen.getAllByText('132').length).toBeGreaterThanOrEqual(1); // attack
+      expect(screen.getAllByText('103').length).toBeGreaterThanOrEqual(1); // defense
+      expect(screen.getAllByText('74').length).toBeGreaterThanOrEqual(1);  // intelligence
+      expect(screen.getAllByText('89').length).toBeGreaterThanOrEqual(1);  // speed
+    });
+
+    it('高星级属性值验证（star=3, level=10）', () => {
+      // level=10 → levelMultiplier=1.27, star=3 → starMultiplier=1.35
+      // 注意：先 floor(levelStats)，再乘以 starMul 再 floor
+      // levelStats: attack=146, defense=114, intelligence=82, speed=99
+      // attack: floor(146 * 1.35) = floor(197.1) = 197
+      // defense: floor(114 * 1.35) = floor(153.9) = 153
+      // intelligence: floor(82 * 1.35) = floor(110.7) = 110
+      // speed: floor(99 * 1.35) = floor(133.65) = 133
+      const engine = makeMockEngine({ general: baseGeneral });
+      const starSys = (engine as any).getHeroStarSystem();
+      starSys.getStar = vi.fn(() => 3);
+
+      render(
+        <HeroDetailModal
+          general={baseGeneral}
+          engine={engine}
+          onClose={vi.fn()}
+          onEnhanceComplete={vi.fn()}
+        />,
+      );
+
+      expect(screen.getAllByText('197').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('153').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('110').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('133').length).toBeGreaterThanOrEqual(1);
+    });
   });
 });

@@ -151,6 +151,41 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
                 onSelectTerritory={(id) => {
                   Toast.info(`选中领土: ${id}`);
                 }}
+                onSiegeTerritory={(territoryId: string) => {
+                  try {
+                    const siegeSys = engine.getSiegeSystem();
+                    const availableTroops = engine.getResourceAmount?.('troops') ?? 0;
+                    const availableGrain = engine.getResourceAmount?.('grain') ?? 0;
+                    const result = siegeSys.executeSiege(
+                      territoryId,
+                      'player',
+                      availableTroops,
+                      availableGrain,
+                    );
+                    if (result.victory) {
+                      Toast.success(`攻城成功！占领了 ${result.targetName}`);
+                    } else if (!result.launched) {
+                      Toast.warning(`无法攻城：${result.failureReason ?? '条件不满足'}`);
+                    } else {
+                      Toast.warning(`攻城失败：${result.targetName} 防守坚固`);
+                    }
+                  } catch (e) {
+                    Toast.danger(`攻城异常：${e instanceof Error ? e.message : String(e)}`);
+                  }
+                }}
+                onUpgradeTerritory={(territoryId: string) => {
+                  try {
+                    const territorySys = engine.getTerritorySystem();
+                    if (territorySys && typeof territorySys.upgradeTerritory === 'function') {
+                      territorySys.upgradeTerritory(territoryId);
+                      Toast.success(`领土升级成功`);
+                    } else {
+                      Toast.info(`升级领土: ${territoryId}`);
+                    }
+                  } catch (e) {
+                    Toast.danger(`升级异常：${e instanceof Error ? e.message : String(e)}`);
+                  }
+                }}
               />
             );
 

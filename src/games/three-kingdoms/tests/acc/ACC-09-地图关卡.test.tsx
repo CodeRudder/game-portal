@@ -288,11 +288,10 @@ describe('ACC-09 地图关卡验收集成测试', () => {
     const onSiege = vi.fn();
     render(<TerritoryInfoPanel territory={territory} onSiege={onSiege} />);
     const siegeBtn = screen.queryByText(/攻城/);
+    assertStrict(!!siegeBtn, 'ACC-09-18', '敌方领土应显示攻城按钮');
     if (siegeBtn) {
       fireEvent.click(siegeBtn);
       assertStrict(onSiege.mock.calls.length === 1, 'ACC-09-18', '攻城回调应被调用');
-    } else {
-      assertStrict(true, 'ACC-09-18', '攻城按钮检查完成');
     }
   });
 
@@ -301,11 +300,10 @@ describe('ACC-09 地图关卡验收集成测试', () => {
     const onUpgrade = vi.fn();
     render(<TerritoryInfoPanel territory={territory} onUpgrade={onUpgrade} />);
     const upgradeBtn = screen.queryByText(/升级/);
+    assertStrict(!!upgradeBtn, 'ACC-09-19', '己方领土应显示升级按钮');
     if (upgradeBtn) {
       fireEvent.click(upgradeBtn);
       assertStrict(onUpgrade.mock.calls.length === 1, 'ACC-09-19', '升级回调应被调用');
-    } else {
-      assertStrict(true, 'ACC-09-19', '升级按钮检查完成');
     }
   });
 
