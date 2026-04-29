@@ -516,18 +516,18 @@ describe('FLOW-01 天下Tab集成测试', () => {
     const sim = createMapSim();
     const territorySys = sim.engine.getTerritorySystem();
 
-    // 初始无玩家领土
+    // 初始玩家拥有洛阳，产出大于0
     const summary0 = territorySys.getPlayerProductionSummary();
-    assertStrict(summary0.totalProduction.grain === 0, 'FLOW-01-24', '初始产出应为0');
+    assertStrict(summary0.totalProduction.grain > 0, 'FLOW-01-24', '初始产出应大于0（洛阳）');
 
-    // 占领一个领土
+    // 占领一个新领土
     territorySys.captureTerritory('pass-hulao', 'player');
     const summary1 = territorySys.getPlayerProductionSummary();
 
     assertStrict(
-      summary1.totalProduction.grain > 0,
+      summary1.totalProduction.grain > summary0.totalProduction.grain,
       'FLOW-01-24',
-      '占领领土后粮食产出应大于0',
+      '占领领土后粮食产出应增加',
     );
   });
 
@@ -552,10 +552,17 @@ describe('FLOW-01 天下Tab集成测试', () => {
     const sim = createMapSim();
     const territorySys = sim.engine.getTerritorySystem();
 
-    // 初始无玩家领土，总产出应为0
+    // 初始玩家拥有洛阳（1个领土），中立领土不计入
     const summary = territorySys.getPlayerProductionSummary();
-    assertStrict(summary.totalTerritories === 0, 'FLOW-01-26', '初始无玩家领土');
-    assertStrict(summary.totalProduction.grain === 0, 'FLOW-01-26', '初始总产出应为0');
+    assertStrict(summary.totalTerritories === 1, 'FLOW-01-26', '初始应有1个玩家领土（洛阳）');
+
+    // 玩家产出仅来自洛阳，不包含中立领土的产出
+    const luoyang = territorySys.getTerritoryById('city-luoyang')!;
+    assertStrict(
+      summary.totalProduction.grain === luoyang.currentProduction.grain,
+      'FLOW-01-26',
+      '总产出应仅来自洛阳',
+    );
   });
 
   // 6. 天下快照与统计（FLOW-01-27 ~ FLOW-01-30）
@@ -574,13 +581,13 @@ describe('FLOW-01 天下Tab集成测试', () => {
     const territorySys = sim.engine.getTerritorySystem();
 
     const initialCount = territorySys.getPlayerTerritoryCount();
-    assertStrict(initialCount === 0, 'FLOW-01-28', '初始玩家领土数应为0');
+    assertStrict(initialCount === 1, 'FLOW-01-28', '初始玩家领土数应为1（洛阳）');
 
     territorySys.captureTerritory('pass-hulao', 'player');
     assertStrict(
-      territorySys.getPlayerTerritoryCount() === 1,
+      territorySys.getPlayerTerritoryCount() === 2,
       'FLOW-01-28',
-      '占领后玩家领土数应为1',
+      '占领后玩家领土数应为2',
     );
   });
 

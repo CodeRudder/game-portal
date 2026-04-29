@@ -140,14 +140,20 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
   }, [sortBy]);
 
   // ── 骨架屏加载条件 ──
+  // 只在 activeTab 变化时显示骨架屏，不响应 snapshotVersion 变化
+  // 避免 snapshotVersion 每次 tick 变化时清除缓存导致重复闪烁
   useEffect(() => {
-    const changed = (snapshotVersion ?? 0) !== lastSnapshotRef.current;
-    if (changed) { lastSnapshotRef.current = snapshotVersion ?? 0; loadedTabsRef.current.clear(); }
-    if (loadedTabsRef.current.has(activeTab) && !changed) { setIsLoading(false); return; }
+    if (loadedTabsRef.current.has(activeTab)) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
-    const t = setTimeout(() => { setIsLoading(false); loadedTabsRef.current.add(activeTab); }, 300);
+    const t = setTimeout(() => {
+      setIsLoading(false);
+      loadedTabsRef.current.add(activeTab);
+    }, 300);
     return () => clearTimeout(t);
-  }, [activeTab, snapshotVersion]);
+  }, [activeTab]);
 
   // ── 刷新信息（按Tab维度） ──
   const refreshInfo = useMemo(() => {

@@ -38,12 +38,12 @@ export const RECRUIT_COSTS: Record<RecruitType, { resourceType: string; amount: 
   normal: {
     /** 普通招募消耗招贤令（R3 修正：1→5，解决经济通胀问题） */
     resourceType: 'recruitToken',
-    amount: 5,
+    amount: 1, // v2: 从5降为1，配合初始30个招贤令让新玩家充分体验招募
   },
   advanced: {
     /** 高级招募消耗求贤令（v2.0 修正：×1 → ×100） */
     resourceType: 'recruitToken',
-    amount: 100,
+    amount: 10, // v2: 从100降为10，让玩家也能体验高级招募
   },
 } as const;
 

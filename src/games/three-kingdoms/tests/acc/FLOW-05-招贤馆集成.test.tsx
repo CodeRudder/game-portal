@@ -88,11 +88,11 @@ describe('FLOW-05 招贤馆集成测试', () => {
     const sim = createRecruitSim({ goldAmount: 10000, tokenAmount: 500 });
     renderModal(sim);
 
-    // 初始 gold=300 + 10000 = 10,300; 初始 recruitToken=10 + 500 = 510
+    // 初始 gold=300 + 10000 = 10,300; 初始 recruitToken=30 + 500 = 530
     const goldEl = screen.getByTestId('recruit-balance-gold');
     const tokenEl = screen.getByTestId('recruit-balance-token');
     assertStrict(goldEl.textContent!.includes('10,300'), 'FLOW-05-02', `铜钱余额应包含 10,300，实际: ${goldEl.textContent}`);
-    assertStrict(tokenEl.textContent!.includes('510'), 'FLOW-05-02', `求贤令余额应包含 510，实际: ${tokenEl.textContent}`);
+    assertStrict(tokenEl.textContent!.includes('530'), 'FLOW-05-02', `求贤令余额应包含 530，实际: ${tokenEl.textContent}`);
   });
 
   it(accTest('FLOW-05-03', '消耗显示正确 — 普通招募消耗求贤令×5'), () => {
@@ -101,8 +101,8 @@ describe('FLOW-05 招贤馆集成测试', () => {
 
     const costElements = screen.getAllByText(/求贤令 ×\d+/);
     assertStrict(costElements.length >= 2, 'FLOW-05-03', '应显示单抽和十连消耗');
-    const hasSingleCost = costElements.some((el) => el.textContent!.includes('×5'));
-    assertStrict(hasSingleCost, 'FLOW-05-03', '普通单抽应显示求贤令×5');
+    const hasSingleCost = costElements.some((el) => el.textContent!.includes('×1'));
+    assertStrict(hasSingleCost, 'FLOW-05-03', '普通单抽应显示求贤令×1');
   });
 
   it(accTest('FLOW-05-04', '保底进度条可见 — 十连保底标签和计数'), () => {
@@ -188,8 +188,8 @@ describe('FLOW-05 招贤馆集成测试', () => {
 
     await userEvent.click(screen.getByTestId('recruit-modal-type-advanced'));
     const costElements = screen.getAllByText(/求贤令 ×\d+/);
-    const hasAdvancedCost = costElements.some((el) => el.textContent!.includes('×100'));
-    assertStrict(hasAdvancedCost, 'FLOW-05-11', '高级招募应显示求贤令×100');
+    const hasAdvancedCost = costElements.some((el) => el.textContent!.includes('×10'));
+    assertStrict(hasAdvancedCost, 'FLOW-05-11', '高级招募应显示求贤令×10');
   });
 
   it(accTest('FLOW-05-12', '高级单抽完整流程 — 消耗求贤令×100'), async () => {
@@ -430,7 +430,9 @@ describe('FLOW-05 招贤馆集成测试', () => {
   });
 
   it(accTest('FLOW-05-29', '十连招募资源不足 — 按钮禁用'), () => {
-    const sim = createRecruitSim({ tokenAmount: 10 }); // 10+10=20，够单抽5但不够十连50
+    const sim = createRecruitSim({ tokenAmount: 0 }); // 初始30，够单抽30次但不够十连10
+    // 消耗掉大部分 recruitToken，只留5个（够单抽但不够十连）
+    sim.engine.resource.consumeResource('recruitToken', 25); // 30 - 25 = 5，够单抽但不够十连(10)
     renderModal(sim);
 
     const tenBtn = screen.getByTestId('recruit-modal-ten-btn') as HTMLButtonElement;
@@ -453,7 +455,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
   // ── 7. 招募资源扣除（FLOW-05-31 ~ FLOW-05-35） ──
 
   it(accTest('FLOW-05-31', '资源刚好够单抽 — 按钮可点击'), () => {
-    const sim = createRecruitSim({ tokenAmount: 0 }); // 初始 recruitToken=10，够单抽5
+    const sim = createRecruitSim({ tokenAmount: 0 }); // 初始 recruitToken=30，够单抽30次
     renderModal(sim);
 
     const singleBtn = screen.getByTestId('recruit-modal-single-btn') as HTMLButtonElement;
@@ -462,9 +464,10 @@ describe('FLOW-05 招贤馆集成测试', () => {
 
   it(accTest('FLOW-05-32', '资源不足 — 单抽按钮禁用'), () => {
     const sim = createRecruitSim({ tokenAmount: 0 });
-    // 消耗掉初始的 recruitToken（通过招募消耗）
-    sim.engine.recruit('normal', 1); // 消耗5
-    sim.engine.recruit('normal', 1); // 消耗5（初始10，现在耗尽）
+    // 消耗掉初始的 recruitToken（初始30，每次消耗1，招募30次耗尽）
+    for (let i = 0; i < 30; i++) {
+      sim.engine.recruit('normal', 1);
+    }
 
     renderModal(sim);
     const singleBtn = screen.getByTestId('recruit-modal-single-btn') as HTMLButtonElement;
@@ -479,7 +482,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
     await userEvent.click(screen.getByTestId('recruit-modal-single-btn'));
 
     const tokenAfter = sim.engine.getResourceAmount('recruitToken');
-    assertStrict(tokenAfter === tokenBefore - 5, 'FLOW-05-33', `余额应减少5，前: ${tokenBefore}，后: ${tokenAfter}`);
+    assertStrict(tokenAfter === tokenBefore - RECRUIT_COSTS.normal.amount, 'FLOW-05-33', `余额应减少${RECRUIT_COSTS.normal.amount}，前: ${tokenBefore}，后: ${tokenAfter}`);
   });
 
   it(accTest('FLOW-05-34', '连续招募多次 — 资源持续扣除'), async () => {
@@ -492,16 +495,18 @@ describe('FLOW-05 招贤馆集成测试', () => {
     await userEvent.click(singleBtn);
 
     const spent = tokenBefore - sim.engine.getResourceAmount('recruitToken');
-    assertStrict(spent >= 5, 'FLOW-05-34', `至少扣除一次招募费用，实际扣除 ${spent}`);
+    assertStrict(spent >= RECRUIT_COSTS.normal.amount * 2, 'FLOW-05-34', `至少扣除两次招募费用（${RECRUIT_COSTS.normal.amount * 2}），实际扣除 ${spent}`);
   });
 
   it(accTest('FLOW-05-35', '资源耗尽后按钮变为禁用'), async () => {
-    const sim = createRecruitSim({ tokenAmount: 0 }); // 初始10，够两次
+    const sim = createRecruitSim({ tokenAmount: 0 }); // 初始30，够30次单抽
     renderModal(sim);
 
     const singleBtn = screen.getByTestId('recruit-modal-single-btn');
-    await userEvent.click(singleBtn);
-    await userEvent.click(singleBtn);
+    // 消耗完所有30个招贤令（每次消耗1）
+    for (let i = 0; i < 30; i++) {
+      await userEvent.click(singleBtn);
+    }
 
     const tokenRemaining = sim.engine.getResourceAmount('recruitToken');
     assertStrict(tokenRemaining === 0, 'FLOW-05-35', `资源应已耗尽，剩余: ${tokenRemaining}`);
@@ -753,8 +758,8 @@ describe('FLOW-05 招贤馆集成测试', () => {
   });
 
   it(accTest('FLOW-05-54', '端到端 — 招募资源管理完整流程'), async () => {
-    // 使用较少资源(20)避免循环抽卡超时，同时足够验证免费+单抽+资源不足流程
-    const sim = createRecruitSim({ tokenAmount: 20 });
+    // 使用较少资源避免循环抽卡超时，同时足够验证免费+单抽+资源不足流程
+    const sim = createRecruitSim({ tokenAmount: 0 }); // 初始30个招贤令
     const tokenInitial = sim.engine.getResourceAmount('recruitToken');
 
     renderModal(sim);
@@ -764,18 +769,18 @@ describe('FLOW-05 招贤馆集成测试', () => {
     const afterFree = sim.engine.getResourceAmount('recruitToken');
     assertStrict(afterFree === tokenInitial, 'FLOW-05-54', '免费招募不应消耗资源');
 
-    // 2. 普通单抽（消耗5）
+    // 2. 普通单抽（消耗1）
     await userEvent.click(screen.getByTestId('recruit-modal-single-btn'));
     const afterSingle = sim.engine.getResourceAmount('recruitToken');
-    assertStrict(afterSingle === tokenInitial - 5, 'FLOW-05-54', `单抽后应减少5，实际: ${afterSingle}`);
+    assertStrict(afterSingle === tokenInitial - RECRUIT_COSTS.normal.amount, 'FLOW-05-54', `单抽后应减少${RECRUIT_COSTS.normal.amount}，实际: ${afterSingle}`);
 
-    // 3. 再抽几次直到资源不足（最多3次即可耗尽）
-    while (sim.engine.getResourceAmount('recruitToken') >= 5) {
+    // 3. 再抽几次直到资源不足（每次消耗1）
+    while (sim.engine.getResourceAmount('recruitToken') >= RECRUIT_COSTS.normal.amount) {
       await userEvent.click(screen.getByTestId('recruit-modal-single-btn'));
     }
 
     const finalToken = sim.engine.getResourceAmount('recruitToken');
-    assertStrict(finalToken < 5, 'FLOW-05-54', `资源应已不足单抽，剩余: ${finalToken}`);
+    assertStrict(finalToken < RECRUIT_COSTS.normal.amount, 'FLOW-05-54', `资源应已不足单抽，剩余: ${finalToken}`);
   });
 
   it(accTest('FLOW-05-55', '端到端 — initMidGameState招募系统状态完整'), () => {

@@ -11,6 +11,7 @@
  * @module panels/army/ArmyTab
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 // ─── Props ──────────────────────────────────
 interface ArmyTabProps {
@@ -42,7 +43,6 @@ const QUALITY_COLORS = HERO_QUALITY_COLORS;
 
 // ─── 主组件 ─────────────────────────────────
 const ArmyTab: React.FC<ArmyTabProps> = ({ engine, visible = true, onClose }) => {
-  if (!visible) return null;
   // 本地阵位状态：string[] 长度5，空字符串=空位
   const [slots, setSlots] = useState<string[]>(['', '', '', '', '']);
   const [message, setMessage] = useState<string | null>(null);
@@ -154,6 +154,7 @@ const ArmyTab: React.FC<ArmyTabProps> = ({ engine, visible = true, onClose }) =>
 
   // ── 渲染 ──
   return (
+    <SharedPanel visible={visible} onClose={onClose} title="军队" icon="🛡️" width="min(560px, 95vw)">
     <div style={S.container} data-testid="army-tab">
       {message && <div style={S.toast}>{message}</div>}
 
@@ -216,6 +217,7 @@ const ArmyTab: React.FC<ArmyTabProps> = ({ engine, visible = true, onClose }) =>
         <button style={S.btnSecondary} onClick={handleLoad}>📂 加载</button>
       </div>
     </div>
+    </SharedPanel>
   );
 };
 

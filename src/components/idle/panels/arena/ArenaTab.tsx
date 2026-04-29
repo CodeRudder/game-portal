@@ -7,6 +7,7 @@
  * @module panels/arena/ArenaTab
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 import './ArenaTab.css';
 
 // ─── Props ──────────────────────────────────
@@ -39,7 +40,6 @@ function getRankMeta(rankId: string) {
 
 // ─── 主组件 ─────────────────────────────────
 const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion, visible = true, onClose }) => {
-  if (!visible) return null;
   const [message, setMessage] = useState<string | null>(null);
   const [battleResult, setBattleResult] = useState<any>(null);
   const [showRanking, setShowRanking] = useState(false);
@@ -113,6 +113,7 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion, visible = 
 
   // ── 渲染 ──
   return (
+    <SharedPanel visible={visible} onClose={onClose} title="竞技场" icon="⚔️" width="min(560px, 95vw)">
     <div style={S.container} data-testid="arena-tab">
       {/* 赛季信息条 */}
       <div style={S.seasonBar}>
@@ -277,6 +278,7 @@ const ArenaTab: React.FC<ArenaTabProps> = ({ engine, snapshotVersion, visible = 
         </div>
       )}
     </div>
+    </SharedPanel>
   );
 };
 

@@ -342,4 +342,54 @@ export class AllianceSystem implements ISubsystem {
   } {
     return AllianceHelper.deserializeAlliance(data);
   }
+
+  // ── 实例状态管理（供 UI 直接调用） ──
+
+  /** 内部联盟数据实例 */
+  private _alliance: AllianceData | null = null;
+  /** 内部玩家联盟状态实例 */
+  private _playerState: AlliancePlayerState = createDefaultAlliancePlayerState();
+
+  /** 获取当前联盟数据 */
+  getAlliance(): AllianceData | null {
+    return this._alliance;
+  }
+
+  /** 获取当前玩家联盟状态 */
+  getPlayerState(): AlliancePlayerState {
+    return this._playerState;
+  }
+
+  /**
+   * 简化版创建联盟（UI 面板直接调用）
+   *
+   * 自动使用内部状态，无需外部传入 playerState/playerId 等参数。
+   * 成功后自动更新内部 _alliance 和 _playerState。
+   */
+  createAllianceSimple(
+    name: string,
+    playerName: string = '玩家',
+  ): { success: boolean; reason?: string } {
+    try {
+      const result = this.createAlliance(
+        this._playerState, name, '', 'player-1', playerName, Date.now(),
+      );
+      this._alliance = result.alliance;
+      this._playerState = result.playerState;
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, reason: e.message ?? '创建失败' };
+    }
+  }
+
+  /**
+   * 重置联盟数据（供存档加载使用）
+   *
+   * @param alliance - 联盟数据，null 表示无联盟
+   * @param playerState - 玩家联盟状态，不传则使用默认值
+   */
+  resetAllianceData(alliance: AllianceData | null, playerState?: AlliancePlayerState): void {
+    this._alliance = alliance;
+    if (playerState) this._playerState = playerState;
+  }
 }

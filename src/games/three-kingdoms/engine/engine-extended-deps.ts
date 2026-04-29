@@ -230,6 +230,12 @@ export function initR11Systems(systems: R11Systems, deps: ISystemDeps): void {
   systems.timedActivitySystem.init(deps);
   systems.endingSystem.init(deps);
   systems.globalStatisticsSystem.init(deps);
+  // 任务/邮件/活动/签到系统初始化
+  systems.questSystem.init(deps);
+  systems.mailSystem.init(deps);
+  systems.mailTemplateSystem.init(deps);
+  systems.activitySystem.init(deps);
+  systems.signInSystem.init(deps);
 }
 
 /**

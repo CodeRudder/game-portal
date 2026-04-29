@@ -95,7 +95,7 @@ describe('ACC-05 招贤馆验收集成测试', () => {
     const goldEl = screen.getByTestId('recruit-balance-gold');
     const tokenEl = screen.getByTestId('recruit-balance-token');
     assertStrict(goldEl.textContent!.includes('10,299'), 'ACC-05-04', `铜钱余额应显示 10,299（初始300+添加9999），实际: ${goldEl.textContent}`);
-    assertStrict(tokenEl.textContent!.includes('898'), 'ACC-05-04', `求贤令余额应显示 898（初始10+添加888），实际: ${tokenEl.textContent}`);
+    assertStrict(tokenEl.textContent!.includes('918'), 'ACC-05-04', `求贤令余额应显示 918（初始30+添加888），实际: ${tokenEl.textContent}`);
   });
 
   it(accTest('ACC-05-05', '消耗显示正确 — 普通单抽和十连消耗'), () => {
@@ -305,10 +305,10 @@ describe('ACC-05 招贤馆验收集成测试', () => {
   });
 
   it(accTest('ACC-05-31', '资源不够十连但够单抽 — 按钮状态区分'), () => {
-    // 普通招募消耗 recruitToken：单抽 5，十连 50
-    // 给 20 recruitToken：够单抽(5)但不够十连(50)
-    // 注意：引擎初始 recruitToken=10，所以给 10 即可达到 20
-    const sim = createRecruitSim({ goldAmount: 0, tokenAmount: 20 });
+    // 普通招募消耗 recruitToken：单抽 1，十连 10
+    // 给 0 recruitToken：初始30，消耗25后剩5，够单抽(1)但不够十连(10)
+    const sim = createRecruitSim({ goldAmount: 0, tokenAmount: 0 });
+    sim.engine.resource.consumeResource('recruitToken', 25); // 30 - 25 = 5
     const engine = sim.engine;
     render(<RecruitModal engine={engine} onClose={onClose} onRecruitComplete={onRecruitComplete} />);
     const singleBtn = screen.getByText('单次招募').closest('button')!;
@@ -398,8 +398,8 @@ describe('ACC-05 招贤馆验收集成测试', () => {
     render(<RecruitModal engine={engine} onClose={onClose} onRecruitComplete={onRecruitComplete} />);
     const goldEl = screen.getByTestId('recruit-balance-gold');
     const tokenEl = screen.getByTestId('recruit-balance-token');
-    // 初始 gold=300 + 添加 10000 = 10,300；初始 recruitToken=10 + 添加 500 = 510
+    // 初始 gold=300 + 添加 10000 = 10,300；初始 recruitToken=30 + 添加 500 = 530
     assertStrict(goldEl.textContent!.includes('10,300'), 'ACC-05-48', `铜钱余额应显示 10,300（初始300+添加10000），实际: ${goldEl.textContent}`);
-    assertStrict(tokenEl.textContent!.includes('510'), 'ACC-05-48', `求贤令余额应显示 510（初始10+添加500），实际: ${tokenEl.textContent}`);
+    assertStrict(tokenEl.textContent!.includes('530'), 'ACC-05-48', `求贤令余额应显示 530（初始30+添加500），实际: ${tokenEl.textContent}`);
   });
 });

@@ -75,6 +75,9 @@ import { TutorialSystem } from './tutorial/tutorial-system';
 import { SeasonSystem } from './season/SeasonSystem';
 import { applyGetters } from './engine-getters';
 import type { EngineGettersMixin } from './engine-getters-types';
+import { ActivityType, ActivityTaskType, MilestoneStatus } from '../core/activity/activity.types';
+import type { ActivityDef, ActivityTaskDef, ActivityMilestone, ActivityState } from '../core/activity/activity.types';
+import { createDefaultActivityState } from './activity/ActivityFactory';
 
 /**
  * 通过 interface 合并将 Mixin 方法类型注入 ThreeKingdomsEngine。
@@ -301,9 +304,82 @@ export class ThreeKingdomsEngine {
     initGuideSystems(this.guide, deps);
     this.tutorialGuide.init(deps);
     this.season.init(deps);
+    // ── 默认数据初始化 ──
+    this._initDefaultData();
     this.initialized = true; this.lastTickTime = Date.now();
     this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
     this.bus.emit('game:initialized', { isNewGame: true });
+  }
+
+  /**
+   * 初始化默认数据：任务/邮件/活动等系统在首次游戏时生成初始数据
+   *
+   * 仅在新游戏（非存档加载）时调用。
+   * 任务系统：刷新日常任务
+   * 邮件系统：发送欢迎邮件
+   * 活动系统：创建一个日常活动
+   */
+  private _initDefaultData(): void {
+    try {
+      // 任务系统：刷新日常任务，生成初始可接取任务
+      const questSys = this.r11.questSystem;
+      questSys.refreshDailyQuests();
+
+      // 邮件系统：发送欢迎邮件
+      const mailSys = this.r11.mailSystem;
+      mailSys.sendCustomMail(
+        'system',
+        '欢迎来到三国霸业',
+        '主公，天下大势，合久必分，分久必合。愿您招贤纳士，一统天下！\n\n点击附件领取新手礼包。',
+        '系统',
+        {
+          attachments: [
+            { resourceType: 'copper', amount: 1000 },
+            { resourceType: 'gold', amount: 50 },
+            { resourceType: 'recruitOrder', amount: 1 },
+          ],
+          retainSeconds: 7 * 24 * 3600, // 7天有效
+        },
+      );
+
+      // 活动系统：创建一个日常活动
+      const activitySys = this.r11.activitySystem;
+      const now = Date.now();
+      const dailyActivityDef: ActivityDef = {
+        id: 'daily_default',
+        name: '每日历练',
+        description: '完成每日任务，获取丰厚奖励',
+        type: ActivityType.DAILY,
+        startTime: now,
+        endTime: now + 24 * 3600 * 1000,
+        icon: '📋',
+      };
+      const dailyTaskDefs: ActivityTaskDef[] = [
+        {
+          id: 'daily_task_1', name: '完成1次战斗', description: '参与任意战斗1次',
+          taskType: ActivityTaskType.DAILY,
+          targetCount: 1, tokenReward: 10, pointReward: 20, resourceReward: { copper: 500 },
+        },
+        {
+          id: 'daily_task_2', name: '升级建筑', description: '升级任意建筑1次',
+          taskType: ActivityTaskType.DAILY,
+          targetCount: 1, tokenReward: 10, pointReward: 20, resourceReward: { copper: 500 },
+        },
+        {
+          id: 'daily_task_3', name: '招募武将', description: '招募武将1次',
+          taskType: ActivityTaskType.DAILY,
+          targetCount: 1, tokenReward: 15, pointReward: 30, resourceReward: { copper: 800 },
+        },
+      ];
+      const dailyMilestones: ActivityMilestone[] = [
+        { id: 'ms_1', requiredPoints: 50, status: MilestoneStatus.LOCKED, rewards: { copper: 1000 }, isFinal: false },
+        { id: 'ms_2', requiredPoints: 100, status: MilestoneStatus.LOCKED, rewards: { gold: 20 }, isFinal: true },
+      ];
+      const defaultState = createDefaultActivityState();
+      activitySys.startActivity(defaultState, dailyActivityDef, dailyTaskDefs, dailyMilestones, now);
+    } catch (_e) {
+      // 默认数据初始化失败不应阻塞游戏启动
+    }
   }
 
   // ── 游戏循环 ──

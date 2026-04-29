@@ -13,6 +13,7 @@
  * @module panels/expedition/ExpeditionTab
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 // ─── Props ──────────────────────────────────
 interface ExpeditionTabProps {
@@ -43,7 +44,6 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 
 // ─── 主组件 ─────────────────────────────────
 const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine, visible = true, onClose }) => {
-  if (!visible) return null;
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showResult, setShowResult] = useState(false);
@@ -147,6 +147,7 @@ const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine, visible = true, o
 
   // ── 渲染 ──
   return (
+    <SharedPanel visible={visible} onClose={onClose} title="远征" icon="🗺️" width="min(560px, 95vw)">
     <div style={S.container} data-testid="expedition-tab">
       {/* 提示 */}
       {message && <div style={S.toast}>{message}</div>}
@@ -279,6 +280,7 @@ const ExpeditionTab: React.FC<ExpeditionTabProps> = ({ engine, visible = true, o
         </div>
       )}
     </div>
+    </SharedPanel>
   );
 };
 

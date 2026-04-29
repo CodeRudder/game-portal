@@ -23,7 +23,7 @@ export const INITIAL_RESOURCES: Readonly<Resources> = {
   troops: 50,
   mandate: 0,
   techPoint: 0,
-  recruitToken: 10, // R5: 新手礼包 +10 个求贤令，让新玩家立即体验招募功能
+  recruitToken: 30, // v2: 新手礼包 30 个招贤令，配合消耗1/次让新玩家充分体验招募
   skillBook: 0,
 };
 
@@ -43,7 +43,7 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
   troops: 0,
   mandate: 0,
   techPoint: 0,
-  recruitToken: 0.002, // PRD v1.5 HER-10.2: 被动产出速率 0.002/秒（引擎实际值，4h在线/天经济模型）
+  recruitToken: 0.01, // v2: 从0.002提升到0.01，约100秒产1个，改善招贤令获取体验
   skillBook: 0,
 };
 

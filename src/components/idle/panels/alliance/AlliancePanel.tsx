@@ -74,7 +74,7 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
       return;
     }
     try {
-      const result = allianceSystem.createAlliance(name);
+      const result = allianceSystem.createAllianceSimple(name);
       if (result?.success) {
         flash(`联盟「${name}」创建成功！`);
         setShowCreateForm(false);

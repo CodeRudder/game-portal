@@ -21,6 +21,7 @@ import { formatNumber } from '@/components/idle/utils/formatNumber';
 /** 品质颜色（使用统一常量覆盖引擎默认值） */
 const RARITY_COLORS = EQUIP_QUALITY_COLORS;
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
+import SharedPanel from '@/components/idle/components/SharedPanel';
 
 // ─── Props ──────────────────────────────────
 interface EquipmentTabProps {
@@ -50,7 +51,6 @@ function fmt(n: number): string {
 
 // ─── 主组件 ─────────────────────────────────
 const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, visible = true, onClose }) => {
-  if (!visible) return null;
   const [subTab, setSubTab] = useState<SubTab>('bag');
   const [slotFilter, setSlotFilter] = useState<EquipmentSlot | null>(null);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
@@ -136,6 +136,7 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, vi
 
   // ── 渲染 ──
   return (
+    <SharedPanel visible={visible} onClose={onClose} title="装备" icon="⚔️" width="min(600px, 95vw)">
     <div style={S.container} data-testid="equipment-tab">
       {/* 子Tab导航 */}
       <div style={S.subTabs} className="tk-equipment-sub-tabs">
@@ -284,6 +285,7 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, vi
         </div>
       )}
     </div>
+    </SharedPanel>
   );
 };
 
