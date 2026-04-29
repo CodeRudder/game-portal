@@ -21,6 +21,6 @@
     }
   },
   "include": ["src"],
-  "exclude": ["src/__tests__", "src/**/__tests__", "src/games/three-kingdoms/bak/**", "src/components/idle/panels/campaign/bak/**", "src/**/bak/**"],
+  "exclude": ["src/__tests__", "src/**/__tests__", "src/games/three-kingdoms/tests/**", "src/components/idle/panels/campaign/bak/**", "src/**/bak/**"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

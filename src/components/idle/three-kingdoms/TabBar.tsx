@@ -3,10 +3,12 @@
  *
  * 职责：渲染底部导航 Tab 栏（建筑/武将/科技/关卡等）
  * 从 ThreeKingdomsGame.tsx 拆分出来
+ *
+ * v2 改造：移除「更多▼」下拉菜单（Portal浮层），
+ * 改为点击「更多」Tab 后在主内容区显示网格列表（MoreTab）。
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import type { FeatureMenuItem } from '@/components/idle/FeatureMenu';
 import CalendarDisplay from './CalendarDisplay';
 import type { Season, WeatherType } from '@/games/three-kingdoms/engine';
@@ -18,8 +20,8 @@ import type { Season, WeatherType } from '@/games/three-kingdoms/engine';
 /**
  * Tab 类型定义 — 与 Plan/PRD NAV-2 统一
  *
- * 7个一级Tab: 天下/出征/武将/科技/建筑/声望/更多▼
- * 其他功能（装备/名士/竞技/远征/军队）通过"更多▼"下拉菜单访问
+ * 7个一级Tab: 天下/出征/武将/科技/建筑/声望/更多
+ * 其他功能（装备/名士/竞技/远征/军队）通过「更多」Tab 在主内容区网格列表访问
  */
 export type TabId = 'map' | 'campaign' | 'hero' | 'tech' | 'building' | 'prestige' | 'more' | 'equipment' | 'npc' | 'arena' | 'expedition' | 'army';
 
@@ -33,7 +35,7 @@ export interface TabConfig {
 
 /**
  * 7个一级Tab — 与 Plan v1.0 #3 / PRD NAV-2 统一
- * 顺序: 天下/出征/武将/科技/建筑/声望/更多▼
+ * 顺序: 天下/出征/武将/科技/建筑/声望/更多
  */
 export const TABS: TabConfig[] = [
   { id: 'map', icon: '🗺️', label: '天下', available: true },
@@ -42,10 +44,10 @@ export const TABS: TabConfig[] = [
   { id: 'tech', icon: '📜', label: '科技', available: true },
   { id: 'building', icon: '🏰', label: '建筑', available: true },
   { id: 'prestige', icon: '👑', label: '声望', available: true },
-  { id: 'more', icon: '📋', label: '更多▼', available: true },
+  { id: 'more', icon: '📋', label: '更多', available: true },
 ];
 
-/** 功能菜单面板ID — 通过"更多▼"菜单访问 */
+/** 功能菜单面板ID — 通过「更多」Tab 网格列表访问 */
 export type FeaturePanelId = 'events' | 'quest' | 'shop' | 'mail' | 'achievement' | 'activity' | 'alliance' | 'prestige' | 'heritage' | 'social' | 'trade' | 'settings' | 'equipment' | 'npc' | 'arena' | 'expedition' | 'army';
 
 /** 功能菜单项配置（静态部分） — 4个功能区 A/B/C/D */
@@ -75,7 +77,7 @@ export const FEATURE_ITEMS: Array<Omit<FeatureMenuItem, 'badge'>> = [
 /** 已有独立Tab的功能映射 — 点击"更多"菜单项时跳转到对应Tab */
 export const FEATURE_TO_TAB: Record<string, TabId> = {
   worldmap: 'map',
-  // 以下功能不再有独立Tab，通过"更多▼"菜单打开面板
+  // 以下功能不再有独立Tab，通过「更多」Tab 网格列表打开面板
   // equipment, arena, expedition, npc, army 等通过 FeaturePanelId 访问
 };
 
@@ -107,16 +109,12 @@ export type TabBadges = Partial<Record<TabId, TabBadge>>;
 interface TabBarProps {
   /** 当前激活的 Tab */
   activeTab: TabId;
-  /** Tab 切换回调（非「更多▼」Tab 时触发） */
+  /** Tab 切换回调 */
   onTabChange: (tab: TabConfig) => void;
   /** 功能菜单项（含动态 badge） */
   featureMenuItems: FeatureMenuItem[];
   /** 功能菜单选择回调 */
   onFeatureSelect: (id: string) => void;
-  /** 「更多▼」Tab 下拉菜单开关回调（打开/关闭时触发） */
-  onMoreToggle?: (open: boolean) => void;
-  /** 「更多▼」下拉菜单是否打开（受控模式） */
-  moreMenuOpen?: boolean;
   /** 日历数据 */
   calendar: {
     date?: {
@@ -182,80 +180,11 @@ const TabBar: React.FC<TabBarProps> = ({
   onTabChange,
   featureMenuItems,
   onFeatureSelect,
-  onMoreToggle,
-  moreMenuOpen = false,
   calendar,
   tabBadges = {},
 }) => {
-  // ── 「更多▼」下拉菜单状态 ──
-  const menuRef = useRef<HTMLDivElement>(null);
-  const moreBtnRef = useRef<HTMLButtonElement>(null);
-  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
-
-  // ── 计算下拉菜单定位（Portal 渲染到 body，使用 fixed 定位） ──
-  const updateDropdownPosition = useCallback(() => {
-    if (!moreBtnRef.current) return;
-    const rect = moreBtnRef.current.getBoundingClientRect();
-    setDropdownStyle({
-      position: 'fixed',
-      bottom: window.innerHeight - rect.top + 6,
-      right: window.innerWidth - rect.right,
-      width: 260,
-      maxHeight: 420,
-    });
-  }, []);
-
-  // ── 菜单打开时计算位置 & 监听 resize/scroll ──
-  useEffect(() => {
-    if (!moreMenuOpen) return;
-    updateDropdownPosition();
-    window.addEventListener('resize', updateDropdownPosition);
-    window.addEventListener('scroll', updateDropdownPosition, true);
-    return () => {
-      window.removeEventListener('resize', updateDropdownPosition);
-      window.removeEventListener('scroll', updateDropdownPosition, true);
-    };
-  }, [moreMenuOpen, updateDropdownPosition]);
-
-  // ── 点击外部关闭下拉菜单（Portal 版本） ──
-  useEffect(() => {
-    if (!moreMenuOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      // 检查点击是否在"更多"按钮或下拉菜单之外
-      const clickedBtn = moreBtnRef.current?.contains(target);
-      const clickedMenu = menuRef.current?.contains(target);
-      if (!clickedBtn && !clickedMenu) {
-        onMoreToggle?.(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [moreMenuOpen, onMoreToggle]);
-
-  // ── ESC 关闭下拉菜单 ──
-  useEffect(() => {
-    if (!moreMenuOpen) return;
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onMoreToggle?.(false);
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [moreMenuOpen, onMoreToggle]);
-
-  // ── 「更多▼」Tab 点击处理 ──
-  const handleMoreClick = useCallback(() => {
-    onMoreToggle?.(!moreMenuOpen);
-  }, [moreMenuOpen, onMoreToggle]);
-
-  // ── 功能项选择 ──
-  const handleItemSelect = useCallback((id: string) => {
-    onFeatureSelect(id);
-    onMoreToggle?.(false);
-  }, [onFeatureSelect, onMoreToggle]);
-
-  // 计算总角标数
-  const totalBadge = featureMenuItems.reduce((sum, item) => sum + (item.badge ?? 0), 0);
+  // v2改造后：更多Tab是普通Tab，不再汇总featureMenuItems的badge
+  // badge在MoreTab内部各功能项上独立显示
 
   return (
     <div className="tk-tab-bar" data-testid="tab-bar">
@@ -263,83 +192,23 @@ const TabBar: React.FC<TabBarProps> = ({
         const badge = tabBadges[tab.id];
         const showBadge = badge && ((badge.count ?? 0) > 0 || badge.dot);
 
-        // 「更多▼」Tab — 特殊处理：点击弹出下拉菜单
+        // 「更多」Tab — 普通Tab，不显示功能菜单汇总badge
         if (tab.id === 'more') {
           return (
-            <div
+            <button
               key={tab.id}
-              className={`tk-tab-btn-wrapper ${moreMenuOpen ? 'tk-tab-btn-wrapper--open' : ''}`}
+              className={`tk-tab-btn ${activeTab === tab.id ? 'tk-tab-btn--active' : ''}`}
+              onClick={() => onTabChange(tab)}
+              aria-label={tab.label}
+              aria-selected={activeTab === tab.id}
+              role="tab"
+              data-testid={`tab-bar-${tab.id}`}
             >
-              <button
-                ref={moreBtnRef}
-                className={`tk-tab-btn ${moreMenuOpen ? 'tk-tab-btn--active' : ''}`}
-                onClick={handleMoreClick}
-                aria-label={tab.label}
-                aria-selected={moreMenuOpen}
-                aria-expanded={moreMenuOpen}
-                aria-haspopup="menu"
-                role="tab"
-                data-testid={`tab-bar-${tab.id}`}
-              >
-                <span className="tk-tab-icon-wrap">
-                  <span className="tk-tab-icon">{tab.icon}</span>
-                  {totalBadge > 0 && (
-                    <span
-                      className="tk-tab-badge tk-tab-badge--count"
-                      data-testid="tab-badge-count"
-                      aria-label={`${totalBadge}项待处理`}
-                    >
-                      {totalBadge > 99 ? '99+' : totalBadge}
-                    </span>
-                  )}
-                </span>
-                <span className="tk-tab-label">{tab.label}</span>
-              </button>
-
-              {/* 下拉功能菜单面板 — 通过 Portal 渲染到 body，避免 overflow:hidden 裁切 */}
-              {moreMenuOpen && typeof document !== 'undefined' && createPortal(
-                <div
-                  ref={menuRef}
-                  className="tk-more-dropdown"
-                  role="menu"
-                  aria-label="功能列表"
-                  data-testid="feature-menu-dropdown"
-                  style={dropdownStyle}
-                >
-                  <div className="tk-more-dropdown-header">
-                    <span className="tk-more-dropdown-title">功能大厅</span>
-                    <span className="tk-more-dropdown-count">{featureMenuItems.length}项功能</span>
-                  </div>
-                  <div className="tk-more-dropdown-list">
-                    {featureMenuItems.map(item => (
-                      <button
-                        key={item.id}
-                        className={`tk-more-dropdown-item ${!item.available ? 'tk-more-dropdown-item--disabled' : ''}`}
-                        onClick={() => handleItemSelect(item.id)}
-                        role="menuitem"
-                        disabled={!item.available}
-                        data-testid={`feature-menu-item-${item.id}`}
-                      >
-                        <span className="tk-more-dropdown-item-icon">{item.icon}</span>
-                        <div className="tk-more-dropdown-item-info">
-                          <span className="tk-more-dropdown-item-label">{item.label}</span>
-                          {item.description && (
-                            <span className="tk-more-dropdown-item-desc">{item.description}</span>
-                          )}
-                        </div>
-                        {item.badge && item.badge > 0 ? (
-                          <span className="tk-more-dropdown-item-badge">{item.badge}</span>
-                        ) : null}
-                        {!item.available && (
-                          <span className="tk-more-dropdown-item-locked">🔒</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>,
-                document.body,
-              )}
-            </div>
+              <span className="tk-tab-icon-wrap">
+                <span className="tk-tab-icon">{tab.icon}</span>
+              </span>
+              <span className="tk-tab-label">{tab.label}</span>
+            </button>
           );
         }
 

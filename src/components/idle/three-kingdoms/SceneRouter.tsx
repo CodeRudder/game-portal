@@ -25,6 +25,9 @@ import NPCInfoModal from '@/components/idle/panels/npc/NPCInfoModal';
 import type { NPCData } from '@/games/three-kingdoms/core/npc';
 import type { TabId, FeaturePanelId } from './TabBar';
 
+// ── 样式 ──
+import '@/components/idle/panels/more/MoreTab.css';
+
 // ─────────────────────────────────────────────
 // Props
 // ─────────────────────────────────────────────

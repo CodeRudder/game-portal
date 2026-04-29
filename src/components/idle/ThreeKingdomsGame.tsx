@@ -93,12 +93,7 @@ const ThreeKingdomsGame: React.FC = () => {
   // ── 功能面板状态 ──
   const [openFeature, setOpenFeature] = useState<FeaturePanelId | null>(null);
 
-  // ── 「更多▼」下拉菜单状态 ──
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-
-  const handleMoreToggle = useCallback((open: boolean) => {
-    setMoreMenuOpen(open);
-  }, []);
+  // ── 「更多」Tab 已改为在主内容区显示网格列表（MoreTab），不再需要下拉菜单状态 ──
 
   // ── 首次启动欢迎弹窗 ──
   const [showWelcome, setShowWelcome] = useState(false);
@@ -331,8 +326,6 @@ const ThreeKingdomsGame: React.FC = () => {
     setActiveTab(tab.id);
     // ACC-01-35 修复：切换Tab时自动关闭功能面板，避免内容重叠
     setOpenFeature(null);
-    // Bug-5修复：切换Tab时关闭更多菜单
-    setMoreMenuOpen(false);
   }, []);
 
   // ── 功能菜单选择 ──
@@ -343,8 +336,6 @@ const ThreeKingdomsGame: React.FC = () => {
     } else {
       setOpenFeature(id as FeaturePanelId);
     }
-    // 关闭「更多▼」下拉菜单
-    setMoreMenuOpen(false);
   }, []);
 
   // ── 功能面板关闭 ──
@@ -529,8 +520,6 @@ const ThreeKingdomsGame: React.FC = () => {
           onTabChange={handleTabChange}
           featureMenuItems={featureMenuItems}
           onFeatureSelect={handleFeatureSelect}
-          onMoreToggle={handleMoreToggle}
-          moreMenuOpen={moreMenuOpen}
           calendar={calendar}
           tabBadges={tabBadges}
         />

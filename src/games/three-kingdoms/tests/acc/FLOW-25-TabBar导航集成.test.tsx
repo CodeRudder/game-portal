@@ -1,13 +1,19 @@
 /**
  * FLOW-25 TabBar导航集成测试 — 真实TabBar组件渲染 + Tab切换/红点badge/选中状态/快速切换
  *
+ * v2 改造后：
+ * - "更多"Tab变为普通Tab，点击触发 onTabChange({ id: 'more' })
+ * - TabBar不再有 moreMenuOpen/onMoreToggle props
+ * - 不再有下拉菜单面板
+ * - 功能菜单由MoreTab组件在主内容区渲染
+ *
  * 【重要】本文件 render 真实 <TabBar /> 组件，通过 fireEvent 模拟 DOM 事件，
- * 不使用自建模拟类。验证 Tab 切换回调、更多菜单交互、Badge 显示等真实 React 行为。
+ * 不使用自建模拟类。验证 Tab 切换回调、Badge 显示等真实 React 行为。
  *
  * 覆盖范围：
  * - Tab渲染：7个Tab按钮可见、图标/标签正确
  * - Tab切换：点击Tab → onTabChange回调触发、参数正确
- * - 更多菜单：点击更多▼ → onMoreToggle(true)、再次点击→关闭
+ * - 更多Tab：点击"更多" → onTabChange({ id: 'more' })，与普通Tab一致
  * - Badge显示：数字badge、圆点badge、99+截断
  * - 快速切换：连续点击Tab不崩溃、回调序列正确
  * - 选中状态：当前Tab高亮（aria-selected=true）
@@ -49,15 +55,13 @@ function makeFeatureMenuItems(overrides: Array<Partial<FeatureMenuItem>> = []): 
   });
 }
 
-/** 构造 TabBar props */
+/** 构造 TabBar props — v2: 移除 moreMenuOpen/onMoreToggle */
 function makeTabBarProps(overrides: Record<string, any> = {}) {
   return {
     activeTab: 'map' as TabId,
     onTabChange: vi.fn(),
     featureMenuItems: makeFeatureMenuItems(),
     onFeatureSelect: vi.fn(),
-    onMoreToggle: vi.fn(),
-    moreMenuOpen: false,
     calendar: {
       date: {
         eraName: '建安',
@@ -118,7 +122,7 @@ describe('FLOW-25 TabBar导航集成测试', () => {
 
       const expectedLabels: Record<string, string> = {
         map: '天下', campaign: '出征', hero: '武将', tech: '科技',
-        building: '建筑', prestige: '声望', more: '更多▼',
+        building: '建筑', prestige: '声望', more: '更多',
       };
 
       for (const [id, label] of Object.entries(expectedLabels)) {
@@ -201,7 +205,7 @@ describe('FLOW-25 TabBar导航集成测试', () => {
     });
 
     it(accTest('FLOW-25-08', 'TabBar渲染 — 不同activeTab传入时高亮正确'), () => {
-      const activeTabs: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige'];
+      const activeTabs: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige', 'more'];
 
       for (const active of activeTabs) {
         cleanup();
@@ -298,126 +302,123 @@ describe('FLOW-25 TabBar导航集成测试', () => {
       assertStrict(call.available === true, 'FLOW-25-15', 'available应为true');
     });
 
-    it(accTest('FLOW-25-16', 'Tab切换 — 点击更多Tab不触发onTabChange'), () => {
+    it(accTest('FLOW-25-16', 'Tab切换 — 点击更多Tab → onTabChange(more)'), () => {
+      // v2改造后：点击更多Tab与普通Tab一致，触发onTabChange
       const onTabChange = vi.fn();
-      const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({ onTabChange, onMoreToggle })} />);
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
 
       fireEvent.click(getTabButton('more'));
 
-      assertStrict(onTabChange.mock.calls.length === 0, 'FLOW-25-16',
-        '点击更多Tab不应触发onTabChange');
-      assertStrict(onMoreToggle.mock.calls.length === 1, 'FLOW-25-16',
-        '点击更多Tab应触发onMoreToggle');
+      assertStrict(onTabChange.mock.calls.length === 1, 'FLOW-25-16',
+        '点击更多Tab应触发onTabChange');
+      const call = onTabChange.mock.calls[0][0] as TabConfig;
+      assertStrict(call.id === 'more', 'FLOW-25-16',
+        `回调参数id应为more，实际: ${call.id}`);
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // 3. 更多菜单交互（FLOW-25-17 ~ FLOW-25-24）
+  // 3. 更多Tab行为（FLOW-25-17 ~ FLOW-25-24）
+  // v2改造后：更多Tab是普通Tab，不再有下拉菜单交互
   // ═══════════════════════════════════════════════════════════
 
-  describe('3. 更多菜单交互', () => {
+  describe('3. 更多Tab行为', () => {
 
-    it(accTest('FLOW-25-17', '更多菜单 — 点击更多按钮 → onMoreToggle(true)'), () => {
-      const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({ moreMenuOpen: false, onMoreToggle })} />);
+    it(accTest('FLOW-25-17', '更多Tab — 点击后触发onTabChange(more)'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
 
       fireEvent.click(getTabButton('more'));
 
-      assertStrict(onMoreToggle.mock.calls.length === 1, 'FLOW-25-17', 'onMoreToggle应被调用');
-      assertStrict(
-        onMoreToggle.mock.calls[0][0] === true,
-        'FLOW-25-17',
-        `参数应为true，实际: ${onMoreToggle.mock.calls[0][0]}`,
-      );
+      assertStrict(onTabChange.mock.calls.length === 1, 'FLOW-25-17', 'onTabChange应被调用');
+      const call = onTabChange.mock.calls[0][0] as TabConfig;
+      assertStrict(call.id === 'more', 'FLOW-25-17', '参数id应为more');
     });
 
-    it(accTest('FLOW-25-18', '更多菜单 — 菜单展开时点击更多 → onMoreToggle(false)'), () => {
-      const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({ moreMenuOpen: true, onMoreToggle })} />);
+    it(accTest('FLOW-25-18', '更多Tab — 选中时aria-selected=true'), () => {
+      render(<TabBar {...makeTabBarProps({ activeTab: 'more' })} />);
 
-      fireEvent.click(getTabButton('more'));
-
-      assertStrict(onMoreToggle.mock.calls.length === 1, 'FLOW-25-18', 'onMoreToggle应被调用');
+      const moreBtn = getTabButton('more');
       assertStrict(
-        onMoreToggle.mock.calls[0][0] === false,
+        moreBtn.getAttribute('aria-selected') === 'true',
         'FLOW-25-18',
-        `参数应为false，实际: ${onMoreToggle.mock.calls[0][0]}`,
+        '更多Tab选中时aria-selected应为true',
       );
     });
 
-    it(accTest('FLOW-25-19', '更多菜单 — 展开时下拉面板可见'), () => {
-      render(<TabBar {...makeTabBarProps({ moreMenuOpen: true })} />);
-
-      const dropdown = screen.getByTestId('feature-menu-dropdown');
-      // TODO: 需要Playwright E2E验证视觉可见性 — jsdom无法检测CSS class造成的overflow:hidden裁切
-      assertInDOM(dropdown, 'FLOW-25-19', '功能菜单下拉面板');
-    });
-
-    it(accTest('FLOW-25-20', '更多菜单 — 关闭时下拉面板不存在'), () => {
-      render(<TabBar {...makeTabBarProps({ moreMenuOpen: false })} />);
+    it(accTest('FLOW-25-19', '更多Tab — 无下拉面板DOM'), () => {
+      // v2改造后：不应有下拉面板
+      render(<TabBar {...makeTabBarProps()} />);
 
       const dropdown = screen.queryByTestId('feature-menu-dropdown');
-      assertStrict(dropdown === null, 'FLOW-25-20',
-        '关闭时下拉面板不应存在');
+      assertStrict(dropdown === null, 'FLOW-25-19',
+        '不应有feature-menu-dropdown元素');
     });
 
-    it(accTest('FLOW-25-21', '更多菜单 — 展开时显示所有16个功能项'), () => {
-      render(<TabBar {...makeTabBarProps({ moreMenuOpen: true })} />);
+    it(accTest('FLOW-25-20', '更多Tab — 无aria-expanded属性'), () => {
+      // v2改造后：更多Tab是普通Tab，不再有aria-expanded
+      render(<TabBar {...makeTabBarProps()} />);
 
+      const moreBtn = getTabButton('more');
+      // 更多Tab不应有aria-haspopup属性（不再是下拉菜单触发器）
+      assertStrict(
+        moreBtn.getAttribute('aria-haspopup') === null,
+        'FLOW-25-20',
+        '更多Tab不应有aria-haspopup属性',
+      );
+    });
+
+    it(accTest('FLOW-25-21', '更多Tab — 无featureMenuItems渲染到TabBar'), () => {
+      // v2改造后：功能菜单项不在TabBar中渲染，而是在MoreTab中
+      render(<TabBar {...makeTabBarProps()} />);
+
+      // 不应有feature-menu-item-*的DOM元素
       for (const item of FEATURE_ITEMS) {
-        const menuItem = screen.getByTestId(`feature-menu-item-${item.id}`);
-        assertInDOM(menuItem, 'FLOW-25-21', `功能项 ${item.id}`);
+        const menuItem = screen.queryByTestId(`feature-menu-item-${item.id}`);
+        assertStrict(menuItem === null, 'FLOW-25-21',
+          `不应有feature-menu-item-${item.id}元素`);
       }
     });
 
-    it(accTest('FLOW-25-22', '更多菜单 — 点击功能项 → onFeatureSelect调用'), () => {
+    it(accTest('FLOW-25-22', '更多Tab — onFeatureSelect不通过TabBar触发'), () => {
+      // v2改造后：onFeatureSelect由MoreTab组件触发，不通过TabBar
       const onFeatureSelect = vi.fn();
-      const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({
-        moreMenuOpen: true,
-        onFeatureSelect,
-        onMoreToggle,
-      })} />);
+      render(<TabBar {...makeTabBarProps({ onFeatureSelect })} />);
 
-      fireEvent.click(screen.getByTestId('feature-menu-item-shop'));
-
-      assertStrict(onFeatureSelect.mock.calls.length === 1, 'FLOW-25-22', 'onFeatureSelect应被调用');
-      assertStrict(
-        onFeatureSelect.mock.calls[0][0] === 'shop',
-        'FLOW-25-22',
-        `参数应为'shop'，实际: ${onFeatureSelect.mock.calls[0][0]}`,
-      );
-      assertStrict(onMoreToggle.mock.calls.length >= 1, 'FLOW-25-22', '选择后应触发onMoreToggle关闭菜单');
+      // 点击更多Tab不应触发onFeatureSelect
+      fireEvent.click(getTabButton('more'));
+      assertStrict(onFeatureSelect.mock.calls.length === 0, 'FLOW-25-22',
+        '点击更多Tab不应触发onFeatureSelect');
     });
 
-    it(accTest('FLOW-25-23', '更多菜单 — aria-expanded状态切换'), () => {
-      const { rerender } = render(
-        <TabBar {...makeTabBarProps({ moreMenuOpen: false })} />
-      );
-      const moreBtn = getTabButton('more');
-      assertStrict(
-        moreBtn.getAttribute('aria-expanded') === 'false',
-        'FLOW-25-23',
-        '关闭时aria-expanded应为false',
-      );
+    it(accTest('FLOW-25-23', '更多Tab — 与其他Tab行为一致'), () => {
+      // 验证更多Tab与普通Tab行为一致
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
 
-      rerender(<TabBar {...makeTabBarProps({ moreMenuOpen: true })} />);
-      const moreBtnOpen = getTabButton('more');
-      assertStrict(
-        moreBtnOpen.getAttribute('aria-expanded') === 'true',
-        'FLOW-25-23',
-        '展开时aria-expanded应为true',
-      );
+      // 点击更多Tab
+      fireEvent.click(getTabButton('more'));
+      const moreCall = onTabChange.mock.calls[0][0] as TabConfig;
+
+      // 点击建筑Tab
+      fireEvent.click(getTabButton('building'));
+      const buildingCall = onTabChange.mock.calls[1][0] as TabConfig;
+
+      // 两者都应触发onTabChange，参数结构一致
+      assertStrict(!!moreCall.id, 'FLOW-25-23', '更多Tab回调应有id');
+      assertStrict(!!moreCall.icon, 'FLOW-25-23', '更多Tab回调应有icon');
+      assertStrict(!!moreCall.label, 'FLOW-25-23', '更多Tab回调应有label');
+      assertStrict(!!buildingCall.id, 'FLOW-25-23', '建筑Tab回调应有id');
     });
 
-    it(accTest('FLOW-25-24', '更多菜单 — aria-haspopup=menu'), () => {
+    it(accTest('FLOW-25-24', '更多Tab — 不再有aria-haspopup'), () => {
       render(<TabBar {...makeTabBarProps()} />);
       const moreBtn = getTabButton('more');
+      // v2改造后：更多Tab是普通Tab，没有aria-haspopup
       assertStrict(
-        moreBtn.getAttribute('aria-haspopup') === 'menu',
+        moreBtn.getAttribute('aria-haspopup') === null,
         'FLOW-25-24',
-        '更多按钮应有aria-haspopup=menu',
+        '更多Tab不应有aria-haspopup',
       );
     });
   });
@@ -485,7 +486,9 @@ describe('FLOW-25 TabBar导航集成测试', () => {
       assertStrict(!!badge99, 'FLOW-25-30', 'count=99应显示"99"');
     });
 
-    it(accTest('FLOW-25-31', 'Badge — 更多Tab汇总badge'), () => {
+    it(accTest('FLOW-25-31', 'Badge — 更多Tab不显示下拉菜单汇总badge'), () => {
+      // v2改造后：更多Tab是普通Tab，不再汇总featureMenuItems的badge
+      // featureMenuItems的badge在MoreTab内部各功能项上显示
       const featureMenuItems = makeFeatureMenuItems([
         { id: 'quest', badge: 3 },
         { id: 'mail', badge: 5 },
@@ -493,13 +496,10 @@ describe('FLOW-25 TabBar导航集成测试', () => {
       render(<TabBar {...makeTabBarProps({ featureMenuItems })} />);
 
       const moreBtn = getTabButton('more');
+      // v2改造后：更多Tab不再显示汇总badge（badge在MoreTab内部）
       const badgeInMore = moreBtn.querySelector('[data-testid="tab-badge-count"]');
-      assertStrict(!!badgeInMore, 'FLOW-25-31', '更多Tab应显示汇总badge');
-      assertStrict(
-        badgeInMore?.textContent === '8',
-        'FLOW-25-31',
-        `汇总badge应为8，实际: ${badgeInMore?.textContent}`,
-      );
+      assertStrict(!badgeInMore, 'FLOW-25-31',
+        'v2改造后：更多Tab不应显示featureMenuItems汇总badge');
     });
 
     it(accTest('FLOW-25-32', 'Badge — 多个Tab同时有badge'), () => {
@@ -525,17 +525,17 @@ describe('FLOW-25 TabBar导航集成测试', () => {
 
   describe('5. 快速切换与回调序列', () => {
 
-    it(accTest('FLOW-25-33', '快速切换 — 连续点击6个Tab，回调序列正确'), () => {
+    it(accTest('FLOW-25-33', '快速切换 — 连续点击7个Tab，回调序列正确'), () => {
       const onTabChange = vi.fn();
       render(<TabBar {...makeTabBarProps({ onTabChange })} />);
 
-      const tabs: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige'];
+      const tabs: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige', 'more'];
       for (const tab of tabs) {
         fireEvent.click(getTabButton(tab));
       }
 
-      assertStrict(onTabChange.mock.calls.length === 6, 'FLOW-25-33',
-        `应调用6次，实际: ${onTabChange.mock.calls.length}`);
+      assertStrict(onTabChange.mock.calls.length === 7, 'FLOW-25-33',
+        `应调用7次，实际: ${onTabChange.mock.calls.length}`);
 
       for (let i = 0; i < tabs.length; i++) {
         const call = onTabChange.mock.calls[i][0] as TabConfig;
@@ -573,32 +573,41 @@ describe('FLOW-25 TabBar导航集成测试', () => {
       );
     });
 
-    it(accTest('FLOW-25-36', '快速切换 — 更多菜单toggle回调序列'), () => {
-      const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({ onMoreToggle })} />);
+    it(accTest('FLOW-25-36', '快速切换 — 更多Tab与其他Tab交替点击'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
 
       fireEvent.click(getTabButton('more'));
       fireEvent.click(getTabButton('more'));
       fireEvent.click(getTabButton('more'));
 
-      assertStrict(onMoreToggle.mock.calls.length === 3, 'FLOW-25-36',
-        `应调用3次onMoreToggle，实际: ${onMoreToggle.mock.calls.length}`);
+      assertStrict(onTabChange.mock.calls.length === 3, 'FLOW-25-36',
+        `应调用3次onTabChange，实际: ${onTabChange.mock.calls.length}`);
+      // 所有调用都应是more
+      for (const call of onTabChange.mock.calls) {
+        assertStrict((call[0] as TabConfig).id === 'more', 'FLOW-25-36',
+          '每次点击更多Tab都应回调more');
+      }
     });
 
-    it(accTest('FLOW-25-37', '快速切换 — 混合Tab和更多菜单交互'), () => {
+    it(accTest('FLOW-25-37', '快速切换 — 混合Tab交互'), () => {
       const onTabChange = vi.fn();
-      const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({ onTabChange, onMoreToggle })} />);
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
 
       fireEvent.click(getTabButton('hero'));
       fireEvent.click(getTabButton('more'));
       fireEvent.click(getTabButton('campaign'));
       fireEvent.click(getTabButton('more'));
 
-      assertStrict(onTabChange.mock.calls.length === 2, 'FLOW-25-37',
-        `onTabChange应调用2次，实际: ${onTabChange.mock.calls.length}`);
-      assertStrict(onMoreToggle.mock.calls.length === 2, 'FLOW-25-37',
-        `onMoreToggle应调用2次，实际: ${onMoreToggle.mock.calls.length}`);
+      assertStrict(onTabChange.mock.calls.length === 4, 'FLOW-25-37',
+        `onTabChange应调用4次，实际: ${onTabChange.mock.calls.length}`);
+
+      const expectedIds = ['hero', 'more', 'campaign', 'more'];
+      for (let i = 0; i < expectedIds.length; i++) {
+        const call = onTabChange.mock.calls[i][0] as TabConfig;
+        assertStrict(call.id === expectedIds[i], 'FLOW-25-37',
+          `第${i + 1}次调用id应为${expectedIds[i]}，实际: ${call.id}`);
+      }
     });
 
     it(accTest('FLOW-25-38', '快速切换 — Tab配置顺序与TABS常量一致'), () => {
@@ -637,13 +646,11 @@ describe('FLOW-25 TabBar导航集成测试', () => {
     });
 
     it(accTest('FLOW-25-41', '边界 — featureMenuItems为空数组'), () => {
+      // v2改造后：featureMenuItems不再用于TabBar渲染，空数组不影响
       const { container } = render(
-        <TabBar {...makeTabBarProps({ featureMenuItems: [], moreMenuOpen: true })} />
+        <TabBar {...makeTabBarProps({ featureMenuItems: [] })} />
       );
       assertStrict(!!container, 'FLOW-25-41', '空featureMenuItems应正常渲染');
-
-      const dropdown = screen.queryByTestId('feature-menu-dropdown');
-      assertStrict(!!dropdown, 'FLOW-25-41', '下拉面板应存在');
     });
 
     it(accTest('FLOW-25-42', '边界 — TABS常量不可变（7个Tab）'), () => {
@@ -665,35 +672,31 @@ describe('FLOW-25 TabBar导航集成测试', () => {
       }
     });
 
-    it(accTest('FLOW-25-45', '边界 — 功能菜单项badge显示'), () => {
-      const featureMenuItems = makeFeatureMenuItems([
-        { id: 'quest', badge: 5 },
-      ]);
-      render(<TabBar {...makeTabBarProps({ featureMenuItems, moreMenuOpen: true })} />);
-
-      const questItem = screen.getByTestId('feature-menu-item-quest');
-      const badgeEl = questItem.querySelector('.tk-more-dropdown-item-badge');
-      assertStrict(!!badgeEl, 'FLOW-25-45', 'quest项应显示badge');
-      assertStrict(badgeEl?.textContent === '5', 'FLOW-25-45',
-        `badge应为5，实际: ${badgeEl?.textContent}`);
+    it(accTest('FLOW-25-45', '边界 — 更多Tab标签为"更多"（无▼符号）'), () => {
+      // v2改造后：更多Tab标签从"更多▼"改为"更多"
+      const moreTab = TABS.find(t => t.id === 'more');
+      assertStrict(!!moreTab, 'FLOW-25-45', '应有more Tab');
+      assertStrict(moreTab!.label === '更多', 'FLOW-25-45',
+        `更多Tab标签应为"更多"，实际: "${moreTab!.label}"`);
     });
 
-    it(accTest('FLOW-25-46', '边界 — 不可用功能项disabled'), () => {
-      const featureMenuItems = makeFeatureMenuItems([
-        { id: 'settings', available: false },
-      ]);
-      render(<TabBar {...makeTabBarProps({ featureMenuItems, moreMenuOpen: true })} />);
+    it(accTest('FLOW-25-46', '边界 — 更多Tab不渲染功能菜单项到TabBar'), () => {
+      // v2改造后：功能菜单项由MoreTab组件渲染，不在TabBar中
+      render(<TabBar {...makeTabBarProps()} />);
 
-      const settingsItem = screen.getByTestId('feature-menu-item-settings');
-      assertStrict(settingsItem.hasAttribute('disabled'), 'FLOW-25-46',
-        '不可用项应有disabled属性');
+      // 不应有feature-menu-dropdown
+      const dropdown = screen.queryByTestId('feature-menu-dropdown');
+      assertStrict(dropdown === null, 'FLOW-25-46',
+        '不应有feature-menu-dropdown');
     });
 
-    it(accTest('FLOW-25-47', '边界 — 更多菜单功能大厅标题'), () => {
-      render(<TabBar {...makeTabBarProps({ moreMenuOpen: true })} />);
+    it(accTest('FLOW-25-47', '边界 — 更多Tab不显示功能大厅标题'), () => {
+      // v2改造后：功能大厅标题在MoreTab组件中，不在TabBar中
+      render(<TabBar {...makeTabBarProps()} />);
 
-      const title = screen.getByText('功能大厅');
-      assertInDOM(title, 'FLOW-25-47', '功能大厅标题');
+      const title = screen.queryByText('功能大厅');
+      assertStrict(title === null, 'FLOW-25-47',
+        'TabBar中不应有功能大厅标题');
     });
 
     it(accTest('FLOW-25-48', '边界 — 引擎子系统通过Tab可达'), () => {

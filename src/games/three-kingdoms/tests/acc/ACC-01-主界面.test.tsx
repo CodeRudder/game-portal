@@ -14,6 +14,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { accTest, assertStrict, assertInDOM, assertContainsText } from './acc-test-utils';
 
 import TabBar, { TABS, FEATURE_ITEMS } from '@/components/idle/three-kingdoms/TabBar';
+import MoreTab from '@/components/idle/panels/more/MoreTab';
 import type { FeatureMenuItem } from '@/components/idle/FeatureMenu';
 import WelcomeModal from '@/components/idle/three-kingdoms/WelcomeModal';
 import OfflineRewardModal from '@/components/idle/three-kingdoms/OfflineRewardModal';
@@ -218,7 +219,7 @@ describe('ACC-01 主界面', () => {
       expect(screen.getByText('科技')).toBeInTheDocument();
       expect(screen.getByText('建筑')).toBeInTheDocument();
       expect(screen.getByText('声望')).toBeInTheDocument();
-      expect(screen.getByText(/更多▼/)).toBeInTheDocument();
+      expect(screen.getByText(/更多/)).toBeInTheDocument();
     });
 
     it(accTest('ACC-01-06', '日历显示 — 季节信息可见'), () => {
@@ -313,31 +314,35 @@ describe('ACC-01 主界面', () => {
       expect(onTabChange).toHaveBeenCalledWith(expect.objectContaining({ id: 'prestige' }));
     });
 
-    it(accTest('ACC-01-15', '更多▼下拉菜单 — 点击展开'), () => {
+    it(accTest('ACC-01-15', '更多Tab — 点击触发onTabChange(more)'), () => {
+      // v2改造后：点击"更多"Tab变为普通Tab切换，不再有下拉菜单
       const onTabChange = vi.fn();
-      const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({ onTabChange })} moreMenuOpen={false} onMoreToggle={onMoreToggle} />);
-      // 初始状态：更多菜单未展开，菜单项不可见
-      expect(screen.queryByText('商店')).not.toBeInTheDocument();
-      // 点击"更多▼"按钮触发展开
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
+      // 点击"更多"按钮触发Tab切换
       const moreBtn = screen.getByTestId('tab-bar-more');
       fireEvent.click(moreBtn);
-      // 验证 onMoreToggle 被调用（参数为 true，即打开菜单）
-      expect(onMoreToggle).toHaveBeenCalledWith(true);
+      // 验证 onTabChange 被调用（参数为 { id: 'more' }）
+      expect(onTabChange).toHaveBeenCalledWith(expect.objectContaining({ id: 'more' }));
     });
 
-    it(accTest('ACC-01-16', '更多▼菜单 — 打开功能面板'), () => {
-      const onTabChange = vi.fn();
-      const onMoreToggle = vi.fn();
-      const props = makeTabBarProps({ onTabChange });
-      render(<TabBar {...props} moreMenuOpen={true} onMoreToggle={onMoreToggle} />);
-      // moreMenuOpen=true 时菜单项可见，点击商店菜单项
-      const shopItem = screen.getByText('商店');
-      fireEvent.click(shopItem);
-      // 验证 onFeatureSelect 被调用（传入 'shop'）
-      expect(props.onFeatureSelect).toHaveBeenCalledWith('shop');
-      // 验证 onMoreToggle 被调用关闭菜单
-      expect(onMoreToggle).toHaveBeenCalledWith(false);
+    it(accTest('ACC-01-16', '更多Tab — SceneRouter渲染MoreTab后点击功能项'), () => {
+      // v2改造后：功能面板通过MoreTab组件的网格列表打开
+      // 验证MoreTab渲染并可以点击功能项
+      const onOpenPanel = vi.fn();
+      const mockEngine = {
+        getQuestSystem: vi.fn(() => ({ getClaimableCount: () => 0 })),
+        getMailSystem: vi.fn(() => ({ getUnreadCount: () => 0 })),
+        getAchievementSystem: vi.fn(() => ({ getClaimableCount: () => 0 })),
+        getActivitySystem: vi.fn(() => ({ getActiveCount: () => 0 })),
+        getFriendSystem: vi.fn(() => ({ getUnreadCount: () => 0 })),
+        getTradeSystem: vi.fn(() => ({ getActiveCaravanCount: () => 0 })),
+      } as any;
+      render(<MoreTab engine={mockEngine} onOpenPanel={onOpenPanel} />);
+      // 点击商店功能项
+      const shopBtn = screen.getByLabelText('商店');
+      fireEvent.click(shopBtn);
+      // 验证 onOpenPanel 被调用（传入 'shop'）
+      expect(onOpenPanel).toHaveBeenCalledWith('shop');
     });
 
     it(accTest('ACC-01-17', '功能面板关闭'), () => {
@@ -364,14 +369,22 @@ describe('ACC-01 主界面', () => {
       fireEvent.click(detailBtn);
     });
 
-    it(accTest('ACC-01-19', '更多Tab网格视图'), () => {
-      const onTabChange = vi.fn();
-      const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({ onTabChange })} moreMenuOpen={true} onMoreToggle={onMoreToggle} />);
-      // moreMenuOpen=true 时验证功能菜单项存在
-      expect(screen.getByText('任务')).toBeInTheDocument();
-      expect(screen.getByText('商店')).toBeInTheDocument();
-      expect(screen.getByText('邮件')).toBeInTheDocument();
+    it(accTest('ACC-01-19', '更多Tab网格视图 — MoreTab渲染功能项'), () => {
+      // v2改造后：更多Tab通过MoreTab组件渲染网格列表
+      const onOpenPanel = vi.fn();
+      const mockEngine = {
+        getQuestSystem: vi.fn(() => ({ getClaimableCount: () => 0 })),
+        getMailSystem: vi.fn(() => ({ getUnreadCount: () => 0 })),
+        getAchievementSystem: vi.fn(() => ({ getClaimableCount: () => 0 })),
+        getActivitySystem: vi.fn(() => ({ getActiveCount: () => 0 })),
+        getFriendSystem: vi.fn(() => ({ getUnreadCount: () => 0 })),
+        getTradeSystem: vi.fn(() => ({ getActiveCaravanCount: () => 0 })),
+      } as any;
+      render(<MoreTab engine={mockEngine} onOpenPanel={onOpenPanel} />);
+      // MoreTab渲染后功能项可见
+      expect(screen.getByLabelText('任务')).toBeInTheDocument();
+      expect(screen.getByLabelText('商店')).toBeInTheDocument();
+      expect(screen.getByLabelText('邮件')).toBeInTheDocument();
     });
   });
 
@@ -571,9 +584,9 @@ describe('ACC-01 主界面', () => {
     it(accTest('ACC-01-35', '同时打开功能面板和Tab切换'), () => {
       const onTabChange = vi.fn();
       render(<TabBar {...makeTabBarProps({ onTabChange })} />);
-      // 打开更多菜单
-      fireEvent.click(screen.getByText(/更多▼/));
-      // 再点击Tab
+      // v2改造后：更多Tab是普通Tab切换，不再有下拉菜单
+      fireEvent.click(screen.getByText(/更多/));
+      // 再点击其他Tab
       fireEvent.click(screen.getByText('武将'));
       expect(onTabChange).toHaveBeenCalledWith(expect.objectContaining({ id: 'hero' }));
     });
@@ -657,7 +670,7 @@ describe('ACC-01 主界面', () => {
       expect(screen.getByText('科技')).toBeInTheDocument();
       expect(screen.getByText('建筑')).toBeInTheDocument();
       expect(screen.getByText('声望')).toBeInTheDocument();
-      expect(screen.getByText(/更多▼/)).toBeInTheDocument();
+      expect(screen.getByText('更多')).toBeInTheDocument();
     });
 
     it(accTest('ACC-01-43', 'Tab触摸切换'), () => {
@@ -667,11 +680,20 @@ describe('ACC-01 主界面', () => {
       expect(onTabChange).toHaveBeenCalledWith(expect.objectContaining({ id: 'hero' }));
     });
 
-    it(accTest('ACC-01-44', '更多▼菜单手机端'), () => {
-      const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps()} moreMenuOpen={true} onMoreToggle={onMoreToggle} />);
-      // moreMenuOpen=true 时功能菜单项应可见
-      expect(screen.getByText('商店')).toBeInTheDocument();
+    it(accTest('ACC-01-44', '更多Tab手机端 — MoreTab渲染功能项'), () => {
+      // v2改造后：更多Tab通过MoreTab渲染网格列表
+      const onOpenPanel = vi.fn();
+      const mockEngine = {
+        getQuestSystem: vi.fn(() => ({ getClaimableCount: () => 0 })),
+        getMailSystem: vi.fn(() => ({ getUnreadCount: () => 0 })),
+        getAchievementSystem: vi.fn(() => ({ getClaimableCount: () => 0 })),
+        getActivitySystem: vi.fn(() => ({ getActiveCount: () => 0 })),
+        getFriendSystem: vi.fn(() => ({ getUnreadCount: () => 0 })),
+        getTradeSystem: vi.fn(() => ({ getActiveCaravanCount: () => 0 })),
+      } as any;
+      render(<MoreTab engine={mockEngine} onOpenPanel={onOpenPanel} />);
+      // MoreTab渲染后功能项可见
+      expect(screen.getByLabelText('商店')).toBeInTheDocument();
     });
 
     it(accTest('ACC-01-45', '功能面板手机端全屏'), () => {

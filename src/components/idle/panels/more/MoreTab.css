@@ -1,0 +1,158 @@
+/**
+ * MoreTab — 更多功能网格列表样式
+ *
+ * 4列网格布局（PC端），2列（手机端）
+ * 按4区分组显示，每组有分组标题
+ */
+
+/* ═══════════════════════════════════════════
+   容器
+   ═══════════════════════════════════════════ */
+.tk-more-tab {
+  padding: 16px;
+  color: #e8e0d0;
+  min-height: 100%;
+  overflow-y: auto;
+}
+
+.tk-more-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #d4a574;
+  margin-bottom: 16px;
+}
+
+/* ═══════════════════════════════════════════
+   分组
+   ═══════════════════════════════════════════ */
+.tk-more-group {
+  margin-bottom: 20px;
+}
+
+.tk-more-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-gold, #C9A84C);
+  margin-bottom: 10px;
+  padding-left: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════
+   网格 — 4列（PC端）
+   ═══════════════════════════════════════════ */
+.tk-more-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+/* ═══════════════════════════════════════════
+   功能卡片
+   ═══════════════════════════════════════════ */
+.tk-more-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--tk-radius-lg, 8px);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  color: inherit;
+  font-family: inherit;
+}
+
+.tk-more-card:hover {
+  background: rgba(200, 168, 76, 0.1);
+  border-color: rgba(200, 168, 76, 0.25);
+}
+
+.tk-more-card:active {
+  background: rgba(200, 168, 76, 0.18);
+  transform: scale(0.97);
+}
+
+.tk-more-card--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tk-more-card--disabled:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tk-more-card-icon {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.tk-more-card-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #c8c0b0;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════
+   红点 Badge
+   ═══════════════════════════════════════════ */
+.tk-more-card-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #e84040;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════
+   响应式 — 手机端 2列
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-more-tab {
+    padding: 12px 8px;
+  }
+
+  .tk-more-title {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .tk-more-group-title {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .tk-more-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .tk-more-card {
+    padding: 14px 8px;
+    gap: 6px;
+  }
+
+  .tk-more-card-icon {
+    font-size: 26px;
+  }
+
+  .tk-more-card-label {
+    font-size: 12px;
+  }
+}
