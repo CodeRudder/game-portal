@@ -267,7 +267,7 @@ describe('FLOW-16 活动系统集成测试', () => {
         makeTaskDef({ id: 't2', name: '收集资源', targetCount: 20, taskType: ActivityTaskType.CUMULATIVE }),
       ];
 
-      const newState = activitySys.startActivity(state, def, tasks, []);
+      const newState = activitySys.startActivity(state, def, tasks, [], Date.now());
       const instance = newState.activities['act-join-001'];
 
       assertStrict(!!instance, 'FLOW-16-06', '活动实例应存在');
@@ -281,7 +281,7 @@ describe('FLOW-16 活动系统集成测试', () => {
       const state = createDefaultActivityState();
       const def = makeActivityDef({ id: 'act-prog-001' });
       const taskDef = makeTaskDef({ id: 't1', targetCount: 50 });
-      let newState = activitySys.startActivity(state, def, [taskDef], []);
+      let newState = activitySys.startActivity(state, def, [taskDef], [], Date.now());
 
       newState = activitySys.updateTaskProgress(newState, 'act-prog-001', 't1', 30);
       const task = newState.activities['act-prog-001'].tasks[0];
@@ -296,7 +296,7 @@ describe('FLOW-16 活动系统集成测试', () => {
       const state = createDefaultActivityState();
       const def = makeActivityDef({ id: 'act-comp-001' });
       const taskDef = makeTaskDef({ id: 't1', targetCount: 50 });
-      let newState = activitySys.startActivity(state, def, [taskDef], []);
+      let newState = activitySys.startActivity(state, def, [taskDef], [], Date.now());
 
       newState = activitySys.updateTaskProgress(newState, 'act-comp-001', 't1', 50);
       const task = newState.activities['act-comp-001'].tasks[0];
@@ -309,7 +309,7 @@ describe('FLOW-16 活动系统集成测试', () => {
       const state = createDefaultActivityState();
       const def = makeActivityDef({ id: 'act-claim-001' });
       const taskDef = makeTaskDef({ id: 't1', targetCount: 50, pointReward: 100, tokenReward: 200 });
-      let newState = activitySys.startActivity(state, def, [taskDef], []);
+      let newState = activitySys.startActivity(state, def, [taskDef], [], Date.now());
       newState = activitySys.updateTaskProgress(newState, 'act-claim-001', 't1', 50);
 
       const result = activitySys.claimTaskReward(newState, 'act-claim-001', 't1');
@@ -324,7 +324,7 @@ describe('FLOW-16 活动系统集成测试', () => {
       const def = makeActivityDef({ id: 'act-milestone-001' });
       const ms1 = makeMilestone({ id: 'ms1', requiredPoints: 100, rewards: { gold: 200 } });
       const ms2 = makeMilestone({ id: 'ms2', requiredPoints: 500, rewards: { gold: 1000 } });
-      let newState = activitySys.startActivity(state, def, [], [ms1, ms2]);
+      let newState = activitySys.startActivity(state, def, [], [ms1, ms2], Date.now());
 
       // 设置积分为150，只解锁第一个里程碑
       newState.activities['act-milestone-001'].points = 150;
@@ -494,7 +494,7 @@ describe('FLOW-16 活动系统集成测试', () => {
       const state = createDefaultActivityState();
       const def = makeActivityDef({ id: 'act-reward-001' });
       const ms = makeMilestone({ id: 'ms1', requiredPoints: 100, rewards: { copper: 500, gold: 20 } });
-      let newState = activitySys.startActivity(state, def, [], [ms]);
+      let newState = activitySys.startActivity(state, def, [], [ms], Date.now());
 
       // 设置积分并检查里程碑
       newState.activities['act-reward-001'].points = 150;
@@ -541,7 +541,7 @@ describe('FLOW-16 活动系统集成测试', () => {
       const state = createDefaultActivityState();
       const def = makeActivityDef({ id: 'act-dup-001' });
       const taskDef = makeTaskDef({ id: 't1', targetCount: 10 });
-      let newState = activitySys.startActivity(state, def, [taskDef], []);
+      let newState = activitySys.startActivity(state, def, [taskDef], [], Date.now());
       newState = activitySys.updateTaskProgress(newState, 'act-dup-001', 't1', 10);
 
       // 第一次领取成功
@@ -565,7 +565,7 @@ describe('FLOW-16 活动系统集成测试', () => {
       const def = makeActivityDef({ id: 'act-serial-001' });
       const tasks = [makeTaskDef({ id: 't1', targetCount: 10 })];
       const ms = [makeMilestone({ id: 'ms1', requiredPoints: 100 })];
-      let newState = activitySys.startActivity(state, def, tasks, ms);
+      let newState = activitySys.startActivity(state, def, tasks, ms, Date.now());
       newState = activitySys.updateTaskProgress(newState, 'act-serial-001', 't1', 5);
       newState.activities['act-serial-001'].points = 50;
 
@@ -593,7 +593,7 @@ describe('FLOW-16 活动系统集成测试', () => {
       if (items.length > 0) {
         const result = shopSys.purchaseItem(items[0].id);
         assertStrict(!result.success, 'FLOW-16-25', '代币不足购买应失败');
-        assertStrict(result.reason?.includes('不足'), 'FLOW-16-25',
+        assertStrict(!!result.reason?.includes('不足'), 'FLOW-16-25',
           `原因应包含"不足"，实际: ${result.reason}`);
       }
     });
@@ -642,7 +642,7 @@ describe('FLOW-16 活动系统集成测试', () => {
         // 再次购买应失败
         const result = shopSys.purchaseItem(limitedItem.id);
         assertStrict(!result.success, 'FLOW-16-29', '达到限购上限应失败');
-        assertStrict(result.reason?.includes('限购'), 'FLOW-16-29',
+        assertStrict(!!result.reason?.includes('限购'), 'FLOW-16-29',
           `原因应包含"限购"，实际: ${result.reason}`);
       }
     });

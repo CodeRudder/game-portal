@@ -36,6 +36,7 @@ import type { HeroBrief } from '../../engine/expedition';
 import { ExpeditionRewardSystem } from '../../engine/expedition/ExpeditionRewardSystem';
 import { MARCH_DURATION } from '../../engine/expedition/expedition-config';
 import type { Faction } from '../../engine/hero/hero.types';
+import { BattleGrade } from '../../engine/expedition';
 
 // ═══════════════════════════════════════════════════════════════
 // 辅助函数
@@ -337,7 +338,7 @@ describe('FLOW-14 远征系统集成测试', () => {
     const easyReward = rewardSystem.calculateNodeReward({
       difficulty: RouteDifficulty.EASY,
       nodeType: NodeType.BANDIT,
-      grade: 'MINOR_VICTORY',
+      grade: BattleGrade.MINOR_VICTORY,
       isFirstClear: false,
       isRouteComplete: false,
     });
@@ -346,7 +347,7 @@ describe('FLOW-14 远征系统集成测试', () => {
     const hardReward = rewardSystem.calculateNodeReward({
       difficulty: RouteDifficulty.HARD,
       nodeType: NodeType.BOSS,
-      grade: 'GREAT_VICTORY',
+      grade: BattleGrade.GREAT_VICTORY,
       isFirstClear: false,
       isRouteComplete: false,
     });
@@ -359,7 +360,7 @@ describe('FLOW-14 远征系统集成测试', () => {
     const normalReward = rewardSystem.calculateNodeReward({
       difficulty: RouteDifficulty.NORMAL,
       nodeType: NodeType.BOSS,
-      grade: 'MINOR_VICTORY',
+      grade: BattleGrade.MINOR_VICTORY,
       isFirstClear: false,
       isRouteComplete: true,
     });
@@ -367,7 +368,7 @@ describe('FLOW-14 远征系统集成测试', () => {
     const firstClearReward = rewardSystem.calculateNodeReward({
       difficulty: RouteDifficulty.NORMAL,
       nodeType: NodeType.BOSS,
-      grade: 'MINOR_VICTORY',
+      grade: BattleGrade.MINOR_VICTORY,
       isFirstClear: true,
       isRouteComplete: true,
     });
@@ -410,11 +411,11 @@ describe('FLOW-14 远征系统集成测试', () => {
 
     const great = rewardSystem.calculateNodeReward({
       difficulty: RouteDifficulty.NORMAL, nodeType: NodeType.BOSS,
-      grade: 'GREAT_VICTORY', isFirstClear: false, isRouteComplete: false,
+      grade: BattleGrade.GREAT_VICTORY, isFirstClear: false, isRouteComplete: false,
     });
     const pyrrhic = rewardSystem.calculateNodeReward({
       difficulty: RouteDifficulty.NORMAL, nodeType: NodeType.BOSS,
-      grade: 'PYRRHIC_VICTORY', isFirstClear: false, isRouteComplete: false,
+      grade: BattleGrade.PYRRHIC_VICTORY, isFirstClear: false, isRouteComplete: false,
     });
 
     assertStrict(great.gold > pyrrhic.gold, 'FLOW-14-20',

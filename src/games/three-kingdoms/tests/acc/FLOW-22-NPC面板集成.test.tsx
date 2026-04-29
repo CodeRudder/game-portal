@@ -101,7 +101,7 @@ function registerTestItems(giftSys: NPCGiftSystem): void {
     { id: 'item-sword', name: '宝剑', category: 'weapon', rarity: 'rare', baseAffinityValue: 10, description: '锋利的宝剑' },
     { id: 'item-book', name: '兵书', category: 'book', rarity: 'rare', baseAffinityValue: 8, description: '孙子兵法' },
     { id: 'item-herb', name: '草药', category: 'medicine', rarity: 'common', baseAffinityValue: 3, description: '常见草药' },
-    { id: 'item-gem', name: '宝石', category: 'gem', rarity: 'epic', baseAffinityValue: 15, description: '璀璨宝石' },
+    { id: 'item-gem', name: '宝石', category: 'jewelry', rarity: 'epic', baseAffinityValue: 15, description: '璀璨宝石' },
   ];
   giftSys.registerItems(items);
 }

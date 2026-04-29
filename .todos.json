@@ -1,8 +1,6 @@
 [
-  {"content": "Phase 1: 修复 P0 Bug — LL-007 武将升星属性不变 + LL-008 天下攻城集成断裂 + 修复永远通过测试", "status": "in_progress"},
-  {"content": "Phase 2a: FLOW-01~03 核心流程集成测试（P0优先级）", "status": "pending"},
-  {"content": "Phase 2b: FLOW-04~08 核心流程集成测试（P1优先级）", "status": "pending"},
-  {"content": "Phase 2c: FLOW-09~10 核心流程集成测试（P2优先级）", "status": "pending"},
-  {"content": "Phase 3: 扩展断言工具 + 统计脚本", "status": "pending"},
-  {"content": "Phase 4: 更新文档 + 最终回归测试", "status": "pending"}
+  {"content": "修复pnpm build 22个TS编译错误（FLOW-04/06/09/14/16/22）", "status": "in_progress"},
+  {"content": "全量菜单/界面集成测试审查 — 苏格拉底式提问补充缺失流程", "status": "pending"},
+  {"content": "补充缺失的集成测试脚本", "status": "pending"},
+  {"content": "最终回归测试 + 提交推送", "status": "pending"}
 ]

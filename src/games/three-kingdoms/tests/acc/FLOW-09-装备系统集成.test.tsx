@@ -494,10 +494,10 @@ describe('FLOW-09 装备系统集成测试', () => {
     generateEquipment(sim.engine, 'armor', 'green');
     generateEquipment(sim.engine, 'weapon', 'purple');
 
-    const weapons = eqSys.filterEquipments({ slot: 'weapon' });
+    const weapons = eqSys.filterEquipments({ slot: 'weapon', rarity: null, unequippedOnly: false, setOnly: false });
     assertStrict(weapons.length === 2, 'FLOW-09-31', `武器应2件，实际 ${weapons.length}`);
 
-    const armors = eqSys.filterEquipments({ slot: 'armor' });
+    const armors = eqSys.filterEquipments({ slot: 'armor', rarity: null, unequippedOnly: false, setOnly: false });
     assertStrict(armors.length === 1, 'FLOW-09-31', `防具应1件，实际 ${armors.length}`);
   });
 

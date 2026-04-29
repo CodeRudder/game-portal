@@ -377,7 +377,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
       const result = researchSystem.startResearch('eco_t1_farming');
       assertStrict(!result.success, 'FLOW-06-15', '队列满时应无法开始新研究');
       assertStrict(
-        result.reason?.includes('已满') || result.reason?.includes('队列'),
+        (result.reason?.includes('已满') ?? false) || (result.reason?.includes('队列') ?? false),
         'FLOW-06-15',
         `失败原因应提及队列满，实际: ${result.reason}`,
       );
@@ -518,7 +518,8 @@ describe('FLOW-06 科技Tab集成测试', () => {
   it(accTest('FLOW-06-25', '科技效果 — TechEffectSystem 加成查询'), () => {
     const sim = createTechSimWithPoints();
     const treeSystem = sim.engine.getTechTreeSystem();
-    const effectSystem = sim.engine.getTechEffectSystem?.();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const effectSystem = (sim.engine as any).getTechEffectSystem?.() as { getAttackBonus: (t: string) => number } | undefined;
 
     treeSystem.completeNode('mil_t1_attack');
 

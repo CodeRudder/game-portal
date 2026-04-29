@@ -563,7 +563,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
     // 扫荡应失败
     const result = sweepSystem.sweep('chapter1_stage1', 1);
     assertStrict(!result.success, 'FLOW-04-26', '扫荡令不足时扫荡应失败');
-    assertStrict(result.failureReason?.includes('扫荡令不足'), 'FLOW-04-26', '失败原因应包含扫荡令不足');
+    assertStrict(result.failureReason?.includes('扫荡令不足') ?? false, 'FLOW-04-26', '失败原因应包含扫荡令不足');
   });
 
   it(accTest('FLOW-04-27', '扫荡功能 — 有扫荡令时扫荡成功并获得奖励'), () => {
