@@ -316,19 +316,28 @@ describe('ACC-01 主界面', () => {
     it(accTest('ACC-01-15', '更多▼下拉菜单 — 点击展开'), () => {
       const onTabChange = vi.fn();
       const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({ onTabChange })} moreMenuOpen={true} onMoreToggle={onMoreToggle} />);
-      // moreMenuOpen=true 时功能菜单项可见
-      expect(screen.getByText('商店')).toBeInTheDocument();
-      expect(screen.getByText('任务')).toBeInTheDocument();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} moreMenuOpen={false} onMoreToggle={onMoreToggle} />);
+      // 初始状态：更多菜单未展开，菜单项不可见
+      expect(screen.queryByText('商店')).not.toBeInTheDocument();
+      // 点击"更多▼"按钮触发展开
+      const moreBtn = screen.getByTestId('tab-bar-more');
+      fireEvent.click(moreBtn);
+      // 验证 onMoreToggle 被调用（参数为 true，即打开菜单）
+      expect(onMoreToggle).toHaveBeenCalledWith(true);
     });
 
     it(accTest('ACC-01-16', '更多▼菜单 — 打开功能面板'), () => {
       const onTabChange = vi.fn();
       const onMoreToggle = vi.fn();
-      render(<TabBar {...makeTabBarProps({ onTabChange })} moreMenuOpen={true} onMoreToggle={onMoreToggle} />);
-      // moreMenuOpen=true 时菜单项可见
+      const props = makeTabBarProps({ onTabChange });
+      render(<TabBar {...props} moreMenuOpen={true} onMoreToggle={onMoreToggle} />);
+      // moreMenuOpen=true 时菜单项可见，点击商店菜单项
       const shopItem = screen.getByText('商店');
-      assertVisible(shopItem, 'ACC-01-16', '商店菜单项');
+      fireEvent.click(shopItem);
+      // 验证 onFeatureSelect 被调用（传入 'shop'）
+      expect(props.onFeatureSelect).toHaveBeenCalledWith('shop');
+      // 验证 onMoreToggle 被调用关闭菜单
+      expect(onMoreToggle).toHaveBeenCalledWith(false);
     });
 
     it(accTest('ACC-01-17', '功能面板关闭'), () => {

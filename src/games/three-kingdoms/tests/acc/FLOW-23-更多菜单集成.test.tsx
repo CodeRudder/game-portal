@@ -15,13 +15,49 @@
  * @module tests/acc/FLOW-23
  */
 
+import React from 'react';
+import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { accTest, assertStrict } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
 // MoreTab 常量
-import { FEATURE_ITEMS, TABS, type FeaturePanelId, type TabId, type TabConfig } from '@/components/idle/three-kingdoms/TabBar';
+import TabBar, { FEATURE_ITEMS, TABS, type FeaturePanelId, type TabId, type TabConfig } from '@/components/idle/three-kingdoms/TabBar';
+import type { FeatureMenuItem } from '@/components/idle/FeatureMenu';
+
+// ── Mock CSS imports ──
+vi.mock('@/components/idle/three-kingdoms/TabBar.css', () => ({}));
+vi.mock('@/components/idle/panels/more/MoreTab.css', () => ({}));
+vi.mock('@/components/idle/common/Modal.css', () => ({}));
+vi.mock('@/components/idle/common/Toast.css', () => ({}));
+vi.mock('@/components/idle/components/SharedPanel.css', () => ({}));
+
+// ── TabBar 测试 Props 工厂（用于DOM交互测试） ──
+const DEFAULT_FEATURE_ITEMS: FeatureMenuItem[] = FEATURE_ITEMS.map(item => ({
+  ...item,
+  badge: 0,
+}));
+
+function makeTabBarProps(overrides: {
+  activeTab?: string;
+  onTabChange?: (tab: any) => void;
+  tabBadges?: Record<string, any>;
+  calendar?: any;
+} = {}) {
+  return {
+    activeTab: (overrides.activeTab ?? 'building') as any,
+    onTabChange: overrides.onTabChange ?? vi.fn(),
+    featureMenuItems: DEFAULT_FEATURE_ITEMS,
+    onFeatureSelect: vi.fn(),
+    calendar: overrides.calendar ?? {
+      date: { eraName: '建安', yearInEra: 1, month: 1, day: 1, season: 'spring' as any },
+      weather: 'clear' as any,
+    },
+    tabBadges: (overrides.tabBadges ?? {}) as any,
+  };
+}
 
 // 系统导入
 import { OfflineRewardSystem } from '../../engine/offline/OfflineRewardSystem';
@@ -61,6 +97,7 @@ describe('FLOW-23 更多菜单集成测试', () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
   });
 
@@ -378,25 +415,23 @@ describe('FLOW-23 更多菜单集成测试', () => {
     });
 
     it(accTest('FLOW-23-30', '边界 — 更多Tab菜单ESC关闭'), () => {
-      // 模拟ESC关闭行为
-      let moreMenuOpen: boolean = true;
-      const onMoreToggle = (open: boolean) => { moreMenuOpen = open; };
-
-      // ESC 键触发关闭
-      onMoreToggle(false);
-      assertStrict(!moreMenuOpen, 'FLOW-23-30',
-        'ESC应关闭更多菜单');
+      // 渲染真实 TabBar 组件，moreMenuOpen=true
+      const onMoreToggle = vi.fn();
+      render(<TabBar {...makeTabBarProps()} moreMenuOpen={true} onMoreToggle={onMoreToggle} />);
+      // 模拟 ESC 键关闭菜单
+      fireEvent.keyDown(window, { key: 'Escape' });
+      // 验证 onMoreToggle 被调用关闭
+      expect(onMoreToggle).toHaveBeenCalledWith(false);
     });
 
     it(accTest('FLOW-23-31', '边界 — 点击外部关闭更多菜单'), () => {
-      // 模拟点击外部关闭
-      const state: { moreMenuOpen: boolean } = { moreMenuOpen: true };
-      const onMoreToggle = (open: boolean) => { state.moreMenuOpen = open; };
-
-      // 点击外部
-      onMoreToggle(false);
-      assertStrict(!state.moreMenuOpen, 'FLOW-23-31',
-        '点击外部应关闭更多菜单');
+      // 渲染真实 TabBar 组件，moreMenuOpen=true
+      const onMoreToggle = vi.fn();
+      render(<TabBar {...makeTabBarProps()} moreMenuOpen={true} onMoreToggle={onMoreToggle} />);
+      // 模拟点击外部区域（document.body，不在菜单内）
+      fireEvent.mouseDown(document.body);
+      // 验证 onMoreToggle 被调用关闭
+      expect(onMoreToggle).toHaveBeenCalledWith(false);
     });
 
     it(accTest('FLOW-23-32', '边界 — 快速切换Tab不丢失状态'), () => {

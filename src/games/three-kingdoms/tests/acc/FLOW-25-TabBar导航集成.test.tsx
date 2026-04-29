@@ -1,118 +1,81 @@
 /**
- * FLOW-25 TabBar导航集成测试 — Tab切换/红点badge/选中状态/快速切换
+ * FLOW-25 TabBar导航集成测试 — 真实TabBar组件渲染 + Tab切换/红点badge/选中状态/快速切换
  *
- * 使用真实引擎实例，通过 createSim() 创建引擎，不 mock 核心逻辑。
- * 测试底部Tab栏的导航功能、Tab切换、红点badge显示、选中状态管理。
+ * 【重要】本文件 render 真实 <TabBar /> 组件，通过 fireEvent 模拟 DOM 事件，
+ * 不使用自建模拟类。验证 Tab 切换回调、更多菜单交互、Badge 显示等真实 React 行为。
  *
  * 覆盖范围：
- * - Tab切换：7个一级Tab切换、活跃状态管理
- * - Tab红点badge：数字badge、圆点badge、badge汇总
- * - Tab选中状态：当前Tab高亮、切换后状态更新
- * - 快速切换不丢失数据：连续切换Tab后引擎状态一致
- * - 更多Tab下拉菜单：打开/关闭/ESC关闭/点击外部关闭
- * - 苏格拉底边界：空badge、重复切换、非法TabId
+ * - Tab渲染：7个Tab按钮可见、图标/标签正确
+ * - Tab切换：点击Tab → onTabChange回调触发、参数正确
+ * - 更多菜单：点击更多▼ → onMoreToggle(true)、再次点击→关闭
+ * - Badge显示：数字badge、圆点badge、99+截断
+ * - 快速切换：连续点击Tab不崩溃、回调序列正确
+ * - 选中状态：当前Tab高亮（aria-selected=true）
  *
  * @module tests/acc/FLOW-25
  */
 
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { accTest, assertStrict, assertRange } from './acc-test-utils';
-import { createSim } from '../../test-utils/test-helpers';
-import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
-
-// TabBar 常量和类型
-import {
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import TabBar, {
   TABS,
   FEATURE_ITEMS,
   type TabId,
   type TabConfig,
   type TabBadge,
   type TabBadges,
-  type FeaturePanelId,
 } from '@/components/idle/three-kingdoms/TabBar';
-
-// 系统导入
-import { HeroBadgeSystem } from '../../engine/hero/HeroBadgeSystem';
-import { OfflineRewardSystem } from '../../engine/offline/OfflineRewardSystem';
-import { FriendSystem } from '../../engine/social/FriendSystem';
-import { TradeSystem } from '../../engine/trade/TradeSystem';
-import type { ISystemDeps } from '../../core/types';
+import type { FeatureMenuItem } from '@/components/idle/FeatureMenu';
+import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { createSim } from '../../test-utils/test-helpers';
+import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
 // ── 辅助函数 ──
 
-function mockDeps(): ISystemDeps {
-  return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
-  } as unknown as ISystemDeps;
+/** 构造 featureMenuItems，默认无 badge */
+function makeFeatureMenuItems(overrides: Array<Partial<FeatureMenuItem>> = []): FeatureMenuItem[] {
+  return FEATURE_ITEMS.map(item => {
+    const override = overrides.find(o => o.id === item.id);
+    return {
+      id: item.id,
+      icon: item.icon,
+      label: item.label,
+      description: item.description,
+      available: item.available ?? true,
+      badge: 0,
+      ...override,
+    };
+  });
 }
 
-/** 模拟 TabBar 的活跃Tab管理逻辑 */
-class TabStateManager {
-  private activeTab: TabId;
-  private moreMenuOpen: boolean = false;
-  private badges: TabBadges = {};
+/** 构造 TabBar props */
+function makeTabBarProps(overrides: Record<string, any> = {}) {
+  return {
+    activeTab: 'map' as TabId,
+    onTabChange: vi.fn(),
+    featureMenuItems: makeFeatureMenuItems(),
+    onFeatureSelect: vi.fn(),
+    onMoreToggle: vi.fn(),
+    moreMenuOpen: false,
+    calendar: {
+      date: {
+        eraName: '建安',
+        yearInEra: 1,
+        month: 1,
+        day: 1,
+        season: 'spring' as const,
+      },
+      weather: 'clear' as const,
+    },
+    tabBadges: {} as TabBadges,
+    ...overrides,
+  };
+}
 
-  constructor(initialTab: TabId = 'map') {
-    this.activeTab = initialTab;
-  }
-
-  /** 切换Tab */
-  switchTab(tabId: TabId): { previousTab: TabId; currentTab: TabId } {
-    if (tabId === 'more') {
-      this.moreMenuOpen = !this.moreMenuOpen;
-      return { previousTab: this.activeTab, currentTab: this.activeTab };
-    }
-    const previous = this.activeTab;
-    this.activeTab = tabId;
-    this.moreMenuOpen = false;
-    return { previousTab: previous, currentTab: tabId };
-  }
-
-  /** 获取当前活跃Tab */
-  getActiveTab(): TabId {
-    return this.activeTab;
-  }
-
-  /** 更多菜单是否打开 */
-  isMoreMenuOpen(): boolean {
-    return this.moreMenuOpen;
-  }
-
-  /** 设置更多菜单状态 */
-  setMoreMenuOpen(open: boolean): void {
-    this.moreMenuOpen = open;
-  }
-
-  /** 设置badge */
-  setBadge(tabId: TabId, badge: TabBadge): void {
-    this.badges[tabId] = badge;
-  }
-
-  /** 获取badge */
-  getBadge(tabId: TabId): TabBadge | undefined {
-    return this.badges[tabId];
-  }
-
-  /** 获取所有badge */
-  getAllBadges(): TabBadges {
-    return { ...this.badges };
-  }
-
-  /** 获取更多Tab的汇总badge */
-  getMoreTabBadge(): number {
-    return FEATURE_ITEMS.reduce((sum, item) => {
-      const badgeVal = (item as any).badge ?? 0;
-      return sum + badgeVal;
-    }, 0);
-  }
+/** 从 TabBar 容器中获取指定 Tab 按钮 */
+function getTabButton(tabId: TabId): HTMLElement {
+  return screen.getByTestId(`tab-bar-${tabId}`);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -121,537 +84,629 @@ class TabStateManager {
 
 describe('FLOW-25 TabBar导航集成测试', () => {
   let sim: GameEventSimulator;
-  let tabState: TabStateManager;
 
   beforeEach(() => {
     vi.clearAllMocks();
     sim = createSim();
     sim.addResources({ gold: 500000, grain: 500000, troops: 50000 });
-    tabState = new TabStateManager();
   });
 
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
   });
 
   // ═══════════════════════════════════════════════════════════
-  // 1. Tab切换（FLOW-25-01 ~ FLOW-25-08）
+  // 1. Tab渲染（FLOW-25-01 ~ FLOW-25-08）
   // ═══════════════════════════════════════════════════════════
 
-  describe('1. Tab切换', () => {
+  describe('1. Tab渲染', () => {
 
-    it(accTest('FLOW-25-01', 'Tab切换 — 初始Tab为天下(map)'), () => {
-      assertStrict(tabState.getActiveTab() === 'map', 'FLOW-25-01',
-        `初始Tab应为map，实际: ${tabState.getActiveTab()}`);
+    it(accTest('FLOW-25-01', 'TabBar渲染 — 7个Tab按钮可见'), () => {
+      const props = makeTabBarProps();
+      render(<TabBar {...props} />);
+
+      const tabIds: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige', 'more'];
+      for (const id of tabIds) {
+        const btn = getTabButton(id);
+        assertVisible(btn, 'FLOW-25-01', `Tab按钮 ${id}`);
+      }
     });
 
-    it(accTest('FLOW-25-02', 'Tab切换 — 切换到出征Tab'), () => {
-      const result = tabState.switchTab('campaign');
-      assertStrict(result.currentTab === 'campaign', 'FLOW-25-02',
-        `当前Tab应为campaign`);
-      assertStrict(result.previousTab === 'map', 'FLOW-25-02',
-        `前一个Tab应为map`);
+    it(accTest('FLOW-25-02', 'TabBar渲染 — 标签文本正确'), () => {
+      render(<TabBar {...makeTabBarProps()} />);
+
+      const expectedLabels: Record<string, string> = {
+        map: '天下', campaign: '出征', hero: '武将', tech: '科技',
+        building: '建筑', prestige: '声望', more: '更多▼',
+      };
+
+      for (const [id, label] of Object.entries(expectedLabels)) {
+        const btn = getTabButton(id as TabId);
+        assertStrict(
+          btn.textContent?.includes(label) ?? false,
+          'FLOW-25-02',
+          `Tab ${id} 应包含标签 "${label}"，实际: "${btn.textContent}"`,
+        );
+      }
     });
 
-    it(accTest('FLOW-25-03', 'Tab切换 — 切换到武将Tab'), () => {
-      tabState.switchTab('hero');
-      assertStrict(tabState.getActiveTab() === 'hero', 'FLOW-25-03',
-        `当前Tab应为hero`);
+    it(accTest('FLOW-25-03', 'TabBar渲染 — 图标emoji可见'), () => {
+      render(<TabBar {...makeTabBarProps()} />);
+
+      const expectedIcons: Record<string, string> = {
+        map: '🗺️', campaign: '⚔️', hero: '🦸', tech: '📜',
+        building: '🏰', prestige: '👑', more: '📋',
+      };
+
+      for (const [id, icon] of Object.entries(expectedIcons)) {
+        const btn = getTabButton(id as TabId);
+        assertStrict(
+          btn.textContent?.includes(icon) ?? false,
+          'FLOW-25-03',
+          `Tab ${id} 应包含图标 ${icon}`,
+        );
+      }
     });
 
-    it(accTest('FLOW-25-04', 'Tab切换 — 切换到科技Tab'), () => {
-      tabState.switchTab('tech');
-      assertStrict(tabState.getActiveTab() === 'tech', 'FLOW-25-04',
-        `当前Tab应为tech`);
+    it(accTest('FLOW-25-04', 'TabBar渲染 — data-testid正确'), () => {
+      render(<TabBar {...makeTabBarProps()} />);
+
+      const tabBar = screen.getByTestId('tab-bar');
+      assertVisible(tabBar, 'FLOW-25-04', 'tab-bar容器');
+
+      for (const tab of TABS) {
+        const btn = screen.getByTestId(`tab-bar-${tab.id}`);
+        assertVisible(btn, 'FLOW-25-04', `tab-bar-${tab.id}`);
+      }
     });
 
-    it(accTest('FLOW-25-05', 'Tab切换 — 切换到建筑Tab'), () => {
-      tabState.switchTab('building');
-      assertStrict(tabState.getActiveTab() === 'building', 'FLOW-25-05',
-        `当前Tab应为building`);
+    it(accTest('FLOW-25-05', 'TabBar渲染 — role=tab属性'), () => {
+      render(<TabBar {...makeTabBarProps()} />);
+
+      const tabs = screen.getAllByRole('tab');
+      assertStrict(tabs.length === 7, 'FLOW-25-05',
+        `应有7个role=tab元素，实际: ${tabs.length}`);
     });
 
-    it(accTest('FLOW-25-06', 'Tab切换 — 切换到声望Tab'), () => {
-      tabState.switchTab('prestige');
-      assertStrict(tabState.getActiveTab() === 'prestige', 'FLOW-25-06',
-        `当前Tab应为prestige`);
+    it(accTest('FLOW-25-06', 'TabBar渲染 — aria-label正确'), () => {
+      render(<TabBar {...makeTabBarProps()} />);
+
+      for (const tab of TABS) {
+        const btn = getTabButton(tab.id);
+        assertStrict(
+          btn.getAttribute('aria-label') === tab.label,
+          'FLOW-25-06',
+          `Tab ${tab.id} aria-label应为 "${tab.label}"，实际: "${btn.getAttribute('aria-label')}"`,
+        );
+      }
     });
 
-    it(accTest('FLOW-25-07', 'Tab切换 — 更多Tab切换菜单状态'), () => {
-      tabState.switchTab('more');
-      assertStrict(tabState.isMoreMenuOpen(), 'FLOW-25-07',
-        '第一次点击更多应打开菜单');
+    it(accTest('FLOW-25-07', 'TabBar渲染 — 初始activeTab高亮'), () => {
+      render(<TabBar {...makeTabBarProps({ activeTab: 'hero' })} />);
 
-      tabState.switchTab('more');
-      assertStrict(!tabState.isMoreMenuOpen(), 'FLOW-25-07',
-        '第二次点击更多应关闭菜单');
-    });
-
-    it(accTest('FLOW-25-08', 'Tab切换 — 切换到非更多Tab时关闭更多菜单'), () => {
-      tabState.setMoreMenuOpen(true);
-      assertStrict(tabState.isMoreMenuOpen(), 'FLOW-25-08', '菜单应打开');
-
-      tabState.switchTab('hero');
-      assertStrict(!tabState.isMoreMenuOpen(), 'FLOW-25-08',
-        '切换Tab应关闭更多菜单');
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  // 2. Tab红点Badge（FLOW-25-09 ~ FLOW-25-16）
-  // ═══════════════════════════════════════════════════════════
-
-  describe('2. Tab红点Badge', () => {
-
-    it(accTest('FLOW-25-09', 'Badge — 设置数字badge'), () => {
-      tabState.setBadge('hero', { count: 5, dot: false });
-      const badge = tabState.getBadge('hero');
-      assertStrict(!!badge, 'FLOW-25-09', '应有badge');
-      assertStrict(badge!.count === 5, 'FLOW-25-09',
-        `badge数应为5，实际: ${badge!.count}`);
-    });
-
-    it(accTest('FLOW-25-10', 'Badge — 设置圆点badge'), () => {
-      tabState.setBadge('tech', { count: 0, dot: true });
-      const badge = tabState.getBadge('tech');
-      assertStrict(!!badge, 'FLOW-25-10', '应有badge');
-      assertStrict(badge!.dot === true, 'FLOW-25-10', '应为圆点');
-      assertStrict(badge!.count === 0, 'FLOW-25-10', 'count应为0');
-    });
-
-    it(accTest('FLOW-25-11', 'Badge — 无badge的Tab返回undefined'), () => {
-      const badge = tabState.getBadge('map');
-      assertStrict(badge === undefined, 'FLOW-25-11', '无badge应返回undefined');
-    });
-
-    it(accTest('FLOW-25-12', 'Badge — badge显示判断逻辑'), () => {
-      // count > 0 → 显示数字
-      const show1 = (badge: TabBadge) => (badge.count ?? 0) > 0 || badge.dot;
-      assertStrict(!!show1({ count: 3, dot: false }), 'FLOW-25-12', 'count>0应显示');
-      assertStrict(!!show1({ count: 0, dot: true }), 'FLOW-25-12', 'dot=true应显示');
-      assertStrict(!show1({ count: 0, dot: false }), 'FLOW-25-12', '无badge不显示');
-    });
-
-    it(accTest('FLOW-25-13', 'Badge — 多个Tab同时有badge'), () => {
-      tabState.setBadge('hero', { count: 3 });
-      tabState.setBadge('tech', { count: 1 });
-      tabState.setBadge('campaign', { dot: true });
-
-      const allBadges = tabState.getAllBadges();
-      const badgeCount = Object.keys(allBadges).length;
-      assertStrict(badgeCount === 3, 'FLOW-25-13',
-        `应有3个Tab有badge，实际: ${badgeCount}`);
-    });
-
-    it(accTest('FLOW-25-14', 'Badge — 大数字badge显示99+'), () => {
-      const largeCount = 150;
-      const display = largeCount > 99 ? '99+' : String(largeCount);
-      assertStrict(display === '99+', 'FLOW-25-14',
-        `150应显示99+，实际: ${display}`);
-
-      const edgeCount = 99;
-      const display2 = edgeCount > 99 ? '99+' : String(edgeCount);
-      assertStrict(display2 === '99', 'FLOW-25-14',
-        `99应显示99，实际: ${display2}`);
-
-      const overCount = 100;
-      const display3 = overCount > 99 ? '99+' : String(overCount);
-      assertStrict(display3 === '99+', 'FLOW-25-14',
-        `100应显示99+，实际: ${display3}`);
-    });
-
-    it(accTest('FLOW-25-15', 'Badge — 清除badge'), () => {
-      tabState.setBadge('hero', { count: 5 });
-      assertStrict(!!tabState.getBadge('hero'), 'FLOW-25-15', '设置后应有badge');
-
-      // 清除：设置为无badge
-      tabState.setBadge('hero', { count: 0, dot: false });
-      const badge = tabState.getBadge('hero');
-      assertStrict(badge!.count === 0 && !badge!.dot, 'FLOW-25-15',
-        '清除后badge应为空');
-    });
-
-    it(accTest('FLOW-25-16', 'Badge — 引擎HeroBadgeSystem可初始化'), () => {
-      const badgeSystem = new HeroBadgeSystem();
-      badgeSystem.init(mockDeps());
-
-      assertStrict(badgeSystem.name === 'heroBadge', 'FLOW-25-16',
-        `系统名应为heroBadge，实际: ${badgeSystem.name}`);
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  // 3. Tab选中状态（FLOW-25-17 ~ FLOW-25-22）
-  // ═══════════════════════════════════════════════════════════
-
-  describe('3. Tab选中状态', () => {
-
-    it(accTest('FLOW-25-17', '选中状态 — 当前Tab高亮'), () => {
-      // 验证TABS中每个Tab都有icon用于高亮
-      const activeTab = tabState.getActiveTab();
-      const tabConfig = TABS.find(t => t.id === activeTab);
-      assertStrict(!!tabConfig, 'FLOW-25-17', '当前Tab应在TABS中');
-    });
-
-    it(accTest('FLOW-25-18', '选中状态 — 切换后前一个Tab取消高亮'), () => {
-      const prevTab = tabState.getActiveTab();
-      tabState.switchTab('campaign');
-      const currTab = tabState.getActiveTab();
-
-      assertStrict(currTab !== prevTab, 'FLOW-25-18',
-        '切换后Tab应不同');
-      assertStrict(currTab === 'campaign', 'FLOW-25-18',
-        '新Tab应为campaign');
-    });
-
-    it(accTest('FLOW-25-19', '选中状态 — 重复切换同一Tab无副作用'), () => {
-      const resources1 = sim.getAllResources();
-
-      tabState.switchTab('hero');
-      tabState.switchTab('hero');
-      tabState.switchTab('hero');
-
-      const resources2 = sim.getAllResources();
+      const heroBtn = getTabButton('hero');
       assertStrict(
-        JSON.stringify(resources1) === JSON.stringify(resources2),
-        'FLOW-25-19',
-        '重复切换同一Tab不应改变资源',
+        heroBtn.getAttribute('aria-selected') === 'true',
+        'FLOW-25-07',
+        'hero Tab 应为 aria-selected=true',
+      );
+
+      const mapBtn = getTabButton('map');
+      assertStrict(
+        mapBtn.getAttribute('aria-selected') === 'false',
+        'FLOW-25-07',
+        'map Tab 应为 aria-selected=false',
       );
     });
 
-    it(accTest('FLOW-25-20', '选中状态 — Tab配置完整性'), () => {
-      for (const tab of TABS) {
-        assertStrict(!!tab.id, 'FLOW-25-20', 'Tab应有id');
-        assertStrict(!!tab.icon, 'FLOW-25-20', `Tab ${tab.id}应有icon`);
-        assertStrict(!!tab.label, 'FLOW-25-20', `Tab ${tab.id}应有label`);
-        assertStrict(typeof tab.available === 'boolean', 'FLOW-25-20',
-          `Tab ${tab.id}应有available布尔值`);
-      }
-    });
+    it(accTest('FLOW-25-08', 'TabBar渲染 — 不同activeTab传入时高亮正确'), () => {
+      const activeTabs: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige'];
 
-    it(accTest('FLOW-25-21', '选中状态 — Tab顺序固定'), () => {
-      const expectedOrder: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige', 'more'];
-      for (let i = 0; i < expectedOrder.length; i++) {
-        assertStrict(TABS[i].id === expectedOrder[i], 'FLOW-25-21',
-          `Tab[${i}]应为${expectedOrder[i]}，实际: ${TABS[i].id}`);
-      }
-    });
+      for (const active of activeTabs) {
+        cleanup();
+        render(<TabBar {...makeTabBarProps({ activeTab: active })} />);
 
-    it(accTest('FLOW-25-22', '选中状态 — 更多Tab打开时Tab栏不切换activeTab'), () => {
-      tabState.switchTab('more');
-      // 更多Tab打开时，activeTab不变
-      assertStrict(tabState.getActiveTab() === 'map', 'FLOW-25-22',
-        '点击更多不应改变activeTab');
+        const btn = getTabButton(active);
+        assertStrict(
+          btn.getAttribute('aria-selected') === 'true',
+          'FLOW-25-08',
+          `Tab ${active} 应高亮`,
+        );
+      }
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // 4. 快速切换不丢失数据（FLOW-25-23 ~ FLOW-25-28）
+  // 2. Tab切换回调（FLOW-25-09 ~ FLOW-25-16）
   // ═══════════════════════════════════════════════════════════
 
-  describe('4. 快速切换不丢失数据', () => {
+  describe('2. Tab切换回调', () => {
 
-    it(accTest('FLOW-25-23', '快速切换 — 连续切换7个Tab资源不变'), () => {
-      const resourcesBefore = sim.getAllResources();
+    it(accTest('FLOW-25-09', 'Tab切换 — 点击天下Tab → onTabChange(map)'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ activeTab: 'campaign', onTabChange })} />);
 
-      const allTabs: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige', 'more'];
-      for (const tab of allTabs) {
-        tabState.switchTab(tab);
-      }
+      fireEvent.click(getTabButton('map'));
 
-      const resourcesAfter = sim.getAllResources();
+      assertStrict(onTabChange.mock.calls.length === 1, 'FLOW-25-09', 'onTabChange应被调用1次');
+      const call = onTabChange.mock.calls[0][0] as TabConfig;
+      assertStrict(call.id === 'map', 'FLOW-25-09',
+        `回调参数id应为map，实际: ${call.id}`);
+    });
+
+    it(accTest('FLOW-25-10', 'Tab切换 — 点击出征Tab → onTabChange(campaign)'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
+
+      fireEvent.click(getTabButton('campaign'));
+
+      assertStrict(onTabChange.mock.calls.length === 1, 'FLOW-25-10', 'onTabChange应被调用');
+      const call = onTabChange.mock.calls[0][0] as TabConfig;
+      assertStrict(call.id === 'campaign', 'FLOW-25-10', '参数id应为campaign');
+    });
+
+    it(accTest('FLOW-25-11', 'Tab切换 — 点击武将Tab → onTabChange(hero)'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
+
+      fireEvent.click(getTabButton('hero'));
+
+      const call = onTabChange.mock.calls[0][0] as TabConfig;
+      assertStrict(call.id === 'hero', 'FLOW-25-11', '参数id应为hero');
+    });
+
+    it(accTest('FLOW-25-12', 'Tab切换 — 点击科技Tab → onTabChange(tech)'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
+
+      fireEvent.click(getTabButton('tech'));
+
+      const call = onTabChange.mock.calls[0][0] as TabConfig;
+      assertStrict(call.id === 'tech', 'FLOW-25-12', '参数id应为tech');
+    });
+
+    it(accTest('FLOW-25-13', 'Tab切换 — 点击建筑Tab → onTabChange(building)'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
+
+      fireEvent.click(getTabButton('building'));
+
+      const call = onTabChange.mock.calls[0][0] as TabConfig;
+      assertStrict(call.id === 'building', 'FLOW-25-13', '参数id应为building');
+    });
+
+    it(accTest('FLOW-25-14', 'Tab切换 — 点击声望Tab → onTabChange(prestige)'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
+
+      fireEvent.click(getTabButton('prestige'));
+
+      const call = onTabChange.mock.calls[0][0] as TabConfig;
+      assertStrict(call.id === 'prestige', 'FLOW-25-14', '参数id应为prestige');
+    });
+
+    it(accTest('FLOW-25-15', 'Tab切换 — TabConfig包含icon和label'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
+
+      fireEvent.click(getTabButton('hero'));
+
+      const call = onTabChange.mock.calls[0][0] as TabConfig;
+      assertStrict(call.icon === '🦸', 'FLOW-25-15', 'icon应为🦸');
+      assertStrict(call.label === '武将', 'FLOW-25-15', 'label应为武将');
+      assertStrict(call.available === true, 'FLOW-25-15', 'available应为true');
+    });
+
+    it(accTest('FLOW-25-16', 'Tab切换 — 点击更多Tab不触发onTabChange'), () => {
+      const onTabChange = vi.fn();
+      const onMoreToggle = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange, onMoreToggle })} />);
+
+      fireEvent.click(getTabButton('more'));
+
+      assertStrict(onTabChange.mock.calls.length === 0, 'FLOW-25-16',
+        '点击更多Tab不应触发onTabChange');
+      assertStrict(onMoreToggle.mock.calls.length === 1, 'FLOW-25-16',
+        '点击更多Tab应触发onMoreToggle');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // 3. 更多菜单交互（FLOW-25-17 ~ FLOW-25-24）
+  // ═══════════════════════════════════════════════════════════
+
+  describe('3. 更多菜单交互', () => {
+
+    it(accTest('FLOW-25-17', '更多菜单 — 点击更多按钮 → onMoreToggle(true)'), () => {
+      const onMoreToggle = vi.fn();
+      render(<TabBar {...makeTabBarProps({ moreMenuOpen: false, onMoreToggle })} />);
+
+      fireEvent.click(getTabButton('more'));
+
+      assertStrict(onMoreToggle.mock.calls.length === 1, 'FLOW-25-17', 'onMoreToggle应被调用');
       assertStrict(
-        JSON.stringify(resourcesBefore) === JSON.stringify(resourcesAfter),
+        onMoreToggle.mock.calls[0][0] === true,
+        'FLOW-25-17',
+        `参数应为true，实际: ${onMoreToggle.mock.calls[0][0]}`,
+      );
+    });
+
+    it(accTest('FLOW-25-18', '更多菜单 — 菜单展开时点击更多 → onMoreToggle(false)'), () => {
+      const onMoreToggle = vi.fn();
+      render(<TabBar {...makeTabBarProps({ moreMenuOpen: true, onMoreToggle })} />);
+
+      fireEvent.click(getTabButton('more'));
+
+      assertStrict(onMoreToggle.mock.calls.length === 1, 'FLOW-25-18', 'onMoreToggle应被调用');
+      assertStrict(
+        onMoreToggle.mock.calls[0][0] === false,
+        'FLOW-25-18',
+        `参数应为false，实际: ${onMoreToggle.mock.calls[0][0]}`,
+      );
+    });
+
+    it(accTest('FLOW-25-19', '更多菜单 — 展开时下拉面板可见'), () => {
+      render(<TabBar {...makeTabBarProps({ moreMenuOpen: true })} />);
+
+      const dropdown = screen.getByTestId('feature-menu-dropdown');
+      assertVisible(dropdown, 'FLOW-25-19', '功能菜单下拉面板');
+    });
+
+    it(accTest('FLOW-25-20', '更多菜单 — 关闭时下拉面板不存在'), () => {
+      render(<TabBar {...makeTabBarProps({ moreMenuOpen: false })} />);
+
+      const dropdown = screen.queryByTestId('feature-menu-dropdown');
+      assertStrict(dropdown === null, 'FLOW-25-20',
+        '关闭时下拉面板不应存在');
+    });
+
+    it(accTest('FLOW-25-21', '更多菜单 — 展开时显示所有16个功能项'), () => {
+      render(<TabBar {...makeTabBarProps({ moreMenuOpen: true })} />);
+
+      for (const item of FEATURE_ITEMS) {
+        const menuItem = screen.getByTestId(`feature-menu-item-${item.id}`);
+        assertVisible(menuItem, 'FLOW-25-21', `功能项 ${item.id}`);
+      }
+    });
+
+    it(accTest('FLOW-25-22', '更多菜单 — 点击功能项 → onFeatureSelect调用'), () => {
+      const onFeatureSelect = vi.fn();
+      const onMoreToggle = vi.fn();
+      render(<TabBar {...makeTabBarProps({
+        moreMenuOpen: true,
+        onFeatureSelect,
+        onMoreToggle,
+      })} />);
+
+      fireEvent.click(screen.getByTestId('feature-menu-item-shop'));
+
+      assertStrict(onFeatureSelect.mock.calls.length === 1, 'FLOW-25-22', 'onFeatureSelect应被调用');
+      assertStrict(
+        onFeatureSelect.mock.calls[0][0] === 'shop',
+        'FLOW-25-22',
+        `参数应为'shop'，实际: ${onFeatureSelect.mock.calls[0][0]}`,
+      );
+      assertStrict(onMoreToggle.mock.calls.length >= 1, 'FLOW-25-22', '选择后应触发onMoreToggle关闭菜单');
+    });
+
+    it(accTest('FLOW-25-23', '更多菜单 — aria-expanded状态切换'), () => {
+      const { rerender } = render(
+        <TabBar {...makeTabBarProps({ moreMenuOpen: false })} />
+      );
+      const moreBtn = getTabButton('more');
+      assertStrict(
+        moreBtn.getAttribute('aria-expanded') === 'false',
         'FLOW-25-23',
-        '连续切换7个Tab资源不变',
+        '关闭时aria-expanded应为false',
+      );
+
+      rerender(<TabBar {...makeTabBarProps({ moreMenuOpen: true })} />);
+      const moreBtnOpen = getTabButton('more');
+      assertStrict(
+        moreBtnOpen.getAttribute('aria-expanded') === 'true',
+        'FLOW-25-23',
+        '展开时aria-expanded应为true',
       );
     });
 
-    it(accTest('FLOW-25-24', '快速切换 — 切换后建筑数据不变'), () => {
-      // 添加一些资源
-      sim.addResources({ gold: 10000, grain: 10000 });
+    it(accTest('FLOW-25-24', '更多菜单 — aria-haspopup=menu'), () => {
+      render(<TabBar {...makeTabBarProps()} />);
+      const moreBtn = getTabButton('more');
+      assertStrict(
+        moreBtn.getAttribute('aria-haspopup') === 'menu',
+        'FLOW-25-24',
+        '更多按钮应有aria-haspopup=menu',
+      );
+    });
+  });
 
+  // ═══════════════════════════════════════════════════════════
+  // 4. Badge显示（FLOW-25-25 ~ FLOW-25-32）
+  // ═══════════════════════════════════════════════════════════
+
+  describe('4. Badge显示', () => {
+
+    it(accTest('FLOW-25-25', 'Badge — 数字badge渲染'), () => {
+      const tabBadges: TabBadges = { hero: { count: 5 } };
+      render(<TabBar {...makeTabBarProps({ tabBadges })} />);
+
+      const badgeElements = screen.getAllByTestId('tab-badge-count');
+      const heroBadge = badgeElements.find(el => el.textContent === '5');
+      assertStrict(!!heroBadge, 'FLOW-25-25', '应显示数字badge "5"');
+    });
+
+    it(accTest('FLOW-25-26', 'Badge — 圆点badge渲染'), () => {
+      const tabBadges: TabBadges = { tech: { count: 0, dot: true } };
+      render(<TabBar {...makeTabBarProps({ tabBadges })} />);
+
+      const dotBadge = screen.getByTestId('tab-badge-dot');
+      assertVisible(dotBadge, 'FLOW-25-26', '圆点badge');
+    });
+
+    it(accTest('FLOW-25-27', 'Badge — 无badge时不显示badge元素'), () => {
+      const tabBadges: TabBadges = {};
+      render(<TabBar {...makeTabBarProps({ tabBadges })} />);
+
+      const heroBtn = getTabButton('hero');
+      const heroBadgeCount = heroBtn.querySelector('[data-testid="tab-badge-count"]');
+      const heroBadgeDot = heroBtn.querySelector('[data-testid="tab-badge-dot"]');
+      assertStrict(!heroBadgeCount, 'FLOW-25-27', 'hero不应有数字badge');
+      assertStrict(!heroBadgeDot, 'FLOW-25-27', 'hero不应有圆点badge');
+    });
+
+    it(accTest('FLOW-25-28', 'Badge — count=0且dot=false不显示'), () => {
+      const tabBadges: TabBadges = { hero: { count: 0, dot: false } };
+      render(<TabBar {...makeTabBarProps({ tabBadges })} />);
+
+      const heroBtn = getTabButton('hero');
+      const badgeCount = heroBtn.querySelector('[data-testid="tab-badge-count"]');
+      const badgeDot = heroBtn.querySelector('[data-testid="tab-badge-dot"]');
+      assertStrict(!badgeCount, 'FLOW-25-28', 'count=0不应显示数字badge');
+      assertStrict(!badgeDot, 'FLOW-25-28', 'dot=false不应显示圆点badge');
+    });
+
+    it(accTest('FLOW-25-29', 'Badge — 99+截断显示'), () => {
+      const tabBadges: TabBadges = { hero: { count: 150 } };
+      render(<TabBar {...makeTabBarProps({ tabBadges })} />);
+
+      const badgeElements = screen.getAllByTestId('tab-badge-count');
+      const largeBadge = badgeElements.find(el => el.textContent === '99+');
+      assertStrict(!!largeBadge, 'FLOW-25-29', 'count=150应显示99+');
+    });
+
+    it(accTest('FLOW-25-30', 'Badge — 99不截断'), () => {
+      const tabBadges: TabBadges = { hero: { count: 99 } };
+      render(<TabBar {...makeTabBarProps({ tabBadges })} />);
+
+      const badgeElements = screen.getAllByTestId('tab-badge-count');
+      const badge99 = badgeElements.find(el => el.textContent === '99');
+      assertStrict(!!badge99, 'FLOW-25-30', 'count=99应显示"99"');
+    });
+
+    it(accTest('FLOW-25-31', 'Badge — 更多Tab汇总badge'), () => {
+      const featureMenuItems = makeFeatureMenuItems([
+        { id: 'quest', badge: 3 },
+        { id: 'mail', badge: 5 },
+      ]);
+      render(<TabBar {...makeTabBarProps({ featureMenuItems })} />);
+
+      const moreBtn = getTabButton('more');
+      const badgeInMore = moreBtn.querySelector('[data-testid="tab-badge-count"]');
+      assertStrict(!!badgeInMore, 'FLOW-25-31', '更多Tab应显示汇总badge');
+      assertStrict(
+        badgeInMore?.textContent === '8',
+        'FLOW-25-31',
+        `汇总badge应为8，实际: ${badgeInMore?.textContent}`,
+      );
+    });
+
+    it(accTest('FLOW-25-32', 'Badge — 多个Tab同时有badge'), () => {
+      const tabBadges: TabBadges = {
+        hero: { count: 3 },
+        tech: { count: 1 },
+        campaign: { dot: true },
+      };
+      render(<TabBar {...makeTabBarProps({ tabBadges })} />);
+
+      const countBadges = screen.getAllByTestId('tab-badge-count');
+      const dotBadges = screen.getAllByTestId('tab-badge-dot');
+      assertStrict(countBadges.length >= 2, 'FLOW-25-32',
+        `应有≥2个数字badge，实际: ${countBadges.length}`);
+      assertStrict(dotBadges.length >= 1, 'FLOW-25-32',
+        `应有≥1个圆点badge，实际: ${dotBadges.length}`);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // 5. 快速切换与回调序列（FLOW-25-33 ~ FLOW-25-38）
+  // ═══════════════════════════════════════════════════════════
+
+  describe('5. 快速切换与回调序列', () => {
+
+    it(accTest('FLOW-25-33', '快速切换 — 连续点击6个Tab，回调序列正确'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
+
+      const tabs: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige'];
+      for (const tab of tabs) {
+        fireEvent.click(getTabButton(tab));
+      }
+
+      assertStrict(onTabChange.mock.calls.length === 6, 'FLOW-25-33',
+        `应调用6次，实际: ${onTabChange.mock.calls.length}`);
+
+      for (let i = 0; i < tabs.length; i++) {
+        const call = onTabChange.mock.calls[i][0] as TabConfig;
+        assertStrict(call.id === tabs[i], 'FLOW-25-33',
+          `第${i + 1}次调用id应为${tabs[i]}，实际: ${call.id}`);
+      }
+    });
+
+    it(accTest('FLOW-25-34', '快速切换 — 重复点击同一Tab每次都触发回调'), () => {
+      const onTabChange = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange })} />);
+
+      fireEvent.click(getTabButton('hero'));
+      fireEvent.click(getTabButton('hero'));
+      fireEvent.click(getTabButton('hero'));
+
+      assertStrict(onTabChange.mock.calls.length === 3, 'FLOW-25-34',
+        '重复点击同一Tab应每次都触发回调');
+    });
+
+    it(accTest('FLOW-25-35', '快速切换 — 引擎资源不变'), () => {
       const resourcesBefore = sim.getAllResources();
 
-      // 快速切换
-      for (let i = 0; i < 20; i++) {
-        tabState.switchTab(TABS[i % TABS.length].id);
+      render(<TabBar {...makeTabBarProps()} />);
+      const tabs: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige', 'more'];
+      for (const tab of tabs) {
+        fireEvent.click(getTabButton(tab));
       }
 
       const resourcesAfter = sim.getAllResources();
       assertStrict(
         JSON.stringify(resourcesBefore) === JSON.stringify(resourcesAfter),
-        'FLOW-25-24',
-        '快速切换20次后资源不变',
+        'FLOW-25-35',
+        '快速切换Tab后引擎资源应不变',
       );
     });
 
-    it(accTest('FLOW-25-25', '快速切换 — 武将数据不丢失'), () => {
-      // 获取引擎武将系统
-      const heroSystem = sim.engine.getHeroSystem();
-      assertStrict(!!heroSystem, 'FLOW-25-25', '武将系统应存在');
+    it(accTest('FLOW-25-36', '快速切换 — 更多菜单toggle回调序列'), () => {
+      const onMoreToggle = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onMoreToggle })} />);
 
-      // 快速切换
-      for (const tab of TABS) {
-        tabState.switchTab(tab.id);
-      }
+      fireEvent.click(getTabButton('more'));
+      fireEvent.click(getTabButton('more'));
+      fireEvent.click(getTabButton('more'));
 
-      // 武将系统应仍然可用
-      const heroSystemAfter = sim.engine.getHeroSystem();
-      assertStrict(!!heroSystemAfter, 'FLOW-25-25', '切换后武将系统仍可用');
+      assertStrict(onMoreToggle.mock.calls.length === 3, 'FLOW-25-36',
+        `应调用3次onMoreToggle，实际: ${onMoreToggle.mock.calls.length}`);
     });
 
-    it(accTest('FLOW-25-26', '快速切换 — 科技数据不丢失'), () => {
-      const techSystem = sim.engine.getSubsystemRegistry().get('techTree');
-      assertStrict(!!techSystem, 'FLOW-25-26', '科技系统应存在');
+    it(accTest('FLOW-25-37', '快速切换 — 混合Tab和更多菜单交互'), () => {
+      const onTabChange = vi.fn();
+      const onMoreToggle = vi.fn();
+      render(<TabBar {...makeTabBarProps({ onTabChange, onMoreToggle })} />);
 
-      for (const tab of TABS) {
-        tabState.switchTab(tab.id);
-      }
+      fireEvent.click(getTabButton('hero'));
+      fireEvent.click(getTabButton('more'));
+      fireEvent.click(getTabButton('campaign'));
+      fireEvent.click(getTabButton('more'));
 
-      const techSystemAfter = sim.engine.getSubsystemRegistry().get('techTree');
-      assertStrict(!!techSystemAfter, 'FLOW-25-26', '切换后科技系统仍可用');
+      assertStrict(onTabChange.mock.calls.length === 2, 'FLOW-25-37',
+        `onTabChange应调用2次，实际: ${onTabChange.mock.calls.length}`);
+      assertStrict(onMoreToggle.mock.calls.length === 2, 'FLOW-25-37',
+        `onMoreToggle应调用2次，实际: ${onMoreToggle.mock.calls.length}`);
     });
 
-    it(accTest('FLOW-25-27', '快速切换 — 编队数据不丢失'), () => {
-      const formationSystem = sim.engine.getSubsystemRegistry().get('heroFormation');
-      assertStrict(!!formationSystem, 'FLOW-25-27', '编队系统应存在');
+    it(accTest('FLOW-25-38', '快速切换 — Tab配置顺序与TABS常量一致'), () => {
+      render(<TabBar {...makeTabBarProps()} />);
 
-      for (const tab of TABS) {
-        tabState.switchTab(tab.id);
+      const tabs = screen.getAllByRole('tab');
+      for (let i = 0; i < TABS.length; i++) {
+        const tabBtn = tabs[i];
+        assertStrict(
+          tabBtn.getAttribute('aria-label') === TABS[i].label,
+          'FLOW-25-38',
+          `第${i}个Tab应为${TABS[i].label}`,
+        );
       }
-
-      const formationSystemAfter = sim.engine.getSubsystemRegistry().get('heroFormation');
-      assertStrict(!!formationSystemAfter, 'FLOW-25-27', '切换后编队系统仍可用');
-    });
-
-    it(accTest('FLOW-25-28', '快速切换 — 引导状态不丢失'), () => {
-      const tutorialGuide = sim.engine.getTutorialStateMachine();
-      assertStrict(!!tutorialGuide, 'FLOW-25-28', '引导系统应存在');
-
-      for (const tab of TABS) {
-        tabState.switchTab(tab.id);
-      }
-
-      const tutorialGuideAfter = sim.engine.getTutorialStateMachine();
-      assertStrict(!!tutorialGuideAfter, 'FLOW-25-28', '切换后引导系统仍可用');
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // 5. 更多Tab下拉菜单（FLOW-25-29 ~ FLOW-25-34）
+  // 6. 苏格拉底边界（FLOW-25-39 ~ FLOW-25-48）
   // ═══════════════════════════════════════════════════════════
 
-  describe('5. 更多Tab下拉菜单', () => {
+  describe('6. 苏格拉底边界', () => {
 
-    it(accTest('FLOW-25-29', '下拉菜单 — 点击更多Tab打开菜单'), () => {
-      assertStrict(!tabState.isMoreMenuOpen(), 'FLOW-25-29', '初始应关闭');
-
-      tabState.switchTab('more');
-      assertStrict(tabState.isMoreMenuOpen(), 'FLOW-25-29', '点击后应打开');
+    it(accTest('FLOW-25-39', '边界 — calendar=null不崩溃'), () => {
+      const { container } = render(
+        <TabBar {...makeTabBarProps({ calendar: null })} />
+      );
+      assertStrict(!!container, 'FLOW-25-39', 'calendar=null时应正常渲染');
     });
 
-    it(accTest('FLOW-25-30', '下拉菜单 — 再次点击更多Tab关闭菜单'), () => {
-      tabState.switchTab('more');
-      tabState.switchTab('more');
-      assertStrict(!tabState.isMoreMenuOpen(), 'FLOW-25-30', '再次点击应关闭');
+    it(accTest('FLOW-25-40', '边界 — tabBadges为空对象'), () => {
+      const { container } = render(
+        <TabBar {...makeTabBarProps({ tabBadges: {} })} />
+      );
+      assertStrict(!!container, 'FLOW-25-40', '空tabBadges应正常渲染');
     });
 
-    it(accTest('FLOW-25-31', '下拉菜单 — ESC关闭菜单'), () => {
-      tabState.setMoreMenuOpen(true);
-      // 模拟ESC
-      tabState.setMoreMenuOpen(false);
-      assertStrict(!tabState.isMoreMenuOpen(), 'FLOW-25-31', 'ESC应关闭');
+    it(accTest('FLOW-25-41', '边界 — featureMenuItems为空数组'), () => {
+      const { container } = render(
+        <TabBar {...makeTabBarProps({ featureMenuItems: [], moreMenuOpen: true })} />
+      );
+      assertStrict(!!container, 'FLOW-25-41', '空featureMenuItems应正常渲染');
+
+      const dropdown = screen.queryByTestId('feature-menu-dropdown');
+      assertStrict(!!dropdown, 'FLOW-25-41', '下拉面板应存在');
     });
 
-    it(accTest('FLOW-25-32', '下拉菜单 — 点击外部关闭'), () => {
-      tabState.setMoreMenuOpen(true);
-      // 模拟点击外部
-      tabState.setMoreMenuOpen(false);
-      assertStrict(!tabState.isMoreMenuOpen(), 'FLOW-25-32', '点击外部应关闭');
+    it(accTest('FLOW-25-42', '边界 — TABS常量不可变（7个Tab）'), () => {
+      assertStrict(TABS.length === 7, 'FLOW-25-42',
+        `TABS应有7项，实际: ${TABS.length}`);
     });
 
-    it(accTest('FLOW-25-33', '下拉菜单 — 选择功能项后关闭菜单'), () => {
-      tabState.setMoreMenuOpen(true);
-
-      // 模拟选择功能项
-      const selectedPanel: string = 'quest';
-      tabState.setMoreMenuOpen(false);
-
-      assertStrict(!tabState.isMoreMenuOpen(), 'FLOW-25-33', '选择后应关闭');
-      assertStrict(selectedPanel === 'quest', 'FLOW-25-33', '应选中quest');
+    it(accTest('FLOW-25-43', '边界 — FEATURE_ITEMS常量（16项）'), () => {
+      assertStrict(FEATURE_ITEMS.length === 16, 'FLOW-25-43',
+        `FEATURE_ITEMS应有16项，实际: ${FEATURE_ITEMS.length}`);
     });
 
-    it(accTest('FLOW-25-34', '下拉菜单 — 功能菜单项包含所有面板'), () => {
-      const panelIds = FEATURE_ITEMS.map(item => item.id);
-      assertStrict(panelIds.includes('quest'), 'FLOW-25-34', '应包含quest');
-      assertStrict(panelIds.includes('social'), 'FLOW-25-34', '应包含social');
-      assertStrict(panelIds.includes('trade'), 'FLOW-25-34', '应包含trade');
-      assertStrict(panelIds.includes('settings'), 'FLOW-25-34', '应包含settings');
-      assertStrict(panelIds.includes('heritage'), 'FLOW-25-34', '应包含heritage');
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  // 6. 苏格拉底提问审查（FLOW-25-35 ~ FLOW-25-42）
-  // ═══════════════════════════════════════════════════════════
-
-  describe('6. 苏格拉底提问审查', () => {
-
-    it(accTest('FLOW-25-35', '审查 — Q1:攻城成功后新领土自动显示在地图上'), () => {
-      // 天下Tab(map)的地图系统
-      const mapSystem = sim.engine.getSubsystemRegistry().get('worldMap');
-      assertStrict(!!mapSystem, 'FLOW-25-35', '地图系统应存在');
-
-      // 切换到天下Tab后地图数据应实时
-      tabState.switchTab('map');
-      const mapSystemAfter = sim.engine.getSubsystemRegistry().get('worldMap');
-      assertStrict(!!mapSystemAfter, 'FLOW-25-35', '切换后地图系统仍可用');
-    });
-
-    it(accTest('FLOW-25-36', '审查 — Q2:建筑升级完成后资源产出实时更新'), () => {
-      // 建筑Tab(building)
-      const buildingSystem = sim.engine.building;
-      assertStrict(!!buildingSystem, 'FLOW-25-36', '建筑系统应存在');
-
-      // 资源系统
-      const resourceSystem = sim.engine.resource;
-      assertStrict(!!resourceSystem, 'FLOW-25-36', '资源系统应存在');
-    });
-
-    it(accTest('FLOW-25-37', '审查 — Q3:武将升星后编队中战力同步更新'), () => {
-      // 武将Tab(hero)和编队系统
-      const heroSystem = sim.engine.getHeroSystem();
-      const formationSystem = sim.engine.getSubsystemRegistry().get('heroFormation');
-      assertStrict(!!heroSystem, 'FLOW-25-37', '武将系统应存在');
-      assertStrict(!!formationSystem, 'FLOW-25-37', '编队系统应存在');
-    });
-
-    it(accTest('FLOW-25-38', '审查 — Q4:出征战斗胜利后奖励自动发放'), () => {
-      // 出征Tab(campaign)
-      const campaignSystem = sim.engine.getSubsystemRegistry().get('campaignSystem');
-      assertStrict(!!campaignSystem, 'FLOW-25-38', '出征系统应存在');
-    });
-
-    it(accTest('FLOW-25-39', '审查 — Q5:招贤馆招募新武将后武将Tab立即可见'), () => {
-      // 招贤馆和武将系统
-      const recruitSystem = sim.engine.getRecruitSystem();
-      const heroSystem = sim.engine.getHeroSystem();
-      assertStrict(!!recruitSystem || !!heroSystem, 'FLOW-25-39',
-        '招募或武将系统应存在');
-    });
-
-    it(accTest('FLOW-25-40', '审查 — Q6:科技升级后加成立即生效'), () => {
-      const techSystem = sim.engine.getSubsystemRegistry().get('techTree');
-      assertStrict(!!techSystem, 'FLOW-25-40', '科技系统应存在');
-    });
-
-    it(accTest('FLOW-25-41', '审查 — Q7:编队修改后出征战力重新计算'), () => {
-      const formationSystem = sim.engine.getSubsystemRegistry().get('heroFormation');
-      const campaignSystem = sim.engine.getSubsystemRegistry().get('campaignSystem');
-      assertStrict(!!formationSystem, 'FLOW-25-41', '编队系统应存在');
-      assertStrict(!!campaignSystem, 'FLOW-25-41', '出征系统应存在');
-    });
-
-    it(accTest('FLOW-25-42', '审查 — Tab导航覆盖所有功能入口'), () => {
-      // 7个一级Tab + 更多菜单覆盖所有功能
+    it(accTest('FLOW-25-44', '边界 — TabId类型覆盖所有TABS'), () => {
       const tabIds = TABS.map(t => t.id);
-      assertStrict(tabIds.length === 7, 'FLOW-25-42',
-        `应有7个一级Tab，实际: ${tabIds.length}`);
-
-      // 更多菜单覆盖其余功能
-      const featureIds = FEATURE_ITEMS.map(f => f.id);
-      assertStrict(featureIds.length === 16, 'FLOW-25-42',
-        `更多菜单应有16项，实际: ${featureIds.length}`);
-
-      // 总功能覆盖 = 6个独立Tab + 16个更多菜单项（声望有独立Tab也在更多菜单中）
-      const allAccessPoints = new Set([...tabIds, ...featureIds]);
-      assertStrict(allAccessPoints.size >= 20, 'FLOW-25-42',
-        `总入口数应≥20，实际: ${allAccessPoints.size}`);
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  // 7. 苏格拉底边界（FLOW-25-43 ~ FLOW-25-48）
-  // ═══════════════════════════════════════════════════════════
-
-  describe('7. 苏格拉底边界', () => {
-
-    it(accTest('FLOW-25-43', '边界 — TabBar配置不可变'), () => {
-      // TABS 应是只读的
-      const originalLength = TABS.length;
-      assertStrict(originalLength === 7, 'FLOW-25-43',
-        `TABS长度应为7，实际: ${originalLength}`);
-    });
-
-    it(accTest('FLOW-25-44', '边界 — 功能菜单配置不可变'), () => {
-      const originalLength = FEATURE_ITEMS.length;
-      assertStrict(originalLength === 16, 'FLOW-25-44',
-        `FEATURE_ITEMS长度应为16，实际: ${originalLength}`);
-    });
-
-    it(accTest('FLOW-25-45', '边界 — TabBadge类型安全'), () => {
-      // TabBadge 可以是 undefined（无badge）
-      const noBadge: TabBadge | undefined = undefined;
-      assertStrict(noBadge === undefined, 'FLOW-25-45', '无badge应为undefined');
-
-      // 空badge
-      const emptyBadge: TabBadge = { count: 0, dot: false };
-      assertStrict(emptyBadge.count === 0, 'FLOW-25-45', '空badge count应为0');
-    });
-
-    it(accTest('FLOW-25-46', '边界 — TabId类型覆盖所有Tab'), () => {
-      const validTabIds: TabId[] = [
-        'map', 'campaign', 'hero', 'tech', 'building', 'prestige', 'more',
-        'equipment', 'npc', 'arena', 'expedition', 'army',
-      ];
-
-      // 所有 TabId 都应有对应的 Tab 配置或功能菜单项
-      for (const id of validTabIds) {
-        const inTabs = TABS.find(t => t.id === id);
-        const inFeatures = FEATURE_ITEMS.find(f => f.id === id);
-        assertStrict(!!inTabs || !!inFeatures, 'FLOW-25-46',
-          `TabId ${id} 应在TABS或FEATURE_ITEMS中`);
+      const expectedIds: TabId[] = ['map', 'campaign', 'hero', 'tech', 'building', 'prestige', 'more'];
+      for (let i = 0; i < expectedIds.length; i++) {
+        assertStrict(tabIds[i] === expectedIds[i], 'FLOW-25-44',
+          `TABS[${i}]应为${expectedIds[i]}，实际: ${tabIds[i]}`);
       }
     });
 
-    it(accTest('FLOW-25-47', '边界 — 引擎所有子系统通过Tab可达'), () => {
-      // 验证引擎关键子系统都可通过Tab导航访问
+    it(accTest('FLOW-25-45', '边界 — 功能菜单项badge显示'), () => {
+      const featureMenuItems = makeFeatureMenuItems([
+        { id: 'quest', badge: 5 },
+      ]);
+      render(<TabBar {...makeTabBarProps({ featureMenuItems, moreMenuOpen: true })} />);
+
+      const questItem = screen.getByTestId('feature-menu-item-quest');
+      const badgeEl = questItem.querySelector('.tk-more-dropdown-item-badge');
+      assertStrict(!!badgeEl, 'FLOW-25-45', 'quest项应显示badge');
+      assertStrict(badgeEl?.textContent === '5', 'FLOW-25-45',
+        `badge应为5，实际: ${badgeEl?.textContent}`);
+    });
+
+    it(accTest('FLOW-25-46', '边界 — 不可用功能项disabled'), () => {
+      const featureMenuItems = makeFeatureMenuItems([
+        { id: 'settings', available: false },
+      ]);
+      render(<TabBar {...makeTabBarProps({ featureMenuItems, moreMenuOpen: true })} />);
+
+      const settingsItem = screen.getByTestId('feature-menu-item-settings');
+      assertStrict(settingsItem.hasAttribute('disabled'), 'FLOW-25-46',
+        '不可用项应有disabled属性');
+    });
+
+    it(accTest('FLOW-25-47', '边界 — 更多菜单功能大厅标题'), () => {
+      render(<TabBar {...makeTabBarProps({ moreMenuOpen: true })} />);
+
+      const title = screen.getByText('功能大厅');
+      assertVisible(title, 'FLOW-25-47', '功能大厅标题');
+    });
+
+    it(accTest('FLOW-25-48', '边界 — 引擎子系统通过Tab可达'), () => {
       const registry = sim.engine.getSubsystemRegistry();
       const criticalSystems = [
-        'hero', 'building', 'techTree', 'resource', 'heroFormation', 'campaignSystem',
-        'shop', 'prestige', 'npc', 'arena', 'expedition',
+        'hero', 'building', 'techTree', 'resource',
+        'heroFormation', 'campaignSystem', 'shop',
+        'prestige', 'npc', 'arena', 'expedition',
       ];
-
       for (const sysName of criticalSystems) {
         const sys = registry.get(sysName);
-        assertStrict(!!sys, 'FLOW-25-47',
+        assertStrict(!!sys, 'FLOW-25-48',
           `关键子系统 ${sysName} 应存在`);
       }
-    });
-
-    it(accTest('FLOW-25-48', '边界 — Tab切换不触发引擎副作用'), () => {
-      // 记录初始状态
-      const snapshot1 = {
-        resources: sim.getAllResources(),
-      };
-
-      // 执行完整的Tab切换循环
-      for (const tab of TABS) {
-        tabState.switchTab(tab.id);
-      }
-      // 回到初始Tab
-      tabState.switchTab('map');
-
-      const snapshot2 = {
-        resources: sim.getAllResources(),
-      };
-
-      assertStrict(
-        JSON.stringify(snapshot1.resources) === JSON.stringify(snapshot2.resources),
-        'FLOW-25-48',
-        '完整Tab切换循环后资源应不变',
-      );
     });
   });
 });
