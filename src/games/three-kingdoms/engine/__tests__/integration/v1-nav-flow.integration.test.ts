@@ -92,7 +92,7 @@ describe('V1 NAV-FLOW 导航系统', () => {
       expect(resources.troops).toBe(50);
       expect(resources.mandate).toBe(0);
       expect(resources.techPoint).toBe(0);
-      expect(resources.recruitToken).toBe(10); // R5: 新手礼包 +10 求贤令
+      expect(resources.recruitToken).toBe(30); // R5: 新手礼包 +30 求贤令
     });
 
     it('should have production rates after init', () => {

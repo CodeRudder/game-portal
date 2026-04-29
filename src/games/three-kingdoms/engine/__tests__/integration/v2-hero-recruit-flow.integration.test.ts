@@ -508,7 +508,7 @@ describe('V2 RECRUIT-FLOW: 武将招募流程集成测试', () => {
   describe('CROSS-FLOW-6: 招募代币获取路径验证', () => {
     it('should be able to add recruitToken resource', () => {
       sim.addResources({ recruitToken: 100 });
-      expect(sim.getResource('recruitToken')).toBe(110); // R5: 初始10 + 添加100 = 110
+      expect(sim.getResource('recruitToken')).toBe(130); // R5: 初始30 + 添加100 = 130
     });
 
     it('should use recruitToken for normal recruit', () => {

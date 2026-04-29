@@ -150,7 +150,7 @@ export class BuildingSystem implements ISubsystem {
     // 主城特殊前置：Lv4→5 需任一建筑 Lv4, Lv9→10 需任一建筑 Lv9
     if (type === 'castle') {
       const next = state.level + 1;
-      if (next === 6 && !BUILDING_TYPES.some((t) => t !== 'castle' && this.buildings[t].level >= 4)) {
+      if (next === 5 && !BUILDING_TYPES.some((t) => t !== 'castle' && this.buildings[t].level >= 4)) {
         reasons.push('需要至少一座其他建筑达到 Lv4');
       }
       if (next === 10 && !BUILDING_TYPES.some((t) => t !== 'castle' && this.buildings[t].level >= 9)) {
@@ -235,7 +235,7 @@ export class BuildingSystem implements ISubsystem {
     if (!cost) return null;
 
     const refund: UpgradeCost = {
-      grain: Math.round(cost.grain * 1.0),
+      grain: Math.round(cost.grain * CANCEL_REFUND_RATIO),
       gold: Math.round(cost.gold * CANCEL_REFUND_RATIO),
       troops: Math.round(cost.troops * CANCEL_REFUND_RATIO),
       timeSeconds: 0,

@@ -158,11 +158,11 @@ describe('武将招募流程集成测试 (v2-play.md)', () => {
         return; // 跳过后续测试
       }
 
-      // 新游戏初始为10（新手礼包+10求贤令，resource-config.ts）
-      expect(token).toBe(10);
+      // 新游戏初始为30（新手礼包+30求贤令，resource-config.ts）
+      expect(token).toBe(30);
 
       // 先消耗所有recruitToken
-      sim.consumeResources({ recruitToken: 10 });
+      sim.consumeResources({ recruitToken: 30 });
       expect(sim.getResource('recruitToken')).toBe(0);
 
       // 尝试招募，应该失败并有明确提示
