@@ -593,6 +593,49 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* ── 超时跳过提示 (P1-3) ── */
+.tk-guide-tooltip__timeout-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.25);
+  border-radius: 6px;
+  animation: tk-guide-timeout-fade-in 0.3s ease forwards;
+}
+
+@keyframes tk-guide-timeout-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tk-guide-timeout-text {
+  font-size: 11px;
+  color: #ff9800;
+  white-space: nowrap;
+}
+
+.tk-guide-timeout-skip {
+  font-size: 11px !important;
+  padding: 3px 10px !important;
+  min-height: auto !important;
+  border-color: rgba(255, 152, 0, 0.4) !important;
+  color: #ff9800 !important;
+}
+
+.tk-guide-timeout-skip:hover {
+  background: rgba(255, 152, 0, 0.1) !important;
+}
+
 /* ── 引导遮罩滚动支持 ── */
 .tk-guide-overlay {
   overflow-y: auto;

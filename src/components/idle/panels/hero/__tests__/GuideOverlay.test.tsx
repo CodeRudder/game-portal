@@ -526,13 +526,15 @@ describe('GuideOverlay', () => {
   // ═══════════════════════════════════════════
 
   it('首次进入且无进度时应显示欢迎弹窗', () => {
-    // 清除所有localStorage，模拟首次进入
+    // P1-1 修复：需要外层 WelcomeModal 已关闭（tk-has-visited=true）才显示内层欢迎弹窗
     localStorage.clear();
+    localStorage.setItem('tk-has-visited', 'true');
     render(<GuideOverlay steps={testSteps} />);
     expect(screen.getByTestId('guide-welcome-modal')).toBeInTheDocument();
   });
 
   it('已完成引导时不应显示欢迎弹窗', () => {
+    localStorage.setItem('tk-has-visited', 'true');
     localStorage.setItem(GUIDE_KEY, JSON.stringify({ step: 0, completed: true }));
     const { container } = render(<GuideOverlay steps={testSteps} />);
     // 已完成 → 整个组件不渲染（包括欢迎弹窗）
@@ -542,6 +544,7 @@ describe('GuideOverlay', () => {
   it('点击开始引导应关闭欢迎弹窗并显示引导步骤', async () => {
     const user = userEvent.setup();
     localStorage.clear();
+    localStorage.setItem('tk-has-visited', 'true');
     render(<GuideOverlay steps={testSteps} />);
 
     // 欢迎弹窗应可见
@@ -559,6 +562,7 @@ describe('GuideOverlay', () => {
   it('欢迎弹窗跳过后不应再显示', async () => {
     const user = userEvent.setup();
     localStorage.clear();
+    localStorage.setItem('tk-has-visited', 'true');
     render(<GuideOverlay steps={testSteps} onSkip={onSkip} />);
 
     // 点击跳过

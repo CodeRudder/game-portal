@@ -114,12 +114,15 @@ describe('ACC-11 引导系统UI层验收', () => {
   describe('ACC-11-01: 首次启动显示欢迎弹窗', () => {
     it('ACC-11-01: 清除localStorage后首次进入显示欢迎弹窗', () => {
       localStorage.clear();
+      // P1-1 修复：外层WelcomeModal已关闭后才显示内层欢迎弹窗
+      localStorage.setItem('tk-has-visited', 'true');
       render(<GuideOverlay steps={testSteps} />);
       expect(screen.getByTestId('guide-welcome-modal')).toBeInTheDocument();
     });
 
     it('ACC-11-01: 欢迎弹窗包含「开始游戏」按钮', () => {
       localStorage.clear();
+      localStorage.setItem('tk-has-visited', 'true');
       render(<GuideOverlay steps={testSteps} />);
       expect(screen.getByTestId('guide-welcome-start')).toBeInTheDocument();
     });
@@ -131,6 +134,7 @@ describe('ACC-11 引导系统UI层验收', () => {
     it('ACC-11-02: 点击开始游戏后显示引导覆盖层', async () => {
       const user = userEvent.setup();
       localStorage.clear();
+      localStorage.setItem('tk-has-visited', 'true');
       render(<GuideOverlay steps={testSteps} />);
 
       await user.click(screen.getByTestId('guide-welcome-start'));
@@ -840,6 +844,8 @@ describe('ACC-11 引导系统UI层验收', () => {
   describe('ACC-11-47: 手机端欢迎弹窗适配', () => {
     it('ACC-11-47: 欢迎弹窗显示步骤数量', () => {
       localStorage.clear();
+      // P1-1 修复：外层WelcomeModal已关闭后才显示内层欢迎弹窗
+      localStorage.setItem('tk-has-visited', 'true');
       render(<GuideOverlay steps={testSteps} />);
       const modal = screen.getByTestId('guide-welcome-modal');
       expect(modal).toBeInTheDocument();

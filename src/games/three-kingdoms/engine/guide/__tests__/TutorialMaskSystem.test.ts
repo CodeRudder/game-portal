@@ -375,4 +375,52 @@ describe('TutorialMaskSystem', () => {
       expect(mask.getTargetSelector()).toBeNull();
     });
   });
+
+  // ═══════════════════════════════════════════
+  // 11. P1-4: activateAsBackup 备用激活
+  // ═══════════════════════════════════════════
+  describe('P1-4: activateAsBackup 备用激活', () => {
+    afterEach(() => {
+      // 清理 localStorage 标记
+      try { localStorage.removeItem('__tk_guide_overlay_active'); } catch { /* ignore */ }
+    });
+
+    it('GuideOverlay未激活时，activateAsBackup成功激活遮罩', () => {
+      // 不设置激活标记 → GuideOverlay 未激活
+      try { localStorage.removeItem('__tk_guide_overlay_active'); } catch { /* ignore */ }
+
+      const result = mask.activateAsBackup();
+      expect(result).toBe(true);
+      expect(mask.isActive()).toBe(true);
+    });
+
+    it('GuideOverlay已激活时，activateAsBackup不激活遮罩', () => {
+      // 设置激活标记 → 模拟 GuideOverlay 正在显示
+      try { localStorage.setItem('__tk_guide_overlay_active', 'true'); } catch { /* ignore */ }
+
+      const result = mask.activateAsBackup();
+      expect(result).toBe(false);
+      expect(mask.isActive()).toBe(false);
+    });
+
+    it('activateAsBackup支持传入自定义配置', () => {
+      try { localStorage.removeItem('__tk_guide_overlay_active'); } catch { /* ignore */ }
+
+      const result = mask.activateAsBackup({ opacity: 0.5, padding: 12, borderRadius: 4, showHandAnimation: false });
+      expect(result).toBe(true);
+      expect(mask.isActive()).toBe(true);
+      // 验证配置已应用
+      const state = mask.getState();
+      expect(state.maskConfig.opacity).toBe(0.5);
+      expect(state.maskConfig.padding).toBe(12);
+    });
+
+    it('activateAsBackup在localStorage不可用时安全降级并激活', () => {
+      // 模拟 localStorage 不可用（不设置标记）
+      // activateAsBackup 应安全降级为正常 activate
+      const result = mask.activateAsBackup();
+      expect(result).toBe(true);
+      expect(mask.isActive()).toBe(true);
+    });
+  });
 });

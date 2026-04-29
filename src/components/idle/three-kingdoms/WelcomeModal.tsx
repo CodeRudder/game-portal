@@ -17,22 +17,35 @@ interface WelcomeModalProps {
   visible: boolean;
   /** 关闭回调 */
   onClose: () => void;
+  /** 是否需要显示引导（引导未完成时传入true，用于在欢迎弹窗中显示引导入口） */
+  showGuideEntry?: boolean;
+  /** 点击"开始引导"回调（当showGuideEntry为true时显示此按钮） */
+  onStartGuide?: () => void;
 }
 
 // ─────────────────────────────────────────────
 // 组件
 // ─────────────────────────────────────────────
 
-const WelcomeModal: React.FC<WelcomeModalProps> = ({ visible, onClose }) => {
+const WelcomeModal: React.FC<WelcomeModalProps> = ({ visible, onClose, showGuideEntry, onStartGuide }) => {
   if (!visible) return null;
+
+  /** 点击确认按钮：有引导入口时触发引导，否则直接关闭 */
+  const handleConfirm = () => {
+    if (showGuideEntry && onStartGuide) {
+      onStartGuide();
+    } else {
+      onClose();
+    }
+  };
 
   return (
     <Modal
       visible={visible}
       type="info"
       title="⚔️ 欢迎来到三国霸业！"
-      confirmText="开始游戏"
-      onConfirm={onClose}
+      confirmText={showGuideEntry ? '🚀 开始引导' : '开始游戏'}
+      onConfirm={handleConfirm}
       onCancel={onClose}
       width="min(460px, 90vw)"
     >
@@ -63,6 +76,11 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ visible, onClose }) => {
             </div>
           ))}
         </div>
+        {showGuideEntry && (
+          <p style={{ margin: 0, fontSize: '13px', color: '#f0c040', textAlign: 'center' }}>
+            🎮 首次游玩？点击「开始引导」快速掌握核心玩法！
+          </p>
+        )}
         <p style={{ margin: 0, fontSize: '12px', color: '#888', textAlign: 'center' }}>
           💡 点击底部 Tab 栏切换功能，右上角菜单查看更多玩法
         </p>

@@ -62,6 +62,32 @@ export class TutorialMaskSystem implements ISubsystem {
   }
 
   /**
+   * P1-4: 安全激活遮罩（备用模式）
+   *
+   * 仅在 GuideOverlay 未激活时才启用引擎层遮罩。
+   * 当 UI 层 GuideOverlay 正在显示时，此方法不会激活遮罩，
+   * 避免双遮罩并存问题。
+   *
+   * @param config - 遮罩配置（可选，使用默认值）
+   * @returns 是否成功激活
+   */
+  activateAsBackup(config?: Partial<TutorialMaskConfig>): boolean {
+    // 检查 UI 层 GuideOverlay 是否激活
+    // 通过 localStorage 标记判断（GuideOverlay 激活时会设置此标记）
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const guideOverlayActive = localStorage.getItem('__tk_guide_overlay_active');
+        if (guideOverlayActive === 'true') {
+          return false; // GuideOverlay 正在显示，不激活引擎层遮罩
+        }
+      }
+    } catch { /* ignore */ }
+
+    this.activate(config);
+    return true;
+  }
+
+  /**
    * 停用遮罩
    */
   deactivate(): void {

@@ -122,17 +122,21 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
   const [visible, setVisible] = useState(true);
 
   // ── 欢迎弹窗状态 ──
-  // 首次进入游戏且引导未完成时显示欢迎弹窗
+  // P1-1 修复：避免与外层 WelcomeModal 双层弹窗并存
+  // 仅当外层 WelcomeModal 已关闭（tk-has-visited=true）且引导未完成时才显示
   const [showWelcome, setShowWelcome] = useState(() => {
     try {
-      // 已完成引导或已关闭过欢迎弹窗 → 不再显示
+      // 外层 WelcomeModal 未关闭 → 不显示内层欢迎弹窗，避免双层弹窗
+      const hasVisited = localStorage.getItem('tk-has-visited');
+      if (hasVisited !== 'true') return false;
+      // 已完成引导或已关闭过引导欢迎弹窗 → 不再显示
       const dismissed = localStorage.getItem(WELCOME_DISMISSED_KEY);
       if (dismissed === 'true') return false;
       const progress = loadProgress();
       if (progress === -1) return false; // 已完成
       return true;
     } catch {
-      return true;
+      return false; // 安全降级：不显示内层欢迎弹窗
     }
   });
 
@@ -279,6 +283,68 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
   // 使用非空断言因为所有事件处理函数仅在组件渲染时触发，此时 step 必然存在
   const step = (shouldRender ? steps[currentStep] : null) as GuideStep | null;
   const isLastStep = step ? currentStep >= steps.length - 1 : false;
+
+  // ── P1-4 修复：统一双遮罩系统 ──
+  // GuideOverlay 激活时停用引擎层 TutorialMaskSystem，避免双遮罩并存
+  // TutorialMaskSystem 仅在 GuideOverlay 未激活时作为备用遮罩启用
+  useEffect(() => {
+    if (!engine) return;
+    try {
+      const registry = engine.getSubsystemRegistry?.();
+      if (!registry?.get) return;
+      // 尝试多种注册名获取遮罩系统（兼容不同注册key）
+      const maskSystem = (registry.get('tutorialMaskSystem') ?? registry.get('tutorial-mask')) as any;
+      if (!maskSystem) return;
+      if (shouldRender) {
+        // GuideOverlay 正在显示 → 停用引擎层遮罩，避免双遮罩并存
+        maskSystem.deactivate?.();
+        // 设置激活标记，供 TutorialMaskSystem.activateAsBackup 检测
+        try { localStorage.setItem('__tk_guide_overlay_active', 'true'); } catch { /* ignore */ }
+      } else {
+        // GuideOverlay 隐藏时清除激活标记
+        try { localStorage.removeItem('__tk_guide_overlay_active'); } catch { /* ignore */ }
+      }
+    } catch { /* 安全降级 */ }
+  }, [engine, shouldRender]);
+
+  // ── P1-3 修复：步骤超时自动跳过机制 ──
+  // 每个步骤30秒无操作后显示"跳过"提示，35秒后自动跳过（不可跳过步骤除外）
+  // 避免引导卡住导致用户无法继续游戏
+  const STEP_TIMEOUT_MS = 30_000;       // 30秒后显示跳过提示
+  const STEP_AUTO_SKIP_MS = 35_000;     // 35秒后自动跳过
+  const [showTimeoutHint, setShowTimeoutHint] = useState(false);
+
+  // 步骤切换时重置超时提示
+  useEffect(() => {
+    setShowTimeoutHint(false);
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (currentStep < 0 || !visible || isUnskippable) return;
+
+    // 30秒后显示"跳过"提示
+    const hintTimer = setTimeout(() => {
+      setShowTimeoutHint(true);
+    }, STEP_TIMEOUT_MS);
+
+    // 35秒后自动跳过
+    const autoSkipTimer = setTimeout(() => {
+      if (isLastStep) {
+        saveProgress(currentStep, true);
+        setVisible(false);
+        onComplete?.();
+      } else {
+        const next = currentStep + 1;
+        setCurrentStep(next);
+        saveProgress(next, false);
+      }
+    }, STEP_AUTO_SKIP_MS);
+
+    return () => {
+      clearTimeout(hintTimer);
+      clearTimeout(autoSkipTimer);
+    };
+  }, [currentStep, visible, isUnskippable, isLastStep, steps.length, onComplete]);
 
   // ── 引擎子步骤文案消费 ──
   // 优先使用引擎定义的子步骤文案，回退到 DEFAULT_STEPS 的静态 description
@@ -557,6 +623,19 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
           <div className="tk-guide-tooltip__progress" data-testid="guide-step-progress">
             {currentStep + 1} / {steps.length}
           </div>
+          {/* P1-3: 超时自动跳过提示 — 30秒后显示，提示用户即将自动跳过 */}
+          {showTimeoutHint && !isUnskippable && (
+            <div className="tk-guide-tooltip__timeout-hint" data-testid="guide-timeout-hint">
+              <span className="tk-guide-timeout-text">⏱ 即将自动跳过…</span>
+              <button
+                className="tk-guide-btn tk-guide-btn--skip tk-guide-timeout-skip"
+                data-testid="guide-timeout-skip-btn"
+                onClick={handleNext}
+              >
+                下一步
+              </button>
+            </div>
+          )}
         </div>
       </div>
       )}
