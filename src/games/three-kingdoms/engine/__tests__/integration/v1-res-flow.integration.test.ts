@@ -14,8 +14,8 @@
  * - 以实际代码行为为准
  *
  * 关键约束：
- * - 非主城建筑等级不能超过主城等级（初始 castle=1, farmland=1）
- * - 升级 farmland 前必须先升级 castle
+ * - 非主城建筑等级不能超过主城等级+1（P0-1修复：允许子建筑领先主城1级）
+ * - 初始状态 farmland Lv1 可直接升级到 Lv2
  * - [P1-2 说明] 容量警告阈值（见 resource-config.ts CAP_WARNING_THRESHOLDS）：
  *   PRD 定义5级（安全0-70%/注意70-90%/警告90-95%/紧急95-100%/已满100%）。
  *   引擎 CAP_WARNING_THRESHOLDS 定义了 safe=0.7/notice=0.9/warning=0.95/urgent=1.0，

@@ -15,8 +15,8 @@
  * - 以实际代码行为为准
  *
  * 关键约束：
- * - 非主城建筑等级不能超过主城等级（初始 castle=1, farmland=1）
- * - 升级任何非主城建筑前必须先确保主城等级足够
+ * - 非主城建筑等级不能超过主城等级+1（P0-1修复：允许子建筑领先主城1级）
+ * - 初始状态农田可直接升级，无需先升主城
  * - 主城 Lv5 需要"至少一座其他建筑达到 Lv4"
  * - 建筑队列：主城 Lv1~5 为 1 槽，Lv6~10 为 2 槽
  */
@@ -312,14 +312,26 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       }).toThrow();
     });
 
-    it('should not allow non-castle building to exceed castle level', () => {
-      // BLD-FLOW-2: 非主城建筑等级不能超过主城等级
+    it('should not allow non-castle building to exceed castle level + 1', () => {
+      // BLD-FLOW-2: 非主城建筑等级不能超过主城等级+1（P0-1修复）
       const sim = createSim();
 
-      // castle=1, farmland=1 → farmland 不能升级
-      const check = sim.engine.checkUpgrade('farmland');
-      expect(check.canUpgrade).toBe(false);
-      expect(check.reasons.some(r => r.includes('主城等级'))).toBe(true);
+      // P0-1修复后：castle=1, farmland=1 → farmland level(1) <= castle level(1) + 1 = 2，可以升级
+      const checkInitial = sim.engine.checkUpgrade('farmland');
+      // 资源可能不足，但不应因主城等级限制被拒绝
+      expect(checkInitial.reasons.some(r => r.includes('主城等级'))).toBe(false);
+
+      // 验证：通过升级农田到 Lv2（允许），然后尝试再升到 Lv3（超过 castle+1=2）
+      sim.addResources(SUFFICIENT_RESOURCES);
+      sim.upgradeBuilding('farmland'); // farmland → Lv2 (<= castle+1=2, 允许)
+      expect(sim.getBuildingLevel('farmland')).toBe(2);
+
+      // farmland=2, castle=1, farmland level(2) > castle level(1) + 1 = 2 → 不超过，但等于
+      // farmland level(2) <= castle(1)+1=2 → 可以升级？不，farmland level=2，升级后 level=3
+      // checkUpgrade 中 state.level > this.buildings.castle.level → 2 > 1 → true → 被限制
+      const checkExceeded = sim.engine.checkUpgrade('farmland');
+      expect(checkExceeded.canUpgrade).toBe(false);
+      expect(checkExceeded.reasons.some(r => r.includes('主城等级'))).toBe(true);
     });
   });
 
@@ -793,18 +805,24 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       }
     });
 
-    it('should reject upgrade when building level exceeds castle level', () => {
-      // 非主城建筑等级不能超过主城等级
+    it('should reject upgrade when building level exceeds castle level + 1', () => {
+      // P0-1修复：非主城建筑等级不能超过主城等级+1
       const sim = createSim();
       sim.addResources(SUFFICIENT_RESOURCES);
 
-      // castle 初始为 Lv1，farmland 初始为 Lv1
-      // farmland 等级不能超过 castle
-      const check = sim.engine.building.checkUpgrade('farmland', sim.engine.resource.getResources());
-      // farmland Lv1→2 需要 castle ≥ 2，当前 castle=1
-      expect(check.canUpgrade).toBe(false);
-      if (!check.canUpgrade) {
-        expect(check.reasons.some(r => r.includes('主城等级'))).toBe(true);
+      // P0-1修复后：castle=1, farmland=1 → farmland level(1) <= castle(1)+1=2，不应被主城等级限制
+      const checkInitial = sim.engine.building.checkUpgrade('farmland', sim.engine.resource.getResources());
+      expect(checkInitial.reasons.some(r => r.includes('主城等级'))).toBe(false);
+
+      // 升级农田到 Lv2（允许，因为 1 <= 1+1=2）
+      sim.upgradeBuilding('farmland');
+      expect(sim.getBuildingLevel('farmland')).toBe(2);
+
+      // farmland=2, castle=1 → farmland level(2) > castle(1) → 被限制
+      const checkExceeded = sim.engine.building.checkUpgrade('farmland', sim.engine.resource.getResources());
+      expect(checkExceeded.canUpgrade).toBe(false);
+      if (!checkExceeded.canUpgrade) {
+        expect(checkExceeded.reasons.some(r => r.includes('主城等级'))).toBe(true);
       }
     });
 

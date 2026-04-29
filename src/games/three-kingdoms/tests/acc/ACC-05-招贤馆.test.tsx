@@ -35,7 +35,7 @@ vi.mock('@/components/idle/common/Toast', () => ({
 
 /**
  * 创建一个初始化完成且带有充足招募资源的 GameEventSimulator。
- * 普通招募消耗铜钱，高级招募消耗求贤令。
+ * 普通招募消耗铜钱，高级招募消耗招贤令。
  */
 function createRecruitSim(options: {
   goldAmount?: number;
@@ -85,27 +85,27 @@ describe('ACC-05 招贤馆验收集成测试', () => {
     assertInDOM(advancedBtn, 'ACC-05-03', '高级招贤按钮');
   });
 
-  it(accTest('ACC-05-04', '资源余额显示 — 铜钱和求贤令'), () => {
+  it(accTest('ACC-05-04', '资源余额显示 — 铜钱和招贤令'), () => {
     const sim = createRecruitSim({ goldAmount: 9999, tokenAmount: 888 });
     const engine = sim.engine;
     render(<RecruitModal engine={engine} onClose={onClose} onRecruitComplete={onRecruitComplete} />);
-    // 验证资源余额渲染 — 铜钱和求贤令数字显示
+    // 验证资源余额渲染 — 铜钱和招贤令数字显示
     // 注意：引擎初始资源 gold=300, recruitToken=10（见 resource-config.ts INITIAL_RESOURCES）
     // createRecruitSim 在初始值基础上添加指定数量
     const goldEl = screen.getByTestId('recruit-balance-gold');
     const tokenEl = screen.getByTestId('recruit-balance-token');
     assertStrict(goldEl.textContent!.includes('10,299'), 'ACC-05-04', `铜钱余额应显示 10,299（初始300+添加9999），实际: ${goldEl.textContent}`);
-    assertStrict(tokenEl.textContent!.includes('918'), 'ACC-05-04', `求贤令余额应显示 918（初始30+添加888），实际: ${tokenEl.textContent}`);
+    assertStrict(tokenEl.textContent!.includes('918'), 'ACC-05-04', `招贤令余额应显示 918（初始30+添加888），实际: ${tokenEl.textContent}`);
   });
 
   it(accTest('ACC-05-05', '消耗显示正确 — 普通单抽和十连消耗'), () => {
     const sim = createRecruitSim();
     const engine = sim.engine;
     render(<RecruitModal engine={engine} onClose={onClose} onRecruitComplete={onRecruitComplete} />);
-    // 普通招募消耗 recruitToken（求贤令），不是 gold（铜钱）
+    // 普通招募消耗 recruitToken（招贤令），不是 gold（铜钱）
     // 配置见 hero-recruit-config.ts: normal { resourceType: 'recruitToken', amount: 5 }
-    const costElements = screen.getAllByText(/求贤令 ×\d+/);
-    assertStrict(costElements.length >= 2, 'ACC-05-05', '应显示单抽和十连消耗（求贤令）');
+    const costElements = screen.getAllByText(/招贤令 ×\d+/);
+    assertStrict(costElements.length >= 2, 'ACC-05-05', '应显示单抽和十连消耗（招贤令）');
   });
 
   it(accTest('ACC-05-06', '保底进度条可见 — 十连保底'), () => {
@@ -169,7 +169,7 @@ describe('ACC-05 招贤馆验收集成测试', () => {
     await userEvent.click(advancedBtn);
     const singleBtn = screen.getByText('单次招募').closest('button')!;
     await userEvent.click(singleBtn);
-    // 高级招募应正常执行（消耗求贤令）
+    // 高级招募应正常执行（消耗招贤令）
     assertStrict(true, 'ACC-05-11', '高级招募应正常执行');
   });
 
@@ -189,8 +189,8 @@ describe('ACC-05 招贤馆验收集成测试', () => {
     render(<RecruitModal engine={engine} onClose={onClose} onRecruitComplete={onRecruitComplete} />);
     const advancedBtn = screen.getByText('高级招贤').closest('button')!;
     await userEvent.click(advancedBtn);
-    const costElements = screen.getAllByText(/求贤令 ×\d+/);
-    assertStrict(costElements.length >= 2, 'ACC-05-13', '切换高级后应显示求贤令消耗');
+    const costElements = screen.getAllByText(/招贤令 ×\d+/);
+    assertStrict(costElements.length >= 2, 'ACC-05-13', '切换高级后应显示招贤令消耗');
   });
 
   it(accTest('ACC-05-14', '资源不足提示 — 按钮置灰不可点击'), () => {
@@ -236,14 +236,14 @@ describe('ACC-05 招贤馆验收集成测试', () => {
   it(accTest('ACC-05-20', '招募消耗正确扣除 — engine.recruit被调用'), async () => {
     const sim = createRecruitSim();
     const engine = sim.engine;
-    // 普通招募消耗 recruitToken（求贤令），不是 gold（铜钱）
+    // 普通招募消耗 recruitToken（招贤令），不是 gold（铜钱）
     const tokenBefore = engine.getResourceAmount('recruitToken');
     render(<RecruitModal engine={engine} onClose={onClose} onRecruitComplete={onRecruitComplete} />);
     const singleBtn = screen.getByText('单次招募').closest('button')!;
     await userEvent.click(singleBtn);
-    // 真实引擎应扣除求贤令（普通单抽消耗 recruitToken × 5）
+    // 真实引擎应扣除招贤令（普通单抽消耗 recruitToken × 5）
     const tokenAfter = engine.getResourceAmount('recruitToken');
-    assertStrict(tokenAfter < tokenBefore, 'ACC-05-20', `招募后求贤令应减少（前: ${tokenBefore}, 后: ${tokenAfter}）`);
+    assertStrict(tokenAfter < tokenBefore, 'ACC-05-20', `招募后招贤令应减少（前: ${tokenBefore}, 后: ${tokenAfter}）`);
   });
 
   it(accTest('ACC-05-21', '十连消耗正确扣除 — 十连招募调用'), async () => {
@@ -255,7 +255,7 @@ describe('ACC-05 招贤馆验收集成测试', () => {
     const tenBtn = screen.getByText('十连招募').closest('button')!;
     await userEvent.click(tenBtn);
     const tokenAfter = engine.getResourceAmount('recruitToken');
-    assertStrict(tokenAfter < tokenBefore, 'ACC-05-21', `十连招募后求贤令应减少（前: ${tokenBefore}, 后: ${tokenAfter}）`);
+    assertStrict(tokenAfter < tokenBefore, 'ACC-05-21', `十连招募后招贤令应减少（前: ${tokenBefore}, 后: ${tokenAfter}）`);
   });
 
   it(accTest('ACC-05-24', '保底计数正确递增 — getGachaState被调用'), async () => {
@@ -318,7 +318,7 @@ describe('ACC-05 招贤馆验收集成测试', () => {
   });
 
   it(accTest('ACC-05-32', '连续快速点击招募 — 不会重复扣除'), async () => {
-    // 普通招募消耗 recruitToken（求贤令），不是 gold（铜钱）
+    // 普通招募消耗 recruitToken（招贤令），不是 gold（铜钱）
     const sim = createRecruitSim({ goldAmount: 0, tokenAmount: 20 });
     const engine = sim.engine;
     const tokenBefore = engine.getResourceAmount('recruitToken');
@@ -400,6 +400,6 @@ describe('ACC-05 招贤馆验收集成测试', () => {
     const tokenEl = screen.getByTestId('recruit-balance-token');
     // 初始 gold=300 + 添加 10000 = 10,300；初始 recruitToken=30 + 添加 500 = 530
     assertStrict(goldEl.textContent!.includes('10,300'), 'ACC-05-48', `铜钱余额应显示 10,300（初始300+添加10000），实际: ${goldEl.textContent}`);
-    assertStrict(tokenEl.textContent!.includes('530'), 'ACC-05-48', `求贤令余额应显示 530（初始30+添加500），实际: ${tokenEl.textContent}`);
+    assertStrict(tokenEl.textContent!.includes('530'), 'ACC-05-48', `招贤令余额应显示 530（初始30+添加500），实际: ${tokenEl.textContent}`);
   });
 });

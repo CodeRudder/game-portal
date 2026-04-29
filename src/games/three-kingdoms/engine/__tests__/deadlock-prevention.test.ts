@@ -7,8 +7,8 @@ import { vi } from 'vitest';
  * 2. 初始资源产出立即生效（不需要先升级）
  * 3. 所有建筑升级路径无死锁
  *
- * 升级规则：非主城建筑等级不能超过主城等级，
- * 因此升级顺序必须为：主城先行 → 其他建筑跟进
+ * 升级规则：非主城建筑等级不能超过主城等级+1（P0-1修复：允许子建筑领先主城1级），
+ * 因此初始状态农田 Lv1 可直接升级到 Lv2（无需先升主城）
  */
 
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
@@ -65,7 +65,7 @@ describe('BUG-01 建筑升级死锁预防', () => {
     });
 
     it('初始资源足够连续升级主城+农田（无死锁）', () => {
-      // 升级顺序：主城先升（因为其他建筑不能超过主城等级），再升农田
+      // P0-1修复后：农田可直接升级（允许领先主城1级），也可以先升主城
       const castleCost = BUILDING_DEFS.castle.levelTable[1].upgradeCost;
       const farmlandCost = BUILDING_DEFS.farmland.levelTable[1].upgradeCost;
 
@@ -176,7 +176,7 @@ describe('BUG-01 建筑升级死锁预防', () => {
       const castleCheck = engine.checkUpgrade('castle');
       expect(castleCheck.canUpgrade).toBe(true);
 
-      // farmland 受主城等级约束（Lv1 == Lv1），但资源本身足够
+      // P0-1修复后：farmland 不再被主城等级限制（允许领先1级），资源本身足够
       const farmlandCost = BUILDING_DEFS.farmland.levelTable[1].upgradeCost;
       expect(INITIAL_RESOURCES.gold).toBeGreaterThanOrEqual(farmlandCost.gold);
       expect(INITIAL_RESOURCES.grain).toBeGreaterThanOrEqual(farmlandCost.grain);

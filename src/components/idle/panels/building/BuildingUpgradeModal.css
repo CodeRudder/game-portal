@@ -288,6 +288,55 @@
 }
 
 /* ═══════════════════════════════════════════
+   P0-1: 主城全资源加成醒目提示
+   ═══════════════════════════════════════════ */
+.tk-upgrade-castle-bonus {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(200, 169, 110, 0.12) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+}
+
+.tk-upgrade-castle-bonus-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFD700;
+  margin-bottom: 6px;
+}
+
+.tk-upgrade-castle-bonus-change {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.tk-upgrade-castle-bonus-current {
+  color: var(--tk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-upgrade-castle-bonus-arrow {
+  color: var(--tk-gold-soft);
+  font-weight: 700;
+}
+
+.tk-upgrade-castle-bonus-next {
+  color: #FFD700;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.tk-upgrade-castle-bonus-detail {
+  font-size: 11px;
+  color: var(--tk-text-secondary);
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════
    响应式 — 手机端
    ═══════════════════════════════════════════ */
 @media (max-width: 767px) {

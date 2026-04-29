@@ -80,7 +80,7 @@ const testSteps: GuideStep[] = [
     title: '⚔️ 排兵布阵',
     description: '创建编队并分配武将',
     position: 'center',
-    rewardText: '🎁 奖励：求贤令 ×1',
+    rewardText: '🎁 奖励：招贤令 ×1',
   },
 ];
 

@@ -141,9 +141,10 @@ export class BuildingSystem implements ISubsystem {
     const maxLv = BUILDING_MAX_LEVELS[type];
     if (state.level >= maxLv) reasons.push(`已达等级上限 Lv${maxLv}`);
 
-    // 非主城建筑等级 ≤ 主城等级
-    if (type !== 'castle' && state.level >= this.buildings.castle.level) {
-      reasons.push(`建筑等级不能超过主城等级 (Lv${this.buildings.castle.level})`);
+    // 非主城建筑等级 ≤ 主城等级 + 1（允许子建筑领先主城1级，改善新手体验）
+    // P0-1 修复：初始状态农田 Lv1 可以直接升级到 Lv2，无需先升级主城
+    if (type !== 'castle' && state.level > this.buildings.castle.level) {
+      reasons.push(`建筑等级不能超过主城等级+1 (当前主城 Lv${this.buildings.castle.level})`);
     }
 
     // 主城特殊前置：Lv4→5 需任一建筑 Lv4, Lv9→10 需任一建筑 Lv9

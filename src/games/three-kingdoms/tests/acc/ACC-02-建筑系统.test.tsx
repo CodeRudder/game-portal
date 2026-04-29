@@ -239,7 +239,10 @@ describe('ACC-02 建筑系统 验收测试', () => {
   it(accTest('ACC-02-13', '升级弹窗 - 资源不足时按钮禁用'), () => {
     // 创建 sim 但不给资源，初始资源很少
     const sim = createSim();
-    // 初始资源很少，远不够升级
+    // P0-1修复后：农田不再被主城等级限制，需要手动设置资源为不足
+    // 农田 Lv1→2 需要 grain=100, gold=50，将资源设为不足
+    sim.engine.resource.setResource('grain', 10);
+    sim.engine.resource.setResource('gold', 10);
     const snapProps = getSnapshotProps(sim);
     render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, {
       resources: snapProps.resources,

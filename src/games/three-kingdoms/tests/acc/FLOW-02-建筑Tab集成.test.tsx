@@ -315,23 +315,38 @@ describe('FLOW-02 建筑Tab集成测试', () => {
   // ═══════════════════════════════════════════════════════════════
 
   it(accTest('FLOW-02-17', '资源不足时按钮disabled — 弹窗确认按钮禁用'), () => {
-    const sim = createSim(); // 不添加额外资源，初始资源很少
-    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, { buildingType: 'farmland' })} />);
+    const sim = createSim(); // 不添加额外资源
+    // P0-1修复后：农田不再被主城等级限制，需要手动设置资源不足
+    sim.engine.resource.setResource('grain', 10);
+    sim.engine.resource.setResource('gold', 10);
+    const snapProps = getSnapshotProps(sim);
+    render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, {
+      buildingType: 'farmland',
+      resources: snapProps.resources,
+    })} />);
 
     const confirmBtn = screen.getByTestId('building-upgrade-confirm') as HTMLButtonElement;
-    // 初始资源 grain=500, gold=300, farmland Lv1→2 需要 grain:100 gold:50
-    // 但 castle Lv1 = farmland Lv1，不可升级（等级不能超过主城）
-    assertStrict(confirmBtn.disabled, 'FLOW-02-17', '不可升级时确认按钮应禁用');
+    // 资源不足（grain=10 < 100, gold=10 < 50），按钮应禁用
+    assertStrict(confirmBtn.disabled, 'FLOW-02-17', '资源不足时确认按钮应禁用');
   });
 
-  it(accTest('FLOW-02-18', '引擎层升级前置条件 — 非主城建筑等级不能超过主城'), () => {
+  it(accTest('FLOW-02-18', '引擎层升级前置条件 — 非主城建筑等级不能超过主城+1'), () => {
     const sim = createSim(); // castle Lv1, farmland Lv1
     const buildingSys = sim.engine.building;
     const resources = sim.engine.resource.getResources();
 
-    const check = buildingSys.checkUpgrade('farmland', resources);
-    assertStrict(!check.canUpgrade, 'FLOW-02-18', 'farmland Lv1=castle Lv1时不可升级');
-    assertStrict(check.reasons.some(r => r.includes('主城等级')), 'FLOW-02-18', '原因应包含主城等级限制');
+    // P0-1修复后：farmland Lv1 <= castle Lv1 + 1 = 2，可以升级
+    const checkInitial = buildingSys.checkUpgrade('farmland', resources);
+    assertStrict(checkInitial.canUpgrade, 'FLOW-02-18', 'farmland Lv1 应可升级（允许领先主城1级）');
+
+    // 升级农田到 Lv2
+    sim.upgradeBuilding('farmland'); // farmland Lv1→2
+
+    // 现在 farmland Lv2, castle Lv1 → farmland level(2) > castle level(1) → 不可升级
+    refillResources(sim);
+    const checkExceeded = buildingSys.checkUpgrade('farmland');
+    assertStrict(!checkExceeded.canUpgrade, 'FLOW-02-18', 'farmland Lv2超过castle Lv1+1时应不可升级');
+    assertStrict(checkExceeded.reasons.some(r => r.includes('主城等级')), 'FLOW-02-18', '原因应包含主城等级限制');
   });
 
   it(accTest('FLOW-02-19', '等级上限判断 — 满级后不可升级'), () => {
@@ -349,7 +364,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     assertStrict(def.maxLevel === 25, 'FLOW-02-19', '农田满级应为25');
   });
 
-  it(accTest('FLOW-02-20', '非主城建筑等级不能超过主城 — 前置条件检查'), () => {
+  it(accTest('FLOW-02-20', '非主城建筑等级不能超过主城+1 — 前置条件检查'), () => {
     const sim = createBuildingSim();
     const buildingSys = sim.engine.building;
 
@@ -357,11 +372,21 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     // 升级 farmland 到 Lv2
     sim.upgradeBuilding('farmland'); // farmland Lv1→2
 
-    // 现在 castle Lv2, farmland Lv2 → farmland 不可再升级
+    // 现在 castle Lv2, farmland Lv2 → farmland level(2) > castle level(2)? No, 2 == 2
+    // P0-1修复后：farmland level(2) <= castle level(2) + 1 = 3，可以继续升级
     refillResources(sim);
-    const check = buildingSys.checkUpgrade('farmland');
-    const hasLevelCap = check.reasons.some(r => r.includes('主城等级'));
-    assertStrict(hasLevelCap, 'FLOW-02-20', '建筑等级达到主城等级后应有限制');
+    const checkAfterLv2 = buildingSys.checkUpgrade('farmland');
+    // farmland Lv2 → Lv3, castle Lv2, farmland(2) <= castle(2)+1=3 → 可以
+    assertStrict(checkAfterLv2.canUpgrade, 'FLOW-02-20', 'farmland Lv2在castle Lv2时应可升级到Lv3');
+
+    // 升级 farmland 到 Lv3
+    sim.upgradeBuilding('farmland'); // farmland Lv2→3
+
+    // 现在 castle Lv2, farmland Lv3 → farmland level(3) > castle level(2) → 不可升级
+    refillResources(sim);
+    const checkExceeded = buildingSys.checkUpgrade('farmland');
+    const hasLevelCap = checkExceeded.reasons.some(r => r.includes('主城等级'));
+    assertStrict(hasLevelCap, 'FLOW-02-20', '建筑等级超过主城等级+1后应有限制');
   });
 
   it(accTest('FLOW-02-21', '主城升级特殊前置 — Lv4→5需其他建筑Lv4'), () => {

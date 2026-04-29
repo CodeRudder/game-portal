@@ -186,7 +186,7 @@ export const DEFAULT_STEPS: GuideStep[] = [
     description: '创建编队并分配武将，前排防御、后排输出，打造最强阵容！',
     targetSelector: '.tk-formation-panel',
     position: 'top',
-    rewardText: '🎁 奖励：求贤令 ×1',
+    rewardText: '🎁 奖励：招贤令 ×1',
   },
   {
     id: 'resources',
@@ -214,11 +214,19 @@ export const DEFAULT_STEPS: GuideStep[] = [
  *
  * GuideOverlay 使用简短的语义ID（recruit/detail/enhance/formation/resources/tech），
  * 引擎使用 stepN_xxx 格式。此映射确保两者正确对接。
+ *
+ * 语义对应关系：
+ *   recruit   → step3_recruit_hero   （招募武将）
+ *   detail    → step1_castle_overview （查看详情/主城概览）
+ *   enhance   → step2_build_farm      （强化/建造升级）
+ *   formation → step4_first_battle    （编队/出征布阵）
+ *   resources → step5_check_resources （查看资源）
+ *   tech      → step6_tech_research   （科技研究）
  */
 export const OVERLAY_TO_ENGINE_STEP: Record<string, import('@/games/three-kingdoms/core/guide/guide.types').TutorialStepId> = {
-  recruit: 'step1_castle_overview',
-  detail: 'step2_build_farm',
-  enhance: 'step3_recruit_hero',
+  recruit: 'step3_recruit_hero',
+  detail: 'step1_castle_overview',
+  enhance: 'step2_build_farm',
   formation: 'step4_first_battle',
   resources: 'step5_check_resources',
   tech: 'step6_tech_research',
@@ -231,19 +239,76 @@ export const OVERLAY_TO_ENGINE_STEP: Record<string, import('@/games/three-kingdo
  * 反向查找对应的 overlay 步骤。
  */
 export const ENGINE_TO_OVERLAY_STEP: Record<string, string> = {
-  step1_castle_overview: 'recruit',
-  step2_build_farm: 'recruit',
+  step1_castle_overview: 'detail',
+  step2_build_farm: 'enhance',
   step3_recruit_hero: 'recruit',
   step4_first_battle: 'formation',
   step5_check_resources: 'resources',
   step6_tech_research: 'tech',
   step7_advisor_suggest: 'tech',
   step8_semi_auto_battle: 'tech',
-  step9_borrow_hero: 'tech',
-  step10_bag_manage: 'tech',
+  step9_borrow_hero: 'recruit',
+  step10_bag_manage: 'detail',
   step11_tech_branch: 'tech',
-  step12_alliance: 'tech',
+  step12_alliance: 'formation',
 };
+
+// ─────────────────────────────────────────────
+// 引擎子步骤文案获取
+// ─────────────────────────────────────────────
+
+/**
+ * 从引擎获取当前活跃步骤的子步骤文案
+ *
+ * 优先使用引擎 TutorialStepManager 中定义的子步骤文案（subSteps[].text），
+ * 回退到 DEFAULT_STEPS 中的静态 description。
+ *
+ * @param stepMgr TutorialStepManager 实例
+ * @param overlayStepId 当前 Overlay 步骤ID
+ * @returns 子步骤文案文本，引擎不可用时返回 null
+ */
+export function getEngineStepDescription(
+  stepMgr: import('@/games/three-kingdoms/engine/guide/TutorialStepManager').TutorialStepManager | null,
+  overlayStepId: string,
+): string | null {
+  if (!stepMgr) return null;
+  const engineStepId = OVERLAY_TO_ENGINE_STEP[overlayStepId];
+  if (!engineStepId) return null;
+
+  // 优先获取当前活跃步骤的子步骤文案
+  const currentSubStep = stepMgr.getCurrentSubStep();
+  if (currentSubStep?.text) return currentSubStep.text;
+
+  // 回退：获取步骤定义的 description
+  const stepDef = stepMgr.getStepDefinition(engineStepId);
+  if (stepDef?.description) return stepDef.description;
+
+  return null;
+}
+
+/**
+ * 获取引擎步骤定义中的所有子步骤文案列表
+ *
+ * 用于步骤切换时一次性获取所有子步骤，
+ * UI层可以根据子步骤索引显示对应文案。
+ *
+ * @param stepMgr TutorialStepManager 实例
+ * @param overlayStepId 当前 Overlay 步骤ID
+ * @returns 子步骤文案数组，引擎不可用时返回空数组
+ */
+export function getEngineSubStepTexts(
+  stepMgr: import('@/games/three-kingdoms/engine/guide/TutorialStepManager').TutorialStepManager | null,
+  overlayStepId: string,
+): string[] {
+  if (!stepMgr) return [];
+  const engineStepId = OVERLAY_TO_ENGINE_STEP[overlayStepId];
+  if (!engineStepId) return [];
+
+  const stepDef = stepMgr.getStepDefinition(engineStepId);
+  if (!stepDef?.subSteps) return [];
+
+  return stepDef.subSteps.map(sub => sub.text);
+}
 
 // ─────────────────────────────────────────────
 // 高亮定位工具

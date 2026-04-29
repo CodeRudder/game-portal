@@ -12,7 +12,7 @@
  * - 点击建筑打开升级弹窗
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import type { BuildingType, BuildingState, Resources, ProductionRate, ResourceCap } from '@/games/three-kingdoms/engine';
 import {
   BUILDING_TYPES,
@@ -123,6 +123,9 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingType | null>(null);
   // P1-03: 资源收支详情弹窗
   const [showIncomeModal, setShowIncomeModal] = useState(false);
+  // P0-2: 升级完成闪光效果状态
+  const [flashBuilding, setFlashBuilding] = useState<BuildingType | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 计算每座建筑的可升级状态和进度
   const buildingInfo = useMemo(() => {
@@ -171,6 +174,12 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
     try {
       engine.upgradeBuilding(type);
       setSelectedBuilding(null);
+
+      // P0-2: 触发升级完成闪光动画
+      setFlashBuilding(type);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = setTimeout(() => setFlashBuilding(null), 1500);
+
       if (onUpgradeComplete) {
         setTimeout(() => onUpgradeComplete(type), 100);
       }
@@ -180,6 +189,13 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
       }
     }
   }, [engine, onUpgradeComplete, onUpgradeError]);
+
+  // P0-2: 清理闪光定时器
+  useEffect(() => {
+    return () => {
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    };
+  }, []);
 
   // P1: 处理取消升级（80%资源返还）
   const handleCancelUpgrade = useCallback((type: BuildingType) => {
@@ -255,7 +271,9 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
               ? 'tk-bld-pin tk-bld-pin--upgrading'
               : canUpgrade
                 ? 'tk-bld-pin tk-bld-pin--upgradable'
-                : 'tk-bld-pin tk-bld-pin--normal';
+                : flashBuilding === type
+                  ? 'tk-bld-pin tk-bld-pin--flash'
+                  : 'tk-bld-pin tk-bld-pin--normal';
 
           return (
             <div

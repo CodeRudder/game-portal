@@ -64,7 +64,7 @@ function getRecruitCostConfig(mode: 'normal' | 'advanced') {
 /** 模式标签 */
 const MODE_LABELS: Record<'normal' | 'advanced', { label: string; icon: string; desc: string }> = {
   normal: { label: '普通招贤', icon: '📜', desc: '铜钱招募，基础概率' },
-  advanced: { label: '高级招贤', icon: '🏆', desc: '求贤令招募，高品质概率' },
+  advanced: { label: '高级招贤', icon: '🏆', desc: '招贤令招募，高品质概率' },
 };
 
 /** 品质颜色映射 */

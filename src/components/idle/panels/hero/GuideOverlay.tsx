@@ -22,6 +22,7 @@ import {
   OVERLAY_TO_ENGINE_STEP,
   ENGINE_TO_OVERLAY_STEP,
   getTargetElementRect,
+  getEngineStepDescription,
   GUIDE_KEY,
   WELCOME_DISMISSED_KEY,
 } from './guide-utils';
@@ -39,6 +40,10 @@ import { GuideRewardConfirm } from './GuideRewardConfirm';
 export { GuideWelcomeModal } from './GuideWelcomeModal';
 export type { GuideWelcomeModalProps } from './GuideWelcomeModal';
 import { GuideWelcomeModal } from './GuideWelcomeModal';
+// 自由探索过渡弹窗
+export { GuideFreeExploreModal } from './GuideFreeExploreModal';
+export type { GuideFreeExploreModalProps } from './GuideFreeExploreModal';
+import { GuideFreeExploreModal } from './GuideFreeExploreModal';
 // 重新导出类型供外部使用
 export type { GuideStep, GuideActionType, GuideAction } from './guide-utils';
 import './GuideOverlay.css';
@@ -136,6 +141,10 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
     visible: boolean;
     rewardText: string;
   }>({ visible: false, rewardText: '' });
+
+  // ── 自由探索过渡弹窗状态 ──
+  // 引导完成后先显示奖励弹窗，用户收取奖励后再显示自由探索过渡弹窗
+  const [showFreeExplore, setShowFreeExplore] = useState(false);
 
   // ── 高亮目标元素位置 ──
   const [highlightRect, setHighlightRect] = useState<HighlightRect | null>(null);
@@ -270,6 +279,16 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
   // 使用非空断言因为所有事件处理函数仅在组件渲染时触发，此时 step 必然存在
   const step = (shouldRender ? steps[currentStep] : null) as GuideStep | null;
   const isLastStep = step ? currentStep >= steps.length - 1 : false;
+
+  // ── 引擎子步骤文案消费 ──
+  // 优先使用引擎定义的子步骤文案，回退到 DEFAULT_STEPS 的静态 description
+  const engineDescription = useMemo(() => {
+    if (!step || !tutorialStepMgr) return null;
+    return getEngineStepDescription(tutorialStepMgr, step.id);
+  }, [step?.id, tutorialStepMgr]);
+
+  // 最终显示的描述文案：引擎文案 > 静态文案
+  const displayDescription = engineDescription ?? step?.description ?? '';
 
   const handleNext = () => {
     if (!step) return;
@@ -459,7 +478,16 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
       <GuideRewardConfirm
         visible={rewardConfirm.visible}
         rewardText={rewardConfirm.rewardText}
-        onConfirm={() => setRewardConfirm({ visible: false, rewardText: '' })}
+        onConfirm={() => {
+          setRewardConfirm({ visible: false, rewardText: '' });
+          // 奖励收取后显示自由探索过渡弹窗
+          setShowFreeExplore(true);
+        }}
+      />
+      {/* 自由探索过渡弹窗 — 奖励收取后显示，引导用户进入自由探索阶段 */}
+      <GuideFreeExploreModal
+        visible={showFreeExplore}
+        onConfirm={() => setShowFreeExplore(false)}
       />
       {/* 引导步骤遮罩 — 仅在 shouldRender 且 step 有效时渲染 */}
       {shouldRender && step && (
@@ -492,7 +520,7 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
             ))}
           </div>
           <h3 className="tk-guide-tooltip__title">{step.title}</h3>
-          <p className="tk-guide-tooltip__desc">{step.description}</p>
+          <p className="tk-guide-tooltip__desc">{displayDescription}</p>
           {/* 引导完成奖励展示 */}
           {step.rewardText && (
             <div className="tk-guide-tooltip__reward" data-testid={`guide-overlay-reward-${currentStep}`}>

@@ -14,8 +14,8 @@
  * - 以实际代码行为为准
  *
  * 关键约束：
- * - 非主城建筑等级不能超过主城等级（初始 castle=1, farmland=1）
- * - 升级 farmland 前必须先升级 castle
+ * - 非主城建筑等级不能超过主城等级+1（P0-1修复：允许子建筑领先主城1级）
+ * - 初始状态 farmland Lv1 可直接升级到 Lv2
  */
 
 import { describe, it, expect } from 'vitest';
@@ -25,7 +25,7 @@ import type { BuildingType } from '../../../shared/types';
 
 /**
  * 辅助：升级 castle 后再升级 farmland
- * 因为 farmland 等级不能超过 castle 等级
+ * P0-1修复后：farmland 可直接升级（允许领先主城1级），此函数保持兼容性
  */
 function upgradeFarmlandWithCastle(sim: GameEventSimulator): void {
   sim.addResources(SUFFICIENT_RESOURCES);

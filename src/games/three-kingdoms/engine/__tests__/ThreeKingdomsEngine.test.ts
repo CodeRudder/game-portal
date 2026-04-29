@@ -95,14 +95,25 @@ describe('ThreeKingdomsEngine', () => {
 
     it('建筑升级完成时发出 building:upgraded 事件', () => {
       engine.init();
+      // P0-1修复后：农田可直接升级（不再被主城等级限制）
+      // 使用 vi.useFakeTimers 来模拟时间推进
+      vi.useFakeTimers();
+      // 重新创建引擎以使用 fake timers
+      engine.reset();
+      engine = new ThreeKingdomsEngine();
+      engine.init();
+
       const check = engine.checkUpgrade('farmland');
       if (check.canUpgrade) {
         engine.upgradeBuilding('farmland');
         const upgradedListener = vi.fn();
         engine.on('building:upgraded', upgradedListener);
-        engine.tick(999999999);
+        // 农田 Lv1→2 需要 5 秒，推进 10 秒确保完成
+        vi.advanceTimersByTime(10000);
+        engine.tick(10000);
         expect(upgradedListener).toHaveBeenCalled();
       }
+      vi.useRealTimers();
     });
   });
 

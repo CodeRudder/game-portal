@@ -82,10 +82,14 @@ describe('BuildingSystem', () => {
       expect(r.reasons).toContain(`已达等级上限 Lv${BUILDING_MAX_LEVELS.farmland}`);
     });
 
-    it('非主城建筑等级不能超过主城等级', () => {
+    it('非主城建筑等级不能超过主城等级+1', () => {
+      // 初始状态：主城 Lv1，农田 Lv1，农田 level(1) <= 主城 level(1) + 1，所以可以升级
+      // 需要先让农田等级 > 主城等级 + 1 才会触发限制
+      // 设置主城 Lv1，农田 Lv3（超过主城+1=2）
+      sys.deserialize(makeSave({ castle: { level: 1 }, farmland: { level: 3 } }));
       const r = sys.checkUpgrade('farmland', RICH);
       expect(r.canUpgrade).toBe(false);
-      expect(r.reasons).toContain('建筑等级不能超过主城等级 (Lv1)');
+      expect(r.reasons).toContain('建筑等级不能超过主城等级+1 (当前主城 Lv1)');
     });
 
     it('队列满时 canUpgrade=false', () => {

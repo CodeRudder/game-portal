@@ -41,8 +41,8 @@ const RECRUIT_TYPE_LABELS: Record<RecruitType, string> = {
 };
 
 const RECRUIT_TYPE_DESC: Record<RecruitType, string> = {
-  normal: '消耗铜钱，概率获得武将',
-  advanced: '消耗求贤令，更高品质概率',
+  normal: '消耗招贤令，概率获得武将',
+  advanced: '消耗招贤令，更高品质概率',
 };
 
 const RECRUIT_TYPE_ICONS: Record<RecruitType, string> = {
@@ -220,7 +220,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
   // 资源名称映射
   const resourceNameMap: Record<string, string> = {
     gold: '铜钱',
-    recruitToken: '求贤令',
+    recruitToken: '招贤令',
   };
 
   return (
@@ -261,7 +261,7 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
                   💰 铜钱: <strong>{goldBalance.toLocaleString('zh-CN')}</strong>
                 </span>
                 <span className="tk-recruit-balance-item" data-testid="recruit-balance-token">
-                  🎫 求贤令: <strong>{tokenBalance.toLocaleString('zh-CN')}</strong>
+                  🎫 招贤令: <strong>{tokenBalance.toLocaleString('zh-CN')}</strong>
                 </span>
               </>
             );

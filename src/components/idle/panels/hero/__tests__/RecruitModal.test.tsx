@@ -52,7 +52,7 @@ function makeRecruitOutput(count: number, overrides: Partial<RecruitOutput> = {}
   return {
     type: 'normal',
     results,
-    cost: { resourceType: 'gold', amount: count === 10 ? 1000 : 100 },
+    cost: { resourceType: 'recruitToken', amount: count === 10 ? 10 : 1 },
     ...overrides,
   };
 }
@@ -62,9 +62,9 @@ function makeMockRecruitSystem(canAfford = true) {
   return {
     getRecruitCost: vi.fn((type: string, count: number) => {
       if (type === 'normal') {
-        return { resourceType: 'gold', amount: count === 10 ? 1000 : 100 };
+        return { resourceType: 'recruitToken', amount: count === 10 ? 10 : 1 };
       }
-      return { resourceType: 'recruitToken', amount: count === 10 ? 10 : 1 };
+      return { resourceType: 'recruitToken', amount: count === 10 ? 100 : 10 };
     }),
     canRecruit: vi.fn(() => canAfford),
     getGachaState: vi.fn(() => ({
@@ -176,15 +176,15 @@ describe('RecruitModal', () => {
     const advancedBtn = screen.getByText('高级招贤').closest('button')!;
     await userEvent.click(advancedBtn);
 
-    // 验证消耗区域包含求贤令（精确匹配消耗显示，排除描述文本）
-    const costElements = screen.getAllByText(/求贤令 ×\d+/);
+    // 验证消耗区域包含招贤令（精确匹配消耗显示，排除描述文本）
+    const costElements = screen.getAllByText(/招贤令 ×\d+/);
     expect(costElements).toHaveLength(2);
   });
 
-  it('默认选中普通招贤，显示铜钱消耗', () => {
+  it('默认选中普通招贤，显示招贤令消耗', () => {
     render(<RecruitModal {...defaultProps} />);
-    // 消耗区域应包含铜钱（单抽和十连各一个，共2处）
-    const costElements = screen.getAllByText(/铜钱 ×\d+/);
+    // 消耗区域应包含招贤令（单抽和十连各一个，共2处）
+    const costElements = screen.getAllByText(/招贤令 ×\d+/);
     expect(costElements).toHaveLength(2);
   });
 
@@ -422,7 +422,7 @@ describe('RecruitModal', () => {
     expect(screen.getByTestId('recruit-balance-gold').textContent).toContain('10,000');
   });
 
-  it('应显示求贤令余额', () => {
+  it('应显示招贤令余额', () => {
     render(<RecruitModal {...defaultProps} />);
     expect(screen.getByTestId('recruit-balance-token')).toBeInTheDocument();
     expect(screen.getByTestId('recruit-balance-token').textContent).toContain('500');

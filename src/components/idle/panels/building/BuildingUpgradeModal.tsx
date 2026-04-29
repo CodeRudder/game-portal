@@ -170,6 +170,28 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
                   </div>
                 );
               })()}
+              {/* 主城专属：全资源加成醒目提示（P0-1 增强感知） */}
+              {(() => {
+                if (buildingType !== 'castle') return null;
+                const currentLevelData = BUILDING_DEFS.castle.levelTable[info.level - 1];
+                const nextLevelData = BUILDING_DEFS.castle.levelTable[info.level];
+                const currentBonus = currentLevelData?.production ?? 0;
+                const nextBonus = nextLevelData?.production ?? currentBonus;
+                const bonusDiff = nextBonus - currentBonus;
+                return (
+                  <div className="tk-upgrade-castle-bonus">
+                    <div className="tk-upgrade-castle-bonus-title">🏛️ 全资源加成</div>
+                    <div className="tk-upgrade-castle-bonus-change">
+                      <span className="tk-upgrade-castle-bonus-current">{currentBonus}%</span>
+                      <span className="tk-upgrade-castle-bonus-arrow">→</span>
+                      <span className="tk-upgrade-castle-bonus-next">+{nextBonus}%</span>
+                    </div>
+                    <div className="tk-upgrade-castle-bonus-detail">
+                      粮草、铜钱、兵力等所有资源产出 +{bonusDiff}%
+                    </div>
+                  </div>
+                );
+              })()}
               {/* 特殊属性变化预览 */}
               {(() => {
                 const def = BUILDING_DEFS[buildingType];

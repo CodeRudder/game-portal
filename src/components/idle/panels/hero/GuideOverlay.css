@@ -974,3 +974,200 @@
     font-size: 32px;
   }
 }
+
+/* ═══════════════════════════════════════════
+   自由探索过渡弹窗 (GuideFreeExploreModal)
+   ═══════════════════════════════════════════ */
+
+/* 自由探索弹窗遮罩层级（高于奖励确认弹窗） */
+.tk-guide-overlay--free-explore {
+  z-index: calc(var(--tk-z-guide-mask) + 3);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.tk-guide-free-explore {
+  position: relative;
+  z-index: 1;
+  background: var(--tk-guide-tooltip-bg);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.5), 0 0 60px rgba(255, 215, 0, 0.1);
+  animation: tk-guide-free-explore-appear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes tk-guide-free-explore-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.tk-guide-free-explore__icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  animation: tk-guide-free-explore-bounce 0.8s ease 0.3s both;
+}
+
+@keyframes tk-guide-free-explore-bounce {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.tk-guide-free-explore__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFD700;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.tk-guide-free-explore__desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--tk-text-secondary, #b0b0b0);
+  margin: 0 0 18px;
+}
+
+/* 推荐行动列表 */
+.tk-guide-free-explore__actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.tk-guide-free-explore__action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.tk-guide-free-explore__action-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 215, 0, 0.15);
+}
+
+.tk-guide-free-explore__action-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.tk-guide-free-explore__action-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tk-guide-free-explore__action-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-text-primary, #fff);
+  margin-bottom: 2px;
+}
+
+.tk-guide-free-explore__action-desc {
+  font-size: 11px;
+  color: var(--tk-text-muted, #888);
+  line-height: 1.4;
+}
+
+/* 确认按钮 */
+.tk-guide-free-explore__btn {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 48px;
+  background: linear-gradient(135deg, #c9a84c, #e8d48b);
+  color: #1a1a2e;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.tk-guide-free-explore__btn:hover {
+  background: linear-gradient(135deg, #b8983b, #d9c47a);
+  box-shadow: 0 4px 16px rgba(201, 168, 76, 0.4);
+  transform: translateY(-1px);
+}
+
+.tk-guide-free-explore__btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ── 自由探索弹窗手机端适配 ── */
+@media (max-width: 767px) {
+  .tk-guide-free-explore {
+    max-width: 95vw;
+    width: 92%;
+    padding: 24px 18px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    border-radius: 14px;
+  }
+
+  .tk-guide-free-explore__icon {
+    font-size: 40px;
+  }
+
+  .tk-guide-free-explore__title {
+    font-size: 16px;
+  }
+
+  .tk-guide-free-explore__desc {
+    font-size: 12px;
+  }
+
+  .tk-guide-free-explore__action-item {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .tk-guide-free-explore__action-icon {
+    font-size: 20px;
+  }
+
+  .tk-guide-free-explore__action-title {
+    font-size: 12px;
+  }
+
+  .tk-guide-free-explore__action-desc {
+    font-size: 10px;
+  }
+
+  .tk-guide-free-explore__btn {
+    padding: 14px 18px;
+    font-size: 14px;
+    min-height: 46px;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 360px) {
+  .tk-guide-free-explore {
+    padding: 20px 14px;
+  }
+
+  .tk-guide-free-explore__title {
+    font-size: 15px;
+  }
+
+  .tk-guide-free-explore__action-desc {
+    display: none;
+  }
+}
