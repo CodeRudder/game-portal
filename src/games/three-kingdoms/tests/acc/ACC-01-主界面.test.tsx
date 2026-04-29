@@ -11,7 +11,7 @@ import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import { accTest, assertStrict, assertVisible, assertContainsText } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM, assertContainsText } from './acc-test-utils';
 
 import TabBar, { TABS, FEATURE_ITEMS } from '@/components/idle/three-kingdoms/TabBar';
 import type { FeatureMenuItem } from '@/components/idle/FeatureMenu';
@@ -159,15 +159,15 @@ describe('ACC-01 主界面', () => {
       render(<WelcomeModal visible={true} onClose={vi.fn()} />);
       // 标题
       const title = screen.getByText(/欢迎来到三国霸业/);
-      assertVisible(title, 'ACC-01-01', '欢迎弹窗标题');
+      assertInDOM(title, 'ACC-01-01', '欢迎弹窗标题');
       // 4个功能卡片
-      assertVisible(screen.getByTestId('welcome-modal-feature-建筑'), 'ACC-01-01', '建筑功能卡片');
-      assertVisible(screen.getByTestId('welcome-modal-feature-武将'), 'ACC-01-01', '武将功能卡片');
-      assertVisible(screen.getByTestId('welcome-modal-feature-科技'), 'ACC-01-01', '科技功能卡片');
-      assertVisible(screen.getByTestId('welcome-modal-feature-关卡'), 'ACC-01-01', '关卡功能卡片');
+      assertInDOM(screen.getByTestId('welcome-modal-feature-建筑'), 'ACC-01-01', '建筑功能卡片');
+      assertInDOM(screen.getByTestId('welcome-modal-feature-武将'), 'ACC-01-01', '武将功能卡片');
+      assertInDOM(screen.getByTestId('welcome-modal-feature-科技'), 'ACC-01-01', '科技功能卡片');
+      assertInDOM(screen.getByTestId('welcome-modal-feature-关卡'), 'ACC-01-01', '关卡功能卡片');
       // "开始游戏"按钮
       const startBtn = screen.getByText('开始游戏');
-      assertVisible(startBtn, 'ACC-01-01', '开始游戏按钮');
+      assertInDOM(startBtn, 'ACC-01-01', '开始游戏按钮');
     });
 
     it(accTest('ACC-01-02', '欢迎弹窗关闭后进入主界面'), () => {
@@ -205,7 +205,7 @@ describe('ACC-01 主界面', () => {
       );
       // 粮草有产出，应显示速率
       const rateText = screen.getByText(/\+1\.5\/秒/);
-      assertVisible(rateText, 'ACC-01-04', '粮草产出速率');
+      assertInDOM(rateText, 'ACC-01-04', '粮草产出速率');
     });
 
     it(accTest('ACC-01-05', '底部7个Tab显示'), () => {
@@ -256,7 +256,7 @@ describe('ACC-01 主界面', () => {
       );
       // 粮草有上限，应显示容量进度 — formatNumber(1500) = "1500" (无逗号)
       const grainText = screen.getByText(/1500/);
-      assertVisible(grainText, 'ACC-01-08', '粮草容量文字');
+      assertInDOM(grainText, 'ACC-01-08', '粮草容量文字');
     });
 
     it(accTest('ACC-01-09', '游戏标题显示'), () => {
@@ -268,7 +268,7 @@ describe('ACC-01 主界面', () => {
         />
       );
       const title = screen.getByText('三国霸业');
-      assertVisible(title, 'ACC-01-09', '游戏标题');
+      assertInDOM(title, 'ACC-01-09', '游戏标题');
     });
   });
 
@@ -360,7 +360,7 @@ describe('ACC-01 主界面', () => {
       );
       // 查找收支详情按钮
       const detailBtn = screen.getByTitle('收支详情') || screen.getByText('📊');
-      assertVisible(detailBtn, 'ACC-01-18', '收支详情按钮');
+      assertInDOM(detailBtn, 'ACC-01-18', '收支详情按钮');
       fireEvent.click(detailBtn);
     });
 
@@ -395,7 +395,7 @@ describe('ACC-01 主界面', () => {
       // 验证资源栏显示的数值与引擎一致
       // 粮草 500 — 使用 data-testid 精确定位
       const grainEl = screen.getByTestId('resource-bar-grain-value');
-      assertVisible(grainEl, 'ACC-01-20', '粮草数值');
+      assertInDOM(grainEl, 'ACC-01-20', '粮草数值');
       assertContainsText(grainEl, 'ACC-01-20', '500');
     });
 
@@ -409,7 +409,7 @@ describe('ACC-01 主界面', () => {
         />
       );
       const rateText = screen.getByText(/\+2\.0\/秒/);
-      assertVisible(rateText, 'ACC-01-21', '粮草产出速率+2.0/秒');
+      assertInDOM(rateText, 'ACC-01-21', '粮草产出速率+2.0/秒');
     });
 
     it(accTest('ACC-01-22', '资源溢出警告 — 接近上限时显示'), () => {
@@ -422,7 +422,7 @@ describe('ACC-01 主界面', () => {
       );
       // 粮草1900/2000 = 95%，应显示警告 — formatNumber(1900) = "1900" (无逗号)
       const grainItem = screen.getByText(/1900/);
-      assertVisible(grainItem, 'ACC-01-22', '高粮草数值');
+      assertInDOM(grainItem, 'ACC-01-22', '高粮草数值');
     });
 
     it(accTest('ACC-01-23', '离线收益弹窗数据正确'), () => {
@@ -434,10 +434,10 @@ describe('ACC-01 主界面', () => {
       render(<OfflineRewardModal reward={reward} onClaim={vi.fn()} />);
       // 验证离线时长显示
       const durationText = screen.getByText(/300秒|5分钟/);
-      assertVisible(durationText, 'ACC-01-23', '离线时长');
+      assertInDOM(durationText, 'ACC-01-23', '离线时长');
       // 验证粮草收益
       const grainReward = screen.getByTestId('offline-reward-grain');
-      assertVisible(grainReward, 'ACC-01-23', '粮草离线收益');
+      assertInDOM(grainReward, 'ACC-01-23', '粮草离线收益');
       assertContainsText(grainReward, 'ACC-01-23', '240');
     });
 
@@ -491,7 +491,7 @@ describe('ACC-01 主界面', () => {
         />
       );
       const goldText = screen.getByText(/100/);
-      assertVisible(goldText, 'ACC-01-28', '消耗后铜钱数值');
+      assertInDOM(goldText, 'ACC-01-28', '消耗后铜钱数值');
     });
 
     it(accTest('ACC-01-29', '快照版本驱动UI刷新'), () => {
@@ -524,7 +524,7 @@ describe('ACC-01 主界面', () => {
       };
       render(<OfflineRewardModal reward={reward} onClaim={vi.fn()} />);
       const cappedText = screen.getByText(/已达上限/);
-      assertVisible(cappedText, 'ACC-01-31', '已达上限警告');
+      assertInDOM(cappedText, 'ACC-01-31', '已达上限警告');
     });
 
     it(accTest('ACC-01-32', '资源为零时的显示'), () => {
@@ -552,7 +552,7 @@ describe('ACC-01 主界面', () => {
       );
       // formatNumber(2000) = "2000" (无逗号) — 使用 data-testid 精确定位
       const grainEl = screen.getByTestId('resource-bar-grain-value');
-      assertVisible(grainEl, 'ACC-01-33', '满仓粮草数值');
+      assertInDOM(grainEl, 'ACC-01-33', '满仓粮草数值');
       assertContainsText(grainEl, 'ACC-01-33', '2000');
     });
 
@@ -690,7 +690,7 @@ describe('ACC-01 主界面', () => {
     it(accTest('ACC-01-46', '欢迎弹窗手机端适配'), () => {
       render(<WelcomeModal visible={true} onClose={vi.fn()} />);
       const modal = screen.getByTestId('welcome-modal');
-      assertVisible(modal, 'ACC-01-46', '欢迎弹窗');
+      assertInDOM(modal, 'ACC-01-46', '欢迎弹窗');
     });
 
     it(accTest('ACC-01-47', '离线收益弹窗手机端'), () => {
@@ -701,7 +701,7 @@ describe('ACC-01 主界面', () => {
       };
       render(<OfflineRewardModal reward={reward} onClaim={vi.fn()} />);
       const claimBtn = screen.getByText('领取收益');
-      assertVisible(claimBtn, 'ACC-01-47', '领取收益按钮');
+      assertInDOM(claimBtn, 'ACC-01-47', '领取收益按钮');
     });
 
     it(accTest('ACC-01-48', '日历组件手机端显示'), () => {

@@ -15,7 +15,7 @@ import {
   MAX_SLOTS_PER_FORMATION,
   QUALITY_BORDER_COLORS,
 } from '@/games/three-kingdoms/engine';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 // Mock CSS imports
@@ -112,13 +112,13 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const sim = createSimWithHeroes();
     renderFormationPanel(sim);
     const panel = screen.getByTestId('formation-panel');
-    assertVisible(panel, 'FLOW-07-01', '编队面板容器');
+    assertInDOM(panel, 'FLOW-07-01', '编队面板容器');
     // 标题
     const title = screen.getByText('⚔️ 编队管理');
-    assertVisible(title, 'FLOW-07-01', '编队管理标题');
+    assertInDOM(title, 'FLOW-07-01', '编队管理标题');
     // 创建按钮
     const createBtn = screen.getByTestId('formation-panel-create-btn');
-    assertVisible(createBtn, 'FLOW-07-01', '创建编队按钮');
+    assertInDOM(createBtn, 'FLOW-07-01', '创建编队按钮');
   });
 
   it(accTest('FLOW-07-02', '编队面板 — 初始无编队时显示空状态'), () => {
@@ -129,7 +129,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const formations = formationSystem.getAllFormations();
     if (formations.length === 0) {
       const emptyText = screen.getByText(/尚无编队/);
-      assertVisible(emptyText, 'FLOW-07-02', '空状态提示');
+      assertInDOM(emptyText, 'FLOW-07-02', '空状态提示');
     }
   });
 
@@ -168,9 +168,9 @@ describe('FLOW-07 编队Tab集成测试', () => {
     const hero0 = screen.getByText('武将0');
     const hero1 = screen.getByText('武将1');
     const hero2 = screen.getByText('武将2');
-    assertVisible(hero0, 'FLOW-07-04', '武将0');
-    assertVisible(hero1, 'FLOW-07-04', '武将1');
-    assertVisible(hero2, 'FLOW-07-04', '武将2');
+    assertInDOM(hero0, 'FLOW-07-04', '武将0');
+    assertInDOM(hero1, 'FLOW-07-04', '武将1');
+    assertInDOM(hero2, 'FLOW-07-04', '武将2');
   });
 
   it(accTest('FLOW-07-05', 'FormationGrid — 编队战力数值显示'), () => {
@@ -188,7 +188,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
     );
     // formatPower(15800) = "1.6万" 或 "15,800"
     const powerEl = screen.getByText(/1\.6万|15,?800/);
-    assertVisible(powerEl, 'FLOW-07-05', '编队战力');
+    assertInDOM(powerEl, 'FLOW-07-05', '编队战力');
   });
 
   it(accTest('FLOW-07-06', '创建编队 — 点击创建按钮生成新编队'), () => {
@@ -429,7 +429,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
     renderFormationPanel(sim);
     // 战力文本
     const powerEl = screen.getByText(/战力:/);
-    assertVisible(powerEl, 'FLOW-07-19', '编队战力显示');
+    assertInDOM(powerEl, 'FLOW-07-19', '编队战力显示');
   });
 
   it(accTest('FLOW-07-20', '编队战力 — 添加武将后战力增加'), () => {
@@ -520,7 +520,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
       // 一键编队按钮应出现
       const autoBtn = screen.queryByTestId(/formation-panel-auto-btn-/);
       if (autoBtn) {
-        assertVisible(autoBtn, 'FLOW-07-23', '一键编队按钮');
+        assertInDOM(autoBtn, 'FLOW-07-23', '一键编队按钮');
       }
     }
   });
@@ -617,7 +617,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
     renderFormationPanel(sim);
     // 激活的编队应显示"当前"标记
     const activeBadge = screen.getByText('当前');
-    assertVisible(activeBadge, 'FLOW-07-28', '激活编队标记');
+    assertInDOM(activeBadge, 'FLOW-07-28', '激活编队标记');
   });
 
   it(accTest('FLOW-07-29', '编队切换 — 点击激活按钮切换编队'), async () => {
@@ -687,7 +687,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
       // 可用武将列表
       const addSection = screen.queryByText(/添加武将/);
       if (addSection) {
-        assertVisible(addSection, 'FLOW-07-33', '添加武将区域');
+        assertInDOM(addSection, 'FLOW-07-33', '添加武将区域');
       }
     }
   });
@@ -813,7 +813,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
       />
     );
     const bond0 = screen.getByTestId('formation-bond-bond_0');
-    assertVisible(bond0, 'FLOW-07-41', '羁绊标签');
+    assertInDOM(bond0, 'FLOW-07-41', '羁绊标签');
     assertStrict(bond0.textContent!.includes('羁绊0'), 'FLOW-07-41', '羁绊名称应包含羁绊0');
   });
 
@@ -830,7 +830,7 @@ describe('FLOW-07 编队Tab集成测试', () => {
     renderFormationPanel(sim);
     // 编队面板应渲染（包含羁绊信息区域）
     const panel = screen.getByTestId('formation-panel');
-    assertVisible(panel, 'FLOW-07-42', '编队面板');
+    assertInDOM(panel, 'FLOW-07-42', '编队面板');
   });
 
   it(accTest('FLOW-07-43', '编队成员数 — getFormationMemberCount'), () => {

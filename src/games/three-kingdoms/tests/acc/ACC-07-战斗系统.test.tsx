@@ -23,7 +23,7 @@ import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKin
 import type { Stage, Chapter, BattleResult, StageState } from '@/games/three-kingdoms/engine';
 import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
 import type { SweepBatchResult } from '@/games/three-kingdoms/engine/campaign/sweep.types';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -264,7 +264,7 @@ describe('ACC-07 战斗系统验收集成测试', () => {
       />
     );
     const stageName = screen.getByText('黄巾之乱');
-    assertVisible(stageName, 'ACC-07-08', '扫荡弹窗关卡名称');
+    assertInDOM(stageName, 'ACC-07-08', '扫荡弹窗关卡名称');
   });
 
   // ═══════════════════════════════════════════
@@ -484,6 +484,6 @@ describe('ACC-07 战斗系统验收集成测试', () => {
       />
     );
     const stageName = screen.getByText('黄巾之乱');
-    assertVisible(stageName, 'ACC-07-46', '手机端扫荡弹窗关卡名称');
+    assertInDOM(stageName, 'ACC-07-46', '手机端扫荡弹窗关卡名称');
   });
 });

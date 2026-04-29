@@ -21,7 +21,7 @@ import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-libra
 import userEvent from '@testing-library/user-event';
 import EquipmentPanel from '@/components/idle/panels/equipment/EquipmentPanel';
 import EquipmentTab from '@/components/idle/panels/equipment/EquipmentTab';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
@@ -81,7 +81,7 @@ describe('FLOW-09 装备系统集成测试', () => {
     render(<EquipmentPanel engine={sim.engine} />);
 
     const panel = screen.getByTestId('equipment-panel');
-    assertVisible(panel, 'FLOW-09-01', '装备面板');
+    assertInDOM(panel, 'FLOW-09-01', '装备面板');
   });
 
   it(accTest('FLOW-09-02', '装备面板 — 生成装备后显示装备卡片'), () => {
@@ -133,7 +133,7 @@ describe('FLOW-09 装备系统集成测试', () => {
     fireEvent.click(card);
 
     const detail = screen.getByTestId('equipment-panel-detail');
-    assertVisible(detail, 'FLOW-09-05', '装备详情弹窗');
+    assertInDOM(detail, 'FLOW-09-05', '装备详情弹窗');
     assertStrict(
       detail.textContent!.includes(eq!.name) || detail.textContent!.includes(eq!.mainStat.type),
       'FLOW-09-05',

@@ -15,10 +15,72 @@ export function assertStrict(condition: boolean, accId: string, message: string)
   if (!condition) throw new Error(`FAIL [${accId}]: ${message}`);
 }
 
-export function assertVisible(element: HTMLElement | null, accId: string, elementName: string): void {
+/**
+ * 断言元素存在于 DOM 中且未被 inline style 隐藏
+ *
+ * ⚠️ 此函数仅检查：
+ *   - 元素非 null（存在于 DOM）
+ *   - inline style 的 display 不是 'none'
+ *   - inline style 的 visibility 不是 'hidden'
+ *
+ * ⚠️ 此函数 **不检查**：
+ *   - CSS class 造成的 overflow:hidden 裁切
+ *   - opacity: 0（通过 class 或 inline）
+ *   - clip-path: inset(100%) 等视觉隐藏手段
+ *   - 元素是否在可视区域内
+ *
+ * 准确的视觉可见性验证需要 Playwright E2E 测试环境。
+ *
+ * @param element     待检查的 DOM 元素
+ * @param accId       ACC/FLOW 用例编号
+ * @param elementName 元素名称（用于错误信息）
+ * @throws 元素不存在或被 inline style 隐藏时抛出
+ */
+export function assertInDOM(element: HTMLElement | null, accId: string, elementName: string): void {
   if (!element) throw new Error(`FAIL [${accId}]: ${elementName} 元素未找到`);
   if (element.style.display === 'none' || element.style.visibility === 'hidden')
-    throw new Error(`FAIL [${accId}]: ${elementName} 元素存在但不可见`);
+    throw new Error(`FAIL [${accId}]: ${elementName} 元素存在但被 inline style 隐藏 (display:none / visibility:hidden)`);
+}
+
+/**
+ * 断言元素在视觉上可渲染（比 assertInDOM 更严格，但仍有 jsdom 限制）
+ *
+ * 在 assertInDOM 基础上额外检查：
+ *   - inline style 的 opacity 不为 '0'
+ *   - inline style 的 clip-path 不是完全裁切（如 inset(100%)）
+ *   - offsetHeight > 0 或 getBoundingClientRect().height > 0（jsdom 中可能为 0，需容错）
+ *
+ * ⚠️ jsdom 限制：
+ *   - CSS class 定义的样式（如 overflow:hidden、height:0）**无法被检测**
+ *   - getComputedStyle 在 jsdom 中不反映真实浏览器计算结果
+ *   - 真正的视觉可见性验证必须使用 Playwright E2E 测试
+ *
+ * @param element     待检查的 DOM 元素
+ * @param accId       ACC/FLOW 用例编号
+ * @param elementName 元素名称（用于错误信息）
+ * @throws 元素不存在、被 inline style 隐藏、或明确不可渲染时抛出
+ */
+export function assertVisuallyRenderable(element: HTMLElement | null, accId: string, elementName: string): void {
+  // 先执行 assertInDOM 的全部检查
+  assertInDOM(element, accId, elementName);
+
+  // element is guaranteed non-null after assertInDOM
+  const el = element!;
+
+  // 检查 opacity（仅 inline style）
+  if (el.style.opacity === '0') {
+    throw new Error(`FAIL [${accId}]: ${elementName} 元素存在但 opacity 为 0（不可见）`);
+  }
+
+  // 检查 clip-path（仅 inline style，检测完全裁切）
+  const clipPath = el.style.clipPath;
+  if (clipPath && /inset\s*\(\s*100%/i.test(clipPath)) {
+    throw new Error(`FAIL [${accId}]: ${elementName} 元素存在但被 clip-path 完全裁切 (${clipPath})`);
+  }
+
+  // 检查元素是否有渲染尺寸（jsdom 中 offsetHeight 通常为 0，所以仅 warning 级别）
+  // 注意：jsdom 中 offsetHeight 始终为 0，此处不抛异常，仅作为参考
+  // 真正的尺寸验证需要在 Playwright 中进行
 }
 
 export function assertContainsText(element: HTMLElement | null, accId: string, expectedText: string): void {

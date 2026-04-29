@@ -15,7 +15,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import FormationGrid from '@/components/idle/panels/hero/FormationGrid';
 import type { FormationSlotHero, BondSummary } from '@/components/idle/panels/hero/FormationGrid';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 
 // ─────────────────────────────────────────────
 // Mock CSS imports
@@ -102,9 +102,9 @@ describe('ACC-06 编队系统验收集成测试', () => {
     const hero0 = screen.getByText('武将0');
     const hero1 = screen.getByText('武将1');
     const hero2 = screen.getByText('武将2');
-    assertVisible(hero0, 'ACC-06-05b', '武将0');
-    assertVisible(hero1, 'ACC-06-05b', '武将1');
-    assertVisible(hero2, 'ACC-06-05b', '武将2');
+    assertInDOM(hero0, 'ACC-06-05b', '武将0');
+    assertInDOM(hero1, 'ACC-06-05b', '武将1');
+    assertInDOM(hero2, 'ACC-06-05b', '武将2');
   });
 
   it(accTest('ACC-06-07', '编队战力数值显示 — 战力格式正确'), () => {
@@ -120,7 +120,7 @@ describe('ACC-06 编队系统验收集成测试', () => {
     );
     // formatPower(15800) = "1.6万"
     const powerEl = screen.getByText(/1\.6万/);
-    assertVisible(powerEl, 'ACC-06-07', '编队战力');
+    assertInDOM(powerEl, 'ACC-06-07', '编队战力');
   });
 
   it(accTest('ACC-06-06', '编队羁绊预览展示 — 激活羁绊标签'), () => {
@@ -137,7 +137,7 @@ describe('ACC-06 编队系统验收集成测试', () => {
     );
     // 羁绊文本为 "🔗 羁绊0"，使用 data-testid 定位
     const bond0 = screen.getByTestId('formation-bond-bond_0');
-    assertVisible(bond0, 'ACC-06-06', '羁绊标签');
+    assertInDOM(bond0, 'ACC-06-06', '羁绊标签');
     assertStrict(bond0.textContent!.includes('羁绊0'), 'ACC-06-06', '羁绊名称应包含羁绊0');
   });
 
@@ -201,7 +201,7 @@ describe('ACC-06 编队系统验收集成测试', () => {
     );
     for (let i = 0; i < 6; i++) {
       const heroEl = screen.getByText(`武将${i}`);
-      assertVisible(heroEl, 'ACC-06-16', `自动编队武将${i}`);
+      assertInDOM(heroEl, 'ACC-06-16', `自动编队武将${i}`);
     }
   });
 
@@ -222,7 +222,7 @@ describe('ACC-06 编队系统验收集成测试', () => {
     );
     // formatPower(12345) = "1.2万"
     const powerEl = screen.getByText(/1\.2万/);
-    assertVisible(powerEl, 'ACC-06-20', '编队战力数值');
+    assertInDOM(powerEl, 'ACC-06-20', '编队战力数值');
   });
 
   it(accTest('ACC-06-22', '编队槽位上限 — 最多6个武将'), () => {
@@ -273,7 +273,7 @@ describe('ACC-06 编队系统验收集成测试', () => {
     );
     // 羁绊文本为 "🔗 桃园结义"，使用 data-testid 定位
     const bond1 = screen.getByTestId('formation-bond-bond_1');
-    assertVisible(bond1, 'ACC-06-24', '激活羁绊标签');
+    assertInDOM(bond1, 'ACC-06-24', '激活羁绊标签');
     assertStrict(bond1.textContent!.includes('桃园结义'), 'ACC-06-24', '应包含羁绊名称');
   });
 
@@ -323,7 +323,7 @@ describe('ACC-06 编队系统验收集成测试', () => {
       />
     );
     const powerEl = screen.getByText(/0/);
-    assertVisible(powerEl, 'ACC-06-33', '空编队战力应为0');
+    assertInDOM(powerEl, 'ACC-06-33', '空编队战力应为0');
   });
 
   it(accTest('ACC-06-37', '快速连续操作编队 — 点击添加按钮多次'), async () => {
@@ -361,7 +361,7 @@ describe('ACC-06 编队系统验收集成测试', () => {
     );
     // formatPower(15000) = "1.5万"
     const powerEl = screen.getByText(/1\.5万/);
-    assertVisible(powerEl, 'ACC-06-40', '手机端战力显示');
+    assertInDOM(powerEl, 'ACC-06-40', '手机端战力显示');
   });
 
   it(accTest('ACC-06-41', '编队槽位触摸操作 — 点击添加按钮响应'), async () => {
@@ -396,7 +396,7 @@ describe('ACC-06 编队系统验收集成测试', () => {
     );
     // 羁绊文本为 "🔗 蜀汉忠义"，使用 data-testid 定位
     const bondEl = screen.getByTestId('formation-bond-b1');
-    assertVisible(bondEl, 'ACC-06-48', '手机端羁绊标签');
+    assertInDOM(bondEl, 'ACC-06-48', '手机端羁绊标签');
     assertStrict(bondEl.textContent!.includes('蜀汉忠义'), 'ACC-06-48', '羁绊名称应可见');
   });
 });

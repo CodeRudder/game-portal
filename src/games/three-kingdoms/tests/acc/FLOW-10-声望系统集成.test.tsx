@@ -19,7 +19,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PrestigePanel from '@/components/idle/panels/prestige/PrestigePanel';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
@@ -82,7 +82,7 @@ describe('FLOW-10 声望系统集成测试', () => {
     render(<PrestigePanel engine={sim.engine} visible={true} />);
 
     const panel = screen.getByTestId('prestige-panel');
-    assertVisible(panel, 'FLOW-10-01', '声望面板');
+    assertInDOM(panel, 'FLOW-10-01', '声望面板');
   });
 
   it(accTest('FLOW-10-02', '声望面板 — 显示当前等级和声望值'), () => {
@@ -90,7 +90,7 @@ describe('FLOW-10 声望系统集成测试', () => {
     render(<PrestigePanel engine={sim.engine} visible={true} />);
 
     const levelCard = screen.getByTestId('prestige-panel-level-card');
-    assertVisible(levelCard, 'FLOW-10-02', '声望等级卡片');
+    assertInDOM(levelCard, 'FLOW-10-02', '声望等级卡片');
 
     const text = levelCard.textContent ?? '';
     assertStrict(text.includes('Lv.'), 'FLOW-10-02', `应包含等级显示，实际: ${text.substring(0, 100)}`);

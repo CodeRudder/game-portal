@@ -19,7 +19,7 @@ import userEvent from '@testing-library/user-event';
 import TechTab from '@/components/idle/panels/tech/TechTab';
 import TechNodeDetailModal from '@/components/idle/panels/tech/TechNodeDetailModal';
 import type { TechNodeDef, TechNodeState } from '@/games/three-kingdoms/engine';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 

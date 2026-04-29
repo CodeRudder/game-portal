@@ -22,7 +22,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, act, within } from '@testing-library/react';
-import { accTest, assertStrict, assertVisible, assertContainsText } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM, assertContainsText } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 import ArmyTab from '@/components/idle/panels/army/ArmyTab';
@@ -79,7 +79,7 @@ describe('FLOW-15 军队系统集成测试', () => {
       render(<ArmyTab engine={sim.engine} visible={true} />);
 
       const tab = screen.getByTestId('army-tab');
-      assertVisible(tab, 'FLOW-15-01', '军队Tab');
+      assertInDOM(tab, 'FLOW-15-01', '军队Tab');
     });
 
     it(accTest('FLOW-15-02', 'ArmyTab — 显示编队战力'), () => {

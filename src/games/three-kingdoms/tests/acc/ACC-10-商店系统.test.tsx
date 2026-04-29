@@ -17,7 +17,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import ShopPanel from '@/components/idle/panels/shop/ShopPanel';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
@@ -113,24 +113,24 @@ describe('ACC-10 商店系统 验收测试', () => {
   it(accTest('ACC-10-01', '商店入口可见 - 更多菜单中可见商店入口'), () => {
     render(<ShopPanel {...makeProps()} />);
     const sharedPanel = screen.getByTestId('shared-panel');
-    assertVisible(sharedPanel, 'ACC-10-01', '商店面板');
+    assertInDOM(sharedPanel, 'ACC-10-01', '商店面板');
     expect(sharedPanel).toHaveAttribute('data-title', '商店');
   });
 
   it(accTest('ACC-10-02', '商店面板打开 - 标题栏显示🏪商店，有关闭按钮'), () => {
     render(<ShopPanel {...makeProps()} />);
     const panel = screen.getByTestId('shop-panel');
-    assertVisible(panel, 'ACC-10-02', '商店面板');
+    assertInDOM(panel, 'ACC-10-02', '商店面板');
     const sharedPanel = screen.getByTestId('shared-panel');
     expect(sharedPanel).toHaveAttribute('data-title', '商店');
     const closeBtn = screen.getByTestId('shared-panel-close');
-    assertVisible(closeBtn, 'ACC-10-02', '关闭按钮');
+    assertInDOM(closeBtn, 'ACC-10-02', '关闭按钮');
   });
 
   it(accTest('ACC-10-03', '四个商店Tab显示 - 杂货铺/竞技商店/远征商店/联盟商店，默认选中杂货铺'), () => {
     render(<ShopPanel {...makeProps()} />);
     const tabs = screen.getByTestId('shop-panel-tabs');
-    assertVisible(tabs, 'ACC-10-03', 'Tab栏');
+    assertInDOM(tabs, 'ACC-10-03', 'Tab栏');
     expect(screen.getByTestId('shop-panel-tab-normal')).toBeInTheDocument();
     expect(screen.getByTestId('shop-panel-tab-black_market')).toBeInTheDocument();
     expect(screen.getByTestId('shop-panel-tab-limited_time')).toBeInTheDocument();
@@ -312,7 +312,7 @@ describe('ACC-10 商店系统 验收测试', () => {
     await waitForGoodsLoaded();
     const panel = screen.getByTestId('shop-panel');
     const goodsGrid = panel.querySelector('.tk-shop-goods-grid');
-    assertVisible(goodsGrid as HTMLElement, 'ACC-10-18', '商品列表区域');
+    assertInDOM(goodsGrid as HTMLElement, 'ACC-10-18', '商品列表区域');
     const cards = panel.querySelectorAll('.tk-shop-goods-card');
     assertStrict(cards.length >= 3, 'ACC-10-18', `应至少有3个商品卡片，实际${cards.length}个`);
   });
@@ -320,7 +320,7 @@ describe('ACC-10 商店系统 验收测试', () => {
   it(accTest('ACC-10-19', '商店Tab栏横向滚动 - Tab栏支持横向滚动'), () => {
     render(<ShopPanel {...makeProps()} />);
     const tabBar = screen.getByTestId('shop-panel-tabs');
-    assertVisible(tabBar, 'ACC-10-19', 'Tab栏');
+    assertInDOM(tabBar, 'ACC-10-19', 'Tab栏');
     expect(screen.getByTestId('shop-panel-tab-normal')).toBeInTheDocument();
     expect(screen.getByTestId('shop-panel-tab-black_market')).toBeInTheDocument();
     expect(screen.getByTestId('shop-panel-tab-limited_time')).toBeInTheDocument();
@@ -650,7 +650,7 @@ describe('ACC-10 商店系统 验收测试', () => {
   it(accTest('ACC-10-41', 'Tab栏横向可滚动 - Tab栏支持overflow-x滚动'), () => {
     render(<ShopPanel {...makeProps()} />);
     const tabBar = screen.getByTestId('shop-panel-tabs');
-    assertVisible(tabBar, 'ACC-10-41', 'Tab栏');
+    assertInDOM(tabBar, 'ACC-10-41', 'Tab栏');
     expect(screen.getByTestId('shop-panel-tab-normal')).toBeVisible();
     expect(screen.getByTestId('shop-panel-tab-black_market')).toBeVisible();
     expect(screen.getByTestId('shop-panel-tab-limited_time')).toBeVisible();
@@ -661,7 +661,7 @@ describe('ACC-10 商店系统 验收测试', () => {
     render(<ShopPanel {...makeProps()} />);
     await waitForGoodsLoaded();
     const card = screen.getByTestId('shop-panel-goods-res_grain_small');
-    assertVisible(card, 'ACC-10-42', '商品卡片');
+    assertInDOM(card, 'ACC-10-42', '商品卡片');
     expect(card.querySelector('.tk-shop-goods-icon')).toBeInTheDocument();
     expect(card.querySelector('.tk-shop-goods-name')).toBeInTheDocument();
     expect(card.querySelector('.tk-shop-buy-btn')).toBeInTheDocument();
@@ -671,7 +671,7 @@ describe('ACC-10 商店系统 验收测试', () => {
     render(<ShopPanel {...makeProps()} />);
     await waitForGoodsLoaded();
     const desc = screen.getByText('100单位粮草');
-    assertVisible(desc, 'ACC-10-43', '商品描述');
+    assertInDOM(desc, 'ACC-10-43', '商品描述');
   });
 
   it(accTest('ACC-10-44', '购买确认弹窗居中 - 弹窗存在且可操作'), async () => {
@@ -682,7 +682,7 @@ describe('ACC-10 商店系统 验收测试', () => {
       expect(screen.getByTestId('shop-panel-confirm-dialog')).toBeInTheDocument();
     });
     const dialog = screen.getByTestId('shop-panel-confirm-dialog');
-    assertVisible(dialog, 'ACC-10-44', '确认弹窗');
+    assertInDOM(dialog, 'ACC-10-44', '确认弹窗');
     expect(screen.getByTestId('shop-panel-confirm-cancel')).toBeInTheDocument();
     expect(screen.getByTestId('shop-panel-confirm-ok')).toBeInTheDocument();
   });
@@ -691,7 +691,7 @@ describe('ACC-10 商店系统 验收测试', () => {
     render(<ShopPanel {...makeProps({ copper: 10000, mandate: 300 })} />);
     const panel = screen.getByTestId('shop-panel');
     const currencyBar = panel.querySelector('.tk-shop-currency-bar');
-    assertVisible(currencyBar as HTMLElement, 'ACC-10-45', '货币栏');
+    assertInDOM(currencyBar as HTMLElement, 'ACC-10-45', '货币栏');
     expect(currencyBar?.textContent).toContain('铜钱');
   });
 
@@ -700,7 +700,7 @@ describe('ACC-10 商店系统 验收测试', () => {
     await waitForGoodsLoaded();
     const panel = screen.getByTestId('shop-panel');
     const goodsGrid = panel.querySelector('.tk-shop-goods-grid');
-    assertVisible(goodsGrid as HTMLElement, 'ACC-10-46', '商品列表区域');
+    assertInDOM(goodsGrid as HTMLElement, 'ACC-10-46', '商品列表区域');
     const cards = goodsGrid?.querySelectorAll('.tk-shop-goods-card');
     assertStrict((cards?.length ?? 0) > 0, 'ACC-10-46', '商品列表应包含商品卡片');
   });
@@ -709,7 +709,7 @@ describe('ACC-10 商店系统 验收测试', () => {
     render(<ShopPanel {...makeProps()} />);
     await waitForGoodsLoaded();
     const buyBtn = screen.getByTestId('shop-panel-buy-res_grain_small');
-    assertVisible(buyBtn, 'ACC-10-47', '购买按钮');
+    assertInDOM(buyBtn, 'ACC-10-47', '购买按钮');
     expect(buyBtn).not.toBeDisabled();
   });
 
@@ -732,6 +732,6 @@ describe('ACC-10 商店系统 验收测试', () => {
   it(accTest('ACC-10-49', '面板关闭按钮可触达 - 关闭按钮存在'), () => {
     render(<ShopPanel {...makeProps()} />);
     const closeBtn = screen.getByTestId('shared-panel-close');
-    assertVisible(closeBtn, 'ACC-10-49', '关闭按钮');
+    assertInDOM(closeBtn, 'ACC-10-49', '关闭按钮');
   });
 });

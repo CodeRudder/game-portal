@@ -17,7 +17,7 @@ import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/re
 import BondPanel from '@/components/idle/panels/hero/BondPanel';
 import BondActivateModal from '@/components/idle/panels/hero/BondActivateModal';
 import BondCollectionPanel from '@/components/idle/panels/hero/BondCollectionPanel';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 
 // ── Mock CSS ──
 vi.mock('@/components/idle/panels/hero/BondPanel.css', () => ({}));
@@ -87,14 +87,14 @@ describe('ACC-12 羁绊系统 验收测试', () => {
   it(accTest('ACC-12-01', '羁绊面板标题与计数 - 显示标题和已激活X/Y'), () => {
     render(<BondPanel {...makeBondPanelProps({ heroIds: ['liubei', 'guanyu'] })} />);
     const panel = screen.getByTestId('bond-panel');
-    assertVisible(panel, 'ACC-12-01', '羁绊面板');
+    assertInDOM(panel, 'ACC-12-01', '羁绊面板');
     expect(panel.textContent).toContain('羁绊');
   });
 
   it(accTest('ACC-12-02', '阵营分布可视化 - 显示各阵营人数'), () => {
     render(<BondPanel {...makeBondPanelProps({ heroIds: ['liubei', 'guanyu', 'caocao'] })} />);
     const dist = screen.getByTestId('bond-faction-distribution');
-    assertVisible(dist, 'ACC-12-02', '阵营分布');
+    assertInDOM(dist, 'ACC-12-02', '阵营分布');
     expect(screen.getByTestId('bond-faction-segment-shu')).toBeInTheDocument();
     expect(screen.getByTestId('bond-faction-segment-wei')).toBeInTheDocument();
   });
@@ -125,7 +125,7 @@ describe('ACC-12 羁绊系统 验收测试', () => {
   it(accTest('ACC-12-19', '空编队羁绊提示 - 显示提示文本'), () => {
     render(<BondPanel {...makeBondPanelProps({ heroIds: [] })} />);
     const empty = screen.getByTestId('bond-panel-empty');
-    assertVisible(empty, 'ACC-12-19', '空编队提示');
+    assertInDOM(empty, 'ACC-12-19', '空编队提示');
     expect(empty.textContent).toContain('当前编队为空');
   });
 
@@ -279,7 +279,7 @@ describe('ACC-12 羁绊系统 验收测试', () => {
   it(accTest('ACC-12-07', '羁绊图鉴Tab切换 - 显示已激活和全部图鉴Tab'), () => {
     render(<BondCollectionPanel {...makeBondCollectionPanelProps()} />);
     const panel = screen.getByTestId('bond-collection-panel');
-    assertVisible(panel, 'ACC-12-07', '羁绊图鉴面板');
+    assertInDOM(panel, 'ACC-12-07', '羁绊图鉴面板');
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -289,19 +289,19 @@ describe('ACC-12 羁绊系统 验收测试', () => {
   it(accTest('ACC-12-40', '羁绊面板竖屏布局 - 面板存在且内容不超出'), () => {
     render(<BondPanel {...makeBondPanelProps({ heroIds: ['liubei', 'guanyu'] })} />);
     const panel = screen.getByTestId('bond-panel');
-    assertVisible(panel, 'ACC-12-40', '羁绊面板');
+    assertInDOM(panel, 'ACC-12-40', '羁绊面板');
   });
 
   it(accTest('ACC-12-41', '羁绊卡片触摸操作 - 点击展开/收起'), () => {
     render(<BondPanel {...makeBondPanelProps({ heroIds: ['liubei', 'guanyu'] })} />);
     const panel = screen.getByTestId('bond-panel');
-    assertVisible(panel, 'ACC-12-41', '羁绊面板');
+    assertInDOM(panel, 'ACC-12-41', '羁绊面板');
   });
 
   it(accTest('ACC-12-42', '羁绊详情弹窗手机适配 - 弹窗存在'), () => {
     const onClose = vi.fn();
     render(<BondActivateModal {...makeBondActivateModalProps({ onClose })} />);
     const modal = screen.getByText('桃园结义');
-    assertVisible(modal, 'ACC-12-42', '羁绊激活弹窗');
+    assertInDOM(modal, 'ACC-12-42', '羁绊激活弹窗');
   });
 });

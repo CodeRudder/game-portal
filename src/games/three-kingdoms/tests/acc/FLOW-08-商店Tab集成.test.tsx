@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ShopPanel from '@/components/idle/panels/shop/ShopPanel';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
@@ -84,13 +84,13 @@ describe('FLOW-08 商店Tab集成测试', () => {
   it(accTest('FLOW-08-01', '商店面板整体渲染 — 面板容器、Tab栏、商品列表'), () => {
     render(<ShopPanel {...makeProps()} />);
     const panel = screen.getByTestId('shop-panel');
-    assertVisible(panel, 'FLOW-08-01', '商店面板容器');
+    assertInDOM(panel, 'FLOW-08-01', '商店面板容器');
 
     const tabs = screen.getByTestId('shop-panel-tabs');
-    assertVisible(tabs, 'FLOW-08-01', '商店Tab栏');
+    assertInDOM(tabs, 'FLOW-08-01', '商店Tab栏');
 
     const refreshBtn = screen.getByTestId('shop-panel-refresh');
-    assertVisible(refreshBtn, 'FLOW-08-01', '刷新按钮');
+    assertInDOM(refreshBtn, 'FLOW-08-01', '刷新按钮');
   });
 
   it(accTest('FLOW-08-02', '四个商店Tab显示 — 杂货铺/竞技商店/远征商店/联盟商店'), () => {
@@ -131,7 +131,7 @@ describe('FLOW-08 商店Tab集成测试', () => {
     render(<ShopPanel {...makeProps()} />);
     // 初始有骨架屏
     const panel = screen.getByTestId('shop-panel');
-    assertVisible(panel, 'FLOW-08-06', '商店面板');
+    assertInDOM(panel, 'FLOW-08-06', '商店面板');
     // 等待加载完成
     await waitForGoodsLoaded();
     const buyButtons = screen.queryAllByTestId(/^shop-panel-buy-/);

@@ -18,7 +18,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import GuideOverlay from '@/components/idle/panels/hero/GuideOverlay';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -110,13 +110,13 @@ describe('ACC-11 引导系统 验收测试', () => {
   it(accTest('ACC-11-02', '关闭欢迎弹窗后触发引导 - 显示GuideOverlay'), () => {
     render(<GuideOverlay {...makeProps()} />);
     const overlay = screen.getByTestId('guide-overlay');
-    assertVisible(overlay, 'ACC-11-02', 'GuideOverlay');
+    assertInDOM(overlay, 'ACC-11-02', 'GuideOverlay');
   });
 
   it(accTest('ACC-11-03', '引导遮罩层正确覆盖全屏 - 遮罩存在'), () => {
     render(<GuideOverlay {...makeProps()} />);
     const overlay = screen.getByTestId('guide-overlay');
-    assertVisible(overlay, 'ACC-11-03', '引导遮罩');
+    assertInDOM(overlay, 'ACC-11-03', '引导遮罩');
   });
 
   it(accTest('ACC-11-04', '引导步骤标题和描述可见 - 显示当前步骤标题和描述'), () => {
@@ -133,7 +133,7 @@ describe('ACC-11 引导系统 验收测试', () => {
   it(accTest('ACC-11-09', '引导气泡位置正确 - 气泡不超出视口'), () => {
     render(<GuideOverlay {...makeProps()} />);
     const overlay = screen.getByTestId('guide-overlay');
-    assertVisible(overlay, 'ACC-11-09', '引导气泡');
+    assertInDOM(overlay, 'ACC-11-09', '引导气泡');
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -368,7 +368,7 @@ describe('ACC-11 引导系统 验收测试', () => {
   it(accTest('ACC-11-40', '引导遮罩在手机端全屏覆盖 - 遮罩存在'), () => {
     render(<GuideOverlay {...makeProps()} />);
     const overlay = screen.getByTestId('guide-overlay');
-    assertVisible(overlay, 'ACC-11-40', '引导遮罩');
+    assertInDOM(overlay, 'ACC-11-40', '引导遮罩');
   });
 
   it(accTest('ACC-11-43', '引导按钮在手机端可点击 - Skip/Next/Previous响应'), () => {
@@ -377,8 +377,8 @@ describe('ACC-11 引导系统 验收测试', () => {
     render(<GuideOverlay {...makeSkippableProps()} />);
     const skipBtn = screen.getByTestId('guide-overlay-skip');
     const nextBtn = screen.getByTestId('guide-overlay-next');
-    assertVisible(skipBtn, 'ACC-11-43', 'Skip按钮');
-    assertVisible(nextBtn, 'ACC-11-43', 'Next按钮');
+    assertInDOM(skipBtn, 'ACC-11-43', 'Skip按钮');
+    assertInDOM(nextBtn, 'ACC-11-43', 'Next按钮');
     fireEvent.click(nextBtn);
     expect(screen.getByText('⚔️ Formation')).toBeInTheDocument();
   });
@@ -387,7 +387,7 @@ describe('ACC-11 引导系统 验收测试', () => {
     render(<GuideOverlay {...makeProps()} />);
     const title = screen.getByText('🎮 Welcome!');
     const desc = screen.getByText('Click the recruit button to recruit your first hero!');
-    assertVisible(title, 'ACC-11-44', '引导标题');
-    assertVisible(desc, 'ACC-11-44', '引导描述');
+    assertInDOM(title, 'ACC-11-44', '引导标题');
+    assertInDOM(desc, 'ACC-11-44', '引导描述');
   });
 });

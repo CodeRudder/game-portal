@@ -11,7 +11,7 @@ import RecruitModal from '@/components/idle/panels/hero/RecruitModal';
 import HeroTab from '@/components/idle/panels/hero/HeroTab';
 import { RECRUIT_COSTS, RECRUIT_PITY, DAILY_FREE_CONFIG } from '@/games/three-kingdoms/engine';
 import { Quality as Q, QUALITY_ORDER } from '@/games/three-kingdoms/engine/hero/hero.types';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -70,18 +70,18 @@ describe('FLOW-05 招贤馆集成测试', () => {
     renderModal(sim);
 
     const overlay = screen.getByTestId('recruit-modal-overlay');
-    assertVisible(overlay, 'FLOW-05-01', '招募弹窗遮罩层');
+    assertInDOM(overlay, 'FLOW-05-01', '招募弹窗遮罩层');
 
     const modal = screen.getByTestId('recruit-modal');
-    assertVisible(modal, 'FLOW-05-01', '招募弹窗容器');
+    assertInDOM(modal, 'FLOW-05-01', '招募弹窗容器');
 
     const title = screen.getByText('⚔️ 招贤纳士');
-    assertVisible(title, 'FLOW-05-01', '招募弹窗标题');
+    assertInDOM(title, 'FLOW-05-01', '招募弹窗标题');
 
-    assertVisible(screen.getByTestId('recruit-modal-type-normal'), 'FLOW-05-01', '普通招贤按钮');
-    assertVisible(screen.getByTestId('recruit-modal-type-advanced'), 'FLOW-05-01', '高级招贤按钮');
-    assertVisible(screen.getByTestId('recruit-modal-single-btn'), 'FLOW-05-01', '单次招募按钮');
-    assertVisible(screen.getByTestId('recruit-modal-ten-btn'), 'FLOW-05-01', '十连招募按钮');
+    assertInDOM(screen.getByTestId('recruit-modal-type-normal'), 'FLOW-05-01', '普通招贤按钮');
+    assertInDOM(screen.getByTestId('recruit-modal-type-advanced'), 'FLOW-05-01', '高级招贤按钮');
+    assertInDOM(screen.getByTestId('recruit-modal-single-btn'), 'FLOW-05-01', '单次招募按钮');
+    assertInDOM(screen.getByTestId('recruit-modal-ten-btn'), 'FLOW-05-01', '十连招募按钮');
   });
 
   it(accTest('FLOW-05-02', '资源余额显示正确 — 铜钱和求贤令数值'), () => {
@@ -109,8 +109,8 @@ describe('FLOW-05 招贤馆集成测试', () => {
     const sim = createRecruitSim();
     renderModal(sim);
 
-    assertVisible(screen.getByText('十连保底（稀有+）'), 'FLOW-05-04', '十连保底进度标签');
-    assertVisible(screen.getByText('0/10'), 'FLOW-05-04', '保底计数 0/10');
+    assertInDOM(screen.getByText('十连保底（稀有+）'), 'FLOW-05-04', '十连保底进度标签');
+    assertInDOM(screen.getByText('0/10'), 'FLOW-05-04', '保底计数 0/10');
   });
 
   it(accTest('FLOW-05-05', '概率表展开后可见 — 概率一览'), async () => {
@@ -118,8 +118,8 @@ describe('FLOW-05 招贤馆集成测试', () => {
     renderModal(sim);
 
     await userEvent.click(screen.getByTestId('recruit-rates-toggle'));
-    assertVisible(screen.getByTestId('recruit-rates-table'), 'FLOW-05-05', '概率表');
-    assertVisible(screen.getByText('60%'), 'FLOW-05-05', '普通品质概率 60%');
+    assertInDOM(screen.getByTestId('recruit-rates-table'), 'FLOW-05-05', '概率表');
+    assertInDOM(screen.getByText('60%'), 'FLOW-05-05', '普通品质概率 60%');
   });
 
   // ── 2. 普通招募（FLOW-05-06 ~ FLOW-05-10） ──
@@ -145,7 +145,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
 
     await userEvent.click(screen.getByTestId('recruit-modal-single-btn'));
 
-    assertVisible(screen.getByTestId('recruit-modal-results'), 'FLOW-05-07', '单抽结果区域');
+    assertInDOM(screen.getByTestId('recruit-modal-results'), 'FLOW-05-07', '单抽结果区域');
     const qualityLabels = screen.getByTestId('recruit-modal-results').querySelectorAll('.tk-recruit-result-quality');
     assertStrict(qualityLabels.length >= 1, 'FLOW-05-07', '结果卡片应显示品质标签');
     const nameLabels = screen.getByTestId('recruit-modal-results').querySelectorAll('.tk-recruit-result-name');
@@ -238,7 +238,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
     await userEvent.click(screen.getByTestId('recruit-modal-type-advanced'));
     await userEvent.click(screen.getByTestId('recruit-rates-toggle'));
 
-    assertVisible(screen.getByTestId('recruit-rates-table'), 'FLOW-05-14', '高级概率表');
+    assertInDOM(screen.getByTestId('recruit-rates-table'), 'FLOW-05-14', '高级概率表');
     // 高级招募传说概率 2%
     const hasLegendary = screen.queryAllByText('2%').length > 0;
     assertStrict(hasLegendary, 'FLOW-05-14', '高级招募应显示传说概率 2%');
@@ -260,7 +260,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
     renderModal(sim);
 
     const freeBtn = screen.getByTestId('recruit-modal-free-btn');
-    assertVisible(freeBtn, 'FLOW-05-16', '免费招募按钮');
+    assertInDOM(freeBtn, 'FLOW-05-16', '免费招募按钮');
   });
 
   it(accTest('FLOW-05-17', '免费招募执行 — 不消耗资源'), async () => {
@@ -361,7 +361,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
     const pityBefore = sim.engine.getRecruitSystem().getGachaState().normalPity;
 
     renderModal(sim);
-    assertVisible(screen.getByText('0/10'), 'FLOW-05-24', '初始保底计数 0/10');
+    assertInDOM(screen.getByText('0/10'), 'FLOW-05-24', '初始保底计数 0/10');
 
     await userEvent.click(screen.getByTestId('recruit-modal-single-btn'));
     const pityAfter = sim.engine.getRecruitSystem().getGachaState().normalPity;
@@ -388,7 +388,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
     renderModal(sim);
 
     await userEvent.click(screen.getByTestId('recruit-modal-ten-btn'));
-    assertVisible(screen.getByTestId('recruit-modal-results'), 'FLOW-05-26', '十连招募结果区域');
+    assertInDOM(screen.getByTestId('recruit-modal-results'), 'FLOW-05-26', '十连招募结果区域');
 
     const history = sim.engine.getRecruitSystem().getRecruitHistory();
     const lastEntry = history[0];
@@ -586,7 +586,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
     renderModal(sim);
 
     await userEvent.click(screen.getByTestId('recruit-modal-single-btn'));
-    assertVisible(screen.getByTestId('recruit-modal-results'), 'FLOW-05-41', '招募结果区域');
+    assertInDOM(screen.getByTestId('recruit-modal-results'), 'FLOW-05-41', '招募结果区域');
   });
 
   it(accTest('FLOW-05-42', '招募结果关闭 — 点击关闭按钮清除结果'), async () => {
@@ -639,10 +639,10 @@ describe('FLOW-05 招贤馆集成测试', () => {
     render(<HeroTab engine={sim.engine} snapshotVersion={0} />);
 
     const recruitBtn = screen.getByTestId('hero-tab-recruit-btn');
-    assertVisible(recruitBtn, 'FLOW-05-46', 'HeroTab招募按钮');
+    assertInDOM(recruitBtn, 'FLOW-05-46', 'HeroTab招募按钮');
 
     await userEvent.click(recruitBtn);
-    assertVisible(screen.getByTestId('recruit-modal-overlay'), 'FLOW-05-46', '招募弹窗应打开');
+    assertInDOM(screen.getByTestId('recruit-modal-overlay'), 'FLOW-05-46', '招募弹窗应打开');
   });
 
   it(accTest('FLOW-05-47', 'HeroTab空状态 — 无武将时显示招募引导或招募按钮'), () => {
@@ -655,7 +655,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
       assertStrict(!!emptyRecruitBtn, 'FLOW-05-47', '空状态应有前往招募按钮');
     } else {
       const recruitBtn = screen.getByTestId('hero-tab-recruit-btn');
-      assertVisible(recruitBtn, 'FLOW-05-47', '招募按钮应存在');
+      assertInDOM(recruitBtn, 'FLOW-05-47', '招募按钮应存在');
     }
   });
 
@@ -701,7 +701,7 @@ describe('FLOW-05 招贤馆集成测试', () => {
     await userEvent.click(screen.getByTestId('hero-tab-recruit-btn'));
 
     // 2. 验证弹窗打开
-    assertVisible(screen.getByTestId('recruit-modal'), 'FLOW-05-51', '招募弹窗');
+    assertInDOM(screen.getByTestId('recruit-modal'), 'FLOW-05-51', '招募弹窗');
 
     // 3. 执行单次招募
     await userEvent.click(screen.getByTestId('recruit-modal-single-btn'));

@@ -16,7 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import HeroStarUpModal from '@/components/idle/panels/hero/HeroStarUpModal';
 import HeroBreakthroughPanel from '@/components/idle/panels/hero/HeroBreakthroughPanel';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import type {
   StarUpPreview,
   FragmentProgress,
@@ -161,7 +161,7 @@ describe('ACC-13 觉醒系统 验收测试', () => {
   it(accTest('ACC-13-01', '升星弹窗正确展示武将星级 - ★标记和等级显示'), () => {
     render(<HeroStarUpModal {...makeDefaultProps()} />);
     const overlay = screen.getByTestId('starup-modal-overlay');
-    assertVisible(overlay, 'ACC-13-01', '升星弹窗');
+    assertInDOM(overlay, 'ACC-13-01', '升星弹窗');
     const stars = screen.getAllByText('★');
     expect(stars.length).toBeGreaterThan(0);
   });
@@ -176,7 +176,7 @@ describe('ACC-13 觉醒系统 验收测试', () => {
   it(accTest('ACC-13-03', '碎片来源快捷入口可见 - 扫荡/商店/活动按钮'), () => {
     render(<HeroStarUpModal {...makeDefaultProps()} />);
     const panel = screen.getByTestId('starup-modal-content');
-    assertVisible(panel, 'ACC-13-03', '升星弹窗内容');
+    assertInDOM(panel, 'ACC-13-03', '升星弹窗内容');
     // 检查碎片来源按钮存在
     expect(screen.getByText(/扫荡/)).toBeInTheDocument();
     expect(screen.getByText(/商店/)).toBeInTheDocument();
@@ -186,13 +186,13 @@ describe('ACC-13 觉醒系统 验收测试', () => {
   it(accTest('ACC-13-04', '突破路线可视化 - 5个突破节点'), () => {
     render(<HeroBreakthroughPanel {...makeBreakthroughProps()} />);
     const roadmap = screen.getByTestId('breakthrough-roadmap');
-    assertVisible(roadmap, 'ACC-13-04', '突破路线');
+    assertInDOM(roadmap, 'ACC-13-04', '突破路线');
   });
 
   it(accTest('ACC-13-05', '突破材料需求展示 - 碎片/铜钱/突破石'), () => {
     render(<HeroBreakthroughPanel {...makeBreakthroughProps()} />);
     const materials = screen.getByTestId('breakthrough-materials');
-    assertVisible(materials, 'ACC-13-05', '突破材料区域');
+    assertInDOM(materials, 'ACC-13-05', '突破材料区域');
     // HeroBreakthroughPanel 使用 MaterialItem 组件，格式为 "owned / required"
     // 当前阶段(currentBreakthrough=1)对应 BREAKTHROUGH_COSTS[1] = {fragments:50, copper:50000, breakthroughStones:10}
     // 组件不使用 toLocaleString()，直接显示原始数字
@@ -204,7 +204,7 @@ describe('ACC-13 觉醒系统 验收测试', () => {
   it(accTest('ACC-13-06', '武将详情中突破状态可见 - 显示突破阶段'), () => {
     render(<HeroBreakthroughPanel {...makeBreakthroughProps()} />);
     const stage = screen.getByTestId('breakthrough-stage');
-    assertVisible(stage, 'ACC-13-06', '突破阶段');
+    assertInDOM(stage, 'ACC-13-06', '突破阶段');
   });
 
   it(accTest('ACC-13-07', '升星预览属性对比可见 - 四维属性变化'), () => {
@@ -280,7 +280,7 @@ describe('ACC-13 觉醒系统 验收测试', () => {
       currentBreakthrough: 4,
     })} />);
     const maxHint = screen.getByTestId('breakthrough-max-hint');
-    assertVisible(maxHint, 'ACC-13-17', '满突提示');
+    assertInDOM(maxHint, 'ACC-13-17', '满突提示');
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -328,7 +328,7 @@ describe('ACC-13 觉醒系统 验收测试', () => {
       levelCap: 50,
     })} />);
     const levelCap = screen.getByTestId('breakthrough-level-cap');
-    assertVisible(levelCap, 'ACC-13-23', '等级上限');
+    assertInDOM(levelCap, 'ACC-13-23', '等级上限');
   });
 
   it(accTest('ACC-13-24', '升星预览属性差值正确 - diff=after-before'), () => {
@@ -367,7 +367,7 @@ describe('ACC-13 觉醒系统 验收测试', () => {
     })} />);
     // 觉醒按钮应可见
     const awakenBtn = screen.getByTestId('btn-awaken');
-    assertVisible(awakenBtn, 'ACC-13-26', '觉醒按钮');
+    assertInDOM(awakenBtn, 'ACC-13-26', '觉醒按钮');
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -447,21 +447,21 @@ describe('ACC-13 觉醒系统 验收测试', () => {
   it(accTest('ACC-13-40', '升星弹窗在手机端适配 - 弹窗存在且内容完整'), () => {
     render(<HeroStarUpModal {...makeDefaultProps()} />);
     const overlay = screen.getByTestId('starup-modal-overlay');
-    assertVisible(overlay, 'ACC-13-40', '升星弹窗');
+    assertInDOM(overlay, 'ACC-13-40', '升星弹窗');
     const content = screen.getByTestId('starup-modal-content');
-    assertVisible(content, 'ACC-13-40', '升星弹窗内容');
+    assertInDOM(content, 'ACC-13-40', '升星弹窗内容');
   });
 
   it(accTest('ACC-13-41', '突破路线在手机端适配 - 节点可见'), () => {
     render(<HeroBreakthroughPanel {...makeBreakthroughProps()} />);
     const roadmap = screen.getByTestId('breakthrough-roadmap');
-    assertVisible(roadmap, 'ACC-13-41', '突破路线');
+    assertInDOM(roadmap, 'ACC-13-41', '突破路线');
   });
 
   it(accTest('ACC-13-42', '材料需求在手机端不截断 - 三项材料完整显示'), () => {
     render(<HeroBreakthroughPanel {...makeBreakthroughProps()} />);
     const materials = screen.getByTestId('breakthrough-materials');
-    assertVisible(materials, 'ACC-13-42', '材料区域');
+    assertInDOM(materials, 'ACC-13-42', '材料区域');
     // HeroBreakthroughPanel 的 MaterialItem 不使用 toLocaleString()，直接显示数字
     expect(materials.textContent).toContain('50');
     expect(materials.textContent).toContain('50000');
@@ -474,7 +474,7 @@ describe('ACC-13 觉醒系统 验收测试', () => {
     })} />);
     // 升星按钮通过文本定位
     const starUpBtn = getStarUpButton();
-    assertVisible(starUpBtn, 'ACC-13-44', '升星按钮');
+    assertInDOM(starUpBtn, 'ACC-13-44', '升星按钮');
     expect(starUpBtn).not.toBeDisabled();
   });
 

@@ -14,7 +14,7 @@ import {
   BUILDING_ICONS,
   BUILDING_DEFS,
 } from '@/games/three-kingdoms/engine/building';
-import { accTest, assertStrict, assertVisible, assertContainsText } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM, assertContainsText } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -134,13 +134,13 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     render(<BuildingPanel {...makePanelProps(sim)} />);
 
     const panel = screen.getByTestId('building-panel');
-    assertVisible(panel, 'FLOW-02-01', '建筑面板容器');
+    assertInDOM(panel, 'FLOW-02-01', '建筑面板容器');
 
     const map = screen.getByTestId('building-panel-map');
-    assertVisible(map, 'FLOW-02-01', '城池地图');
+    assertInDOM(map, 'FLOW-02-01', '城池地图');
 
     const list = screen.getByTestId('building-panel-list');
-    assertVisible(list, 'FLOW-02-01', '建筑列表');
+    assertInDOM(list, 'FLOW-02-01', '建筑列表');
   });
 
   it(accTest('FLOW-02-02', '建筑列表显示 — 所有8座建筑名称可见'), () => {
@@ -183,7 +183,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     render(<BuildingPanel {...makePanelProps(sim)} />);
 
     const incomeBtn = screen.getByTestId('building-panel-income-btn');
-    assertVisible(incomeBtn, 'FLOW-02-05', '收支详情按钮');
+    assertInDOM(incomeBtn, 'FLOW-02-05', '收支详情按钮');
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -196,7 +196,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
 
     for (const type of BUILDING_TYPES) {
       const item = screen.getByTestId(`building-panel-item-${type}`);
-      assertVisible(item, 'FLOW-02-06', `${BUILDING_LABELS[type]} 地图节点`);
+      assertInDOM(item, 'FLOW-02-06', `${BUILDING_LABELS[type]} 地图节点`);
     }
   });
 
@@ -239,7 +239,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
 
     for (const type of BUILDING_TYPES) {
       const listItem = screen.getByTestId(`building-panel-list-item-${type}`);
-      assertVisible(listItem, 'FLOW-02-10', `${BUILDING_LABELS[type]} 列表项`);
+      assertInDOM(listItem, 'FLOW-02-10', `${BUILDING_LABELS[type]} 列表项`);
     }
   });
 
@@ -255,7 +255,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     await userEvent.click(farmlandItem);
 
     const modalHeader = screen.getByTestId('building-upgrade-header');
-    assertVisible(modalHeader, 'FLOW-02-11', '升级弹窗头部');
+    assertInDOM(modalHeader, 'FLOW-02-11', '升级弹窗头部');
   });
 
   it(accTest('FLOW-02-12', '升级弹窗 — 显示建筑名称和等级'), async () => {
@@ -272,7 +272,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim, { buildingType: 'farmland' })} />);
 
     const levelChange = screen.getByText(/Lv\.1.*Lv\.2/);
-    assertVisible(levelChange, 'FLOW-02-13', '等级变化预览');
+    assertInDOM(levelChange, 'FLOW-02-13', '等级变化预览');
   });
 
   it(accTest('FLOW-02-14', '升级弹窗 — 费用明细显示粮草和铜钱'), async () => {
@@ -492,7 +492,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     render(<BuildingPanel {...makePanelProps(sim, { buildings: snapProps.buildings })} />);
 
     const queue = screen.getByTestId('building-panel-queue');
-    assertVisible(queue, 'FLOW-02-28', '升级队列面板');
+    assertInDOM(queue, 'FLOW-02-28', '升级队列面板');
     assertContainsText(queue, 'FLOW-02-28', '升级中');
   });
 
@@ -648,7 +648,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     render(<BuildingPanel {...makePanelProps(sim, { buildings: snapProps.buildings })} />);
 
     const cancelBtn = screen.getByTestId('building-map-cancel-farmland');
-    assertVisible(cancelBtn, 'FLOW-02-37', '地图取消按钮');
+    assertInDOM(cancelBtn, 'FLOW-02-37', '地图取消按钮');
 
     await userEvent.click(cancelBtn);
 
@@ -834,7 +834,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     render(<BuildingIncomeModal {...makeIncomeModalProps(sim)} />);
 
     const section = screen.getByTestId('building-income-section');
-    assertVisible(section, 'FLOW-02-49', '产出区块');
+    assertInDOM(section, 'FLOW-02-49', '产出区块');
   });
 
   it(accTest('FLOW-02-50', '收支详情弹窗 — 显示净收入'), () => {
@@ -842,7 +842,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     render(<BuildingIncomeModal {...makeIncomeModalProps(sim)} />);
 
     const netBox = screen.getByTestId('building-income-net');
-    assertVisible(netBox, 'FLOW-02-50', '净收入区块');
+    assertInDOM(netBox, 'FLOW-02-50', '净收入区块');
   });
 
   it(accTest('FLOW-02-51', '收支详情弹窗 — 显示建筑产出明细'), () => {
@@ -850,7 +850,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     render(<BuildingIncomeModal {...makeIncomeModalProps(sim)} />);
 
     const details = screen.getByTestId('building-income-details');
-    assertVisible(details, 'FLOW-02-51', '产出明细区块');
+    assertInDOM(details, 'FLOW-02-51', '产出明细区块');
   });
 
   // ═══════════════════════════════════════════════════════════════

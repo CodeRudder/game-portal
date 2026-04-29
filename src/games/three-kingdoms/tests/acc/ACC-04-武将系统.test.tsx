@@ -22,7 +22,7 @@ import { Quality as Q } from '@/games/three-kingdoms/engine';
 import type { EnhancePreview } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 import { statsAtLevel } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
 import { getStarMultiplier } from '@/games/three-kingdoms/engine/hero/star-up-config';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -176,14 +176,14 @@ describe('ACC-04 武将系统验收集成测试', () => {
   it(accTest('ACC-04-01', '武将Tab入口可见 — 渲染HeroTab容器'), () => {
     const { engine } = makeEngine();
     render(<HeroTab engine={engine} snapshotVersion={0} />);
-    assertVisible(screen.getByTestId('hero-tab'), 'ACC-04-01', '武将Tab容器');
+    assertInDOM(screen.getByTestId('hero-tab'), 'ACC-04-01', '武将Tab容器');
   });
 
   it(accTest('ACC-04-02', '武将列表正常展示 — 卡片网格渲染'), () => {
     const { engine } = makeEngine({ generalCount: 4 });
     render(<HeroTab engine={engine} snapshotVersion={0} />);
     const grid = screen.getByTestId('hero-tab-grid');
-    assertVisible(grid, 'ACC-04-02', '武将卡片网格');
+    assertInDOM(grid, 'ACC-04-02', '武将卡片网格');
     const cards = grid.querySelectorAll('[data-testid^="hero-card-"]');
     assertStrict(cards.length === 4, 'ACC-04-02', `应显示4张卡片，实际${cards.length}`);
   });
@@ -193,7 +193,7 @@ describe('ACC-04 武将系统验收集成测试', () => {
     const { engine } = makeEngine({ generalCount: 1 });
     render(<HeroCard general={g} engine={engine} />);
     const card = screen.getByTestId(`hero-card-${g.id}`);
-    assertVisible(card, 'ACC-04-03', '武将卡片');
+    assertInDOM(card, 'ACC-04-03', '武将卡片');
     assertStrict(card.textContent!.includes(g.name), 'ACC-04-03', `应包含名称「${g.name}」`);
     assertStrict(card.textContent!.includes(`Lv.${g.level}`), 'ACC-04-03', `应包含等级Lv.${g.level}`);
   });
@@ -210,14 +210,14 @@ describe('ACC-04 武将系统验收集成测试', () => {
     const { engine } = makeEngine();
     render(<HeroDetailModal general={g} engine={engine} onClose={vi.fn()} />);
     const modal = screen.getByTestId('hero-detail-modal');
-    assertVisible(modal, 'ACC-04-05', '武将详情弹窗');
+    assertInDOM(modal, 'ACC-04-05', '武将详情弹窗');
     assertStrict(screen.getByTestId('hero-detail-header').textContent!.includes(g.name), 'ACC-04-05', '应显示武将名称');
   });
 
   it(accTest('ACC-04-06', '属性雷达图可见 — 雷达图组件渲染'), () => {
     const { engine } = makeEngine();
     render(<HeroDetailModal general={makeGeneral()} engine={engine} onClose={vi.fn()} />);
-    assertVisible(screen.getByTestId('radar-chart'), 'ACC-04-06', '属性雷达图');
+    assertInDOM(screen.getByTestId('radar-chart'), 'ACC-04-06', '属性雷达图');
   });
 
   it(accTest('ACC-04-07', '四维属性条可见 — 属性标签存在'), () => {
@@ -232,14 +232,14 @@ describe('ACC-04 武将系统验收集成测试', () => {
     const { engine } = makeEngine();
     render(<HeroDetailModal general={makeGeneral()} engine={engine} onClose={vi.fn()} />);
     const skills = screen.getByTestId('hero-detail-skills');
-    assertVisible(skills, 'ACC-04-08', '技能列表区域');
+    assertInDOM(skills, 'ACC-04-08', '技能列表区域');
     assertStrict(skills.textContent!.includes('青龙偃月'), 'ACC-04-08', '应包含技能名称');
   });
 
   it(accTest('ACC-04-09', '突破状态可见 — 突破节点显示'), () => {
     const { engine } = makeEngine();
     render(<HeroDetailModal general={makeGeneral()} engine={engine} onClose={vi.fn()} />);
-    assertVisible(screen.getByTestId('hero-detail-breakthrough'), 'ACC-04-09', '突破状态区域');
+    assertInDOM(screen.getByTestId('hero-detail-breakthrough'), 'ACC-04-09', '突破状态区域');
   });
 
   // ═══════════════════════════════════════════
@@ -314,7 +314,7 @@ describe('ACC-04 武将系统验收集成测试', () => {
     const { engine } = makeEngineForEnhance('guanyu');
     const g = engine.getGeneral('guanyu')!;
     render(<HeroDetailModal general={g} engine={engine} onClose={vi.fn()} onEnhanceComplete={vi.fn()} />);
-    assertVisible(screen.getByTestId('hero-enhance-preview'), 'ACC-04-18', '升级预览区域');
+    assertInDOM(screen.getByTestId('hero-enhance-preview'), 'ACC-04-18', '升级预览区域');
   });
 
   it(accTest('ACC-04-19', '关闭详情弹窗 — 关闭按钮'), async () => {
@@ -352,7 +352,7 @@ describe('ACC-04 武将系统验收集成测试', () => {
     const g = makeGeneral({ level: 10 });
     const { rerender } = render(<HeroDetailModal general={g} engine={engine} onClose={vi.fn()} />);
     rerender(<HeroDetailModal general={{ ...g, level: 15 } as GeneralData} engine={engine} onClose={vi.fn()} />);
-    assertVisible(screen.getByTestId('radar-chart'), 'ACC-04-21', '升级后雷达图应重渲染');
+    assertInDOM(screen.getByTestId('radar-chart'), 'ACC-04-21', '升级后雷达图应重渲染');
   });
 
   it(accTest('ACC-04-22', '升级后战力数值立即更新 — calculatePower被重新调用'), () => {
@@ -528,8 +528,8 @@ describe('ACC-04 武将系统验收集成测试', () => {
   it(accTest('ACC-04-36', '空武将列表引导 — 显示空状态和招募按钮'), () => {
     const { engine } = makeEngine({ generalCount: 0 });
     render(<HeroTab engine={engine} snapshotVersion={0} />);
-    assertVisible(screen.getByTestId('hero-tab-empty'), 'ACC-04-36', '空状态引导区域');
-    assertVisible(screen.getByTestId('hero-tab-empty-recruit-btn'), 'ACC-04-36', '前往招募按钮');
+    assertInDOM(screen.getByTestId('hero-tab-empty'), 'ACC-04-36', '空状态引导区域');
+    assertInDOM(screen.getByTestId('hero-tab-empty-recruit-btn'), 'ACC-04-36', '前往招募按钮');
   });
 
   it(accTest('ACC-04-37', '技能等级上限处理 — getSkillLevelCap返回正数'), () => {
@@ -545,7 +545,7 @@ describe('ACC-04 武将系统验收集成测试', () => {
     });
     const { engine } = makeEngine();
     render(<HeroDetailModal general={g} engine={engine} onClose={vi.fn()} />);
-    assertVisible(screen.getByTestId('hero-detail-skills'), 'ACC-04-38', '技能列表应包含觉醒技能');
+    assertInDOM(screen.getByTestId('hero-detail-skills'), 'ACC-04-38', '技能列表应包含觉醒技能');
   });
 
   it(accTest('ACC-04-39', '快速连续操作防抖 — 升级按钮防重复提交'), async () => {
@@ -567,21 +567,21 @@ describe('ACC-04 武将系统验收集成测试', () => {
   it(accTest('ACC-04-40', '武将列表手机端布局 — 卡片网格渲染'), () => {
     const { engine } = makeEngine();
     render(<HeroTab engine={engine} snapshotVersion={0} />);
-    assertVisible(screen.getByTestId('hero-tab-grid'), 'ACC-04-40', '手机端武将卡片网格');
+    assertInDOM(screen.getByTestId('hero-tab-grid'), 'ACC-04-40', '手机端武将卡片网格');
   });
 
   it(accTest('ACC-04-41', '武将详情手机端全屏 — 弹窗有dialog角色'), () => {
     const { engine } = makeEngine();
     render(<HeroDetailModal general={makeGeneral()} engine={engine} onClose={vi.fn()} />);
     const modal = screen.getByTestId('hero-detail-modal');
-    assertVisible(modal, 'ACC-04-41', '手机端详情弹窗');
+    assertInDOM(modal, 'ACC-04-41', '手机端详情弹窗');
     assertStrict(modal.getAttribute('role') === 'dialog', 'ACC-04-41', '应有role=dialog');
   });
 
   it(accTest('ACC-04-42', '属性雷达图手机端适配 — 雷达图渲染'), () => {
     const { engine } = makeEngine();
     render(<HeroDetailModal general={makeGeneral()} engine={engine} onClose={vi.fn()} />);
-    assertVisible(screen.getByTestId('radar-chart'), 'ACC-04-42', '手机端雷达图');
+    assertInDOM(screen.getByTestId('radar-chart'), 'ACC-04-42', '手机端雷达图');
   });
 
   it(accTest('ACC-04-43', '升级面板手机端可用 — 升级按钮可点击'), () => {
@@ -600,7 +600,7 @@ describe('ACC-04 武将系统验收集成测试', () => {
   it(accTest('ACC-04-45', '筛选排序手机端可用 — 全部筛选按钮存在'), () => {
     const { engine } = makeEngine();
     render(<HeroTab engine={engine} snapshotVersion={0} />);
-    assertVisible(screen.getByText('全部'), 'ACC-04-45', '全部筛选按钮');
+    assertInDOM(screen.getByText('全部'), 'ACC-04-45', '全部筛选按钮');
   });
 
   it(accTest('ACC-04-46', '四维属性条手机端显示 — 属性标签完整'), () => {
@@ -620,7 +620,7 @@ describe('ACC-04 武将系统验收集成测试', () => {
     });
     const { engine } = makeEngine();
     render(<HeroDetailModal general={g} engine={engine} onClose={vi.fn()} />);
-    assertVisible(screen.getByTestId('hero-detail-skills'), 'ACC-04-47', '手机端技能列表');
+    assertInDOM(screen.getByTestId('hero-detail-skills'), 'ACC-04-47', '手机端技能列表');
   });
 
   it(accTest('ACC-04-48', '触摸操作响应 — 卡片可点击'), async () => {
@@ -635,7 +635,7 @@ describe('ACC-04 武将系统验收集成测试', () => {
     const { engine } = makeEngine();
     render(<HeroTab engine={engine} snapshotVersion={0} />);
     const el = screen.getByTestId('hero-tab-total-power');
-    assertVisible(el, 'ACC-04-49', '总战力显示');
+    assertInDOM(el, 'ACC-04-49', '总战力显示');
     assertStrict(el.textContent!.includes('总战力'), 'ACC-04-49', '应显示总战力标签');
   });
 
@@ -648,7 +648,7 @@ describe('ACC-04 武将系统验收集成测试', () => {
     const g = engine.getGeneral('guanyu')!;
     render(<HeroUpgradePanel general={g} engine={engine} onUpgradeComplete={vi.fn()} />);
     const panel = screen.getByTestId('hero-upgrade-panel');
-    assertVisible(panel, 'ACC-04-50', '升级面板');
+    assertInDOM(panel, 'ACC-04-50', '升级面板');
     assertStrict(panel.textContent!.includes(`Lv.${g.level}`), 'ACC-04-50', '应显示当前等级');
   });
 
@@ -701,9 +701,9 @@ describe('ACC-04 武将系统验收集成测试', () => {
     // 使用真实武将 ID
     const g = engine.getGenerals()[0];
     render(<HeroTab engine={engine} snapshotVersion={0} />);
-    assertVisible(screen.getByTestId('hero-tab-grid'), 'ACC-04-56', '武将列表');
+    assertInDOM(screen.getByTestId('hero-tab-grid'), 'ACC-04-56', '武将列表');
     await userEvent.click(screen.getByTestId(`hero-card-${g.id}`));
-    assertVisible(screen.getByTestId('hero-detail-modal'), 'ACC-04-56', '详情弹窗');
+    assertInDOM(screen.getByTestId('hero-detail-modal'), 'ACC-04-56', '详情弹窗');
     await userEvent.click(screen.getByTestId('hero-detail-modal-close'));
   });
 
@@ -711,7 +711,7 @@ describe('ACC-04 武将系统验收集成测试', () => {
     const { engine } = makeEngine({ generalCount: 0 });
     render(<HeroTab engine={engine} snapshotVersion={0} />);
     await userEvent.click(screen.getByTestId('hero-tab-empty-recruit-btn'));
-    assertVisible(screen.getByTestId('recruit-modal'), 'ACC-04-57', '招募弹窗');
+    assertInDOM(screen.getByTestId('recruit-modal'), 'ACC-04-57', '招募弹窗');
   });
 
   it(accTest('ACC-04-58', '武将总数显示 — 底部计数正确'), () => {

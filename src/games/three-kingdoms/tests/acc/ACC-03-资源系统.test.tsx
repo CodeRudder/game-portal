@@ -17,7 +17,7 @@ import '@testing-library/jest-dom';
 import ResourceBar from '@/components/idle/panels/resource/ResourceBar';
 import OfflineRewardModal from '@/components/idle/three-kingdoms/OfflineRewardModal';
 import type { Resources, ProductionRate, ResourceCap, ResourceType, OfflineEarnings } from '@/games/three-kingdoms/engine';
-import { accTest, assertStrict, assertVisible, assertContainsText } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM, assertContainsText } from './acc-test-utils';
 
 // ─────────────────────────────────────────────
 // Mock CSS imports
@@ -121,7 +121,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const caps = makeDefaultCaps();
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
     const bar = screen.getByTestId('resource-bar');
-    assertVisible(bar, 'ACC-03-01', '资源栏容器');
+    assertInDOM(bar, 'ACC-03-01', '资源栏容器');
     assertStrict(bar.getAttribute('role') === 'status', 'ACC-03-01', '资源栏应有 role=status');
   });
 
@@ -133,7 +133,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const expectedIcons = ['🌾', '💰', '⚔️', '👑', '🔬', '📜'];
     for (const icon of expectedIcons) {
       const iconEl = screen.getByText(icon);
-      assertVisible(iconEl, 'ACC-03-02', `资源图标 ${icon}`);
+      assertInDOM(iconEl, 'ACC-03-02', `资源图标 ${icon}`);
     }
   });
 
@@ -143,10 +143,10 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const caps = makeDefaultCaps();
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
     const grainValue = screen.getByTestId('resource-bar-grain-value');
-    assertVisible(grainValue, 'ACC-03-03', '粮草数值');
+    assertInDOM(grainValue, 'ACC-03-03', '粮草数值');
     assertContainsText(grainValue, 'ACC-03-03', '1234');
     const goldValue = screen.getByTestId('resource-bar-gold-value');
-    assertVisible(goldValue, 'ACC-03-03', '铜钱数值');
+    assertInDOM(goldValue, 'ACC-03-03', '铜钱数值');
     assertContainsText(goldValue, 'ACC-03-03', '5678');
   });
 
@@ -191,7 +191,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const caps = makeDefaultCaps();
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
     const detailBtn = screen.getByTestId('resource-bar-detail-btn');
-    assertVisible(detailBtn, 'ACC-03-07', '收支详情按钮');
+    assertInDOM(detailBtn, 'ACC-03-07', '收支详情按钮');
     assertStrict(detailBtn.getAttribute('title') === '收支详情', 'ACC-03-07', '按钮title应为收支详情');
   });
 
@@ -201,7 +201,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const caps = makeDefaultCaps();
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
     const title = screen.getByTestId('resource-bar-title');
-    assertVisible(title, 'ACC-03-08', '游戏标题');
+    assertInDOM(title, 'ACC-03-08', '游戏标题');
     assertContainsText(title, 'ACC-03-08', '三国霸业');
   });
 
@@ -218,7 +218,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const detailBtn = screen.getByTestId('resource-bar-detail-btn');
     await userEvent.click(detailBtn);
     const modalTitle = screen.getByText('资源收支');
-    assertVisible(modalTitle, 'ACC-03-10', '收支详情弹窗标题');
+    assertInDOM(modalTitle, 'ACC-03-10', '收支详情弹窗标题');
   });
 
   it(accTest('ACC-03-11', '收支详情弹窗显示产出明细 — 建筑产出列表'), async () => {
@@ -230,9 +230,9 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const detailBtn = screen.getByTestId('resource-bar-detail-btn');
     await userEvent.click(detailBtn);
     const modal = screen.getByTestId('resource-bar-detail-modal');
-    assertVisible(modal, 'ACC-03-11', '收支详情弹窗');
+    assertInDOM(modal, 'ACC-03-11', '收支详情弹窗');
     const prodTitle = screen.getByText('产出');
-    assertVisible(prodTitle, 'ACC-03-11', '产出标题');
+    assertInDOM(prodTitle, 'ACC-03-11', '产出标题');
   });
 
   it(accTest('ACC-03-12', '收支详情弹窗显示净收入 — 各资源净收支'), async () => {
@@ -244,7 +244,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const detailBtn = screen.getByTestId('resource-bar-detail-btn');
     await userEvent.click(detailBtn);
     const netTitle = screen.getByText('净收入');
-    assertVisible(netTitle, 'ACC-03-12', '净收入标题');
+    assertInDOM(netTitle, 'ACC-03-12', '净收入标题');
   });
 
   it(accTest('ACC-03-13', '点击遮罩关闭收支详情弹窗'), async () => {
@@ -280,7 +280,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const onClaim = vi.fn();
     render(<OfflineRewardModal reward={reward} onClaim={onClaim} />);
     const title = screen.getByText('离线收益');
-    assertVisible(title, 'ACC-03-15', '离线收益弹窗标题');
+    assertInDOM(title, 'ACC-03-15', '离线收益弹窗标题');
   });
 
   it(accTest('ACC-03-16', '离线收益弹窗显示资源明细 — 粮草/铜钱/天命卡片'), () => {
@@ -288,13 +288,13 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const onClaim = vi.fn();
     render(<OfflineRewardModal reward={reward} onClaim={onClaim} />);
     const grainCard = screen.getByTestId('offline-reward-grain');
-    assertVisible(grainCard, 'ACC-03-16', '粮草收益卡片');
+    assertInDOM(grainCard, 'ACC-03-16', '粮草收益卡片');
     assertContainsText(grainCard, 'ACC-03-16', '480');
     const goldCard = screen.getByTestId('offline-reward-gold');
-    assertVisible(goldCard, 'ACC-03-16', '铜钱收益卡片');
+    assertInDOM(goldCard, 'ACC-03-16', '铜钱收益卡片');
     assertContainsText(goldCard, 'ACC-03-16', '780');
     const mandateCard = screen.getByTestId('offline-reward-mandate');
-    assertVisible(mandateCard, 'ACC-03-16', '天命收益卡片');
+    assertInDOM(mandateCard, 'ACC-03-16', '天命收益卡片');
     assertContainsText(mandateCard, 'ACC-03-16', '10');
   });
 
@@ -303,7 +303,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const onClaim = vi.fn();
     render(<OfflineRewardModal reward={reward} onClaim={onClaim} />);
     const claimBtn = screen.getByText('领取收益');
-    assertVisible(claimBtn, 'ACC-03-17', '领取收益按钮');
+    assertInDOM(claimBtn, 'ACC-03-17', '领取收益按钮');
     fireEvent.click(claimBtn);
     assertStrict(onClaim.mock.calls.length === 1, 'ACC-03-17', 'onClaim回调应被调用1次');
   });
@@ -313,7 +313,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const onClaim = vi.fn();
     render(<OfflineRewardModal reward={reward} onClaim={onClaim} />);
     const durationText = screen.getByText(/离线时长/);
-    assertVisible(durationText, 'ACC-03-18', '离线时长文本');
+    assertInDOM(durationText, 'ACC-03-18', '离线时长文本');
     assertContainsText(durationText, 'ACC-03-18', '2小时');
   });
 
@@ -367,7 +367,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const onClaim = vi.fn();
     render(<OfflineRewardModal reward={reward} onClaim={onClaim} />);
     const cappedWarning = screen.getByText('⚠️ 已达上限');
-    assertVisible(cappedWarning, 'ACC-03-25', '已达上限警告');
+    assertInDOM(cappedWarning, 'ACC-03-25', '已达上限警告');
   });
 
   it(accTest('ACC-03-27', '批量资源消耗原子性 — 多资源同时更新'), () => {
@@ -438,7 +438,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const pendingGains = { grain: 200 }; // 1950+200=2150 > 2000
     render(<ResourceBar resources={resources} rates={rates} caps={caps} pendingGains={pendingGains} />);
     const banner = screen.getByTestId('resource-bar-overflow-banner');
-    assertVisible(banner, 'ACC-03-33', '溢出警告横幅');
+    assertInDOM(banner, 'ACC-03-33', '溢出警告横幅');
     assertContainsText(banner, 'ACC-03-33', '粮草溢出');
   });
 
@@ -470,7 +470,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const detailBtn = screen.getByTestId('resource-bar-detail-btn');
     await userEvent.click(detailBtn);
     const emptyText = screen.getByText('暂无建筑产出');
-    assertVisible(emptyText, 'ACC-03-36', '暂无建筑产出文本');
+    assertInDOM(emptyText, 'ACC-03-36', '暂无建筑产出文本');
   });
 
   it(accTest('ACC-03-38', '大数值资源格式化显示正确 — 12345678显示为1234.6万'), () => {
@@ -501,7 +501,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     const caps = makeDefaultCaps();
     render(<ResourceBar resources={resources} rates={rates} caps={caps} />);
     const bar = screen.getByTestId('resource-bar');
-    assertVisible(bar, 'ACC-03-40', '手机端资源栏');
+    assertInDOM(bar, 'ACC-03-40', '手机端资源栏');
   });
 
   it(accTest('ACC-03-44', '手机端离线收益弹窗适配 — 资源卡片网格显示'), () => {
@@ -512,8 +512,8 @@ describe('ACC-03 资源系统验收集成测试', () => {
     render(<OfflineRewardModal reward={reward} onClaim={onClaim} />);
     const grainCard = screen.getByTestId('offline-reward-grain');
     const goldCard = screen.getByTestId('offline-reward-gold');
-    assertVisible(grainCard, 'ACC-03-44', '手机端粮草卡片');
-    assertVisible(goldCard, 'ACC-03-44', '手机端铜钱卡片');
+    assertInDOM(grainCard, 'ACC-03-44', '手机端粮草卡片');
+    assertInDOM(goldCard, 'ACC-03-44', '手机端铜钱卡片');
   });
 
   it(accTest('ACC-03-48', '手机端触摸收支详情按钮 — 按钮可点击'), async () => {
@@ -526,7 +526,7 @@ describe('ACC-03 资源系统验收集成测试', () => {
     assertStrict(!detailBtn.hasAttribute('disabled'), 'ACC-03-48', '收支详情按钮应可点击');
     await userEvent.click(detailBtn);
     const modal = screen.getByTestId('resource-bar-detail-modal');
-    assertVisible(modal, 'ACC-03-48', '点击后弹窗应打开');
+    assertInDOM(modal, 'ACC-03-48', '点击后弹窗应打开');
   });
 
   it(accTest('ACC-03-49', '手机端大数值不截断 — 100万显示为紧凑格式'), () => {

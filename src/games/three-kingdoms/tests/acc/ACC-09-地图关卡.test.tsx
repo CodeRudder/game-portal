@@ -19,7 +19,7 @@ import TerritoryInfoPanel from '@/components/idle/panels/map/TerritoryInfoPanel'
 import SiegeConfirmModal from '@/components/idle/panels/map/SiegeConfirmModal';
 import type { Stage, Chapter, StageState } from '@/games/three-kingdoms/engine';
 import type { TerritoryData, TerritoryProductionSummary } from '@/games/three-kingdoms/core/map';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -220,9 +220,9 @@ describe('ACC-09 地图关卡验收集成测试', () => {
     const luoyang = screen.getByText('洛阳');
     const xuchang = screen.getByText('许昌');
     const yecheng = screen.getByText('邺城');
-    assertVisible(luoyang, 'ACC-09-07', '洛阳领土卡片');
-    assertVisible(xuchang, 'ACC-09-07', '许昌领土卡片');
-    assertVisible(yecheng, 'ACC-09-07', '邺城领土卡片');
+    assertInDOM(luoyang, 'ACC-09-07', '洛阳领土卡片');
+    assertInDOM(xuchang, 'ACC-09-07', '许昌领土卡片');
+    assertInDOM(yecheng, 'ACC-09-07', '邺城领土卡片');
   });
 
   it(accTest('ACC-09-08', '统计卡片显示 — 占领/总数和产出'), () => {
@@ -443,7 +443,7 @@ describe('ACC-09 地图关卡验收集成测试', () => {
       />
     );
     const luoyang = screen.getByText('洛阳');
-    assertVisible(luoyang, 'ACC-09-42', '手机端领土卡片');
+    assertInDOM(luoyang, 'ACC-09-42', '手机端领土卡片');
   });
 
   it(accTest('ACC-09-44', '领土卡片触控 — 点击响应'), async () => {
@@ -488,6 +488,6 @@ describe('ACC-09 地图关卡验收集成测试', () => {
       </div>
     );
     const testEl = screen.getByTestId('battle-formation-test');
-    assertVisible(testEl, 'ACC-09-47', '战前布阵测试元素');
+    assertInDOM(testEl, 'ACC-09-47', '战前布阵测试元素');
   });
 });

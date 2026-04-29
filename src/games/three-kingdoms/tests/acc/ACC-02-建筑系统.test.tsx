@@ -20,7 +20,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import BuildingPanel from '@/components/idle/panels/building/BuildingPanel';
 import BuildingUpgradeModal from '@/components/idle/panels/building/BuildingUpgradeModal';
 import BuildingIncomeModal from '@/components/idle/panels/building/BuildingIncomeModal';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim, createSimWithResources, SUFFICIENT_RESOURCES, MASSIVE_RESOURCES } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 import type { BuildingType, BuildingState, Resources, ProductionRate, ResourceCap } from '@/games/three-kingdoms/shared/types';
@@ -120,14 +120,14 @@ describe('ACC-02 建筑系统 验收测试', () => {
     const sim = createBuildingSim();
     render(<BuildingPanel {...makePanelProps(sim)} />);
     const panel = screen.getByTestId('building-panel');
-    assertVisible(panel, 'ACC-02-01', '建筑面板');
+    assertInDOM(panel, 'ACC-02-01', '建筑面板');
   });
 
   it(accTest('ACC-02-02', '8座建筑地图布局 - 所有建筑节点可见'), () => {
     const sim = createBuildingSim();
     render(<BuildingPanel {...makePanelProps(sim)} />);
     const map = screen.getByTestId('building-panel-map');
-    assertVisible(map, 'ACC-02-02', '建筑地图');
+    assertInDOM(map, 'ACC-02-02', '建筑地图');
     // 检查8座建筑都渲染了
     const types: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
     for (const t of types) {
@@ -172,7 +172,7 @@ describe('ACC-02 建筑系统 验收测试', () => {
     const sim = createBuildingSim();
     render(<BuildingPanel {...makePanelProps(sim)} />);
     const btn = screen.getByTestId('building-panel-income-btn');
-    assertVisible(btn, 'ACC-02-07', '收支详情按钮');
+    assertInDOM(btn, 'ACC-02-07', '收支详情按钮');
   });
 
   it(accTest('ACC-02-08', '升级队列悬浮面板 - 显示升级中建筑'), () => {
@@ -187,7 +187,7 @@ describe('ACC-02 建筑系统 验收测试', () => {
       snapshotVersion: 1,
     })} />);
     const queue = screen.getByTestId('building-panel-queue');
-    assertVisible(queue, 'ACC-02-08', '升级队列');
+    assertInDOM(queue, 'ACC-02-08', '升级队列');
   });
 
   it(accTest('ACC-02-09', '升级中建筑状态 - 显示进度条和倒计时'), () => {
@@ -217,7 +217,7 @@ describe('ACC-02 建筑系统 验收测试', () => {
     const sim = createBuildingSim();
     render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim)} />);
     const header = screen.getByTestId('building-upgrade-header');
-    assertVisible(header, 'ACC-02-10', '升级弹窗头部');
+    assertInDOM(header, 'ACC-02-10', '升级弹窗头部');
   });
 
   it(accTest('ACC-02-11', '升级弹窗 - 升级预览显示等级变化和产出变化'), () => {
@@ -302,7 +302,7 @@ describe('ACC-02 建筑系统 验收测试', () => {
       snapshotVersion: 1,
     })} />);
     const panel = screen.getByTestId('building-panel');
-    assertVisible(panel, 'ACC-02-20', '升级后面板');
+    assertInDOM(panel, 'ACC-02-20', '升级后面板');
   });
 
   it(accTest('ACC-02-21', '升级消耗与配置一致 - 弹窗显示消耗数值'), () => {
@@ -368,7 +368,7 @@ describe('ACC-02 建筑系统 验收测试', () => {
     const sim = createBuildingSim();
     render(<BuildingIncomeModal {...makeIncomeModalProps(sim)} />);
     const section = screen.getByTestId('building-income-section');
-    assertVisible(section, 'ACC-02-27', '收支详情区域');
+    assertInDOM(section, 'ACC-02-27', '收支详情区域');
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -443,7 +443,7 @@ describe('ACC-02 建筑系统 验收测试', () => {
       snapshotVersion: 1,
     })} />);
     const panel = screen.getByTestId('building-panel');
-    assertVisible(panel, 'ACC-02-32', '最高等级建筑面板');
+    assertInDOM(panel, 'ACC-02-32', '最高等级建筑面板');
   });
 
   it(accTest('ACC-02-33', '连续快速点击升级按钮 - 只触发一次'), () => {
@@ -503,14 +503,14 @@ describe('ACC-02 建筑系统 验收测试', () => {
     const sim = createBuildingSim();
     render(<BuildingPanel {...makePanelProps(sim)} />);
     const panel = screen.getByTestId('building-panel');
-    assertVisible(panel, 'ACC-02-40', '手机端建筑面板');
+    assertInDOM(panel, 'ACC-02-40', '手机端建筑面板');
   });
 
   it(accTest('ACC-02-42', '手机端升级按钮交互 - 弹窗正常弹出'), () => {
     const sim = createBuildingSim();
     render(<BuildingUpgradeModal {...makeUpgradeModalProps(sim)} />);
     const header = screen.getByTestId('building-upgrade-header');
-    assertVisible(header, 'ACC-02-42', '手机端升级弹窗');
+    assertInDOM(header, 'ACC-02-42', '手机端升级弹窗');
   });
 
   it(accTest('ACC-02-46', '手机端升级弹窗适配 - 内容完整显示'), () => {
@@ -534,6 +534,6 @@ describe('ACC-02 建筑系统 验收测试', () => {
     const sim = createBuildingSim();
     render(<BuildingIncomeModal {...makeIncomeModalProps(sim)} />);
     const section = screen.getByTestId('building-income-section');
-    assertVisible(section, 'ACC-02-47', '手机端收支详情弹窗');
+    assertInDOM(section, 'ACC-02-47', '手机端收支详情弹窗');
   });
 });

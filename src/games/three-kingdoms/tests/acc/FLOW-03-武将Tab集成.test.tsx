@@ -11,7 +11,7 @@ import HeroUpgradePanel from '@/components/idle/panels/hero/HeroUpgradePanel';
 import type { GeneralData } from '@/games/three-kingdoms/engine';
 import { getStarMultiplier } from '@/games/three-kingdoms/engine/hero/star-up-config';
 import { statsAtLevel } from '@/games/three-kingdoms/engine/hero/HeroLevelSystem';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -96,13 +96,13 @@ describe('FLOW-03 武将Tab集成测试', () => {
     render(<HeroTab engine={sim.engine} snapshotVersion={0} />);
 
     const heroTab = screen.getByTestId('hero-tab');
-    assertVisible(heroTab, 'FLOW-03-01', '武将Tab容器');
+    assertInDOM(heroTab, 'FLOW-03-01', '武将Tab容器');
 
     const grid = screen.getByTestId('hero-tab-grid');
-    assertVisible(grid, 'FLOW-03-01', '武将网格');
+    assertInDOM(grid, 'FLOW-03-01', '武将网格');
 
     const totalPower = screen.getByTestId('hero-tab-total-power');
-    assertVisible(totalPower, 'FLOW-03-01', '总战力显示');
+    assertInDOM(totalPower, 'FLOW-03-01', '总战力显示');
   });
 
   it(accTest('FLOW-03-02', '武将列表显示 — 所有武将卡片渲染'), () => {
@@ -112,7 +112,7 @@ describe('FLOW-03 武将Tab集成测试', () => {
     const heroIds = ['liubei', 'guanyu', 'zhangfei', 'zhugeliang', 'zhaoyun'];
     for (const id of heroIds) {
       const card = screen.getByTestId(`hero-card-${id}`);
-      assertVisible(card, 'FLOW-03-02', `武将卡片 ${id}`);
+      assertInDOM(card, 'FLOW-03-02', `武将卡片 ${id}`);
     }
   });
 
@@ -139,7 +139,7 @@ describe('FLOW-03 武将Tab集成测试', () => {
     render(<HeroTab engine={sim.engine} snapshotVersion={0} />);
 
     const countEl = screen.getByTestId('hero-tab-count');
-    assertVisible(countEl, 'FLOW-03-04', '武将总数');
+    assertInDOM(countEl, 'FLOW-03-04', '武将总数');
     assertStrict(
       countEl.textContent?.includes('5'),
       'FLOW-03-04',
@@ -152,10 +152,10 @@ describe('FLOW-03 武将Tab集成测试', () => {
     render(<HeroTab engine={sim.engine} snapshotVersion={0} />);
 
     const emptyEl = screen.getByTestId('hero-tab-empty');
-    assertVisible(emptyEl, 'FLOW-03-05', '空列表引导');
+    assertInDOM(emptyEl, 'FLOW-03-05', '空列表引导');
 
     const recruitBtn = screen.getByTestId('hero-tab-empty-recruit-btn');
-    assertVisible(recruitBtn, 'FLOW-03-05', '前往招募按钮');
+    assertInDOM(recruitBtn, 'FLOW-03-05', '前往招募按钮');
   });
 
   // ── 2. 武将详情弹窗（FLOW-03-06 ~ FLOW-03-10） ──
@@ -168,7 +168,7 @@ describe('FLOW-03 武将Tab集成测试', () => {
     await userEvent.click(liubeiCard);
 
     const modal = screen.getByTestId('hero-detail-modal');
-    assertVisible(modal, 'FLOW-03-06', '武将详情弹窗');
+    assertInDOM(modal, 'FLOW-03-06', '武将详情弹窗');
   });
 
   it(accTest('FLOW-03-07', '武将详情弹窗 — 显示名称和属性'), async () => {
@@ -201,7 +201,7 @@ describe('FLOW-03 武将Tab集成测试', () => {
 
     // 技能区域标题
     const skillTitle = screen.getByText('技能');
-    assertVisible(skillTitle, 'FLOW-03-08', '技能标题');
+    assertInDOM(skillTitle, 'FLOW-03-08', '技能标题');
   });
 
   it(accTest('FLOW-03-09', '武将详情弹窗 — 属性总览(雷达图)可见'), async () => {
@@ -212,7 +212,7 @@ describe('FLOW-03 武将Tab集成测试', () => {
     await userEvent.click(zhaoyunCard);
 
     const radarTitle = screen.getByText('属性总览');
-    assertVisible(radarTitle, 'FLOW-03-09', '属性总览标题');
+    assertInDOM(radarTitle, 'FLOW-03-09', '属性总览标题');
   });
 
   it(accTest('FLOW-03-10', '关闭详情弹窗 — 点击关闭按钮'), async () => {
@@ -320,10 +320,10 @@ describe('FLOW-03 武将Tab集成测试', () => {
     );
 
     const panel = screen.getByTestId('hero-upgrade-panel');
-    assertVisible(panel, 'FLOW-03-15', '升级面板');
+    assertInDOM(panel, 'FLOW-03-15', '升级面板');
 
     const enhanceBtn = screen.getByTestId('upgrade-panel-enhance-btn');
-    assertVisible(enhanceBtn, 'FLOW-03-15', '升级按钮');
+    assertInDOM(enhanceBtn, 'FLOW-03-15', '升级按钮');
   });
 
   // ── 4. 武将升星流程（FLOW-03-16 ~ FLOW-03-20）LL-007回归 ──

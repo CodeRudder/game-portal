@@ -47,11 +47,9 @@
   width: 100%;
 }
 
-/* ── 「更多▼」下拉面板 ── */
+/* ── 「更多▼」下拉面板（Portal 渲染到 body，使用 fixed 定位） ── */
 .tk-more-dropdown {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  right: 0;
+  position: fixed;
   width: 260px;
   max-height: 420px;
   background: rgba(20, 25, 35, 0.98);
@@ -62,7 +60,7 @@
   display: flex;
   flex-direction: column;
   animation: tk-more-dropdown-enter 0.15s ease-out;
-  z-index: var(--tk-z-dropdown, 100);
+  z-index: var(--tk-z-dropdown, 200);
 }
 
 @keyframes tk-more-dropdown-enter {
@@ -378,20 +376,21 @@
     display: none;
   }
 
-  /* ── 手机端「更多▼」下拉菜单 ── */
+  /* ── 手机端「更多▼」Tab 容器 ── */
   .tk-tab-btn-wrapper {
     flex: 1;
     max-width: none;
     min-width: 44px;
   }
 
+  /* ── 手机端「更多▼」下拉菜单（Portal fixed 定位） ── */
   .tk-more-dropdown {
     position: fixed;
     top: auto;
     bottom: 44px;
     left: 4px;
     right: 4px;
-    width: auto;
+    width: auto !important;
     max-height: 50vh;
     border-radius: 12px 12px 4px 4px;
   }

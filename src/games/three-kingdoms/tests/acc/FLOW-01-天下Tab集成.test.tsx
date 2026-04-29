@@ -8,7 +8,7 @@ import WorldMapTab from '@/components/idle/panels/map/WorldMapTab';
 import TerritoryInfoPanel from '@/components/idle/panels/map/TerritoryInfoPanel';
 import SiegeConfirmModal from '@/components/idle/panels/map/SiegeConfirmModal';
 import type { TerritoryData, TerritoryProductionSummary } from '@/games/three-kingdoms/core/map';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -130,16 +130,16 @@ describe('FLOW-01 天下Tab集成测试', () => {
     );
 
     const mapTab = screen.getByTestId('worldmap-tab');
-    assertVisible(mapTab, 'FLOW-01-01', '天下Tab容器');
+    assertInDOM(mapTab, 'FLOW-01-01', '天下Tab容器');
 
     const toolbar = screen.getByTestId('worldmap-toolbar');
-    assertVisible(toolbar, 'FLOW-01-01', '筛选工具栏');
+    assertInDOM(toolbar, 'FLOW-01-01', '筛选工具栏');
 
     const grid = screen.getByTestId('worldmap-grid');
-    assertVisible(grid, 'FLOW-01-01', '领土网格');
+    assertInDOM(grid, 'FLOW-01-01', '领土网格');
 
     const infoPanel = screen.getByTestId('worldmap-info-panel');
-    assertVisible(infoPanel, 'FLOW-01-01', '信息面板');
+    assertInDOM(infoPanel, 'FLOW-01-01', '信息面板');
   });
 
   it(accTest('FLOW-01-02', '领土列表显示 — 所有领土名称可见'), () => {
@@ -154,7 +154,7 @@ describe('FLOW-01 天下Tab集成测试', () => {
 
     for (const t of territories) {
       const el = screen.getByText(t.name);
-      assertVisible(el, 'FLOW-01-02', `领土 ${t.name}`);
+      assertInDOM(el, 'FLOW-01-02', `领土 ${t.name}`);
     }
   });
 
@@ -188,7 +188,7 @@ describe('FLOW-01 天下Tab集成测试', () => {
     const playerTerritories = territories.filter(t => t.ownership === 'player');
     for (const t of playerTerritories) {
       const bubble = screen.getByTestId(`bubble-${t.id}`);
-      assertVisible(bubble, 'FLOW-01-04', `${t.name} 产出气泡`);
+      assertInDOM(bubble, 'FLOW-01-04', `${t.name} 产出气泡`);
     }
   });
 
@@ -204,13 +204,13 @@ describe('FLOW-01 天下Tab集成测试', () => {
     );
 
     const statTerritories = screen.getByTestId('stat-territories');
-    assertVisible(statTerritories, 'FLOW-01-05', '占领/总数统计');
+    assertInDOM(statTerritories, 'FLOW-01-05', '占领/总数统计');
 
     const statGrain = screen.getByTestId('stat-grain');
-    assertVisible(statGrain, 'FLOW-01-05', '粮食产出统计');
+    assertInDOM(statGrain, 'FLOW-01-05', '粮食产出统计');
 
     const statGold = screen.getByTestId('stat-gold');
-    assertVisible(statGold, 'FLOW-01-05', '金币产出统计');
+    assertInDOM(statGold, 'FLOW-01-05', '金币产出统计');
   });
 
   // 2. 领土选择与信息面板（FLOW-01-06 ~ FLOW-01-10）
@@ -229,10 +229,10 @@ describe('FLOW-01 天下Tab集成测试', () => {
     await userEvent.click(luoyang);
 
     const infoPanel = screen.getByTestId('territory-info-city-luoyang');
-    assertVisible(infoPanel, 'FLOW-01-06', '洛阳信息面板');
+    assertInDOM(infoPanel, 'FLOW-01-06', '洛阳信息面板');
 
     const nameEl = within(infoPanel).getByText('洛阳');
-    assertVisible(nameEl, 'FLOW-01-06', '面板中领土名称');
+    assertInDOM(nameEl, 'FLOW-01-06', '面板中领土名称');
   });
 
   it(accTest('FLOW-01-07', '选中己方领土 — 显示名称/等级/归属/产出'), async () => {
@@ -250,7 +250,7 @@ describe('FLOW-01 天下Tab集成测试', () => {
     render(<TerritoryInfoPanel territory={territory} />);
 
     const siegeBtn = screen.getByTestId('btn-siege-city-xuchang');
-    assertVisible(siegeBtn, 'FLOW-01-08', '攻城按钮');
+    assertInDOM(siegeBtn, 'FLOW-01-08', '攻城按钮');
     assertStrict(siegeBtn.textContent?.includes('攻城'), 'FLOW-01-08', '按钮文字包含攻城');
   });
 
@@ -259,7 +259,7 @@ describe('FLOW-01 天下Tab集成测试', () => {
     render(<TerritoryInfoPanel territory={territory} />);
 
     const siegeBtn = screen.getByTestId('btn-siege-city-ye');
-    assertVisible(siegeBtn, 'FLOW-01-09', '占领按钮');
+    assertInDOM(siegeBtn, 'FLOW-01-09', '占领按钮');
     assertStrict(siegeBtn.textContent?.includes('占领'), 'FLOW-01-09', '按钮文字包含占领');
   });
 
@@ -458,7 +458,7 @@ describe('FLOW-01 天下Tab集成测试', () => {
     );
 
     const modal = screen.getByTestId('siege-confirm');
-    assertVisible(modal, 'FLOW-01-21', '攻城确认弹窗');
+    assertInDOM(modal, 'FLOW-01-21', '攻城确认弹窗');
 
     const conditions = screen.queryAllByTestId(/siege-condition-/);
     assertStrict(conditions.length >= 2, 'FLOW-01-21', '应显示至少2个条件检查项');
@@ -483,7 +483,7 @@ describe('FLOW-01 天下Tab集成测试', () => {
     assertStrict(confirmBtn.hasAttribute('disabled'), 'FLOW-01-22', '条件不满足时确认按钮应disabled');
 
     const errorMsg = screen.getByTestId('siege-error');
-    assertVisible(errorMsg, 'FLOW-01-22', '错误消息');
+    assertInDOM(errorMsg, 'FLOW-01-22', '错误消息');
   });
 
   // 5. 资源产出计算（FLOW-01-23 ~ FLOW-01-26）
@@ -636,9 +636,9 @@ describe('FLOW-01 天下Tab集成测试', () => {
     const ownershipFilter = screen.getByTestId('worldmap-filter-ownership');
     const landmarkFilter = screen.getByTestId('worldmap-filter-landmark');
 
-    assertVisible(regionFilter, 'FLOW-01-31', '区域筛选器');
-    assertVisible(ownershipFilter, 'FLOW-01-31', '归属筛选器');
-    assertVisible(landmarkFilter, 'FLOW-01-31', '类型筛选器');
+    assertInDOM(regionFilter, 'FLOW-01-31', '区域筛选器');
+    assertInDOM(ownershipFilter, 'FLOW-01-31', '归属筛选器');
+    assertInDOM(landmarkFilter, 'FLOW-01-31', '类型筛选器');
   });
 
   it(accTest('FLOW-01-32', '归属筛选 — 选择"己方"只显示player领土'), async () => {
@@ -680,7 +680,7 @@ describe('FLOW-01 天下Tab集成测试', () => {
     assertStrict(heatmapEls.length > 0, 'FLOW-01-33', '热力图叠加层应显示');
 
     const legend = screen.getByTestId('worldmap-legend');
-    assertVisible(legend, 'FLOW-01-33', '热力图图例');
+    assertInDOM(legend, 'FLOW-01-33', '热力图图例');
   });
 
   it(accTest('FLOW-01-34', '筛选无结果 — 显示空状态提示'), async () => {

@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import type { FeatureMenuItem } from '@/components/idle/FeatureMenu';
 import CalendarDisplay from './CalendarDisplay';
 import type { Season, WeatherType } from '@/games/three-kingdoms/engine';
@@ -188,12 +189,43 @@ const TabBar: React.FC<TabBarProps> = ({
 }) => {
   // ── 「更多▼」下拉菜单状态 ──
   const menuRef = useRef<HTMLDivElement>(null);
+  const moreBtnRef = useRef<HTMLButtonElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
-  // ── 点击外部关闭下拉菜单 ──
+  // ── 计算下拉菜单定位（Portal 渲染到 body，使用 fixed 定位） ──
+  const updateDropdownPosition = useCallback(() => {
+    if (!moreBtnRef.current) return;
+    const rect = moreBtnRef.current.getBoundingClientRect();
+    setDropdownStyle({
+      position: 'fixed',
+      bottom: window.innerHeight - rect.top + 6,
+      right: window.innerWidth - rect.right,
+      width: 260,
+      maxHeight: 420,
+    });
+  }, []);
+
+  // ── 菜单打开时计算位置 & 监听 resize/scroll ──
+  useEffect(() => {
+    if (!moreMenuOpen) return;
+    updateDropdownPosition();
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [moreMenuOpen, updateDropdownPosition]);
+
+  // ── 点击外部关闭下拉菜单（Portal 版本） ──
   useEffect(() => {
     if (!moreMenuOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      // 检查点击是否在"更多"按钮或下拉菜单之外
+      const clickedBtn = moreBtnRef.current?.contains(target);
+      const clickedMenu = menuRef.current?.contains(target);
+      if (!clickedBtn && !clickedMenu) {
         onMoreToggle?.(false);
       }
     };
@@ -236,10 +268,10 @@ const TabBar: React.FC<TabBarProps> = ({
           return (
             <div
               key={tab.id}
-              ref={menuRef}
               className={`tk-tab-btn-wrapper ${moreMenuOpen ? 'tk-tab-btn-wrapper--open' : ''}`}
             >
               <button
+                ref={moreBtnRef}
                 className={`tk-tab-btn ${moreMenuOpen ? 'tk-tab-btn--active' : ''}`}
                 onClick={handleMoreClick}
                 aria-label={tab.label}
@@ -264,13 +296,15 @@ const TabBar: React.FC<TabBarProps> = ({
                 <span className="tk-tab-label">{tab.label}</span>
               </button>
 
-              {/* 下拉功能菜单面板 */}
-              {moreMenuOpen && (
+              {/* 下拉功能菜单面板 — 通过 Portal 渲染到 body，避免 overflow:hidden 裁切 */}
+              {moreMenuOpen && typeof document !== 'undefined' && createPortal(
                 <div
+                  ref={menuRef}
                   className="tk-more-dropdown"
                   role="menu"
                   aria-label="功能列表"
                   data-testid="feature-menu-dropdown"
+                  style={dropdownStyle}
                 >
                   <div className="tk-more-dropdown-header">
                     <span className="tk-more-dropdown-title">功能大厅</span>
@@ -302,7 +336,8 @@ const TabBar: React.FC<TabBarProps> = ({
                       </button>
                     ))}
                   </div>
-                </div>
+                </div>,
+                document.body,
               )}
             </div>
           );

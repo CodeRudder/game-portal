@@ -18,7 +18,7 @@ import {
   TECH_NODE_DEFS,
   getNodesByPath,
 } from '@/games/three-kingdoms/engine';
-import { accTest, assertStrict, assertVisible } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -129,12 +129,12 @@ describe('FLOW-06 科技Tab集成测试', () => {
     renderTechTab(sim);
 
     const tab = screen.getByTestId('tech-tab');
-    assertVisible(tab, 'FLOW-06-01', '科技Tab容器');
+    assertInDOM(tab, 'FLOW-06-01', '科技Tab容器');
 
     // 三条路线Tab
     for (const path of TECH_PATHS) {
       const pathTab = screen.getByTestId(`tech-path-tab-${path}`);
-      assertVisible(pathTab, 'FLOW-06-01', `${TECH_PATH_LABELS[path]}路线Tab`);
+      assertInDOM(pathTab, 'FLOW-06-01', `${TECH_PATH_LABELS[path]}路线Tab`);
     }
 
     // 科技点信息栏
@@ -143,7 +143,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
 
     // 科技树画布
     const canvas = screen.getByTestId('tech-canvas');
-    assertVisible(canvas, 'FLOW-06-01', '科技树画布');
+    assertInDOM(canvas, 'FLOW-06-01', '科技树画布');
   });
   it(accTest('FLOW-06-02', '三条路线Tab显示 — 军事/经济/文化路线名称与图标'), () => {
     const sim = createTechSim();
@@ -187,7 +187,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
     // PC端（matchMedia返回false）应显示三条路线列
     for (const path of TECH_PATHS) {
       const pathCol = screen.getByTestId(`tech-path-${path}`);
-      assertVisible(pathCol, 'FLOW-06-04', `${TECH_PATH_LABELS[path]}路线列`);
+      assertInDOM(pathCol, 'FLOW-06-04', `${TECH_PATH_LABELS[path]}路线列`);
     }
   });
   it(accTest('FLOW-06-05', '研究队列面板渲染 — 队列标题和空闲槽位'), () => {
@@ -195,7 +195,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
     renderTechTab(sim);
 
     const panel = screen.getByTestId('tech-research-panel');
-    assertVisible(panel, 'FLOW-06-05', '研究队列面板');
+    assertInDOM(panel, 'FLOW-06-05', '研究队列面板');
 
     // 队列标题
     const titleEl = panel.querySelector('.tk-tech-research-title-text');
@@ -215,7 +215,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
     // 验证首个Tier1节点可渲染
     const firstNode = militaryNodes[0];
     const nodeEl = screen.getByTestId(`tech-node-${firstNode.id}`);
-    assertVisible(nodeEl, 'FLOW-06-06', `科技节点 ${firstNode.name}`);
+    assertInDOM(nodeEl, 'FLOW-06-06', `科技节点 ${firstNode.name}`);
 
     // 节点名称
     assertStrict(
@@ -237,7 +237,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
       const state = allStates[node.id];
       if (state?.status === 'available') {
         const badge = screen.getByTestId(`tech-badge-${node.id}`);
-        assertVisible(badge, 'FLOW-06-07', `${node.name} 状态角标`);
+        assertInDOM(badge, 'FLOW-06-07', `${node.name} 状态角标`);
         assertStrict(
           badge.textContent!.includes('🔓'),
           'FLOW-06-07',
@@ -284,13 +284,13 @@ describe('FLOW-06 科技Tab集成测试', () => {
     const ecoNodes = getNodesByPath('economy');
     assertStrict(ecoNodes.length > 0, 'FLOW-06-09', '经济路线应有节点');
     const ecoPathCol = screen.getByTestId('tech-path-economy');
-    assertVisible(ecoPathCol, 'FLOW-06-09', '经济路线列');
+    assertInDOM(ecoPathCol, 'FLOW-06-09', '经济路线列');
 
     // 文化路线
     const culNodes = getNodesByPath('culture');
     assertStrict(culNodes.length > 0, 'FLOW-06-09', '文化路线应有节点');
     const culPathCol = screen.getByTestId('tech-path-culture');
-    assertVisible(culPathCol, 'FLOW-06-09', '文化路线列');
+    assertInDOM(culPathCol, 'FLOW-06-09', '文化路线列');
 
     // Tier1互斥节点显示"二选一"标签
     const mutexTags = screen.queryAllByText('二选一');
@@ -617,7 +617,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
 
     // 活跃研究应显示在面板中
     const slot = screen.getByTestId('research-slot-mil_t1_attack');
-    assertVisible(slot, 'FLOW-06-30', '研究槽位');
+    assertInDOM(slot, 'FLOW-06-30', '研究槽位');
 
     // 进度百分比
     const percentEl = slot.querySelector('.tk-tech-research-slot-percent');
@@ -687,7 +687,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
 
     // 弹窗容器（TechNodeDetailModal 传 data-testid="tech-detail-overlay" 给 SharedPanel）
     const panel = screen.getByTestId('tech-detail-overlay');
-    assertVisible(panel, 'FLOW-06-36', '节点详情弹窗');
+    assertInDOM(panel, 'FLOW-06-36', '节点详情弹窗');
 
     // 节点名称（标题+详情中可能重复，用 getAllByText）
     const nameEls = within(panel).getAllByText('锐兵术');
@@ -709,7 +709,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
 
     // 描述文本
     const descEl = screen.getByText(/提升全军攻击力/);
-    assertVisible(descEl, 'FLOW-06-37', '效果描述');
+    assertInDOM(descEl, 'FLOW-06-37', '效果描述');
   });
   it(accTest('FLOW-06-38', '节点详情弹窗 — 显示消耗和前置条件'), () => {
     const sim = createTechSim();
@@ -727,7 +727,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
 
     // 科技点消耗
     const costEl = screen.getByText(/50/);
-    assertVisible(costEl, 'FLOW-06-38', '科技点消耗');
+    assertInDOM(costEl, 'FLOW-06-38', '科技点消耗');
   });
   it(accTest('FLOW-06-39', '节点详情弹窗 — 关闭按钮触发回调'), async () => {
     const sim = createTechSim();
@@ -775,14 +775,14 @@ describe('FLOW-06 科技Tab集成测试', () => {
     }
     // 状态文本应显示"未解锁"
     const statusText = screen.getByText('未解锁');
-    assertVisible(statusText, 'FLOW-06-40', 'locked 状态文本');
+    assertInDOM(statusText, 'FLOW-06-40', 'locked 状态文本');
   });
   it(accTest('FLOW-06-41', '离线收益按钮 — 渲染入口按钮'), () => {
     const sim = createTechSim();
     renderTechTab(sim);
 
     const offlineBtn = screen.getByTestId('tech-offline-btn');
-    assertVisible(offlineBtn, 'FLOW-06-41', '离线收益按钮');
+    assertInDOM(offlineBtn, 'FLOW-06-41', '离线收益按钮');
     assertStrict(
       offlineBtn.textContent!.includes('离线'),
       'FLOW-06-41',
@@ -800,7 +800,7 @@ describe('FLOW-06 科技Tab集成测试', () => {
     const offlinePanel = screen.queryByTestId('tech-offline-panel');
     // 面板可能使用 Modal 组件，检查是否渲染
     if (offlinePanel) {
-      assertVisible(offlinePanel, 'FLOW-06-42', '离线研究面板');
+      assertInDOM(offlinePanel, 'FLOW-06-42', '离线研究面板');
     }
   });
   it(accTest('FLOW-06-43', '科技重置 — treeSystem.reset 恢复初始状态'), () => {

@@ -12,7 +12,7 @@ import { BattleOutcome } from '@/games/three-kingdoms/engine';
 import type { BattleResult } from '@/games/three-kingdoms/engine';
 import type { Stage, Chapter } from '@/games/three-kingdoms/engine/campaign/campaign.types';
 import { STAGE_TYPE_LABELS, MAX_STARS } from '@/games/three-kingdoms/engine/campaign/campaign.types';
-import { accTest, assertStrict, assertVisible, assertContainsText } from './acc-test-utils';
+import { accTest, assertStrict, assertInDOM, assertContainsText } from './acc-test-utils';
 import { createSim } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
@@ -126,14 +126,14 @@ describe('FLOW-04 出征Tab集成测试', () => {
     render(<CampaignTab engine={sim.engine} snapshotVersion={0} />);
 
     const tab = screen.getByTestId('campaign-tab');
-    assertVisible(tab, 'FLOW-04-01', '出征Tab容器');
+    assertInDOM(tab, 'FLOW-04-01', '出征Tab容器');
 
     const chapterSelector = screen.getByTestId('chapter-selector');
-    assertVisible(chapterSelector, 'FLOW-04-01', '章节选择器');
+    assertInDOM(chapterSelector, 'FLOW-04-01', '章节选择器');
 
     // 验证章节标题显示
     const chapterTitle = screen.getByText(/第1章/);
-    assertVisible(chapterTitle, 'FLOW-04-01', '章节标题');
+    assertInDOM(chapterTitle, 'FLOW-04-01', '章节标题');
   });
 
   it(accTest('FLOW-04-02', '关卡列表显示 — 所有关卡名称可见'), () => {
@@ -146,7 +146,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
     // 验证第一关名称可见
     const firstStage = firstChapter.stages[0];
     const stageNode = screen.getByLabelText(new RegExp(firstStage.name));
-    assertVisible(stageNode, 'FLOW-04-02', `关卡 ${firstStage.name}`);
+    assertInDOM(stageNode, 'FLOW-04-02', `关卡 ${firstStage.name}`);
   });
 
   it(accTest('FLOW-04-03', '关卡列表显示 — 关卡类型标签正确'), () => {
@@ -218,7 +218,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
 
     // 应弹出战前布阵弹窗
     const modal = screen.getByTestId('battle-formation-modal');
-    assertVisible(modal, 'FLOW-04-06', '战前布阵弹窗');
+    assertInDOM(modal, 'FLOW-04-06', '战前布阵弹窗');
   });
 
   it(accTest('FLOW-04-07', '关卡选择 — 布阵弹窗显示敌方阵容信息'), async () => {
@@ -234,12 +234,12 @@ describe('FLOW-04 出征Tab集成测试', () => {
     // 验证敌方阵容名称
     const enemyFormationName = firstStage.enemyFormation.name;
     const enemyName = screen.getByText(new RegExp(enemyFormationName));
-    assertVisible(enemyName, 'FLOW-04-07', '敌方阵容名称');
+    assertInDOM(enemyName, 'FLOW-04-07', '敌方阵容名称');
 
     // 验证敌方单位显示
     for (const unit of firstStage.enemyFormation.units) {
       const unitEl = screen.getByText(unit.name);
-      assertVisible(unitEl, 'FLOW-04-07', `敌方单位 ${unit.name}`);
+      assertInDOM(unitEl, 'FLOW-04-07', `敌方单位 ${unit.name}`);
     }
   });
 
@@ -255,11 +255,11 @@ describe('FLOW-04 出征Tab集成测试', () => {
 
     // 验证战力对比区域
     const vsText = screen.getByText('VS');
-    assertVisible(vsText, 'FLOW-04-08', 'VS对比');
+    assertInDOM(vsText, 'FLOW-04-08', 'VS对比');
 
     // 验证推荐战力显示
     const recPower = screen.getByText(firstStage.enemyFormation.recommendedPower.toLocaleString());
-    assertVisible(recPower, 'FLOW-04-08', '推荐战力');
+    assertInDOM(recPower, 'FLOW-04-08', '推荐战力');
   });
 
   it(accTest('FLOW-04-09', '关卡选择 — 布阵弹窗显示我方编队武将'), async () => {
@@ -281,7 +281,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
 
     for (const name of heroNames) {
       const nameEl = screen.getByText(name!);
-      assertVisible(nameEl, 'FLOW-04-09', `我方武将 ${name}`);
+      assertInDOM(nameEl, 'FLOW-04-09', `我方武将 ${name}`);
     }
   });
 
@@ -342,7 +342,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
 
     // 应显示战斗结算弹窗
     const resultModal = screen.getByTestId('battle-result-modal');
-    assertVisible(resultModal, 'FLOW-04-12', '战斗结算弹窗');
+    assertInDOM(resultModal, 'FLOW-04-12', '战斗结算弹窗');
 
     _mockBattleResult = null;
   });
@@ -399,7 +399,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
 
     // 点击一键布阵
     const autoBtn = screen.getByTestId('bfm-auto-btn');
-    assertVisible(autoBtn, 'FLOW-04-15', '一键布阵按钮');
+    assertInDOM(autoBtn, 'FLOW-04-15', '一键布阵按钮');
     await userEvent.click(autoBtn);
 
     // 验证编队中有武将（一键布阵后出征按钮应可用）
@@ -605,7 +605,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
 
     // 验证战斗结算弹窗
     const resultModal = screen.getByTestId('battle-result-modal');
-    assertVisible(resultModal, 'FLOW-04-28', '战斗结算弹窗');
+    assertInDOM(resultModal, 'FLOW-04-28', '战斗结算弹窗');
 
     // 验证星级显示（★ 或 ☆）
     const stars = screen.queryAllByText(/[★☆]/);
@@ -665,7 +665,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
       // 验证奖励标题
       const rewardsTitle = screen.queryByText('🎁 获得奖励');
       if (rewardsTitle) {
-        assertVisible(rewardsTitle, 'FLOW-04-30', '获得奖励标题');
+        assertInDOM(rewardsTitle, 'FLOW-04-30', '获得奖励标题');
       }
     }
 
@@ -751,7 +751,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
     const chapters = sim.engine.getChapters();
     if (chapters.length > 1) {
       const chapter2Title = screen.getByText(new RegExp(`第${chapters[1].order}章`));
-      assertVisible(chapter2Title, 'FLOW-04-33', '第2章标题');
+      assertInDOM(chapter2Title, 'FLOW-04-33', '第2章标题');
     }
   });
 
@@ -789,7 +789,7 @@ describe('FLOW-04 出征Tab集成测试', () => {
 
     // 验证进度文本
     const progressText = screen.getByText(/进度/);
-    assertVisible(progressText, 'FLOW-04-36', '进度文本');
+    assertInDOM(progressText, 'FLOW-04-36', '进度文本');
   });
 
   it(accTest('FLOW-04-37', '进度显示 — 通关后进度更新'), () => {
