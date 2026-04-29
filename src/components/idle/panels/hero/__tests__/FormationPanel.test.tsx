@@ -22,6 +22,17 @@ import type { ActiveBond, BondPotentialTip, FormationBondPreview } from '@/games
 
 // ── Mock CSS ──
 vi.mock('../FormationPanel.css', () => ({}));
+vi.mock('@/components/idle/common/Modal', () => ({
+  default: ({ visible, title, onConfirm, onCancel, children, confirmText, cancelText, 'data-testid': dtid }: any) =>
+    visible ? (
+      <div data-testid={dtid ?? 'mock-modal'} role="dialog" aria-label={title}>
+        <div>{children}</div>
+        {confirmText && <button data-testid="modal-confirm" onClick={onConfirm}>{confirmText}</button>}
+        {cancelText && <button data-testid="modal-cancel" onClick={onCancel}>{cancelText}</button>}
+      </div>
+    ) : null,
+  __esModule: true,
+}));
 
 // ─────────────────────────────────────────────
 // 测试数据工厂
@@ -129,6 +140,8 @@ const createMockEngine = (options: MockEngineOptions = {}) => {
       return formations.find((f) => f.id === id) ?? null;
     }),
     calculateFormationPower: vi.fn().mockReturnValue(5000),
+    setMaxFormations: vi.fn(),
+    getMaxFormations: vi.fn().mockReturnValue(3),
   };
 
   const heroSystem = {
@@ -155,6 +168,9 @@ const createMockEngine = (options: MockEngineOptions = {}) => {
     getHeroStarSystem: vi.fn().mockReturnValue({
       getStar: vi.fn().mockReturnValue(1),
     }),
+    // F10-P1-03: 编队扩展需要资源系统
+    getResourceAmount: vi.fn().mockReturnValue(99999),
+    resource: { consumeBatch: vi.fn(), resources: { gold: 99999, jade: 99999 } },
   };
 };
 
@@ -260,7 +276,7 @@ describe('FormationPanel', () => {
   // ═══════════════════════════════════════════
 
   describe('删除编队', () => {
-    it('点击删除按钮应调用 deleteFormation', () => {
+    it('点击删除按钮应弹出确认弹窗，确认后调用 deleteFormation', () => {
       const formations = [
         makeFormation({ id: '1', name: '第一队' }),
         makeFormation({ id: '2', name: '第二队' }),
@@ -274,6 +290,12 @@ describe('FormationPanel', () => {
       expect(deleteBtn).toBeTruthy();
       fireEvent.click(deleteBtn);
 
+      // P1-01: 现在需要确认弹窗
+      const confirmModal = screen.getByTestId('formation-delete-confirm-modal');
+      expect(confirmModal).toBeInTheDocument();
+
+      // 确认删除
+      fireEvent.click(screen.getByTestId('modal-confirm'));
       expect(engine.getFormationSystem().deleteFormation).toHaveBeenCalledWith('1');
     });
   });
@@ -401,7 +423,7 @@ describe('FormationPanel', () => {
       expect(screen.getByText('关羽')).toBeInTheDocument();
     });
 
-    it('编辑模式下点击移除按钮应调用 removeFromFormation', () => {
+    it('编辑模式下点击移除按钮应弹出确认弹窗，确认后调用 removeFromFormation', () => {
       const formations = [
         makeFormation({
           id: '1',
@@ -423,6 +445,12 @@ describe('FormationPanel', () => {
       expect(removeBtn).toBeTruthy();
       fireEvent.click(removeBtn);
 
+      // P1-02: 现在需要确认弹窗
+      const confirmModal = screen.getByTestId('formation-remove-hero-confirm-modal');
+      expect(confirmModal).toBeInTheDocument();
+
+      // 确认移除
+      fireEvent.click(screen.getByTestId('modal-confirm'));
       expect(engine.getFormationSystem().removeFromFormation).toHaveBeenCalledWith('1', 'guanyu');
     });
 

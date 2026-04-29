@@ -116,7 +116,7 @@ const MoreTab: React.FC<MoreTabProps> = ({ engine, snapshotVersion, onOpenPanel 
             {group.items.map(item => (
               <button
                 key={item.id}
-                className={`tk-more-card ${!item.available ? 'tk-more-card--disabled' : ''}`}
+                className={`tk-more-card ${!item.available ? 'tk-more-card--disabled' : ''} ${item.id === 'alliance' ? 'tk-more-card--alliance' : ''}`}
                 onClick={() => onOpenPanel(item.id)}
                 aria-label={item.label}
                 disabled={!item.available}

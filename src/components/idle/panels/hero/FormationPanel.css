@@ -616,3 +616,73 @@
     padding: 2px 6px;
   }
 }
+
+/* ═══════════════════════════════════════════
+   P1-03: 编队槽位扩展
+   ═══════════════════════════════════════════ */
+.tk-formation-expansion {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px dashed rgba(200, 168, 76, 0.4);
+  border-radius: var(--tk-radius-lg, 8px);
+  background: rgba(200, 168, 76, 0.05);
+}
+
+.tk-formation-expansion-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-gold-light, #d4a574);
+  margin-bottom: 10px;
+}
+
+.tk-formation-expansion-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--tk-radius-md, 6px);
+  margin-bottom: 6px;
+}
+
+.tk-formation-expansion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-formation-expansion-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e8e0d0;
+}
+
+.tk-formation-expansion-cost {
+  font-size: 11px;
+  color: #a0a0a0;
+}
+
+.tk-formation-expansion-btn {
+  padding: 6px 16px;
+  background: rgba(200, 168, 76, 0.2);
+  border: 1px solid var(--tk-gold, #c8a84c);
+  border-radius: var(--tk-radius-md, 6px);
+  color: var(--tk-gold-light, #d4a574);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.tk-formation-expansion-btn:hover:not(:disabled) {
+  background: rgba(200, 168, 76, 0.35);
+}
+
+.tk-formation-expansion-btn--disabled,
+.tk-formation-expansion-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #888;
+}

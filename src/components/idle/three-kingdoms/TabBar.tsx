@@ -59,7 +59,7 @@ export const FEATURE_ITEMS: Array<Omit<FeatureMenuItem, 'badge'>> = [
   { id: 'shop', icon: '🛒', label: '商店', description: '道具与资源购买', available: true },
   // B区-社交互动
   { id: 'social', icon: '👥', label: '好友', description: '好友互动与排行榜', available: true },
-  { id: 'alliance', icon: '⚔️', label: '公会', description: '公会BOSS与任务', available: true },
+  { id: 'alliance', icon: '🏰', label: '联盟', description: '联盟BOSS·任务·排行', available: true },
   { id: 'achievement', icon: '🏆', label: '排行榜', description: '全服排名与赛季奖励', available: true },
   // C区-扩展系统
   { id: 'expedition', icon: '🧭', label: '远征', description: '探索未知领域', available: true },

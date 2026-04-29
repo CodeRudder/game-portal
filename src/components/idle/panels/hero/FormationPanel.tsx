@@ -17,6 +17,7 @@ import type { ActiveBond, BondPotentialTip } from '@/games/three-kingdoms/core/b
 import { BOND_NAMES } from '@/games/three-kingdoms/core/bond';
 import { PARTNER_BONDS } from '@/games/three-kingdoms/engine/hero/bond-config';
 import FormationSaveSlot, { type FormationSlotData } from './FormationSaveSlot';
+import Modal from '@/components/idle/common/Modal';
 import './FormationPanel.css';
 
 // ─────────────────────────────────────────────
@@ -71,6 +72,29 @@ function getActivePartnerBonds(heroIds: string[]) {
 // ─────────────────────────────────────────────
 // 主组件
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// 编队扩展配置
+// ─────────────────────────────────────────────
+/** 编队扩展槽位配置：第4/5个编队位解锁所需资源 */
+const FORMATION_EXPANSION_CONFIG = [
+  { slot: 4, cost: { gold: 2000, jade: 100 }, label: '第4编队位' },
+  { slot: 5, cost: { gold: 5000, jade: 300 }, label: '第5编队位' },
+];
+
+/** localStorage key for unlocked formation slots */
+const UNLOCKED_SLOTS_KEY = 'tk-formation-unlocked-slots';
+
+/** 获取已解锁的额外编队槽位数量 */
+function getUnlockedExtraSlots(): number {
+  try {
+    const raw = localStorage.getItem(UNLOCKED_SLOTS_KEY);
+    return raw ? JSON.parse(raw) : 0;
+  } catch { return 0; }
+}
+
+// ─────────────────────────────────────────────
+// 主组件
+// ─────────────────────────────────────────────
 const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion }) => {
   const formationSystem = engine.getFormationSystem();
   const heroSystem = engine.getHeroSystem();
@@ -81,6 +105,22 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
   const [renameValue, setRenameValue] = useState('');
   const isCreatingRef = useRef(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  // ── P1-01/P1-02 确认弹窗状态 ──
+  const [deleteConfirm, setDeleteConfirm] = useState<{ visible: boolean; formationId: string; formationName: string }>({ visible: false, formationId: '', formationName: '' });
+  const [removeConfirm, setRemoveConfirm] = useState<{ visible: boolean; formationId: string; heroId: string; heroName: string }>({ visible: false, formationId: '', heroId: '', heroName: '' });
+
+  // ── P1-03 编队扩展状态 ──
+  const [unlockedSlots, setUnlockedSlots] = useState<number>(getUnlockedExtraSlots);
+  const [expandConfirm, setExpandConfirm] = useState<{ visible: boolean; configIdx: number }>({ visible: false, configIdx: -1 });
+
+  /** 当前最大编队数 = 基础3 + 已解锁扩展 */
+  const currentMaxFormations = MAX_FORMATIONS + unlockedSlots;
+
+  // 同步编队上限到引擎
+  useEffect(() => {
+    formationSystem.setMaxFormations(currentMaxFormations);
+  }, [formationSystem, currentMaxFormations]);
 
   // ── 阵容收藏（localStorage持久化） ──
   const SAVED_SLOTS_KEY = 'tk-formation-saved-slots';
@@ -118,10 +158,31 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
   }, [formationSystem, isCreating]);
 
   const handleActivate = useCallback((id: string) => formationSystem.setActiveFormation(id), [formationSystem]);
-  const handleDelete = useCallback((id: string) => {
-    formationSystem.deleteFormation(id);
-    if (editingId === id) setEditingId(null);
-  }, [formationSystem, editingId]);
+
+  /** P1-01: 删除编队 — 先弹出确认弹窗 */
+  const handleDeleteRequest = useCallback((id: string) => {
+    const f = formationSystem.getFormation(id);
+    setDeleteConfirm({ visible: true, formationId: id, formationName: f?.name ?? '编队' });
+  }, [formationSystem]);
+
+  /** P1-01: 确认删除编队 */
+  const handleDeleteConfirm = useCallback(() => {
+    formationSystem.deleteFormation(deleteConfirm.formationId);
+    if (editingId === deleteConfirm.formationId) setEditingId(null);
+    setDeleteConfirm({ visible: false, formationId: '', formationName: '' });
+  }, [formationSystem, editingId, deleteConfirm.formationId]);
+
+  /** P1-02: 移除武将 — 先弹出确认弹窗 */
+  const handleRemoveHeroRequest = useCallback((fid: string, gid: string) => {
+    const hero = heroSystem.getGeneral(gid);
+    setRemoveConfirm({ visible: true, formationId: fid, heroId: gid, heroName: hero?.name ?? gid });
+  }, [heroSystem]);
+
+  /** P1-02: 确认移除武将 */
+  const handleRemoveHeroConfirm = useCallback(() => {
+    formationSystem.removeFromFormation(removeConfirm.formationId, removeConfirm.heroId);
+    setRemoveConfirm({ visible: false, formationId: '', heroId: '', heroName: '' });
+  }, [formationSystem, removeConfirm.formationId, removeConfirm.heroId]);
 
   const handleRenameStart = useCallback((f: FormationData) => { setRenameId(f.id); setRenameValue(f.name); }, []);
   const handleRenameConfirm = useCallback(() => {
@@ -130,7 +191,39 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
   }, [formationSystem, renameId, renameValue]);
 
   const handleAddHero = useCallback((fid: string, gid: string) => formationSystem.addToFormation(fid, gid), [formationSystem]);
-  const handleRemoveHero = useCallback((fid: string, gid: string) => formationSystem.removeFromFormation(fid, gid), [formationSystem]);
+
+  /** P1-03: 请求扩展编队槽位 */
+  const handleExpandRequest = useCallback((configIdx: number) => {
+    setExpandConfirm({ visible: true, configIdx });
+  }, []);
+
+  /** P1-03: 确认扩展编队槽位（扣除资源） */
+  const handleExpandConfirm = useCallback(() => {
+    const config = FORMATION_EXPANSION_CONFIG[expandConfirm.configIdx];
+    if (!config) return;
+    // 检查并扣除资源
+    const goldAmount = engine.getResourceAmount('gold');
+    const jadeAmount = engine.getResourceAmount('jade');
+    if (goldAmount < config.cost.gold || jadeAmount < config.cost.jade) return;
+    // 扣除资源（通过 ResourceSystem）
+    try {
+      const resourceSystem = (engine as any).resource;
+      if (resourceSystem?.consumeBatch) {
+        resourceSystem.consumeBatch({ gold: config.cost.gold, jade: config.cost.jade });
+      } else {
+        // fallback: 直接减少
+        if (resourceSystem?.resources) {
+          resourceSystem.resources.gold -= config.cost.gold;
+          resourceSystem.resources.jade -= config.cost.jade;
+        }
+      }
+    } catch { return; }
+    // 更新解锁数量
+    const newUnlocked = unlockedSlots + 1;
+    setUnlockedSlots(newUnlocked);
+    localStorage.setItem(UNLOCKED_SLOTS_KEY, JSON.stringify(newUnlocked));
+    setExpandConfirm({ visible: false, configIdx: -1 });
+  }, [engine, expandConfirm, unlockedSlots]);
 
   // ── 一键自动编队 ──
   const handleAutoFormation = useCallback((formationId: string) => {
@@ -210,7 +303,7 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
         title={dispatched ? `${hero?.name ?? heroId} 已派遣至建筑` : undefined}>
         <span className="tk-formation-slot-name">{hero?.name ?? heroId}</span>
         {dispatched && <span className="tk-formation-slot-dispatch-badge" title="已派遣">🏗️</span>}
-        {editingId === fid && <button className="tk-formation-slot-remove" onClick={() => handleRemoveHero(fid, heroId)}>✕</button>}
+        {editingId === fid && <button className="tk-formation-slot-remove" onClick={() => handleRemoveHeroRequest(fid, heroId)}>✕</button>}
       </div>
     );
   };
@@ -270,7 +363,7 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
       <div className="tk-formation-header">
         <span className="tk-formation-title">⚔️ 编队管理</span>
         <button className="tk-formation-create-btn" data-testid="formation-panel-create-btn"
-          onClick={handleCreate} disabled={formations.length >= MAX_FORMATIONS || isCreating}>
+          onClick={handleCreate} disabled={formations.length >= currentMaxFormations || isCreating}>
           + 创建编队
         </button>
       </div>
@@ -301,7 +394,7 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
                     {!isActive && <button className="tk-formation-activate-btn" data-testid={`formation-panel-activate-btn-${f.id}`} onClick={() => handleActivate(f.id)}>激活</button>}
                     {isActive && <span className="tk-formation-active-badge">当前</span>}
                     <button className="tk-formation-edit-btn" onClick={() => setEditingId(isEditing ? null : f.id)}>{isEditing ? '收起' : '编辑'}</button>
-                    <button className="tk-formation-delete-btn" onClick={() => handleDelete(f.id)}>✕</button>
+                    <button className="tk-formation-delete-btn" onClick={() => handleDeleteRequest(f.id)}>✕</button>
                   </div>
                 </div>
                 <div className="tk-formation-power">战力: {getFormationPower(f).toLocaleString('zh-CN')}</div>
@@ -354,6 +447,92 @@ const FormationPanel: React.FC<FormationPanelProps> = ({ engine, snapshotVersion
       )}
       <FormationSaveSlot slots={savedSlots} onSave={handleSaveSlot}
         onLoad={handleLoadSlot} onDelete={handleDeleteSlot} maxSlots={3} />
+
+      {/* P1-01: 删除编队确认弹窗 */}
+      <Modal
+        visible={deleteConfirm.visible}
+        type="danger"
+        title="删除编队"
+        confirmText="确认删除"
+        cancelText="取消"
+        dangerConfirm
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteConfirm({ visible: false, formationId: '', formationName: '' })}
+        data-testid="formation-delete-confirm-modal"
+      >
+        <p>确定要删除编队「{deleteConfirm.formationName}」吗？</p>
+        <p style={{ color: '#ff6b6b', fontSize: 12, marginTop: 4 }}>此操作不可撤销，编队中的武将将被移出。</p>
+      </Modal>
+
+      {/* P1-02: 移除武将确认弹窗 */}
+      <Modal
+        visible={removeConfirm.visible}
+        type="warning"
+        title="移除武将"
+        confirmText="确认移除"
+        cancelText="取消"
+        dangerConfirm
+        onConfirm={handleRemoveHeroConfirm}
+        onCancel={() => setRemoveConfirm({ visible: false, formationId: '', heroId: '', heroName: '' })}
+        data-testid="formation-remove-hero-confirm-modal"
+      >
+        <p>确定要将「{removeConfirm.heroName}」从编队中移除吗？</p>
+      </Modal>
+
+      {/* P1-03: 编队槽位扩展 */}
+      {unlockedSlots < FORMATION_EXPANSION_CONFIG.length && (
+        <div className="tk-formation-expansion" data-testid="formation-expansion-section">
+          <div className="tk-formation-expansion-title">🔓 扩展编队位</div>
+          {FORMATION_EXPANSION_CONFIG.map((cfg, idx) => {
+            if (idx < unlockedSlots) return null; // 已解锁
+            if (idx > unlockedSlots) return null; // 需先解锁前置
+            const goldAmount = engine.getResourceAmount('gold');
+            const jadeAmount = engine.getResourceAmount('jade');
+            const canAfford = goldAmount >= cfg.cost.gold && jadeAmount >= cfg.cost.jade;
+            return (
+              <div key={cfg.slot} className="tk-formation-expansion-card" data-testid={`formation-expansion-slot-${cfg.slot}`}>
+                <div className="tk-formation-expansion-info">
+                  <span className="tk-formation-expansion-label">{cfg.label}</span>
+                  <span className="tk-formation-expansion-cost">
+                    💰 {cfg.cost.gold} 金 · 💎 {cfg.cost.jade} 玉
+                  </span>
+                </div>
+                <button
+                  className={`tk-formation-expansion-btn ${canAfford ? '' : 'tk-formation-expansion-btn--disabled'}`}
+                  onClick={() => canAfford && handleExpandRequest(idx)}
+                  disabled={!canAfford}
+                  data-testid={`formation-expansion-btn-${cfg.slot}`}
+                >
+                  {canAfford ? '解锁' : '资源不足'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* P1-03: 扩展确认弹窗 */}
+      <Modal
+        visible={expandConfirm.visible}
+        type="info"
+        title="解锁编队位"
+        confirmText="确认解锁"
+        cancelText="取消"
+        onConfirm={handleExpandConfirm}
+        onCancel={() => setExpandConfirm({ visible: false, configIdx: -1 })}
+        data-testid="formation-expand-confirm-modal"
+      >
+        {expandConfirm.configIdx >= 0 && (() => {
+          const cfg = FORMATION_EXPANSION_CONFIG[expandConfirm.configIdx];
+          return (
+            <div>
+              <p>解锁「{cfg.label}」需要消耗：</p>
+              <p style={{ color: '#d4a574', marginTop: 4 }}>💰 {cfg.cost.gold} 金 · 💎 {cfg.cost.jade} 玉</p>
+              <p style={{ color: '#888', fontSize: 12, marginTop: 4 }}>解锁后可创建最多 {MAX_FORMATIONS + unlockedSlots + 1} 个编队</p>
+            </div>
+          );
+        })()}
+      </Modal>
     </div>
   );
 };

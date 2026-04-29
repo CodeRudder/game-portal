@@ -27,7 +27,7 @@ import {
 export type { FormationData, FormationState, FormationSaveData } from './formation-types';
 export { MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './formation-types';
 
-/** 编队创建前置条件检查回调 */
+  /** 编队创建前置条件检查回调 */
 export interface FormationPrerequisites {
   /** 获取主城等级 */
   getCastleLevel: () => number;
@@ -44,6 +44,8 @@ export class HeroFormation implements ISubsystem {
   private deps: ISystemDeps | null = null;
   private state: FormationState;
   private prerequisites: FormationPrerequisites | null = null;
+  /** 动态编队上限（默认 MAX_FORMATIONS=3，可通过 setMaxFormations 扩展到5） */
+  private maxFormations: number = MAX_FORMATIONS;
 
   constructor() {
     this.state = {
@@ -61,6 +63,16 @@ export class HeroFormation implements ISubsystem {
   /** 设置编队创建前置条件回调（由外部系统注入） */
   setPrerequisites(prereqs: FormationPrerequisites): void {
     this.prerequisites = prereqs;
+  }
+
+  /** P1-03: 设置动态编队上限（最大5） */
+  setMaxFormations(max: number): void {
+    this.maxFormations = Math.min(Math.max(max, MAX_FORMATIONS), 5);
+  }
+
+  /** P1-03: 获取当前编队上限 */
+  getMaxFormations(): number {
+    return this.maxFormations;
   }
 
   // ── 编队管理 ──
@@ -412,7 +424,7 @@ export class HeroFormation implements ISubsystem {
 
   /** 获取下一个可用编队ID */
   private nextAvailableId(): string | null {
-    for (let i = 1; i <= MAX_FORMATIONS; i++) {
+    for (let i = 1; i <= this.maxFormations; i++) {
       const id = String(i);
       if (!this.state.formations[id]) return id;
     }

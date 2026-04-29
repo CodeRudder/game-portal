@@ -7,7 +7,7 @@
  *
  * @module panels/alliance/AlliancePanel
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import SharedPanel from '@/components/idle/components/SharedPanel';
 
 interface AlliancePanelProps {
@@ -18,7 +18,7 @@ interface AlliancePanelProps {
   onClose?: () => void;
 }
 
-type AllianceTab = 'info' | 'members' | 'tasks' | 'search' | 'donate';
+type AllianceTab = 'info' | 'members' | 'tasks' | 'search' | 'donate' | 'ranking';
 
 const TAB_CONFIG: { id: AllianceTab; label: string }[] = [
   { id: 'info', label: '📋 信息' },
@@ -26,6 +26,7 @@ const TAB_CONFIG: { id: AllianceTab; label: string }[] = [
   { id: 'tasks', label: '🎯 任务' },
   { id: 'search', label: '🔍 搜索' },
   { id: 'donate', label: '💰 捐献' },
+  { id: 'ranking', label: '🏆 排行' },
 ];
 
 const s: Record<string, React.CSSProperties> = {
@@ -58,6 +59,12 @@ const s: Record<string, React.CSSProperties> = {
   donateAmount: { fontSize: 16, fontWeight: 600, color: '#d4a574' },
   donateReward: { fontSize: 11, color: '#888', marginTop: 4 },
   roleBtn: { fontSize: 10, color: '#d4a574', background: 'none', border: '1px solid rgba(212,165,116,0.3)', cursor: 'pointer', padding: '2px 8px', borderRadius: 4 },
+  rankBadge: { width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 },
+  rankGold: { background: 'rgba(255,215,0,0.25)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.4)' },
+  rankSilver: { background: 'rgba(192,192,192,0.25)', color: '#C0C0C0', border: '1px solid rgba(192,192,192,0.4)' },
+  rankBronze: { background: 'rgba(205,127,50,0.25)', color: '#CD7F32', border: '1px solid rgba(205,127,50,0.4)' },
+  rankNormal: { background: 'rgba(255,255,255,0.06)', color: '#888', border: '1px solid rgba(255,255,255,0.1)' },
+  eventToast: { position: 'fixed', top: 60, left: '50%', transform: 'translateX(-50%)', padding: '10px 20px', borderRadius: 'var(--tk-radius-lg)' as any, background: 'rgba(126,200,80,0.9)', color: '#fff', fontSize: 13, fontWeight: 600, zIndex: 9999, boxShadow: '0 4px 12px rgba(0,0,0,0.3)' },
 };
 
 export default function AlliancePanel({ engine, visible = true, onClose }: AlliancePanelProps) {
@@ -69,6 +76,9 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [leaveConfirm, setLeaveConfirm] = useState(false);
+  // P1-03: 全局事件通知Toast
+  const [eventToast, setEventToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const allianceSystem = engine?.getAllianceSystem?.() ?? engine?.alliance;
   const taskSystem = engine?.getAllianceTaskSystem?.() ?? engine?.allianceTask;
@@ -82,6 +92,33 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
   const isLeader = playerRole === 'LEADER';
 
   const flash = useCallback((msg: string) => { setMessage(msg); setTimeout(() => setMessage(null), 2500); }, []);
+
+  /** P1-03: 显示全局事件通知 */
+  const showEventToast = useCallback((msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setEventToast(msg);
+    toastTimerRef.current = setTimeout(() => setEventToast(null), 3500);
+  }, []);
+
+  // P1-03: 监听联盟事件（升级/Boss击杀等）
+  useEffect(() => {
+    if (!engine?.eventBus || !isInAlliance) return;
+    const handlers: Record<string, (...args: any[]) => void> = {};
+    const events = [
+      { event: 'alliance:levelUp', handler: (data: any) => showEventToast(`🎉 联盟升级至 Lv.${data?.newLevel ?? '?'}`) },
+      { event: 'alliance:bossKilled', handler: (data: any) => showEventToast(`⚔️ 联盟Boss「${data?.bossName ?? 'Boss'}」已被击杀！`) },
+      { event: 'alliance:memberJoin', handler: (data: any) => showEventToast(`👋 ${data?.playerName ?? '新成员'} 加入了联盟`) },
+    ];
+    events.forEach(({ event, handler }) => {
+      handlers[event] = handler;
+      engine.eventBus.on(event, handler);
+    });
+    return () => {
+      events.forEach(({ event }) => {
+        engine.eventBus.off(event, handlers[event]);
+      });
+    };
+  }, [engine, isInAlliance, showEventToast]);
 
   const handleCreate = useCallback(() => {
     const name = allianceName.trim();
@@ -304,8 +341,52 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
             <div style={{ fontSize: 11, color: '#888', marginTop: 12 }}>今日已捐献：{playerState?.dailyContribution ?? 0} 铜钱</div>
           </div>
         )}
+        {/* P1-04: 排行榜Tab */}
+        {tab === 'ranking' && (
+          <div style={s.block}>
+            <div style={s.label}>联盟贡献排行榜</div>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 12 }}>按成员累计贡献排名</div>
+            {renderRankingTab()}
+          </div>
+        )}
+        {/* P1-03: 全局事件Toast */}
+        {eventToast && <div style={s.eventToast}>{eventToast}</div>}
       </div>
     );
+  };
+
+  /** P1-04: 排行榜渲染（按贡献降序） */
+  const rankedMembers = React.useMemo(() => {
+    if (!members.length) return [];
+    return [...members].sort((a: any, b: any) => (b.totalContribution ?? 0) - (a.totalContribution ?? 0));
+  }, [members]);
+
+  const renderRankingTab = () => {
+    if (rankedMembers.length === 0) {
+      return <div style={s.emptySmall}>暂无排行数据</div>;
+    }
+    const maxContribution = Math.max(1, ...rankedMembers.map((m: any) => m.totalContribution ?? 0));
+    return rankedMembers.map((m: any, idx: number) => {
+      const rank = idx + 1;
+      const contribution = m.totalContribution ?? 0;
+      const pct = Math.round((contribution / maxContribution) * 100);
+      const badgeStyle = rank === 1 ? s.rankGold : rank === 2 ? s.rankSilver : rank === 3 ? s.rankBronze : s.rankNormal;
+      return (
+        <div key={m.playerId} style={s.row} data-testid={`alliance-panel-ranking-${m.playerId}`}>
+          <span style={{ ...s.rankBadge, ...badgeStyle }}>{rank}</span>
+          <span style={{ flex: 1, fontWeight: 600 }}>{m.playerName}</span>
+          <span style={{ fontSize: 11, color: m.role === 'LEADER' ? '#d4a574' : m.role === 'ADVISOR' ? '#7EC850' : '#a0a0a0' }}>
+            {({ LEADER: '盟主', ADVISOR: '军师', MEMBER: '成员' } as Record<string, string>)[m.role] ?? m.role}
+          </span>
+          <span style={{ fontSize: 11, color: '#7EC850', marginLeft: 8, minWidth: 50, textAlign: 'right' }}>
+            🏅 {contribution}
+          </span>
+          <div style={{ ...s.bar, width: 60, marginLeft: 4 }}>
+            <div style={{ ...s.fill, width: `${pct}%` }} />
+          </div>
+        </div>
+      );
+    });
   };
 
   /** R2修复：搜索联盟Tab渲染 */
