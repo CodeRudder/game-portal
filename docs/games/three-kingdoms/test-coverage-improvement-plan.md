@@ -659,3 +659,98 @@ print_report() {
 ```
 
 > **本次优化重点**: 新增 L1.5 层"流程集成测试"，填补 L1（引擎集成）和 L2（ACC 验收）之间的测试盲区。
+
+---
+
+## 测试方法论补充 — 玩家视觉路径规则
+
+> **教训来源**：LL-009 更多菜单链路从未端到端验证
+> **发现时间**：2026-04-29
+> **严重程度**：P0 — 违反玩家视觉验收要求
+
+### 规则1：玩家视觉路径（Player Visual Path）
+
+**定义**：每个功能面板的测试必须包含至少一个用例，从用户看到该功能的UI入口（TabBar/更多菜单）开始，模拟完整的点击路径到达目标面板。
+
+**要求**：
+- 如果用户需要3步操作到达某功能（如"更多→商店"），测试必须模拟这3步
+- 不允许直接 `render(<ShopPanel />)` 跳过导航路径
+- 至少有一个测试用例必须验证完整的导航链路
+
+**反例**（禁止）：
+```typescript
+// ❌ 直接render目标组件，跳过导航
+render(<ShopPanel engine={engine} visible={true} />);
+```
+
+**正例**（要求）：
+```typescript
+// ✅ 从导航入口开始，模拟完整路径
+render(<TabBar moreMenuOpen={false} onMoreToggle={onMoreToggle} />);
+fireEvent.click(screen.getByText(/更多/));
+expect(onMoreToggle).toHaveBeenCalledWith(true);
+// 然后验证功能面板被打开
+```
+
+### 规则2：render深度要求（Render Depth）
+
+**定义**：每个FLOW测试文件必须包含至少一个用例render了包含导航组件（TabBar/SceneRouter）的组合，而非仅render目标面板。
+
+**要求**：
+- FLOW测试不能只render叶子组件（如ShopPanel）
+- 至少一个用例必须render包含TabBar的父级组件
+- 验证导航状态（activeTab、moreMenuOpen、openFeature）的联动
+
+### 规则3：禁止纯逻辑替代DOM交互（No Logic Substitute）
+
+**定义**：测试用例名包含"点击""展开""关闭"等交互词汇时，必须使用 fireEvent/userEvent 模拟真实DOM事件，禁止用变量赋值替代。
+
+**反例**（禁止）：
+```typescript
+// ❌ 名为"ESC关闭"但实际是变量赋值
+it('ESC关闭', () => {
+  let open = true;
+  const toggle = (v: boolean) => { open = v; };
+  toggle(false);
+  expect(open).toBe(false);
+});
+```
+
+**正例**（要求）：
+```typescript
+// ✅ render真实组件 + fireEvent模拟ESC
+it('ESC关闭', () => {
+  const onMoreToggle = vi.fn();
+  render(<TabBar moreMenuOpen={true} onMoreToggle={onMoreToggle} />);
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(onMoreToggle).toHaveBeenCalledWith(false);
+});
+```
+
+### 规则4：禁止自建模拟类（No Mock State Manager）
+
+**定义**：不允许为已存在的React组件创建纯JavaScript模拟类来"测试"其行为。
+
+**反例**（禁止）：
+```typescript
+// ❌ 自建TabStateManager代替真实TabBar
+class TabStateManager {
+  switchTab(id) { /* 纯逻辑 */ }
+}
+```
+
+**正例**（要求）：
+```typescript
+// ✅ render真实TabBar组件
+render(<TabBar {...props} />);
+fireEvent.click(screen.getByText('天下'));
+```
+
+### 规则5：导航流程必须纳入测试清单
+
+**定义**：核心玩法流程清单中必须包含"导航流程"，不能只关注业务操作流程。
+
+**要求**：
+- 每个Tab切换都必须有对应的测试用例
+- 每个功能面板的打开路径都必须被验证
+- TabBar红点badge、菜单展开/收起、面板打开/关闭的联动必须被测试
