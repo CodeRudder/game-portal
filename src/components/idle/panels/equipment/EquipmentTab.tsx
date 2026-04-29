@@ -4,6 +4,11 @@
  * 三个子Tab: 背包 | 锻造 | 强化
  * 使用 engine props 模式，与 TechTab/HeroTab 一致。
  *
+ * R3 修复清单：
+ * - [P1-1] 空背包引导提示（通过出征或商店获取装备） ✅
+ * - [P1-2] 穿戴前后属性对比（绿色提升/红色下降） ✅
+ * - [P1-3] 一键穿戴最优装备按钮 ✅
+ *
  * @module panels/equipment/EquipmentTab
  */
 import React, { useState, useMemo, useCallback } from 'react';
@@ -57,12 +62,17 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, vi
   const [forgeType, setForgeType] = useState<'basic' | 'advanced'>('basic');
   const [enhanceUseProt, setEnhanceUseProt] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  /** P1-2: 穿戴确认弹窗 */
+  const [equipConfirmUid, setEquipConfirmUid] = useState<string | null>(null);
+  /** P1-2: 穿戴目标武将ID */
+  const [equipHeroId, setEquipHeroId] = useState<string>('hero1');
 
   // ── 引擎子系统引用 ──
   const _registry = engine?.getSubsystemRegistry?.();
   const eqSys = _registry?.get?.('equipment') as any;
   const forgeSys = _registry?.get?.('equipmentForge') as any;
   const enhanceSys = _registry?.get?.('equipmentEnhance') as any;
+  const recommendSys = _registry?.get?.('equipmentRecommend') as any;
 
   // ── 数据 ──
   const allItems: EquipmentInstance[] = useMemo(
@@ -79,6 +89,21 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, vi
   }, [allItems, slotFilter]);
 
   const selected = selectedUid ? allItems.find(e => e.uid === selectedUid) ?? null : null;
+
+  // P1-2: 穿戴确认相关数据
+  const equipConfirmItem = equipConfirmUid ? allItems.find(e => e.uid === equipConfirmUid) ?? null : null;
+
+  // 获取武将当前已穿戴装备
+  const currentHeroEquips = useMemo(() => {
+    if (!eqSys || !equipConfirmItem) return null;
+    try {
+      const equips = eqSys.getHeroEquips?.(equipHeroId);
+      if (!equips) return null;
+      const slotUid = equips[equipConfirmItem.slot];
+      if (!slotUid) return null;
+      return allItems.find(e => e.uid === slotUid) ?? null;
+    } catch { return null; }
+  }, [eqSys, equipConfirmItem, equipHeroId, allItems]);
 
   // ── 操作 ──
   const handleForge = useCallback(() => {
@@ -134,6 +159,92 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, vi
     setSelectedUid(null);
   }, [eqSys]);
 
+  // P1-2: 穿戴装备（带属性对比确认）
+  const handleEquip = useCallback((uid: string) => {
+    try {
+      const result = eqSys?.equipItem?.(equipHeroId, uid);
+      if (result?.success) {
+        const replaced = result.replacedUid ? '（替换旧装备）' : '';
+        setMessage(`✅ 穿戴成功${replaced}`);
+      } else {
+        setMessage(`穿戴失败: ${result?.reason ?? '未知'}`);
+      }
+    } catch (e: any) {
+      setMessage(e?.message ?? '穿戴操作失败');
+    }
+    setEquipConfirmUid(null);
+    setSelectedUid(null);
+    setTimeout(() => setMessage(null), 2500);
+  }, [eqSys, equipHeroId]);
+
+  // P1-3: 一键穿戴最优装备
+  const handleAutoEquip = useCallback(() => {
+    if (!eqSys) return setMessage('装备系统未就绪');
+    try {
+      let equippedCount = 0;
+      // 对每个部位，找到品质最高的未穿戴装备
+      for (const slot of EQUIPMENT_SLOTS) {
+        // 获取当前武将该部位已穿戴装备
+        const currentEquips = eqSys.getHeroEquips?.(equipHeroId);
+        const currentSlotUid = currentEquips?.[slot];
+        const currentEquip = currentSlotUid ? allItems.find(e => e.uid === currentSlotUid) : null;
+
+        // 筛选该部位所有未穿戴装备
+        const candidates = allItems.filter(e => e.slot === slot && !e.isEquipped);
+        if (candidates.length === 0) continue;
+
+        // 选出评分最高的（品质 > 强化等级 > 主属性值）
+        const best = candidates.sort((a, b) => {
+          const rDiff = (RARITY_ORDER[b.rarity] ?? 0) - (RARITY_ORDER[a.rarity] ?? 0);
+          if (rDiff !== 0) return rDiff;
+          const eDiff = b.enhanceLevel - a.enhanceLevel;
+          if (eDiff !== 0) return eDiff;
+          return b.mainStat.value - a.mainStat.value;
+        })[0];
+
+        // 如果当前已有装备，比较是否更优
+        if (currentEquip) {
+          const currentScore = (RARITY_ORDER[currentEquip.rarity] ?? 0) * 1000 + currentEquip.enhanceLevel * 10 + currentEquip.mainStat.value;
+          const newScore = (RARITY_ORDER[best.rarity] ?? 0) * 1000 + best.enhanceLevel * 10 + best.mainStat.value;
+          if (newScore <= currentScore) continue;
+        }
+
+        const result = eqSys.equipItem?.(equipHeroId, best.uid);
+        if (result?.success) equippedCount++;
+      }
+      if (equippedCount > 0) {
+        setMessage(`✅ 一键穿戴成功，共穿戴 ${equippedCount} 件装备`);
+      } else {
+        setMessage('没有找到更优的装备可穿戴');
+      }
+    } catch (e: any) {
+      setMessage(e?.message ?? '一键穿戴失败');
+    }
+    setTimeout(() => setMessage(null), 2500);
+  }, [eqSys, equipHeroId, allItems]);
+
+  // P1-2: 计算属性差异
+  const getStatDiff = useCallback((newItem: EquipmentInstance, oldItem: EquipmentInstance | null) => {
+    const diffs: { label: string; newValue: number; oldValue: number; diff: number }[] = [];
+    // 主属性
+    diffs.push({
+      label: newItem.mainStat.type,
+      newValue: newItem.mainStat.value,
+      oldValue: oldItem?.mainStat.value ?? 0,
+      diff: newItem.mainStat.value - (oldItem?.mainStat.value ?? 0),
+    });
+    // 副属性
+    const oldSubMap = new Map<string, number>();
+    if (oldItem) {
+      for (const ss of oldItem.subStats) oldSubMap.set(ss.type, ss.value);
+    }
+    for (const ss of newItem.subStats) {
+      const oldVal = oldSubMap.get(ss.type) ?? 0;
+      diffs.push({ label: ss.type, newValue: ss.value, oldValue: oldVal, diff: ss.value - oldVal });
+    }
+    return diffs;
+  }, []);
+
   // ── 渲染 ──
   return (
     <SharedPanel visible={visible} onClose={onClose} title="装备" icon="⚔️" width="min(600px, 95vw)">
@@ -158,6 +269,13 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, vi
         <>
           <div style={S.filterRow}>
             <span style={S.info}>🎒 {allItems.length}/{bagCap}</span>
+            {/* P1-3: 一键穿戴按钮 */}
+            {allItems.length > 0 && (
+              <button style={S.autoEquipBtn} onClick={handleAutoEquip} data-testid="equipment-panel-auto-equip">
+                👑 一键穿戴
+              </button>
+            )}
+            <span style={{ flex: 1 }} />
             <button style={{ ...S.filterBtn, ...(slotFilter === null ? S.activeBtn : {}) }}
               onClick={() => setSlotFilter(null)}>全部</button>
             {EQUIPMENT_SLOTS.map(s => (
@@ -184,7 +302,19 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, vi
               </div>
             ))}
           </div>
-          {displayItems.length === 0 && <div style={S.empty}>暂无装备</div>}
+          {/* P1-1: 空背包引导提示 */}
+          {displayItems.length === 0 && (
+            <div style={S.emptyGuide} data-testid="equipment-panel-empty-guide">
+              <div style={S.emptyGuideIcon}>🎒</div>
+              <div style={S.emptyGuideTitle}>暂无装备</div>
+              <div style={S.emptyGuideHint}>
+                通过<span style={{ color: '#d4a574' }}>出征</span>或<span style={{ color: '#d4a574' }}>商店</span>获取装备
+              </div>
+              <div style={S.emptyGuideSubHint}>
+                完成关卡战斗可掉落装备，也可在商店中购买装备箱
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -252,7 +382,7 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, vi
       )}
 
       {/* ── 装备详情弹窗（背包用） ── */}
-      {subTab === 'bag' && selected && (
+      {subTab === 'bag' && selected && !equipConfirmUid && (
         <div style={S.overlay} onClick={() => setSelectedUid(null)}>
           <div style={S.detailPanel} className="tk-equipment-detail-modal" onClick={e => e.stopPropagation()}>
             <div style={{ color: RARITY_COLORS[selected.rarity], fontSize: 18, fontWeight: 600 }}>{selected.name}</div>
@@ -276,10 +406,68 @@ const EquipmentTab: React.FC<EquipmentTabProps> = ({ engine, snapshotVersion, vi
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              {/* P1-2: 穿戴按钮（带属性对比） */}
+              {!selected.isEquipped && (
+                <button style={S.equipBtn} data-testid="equipment-panel-equip"
+                  onClick={() => setEquipConfirmUid(selected.uid)}>
+                  👕 穿戴
+                </button>
+              )}
               {!selected.isEquipped && (
                 <button style={S.decomposeBtn} onClick={() => handleDecompose(selected.uid)}>分解</button>
               )}
               <button style={S.closeBtn} onClick={() => setSelectedUid(null)}>关闭</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* P1-2: 穿戴确认弹窗（属性对比） */}
+      {equipConfirmItem && (
+        <div style={S.overlay} onClick={() => setEquipConfirmUid(null)} data-testid="equipment-panel-equip-overlay">
+          <div style={S.detailPanel} onClick={e => e.stopPropagation()} data-testid="equipment-panel-equip-confirm">
+            <div style={{ color: RARITY_COLORS[equipConfirmItem.rarity], fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+              ⚔️ 穿戴确认
+            </div>
+            <div style={{ fontSize: 13, color: '#d4a574', marginBottom: 12 }}>
+              将 <span style={{ fontWeight: 600 }}>{equipConfirmItem.name}</span> 穿戴到 {SLOT_LABELS[equipConfirmItem.slot]} 槽位
+            </div>
+
+            {/* 属性对比区域 */}
+            <div style={S.compareSection}>
+              <div style={S.compareHeader}>
+                <span style={{ flex: 1, textAlign: 'center', fontSize: 12, color: '#a0a0a0' }}>
+                  {currentHeroEquips ? `当前: ${currentHeroEquips.name}` : '当前: 无'}
+                </span>
+                <span style={{ width: 30 }} />
+                <span style={{ flex: 1, textAlign: 'center', fontSize: 12, color: '#d4a574' }}>
+                  新: {equipConfirmItem.name}
+                </span>
+              </div>
+              {getStatDiff(equipConfirmItem, currentHeroEquips).map((d, i) => (
+                <div key={i} style={S.compareRow}>
+                  <span style={{ flex: 1, textAlign: 'center', fontSize: 12, color: '#a0a0a0' }}>
+                    {d.oldValue > 0 ? fmt(d.oldValue) : '-'}
+                  </span>
+                  <span style={{
+                    width: 30, textAlign: 'center', fontSize: 11, fontWeight: 600,
+                    color: d.diff > 0 ? '#7EC850' : d.diff < 0 ? '#ff6464' : '#888',
+                  }}>
+                    {d.diff > 0 ? `+${fmt(d.diff)}` : d.diff < 0 ? fmt(d.diff) : '='}
+                  </span>
+                  <span style={{ flex: 1, textAlign: 'center', fontSize: 12, color: '#e8e0d0' }}>
+                    {fmt(d.newValue)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <button style={S.closeBtn} onClick={() => setEquipConfirmUid(null)}>取消</button>
+              <button style={S.equipBtn} data-testid="equipment-panel-equip-confirm-btn"
+                onClick={() => handleEquip(equipConfirmUid!)}>
+                ✅ 确认穿戴
+              </button>
             </div>
           </div>
         </div>
@@ -345,12 +533,45 @@ const S: Record<string, React.CSSProperties> = {
   },
   detailPanel: {
     background: '#1a1a2e', border: '1px solid #d4a574', borderRadius: 'var(--tk-radius-xl)' as any, padding: 20,
-    minWidth: 300, maxWidth: 400, color: '#e8e0d0',
+    minWidth: 300, maxWidth: 420, color: '#e8e0d0',
   },
   detailSection: { marginBottom: 10, fontSize: 13 },
   detailLabel: { color: '#d4a574', fontSize: 12, marginBottom: 2 },
   decomposeBtn: {
     flex: 1, padding: '8px', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'rgba(255,100,100,0.15)', color: '#ff6464', fontSize: 13, cursor: 'pointer',
+  },
+  // P1-2: 穿戴按钮样式
+  equipBtn: {
+    flex: 1, padding: '8px', border: '1px solid rgba(126,200,80,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
+    background: 'rgba(126,200,80,0.15)', color: '#7EC850', fontSize: 13, cursor: 'pointer', fontWeight: 600,
+  },
+  // P1-3: 一键穿戴按钮样式
+  autoEquipBtn: {
+    padding: '4px 12px', border: '1px solid rgba(255,193,7,0.3)', borderRadius: 'var(--tk-radius-md)' as any,
+    background: 'rgba(255,193,7,0.12)', color: '#ffc107', fontSize: 11, cursor: 'pointer', fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+  },
+  // P1-1: 空背包引导样式
+  emptyGuide: {
+    textAlign: 'center' as const, padding: '32px 16px',
+    background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--tk-radius-lg)' as any,
+    border: '1px dashed rgba(212,165,116,0.2)',
+  },
+  emptyGuideIcon: { fontSize: 36, marginBottom: 8, opacity: 0.6 },
+  emptyGuideTitle: { fontSize: 14, color: '#888', marginBottom: 8 },
+  emptyGuideHint: { fontSize: 13, color: '#a0a0a0', lineHeight: 1.6 },
+  emptyGuideSubHint: { fontSize: 11, color: '#666', marginTop: 6, lineHeight: 1.5 },
+  // P1-2: 属性对比区域样式
+  compareSection: {
+    background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--tk-radius-md)' as any,
+    padding: 12, marginBottom: 8,
+  },
+  compareHeader: {
+    display: 'flex', alignItems: 'center', marginBottom: 8,
+    borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 6,
+  },
+  compareRow: {
+    display: 'flex', alignItems: 'center', padding: '3px 0', fontSize: 12,
   },
 };

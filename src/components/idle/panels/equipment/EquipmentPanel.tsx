@@ -270,7 +270,14 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
       </div>
 
       {displayItems.length === 0 && (
-        <div style={styles.empty}>暂无装备</div>
+        <div style={styles.emptyGuide}>
+          <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.6 }}>🎒</div>
+          <div style={{ fontSize: 14, color: '#888', marginBottom: 8 }}>暂无装备</div>
+          <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
+            通过<span style={{ color: '#d4a574' }}>出征</span>或<span style={{ color: '#d4a574' }}>商店</span>获取装备
+          </div>
+          <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>完成关卡战斗可掉落装备，也可在商店中购买装备箱</div>
+        </div>
       )}
       </>)}
 
@@ -438,6 +445,11 @@ const styles: Record<string, React.CSSProperties> = {
   cardHeader: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 },
   statRow: { display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '2px 0' },
   empty: { textAlign: 'center', padding: 24, color: '#666', fontSize: 13 },
+  emptyGuide: {
+    textAlign: 'center' as const, padding: '32px 16px',
+    background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--tk-radius-lg)' as any,
+    border: '1px dashed rgba(212,165,116,0.2)',
+  },
   detailOverlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
     background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--tk-z-modal)' as any,

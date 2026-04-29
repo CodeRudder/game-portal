@@ -582,6 +582,94 @@
 }
 
 /* ═══════════════════════════════════════════
+   商店等级指示条
+   ═══════════════════════════════════════════ */
+.tk-shop-level-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  background: rgba(212, 165, 116, 0.08);
+  border: 1px solid rgba(212, 165, 116, 0.15);
+  border-radius: var(--tk-radius-md, 6px);
+}
+
+.tk-shop-level-icon {
+  font-size: 16px;
+}
+
+.tk-shop-level-text {
+  font-size: 12px;
+  color: #d4a574;
+  font-weight: 600;
+  flex: 1;
+}
+
+.tk-shop-level-stars {
+  font-size: 12px;
+  color: #ff9800;
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════════
+   贵重物品警告
+   ═══════════════════════════════════════════ */
+.tk-shop-expensive-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(255, 152, 0, 0.12);
+  border: 1px solid rgba(255, 152, 0, 0.25);
+  border-radius: var(--tk-radius-md, 6px);
+  font-size: 12px;
+  color: #ffb43c;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.tk-shop-expensive-warning-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   商品详情弹窗属性
+   ═══════════════════════════════════════════ */
+.tk-shop-detail-attrs {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  text-align: left;
+}
+
+.tk-shop-detail-attrs-title {
+  font-size: 12px;
+  color: #d4a574;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.tk-shop-detail-attr-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.tk-shop-detail-attr-name {
+  color: #a0a0a0;
+}
+
+.tk-shop-detail-attr-value {
+  color: #7EC850;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════
    空状态
    ═══════════════════════════════════════════ */
 .tk-shop-empty {
@@ -974,6 +1062,26 @@
 
   .tk-shop-empty-icon {
     font-size: 32px;
+  }
+
+  /* 手机端商店等级条 */
+  .tk-shop-level-bar {
+    padding: 4px 10px;
+    margin-bottom: 6px;
+  }
+
+  .tk-shop-level-text {
+    font-size: 11px;
+  }
+
+  .tk-shop-level-stars {
+    font-size: 10px;
+  }
+
+  /* 手机端贵重物品警告 */
+  .tk-shop-expensive-warning {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 
   /* 手机端折扣角标 */

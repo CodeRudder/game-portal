@@ -17,6 +17,11 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import SharedPanel from '@/components/idle/components/SharedPanel';
 import './ShopPanel.css';
 
+// ─── 商店等级描述映射 ───────────────────────
+const SHOP_LEVEL_DESC: Record<number, string> = {
+  1: '初级集市', 2: '中级集市', 3: '高级集市', 4: '豪华集市', 5: '皇家集市',
+};
+
 // ─── Props ──────────────────────────────────
 interface ShopPanelProps {
   engine: any;
@@ -121,6 +126,8 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   // P1-4修复：NPC折扣状态（从引擎获取当前NPC好感度折扣）
   const [npcId, setNpcId] = useState<string | undefined>(undefined);
+  /** 商品详情弹窗 */
+  const [detailDefId, setDetailDefId] = useState<string | null>(null);
 
   const isOperatingRef = useRef(false);
   const lastSnapshotRef = useRef<number>(snapshotVersion ?? 0);
@@ -176,6 +183,12 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
       const s = shopSystem.getState?.()?.[activeTab];
       return { count: s?.manualRefreshCount ?? 0, limit: s?.manualRefreshLimit ?? 5 };
     } catch { return { count: 0, limit: 5 }; }
+  }, [shopSystem, activeTab, message, snapshotVersion]);
+
+  // ── 商店等级 ──
+  const shopLevel = useMemo(() => {
+    if (!shopSystem) return 1;
+    try { return shopSystem.getShopLevel?.(activeTab) ?? 1; } catch { return 1; }
   }, [shopSystem, activeTab, message, snapshotVersion]);
 
   // ── 货币 ──
@@ -320,6 +333,17 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
           ))}
         </div>
 
+        {/* 商店等级指示 */}
+        <div className="tk-shop-level-bar" data-testid="shop-panel-level">
+          <span className="tk-shop-level-icon">🏛️</span>
+          <span className="tk-shop-level-text">
+            等级 {shopLevel} · {SHOP_LEVEL_DESC[shopLevel] ?? '集市'}
+          </span>
+          <span className="tk-shop-level-stars">
+            {'★'.repeat(shopLevel)}{'☆'.repeat(Math.max(0, 5 - shopLevel))}
+          </span>
+        </div>
+
         {/* 货币 + 刷新 + 排序 */}
         <div className="tk-shop-toolbar">
           <div className="tk-shop-currency-row">
@@ -396,7 +420,8 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
               return (
                 <div key={item.defId}
                   className={`tk-shop-goods-card${isSoldOut ? ' tk-shop-goods-card--out-of-stock' : ''}${isSuccess ? ' tk-shop-goods-card--success' : ''}${isFav ? ' tk-shop-goods-card--favorite' : ''}`}
-                  data-testid={`shop-panel-goods-${item.defId}`}>
+                  data-testid={`shop-panel-goods-${item.defId}`}
+                  onClick={() => setDetailDefId(item.defId)}>
                   {isDiscounted && <span className="tk-shop-discount-badge">-{Math.round((1 - item.discount) * 100)}%</span>}
                   <div className="tk-shop-goods-icon">{def.icon ?? '📦'}</div>
                   <div className="tk-shop-goods-info">
@@ -451,6 +476,79 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
           </div>
         )}
 
+        {/* 商品详情弹窗 */}
+        {detailDefId && (() => {
+          const dDef = getGoodsDef(detailDefId);
+          const dItem = goods.find((g: any) => g.defId === detailDefId);
+          if (!dDef) return null;
+          const dPrice = dItem ? (shopSystem?.calculateFinalPrice?.(detailDefId, activeTab) ?? dDef.basePrice) : dDef.basePrice;
+          const isDiscounted = dItem && dItem.discount < 1;
+          return (
+            <div className="tk-shop-overlay tk-shop-overlay--visible"
+              onClick={() => setDetailDefId(null)} data-testid="shop-panel-detail-overlay">
+              <div className="tk-shop-confirm-panel tk-shop-confirm-panel--visible"
+                onClick={(e) => e.stopPropagation()} data-testid="shop-panel-detail-dialog">
+                <div className="tk-shop-confirm-title">商品详情</div>
+                <div className="tk-shop-confirm-goods-icon">{dDef.icon ?? '📦'}</div>
+                <div className="tk-shop-confirm-goods-name">{dDef.name}</div>
+                {dDef.description && <div className="tk-shop-confirm-goods-desc">{dDef.description}</div>}
+                {/* 属性信息 */}
+                {dDef.attributes && Object.keys(dDef.attributes).length > 0 && (
+                  <div className="tk-shop-detail-attrs">
+                    <div className="tk-shop-detail-attrs-title">属性加成</div>
+                    {Object.entries(dDef.attributes).map(([key, val]) => (
+                      <div key={key} className="tk-shop-detail-attr-row">
+                        <span className="tk-shop-detail-attr-name">{key}</span>
+                        <span className="tk-shop-detail-attr-value">+{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* 价格 */}
+                <div className="tk-shop-confirm-price-details">
+                  <div className="tk-shop-confirm-price-row">
+                    <span className="tk-shop-confirm-price-label">价格</span>
+                    <span className="tk-shop-confirm-price-amount" style={{ color: '#d4a574' }}>
+                      {isDiscounted && (
+                        <span style={{ textDecoration: 'line-through', color: '#666', fontSize: 11, marginRight: 6 }}>
+                          {formatPrice(dDef.basePrice)}
+                        </span>
+                      )}
+                      {formatPrice(dPrice)}
+                    </span>
+                  </div>
+                </div>
+                {/* 限购信息 */}
+                {dItem && (dItem.dailyLimit > 0 || (dItem.lifetimeLimit > 0 && dItem.lifetimeLimit !== -1)) && (
+                  <div className="tk-shop-confirm-limit-info">
+                    {dItem.dailyLimit > 0 && <span>今日: {dItem.dailyPurchased}/{dItem.dailyLimit}</span>}
+                    {dItem.lifetimeLimit > 0 && dItem.lifetimeLimit !== -1 && (
+                      <span style={{ marginLeft: dItem.dailyLimit > 0 ? 10 : 0 }}>
+                        终身: {dItem.lifetimePurchased}/{dItem.lifetimeLimit}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="tk-shop-confirm-actions">
+                  <button className="tk-shop-cancel-btn" data-testid="shop-panel-detail-close"
+                    onClick={() => setDetailDefId(null)}>关闭</button>
+                  <button className="tk-shop-confirm-btn"
+                    data-testid="shop-panel-detail-buy"
+                    disabled={dItem ? (dItem.stock !== -1 && dItem.stock <= 0) : false}
+                    onClick={() => {
+                      setDetailDefId(null);
+                      setBuyingId(detailDefId);
+                      setBuyQuantity(1);
+                      setTimeout(() => setConfirmVisible(true), 10);
+                    }}>
+                    {dItem && dItem.stock !== -1 && dItem.stock <= 0 ? '已售罄' : '立即购买'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* 购买确认弹窗 */}
         {buyingId && (() => {
           const bDef = getGoodsDef(buyingId);
@@ -482,12 +580,22 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
             return Math.max(1, Math.min(dailyRemain, lifetimeRemain, stockRemain, currencyRemain));
           })();
           const closeConfirm = () => { setConfirmVisible(false); setTimeout(() => setBuyingId(null), 200); };
+          // P1-1: 计算铜钱等价，判断是否为贵重物品
+          const copperEquiv = multipliedPrice
+            ? Object.entries(multipliedPrice).reduce((sum, [c, a]) => {
+                const rates: Record<string, number> = { copper: 1, mandate: 100, recruit: 200, summon: 500, ingot: 1000 };
+                return sum + (a as number) * (rates[c] ?? 1);
+              }, 0)
+            : 0;
+          const isExpensive = copperEquiv > 1000;
           return (
             <div className={`tk-shop-overlay${confirmVisible ? ' tk-shop-overlay--visible' : ''}`}
               onClick={closeConfirm} data-testid="shop-panel-confirm-overlay">
               <div className={`tk-shop-confirm-panel${confirmVisible ? ' tk-shop-confirm-panel--visible' : ''}`}
                 onClick={(e) => e.stopPropagation()} data-testid="shop-panel-confirm-dialog">
-                <div className="tk-shop-confirm-title">确认购买？</div>
+                <div className="tk-shop-confirm-title">
+                  {isExpensive ? '⚠️ 贵重物品确认' : '确认购买？'}
+                </div>
                 {bDef && <div className="tk-shop-confirm-goods-icon">{bDef.icon ?? '📦'}</div>}
                 {bDef && <div className="tk-shop-confirm-goods-name">{bDef.name}</div>}
                 {bDef?.description && <div className="tk-shop-confirm-goods-desc">{bDef.description}</div>}
@@ -536,6 +644,13 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
                         </span>
                       </div>
                     ))}
+                  </div>
+                )}
+                {/* P1-1: 贵重物品额外警告 */}
+                {isExpensive && (
+                  <div className="tk-shop-expensive-warning" data-testid="shop-panel-expensive-warning">
+                    <span className="tk-shop-expensive-warning-icon">💰</span>
+                    <span>此为贵重物品，价值约 {copperEquiv.toLocaleString()} 铜钱，请确认购买</span>
                   </div>
                 )}
                 <div className="tk-shop-confirm-actions">
