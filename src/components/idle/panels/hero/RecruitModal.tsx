@@ -298,7 +298,9 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
                       }}
                     />
                   </div>
-                  <span className="tk-recruit-rate-pct">{(row.rate * 100).toFixed(0)}%</span>
+                  <span className={`tk-recruit-rate-pct ${row.rate === 0 ? 'tk-recruit-rate-pct--zero' : ''}`}>
+                    {row.rate === 0 ? '无法获得' : `${(row.rate * 100).toFixed(0)}%`}
+                  </span>
                 </div>
               ))}
             </div>
@@ -406,6 +408,21 @@ const RecruitModal: React.FC<RecruitModalProps> = ({ engine, onClose, onRecruitC
                   delay={idx * 80}
                 />
               ))}
+            </div>
+            {/* P1-1 修复：招募→编队引导链路 */}
+            <div className="tk-recruit-results-actions" data-testid="recruit-results-actions">
+              <button
+                className="tk-recruit-btn tk-recruit-btn--formation"
+                data-testid="recruit-goto-formation-btn"
+                onClick={() => {
+                  handleCloseResults();
+                  onClose();
+                  // 通过自定义事件通知上层切换到编队Tab
+                  window.dispatchEvent(new CustomEvent('tk:navigate-to-formation'));
+                }}
+              >
+                ⚔️ 前往编队
+              </button>
             </div>
           </div>
         )}

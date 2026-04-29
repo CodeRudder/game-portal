@@ -466,3 +466,23 @@
   color: #d4a574;
   font-weight: 500;
 }
+
+/* ═══════════════════════════════════════════
+   P1-3 修复：重新挑战按钮
+   ═══════════════════════════════════════════ */
+.tk-brm-confirm-btn--retry {
+  background: linear-gradient(135deg, #e67e22, #f39c12) !important;
+  border-color: rgba(243, 156, 18, 0.6) !important;
+  margin-right: 8px;
+}
+
+.tk-brm-confirm-btn--retry:hover {
+  background: linear-gradient(135deg, #f09030, #f5b030) !important;
+  box-shadow: 0 0 12px rgba(243, 156, 18, 0.4);
+}
+
+.tk-brm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}

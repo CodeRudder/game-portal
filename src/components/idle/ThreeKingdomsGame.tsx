@@ -444,6 +444,13 @@ const ThreeKingdomsGame: React.FC = () => {
     } catch {}
   }, [engine]);
 
+  // ── 欢迎弹窗 → 引导链路：关闭欢迎弹窗后自动切换到武将Tab触发引导 ──
+  const handleWelcomeStartGuide = useCallback(() => {
+    setShowWelcome(false);
+    // 切换到武将Tab，触发GuideOverlay的GuideWelcomeModal显示
+    setActiveTab('hero');
+  }, []);
+
   // ── 主渲染 ──
   // 引擎创建失败 — 显示错误页面（必须在所有 hooks 之后）
   if (!engine) {
@@ -533,10 +540,19 @@ const ThreeKingdomsGame: React.FC = () => {
         />
       )}
 
-      {/* 首次启动欢迎弹窗 */}
+      {/* 首次启动欢迎弹窗 — 整合引导入口，避免双层弹窗 */}
       <WelcomeModal
         visible={showWelcome}
         onClose={handleWelcomeClose}
+        showGuideEntry={(() => {
+          try {
+            const progress = localStorage.getItem('tk-tutorial-progress');
+            if (!progress) return true; // 无引导记录 → 需要引导
+            const data = JSON.parse(progress);
+            return !data.completed; // 引导未完成 → 需要引导
+          } catch { return true; }
+        })()}
+        onStartGuide={handleWelcomeStartGuide}
       />
 
       {/* ═══ 功能面板弹窗 ═══ */}

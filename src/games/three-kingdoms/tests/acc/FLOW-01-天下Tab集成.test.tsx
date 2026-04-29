@@ -858,14 +858,16 @@ describe('FLOW-01 天下Tab集成测试', () => {
   it(accTest('FLOW-01-42', 'WorldMapTab内部攻城流程 — 无外部回调时自动弹出确认'), async () => {
     const territories = makeTestTerritories();
     const mockEngine = {
-      getMapSystem: () => ({
+      getSiegeSystem: () => ({
         checkSiegeConditions: () => ({ canSiege: true }),
         calculateSiegeCost: () => ({ troops: 200, grain: 500 }),
         executeSiege: () => ({}),
-        getDailySiegesRemaining: () => 3,
-        getCooldownRemaining: () => 0,
+        getRemainingDailySieges: () => 3,
+        getRemainingCooldown: () => 0,
       }),
       getResourceAmount: (type: string) => type === 'troops' ? 5000 : 5000,
+      on: vi.fn(),
+      off: vi.fn(),
     };
 
     render(

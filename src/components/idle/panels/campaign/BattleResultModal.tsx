@@ -27,6 +27,8 @@ interface BattleResultModalProps {
   stage: Stage;
   /** 确认回调 */
   onConfirm: () => void;
+  /** 重新挑战回调（P1-3修复：失败时提供重试入口） */
+  onRetry?: () => void;
 }
 
 // ─────────────────────────────────────────────
@@ -72,6 +74,7 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
   result,
   stage,
   onConfirm,
+  onRetry,
 }) => {
   const isVictory = result.outcome === BattleOutcome.VICTORY;
   const isDraw = result.outcome === BattleOutcome.DRAW;
@@ -289,6 +292,16 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
 
         {/* ── 确认按钮 ── */}
         <div className="tk-brm-actions">
+          {/* P1-3 修复：失败时显示重新挑战按钮 */}
+          {!isVictory && onRetry && (
+            <button
+              className="tk-brm-confirm-btn tk-brm-confirm-btn--retry"
+              onClick={onRetry}
+              data-testid="battle-result-retry"
+            >
+              🔄 重新挑战
+            </button>
+          )}
           <button
             className={`tk-brm-confirm-btn ${isVictory ? 'tk-brm-confirm-btn--victory' : 'tk-brm-confirm-btn--defeat'}`}
             onClick={onConfirm}

@@ -466,3 +466,89 @@ describe('SiegeSystem — ISubsystem', () => {
     expect(() => siege.update(0.016)).not.toThrow();
   });
 });
+
+// ─────────────────────────────────────────────
+// P1-4: 每日攻城次数自动重置
+// ─────────────────────────────────────────────
+describe('SiegeSystem — P1-4 每日攻城次数自动重置', () => {
+  it('初始状态下每日攻城次数为3', () => {
+    const { siege } = createSystems();
+    expect(siege.getRemainingDailySieges()).toBe(3);
+  });
+
+  it('攻城后剩余次数减少', () => {
+    const { siege, territory } = createSystems();
+    territory.captureTerritory('city-luoyang', 'player');
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+    expect(siege.getRemainingDailySieges()).toBe(2);
+  });
+
+  it('update中检测日期变化自动重置每日次数', () => {
+    const { siege, territory } = createSystems();
+    // 消耗2次攻城
+    territory.captureTerritory('city-luoyang', 'player');
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+    siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, true);
+    expect(siege.getRemainingDailySieges()).toBe(1);
+
+    // 模拟跨天：修改内部 lastSiegeDate 为昨天
+    const saveData = siege.serialize();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    saveData.lastSiegeDate = yesterday.toISOString().slice(0, 10);
+    saveData.dailySiegeCount = 2;
+    siege.deserialize(saveData);
+
+    // 调用 update 触发日期检测
+    siege.update(0.016);
+
+    // 每日次数应已重置
+    expect(siege.getRemainingDailySieges()).toBe(3);
+  });
+
+  it('同一天内update不会重置次数', () => {
+    const { siege, territory } = createSystems();
+    territory.captureTerritory('city-luoyang', 'player');
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+    expect(siege.getRemainingDailySieges()).toBe(2);
+
+    // 同一天调用 update 不应重置
+    siege.update(0.016);
+    siege.update(0.016);
+    expect(siege.getRemainingDailySieges()).toBe(2);
+  });
+
+  it('序列化/反序列化保留每日次数和日期', () => {
+    const { siege, territory } = createSystems();
+    territory.captureTerritory('city-luoyang', 'player');
+    siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+
+    const data = siege.serialize();
+    expect(data.dailySiegeCount).toBe(1);
+    expect(data.lastSiegeDate).toBeTruthy();
+
+    // 反序列化后恢复
+    const newSiege = new SiegeSystem();
+    newSiege.init(createMockDeps());
+    newSiege.deserialize(data);
+    expect(newSiege.getRemainingDailySieges()).toBe(2);
+  });
+
+  it('每日3次攻城用完后不可再攻城', () => {
+    const { siege, territory } = createSystems();
+    territory.captureTerritory('city-luoyang', 'player');
+
+    // 通过序列化/反序列化模拟已用完3次
+    const saveData = siege.serialize();
+    saveData.dailySiegeCount = 3;
+    saveData.lastSiegeDate = new Date().toISOString().slice(0, 10);
+    siege.deserialize(saveData);
+
+    expect(siege.getRemainingDailySieges()).toBe(0);
+
+    // 攻城条件检查应拒绝
+    const result = siege.checkSiegeConditions('city-xuchang', 'player', 5000, 500);
+    expect(result.canSiege).toBe(false);
+    expect(result.errorCode).toBe('DAILY_LIMIT_REACHED');
+  });
+});

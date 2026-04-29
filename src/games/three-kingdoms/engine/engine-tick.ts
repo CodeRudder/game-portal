@@ -21,6 +21,7 @@ import type { EventUINotification } from './event/EventUINotification';
 import type { EventChainSystem } from './event/EventChainSystem';
 import type { EventLogSystem } from './event/EventLogSystem';
 import type { OfflineEventSystem } from './event/OfflineEventSystem';
+import type { SiegeSystem } from './map/SiegeSystem';
 import type { EventBus } from '../core/events/EventBus';
 import type { Bonuses } from './resource/resource.types';
 import type { BuildingType } from './building/building.types';
@@ -55,6 +56,8 @@ export interface TickContext {
   readonly eventLog?: EventLogSystem;
   /** 离线事件系统（v15.0+） */
   readonly offlineEvent?: OfflineEventSystem;
+  /** 攻城系统（P1-4: 每日攻城次数自动重置） */
+  readonly siege?: SiegeSystem;
   readonly bus: EventBus;
   /** 变化检测用的缓存 JSON */
   prevResourcesJson: string;
@@ -134,6 +137,10 @@ export function executeTick(ctx: TickContext, dtSec: number): void {
   ctx.eventChain?.update(dtSec);
   ctx.eventLog?.update(dtSec);
   ctx.offlineEvent?.update(dtSec);
+
+  // 8. 攻城系统更新（P1-4: 每日攻城次数自动重置）
+  //    SiegeSystem.update() 内部检测日期变化，自动重置 dailySiegeCount
+  ctx.siege?.update(dtSec);
 
   // 7. 变化检测 → 发出事件
   detectAndEmitChanges(ctx);

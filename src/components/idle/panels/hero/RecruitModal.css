@@ -600,3 +600,32 @@
   transform: scale(0.97);
   transition: transform 0.1s;
 }
+
+/* ═══════════════════════════════════════════
+   P1-1 修复：招募结果操作区（前往编队按钮）
+   ═══════════════════════════════════════════ */
+.tk-recruit-results-actions {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+  border-top: 1px solid rgba(200, 168, 76, 0.15);
+  margin-top: 8px;
+}
+
+.tk-recruit-btn--formation {
+  background: linear-gradient(135deg, #5b4a9e, #7c5cbf) !important;
+  border-color: rgba(124, 92, 191, 0.6) !important;
+  min-width: 140px;
+}
+
+.tk-recruit-btn--formation:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6b5aae, #8c6ccf) !important;
+  box-shadow: 0 0 12px rgba(124, 92, 191, 0.4);
+}
+
+/* P1-2 修复：概率0%标注"无法获得"样式 */
+.tk-recruit-rate-pct--zero {
+  color: #666;
+  font-style: italic;
+  font-size: 11px;
+}

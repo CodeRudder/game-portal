@@ -761,6 +761,7 @@ export class ThreeKingdomsEngine {
       eventChain: this.eventSystems.chain,
       eventLog: this.eventSystems.log,
       offlineEvent: this.eventSystems.offline,
+      siege: this.mapSystems.siege,
       bus: this.bus, prevResourcesJson: this.prevResourcesJson, prevRatesJson: this.prevRatesJson,
     };
   }

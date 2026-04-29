@@ -193,21 +193,23 @@ describe('WorldMapTab', () => {
   it('攻城确认后清除选中状态', () => {
     const executeSiege = vi.fn();
     const engine = {
-      getMapSystem: () => ({
+      getSiegeSystem: () => ({
         checkSiegeConditions: () => ({ canSiege: true }),
         calculateSiegeCost: () => ({ troops: 100, grain: 50 }),
         executeSiege,
-        getDailySiegesRemaining: () => 2,
-        getCooldownRemaining: () => 0,
+        getRemainingDailySieges: () => 2,
+        getRemainingCooldown: () => 0,
       }),
       getResourceAmount: (type: string) => type === 'troops' ? 1000 : 500,
+      on: vi.fn(),
+      off: vi.fn(),
     };
     render(<WorldMapTab {...defaultProps} engine={engine} />);
     // 选中敌方领土
     const enemyCell = screen.getByTestId('territory-cell-city-xuchang');
     fireEvent.click(enemyCell);
     // 触发攻城（通过TerritoryInfoPanel mock无法直接测试，验证engine集成）
-    expect(engine.getMapSystem()).toBeTruthy();
+    expect(engine.getSiegeSystem()).toBeTruthy();
   });
 
   it('中立领土筛选正确工作', () => {

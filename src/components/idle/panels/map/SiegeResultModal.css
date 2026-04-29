@@ -1,0 +1,200 @@
+/**
+ * SiegeResultModal — 攻城结果弹窗样式
+ */
+
+/* ═══════════════════════════════════════════
+   结果弹窗主体
+   ═══════════════════════════════════════════ */
+.tk-siege-result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #e0d8c8;
+  font-size: 14px;
+}
+
+/* ── 战斗概要 ── */
+.tk-siege-result-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.tk-siege-result-header--victory {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.tk-siege-result-header--defeat {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.2);
+}
+
+.tk-siege-result-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.tk-siege-result-summary {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ── 战斗统计 ── */
+.tk-siege-result-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tk-siege-result-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+}
+
+.tk-siege-result-stat-label {
+  font-size: 12px;
+  color: #999;
+}
+
+.tk-siege-result-stat-value--cost {
+  color: #e8a735;
+  font-weight: 600;
+}
+
+.tk-siege-result-stat-value--loss {
+  color: #ef5350;
+  font-weight: 600;
+}
+
+/* ── 奖励展示 ── */
+.tk-siege-result-rewards {
+  padding: 12px;
+  background: rgba(76, 175, 80, 0.06);
+  border: 1px solid rgba(76, 175, 80, 0.15);
+  border-radius: 8px;
+}
+
+.tk-siege-result-rewards-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #81c784;
+  margin-bottom: 8px;
+}
+
+.tk-siege-result-rewards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-siege-result-reward-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.tk-siege-result-reward-item--bonus {
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.tk-siege-result-reward-label {
+  font-size: 13px;
+  color: #ccc;
+}
+
+.tk-siege-result-reward-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #81c784;
+}
+
+.tk-siege-result-reward-item--bonus .tk-siege-result-reward-value {
+  color: #ffd700;
+}
+
+/* ── 道具掉落 ── */
+.tk-siege-result-items {
+  padding: 12px;
+  background: rgba(156, 39, 176, 0.06);
+  border: 1px solid rgba(156, 39, 176, 0.15);
+  border-radius: 8px;
+}
+
+.tk-siege-result-items-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ce93d8;
+  margin-bottom: 8px;
+}
+
+.tk-siege-result-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tk-siege-result-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.tk-siege-result-item--common { background: rgba(158, 158, 158, 0.1); border-left: 3px solid #9e9e9e; }
+.tk-siege-result-item--rare { background: rgba(33, 150, 243, 0.1); border-left: 3px solid #2196f3; }
+.tk-siege-result-item--epic { background: rgba(156, 39, 176, 0.1); border-left: 3px solid #9c27b0; }
+.tk-siege-result-item--legendary { background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; }
+
+.tk-siege-result-item-name {
+  flex: 1;
+  color: #e0d8c8;
+}
+
+.tk-siege-result-item-rarity {
+  font-size: 11px;
+  color: #999;
+}
+
+.tk-siege-result-item-qty {
+  font-weight: 600;
+  color: #ce93d8;
+}
+
+/* ── 失败建议 ── */
+.tk-siege-result-defeat {
+  padding: 12px;
+  background: rgba(255, 152, 0, 0.06);
+  border: 1px solid rgba(255, 152, 0, 0.15);
+  border-radius: 8px;
+}
+
+.tk-siege-result-defeat-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffb74d;
+  margin-bottom: 8px;
+}
+
+.tk-siege-result-defeat-list {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.tk-siege-result-defeat-item {
+  font-size: 13px;
+  color: #bbb;
+  line-height: 1.6;
+}
