@@ -53,7 +53,7 @@ function createDeps(generals: GeneralData[] = []): ISystemDeps {
   registry.set('siege', siege);
   registry.set('garrison', garrison);
   registry.set('hero', {
-    getGeneralById: (id: string) => generalMap.get(id) ? { ...generalMap.get(id) } : null,
+    getGeneral: (id: string) => generalMap.get(id) ?? undefined,
     isGeneralInFormation: () => false,
   });
 
@@ -90,10 +90,12 @@ function getSys(deps: ISystemDeps) {
   };
 }
 
-/** 获取一个玩家领土ID */
+/** 获取一个玩家领土ID（无初始player领土时先占领一个neutral领土） */
 function getPlayerTerritoryId(sys: ReturnType<typeof getSys>): string | null {
   const ids = sys.territory.getPlayerTerritoryIds();
-  return ids.length > 0 ? ids[0] : null;
+  if (ids.length > 0) return ids[0];
+  // 无初始player领土，先占领一个neutral领土
+  return captureFirstNeutral(sys);
 }
 
 /** 占领一个非己方领土使其变为己方 */

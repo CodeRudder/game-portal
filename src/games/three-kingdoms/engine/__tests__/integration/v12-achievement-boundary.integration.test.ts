@@ -119,7 +119,17 @@ describe('v12.0 补充 — §5 任务系统边界', () => {
 
     const instance = quest.acceptQuest('track-quest-001');
     if (instance) {
-      // 新任务自动追踪（若未满），先取消追踪再重新追踪
+      // 新任务可能未被自动追踪（日常任务已占满追踪槽位），需确保先追踪
+      const trackedIds = quest.getState().trackedQuestIds;
+      if (!trackedIds.includes(instance.instanceId)) {
+        // 先取消一个已有追踪腾出槽位，再追踪新任务
+        if (trackedIds.length > 0) {
+          quest.untrackQuest(trackedIds[0]);
+        }
+        const preTrack = quest.trackQuest(instance.instanceId);
+        expect(preTrack).toBe(true);
+      }
+      // 先取消追踪再重新追踪
       const untracked = quest.untrackQuest(instance.instanceId);
       expect(untracked).toBe(true);
 

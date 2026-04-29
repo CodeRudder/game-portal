@@ -38,7 +38,14 @@ export function refreshDailyQuestsLogic(deps: DailyQuestDeps): {
   dailyQuestInstanceIds: string[];
   dailyRefreshDate: string;
 } {
-  const today = new Date().toISOString().slice(0, 10);
+  const config = DEFAULT_DAILY_POOL_CONFIG;
+  const now = new Date();
+  // 使用 refreshHour 配置判断刷新日期：如果当前时间在 refreshHour 之前，刷新日期为昨天
+  const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (now.getHours() < config.refreshHour) {
+    todayDate.setDate(todayDate.getDate() - 1);
+  }
+  const today = todayDate.toISOString().slice(0, 10);
   if (deps.dailyRefreshDate === today) {
     return {
       newInstances: deps.dailyQuestInstanceIds
@@ -49,19 +56,28 @@ export function refreshDailyQuestsLogic(deps: DailyQuestDeps): {
     };
   }
 
-  // 清除旧的日常任务
+  // 清除旧的日常任务（P2-9修复：已完成未领取的奖励自动领取）
   for (const id of deps.dailyQuestInstanceIds) {
     const instance = deps.activeQuests.get(id);
-    if (instance && instance.status === 'active') {
-      instance.status = 'expired';
+    if (instance) {
+      if (instance.status === 'completed' && !instance.rewardClaimed) {
+        // P2-9: 自动领取已完成但未领取的奖励，避免奖励丢失
+        instance.rewardClaimed = true;
+        instance.status = 'expired';
+        deps.emit('quest:autoClaimed', {
+          instanceId: id,
+          questId: instance.questDefId,
+          reason: 'daily_refresh',
+        });
+      } else {
+        instance.status = 'expired';
+      }
       deps.activeQuests.delete(id);
     }
   }
 
-  // 随机抽取
-  const config = DEFAULT_DAILY_POOL_CONFIG;
-  const shuffled = [...DAILY_QUEST_TEMPLATES].sort(() => Math.random() - 0.5);
-  const picked = shuffled.slice(0, config.dailyPickCount);
+  // 使用多样性保证算法抽取日常任务（PRD §QST-3）
+  const picked = pickDailyWithDiversity([...DAILY_QUEST_TEMPLATES], config.dailyPickCount);
 
   // 注册并接受
   const newInstances: QuestInstance[] = [];
@@ -262,8 +278,11 @@ export function claimRewardLogic(
   const def = ctx.questDefs.get(instance.questDefId);
   if (!def) return null;
 
+  // P1-6: 先标记已领取并从活跃列表移除，防止并发重复领取
   instance.rewardClaimed = true;
+  ctx.activeQuests.delete(instanceId);
 
+  // 日常任务活跃度加成
   if (def.category === 'daily' && def.rewards.activityPoints) {
     ctx.addActivityPoints(def.rewards.activityPoints);
     ctx.activityAddCallback?.(def.rewards.activityPoints);
@@ -276,8 +295,6 @@ export function claimRewardLogic(
     questId: instance.questDefId,
     rewards: def.rewards,
   });
-
-  ctx.activeQuests.delete(instanceId);
 
   return def.rewards;
 }
@@ -297,4 +314,166 @@ export function claimAllRewardsLogic(
   }
 
   return rewards;
+}
+
+// ─── 日常任务多样性保证 ──────────────────────────
+
+/** 日常任务分类标签 */
+type DailyQuestTag = 'battle' | 'training' | 'auto' | 'build' | 'social' | 'collect' | 'event' | 'spend';
+
+/** 日常任务ID到分类标签的映射 */
+const DAILY_TAG_MAP: Record<string, DailyQuestTag> = {
+  'daily-001': 'build',    // 勤劳建设
+  'daily-002': 'battle',   // 沙场练兵
+  'daily-003': 'training', // 招贤纳士
+  'daily-004': 'collect',  // 广积粮草
+  'daily-005': 'social',   // 礼尚往来
+  'daily-006': 'training', // 科技创新
+  'daily-007': 'social',   // 社交达人
+  'daily-008': 'event',    // 事件达人
+  'daily-009': 'build',    // 勤政爱民
+  'daily-010': 'battle',   // 百战百胜
+  'daily-011': 'collect',  // 日进斗金
+  'daily-012': 'training', // 名将收集
+  'daily-013': 'training', // 科技先驱
+  'daily-014': 'social',   // 慷慨解囊
+  'daily-015': 'battle',   // 征战四方
+  'daily-016': 'build',    // 大兴土木
+  'daily-017': 'training', // 满腹经纶
+  'daily-018': 'social',   // 人脉广阔
+  'daily-019': 'auto',     // 每日签到
+  'daily-020': 'event',    // 事件猎手
+};
+
+/** D01(每日签到) 必定出现的ID */
+const DAILY_MUST_INCLUDE = 'daily-019';
+
+/**
+ * 带多样性保证的日常任务抽取
+ * PRD §QST-3 规则：
+ * - 至少1个战斗类
+ * - 至少1个养成类
+ * - 至少1个自动完成类
+ * - 最多2个同类任务
+ * - D01（登录）必定出现
+ */
+export function pickDailyWithDiversity(templates: QuestDef[], pickCount: number): QuestDef[] {
+  const D01 = templates.find(t => t.id === DAILY_MUST_INCLUDE);
+  const rest = templates.filter(t => t.id !== DAILY_MUST_INCLUDE);
+
+  // Fisher-Yates 洗牌
+  for (let i = rest.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rest[i], rest[j]] = [rest[j], rest[i]];
+  }
+
+  // D01 必定出现
+  const picked: QuestDef[] = D01 ? [D01] : [];
+
+  // 分类计数器
+  const tagCounts: Record<string, number> = {};
+  for (const q of picked) {
+    const tag = DAILY_TAG_MAP[q.id] ?? 'other';
+    tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+  }
+
+  // 保证类别
+  const guaranteedTags: DailyQuestTag[] = ['battle', 'training', 'auto'];
+
+  // 先从保证类别中各选1个
+  for (const tag of guaranteedTags) {
+    if ((tagCounts[tag] ?? 0) >= 1) continue;
+    const idx = rest.findIndex(q => (DAILY_TAG_MAP[q.id] ?? 'other') === tag);
+    if (idx >= 0) {
+      picked.push(rest[idx]);
+      tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      rest.splice(idx, 1);
+    }
+  }
+
+  // 填充剩余名额，每类最多2个
+  for (const q of rest) {
+    if (picked.length >= pickCount) break;
+    const tag = DAILY_TAG_MAP[q.id] ?? 'other';
+    if ((tagCounts[tag] ?? 0) >= 2) continue;
+    picked.push(q);
+    tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+  }
+
+  return picked.slice(0, pickCount);
+}
+
+// ─── 周常任务辅助 ──────────────────────────────
+
+import { WEEKLY_QUEST_TEMPLATES, DEFAULT_WEEKLY_POOL_CONFIG } from '../../core/quest';
+
+/** 周常任务刷新的依赖接口 */
+export interface WeeklyQuestDeps {
+  activeQuests: Map<string, QuestInstance>;
+  weeklyQuestInstanceIds: string[];
+  weeklyRefreshDate: string;
+  registerQuest: (def: QuestDef) => void;
+  acceptQuest: (questId: QuestId) => QuestInstance | null;
+  emit: (event: string, data: unknown) => void;
+}
+
+/** 刷新周常任务的纯逻辑（PRD §QST-3: 每周一05:00重置） */
+export function refreshWeeklyQuestsLogic(deps: WeeklyQuestDeps): {
+  newInstances: QuestInstance[];
+  weeklyQuestInstanceIds: string[];
+  weeklyRefreshDate: string;
+} {
+  const config = DEFAULT_WEEKLY_POOL_CONFIG;
+  const now = new Date();
+
+  // 计算本周一的日期字符串
+  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+  // 如果今天是周一且还没到refreshHour，用上周一
+  if (dayOfWeek === config.refreshDay && now.getHours() < config.refreshHour) {
+    monday.setDate(monday.getDate() - 7);
+  }
+  const thisMonday = monday.toISOString().slice(0, 10);
+
+  if (deps.weeklyRefreshDate === thisMonday) {
+    return {
+      newInstances: deps.weeklyQuestInstanceIds
+        .map((id) => deps.activeQuests.get(id))
+        .filter(Boolean) as QuestInstance[],
+      weeklyQuestInstanceIds: deps.weeklyQuestInstanceIds,
+      weeklyRefreshDate: deps.weeklyRefreshDate,
+    };
+  }
+
+  // 清除旧的周常任务
+  for (const id of deps.weeklyQuestInstanceIds) {
+    const instance = deps.activeQuests.get(id);
+    if (instance) {
+      instance.status = 'expired';
+      deps.activeQuests.delete(id);
+    }
+  }
+
+  // Fisher-Yates 洗牌
+  const pool = [...WEEKLY_QUEST_TEMPLATES];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const picked = pool.slice(0, config.weeklyPickCount);
+
+  const newInstances: QuestInstance[] = [];
+  const weeklyQuestInstanceIds: string[] = [];
+
+  for (const def of picked) {
+    deps.registerQuest(def);
+    const instance = deps.acceptQuest(def.id);
+    if (instance) {
+      weeklyQuestInstanceIds.push(instance.instanceId);
+      newInstances.push(instance);
+    }
+  }
+
+  return { newInstances, weeklyQuestInstanceIds, weeklyRefreshDate: thisMonday };
 }

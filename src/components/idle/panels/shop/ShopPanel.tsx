@@ -32,10 +32,20 @@ const CUR_LABELS: Record<string, string> = {
 };
 
 const SHOP_TABS = [
-  { id: 'normal', label: '杂货铺', icon: '🏪' },
-  { id: 'black_market', label: '黑市', icon: '🗡️' },
-  { id: 'limited_time', label: '限时特惠', icon: '⏰' },
-  { id: 'vip', label: 'VIP商店', icon: '👑' },
+  { id: 'normal', label: '集市', icon: '🏪' },
+  { id: 'black_market', label: '黑市', icon: '💰' },
+  { id: 'limited_time', label: '限时特惠', icon: '⚡' },
+  { id: 'vip', label: 'VIP', icon: '👑' },
+] as const;
+
+/** P1-2修复：商品分类筛选（normal商店商品过多时使用） */
+const GOODS_CATEGORY_FILTERS = [
+  { id: 'all', label: '全部' },
+  { id: 'resource', label: '资源' },
+  { id: 'material', label: '材料' },
+  { id: 'equipment', label: '装备' },
+  { id: 'consumable', label: '消耗品' },
+  { id: 'special', label: '特殊' },
 ] as const;
 
 /** 排序选项 */
@@ -107,6 +117,10 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [buySuccessId, setBuySuccessId] = useState<string | null>(null);
   const [refreshCooldown, setRefreshCooldown] = useState(0);
+  // P1-2修复：商品分类筛选状态
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  // P1-4修复：NPC折扣状态（从引擎获取当前NPC好感度折扣）
+  const [npcId, setNpcId] = useState<string | undefined>(undefined);
 
   const isOperatingRef = useRef(false);
   const lastSnapshotRef = useRef<number>(snapshotVersion ?? 0);
@@ -180,9 +194,17 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
     if (!shopSystem) return [];
     try {
       const raw = shopSystem.getShopGoods?.(activeTab) ?? [];
-      return Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, any>) : [];
+      const items = Array.isArray(raw) ? raw : raw ? Object.values(raw as Record<string, any>) : [];
+      // P1-2修复：normal商店按分类筛选
+      if (activeTab === 'normal' && categoryFilter !== 'all') {
+        return items.filter((item: any) => {
+          const def = shopSystem.getGoodsDef?.(item.defId);
+          return def?.category === categoryFilter;
+        });
+      }
+      return items;
     } catch { return []; }
-  }, [shopSystem, activeTab, message, snapshotVersion]);
+  }, [shopSystem, activeTab, categoryFilter, message, snapshotVersion]);
 
   // ── 排序后商品 ──
   const sortedGoods = useMemo(() => {
@@ -326,6 +348,28 @@ export default function ShopPanel({ engine, visible = true, onClose, snapshotVer
               ))}
             </div>
           </div>
+          {/* P1-2修复：normal商店商品分类筛选 */}
+          {activeTab === 'normal' && (
+            <div className="tk-shop-category-row" data-testid="shop-panel-category-filter"
+              style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' as const }}>
+              {GOODS_CATEGORY_FILTERS.map(cat => (
+                <button key={cat.id}
+                  className={`tk-shop-sort-btn${categoryFilter === cat.id ? ' tk-shop-sort-btn--active' : ''}`}
+                  onClick={() => setCategoryFilter(cat.id)}
+                  data-testid={`shop-panel-category-${cat.id}`}
+                  style={{ padding: '2px 8px', fontSize: 11, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, background: categoryFilter === cat.id ? 'rgba(212,165,116,0.2)' : 'transparent', color: categoryFilter === cat.id ? '#d4a574' : '#888', cursor: 'pointer' }}>
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* P1-4修复：NPC好感度折扣提示 */}
+          {shopSystem?.npcDiscountProvider && npcId && (
+            <div style={{ fontSize: 11, color: '#7EC850', marginTop: 4, padding: '2px 8px', background: 'rgba(126,200,80,0.08)', borderRadius: 4 }}
+              data-testid="shop-panel-npc-discount">
+              🤝 NPC好友折扣已生效
+            </div>
+          )}
         </div>
 
         {/* Toast */}

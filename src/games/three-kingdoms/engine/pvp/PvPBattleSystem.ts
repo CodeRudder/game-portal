@@ -55,34 +55,34 @@ export const REPLAY_CONFIG = {
 // 21级段位定义（5大段位：青铜/白银/黄金/钻石/王者，与PRD PVP-3对齐）
 // ─────────────────────────────────────────────
 
-/** 段位等级列表（从低到高，共21级） */
+/** 段位等级列表（从低到高，共21级）— 与PRD PVP-3段位积分对齐 */
 export const RANK_LEVELS: RankLevel[] = [
-  // 青铜 (5级: V~I)
+  // 青铜 (5级: V~I) — 0~1499，每级300分
   { id: 'BRONZE_V', tier: 'BRONZE' as RankTier, division: RankDivision.V, minScore: 0, maxScore: 299, dailyReward: { copper: 500, arenaCoin: 10, gold: 5 } },
-  { id: 'BRONZE_IV', tier: 'BRONZE' as RankTier, division: RankDivision.IV, minScore: 300, maxScore: 599, dailyReward: { copper: 600, arenaCoin: 15, gold: 8 } },
-  { id: 'BRONZE_III', tier: 'BRONZE' as RankTier, division: RankDivision.III, minScore: 600, maxScore: 899, dailyReward: { copper: 700, arenaCoin: 20, gold: 10 } },
-  { id: 'BRONZE_II', tier: 'BRONZE' as RankTier, division: RankDivision.II, minScore: 900, maxScore: 1199, dailyReward: { copper: 800, arenaCoin: 25, gold: 12 } },
-  { id: 'BRONZE_I', tier: 'BRONZE' as RankTier, division: RankDivision.I, minScore: 1200, maxScore: 1499, dailyReward: { copper: 900, arenaCoin: 30, gold: 15 } },
-  // 白银 (5级: V~I)
-  { id: 'SILVER_V', tier: 'SILVER' as RankTier, division: RankDivision.V, minScore: 1500, maxScore: 1799, dailyReward: { copper: 1000, arenaCoin: 35, gold: 18 } },
-  { id: 'SILVER_IV', tier: 'SILVER' as RankTier, division: RankDivision.IV, minScore: 1800, maxScore: 2099, dailyReward: { copper: 1100, arenaCoin: 40, gold: 20 } },
-  { id: 'SILVER_III', tier: 'SILVER' as RankTier, division: RankDivision.III, minScore: 2100, maxScore: 2399, dailyReward: { copper: 1200, arenaCoin: 45, gold: 22 } },
-  { id: 'SILVER_II', tier: 'SILVER' as RankTier, division: RankDivision.II, minScore: 2400, maxScore: 2699, dailyReward: { copper: 1300, arenaCoin: 50, gold: 25 } },
-  { id: 'SILVER_I', tier: 'SILVER' as RankTier, division: RankDivision.I, minScore: 2700, maxScore: 2999, dailyReward: { copper: 1400, arenaCoin: 55, gold: 28 } },
-  // 黄金 (5级: V~I)
-  { id: 'GOLD_V', tier: 'GOLD' as RankTier, division: RankDivision.V, minScore: 3000, maxScore: 3399, dailyReward: { copper: 1600, arenaCoin: 60, gold: 30 } },
-  { id: 'GOLD_IV', tier: 'GOLD' as RankTier, division: RankDivision.IV, minScore: 3400, maxScore: 3799, dailyReward: { copper: 1800, arenaCoin: 70, gold: 35 } },
-  { id: 'GOLD_III', tier: 'GOLD' as RankTier, division: RankDivision.III, minScore: 3800, maxScore: 4199, dailyReward: { copper: 2000, arenaCoin: 80, gold: 40 } },
-  { id: 'GOLD_II', tier: 'GOLD' as RankTier, division: RankDivision.II, minScore: 4200, maxScore: 4599, dailyReward: { copper: 2200, arenaCoin: 90, gold: 45 } },
-  { id: 'GOLD_I', tier: 'GOLD' as RankTier, division: RankDivision.I, minScore: 4600, maxScore: 4999, dailyReward: { copper: 2500, arenaCoin: 100, gold: 50 } },
-  // 钻石 (5级: V~I)
-  { id: 'DIAMOND_V', tier: 'DIAMOND' as RankTier, division: RankDivision.V, minScore: 5000, maxScore: 5999, dailyReward: { copper: 3000, arenaCoin: 120, gold: 60 } },
-  { id: 'DIAMOND_IV', tier: 'DIAMOND' as RankTier, division: RankDivision.IV, minScore: 6000, maxScore: 6999, dailyReward: { copper: 3500, arenaCoin: 140, gold: 70 } },
-  { id: 'DIAMOND_III', tier: 'DIAMOND' as RankTier, division: RankDivision.III, minScore: 7000, maxScore: 7999, dailyReward: { copper: 4000, arenaCoin: 160, gold: 80 } },
-  { id: 'DIAMOND_II', tier: 'DIAMOND' as RankTier, division: RankDivision.II, minScore: 8000, maxScore: 8999, dailyReward: { copper: 5000, arenaCoin: 180, gold: 90 } },
-  { id: 'DIAMOND_I', tier: 'DIAMOND' as RankTier, division: RankDivision.I, minScore: 9000, maxScore: 9999, dailyReward: { copper: 6000, arenaCoin: 200, gold: 100 } },
-  // 王者 (前100名，积分≥10000)
-  { id: 'KING_I', tier: 'KING' as RankTier, division: RankDivision.I, minScore: 10000, maxScore: 99999, dailyReward: { copper: 8000, arenaCoin: 300, gold: 150 } },
+  { id: 'BRONZE_IV', tier: 'BRONZE' as RankTier, division: RankDivision.IV, minScore: 300, maxScore: 599, dailyReward: { copper: 550, arenaCoin: 12, gold: 0 } },
+  { id: 'BRONZE_III', tier: 'BRONZE' as RankTier, division: RankDivision.III, minScore: 600, maxScore: 899, dailyReward: { copper: 600, arenaCoin: 14, gold: 0 } },
+  { id: 'BRONZE_II', tier: 'BRONZE' as RankTier, division: RankDivision.II, minScore: 900, maxScore: 1199, dailyReward: { copper: 650, arenaCoin: 16, gold: 0 } },
+  { id: 'BRONZE_I', tier: 'BRONZE' as RankTier, division: RankDivision.I, minScore: 1200, maxScore: 1499, dailyReward: { copper: 700, arenaCoin: 18, gold: 0 } },
+  // 白银 (5级: V~I) — 1500~2999，每级300分
+  { id: 'SILVER_V', tier: 'SILVER' as RankTier, division: RankDivision.V, minScore: 1500, maxScore: 1799, dailyReward: { copper: 800, arenaCoin: 20, gold: 0 } },
+  { id: 'SILVER_IV', tier: 'SILVER' as RankTier, division: RankDivision.IV, minScore: 1800, maxScore: 2099, dailyReward: { copper: 900, arenaCoin: 25, gold: 0 } },
+  { id: 'SILVER_III', tier: 'SILVER' as RankTier, division: RankDivision.III, minScore: 2100, maxScore: 2399, dailyReward: { copper: 1000, arenaCoin: 30, gold: 0 } },
+  { id: 'SILVER_II', tier: 'SILVER' as RankTier, division: RankDivision.II, minScore: 2400, maxScore: 2699, dailyReward: { copper: 1100, arenaCoin: 35, gold: 0 } },
+  { id: 'SILVER_I', tier: 'SILVER' as RankTier, division: RankDivision.I, minScore: 2700, maxScore: 2999, dailyReward: { copper: 1200, arenaCoin: 40, gold: 0 } },
+  // 黄金 (5级: V~I) — 3000~4999，每级400分
+  { id: 'GOLD_V', tier: 'GOLD' as RankTier, division: RankDivision.V, minScore: 3000, maxScore: 3399, dailyReward: { copper: 1500, arenaCoin: 50, gold: 0 } },
+  { id: 'GOLD_IV', tier: 'GOLD' as RankTier, division: RankDivision.IV, minScore: 3400, maxScore: 3799, dailyReward: { copper: 1700, arenaCoin: 55, gold: 0 } },
+  { id: 'GOLD_III', tier: 'GOLD' as RankTier, division: RankDivision.III, minScore: 3800, maxScore: 4199, dailyReward: { copper: 1900, arenaCoin: 60, gold: 0 } },
+  { id: 'GOLD_II', tier: 'GOLD' as RankTier, division: RankDivision.II, minScore: 4200, maxScore: 4599, dailyReward: { copper: 2100, arenaCoin: 65, gold: 0 } },
+  { id: 'GOLD_I', tier: 'GOLD' as RankTier, division: RankDivision.I, minScore: 4600, maxScore: 4999, dailyReward: { copper: 2300, arenaCoin: 70, gold: 5 } },
+  // 钻石 (5级: V~I) — 5000~9999，每级1000分
+  { id: 'DIAMOND_V', tier: 'DIAMOND' as RankTier, division: RankDivision.V, minScore: 5000, maxScore: 5999, dailyReward: { copper: 3000, arenaCoin: 100, gold: 10 } },
+  { id: 'DIAMOND_IV', tier: 'DIAMOND' as RankTier, division: RankDivision.IV, minScore: 6000, maxScore: 6999, dailyReward: { copper: 3500, arenaCoin: 130, gold: 12 } },
+  { id: 'DIAMOND_III', tier: 'DIAMOND' as RankTier, division: RankDivision.III, minScore: 7000, maxScore: 7999, dailyReward: { copper: 4000, arenaCoin: 160, gold: 14 } },
+  { id: 'DIAMOND_II', tier: 'DIAMOND' as RankTier, division: RankDivision.II, minScore: 8000, maxScore: 8999, dailyReward: { copper: 4500, arenaCoin: 190, gold: 16 } },
+  { id: 'DIAMOND_I', tier: 'DIAMOND' as RankTier, division: RankDivision.I, minScore: 9000, maxScore: 9999, dailyReward: { copper: 5000, arenaCoin: 220, gold: 20 } },
+  // 王者 — 积分≥10000
+  { id: 'KING_I', tier: 'KING' as RankTier, division: RankDivision.I, minScore: 10000, maxScore: 99999, dailyReward: { copper: 8000, arenaCoin: 300, gold: 30 } },
 ];
 
 /** 段位ID → 段位定义的映射 */

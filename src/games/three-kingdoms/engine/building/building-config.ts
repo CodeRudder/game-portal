@@ -427,7 +427,9 @@ export const BUILDING_DEFS: Record<BuildingType, BuildingDef> = {
     type: 'wall',
     maxLevel: 20,
     unlockCastleLevel: 5,
-    production: { resourceType: 'recruitToken', baseValue: 0.01, perLevel: 0 },
+    // 城墙产出为城防值（specialValue）和防御加成百分比（production），
+    // 不是资源产出，因此不设置 production.resourceType。
+    // PRD §BLD-1: "城防值/防御加成"
     levelTable: WALL_LEVEL_TABLE,
   },
 };

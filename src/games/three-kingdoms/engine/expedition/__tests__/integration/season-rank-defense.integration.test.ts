@@ -115,8 +115,8 @@ describe('§3-4 赛季+段位+防守闭环', () => {
       const state = createPlayerState({ rankId: 'SILVER_V' });
       const result = season.grantDailyReward(state);
       expect(result.state.arenaCoins).toBeGreaterThan(state.arenaCoins);
-      expect(result.reward.copper).toBe(1000);
-      expect(result.reward.arenaCoin).toBe(35);
+      expect(result.reward.copper).toBe(800);
+      expect(result.reward.arenaCoin).toBe(20);
     });
 
     it('积分范围覆盖0~99999', () => {

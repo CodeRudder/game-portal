@@ -94,6 +94,7 @@ export class ShopSystem implements ISubsystem {
   private favorites: Set<string> = new Set();
   private activeDiscounts: DiscountConfig[] = [];
   private npcDiscountProvider: ((npcId: string) => number) | null = null;
+  private lastUpdateTick: number = 0;
 
   constructor() {
     const now = Date.now();
@@ -104,8 +105,18 @@ export class ShopSystem implements ISubsystem {
 
   // ─── ISubsystem ───────────────────────────
 
-  init(deps: ISystemDeps): void { this.deps = deps; }
-  update(_dt: number): void { /* 无 tick 逻辑 */ }
+  init(deps: ISystemDeps): void { this.deps = deps; this.lastUpdateTick = Date.now(); }
+  update(_dt: number): void {
+    // 定时补货：每8h自动刷新
+    const now = Date.now();
+    const interval = DEFAULT_RESTOCK_CONFIG.scheduledInterval * 1000;
+    for (const type of SHOP_TYPES) {
+      const shop = this.shops[type];
+      if (now - shop.lastScheduledRestock >= interval) {
+        this.restockShop(type, now);
+      }
+    }
+  }
   getState(): Record<ShopType, ShopState> { return { ...this.shops }; }
 
   reset(): void {
@@ -166,8 +177,8 @@ export class ShopSystem implements ISubsystem {
       });
     }
 
-    // 排序
-    const sortBy = filter.sortBy ?? 'name';
+    // 排序（默认排序：推荐→折扣→价格升序）
+    const sortBy = filter.sortBy ?? 'default';
     const order = filter.sortOrder ?? 'asc';
     items.sort((a, b) => {
       const dA = GOODS_DEF_MAP[a.defId], dB = GOODS_DEF_MAP[b.defId];
@@ -175,6 +186,14 @@ export class ShopSystem implements ISubsystem {
       if (sortBy === 'price') cmp = (Object.values(dA?.basePrice ?? {})[0] ?? 0) - (Object.values(dB?.basePrice ?? {})[0] ?? 0);
       else if (sortBy === 'name') cmp = (dA?.name ?? '').localeCompare(dB?.name ?? '');
       else if (sortBy === 'discount') cmp = a.discount - b.discount;
+      else if (sortBy === 'default') {
+        // 默认排序规则：1.收藏优先 2.折扣优先 3.价格升序
+        const favA = this.favorites.has(a.defId) ? 0 : 1;
+        const favB = this.favorites.has(b.defId) ? 0 : 1;
+        if (favA !== favB) { cmp = favA - favB; }
+        else if (a.discount !== b.discount) { cmp = a.discount - b.discount; }
+        else { cmp = (Object.values(dA?.basePrice ?? {})[0] ?? 0) - (Object.values(dB?.basePrice ?? {})[0] ?? 0); }
+      }
       return order === 'asc' ? cmp : -cmp;
     });
     return items;
@@ -340,6 +359,32 @@ export class ShopSystem implements ISubsystem {
 
   isFavorite(defId: string): boolean { return this.favorites.has(defId); }
   getFavorites(): string[] { return [...this.favorites]; }
+
+  /** 离线补货（登录时调用，最多累积2次） */
+  processOfflineRestock(): void {
+    const now = Date.now();
+    const offlineInterval = DEFAULT_RESTOCK_CONFIG.offlineInterval * 1000;
+    const maxAccumulation = DEFAULT_RESTOCK_CONFIG.offlineMaxAccumulation;
+
+    for (const type of SHOP_TYPES) {
+      const shop = this.shops[type];
+      const elapsed = now - shop.lastOfflineRestock;
+      const accumulated = Math.min(maxAccumulation, Math.floor(elapsed / offlineInterval));
+
+      if (accumulated > 0) {
+        this.restockShop(type, now);
+        // 10%概率出现稀有
+        if (Math.random() < DEFAULT_RESTOCK_CONFIG.offlineRareChance) {
+          for (const item of shop.goods) {
+            if (item.discount === 1) {
+              item.discount = 0.7; // 稀有折扣
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
 
   // ─── 6. 商店等级 ─────────────────────────
 

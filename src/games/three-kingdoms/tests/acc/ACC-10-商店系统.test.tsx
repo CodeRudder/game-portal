@@ -604,10 +604,10 @@ describe('ACC-10 商店系统 验收测试', () => {
     const { engine } = makeEngine();
     render(<ShopPanel engine={engine} visible={true} onClose={vi.fn()} />);
     await waitForGoodsLoaded();
-    // spd_daily_pack: basePrice={ingot:30}, discount=0.8 → 30*0.8=24
+    // spd_daily_pack: basePrice={ingot:198}, discount=0.8 → 198*0.8=158.4 → ceil=159
     const shopSystem = engine.getShopSystem();
     const finalPrice = shopSystem.calculateFinalPrice('spd_daily_pack', 'normal');
-    expect(finalPrice).toEqual({ ingot: 24 });
+    expect(finalPrice).toEqual({ ingot: 159 });
   });
 
   it(accTest('ACC-10-38', '过期折扣自动清理 - cleanupExpiredDiscounts可调用'), async () => {

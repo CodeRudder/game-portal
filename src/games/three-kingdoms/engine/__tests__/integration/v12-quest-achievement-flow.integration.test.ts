@@ -128,14 +128,23 @@ describe('v12.0 任务成就 — §1 任务系统', () => {
     const sim = createSim();
     const quest = sim.engine.getQuestSystem();
 
-    const defs = quest.getAllQuestDefs();
-    if (defs.length > 0) {
-      const instance = quest.acceptQuest(defs[0].id);
-      if (instance) {
-        expect(instance.questId).toBeDefined();
-        expect(instance.status).toBe('active');
-      }
-    }
+    // 注册一个全新的可接受任务（预定义任务可能已被 initializeDefaults 接受）
+    const testDef: import('../../../shared/types').QuestDef = {
+      id: 'test_accept_quest' as any,
+      title: '接受测试任务',
+      description: '测试接受任务',
+      category: 'daily' as any,
+      objectives: [{ id: 'obj_acc', type: 'kill_enemy', description: '击杀敌人', targetCount: 1, params: {} }],
+      rewards: [{ type: 'resource', id: 'gold', amount: 10 }],
+      autoAccept: false,
+      sortOrder: 0,
+    };
+    quest.registerQuests([testDef]);
+
+    const instance = quest.acceptQuest(testDef.id as any);
+    expect(instance).toBeDefined();
+    expect(instance!.questDefId).toBeDefined();
+    expect(instance!.status).toBe('active');
   });
 
   it('should update quest objective progress', () => {

@@ -850,6 +850,19 @@ describe('v12.0 补充2 — §H 追踪上限与边界', () => {
     quest.acceptQuest('track-free-2');
     const inst3 = quest.acceptQuest('track-free-3');
 
+    // 引擎初始化时已有日常任务占据追踪槽位，需先清空
+    const existingTracked = quest.getState().trackedQuestIds;
+    for (const tid of existingTracked) {
+      quest.untrackQuest(tid);
+    }
+
+    // 手动追踪前3个任务填满槽位
+    if (inst0) {
+      expect(quest.trackQuest(inst0.instanceId)).toBe(true);
+    }
+    quest.trackQuest(quest.getActiveQuests().find(q => q.questDefId === 'track-free-1')?.instanceId ?? '');
+    quest.trackQuest(quest.getActiveQuests().find(q => q.questDefId === 'track-free-2')?.instanceId ?? '');
+
     if (inst3) {
       expect(quest.trackQuest(inst3.instanceId)).toBe(false);
     }

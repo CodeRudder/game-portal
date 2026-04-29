@@ -40,6 +40,10 @@ export interface SiegeConfirmModalProps {
   dailySiegesRemaining?: number | null;
   /** 攻城冷却剩余毫秒数（0表示无冷却） */
   cooldownRemainingMs?: number;
+  /** 用户选择的出征兵力（用于滑块控制） */
+  selectedTroops?: number;
+  /** 出征兵力变更回调 */
+  onTroopsChange?: (troops: number) => void;
   /** 确认攻城 */
   onConfirm: () => void;
   /** 取消 */
@@ -133,6 +137,8 @@ const SiegeConfirmModal: React.FC<SiegeConfirmModalProps> = ({
   availableGrain,
   dailySiegesRemaining,
   cooldownRemainingMs = 0,
+  selectedTroops,
+  onTroopsChange,
   onConfirm,
   onCancel,
 }) => {
@@ -238,11 +244,35 @@ const SiegeConfirmModal: React.FC<SiegeConfirmModalProps> = ({
         {cost && (
           <div className="tk-siege-cost">
             <h4 className="tk-siege-section-title">预估消耗</h4>
+            {/* 兵力部署滑块 */}
+            {onTroopsChange && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, color: '#a0a0a0' }}>出征兵力</span>
+                  <span style={{ fontSize: 13, color: '#d4a574', fontWeight: 600 }}>
+                    {selectedTroops ?? cost.troops} / {availableTroops}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={cost.troops}
+                  max={availableTroops}
+                  value={selectedTroops ?? cost.troops}
+                  onChange={(e) => onTroopsChange(Number(e.target.value))}
+                  style={{ width: '100%', accentColor: '#d4a574' }}
+                  data-testid="siege-troops-slider"
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#666' }}>
+                  <span>最低 {cost.troops}</span>
+                  <span>全部 {availableTroops}</span>
+                </div>
+              </div>
+            )}
             <div className="tk-siege-cost-grid">
               <div className="tk-siege-cost-item">
                 <span className="tk-siege-cost-icon">⚔️</span>
                 <span className="tk-siege-cost-label">兵力</span>
-                <span className="tk-siege-cost-value">-{cost.troops}</span>
+                <span className="tk-siege-cost-value">-{selectedTroops ?? cost.troops}</span>
               </div>
               <div className="tk-siege-cost-item">
                 <span className="tk-siege-cost-icon">🌾</span>

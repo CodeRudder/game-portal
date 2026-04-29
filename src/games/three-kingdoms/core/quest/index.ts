@@ -16,6 +16,7 @@ export type {
   ActivityMilestone,
   ActivityState,
   DailyQuestPoolConfig,
+  WeeklyQuestPoolConfig,
   QuestSystemSaveData,
 } from './quest.types';
 
@@ -23,6 +24,7 @@ export {
   OBJECTIVE_EVENT_MAP,
   DEFAULT_ACTIVITY_MILESTONES,
   DEFAULT_DAILY_POOL_CONFIG,
+  DEFAULT_WEEKLY_POOL_CONFIG,
   QUEST_SAVE_VERSION,
 } from './quest.types';
 
@@ -33,5 +35,6 @@ export {
   QUEST_SIDE_TECH,
   QUEST_SIDE_NPC,
   DAILY_QUEST_TEMPLATES,
+  WEEKLY_QUEST_TEMPLATES,
   PREDEFINED_QUESTS,
 } from './quest-config';

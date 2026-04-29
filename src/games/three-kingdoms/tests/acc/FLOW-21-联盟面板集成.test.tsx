@@ -649,4 +649,189 @@ describe('FLOW-21 联盟面板集成测试', () => {
       assertStrict(threw, 'FLOW-21-35', '非成员捐献应抛异常');
     });
   });
+
+  // ═══════════════════════════════════════════════════════════
+  // 7. 联盟Boss Tab UI集成（P0-1 补充 — FLOW-21-36 ~ FLOW-21-40）
+  // ═══════════════════════════════════════════════════════════
+
+  describe('7. 联盟Boss Tab UI集成', () => {
+
+    it(accTest('FLOW-21-36', 'Boss Tab — Boss信息正确显示'), () => {
+      const { alliance } = createTestAlliance(allianceSys);
+      const boss = bossSys.getCurrentBoss(alliance);
+
+      // 验证Boss数据结构完整，供UI渲染
+      assertStrict(!!boss.id, 'FLOW-21-36', 'Boss应有id');
+      assertStrict(!!boss.name, 'FLOW-21-36', 'Boss应有名称');
+      assertStrict(boss.maxHp > 0, 'FLOW-21-36', 'Boss应有最大HP');
+      assertStrict(boss.currentHp === boss.maxHp, 'FLOW-21-36', '初始HP应等于最大HP');
+      assertStrict(boss.status === BossStatus.ALIVE, 'FLOW-21-36', 'Boss应为存活状态');
+    });
+
+    it(accTest('FLOW-21-37', 'Boss Tab — 挑战Boss后HP减少'), () => {
+      const { alliance } = createTestAlliance(allianceSys);
+      const ps = createPlayerState({ allianceId: alliance.id });
+      const boss = bossSys.getCurrentBoss(alliance);
+
+      const result = bossSys.challengeBoss(boss, alliance, ps, 'p1', 15000);
+      assertStrict(result.boss.currentHp === boss.maxHp - 15000, 'FLOW-21-37',
+        `Boss HP应减少15000，实际: ${result.boss.currentHp}`);
+      assertStrict(result.result.damage === 15000, 'FLOW-21-37',
+        `伤害应为15000，实际: ${result.result.damage}`);
+    });
+
+    it(accTest('FLOW-21-38', 'Boss Tab — 击杀Boss触发全员奖励'), () => {
+      const { alliance } = createTestAlliance(allianceSys);
+      const ps = createPlayerState({ allianceId: alliance.id });
+      const boss = bossSys.getCurrentBoss(alliance);
+
+      // 一击击杀
+      const result = bossSys.challengeBoss(boss, alliance, ps, 'p1', boss.maxHp);
+      assertStrict(result.result.isKillingBlow === true, 'FLOW-21-38',
+        '应为击杀');
+      assertStrict(result.boss.status === BossStatus.KILLED, 'FLOW-21-38',
+        'Boss状态应为KILLED');
+      assertStrict(!!result.result.killReward, 'FLOW-21-38',
+        '应有击杀奖励');
+      assertStrict(result.result.killReward!.guildCoin === DEFAULT_BOSS_CONFIG.killGuildCoinReward,
+        'FLOW-21-38',
+        `击杀公会币奖励应为${DEFAULT_BOSS_CONFIG.killGuildCoinReward}`);
+    });
+
+    it(accTest('FLOW-21-39', 'Boss Tab — 每日挑战次数限制'), () => {
+      const { alliance } = createTestAlliance(allianceSys);
+      const ps = createPlayerState({ allianceId: alliance.id });
+
+      // 连续挑战3次
+      for (let i = 0; i < 3; i++) {
+        const boss = bossSys.getCurrentBoss(
+          i === 0 ? alliance : { ...alliance, bossKilledToday: false }
+        );
+        const result = bossSys.challengeBoss(boss, alliance, ps, 'p1', 1000);
+        ps.dailyBossChallenges = result.playerState.dailyBossChallenges;
+      }
+
+      assertStrict(ps.dailyBossChallenges === 3, 'FLOW-21-39',
+        `挑战次数应为3，实际: ${ps.dailyBossChallenges}`);
+
+      // 第4次应抛异常
+      let threw = false;
+      try {
+        const boss = bossSys.getCurrentBoss({ ...alliance, bossKilledToday: false });
+        bossSys.challengeBoss(boss, alliance, ps, 'p1', 1000);
+      } catch (e: any) {
+        threw = true;
+        assertStrict(e.message.includes('已用完'), 'FLOW-21-39',
+          `错误应包含"已用完"，实际: ${e.message}`);
+      }
+      assertStrict(threw, 'FLOW-21-39', '超过次数应抛异常');
+    });
+
+    it(accTest('FLOW-21-40', 'Boss Tab — 伤害排行正确排序'), () => {
+      const { alliance } = createTestAlliance(allianceSys);
+      let boss = bossSys.getCurrentBoss(alliance);
+
+      // 多人挑战
+      const ps1 = createPlayerState({ allianceId: alliance.id });
+      const r1 = bossSys.challengeBoss(boss, alliance, ps1, 'p1', 30000);
+      boss = r1.boss;
+
+      const ps2 = createPlayerState({ allianceId: alliance.id, dailyBossChallenges: 0 });
+      // 手动添加成员以通过成员检查
+      const allianceWithP2 = {
+        ...alliance,
+        members: {
+          ...alliance.members,
+          p2: { playerId: 'p2', playerName: '关羽', role: 'MEMBER', power: 5000, joinTime: NOW, dailyContribution: 0, totalContribution: 0, dailyBossChallenges: 0 },
+        },
+      };
+      const r2 = bossSys.challengeBoss(boss, allianceWithP2, ps2, 'p2', 50000);
+      boss = r2.boss;
+
+      const records = Object.entries(boss.damageRecords);
+      assertStrict(records.length === 2, 'FLOW-21-40',
+        `应有2条伤害记录，实际: ${records.length}`);
+
+      // 按伤害排序
+      const sorted = records.sort(([, a]: any, [, b]: any) => b - a);
+      assertStrict(sorted[0][0] === 'p2', 'FLOW-21-40',
+        `第一应为p2(50000伤害)`);
+      assertStrict(sorted[1][0] === 'p1', 'FLOW-21-40',
+        `第二应为p1(30000伤害)`);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // 8. 联盟商店 Tab UI集成（P0-1 补充 — FLOW-21-41 ~ FLOW-21-45）
+  // ═══════════════════════════════════════════════════════════
+
+  describe('8. 联盟商店 Tab UI集成', () => {
+
+    it(accTest('FLOW-21-41', '商店 Tab — 商品列表完整显示'), () => {
+      const items = shopSys.getAllItems();
+      assertStrict(items.length >= 6, 'FLOW-21-41',
+        `应有至少6个商品，实际: ${items.length}`);
+
+      // 每个商品应有完整字段
+      for (const item of items) {
+        assertStrict(!!item.id, 'FLOW-21-41', `商品应有id`);
+        assertStrict(!!item.name, 'FLOW-21-41', `商品应有名称`);
+        assertStrict(item.guildCoinCost > 0, 'FLOW-21-41', `商品应有价格`);
+      }
+    });
+
+    it(accTest('FLOW-21-42', '商店 Tab — 按联盟等级筛选商品'), () => {
+      // 1级联盟可购买的商品
+      const lv1Items = shopSys.getAvailableShopItems(1);
+      const lv1Expected = DEFAULT_ALLIANCE_SHOP_ITEMS.filter(i => i.requiredAllianceLevel <= 1);
+      assertStrict(lv1Items.length === lv1Expected.length, 'FLOW-21-42',
+        `1级应解锁${lv1Expected.length}个商品，实际: ${lv1Items.length}`);
+
+      // 5级联盟可购买的商品
+      const lv5Items = shopSys.getAvailableShopItems(5);
+      const lv5Expected = DEFAULT_ALLIANCE_SHOP_ITEMS.filter(i => i.requiredAllianceLevel <= 5);
+      assertStrict(lv5Items.length === lv5Expected.length, 'FLOW-21-42',
+        `5级应解锁${lv5Expected.length}个商品，实际: ${lv5Items.length}`);
+    });
+
+    it(accTest('FLOW-21-43', '商店 Tab — 购买商品扣除公会币并记录'), () => {
+      const ps = createPlayerState({ guildCoins: 500 });
+      const items = shopSys.getAvailableShopItems(1);
+      const item = items[0];
+
+      const result = shopSys.buyShopItem(ps, item.id, 1);
+      assertStrict(result.guildCoins === 500 - item.guildCoinCost, 'FLOW-21-43',
+        `余额应为${500 - item.guildCoinCost}，实际: ${result.guildCoins}`);
+    });
+
+    it(accTest('FLOW-21-44', '商店 Tab — 周限购数量正确追踪'), () => {
+      const ps = createPlayerState({ guildCoins: 10000 });
+      const items = shopSys.getAvailableShopItems(1);
+      const item = items.find((i: any) => i.weeklyLimit != null && i.weeklyLimit > 0);
+      assertStrict(!!item, 'FLOW-21-44', '应有限购商品');
+
+      // 购买一次
+      const result = shopSys.buyShopItem(ps, item.id, 1);
+      // 验证购买数量增加
+      const updatedItems = shopSys.getAllItems();
+      const updated = updatedItems.find((i: any) => i.id === item.id);
+      assertStrict(updated!.purchased === 1, 'FLOW-21-44',
+        `已购买数应为1，实际: ${updated!.purchased}`);
+    });
+
+    it(accTest('FLOW-21-45', '商店 Tab — 公会币不足购买失败'), () => {
+      const ps = createPlayerState({ guildCoins: 0 });
+
+      let threw = false;
+      try {
+        const items = shopSys.getAvailableShopItems(1);
+        shopSys.buyShopItem(ps, items[0].id, 1);
+      } catch (e: any) {
+        threw = true;
+        assertStrict(e.message.includes('不足'), 'FLOW-21-45',
+          `错误应包含"不足"，实际: ${e.message}`);
+      }
+      assertStrict(threw, 'FLOW-21-45', '公会币不足应抛异常');
+    });
+  });
 });

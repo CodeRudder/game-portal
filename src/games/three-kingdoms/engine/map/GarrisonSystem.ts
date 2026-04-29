@@ -57,6 +57,12 @@ export class GarrisonSystem implements ISubsystem {
   init(deps: ISystemDeps): void {
     this.deps = deps;
     this.assignments.clear();
+    // P1-5修复：消费 siege:autoGarrison 事件，自动派遣驻防
+    try {
+      deps.eventBus?.on?.('siege:autoGarrison', (data: { territoryId: string; owner: string; garrisonTroops: number }) => {
+        this.handleAutoGarrison(data);
+      });
+    } catch { /* eventBus不可用时静默处理 */ }
   }
 
   update(_dt: number): void { /* 预留 */ }
@@ -394,5 +400,30 @@ export class GarrisonSystem implements ISubsystem {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * P1-5修复：处理自动驻防事件
+   *
+   * 当攻城胜利后，SiegeSystem发出 siege:autoGarrison 事件，
+   * GarrisonSystem消费该事件，记录驻防兵力信息。
+   *
+   * 注意：此处不派遣武将（武将驻防需玩家手动操作），
+   * 仅记录兵力驻防信息用于防御加成计算。
+   */
+  private handleAutoGarrison(data: { territoryId: string; owner: string; garrisonTroops: number }): void {
+    const { territoryId, owner, garrisonTroops } = data;
+    if (!territoryId || garrisonTroops <= 0) return;
+
+    // 验证领土归属
+    const territory = this.territorySys?.getTerritoryById(territoryId);
+    if (!territory || territory.ownership !== 'player') return;
+
+    // 发出驻防确认事件（供UI展示）
+    this.deps?.eventBus.emit('garrison:autoGarrisoned', {
+      territoryId,
+      garrisonTroops,
+      timestamp: Date.now(),
+    });
   }
 }

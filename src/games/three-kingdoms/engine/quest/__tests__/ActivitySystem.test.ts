@@ -120,15 +120,15 @@ describe('ActivitySystem', () => {
   // 3. 里程碑宝箱奖励（#18）
   // ═══════════════════════════════════════════
   describe('里程碑宝箱奖励', () => {
-    it('默认有5个里程碑', () => {
+    it('默认有4个里程碑（PRD §QST-3）', () => {
       const state = system.getActivityState();
-      expect(state.milestones).toHaveLength(5);
+      expect(state.milestones).toHaveLength(4);
     });
 
-    it('里程碑阈值为 20/40/60/80/100', () => {
+    it('里程碑阈值为 40/60/80/100（PRD §QST-3）', () => {
       const state = system.getActivityState();
       const points = state.milestones.map((m) => m.points);
-      expect(points).toEqual([20, 40, 60, 80, 100]);
+      expect(points).toEqual([40, 60, 80, 100]);
     });
 
     it('活跃度不足时不能领取宝箱', () => {
@@ -139,31 +139,30 @@ describe('ActivitySystem', () => {
       const rewards: unknown[] = [];
       system.setRewardCallback((r) => rewards.push(r));
 
-      system.addPoints(20);
+      system.addPoints(40);
       const reward = system.claimMilestone(0);
       expect(reward).not.toBeNull();
-      expect(reward!.resources!.gold).toBe(100);
+      expect(reward!.resources!.gold).toBe(5000);
       expect(rewards).toHaveLength(1);
     });
 
     it('已领取的宝箱不能重复领取', () => {
-      system.addPoints(20);
+      system.addPoints(40);
       system.claimMilestone(0);
       expect(system.claimMilestone(0)).toBeNull();
     });
 
     it('领取宝箱后标记为已领取', () => {
-      system.addPoints(20);
+      system.addPoints(40);
       system.claimMilestone(0);
       const state = system.getActivityState();
       expect(state.milestones[0].claimed).toBe(true);
     });
 
     it('可以领取多个宝箱', () => {
-      system.addPoints(60);
+      system.addPoints(80);
       expect(system.claimMilestone(0)).not.toBeNull();
       expect(system.claimMilestone(1)).not.toBeNull();
-      expect(system.claimMilestone(2)).not.toBeNull();
     });
 
     it('索引越界返回 null', () => {
@@ -173,7 +172,7 @@ describe('ActivitySystem', () => {
 
     it('isMilestoneClaimable 判断正确', () => {
       expect(system.isMilestoneClaimable(0)).toBe(false);
-      system.addPoints(20);
+      system.addPoints(40);
       expect(system.isMilestoneClaimable(0)).toBe(true);
       system.claimMilestone(0);
       expect(system.isMilestoneClaimable(0)).toBe(false);
@@ -181,27 +180,27 @@ describe('ActivitySystem', () => {
 
     it('getNextClaimableIndex 返回正确索引', () => {
       expect(system.getNextClaimableIndex()).toBe(-1);
-      system.addPoints(40);
+      system.addPoints(60);
       expect(system.getNextClaimableIndex()).toBe(0);
       system.claimMilestone(0);
       expect(system.getNextClaimableIndex()).toBe(1);
     });
 
     it('claimAllMilestones 一键领取所有可领取的', () => {
-      system.addPoints(60);
+      system.addPoints(80);
       const rewards = system.claimAllMilestones();
-      expect(rewards).toHaveLength(3); // 20, 40, 60
+      expect(rewards).toHaveLength(3); // 40, 60, 80
     });
 
     it('领取宝箱触发事件', () => {
       const deps = mockDeps();
       const sys = new ActivitySystem();
       sys.init(deps);
-      sys.addPoints(20);
+      sys.addPoints(40);
       sys.claimMilestone(0);
       expect(deps.eventBus.emit).toHaveBeenCalledWith('quest:activityMilestoneClaimed', {
         index: 0,
-        points: 20,
+        points: 40,
       });
     });
   });

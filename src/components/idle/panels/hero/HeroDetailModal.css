@@ -866,3 +866,37 @@
     font-size: 12px;
   }
 }
+
+/* ── R2修复：装备槽位 ── */
+.tk-hero-detail-equipment-section {
+  margin-top: 12px;
+}
+
+.tk-hero-detail-equipment-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.tk-hero-detail-equip-slot {
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--tk-radius-md, 6px);
+  font-size: 12px;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+
+.tk-hero-detail-equip-slot:hover {
+  border-color: rgba(212, 165, 116, 0.3);
+}
+
+.tk-hero-detail-equip-slot-label {
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.tk-hero-detail-equip-slot-content {
+  color: #e8e0d0;
+  font-size: 12px;
+}

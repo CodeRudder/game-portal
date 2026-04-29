@@ -91,6 +91,8 @@ describe('FLOW-18 邮件面板集成测试', () => {
 
     mailSys = new MailSystem();
     mailSys.init(mockDeps());
+    // 清除 _initDefaultData 发送的欢迎邮件，使测试从干净状态开始
+    mailSys.reset();
   });
 
   afterEach(() => {
@@ -498,5 +500,92 @@ describe('FLOW-18 邮件面板集成测试', () => {
     assertStrict(mail !== null, 'FLOW-18-32', '自定义邮件应创建成功');
     assertStrict(mail!.category === 'battle', 'FLOW-18-32', '分类应为 battle');
     assertStrict(mail!.title === '战报', 'FLOW-18-32', '标题应匹配');
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // P0-2: 邮件附件领取后资源到账验证（FLOW-18-33 ~ FLOW-18-36）
+  // ═══════════════════════════════════════════════════════════
+
+  describe('P0-2: 邮件附件领取后资源到账', () => {
+
+    it(accTest('FLOW-18-33', 'P0-2 — 单封领取附件返回正确资源映射'), () => {
+      // 使用全新的MailSystem避免受前面测试影响
+      const freshMailSys = new MailSystem();
+      freshMailSys.init(mockDeps());
+      const mail = freshMailSys.sendMail(makeRewardMail());
+
+      const claimed = freshMailSys.claimAttachments(mail.id);
+
+      // makeRewardMail 附件: gold:100, grain:200
+      assertStrict(Object.keys(claimed).length === 2, 'FLOW-18-33',
+        `应返回2种资源，实际: ${Object.keys(claimed).length}`);
+      assertStrict(claimed.gold === 100, 'FLOW-18-33',
+        `gold应为100，实际: ${claimed.gold}`);
+      assertStrict(claimed.grain === 200, 'FLOW-18-33',
+        `grain应为200，实际: ${claimed.grain}`);
+    });
+
+    it(accTest('FLOW-18-34', 'P0-2 — 领取附件后邮件状态变为已领取'), () => {
+      const freshMailSys = new MailSystem();
+      freshMailSys.init(mockDeps());
+      const mail = freshMailSys.sendMail(makeRewardMail());
+
+      freshMailSys.claimAttachments(mail.id);
+
+      const updated = freshMailSys.getMail(mail.id);
+      assertStrict(updated?.status === 'read_claimed', 'FLOW-18-34',
+        `状态应为read_claimed，实际: ${updated?.status}`);
+      assertStrict(updated?.isRead === true, 'FLOW-18-34',
+        '邮件应标记为已读');
+
+      // 附件都应标记为已领取
+      for (const att of updated!.attachments) {
+        assertStrict(att.claimed === true, 'FLOW-18-34',
+          `附件${att.resourceType}应标记为已领取`);
+      }
+    });
+
+    it(accTest('FLOW-18-35', 'P0-2 — 批量领取返回汇总资源映射'), () => {
+      // 使用全新的MailSystem避免受前面测试影响
+      const freshMailSys = new MailSystem();
+      freshMailSys.init(mockDeps());
+
+      // init() 会发送1封欢迎邮件（带附件），先记录初始邮件数
+      const initialCount = freshMailSys.getMails().length;
+
+      // 发送3封带附件的邮件
+      freshMailSys.sendMail(makeRewardMail());
+      freshMailSys.sendMail(makeRewardMail());
+      freshMailSys.sendMail(makeRewardMail());
+
+      const result = freshMailSys.claimAllAttachments();
+
+      // 领取数量 = 欢迎邮件(1) + 新发邮件(3) = 4封（都有附件）
+      assertStrict(result.count === initialCount + 3, 'FLOW-18-35',
+        `应领取${initialCount + 3}封，实际: ${result.count}`);
+      assertStrict(!!result.claimedResources, 'FLOW-18-35',
+        '应返回资源汇总');
+
+      // 3封 × (100 gold + 200 grain) + 欢迎邮件 (1000 gold + 5 recruitToken)
+      const expectedGold = 300 + 1000;
+      assertStrict(result.claimedResources!.gold === expectedGold, 'FLOW-18-35',
+        `总gold应为${expectedGold}，实际: ${result.claimedResources!.gold}`);
+    });
+
+    it(accTest('FLOW-18-36', 'P0-2 — 重复领取返回空映射'), () => {
+      const freshMailSys = new MailSystem();
+      freshMailSys.init(mockDeps());
+      const mail = freshMailSys.sendMail(makeRewardMail());
+
+      // 第一次领取
+      const first = freshMailSys.claimAttachments(mail.id);
+      assertStrict(Object.keys(first).length === 2, 'FLOW-18-36',
+        '第一次领取应返回资源');
+
+      // 第二次领取
+      const second = freshMailSys.claimAttachments(mail.id);
+      assertStrict(Object.keys(second).length === 0, 'FLOW-18-36',
+        '重复领取应返回空映射');
+    });
   });
 });

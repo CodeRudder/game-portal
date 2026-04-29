@@ -257,6 +257,12 @@ export class TutorialStepExecutor implements ISubsystem {
         return gameState.techCount >= Number(condition.value);
       case 'alliance_joined':
         return gameState.allianceJoined;
+      case 'first_alliance':
+        // PRD: 首次加入好友或公会
+        return gameState.firstAlliance;
+      case 'bag_capacity':
+        // PRD: 背包首次达到80%容量
+        return gameState.bagCapacityPercent >= Number(condition.value);
       default:
         return false;
     }

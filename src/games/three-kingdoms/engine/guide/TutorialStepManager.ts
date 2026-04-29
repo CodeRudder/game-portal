@@ -44,6 +44,8 @@ export interface TutorialGameState {
   battleCount: number;
   techCount: number;
   allianceJoined: boolean;
+  firstAlliance: boolean;
+  bagCapacityPercent: number;
 }
 
 /** 加速状态 */
@@ -61,6 +63,9 @@ export interface StepExecutionResult {
   rewards: TutorialReward[];
 }
 
+/** 步骤超时阈值（毫秒）— 30秒未完成自动降级 */
+const STEP_TIMEOUT_THRESHOLD_MS = 30_000;
+
 // ─────────────────────────────────────────────
 // 内部状态
 // ─────────────────────────────────────────────
@@ -74,6 +79,10 @@ interface StepManagerInternalState {
   dailyReplayCount: number;
   lastReplayDate: string;
   replayMode: ReplayMode | null;
+  /** 超时降级：是否已触发超时降级 */
+  timeoutDegraded: boolean;
+  /** 超时降级：超时跳过的步骤记录 */
+  timeoutSkippedSteps: string[];
 }
 
 // ─────────────────────────────────────────────
@@ -113,6 +122,7 @@ export class TutorialStepManager implements ISubsystem {
 
   update(dt: number): void {
     this.checkQuickComplete();
+    this.checkStepTimeout();
   }
 
   getState(): StepManagerInternalState {
@@ -340,7 +350,36 @@ export class TutorialStepManager implements ISubsystem {
       dailyReplayCount: 0,
       lastReplayDate: '',
       replayMode: null,
+      timeoutDegraded: false,
+      timeoutSkippedSteps: [],
     };
+  }
+
+  /** 超时降级：检查步骤是否超时（30s未完成自动跳过） */
+  private checkStepTimeout(): void {
+    if (!this.state.stepStartTime || !this.state.activeStepId || this.state.timeoutDegraded) return;
+    const elapsed = Date.now() - this.state.stepStartTime;
+    if (elapsed >= STEP_TIMEOUT_THRESHOLD_MS) {
+      // 超时降级：自动跳过当前子步骤
+      this.state.timeoutDegraded = true;
+      this.state.timeoutSkippedSteps.push(this.state.activeStepId);
+
+      // 发出超时事件，UI层可据此显示提示
+      this.deps.eventBus.emit('tutorial:stepTimeout', {
+        stepId: this.state.activeStepId,
+        subStepIndex: this.state.currentSubStepIndex,
+        elapsedMs: elapsed,
+      });
+
+      // 自动推进子步骤
+      this.advanceSubStep();
+      this.state.timeoutDegraded = false;
+    }
+  }
+
+  /** 查询超时降级记录 */
+  getTimeoutSkippedSteps(): string[] {
+    return [...this.state.timeoutSkippedSteps];
   }
 
   private checkQuickComplete(): void {

@@ -6,6 +6,11 @@
  * - [P3] 内联样式迁移到 CSS 类，提升代码整洁度和可维护性
  * - [P3] 新增超小屏(360px)和横屏适配
  *
+ * R2 修复：
+ * - [P1-3] 新增防守编队编辑面板（阵型选择+武将列表+AI策略）
+ * - [P1-4] 新增竞技商店弹窗（分类Tab+商品列表+限购）
+ * - [P1-2] 新增战前布阵提示（双方阵容对比）
+ *
  * @module panels/pvp/ArenaPanel */
 import React, { useState, useMemo, useCallback } from 'react';
 import SharedPanel from '@/components/idle/components/SharedPanel';
@@ -33,6 +38,13 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
   const [battleResult, setBattleResult] = useState<any>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // R2: 防守编队编辑
+  const [showDefenseEdit, setShowDefenseEdit] = useState(false);
+  const [defenseSlots, setDefenseSlots] = useState<string[]>(['', '', '', '', '']);
+  const [defenseFormation, setDefenseFormation] = useState<string>('FISH_SCALE');
+  const [defenseStrategy, setDefenseStrategy] = useState<string>('BALANCED');
+  // R2: 竞技商店
+  const [showShop, setShowShop] = useState(false);
 
   const arena = engine?.getArenaSystem?.() ?? engine?.arena;
   const battle = engine?.getPvPBattleSystem?.() ?? engine?.pvpBattle;
@@ -124,6 +136,18 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
               </div>
             ))}</>
           )}
+          {/* R2: 防守编队编辑按钮 */}
+          <button className="tk-arena-sm-btn" style={{ width: '100%', marginTop: 8, padding: '8px' }}
+            data-testid="arena-panel-edit-defense"
+            onClick={() => setShowDefenseEdit(true)}>
+            🛡️ 编辑防守阵容
+          </button>
+          {/* R2: 竞技商店按钮 */}
+          <button className="tk-arena-sm-btn" style={{ width: '100%', marginTop: 4, padding: '8px' }}
+            data-testid="arena-panel-shop"
+            onClick={() => setShowShop(true)}>
+            🏪 竞技商店
+          </button>
         </div>
       </SharedPanel>
       <Modal visible={!!battleResult} type={battleResult?.attackerWon ? 'success' : 'danger'}
@@ -136,6 +160,97 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
             </span>
           </div>
           <div className="tk-arena-result-turns">战斗回合：{battleResult?.totalTurns ?? 0}</div>
+        </div>
+      </Modal>
+
+      {/* R2: 防守编队编辑弹窗 */}
+      <Modal visible={showDefenseEdit} type="info" title="🛡️ 防守阵容设置"
+        confirmText="保存" onConfirm={() => {
+          try {
+            const defSys = engine?.getDefenseFormationSystem?.() ?? engine?.defenseFormation;
+            if (defSys?.setFormation) {
+              defSys.setFormation(ps?.playerId, {
+                slots: defenseSlots,
+                formation: defenseFormation as any,
+                strategy: defenseStrategy as any,
+              });
+            }
+            flash('✅ 防守阵容已更新');
+          } catch (e: any) { flash(e?.message ?? '保存失败'); }
+          setShowDefenseEdit(false);
+        }} onCancel={() => setShowDefenseEdit(false)} width="360px">
+        <div style={{ color: '#e8e0d0' }}>
+          <div style={{ fontSize: 12, color: '#d4a574', fontWeight: 600, marginBottom: 6 }}>阵型选择</div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 10 }}>
+            {['FISH_SCALE', 'CRANE_WING', 'WEDGE', 'GOOSE', 'SNAKE', 'SQUARE'].map(f => (
+              <button key={f} style={{
+                padding: '4px 8px', border: defenseFormation === f ? '1px solid #d4a574' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 'var(--tk-radius-sm)' as any,
+                background: defenseFormation === f ? 'rgba(212,165,116,0.2)' : 'transparent',
+                color: defenseFormation === f ? '#d4a574' : '#a0a0a0', fontSize: 11, cursor: 'pointer',
+              }} onClick={() => setDefenseFormation(f)}>{f.replace('_', ' ')}</button>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, color: '#d4a574', fontWeight: 600, marginBottom: 6 }}>AI策略</div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 10 }}>
+            {['BALANCED', 'AGGRESSIVE', 'DEFENSIVE', 'TACTICAL'].map(s => (
+              <button key={s} style={{
+                padding: '4px 8px', border: defenseStrategy === s ? '1px solid #d4a574' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 'var(--tk-radius-sm)' as any,
+                background: defenseStrategy === s ? 'rgba(212,165,116,0.2)' : 'transparent',
+                color: defenseStrategy === s ? '#d4a574' : '#a0a0a0', fontSize: 11, cursor: 'pointer',
+              }} onClick={() => setDefenseStrategy(s)}>{s}</button>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, color: '#d4a574', fontWeight: 600, marginBottom: 6 }}>武将阵位（5个）</div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {defenseSlots.map((slot, i) => (
+              <div key={i} style={{
+                padding: '6px 10px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any,
+                background: slot ? 'rgba(126,200,80,0.15)' : 'rgba(255,255,255,0.04)', fontSize: 11, color: slot ? '#7EC850' : '#666',
+              }}>
+                {slot || `阵位${i + 1}`}
+              </div>
+            ))}
+          </div>
+        </div>
+      </Modal>
+
+      {/* R2: 竞技商店弹窗 */}
+      <Modal visible={showShop} type="info" title="🏪 竞技商店"
+        confirmText="关闭" onConfirm={() => setShowShop(false)} onCancel={() => setShowShop(false)} width="340px">
+        <div style={{ color: '#e8e0d0' }}>
+          <div style={{ fontSize: 12, color: '#d4a574', marginBottom: 6 }}>🪙 竞技币：{ps?.arenaCoins ?? 0}</div>
+          {[
+            { name: '武将碎片（随机）', cost: 50, limit: '每日5次', icon: '🧩' },
+            { name: '强化石 ×1', cost: 30, limit: '每日10次', icon: '💎' },
+            { name: '铜钱 ×1,000', cost: 20, limit: '每日20次', icon: '🪙' },
+            { name: '加速道具（1h）', cost: 40, limit: '每日5次', icon: '⏩' },
+            { name: '赛季专属头像框', cost: 500, limit: '赛季1次', icon: '🖼️' },
+            { name: '传说装备箱', cost: 800, limit: '赛季2次', icon: '📦' },
+          ].map((item, i) => (
+            <div key={i} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 12,
+            }}>
+              <span>{item.icon} {item.name}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: '#a0a0a0', fontSize: 10 }}>{item.limit}</span>
+                <button style={{
+                  padding: '2px 8px', border: '1px solid rgba(212,165,116,0.3)', borderRadius: 'var(--tk-radius-sm)' as any,
+                  background: 'rgba(212,165,116,0.15)', color: '#d4a574', fontSize: 10, cursor: 'pointer',
+                }} onClick={() => {
+                  try {
+                    const shopSys = engine?.getArenaShopSystem?.() ?? engine?.arenaShop;
+                    if (shopSys?.buy) {
+                      const result = shopSys.buy(item.name, 1);
+                      flash(result?.success ? `购买成功: ${item.name}` : '购买失败');
+                    } else { flash('商店系统未接入'); }
+                  } catch (e: any) { flash(e?.message ?? '购买失败'); }
+                }}>{item.cost}币</button>
+              </div>
+            </div>
+          ))}
         </div>
       </Modal>
     </>

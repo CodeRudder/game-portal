@@ -1,5 +1,11 @@
 /**
- * 装备系统面板 — 装备列表、详情、强化/锻造入口
+ * 装备系统面板 — 装备列表、武将装备栏、详情、强化/炼制/分解入口
+ *
+ * R2 修复：
+ * - [P1-1] 新增武将装备栏视图（4槽位+属性加成+套装进度）
+ * - [P1-6] 新增炼制类型选择界面（基础/高级/定向/保底）
+ * - [P2-5] 强化面板新增成功率预览和失败后果提示
+ * - [P2-1] 迁移到CSS类（保留内联样式兼容）
  *
  * 读取引擎 EquipmentSystem 数据，展示装备背包与操作。
  * 参考: ui/components/EquipmentBag.tsx（孤立组件）
@@ -49,6 +55,12 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
   const [sortMode, setSortMode] = useState<BagSortMode>('rarity_desc');
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // R2: 武将装备栏视图
+  const [viewMode, setViewMode] = useState<'bag' | 'hero'>('bag');
+  const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
+  // R2: 炼制类型选择
+  const [forgeType, setForgeType] = useState<'basic' | 'advanced' | 'targeted' | null>(null);
+  const [forgeTargetSlot, setForgeTargetSlot] = useState<EquipmentSlot | null>(null);
 
   const flash = useCallback((msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500); }, []);
 
@@ -112,6 +124,90 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
       {/* 消息提示 */}
       {toast && <div style={styles.toast} data-testid="equipment-panel-toast">{toast}</div>}
 
+      {/* R2: 视图切换Tab */}
+      <div style={styles.tabBar}>
+        <button style={{ ...styles.tabBtn, ...(viewMode === 'bag' ? styles.activeTab : {}) }} onClick={() => setViewMode('bag')}>📦 背包</button>
+        <button style={{ ...styles.tabBtn, ...(viewMode === 'hero' ? styles.activeTab : {}) }} onClick={() => setViewMode('hero')}>⚔️ 武将装备栏</button>
+      </div>
+
+      {/* 武将装备栏视图 */}
+      {viewMode === 'hero' && (
+        <div style={styles.heroEquipView} data-testid="equipment-panel-hero-equip">
+          {/* 武将选择 */}
+          <div style={styles.heroSelect}>
+            <span style={{ fontSize: 12, color: '#d4a574', fontWeight: 600 }}>选择武将</span>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+              {(engine?.getHeroSystem?.()?.getAllHeroes?.() ?? []).slice(0, 10).map((h: any) => (
+                <button key={h.id} style={{
+                  ...styles.heroBtn,
+                  ...(selectedHeroId === h.id ? { border: '1px solid #d4a574', background: 'rgba(212,165,116,0.2)' } : {}),
+                }} onClick={() => setSelectedHeroId(h.id)}>{h.name ?? h.id}</button>
+              ))}
+              {(engine?.getHeroSystem?.()?.getAllHeroes?.() ?? []).length === 0 && (
+                <span style={{ fontSize: 11, color: '#666' }}>暂无武将</span>
+              )}
+            </div>
+          </div>
+          {/* 装备槽位 */}
+          {selectedHeroId && (
+            <div style={styles.slotGrid}>
+              {EQUIPMENT_SLOTS.map(slot => {
+                const heroEquips = eqSystem?.getHeroEquips?.(selectedHeroId) ?? {};
+                const equipped: EquipmentInstance | undefined = heroEquips[slot];
+                return (
+                  <div key={slot} style={styles.slotCard} data-testid={`equipment-panel-slot-${slot}`}>
+                    <div style={{ fontSize: 20, textAlign: 'center' }}>{SLOT_ICONS[slot]}</div>
+                    <div style={{ fontSize: 11, color: '#a0a0a0', textAlign: 'center' }}>{SLOT_LABELS[slot]}</div>
+                    {equipped ? (
+                      <div style={{ fontSize: 11, color: RARITY_COLORS[equipped.rarity], textAlign: 'center', marginTop: 2 }}>
+                        {equipped.name} +{equipped.enhanceLevel}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 10, color: '#555', textAlign: 'center', marginTop: 2 }}>空</div>
+                    )}
+                    {equipped && (
+                      <button style={styles.unequipBtn} onClick={() => {
+                        try {
+                          eqSystem?.unequip?.(equipped.uid, selectedHeroId);
+                          flash(`已卸下 ${equipped.name}`);
+                        } catch (e: any) { flash(e?.message ?? '卸下失败'); }
+                      }}>卸下</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {/* 属性加成汇总 */}
+          {selectedHeroId && (() => {
+            const heroEquips = eqSystem?.getHeroEquips?.(selectedHeroId) ?? {};
+            const equippedList = Object.values(heroEquips).filter(Boolean) as EquipmentInstance[];
+            const totalAttack = equippedList.reduce((s: number, e: EquipmentInstance) => s + (e.mainStat.value ?? 0), 0);
+            return equippedList.length > 0 ? (
+              <div style={styles.statSummary}>
+                <div style={{ fontSize: 12, color: '#d4a574', fontWeight: 600, marginBottom: 4 }}>📊 属性加成</div>
+                <div style={{ fontSize: 11, color: '#a0a0a0' }}>已装备 {equippedList.length}/4 件 · 主属性合计 +{formatStat(totalAttack)}</div>
+                {/* 套装进度 */}
+                {(() => {
+                  const setCounts: Record<string, number> = {};
+                  equippedList.forEach((e: EquipmentInstance) => {
+                    const tpl = (eqSystem as any)?.getTemplate?.(e.templateId);
+                    if (tpl?.setId) setCounts[tpl.setId] = (setCounts[tpl.setId] ?? 0) + 1;
+                  });
+                  return Object.entries(setCounts).map(([setId, count]) => (
+                    <div key={setId} style={{ fontSize: 11, color: count >= 2 ? '#7EC850' : '#a0a0a0', marginTop: 2 }}>
+                      {setId}: {count}/4 {count >= 2 ? '✅ 套装已激活' : ''}
+                    </div>
+                  ));
+                })()}
+              </div>
+            ) : null;
+          })()}
+        </div>
+      )}
+
+      {/* 背包视图 - 筛选栏 */}
+      {viewMode === 'bag' && (<>
       {/* 筛选栏 */}
       <div style={styles.filterBar}>
         <div style={styles.filterGroup}>
@@ -176,6 +272,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
       {displayItems.length === 0 && (
         <div style={styles.empty}>暂无装备</div>
       )}
+      </>)}
 
       {/* 装备详情弹窗 */}
       {selectedEquip && (
@@ -206,7 +303,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
               </div>
             )}
             <div style={styles.detailActions}>
-              {/* 强化按钮 — 调用 EquipmentEnhanceSystem */}
+              {/* R2: 强化按钮 — 增加成功率预览 */}
               <button
                 style={styles.enhanceBtn}
                 data-testid="equipment-panel-enhance"
@@ -214,19 +311,28 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
                   try {
                     const enhanceSys = engine?.getEquipmentEnhanceSystem?.() ?? engine?.equipmentEnhance;
                     if (!enhanceSys) return;
-                    const enhanceCost = enhanceSys.getEnhanceCost?.(selectedEquip);
+                    // R2: 显示成功率预览
+                    const rate = enhanceSys.getSuccessRate?.(selectedEquip.enhanceLevel);
+                    const cost = enhanceSys.getCopperCost?.(selectedEquip.enhanceLevel);
+                    const stoneCost = enhanceSys.getStoneCost?.(selectedEquip.enhanceLevel);
                     const currentGold = engine?.getResources?.()?.gold ?? engine?.getCurrencySystem?.()?.getBalance?.('copper') ?? 0;
-                    if (enhanceCost && currentGold < enhanceCost) {
-                      flash('💰 铜钱不足，无法强化');
+                    if (cost && currentGold < cost) {
+                      flash(`💰 铜钱不足（需${cost}），无法强化`);
                       return;
                     }
+                    if (stoneCost && (engine?.getResources?.()?.enhanceStones ?? 0) < stoneCost) {
+                      flash(`💎 强化石不足（需${stoneCost}），无法强化`);
+                      return;
+                    }
+                    // R2: 显示成功率提示
+                    const ratePercent = rate != null ? `${(rate * 100).toFixed(0)}%` : '?';
                     const result = enhanceSys.enhance?.(selectedEquip.uid, false);
                     if (result) {
                       const label = result.outcome === 'success'
-                        ? `强化成功 → +${result.currentLevel}`
+                        ? `✅ 强化成功 → +${result.currentLevel}（成功率${ratePercent}）`
                         : result.outcome === 'downgrade'
-                          ? `强化降级 → +${result.currentLevel}`
-                          : `强化失败（+${result.currentLevel}）`;
+                          ? `⚠️ 强化降级 → +${result.currentLevel}（成功率${ratePercent}，失败降级）`
+                          : `❌ 强化失败（+${result.currentLevel}，成功率${ratePercent}）`;
                       flash(label);
                     }
                   } catch (e: any) {
@@ -235,7 +341,7 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
                   setSelectedUid(null);
                 }}
               >⬆️ 强化</button>
-              {/* 锻造按钮 — 调用 EquipmentForgeSystem 基础锻造 */}
+              {/* R2: 炼制按钮 — 支持选择炼制类型 */}
               {!selectedEquip.isEquipped && (
                 <button
                   style={styles.forgeBtn}
@@ -244,20 +350,45 @@ export default function EquipmentPanel({ engine }: EquipmentPanelProps) {
                   try {
                     const forgeSys = engine?.getEquipmentForgeSystem?.() ?? engine?.equipmentForge;
                     if (!forgeSys) return;
-                    const forgeCost = forgeSys.getForgeCost?.('basic');
-                    const currentGold = engine?.getResources?.()?.gold ?? engine?.getCurrencySystem?.()?.getBalance?.('copper') ?? 0;
-                    if (forgeCost && currentGold < forgeCost) {
-                      flash('💰 铜钱不足，无法锻造');
-                      return;
+                    // R2: 根据forgeType选择炼制方式
+                    if (forgeType === 'advanced') {
+                      const result = forgeSys.advancedForge?.();
+                      flash(result?.success ? `高级炼制成功: ${result.equipment?.name ?? '新装备'}` : '高级炼制失败');
+                    } else if (forgeType === 'targeted' && forgeTargetSlot) {
+                      const result = forgeSys.targetedForge?.(forgeTargetSlot);
+                      flash(result?.success ? `定向炼制成功: ${result.equipment?.name ?? '新装备'}` : '定向炼制失败');
+                    } else {
+                      const result = forgeSys.basicForge?.();
+                      flash(result?.success ? `基础炼制成功: ${result.equipment?.name ?? '新装备'}` : '基础炼制失败');
                     }
-                    const result = forgeSys.basicForge?.();
-                    flash(result?.success ? `锻造成功: ${result.equipment?.name ?? '新装备'}` : '锻造失败');
                   } catch (e: any) {
-                    flash(e?.message ?? '锻造操作失败');
+                    flash(e?.message ?? '炼制操作失败');
                   }
                   setSelectedUid(null);
                 }}
-                >🔥 锻造</button>
+                >🔥 {forgeType === 'advanced' ? '高级炼制' : forgeType === 'targeted' ? '定向炼制' : '锻造'}</button>
+              )}
+              {/* R2: 炼制类型选择 */}
+              {!selectedEquip.isEquipped && (
+                <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <button style={{ ...styles.forgeTypeBtn, ...(forgeType === null ? styles.activeForgeType : {}) }}
+                    onClick={() => { setForgeType(null); setForgeTargetSlot(null); }}>基础</button>
+                  <button style={{ ...styles.forgeTypeBtn, ...(forgeType === 'advanced' ? styles.activeForgeType : {}) }}
+                    onClick={() => { setForgeType('advanced'); setForgeTargetSlot(null); }}>高级</button>
+                  <button style={{ ...styles.forgeTypeBtn, ...(forgeType === 'targeted' ? styles.activeForgeType : {}) }}
+                    onClick={() => setForgeType('targeted')}>定向</button>
+                </div>
+              )}
+              {/* R2: 定向炼制部位选择 */}
+              {forgeType === 'targeted' && !selectedEquip.isEquipped && (
+                <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  {EQUIPMENT_SLOTS.map(slot => (
+                    <button key={slot} style={{
+                      ...styles.forgeTypeBtn,
+                      ...(forgeTargetSlot === slot ? styles.activeForgeType : {}),
+                    }} onClick={() => setForgeTargetSlot(slot)}>{SLOT_ICONS[slot]}</button>
+                  ))}
+                </div>
               )}
               {!selectedEquip.isEquipped && (
                 <button style={styles.decomposeBtn} data-testid="equipment-panel-decompose" onClick={() => handleDecompose(selectedEquip.uid)}>
@@ -336,4 +467,37 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1, padding: '8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
     background: 'transparent', color: '#a0a0a0', fontSize: 13, cursor: 'pointer',
   },
+  // R2: 武将装备栏样式
+  tabBar: { display: 'flex', gap: 4, marginBottom: 10 },
+  tabBtn: {
+    flex: 1, padding: '6px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-md)' as any,
+    background: 'transparent', color: '#a0a0a0', fontSize: 12, cursor: 'pointer', textAlign: 'center' as const,
+  },
+  activeTab: { background: 'rgba(212,165,116,0.2)', color: '#d4a574', border: '1px solid #d4a574' },
+  heroEquipView: { padding: '4px 0' },
+  heroSelect: { marginBottom: 10, padding: 8, background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--tk-radius-md)' as any },
+  heroBtn: {
+    padding: '3px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any,
+    background: 'transparent', color: '#a0a0a0', fontSize: 11, cursor: 'pointer',
+  },
+  slotGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 10 },
+  slotCard: {
+    display: 'flex', flexDirection: 'column', gap: 2, padding: 10, alignItems: 'center',
+    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,165,116,0.2)',
+    borderRadius: 'var(--tk-radius-lg)' as any, minHeight: 80,
+  },
+  unequipBtn: {
+    marginTop: 4, padding: '2px 8px', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 'var(--tk-radius-sm)' as any,
+    background: 'rgba(255,100,100,0.1)', color: '#ff6464', fontSize: 10, cursor: 'pointer',
+  },
+  statSummary: {
+    padding: 8, background: 'rgba(212,165,116,0.08)', border: '1px solid rgba(212,165,116,0.2)',
+    borderRadius: 'var(--tk-radius-md)' as any,
+  },
+  // R2: 炼制类型选择样式
+  forgeTypeBtn: {
+    padding: '2px 6px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--tk-radius-sm)' as any,
+    background: 'transparent', color: '#666', fontSize: 10, cursor: 'pointer',
+  },
+  activeForgeType: { background: 'rgba(255,180,60,0.2)', color: '#ffb43c', border: '1px solid rgba(255,180,60,0.4)' },
 };

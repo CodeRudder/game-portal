@@ -121,10 +121,12 @@ describe('§5 强化系统', () => {
     it('强化后装备属性应增加', () => {
       const eq = genEq(equipment, 'blue');
       const powerBefore = equipment.calculatePower(eq);
-      // 强化3级以确保属性差异明显（避免浮点取整导致差异为0）
+      // 强化5级以确保属性差异明显（避免浮点取整导致差异为0）
       enhance.enhance(eq.uid); // 0→1
       enhance.enhance(eq.uid); // 1→2
       enhance.enhance(eq.uid); // 2→3
+      enhance.enhance(eq.uid); // 3→4
+      enhance.enhance(eq.uid); // 4→5
       const updated = equipment.getEquipment(eq.uid)!;
       const powerAfter = equipment.calculatePower(updated);
       expect(powerAfter).toBeGreaterThan(powerBefore);

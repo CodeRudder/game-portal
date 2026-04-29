@@ -271,13 +271,24 @@ describe('ShopSystem', () => {
       }
     });
 
-    it('filterGoods 按名称排序（默认）', () => {
+    it('filterGoods 默认排序（收藏优先→折扣优先→价格升序）', () => {
       const filter: GoodsFilter = {};
       const items = shop.filterGoods('normal', filter);
+      // 验证默认排序：收藏优先、折扣优先、价格升序
       for (let i = 1; i < items.length; i++) {
-        const nA = GOODS_DEF_MAP[items[i - 1].defId]?.name ?? '';
-        const nB = GOODS_DEF_MAP[items[i].defId]?.name ?? '';
-        expect(nA.localeCompare(nB)).toBeLessThanOrEqual(0);
+        const dA = GOODS_DEF_MAP[items[i - 1].defId];
+        const dB = GOODS_DEF_MAP[items[i].defId];
+        const favA = shop.isFavorite(items[i - 1].defId) ? 0 : 1;
+        const favB = shop.isFavorite(items[i].defId) ? 0 : 1;
+        if (favA !== favB) {
+          expect(favA).toBeLessThan(favB);
+        } else if (items[i - 1].discount !== items[i].discount) {
+          expect(items[i - 1].discount).toBeLessThanOrEqual(items[i].discount);
+        } else {
+          const pA = Object.values(dA?.basePrice ?? {})[0] ?? 0;
+          const pB = Object.values(dB?.basePrice ?? {})[0] ?? 0;
+          expect(pA).toBeLessThanOrEqual(pB);
+        }
       }
     });
 

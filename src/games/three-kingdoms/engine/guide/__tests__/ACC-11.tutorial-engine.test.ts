@@ -37,6 +37,7 @@ import {
   GUIDE_REPLAY_REWARD,
   CORE_STEP_DEFINITIONS,
   STORY_EVENT_DEFINITIONS,
+  TUTORIAL_PHASE_REWARDS,
 } from '../../../core/guide';
 
 // ─────────────────────────────────────────────
@@ -662,6 +663,8 @@ describe('ACC-11 引导系统引擎层验收', () => {
         battleCount: 0,
         techCount: 0,
         allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 0,
       };
 
       const result = mgr.checkExtendedStepTriggers(gameState);
@@ -679,6 +682,8 @@ describe('ACC-11 引导系统引擎层验收', () => {
         battleCount: 3,
         techCount: 0,
         allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 0,
       };
 
       const result = mgr.checkExtendedStepTriggers(gameState);
@@ -696,6 +701,8 @@ describe('ACC-11 引导系统引擎层验收', () => {
         battleCount: 0,
         techCount: 0,
         allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 0,
       };
 
       const result = mgr.checkExtendedStepTriggers(gameState);
@@ -858,6 +865,248 @@ describe('ACC-11 引导系统引擎层验收', () => {
       const step1 = CORE_STEP_DEFINITIONS.find(d => d.stepId === 'step1_castle_overview');
       expect(step1).toBeDefined();
       expect(step1!.subSteps[0].unskippable).toBe(true);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // R2 补充：PRD一致性验证 + 边界场景测试
+  // ═══════════════════════════════════════════════════════════════
+
+  // ─── ACC-11-R2-01: 扩展引导触发条件与PRD一致性 ───
+
+  describe('ACC-11-R2-01: 扩展引导触发条件与PRD一致性', () => {
+    it('step9借将系统：首次加入好友或公会触发（first_alliance）', () => {
+      const sm = createInitializedSM();
+      const mgr = createInitializedStepMgr(sm);
+
+      // 先完成step7/step8
+      const gameState: TutorialGameState = {
+        castleLevel: 3,
+        heroCount: 0,
+        battleCount: 3,
+        techCount: 0,
+        allianceJoined: false,
+        firstAlliance: true,
+        bagCapacityPercent: 0,
+      };
+
+      // step7和step8已完成的情况下，step9应该被触发
+      sm.completeStep('step7_advisor_suggest');
+      sm.completeStep('step8_semi_auto_battle');
+
+      const result = mgr.checkExtendedStepTriggers(gameState);
+      expect(result).not.toBeNull();
+      expect(result!.stepId).toBe('step9_borrow_hero');
+    });
+
+    it('step9借将系统：未加入好友/公会时不触发', () => {
+      const sm = createInitializedSM();
+      const mgr = createInitializedStepMgr(sm);
+
+      const gameState: TutorialGameState = {
+        castleLevel: 10,
+        heroCount: 5,
+        battleCount: 100,
+        techCount: 10,
+        allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 0,
+      };
+
+      sm.completeStep('step7_advisor_suggest');
+      sm.completeStep('step8_semi_auto_battle');
+
+      const result = mgr.checkExtendedStepTriggers(gameState);
+      // step9不应触发，因为firstAlliance=false
+      expect(result?.stepId).not.toBe('step9_borrow_hero');
+    });
+
+    it('step10背包管理：背包达到80%容量触发（bag_capacity）', () => {
+      const sm = createInitializedSM();
+      const mgr = createInitializedStepMgr(sm);
+
+      sm.completeStep('step7_advisor_suggest');
+      sm.completeStep('step8_semi_auto_battle');
+      sm.completeStep('step9_borrow_hero');
+
+      const gameState: TutorialGameState = {
+        castleLevel: 1,
+        heroCount: 0,
+        battleCount: 0,
+        techCount: 0,
+        allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 80,
+      };
+
+      const result = mgr.checkExtendedStepTriggers(gameState);
+      expect(result).not.toBeNull();
+      expect(result!.stepId).toBe('step10_bag_manage');
+    });
+
+    it('step10背包管理：容量不足80%不触发', () => {
+      const sm = createInitializedSM();
+      const mgr = createInitializedStepMgr(sm);
+
+      sm.completeStep('step7_advisor_suggest');
+      sm.completeStep('step8_semi_auto_battle');
+      sm.completeStep('step9_borrow_hero');
+
+      const gameState: TutorialGameState = {
+        castleLevel: 1,
+        heroCount: 0,
+        battleCount: 0,
+        techCount: 0,
+        allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 79,
+      };
+
+      const result = mgr.checkExtendedStepTriggers(gameState);
+      expect(result?.stepId).not.toBe('step10_bag_manage');
+    });
+
+    it('step11科技分支：科技研究至第4节点触发（tech_count: 4）', () => {
+      const sm = createInitializedSM();
+      const mgr = createInitializedStepMgr(sm);
+
+      sm.completeStep('step7_advisor_suggest');
+      sm.completeStep('step8_semi_auto_battle');
+      sm.completeStep('step9_borrow_hero');
+      sm.completeStep('step10_bag_manage');
+
+      const gameState: TutorialGameState = {
+        castleLevel: 1,
+        heroCount: 0,
+        battleCount: 0,
+        techCount: 4,
+        allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 0,
+      };
+
+      const result = mgr.checkExtendedStepTriggers(gameState);
+      expect(result).not.toBeNull();
+      expect(result!.stepId).toBe('step11_tech_branch');
+    });
+
+    it('step12联盟系统：主城等级8触发（building_level: 8）', () => {
+      const sm = createInitializedSM();
+      const mgr = createInitializedStepMgr(sm);
+
+      // 完成前面的扩展步骤
+      sm.completeStep('step7_advisor_suggest');
+      sm.completeStep('step8_semi_auto_battle');
+      sm.completeStep('step9_borrow_hero');
+      sm.completeStep('step10_bag_manage');
+      sm.completeStep('step11_tech_branch');
+
+      const gameState: TutorialGameState = {
+        castleLevel: 8,
+        heroCount: 0,
+        battleCount: 0,
+        techCount: 0,
+        allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 0,
+      };
+
+      const result = mgr.checkExtendedStepTriggers(gameState);
+      expect(result).not.toBeNull();
+      expect(result!.stepId).toBe('step12_alliance');
+    });
+
+    it('step12联盟系统：主城等级不足8不触发', () => {
+      const sm = createInitializedSM();
+      const mgr = createInitializedStepMgr(sm);
+
+      sm.completeStep('step7_advisor_suggest');
+      sm.completeStep('step8_semi_auto_battle');
+      sm.completeStep('step9_borrow_hero');
+      sm.completeStep('step10_bag_manage');
+      sm.completeStep('step11_tech_branch');
+
+      const gameState: TutorialGameState = {
+        castleLevel: 7,
+        heroCount: 0,
+        battleCount: 0,
+        techCount: 0,
+        allianceJoined: true,
+        firstAlliance: false,
+        bagCapacityPercent: 0,
+      };
+
+      const result = mgr.checkExtendedStepTriggers(gameState);
+      expect(result).toBeNull();
+    });
+  });
+
+  // ─── ACC-11-R2-02: 剧情对话行数与PRD一致性 ───
+
+  describe('ACC-11-R2-02: 剧情对话行数与PRD一致性', () => {
+    it('E2黄巾之乱：对话行数≥6行（PRD定义）', () => {
+      const e2 = STORY_EVENT_DEFINITIONS.find(e => e.eventId === 'e2_yellow_turban');
+      expect(e2).toBeDefined();
+      expect(e2!.dialogues.length).toBeGreaterThanOrEqual(6);
+    });
+
+    it('E2黄巾之乱：包含探子角色对话', () => {
+      const e2 = STORY_EVENT_DEFINITIONS.find(e => e.eventId === 'e2_yellow_turban');
+      expect(e2).toBeDefined();
+      const hasScout = e2!.dialogues.some(d => d.speaker === '探子');
+      expect(hasScout).toBe(true);
+    });
+
+    it('E2黄巾之乱：包含张飞角色对话', () => {
+      const e2 = STORY_EVENT_DEFINITIONS.find(e => e.eventId === 'e2_yellow_turban');
+      expect(e2).toBeDefined();
+      const hasZhangFei = e2!.dialogues.some(d => d.speaker === '张飞');
+      expect(hasZhangFei).toBe(true);
+    });
+
+    it('E7七擒孟获：对话行数≥5行（PRD定义）', () => {
+      const e7 = STORY_EVENT_DEFINITIONS.find(e => e.eventId === 'e7_seven_captures');
+      expect(e7).toBeDefined();
+      expect(e7!.dialogues.length).toBeGreaterThanOrEqual(5);
+    });
+
+    it('E7七擒孟获：包含孟获角色对话', () => {
+      const e7 = STORY_EVENT_DEFINITIONS.find(e => e.eventId === 'e7_seven_captures');
+      expect(e7).toBeDefined();
+      const hasMengHuo = e7!.dialogues.some(d => d.speaker === '孟获');
+      expect(hasMengHuo).toBe(true);
+    });
+
+    it('E8三国归一：对话行数≥5行（PRD定义）', () => {
+      const e8 = STORY_EVENT_DEFINITIONS.find(e => e.eventId === 'e8_unification');
+      expect(e8).toBeDefined();
+      expect(e8!.dialogues.length).toBeGreaterThanOrEqual(5);
+    });
+
+    it('E8三国归一：包含诸葛亮角色对话', () => {
+      const e8 = STORY_EVENT_DEFINITIONS.find(e => e.eventId === 'e8_unification');
+      expect(e8).toBeDefined();
+      const hasZhugeLiang = e8!.dialogues.some(d => d.speaker === '诸葛亮');
+      expect(hasZhugeLiang).toBe(true);
+    });
+  });
+
+  // ─── ACC-11-R2-03: 阶段奖励完整性 ───
+
+  describe('ACC-11-R2-03: 阶段奖励完整性', () => {
+    it('步骤12毕业奖励包含蓝色装备箱', () => {
+      const step12Reward = TUTORIAL_PHASE_REWARDS.find(r => r.triggerStepId === 'step12_alliance');
+      expect(step12Reward).toBeDefined();
+      const hasBlueBox = step12Reward!.rewards.some(r => r.rewardId === 'blue_equipment_box');
+      expect(hasBlueBox).toBe(true);
+    });
+
+    it('步骤12毕业奖励包含铜钱×3000', () => {
+      const step12Reward = TUTORIAL_PHASE_REWARDS.find(r => r.triggerStepId === 'step12_alliance');
+      expect(step12Reward).toBeDefined();
+      const copperReward = step12Reward!.rewards.find(r => r.rewardId === 'copper');
+      expect(copperReward).toBeDefined();
+      expect(copperReward!.amount).toBe(3000);
     });
   });
 });

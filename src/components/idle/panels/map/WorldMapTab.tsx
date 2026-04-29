@@ -32,6 +32,8 @@ import type {
 } from '@/games/three-kingdoms/core/map';
 import TerritoryInfoPanel from './TerritoryInfoPanel';
 import SiegeConfirmModal from './SiegeConfirmModal';
+import SiegeResultModal from './SiegeResultModal';
+import type { SiegeResultData } from './SiegeResultModal';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import './WorldMapTab.css';
 
@@ -112,6 +114,13 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
   const [siegeTarget, setSiegeTarget] = useState<TerritoryData | null>(null);
   const [siegeVisible, setSiegeVisible] = useState(false);
 
+  // ── 攻城结果弹窗状态（P0-3） ──
+  const [siegeResultData, setSiegeResultData] = useState<SiegeResultData | null>(null);
+  const [siegeResultVisible, setSiegeResultVisible] = useState(false);
+
+  // ── P1-1: 兵力部署滑块状态 ──
+  const [selectedTroops, setSelectedTroops] = useState<number>(0);
+
   // ── 筛选后的领土 ──
   const filteredTerritories = useMemo(() => {
     let result = territories;
@@ -170,34 +179,13 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
       if (target) {
         setSiegeTarget(target);
         setSiegeVisible(true);
+        // P1-1: 初始化兵力选择为可用兵力（默认全兵）
+        const troops = engine?.getResourceAmount?.('troops') ?? 0;
+        setSelectedTroops(troops);
       }
     },
-    [onSiegeTerritory, territories],
+    [onSiegeTerritory, territories, engine],
   );
-
-  // ── 攻城确认弹窗：条件校验 ──
-  const siegeConditionResult = useMemo(() => {
-    if (!siegeTarget || !engine) return null;
-    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
-    if (!mapSystem?.checkSiegeConditions) return null;
-    try {
-      return mapSystem.checkSiegeConditions(siegeTarget.id);
-    } catch {
-      return { canSiege: true };
-    }
-  }, [siegeTarget, engine, snapshotVersion]);
-
-  // ── 攻城确认弹窗：消耗预估 ──
-  const siegeCost = useMemo(() => {
-    if (!siegeTarget || !engine) return null;
-    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
-    if (!mapSystem?.calculateSiegeCost) return null;
-    try {
-      return mapSystem.calculateSiegeCost(siegeTarget.id);
-    } catch {
-      return { troops: 0, grain: 0 };
-    }
-  }, [siegeTarget, engine, snapshotVersion]);
 
   // ── 攻城确认弹窗：可用兵力/粮草 ──
   const availableTroops = useMemo(() => {
@@ -210,31 +198,77 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     return engine.getResourceAmount?.('grain') ?? 0;
   }, [engine, snapshotVersion]);
 
+  // ── 攻城确认弹窗：条件校验 ──
+  const siegeConditionResult = useMemo(() => {
+    if (!siegeTarget || !engine) return null;
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    if (!siegeSystem?.checkSiegeConditions) return null;
+    try {
+      return siegeSystem.checkSiegeConditions(siegeTarget.id, 'player', availableTroops, availableGrain);
+    } catch {
+      return { canSiege: true };
+    }
+  }, [siegeTarget, engine, snapshotVersion, availableTroops, availableGrain]);
+
+  // ── 攻城确认弹窗：消耗预估 ──
+  const siegeCost = useMemo(() => {
+    if (!siegeTarget || !engine) return null;
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    if (!siegeSystem?.getSiegeCostById && !siegeSystem?.calculateSiegeCost) return null;
+    try {
+      return siegeSystem.getSiegeCostById?.(siegeTarget.id) ?? siegeSystem.calculateSiegeCost(siegeTarget.id);
+    } catch {
+      return { troops: 0, grain: 0 };
+    }
+  }, [siegeTarget, engine, snapshotVersion]);
+
   // ── 攻城确认弹窗：每日次数和冷却 ──
   const dailySiegesRemaining = useMemo(() => {
     if (!engine) return null;
-    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
-    return mapSystem?.getDailySiegesRemaining?.() ?? null;
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    return siegeSystem?.getDailySiegesRemaining?.() ?? siegeSystem?.getRemainingDailySieges?.() ?? null;
   }, [engine, snapshotVersion]);
 
   const cooldownRemainingMs = useMemo(() => {
     if (!engine) return 0;
-    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
-    return mapSystem?.getCooldownRemaining?.() ?? 0;
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    return siegeSystem?.getCooldownRemaining?.() ?? 0;
   }, [engine, snapshotVersion]);
 
   // ── 确认攻城执行 ──
   const handleSiegeConfirm = useCallback(() => {
     if (!siegeTarget || !engine) return;
-    const mapSystem = engine.getMapSystem?.() ?? engine?.map;
-    if (mapSystem?.executeSiege) {
-      const result = mapSystem.executeSiege(siegeTarget.id);
+
+    // P0-2 修复：正确获取攻城系统并执行攻城
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    if (siegeSystem?.executeSiege) {
+      // 从引擎获取当前可用兵力和粮草
+      const currentTroops = engine.getResourceAmount?.('troops') ?? availableTroops;
+      const currentGrain = engine.getResourceAmount?.('grain') ?? availableGrain;
+
+      const result = siegeSystem.executeSiege(siegeTarget.id, 'player', currentTroops, currentGrain);
+
+      // 将 SiegeResult 转换为 SiegeResultData 格式
+      const siegeResultData: SiegeResultData = {
+        launched: result.launched,
+        victory: result.victory,
+        targetId: result.targetId,
+        targetName: result.targetName,
+        cost: result.cost,
+        capture: result.capture,
+        failureReason: result.failureReason,
+        defeatTroopLoss: result.defeatTroopLoss,
+      };
+
+      // P0-3: 显示攻城结果弹窗
+      setSiegeResultData(siegeResultData);
+      setSiegeResultVisible(true);
       // 攻城后清除选中状态，避免残留旧数据
       setSelectedId(null);
     }
     setSiegeVisible(false);
     setSiegeTarget(null);
-  }, [siegeTarget, engine]);
+  }, [siegeTarget, engine, availableTroops, availableGrain]);
 
   // ── 取消攻城弹窗 ──
   const handleSiegeCancel = useCallback(() => {
@@ -266,6 +300,15 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     const totalGold = productionSummary?.totalProduction.gold ?? 0;
     return { playerCount, totalCount, totalGrain, totalGold };
   }, [territories, productionSummary]);
+
+  // ── 攻城每日次数和冷却信息 ──
+  const siegeInfo = useMemo(() => {
+    if (!engine) return null;
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    if (!siegeSystem) return null;
+    const remaining = siegeSystem.getRemainingDailySieges?.() ?? 0;
+    return { remainingDaily: remaining };
+  }, [engine, snapshotVersion]);
 
   return (
     <div className="tk-worldmap-tab" data-testid="worldmap-tab">
@@ -407,6 +450,47 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
             </div>
           </div>
 
+          {/* 攻城信息面板（每日次数+冷却） */}
+          {siegeInfo && (
+            <div style={{ padding: '6px 10px', marginBottom: 8, borderRadius: 6, background: 'rgba(212,165,116,0.06)', border: '1px solid rgba(212,165,116,0.12)', fontSize: 11 }}
+              data-testid="siege-info-panel">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#a0a0a0' }}>⚔️ 今日攻城</span>
+                <span style={{ color: siegeInfo.remainingDaily > 0 ? '#7EC850' : '#e74c3c', fontWeight: 600 }}>
+                  {siegeInfo.remainingDaily > 0 ? `剩余 ${siegeInfo.remainingDaily} 次` : '已用完'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* 小地图缩略图 */}
+          <div style={{ padding: '6px 0', marginBottom: 8 }} data-testid="worldmap-minimap">
+            <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 4 }}>🗺️ 缩略图</div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(6, 1fr)',
+              gap: 2,
+              padding: 4,
+              background: 'rgba(0,0,0,0.2)',
+              borderRadius: 4,
+              maxWidth: 180,
+            }}>
+              {territories.slice(0, 24).map((t) => (
+                <div
+                  key={t.id}
+                  style={{
+                    width: 12, height: 12, borderRadius: 2,
+                    background: t.ownership === 'player' ? '#7EC850' : t.ownership === 'enemy' ? '#e74c3c' : 'rgba(255,255,255,0.15)',
+                    border: selectedId === t.id ? '1px solid #d4a574' : 'none',
+                    cursor: 'pointer',
+                  }}
+                  title={t.name}
+                  onClick={() => handleSelectTerritory(t.id)}
+                />
+              ))}
+            </div>
+          </div>
+
           {/* 热力图图例 */}
           {showHeatmap && (
             <div className="tk-worldmap-legend" data-testid="worldmap-legend">
@@ -437,8 +521,20 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
         availableGrain={availableGrain}
         dailySiegesRemaining={dailySiegesRemaining}
         cooldownRemainingMs={cooldownRemainingMs}
+        selectedTroops={selectedTroops}
+        onTroopsChange={setSelectedTroops}
         onConfirm={handleSiegeConfirm}
         onCancel={handleSiegeCancel}
+      />
+
+      {/* P0-3: 攻城结果弹窗 ── */}
+      <SiegeResultModal
+        visible={siegeResultVisible}
+        result={siegeResultData}
+        onClose={() => {
+          setSiegeResultVisible(false);
+          setSiegeResultData(null);
+        }}
       />
     </div>
   );

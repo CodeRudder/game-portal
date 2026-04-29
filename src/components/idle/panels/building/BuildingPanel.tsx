@@ -102,6 +102,13 @@ function getProductionText(type: BuildingType, engine: ThreeKingdomsEngine): str
     case 'market': return `+${prod.toFixed(1)} 铜钱/s`;
     case 'barracks': return `+${prod.toFixed(1)} 兵力/s`;
     case 'academy': return `+${prod.toFixed(1)} 科技点/s`;
+    case 'smithy': return `+${prod.toFixed(1)} 材料/h`;
+    case 'clinic': return `恢复 +${prod.toFixed(0)}%`;
+    case 'wall': {
+      const defense = engine.building?.getWallDefense?.() ?? 0;
+      return `城防 ${defense} / 防御 +${prod.toFixed(0)}%`;
+    }
+    case 'castle': return `全资源 +${prod}%`;
     default: return BUILDING_EFFECTS[type];
   }
 }

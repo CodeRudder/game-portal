@@ -573,9 +573,9 @@ describe('FLOW-08 商店Tab集成测试', () => {
   it(accTest('FLOW-08-40', '折扣价格计算正确 — 折扣价=原价×折扣率向上取整'), async () => {
     const { engine } = makeEngine();
     const shopSystem = engine.getShopSystem();
-    // spd_daily_pack: basePrice={ingot:30}, discount=0.8 → 30*0.8=24
+    // spd_daily_pack: basePrice={ingot:198}, discount=0.8 → 198*0.8=158.4→ceil→159
     const finalPrice = shopSystem.calculateFinalPrice('spd_daily_pack', 'normal');
-    expect(finalPrice).toEqual({ ingot: 24 });
+    expect(finalPrice).toEqual({ ingot: 159 });
   });
 
   it(accTest('FLOW-08-41', '收藏功能 — 点击收藏按钮切换收藏状态'), async () => {

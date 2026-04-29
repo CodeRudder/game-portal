@@ -63,6 +63,11 @@ export class TutorialStorage implements ISubsystem {
   private deps!: ISystemDeps;
   private _stateMachine!: TutorialStateMachine;
 
+  /** 内存回退存储 — localStorage不可用时使用 */
+  private memoryStore: Map<string, string> = new Map();
+  /** 是否使用内存回退 */
+  private usingMemoryFallback: boolean = false;
+
   // ─── 依赖注入 ───────────────────────────
 
   /** 注入状态机 */
@@ -74,6 +79,8 @@ export class TutorialStorage implements ISubsystem {
 
   init(deps: ISystemDeps): void {
     this.deps = deps;
+    // 检测localStorage是否可用
+    this.detectStorageAvailability();
   }
 
   update(_dt: number): void {
@@ -97,7 +104,7 @@ export class TutorialStorage implements ISubsystem {
     try {
       const data = this._stateMachine.serialize();
       const json = JSON.stringify(data);
-      localStorage.setItem(STORAGE_KEY, json);
+      this.storageSet(STORAGE_KEY, json);
       this._lastSaveTime = Date.now();
       return { success: true };
     } catch (e) {
@@ -113,7 +120,7 @@ export class TutorialStorage implements ISubsystem {
    */
   load(): StorageResult & { data?: TutorialSaveData } {
     try {
-      const json = localStorage.getItem(STORAGE_KEY);
+      const json = this.storageGet(STORAGE_KEY);
       if (!json) {
         return { success: true, data: undefined };
       }
@@ -189,7 +196,7 @@ export class TutorialStorage implements ISubsystem {
    */
   fullReset(): StorageResult {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      this.storageRemove(STORAGE_KEY);
       this._stateMachine.reset();
       this._lastSaveTime = null;
       return { success: true };
@@ -227,7 +234,7 @@ export class TutorialStorage implements ISubsystem {
    * 检测是否首次启动
    */
   detectFirstLaunch(): FirstLaunchResult {
-    const launched = localStorage.getItem(FIRST_LAUNCH_KEY);
+    const launched = this.storageGet(FIRST_LAUNCH_KEY);
     if (launched === null) {
       // 从未启动过
       return { isFirstLaunch: true, existingData: null };
@@ -243,14 +250,14 @@ export class TutorialStorage implements ISubsystem {
    * 标记已启动（首次启动流程完成后调用）
    */
   markLaunched(): void {
-    localStorage.setItem(FIRST_LAUNCH_KEY, Date.now().toString());
+    this.storageSet(FIRST_LAUNCH_KEY, Date.now().toString());
   }
 
   /**
    * 清除首次启动标记（调试用）
    */
   clearLaunchMark(): void {
-    localStorage.removeItem(FIRST_LAUNCH_KEY);
+    this.storageRemove(FIRST_LAUNCH_KEY);
   }
 
   // ─── 查询 API ───────────────────────────
@@ -266,20 +273,82 @@ export class TutorialStorage implements ISubsystem {
    * 是否有存档数据
    */
   hasSaveData(): boolean {
-    return localStorage.getItem(STORAGE_KEY) !== null;
+    return this.storageGet(STORAGE_KEY) !== null;
   }
 
   /**
    * 获取存档大小（字节估算）
    */
   getSaveDataSize(): number {
-    const json = localStorage.getItem(STORAGE_KEY);
+    const json = this.storageGet(STORAGE_KEY);
     return json ? new Blob([json]).size : 0;
   }
 
   // ─── 内部方法 ───────────────────────────
 
   private _lastSaveTime: number | null = null;
+
+  /** 检测localStorage是否可用 */
+  private detectStorageAvailability(): void {
+    try {
+      const testKey = '__tk_storage_test__';
+      localStorage.setItem(testKey, '1');
+      localStorage.removeItem(testKey);
+      this.usingMemoryFallback = false;
+    } catch {
+      this.usingMemoryFallback = true;
+    }
+  }
+
+  /** 统一存储读取 — 自动降级到内存 */
+  private storageGet(key: string): string | null {
+    if (this.usingMemoryFallback) {
+      return this.memoryStore.get(key) ?? null;
+    }
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      // 运行时降级
+      this.usingMemoryFallback = true;
+      return this.memoryStore.get(key) ?? null;
+    }
+  }
+
+  /** 统一存储写入 — 自动降级到内存 */
+  private storageSet(key: string, value: string): boolean {
+    if (this.usingMemoryFallback) {
+      this.memoryStore.set(key, value);
+      return true;
+    }
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch {
+      // 运行时降级
+      this.usingMemoryFallback = true;
+      this.memoryStore.set(key, value);
+      return true;
+    }
+  }
+
+  /** 统一存储删除 — 自动降级到内存 */
+  private storageRemove(key: string): void {
+    if (this.usingMemoryFallback) {
+      this.memoryStore.delete(key);
+    } else {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        this.usingMemoryFallback = true;
+        this.memoryStore.delete(key);
+      }
+    }
+  }
+
+  /** 是否正在使用内存回退 */
+  isUsingMemoryFallback(): boolean {
+    return this.usingMemoryFallback;
+  }
 
   /** 验证存档数据格式 */
   private validateSaveData(data: TutorialSaveData): boolean {

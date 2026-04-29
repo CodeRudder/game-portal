@@ -126,7 +126,7 @@ export interface TutorialStepDefinition {
 /** 扩展步骤触发条件 (#7) */
 export interface TutorialStepTriggerCondition {
   /** 条件类型 */
-  type: 'building_level' | 'hero_count' | 'battle_count' | 'tech_count' | 'alliance_joined';
+  type: 'building_level' | 'hero_count' | 'battle_count' | 'tech_count' | 'alliance_joined' | 'first_alliance' | 'bag_capacity';
   /** 条件值 */
   value: number | string;
 }

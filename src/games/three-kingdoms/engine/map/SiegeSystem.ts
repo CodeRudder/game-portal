@@ -137,7 +137,14 @@ export class SiegeSystem implements ISubsystem {
     this.captureTimestamps.clear();
   }
 
-  update(_dt: number): void { /* 预留 */ }
+  update(_dt: number): void {
+    // P1-2: 自动检查跨天重置每日攻城次数
+    const today = new Date().toISOString().slice(0, 10);
+    if (this.lastSiegeDate && this.lastSiegeDate !== today) {
+      this.dailySiegeCount = 0;
+      this.lastSiegeDate = '';
+    }
+  }
 
   getState(): SiegeState {
     return {
@@ -412,6 +419,10 @@ export class SiegeSystem implements ISubsystem {
       // PRD §7.5: 自动驻防（50%兵力上限）
       this.autoGarrison(targetId, attackerOwner, cost.troops);
       result.capture = { territoryId: targetId, newOwner: attackerOwner, previousOwner };
+
+      // P0-3修复：直接扣减攻城资源（不再依赖事件通知）
+      this.deductSiegeResources(cost);
+
       this.deps?.eventBus.emit('siege:victory', {
         territoryId: targetId, territoryName: territory.name,
         newOwner: attackerOwner, previousOwner, cost,
@@ -422,6 +433,10 @@ export class SiegeSystem implements ISubsystem {
       const defeatTroopLoss = Math.floor(cost.troops * 0.3);
       result.failureReason = '攻城失败，兵力不足以攻破防线';
       result.defeatTroopLoss = defeatTroopLoss;
+
+      // P0-3修复：失败时也直接扣减资源（30%兵力+全部粮草）
+      this.deductSiegeResources({ troops: defeatTroopLoss, grain: cost.grain });
+
       this.deps?.eventBus.emit('siege:defeat', {
         territoryId: targetId, territoryName: territory.name, cost,
         defeatTroopLoss,
@@ -430,6 +445,19 @@ export class SiegeSystem implements ISubsystem {
 
     this.history.push(result);
     return result;
+  }
+
+  /** 直接扣减攻城资源（P0-3修复） */
+  private deductSiegeResources(cost: SiegeCost): void {
+    try {
+      const resourceSys = this.deps?.registry?.get<any>('resource');
+      if (resourceSys) {
+        if (cost.troops > 0) resourceSys.consume?.('troops', cost.troops);
+        if (cost.grain > 0) resourceSys.consume?.('grain', cost.grain);
+      }
+    } catch {
+      // 资源系统不可用时静默处理（测试环境）
+    }
   }
 
   /** 获取 TerritorySystem 子系统 */

@@ -22,6 +22,8 @@ import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
 import PrestigePanel from '@/components/idle/panels/prestige/PrestigePanel';
 import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import NPCInfoModal from '@/components/idle/panels/npc/NPCInfoModal';
+import SiegeResultModal from '@/components/idle/panels/map/SiegeResultModal';
+import type { SiegeResultData } from '@/components/idle/panels/map/SiegeResultModal';
 import type { NPCData } from '@/games/three-kingdoms/core/npc';
 import type { TabId, FeaturePanelId } from './TabBar';
 
@@ -84,6 +86,10 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
 
   // ── NPC 弹窗状态 ──
   const [selectedNPC, setSelectedNPC] = React.useState<NPCData | null>(null);
+
+  // ── 攻城结果弹窗状态（P0-3） ──
+  const [siegeResult, setSiegeResult] = React.useState<SiegeResultData | null>(null);
+  const [siegeResultVisible, setSiegeResultVisible] = React.useState(false);
 
   const handleSelectNPC = React.useCallback((npcId: string) => {
     const npc = npcData.find((n) => n.id === npcId);
@@ -165,13 +171,9 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
                       availableTroops,
                       availableGrain,
                     );
-                    if (result.victory) {
-                      Toast.success(`攻城成功！占领了 ${result.targetName}`);
-                    } else if (!result.launched) {
-                      Toast.warning(`无法攻城：${result.failureReason ?? '条件不满足'}`);
-                    } else {
-                      Toast.warning(`攻城失败：${result.targetName} 防守坚固`);
-                    }
+                    // P0-3: 显示攻城结果弹窗
+                    setSiegeResult(result);
+                    setSiegeResultVisible(true);
                   } catch (e) {
                     Toast.danger(`攻城异常：${e instanceof Error ? e.message : String(e)}`);
                   }
@@ -261,6 +263,16 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
             return null;
         }
       })()}
+
+      {/* P0-3: 攻城结果弹窗 — 全局显示，不绑定特定Tab */}
+      <SiegeResultModal
+        visible={siegeResultVisible}
+        result={siegeResult}
+        onClose={() => {
+          setSiegeResultVisible(false);
+          setSiegeResult(null);
+        }}
+      />
     </div>
   );
 };

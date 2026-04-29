@@ -355,6 +355,42 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({
               currentLevel={general.level}
               onAwakenComplete={onEnhanceComplete}
             />
+
+            {/* R2修复：装备槽位显示 */}
+            <div className="tk-hero-detail-equipment-section" data-testid="hero-detail-equipment">
+              <h4 className="tk-hero-detail-section-title">装备槽位</h4>
+              <div className="tk-hero-detail-equipment-slots">
+                {(['weapon', 'armor', 'accessory', 'mount'] as const).map(slot => {
+                  const equipSystem = (engine as any).getEquipmentSystem?.();
+                  const equips = equipSystem?.getHeroEquips?.(general.id);
+                  const equipped = equips?.[slot];
+                  const SLOT_LABELS: Record<string, string> = { weapon: '⚔️ 武器', armor: '🛡️ 防具', accessory: '💍 饰品', mount: '🐴 坐骑' };
+                  const SLOT_COLORS: Record<string, string> = { weapon: '#E53935', armor: '#1E88E5', accessory: '#AB47BC', mount: '#43A047' };
+                  return (
+                    <div key={slot} className="tk-hero-detail-equip-slot" data-testid={`hero-equip-slot-${slot}`}
+                      style={{ opacity: equipped ? 1 : 0.5 }}>
+                      <div className="tk-hero-detail-equip-slot-label" style={{ color: SLOT_COLORS[slot] || '#d4a574' }}>
+                        {SLOT_LABELS[slot]}
+                      </div>
+                      <div className="tk-hero-detail-equip-slot-content">
+                        {equipped ? (
+                          <span style={{
+                            color: (equipped.rarity === 'legendary' || equipped.rarity === 'mythic') ? '#ff9800'
+                              : equipped.rarity === 'epic' ? '#f44336'
+                              : equipped.rarity === 'rare' ? '#AB47BC'
+                              : '#e8e0d0'
+                          }}>
+                            {equipped.name || equipped.templateId || '已装备'}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#666' }}>空</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 

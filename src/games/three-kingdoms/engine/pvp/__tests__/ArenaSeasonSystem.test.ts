@@ -138,8 +138,8 @@ describe('ArenaSeasonSystem — 赛季结算', () => {
   });
 
   test('结算时积分重置到当前段位最低值', () => {
-    // GOLD_IV: minScore = 3400
-    const player = createPlayerState(3500, 'GOLD_IV');
+    // GOLD_IV: minScore = 3400 (PRD PVP-3对齐后)
+    const player = createPlayerState(3600, 'GOLD_IV');
     const result = system.settleSeason(player, 'GOLD_IV');
 
     expect(result.resetScore).toBe(3400);
@@ -277,11 +277,11 @@ describe('ArenaSeasonSystem — 每日段位奖励', () => {
   });
 
   test('发放每日奖励增加竞技币', () => {
-    const player = createPlayerState(500, 'SILVER_V');
+    const player = createPlayerState(1500, 'SILVER_V');
     const result = system.grantDailyReward(player);
 
-    expect(result.reward.arenaCoin).toBe(35); // SILVER_V dailyReward
-    expect(result.state.arenaCoins).toBe(player.arenaCoins + 35);
+    expect(result.reward.arenaCoin).toBe(20); // PRD PVP-3: SILVER_V 竞技币×20
+    expect(result.state.arenaCoins).toBe(player.arenaCoins + 20);
   });
 
   test('高段位每日奖励更好', () => {

@@ -120,12 +120,12 @@ describe('V1 RES-FLOW 资源系统', () => {
       expect(tokenAfter).toBeGreaterThan(tokenBefore);
     });
 
-    it('should have recruitToken initial value of 10 (newbie pack) [RES-FLOW-1 步骤8]', () => {
-      // R5: 新手礼包 +10 个求贤令，让新玩家立即体验招募功能
-      // recruitToken 初始值从 0 改为 10
+    it('should have recruitToken initial value of 30 (newbie pack) [RES-FLOW-1 步骤8]', () => {
+      // R5: 新手礼包 +30 个招贤令，配合消耗1/次让新玩家充分体验招募功能
+      // recruitToken 初始值从 0 改为 30（PRD已更新初始招贤令为30）
       const sim = createSim();
 
-      expect(sim.getResource('recruitToken')).toBe(10);
+      expect(sim.getResource('recruitToken')).toBe(30);
     });
   });
 

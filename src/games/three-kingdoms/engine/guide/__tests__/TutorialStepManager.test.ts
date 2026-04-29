@@ -240,6 +240,8 @@ describe('TutorialStepManager', () => {
         battleCount: 0,
         techCount: 0,
         allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 0,
       };
       const triggered = stepMgr.checkExtendedStepTriggers(gameState);
       expect(triggered).not.toBeNull();
@@ -254,6 +256,8 @@ describe('TutorialStepManager', () => {
         battleCount: 0,
         techCount: 0,
         allianceJoined: false,
+        firstAlliance: false,
+        bagCapacityPercent: 0,
       };
       const triggered = stepMgr.checkExtendedStepTriggers(gameState);
       expect(triggered).toBeNull();

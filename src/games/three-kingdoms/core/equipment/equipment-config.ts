@@ -62,22 +62,22 @@ export const TEMPLATE_MAP = new Map(EQUIPMENT_TEMPLATES.map(t => [t.id, t]));
 // 2. 品质倍率
 // ─────────────────────────────────────────────
 
-/** 品质主属性倍率 */
+/** 品质主属性倍率 — 与PRD EQP-2对齐 */
 export const RARITY_MAIN_STAT_MULTIPLIER: Record<EquipmentRarity, number> = {
   white: 1.0,
   green: 1.3,
-  blue: 1.7,
-  purple: 2.2,
+  blue: 1.7,   // PRD: 1.7x
+  purple: 2.2,  // PRD: 2.2x
   gold: 2.5,
 };
 
-/** 品质副属性倍率 */
+/** 品质副属性倍率 — 与PRD EQP-2对齐 */
 export const RARITY_SUB_STAT_MULTIPLIER: Record<EquipmentRarity, number> = {
-  white: 1.0,
-  green: 1.2,
-  blue: 1.5,
-  purple: 2.0,
-  gold: 2.8,
+  white: 0.5,   // PRD: 0.5x（原1.0x）
+  green: 0.8,   // PRD: 0.8x（原1.2x）
+  blue: 1.0,    // PRD: 1.0x（原1.5x）
+  purple: 1.2,  // PRD: 1.2x（原2.0x）
+  gold: 1.5,    // PRD: 1.5x（原2.8x）
 };
 
 /** 品质强化系数加成 */
@@ -128,31 +128,31 @@ export const FORGE_PITY_THRESHOLDS = {
 // 4. 强化配置
 // ─────────────────────────────────────────────
 
-/** 强化成功率曲线（索引=强化等级） */
+/** 强化成功率曲线（索引=强化等级）— 与PRD EQP-4对齐 */
 export const ENHANCE_SUCCESS_RATES = [
-  1.0,   // 0→1: 100%
-  1.0,   // 1→2: 100%
-  1.0,   // 2→3: 100%
-  0.80,  // 3→4: 80%
-  0.70,  // 4→5: 70%
-  0.55,  // 5→6: 55%
-  0.40,  // 6→7: 40%
-  0.30,  // 7→8: 30%
-  0.20,  // 8→9: 20%
-  0.10,  // 9→10: 10%
-  0.05,  // 10→11: 5%
-  0.03,  // 11→12: 3%
-  0.02,  // 12→13: 2%
-  0.01,  // 13→14: 1%
-  0.01,  // 14→15: 1%
+  1.0,   // 0→1: 100%  (PRD: +1→+2 100%)
+  1.0,   // 1→2: 100%  (PRD: +2→+3 100%)
+  1.0,   // 2→3: 100%  (PRD: +3→+4 100%)
+  0.80,  // 3→4: 80%   (PRD: +4→+5 80%)
+  0.70,  // 4→5: 70%   (PRD: +5→+6 70%)
+  0.55,  // 5→6: 55%   (PRD: +6→+7 55%)
+  0.40,  // 6→7: 40%   (PRD: +7→+8 40%)
+  0.30,  // 7→8: 30%   (PRD: +8→+9 30%)
+  0.20,  // 8→9: 20%   (PRD: +9→+10 20%)
+  0.10,  // 9→10: 10%  (PRD: +10→+11 10%)
+  0.07,  // 10→11: 7%  (PRD: +11→+12 7%)
+  0.05,  // 11→12: 5%  (PRD: +12→+13 5%)
+  0.03,  // 12→13: 3%  (PRD: +13→+14 3%)
+  0.02,  // 13→14: 2%  (PRD: +14→+15 2%)
+  0.01,  // 14→15: 1%  (PRD未定义+15，沿用最低)
 ];
 
-/** 强化系统配置 */
+/** 强化系统配置 — 与PRD EQP-4对齐 */
 export const ENHANCE_CONFIG: EnhanceConfig = {
   maxLevel: 15,
   safeLevel: 5,
   successRates: ENHANCE_SUCCESS_RATES,
-  downgradeChance: 0.5,
+  downgradeChance: 0.5,  // PRD: 失败50%概率降1级
   protectionCost: { 6: 1, 7: 1, 8: 2, 9: 2, 10: 3, 11: 3, 12: 4, 13: 5, 14: 5, 15: 6 },
   costConfig: {
     baseCopper: 100,
@@ -343,13 +343,13 @@ export const RARITY_ENHANCE_CAP: Record<EquipmentRarity, number> = {
 // 13. 品质副属性数量
 // ─────────────────────────────────────────────
 
-/** 各品质副属性数量范围 [最小, 最大] */
+/** 各品质副属性数量范围 [最小, 最大] — 与PRD EQP-2对齐 */
 export const RARITY_SUB_STAT_COUNT: Record<EquipmentRarity, [number, number]> = {
-  white: [0, 1],
-  green: [1, 1],
-  blue: [2, 3],
-  purple: [3, 4],
-  gold: [4, 4],
+  white: [0, 1],   // PRD: 0~1条
+  green: [1, 1],   // PRD: 1条
+  blue: [1, 2],    // PRD: 1~2条（原2~3）
+  purple: [2, 2],  // PRD: 2条（原3~4）
+  gold: [2, 3],    // PRD: 2~3条（原4）
 };
 
 /** 各品质特殊词条概率 */

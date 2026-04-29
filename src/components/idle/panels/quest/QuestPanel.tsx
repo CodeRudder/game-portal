@@ -17,12 +17,30 @@ interface QuestPanelProps {
   onClose?: () => void;
 }
 
-type QTab = 'daily' | 'main' | 'side';
+type QTab = 'daily' | 'weekly' | 'main' | 'side';
 const TABS: { id: QTab; label: string; icon: string }[] = [
   { id: 'daily', label: '日常', icon: '📅' },
+  { id: 'weekly', label: '周常', icon: '🗓️' },
   { id: 'main', label: '主线', icon: '📖' },
   { id: 'side', label: '支线', icon: '📜' },
 ];
+
+/** 任务类型标签映射 */
+const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
+  daily: { label: '日常', color: '#4A90D9' },
+  main: { label: '主线', color: '#D4A843' },
+  side: { label: '支线', color: '#7EC850' },
+  weekly: { label: '周常', color: '#9B59B6' },
+  achievement: { label: '成就', color: '#E74C3C' },
+};
+
+/** 资源名称映射 */
+const RESOURCE_LABELS: Record<string, string> = {
+  gold: '铜钱', grain: '粮草', gem: '元宝', experience: '经验',
+  strengthening_stone: '强化石', recruit_token: '招募令',
+  purple_equipment_box: '紫色装备箱', golden_fragment: '金色装备碎片',
+  troops: '兵力',
+};
 
 
 const s: Record<string, React.CSSProperties> = {
@@ -49,8 +67,16 @@ export default function QuestPanel({ engine, visible = true, onClose }: QuestPan
   const quests = useMemo(() => {
     if (!qs) return [];
     if (tab === 'daily') return qs.getDailyQuests?.() ?? [];
+    if (tab === 'weekly') return qs.getWeeklyQuests?.() ?? [];
     return qs.getActiveQuestsByCategory?.(tab) ?? [];
   }, [qs, tab]);
+
+  // P2-7: 计算所有可领取奖励的任务数（Badge红点）
+  const claimableCount = useMemo(() => {
+    if (!qs) return 0;
+    const all = qs.getActiveQuests?.() ?? [];
+    return all.filter((q: any) => q.status === 'completed' && !q.rewardClaimed).length;
+  }, [qs, quests]);
 
   const act = qs?.getActivityState?.();
   const actPts = act?.currentPoints ?? 0;
@@ -87,6 +113,16 @@ export default function QuestPanel({ engine, visible = true, onClose }: QuestPan
     <SharedPanel visible={visible} title="任务" icon="📋" onClose={onClose} width="520px">
     <div style={s.wrap} data-testid="quest-panel">
       {message && <div style={s.toast} data-testid="quest-panel-toast">{message}</div>}
+      {/* P2-7: Badge红点提示 */}
+      {claimableCount > 0 && (
+        <div style={{
+          padding: '6px 10px', marginBottom: 8, borderRadius: 8,
+          background: 'rgba(231,76,60,0.12)', border: '1px solid rgba(231,76,60,0.25)',
+          fontSize: 12, color: '#e74c3c', textAlign: 'center',
+        }} data-testid="quest-panel-badge">
+          🔔 你有 {claimableCount} 个任务奖励可领取
+        </div>
+      )}
       {/* 活跃度 */}
       <div style={s.actBox} data-testid="quest-panel-activity">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -120,11 +156,31 @@ export default function QuestPanel({ engine, visible = true, onClose }: QuestPan
         const done = q.status === 'completed';
         const claimed = q.rewardClaimed;
         const objs: any[] = q.objectives ?? [];
+        // 获取任务定义以显示描述和奖励
+        const questDef = qs?.getQuestDef?.(q.questDefId);
+        const questTitle = questDef?.title ?? q.questDefId ?? '任务';
+        const questDesc = questDef?.description ?? '';
+        const questRewards = questDef?.rewards ?? {};
+        const questCategory = questDef?.category ?? '';
+        const catInfo = CATEGORY_LABELS[questCategory] ?? { label: '', color: '#888' };
+        const rewardEntries = [
+          ...Object.entries(questRewards?.resources ?? {}),
+          ...(questRewards?.experience ? [['经验', questRewards.experience]] : []),
+          ...(questRewards?.activityPoints ? [['活跃度', questRewards.activityPoints]] : []),
+        ];
         return (
           <div key={q.instanceId} style={{ ...s.card, opacity: claimed ? 0.5 : 1 }} data-testid={`quest-panel-item-${q.instanceId}`}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
-              {q.questDefId ?? '任务'}{done && <span style={{ color: '#7EC850', marginLeft: 6 }}>✅</span>}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                {catInfo.label && <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, background: catInfo.color + '22', color: catInfo.color, border: `1px solid ${catInfo.color}44` }}>{catInfo.label}</span>}
+                {questTitle}
+                {done && <span style={{ color: '#7EC850' }}>✅</span>}
+              </div>
+              {questDef?.expireHours && !done && (
+                <span style={{ fontSize: 10, color: '#888' }}>⏰ {questDef.expireHours}h</span>
+              )}
             </div>
+            {questDesc && <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 4 }}>{questDesc}</div>}
             {objs.map((o: any) => (
               <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <div style={{ flex: 1, height: 4, borderRadius: 'var(--tk-radius-sm)' as any, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
@@ -133,6 +189,29 @@ export default function QuestPanel({ engine, visible = true, onClose }: QuestPan
                 <span style={{ fontSize: 11, color: '#888', minWidth: 44, textAlign: 'right' }}>{o.currentCount}/{o.targetCount}</span>
               </div>
             ))}
+            {rewardEntries.length > 0 && (
+              <div style={{ fontSize: 10, color: '#d4a574', marginTop: 4 }}>
+                🎁 {rewardEntries.map(([k, v]) => `${RESOURCE_LABELS[k] ?? k}×${v}`).join('  ')}
+              </div>
+            )}
+            {/* P2-4: 任务跳转按钮 */}
+            {questDef?.jumpTarget && !done && (
+              <button
+                style={{ ...s.btn, fontSize: 10, padding: '3px 8px', marginTop: 4, opacity: 0.8 }}
+                data-testid={`quest-panel-jump-${q.instanceId}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  flash(`📍 前往: ${questDef.jumpTarget}`);
+                  // 通知外部路由跳转（通过事件或回调）
+                  try {
+                    const router = (engine as any)?.getRouter?.() ?? (engine as any)?.router;
+                    if (router?.navigate) router.navigate(questDef.jumpTarget);
+                  } catch { /* 路由不可用时仅显示提示 */ }
+                }}
+              >
+                前往 →
+              </button>
+            )}
             {done && !claimed && <button style={s.btn} data-testid={`quest-panel-claim-${q.instanceId}`} onClick={() => handleClaim(q.instanceId)}>领取奖励</button>}
           </div>
         );

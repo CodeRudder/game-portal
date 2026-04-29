@@ -56,8 +56,8 @@ describe('quest.types', () => {
   // 2. 活跃度里程碑
   // ═══════════════════════════════════════════
   describe('DEFAULT_ACTIVITY_MILESTONES', () => {
-    it('有5个里程碑等级', () => {
-      expect(DEFAULT_ACTIVITY_MILESTONES).toHaveLength(5);
+    it('有4个里程碑等级（PRD §QST-3）', () => {
+      expect(DEFAULT_ACTIVITY_MILESTONES).toHaveLength(4);
     });
 
     it('里程碑分数递增', () => {
@@ -71,7 +71,9 @@ describe('quest.types', () => {
     it('每个里程碑都有资源奖励', () => {
       for (const m of DEFAULT_ACTIVITY_MILESTONES) {
         expect(m.rewards.resources).toBeDefined();
-        expect(m.rewards.resources!.gold).toBeGreaterThan(0);
+        const res = m.rewards.resources!;
+        const hasAnyResource = Object.values(res).some((v) => (v as number) > 0);
+        expect(hasAnyResource).toBe(true);
       }
     });
 

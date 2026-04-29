@@ -66,7 +66,7 @@ describe('QuestSystem', () => {
 
       const allRewards = questSys.claimAllRewards();
       expect(allRewards).toHaveLength(1);
-      expect(allRewards[0].resources!.gold).toBe(200);
+      expect(allRewards[0].resources!.gold).toBe(2000);
     });
   });
 
@@ -146,11 +146,11 @@ describe('QuestSystem', () => {
     });
 
     it('领取活跃度宝箱', () => {
-      questSys.addActivityPoints(25);
+      questSys.addActivityPoints(40);
 
       const reward = questSys.claimActivityMilestone(0);
       expect(reward).not.toBeNull();
-      expect(reward!.resources!.gold).toBe(100);
+      expect(reward!.resources!.gold).toBe(5000);
     });
 
     it('活跃度不够不能领取宝箱', () => {
@@ -160,7 +160,7 @@ describe('QuestSystem', () => {
     });
 
     it('已领取的宝箱不能重复领取', () => {
-      questSys.addActivityPoints(25);
+      questSys.addActivityPoints(40);
       questSys.claimActivityMilestone(0);
       const again = questSys.claimActivityMilestone(0);
       expect(again).toBeNull();
@@ -174,11 +174,11 @@ describe('QuestSystem', () => {
       expect(state.milestones.every((m) => !m.claimed)).toBe(true);
     });
 
-    it('活跃度里程碑有5个等级', () => {
+    it('活跃度里程碑有4个等级（PRD §QST-3）', () => {
       const state = questSys.getActivityState();
-      expect(state.milestones).toHaveLength(5);
-      expect(state.milestones[0].points).toBe(20);
-      expect(state.milestones[4].points).toBe(100);
+      expect(state.milestones).toHaveLength(4);
+      expect(state.milestones[0].points).toBe(40);
+      expect(state.milestones[3].points).toBe(100);
     });
   });
 

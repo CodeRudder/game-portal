@@ -266,7 +266,7 @@ describe('QuestSystem', () => {
 
       const reward = questSys.claimReward(inst.instanceId);
       expect(reward).not.toBeNull();
-      expect(reward!.resources!.gold).toBe(200);
+      expect(reward!.resources!.gold).toBe(2000);
       expect(rewards).toHaveLength(1);
     });
 

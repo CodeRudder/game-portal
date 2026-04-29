@@ -22,7 +22,7 @@ export const QUEST_MAIN_CHAPTER_1: QuestDef = {
   objectives: [
     { id: 'obj-001-1', type: 'build_upgrade', description: '升级任意建筑1次', targetCount: 1, currentCount: 0 },
   ],
-  rewards: { resources: { gold: 200 }, experience: 50 },
+  rewards: { resources: { gold: 2000 }, experience: 1000 },
   sortOrder: 1,
 };
 
@@ -35,7 +35,7 @@ export const QUEST_MAIN_CHAPTER_2: QuestDef = {
   objectives: [
     { id: 'obj-002-1', type: 'recruit_hero', description: '招募武将1次', targetCount: 1, currentCount: 0 },
   ],
-  rewards: { resources: { gold: 300 }, experience: 80 },
+  rewards: { resources: { gold: 4000 }, experience: 2500 },
   prerequisiteQuestIds: ['quest-main-001'],
   sortOrder: 2,
 };
@@ -49,7 +49,7 @@ export const QUEST_MAIN_CHAPTER_3: QuestDef = {
   objectives: [
     { id: 'obj-003-1', type: 'battle_clear', description: '通关关卡3次', targetCount: 3, currentCount: 0 },
   ],
-  rewards: { resources: { gold: 500 }, experience: 120 },
+  rewards: { resources: { gold: 6000 }, experience: 4000 },
   prerequisiteQuestIds: ['quest-main-002'],
   sortOrder: 3,
 };
@@ -67,7 +67,7 @@ export const QUEST_SIDE_TECH: QuestDef = {
   objectives: [
     { id: 'obj-side-tech-1', type: 'tech_research', description: '研究科技1项', targetCount: 1, currentCount: 0 },
   ],
-  rewards: { resources: { gold: 150 }, experience: 30 },
+  rewards: { resources: { gold: 5000, gem: 30 }, experience: 1500 },
   requiredLevel: 2,
 };
 
@@ -80,7 +80,7 @@ export const QUEST_SIDE_NPC: QuestDef = {
   objectives: [
     { id: 'obj-side-npc-1', type: 'npc_interact', description: '与NPC交互5次', targetCount: 5, currentCount: 0 },
   ],
-  rewards: { resources: { gold: 100 }, experience: 20 },
+  rewards: { resources: { gold: 5000, gem: 30 }, experience: 1000 },
 };
 
 // ─────────────────────────────────────────────
@@ -93,141 +93,233 @@ export const DAILY_QUEST_TEMPLATES: QuestDef[] = [
     id: 'daily-001', title: '勤劳建设', description: '升级建筑1次',
     category: 'daily',
     objectives: [{ id: 'd-obj-1', type: 'build_upgrade', description: '升级建筑1次', targetCount: 1, currentCount: 0 }],
-    rewards: { resources: { gold: 50 }, activityPoints: 10 },
+    rewards: { resources: { gold: 1000 }, activityPoints: 10 },
     expireHours: 24, jumpTarget: '/buildings',
   },
   {
     id: 'daily-002', title: '沙场练兵', description: '通关关卡3次',
     category: 'daily',
     objectives: [{ id: 'd-obj-2', type: 'battle_clear', description: '通关关卡3次', targetCount: 3, currentCount: 0 }],
-    rewards: { resources: { gold: 80 }, activityPoints: 15 },
+    rewards: { resources: { gold: 1500 }, activityPoints: 15 },
     expireHours: 24, jumpTarget: '/campaign',
   },
   {
     id: 'daily-003', title: '招贤纳士', description: '招募武将1次',
     category: 'daily',
     objectives: [{ id: 'd-obj-3', type: 'recruit_hero', description: '招募武将1次', targetCount: 1, currentCount: 0 }],
-    rewards: { resources: { gold: 60 }, activityPoints: 10 },
+    rewards: { resources: { gold: 1200 }, activityPoints: 20 },
     expireHours: 24, jumpTarget: '/heroes',
   },
   {
     id: 'daily-004', title: '广积粮草', description: '收集粮草500',
     category: 'daily',
     objectives: [{ id: 'd-obj-4', type: 'collect_resource', description: '收集粮草500', targetCount: 500, currentCount: 0, params: { resource: 'grain' } }],
-    rewards: { resources: { gold: 40 }, activityPoints: 10 },
+    rewards: { resources: { gold: 1000 }, activityPoints: 15 },
     expireHours: 24,
   },
   {
     id: 'daily-005', title: '礼尚往来', description: '赠送NPC物品1次',
     category: 'daily',
     objectives: [{ id: 'd-obj-5', type: 'npc_gift', description: '赠送NPC物品1次', targetCount: 1, currentCount: 0 }],
-    rewards: { resources: { gold: 30 }, activityPoints: 5 },
+    rewards: { resources: { gold: 1000 }, activityPoints: 15 },
     expireHours: 24, jumpTarget: '/npc',
   },
   {
     id: 'daily-006', title: '科技创新', description: '研究科技1项',
     category: 'daily',
     objectives: [{ id: 'd-obj-6', type: 'tech_research', description: '研究科技1项', targetCount: 1, currentCount: 0 }],
-    rewards: { resources: { gold: 70 }, activityPoints: 15 },
+    rewards: { resources: { gold: 1500 }, activityPoints: 15 },
     expireHours: 24, jumpTarget: '/tech',
   },
   {
     id: 'daily-007', title: '社交达人', description: '与NPC交互3次',
     category: 'daily',
     objectives: [{ id: 'd-obj-7', type: 'npc_interact', description: '与NPC交互3次', targetCount: 3, currentCount: 0 }],
-    rewards: { resources: { gold: 40 }, activityPoints: 10 },
+    rewards: { resources: { gold: 1000 }, activityPoints: 15 },
     expireHours: 24, jumpTarget: '/npc',
   },
   {
     id: 'daily-008', title: '事件达人', description: '完成事件2个',
     category: 'daily',
     objectives: [{ id: 'd-obj-8', type: 'event_complete', description: '完成事件2个', targetCount: 2, currentCount: 0 }],
-    rewards: { resources: { gold: 60 }, activityPoints: 10 },
+    rewards: { resources: { gold: 1200 }, activityPoints: 15 },
     expireHours: 24,
   },
   {
     id: 'daily-009', title: '勤政爱民', description: '升级建筑2次',
     category: 'daily',
     objectives: [{ id: 'd-obj-9', type: 'build_upgrade', description: '升级建筑2次', targetCount: 2, currentCount: 0 }],
-    rewards: { resources: { gold: 80 }, activityPoints: 15 },
+    rewards: { resources: { gold: 1500 }, activityPoints: 15 },
     expireHours: 24, jumpTarget: '/buildings',
   },
   {
     id: 'daily-010', title: '百战百胜', description: '通关关卡5次',
     category: 'daily',
     objectives: [{ id: 'd-obj-10', type: 'battle_clear', description: '通关关卡5次', targetCount: 5, currentCount: 0 }],
-    rewards: { resources: { gold: 120 }, activityPoints: 20 },
+    rewards: { resources: { gold: 2000 }, activityPoints: 15 },
     expireHours: 24, jumpTarget: '/campaign',
   },
   {
     id: 'daily-011', title: '日进斗金', description: '收集金币1000',
     category: 'daily',
     objectives: [{ id: 'd-obj-11', type: 'collect_resource', description: '收集金币1000', targetCount: 1000, currentCount: 0, params: { resource: 'gold' } }],
-    rewards: { resources: { grain: 200 }, activityPoints: 10 },
+    rewards: { resources: { grain: 2000 }, activityPoints: 10 },
     expireHours: 24,
   },
   {
     id: 'daily-012', title: '名将收集', description: '招募武将2次',
     category: 'daily',
     objectives: [{ id: 'd-obj-12', type: 'recruit_hero', description: '招募武将2次', targetCount: 2, currentCount: 0 }],
-    rewards: { resources: { gold: 100 }, activityPoints: 15 },
+    rewards: { resources: { gold: 2000 }, activityPoints: 10 },
     expireHours: 24, jumpTarget: '/heroes',
   },
   {
     id: 'daily-013', title: '科技先驱', description: '研究科技2项',
     category: 'daily',
     objectives: [{ id: 'd-obj-13', type: 'tech_research', description: '研究科技2项', targetCount: 2, currentCount: 0 }],
-    rewards: { resources: { gold: 100 }, activityPoints: 15 },
+    rewards: { resources: { gold: 2000 }, activityPoints: 15 },
     expireHours: 24, jumpTarget: '/tech',
   },
   {
     id: 'daily-014', title: '慷慨解囊', description: '赠送NPC物品3次',
     category: 'daily',
     objectives: [{ id: 'd-obj-14', type: 'npc_gift', description: '赠送NPC物品3次', targetCount: 3, currentCount: 0 }],
-    rewards: { resources: { gold: 50 }, activityPoints: 10 },
+    rewards: { resources: { gold: 1200 }, activityPoints: 10 },
     expireHours: 24, jumpTarget: '/npc',
   },
   {
     id: 'daily-015', title: '征战四方', description: '通关关卡10次',
     category: 'daily',
     objectives: [{ id: 'd-obj-15', type: 'battle_clear', description: '通关关卡10次', targetCount: 10, currentCount: 0 }],
-    rewards: { resources: { gold: 200 }, activityPoints: 25 },
+    rewards: { resources: { gold: 3000 }, activityPoints: 20 },
     expireHours: 24, jumpTarget: '/campaign',
   },
   {
     id: 'daily-016', title: '大兴土木', description: '升级建筑3次',
     category: 'daily',
     objectives: [{ id: 'd-obj-16', type: 'build_upgrade', description: '升级建筑3次', targetCount: 3, currentCount: 0 }],
-    rewards: { resources: { gold: 120 }, activityPoints: 20 },
+    rewards: { resources: { gold: 2000 }, activityPoints: 20 },
     expireHours: 24, jumpTarget: '/buildings',
   },
   {
     id: 'daily-017', title: '满腹经纶', description: '研究科技3项',
     category: 'daily',
     objectives: [{ id: 'd-obj-17', type: 'tech_research', description: '研究科技3项', targetCount: 3, currentCount: 0 }],
-    rewards: { resources: { gold: 150 }, activityPoints: 20 },
+    rewards: { resources: { gold: 2500 }, activityPoints: 15 },
     expireHours: 24, jumpTarget: '/tech',
   },
   {
     id: 'daily-018', title: '人脉广阔', description: '与NPC交互5次',
     category: 'daily',
     objectives: [{ id: 'd-obj-18', type: 'npc_interact', description: '与NPC交互5次', targetCount: 5, currentCount: 0 }],
-    rewards: { resources: { gold: 60 }, activityPoints: 10 },
+    rewards: { resources: { gold: 1200 }, activityPoints: 10 },
     expireHours: 24, jumpTarget: '/npc',
   },
   {
     id: 'daily-019', title: '每日签到', description: '今日首次登录',
     category: 'daily',
     objectives: [{ id: 'd-obj-19', type: 'daily_login', description: '今日首次登录', targetCount: 1, currentCount: 0 }],
-    rewards: { resources: { gold: 30 }, activityPoints: 5 },
+    rewards: { resources: { gold: 1000 }, activityPoints: 10 },
     expireHours: 24,
   },
   {
     id: 'daily-020', title: '事件猎手', description: '完成事件5个',
     category: 'daily',
     objectives: [{ id: 'd-obj-20', type: 'event_complete', description: '完成事件5个', targetCount: 5, currentCount: 0 }],
-    rewards: { resources: { gold: 150 }, activityPoints: 20 },
+    rewards: { resources: { gold: 2500 }, activityPoints: 10 },
     expireHours: 24,
+  },
+];
+
+// ─────────────────────────────────────────────
+// 周常任务池（12个模板，PRD §QST-3: 12选4）
+// ─────────────────────────────────────────────
+
+/** 周常任务模板列表 */
+export const WEEKLY_QUEST_TEMPLATES: QuestDef[] = [
+  {
+    id: 'weekly-001', title: '征战四方', description: '累计击败500敌军',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-1', type: 'battle_clear', description: '累计击败500敌军', targetCount: 500, currentCount: 0 }],
+    rewards: { resources: { gold: 30000, gem: 150 }, experience: 5000 },
+    expireHours: 168, jumpTarget: '/campaign', sortOrder: 1,
+  },
+  {
+    id: 'weekly-002', title: '装备收集者', description: '累计获得10件蓝色+装备',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-2', type: 'collect_resource', description: '累计获得10件蓝色+装备', targetCount: 10, currentCount: 0, params: { rarity: 'blue+' } }],
+    rewards: { resources: { gold: 30000, gem: 150 }, experience: 5000 },
+    expireHours: 168, sortOrder: 2,
+  },
+  {
+    id: 'weekly-003', title: '强化大师', description: '累计强化20次',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-3', type: 'build_upgrade', description: '累计强化20次', targetCount: 20, currentCount: 0 }],
+    rewards: { resources: { gold: 30000, gem: 150 }, experience: 5000 },
+    expireHours: 168, jumpTarget: '/heroes', sortOrder: 3,
+  },
+  {
+    id: 'weekly-004', title: '炼丹术士', description: '累计炼制10次',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-4', type: 'tech_research', description: '累计炼制10次', targetCount: 10, currentCount: 0 }],
+    rewards: { resources: { gold: 20000, gem: 80 }, experience: 3000 },
+    expireHours: 168, jumpTarget: '/tech', sortOrder: 4,
+  },
+  {
+    id: 'weekly-005', title: '广纳贤才', description: '累计招募15名武将',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-5', type: 'recruit_hero', description: '累计招募15名武将', targetCount: 15, currentCount: 0 }],
+    rewards: { resources: { gold: 30000, gem: 150 }, experience: 5000 },
+    expireHours: 168, jumpTarget: '/heroes', sortOrder: 5,
+  },
+  {
+    id: 'weekly-006', title: '大兴土木', description: '累计升级30座建筑',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-6', type: 'build_upgrade', description: '累计升级30座建筑', targetCount: 30, currentCount: 0 }],
+    rewards: { resources: { gold: 20000, gem: 80 }, experience: 3000 },
+    expireHours: 168, jumpTarget: '/buildings', sortOrder: 6,
+  },
+  {
+    id: 'weekly-007', title: '挥金如土', description: '累计消耗50000铜钱',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-7', type: 'collect_resource', description: '累计消耗50000铜钱', targetCount: 50000, currentCount: 0, params: { resource: 'gold_spent' } }],
+    rewards: { resources: { gold: 20000, gem: 80 }, experience: 3000 },
+    expireHours: 168, sortOrder: 7,
+  },
+  {
+    id: 'weekly-008', title: '百战百胜', description: '累计完成30次战斗',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-8', type: 'battle_clear', description: '累计完成30次战斗', targetCount: 30, currentCount: 0 }],
+    rewards: { resources: { gold: 30000, gem: 150 }, experience: 5000 },
+    expireHours: 168, jumpTarget: '/campaign', sortOrder: 8,
+  },
+  {
+    id: 'weekly-009', title: '挂机达人', description: '累计收取20次挂机收益',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-9', type: 'collect_resource', description: '累计收取20次挂机收益', targetCount: 20, currentCount: 0 }],
+    rewards: { resources: { gold: 20000, gem: 80 }, experience: 3000 },
+    expireHours: 168, sortOrder: 9,
+  },
+  {
+    id: 'weekly-010', title: '事件响应者', description: '累计完成10次事件响应',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-10', type: 'event_complete', description: '累计完成10次事件响应', targetCount: 10, currentCount: 0 }],
+    rewards: { resources: { gold: 20000, gem: 80 }, experience: 3000 },
+    expireHours: 168, sortOrder: 10,
+  },
+  {
+    id: 'weekly-011', title: '粮草充沛', description: '累计获得100000粮草',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-11', type: 'collect_resource', description: '累计获得100000粮草', targetCount: 100000, currentCount: 0, params: { resource: 'grain' } }],
+    rewards: { resources: { gold: 30000, gem: 150 }, experience: 5000 },
+    expireHours: 168, sortOrder: 11,
+  },
+  {
+    id: 'weekly-012', title: '勤勉之主', description: '累计登录5天',
+    category: 'weekly',
+    objectives: [{ id: 'w-obj-12', type: 'daily_login', description: '累计登录5天', targetCount: 5, currentCount: 0 }],
+    rewards: { resources: { gold: 10000, strengthening_stone: 5 }, experience: 2000 },
+    expireHours: 168, sortOrder: 12,
   },
 ];
 
@@ -235,7 +327,7 @@ export const DAILY_QUEST_TEMPLATES: QuestDef[] = [
 // 所有预定义任务
 // ─────────────────────────────────────────────
 
-/** 所有预定义任务映射（不含日常模板） */
+/** 所有预定义任务映射（不含日常/周常模板） */
 export const PREDEFINED_QUESTS: Record<string, QuestDef> = {
   'quest-main-001': QUEST_MAIN_CHAPTER_1,
   'quest-main-002': QUEST_MAIN_CHAPTER_2,

@@ -107,8 +107,8 @@ describe('PvPBattleSystem — 积分计算', () => {
   });
 
   test('积分变化后段位自动更新', () => {
-    const state = createPlayerState(90); // BRONZE_V (0~299)
-    const result = system.applyScoreChange(state, 250); // 340 → BRONZE_IV (300~599)
+    const state = createPlayerState(90); // BRONZE_V (0~300)
+    const result = system.applyScoreChange(state, 250); // 340 → BRONZE_IV (301~600)
     expect(result.score).toBe(340);
     expect(result.rankId).toBe('BRONZE_IV');
   });
@@ -378,6 +378,7 @@ describe('PvPBattleSystem — 每日奖励', () => {
 
   test('青铜V每日奖励', () => {
     const reward = system.getDailyReward('BRONZE_V');
+    // PRD PVP-3: 青铜V奖励 = 铜钱×500 + 竞技币×10 + 元宝×5
     expect(reward.copper).toBe(500);
     expect(reward.arenaCoin).toBe(10);
     expect(reward.gold).toBe(5);

@@ -20,6 +20,7 @@ import {
   MAX_TRACKED_QUESTS,
   MAX_ACTIVITY_POINTS,
   refreshDailyQuestsLogic,
+  refreshWeeklyQuestsLogic,
   getTrackedQuests as getTrackedQuestsHelper,
   trackQuest as trackQuestHelper,
   untrackQuest as untrackQuestHelper,
@@ -46,6 +47,8 @@ export class QuestSystem implements ISubsystem {
   private completedQuestIds: Set<QuestId> = new Set();
   private dailyQuestInstanceIds: string[] = [];
   private dailyRefreshDate: string = '';
+  private weeklyQuestInstanceIds: string[] = [];
+  private weeklyRefreshDate: string = '';
   private instanceCounter = 0;
   private trackedQuestIds: string[] = [];
   private activityState: ActivityState = {
@@ -58,7 +61,18 @@ export class QuestSystem implements ISubsystem {
 
   // ─── ISubsystem ─────────────────────────────
 
-  init(deps: ISystemDeps): void { this.deps = deps; this.loadPredefinedQuests(); }
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+    this.loadPredefinedQuests();
+  }
+
+  /** P2-8: 初始化默认任务（由上层游戏循环在引擎就绪后调用） */
+  initializeDefaults(): void {
+    // 自动接受第一个主线任务
+    this.acceptQuest('quest-main-001');
+    // 刷新日常任务
+    this.refreshDailyQuests();
+  }
   update(_dt: number): void { /* 由 QuestTrackerSystem 事件驱动 */ }
 
   getState() {
@@ -75,6 +89,8 @@ export class QuestSystem implements ISubsystem {
     this.completedQuestIds.clear();
     this.dailyQuestInstanceIds = [];
     this.dailyRefreshDate = '';
+    this.weeklyQuestInstanceIds = [];
+    this.weeklyRefreshDate = '';
     this.instanceCounter = 0;
     this.trackedQuestIds = [];
     this.activityState = {
@@ -293,6 +309,38 @@ export class QuestSystem implements ISubsystem {
     return getDailyQuestsHelper(this.dailyQuestInstanceIds, this.activeQuests);
   }
 
+  // ─── 周常任务 ──────────────────────────────
+
+  /**
+   * 刷新周常任务（PRD §QST-3: 每周一05:00重置，12选4）
+   */
+  refreshWeeklyQuests(): QuestInstance[] {
+    const result = refreshWeeklyQuestsLogic({
+      activeQuests: this.activeQuests,
+      weeklyQuestInstanceIds: this.weeklyQuestInstanceIds,
+      weeklyRefreshDate: this.weeklyRefreshDate,
+      registerQuest: (def) => this.registerQuest(def),
+      acceptQuest: (id) => this.acceptQuest(id),
+      emit: (event, data) => this.deps?.eventBus.emit(event, data),
+    });
+    this.weeklyQuestInstanceIds = result.weeklyQuestInstanceIds;
+    this.weeklyRefreshDate = result.weeklyRefreshDate;
+
+    this.deps?.eventBus.emit('quest:weeklyRefreshed', {
+      date: result.weeklyRefreshDate,
+      questIds: result.newInstances.map((i) => i.questDefId),
+    });
+
+    return result.newInstances;
+  }
+
+  /** 获取当前周常任务 */
+  getWeeklyQuests(): QuestInstance[] {
+    return this.weeklyQuestInstanceIds
+      .map((id) => this.activeQuests.get(id))
+      .filter((q): q is QuestInstance => q !== undefined);
+  }
+
   // ─── 任务追踪（#19）──────────────────────────
 
   /** 获取追踪中的任务 */
@@ -376,6 +424,8 @@ export class QuestSystem implements ISubsystem {
     this.dailyRefreshDate = result.dailyRefreshDate;
     this.dailyQuestInstanceIds = result.dailyQuestInstanceIds;
     this.activityState = result.activityState as typeof this.activityState;
+    this.weeklyQuestInstanceIds = data.weeklyQuestInstanceIds ?? [];
+    this.weeklyRefreshDate = data.weeklyRefreshDate ?? '';
   }
 
   // ─── 内部方法 ──────────────────────────────

@@ -83,7 +83,26 @@ export class MailSystem implements ISubsystem {
 
   // ─── ISubsystem 接口 ───────────────────────
 
-  init(deps: ISystemDeps): void { this.deps = deps; }
+  init(deps: ISystemDeps): void {
+    this.deps = deps;
+    // R2修复：引擎初始化后自动发送欢迎邮件（仅首次）
+    this._initDefaultData();
+  }
+
+  /** R2修复：发送默认欢迎邮件（仅首次初始化时） */
+  private _initDefaultData(): void {
+    if (this.mails.size > 0) return; // 已有邮件则不发送
+    this.sendMail({
+      category: 'system',
+      title: '欢迎来到三国霸业！',
+      content: '主公，欢迎来到乱世！招募武将、建设城池、征战天下，成就一番霸业！请查收新手礼包。',
+      sender: '系统',
+      attachments: [
+        { resourceType: 'gold', amount: 1000 },
+        { resourceType: 'recruitToken', amount: 5 },
+      ],
+    });
+  }
   update(_dt: number): void { /* 预留 */ }
   getState(): unknown { return { mails: Object.fromEntries(this.mails), nextId: this.nextId }; }
 
@@ -198,6 +217,8 @@ export class MailSystem implements ISubsystem {
     if (Object.keys(claimed).length > 0) {
       mail.status = 'read_claimed';
       mail.isRead = true;
+      // P0-1 修复：领取附件时实际增加到玩家资源系统
+      this.addClaimedResources(claimed);
     }
     this.persist();
     return claimed;
@@ -218,6 +239,7 @@ export class MailSystem implements ISubsystem {
         }
       }
     }
+    // 注意：批量领取的资源已在 claimAttachments 内逐封增加到资源系统，此处无需重复
     return result;
   }
 
@@ -383,6 +405,25 @@ export class MailSystem implements ISubsystem {
   }
 
   // ── 私有方法 ──
+
+  /**
+   * P0-1 修复：将领取的资源实际增加到玩家资源系统
+   *
+   * 通过 deps.registry 获取 ResourceSystem，将附件资源增加到玩家账户。
+   * 如果 deps 未初始化（独立使用 MailSystem 时），则静默跳过。
+   */
+  private addClaimedResources(claimed: Record<string, number>): void {
+    if (!this.deps?.registry) return;
+    try {
+      const resourceSystem = this.deps.registry.get('resource') as { addResource?: (type: string, amount: number) => number };
+      if (!resourceSystem?.addResource) return;
+      for (const [type, amount] of Object.entries(claimed)) {
+        resourceSystem.addResource(type, amount);
+      }
+    } catch {
+      // registry 中可能不存在 resource 子系统（如独立测试场景），静默忽略
+    }
+  }
 
   private getFilteredMails(filter?: MailFilter): MailData[] {
     return filterMails(this.mails.values(), filter);

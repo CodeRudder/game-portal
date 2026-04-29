@@ -18,7 +18,7 @@
 export type QuestId = string;
 
 /** 任务类型 */
-export type QuestCategory = 'main' | 'side' | 'daily' | 'weekly';
+export type QuestCategory = 'main' | 'side' | 'daily' | 'weekly' | 'achievement';
 
 /** 任务状态 */
 export type QuestStatus = 'locked' | 'available' | 'active' | 'completed' | 'failed' | 'expired';
@@ -166,11 +166,10 @@ export interface ActivityState {
 
 /** 默认活跃度里程碑 */
 export const DEFAULT_ACTIVITY_MILESTONES: ActivityMilestone[] = [
-  { points: 20, rewards: { resources: { gold: 100 }, activityPoints: 0 }, claimed: false },
-  { points: 40, rewards: { resources: { gold: 200, grain: 100 }, activityPoints: 0 }, claimed: false },
-  { points: 60, rewards: { resources: { gold: 300, grain: 200 }, experience: 50, activityPoints: 0 }, claimed: false },
-  { points: 80, rewards: { resources: { gold: 500, grain: 300 }, experience: 100, activityPoints: 0 }, claimed: false },
-  { points: 100, rewards: { resources: { gold: 1000, grain: 500 }, experience: 200, activityPoints: 0 }, claimed: false },
+  { points: 40, rewards: { resources: { gold: 5000, strengthening_stone: 2 }, activityPoints: 0 }, claimed: false },
+  { points: 60, rewards: { resources: { gem: 50, recruit_token: 1 }, activityPoints: 0 }, claimed: false },
+  { points: 80, rewards: { resources: { gem: 100, purple_equipment_box: 1 }, activityPoints: 0 }, claimed: false },
+  { points: 100, rewards: { resources: { gem: 200, golden_fragment: 3 }, activityPoints: 0 }, claimed: false },
 ];
 
 // ─────────────────────────────────────────────
@@ -195,6 +194,30 @@ export const DEFAULT_DAILY_POOL_CONFIG: DailyQuestPoolConfig = {
 };
 
 // ─────────────────────────────────────────────
+// 7.5 周常任务池配置
+// ─────────────────────────────────────────────
+
+/** 周常任务池配置 */
+export interface WeeklyQuestPoolConfig {
+  /** 任务池大小 */
+  poolSize: number;
+  /** 每周抽取数量 */
+  weeklyPickCount: number;
+  /** 刷新时间（周几，1=周一） */
+  refreshDay: number;
+  /** 刷新时间（小时，0~23） */
+  refreshHour: number;
+}
+
+/** 默认周常任务池配置（PRD §QST-3: 每周一05:00重置） */
+export const DEFAULT_WEEKLY_POOL_CONFIG: WeeklyQuestPoolConfig = {
+  poolSize: 12,
+  weeklyPickCount: 4,
+  refreshDay: 1, // 周一
+  refreshHour: 5,
+};
+
+// ─────────────────────────────────────────────
 // 8. 任务系统存档
 // ─────────────────────────────────────────────
 
@@ -210,6 +233,10 @@ export interface QuestSystemSaveData {
   dailyRefreshDate: string;
   /** 当前日常任务实例 ID 列表 */
   dailyQuestInstanceIds: string[];
+  /** 周常任务刷新日期 */
+  weeklyRefreshDate?: string;
+  /** 当前周常任务实例 ID 列表 */
+  weeklyQuestInstanceIds?: string[];
   /** 版本号 */
   version: number;
 }
