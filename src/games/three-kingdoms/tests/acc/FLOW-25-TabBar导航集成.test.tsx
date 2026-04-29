@@ -619,7 +619,7 @@ describe('FLOW-25 TabBar导航集成测试', () => {
       // 验证引擎关键子系统都可通过Tab导航访问
       const registry = sim.engine.getSubsystemRegistry();
       const criticalSystems = [
-        'hero', 'building', 'tech', 'resource', 'formation', 'campaign',
+        'hero', 'building', 'techTree', 'resource', 'heroFormation', 'campaignSystem',
         'shop', 'prestige', 'npc', 'arena', 'expedition',
       ];
 

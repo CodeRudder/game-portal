@@ -222,7 +222,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
       const tutorial = new TutorialSystem();
       tutorial.init(mockDeps());
 
-      tutorial.skip();
+      tutorial.skipTutorial();
 
       const step = tutorial.getCurrentStep();
       assertStrict(step === null, 'FLOW-24-05', '跳过后应无当前步骤');
@@ -260,7 +260,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
       // 完成第一步
       tutorial.completeCurrentStep('claim_newbie_pack');
 
-      const saveData = tutorial.exportSaveData();
+      const saveData = tutorial.serialize();
       assertStrict(saveData.version === TUTORIAL_GUIDE_SAVE_VERSION, 'FLOW-24-07',
         `版本应为${TUTORIAL_GUIDE_SAVE_VERSION}，实际: ${saveData.version}`);
       assertStrict(saveData.completedSteps.length === 1, 'FLOW-24-07',
@@ -269,7 +269,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
       // 恢复
       const tutorial2 = new TutorialSystem();
       tutorial2.init(mockDeps());
-      tutorial2.importSaveData(saveData);
+      tutorial2.loadSaveData(saveData);
 
       const state = tutorial2.getState();
       assertStrict(state.completedSteps.length === 1, 'FLOW-24-07',
