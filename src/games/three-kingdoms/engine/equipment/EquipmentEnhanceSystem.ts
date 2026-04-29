@@ -114,7 +114,7 @@ export class EquipmentEnhanceSystem implements ISubsystem {
       // 失败：检查是否降级
       // PRD规则：金色装备+12以上失败不降级
       const isGoldSafe = eq.rarity === 'gold' && level >= 12;
-      if (level >= ENHANCE_CONFIG.safeLevel && !isGoldSafe) {
+      if (level > ENHANCE_CONFIG.safeLevel && !isGoldSafe) {
         if (useProtection) {
           // 保护符保护不降级
           outcome = 'fail';
