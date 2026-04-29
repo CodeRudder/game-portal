@@ -15,6 +15,15 @@ export const MAX_FORMATIONS = 3;
 /** 每个编队最大武将数 */
 export const MAX_SLOTS_PER_FORMATION = 6;
 
+/** 创建编队所需主城最低等级 */
+export const FORMATION_CREATE_REQUIRED_CASTLE_LEVEL = 3;
+
+/** 创建编队消耗铜钱 */
+export const FORMATION_CREATE_COST_COPPER = 500;
+
+/** 编队加成系数：每激活一个羁绊，编队战力增加5% */
+export const FORMATION_BOND_BONUS_RATE = 0.05;
+
 // ─────────────────────────────────────────────
 // 类型
 // ─────────────────────────────────────────────

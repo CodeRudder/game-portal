@@ -43,9 +43,22 @@ export class AllianceSystem implements ISubsystem {
   readonly name = 'AllianceSystem';
   private deps!: ISystemDeps;
   private createConfig: AllianceCreateConfig;
+  /** 货币扣除回调（由外部注入，用于实际扣除元宝） */
+  private currencySpendCallback?: (currency: string, amount: number) => boolean;
+  /** 货币余额查询回调 */
+  private currencyBalanceCallback?: (currency: string) => number;
 
   constructor(createConfig?: Partial<AllianceCreateConfig>) {
     this.createConfig = { ...DEFAULT_CREATE_CONFIG, ...createConfig };
+  }
+
+  /** 设置货币系统回调（用于创建联盟时扣除元宝） */
+  setCurrencyCallbacks(callbacks: {
+    spend: (currency: string, amount: number) => boolean;
+    getBalance: (currency: string) => number;
+  }): void {
+    this.currencySpendCallback = callbacks.spend;
+    this.currencyBalanceCallback = callbacks.getBalance;
   }
 
   // ── ISubsystem 接口 ─────────────────────────
@@ -365,15 +378,34 @@ export class AllianceSystem implements ISubsystem {
    *
    * 自动使用内部状态，无需外部传入 playerState/playerId 等参数。
    * 成功后自动更新内部 _alliance 和 _playerState。
+   * 创建联盟需消耗 createCostGold（默认500元宝）。
    */
   createAllianceSimple(
     name: string,
     playerName: string = '玩家',
   ): { success: boolean; reason?: string } {
     try {
+      // 检查元宝余额
+      const costGold = this.createConfig.createCostGold;
+      if (this.currencyBalanceCallback) {
+        const balance = this.currencyBalanceCallback('ingot');
+        if (balance < costGold) {
+          return { success: false, reason: `元宝不足，需要${costGold}元宝` };
+        }
+      }
+
       const result = this.createAlliance(
         this._playerState, name, '', 'player-1', playerName, Date.now(),
       );
+
+      // 扣除元宝
+      if (this.currencySpendCallback) {
+        const spent = this.currencySpendCallback('ingot', costGold);
+        if (!spent) {
+          return { success: false, reason: '元宝扣除失败' };
+        }
+      }
+
       this._alliance = result.alliance;
       this._playerState = result.playerState;
       return { success: true };

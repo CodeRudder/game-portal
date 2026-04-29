@@ -17,7 +17,7 @@ interface AlliancePanelProps {
   onClose?: () => void;
 }
 
-type AllianceTab = 'info' | 'members' | 'tasks';
+type AllianceTab = 'info' | 'members' | 'tasks' | 'chat' | 'announce';
 
 
 const s: Record<string, React.CSSProperties> = {
@@ -51,6 +51,8 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
   const [message, setMessage] = useState<string | null>(null);
   const [allianceName, setAllianceName] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [announceInput, setAnnounceInput] = useState('');
 
   const allianceSystem = engine?.getAllianceSystem?.() ?? engine?.alliance;
   const taskSystem = engine?.getAllianceTaskSystem?.() ?? engine?.allianceTask;
@@ -130,9 +132,9 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
         </div>
         {/* Tab */}
         <div style={s.tabs} data-testid="alliance-panel-tabs">
-          {(['info', 'members', 'tasks'] as const).map(t => (
+          {(['info', 'members', 'tasks', 'chat', 'announce'] as const).map(t => (
             <button key={t} style={{ ...s.tab, ...(tab === t ? s.tabOn : {}) }} onClick={() => setTab(t)} data-testid={`alliance-panel-tab-${t}`}>
-              {{ info: '📋 信息', members: '👥 成员', tasks: '🎯 任务' }[t]}
+              {{ info: '📋 信息', members: '👥 成员', tasks: '🎯 任务', chat: '💬 聊天', announce: '📢 公告' }[t]}
             </button>
           ))}
         </div>
@@ -167,6 +169,87 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
             </div>
           );
         }) : <div style={s.emptySmall}>暂无联盟任务</div>)}
+        {/* 联盟聊天 */}
+        {tab === 'chat' && (
+          <div data-testid="alliance-panel-chat">
+            <div style={{ maxHeight: 240, overflowY: 'auto', marginBottom: 8 }}>
+              {(alliance?.messages ?? []).length === 0 ? (
+                <div style={s.emptySmall}>暂无聊天消息</div>
+              ) : (alliance.messages as any[]).slice(-20).map((msg: any) => (
+                <div key={msg.id} style={{ ...s.row, flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                  <span style={{ fontSize: 11, color: '#d4a574', fontWeight: 600 }}>{msg.senderName ?? '未知'}</span>
+                  <span style={{ fontSize: 12, color: '#e8e0d0' }}>{msg.content}</span>
+                  <span style={{ fontSize: 10, color: '#666' }}>{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('zh-CN') : ''}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                style={{ ...s.input, flex: 1 }}
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                placeholder="输入消息..."
+                maxLength={200}
+                data-testid="alliance-panel-chat-input"
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && chatInput.trim() && allianceSystem?.sendMessage) {
+                    try {
+                      const updated = allianceSystem.sendMessage(alliance, 'player-1', '玩家', chatInput.trim(), Date.now());
+                      allianceSystem.resetAllianceData(updated);
+                      setChatInput('');
+                    } catch (err: any) { flash(err?.message ?? '发送失败'); }
+                  }
+                }}
+              />
+              <button style={s.btn} data-testid="alliance-panel-chat-send" onClick={() => {
+                if (!chatInput.trim() || !allianceSystem?.sendMessage) return;
+                try {
+                  const updated = allianceSystem.sendMessage(alliance, 'player-1', '玩家', chatInput.trim(), Date.now());
+                  allianceSystem.resetAllianceData(updated);
+                  setChatInput('');
+                } catch (err: any) { flash(err?.message ?? '发送失败'); }
+              }}>发送</button>
+            </div>
+          </div>
+        )}
+        {/* 联盟公告 */}
+        {tab === 'announce' && (
+          <div data-testid="alliance-panel-announce">
+            {(alliance?.announcements ?? []).length === 0 ? (
+              <div style={s.emptySmall}>暂无公告</div>
+            ) : (alliance.announcements as any[]).map((ann: any) => (
+              <div key={ann.id} style={{ ...s.card, borderLeft: ann.pinned ? '3px solid #d4a574' : undefined }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#d4a574' }}>{ann.authorName ?? '管理员'}{ann.pinned ? ' 📌' : ''}</span>
+                  <span style={{ fontSize: 10, color: '#666' }}>{ann.timestamp ? new Date(ann.timestamp).toLocaleDateString('zh-CN') : ''}</span>
+                </div>
+                <div style={{ fontSize: 12, color: '#e8e0d0' }}>{ann.content}</div>
+              </div>
+            ))}
+            {/* 发布公告（仅权限用户） */}
+            {allianceSystem?.hasPermission?.(alliance, 'player-1', 'announce') && (
+              <div style={{ marginTop: 8, display: 'flex', gap: 6 }}>
+                <input
+                  style={{ ...s.input, flex: 1 }}
+                  value={announceInput}
+                  onChange={e => setAnnounceInput(e.target.value)}
+                  placeholder="发布公告..."
+                  maxLength={200}
+                  data-testid="alliance-panel-announce-input"
+                />
+                <button style={s.btn} data-testid="alliance-panel-announce-publish" onClick={() => {
+                  if (!announceInput.trim() || !allianceSystem?.postAnnouncement) return;
+                  try {
+                    const updated = allianceSystem.postAnnouncement(alliance, 'player-1', '玩家', announceInput.trim(), false, Date.now());
+                    allianceSystem.resetAllianceData(updated);
+                    setAnnounceInput('');
+                    flash('📢 公告已发布');
+                  } catch (err: any) { flash(err?.message ?? '发布失败'); }
+                }}>发布</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   };

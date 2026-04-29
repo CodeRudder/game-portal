@@ -18,16 +18,32 @@ import { DEFAULT_NAMES } from './formation-types';
 import {
   MAX_FORMATIONS,
   MAX_SLOTS_PER_FORMATION,
+  FORMATION_CREATE_REQUIRED_CASTLE_LEVEL,
+  FORMATION_CREATE_COST_COPPER,
+  FORMATION_BOND_BONUS_RATE,
 } from './formation-types';
 
 // Re-export for index.ts convenience
 export type { FormationData, FormationState, FormationSaveData } from './formation-types';
 export { MAX_FORMATIONS, MAX_SLOTS_PER_FORMATION } from './formation-types';
 
+/** 编队创建前置条件检查回调 */
+export interface FormationPrerequisites {
+  /** 获取主城等级 */
+  getCastleLevel: () => number;
+  /** 获取铜钱余额 */
+  getCopperBalance: () => number;
+  /** 扣除铜钱 */
+  spendCopper: (amount: number) => boolean;
+  /** 获取编队中已激活的羁绊数量 */
+  getActiveBondCount: (formation: FormationData) => number;
+}
+
 export class HeroFormation implements ISubsystem {
   readonly name = 'heroFormation' as const;
   private deps: ISystemDeps | null = null;
   private state: FormationState;
+  private prerequisites: FormationPrerequisites | null = null;
 
   constructor() {
     this.state = {
@@ -42,13 +58,36 @@ export class HeroFormation implements ISubsystem {
   update(_dt: number): void { /* 编队系统无需每帧更新 */ }
   getState(): unknown { return this.serialize(); }
 
+  /** 设置编队创建前置条件回调（由外部系统注入） */
+  setPrerequisites(prereqs: FormationPrerequisites): void {
+    this.prerequisites = prereqs;
+  }
+
   // ── 编队管理 ──
 
-  /** 创建新编队（如果未达上限） */
+  /** 创建新编队（如果未达上限，且满足前置条件） */
   createFormation(id?: string): FormationData | null {
+    // 前置条件检查
+    if (this.prerequisites) {
+      const castleLevel = this.prerequisites.getCastleLevel();
+      if (castleLevel < FORMATION_CREATE_REQUIRED_CASTLE_LEVEL) {
+        return null; // 主城等级不足
+      }
+      const copper = this.prerequisites.getCopperBalance();
+      if (copper < FORMATION_CREATE_COST_COPPER) {
+        return null; // 铜钱不足
+      }
+    }
+
     const formationId = id ?? this.nextAvailableId();
     if (!formationId) return null;
     if (this.state.formations[formationId]) return null;
+
+    // 扣除资源
+    if (this.prerequisites) {
+      const spent = this.prerequisites.spendCopper(FORMATION_CREATE_COST_COPPER);
+      if (!spent) return null; // 扣费失败
+    }
 
     const formation: FormationData = {
       id: formationId,
@@ -177,12 +216,21 @@ export class HeroFormation implements ISubsystem {
     getGeneral: (id: string) => GeneralData | undefined,
     calcPower: (g: GeneralData) => number,
   ): number {
-    return formation.slots
+    const basePower = formation.slots
       .filter((id) => id !== '')
       .reduce((sum, id) => {
         const g = getGeneral(id);
         return sum + (g ? calcPower(g) : 0);
       }, 0);
+
+    // 编队羁绊加成：每激活一个羁绊，战力增加5%
+    let bondCount = 0;
+    if (this.prerequisites) {
+      bondCount = this.prerequisites.getActiveBondCount(formation);
+    }
+    const bondBonus = 1 + bondCount * FORMATION_BOND_BONUS_RATE;
+
+    return Math.floor(basePower * bondBonus);
   }
 
   /** 获取编队中的武将数量 */

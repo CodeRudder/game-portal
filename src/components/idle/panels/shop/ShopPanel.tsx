@@ -33,9 +33,9 @@ const CUR_LABELS: Record<string, string> = {
 
 const SHOP_TABS = [
   { id: 'normal', label: '杂货铺', icon: '🏪' },
-  { id: 'black_market', label: '竞技商店', icon: '⚔️' },
-  { id: 'limited_time', label: '远征商店', icon: '🚀' },
-  { id: 'vip', label: '联盟商店', icon: '🏰' },
+  { id: 'black_market', label: '黑市', icon: '🗡️' },
+  { id: 'limited_time', label: '限时特惠', icon: '⏰' },
+  { id: 'vip', label: 'VIP商店', icon: '👑' },
 ] as const;
 
 /** 排序选项 */
