@@ -109,7 +109,7 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
       // 将引擎步骤ID反向映射到 overlay 步骤索引
       const overlayStepId = ENGINE_TO_OVERLAY_STEP[nextStep.stepId];
       if (overlayStepId) {
-        const stepIndex = DEFAULT_STEPS.findIndex((s) => s.id === overlayStepId);
+        const stepIndex = steps.findIndex((s) => s.id === overlayStepId);
         if (stepIndex >= 0) return stepIndex;
       }
     }
@@ -287,8 +287,8 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
     return getEngineStepDescription(tutorialStepMgr, step.id);
   }, [step?.id, tutorialStepMgr]);
 
-  // 最终显示的描述文案：引擎文案 > 静态文案
-  const displayDescription = engineDescription ?? step?.description ?? '';
+  // 最终显示的描述文案：步骤自身文案 > 引擎文案
+  const displayDescription = step?.description || engineDescription || '';
 
   const handleNext = () => {
     if (!step) return;

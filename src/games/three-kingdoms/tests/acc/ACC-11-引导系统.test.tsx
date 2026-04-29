@@ -27,20 +27,27 @@ vi.mock('@/components/idle/panels/hero/GuideOverlay.css', () => ({}));
 vi.mock('@/components/idle/panels/hero/GuideWelcomeModal.css', () => ({}));
 
 // ── Test Data ──
-// 注意：步骤ID 'recruit' 会映射到引擎 step1_castle_overview，属于 UNSKIPPABLE_STEPS
-// 因此第一步没有 Skip 按钮。使用非 unskippable 的步骤ID 来测试 skip 功能。
+// 步骤顺序与引擎 CORE_STEP_DEFINITIONS 对齐：
+//   step1_castle_overview → detail (UNSKIPPABLE)
+//   step2_build_farm      → enhance (UNSKIPPABLE)
+//   step3_recruit_hero    → recruit (可跳过)
+//   step4_first_battle    → formation (UNSKIPPABLE)
+// 因此第一步 detail 没有 Skip 按钮。使用 skippableTestSteps 来测试 skip 功能。
 
 const testSteps = [
-  { id: 'recruit', title: '🎮 Welcome!', description: 'Click the recruit button to recruit your first hero!', targetSelector: '.btn-recruit', position: 'bottom' as const },
   { id: 'detail', title: '📋 Hero Detail', description: 'View your hero details!', targetSelector: '.btn-detail', position: 'right' as const },
   { id: 'enhance', title: '⬆️ Enhance', description: 'Enhance your hero!', targetSelector: '.btn-enhance', position: 'top' as const },
+  { id: 'recruit', title: '🎮 Welcome!', description: 'Click the recruit button to recruit your first hero!', targetSelector: '.btn-recruit', position: 'bottom' as const },
   { id: 'formation', title: '⚔️ Formation', description: 'Set up your formation!', targetSelector: '.btn-formation', position: 'left' as const },
 ];
 
 /** 不含 unskippable 步骤的测试步骤集（所有步骤都可跳过） */
+// recruit → step3_recruit_hero（可跳过），resources → step5_check_resources（可跳过），
+// tech → step6_tech_research（可跳过）
+// 注意：不包含 detail（step1_castle_overview UNSKIPPABLE）和 enhance（step2_build_farm UNSKIPPABLE），
+// 这样引擎初始化时找不到映射步骤，回退到 index 0，确保第一步可跳过。
 const skippableTestSteps = [
-  { id: 'enhance', title: '⬆️ Enhance', description: 'Enhance your hero!', targetSelector: '.btn-enhance', position: 'top' as const },
-  { id: 'formation', title: '⚔️ Formation', description: 'Set up your formation!', targetSelector: '.btn-formation', position: 'left' as const },
+  { id: 'recruit', title: '🎮 Welcome!', description: 'Click the recruit button to recruit your first hero!', targetSelector: '.btn-recruit', position: 'bottom' as const },
   { id: 'resources', title: '💰 Resources', description: 'Check your resources!', targetSelector: '.btn-resources', position: 'bottom' as const },
   { id: 'tech', title: '🔬 Tech', description: 'Research technology!', targetSelector: '.btn-tech', position: 'top' as const },
 ];
@@ -121,8 +128,8 @@ describe('ACC-11 引导系统 验收测试', () => {
 
   it(accTest('ACC-11-04', '引导步骤标题和描述可见 - 显示当前步骤标题和描述'), () => {
     render(<GuideOverlay {...makeProps()} />);
-    expect(screen.getByText('🎮 Welcome!')).toBeInTheDocument();
-    expect(screen.getByText('Click the recruit button to recruit your first hero!')).toBeInTheDocument();
+    expect(screen.getByText('📋 Hero Detail')).toBeInTheDocument();
+    expect(screen.getByText('View your hero details!')).toBeInTheDocument();
   });
 
   it(accTest('ACC-11-05', '步骤进度指示器显示 - 显示当前步骤进度'), () => {
@@ -144,7 +151,7 @@ describe('ACC-11 引导系统 验收测试', () => {
     render(<GuideOverlay {...makeProps()} />);
     const nextBtn = screen.getByTestId('guide-overlay-next');
     fireEvent.click(nextBtn);
-    expect(screen.getByText('📋 Hero Detail')).toBeInTheDocument();
+    expect(screen.getByText('⬆️ Enhance')).toBeInTheDocument();
     expect(screen.getByText('2 / 4')).toBeInTheDocument();
   });
 
@@ -154,15 +161,15 @@ describe('ACC-11 引导系统 验收测试', () => {
     expect(screen.queryByTestId('guide-overlay-prev')).toBeNull();
     // 前进到第二步
     fireEvent.click(screen.getByTestId('guide-overlay-next'));
-    expect(screen.getByText('📋 Hero Detail')).toBeInTheDocument();
+    expect(screen.getByText('⬆️ Enhance')).toBeInTheDocument();
     // 回到第一步
     fireEvent.click(screen.getByTestId('guide-overlay-prev'));
-    expect(screen.getByText('🎮 Welcome!')).toBeInTheDocument();
+    expect(screen.getByText('📋 Hero Detail')).toBeInTheDocument();
   });
 
   it(accTest('ACC-11-12', '点击Skip跳过引导 - 触发onSkip回调'), () => {
-    // 使用可跳过步骤集，因为 'recruit' 映射到 UNSKIPPABLE_STEPS 中的 step1_castle_overview
-    // 'enhance' 映射到 step3_recruit_hero，不在 UNSKIPPABLE_STEPS 中，所以有 Skip 按钮
+    // 使用可跳过步骤集，因为 'detail' 映射到 UNSKIPPABLE_STEPS 中的 step1_castle_overview
+    // 'recruit' 映射到 step3_recruit_hero，不在 UNSKIPPABLE_STEPS 中，所以有 Skip 按钮
     const onSkip = vi.fn();
     render(<GuideOverlay {...makeSkippableProps()} onSkip={onSkip} />);
     const skipBtn = screen.getByTestId('guide-overlay-skip');
@@ -305,8 +312,8 @@ describe('ACC-11 引导系统 验收测试', () => {
     localStorage.setItem('tk-tutorial-progress', JSON.stringify({ step: 2, completed: false }));
     localStorage.setItem('tk-tutorial-welcome-dismissed', 'true');
     render(<GuideOverlay steps={testSteps} engine={null} />);
-    // 应恢复到第3步（index=2）即 "⬆️ Enhance"
-    expect(screen.getByText('⬆️ Enhance')).toBeInTheDocument();
+    // 应恢复到第3步（index=2）即 "🎮 Welcome!"
+    expect(screen.getByText('🎮 Welcome!')).toBeInTheDocument();
   });
 
   it(accTest('ACC-11-33', '引导中快速连续点击Next - 不出现状态错乱'), () => {
@@ -321,8 +328,8 @@ describe('ACC-11 引导系统 验收测试', () => {
   });
 
   it(accTest('ACC-11-34', '跳过引导后状态机一致 - 触发skip'), () => {
-    // 使用可跳过步骤集，因为 'recruit' 映射到 UNSKIPPABLE_STEPS
-    // 'enhance' 映射到 step3_recruit_hero，不在 UNSKIPPABLE_STEPS 中
+    // 使用可跳过步骤集，因为 'detail' 映射到 UNSKIPPABLE_STEPS 中的 step1_castle_overview
+    // 'recruit' 映射到 step3_recruit_hero，不在 UNSKIPPABLE_STEPS 中
     const onSkip = vi.fn();
     const props = makeSkippableProps();
     render(<GuideOverlay {...props} onSkip={onSkip} />);
@@ -373,20 +380,20 @@ describe('ACC-11 引导系统 验收测试', () => {
 
   it(accTest('ACC-11-43', '引导按钮在手机端可点击 - Skip/Next/Previous响应'), () => {
     // 使用可跳过步骤集，确保 Skip 按钮可见
-    // 'enhance' 映射到 step3_recruit_hero，不在 UNSKIPPABLE_STEPS 中
+    // 'recruit' 映射到 step3_recruit_hero，不在 UNSKIPPABLE_STEPS 中
     render(<GuideOverlay {...makeSkippableProps()} />);
     const skipBtn = screen.getByTestId('guide-overlay-skip');
     const nextBtn = screen.getByTestId('guide-overlay-next');
     assertInDOM(skipBtn, 'ACC-11-43', 'Skip按钮');
     assertInDOM(nextBtn, 'ACC-11-43', 'Next按钮');
     fireEvent.click(nextBtn);
-    expect(screen.getByText('⚔️ Formation')).toBeInTheDocument();
+    expect(screen.getByText('💰 Resources')).toBeInTheDocument();
   });
 
   it(accTest('ACC-11-44', '手机端引导气泡文字可读 - 标题和描述可见'), () => {
     render(<GuideOverlay {...makeProps()} />);
-    const title = screen.getByText('🎮 Welcome!');
-    const desc = screen.getByText('Click the recruit button to recruit your first hero!');
+    const title = screen.getByText('📋 Hero Detail');
+    const desc = screen.getByText('View your hero details!');
     assertInDOM(title, 'ACC-11-44', '引导标题');
     assertInDOM(desc, 'ACC-11-44', '引导描述');
   });

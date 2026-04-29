@@ -95,14 +95,14 @@ describe('FLOW-05 招贤馆集成测试', () => {
     assertStrict(tokenEl.textContent!.includes('530'), 'FLOW-05-02', `求贤令余额应包含 530，实际: ${tokenEl.textContent}`);
   });
 
-  it(accTest('FLOW-05-03', '消耗显示正确 — 普通招募消耗求贤令×5'), () => {
+  it(accTest('FLOW-05-03', '消耗显示正确 — 普通招募消耗招贤令×5'), () => {
     const sim = createRecruitSim();
     renderModal(sim);
 
-    const costElements = screen.getAllByText(/求贤令 ×\d+/);
+    const costElements = screen.getAllByText(/招贤令 ×\d+/);
     assertStrict(costElements.length >= 2, 'FLOW-05-03', '应显示单抽和十连消耗');
     const hasSingleCost = costElements.some((el) => el.textContent!.includes('×1'));
-    assertStrict(hasSingleCost, 'FLOW-05-03', '普通单抽应显示求贤令×1');
+    assertStrict(hasSingleCost, 'FLOW-05-03', '普通单抽应显示招贤令×1');
   });
 
   it(accTest('FLOW-05-04', '保底进度条可见 — 十连保底标签和计数'), () => {
@@ -182,14 +182,14 @@ describe('FLOW-05 招贤馆集成测试', () => {
 
   // ── 3. 高级招募（FLOW-05-11 ~ FLOW-05-15） ──
 
-  it(accTest('FLOW-05-11', '高级招募切换 — 消耗显示更新为求贤令×100'), async () => {
+  it(accTest('FLOW-05-11', '高级招募切换 — 消耗显示更新为招贤令×100'), async () => {
     const sim = createRecruitSim({ tokenAmount: 5000 });
     renderModal(sim);
 
     await userEvent.click(screen.getByTestId('recruit-modal-type-advanced'));
-    const costElements = screen.getAllByText(/求贤令 ×\d+/);
+    const costElements = screen.getAllByText(/招贤令 ×\d+/);
     const hasAdvancedCost = costElements.some((el) => el.textContent!.includes('×10'));
-    assertStrict(hasAdvancedCost, 'FLOW-05-11', '高级招募应显示求贤令×10');
+    assertStrict(hasAdvancedCost, 'FLOW-05-11', '高级招募应显示招贤令×10');
   });
 
   it(accTest('FLOW-05-12', '高级单抽完整流程 — 消耗求贤令×100'), async () => {
