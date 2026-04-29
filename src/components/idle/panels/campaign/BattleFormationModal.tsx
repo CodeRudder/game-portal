@@ -160,6 +160,13 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
     onClose();
   }, [battleResult, engine, stage.id, onClose]);
 
+  // ── P1-3 修复：失败后重新挑战 ──
+  const handleRetry = useCallback(() => {
+    setBattleResult(null);
+    setIsBattling(false);
+    // 回到战前布阵界面，玩家可重新点击出征
+  }, []);
+
   // ── 一键布阵（防御排序：防御最高的3人放前排，其余放后排） ──
   const handleAutoFormation = useCallback(() => {
     const sorted = heroSystem.getGeneralsSortedByPower(true);
@@ -267,6 +274,7 @@ const BattleFormationModal: React.FC<BattleFormationModalProps> = ({
         result={battleResult}
         stage={stage}
         onConfirm={handleResultConfirm}
+        onRetry={handleRetry}
       />
     );
   }

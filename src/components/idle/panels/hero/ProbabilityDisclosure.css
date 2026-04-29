@@ -35,6 +35,12 @@
 .tk-prob-disc__bar-track { height: 5px; background: rgba(0,0,0,0.25); border-radius: 3px; overflow: hidden; min-width: 60px; }
 .tk-prob-disc__bar-fill { height: 100%; border-radius: inherit; transition: width 0.3s; }
 
+/* ── 0%概率项（无法获得）样式 ── */
+.tk-prob-disc__row--unavailable { opacity: 0.5; }
+.tk-prob-disc__quality-label--unavailable { color: var(--tk-text-muted); text-decoration: line-through; }
+.tk-prob-disc__rate-value--zero { color: var(--tk-text-muted); font-style: italic; }
+.tk-prob-disc__unavailable-text { color: var(--tk-text-muted); font-size: 12px; }
+
 /* ── 保底机制 ── */
 .tk-prob-disc__pity { display: flex; flex-direction: column; gap: 8px; padding: 10px; background: rgba(196,149,106,0.06); border-radius: 8px; border: 1px solid rgba(196,149,106,0.1); }
 .tk-prob-disc__pity-title { font-size: 13px; font-weight: 600; color: var(--tk-gold-soft, #C4956A); }

@@ -38,24 +38,33 @@ const RateTable: React.FC<{
           <tr><th>品质</th><th>概率</th><th>占比</th></tr>
         </thead>
         <tbody>
-          {rates.map((r) => (
-            <tr key={r.quality} className={`tk-prob-disc__row tk-prob-disc__row--${r.quality.toLowerCase()}`}>
-              <td>
-                <span className="tk-prob-disc__quality-dot"
-                  style={{ backgroundColor: QUALITY_COLORS[r.quality] || '#9e9e9e' }} />
-                {r.label}
-              </td>
-              <td className="tk-prob-disc__rate-value">{(r.rate * 100).toFixed(2)}%</td>
-              <td>
-                <div className="tk-prob-disc__bar-track">
-                  <div className="tk-prob-disc__bar-fill" style={{
-                    width: `${r.rate * 100}%`,
-                    backgroundColor: QUALITY_COLORS[r.quality] || '#9e9e9e',
-                  }} />
-                </div>
-              </td>
-            </tr>
-          ))}
+          {rates.map((r) => {
+            const isZero = r.rate === 0;
+            return (
+              <tr key={r.quality} className={`tk-prob-disc__row tk-prob-disc__row--${r.quality.toLowerCase()} ${isZero ? 'tk-prob-disc__row--unavailable' : ''}`}>
+                <td>
+                  <span className="tk-prob-disc__quality-dot"
+                    style={{ backgroundColor: isZero ? '#666' : (QUALITY_COLORS[r.quality] || '#9e9e9e') }} />
+                  <span className={isZero ? 'tk-prob-disc__quality-label--unavailable' : ''}>{r.label}</span>
+                </td>
+                <td className={`tk-prob-disc__rate-value ${isZero ? 'tk-prob-disc__rate-value--zero' : ''}`}>
+                  {isZero ? '无法获得' : `${(r.rate * 100).toFixed(2)}%`}
+                </td>
+                <td>
+                  {isZero ? (
+                    <span className="tk-prob-disc__unavailable-text">—</span>
+                  ) : (
+                    <div className="tk-prob-disc__bar-track">
+                      <div className="tk-prob-disc__bar-fill" style={{
+                        width: `${r.rate * 100}%`,
+                        backgroundColor: QUALITY_COLORS[r.quality] || '#9e9e9e',
+                      }} />
+                    </div>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
         <tfoot>
           <tr>

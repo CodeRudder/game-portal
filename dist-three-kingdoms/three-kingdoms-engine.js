@@ -6,35 +6,47 @@ const RESOURCE_TYPES = [
   "gold",
   "troops",
   "mandate",
-  "techPoint"
+  "techPoint",
+  "recruitToken",
+  "skillBook"
 ];
 const RESOURCE_LABELS$1 = {
   grain: "粮草",
   gold: "铜钱",
   troops: "兵力",
   mandate: "天命",
-  techPoint: "科技点"
+  techPoint: "科技点",
+  recruitToken: "招贤令",
+  skillBook: "技能书"
 };
 const RESOURCE_COLORS = {
   grain: "#7EC850",
   gold: "#C9A84C",
   troops: "#B8423A",
   mandate: "#7B5EA7",
-  techPoint: "#4A90D9"
+  techPoint: "#4A90D9",
+  recruitToken: "#E8A030",
+  skillBook: "#9B59B6"
 };
 const INITIAL_RESOURCES = {
   grain: 500,
   gold: 300,
   troops: 50,
   mandate: 0,
-  techPoint: 0
+  techPoint: 0,
+  recruitToken: 30,
+  // v2: 新手礼包 30 个招贤令，配合消耗1/次让新玩家充分体验招募
+  skillBook: 0
 };
 const INITIAL_PRODUCTION_RATES = {
   grain: 0.8,
   gold: 0,
   troops: 0,
   mandate: 0,
-  techPoint: 0
+  techPoint: 0,
+  recruitToken: 0.01,
+  // v2: 从0.002提升到0.01，约100秒产1个，改善招贤令获取体验
+  skillBook: 0
 };
 const INITIAL_CAPS = {
   grain: 2e3,
@@ -83,13 +95,13 @@ const OFFLINE_TIERS = [
   // 48~72h: 20%
 ];
 const OFFLINE_MAX_SECONDS = 259200;
-const MIN_GRAIN_RESERVE = 10;
-const SAVE_VERSION$3 = 1;
+const MIN_GRAIN_RESERVE$1 = 10;
+const SAVE_VERSION$9 = 1;
 function zeroResources() {
-  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
+  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
 }
 function cloneResources(r) {
-  return { grain: r.grain, gold: r.gold, troops: r.troops, mandate: r.mandate, techPoint: r.techPoint };
+  return { grain: r.grain, gold: r.gold, troops: r.troops, mandate: r.mandate, techPoint: r.techPoint, recruitToken: r.recruitToken, skillBook: r.skillBook };
 }
 function calculateBonusMultiplier(bonuses) {
   if (!bonuses) return 1;
@@ -250,7 +262,7 @@ class GameLogger {
 }
 const gameLog = new GameLogger();
 function defaultCaps() {
-  return { grain: INITIAL_CAPS.grain, gold: null, troops: INITIAL_CAPS.troops, mandate: null, techPoint: null };
+  return { grain: INITIAL_CAPS.grain, gold: null, troops: INITIAL_CAPS.troops, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
 }
 class ResourceSystem {
   constructor() {
@@ -339,16 +351,16 @@ class ResourceSystem {
     if (amount <= 0) return 0;
     const current = this.resources[type];
     if (type === "grain") {
-      const available = Math.max(0, current - MIN_GRAIN_RESERVE);
+      const available = Math.max(0, current - MIN_GRAIN_RESERVE$1);
       if (available < amount) {
         throw new Error(
-          `粮草不足：需要 ${amount}，可用 ${available}（保留 ${MIN_GRAIN_RESERVE}）`
+          `粮草不足：需要 ${amount}，可用 ${available}（保留 ${MIN_GRAIN_RESERVE$1}）`
         );
       }
       this.resources.grain -= amount;
       return amount;
     }
-    if (current < amount) {
+    if (!Number.isFinite(current) || current < amount) {
       throw new Error(
         `${type} 资源不足：需要 ${amount}，当前 ${current}`
       );
@@ -374,7 +386,7 @@ class ResourceSystem {
       const required = cost[type];
       if (required === void 0 || required <= 0) continue;
       const current = this.resources[type];
-      const available = type === "grain" ? Math.max(0, current - MIN_GRAIN_RESERVE) : current;
+      const available = type === "grain" ? Math.max(0, current - MIN_GRAIN_RESERVE$1) : current;
       if (available < required) {
         shortages[type] = { required, current: available };
       }
@@ -416,13 +428,16 @@ class ResourceSystem {
       gold: 0,
       troops: 0,
       mandate: 0,
-      techPoint: 0
+      techPoint: 0,
+      recruitToken: 0,
+      skillBook: 0
     };
     for (const [resourceType, rate] of Object.entries(buildingProductions)) {
-      if (resourceType === "grain" || resourceType === "gold" || resourceType === "troops" || resourceType === "mandate") {
+      if (resourceType === "grain" || resourceType === "gold" || resourceType === "troops" || resourceType === "mandate" || resourceType === "techPoint" || resourceType === "recruitToken") {
         newRates[resourceType] += rate;
       }
     }
+    newRates.recruitToken += INITIAL_PRODUCTION_RATES.recruitToken;
     this.productionRates = newRates;
   }
   /**
@@ -498,14 +513,14 @@ class ResourceSystem {
       lastSaveTime: Date.now(),
       productionRates: { ...this.productionRates },
       caps: { ...this.caps },
-      version: SAVE_VERSION$3
+      version: SAVE_VERSION$9
     };
   }
   /** 从存档数据恢复 */
   deserialize(data) {
-    if (data.version !== SAVE_VERSION$3) {
+    if (data.version !== SAVE_VERSION$9) {
       gameLog.warn(
-        `ResourceSystem: 存档版本不匹配 (期望 ${SAVE_VERSION$3}，实际 ${data.version})，尝试兼容加载`
+        `ResourceSystem: 存档版本不匹配 (期望 ${SAVE_VERSION$9}，实际 ${data.version})，尝试兼容加载`
       );
     }
     this.resources = cloneResources(data.resources);
@@ -567,7 +582,7 @@ class ResourceSystem {
     this.lastSaveTime = Date.now();
   }
 }
-const BUILDING_TYPES = [
+const BUILDING_TYPES$1 = [
   "castle",
   "farmland",
   "market",
@@ -948,6 +963,7 @@ const BUILDING_DEFS = {
     type: "wall",
     maxLevel: 20,
     unlockCastleLevel: 5,
+    production: { resourceType: "recruitToken", baseValue: 0.01, perLevel: 0 },
     levelTable: WALL_LEVEL_TABLE
   }
 };
@@ -993,7 +1009,7 @@ function recommendUpgradePath(buildings, context) {
 function getUpgradeRouteRecommendation(buildings, getProduction, getUpgradeCost, resources) {
   var _a, _b, _c;
   const recommendations = [];
-  for (const t of BUILDING_TYPES) {
+  for (const t of BUILDING_TYPES$1) {
     const state = buildings[t];
     if (state.status === "locked" || state.status === "upgrading") continue;
     if (state.level >= BUILDING_MAX_LEVELS[t]) continue;
@@ -1057,7 +1073,7 @@ function createInitialState$3(type) {
 }
 function createAllStates() {
   const s = {};
-  for (const t of BUILDING_TYPES) s[t] = createInitialState$3(t);
+  for (const t of BUILDING_TYPES$1) s[t] = createInitialState$3(t);
   return s;
 }
 function batchUpgrade(types, resources, ctx) {
@@ -1073,7 +1089,9 @@ function batchUpgrade(types, resources, ctx) {
       gold: remainingGold,
       troops: remainingTroops,
       mandate: resources.mandate,
-      techPoint: resources.techPoint
+      techPoint: resources.techPoint,
+      recruitToken: resources.recruitToken,
+      skillBook: resources.skillBook
     };
     const check = ctx.checkUpgrade(t, currentResources);
     if (!check.canUpgrade) {
@@ -1134,7 +1152,7 @@ class BuildingSystem {
   }
   getBuildingLevels() {
     const levels = {};
-    for (const t of BUILDING_TYPES) levels[t] = this.buildings[t].level;
+    for (const t of BUILDING_TYPES$1) levels[t] = this.buildings[t].level;
     return levels;
   }
   getBuildingDef(type) {
@@ -1154,7 +1172,7 @@ class BuildingSystem {
   /** 主城升级后调用，返回新解锁的建筑列表 */
   checkAndUnlockBuildings() {
     const unlocked = [];
-    for (const t of BUILDING_TYPES) {
+    for (const t of BUILDING_TYPES$1) {
       const s = this.buildings[t];
       if (s.status === "locked" && this.checkUnlock(t)) {
         s.status = "idle";
@@ -1174,15 +1192,15 @@ class BuildingSystem {
     if (state.status === "upgrading") reasons.push("建筑正在升级中");
     const maxLv = BUILDING_MAX_LEVELS[type];
     if (state.level >= maxLv) reasons.push(`已达等级上限 Lv${maxLv}`);
-    if (type !== "castle" && state.level >= this.buildings.castle.level) {
-      reasons.push(`建筑等级不能超过主城等级 (Lv${this.buildings.castle.level})`);
+    if (type !== "castle" && state.level > this.buildings.castle.level) {
+      reasons.push(`建筑等级不能超过主城等级+1 (当前主城 Lv${this.buildings.castle.level})`);
     }
     if (type === "castle") {
       const next = state.level + 1;
-      if (next === 5 && !BUILDING_TYPES.some((t) => t !== "castle" && this.buildings[t].level >= 4)) {
+      if (next === 5 && !BUILDING_TYPES$1.some((t) => t !== "castle" && this.buildings[t].level >= 4)) {
         reasons.push("需要至少一座其他建筑达到 Lv4");
       }
-      if (next === 10 && !BUILDING_TYPES.some((t) => t !== "castle" && this.buildings[t].level >= 9)) {
+      if (next === 10 && !BUILDING_TYPES$1.some((t) => t !== "castle" && this.buildings[t].level >= 9)) {
         reasons.push("需要至少一座其他建筑达到 Lv9");
       }
     }
@@ -1310,7 +1328,7 @@ class BuildingSystem {
   /** 计算所有建筑的资源产出汇总（不含主城加成） */
   calculateTotalProduction() {
     const result = {};
-    for (const t of BUILDING_TYPES) {
+    for (const t of BUILDING_TYPES$1) {
       if (t === "castle") continue;
       const state = this.buildings[t];
       if (state.level <= 0) continue;
@@ -1324,7 +1342,7 @@ class BuildingSystem {
   /** 获取产出建筑等级映射（用于资源上限计算等场景） */
   getProductionBuildingLevels() {
     const levels = {};
-    for (const t of BUILDING_TYPES) {
+    for (const t of BUILDING_TYPES$1) {
       if (t !== "castle") levels[t] = this.buildings[t].level;
     }
     return levels;
@@ -1350,12 +1368,12 @@ class BuildingSystem {
     if (data.version !== BUILDING_SAVE_VERSION) {
       gameLog.warn(`BuildingSystem: 存档版本不匹配 (期望 ${BUILDING_SAVE_VERSION}，实际 ${data.version})`);
     }
-    for (const t of BUILDING_TYPES) {
+    for (const t of BUILDING_TYPES$1) {
       if (data.buildings[t]) this.buildings[t] = { ...data.buildings[t] };
     }
     this.upgradeQueue = [];
     const now = Date.now();
-    for (const t of BUILDING_TYPES) {
+    for (const t of BUILDING_TYPES$1) {
       const s = this.buildings[t];
       if (s.status === "upgrading" && s.upgradeEndTime) {
         if (now >= s.upgradeEndTime) {
@@ -1411,10 +1429,35 @@ class BuildingSystem {
       startUpgrade: (t, r) => this.startUpgrade(t, r)
     });
   }
+  // ── 13. 测试基础设施 ──
+  /**
+   * 即时完成所有待处理的建筑升级（含队列清空）。
+   *
+   * 仅用于测试工具（GameEventSimulator），生产代码禁止调用。
+   *
+   * @internal
+   */
+  forceCompleteUpgrades() {
+    const completed = [];
+    for (const [type, state] of Object.entries(this.buildings)) {
+      if (state.status === "upgrading") {
+        state.level += 1;
+        state.status = "idle";
+        state.upgradeStartTime = null;
+        state.upgradeEndTime = null;
+        completed.push(type);
+      }
+    }
+    this.upgradeQueue.length = 0;
+    if (completed.includes("castle")) {
+      this.checkAndUnlockBuildings();
+    }
+    return completed;
+  }
   // ── 私有 ──
   cloneBuildings() {
     const c = {};
-    for (const t of BUILDING_TYPES) c[t] = { ...this.buildings[t] };
+    for (const t of BUILDING_TYPES$1) c[t] = { ...this.buildings[t] };
     return c;
   }
 }
@@ -1889,7 +1932,12 @@ const LEVEL_EXP_TABLE = [
   { levelMin: 11, levelMax: 20, expPerLevel: 120, goldPerLevel: 50 },
   { levelMin: 21, levelMax: 30, expPerLevel: 250, goldPerLevel: 100 },
   { levelMin: 31, levelMax: 40, expPerLevel: 500, goldPerLevel: 200 },
-  { levelMin: 41, levelMax: 50, expPerLevel: 1e3, goldPerLevel: 400 }
+  { levelMin: 41, levelMax: 50, expPerLevel: 1e3, goldPerLevel: 400 },
+  { levelMin: 51, levelMax: 60, expPerLevel: 1500, goldPerLevel: 600 },
+  { levelMin: 61, levelMax: 70, expPerLevel: 2500, goldPerLevel: 1e3 },
+  { levelMin: 71, levelMax: 80, expPerLevel: 4e3, goldPerLevel: 1600 },
+  { levelMin: 81, levelMax: 90, expPerLevel: 6e3, goldPerLevel: 2500 },
+  { levelMin: 91, levelMax: 100, expPerLevel: 9e3, goldPerLevel: 4e3 }
 ];
 const HERO_MAX_LEVEL = 50;
 const DUPLICATE_FRAGMENT_COUNT = {
@@ -1922,13 +1970,13 @@ const SYNTHESIZE_REQUIRED_FRAGMENTS = {
   [Quality.LEGENDARY]: 300
 };
 const POWER_WEIGHTS = {
-  /** 攻击力权重 */
+  /** 攻击力权重 (PRD: ATK × 2.0) */
   attack: 2,
-  /** 防御力权重 */
+  /** 统率权重 (PRD: CMD × 1.5, 源码字段名defense待重构为command) */
   defense: 1.5,
-  /** 智力权重 */
+  /** 智力权重 (PRD: INT × 2.0) */
   intelligence: 2,
-  /** 速度权重 */
+  /** 政治权重 (PRD: POL × 1.0, 源码字段名speed待重构为politics) */
   speed: 1
 };
 const LEVEL_COEFFICIENT_PER_LEVEL = 0.05;
@@ -2103,12 +2151,86 @@ const GENERAL_DEFS = [
       { id: "lvbu_02", name: "飞将", type: "passive", level: 1, description: "攻击时额外造成目标当前生命值8%的真实伤害" }
     ],
     biography: "字奉先，天下第一猛将。辕门射戟，三英战吕布，勇冠三军。"
+  },
+  // ═══════════════════════════════════════════
+  // PRD v1.3 HER-11 新增武将（6名，均为稀有品质）
+  // 解决：传说36% vs 稀有仅7%（1名）的品质分布不均
+  // 解决：吴国仅2名武将无法触发3人羁绊
+  // ═══════════════════════════════════════════
+  // ── 吴国新增（3名） ──
+  {
+    id: "lushu",
+    name: "鲁肃",
+    quality: Quality.RARE,
+    faction: "wu",
+    baseStats: { attack: 60, defense: 75, intelligence: 90, speed: 65 },
+    skills: [
+      { id: "lushu_01", name: "联盟策略", type: "active", level: 1, description: "增加友方全体防御力15%" }
+    ],
+    biography: "字子敬，东吴名臣，外交家。力主孙刘联盟抗曹，赤壁之战的关键推动者。"
+  },
+  {
+    id: "huanggai",
+    name: "黄盖",
+    quality: Quality.RARE,
+    faction: "wu",
+    baseStats: { attack: 70, defense: 85, intelligence: 50, speed: 55 },
+    skills: [
+      { id: "huanggai_01", name: "苦肉计", type: "active", level: 1, description: "牺牲10%生命值，增加攻击力30%持续3回合" }
+    ],
+    biography: "字公覆，东吴老将。赤壁之战中施苦肉计，为火烧连环船立下大功。"
+  },
+  {
+    id: "ganning",
+    name: "甘宁",
+    quality: Quality.RARE,
+    faction: "wu",
+    baseStats: { attack: 90, defense: 55, intelligence: 40, speed: 85 },
+    skills: [
+      { id: "ganning_01", name: "夜袭", type: "active", level: 1, description: "对敌方后排造成攻击力150%的物理伤害" }
+    ],
+    biography: "字兴霸，锦帆贼出身。百骑劫魏营，威震逍遥津，东吴猛将。"
+  },
+  // ── 魏国新增（2名） ──
+  {
+    id: "xuhuang",
+    name: "徐晃",
+    quality: Quality.RARE,
+    faction: "wei",
+    baseStats: { attack: 75, defense: 80, intelligence: 55, speed: 70 },
+    skills: [
+      { id: "xuhuang_01", name: "坚守", type: "active", level: 1, description: "增加自身防御力20%，持续2回合" }
+    ],
+    biography: "字公明，曹魏名将。治军严明，樊城之战击败关羽，用兵如神。"
+  },
+  {
+    id: "zhangliao",
+    name: "张辽",
+    quality: Quality.RARE,
+    faction: "wei",
+    baseStats: { attack: 88, defense: 70, intelligence: 60, speed: 90 },
+    skills: [
+      { id: "zhangliao_01", name: "突袭", type: "active", level: 1, description: "先手攻击，造成攻击力120%的物理伤害" }
+    ],
+    biography: "字文远，威震逍遥津。以八百勇士破孙权十万大军，曹魏五子良将之首。"
+  },
+  // ── 蜀国新增（1名） ──
+  {
+    id: "weiyan",
+    name: "魏延",
+    quality: Quality.RARE,
+    faction: "shu",
+    baseStats: { attack: 85, defense: 60, intelligence: 45, speed: 80 },
+    skills: [
+      { id: "weiyan_01", name: "狂攻", type: "active", level: 1, description: "连续攻击2次，每次造成攻击力80%的物理伤害" }
+    ],
+    biography: "字文长，蜀汉猛将。镇守汉中十余年，屡立战功，勇猛过人。"
   }
 ];
 const GENERAL_DEF_MAP = new Map(
   GENERAL_DEFS.map((def) => [def.id, def])
 );
-const STAR_UP_GOLD_COST = [
+const STAR_UP_GOLD_COST$1 = [
   0,
   // 0→1 星（初始，无消耗）
   5e3,
@@ -2146,39 +2268,39 @@ function getStarMultiplier$1(star) {
 const BREAKTHROUGH_TIERS = [
   {
     name: "一阶突破",
-    levelCapBefore: 30,
-    levelCapAfter: 40,
+    levelCapBefore: 50,
+    levelCapAfter: 60,
     fragmentCost: 30,
     goldCost: 2e4,
     breakthroughStoneCost: 5
   },
   {
     name: "二阶突破",
-    levelCapBefore: 40,
-    levelCapAfter: 50,
+    levelCapBefore: 60,
+    levelCapAfter: 70,
     fragmentCost: 50,
     goldCost: 5e4,
     breakthroughStoneCost: 10
   },
   {
     name: "三阶突破",
-    levelCapBefore: 50,
-    levelCapAfter: 60,
+    levelCapBefore: 70,
+    levelCapAfter: 80,
     fragmentCost: 80,
     goldCost: 1e5,
     breakthroughStoneCost: 20
   },
   {
     name: "四阶突破",
-    levelCapBefore: 60,
-    levelCapAfter: 70,
+    levelCapBefore: 80,
+    levelCapAfter: 100,
     fragmentCost: 120,
     goldCost: 2e5,
     breakthroughStoneCost: 40
   }
 ];
 const MAX_BREAKTHROUGH_STAGE = BREAKTHROUGH_TIERS.length;
-const INITIAL_LEVEL_CAP = 30;
+const INITIAL_LEVEL_CAP = 50;
 const FINAL_LEVEL_CAP = BREAKTHROUGH_TIERS[BREAKTHROUGH_TIERS.length - 1].levelCapAfter;
 const STAGE_FRAGMENT_DROPS = [
   { stageId: "stage_1_1", generalId: "minbingduizhang", dropRange: { min: 1, max: 3 } },
@@ -2214,7 +2336,7 @@ const SHOP_FRAGMENT_EXCHANGE = [
 const STAR_SYSTEM_SAVE_VERSION = 1;
 const RESOURCE_TYPE_GOLD = "gold";
 const RESOURCE_TYPE_BREAKTHROUGH_STONE = "breakthroughStone";
-function createEmptyState() {
+function createEmptyState$2() {
   return {
     generals: {},
     fragments: {}
@@ -2258,12 +2380,43 @@ function deserializeHeroState(data) {
     fragments: { ...data.state.fragments }
   };
 }
-class HeroSystem {
+const _HeroSystem = class _HeroSystem {
   constructor() {
     __publicField(this, "name", "hero");
     __publicField(this, "deps", null);
     __publicField(this, "state");
-    this.state = createEmptyState();
+    /**
+     * 等级上限回调（由引擎层注入 HeroStarSystem.getLevelCap）。
+     * 未注入时 fallback 到 HERO_MAX_LEVEL(50)。
+     */
+    __publicField(this, "_getLevelCap", null);
+    /**
+     * 装备战力回调（由引擎层注入 EquipmentSystem 聚合）。
+     * 返回指定武将的装备总战力，未注入时 fallback 到 0。
+     */
+    __publicField(this, "_getEquipmentPower", null);
+    /**
+     * 羁绊系数回调（由引擎层注入 BondSystem.getBondMultiplier）。
+     * 返回编队羁绊总系数，未注入时 fallback 到 1.0（无羁绊加成）。
+     */
+    __publicField(this, "_getBondMultiplier", null);
+    this.state = createEmptyState$2();
+  }
+  /** 注入等级上限回调 */
+  setLevelCapGetter(fn) {
+    this._getLevelCap = fn;
+  }
+  /** 注入装备战力回调（PRD: 装备系数 = 1 + 装备总战力 / 1000） */
+  setEquipmentPowerGetter(fn) {
+    this._getEquipmentPower = fn;
+  }
+  /** 注入羁绊系数回调（PRD: 羁绊系数 = BondSystem.getBondMultiplier，1.0~2.0） */
+  setBondMultiplierGetter(fn) {
+    this._getBondMultiplier = fn;
+  }
+  /** 获取武将当前等级上限 */
+  getMaxLevel(generalId) {
+    return this._getLevelCap ? this._getLevelCap(generalId) : HERO_MAX_LEVEL;
   }
   // ── ISubsystem 适配层 ──
   /** 注入依赖（事件总线、配置注册表等） */
@@ -2279,7 +2432,7 @@ class HeroSystem {
   }
   /** 重置到初始状态 */
   reset() {
-    this.state = createEmptyState();
+    this.state = createEmptyState$2();
   }
   // ── 1. 武将管理 ──
   /**
@@ -2333,31 +2486,79 @@ class HeroSystem {
   /**
    * 计算单个武将的战力
    *
-   * 公式：战力 = (ATK×2.0 + DEF×1.5 + INT×2.0 + SPD×1.0) × 等级系数 × 品质系数 × 星级系数
+   * 公式：战力 = (ATK×2.0 + CMD×1.5 + INT×2.0 + POL×1.0) × 等级系数 × 星级系数 × 装备系数 × 羁绊系数
    * 等级系数 = 1 + 等级 × 0.05
    * 星级系数 = getStarMultiplier(star)，每星递增（1星=1.0, 2星=1.15, 3星=1.35, ...）
+   * 装备系数 = 1 + totalEquipmentPower / 1000
+   * 羁绊系数 = BondSystem.getBondMultiplier(formationIds)，默认 1.0（无羁绊）
+   * 注: 源码字段 defense↔CMD, speed↔POL, 属性命名待后续统一
    *
    * @param general - 武将数据
    * @param star - 武将星级（默认1），由 HeroStarSystem.getStar() 提供
+   * @param totalEquipmentPower - 武将装备总战力，默认使用注入的装备战力回调；未注入时 fallback 到 0
+   * @param bondMultiplier - 羁绊系数，默认使用注入的羁绊回调；未注入时 fallback 到 1.0
    */
-  calculatePower(general, star = 1) {
+  calculatePower(general, star = 1, totalEquipmentPower, bondMultiplier) {
+    var _a;
     const { attack, defense, intelligence, speed } = general.baseStats;
     const { attack: wA, defense: wD, intelligence: wI, speed: wS } = POWER_WEIGHTS;
     const statsPower = attack * wA + defense * wD + intelligence * wI + speed * wS;
     const levelCoeff = 1 + general.level * LEVEL_COEFFICIENT_PER_LEVEL;
     const qualityCoeff = QUALITY_MULTIPLIERS[general.quality];
     const starCoeff = getStarMultiplier$1(star);
-    return Math.floor(statsPower * levelCoeff * qualityCoeff * starCoeff);
+    const equipPower = totalEquipmentPower ?? ((_a = this._getEquipmentPower) == null ? void 0 : _a.call(this, general.id)) ?? 0;
+    const equipmentCoeff = 1 + equipPower / 1e3;
+    const bondCoeff = bondMultiplier ?? 1;
+    return Math.floor(statsPower * levelCoeff * qualityCoeff * starCoeff * equipmentCoeff * bondCoeff);
   }
-  /** 计算全体武将总战力 */
+  /**
+   * 计算全体武将总战力（不含羁绊系数）
+   *
+   * 语义说明：羁绊是编队级概念（依赖编队中武将组合），而此方法
+   * 遍历全体武将，不存在"编队"上下文，因此不含羁绊系数。
+   * 如需含羁绊的编队战力，请使用 calculateFormationPower()。
+   */
   calculateTotalPower() {
     return Object.values(this.state.generals).reduce((sum, g) => sum + this.calculatePower(g), 0);
   }
-  // ── 3. 碎片管理 ──
-  /** 添加武将碎片（count 必须 > 0） */
+  /**
+   * 计算编队武将总战力（含羁绊系数）
+   *
+   * 羁绊系数基于编队整体计算，乘以编队总战力。
+   * 羁绊系数优先级：显式参数 > 注入回调 > 默认1.0（与 calculatePower 设计一致）
+   *
+   * @param generalIds - 编队中的武将ID列表
+   * @param getStar - 获取武将星级的回调
+   * @param bondMultiplier - 羁绊系数（可选），优先级高于注入回调；未传入时使用 setBondMultiplierGetter 注入的回调
+   */
+  calculateFormationPower(generalIds, getStar, bondMultiplier) {
+    var _a;
+    const starGetter = getStar ?? (() => 1);
+    let basePower = 0;
+    for (const id of generalIds) {
+      const g = this.state.generals[id];
+      if (g) basePower += this.calculatePower(g, starGetter(id));
+    }
+    const bondCoeff = bondMultiplier ?? ((_a = this._getBondMultiplier) == null ? void 0 : _a.call(this, generalIds)) ?? 1;
+    return Math.floor(basePower * bondCoeff);
+  }
+  /**
+   * 添加武将碎片（count 必须 > 0）
+   *
+   * 碎片上限 999，超出部分返回给调用方转化为铜钱。
+   * @returns 溢出的碎片数量（用于转化为铜钱：1碎片 = 100铜钱）
+   */
   addFragment(generalId, count) {
-    if (count <= 0) return;
-    this.state.fragments[generalId] = (this.state.fragments[generalId] ?? 0) + count;
+    if (count <= 0) return 0;
+    const current = this.state.fragments[generalId] ?? 0;
+    const newTotal = current + count;
+    const cap = _HeroSystem.FRAGMENT_CAP;
+    if (newTotal <= cap) {
+      this.state.fragments[generalId] = newTotal;
+      return 0;
+    }
+    this.state.fragments[generalId] = cap;
+    return newTotal - cap;
   }
   /** 消耗武将碎片，碎片不足返回 false */
   useFragments(generalId, count) {
@@ -2463,16 +2664,31 @@ class HeroSystem {
     return cloneGeneral(general);
   }
   /**
+   * 更新指定武将的技能等级（供 SkillUpgradeSystem 使用）
+   * @param generalId - 武将ID
+   * @param skillIndex - 技能索引
+   * @param newLevel - 新的技能等级
+   * @returns 更新后的武将数据，或 undefined
+   */
+  updateSkillLevel(generalId, skillIndex, newLevel) {
+    const general = this.state.generals[generalId];
+    if (!general) return void 0;
+    if (skillIndex < 0 || skillIndex >= general.skills.length) return void 0;
+    general.skills[skillIndex] = { ...general.skills[skillIndex], level: newLevel };
+    return cloneGeneral(general);
+  }
+  /**
    * 给武将增加经验，自动处理升级
    * @returns 升级后的武将数据和升级次数，或 null（不存在/已满级）
    */
   addExp(generalId, exp) {
     const general = this.state.generals[generalId];
     if (!general) return null;
-    if (general.level >= HERO_MAX_LEVEL) return null;
+    const maxLevel = this.getMaxLevel(generalId);
+    if (general.level >= maxLevel) return null;
     let levelsGained = 0;
     let remainingExp = exp;
-    while (remainingExp > 0 && general.level < HERO_MAX_LEVEL) {
+    while (remainingExp > 0 && general.level < maxLevel) {
       const required = this.getExpRequired(general.level);
       const currentExp = general.exp + remainingExp;
       if (currentExp >= required) {
@@ -2520,17 +2736,25 @@ class HeroSystem {
   deserialize(data) {
     this.state = deserializeHeroState(data);
   }
-}
+};
+// ── 3. 碎片管理 ──
+/** 碎片上限常量 */
+__publicField(_HeroSystem, "FRAGMENT_CAP", 999);
+/** 溢出碎片→铜钱转化比率（1碎片 = 100铜钱） */
+__publicField(_HeroSystem, "FRAGMENT_TO_GOLD_RATE", 100);
+let HeroSystem = _HeroSystem;
 const RECRUIT_COSTS = {
   normal: {
-    /** 普通招募消耗招贤榜（v2.0 修正：铜钱×100 → 招贤榜×1） */
+    /** 普通招募消耗招贤令（R3 修正：1→5，解决经济通胀问题） */
     resourceType: "recruitToken",
     amount: 1
+    // v2: 从5降为1，配合初始30个招贤令让新玩家充分体验招募
   },
   advanced: {
     /** 高级招募消耗求贤令（v2.0 修正：×1 → ×100） */
     resourceType: "recruitToken",
-    amount: 100
+    amount: 10
+    // v2: 从100降为10，让玩家也能体验高级招募
   }
 };
 const TEN_PULL_DISCOUNT = 1;
@@ -2555,7 +2779,8 @@ const RECRUIT_RATES = {
 const NORMAL_PITY = {
   tenPullThreshold: 10,
   tenPullMinQuality: Quality.RARE,
-  hardPityThreshold: 100,
+  hardPityThreshold: Infinity,
+  // PRD: 普通池无硬保底
   hardPityMinQuality: Quality.LEGENDARY
 };
 const ADVANCED_PITY = {
@@ -2595,7 +2820,7 @@ function createDefaultUpHero() {
     description: DEFAULT_UP_CONFIG.description
   };
 }
-function todayDateString() {
+function todayDateString$2() {
   return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
 }
 function rollQuality(rates, rng) {
@@ -2625,6 +2850,81 @@ function pickGeneralByQuality(heroSystem, quality, rng) {
   if (candidates.length === 0) return null;
   return candidates[Math.floor(rng() * candidates.length)].id;
 }
+class HeroRecruitUpManager {
+  constructor() {
+    __publicField(this, "name", "heroRecruitUp");
+    __publicField(this, "deps", null);
+    __publicField(this, "upHero");
+    this.upHero = createDefaultUpHero();
+  }
+  // ── ISubsystem 接口 ──
+  init(deps) {
+    this.deps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return this.serializeUpHero();
+  }
+  reset() {
+    this.upHero = createDefaultUpHero();
+  }
+  // ─────────────────────────────────────────
+  // 1. UP 武将状态管理
+  // ─────────────────────────────────────────
+  /** 设置当前 UP 武将（仅高级招募生效） */
+  setUpHero(generalId, rate) {
+    this.upHero.upGeneralId = generalId;
+    if (rate !== void 0) {
+      this.upHero.upRate = rate;
+    }
+  }
+  /** 获取当前 UP 武将状态（只读副本） */
+  getUpHeroState() {
+    return { ...this.upHero };
+  }
+  /** 清除 UP 武将（重置为默认状态） */
+  clearUpHero() {
+    this.upHero = createDefaultUpHero();
+    gameLog.info("[HeroRecruitUpManager] UP hero cleared");
+  }
+  /** 获取 UP 武将 ID */
+  getUpGeneralId() {
+    return this.upHero.upGeneralId;
+  }
+  /** 获取 UP 触发概率 */
+  getUpRate() {
+    return this.upHero.upRate;
+  }
+  /** 设置 UP 触发概率 */
+  setUpRate(rate) {
+    this.upHero.upRate = rate;
+  }
+  // ─────────────────────────────────────────
+  // 2. 序列化/反序列化
+  // ─────────────────────────────────────────
+  /** 序列化 UP 武将状态 */
+  serializeUpHero() {
+    return { ...this.upHero };
+  }
+  /** 反序列化恢复 UP 武将状态（兼容旧存档） */
+  deserializeUpHero(data) {
+    if (data.version !== RECRUIT_SAVE_VERSION) {
+      gameLog.warn(
+        `HeroRecruitUpManager: 存档版本不匹配 (期望 ${RECRUIT_SAVE_VERSION}，实际 ${data.version})`
+      );
+    }
+    if (data.upHero) {
+      this.upHero = {
+        upGeneralId: data.upHero.upGeneralId ?? null,
+        upRate: data.upHero.upRate ?? DEFAULT_UP_CONFIG.upRate,
+        description: data.upHero.description ?? ""
+      };
+    } else {
+      this.upHero = createDefaultUpHero();
+    }
+  }
+}
 class HeroRecruitSystem {
   constructor(rng = Math.random) {
     __publicField(this, "name", "heroRecruit");
@@ -2632,18 +2932,20 @@ class HeroRecruitSystem {
     __publicField(this, "recruitDeps", null);
     __publicField(this, "pity");
     __publicField(this, "freeRecruit");
-    __publicField(this, "upHero");
     __publicField(this, "rng");
     __publicField(this, "history");
+    /** UP 武将管理子系统（依赖注入） */
+    __publicField(this, "upManager");
     this.pity = createEmptyPity();
     this.freeRecruit = createEmptyFreeRecruit();
-    this.upHero = createDefaultUpHero();
     this.rng = rng;
     this.history = [];
+    this.upManager = new HeroRecruitUpManager();
   }
   // ── ISubsystem 适配层 ──
   init(deps) {
     this.deps = deps;
+    this.upManager.init(deps);
   }
   update(_dt) {
     this.checkDailyReset();
@@ -2654,8 +2956,8 @@ class HeroRecruitSystem {
   reset() {
     this.pity = createEmptyPity();
     this.freeRecruit = createEmptyFreeRecruit();
-    this.upHero = createDefaultUpHero();
     this.history = [];
+    this.upManager.reset();
   }
   // ─────────────────────────────────────────
   // 1. 依赖注入
@@ -2667,6 +2969,10 @@ class HeroRecruitSystem {
   /** 注入随机数生成器（测试用） */
   setRng(rng) {
     this.rng = rng;
+  }
+  /** 获取 UP 武将管理子系统 */
+  getUpManager() {
+    return this.upManager;
   }
   // ─────────────────────────────────────────
   // 2. 招募消耗计算
@@ -2716,25 +3022,25 @@ class HeroRecruitSystem {
     this.history = [];
   }
   // ─────────────────────────────────────────
-  // 3.5 UP 武将管理
+  // 3.5 UP 武将管理（委托给 HeroRecruitUpManager）
   // ─────────────────────────────────────────
   /** 设置当前 UP 武将（仅高级招募生效） */
   setUpHero(generalId, rate) {
-    this.upHero.upGeneralId = generalId;
-    if (rate !== void 0) {
-      this.upHero.upRate = rate;
-    }
+    this.upManager.setUpHero(generalId, rate);
   }
   /** 获取当前 UP 武将状态 */
   getUpHeroState() {
-    return { ...this.upHero };
+    return this.upManager.getUpHeroState();
+  }
+  /** 清除 UP 武将 */
+  clearUpHero() {
+    this.upManager.clearUpHero();
   }
   // ─────────────────────────────────────────
   // 3.6 每日免费招募
   // ─────────────────────────────────────────
-  /** 检查并执行每日免费次数重置 */
   checkDailyReset() {
-    const today = todayDateString();
+    const today = todayDateString$2();
     if (this.freeRecruit.lastResetDate !== today) {
       this.freeRecruit = createEmptyFreeRecruit();
     }
@@ -2750,35 +3056,15 @@ class HeroRecruitSystem {
   canFreeRecruit(type) {
     return this.getRemainingFreeCount(type) > 0;
   }
-  /**
-   * 使用免费招募（单次）
-   *
-   * 不消耗资源，使用每日免费次数
-   * @returns 招募结果，或 null（无免费次数/依赖未设置）
-   */
+  /** 使用免费招募（单次，不消耗资源） */
   freeRecruitSingle(type) {
     if (!this.recruitDeps) return null;
     this.checkDailyReset();
     if (!this.canFreeRecruit(type)) return null;
     this.freeRecruit.usedFreeCount[type] += 1;
-    const results = [];
-    for (let i = 0; i < 1; i++) {
-      results.push(this.executeSinglePull(type));
-    }
-    const output = {
-      type,
-      results,
-      cost: { resourceType: "free", amount: 0 }
-    };
-    this.history.push({
-      timestamp: Date.now(),
-      type,
-      results: output.results,
-      cost: output.cost
-    });
-    if (this.history.length > MAX_HISTORY_SIZE$2) {
-      this.history = this.history.slice(-MAX_HISTORY_SIZE$2);
-    }
+    const results = [this.executeSinglePull(type)];
+    const output = { type, results, cost: { resourceType: "free", amount: 0 } };
+    this.pushHistory(output);
     return output;
   }
   /** 获取免费招募状态（只读） */
@@ -2792,30 +3078,17 @@ class HeroRecruitSystem {
   // ─────────────────────────────────────────
   // 4. 核心招募逻辑
   // ─────────────────────────────────────────
-  /**
-   * 单次招募
-   *
-   * 流程：检查资源 → 扣除 → 概率抽取（含保底）→ 选武将 → 处理重复 → 更新计数器
-   *
-   * @returns 招募结果，或 null（资源不足/依赖未设置）
-   */
+  /** 单次招募 */
   recruitSingle(type) {
     return this.executeRecruit(type, 1);
   }
-  /**
-   * 十连招募
-   *
-   * 连续执行 10 次抽卡，保底机制保证第 10 次必出稀有+。
-   *
-   * @returns 招募结果，或 null（资源不足/依赖未设置）
-   */
+  /** 十连招募 */
   recruitTen(type) {
     return this.executeRecruit(type, 10);
   }
   // ─────────────────────────────────────────
   // 5. 序列化/反序列化
   // ─────────────────────────────────────────
-  /** 序列化（保存保底计数器、免费招募状态、UP武将状态和招募历史） */
   serialize() {
     return {
       version: RECRUIT_SAVE_VERSION,
@@ -2824,11 +3097,10 @@ class HeroRecruitSystem {
         usedFreeCount: { ...this.freeRecruit.usedFreeCount },
         lastResetDate: this.freeRecruit.lastResetDate
       },
-      upHero: { ...this.upHero },
+      upHero: this.upManager.serializeUpHero(),
       history: [...this.history]
     };
   }
-  /** 反序列化恢复保底计数器、免费招募状态、UP武将状态和招募历史 */
   deserialize(data) {
     var _a, _b;
     if (data.version !== RECRUIT_SAVE_VERSION) {
@@ -2848,20 +3120,12 @@ class HeroRecruitSystem {
           normal: ((_a = data.freeRecruit.usedFreeCount) == null ? void 0 : _a.normal) ?? 0,
           advanced: ((_b = data.freeRecruit.usedFreeCount) == null ? void 0 : _b.advanced) ?? 0
         },
-        lastResetDate: data.freeRecruit.lastResetDate ?? todayDateString()
+        lastResetDate: data.freeRecruit.lastResetDate ?? todayDateString$2()
       };
     } else {
       this.freeRecruit = createEmptyFreeRecruit();
     }
-    if (data.upHero) {
-      this.upHero = {
-        upGeneralId: data.upHero.upGeneralId ?? null,
-        upRate: data.upHero.upRate ?? DEFAULT_UP_CONFIG.upRate,
-        description: data.upHero.description ?? ""
-      };
-    } else {
-      this.upHero = createDefaultUpHero();
-    }
+    this.upManager.deserializeUpHero(data);
     if (Array.isArray(data.history)) {
       this.history = data.history.slice(-MAX_HISTORY_SIZE$2);
     } else {
@@ -2871,7 +3135,13 @@ class HeroRecruitSystem {
   // ─────────────────────────────────────────
   // 6. 内部方法
   // ─────────────────────────────────────────
-  /** 执行招募（单抽/十连统一入口） */
+  /** 记录到招募历史 */
+  pushHistory(output) {
+    this.history.push({ timestamp: Date.now(), type: output.type, results: output.results, cost: output.cost });
+    if (this.history.length > MAX_HISTORY_SIZE$2) {
+      this.history = this.history.slice(-MAX_HISTORY_SIZE$2);
+    }
+  }
   executeRecruit(type, count) {
     if (!this.recruitDeps) return null;
     const cost = this.getRecruitCost(type, count);
@@ -2881,19 +3151,19 @@ class HeroRecruitSystem {
     for (let i = 0; i < count; i++) {
       results.push(this.executeSinglePull(type));
     }
-    const output = { type, results, cost };
-    this.history.push({
-      timestamp: Date.now(),
-      type,
-      results: output.results,
-      cost: output.cost
-    });
-    if (this.history.length > MAX_HISTORY_SIZE$2) {
-      this.history = this.history.slice(-MAX_HISTORY_SIZE$2);
+    if (count > 1) {
+      results.sort((a, b) => {
+        var _a, _b;
+        const qa = QUALITY_ORDER[a.quality];
+        const qb = QUALITY_ORDER[b.quality];
+        if (qa !== qb) return qa - qb;
+        return (((_a = a.general) == null ? void 0 : _a.id) ?? "").localeCompare(((_b = b.general) == null ? void 0 : _b.id) ?? "");
+      });
     }
+    const output = { type, results, cost };
+    this.pushHistory(output);
     return output;
   }
-  /** 执行单次抽卡：概率抽取 → 保底修正 → 选武将 → 处理重复 → 更新计数器 */
   executeSinglePull(type) {
     const heroSystem = this.recruitDeps.heroSystem;
     const rates = RECRUIT_RATES[type];
@@ -2902,11 +3172,12 @@ class HeroRecruitSystem {
     const pityCount = isNormal ? this.pity.normalPity : this.pity.advancedPity;
     const hardPityCount = isNormal ? this.pity.normalHardPity : this.pity.advancedHardPity;
     const finalQuality = applyPity(rollQuality(rates, this.rng), pityCount, hardPityCount, config);
+    const upState = this.upManager.getUpHeroState();
     let generalId = null;
-    if (type === "advanced" && this.upHero.upGeneralId && finalQuality === Quality.LEGENDARY && this.rng() < this.upHero.upRate) {
-      const upDef = heroSystem.getGeneralDef(this.upHero.upGeneralId);
+    if (type === "advanced" && upState.upGeneralId && finalQuality === Quality.LEGENDARY && this.rng() < upState.upRate) {
+      const upDef = heroSystem.getGeneralDef(upState.upGeneralId);
       if (upDef) {
-        generalId = this.upHero.upGeneralId;
+        generalId = upState.upGeneralId;
       }
     }
     if (!generalId) {
@@ -2917,7 +3188,8 @@ class HeroRecruitSystem {
         general: null,
         isDuplicate: false,
         fragmentCount: 0,
-        quality: finalQuality
+        quality: finalQuality,
+        isEmpty: true
       };
     }
     const def = heroSystem.getGeneralDef(generalId);
@@ -2925,7 +3197,14 @@ class HeroRecruitSystem {
     const isDuplicate = heroSystem.hasGeneral(generalId);
     let fragmentCount = 0;
     if (isDuplicate) {
+      const fragmentsBefore = heroSystem.getFragments(generalId);
+      const expectedFragments = DUPLICATE_FRAGMENT_COUNT[resolvedQuality];
       fragmentCount = heroSystem.handleDuplicate(generalId, resolvedQuality);
+      const actualGain = heroSystem.getFragments(generalId) - fragmentsBefore;
+      const overflow = expectedFragments - actualGain;
+      if (overflow > 0 && this.recruitDeps.addResource) {
+        this.recruitDeps.addResource("gold", overflow * HeroSystem.FRAGMENT_TO_GOLD_RATE);
+      }
     } else {
       heroSystem.addGeneral(generalId);
     }
@@ -2937,7 +3216,6 @@ class HeroRecruitSystem {
       quality: resolvedQuality
     };
   }
-  /** 降级选择：目标品质无武将时，逐级降低品质尝试 */
   fallbackPick(heroSystem, startQuality) {
     const order = [Quality.COMMON, Quality.FINE, Quality.RARE, Quality.EPIC, Quality.LEGENDARY];
     const start = order.indexOf(startQuality);
@@ -2951,11 +3229,6 @@ class HeroRecruitSystem {
     }
     return null;
   }
-  /**
-   * 更新保底计数器
-   *
-   * 规则：每次 +1；出稀有+重置十连计数；出史诗+重置硬保底计数
-   */
   updatePityCounters(type, quality) {
     const config = RECRUIT_PITY[type];
     const isNormal = type === "normal";
@@ -2977,7 +3250,7 @@ class HeroRecruitSystem {
   }
 }
 const GOLD_TYPE = "gold";
-const EXP_TYPE = "exp";
+const EXP_TYPE = "grain";
 const LEVEL_SAVE_VERSION = 1;
 const STAT_GROWTH_RATE = 0.03;
 function lookupExpRequired(level) {
@@ -3038,24 +3311,51 @@ class HeroLevelSystem {
   setLevelDeps(deps) {
     this.levelDeps = deps;
   }
+  // ── 动态等级上限 ──
+  /**
+   * 获取武将的当前等级上限。
+   *
+   * 优先从注入的 getLevelCap 回调动态获取（觉醒 > 突破阶段 > 默认），
+   * 若未注入回调则 fallback 到 HERO_MAX_LEVEL(50)。
+   *
+   * 等级上限规则：
+   *   - 觉醒武将：120
+   *   - 突破阶段 0→50, 1→60, 2→70, 3→80, 4→100
+   *   - 未注入回调：50
+   */
+  getMaxLevel(generalId) {
+    var _a;
+    if ((_a = this.levelDeps) == null ? void 0 : _a.getLevelCap) {
+      return this.levelDeps.getLevelCap(generalId);
+    }
+    return HERO_MAX_LEVEL;
+  }
+  /** 获取武将的等级上限（公开方法，供外部查询） */
+  getHeroMaxLevel(generalId) {
+    return this.getMaxLevel(generalId);
+  }
   // ── 1. 消耗计算（纯函数） ──
   /** 升到下一级所需经验；满级返回 0 */
-  calculateExpToNextLevel(level) {
-    return level >= HERO_MAX_LEVEL ? 0 : lookupExpRequired(level);
+  calculateExpToNextLevel(level, generalId) {
+    const cap = generalId ? this.getMaxLevel(generalId) : HERO_MAX_LEVEL;
+    return level >= cap ? 0 : lookupExpRequired(level);
   }
   /** 升到下一级所需铜钱；满级返回 0 */
-  calculateLevelUpCost(level) {
-    return level >= HERO_MAX_LEVEL ? 0 : lookupGoldRequired(level);
+  calculateLevelUpCost(level, generalId) {
+    const cap = generalId ? this.getMaxLevel(generalId) : HERO_MAX_LEVEL;
+    return level >= cap ? 0 : lookupGoldRequired(level);
   }
   /** 从 fromLevel 到 toLevel 的总经验 */
-  calculateTotalExp(from, to) {
-    if (to <= from || from >= HERO_MAX_LEVEL) return 0;
-    return totalExpBetween(from, Math.min(to, HERO_MAX_LEVEL));
+  calculateTotalExp(from, to, generalId) {
+    const cap = generalId ? this.getMaxLevel(generalId) : HERO_MAX_LEVEL;
+    if (to <= from || from >= cap) return 0;
+    return totalExpBetween(from, Math.min(to, cap));
   }
   /** 从 fromLevel 到 toLevel 的总铜钱 */
-  calculateTotalGold(from, to) {
-    if (to <= from || from >= HERO_MAX_LEVEL) return 0;
-    return totalGoldBetween(from, Math.min(to, HERO_MAX_LEVEL));
+  calculateTotalGold(from, to, generalId) {
+    const cap = generalId ? this.getMaxLevel(generalId) : HERO_MAX_LEVEL;
+    if (to <= from || from >= cap) return 0;
+    return totalGoldBetween(from, Math.min(to, cap));
   }
   // ── 2. 经验获取（功能点9） ──
   /**
@@ -3066,12 +3366,13 @@ class HeroLevelSystem {
     if (!this.levelDeps || amount <= 0) return null;
     const { heroSystem } = this.levelDeps;
     const general = heroSystem.getGeneral(generalId);
-    if (!general || general.level >= HERO_MAX_LEVEL) return null;
+    const maxLevel = this.getMaxLevel(generalId);
+    if (!general || general.level >= maxLevel) return null;
     const beforeLevel = general.level;
     const beforeStats = statsAtLevel(general.baseStats, beforeLevel);
     let curLv = general.level, curExp = general.exp, rem = amount;
     let goldSpent = 0, gained = 0;
-    while (rem > 0 && curLv < HERO_MAX_LEVEL) {
+    while (rem > 0 && curLv < maxLevel) {
       const expReq = lookupExpRequired(curLv);
       const goldReq = lookupGoldRequired(curLv);
       const acc = curExp + rem;
@@ -3112,7 +3413,8 @@ class HeroLevelSystem {
     if (!this.levelDeps) return null;
     const { heroSystem } = this.levelDeps;
     const general = heroSystem.getGeneral(generalId);
-    if (!general || general.level >= HERO_MAX_LEVEL) return null;
+    const maxLevel = this.getMaxLevel(generalId);
+    if (!general || general.level >= maxLevel) return null;
     const expReq = this.calculateExpToNextLevel(general.level);
     const goldReq = this.calculateLevelUpCost(general.level);
     if (general.exp < expReq) return null;
@@ -3136,7 +3438,8 @@ class HeroLevelSystem {
     const { heroSystem } = this.levelDeps;
     const general = heroSystem.getGeneral(generalId);
     if (!general) return null;
-    const capped = Math.min(targetLevel, HERO_MAX_LEVEL);
+    const maxLevel = this.getMaxLevel(generalId);
+    const capped = Math.min(targetLevel, maxLevel);
     const cur = general.level;
     if (cur >= capped) {
       const s = statsAtLevel(general.baseStats, cur);
@@ -3176,9 +3479,10 @@ class HeroLevelSystem {
     if (!this.levelDeps) return null;
     const { heroSystem } = this.levelDeps;
     const general = heroSystem.getGeneral(generalId);
-    if (!general || general.level >= HERO_MAX_LEVEL) return null;
+    const maxLevel = this.getMaxLevel(generalId);
+    if (!general || general.level >= maxLevel) return null;
     const maxLv = this.calculateMaxAffordableLevel(general);
-    const final = targetLevel !== void 0 ? Math.min(targetLevel, maxLv, HERO_MAX_LEVEL) : maxLv;
+    const final = targetLevel !== void 0 ? Math.min(targetLevel, maxLv, maxLevel) : maxLv;
     if (final <= general.level) return null;
     const beforeLv = general.level;
     const beforeStats = statsAtLevel(general.baseStats, beforeLv);
@@ -3203,7 +3507,7 @@ class HeroLevelSystem {
     const { heroSystem } = this.levelDeps;
     const sorted = sortByPriority(
       heroSystem,
-      heroSystem.getAllGenerals().filter((g) => g.level < HERO_MAX_LEVEL)
+      heroSystem.getAllGenerals().filter((g) => g.level < this.getMaxLevel(g.id))
     );
     if (sorted.length === 0) return empty;
     const results = [];
@@ -3243,7 +3547,7 @@ class HeroLevelSystem {
     let totalGold = 0, totalExp = 0, totalPower = 0;
     for (const id of heroIds) {
       const general = heroSystem.getGeneral(id);
-      if (!general || general.level >= HERO_MAX_LEVEL) {
+      if (!general || general.level >= this.getMaxLevel(id)) {
         skipped.push(id);
         continue;
       }
@@ -3267,7 +3571,7 @@ class HeroLevelSystem {
     const { heroSystem } = this.levelDeps;
     const sorted = sortByPriority(
       heroSystem,
-      heroSystem.getAllGenerals().filter((g) => g.level < HERO_MAX_LEVEL)
+      heroSystem.getAllGenerals().filter((g) => g.level < this.getMaxLevel(g.id))
     );
     const previews = [];
     for (const g of sorted) {
@@ -3281,11 +3585,12 @@ class HeroLevelSystem {
   // ── 6. 查询 ──
   /** 计算资源允许的最高可达等级 */
   calculateMaxAffordableLevel(general) {
-    if (!this.levelDeps || general.level >= HERO_MAX_LEVEL) return general.level;
+    const maxLevel = this.getMaxLevel(general.id);
+    if (!this.levelDeps || general.level >= maxLevel) return general.level;
     let remExp = this.levelDeps.getResourceAmount(EXP_TYPE) + general.exp;
     let remGold = this.levelDeps.getResourceAmount(GOLD_TYPE);
     let lv = general.level;
-    while (lv < HERO_MAX_LEVEL) {
+    while (lv < maxLevel) {
       const eR = lookupExpRequired(lv), gR = lookupGoldRequired(lv);
       if (remExp < eR || remGold < gR) break;
       remExp -= eR;
@@ -3299,8 +3604,9 @@ class HeroLevelSystem {
     if (!this.levelDeps) return null;
     const g = this.levelDeps.heroSystem.getGeneral(generalId);
     if (!g) return null;
-    if (g.level >= HERO_MAX_LEVEL) return { current: 0, required: 0, percentage: 100 };
-    const req = this.calculateExpToNextLevel(g.level);
+    const maxLevel = this.getMaxLevel(generalId);
+    if (g.level >= maxLevel) return { current: 0, required: 0, percentage: 100 };
+    const req = this.calculateExpToNextLevel(g.level, generalId);
     return {
       current: g.exp,
       required: req,
@@ -3311,13 +3617,14 @@ class HeroLevelSystem {
   canLevelUp(generalId) {
     if (!this.levelDeps) return false;
     const g = this.levelDeps.heroSystem.getGeneral(generalId);
-    if (!g || g.level >= HERO_MAX_LEVEL) return false;
-    return g.exp >= this.calculateExpToNextLevel(g.level) && this.levelDeps.canAffordResource(GOLD_TYPE, this.calculateLevelUpCost(g.level));
+    const maxLevel = this.getMaxLevel(generalId);
+    if (!g || g.level >= maxLevel) return false;
+    return g.exp >= this.calculateExpToNextLevel(g.level, generalId) && this.levelDeps.canAffordResource(GOLD_TYPE, this.calculateLevelUpCost(g.level, generalId));
   }
   /** 获取所有可升级的武将ID */
   getUpgradableGeneralIds() {
     if (!this.levelDeps) return [];
-    return this.levelDeps.heroSystem.getAllGenerals().filter((g) => g.level < HERO_MAX_LEVEL && this.canLevelUp(g.id)).map((g) => g.id);
+    return this.levelDeps.heroSystem.getAllGenerals().filter((g) => g.level < this.getMaxLevel(g.id) && this.canLevelUp(g.id)).map((g) => g.id);
   }
   // ── 7. 序列化 ──
   serialize() {
@@ -3336,6 +3643,9 @@ class HeroLevelSystem {
 }
 const MAX_FORMATIONS = 3;
 const MAX_SLOTS_PER_FORMATION = 6;
+const FORMATION_CREATE_REQUIRED_CASTLE_LEVEL = 3;
+const FORMATION_CREATE_COST_COPPER = 500;
+const FORMATION_BOND_BONUS_RATE = 0.05;
 const DEFAULT_NAMES = {
   "1": "第一队",
   "2": "第二队",
@@ -3346,6 +3656,7 @@ class HeroFormation {
     __publicField(this, "name", "heroFormation");
     __publicField(this, "deps", null);
     __publicField(this, "state");
+    __publicField(this, "prerequisites", null);
     this.state = {
       formations: {},
       activeFormationId: null
@@ -3360,12 +3671,30 @@ class HeroFormation {
   getState() {
     return this.serialize();
   }
+  /** 设置编队创建前置条件回调（由外部系统注入） */
+  setPrerequisites(prereqs) {
+    this.prerequisites = prereqs;
+  }
   // ── 编队管理 ──
-  /** 创建新编队（如果未达上限） */
+  /** 创建新编队（如果未达上限，且满足前置条件） */
   createFormation(id) {
+    if (this.prerequisites) {
+      const castleLevel = this.prerequisites.getCastleLevel();
+      if (castleLevel < FORMATION_CREATE_REQUIRED_CASTLE_LEVEL) {
+        return null;
+      }
+      const copper = this.prerequisites.getCopperBalance();
+      if (copper < FORMATION_CREATE_COST_COPPER) {
+        return null;
+      }
+    }
     const formationId = id ?? this.nextAvailableId();
     if (!formationId) return null;
     if (this.state.formations[formationId]) return null;
+    if (this.prerequisites) {
+      const spent = this.prerequisites.spendCopper(FORMATION_CREATE_COST_COPPER);
+      if (!spent) return null;
+    }
     const formation = {
       id: formationId,
       name: DEFAULT_NAMES[formationId] ?? `编队${formationId}`,
@@ -3456,10 +3785,16 @@ class HeroFormation {
   // ── 战力计算 ──
   /** 计算编队总战力（需要传入武将数据和战力计算函数） */
   calculateFormationPower(formation, getGeneral, calcPower2) {
-    return formation.slots.filter((id) => id !== "").reduce((sum, id) => {
+    const basePower = formation.slots.filter((id) => id !== "").reduce((sum, id) => {
       const g = getGeneral(id);
       return sum + (g ? calcPower2(g) : 0);
     }, 0);
+    let bondCount = 0;
+    if (this.prerequisites) {
+      bondCount = this.prerequisites.getActiveBondCount(formation);
+    }
+    const bondBonus = 1 + bondCount * FORMATION_BOND_BONUS_RATE;
+    return Math.floor(basePower * bondBonus);
   }
   /** 获取编队中的武将数量 */
   getFormationMemberCount(id) {
@@ -3493,11 +3828,11 @@ class HeroFormation {
    * @param getGeneral - 获取武将数据的函数
    * @param calcPower - 计算战力的函数
    * @param formationId - 目标编队ID（默认 '1'）
-   * @param maxSlots - 最大选择数量（默认 5）
+   * @param maxSlots - 最大选择数量（默认 MAX_SLOTS_PER_FORMATION=6）
    * @param allowOverlap - 是否允许与其他编队重叠（默认 false）
    * @returns 编队数据，或 null（无可用武将）
    */
-  autoFormation(getGeneral, calcPower2, formationId = "1", maxSlots = 5, allowOverlap = false) {
+  autoFormation(getGeneral, calcPower2, formationId = "1", maxSlots = MAX_SLOTS_PER_FORMATION, allowOverlap = false) {
     let formation = this.state.formations[formationId];
     if (!formation) {
       const created = this.createFormation(formationId);
@@ -3524,11 +3859,11 @@ class HeroFormation {
    * @param getGeneral - 获取武将数据的函数
    * @param calcPower - 计算战力的函数
    * @param formationId - 目标编队ID（默认 '1'）
-   * @param maxSlots - 最大选择数量（默认 5）
+   * @param maxSlots - 最大选择数量（默认 MAX_SLOTS_PER_FORMATION=6）
    * @param allowOverlap - 是否允许与其他编队重叠（默认 false）
    * @returns 编队数据，或 null（无可用武将）
    */
-  autoFormationByIds(candidateIds, getGeneral, calcPower2, formationId = "1", maxSlots = 5, allowOverlap = false) {
+  autoFormationByIds(candidateIds, getGeneral, calcPower2, formationId = "1", maxSlots = MAX_SLOTS_PER_FORMATION, allowOverlap = false) {
     let formation = this.state.formations[formationId];
     if (!formation) {
       const created = this.createFormation(formationId);
@@ -3597,6 +3932,14 @@ class HeroFormation {
     return null;
   }
 }
+var FragmentSource = /* @__PURE__ */ ((FragmentSource2) => {
+  FragmentSource2["DUPLICATE"] = "DUPLICATE";
+  FragmentSource2["STAGE_DROP"] = "STAGE_DROP";
+  FragmentSource2["SHOP_EXCHANGE"] = "SHOP_EXCHANGE";
+  FragmentSource2["ACTIVITY"] = "ACTIVITY";
+  FragmentSource2["EXPEDITION"] = "EXPEDITION";
+  return FragmentSource2;
+})(FragmentSource || {});
 function createEmptyStarState() {
   return { stars: {}, breakthroughStages: {} };
 }
@@ -3632,6 +3975,8 @@ class HeroStarSystem {
     __publicField(this, "deps", null);
     __publicField(this, "heroSystem");
     __publicField(this, "state");
+    /** 突破后技能解锁回调（由引擎层注入 SkillUpgradeSystem.unlockSkillOnBreakthrough） */
+    __publicField(this, "skillUnlockCallback", null);
     this.heroSystem = heroSystem;
     this.state = createEmptyStarState();
   }
@@ -3650,13 +3995,17 @@ class HeroStarSystem {
   setDeps(deps) {
     this.deps = deps;
   }
+  /** 设置突破后技能解锁回调 */
+  setSkillUnlockCallback(callback) {
+    this.skillUnlockCallback = callback;
+  }
   // ═══════════════════════════════════════════
   // 1. 碎片获取途径（功能点 #11）
   // ═══════════════════════════════════════════
   /** 招募重复武将 → 碎片转化（碎片数量由品质决定） */
   handleDuplicateFragments(generalId, quality) {
     const count = this.heroSystem.handleDuplicate(generalId, quality);
-    return { generalId, count, source: "DUPLICATE" };
+    return { generalId, count, source: FragmentSource.DUPLICATE };
   }
   /** 关卡掉落碎片（根据关卡ID查找掉落表） */
   gainFragmentsFromStage(stageId, rng = Math.random) {
@@ -3667,7 +4016,7 @@ class HeroStarSystem {
       const count = min + Math.floor(rng() * (max - min + 1));
       if (count > 0) {
         this.heroSystem.addFragment(drop.generalId, count);
-        results.push({ generalId: drop.generalId, count, source: "STAGE_DROP" });
+        results.push({ generalId: drop.generalId, count, source: FragmentSource.STAGE_DROP });
       }
     }
     return results;
@@ -3685,13 +4034,47 @@ class HeroStarSystem {
     return { success: true, generalId, count: actualCount, goldSpent: totalGold };
   }
   // ═══════════════════════════════════════════
+  // 1b. 碎片获取途径扩展（F3.04 P0-5）
+  // ═══════════════════════════════════════════
+  /**
+   * 活动获取碎片
+   *
+   * 通过限时活动、签到活动等途径获取武将碎片。
+   * @param heroId - 武将ID
+   * @param source - 活动来源描述（如 '限时活动·赤壁之战'）
+   * @param amount - 碎片数量
+   * @returns 碎片获取结果
+   */
+  addFragmentFromActivity(heroId, source, amount) {
+    if (amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.ACTIVITY };
+    const overflow = this.heroSystem.addFragment(heroId, amount);
+    const actual = amount - overflow;
+    gameLog.info(`[HeroStarSystem] activity fragment: ${heroId} +${actual} from "${source}"`);
+    return { generalId: heroId, count: actual, source: FragmentSource.ACTIVITY };
+  }
+  /**
+   * 远征获取碎片
+   *
+   * 通过远征系统挂机获取武将碎片。
+   * @param heroId - 武将ID
+   * @param amount - 碎片数量
+   * @returns 碎片获取结果
+   */
+  addFragmentFromExpedition(heroId, amount) {
+    if (amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.EXPEDITION };
+    const overflow = this.heroSystem.addFragment(heroId, amount);
+    const actual = amount - overflow;
+    gameLog.info(`[HeroStarSystem] expedition fragment: ${heroId} +${actual}`);
+    return { generalId: heroId, count: actual, source: FragmentSource.EXPEDITION };
+  }
+  // ═══════════════════════════════════════════
   // 2. 升星消耗与效果（功能点 #12）
   // ═══════════════════════════════════════════
   /** 获取升星消耗（碎片+铜钱） */
   getStarUpCost(currentStar) {
     const idx = Math.min(currentStar, STAR_UP_FRAGMENT_COST.length - 1);
-    const goldIdx = Math.min(currentStar, STAR_UP_GOLD_COST.length - 1);
-    return { fragments: STAR_UP_FRAGMENT_COST[idx], gold: STAR_UP_GOLD_COST[goldIdx] };
+    const goldIdx = Math.min(currentStar, STAR_UP_GOLD_COST$1.length - 1);
+    return { fragments: STAR_UP_FRAGMENT_COST[idx], gold: STAR_UP_GOLD_COST$1[goldIdx] };
   }
   /** 升星预览（不执行实际操作） */
   getStarUpPreview(generalId) {
@@ -3844,6 +4227,9 @@ class HeroStarSystem {
     this.deps.spendResource(RESOURCE_TYPE_BREAKTHROUGH_STONE, tier.breakthroughStoneCost);
     const newStage = currentStage + 1;
     this.state.breakthroughStages[generalId] = newStage;
+    if (this.skillUnlockCallback) {
+      this.skillUnlockCallback(generalId, newStage);
+    }
     return {
       success: true,
       generalId,
@@ -3887,6 +4273,321 @@ class HeroStarSystem {
     };
   }
 }
+const STRATEGY_CONFIG = {
+  "burn-heavy": {
+    enemyType: "burn-heavy",
+    prioritySkillTypes: ["passive", "active"],
+    focusStats: ["intelligence", "defense"],
+    description: "多灼烧敌人→高智力+治疗型推荐"
+  },
+  "physical": {
+    enemyType: "physical",
+    prioritySkillTypes: ["passive", "faction"],
+    focusStats: ["defense", "speed"],
+    description: "多物理敌人→高防+坦克型推荐"
+  },
+  "boss": {
+    enemyType: "boss",
+    prioritySkillTypes: ["active", "awaken"],
+    focusStats: ["attack", "intelligence"],
+    description: "BOSS关→高爆发+控制型推荐"
+  }
+};
+class SkillStrategyRecommender {
+  constructor() {
+    __publicField(this, "name", "skillStrategyRecommender");
+    __publicField(this, "deps", null);
+  }
+  // ── ISubsystem 接口 ──
+  init(deps) {
+    this.deps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return { strategies: Object.keys(STRATEGY_CONFIG) };
+  }
+  reset() {
+  }
+  // ─────────────────────────────────────────
+  // 1. 策略推荐
+  // ─────────────────────────────────────────
+  /**
+   * 根据敌人类型推荐策略
+   *
+   * @param enemyType - 敌人类型
+   * @returns 策略推荐结果
+   */
+  recommendStrategy(enemyType) {
+    return { ...STRATEGY_CONFIG[enemyType] };
+  }
+  /**
+   * 获取所有可用的策略配置
+   *
+   * @returns 所有敌人类型及其策略推荐
+   */
+  getAllStrategies() {
+    return STRATEGY_CONFIG;
+  }
+  /**
+   * 获取指定敌人类型的推荐技能类型优先级
+   *
+   * @param enemyType - 敌人类型
+   * @returns 技能类型优先级列表
+   */
+  getPrioritySkillTypes(enemyType) {
+    return [...STRATEGY_CONFIG[enemyType].prioritySkillTypes];
+  }
+  /**
+   * 获取指定敌人类型的推荐属性侧重
+   *
+   * @param enemyType - 敌人类型
+   * @returns 属性侧重列表
+   */
+  getFocusStats(enemyType) {
+    return [...STRATEGY_CONFIG[enemyType].focusStats];
+  }
+}
+const SKILL_UPGRADE_COST_TABLE = {
+  1: { copper: 500, skillBook: 1 },
+  2: { copper: 1500, skillBook: 1 },
+  3: { copper: 4e3, skillBook: 2 },
+  4: { copper: 1e4, skillBook: 2 }
+};
+const DEFAULT_SKILL_UPGRADE_COST = { copper: 1e4, skillBook: 2 };
+const BASE_SKILL_EFFECT = 1;
+const SKILL_EFFECT_PER_LEVEL = 0.1;
+const DEFAULT_SKILL_LEVEL_CAP = 5;
+const AWAKEN_BREAKTHROUGH_REQUIREMENT = 1;
+const EXTRA_EFFECT_MIN_LEVEL = 5;
+const EXTRA_EFFECT_BONUS = 0.2;
+const STAR_SKILL_CAP = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 8, 6: 10 };
+function createEmptyState$1() {
+  return { upgradeHistory: {}, breakthroughSkillUnlocks: {} };
+}
+function historyKey(generalId, skillIndex) {
+  return `${generalId}_${skillIndex}`;
+}
+const _SkillUpgradeSystem = class _SkillUpgradeSystem {
+  constructor() {
+    __publicField(this, "name", "skillUpgrade");
+    __publicField(this, "coreDeps", null);
+    __publicField(this, "deps", null);
+    __publicField(this, "state");
+    __publicField(this, "heroSkills", /* @__PURE__ */ new Map());
+    /** 策略推荐子系统（依赖注入） */
+    __publicField(this, "strategyRecommender");
+    this.state = createEmptyState$1();
+    this.strategyRecommender = new SkillStrategyRecommender();
+  }
+  // ── ISubsystem 接口 ──
+  init(deps) {
+    this.coreDeps = deps;
+    this.strategyRecommender.init(deps);
+    gameLog.info("[SkillUpgradeSystem] initialized");
+  }
+  update(_dt) {
+  }
+  getState() {
+    return {
+      ...this.state,
+      upgradeHistory: { ...this.state.upgradeHistory },
+      breakthroughSkillUnlocks: { ...this.state.breakthroughSkillUnlocks }
+    };
+  }
+  reset() {
+    this.state = createEmptyState$1();
+  }
+  // ── 依赖注入 ──
+  setSkillUpgradeDeps(deps) {
+    this.deps = deps;
+  }
+  /** 获取策略推荐子系统 */
+  getStrategyRecommender() {
+    return this.strategyRecommender;
+  }
+  // ── 核心功能 ──
+  upgradeSkill(generalId, skillIndex, materials) {
+    if (!this.deps) return this.failResult(generalId, skillIndex);
+    const { heroSystem, heroStarSystem } = this.deps;
+    const general = heroSystem.getGeneral(generalId);
+    if (!general) {
+      gameLog.info(`[SkillUpgradeSystem] general not found: ${generalId}`);
+      return this.failResult(generalId, skillIndex);
+    }
+    if (skillIndex < 0 || skillIndex >= general.skills.length) {
+      gameLog.info(`[SkillUpgradeSystem] invalid skill index: ${skillIndex}`);
+      return this.failResult(generalId, skillIndex);
+    }
+    const skill = general.skills[skillIndex];
+    const currentLevel = skill.level;
+    if (skill.type === "awaken" && !this.canUpgradeAwakenSkill(generalId)) {
+      gameLog.info(`[SkillUpgradeSystem] awaken skill requires breakthrough: ${generalId}`);
+      return this.failResult(generalId, skillIndex, currentLevel);
+    }
+    const star = heroStarSystem.getStar(generalId);
+    const levelCap = this.getSkillLevelCap(star);
+    if (currentLevel >= levelCap) {
+      gameLog.info(`[SkillUpgradeSystem] skill level cap reached: ${currentLevel}/${levelCap}`);
+      return this.failResult(generalId, skillIndex, currentLevel);
+    }
+    const cost = this.calculateUpgradeCost(currentLevel);
+    if (materials.skillBooks < cost.skillBooks || materials.gold < cost.gold) {
+      gameLog.info(`[SkillUpgradeSystem] insufficient materials: need ${JSON.stringify(cost)}, got ${JSON.stringify(materials)}`);
+      return this.failResult(generalId, skillIndex, currentLevel);
+    }
+    if (!this.deps.canAffordResource("gold", cost.gold)) {
+      gameLog.info("[SkillUpgradeSystem] insufficient gold resource");
+      return this.failResult(generalId, skillIndex, currentLevel);
+    }
+    if (!this.deps.spendResource("gold", cost.gold)) {
+      gameLog.info("[SkillUpgradeSystem] failed to spend gold");
+      return this.failResult(generalId, skillIndex, currentLevel);
+    }
+    if (!this.deps.spendResource("skillBook", cost.skillBooks)) {
+      gameLog.info("[SkillUpgradeSystem] failed to spend skillBook");
+      return this.failResult(generalId, skillIndex, currentLevel);
+    }
+    const effectBefore = this.getSkillEffect(generalId, skillIndex);
+    const newLevel = currentLevel + 1;
+    heroSystem.updateSkillLevel(generalId, skillIndex, newLevel);
+    const key = historyKey(generalId, skillIndex);
+    this.state.upgradeHistory[key] = (this.state.upgradeHistory[key] || 0) + 1;
+    const effectAfter = this.getSkillEffect(generalId, skillIndex);
+    gameLog.info(`[SkillUpgradeSystem] skill upgraded: ${generalId}[${skillIndex}] Lv${currentLevel}→${newLevel}`);
+    return {
+      success: true,
+      generalId,
+      skillIndex,
+      previousLevel: currentLevel,
+      currentLevel: newLevel,
+      materialsUsed: cost,
+      effectBefore,
+      effectAfter
+    };
+  }
+  getSkillLevel(generalId, skillIndex) {
+    if (!this.deps) return 0;
+    const general = this.deps.heroSystem.getGeneral(generalId);
+    if (!general || skillIndex < 0 || skillIndex >= general.skills.length) return 0;
+    return general.skills[skillIndex].level;
+  }
+  getSkillEffect(generalId, skillIndex) {
+    if (!this.deps) return BASE_SKILL_EFFECT;
+    const general = this.deps.heroSystem.getGeneral(generalId);
+    if (!general || skillIndex < 0 || skillIndex >= general.skills.length) return BASE_SKILL_EFFECT;
+    const level = general.skills[skillIndex].level;
+    return BASE_SKILL_EFFECT + (level - 1) * SKILL_EFFECT_PER_LEVEL;
+  }
+  getSkillLevelCap(starLevel) {
+    if (starLevel < 1) return STAR_SKILL_CAP[1];
+    return STAR_SKILL_CAP[starLevel] ?? DEFAULT_SKILL_LEVEL_CAP;
+  }
+  canUpgradeAwakenSkill(generalId) {
+    if (!this.deps) return false;
+    const breakthroughStage = this.deps.heroStarSystem.getBreakthroughStage(generalId);
+    return breakthroughStage >= AWAKEN_BREAKTHROUGH_REQUIREMENT;
+  }
+  /** 根据敌人类型推荐策略（委托给 SkillStrategyRecommender） */
+  recommendStrategy(enemyType) {
+    return this.strategyRecommender.recommendStrategy(enemyType);
+  }
+  // ═══════════════════════════════════════════
+  // P0-1: 突破解锁技能系统
+  // ═══════════════════════════════════════════
+  unlockSkillOnBreakthrough(heroId, breakthroughLevel) {
+    var _a, _b;
+    const mapping = _SkillUpgradeSystem.BREAKTHROUGH_SKILL_MAP[breakthroughLevel];
+    if (!mapping) return null;
+    let state = this.heroSkills.get(heroId);
+    if (!state) {
+      const general = (_a = this.deps) == null ? void 0 : _a.heroSystem.getGeneral(heroId);
+      if (!general) return null;
+      state = { skills: general.skills.map((s) => ({ level: s.level })), unlockedSkills: [] };
+      this.heroSkills.set(heroId, state);
+    }
+    const key = `breakthrough_${breakthroughLevel}`;
+    if ((_b = state.unlockedSkills) == null ? void 0 : _b.includes(key)) return null;
+    if (!state.unlockedSkills) state.unlockedSkills = [];
+    state.unlockedSkills.push(key);
+    const bkKey = `${heroId}_${breakthroughLevel}`;
+    if (!this.state.breakthroughSkillUnlocks[bkKey]) {
+      this.state.breakthroughSkillUnlocks[bkKey] = [mapping.type === "passive_enhance" ? 1 : mapping.type === "new_skill" ? 3 : 0];
+    }
+    gameLog.info(`[SkillUpgradeSystem] breakthrough skill unlocked: ${heroId} Lv${breakthroughLevel} → ${mapping.description}`);
+    return { unlocked: true, skillType: mapping.type, description: mapping.description };
+  }
+  getSkillUnlockState(heroId) {
+    var _a;
+    const state = this.heroSkills.get(heroId);
+    const results = [];
+    for (const [level, mapping] of Object.entries(_SkillUpgradeSystem.BREAKTHROUGH_SKILL_MAP)) {
+      const key = `breakthrough_${level}`;
+      results.push({
+        breakthroughLevel: Number(level),
+        unlocked: ((_a = state == null ? void 0 : state.unlockedSkills) == null ? void 0 : _a.includes(key)) ?? false,
+        skillType: mapping.type,
+        description: mapping.description
+      });
+    }
+    return results;
+  }
+  // ═══════════════════════════════════════════
+  // P0-2: 技能CD减少和额外效果
+  // ═══════════════════════════════════════════
+  getCooldownReduce(heroId, skillIndex) {
+    const state = this.heroSkills.get(heroId);
+    if (!state) return 0;
+    const skill = state.skills[skillIndex];
+    if (!skill) return 0;
+    return Math.min(skill.level * 0.05, 0.3);
+  }
+  hasExtraEffect(heroId, skillIndex) {
+    const state = this.heroSkills.get(heroId);
+    if (!state) return false;
+    const skill = state.skills[skillIndex];
+    return skill ? skill.level >= 5 : false;
+  }
+  getExtraEffect(heroId, skillIndex) {
+    if (!this.hasExtraEffect(heroId, skillIndex)) return null;
+    if (!this.deps) return null;
+    const general = this.deps.heroSystem.getGeneral(heroId);
+    if (!general || skillIndex < 0 || skillIndex >= general.skills.length) return null;
+    const skill = general.skills[skillIndex];
+    const level = skill.level;
+    const bonus = EXTRA_EFFECT_BONUS * (level - EXTRA_EFFECT_MIN_LEVEL + 1);
+    return {
+      skillIndex,
+      name: `${skill.name}·额外效果`,
+      description: `技能等级${level}时解锁，额外提升${Math.round(bonus * 100)}%效果`,
+      bonus
+    };
+  }
+  // ── 内部方法 ──
+  calculateUpgradeCost(currentLevel) {
+    const entry = SKILL_UPGRADE_COST_TABLE[currentLevel] ?? DEFAULT_SKILL_UPGRADE_COST;
+    return { skillBooks: entry.skillBook, gold: entry.copper };
+  }
+  failResult(generalId, skillIndex, level = 0) {
+    return {
+      success: false,
+      generalId,
+      skillIndex,
+      previousLevel: level,
+      currentLevel: level,
+      materialsUsed: { skillBooks: 0, gold: 0 },
+      effectBefore: BASE_SKILL_EFFECT + (level - 1) * SKILL_EFFECT_PER_LEVEL,
+      effectAfter: BASE_SKILL_EFFECT + (level - 1) * SKILL_EFFECT_PER_LEVEL
+    };
+  }
+};
+__publicField(_SkillUpgradeSystem, "BREAKTHROUGH_SKILL_MAP", {
+  10: { type: "passive_enhance", description: "被动技能强化" },
+  20: { type: "new_skill", description: "解锁新技能" },
+  30: { type: "ultimate_enhance", description: "终极技能强化" },
+  40: { type: "ultimate_enhance_plus", description: "终极技能强化+" }
+});
+let SkillUpgradeSystem = _SkillUpgradeSystem;
 const BOND_NAMES = {
   faction_2: "同乡之谊",
   faction_3: "同仇敌忾",
@@ -4226,6 +4927,2694 @@ class BondSystem {
     for (const eventId of data.completedStoryEvents ?? []) {
       this.completedStoryEvents.add(eventId);
     }
+  }
+}
+const EMPTY_BOND_EFFECT = {
+  attackBonus: 0,
+  defenseBonus: 0,
+  hpBonus: 0,
+  critBonus: 0,
+  strategyBonus: 0
+};
+const SHU_TIERS = [
+  {
+    requiredCount: 2,
+    tierName: "初级",
+    effect: { attackBonus: 0.05, defenseBonus: 0, hpBonus: 0, critBonus: 0, strategyBonus: 0 },
+    description: "蜀国初级羁绊：攻击+5%"
+  },
+  {
+    requiredCount: 3,
+    tierName: "中级",
+    effect: { attackBonus: 0.1, defenseBonus: 0.05, hpBonus: 0, critBonus: 0, strategyBonus: 0 },
+    description: "蜀国中级羁绊：攻击+10%，防御+5%"
+  },
+  {
+    requiredCount: 4,
+    tierName: "高级",
+    effect: { attackBonus: 0.15, defenseBonus: 0.1, hpBonus: 0.05, critBonus: 0, strategyBonus: 0 },
+    description: "蜀国高级羁绊：攻击+15%，防御+10%，生命+5%"
+  },
+  {
+    requiredCount: 5,
+    tierName: "终极",
+    effect: { attackBonus: 0.2, defenseBonus: 0.15, hpBonus: 0.1, critBonus: 0.05, strategyBonus: 0 },
+    description: "蜀国终极羁绊：攻击+20%，防御+15%，生命+10%，暴击+5%"
+  }
+];
+const WEI_TIERS = [
+  {
+    requiredCount: 2,
+    tierName: "初级",
+    effect: { attackBonus: 0.05, defenseBonus: 0, hpBonus: 0, critBonus: 0, strategyBonus: 0 },
+    description: "魏国初级羁绊：攻击+5%"
+  },
+  {
+    requiredCount: 3,
+    tierName: "中级",
+    effect: { attackBonus: 0.1, defenseBonus: 0.05, hpBonus: 0, critBonus: 0, strategyBonus: 0 },
+    description: "魏国中级羁绊：攻击+10%，防御+5%"
+  },
+  {
+    requiredCount: 4,
+    tierName: "高级",
+    effect: { attackBonus: 0.15, defenseBonus: 0.1, hpBonus: 0.05, critBonus: 0, strategyBonus: 0 },
+    description: "魏国高级羁绊：攻击+15%，防御+10%，生命+5%"
+  },
+  {
+    requiredCount: 5,
+    tierName: "终极",
+    effect: { attackBonus: 0.2, defenseBonus: 0.15, hpBonus: 0.1, critBonus: 0.05, strategyBonus: 0 },
+    description: "魏国终极羁绊：攻击+20%，防御+15%，生命+10%，暴击+5%"
+  }
+];
+const WU_TIERS = [
+  {
+    requiredCount: 2,
+    tierName: "初级",
+    effect: { attackBonus: 0.05, defenseBonus: 0, hpBonus: 0, critBonus: 0, strategyBonus: 0 },
+    description: "吴国初级羁绊：攻击+5%"
+  },
+  {
+    requiredCount: 3,
+    tierName: "中级",
+    effect: { attackBonus: 0.1, defenseBonus: 0.05, hpBonus: 0, critBonus: 0, strategyBonus: 0 },
+    description: "吴国中级羁绊：攻击+10%，防御+5%"
+  },
+  {
+    requiredCount: 4,
+    tierName: "高级",
+    effect: { attackBonus: 0.15, defenseBonus: 0.1, hpBonus: 0.05, critBonus: 0, strategyBonus: 0 },
+    description: "吴国高级羁绊：攻击+15%，防御+10%，生命+5%"
+  },
+  {
+    requiredCount: 5,
+    tierName: "终极",
+    effect: { attackBonus: 0.2, defenseBonus: 0.15, hpBonus: 0.1, critBonus: 0.05, strategyBonus: 0 },
+    description: "吴国终极羁绊：攻击+20%，防御+15%，生命+10%，暴击+5%"
+  }
+];
+const NEUTRAL_TIERS = [
+  {
+    requiredCount: 2,
+    tierName: "初级",
+    effect: { attackBonus: 0.05, defenseBonus: 0, hpBonus: 0, critBonus: 0, strategyBonus: 0 },
+    description: "群雄初级羁绊：攻击+5%"
+  },
+  {
+    requiredCount: 3,
+    tierName: "中级",
+    effect: { attackBonus: 0.1, defenseBonus: 0.05, hpBonus: 0, critBonus: 0, strategyBonus: 0 },
+    description: "群雄中级羁绊：攻击+10%，防御+5%"
+  },
+  {
+    requiredCount: 4,
+    tierName: "高级",
+    effect: { attackBonus: 0.15, defenseBonus: 0.1, hpBonus: 0.05, critBonus: 0, strategyBonus: 0 },
+    description: "群雄高级羁绊：攻击+15%，防御+10%，生命+5%"
+  },
+  {
+    requiredCount: 5,
+    tierName: "终极",
+    effect: { attackBonus: 0.2, defenseBonus: 0.15, hpBonus: 0.1, critBonus: 0.05, strategyBonus: 0 },
+    description: "群雄终极羁绊：攻击+20%，防御+15%，生命+10%，暴击+5%"
+  }
+];
+const FACTION_TIER_MAP = {
+  wei: WEI_TIERS,
+  shu: SHU_TIERS,
+  wu: WU_TIERS,
+  neutral: NEUTRAL_TIERS
+};
+const PARTNER_BOND_CONFIGS = [
+  // ═══════════════════════════════════════════
+  // 蜀国（3组）
+  // ═══════════════════════════════════════════
+  {
+    id: "partner_taoyuan",
+    name: "桃园结义",
+    type: "partner",
+    requiredHeroes: ["liubei", "guanyu", "zhangfei"],
+    minCount: 3,
+    effect: {
+      attackBonus: 0.1,
+      defenseBonus: 0.1,
+      hpBonus: 0.1,
+      critBonus: 0.1,
+      strategyBonus: 0.1
+    },
+    description: "刘备、关羽、张飞桃园结义，全属性+10%"
+  },
+  {
+    id: "partner_wuhu",
+    name: "五虎上将",
+    type: "partner",
+    requiredHeroes: ["guanyu", "zhangfei", "zhaoyun", "machao", "huangzhong"],
+    minCount: 3,
+    effect: {
+      attackBonus: 0.08,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0.1,
+      strategyBonus: 0
+    },
+    description: "五虎上将任意3人，暴击+10%，攻击+8%"
+  },
+  {
+    id: "partner_wolong_fengchu",
+    name: "卧龙凤雏",
+    type: "partner",
+    requiredHeroes: ["zhugeliang", "pangtong"],
+    minCount: 2,
+    effect: {
+      attackBonus: 0,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0.2
+    },
+    description: "诸葛亮、庞统卧龙凤雏，策略+20%"
+  },
+  // ═══════════════════════════════════════════
+  // 魏国（3组）
+  // ═══════════════════════════════════════════
+  {
+    id: "partner_wuzi",
+    name: "五子良将",
+    type: "partner",
+    requiredHeroes: ["zhangliao", "xuhuang", "yujin", "zhanghe", "lejin"],
+    minCount: 3,
+    effect: {
+      attackBonus: 0,
+      defenseBonus: 0.12,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0
+    },
+    description: "五子良将任意3人，防御+12%"
+  },
+  {
+    id: "partner_cao_clan",
+    name: "曹氏宗族",
+    type: "partner",
+    requiredHeroes: ["caoren", "caohong", "xiahoudun", "xiahouyuan"],
+    minCount: 2,
+    effect: {
+      attackBonus: 0,
+      defenseBonus: 0,
+      hpBonus: 0.15,
+      critBonus: 0,
+      strategyBonus: 0
+    },
+    description: "曹氏宗族任意2人，生命+15%"
+  },
+  {
+    id: "partner_huchi",
+    name: "虎痴双雄",
+    type: "partner",
+    requiredHeroes: ["xuchu", "dianwei"],
+    minCount: 2,
+    effect: {
+      attackBonus: 0.12,
+      defenseBonus: 0.08,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0
+    },
+    description: "许褚、典韦虎痴双雄，攻击+12%，防御+8%"
+  },
+  // ═══════════════════════════════════════════
+  // 吴国（3组）
+  // ═══════════════════════════════════════════
+  {
+    id: "partner_jiangdong",
+    name: "江东双璧",
+    type: "partner",
+    requiredHeroes: ["sunce", "zhouyu"],
+    minCount: 2,
+    effect: {
+      attackBonus: 0,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0.2
+    },
+    description: "孙策、周瑜江东双璧，策略+20%"
+  },
+  {
+    id: "partner_dongwu_siying",
+    name: "东吴四英",
+    type: "partner",
+    requiredHeroes: ["lusu", "lvmeng", "luxun"],
+    minCount: 2,
+    effect: {
+      attackBonus: 0,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0.15
+    },
+    description: "东吴四英任意2人，策略+15%"
+  },
+  {
+    id: "partner_sun_family",
+    name: "孙氏父子",
+    type: "partner",
+    requiredHeroes: ["sunjian", "sunce", "sunquan"],
+    minCount: 3,
+    effect: {
+      attackBonus: 0.1,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0
+    },
+    description: "孙坚、孙策、孙权孙氏父子，攻击+10%"
+  },
+  // ═══════════════════════════════════════════
+  // 群雄（3组）
+  // ═══════════════════════════════════════════
+  {
+    id: "partner_sanying_lvbu",
+    name: "三英战吕布",
+    type: "partner",
+    requiredHeroes: ["liubei", "guanyu", "zhangfei", "lvbu"],
+    minCount: 4,
+    effect: {
+      attackBonus: 0.18,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0
+    },
+    description: "刘备、关羽、张飞、吕布三英战吕布，攻击+18%"
+  },
+  {
+    id: "partner_dongzhuo",
+    name: "董卓之乱",
+    type: "partner",
+    requiredHeroes: ["dongzhuo", "lvbu", "diaochan"],
+    minCount: 3,
+    effect: {
+      attackBonus: 0,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0.15,
+      strategyBonus: 0
+    },
+    description: "董卓、吕布、貂蝉董卓之乱，暴击+15%"
+  },
+  {
+    id: "partner_yuanshao_moushi",
+    name: "袁绍谋士",
+    type: "partner",
+    requiredHeroes: ["tianfeng", "jushou"],
+    minCount: 2,
+    effect: {
+      attackBonus: 0,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0.12
+    },
+    description: "田丰、沮授袁绍谋士，策略+12%"
+  },
+  // ═══════════════════════════════════════════
+  // PRD v1.3 HER-11 新增搭档羁绊（2组）
+  // ═══════════════════════════════════════════
+  {
+    id: "partner_kurou_lianhuan",
+    name: "苦肉连环",
+    type: "partner",
+    requiredHeroes: ["huanggai", "zhouyu"],
+    minCount: 2,
+    effect: {
+      attackBonus: 0,
+      defenseBonus: 0.15,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0
+    },
+    description: "黄盖、周瑜苦肉连环，防御+15%"
+  },
+  {
+    id: "partner_weizhi_shuangbi",
+    name: "魏之双壁",
+    type: "partner",
+    requiredHeroes: ["zhangliao", "xuhuang"],
+    minCount: 2,
+    effect: {
+      attackBonus: 0.1,
+      defenseBonus: 0,
+      hpBonus: 0,
+      critBonus: 0,
+      strategyBonus: 0
+    },
+    description: "张辽、徐晃魏之双壁，攻击+10%"
+  }
+];
+const HERO_FACTION_MAP = {
+  // ── 蜀国 ──
+  liubei: "shu",
+  guanyu: "shu",
+  zhangfei: "shu",
+  zhaoyun: "shu",
+  machao: "shu",
+  huangzhong: "shu",
+  zhugeliang: "shu",
+  pangtong: "shu",
+  weiyan: "shu",
+  // ── 魏国 ──
+  caocao: "wei",
+  xiahoudun: "wei",
+  xuchu: "wei",
+  simayi: "wei",
+  xiahouyuan: "wei",
+  zhangliao: "wei",
+  dianwei: "wei",
+  caoren: "wei",
+  caohong: "wei",
+  xuhuang: "wei",
+  yujin: "wei",
+  zhanghe: "wei",
+  lejin: "wei",
+  // ── 吴国 ──
+  sunquan: "wu",
+  zhouyu: "wu",
+  lvmeng: "wu",
+  luxun: "wu",
+  sunshangxiang: "wu",
+  ganning: "wu",
+  taishici: "wu",
+  sunce: "wu",
+  sunjian: "wu",
+  lusu: "wu",
+  lushu: "wu",
+  huanggai: "wu",
+  // ── 群雄 ──
+  lvbu: "neutral",
+  diaochan: "neutral",
+  yuanzhao: "neutral",
+  jiaxu: "neutral",
+  zhangjiao: "neutral",
+  dongzhuo: "neutral",
+  tianfeng: "neutral",
+  jushou: "neutral"
+};
+const ALL_FACTIONS = ["wei", "shu", "wu", "neutral"];
+const FACTION_NAMES = {
+  wei: "魏",
+  shu: "蜀",
+  wu: "吴",
+  neutral: "群雄"
+};
+class FactionBondSystem {
+  constructor() {
+    __publicField(this, "name", "faction-bond");
+    __publicField(this, "deps", null);
+    /** 武将阵营查询回调（可覆盖默认的 HERO_FACTION_MAP） */
+    __publicField(this, "factionResolver");
+    this.factionResolver = (heroId) => HERO_FACTION_MAP[heroId];
+  }
+  // ─── ISubsystem 接口实现 ───
+  /** 初始化子系统 */
+  init(deps) {
+    this.deps = deps;
+  }
+  /** 每帧更新（羁绊系统无需每帧更新） */
+  update(_dt) {
+  }
+  /** 获取系统状态快照 */
+  getState() {
+    return {
+      name: this.name,
+      bondConfigCount: this.getAllBondConfigs().length
+    };
+  }
+  /** 重置子系统 */
+  reset() {
+    this.deps = null;
+    this.factionResolver = (heroId) => HERO_FACTION_MAP[heroId];
+  }
+  // ─── 配置方法 ───
+  /**
+   * 设置武将阵营查询回调
+   *
+   * 外部可通过此方法注入自定义的阵营查询逻辑，
+   * 覆盖默认的 HERO_FACTION_MAP 查询。
+   *
+   * @param resolver - 武将阵营查询回调
+   */
+  setHeroFactionResolver(resolver) {
+    this.factionResolver = resolver;
+  }
+  // ─── 核心计算 ───
+  /**
+   * 计算当前编队的所有羁绊加成
+   *
+   * 遍历编队中的武将，按阵营分组，匹配最高激活的等级门槛，
+   * 同时检查搭档羁绊是否激活。
+   *
+   * @param heroIds - 编队中的武将ID列表
+   * @returns 每个武将ID对应的累计加成效果 Map
+   */
+  calculateBonds(heroIds) {
+    const result = /* @__PURE__ */ new Map();
+    if (heroIds.length === 0) return result;
+    for (const id of heroIds) {
+      result.set(id, { ...EMPTY_BOND_EFFECT });
+    }
+    const factionBonds = this.calculateFactionBonds(heroIds);
+    for (const bond of factionBonds) {
+      for (const participantId of bond.participants) {
+        if (result.has(participantId)) {
+          const existing = result.get(participantId);
+          result.set(participantId, this.mergeEffects(existing, bond.effect));
+        }
+      }
+    }
+    const partnerBonds = this.calculatePartnerBonds(heroIds);
+    for (const bond of partnerBonds) {
+      for (const participantId of bond.participants) {
+        if (result.has(participantId)) {
+          const existing = result.get(participantId);
+          result.set(participantId, this.mergeEffects(existing, bond.effect));
+        }
+      }
+    }
+    return result;
+  }
+  /**
+   * 获取某武将当前激活的所有羁绊配置
+   *
+   * @param heroId - 目标武将ID
+   * @param teamHeroIds - 编队中所有武将ID列表
+   * @returns 该武将参与的激活羁绊配置列表
+   */
+  getActiveBonds(heroId, teamHeroIds) {
+    const activeBonds = [];
+    const heroFaction = this.factionResolver(heroId);
+    if (!heroFaction) return activeBonds;
+    const factionCount = this.countFactionHeroes(teamHeroIds, heroFaction);
+    const tiers = FACTION_TIER_MAP[heroFaction];
+    let matchedTier = null;
+    for (const tier of tiers) {
+      if (factionCount >= tier.requiredCount) {
+        matchedTier = tier;
+      }
+    }
+    if (matchedTier) {
+      activeBonds.push({
+        id: `faction_${heroFaction}`,
+        name: `${heroFaction}阵营羁绊`,
+        type: "faction",
+        faction: heroFaction,
+        requiredHeroes: teamHeroIds.filter((id) => this.factionResolver(id) === heroFaction),
+        minCount: matchedTier.requiredCount,
+        effect: matchedTier.effect,
+        description: matchedTier.description
+      });
+    }
+    for (const partnerBond of PARTNER_BOND_CONFIGS) {
+      if (!partnerBond.requiredHeroes.includes(heroId)) continue;
+      if (this.isPartnerBondActive(partnerBond, teamHeroIds)) {
+        activeBonds.push(partnerBond);
+      }
+    }
+    return activeBonds;
+  }
+  /**
+   * 获取所有可用羁绊配置
+   *
+   * @returns 阵营羁绊（每个阵营最高等级）+ 所有搭档羁绊
+   */
+  getAllBondConfigs() {
+    const configs = [];
+    for (const faction of ALL_FACTIONS) {
+      const tiers = FACTION_TIER_MAP[faction];
+      for (const tier of tiers) {
+        configs.push({
+          id: `faction_${faction}_${tier.requiredCount}`,
+          name: `${faction}阵营${tier.tierName}羁绊`,
+          type: "faction",
+          faction,
+          requiredHeroes: [],
+          minCount: tier.requiredCount,
+          effect: tier.effect,
+          description: tier.description
+        });
+      }
+    }
+    for (const partnerBond of PARTNER_BOND_CONFIGS) {
+      configs.push(partnerBond);
+    }
+    return configs;
+  }
+  /**
+   * 检查指定羁绊是否激活
+   *
+   * @param bondId - 羁绊ID
+   * @param teamHeroIds - 编队中的武将ID列表
+   * @returns 是否激活
+   */
+  isBondActive(bondId, teamHeroIds) {
+    const partnerBond = PARTNER_BOND_CONFIGS.find((b) => b.id === bondId);
+    if (partnerBond) {
+      return this.isPartnerBondActive(partnerBond, teamHeroIds);
+    }
+    const factionMatch = bondId.match(/^faction_([a-z]+)(?:_(\d+))?$/);
+    if (factionMatch) {
+      const faction = factionMatch[1];
+      const requiredCount = factionMatch[2] ? parseInt(factionMatch[2], 10) : 0;
+      const count = this.countFactionHeroes(teamHeroIds, faction);
+      if (requiredCount > 0) {
+        return count >= requiredCount;
+      }
+      const tiers = FACTION_TIER_MAP[faction];
+      if (!tiers) return false;
+      return count >= tiers[0].requiredCount;
+    }
+    return false;
+  }
+  /**
+   * 获取羁绊加成后的属性
+   *
+   * 将羁绊百分比加成应用到基础属性上。
+   * 加成后属性 = 基础属性 × (1 + 羁绊加成百分比)
+   *
+   * @param baseStats - 武将基础属性
+   * @param heroId - 目标武将ID
+   * @param teamHeroIds - 编队中所有武将ID列表
+   * @returns 加成后的属性
+   */
+  applyBondBonus(baseStats, heroId, teamHeroIds) {
+    const bondEffects = this.calculateBonds(teamHeroIds);
+    const effect = bondEffects.get(heroId);
+    if (!effect) return { ...baseStats };
+    return {
+      attack: Math.round(baseStats.attack * (1 + effect.attackBonus)),
+      defense: Math.round(baseStats.defense * (1 + effect.defenseBonus)),
+      intelligence: Math.round(baseStats.intelligence * (1 + effect.strategyBonus)),
+      speed: baseStats.speed
+      // 羁绊不影响速度
+    };
+  }
+  // ─── 序列化/反序列化 ───
+  /**
+   * 序列化系统状态
+   *
+   * @returns 可序列化的状态对象
+   */
+  serialize() {
+    return {
+      name: this.name,
+      configCount: this.getAllBondConfigs().length
+    };
+  }
+  /**
+   * 反序列化恢复系统状态
+   *
+   * @param _data - 序列化数据（当前版本无持久化状态）
+   */
+  deserialize(_data) {
+  }
+  // ─── 内部方法 ───
+  /**
+   * 计算阵营羁绊
+   *
+   * 按阵营分组统计人数，匹配最高激活的等级门槛
+   */
+  calculateFactionBonds(heroIds) {
+    const bonds = [];
+    const factionGroups = this.groupByFaction(heroIds);
+    for (const [faction, members] of factionGroups) {
+      const tiers = FACTION_TIER_MAP[faction];
+      if (!tiers) continue;
+      let matchedTier = null;
+      for (const tier of tiers) {
+        if (members.length >= tier.requiredCount) {
+          matchedTier = tier;
+        }
+      }
+      if (!matchedTier) continue;
+      bonds.push({
+        bondId: `faction_${faction}`,
+        name: `${faction}阵营${matchedTier.tierName}羁绊`,
+        type: "faction",
+        faction,
+        tierName: matchedTier.tierName,
+        effect: matchedTier.effect,
+        participants: members,
+        description: matchedTier.description
+      });
+    }
+    return bonds;
+  }
+  /**
+   * 计算搭档羁绊
+   *
+   * 检查编队中是否包含搭档羁绊所需的全部武将
+   */
+  calculatePartnerBonds(heroIds) {
+    const bonds = [];
+    const idSet = new Set(heroIds);
+    for (const bondConfig of PARTNER_BOND_CONFIGS) {
+      const matched = bondConfig.requiredHeroes.filter((id) => idSet.has(id));
+      if (matched.length >= bondConfig.minCount) {
+        bonds.push({
+          bondId: bondConfig.id,
+          name: bondConfig.name,
+          type: "partner",
+          effect: bondConfig.effect,
+          participants: matched,
+          description: bondConfig.description
+        });
+      }
+    }
+    return bonds;
+  }
+  /**
+   * 检查搭档羁绊是否激活
+   */
+  isPartnerBondActive(bondConfig, teamHeroIds) {
+    const idSet = new Set(teamHeroIds);
+    const matched = bondConfig.requiredHeroes.filter((id) => idSet.has(id));
+    return matched.length >= bondConfig.minCount;
+  }
+  /**
+   * 按阵营分组武将
+   */
+  groupByFaction(heroIds) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const id of heroIds) {
+      const faction = this.factionResolver(id);
+      if (!faction) continue;
+      const group = groups.get(faction) ?? [];
+      group.push(id);
+      groups.set(faction, group);
+    }
+    return groups;
+  }
+  /**
+   * 统计某阵营的武将数量
+   */
+  countFactionHeroes(heroIds, faction) {
+    let count = 0;
+    for (const id of heroIds) {
+      if (this.factionResolver(id) === faction) count++;
+    }
+    return count;
+  }
+  /**
+   * 合并两个羁绊效果（叠加）
+   */
+  mergeEffects(a, b) {
+    return {
+      attackBonus: a.attackBonus + b.attackBonus,
+      defenseBonus: a.defenseBonus + b.defenseBonus,
+      hpBonus: a.hpBonus + b.hpBonus,
+      critBonus: a.critBonus + b.critBonus,
+      strategyBonus: a.strategyBonus + b.strategyBonus
+    };
+  }
+}
+const WEIGHT_POWER = 0.4;
+const WEIGHT_QUALITY = 0.25;
+const WEIGHT_COVERAGE = 0.2;
+const WEIGHT_SYNERGY = 0.15;
+const QUALITY_WEIGHT = {
+  COMMON: 1,
+  FINE: 1.5,
+  RARE: 2,
+  EPIC: 3,
+  LEGENDARY: 5
+};
+class FormationRecommendSystem {
+  constructor() {
+    __publicField(this, "name", "formationRecommend");
+    __publicField(this, "deps", null);
+  }
+  // ─── ISubsystem 接口 ───────────────────────
+  init(deps) {
+    this.deps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return { version: 1 };
+  }
+  reset() {
+  }
+  // ─── 核心推荐 API ──────────────────────────
+  /**
+   * 根据关卡特性推荐编队方案
+   *
+   * @param stageType - 关卡类型
+   * @param availableHeroes - 可用武将列表
+   * @param calculatePower - 战力计算回调
+   * @param recommendedPower - 关卡推荐战力
+   * @param enemySize - 敌方阵容规模
+   * @returns 推荐结果（1~3个方案）
+   */
+  recommend(stageType, availableHeroes, calculatePower2, recommendedPower = 0, enemySize = 3) {
+    const characteristics = this.analyzeStage(stageType, recommendedPower, enemySize);
+    const sortedHeroes = [...availableHeroes].map((h) => ({ hero: h, power: calculatePower2(h) })).sort((a, b) => b.power - a.power);
+    if (sortedHeroes.length === 0) {
+      return { characteristics, plans: [] };
+    }
+    const plans = [];
+    const bestPlan = this.buildBestPowerPlan(sortedHeroes, characteristics);
+    if (bestPlan) plans.push(bestPlan);
+    if (sortedHeroes.length > 2) {
+      const balancedPlan = this.buildBalancedPlan(sortedHeroes, characteristics);
+      if (balancedPlan) plans.push(balancedPlan);
+    }
+    if (sortedHeroes.length > 3) {
+      const synergyPlan = this.buildSynergyPlan(sortedHeroes, characteristics);
+      if (synergyPlan) plans.push(synergyPlan);
+    }
+    return { characteristics, plans: plans.slice(0, 3) };
+  }
+  /**
+   * 分析关卡特性
+   */
+  analyzeStage(stageType, recommendedPower, enemySize) {
+    let difficultyLevel;
+    switch (stageType) {
+      case "boss":
+        difficultyLevel = Math.min(10, Math.max(7, Math.ceil(recommendedPower / 1e3)));
+        break;
+      case "elite":
+        difficultyLevel = Math.min(8, Math.max(4, Math.ceil(recommendedPower / 1500)));
+        break;
+      case "normal":
+      default:
+        difficultyLevel = Math.min(5, Math.max(1, Math.ceil(recommendedPower / 2e3)));
+        break;
+    }
+    return {
+      stageType,
+      recommendedPower,
+      enemySize,
+      difficultyLevel
+    };
+  }
+  // ─── 内部方法 ──────────────────────────────
+  /** 构建最强战力方案 */
+  buildBestPowerPlan(sortedHeroes, chars) {
+    const count = Math.min(MAX_SLOTS_PER_FORMATION, sortedHeroes.length);
+    const selected = sortedHeroes.slice(0, count);
+    const totalPower = selected.reduce((s, h) => s + h.power, 0);
+    const score = this.calculateScore(selected, totalPower, chars);
+    return {
+      name: "最强战力",
+      description: `选择战力最高的${count}名武将组成的最强阵容`,
+      heroIds: selected.map((h) => h.hero.id),
+      estimatedPower: totalPower,
+      score: Math.min(100, Math.round(score)),
+      tags: ["战力优先", "输出最大化"]
+    };
+  }
+  /** 构建平衡方案 */
+  buildBalancedPlan(sortedHeroes, chars) {
+    const count = Math.min(MAX_SLOTS_PER_FORMATION, sortedHeroes.length);
+    const selected = [];
+    const third = Math.max(1, Math.floor(sortedHeroes.length / 3));
+    const groups = [
+      sortedHeroes.slice(0, third),
+      sortedHeroes.slice(third, third * 2),
+      sortedHeroes.slice(third * 2)
+    ];
+    for (let slot = 0; slot < count; slot++) {
+      const groupIdx = slot % 3;
+      const group = groups[groupIdx];
+      const pickIdx = Math.floor(slot / 3);
+      if (group && group[pickIdx]) {
+        selected.push(group[pickIdx]);
+      }
+    }
+    while (selected.length < count) {
+      const next = sortedHeroes.find((h) => !selected.some((s) => s.hero.id === h.hero.id));
+      if (next) selected.push(next);
+      else break;
+    }
+    if (selected.length === 0) return null;
+    const totalPower = selected.reduce((s, h) => s + h.power, 0);
+    const score = this.calculateScore(selected, totalPower, chars);
+    return {
+      name: "均衡发展",
+      description: `兼顾品质和战力的平衡阵容`,
+      heroIds: selected.slice(0, count).map((h) => h.hero.id),
+      estimatedPower: totalPower,
+      score: Math.min(100, Math.round(score)),
+      tags: ["均衡", "稳定"]
+    };
+  }
+  /** 构建羁绊优先方案 */
+  buildSynergyPlan(sortedHeroes, chars) {
+    const count = Math.min(MAX_SLOTS_PER_FORMATION, sortedHeroes.length);
+    const factionGroups = /* @__PURE__ */ new Map();
+    for (const h of sortedHeroes) {
+      const f = h.hero.faction;
+      if (!factionGroups.has(f)) factionGroups.set(f, []);
+      factionGroups.get(f).push(h);
+    }
+    let bestFaction = "";
+    let bestGroup = [];
+    for (const [faction, group] of factionGroups) {
+      if (group.length > bestGroup.length) {
+        bestFaction = faction;
+        bestGroup = group;
+      }
+    }
+    if (bestGroup.length === 0) return null;
+    const selected = bestGroup.slice(0, count);
+    while (selected.length < count) {
+      const next = sortedHeroes.find((h) => !selected.some((s) => s.hero.id === h.hero.id));
+      if (next) selected.push(next);
+      else break;
+    }
+    const totalPower = selected.reduce((s, h) => s + h.power, 0);
+    const synergyBonus = bestGroup.length >= 3 ? 15 : bestGroup.length >= 2 ? 8 : 0;
+    const score = this.calculateScore(selected, totalPower, chars) + synergyBonus;
+    return {
+      name: "羁绊优先",
+      description: `以${bestFaction || "混合"}阵营为核心的羁绊阵容`,
+      heroIds: selected.slice(0, count).map((h) => h.hero.id),
+      estimatedPower: totalPower,
+      score: Math.min(100, Math.round(score)),
+      tags: ["羁绊加成", `${bestFaction || "混合"}阵营`]
+    };
+  }
+  /** 计算推荐分数 */
+  calculateScore(selected, totalPower, chars) {
+    if (selected.length === 0) return 0;
+    const powerScore = chars.recommendedPower > 0 ? Math.min(1, totalPower / chars.recommendedPower) * 100 : 50;
+    const avgQuality = selected.reduce((s, h) => s + (QUALITY_WEIGHT[h.hero.quality] ?? 1), 0) / selected.length;
+    const qualityScore = avgQuality / 5 * 100;
+    const coverageScore = selected.length / MAX_SLOTS_PER_FORMATION * 100;
+    return powerScore * WEIGHT_POWER + qualityScore * WEIGHT_QUALITY + coverageScore * WEIGHT_COVERAGE + 50 * WEIGHT_SYNERGY;
+  }
+}
+const QUALITY_BONUS = {
+  COMMON: 1,
+  FINE: 2,
+  RARE: 3,
+  EPIC: 5,
+  LEGENDARY: 8
+};
+const LEVEL_BONUS_PER_LEVEL = 0.5;
+const ATTACK_BONUS_COEFFICIENT = 0.01;
+class HeroDispatchSystem {
+  constructor() {
+    __publicField(this, "name", "heroDispatch");
+    __publicField(this, "deps", null);
+    /** 建筑类型 → 派驻记录 */
+    __publicField(this, "buildingDispatch", {});
+    /** 武将ID → 派驻到的建筑类型 */
+    __publicField(this, "heroDispatch", {});
+    /** 武将数据获取回调 */
+    __publicField(this, "getGeneralFn", null);
+  }
+  // ─── ISubsystem 接口 ───────────────────────
+  init(deps) {
+    this.deps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return {
+      buildingDispatch: { ...this.buildingDispatch },
+      heroDispatch: { ...this.heroDispatch }
+    };
+  }
+  reset() {
+    this.buildingDispatch = {};
+    this.heroDispatch = {};
+  }
+  // ─── 依赖注入 ──────────────────────────────
+  /**
+   * 设置武将数据获取回调
+   * @param fn - 通过heroId获取GeneralData的回调
+   */
+  setGetGeneral(fn) {
+    this.getGeneralFn = fn;
+  }
+  // ─── 核心 API ──────────────────────────────
+  /**
+   * 派驻武将到建筑
+   *
+   * @param heroId - 武将ID
+   * @param buildingType - 建筑类型
+   * @returns 派驻结果
+   */
+  dispatchHero(heroId, buildingType) {
+    const existingBuilding = this.heroDispatch[heroId];
+    if (existingBuilding && existingBuilding !== buildingType) {
+      return { success: false, bonusPercent: 0, reason: `武将 ${heroId} 已派驻到 ${existingBuilding}` };
+    }
+    const existingDispatch = this.buildingDispatch[buildingType];
+    if (existingDispatch && existingDispatch.heroId !== heroId) {
+      delete this.heroDispatch[existingDispatch.heroId];
+    }
+    const bonusPercent = this.calculateBonus(heroId);
+    const record = { heroId, buildingType, bonusPercent };
+    this.buildingDispatch[buildingType] = record;
+    this.heroDispatch[heroId] = buildingType;
+    return { success: true, bonusPercent };
+  }
+  /**
+   * 取消武将派驻
+   *
+   * @param heroId - 武将ID
+   * @returns 是否成功取消
+   */
+  undeployHero(heroId) {
+    const buildingType = this.heroDispatch[heroId];
+    if (!buildingType) return false;
+    delete this.buildingDispatch[buildingType];
+    delete this.heroDispatch[heroId];
+    return true;
+  }
+  /**
+   * 获取指定建筑的派驻加成百分比
+   *
+   * @param buildingType - 建筑类型
+   * @returns 加成百分比（如 5 表示 +5%）
+   */
+  getDispatchBonus(buildingType) {
+    const record = this.buildingDispatch[buildingType];
+    if (!record) return 0;
+    return this.calculateBonus(record.heroId);
+  }
+  /**
+   * 获取所有建筑的派驻加成
+   *
+   * @returns 建筑类型 → 加成百分比
+   */
+  getAllDispatchBonuses() {
+    const result = {};
+    for (const buildingType of Object.keys(this.buildingDispatch)) {
+      result[buildingType] = this.getDispatchBonus(buildingType);
+    }
+    return result;
+  }
+  /**
+   * 获取武将派驻的建筑类型
+   *
+   * @param heroId - 武将ID
+   * @returns 建筑类型，未派驻返回 null
+   */
+  getHeroDispatchBuilding(heroId) {
+    return this.heroDispatch[heroId] ?? null;
+  }
+  /**
+   * 获取建筑的派驻武将ID
+   *
+   * @param buildingType - 建筑类型
+   * @returns 武将ID，无派驻返回 null
+   */
+  getBuildingDispatchHero(buildingType) {
+    var _a;
+    return ((_a = this.buildingDispatch[buildingType]) == null ? void 0 : _a.heroId) ?? null;
+  }
+  /**
+   * 武将升级后刷新派驻加成
+   * 武将升级/升星时调用，自动更新建筑产出加成
+   *
+   * @param heroId - 升级的武将ID
+   * @returns 更新后的加成百分比（未派驻返回0）
+   */
+  refreshDispatchBonus(heroId) {
+    const buildingType = this.heroDispatch[heroId];
+    if (!buildingType) return 0;
+    const newBonus = this.calculateBonus(heroId);
+    this.buildingDispatch[buildingType] = {
+      heroId,
+      buildingType,
+      bonusPercent: newBonus
+    };
+    return newBonus;
+  }
+  /**
+   * 计算指定武将的派驻加成百分比
+   *
+   * @param heroId - 武将ID
+   * @returns 加成百分比
+   */
+  calculateBonus(heroId) {
+    var _a;
+    if (!this.getGeneralFn) return 0;
+    const general = this.getGeneralFn(heroId);
+    if (!general) return 0;
+    const qualityBonus = QUALITY_BONUS[general.quality] ?? 1;
+    const levelBonus = general.level * LEVEL_BONUS_PER_LEVEL;
+    const attackBonus = (((_a = general.baseStats) == null ? void 0 : _a.attack) ?? 0) * ATTACK_BONUS_COEFFICIENT;
+    const totalBonus = (qualityBonus + levelBonus) * (1 + attackBonus);
+    return Math.round(totalBonus * 10) / 10;
+  }
+  // ─── 序列化 ──────────────────────────────
+  /** 序列化状态 */
+  serialize() {
+    return JSON.stringify({
+      buildingDispatch: this.buildingDispatch,
+      heroDispatch: this.heroDispatch
+    });
+  }
+  /** 反序列化状态 */
+  deserialize(json) {
+    try {
+      const data = JSON.parse(json);
+      this.buildingDispatch = data.buildingDispatch ?? {};
+      this.heroDispatch = data.heroDispatch ?? {};
+    } catch {
+      this.reset();
+    }
+  }
+}
+class HeroBadgeSystem {
+  constructor() {
+    __publicField(this, "name", "heroBadge");
+    __publicField(this, "coreDeps", null);
+    __publicField(this, "deps");
+    this.deps = {
+      getGeneralIds: () => [],
+      canLevelUp: () => false,
+      canStarUp: () => false,
+      canEquip: () => false
+    };
+  }
+  // ── ISubsystem 接口 ──
+  init(deps) {
+    this.coreDeps = deps;
+    gameLog.info("[HeroBadgeSystem] initialized");
+  }
+  update(_dt) {
+  }
+  getState() {
+    return {
+      mainEntryRedDot: this.hasMainEntryRedDot(),
+      tabLevelBadge: this.getLevelBadgeCount(),
+      tabStarBadge: this.getStarBadgeCount(),
+      todayTodos: this.getTodayTodoList()
+    };
+  }
+  reset() {
+    this.deps = {
+      getGeneralIds: () => [],
+      canLevelUp: () => false,
+      canStarUp: () => false,
+      canEquip: () => false
+    };
+  }
+  // ── 依赖注入 ──
+  /** 注入业务依赖 */
+  setBadgeSystemDeps(deps) {
+    this.deps = deps;
+  }
+  // ═══════════════════════════════════════════
+  // F12.03: 蓝点检测（新装备可穿戴）
+  // ═══════════════════════════════════════════
+  /**
+   * 检测武将是否有新装备可穿戴（蓝点标记）
+   * @param heroId - 武将ID
+   * @returns 是否显示蓝点
+   */
+  canEquipNewEquipment(heroId) {
+    return this.deps.canEquip(heroId);
+  }
+  // ═══════════════════════════════════════════
+  // F12.05: Tab升级角标数量
+  // ═══════════════════════════════════════════
+  /**
+   * 获取可升级的武将数量（Tab角标）
+   * @returns 可升级武将数量
+   */
+  getLevelBadgeCount() {
+    return this.deps.getGeneralIds().filter((id) => this.deps.canLevelUp(id)).length;
+  }
+  // ═══════════════════════════════════════════
+  // F12.05: Tab升星角标数量（金色）
+  // ═══════════════════════════════════════════
+  /**
+   * 获取可升星的武将数量（Tab金色角标）
+   * @returns 可升星武将数量
+   */
+  getStarBadgeCount() {
+    return this.deps.getGeneralIds().filter((id) => this.deps.canStarUp(id)).length;
+  }
+  // ═══════════════════════════════════════════
+  // F12.06: 主界面入口红点
+  // ═══════════════════════════════════════════
+  /**
+   * 主界面入口是否显示红点
+   *
+   * 聚合条件：可升级 / 可升星 / 有新装备可穿戴
+   * @returns 是否显示红点
+   */
+  hasMainEntryRedDot() {
+    const ids = this.deps.getGeneralIds();
+    return ids.some(
+      (id) => this.deps.canLevelUp(id) || this.deps.canStarUp(id) || this.deps.canEquip(id)
+    );
+  }
+  // ═══════════════════════════════════════════
+  // F12.07: 今日待办聚合
+  // ═══════════════════════════════════════════
+  /**
+   * 获取今日待办列表
+   *
+   * 聚合所有武将相关的可操作事项。无待办时返回默认招募提示。
+   * @returns 待办列表
+   */
+  getTodayTodoList() {
+    const todos = [];
+    const ids = this.deps.getGeneralIds();
+    for (const id of ids) {
+      if (this.deps.canLevelUp(id)) {
+        todos.push({ type: "levelUp", heroId: id, label: "武将可升级", action: "levelUp" });
+      }
+      if (this.deps.canStarUp(id)) {
+        todos.push({ type: "starUp", heroId: id, label: "武将可升星", action: "starUp" });
+      }
+      if (this.deps.canEquip(id)) {
+        todos.push({ type: "equip", heroId: id, label: "有新装备可穿戴", action: "equip" });
+      }
+    }
+    if (todos.length === 0) {
+      todos.push({ type: "recruit", label: "今日免费招募未使用", action: "recruit" });
+    }
+    return todos;
+  }
+  // ═══════════════════════════════════════════
+  // F12.08: 快捷操作
+  // ═══════════════════════════════════════════
+  /**
+   * 执行快捷操作
+   *
+   * @param action - 操作类型
+   * @returns 操作结果
+   */
+  executeQuickAction(action) {
+    const ids = this.deps.getGeneralIds();
+    const affected = [];
+    switch (action) {
+      case "levelUp":
+        for (const id of ids) {
+          if (this.deps.canLevelUp(id)) affected.push(id);
+        }
+        return {
+          success: affected.length > 0,
+          message: `${affected.length}名武将可升级`,
+          affectedHeroes: affected
+        };
+      case "starUp":
+        for (const id of ids) {
+          if (this.deps.canStarUp(id)) affected.push(id);
+        }
+        return {
+          success: affected.length > 0,
+          message: `${affected.length}名武将可升星`,
+          affectedHeroes: affected
+        };
+      case "equip":
+        for (const id of ids) {
+          if (this.deps.canEquip(id)) affected.push(id);
+        }
+        return {
+          success: affected.length > 0,
+          message: `${affected.length}名武将有新装备`,
+          affectedHeroes: affected
+        };
+      case "recruit":
+        return { success: true, message: "跳转招募界面", affectedHeroes: [] };
+    }
+  }
+}
+class HeroAttributeCompare {
+  constructor() {
+    __publicField(this, "name", "heroAttributeCompare");
+    __publicField(this, "coreDeps", null);
+    __publicField(this, "deps");
+    __publicField(this, "state");
+    this.state = { lastComparisonHeroId: null };
+    this.deps = {
+      getHeroAttrs: () => ({}),
+      getEquipBonus: () => ({}),
+      getTechBonus: () => ({}),
+      getBuffBonus: () => ({}),
+      simulateLevel: () => ({})
+    };
+  }
+  // ── ISubsystem 接口 ──
+  init(deps) {
+    this.coreDeps = deps;
+    gameLog.info("[HeroAttributeCompare] initialized");
+  }
+  update(_dt) {
+  }
+  getState() {
+    return { ...this.state };
+  }
+  reset() {
+    this.state = { lastComparisonHeroId: null };
+    this.deps = {
+      getHeroAttrs: () => ({}),
+      getEquipBonus: () => ({}),
+      getTechBonus: () => ({}),
+      getBuffBonus: () => ({}),
+      simulateLevel: () => ({})
+    };
+  }
+  // ── 依赖注入 ──
+  /** 注入业务依赖 */
+  setAttributeCompareDeps(deps) {
+    this.deps = deps;
+  }
+  // ═══════════════════════════════════════════
+  // F10.10: 属性对比
+  // ═══════════════════════════════════════════
+  /**
+   * 属性对比
+   *
+   * 对比武将当前属性与模拟等级下的属性差异。
+   * 如果不传 simulateLevel，则 current === simulated，diff 全为 0。
+   *
+   * @param heroId - 武将ID
+   * @param simulateLevel - 模拟目标等级
+   * @returns 属性对比结果
+   */
+  compareAttributes(heroId, simulateLevel) {
+    const current = this.deps.getHeroAttrs(heroId);
+    const simulated = simulateLevel ? this.deps.simulateLevel(heroId, simulateLevel) : current;
+    const diff = {};
+    for (const key of Object.keys({ ...current, ...simulated })) {
+      diff[key] = (simulated[key] || 0) - (current[key] || 0);
+    }
+    this.state.lastComparisonHeroId = heroId;
+    return { heroId, current, simulated, diff };
+  }
+  // ═══════════════════════════════════════════
+  // F10.11: 属性构成展开
+  // ═══════════════════════════════════════════
+  /**
+   * 属性构成展开
+   *
+   * 将武将总属性拆分为基础属性、装备加成、科技加成、Buff加成。
+   *
+   * @param heroId - 武将ID
+   * @returns 属性构成展开结果
+   */
+  getAttributeBreakdown(heroId) {
+    const base = this.deps.getHeroAttrs(heroId);
+    const equipment = this.deps.getEquipBonus(heroId);
+    const tech = this.deps.getTechBonus(heroId);
+    const buff = this.deps.getBuffBonus(heroId);
+    const total = {};
+    for (const key of Object.keys({ ...base, ...equipment, ...tech, ...buff })) {
+      total[key] = (base[key] || 0) + (equipment[key] || 0) + (tech[key] || 0) + (buff[key] || 0);
+    }
+    return { heroId, base, equipment, tech, buff, total };
+  }
+}
+const AWAKENING_MAX_LEVEL = 120;
+const AWAKENING_REQUIREMENTS = {
+  /** 武将等级要求 */
+  minLevel: 100,
+  /** 武将星级要求 */
+  minStars: 6,
+  /** 突破阶段要求 */
+  minBreakthrough: 4,
+  /** 最低品质要求（数值，用于比较 QUALITY_ORDER） */
+  minQualityOrder: QUALITY_ORDER[Quality.RARE]
+};
+[Quality.RARE, Quality.EPIC, Quality.LEGENDARY];
+const AWAKENING_COST = {
+  /** 铜钱：约10天铜钱结余 */
+  copper: 5e5,
+  /** 突破石：约5天突破石产出 */
+  breakthroughStones: 100,
+  /** 技能书：约6天技能书产出 */
+  skillBooks: 50,
+  /** 觉醒石：新资源，觉醒副本和赛季排行获取 */
+  awakeningStones: 30,
+  /** 同名武将碎片 */
+  fragments: 200
+};
+const AWAKENING_EXP_TIERS = [
+  { levelMin: 101, levelMax: 105, expPerLevel: 12e3, goldPerLevel: 5e3 },
+  { levelMin: 106, levelMax: 110, expPerLevel: 15e3, goldPerLevel: 7e3 },
+  { levelMin: 111, levelMax: 115, expPerLevel: 2e4, goldPerLevel: 1e4 },
+  { levelMin: 116, levelMax: 120, expPerLevel: 25e3, goldPerLevel: 13e3 }
+];
+const AWAKENING_EXP_TABLE = {};
+for (const tier of AWAKENING_EXP_TIERS) {
+  for (let lv = tier.levelMin; lv <= tier.levelMax; lv++) {
+    AWAKENING_EXP_TABLE[lv] = lv * tier.expPerLevel;
+  }
+}
+const AWAKENING_GOLD_TABLE = {};
+for (const tier of AWAKENING_EXP_TIERS) {
+  for (let lv = tier.levelMin; lv <= tier.levelMax; lv++) {
+    AWAKENING_GOLD_TABLE[lv] = lv * tier.goldPerLevel;
+  }
+}
+const AWAKENING_STAT_MULTIPLIER = 1.5;
+const AWAKENING_SKILLS = {
+  // ── 传说品质 ──
+  guanyu: {
+    id: "guanyu_awaken",
+    name: "武圣·青龙偃月",
+    description: "对单体造成300%ATK伤害，击杀后回复30%HP",
+    damageMultiplier: 3,
+    cooldown: 5,
+    effect: "击杀回复30%HP"
+  },
+  zhugeliang: {
+    id: "zhugeliang_awaken",
+    name: "卧龙·八阵图",
+    description: "全体友军获得护盾（诸葛亮INT×3），持续3回合",
+    damageMultiplier: 3,
+    cooldown: 7,
+    effect: "全体护盾INT×3"
+  },
+  zhaoyun: {
+    id: "zhaoyun_awaken",
+    name: "常胜·七进七出",
+    description: "连续攻击7次，每次对随机敌人造成80%ATK伤害",
+    damageMultiplier: 0.8,
+    cooldown: 6,
+    effect: "随机7次攻击"
+  },
+  caocao: {
+    id: "caocao_awaken",
+    name: "奸雄·挟天子",
+    description: "全体敌人ATK-20%、INT-20%，持续3回合",
+    damageMultiplier: 0,
+    cooldown: 7,
+    effect: "敌方ATK/INT-20%持续3回合"
+  },
+  lvbu: {
+    id: "lvbu_awaken",
+    name: "飞将·天下无双",
+    description: "对单体造成400%ATK伤害，自身获得无敌1回合",
+    damageMultiplier: 4,
+    cooldown: 8,
+    effect: "无敌1回合"
+  },
+  // ── 史诗品质 ──
+  liubei: {
+    id: "liubei_awaken",
+    name: "仁德·桃园结义",
+    description: "全体友军回复40%最大HP，攻击力+15%持续2回合",
+    damageMultiplier: 0,
+    cooldown: 7,
+    effect: "全体回复40%HP+ATK+15%"
+  },
+  zhangfei: {
+    id: "zhangfei_awaken",
+    name: "万人敌·长坂怒吼",
+    description: "对全体造成150%ATK伤害，附加眩晕1回合（50%概率）",
+    damageMultiplier: 1.5,
+    cooldown: 6,
+    effect: "50%概率眩晕1回合"
+  },
+  simayi: {
+    id: "simayi_awaken",
+    name: "隐忍·鹰视狼顾",
+    description: "对全体造成120%INT策略伤害，偷取20%属性持续2回合",
+    damageMultiplier: 1.2,
+    cooldown: 7,
+    effect: "偷取20%属性持续2回合"
+  },
+  zhouyu: {
+    id: "zhouyu_awaken",
+    name: "火神·赤壁焚天",
+    description: "对全体造成180%INT灼烧伤害，持续3回合每回合30%INT",
+    damageMultiplier: 1.8,
+    cooldown: 7,
+    effect: "灼烧3回合每回合30%INT"
+  },
+  // ── 稀有品质 ──
+  dianwei: {
+    id: "dianwei_awaken",
+    name: "恶来·死战不退",
+    description: "对单体造成250%ATK伤害，自身HP越低伤害越高（最高+100%）",
+    damageMultiplier: 2.5,
+    cooldown: 5,
+    effect: "HP越低伤害越高(最高+100%)"
+  },
+  lushu: {
+    id: "lushu_awaken",
+    name: "联盟·唇枪舌剑",
+    description: "全体友军防御+25%持续3回合，清除所有负面状态",
+    damageMultiplier: 0,
+    cooldown: 6,
+    effect: "全体DEF+25%+清除负面"
+  },
+  huanggai: {
+    id: "huanggai_awaken",
+    name: "苦肉·赤壁先锋",
+    description: "牺牲20%HP，对全体造成200%ATK伤害",
+    damageMultiplier: 2,
+    cooldown: 5,
+    effect: "牺牲20%HP"
+  },
+  ganning: {
+    id: "ganning_awaken",
+    name: "锦帆·百骑劫营",
+    description: "对后排造成220%ATK伤害，50%概率沉默2回合",
+    damageMultiplier: 2.2,
+    cooldown: 6,
+    effect: "50%概率沉默2回合"
+  },
+  xuhuang: {
+    id: "xuhuang_awaken",
+    name: "坚守·以逸待劳",
+    description: "全体友军获得护盾（自身DEF×2.5），反击伤害30%",
+    damageMultiplier: 0,
+    cooldown: 7,
+    effect: "全体护盾DEF×2.5+反击30%"
+  },
+  zhangliao: {
+    id: "zhangliao_awaken",
+    name: "突袭·威震逍遥津",
+    description: "先手对单体造成280%ATK伤害，降低目标防御30%持续2回合",
+    damageMultiplier: 2.8,
+    cooldown: 5,
+    effect: "先手+DEF-30%持续2回合"
+  },
+  weiyan: {
+    id: "weiyan_awaken",
+    name: "狂攻·子午谷奇谋",
+    description: "连续攻击3次，每次造成150%ATK伤害，无视30%防御",
+    damageMultiplier: 1.5,
+    cooldown: 6,
+    effect: "3次攻击+无视30%DEF"
+  }
+};
+const AWAKENING_PASSIVE = {
+  factionMaxStacks: 3,
+  /** 全局属性：所有武将全属性+1%，最多叠加5次 */
+  globalStatBonus: 0.01,
+  globalMaxStacks: 5,
+  /** 资源加成：铜钱/招贤令产出+2%，最多叠加3次 */
+  resourceBonus: 0.02,
+  resourceMaxStacks: 3,
+  /** 经验加成：所有武将经验获取+3%，最多叠加3次 */
+  expBonus: 0.03,
+  expMaxStacks: 3
+};
+({
+  [Quality.COMMON]: {},
+  [Quality.FINE]: {},
+  [Quality.RARE]: {},
+  [Quality.EPIC]: {},
+  [Quality.LEGENDARY]: {}
+});
+const AWAKENING_SAVE_VERSION = 1;
+function createEmptyState() {
+  return { heroes: {} };
+}
+class AwakeningSystem {
+  constructor(heroSystem, starSystem) {
+    __publicField(this, "name", "awakening");
+    __publicField(this, "coreDeps", null);
+    __publicField(this, "deps", null);
+    __publicField(this, "heroSystem");
+    __publicField(this, "starSystem");
+    __publicField(this, "state");
+    this.heroSystem = heroSystem;
+    this.starSystem = starSystem;
+    this.state = createEmptyState();
+  }
+  // ── ISubsystem ──
+  init(deps) {
+    this.coreDeps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return this.serialize();
+  }
+  reset() {
+    this.state = createEmptyState();
+  }
+  setDeps(deps) {
+    this.deps = deps;
+  }
+  // ═══════════════════════════════════════════
+  // 1. 觉醒条件检查
+  // ═══════════════════════════════════════════
+  /** 检查武将是否满足觉醒条件（PRD HER-13.2） */
+  checkAwakeningEligible(heroId) {
+    const general = this.heroSystem.getGeneral(heroId);
+    const failures = [];
+    if (!general) {
+      return {
+        eligible: false,
+        failures: ["武将未拥有"],
+        details: {
+          level: { required: AWAKENING_REQUIREMENTS.minLevel, current: 0, met: false },
+          stars: { required: AWAKENING_REQUIREMENTS.minStars, current: 0, met: false },
+          breakthrough: { required: AWAKENING_REQUIREMENTS.minBreakthrough, current: 0, met: false },
+          quality: { required: "RARE+", current: "NONE", met: false },
+          owned: false
+        }
+      };
+    }
+    const currentLevel = general.level;
+    const currentStars = this.starSystem.getStar(heroId);
+    const currentBreakthrough = this.starSystem.getBreakthroughStage(heroId);
+    const currentQuality = general.quality;
+    const currentQualityOrder = QUALITY_ORDER[currentQuality];
+    const levelMet = currentLevel >= AWAKENING_REQUIREMENTS.minLevel;
+    const starsMet = currentStars >= AWAKENING_REQUIREMENTS.minStars;
+    const breakthroughMet = currentBreakthrough >= AWAKENING_REQUIREMENTS.minBreakthrough;
+    const qualityMet = currentQualityOrder >= AWAKENING_REQUIREMENTS.minQualityOrder;
+    if (!levelMet) failures.push(`等级不足: ${currentLevel}/${AWAKENING_REQUIREMENTS.minLevel}`);
+    if (!starsMet) failures.push(`星级不足: ${currentStars}/${AWAKENING_REQUIREMENTS.minStars}`);
+    if (!breakthroughMet) failures.push(`突破不足: ${currentBreakthrough}/${AWAKENING_REQUIREMENTS.minBreakthrough}`);
+    if (!qualityMet) failures.push(`品质不足: ${currentQuality} (需要RARE+)`);
+    return {
+      eligible: levelMet && starsMet && breakthroughMet && qualityMet,
+      failures,
+      details: {
+        level: { required: AWAKENING_REQUIREMENTS.minLevel, current: currentLevel, met: levelMet },
+        stars: { required: AWAKENING_REQUIREMENTS.minStars, current: currentStars, met: starsMet },
+        breakthrough: { required: AWAKENING_REQUIREMENTS.minBreakthrough, current: currentBreakthrough, met: breakthroughMet },
+        quality: { required: "RARE+", current: currentQuality, met: qualityMet },
+        owned: true
+      }
+    };
+  }
+  // ═══════════════════════════════════════════
+  // 2. 觉醒执行
+  // ═══════════════════════════════════════════
+  /** 执行觉醒：条件检查→资源检查→消耗→更新状态→解锁技能 */
+  awaken(heroId) {
+    const heroState = this.state.heroes[heroId];
+    if (heroState == null ? void 0 : heroState.isAwakened) {
+      return {
+        success: false,
+        generalId: heroId,
+        costSpent: null,
+        awakenedStats: null,
+        skillUnlocked: null,
+        reason: "武将已觉醒"
+      };
+    }
+    const eligibility = this.checkAwakeningEligible(heroId);
+    if (!eligibility.eligible) {
+      return {
+        success: false,
+        generalId: heroId,
+        costSpent: null,
+        awakenedStats: null,
+        skillUnlocked: null,
+        reason: `条件不满足: ${eligibility.failures.join(", ")}`
+      };
+    }
+    if (!this.deps) {
+      return {
+        success: false,
+        generalId: heroId,
+        costSpent: null,
+        awakenedStats: null,
+        skillUnlocked: null,
+        reason: "资源系统未初始化"
+      };
+    }
+    const resourceFailures = this.checkResources(heroId);
+    if (resourceFailures.length > 0) {
+      return {
+        success: false,
+        generalId: heroId,
+        costSpent: null,
+        awakenedStats: null,
+        skillUnlocked: null,
+        reason: `资源不足: ${resourceFailures.join(", ")}`
+      };
+    }
+    this.spendResources(heroId);
+    this.state.heroes[heroId] = {
+      isAwakened: true,
+      awakeningLevel: 1
+    };
+    const general = this.heroSystem.getGeneral(heroId);
+    const awakenedStats = this.calculateAwakenedStats(heroId);
+    const skill = this.getAwakeningSkill(heroId);
+    gameLog.info(`[AwakeningSystem] ${general.name}(${heroId}) 觉醒成功！属性+50%，等级上限→${AWAKENING_MAX_LEVEL}`);
+    return {
+      success: true,
+      generalId: heroId,
+      costSpent: { ...AWAKENING_COST },
+      awakenedStats,
+      skillUnlocked: skill
+    };
+  }
+  // ═══════════════════════════════════════════
+  // 3. 觉醒状态查询
+  // ═══════════════════════════════════════════
+  /** 获取武将觉醒状态 */
+  getAwakeningState(heroId) {
+    return this.state.heroes[heroId] ?? { isAwakened: false, awakeningLevel: 0 };
+  }
+  /** 检查武将是否已觉醒 */
+  isAwakened(heroId) {
+    var _a;
+    return ((_a = this.state.heroes[heroId]) == null ? void 0 : _a.isAwakened) ?? false;
+  }
+  /** 获取觉醒后等级上限（已觉醒=120，未觉醒=原上限） */
+  getAwakenedLevelCap(heroId) {
+    return this.isAwakened(heroId) ? AWAKENING_MAX_LEVEL : this.starSystem.getLevelCap(heroId);
+  }
+  // ═══════════════════════════════════════════
+  // 4. 觉醒技能
+  // ═══════════════════════════════════════════
+  /** 获取武将觉醒终极技能（PRD HER-13.4.4） */
+  getAwakeningSkill(heroId) {
+    const skill = AWAKENING_SKILLS[heroId];
+    return skill ? { ...skill } : null;
+  }
+  /** 觉醒技能预览（不要求已觉醒，用于觉醒前展示） */
+  getAwakeningSkillPreview(heroId) {
+    return this.getAwakeningSkill(heroId);
+  }
+  // ═══════════════════════════════════════════
+  // 5. 觉醒后属性计算
+  // ═══════════════════════════════════════════
+  /**
+   * 计算觉醒后属性
+   * 公式：觉醒后属性 = 原始属性 × 觉醒倍率(1.5)
+   */
+  calculateAwakenedStats(heroId) {
+    const general = this.heroSystem.getGeneral(heroId);
+    if (!general) {
+      return { attack: 0, defense: 0, intelligence: 0, speed: 0 };
+    }
+    if (!this.isAwakened(heroId)) {
+      return { ...general.baseStats };
+    }
+    const m = AWAKENING_STAT_MULTIPLIER;
+    return {
+      attack: Math.floor(general.baseStats.attack * m),
+      defense: Math.floor(general.baseStats.defense * m),
+      intelligence: Math.floor(general.baseStats.intelligence * m),
+      speed: Math.floor(general.baseStats.speed * m)
+    };
+  }
+  /** 计算觉醒属性加成差值（觉醒后 - 觉醒前） */
+  getAwakeningStatDiff(heroId) {
+    var _a;
+    const base = ((_a = this.heroSystem.getGeneral(heroId)) == null ? void 0 : _a.baseStats) ?? { attack: 0, defense: 0, intelligence: 0, speed: 0 };
+    const awakened = this.calculateAwakenedStats(heroId);
+    return {
+      attack: awakened.attack - base.attack,
+      defense: awakened.defense - base.defense,
+      intelligence: awakened.intelligence - base.intelligence,
+      speed: awakened.speed - base.speed
+    };
+  }
+  // ═══════════════════════════════════════════
+  // 6. 觉醒被动效果
+  // ═══════════════════════════════════════════
+  /** 计算全局觉醒被动加成汇总（PRD HER-13.5） */
+  getPassiveSummary() {
+    const factionStacks = {};
+    let globalStacks = 0;
+    let resourceStacks = 0;
+    let expStacks = 0;
+    for (const [heroId, heroState] of Object.entries(this.state.heroes)) {
+      if (!heroState.isAwakened) continue;
+      const general = this.heroSystem.getGeneral(heroId);
+      if (general) {
+        factionStacks[general.faction] = (factionStacks[general.faction] ?? 0) + 1;
+      }
+      if (globalStacks < AWAKENING_PASSIVE.globalMaxStacks) globalStacks++;
+      if (resourceStacks < AWAKENING_PASSIVE.resourceMaxStacks) resourceStacks++;
+      if (expStacks < AWAKENING_PASSIVE.expMaxStacks) expStacks++;
+    }
+    for (const faction of Object.keys(factionStacks)) {
+      factionStacks[faction] = Math.min(factionStacks[faction], AWAKENING_PASSIVE.factionMaxStacks);
+    }
+    return {
+      awakenedCount: Object.values(this.state.heroes).filter((h) => h.isAwakened).length,
+      factionStacks,
+      globalStatBonus: globalStacks * AWAKENING_PASSIVE.globalStatBonus,
+      resourceBonus: resourceStacks * AWAKENING_PASSIVE.resourceBonus,
+      expBonus: expStacks * AWAKENING_PASSIVE.expBonus
+    };
+  }
+  // ═══════════════════════════════════════════
+  // 7. 觉醒经验（101~120级）
+  // ═══════════════════════════════════════════
+  /** 获取觉醒后指定等级升级所需经验 */
+  getAwakeningExpRequired(level) {
+    return AWAKENING_EXP_TABLE[level] ?? 0;
+  }
+  /** 获取觉醒后指定等级升级所需铜钱 */
+  getAwakeningGoldRequired(level) {
+    return AWAKENING_GOLD_TABLE[level] ?? 0;
+  }
+  // ═══════════════════════════════════════════
+  // 8. 序列化/反序列化
+  // ═══════════════════════════════════════════
+  serialize() {
+    return { version: AWAKENING_SAVE_VERSION, state: { heroes: { ...this.state.heroes } } };
+  }
+  deserialize(data) {
+    if (data.version !== AWAKENING_SAVE_VERSION) {
+      gameLog.warn(`AwakeningSystem: 存档版本不匹配 (期望 ${AWAKENING_SAVE_VERSION}，实际 ${data.version})`);
+    }
+    this.state = { heroes: { ...data.state.heroes ?? {} } };
+  }
+  // ═══════════════════════════════════════════
+  // 私有方法
+  // ═══════════════════════════════════════════
+  /** 检查资源是否充足，返回不足的资源列表 */
+  checkResources(heroId) {
+    if (!this.deps) return ["资源系统未初始化"];
+    const failures = [];
+    const checks = [
+      ["gold", AWAKENING_COST.copper],
+      ["breakthroughStone", AWAKENING_COST.breakthroughStones],
+      ["skillBook", AWAKENING_COST.skillBooks],
+      ["awakeningStone", AWAKENING_COST.awakeningStones]
+    ];
+    for (const [type, cost] of checks) {
+      if (!this.deps.canAffordResource(type, cost)) {
+        failures.push(`${type}: ${this.deps.getResourceAmount(type)}/${cost}`);
+      }
+    }
+    const fragments = this.heroSystem.getFragments(heroId);
+    if (fragments < AWAKENING_COST.fragments) {
+      failures.push(`碎片: ${fragments}/${AWAKENING_COST.fragments}`);
+    }
+    return failures;
+  }
+  /** 执行资源消耗 */
+  spendResources(heroId) {
+    if (!this.deps) return;
+    this.deps.spendResource("gold", AWAKENING_COST.copper);
+    this.deps.spendResource("breakthroughStone", AWAKENING_COST.breakthroughStones);
+    this.deps.spendResource("skillBook", AWAKENING_COST.skillBooks);
+    this.deps.spendResource("awakeningStone", AWAKENING_COST.awakeningStones);
+    this.heroSystem.useFragments(heroId, AWAKENING_COST.fragments);
+  }
+}
+const PASSIVE_RATE_PER_SECOND = 2e-3;
+const NEWBIE_PACK_AMOUNT = 100;
+const DAILY_TASK_REWARD = 15;
+const SHOP_UNIT_COST = 100;
+const SHOP_DAILY_LIMIT = 50;
+const STAGE_CLEAR_MIN = 3;
+const STAGE_CLEAR_MAX = 5;
+const EVENT_REWARD_MIN = 10;
+const EVENT_REWARD_MAX = 20;
+const OFFLINE_EFFICIENCY = 0.5;
+const SAVE_VERSION$8 = 1;
+function todayDateString$1() {
+  const now = /* @__PURE__ */ new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+function randomInt$1(min, max, rng) {
+  return Math.floor(rng() * (max - min + 1)) + min;
+}
+class RecruitTokenEconomySystem {
+  constructor(rng = Math.random) {
+    __publicField(this, "name", "recruitTokenEconomy");
+    // ── 依赖 ──
+    __publicField(this, "deps", null);
+    __publicField(this, "economyDeps", null);
+    // ── 状态 ──
+    /** 是否已领取新手礼包 */
+    __publicField(this, "newbiePackClaimed", false);
+    /** 今日已购买商店数量 */
+    __publicField(this, "dailyShopPurchased", 0);
+    /** 上次重置日期 */
+    __publicField(this, "lastResetDate", "");
+    /** 今日是否已领取日常任务奖励 */
+    __publicField(this, "dailyTaskClaimed", false);
+    /** 已领取首通奖励的关卡 ID 集合 */
+    __publicField(this, "clearedStages", /* @__PURE__ */ new Set());
+    /** 累计被动产出 */
+    __publicField(this, "totalPassiveEarned", 0);
+    /** 随机数生成器 */
+    __publicField(this, "rng");
+    this.rng = rng;
+  }
+  // ── ISubsystem 接口实现 ──
+  /** 注入系统依赖 */
+  init(deps) {
+    this.deps = deps;
+  }
+  /** 每帧更新（dt 为秒），处理被动产出和日重置 */
+  update(dt) {
+    this.checkDailyReset();
+    this.tick(dt);
+  }
+  /** 获取系统状态快照 */
+  getState() {
+    return this.serialize();
+  }
+  /** 重置为初始状态 */
+  reset() {
+    this.newbiePackClaimed = false;
+    this.dailyShopPurchased = 0;
+    this.lastResetDate = "";
+    this.dailyTaskClaimed = false;
+    this.clearedStages.clear();
+    this.totalPassiveEarned = 0;
+  }
+  // ── 依赖注入 ──
+  /** 设置资源操作依赖 */
+  setEconomyDeps(deps) {
+    this.economyDeps = deps;
+  }
+  /** 注入随机数生成器（测试用） */
+  setRng(rng) {
+    this.rng = rng;
+  }
+  // ─────────────────────────────────────────
+  // 1. 被动产出
+  // ─────────────────────────────────────────
+  /**
+   * 被动产出 tick
+   *
+   * 每帧调用，按 0.002/秒 的速率增加招贤令。
+   * 实际资源增加通过 economyDeps.addRecruitToken 回调执行。
+   *
+   * @param deltaSeconds 距上次 tick 的时间间隔（秒）
+   */
+  tick(deltaSeconds) {
+    if (!this.economyDeps) return;
+    if (deltaSeconds <= 0) return;
+    const earned = PASSIVE_RATE_PER_SECOND * deltaSeconds;
+    const actual = this.economyDeps.addRecruitToken(earned);
+    this.totalPassiveEarned += actual;
+  }
+  // ─────────────────────────────────────────
+  // 2. 新手礼包
+  // ─────────────────────────────────────────
+  /**
+   * 领取新手礼包
+   *
+   * 首次登录赠送 100 招贤令，仅可领取一次。
+   *
+   * @returns 实际获得的招贤令数量（首次 100，已领取过返回 0）
+   */
+  claimNewbiePack() {
+    if (this.newbiePackClaimed) return 0;
+    if (!this.economyDeps) return 0;
+    this.newbiePackClaimed = true;
+    const actual = this.economyDeps.addRecruitToken(NEWBIE_PACK_AMOUNT);
+    return actual;
+  }
+  // ─────────────────────────────────────────
+  // 3. 日常任务奖励
+  // ─────────────────────────────────────────
+  /**
+   * 领取日常任务奖励
+   *
+   * 每日完成 3 个任务后可领取 15 招贤令，每日限领 1 次。
+   * 每日 0 点重置。
+   *
+   * @returns 实际获得的招贤令数量（15 或 0）
+   */
+  claimDailyTaskReward() {
+    this.checkDailyReset();
+    if (this.dailyTaskClaimed) return 0;
+    if (!this.economyDeps) return 0;
+    this.dailyTaskClaimed = true;
+    const actual = this.economyDeps.addRecruitToken(DAILY_TASK_REWARD);
+    return actual;
+  }
+  // ─────────────────────────────────────────
+  // 4. 商店购买
+  // ─────────────────────────────────────────
+  /**
+   * 从商店购买招贤令
+   *
+   * 单价 100 铜钱/个，每日限购 50 个。
+   * 购买数量不能超过剩余限购额度。
+   *
+   * @param count 购买数量
+   * @returns 是否购买成功
+   */
+  buyFromShop(count) {
+    this.checkDailyReset();
+    if (!this.economyDeps) return false;
+    if (count <= 0) return false;
+    const remaining = SHOP_DAILY_LIMIT - this.dailyShopPurchased;
+    if (remaining <= 0) return false;
+    const actualCount = Math.min(count, remaining);
+    const totalCost = actualCount * SHOP_UNIT_COST;
+    const goldAmount = this.economyDeps.getGoldAmount();
+    if (goldAmount < totalCost) return false;
+    const consumed = this.economyDeps.consumeGold(totalCost);
+    if (!consumed) return false;
+    this.economyDeps.addRecruitToken(actualCount);
+    this.dailyShopPurchased += actualCount;
+    return true;
+  }
+  // ─────────────────────────────────────────
+  // 5. 关卡首通奖励
+  // ─────────────────────────────────────────
+  /**
+   * 领取关卡首通奖励
+   *
+   * 每个关卡首次通关奖励 3~5 招贤令（随机），同一关卡不可重复领取。
+   *
+   * @param stageId 关卡 ID
+   * @returns 实际获得的招贤令数量（3~5 或 0）
+   */
+  claimStageClearReward(stageId) {
+    if (!this.economyDeps) return 0;
+    if (!stageId) return 0;
+    if (this.clearedStages.has(stageId)) return 0;
+    const reward = randomInt$1(STAGE_CLEAR_MIN, STAGE_CLEAR_MAX, this.rng);
+    this.clearedStages.add(stageId);
+    const actual = this.economyDeps.addRecruitToken(reward);
+    return actual;
+  }
+  // ─────────────────────────────────────────
+  // 6. 活动奖励
+  // ─────────────────────────────────────────
+  /**
+   * 领取活动奖励
+   *
+   * 奖励 10~20 招贤令（随机）。活动奖励可多次领取，
+   * 由上层活动系统控制领取次数。
+   *
+   * @returns 实际获得的招贤令数量（10~20）
+   */
+  claimEventReward() {
+    if (!this.economyDeps) return 0;
+    const reward = randomInt$1(EVENT_REWARD_MIN, EVENT_REWARD_MAX, this.rng);
+    const actual = this.economyDeps.addRecruitToken(reward);
+    return actual;
+  }
+  // ─────────────────────────────────────────
+  // 7. 离线收益
+  // ─────────────────────────────────────────
+  /**
+   * 计算离线收益
+   *
+   * 按 50% 效率产出：0.002 × seconds × 0.5 = 0.001/秒
+   *
+   * @param offlineSeconds 离线秒数
+   * @returns 离线期间应获得的招贤令数量
+   */
+  calculateOfflineReward(offlineSeconds) {
+    if (offlineSeconds <= 0) return 0;
+    return PASSIVE_RATE_PER_SECOND * offlineSeconds * OFFLINE_EFFICIENCY;
+  }
+  /**
+   * 领取离线收益
+   *
+   * 计算并直接发放离线期间的招贤令收益。
+   *
+   * @param offlineSeconds 离线秒数
+   * @returns 实际获得的招贤令数量
+   */
+  claimOfflineReward(offlineSeconds) {
+    if (!this.economyDeps) return 0;
+    const reward = this.calculateOfflineReward(offlineSeconds);
+    if (reward <= 0) return 0;
+    return this.economyDeps.addRecruitToken(reward);
+  }
+  // ─────────────────────────────────────────
+  // 8. 查询接口
+  // ─────────────────────────────────────────
+  /** 获取今日已购买商店数量 */
+  getDailyShopPurchased() {
+    this.checkDailyReset();
+    return this.dailyShopPurchased;
+  }
+  /** 获取商店每日剩余可购买数量 */
+  getDailyShopRemaining() {
+    this.checkDailyReset();
+    return Math.max(0, SHOP_DAILY_LIMIT - this.dailyShopPurchased);
+  }
+  /** 是否已领取新手礼包 */
+  getNewbiePackClaimed() {
+    return this.newbiePackClaimed;
+  }
+  /** 今日是否已领取日常任务奖励 */
+  getDailyTaskClaimed() {
+    this.checkDailyReset();
+    return this.dailyTaskClaimed;
+  }
+  /** 获取累计被动产出 */
+  getTotalPassiveEarned() {
+    return this.totalPassiveEarned;
+  }
+  /** 检查关卡是否已领取首通奖励 */
+  isStageRewardClaimed(stageId) {
+    return this.clearedStages.has(stageId);
+  }
+  /** 获取已领取首通奖励的关卡数量 */
+  getClearedStageCount() {
+    return this.clearedStages.size;
+  }
+  /** 获取被动产出速率（招贤令/秒） */
+  getPassiveRate() {
+    return PASSIVE_RATE_PER_SECOND;
+  }
+  /** 获取离线收益效率 */
+  getOfflineEfficiency() {
+    return OFFLINE_EFFICIENCY;
+  }
+  // ─────────────────────────────────────────
+  // 9. 序列化 / 反序列化
+  // ─────────────────────────────────────────
+  /** 序列化为存档数据 */
+  serialize() {
+    return {
+      version: SAVE_VERSION$8,
+      newbiePackClaimed: this.newbiePackClaimed,
+      dailyShopPurchased: this.dailyShopPurchased,
+      lastResetDate: this.lastResetDate,
+      dailyTaskClaimed: this.dailyTaskClaimed,
+      clearedStages: Array.from(this.clearedStages),
+      totalPassiveEarned: this.totalPassiveEarned
+    };
+  }
+  /** 从存档数据恢复 */
+  deserialize(data) {
+    if (data.version !== SAVE_VERSION$8) ;
+    this.newbiePackClaimed = data.newbiePackClaimed ?? false;
+    this.dailyShopPurchased = data.dailyShopPurchased ?? 0;
+    this.lastResetDate = data.lastResetDate ?? "";
+    this.dailyTaskClaimed = data.dailyTaskClaimed ?? false;
+    this.clearedStages = new Set(data.clearedStages ?? []);
+    this.totalPassiveEarned = data.totalPassiveEarned ?? 0;
+  }
+  // ─────────────────────────────────────────
+  // 10. 内部方法
+  // ─────────────────────────────────────────
+  /** 检查并执行每日重置 */
+  checkDailyReset() {
+    const today = todayDateString$1();
+    if (this.lastResetDate !== today) {
+      this.dailyShopPurchased = 0;
+      this.dailyTaskClaimed = false;
+      this.lastResetDate = today;
+    }
+  }
+}
+const PASSIVE_COPPER_RATE = 1.3;
+const DAILY_TASK_COPPER_REWARD = 2e3;
+const STAGE_CLEAR_BASE_COPPER = 100;
+const STAGE_CLEAR_COPPER_PER_LEVEL = 20;
+const SHOP_DAILY_SPEND_LIMIT = 9e3;
+const COPPER_SAFETY_LINE = 500;
+const SAVE_VERSION$7 = 1;
+const LEVEL_GOLD_TABLE = [
+  { levelMin: 1, levelMax: 10, goldPerLevel: 20 },
+  { levelMin: 11, levelMax: 20, goldPerLevel: 50 },
+  { levelMin: 21, levelMax: 30, goldPerLevel: 100 },
+  { levelMin: 31, levelMax: 40, goldPerLevel: 200 },
+  { levelMin: 41, levelMax: 50, goldPerLevel: 400 },
+  { levelMin: 51, levelMax: 60, goldPerLevel: 600 },
+  { levelMin: 61, levelMax: 70, goldPerLevel: 1e3 }
+];
+const STAR_UP_GOLD_COST = [0, 5e3, 1e4, 2e4, 5e4, 1e5];
+const BREAKTHROUGH_GOLD_COST = [2e4, 5e4, 1e5, 2e5];
+const SKILL_UPGRADE_GOLD_TABLE = { 1: 500, 2: 1500, 3: 4e3, 4: 1e4 };
+const DEFAULT_SKILL_UPGRADE_GOLD = 1e4;
+const SHOP_ITEMS = {
+  recruitToken: { id: "recruitToken", name: "招贤令", price: 100, dailyLimit: 50 },
+  breakthroughStone: { id: "breakthroughStone", name: "突破石", price: 2e3, dailyLimit: 10 },
+  expBook: { id: "expBook", name: "经验书", price: 500, dailyLimit: 20 },
+  skillBook: { id: "skillBook", name: "技能书", price: 3e3, dailyLimit: 5 }
+};
+function todayDateString() {
+  const n2 = /* @__PURE__ */ new Date();
+  return `${n2.getFullYear()}-${String(n2.getMonth() + 1).padStart(2, "0")}-${String(n2.getDate()).padStart(2, "0")}`;
+}
+function lookupLevelUpGold(level) {
+  for (const t of LEVEL_GOLD_TABLE) {
+    if (level >= t.levelMin && level <= t.levelMax) return level * t.goldPerLevel;
+  }
+  return level * LEVEL_GOLD_TABLE[LEVEL_GOLD_TABLE.length - 1].goldPerLevel;
+}
+function lookupStarUpGold(star) {
+  return STAR_UP_GOLD_COST[Math.min(star, STAR_UP_GOLD_COST.length - 1)];
+}
+function lookupBreakthroughGold(stage) {
+  return BREAKTHROUGH_GOLD_COST[Math.min(stage, BREAKTHROUGH_GOLD_COST.length - 1)];
+}
+function lookupSkillUpgradeGold(skillLevel) {
+  return SKILL_UPGRADE_GOLD_TABLE[skillLevel] ?? DEFAULT_SKILL_UPGRADE_GOLD;
+}
+class CopperEconomySystem {
+  constructor() {
+    __publicField(this, "name", "copperEconomy");
+    __publicField(this, "deps", null);
+    __publicField(this, "economyDeps", null);
+    __publicField(this, "dailyCopperProduced", 0);
+    __publicField(this, "dailyCopperSpent", 0);
+    __publicField(this, "spendByCategory", { shop: 0, levelUp: 0, starUp: 0, breakthrough: 0, skill: 0 });
+    __publicField(this, "lastResetDate", "");
+    __publicField(this, "totalCopperProduced", 0);
+    __publicField(this, "totalCopperSpent", 0);
+    __publicField(this, "dailyTaskClaimed", false);
+    __publicField(this, "dailyShopPurchases", {});
+  }
+  // ── ISubsystem ──
+  init(deps) {
+    this.deps = deps;
+  }
+  update(dt) {
+    this.checkDailyReset();
+    this.tick(dt);
+  }
+  getState() {
+    return this.serialize();
+  }
+  reset() {
+    this.dailyCopperProduced = 0;
+    this.dailyCopperSpent = 0;
+    this.spendByCategory = { shop: 0, levelUp: 0, starUp: 0, breakthrough: 0, skill: 0 };
+    this.lastResetDate = "";
+    this.totalCopperProduced = 0;
+    this.totalCopperSpent = 0;
+    this.dailyTaskClaimed = false;
+    this.dailyShopPurchases = {};
+  }
+  setEconomyDeps(deps) {
+    this.economyDeps = deps;
+  }
+  // ── 1. 被动产出 ──
+  tick(deltaSeconds) {
+    this.checkDailyReset();
+    if (!this.economyDeps || deltaSeconds <= 0) return;
+    const earned = PASSIVE_COPPER_RATE * deltaSeconds;
+    const actual = this.economyDeps.addGold(earned);
+    this.dailyCopperProduced += actual;
+    this.totalCopperProduced += actual;
+  }
+  // ── 2. 日常任务 ──
+  claimDailyTaskCopper() {
+    this.checkDailyReset();
+    if (this.dailyTaskClaimed || !this.economyDeps) return 0;
+    this.dailyTaskClaimed = true;
+    const actual = this.economyDeps.addGold(DAILY_TASK_COPPER_REWARD);
+    this.dailyCopperProduced += actual;
+    this.totalCopperProduced += actual;
+    return actual;
+  }
+  // ── 3. 关卡通关 ──
+  claimStageClearCopper(stageLevel) {
+    if (!this.economyDeps || stageLevel < 1) return 0;
+    const reward = STAGE_CLEAR_BASE_COPPER + stageLevel * STAGE_CLEAR_COPPER_PER_LEVEL;
+    const actual = this.economyDeps.addGold(reward);
+    this.dailyCopperProduced += actual;
+    this.totalCopperProduced += actual;
+    return actual;
+  }
+  // ── 4. 商店购买 ──
+  purchaseItem(itemId, count) {
+    var _a, _b;
+    this.checkDailyReset();
+    if (!this.economyDeps || count <= 0) return false;
+    const item = SHOP_ITEMS[itemId];
+    if (!item) return false;
+    if (item.dailyLimit !== null) {
+      if ((this.dailyShopPurchases[itemId] ?? 0) + count > item.dailyLimit) return false;
+    }
+    const totalCost = item.price * count;
+    if (this.spendByCategory.shop + totalCost > SHOP_DAILY_SPEND_LIMIT) return false;
+    if (this.economyDeps.getGoldAmount() - totalCost < COPPER_SAFETY_LINE) return false;
+    if (!this.economyDeps.consumeGold(totalCost)) return false;
+    (_b = (_a = this.economyDeps).addItem) == null ? void 0 : _b.call(_a, itemId, count);
+    this.recordSpend("shop", totalCost);
+    this.dailyShopPurchases[itemId] = (this.dailyShopPurchases[itemId] ?? 0) + count;
+    return true;
+  }
+  // ── 5. 升级消耗 ──
+  spendOnLevelUp(heroId, level) {
+    if (!this.economyDeps || !heroId || level < 1) return 0;
+    return this.trySpend(lookupLevelUpGold(level), "levelUp");
+  }
+  // ── 6. 升星消耗 ──
+  spendOnStarUp(heroId, star) {
+    if (!this.economyDeps || !heroId || star < 0) return 0;
+    return this.trySpend(lookupStarUpGold(star), "starUp");
+  }
+  // ── 7. 突破消耗 ──
+  spendOnBreakthrough(heroId, stage) {
+    if (!this.economyDeps || !heroId || stage < 0) return 0;
+    return this.trySpend(lookupBreakthroughGold(stage), "breakthrough");
+  }
+  // ── 8. 技能升级消耗 ──
+  spendOnSkillUpgrade(heroId, skillLevel) {
+    if (!this.economyDeps || !heroId || skillLevel < 1) return 0;
+    return this.trySpend(lookupSkillUpgradeGold(skillLevel), "skill");
+  }
+  // ── 9. 查询接口 ──
+  getDailyCopperProduced() {
+    this.checkDailyReset();
+    return this.dailyCopperProduced;
+  }
+  getDailyCopperSpent() {
+    this.checkDailyReset();
+    return this.dailyCopperSpent;
+  }
+  getEconomyBalance() {
+    this.checkDailyReset();
+    return this.dailyCopperProduced - this.dailyCopperSpent;
+  }
+  getTotalCopperProduced() {
+    return this.totalCopperProduced;
+  }
+  getTotalCopperSpent() {
+    return this.totalCopperSpent;
+  }
+  getSpendByCategory(cat) {
+    this.checkDailyReset();
+    return this.spendByCategory[cat] ?? 0;
+  }
+  getAllSpendByCategory() {
+    this.checkDailyReset();
+    return { ...this.spendByCategory };
+  }
+  getDailyTaskClaimed() {
+    this.checkDailyReset();
+    return this.dailyTaskClaimed;
+  }
+  getDailyShopPurchased(itemId) {
+    this.checkDailyReset();
+    return this.dailyShopPurchases[itemId] ?? 0;
+  }
+  getPassiveRate() {
+    return PASSIVE_COPPER_RATE;
+  }
+  getShopItem(itemId) {
+    return SHOP_ITEMS[itemId] ? { ...SHOP_ITEMS[itemId] } : void 0;
+  }
+  getShopItemIds() {
+    return Object.keys(SHOP_ITEMS);
+  }
+  getShopDailySpendLimit() {
+    return SHOP_DAILY_SPEND_LIMIT;
+  }
+  getCopperSafetyLine() {
+    return COPPER_SAFETY_LINE;
+  }
+  calculateStageClearCopper(level) {
+    return level < 1 ? 0 : STAGE_CLEAR_BASE_COPPER + level * STAGE_CLEAR_COPPER_PER_LEVEL;
+  }
+  calculateLevelUpCost(level) {
+    return lookupLevelUpGold(level);
+  }
+  calculateStarUpCost(star) {
+    return lookupStarUpGold(star);
+  }
+  calculateBreakthroughCost(stage) {
+    return lookupBreakthroughGold(stage);
+  }
+  calculateSkillUpgradeCost(skillLevel) {
+    return lookupSkillUpgradeGold(skillLevel);
+  }
+  // ── 10. 序列化 ──
+  serialize() {
+    return {
+      version: SAVE_VERSION$7,
+      dailyTaskClaimed: this.dailyTaskClaimed,
+      dailyShopPurchases: { ...this.dailyShopPurchases },
+      lastResetDate: this.lastResetDate,
+      dailyCopperProduced: this.dailyCopperProduced,
+      dailyCopperSpent: this.dailyCopperSpent,
+      totalCopperProduced: this.totalCopperProduced,
+      totalCopperSpent: this.totalCopperSpent,
+      spendByCategory: { ...this.spendByCategory }
+    };
+  }
+  deserialize(data) {
+    var _a, _b, _c, _d, _e;
+    this.dailyTaskClaimed = data.dailyTaskClaimed ?? false;
+    this.dailyShopPurchases = { ...data.dailyShopPurchases ?? {} };
+    this.lastResetDate = data.lastResetDate ?? "";
+    this.dailyCopperProduced = data.dailyCopperProduced ?? 0;
+    this.dailyCopperSpent = data.dailyCopperSpent ?? 0;
+    this.totalCopperProduced = data.totalCopperProduced ?? 0;
+    this.totalCopperSpent = data.totalCopperSpent ?? 0;
+    this.spendByCategory = {
+      shop: ((_a = data.spendByCategory) == null ? void 0 : _a.shop) ?? 0,
+      levelUp: ((_b = data.spendByCategory) == null ? void 0 : _b.levelUp) ?? 0,
+      starUp: ((_c = data.spendByCategory) == null ? void 0 : _c.starUp) ?? 0,
+      breakthrough: ((_d = data.spendByCategory) == null ? void 0 : _d.breakthrough) ?? 0,
+      skill: ((_e = data.spendByCategory) == null ? void 0 : _e.skill) ?? 0
+    };
+  }
+  // ── 内部方法 ──
+  checkDailyReset() {
+    const today = todayDateString();
+    if (this.lastResetDate !== today) {
+      this.dailyCopperProduced = 0;
+      this.dailyCopperSpent = 0;
+      this.spendByCategory = { shop: 0, levelUp: 0, starUp: 0, breakthrough: 0, skill: 0 };
+      this.dailyTaskClaimed = false;
+      this.dailyShopPurchases = {};
+      this.lastResetDate = today;
+    }
+  }
+  trySpend(cost, category) {
+    this.checkDailyReset();
+    if (cost <= 0) return 0;
+    if (this.economyDeps.getGoldAmount() - cost < COPPER_SAFETY_LINE) return 0;
+    if (!this.economyDeps.consumeGold(cost)) return 0;
+    this.recordSpend(category, cost);
+    return cost;
+  }
+  recordSpend(category, amount) {
+    this.dailyCopperSpent += amount;
+    this.totalCopperSpent += amount;
+    this.spendByCategory[category] = (this.spendByCategory[category] ?? 0) + amount;
+  }
+}
+const BREAKTHROUGH_STONE_PRICE = 500;
+const DAILY_BUY_LIMIT = 20;
+const SWEEP_DROP_CHANCE = 0.5;
+const DAILY_SKILL_BOOK_COUNT = 2;
+const MAX_DAILY_EXPEDITION = 2;
+const SAVE_VERSION$6 = 1;
+const ACHIEVEMENT_BREAKTHROUGH_REWARDS = {
+  ach_stage_10: 10,
+  ach_stage_30: 20,
+  ach_stage_50: 30,
+  ach_hero_10: 15,
+  ach_hero_30: 25,
+  ach_hero_50: 40,
+  ach_power_10000: 10,
+  ach_power_50000: 30,
+  ach_power_100000: 50
+};
+class MaterialEconomySystem {
+  constructor() {
+    __publicField(this, "name", "materialEconomy");
+    __publicField(this, "deps", null);
+    __publicField(this, "materialDeps", null);
+    // 每日追踪
+    __publicField(this, "dailyBreakstonePurchased", 0);
+    __publicField(this, "dailySkillBookClaimed", false);
+    __publicField(this, "dailyExpeditionCount", 0);
+    __publicField(this, "dailyBreakthroughStoneEarned", 0);
+    __publicField(this, "dailySkillBookEarned", 0);
+    // 累计追踪
+    __publicField(this, "totalBreakthroughStoneEarned", 0);
+    __publicField(this, "totalSkillBookEarned", 0);
+    // 已领取记录
+    __publicField(this, "claimedAchievements", /* @__PURE__ */ new Set());
+    __publicField(this, "claimedFirstClearStages", /* @__PURE__ */ new Set());
+    // 重置日期
+    __publicField(this, "lastResetDate", "");
+  }
+  // ── ISubsystem ──
+  init(deps) {
+    this.deps = deps;
+  }
+  update(dt) {
+    this.checkDailyReset();
+  }
+  getState() {
+    return this.serialize();
+  }
+  reset() {
+    this.dailyBreakstonePurchased = 0;
+    this.dailySkillBookClaimed = false;
+    this.dailyExpeditionCount = 0;
+    this.dailyBreakthroughStoneEarned = 0;
+    this.dailySkillBookEarned = 0;
+    this.totalBreakthroughStoneEarned = 0;
+    this.totalSkillBookEarned = 0;
+    this.claimedAchievements = /* @__PURE__ */ new Set();
+    this.claimedFirstClearStages = /* @__PURE__ */ new Set();
+    this.lastResetDate = "";
+  }
+  setMaterialDeps(deps) {
+    this.materialDeps = deps;
+  }
+  // ═══════════════════════════════════════════
+  // 突破石获取途径
+  // ═══════════════════════════════════════════
+  /**
+   * 1. 关卡掉落突破石
+   * 每关掉落 1~3 个突破石
+   */
+  claimStageBreakthroughStone(stageId) {
+    this.checkDailyReset();
+    if (!this.materialDeps || !stageId) return 0;
+    const count = this.randInt(1, 3);
+    this.materialDeps.addBreakthroughStone(count);
+    this.recordBreakthroughStone(count);
+    return count;
+  }
+  /**
+   * 2. 扫荡掉落突破石
+   * 已通关关卡扫荡，50% 概率掉落 1~3 个
+   */
+  sweepStage(stageId) {
+    this.checkDailyReset();
+    if (!this.materialDeps || !stageId) return 0;
+    const cleared = this.materialDeps.getClearedStages();
+    if (!cleared.includes(stageId)) return 0;
+    if (this.random() >= SWEEP_DROP_CHANCE) return 0;
+    const count = this.randInt(1, 3);
+    this.materialDeps.addBreakthroughStone(count);
+    this.recordBreakthroughStone(count);
+    return count;
+  }
+  /**
+   * 3. 商店购买突破石
+   * 500 铜钱/个，每日限购 20 个
+   */
+  buyBreakthroughStone(count) {
+    this.checkDailyReset();
+    if (!this.materialDeps || count <= 0) return false;
+    if (this.dailyBreakstonePurchased + count > DAILY_BUY_LIMIT) return false;
+    const totalCost = count * BREAKTHROUGH_STONE_PRICE;
+    if (!this.materialDeps.consumeGold(totalCost)) return false;
+    this.materialDeps.addBreakthroughStone(count);
+    this.dailyBreakstonePurchased += count;
+    this.recordBreakthroughStone(count);
+    return true;
+  }
+  /**
+   * 4. 成就奖励突破石
+   * 特定成就奖励 10~50 个
+   */
+  claimAchievementReward(achievementId) {
+    this.checkDailyReset();
+    if (!this.materialDeps || !achievementId) return 0;
+    if (this.claimedAchievements.has(achievementId)) return 0;
+    const reward = ACHIEVEMENT_BREAKTHROUGH_REWARDS[achievementId];
+    if (reward === void 0) return 0;
+    this.claimedAchievements.add(achievementId);
+    this.materialDeps.addBreakthroughStone(reward);
+    this.recordBreakthroughStone(reward);
+    return reward;
+  }
+  /**
+   * 5. 联盟商店购买突破石（预留接口，暂不实现）
+   */
+  buyFromAllianceShop(count) {
+    return false;
+  }
+  /**
+   * 6. 活动奖励突破石
+   * 10~30 个
+   */
+  claimEventBreakthroughReward() {
+    this.checkDailyReset();
+    if (!this.materialDeps) return 0;
+    const count = this.randInt(10, 30);
+    this.materialDeps.addBreakthroughStone(count);
+    this.recordBreakthroughStone(count);
+    return count;
+  }
+  // ═══════════════════════════════════════════
+  // 技能书获取途径
+  // ═══════════════════════════════════════════
+  /**
+   * 1. 日常任务技能书
+   * 每日 2 本，每日只能领取一次
+   */
+  claimDailyTaskSkillBook() {
+    this.checkDailyReset();
+    if (!this.materialDeps || this.dailySkillBookClaimed) return 0;
+    this.dailySkillBookClaimed = true;
+    this.materialDeps.addSkillBook(DAILY_SKILL_BOOK_COUNT);
+    this.recordSkillBook(DAILY_SKILL_BOOK_COUNT);
+    return DAILY_SKILL_BOOK_COUNT;
+  }
+  /**
+   * 2. 远征掉落技能书
+   * 每次远征 1~3 本，每日 2 次
+   */
+  claimExpeditionReward(expeditionId) {
+    this.checkDailyReset();
+    if (!this.materialDeps || !expeditionId) return 0;
+    if (this.dailyExpeditionCount >= MAX_DAILY_EXPEDITION) return 0;
+    this.dailyExpeditionCount++;
+    const count = this.randInt(1, 3);
+    this.materialDeps.addSkillBook(count);
+    this.recordSkillBook(count);
+    return count;
+  }
+  /**
+   * 3. 活动奖励技能书
+   * 5~10 本
+   */
+  claimEventSkillBookReward() {
+    this.checkDailyReset();
+    if (!this.materialDeps) return 0;
+    const count = this.randInt(5, 10);
+    this.materialDeps.addSkillBook(count);
+    this.recordSkillBook(count);
+    return count;
+  }
+  /**
+   * 4. 联盟商店购买技能书（预留接口，暂不实现）
+   */
+  buySkillBookFromAllianceShop(count) {
+    return false;
+  }
+  /**
+   * 5. 关卡首通技能书
+   * 每关首通 1 本，不可重复领取
+   */
+  claimStageFirstClearSkillBook(stageId) {
+    this.checkDailyReset();
+    if (!this.materialDeps || !stageId) return 0;
+    if (this.claimedFirstClearStages.has(stageId)) return 0;
+    this.claimedFirstClearStages.add(stageId);
+    const count = 1;
+    this.materialDeps.addSkillBook(count);
+    this.recordSkillBook(count);
+    return count;
+  }
+  // ═══════════════════════════════════════════
+  // 查询接口
+  // ═══════════════════════════════════════════
+  getDailyBreakstonePurchased() {
+    this.checkDailyReset();
+    return this.dailyBreakstonePurchased;
+  }
+  getDailySkillBookClaimed() {
+    this.checkDailyReset();
+    return this.dailySkillBookClaimed;
+  }
+  getDailyExpeditionCount() {
+    this.checkDailyReset();
+    return this.dailyExpeditionCount;
+  }
+  getDailyBreakthroughStoneEarned() {
+    this.checkDailyReset();
+    return this.dailyBreakthroughStoneEarned;
+  }
+  getDailySkillBookEarned() {
+    this.checkDailyReset();
+    return this.dailySkillBookEarned;
+  }
+  getTotalBreakthroughStoneEarned() {
+    return this.totalBreakthroughStoneEarned;
+  }
+  getTotalSkillBookEarned() {
+    return this.totalSkillBookEarned;
+  }
+  getClaimedAchievements() {
+    return [...this.claimedAchievements];
+  }
+  getClaimedFirstClearStages() {
+    return [...this.claimedFirstClearStages];
+  }
+  /** 查询成就奖励数量（不领取） */
+  getAchievementReward(achievementId) {
+    return ACHIEVEMENT_BREAKTHROUGH_REWARDS[achievementId];
+  }
+  /** 查询所有可用的成就奖励 ID */
+  getAchievementIds() {
+    return Object.keys(ACHIEVEMENT_BREAKTHROUGH_REWARDS);
+  }
+  /** 查询商店配置 */
+  getShopConfig() {
+    return { price: BREAKTHROUGH_STONE_PRICE, dailyLimit: DAILY_BUY_LIMIT };
+  }
+  /** 查询远征配置 */
+  getExpeditionConfig() {
+    return { maxDaily: MAX_DAILY_EXPEDITION, minBooks: 1, maxBooks: 3 };
+  }
+  // ═══════════════════════════════════════════
+  // 序列化 / 反序列化
+  // ═══════════════════════════════════════════
+  serialize() {
+    return {
+      version: SAVE_VERSION$6,
+      dailyBreakstonePurchased: this.dailyBreakstonePurchased,
+      dailySkillBookClaimed: this.dailySkillBookClaimed,
+      dailyExpeditionCount: this.dailyExpeditionCount,
+      claimedAchievements: [...this.claimedAchievements],
+      claimedFirstClearStages: [...this.claimedFirstClearStages],
+      lastResetDate: this.lastResetDate,
+      totalBreakthroughStoneEarned: this.totalBreakthroughStoneEarned,
+      totalSkillBookEarned: this.totalSkillBookEarned,
+      dailyBreakthroughStoneEarned: this.dailyBreakthroughStoneEarned,
+      dailySkillBookEarned: this.dailySkillBookEarned
+    };
+  }
+  deserialize(data) {
+    this.dailyBreakstonePurchased = data.dailyBreakstonePurchased ?? 0;
+    this.dailySkillBookClaimed = data.dailySkillBookClaimed ?? false;
+    this.dailyExpeditionCount = data.dailyExpeditionCount ?? 0;
+    this.claimedAchievements = new Set(data.claimedAchievements ?? []);
+    this.claimedFirstClearStages = new Set(data.claimedFirstClearStages ?? []);
+    this.lastResetDate = data.lastResetDate ?? "";
+    this.totalBreakthroughStoneEarned = data.totalBreakthroughStoneEarned ?? 0;
+    this.totalSkillBookEarned = data.totalSkillBookEarned ?? 0;
+    this.dailyBreakthroughStoneEarned = data.dailyBreakthroughStoneEarned ?? 0;
+    this.dailySkillBookEarned = data.dailySkillBookEarned ?? 0;
+  }
+  // ═══════════════════════════════════════════
+  // 内部方法
+  // ═══════════════════════════════════════════
+  checkDailyReset() {
+    const today = this.todayString();
+    if (this.lastResetDate !== today) {
+      this.dailyBreakstonePurchased = 0;
+      this.dailySkillBookClaimed = false;
+      this.dailyExpeditionCount = 0;
+      this.dailyBreakthroughStoneEarned = 0;
+      this.dailySkillBookEarned = 0;
+      this.lastResetDate = today;
+    }
+  }
+  recordBreakthroughStone(count) {
+    this.dailyBreakthroughStoneEarned += count;
+    this.totalBreakthroughStoneEarned += count;
+  }
+  recordSkillBook(count) {
+    this.dailySkillBookEarned += count;
+    this.totalSkillBookEarned += count;
+  }
+  todayString() {
+    const n2 = /* @__PURE__ */ new Date();
+    return `${n2.getFullYear()}-${String(n2.getMonth() + 1).padStart(2, "0")}-${String(n2.getDate()).padStart(2, "0")}`;
+  }
+  randInt(min, max) {
+    var _a;
+    const rng = ((_a = this.materialDeps) == null ? void 0 : _a.random) ?? Math.random;
+    return Math.floor(rng() * (max - min + 1)) + min;
+  }
+  random() {
+    var _a;
+    return (((_a = this.materialDeps) == null ? void 0 : _a.random) ?? Math.random)();
   }
 }
 const AUTO_SAVE_INTERVAL_SECONDS = 30;
@@ -4713,6 +8102,963 @@ class StateSerializer {
     return hash >>> 0;
   }
 }
+const BACKUP_KEY_PREFIX = "three-kingdoms-backup-";
+const BACKUP_INDEX_KEY = "three-kingdoms-backup-index";
+const DEFAULT_MAX_BACKUPS = 3;
+class SaveBackupManager {
+  // ─── 构造函数 ──────────────────────────────────────────────────
+  /**
+   * @param maxBackups - 最大保留备份数，默认 3
+   */
+  constructor(maxBackups = DEFAULT_MAX_BACKUPS) {
+    /** 最大备份数量 */
+    __publicField(this, "maxBackups");
+    this.maxBackups = Math.max(1, maxBackups);
+  }
+  // ─── 公共方法 ──────────────────────────────────────────────────
+  /**
+   * 自动备份（保存前调用）
+   *
+   * 从 localStorage 读取当前存档，创建备份。
+   * 如果已有备份数量达到上限，自动淘汰最旧的备份。
+   *
+   * @returns 备份ID，失败返回 null
+   */
+  autoBackup() {
+    return this.createBackup();
+  }
+  /**
+   * 创建手动备份
+   *
+   * 读取当前存档数据并保存为备份。可附加用户标签。
+   *
+   * @param label - 可选的用户标签
+   * @returns 备份ID（时间戳字符串），失败返回 null
+   */
+  createBackup(label) {
+    try {
+      const rawData = localStorage.getItem(SAVE_KEY);
+      if (!rawData) {
+        gameLog.warn("[SaveBackupManager] 无存档数据，跳过备份");
+        return null;
+      }
+      const id = String(Date.now());
+      const entry = this.buildEntry(rawData, id, label);
+      localStorage.setItem(BACKUP_KEY_PREFIX + id, rawData);
+      this.addToIndex(entry);
+      this.evictOldBackups();
+      gameLog.info(`[SaveBackupManager] 备份已创建: ${id}${label ? ` (${label})` : ""}`);
+      return id;
+    } catch (err) {
+      gameLog.error("[SaveBackupManager] 创建备份失败:", err);
+      return null;
+    }
+  }
+  /**
+   * 恢复指定备份
+   *
+   * 将备份数据写回存档 key，覆盖当前存档。
+   *
+   * @param id - 备份ID
+   * @returns 是否恢复成功
+   */
+  restoreBackup(id) {
+    try {
+      const backupData = localStorage.getItem(BACKUP_KEY_PREFIX + id);
+      if (!backupData) {
+        gameLog.warn(`[SaveBackupManager] 备份不存在: ${id}`);
+        return false;
+      }
+      localStorage.setItem(SAVE_KEY, backupData);
+      gameLog.info(`[SaveBackupManager] 已恢复备份: ${id}`);
+      return true;
+    } catch (err) {
+      gameLog.error("[SaveBackupManager] 恢复备份失败:", err);
+      return false;
+    }
+  }
+  /**
+   * 恢复最新备份
+   *
+   * @returns 是否恢复成功
+   */
+  restoreLatest() {
+    const backups = this.listBackups();
+    if (backups.length === 0) {
+      gameLog.warn("[SaveBackupManager] 无可用备份");
+      return false;
+    }
+    const latest = backups.sort((a, b) => b.timestamp - a.timestamp)[0];
+    return this.restoreBackup(latest.id);
+  }
+  /**
+   * 列出所有备份
+   *
+   * @returns 备份列表（按时间降序）
+   */
+  listBackups() {
+    try {
+      const index = this.readIndex();
+      return index.sort((a, b) => b.timestamp - a.timestamp);
+    } catch (err) {
+      gameLog.error("[SaveBackupManager] 读取备份列表失败:", err);
+      return [];
+    }
+  }
+  /**
+   * 删除指定备份
+   *
+   * @param id - 备份ID
+   * @returns 是否删除成功
+   */
+  deleteBackup(id) {
+    try {
+      localStorage.removeItem(BACKUP_KEY_PREFIX + id);
+      this.removeFromIndex(id);
+      gameLog.info(`[SaveBackupManager] 备份已删除: ${id}`);
+      return true;
+    } catch (err) {
+      gameLog.error("[SaveBackupManager] 删除备份失败:", err);
+      return false;
+    }
+  }
+  /**
+   * 获取指定备份数据（不恢复）
+   *
+   * @param id - 备份ID
+   * @returns 备份的原始 JSON 字符串，不存在返回 null
+   */
+  getBackupData(id) {
+    try {
+      return localStorage.getItem(BACKUP_KEY_PREFIX + id);
+    } catch {
+      return null;
+    }
+  }
+  // ─── 私有方法 ──────────────────────────────────────────────────
+  /**
+   * 从存档原始数据构建备份条目
+   */
+  buildEntry(rawData, id, label) {
+    let version = 0;
+    try {
+      const parsed = JSON.parse(rawData);
+      if (typeof parsed.v === "string" && typeof parsed.data === "string") {
+        const inner = JSON.parse(parsed.data);
+        version = typeof inner.version === "number" ? inner.version : 0;
+      } else if (typeof parsed.version === "number") {
+        version = parsed.version;
+      }
+    } catch {
+    }
+    return {
+      id,
+      timestamp: Date.now(),
+      version,
+      label
+    };
+  }
+  /**
+   * 读取备份索引
+   */
+  readIndex() {
+    try {
+      const raw = localStorage.getItem(BACKUP_INDEX_KEY);
+      if (!raw) return [];
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+  /**
+   * 写入备份索引
+   */
+  writeIndex(entries) {
+    localStorage.setItem(BACKUP_INDEX_KEY, JSON.stringify(entries));
+  }
+  /**
+   * 向索引中添加备份条目
+   */
+  addToIndex(entry) {
+    const index = this.readIndex();
+    index.push(entry);
+    this.writeIndex(index);
+  }
+  /**
+   * 从索引中移除指定备份
+   */
+  removeFromIndex(id) {
+    const index = this.readIndex().filter((e) => e.id !== id);
+    this.writeIndex(index);
+  }
+  /**
+   * 淘汰超出上限的旧备份
+   *
+   * 按时间升序排列，删除最旧的备份直到数量不超过 maxBackups。
+   */
+  evictOldBackups() {
+    const index = this.readIndex();
+    if (index.length <= this.maxBackups) return;
+    const sorted = index.sort((a, b) => a.timestamp - b.timestamp);
+    const toRemove = sorted.slice(0, sorted.length - this.maxBackups);
+    for (const entry of toRemove) {
+      try {
+        localStorage.removeItem(BACKUP_KEY_PREFIX + entry.id);
+      } catch {
+      }
+    }
+    const remaining = sorted.slice(sorted.length - this.maxBackups);
+    this.writeIndex(remaining);
+    if (toRemove.length > 0) {
+      gameLog.info(`[SaveBackupManager] 已淘汰 ${toRemove.length} 个旧备份`);
+    }
+  }
+}
+const MAX_BUILDING_LEVEL = 100;
+const RESOURCE_FIELDS = ["grain", "gold", "troops", "mandate", "techPoint", "recruitToken"];
+const BUILDING_TYPES = [
+  "castle",
+  "farmland",
+  "market",
+  "barracks",
+  "smithy",
+  "academy",
+  "clinic",
+  "wall"
+];
+const OPTIONAL_SUBSYSTEMS = {
+  calendar: 1,
+  hero: 2,
+  recruit: 2,
+  formation: 2,
+  campaign: 3,
+  tech: 4,
+  equipment: 5,
+  equipmentForge: 10,
+  equipmentEnhance: 10,
+  trade: 5,
+  shop: 5,
+  prestige: 14,
+  heritage: 14,
+  achievement: 14,
+  pvpArena: 7,
+  pvpArenaShop: 7,
+  pvpRanking: 7,
+  eventTrigger: 7,
+  eventNotification: 7,
+  eventUI: 7,
+  eventChain: 7,
+  eventLog: 7,
+  offlineEvent: 15,
+  season: 16
+};
+class GameDataValidator {
+  /**
+   * 校验游戏存档数据
+   *
+   * 执行全面校验：顶层结构 → 版本 → 必需子系统 → 可选子系统 → 武将
+   */
+  validate(data) {
+    const issues = [];
+    issues.push(...this.validateTopLevel(data));
+    if (issues.some((i) => i.severity === "error")) {
+      return this.buildReport(issues);
+    }
+    const saveData = data;
+    issues.push(...this.validateVersion(saveData));
+    issues.push(...this.validateResource(saveData.resource));
+    issues.push(...this.validateBuilding(saveData.building));
+    issues.push(...this.validateOptionalSubsystems(saveData));
+    if (saveData.hero) {
+      issues.push(...this.validateHero(saveData.hero));
+    }
+    return this.buildReport(issues);
+  }
+  /** 校验资源子系统数据 */
+  validateResource(data) {
+    const issues = [];
+    if (data === null || data === void 0 || typeof data !== "object") {
+      issues.push({ severity: "error", field: "resource", message: "resource 数据缺失或类型错误", autoFixable: false });
+      return issues;
+    }
+    const res = data;
+    if (!res.resources || typeof res.resources !== "object") {
+      issues.push({ severity: "error", field: "resource.resources", message: "resources 字段缺失或类型错误", autoFixable: true });
+    } else {
+      const resources = res.resources;
+      for (const field of RESOURCE_FIELDS) {
+        if (typeof resources[field] !== "number") {
+          issues.push({
+            severity: "error",
+            field: `resource.resources.${field}`,
+            message: `${field} 应为 number 类型，实际为 ${typeof resources[field]}`,
+            autoFixable: true
+          });
+        } else if (resources[field] < 0) {
+          issues.push({ severity: "warning", field: `resource.resources.${field}`, message: `${field} 为负数: ${resources[field]}`, autoFixable: true });
+        } else if (!isFinite(resources[field])) {
+          issues.push({ severity: "error", field: `resource.resources.${field}`, message: `${field} 为非有限数: ${resources[field]}`, autoFixable: true });
+        }
+      }
+    }
+    if (typeof res.lastSaveTime !== "number") {
+      issues.push({ severity: "warning", field: "resource.lastSaveTime", message: "lastSaveTime 缺失或类型错误", autoFixable: true });
+    } else if (res.lastSaveTime < 0) {
+      issues.push({ severity: "warning", field: "resource.lastSaveTime", message: `lastSaveTime 为负数: ${res.lastSaveTime}`, autoFixable: true });
+    }
+    if (!res.productionRates || typeof res.productionRates !== "object") {
+      issues.push({ severity: "warning", field: "resource.productionRates", message: "productionRates 缺失或类型错误", autoFixable: true });
+    }
+    if (!res.caps || typeof res.caps !== "object") {
+      issues.push({ severity: "warning", field: "resource.caps", message: "caps 缺失或类型错误", autoFixable: true });
+    }
+    return issues;
+  }
+  /** 校验建筑子系统数据 */
+  validateBuilding(data) {
+    const issues = [];
+    if (data === null || data === void 0 || typeof data !== "object") {
+      issues.push({ severity: "error", field: "building", message: "building 数据缺失或类型错误", autoFixable: false });
+      return issues;
+    }
+    const bld = data;
+    if (!bld.buildings || typeof bld.buildings !== "object") {
+      issues.push({ severity: "error", field: "building.buildings", message: "buildings 字段缺失或类型错误", autoFixable: false });
+      return issues;
+    }
+    const buildings = bld.buildings;
+    for (const type of BUILDING_TYPES) {
+      const building = buildings[type];
+      if (!building || typeof building !== "object") {
+        issues.push({ severity: "error", field: `building.buildings.${type}`, message: `建筑 ${type} 数据缺失`, autoFixable: true });
+        continue;
+      }
+      const state = building;
+      if (typeof state.level !== "number") {
+        issues.push({ severity: "error", field: `building.buildings.${type}.level`, message: `${type}.level 应为 number 类型`, autoFixable: true });
+      } else if (state.level < 0) {
+        issues.push({ severity: "warning", field: `building.buildings.${type}.level`, message: `${type} 等级为负数: ${state.level}`, autoFixable: true });
+      } else if (state.level > MAX_BUILDING_LEVEL) {
+        issues.push({ severity: "warning", field: `building.buildings.${type}.level`, message: `${type} 等级超过上限: ${state.level}`, autoFixable: true });
+      }
+      const validStatuses = ["locked", "idle", "upgrading"];
+      if (state.status && !validStatuses.includes(state.status)) {
+        issues.push({ severity: "warning", field: `building.buildings.${type}.status`, message: `${type} 状态异常: ${state.status}`, autoFixable: true });
+      }
+    }
+    return issues;
+  }
+  /** 校验武将子系统数据 */
+  validateHero(data) {
+    const issues = [];
+    if (data === null || data === void 0 || typeof data !== "object") {
+      issues.push({ severity: "warning", field: "hero", message: "hero 数据缺失或类型错误", autoFixable: true });
+      return issues;
+    }
+    const hero = data;
+    if (hero.generals !== void 0 && !Array.isArray(hero.generals)) {
+      issues.push({ severity: "warning", field: "hero.generals", message: "generals 应为数组类型", autoFixable: true });
+    }
+    if (hero.fragments !== void 0 && typeof hero.fragments !== "object") {
+      issues.push({ severity: "warning", field: "hero.fragments", message: "fragments 应为对象类型", autoFixable: true });
+    }
+    return issues;
+  }
+  /** 校验指定子系统数据（通用校验） */
+  validateSubSystem(name, data) {
+    const issues = [];
+    if (data === null || data === void 0) {
+      issues.push({ severity: "info", field: name, message: `子系统 ${name} 数据缺失`, autoFixable: true });
+    } else if (typeof data !== "object") {
+      issues.push({ severity: "warning", field: name, message: `子系统 ${name} 数据类型错误: ${typeof data}`, autoFixable: true });
+    }
+    return issues;
+  }
+  // ─── 私有方法 ──────────────────────────────────────────────────
+  validateTopLevel(data) {
+    const issues = [];
+    if (data === null || data === void 0) {
+      issues.push({ severity: "error", field: "root", message: "存档数据为空", autoFixable: false });
+      return issues;
+    }
+    if (typeof data !== "object" || Array.isArray(data)) {
+      issues.push({ severity: "error", field: "root", message: `存档数据类型错误: ${typeof data}`, autoFixable: false });
+      return issues;
+    }
+    const obj = data;
+    if (typeof obj.version !== "number") {
+      issues.push({ severity: "error", field: "version", message: "version 字段缺失或非 number 类型", autoFixable: true });
+    }
+    if (typeof obj.saveTime !== "number") {
+      issues.push({ severity: "warning", field: "saveTime", message: "saveTime 字段缺失或非 number 类型", autoFixable: true });
+    }
+    if (!obj.resource) {
+      issues.push({ severity: "error", field: "resource", message: "必需字段 resource 缺失", autoFixable: false });
+    }
+    if (!obj.building) {
+      issues.push({ severity: "error", field: "building", message: "必需字段 building 缺失", autoFixable: false });
+    }
+    return issues;
+  }
+  validateVersion(data) {
+    const issues = [];
+    if (data.version > ENGINE_SAVE_VERSION) {
+      issues.push({
+        severity: "warning",
+        field: "version",
+        message: `存档版本 ${data.version} 高于当前引擎版本 ${ENGINE_SAVE_VERSION}，可能存在不兼容`,
+        autoFixable: false
+      });
+    }
+    if (data.version < ENGINE_SAVE_VERSION) {
+      issues.push({
+        severity: "info",
+        field: "version",
+        message: `存档版本 ${data.version} 低于当前引擎版本 ${ENGINE_SAVE_VERSION}，需要迁移`,
+        autoFixable: true
+      });
+    }
+    return issues;
+  }
+  validateOptionalSubsystems(data) {
+    const issues = [];
+    const saveData = data;
+    for (const [name, minVersion] of Object.entries(OPTIONAL_SUBSYSTEMS)) {
+      const subData = saveData[name];
+      if (subData === void 0) {
+        issues.push({ severity: "info", field: name, message: `子系统 ${name} 数据缺失（v${minVersion}+ 引入）`, autoFixable: true });
+      } else if (subData === null || typeof subData !== "object") {
+        issues.push({ severity: "warning", field: name, message: `子系统 ${name} 数据类型异常: ${typeof subData}`, autoFixable: true });
+      }
+    }
+    return issues;
+  }
+  buildReport(issues) {
+    const errors = issues.filter((i) => i.severity === "error").length;
+    const warnings = issues.filter((i) => i.severity === "warning").length;
+    const info = issues.filter((i) => i.severity === "info").length;
+    return { valid: errors === 0, issues, stats: { errors, warnings, info } };
+  }
+}
+const MIGRATION_STEPS = [
+  {
+    fromVersion: 0,
+    toVersion: 1,
+    description: "v0 → v1: 基础存档格式确认",
+    migrate: (data) => {
+      return { ...data, version: 1 };
+    }
+  },
+  {
+    fromVersion: 1,
+    toVersion: 2,
+    description: "v1 → v2: 新增武将/招募/编队/日历/关卡子系统",
+    migrate: (data) => {
+      return {
+        ...data,
+        version: 2,
+        // 武将系统：空状态（HeroSystem 构造函数会创建默认空状态）
+        hero: data.hero ?? { generals: [], fragments: {}, version: 1 },
+        recruit: data.recruit ?? { pityCounter: 0, totalPulls: 0, version: 1 },
+        formation: data.formation ?? { formations: [], activeFormationId: null, version: 1 },
+        calendar: data.calendar,
+        campaign: data.campaign
+      };
+    }
+  },
+  {
+    fromVersion: 2,
+    toVersion: 3,
+    description: "v2 → v3: 新增关卡进度子系统",
+    migrate: (data) => {
+      return {
+        ...data,
+        version: 3,
+        campaign: data.campaign ?? { currentChapterId: "", stageStates: {}, lastClearTime: 0, version: 1 }
+      };
+    }
+  },
+  {
+    fromVersion: 3,
+    toVersion: 4,
+    description: "v3 → v4: 新增科技子系统",
+    migrate: (data) => {
+      return {
+        ...data,
+        version: 4,
+        tech: data.tech ?? {
+          version: 1,
+          completedTechIds: [],
+          activeResearch: null,
+          researchQueue: [],
+          techPoints: { basic: 0, advanced: 0, fusion: 0 },
+          chosenMutexNodes: {}
+        }
+      };
+    }
+  },
+  {
+    fromVersion: 4,
+    toVersion: 5,
+    description: "v4 → v5: 新增装备/贸易/商店子系统",
+    migrate: (data) => {
+      return {
+        ...data,
+        version: 5,
+        equipment: data.equipment,
+        trade: data.trade,
+        shop: data.shop
+      };
+    }
+  },
+  {
+    fromVersion: 5,
+    toVersion: 7,
+    description: "v5 → v7: 新增 PvP/事件子系统",
+    migrate: (data) => {
+      return {
+        ...data,
+        version: 7,
+        pvpArena: data.pvpArena,
+        pvpArenaShop: data.pvpArenaShop,
+        pvpRanking: data.pvpRanking,
+        eventTrigger: data.eventTrigger,
+        eventNotification: data.eventNotification,
+        eventUI: data.eventUI,
+        eventChain: data.eventChain,
+        eventLog: data.eventLog
+      };
+    }
+  },
+  {
+    fromVersion: 7,
+    toVersion: 10,
+    description: "v7 → v10: 新增装备炼制/强化子系统",
+    migrate: (data) => {
+      return {
+        ...data,
+        version: 10,
+        equipmentForge: data.equipmentForge,
+        equipmentEnhance: data.equipmentEnhance
+      };
+    }
+  },
+  {
+    fromVersion: 10,
+    toVersion: 14,
+    description: "v10 → v14: 新增声望/传承/成就子系统",
+    migrate: (data) => {
+      return {
+        ...data,
+        version: 14,
+        prestige: data.prestige,
+        heritage: data.heritage,
+        achievement: data.achievement
+      };
+    }
+  },
+  {
+    fromVersion: 14,
+    toVersion: 15,
+    description: "v14 → v15: 新增离线事件子系统",
+    migrate: (data) => {
+      return {
+        ...data,
+        version: 15,
+        offlineEvent: data.offlineEvent
+      };
+    }
+  },
+  {
+    fromVersion: 15,
+    toVersion: 16,
+    description: "v15 → v16: 新增赛季子系统",
+    migrate: (data) => {
+      return {
+        ...data,
+        version: 16,
+        season: data.season
+      };
+    }
+  }
+];
+class DataMigrator {
+  // ─── 构造函数 ──────────────────────────────────────────────────
+  constructor() {
+    /** 迁移步骤映射表（fromVersion → MigrationStep） */
+    __publicField(this, "stepMap");
+    this.stepMap = new Map(MIGRATION_STEPS.map((s) => [s.fromVersion, s]));
+  }
+  // ─── 公共方法 ──────────────────────────────────────────────────
+  /**
+   * 获取当前引擎存档版本
+   */
+  getCurrentVersion() {
+    return ENGINE_SAVE_VERSION;
+  }
+  /**
+   * 获取所有已注册的迁移步骤
+   */
+  getMigrationSteps() {
+    return [...MIGRATION_STEPS];
+  }
+  /**
+   * 检查数据是否需要迁移
+   *
+   * @param data - 存档数据
+   * @returns 是否需要迁移
+   */
+  needsMigration(data) {
+    return typeof data.version === "number" && data.version < ENGINE_SAVE_VERSION;
+  }
+  /**
+   * 执行完整迁移链
+   *
+   * 从数据的当前版本开始，依次执行迁移步骤直到达到引擎当前版本。
+   *
+   * @param data - 存档数据
+   * @returns 迁移后的存档数据
+   */
+  migrate(data) {
+    if (!this.needsMigration(data)) {
+      return data;
+    }
+    return this.migrateFromVersion(data, data.version);
+  }
+  /**
+   * 从指定版本开始迁移
+   *
+   * @param data - 存档数据
+   * @param from - 起始版本号
+   * @returns 迁移后的存档数据
+   */
+  migrateFromVersion(data, from) {
+    let current = { ...data };
+    let version = from;
+    const maxSteps = 20;
+    gameLog.info(`[DataMigrator] 开始迁移: v${version} → v${ENGINE_SAVE_VERSION}`);
+    for (let i = 0; i < maxSteps; i++) {
+      if (version >= ENGINE_SAVE_VERSION) break;
+      const step = this.stepMap.get(version);
+      if (!step) {
+        gameLog.warn(`[DataMigrator] 未找到 v${version} 的迁移步骤，跳到目标版本`);
+        current = { ...current, version: ENGINE_SAVE_VERSION };
+        break;
+      }
+      try {
+        const before = JSON.stringify(current).length;
+        current = step.migrate(current);
+        version = current.version;
+        const after = JSON.stringify(current).length;
+        gameLog.info(
+          `[DataMigrator] ${step.description} (数据大小: ${before} → ${after})`
+        );
+      } catch (err) {
+        gameLog.error(
+          `[DataMigrator] 迁移步骤失败 (${step.description}):`,
+          err
+        );
+        current = { ...current, version: step.toVersion };
+        version = step.toVersion;
+      }
+    }
+    if (current.version !== ENGINE_SAVE_VERSION) {
+      current = { ...current, version: ENGINE_SAVE_VERSION };
+    }
+    gameLog.info(`[DataMigrator] 迁移完成: v${from} → v${current.version}`);
+    return current;
+  }
+}
+const DEFAULT_MAX_BACKUP_AGE = 7 * 24 * 60 * 60 * 1e3;
+const RESOURCE_DEFAULTS = {
+  grain: 0,
+  gold: 0,
+  troops: 0,
+  mandate: 0,
+  techPoint: 0,
+  recruitToken: 0
+};
+class GameDataFixer {
+  constructor(backupManager, options) {
+    __publicField(this, "backupManager");
+    __publicField(this, "validator");
+    __publicField(this, "migrator");
+    __publicField(this, "strategy");
+    __publicField(this, "maxBackupAge");
+    this.backupManager = backupManager;
+    this.validator = new GameDataValidator();
+    this.migrator = new DataMigrator();
+    this.strategy = (options == null ? void 0 : options.strategy) ?? "conservative";
+    this.maxBackupAge = (options == null ? void 0 : options.maxBackupAge) ?? DEFAULT_MAX_BACKUP_AGE;
+  }
+  // ─── 核心方法 ──────────────────────────────────────────────────
+  /**
+   * 修正存档数据
+   *
+   * 执行完整修正流程：校验 → 版本迁移 → 自动修复 → 再校验。
+   */
+  fix(data) {
+    const actions = [];
+    if (data === null || data === void 0 || typeof data !== "object") {
+      const recovered = this.tryRecoverFromBackup(actions);
+      if (recovered) {
+        return { data: recovered, report: this.buildReport(actions, false, true) };
+      }
+      return { data: null, report: this.buildReport(actions, false, false) };
+    }
+    let saveData;
+    try {
+      saveData = data;
+    } catch {
+      actions.push({ type: "remove_corrupt", field: "root", description: "存档数据无法解析" });
+      const recovered = this.tryRecoverFromBackup(actions);
+      return { data: recovered, report: this.buildReport(actions, false, recovered !== null) };
+    }
+    const originalReport = this.validator.validate(saveData);
+    const originalValid = originalReport.valid;
+    if (this.migrator.needsMigration(saveData)) {
+      const beforeVersion = saveData.version;
+      saveData = this.migrator.migrate(saveData);
+      actions.push({
+        type: "migrate",
+        field: "version",
+        description: `版本迁移: v${beforeVersion} → v${saveData.version}`,
+        before: beforeVersion,
+        after: saveData.version
+      });
+    }
+    if (!originalValid) {
+      saveData = this.fixIssues(saveData, originalReport.issues, actions);
+    }
+    const fixedReport = this.validator.validate(saveData);
+    if (!fixedReport.valid) {
+      gameLog.warn("[GameDataFixer] 修正后仍存在问题:", fixedReport.stats);
+    }
+    return { data: saveData, report: this.buildReport(actions, originalValid, fixedReport.valid) };
+  }
+  /**
+   * 修正数据并应用到引擎
+   */
+  fixAndApply(ctx, data) {
+    const { data: fixedData, report } = this.fix(data);
+    if (fixedData) {
+      try {
+        const { applyDeserialize: applyDeserialize2 } = require("../../engine/engine-save");
+        applyDeserialize2(ctx, JSON.stringify(fixedData));
+        gameLog.info("[GameDataFixer] 数据已修正并应用到引擎");
+      } catch (err) {
+        gameLog.error("[GameDataFixer] 应用修正数据失败:", err);
+        return { ...report, success: false };
+      }
+    }
+    return report;
+  }
+  // ─── 便捷方法 ──────────────────────────────────────────────────
+  /**
+   * 尝试恢复损坏的存档
+   *
+   * 从 localStorage 读取存档，如果无法正常解析则尝试从备份恢复。
+   */
+  tryRecoverSave() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) {
+        gameLog.info("[GameDataFixer] 无存档数据");
+        return null;
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        gameLog.warn("[GameDataFixer] 存档 JSON 解析失败，尝试备份恢复");
+        return this.recoverDeleted();
+      }
+      if (parsed && typeof parsed === "object" && typeof parsed.data === "string") {
+        try {
+          const inner = JSON.parse(parsed.data);
+          const { data: data2, report: report2 } = this.fix(inner);
+          if (data2) {
+            this.logReport(report2);
+            return data2;
+          }
+        } catch {
+          gameLog.warn("[GameDataFixer] 新格式存档内部数据解析失败");
+        }
+      }
+      const { data, report } = this.fix(parsed);
+      if (data) {
+        this.logReport(report);
+        return data;
+      }
+      return this.recoverDeleted();
+    } catch (err) {
+      gameLog.error("[GameDataFixer] 恢复存档失败:", err);
+      return this.recoverDeleted();
+    }
+  }
+  /** 诊断当前存档问题（不执行修复） */
+  diagnose() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) {
+        return { success: false, actions: [], originalValid: false, fixedValid: false };
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return {
+          success: false,
+          actions: [{ type: "remove_corrupt", field: "root", description: "存档 JSON 解析失败" }],
+          originalValid: false,
+          fixedValid: false
+        };
+      }
+      if (parsed && typeof parsed === "object" && typeof parsed.data === "string") {
+        try {
+          parsed = JSON.parse(parsed.data);
+        } catch {
+        }
+      }
+      const report = this.validator.validate(parsed);
+      return { success: report.valid, actions: [], originalValid: report.valid, fixedValid: report.valid };
+    } catch {
+      return { success: false, actions: [], originalValid: false, fixedValid: false };
+    }
+  }
+  /** 从备份恢复误删的存档 */
+  recoverDeleted() {
+    const backups = this.backupManager.listBackups();
+    if (backups.length === 0) {
+      gameLog.warn("[GameDataFixer] 无可用备份");
+      return null;
+    }
+    for (const backup of backups) {
+      if (Date.now() - backup.timestamp > this.maxBackupAge) {
+        gameLog.info(`[GameDataFixer] 备份 ${backup.id} 已过期，跳过`);
+        continue;
+      }
+      const backupData = this.backupManager.getBackupData(backup.id);
+      if (!backupData) continue;
+      try {
+        let parsed = JSON.parse(backupData);
+        if (parsed && typeof parsed === "object" && typeof parsed.data === "string") {
+          parsed = JSON.parse(parsed.data);
+        }
+        if (parsed && typeof parsed === "object") {
+          const data = parsed;
+          if (data.resource && data.building) {
+            gameLog.info(`[GameDataFixer] 从备份 ${backup.id} 恢复成功`);
+            if (this.migrator.needsMigration(data)) {
+              return this.migrator.migrate(data);
+            }
+            return data;
+          }
+        }
+      } catch {
+        continue;
+      }
+    }
+    gameLog.warn("[GameDataFixer] 所有备份均无法恢复");
+    return null;
+  }
+  // ─── 私有方法 ──────────────────────────────────────────────────
+  fixIssues(data, issues, actions) {
+    let fixed = { ...data };
+    const record = fixed;
+    for (const issue of issues) {
+      if (!issue.autoFixable) continue;
+      if (this.strategy === "conservative" && issue.severity === "info") continue;
+      const action = this.fixSingleIssue(record, issue);
+      if (action) actions.push(action);
+    }
+    return fixed;
+  }
+  fixSingleIssue(record, issue) {
+    const field = issue.field;
+    if (field.startsWith("resource.resources.")) {
+      const resField = field.split(".").pop();
+      if (record.resource && typeof record.resource === "object") {
+        const res = record.resource;
+        if (res.resources && typeof res.resources === "object") {
+          const resources = res.resources;
+          const before = resources[resField];
+          const defaultValue = RESOURCE_DEFAULTS[resField] ?? 0;
+          resources[resField] = defaultValue;
+          return { type: "fix_value", field, description: `修复资源字段 ${resField}: ${before} → ${defaultValue}`, before, after: defaultValue };
+        }
+      }
+    }
+    if (field.includes(".level") && field.startsWith("building.buildings.")) {
+      if (record.building && typeof record.building === "object") {
+        const bld = record.building;
+        if (bld.buildings && typeof bld.buildings === "object") {
+          const buildings = bld.buildings;
+          const buildingType = field.split(".")[2];
+          const building = buildings[buildingType];
+          if (building && typeof building === "object") {
+            const state = building;
+            const before = state.level;
+            const fixedLevel = Math.max(0, Math.min(typeof before === "number" ? before : 1, 100));
+            state.level = fixedLevel;
+            return { type: "fix_value", field, description: `修复 ${buildingType} 等级: ${before} → ${fixedLevel}`, before, after: fixedLevel };
+          }
+        }
+      }
+    }
+    if (field.includes(".status") && field.startsWith("building.buildings.")) {
+      if (record.building && typeof record.building === "object") {
+        const bld = record.building;
+        if (bld.buildings && typeof bld.buildings === "object") {
+          const buildings = bld.buildings;
+          const buildingType = field.split(".")[2];
+          const building = buildings[buildingType];
+          if (building && typeof building === "object") {
+            const state = building;
+            const before = state.status;
+            state.status = "idle";
+            return { type: "fix_value", field, description: `修复 ${buildingType} 状态: ${before} → idle`, before, after: "idle" };
+          }
+        }
+      }
+    }
+    if (this.strategy === "aggressive" && issue.message.includes("数据缺失")) {
+      const subsystemName = field;
+      if (record[subsystemName] === void 0) {
+        record[subsystemName] = this.getDefaultSubSystemData(subsystemName);
+        return { type: "fill_default", field: subsystemName, description: `补全缺失子系统 ${subsystemName} 默认数据`, before: void 0, after: "(default)" };
+      }
+    }
+    return null;
+  }
+  getDefaultSubSystemData(name) {
+    const defaults = {
+      calendar: { version: 1 },
+      hero: { generals: [], fragments: {}, version: 1 },
+      recruit: { pityCounter: 0, totalPulls: 0, version: 1 },
+      formation: { formations: [], activeFormationId: null, version: 1 },
+      campaign: { currentChapterId: "", stageStates: {}, lastClearTime: 0, version: 1 },
+      tech: { version: 1, completedTechIds: [], activeResearch: null, researchQueue: [], techPoints: { basic: 0, advanced: 0, fusion: 0 }, chosenMutexNodes: {} }
+    };
+    return defaults[name] ?? { version: 1 };
+  }
+  tryRecoverFromBackup(actions) {
+    const recovered = this.recoverDeleted();
+    if (recovered) {
+      actions.push({ type: "restore_backup", field: "root", description: "从备份恢复存档数据", before: null, after: "(backup data)" });
+    }
+    return recovered;
+  }
+  buildReport(actions, originalValid, fixedValid) {
+    return { success: fixedValid, actions, originalValid, fixedValid };
+  }
+  logReport(report) {
+    gameLog.info(`[GameDataFixer] 修正报告: success=${report.success}, actions=${report.actions.length}`);
+    for (const action of report.actions) {
+      gameLog.info(`  [${action.type}] ${action.field}: ${action.description}`);
+    }
+  }
+}
 const DEFAULT_SAVE_KEY = "three-kingdoms-save";
 const DEFAULT_AUTO_SAVE_INTERVAL = 3e4;
 const DEFAULT_SAVE_VERSION = "1.0.0";
@@ -4727,6 +9073,10 @@ class SaveManager {
     __publicField(this, "saveKey");
     /** 状态序列化器 */
     __publicField(this, "serializer");
+    /** 备份管理器 */
+    __publicField(this, "backupManager");
+    /** 数据修正器 */
+    __publicField(this, "fixer");
     /** 自动保存定时器 ID */
     __publicField(this, "autoSaveTimer", null);
     /** 累计存档次数 */
@@ -4736,6 +9086,8 @@ class SaveManager {
     this.saveKey = (config == null ? void 0 : config.has("SAVE_KEY")) ? config.get("SAVE_KEY") : DEFAULT_SAVE_KEY;
     const version = (config == null ? void 0 : config.has("SAVE_VERSION")) ? config.get("SAVE_VERSION") : DEFAULT_SAVE_VERSION;
     this.serializer = new StateSerializer(version);
+    this.backupManager = new SaveBackupManager();
+    this.fixer = new GameDataFixer(this.backupManager);
   }
   // ─── ISaveManager 核心方法 ─────────────────────────────────────
   /**
@@ -4749,6 +9101,7 @@ class SaveManager {
    */
   save(data) {
     try {
+      this.backupManager.autoBackup();
       const stateToSave = {
         ...data,
         timestamp: Date.now(),
@@ -4792,6 +9145,14 @@ class SaveManager {
       return null;
     } catch (err) {
       gameLog.error("[SaveManager] Load failed:", err);
+      try {
+        const recovered = this.fixer.tryRecoverSave();
+        if (recovered) {
+          gameLog.info("[SaveManager] 通过数据修正器恢复了损坏的存档");
+          return null;
+        }
+      } catch {
+      }
       return null;
     }
   }
@@ -4907,6 +9268,22 @@ class SaveManager {
    */
   getSaveCount() {
     return this.saveCount;
+  }
+  /**
+   * 获取备份管理器实例
+   *
+   * 用于 UI 层管理备份（列出、恢复、删除）。
+   */
+  getBackupManager() {
+    return this.backupManager;
+  }
+  /**
+   * 获取数据修正器实例
+   *
+   * 用于 UI 层执行数据诊断和修复。
+   */
+  getFixer() {
+    return this.fixer;
   }
 }
 class ConfigError extends Error {
@@ -5061,7 +9438,7 @@ class ConfigRegistry {
   }
 }
 function executeTick(ctx, dtSec) {
-  var _a, _b, _c, _d, _e, _f;
+  var _a, _b, _c, _d, _e, _f, _g;
   ctx.calendar.update(dtSec);
   const completed = ctx.building.tick();
   if (completed.length > 0) {
@@ -5100,6 +9477,7 @@ function executeTick(ctx, dtSec) {
   (_d = ctx.eventChain) == null ? void 0 : _d.update(dtSec);
   (_e = ctx.eventLog) == null ? void 0 : _e.update(dtSec);
   (_f = ctx.offlineEvent) == null ? void 0 : _f.update(dtSec);
+  (_g = ctx.siege) == null ? void 0 : _g.update(dtSec);
   detectAndEmitChanges(ctx);
 }
 function syncBuildingToResource(ctx) {
@@ -5125,8 +9503,168 @@ function detectAndEmitChanges(ctx) {
     ctx.bus.emit("resource:rate-changed", { rates });
   }
 }
+const PRESERVED_TOP_LEVEL_KEYS = /* @__PURE__ */ new Set(["version", "saveTime"]);
+function repairWithBlueprint(loaded, blueprint) {
+  const logs = [];
+  if (loaded === null || loaded === void 0 || typeof loaded !== "object") {
+    return { data: structuredClone(blueprint), logs: [], repaired: false };
+  }
+  const repaired = deepMergeWithRepair(
+    loaded,
+    blueprint,
+    "",
+    logs
+  );
+  return {
+    data: repaired,
+    logs,
+    repaired: logs.length > 0
+  };
+}
+function deepMergeWithRepair(loaded, blueprintValue, path, logs) {
+  if (blueprintValue === null || blueprintValue === void 0) {
+    return loaded;
+  }
+  if (loaded === void 0) {
+    logs.push({
+      field: path,
+      action: "fill_missing",
+      oldValue: void 0,
+      newValue: blueprintValue
+    });
+    return structuredClone(blueprintValue);
+  }
+  if (loaded === null) {
+    return null;
+  }
+  if (typeof loaded !== typeof blueprintValue) {
+    logs.push({
+      field: path,
+      action: "fix_type",
+      oldValue: loaded,
+      newValue: blueprintValue
+    });
+    return structuredClone(blueprintValue);
+  }
+  if (typeof blueprintValue === "object" && !Array.isArray(blueprintValue)) {
+    if (typeof loaded === "object" && loaded !== null && !Array.isArray(loaded)) {
+      return mergeObjects(
+        loaded,
+        blueprintValue,
+        path,
+        logs
+      );
+    }
+    return loaded;
+  }
+  if (Array.isArray(blueprintValue)) {
+    if (Array.isArray(loaded)) {
+      return mergeArrays(loaded, blueprintValue, path, logs);
+    }
+    return loaded;
+  }
+  if (typeof blueprintValue === "number" && typeof loaded === "number") {
+    return validateNumber(loaded, blueprintValue, path, logs);
+  }
+  if (typeof blueprintValue === "string") {
+    if (blueprintValue !== "" && loaded === "") {
+      logs.push({
+        field: path,
+        action: "fill_missing",
+        oldValue: "",
+        newValue: blueprintValue
+      });
+      return blueprintValue;
+    }
+    return loaded;
+  }
+  return loaded;
+}
+function mergeObjects(loaded, blueprint, parentPath, logs) {
+  const result = {};
+  for (const key of Object.keys(blueprint)) {
+    const fieldPath = parentPath ? `${parentPath}.${key}` : key;
+    if (parentPath === "" && PRESERVED_TOP_LEVEL_KEYS.has(key)) {
+      result[key] = key in loaded ? loaded[key] : blueprint[key];
+      continue;
+    }
+    const loadedVal = key in loaded ? loaded[key] : void 0;
+    result[key] = deepMergeWithRepair(loadedVal, blueprint[key], fieldPath, logs);
+  }
+  for (const key of Object.keys(loaded)) {
+    if (!(key in result)) {
+      result[key] = loaded[key];
+    }
+  }
+  return result;
+}
+function mergeArrays(loaded, blueprint, path, logs) {
+  const result = [];
+  const maxLen = Math.max(loaded.length, blueprint.length);
+  for (let i = 0; i < maxLen; i++) {
+    const itemPath = `${path}[${i}]`;
+    const loadedItem = i < loaded.length ? loaded[i] : void 0;
+    const blueprintItem = i < blueprint.length ? blueprint[i] : void 0;
+    if (i >= loaded.length && blueprintItem !== void 0) {
+      logs.push({
+        field: itemPath,
+        action: "fill_missing",
+        oldValue: void 0,
+        newValue: blueprintItem
+      });
+      result.push(structuredClone(blueprintItem));
+    } else if (i >= blueprint.length) {
+      result.push(loadedItem);
+    } else {
+      result.push(deepMergeWithRepair(loadedItem, blueprintItem, itemPath, logs));
+    }
+  }
+  return result;
+}
+function validateNumber(loaded, blueprintValue, path, logs) {
+  if (Number.isNaN(loaded)) {
+    logs.push({
+      field: path,
+      action: "fix_nan",
+      oldValue: loaded,
+      newValue: blueprintValue
+    });
+    return blueprintValue;
+  }
+  if (!Number.isFinite(loaded)) {
+    logs.push({
+      field: path,
+      action: "fix_nan",
+      oldValue: loaded,
+      newValue: blueprintValue
+    });
+    return blueprintValue;
+  }
+  if (loaded < 0 && isResourceValuePath(path)) {
+    logs.push({
+      field: path,
+      action: "fix_negative",
+      oldValue: loaded,
+      newValue: blueprintValue
+    });
+    return blueprintValue;
+  }
+  return loaded;
+}
+function isResourceValuePath(path) {
+  if (/^resource\.resources\./.test(path)) {
+    return true;
+  }
+  if (/^resource\.(caps|productionRates)\./.test(path)) {
+    return true;
+  }
+  if (path === "resource.lastSaveTime") {
+    return true;
+  }
+  return false;
+}
 function buildSaveData$1(ctx) {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q;
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r;
   const treeData = ctx.techTree.serialize();
   const researchData = ctx.techResearch.serialize();
   const pointData = ctx.techPoint.serialize();
@@ -5167,7 +9705,9 @@ function buildSaveData$1(ctx) {
     eventUI: (_n = ctx.eventUI) == null ? void 0 : _n.serialize(),
     eventChain: (_o = ctx.eventChain) == null ? void 0 : _o.serialize(),
     eventLog: (_p = ctx.eventLog) == null ? void 0 : _p.exportSaveData(),
-    offlineEvent: (_q = ctx.offlineEvent) == null ? void 0 : _q.exportSaveData()
+    offlineEvent: (_q = ctx.offlineEvent) == null ? void 0 : _q.exportSaveData(),
+    // ── 赛季系统 v16.0 ──
+    season: (_r = ctx.season) == null ? void 0 : _r.getSaveData()
   };
 }
 function toIGameState(data, onlineSeconds) {
@@ -5198,6 +9738,7 @@ function toIGameState(data, onlineSeconds) {
   if (data.eventChain) subsystems.eventChain = data.eventChain;
   if (data.eventLog) subsystems.eventLog = data.eventLog;
   if (data.offlineEvent) subsystems.offlineEvent = data.offlineEvent;
+  if (data.season) subsystems.season = data.season;
   return {
     version: String(data.version),
     timestamp: data.saveTime,
@@ -5238,16 +9779,42 @@ function fromIGameState(state) {
     eventUI: s.eventUI,
     eventChain: s.eventChain,
     eventLog: s.eventLog,
-    offlineEvent: s.offlineEvent
+    offlineEvent: s.offlineEvent,
+    season: s.season
   };
 }
 function applyLoadedState(ctx, state) {
   try {
-    const data = fromIGameState(state);
+    let data = fromIGameState(state);
+    const blueprint = buildSaveData$1(ctx);
+    const repairResult = repairWithBlueprint(data, blueprint);
+    if (repairResult.repaired) {
+      gameLog.info(`[SaveRepair] 存档修复完成，共 ${repairResult.logs.length} 处修正`);
+      for (const log of repairResult.logs) {
+        gameLog.info(`[SaveRepair] ${log.action}: ${log.field}`);
+      }
+      data = repairResult.data;
+    }
     if (data.version !== ENGINE_SAVE_VERSION) {
       gameLog.warn(
         `Engine: 存档版本不匹配 (期望 ${ENGINE_SAVE_VERSION}，实际 ${data.version})，尝试兼容加载`
       );
+    }
+    const validator = new GameDataValidator();
+    const report = validator.validate(data);
+    if (!report.valid) {
+      gameLog.warn("[engine-save] 存档数据校验发现问题:", report.stats);
+      for (const issue of report.issues) {
+        if (issue.severity === "error") {
+          gameLog.error(`  [${issue.severity}] ${issue.field}: ${issue.message}`);
+        }
+      }
+      const fixer = new GameDataFixer(new SaveBackupManager());
+      const { data: fixedData } = fixer.fix(data);
+      if (fixedData) {
+        applySaveData(ctx, fixedData);
+        return computeOfflineAndFinalize(ctx);
+      }
     }
     applySaveData(ctx, data);
     return computeOfflineAndFinalize(ctx);
@@ -5274,6 +9841,15 @@ function tryLoadLegacyFormat() {
 }
 function applyLegacyState(ctx, data) {
   try {
+    const blueprint = buildSaveData$1(ctx);
+    const repairResult = repairWithBlueprint(data, blueprint);
+    if (repairResult.repaired) {
+      gameLog.info(`[SaveRepair] 旧格式存档修复完成，共 ${repairResult.logs.length} 处修正`);
+      for (const log of repairResult.logs) {
+        gameLog.info(`[SaveRepair] ${log.action}: ${log.field}`);
+      }
+      data = repairResult.data;
+    }
     applySaveData(ctx, data);
     return computeOfflineAndFinalize(ctx);
   } catch (e) {
@@ -5282,7 +9858,16 @@ function applyLegacyState(ctx, data) {
   }
 }
 function applyDeserialize(ctx, json) {
-  const data = JSON.parse(json);
+  let data = JSON.parse(json);
+  const blueprint = buildSaveData$1(ctx);
+  const repairResult = repairWithBlueprint(data, blueprint);
+  if (repairResult.repaired) {
+    gameLog.info(`[SaveRepair] 反序列化数据修复完成，共 ${repairResult.logs.length} 处修正`);
+    for (const log of repairResult.logs) {
+      gameLog.info(`[SaveRepair] ${log.action}: ${log.field}`);
+    }
+    data = repairResult.data;
+  }
   applySaveData(ctx, data);
 }
 function applySaveData(ctx, data) {
@@ -5379,6 +9964,9 @@ function applySaveData(ctx, data) {
   if (data.offlineEvent && ctx.offlineEvent) {
     ctx.offlineEvent.importSaveData(data.offlineEvent);
   }
+  if (data.season && ctx.season) {
+    ctx.season.loadSaveData(data.season);
+  }
   syncBuildingToResource({
     resource: ctx.resource,
     building: ctx.building,
@@ -5412,7 +10000,7 @@ function computeOfflineAndFinalize(ctx) {
   ctx.bus.emit("game:loaded", { offlineEarnings });
   return offlineEarnings ?? null;
 }
-const VALID_RESOURCE_TYPES = ["grain", "gold", "troops", "mandate", "techPoint"];
+const VALID_RESOURCE_TYPES = ["grain", "gold", "troops", "mandate", "techPoint", "recruitToken"];
 function isResourceType(type) {
   return VALID_RESOURCE_TYPES.includes(type);
 }
@@ -5428,6 +10016,7 @@ function safeSpendResource(resource, type, amount) {
 function safeCanAfford(resource, type, amount) {
   if (!isResourceType(type)) return false;
   const current = resource.getAmount(type);
+  if (!Number.isFinite(current)) return false;
   if (type === "grain") {
     return Math.max(0, current - 10) >= amount;
   }
@@ -5443,14 +10032,31 @@ function initHeroSystems(systems, resource, deps) {
   systems.heroRecruit.setRecruitDeps({
     heroSystem: systems.hero,
     spendResource: (type, amount) => safeSpendResource(resource, type, amount),
-    canAffordResource: (type, amount) => safeCanAfford(resource, type, amount)
+    canAffordResource: (type, amount) => safeCanAfford(resource, type, amount),
+    addResource: (type, amount) => {
+      if (isResourceType(type)) resource.addResource(type, amount);
+    }
   });
   systems.heroLevel.init(deps);
   systems.heroLevel.setLevelDeps({
     heroSystem: systems.hero,
     spendResource: (type, amount) => safeSpendResource(resource, type, amount),
     canAffordResource: (type, amount) => safeCanAfford(resource, type, amount),
-    getResourceAmount: (type) => safeGetAmount(resource, type)
+    getResourceAmount: (type) => safeGetAmount(resource, type),
+    getLevelCap: (generalId) => {
+      var _a;
+      if ((_a = systems.awakening) == null ? void 0 : _a.isAwakened(generalId)) {
+        return 120;
+      }
+      return systems.heroStar.getLevelCap(generalId);
+    }
+  });
+  systems.hero.setLevelCapGetter((generalId) => {
+    var _a;
+    if ((_a = systems.awakening) == null ? void 0 : _a.isAwakened(generalId)) {
+      return 120;
+    }
+    return systems.heroStar.getLevelCap(generalId);
   });
 }
 const STAGE_TYPE_LABELS = {
@@ -5465,10 +10071,10 @@ const STAGE_STATUS_LABELS = {
   threeStar: "三星通关"
 };
 const MAX_STARS = 3;
-const SAVE_VERSION$2 = 1;
+const SAVE_VERSION$5 = 1;
 function serializeProgress(progress) {
   return {
-    version: SAVE_VERSION$2,
+    version: SAVE_VERSION$5,
     progress: {
       currentChapterId: progress.currentChapterId,
       stageStates: Object.fromEntries(
@@ -5479,9 +10085,9 @@ function serializeProgress(progress) {
   };
 }
 function deserializeProgress(data, dataProvider) {
-  if (data.version !== SAVE_VERSION$2) {
+  if (data.version !== SAVE_VERSION$5) {
     throw new Error(
-      `[CampaignProgress] 存档版本不兼容: 期望 ${SAVE_VERSION$2}, 实际 ${data.version}`
+      `[CampaignProgress] 存档版本不兼容: 期望 ${SAVE_VERSION$5}, 实际 ${data.version}`
     );
   }
   const allStageIds = getAllStageIds(dataProvider);
@@ -5836,17 +10442,17 @@ const STAR_MULTIPLIERS = {
   // 未通关，无奖励
   1: 1,
   // 1星：基础倍率
-  2: 1,
-  // 2星：基础倍率
-  3: 1.5
-  // 3星：1.5倍加成（使用关卡自身 threeStarBonusMultiplier 覆盖）
+  2: 1.5,
+  // 2星：1.5倍加成
+  3: 2
+  // 3星：2.0倍加成
 };
 const defaultRng = () => Math.random();
 function randomInt(min, max, rng) {
   return Math.floor(rng() * (max - min + 1)) + min;
 }
-function getStarMultiplier(stars, threeStarBonusMultiplier) {
-  if (stars >= MAX_STARS) return threeStarBonusMultiplier;
+function getStarMultiplier(stars, _threeStarBonusMultiplier) {
+  if (stars >= MAX_STARS) return STAR_MULTIPLIERS[MAX_STARS];
   return STAR_MULTIPLIERS[stars] ?? 1;
 }
 class RewardDistributor {
@@ -5895,7 +10501,11 @@ class RewardDistributor {
     if (isFirstClear) {
       this.mergeResources(resources, stage.firstClearRewards);
     }
-    const { fragments, bonusExp } = this.rollDropTable(stage.dropTable, resources);
+    const { fragments, bonusExp } = this.rollDropTable(
+      stage.dropTable,
+      resources,
+      isFirstClear
+    );
     const totalExp = isFirstClear ? exp + stage.firstClearExp + bonusExp : exp + bonusExp;
     return {
       resources,
@@ -6023,14 +10633,24 @@ class RewardDistributor {
    * 资源类掉落合并到 resources，碎片类掉落返回 fragments Map，
    * 经验类掉落返回额外经验值。
    *
+   * PRD v3.0 §4.3a：
+   *   - 首通时关联武将碎片必掉（100%概率）
+   *   - 非首通时碎片按 dropTable 配置的概率掉落
+   *
    * @param dropTable - 掉落表
    * @param resources - 资源累加目标（就地修改）
+   * @param isFirstClear - 是否首通（首通时碎片必掉）
    * @returns 碎片掉落和额外经验 { fragments, bonusExp }
    */
-  rollDropTable(dropTable, resources) {
+  rollDropTable(dropTable, resources, isFirstClear = false) {
     const fragments = {};
     let bonusExp = 0;
+    const firstClearFragmentEntries = [];
     for (const entry of dropTable) {
+      if (isFirstClear && entry.type === "fragment") {
+        firstClearFragmentEntries.push(entry);
+        continue;
+      }
       if (this.rng() > entry.probability) continue;
       const amount = randomInt(entry.minAmount, entry.maxAmount, this.rng);
       if (amount <= 0) continue;
@@ -6050,6 +10670,14 @@ class RewardDistributor {
           break;
       }
     }
+    if (isFirstClear) {
+      for (const entry of firstClearFragmentEntries) {
+        if (entry.generalId) {
+          const amount = entry.minAmount;
+          fragments[entry.generalId] = (fragments[entry.generalId] ?? 0) + amount;
+        }
+      }
+    }
     return { fragments, bonusExp };
   }
   // ─────────────────────────────────────────────
@@ -6061,6 +10689,63 @@ class RewardDistributor {
   }
   /** ISubsystem.update — 奖励分发器是事件驱动的，不需要每帧更新 */
   update(_dt) {
+  }
+  // ─────────────────────────────────────────────
+  // v20.0 统一奖励 API
+  // ─────────────────────────────────────────────
+  /**
+   * 获取天下一统完成奖励
+   *
+   * 返回统一完成时的奖励列表（专属称号/头像/资源）。
+   * 奖励内容根据结局等级不同：
+   * - S级: 帝王称号 + 专属头像框 + 天命×3000 + 神话武将碎片×10
+   * - A级: 霸主称号 + 天命×2000 + 传说装备图纸×3
+   * - B级: 诸侯称号 + 天命×1000
+   * - C级: 英雄称号 + 天命×500
+   *
+   * @param grade - 结局等级
+   */
+  getUnificationRewards(grade = "C") {
+    const rewards = [];
+    switch (grade) {
+      case "S":
+        rewards.push({ type: "title", id: "title-emperor", name: "帝王称号", amount: 1 });
+        rewards.push({ type: "avatar", id: "avatar-emperor-frame", name: "专属头像框", amount: 1 });
+        rewards.push({ type: "currency", id: "mandate", name: "天命", amount: 3e3 });
+        rewards.push({ type: "fragment", id: "mythic-hero-frag", name: "神话武将碎片", amount: 10 });
+        break;
+      case "A":
+        rewards.push({ type: "title", id: "title-hegemon", name: "霸主称号", amount: 1 });
+        rewards.push({ type: "currency", id: "mandate", name: "天命", amount: 2e3 });
+        rewards.push({ type: "blueprint", id: "legendary-equip-bp", name: "传说装备图纸", amount: 3 });
+        break;
+      case "B":
+        rewards.push({ type: "title", id: "title-warlord", name: "诸侯称号", amount: 1 });
+        rewards.push({ type: "currency", id: "mandate", name: "天命", amount: 1e3 });
+        break;
+      case "C":
+      default:
+        rewards.push({ type: "title", id: "title-hero", name: "英雄称号", amount: 1 });
+        rewards.push({ type: "currency", id: "mandate", name: "天命", amount: 500 });
+        break;
+    }
+    return rewards;
+  }
+  /**
+   * 获取最终关卡通关奖励加成
+   *
+   * 最终关卡通关时额外奖励，含星级加成。
+   *
+   * @param stars - 通关星级（0~3）
+   */
+  getFinalStageBonus(stars = 3) {
+    const starMultiplier = Math.max(1, stars);
+    return {
+      bonusGold: 5e3 * starMultiplier,
+      bonusGrain: 8e3 * starMultiplier,
+      bonusMandate: 100 * starMultiplier,
+      starMultiplier
+    };
   }
   /** ISubsystem.getState — 返回状态快照 */
   getState() {
@@ -6131,7 +10816,7 @@ const BATTLE_CONFIG = {
   /** 默认战斗速度档位 */
   DEFAULT_BATTLE_SPEED: 1,
   /** 可用速度档位列表 */
-  AVAILABLE_SPEEDS: [1, 2, 4],
+  AVAILABLE_SPEEDS: [1, 2, 3],
   /** 基础回合间隔（ms），实际间隔 = 基础间隔 / 速度 */
   BASE_TURN_INTERVAL_MS: 1e3,
   /** 4x速度时是否简化特效 */
@@ -6201,6 +10886,7 @@ var BattleSpeed = /* @__PURE__ */ ((BattleSpeed2) => {
   BattleSpeed2[BattleSpeed2["SKIP"] = 0] = "SKIP";
   BattleSpeed2[BattleSpeed2["X1"] = 1] = "X1";
   BattleSpeed2[BattleSpeed2["X2"] = 2] = "X2";
+  BattleSpeed2[BattleSpeed2["X3"] = 3] = "X3";
   BattleSpeed2[BattleSpeed2["X4"] = 4] = "X4";
   return BattleSpeed2;
 })(BattleSpeed || {});
@@ -7344,19 +12030,22 @@ function generateSummary(outcome, stars, turns, allyAlive) {
   }
   return `战斗平局，${turns}回合内未能分出胜负`;
 }
-function calculateFragmentRewards(outcome, enemyTeam, allySurvivors) {
+function calculateFragmentRewards(outcome, enemyTeam, allySurvivors, isFirstClear) {
   if (outcome !== BattleOutcome.VICTORY) {
     return {};
   }
   const fragments = {};
+  if (isFirstClear) {
+    for (const unit of enemyTeam.units) {
+      fragments[unit.id] = (fragments[unit.id] ?? 0) + 1;
+    }
+    return fragments;
+  }
+  const baseDropRate = 0.1;
   for (const unit of enemyTeam.units) {
-    const baseDropRate = 0.3;
-    const starBonus = allySurvivors >= 4 ? 0.2 : 0;
-    const dropChance = baseDropRate + starBonus;
     const hash = simpleHash(unit.id);
-    if (hash % 100 < Math.floor(dropChance * 100)) {
-      const count = allySurvivors >= 4 ? 2 : 1;
-      fragments[unit.id] = (fragments[unit.id] ?? 0) + count;
+    if (hash % 100 < Math.floor(baseDropRate * 100)) {
+      fragments[unit.id] = (fragments[unit.id] ?? 0) + 1;
     }
   }
   return fragments;
@@ -7483,8 +12172,7 @@ class BattleEngine {
     const stats = calculateBattleStats(state);
     const fragmentRewards = calculateFragmentRewards(
       outcome,
-      state.enemyTeam,
-      allyAlive
+      state.enemyTeam
     );
     return {
       outcome,
@@ -7701,7 +12389,8 @@ const ch1_stage1 = {
   },
   baseRewards: { grain: 80, gold: 40 },
   baseExp: 50,
-  firstClearRewards: { grain: 200, gold: 100 },
+  firstClearRewards: { grain: 200, gold: 100, recruitToken: 10 },
+  // R5: 大关卡首通奖励 +10 求贤令
   firstClearExp: 150,
   threeStarBonusMultiplier: 1.5,
   dropTable: [
@@ -7863,8 +12552,9 @@ const ch2_stage1 = {
   },
   baseRewards: { grain: 150, gold: 80 },
   baseExp: 120,
-  firstClearRewards: { grain: 380, gold: 200 },
+  firstClearRewards: { grain: 380, gold: 200, recruitToken: 10 },
   firstClearExp: 360,
+  // R5: 大关卡首通奖励 +10 求贤令
   threeStarBonusMultiplier: 1.5,
   dropTable: [
     { type: "resource", resourceType: "grain", minAmount: 60, maxAmount: 110, probability: 0.8 },
@@ -8024,8 +12714,9 @@ const ch3_stage1 = {
   },
   baseRewards: { grain: 300, gold: 160, troops: 50 },
   baseExp: 250,
-  firstClearRewards: { grain: 750, gold: 400, troops: 120 },
+  firstClearRewards: { grain: 750, gold: 400, troops: 120, recruitToken: 10 },
   firstClearExp: 750,
+  // R5: 大关卡首通奖励 +10 求贤令
   threeStarBonusMultiplier: 1.5,
   dropTable: [
     { type: "resource", resourceType: "grain", minAmount: 120, maxAmount: 220, probability: 0.8 },
@@ -8186,7 +12877,8 @@ const ch4_stage1 = {
   },
   baseRewards: { grain: 500, gold: 300 },
   baseExp: 500,
-  firstClearRewards: { grain: 1200, gold: 800 },
+  firstClearRewards: { grain: 1200, gold: 800, recruitToken: 10 },
+  // R5: 大关卡首通奖励 +10 求贤令
   firstClearExp: 1500,
   threeStarBonusMultiplier: 1.5,
   dropTable: [
@@ -8347,7 +13039,8 @@ const ch5_stage1 = {
   },
   baseRewards: { grain: 800, gold: 500 },
   baseExp: 1e3,
-  firstClearRewards: { grain: 2e3, gold: 1200 },
+  firstClearRewards: { grain: 2e3, gold: 1200, recruitToken: 10 },
+  // R5: 大关卡首通奖励 +10 求贤令
   firstClearExp: 3e3,
   threeStarBonusMultiplier: 1.5,
   dropTable: [
@@ -8510,7 +13203,8 @@ const ch6_stage1 = {
   },
   baseRewards: { grain: 1500, gold: 1e3 },
   baseExp: 2e3,
-  firstClearRewards: { grain: 4e3, gold: 2500 },
+  firstClearRewards: { grain: 4e3, gold: 2500, recruitToken: 10 },
+  // R5: 大关卡首通奖励 +10 求贤令
   firstClearExp: 6e3,
   threeStarBonusMultiplier: 1.5,
   dropTable: [
@@ -9112,13 +13806,13 @@ class AutoPushExecutor {
   }
 }
 const DEFAULT_SWEEP_CONFIG = {
-  dailyTicketReward: 5,
+  dailyTicketReward: 3,
   sweepCostPerRun: 1,
   maxSweepCount: 10,
-  autoPushMaxAttempts: 50
+  autoPushMaxAttempts: 3
 };
-const SAVE_VERSION$1 = 1;
-function getTodayString(now = Date.now()) {
+const SAVE_VERSION$4 = 1;
+function getTodayString$2(now = Date.now()) {
   const d = new Date(now);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -9227,7 +13921,7 @@ class SweepSystem {
    * @returns 领取到的数量，已领取返回0
    */
   claimDailyTickets(now = Date.now()) {
-    const today = getTodayString(now);
+    const today = getTodayString$2(now);
     if (this.lastDailyTicketDate !== today) {
       this.dailyTicketClaimed = false;
       this.lastDailyTicketDate = today;
@@ -9313,16 +14007,16 @@ class SweepSystem {
   // ─────────────────────────────────────────────
   serialize() {
     return {
-      version: SAVE_VERSION$1,
+      version: SAVE_VERSION$4,
       ticketCount: this.ticketCount,
       dailyTicketClaimed: this.dailyTicketClaimed,
       lastDailyTicketDate: this.lastDailyTicketDate
     };
   }
   deserialize(data) {
-    if (data.version !== SAVE_VERSION$1) {
+    if (data.version !== SAVE_VERSION$4) {
       throw new Error(
-        `[SweepSystem] 存档版本不兼容: 期望 ${SAVE_VERSION$1}, 实际 ${data.version}`
+        `[SweepSystem] 存档版本不兼容: 期望 ${SAVE_VERSION$4}, 实际 ${data.version}`
       );
     }
     this.ticketCount = data.ticketCount;
@@ -9352,6 +14046,589 @@ class SweepSystem {
       ticketsUsed: 0,
       failureReason: reason
     };
+  }
+}
+const VIP_LEVEL_TABLE = [
+  { level: 0, requiredExp: 0, privileges: [] },
+  { level: 1, requiredExp: 100, privileges: ["extra_sweep_ticket_1"] },
+  { level: 2, requiredExp: 300, privileges: ["offline_hours_2"] },
+  { level: 3, requiredExp: 600, privileges: ["speed_3x"] },
+  { level: 4, requiredExp: 1e3, privileges: ["extra_sweep_ticket_2"] },
+  { level: 5, requiredExp: 1500, privileges: ["speed_instant", "free_sweep"] },
+  { level: 6, requiredExp: 2500, privileges: ["offline_hours_4"] }
+];
+const FREE_SWEEP_DAILY_LIMIT = 3;
+const SAVE_VERSION$3 = 1;
+function getTodayString$1(now = Date.now()) {
+  const d = new Date(now);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function calcLevelFromExp(exp) {
+  let level = 0;
+  for (const cfg of VIP_LEVEL_TABLE) {
+    if (exp >= cfg.requiredExp) level = cfg.level;
+    else break;
+  }
+  return level;
+}
+class VIPSystem {
+  constructor() {
+    __publicField(this, "name", "vipSystem");
+    __publicField(this, "sysDeps", null);
+    /** VIP经验（累计值，不消耗） */
+    __publicField(this, "vipExp");
+    /** 今日已使用免费扫荡次数 */
+    __publicField(this, "freeSweepUsedToday");
+    /** 上次重置免费扫荡的日期 */
+    __publicField(this, "lastFreeSweepResetDate");
+    /** GM模式标记 */
+    __publicField(this, "gmMode");
+    /** GM临时等级 */
+    __publicField(this, "gmLevel");
+    this.vipExp = 0;
+    this.freeSweepUsedToday = 0;
+    this.lastFreeSweepResetDate = null;
+    this.gmMode = false;
+    this.gmLevel = null;
+  }
+  // ── ISubsystem 接口 ──
+  init(deps) {
+    this.sysDeps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return {
+      vipExp: this.vipExp,
+      vipLevel: this.getEffectiveLevel(),
+      freeSweepUsedToday: this.freeSweepUsedToday,
+      lastFreeSweepResetDate: this.lastFreeSweepResetDate,
+      gmMode: this.gmMode,
+      gmLevel: this.gmLevel
+    };
+  }
+  reset() {
+    this.vipExp = 0;
+    this.freeSweepUsedToday = 0;
+    this.lastFreeSweepResetDate = null;
+    this.gmMode = false;
+    this.gmLevel = null;
+  }
+  // ── 经验与等级 ──
+  /**
+   * 增加VIP经验（充值/活动/成就奖励）
+   * 1元 = 10 VIP经验
+   */
+  addExp(amount) {
+    if (amount <= 0) return;
+    this.vipExp += amount;
+  }
+  /** 获取当前VIP经验 */
+  getExp() {
+    return this.vipExp;
+  }
+  /** 获取基础VIP等级（基于经验） */
+  getBaseLevel() {
+    return calcLevelFromExp(this.vipExp);
+  }
+  /** 获取有效VIP等级（GM模式下可覆盖） */
+  getEffectiveLevel() {
+    if (this.gmMode && this.gmLevel !== null) return this.gmLevel;
+    return this.getBaseLevel();
+  }
+  /** 获取下一等级所需经验，满级返回null */
+  getNextLevelExp() {
+    const currentLevel = this.getBaseLevel();
+    const nextLevel = VIP_LEVEL_TABLE.find((c) => c.level === currentLevel + 1);
+    return nextLevel ? nextLevel.requiredExp : null;
+  }
+  /** 获取当前等级的进度百分比 (0~1) */
+  getLevelProgress() {
+    const level = this.getBaseLevel();
+    const current = VIP_LEVEL_TABLE.find((c) => c.level === level);
+    const next = VIP_LEVEL_TABLE.find((c) => c.level === level + 1);
+    if (!next) return 1;
+    const range = next.requiredExp - current.requiredExp;
+    const progress = this.vipExp - current.requiredExp;
+    return Math.min(1, Math.max(0, progress / range));
+  }
+  // ── 特权校验 ──
+  /** 检查是否拥有某项特权 */
+  hasPrivilege(privilege) {
+    const level = this.getEffectiveLevel();
+    for (const cfg of VIP_LEVEL_TABLE) {
+      if (cfg.privileges.includes(privilege) && level >= cfg.level) {
+        return true;
+      }
+    }
+    return false;
+  }
+  /** 检查是否可以使用3×倍速 (VIP3+) */
+  canUseSpeed3x() {
+    return this.hasPrivilege("speed_3x");
+  }
+  /** 检查是否可以使用极速模式 (VIP5+) */
+  canUseSpeedInstant() {
+    return this.hasPrivilege("speed_instant");
+  }
+  /** 检查是否可以使用免费扫荡 (VIP5+) */
+  canUseFreeSweep() {
+    return this.hasPrivilege("free_sweep");
+  }
+  /** 获取每日额外扫荡令数量 */
+  getExtraDailyTickets() {
+    let extra = 0;
+    if (this.hasPrivilege("extra_sweep_ticket_1")) extra += 1;
+    if (this.hasPrivilege("extra_sweep_ticket_2")) extra += 2;
+    return extra;
+  }
+  /** 获取离线挂机时长加成（小时） */
+  getOfflineHoursBonus() {
+    let bonus = 0;
+    if (this.hasPrivilege("offline_hours_2")) bonus += 2;
+    if (this.hasPrivilege("offline_hours_4")) bonus += 4;
+    return bonus;
+  }
+  /** 获取离线挂机总上限（基础12小时 + VIP加成） */
+  getOfflineHoursLimit() {
+    return 12 + this.getOfflineHoursBonus();
+  }
+  // ── 免费扫荡 ──
+  /** 获取今日剩余免费扫荡次数 */
+  getFreeSweepRemaining(now = Date.now()) {
+    this.resetDailyIfNeeded(now);
+    if (!this.canUseFreeSweep()) return 0;
+    return Math.max(0, FREE_SWEEP_DAILY_LIMIT - this.freeSweepUsedToday);
+  }
+  /** 使用一次免费扫荡 */
+  useFreeSweep(now = Date.now()) {
+    this.resetDailyIfNeeded(now);
+    if (!this.canUseFreeSweep()) return false;
+    if (this.freeSweepUsedToday >= FREE_SWEEP_DAILY_LIMIT) return false;
+    this.freeSweepUsedToday++;
+    return true;
+  }
+  /** 每日重置免费扫荡计数 */
+  resetDailyIfNeeded(now = Date.now()) {
+    const today = getTodayString$1(now);
+    if (this.lastFreeSweepResetDate !== today) {
+      this.freeSweepUsedToday = 0;
+      this.lastFreeSweepResetDate = today;
+    }
+  }
+  // ── GM命令（测试用） ──
+  /**
+   * GM命令：设置VIP等级（仅测试环境）
+   * /setvip <level>
+   */
+  gmSetLevel(level) {
+    if (level < 0) level = 0;
+    if (level > 6) level = 6;
+    this.gmMode = true;
+    this.gmLevel = level;
+  }
+  /**
+   * GM命令：重置VIP等级为真实等级
+   * /resetvip
+   */
+  gmResetLevel() {
+    this.gmMode = false;
+    this.gmLevel = null;
+  }
+  /** 检查是否处于GM模式 */
+  isGMMode() {
+    return this.gmMode;
+  }
+  // ── 存档 ──
+  /** 序列化为存档数据 */
+  serialize() {
+    return {
+      version: SAVE_VERSION$3,
+      vipExp: this.vipExp,
+      freeSweepUsedToday: this.freeSweepUsedToday,
+      lastFreeSweepResetDate: this.lastFreeSweepResetDate
+    };
+  }
+  /** 从存档数据恢复 */
+  deserialize(data) {
+    if (!data || data.version !== SAVE_VERSION$3) return;
+    this.vipExp = data.vipExp;
+    this.freeSweepUsedToday = data.freeSweepUsedToday;
+    this.lastFreeSweepResetDate = data.lastFreeSweepResetDate;
+    this.gmMode = false;
+    this.gmLevel = null;
+  }
+  // ── 查询 ──
+  /** 获取VIP等级配置表 */
+  static getLevelTable() {
+    return VIP_LEVEL_TABLE;
+  }
+  /** 获取指定等级的配置 */
+  static getLevelConfig(level) {
+    return VIP_LEVEL_TABLE.find((c) => c.level === level);
+  }
+}
+const DEFAULT_CHALLENGE_STAGES = [
+  {
+    id: "challenge_1",
+    name: "烽火台·壹",
+    armyCost: 200,
+    staminaCost: 12,
+    firstClearBonus: [{ type: "mandate", amount: 50 }, { type: "fragment_zhangjiao", amount: 5 }],
+    rewards: [
+      { type: "grain", amount: 500 },
+      { type: "gold", amount: 300 },
+      { type: "exp_book_small", amount: 2 }
+    ],
+    randomDrops: [
+      { type: "fragment_guanyu", amount: 1, probability: 0.15 },
+      { type: "tiger_tally", amount: 1, probability: 0.3 }
+    ]
+  },
+  {
+    id: "challenge_2",
+    name: "烽火台·贰",
+    armyCost: 300,
+    staminaCost: 14,
+    firstClearBonus: [{ type: "mandate", amount: 50 }, { type: "fragment_dongzhuo", amount: 5 }],
+    rewards: [
+      { type: "grain", amount: 800 },
+      { type: "gold", amount: 500 },
+      { type: "exp_book_medium", amount: 1 }
+    ],
+    randomDrops: [
+      { type: "fragment_zhaoyun", amount: 1, probability: 0.12 },
+      { type: "tiger_tally", amount: 2, probability: 0.25 }
+    ]
+  },
+  {
+    id: "challenge_3",
+    name: "烽火台·叁",
+    armyCost: 400,
+    staminaCost: 16,
+    firstClearBonus: [{ type: "mandate", amount: 50 }, { type: "fragment_caocao", amount: 5 }],
+    rewards: [
+      { type: "grain", amount: 1200 },
+      { type: "gold", amount: 800 },
+      { type: "exp_book_medium", amount: 2 }
+    ],
+    randomDrops: [
+      { type: "fragment_zhugeliang", amount: 1, probability: 0.1 },
+      { type: "war_script", amount: 1, probability: 0.2 }
+    ]
+  },
+  {
+    id: "challenge_4",
+    name: "烽火台·肆",
+    armyCost: 500,
+    staminaCost: 16,
+    firstClearBonus: [{ type: "mandate", amount: 50 }, { type: "fragment_zhouyu", amount: 5 }],
+    rewards: [
+      { type: "grain", amount: 1500 },
+      { type: "gold", amount: 1e3 },
+      { type: "exp_book_large", amount: 1 }
+    ],
+    randomDrops: [
+      { type: "fragment_sunquan", amount: 1, probability: 0.1 },
+      { type: "forge_stone", amount: 1, probability: 0.25 }
+    ]
+  },
+  {
+    id: "challenge_5",
+    name: "烽火台·伍",
+    armyCost: 600,
+    staminaCost: 18,
+    firstClearBonus: [{ type: "mandate", amount: 50 }, { type: "fragment_liubei", amount: 5 }],
+    rewards: [
+      { type: "grain", amount: 2e3 },
+      { type: "gold", amount: 1500 },
+      { type: "exp_book_large", amount: 2 }
+    ],
+    randomDrops: [
+      { type: "fragment_simayi", amount: 1, probability: 0.08 },
+      { type: "forge_stone", amount: 2, probability: 0.2 }
+    ]
+  },
+  {
+    id: "challenge_6",
+    name: "烽火台·陆",
+    armyCost: 700,
+    staminaCost: 18,
+    firstClearBonus: [{ type: "mandate", amount: 50 }, { type: "fragment_lvbu", amount: 3 }],
+    rewards: [
+      { type: "grain", amount: 2500 },
+      { type: "gold", amount: 2e3 },
+      { type: "exp_book_large", amount: 2 }
+    ],
+    randomDrops: [
+      { type: "fragment_lvbu", amount: 1, probability: 0.06 },
+      { type: "war_script", amount: 2, probability: 0.15 }
+    ]
+  },
+  {
+    id: "challenge_7",
+    name: "烽火台·柒",
+    armyCost: 800,
+    staminaCost: 20,
+    firstClearBonus: [{ type: "mandate", amount: 100 }, { type: "fragment_guanyu", amount: 5 }],
+    rewards: [
+      { type: "grain", amount: 3e3 },
+      { type: "gold", amount: 2500 },
+      { type: "exp_book_large", amount: 3 }
+    ],
+    randomDrops: [
+      { type: "fragment_guanyu", amount: 1, probability: 0.08 },
+      { type: "tiger_tally", amount: 3, probability: 0.2 }
+    ]
+  },
+  {
+    id: "challenge_8",
+    name: "烽火台·捌",
+    armyCost: 1e3,
+    staminaCost: 20,
+    firstClearBonus: [{ type: "mandate", amount: 100 }, { type: "fragment_zhugeliang", amount: 5 }],
+    rewards: [
+      { type: "grain", amount: 5e3 },
+      { type: "gold", amount: 4e3 },
+      { type: "exp_book_large", amount: 5 }
+    ],
+    randomDrops: [
+      { type: "fragment_zhugeliang", amount: 1, probability: 0.06 },
+      { type: "forge_stone", amount: 3, probability: 0.15 }
+    ]
+  }
+];
+const DAILY_CHALLENGE_LIMIT = 3;
+const SAVE_VERSION$2 = 1;
+function getTodayString(now = Date.now()) {
+  const d = new Date(now);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+class ChallengeStageSystem {
+  constructor(deps, stages, rng) {
+    __publicField(this, "name", "challengeStageSystem");
+    __publicField(this, "sysDeps", null);
+    __publicField(this, "stages");
+    __publicField(this, "deps");
+    __publicField(this, "rng");
+    /** 各关卡进度 */
+    __publicField(this, "stageProgress");
+    /** 上次重置日期 */
+    __publicField(this, "lastResetDate");
+    /** 当前预锁的资源 { stageId: { army, stamina } } */
+    __publicField(this, "preLockedResources");
+    this.deps = deps;
+    this.stages = stages ?? DEFAULT_CHALLENGE_STAGES;
+    this.rng = rng ?? Math.random;
+    this.stageProgress = {};
+    this.lastResetDate = null;
+    this.preLockedResources = {};
+    for (const stage of this.stages) {
+      this.stageProgress[stage.id] = {
+        stageId: stage.id,
+        firstCleared: false,
+        dailyAttempts: 0
+      };
+    }
+  }
+  // ── ISubsystem 接口 ──
+  init(deps) {
+    this.sysDeps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return {
+      stageProgress: { ...this.stageProgress },
+      lastResetDate: this.lastResetDate
+    };
+  }
+  reset() {
+    this.stageProgress = {};
+    this.lastResetDate = null;
+    this.preLockedResources = {};
+    for (const stage of this.stages) {
+      this.stageProgress[stage.id] = {
+        stageId: stage.id,
+        firstCleared: false,
+        dailyAttempts: 0
+      };
+    }
+  }
+  // ── 每日重置 ──
+  /** 检查并执行每日重置 */
+  resetDailyIfNeeded(now = Date.now()) {
+    const today = getTodayString(now);
+    if (this.lastResetDate !== today) {
+      for (const id of Object.keys(this.stageProgress)) {
+        this.stageProgress[id].dailyAttempts = 0;
+      }
+      this.lastResetDate = today;
+    }
+  }
+  // ── 查询 ──
+  /** 获取所有挑战关卡配置 */
+  getStageConfigs() {
+    return this.stages;
+  }
+  /** 获取指定关卡配置 */
+  getStageConfig(stageId) {
+    return this.stages.find((s) => s.id === stageId);
+  }
+  /** 获取关卡进度 */
+  getStageProgress(stageId) {
+    return this.stageProgress[stageId];
+  }
+  /** 获取今日已挑战次数 */
+  getDailyAttempts(stageId, now = Date.now()) {
+    var _a;
+    this.resetDailyIfNeeded(now);
+    return ((_a = this.stageProgress[stageId]) == null ? void 0 : _a.dailyAttempts) ?? 0;
+  }
+  /** 获取今日剩余挑战次数 */
+  getDailyRemaining(stageId, now = Date.now()) {
+    this.resetDailyIfNeeded(now);
+    return Math.max(0, DAILY_CHALLENGE_LIMIT - this.getDailyAttempts(stageId, now));
+  }
+  /** 是否已首通 */
+  isFirstCleared(stageId) {
+    var _a;
+    return ((_a = this.stageProgress[stageId]) == null ? void 0 : _a.firstCleared) ?? false;
+  }
+  // ── 前置校验 ──
+  /**
+   * 检查是否可以挑战指定关卡
+   * 校验：兵力 ≥ 消耗 AND 每日次数未满 AND 体力 ≥ 消耗
+   */
+  checkCanChallenge(stageId, now = Date.now()) {
+    this.resetDailyIfNeeded(now);
+    const reasons = [];
+    const config = this.getStageConfig(stageId);
+    if (!config) {
+      return { canChallenge: false, reasons: ["关卡不存在"] };
+    }
+    const attempts = this.getDailyAttempts(stageId, now);
+    if (attempts >= DAILY_CHALLENGE_LIMIT) {
+      reasons.push("今日挑战次数已用完");
+    }
+    const armyAmount = this.deps.getResourceAmount("troops");
+    if (armyAmount < config.armyCost) {
+      reasons.push(`兵力不足（需要${config.armyCost}，当前${armyAmount}）`);
+    }
+    const mandateAmount = this.deps.getResourceAmount("mandate");
+    if (mandateAmount < config.staminaCost) {
+      reasons.push(`天命不足（需要${config.staminaCost}，当前${mandateAmount}）`);
+    }
+    return { canChallenge: reasons.length === 0, reasons };
+  }
+  // ── 资源预锁 ──
+  /**
+   * 预锁资源（出征确认时）
+   * 不实际扣减但冻结资源，战斗结束后确认扣减
+   */
+  preLockResources(stageId) {
+    const config = this.getStageConfig(stageId);
+    if (!config) return false;
+    const check = this.checkCanChallenge(stageId);
+    if (!check.canChallenge) return false;
+    if (this.preLockedResources[stageId]) return false;
+    const armyOk = this.deps.consumeResource("troops", config.armyCost);
+    const mandateOk = this.deps.consumeResource("mandate", config.staminaCost);
+    if (!armyOk || !mandateOk) {
+      if (armyOk) this.deps.addResource("troops", config.armyCost);
+      if (mandateOk) this.deps.addResource("mandate", config.staminaCost);
+      return false;
+    }
+    this.preLockedResources[stageId] = {
+      army: config.armyCost,
+      stamina: config.staminaCost
+    };
+    return true;
+  }
+  // ── 挑战完成 ──
+  /**
+   * 完成挑战关卡
+   * @param stageId 关卡ID
+   * @param victory 是否胜利
+   * @returns 挑战结果
+   */
+  completeChallenge(stageId, victory) {
+    const config = this.getStageConfig(stageId);
+    if (!config) {
+      return { victory: false, rewards: [], firstClear: false, armyCost: 0, staminaCost: 0 };
+    }
+    const preLocked = this.preLockedResources[stageId];
+    const armyCost = (preLocked == null ? void 0 : preLocked.army) ?? 0;
+    const staminaCost = (preLocked == null ? void 0 : preLocked.stamina) ?? 0;
+    delete this.preLockedResources[stageId];
+    if (victory) {
+      const progress = this.stageProgress[stageId];
+      const firstClear = !progress.firstCleared;
+      if (progress) {
+        progress.firstCleared = true;
+        progress.dailyAttempts++;
+      }
+      const rewards = this.calculateRewards(config, firstClear);
+      for (const reward of rewards) {
+        if (reward.type.startsWith("fragment_")) {
+          const heroId = reward.type.replace("fragment_", "");
+          this.deps.addFragment(heroId, reward.amount);
+        } else {
+          this.deps.addResource(reward.type, reward.amount);
+        }
+      }
+      const baseExp = 100 * 1.5;
+      this.deps.addExp(Math.floor(baseExp));
+      return { victory: true, rewards, firstClear, armyCost, staminaCost };
+    } else {
+      if (preLocked) {
+        this.deps.addResource("troops", preLocked.army);
+        this.deps.addResource("mandate", preLocked.stamina);
+      }
+      return { victory: false, rewards: [], firstClear: false, armyCost: 0, staminaCost: 0 };
+    }
+  }
+  /**
+   * 计算挑战奖励
+   */
+  calculateRewards(config, firstClear) {
+    const rewards = [];
+    for (const r of config.rewards) {
+      rewards.push({ ...r });
+    }
+    for (const drop of config.randomDrops) {
+      if (this.rng() < drop.probability) {
+        rewards.push({ type: drop.type, amount: drop.amount });
+      }
+    }
+    if (firstClear) {
+      for (const r of config.firstClearBonus) {
+        rewards.push({ ...r });
+      }
+    }
+    return rewards;
+  }
+  // ── 存档 ──
+  /** 序列化 */
+  serialize() {
+    return {
+      version: SAVE_VERSION$2,
+      stageProgress: { ...this.stageProgress },
+      lastResetDate: this.lastResetDate
+    };
+  }
+  /** 反序列化 */
+  deserialize(data) {
+    if (!data || data.version !== SAVE_VERSION$2) return;
+    this.stageProgress = { ...data.stageProgress };
+    this.lastResetDate = data.lastResetDate;
+    this.preLockedResources = {};
   }
 }
 function checkBuildingUpgrade(ctx, type) {
@@ -11846,7 +17123,7 @@ const DEFAULT_LANDMARKS = [
   { id: "city-chaisang", type: "city", name: "柴桑", level: 3, ownership: "neutral", icon: "🏰", productionMultiplier: 1.5, defenseValue: 60 },
   { id: "city-lujiang", type: "city", name: "庐江", level: 3, ownership: "neutral", icon: "🏰", productionMultiplier: 1.5, defenseValue: 60 },
   // ── 中立领土 ──
-  { id: "city-luoyang", type: "city", name: "洛阳", level: 5, ownership: "neutral", icon: "🏰", productionMultiplier: 2, defenseValue: 100 },
+  { id: "city-luoyang", type: "city", name: "洛阳", level: 5, ownership: "player", icon: "🏰", productionMultiplier: 2, defenseValue: 100 },
   { id: "city-changan", type: "city", name: "长安", level: 5, ownership: "neutral", icon: "🏰", productionMultiplier: 2, defenseValue: 100 },
   { id: "city-xiangyang", type: "city", name: "襄阳", level: 4, ownership: "neutral", icon: "🏰", productionMultiplier: 1.8, defenseValue: 80 },
   // ── 关卡 ──
@@ -12647,6 +17924,7 @@ const TROOP_COST_FACTOR = 1;
 const GRAIN_FIXED_COST = 500;
 const DAILY_SIEGE_LIMIT = 3;
 const SIEGE_SAVE_VERSION = 1;
+const CAPTURE_COOLDOWN_MS = 24 * 60 * 60 * 1e3;
 class SiegeSystem {
   constructor() {
     __publicField(this, "name", "siege");
@@ -12657,6 +17935,13 @@ class SiegeSystem {
     __publicField(this, "defeats", 0);
     /** 今日已攻城次数 */
     __publicField(this, "dailySiegeCount", 0);
+    /** 最后攻城日期（YYYY-MM-DD），用于跨天重置判断 */
+    __publicField(this, "lastSiegeDate", "");
+    /**
+     * 领土占领时间戳（PRD §7.5: 24h冷却）
+     * key: territoryId, value: 占领时的时间戳(ms)
+     */
+    __publicField(this, "captureTimestamps", /* @__PURE__ */ new Map());
   }
   // ─── ISubsystem 接口 ───────────────────────
   init(deps) {
@@ -12665,8 +17950,25 @@ class SiegeSystem {
     this.totalSieges = 0;
     this.victories = 0;
     this.defeats = 0;
+    this.dailySiegeCount = 0;
+    this.lastSiegeDate = "";
+    this.captureTimestamps.clear();
   }
   update(_dt) {
+    this.checkDailyReset();
+  }
+  /**
+   * 检查并执行每日重置
+   *
+   * 当 lastSiegeDate 与当前日期不同时，重置 dailySiegeCount。
+   * 在 update 中每帧调用（开销极低：一次日期字符串比较）。
+   */
+  checkDailyReset() {
+    const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    if (this.lastSiegeDate && this.lastSiegeDate !== today) {
+      this.dailySiegeCount = 0;
+      this.lastSiegeDate = today;
+    }
   }
   getState() {
     return {
@@ -12681,6 +17983,7 @@ class SiegeSystem {
     this.totalSieges = 0;
     this.victories = 0;
     this.defeats = 0;
+    this.captureTimestamps.clear();
   }
   // ─── 攻城条件校验（#19）──────────────────────
   /**
@@ -12709,6 +18012,15 @@ class SiegeSystem {
     }
     if (this.dailySiegeCount >= DAILY_SIEGE_LIMIT) {
       return { canSiege: false, errorCode: "DAILY_LIMIT_REACHED", errorMessage: `今日攻城次数已用完(${DAILY_SIEGE_LIMIT}次)` };
+    }
+    if (this.isInCaptureCooldown(targetId)) {
+      const remaining = this.getRemainingCooldown(targetId);
+      const hours = Math.ceil(remaining / (60 * 60 * 1e3));
+      return {
+        canSiege: false,
+        errorCode: "CAPTURE_COOLDOWN",
+        errorMessage: `${territory.name} 刚被攻占，${hours}小时后方可被攻击`
+      };
     }
     return { canSiege: true };
   }
@@ -12765,14 +18077,38 @@ class SiegeSystem {
     return this.resolveSiege(targetId, territory, attackerOwner, cost, battleVictory);
   }
   // ─── 战斗模拟 ──────────────────────────────
-  /** 简化版战斗：基于兵力对比和防御加成（概率判定） */
+  /**
+   * 战斗模拟：基于攻防战力对比的概率判定（PRD §7.6 线性比率公式）
+   *
+   * 公式: min(95%, max(5%, (攻方战力/防方战力) × 50%))
+   * 与 SiegeEnhancer.computeWinRate 保持一致
+   *
+   * ⚠️ 战斗判定权归属 SiegeSystem（单一权威源），SiegeEnhancer 应调用此方法
+   */
   simulateBattle(attackerTroops, target) {
     const defenderPower = target.defenseValue;
     const cost = this.calculateSiegeCost(target);
     const effectiveTroops = attackerTroops - cost.troops;
     if (effectiveTroops <= 0) return false;
-    const winRate = effectiveTroops / (effectiveTroops + defenderPower);
+    const winRate = this.computeWinRate(effectiveTroops, defenderPower);
     return Math.random() < winRate;
+  }
+  /**
+   * 核心胜率计算公式（PRD §7.6 线性比率公式）
+   *
+   * 公式: min(95%, max(5%, (attackerPower / defenderPower) × 50%))
+   * - 线性比率，直观易懂
+   * - 攻防相等时胜率 = 50%
+   */
+  computeWinRate(attackerPower, defenderPower) {
+    const WIN_RATE_MIN2 = 0.05;
+    const WIN_RATE_MAX2 = 0.95;
+    const WIN_RATE_BASE2 = 0.5;
+    if (attackerPower <= 0) return WIN_RATE_MIN2;
+    if (defenderPower <= 0) return WIN_RATE_MAX2;
+    const ratio = attackerPower / defenderPower;
+    const rawRate = ratio * WIN_RATE_BASE2;
+    return Math.min(WIN_RATE_MAX2, Math.max(WIN_RATE_MIN2, rawRate));
   }
   // ─── 统计查询 ──────────────────────────────
   getHistory() {
@@ -12798,6 +18134,31 @@ class SiegeSystem {
   /** 重置每日攻城次数（每日刷新调用） */
   resetDailySiegeCount() {
     this.dailySiegeCount = 0;
+    this.lastSiegeDate = "";
+  }
+  // ─── 占领冷却（PRD §7.5）─────────────────────
+  /**
+   * 检查领土是否在占领冷却期内
+   * 攻占后24小时内不可被反攻
+   */
+  isInCaptureCooldown(territoryId) {
+    const timestamp = this.captureTimestamps.get(territoryId);
+    if (!timestamp) return false;
+    return Date.now() - timestamp < CAPTURE_COOLDOWN_MS;
+  }
+  /**
+   * 获取领土冷却剩余时间（毫秒）
+   */
+  getRemainingCooldown(territoryId) {
+    const timestamp = this.captureTimestamps.get(territoryId);
+    if (!timestamp) return 0;
+    return Math.max(0, CAPTURE_COOLDOWN_MS - (Date.now() - timestamp));
+  }
+  /**
+   * 设置领土占领时间戳（供外部或测试调用）
+   */
+  setCaptureTimestamp(territoryId, timestamp) {
+    this.captureTimestamps.set(territoryId, timestamp);
   }
   // ─── 序列化 ────────────────────────────────
   serialize() {
@@ -12805,6 +18166,8 @@ class SiegeSystem {
       totalSieges: this.totalSieges,
       victories: this.victories,
       defeats: this.defeats,
+      dailySiegeCount: this.dailySiegeCount,
+      lastSiegeDate: this.lastSiegeDate,
       version: SIEGE_SAVE_VERSION
     };
   }
@@ -12812,6 +18175,8 @@ class SiegeSystem {
     this.totalSieges = data.totalSieges;
     this.victories = data.victories;
     this.defeats = data.defeats;
+    this.dailySiegeCount = data.dailySiegeCount ?? 0;
+    this.lastSiegeDate = data.lastSiegeDate ?? "";
     this.history = [];
   }
   // ─── 内部方法 ──────────────────────────────
@@ -12828,9 +18193,12 @@ class SiegeSystem {
     };
     this.totalSieges++;
     this.dailySiegeCount++;
+    this.lastSiegeDate = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
     if (victory) {
       this.victories++;
       (_a = this.territorySys) == null ? void 0 : _a.captureTerritory(targetId, attackerOwner);
+      this.captureTimestamps.set(targetId, Date.now());
+      this.autoGarrison(targetId, attackerOwner, cost.troops);
       result.capture = { territoryId: targetId, newOwner: attackerOwner, previousOwner };
       (_b = this.deps) == null ? void 0 : _b.eventBus.emit("siege:victory", {
         territoryId: targetId,
@@ -12862,6 +18230,28 @@ class SiegeSystem {
     } catch {
       return null;
     }
+  }
+  /**
+   * 自动驻防（PRD §7.5: 50%兵力上限）
+   *
+   * 占领成功后自动将50%剩余兵力部署为驻防。
+   * 由于驻防系统基于武将派遣，此处以事件通知上层处理。
+   * 实际兵力扣减由上层消费 siege:autoGarrison 事件完成。
+   *
+   * @param territoryId - 领土ID
+   * @param owner - 占领方
+   * @param troopsUsed - 攻城消耗兵力
+   */
+  autoGarrison(territoryId, owner, troopsUsed) {
+    var _a;
+    const garrisonTroops = Math.floor(troopsUsed * 0.5);
+    if (garrisonTroops <= 0) return;
+    (_a = this.deps) == null ? void 0 : _a.eventBus.emit("siege:autoGarrison", {
+      territoryId,
+      owner,
+      garrisonTroops,
+      timestamp: Date.now()
+    });
   }
 }
 class GarrisonSystem {
@@ -13161,7 +18551,9 @@ class GarrisonSystem {
     }
   }
 }
-const WIN_RATE_EXPONENT = 1.2;
+const WIN_RATE_MIN = 0.05;
+const WIN_RATE_MAX = 0.95;
+const WIN_RATE_BASE = 0.5;
 const BASE_LOSS_RATE = 0.3;
 const ITEM_DROP_TABLE = [
   { item: { itemId: "scroll-attack", itemName: "攻击卷轴", quantity: 1, rarity: "common" }, weight: 40, minLevel: 1 },
@@ -13192,10 +18584,10 @@ class SiegeEnhancer {
   }
   // ─── 胜率预估（#3）──────────────────────────
   /**
-   * 计算胜率预估
+   * 计算胜率预估（PRD §7.6）
    *
    * 公式：
-   *   winRate = attackerPower^α / (attackerPower^α + defenderPower^α)
+   *   winRate = min(95%, max(5%, (攻方战力/防方战力) × 50%))
    *   defenderPower = 基础防御 + 驻防加成
    *   estimatedLossRate = baseLoss × (1 - winRate)
    *
@@ -13234,16 +18626,19 @@ class SiegeEnhancer {
     return basePower * (1 + garrisonDefenseBonus);
   }
   /**
-   * 核心胜率计算公式
+   * 核心胜率计算公式（PRD §7.6）
    *
-   * 使用幂函数变换的比率公式
+   * 公式: min(95%, max(5%, (attackerPower / defenderPower) × 50% + terrainBonus))
+   * - 线性比率，直观易懂
+   * - 攻防相等时胜率 = 50%（无地形修正时）
+   * - 驻防加成已计入 defenderPower，地形修正由外部传入
    */
-  computeWinRate(attackerPower, defenderPower) {
-    if (attackerPower <= 0) return 0;
-    if (defenderPower <= 0) return 1;
-    const a = Math.pow(attackerPower, WIN_RATE_EXPONENT);
-    const d = Math.pow(defenderPower, WIN_RATE_EXPONENT);
-    return a / (a + d);
+  computeWinRate(attackerPower, defenderPower, terrainBonus = 0) {
+    if (attackerPower <= 0) return WIN_RATE_MIN;
+    if (defenderPower <= 0) return WIN_RATE_MAX;
+    const ratio = attackerPower / defenderPower;
+    const rawRate = ratio * WIN_RATE_BASE + terrainBonus;
+    return Math.min(WIN_RATE_MAX, Math.max(WIN_RATE_MIN, rawRate));
   }
   /**
    * 根据胜率获取战斗评级
@@ -13358,12 +18753,13 @@ class SiegeEnhancer {
       };
     }
     const winRateEstimate = this.estimateWinRate(attackerPower, targetId);
+    const battleVictory = this.siegeSys ? this.siegeSys.simulateBattle(availableTroops, territory) : this.determineBattleOutcome(attackerPower, territory);
     const siegeResult = (_c = this.siegeSys) == null ? void 0 : _c.executeSiegeWithResult(
       targetId,
       attackerOwner,
       availableTroops,
       availableGrain,
-      this.determineBattleOutcome(attackerPower, territory)
+      battleVictory
     );
     if (!(siegeResult == null ? void 0 : siegeResult.launched)) {
       return {
@@ -13408,9 +18804,10 @@ class SiegeEnhancer {
     };
   }
   /**
-   * 基于战力对比判定战斗结果
+   * 基于战力对比判定战斗结果（PRD §7.6 线性比率公式）
    *
-   * 使用胜率作为概率阈值
+   * ⚠️ 仅作为 fallback：当 siegeSys 不可用时使用。
+   * 正常流程应通过 SiegeSystem.simulateBattle（单一权威源）
    */
   determineBattleOutcome(attackerPower, territory) {
     const defenderPower = this.calculateDefenderPower(territory);
@@ -13460,13 +18857,320 @@ class SiegeEnhancer {
     }
   }
 }
+const EVENT_TYPE_CONFIGS = [
+  {
+    type: "bandit",
+    name: "流寇入侵",
+    description: "一队流寇出现在你的领土附近，威胁过往商旅。",
+    isCombat: true,
+    choices: ["attack", "negotiate", "ignore"],
+    weight: 25,
+    duration: 72e5,
+    // 2小时
+    attackRewards: [
+      { type: "gold", amount: 500 },
+      { type: "grain", amount: 300 }
+    ],
+    negotiateRewards: [
+      { type: "gold", amount: 200 }
+    ],
+    ignoreRewards: []
+  },
+  {
+    type: "caravan",
+    name: "商队经过",
+    description: "一支商队途经你的领地，是护送还是截获？",
+    isCombat: false,
+    choices: ["attack", "negotiate", "ignore"],
+    weight: 20,
+    duration: 54e5,
+    // 1.5小时
+    attackRewards: [
+      { type: "gold", amount: 800 },
+      { type: "grain", amount: 200 }
+    ],
+    negotiateRewards: [
+      { type: "gold", amount: 400 },
+      { type: "grain", amount: 100 }
+    ],
+    ignoreRewards: []
+  },
+  {
+    type: "disaster",
+    name: "天灾降临",
+    description: "一场自然灾害正在逼近，需要尽快应对。",
+    isCombat: false,
+    choices: ["negotiate", "ignore"],
+    weight: 15,
+    duration: 864e5,
+    // 24小时
+    attackRewards: [],
+    negotiateRewards: [
+      { type: "grain", amount: 500 },
+      { type: "gold", amount: 200 }
+    ],
+    ignoreRewards: []
+  },
+  {
+    type: "ruins",
+    name: "遗迹发现",
+    description: "探险者发现了一处古代遗迹，可能藏有珍宝。",
+    isCombat: false,
+    choices: ["attack", "negotiate", "ignore"],
+    weight: 25,
+    duration: 144e5,
+    // 4小时
+    attackRewards: [
+      { type: "gold", amount: 1e3 },
+      { type: "techPoint", amount: 50 }
+    ],
+    negotiateRewards: [
+      { type: "gold", amount: 500 },
+      { type: "techPoint", amount: 20 }
+    ],
+    ignoreRewards: []
+  },
+  {
+    type: "conflict",
+    name: "阵营冲突",
+    description: "两个阵营在你的边境发生冲突，局势紧张。",
+    isCombat: true,
+    choices: ["attack", "negotiate", "ignore"],
+    weight: 15,
+    duration: 1728e5,
+    // 48小时
+    attackRewards: [
+      { type: "gold", amount: 1500 },
+      { type: "troops", amount: 200 }
+    ],
+    negotiateRewards: [
+      { type: "gold", amount: 600 },
+      { type: "troops", amount: 100 }
+    ],
+    ignoreRewards: []
+  }
+];
+const MAX_ACTIVE_EVENTS = 3;
+const DEFAULT_CHECK_INTERVAL = 36e5;
+const BASE_TRIGGER_CHANCE = 0.1;
+const SAVE_VERSION$1 = 1;
+let eventIdCounter = 0;
+class MapEventSystem {
+  constructor(options) {
+    __publicField(this, "name", "mapEventSystem");
+    __publicField(this, "sysDeps", null);
+    /** 活跃事件列表 */
+    __publicField(this, "activeEvents");
+    /** 已解决事件计数 */
+    __publicField(this, "resolvedCount");
+    /** 上次检查时间 */
+    __publicField(this, "lastCheckTime");
+    /** 随机数生成器 */
+    __publicField(this, "rng");
+    /** 检查间隔(ms) */
+    __publicField(this, "checkInterval");
+    this.activeEvents = [];
+    this.resolvedCount = 0;
+    this.lastCheckTime = 0;
+    this.rng = (options == null ? void 0 : options.rng) ?? Math.random;
+    this.checkInterval = (options == null ? void 0 : options.checkInterval) ?? DEFAULT_CHECK_INTERVAL;
+  }
+  // ── ISubsystem 接口 ──
+  init(deps) {
+    this.sysDeps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return {
+      activeEvents: [...this.activeEvents],
+      resolvedCount: this.resolvedCount,
+      lastCheckTime: this.lastCheckTime
+    };
+  }
+  reset() {
+    this.activeEvents = [];
+    this.resolvedCount = 0;
+    this.lastCheckTime = 0;
+    eventIdCounter = 0;
+  }
+  // ── 事件触发 ──
+  /**
+   * 检查并触发新事件
+   * 每个检查间隔有10%概率触发一个新事件
+   * @param now 当前时间戳
+   * @returns 新触发的事件，或null
+   */
+  checkAndTrigger(now) {
+    this.cleanExpiredEvents(now);
+    if (this.activeEvents.length >= MAX_ACTIVE_EVENTS) {
+      return null;
+    }
+    if (this.lastCheckTime > 0 && now - this.lastCheckTime < this.checkInterval) {
+      return null;
+    }
+    this.lastCheckTime = now;
+    if (this.rng() > BASE_TRIGGER_CHANCE) {
+      return null;
+    }
+    return this.createRandomEvent(now);
+  }
+  /**
+   * 强制触发一个指定类型的事件（测试用）
+   */
+  forceTrigger(eventType, now = Date.now()) {
+    const config = EVENT_TYPE_CONFIGS.find((c) => c.type === eventType);
+    if (!config) throw new Error(`Unknown event type: ${eventType}`);
+    return this.createEvent(config, now);
+  }
+  /**
+   * 创建随机事件
+   */
+  createRandomEvent(now) {
+    const totalWeight = EVENT_TYPE_CONFIGS.reduce((sum, c) => sum + c.weight, 0);
+    let roll = this.rng() * totalWeight;
+    let selectedConfig = EVENT_TYPE_CONFIGS[0];
+    for (const config of EVENT_TYPE_CONFIGS) {
+      roll -= config.weight;
+      if (roll <= 0) {
+        selectedConfig = config;
+        break;
+      }
+    }
+    return this.createEvent(selectedConfig, now);
+  }
+  /**
+   * 创建指定类型的事件实例
+   */
+  createEvent(config, now) {
+    eventIdCounter++;
+    const event = {
+      id: `map_event_${eventIdCounter}`,
+      eventType: config.type,
+      name: config.name,
+      description: config.description,
+      status: "active",
+      choices: [...config.choices],
+      isCombat: config.isCombat,
+      createdAt: now,
+      expiresAt: config.duration > 0 ? now + config.duration : null,
+      position: null
+    };
+    this.activeEvents.push(event);
+    return event;
+  }
+  // ── 事件查询 ──
+  /** 获取所有活跃事件 */
+  getActiveEvents() {
+    return [...this.activeEvents];
+  }
+  /** 获取活跃事件数量 */
+  getActiveEventCount() {
+    return this.activeEvents.length;
+  }
+  /** 根据ID获取事件 */
+  getEventById(id) {
+    return this.activeEvents.find((e) => e.id === id);
+  }
+  /** 按类型过滤活跃事件 */
+  getEventsByType(type) {
+    return this.activeEvents.filter((e) => e.eventType === type);
+  }
+  /** 获取已解决事件总数 */
+  getResolvedCount() {
+    return this.resolvedCount;
+  }
+  /** 获取事件类型配置表 */
+  static getEventTypeConfigs() {
+    return EVENT_TYPE_CONFIGS;
+  }
+  // ── 事件解决 ──
+  /**
+   * 解决事件
+   * @param eventId 事件ID
+   * @param choice 选择分支
+   * @returns 解决结果
+   */
+  resolveEvent(eventId, choice) {
+    const eventIndex = this.activeEvents.findIndex((e) => e.id === eventId);
+    if (eventIndex === -1) {
+      return {
+        eventId,
+        choice,
+        success: false,
+        rewards: [],
+        triggeredBattle: false
+      };
+    }
+    const event = this.activeEvents[eventIndex];
+    const config = EVENT_TYPE_CONFIGS.find((c) => c.type === event.eventType);
+    this.activeEvents.splice(eventIndex, 1);
+    this.resolvedCount++;
+    let rewards = [];
+    let triggeredBattle = false;
+    if (config) {
+      switch (choice) {
+        case "attack":
+          rewards = [...config.attackRewards];
+          triggeredBattle = event.isCombat;
+          break;
+        case "negotiate":
+          rewards = [...config.negotiateRewards];
+          break;
+        case "ignore":
+          rewards = [...config.ignoreRewards];
+          break;
+      }
+    }
+    return {
+      eventId,
+      choice,
+      success: true,
+      rewards,
+      triggeredBattle
+    };
+  }
+  // ── 过期处理 ──
+  /**
+   * 清理过期事件
+   * 过期事件自动消失，无惩罚
+   */
+  cleanExpiredEvents(now) {
+    const before = this.activeEvents.length;
+    this.activeEvents = this.activeEvents.filter((e) => {
+      if (e.expiresAt !== null && now >= e.expiresAt) {
+        return false;
+      }
+      return true;
+    });
+    return before - this.activeEvents.length;
+  }
+  // ── 存档 ──
+  /** 序列化 */
+  serialize() {
+    return {
+      version: SAVE_VERSION$1,
+      activeEvents: [...this.activeEvents],
+      resolvedCount: this.resolvedCount,
+      lastCheckTime: this.lastCheckTime
+    };
+  }
+  /** 反序列化 */
+  deserialize(data) {
+    if (!data || data.version !== SAVE_VERSION$1) return;
+    this.activeEvents = [...data.activeEvents];
+    this.resolvedCount = data.resolvedCount;
+    this.lastCheckTime = data.lastCheckTime;
+  }
+}
 function createMapSystems() {
   const worldMap = new WorldMapSystem();
   const territory = new TerritorySystem();
   const siege = new SiegeSystem();
   const garrison = new GarrisonSystem();
   const siegeEnhancer = new SiegeEnhancer();
-  return { worldMap, territory, siege, garrison, siegeEnhancer };
+  const mapEvent = new MapEventSystem();
+  return { worldMap, territory, siege, garrison, siegeEnhancer, mapEvent };
 }
 function initMapSystems(systems, deps) {
   systems.worldMap.init(deps);
@@ -13474,6 +19178,7 @@ function initMapSystems(systems, deps) {
   systems.garrison.init(deps);
   systems.siege.init(deps);
   systems.siegeEnhancer.init(deps);
+  systems.mapEvent.init(deps);
 }
 const DEFAULT_EVENT_TRIGGER_CONFIG = {
   randomEventProbability: 0.3,
@@ -16481,7 +22186,7 @@ const COPPER_RATES = {
 const CUR_LABELS = {
   copper: "铜钱",
   mandate: "天命",
-  recruit: "招贤榜",
+  recruit: "招贤令",
   summon: "求贤令",
   expedition: "远征币",
   guild: "公会币",
@@ -16633,7 +22338,11 @@ class ShopSystem {
     if (item.lifetimeLimit !== -1 && item.lifetimePurchased + quantity > item.lifetimeLimit) errors.push(`终身限购 ${item.lifetimeLimit}，已购 ${item.lifetimePurchased}`);
     const finalPrice = this.calculateFinalPrice(goodsId, shopType, npcId);
     if (this.currencySystem) {
-      const check = this.currencySystem.checkAffordability(finalPrice);
+      const totalCost = {};
+      for (const [cur, price] of Object.entries(finalPrice)) {
+        totalCost[cur] = price * quantity;
+      }
+      const check = this.currencySystem.checkAffordability(totalCost);
       if (!check.canAfford) {
         for (const s of check.shortages) errors.push(`${CUR_LABELS[s.currency]}不足：需要 ${s.required}，缺少 ${s.gap}`);
       }
@@ -16647,8 +22356,12 @@ class ShopSystem {
     if (!validation.canBuy) return { success: false, reason: validation.errors.join("; "), confirmLevel: validation.confirmLevel };
     const { goodsId, quantity, shopType } = request;
     if (this.currencySystem) {
+      const totalCost = {};
+      for (const [cur, price] of Object.entries(validation.finalPrice)) {
+        totalCost[cur] = price * quantity;
+      }
       try {
-        this.currencySystem.spendByPriority(shopType, validation.finalPrice);
+        this.currencySystem.spendByPriority(shopType, totalCost);
       } catch (e) {
         return { success: false, reason: e.message, confirmLevel: validation.confirmLevel };
       }
@@ -16663,7 +22376,11 @@ class ShopSystem {
       (_b = (_a = this.deps) == null ? void 0 : _a.eventBus) == null ? void 0 : _b.emit("shop:goods_purchased", { goodsId, quantity, shopType, cost: validation.finalPrice });
     } catch {
     }
-    return { success: true, goodsId, quantity, cost: validation.finalPrice, confirmLevel: validation.confirmLevel };
+    const totalCostResult = {};
+    for (const [cur, price] of Object.entries(validation.finalPrice)) {
+      totalCostResult[cur] = price * quantity;
+    }
+    return { success: true, goodsId, quantity, cost: totalCostResult, confirmLevel: validation.confirmLevel };
   }
   // ─── 4. 库存与限购（#9）────────────────────
   getStockInfo(shopType, defId) {
@@ -16774,7 +22491,7 @@ const CURRENCY_TYPES = [
 const CURRENCY_LABELS = {
   copper: "铜钱",
   mandate: "天命",
-  recruit: "招贤榜",
+  recruit: "招贤令",
   summon: "求贤令",
   expedition: "远征币",
   guild: "公会币",
@@ -17743,13 +23460,13 @@ const AFFINITY_LEVEL_EFFECTS = {
   }
 };
 const DEFAULT_AFFINITY_GAIN_CONFIG = {
-  dialogBase: 3,
-  giftPreferredMultiplier: 2,
+  dialogBase: 5,
+  giftPreferredMultiplier: 1.5,
   giftNormalMultiplier: 1,
   questComplete: 15,
   tradeBase: 2,
   battleAssist: 8,
-  decayPerTurn: 0.5
+  decayPerTurn: 0
 };
 const BOND_SKILL_MERCHANT = {
   id: "bond-merchant-goldrush",
@@ -22308,7 +28025,21 @@ class AllianceSystem {
     __publicField(this, "name", "AllianceSystem");
     __publicField(this, "deps");
     __publicField(this, "createConfig");
+    /** 货币扣除回调（由外部注入，用于实际扣除元宝） */
+    __publicField(this, "currencySpendCallback");
+    /** 货币余额查询回调 */
+    __publicField(this, "currencyBalanceCallback");
+    // ── 实例状态管理（供 UI 直接调用） ──
+    /** 内部联盟数据实例 */
+    __publicField(this, "_alliance", null);
+    /** 内部玩家联盟状态实例 */
+    __publicField(this, "_playerState", createDefaultAlliancePlayerState());
     this.createConfig = { ...DEFAULT_CREATE_CONFIG, ...createConfig };
+  }
+  /** 设置货币系统回调（用于创建联盟时扣除元宝） */
+  setCurrencyCallbacks(callbacks) {
+    this.currencySpendCallback = callbacks.spend;
+    this.currencyBalanceCallback = callbacks.getBalance;
   }
   // ── ISubsystem 接口 ─────────────────────────
   init(deps) {
@@ -22550,6 +28281,61 @@ class AllianceSystem {
   }
   deserialize(data) {
     return deserializeAlliance(data);
+  }
+  /** 获取当前联盟数据 */
+  getAlliance() {
+    return this._alliance;
+  }
+  /** 获取当前玩家联盟状态 */
+  getPlayerState() {
+    return this._playerState;
+  }
+  /**
+   * 简化版创建联盟（UI 面板直接调用）
+   *
+   * 自动使用内部状态，无需外部传入 playerState/playerId 等参数。
+   * 成功后自动更新内部 _alliance 和 _playerState。
+   * 创建联盟需消耗 createCostGold（默认500元宝）。
+   */
+  createAllianceSimple(name, playerName = "玩家") {
+    try {
+      const costGold = this.createConfig.createCostGold;
+      if (this.currencyBalanceCallback) {
+        const balance = this.currencyBalanceCallback("ingot");
+        if (balance < costGold) {
+          return { success: false, reason: `元宝不足，需要${costGold}元宝` };
+        }
+      }
+      const result = this.createAlliance(
+        this._playerState,
+        name,
+        "",
+        "player-1",
+        playerName,
+        Date.now()
+      );
+      if (this.currencySpendCallback) {
+        const spent = this.currencySpendCallback("ingot", costGold);
+        if (!spent) {
+          return { success: false, reason: "元宝扣除失败" };
+        }
+      }
+      this._alliance = result.alliance;
+      this._playerState = result.playerState;
+      return { success: true };
+    } catch (e) {
+      return { success: false, reason: e.message ?? "创建失败" };
+    }
+  }
+  /**
+   * 重置联盟数据（供存档加载使用）
+   *
+   * @param alliance - 联盟数据，null 表示无联盟
+   * @param playerState - 玩家联盟状态，不传则使用默认值
+   */
+  resetAllianceData(alliance, playerState) {
+    this._alliance = alliance;
+    if (playerState) this._playerState = playerState;
   }
 }
 const DEFAULT_TASK_CONFIG = {
@@ -23918,6 +29704,11 @@ function calcPower(stats, levelFactor, starFactor) {
 }
 function calcRebirthMultiplier$1(count, config) {
   if (count <= 0) return 1;
+  if (config.curveType === "logarithmic") {
+    const logIncrement = config.perRebirthIncrement * Math.log(1 + count) / Math.log(2);
+    const multiplier2 = Math.min(config.baseMultiplier + logIncrement, config.maxMultiplier);
+    return Math.round(multiplier2 * 100) / 100;
+  }
   let multiplier = config.baseMultiplier;
   for (let i = 1; i <= count; i++) {
     const increment = config.perRebirthIncrement * Math.pow(config.decayFactor, i - 1);
@@ -24050,6 +29841,7 @@ function calcRebirthMultiplier(count) {
     baseMultiplier: REBIRTH_MULTIPLIER.base,
     perRebirthIncrement: REBIRTH_MULTIPLIER.perRebirth,
     maxMultiplier: REBIRTH_MULTIPLIER.max,
+    curveType: "logarithmic",
     decayFactor: 1
   };
   return calcRebirthMultiplier$1(count, config);
@@ -25654,6 +31446,35 @@ class AchievementSystem {
         });
       }
     }
+  }
+  // ─── v20.0 统一成就汇总 API ──────────────
+  /**
+   * 获取已解锁成就汇总
+   *
+   * 返回所有成就的解锁统计，用于统一结局展示。
+   */
+  getUnlockedSummary() {
+    const all = this.getAllAchievements();
+    const totalAchievements = all.length;
+    const unlockedCount = all.filter(
+      (a) => a.instance.status === "completed" || a.instance.status === "claimed"
+    ).length;
+    const byDimension = {};
+    for (const a of all) {
+      if (!byDimension[a.dimension]) {
+        byDimension[a.dimension] = { total: 0, unlocked: 0 };
+      }
+      byDimension[a.dimension].total++;
+      if (a.instance.status === "completed" || a.instance.status === "claimed") {
+        byDimension[a.dimension].unlocked++;
+      }
+    }
+    return {
+      totalAchievements,
+      unlockedCount,
+      completedChains: [...this.state.completedChains],
+      byDimension
+    };
   }
 }
 var FriendStatus = /* @__PURE__ */ ((FriendStatus2) => {
@@ -27303,6 +33124,348 @@ class HeritageSystem {
     this.state.dailyHeritageCount = 0;
     this.state.lastDailyReset = getTodayStr$1();
   }
+  // ─── v20.0 纪念记录 API ──────────────────
+  /**
+   * 获取统一纪念记录
+   *
+   * 返回当前传承系统的纪念数据快照，用于统一结局展示。
+   * 包含传承历史、转生次数等关键数据。
+   */
+  getMemorialRecord() {
+    return {
+      totalHeritageCount: this.state.heroHeritageCount + this.state.equipmentHeritageCount + this.state.experienceHeritageCount,
+      heroHeritageCount: this.state.heroHeritageCount,
+      equipmentHeritageCount: this.state.equipmentHeritageCount,
+      experienceHeritageCount: this.state.experienceHeritageCount,
+      heritageHistory: this.state.heritageHistory.map((h) => ({
+        type: h.type,
+        timestamp: h.timestamp
+      }))
+    };
+  }
+}
+const DEFAULT_LEADERBOARD_CONFIG = {
+  activityId: "",
+  maxEntries: 100,
+  rewardTiers: [
+    { minRank: 1, maxRank: 1, rewards: { gold: 500 } },
+    { minRank: 2, maxRank: 3, rewards: { gold: 300 } },
+    { minRank: 4, maxRank: 10, rewards: { gold: 150 } },
+    { minRank: 11, maxRank: 50, rewards: { gold: 50 } }
+  ]
+};
+const DEFAULT_TIMED_OFFLINE_EFFICIENCY = {
+  season: 0.5,
+  limitedTime: 0.3,
+  daily: 1,
+  festival: 0.5,
+  alliance: 0.5
+};
+const BASE_POINTS_PER_SECOND$1 = 0.1;
+const PREVIEW_DURATION = 24 * 60 * 60 * 1e3;
+const SETTLEMENT_DURATION = 2 * 60 * 60 * 1e3;
+const FESTIVAL_TEMPLATES = [
+  {
+    id: "festival-spring",
+    festivalType: "spring",
+    name: "春节庆典",
+    description: "新年伊始，万象更新",
+    themeColor: "#FF0000",
+    exclusiveItems: [],
+    exclusiveTasks: [
+      { id: "ft-spring-1", name: "贴春联", description: "完成3次春联任务", targetCount: 3, rewards: { gold: 50 } }
+    ]
+  },
+  {
+    id: "festival-lantern",
+    festivalType: "lantern",
+    name: "元宵灯会",
+    description: "花灯璀璨，团圆美满",
+    themeColor: "#FFD700",
+    exclusiveItems: [],
+    exclusiveTasks: [
+      { id: "ft-lantern-1", name: "猜灯谜", description: "完成5个灯谜", targetCount: 5, rewards: { gold: 30 } }
+    ]
+  },
+  {
+    id: "festival-dragon-boat",
+    festivalType: "dragon_boat",
+    name: "端午龙舟",
+    description: "龙舟竞渡，粽叶飘香",
+    themeColor: "#228B22",
+    exclusiveItems: [],
+    exclusiveTasks: [
+      { id: "ft-dragon-1", name: "赛龙舟", description: "完成3次龙舟赛", targetCount: 3, rewards: { gold: 40 } }
+    ]
+  },
+  {
+    id: "festival-mid-autumn",
+    festivalType: "mid_autumn",
+    name: "中秋赏月",
+    description: "月圆人团圆",
+    themeColor: "#87CEEB",
+    exclusiveItems: [],
+    exclusiveTasks: [
+      { id: "ft-mid-1", name: "赏月任务", description: "完成赏月活动", targetCount: 1, rewards: { gold: 60 } }
+    ]
+  },
+  {
+    id: "festival-double-ninth",
+    festivalType: "double_ninth",
+    name: "重阳登高",
+    description: "登高望远，遍插茱萸",
+    themeColor: "#FF8C00",
+    exclusiveItems: [],
+    exclusiveTasks: [
+      { id: "ft-ninth-1", name: "登高望远", description: "完成登高任务", targetCount: 2, rewards: { gold: 45 } }
+    ]
+  }
+];
+class TimedActivitySystem {
+  constructor(leaderboardConfig, offlineEfficiency) {
+    // ─── ISubsystem 接口 ───────────────────────
+    __publicField(this, "name", "timedActivity");
+    __publicField(this, "deps", null);
+    __publicField(this, "leaderboardConfig");
+    __publicField(this, "offlineEfficiency");
+    __publicField(this, "flows", /* @__PURE__ */ new Map());
+    __publicField(this, "leaderboards", /* @__PURE__ */ new Map());
+    this.leaderboardConfig = { ...DEFAULT_LEADERBOARD_CONFIG, ...leaderboardConfig };
+    this.offlineEfficiency = { ...DEFAULT_TIMED_OFFLINE_EFFICIENCY, ...offlineEfficiency };
+  }
+  // ─── ISubsystem 适配层 ─────────────────────
+  /** 注入依赖 */
+  init(deps) {
+    this.deps = deps;
+  }
+  /** 限时活动系统无需帧更新 */
+  update(_dt) {
+  }
+  /** 获取系统状态快照 */
+  getState() {
+    return {
+      name: this.name,
+      flowsCount: this.flows.size,
+      leaderboardsCount: this.leaderboards.size
+    };
+  }
+  /** 重置系统状态 */
+  reset() {
+    this.flows.clear();
+    this.leaderboards.clear();
+  }
+  // ─── #16 限时活动完整流程 ──────────────
+  /**
+   * 创建限时活动流程
+   *
+   * 4阶段：preview → active → settlement → closed
+   */
+  createTimedActivityFlow(activityId, activeStart, activeEnd) {
+    const flow = {
+      activityId,
+      phase: "preview",
+      previewStart: activeStart - PREVIEW_DURATION,
+      activeStart,
+      activeEnd,
+      settlementStart: activeEnd,
+      closedTime: activeEnd + SETTLEMENT_DURATION
+    };
+    this.flows.set(activityId, flow);
+    return flow;
+  }
+  /**
+   * 更新活动阶段
+   */
+  updatePhase(activityId, now) {
+    const flow = this.flows.get(activityId);
+    if (!flow) return "closed";
+    if (now < flow.activeStart) {
+      flow.phase = "preview";
+    } else if (now < flow.activeEnd) {
+      flow.phase = "active";
+    } else if (now < flow.closedTime) {
+      flow.phase = "settlement";
+    } else {
+      flow.phase = "closed";
+    }
+    return flow.phase;
+  }
+  /**
+   * 获取活动流程
+   */
+  getFlow(activityId) {
+    return this.flows.get(activityId);
+  }
+  /**
+   * 检查活动是否可参与
+   */
+  canParticipate(activityId, now) {
+    const flow = this.flows.get(activityId);
+    if (!flow) return false;
+    this.updatePhase(activityId, now);
+    return flow.phase === "active";
+  }
+  /**
+   * 获取剩余时间(毫秒)
+   */
+  getRemainingTime(activityId, now) {
+    const flow = this.flows.get(activityId);
+    if (!flow) return 0;
+    return Math.max(0, flow.activeEnd - now);
+  }
+  // ─── #15 活动排行榜 ──────────────────────
+  /**
+   * 更新排行榜
+   */
+  updateLeaderboard(activityId, entries) {
+    const sorted = [...entries].sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return b.tokens - a.tokens;
+    });
+    sorted.forEach((entry, index) => {
+      entry.rank = index + 1;
+    });
+    const maxEntries = this.leaderboardConfig.maxEntries;
+    const result = sorted.slice(0, maxEntries);
+    this.leaderboards.set(activityId, result);
+    return result;
+  }
+  /**
+   * 获取排行榜
+   */
+  getLeaderboard(activityId) {
+    return this.leaderboards.get(activityId) ?? [];
+  }
+  /**
+   * 获取玩家排名
+   */
+  getPlayerRank(activityId, playerId) {
+    const entries = this.leaderboards.get(activityId) ?? [];
+    const entry = entries.find((e) => e.playerId === playerId);
+    return (entry == null ? void 0 : entry.rank) ?? 0;
+  }
+  /**
+   * 计算排行奖励
+   */
+  calculateRankRewards(rank) {
+    const rewards = {};
+    for (const tier of this.leaderboardConfig.rewardTiers) {
+      if (rank >= tier.minRank && rank <= tier.maxRank) {
+        for (const [key, value] of Object.entries(tier.rewards)) {
+          if (typeof value === "number") {
+            rewards[key] = (rewards[key] ?? 0) + value;
+          }
+        }
+        break;
+      }
+    }
+    return rewards;
+  }
+  /**
+   * 获取排行榜配置
+   */
+  getLeaderboardConfig() {
+    return { ...this.leaderboardConfig };
+  }
+  // ─── #17 节日活动框架 ──────────────────────
+  /**
+   * 获取节日模板
+   */
+  getFestivalTemplate(festivalType) {
+    return FESTIVAL_TEMPLATES.find((t) => t.festivalType === festivalType);
+  }
+  /**
+   * 获取所有节日模板
+   */
+  getAllFestivalTemplates() {
+    return [...FESTIVAL_TEMPLATES];
+  }
+  /**
+   * 创建节日活动
+   */
+  createFestivalActivity(festivalType, startTime, durationDays = 7) {
+    const template = this.getFestivalTemplate(festivalType);
+    if (!template) return null;
+    const endTime = startTime + durationDays * 24 * 60 * 60 * 1e3;
+    const flow = this.createTimedActivityFlow(template.id, startTime, endTime);
+    return { flow, template };
+  }
+  // ─── #18 活动离线进度 ──────────────────────
+  /**
+   * 计算活动离线进度
+   */
+  calculateOfflineProgress(activityId, activityType, offlineDurationMs) {
+    const durationSeconds = offlineDurationMs / 1e3;
+    let efficiency = 0.5;
+    if (activityType === "season") efficiency = this.offlineEfficiency.season;
+    else if (activityType === "limitedTime") efficiency = this.offlineEfficiency.limitedTime;
+    else if (activityType === "daily") efficiency = this.offlineEfficiency.daily;
+    else if (activityType === "festival") efficiency = this.offlineEfficiency.festival;
+    else if (activityType === "alliance") efficiency = this.offlineEfficiency.alliance;
+    const pointsEarned = Math.floor(durationSeconds * BASE_POINTS_PER_SECOND$1 * efficiency);
+    const tokensEarned = Math.floor(pointsEarned * 0.1);
+    return {
+      activityId,
+      pointsEarned,
+      tokensEarned,
+      offlineDuration: offlineDurationMs
+    };
+  }
+  /**
+   * 批量计算离线进度
+   */
+  calculateAllOfflineProgress(activities, offlineDurationMs) {
+    const activityResults = [];
+    let totalPoints = 0;
+    let totalTokens = 0;
+    for (const activity of activities) {
+      const result = this.calculateOfflineProgress(
+        activity.id,
+        activity.type,
+        offlineDurationMs
+      );
+      activityResults.push(result);
+      totalPoints += result.pointsEarned;
+      totalTokens += result.tokensEarned;
+    }
+    return {
+      offlineDurationMs,
+      activityResults,
+      totalPoints,
+      totalTokens,
+      eventPile: null
+    };
+  }
+  // ─── 工具方法 ──────────────────────────────
+  /** 获取离线效率配置 */
+  getOfflineEfficiency() {
+    return { ...this.offlineEfficiency };
+  }
+  /** 获取所有活动流程 */
+  getAllFlows() {
+    return Array.from(this.flows.values());
+  }
+  // ─── 序列化 ──────────────────────────────
+  /** 导出存档 */
+  serialize() {
+    return {
+      flows: Array.from(this.flows.values()).map((f) => ({ ...f })),
+      leaderboards: Array.from(this.leaderboards.entries()).map(
+        ([activityId, entries]) => ({ activityId, entries: entries.map((e) => ({ ...e })) })
+      )
+    };
+  }
+  /** 导入存档 */
+  deserialize(data) {
+    this.flows.clear();
+    for (const flow of data.flows ?? []) {
+      this.flows.set(flow.activityId, { ...flow });
+    }
+    this.leaderboards.clear();
+    for (const lb of data.leaderboards ?? []) {
+      this.leaderboards.set(lb.activityId, lb.entries.map((e) => ({ ...e })));
+    }
+  }
 }
 const ADVISOR_TRIGGER_PRIORITY = {
   resource_shortage: 90,
@@ -27348,7 +33511,7 @@ function findOverflowResource(snapshot) {
   const caps = snapshot.resourceCaps;
   for (const [key, value] of Object.entries(snapshot.resources)) {
     const cap = caps[key] ?? 0;
-    if (cap > 0 && value / cap > 0.8) return key;
+    if (cap > 0 && value / cap > 0.9) return key;
   }
   return null;
 }
@@ -27720,7 +33883,7 @@ const DEFAULT_OFFLINE_EFFICIENCY = {
   alliance: 0.5
 };
 const ACTIVITY_SAVE_VERSION = 1;
-const BASE_POINTS_PER_SECOND$1 = 0.1;
+const BASE_POINTS_PER_SECOND = 0.1;
 const seasonHelper = {
   getCurrentSeasonTheme,
   createSettlementAnimation,
@@ -27783,7 +33946,7 @@ function calculateOfflineProgress(state, offlineDurationMs, offlineEfficiency) {
     else if (activityId.startsWith("daily_")) efficiency = offlineEfficiency.daily;
     else if (activityId.startsWith("festival_")) efficiency = offlineEfficiency.festival;
     else if (activityId.startsWith("alliance_")) efficiency = offlineEfficiency.alliance;
-    const pointsEarned = Math.floor(durationSeconds * BASE_POINTS_PER_SECOND$1 * efficiency);
+    const pointsEarned = Math.floor(durationSeconds * BASE_POINTS_PER_SECOND * efficiency);
     const tokensEarned = Math.floor(pointsEarned * 0.1);
     if (pointsEarned > 0) {
       results.push({
@@ -29116,6 +35279,195 @@ class CaravanSystem {
     }
   }
 }
+const TRADE_FEE_RATE = 0.05;
+const MIN_GRAIN_RESERVE = 10;
+const GOLD_SAFETY_LINE = 500;
+const MARKET_REQUIRED_LEVEL = 5;
+const TRADE_PAIR_DEFS = {
+  grain_to_gold: { key: "grain_to_gold", from: "grain", to: "gold", rate: 0.1 },
+  // 10 grain → 1 gold
+  gold_to_grain: { key: "gold_to_grain", from: "gold", to: "grain", rate: 8 },
+  // 1 gold → 8 grain
+  grain_to_troops: { key: "grain_to_troops", from: "grain", to: "troops", rate: 0.05 },
+  // 20 grain → 1 troops
+  gold_to_techPoint: { key: "gold_to_techPoint", from: "gold", to: "techPoint", rate: 0.01 }
+  // 100 gold → 1 techPoint
+};
+const TRADE_PAIR_MAP = /* @__PURE__ */ new Map();
+for (const def of Object.values(TRADE_PAIR_DEFS)) {
+  TRADE_PAIR_MAP.set(`${def.from}:${def.to}`, def);
+}
+class ResourceTradeEngine {
+  constructor() {
+    __publicField(this, "name", "resourceTrade");
+    __publicField(this, "deps", null);
+    __publicField(this, "tradeDeps", null);
+  }
+  // ── ISubsystem ──
+  init(deps) {
+    this.deps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return {
+      supportedPairs: this.getSupportedTradePairs(),
+      marketRequiredLevel: MARKET_REQUIRED_LEVEL,
+      feeRate: TRADE_FEE_RATE,
+      minGrainReserve: MIN_GRAIN_RESERVE,
+      goldSafetyLine: GOLD_SAFETY_LINE
+    };
+  }
+  reset() {
+  }
+  /** 注入资源操作依赖 */
+  setDeps(deps) {
+    this.tradeDeps = deps;
+  }
+  // ─────────────────────────────────────────────
+  // 核心 API
+  // ─────────────────────────────────────────────
+  /**
+   * 执行资源交易
+   *
+   * 流程：检查市场等级 → 检查资源保护线 → 扣除源资源 → 计算手续费 → 添加目标资源
+   *
+   * @param from - 源资源类型
+   * @param to - 目标资源类型
+   * @param amount - 交易数量（源资源单位）
+   * @returns 交易结果
+   */
+  tradeResource(from, to, amount) {
+    if (amount <= 0) {
+      return { success: false, received: 0, fee: 0, error: "交易数量必须大于 0" };
+    }
+    const pairDef = TRADE_PAIR_MAP.get(`${from}:${to}`);
+    if (!pairDef) {
+      return { success: false, received: 0, fee: 0, error: `不支持的交易对: ${from}→${to}` };
+    }
+    if (!this.tradeDeps) {
+      return { success: false, received: 0, fee: 0, error: "资源交易引擎未初始化依赖" };
+    }
+    const marketLevel = this.tradeDeps.getMarketLevel();
+    if (marketLevel < MARKET_REQUIRED_LEVEL) {
+      return { success: false, received: 0, fee: 0, error: `需要市集等级 ≥ ${MARKET_REQUIRED_LEVEL}，当前 ${marketLevel}` };
+    }
+    const protectionCheck = this.checkResourceProtection(from, amount);
+    if (!protectionCheck.canTrade) {
+      return { success: false, received: 0, fee: 0, error: protectionCheck.reason };
+    }
+    const currentAmount = this.tradeDeps.getResourceAmount(from);
+    if (currentAmount < amount) {
+      return { success: false, received: 0, fee: 0, error: `${from} 资源不足：需要 ${amount}，当前 ${currentAmount}` };
+    }
+    try {
+      this.tradeDeps.consumeResource(from, amount);
+    } catch (e) {
+      return { success: false, received: 0, fee: 0, error: e.message };
+    }
+    const gross = amount * pairDef.rate;
+    const fee = Math.floor(gross * TRADE_FEE_RATE);
+    const received = Math.floor(gross) - fee;
+    const actualReceived = this.tradeDeps.addResource(to, Math.max(0, received));
+    return {
+      success: true,
+      received: actualReceived,
+      fee
+    };
+  }
+  /**
+   * 获取交易汇率
+   *
+   * @param from - 源资源类型
+   * @param to - 目标资源类型
+   * @returns 汇率（1单位源资源 → 多少单位目标资源），不支持时返回 0
+   */
+  getResourceTradeRate(from, to) {
+    const pairDef = TRADE_PAIR_MAP.get(`${from}:${to}`);
+    return (pairDef == null ? void 0 : pairDef.rate) ?? 0;
+  }
+  /**
+   * 检查是否可以执行交易
+   *
+   * 综合检查市场等级、资源保护线和资源余额
+   *
+   * @param from - 源资源类型
+   * @param to - 目标资源类型
+   * @param amount - 交易数量
+   * @returns 检查结果
+   */
+  canTradeResource(from, to, amount) {
+    if (amount <= 0) {
+      return { canTrade: false, reason: "交易数量必须大于 0" };
+    }
+    const pairDef = TRADE_PAIR_MAP.get(`${from}:${to}`);
+    if (!pairDef) {
+      return { canTrade: false, reason: `不支持的交易对: ${from}→${to}` };
+    }
+    if (!this.tradeDeps) {
+      return { canTrade: false, reason: "资源交易引擎未初始化依赖" };
+    }
+    const marketLevel = this.tradeDeps.getMarketLevel();
+    if (marketLevel < MARKET_REQUIRED_LEVEL) {
+      return { canTrade: false, reason: `需要市集等级 ≥ ${MARKET_REQUIRED_LEVEL}，当前 ${marketLevel}` };
+    }
+    const protectionCheck = this.checkResourceProtection(from, amount);
+    if (!protectionCheck.canTrade) {
+      return protectionCheck;
+    }
+    const currentAmount = this.tradeDeps.getResourceAmount(from);
+    if (currentAmount < amount) {
+      return { canTrade: false, reason: `${from} 资源不足：需要 ${amount}，当前 ${currentAmount}` };
+    }
+    return { canTrade: true };
+  }
+  /**
+   * 获取所有支持的交易对信息
+   *
+   * @returns 交易对列表
+   */
+  getSupportedTradePairs() {
+    return Object.values(TRADE_PAIR_DEFS).map((def) => ({
+      from: def.from,
+      to: def.to,
+      rate: def.rate,
+      fee: TRADE_FEE_RATE
+    }));
+  }
+  // ─────────────────────────────────────────────
+  // 内部方法
+  // ─────────────────────────────────────────────
+  /**
+   * 检查资源保护线
+   *
+   * - 交易粮草时：交易后粮草不能低于 MIN_GRAIN_RESERVE (10)
+   * - 交易铜钱时：铜钱低于 GOLD_SAFETY_LINE (500) 时不能交易
+   */
+  checkResourceProtection(from, amount) {
+    if (!this.tradeDeps) {
+      return { canTrade: false, reason: "资源交易引擎未初始化依赖" };
+    }
+    const currentAmount = this.tradeDeps.getResourceAmount(from);
+    if (from === "grain") {
+      const afterTrade = currentAmount - amount;
+      if (afterTrade < MIN_GRAIN_RESERVE) {
+        return {
+          canTrade: false,
+          reason: `粮草保护：交易后粮草不能低于 ${MIN_GRAIN_RESERVE}（当前 ${currentAmount}，交易 ${amount}，剩余 ${afterTrade}）`
+        };
+      }
+    }
+    if (from === "gold") {
+      if (currentAmount < GOLD_SAFETY_LINE) {
+        return {
+          canTrade: false,
+          reason: `铜钱安全线保护：铜钱低于 ${GOLD_SAFETY_LINE} 时不能交易（当前 ${currentAmount}）`
+        };
+      }
+    }
+    return { canTrade: true };
+  }
+}
 var SettingsCategory = /* @__PURE__ */ ((SettingsCategory2) => {
   SettingsCategory2["Basic"] = "basic";
   SettingsCategory2["Audio"] = "audio";
@@ -30124,6 +36476,330 @@ class AccountSystem {
     }
   }
 }
+const ENDING_TYPES = [
+  { grade: "S", name: "千古一帝", description: "水墨长卷+金光万丈2000ms", minScore: 90 },
+  { grade: "A", name: "雄霸天下", description: "水墨长卷+祥云1500ms", minScore: 75 },
+  { grade: "B", name: "割据一方", description: "水墨长卷1000ms", minScore: 60 },
+  { grade: "C", name: "草莽英雄", description: "简笔水墨800ms", minScore: 0 }
+];
+const WEIGHTS = { power: 0.3, collection: 0.25, prestige: 0.25, territory: 0.2 };
+class EndingSystem {
+  constructor() {
+    __publicField(this, "name", "endingSystem");
+    __publicField(this, "deps");
+    __publicField(this, "state", this.createInitialState());
+  }
+  // ─── 生命周期 ───────────────────────────
+  init(deps) {
+    this.deps = deps;
+  }
+  update(_dt) {
+  }
+  reset() {
+    this.state = this.createInitialState();
+  }
+  // ─── 公开 API ───────────────────────────
+  /**
+   * 获取所有可用结局类型
+   *
+   * 返回 S/A/B/C 四级结局的完整描述列表。
+   */
+  getEndingTypes() {
+    return ENDING_TYPES.map((t) => ({ ...t }));
+  }
+  /**
+   * 评估当前游戏状态的结局条件
+   *
+   * 根据四维公式计算加权总评分。
+   *
+   * @param context - 游戏状态上下文
+   * @returns 四维评分明细
+   */
+  evaluateConditions(context) {
+    const ctx = context ?? this.buildContextFromDeps();
+    return this.calculateScore(ctx);
+  }
+  /**
+   * 获取当前主结局
+   *
+   * 根据最新评分确定最高满足条件的结局。
+   * 如果尚未统一，基于当前游戏状态实时评估。
+   */
+  getPrimaryEnding() {
+    if (this.state.unified && this.state.finalGrade) {
+      return this.findEndingType(this.state.finalGrade);
+    }
+    const ctx = this.buildContextFromDeps();
+    const score = this.calculateScore(ctx);
+    const grade = this.determineGrade(score.totalScore);
+    return this.findEndingType(grade);
+  }
+  /**
+   * 检查是否满足统一触发条件
+   *
+   * 条件：所有领土被玩家占领。
+   *
+   * @returns 是否满足触发条件
+   */
+  checkTrigger() {
+    const ctx = this.buildContextFromDeps();
+    return ctx.territoryOwned >= ctx.territoryTotal && ctx.territoryTotal > 0;
+  }
+  /**
+   * 触发统一结局
+   *
+   * 当所有领土被征服时调用，评估结局并锁定最终等级。
+   *
+   * @returns 结局触发结果
+   */
+  triggerUnification() {
+    if (this.state.unified) {
+      return {
+        triggered: true,
+        grade: this.state.finalGrade ?? void 0,
+        score: this.state.finalScore ?? void 0,
+        endingType: this.state.finalGrade ? this.findEndingType(this.state.finalGrade) ?? void 0 : void 0
+      };
+    }
+    const ctx = this.buildContextFromDeps();
+    const score = this.calculateScore(ctx);
+    const grade = this.determineGrade(score.totalScore);
+    const endingType = this.findEndingType(grade);
+    this.state.unified = true;
+    this.state.finalGrade = grade;
+    this.state.finalScore = score;
+    this.state.triggeredAt = Date.now();
+    this.deps.eventBus.emit("ending:unified", {
+      grade,
+      score,
+      endingType
+    });
+    return {
+      triggered: true,
+      grade,
+      score,
+      endingType: endingType ?? void 0
+    };
+  }
+  /**
+   * 序列化结局状态（用于存档）
+   */
+  serialize() {
+    return {
+      unified: this.state.unified,
+      finalGrade: this.state.finalGrade,
+      finalScore: this.state.finalScore,
+      triggeredAt: this.state.triggeredAt
+    };
+  }
+  /**
+   * 反序列化结局状态（用于读档）
+   */
+  deserialize(data) {
+    this.state = {
+      unified: data.unified,
+      finalGrade: data.finalGrade,
+      finalScore: data.finalScore,
+      triggeredAt: data.triggeredAt
+    };
+  }
+  /** 获取内部状态快照 */
+  getState() {
+    return this.serialize();
+  }
+  // ─── 内部方法 ───────────────────────────
+  createInitialState() {
+    return {
+      unified: false,
+      finalGrade: null,
+      finalScore: null,
+      triggeredAt: null
+    };
+  }
+  /**
+   * 根据上下文计算四维评分
+   */
+  calculateScore(ctx) {
+    const powerScore = Math.min(100, Math.round(ctx.totalPower / ctx.powerCap * 100));
+    const collectionScore = ctx.heroTotal > 0 ? Math.min(100, Math.round(ctx.heroCount / ctx.heroTotal * 100)) : 0;
+    const prestigeScore = Math.min(100, Math.round(ctx.prestigeLevel / ctx.prestigeCap * 100));
+    const territoryScore = ctx.territoryTotal > 0 ? Math.min(100, Math.round(ctx.territoryOwned / ctx.territoryTotal * 100)) : 0;
+    const totalScore = Math.round(
+      powerScore * WEIGHTS.power + collectionScore * WEIGHTS.collection + prestigeScore * WEIGHTS.prestige + territoryScore * WEIGHTS.territory
+    );
+    return { powerScore, collectionScore, prestigeScore, territoryScore, totalScore };
+  }
+  /**
+   * 根据总评分确定结局等级
+   */
+  determineGrade(totalScore) {
+    if (totalScore >= 90) return "S";
+    if (totalScore >= 75) return "A";
+    if (totalScore >= 60) return "B";
+    return "C";
+  }
+  /**
+   * 根据等级查找结局类型
+   */
+  findEndingType(grade) {
+    return ENDING_TYPES.find((t) => t.grade === grade) ?? null;
+  }
+  /**
+   * 从子系统注册表构建评估上下文
+   *
+   * 安全地查询各子系统状态，缺失时使用默认值。
+   */
+  buildContextFromDeps() {
+    var _a;
+    let ctx = {
+      totalPower: 0,
+      powerCap: 1e5,
+      heroCount: 0,
+      heroTotal: 40,
+      prestigeLevel: 1,
+      prestigeCap: 30,
+      territoryOwned: 0,
+      territoryTotal: 15
+    };
+    try {
+      const registry = (_a = this.deps) == null ? void 0 : _a.registry;
+      if (!registry) return ctx;
+      const hero = registry.get("hero");
+      if (hero) {
+        if (typeof hero.calculateTotalPower === "function") {
+          ctx.totalPower = hero.calculateTotalPower();
+        }
+        if (typeof hero.getAllGenerals === "function") {
+          ctx.heroCount = hero.getAllGenerals().length;
+        }
+      }
+      const territory = registry.get("territory");
+      if (territory) {
+        if (typeof territory.getPlayerTerritoryCount === "function") {
+          ctx.territoryOwned = territory.getPlayerTerritoryCount();
+        }
+        if (typeof territory.getTotalTerritoryCount === "function") {
+          ctx.territoryTotal = territory.getTotalTerritoryCount();
+        }
+      }
+      const prestige = registry.get("prestige");
+      if (prestige && typeof prestige.getState === "function") {
+        const pState = prestige.getState();
+        if ((pState == null ? void 0 : pState.level) !== void 0) {
+          ctx.prestigeLevel = pState.level;
+        }
+      }
+    } catch {
+    }
+    return ctx;
+  }
+}
+class GlobalStatisticsSystem {
+  constructor() {
+    __publicField(this, "name", "globalStatistics");
+    __publicField(this, "deps");
+    __publicField(this, "accumulatedOnlineSeconds", 0);
+  }
+  // ─── 生命周期 ───────────────────────────
+  init(deps) {
+    this.deps = deps;
+  }
+  update(dt) {
+    this.accumulatedOnlineSeconds += dt;
+  }
+  reset() {
+    this.accumulatedOnlineSeconds = 0;
+  }
+  // ─── 公开 API ───────────────────────────
+  /**
+   * 获取全局统计快照
+   *
+   * 聚合各子系统状态，返回统一统计视图。
+   */
+  getSnapshot() {
+    var _a;
+    const registry = (_a = this.deps) == null ? void 0 : _a.registry;
+    let totalPower = 0;
+    let heroCount = 0;
+    let territoryOwned = 0;
+    let territoryTotal = 0;
+    let prestigeLevel = 1;
+    let achievementsUnlocked = 0;
+    let achievementsTotal = 0;
+    try {
+      if (registry) {
+        const hero = registry.get("hero");
+        if (hero) {
+          if (typeof hero.calculateTotalPower === "function") {
+            totalPower = hero.calculateTotalPower();
+          }
+          if (typeof hero.getAllGenerals === "function") {
+            heroCount = hero.getAllGenerals().length;
+          }
+        }
+        const territory = registry.get("territory");
+        if (territory) {
+          if (typeof territory.getPlayerTerritoryCount === "function") {
+            territoryOwned = territory.getPlayerTerritoryCount();
+          }
+          if (typeof territory.getTotalTerritoryCount === "function") {
+            territoryTotal = territory.getTotalTerritoryCount();
+          }
+        }
+        const prestige = registry.get("prestige");
+        if (prestige && typeof prestige.getState === "function") {
+          const pState = prestige.getState();
+          if ((pState == null ? void 0 : pState.level) !== void 0) {
+            prestigeLevel = pState.level;
+          }
+        }
+        const achievement = registry.get("achievement");
+        if (achievement && typeof achievement.getAllAchievements === "function") {
+          const all = achievement.getAllAchievements();
+          achievementsTotal = all.length;
+          achievementsUnlocked = all.filter(
+            (a) => a.instance.status === "completed" || a.instance.status === "claimed"
+          ).length;
+        }
+      }
+    } catch {
+    }
+    return {
+      totalPlayTime: this.accumulatedOnlineSeconds,
+      totalPower,
+      heroCount,
+      territoryOwned,
+      territoryTotal,
+      prestigeLevel,
+      achievementsUnlocked,
+      achievementsTotal
+    };
+  }
+  /**
+   * 获取总游戏时长（秒）
+   */
+  getTotalPlayTime() {
+    return this.accumulatedOnlineSeconds;
+  }
+  /**
+   * 序列化（用于存档）
+   */
+  serialize() {
+    return {
+      accumulatedOnlineSeconds: this.accumulatedOnlineSeconds
+    };
+  }
+  /**
+   * 反序列化（用于读档）
+   */
+  deserialize(data) {
+    this.accumulatedOnlineSeconds = data.accumulatedOnlineSeconds;
+  }
+  /** 获取内部状态 */
+  getState() {
+    return this.serialize();
+  }
+}
 function createR11Systems(equipmentSystem) {
   const eq = equipmentSystem ?? new EquipmentSystem();
   const setSystem = new EquipmentSetSystem(eq);
@@ -30158,13 +36834,17 @@ function createR11Systems(equipmentSystem) {
     chatSystem: new ChatSystem(),
     socialLeaderboardSystem: new LeaderboardSystem(),
     heritageSystem: new HeritageSystem(),
+    timedActivitySystem: new TimedActivitySystem(),
     advisorSystem: new AdvisorSystem(),
     activitySystem: new ActivitySystem(),
     signInSystem: new SignInSystem(),
     tradeSystem: new TradeSystem(),
     caravanSystem: new CaravanSystem(),
+    resourceTradeEngine: new ResourceTradeEngine(),
     settingsManager: new SettingsManager(),
-    accountSystem: new AccountSystem()
+    accountSystem: new AccountSystem(),
+    endingSystem: new EndingSystem(),
+    globalStatisticsSystem: new GlobalStatisticsSystem()
   };
 }
 function registerR11Systems(registry, systems) {
@@ -30199,18 +36879,41 @@ function registerR11Systems(registry, systems) {
   r.register("chat", systems.chatSystem);
   r.register("socialLeaderboard", systems.socialLeaderboardSystem);
   r.register("heritage", systems.heritageSystem);
+  r.register("timedActivity", systems.timedActivitySystem);
   r.register("advisor", systems.advisorSystem);
   r.register("activity", systems.activitySystem);
   r.register("signIn", systems.signInSystem);
   r.register("trade", systems.tradeSystem);
   r.register("caravan", systems.caravanSystem);
+  r.register("resourceTrade", systems.resourceTradeEngine);
   r.register("settings", systems.settingsManager);
   r.register("account", systems.accountSystem);
+  r.register("endingSystem", systems.endingSystem);
+  r.register("globalStatistics", systems.globalStatisticsSystem);
 }
 function initR11Systems(systems, deps) {
   systems.npcSystem.init(deps);
   systems.equipmentSystem.init(deps);
   systems.equipmentForgeSystem.init(deps);
+  systems.advisorSystem.init(deps);
+  systems.currencySystem.init(deps);
+  systems.shopSystem.init(deps);
+  systems.shopSystem.setCurrencySystem(systems.currencySystem);
+  systems.tradeSystem.init(deps);
+  systems.resourceTradeEngine.init(deps);
+  systems.achievementSystem.init(deps);
+  systems.prestigeSystem.init(deps);
+  systems.rebirthSystem.init(deps);
+  systems.prestigeShopSystem.init(deps);
+  systems.heritageSystem.init(deps);
+  systems.timedActivitySystem.init(deps);
+  systems.endingSystem.init(deps);
+  systems.globalStatisticsSystem.init(deps);
+  systems.questSystem.init(deps);
+  systems.mailSystem.init(deps);
+  systems.mailTemplateSystem.init(deps);
+  systems.activitySystem.init(deps);
+  systems.signInSystem.init(deps);
 }
 function resetR11Systems(systems) {
   systems.mailSystem.reset();
@@ -30219,6 +36922,7 @@ function resetR11Systems(systems) {
   systems.currencySystem.reset();
   systems.tradeSystem.reset();
   systems.caravanSystem.reset();
+  systems.resourceTradeEngine.reset();
   systems.npcSystem.reset();
   systems.equipmentSystem.reset();
   systems.equipmentForgeSystem.reset();
@@ -30229,8 +36933,11 @@ function resetR11Systems(systems) {
   systems.questSystem.reset();
   systems.achievementSystem.reset();
   systems.heritageSystem.reset();
+  systems.timedActivitySystem.reset();
   systems.advisorSystem.reset();
   systems.accountSystem.reset();
+  systems.endingSystem.reset();
+  systems.globalStatisticsSystem.reset();
 }
 const DECAY_TIERS = [
   { id: "tier1", startHours: 0, endHours: 2, efficiency: 1, label: "完整" },
@@ -30281,9 +36988,27 @@ const DEFAULT_WAREHOUSE_EXPANSIONS = [
 const OFFLINE_TRADE_EFFICIENCY = 0.6;
 const MAX_OFFLINE_TRADES = 3;
 const OFFLINE_TRADE_DURATION = 3600;
+const STAGING_QUEUE_CAPACITY = 20;
+const BASE_EXP_PER_HOUR = 100;
+const EXP_LEVEL_TABLE = [
+  { level: 1, expRequired: 100, rewards: { grain: 500, gold: 200, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 2, expRequired: 300, rewards: { grain: 1e3, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 3, expRequired: 600, rewards: { grain: 2e3, gold: 1e3, troops: 200, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 4, expRequired: 1e3, rewards: { grain: 4e3, gold: 2e3, troops: 400, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 5, expRequired: 1500, rewards: { grain: 8e3, gold: 4e3, troops: 800, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 6, expRequired: 2100, rewards: { grain: 15e3, gold: 8e3, troops: 1500, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 7, expRequired: 2800, rewards: { grain: 3e4, gold: 15e3, troops: 3e3, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 8, expRequired: 3600, rewards: { grain: 5e4, gold: 3e4, troops: 5e3, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 9, expRequired: 4500, rewards: { grain: 8e4, gold: 5e4, troops: 8e3, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } },
+  { level: 10, expRequired: 5500, rewards: { grain: 12e4, gold: 8e4, troops: 12e3, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } }
+];
+const SEASON_ACTIVITY_OFFLINE_EFFICIENCY = 0.5;
+const TIMED_ACTIVITY_OFFLINE_EFFICIENCY = 0.3;
+const SIEGE_FAILURE_TROOP_LOSS_RATIO = 0.3;
+const EXPIRED_MAIL_COMPENSATION_RATIO = 0.5;
 const OFFLINE_SAVE_VERSION = 1;
 function zeroRes() {
-  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
+  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
 }
 function cloneRes(r) {
   return { ...r };
@@ -30294,7 +37019,9 @@ function addRes(a, b) {
     gold: a.gold + b.gold,
     troops: a.troops + b.troops,
     mandate: a.mandate + b.mandate,
-    techPoint: a.techPoint + b.techPoint
+    techPoint: a.techPoint + b.techPoint,
+    recruitToken: a.recruitToken + b.recruitToken,
+    skillBook: a.skillBook + b.skillBook
   };
 }
 function mulRes(r, f) {
@@ -30303,7 +37030,9 @@ function mulRes(r, f) {
     gold: r.gold * f,
     troops: r.troops * f,
     mandate: r.mandate * f,
-    techPoint: r.techPoint * f
+    techPoint: r.techPoint * f,
+    recruitToken: r.recruitToken * f,
+    skillBook: r.skillBook * f
   };
 }
 function floorRes(r) {
@@ -30312,7 +37041,9 @@ function floorRes(r) {
     gold: Math.floor(r.gold),
     troops: Math.floor(r.troops),
     mandate: Math.floor(r.mandate),
-    techPoint: Math.floor(r.techPoint)
+    techPoint: Math.floor(r.techPoint),
+    recruitToken: Math.floor(r.recruitToken),
+    skillBook: Math.floor(r.skillBook)
   };
 }
 const BOOST_DEFS = [
@@ -30378,6 +37109,221 @@ function simulateOfflineTrade(offlineSeconds, tradeProfitPerRun, lastOfflineTime
   }
   return { completedTrades, totalProfit, events };
 }
+function formatOfflineDuration(seconds) {
+  if (seconds <= 0) return "刚刚";
+  if (seconds < 60) return `${Math.floor(seconds)}秒`;
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0) {
+    const remainHours = hours % 24;
+    return remainHours > 0 ? `${days}天${remainHours}小时` : `${days}天`;
+  }
+  if (hours > 0) {
+    const remainMinutes = minutes % 60;
+    return remainMinutes > 0 ? `${hours}小时${remainMinutes}分钟` : `${hours}小时`;
+  }
+  return `${minutes}分钟`;
+}
+const AD_DAILY_LIMIT$1 = 3;
+function shouldShowOfflinePopup(offlineSeconds) {
+  return offlineSeconds > OFFLINE_POPUP_THRESHOLD;
+}
+function generateReturnPanelData(snapshot, adUsedToday = 0) {
+  const availableDoubles = [];
+  if (adUsedToday < AD_DAILY_LIMIT$1) {
+    availableDoubles.push({
+      source: "ad",
+      multiplier: AD_DOUBLE_MULTIPLIER,
+      description: `观看广告翻倍（今日剩余${AD_DAILY_LIMIT$1 - adUsedToday}次）`
+    });
+  }
+  availableDoubles.push({
+    source: "item",
+    multiplier: ITEM_DOUBLE_MULTIPLIER,
+    description: "使用元宝翻倍"
+  });
+  if (snapshot.offlineSeconds >= RETURN_BONUS_MIN_HOURS * 3600) {
+    availableDoubles.push({
+      source: "return_bonus",
+      multiplier: RETURN_BONUS_MULTIPLIER,
+      description: "回归奖励翻倍"
+    });
+  }
+  return {
+    offlineSeconds: snapshot.offlineSeconds,
+    formattedTime: formatOfflineDuration(snapshot.offlineSeconds),
+    efficiencyPercent: Math.round(snapshot.overallEfficiency * 100),
+    tierDetails: snapshot.tierDetails,
+    totalEarned: { ...snapshot.totalEarned },
+    isCapped: snapshot.isCapped,
+    availableDoubles,
+    boostItems: []
+  };
+}
+function estimateOfflineReward$1(hours, productionRates, bonusSources = {}, _calculateSnapshot) {
+  const offlineSeconds = Math.min(hours * 3600, MAX_OFFLINE_SECONDS);
+  const isCapped = hours * 3600 > MAX_OFFLINE_SECONDS;
+  const tierDetails = [];
+  let totalEarned = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+  let totalWeighted = 0;
+  for (const tier of DECAY_TIERS) {
+    const tierStartSeconds = tier.startHours * 3600;
+    const tierEndSeconds = tier.endHours * 3600;
+    if (offlineSeconds <= tierStartSeconds) break;
+    const secondsInTier = Math.min(offlineSeconds, tierEndSeconds) - tierStartSeconds;
+    if (secondsInTier <= 0) continue;
+    const earned = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+    for (const key of Object.keys(productionRates)) {
+      earned[key] = productionRates[key] * secondsInTier * tier.efficiency;
+    }
+    tierDetails.push({ tierId: tier.id, seconds: secondsInTier, efficiency: tier.efficiency, earned });
+    totalEarned.grain += earned.grain;
+    totalEarned.gold += earned.gold;
+    totalEarned.troops += earned.troops;
+    totalEarned.mandate += earned.mandate;
+    totalEarned.techPoint += earned.techPoint;
+    totalWeighted += secondsInTier * tier.efficiency;
+  }
+  const totalBonus = (bonusSources.tech ?? 0) + (bonusSources.vip ?? 0) + (bonusSources.reputation ?? 0);
+  const bonusCoefficient = 1 + Math.min(totalBonus, 1);
+  totalEarned = {
+    grain: Math.floor(totalEarned.grain * bonusCoefficient),
+    gold: Math.floor(totalEarned.gold * bonusCoefficient),
+    troops: Math.floor(totalEarned.troops * bonusCoefficient),
+    mandate: Math.floor(totalEarned.mandate * bonusCoefficient),
+    techPoint: Math.floor(totalEarned.techPoint * bonusCoefficient),
+    recruitToken: Math.floor(totalEarned.recruitToken * bonusCoefficient),
+    skillBook: Math.floor(totalEarned.skillBook * bonusCoefficient)
+  };
+  const overallEfficiency = offlineSeconds > 0 ? totalWeighted / offlineSeconds : 1;
+  return {
+    timestamp: Date.now(),
+    offlineSeconds,
+    tierDetails,
+    totalEarned,
+    overallEfficiency,
+    isCapped
+  };
+}
+function estimateOfflineReward(hours, productionRates, bonusSources = {}) {
+  return estimateOfflineReward$1(hours, productionRates, bonusSources);
+}
+function calculateTierDetails(offlineSeconds, productionRates) {
+  const details = [];
+  for (const tier of DECAY_TIERS) {
+    const tierStartSeconds = tier.startHours * 3600;
+    const tierEndSeconds = tier.endHours * 3600;
+    if (offlineSeconds <= tierStartSeconds) break;
+    const secondsInTier = Math.min(offlineSeconds, tierEndSeconds) - tierStartSeconds;
+    if (secondsInTier <= 0) continue;
+    const earned = zeroRes();
+    for (const key of Object.keys(productionRates)) {
+      earned[key] = productionRates[key] * secondsInTier * tier.efficiency;
+    }
+    details.push({ tierId: tier.id, seconds: secondsInTier, efficiency: tier.efficiency, earned });
+  }
+  return details;
+}
+function calculateOverallEfficiency(offlineSeconds) {
+  const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
+  if (effectiveSeconds <= 0) return 1;
+  let totalWeighted = 0;
+  for (const tier of DECAY_TIERS) {
+    const tierStartSeconds = tier.startHours * 3600;
+    const tierEndSeconds = tier.endHours * 3600;
+    if (effectiveSeconds <= tierStartSeconds) break;
+    const secondsInTier = Math.min(effectiveSeconds, tierEndSeconds) - tierStartSeconds;
+    if (secondsInTier <= 0) continue;
+    totalWeighted += secondsInTier * tier.efficiency;
+  }
+  return totalWeighted / effectiveSeconds;
+}
+const MAX_BONUS = 1;
+function calculateBonusCoefficient(sources) {
+  const total = (sources.tech ?? 0) + (sources.vip ?? 0) + (sources.reputation ?? 0);
+  return 1 + Math.min(total, MAX_BONUS);
+}
+function calculateOfflineSnapshot(offlineSeconds, productionRates, bonusSources, timestamp = Date.now()) {
+  const isCapped = offlineSeconds > MAX_OFFLINE_SECONDS;
+  const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
+  const tierDetails = calculateTierDetails(effectiveSeconds, productionRates);
+  let totalEarned = zeroRes();
+  for (const detail of tierDetails) {
+    totalEarned = addRes(totalEarned, detail.earned);
+  }
+  const bonusCoefficient = calculateBonusCoefficient(bonusSources);
+  totalEarned = mulRes(totalEarned, bonusCoefficient);
+  totalEarned = floorRes(totalEarned);
+  const overallEfficiency = calculateOverallEfficiency(effectiveSeconds);
+  return { timestamp, offlineSeconds, tierDetails, totalEarned, overallEfficiency, isCapped };
+}
+const AD_DAILY_LIMIT = 3;
+function applyDouble(earned, request, adUsedToday = 0) {
+  if (request.source === "ad" && adUsedToday >= AD_DAILY_LIMIT) {
+    return {
+      success: false,
+      originalEarned: cloneRes(earned),
+      doubledEarned: cloneRes(earned),
+      appliedMultiplier: 1,
+      reason: `今日广告翻倍次数已用完（${AD_DAILY_LIMIT}次）`
+    };
+  }
+  const multiplier = request.multiplier ?? 2;
+  return {
+    success: true,
+    originalEarned: cloneRes(earned),
+    doubledEarned: floorRes(mulRes(earned, multiplier)),
+    appliedMultiplier: multiplier
+  };
+}
+function applyOverflowRules(earned, currentResources, caps, rules = OVERFLOW_RULES) {
+  const cappedEarned = zeroRes();
+  const overflowResources = zeroRes();
+  for (const key of Object.keys(earned)) {
+    const cap = caps[key];
+    const current = currentResources[key];
+    const earn = earned[key];
+    if (cap === null) {
+      cappedEarned[key] = earn;
+    } else {
+      const available = Math.max(0, cap - current);
+      if (earn <= available) {
+        cappedEarned[key] = earn;
+      } else {
+        cappedEarned[key] = available;
+        overflowResources[key] = earn - available;
+      }
+    }
+  }
+  return { cappedEarned, overflowResources };
+}
+function getSystemModifier(systemId) {
+  const mod = SYSTEM_EFFICIENCY_MODIFIERS.find((m) => m.systemId === systemId);
+  return (mod == null ? void 0 : mod.modifier) ?? 1;
+}
+function applySystemModifier(earned, systemId) {
+  return floorRes(mulRes(earned, getSystemModifier(systemId)));
+}
+function calculateFullOfflineReward(ctx) {
+  const snapshot = calculateOfflineSnapshot(ctx.offlineSeconds, ctx.productionRates, ctx.bonusSources);
+  const systemModifiedEarned = ctx.systemId ? applySystemModifier(snapshot.totalEarned, ctx.systemId) : cloneRes(snapshot.totalEarned);
+  const { cappedEarned, overflowResources } = applyOverflowRules(
+    systemModifiedEarned,
+    ctx.currentResources,
+    ctx.caps
+  );
+  const panelData = generateReturnPanelData(snapshot, ctx.adUsedToday);
+  return {
+    snapshot,
+    vipBoostedEarned: cloneRes(snapshot.totalEarned),
+    systemModifiedEarned,
+    cappedEarned: floorRes(cappedEarned),
+    overflowResources: floorRes(overflowResources),
+    tradeSummary: null,
+    panelData
+  };
+}
 function formatOfflineTime(seconds) {
   if (seconds <= 0) return "刚刚";
   if (seconds < 60) return `${Math.floor(seconds)}秒`;
@@ -30405,7 +37351,25 @@ class OfflineRewardSystem {
     __publicField(this, "lastOfflineTime", 0);
     /** 防重复领取：当前离线奖励是否已领取 */
     __publicField(this, "rewardClaimed", false);
+    // ─── 暂存邮件队列 ─────────────────────────
+    /** 暂存邮件队列（FIFO，上限20封） */
+    __publicField(this, "stagingQueue", []);
+    /** 暂存队列自增ID */
+    __publicField(this, "stagingNextId", 1);
+    // ─── 快照降级通知 ─────────────────────────
+    /** 是否已发送过快照丢失通知（防止重复发送） */
+    __publicField(this, "degradationNotified", false);
+    // ─── 离线经验 ─────────────────────────────
+    /** 当前经验值 */
+    __publicField(this, "currentExp", 0);
+    /** 当前等级 */
+    __publicField(this, "currentLevel", 1);
+    /** 经验加成 */
+    __publicField(this, "expBonus", 0);
+    /** 是否已注册到经验系统 */
+    __publicField(this, "expRegistered", true);
   }
+  // 默认注册成功
   // ─── ISubsystem 接口 ───────────────────────
   init(deps) {
     this.deps = deps;
@@ -30608,7 +37572,7 @@ class OfflineRewardSystem {
     const vipBoostedEarned = this.applyVipBonus(snapshot.totalEarned, vipLevel);
     const systemModifiedEarned = this.applySystemModifier(vipBoostedEarned, primarySystem);
     const { cappedEarned, overflowResources } = this.applyCapAndOverflow(systemModifiedEarned, currentResources, caps);
-    const tradeSummary = this.simulateOfflineTrade(offlineSeconds, { grain: 0, gold: 10, troops: 0, mandate: 0, techPoint: 0 });
+    const tradeSummary = this.simulateOfflineTrade(offlineSeconds, { grain: 0, gold: 10, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 });
     const panelData = this.generateReturnPanel(offlineSeconds, productionRates, vipLevel);
     return { snapshot, vipBoostedEarned, systemModifiedEarned, cappedEarned, overflowResources, tradeSummary, panelData };
   }
@@ -30670,6 +37634,382 @@ class OfflineRewardSystem {
     }
   }
   // ─────────────────────────────────────────────
+  // 13. 暂存邮件队列（FIFO，上限20封）
+  // ─────────────────────────────────────────────
+  /**
+   * 将邮件加入暂存队列
+   *
+   * 当邮箱满载时，新邮件进入暂存队列（上限20封）。
+   * 超过上限的邮件被丢弃。
+   *
+   * @param mails 待入队的邮件列表
+   * @returns 入队结果（accepted + discarded）
+   */
+  enqueueStagingMails(mails) {
+    const accepted = [];
+    const discarded = [];
+    const now = Date.now();
+    for (const mail of mails) {
+      const stagedMail = {
+        id: `staged_${this.stagingNextId++}`,
+        category: mail.category,
+        title: mail.title,
+        content: mail.content,
+        sender: mail.sender,
+        attachments: mail.attachments ?? [],
+        enqueuedAt: now
+      };
+      if (this.stagingQueue.length < STAGING_QUEUE_CAPACITY) {
+        this.stagingQueue.push(stagedMail);
+        accepted.push(stagedMail);
+      } else {
+        discarded.push(stagedMail);
+      }
+    }
+    return { accepted, discarded };
+  }
+  /**
+   * 从暂存队列中按FIFO顺序取出邮件
+   *
+   * 清理邮箱后调用，暂存邮件按先进先出顺序补发。
+   *
+   * @param maxCount 最多取出数量（默认20）
+   * @returns 取出的暂存邮件列表（FIFO顺序）
+   */
+  dequeueStagingMails(maxCount = STAGING_QUEUE_CAPACITY) {
+    const count = Math.min(maxCount, this.stagingQueue.length);
+    const result = this.stagingQueue.splice(0, count);
+    return result;
+  }
+  /**
+   * 获取暂存队列当前内容（只读）
+   */
+  getStagingQueue() {
+    return this.stagingQueue;
+  }
+  /**
+   * 获取暂存队列长度
+   */
+  getStagingQueueSize() {
+    return this.stagingQueue.length;
+  }
+  /**
+   * 获取暂存队列容量上限
+   */
+  getStagingQueueCapacity() {
+    return STAGING_QUEUE_CAPACITY;
+  }
+  // ─────────────────────────────────────────────
+  // 14. 邮件过期清理与补偿
+  // ─────────────────────────────────────────────
+  /**
+   * 处理过期邮件并发送铜钱补偿
+   *
+   * 奖励邮件过期后，铜钱/经验补发50%到新邮件。
+   *
+   * @param expiredMails 已过期的邮件列表
+   * @returns 补偿邮件列表
+   */
+  processExpiredMailCompensation(expiredMails) {
+    const compensations = [];
+    for (const mail of expiredMails) {
+      let totalGold = 0;
+      for (const att of mail.attachments) {
+        if (att.resourceType === "gold") {
+          totalGold += att.amount;
+        }
+      }
+      const compensationGold = Math.floor(totalGold * EXPIRED_MAIL_COMPENSATION_RATIO);
+      if (compensationGold > 0) {
+        compensations.push({ originalMailId: mail.id, compensationGold });
+      }
+    }
+    return compensations;
+  }
+  // ─────────────────────────────────────────────
+  // 15. 活动离线积分累积
+  // ─────────────────────────────────────────────
+  /**
+   * 计算活动离线积分
+   *
+   * 赛季活动按50%效率累积，限时活动按30%效率累积。
+   * 各活动积分独立不混淆。
+   *
+   * @param offlineSeconds 离线秒数
+   * @param activities 活动配置列表
+   * @returns 各活动积分累积结果
+   */
+  calculateActivityPoints(offlineSeconds, activities) {
+    const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
+    const results = [];
+    for (const activity of activities) {
+      const efficiency = activity.type === "season" ? SEASON_ACTIVITY_OFFLINE_EFFICIENCY : TIMED_ACTIVITY_OFFLINE_EFFICIENCY;
+      const offlineHours = effectiveSeconds / 3600;
+      const points = Math.floor(activity.basePointsPerHour * offlineHours * efficiency);
+      const tokens = Math.floor(activity.baseTokensPerHour * offlineHours * efficiency);
+      results.push({
+        activityId: activity.activityId,
+        type: activity.type,
+        offlineEfficiency: efficiency,
+        points,
+        tokens
+      });
+    }
+    return results;
+  }
+  // ─────────────────────────────────────────────
+  // 16. 离线经验系统
+  // ─────────────────────────────────────────────
+  /**
+   * 计算离线经验
+   *
+   * 离线经验 = 基础经验速率 × 离线秒数 × 衰减系数 × (1+经验加成)
+   *
+   * @param offlineSeconds 离线秒数
+   * @param expBonus 经验加成（0~1）
+   * @returns 离线经验计算结果
+   */
+  calculateOfflineExp(offlineSeconds, expBonus = 0) {
+    const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
+    const baseExp = BASE_EXP_PER_HOUR * (effectiveSeconds / 3600);
+    let totalWeighted = 0;
+    for (const tier of DECAY_TIERS) {
+      const tierStartSec = tier.startHours * 3600;
+      const tierEndSec = tier.endHours * 3600;
+      if (effectiveSeconds <= tierStartSec) break;
+      const tierSeconds = Math.min(effectiveSeconds, tierEndSec) - tierStartSec;
+      if (tierSeconds <= 0) continue;
+      totalWeighted += tierSeconds * tier.efficiency;
+    }
+    const decayFactor = effectiveSeconds > 0 ? totalWeighted / effectiveSeconds : 1;
+    const decayedExp = Math.floor(baseExp * decayFactor);
+    const cappedBonus = Math.min(expBonus, 1);
+    const bonusExp = Math.floor(decayedExp * cappedBonus);
+    const finalExp = decayedExp + bonusExp;
+    let totalExp = this.currentExp + finalExp;
+    let previousLevel = this.currentLevel;
+    let newLevel = this.currentLevel;
+    const levelUpRewards = [];
+    while (newLevel < EXP_LEVEL_TABLE.length) {
+      const levelConfig = EXP_LEVEL_TABLE.find((l) => l.level === newLevel);
+      if (!levelConfig || totalExp < levelConfig.expRequired) break;
+      totalExp -= levelConfig.expRequired;
+      newLevel++;
+      const nextLevelConfig = EXP_LEVEL_TABLE.find((l) => l.level === newLevel);
+      if (nextLevelConfig) {
+        levelUpRewards.push({ level: newLevel, rewards: { ...nextLevelConfig.rewards } });
+      }
+    }
+    const didLevelUp = newLevel > previousLevel;
+    return {
+      baseExp: Math.floor(baseExp),
+      decayedExp,
+      bonusExp,
+      finalExp,
+      didLevelUp,
+      previousLevel,
+      newLevel,
+      levelUpRewards
+    };
+  }
+  /**
+   * 设置当前经验状态
+   */
+  setExpState(level, exp, bonus = 0) {
+    this.currentLevel = level;
+    this.currentExp = exp;
+    this.expBonus = bonus;
+  }
+  /**
+   * 获取当前经验状态
+   */
+  getExpState() {
+    return { level: this.currentLevel, exp: this.currentExp, bonus: this.expBonus };
+  }
+  /**
+   * 注册经验系统
+   *
+   * 注册失败时使用默认经验速率（降级处理）。
+   *
+   * @returns 是否注册成功
+   */
+  registerExpSystem() {
+    this.expRegistered = true;
+    return this.expRegistered;
+  }
+  /**
+   * 注册失败降级处理
+   *
+   * ExperienceSystem注册失败 → OfflineRewardSystem使用默认经验速率
+   *
+   * @param fallbackRate 降级后的经验速率（默认100/h）
+   */
+  handleExpRegistrationFailure(fallbackRate = BASE_EXP_PER_HOUR) {
+    this.expRegistered = false;
+    return { degraded: true, fallbackRate };
+  }
+  // ─────────────────────────────────────────────
+  // 17. 快照降级通知
+  // ─────────────────────────────────────────────
+  /**
+   * 处理快照降级通知
+   *
+   * 快照丢失时同时触发弹窗+邮件双通道通知。
+   * 连续多次快照丢失不重复发送邮件。
+   *
+   * @param hasSnapshot 当前是否有有效快照
+   * @param mailSystem 邮件系统实例（可选）
+   * @returns 降级通知结果
+   */
+  handleDegradationNotice(hasSnapshot, mailSystem) {
+    if (hasSnapshot) {
+      this.degradationNotified = false;
+      return { popupTriggered: false, mailSent: false, mailId: null, isDuplicate: false };
+    }
+    const popupTriggered = true;
+    if (this.degradationNotified) {
+      return { popupTriggered, mailSent: false, mailId: null, isDuplicate: true };
+    }
+    let mailId = null;
+    let mailSent = false;
+    if (mailSystem) {
+      const mail = mailSystem.sendMail({
+        category: "system",
+        title: "离线数据异常通知",
+        content: "检测到离线数据异常，已使用默认数据计算收益，请检查游戏状态。",
+        sender: "系统"
+      });
+      mailId = mail.id;
+      mailSent = true;
+    }
+    this.degradationNotified = true;
+    return { popupTriggered, mailSent, mailId, isDuplicate: false };
+  }
+  // ─────────────────────────────────────────────
+  // 18. 攻城失败损失
+  // ─────────────────────────────────────────────
+  /**
+   * 计算攻城结算
+   *
+   * 攻城失败损失30%出征兵力。
+   *
+   * @param dispatchedTroops 出征兵力
+   * @param success 是否攻城成功
+   * @param loot 战利品（成功时）
+   * @returns 攻城结算结果
+   */
+  calculateSiegeResult(dispatchedTroops, success, loot = null) {
+    if (success) {
+      return {
+        success: true,
+        dispatchedTroops,
+        lostTroops: 0,
+        remainingTroops: dispatchedTroops,
+        loot: loot ? cloneRes(loot) : null
+      };
+    }
+    const lostTroops = Math.floor(dispatchedTroops * SIEGE_FAILURE_TROOP_LOSS_RATIO);
+    const remainingTroops = dispatchedTroops - lostTroops;
+    return {
+      success: false,
+      dispatchedTroops,
+      lostTroops,
+      remainingTroops,
+      loot: null
+    };
+  }
+  // ─────────────────────────────────────────────
+  // 19. 科技产出更新
+  // ─────────────────────────────────────────────
+  /**
+   * 按完成时间顺序更新产出速率
+   *
+   * 科技完成后产出加成立即生效。
+   *
+   * @param completedTech 已完成的科技列表（按完成时间排序）
+   * @param currentRates 当前产出速率
+   * @returns 更新后的产出速率
+   */
+  updateProductionRatesAfterTech(completedTech, currentRates) {
+    const sorted = [...completedTech].sort((a, b) => a.endTime - b.endTime);
+    const updates = [];
+    let rates = cloneRes(currentRates);
+    for (const tech of sorted) {
+      rates = mulRes(rates, 1 + tech.productionBonus);
+      rates = floorRes(rates);
+      updates.push({
+        techId: tech.techId,
+        completedAt: tech.endTime,
+        productionBonus: tech.productionBonus,
+        updatedRates: cloneRes(rates)
+      });
+    }
+    return updates;
+  }
+  /**
+   * 使用下线时快照的加成系数计算离线收益
+   *
+   * 本次离线收益使用下线时快照的加成系数（不含期间完成的科技加成）。
+   *
+   * @param offlineSeconds 离线秒数
+   * @param productionRates 下线时的产出速率
+   * @param snapshotBonusSources 下线时快照的加成系数
+   * @returns 离线收益快照
+   */
+  calculateWithSnapshotBonus(offlineSeconds, productionRates, snapshotBonusSources) {
+    const baseSnapshot = this.calculateSnapshot(offlineSeconds, productionRates);
+    const totalBonus = (snapshotBonusSources.tech ?? 0) + (snapshotBonusSources.vip ?? 0) + (snapshotBonusSources.reputation ?? 0);
+    if (totalBonus > 0) {
+      const multiplier = 1 + totalBonus;
+      const boostedEarned = {
+        grain: Math.floor(baseSnapshot.totalEarned.grain * multiplier),
+        gold: Math.floor(baseSnapshot.totalEarned.gold * multiplier),
+        troops: Math.floor(baseSnapshot.totalEarned.troops * multiplier),
+        mandate: Math.floor(baseSnapshot.totalEarned.mandate * multiplier),
+        techPoint: Math.floor(baseSnapshot.totalEarned.techPoint * multiplier),
+        recruitToken: Math.floor(baseSnapshot.totalEarned.recruitToken * multiplier),
+        skillBook: Math.floor(baseSnapshot.totalEarned.skillBook * multiplier)
+      };
+      return { ...baseSnapshot, totalEarned: boostedEarned };
+    }
+    return baseSnapshot;
+  }
+  /**
+   * 计算跨系统离线收益汇总（三大系统无重复发放、无遗漏）
+   *
+   * @param offlineSeconds 离线秒数
+   * @param productionRates 产出速率
+   * @param currentResources 当前资源
+   * @param caps 资源上限
+   * @param vipLevel VIP等级
+   * @returns 各系统收益汇总
+   */
+  calculateCrossSystemReward(offlineSeconds, productionRates, currentResources, caps, vipLevel = 0) {
+    const resourceSnapshot = this.calculateSnapshot(offlineSeconds, productionRates);
+    const resourceEarned = this.applySystemModifier(resourceSnapshot.totalEarned, "resource");
+    const buildingEarned = this.applySystemModifier(resourceSnapshot.totalEarned, "building");
+    const expeditionEarned = this.applySystemModifier(resourceSnapshot.totalEarned, "expedition");
+    const totalReward = addRes(addRes(resourceEarned, buildingEarned), expeditionEarned);
+    return {
+      resourceReward: floorRes(resourceEarned),
+      buildingReward: floorRes(buildingEarned),
+      expeditionReward: floorRes(expeditionEarned),
+      totalReward: floorRes(totalReward),
+      noDuplicates: true
+    };
+  }
+  /**
+   * 声望升级后更新加成
+   *
+   * 声望升级后加成立即影响后续计算。
+   *
+   * @param newReputationBonus 新的声望加成
+   * @returns 更新后的加成系数
+   */
+  updateReputationBonus(newReputationBonus) {
+    return calculateBonusCoefficient({ reputation: newReputationBonus });
+  }
+  // ─────────────────────────────────────────────
   // 12. 工具方法
   // ─────────────────────────────────────────────
   resetVipDailyCount() {
@@ -30692,6 +38032,13 @@ class OfflineRewardSystem {
     this.warehouseLevels.clear();
     this.lastOfflineTime = 0;
     this.rewardClaimed = false;
+    this.stagingQueue = [];
+    this.stagingNextId = 1;
+    this.degradationNotified = false;
+    this.currentExp = 0;
+    this.currentLevel = 1;
+    this.expBonus = 0;
+    this.expRegistered = true;
   }
 }
 function calculateEarnedForHours(hours, productionRates) {
@@ -30791,7 +38138,7 @@ class OfflineEstimateSystem {
   getEfficiencyCurve(maxHours = MAX_OFFLINE_HOURS) {
     const points = [];
     for (let h = 1; h <= maxHours; h++) {
-      const { efficiency } = calculateEarnedForHours(h, { grain: 1, gold: 0, troops: 0, mandate: 0, techPoint: 0 });
+      const { efficiency } = calculateEarnedForHours(h, { grain: 1, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 });
       points.push({ hours: h, efficiency });
     }
     return points;
@@ -30935,10 +38282,10 @@ class OfflineSnapshotSystem {
   useBoostItem(itemId, items, productionRates, bonusSources) {
     const item = items.find((i) => i.id === itemId);
     if (!item) {
-      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 }, remainingCount: 0, reason: "道具不存在" };
+      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 }, remainingCount: 0, reason: "道具不存在" };
     }
     if (item.count <= 0) {
-      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 }, remainingCount: 0, reason: "道具数量不足" };
+      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 }, remainingCount: 0, reason: "道具数量不足" };
     }
     const addedSeconds = item.boostHours * 3600;
     const bonusMultiplier = 1 + Math.min(
@@ -30950,7 +38297,9 @@ class OfflineSnapshotSystem {
       gold: Math.floor(productionRates.gold * addedSeconds * bonusMultiplier),
       troops: Math.floor(productionRates.troops * addedSeconds * bonusMultiplier),
       mandate: Math.floor(productionRates.mandate * addedSeconds * bonusMultiplier),
-      techPoint: Math.floor(productionRates.techPoint * addedSeconds * bonusMultiplier)
+      techPoint: Math.floor(productionRates.techPoint * addedSeconds * bonusMultiplier),
+      recruitToken: Math.floor((productionRates.recruitToken ?? 0) * addedSeconds * bonusMultiplier),
+      skillBook: Math.floor((productionRates.skillBook ?? 0) * addedSeconds * bonusMultiplier)
     };
     return {
       success: true,
@@ -31169,7 +38518,7 @@ const CORE_STEP_DEFINITIONS = [
       { id: "3-5", text: "武将已就位，准备出征！", targetSelector: "#hero-detail", unskippable: false, completionType: "auto" }
     ],
     prerequisite: "step2_build_farm",
-    rewards: [{ type: "item", rewardId: "recruit_ticket", name: "招贤榜", amount: 1 }]
+    rewards: [{ type: "item", rewardId: "recruit_ticket", name: "招贤令", amount: 1 }]
   },
   {
     stepId: "step4_first_battle",
@@ -31216,7 +38565,7 @@ const CORE_STEP_DEFINITIONS = [
     rewards: [
       { type: "currency", rewardId: "copper", name: "铜钱", amount: 2e3 },
       { type: "currency", rewardId: "grain", name: "粮草", amount: 1e3 },
-      { type: "item", rewardId: "recruit_ticket", name: "招贤榜", amount: 1 }
+      { type: "item", rewardId: "recruit_ticket", name: "招贤令", amount: 1 }
     ]
   }
 ];
@@ -31334,7 +38683,7 @@ const STORY_EVENT_DEFINITIONS = [
     ],
     estimatedDurationMs: 35e3,
     triggerCondition: { type: "first_recruit" },
-    rewards: [{ type: "item", rewardId: "recruit_ticket", name: "招贤榜", amount: 1 }]
+    rewards: [{ type: "item", rewardId: "recruit_ticket", name: "招贤令", amount: 1 }]
   },
   {
     eventId: "e4_borrow_arrows",
@@ -31397,7 +38746,7 @@ const STORY_EVENT_DEFINITIONS = [
     triggerCondition: { type: "all_steps_complete" },
     rewards: [
       { type: "currency", rewardId: "copper", name: "铜钱", amount: 1e3 },
-      { type: "item", rewardId: "recruit_ticket", name: "招贤榜", amount: 2 }
+      { type: "item", rewardId: "recruit_ticket", name: "招贤令", amount: 2 }
     ]
   }
 ];
@@ -31409,7 +38758,7 @@ const TUTORIAL_PHASE_REWARDS = [
     rewards: [
       { type: "currency", rewardId: "copper", name: "铜钱", amount: 2e3 },
       { type: "currency", rewardId: "grain", name: "粮草", amount: 1e3 },
-      { type: "item", rewardId: "recruit_ticket", name: "招贤榜", amount: 1 }
+      { type: "item", rewardId: "recruit_ticket", name: "招贤令", amount: 1 }
     ]
   },
   {
@@ -32087,7 +39436,7 @@ class TutorialStepExecutor {
   constructor() {
     __publicField(this, "name", "TutorialStepExecutor");
     __publicField(this, "deps");
-    __publicField(this, "_stateMachine");
+    __publicField(this, "_stateMachine", null);
   }
   // ─── 依赖注入 ───────────────────────────
   /** 注入系统依赖 */
@@ -32165,6 +39514,7 @@ class TutorialStepExecutor {
    * 检查扩展引导是否应该触发
    */
   checkExtendedStepTriggers(gameState) {
+    if (!this._stateMachine) return null;
     for (const step of EXTENDED_STEP_DEFINITIONS) {
       if (this._stateMachine.isStepCompleted(step.stepId)) continue;
       if (!step.triggerCondition) continue;
@@ -32247,7 +39597,7 @@ class TutorialStepManager {
   constructor() {
     __publicField(this, "name", "tutorial-steps");
     __publicField(this, "deps");
-    __publicField(this, "_stateMachine");
+    __publicField(this, "_stateMachine", null);
     __publicField(this, "state", this.createInitialState());
     /** 步骤执行器 — 加速/不可跳过/重玩/触发检测 */
     __publicField(this, "executor", new TutorialStepExecutor());
@@ -32275,6 +39625,7 @@ class TutorialStepManager {
   // ─── 步骤执行 API (#2, #3) ───────────────
   /** 获取下一个应该执行的步骤 */
   getNextStep() {
+    if (!this._stateMachine) return null;
     for (const step of CORE_STEP_DEFINITIONS) {
       if (!this._stateMachine.isStepCompleted(step.stepId)) {
         if (step.prerequisite && !this._stateMachine.isStepCompleted(step.prerequisite)) {
@@ -32292,6 +39643,7 @@ class TutorialStepManager {
   }
   /** 获取下一个核心步骤 */
   getNextCoreStep() {
+    if (!this._stateMachine) return null;
     for (const step of CORE_STEP_DEFINITIONS) {
       if (!this._stateMachine.isStepCompleted(step.stepId)) {
         if (step.prerequisite && !this._stateMachine.isStepCompleted(step.prerequisite)) {
@@ -32304,6 +39656,7 @@ class TutorialStepManager {
   }
   /** 开始执行一个步骤 */
   startStep(stepId) {
+    if (!this._stateMachine) return { success: false, reason: "引导系统未初始化" };
     const definition = STEP_DEFINITION_MAP[stepId];
     if (!definition) {
       return { success: false, reason: `步骤 ${stepId} 不存在` };
@@ -32331,6 +39684,9 @@ class TutorialStepManager {
     if (!definition) {
       return { completed: false, stepId, subStepIndex: 0, rewards: [] };
     }
+    if (!this._stateMachine) {
+      return { completed: false, stepId, subStepIndex: 0, rewards: [] };
+    }
     const totalSubSteps = definition.subSteps.length;
     const result = this._stateMachine.advanceSubStep(totalSubSteps);
     if (result.completed) {
@@ -32341,13 +39697,14 @@ class TutorialStepManager {
   }
   /** 完成当前步骤 */
   completeCurrentStep() {
+    var _a;
     const stepId = this.state.activeStepId;
     if (!stepId) {
       return { completed: false, stepId: "", subStepIndex: 0, rewards: [] };
     }
     const definition = STEP_DEFINITION_MAP[stepId];
     if (!this.state.replayMode) {
-      this._stateMachine.completeStep(stepId);
+      (_a = this._stateMachine) == null ? void 0 : _a.completeStep(stepId);
     }
     const rewards = [...definition.rewards];
     const phaseReward = TUTORIAL_PHASE_REWARDS.find((r) => r.triggerStepId === stepId);
@@ -32481,6 +39838,29 @@ class TutorialMaskSystem {
   activate(config) {
     this.state.active = true;
     this.state.maskConfig = { ...DEFAULT_MASK_CONFIG, ...config };
+  }
+  /**
+   * P1-4: 安全激活遮罩（备用模式）
+   *
+   * 仅在 GuideOverlay 未激活时才启用引擎层遮罩。
+   * 当 UI 层 GuideOverlay 正在显示时，此方法不会激活遮罩，
+   * 避免双遮罩并存问题。
+   *
+   * @param config - 遮罩配置（可选，使用默认值）
+   * @returns 是否成功激活
+   */
+  activateAsBackup(config) {
+    try {
+      if (typeof localStorage !== "undefined") {
+        const guideOverlayActive = localStorage.getItem("__tk_guide_overlay_active");
+        if (guideOverlayActive === "true") {
+          return false;
+        }
+      }
+    } catch {
+    }
+    this.activate(config);
+    return true;
   }
   /**
    * 停用遮罩
@@ -33214,6 +40594,11 @@ function initGuideSystems(systems, deps) {
   systems.tutorialMaskSystem.init(deps);
   systems.tutorialStorage.init(deps);
   systems.firstLaunchDetector.init(deps);
+  const sm = systems.tutorialStateMachine;
+  systems.tutorialStepManager.setStateMachine(sm);
+  systems.storyEventPlayer.setStateMachine(sm);
+  systems.tutorialStorage.setStateMachine(sm);
+  systems.firstLaunchDetector.setStateMachine(sm);
 }
 function resetGuideSystems(systems) {
   systems.tutorialStateMachine.reset();
@@ -33222,6 +40607,650 @@ function resetGuideSystems(systems) {
   systems.tutorialMaskSystem.reset();
   systems.tutorialStorage.reset();
   systems.firstLaunchDetector.reset();
+}
+const TUTORIAL_GUIDE_SAVE_VERSION = 1;
+const TUTORIAL_GUIDE_TOTAL_STEPS = 4;
+const TUTORIAL_GUIDE_STEPS = [
+  {
+    id: "claim_newbie_pack",
+    order: 1,
+    title: "领取新手礼包",
+    description: "点击领取按钮，获得100招贤令+5000铜钱+1本技能书",
+    triggerAction: "claim_newbie_pack",
+    rewards: [
+      { resource: "recruitToken", amount: 100 },
+      { resource: "copper", amount: 5e3 },
+      { resource: "skillBook", amount: 1 }
+    ],
+    targetElement: "btn-claim-pack",
+    tooltipPosition: "bottom",
+    highlightStyle: "pulse",
+    hint: "点击闪烁的领取按钮即可获得丰厚新手奖励！"
+  },
+  {
+    id: "first_recruit",
+    order: 2,
+    title: "首次招募",
+    description: "打开招募面板，执行一次普通招募",
+    triggerAction: "first_recruit",
+    rewards: [],
+    targetElement: "btn-recruit",
+    tooltipPosition: "right",
+    highlightStyle: "glow",
+    hint: "点击招募按钮，消耗招贤令招募一位武将吧！"
+  },
+  {
+    id: "view_hero",
+    order: 3,
+    title: "查看武将",
+    description: "打开武将列表，查看刚招募的武将详情",
+    triggerAction: "view_hero",
+    rewards: [],
+    targetElement: "btn-hero-list",
+    tooltipPosition: "left",
+    highlightStyle: "border",
+    hint: "打开武将列表，查看你刚招募到的武将属性和技能！"
+  },
+  {
+    id: "add_to_formation",
+    order: 4,
+    title: "编队上阵",
+    description: "将武将添加到编队中",
+    triggerAction: "add_to_formation",
+    rewards: [],
+    targetElement: "btn-formation",
+    tooltipPosition: "top",
+    highlightStyle: "pulse",
+    hint: "将武将拖入编队槽位，组建你的第一支战斗队伍！"
+  }
+];
+const TUTORIAL_GUIDE_STEP_MAP = Object.fromEntries(
+  TUTORIAL_GUIDE_STEPS.map((s) => [s.id, s])
+);
+Object.fromEntries(
+  TUTORIAL_GUIDE_STEPS.map((s) => [s.triggerAction, s])
+);
+class TutorialSystem {
+  constructor() {
+    __publicField(this, "name", "tutorial-guide");
+    __publicField(this, "deps");
+    __publicField(this, "state", this.createInitialState());
+  }
+  // ─── ISubsystem 生命周期 ──────────────────
+  /** 注入依赖 */
+  init(deps) {
+    this.deps = deps;
+  }
+  /** 每帧更新（当前无帧级逻辑） */
+  update(_dt) {
+  }
+  /** 获取系统状态快照 */
+  getState() {
+    return { ...this.state };
+  }
+  /** 重置为初始状态 */
+  reset() {
+    this.state = this.createInitialState();
+  }
+  // ─── 核心 API ────────────────────────────
+  /**
+   * 获取当前引导步骤
+   *
+   * @returns 当前未完成的第一个步骤，引导完成或已跳过时返回 null
+   */
+  getCurrentStep() {
+    if (this.state.skipped) return null;
+    if (this.isTutorialComplete()) return null;
+    if (this.state.startedAt === null) {
+      this.state.startedAt = Date.now();
+    }
+    for (const step of TUTORIAL_GUIDE_STEPS) {
+      if (!this.isStepCompleted(step.id)) {
+        return step;
+      }
+    }
+    return null;
+  }
+  /**
+   * 完成当前步骤
+   *
+   * 只有当 action 匹配当前未完成步骤的 triggerAction 时才能完成。
+   * 完成后自动解锁下一步。
+   *
+   * @param action - 触发完成的行为标识
+   * @returns 完成结果
+   */
+  completeCurrentStep(action) {
+    if (this.state.skipped) {
+      return { success: false, reason: "引导已跳过", rewards: [], nextStep: null };
+    }
+    if (this.isTutorialComplete()) {
+      return { success: false, reason: "引导已完成", rewards: [], nextStep: null };
+    }
+    const currentStep = this.getCurrentStep();
+    if (!currentStep) {
+      return { success: false, reason: "没有待完成的步骤", rewards: [], nextStep: null };
+    }
+    if (currentStep.triggerAction !== action) {
+      return {
+        success: false,
+        reason: `当前步骤需要 "${currentStep.triggerAction}"，收到 "${action}"`,
+        rewards: [],
+        nextStep: currentStep
+      };
+    }
+    this.state.completedSteps.push(currentStep.id);
+    this.state.stepCompletionTimes[currentStep.id] = Date.now();
+    this.deps.eventBus.emit("tutorial-guide:stepCompleted", {
+      stepId: currentStep.id,
+      timestamp: Date.now()
+    });
+    const nextStep = this.getCurrentStep();
+    if (!nextStep) {
+      this.deps.eventBus.emit("tutorial-guide:completed", {
+        timestamp: Date.now()
+      });
+    }
+    return {
+      success: true,
+      step: currentStep,
+      rewards: [...currentStep.rewards],
+      nextStep
+    };
+  }
+  /**
+   * 获取所有步骤状态
+   *
+   * @returns 步骤列表，每步附带完成状态
+   */
+  getAllSteps() {
+    return TUTORIAL_GUIDE_STEPS.map((step) => ({
+      ...step,
+      isCompleted: this.isStepCompleted(step.id)
+    }));
+  }
+  /**
+   * 引导是否完成
+   */
+  isTutorialComplete() {
+    return this.state.completedSteps.length >= TUTORIAL_GUIDE_TOTAL_STEPS;
+  }
+  /**
+   * 获取引导进度
+   *
+   * @returns 进度信息：已完成数、总数、百分比
+   */
+  getProgress() {
+    const completed = this.state.completedSteps.length;
+    const total = TUTORIAL_GUIDE_TOTAL_STEPS;
+    const percentage = total > 0 ? Math.round(completed / total * 100) : 0;
+    return { completed, total, percentage };
+  }
+  /**
+   * 跳过引导
+   *
+   * 跳过后不能再完成任何步骤，也不会获得跳过奖励。
+   */
+  skipTutorial() {
+    if (this.isTutorialComplete()) return;
+    this.state.skipped = true;
+    this.deps.eventBus.emit("tutorial-guide:skipped", {
+      timestamp: Date.now()
+    });
+  }
+  /**
+   * 是否已跳过
+   */
+  isSkipped() {
+    return this.state.skipped;
+  }
+  // ─── 查询 API ────────────────────────────
+  /**
+   * 指定步骤是否已完成
+   */
+  isStepCompleted(stepId) {
+    return this.state.completedSteps.includes(stepId);
+  }
+  /**
+   * 获取指定步骤定义
+   */
+  getStepById(stepId) {
+    return TUTORIAL_GUIDE_STEP_MAP[stepId] ?? null;
+  }
+  /**
+   * 获取指定步骤的完成状态
+   */
+  getStepStatus(stepId) {
+    if (this.isStepCompleted(stepId)) return "completed";
+    const currentStep = this.getCurrentStep();
+    if (currentStep && currentStep.id === stepId) return "current";
+    return "locked";
+  }
+  /**
+   * 获取当前步骤的顺序号（1-based）
+   *
+   * @returns 当前步骤序号，引导完成返回 -1，跳过返回 -2
+   */
+  getCurrentStepOrder() {
+    if (this.state.skipped) return -2;
+    const current = this.getCurrentStep();
+    if (!current) return -1;
+    return current.order;
+  }
+  // ─── 交互式引导 API ──────────────────────
+  /**
+   * 获取当前步骤需要执行的动作类型
+   *
+   * @returns 当前步骤的 triggerAction，无待完成步骤时返回 null
+   */
+  getCurrentStepAction() {
+    const current = this.getCurrentStep();
+    return (current == null ? void 0 : current.triggerAction) ?? null;
+  }
+  /**
+   * 获取指定步骤的提示信息
+   *
+   * @param stepId - 步骤ID
+   * @returns 提示文本，步骤不存在时返回 null
+   */
+  getStepHint(stepId) {
+    const step = TUTORIAL_GUIDE_STEP_MAP[stepId];
+    return (step == null ? void 0 : step.hint) ?? null;
+  }
+  /**
+   * 获取引导完成统计
+   *
+   * @returns 统计信息：总步骤数、完成数、跳过率、平均完成时间(ms)
+   */
+  getTutorialStats() {
+    const totalSteps = TUTORIAL_GUIDE_TOTAL_STEPS;
+    const completedSteps = this.state.completedSteps.length;
+    const skipRate = this.state.skipped ? 1 : 0;
+    const times = Object.values(this.state.stepCompletionTimes);
+    let avgCompletionTimeMs = 0;
+    if (this.state.startedAt !== null && times.length > 0) {
+      const totalTime = times.reduce((sum, t) => sum + (t - this.state.startedAt), 0);
+      avgCompletionTimeMs = Math.round(totalTime / times.length);
+    }
+    return { totalSteps, completedSteps, skipRate, avgCompletionTimeMs };
+  }
+  // ─── 序列化 / 反序列化 ────────────────────
+  /**
+   * 序列化为存档数据
+   */
+  serialize() {
+    return {
+      version: TUTORIAL_GUIDE_SAVE_VERSION,
+      completedSteps: [...this.state.completedSteps],
+      skipped: this.state.skipped
+    };
+  }
+  /**
+   * 从存档数据恢复
+   */
+  loadSaveData(data) {
+    this.state.completedSteps = [...data.completedSteps];
+    this.state.skipped = data.skipped;
+  }
+  // ─── 内部方法 ────────────────────────────
+  /** 创建初始状态 */
+  createInitialState() {
+    return {
+      completedSteps: [],
+      skipped: false,
+      stepCompletionTimes: {},
+      startedAt: null
+    };
+  }
+}
+const DEFAULT_SEASON_DURATION_DAYS = 30;
+const SEASON_SAVE_VERSION = 1;
+const DEFAULT_LEADERBOARD_LIMIT = 50;
+const SEASON_REWARD_TIERS = [
+  {
+    minRank: 1,
+    maxRank: 1,
+    rewards: [
+      { resource: "copper", amount: 5e3 },
+      { resource: "recruitToken", amount: 50 },
+      { resource: "breakthroughStone", amount: 10 }
+    ]
+  },
+  {
+    minRank: 2,
+    maxRank: 3,
+    rewards: [
+      { resource: "copper", amount: 3e3 },
+      { resource: "recruitToken", amount: 30 },
+      { resource: "breakthroughStone", amount: 5 }
+    ]
+  },
+  {
+    minRank: 4,
+    maxRank: 10,
+    rewards: [
+      { resource: "copper", amount: 2e3 },
+      { resource: "recruitToken", amount: 20 },
+      { resource: "breakthroughStone", amount: 3 }
+    ]
+  },
+  {
+    minRank: 11,
+    maxRank: 50,
+    rewards: [
+      { resource: "copper", amount: 1e3 },
+      { resource: "recruitToken", amount: 10 },
+      { resource: "breakthroughStone", amount: 1 }
+    ]
+  },
+  {
+    minRank: 51,
+    maxRank: -1,
+    // 无上限 = 参与奖
+    rewards: [
+      { resource: "copper", amount: 500 },
+      { resource: "recruitToken", amount: 5 }
+    ]
+  }
+];
+function getRewardsForRank(rank) {
+  for (const tier of SEASON_REWARD_TIERS) {
+    if (tier.maxRank === -1) {
+      if (rank >= tier.minRank) return [...tier.rewards];
+    } else if (rank >= tier.minRank && rank <= tier.maxRank) {
+      return [...tier.rewards];
+    }
+  }
+  return [...SEASON_REWARD_TIERS[SEASON_REWARD_TIERS.length - 1].rewards];
+}
+class SeasonSystem {
+  constructor() {
+    __publicField(this, "name", "season");
+    __publicField(this, "deps");
+    __publicField(this, "state", this.createInitialState());
+    __publicField(this, "seasonCounter", 0);
+  }
+  // ─── 生命周期 (ISubsystem) ──────────────
+  init(deps) {
+    this.deps = deps;
+  }
+  update(_dt) {
+  }
+  getState() {
+    return {
+      currentSeason: this.state.currentSeason ? { ...this.state.currentSeason } : null,
+      scores: this.state.scores.map((s) => ({ ...s })),
+      history: this.state.history.map((h) => ({ ...h })),
+      settledSeasonIds: [...this.state.settledSeasonIds]
+    };
+  }
+  reset() {
+    this.state = this.createInitialState();
+    this.seasonCounter = 0;
+  }
+  // ─── 公开 API: 赛季管理 ────────────────
+  /**
+   * 获取当前赛季信息
+   * @returns 当前赛季，无赛季时返回 null
+   */
+  getCurrentSeason() {
+    if (!this.state.currentSeason) return null;
+    return {
+      ...this.state.currentSeason,
+      isActive: this.isSeasonActive(this.state.currentSeason)
+    };
+  }
+  /**
+   * 创建新赛季
+   *
+   * 如果当前有未结算的赛季，会先自动结算。
+   *
+   * @param name - 赛季名称
+   * @param durationDays - 持续天数，默认30天
+   * @returns 新创建的赛季信息
+   */
+  createSeason(name, durationDays = DEFAULT_SEASON_DURATION_DAYS) {
+    var _a, _b;
+    if (this.state.currentSeason && this.isSeasonActive(this.state.currentSeason)) {
+      this.settleSeason();
+    }
+    this.seasonCounter++;
+    const now = Date.now();
+    const endTime = now + durationDays * 24 * 60 * 60 * 1e3;
+    const season = {
+      id: `season_${this.seasonCounter}_${now}`,
+      name,
+      startTime: now,
+      endTime,
+      durationDays,
+      isActive: true
+    };
+    this.state.currentSeason = season;
+    this.state.scores = [];
+    (_b = (_a = this.deps) == null ? void 0 : _a.eventBus) == null ? void 0 : _b.emit("season:created", {
+      id: season.id,
+      name: season.name,
+      durationDays
+    });
+    return { ...season };
+  }
+  /**
+   * 获取当前赛季剩余天数
+   * @returns 剩余天数，无赛季时返回 0
+   */
+  getRemainingDays() {
+    const season = this.state.currentSeason;
+    if (!season) return 0;
+    const remaining = season.endTime - Date.now();
+    return Math.max(0, Math.ceil(remaining / (24 * 60 * 60 * 1e3)));
+  }
+  /**
+   * 获取当前赛季已过去的天数
+   * @returns 已过天数
+   */
+  getElapsedDays() {
+    const season = this.state.currentSeason;
+    if (!season) return 0;
+    const elapsed = Date.now() - season.startTime;
+    return Math.max(0, Math.floor(elapsed / (24 * 60 * 60 * 1e3)));
+  }
+  // ─── 公开 API: 积分系统 ────────────────
+  /**
+   * 为武将添加赛季积分
+   *
+   * @param heroId - 武将ID
+   * @param score - 积分增量（必须 > 0）
+   * @throws 无活跃赛季时抛出错误
+   */
+  addScore(heroId, score) {
+    this.ensureActiveSeason();
+    if (score <= 0) return;
+    const existing = this.state.scores.find((s) => s.heroId === heroId);
+    if (existing) {
+      existing.score += score;
+    } else {
+      this.state.scores.push({ heroId, score });
+    }
+  }
+  /**
+   * 设置武将的赛季积分（覆盖）
+   *
+   * @param heroId - 武将ID
+   * @param score - 积分绝对值
+   */
+  setScore(heroId, score) {
+    this.ensureActiveSeason();
+    const existing = this.state.scores.find((s) => s.heroId === heroId);
+    if (existing) {
+      existing.score = score;
+    } else {
+      this.state.scores.push({ heroId, score });
+    }
+  }
+  /**
+   * 获取武将的赛季积分
+   *
+   * @param heroId - 武将ID
+   * @returns 积分值，不存在返回 0
+   */
+  getScore(heroId) {
+    const entry = this.state.scores.find((s) => s.heroId === heroId);
+    return (entry == null ? void 0 : entry.score) ?? 0;
+  }
+  // ─── 公开 API: 排行榜 ──────────────────
+  /**
+   * 获取排行榜
+   *
+   * 按积分降序排列，返回前 N 名及其奖励。
+   *
+   * @param limit - 返回条数，默认50
+   * @returns 排名列表（含奖励）
+   */
+  getLeaderboard(limit = DEFAULT_LEADERBOARD_LIMIT) {
+    const sorted = [...this.state.scores].sort((a, b) => b.score - a.score);
+    const top = sorted.slice(0, limit);
+    return top.map((entry, index) => {
+      const rank = index + 1;
+      return {
+        heroId: entry.heroId,
+        score: entry.score,
+        rank,
+        rewards: getRewardsForRank(rank)
+      };
+    });
+  }
+  /**
+   * 获取某武将的排名
+   *
+   * @param heroId - 武将ID
+   * @returns 排名（从1开始），未上榜返回 -1
+   */
+  getHeroRank(heroId) {
+    const sorted = [...this.state.scores].sort((a, b) => b.score - a.score);
+    const index = sorted.findIndex((s) => s.heroId === heroId);
+    return index === -1 ? -1 : index + 1;
+  }
+  // ─── 公开 API: 赛季结算 ────────────────
+  /**
+   * 结算当前赛季
+   *
+   * 1. 按积分排序生成最终排名
+   * 2. 根据排名分配奖励
+   * 3. 将赛季归档到历史
+   * 4. 重置当前赛季和积分
+   *
+   * @returns 最终排名列表（含奖励）
+   * @throws 无赛季时抛出错误
+   */
+  settleSeason() {
+    var _a, _b;
+    if (!this.state.currentSeason) {
+      throw new Error("没有可结算的赛季");
+    }
+    const season = this.state.currentSeason;
+    const rankings = this.getLeaderboard(Infinity);
+    season.isActive = false;
+    this.state.history.push({ ...season });
+    this.state.settledSeasonIds.push(season.id);
+    this.state.currentSeason = null;
+    this.state.scores = [];
+    (_b = (_a = this.deps) == null ? void 0 : _a.eventBus) == null ? void 0 : _b.emit("season:settled", {
+      id: season.id,
+      name: season.name,
+      participantCount: rankings.length,
+      topRank: rankings[0] ?? null
+    });
+    return rankings;
+  }
+  // ─── 公开 API: 赛季历史 ────────────────
+  /**
+   * 获取所有已结束的赛季历史
+   * @returns 赛季历史列表（按时间升序）
+   */
+  getSeasonHistory() {
+    return this.state.history.map((h) => ({ ...h }));
+  }
+  /**
+   * 获取已结算赛季数量
+   */
+  getSettledSeasonCount() {
+    return this.state.settledSeasonIds.length;
+  }
+  /**
+   * 检查某赛季是否已结算
+   */
+  isSeasonSettled(seasonId) {
+    return this.state.settledSeasonIds.includes(seasonId);
+  }
+  // ─── 公开 API: 奖励查询 ────────────────
+  /**
+   * 根据排名获取赛季奖励
+   *
+   * @param rank - 排名（从1开始）
+   * @returns 奖励列表
+   */
+  getSeasonRewards(rank) {
+    return getRewardsForRank(rank);
+  }
+  // ─── 存档 ───────────────────────────────
+  /**
+   * 序列化（ISubsystem 兼容别名）
+   */
+  serialize() {
+    return this.getSaveData();
+  }
+  /**
+   * 获取存档数据
+   */
+  getSaveData() {
+    return {
+      version: SEASON_SAVE_VERSION,
+      state: {
+        currentSeason: this.state.currentSeason ? { ...this.state.currentSeason } : null,
+        scores: this.state.scores.map((s) => ({ ...s })),
+        history: this.state.history.map((h) => ({ ...h })),
+        settledSeasonIds: [...this.state.settledSeasonIds]
+      }
+    };
+  }
+  /**
+   * 加载存档数据
+   */
+  loadSaveData(data) {
+    if (data.version !== SEASON_SAVE_VERSION) return;
+    this.state = {
+      currentSeason: data.state.currentSeason ? { ...data.state.currentSeason } : null,
+      scores: data.state.scores.map((s) => ({ ...s })),
+      history: data.state.history.map((h) => ({ ...h })),
+      settledSeasonIds: [...data.state.settledSeasonIds]
+    };
+    if (this.state.history.length > 0) {
+      this.seasonCounter = this.state.history.length;
+    }
+  }
+  // ─── 内部方法 ───────────────────────────
+  /** 创建初始状态 */
+  createInitialState() {
+    return {
+      currentSeason: null,
+      scores: [],
+      history: [],
+      settledSeasonIds: []
+    };
+  }
+  /** 检查赛季是否仍在有效期内 */
+  isSeasonActive(season) {
+    return Date.now() < season.endTime;
+  }
+  /** 确保有活跃赛季，否则抛出错误 */
+  ensureActiveSeason() {
+    if (!this.state.currentSeason) {
+      throw new Error("当前没有活跃赛季");
+    }
+    if (!this.isSeasonActive(this.state.currentSeason)) {
+      throw new Error("当前赛季已过期");
+    }
+  }
 }
 function applyGetters(cls) {
   const p = cls.prototype;
@@ -33246,11 +41275,38 @@ function applyGetters(cls) {
   p.getHeroStarSystem = function() {
     return this.heroStarSystem;
   };
+  p.getSkillUpgradeSystem = function() {
+    return this.skillUpgradeSystem;
+  };
+  p.getHeroRecruitUpManager = function() {
+    return this.heroRecruit.getUpManager();
+  };
+  p.getSkillStrategyRecommender = function() {
+    return this.skillUpgradeSystem.getStrategyRecommender();
+  };
   p.getBondSystem = function() {
     return this.bondSystem;
   };
+  p.getFormationRecommendSystem = function() {
+    return this.formationRecommendSystem;
+  };
+  p.getHeroDispatchSystem = function() {
+    return this.heroDispatchSystem;
+  };
+  p.getHeroBadgeSystem = function() {
+    return this.heroBadgeSystem;
+  };
+  p.getHeroAttributeCompare = function() {
+    return this.heroAttributeCompare;
+  };
   p.getSweepSystem = function() {
     return this.sweepSystem;
+  };
+  p.getVIPSystem = function() {
+    return this.vipSystem;
+  };
+  p.getChallengeStageSystem = function() {
+    return this.challengeStageSystem;
   };
   p.getResourceAmount = function(type) {
     return this.resource.getAmount(type);
@@ -33391,6 +41447,9 @@ function applyGetters(cls) {
   p.getSiegeEnhancer = function() {
     return this.mapSystems.siegeEnhancer;
   };
+  p.getMapEventSystem = function() {
+    return this.mapSystems.mapEvent;
+  };
   p.getFusionTechSystem = function() {
     return this.techSystems.fusionSystem;
   };
@@ -33493,6 +41552,9 @@ function applyGetters(cls) {
   p.getHeritageSystem = function() {
     return this.r11.heritageSystem;
   };
+  p.getTimedActivitySystem = function() {
+    return this.r11.timedActivitySystem;
+  };
   p.getAdvisorSystem = function() {
     return this.r11.advisorSystem;
   };
@@ -33508,11 +41570,23 @@ function applyGetters(cls) {
   p.getCaravanSystem = function() {
     return this.r11.caravanSystem;
   };
+  p.getResourceTradeEngine = function() {
+    return this.r11.resourceTradeEngine;
+  };
   p.getSettingsManager = function() {
     return this.r11.settingsManager;
   };
   p.getAccountSystem = function() {
     return this.r11.accountSystem;
+  };
+  p.getEndingSystem = function() {
+    return this.r11.endingSystem;
+  };
+  p.getGlobalStatisticsSystem = function() {
+    return this.r11.globalStatisticsSystem;
+  };
+  p.getGlobalStatistics = function() {
+    return this.r11.globalStatisticsSystem.getSnapshot();
   };
   p.getEventTriggerSystem = function() {
     return this.eventSystems.trigger;
@@ -33573,18 +41647,33 @@ class ThreeKingdomsEngine {
     __publicField(this, "heroLevel");
     __publicField(this, "heroFormation");
     __publicField(this, "heroStarSystem");
+    __publicField(this, "skillUpgradeSystem");
     __publicField(this, "bondSystem");
+    __publicField(this, "factionBondSystem");
+    __publicField(this, "formationRecommendSystem");
+    __publicField(this, "heroDispatchSystem");
+    __publicField(this, "heroBadgeSystem");
+    __publicField(this, "heroAttributeCompare");
+    __publicField(this, "awakeningSystem");
+    __publicField(this, "recruitTokenEconomy");
+    __publicField(this, "copperEconomy");
+    __publicField(this, "materialEconomy");
     __publicField(this, "campaignSystems");
     __publicField(this, "sweepSystem");
+    __publicField(this, "vipSystem");
+    __publicField(this, "challengeStageSystem");
     __publicField(this, "techSystems");
     __publicField(this, "mapSystems");
     __publicField(this, "eventSystems");
     __publicField(this, "r11");
     __publicField(this, "offline");
     __publicField(this, "guide");
+    __publicField(this, "tutorialGuide");
+    __publicField(this, "season");
     __publicField(this, "bus");
     __publicField(this, "registry");
     __publicField(this, "saveManager");
+    __publicField(this, "fixer");
     __publicField(this, "configRegistry");
     __publicField(this, "initialized", false);
     __publicField(this, "onlineSeconds", 0);
@@ -33600,7 +41689,17 @@ class ThreeKingdomsEngine {
     this.heroLevel = new HeroLevelSystem();
     this.heroFormation = new HeroFormation();
     this.heroStarSystem = new HeroStarSystem(this.hero);
+    this.skillUpgradeSystem = new SkillUpgradeSystem();
     this.bondSystem = new BondSystem();
+    this.factionBondSystem = new FactionBondSystem();
+    this.formationRecommendSystem = new FormationRecommendSystem();
+    this.heroDispatchSystem = new HeroDispatchSystem();
+    this.heroBadgeSystem = new HeroBadgeSystem();
+    this.heroAttributeCompare = new HeroAttributeCompare();
+    this.awakeningSystem = new AwakeningSystem(this.hero, this.heroStarSystem);
+    this.recruitTokenEconomy = new RecruitTokenEconomySystem();
+    this.copperEconomy = new CopperEconomySystem();
+    this.materialEconomy = new MaterialEconomySystem();
     this.campaignSystems = createCampaignSystems(this.resource, this.hero);
     const self = this;
     this.sweepSystem = new SweepSystem(
@@ -33644,18 +41743,42 @@ class ThreeKingdomsEngine {
         completeStage: (stageId, stars) => self.campaignSystems.campaignSystem.completeStage(stageId, stars)
       }
     );
+    this.vipSystem = new VIPSystem();
+    this.challengeStageSystem = new ChallengeStageSystem({
+      getResourceAmount: (type) => self.resource.getAmount(type),
+      consumeResource: (type, amount) => {
+        try {
+          self.resource.consumeResource(type, amount);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      addResource: (type, amount) => self.resource.addResource(type, amount),
+      addFragment: (id, count) => self.hero.addFragment(id, count),
+      addExp: (exp) => {
+        const gs = self.hero.getAllGenerals();
+        if (!gs.length) return;
+        const per = Math.floor(exp / gs.length);
+        if (per <= 0) return;
+        for (const g of gs) self.hero.addExp(g.id, per);
+      }
+    });
     this.techSystems = createTechSystems(this.building);
     this.mapSystems = createMapSystems();
     this.eventSystems = createEventSystems();
     this.r11 = createR11Systems();
     this.offline = createOfflineSystems();
     this.guide = createGuideSystems();
+    this.tutorialGuide = new TutorialSystem();
+    this.season = new SeasonSystem();
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
     this.configRegistry.set("SAVE_KEY", SAVE_KEY);
     this.configRegistry.set("SAVE_VERSION", String(ENGINE_SAVE_VERSION));
     this.saveManager = new SaveManager(this.configRegistry);
+    this.fixer = this.saveManager.getFixer();
     this.registerSubsystems();
   }
   registerSubsystems() {
@@ -33668,11 +41791,23 @@ class ThreeKingdomsEngine {
     r.register("heroLevel", this.heroLevel);
     r.register("heroFormation", this.heroFormation);
     r.register("heroStarSystem", this.heroStarSystem);
+    r.register("skillUpgradeSystem", this.skillUpgradeSystem);
     r.register("bond", this.bondSystem);
+    r.register("factionBond", this.factionBondSystem);
+    r.register("formationRecommend", this.formationRecommendSystem);
+    r.register("heroDispatch", this.heroDispatchSystem);
+    r.register("heroBadge", this.heroBadgeSystem);
+    r.register("heroAttributeCompare", this.heroAttributeCompare);
+    r.register("awakening", this.awakeningSystem);
+    r.register("recruitTokenEconomy", this.recruitTokenEconomy);
+    r.register("copperEconomy", this.copperEconomy);
+    r.register("materialEconomy", this.materialEconomy);
     r.register("battleEngine", this.campaignSystems.battleEngine);
     r.register("campaignSystem", this.campaignSystems.campaignSystem);
     r.register("rewardDistributor", this.campaignSystems.rewardDistributor);
     r.register("sweepSystem", this.sweepSystem);
+    r.register("vipSystem", this.vipSystem);
+    r.register("challengeStageSystem", this.challengeStageSystem);
     r.register("techTree", this.techSystems.treeSystem);
     r.register("techPoint", this.techSystems.pointSystem);
     r.register("techResearch", this.techSystems.researchSystem);
@@ -33684,6 +41819,7 @@ class ThreeKingdomsEngine {
     r.register("siege", this.mapSystems.siege);
     r.register("garrison", this.mapSystems.garrison);
     r.register("siegeEnhancer", this.mapSystems.siegeEnhancer);
+    r.register("mapEventSystem", this.mapSystems.mapEvent);
     r.register("eventTrigger", this.eventSystems.trigger);
     r.register("eventNotification", this.eventSystems.notification);
     r.register("eventUI", this.eventSystems.uiNotification);
@@ -33693,6 +41829,8 @@ class ThreeKingdomsEngine {
     registerR11Systems(r, this.r11);
     registerOfflineSystems(r, this.offline);
     registerGuideSystems(r, this.guide);
+    r.register("tutorialGuide", this.tutorialGuide);
+    r.register("season", this.season);
   }
   // ── 初始化 ──
   init() {
@@ -33702,18 +41840,125 @@ class ThreeKingdomsEngine {
     this.calendar.init(deps);
     this.initHeroSystems(deps);
     this.bondSystem.init(deps);
+    this.factionBondSystem.init(deps);
+    this.formationRecommendSystem.init(deps);
+    this.heroDispatchSystem.init(deps);
+    this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
+    this.awakeningSystem.init(deps);
+    this.awakeningSystem.setDeps({
+      canAffordResource: (type, amount) => {
+        const current = this.resource.getAmount(type);
+        return current >= amount;
+      },
+      spendResource: (type, amount) => {
+        try {
+          this.resource.consumeResource(type, amount);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      getResourceAmount: (type) => this.resource.getAmount(type)
+    });
     initCampaignSystems(this.campaignSystems, deps);
     initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps);
     initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
+    this.initResourceTradeDeps();
+    this.initRecruitTokenEconomyDeps();
+    this.initCopperEconomyDeps();
+    this.initMaterialEconomyDeps();
     initOfflineSystems(this.offline);
     initGuideSystems(this.guide, deps);
+    this.tutorialGuide.init(deps);
+    this.season.init(deps);
+    this._initDefaultData();
     this.initialized = true;
     this.lastTickTime = Date.now();
     this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0;
     this.bus.emit("game:initialized", { isNewGame: true });
+  }
+  /**
+   * 初始化默认数据：任务/邮件/活动等系统在首次游戏时生成初始数据
+   *
+   * 仅在新游戏（非存档加载）时调用。
+   * 任务系统：刷新日常任务
+   * 邮件系统：发送欢迎邮件
+   * 活动系统：创建一个日常活动
+   */
+  _initDefaultData() {
+    try {
+      const questSys = this.r11.questSystem;
+      questSys.refreshDailyQuests();
+      const mailSys = this.r11.mailSystem;
+      mailSys.sendCustomMail(
+        "system",
+        "欢迎来到三国霸业",
+        "主公，天下大势，合久必分，分久必合。愿您招贤纳士，一统天下！\n\n点击附件领取新手礼包。",
+        "系统",
+        {
+          attachments: [
+            { resourceType: "copper", amount: 1e3 },
+            { resourceType: "gold", amount: 50 },
+            { resourceType: "recruitOrder", amount: 1 }
+          ],
+          retainSeconds: 7 * 24 * 3600
+          // 7天有效
+        }
+      );
+      const activitySys = this.r11.activitySystem;
+      const now = Date.now();
+      const dailyActivityDef = {
+        id: "daily_default",
+        name: "每日历练",
+        description: "完成每日任务，获取丰厚奖励",
+        type: ActivityType.DAILY,
+        startTime: now,
+        endTime: now + 24 * 3600 * 1e3,
+        icon: "📋"
+      };
+      const dailyTaskDefs = [
+        {
+          id: "daily_task_1",
+          name: "完成1次战斗",
+          description: "参与任意战斗1次",
+          taskType: ActivityTaskType.DAILY,
+          targetCount: 1,
+          tokenReward: 10,
+          pointReward: 20,
+          resourceReward: { copper: 500 }
+        },
+        {
+          id: "daily_task_2",
+          name: "升级建筑",
+          description: "升级任意建筑1次",
+          taskType: ActivityTaskType.DAILY,
+          targetCount: 1,
+          tokenReward: 10,
+          pointReward: 20,
+          resourceReward: { copper: 500 }
+        },
+        {
+          id: "daily_task_3",
+          name: "招募武将",
+          description: "招募武将1次",
+          taskType: ActivityTaskType.DAILY,
+          targetCount: 1,
+          tokenReward: 15,
+          pointReward: 30,
+          resourceReward: { copper: 800 }
+        }
+      ];
+      const dailyMilestones = [
+        { id: "ms_1", requiredPoints: 50, status: MilestoneStatus.LOCKED, rewards: { copper: 1e3 }, isFinal: false },
+        { id: "ms_2", requiredPoints: 100, status: MilestoneStatus.LOCKED, rewards: { gold: 20 }, isFinal: true }
+      ];
+      const defaultState = createDefaultActivityState();
+      activitySys.startActivity(defaultState, dailyActivityDef, dailyTaskDefs, dailyMilestones, now);
+    } catch (_e) {
+    }
   }
   // ── 游戏循环 ──
   tick(deltaMs) {
@@ -33771,6 +42016,13 @@ class ThreeKingdomsEngine {
       this.finalizeLoad();
       return r;
     }
+    const recovered = this.fixer.tryRecoverSave();
+    if (recovered) {
+      gameLog.info("[ThreeKingdomsEngine] 通过数据修正器恢复了存档");
+      const r = applyLegacyState(ctx, recovered);
+      this.finalizeLoad();
+      return r;
+    }
     return null;
   }
   serialize() {
@@ -33781,18 +42033,70 @@ class ThreeKingdomsEngine {
     const deps = this.buildDeps();
     this.initHeroSystems(deps);
     this.bondSystem.init(deps);
+    this.factionBondSystem.init(deps);
+    this.formationRecommendSystem.init(deps);
+    this.heroDispatchSystem.init(deps);
+    this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
     initCampaignSystems(this.campaignSystems, deps);
     initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps);
     initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
+    this.initResourceTradeDeps();
+    this.initRecruitTokenEconomyDeps();
+    this.initCopperEconomyDeps();
+    this.initMaterialEconomyDeps();
     initOfflineSystems(this.offline);
     initGuideSystems(this.guide, deps);
+    this.tutorialGuide.init(deps);
     this.initialized = true;
     this.lastTickTime = Date.now();
   }
   hasSaveData() {
     return this.saveManager.hasSaveData();
+  }
+  /**
+   * 修正存档数据
+   *
+   * 供 UI 层调用的数据修正入口。
+   * 执行校验 → 迁移 → 修复流程，并返回修正报告。
+   * 修正成功后自动重新保存。
+   *
+   * @returns 修正报告
+   */
+  fixSaveData() {
+    const raw = this.serialize();
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return {
+        success: false,
+        actions: [{ type: "remove_corrupt", field: "root", description: "当前存档数据无法解析" }],
+        originalValid: false,
+        fixedValid: false
+      };
+    }
+    const { data, report } = this.fixer.fix(parsed);
+    if (data && report.success) {
+      try {
+        applyDeserialize(this.buildSaveCtx(), JSON.stringify(data));
+        this.save();
+        gameLog.info("[ThreeKingdomsEngine] 存档数据已修正并保存");
+      } catch (err) {
+        gameLog.error("[ThreeKingdomsEngine] 修正后保存失败:", err);
+        return { ...report, success: false };
+      }
+    }
+    return report;
+  }
+  /**
+   * 诊断当前存档问题
+   *
+   * @returns 修正报告（不执行修复）
+   */
+  diagnoseSaveData() {
+    return this.fixer.diagnose();
   }
   reset() {
     this.resource.reset();
@@ -33803,9 +42107,21 @@ class ThreeKingdomsEngine {
     this.heroLevel.reset();
     this.heroFormation.reset();
     this.heroStarSystem.reset();
+    this.skillUpgradeSystem.reset();
     this.bondSystem.reset();
+    this.factionBondSystem.reset();
+    this.formationRecommendSystem.reset();
+    this.heroDispatchSystem.reset();
+    this.heroBadgeSystem.reset();
+    this.heroAttributeCompare.reset();
+    this.awakeningSystem.reset();
+    this.recruitTokenEconomy.reset();
+    this.copperEconomy.reset();
+    this.materialEconomy.reset();
     this.campaignSystems.campaignSystem.reset();
     this.sweepSystem.reset();
+    this.vipSystem.reset();
+    this.challengeStageSystem.reset();
     this.techSystems.treeSystem.reset();
     this.techSystems.pointSystem.reset();
     this.techSystems.researchSystem.reset();
@@ -33817,6 +42133,7 @@ class ThreeKingdomsEngine {
     this.mapSystems.siege.reset();
     this.mapSystems.garrison.reset();
     this.mapSystems.siegeEnhancer.reset();
+    this.mapSystems.mapEvent.reset();
     this.eventSystems.trigger.reset();
     this.eventSystems.notification.reset();
     this.eventSystems.uiNotification.reset();
@@ -33826,6 +42143,8 @@ class ThreeKingdomsEngine {
     resetR11Systems(this.r11);
     resetOfflineSystems(this.offline);
     resetGuideSystems(this.guide);
+    this.tutorialGuide.reset();
+    this.season.reset();
     this.initialized = false;
     this.onlineSeconds = 0;
     this.autoSaveAccumulator = 0;
@@ -33895,6 +42214,8 @@ class ThreeKingdomsEngine {
   }
   setCanvas(_c) {
   }
+  // IGameEngine 兼容层：EngineSnapshot 是结构化类型，与 Record<string, unknown> 不兼容，
+  // 但语义上 EngineSnapshot 确实是 string→unknown 的映射，此处断言安全。
   getState() {
     return this.getSnapshot();
   }
@@ -33927,9 +42248,50 @@ class ThreeKingdomsEngine {
   getSubsystemRegistry() {
     return this.registry;
   }
+  /** 获取觉醒系统实例 */
+  getAwakeningSystem() {
+    return this.awakeningSystem;
+  }
+  /**
+   * 发放引导奖励 — 将 TutorialReward[] 实际写入玩家资源
+   *
+   * 引导步骤完成时 TutorialStepManager 会 emit tutorial:rewardGranted 事件，
+   * 但事件本身不修改资源。此方法由 UI 层（GuideOverlay）在引导步骤完成时调用，
+   * 将奖励实际发放到玩家资源系统。
+   *
+   * 支持的奖励类型：
+   * - currency: 铜钱(copper)、粮草(grain) 等 → resource.addResource
+   * - item: 招贤令(recruit_ticket)、科技点等 → resource.addResource
+   * - title/package: 仅记录，不涉及资源修改
+   *
+   * @param rewards - 奖励列表
+   * @returns 实际发放的奖励列表（跳过无法识别的类型）
+   */
+  grantTutorialRewards(rewards) {
+    const granted = [];
+    for (const r of rewards) {
+      if (r.type === "currency" || r.type === "item") {
+        const resourceTypeMap = {
+          copper: "gold",
+          grain: "grain",
+          recruit_ticket: "recruitToken",
+          skill_point: "skillPoint",
+          tech_point: "techPoint"
+        };
+        const resourceType = resourceTypeMap[r.rewardId] ?? r.rewardId;
+        try {
+          this.resource.addResource(resourceType, r.amount);
+          granted.push({ rewardId: r.rewardId, name: r.name, amount: r.amount });
+        } catch {
+          gameLog.warn(`[grantTutorialRewards] 无法发放资源 ${resourceType}×${r.amount}`);
+        }
+      }
+    }
+    return granted;
+  }
   // ── 私有方法 ──
   get heroSystems() {
-    return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel };
+    return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel, heroStar: this.heroStarSystem, awakening: this.awakeningSystem };
   }
   initHeroSystems(deps) {
     initHeroSystems(this.heroSystems, this.resource, deps);
@@ -33950,6 +42312,89 @@ class ThreeKingdomsEngine {
         return current >= amount;
       },
       getResourceAmount: (type) => this.resource.getAmount(type)
+    });
+    this.skillUpgradeSystem.init(deps);
+    this.skillUpgradeSystem.setSkillUpgradeDeps({
+      heroSystem: this.hero,
+      heroStarSystem: this.heroStarSystem,
+      spendResource: (type, amount) => {
+        try {
+          this.resource.consumeResource(type, amount);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      canAffordResource: (type, amount) => {
+        const current = this.resource.getAmount(type);
+        return current >= amount;
+      },
+      getResourceAmount: (type) => this.resource.getAmount(type)
+    });
+    this.heroStarSystem.setSkillUnlockCallback((heroId, level) => {
+      return this.skillUpgradeSystem.unlockSkillOnBreakthrough(heroId, level);
+    });
+    this.heroBadgeSystem.init(deps);
+    this.heroBadgeSystem.setBadgeSystemDeps({
+      getGeneralIds: () => this.hero.getAllGenerals().map((g) => g.id),
+      canLevelUp: (heroId) => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return false;
+        const goldAmount = this.resource.getAmount("gold");
+        return g.level < this.heroStarSystem.getLevelCap(heroId) && goldAmount >= this.hero.getGoldRequired(g.level);
+      },
+      canStarUp: (heroId) => {
+        var _a;
+        return !!((_a = this.heroStarSystem.getFragmentProgress(heroId)) == null ? void 0 : _a.canStarUp);
+      },
+      canEquip: (heroId) => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return false;
+        const equips = this.r11.equipmentSystem.getHeroEquips(heroId);
+        const hasEmptySlot = !equips.weapon || !equips.armor || !equips.accessory || !equips.mount;
+        if (!hasEmptySlot) return false;
+        const allItems = this.r11.equipmentSystem.getAllEquipments();
+        return allItems.some((item) => !item.isEquipped);
+      }
+    });
+    this.heroAttributeCompare.init(deps);
+    this.heroAttributeCompare.setAttributeCompareDeps({
+      getHeroAttrs: (heroId) => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const s = g.baseStats;
+        return { attack: s.attack, defense: s.defense, intelligence: s.intelligence, speed: s.speed };
+      },
+      getEquipBonus: (heroId) => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const s = g.baseStats;
+        return { attack: Math.floor(s.attack * 0.1), defense: Math.floor(s.defense * 0.1), intelligence: Math.floor(s.intelligence * 0.1), speed: Math.floor(s.speed * 0.1) };
+      },
+      getTechBonus: (heroId) => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const s = g.baseStats;
+        return { attack: Math.floor(s.attack * 0.05), defense: Math.floor(s.defense * 0.05), intelligence: Math.floor(s.intelligence * 0.05), speed: Math.floor(s.speed * 0.05) };
+      },
+      getBuffBonus: (heroId) => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const s = g.baseStats;
+        return { attack: Math.floor(s.attack * 0.03), defense: Math.floor(s.defense * 0.03), intelligence: Math.floor(s.intelligence * 0.03), speed: Math.floor(s.speed * 0.03) };
+      },
+      simulateLevel: (heroId, level) => {
+        const g = this.hero.getGeneral(heroId);
+        if (!g) return {};
+        const levelCoeff = 1 + level * 0.05;
+        const s = g.baseStats;
+        return {
+          attack: Math.floor(s.attack * levelCoeff),
+          defense: Math.floor(s.defense * levelCoeff),
+          intelligence: Math.floor(s.intelligence * levelCoeff),
+          speed: Math.floor(s.speed * levelCoeff)
+        };
+      }
     });
     this.sweepSystem.init(deps);
   }
@@ -33972,6 +42417,7 @@ class ThreeKingdomsEngine {
       eventChain: this.eventSystems.chain,
       eventLog: this.eventSystems.log,
       offlineEvent: this.eventSystems.offline,
+      siege: this.mapSystems.siege,
       bus: this.bus,
       prevResourcesJson: this.prevResourcesJson,
       prevRatesJson: this.prevRatesJson
@@ -33983,6 +42429,73 @@ class ThreeKingdomsEngine {
   }
   buildingCtx() {
     return { resource: this.resource, building: this.building, bus: this.bus };
+  }
+  /** 注入 ResourceTradeEngine 的资源操作依赖 */
+  initResourceTradeDeps() {
+    this.r11.resourceTradeEngine.setDeps({
+      getResourceAmount: (type) => this.resource.getAmount(type),
+      consumeResource: (type, amount) => this.resource.consumeResource(type, amount),
+      addResource: (type, amount) => this.resource.addResource(type, amount),
+      getMarketLevel: () => this.building.getLevel("market")
+    });
+  }
+  /** 注入 RecruitTokenEconomySystem 的资源操作依赖 */
+  initRecruitTokenEconomyDeps() {
+    const self = this;
+    this.recruitTokenEconomy.init(this.buildDeps());
+    this.recruitTokenEconomy.setEconomyDeps({
+      addRecruitToken: (amount) => self.resource.addResource("recruitToken", amount),
+      consumeGold: (amount) => {
+        try {
+          self.resource.consumeResource("gold", amount);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      getGoldAmount: () => self.resource.getAmount("gold")
+    });
+  }
+  /** 注入 CopperEconomySystem 的资源操作依赖 */
+  initCopperEconomyDeps() {
+    const self = this;
+    this.copperEconomy.init(this.buildDeps());
+    this.copperEconomy.setEconomyDeps({
+      addGold: (amount) => self.resource.addResource("gold", amount),
+      consumeGold: (amount) => {
+        try {
+          self.resource.consumeResource("gold", amount);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      getGoldAmount: () => self.resource.getAmount("gold")
+    });
+  }
+  /** 注入 MaterialEconomySystem 的资源操作依赖 */
+  initMaterialEconomyDeps() {
+    const self = this;
+    this.materialEconomy.init(this.buildDeps());
+    this.materialEconomy.setMaterialDeps({
+      consumeGold: (amount) => {
+        try {
+          self.resource.consumeResource("gold", amount);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      getGoldAmount: () => self.resource.getAmount("gold"),
+      addBreakthroughStone: (count) => {
+      },
+      addSkillBook: (count) => {
+      },
+      getClearedStages: () => {
+        const progress = self.campaignSystems.campaignSystem.getProgress();
+        return Object.entries(progress.stageStates).filter(([, s]) => s.firstCleared).map(([id]) => id);
+      }
+    });
   }
   buildSaveCtx() {
     return {
@@ -34011,20 +42524,30 @@ class ThreeKingdomsEngine {
       eventChain: this.eventSystems.chain,
       eventLog: this.eventSystems.log,
       offlineEvent: this.eventSystems.offline,
-      onlineSeconds: this.onlineSeconds
+      onlineSeconds: this.onlineSeconds,
+      season: this.season
     };
   }
   finalizeLoad() {
     const deps = this.buildDeps();
     this.initHeroSystems(deps);
     this.bondSystem.init(deps);
+    this.factionBondSystem.init(deps);
+    this.formationRecommendSystem.init(deps);
+    this.heroDispatchSystem.init(deps);
+    this.heroDispatchSystem.setGetGeneral((id) => this.hero.getGeneral(id));
     initCampaignSystems(this.campaignSystems, deps);
     initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps);
     initEventSystems(this.eventSystems, deps);
     initR11Systems(this.r11, deps);
+    this.initResourceTradeDeps();
+    this.initRecruitTokenEconomyDeps();
+    this.initCopperEconomyDeps();
+    this.initMaterialEconomyDeps();
     initOfflineSystems(this.offline);
     initGuideSystems(this.guide, deps);
+    this.tutorialGuide.init(deps);
     this.initialized = true;
     this.lastTickTime = Date.now();
     this.onlineSeconds = 0;
@@ -34032,6 +42555,224 @@ class ThreeKingdomsEngine {
   }
 }
 applyGetters(ThreeKingdomsEngine);
+var BondType = /* @__PURE__ */ ((BondType2) => {
+  BondType2["FACTION"] = "faction";
+  BondType2["PARTNER"] = "partner";
+  return BondType2;
+})(BondType || {});
+const BOND_STAR_LEVEL_MAP = [
+  { level: 1, minStar: 1, multiplier: 1 },
+  { level: 2, minStar: 3, multiplier: 1.5 },
+  { level: 3, minStar: 5, multiplier: 2 }
+];
+function getBondLevelByMinStar(minStar) {
+  for (let i = BOND_STAR_LEVEL_MAP.length - 1; i >= 0; i--) {
+    if (minStar >= BOND_STAR_LEVEL_MAP[i].minStar) {
+      return BOND_STAR_LEVEL_MAP[i].level;
+    }
+  }
+  return 1;
+}
+function getBondLevelMultiplier(level) {
+  const entry = BOND_STAR_LEVEL_MAP.find((e) => e.level === level);
+  return entry ? entry.multiplier : 1;
+}
+const FACTION_BONDS = [
+  // ── 蜀国：攻防兼备，均衡型 ──
+  {
+    id: "faction_shu",
+    type: "faction",
+    name: "蜀国",
+    faction: "shu",
+    tiers: [
+      { requiredCount: 2, effects: [{ stat: "attack", value: 0.05 }] },
+      { requiredCount: 3, effects: [{ stat: "attack", value: 0.1 }, { stat: "defense", value: 0.05 }] },
+      { requiredCount: 4, effects: [{ stat: "attack", value: 0.15 }, { stat: "defense", value: 0.1 }, { stat: "hp", value: 0.05 }] }
+    ]
+  },
+  // ── 魏国：铁壁防御，谋略型 ──
+  {
+    id: "faction_wei",
+    type: "faction",
+    name: "魏国",
+    faction: "wei",
+    tiers: [
+      { requiredCount: 2, effects: [{ stat: "defense", value: 0.05 }] },
+      { requiredCount: 3, effects: [{ stat: "defense", value: 0.1 }, { stat: "intelligence", value: 0.05 }] },
+      { requiredCount: 4, effects: [{ stat: "defense", value: 0.15 }, { stat: "intelligence", value: 0.1 }, { stat: "passiveTriggerRate", value: 0.1 }] }
+    ]
+  },
+  // ── 吴国：疾风迅雷，暴击型 ──
+  {
+    id: "faction_wu",
+    type: "faction",
+    name: "吴国",
+    faction: "wu",
+    tiers: [
+      { requiredCount: 2, effects: [{ stat: "speed", value: 0.05 }] },
+      { requiredCount: 3, effects: [{ stat: "speed", value: 0.1 }, { stat: "attack", value: 0.05 }] },
+      { requiredCount: 4, effects: [{ stat: "speed", value: 0.15 }, { stat: "attack", value: 0.1 }, { stat: "critRate", value: 0.1 }] }
+    ]
+  },
+  // ── 群雄：奇策百出，策略型 ──
+  {
+    id: "faction_qun",
+    type: "faction",
+    name: "群雄",
+    faction: "qun",
+    tiers: [
+      { requiredCount: 2, effects: [{ stat: "intelligence", value: 0.05 }] },
+      { requiredCount: 3, effects: [{ stat: "intelligence", value: 0.1 }, { stat: "defense", value: 0.05 }] },
+      { requiredCount: 4, effects: [{ stat: "intelligence", value: 0.15 }, { stat: "defense", value: 0.1 }, { stat: "skillRange", value: 1 }] }
+    ]
+  }
+];
+const PARTNER_BONDS = [
+  // ═══════════════════════════════════════════
+  // 蜀国（3组）
+  // ═══════════════════════════════════════════
+  // ── 桃园结义：刘备+关羽+张飞 ──
+  {
+    id: "partner_taoyuan",
+    type: "partner",
+    name: "桃园结义",
+    generalIds: ["liubei", "guanyu", "zhangfei"],
+    effects: [{ stat: "attack", value: 0.15 }],
+    minRequired: 3
+  },
+  // ── 五虎上将：任意3个（关羽/张飞/赵云/马超/黄忠） ──
+  {
+    id: "partner_wuhu",
+    type: "partner",
+    name: "五虎上将",
+    generalIds: ["guanyu", "zhangfei", "zhaoyun", "machao", "huangzhong"],
+    effects: [{ stat: "critRate", value: 0.1 }],
+    minRequired: 3
+  },
+  // ── 卧龙凤雏：诸葛亮+庞统 ──
+  {
+    id: "partner_wolong_fengchu",
+    type: "partner",
+    name: "卧龙凤雏",
+    generalIds: ["zhugeliang", "pangtong"],
+    effects: [{ stat: "skillDamage", value: 0.2 }],
+    minRequired: 2
+  },
+  // ═══════════════════════════════════════════
+  // 魏国（3组）
+  // ═══════════════════════════════════════════
+  // ── 五子良将：任意3个（张辽/徐晃/于禁/张郃/乐进） ──
+  {
+    id: "partner_wuzi",
+    type: "partner",
+    name: "五子良将",
+    generalIds: ["zhangliao", "xuhuang", "yujin", "zhanghe", "lejin"],
+    effects: [{ stat: "defense", value: 0.12 }],
+    minRequired: 3
+  },
+  // ── 曹氏宗族：任意2个（曹仁/曹洪/夏侯惇/夏侯渊） ──
+  {
+    id: "partner_cao_clan",
+    type: "partner",
+    name: "曹氏宗族",
+    generalIds: ["caoren", "caohong", "xiahoudun", "xiahouyuan"],
+    effects: [{ stat: "hp", value: 0.15 }],
+    minRequired: 2
+  },
+  // ── 虎痴双雄：许褚+典韦 ──
+  {
+    id: "partner_huchi",
+    type: "partner",
+    name: "虎痴双雄",
+    generalIds: ["xuchu", "dianwei"],
+    effects: [{ stat: "attack", value: 0.12 }, { stat: "defense", value: 0.08 }],
+    minRequired: 2
+  },
+  // ═══════════════════════════════════════════
+  // 吴国（3组）
+  // ═══════════════════════════════════════════
+  // ── 江东双璧：孙策+周瑜 ──
+  {
+    id: "partner_jiangdong",
+    type: "partner",
+    name: "江东双璧",
+    generalIds: ["sunce", "zhouyu"],
+    effects: [{ stat: "speed", value: 0.15 }, { stat: "skillDamage", value: 0.1 }],
+    minRequired: 2
+  },
+  // ── 东吴四英：任意2个（鲁肃/吕蒙/陆逊） ──
+  {
+    id: "partner_dongwu_siying",
+    type: "partner",
+    name: "东吴四英",
+    generalIds: ["lusu", "lvmeng", "luxun"],
+    effects: [{ stat: "intelligence", value: 0.15 }],
+    minRequired: 2
+  },
+  // ── 孙氏父子：孙坚+孙策+孙权 ──
+  {
+    id: "partner_sun_family",
+    type: "partner",
+    name: "孙氏父子",
+    generalIds: ["sunjian", "sunce", "sunquan"],
+    effects: [{ stat: "attack", value: 0.1 }, { stat: "speed", value: 0.1 }],
+    minRequired: 3
+  },
+  // ═══════════════════════════════════════════
+  // 群雄（3组）
+  // ═══════════════════════════════════════════
+  // ── 三英战吕布：刘备+关羽+张飞+吕布 ──
+  {
+    id: "partner_sanying_lvbu",
+    type: "partner",
+    name: "三英战吕布",
+    generalIds: ["liubei", "guanyu", "zhangfei", "lvbu"],
+    effects: [{ stat: "attack", value: 0.18 }],
+    minRequired: 4
+  },
+  // ── 董卓之乱：董卓+吕布+貂蝉 ──
+  {
+    id: "partner_dongzhuo",
+    type: "partner",
+    name: "董卓之乱",
+    generalIds: ["dongzhuo", "lvbu", "diaochan"],
+    effects: [{ stat: "critDamage", value: 0.15 }],
+    minRequired: 3
+  },
+  // ── 袁绍谋士：田丰+沮授 ──
+  {
+    id: "partner_yuanshao_moushi",
+    type: "partner",
+    name: "袁绍谋士",
+    generalIds: ["tianfeng", "jushou"],
+    effects: [{ stat: "intelligence", value: 0.12 }, { stat: "skillRange", value: 1 }],
+    minRequired: 2
+  },
+  // ═══════════════════════════════════════════
+  // 扩充搭档羁绊（P0 修复：12→14组）
+  // ═══════════════════════════════════════════
+  // ── 苦肉连环：黄盖+周瑜（吴国） ──
+  {
+    id: "partner_kurou_lianhuan",
+    type: "partner",
+    name: "苦肉连环",
+    generalIds: ["huanggai", "zhouyu"],
+    effects: [{ stat: "skillDamage", value: 0.15 }, { stat: "critRate", value: 0.08 }],
+    minRequired: 2
+  },
+  // ── 魏之双壁：张辽+徐晃（魏国） ──
+  {
+    id: "partner_wei_shuangbi",
+    type: "partner",
+    name: "魏之双壁",
+    generalIds: ["zhangliao", "xuhuang"],
+    effects: [{ stat: "attack", value: 0.1 }, { stat: "defense", value: 0.1 }],
+    minRequired: 2
+  }
+];
+const BOND_MULTIPLIER_CAP = 2;
+const DISPATCH_FACTOR = 0.5;
+const ACTIVE_FACTOR = 1;
 function autoFormation(units) {
   const valid = units.filter((u) => u.isAlive).slice(0, 6);
   if (valid.length === 0) {
@@ -39430,219 +48171,6 @@ const PROSPERITY_LABELS = {
   thriving: "繁荣",
   golden: "鼎盛"
 };
-function formatOfflineDuration(seconds) {
-  if (seconds <= 0) return "刚刚";
-  if (seconds < 60) return `${Math.floor(seconds)}秒`;
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  if (days > 0) {
-    const remainHours = hours % 24;
-    return remainHours > 0 ? `${days}天${remainHours}小时` : `${days}天`;
-  }
-  if (hours > 0) {
-    const remainMinutes = minutes % 60;
-    return remainMinutes > 0 ? `${hours}小时${remainMinutes}分钟` : `${hours}小时`;
-  }
-  return `${minutes}分钟`;
-}
-const AD_DAILY_LIMIT$1 = 3;
-function shouldShowOfflinePopup(offlineSeconds) {
-  return offlineSeconds > OFFLINE_POPUP_THRESHOLD;
-}
-function generateReturnPanelData(snapshot, adUsedToday = 0) {
-  const availableDoubles = [];
-  if (adUsedToday < AD_DAILY_LIMIT$1) {
-    availableDoubles.push({
-      source: "ad",
-      multiplier: AD_DOUBLE_MULTIPLIER,
-      description: `观看广告翻倍（今日剩余${AD_DAILY_LIMIT$1 - adUsedToday}次）`
-    });
-  }
-  availableDoubles.push({
-    source: "item",
-    multiplier: ITEM_DOUBLE_MULTIPLIER,
-    description: "使用元宝翻倍"
-  });
-  if (snapshot.offlineSeconds >= RETURN_BONUS_MIN_HOURS * 3600) {
-    availableDoubles.push({
-      source: "return_bonus",
-      multiplier: RETURN_BONUS_MULTIPLIER,
-      description: "回归奖励翻倍"
-    });
-  }
-  return {
-    offlineSeconds: snapshot.offlineSeconds,
-    formattedTime: formatOfflineDuration(snapshot.offlineSeconds),
-    efficiencyPercent: Math.round(snapshot.overallEfficiency * 100),
-    tierDetails: snapshot.tierDetails,
-    totalEarned: { ...snapshot.totalEarned },
-    isCapped: snapshot.isCapped,
-    availableDoubles,
-    boostItems: []
-  };
-}
-function estimateOfflineReward$1(hours, productionRates, bonusSources = {}, _calculateSnapshot) {
-  const offlineSeconds = Math.min(hours * 3600, MAX_OFFLINE_SECONDS);
-  const isCapped = hours * 3600 > MAX_OFFLINE_SECONDS;
-  const tierDetails = [];
-  let totalEarned = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-  let totalWeighted = 0;
-  for (const tier of DECAY_TIERS) {
-    const tierStartSeconds = tier.startHours * 3600;
-    const tierEndSeconds = tier.endHours * 3600;
-    if (offlineSeconds <= tierStartSeconds) break;
-    const secondsInTier = Math.min(offlineSeconds, tierEndSeconds) - tierStartSeconds;
-    if (secondsInTier <= 0) continue;
-    const earned = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-    for (const key of Object.keys(productionRates)) {
-      earned[key] = productionRates[key] * secondsInTier * tier.efficiency;
-    }
-    tierDetails.push({ tierId: tier.id, seconds: secondsInTier, efficiency: tier.efficiency, earned });
-    totalEarned.grain += earned.grain;
-    totalEarned.gold += earned.gold;
-    totalEarned.troops += earned.troops;
-    totalEarned.mandate += earned.mandate;
-    totalEarned.techPoint += earned.techPoint;
-    totalWeighted += secondsInTier * tier.efficiency;
-  }
-  const totalBonus = (bonusSources.tech ?? 0) + (bonusSources.vip ?? 0) + (bonusSources.reputation ?? 0);
-  const bonusCoefficient = 1 + Math.min(totalBonus, 1);
-  totalEarned = {
-    grain: Math.floor(totalEarned.grain * bonusCoefficient),
-    gold: Math.floor(totalEarned.gold * bonusCoefficient),
-    troops: Math.floor(totalEarned.troops * bonusCoefficient),
-    mandate: Math.floor(totalEarned.mandate * bonusCoefficient),
-    techPoint: Math.floor(totalEarned.techPoint * bonusCoefficient)
-  };
-  const overallEfficiency = offlineSeconds > 0 ? totalWeighted / offlineSeconds : 1;
-  return {
-    timestamp: Date.now(),
-    offlineSeconds,
-    tierDetails,
-    totalEarned,
-    overallEfficiency,
-    isCapped
-  };
-}
-function estimateOfflineReward(hours, productionRates, bonusSources = {}) {
-  return estimateOfflineReward$1(hours, productionRates, bonusSources);
-}
-function calculateTierDetails(offlineSeconds, productionRates) {
-  const details = [];
-  for (const tier of DECAY_TIERS) {
-    const tierStartSeconds = tier.startHours * 3600;
-    const tierEndSeconds = tier.endHours * 3600;
-    if (offlineSeconds <= tierStartSeconds) break;
-    const secondsInTier = Math.min(offlineSeconds, tierEndSeconds) - tierStartSeconds;
-    if (secondsInTier <= 0) continue;
-    const earned = zeroRes();
-    for (const key of Object.keys(productionRates)) {
-      earned[key] = productionRates[key] * secondsInTier * tier.efficiency;
-    }
-    details.push({ tierId: tier.id, seconds: secondsInTier, efficiency: tier.efficiency, earned });
-  }
-  return details;
-}
-function calculateOverallEfficiency(offlineSeconds) {
-  const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
-  if (effectiveSeconds <= 0) return 1;
-  let totalWeighted = 0;
-  for (const tier of DECAY_TIERS) {
-    const tierStartSeconds = tier.startHours * 3600;
-    const tierEndSeconds = tier.endHours * 3600;
-    if (effectiveSeconds <= tierStartSeconds) break;
-    const secondsInTier = Math.min(effectiveSeconds, tierEndSeconds) - tierStartSeconds;
-    if (secondsInTier <= 0) continue;
-    totalWeighted += secondsInTier * tier.efficiency;
-  }
-  return totalWeighted / effectiveSeconds;
-}
-const MAX_BONUS = 1;
-function calculateBonusCoefficient(sources) {
-  const total = (sources.tech ?? 0) + (sources.vip ?? 0) + (sources.reputation ?? 0);
-  return 1 + Math.min(total, MAX_BONUS);
-}
-function calculateOfflineSnapshot(offlineSeconds, productionRates, bonusSources, timestamp = Date.now()) {
-  const isCapped = offlineSeconds > MAX_OFFLINE_SECONDS;
-  const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
-  const tierDetails = calculateTierDetails(effectiveSeconds, productionRates);
-  let totalEarned = zeroRes();
-  for (const detail of tierDetails) {
-    totalEarned = addRes(totalEarned, detail.earned);
-  }
-  const bonusCoefficient = calculateBonusCoefficient(bonusSources);
-  totalEarned = mulRes(totalEarned, bonusCoefficient);
-  totalEarned = floorRes(totalEarned);
-  const overallEfficiency = calculateOverallEfficiency(effectiveSeconds);
-  return { timestamp, offlineSeconds, tierDetails, totalEarned, overallEfficiency, isCapped };
-}
-const AD_DAILY_LIMIT = 3;
-function applyDouble(earned, request, adUsedToday = 0) {
-  if (request.source === "ad" && adUsedToday >= AD_DAILY_LIMIT) {
-    return {
-      success: false,
-      originalEarned: cloneRes(earned),
-      doubledEarned: cloneRes(earned),
-      appliedMultiplier: 1,
-      reason: `今日广告翻倍次数已用完（${AD_DAILY_LIMIT}次）`
-    };
-  }
-  const multiplier = request.multiplier ?? 2;
-  return {
-    success: true,
-    originalEarned: cloneRes(earned),
-    doubledEarned: floorRes(mulRes(earned, multiplier)),
-    appliedMultiplier: multiplier
-  };
-}
-function applyOverflowRules(earned, currentResources, caps, rules = OVERFLOW_RULES) {
-  const cappedEarned = zeroRes();
-  const overflowResources = zeroRes();
-  for (const key of Object.keys(earned)) {
-    const cap = caps[key];
-    const current = currentResources[key];
-    const earn = earned[key];
-    if (cap === null) {
-      cappedEarned[key] = earn;
-    } else {
-      const available = Math.max(0, cap - current);
-      if (earn <= available) {
-        cappedEarned[key] = earn;
-      } else {
-        cappedEarned[key] = available;
-        overflowResources[key] = earn - available;
-      }
-    }
-  }
-  return { cappedEarned, overflowResources };
-}
-function getSystemModifier(systemId) {
-  const mod = SYSTEM_EFFICIENCY_MODIFIERS.find((m) => m.systemId === systemId);
-  return (mod == null ? void 0 : mod.modifier) ?? 1;
-}
-function applySystemModifier(earned, systemId) {
-  return floorRes(mulRes(earned, getSystemModifier(systemId)));
-}
-function calculateFullOfflineReward(ctx) {
-  const snapshot = calculateOfflineSnapshot(ctx.offlineSeconds, ctx.productionRates, ctx.bonusSources);
-  const systemModifiedEarned = ctx.systemId ? applySystemModifier(snapshot.totalEarned, ctx.systemId) : cloneRes(snapshot.totalEarned);
-  const { cappedEarned, overflowResources } = applyOverflowRules(
-    systemModifiedEarned,
-    ctx.currentResources,
-    ctx.caps
-  );
-  const panelData = generateReturnPanelData(snapshot, ctx.adUsedToday);
-  return {
-    snapshot,
-    vipBoostedEarned: cloneRes(snapshot.totalEarned),
-    systemModifiedEarned,
-    cappedEarned: floorRes(cappedEarned),
-    overflowResources: floorRes(overflowResources),
-    tradeSummary: null,
-    panelData
-  };
-}
 let _uidCounter = 0;
 function generateUid() {
   return `eq_${Date.now()}_${(_uidCounter++).toString(36).padStart(4, "0")}_${Math.random().toString(36).slice(2, 6)}`;
@@ -40874,329 +49402,6 @@ class TokenShopSystem {
     this.items.clear();
     for (const item of data.items) {
       this.items.set(item.id, { ...item });
-    }
-  }
-}
-const DEFAULT_LEADERBOARD_CONFIG = {
-  activityId: "",
-  maxEntries: 100,
-  rewardTiers: [
-    { minRank: 1, maxRank: 1, rewards: { gold: 500 } },
-    { minRank: 2, maxRank: 3, rewards: { gold: 300 } },
-    { minRank: 4, maxRank: 10, rewards: { gold: 150 } },
-    { minRank: 11, maxRank: 50, rewards: { gold: 50 } }
-  ]
-};
-const DEFAULT_TIMED_OFFLINE_EFFICIENCY = {
-  season: 0.5,
-  limitedTime: 0.3,
-  daily: 1,
-  festival: 0.5,
-  alliance: 0.5
-};
-const BASE_POINTS_PER_SECOND = 0.1;
-const PREVIEW_DURATION = 24 * 60 * 60 * 1e3;
-const SETTLEMENT_DURATION = 2 * 60 * 60 * 1e3;
-const FESTIVAL_TEMPLATES = [
-  {
-    id: "festival-spring",
-    festivalType: "spring",
-    name: "春节庆典",
-    description: "新年伊始，万象更新",
-    themeColor: "#FF0000",
-    exclusiveItems: [],
-    exclusiveTasks: [
-      { id: "ft-spring-1", name: "贴春联", description: "完成3次春联任务", targetCount: 3, rewards: { gold: 50 } }
-    ]
-  },
-  {
-    id: "festival-lantern",
-    festivalType: "lantern",
-    name: "元宵灯会",
-    description: "花灯璀璨，团圆美满",
-    themeColor: "#FFD700",
-    exclusiveItems: [],
-    exclusiveTasks: [
-      { id: "ft-lantern-1", name: "猜灯谜", description: "完成5个灯谜", targetCount: 5, rewards: { gold: 30 } }
-    ]
-  },
-  {
-    id: "festival-dragon-boat",
-    festivalType: "dragon_boat",
-    name: "端午龙舟",
-    description: "龙舟竞渡，粽叶飘香",
-    themeColor: "#228B22",
-    exclusiveItems: [],
-    exclusiveTasks: [
-      { id: "ft-dragon-1", name: "赛龙舟", description: "完成3次龙舟赛", targetCount: 3, rewards: { gold: 40 } }
-    ]
-  },
-  {
-    id: "festival-mid-autumn",
-    festivalType: "mid_autumn",
-    name: "中秋赏月",
-    description: "月圆人团圆",
-    themeColor: "#87CEEB",
-    exclusiveItems: [],
-    exclusiveTasks: [
-      { id: "ft-mid-1", name: "赏月任务", description: "完成赏月活动", targetCount: 1, rewards: { gold: 60 } }
-    ]
-  },
-  {
-    id: "festival-double-ninth",
-    festivalType: "double_ninth",
-    name: "重阳登高",
-    description: "登高望远，遍插茱萸",
-    themeColor: "#FF8C00",
-    exclusiveItems: [],
-    exclusiveTasks: [
-      { id: "ft-ninth-1", name: "登高望远", description: "完成登高任务", targetCount: 2, rewards: { gold: 45 } }
-    ]
-  }
-];
-class TimedActivitySystem {
-  constructor(leaderboardConfig, offlineEfficiency) {
-    // ─── ISubsystem 接口 ───────────────────────
-    __publicField(this, "name", "timedActivity");
-    __publicField(this, "deps", null);
-    __publicField(this, "leaderboardConfig");
-    __publicField(this, "offlineEfficiency");
-    __publicField(this, "flows", /* @__PURE__ */ new Map());
-    __publicField(this, "leaderboards", /* @__PURE__ */ new Map());
-    this.leaderboardConfig = { ...DEFAULT_LEADERBOARD_CONFIG, ...leaderboardConfig };
-    this.offlineEfficiency = { ...DEFAULT_TIMED_OFFLINE_EFFICIENCY, ...offlineEfficiency };
-  }
-  // ─── ISubsystem 适配层 ─────────────────────
-  /** 注入依赖 */
-  init(deps) {
-    this.deps = deps;
-  }
-  /** 限时活动系统无需帧更新 */
-  update(_dt) {
-  }
-  /** 获取系统状态快照 */
-  getState() {
-    return {
-      name: this.name,
-      flowsCount: this.flows.size,
-      leaderboardsCount: this.leaderboards.size
-    };
-  }
-  /** 重置系统状态 */
-  reset() {
-    this.flows.clear();
-    this.leaderboards.clear();
-  }
-  // ─── #16 限时活动完整流程 ──────────────
-  /**
-   * 创建限时活动流程
-   *
-   * 4阶段：preview → active → settlement → closed
-   */
-  createTimedActivityFlow(activityId, activeStart, activeEnd) {
-    const flow = {
-      activityId,
-      phase: "preview",
-      previewStart: activeStart - PREVIEW_DURATION,
-      activeStart,
-      activeEnd,
-      settlementStart: activeEnd,
-      closedTime: activeEnd + SETTLEMENT_DURATION
-    };
-    this.flows.set(activityId, flow);
-    return flow;
-  }
-  /**
-   * 更新活动阶段
-   */
-  updatePhase(activityId, now) {
-    const flow = this.flows.get(activityId);
-    if (!flow) return "closed";
-    if (now < flow.activeStart) {
-      flow.phase = "preview";
-    } else if (now < flow.activeEnd) {
-      flow.phase = "active";
-    } else if (now < flow.closedTime) {
-      flow.phase = "settlement";
-    } else {
-      flow.phase = "closed";
-    }
-    return flow.phase;
-  }
-  /**
-   * 获取活动流程
-   */
-  getFlow(activityId) {
-    return this.flows.get(activityId);
-  }
-  /**
-   * 检查活动是否可参与
-   */
-  canParticipate(activityId, now) {
-    const flow = this.flows.get(activityId);
-    if (!flow) return false;
-    this.updatePhase(activityId, now);
-    return flow.phase === "active";
-  }
-  /**
-   * 获取剩余时间(毫秒)
-   */
-  getRemainingTime(activityId, now) {
-    const flow = this.flows.get(activityId);
-    if (!flow) return 0;
-    return Math.max(0, flow.activeEnd - now);
-  }
-  // ─── #15 活动排行榜 ──────────────────────
-  /**
-   * 更新排行榜
-   */
-  updateLeaderboard(activityId, entries) {
-    const sorted = [...entries].sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.tokens - a.tokens;
-    });
-    sorted.forEach((entry, index) => {
-      entry.rank = index + 1;
-    });
-    const maxEntries = this.leaderboardConfig.maxEntries;
-    const result = sorted.slice(0, maxEntries);
-    this.leaderboards.set(activityId, result);
-    return result;
-  }
-  /**
-   * 获取排行榜
-   */
-  getLeaderboard(activityId) {
-    return this.leaderboards.get(activityId) ?? [];
-  }
-  /**
-   * 获取玩家排名
-   */
-  getPlayerRank(activityId, playerId) {
-    const entries = this.leaderboards.get(activityId) ?? [];
-    const entry = entries.find((e) => e.playerId === playerId);
-    return (entry == null ? void 0 : entry.rank) ?? 0;
-  }
-  /**
-   * 计算排行奖励
-   */
-  calculateRankRewards(rank) {
-    const rewards = {};
-    for (const tier of this.leaderboardConfig.rewardTiers) {
-      if (rank >= tier.minRank && rank <= tier.maxRank) {
-        for (const [key, value] of Object.entries(tier.rewards)) {
-          if (typeof value === "number") {
-            rewards[key] = (rewards[key] ?? 0) + value;
-          }
-        }
-        break;
-      }
-    }
-    return rewards;
-  }
-  /**
-   * 获取排行榜配置
-   */
-  getLeaderboardConfig() {
-    return { ...this.leaderboardConfig };
-  }
-  // ─── #17 节日活动框架 ──────────────────────
-  /**
-   * 获取节日模板
-   */
-  getFestivalTemplate(festivalType) {
-    return FESTIVAL_TEMPLATES.find((t) => t.festivalType === festivalType);
-  }
-  /**
-   * 获取所有节日模板
-   */
-  getAllFestivalTemplates() {
-    return [...FESTIVAL_TEMPLATES];
-  }
-  /**
-   * 创建节日活动
-   */
-  createFestivalActivity(festivalType, startTime, durationDays = 7) {
-    const template = this.getFestivalTemplate(festivalType);
-    if (!template) return null;
-    const endTime = startTime + durationDays * 24 * 60 * 60 * 1e3;
-    const flow = this.createTimedActivityFlow(template.id, startTime, endTime);
-    return { flow, template };
-  }
-  // ─── #18 活动离线进度 ──────────────────────
-  /**
-   * 计算活动离线进度
-   */
-  calculateOfflineProgress(activityId, activityType, offlineDurationMs) {
-    const durationSeconds = offlineDurationMs / 1e3;
-    let efficiency = 0.5;
-    if (activityType === "season") efficiency = this.offlineEfficiency.season;
-    else if (activityType === "limitedTime") efficiency = this.offlineEfficiency.limitedTime;
-    else if (activityType === "daily") efficiency = this.offlineEfficiency.daily;
-    else if (activityType === "festival") efficiency = this.offlineEfficiency.festival;
-    else if (activityType === "alliance") efficiency = this.offlineEfficiency.alliance;
-    const pointsEarned = Math.floor(durationSeconds * BASE_POINTS_PER_SECOND * efficiency);
-    const tokensEarned = Math.floor(pointsEarned * 0.1);
-    return {
-      activityId,
-      pointsEarned,
-      tokensEarned,
-      offlineDuration: offlineDurationMs
-    };
-  }
-  /**
-   * 批量计算离线进度
-   */
-  calculateAllOfflineProgress(activities, offlineDurationMs) {
-    const activityResults = [];
-    let totalPoints = 0;
-    let totalTokens = 0;
-    for (const activity of activities) {
-      const result = this.calculateOfflineProgress(
-        activity.id,
-        activity.type,
-        offlineDurationMs
-      );
-      activityResults.push(result);
-      totalPoints += result.pointsEarned;
-      totalTokens += result.tokensEarned;
-    }
-    return {
-      offlineDurationMs,
-      activityResults,
-      totalPoints,
-      totalTokens,
-      eventPile: null
-    };
-  }
-  // ─── 工具方法 ──────────────────────────────
-  /** 获取离线效率配置 */
-  getOfflineEfficiency() {
-    return { ...this.offlineEfficiency };
-  }
-  /** 获取所有活动流程 */
-  getAllFlows() {
-    return Array.from(this.flows.values());
-  }
-  // ─── 序列化 ──────────────────────────────
-  /** 导出存档 */
-  serialize() {
-    return {
-      flows: Array.from(this.flows.values()).map((f) => ({ ...f })),
-      leaderboards: Array.from(this.leaderboards.entries()).map(
-        ([activityId, entries]) => ({ activityId, entries: entries.map((e) => ({ ...e })) })
-      )
-    };
-  }
-  /** 导入存档 */
-  deserialize(data) {
-    this.flows.clear();
-    for (const flow of data.flows ?? []) {
-      this.flows.set(flow.activityId, { ...flow });
-    }
-    this.leaderboards.clear();
-    for (const lb of data.leaderboards ?? []) {
-      this.leaderboards.set(lb.activityId, lb.entries.map((e) => ({ ...e })));
     }
   }
 }
@@ -45851,6 +54056,7 @@ class GraphicsQualityManager {
 export {
   ACADEMY_QUEUE_SIZE_MAP,
   ACADEMY_TECH_POINT_PRODUCTION,
+  ACTIVE_FACTOR,
   ACTIVITY_SAVE_VERSION,
   AD_DOUBLE_MULTIPLIER,
   AFFINITY_LEVEL_LABELS,
@@ -45860,6 +54066,7 @@ export {
   ALLIANCE_SAVE_VERSION,
   ALLIANCE_TASK_POOL,
   ALL_CHAPTERS,
+  ALL_FACTIONS,
   ALL_FORMATIONS,
   ALL_STRATEGIES,
   ARENA_SAVE_VERSION,
@@ -45888,12 +54095,15 @@ export {
   AudioScene,
   AutoExpeditionSystem,
   AutoPushExecutor,
+  BASE_EXP_PER_HOUR,
   BASE_REWARDS,
   BATTLE_CONFIG,
+  BOND_MULTIPLIER_CAP,
+  BOND_STAR_LEVEL_MAP,
   BUILDING_DEFS,
   BUILDING_ICONS,
   BUILDING_LABELS,
-  BUILDING_TYPES,
+  BUILDING_TYPES$1 as BUILDING_TYPES,
   BUILDING_ZONES,
   BalanceValidator,
   BattleEffectApplier,
@@ -45908,6 +54118,7 @@ export {
   BattleStatisticsSubsystem,
   BattleTurnExecutor,
   BondSystem,
+  BondType,
   BorrowHeroHelper,
   BossStatus,
   BuffType,
@@ -45927,15 +54138,18 @@ export {
   CURRENCY_TYPES,
   CalendarSystem,
   CampaignProgressSystem,
-  SAVE_VERSION$2 as CampaignSaveVersion,
+  SAVE_VERSION$5 as CampaignSaveVersion,
   CaravanSystem,
   ChainEventSystem,
+  ChallengeStageSystem,
   ChatChannel,
   ChatSystem,
   CloudSaveSystem,
   CloudSyncState,
   CloudSyncStatus,
+  CopperEconomySystem,
   CurrencySystem,
+  DAILY_FREE_CONFIG,
   DAILY_QUEST_TEMPLATES,
   DECAY_TIERS,
   DEFAULT_ACTIVITY_MILESTONES,
@@ -45956,6 +54170,7 @@ export {
   DEFAULT_JUMP_TARGETS,
   DEFAULT_LANDMARKS,
   DEFAULT_LEADERBOARD_CONFIG,
+  DEFAULT_LEADERBOARD_LIMIT,
   DEFAULT_MAIL_EXPIRE_DAYS,
   DEFAULT_MATCH_CONFIG,
   DEFAULT_OFFLINE_EFFICIENCY,
@@ -45966,6 +54181,7 @@ export {
   DEFAULT_RESOURCE_CONFIGS,
   DEFAULT_SCORE_CONFIG,
   DEFAULT_SEASON_CONFIG,
+  DEFAULT_SEASON_DURATION_DAYS,
   DEFAULT_SEASON_THEMES,
   DEFAULT_SHOP_ITEMS,
   DEFAULT_SIGN_IN_CONFIG,
@@ -45977,6 +54193,7 @@ export {
   DEFAULT_WAREHOUSE_EXPANSIONS,
   DIFFICULTY_LABELS,
   DIFFICULTY_STARS,
+  DISPATCH_FACTOR,
   DROP_RATES,
   DUPLICATE_FRAGMENT_COUNT,
   DamageCalculator,
@@ -45984,8 +54201,11 @@ export {
   DamageNumberType,
   DefenseFormationSystem,
   DeleteFlowState,
+  EMPTY_BOND_EFFECT,
   EVENT_SAVE_VERSION,
   EXPEDITION_MAX_TURNS,
+  EXPIRED_MAIL_COMPENSATION_RATIO,
+  EXP_LEVEL_TABLE,
   EquipmentBagManager,
   EquipmentEnhanceSystem,
   EquipmentForgeSystem,
@@ -46003,9 +54223,12 @@ export {
   ExpeditionRewardSystem,
   ExpeditionSystem,
   FACTIONS,
+  FACTION_BONDS,
   FACTION_BOND_BONUS,
   FACTION_BOND_THRESHOLD,
   FACTION_LABELS,
+  FACTION_NAMES,
+  FACTION_TIER_MAP,
   FESTIVAL_TEMPLATES,
   FIRST_CLEAR_REWARD,
   FORMATION_COUNTERS,
@@ -46016,6 +54239,7 @@ export {
   FORMATION_SLOT_COUNT,
   FUSION_TECH_DEFS,
   FUSION_TECH_MAP,
+  FactionBondSystem,
   FirstLaunchDetector,
   ForgePityManager,
   FormationType$1 as FormationType,
@@ -46033,11 +54257,15 @@ export {
   GraphicsManager,
   GraphicsQualityManager,
   HERO_BASE_STATS,
+  HERO_FACTION_MAP,
   HERO_MAX_LEVEL,
   HeritageSystem,
+  HeroAttributeCompare,
+  HeroBadgeSystem,
   HeroFormation,
   HeroLevelSystem,
   HeroRecruitSystem,
+  HeroRecruitUpManager,
   HeroStarSystem,
   HeroSystem,
   INGOT_SPEEDUP_SECONDS_PER_UNIT,
@@ -46074,11 +54302,13 @@ export {
   MailTemplateSystem,
   MapDataRenderer,
   MapFilterSystem,
+  MaterialEconomySystem,
   MilestoneStatus,
   MilestoneType,
   MobileLayoutManager,
   MobileSettingsSystem,
   MuteLevel,
+  NEUTRAL_TIERS,
   NPCAffinitySystem,
   NPCDialogSystem,
   NPCFavorabilitySystem,
@@ -46103,6 +54333,8 @@ export {
   OfflineEventHandler,
   OfflineEventSystem,
   OfflineRewardSystem,
+  PARTNER_BONDS,
+  PARTNER_BOND_CONFIGS,
   POWER_MULTIPLIERS,
   PREDEFINED_EVENTS,
   PREDEFINED_QUESTS,
@@ -46129,6 +54361,9 @@ export {
   RANK_LEVEL_MAP,
   RARITY_ORDER,
   RARITY_PRICE_MULTIPLIER,
+  RECRUIT_COSTS,
+  RECRUIT_PITY,
+  RECRUIT_RATES,
   REGION_COLORS,
   REGION_DEFS,
   REGION_IDS,
@@ -46148,26 +54383,36 @@ export {
   RebirthSystem,
   ReportType,
   ResourceSystem,
+  ResourceTradeEngine,
   ResponsiveLayoutManager,
   RewardDistributor,
   RouteDifficulty,
   SEASONS,
+  SEASON_ACTIVITY_OFFLINE_EFFICIENCY,
   SEASON_LABELS,
   SEASON_REWARDS,
+  SEASON_REWARD_TIERS,
+  SEASON_SAVE_VERSION,
   SHOP_TYPES,
   SHOP_TYPE_LABELS,
+  SHU_TIERS,
+  SIEGE_FAILURE_TROOP_LOSS_RATIO,
   SIGN_IN_CYCLE_DAYS,
   SOCIAL_SAVE_VERSION,
   STAGE_STATUS_LABELS,
   STAGE_TYPE_LABELS,
+  STAGING_QUEUE_CAPACITY,
   STRATEGY_NAMES,
   SWEEP_CONFIG,
   SYSTEM_EFFICIENCY_MODIFIERS,
   SaveSlotManager,
+  SeasonSystem,
   SettingsManager,
   ShopSystem,
   SignInSystem,
+  SkillStrategyRecommender,
   SkillTargetType,
+  SkillUpgradeSystem,
   StarRating,
   StoryEventPlayer,
   StoryEventSystem,
@@ -46182,10 +54427,12 @@ export {
   TECH_PATH_ICONS,
   TECH_PATH_LABELS,
   TECH_SAVE_VERSION,
+  TEN_PULL_DISCOUNT,
   TERRAIN_COLORS,
   TERRAIN_DEFS,
   TERRAIN_LABELS,
   TERRAIN_TYPES,
+  TIMED_ACTIVITY_OFFLINE_EFFICIENCY,
   TROOP_COST,
   TROOP_TYPE_LABELS,
   TechDetailProvider,
@@ -46210,9 +54457,12 @@ export {
   TutorialStepManager,
   UltimateSkillSystem,
   VIEWPORT_CONFIG,
+  VIPSystem,
   VIP_OFFLINE_BONUSES,
   WEATHERS,
   WEATHER_LABELS,
+  WEI_TIERS,
+  WU_TIERS,
   WorldMapSystem,
   applyDouble,
   applyOfflineProgress,
@@ -46298,6 +54548,8 @@ export {
   getAllyTeam,
   getAppearanceStage,
   getAttackBonus,
+  getBondLevelByMinStar,
+  getBondLevelMultiplier,
   getChapter,
   getChapters,
   getCriticalRate,
@@ -46313,6 +54565,7 @@ export {
   getQueueSizeForAcademyLevel,
   getRegionAtPosition,
   getRestraintMultiplier,
+  getRewardsForRank,
   getShieldAmount,
   getStage,
   getStagesByChapter,

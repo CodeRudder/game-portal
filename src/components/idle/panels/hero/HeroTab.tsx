@@ -13,7 +13,7 @@
  * - 编队管理（FormationPanel）
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import type { GeneralData, Quality, Faction } from '@/games/three-kingdoms/engine';
 import {
   QUALITY_LABELS,
@@ -161,6 +161,16 @@ const HeroTab: React.FC<HeroTabProps> = ({ engine, snapshotVersion }) => {
       }
     }
   }, [engine, selectedGeneral]);
+
+  // ── P1-1 修复：监听招募→编队引导事件 ──
+  useEffect(() => {
+    const handleNavigateToFormation = () => {
+      setSubTab('formation');
+      setShowRecruitModal(false);
+    };
+    window.addEventListener('tk:navigate-to-formation', handleNavigateToFormation);
+    return () => window.removeEventListener('tk:navigate-to-formation', handleNavigateToFormation);
+  }, []);
 
   const handleRecruitOpen = useCallback(() => setShowRecruitModal(true), []);
   const handleRecruitClose = useCallback(() => setShowRecruitModal(false), []);
