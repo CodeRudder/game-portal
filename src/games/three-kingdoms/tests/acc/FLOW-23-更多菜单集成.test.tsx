@@ -379,23 +379,23 @@ describe('FLOW-23 更多菜单集成测试', () => {
 
     it(accTest('FLOW-23-30', '边界 — 更多Tab菜单ESC关闭'), () => {
       // 模拟ESC关闭行为
-      let moreMenuOpen = true;
+      let moreMenuOpen: boolean = true;
       const onMoreToggle = (open: boolean) => { moreMenuOpen = open; };
 
       // ESC 键触发关闭
       onMoreToggle(false);
-      assertStrict(moreMenuOpen === false, 'FLOW-23-30',
+      assertStrict(!moreMenuOpen, 'FLOW-23-30',
         'ESC应关闭更多菜单');
     });
 
     it(accTest('FLOW-23-31', '边界 — 点击外部关闭更多菜单'), () => {
       // 模拟点击外部关闭
-      let moreMenuOpen = true;
-      const onMoreToggle = (open: boolean) => { moreMenuOpen = open; };
+      const state: { moreMenuOpen: boolean } = { moreMenuOpen: true };
+      const onMoreToggle = (open: boolean) => { state.moreMenuOpen = open; };
 
       // 点击外部
       onMoreToggle(false);
-      assertStrict(moreMenuOpen === false, 'FLOW-23-31',
+      assertStrict(!state.moreMenuOpen, 'FLOW-23-31',
         '点击外部应关闭更多菜单');
     });
 

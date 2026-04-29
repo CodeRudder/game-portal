@@ -28,7 +28,7 @@ import {
   TUTORIAL_GUIDE_ACTION_MAP,
   TUTORIAL_GUIDE_SAVE_VERSION,
 } from '../../engine/tutorial/tutorial-config';
-import type { TutorialGuideStepId, CompleteStepResult } from '../../engine/tutorial/tutorial-system';
+import type { CompleteStepResult } from '../../engine/tutorial/tutorial-system';
 
 // 引导状态机
 import { TutorialStateMachine } from '../../engine/guide/TutorialStateMachine';

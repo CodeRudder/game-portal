@@ -227,8 +227,8 @@ describe('FLOW-25 TabBar导航集成测试', () => {
     it(accTest('FLOW-25-12', 'Badge — badge显示判断逻辑'), () => {
       // count > 0 → 显示数字
       const show1 = (badge: TabBadge) => (badge.count ?? 0) > 0 || badge.dot;
-      assertStrict(show1({ count: 3, dot: false }), 'FLOW-25-12', 'count>0应显示');
-      assertStrict(show1({ count: 0, dot: true }), 'FLOW-25-12', 'dot=true应显示');
+      assertStrict(!!show1({ count: 3, dot: false }), 'FLOW-25-12', 'count>0应显示');
+      assertStrict(!!show1({ count: 0, dot: true }), 'FLOW-25-12', 'dot=true应显示');
       assertStrict(!show1({ count: 0, dot: false }), 'FLOW-25-12', '无badge不显示');
     });
 
