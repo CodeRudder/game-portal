@@ -1,0 +1,72 @@
+[
+  {
+    "id": "D1",
+    "module": "Damage",
+    "desc": "arith:max(1)→max(0)",
+    "cat": "arith",
+    "killed": true
+  },
+  {
+    "id": "D2",
+    "module": "Damage",
+    "desc": "const:MIN_DMG→0",
+    "cat": "const",
+    "killed": true
+  },
+  {
+    "id": "D3",
+    "module": "Damage",
+    "desc": "logic:some→every",
+    "cat": "logic",
+    "killed": false
+  },
+  {
+    "id": "D4",
+    "module": "Damage",
+    "desc": "cmp:hp<=0→<0",
+    "cat": "cmp",
+    "killed": true
+  },
+  {
+    "id": "D5",
+    "module": "Damage",
+    "desc": "stmt:reduceShield",
+    "cat": "stmt",
+    "killed": true
+  },
+  {
+    "id": "D6",
+    "module": "Damage",
+    "desc": "const:ADVANTAGE→DISADV",
+    "cat": "const",
+    "killed": true
+  },
+  {
+    "id": "D7",
+    "module": "Damage",
+    "desc": "arith:ATK_UP+=→-=",
+    "cat": "arith",
+    "killed": true
+  },
+  {
+    "id": "D8",
+    "module": "Damage",
+    "desc": "arith:(1+atk)→(1-atk)",
+    "cat": "arith",
+    "killed": true
+  },
+  {
+    "id": "D9",
+    "module": "Damage",
+    "desc": "stmt:isAlive",
+    "cat": "stmt",
+    "killed": false
+  },
+  {
+    "id": "D10",
+    "module": "Damage",
+    "desc": "ret:return→0",
+    "cat": "ret",
+    "killed": true
+  }
+]

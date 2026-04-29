@@ -1,0 +1,72 @@
+[
+  {
+    "id": "E1",
+    "module": "EquipEnhance",
+    "desc": "arith:newLevel+1→-1",
+    "cat": "arith",
+    "killed": true
+  },
+  {
+    "id": "E2",
+    "module": "EquipEnhance",
+    "desc": "cmp:>=rarityCap→>",
+    "cat": "cmp",
+    "killed": true
+  },
+  {
+    "id": "E3",
+    "module": "EquipEnhance",
+    "desc": "cmp:>safeLevel→>=",
+    "cat": "cmp",
+    "killed": false
+  },
+  {
+    "id": "E4",
+    "module": "EquipEnhance",
+    "desc": "logic:gold&&→||",
+    "cat": "logic",
+    "killed": false
+  },
+  {
+    "id": "E5",
+    "module": "EquipEnhance",
+    "desc": "ret:Math.max→min",
+    "cat": "ret",
+    "killed": true
+  },
+  {
+    "id": "E6",
+    "module": "EquipEnhance",
+    "desc": "cmp:protCost>0→>=0",
+    "cat": "cmp",
+    "killed": false
+  },
+  {
+    "id": "E7",
+    "module": "EquipEnhance",
+    "desc": "stmt:protCount-=→+=",
+    "cat": "stmt",
+    "killed": false
+  },
+  {
+    "id": "E8",
+    "module": "EquipEnhance",
+    "desc": "const:fallback0.01→0.99",
+    "cat": "const",
+    "killed": false
+  },
+  {
+    "id": "E9",
+    "module": "EquipEnhance",
+    "desc": "cmp:>=maxCopper→>",
+    "cat": "cmp",
+    "killed": false
+  },
+  {
+    "id": "E10",
+    "module": "EquipEnhance",
+    "desc": "const:max(1)→max(0)",
+    "cat": "const",
+    "killed": false
+  }
+]

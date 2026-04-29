@@ -1,0 +1,9 @@
+Round 2 Report - 2026-04-30 03:43:12
+
+#01 [KILLED] M06:DC-calculateDamage-comparison: finalDamage<min-><=min - 1 tests failed
+#02 [SURVIVED] M13:EE-enhance-comparison: roll<rate->roll<=rate - all passed
+#03 [KILLED] M14:EE-getCopperCost-arithmetic: copperGrowth->copperGrowth-0.1 - 2 tests failed
+#04 [SKIP] M15:EE-enhance-comparison: level>safe->level>=safe - pattern not found
+#05 [SURVIVED] M18:EE-enhance-comparison: downgradeRoll<chance-><=chance - all passed
+
+Total=5 Killed=2 Survived=2 Skipped=1

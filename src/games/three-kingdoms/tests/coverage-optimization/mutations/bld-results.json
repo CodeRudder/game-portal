@@ -1,0 +1,44 @@
+[
+  {
+    "id": "B1",
+    "module": "Building",
+    "desc": "cmp:>=maxLv→>",
+    "cat": "cmp",
+    "killed": false
+  },
+  {
+    "id": "B2",
+    "module": "Building",
+    "desc": "cmp:>=castle→>",
+    "cat": "cmp",
+    "killed": true
+  },
+  {
+    "id": "B3",
+    "module": "Building",
+    "desc": "const:REFUND→1.0",
+    "cat": "const",
+    "killed": false
+  },
+  {
+    "id": "B4",
+    "module": "Building",
+    "desc": "logic:===locked→!==",
+    "cat": "logic",
+    "killed": false
+  },
+  {
+    "id": "B6",
+    "module": "Building",
+    "desc": "arith:level+=1→+=2",
+    "cat": "arith",
+    "killed": false
+  },
+  {
+    "id": "B8",
+    "module": "Building",
+    "desc": "ret:1+→1-",
+    "cat": "ret",
+    "killed": false
+  }
+]
