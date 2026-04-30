@@ -311,9 +311,19 @@ export class HeroRecruitSystem implements ISubsystem {
     if (!this.recruitDeps.canAffordResource(cost.resourceType, cost.amount)) return null;
     if (!this.recruitDeps.spendResource(cost.resourceType, cost.amount)) return null;
 
+    // R2-FIX-P04: 十连招募事务性保护 — 中途异常时回滚资源
     const results: RecruitResult[] = [];
-    for (let i = 0; i < count; i++) {
-      results.push(this.executeSinglePull(type));
+    try {
+      for (let i = 0; i < count; i++) {
+        results.push(this.executeSinglePull(type));
+      }
+    } catch (err) {
+      // 回滚：退还已消耗的资源
+      if (this.recruitDeps.addResource) {
+        this.recruitDeps.addResource(cost.resourceType, cost.amount);
+      }
+      gameLog.error(`[HeroRecruitSystem] executeRecruit failed, resource rolled back: ${err}`);
+      return null;
     }
 
     if (count > 1) {

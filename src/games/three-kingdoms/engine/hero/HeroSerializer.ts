@@ -30,6 +30,8 @@ export function createEmptyState(): HeroState {
 
 /** 深拷贝武将数据 */
 export function cloneGeneral(g: GeneralData): GeneralData {
+  // R2-FIX-P02: null/undefined 防护，防止 null.skills.map 崩溃
+  if (!g) return null as unknown as GeneralData;
   return {
     ...g,
     baseStats: { ...g.baseStats },
@@ -86,7 +88,8 @@ export function deserializeHeroState(data: HeroSaveData): HeroState {
   // 恢复武将数据
   const generals: Record<string, GeneralData> = {};
   for (const [id, g] of Object.entries(data.state.generals)) {
-    generals[id] = cloneGeneral(g);
+    // R2-FIX-P02: 跳过 null/undefined 武将数据，防止 cloneGeneral 崩溃
+    if (g) generals[id] = cloneGeneral(g);
   }
 
   // 恢复碎片数据

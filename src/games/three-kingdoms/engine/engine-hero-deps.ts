@@ -68,6 +68,10 @@ export interface HeroSystems {
   heroStar: import('./hero/HeroStarSystem').HeroStarSystem;
   /** 觉醒系统（提供觉醒后等级上限120） */
   awakening?: import('./hero/AwakeningSystem').AwakeningSystem;
+  /** 羁绊系统（提供羁绊系数，R2-FIX-P01: 注入 setBondMultiplierGetter） */
+  bondSystem?: import('./hero/faction-bond-system').FactionBondSystem;
+  /** 装备系统（提供装备战力，R2-FIX-P01: 注入 setEquipmentPowerGetter） */
+  equipmentSystem?: import('./equipment/EquipmentSystem').EquipmentSystem;
 }
 
 /** 初始化武将子系统（注入依赖和回调） */
@@ -112,4 +116,25 @@ export function initHeroSystems(
     }
     return systems.heroStar.getLevelCap(generalId);
   });
+
+  // R2-FIX-P01: 注入羁绊系数回调（BondSystem.getBondMultiplier）
+  // 未注入时 fallback 到 1.0（无羁绊加成），修复前羁绊系数永远为 1.0
+  if (systems.bondSystem) {
+    systems.hero.setBondMultiplierGetter((generalIds: string[]) =>
+      systems.bondSystem!.getBondMultiplier(generalIds),
+    );
+  }
+
+  // R2-FIX-P01: 注入装备战力回调（EquipmentSystem.getHeroEquipments → 求和 calculatePower）
+  // 未注入时 fallback 到 0（无装备加成），修复前装备战力永远为 0
+  if (systems.equipmentSystem) {
+    systems.hero.setEquipmentPowerGetter((generalId: string) => {
+      const equips = systems.equipmentSystem!.getHeroEquipments(generalId);
+      let total = 0;
+      for (const eq of equips) {
+        total += systems.equipmentSystem!.calculatePower(eq);
+      }
+      return total;
+    });
+  }
 }

@@ -187,7 +187,10 @@ export class HeroSystem implements ISubsystem {
     const equipmentCoeff = 1 + equipPower / 1000;
     // P0-R6-1: 羁绊系数作为第5乘区，优先使用显式传入值，否则 fallback 到 1.0
     const bondCoeff = bondMultiplier ?? 1.0;
-    return Math.floor(statsPower * levelCoeff * qualityCoeff * starCoeff * equipmentCoeff * bondCoeff);
+    const raw = statsPower * levelCoeff * qualityCoeff * starCoeff * equipmentCoeff * bondCoeff;
+    // R2-FIX-P05: NaN/Infinity/负数 最终输出防护，防止异常值传播到排序/编队/UI
+    if (!Number.isFinite(raw) || raw < 0) return 0;
+    return Math.floor(raw);
   }
 
   /**

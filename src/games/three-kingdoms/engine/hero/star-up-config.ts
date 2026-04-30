@@ -56,6 +56,8 @@ export const STAR_MULTIPLIERS: readonly number[] = [
 
 /** 获取指定星级的属性倍率 */
 export function getStarMultiplier(star: number): number {
+  // R2-FIX-P02: NaN/非有限值防护，防止 STAR_MULTIPLIERS[NaN] = undefined 导致战力 NaN
+  if (!Number.isFinite(star) || star < 0) return 1;
   if (star < 1) return STAR_MULTIPLIERS[0];
   if (star >= STAR_MULTIPLIERS.length) return STAR_MULTIPLIERS[STAR_MULTIPLIERS.length - 1];
   return STAR_MULTIPLIERS[star];

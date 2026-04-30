@@ -93,22 +93,25 @@ describe('HeroSystem 边界条件测试', () => {
   });
 
   // ── 5. 武将属性为NaN时计算战力 ──
-  it('武将属性含NaN时计算战力应返回NaN（引擎层应防护）', () => {
+  it('武将属性含NaN时计算战力应返回0（R2-FIX-P05: NaN防护）', () => {
     const general = makeGeneral({
       baseStats: { attack: NaN, defense: 80, intelligence: 70, speed: 60 },
     });
     const power = hs.calculatePower(general);
-    // NaN传播导致结果为NaN，这是边界行为
-    expect(Number.isNaN(power)).toBe(true);
+    // R2-FIX-P05: NaN 最终输出防护，返回 0 防止异常值传播到排序/编队/UI
+    expect(Number.isFinite(power)).toBe(true);
+    expect(power).toBe(0);
   });
 
   // ── 6. 武将属性为Infinity时计算战力 ──
-  it('武将属性含Infinity时计算战力应返回Infinity', () => {
+  it('武将属性含Infinity时计算战力应返回0（R2-FIX-P05: 非有限值防护）', () => {
     const general = makeGeneral({
       baseStats: { attack: Infinity, defense: 80, intelligence: 70, speed: 60 },
     });
     const power = hs.calculatePower(general);
-    expect(power).toBe(Infinity);
+    // R2-FIX-P05: Infinity 最终输出防护，返回 0 防止异常值传播
+    expect(Number.isFinite(power)).toBe(true);
+    expect(power).toBe(0);
   });
 
   // ── 7. 添加不存在的武将ID ──

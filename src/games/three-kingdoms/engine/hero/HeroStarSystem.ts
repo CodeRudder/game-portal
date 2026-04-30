@@ -13,7 +13,7 @@ import type {
 } from './star-up.types';
 import { FragmentSource } from './star-up.types';
 import type { GeneralStats, GeneralData } from './hero.types';
-import type { HeroSystem } from './HeroSystem';
+import { HeroSystem } from './HeroSystem';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import {
   STAR_UP_FRAGMENT_COST, STAR_UP_GOLD_COST, getStarMultiplier,
@@ -137,7 +137,15 @@ export class HeroStarSystem implements ISubsystem {
     if (!this.deps.canAffordResource(RESOURCE_TYPE_GOLD, totalGold)) return { success: false, generalId, count: 0, goldSpent: 0 };
     if (!this.deps.spendResource(RESOURCE_TYPE_GOLD, totalGold)) return { success: false, generalId, count: 0, goldSpent: 0 };
 
-    this.heroSystem.addFragment(generalId, actualCount);
+    // R2-FIX-P03: 捕获溢出碎片，退还对应铜钱
+    const overflow = this.heroSystem.addFragment(generalId, actualCount);
+    if (overflow > 0) {
+      const refundGold = overflow * config.pricePerFragment;
+      if (this.deps.addResource) {
+        this.deps.addResource(RESOURCE_TYPE_GOLD, refundGold);
+      }
+      gameLog.warn(`[HeroStarSystem] shop fragment overflow: ${generalId} overflow=${overflow}, refund=${refundGold} gold`);
+    }
     // 累加已兑换次数
     this.state.dailyExchangeCount[generalId] = alreadyExchanged + actualCount;
     return { success: true, generalId, count: actualCount, goldSpent: totalGold };
@@ -165,6 +173,12 @@ export class HeroStarSystem implements ISubsystem {
     if (!Number.isFinite(amount) || amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.ACTIVITY };
     const overflow = this.heroSystem.addFragment(heroId, amount);
     const actual = amount - overflow;
+    // R2-FIX-P03: 溢出碎片转化为铜钱（1碎片 = 100铜钱）
+    if (overflow > 0 && this.deps?.addResource) {
+      const goldCompensation = overflow * HeroSystem.FRAGMENT_TO_GOLD_RATE;
+      this.deps.addResource(RESOURCE_TYPE_GOLD, goldCompensation);
+      gameLog.info(`[HeroStarSystem] activity fragment overflow: ${heroId} overflow=${overflow}, gold=${goldCompensation}`);
+    }
     gameLog.info(`[HeroStarSystem] activity fragment: ${heroId} +${actual} from "${source}"`);
     return { generalId: heroId, count: actual, source: FragmentSource.ACTIVITY };
   }
@@ -181,6 +195,12 @@ export class HeroStarSystem implements ISubsystem {
     if (!Number.isFinite(amount) || amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.EXPEDITION };
     const overflow = this.heroSystem.addFragment(heroId, amount);
     const actual = amount - overflow;
+    // R2-FIX-P03: 溢出碎片转化为铜钱（1碎片 = 100铜钱）
+    if (overflow > 0 && this.deps?.addResource) {
+      const goldCompensation = overflow * HeroSystem.FRAGMENT_TO_GOLD_RATE;
+      this.deps.addResource(RESOURCE_TYPE_GOLD, goldCompensation);
+      gameLog.info(`[HeroStarSystem] expedition fragment overflow: ${heroId} overflow=${overflow}, gold=${goldCompensation}`);
+    }
     gameLog.info(`[HeroStarSystem] expedition fragment: ${heroId} +${actual}`);
     return { generalId: heroId, count: actual, source: FragmentSource.EXPEDITION };
   }

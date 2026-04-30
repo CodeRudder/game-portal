@@ -165,6 +165,41 @@ export class FactionBondSystem implements ISubsystem {
   }
 
   /**
+   * 计算编队羁绊总系数（R2-FIX-P01: 用于战力公式第5乘区）
+   *
+   * 将所有激活羁绊的加成效果汇总为一个乘数。
+   * 计算方式：1 + 所有羁绊效果的平均加成百分比之和
+   * 上限 2.0，下限 1.0
+   *
+   * @param heroIds - 编队中的武将ID列表
+   * @returns 羁绊系数（1.0 ~ 2.0）
+   */
+  getBondMultiplier(heroIds: string[]): number {
+    if (!heroIds || heroIds.length === 0) return 1.0;
+
+    const bondMap = this.calculateBonds(heroIds);
+    let totalBonus = 0;
+    let count = 0;
+    for (const [, effect] of bondMap) {
+      // 累加各项加成百分比
+      const sum = (effect.attackBonus ?? 0) + (effect.defenseBonus ?? 0)
+        + (effect.hpBonus ?? 0) + (effect.critBonus ?? 0) + (effect.strategyBonus ?? 0);
+      if (sum > 0) {
+        totalBonus += sum;
+        count++;
+      }
+    }
+
+    if (count === 0 || !Number.isFinite(totalBonus)) return 1.0;
+
+    // 取平均值作为羁绊系数的基础加成
+    const avgBonus = totalBonus / count;
+    const multiplier = 1 + avgBonus;
+    // 上限 2.0，下限 1.0
+    return Math.max(1.0, Math.min(multiplier, 2.0));
+  }
+
+  /**
    * 获取某武将当前激活的所有羁绊配置
    *
    * @param heroId - 目标武将ID

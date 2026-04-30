@@ -103,11 +103,11 @@ describe('战力公式 — 极端值边界测试（P1-R7-3）', () => {
       expect(formationPower).toBe(Math.floor(baseSum * 3.0));
     });
 
-    it('羁绊系数负值时战力为负数（floor后）', () => {
+    it('羁绊系数负值时战力返回0（R2-FIX-P05: 负数防护）', () => {
       const g = heroSys.addGeneral('guanyu')!;
       const power = heroSys.calculatePower(g, 1, 0, -1.0);
-      // statsPower > 0, 所有正系数 × (-1.0) → 负数
-      expect(power).toBeLessThan(0);
+      // R2-FIX-P05: 负数最终输出防护，返回 0 防止负战力传播到排序/UI
+      expect(power).toBe(0);
     });
   });
 

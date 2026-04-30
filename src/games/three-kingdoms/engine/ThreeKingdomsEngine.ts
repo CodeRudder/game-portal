@@ -650,7 +650,7 @@ export class ThreeKingdomsEngine {
   // ── 私有方法 ──
 
   private get heroSystems(): HeroSystems {
-    return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel, heroStar: this.heroStarSystem, awakening: this.awakeningSystem };
+    return { hero: this.hero, heroRecruit: this.heroRecruit, heroLevel: this.heroLevel, heroStar: this.heroStarSystem, awakening: this.awakeningSystem, bondSystem: this.factionBondSystem, equipmentSystem: this.r11.equipmentSystem };
   }
   private initHeroSystems(deps: ISystemDeps): void {
     initHeroSystems(this.heroSystems, this.resource, deps);
@@ -666,6 +666,10 @@ export class ThreeKingdomsEngine {
         return current >= amount;
       },
       getResourceAmount: (type: string) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+      // R2-FIX-P03: 碎片溢出补偿铜钱回调
+      addResource: (type: string, amount: number) => {
+        try { this.resource.addResource(type as import('../shared/types').ResourceType, amount); } catch { /* ignore */ }
+      },
     });
     this.skillUpgradeSystem.init(deps);
     this.skillUpgradeSystem.setSkillUpgradeDeps({

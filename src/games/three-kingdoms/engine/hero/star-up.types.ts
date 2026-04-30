@@ -237,4 +237,6 @@ export interface StarSystemDeps {
   canAffordResource: StarResourceCheckFn;
   /** 资源数量查询 */
   getResourceAmount: StarResourceGetFn;
+  /** R2-FIX-P03: 资源添加回调（用于碎片溢出补偿铜钱），可选 */
+  addResource?: (type: string, amount: number) => void;
 }
