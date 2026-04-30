@@ -21,12 +21,13 @@
  */
 
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { ThreeKingdomsEngine, shouldShowOfflinePopup } from '@/games/three-kingdoms/engine';
+import { ThreeKingdomsEngine, shouldShowOfflinePopup, BUILDING_DEFS } from '@/games/three-kingdoms/engine';
 import { RESOURCE_LABELS } from '@/games/three-kingdoms/engine';
 import type {
   EngineSnapshot,
   BuildingType,
   BuildingState,
+  ResourceType,
 } from '@/games/three-kingdoms/shared/types';
 import { Toast } from '@/components/idle/common/Toast';
 import ResourceBar from '@/components/idle/panels/resource/ResourceBar';
@@ -301,10 +302,78 @@ const ThreeKingdomsGame: React.FC = () => {
   }, [engine, productionRates]);
 
   // ── 建筑升级完成回调 ──
+  // Fix #2: 升级完成后在资源栏显示产出变化浮动数字
+  const [floatingChanges, setFloatingChanges] = useState<Array<{
+    id: number;
+    type: ResourceType;
+    value: number;
+  }>>([]);
+  const floatingIdRef = useRef(0);
+
   const handleUpgradeComplete = useCallback((type: BuildingType) => {
     setSnapshotVersion(v => v + 1);
     Toast.success(`${type} 升级成功！`);
-  }, []);
+
+    // Fix #2: 计算产出变化并显示浮动数字
+    try {
+      if (!engine) return;
+      const snap = engine.getSnapshot();
+      const def = BUILDING_DEFS[type];
+      if (def?.production) {
+        const state = snap.buildings[type];
+        const currentLevelData = def.levelTable[state.level - 1];
+        const prevLevelData = def.levelTable[state.level - 2];
+        if (currentLevelData && prevLevelData) {
+          const diff = currentLevelData.production - prevLevelData.production;
+          if (diff > 0) {
+            const id = ++floatingIdRef.current;
+            setFloatingChanges(prev => [...prev, {
+              id,
+              type: def.production!.resourceType as ResourceType,
+              value: diff,
+            }]);
+            // 2秒后移除浮动数字
+            setTimeout(() => {
+              setFloatingChanges(prev => prev.filter(c => c.id !== id));
+            }, 2100);
+          }
+        }
+      }
+      // 主城加成：显示所有资源的变化
+      if (type === 'castle') {
+        const state = snap.buildings[type];
+        const castleDef = BUILDING_DEFS.castle;
+        const currentLevelData = castleDef.levelTable[state.level - 1];
+        const prevLevelData = castleDef.levelTable[state.level - 2];
+        if (currentLevelData && prevLevelData) {
+          const bonusDiff = currentLevelData.production - prevLevelData.production;
+          if (bonusDiff > 0) {
+            // 对每种有产出的资源都显示浮动数字
+            const resourceTypes: ResourceType[] = ['grain', 'gold', 'troops'];
+            resourceTypes.forEach((resType, idx) => {
+              const rate = snap.productionRates[resType] ?? 0;
+              if (rate > 0) {
+                const gain = rate * bonusDiff / 100;
+                const id = ++floatingIdRef.current;
+                setTimeout(() => {
+                  setFloatingChanges(prev => [...prev, {
+                    id,
+                    type: resType,
+                    value: gain,
+                  }]);
+                  setTimeout(() => {
+                    setFloatingChanges(prev => prev.filter(c => c.id !== id));
+                  }, 2100);
+                }, idx * 200); // 错开显示
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // 浮动数字是增强功能，出错不影响主流程
+    }
+  }, [engine]);
 
   // ── 建筑升级确认（由 BuildingPanel 调用） ──
   const handleUpgradeError = useCallback((error: Error) => {
@@ -500,6 +569,7 @@ const ThreeKingdomsGame: React.FC = () => {
           caps={caps}
           buildings={buildings}
           pendingGains={pendingGains}
+          floatingChanges={floatingChanges}
         />
 
         {/* 急报横幅（资源栏下方） */}

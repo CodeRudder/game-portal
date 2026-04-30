@@ -20,7 +20,7 @@ vi.mock('../BuildingPanel.css', () => ({}));
 vi.mock('../BuildingUpgradeModal.css', () => ({}));
 
 // ── Mock 引擎模块 — 使用 vi.hoisted 避免提升时变量引用问题 ──
-const { mockBuildingTypes, mockBuildingLabels, mockBuildingIcons, mockBuildingZones } = vi.hoisted(() => {
+const { mockBuildingTypes, mockBuildingLabels, mockBuildingIcons, mockBuildingZones, mockBuildingUnlockLevels, mockToast } = vi.hoisted(() => {
   const BUILDING_TYPES = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'] as const;
   const BUILDING_LABELS = {
     castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
@@ -34,11 +34,24 @@ const { mockBuildingTypes, mockBuildingLabels, mockBuildingIcons, mockBuildingZo
     castle: 'core', farmland: 'civilian', market: 'civilian', barracks: 'military',
     smithy: 'military', academy: 'cultural', clinic: 'cultural', wall: 'defense',
   };
+  const BUILDING_UNLOCK_LEVELS = {
+    castle: 0, farmland: 0, market: 2, barracks: 2,
+    smithy: 3, academy: 3, clinic: 4, wall: 5,
+  };
+  const mockToast = {
+    show: vi.fn(),
+    success: vi.fn(),
+    warning: vi.fn(),
+    danger: vi.fn(),
+    info: vi.fn(),
+  };
   return {
     mockBuildingTypes: BUILDING_TYPES,
     mockBuildingLabels: BUILDING_LABELS,
     mockBuildingIcons: BUILDING_ICONS,
     mockBuildingZones: BUILDING_ZONES,
+    mockBuildingUnlockLevels: BUILDING_UNLOCK_LEVELS,
+    mockToast,
   };
 });
 
@@ -47,7 +60,13 @@ vi.mock('@/games/three-kingdoms/engine', () => ({
   BUILDING_LABELS: mockBuildingLabels,
   BUILDING_ICONS: mockBuildingIcons,
   BUILDING_ZONES: mockBuildingZones,
+  BUILDING_UNLOCK_LEVELS: mockBuildingUnlockLevels,
   RESOURCE_LABELS: { grain: '粮草', gold: '铜钱', troops: '兵力', mandate: '天命' },
+}));
+
+// ── Mock Toast ──
+vi.mock('@/components/idle/common/Toast', () => ({
+  Toast: mockToast,
 }));
 
 vi.mock('@/games/three-kingdoms/engine/ThreeKingdomsEngine', () => ({}));
@@ -371,5 +390,92 @@ describe('BuildingPanel', () => {
       expect(style.top).toBeTruthy();
       expect(style.left).toBeTruthy();
     });
+  });
+
+  // ════════════════════════════════════════════════════════════════
+  // Fix #1: 锁定建筑点击显示Toast提示
+  // ════════════════════════════════════════════════════════════════
+  it('点击锁定建筑应显示Toast提示解锁条件', () => {
+    const engine = createMockEngine();
+    const buildings = createMockBuildings();
+    // 将 market 设为锁定状态
+    buildings.market.status = 'locked';
+
+    render(
+      <BuildingPanel
+        buildings={buildings}
+        resources={defaultResources}
+        rates={defaultRates}
+        caps={defaultCaps}
+        engine={engine as any}
+      />,
+    );
+
+    // 找到锁定的市集建筑（地图版）
+    const lockedMarket = screen.getByTestId('building-panel-item-market');
+    expect(lockedMarket).toBeTruthy();
+
+    // 点击锁定建筑
+    fireEvent.click(lockedMarket);
+
+    // 应显示Toast提示解锁条件
+    expect(mockToast.warning).toHaveBeenCalledTimes(1);
+    expect(mockToast.warning).toHaveBeenCalledWith(
+      expect.stringContaining('主城达到Lv2后解锁市集'),
+      3000,
+    );
+  });
+
+  it('点击锁定建筑（列表版）应显示Toast提示解锁条件', () => {
+    const engine = createMockEngine();
+    const buildings = createMockBuildings();
+    // 将 smithy 设为锁定状态（需要主城Lv3）
+    buildings.smithy.status = 'locked';
+
+    render(
+      <BuildingPanel
+        buildings={buildings}
+        resources={defaultResources}
+        rates={defaultRates}
+        caps={defaultCaps}
+        engine={engine as any}
+      />,
+    );
+
+    // 找到列表版锁定建筑
+    const lockedSmithy = screen.getByTestId('building-panel-list-item-smithy');
+    expect(lockedSmithy).toBeTruthy();
+
+    // 点击锁定建筑
+    fireEvent.click(lockedSmithy);
+
+    // 应显示Toast提示解锁条件
+    expect(mockToast.warning).toHaveBeenCalledTimes(1);
+    expect(mockToast.warning).toHaveBeenCalledWith(
+      expect.stringContaining('主城达到Lv3后解锁铁匠铺'),
+      3000,
+    );
+  });
+
+  it('点击未锁定建筑不应触发Toast', () => {
+    const engine = createMockEngine();
+    const buildings = createMockBuildings();
+
+    render(
+      <BuildingPanel
+        buildings={buildings}
+        resources={defaultResources}
+        rates={defaultRates}
+        caps={defaultCaps}
+        engine={engine as any}
+      />,
+    );
+
+    // 点击已解锁的农田
+    const farmland = screen.getByTestId('building-panel-item-farmland');
+    fireEvent.click(farmland);
+
+    // 不应触发Toast
+    expect(mockToast.warning).not.toHaveBeenCalled();
   });
 });

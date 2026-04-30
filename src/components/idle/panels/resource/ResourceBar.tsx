@@ -26,6 +26,12 @@ interface ResourceBarProps {
   pendingGains?: Partial<Record<ResourceType, number>>;
   /** 建筑状态，用于收支详情弹窗 */
   buildings?: Record<BuildingType, BuildingState>;
+  /** Fix #2: 升级完成后产出变化浮动数字动画 */
+  floatingChanges?: Array<{
+    id: number;
+    type: ResourceType;
+    value: number;
+  }>;
 }
 
 /** 资源图标映射 */
@@ -183,7 +189,7 @@ function ResourceItem({
 }
 
 // ─── 资源栏主组件 ────────────────────────────────
-export default function ResourceBar({ resources, rates, caps, pendingGains, buildings }: ResourceBarProps) {
+export default function ResourceBar({ resources, rates, caps, pendingGains, buildings, floatingChanges }: ResourceBarProps) {
   const [showDetails, setShowDetails] = useState(false);
 
   // 收支详情：计算各建筑的产出明细
@@ -266,6 +272,22 @@ export default function ResourceBar({ resources, rates, caps, pendingGains, buil
       >
         📊
       </button>
+
+      {/* Fix #2: 产出变化浮动数字动画 */}
+      {floatingChanges && floatingChanges.length > 0 && (
+        <div className="tk-res-floating-container" data-testid="resource-bar-floating-changes">
+          {floatingChanges.map(change => (
+            <div
+              key={change.id}
+              className="tk-res-floating-number"
+              data-testid={`floating-change-${change.type}`}
+              style={{ color: RESOURCE_COLORS[change.type] || '#4caf50' }}
+            >
+              +{change.value.toFixed(1)}/s {RESOURCE_ICONS[change.type]}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 收支详情弹窗 */}
       {showDetails && (

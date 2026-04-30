@@ -5,7 +5,7 @@
  * 居中弹窗，显示升级预览 + 费用 + 操作按钮
  * 关闭方式：[×] / 点击遮罩 / ESC
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import type { BuildingType, Resources } from '@/games/three-kingdoms/engine';
 import {
   BUILDING_LABELS,
@@ -15,6 +15,7 @@ import {
 import { BUILDING_DEFS } from '@/games/three-kingdoms/engine';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
+import { Toast } from '@/components/idle/common/Toast';
 import SharedPanel from '../../components/SharedPanel';
 import './BuildingUpgradeModal.css';
 
@@ -112,19 +113,122 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
   // Bug-04: 防重复点击保护
   const [upgrading, setUpgrading] = useState(false);
 
+  // Fix #3: 首次升级完成总结弹窗
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryData, setSummaryData] = useState<{
+    buildingName: string;
+    buildingIcon: string;
+    fromLevel: number;
+    toLevel: number;
+    changes: Array<{ label: string; from: string; to: string; diff: string }>;
+  } | null>(null);
+
+  // Fix #4: 资源不足时点击按钮的Toast提示已处理（见handleConfirm）
+
   const canAfford = affordability.grain && affordability.gold && affordability.troops;
 
   // BUG-2: 使用引擎综合判断（canUpgrade）+ 资源检查（canAfford）+ 满级检查
   const isConfirmDisabled = !info.canUpgrade || !canAfford || upgrading || isMaxLevel;
 
+  // Fix #3: 检查是否为首次升级
+  const isFirstUpgrade = useMemo(() => {
+    try {
+      return !localStorage.getItem('tk_first_upgrade_done');
+    } catch {
+      return false;
+    }
+  }, []);
+
   // 防重复点击的升级确认处理
   const handleConfirm = () => {
-    if (isConfirmDisabled) return;
+    if (isConfirmDisabled) {
+      // Fix #4: 资源不足时点击禁用按钮显示Toast提示
+      if (info.canUpgrade && !canAfford && !isMaxLevel) {
+        const shortages: string[] = [];
+        if (!affordability.grain) {
+          const deficit = (info.cost?.grain ?? 0) - resources.grain;
+          shortages.push(`粮草不足 ${formatNum(Math.abs(deficit))}`);
+        }
+        if (!affordability.gold) {
+          const deficit = (info.cost?.gold ?? 0) - resources.gold;
+          shortages.push(`铜钱不足 ${formatNum(Math.abs(deficit))}`);
+        }
+        if (!affordability.troops && (info.cost?.troops ?? 0) > 0) {
+          const deficit = (info.cost?.troops ?? 0) - resources.troops;
+          shortages.push(`兵力不足 ${formatNum(Math.abs(deficit))}`);
+        }
+        if (shortages.length > 0) {
+          Toast.warning(shortages.join('，'), 3000);
+        }
+      }
+      return;
+    }
+
+    // Fix #3: 收集升级前数据用于总结弹窗
+    const def = BUILDING_DEFS[buildingType];
+    const prevLevel = info.level;
+    const nextLevel = info.level + 1;
+    const currentLevelData = def?.levelTable?.[prevLevel - 1];
+    const nextLevelData = def?.levelTable?.[nextLevel - 1];
+    const changes: Array<{ label: string; from: string; to: string; diff: string }> = [];
+
+    if (def?.production && currentLevelData && nextLevelData) {
+      const currentProd = currentLevelData.production;
+      const nextProd = nextLevelData.production;
+      const diff = nextProd - currentProd;
+      const resIcon: Record<string, string> = { grain: '🌾', gold: '💰', troops: '⚔️', mandate: '👑', material: '🔨', techPoint: '📜' };
+      changes.push({
+        label: `${resIcon[def.production.resourceType] || '📊'} 产出`,
+        from: `${currentProd}/秒`,
+        to: `${nextProd}/秒`,
+        diff: `+${diff.toFixed(1)}/秒`,
+      });
+    }
+
+    // 主城全资源加成
+    if (buildingType === 'castle' && currentLevelData && nextLevelData) {
+      const currentBonus = currentLevelData.production ?? 0;
+      const nextBonus = nextLevelData.production ?? 0;
+      const bonusDiff = nextBonus - currentBonus;
+      changes.push({
+        label: '🏛️ 全资源加成',
+        from: `${currentBonus}%`,
+        to: `${nextBonus}%`,
+        diff: `+${bonusDiff}%`,
+      });
+    }
+
+    // 特殊属性
+    if (def?.specialAttribute && currentLevelData && nextLevelData) {
+      const currentVal = currentLevelData.specialValue ?? 0;
+      const nextVal = nextLevelData.specialValue ?? 0;
+      changes.push({
+        label: `📊 ${def.specialAttribute.name}`,
+        from: `${currentVal}%`,
+        to: `${nextVal}%`,
+        diff: `+${nextVal - currentVal}%`,
+      });
+    }
+
     setUpgrading(true);
+
+    // Fix #3: 首次升级时显示总结弹窗
+    if (isFirstUpgrade && changes.length > 0) {
+      setSummaryData({
+        buildingName: BUILDING_LABELS[buildingType],
+        buildingIcon: BUILDING_ICONS[buildingType],
+        fromLevel: prevLevel,
+        toLevel: nextLevel,
+        changes,
+      });
+      try { localStorage.setItem('tk_first_upgrade_done', '1'); } catch {}
+    }
+
     onConfirm(buildingType);
   };
 
   return (
+    <>
     <SharedPanel title={`${name}升级`} onClose={onCancel} visible={true}>
         {/* 建筑头部 */}
         <div className="tk-upgrade-header" data-testid="building-upgrade-header">
@@ -264,13 +368,64 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
           <button
             className={`tk-upgrade-btn tk-upgrade-btn--confirm ${isConfirmDisabled ? 'tk-upgrade-btn--disabled' : ''}`}
             onClick={handleConfirm}
-            disabled={isConfirmDisabled}
+            aria-disabled={isConfirmDisabled}
             data-testid="building-upgrade-confirm"
           >
             {isMaxLevel ? '已满级' : upgrading ? '升级中...' : !info.canUpgrade ? '无法升级' : canAfford ? '▲ 升级' : '资源不足'}
           </button>
         </div>
     </SharedPanel>
+
+    {/* Fix #3: 首次升级效果总结弹窗 */}
+    {summaryData && (
+      <SharedPanel
+        title="🎉 升级成功"
+        visible={true}
+        onClose={() => setSummaryData(null)}
+        width="380px"
+        data-testid="upgrade-summary-modal"
+      >
+        <div className="tk-upgrade-summary" data-testid="upgrade-summary-content">
+          <div className="tk-upgrade-summary-header">
+            <span className="tk-upgrade-summary-icon">{summaryData.buildingIcon}</span>
+            <span className="tk-upgrade-summary-name">{summaryData.buildingName}</span>
+            <span className="tk-upgrade-summary-level">
+              Lv.{summaryData.fromLevel} → Lv.{summaryData.toLevel}
+            </span>
+          </div>
+
+          <div className="tk-upgrade-summary-title">升级效果</div>
+
+          <div className="tk-upgrade-summary-changes">
+            {summaryData.changes.map((change, idx) => (
+              <div key={idx} className="tk-upgrade-summary-change-item" data-testid={`summary-change-${idx}`}>
+                <span className="tk-upgrade-summary-change-label">{change.label}</span>
+                <span className="tk-upgrade-summary-change-from">{change.from}</span>
+                <span className="tk-upgrade-summary-change-arrow">→</span>
+                <span className="tk-upgrade-summary-change-to">{change.to}</span>
+                <span className="tk-upgrade-summary-change-diff">{change.diff}</span>
+              </div>
+            ))}
+          </div>
+
+          {buildingType === 'castle' && (
+            <div className="tk-upgrade-summary-tip" data-testid="summary-castle-tip">
+              💡 主城升级可提升全资源产出加成，是前期最重要的建筑！
+            </div>
+          )}
+
+          <button
+            className="tk-upgrade-btn tk-upgrade-btn--confirm"
+            data-testid="upgrade-summary-close"
+            onClick={() => setSummaryData(null)}
+            style={{ width: '100%', marginTop: '16px' }}
+          >
+            知道了
+          </button>
+        </div>
+      </SharedPanel>
+    )}
+    </>
   );
 };
 

@@ -18,7 +18,9 @@ import {
   BUILDING_TYPES,
   BUILDING_LABELS,
   BUILDING_ICONS,
+  BUILDING_UNLOCK_LEVELS,
 } from '@/games/three-kingdoms/engine';
+import { Toast } from '@/components/idle/common/Toast';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import BuildingUpgradeModal from './BuildingUpgradeModal';
@@ -218,7 +220,12 @@ const BuildingPanel: React.FC<BuildingPanelProps> = ({
   // 处理建筑点击
   const handleBuildingClick = useCallback((type: BuildingType) => {
     const state = buildings[type];
-    if (state?.status === 'locked') return;
+    if (state?.status === 'locked') {
+      // Fix #1: 锁定建筑点击时显示Toast提示解锁条件
+      const requiredLevel = BUILDING_UNLOCK_LEVELS[type];
+      Toast.warning(`主城达到Lv${requiredLevel}后解锁${BUILDING_LABELS[type]}`, 3000);
+      return;
+    }
     setSelectedBuilding(type);
   }, [buildings]);
 

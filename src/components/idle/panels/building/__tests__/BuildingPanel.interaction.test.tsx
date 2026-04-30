@@ -318,9 +318,9 @@ describe('BuildingPanel 核心交互测试', () => {
       // 点击卡片打开弹窗
       await openUpgradeModal(user, '主城');
 
-      // 弹窗中的确认按钮应被 disabled
+      // 弹窗中的确认按钮应被 disabled（aria-disabled）
       const confirmBtn = getModalConfirmButton();
-      expect(confirmBtn).toBeDisabled();
+      expect(confirmBtn.getAttribute('aria-disabled')).toBe('true');
       // BUG-2 fix: canUpgrade=false 时显示"无法升级"而非"资源不足"
       expect(confirmBtn.textContent).toContain('无法升级');
     });

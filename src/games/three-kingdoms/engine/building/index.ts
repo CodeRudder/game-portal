@@ -12,7 +12,7 @@ export type {
 export {
   BUILDING_TYPES, BUILDING_LABELS, BUILDING_ICONS, BUILDING_ZONES,
 } from './building.types';
-export { BUILDING_DEFS } from './building-config';
+export { BUILDING_DEFS, BUILDING_UNLOCK_LEVELS } from './building-config';
 
 // 拆分模块
 export {

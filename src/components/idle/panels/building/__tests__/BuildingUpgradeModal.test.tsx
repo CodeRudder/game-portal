@@ -206,9 +206,9 @@ describe('BuildingUpgradeModal', () => {
     const confirmBtn = screen.getByText('无法升级');
     expect(confirmBtn).toBeInTheDocument();
 
-    // 按钮应该是 disabled 的
+    // 按钮应该是 disabled 的（使用 aria-disabled）
     const button = confirmBtn.closest('button');
-    expect(button?.disabled).toBe(true);
+    expect(button?.getAttribute('aria-disabled')).toBe('true');
 
     // 应显示不足原因
     expect(screen.getByText(/❌ 粮草不足/)).toBeInTheDocument();
