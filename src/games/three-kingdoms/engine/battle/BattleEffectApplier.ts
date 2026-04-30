@@ -365,7 +365,8 @@ export class BattleEffectApplier implements ISubsystem {
   /** 获取兵种专属防御加成（不含 all） */
   private getTechTroopDefenseBonus(troop: string): number {
     if (!this.techEffect) return 0;
-    return this.techEffect.getEffectValueByTarget('troop_defense' as const, troop)
+    const result = this.techEffect.getEffectValueByTarget('troop_defense' as const, troop)
       - this.getTechDefenseBonusForAllOnly();
+    return Math.max(0, result);
   }
 }

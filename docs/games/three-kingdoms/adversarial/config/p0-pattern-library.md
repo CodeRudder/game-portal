@@ -1,6 +1,6 @@
 # P0缺陷模式库 — 三国霸业
 
-> 版本: v1.4 | 初始化: 2026-05-01
+> 版本: v1.5 | 初始化: 2026-05-01
 > 持续积累，每轮更新
 
 ## 已验证的P0模式（42个缺陷提炼）
@@ -116,3 +116,9 @@
 - **检查方法**: 搜索Infinity使用，验证序列化路径
 - **典型案例**: SKIP模式返回Infinity，JSON.stringify变为null
 - **修复模式**: 使用有限值替代Infinity
+
+### 模式19: 对称函数修复遗漏
+- **出现频率**: 中等（Battle R2发现1处）
+- **检查方法**: 修复一个函数时，搜索其对称函数（attack↔defense、add↔remove、serialize↔deserialize）是否需要相同修复
+- **典型案例**: FIX-105对getTechTroopAttackBonus添加Math.max(0)，但getTechTroopDefenseBonus遗漏
+- **修复模式**: 修复时同步搜索所有对称函数，确保一致处理

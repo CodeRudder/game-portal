@@ -443,10 +443,25 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
    * @param state - 要序列化的战斗状态
    * @returns 深拷贝的 BattleState 纯对象
    */
+  /**
+   * 将 BattleState 深拷贝为可 JSON 化的纯对象，同时附带子系统状态。
+   * 用于存档、回放、断线重连等场景。
+   *
+   * @param state - 要序列化的战斗状态
+   * @returns 深拷贝的 BattleState 纯对象（含 __subsystem 快照）
+   */
   serialize(state: BattleState): BattleState {
     // BattleState 中所有字段都是基本类型或纯对象数组，
     // 使用结构化克隆（structuredClone）实现深拷贝，兼容性好且无 JSON 精度丢失。
-    return structuredClone(state);
+    const cloned = structuredClone(state);
+
+    // FIX-201: 附带子系统状态，确保 serialize → deserialize 后战斗模式、速度、大招状态不丢失
+    (cloned as unknown as Record<string, unknown>).__subsystem = {
+      battleMode: this.battleMode,
+      speed: this.speedController.serialize(),
+      ultimate: this.ultimateSystem.serialize(),
+    };
+    return cloned;
   }
 
   /**
@@ -477,8 +492,24 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
       }
     }
 
-    // 深拷贝以避免外部引用污染
-    return structuredClone(d as unknown as BattleState);
+    // FIX-201: 恢复子系统状态（battleMode / speed / ultimate）
+    const sub = d.__subsystem as Record<string, unknown> | undefined;
+    if (sub) {
+      if (sub.battleMode !== undefined) {
+        this.battleMode = sub.battleMode as BattleMode;
+      }
+      if (sub.speed !== undefined) {
+        this.speedController.deserialize(sub.speed as BattleSpeedState);
+      }
+      if (sub.ultimate !== undefined) {
+        this.ultimateSystem.deserialize(sub.ultimate as Parameters<typeof this.ultimateSystem.deserialize>[0]);
+      }
+    }
+
+    // 深拷贝以避免外部引用污染，剥离 __subsystem 避免污染 BattleState
+    const { __subsystem, ...rest } = d;
+    void __subsystem;
+    return structuredClone(rest as unknown as BattleState);
   }
 
   // 回合内部流程

@@ -69,3 +69,4 @@
 14. **Phase 2 Battle R1**: 建立covered标注源码验证机制（虚报率>5%自动扣分）
 15. **Phase 2 Battle R1**: 增加战斗数值安全专项扫描（NaN/负数/Infinity三重验证）
 16. **Phase 2 Battle R1**: 增加配置-枚举同步自动验证（枚举值 vs 配置数组一致性）
+17. **Phase 2 Battle R2**: 建立对称函数封版审查机制（对称对中一侧已修复→另一侧必须验证）
