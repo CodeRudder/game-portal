@@ -211,6 +211,11 @@ export class RewardDistributor implements ISubsystem {
    * @param reward - 奖励数据
    */
   distribute(reward: StageReward): void {
+    // DEF-014: 防护 fragments 为 null/undefined 时 Object.entries 崩溃
+    if (!reward.fragments) {
+      reward.fragments = {};
+    }
+
     // 分发资源（类型安全遍历 Partial<Resources>）
     const resourceKeys: (keyof import('../../shared/types').Resources)[] = [
       'grain', 'gold', 'troops', 'mandate',

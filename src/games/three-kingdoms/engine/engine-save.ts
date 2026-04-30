@@ -14,6 +14,9 @@ import type { HeroSystem } from './hero/HeroSystem';
 import type { HeroRecruitSystem } from './hero/HeroRecruitSystem';
 import type { HeroFormation } from './hero/HeroFormation';
 import type { CampaignProgressSystem } from './campaign/CampaignProgressSystem';
+import type { SweepSystem } from './campaign/SweepSystem';
+import type { VIPSystem } from './campaign/VIPSystem';
+import type { ChallengeStageSystem } from './campaign/ChallengeStageSystem';
 import type { TechTreeSystem } from './tech/TechTreeSystem';
 import type { TechPointSystem } from './tech/TechPointSystem';
 import type { TechResearchSystem } from './tech/TechResearchSystem';
@@ -101,6 +104,12 @@ export interface SaveContext {
   onlineSeconds: number;
   /** 赛季系统（可选，v16.0+） */
   readonly season?: import('./season/SeasonSystem').SeasonSystem;
+  /** 扫荡系统（可选，v4.0+） */
+  readonly sweep?: SweepSystem;
+  /** VIP系统（可选，v9.4+） */
+  readonly vip?: VIPSystem;
+  /** 挑战关卡系统（可选，v11+） */
+  readonly challenge?: ChallengeStageSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -155,6 +164,12 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     offlineEvent: ctx.offlineEvent?.exportSaveData() as { version: number; offlineQueue: unknown[]; autoRules: unknown[] },
     // ── 赛季系统 v16.0 ──
     season: ctx.season?.getSaveData(),
+    // ── 扫荡系统 v4.0 ──
+    sweep: ctx.sweep?.serialize(),
+    // ── VIP系统 v9.4 ──
+    vip: ctx.vip?.serialize(),
+    // ── 挑战关卡系统 v11 ──
+    challenge: ctx.challenge?.serialize(),
   };
 }
 
@@ -188,6 +203,9 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.eventLog) subsystems.eventLog = data.eventLog;
   if (data.offlineEvent) subsystems.offlineEvent = data.offlineEvent;
   if (data.season) subsystems.season = data.season;
+  if (data.sweep) subsystems.sweep = data.sweep;
+  if (data.vip) subsystems.vip = data.vip;
+  if (data.challenge) subsystems.challenge = data.challenge;
 
   return {
     version: String(data.version),
@@ -233,6 +251,9 @@ export function fromIGameState(state: IGameState): GameSaveData {
     eventLog: s.eventLog as import('./event/EventLogSystem').EventLogSaveData | undefined,
     offlineEvent: s.offlineEvent as { version: number; offlineQueue: unknown[]; autoRules: unknown[] } | undefined,
     season: s.season as import('./season/SeasonSystem').SeasonSaveData | undefined,
+    sweep: s.sweep as import('./campaign/sweep.types').SweepSaveData | undefined,
+    vip: s.vip as import('./campaign/VIPSystem').VIPSaveData | undefined,
+    challenge: s.challenge as import('./campaign/ChallengeStageSystem').ChallengeSaveData | undefined,
   };
 }
 
@@ -506,6 +527,21 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   // ── 赛季系统 v16.0 ──
   if (data.season && ctx.season) {
     ctx.season.loadSaveData(data.season);
+  }
+
+  // ── 扫荡系统 v4.0 ──
+  if (data.sweep && ctx.sweep) {
+    ctx.sweep.deserialize(data.sweep);
+  }
+
+  // ── VIP系统 v9.4 ──
+  if (data.vip && ctx.vip) {
+    ctx.vip.deserialize(data.vip);
+  }
+
+  // ── 挑战关卡系统 v11 ──
+  if (data.challenge && ctx.challenge) {
+    ctx.challenge.deserialize(data.challenge);
   }
 
   syncBuildingToResource({

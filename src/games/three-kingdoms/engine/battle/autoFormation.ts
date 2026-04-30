@@ -44,8 +44,8 @@ export function autoFormation(units: BattleUnit[]): AutoFormationResult {
     return { team: { units: [], side: 'ally' }, frontLine: [], backLine: [], score: 0 };
   }
 
-  // 按防御降序 → HP降序排序
-  const sorted = [...valid].sort((a, b) => {
+  // 按防御降序 → HP降序排序（深拷贝，避免修改原对象的 position）
+  const sorted = [...valid].map(u => ({ ...u })).sort((a, b) => {
     const defDiff = b.defense - a.defense;
     if (defDiff !== 0) return defDiff;
     return b.maxHp - a.maxHp;

@@ -196,7 +196,7 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
       expect(result2.outcome).toBe(result1.outcome);
     });
 
-    it('skipBattle 后速度应为 SKIP', () => {
+    it('skipBattle 后速度应恢复为 X1（DEF-010 修复）', () => {
       const ally = createTeam('ally', 1, {
         attack: 99999,
         defense: 0,
@@ -213,7 +213,8 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
       const state = engine.initBattle(ally, enemy);
       engine.skipBattle(state);
 
-      expect(engine.getSpeedState().speed).toBe(BattleSpeed.SKIP);
+      // DEF-010: skipBattle 完成后自动恢复速度到 X1，避免 SKIP 累积
+      expect(engine.getSpeedState().speed).toBe(BattleSpeed.X1);
     });
 
     it('skipBattle 应产生完整的行动日志', () => {
@@ -298,7 +299,7 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
       expect(result.totalTurns).toBeGreaterThanOrEqual(1);
     });
 
-    it('quickBattle 应设置 SKIP 速度', () => {
+    it('quickBattle 后速度应恢复为 X1（DEF-010 修复）', () => {
       const ally = createTeam('ally', 1, {
         attack: 99999,
         defense: 0,
@@ -313,7 +314,8 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
       });
 
       engine.quickBattle(ally, enemy);
-      expect(engine.getSpeedState().speed).toBe(BattleSpeed.SKIP);
+      // DEF-010: quickBattle 内部调用 skipBattle，完成后速度恢复 X1
+      expect(engine.getSpeedState().speed).toBe(BattleSpeed.X1);
     });
 
     it('quickBattle 星级评定应正常', () => {
@@ -349,7 +351,7 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
       expect(engine.isSkipMode()).toBe(true);
     });
 
-    it('skipBattle 后应在 SKIP 模式', () => {
+    it('skipBattle 后不应在 SKIP 模式（DEF-010 修复）', () => {
       const ally = createTeam('ally', 1, {
         attack: 99999,
         defense: 0,
@@ -366,7 +368,8 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
       const state = engine.initBattle(ally, enemy);
       engine.skipBattle(state);
 
-      expect(engine.isSkipMode()).toBe(true);
+      // DEF-010: skipBattle 完成后速度恢复 X1，不在 SKIP 模式
+      expect(engine.isSkipMode()).toBe(false);
     });
 
     it('reset 后应退出 SKIP 模式', () => {

@@ -18,6 +18,7 @@ import type { EnemyUnitDef, RewardDistributorDeps, Stage } from './campaign/camp
 import type { ISystemDeps } from '../core/types';
 import { campaignDataProvider } from './campaign/campaign-config';
 import { TroopType, SkillTargetType } from './battle/battle.types';
+import type { GeneralStats } from '../shared/types';
 
 // ─────────────────────────────────────────────
 // 关卡/战斗子系统集合
@@ -83,10 +84,18 @@ export function buildRewardDeps(
 // 战斗阵容构建
 // ─────────────────────────────────────────────
 
-/** 从编队 + 武将数据构建我方 BattleTeam */
+/**
+ * 从编队 + 武将数据构建我方 BattleTeam
+ *
+ * @param formation - 武将编队
+ * @param hero - 武将系统
+ * @param getTotalStats - 可选回调，获取武将含装备/羁绊加成的总属性
+ *   若未提供则回退到 baseStats（兼容旧调用方式）
+ */
 export function buildAllyTeam(
   formation: HeroFormation,
   hero: HeroSystem,
+  getTotalStats?: (generalId: string) => GeneralStats | undefined,
 ): BattleTeam {
   const active = formation.getActiveFormation();
   const slots = active?.slots ?? [];
@@ -96,7 +105,9 @@ export function buildAllyTeam(
     if (!gid) continue;
     const g = hero.getGeneral(gid);
     if (!g) continue;
-    units.push(generalToBattleUnit(g, 'ally', i < 3 ? 'front' : 'back'));
+    // 优先使用含装备/羁绊加成的总属性，回退到 baseStats
+    const stats = getTotalStats?.(gid) ?? g.baseStats;
+    units.push(generalToBattleUnit(g, 'ally', i < 3 ? 'front' : 'back', stats));
   }
   return { units, side: 'ally' };
 }
@@ -124,12 +135,23 @@ function inferTroopType(stats: { attack: number; defense: number; intelligence: 
   return TroopType.INFANTRY; // 兜底
 }
 
+/**
+ * 将武将数据转换为战斗单位
+ *
+ * @param g - 武将数据（含 baseStats）
+ * @param side - 阵营
+ * @param position - 前排/后排
+ * @param stats - 用于战斗的四维属性（默认为 baseStats，可传入含装备加成的 totalStats）
+ */
 function generalToBattleUnit(
   g: { id: string; name: string; faction: any; baseStats: any; level: number; skills: any[] },
   side: 'ally' | 'enemy',
   position: 'front' | 'back',
+  stats?: { attack: number; defense: number; intelligence: number; speed: number },
 ): BattleUnit {
-  const maxHp = 500 + g.level * 100 + g.baseStats.defense * 10;
+  // DEF-007: 使用传入的 stats（含装备/羁绊加成），若无则回退到 baseStats
+  const effectiveStats = stats ?? g.baseStats;
+  const maxHp = 500 + g.level * 100 + effectiveStats.defense * 10;
   const normalAttack: BattleSkill = {
     id: 'normal_attack', name: '普攻', type: 'active', level: 1,
     description: '普通攻击', multiplier: 1.0,
@@ -144,10 +166,10 @@ function generalToBattleUnit(
   }));
   return {
     id: g.id, name: g.name, faction: g.faction,
-    troopType: inferTroopType(g.baseStats), position, side,
-    attack: g.baseStats.attack, baseAttack: g.baseStats.attack,
-    defense: g.baseStats.defense, baseDefense: g.baseStats.defense,
-    intelligence: g.baseStats.intelligence, speed: g.baseStats.speed,
+    troopType: inferTroopType(effectiveStats), position, side,
+    attack: effectiveStats.attack, baseAttack: g.baseStats.attack,
+    defense: effectiveStats.defense, baseDefense: g.baseStats.defense,
+    intelligence: effectiveStats.intelligence, speed: effectiveStats.speed,
     hp: maxHp, maxHp, isAlive: true, rage: 0, maxRage: 100,
     normalAttack, skills, buffs: [],
   };

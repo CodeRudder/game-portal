@@ -404,6 +404,9 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
     const result = this.getBattleResult(state);
     state.result = result;
 
+    // DEF-010: 恢复速度到 X1，避免 SKIP 状态累积影响后续战斗
+    this.speedController.setSpeed(BattleSpeed.X1);
+
     return result;
   }
 
@@ -427,6 +430,55 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
    */
   isSkipMode(): boolean {
     return this.speedController.getSpeed() === BattleSpeed.SKIP;
+  }
+
+  // ── 序列化 / 反序列化（DEF-008） ─────────────────────
+
+  /**
+   * 序列化战斗状态
+   *
+   * 将 BattleState 深拷贝为可 JSON 化的纯对象。
+   * 用于存档、回放、断线重连等场景。
+   *
+   * @param state - 要序列化的战斗状态
+   * @returns 深拷贝的 BattleState 纯对象
+   */
+  serialize(state: BattleState): BattleState {
+    // BattleState 中所有字段都是基本类型或纯对象数组，
+    // 使用结构化克隆（structuredClone）实现深拷贝，兼容性好且无 JSON 精度丢失。
+    return structuredClone(state);
+  }
+
+  /**
+   * 反序列化战斗状态
+   *
+   * 从存档数据恢复 BattleState，用于断线重连或回放。
+   * 仅做基本校验，不重新计算行动顺序——调用方可按需调用 executeTurn。
+   *
+   * @param data - 序列化的 BattleState 数据
+   * @returns 恢复后的 BattleState
+   * @throws 如果数据缺少必要字段
+   */
+  deserialize(data: unknown): BattleState {
+    if (!data || typeof data !== 'object') {
+      throw new Error('BattleEngine.deserialize: data must be a non-null object');
+    }
+    const d = data as Record<string, unknown>;
+
+    // 基本校验：必须包含 BattleState 的关键字段
+    const requiredKeys: (keyof BattleState)[] = [
+      'id', 'phase', 'currentTurn', 'maxTurns',
+      'allyTeam', 'enemyTeam', 'turnOrder', 'currentActorIndex',
+      'actionLog', 'result',
+    ];
+    for (const key of requiredKeys) {
+      if (!(key in d)) {
+        throw new Error(`BattleEngine.deserialize: missing required field "${key}"`);
+      }
+    }
+
+    // 深拷贝以避免外部引用污染
+    return structuredClone(d as unknown as BattleState);
   }
 
   // 回合内部流程

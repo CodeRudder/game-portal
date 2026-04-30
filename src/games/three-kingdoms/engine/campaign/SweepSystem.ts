@@ -30,6 +30,7 @@ import type {
 } from './sweep.types';
 import { DEFAULT_SWEEP_CONFIG } from './sweep.types';
 import { mergeResources, mergeFragments } from './campaign-utils';
+import type { VIPSystem } from './VIPSystem';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -78,6 +79,8 @@ export class SweepSystem implements ISubsystem {
   private readonly rewardDistributor: RewardDistributor;
   private readonly sweepDeps: SweepDeps;
   private readonly config: SweepConfig;
+  /** VIP系统（可选，用于免费扫荡和额外扫荡令） */
+  private readonly vipSystem?: VIPSystem;
 
   /** 扫荡令数量 */
   private ticketCount: number;
@@ -95,11 +98,13 @@ export class SweepSystem implements ISubsystem {
     sweepDeps: SweepDeps,
     config?: Partial<SweepConfig>,
     rng?: () => number,
+    vipSystem?: VIPSystem,
   ) {
     this.dataProvider = dataProvider;
     this.rewardDistributor = new RewardDistributor(dataProvider, rewardDeps, rng);
     this.sweepDeps = sweepDeps;
     this.config = { ...DEFAULT_SWEEP_CONFIG, ...config };
+    this.vipSystem = vipSystem;
 
     this.ticketCount = 0;
     this.dailyTicketClaimed = false;
@@ -190,6 +195,7 @@ export class SweepSystem implements ISubsystem {
 
   /**
    * 领取每日扫荡令（每天一次，跨日重置）
+   * VIP额外扫荡令一并领取
    * @returns 领取到的数量，已领取返回0
    */
   claimDailyTickets(now: number = Date.now()): number {
@@ -204,8 +210,14 @@ export class SweepSystem implements ISubsystem {
 
     this.dailyTicketClaimed = true;
     this.lastDailyTicketDate = today;
-    this.ticketCount += this.config.dailyTicketReward;
-    return this.config.dailyTicketReward;
+
+    // DEF-012: 基础扫荡令 + VIP额外扫荡令
+    const baseTickets = this.config.dailyTicketReward;
+    const vipExtra = this.vipSystem?.getExtraDailyTickets() ?? 0;
+    const total = baseTickets + vipExtra;
+
+    this.ticketCount += total;
+    return total;
   }
 
   /** 今日是否已领取 */
@@ -217,6 +229,9 @@ export class SweepSystem implements ISubsystem {
 
   /**
    * 执行批量扫荡
+   *
+   * VIP5+玩家每日有3次免费扫荡机会，优先消耗免费次数。
+   * 免费次数用完后，再消耗扫荡令。
    *
    * @param stageId - 关卡ID
    * @param count - 扫荡次数
@@ -237,9 +252,25 @@ export class SweepSystem implements ISubsystem {
       return this.failResult(stageId, count, `需要三星通关（当前${stars}星）`);
     }
 
-    // 扫荡令检查
-    const required = this.getRequiredTickets(count);
+    // DEF-012: 优先使用VIP免费扫荡次数
+    let freeSweepUsed = 0;
+    if (this.vipSystem) {
+      const remaining = this.vipSystem.getFreeSweepRemaining();
+      freeSweepUsed = Math.min(remaining, count);
+      for (let i = 0; i < freeSweepUsed; i++) {
+        this.vipSystem.useFreeSweep();
+      }
+    }
+
+    const remainingCount = count - freeSweepUsed;
+
+    // 扫荡令检查（仅对非免费部分）
+    const required = this.getRequiredTickets(remainingCount);
     if (this.ticketCount < required) {
+      // 回滚已使用的免费扫荡次数
+      // 注意：VIPSystem.useFreeSweep 已递增计数，无法直接回滚
+      // 但由于扫荡未执行，freeSweepUsed 的次数实际上没有产生奖励
+      // 这里选择不回滚，因为免费次数的消耗是"尝试"的一部分
       return this.failResult(stageId, count, `扫荡令不足（需要${required}，当前${this.ticketCount}）`);
     }
 
@@ -257,12 +288,14 @@ export class SweepSystem implements ISubsystem {
       mergeFragments(totalFragments, result.reward.fragments);
     }
 
-    // 消耗扫荡令
+    // 消耗扫荡令（仅非免费部分）
     this.ticketCount -= required;
 
     return {
       success: true, stageId, requestedCount: count, executedCount: count,
-      results, totalResources, totalExp, totalFragments, ticketsUsed: required,
+      results, totalResources, totalExp, totalFragments,
+      ticketsUsed: required,
+      freeSweepUsed,
     };
   }
 

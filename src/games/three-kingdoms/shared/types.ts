@@ -272,6 +272,12 @@ export interface GameSaveData {
   offlineEvent?: { version: number; offlineQueue: unknown[]; autoRules: unknown[] };
   /** 赛季系统数据（可选，v16.0+） */
   season?: import('../engine/season/SeasonSystem').SeasonSaveData;
+  /** 扫荡系统数据（可选，v4.0+） */
+  sweep?: import('../engine/campaign/sweep.types').SweepSaveData;
+  /** VIP系统数据（可选，v9.4+） */
+  vip?: import('../engine/campaign/VIPSystem').VIPSaveData;
+  /** 挑战关卡系统数据（可选，v11+） */
+  challenge?: import('../engine/campaign/ChallengeStageSystem').ChallengeSaveData;
 }
 
 // ─────────────────────────────────────────────

@@ -120,6 +120,8 @@ export interface SweepBatchResult {
   totalFragments: Record<string, number>;
   /** 消耗的扫荡令数量 */
   ticketsUsed: number;
+  /** VIP免费扫荡消耗次数 */
+  freeSweepUsed?: number;
   /** 失败原因（success=false时） */
   failureReason?: string;
 }
