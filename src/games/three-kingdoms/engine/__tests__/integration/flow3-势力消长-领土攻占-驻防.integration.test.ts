@@ -14,8 +14,8 @@
  * 涉及子系统: TerritorySystem, GarrisonSystem, SiegeSystem
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { ISystemDeps } from '../../../core/types';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createSim } from '../../../test-utils/test-helpers';
 import { TerritorySystem } from '../../../engine/map/TerritorySystem';
 import { GarrisonSystem } from '../../../engine/map/GarrisonSystem';
 import { SiegeSystem } from '../../../engine/map/SiegeSystem';
@@ -25,49 +25,16 @@ import type { TerritoryProduction, OwnershipStatus } from '../../../core/map';
 // 辅助工具
 // ─────────────────────────────────────────────
 
-/** 创建带领土系统注册的 mock deps */
-function mockDepsWithTerritory(territorySys: TerritorySystem): ISystemDeps {
+/** 从 createSim 获取真实引擎的领土/攻城/驻防子系统 */
+function getMapSystems() {
+  const sim = createSim();
+  const registry = sim.engine.getSubsystemRegistry();
   return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: {
-      register: vi.fn(),
-      get: vi.fn().mockImplementation((name: string) => {
-        if (name === 'territory') return territorySys;
-        return undefined;
-      }),
-      getAll: vi.fn().mockReturnValue([]),
-      has: vi.fn().mockImplementation((name: string) => name === 'territory'),
-      unregister: vi.fn(),
-    },
-  } as unknown as ISystemDeps;
-}
-
-/** 创建基础 mock deps（无领土系统） */
-function mockDeps(): ISystemDeps {
-  return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: {
-      register: vi.fn(),
-      get: vi.fn().mockReturnValue(undefined),
-      getAll: vi.fn().mockReturnValue([]),
-      has: vi.fn().mockReturnValue(false),
-      unregister: vi.fn(),
-    },
-  } as unknown as ISystemDeps;
+    sim,
+    territorySys: registry.get<TerritorySystem>('territory'),
+    siegeSys: registry.get<SiegeSystem>('siege'),
+    garrisonSys: registry.get<GarrisonSystem>('garrison'),
+  };
 }
 
 // ─────────────────────────────────────────────
@@ -80,12 +47,9 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
 
   describe('§3 势力消长', () => {
     let territorySys: TerritorySystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      deps = mockDeps();
-      territorySys = new TerritorySystem();
-      territorySys.init(deps);
+      territorySys = getMapSystems().territorySys;
     });
 
     it('应正确初始化领土系统', () => {
@@ -155,18 +119,11 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
   describe('§3.1 领土攻占', () => {
     let territorySys: TerritorySystem;
     let siegeSys: SiegeSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      territorySys = new TerritorySystem();
-      deps = mockDepsWithTerritory(territorySys);
-      territorySys.init(deps);
-      // 通过 registry mock 注入 TerritorySystem，让 SiegeSystem 的 getter 能正确获取
-      (deps.registry.get as ReturnType<typeof vi.fn>).mockImplementation(
-        (name: string) => name === 'territory' ? territorySys : undefined
-      );
-      siegeSys = new SiegeSystem();
-      siegeSys.init(deps);
+      const systems = getMapSystems();
+      territorySys = systems.territorySys;
+      siegeSys = systems.siegeSys;
     });
 
     it('攻占后领土归属应变更', () => {
@@ -285,18 +242,11 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
   describe('§3.1.1 胜率预估', () => {
     let territorySys: TerritorySystem;
     let siegeSys: SiegeSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      territorySys = new TerritorySystem();
-      deps = mockDepsWithTerritory(territorySys);
-      territorySys.init(deps);
-      // 通过 registry mock 注入 TerritorySystem
-      (deps.registry.get as ReturnType<typeof vi.fn>).mockImplementation(
-        (name: string) => name === 'territory' ? territorySys : undefined
-      );
-      siegeSys = new SiegeSystem();
-      siegeSys.init(deps);
+      const systems = getMapSystems();
+      territorySys = systems.territorySys;
+      siegeSys = systems.siegeSys;
     });
 
     it('攻城条件检查应返回布尔值', () => {
@@ -328,18 +278,11 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
   describe('§3.2 驻防机制', () => {
     let territorySys: TerritorySystem;
     let garrisonSys: GarrisonSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      territorySys = new TerritorySystem();
-      deps = mockDepsWithTerritory(territorySys);
-      territorySys.init(deps);
-      // 通过 registry mock 注入 TerritorySystem
-      (deps.registry.get as ReturnType<typeof vi.fn>).mockImplementation(
-        (name: string) => name === 'territory' ? territorySys : undefined
-      );
-      garrisonSys = new GarrisonSystem();
-      garrisonSys.init(deps);
+      const systems = getMapSystems();
+      territorySys = systems.territorySys;
+      garrisonSys = systems.garrisonSys;
     });
 
     it('应正确初始化驻防系统', () => {

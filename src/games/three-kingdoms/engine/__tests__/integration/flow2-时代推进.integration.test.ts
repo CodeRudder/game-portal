@@ -12,8 +12,8 @@
  * 涉及子系统: CalendarSystem, ChainEventSystem
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { ISystemDeps } from '../../../core/types';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createSim } from '../../../test-utils/test-helpers';
 import { CalendarSystem } from '../../../engine/calendar/CalendarSystem';
 import type { GameDate, Season, WeatherType } from '../../../engine/calendar/calendar.types';
 import { SEASONS, WEATHERS } from '../../../engine/calendar/calendar.types';
@@ -24,18 +24,15 @@ import type { EventChainDef, ChainNodeDef } from '../../../engine/event/chain-ev
 // 辅助工具
 // ─────────────────────────────────────────────
 
-function mockDeps(): ISystemDeps {
+/** 从 createSim 获取真实引擎的日历和事件链子系统 */
+function getEngineSystems() {
+  const sim = createSim();
+  const registry = sim.engine.getSubsystemRegistry();
   return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
-  } as unknown as ISystemDeps;
+    sim,
+    calendar: registry.get<CalendarSystem>('calendar'),
+    chainSys: registry.get<ChainEventSystem>('eventChain'),
+  };
 }
 
 /** 创建事件链定义 */
@@ -74,12 +71,10 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
 
   describe('§2 时代推进', () => {
     let calendar: CalendarSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      deps = mockDeps();
-      calendar = new CalendarSystem();
-      calendar.init(deps);
+      const systems = getEngineSystems();
+      calendar = systems.calendar;
     });
 
     it('应正确初始化日历系统', () => {
@@ -170,8 +165,7 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
       const saved = calendar.serialize();
       expect(saved).toBeDefined();
 
-      const calendar2 = new CalendarSystem();
-      calendar2.init(deps);
+      const calendar2 = getEngineSystems().calendar;
       calendar2.deserialize(saved);
 
       expect(calendar2.getTotalDays()).toBe(calendar.getTotalDays());
@@ -215,14 +209,11 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
   describe('§2.1 时代目标', () => {
     let calendar: CalendarSystem;
     let chainSys: ChainEventSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      deps = mockDeps();
-      calendar = new CalendarSystem();
-      calendar.init(deps);
-      chainSys = new ChainEventSystem();
-      chainSys.init(deps);
+      const systems = getEngineSystems();
+      calendar = systems.calendar;
+      chainSys = systems.chainSys;
     });
 
     it('时代推进应按历史顺序: 黄巾之乱→群雄割据→官渡之战→赤壁之战→三国鼎立', () => {
@@ -290,12 +281,10 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
 
   describe('§2.2 时代奖励', () => {
     let calendar: CalendarSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      deps = mockDeps();
-      calendar = new CalendarSystem();
-      calendar.init(deps);
+      const systems = getEngineSystems();
+      calendar = systems.calendar;
     });
 
     it('时代变迁后应解锁新年号', () => {
@@ -309,8 +298,7 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
       const state = calendar.getState();
       const saved = calendar.serialize();
 
-      const cal2 = new CalendarSystem();
-      cal2.init(deps);
+      const cal2 = getEngineSystems().calendar;
       cal2.deserialize(saved);
 
       expect(cal2.getTotalDays()).toBe(state.totalDays);
@@ -320,8 +308,7 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
       calendar.update(100000);
       const saved1 = calendar.serialize();
 
-      const cal2 = new CalendarSystem();
-      cal2.init(deps);
+      const cal2 = getEngineSystems().calendar;
       cal2.deserialize(saved1);
 
       const saved2 = cal2.serialize();
@@ -333,12 +320,10 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
 
   describe('§7.11 时代推进×资源产出联动', () => {
     let calendar: CalendarSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      deps = mockDeps();
-      calendar = new CalendarSystem();
-      calendar.init(deps);
+      const systems = getEngineSystems();
+      calendar = systems.calendar;
     });
 
     it('时代加成因子: 黄巾之乱×1.0 / 群雄割据×1.1 / 官渡之战×1.2 / 赤壁之战×1.3 / 三国鼎立×1.5', () => {
@@ -362,14 +347,11 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
   describe('§7.12 NPC好感度×时代推进联动', () => {
     let calendar: CalendarSystem;
     let chainSys: ChainEventSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      deps = mockDeps();
-      calendar = new CalendarSystem();
-      calendar.init(deps);
-      chainSys = new ChainEventSystem();
-      chainSys.init(deps);
+      const systems = getEngineSystems();
+      calendar = systems.calendar;
+      chainSys = systems.chainSys;
     });
 
     it('时代变迁应解锁新NPC类型', () => {
@@ -393,12 +375,10 @@ describe('v6.0 集成测试 — Flow 2: 时代推进', () => {
 
   describe('§7.13 连锁事件×时代推进联动', () => {
     let chainSys: ChainEventSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      deps = mockDeps();
-      chainSys = new ChainEventSystem();
-      chainSys.init(deps);
+      const systems = getEngineSystems();
+      chainSys = systems.chainSys;
     });
 
     it('剧情链每环完成应推进时代进度+5%', () => {
