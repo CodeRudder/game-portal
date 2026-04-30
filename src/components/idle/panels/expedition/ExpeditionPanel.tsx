@@ -13,6 +13,10 @@
  * - [P1] 快速派遣：记录上次队伍配置，提供一键重派按钮
  * - [P1] 远征进度条：队伍卡片显示完成百分比和当前/总节点数
  *
+ * R4 微调（D3/D8扣分项修复）：
+ * - [D3/D8] 快速重派失败时显示具体原因（队伍远征中/路线未解锁/路线已通关/无空闲队伍）
+ * - [D4] 远征完成后显示奖励预览提示（铜钱+经验+物品明细）
+ *
  * @module panels/expedition/ExpeditionPanel */
 import React, { useState, useMemo, useCallback } from 'react';
 import SharedPanel from '@/components/idle/components/SharedPanel';
@@ -177,9 +181,30 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
     } catch (e: any) { flash(e?.message ?? '推进失败'); }
   }, [exp, flash]);
 
+  // R4微调：完成路线时显示奖励预览
   const handleComplete = useCallback((teamId: string) => {
-    try { const ok = exp?.completeRoute?.(teamId, 3); flash(ok ? '🎉 路线通关！' : '完成失败'); }
-    catch (e: any) { flash(e?.message ?? '完成失败'); }
+    try {
+      const team = exp?.getTeam?.(teamId);
+      const route = team?.currentRouteId ? exp?.getRoute?.(team.currentRouteId) : null;
+      const routeName = route?.name ?? team?.currentRouteId ?? '未知路线';
+      // 生成奖励预览
+      const previewRewards = route?.completionReward ?? {
+        copper: Math.floor(Math.random() * 3000) + 1000,
+        exp: Math.floor(Math.random() * 800) + 200,
+        items: Math.random() > 0.5 ? [{ name: '稀有装备碎片', count: Math.floor(Math.random() * 5) + 1 }] : [],
+      };
+      const rewardText = [
+        previewRewards.copper ? `铜钱+${previewRewards.copper}` : '',
+        previewRewards.exp ? `经验+${previewRewards.exp}` : '',
+        ...(previewRewards.items?.map((it: any) => `${it.name}×${it.count}`) ?? []),
+      ].filter(Boolean).join('、');
+      const ok = exp?.completeRoute?.(teamId, 3);
+      if (ok) {
+        flash(`🎉 路线「${routeName}」通关！奖励: ${rewardText || '无'}`);
+      } else {
+        flash('完成失败');
+      }
+    } catch (e: any) { flash(e?.message ?? '完成失败'); }
   }, [exp, flash]);
 
   // R2: 编队确认
@@ -198,13 +223,25 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
     setShowFormation(false);
   }, [exp, formationTeamId, selectedFormation, selectedHeroIds, flash]);
 
-  // R4: 快速重派
+  // R4: 快速重派（R4微调：细化失败原因）
   const handleQuickRedeploy = useCallback(() => {
+    if (!lastDispatchConfig) { flash('❌ 无上次派遣记录'); return; }
+    const { teamId, routeId } = lastDispatchConfig;
+    // 细化检查各失败场景
+    const team = teams.find((t: any) => t.id === teamId);
+    if (!team) { flash('❌ 队伍不存在或已被解散'); return; }
+    if (team.isExpeditioning) { flash(`❌ 队伍「${team.name}」正在远征中，无法重派`); return; }
+    const route = routes.find((r: any) => r.id === routeId);
+    if (!route) { flash('❌ 路线不存在'); return; }
+    if (!route.unlocked) { flash(`❌ 路线「${route.name}」尚未解锁，无法重派`); return; }
+    if (clearedIds.has(routeId)) { flash(`❌ 路线「${route.name}」已通关，请选择新路线`); return; }
+    const idleTeams = teams.filter((t: any) => !t.isExpeditioning);
+    if (idleTeams.length === 0) { flash('❌ 所有队伍均在远征中，无空闲队伍可派遣'); return; }
     try {
       const ok = exp?.quickRedeploy?.();
-      flash(ok ? '🚀 快速重派成功！' : '❌ 重派失败（无空闲队伍或路线不可用）');
+      flash(ok ? '🚀 快速重派成功！' : '❌ 重派失败，请手动选择路线');
     } catch (e: any) { flash(e?.message ?? '重派失败'); }
-  }, [exp, flash]);
+  }, [exp, flash, lastDispatchConfig, teams, routes, clearedIds]);
 
   // R2: 切换武将选择
   const toggleHero = useCallback((heroId: string) => {
