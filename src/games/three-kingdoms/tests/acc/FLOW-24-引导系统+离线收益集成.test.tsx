@@ -11,12 +11,14 @@
  * - 离线收益弹窗：数值展示、封顶提示、资源类型覆盖
  * - 苏格拉底边界：空状态、满级、资源不足、序列化
  *
+ * R29: 将 mockDeps 替换为 createRealDeps()（基于真实引擎实例）
+ *
  * @module tests/acc/FLOW-24
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { accTest, assertStrict, assertRange } from './acc-test-utils';
-import { createSim } from '../../test-utils/test-helpers';
+import { createSim, createRealDeps } from '../../test-utils/test-helpers';
 import type { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
 // 引导系统
@@ -70,31 +72,9 @@ import type { Resources, ProductionRate } from '../../shared/types';
 
 // ── 辅助函数 ──
 
-function mockDeps(): ISystemDeps {
-  const listeners = new Map<string, Function[]>();
-  return {
-    eventBus: {
-      on: vi.fn((event: string, handler: Function) => {
-        if (!listeners.has(event)) listeners.set(event, []);
-        listeners.get(event)!.push(handler);
-        return () => { const arr = listeners.get(event); if (arr) { const idx = arr.indexOf(handler); if (idx >= 0) arr.splice(idx, 1); } };
-      }),
-      emit: vi.fn((event: string, payload?: unknown) => {
-        const handlers = listeners.get(event);
-        if (handlers) handlers.forEach(h => h(payload));
-      }),
-      once: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
-  } as unknown as ISystemDeps;
-}
-
-/** 创建并连接引导子系统 */
+/** 创建并连接引导子系统（使用真实引擎依赖） */
 function createGuideBundle() {
-  const deps = mockDeps();
+  const deps = createRealDeps();
   const stateMachine = new TutorialStateMachine();
   const stepManager = new TutorialStepManager();
   const stepExecutor = new TutorialStepExecutor();
@@ -182,7 +162,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-03', '引导系统 — 步骤按顺序完成'), () => {
       const tutorial = new TutorialSystem();
-      tutorial.init(mockDeps());
+      tutorial.init(createRealDeps());
 
       // 第一步：领取新手礼包
       const result1 = tutorial.completeCurrentStep('claim_newbie_pack');
@@ -211,7 +191,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-04', '引导系统 — 错误action不完成步骤'), () => {
       const tutorial = new TutorialSystem();
-      tutorial.init(mockDeps());
+      tutorial.init(createRealDeps());
 
       const result = tutorial.completeCurrentStep('wrong_action');
       assertStrict(!result.success, 'FLOW-24-04',
@@ -220,7 +200,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-05', '引导系统 — 跳过引导'), () => {
       const tutorial = new TutorialSystem();
-      tutorial.init(mockDeps());
+      tutorial.init(createRealDeps());
 
       tutorial.skipTutorial();
 
@@ -255,7 +235,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-07', '引导系统 — 序列化/反序列化保持状态'), () => {
       const tutorial = new TutorialSystem();
-      tutorial.init(mockDeps());
+      tutorial.init(createRealDeps());
 
       // 完成第一步
       tutorial.completeCurrentStep('claim_newbie_pack');
@@ -268,7 +248,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
       // 恢复
       const tutorial2 = new TutorialSystem();
-      tutorial2.init(mockDeps());
+      tutorial2.init(createRealDeps());
       tutorial2.loadSaveData(saveData);
 
       const state = tutorial2.getState();
@@ -280,7 +260,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-08', '引导系统 — 引导完成后不再显示'), () => {
       const tutorial = new TutorialSystem();
-      tutorial.init(mockDeps());
+      tutorial.init(createRealDeps());
 
       // 完成所有步骤
       tutorial.completeCurrentStep('claim_newbie_pack');
@@ -423,6 +403,9 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
       stateMachine.transition('first_enter');
       stepManager.startStep('step1_castle_overview');
 
+      // 监听真实 EventBus 的 emit 调用
+      const emitSpy = vi.spyOn(deps.eventBus, 'emit');
+
       // 推进所有子步骤直到完成
       const def = STEP_DEFINITION_MAP['step1_castle_overview'];
       let lastResult;
@@ -434,10 +417,11 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
       assertStrict(lastResult!.rewards.length > 0, 'FLOW-24-20',
         '完成步骤应有奖励');
 
-      // 验证事件发射
-      const emitCalls = (deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls;
-      const rewardCall = emitCalls.find((c: unknown[]) => c[0] === 'tutorial:rewardGranted');
+      // 验证事件发射（通过 spy 捕获真实 emit 调用）
+      const rewardCall = emitSpy.mock.calls.find((c: unknown[]) => c[0] === 'tutorial:rewardGranted');
       assertStrict(!!rewardCall, 'FLOW-24-20', '应发射rewardGranted事件');
+
+      emitSpy.mockRestore();
     });
 
     it(accTest('FLOW-24-21', '步骤管理 — 阶段奖励配置正确'), () => {
@@ -584,7 +568,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-31', '离线领取 — 计算离线奖励'), () => {
       const offline = new OfflineRewardSystem();
-      offline.init(mockDeps());
+      offline.init(createRealDeps());
 
       const rates = defaultProductionRates();
       const resources = defaultResources();
@@ -601,7 +585,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-32', '离线领取 — 防重复领取'), () => {
       const offline = new OfflineRewardSystem();
-      offline.init(mockDeps());
+      offline.init(createRealDeps());
 
       const rates = defaultProductionRates();
       const resources = defaultResources();
@@ -620,7 +604,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-33', '离线领取 — 收益数值非负'), () => {
       const offline = new OfflineRewardSystem();
-      offline.init(mockDeps());
+      offline.init(createRealDeps());
 
       const rates = defaultProductionRates();
       const resources = defaultResources();
@@ -637,7 +621,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-34', '离线领取 — 收益不超过上限'), () => {
       const offline = new OfflineRewardSystem();
-      offline.init(mockDeps());
+      offline.init(createRealDeps());
 
       const rates = defaultProductionRates();
       const resources = defaultResources();
@@ -655,7 +639,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-35', '离线领取 — 零离线时间无收益'), () => {
       const offline = new OfflineRewardSystem();
-      offline.init(mockDeps());
+      offline.init(createRealDeps());
 
       const snapshot = offline.calculateSnapshot(0, defaultProductionRates());
       assertStrict(snapshot.offlineSeconds === 0, 'FLOW-24-35',
@@ -666,7 +650,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-36', '离线领取 — 序列化/反序列化'), () => {
       const offline = new OfflineRewardSystem();
-      offline.init(mockDeps());
+      offline.init(createRealDeps());
 
       const saveData = offline.serialize();
       assertStrict(!!saveData, 'FLOW-24-36', '应返回序列化数据');
@@ -674,7 +658,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
       // 恢复
       const offline2 = new OfflineRewardSystem();
-      offline2.init(mockDeps());
+      offline2.init(createRealDeps());
       offline2.deserialize(saveData);
 
       const state = offline2.getState() as any;
@@ -690,7 +674,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-37', '边界 — Q10:离线收益弹窗数值与实际到账一致'), () => {
       const offline = new OfflineRewardSystem();
-      offline.init(mockDeps());
+      offline.init(createRealDeps());
 
       const rates = defaultProductionRates();
       const resources = defaultResources();
@@ -711,7 +695,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-38', '边界 — 引导系统reset后恢复初始'), () => {
       const tutorial = new TutorialSystem();
-      tutorial.init(mockDeps());
+      tutorial.init(createRealDeps());
       tutorial.completeCurrentStep('claim_newbie_pack');
 
       tutorial.reset();
@@ -735,7 +719,7 @@ describe('FLOW-24 引导系统+离线收益集成测试', () => {
 
     it(accTest('FLOW-24-40', '边界 — 离线收益负数离线时间处理'), () => {
       const offline = new OfflineRewardSystem();
-      offline.init(mockDeps());
+      offline.init(createRealDeps());
 
       const snapshot = offline.calculateSnapshot(-100, defaultProductionRates());
       assertStrict(snapshot.offlineSeconds === 0, 'FLOW-24-40',

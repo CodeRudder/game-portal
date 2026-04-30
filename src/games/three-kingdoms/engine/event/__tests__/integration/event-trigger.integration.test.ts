@@ -10,6 +10,8 @@
  *   - 事件选项与后果计算
  *   - 事件注册/触发/过期完整生命周期
  *
+ * R29: 将 mockDeps 替换为 createRealDeps()（基于真实引擎实例）
+ *
  * @module engine/event/__tests__/integration
  */
 
@@ -22,6 +24,7 @@ import {
   evaluateTurnRangeCondition,
   evaluateResourceCondition,
 } from '../../EventTriggerConditions';
+import { createRealDeps } from '../../../../test-utils/test-helpers';
 import type { ISystemDeps } from '../../../../core/types/subsystem';
 import type {
   EventDef, EventInstance, EventCondition, EventOption, EventConsequence,
@@ -33,20 +36,6 @@ import type {
 // ─────────────────────────────────────────────
 // 辅助
 // ─────────────────────────────────────────────
-
-function mockDeps(): ISystemDeps {
-  return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
-  } as unknown as ISystemDeps;
-}
 
 function makeEventDef(overrides?: Partial<EventDef>): EventDef {
   return {
@@ -101,7 +90,7 @@ describe('§1 事件系统 — 随机遭遇/触发条件/概率公式/冷却/通
 
     beforeEach(() => {
       system = new EventTriggerSystem();
-      system.init(mockDeps());
+      system.init(createRealDeps());
     });
 
     it('应成功注册单个事件定义', () => {
@@ -158,7 +147,7 @@ describe('§1 事件系统 — 随机遭遇/触发条件/概率公式/冷却/通
       expect(saved).toBeDefined();
 
       const system2 = new EventTriggerSystem();
-      system2.init(mockDeps());
+      system2.init(createRealDeps());
       system2.deserialize(saved);
       expect(system2.getActiveEventCount()).toBe(1);
     });
@@ -209,7 +198,7 @@ describe('§1 事件系统 — 随机遭遇/触发条件/概率公式/冷却/通
 
     it('固定事件应在条件满足时可触发', () => {
       const system = new EventTriggerSystem();
-      system.init(mockDeps());
+      system.init(createRealDeps());
       const def = makeFixedEventDef('fixed-01', 3, 10);
       system.registerEvent(def);
 
@@ -276,7 +265,7 @@ describe('§1 事件系统 — 随机遭遇/触发条件/概率公式/冷却/通
 
     it('EventTriggerSystem 应支持注册概率条件', () => {
       const system = new EventTriggerSystem();
-      system.init(mockDeps());
+      system.init(createRealDeps());
       const cond = makeProbabilityCondition(0.1, [
         { name: 'level', additiveBonus: 0.02, multiplicativeBonus: 1, active: true },
       ]);
@@ -293,7 +282,7 @@ describe('§1 事件系统 — 随机遭遇/触发条件/概率公式/冷却/通
 
     beforeEach(() => {
       system = new EventTriggerSystem();
-      system.init(mockDeps());
+      system.init(createRealDeps());
     });
 
     it('强制触发应成功创建事件实例', () => {
@@ -345,7 +334,7 @@ describe('§1 事件系统 — 随机遭遇/触发条件/概率公式/冷却/通
 
     beforeEach(() => {
       notification = new EventNotificationSystem();
-      notification.init(mockDeps());
+      notification.init(createRealDeps());
     });
 
     it('应按紧急程度创建横幅通知', () => {
@@ -437,7 +426,7 @@ describe('§1 事件系统 — 随机遭遇/触发条件/概率公式/冷却/通
   describe('§1.6 事件选项与后果计算', () => {
     it('resolveEvent 应正确处理选项选择', () => {
       const system = new EventTriggerSystem();
-      system.init(mockDeps());
+      system.init(createRealDeps());
       const def = makeEventDef({ triggerProbability: 1.0 });
       system.registerEvent(def);
       system.forceTriggerEvent(def.id, 1);
@@ -450,14 +439,14 @@ describe('§1 事件系统 — 随机遭遇/触发条件/概率公式/冷却/通
 
     it('resolveEvent 不存在的实例应返回 null', () => {
       const system = new EventTriggerSystem();
-      system.init(mockDeps());
+      system.init(createRealDeps());
       const result = system.resolveEvent('nonexistent', 'opt-1');
       expect(result).toBeNull();
     });
 
     it('过期事件应在 expireEvents 时被清理', () => {
       const system = new EventTriggerSystem();
-      system.init(mockDeps());
+      system.init(createRealDeps());
       const def = makeEventDef({ triggerProbability: 1.0, expireAfterTurns: 3 });
       system.registerEvent(def);
       system.forceTriggerEvent(def.id, 1);

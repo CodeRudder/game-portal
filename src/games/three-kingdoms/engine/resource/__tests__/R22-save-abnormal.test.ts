@@ -6,14 +6,18 @@
  * - 版本迁移（旧版本存档）
  * - 空存档恢复
  * - 序列化/反序列化一致性
+ *
+ * R29: 将 mockDeps 替换为 createRealDeps()（基于真实引擎实例）
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ResourceSystem } from '../../resource/ResourceSystem';
 import { BuildingSystem } from '../../building/BuildingSystem';
 import { HeroSystem } from '../../hero/HeroSystem';
 import { SAVE_VERSION } from '../../resource/resource-config';
 import { ENGINE_SAVE_VERSION } from '../../../shared/constants';
+import { createRealDeps } from '../../../test-utils/test-helpers';
+import type { ISystemDeps } from '../../../core/types';
 
 describe('R22-5: 存档系统异常路径', () => {
 
@@ -24,18 +28,15 @@ describe('R22-5: 存档系统异常路径', () => {
     let rs: ResourceSystem;
     let bs: BuildingSystem;
     let hs: HeroSystem;
+    let deps: ISystemDeps;
 
     beforeEach(() => {
-      const mockDeps = {
-        eventBus: { on: vi.fn(), once: vi.fn(), emit: vi.fn(), off: vi.fn(), removeAllListeners: vi.fn() },
-        config: { get: vi.fn(), set: vi.fn(), has: vi.fn(() => false) },
-        registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(() => new Map()), has: vi.fn(() => false), unregister: vi.fn() },
-      };
+      deps = createRealDeps();
       rs = new ResourceSystem();
       bs = new BuildingSystem();
       hs = new HeroSystem();
-      rs.init(mockDeps);
-      hs.init(mockDeps);
+      rs.init(deps);
+      hs.init(deps);
     });
 
     it('ResourceSystem deserialize 缺失字段不崩溃', () => {
@@ -112,20 +113,17 @@ describe('R22-5: 存档系统异常路径', () => {
   // ═══════════════════════════════════════════
   describe('序列化/反序列化一致性', () => {
     it('ResourceSystem 序列化后反序列化数据一致', () => {
-      const mockDeps = {
-        eventBus: { on: vi.fn(), once: vi.fn(), emit: vi.fn(), off: vi.fn(), removeAllListeners: vi.fn() },
-        config: { get: vi.fn(), set: vi.fn(), has: vi.fn(() => false) },
-        registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(() => new Map()), has: vi.fn(() => false), unregister: vi.fn() },
-      };
+      const deps = createRealDeps();
       const rs1 = new ResourceSystem();
-      rs1.init(mockDeps);
+      rs1.init(deps);
       rs1.addResource('grain', 1000);
       rs1.addResource('gold', 500);
 
       const data = rs1.serialize();
 
+      const deps2 = createRealDeps();
       const rs2 = new ResourceSystem();
-      rs2.init(mockDeps);
+      rs2.init(deps2);
       rs2.deserialize(data);
 
       expect(rs2.getAmount('grain')).toBe(rs1.getAmount('grain'));
@@ -144,21 +142,18 @@ describe('R22-5: 存档系统异常路径', () => {
     });
 
     it('HeroSystem 序列化后反序列化数据一致', () => {
-      const mockDeps = {
-        eventBus: { on: vi.fn(), once: vi.fn(), emit: vi.fn(), off: vi.fn(), removeAllListeners: vi.fn() },
-        config: { get: vi.fn(), set: vi.fn(), has: vi.fn(() => false) },
-        registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(() => new Map()), has: vi.fn(() => false), unregister: vi.fn() },
-      };
+      const deps = createRealDeps();
       const hs1 = new HeroSystem();
-      hs1.init(mockDeps);
+      hs1.init(deps);
       hs1.addGeneral('liubei');
       hs1.addGeneral('guanyu');
       hs1.addFragment('zhangfei', 50);
 
       const data = hs1.serialize();
 
+      const deps2 = createRealDeps();
       const hs2 = new HeroSystem();
-      hs2.init(mockDeps);
+      hs2.init(deps2);
       hs2.deserialize(data);
 
       expect(hs2.getGeneralCount()).toBe(2);
@@ -173,13 +168,9 @@ describe('R22-5: 存档系统异常路径', () => {
   // ═══════════════════════════════════════════
   describe('空存档恢复', () => {
     it('ResourceSystem 全零存档恢复正常', () => {
-      const mockDeps = {
-        eventBus: { on: vi.fn(), once: vi.fn(), emit: vi.fn(), off: vi.fn(), removeAllListeners: vi.fn() },
-        config: { get: vi.fn(), set: vi.fn(), has: vi.fn(() => false) },
-        registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(() => new Map()), has: vi.fn(() => false), unregister: vi.fn() },
-      };
+      const deps = createRealDeps();
       const rs = new ResourceSystem();
-      rs.init(mockDeps);
+      rs.init(deps);
       rs.deserialize({
         resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
         lastSaveTime: 0,

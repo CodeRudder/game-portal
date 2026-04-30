@@ -4,11 +4,14 @@
  * 覆盖 §6.1~§6.6 + §10.3~§10.5 + v16.0深化
  * vitest · describe嵌套§编号 · it.skip未实现API
  *
+ * R29: 将 mockDeps 替换为 createRealDeps()（基于真实引擎实例）
+ *
  * @module engine/settings/__tests__/integration/rebirth-flow
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RebirthSystem, calcRebirthMultiplier } from '../../../prestige/RebirthSystem';
+import { createRealDeps } from '../../../../test-utils/test-helpers';
 import type { ISystemDeps } from '../../../../core/types';
 import {
   REBIRTH_CONDITIONS,
@@ -24,23 +27,9 @@ import {
 // 辅助
 // ─────────────────────────────────────────────
 
-function mockDeps(): ISystemDeps {
-  return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
-  } as unknown as ISystemDeps;
-}
-
 function createReadyRebirth(): RebirthSystem {
   const sys = new RebirthSystem();
-  sys.init(mockDeps());
+  sys.init(createRealDeps());
   sys.setCallbacks({
     castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
     heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
@@ -80,7 +69,7 @@ describe('§6 转生流程 集成测试', () => {
 
     it('§6.1.4 声望等级不足时不满足', () => {
       const sys = new RebirthSystem();
-      sys.init(mockDeps());
+      sys.init(createRealDeps());
       sys.setCallbacks({
         castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
         heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
@@ -92,7 +81,7 @@ describe('§6 转生流程 集成测试', () => {
 
     it('§6.1.5 部分不满足时canRebirth为false', () => {
       const sys = new RebirthSystem();
-      sys.init(mockDeps());
+      sys.init(createRealDeps());
       sys.setCallbacks({
         castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
         heroCount: () => REBIRTH_CONDITIONS.minHeroCount - 1,
@@ -104,7 +93,7 @@ describe('§6 转生流程 集成测试', () => {
 
     it('§6.1.6 初始状态不满足转生条件', () => {
       const sys = new RebirthSystem();
-      sys.init(mockDeps());
+      sys.init(createRealDeps());
       expect(sys.checkRebirthConditions().canRebirth).toBe(false);
     });
   });
@@ -269,7 +258,7 @@ describe('§6 转生流程 集成测试', () => {
   describe('§10.3 转生回滚保护', () => {
     it('§10.3.1 条件不满足执行转生返回失败', () => {
       const sys = new RebirthSystem();
-      sys.init(mockDeps());
+      sys.init(createRealDeps());
       const r = sys.executeRebirth();
       expect(r.success).toBe(false);
       expect(r.reason).toBeTruthy();
@@ -277,14 +266,14 @@ describe('§6 转生流程 集成测试', () => {
 
     it('§10.3.2 条件不满足时次数不变', () => {
       const sys = new RebirthSystem();
-      sys.init(mockDeps());
+      sys.init(createRealDeps());
       sys.executeRebirth();
       expect(sys.getState().rebirthCount).toBe(0);
     });
 
     it('§10.3.3 条件不满足时倍率不变', () => {
       const sys = new RebirthSystem();
-      sys.init(mockDeps());
+      sys.init(createRealDeps());
       const before = sys.getCurrentMultiplier();
       sys.executeRebirth();
       expect(sys.getCurrentMultiplier()).toBe(before);
@@ -342,7 +331,7 @@ describe('§6 转生流程 集成测试', () => {
       rebirth.executeRebirth();
       const state = rebirth.getState();
       const r2 = new RebirthSystem();
-      r2.init(mockDeps());
+      r2.init(createRealDeps());
       r2.loadSaveData({ rebirth: state });
       expect(r2.getState().rebirthCount).toBe(2);
     });

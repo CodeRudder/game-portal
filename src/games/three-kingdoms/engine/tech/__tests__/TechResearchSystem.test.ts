@@ -2,26 +2,15 @@ import { vi } from 'vitest';
 /**
  * TechResearchSystem 单元测试
  * 覆盖：研究流程、队列规则、加速机制、序列化
+ *
+ * R29: 将 mockDeps 替换为 createRealDeps()（基于真实引擎实例）
  */
 
 import { TechTreeSystem } from '../TechTreeSystem';
 import { TechPointSystem } from '../TechPointSystem';
 import { TechResearchSystem } from '../TechResearchSystem';
-import type { ISystemDeps } from '../../../../core/types';
-
-function mockDeps(): ISystemDeps {
-  return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
-  } as unknown as ISystemDeps;
-}
+import { createRealDeps } from '../../../test-utils/test-helpers';
+import type { ISystemDeps } from '../../../core/types';
 
 describe('TechResearchSystem', () => {
   let treeSys: TechTreeSystem;
@@ -52,7 +41,7 @@ describe('TechResearchSystem', () => {
       },
     );
 
-    const deps = mockDeps();
+    const deps = createRealDeps();
     treeSys.init(deps);
     pointSys.init(deps);
     researchSys.init(deps);
@@ -227,19 +216,19 @@ describe('TechResearchSystem', () => {
 
     it('书院等级 5 时队列大小为 2', () => {
       const sys2 = new TechResearchSystem(treeSys, pointSys, () => 5, () => 0, () => false);
-      sys2.init(mockDeps());
+      sys2.init(createRealDeps());
       expect(sys2.getMaxQueueSize()).toBe(2);
     });
 
     it('书院等级 10 时队列大小为 3', () => {
       const sys3 = new TechResearchSystem(treeSys, pointSys, () => 10, () => 0, () => false);
-      sys3.init(mockDeps());
+      sys3.init(createRealDeps());
       expect(sys3.getMaxQueueSize()).toBe(3);
     });
 
     it('书院等级 20 时队列大小为 5', () => {
       const sys5 = new TechResearchSystem(treeSys, pointSys, () => 20, () => 0, () => false);
-      sys5.init(mockDeps());
+      sys5.init(createRealDeps());
       expect(sys5.getMaxQueueSize()).toBe(5);
     });
 
@@ -411,7 +400,7 @@ describe('TechResearchSystem', () => {
       const data = researchSys.serialize();
 
       const newSys = new TechResearchSystem(treeSys, pointSys, () => 3, () => 0, () => false);
-      newSys.init(mockDeps());
+      newSys.init(createRealDeps());
       newSys.deserialize(data);
       expect(newSys.getQueue()).toHaveLength(1);
       expect(newSys.getQueue()[0].techId).toBe('mil_t1_attack');
@@ -467,7 +456,7 @@ describe('TechResearchSystem', () => {
     it('三条路线可以并行研究不同节点', () => {
       // 使用大队列
       const bigSys = new TechResearchSystem(treeSys, pointSys, () => 20, () => 0, () => false);
-      bigSys.init(mockDeps());
+      bigSys.init(createRealDeps());
 
       grantPoints(500);
       expect(bigSys.startResearch('mil_t1_attack').success).toBe(true);
