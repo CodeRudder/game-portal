@@ -159,20 +159,21 @@ describe('§3.2 驻防机制', () => {
     const tid = getPlayerTerritoryId(sys);
     if (!tid) return;
     const general2 = createGeneral({ id: 'general-test-02', name: '武将2' });
-    // 注册第二个武将
+    // 注册第二个武将 — 保存原始 registry 引用避免递归
+    const originalRegistry = sys.garrison['deps']?.registry;
     (sys.garrison as any).deps = {
       ...sys.garrison['deps'],
       registry: {
         get: (name: string) => {
           if (name === 'hero') return {
-            getGeneralById: (id: string) => {
+            getGeneral: (id: string) => {
               if (id === general.id) return { ...general };
               if (id === general2.id) return { ...general2 };
               return null;
             },
             isGeneralInFormation: () => false,
           };
-          return sys.garrison['deps']?.registry?.get(name);
+          return originalRegistry?.get(name);
         },
       },
     };

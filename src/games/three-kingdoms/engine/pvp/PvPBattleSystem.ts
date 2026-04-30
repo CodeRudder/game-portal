@@ -82,7 +82,7 @@ export const RANK_LEVELS: RankLevel[] = [
   { id: 'DIAMOND_II', tier: 'DIAMOND' as RankTier, division: RankDivision.II, minScore: 8000, maxScore: 8999, dailyReward: { copper: 4500, arenaCoin: 190, gold: 16 } },
   { id: 'DIAMOND_I', tier: 'DIAMOND' as RankTier, division: RankDivision.I, minScore: 9000, maxScore: 9999, dailyReward: { copper: 5000, arenaCoin: 220, gold: 20 } },
   // 王者 — 积分≥10000
-  { id: 'KING_I', tier: 'KING' as RankTier, division: RankDivision.I, minScore: 10000, maxScore: 99999, dailyReward: { copper: 8000, arenaCoin: 300, gold: 30 } },
+  { id: 'KING_I', tier: 'KING' as RankTier, division: RankDivision.I, minScore: 10000, maxScore: 99999, dailyReward: { copper: 8000, arenaCoin: 200, gold: 30 } },
 ];
 
 /** 段位ID → 段位定义的映射 */

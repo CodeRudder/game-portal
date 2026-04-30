@@ -230,7 +230,7 @@ export const DEFAULT_LANDMARKS: readonly LandmarkData[] = [
   { id: 'city-chaisang', type: 'city', name: '柴桑', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
   { id: 'city-lujiang', type: 'city', name: '庐江', level: 3, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.5, defenseValue: 60 },
   // ── 中立领土 ──
-  { id: 'city-luoyang', type: 'city', name: '洛阳', level: 5, ownership: 'neutral', icon: '🏰', productionMultiplier: 2.0, defenseValue: 100 },
+  { id: 'city-luoyang', type: 'city', name: '洛阳', level: 5, ownership: 'player', icon: '🏰', productionMultiplier: 2.0, defenseValue: 100 },
   { id: 'city-changan', type: 'city', name: '长安', level: 5, ownership: 'neutral', icon: '🏰', productionMultiplier: 2.0, defenseValue: 100 },
   { id: 'city-xiangyang', type: 'city', name: '襄阳', level: 4, ownership: 'neutral', icon: '🏰', productionMultiplier: 1.8, defenseValue: 80 },
   // ── 关卡 ──

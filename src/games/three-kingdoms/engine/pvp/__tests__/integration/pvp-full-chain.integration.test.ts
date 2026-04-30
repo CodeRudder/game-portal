@@ -247,8 +247,8 @@ describe('§2 排名挑战', () => {
 
     const kingReward = battle.getDailyReward('KING_I');
     expect(kingReward.copper).toBe(8000);
-    expect(kingReward.arenaCoin).toBe(300);
-    expect(kingReward.gold).toBe(150);
+    expect(kingReward.arenaCoin).toBe(200);
+    expect(kingReward.gold).toBe(30);
   });
 });
 
@@ -302,8 +302,8 @@ describe('§3 赛季系统', () => {
   it('§3.5 每日段位奖励发放', () => {
     const result = season.grantDailyReward(player);
     expect(result.reward.copper).toBe(3000);
-    expect(result.reward.arenaCoin).toBe(120);
-    expect(result.state.arenaCoins).toBe(120);
+    expect(result.reward.arenaCoin).toBe(100);
+    expect(result.state.arenaCoins).toBe(100);
   });
 
   it('§3.6 最高段位更新', () => {

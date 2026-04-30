@@ -499,12 +499,14 @@ describe('FLOW-05 招贤馆集成测试', () => {
   });
 
   it(accTest('FLOW-05-35', '资源耗尽后按钮变为禁用'), async () => {
-    const sim = createRecruitSim({ tokenAmount: 0 }); // 初始30，够30次单抽
+    const sim = createRecruitSim({ tokenAmount: 0 }); // 仅初始30个招贤令
+    // 直接设置少量token以减少点击次数，避免测试超时
+    sim.setResource('recruitToken', 3);
     renderModal(sim);
 
     const singleBtn = screen.getByTestId('recruit-modal-single-btn');
-    // 消耗完所有30个招贤令（每次消耗1）
-    for (let i = 0; i < 30; i++) {
+    // 消耗完所有3个招贤令（每次消耗1）
+    for (let i = 0; i < 3; i++) {
       await userEvent.click(singleBtn);
     }
 

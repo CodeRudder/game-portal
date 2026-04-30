@@ -273,7 +273,9 @@ export class BuildingSystem implements ISubsystem {
     this.upgradeQueue = remaining;
 
     // 主城升级后检查新建筑解锁
-      
+    if (completed.includes('castle')) {
+      this.checkAndUnlockBuildings();
+    }
 
     return completed;
   }
