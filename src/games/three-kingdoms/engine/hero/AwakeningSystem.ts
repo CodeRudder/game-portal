@@ -231,8 +231,22 @@ export class AwakeningSystem implements ISubsystem {
       awakeningLevel: 1,
     };
 
+    // FIX-303: 验证武将存在性（移除非空断言）
+    const general = this.heroSystem.getGeneral(heroId);
+    if (!general) {
+      // 回滚觉醒状态
+      delete this.state.heroes[heroId];
+      return {
+        success: false,
+        generalId: heroId,
+        costSpent: null,
+        awakenedStats: null,
+        skillUnlocked: null,
+        reason: `武将 ${heroId} 不存在`,
+      };
+    }
+
     // 计算觉醒后属性
-    const general = this.heroSystem.getGeneral(heroId)!;
     const awakenedStats = this.calculateAwakenedStats(heroId);
 
     // 获取觉醒技能

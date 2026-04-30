@@ -227,12 +227,13 @@ describe('HeroDispatchSystem', () => {
       system.dispatchHero('hero1', 'barracks');
       system.dispatchHero('hero2', 'market');
 
-      const json = system.serialize();
-      expect(typeof json).toBe('string');
+      const data = system.serialize();
+      expect(typeof data).toBe('object');
+      expect(data.version).toBe(1);
 
       // 创建新系统并反序列化
       const newSystem = new HeroDispatchSystem();
-      newSystem.deserialize(json);
+      newSystem.deserialize(data);
 
       expect(newSystem.getBuildingDispatchHero('barracks')).toBe('hero1');
       expect(newSystem.getBuildingDispatchHero('market')).toBe('hero2');
@@ -241,16 +242,15 @@ describe('HeroDispatchSystem', () => {
     it('反序列化无效 JSON 应重置状态', () => {
       const newSystem = new HeroDispatchSystem();
       newSystem.dispatchHero('hero1', 'barracks');
-      newSystem.deserialize('invalid json');
+      newSystem.deserializeLegacy('invalid json');
       // reset 后应清空
       expect(newSystem.getBuildingDispatchHero('barracks')).toBeNull();
     });
 
-    it('序列化空状态应返回有效 JSON', () => {
-      const json = system.serialize();
-      const parsed = JSON.parse(json);
-      expect(parsed.buildingDispatch).toEqual({});
-      expect(parsed.heroDispatch).toEqual({});
+    it('序列化空状态应返回有效结构化数据', () => {
+      const data = system.serialize();
+      expect(data.buildingDispatch).toEqual({});
+      expect(data.heroDispatch).toEqual({});
     });
   });
 

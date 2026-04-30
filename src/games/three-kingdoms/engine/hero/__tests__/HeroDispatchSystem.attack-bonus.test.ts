@@ -546,21 +546,21 @@ describe('HeroDispatchSystem — attack 加成专项', () => {
       expect(result.bonusPercent).toBe(-32.0);
     });
 
-    it('getGeneralFn 未设置时加成为 0', () => {
+    it('getGeneralFn 未设置时派驻失败 (FIX-303)', () => {
       const noCallbackSystem = new HeroDispatchSystem();
       noCallbackSystem.init(createMockDeps());
       // 不调用 setGetGeneral
 
       const result = noCallbackSystem.dispatchHero('any_hero', 'barracks');
-      expect(result.success).toBe(true);
-      expect(result.bonusPercent).toBe(0);
+      expect(result.success).toBe(false);
+      expect(result.reason).toContain('未初始化');
     });
 
-    it('武将 ID 在 generalMap 中不存在时加成为 0', () => {
+    it('武将 ID 在 generalMap 中不存在时派驻失败 (FIX-303)', () => {
       // generalMap 为空，任何 heroId 都查不到
       const result = system.dispatchHero('nonexistent', 'barracks');
-      expect(result.success).toBe(true);
-      expect(result.bonusPercent).toBe(0);
+      expect(result.success).toBe(false);
+      expect(result.reason).toContain('不存在');
     });
   });
 

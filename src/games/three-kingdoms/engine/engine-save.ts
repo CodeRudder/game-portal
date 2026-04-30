@@ -110,6 +110,17 @@ export interface SaveContext {
   readonly vip?: VIPSystem;
   /** 挑战关卡系统（可选，v11+） */
   readonly challenge?: ChallengeStageSystem;
+  // ── 武将子系统 (FIX-301: R3 保存/加载覆盖) ──
+  /** 升星/突破系统（可选，v17.0+） */
+  readonly heroStar?: import('./hero/HeroStarSystem').HeroStarSystem;
+  /** 技能升级系统（可选，v17.0+） */
+  readonly skillUpgrade?: import('./hero/SkillUpgradeSystem').SkillUpgradeSystem;
+  /** 武将派驻系统（可选，v17.0+） */
+  readonly heroDispatch?: import('./hero/HeroDispatchSystem').HeroDispatchSystem;
+  /** 觉醒系统（可选，v17.0+） */
+  readonly awakening?: import('./hero/AwakeningSystem').AwakeningSystem;
+  /** 招贤令经济系统（可选，v17.0+） */
+  readonly recruitTokenEconomy?: import('./hero/recruit-token-economy-system').RecruitTokenEconomySystem;
 }
 
 // ─────────────────────────────────────────────
@@ -170,6 +181,12 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     vip: ctx.vip?.serialize(),
     // ── 挑战关卡系统 v11 ──
     challenge: ctx.challenge?.serialize(),
+    // ── 武将子系统 v17.0 (FIX-301: R3 保存/加载覆盖) ──
+    heroStar: ctx.heroStar?.serialize(),
+    skillUpgrade: ctx.skillUpgrade?.serialize(),
+    heroDispatch: ctx.heroDispatch?.serialize(),
+    awakening: ctx.awakening?.serialize(),
+    recruitTokenEconomy: ctx.recruitTokenEconomy?.serialize(),
   };
 }
 
@@ -206,6 +223,12 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.sweep) subsystems.sweep = data.sweep;
   if (data.vip) subsystems.vip = data.vip;
   if (data.challenge) subsystems.challenge = data.challenge;
+  // ── 武将子系统 v17.0 (FIX-301: R3 保存/加载覆盖) ──
+  if (data.heroStar) subsystems.heroStar = data.heroStar;
+  if (data.skillUpgrade) subsystems.skillUpgrade = data.skillUpgrade;
+  if (data.heroDispatch) subsystems.heroDispatch = data.heroDispatch;
+  if (data.awakening) subsystems.awakening = data.awakening;
+  if (data.recruitTokenEconomy) subsystems.recruitTokenEconomy = data.recruitTokenEconomy;
 
   return {
     version: String(data.version),
@@ -254,6 +277,12 @@ export function fromIGameState(state: IGameState): GameSaveData {
     sweep: s.sweep as import('./campaign/sweep.types').SweepSaveData | undefined,
     vip: s.vip as import('./campaign/VIPSystem').VIPSaveData | undefined,
     challenge: s.challenge as import('./campaign/ChallengeStageSystem').ChallengeSaveData | undefined,
+    // ── 武将子系统 v17.0 (FIX-301: R3 保存/加载覆盖) ──
+    heroStar: s.heroStar as import('./hero/star-up.types').StarSystemSaveData | undefined,
+    skillUpgrade: s.skillUpgrade as import('./hero/SkillUpgradeSystem').SkillUpgradeSaveData | undefined,
+    heroDispatch: s.heroDispatch as import('./hero/HeroDispatchSystem').DispatchSaveData | undefined,
+    awakening: s.awakening as import('./hero/AwakeningSystem').AwakeningSaveData | undefined,
+    recruitTokenEconomy: s.recruitTokenEconomy as import('./hero/recruit-token-economy-system').RecruitTokenEconomySaveData | undefined,
   };
 }
 
@@ -542,6 +571,37 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   // ── 挑战关卡系统 v11 ──
   if (data.challenge && ctx.challenge) {
     ctx.challenge.deserialize(data.challenge);
+  }
+
+  // ── 武将子系统 v17.0 (FIX-301: R3 保存/加载覆盖) ──
+  if (data.heroStar && ctx.heroStar) {
+    ctx.heroStar.deserialize(data.heroStar);
+  } else {
+    gameLog.info('[Save] v17.0 存档迁移：无升星数据，自动初始化默认状态');
+  }
+
+  if (data.skillUpgrade && ctx.skillUpgrade) {
+    ctx.skillUpgrade.deserialize(data.skillUpgrade);
+  } else {
+    gameLog.info('[Save] v17.0 存档迁移：无技能升级数据，自动初始化默认状态');
+  }
+
+  if (data.heroDispatch && ctx.heroDispatch) {
+    ctx.heroDispatch.deserialize(data.heroDispatch);
+  } else {
+    gameLog.info('[Save] v17.0 存档迁移：无派驻数据，自动初始化默认状态');
+  }
+
+  if (data.awakening && ctx.awakening) {
+    ctx.awakening.deserialize(data.awakening);
+  } else {
+    gameLog.info('[Save] v17.0 存档迁移：无觉醒数据，自动初始化默认状态');
+  }
+
+  if (data.recruitTokenEconomy && ctx.recruitTokenEconomy) {
+    ctx.recruitTokenEconomy.deserialize(data.recruitTokenEconomy);
+  } else {
+    gameLog.info('[Save] v17.0 存档迁移：无招贤令经济数据，自动初始化默认状态');
   }
 
   syncBuildingToResource({

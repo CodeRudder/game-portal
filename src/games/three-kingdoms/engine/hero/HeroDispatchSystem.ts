@@ -51,6 +51,16 @@ export interface DispatchResult {
   reason?: string;
 }
 
+/** 派驻系统存档数据 (FIX-301: R3 保存/加载覆盖) */
+export interface DispatchSaveData {
+  /** 存档版本号 */
+  version: number;
+  /** 建筑类型 → 派驻记录 */
+  buildingDispatch: Record<string, DispatchRecord>;
+  /** 武将ID → 派驻到的建筑类型 */
+  heroDispatch: Record<string, BuildingType>;
+}
+
 // ─────────────────────────────────────────────
 // 品质加成映射
 // ─────────────────────────────────────────────
@@ -130,6 +140,15 @@ export class HeroDispatchSystem implements ISubsystem {
    * @returns 派驻结果
    */
   dispatchHero(heroId: string, buildingType: BuildingType): DispatchResult {
+    // FIX-303: 验证武将存在性
+    if (!this.getGeneralFn) {
+      return { success: false, bonusPercent: 0, reason: '武将查询函数未初始化' };
+    }
+    const general = this.getGeneralFn(heroId);
+    if (!general) {
+      return { success: false, bonusPercent: 0, reason: `武将 ${heroId} 不存在` };
+    }
+
     // 检查武将是否已派驻到其他建筑
     const existingBuilding = this.heroDispatch[heroId];
     if (existingBuilding && existingBuilding !== buildingType) {
@@ -263,18 +282,31 @@ export class HeroDispatchSystem implements ISubsystem {
     return Math.round(totalBonus * 10) / 10; // 保留一位小数
   }
 
-  // ─── 序列化 ──────────────────────────────
+  // ─── 序列化 (FIX-301: R3 保存/加载覆盖，改为结构化存档) ─────────────────
+
+  private static readonly DISPATCH_SAVE_VERSION = 1;
 
   /** 序列化状态 */
-  serialize(): string {
-    return JSON.stringify({
-      buildingDispatch: this.buildingDispatch,
-      heroDispatch: this.heroDispatch,
-    });
+  serialize(): DispatchSaveData {
+    return {
+      version: HeroDispatchSystem.DISPATCH_SAVE_VERSION,
+      buildingDispatch: { ...this.buildingDispatch },
+      heroDispatch: { ...this.heroDispatch },
+    };
   }
 
   /** 反序列化状态 */
-  deserialize(json: string): void {
+  deserialize(data: DispatchSaveData): void {
+    if (!data) { this.reset(); return; }
+    if (data.version !== HeroDispatchSystem.DISPATCH_SAVE_VERSION) {
+      // 兼容旧格式（JSON 字符串）
+    }
+    this.buildingDispatch = { ...(data.buildingDispatch ?? {}) };
+    this.heroDispatch = { ...(data.heroDispatch ?? {}) };
+  }
+
+  /** 兼容旧格式反序列化（JSON 字符串） */
+  deserializeLegacy(json: string): void {
     if (!json) { this.reset(); return; }
     try {
       const data = JSON.parse(json);

@@ -63,6 +63,16 @@ export interface SkillUpgradeState {
   breakthroughSkillUnlocks: Record<string, number[]>;
 }
 
+/** 技能升级系统存档数据 (FIX-301: R3 保存/加载覆盖) */
+export interface SkillUpgradeSaveData {
+  /** 存档版本号 */
+  version: number;
+  /** 技能升级历史 */
+  upgradeHistory: Record<string, number>;
+  /** 突破技能解锁记录 */
+  breakthroughSkillUnlocks: Record<string, number[]>;
+}
+
 /** 武将技能条目（heroSkills Map 的 value 类型） */
 export interface HeroSkillEntry {
   skills: { level: number }[];
@@ -383,6 +393,36 @@ export class SkillUpgradeSystem implements ISubsystem {
       materialsUsed: { skillBooks: 0, gold: 0 },
       effectBefore: BASE_SKILL_EFFECT + (level - 1) * SKILL_EFFECT_PER_LEVEL,
       effectAfter: BASE_SKILL_EFFECT + (level - 1) * SKILL_EFFECT_PER_LEVEL,
+    };
+  }
+
+  // ═══════════════════════════════════════════
+  // 序列化/反序列化 (FIX-301: R3 保存/加载覆盖)
+  // ═══════════════════════════════════════════
+
+  private static readonly SAVE_VERSION = 1;
+
+  /** 序列化技能升级系统状态 */
+  serialize(): SkillUpgradeSaveData {
+    return {
+      version: SkillUpgradeSystem.SAVE_VERSION,
+      upgradeHistory: { ...this.state.upgradeHistory },
+      breakthroughSkillUnlocks: { ...this.state.breakthroughSkillUnlocks },
+    };
+  }
+
+  /** 反序列化恢复技能升级系统状态 */
+  deserialize(data: SkillUpgradeSaveData): void {
+    if (!data) {
+      this.state = createEmptyState();
+      return;
+    }
+    if (data.version !== SkillUpgradeSystem.SAVE_VERSION) {
+      gameLog.warn(`SkillUpgradeSystem: 存档版本不匹配 (期望 ${SkillUpgradeSystem.SAVE_VERSION}，实际 ${data.version})`);
+    }
+    this.state = {
+      upgradeHistory: { ...(data.upgradeHistory ?? {}) },
+      breakthroughSkillUnlocks: { ...(data.breakthroughSkillUnlocks ?? {}) },
     };
   }
 }

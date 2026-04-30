@@ -848,6 +848,12 @@ export class ThreeKingdomsEngine {
       offlineEvent: this.eventSystems.offline,
       onlineSeconds: this.onlineSeconds,
       season: this.season,
+      // ── 武将子系统 v17.0 (FIX-301: R3 保存/加载覆盖) ──
+      heroStar: this.heroStarSystem,
+      skillUpgrade: this.skillUpgradeSystem,
+      heroDispatch: this.heroDispatchSystem,
+      awakening: this.awakeningSystem,
+      recruitTokenEconomy: this.recruitTokenEconomy,
     };
   }
   private finalizeLoad(): void {

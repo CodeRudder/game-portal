@@ -1,6 +1,6 @@
 # Challenger Agent Rules — 三国霸业
 
-> 版本: v1.2 | 初始化: 2026-05-01
+> 版本: v1.3 | 初始化: 2026-05-01
 > 每轮复盘后更新此文件
 
 ## 通用规则
@@ -58,6 +58,22 @@
 - P0修复必须附带验证测试
 - 修复方案必须说明根因而非仅处理调用方
 
+### 保存/加载完整性挑战
+- 每个子系统必须验证serialize()输出是否被engine-save的buildSaveData()引用
+- 每个子系统必须验证deserialize()是否被applySaveData()调用
+- 新增子系统时必须挑战"六处同步"完整性（GameSaveData/SaveContext/buildSaveData/toIGameState/fromIGameState/applySaveData）
+- 典型案例：6个子系统有serialize/deserialize但未被engine-save调用，存档后数据丢失
+
+### 新维度探索
+- 不满足于已有维度，主动探索新P0维度
+- R3新发现维度：保存/加载流程完整性（独立于F-Lifecycle）
+- 建议持续探索：配置热更新、跨版本迁移、离线数据同步
+
+### 遗留P0重新评估
+- 每轮应重新评估前轮降级为P1/P2的缺陷
+- 系统性修复可能改变遗留缺陷的影响范围
+- 典型案例：R1的null guard问题在R3编队系统中仍有残留
+
 ## 三国霸业特定挑战策略
 
 1. 武将系统：重点检查双路径一致性（HeroSystem vs HeroLevelSystem）
@@ -80,3 +96,4 @@
 | 2026-05-01 | 初始化 | 创建初始规则 | 方法论升级 |
 | 2026-05-01 | Hero R1 | +2个检查模式 | NaN绕过<=0、配置交叉验证 |
 | 2026-05-01 | Hero R2 | +2个检查模式 | FIX穿透验证、修复方案要求 |
+| 2026-05-01 | Hero R3 | +3个检查模式 | 保存/加载完整性挑战、新维度探索、遗留P0重新评估 |

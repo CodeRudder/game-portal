@@ -136,8 +136,10 @@ export class HeroFormation implements ISubsystem {
     const formation = this.state.formations[id];
     if (!formation) return null;
 
+    // FIX-302: 过滤 null/undefined/空字符串，防止无效武将ID进入编队
+    const validIds = generalIds.filter((gid): gid is string => typeof gid === 'string' && gid !== '');
     // 限制最多6个
-    const trimmed = generalIds.slice(0, MAX_SLOTS_PER_FORMATION);
+    const trimmed = validIds.slice(0, MAX_SLOTS_PER_FORMATION);
     formation.slots = Array(MAX_SLOTS_PER_FORMATION).fill('');
     trimmed.forEach((gid, i) => {
       formation.slots[i] = gid;
@@ -148,6 +150,9 @@ export class HeroFormation implements ISubsystem {
 
   /** 向编队添加一个武将（到第一个空位） */
   addToFormation(id: string, generalId: string): FormationData | null {
+    // FIX-302: 武将ID null guard
+    if (!generalId || typeof generalId !== 'string') return null;
+
     const formation = this.state.formations[id];
     if (!formation) return null;
 
@@ -167,6 +172,9 @@ export class HeroFormation implements ISubsystem {
 
   /** 从编队移除一个武将 */
   removeFromFormation(id: string, generalId: string): FormationData | null {
+    // FIX-302: 武将ID null guard
+    if (!generalId || typeof generalId !== 'string') return null;
+
     const formation = this.state.formations[id];
     if (!formation) return null;
 

@@ -278,6 +278,17 @@ export interface GameSaveData {
   vip?: import('../engine/campaign/VIPSystem').VIPSaveData;
   /** 挑战关卡系统数据（可选，v11+） */
   challenge?: import('../engine/campaign/ChallengeStageSystem').ChallengeSaveData;
+  // ── 武将子系统 v17.0+ ──
+  /** 升星/突破系统数据（可选，v17.0+） */
+  heroStar?: import('../engine/hero/star-up.types').StarSystemSaveData;
+  /** 技能升级系统数据（可选，v17.0+） */
+  skillUpgrade?: import('../engine/hero/SkillUpgradeSystem').SkillUpgradeSaveData;
+  /** 武将派驻系统数据（可选，v17.0+） */
+  heroDispatch?: import('../engine/hero/HeroDispatchSystem').DispatchSaveData;
+  /** 觉醒系统数据（可选，v17.0+） */
+  awakening?: import('../engine/hero/AwakeningSystem').AwakeningSaveData;
+  /** 招贤令经济系统数据（可选，v17.0+） */
+  recruitTokenEconomy?: import('../engine/hero/recruit-token-economy-system').RecruitTokenEconomySaveData;
 }
 
 // ─────────────────────────────────────────────

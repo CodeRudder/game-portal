@@ -28,14 +28,30 @@ export function createEmptyState(): HeroState {
   };
 }
 
-/** 深拷贝武将数据 */
+/** 深拷贝武将数据 (FIX-304: 使用结构化深拷贝防止引用共享) */
 export function cloneGeneral(g: GeneralData): GeneralData {
   // R2-FIX-P02: null/undefined 防护，防止 null.skills.map 崩溃
   if (!g) return null as unknown as GeneralData;
   return {
-    ...g,
-    baseStats: { ...g.baseStats },
-    skills: g.skills.map((s) => ({ ...s })),
+    id: g.id,
+    name: g.name,
+    quality: g.quality,
+    baseStats: {
+      attack: g.baseStats.attack,
+      defense: g.baseStats.defense,
+      intelligence: g.baseStats.intelligence,
+      speed: g.baseStats.speed,
+    },
+    level: g.level,
+    exp: g.exp,
+    faction: g.faction,
+    skills: g.skills.map((s): SkillData => ({
+      id: s.id,
+      name: s.name,
+      type: s.type,
+      level: s.level,
+      description: s.description,
+    })),
   };
 }
 
