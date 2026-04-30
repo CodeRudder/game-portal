@@ -32,6 +32,15 @@ import {
 vi.mock('../TechTab.css', () => ({}));
 vi.mock('../TechNodeDetailModal.css', () => ({}));
 vi.mock('../TechResearchPanel.css', () => ({}));
+vi.mock('@/components/idle/common/Toast', () => ({
+  Toast: {
+    show: vi.fn(),
+    success: vi.fn(),
+    warning: vi.fn(),
+    danger: vi.fn(),
+    info: vi.fn(),
+  },
+}));
 
 // ─────────────────────────────────────────────
 // Mock window.matchMedia（jsdom 不支持）
@@ -373,5 +382,104 @@ describe('TechTab', () => {
 
     const badge = screen.getByTestId(`tech-badge-${milNodes[0].id}`);
     expect(badge).toHaveTextContent('✅');
+  });
+
+  // ─────────────────────────────────────────────
+  // P1-1: 科技Tab未解锁时显示提示信息
+  // ─────────────────────────────────────────────
+  it('书院未解锁时显示锁定提示区域', () => {
+    const engine = makeMockEngine();
+    // 模拟 building.getLevel 返回低等级（主城Lv1，书院Lv0）
+    (engine as unknown as Record<string, unknown>).building = {
+      getLevel: (type: string) => (type === 'castle' ? 1 : 0),
+    };
+    render(<TechTab engine={engine} snapshotVersion={0} />);
+
+    expect(screen.getByTestId('tech-locked-hint')).toBeInTheDocument();
+    expect(screen.getByText('科技系统未解锁')).toBeInTheDocument();
+    expect(screen.getByText('升级主城至Lv3并建造书院后解锁科技系统')).toBeInTheDocument();
+  });
+
+  it('书院未解锁时不显示科技树内容', () => {
+    const engine = makeMockEngine();
+    (engine as unknown as Record<string, unknown>).building = {
+      getLevel: (type: string) => (type === 'castle' ? 1 : 0),
+    };
+    render(<TechTab engine={engine} snapshotVersion={0} />);
+
+    // 不应显示科技树画布
+    expect(screen.queryByTestId('tech-canvas')).not.toBeInTheDocument();
+    // 不应显示路线Tab
+    expect(screen.queryByTestId('tech-path-tab-military')).not.toBeInTheDocument();
+  });
+
+  it('书院已解锁时显示完整科技树', () => {
+    const engine = makeMockEngine();
+    (engine as unknown as Record<string, unknown>).building = {
+      getLevel: (type: string) => (type === 'castle' ? 3 : 1),
+    };
+    render(<TechTab engine={engine} snapshotVersion={0} />);
+
+    // 不应显示锁定提示
+    expect(screen.queryByTestId('tech-locked-hint')).not.toBeInTheDocument();
+    // 应显示科技树画布
+    expect(screen.getByTestId('tech-canvas')).toBeInTheDocument();
+  });
+
+  // ─────────────────────────────────────────────
+  // P1-2: 研究完成Toast通知
+  // ─────────────────────────────────────────────
+  it('注册了科技研究完成事件监听', () => {
+    const mockOn = vi.fn(() => vi.fn());
+    const engine = makeMockEngine();
+    (engine as unknown as Record<string, unknown>).eventBus = { on: mockOn };
+
+    render(<TechTab engine={engine} snapshotVersion={0} />);
+
+    expect(mockOn).toHaveBeenCalledWith('economy:techCompleted', expect.any(Function));
+  });
+
+  // ─────────────────────────────────────────────
+  // P1-3: 推荐标记显示
+  // ─────────────────────────────────────────────
+  it('推荐科技节点显示推荐标记', () => {
+    const engine = makeMockEngine();
+    render(<TechTab engine={engine} snapshotVersion={0} />);
+
+    // 检查3个推荐科技是否显示推荐标记
+    expect(screen.getByTestId('tech-recommend-mil_t1_attack')).toBeInTheDocument();
+    expect(screen.getByTestId('tech-recommend-eco_t1_farming')).toBeInTheDocument();
+    expect(screen.getByTestId('tech-recommend-cul_t1_education')).toBeInTheDocument();
+  });
+
+  it('推荐标记显示⭐推荐文字', () => {
+    const engine = makeMockEngine();
+    render(<TechTab engine={engine} snapshotVersion={0} />);
+
+    const tag = screen.getByTestId('tech-recommend-mil_t1_attack');
+    expect(tag).toHaveTextContent('⭐ 推荐');
+  });
+
+  it('已完成的推荐科技不显示推荐标记', () => {
+    const nodeStates = createDefaultNodeStates();
+    nodeStates['mil_t1_attack'] = {
+      id: 'mil_t1_attack',
+      status: 'completed',
+      researchStartTime: null,
+      researchEndTime: null,
+    };
+
+    const engine = makeMockEngine({ nodeStates });
+    render(<TechTab engine={engine} snapshotVersion={0} />);
+
+    expect(screen.queryByTestId('tech-recommend-mil_t1_attack')).not.toBeInTheDocument();
+  });
+
+  it('非推荐科技不显示推荐标记', () => {
+    const engine = makeMockEngine();
+    render(<TechTab engine={engine} snapshotVersion={0} />);
+
+    // mil_t2_charge 不是推荐科技，不应有推荐标记
+    expect(screen.queryByTestId('tech-recommend-mil_t2_charge')).not.toBeInTheDocument();
   });
 });

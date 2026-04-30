@@ -33,6 +33,7 @@ import {
 import TechNodeDetailModal from './TechNodeDetailModal';
 import TechResearchPanel from './TechResearchPanel';
 import TechOfflinePanel from './TechOfflinePanel';
+import { Toast } from '@/components/idle/common/Toast';
 import './TechTab.css';
 
 // ─────────────────────────────────────────────
@@ -52,6 +53,15 @@ const STATUS_LABELS: Record<TechNodeStatus, string> = {
   available: '🔓',
   locked: '🔒',
 };
+
+// ─────────────────────────────────────────────
+// P1-3: 推荐优先研究的科技（前3个基础科技）
+// ─────────────────────────────────────────────
+const RECOMMENDED_TECH_IDS: ReadonlySet<string> = new Set([
+  'mil_t1_attack',   // 军事：锐兵术
+  'eco_t1_farming',  // 经济：精耕细作
+  'cul_t1_education', // 文化：兴学令
+]);
 
 // ─────────────────────────────────────────────
 // 格式化剩余时间
@@ -83,6 +93,18 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
   const researchSystem = engine.getTechResearchSystem();
   const pointSystem = engine.getTechPointSystem();
 
+  // ── P1-1: 书院解锁检查（主城≥Lv3且书院≥Lv1） ──
+  const isTechUnlocked = useMemo(() => {
+    try {
+      const castleLevel = (engine as unknown as { building: { getLevel: (t: string) => number } }).building.getLevel('castle');
+      const academyLevel = (engine as unknown as { building: { getLevel: (t: string) => number } }).building.getLevel('academy');
+      return castleLevel >= 3 && academyLevel >= 1;
+    } catch {
+      // 引擎不支持建筑等级查询时默认解锁
+      return true;
+    }
+  }, [engine, snapshotVersion]);
+
   // 每秒刷新研究进度（仅在有活跃研究时计时，节省性能）
   useEffect(() => {
     const hasActive = researchSystem.getQueue().length > 0;
@@ -102,6 +124,21 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+
+  // ── P1-2: 监听科技研究完成事件，弹出Toast通知 ──
+  useEffect(() => {
+    const eventBus = (engine as unknown as { eventBus?: { on: (e: string, h: (p: unknown) => void) => () => void } }).eventBus;
+    if (!eventBus) return;
+
+    const unsubscribe = eventBus.on('economy:techCompleted', (payload: unknown) => {
+      const data = payload as { techName?: string };
+      if (data?.techName) {
+        Toast.success(`${data.techName}科技研究完成！`);
+      }
+    });
+
+    return unsubscribe;
+  }, [engine]);
 
   // ── 数据获取 ──
   const allNodeStates = useMemo(
@@ -247,6 +284,13 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
           {nodeDef.mutexGroup && !mutexLocked && status !== 'completed' && (
             <span className="tk-tech-mutex-tag">二选一</span>
           )}
+
+          {/* P1-3: 推荐标记 */}
+          {RECOMMENDED_TECH_IDS.has(nodeDef.id) && status !== 'completed' && (
+            <span className="tk-tech-recommend-tag" data-testid={`tech-recommend-${nodeDef.id}`}>
+              ⭐ 推荐
+            </span>
+          )}
         </div>
       );
     },
@@ -321,6 +365,20 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
 
   return (
     <div className="tk-tech-tab" data-testid="tech-tab">
+      {/* P1-1: 书院未解锁提示 */}
+      {!isTechUnlocked && (
+        <div className="tk-tech-locked-hint" data-testid="tech-locked-hint">
+          <div className="tk-tech-locked-hint-icon">🔒</div>
+          <div className="tk-tech-locked-hint-text">
+            <p className="tk-tech-locked-hint-title">科技系统未解锁</p>
+            <p className="tk-tech-locked-hint-desc">升级主城至Lv3并建造书院后解锁科技系统</p>
+          </div>
+        </div>
+      )}
+
+      {/* 科技系统已解锁时显示完整内容 */}
+      {isTechUnlocked && (
+        <>
       {/* 路线切换Tab */}
       <div className="tk-tech-path-tabs">
         {TECH_PATHS.map((path) => (
@@ -433,6 +491,8 @@ const TechTab: React.FC<TechTabProps> = ({ engine, snapshotVersion }) => {
             try { pointSystem.refund(points); } catch { /* 忽略 */ }
           }}
         />
+      )}
+        </>
       )}
     </div>
   );

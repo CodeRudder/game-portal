@@ -384,6 +384,66 @@
   margin-top: 2px;
 }
 
+/* P1-3: 推荐标记 */
+.tk-tech-recommend-tag {
+  font-size: 9px;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-top: 2px;
+  font-weight: 600;
+  white-space: nowrap;
+  animation: tk-tech-recommend-glow 2s ease-in-out infinite;
+}
+
+@keyframes tk-tech-recommend-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+  50% { box-shadow: 0 0 6px 2px rgba(251, 191, 36, 0.2); }
+}
+
+/* P1-1: 书院未解锁提示区域 */
+.tk-tech-locked-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
+  gap: 16px;
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.tk-tech-locked-hint-icon {
+  font-size: 64px;
+  opacity: 0.6;
+  animation: tk-tech-locked-bounce 2s ease-in-out infinite;
+}
+
+@keyframes tk-tech-locked-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.tk-tech-locked-hint-text {
+  max-width: 320px;
+}
+
+.tk-tech-locked-hint-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--tk-text-primary);
+  margin: 0 0 8px 0;
+}
+
+.tk-tech-locked-hint-desc {
+  font-size: 14px;
+  color: var(--tk-text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
 /* 底部研究进度浮动条（手机端） */
 .tk-tech-research-float {
   display: none;
