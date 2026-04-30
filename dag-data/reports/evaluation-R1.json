@@ -1,0 +1,75 @@
+{
+  "iteration": 1,
+  "timestamp": "2026-04-30T04:19:20.420Z",
+  "coverage": {
+    "navigation": {
+      "dagType": "navigation",
+      "dagId": "nav-main-v1",
+      "totalPaths": 73,
+      "coveredPaths": 73,
+      "pathCoverage": 1,
+      "nodeCoverage": 1,
+      "edgeCoverage": 1,
+      "overall": 0.7,
+      "uncoveredPaths": [],
+      "uncoveredNodes": [],
+      "uncoveredEdges": []
+    },
+    "flow": {
+      "dagType": "flow",
+      "dagId": "flow-v1-to-v5",
+      "totalPaths": 217,
+      "coveredPaths": 217,
+      "pathCoverage": 1,
+      "nodeCoverage": 1,
+      "edgeCoverage": 1,
+      "overall": 0.7,
+      "uncoveredPaths": [],
+      "uncoveredNodes": [],
+      "uncoveredEdges": []
+    },
+    "resource": {
+      "dagType": "resource",
+      "dagId": "three-kingdoms-resource",
+      "totalPaths": 68,
+      "coveredPaths": 68,
+      "pathCoverage": 1,
+      "nodeCoverage": 1,
+      "edgeCoverage": 1,
+      "overall": 0.7,
+      "uncoveredPaths": [],
+      "uncoveredNodes": [],
+      "uncoveredEdges": []
+    },
+    "events": {
+      "dagType": "events",
+      "dagId": "three-kingdoms-events",
+      "totalPaths": 38,
+      "coveredPaths": 38,
+      "pathCoverage": 1,
+      "nodeCoverage": 1,
+      "edgeCoverage": 1,
+      "overall": 0.7,
+      "uncoveredPaths": [],
+      "uncoveredNodes": [],
+      "uncoveredEdges": []
+    },
+    "state": {
+      "dagType": "state",
+      "dagId": "three-kingdoms-state",
+      "totalPaths": 18,
+      "coveredPaths": 18,
+      "pathCoverage": 1,
+      "nodeCoverage": 1,
+      "edgeCoverage": 1,
+      "overall": 0.7,
+      "uncoveredPaths": [],
+      "uncoveredNodes": [],
+      "uncoveredEdges": []
+    },
+    "overall": 0.7
+  },
+  "issues": [],
+  "fixes": [],
+  "nextActions": []
+}
