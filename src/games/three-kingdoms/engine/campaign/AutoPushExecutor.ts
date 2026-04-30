@@ -116,32 +116,48 @@ export class AutoPushExecutor implements ISubsystem {
     let reachedMaxAttempts = false;
     let remainingTickets = ticketCount;
 
-    for (let i = 0; i < this.config.autoPushMaxAttempts; i++) {
-      this.progress.currentStageId = currentStageId;
-      this.progress.attempts = i + 1;
+    // DEF-009: try-finally 确保 isRunning 在任何异常路径下都能恢复为 false
+    // 防止 canChallenge/getStageStars/calculateRewards/completeStage/
+    // mergeResources/getNextStage/simulateBattle 抛异常时 isRunning 卡死
+    try {
+      for (let i = 0; i < this.config.autoPushMaxAttempts; i++) {
+        this.progress.currentStageId = currentStageId;
+        this.progress.attempts = i + 1;
 
-      // 检查关卡是否可挑战
-      if (!this.sweepDeps.canChallenge(currentStageId)) {
-        break;
-      }
+        // 检查关卡是否可挑战
+        if (!this.sweepDeps.canChallenge(currentStageId)) {
+          break;
+        }
 
-      const stars = this.sweepDeps.getStageStars(currentStageId);
+        const stars = this.sweepDeps.getStageStars(currentStageId);
 
-      // 已三星通关 → 使用扫荡（消耗扫荡令）
-      if (stars >= MAX_STARS) {
-        if (remainingTickets >= this.config.sweepCostPerRun) {
-          // 使用扫荡
-          const reward = this.rewardDistributor.calculateRewards(currentStageId, stars, false);
-          const sweepResult: SweepResult = { stageId: currentStageId, stars, reward };
-          results.push(sweepResult);
-          mergeResources(totalResources, reward.resources);
-          totalExp += reward.exp;
-          mergeFragments(totalFragments, reward.fragments);
-          remainingTickets -= this.config.sweepCostPerRun;
-          ticketsUsed += this.config.sweepCostPerRun;
-          this.progress.victories++;
+        // 已三星通关 → 使用扫荡（消耗扫荡令）
+        if (stars >= MAX_STARS) {
+          if (remainingTickets >= this.config.sweepCostPerRun) {
+            // 使用扫荡
+            const reward = this.rewardDistributor.calculateRewards(currentStageId, stars, false);
+            const sweepResult: SweepResult = { stageId: currentStageId, stars, reward };
+            results.push(sweepResult);
+            mergeResources(totalResources, reward.resources);
+            totalExp += reward.exp;
+            mergeFragments(totalFragments, reward.fragments);
+            remainingTickets -= this.config.sweepCostPerRun;
+            ticketsUsed += this.config.sweepCostPerRun;
+            this.progress.victories++;
+          } else {
+            // 扫荡令不足，尝试模拟战斗
+            const battleExp = this.simulateAndRecord(
+              currentStageId, results, totalResources, totalFragments,
+            );
+            if (battleExp === null) {
+              this.progress.defeats++;
+              break;
+            }
+            totalExp += battleExp;
+            this.progress.victories++;
+          }
         } else {
-          // 扫荡令不足，尝试模拟战斗
+          // 未三星 → 模拟战斗
           const battleExp = this.simulateAndRecord(
             currentStageId, results, totalResources, totalFragments,
           );
@@ -152,34 +168,24 @@ export class AutoPushExecutor implements ISubsystem {
           totalExp += battleExp;
           this.progress.victories++;
         }
-      } else {
-        // 未三星 → 模拟战斗
-        const battleExp = this.simulateAndRecord(
-          currentStageId, results, totalResources, totalFragments,
-        );
-        if (battleExp === null) {
-          this.progress.defeats++;
+
+        // 检查是否达到最大尝试次数（在推进前检查）
+        if (i + 1 >= this.config.autoPushMaxAttempts) {
+          reachedMaxAttempts = true;
           break;
         }
-        totalExp += battleExp;
-        this.progress.victories++;
-      }
 
-      // 检查是否达到最大尝试次数（在推进前检查）
-      if (i + 1 >= this.config.autoPushMaxAttempts) {
-        reachedMaxAttempts = true;
-        break;
+        // 尝试推进到下一关
+        const nextStageId = this.getNextStage(currentStageId);
+        if (!nextStageId) {
+          break;
+        }
+        currentStageId = nextStageId;
       }
-
-      // 尝试推进到下一关
-      const nextStageId = this.getNextStage(currentStageId);
-      if (!nextStageId) {
-        break;
-      }
-      currentStageId = nextStageId;
+    } finally {
+      // DEF-009: 无论正常退出还是异常退出，都确保 isRunning 恢复为 false
+      this.progress.isRunning = false;
     }
-
-    this.progress.isRunning = false;
 
     return {
       result: {

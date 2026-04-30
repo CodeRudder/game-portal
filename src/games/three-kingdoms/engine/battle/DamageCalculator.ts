@@ -250,6 +250,20 @@ export class DamageCalculator implements IDamageCalculator, ISubsystem {
     const rawDamage = effectiveAttack - effectiveDefense;
     const baseDamage = Math.max(1, rawDamage);
 
+    // DEF-006: NaN 防护，防止 baseDamage 为 NaN 传播到整个伤害链
+    if (Number.isNaN(baseDamage)) {
+      return {
+        damage: 0,
+        baseDamage: 0,
+        skillMultiplier,
+        isCritical: false,
+        criticalMultiplier: 1.0,
+        restraintMultiplier: 1.0,
+        randomFactor: 1.0,
+        isMinDamage: false,
+      };
+    }
+
     // 4. 应用技能倍率
     const damageAfterSkill = baseDamage * skillMultiplier;
 
@@ -281,6 +295,20 @@ export class DamageCalculator implements IDamageCalculator, ISubsystem {
       finalDamage = minDamage;
     }
 
+    // DEF-006: 最终 NaN 防护（skillMultiplier 等参数可能为 NaN）
+    if (Number.isNaN(finalDamage)) {
+      return {
+        damage: 0,
+        baseDamage: Math.floor(baseDamage),
+        skillMultiplier,
+        isCritical,
+        criticalMultiplier,
+        restraintMultiplier,
+        randomFactor,
+        isMinDamage: false,
+      };
+    }
+
     return {
       damage: Math.floor(finalDamage),
       baseDamage: Math.floor(baseDamage),
@@ -301,6 +329,11 @@ export class DamageCalculator implements IDamageCalculator, ISubsystem {
    * @returns 实际造成的伤害值
    */
   applyDamage(defender: BattleUnit, damage: number): number {
+    // DEF-006: NaN 防护，防止 NaN 沿调用链传播
+    if (Number.isNaN(damage)) return 0;
+    // DEF-005: 负伤害防护，防止负数伤害变成治疗
+    if (damage <= 0) return 0;
+
     if (!defender.isAlive) return 0;
 
     let remainingDamage = damage;

@@ -280,6 +280,12 @@ export class CampaignProgressSystem implements ISubsystem {
       throw new Error(`[CampaignProgress] 关卡不存在: ${stageId}`);
     }
 
+    // DEF-010: 防御 NaN，避免星级异常导致后续逻辑崩溃
+    // 注意：只处理 NaN，超出 [0,3] 范围的值由下方 Math.max/min 正常截断
+    if (Number.isNaN(stars)) {
+      stars = 0;
+    }
+
     // 确保关卡状态存在
     if (!this.progress.stageStates[stageId]) {
       this.progress.stageStates[stageId] = createInitialStageState(stageId);

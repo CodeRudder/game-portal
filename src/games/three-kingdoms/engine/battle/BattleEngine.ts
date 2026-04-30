@@ -102,6 +102,11 @@ export class BattleEngine implements IBattleEngine, ISubsystem {
    * 创建初始战斗状态，按速度排序生成首回合行动顺序
    */
   initBattle(allyTeam: BattleTeam, enemyTeam: BattleTeam): BattleState {
+    // DEF-004: null/undefined 防护，防止空队伍导致后续崩溃
+    if (!allyTeam || !enemyTeam) {
+      throw new Error('BattleEngine.initBattle: teams cannot be null or undefined');
+    }
+
     const state = {
       id: generateBattleId(),
       phase: BattlePhase.IN_PROGRESS,

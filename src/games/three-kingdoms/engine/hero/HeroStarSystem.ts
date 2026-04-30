@@ -47,7 +47,7 @@ export type SkillUnlockCallback = (heroId: string, breakthroughLevel: number) =>
 // ── 辅助函数 ──
 
 function createEmptyStarState(): StarSystemState {
-  return { stars: {}, breakthroughStages: {} };
+  return { stars: {}, breakthroughStages: {}, dailyExchangeCount: {} };
 }
 
 function failedStarUp(generalId: string, star = 1): StarUpResult {
@@ -126,14 +126,26 @@ export class HeroStarSystem implements ISubsystem {
     const config = SHOP_FRAGMENT_EXCHANGE.find((c) => c.generalId === generalId);
     if (!config) return { success: false, generalId, count: 0, goldSpent: 0 };
 
-    const actualCount = Math.min(count, config.dailyLimit);
+    // DEF-001 fix: 跟踪每日已兑换次数，剩余可购 = dailyLimit - dailyExchangeCount
+    const alreadyExchanged = this.state.dailyExchangeCount[generalId] ?? 0;
+    const remaining = config.dailyLimit - alreadyExchanged;
+    if (remaining <= 0) return { success: false, generalId, count: 0, goldSpent: 0 };
+
+    const actualCount = Math.min(count, remaining);
     const totalGold = actualCount * config.pricePerFragment;
 
     if (!this.deps.canAffordResource(RESOURCE_TYPE_GOLD, totalGold)) return { success: false, generalId, count: 0, goldSpent: 0 };
     if (!this.deps.spendResource(RESOURCE_TYPE_GOLD, totalGold)) return { success: false, generalId, count: 0, goldSpent: 0 };
 
     this.heroSystem.addFragment(generalId, actualCount);
+    // 累加已兑换次数
+    this.state.dailyExchangeCount[generalId] = alreadyExchanged + actualCount;
     return { success: true, generalId, count: actualCount, goldSpent: totalGold };
+  }
+
+  /** 重置所有武将的商店碎片每日已兑换次数（跨日调用） */
+  resetDailyExchangeLimits(): void {
+    this.state.dailyExchangeCount = {};
   }
 
   // ═══════════════════════════════════════════
@@ -388,7 +400,11 @@ export class HeroStarSystem implements ISubsystem {
   serialize(): StarSystemSaveData {
     return {
       version: STAR_SYSTEM_SAVE_VERSION,
-      state: { stars: { ...this.state.stars }, breakthroughStages: { ...this.state.breakthroughStages } },
+      state: {
+        stars: { ...this.state.stars },
+        breakthroughStages: { ...this.state.breakthroughStages },
+        dailyExchangeCount: { ...this.state.dailyExchangeCount },
+      },
     };
   }
 
@@ -399,6 +415,7 @@ export class HeroStarSystem implements ISubsystem {
     this.state = {
       stars: { ...(data.state.stars ?? {}) },
       breakthroughStages: { ...(data.state.breakthroughStages ?? {}) },
+      dailyExchangeCount: { ...(data.state.dailyExchangeCount ?? {}) },
     };
   }
 }

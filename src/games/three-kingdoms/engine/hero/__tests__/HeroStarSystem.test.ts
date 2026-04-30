@@ -407,4 +407,95 @@ describe('HeroStarSystem', () => {
   describe('update()', () => {
     it('should not throw', () => { expect(() => starSystem.update(16)).not.toThrow(); });
   });
+
+  // ═══════════════════════════════════════════
+  // DEF-001: 商店碎片日限购累计跟踪
+  // ═══════════════════════════════════════════
+  describe('DEF-001 商店碎片日限购累计', () => {
+    it('多次兑换应累计计数，不超过dailyLimit', () => {
+      // guanyu dailyLimit = 5
+      // 第1次兑换3个
+      const r1 = starSystem.exchangeFragmentsFromShop('guanyu', 3);
+      expect(r1.success).toBe(true);
+      expect(r1.count).toBe(3);
+
+      // 第2次兑换3个 → 只能再兑换2个（5-3=2）
+      const r2 = starSystem.exchangeFragmentsFromShop('guanyu', 3);
+      expect(r2.success).toBe(true);
+      expect(r2.count).toBe(2);
+
+      // 第3次兑换 → 已达上限，应失败
+      const r3 = starSystem.exchangeFragmentsFromShop('guanyu', 1);
+      expect(r3.success).toBe(false);
+      expect(r3.count).toBe(0);
+
+      // 总共获得 3+2 = 5 碎片
+      expect(heroSystem.getFragments('guanyu')).toBe(5);
+    });
+
+    it('一次性兑换超过dailyLimit应截断为dailyLimit', () => {
+      // guanyu dailyLimit = 5
+      const r = starSystem.exchangeFragmentsFromShop('guanyu', 100);
+      expect(r.success).toBe(true);
+      expect(r.count).toBe(5);
+
+      // 再次兑换应失败
+      const r2 = starSystem.exchangeFragmentsFromShop('guanyu', 1);
+      expect(r2.success).toBe(false);
+    });
+
+    it('resetDailyExchangeLimits 后可再次兑换', () => {
+      // 先用完限额
+      starSystem.exchangeFragmentsFromShop('guanyu', 5);
+      expect(starSystem.exchangeFragmentsFromShop('guanyu', 1).success).toBe(false);
+
+      // 重置日限购
+      starSystem.resetDailyExchangeLimits();
+
+      // 重置后可以再次兑换
+      const r = starSystem.exchangeFragmentsFromShop('guanyu', 3);
+      expect(r.success).toBe(true);
+      expect(r.count).toBe(3);
+    });
+
+    it('不同武将的日限购应独立计数', () => {
+      // guanyu dailyLimit=5, liubei dailyLimit=10
+      starSystem.exchangeFragmentsFromShop('guanyu', 5);
+      expect(starSystem.exchangeFragmentsFromShop('guanyu', 1).success).toBe(false);
+
+      // liubei 仍可兑换
+      const r = starSystem.exchangeFragmentsFromShop('liubei', 5);
+      expect(r.success).toBe(true);
+      expect(r.count).toBe(5);
+    });
+
+    it('日限购计数应持久化到序列化数据', () => {
+      starSystem.exchangeFragmentsFromShop('guanyu', 3);
+      const save = starSystem.serialize();
+      expect(save.state.dailyExchangeCount['guanyu']).toBe(3);
+
+      // 反序列化后计数保持
+      const newSys = new HeroStarSystem(heroSystem);
+      newSys.init(makeMockDeps());
+      const newDeps = makeStarDeps();
+      newDeps.getFragments = (id: string) => heroSystem.getFragments(id);
+      newDeps.spendFragments = (id: string, c: number) => heroSystem.useFragments(id, c);
+      newSys.setDeps(newDeps);
+      newSys.deserialize(save);
+
+      // 反序列化后只能再兑换 5-3=2 个
+      const r = newSys.exchangeFragmentsFromShop('guanyu', 5);
+      expect(r.success).toBe(true);
+      expect(r.count).toBe(2);
+    });
+
+    it('reset() 应清空日限购计数', () => {
+      starSystem.exchangeFragmentsFromShop('guanyu', 3);
+      starSystem.reset();
+      // reset 后可以重新兑换
+      const r = starSystem.exchangeFragmentsFromShop('guanyu', 5);
+      expect(r.success).toBe(true);
+      expect(r.count).toBe(5);
+    });
+  });
 });

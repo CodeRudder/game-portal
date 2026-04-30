@@ -202,6 +202,8 @@ export interface StarSystemState {
   stars: Record<string, number>;
   /** 武将突破阶段 Map<generalId, breakthroughStage> */
   breakthroughStages: Record<string, number>;
+  /** 商店碎片每日已兑换次数 Map<generalId, dailyExchangeCount> */
+  dailyExchangeCount: Record<string, number>;
 }
 
 /** 升星系统存档数据 */
