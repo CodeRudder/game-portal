@@ -221,7 +221,7 @@ export class HeroLevelSystem implements ISubsystem {
    * 铜钱不足则停在耗尽的那级，剩余经验保留在经验条中
    */
   addExp(generalId: string, amount: number): LevelUpResult | null {
-    if (!this.levelDeps || amount <= 0) return null;
+    if (!this.levelDeps || !Number.isFinite(amount) || amount <= 0) return null;
     const { heroSystem } = this.levelDeps;
     const general = heroSystem.getGeneral(generalId);
     const maxLevel = this.getMaxLevel(generalId);

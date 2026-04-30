@@ -73,6 +73,10 @@ export function serializeHeroState(state: HeroState): HeroSaveData {
  * @returns 恢复后的 HeroState
  */
 export function deserializeHeroState(data: HeroSaveData): HeroState {
+  if (!data || !data.state) {
+    gameLog.warn('HeroSystem: 存档数据为空，返回空状态');
+    return createEmptyState();
+  }
   if (data.version !== HERO_SAVE_VERSION) {
     gameLog.warn(
       `HeroSystem: 存档版本不匹配 (期望 ${HERO_SAVE_VERSION}，实际 ${data.version})`,

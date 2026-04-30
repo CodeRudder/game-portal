@@ -275,6 +275,7 @@ export class HeroDispatchSystem implements ISubsystem {
 
   /** 反序列化状态 */
   deserialize(json: string): void {
+    if (!json) { this.reset(); return; }
     try {
       const data = JSON.parse(json);
       this.buildingDispatch = data.buildingDispatch ?? {};

@@ -118,9 +118,15 @@ export class FormationRecommendSystem implements ISubsystem {
   ): RecommendResult {
     const characteristics = this.analyzeStage(stageType, recommendedPower, enemySize);
 
+    // null guard: 防护 availableHeroes 为 null/undefined 或包含 null 元素
+    const safeHeroes = (availableHeroes ?? []).filter((h): h is GeneralData => h != null);
+
     // 按战力排序武将
-    const sortedHeroes = [...availableHeroes]
-      .map(h => ({ hero: h, power: calculatePower(h) }))
+    const sortedHeroes = safeHeroes
+      .map(h => {
+        const power = calculatePower(h);
+        return { hero: h, power: Number.isFinite(power) ? power : 0 };
+      })
       .sort((a, b) => b.power - a.power);
 
     if (sortedHeroes.length === 0) {

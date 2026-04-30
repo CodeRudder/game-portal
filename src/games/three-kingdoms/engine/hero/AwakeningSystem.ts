@@ -388,6 +388,10 @@ export class AwakeningSystem implements ISubsystem {
   }
 
   deserialize(data: AwakeningSaveData): void {
+    if (!data || !data.state) {
+      this.state = { heroes: {} };
+      return;
+    }
     if (data.version !== AWAKENING_SAVE_VERSION) {
       gameLog.warn(`AwakeningSystem: 存档版本不匹配 (期望 ${AWAKENING_SAVE_VERSION}，实际 ${data.version})`);
     }

@@ -84,6 +84,10 @@ export class HeroRecruitUpManager implements ISubsystem {
 
   /** 反序列化恢复 UP 武将状态（兼容旧存档） */
   deserializeUpHero(data: RecruitSaveData): void {
+    if (!data) {
+      this.upHero = createDefaultUpHero();
+      return;
+    }
     if (data.version !== RECRUIT_SAVE_VERSION) {
       gameLog.warn(
         `HeroRecruitUpManager: 存档版本不匹配 (期望 ${RECRUIT_SAVE_VERSION}，实际 ${data.version})`,

@@ -402,6 +402,10 @@ export class HeroFormation implements ISubsystem {
   }
 
   deserialize(data: FormationSaveData): void {
+    if (!data?.state) {
+      this.state = { formations: {}, activeFormationId: null };
+      return;
+    }
     if (data?.state) {
       this.state = {
         formations: Object.fromEntries(

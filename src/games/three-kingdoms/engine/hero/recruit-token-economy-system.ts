@@ -214,7 +214,7 @@ export class RecruitTokenEconomySystem implements ISubsystem {
    */
   tick(deltaSeconds: number): void {
     if (!this.economyDeps) return;
-    if (deltaSeconds <= 0) return;
+    if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
 
     const earned = PASSIVE_RATE_PER_SECOND * deltaSeconds;
     const actual = this.economyDeps.addRecruitToken(earned);
@@ -279,7 +279,7 @@ export class RecruitTokenEconomySystem implements ISubsystem {
   buyFromShop(count: number): boolean {
     this.checkDailyReset();
     if (!this.economyDeps) return false;
-    if (count <= 0) return false;
+    if (!Number.isFinite(count) || count <= 0) return false;
 
     // 检查日限购
     const remaining = SHOP_DAILY_LIMIT - this.dailyShopPurchased;
@@ -361,7 +361,7 @@ export class RecruitTokenEconomySystem implements ISubsystem {
    * @returns 离线期间应获得的招贤令数量
    */
   calculateOfflineReward(offlineSeconds: number): number {
-    if (offlineSeconds <= 0) return 0;
+    if (!Number.isFinite(offlineSeconds) || offlineSeconds <= 0) return 0;
     return PASSIVE_RATE_PER_SECOND * offlineSeconds * OFFLINE_EFFICIENCY;
   }
 
@@ -451,6 +451,15 @@ export class RecruitTokenEconomySystem implements ISubsystem {
 
   /** 从存档数据恢复 */
   deserialize(data: RecruitTokenEconomySaveData): void {
+    if (!data) {
+      this.newbiePackClaimed = false;
+      this.dailyShopPurchased = 0;
+      this.lastResetDate = '';
+      this.dailyTaskClaimed = false;
+      this.clearedStages = new Set();
+      this.totalPassiveEarned = 0;
+      return;
+    }
     if (data.version !== SAVE_VERSION) {
       // 兼容处理：尝试加载
     }

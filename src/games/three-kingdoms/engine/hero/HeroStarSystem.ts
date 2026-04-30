@@ -121,7 +121,7 @@ export class HeroStarSystem implements ISubsystem {
 
   /** 商店兑换碎片（铜钱兑换，受每日限购） */
   exchangeFragmentsFromShop(generalId: string, count: number): ShopExchangeResult {
-    if (!this.deps || count <= 0) return { success: false, generalId, count: 0, goldSpent: 0 };
+    if (!this.deps || !Number.isFinite(count) || count <= 0) return { success: false, generalId, count: 0, goldSpent: 0 };
 
     const config = SHOP_FRAGMENT_EXCHANGE.find((c) => c.generalId === generalId);
     if (!config) return { success: false, generalId, count: 0, goldSpent: 0 };
@@ -162,7 +162,7 @@ export class HeroStarSystem implements ISubsystem {
    * @returns 碎片获取结果
    */
   addFragmentFromActivity(heroId: string, source: string, amount: number): FragmentGainResult {
-    if (amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.ACTIVITY };
+    if (!Number.isFinite(amount) || amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.ACTIVITY };
     const overflow = this.heroSystem.addFragment(heroId, amount);
     const actual = amount - overflow;
     gameLog.info(`[HeroStarSystem] activity fragment: ${heroId} +${actual} from "${source}"`);
@@ -178,7 +178,7 @@ export class HeroStarSystem implements ISubsystem {
    * @returns 碎片获取结果
    */
   addFragmentFromExpedition(heroId: string, amount: number): FragmentGainResult {
-    if (amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.EXPEDITION };
+    if (!Number.isFinite(amount) || amount <= 0) return { generalId: heroId, count: 0, source: FragmentSource.EXPEDITION };
     const overflow = this.heroSystem.addFragment(heroId, amount);
     const actual = amount - overflow;
     gameLog.info(`[HeroStarSystem] expedition fragment: ${heroId} +${actual}`);
@@ -297,7 +297,7 @@ export class HeroStarSystem implements ISubsystem {
   /** 获取武将当前等级上限（根据突破阶段确定） */
   getLevelCap(generalId: string): number {
     const stage = this.state.breakthroughStages[generalId] ?? 0;
-    if (stage <= 0) return INITIAL_LEVEL_CAP;
+    if (!Number.isFinite(stage) || stage <= 0) return INITIAL_LEVEL_CAP;
     if (stage >= BREAKTHROUGH_TIERS.length) return FINAL_LEVEL_CAP;
     return BREAKTHROUGH_TIERS[stage - 1].levelCapAfter;
   }
@@ -409,6 +409,10 @@ export class HeroStarSystem implements ISubsystem {
   }
 
   deserialize(data: StarSystemSaveData): void {
+    if (!data || !data.state) {
+      this.state = { stars: {}, breakthroughStages: {}, dailyExchangeCount: {} };
+      return;
+    }
     if (data.version !== STAR_SYSTEM_SAVE_VERSION) {
       gameLog.warn(`HeroStarSystem: 存档版本不匹配 (期望 ${STAR_SYSTEM_SAVE_VERSION}，实际 ${data.version})`);
     }

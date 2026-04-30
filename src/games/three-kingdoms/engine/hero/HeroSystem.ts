@@ -240,7 +240,7 @@ export class HeroSystem implements ISubsystem {
    * @returns 溢出的碎片数量（用于转化为铜钱：1碎片 = 100铜钱）
    */
   addFragment(generalId: string, count: number): number {
-    if (count <= 0) return 0;
+    if (!Number.isFinite(count) || count <= 0) return 0;
     const current = this.state.fragments[generalId] ?? 0;
     const newTotal = current + count;
     const cap = HeroSystem.FRAGMENT_CAP;
@@ -256,6 +256,7 @@ export class HeroSystem implements ISubsystem {
 
   /** 消耗武将碎片，碎片不足返回 false */
   useFragments(generalId: string, count: number): boolean {
+    if (!Number.isFinite(count) || count <= 0) return false;
     const current = this.state.fragments[generalId] ?? 0;
     if (current < count) return false;
     this.state.fragments[generalId] = current - count;
@@ -466,6 +467,7 @@ export class HeroSystem implements ISubsystem {
 
   /** 反序列化恢复武将系统状态 */
   deserialize(data: HeroSaveData): void {
+    if (!data) { this.state = createEmptyState(); return; }
     this.state = deserializeHeroState(data);
   }
 }

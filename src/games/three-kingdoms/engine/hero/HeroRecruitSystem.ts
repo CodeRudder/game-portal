@@ -255,6 +255,13 @@ export class HeroRecruitSystem implements ISubsystem {
   }
 
   deserialize(data: RecruitSaveData): void {
+    if (!data) {
+      this.pity = { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 };
+      this.freeRecruit = createEmptyFreeRecruit();
+      this.history = [];
+      this.upManager.deserializeUpHero({ version: RECRUIT_SAVE_VERSION, pity: this.pity, freeRecruit: this.freeRecruit, upHero: { upGeneralId: null, upRate: 0, description: '' }, history: [] });
+      return;
+    }
     if (data.version !== RECRUIT_SAVE_VERSION) {
       gameLog.warn(
         `HeroRecruitSystem: 存档版本不匹配 (期望 ${RECRUIT_SAVE_VERSION}，实际 ${data.version})`,
