@@ -1,0 +1,34 @@
+# Agent进化日志 — 三国霸业
+
+> 初始化: 2026-05-01
+> 每轮迭代后追加记录
+
+## 进化时间线
+
+### 2026-05-01 — 方法论升级启动
+
+**变更类型**: 架构级升级
+**变更内容**:
+1. 3-Agent规则独立持久化（builder-rules.md / challenger-rules.md / arbiter-rules.md）
+2. 3个Agent独立Skill（adversarial-builder / adversarial-challenger / adversarial-arbiter）
+3. 项目级配置独立于通用Skill
+4. 每轮复盘更新规则
+5. 从纯测试扩展到测试+修复+可玩性+架构审查
+
+**预期效果**:
+- Agent规则持续进化，不再从零开始
+- 项目知识积累，跨轮次复用
+- 30轮+深度迭代直到完美
+
+---
+
+## 进化统计
+
+| 指标 | 当前值 |
+|------|--------|
+| 总进化次数 | 1 |
+| Builder规则版本 | v1.0 |
+| Challenger规则版本 | v1.0 |
+| Arbiter规则版本 | v1.0 |
+| P0模式库条目 | 8 |
+| 覆盖模块数 | 16/35 |
