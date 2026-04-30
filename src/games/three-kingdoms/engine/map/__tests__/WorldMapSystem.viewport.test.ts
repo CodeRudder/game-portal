@@ -78,7 +78,8 @@ describe('WorldMapSystem 地标与视口', () => {
 
     it('getLandmarksByOwnership neutral', () => {
       const neutrals = mapSys.getLandmarksByOwnership('neutral');
-      expect(neutrals.length).toBe(DEFAULT_LANDMARKS.length);
+      // city-luoyang 初始为 player
+      expect(neutrals.length).toBe(DEFAULT_LANDMARKS.length - 1);
     });
 
     it('getLandmarkById 返回正确地标', () => {
@@ -143,13 +144,14 @@ describe('WorldMapSystem 地标与视口', () => {
       expect(mapSys.upgradeLandmark('non-existent')).toBe(false);
     });
 
-    it('getPlayerLandmarkCount 初始为 0', () => {
-      expect(mapSys.getPlayerLandmarkCount()).toBe(0);
+    it('getPlayerLandmarkCount 初始有洛阳', () => {
+      // city-luoyang 初始为 player
+      expect(mapSys.getPlayerLandmarkCount()).toBe(1);
     });
 
     it('getPlayerLandmarkCount 占领后增加', () => {
-      mapSys.setLandmarkOwnership('city-luoyang', 'player');
-      expect(mapSys.getPlayerLandmarkCount()).toBe(1);
+      mapSys.setLandmarkOwnership('city-xuchang', 'player');
+      expect(mapSys.getPlayerLandmarkCount()).toBe(2);
     });
 
     it('getTotalLandmarkCount 等于 DEFAULT_LANDMARKS 长度', () => {
@@ -229,10 +231,14 @@ describe('WorldMapSystem 地标与视口', () => {
   // 3. 序列化/反序列化
   // ═══════════════════════════════════════════
   describe('序列化/反序列化', () => {
-    it('serialize 初始状态所有地标为 neutral', () => {
+    it('serialize 初始状态地标归属（洛阳为 player，其余 neutral）', () => {
       const data = mapSys.serialize();
-      for (const ownership of Object.values(data.landmarkOwnerships)) {
-        expect(ownership).toBe('neutral');
+      for (const [id, ownership] of Object.entries(data.landmarkOwnerships)) {
+        if (id === 'city-luoyang') {
+          expect(ownership).toBe('player');
+        } else {
+          expect(ownership).toBe('neutral');
+        }
       }
     });
 

@@ -128,11 +128,8 @@ describe('R11: 玩家行为模拟测试', () => {
       if (heroes.length > 0) {
         // 尝试编队
         const heroId = heroes[0].id;
-        try {
-          engine.heroFormation.createFormation([heroId]);
-        } catch {
-          // 编队可能因配置限制失败，不影响核心断言
-        }
+        // 编队可能因配置限制失败，用 expect 验证不崩溃
+        expect(() => engine.heroFormation.createFormation([heroId])).not.toThrow();
       }
 
       // 推进更多 tick 模拟战斗准备
@@ -221,11 +218,8 @@ describe('R11: 玩家行为模拟测试', () => {
       // ── Step 4: 编队调整 ──
       if (heroes.length >= 1) {
         const heroIds = heroes.slice(0, Math.min(3, heroes.length)).map(h => h.id);
-        try {
-          engine.heroFormation.createFormation(heroIds);
-        } catch {
-          // 编队可能因配置限制失败
-        }
+        // 编队可能因配置限制失败，用 expect 验证不崩溃
+        expect(() => engine.heroFormation.createFormation(heroIds)).not.toThrow();
       }
 
       // 断言 5: 编队系统正常
@@ -451,7 +445,7 @@ describe('R11: 玩家行为模拟测试', () => {
       fastForward(engine, 200);
 
       // 尝试升级建筑
-      try { engine.upgradeBuilding('mainHall'); } catch { /* 可能不够资源 */ }
+      expect(() => engine.upgradeBuilding('mainHall')).not.toThrow();
 
       fastForward(engine, 300);
 

@@ -60,10 +60,11 @@ describe('WorldMapSystem 基础与区域地形', () => {
     });
 
     it('reset 恢复初始状态', () => {
-      mapSys.setLandmarkOwnership('city-luoyang', 'player');
+      mapSys.setLandmarkOwnership('city-luoyang', 'enemy');
       mapSys.reset();
       const lm = mapSys.getLandmarkById('city-luoyang');
-      expect(lm!.ownership).toBe('neutral');
+      // city-luoyang 初始为 player
+      expect(lm!.ownership).toBe('player');
     });
 
     it('getState 返回完整状态', () => {

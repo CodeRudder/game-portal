@@ -38,13 +38,15 @@ describe('v8 SHOP-FLOW §1.1 集市商店浏览与购买', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) {
-      const item = goods[0];
-      expect(item.defId).toBeDefined();
-      expect(item.stock).toBeDefined();
-      expect(item.discount).toBeGreaterThan(0);
-      expect(item.discount).toBeLessThanOrEqual(1);
-    }
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    const item = goods[0];
+    expect(item.defId).toBeDefined();
+    expect(item.stock).toBeDefined();
+    expect(item.discount).toBeGreaterThan(0);
+    expect(item.discount).toBeLessThanOrEqual(1);
   });
 
   it('SHOP-FLOW-4: 商品分类Tab切换过滤', () => {
@@ -52,24 +54,26 @@ describe('v8 SHOP-FLOW §1.1 集市商店浏览与购买', () => {
     const shop = sim.engine.getShopSystem();
     const categories = shop.getCategories();
     expect(Array.isArray(categories)).toBe(true);
+
+    // 前置断言：确保分类存在
     expect(categories.length).toBeGreaterThan(0);
-    if (categories.length > 0) {
-      const filtered = shop.getGoodsByCategory('normal' as ShopType, categories[0] as GoodsCategory);
-      expect(Array.isArray(filtered)).toBe(true);
-    }
+
+    const filtered = shop.getGoodsByCategory('normal' as ShopType, categories[0] as GoodsCategory);
+    expect(Array.isArray(filtered)).toBe(true);
   });
 
   it('SHOP-FLOW-5: 查看商品详情', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) {
-      const def = shop.getGoodsDef(goods[0].defId);
-      if (def) {
-        expect(def.name).toBeDefined();
-        expect(def.basePrice).toBeDefined();
-      }
-    }
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    const def = shop.getGoodsDef(goods[0].defId);
+    expect(def).toBeDefined();
+    expect(def!.name).toBeDefined();
+    expect(def!.basePrice).toBeDefined();
   });
 
   it('SHOP-FLOW-6: 资源充足时购买成功并扣款', () => {
@@ -81,25 +85,29 @@ describe('v8 SHOP-FLOW §1.1 集市商店浏览与购买', () => {
     currency.addCurrency('copper', 100000);
 
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) {
-      const copperBefore = currency.getBalance('copper');
-      const validation = shop.validateBuy({
-        shopType: 'normal' as ShopType,
-        goodsId: goods[0].defId,
-        quantity: 1,
-      });
-      if (validation.canBuy) {
-        const result = shop.executeBuy({
-          shopType: 'normal' as ShopType,
-          goodsId: goods[0].defId,
-          quantity: 1,
-        });
-        expect(result.success).toBe(true);
-        expect(result.goodsId).toBe(goods[0].defId);
-        // 验证货币扣除
-        expect(currency.getBalance('copper')).toBeLessThanOrEqual(copperBefore);
-      }
-    }
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    const copperBefore = currency.getBalance('copper');
+    const validation = shop.validateBuy({
+      shopType: 'normal' as ShopType,
+      goodsId: goods[0].defId,
+      quantity: 1,
+    });
+
+    // 验证逻辑：充足资源下应可购买
+    expect(validation.canBuy).toBe(true);
+
+    const result = shop.executeBuy({
+      shopType: 'normal' as ShopType,
+      goodsId: goods[0].defId,
+      quantity: 1,
+    });
+    expect(result.success).toBe(true);
+    expect(result.goodsId).toBe(goods[0].defId);
+    // 验证货币扣除
+    expect(currency.getBalance('copper')).toBeLessThanOrEqual(copperBefore);
   });
 
   it('SHOP-FLOW-7: 购买后库存减少', () => {
@@ -230,13 +238,15 @@ describe('v8 SHOP-FLOW §1.4 库存与限购', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) {
-      const info = shop.getStockInfo('normal' as ShopType, goods[0].defId);
-      expect(info).toBeDefined();
-      expect(info!.stock).toBeDefined();
-      expect(info!.dailyPurchased).toBeDefined();
-      expect(info!.dailyLimit).toBeDefined();
-    }
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    const info = shop.getStockInfo('normal' as ShopType, goods[0].defId);
+    expect(info).toBeDefined();
+    expect(info!.stock).toBeDefined();
+    expect(info!.dailyPurchased).toBeDefined();
+    expect(info!.dailyLimit).toBeDefined();
   });
 
   it('SHOP-FLOW-12: 库存不足时购买验证失败', () => {
@@ -342,26 +352,31 @@ describe('v8 SHOP-FLOW §1.5 折扣机制', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) {
-      const defId = goods[0].defId;
-      const before = shop.calculateFinalPrice(defId, 'normal' as ShopType);
-      shop.addDiscount({
-        type: 'normal', rate: 0.5,
-        startTime: Date.now() - 1000, endTime: Date.now() + 86400000,
-        targetShopType: 'normal' as ShopType, applicableGoods: [defId],
-      });
-      const after = shop.calculateFinalPrice(defId, 'normal' as ShopType);
-      const copperBefore = Object.values(before)[0] ?? 0;
-      const copperAfter = Object.values(after)[0] ?? 0;
-      if (copperBefore > 0) expect(copperAfter).toBeLessThanOrEqual(copperBefore);
-    }
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    const defId = goods[0].defId;
+    const before = shop.calculateFinalPrice(defId, 'normal' as ShopType);
+    shop.addDiscount({
+      type: 'normal', rate: 0.5,
+      startTime: Date.now() - 1000, endTime: Date.now() + 86400000,
+      targetShopType: 'normal' as ShopType, applicableGoods: [defId],
+    });
+    const after = shop.calculateFinalPrice(defId, 'normal' as ShopType);
+    const copperBefore = Object.values(before)[0] ?? 0;
+    const copperAfter = Object.values(after)[0] ?? 0;
+    expect(copperBefore).toBeGreaterThan(0);
+    expect(copperAfter).toBeLessThanOrEqual(copperBefore);
   });
 
   it('SHOP-FLOW-19: NPC好感度折扣提供者', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length === 0) return;
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
 
     const defId = goods[0].defId;
     const basePrice = shop.calculateFinalPrice(defId, 'normal' as ShopType);
@@ -377,39 +392,43 @@ describe('v8 SHOP-FLOW §1.5 折扣机制', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) {
-      const defId = goods[0].defId;
-      const basePrice = shop.calculateFinalPrice(defId, 'normal' as ShopType);
 
-      shop.setNPCDiscountProvider(() => 0.9); // NPC -10%
-      shop.addDiscount({
-        type: 'normal', rate: 0.9, // 常规 -10%
-        startTime: Date.now() - 1000, endTime: Date.now() + 86400000,
-        targetShopType: 'normal' as ShopType, applicableGoods: [defId],
-      });
-      const finalPrice = shop.calculateFinalPrice(defId, 'normal' as ShopType, 'npc_1');
-      const baseCopper = Object.values(basePrice)[0] ?? 0;
-      const finalCopper = Object.values(finalPrice)[0] ?? 0;
-      // 叠加后应低于原价
-      expect(finalCopper).toBeLessThanOrEqual(baseCopper);
-    }
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    const defId = goods[0].defId;
+    const basePrice = shop.calculateFinalPrice(defId, 'normal' as ShopType);
+
+    shop.setNPCDiscountProvider(() => 0.9); // NPC -10%
+    shop.addDiscount({
+      type: 'normal', rate: 0.9, // 常规 -10%
+      startTime: Date.now() - 1000, endTime: Date.now() + 86400000,
+      targetShopType: 'normal' as ShopType, applicableGoods: [defId],
+    });
+    const finalPrice = shop.calculateFinalPrice(defId, 'normal' as ShopType, 'npc_1');
+    const baseCopper = Object.values(basePrice)[0] ?? 0;
+    const finalCopper = Object.values(finalPrice)[0] ?? 0;
+    // 叠加后应低于原价
+    expect(finalCopper).toBeLessThanOrEqual(baseCopper);
   });
 
   it('SHOP-FLOW-21: 价格地板验证（最终价格≥1）', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) {
-      const defId = goods[0].defId;
-      shop.setNPCDiscountProvider(() => 0.01);
-      shop.addDiscount({
-        type: 'extreme', rate: 0.01,
-        startTime: Date.now() - 1000, endTime: Date.now() + 86400000,
-        targetShopType: 'normal' as ShopType, applicableGoods: [defId],
-      });
-      const finalPrice = shop.calculateFinalPrice(defId, 'normal' as ShopType, 'npc_1');
-      expect(Object.values(finalPrice)[0] ?? 0).toBeGreaterThanOrEqual(1);
-    }
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    const defId = goods[0].defId;
+    shop.setNPCDiscountProvider(() => 0.01);
+    shop.addDiscount({
+      type: 'extreme', rate: 0.01,
+      startTime: Date.now() - 1000, endTime: Date.now() + 86400000,
+      targetShopType: 'normal' as ShopType, applicableGoods: [defId],
+    });
+    const finalPrice = shop.calculateFinalPrice(defId, 'normal' as ShopType, 'npc_1');
+    expect(Object.values(finalPrice)[0] ?? 0).toBeGreaterThanOrEqual(1);
   });
 
   it('SHOP-FLOW-21b: 限时特惠折扣(30%~60%)', () => {
@@ -479,8 +498,10 @@ describe('v8 SHOP-FLOW §1.6 货币体系', () => {
     // 集市优先铜钱
     const normalPriority = currency.getSpendPriority('normal');
     expect(normalPriority).toBeDefined();
+
+    // 前置断言：确保优先级列表非空
     expect(normalPriority.length).toBeGreaterThan(0);
-    if (normalPriority.length > 0) expect(normalPriority[0]).toBe('copper');
+    expect(normalPriority[0]).toBe('copper');
   });
 
   it('SHOP-FLOW-24: 货币不足时购买验证失败', () => {
@@ -640,19 +661,25 @@ describe('v8 SHOP-FLOW §6.1 商品收藏', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) expect(typeof shop.toggleFavorite(goods[0].defId)).toBe('boolean');
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    expect(typeof shop.toggleFavorite(goods[0].defId)).toBe('boolean');
   });
 
   it('SHOP-FLOW-36: 收藏状态切换', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) {
-      shop.toggleFavorite(goods[0].defId);
-      expect(shop.isFavorite(goods[0].defId)).toBe(true);
-      shop.toggleFavorite(goods[0].defId);
-      expect(shop.isFavorite(goods[0].defId)).toBe(false);
-    }
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    shop.toggleFavorite(goods[0].defId);
+    expect(shop.isFavorite(goods[0].defId)).toBe(true);
+    shop.toggleFavorite(goods[0].defId);
+    expect(shop.isFavorite(goods[0].defId)).toBe(false);
   });
 
   it('SHOP-FLOW-37: 获取收藏列表', () => {
@@ -809,7 +836,11 @@ describe('v8 SHOP-FLOW 序列化', () => {
     const sim = createSim();
     const shop = sim.engine.getShopSystem();
     const goods = shop.getShopGoods('normal' as ShopType);
-    if (goods.length > 0) shop.toggleFavorite(goods[0].defId);
+
+    // 前置断言：确保商品存在
+    expect(goods.length).toBeGreaterThan(0);
+
+    shop.toggleFavorite(goods[0].defId);
 
     const data = shop.serialize();
     expect(data).toBeDefined();
@@ -818,7 +849,7 @@ describe('v8 SHOP-FLOW 序列化', () => {
     expect(data.version).toBeDefined();
 
     shop.deserialize(data);
-    if (goods.length > 0) expect(shop.isFavorite(goods[0].defId)).toBe(true);
+    expect(shop.isFavorite(goods[0].defId)).toBe(true);
   });
 
   it('SHOP-FLOW-48: 购买后序列化保留状态', () => {

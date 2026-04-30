@@ -63,7 +63,10 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
   });
 
   afterEach(() => {
-    try { engine.reset(); } catch { /* engine may be corrupted by adversarial test */ }
+    try { engine.reset(); } catch (e) {
+      // 对抗性测试可能破坏引擎状态，reset 失败是预期的
+      expect(e).toBeDefined();
+    }
   });
 
   // ─── 1. 直接修改内存数据（通过反序列化注入） ───
@@ -85,9 +88,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
         const testEngine = new ThreeKingdomsEngine();
         testEngine.init();
         // 反序列化恶意数据不应抛出未捕获异常
-        expect(() => {
-          try { testEngine.deserialize(payload); } catch { /* 预期可能抛出 */ }
-        }).not.toThrow();
+        expect(() => testEngine.deserialize(payload)).not.toThrow();
         testEngine.reset();
       }
     });
@@ -104,9 +105,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
       const testEngine = new ThreeKingdomsEngine();
       testEngine.init();
-      expect(() => {
-        try { testEngine.deserialize(payload); } catch { /* 预期可能抛出 */ }
-      }).not.toThrow();
+      expect(() => testEngine.deserialize(payload)).not.toThrow();
       testEngine.reset();
 
       // 验证原型未被污染
@@ -257,9 +256,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
     it('setResource 传入对象不应导致内部状态异常', () => {
       // TypeScript 类型系统阻止直接传入对象，但运行时可能绕过
       expect(() => {
-        try {
-          (engine.resource as any).setResource('grain', { value: 100 });
-        } catch { /* 预期可能抛出 */ }
+        (engine.resource as any).setResource('grain', { value: 100 });
       }).not.toThrow();
 
       // 引擎仍能正常工作
@@ -268,9 +265,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
     it('addResource 传入对象不应导致内部状态异常', () => {
       expect(() => {
-        try {
-          (engine.resource as any).addResource('grain', { value: 100 });
-        } catch { /* 预期可能抛出 */ }
+        (engine.resource as any).addResource('grain', { value: 100 });
       }).not.toThrow();
     });
   });
@@ -286,9 +281,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
       const testEngine = new ThreeKingdomsEngine();
       testEngine.init();
-      expect(() => {
-        try { testEngine.deserialize(payload); } catch { /* 预期可能抛出 */ }
-      }).not.toThrow();
+      expect(() => testEngine.deserialize(payload)).not.toThrow();
       testEngine.reset();
     });
 
@@ -300,9 +293,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
       const testEngine = new ThreeKingdomsEngine();
       testEngine.init();
-      expect(() => {
-        try { testEngine.deserialize(payload); } catch { /* 预期可能抛出 */ }
-      }).not.toThrow();
+      expect(() => testEngine.deserialize(payload)).not.toThrow();
       testEngine.reset();
     });
   });
@@ -326,9 +317,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       for (const payload of payloads) {
         const testEngine = new ThreeKingdomsEngine();
         testEngine.init();
-        expect(() => {
-          try { testEngine.deserialize(payload); } catch { /* 预期可能抛出 */ }
-        }).not.toThrow();
+        expect(() => testEngine.deserialize(payload)).not.toThrow();
         testEngine.reset();
       }
     });
@@ -347,9 +336,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
     it('快速序列化→反序列化循环不应崩溃', () => {
       for (let i = 0; i < 20; i++) {
         const serialized = engine.serialize();
-        expect(() => {
-          try { engine.deserialize(serialized); } catch { /* 可能抛出 */ }
-        }).not.toThrow();
+        expect(() => engine.deserialize(serialized)).not.toThrow();
       }
     });
 
@@ -405,8 +392,9 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       // 我们只验证覆盖后引擎的恢复能力
       try {
         (testEngine as any).resource = null;
-      } catch {
+      } catch (e) {
         // strict mode 或 frozen 对象可能阻止赋值
+        expect(e).toBeDefined();
       }
 
       // 验证新引擎仍能正常创建和使用
@@ -414,15 +402,18 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       expect(() => freshEngine.tick(100)).not.toThrow();
       expect(freshEngine.isInitialized()).toBe(true);
       freshEngine.reset();
-      // 被破坏的引擎 reset 会失败，用 try 保护
-      try { testEngine.reset(); } catch { /* 预期：resource 已被设为 null */ }
+      // 被破坏的引擎 reset 会失败
+      expect(() => testEngine.reset()).toThrow();
     });
 
     it('尝试删除引擎属性后新引擎应正常工作', () => {
       const testEngine = createEngine();
       try {
         delete (testEngine as any).initialized;
-      } catch { /* 可能失败 */ }
+      } catch (e) {
+        // 可能因严格模式失败
+        expect(e).toBeDefined();
+      }
 
       // 新引擎应正常工作
       const freshEngine = createEngine();
@@ -444,16 +435,14 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
       const testEngine = new ThreeKingdomsEngine();
       testEngine.init();
-      expect(() => {
-        try { testEngine.deserialize(payload); } catch { /* 预期可能抛出 */ }
-      }).not.toThrow();
+      expect(() => testEngine.deserialize(payload)).not.toThrow();
       testEngine.reset();
     });
 
     it('反序列化空对象后引擎应保持可用', () => {
       const testEngine = new ThreeKingdomsEngine();
       testEngine.init();
-      try { testEngine.deserialize('{}'); } catch { /* 可能抛出 */ }
+      expect(() => testEngine.deserialize('{}')).not.toThrow();
 
       // 引擎应仍可操作
       expect(() => testEngine.tick(100)).not.toThrow();
@@ -479,9 +468,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
       const testEngine = new ThreeKingdomsEngine();
       testEngine.init();
-      expect(() => {
-        try { testEngine.deserialize(payload); } catch { /* 预期可能抛出 */ }
-      }).not.toThrow();
+      expect(() => testEngine.deserialize(payload)).not.toThrow();
       testEngine.reset();
 
       // 验证原型未被污染
@@ -503,9 +490,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
       const testEngine = new ThreeKingdomsEngine();
       testEngine.init();
-      expect(() => {
-        try { testEngine.deserialize(injected); } catch { /* 预期可能抛出 */ }
-      }).not.toThrow();
+      expect(() => testEngine.deserialize(injected)).not.toThrow();
       testEngine.reset();
 
       // 验证原型未被污染
@@ -527,9 +512,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
       const testEngine = new ThreeKingdomsEngine();
       testEngine.init();
-      expect(() => {
-        try { testEngine.deserialize(payload); } catch { /* 预期可能抛出 */ }
-      }).not.toThrow();
+      expect(() => testEngine.deserialize(payload)).not.toThrow();
       testEngine.reset();
     });
   });

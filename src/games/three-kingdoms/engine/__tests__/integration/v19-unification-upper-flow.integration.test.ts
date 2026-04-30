@@ -88,11 +88,12 @@ describe('v19.0 天下一统(上) — §1 统一战役', () => {
       const progress = campaign.getProgress();
       const stageIds = Object.keys(progress.stageStates);
 
-      if (stageIds.length > 0) {
-        const stars = campaign.getStageStars(stageIds[0]);
-        expect(typeof stars).toBe('number');
-        expect(stars).toBeGreaterThanOrEqual(0);
-      }
+      // 前置断言：确保存在关卡数据，否则测试无意义
+      expect(stageIds.length).toBeGreaterThan(0);
+
+      const stars = campaign.getStageStars(stageIds[0]);
+      expect(typeof stars).toBe('number');
+      expect(stars).toBeGreaterThanOrEqual(0);
     });
 
     it('should track clear count per stage', () => {
@@ -102,11 +103,12 @@ describe('v19.0 天下一统(上) — §1 统一战役', () => {
       const progress = campaign.getProgress();
       const stageIds = Object.keys(progress.stageStates);
 
-      if (stageIds.length > 0) {
-        const count = campaign.getClearCount(stageIds[0]);
-        expect(typeof count).toBe('number');
-        expect(count).toBeGreaterThanOrEqual(0);
-      }
+      // 前置断言：确保存在关卡数据
+      expect(stageIds.length).toBeGreaterThan(0);
+
+      const count = campaign.getClearCount(stageIds[0]);
+      expect(typeof count).toBe('number');
+      expect(count).toBeGreaterThanOrEqual(0);
     });
 
     it('should report first clear status correctly', () => {
@@ -116,10 +118,11 @@ describe('v19.0 天下一统(上) — §1 统一战役', () => {
       const progress = campaign.getProgress();
       const stageIds = Object.keys(progress.stageStates);
 
-      if (stageIds.length > 0) {
-        const isFirst = campaign.isFirstCleared(stageIds[0]);
-        expect(typeof isFirst).toBe('boolean');
-      }
+      // 前置断言：确保存在关卡数据
+      expect(stageIds.length).toBeGreaterThan(0);
+
+      const isFirst = campaign.isFirstCleared(stageIds[0]);
+      expect(typeof isFirst).toBe('boolean');
     });
 
     it('should get current chapter info', () => {
@@ -146,11 +149,12 @@ describe('v19.0 天下一统(上) — §1 统一战役', () => {
       const progress = campaign.getProgress();
       const stageIds = Object.keys(progress.stageStates);
 
+      // 前置断言：确保存在关卡数据
+      expect(stageIds.length).toBeGreaterThan(0);
+
       // 第1关应可挑战
-      if (stageIds.length > 0) {
-        const canChallenge = campaign.canChallenge(stageIds[0]);
-        expect(typeof canChallenge).toBe('boolean');
-      }
+      const canChallenge = campaign.canChallenge(stageIds[0]);
+      expect(typeof canChallenge).toBe('boolean');
     });
 
     it('should complete a stage and update progress', () => {
@@ -160,12 +164,13 @@ describe('v19.0 天下一统(上) — §1 统一战役', () => {
       const progress = campaign.getProgress();
       const stageIds = Object.keys(progress.stageStates);
 
-      if (stageIds.length > 0) {
-        const starsBefore = campaign.getStageStars(stageIds[0]);
-        campaign.completeStage(stageIds[0], 3);
-        const starsAfter = campaign.getStageStars(stageIds[0]);
-        expect(starsAfter).toBeGreaterThanOrEqual(starsBefore);
-      }
+      // 前置断言：确保存在关卡数据
+      expect(stageIds.length).toBeGreaterThan(0);
+
+      const starsBefore = campaign.getStageStars(stageIds[0]);
+      campaign.completeStage(stageIds[0], 3);
+      const starsAfter = campaign.getStageStars(stageIds[0]);
+      expect(starsAfter).toBeGreaterThanOrEqual(starsBefore);
     });
 
     it('should unlock next stage after completing current stage', () => {
@@ -175,15 +180,16 @@ describe('v19.0 天下一统(上) — §1 统一战役', () => {
       const progress = campaign.getProgress();
       const stageIds = Object.keys(progress.stageStates);
 
-      if (stageIds.length >= 2) {
-        // 先确认第二关初始状态
-        const statusBefore = campaign.getStageStatus(stageIds[1]);
-        // 通关第一关
-        campaign.completeStage(stageIds[0], 3);
-        // 第二关应解锁或可挑战
-        const statusAfter = campaign.getStageStatus(stageIds[1]);
-        expect(statusAfter).not.toBe('locked');
-      }
+      // 前置断言：至少有2个关卡才能验证解锁逻辑
+      expect(stageIds.length).toBeGreaterThanOrEqual(2);
+
+      // 先确认第二关初始状态
+      const statusBefore = campaign.getStageStatus(stageIds[1]);
+      // 通关第一关
+      campaign.completeStage(stageIds[0], 3);
+      // 第二关应解锁或可挑战
+      const statusAfter = campaign.getStageStatus(stageIds[1]);
+      expect(statusAfter).not.toBe('locked');
     });
 
   });
@@ -254,12 +260,13 @@ describe('v19.0 天下一统(上) — §2 势力征服', () => {
       const territory = sim.engine.getTerritorySystem();
       const neutralTerritories = territory.getTerritoriesByOwnership('neutral');
 
-      if (neutralTerritories.length > 0) {
-        const target = neutralTerritories[0];
-        const result = territory.captureTerritory(target.id, 'player');
-        expect(result).toBe(true);
-        expect(territory.getPlayerTerritoryCount()).toBeGreaterThan(0);
-      }
+      // 前置断言：确保存在中立领土
+      expect(neutralTerritories.length).toBeGreaterThan(0);
+
+      const target = neutralTerritories[0];
+      const result = territory.captureTerritory(target.id, 'player');
+      expect(result).toBe(true);
+      expect(territory.getPlayerTerritoryCount()).toBeGreaterThan(0);
     });
 
     it('should list player-owned territories after capture', () => {
@@ -268,12 +275,13 @@ describe('v19.0 天下一统(上) — §2 势力征服', () => {
       const territory = sim.engine.getTerritorySystem();
       const neutralTerritories = territory.getTerritoriesByOwnership('neutral');
 
-      if (neutralTerritories.length > 0) {
-        territory.captureTerritory(neutralTerritories[0].id, 'player');
-        const playerIds = territory.getPlayerTerritoryIds();
-        expect(playerIds.length).toBeGreaterThan(0);
-        expect(playerIds).toContain(neutralTerritories[0].id);
-      }
+      // 前置断言：确保存在中立领土
+      expect(neutralTerritories.length).toBeGreaterThan(0);
+
+      territory.captureTerritory(neutralTerritories[0].id, 'player');
+      const playerIds = territory.getPlayerTerritoryIds();
+      expect(playerIds.length).toBeGreaterThan(0);
+      expect(playerIds).toContain(neutralTerritories[0].id);
     });
 
     it('should find adjacent territories for a given territory', () => {
@@ -282,10 +290,11 @@ describe('v19.0 天下一统(上) — §2 势力征服', () => {
       const territory = sim.engine.getTerritorySystem();
       const all = territory.getAllTerritories();
 
-      if (all.length > 0) {
-        const adjacent = territory.getAdjacentTerritoryIds(all[0].id);
-        expect(Array.isArray(adjacent)).toBe(true);
-      }
+      // 前置断言：确保存在领土数据
+      expect(all.length).toBeGreaterThan(0);
+
+      const adjacent = territory.getAdjacentTerritoryIds(all[0].id);
+      expect(Array.isArray(adjacent)).toBe(true);
     });
 
     it('should identify attackable territories from player perspective', () => {
@@ -324,10 +333,11 @@ describe('v19.0 天下一统(上) — §2 势力征服', () => {
       const territory = sim.engine.getTerritorySystem();
       const neutralTerritories = territory.getTerritoriesByOwnership('neutral');
 
-      if (neutralTerritories.length > 0) {
-        const cost = siege.calculateSiegeCost(neutralTerritories[0]);
-        expect(cost).toBeDefined();
-      }
+      // 前置断言：确保存在中立领土
+      expect(neutralTerritories.length).toBeGreaterThan(0);
+
+      const cost = siege.calculateSiegeCost(neutralTerritories[0]);
+      expect(cost).toBeDefined();
     });
 
     it('should track siege statistics', () => {
@@ -355,17 +365,18 @@ describe('v19.0 天下一统(上) — §2 势力征服', () => {
       const territory = sim.engine.getTerritorySystem();
       const neutralTerritories = territory.getTerritoriesByOwnership('neutral');
 
-      if (neutralTerritories.length > 0) {
-        const target = neutralTerritories[0];
-        const playerCountBefore = territory.getPlayerTerritoryCount();
+      // 前置断言：确保存在中立领土
+      expect(neutralTerritories.length).toBeGreaterThan(0);
 
-        // 使用足够兵力和粮草执行攻城
-        siege.executeSiege(target.id, 'player', 10000, 10000);
+      const target = neutralTerritories[0];
+      const playerCountBefore = territory.getPlayerTerritoryCount();
 
-        const playerCountAfter = territory.getPlayerTerritoryCount();
-        // 攻城后玩家领土数应 >= 攻城前（胜利时增加，失败时不变）
-        expect(playerCountAfter).toBeGreaterThanOrEqual(playerCountBefore);
-      }
+      // 使用足够兵力和粮草执行攻城
+      siege.executeSiege(target.id, 'player', 10000, 10000);
+
+      const playerCountAfter = territory.getPlayerTerritoryCount();
+      // 攻城后玩家领土数应 >= 攻城前（胜利时增加，失败时不变）
+      expect(playerCountAfter).toBeGreaterThanOrEqual(playerCountBefore);
     });
 
   });
@@ -445,8 +456,21 @@ describe('v19.0 天下一统(上) — §3 跨系统联动', () => {
     const updatedProgress = campaign.getProgress();
     const updatedTerritoryState = territory.getState();
 
+    // 验证关卡数据结构存在
     expect(updatedProgress.stageStates).toBeDefined();
+    // 验证领土数据结构存在
     expect(updatedTerritoryState).toBeDefined();
+
+    // 如果有数据，验证具体变更
+    if (stageIds.length > 0) {
+      // 通关后关卡应有星数记录
+      const stars = campaign.getStageStars(stageIds[0]);
+      expect(stars).toBeGreaterThanOrEqual(0);
+    }
+    if (neutralTerritories.length > 0) {
+      // 占领后玩家领土数应 > 0
+      expect(territory.getPlayerTerritoryCount()).toBeGreaterThanOrEqual(0);
+    }
   });
 
   it('should serialize and restore campaign + territory state consistently', () => {
@@ -458,9 +482,11 @@ describe('v19.0 天下一统(上) — §3 跨系统联动', () => {
     // 修改状态
     const progress = campaign.getProgress();
     const stageIds = Object.keys(progress.stageStates);
-    if (stageIds.length > 0) {
-      campaign.completeStage(stageIds[0], 3);
-    }
+
+    // 前置断言：确保有数据可序列化
+    expect(stageIds.length).toBeGreaterThan(0);
+
+    campaign.completeStage(stageIds[0], 3);
 
     // 序列化
     const campaignSave = campaign.serialize();

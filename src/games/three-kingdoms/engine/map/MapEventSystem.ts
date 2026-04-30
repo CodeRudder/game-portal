@@ -247,6 +247,12 @@ export class MapEventSystem implements ISubsystem {
   forceTrigger(eventType: MapEventType, now: number = Date.now()): MapEventInstance {
     const config = EVENT_TYPE_CONFIGS.find(c => c.type === eventType);
     if (!config) throw new Error(`Unknown event type: ${eventType}`);
+    // 清理过期事件
+    this.cleanExpiredEvents(now);
+    // 检查是否达到最大事件数，达到则返回最后一个事件（不创建新事件）
+    if (this.activeEvents.length >= MAX_ACTIVE_EVENTS) {
+      return this.activeEvents[this.activeEvents.length - 1];
+    }
     return this.createEvent(config, now);
   }
 

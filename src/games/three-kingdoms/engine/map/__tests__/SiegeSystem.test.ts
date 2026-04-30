@@ -110,7 +110,8 @@ describe('SiegeSystem — #19 攻城条件校验', () => {
   });
 
   it('不相邻不可攻城', () => {
-    // 没有己方领土，自然不相邻
+    // 先将洛阳设为 neutral，确保无己方领土与目标相邻
+    territory.captureTerritory('city-luoyang', 'neutral');
     const result = siege.checkSiegeConditions('city-xuchang', 'player', 10000, 500);
     expect(result.canSiege).toBe(false);
     expect(result.errorCode).toBe('NOT_ADJACENT');

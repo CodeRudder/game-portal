@@ -107,18 +107,21 @@ describe('MapFilterSystem', () => {
   describe('按占领状态筛选', () => {
     it('筛选中立地标', () => {
       const result = MapFilterSystem.filterByOwnership(allLandmarks, ['neutral']);
-      expect(result.length).toBe(allLandmarks.length);
+      // city-luoyang 初始为 player，其余为 neutral
+      expect(result.length).toBe(allLandmarks.length - 1);
     });
 
-    it('筛选玩家地标（初始为空）', () => {
+    it('筛选玩家地标（初始有洛阳）', () => {
       const result = MapFilterSystem.filterByOwnership(allLandmarks, ['player']);
-      expect(result.length).toBe(0);
+      // city-luoyang 初始为 player
+      expect(result.length).toBe(1);
     });
 
     it('筛选多种状态', () => {
       const modifiedLandmarks = allLandmarks.map(l => ({ ...l }));
-      modifiedLandmarks[0].ownership = 'player';
-      modifiedLandmarks[1].ownership = 'enemy';
+      // city-luoyang 已经是 player，再改一个为 enemy
+      const neutralIdx = modifiedLandmarks.findIndex(l => l.ownership === 'neutral');
+      modifiedLandmarks[neutralIdx].ownership = 'enemy';
 
       const result = MapFilterSystem.filterByOwnership(modifiedLandmarks, ['player', 'enemy']);
       expect(result.length).toBe(2);
@@ -266,7 +269,9 @@ describe('MapFilterSystem', () => {
       const counts = MapFilterSystem.countByOwnership(allLandmarks);
       const total = counts.player + counts.enemy + counts.neutral;
       expect(total).toBe(allLandmarks.length);
-      expect(counts.neutral).toBe(allLandmarks.length);
+      // city-luoyang 初始为 player
+      expect(counts.player).toBe(1);
+      expect(counts.neutral).toBe(allLandmarks.length - 1);
     });
 
     it('countByRegion 与 filterByRegion 一致', () => {

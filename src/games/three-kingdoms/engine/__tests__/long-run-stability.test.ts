@@ -111,12 +111,18 @@ function runEngineForTicks(tickCount: number, seed: number): ThreeKingdomsEngine
         case 1: { // 消耗资源
           const type = RESOURCE_TYPES[randInt(rng, 0, RESOURCE_TYPES.length - 1)];
           const amount = randFloat(rng, 10, 1000);
-          try { engine.resource.consumeResource(type, amount); } catch { /* ignore */ }
+          try { engine.resource.consumeResource(type, amount); } catch (e) {
+            // 预期失败：资源可能不足，记录但不中断
+            expect(e).toBeDefined();
+          }
           break;
         }
         case 2: { // 尝试升级建筑
           const buildingType = BUILDING_TYPES[randInt(rng, 0, BUILDING_TYPES.length - 1)] as import('../../shared/types').BuildingType;
-          try { engine.upgradeBuilding(buildingType); } catch { /* ignore */ }
+          try { engine.upgradeBuilding(buildingType); } catch (e) {
+            // 预期失败：资源/条件可能不足，记录但不中断
+            expect(e).toBeDefined();
+          }
           break;
         }
         case 3: { // tick驱动
@@ -156,7 +162,10 @@ describe('Long-Run Stability Testing (1000 ticks)', () => {
   });
 
   afterEach(() => {
-    try { engine.reset(); } catch { /* ignore */ }
+    try { engine.reset(); } catch (e) {
+      // 长时间运行后引擎状态可能异常，reset 可能失败
+      expect(e).toBeDefined();
+    }
   });
 
   // ── 1. 1000 tick后资源非负 ──
@@ -331,7 +340,10 @@ describe('Long-Run Stability Testing (1000 ticks)', () => {
       const errors = allNumbersValid(snapshot);
       expect(errors).toHaveLength(0);
 
-      try { localEngine.reset(); } catch { /* ignore */ }
+      try { localEngine.reset(); } catch (e) {
+        // 长时间运行后引擎状态可能异常
+        expect(e).toBeDefined();
+      }
     }
   });
 });

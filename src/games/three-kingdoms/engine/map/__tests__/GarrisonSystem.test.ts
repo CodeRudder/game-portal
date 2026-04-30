@@ -149,8 +149,8 @@ describe('GarrisonSystem', () => {
     });
 
     it('非己方领土时失败', () => {
-      // city-luoyang 默认是 neutral
-      const result = garrison.assignGarrison('city-luoyang', 'guanyu');
+      // city-changan 默认是 neutral，不是己方领土
+      const result = garrison.assignGarrison('city-changan', 'guanyu');
       expect(result.success).toBe(false);
       expect(result.errorCode).toBe('TERRITORY_NOT_OWNED');
     });

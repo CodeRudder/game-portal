@@ -91,10 +91,12 @@ describe('§5 切磋系统集成', () => {
       );
 
       const wins = results.filter((r) => r.outcome === 'win');
-      if (wins.length > 0) {
-        expect(wins[0].rewards).not.toBeNull();
-        expect(wins[0].rewards!.experience).toBeGreaterThan(0);
-      }
+
+      // 前置断言：20次切磋中应至少有1次胜利
+      expect(wins.length).toBeGreaterThan(0);
+
+      expect(wins[0].rewards).not.toBeNull();
+      expect(wins[0].rewards!.experience).toBeGreaterThan(0);
     });
 
     it('§5.1.3 切磋后应记录到训练记录', () => {
@@ -110,11 +112,11 @@ describe('§5 切磋系统集成', () => {
       env.trainingSystem.training('npc-aff-01', 10, 10);
 
       // 胜利+5，平局+2，失败不触发
-      expect(env.affinityChanges.length).toBeGreaterThanOrEqual(0);
-      if (env.affinityChanges.length > 0) {
-        expect(env.affinityChanges[0].npcId).toBe('npc-aff-01');
-        expect(env.affinityChanges[0].reason).toBe('training');
-      }
+      // 前置断言：切磋后应至少触发一次好感度变化
+      expect(env.affinityChanges.length).toBeGreaterThan(0);
+
+      expect(env.affinityChanges[0].npcId).toBe('npc-aff-01');
+      expect(env.affinityChanges[0].reason).toBe('training');
     });
   });
 
@@ -323,10 +325,10 @@ describe('§7 离线行为集成', () => {
       const npcs = createNpcList(3);
       env.trainingSystem.calculateOfflineActions(3600, npcs);
 
-      // 如果有资源变化，应触发回调
-      if (env.resourceChanges.length > 0) {
-        expect(typeof env.resourceChanges[0]).toBe('object');
-      }
+      // 前置断言：离线行为应至少触发一次资源变化
+      expect(env.resourceChanges.length).toBeGreaterThan(0);
+
+      expect(typeof env.resourceChanges[0]).toBe('object');
     });
   });
 

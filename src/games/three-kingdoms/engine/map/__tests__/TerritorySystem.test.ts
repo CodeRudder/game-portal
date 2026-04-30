@@ -52,11 +52,15 @@ describe('TerritorySystem — #15 领土产出计算', () => {
     sys = createSystem();
   });
 
-  it('初始所有领土归属为 neutral', () => {
+  it('初始领土归属为 neutral（洛阳除外，初始为 player）', () => {
     const all = sys.getAllTerritories();
     expect(all.length).toBeGreaterThan(0);
     for (const t of all) {
-      expect(t.ownership).toBe('neutral');
+      if (t.id === 'city-luoyang') {
+        expect(t.ownership).toBe('player');
+      } else {
+        expect(t.ownership).toBe('neutral');
+      }
     }
   });
 
@@ -115,7 +119,9 @@ describe('TerritorySystem — #15 领土产出计算', () => {
     expect(summary.totalProduction.grain).toBeGreaterThan(0);
   });
 
-  it('未占领领土不产出', () => {
+  it('未占领领土不产出（洛阳初始为 player 除外）', () => {
+    // 先把洛阳设为 neutral 来验证"无领土时产出为0"
+    sys.captureTerritory('city-luoyang', 'neutral');
     const summary = sys.getPlayerProductionSummary();
     expect(summary.totalTerritories).toBe(0);
     expect(summary.totalProduction.grain).toBe(0);
@@ -217,7 +223,8 @@ describe('TerritorySystem — #17 产出汇总', () => {
     sys = createSystem();
   });
 
-  it('无领土时汇总为0', () => {
+  it('无领土时汇总为0（需先将洛阳设为 neutral）', () => {
+    sys.captureTerritory('city-luoyang', 'neutral');
     const summary = sys.getPlayerProductionSummary();
     expect(summary.totalTerritories).toBe(0);
     expect(summary.details).toHaveLength(0);
@@ -363,6 +370,8 @@ describe('TerritorySystem — 相邻关系', () => {
   });
 
   it('canAttackTerritory: 无己方领土时不可攻击', () => {
+    // 先将洛阳设为 neutral，模拟"无己方领土"
+    sys.captureTerritory('city-luoyang', 'neutral');
     const canAttack = sys.canAttackTerritory('city-xuchang', 'player');
     expect(canAttack).toBe(false);
   });
@@ -421,7 +430,8 @@ describe('TerritorySystem — 序列化', () => {
     const serialized = sys.serialize();
 
     sys.reset();
-    expect(sys.getTerritoryById('city-luoyang')!.ownership).toBe('neutral');
+    // city-luoyang 初始为 player，reset 后恢复初始状态
+    expect(sys.getTerritoryById('city-luoyang')!.ownership).toBe('player');
 
     sys.deserialize(serialized);
     expect(sys.getTerritoryById('city-luoyang')!.ownership).toBe('player');
@@ -457,11 +467,14 @@ describe('TerritorySystem — ISubsystem', () => {
 
   it('reset 恢复初始状态', () => {
     const sys = createSystem();
-    sys.captureTerritory('city-luoyang', 'player');
+    // city-luoyang 初始为 player
     expect(sys.getPlayerTerritoryCount()).toBe(1);
+    sys.captureTerritory('city-xuchang', 'player');
+    expect(sys.getPlayerTerritoryCount()).toBe(2);
 
     sys.reset();
-    expect(sys.getPlayerTerritoryCount()).toBe(0);
+    // reset 后恢复初始状态：只有洛阳为 player
+    expect(sys.getPlayerTerritoryCount()).toBe(1);
   });
 
   it('getState 返回完整状态', () => {
