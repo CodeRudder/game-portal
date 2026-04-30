@@ -21,6 +21,7 @@ import type {
   ExpeditionRegion,
   ExpeditionTeam,
   ExpeditionSaveData,
+  ExpeditionLastDispatchConfig,
 } from '../../core/expedition/expedition.types';
 import {
   RouteDifficulty,
@@ -95,6 +96,75 @@ export class ExpeditionSystem implements ISubsystem {
   }
 
   getUnlockedSlots(): number { return this.state.unlockedSlots; }
+
+  // ─── 武将锁定（远征中） ───────────────────
+
+  /** 获取所有正在远征中的武将ID集合 */
+  getExpeditioningHeroIds(): Set<string> {
+    const heroIds = new Set<string>();
+    for (const team of Object.values(this.state.teams)) {
+      if (team.isExpeditioning) {
+        for (const hid of team.heroIds) {
+          heroIds.add(hid);
+        }
+      }
+    }
+    return heroIds;
+  }
+
+  /** 检查指定武将是否正在远征中（被锁定） */
+  isHeroExpeditioning(heroId: string): boolean {
+    return this.getExpeditioningHeroIds().has(heroId);
+  }
+
+  /** 获取上次派遣配置（用于快速重派）— 返回副本 */
+  getLastDispatchConfig(): ExpeditionLastDispatchConfig | null {
+    const config = this.state.lastDispatchConfig;
+    if (!config) return null;
+    return { ...config, heroIds: [...config.heroIds] };
+  }
+
+  /** 快速重派：使用上次成功的配置重新派遣队伍 */
+  quickRedeploy(): boolean {
+    const config = this.state.lastDispatchConfig;
+    if (!config) return false;
+
+    // 查找可用队伍（优先使用相同队伍ID，否则找空闲队伍）
+    let team: ExpeditionTeam | undefined = this.state.teams[config.teamId];
+    if (!team || team.isExpeditioning) {
+      team = Object.values(this.state.teams).find(t => !t.isExpeditioning);
+    }
+    if (!team) return false;
+
+    // 检查路线是否可用
+    const route = this.state.routes[config.routeId];
+    if (!route || !route.unlocked) return false;
+
+    return this.dispatchTeam(team.id, config.routeId);
+  }
+
+  /** 获取路线节点完成进度（当前已清除节点数 / 总节点数） */
+  getRouteNodeProgress(routeId: string): { current: number; total: number; percentage: number } {
+    const route = this.state.routes[routeId];
+    if (!route) return { current: 0, total: 0, percentage: 0 };
+
+    const allNodes = Object.values(route.nodes);
+    const total = allNodes.length;
+    const cleared = allNodes.filter(n => n.status === NodeStatus.CLEARED).length;
+    const percentage = total > 0 ? Math.round((cleared / total) * 100) : 0;
+
+    return { current: cleared, total, percentage };
+  }
+
+  /** 获取队伍当前路线的节点进度 */
+  getTeamNodeProgress(teamId: string): { current: number; total: number; percentage: number; routeName: string } {
+    const team = this.state.teams[teamId];
+    if (!team || !team.currentRouteId) return { current: 0, total: 0, percentage: 0, routeName: '' };
+
+    const route = this.state.routes[team.currentRouteId];
+    const progress = this.getRouteNodeProgress(team.currentRouteId);
+    return { ...progress, routeName: route?.name ?? '' };
+  }
 
   // ─── 路线解锁 ─────────────────────────────
 
@@ -195,6 +265,15 @@ export class ExpeditionSystem implements ISubsystem {
     team.currentRouteId = routeId;
     team.currentNodeId = route.startNodeId;
     team.isExpeditioning = true;
+
+    // 记录上次派遣配置，用于快速重派
+    this.state.lastDispatchConfig = {
+      teamId,
+      routeId,
+      heroIds: [...team.heroIds],
+      formation: team.formation,
+      timestamp: Date.now(),
+    };
 
     const startNode = route.nodes[route.startNodeId];
     if (startNode && startNode.status === NodeStatus.LOCKED) {
@@ -354,6 +433,7 @@ export class ExpeditionSystem implements ISubsystem {
       autoConfig: { ...this.state.autoConfig }, unlockedSlots: this.state.unlockedSlots,
       consecutiveFailures: this.state.consecutiveFailures, isAutoExpeditioning: this.state.isAutoExpeditioning,
       routeNodeStatuses,
+      lastDispatchConfig: this.state.lastDispatchConfig,
     };
   }
 
@@ -365,6 +445,7 @@ export class ExpeditionSystem implements ISubsystem {
     this.state.unlockedSlots = data.unlockedSlots ?? 1;
     this.state.consecutiveFailures = data.consecutiveFailures ?? 0;
     this.state.isAutoExpeditioning = data.isAutoExpeditioning ?? false;
+    this.state.lastDispatchConfig = data.lastDispatchConfig ?? null;
 
     this.state.teams = {};
     for (const [id, teamData] of Object.entries(data.teams)) { this.state.teams[id] = { ...teamData }; }

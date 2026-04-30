@@ -8,6 +8,11 @@
  * - [P1-5] 新增阵型效果展示
  * - [P1-6] 统一使用CSS类（保留内联样式兼容）
  *
+ * R4 修复：
+ * - [P1] 武将远征中锁定检查：远征中武将显示"远征中"标记，编队时不可选中
+ * - [P1] 快速派遣：记录上次队伍配置，提供一键重派按钮
+ * - [P1] 远征进度条：队伍卡片显示完成百分比和当前/总节点数
+ *
  * @module panels/expedition/ExpeditionPanel */
 import React, { useState, useMemo, useCallback } from 'react';
 import SharedPanel from '@/components/idle/components/SharedPanel';
@@ -65,6 +70,28 @@ const s: Record<string, React.CSSProperties> = {
   rewardItem: { display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 12 },
   rewardName: { color: '#a0a0a0' },
   rewardValue: { color: '#FFD700', fontWeight: 600 },
+  // R4: 武将远征锁定标记
+  heroExpeditioningTag: {
+    fontSize: 9, color: '#ff6464', marginLeft: 2, padding: '0 3px',
+    background: 'rgba(255,100,100,0.15)', borderRadius: 'var(--tk-radius-sm)' as any,
+  },
+  heroLockedChip: {
+    padding: '3px 8px', border: '1px solid rgba(255,100,100,0.2)', borderRadius: 'var(--tk-radius-sm)' as any,
+    background: 'rgba(255,100,100,0.08)', color: '#ff6464', fontSize: 11, cursor: 'not-allowed', opacity: 0.5,
+  },
+  // R4: 快速重派按钮
+  quickRedeployBtn: {
+    padding: '4px 10px', border: '1px solid rgba(126,200,80,0.4)', borderRadius: 'var(--tk-radius-sm)' as any,
+    background: 'rgba(126,200,80,0.15)', color: '#7EC850', fontSize: 11, cursor: 'pointer', fontWeight: 600,
+  },
+  // R4: 节点进度条
+  nodeProgressBar: {
+    height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: 4,
+  },
+  nodeProgressFill: {
+    height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7EC850, #d4a574)', transition: 'width 0.3s ease',
+  },
+  nodeProgressText: { fontSize: 10, color: '#a0a0a0', marginTop: 2 },
 };
 
 export default function ExpeditionPanel({ engine, visible, onClose }: ExpeditionPanelProps) {
@@ -97,6 +124,14 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
     const heroSys = engine?.getHeroSystem?.();
     return heroSys?.getAllHeroes?.() ?? [];
   }, [engine]);
+
+  // R4: 获取正在远征中的武将ID集合
+  const expeditioningHeroIds: Set<string> = useMemo(() => {
+    return exp?.getExpeditioningHeroIds?.() ?? new Set<string>();
+  }, [exp, teams]);
+
+  // R4: 获取上次派遣配置
+  const lastDispatchConfig = useMemo(() => exp?.getLastDispatchConfig?.() ?? null, [exp]);
 
   const selectedRoute = useMemo(
     () => (selectedRouteId ? routes.find((r: any) => r.id === selectedRouteId) : null),
@@ -163,6 +198,14 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
     setShowFormation(false);
   }, [exp, formationTeamId, selectedFormation, selectedHeroIds, flash]);
 
+  // R4: 快速重派
+  const handleQuickRedeploy = useCallback(() => {
+    try {
+      const ok = exp?.quickRedeploy?.();
+      flash(ok ? '🚀 快速重派成功！' : '❌ 重派失败（无空闲队伍或路线不可用）');
+    } catch (e: any) { flash(e?.message ?? '重派失败'); }
+  }, [exp, flash]);
+
   // R2: 切换武将选择
   const toggleHero = useCallback((heroId: string) => {
     setSelectedHeroIds(prev =>
@@ -181,42 +224,75 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
             <span style={{ fontSize: 12, color: '#a0a0a0' }}>活跃 {activeTeamCount}/{unlockedSlots} 队</span>
           </div>
           {/* 路线完成进度条 */}
-          {routes.length > 0 && (
-            <div style={{
-              marginBottom: 8, padding: '8px 10px',
-              background: 'rgba(212,165,116,0.06)',
-              border: '1px solid rgba(212,165,116,0.15)',
-              borderRadius: 'var(--tk-radius-md)' as any,
-            }} data-testid="expedition-panel-progress">
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 12, color: '#d4a574', fontWeight: 600 }}>🗺️ 路线进度</span>
-                <span style={{ fontSize: 12, color: '#a0a0a0' }} data-testid="expedition-panel-progress-text">
-                  {clearedIds.size}/{routes.length} 通关
-                </span>
-              </div>
+          {routes.length > 0 && (() => {
+            const overallPercentage = routes.length > 0 ? Math.round((clearedIds.size / routes.length) * 100) : 0;
+            return (
               <div style={{
-                height: 6, borderRadius: 3,
-                background: 'rgba(255,255,255,0.08)',
-                overflow: 'hidden',
-              }}>
+                marginBottom: 8, padding: '8px 10px',
+                background: 'rgba(212,165,116,0.06)',
+                border: '1px solid rgba(212,165,116,0.15)',
+                borderRadius: 'var(--tk-radius-md)' as any,
+              }} data-testid="expedition-panel-progress">
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: '#d4a574', fontWeight: 600 }}>🗺️ 路线进度</span>
+                  <span style={{ fontSize: 12, color: '#a0a0a0' }} data-testid="expedition-panel-progress-text">
+                    {clearedIds.size}/{routes.length} 通关 ({overallPercentage}%)
+                  </span>
+                </div>
                 <div style={{
-                  height: '100%', borderRadius: 3,
-                  background: 'linear-gradient(90deg, #7EC850, #d4a574)',
-                  width: `${routes.length > 0 ? (clearedIds.size / routes.length) * 100 : 0}%`,
-                  transition: 'width 0.3s ease',
-                }} />
+                  height: 6, borderRadius: 3,
+                  background: 'rgba(255,255,255,0.08)',
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    height: '100%', borderRadius: 3,
+                    background: 'linear-gradient(90deg, #7EC850, #d4a574)',
+                    width: `${overallPercentage}%`,
+                    transition: 'width 0.3s ease',
+                  }} />
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
           {/* 队伍 */}
           <div style={s.title}>👥 队伍</div>
-          {teams.map((t: any) => (
+          {/* R4: 快速重派按钮 */}
+          {lastDispatchConfig && (
+            <button style={{ ...s.quickRedeployBtn, width: '100%', marginBottom: 6, padding: '6px 10px' }}
+              data-testid="expedition-panel-quick-redeploy"
+              onClick={handleQuickRedeploy}>
+              ⚡ 快速重派（上次: {routes.find((r: any) => r.id === lastDispatchConfig.routeId)?.name ?? lastDispatchConfig.routeId}）
+            </button>
+          )}
+          {teams.map((t: any) => {
+            // R4: 获取队伍当前路线的节点进度
+            const teamProgress = t.isExpeditioning ? exp?.getTeamNodeProgress?.(t.id) : null;
+            return (
             <div key={t.id} style={s.teamCard} className="tk-expedition-team-card" data-testid={`expedition-panel-team-${t.id}`}>
               <div style={{ flex: 1 }}>
-                <div style={s.teamName}>{t.name}</div>
+                <div style={s.teamName}>
+                  {t.name}
+                  {/* R4: 显示远征中武将列表 */}
+                  {t.isExpeditioning && t.heroIds?.length > 0 && (
+                    <span style={{ fontSize: 10, color: '#a0a0a0', marginLeft: 6, fontWeight: 400 }}>
+                      ({t.heroIds.length}名武将远征中)
+                    </span>
+                  )}
+                </div>
                 <div style={s.teamMeta}>⚔️{t.totalPower} · 兵力{t.troopCount}/{t.maxTroops}
                   {t.isExpeditioning && <span style={{ color: '#7EC850', marginLeft: 4 }}>● 远征中</span>}
                 </div>
+                {/* R4: 节点进度条 */}
+                {teamProgress && teamProgress.total > 0 && (
+                  <div data-testid={`expedition-panel-team-progress-${t.id}`}>
+                    <div style={s.nodeProgressBar}>
+                      <div style={{ ...s.nodeProgressFill, width: `${teamProgress.percentage}%` }} />
+                    </div>
+                    <div style={s.nodeProgressText}>
+                      📍 {teamProgress.routeName} {teamProgress.current}/{teamProgress.total}节点 ({teamProgress.percentage}%)
+                    </div>
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', gap: 4 }} className="tk-expedition-team-actions">
                 {/* R2: 编队按钮 */}
@@ -238,7 +314,8 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
           {/* 路线 */}
           <div style={s.title}>🗺️ 路线</div>
           {routes.map((r: any) => {
@@ -265,7 +342,17 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
           })}
           {/* 节点进度 */}
           {selectedRoute && (<>
-            <div style={{ ...s.title, marginTop: 8 }}>📍 {selectedRoute.name} 节点</div>
+            <div style={{ ...s.title, marginTop: 8 }}>
+              📍 {selectedRoute.name} 节点
+              {(() => {
+                const p = exp?.getRouteNodeProgress?.(selectedRoute.id);
+                return p && p.total > 0 ? (
+                  <span style={{ fontSize: 11, color: '#a0a0a0', fontWeight: 400, marginLeft: 6 }}>
+                    ({p.current}/{p.total} · {p.percentage}%)
+                  </span>
+                ) : null;
+              })()}
+            </div>
             <div style={s.nodeList}>
               {Object.values(selectedRoute.nodes).map((n: any) => (
                 <div key={n.id} style={{ ...s.nodeItem, opacity: n.status === 'LOCKED' ? 0.4 : 1 }}>
@@ -286,14 +373,21 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
         <div style={{ color: '#e8e0d0' }}>
           <div style={{ fontSize: 12, color: '#d4a574', fontWeight: 600, marginBottom: 4 }}>选择武将（最多5名）</div>
           <div style={s.heroList}>
-            {allHeroes.map((h: any) => (
-              <button key={h.id} style={{
-                ...s.heroChip,
-                ...(selectedHeroIds.includes(h.id) ? s.selectedHeroChip : {}),
-              }} onClick={() => toggleHero(h.id)}>
-                {h.name ?? h.id} ⚔️{h.power ?? '?'}
-              </button>
-            ))}
+            {allHeroes.map((h: any) => {
+              // R4: 检查武将是否远征中（锁定）
+              const isExpeditioning = expeditioningHeroIds.has(h.id);
+              const isSelected = selectedHeroIds.includes(h.id);
+              return (
+                <button key={h.id} style={{
+                  ...(isExpeditioning ? s.heroLockedChip : isSelected ? { ...s.heroChip, ...s.selectedHeroChip } : s.heroChip),
+                }} onClick={() => !isExpeditioning && toggleHero(h.id)}
+                  disabled={isExpeditioning}
+                  data-testid={`expedition-panel-hero-${h.id}`}>
+                  {h.name ?? h.id} ⚔️{h.power ?? '?'}
+                  {isExpeditioning && <span style={s.heroExpeditioningTag}>远征中</span>}
+                </button>
+              );
+            })}
             {allHeroes.length === 0 && <span style={{ fontSize: 11, color: '#666' }}>暂无可用武将</span>}
           </div>
           <div style={{ fontSize: 12, color: '#d4a574', fontWeight: 600, marginTop: 10, marginBottom: 4 }}>选择阵型</div>

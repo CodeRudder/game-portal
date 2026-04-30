@@ -50,6 +50,7 @@ export function createDefaultExpeditionState(basePower: number = 1000): Expediti
     },
     consecutiveFailures: 0,
     isAutoExpeditioning: false,
+    lastDispatchConfig: null,
   };
 }
 

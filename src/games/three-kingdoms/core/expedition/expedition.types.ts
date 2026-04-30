@@ -315,6 +315,24 @@ export const FACTION_BOND_BONUS = 0.10;
 export const MAX_HEROES_PER_TEAM = 5;
 
 // ─────────────────────────────────────────────
+// 7.5 快速派遣配置
+// ─────────────────────────────────────────────
+
+/** 上次派遣配置（用于快速重派） */
+export interface ExpeditionLastDispatchConfig {
+  /** 队伍ID */
+  teamId: string;
+  /** 路线ID */
+  routeId: string;
+  /** 武将ID列表 */
+  heroIds: string[];
+  /** 阵型 */
+  formation: FormationType;
+  /** 派遣时间戳 */
+  timestamp: number;
+}
+
+// ─────────────────────────────────────────────
 // 8. 远征系统状态
 // ─────────────────────────────────────────────
 
@@ -342,6 +360,8 @@ export interface ExpeditionState {
   consecutiveFailures: number;
   /** 是否自动远征中 */
   isAutoExpeditioning: boolean;
+  /** 上次派遣配置（用于快速重派） */
+  lastDispatchConfig: ExpeditionLastDispatchConfig | null;
 }
 
 /** 远征系统存档数据（可序列化） */
@@ -372,4 +392,6 @@ export interface ExpeditionSaveData {
   isAutoExpeditioning: boolean;
   /** 路线节点状态（路线ID → 节点ID → 状态字符串） */
   routeNodeStatuses?: Record<string, Record<string, string>>;
+  /** 上次派遣配置 */
+  lastDispatchConfig?: ExpeditionLastDispatchConfig | null;
 }
