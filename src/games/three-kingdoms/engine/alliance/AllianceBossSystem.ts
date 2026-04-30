@@ -168,8 +168,8 @@ export class AllianceBossSystem implements ISubsystem {
       throw new Error('今日挑战次数已用完');
     }
 
-    // 限制伤害不超过当前HP
-    const actualDamage = Math.min(damage, boss.currentHp);
+    // 限制伤害不超过当前HP，且不允许负数
+    const actualDamage = Math.max(0, Math.min(damage, boss.currentHp));
     const isKillingBlow = boss.currentHp - actualDamage <= 0;
 
     // 更新Boss

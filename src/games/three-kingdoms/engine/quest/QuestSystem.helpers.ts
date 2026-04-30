@@ -176,9 +176,10 @@ export function getActivityState(state: ActivityStateHolder): ActivityState {
   };
 }
 
-/** 增加活跃度（不超过最大值） */
+/** 增加活跃度（不超过最大值，不低于0） */
 export function addActivityPoints(state: ActivityStateHolder, points: number): void {
-  state.currentPoints = Math.min(state.currentPoints + points, state.maxPoints);
+  const safePoints = Math.max(0, points);
+  state.currentPoints = Math.min(state.currentPoints + safePoints, state.maxPoints);
 }
 
 /** 领取活跃度里程碑宝箱 */

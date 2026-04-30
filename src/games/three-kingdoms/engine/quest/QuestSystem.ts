@@ -199,7 +199,8 @@ export class QuestSystem implements ISubsystem {
     const objective = instance.objectives.find((o) => o.id === objectiveId);
     if (!objective) return null;
 
-    objective.currentCount = Math.min(objective.currentCount + progress, objective.targetCount);
+    const safeProgress = Math.max(0, progress);
+    objective.currentCount = Math.min(objective.currentCount + safeProgress, objective.targetCount);
 
     this.deps?.eventBus.emit('quest:progress', {
       instanceId,

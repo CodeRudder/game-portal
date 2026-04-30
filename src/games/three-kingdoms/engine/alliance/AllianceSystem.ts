@@ -265,7 +265,8 @@ export class AllianceSystem implements ISubsystem {
   // ── 联盟等级与福利 ──────────────────────────
 
   addExperience(alliance: AllianceData, exp: number): AllianceData {
-    let newExp = alliance.experience + exp;
+    const safeExp = Math.max(0, exp);
+    let newExp = alliance.experience + safeExp;
     let newLevel = alliance.level;
     const maxLevel = ALLIANCE_LEVEL_CONFIGS.length;
     while (newLevel < maxLevel) {

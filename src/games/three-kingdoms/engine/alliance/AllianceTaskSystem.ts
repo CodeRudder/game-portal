@@ -162,7 +162,8 @@ export class AllianceTaskSystem implements ISubsystem {
     if (!task) return null;
     if (task.status !== AllianceTaskStatus.ACTIVE) return task;
 
-    task.currentProgress += progress;
+    const safeProgress = Math.max(0, progress);
+    task.currentProgress += safeProgress;
 
     // 检查是否完成
     const def = this.taskPool.find(d => d.id === taskDefId);
@@ -186,12 +187,13 @@ export class AllianceTaskSystem implements ISubsystem {
     const member = alliance.members[playerId];
     if (!member) throw new Error('不是联盟成员');
 
+    const safeContribution = Math.max(0, contribution);
     const updatedMembers = {
       ...alliance.members,
       [playerId]: {
         ...member,
-        dailyContribution: member.dailyContribution + contribution,
-        totalContribution: member.totalContribution + contribution,
+        dailyContribution: member.dailyContribution + safeContribution,
+        totalContribution: member.totalContribution + safeContribution,
       },
     };
 
@@ -199,8 +201,8 @@ export class AllianceTaskSystem implements ISubsystem {
       alliance: { ...alliance, members: updatedMembers },
       playerState: {
         ...playerState,
-        guildCoins: playerState.guildCoins + contribution,
-        dailyContribution: playerState.dailyContribution + contribution,
+        guildCoins: playerState.guildCoins + safeContribution,
+        dailyContribution: playerState.dailyContribution + safeContribution,
       },
     };
   }
