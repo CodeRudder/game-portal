@@ -23,7 +23,7 @@ import { INITIAL_RESOURCES, INITIAL_CAPS, MIN_GRAIN_RESERVE } from '../resource/
 import { BUILDING_DEFS, BUILDING_MAX_LEVELS, QUEUE_CONFIGS } from '../building/building-config';
 
 // ── 引导系统 ──
-import { TutorialStepManager } from '../guide/TutorialStepManager';
+import { TutorialStepManager, type TutorialGameState } from '../guide/TutorialStepManager';
 import { TutorialStepExecutor } from '../guide/TutorialStepExecutor';
 import { TutorialStateMachine } from '../guide/TutorialStateMachine';
 import { createGuideSystems, initGuideSystems } from '../engine-guide-deps';
@@ -360,8 +360,12 @@ describe('R25: 关键Bug回归测试', () => {
       const executor = new TutorialStepExecutor();
       executor.init(createMockDeps());
 
-      expect(() => executor.checkExtendedStepTriggers({} as any)).not.toThrow();
-      expect(executor.checkExtendedStepTriggers({} as any)).toBeNull();
+      const emptyGameState: TutorialGameState = {
+        castleLevel: 0, heroCount: 0, battleCount: 0,
+        techCount: 0, allianceJoined: false, firstAlliance: false, bagCapacityPercent: 0,
+      };
+      expect(() => executor.checkExtendedStepTriggers(emptyGameState)).not.toThrow();
+      expect(executor.checkExtendedStepTriggers(emptyGameState)).toBeNull();
     });
 
     it('注入 stateMachine 后正常工作（不返回null降级）', () => {
