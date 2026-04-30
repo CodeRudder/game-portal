@@ -1,0 +1,116 @@
+{
+  "dagId": "three-kingdoms-state",
+  "dagType": "state",
+  "nodeCount": 47,
+  "edgeCount": 46,
+  "totalPaths": 18,
+  "criticalPaths": [
+    [
+      "st-quest-locked",
+      "st-quest-available",
+      "st-quest-active",
+      "st-quest-complete",
+      "st-quest-claimed"
+    ]
+  ],
+  "paths": [
+    [
+      "st-game-init",
+      "st-game-playing",
+      "st-game-paused"
+    ],
+    [
+      "st-game-init",
+      "st-game-playing",
+      "st-game-rebirth"
+    ],
+    [
+      "st-bld-locked",
+      "st-bld-idle",
+      "st-bld-upgrading"
+    ],
+    [
+      "st-bld-locked",
+      "st-bld-idle",
+      "st-bld-max"
+    ],
+    [
+      "st-hero-locked",
+      "st-hero-owned",
+      "st-hero-dispatched"
+    ],
+    [
+      "st-battle-prepare",
+      "st-battle-fighting",
+      "st-battle-victory"
+    ],
+    [
+      "st-battle-prepare",
+      "st-battle-fighting",
+      "st-battle-defeat"
+    ],
+    [
+      "st-tech-locked",
+      "st-tech-researching",
+      "st-tech-unlocked"
+    ],
+    [
+      "st-siege-prepare",
+      "st-siege-fighting",
+      "st-siege-victory"
+    ],
+    [
+      "st-siege-prepare",
+      "st-siege-fighting",
+      "st-siege-defeat"
+    ],
+    [
+      "st-equip-raw",
+      "st-equip-enhanced",
+      "st-equip-equipped"
+    ],
+    [
+      "st-equip-raw",
+      "st-equip-enhanced",
+      "st-equip-max"
+    ],
+    [
+      "st-guide-inactive",
+      "st-guide-active",
+      "st-guide-done"
+    ],
+    [
+      "st-expedition-idle",
+      "st-expedition-active",
+      "st-expedition-done"
+    ],
+    [
+      "st-hero-locked",
+      "st-hero-owned",
+      "st-hero-deployed",
+      "st-hero-battle"
+    ],
+    [
+      "st-alliance-none",
+      "st-alliance-member",
+      "st-alliance-officer",
+      "st-alliance-leader"
+    ],
+    [
+      "st-arena-idle",
+      "st-arena-matching",
+      "st-arena-fighting",
+      "st-arena-result"
+    ],
+    [
+      "st-quest-locked",
+      "st-quest-available",
+      "st-quest-active",
+      "st-quest-complete",
+      "st-quest-claimed"
+    ]
+  ],
+  "avgPathLength": 3.28,
+  "maxPathLength": 5,
+  "minPathLength": 3
+}
