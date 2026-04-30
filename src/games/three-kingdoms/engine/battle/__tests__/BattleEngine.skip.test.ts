@@ -413,9 +413,9 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
       expect(controller.getAdjustedTurnInterval()).toBe(0);
     });
 
-    it('SKIP 模式动画速度应为 Infinity', () => {
+    it('SKIP 模式动画速度应为有限大值（替代 Infinity 防止序列化丢失）', () => {
       controller.setSpeed(BattleSpeed.SKIP);
-      expect(controller.getAnimationSpeedScale()).toBe(Infinity);
+      expect(controller.getAnimationSpeedScale()).toBe(9999);
     });
 
     it('SKIP 模式应强制简化特效', () => {
@@ -434,7 +434,7 @@ describe('BattleEngine — 跳过战斗 (Plan #49)', () => {
 
       expect(serialized.speed).toBe(BattleSpeed.SKIP);
       expect(serialized.turnIntervalScale).toBe(0);
-      expect(serialized.animationSpeedScale).toBe(Infinity);
+      expect(serialized.animationSpeedScale).toBe(9999);
       expect(serialized.simplifiedEffects).toBe(true);
     });
 

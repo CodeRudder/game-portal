@@ -80,7 +80,7 @@ export const BATTLE_CONFIG = {
   /** 默认战斗速度档位 */
   DEFAULT_BATTLE_SPEED: 1 as const,
   /** 可用速度档位列表 */
-  AVAILABLE_SPEEDS: [1, 2, 3] as const,
+  AVAILABLE_SPEEDS: [1, 2, 3, 4] as const,
   /** 基础回合间隔（ms），实际间隔 = 基础间隔 / 速度 */
   BASE_TURN_INTERVAL_MS: 1000,
   /** 4x速度时是否简化特效 */

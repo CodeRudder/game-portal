@@ -1,6 +1,6 @@
 # Builder Agent Rules — 三国霸业
 
-> 版本: v1.3 | 初始化: 2026-05-01
+> 版本: v1.4 | 初始化: 2026-05-01
 > 每轮复盘后更新此文件
 
 ## 通用规则
@@ -21,6 +21,9 @@
 14. 保存/加载覆盖扫描：每个子系统必须验证serialize/deserialize是否被engine-save调用（BR-023, R3教训：6个子系统状态丢失）
 15. deserialize覆盖验证：新增子系统时必须同步更新GameSaveData、SaveContext、buildSaveData、toIGameState、fromIGameState、applySaveData六处（BR-024, R3教训：遗漏任一处导致数据丢失）
 16. 跨系统链路验证：子系统间的回调注入必须在finalizeLoad/init流程中验证调用（BR-025, R3教训：HeroBadgeSystem依赖回调但无持久化需求）
+17. 战斗数值安全：所有伤害/加成/乘数必须验证NaN/负数/Infinity
+18. 配置-枚举同步：枚举值必须与配置数组完全对应
+19. Infinity序列化：Infinity不能直接序列化，必须转为有限值
 
 ## 三国霸业特定规则
 
@@ -54,3 +57,4 @@
 | 2026-05-01 | Hero R1 | +4条通用规则 | NaN绕过、配置交叉验证、算法正确性、双系统并存 |
 | 2026-05-01 | Hero R2 | +4条通用规则(10-13) | FIX穿透验证、注入点验证、溢出闭环、事务性扫描 |
 | 2026-05-01 | Hero R3 | +3条通用规则(14-16) | 保存/加载覆盖扫描、deserialize覆盖验证、跨系统链路验证 |
+| 2026-05-01 | Battle R1 | +3条通用规则(17-19) | 战斗数值安全、配置-枚举同步、Infinity序列化 |

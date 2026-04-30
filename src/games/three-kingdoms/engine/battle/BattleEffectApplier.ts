@@ -356,9 +356,10 @@ export class BattleEffectApplier implements ISubsystem {
   /** 获取兵种专属攻击加成（不含 all） */
   private getTechTroopAttackBonus(troop: string): number {
     if (!this.techEffect) return 0;
-    // 直接查询 TechTreeSystem 获取仅匹配该兵种的效果
-    return this.techEffect.getEffectValueByTarget('troop_attack' as const, troop)
+    // FIX-105: 减法可能产生负值，使用 Math.max(0, ...) 防护
+    const result = this.techEffect.getEffectValueByTarget('troop_attack' as const, troop)
       - this.getTechAttackBonusForAllOnly();
+    return Math.max(0, result);
   }
 
   /** 获取兵种专属防御加成（不含 all） */

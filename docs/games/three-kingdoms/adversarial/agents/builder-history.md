@@ -21,6 +21,7 @@
 | hero | R1 | 612 | 96.8% | 8 | 7.0 | CONTINUE |
 | hero | R2 | - | - | - | - | CONTINUE |
 | hero | R3 | - | - | - | - | CONTINUE |
+| battle | R1 | - | - | - | - | CONTINUE |
 
 ## 经验教训
 
@@ -34,6 +35,9 @@
 8. **R3新增**: 保存/加载覆盖扫描是架构级必检项（6个子系统状态丢失）
 9. **R3新增**: 新增子系统必须同步更新六处（GameSaveData/SaveContext/buildSaveData/toIGameState/fromIGameState/applySaveData）
 10. **R3新增**: 跨系统回调注入必须在finalizeLoad/init流程中验证
+11. **Battle R1新增**: 战斗数值安全——伤害/加成/乘数必须验证NaN/负数/Infinity
+12. **Battle R1新增**: 配置-枚举同步——枚举值必须与配置数组完全对应
+13. **Battle R1新增**: Infinity序列化风险——Infinity不能直接序列化，必须转为有限值
 
 ## 改进方向
 

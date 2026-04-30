@@ -132,9 +132,10 @@ export function getAttackBonus(unit: BattleUnit): number {
   let bonus = 0;
   for (const buff of unit.buffs) {
     if (buff.type === BuffType.ATK_UP) {
-      bonus += buff.value;
+      // FIX-102: NaN 防护，防止 buff.value 为 NaN 污染伤害链
+      bonus += Number.isFinite(buff.value) ? buff.value : 0;
     } else if (buff.type === BuffType.ATK_DOWN) {
-      bonus -= buff.value;
+      bonus -= Number.isFinite(buff.value) ? buff.value : 0;
     }
   }
   return bonus;
@@ -150,9 +151,10 @@ export function getDefenseBonus(unit: BattleUnit): number {
   let bonus = 0;
   for (const buff of unit.buffs) {
     if (buff.type === BuffType.DEF_UP) {
-      bonus += buff.value;
+      // FIX-102: NaN 防护，防止 buff.value 为 NaN 污染伤害链
+      bonus += Number.isFinite(buff.value) ? buff.value : 0;
     } else if (buff.type === BuffType.DEF_DOWN) {
-      bonus -= buff.value;
+      bonus -= Number.isFinite(buff.value) ? buff.value : 0;
     }
   }
   return bonus;
@@ -264,8 +266,13 @@ export class DamageCalculator implements IDamageCalculator, ISubsystem {
       };
     }
 
+    // FIX-103: skillMultiplier 负数/NaN/Infinity 防护，防止伤害变加血
+    const safeSkillMultiplier = Number.isFinite(skillMultiplier) && skillMultiplier >= 0
+      ? skillMultiplier
+      : 0;
+
     // 4. 应用技能倍率
-    const damageAfterSkill = baseDamage * skillMultiplier;
+    const damageAfterSkill = baseDamage * safeSkillMultiplier;
 
     // 5. 判定暴击
     const isCritical = rollCritical(attacker.speed);
@@ -391,23 +398,29 @@ export class DamageCalculator implements IDamageCalculator, ISubsystem {
     let totalDot = 0;
 
     for (const buff of unit.buffs) {
+      let dot = 0;
       switch (buff.type) {
         case BuffType.BURN:
           // 灼烧：最大HP的5%
-          totalDot += Math.floor(unit.maxHp * BATTLE_CONFIG.BURN_DAMAGE_RATIO);
+          dot = Math.floor(unit.maxHp * BATTLE_CONFIG.BURN_DAMAGE_RATIO);
           break;
         case BuffType.POISON:
           // 中毒：最大HP的3%
-          totalDot += Math.floor(unit.maxHp * BATTLE_CONFIG.POISON_DAMAGE_RATIO);
+          dot = Math.floor(unit.maxHp * BATTLE_CONFIG.POISON_DAMAGE_RATIO);
           break;
         case BuffType.BLEED:
           // 流血：攻击力的10%
-          totalDot += Math.floor(unit.attack * BATTLE_CONFIG.BLEED_DAMAGE_RATIO);
+          dot = Math.floor(unit.attack * BATTLE_CONFIG.BLEED_DAMAGE_RATIO);
           break;
+      }
+      // FIX-101: NaN/Infinity 防护，防止非有限值绕过 > 0 检查污染伤害链
+      if (Number.isFinite(dot)) {
+        totalDot += dot;
       }
     }
 
-    return totalDot;
+    // 最终防护：确保返回值为有限非负整数
+    return Number.isFinite(totalDot) ? totalDot : 0;
   }
 
   /**

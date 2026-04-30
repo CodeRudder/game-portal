@@ -293,11 +293,12 @@ export class BattleSpeedController implements ISubsystem {
    */
   private createSpeedState(speed: BattleSpeed): BattleSpeedState {
     // SKIP 模式：回合间隔为0，动画速度无限大，强制简化特效
+    // FIX-106: 使用有限大值替代 Infinity，避免 JSON 序列化后变为 null
     if (speed === BattleSpeed.SKIP) {
       return {
         speed: BattleSpeed.SKIP,
         turnIntervalScale: 0,
-        animationSpeedScale: Infinity,
+        animationSpeedScale: 9999,
         simplifiedEffects: true,
       };
     }

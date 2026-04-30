@@ -21,6 +21,7 @@
 | hero | R1 | 12 | 0% | CONTINUE |
 | hero | R2 | - | - | CONTINUE |
 | hero | R3 | - | - | CONTINUE |
+| battle | R1 | - | - | CONTINUE |
 
 ## 经验教训
 
@@ -34,6 +35,8 @@
 8. **R3新增**: 保存/加载完整性是独立于F-Lifecycle的新维度（6个子系统serialize/deserialize未被engine-save调用）
 9. **R3新增**: 每轮应从全新角度审查，避免重复前几轮的审查模式
 10. **R3新增**: 遗留P0必须每轮重新评估，系统性修复可能改变遗留缺陷的影响范围
+11. **Battle R1新增**: 战斗数值安全——伤害/buff/乘数计算必须验证NaN/负数/Infinity
+12. **Battle R1新增**: 配置-枚举同步验证——枚举值与配置数组必须完全对应
 
 ## 改进方向
 
