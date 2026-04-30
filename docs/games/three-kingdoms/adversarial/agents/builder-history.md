@@ -20,6 +20,7 @@
 | hero | R1- | - | - | - | - | 待启动 |
 | hero | R1 | 612 | 96.8% | 8 | 7.0 | CONTINUE |
 | hero | R2 | - | - | - | - | CONTINUE |
+| hero | R3 | - | - | - | - | CONTINUE |
 
 ## 经验教训
 
@@ -30,6 +31,9 @@
 5. **R2新增**: FIX穿透率19%（修复调用方但未修复底层函数），需追溯调用链
 6. **R2新增**: setter/getter注入模式定义但未调用是高频集成缺失问题
 7. **R2新增**: 资源系统溢出处理不完整，需形成闭环
+8. **R3新增**: 保存/加载覆盖扫描是架构级必检项（6个子系统状态丢失）
+9. **R3新增**: 新增子系统必须同步更新六处（GameSaveData/SaveContext/buildSaveData/toIGameState/fromIGameState/applySaveData）
+10. **R3新增**: 跨系统回调注入必须在finalizeLoad/init流程中验证
 
 ## 改进方向
 
