@@ -266,13 +266,22 @@ export class DamageCalculator implements IDamageCalculator, ISubsystem {
       };
     }
 
-    // FIX-103: skillMultiplier 负数/NaN/Infinity 防护，防止伤害变加血
-    const safeSkillMultiplier = Number.isFinite(skillMultiplier) && skillMultiplier >= 0
-      ? skillMultiplier
-      : 0;
+    // FIX-103: skillMultiplier 负数/NaN/Infinity 防护，防止伤害变加血或传播 NaN
+    if (!Number.isFinite(skillMultiplier) || skillMultiplier < 0) {
+      return {
+        damage: 0,
+        baseDamage: Math.floor(baseDamage),
+        skillMultiplier,
+        isCritical: false,
+        criticalMultiplier: 1.0,
+        restraintMultiplier: 1.0,
+        randomFactor: 1.0,
+        isMinDamage: false,
+      };
+    }
 
     // 4. 应用技能倍率
-    const damageAfterSkill = baseDamage * safeSkillMultiplier;
+    const damageAfterSkill = baseDamage * skillMultiplier;
 
     // 5. 判定暴击
     const isCritical = rollCritical(attacker.speed);

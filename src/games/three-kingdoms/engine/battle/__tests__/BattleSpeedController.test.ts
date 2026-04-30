@@ -182,7 +182,7 @@ describe('BattleSpeedController', () => {
   // ── 循环切换 ──
 
   describe('cycleSpeed', () => {
-    it('应按 1x → 2x → 3x → 1x 循环', () => {
+    it('应按 1x → 2x → 3x → 4x → 1x 循环', () => {
       expect(controller.getSpeed()).toBe(BattleSpeed.X1);
 
       controller.cycleSpeed();
@@ -190,6 +190,9 @@ describe('BattleSpeedController', () => {
 
       controller.cycleSpeed();
       expect(controller.getSpeed()).toBe(BattleSpeed.X3);
+
+      controller.cycleSpeed();
+      expect(controller.getSpeed()).toBe(BattleSpeed.X4);
 
       controller.cycleSpeed();
       expect(controller.getSpeed()).toBe(BattleSpeed.X1);
@@ -365,8 +368,8 @@ describe('BattleSpeedController', () => {
         expect(BattleSpeedController.isValidSpeed(3)).toBe(true);
       });
 
-      it('4x应不合法', () => {
-        expect(BattleSpeedController.isValidSpeed(4)).toBe(false);
+      it('4x应合法（FIX-104: X4已加入AVAILABLE_SPEEDS）', () => {
+        expect(BattleSpeedController.isValidSpeed(4)).toBe(true);
       });
 
       it('0应合法（SKIP模式）', () => {
@@ -381,7 +384,7 @@ describe('BattleSpeedController', () => {
     describe('getAvailableSpeeds', () => {
       it('应返回所有可用速度', () => {
         const speeds = BattleSpeedController.getAvailableSpeeds();
-        expect(speeds).toEqual([1, 2, 3]);
+        expect(speeds).toEqual([1, 2, 3, 4]);
       });
     });
   });
