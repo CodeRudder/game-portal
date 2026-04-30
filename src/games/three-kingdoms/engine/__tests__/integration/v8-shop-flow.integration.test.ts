@@ -2,7 +2,7 @@
  * v8.0 商贸繁荣 — 商店系统 Play 流程集成测试
  *
  * 覆盖: §1.1~1.5 商店核心 | §1.5.2 折扣叠加(R4) | §2 多商店 | §6.1 收藏 | §7.1 补货 | §9.1 定价
- * 原则: 独立sim实例 | 真实引擎API | 零as any | 零mock
+ * 原则: 独立sim实例 | 真实引擎API | 类型安全 | 零mock
  */
 
 import { describe, it, expect } from 'vitest';

@@ -12,8 +12,8 @@
  * @see docs/games/three-kingdoms/play/v12-play.md (远征核心玩法)
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { createSim, SUFFICIENT_RESOURCES } from '../../../test-utils/test-helpers';
+import { describe, it, expect } from 'vitest';
+import { createSim, createRealDeps, SUFFICIENT_RESOURCES } from '../../../test-utils/test-helpers';
 import { FormationType } from '../../../core/expedition/expedition-formation.types';
 import {
   SweepType,
@@ -32,7 +32,6 @@ import { ExpeditionRewardSystem } from '../../expedition/ExpeditionRewardSystem'
 import { AutoExpeditionSystem } from '../../expedition/AutoExpeditionSystem';
 import type { HeroBrief } from '../../expedition/ExpeditionTeamHelper';
 import type { Faction } from '../../hero/hero.types';
-import type { ISystemDeps } from '../../../core/types';
 
 // ── 辅助函数 ──
 
@@ -57,19 +56,8 @@ function shuHeroes(count: number = 3): HeroBrief[] {
   return pool.slice(0, count);
 }
 
-function mockDeps(): ISystemDeps {
-  return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    } as unknown as ISystemDeps['eventBus'],
-    config: { get: vi.fn(), set: vi.fn() } as unknown as ISystemDeps['config'],
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() } as unknown as ISystemDeps['registry'],
-  };
-}
+/** 获取真实系统依赖（替代 mockDeps，使用引擎真实的 EventBus/Config/Registry） */
+const realDeps = () => createRealDeps();
 
 /** 准备一条已三星通关的路线 */
 function prepareThreeStarRoute(
@@ -189,14 +177,14 @@ describe('v11.0 远征补充2 — §14 自动远征深化', () => {
 
   it('AUTO-DEEP-1: 停止自动远征后状态恢复', () => {
     const battleSys = new ExpeditionBattleSystem();
-    battleSys.init(mockDeps());
+    battleSys.init(realDeps());
     const rewardSys = new ExpeditionRewardSystem();
-    rewardSys.init(mockDeps());
+    rewardSys.init(realDeps());
     const autoSys = new AutoExpeditionSystem(battleSys, rewardSys);
-    autoSys.init(mockDeps());
+    autoSys.init(realDeps());
 
     const expedition = new ExpeditionSystem();
-    expedition.init(mockDeps());
+    expedition.init(realDeps());
     expedition.updateSlots(10);
 
     const state = expedition.getState();
@@ -211,14 +199,14 @@ describe('v11.0 远征补充2 — §14 自动远征深化', () => {
 
   it('AUTO-DEEP-2: 重复启停自动远征', () => {
     const battleSys = new ExpeditionBattleSystem();
-    battleSys.init(mockDeps());
+    battleSys.init(realDeps());
     const rewardSys = new ExpeditionRewardSystem();
-    rewardSys.init(mockDeps());
+    rewardSys.init(realDeps());
     const autoSys = new AutoExpeditionSystem(battleSys, rewardSys);
-    autoSys.init(mockDeps());
+    autoSys.init(realDeps());
 
     const expedition = new ExpeditionSystem();
-    expedition.init(mockDeps());
+    expedition.init(realDeps());
     expedition.updateSlots(10);
 
     const state = expedition.getState();
@@ -263,11 +251,11 @@ describe('v11.0 远征补充2 — §14 自动远征深化', () => {
 
   it('AUTO-DEEP-4: AutoExpeditionSystem reset清除状态', () => {
     const battleSys = new ExpeditionBattleSystem();
-    battleSys.init(mockDeps());
+    battleSys.init(realDeps());
     const rewardSys = new ExpeditionRewardSystem();
-    rewardSys.init(mockDeps());
+    rewardSys.init(realDeps());
     const autoSys = new AutoExpeditionSystem(battleSys, rewardSys);
-    autoSys.init(mockDeps());
+    autoSys.init(realDeps());
 
     const state = autoSys.getState();
     expect(state.remainingRepeats).toBeNull();
@@ -279,14 +267,14 @@ describe('v11.0 远征补充2 — §14 自动远征深化', () => {
 
   it('AUTO-DEEP-5: 连续失败达到阈值时自动暂停', () => {
     const battleSys = new ExpeditionBattleSystem();
-    battleSys.init(mockDeps());
+    battleSys.init(realDeps());
     const rewardSys = new ExpeditionRewardSystem();
-    rewardSys.init(mockDeps());
+    rewardSys.init(realDeps());
     const autoSys = new AutoExpeditionSystem(battleSys, rewardSys);
-    autoSys.init(mockDeps());
+    autoSys.init(realDeps());
 
     const expedition = new ExpeditionSystem();
-    expedition.init(mockDeps());
+    expedition.init(realDeps());
     expedition.updateSlots(10);
     const state = expedition.getState();
 
@@ -547,13 +535,13 @@ describe('v11.0 远征补充2 — §17 ISubsystem合规', () => {
 
   it('ISUBSYSTEM-2: init注入依赖不报错', () => {
     const sys = new ExpeditionSystem();
-    const deps = mockDeps();
+    const deps = realDeps();
     expect(() => sys.init(deps)).not.toThrow();
   });
 
   it('ISUBSYSTEM-3: update不报错（事件驱动系统）', () => {
     const sys = new ExpeditionSystem();
-    sys.init(mockDeps());
+    sys.init(realDeps());
     expect(() => sys.update(16)).not.toThrow();
     expect(() => sys.update(0)).not.toThrow();
     expect(() => sys.update(-1)).not.toThrow();
@@ -561,7 +549,7 @@ describe('v11.0 远征补充2 — §17 ISubsystem合规', () => {
 
   it('ISUBSYSTEM-4: reset后状态回到初始值', () => {
     const sys = new ExpeditionSystem();
-    sys.init(mockDeps());
+    sys.init(realDeps());
 
     // 修改状态
     const state = sys.getState();
@@ -579,7 +567,7 @@ describe('v11.0 远征补充2 — §17 ISubsystem合规', () => {
 
   it('ISUBSYSTEM-5: 序列化-反序列化完整流程', () => {
     const sys = new ExpeditionSystem();
-    sys.init(mockDeps());
+    sys.init(realDeps());
     sys.updateSlots(10);
 
     // 创建队伍和扫荡数据
@@ -595,7 +583,7 @@ describe('v11.0 远征补充2 — §17 ISubsystem合规', () => {
 
     // 反序列化到新实例
     const sys2 = new ExpeditionSystem();
-    sys2.init(mockDeps());
+    sys2.init(realDeps());
     sys2.deserialize(data);
 
     // 验证状态恢复
@@ -636,11 +624,11 @@ describe('v11.0 远征补充2 — §18 离线远征', () => {
 
   it('OFFLINE-2: 离线远征效率衰减', () => {
     const battleSys = new ExpeditionBattleSystem();
-    battleSys.init(mockDeps());
+    battleSys.init(realDeps());
     const rewardSys = new ExpeditionRewardSystem();
-    rewardSys.init(mockDeps());
+    rewardSys.init(realDeps());
     const autoSys = new AutoExpeditionSystem(battleSys, rewardSys);
-    autoSys.init(mockDeps());
+    autoSys.init(realDeps());
 
     const baseReward = { grain: 100, gold: 200, iron: 1, equipFragments: 1, exp: 50, drops: [] };
 
@@ -676,11 +664,11 @@ describe('v11.0 远征补充2 — §18 离线远征', () => {
 
   it('OFFLINE-3: 超过72小时被截断', () => {
     const battleSys = new ExpeditionBattleSystem();
-    battleSys.init(mockDeps());
+    battleSys.init(realDeps());
     const rewardSys = new ExpeditionRewardSystem();
-    rewardSys.init(mockDeps());
+    rewardSys.init(realDeps());
     const autoSys = new AutoExpeditionSystem(battleSys, rewardSys);
-    autoSys.init(mockDeps());
+    autoSys.init(realDeps());
 
     const baseReward = { grain: 100, gold: 200, iron: 1, equipFragments: 1, exp: 50, drops: [] };
 
@@ -701,11 +689,11 @@ describe('v11.0 远征补充2 — §18 离线远征', () => {
 
   it('OFFLINE-4: 预估收益接口返回多个时间点', () => {
     const battleSys = new ExpeditionBattleSystem();
-    battleSys.init(mockDeps());
+    battleSys.init(realDeps());
     const rewardSys = new ExpeditionRewardSystem();
-    rewardSys.init(mockDeps());
+    rewardSys.init(realDeps());
     const autoSys = new AutoExpeditionSystem(battleSys, rewardSys);
-    autoSys.init(mockDeps());
+    autoSys.init(realDeps());
 
     const baseReward = { grain: 100, gold: 200, iron: 1, equipFragments: 1, exp: 50, drops: [] };
 

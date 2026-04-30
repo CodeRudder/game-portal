@@ -8,6 +8,7 @@
 import { GameEventSimulator } from './GameEventSimulator';
 import type { ResourceMap } from './GameEventSimulator';
 import type { BuildingType } from '../shared/types';
+import type { ISystemDeps } from '../core/types/subsystem';
 
 // ── 工厂函数 ──
 
@@ -24,6 +25,15 @@ export function createSim(): GameEventSimulator {
   const sim = new GameEventSimulator();
   sim.init();
   return sim;
+}
+
+/**
+ * 创建真实的 ISystemDeps（基于引擎内部的真实 EventBus、ConfigRegistry、SubsystemRegistry）。
+ * 用于替代 mockDeps()，让子系统单元测试使用真实依赖而非 mock。
+ */
+export function createRealDeps(): ISystemDeps {
+  const sim = createSim();
+  return sim.engine.getSystemDeps();
 }
 
 /**

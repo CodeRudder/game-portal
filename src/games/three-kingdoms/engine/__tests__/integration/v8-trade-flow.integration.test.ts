@@ -15,7 +15,7 @@
  *
  * 测试原则：
  * - 每个用例创建独立 sim 实例，使用真实引擎 API
- * - 零 as any，零 mock
+ * - 零 mock，类型安全
  */
 
 import { describe, it, expect } from 'vitest';

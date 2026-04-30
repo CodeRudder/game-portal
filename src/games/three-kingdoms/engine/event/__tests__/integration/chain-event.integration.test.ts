@@ -12,9 +12,9 @@
  * @module engine/event/__tests__/integration
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createRealDeps } from '../../../../test-utils/test-helpers';
 import { ChainEventSystem } from '../../ChainEventSystem';
-import type { ISystemDeps } from '../../../../core/types/subsystem';
 import type {
   EventChainDef, ChainNodeDef, ChainProgress, ChainAdvanceResult,
 } from '../../chain-event-types';
@@ -23,20 +23,6 @@ import { MAX_ALLOWED_DEPTH, CHAIN_SAVE_VERSION } from '../../chain-event-types';
 // ─────────────────────────────────────────────
 // 辅助
 // ─────────────────────────────────────────────
-
-function mockDeps(): ISystemDeps {
-  return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
-  } as unknown as ISystemDeps;
-}
 
 /** 创建线性链（A→B→C） */
 function makeLinearChain(id: string = 'chain-linear'): EventChainDef {
@@ -97,7 +83,7 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
 
     beforeEach(() => {
       chain = new ChainEventSystem();
-      chain.init(mockDeps());
+      chain.init(createRealDeps());
     });
 
     it('应成功注册事件链定义', () => {
@@ -153,11 +139,14 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
     });
 
     it('启动链应发出 chain:started 事件', () => {
-      const deps = mockDeps();
+      const deps = createRealDeps();
       chain.init(deps);
       chain.registerChain(makeLinearChain());
+
+      let received = false;
+      deps.eventBus.on('chain:started', () => { received = true; });
       chain.startChain('chain-linear');
-      expect(deps.eventBus.emit).toHaveBeenCalledWith('chain:started', expect.any(Object));
+      expect(received).toBe(true);
     });
   });
 
@@ -168,7 +157,7 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
 
     beforeEach(() => {
       chain = new ChainEventSystem();
-      chain.init(mockDeps());
+      chain.init(createRealDeps());
     });
 
     it('线性链应按选择推进到下一节点', () => {
@@ -229,14 +218,15 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
     });
 
     it('推进链应发出 chain:advanced 事件', () => {
-      const deps = mockDeps();
+      const deps = createRealDeps();
       chain.init(deps);
       chain.registerChain(makeLinearChain());
       chain.startChain('chain-linear');
-      (deps.eventBus.emit as ReturnType<typeof vi.fn>).mockClear();
 
+      let received = false;
+      deps.eventBus.on('chain:advanced', () => { received = true; });
       chain.advanceChain('chain-linear', 'opt-next');
-      expect(deps.eventBus.emit).toHaveBeenCalledWith('chain:advanced', expect.any(Object));
+      expect(received).toBe(true);
     });
   });
 
@@ -247,7 +237,7 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
 
     beforeEach(() => {
       chain = new ChainEventSystem();
-      chain.init(mockDeps());
+      chain.init(createRealDeps());
     });
 
     it('getProgress 应返回正确的进度数据', () => {
@@ -325,7 +315,7 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
 
     beforeEach(() => {
       chain = new ChainEventSystem();
-      chain.init(mockDeps());
+      chain.init(createRealDeps());
     });
 
     it('已完成链不应再推进', () => {
@@ -358,18 +348,19 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
     });
 
     it('链完成应发出 chain:completed 事件', () => {
-      const deps = mockDeps();
+      const deps = createRealDeps();
       chain.init(deps);
       chain.registerChain(makeBranchChain());
       chain.startChain('chain-branch');
-      (deps.eventBus.emit as ReturnType<typeof vi.fn>).mockClear();
+
+      let completedPayload: unknown = null;
+      deps.eventBus.on('chain:completed', (payload: unknown) => { completedPayload = payload; });
 
       chain.advanceChain('chain-branch', 'opt-fight'); // root → branch-fight
-      // 尚未完成，不应有 completed 事件
-      expect(deps.eventBus.emit).not.toHaveBeenCalledWith('chain:completed', expect.any(Object));
+      expect(completedPayload).toBeNull(); // 尚未完成
 
       chain.advanceChain('chain-branch', 'opt-next'); // branch-fight → 完成
-      expect(deps.eventBus.emit).toHaveBeenCalledWith('chain:completed', expect.any(Object));
+      expect(completedPayload).not.toBeNull();
     });
   });
 
@@ -380,7 +371,7 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
 
     beforeEach(() => {
       chain = new ChainEventSystem();
-      chain.init(mockDeps());
+      chain.init(createRealDeps());
     });
 
     it('应支持同时启动多条链', () => {
@@ -421,7 +412,7 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
   describe('§2.6 序列化/反序列化', () => {
     it('应正确导出存档数据', () => {
       const chain = new ChainEventSystem();
-      chain.init(mockDeps());
+      chain.init(createRealDeps());
       chain.registerChain(makeLinearChain());
       chain.startChain('chain-linear');
 
@@ -433,7 +424,7 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
 
     it('应正确导入存档数据', () => {
       const chain1 = new ChainEventSystem();
-      chain1.init(mockDeps());
+      chain1.init(createRealDeps());
       chain1.registerChain(makeLinearChain());
       chain1.startChain('chain-linear');
       chain1.advanceChain('chain-linear', 'opt-next');
@@ -441,7 +432,7 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
       const save = chain1.exportSaveData();
 
       const chain2 = new ChainEventSystem();
-      chain2.init(mockDeps());
+      chain2.init(createRealDeps());
       chain2.importSaveData(save);
 
       const progress = chain2.getProgress('chain-linear');
@@ -452,7 +443,7 @@ describe('§2 链式事件 — 连锁引擎/分支路径/链追踪/超时/并发
 
     it('空存档数据应正常处理', () => {
       const chain = new ChainEventSystem();
-      chain.init(mockDeps());
+      chain.init(createRealDeps());
       chain.importSaveData({ version: CHAIN_SAVE_VERSION, chainProgresses: [] });
       expect(chain.getAllChains()).toHaveLength(0);
     });

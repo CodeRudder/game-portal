@@ -21,6 +21,7 @@ import {
   createSim,
   createSimWithResources,
   createSimWithMarketLevel5,
+  createRealDeps,
   SUFFICIENT_RESOURCES,
   MASSIVE_RESOURCES,
 } from '../../../test-utils/test-helpers';
@@ -703,12 +704,7 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
 
     // 反序列化到新实例
     const trade2 = new TradeSystem();
-    const mockDeps = {
-      eventBus: { emit: () => {}, on: () => {}, off: () => {}, once: () => {}, removeAllListeners: () => {} },
-      config: { get: () => undefined },
-      registry: { get: () => undefined },
-    };
-    trade2.init(mockDeps as unknown as Record<string, unknown>);
+    trade2.init(createRealDeps());
     trade2.deserialize(saved);
 
     // 验证恢复一致
@@ -735,12 +731,7 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
 
     // 反序列化到新实例
     const currency2 = new CurrencySystem();
-    const mockDeps = {
-      eventBus: { emit: () => {}, on: () => {}, off: () => {}, once: () => {}, removeAllListeners: () => {} },
-      config: { get: () => undefined },
-      registry: { get: () => undefined },
-    };
-    currency2.init(mockDeps as unknown as Record<string, unknown>);
+    currency2.init(createRealDeps());
     currency2.deserialize(saved);
 
     // 验证恢复一致
@@ -762,12 +753,7 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
 
     // 反序列化到新实例
     const shop2 = new ShopSystem();
-    const mockDeps = {
-      eventBus: { emit: () => {}, on: () => {}, off: () => {}, once: () => {}, removeAllListeners: () => {} },
-      config: { get: () => undefined },
-      registry: { get: () => undefined },
-    };
-    shop2.init(mockDeps as unknown as Record<string, unknown>);
+    shop2.init(createRealDeps());
     shop2.deserialize(saved);
 
     // 验证恢复一致
@@ -783,12 +769,7 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
 
     // 反序列化到新实例
     const caravan2 = new CaravanSystem();
-    const mockDeps = {
-      eventBus: { emit: () => {}, on: () => {}, off: () => {}, once: () => {}, removeAllListeners: () => {} },
-      config: { get: () => undefined },
-      registry: { get: () => undefined },
-    };
-    caravan2.init(mockDeps as unknown as Record<string, unknown>);
+    caravan2.init(createRealDeps());
     caravan2.deserialize(saved);
 
     // 验证恢复一致
@@ -828,31 +809,25 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
     expect(caravanData.version).toBe(TRADE_SAVE_VERSION);
 
     // 反序列化到新实例验证
-    const mockDeps = {
-      eventBus: { emit: () => {}, on: () => {}, off: () => {}, once: () => {}, removeAllListeners: () => {} },
-      config: { get: () => undefined },
-      registry: { get: () => undefined },
-    };
-
     const trade2 = new TradeSystem();
-    trade2.init(mockDeps as unknown as Record<string, unknown>);
+    trade2.init(createRealDeps());
     trade2.deserialize(tradeData);
     expect(trade2.getRouteState(routeId)?.prosperity).toBe(70);
 
     const currency2 = new CurrencySystem();
-    currency2.init(mockDeps as unknown as Record<string, unknown>);
+    currency2.init(createRealDeps());
     currency2.deserialize(currencyData);
     expect(currency2.getBalance('copper' as CurrencyType)).toBe(
       currency.getBalance('copper' as CurrencyType),
     );
 
     const shop2 = new ShopSystem();
-    shop2.init(mockDeps as unknown as Record<string, unknown>);
+    shop2.init(createRealDeps());
     shop2.deserialize(shopData);
     expect(shop2.getShopLevel('normal' as ShopType)).toBe(5);
 
     const caravan2 = new CaravanSystem();
-    caravan2.init(mockDeps as unknown as Record<string, unknown>);
+    caravan2.init(createRealDeps());
     caravan2.deserialize(caravanData);
     expect(caravan2.getCaravanCount()).toBe(caravan.getCaravanCount());
   });

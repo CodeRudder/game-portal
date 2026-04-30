@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createSim } from '../../../test-utils/test-helpers';
+import { createSim, createRealDeps } from '../../../test-utils/test-helpers';
 import { TerritorySystem } from '../../../engine/map/TerritorySystem';
 import { GarrisonSystem } from '../../../engine/map/GarrisonSystem';
 import { SiegeSystem } from '../../../engine/map/SiegeSystem';
@@ -343,7 +343,7 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
       expect(saved).toBeDefined();
 
       const garrison2 = new GarrisonSystem();
-      garrison2.init(deps);
+      garrison2.init(createRealDeps());
       garrison2.deserialize(saved);
       expect(garrison2.getGarrisonCount()).toBe(0);
     });
@@ -359,12 +359,10 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
 
   describe('§3.2.1 领土等级', () => {
     let territorySys: TerritorySystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      deps = mockDeps();
-      territorySys = new TerritorySystem();
-      territorySys.init(deps);
+      const systems = getMapSystems();
+      territorySys = systems.territorySys;
     });
 
     it('初始占领领土应为Lv.1', () => {
@@ -402,12 +400,10 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
 
   describe('§3.2.2 领土产出计算', () => {
     let territorySys: TerritorySystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      deps = mockDeps();
-      territorySys = new TerritorySystem();
-      territorySys.init(deps);
+      const systems = getMapSystems();
+      territorySys = systems.territorySys;
     });
 
     it('领土总产出 = 基础×地形×阵营×科技×声望×地标×驻防×时代加成', () => {
@@ -455,14 +451,11 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
   describe('§3.3 离线领土变化', () => {
     let territorySys: TerritorySystem;
     let garrisonSys: GarrisonSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      territorySys = new TerritorySystem();
-      deps = mockDepsWithTerritory(territorySys);
-      territorySys.init(deps);
-      garrisonSys = new GarrisonSystem();
-      garrisonSys.init(deps);
+      const systems = getMapSystems();
+      territorySys = systems.territorySys;
+      garrisonSys = systems.garrisonSys;
     });
 
     it('离线损失上限应不超过20%领土', () => {
@@ -491,7 +484,7 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
 
       const saved = territorySys.serialize();
       const territorySys2 = new TerritorySystem();
-      territorySys2.init(deps);
+      territorySys2.init(createRealDeps());
       territorySys2.deserialize(saved);
 
       expect(territorySys2.getPlayerTerritoryCount()).toBe(territorySys.getPlayerTerritoryCount());
@@ -504,20 +497,12 @@ describe('v6.0 集成测试 — Flow 3: 势力消长 + 领土攻占 + 驻防', (
     let territorySys: TerritorySystem;
     let garrisonSys: GarrisonSystem;
     let siegeSys: SiegeSystem;
-    let deps: ISystemDeps;
 
     beforeEach(() => {
-      territorySys = new TerritorySystem();
-      deps = mockDepsWithTerritory(territorySys);
-      territorySys.init(deps);
-      // 通过 registry mock 注入 TerritorySystem
-      (deps.registry.get as ReturnType<typeof vi.fn>).mockImplementation(
-        (name: string) => name === 'territory' ? territorySys : undefined
-      );
-      garrisonSys = new GarrisonSystem();
-      garrisonSys.init(deps);
-      siegeSys = new SiegeSystem();
-      siegeSys.init(deps);
+      const systems = getMapSystems();
+      territorySys = systems.territorySys;
+      garrisonSys = systems.garrisonSys;
+      siegeSys = systems.siegeSys;
     });
 
     it('攻占领土后应可驻防武将(需武将数据)', () => {

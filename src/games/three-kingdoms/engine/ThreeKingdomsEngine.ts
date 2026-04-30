@@ -748,6 +748,8 @@ export class ThreeKingdomsEngine {
     });
     this.sweepSystem.init(deps);
   }
+  /** 获取引擎的系统依赖（事件总线、配置注册表、子系统注册表），用于子系统单元测试 */
+  getSystemDeps(): ISystemDeps { return this.buildDeps(); }
   private buildDeps(): ISystemDeps { return { eventBus: this.bus, config: this.configRegistry, registry: this.registry }; }
   private buildTickCtx(): TickContext {
     return {

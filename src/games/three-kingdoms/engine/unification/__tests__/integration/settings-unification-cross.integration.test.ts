@@ -9,6 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createRealDeps } from '../../../../test-utils/test-helpers';
 import { SettingsManager, type ISettingsStorage } from '../../../settings/SettingsManager';
 import { CloudSaveSystem, CloudSyncState } from '../../../settings/CloudSaveSystem';
 import { AccountSystem, DeleteFlowState } from '../../../settings/AccountSystem';
@@ -17,32 +18,11 @@ import { IntegrationValidator } from '../../IntegrationValidator';
 import { DefaultSimulationDataProvider } from '../../SimulationDataProvider';
 import { DEFAULT_REBIRTH_CONFIG, DEFAULT_BATTLE_CONFIG } from '../../BalanceCalculator';
 import { calcRebirthMultiplier } from '../../BalanceUtils';
-import type { ISystemDeps } from '../../../../core/types/subsystem';
 import type { ICloudStorage, INetworkDetector, CloudSaveChangeCallback } from '../../../settings/cloud-save.types';
 
 // ─────────────────────────────────────────────
 // 辅助
 // ─────────────────────────────────────────────
-
-function mockDeps(): ISystemDeps {
-  return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: {
-      register: vi.fn(),
-      get: vi.fn(),
-      getAll: vi.fn().mockReturnValue(new Map()),
-      has: vi.fn().mockReturnValue(false),
-      unregister: vi.fn(),
-    },
-  } as unknown as ISystemDeps;
-}
 
 function createMockStorage() {
   const store: Record<string, string> = {};
@@ -88,11 +68,11 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
   beforeEach(() => {
     storage = createMockStorage();
     settings = new SettingsManager(storage);
-    settings.init(mockDeps());
+    settings.init(createRealDeps());
     balance = new BalanceValidator();
-    balance.init(mockDeps());
+    balance.init(createRealDeps());
     integration = new IntegrationValidator();
-    integration.init(mockDeps());
+    integration.init(createRealDeps());
   });
 
   // ─── §4 设置系统与统一系统联动 ──────────────
@@ -165,7 +145,7 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
       const cloudStorage = createMockCloudStorage();
       const network = createMockNetworkDetector(true, true);
       const cloud = new CloudSaveSystem({ cloudStorage, networkDetector: network });
-      cloud.init(mockDeps());
+      cloud.init(createRealDeps());
 
       // 先上传一次，使远端有数据
       await cloud.sync('test-data', 'device-1');
@@ -178,7 +158,7 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
       const cloudStorage = createMockCloudStorage();
       const network = createMockNetworkDetector(false, false);
       const cloud = new CloudSaveSystem({ cloudStorage, networkDetector: network });
-      cloud.init(mockDeps());
+      cloud.init(createRealDeps());
 
       const result = await cloud.sync('test-data', 'device-1');
       expect(result.state).toBe(CloudSyncState.Failed);
@@ -188,7 +168,7 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
     it('云存档未配置时同步返回失败', async () => {
       const network = createMockNetworkDetector(true, true);
       const cloud = new CloudSaveSystem({ networkDetector: network });
-      cloud.init(mockDeps());
+      cloud.init(createRealDeps());
 
       const result = await cloud.sync('test-data', 'device-1');
       expect(result.state).toBe(CloudSyncState.Failed);
@@ -198,7 +178,7 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
       const cloudStorage = createMockCloudStorage();
       const network = createMockNetworkDetector(true, true);
       const cloud = new CloudSaveSystem({ cloudStorage, networkDetector: network });
-      cloud.init(mockDeps());
+      cloud.init(createRealDeps());
 
       const syncPromise = cloud.sync('data', 'dev-1');
       const balReport = balance.validateAll();
@@ -225,7 +205,7 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
       const cloudStorage = createMockCloudStorage();
       const network = createMockNetworkDetector(true, true);
       const cloud = new CloudSaveSystem({ cloudStorage, networkDetector: network });
-      cloud.init(mockDeps());
+      cloud.init(createRealDeps());
 
       const states: CloudSyncState[] = [];
       cloud.onChange((state) => states.push(state));
@@ -239,7 +219,7 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
       const cloudStorage = createMockCloudStorage();
       const network = createMockNetworkDetector(true, true);
       const cloud = new CloudSaveSystem({ cloudStorage, networkDetector: network });
-      cloud.init(mockDeps());
+      cloud.init(createRealDeps());
 
       await cloud.sync('data', 'dev-1');
       cloud.reset();
@@ -249,13 +229,13 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
 
     it('AccountSystem初始化后name为account', () => {
       const account = new AccountSystem();
-      account.init(mockDeps());
+      account.init(createRealDeps());
       expect(account.name).toBe('account');
     });
 
     it('AccountSystem游客绑定后状态变更', () => {
       const account = new AccountSystem();
-      account.init(mockDeps());
+      account.init(createRealDeps());
       const grantIngot = vi.fn();
       account.initialize(settings.getAccountSettings(), grantIngot);
 
@@ -278,7 +258,7 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
 
     it('云存档加密解密一致性', () => {
       const cloud = new CloudSaveSystem();
-      cloud.init(mockDeps());
+      cloud.init(createRealDeps());
       const original = 'test-save-data-12345';
       const key = 'encryption-key';
       const encrypted = cloud.encrypt(original, key);
@@ -288,7 +268,7 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
 
     it('云存档校验和验证正确', () => {
       const cloud = new CloudSaveSystem();
-      cloud.init(mockDeps());
+      cloud.init(createRealDeps());
       const data = 'integrity-check-data';
       const checksum = cloud.computeChecksum(data);
       expect(cloud.verifyIntegrity(data, checksum)).toBe(true);
@@ -318,7 +298,7 @@ describe('§4~§5 天下大势 + 交叉验证 集成测试', () => {
       const cloudStorage = createMockCloudStorage();
       const network = createMockNetworkDetector(true, true);
       const cloud = new CloudSaveSystem({ cloudStorage, networkDetector: network });
-      cloud.init(mockDeps());
+      cloud.init(createRealDeps());
 
       const localData = JSON.stringify(settings.getSaveData());
       const syncResult = await cloud.sync(localData, 'device-1');

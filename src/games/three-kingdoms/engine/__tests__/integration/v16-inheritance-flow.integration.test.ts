@@ -10,7 +10,7 @@
  *
  * 测试原则：
  * - 每个用例创建独立的 sim 实例（createSim）
- * - 使用真实引擎 API，不使用 mock，不用 `as any`
+ * - 使用真实引擎 API，不使用 mock，类型安全
  * - 以实际代码行为为准
  *
  * @see docs/games/three-kingdoms/play/v16-play.md
@@ -39,21 +39,14 @@ import { calcRebirthMultiplier } from '../../prestige/RebirthSystem';
  *
  * 引擎 initR16Systems() 当前未调用 heritageSystem.init(deps)，
  * 导致 recordHeritage 中 this.deps.eventBus 崩溃。
- * 此 helper 在引擎初始化后手动注入 deps，避免 `as any`。
+ * 此 helper 在引擎初始化后手动注入 deps，通过 getSystemDeps() 获取类型安全的依赖。
  */
 function createSimWithHeritageInit() {
   const sim = createSim();
   const heritage = sim.engine.getHeritageSystem();
-  // 从引擎内部获取 eventBus — 使用 unknown 中转避免 `as any`
-  const engineInternal = sim.engine as unknown as {
-    bus: { on: (...a: unknown[]) => void; emit: (...a: unknown[]) => void; off: (...a: unknown[]) => void };
-  };
-  const deps = {
-    eventBus: engineInternal.bus,
-    config: { get: () => undefined },
-    registry: { get: () => undefined },
-  };
-  heritage.init(deps as never);
+  // 通过引擎公共 API 获取系统依赖，类型安全
+  const deps = sim.engine.getSystemDeps();
+  heritage.init(deps);
   return sim;
 }
 
