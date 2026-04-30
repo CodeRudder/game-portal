@@ -122,3 +122,10 @@
 - **检查方法**: 修复一个函数时，搜索其对称函数（attack↔defense、add↔remove、serialize↔deserialize）是否需要相同修复
 - **典型案例**: FIX-105对getTechTroopAttackBonus添加Math.max(0)，但getTechTroopDefenseBonus遗漏
 - **修复模式**: 修复时同步搜索所有对称函数，确保一致处理
+
+### 模式20: 无锁发奖（关卡系统状态锁缺失）
+- **出现频率**: 中等（Campaign R1发现1处）
+- **检查方法**: 搜索所有"发奖/发放奖励"代码路径，验证是否存在前置状态锁（如preLock/preCheck），未锁定时是否拒绝执行
+- **典型案例**: FIX-303 ChallengeStageSystem.completeChallenge未验证preLockedResources[stageId]是否存在，导致跳过preLockResources直接调用即可免费获得奖励
+- **修复模式**: 在complete/confirm类API入口添加前置状态检查，未满足条件时返回空结果而非执行业务逻辑
+- **关联规则**: Builder规则#20（关卡系统状态锁验证）

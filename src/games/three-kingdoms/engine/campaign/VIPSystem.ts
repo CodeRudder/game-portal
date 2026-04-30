@@ -177,7 +177,7 @@ export class VIPSystem implements ISubsystem {
    * 1元 = 10 VIP经验
    */
   addExp(amount: number): void {
-    if (amount <= 0) return;
+    if (!Number.isFinite(amount) || amount <= 0) return;
     this.vipExp += amount;
   }
 

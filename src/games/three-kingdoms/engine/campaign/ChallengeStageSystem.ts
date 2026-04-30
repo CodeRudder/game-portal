@@ -355,8 +355,12 @@ export class ChallengeStageSystem implements ISubsystem {
     }
 
     const preLocked = this.preLockedResources[stageId];
-    const armyCost = preLocked?.army ?? 0;
-    const staminaCost = preLocked?.stamina ?? 0;
+    // FIX-303: 未预锁资源不允许完成挑战，防止免费刷奖励
+    if (!preLocked) {
+      return { victory: false, rewards: [], firstClear: false, armyCost: 0, staminaCost: 0 };
+    }
+    const armyCost = preLocked.army ?? 0;
+    const staminaCost = preLocked.stamina ?? 0;
 
     // 清除预锁记录
     delete this.preLockedResources[stageId];
@@ -433,9 +437,14 @@ export class ChallengeStageSystem implements ISubsystem {
 
   /** 序列化 */
   serialize(): ChallengeSaveData {
+    // FIX-304: 深拷贝 stageProgress，防止外部修改影响内部状态
+    const stageProgress: Record<string, ChallengeStageProgress> = {};
+    for (const [id, progress] of Object.entries(this.stageProgress)) {
+      stageProgress[id] = { ...progress };
+    }
     return {
       version: SAVE_VERSION,
-      stageProgress: { ...this.stageProgress },
+      stageProgress,
       lastResetDate: this.lastResetDate,
     };
   }
@@ -443,7 +452,12 @@ export class ChallengeStageSystem implements ISubsystem {
   /** 反序列化 */
   deserialize(data: ChallengeSaveData): void {
     if (!data || data.version !== SAVE_VERSION) return;
-    this.stageProgress = { ...data.stageProgress };
+    // FIX-304: 深拷贝 stageProgress，防止存档数据与内部状态共享引用
+    const stageProgress: Record<string, ChallengeStageProgress> = {};
+    for (const [id, progress] of Object.entries(data.stageProgress)) {
+      stageProgress[id] = { ...progress };
+    }
+    this.stageProgress = stageProgress;
     this.lastResetDate = data.lastResetDate;
     this.preLockedResources = {};
   }

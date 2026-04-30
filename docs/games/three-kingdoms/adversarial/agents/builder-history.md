@@ -39,6 +39,9 @@
 12. **Battle R1新增**: 配置-枚举同步——枚举值必须与配置数组完全对应
 13. **Battle R1新增**: Infinity序列化风险——Infinity不能直接序列化，必须转为有限值
 14. **Battle R2新增**: 对称函数修复验证——修复attack/defense对中的一个时，必须同步检查另一个
+15. **Campaign R1新增**: 关卡系统状态锁验证——completeChallenge类API必须验证前置状态锁（preLock），未满足时拒绝执行
+16. **Campaign R1新增**: serialize/deserialize深拷贝一致性——必须与同类子系统实现对比，使用逐条深拷贝
+17. **Campaign R1新增**: 经济系统预锁→发奖链路完整性——所有发奖路径必须验证预锁状态
 
 ## 改进方向
 

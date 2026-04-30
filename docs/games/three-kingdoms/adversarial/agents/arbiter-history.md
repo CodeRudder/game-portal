@@ -70,3 +70,5 @@
 15. **Phase 2 Battle R1**: 增加战斗数值安全专项扫描（NaN/负数/Infinity三重验证）
 16. **Phase 2 Battle R1**: 增加配置-枚举同步自动验证（枚举值 vs 配置数组一致性）
 17. **Phase 2 Battle R2**: 建立对称函数封版审查机制（对称对中一侧已修复→另一侧必须验证）
+18. **Phase 2 Campaign R1**: 建立关卡系统状态锁验证机制（completeChallenge类API前置状态锁检查）
+19. **Phase 2 Campaign R1**: 经济系统"预锁→消费→发奖"链路完整性纳入准确性评分

@@ -177,7 +177,7 @@ export class SweepSystem implements ISubsystem {
    * @throws {Error} 数量 ≤ 0 时抛出异常
    */
   addTickets(amount: number): void {
-    if (amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error(`[SweepSystem] 扫荡令数量必须大于0: ${amount}`);
     }
     this.ticketCount += amount;

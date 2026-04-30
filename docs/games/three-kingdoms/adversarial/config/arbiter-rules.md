@@ -1,6 +1,6 @@
 # Arbiter Agent Rules — 三国霸业
 
-> 版本: v1.5 | 初始化: 2026-05-01
+> 版本: v1.6 | 初始化: 2026-05-01
 > 每轮复盘后更新此文件
 
 ## 评分规则
@@ -94,8 +94,15 @@
 | 2026-05-01 | Hero R3 | +3条评分规则(AR-008~010) | 保存/加载架构评审、收敛加速规则、可玩性阻断项封版权重 |
 | 2026-05-01 | Battle R1 | +1条评分规则(AR-011) | covered标注验证（虚报率>5%扣分、NaN防护入口验证、配置交叉验证） |
 | 2026-05-01 | Battle R2 | +1条评分规则(AR-012) | 有条件封版：当对称函数对中一侧已修复但另一侧未修复时，不得封版（Battle R2教训：FIX-105修了attack遗漏defense） |
+| 2026-05-01 | Campaign R1 | +1条评分规则(AR-013) | 关卡系统状态锁验证：completeChallenge类API必须验证前置状态锁 |
 
 ### 有条件封版规则 (AR-012)
 - 对称函数对（如attack/defense、add/remove、serialize/deserialize）中，如果一侧有修复记录，必须验证另一侧是否需要相同修复
 - 未验证完毕前，该模块不得进入封版状态
 - 适用于所有P0修复的封版审查
+
+### 关卡系统状态锁验证 (AR-013)
+- completeChallenge/completeStage类API必须验证前置状态锁（如preLock/preCheck）
+- 未满足前置条件时拒绝执行并返回空结果
+- 典型案例：completeChallenge未验证preLockedResources，跳过preLockResources直接调用可免费获得奖励
+- 经济系统"预锁→消费→发奖"链路完整性纳入准确性评分

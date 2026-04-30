@@ -143,3 +143,27 @@
 **P0模式库变更**:
 - 新增1个模式（模式19: 对称函数修复遗漏）
 - 模式总数: 18 → 19
+
+### 2026-05-01 — Campaign R1 进化
+
+**变更类型**: 规则进化 + 代码修复
+**触发**: Campaign R1 三Agent复盘建议
+
+**代码修复 (4 P0)**:
+- FIX-301: VIPSystem.addExp NaN防护 (`!Number.isFinite(amount) || amount <= 0`)
+- FIX-302: SweepSystem.addTickets NaN防护 (`!Number.isFinite(amount) || amount <= 0`)
+- FIX-303: ChallengeStageSystem.completeChallenge 无锁发奖防护 (添加preLocked检查)
+- FIX-304: ChallengeStageSystem serialize/deserialize 深拷贝 (Object.entries逐条拷贝)
+
+**Builder规则变更**:
+- 新增1条通用规则（#20 关卡系统状态锁验证：completeChallenge类API必须验证前置状态锁）
+- 新增2条隐含规则落实（#16 serialize深拷贝一致性、#17 经济系统预锁→发奖链路验证）
+- 版本: v1.5 → v1.6
+
+**Arbiter规则变更**:
+- 新增1条评分规则（AR-013 关卡系统状态锁验证）
+- 版本: v1.5 → v1.6
+
+**P0模式库变更**:
+- 新增1个模式（模式20: 无锁发奖 — 关卡系统状态锁缺失）
+- 模式总数: 19 → 20
