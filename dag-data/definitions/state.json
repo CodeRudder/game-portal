@@ -1,0 +1,124 @@
+{
+  "id": "three-kingdoms-state",
+  "name": "三国霸业状态转换DAG",
+  "entity": "Game",
+  "states": [
+    {"id": "st-game-init", "entity": "Game", "state": "initializing", "isInitial": true, "isFinal": false},
+    {"id": "st-game-playing", "entity": "Game", "state": "playing", "isInitial": false, "isFinal": false},
+    {"id": "st-game-paused", "entity": "Game", "state": "paused", "isInitial": false, "isFinal": false},
+    {"id": "st-game-rebirth", "entity": "Game", "state": "rebirth", "isInitial": false, "isFinal": false},
+
+    {"id": "st-bld-locked", "entity": "Building", "state": "locked", "isInitial": true, "isFinal": false},
+    {"id": "st-bld-idle", "entity": "Building", "state": "idle", "isInitial": false, "isFinal": false},
+    {"id": "st-bld-upgrading", "entity": "Building", "state": "upgrading", "isInitial": false, "isFinal": false},
+    {"id": "st-bld-max", "entity": "Building", "state": "maxLevel", "isInitial": false, "isFinal": true},
+
+    {"id": "st-hero-locked", "entity": "Hero", "state": "locked", "isInitial": true, "isFinal": false},
+    {"id": "st-hero-owned", "entity": "Hero", "state": "owned", "isInitial": false, "isFinal": false},
+    {"id": "st-hero-deployed", "entity": "Hero", "state": "deployed", "isInitial": false, "isFinal": false},
+    {"id": "st-hero-battle", "entity": "Hero", "state": "inBattle", "isInitial": false, "isFinal": false},
+    {"id": "st-hero-dispatched", "entity": "Hero", "state": "dispatched", "isInitial": false, "isFinal": false},
+
+    {"id": "st-battle-prepare", "entity": "Battle", "state": "preparing", "isInitial": true, "isFinal": false},
+    {"id": "st-battle-fighting", "entity": "Battle", "state": "fighting", "isInitial": false, "isFinal": false},
+    {"id": "st-battle-victory", "entity": "Battle", "state": "victory", "isInitial": false, "isFinal": true},
+    {"id": "st-battle-defeat", "entity": "Battle", "state": "defeat", "isInitial": false, "isFinal": true},
+
+    {"id": "st-quest-locked", "entity": "Quest", "state": "locked", "isInitial": true, "isFinal": false},
+    {"id": "st-quest-available", "entity": "Quest", "state": "available", "isInitial": false, "isFinal": false},
+    {"id": "st-quest-active", "entity": "Quest", "state": "active", "isInitial": false, "isFinal": false},
+    {"id": "st-quest-complete", "entity": "Quest", "state": "completed", "isInitial": false, "isFinal": false},
+    {"id": "st-quest-claimed", "entity": "Quest", "state": "claimed", "isInitial": false, "isFinal": true},
+
+    {"id": "st-tech-locked", "entity": "Tech", "state": "locked", "isInitial": true, "isFinal": false},
+    {"id": "st-tech-researching", "entity": "Tech", "state": "researching", "isInitial": false, "isFinal": false},
+    {"id": "st-tech-unlocked", "entity": "Tech", "state": "unlocked", "isInitial": false, "isFinal": true},
+
+    {"id": "st-siege-prepare", "entity": "Siege", "state": "preparing", "isInitial": true, "isFinal": false},
+    {"id": "st-siege-fighting", "entity": "Siege", "state": "fighting", "isInitial": false, "isFinal": false},
+    {"id": "st-siege-victory", "entity": "Siege", "state": "victory", "isInitial": false, "isFinal": true},
+    {"id": "st-siege-defeat", "entity": "Siege", "state": "defeat", "isInitial": false, "isFinal": true},
+
+    {"id": "st-equip-raw", "entity": "Equipment", "state": "raw", "isInitial": true, "isFinal": false},
+    {"id": "st-equip-enhanced", "entity": "Equipment", "state": "enhanced", "isInitial": false, "isFinal": false},
+    {"id": "st-equip-equipped", "entity": "Equipment", "state": "equipped", "isInitial": false, "isFinal": false},
+    {"id": "st-equip-max", "entity": "Equipment", "state": "maxEnhance", "isInitial": false, "isFinal": true},
+
+    {"id": "st-guide-inactive", "entity": "Guide", "state": "inactive", "isInitial": true, "isFinal": false},
+    {"id": "st-guide-active", "entity": "Guide", "state": "active", "isInitial": false, "isFinal": false},
+    {"id": "st-guide-done", "entity": "Guide", "state": "completed", "isInitial": false, "isFinal": true},
+
+    {"id": "st-alliance-none", "entity": "Alliance", "state": "none", "isInitial": true, "isFinal": false},
+    {"id": "st-alliance-member", "entity": "Alliance", "state": "member", "isInitial": false, "isFinal": false},
+    {"id": "st-alliance-officer", "entity": "Alliance", "state": "officer", "isInitial": false, "isFinal": false},
+    {"id": "st-alliance-leader", "entity": "Alliance", "state": "leader", "isInitial": false, "isFinal": true},
+
+    {"id": "st-expedition-idle", "entity": "Expedition", "state": "idle", "isInitial": true, "isFinal": false},
+    {"id": "st-expedition-active", "entity": "Expedition", "state": "active", "isInitial": false, "isFinal": false},
+    {"id": "st-expedition-done", "entity": "Expedition", "state": "completed", "isInitial": false, "isFinal": true},
+
+    {"id": "st-arena-idle", "entity": "Arena", "state": "idle", "isInitial": true, "isFinal": false},
+    {"id": "st-arena-matching", "entity": "Arena", "state": "matching", "isInitial": false, "isFinal": false},
+    {"id": "st-arena-fighting", "entity": "Arena", "state": "fighting", "isInitial": false, "isFinal": false},
+    {"id": "st-arena-result", "entity": "Arena", "state": "result", "isInitial": false, "isFinal": true}
+  ],
+  "transitions": [
+    {"from": "st-game-init", "to": "st-game-playing", "trigger": "startGame", "condition": "存档加载完成"},
+    {"from": "st-game-playing", "to": "st-game-paused", "trigger": "pauseGame", "condition": "用户暂停"},
+    {"from": "st-game-paused", "to": "st-game-playing", "trigger": "resumeGame", "condition": "用户恢复"},
+    {"from": "st-game-playing", "to": "st-game-rebirth", "trigger": "rebirth", "condition": "天命值≥10", "sideEffects": ["资源重置", "保留武将", "增加永久加成"]},
+    {"from": "st-game-rebirth", "to": "st-game-playing", "trigger": "rebirthComplete", "condition": "转生完成"},
+
+    {"from": "st-bld-locked", "to": "st-bld-idle", "trigger": "unlock", "condition": "前置建筑等级满足", "sideEffects": ["解锁建筑"]},
+    {"from": "st-bld-idle", "to": "st-bld-upgrading", "trigger": "upgrade", "condition": "资源充足", "sideEffects": ["扣除资源"]},
+    {"from": "st-bld-upgrading", "to": "st-bld-idle", "trigger": "upgradeDone", "condition": "建造完成", "sideEffects": ["等级+1", "产出提升"]},
+    {"from": "st-bld-idle", "to": "st-bld-max", "trigger": "reachMax", "condition": "等级=上限"},
+
+    {"from": "st-hero-locked", "to": "st-hero-owned", "trigger": "recruit", "condition": "招募资源充足", "sideEffects": ["扣除资源", "获得武将"]},
+    {"from": "st-hero-owned", "to": "st-hero-deployed", "trigger": "deploy", "condition": "编队有空位"},
+    {"from": "st-hero-deployed", "to": "st-hero-owned", "trigger": "undeploy", "condition": "无"},
+    {"from": "st-hero-deployed", "to": "st-hero-battle", "trigger": "enterBattle", "condition": "战斗开始"},
+    {"from": "st-hero-battle", "to": "st-hero-deployed", "trigger": "battleEnd", "condition": "战斗结束"},
+    {"from": "st-hero-owned", "to": "st-hero-dispatched", "trigger": "dispatch", "condition": "派遣任务可用"},
+    {"from": "st-hero-dispatched", "to": "st-hero-owned", "trigger": "dispatchReturn", "condition": "派遣时间到"},
+
+    {"from": "st-battle-prepare", "to": "st-battle-fighting", "trigger": "startFight", "condition": "粮草+兵力充足"},
+    {"from": "st-battle-fighting", "to": "st-battle-victory", "trigger": "win", "condition": "敌方HP≤0"},
+    {"from": "st-battle-fighting", "to": "st-battle-defeat", "trigger": "lose", "condition": "我方HP≤0"},
+
+    {"from": "st-quest-locked", "to": "st-quest-available", "trigger": "unlock", "condition": "前置任务完成"},
+    {"from": "st-quest-available", "to": "st-quest-active", "trigger": "accept", "condition": "无"},
+    {"from": "st-quest-active", "to": "st-quest-complete", "trigger": "complete", "condition": "目标达成"},
+    {"from": "st-quest-complete", "to": "st-quest-claimed", "trigger": "claimReward", "condition": "无", "sideEffects": ["发放奖励"]},
+
+    {"from": "st-tech-locked", "to": "st-tech-researching", "trigger": "research", "condition": "科技点充足+前置科技", "sideEffects": ["扣除科技点"]},
+    {"from": "st-tech-researching", "to": "st-tech-unlocked", "trigger": "researchDone", "condition": "研究完成"},
+
+    {"from": "st-siege-prepare", "to": "st-siege-fighting", "trigger": "startSiege", "condition": "兵力充足"},
+    {"from": "st-siege-fighting", "to": "st-siege-victory", "trigger": "win", "condition": "城池HP≤0"},
+    {"from": "st-siege-fighting", "to": "st-siege-defeat", "trigger": "lose", "condition": "我方兵力≤0"},
+
+    {"from": "st-equip-raw", "to": "st-equip-enhanced", "trigger": "enhance", "condition": "铜钱充足+成功率", "sideEffects": ["属性提升"]},
+    {"from": "st-equip-enhanced", "to": "st-equip-equipped", "trigger": "equip", "condition": "武将有空槽位"},
+    {"from": "st-equip-equipped", "to": "st-equip-enhanced", "trigger": "unequip", "condition": "无"},
+    {"from": "st-equip-enhanced", "to": "st-equip-max", "trigger": "reachMax", "condition": "强化等级=上限"},
+
+    {"from": "st-guide-inactive", "to": "st-guide-active", "trigger": "triggerGuide", "condition": "新手+首次进入"},
+    {"from": "st-guide-active", "to": "st-guide-done", "trigger": "allStepsComplete", "condition": "全部步骤完成"},
+
+    {"from": "st-alliance-none", "to": "st-alliance-member", "trigger": "joinAlliance", "condition": "联盟人数未满"},
+    {"from": "st-alliance-member", "to": "st-alliance-officer", "trigger": "promote", "condition": "贡献值达标+盟主操作"},
+    {"from": "st-alliance-officer", "to": "st-alliance-leader", "trigger": "transferLeader", "condition": "盟主转让"},
+    {"from": "st-alliance-member", "to": "st-alliance-none", "trigger": "leaveAlliance", "condition": "无"},
+    {"from": "st-alliance-officer", "to": "st-alliance-none", "trigger": "leaveAlliance", "condition": "无"},
+
+    {"from": "st-expedition-idle", "to": "st-expedition-active", "trigger": "startExpedition", "condition": "武将可用+次数未满"},
+    {"from": "st-expedition-active", "to": "st-expedition-done", "trigger": "expeditionComplete", "condition": "远征时间到", "sideEffects": ["获得奖励"]},
+    {"from": "st-expedition-done", "to": "st-expedition-idle", "trigger": "claimReward", "condition": "无"},
+
+    {"from": "st-arena-idle", "to": "st-arena-matching", "trigger": "startMatch", "condition": "挑战次数未满"},
+    {"from": "st-arena-matching", "to": "st-arena-fighting", "trigger": "matchFound", "condition": "匹配成功"},
+    {"from": "st-arena-fighting", "to": "st-arena-result", "trigger": "battleEnd", "condition": "战斗结束"},
+    {"from": "st-arena-result", "to": "st-arena-idle", "trigger": "claimReward", "condition": "无"}
+  ]
+}
