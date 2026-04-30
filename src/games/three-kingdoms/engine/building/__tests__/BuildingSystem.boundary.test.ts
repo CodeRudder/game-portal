@@ -191,10 +191,10 @@ describe('BuildingSystem 边界条件测试', () => {
   });
 
   // ── 13. 主城升级前置条件 ──
-  it('主城Lv5→6前置条件不满足时应拒绝升级', () => {
+  it('主城Lv4→5前置条件不满足时应拒绝升级', () => {
     bs.deserialize(
       makeSave({
-        castle: { level: 5, status: 'idle' },
+        castle: { level: 4, status: 'idle' },
         farmland: { level: 3, status: 'idle' },
       }),
     );

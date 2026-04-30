@@ -62,8 +62,15 @@ describe('BuildingSystem — 对抗性测试 (Adversarial)', () => {
   });
 
   // ── 3. checkUpgrade 精确边界：建筑等级恰好等于主城等级 ──
-  it('非主城建筑等级恰好等于主城等级时，不能升级', () => {
+  it('非主城建筑等级恰好等于主城等级时，可以升级（允许子建筑领先主城1级）', () => {
     sys.deserialize(makeSave({ castle: { level: 5 }, farmland: { level: 5 } }));
+    const r = sys.checkUpgrade('farmland', RICH);
+    expect(r.canUpgrade).toBe(true);
+  });
+
+  // ── 3b. checkUpgrade 精确边界：建筑等级超过主城等级 ──
+  it('非主城建筑等级超过主城等级时，不能升级', () => {
+    sys.deserialize(makeSave({ castle: { level: 3 }, farmland: { level: 4 } }));
     const r = sys.checkUpgrade('farmland', RICH);
     expect(r.canUpgrade).toBe(false);
     expect(r.reasons).toEqual(
