@@ -4,6 +4,11 @@
  * 设计风格：水墨江山·铜纹霸业
  * 响应式适配：小屏设备上优化布局
  *
+ * R4 新增：
+ * - [P1-1] 防守引导提示 + 低胜率策略建议
+ * - [P1-2] 战斗摘要弹窗（评级/数据/行动记录）
+ * - [P1-5] 对手详情卡片（阵容预览/战力/最近战绩）
+ *
  * 样式从内联 style 对象提取为 CSS 类，提升可维护性
  */
 
@@ -11,6 +16,375 @@
 .tk-arena-panel {
   padding: 8px;
   color: #e8e0d0;
+}
+
+/* ────────────────────────────────────────────
+   R4-P1-1: 防守引导提示
+   ──────────────────────────────────────────── */
+.tk-arena-guide-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.18), rgba(255, 215, 0, 0.1));
+  border: 1px solid rgba(212, 165, 116, 0.35);
+  border-radius: var(--tk-radius-lg, 10px);
+  text-align: center;
+  animation: tk-arena-guide-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tk-arena-guide-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 165, 116, 0.25); }
+  50% { box-shadow: 0 0 12px 4px rgba(212, 165, 116, 0.15); }
+}
+
+.tk-arena-guide-icon {
+  font-size: 28px;
+}
+
+.tk-arena-guide-content {
+  flex: 1;
+}
+
+.tk-arena-guide-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #d4a574;
+  margin-bottom: 4px;
+}
+
+.tk-arena-guide-desc {
+  font-size: 11px;
+  color: #a0a0a0;
+  line-height: 1.5;
+}
+
+.tk-arena-guide-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tk-arena-guide-btn {
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--tk-radius-sm, 4px);
+  background: transparent;
+  color: #a0a0a0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tk-arena-guide-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tk-arena-guide-btn--primary {
+  background: rgba(212, 165, 116, 0.2);
+  border-color: rgba(212, 165, 116, 0.4);
+  color: #d4a574;
+  font-weight: 600;
+}
+
+.tk-arena-guide-btn--primary:hover {
+  background: rgba(212, 165, 116, 0.3);
+}
+
+/* ── R4-P1-1: 低胜率策略建议条 ── */
+.tk-arena-strategy-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.25);
+  border-radius: var(--tk-radius-md, 6px);
+  font-size: 12px;
+  color: #ffc107;
+  animation: tk-arena-tip-highlight 3s ease-in-out infinite;
+}
+
+@keyframes tk-arena-tip-highlight {
+  0%, 100% { border-color: rgba(255, 193, 7, 0.25); }
+  50% { border-color: rgba(255, 193, 7, 0.5); }
+}
+
+.tk-arena-strategy-tip-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.tk-arena-strategy-tip-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.tk-arena-strategy-tip-text b {
+  color: #FFD700;
+}
+
+.tk-arena-strategy-tip-btn {
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: var(--tk-radius-sm, 4px);
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.tk-arena-strategy-tip-btn:hover {
+  background: rgba(255, 193, 7, 0.25);
+}
+
+/* ────────────────────────────────────────────
+   R4-P1-5: 对手详情卡片
+   ──────────────────────────────────────────── */
+.tk-arena-opp-card--detailed {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 10px;
+  gap: 6px;
+}
+
+.tk-arena-opp-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-arena-opp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tk-arena-opp-rank-badge {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tk-arena-opp-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  color: #888;
+  flex-wrap: wrap;
+}
+
+/* 对手阵容预览 */
+.tk-arena-opp-formation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--tk-radius-sm, 4px);
+  margin-top: 2px;
+}
+
+.tk-arena-opp-formation-label {
+  font-size: 10px;
+  color: #d4a574;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.tk-arena-opp-slots {
+  display: flex;
+  gap: 2px;
+}
+
+.tk-arena-opp-slot {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  font-size: 9px;
+}
+
+.tk-arena-opp-slot--filled {
+  background: rgba(126, 200, 80, 0.15);
+  color: #7EC850;
+}
+
+.tk-arena-opp-slot--empty {
+  background: rgba(255, 255, 255, 0.04);
+  color: #555;
+}
+
+.tk-arena-opp-slots-count {
+  font-size: 10px;
+  color: #666;
+  margin-left: auto;
+}
+
+/* 对手最近战绩 */
+.tk-arena-opp-record {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.tk-arena-opp-record-label {
+  color: #666;
+  flex-shrink: 0;
+}
+
+.tk-arena-opp-record-dot {
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.tk-arena-opp-record-dot--win {
+  background: rgba(126, 200, 80, 0.15);
+  color: #7EC850;
+}
+
+.tk-arena-opp-record-dot--lose {
+  background: rgba(255, 100, 100, 0.15);
+  color: #ff6464;
+}
+
+.tk-arena-opp-record-text {
+  color: #888;
+}
+
+/* 对手卡片内挑战按钮（详情模式） */
+.tk-arena-opp-card--detailed .tk-arena-chal-btn {
+  align-self: flex-end;
+  margin-top: 2px;
+}
+
+/* ────────────────────────────────────────────
+   R4-P1-2: 战斗摘要弹窗
+   ──────────────────────────────────────────── */
+.tk-arena-battle-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+/* 评级区域 */
+.tk-arena-summary-rating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--tk-radius-lg, 10px);
+}
+
+.tk-arena-summary-grade {
+  font-size: 32px;
+  font-weight: 900;
+  text-shadow: 0 0 12px currentColor;
+}
+
+.tk-arena-summary-grade-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 核心数据网格 */
+.tk-arena-summary-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tk-arena-summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--tk-radius-md, 6px);
+}
+
+.tk-arena-summary-stat-label {
+  font-size: 10px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.tk-arena-summary-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e8e0d0;
+}
+
+.tk-arena-summary-stat--positive {
+  color: #7EC850;
+}
+
+.tk-arena-summary-stat--negative {
+  color: #ff6464;
+}
+
+.tk-arena-summary-stat--highlight {
+  color: #FFD700;
+}
+
+/* 战斗行动摘要 */
+.tk-arena-summary-actions {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+
+.tk-arena-summary-actions-title {
+  font-size: 11px;
+  color: #d4a574;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.tk-arena-summary-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tk-arena-summary-action-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--tk-radius-sm, 4px);
+}
+
+.tk-arena-summary-action-turn {
+  color: #d4a574;
+  font-weight: 600;
+  font-size: 10px;
+  flex-shrink: 0;
+  min-width: 22px;
+}
+
+.tk-arena-summary-action-desc {
+  color: #a0a0a0;
+}
+
+.tk-arena-summary-actions-more {
+  font-size: 10px;
+  color: #555;
+  text-align: center;
+  padding-top: 2px;
 }
 
 /* ── 段位横幅 ── */
@@ -210,7 +584,7 @@
   color: #ff6464;
 }
 
-/* ── 结算弹窗内容 ── */
+/* ── 结算弹窗内容（旧版兼容，保留） ── */
 .tk-arena-result {
   text-align: center;
 }
@@ -261,6 +635,18 @@
     text-align: center;
   }
 
+  .tk-arena-opp-card--detailed {
+    align-items: stretch;
+  }
+
+  .tk-arena-opp-card--detailed > div {
+    text-align: left;
+  }
+
+  .tk-arena-opp-header {
+    justify-content: space-between;
+  }
+
   .tk-arena-chal-btn {
     width: 100%;
     padding: 8px;
@@ -289,6 +675,35 @@
   .tk-arena-header {
     font-size: 12px;
   }
+
+  /* 战斗摘要移动端适配 */
+  .tk-arena-summary-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .tk-arena-summary-grade {
+    font-size: 26px;
+  }
+
+  .tk-arena-summary-grade-label {
+    font-size: 12px;
+  }
+
+  /* 引导提示移动端 */
+  .tk-arena-guide-banner {
+    padding: 10px;
+  }
+
+  .tk-arena-guide-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .tk-arena-guide-btn {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 /* ── 超小屏适配 ── */
@@ -311,6 +726,7 @@
 
   .tk-arena-opp-meta {
     font-size: 10px;
+    gap: 6px;
   }
 
   .tk-arena-bar {
@@ -325,6 +741,22 @@
   .tk-arena-sm-btn {
     padding: 3px 8px;
     font-size: 10px;
+  }
+
+  .tk-arena-summary-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .tk-arena-summary-grade {
+    font-size: 22px;
+  }
+
+  .tk-arena-opp-formation {
+    flex-wrap: wrap;
+  }
+
+  .tk-arena-opp-record {
+    flex-wrap: wrap;
   }
 }
 
@@ -342,6 +774,11 @@
 
   .tk-arena-opp-card {
     flex-direction: row;
+  }
+
+  .tk-arena-opp-card--detailed {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 
   .tk-arena-chal-btn {
@@ -367,6 +804,15 @@
 
   .tk-arena-opp-card {
     min-height: 48px;
+  }
+
+  .tk-arena-guide-btn {
+    min-height: 36px;
+  }
+
+  .tk-arena-strategy-tip-btn {
+    min-height: 32px;
+    padding: 4px 12px;
   }
 }
 

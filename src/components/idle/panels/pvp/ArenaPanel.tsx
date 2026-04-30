@@ -3,6 +3,11 @@
  *          battle.executeBattle/applyBattleResult
  *
  * R4 修复：
+ * - [P1-1] 空防守阵容无引导提示：首次进入提示"请设置防守阵容"引导；低胜率高亮策略建议
+ * - [P1-2] 挑战结果UI反馈不明确：战斗摘要弹窗（伤害/回合/评级/关键数据）
+ * - [P1-5] 对手信息展示不够详细：对手卡片显示阵容预览、战力、最近战绩
+ *
+ * R3 修复：
  * - [P3] 内联样式迁移到 CSS 类，提升代码整洁度和可维护性
  * - [P3] 新增超小屏(360px)和横屏适配
  *
@@ -12,7 +17,7 @@
  * - [P1-2] 新增战前布阵提示（双方阵容对比）
  *
  * @module panels/pvp/ArenaPanel */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import SharedPanel from '@/components/idle/components/SharedPanel';
 import Modal from '@/components/idle/common/Modal';
 import './ArenaPanel.css';
@@ -24,6 +29,30 @@ const RANK_META: Record<string, { label: string; icon: string; color: string }> 
   KING: { label: '王者', icon: '👑', color: '#FFD700' },
 };
 const DIV_LABELS: Record<string, string> = { I: 'I', II: 'II', III: 'III', IV: 'IV', V: 'V' };
+
+/** 阵型名称映射 */
+const FORMATION_LABELS: Record<string, string> = {
+  FISH_SCALE: '鱼鳞阵', CRANE_WING: '鹤翼阵', WEDGE: '锋矢阵',
+  GOOSE: '雁行阵', SNAKE: '长蛇阵', SQUARE: '方圆阵',
+};
+
+/** AI策略名称映射 */
+const STRATEGY_LABELS: Record<string, string> = {
+  BALANCED: '均衡', AGGRESSIVE: '猛攻', DEFENSIVE: '坚守', CUNNING: '智谋', TACTICAL: '战术',
+};
+
+/** 战斗评级计算 */
+function getBattleRating(result: any): { grade: string; label: string; color: string } {
+  const turns = result?.totalTurns ?? 99;
+  const won = result?.attackerWon ?? false;
+  const scoreChange = result?.scoreChange ?? 0;
+
+  if (!won) return { grade: 'D', label: '惜败', color: '#ff6464' };
+  if (turns <= 3 && scoreChange >= 20) return { grade: 'S', label: '完美碾压', color: '#FFD700' };
+  if (turns <= 5 && scoreChange >= 15) return { grade: 'A', label: '出色胜利', color: '#7EC850' };
+  if (turns <= 7) return { grade: 'B', label: '稳健获胜', color: '#4FC3F7' };
+  return { grade: 'C', label: '艰难取胜', color: '#d4a574' };
+}
 
 function parseRank(rankId: string) {
   const tier = rankId.split('_')[0] ?? 'BRONZE';
@@ -45,6 +74,8 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
   const [defenseStrategy, setDefenseStrategy] = useState<string>('BALANCED');
   // R2: 竞技商店
   const [showShop, setShowShop] = useState(false);
+  // R4-P1-1: 防守引导提示状态
+  const [showDefenseGuide, setShowDefenseGuide] = useState(false);
 
   const arena = engine?.getArenaSystem?.() ?? engine?.arena;
   const battle = engine?.getPvPBattleSystem?.() ?? engine?.pvpBattle;
@@ -60,6 +91,25 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
 
   // ACC-07-37 [P1]: 挑战次数是否可用（用于按钮视觉禁用）
   const canChallengeNow = arena?.canChallenge?.(ps) ?? false;
+
+  // ── R4-P1-1: 防守阵容是否为空 ──
+  const isDefenseEmpty = useMemo(() => {
+    const slots = ps?.defenseFormation?.slots;
+    if (!slots) return true;
+    return slots.every((s: string) => !s || s === '');
+  }, [ps?.defenseFormation?.slots]);
+
+  // ── R4-P1-1: 防守统计与策略建议 ──
+  const defenseStats = useMemo(() => {
+    return arena?.getDefenseStats?.(ps) ?? null;
+  }, [arena, ps]);
+
+  // ── R4-P1-1: 首次进入检测，显示引导提示 ──
+  useEffect(() => {
+    if (visible && isDefenseEmpty) {
+      setShowDefenseGuide(true);
+    }
+  }, [visible, isDefenseEmpty]);
 
   const flash = useCallback((msg: string) => { setMessage(msg); setTimeout(() => setMessage(null), 2500); }, []);
 
@@ -91,10 +141,53 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
   // 挑战次数剩余
   const challengesLeft = ps?.dailyChallengesLeft ?? 0;
 
+  // ── R4-P1-2: 战斗评级 ──
+  const battleRating = useMemo(() => getBattleRating(battleResult), [battleResult]);
+
   return (
     <>
       <SharedPanel title="⚔️ 竞技场" visible={visible} onClose={onClose} width="380px">
         <div className="tk-arena-panel" data-testid="arena-panel">
+
+          {/* ── R4-P1-1: 空防守阵容引导提示 ── */}
+          {showDefenseGuide && isDefenseEmpty && (
+            <div className="tk-arena-guide-banner" data-testid="arena-defense-guide">
+              <div className="tk-arena-guide-icon">🛡️</div>
+              <div className="tk-arena-guide-content">
+                <div className="tk-arena-guide-title">请设置防守阵容</div>
+                <div className="tk-arena-guide-desc">其他玩家可以挑战你，设置防守阵容保护你的排名和积分</div>
+              </div>
+              <div className="tk-arena-guide-actions">
+                <button className="tk-arena-guide-btn tk-arena-guide-btn--primary"
+                  data-testid="arena-defense-guide-setup"
+                  onClick={() => { setShowDefenseGuide(false); setShowDefenseEdit(true); }}>
+                  立即设置
+                </button>
+                <button className="tk-arena-guide-btn"
+                  data-testid="arena-defense-guide-dismiss"
+                  onClick={() => setShowDefenseGuide(false)}>
+                  稍后
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── R4-P1-1: 低胜率策略建议 ── */}
+          {defenseStats && defenseStats.totalDefenses >= 5 && defenseStats.winRate < 0.4 && !isDefenseEmpty && (
+            <div className="tk-arena-strategy-tip" data-testid="arena-strategy-tip">
+              <span className="tk-arena-strategy-tip-icon">💡</span>
+              <span className="tk-arena-strategy-tip-text">
+                防守胜率仅{Math.round(defenseStats.winRate * 100)}%，建议切换为
+                <b>{STRATEGY_LABELS[defenseStats.suggestedStrategy ?? 'DEFENSIVE']}</b>策略
+              </span>
+              <button className="tk-arena-strategy-tip-btn"
+                data-testid="arena-strategy-tip-action"
+                onClick={() => { setShowDefenseEdit(true); }}>
+                调整
+              </button>
+            </div>
+          )}
+
           {/* 段位 */}
           <div className="tk-arena-rank-banner" data-testid="arena-panel-rank">
             <span className="tk-arena-rank-icon">{rank.icon}</span>
@@ -117,14 +210,62 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
           {message && <div className="tk-arena-toast" data-testid="arena-panel-toast">{message}</div>}
           {/* 对手 */}
           <div className="tk-arena-header"><span>挑战对手</span><button className="tk-arena-sm-btn" data-testid="arena-panel-refresh" onClick={handleRefresh}>🔄 刷新</button></div>
-          {opponents.length > 0 ? opponents.map((o: any) => (
-            <div key={o.playerId} className="tk-arena-opp-card" data-testid={`arena-panel-opponent-${o.playerId}`}>
-              <div><div className="tk-arena-opp-name">{o.playerName ?? '对手'}</div><div className="tk-arena-opp-meta">⚔️{o.power ?? '?'} · #{o.ranking ?? '?'}</div></div>
-              <button className={`tk-arena-chal-btn ${(busyId === o.playerId || !canChallengeNow) ? 'tk-arena-chal-btn--disabled' : ''}`} disabled={busyId === o.playerId || !canChallengeNow}
-                data-testid={`arena-panel-challenge-${o.playerId}`}
-                onClick={() => handleChallenge(o)}>{busyId === o.playerId ? '...' : '挑战'}</button>
-            </div>
-          )) : <div className="tk-arena-empty">暂无对手，请刷新</div>}
+          {opponents.length > 0 ? opponents.map((o: any) => {
+            // ── R4-P1-5: 对手详细信息 ──
+            const oppRank = parseRank(o.rankId ?? 'BRONZE_V');
+            const oppSlots = o.defenseSnapshot?.slots ?? [];
+            const oppFormation = o.defenseSnapshot?.formation;
+            const filledSlots = oppSlots.filter((s: string) => s && s !== '').length;
+            const oppRecord = o.recentRecord ?? o.recentResults ?? null;
+
+            return (
+              <div key={o.playerId} className="tk-arena-opp-card tk-arena-opp-card--detailed" data-testid={`arena-panel-opponent-${o.playerId}`}>
+                <div className="tk-arena-opp-main">
+                  <div className="tk-arena-opp-header">
+                    <div className="tk-arena-opp-name">{o.playerName ?? '对手'}</div>
+                    <span className="tk-arena-opp-rank-badge" style={{ color: oppRank.color }}>{oppRank.icon} {oppRank.full}</span>
+                  </div>
+                  <div className="tk-arena-opp-meta">
+                    <span>⚔️ 战力 {o.power ?? '?'}</span>
+                    <span>🏆 积分 {o.score ?? '?'}</span>
+                    <span>📊 排名 #{o.ranking ?? '?'}</span>
+                  </div>
+                  {/* R4-P1-5: 阵容预览 */}
+                  {oppSlots.length > 0 && (
+                    <div className="tk-arena-opp-formation" data-testid={`arena-opp-formation-${o.playerId}`}>
+                      <span className="tk-arena-opp-formation-label">
+                        {oppFormation ? (FORMATION_LABELS[oppFormation] ?? oppFormation) : '未知阵型'}
+                      </span>
+                      <div className="tk-arena-opp-slots">
+                        {oppSlots.map((slot: string, i: number) => (
+                          <span key={i} className={`tk-arena-opp-slot ${slot ? 'tk-arena-opp-slot--filled' : 'tk-arena-opp-slot--empty'}`}>
+                            {slot ? '⚔️' : '·'}
+                          </span>
+                        ))}
+                      </div>
+                      <span className="tk-arena-opp-slots-count">{filledSlots}/5</span>
+                    </div>
+                  )}
+                  {/* R4-P1-5: 最近战绩 */}
+                  {oppRecord && (
+                    <div className="tk-arena-opp-record" data-testid={`arena-opp-record-${o.playerId}`}>
+                      <span className="tk-arena-opp-record-label">最近：</span>
+                      {Array.isArray(oppRecord) ? oppRecord.slice(0, 5).map((r: any, i: number) => (
+                        <span key={i} className={`tk-arena-opp-record-dot ${r === 'win' || r?.won ? 'tk-arena-opp-record-dot--win' : 'tk-arena-opp-record-dot--lose'}`}>
+                          {r === 'win' || r?.won ? '胜' : '负'}
+                        </span>
+                      )) : (
+                        <span className="tk-arena-opp-record-text">{oppRecord}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <button className={`tk-arena-chal-btn ${(busyId === o.playerId || !canChallengeNow) ? 'tk-arena-chal-btn--disabled' : ''}`} disabled={busyId === o.playerId || !canChallengeNow}
+                  data-testid={`arena-panel-challenge-${o.playerId}`}
+                  onClick={() => handleChallenge(o)}>{busyId === o.playerId ? '...' : '挑战'}</button>
+              </div>
+            );
+          }) : <div className="tk-arena-empty">暂无对手，请刷新</div>}
           <div className="tk-arena-bar">🪙 竞技币：{ps?.arenaCoins ?? 0}</div>
           {/* 防守日志 */}
           {(ps?.defenseLogs?.length ?? 0) > 0 && (
@@ -150,17 +291,65 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
           </button>
         </div>
       </SharedPanel>
+
+      {/* ── R4-P1-2: 战斗摘要弹窗 ── */}
       <Modal visible={!!battleResult} type={battleResult?.attackerWon ? 'success' : 'danger'}
         title={battleResult?.attackerWon ? '🎉 挑战胜利' : '💔 挑战失败'}
-        confirmText="确定" onConfirm={() => setBattleResult(null)} onCancel={() => setBattleResult(null)} width="300px">
-        <div className="tk-arena-result">
-          <div className="tk-arena-result-score">积分变化：
-            <span className={battleResult?.scoreChange >= 0 ? 'tk-arena-result-change--positive' : 'tk-arena-result-change--negative'}>
-              {battleResult?.scoreChange >= 0 ? '+' : ''}{battleResult?.scoreChange}
-            </span>
+        confirmText="确定" onConfirm={() => setBattleResult(null)} onCancel={() => setBattleResult(null)} width="320px">
+        {battleResult && (
+          <div className="tk-arena-battle-summary" data-testid="arena-battle-summary">
+            {/* 评级 */}
+            <div className="tk-arena-summary-rating" data-testid="arena-battle-rating">
+              <span className="tk-arena-summary-grade" style={{ color: battleRating.color }}>{battleRating.grade}</span>
+              <span className="tk-arena-summary-grade-label" style={{ color: battleRating.color }}>{battleRating.label}</span>
+            </div>
+            {/* 核心数据 */}
+            <div className="tk-arena-summary-stats">
+              <div className="tk-arena-summary-stat">
+                <span className="tk-arena-summary-stat-label">积分变化</span>
+                <span className={`tk-arena-summary-stat-value ${(battleResult.scoreChange ?? 0) >= 0 ? 'tk-arena-summary-stat--positive' : 'tk-arena-summary-stat--negative'}`}>
+                  {(battleResult.scoreChange ?? 0) >= 0 ? '+' : ''}{battleResult.scoreChange ?? 0}
+                </span>
+              </div>
+              <div className="tk-arena-summary-stat">
+                <span className="tk-arena-summary-stat-label">战斗回合</span>
+                <span className="tk-arena-summary-stat-value">{battleResult.totalTurns ?? 0}回合</span>
+              </div>
+              <div className="tk-arena-summary-stat">
+                <span className="tk-arena-summary-stat-label">是否超时</span>
+                <span className="tk-arena-summary-stat-value">{battleResult.isTimeout ? '⏰ 超时' : '✅ 正常'}</span>
+              </div>
+              {battleResult.attackerNewScore !== undefined && (
+                <div className="tk-arena-summary-stat">
+                  <span className="tk-arena-summary-stat-label">当前积分</span>
+                  <span className="tk-arena-summary-stat-value tk-arena-summary-stat--highlight">{battleResult.attackerNewScore}</span>
+                </div>
+              )}
+            </div>
+            {/* 战斗行动摘要（如有） */}
+            {battleResult.battleState?.actions && battleResult.battleState.actions.length > 0 && (
+              <div className="tk-arena-summary-actions">
+                <div className="tk-arena-summary-actions-title">战斗摘要</div>
+                <div className="tk-arena-summary-actions-list">
+                  {battleResult.battleState.actions.slice(0, 3).map((a: any, i: number) => (
+                    <div key={i} className="tk-arena-summary-action-item">
+                      <span className="tk-arena-summary-action-turn">R{a.turn ?? i + 1}</span>
+                      <span className="tk-arena-summary-action-desc">
+                        {a.attackerName ?? '我方'} → {a.targetName ?? '敌方'}
+                        {a.damage ? ` 伤害${a.damage}` : ''}{a.heal ? ` 治疗${a.heal}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                  {battleResult.battleState.actions.length > 3 && (
+                    <div className="tk-arena-summary-actions-more">
+                      还有{battleResult.battleState.actions.length - 3}条记录...
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="tk-arena-result-turns">战斗回合：{battleResult?.totalTurns ?? 0}</div>
-        </div>
+        )}
       </Modal>
 
       {/* R2: 防守编队编辑弹窗 */}
@@ -188,7 +377,7 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
                 borderRadius: 'var(--tk-radius-sm)' as any,
                 background: defenseFormation === f ? 'rgba(212,165,116,0.2)' : 'transparent',
                 color: defenseFormation === f ? '#d4a574' : '#a0a0a0', fontSize: 11, cursor: 'pointer',
-              }} onClick={() => setDefenseFormation(f)}>{f.replace('_', ' ')}</button>
+              }} onClick={() => setDefenseFormation(f)}>{FORMATION_LABELS[f] ?? f}</button>
             ))}
           </div>
           <div style={{ fontSize: 12, color: '#d4a574', fontWeight: 600, marginBottom: 6 }}>AI策略</div>
@@ -199,7 +388,7 @@ export default function ArenaPanel({ engine, visible, onClose }: ArenaPanelProps
                 borderRadius: 'var(--tk-radius-sm)' as any,
                 background: defenseStrategy === s ? 'rgba(212,165,116,0.2)' : 'transparent',
                 color: defenseStrategy === s ? '#d4a574' : '#a0a0a0', fontSize: 11, cursor: 'pointer',
-              }} onClick={() => setDefenseStrategy(s)}>{s}</button>
+              }} onClick={() => setDefenseStrategy(s)}>{STRATEGY_LABELS[s] ?? s}</button>
             ))}
           </div>
           <div style={{ fontSize: 12, color: '#d4a574', fontWeight: 600, marginBottom: 6 }}>武将阵位（5个）</div>
