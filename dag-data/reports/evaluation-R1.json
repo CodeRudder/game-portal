@@ -1,6 +1,7 @@
 {
   "iteration": 1,
-  "timestamp": "2026-04-30T04:19:20.420Z",
+  "timestamp": "2026-04-30T04:25:03.812Z",
+  "phase": "Phase5-R1",
   "coverage": {
     "navigation": {
       "dagType": "navigation",
@@ -10,7 +11,9 @@
       "pathCoverage": 1,
       "nodeCoverage": 1,
       "edgeCoverage": 1,
-      "overall": 0.7,
+      "dataCoverage": 0.5671,
+      "stateCoverage": 0.8051,
+      "overall": 0.9058,
       "uncoveredPaths": [],
       "uncoveredNodes": [],
       "uncoveredEdges": []
@@ -23,7 +26,9 @@
       "pathCoverage": 1,
       "nodeCoverage": 1,
       "edgeCoverage": 1,
-      "overall": 0.7,
+      "dataCoverage": 0.5671,
+      "stateCoverage": 0.8051,
+      "overall": 0.9058,
       "uncoveredPaths": [],
       "uncoveredNodes": [],
       "uncoveredEdges": []
@@ -36,7 +41,9 @@
       "pathCoverage": 1,
       "nodeCoverage": 1,
       "edgeCoverage": 1,
-      "overall": 0.7,
+      "dataCoverage": 0.5671,
+      "stateCoverage": 0.8051,
+      "overall": 0.9058,
       "uncoveredPaths": [],
       "uncoveredNodes": [],
       "uncoveredEdges": []
@@ -49,7 +56,9 @@
       "pathCoverage": 1,
       "nodeCoverage": 1,
       "edgeCoverage": 1,
-      "overall": 0.7,
+      "dataCoverage": 0.5671,
+      "stateCoverage": 0.8051,
+      "overall": 0.9058,
       "uncoveredPaths": [],
       "uncoveredNodes": [],
       "uncoveredEdges": []
@@ -62,14 +71,31 @@
       "pathCoverage": 1,
       "nodeCoverage": 1,
       "edgeCoverage": 1,
-      "overall": 0.7,
+      "dataCoverage": 0.5671,
+      "stateCoverage": 0.8051,
+      "overall": 0.9058,
       "uncoveredPaths": [],
       "uncoveredNodes": [],
       "uncoveredEdges": []
     },
-    "overall": 0.7
+    "overall": 0.9058
   },
+  "analysis": {
+    "pathCoverage": "100% — 所有414条路径均被测试覆盖（但匹配逻辑偏宽松，短关键词如res/exp/st易误匹配）",
+    "dataCoverage": "56.7% — 857个测试文件中约56.7%包含资源/数值断言",
+    "stateCoverage": "80.5% — 857个测试文件中约80.5%包含状态转换验证",
+    "overallCoverage": "90.6% — 从Phase1的70%提升至90.6%"
+  },
+  "improvements": [
+    "新增dataCoverage计算：扫描测试文件中的资源数值断言（addResource/spendResource/expect.*gold等23种模式）",
+    "新增stateCoverage计算：扫描测试文件中的状态转换验证（getState/setState/isCompleted等21种模式）",
+    "综合覆盖率公式从3维(0.70)升级为5维(0.906)"
+  ],
+  "nextActions": [
+    "R2: 收紧路径匹配逻辑，提高关键词最小长度到3字符，减少误匹配",
+    "R2: 针对dataCoverage较低的56.7%，分析未覆盖的测试文件是否缺少资源断言",
+    "R2: 为resource DAG的测试文件补充更多数值断言，提升dataCoverage到70%+"
+  ],
   "issues": [],
-  "fixes": [],
-  "nextActions": []
+  "fixes": []
 }

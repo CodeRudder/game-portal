@@ -25,6 +25,7 @@ interface TestFileInfo {
   file: string;
   describes: string[];
   its: string[];
+  content?: string; // Phase 5: 保留文件内容用于data/state覆盖率分析
 }
 
 /**
@@ -48,6 +49,96 @@ function extractTestNames(content: string): { describes: string[]; its: string[]
   }
 
   return { describes, its };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Phase 5: dataCoverage — 检查测试中是否有资源数值断言
+// ═══════════════════════════════════════════════════════════════
+
+const DATA_PATTERNS = [
+  /expect.*resource.*(?:toBe|toEqual|toBeGreaterThan|toBeLessThan)/i,
+  /expect.*amount.*(?:toBe|toEqual|toBeGreaterThan|toBeLessThan)/i,
+  /expect.*cost.*(?:toBe|toEqual)/i,
+  /expect.*reward.*(?:toBe|toEqual)/i,
+  /expect.*balance.*(?:toBe|toEqual)/i,
+  /\.addResource\(/i,
+  /\.spendResource\(/i,
+  /\.getBalance\(/i,
+  /resource.*change/i,
+  /\.addGold\(/i,
+  /\.spendGold\(/i,
+  /\.addExp\(/i,
+  /getGold\(\)/i,
+  /getExp\(\)/i,
+  /getResource\(/i,
+  /expect.*gold/i,
+  /expect.*exp\b/i,
+  /expect.*lumber/i,
+  /expect.*food/i,
+  /expect.*iron/i,
+  /expect.*stone/i,
+  /currency.*change/i,
+  /\.addCurrency\(/i,
+  /\.spendCurrency\(/i,
+];
+
+/**
+ * 计算数据覆盖率 — 测试文件中包含资源/数值断言的比例
+ */
+function calculateDataCoverage(testFiles: TestFileInfo[]): number {
+  let matched = 0;
+  let total = 0;
+  for (const tf of testFiles) {
+    if (!tf.content) continue;
+    total++;
+    if (DATA_PATTERNS.some(p => p.test(tf.content!))) {
+      matched++;
+    }
+  }
+  return total > 0 ? matched / total : 0;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Phase 5: stateCoverage — 检查测试中是否有状态转换验证
+// ═══════════════════════════════════════════════════════════════
+
+const STATE_PATTERNS = [
+  /expect.*state.*(?:toBe|toEqual|toMatch)/i,
+  /expect.*status.*(?:toBe|toEqual|toMatch)/i,
+  /\.getState\(/i,
+  /\.setState\(/i,
+  /transition/i,
+  /\.isCompleted/i,
+  /\.isActive/i,
+  /\.isUnlocked/i,
+  /building.*level/i,
+  /hero.*level/i,
+  /\.level\s*(?:===|!==|>=|<=|>|<)/i,
+  /expect.*level/i,
+  /\.isLocked/i,
+  /\.isFinished/i,
+  /gameState/i,
+  /gamePhase/i,
+  /phase.*(?:toBe|toEqual)/i,
+  /stage.*(?:toBe|toEqual)/i,
+  /locked/i,
+  /unlocked/i,
+];
+
+/**
+ * 计算状态覆盖率 — 测试文件中包含状态转换/验证的比例
+ */
+function calculateStateCoverage(testFiles: TestFileInfo[]): number {
+  let matched = 0;
+  let total = 0;
+  for (const tf of testFiles) {
+    if (!tf.content) continue;
+    total++;
+    if (STATE_PATTERNS.some(p => p.test(tf.content!))) {
+      matched++;
+    }
+  }
+  return total > 0 ? matched / total : 0;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -129,6 +220,8 @@ interface DAGCoverageResult {
   pathCoverage: number;
   nodeCoverage: number;
   edgeCoverage: number;
+  dataCoverage: number;  // Phase 5: 资源/数值断言覆盖率
+  stateCoverage: number; // Phase 5: 状态转换验证覆盖率
   overall: number;
   uncoveredPaths: string[][];
   uncoveredNodes: string[];
@@ -204,9 +297,15 @@ function calculateDAGCoverage(
   const edgeCoverage = edges.length > 0 ? coveredEdges.size / edges.length : 0;
 
   // 综合覆盖率（加权）
-  // dataCoverage和stateCoverage暂为0（Phase 1不支持）
+  // Phase 5: 完整5维覆盖率
+  // nodeCoverage: 0.25, edgeCoverage: 0.25, pathCoverage: 0.20
+  // dataCoverage: 0.15, stateCoverage: 0.15
+  const dataCov = calculateDataCoverage(testFiles);
+  const stateCov = calculateStateCoverage(testFiles);
+
   const overall = Math.round(
-    (0.25 * nodeCoverage + 0.25 * edgeCoverage + 0.20 * pathCoverage) * 10000,
+    (0.25 * nodeCoverage + 0.25 * edgeCoverage + 0.20 * pathCoverage +
+     0.15 * dataCov + 0.15 * stateCov) * 10000,
   ) / 10000;
 
   return {
@@ -217,6 +316,8 @@ function calculateDAGCoverage(
     pathCoverage: Math.round(pathCoverage * 10000) / 10000,
     nodeCoverage: Math.round(nodeCoverage * 10000) / 10000,
     edgeCoverage: Math.round(edgeCoverage * 10000) / 10000,
+    dataCoverage: Math.round(dataCov * 10000) / 10000,
+    stateCoverage: Math.round(stateCov * 10000) / 10000,
     overall,
     uncoveredPaths: uncovered.slice(0, 30),
     uncoveredNodes: uncoveredNodes.slice(0, 30),
@@ -250,7 +351,7 @@ function walkDir(dir: string) {
     ) {
       const content = fs.readFileSync(full, 'utf-8');
       const names = extractTestNames(content);
-      allTestFiles.push({ file: path.relative(process.cwd(), full), ...names });
+      allTestFiles.push({ file: path.relative(process.cwd(), full), ...names, content }); // Phase 5: 保留content
     }
   }
 }
@@ -311,6 +412,8 @@ for (const dagType of dagTypes) {
   console.log(`  路径覆盖率: ${(result.pathCoverage * 100).toFixed(1)}% (${result.coveredPaths}/${result.totalPaths})`);
   console.log(`  节点覆盖率: ${(result.nodeCoverage * 100).toFixed(1)}% (${nodes.length - result.uncoveredNodes.length}/${nodes.length})`);
   console.log(`  边覆盖率:   ${(result.edgeCoverage * 100).toFixed(1)}% (${edges.length - result.uncoveredEdges.length}/${edges.length})`);
+  console.log(`  数据覆盖率: ${(result.dataCoverage * 100).toFixed(1)}%`);
+  console.log(`  状态覆盖率: ${(result.stateCoverage * 100).toFixed(1)}%`);
   console.log(`  综合覆盖率: ${(result.overall * 100).toFixed(1)}%`);
 
   if (result.uncoveredPaths.length > 0) {
@@ -366,11 +469,11 @@ console.log('═'.repeat(60));
 console.log(`  测试文件: ${allTestFiles.length}, 测试用例: ${totalIts}`);
 console.log(`  DAG总数: ${results.length}, 路径总数: ${report.summary.totalPaths}`);
 console.log('');
-console.log(`  ${'DAG类型'.padEnd(14)} ${'路径覆盖'.padStart(10)} ${'节点覆盖'.padStart(10)} ${'边覆盖'.padStart(10)} ${'综合'.padStart(8)}`);
-console.log(`  ${'─'.repeat(14)} ${'─'.repeat(10)} ${'─'.repeat(10)} ${'─'.repeat(10)} ${'─'.repeat(8)}`);
+console.log(`  ${'DAG类型'.padEnd(14)} ${'路径覆盖'.padStart(10)} ${'节点覆盖'.padStart(10)} ${'边覆盖'.padStart(10)} ${'数据覆盖'.padStart(10)} ${'状态覆盖'.padStart(10)} ${'综合'.padStart(8)}`);
+console.log(`  ${'─'.repeat(14)} ${'─'.repeat(10)} ${'─'.repeat(10)} ${'─'.repeat(10)} ${'─'.repeat(10)} ${'─'.repeat(10)} ${'─'.repeat(8)}`);
 for (const r of results) {
   console.log(
-    `  ${r.dagType.padEnd(14)} ${((r.pathCoverage) * 100).toFixed(1).padStart(9)}% ${((r.nodeCoverage) * 100).toFixed(1).padStart(9)}% ${((r.edgeCoverage) * 100).toFixed(1).padStart(9)}% ${(r.overall * 100).toFixed(1).padStart(7)}%`,
+    `  ${r.dagType.padEnd(14)} ${((r.pathCoverage) * 100).toFixed(1).padStart(9)}% ${((r.nodeCoverage) * 100).toFixed(1).padStart(9)}% ${((r.edgeCoverage) * 100).toFixed(1).padStart(9)}% ${((r.dataCoverage) * 100).toFixed(1).padStart(9)}% ${((r.stateCoverage) * 100).toFixed(1).padStart(9)}% ${(r.overall * 100).toFixed(1).padStart(7)}%`,
   );
 }
 console.log('');
