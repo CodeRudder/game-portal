@@ -56,30 +56,64 @@ function extractTestNames(content: string): { describes: string[]; its: string[]
 // ═══════════════════════════════════════════════════════════════
 
 const DATA_PATTERNS = [
-  /expect.*resource.*(?:toBe|toEqual|toBeGreaterThan|toBeLessThan)/i,
-  /expect.*amount.*(?:toBe|toEqual|toBeGreaterThan|toBeLessThan)/i,
-  /expect.*cost.*(?:toBe|toEqual)/i,
-  /expect.*reward.*(?:toBe|toEqual)/i,
-  /expect.*balance.*(?:toBe|toEqual)/i,
+  // ── 通用资源断言 ──
+  /expect.*resource.*(?:toBe|toEqual|toBeGreaterThan|toBeLessThan|toBeGreaterThanOrEqual|toBeLessThanOrEqual)/i,
+  /expect.*amount.*(?:toBe|toEqual|toBeGreaterThan|toBeLessThan|toBeGreaterThanOrEqual|toBeLessThanOrEqual)/i,
+  /expect.*cost.*(?:toBe|toEqual|toBeGreaterThan)/i,
+  /expect.*reward.*(?:toBe|toEqual|toBeGreaterThan)/i,
+  /expect.*balance.*(?:toBe|toEqual|toBeGreaterThan)/i,
+  /expect.*price.*(?:toBe|toEqual|toBeGreaterThan)/i,
+  /expect.*value.*(?:toBe|toEqual|toBeGreaterThan|toBeLessThan)/i,
+  /expect.*count.*(?:toBe|toEqual|toBeGreaterThan|toBeLessThan)/i,
+  /expect.*total.*(?:toBe|toEqual|toBeGreaterThan)/i,
+  /expect.*rate.*(?:toBe|toEqual|toBeGreaterThan)/i,
+  /expect.*income.*(?:toBe|toEqual|toBeGreaterThan)/i,
   /\.addResource\(/i,
   /\.spendResource\(/i,
   /\.getBalance\(/i,
   /resource.*change/i,
+  /\.addCurrency\(/i,
+  /\.spendCurrency\(/i,
+  /currency.*change/i,
+
+  // ── 三国特有资源：金/铜/银/粮/木材/铁矿/石料 ──
+  /expect.*gold/i,
+  /expect.*copper/i,
+  /expect.*silver/i,
+  /expect.*grain/i,
+  /expect.*food/i,
+  /expect.*lumber/i,
+  /expect.*iron/i,
+  /expect.*stone/i,
+  /expect.*exp\b/i,
+  /expect.*troops/i,
+  /expect.*morale/i,
+  /expect.*prestige/i,
+  /expect.*honor/i,
+  /expect.*fame/i,
   /\.addGold\(/i,
   /\.spendGold\(/i,
+  /\.addCopper\(/i,
+  /\.spendCopper\(/i,
+  /\.addGrain\(/i,
   /\.addExp\(/i,
   /getGold\(\)/i,
   /getExp\(\)/i,
   /getResource\(/i,
-  /expect.*gold/i,
-  /expect.*exp\b/i,
-  /expect.*lumber/i,
-  /expect.*food/i,
-  /expect.*iron/i,
-  /expect.*stone/i,
-  /currency.*change/i,
-  /\.addCurrency\(/i,
-  /\.spendCurrency\(/i,
+
+  // ── 数值验证：caps/limit/rate/level 等关键资源属性 ──
+  /expect.*cap/i,
+  /expect.*limit/i,
+  /expect.*level.*(?:toBe|toEqual|toBeGreaterThan|toBeLessThan|toBeGreaterThanOrEqual)/i,
+  /caps\.\w+/i,
+  /\.getSnapshot\(\)/i,
+  /\.getResources\(\)/i,
+
+  // ── 数值字面量断言（资源数值检查） ──
+  /expect\(.*\)\.(?:toBe|toEqual)\(\d+\)/i,
+  /expect\(.*\)\.toBeGreaterThan\(\d+\)/i,
+  /expect\(.*\)\.toBeLessThan\(\d+\)/i,
+  /expect\(.*\)\.toBeGreaterThanOrEqual\(\d+\)/i,
 ];
 
 /**
@@ -172,11 +206,11 @@ function matchTestCoverage(
       const lowerNodeId = nodeId.toLowerCase();
 
       // 将节点ID按分隔符拆分为关键词
-      const keywords = lowerNodeId.split(/[-_]/).filter(k => k.length >= 2);
+      const keywords = lowerNodeId.split(/[-_]/).filter(k => k.length >= 3);
 
       for (const testName of allTestNames) {
         // 检查完整节点ID是否在测试名称中
-        if (lowerNodeId.length >= 2 && testName.includes(lowerNodeId)) {
+        if (lowerNodeId.length >= 3 && testName.includes(lowerNodeId)) {
           isCovered = true;
           break;
         }
@@ -190,7 +224,7 @@ function matchTestCoverage(
         if (isCovered) break;
 
         // 也检查测试名称是否是节点ID的子串
-        if (testName.length >= 2 && lowerNodeId.includes(testName)) {
+        if (testName.length >= 3 && lowerNodeId.includes(testName)) {
           isCovered = true;
           break;
         }
@@ -251,15 +285,15 @@ function calculateDAGCoverage(
   const uncoveredNodes: string[] = [];
   for (const node of nodes) {
     const lowerId = node.id.toLowerCase();
-    const keywords = lowerId.split(/[-_]/).filter(k => k.length >= 2);
+    const keywords = lowerId.split(/[-_]/).filter(k => k.length >= 3);
     let found = false;
     for (const tn of allTestNames) {
-      if (lowerId.length >= 2 && tn.includes(lowerId)) { found = true; break; }
+      if (lowerId.length >= 3 && tn.includes(lowerId)) { found = true; break; }
       for (const kw of keywords) {
         if (tn.includes(kw)) { found = true; break; }
       }
       if (found) break;
-      if (tn.length >= 2 && lowerId.includes(tn)) { found = true; break; }
+      if (tn.length >= 3 && lowerId.includes(tn)) { found = true; break; }
     }
     if (found) {
       coveredNodes.add(node.id);
@@ -276,13 +310,13 @@ function calculateDAGCoverage(
     const edgeKey = `${edge.from}→${edge.to}`;
     const lowerFrom = edge.from.toLowerCase();
     const lowerTo = edge.to.toLowerCase();
-    const kwFrom = lowerFrom.split(/[-_]/).filter(k => k.length >= 2);
-    const kwTo = lowerTo.split(/[-_]/).filter(k => k.length >= 2);
+    const kwFrom = lowerFrom.split(/[-_]/).filter(k => k.length >= 3);
+    const kwTo = lowerTo.split(/[-_]/).filter(k => k.length >= 3);
     let found = false;
     for (const tn of allTestNames) {
       // 边的任一端点匹配即可
-      if (lowerFrom.length >= 2 && tn.includes(lowerFrom)) { found = true; break; }
-      if (lowerTo.length >= 2 && tn.includes(lowerTo)) { found = true; break; }
+      if (lowerFrom.length >= 3 && tn.includes(lowerFrom)) { found = true; break; }
+      if (lowerTo.length >= 3 && tn.includes(lowerTo)) { found = true; break; }
       for (const kw of [...kwFrom, ...kwTo]) {
         if (tn.includes(kw)) { found = true; break; }
       }

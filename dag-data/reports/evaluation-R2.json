@@ -1,9 +1,7 @@
 {
-  "timestamp": "2026-04-30T04:30:47.723Z",
-  "testFiles": 857,
-  "testCases": 40964,
-  "describeBlocks": 8026,
-  "dagResults": {
+  "iteration": 2,
+  "timestamp": "2026-04-30T04:31:26.973Z",
+  "coverage": {
     "navigation": {
       "dagType": "navigation",
       "dagId": "nav-main-v1",
@@ -78,14 +76,12 @@
       "uncoveredPaths": [],
       "uncoveredNodes": [],
       "uncoveredEdges": []
-    }
+    },
+    "overall": 0.9645,
+    "previousOverall": 0.9058,
+    "delta": 0.059
   },
-  "overallCoverage": 0.9645,
-  "summary": {
-    "totalDAGs": 5,
-    "totalPaths": 414,
-    "totalCoveredPaths": 414,
-    "totalNodes": 244,
-    "totalEdges": 274
-  }
+  "issues": [],
+  "fixes": [],
+  "nextActions": []
 }
