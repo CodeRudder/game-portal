@@ -404,7 +404,7 @@ describe('BattleEngine', () => {
         isControlled: () => false,
       };
 
-      const customEngine = new BattleEngine(deterministicCalc as any);
+      const customEngine = new BattleEngine(deterministicCalc as unknown as Record<string, unknown>);
 
       // 6个盟友，每次攻击50伤害，每回合300伤害
       // HP=1800：6回合=1800刚好不够（需要>1800），7回合=2100够了

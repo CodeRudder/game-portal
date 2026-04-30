@@ -564,7 +564,7 @@ describe('§5.4 联盟解散→成员回归→重新加入全流程', () => {
 
   it('反序列化版本不匹配返回默认', () => {
     const saved = { version: 999, playerState: state(), allianceData: null };
-    const { playerState, alliance } = sys.deserialize(saved as any);
+    const { playerState, alliance } = sys.deserialize(saved as unknown as Record<string, unknown>);
     expect(playerState.allianceId).toBe('');
     expect(alliance).toBeNull();
   });

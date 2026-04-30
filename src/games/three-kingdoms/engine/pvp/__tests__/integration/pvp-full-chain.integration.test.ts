@@ -630,7 +630,7 @@ describe('§9.15 PvP→声望串联验证', () => {
     expect(typeof newAttacker.score).toBe('number');
     expect(typeof newAttacker.arenaCoins).toBe('number');
     // 确认ArenaPlayerState没有声望字段
-    expect((newAttacker as any).prestige).toBeUndefined();
-    expect((newAttacker as any).reputation).toBeUndefined();
+    expect((newAttacker as unknown as Record<string, unknown>).prestige).toBeUndefined();
+    expect((newAttacker as unknown as Record<string, unknown>).reputation).toBeUndefined();
   });
 });

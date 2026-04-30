@@ -252,7 +252,7 @@ describe('§3 限时活动+代币商店 集成', () => {
         { playerId: 'p2', playerName: 'B', points: 300, tokens: 0, rank: 0 },
         { playerId: 'p3', playerName: 'C', points: 200, tokens: 0, rank: 0 },
       ];
-      const result = activity.updateLeaderboard('act-1', entries as any);
+      const result = activity.updateLeaderboard('act-1', entries as unknown as Record<string, unknown>);
       expect(result[0].rank).toBe(1);
       expect(result[0].playerId).toBe('p2');
       expect(result[1].playerId).toBe('p3');
@@ -264,7 +264,7 @@ describe('§3 限时活动+代币商店 集成', () => {
         { playerId: 'p1', playerName: 'A', points: 100, tokens: 0, rank: 0 },
         { playerId: 'p2', playerName: 'B', points: 200, tokens: 0, rank: 0 },
       ];
-      activity.updateLeaderboard('act-1', entries as any);
+      activity.updateLeaderboard('act-1', entries as unknown as Record<string, unknown>);
       expect(activity.getPlayerRank('act-1', 'p2')).toBe(1);
       expect(activity.getPlayerRank('act-1', 'p1')).toBe(2);
     });
@@ -302,7 +302,7 @@ describe('§3 限时活动+代币商店 集成', () => {
       const many = Array.from({ length: 200 }, (_, i) => ({
         playerId: `p${i}`, playerName: `P${i}`, points: i, tokens: 0, rank: 0,
       }));
-      const result = activity.updateLeaderboard('act-1', many as any);
+      const result = activity.updateLeaderboard('act-1', many as unknown as Record<string, unknown>);
       expect(result.length).toBeLessThanOrEqual(100);
     });
   });
@@ -330,7 +330,7 @@ describe('§3 限时活动+代币商店 集成', () => {
     });
 
     it('getFestivalTemplate 不存在的类型返回 undefined', () => {
-      expect(activity.getFestivalTemplate('non_existent' as any)).toBeUndefined();
+      expect(activity.getFestivalTemplate('non_existent' as unknown as string)).toBeUndefined();
     });
 
     it('createFestivalActivity 创建完整活动流程', () => {
@@ -397,7 +397,7 @@ describe('§3 限时活动+代币商店 集成', () => {
       activity.createTimedActivityFlow('act-1', T0 + DAY, T0 + 7 * DAY);
       activity.updateLeaderboard('act-1', [
         { playerId: 'p1', playerName: 'A', points: 100, tokens: 0, rank: 0 },
-      ] as any);
+      ] as unknown as string[]);
 
       const data = activity.serialize();
       const newActivity = new TimedActivitySystem();

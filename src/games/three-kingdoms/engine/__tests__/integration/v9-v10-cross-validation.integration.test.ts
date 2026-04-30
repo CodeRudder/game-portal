@@ -15,7 +15,7 @@
  * 测试原则：
  * - 每个用例创建独立的 sim 实例
  * - 使用真实引擎 API，不使用 mock
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  *
  * @see docs/games/three-kingdoms/play/v9-play.md
  * @see docs/games/three-kingdoms/play/v10-play.md

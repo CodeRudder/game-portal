@@ -63,7 +63,7 @@ function createShop(): ShopSystem {
   };
   const mockConfig = { get: vi.fn() };
   const mockRegistry = { get: vi.fn() };
-  shop.init({ eventBus: mockEventBus as any, config: mockConfig as any, registry: mockRegistry as any });
+  shop.init({ eventBus: mockEventBus as unknown as { emit: (...args: unknown[]) => void; on: (...args: unknown[]) => void; off: (...args: unknown[]) => void }, config: mockConfig as unknown as { get: (key: string) => unknown }, registry: mockRegistry as unknown as { get: (key: string) => unknown } });
   return shop;
 }
 
@@ -93,7 +93,7 @@ function createMockCurrencySystem(): CurrencySystem & {
     }),
     _checkResult: { canAfford: true, shortages: [] },
     _setAffordable: (v: boolean) => { affordable = v; },
-  } as any;
+  } as unknown as Record<string, unknown>;
 }
 
 /** 获取一个存在于 normal 商店的商品ID */
@@ -780,7 +780,7 @@ describe('ShopSystem', () => {
 
     it('deserialize 版本不匹配不抛异常（仅警告）', () => {
       const data: ShopSaveData = {
-        shops: {} as any,
+        shops: {} as Record<string, unknown>,
         favorites: [],
         version: 999,
       };
@@ -812,7 +812,7 @@ describe('ShopSystem', () => {
 
     it('init 可多次调用', () => {
       expect(() => {
-        shop.init({ eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() } as any, config: { get: vi.fn() } as any, registry: { get: vi.fn() } as any });
+        shop.init({ eventBus: { emit: vi.fn() as unknown as (...args: unknown[]) => void, on: vi.fn() as unknown as (...args: unknown[]) => void, off: vi.fn() as unknown as (...args: unknown[]) => void }, config: { get: vi.fn() as unknown as (key: string) => unknown }, registry: { get: vi.fn() as unknown as (key: string) => unknown } });
       }).not.toThrow();
     });
 

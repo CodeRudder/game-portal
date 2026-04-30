@@ -62,7 +62,7 @@ describe('MapEventSystem', () => {
     });
 
     it('forceTrigger 不存在的类型应抛错', () => {
-      expect(() => system.forceTrigger('nonexistent' as any)).toThrow();
+      expect(() => system.forceTrigger('nonexistent' as unknown as string)).toThrow();
     });
   });
 

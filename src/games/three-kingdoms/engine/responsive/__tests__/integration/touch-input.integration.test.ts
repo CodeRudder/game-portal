@@ -373,7 +373,7 @@ describe('§2 触控交互', () => {
   describe('§2.7 子系统接口与重置', () => {
     it('init/getState/isInitialized 应满足 ISubsystem 接口', () => {
       expect(sys.isInitialized).toBe(false);
-      sys.init({} as any);
+      sys.init({} as Record<string, unknown>);
       expect(sys.isInitialized).toBe(true);
     });
 

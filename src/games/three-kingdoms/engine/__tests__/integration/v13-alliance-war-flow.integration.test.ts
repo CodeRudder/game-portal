@@ -770,7 +770,7 @@ describe('v13.0 联盟战争 — §16.2 断线与异常处理', () => {
       timestamp: NOW,
       totalTurns: 5,
       actions: [],
-      result: { winner: 'attacker' } as any,
+      result: { winner: 'attacker' } as unknown as Record<string, unknown>,
       keyMoments: [3],
     };
 
@@ -792,7 +792,7 @@ describe('v13.0 联盟战争 — §16.2 断线与异常处理', () => {
       timestamp: NOW - 8 * DAY_MS, // 8 days ago (expired)
       totalTurns: 3,
       actions: [],
-      result: { winner: 'attacker' } as any,
+      result: { winner: 'attacker' } as unknown as Record<string, unknown>,
       keyMoments: [],
     };
 
@@ -805,7 +805,7 @@ describe('v13.0 联盟战争 — §16.2 断线与异常处理', () => {
       timestamp: NOW - DAY_MS, // 1 day ago (valid)
       totalTurns: 7,
       actions: [],
-      result: { winner: 'defender' } as any,
+      result: { winner: 'defender' } as unknown as Record<string, unknown>,
       keyMoments: [4],
     };
 
@@ -834,7 +834,7 @@ describe('v13.0 联盟战争 — §16.2 断线与异常处理', () => {
         timestamp: NOW - i * 1000,
         totalTurns: 3 + (i % 5),
         actions: [],
-        result: { winner: i % 2 === 0 ? 'attacker' : 'defender' } as any,
+        result: { winner: i % 2 === 0 ? 'attacker' : 'defender' } as unknown as Record<string, unknown>,
         keyMoments: [],
       });
     }

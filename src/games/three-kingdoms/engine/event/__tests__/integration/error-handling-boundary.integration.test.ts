@@ -337,7 +337,7 @@ describe('§9 异常处理与边界场景 集成', () => {
     });
 
     it('条件评估 — 未知条件类型默认通过', () => {
-      const cond = { type: 'unknown_type', params: {} } as any as EventCondition;
+      const cond = { type: 'unknown_type', params: {} } as unknown as EventCondition;
       const result = evaluator.evaluate(cond, { currentTurn: 1, completedEventIds: new Set() });
       expect(result).toBe(true);
     });

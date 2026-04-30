@@ -22,9 +22,9 @@ import type { ISystemDeps } from '../../../../core/types';
 
 function makeMockDeps(): ISystemDeps {
   return {
-    eventBus: { on: () => {}, off: () => {}, emit: () => {} } as any,
-    config: { get: () => null, set: () => {}, has: () => false } as any,
-    registry: { get: () => null, register: () => {}, has: () => false, getAll: () => [], unregister: () => {} } as any,
+    eventBus: { on: () => {}, off: () => {}, emit: () => {} } as unknown as Record<string, unknown>,
+    config: { get: () => null, set: () => {}, has: () => false } as unknown as Record<string, unknown>,
+    registry: { get: () => null, register: () => {}, has: () => false, getAll: () => [], unregister: () => {} } as unknown as Record<string, unknown>,
   };
 }
 

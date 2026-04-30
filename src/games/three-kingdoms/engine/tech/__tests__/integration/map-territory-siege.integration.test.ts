@@ -193,7 +193,7 @@ describe('§2.4 特殊地标', () => {
   it('可按类型查询地标', () => {
     const types = ['city', 'pass', 'resource'];
     for (const t of types) {
-      const landmarks = sys.map.getLandmarksByType(t as any);
+      const landmarks = sys.map.getLandmarksByType(t as unknown as Record<string, unknown>);
       expect(Array.isArray(landmarks)).toBe(true);
     }
   });

@@ -25,9 +25,9 @@ import {
 
 function createSystems() {
   const equipment = new EquipmentSystem();
-  equipment.init({ eventBus: { emit: () => {} } } as any);
+  equipment.init({ eventBus: { emit: () => {} } } as unknown as Record<string, unknown>);
   const enhance = new EquipmentEnhanceSystem(equipment);
-  enhance.init({ eventBus: { emit: () => {} } } as any);
+  enhance.init({ eventBus: { emit: () => {} } } as unknown as Record<string, unknown>);
   return { equipment, enhance };
 }
 

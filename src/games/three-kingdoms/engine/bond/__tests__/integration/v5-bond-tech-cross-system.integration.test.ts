@@ -10,7 +10,7 @@
  * 编码规范：
  * - 每个it前创建新的系统实例
  * - describe按play流程ID组织
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  *
  * @module engine/bond/__tests__/integration/v5-bond-tech-cross-system
  */

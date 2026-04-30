@@ -74,7 +74,7 @@ function createSystemBundle() {
 }
 
 function completeStep(stepManager: TutorialStepManager, stepId: string) {
-  const result = stepManager.startStep(stepId as any);
+  const result = stepManager.startStep(stepId as unknown as Record<string, unknown>);
   if (!result.success) return result;
   const definition = result.step!;
   for (let i = 0; i < definition.subSteps.length; i++) {

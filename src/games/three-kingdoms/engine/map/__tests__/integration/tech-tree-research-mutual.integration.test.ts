@@ -44,7 +44,7 @@ function createMockDeps(): ISystemDeps {
       getAll: () => new Map(),
       has: () => false,
       unregister: () => {},
-    } as any,
+    } as unknown as Record<string, unknown>,
   };
 }
 

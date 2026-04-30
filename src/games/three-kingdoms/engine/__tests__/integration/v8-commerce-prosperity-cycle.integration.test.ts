@@ -708,7 +708,7 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
       config: { get: () => undefined },
       registry: { get: () => undefined },
     };
-    trade2.init(mockDeps as any);
+    trade2.init(mockDeps as unknown as Record<string, unknown>);
     trade2.deserialize(saved);
 
     // 验证恢复一致
@@ -740,7 +740,7 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
       config: { get: () => undefined },
       registry: { get: () => undefined },
     };
-    currency2.init(mockDeps as any);
+    currency2.init(mockDeps as unknown as Record<string, unknown>);
     currency2.deserialize(saved);
 
     // 验证恢复一致
@@ -767,7 +767,7 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
       config: { get: () => undefined },
       registry: { get: () => undefined },
     };
-    shop2.init(mockDeps as any);
+    shop2.init(mockDeps as unknown as Record<string, unknown>);
     shop2.deserialize(saved);
 
     // 验证恢复一致
@@ -788,7 +788,7 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
       config: { get: () => undefined },
       registry: { get: () => undefined },
     };
-    caravan2.init(mockDeps as any);
+    caravan2.init(mockDeps as unknown as Record<string, unknown>);
     caravan2.deserialize(saved);
 
     // 验证恢复一致
@@ -835,24 +835,24 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
     };
 
     const trade2 = new TradeSystem();
-    trade2.init(mockDeps as any);
+    trade2.init(mockDeps as unknown as Record<string, unknown>);
     trade2.deserialize(tradeData);
     expect(trade2.getRouteState(routeId)?.prosperity).toBe(70);
 
     const currency2 = new CurrencySystem();
-    currency2.init(mockDeps as any);
+    currency2.init(mockDeps as unknown as Record<string, unknown>);
     currency2.deserialize(currencyData);
     expect(currency2.getBalance('copper' as CurrencyType)).toBe(
       currency.getBalance('copper' as CurrencyType),
     );
 
     const shop2 = new ShopSystem();
-    shop2.init(mockDeps as any);
+    shop2.init(mockDeps as unknown as Record<string, unknown>);
     shop2.deserialize(shopData);
     expect(shop2.getShopLevel('normal' as ShopType)).toBe(5);
 
     const caravan2 = new CaravanSystem();
-    caravan2.init(mockDeps as any);
+    caravan2.init(mockDeps as unknown as Record<string, unknown>);
     caravan2.deserialize(caravanData);
     expect(caravan2.getCaravanCount()).toBe(caravan.getCaravanCount());
   });
@@ -863,7 +863,7 @@ describe('v8.0 商贸繁荣 — §4 多系统序列化一致性', () => {
 
     // TradeSystem 版本不匹配应抛异常
     expect(() => {
-      trade.deserialize({ version: -1 } as any);
+      trade.deserialize({ version: -1 } as unknown as Record<string, unknown>);
     }).toThrow(/版本不匹配/);
   });
 });

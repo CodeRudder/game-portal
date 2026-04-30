@@ -93,7 +93,7 @@ function createSystemBundle() {
 
 /** 完成指定步骤（含所有子步骤） */
 function completeStep(stepManager: TutorialStepManager, stepId: string) {
-  const result = stepManager.startStep(stepId as any);
+  const result = stepManager.startStep(stepId as unknown as Record<string, unknown>);
   if (!result.success) return result;
   const definition = result.step!;
   for (let i = 0; i < definition.subSteps.length; i++) {
@@ -248,8 +248,8 @@ describe('§7.4 统计面板+中断恢复+移动端适配 集成测试', () => {
       const local: TutorialSaveData = {
         version: 1,
         currentPhase: 'core_guiding',
-        completedSteps: ['step1_castle_overview', 'step2_build_farm'] as any,
-        completedEvents: ['e1_peach_garden'] as any,
+        completedSteps: ['step1_castle_overview', 'step2_build_farm'] as unknown as string[],
+        completedEvents: ['e1_peach_garden'] as unknown as string[],
         currentStepId: null,
         currentSubStepIndex: 0,
         tutorialStartTime: Date.now(),
@@ -260,8 +260,8 @@ describe('§7.4 统计面板+中断恢复+移动端适配 集成测试', () => {
       };
       const remote: TutorialSaveData = {
         ...local,
-        completedSteps: ['step2_build_farm', 'step3_recruit_hero'] as any,
-        completedEvents: ['e2_yellow_turban'] as any,
+        completedSteps: ['step2_build_farm', 'step3_recruit_hero'] as unknown as string[],
+        completedEvents: ['e2_yellow_turban'] as unknown as string[],
       };
 
       const merged = bundle.stateMachine.resolveConflict(local, remote);
@@ -276,7 +276,7 @@ describe('§7.4 统计面板+中断恢复+移动端适配 集成测试', () => {
         version: 1,
         currentPhase: 'core_guiding',
         completedSteps: [],
-        completedEvents: ['e1_peach_garden'] as any,
+        completedEvents: ['e1_peach_garden'] as unknown as string[],
         currentStepId: null,
         currentSubStepIndex: 0,
         tutorialStartTime: Date.now(),
@@ -287,7 +287,7 @@ describe('§7.4 统计面板+中断恢复+移动端适配 集成测试', () => {
       };
       const remote: TutorialSaveData = {
         ...base,
-        completedEvents: ['e2_yellow_turban', 'e3_three_visits'] as any,
+        completedEvents: ['e2_yellow_turban', 'e3_three_visits'] as unknown as string[],
       };
 
       const merged = bundle.stateMachine.resolveConflict(base, remote);
@@ -325,8 +325,8 @@ describe('§7.4 统计面板+中断恢复+移动端适配 集成测试', () => {
       const remote: TutorialSaveData = {
         version: 1,
         currentPhase: 'core_guiding',
-        completedSteps: ['step2_build_farm'] as any,
-        completedEvents: ['e1_peach_garden'] as any,
+        completedSteps: ['step2_build_farm'] as unknown as string[],
+        completedEvents: ['e1_peach_garden'] as unknown as string[],
         currentStepId: null,
         currentSubStepIndex: 0,
         tutorialStartTime: Date.now(),

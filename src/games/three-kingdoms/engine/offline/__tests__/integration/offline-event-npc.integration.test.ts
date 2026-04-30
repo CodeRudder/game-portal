@@ -109,12 +109,12 @@ describe('v9-int §3.5 事件系统离线行为', () => {
   it('§3.5.3 批量添加离线事件', () => {
     const eventDef = makeEventDef();
     const events = Array.from({ length: 5 }, (_, i) => ({
-      eventId: `evt-${i}` as any,
+      eventId: `evt-${i}` as unknown as string,
       eventDefId: `evt-${i}`,
       title: `事件${i}`,
       description: `描述${i}`,
       urgency: 'medium' as const,
-      category: 'random' as any,
+      category: 'random' as unknown as string,
       triggeredAt: Date.now() - i * 60000,
       requiresManualAction: false,
       triggerTurn: i,
@@ -130,12 +130,12 @@ describe('v9-int §3.5 事件系统离线行为', () => {
     const eventDef = makeEventDef();
     for (let i = 0; i < 55; i++) {
       eventSystem.addOfflineEvent({
-        eventId: `evt-${i}` as any,
+        eventId: `evt-${i}` as unknown as string,
         eventDefId: `evt-${i}`,
         title: `事件${i}`,
         description: `描述${i}`,
         urgency: 'low',
-        category: 'random' as any,
+        category: 'random' as unknown as string,
         triggeredAt: Date.now() - i * 60000,
         requiresManualAction: false,
         triggerTurn: i,
@@ -174,7 +174,7 @@ describe('v9-int §3.5 事件系统离线行为', () => {
       title: '低优先级事件',
       description: '自动处理',
       urgency: 'low',
-      category: 'random' as any,
+      category: 'random' as unknown as string,
       triggeredAt: Date.now() - 3600000,
       requiresManualAction: false,
       triggerTurn: 1,
@@ -194,7 +194,7 @@ describe('v9-int §3.5 事件系统离线行为', () => {
       title: '需手动处理',
       description: '高优先级',
       urgency: 'critical',
-      category: 'random' as any,
+      category: 'random' as unknown as string,
       triggeredAt: Date.now(),
       requiresManualAction: true,
       triggerTurn: 1,
@@ -214,7 +214,7 @@ describe('v9-int §3.5 事件系统离线行为', () => {
       title: '事件',
       description: '描述',
       urgency: 'low',
-      category: 'random' as any,
+      category: 'random' as unknown as string,
       triggeredAt: Date.now(),
       requiresManualAction: false,
       triggerTurn: 1,
@@ -294,7 +294,7 @@ describe('v9-int §3.6 NPC离线行为', () => {
     });
     // 快照只有资源/速率/队列数据，无NPC好感度字段
     expect(snap.resources).toBeDefined();
-    expect((snap as any).npcAffinity).toBeUndefined();
+    expect((snap as unknown as Record<string, unknown>).npcAffinity).toBeUndefined();
   });
 
   it('§3.6.2 NPC系统离线效率系数(hero=0.5)', () => {
@@ -384,7 +384,7 @@ describe('v9-int §3.6 NPC离线行为', () => {
       title: '回溯测试',
       description: '测试回溯',
       urgency: 'medium',
-      category: 'random' as any,
+      category: 'random' as unknown as string,
       triggeredAt: Date.now() - 7200000,
       requiresManualAction: false,
       triggerTurn: 3,
@@ -408,7 +408,7 @@ describe('v9-int §3.6 NPC离线行为', () => {
       title: '手动处理',
       description: '需手动',
       urgency: 'high',
-      category: 'random' as any,
+      category: 'random' as unknown as string,
       triggeredAt: Date.now(),
       requiresManualAction: true,
       triggerTurn: 1,
@@ -435,7 +435,7 @@ describe('v9-int §3.6 NPC离线行为', () => {
       title: '事件',
       description: '描述',
       urgency: 'low',
-      category: 'random' as any,
+      category: 'random' as unknown as string,
       triggeredAt: Date.now(),
       requiresManualAction: false,
       triggerTurn: 1,

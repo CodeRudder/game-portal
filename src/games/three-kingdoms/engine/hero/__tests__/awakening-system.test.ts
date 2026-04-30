@@ -131,12 +131,12 @@ function createTestEnv(
 
   // 设置星级（通过内部状态直接设置）
   if (opts?.star) {
-    (starSystem as any).state.stars[heroId] = opts.star;
+    (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars[heroId] = opts.star;
   }
 
   // 设置突破阶段
   if (opts?.breakthrough) {
-    (starSystem as any).state.breakthroughStages[heroId] = opts.breakthrough;
+    (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.breakthroughStages[heroId] = opts.breakthrough;
   }
 
   // 创建觉醒系统
@@ -597,8 +597,8 @@ describe('AwakeningSystem', () => {
 
       const starSystem = new HeroStarSystem(heroSystem);
       starSystem.init(makeMockCoreDeps());
-      (starSystem as any).state.stars['guanyu'] = 6;
-      (starSystem as any).state.breakthroughStages['guanyu'] = 4;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 6;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.breakthroughStages['guanyu'] = 4;
 
       const awakeningSystem = new AwakeningSystem(heroSystem, starSystem);
       awakeningSystem.init(makeMockCoreDeps());
@@ -669,8 +669,8 @@ describe('AwakeningSystem', () => {
       starSystem.setDeps(starDeps);
 
       for (const id of shuHeroes) {
-        (starSystem as any).state.stars[id] = 6;
-        (starSystem as any).state.breakthroughStages[id] = 4;
+        (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars[id] = 6;
+        (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.breakthroughStages[id] = 4;
       }
 
       const awakeningSystem = new AwakeningSystem(heroSystem, starSystem);
@@ -707,8 +707,8 @@ describe('AwakeningSystem', () => {
       starSystem.setDeps(starDeps);
 
       for (const id of shuHeroes) {
-        (starSystem as any).state.stars[id] = 6;
-        (starSystem as any).state.breakthroughStages[id] = 4;
+        (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars[id] = 6;
+        (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.breakthroughStages[id] = 4;
       }
 
       const awakeningSystem = new AwakeningSystem(heroSystem, starSystem);
@@ -841,8 +841,8 @@ describe('AwakeningSystem', () => {
       starSystem.setDeps(starDeps);
 
       for (const id of heroes) {
-        (starSystem as any).state.stars[id] = 6;
-        (starSystem as any).state.breakthroughStages[id] = 4;
+        (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars[id] = 6;
+        (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.breakthroughStages[id] = 4;
       }
 
       const awakeningSystem = new AwakeningSystem(heroSystem, starSystem);

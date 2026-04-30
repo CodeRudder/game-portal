@@ -42,7 +42,7 @@ function createSystem(): CurrencySystem {
   };
   const mockConfig = { get: vi.fn() };
   const mockRegistry = { get: vi.fn() };
-  cs.init({ eventBus: mockEventBus as any, config: mockConfig as any, registry: mockRegistry as any });
+  cs.init({ eventBus: mockEventBus as unknown as { emit: (...args: unknown[]) => void; on: (...args: unknown[]) => void; off: (...args: unknown[]) => void }, config: mockConfig as unknown as { get: (key: string) => unknown }, registry: mockRegistry as unknown as { get: (key: string) => unknown } });
   return cs;
 }
 
@@ -363,7 +363,7 @@ describe('CurrencySystem', () => {
       expect(data.wallet.mandate).toBe(10);
 
       const cs2 = new CurrencySystem();
-      cs2.init({ eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() } as any, config: { get: vi.fn() } as any, registry: { get: vi.fn() } as any });
+      cs2.init({ eventBus: { emit: vi.fn() as unknown as (...args: unknown[]) => void, on: vi.fn() as unknown as (...args: unknown[]) => void, off: vi.fn() as unknown as (...args: unknown[]) => void }, config: { get: vi.fn() as unknown as (key: string) => unknown }, registry: { get: vi.fn() as unknown as (key: string) => unknown } });
       cs2.deserialize(data);
       expect(cs2.getBalance('copper')).toBe(1500);
       expect(cs2.getBalance('mandate')).toBe(10);
@@ -372,7 +372,7 @@ describe('CurrencySystem', () => {
     it('deserialize 版本不匹配时仍恢复数据', () => {
       const data = { wallet: { ...INITIAL_WALLET, copper: 5000 }, version: 99 };
       const consoleSpy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
-      cs.deserialize(data as any);
+      cs.deserialize(data as unknown as Record<string, unknown>);
       expect(cs.getBalance('copper')).toBe(5000);
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
@@ -391,7 +391,7 @@ describe('CurrencySystem', () => {
   describe('事件监听', () => {
     it('addCurrency 触发 currency:changed 事件', () => {
       cs.addCurrency('copper', 100);
-      const mockEventBus = (cs as any).deps.eventBus;
+      const mockEventBus = (cs as unknown as Record<string, unknown>).deps.eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith('currency:changed', {
         type: 'copper',
         before: 1000,
@@ -401,7 +401,7 @@ describe('CurrencySystem', () => {
 
     it('spendCurrency 触发 currency:changed 事件', () => {
       cs.spendCurrency('copper', 100);
-      const mockEventBus = (cs as any).deps.eventBus;
+      const mockEventBus = (cs as unknown as Record<string, unknown>).deps.eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith('currency:changed', {
         type: 'copper',
         before: 1000,

@@ -17,7 +17,7 @@
  * - 每个it前创建新的sim实例
  * - describe按play流程ID组织
  * - 引擎未实现 it.todo + [引擎未实现]
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  *
  * @see docs/games/three-kingdoms/play/v9-play.md
  */

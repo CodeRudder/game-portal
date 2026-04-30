@@ -174,9 +174,9 @@ describe('v19.0 §3 统一系统 集成测试', () => {
       // 关闭动画总开关
       ctrl.applySettings({
         enabled: false,
-        transitions: {} as any,
-        stateAnimations: {} as any,
-        feedbackAnimations: {} as any,
+        transitions: {} as Record<string, unknown>,
+        stateAnimations: {} as Record<string, unknown>,
+        feedbackAnimations: {} as Record<string, unknown>,
       });
       ctrl.playInkWashTransition();
       // 播放器不应被调用（开关关闭）

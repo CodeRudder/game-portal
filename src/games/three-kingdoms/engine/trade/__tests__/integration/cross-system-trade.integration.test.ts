@@ -25,6 +25,7 @@ import {
   INITIAL_CARAVAN_COUNT,
   GUARD_RISK_REDUCTION,
 } from '../../../../core/trade/trade-config';
+import type { CurrencyType } from '../../../../core/currency';
 
 // ─── 辅助 ────────────────────────────────────
 
@@ -57,8 +58,8 @@ function createFullFixture() {
 
   // Trade → Currency 回调
   trade.setCurrencyOps({
-    addCurrency: (type: string, amount: number) => currency.addCurrency(type as any, amount),
-    canAfford: (type: string, amount: number) => currency.hasEnough(type as any, amount),
+    addCurrency: (type: string, amount: number) => currency.addCurrency(type as CurrencyType, amount),
+    canAfford: (type: string, amount: number) => currency.hasEnough(type as CurrencyType, amount),
     spendByPriority: (shopType: string, amount: number, currencyType?: string) => {
       try {
         currency.spendByPriority(shopType, { [currencyType ?? 'copper']: amount });
@@ -139,11 +140,11 @@ describe('§8.1~8.5 跨系统联动', () => {
       if (!goods) return;
       // 充足货币
       for (const [cur, amt] of Object.entries(goods.price)) {
-        currency.addCurrency(cur as any, amt + 1000);
+        currency.addCurrency(cur as CurrencyType, amt + 1000);
       }
       const beforeBalances: Record<string, number> = {};
       for (const cur of Object.keys(goods.price)) {
-        beforeBalances[cur] = currency.getBalance(cur as any);
+        beforeBalances[cur] = currency.getBalance(cur as unknown as Record<string, unknown>);
       }
       const result = shop.executeBuy({
         goodsId: goods.item.defId,
@@ -152,7 +153,7 @@ describe('§8.1~8.5 跨系统联动', () => {
       });
       if (result.success) {
         for (const [cur, amt] of Object.entries(goods.price)) {
-          const after = currency.getBalance(cur as any);
+          const after = currency.getBalance(cur as unknown as Record<string, unknown>);
           expect(after).toBeLessThanOrEqual(beforeBalances[cur]);
         }
       }
@@ -176,7 +177,7 @@ describe('§8.1~8.5 跨系统联动', () => {
       const goods = getPurchasableGoods(shop);
       if (!goods || goods.item.stock === -1) return;
       for (const [cur, amt] of Object.entries(goods.price)) {
-        currency.addCurrency(cur as any, amt + 1000);
+        currency.addCurrency(cur as CurrencyType, amt + 1000);
       }
       const beforeStock = shop.getStockInfo('normal', goods.item.defId)!.stock;
       const result = shop.executeBuy({
@@ -194,7 +195,7 @@ describe('§8.1~8.5 跨系统联动', () => {
       const goods = getPurchasableGoods(shop);
       if (!goods) return;
       for (const [cur, amt] of Object.entries(goods.price)) {
-        currency.addCurrency(cur as any, amt * 10 + 1000);
+        currency.addCurrency(cur as CurrencyType, amt * 10 + 1000);
       }
       const result = shop.executeBuy({
         goodsId: goods.item.defId,
@@ -210,7 +211,7 @@ describe('§8.1~8.5 跨系统联动', () => {
     it('§8.1.5 validateBuy返回完整校验结果', () => {
       const goods = getPurchasableGoods(shop);
       if (!goods) return;
-      currency.addCurrency('copper' as any, 100000);
+      currency.addCurrency('copper' as CurrencyType, 100000);
       const validation = shop.validateBuy({
         goodsId: goods.item.defId,
         quantity: 1,
@@ -269,7 +270,7 @@ describe('§8.1~8.5 跨系统联动', () => {
 
     it('§8.2.1 完整贸易流程：开店→派遣→事件→完成', () => {
       // 1. 开通商路
-      currency.addCurrency('copper' as any, 100000);
+      currency.addCurrency('copper' as CurrencyType, 100000);
       const routeId = openFirstRoute(trade);
       expect(routeId).not.toBeNull();
 
@@ -524,17 +525,17 @@ describe('§8.1~8.5 跨系统联动', () => {
     });
 
     it('§8.4.4 CurrencySystem序列化/反序列化一致', () => {
-      currency.addCurrency('copper' as any, 5000);
-      currency.addCurrency('mandate' as any, 100);
+      currency.addCurrency('copper' as CurrencyType, 5000);
+      currency.addCurrency('mandate' as CurrencyType, 100);
       const wallet = currency.getWallet();
       // CurrencySystem没有serialize/deserialize，用getWallet/setCurrency验证
-      const copper = currency.getBalance('copper' as any);
+      const copper = currency.getBalance('copper' as CurrencyType);
       expect(copper).toBeGreaterThan(0);
     });
 
     it('§8.4.5 全系统序列化后恢复状态', () => {
       // 准备状态
-      currency.addCurrency('copper' as any, 50000);
+      currency.addCurrency('copper' as CurrencyType, 50000);
       const routeId = openFirstRoute(trade);
       if (routeId) {
         trade.completeTrade(routeId);
@@ -572,7 +573,7 @@ describe('§8.1~8.5 跨系统联动', () => {
   describe('§8.5 跨系统串联', () => {
 
     it('§8.5.1 Shop+Currency购买流程', () => {
-      currency.addCurrency('copper' as any, 100000);
+      currency.addCurrency('copper' as CurrencyType, 100000);
       const goods = shop.getShopGoods('normal');
       expect(goods.length).toBeGreaterThan(0);
       // 找一个可购买商品
@@ -598,19 +599,19 @@ describe('§8.1~8.5 跨系统联动', () => {
 
     it('§8.5.2 Trade+Currency开店扣费', () => {
       // 确保初始余额已知
-      currency.setCurrency('copper' as any, 500);
-      const beforeCopper = currency.getBalance('copper' as any);
+      currency.setCurrency('copper' as CurrencyType, 500);
+      const beforeCopper = currency.getBalance('copper' as CurrencyType);
       // 开通第一条商路需要500铜钱
       const routeId = openFirstRoute(trade, 1);
       if (routeId) {
         // 验证货币被扣除
-        const afterCopper = currency.getBalance('copper' as any);
+        const afterCopper = currency.getBalance('copper' as CurrencyType);
         expect(afterCopper).toBeLessThan(beforeCopper);
       }
     });
 
     it('§8.5.3 Trade+Caravan完整流程', () => {
-      currency.addCurrency('copper' as any, 100000);
+      currency.addCurrency('copper' as CurrencyType, 100000);
       const routeId = openFirstRoute(trade);
       expect(routeId).not.toBeNull();
       const idle = caravan.getIdleCaravans();
@@ -627,9 +628,9 @@ describe('§8.1~8.5 跨系统联动', () => {
 
     it('§8.5.4 四系统联动：商店购买→贸易→商队→货币', () => {
       // 1. 给足够货币并记录初始值
-      currency.setCurrency('copper' as any, 100000);
-      currency.addCurrency('mandate' as any, 100);
-      const beforeCopper = currency.getBalance('copper' as any);
+      currency.setCurrency('copper' as CurrencyType, 100000);
+      currency.addCurrency('mandate' as CurrencyType, 100);
+      const beforeCopper = currency.getBalance('copper' as CurrencyType);
 
       // 2. 商店购买
       const goods = getPurchasableGoods(shop);
@@ -642,7 +643,7 @@ describe('§8.1~8.5 跨系统联动', () => {
         // 购买可能成功也可能因限购失败
         if (buyResult.success) {
           // 验证货币减少
-          expect(currency.getBalance('copper' as any)).toBeLessThan(beforeCopper);
+          expect(currency.getBalance('copper' as CurrencyType)).toBeLessThan(beforeCopper);
         }
       }
 
@@ -709,7 +710,7 @@ describe('§8.1~8.5 跨系统联动', () => {
     });
 
     it('§8.5.10 贸易事件→繁荣度→利润闭环', () => {
-      currency.addCurrency('copper' as any, 100000);
+      currency.addCurrency('copper' as CurrencyType, 100000);
       const routeId = openFirstRoute(trade);
       if (!routeId) return;
 

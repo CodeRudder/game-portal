@@ -44,20 +44,20 @@ function createMockDeps(): any {
 function createMockEvent(overrides: Partial<ActiveGameEvent> = {}): ActiveGameEvent {
   return {
     instanceId: 'inst-001',
-    eventId: 'event_test' as any,
+    eventId: 'event_test' as unknown as string,
     name: '测试事件',
     description: '这是一个测试事件',
-    triggerType: 'random' as any,
-    category: 'military' as any,
-    priority: 'normal' as any,
-    status: 'active' as any,
+    triggerType: 'random' as unknown as string,
+    category: 'military' as unknown as string,
+    priority: 'normal' as unknown as string,
+    status: 'active' as unknown as string,
     options: [
       {
         id: 'opt1',
         text: '选项1',
         description: '选项描述1',
         consequences: [
-          { type: 'resource_change' as any, target: 'grain', value: 100, description: '获得100粮草' },
+          { type: 'resource_change' as unknown as string, target: 'grain', value: 100, description: '获得100粮草' },
         ],
         aiWeight: 1,
       },
@@ -65,7 +65,7 @@ function createMockEvent(overrides: Partial<ActiveGameEvent> = {}): ActiveGameEv
         id: 'opt2',
         text: '选项2',
         consequences: [
-          { type: 'resource_change' as any, target: 'gold', value: -50, description: '损失50铜钱' },
+          { type: 'resource_change' as unknown as string, target: 'gold', value: -50, description: '损失50铜钱' },
         ],
         aiWeight: 0.5,
       },
@@ -154,8 +154,8 @@ describe('EventUINotification', () => {
     });
 
     it('有当前横幅时加入 pending 队列', () => {
-      const event1 = createMockEvent({ eventId: 'e1' as any });
-      const event2 = createMockEvent({ eventId: 'e2' as any });
+      const event1 = createMockEvent({ eventId: 'e1' as unknown as string });
+      const event2 = createMockEvent({ eventId: 'e2' as unknown as string });
 
       ui.createBanner(event1);
       ui.createBanner(event2);
@@ -165,37 +165,37 @@ describe('EventUINotification', () => {
     });
 
     it('横幅图标根据 category 映射', () => {
-      const militaryEvent = createMockEvent({ category: 'military' as any });
+      const militaryEvent = createMockEvent({ category: 'military' as unknown as string });
       const banner = ui.createBanner(militaryEvent);
       expect(banner.icon).toBe('⚔️');
     });
 
     it('未知 category 使用默认图标', () => {
-      const unknownEvent = createMockEvent({ category: 'unknown_cat' as any });
+      const unknownEvent = createMockEvent({ category: 'unknown_cat' as unknown as string });
       const banner = ui.createBanner(unknownEvent);
       expect(banner.icon).toBe('📢');
     });
 
     it('urgent 优先级显示时长 8000ms', () => {
-      const event = createMockEvent({ priority: 'urgent' as any });
+      const event = createMockEvent({ priority: 'urgent' as unknown as string });
       const banner = ui.createBanner(event);
       expect(banner.displayDuration).toBe(8000);
     });
 
     it('high 优先级显示时长 6000ms', () => {
-      const event = createMockEvent({ priority: 'high' as any });
+      const event = createMockEvent({ priority: 'high' as unknown as string });
       const banner = ui.createBanner(event);
       expect(banner.displayDuration).toBe(6000);
     });
 
     it('normal 优先级显示时长 5000ms', () => {
-      const event = createMockEvent({ priority: 'normal' as any });
+      const event = createMockEvent({ priority: 'normal' as unknown as string });
       const banner = ui.createBanner(event);
       expect(banner.displayDuration).toBe(5000);
     });
 
     it('low 优先级显示时长 4000ms', () => {
-      const event = createMockEvent({ priority: 'low' as any });
+      const event = createMockEvent({ priority: 'low' as unknown as string });
       const banner = ui.createBanner(event);
       expect(banner.displayDuration).toBe(4000);
     });
@@ -205,9 +205,9 @@ describe('EventUINotification', () => {
 
   describe('横幅队列优先级排序', () => {
     it('pending 队列按优先级降序排列', () => {
-      const lowEvent = createMockEvent({ eventId: 'low' as any, priority: 'low' as any });
-      const urgentEvent = createMockEvent({ eventId: 'urgent' as any, priority: 'urgent' as any });
-      const normalEvent = createMockEvent({ eventId: 'normal' as any, priority: 'normal' as any });
+      const lowEvent = createMockEvent({ eventId: 'low' as unknown as string, priority: 'low' as unknown as string });
+      const urgentEvent = createMockEvent({ eventId: 'urgent' as unknown as string, priority: 'urgent' as unknown as string });
+      const normalEvent = createMockEvent({ eventId: 'normal' as unknown as string, priority: 'normal' as unknown as string });
 
       ui.createBanner(lowEvent);
       ui.createBanner(urgentEvent);
@@ -238,8 +238,8 @@ describe('EventUINotification', () => {
 
   describe('dismissCurrentBanner', () => {
     it('关闭当前横幅后显示下一个', () => {
-      const event1 = createMockEvent({ eventId: 'e1' as any });
-      const event2 = createMockEvent({ eventId: 'e2' as any });
+      const event1 = createMockEvent({ eventId: 'e1' as unknown as string });
+      const event2 = createMockEvent({ eventId: 'e2' as unknown as string });
 
       ui.createBanner(event1);
       ui.createBanner(event2);
@@ -275,7 +275,7 @@ describe('EventUINotification', () => {
     it('返回深拷贝不影响内部状态', () => {
       ui.createBanner(createMockEvent());
       const state = ui.getState();
-      (state.bannerQueue.current as any)!.title = 'modified';
+      (state.bannerQueue.current as unknown as { title: string })!.title = 'modified';
 
       // 内部状态不受影响
       expect(ui.getCurrentBanner()!.title).toBe('测试事件');
@@ -308,19 +308,19 @@ describe('EventUINotification', () => {
     });
 
     it('urgent 事件 isUrgent 为 true', () => {
-      const event = createMockEvent({ priority: 'urgent' as any });
+      const event = createMockEvent({ priority: 'urgent' as unknown as string });
       const modal = ui.createEncounterModal(event);
       expect(modal.isUrgent).toBe(true);
     });
 
     it('非 urgent 事件 isUrgent 为 false', () => {
-      const event = createMockEvent({ priority: 'normal' as any });
+      const event = createMockEvent({ priority: 'normal' as unknown as string });
       const modal = ui.createEncounterModal(event);
       expect(modal.isUrgent).toBe(false);
     });
 
     it('图标根据 category 映射', () => {
-      const event = createMockEvent({ category: 'economic' as any });
+      const event = createMockEvent({ category: 'economic' as unknown as string });
       const modal = ui.createEncounterModal(event);
       expect(modal.icon).toBe('💰');
     });
@@ -391,7 +391,7 @@ describe('EventUINotification', () => {
     it('过期横幅列表最多保留50条', () => {
       // 创建并关闭51个横幅
       for (let i = 0; i < 51; i++) {
-        ui.createBanner(createMockEvent({ eventId: `e${i}` as any }));
+        ui.createBanner(createMockEvent({ eventId: `e${i}` as unknown as string }));
         ui.dismissCurrentBanner();
       }
 
@@ -403,7 +403,7 @@ describe('EventUINotification', () => {
       // BANNER_MAX_QUEUE_SIZE = 5
       // 第一个作为 current，后续进入 pending
       for (let i = 0; i < 10; i++) {
-        ui.createBanner(createMockEvent({ eventId: `e${i}` as any }));
+        ui.createBanner(createMockEvent({ eventId: `e${i}` as unknown as string }));
       }
 
       const state = ui.getState();

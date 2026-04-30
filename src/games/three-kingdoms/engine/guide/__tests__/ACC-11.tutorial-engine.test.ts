@@ -582,7 +582,7 @@ describe('ACC-11 引导系统引擎层验收', () => {
       const localData: TutorialSaveData = {
         version: TUTORIAL_SAVE_VERSION,
         currentPhase: 'core_guiding',
-        completedSteps: ['step1_castle_overview', 'step2_build_farm'] as any,
+        completedSteps: ['step1_castle_overview', 'step2_build_farm'] as unknown as string[],
         completedEvents: [],
         currentStepId: null,
         currentSubStepIndex: 0,
@@ -596,7 +596,7 @@ describe('ACC-11 引导系统引擎层验收', () => {
       const remoteData: TutorialSaveData = {
         version: TUTORIAL_SAVE_VERSION,
         currentPhase: 'core_guiding',
-        completedSteps: ['step2_build_farm', 'step3_recruit_hero'] as any,
+        completedSteps: ['step2_build_farm', 'step3_recruit_hero'] as unknown as string[],
         completedEvents: [],
         currentStepId: null,
         currentSubStepIndex: 0,
@@ -620,7 +620,7 @@ describe('ACC-11 引导系统引擎层验收', () => {
       const localData: TutorialSaveData = {
         version: TUTORIAL_SAVE_VERSION,
         currentPhase: 'core_guiding',
-        completedSteps: ['step1_castle_overview'] as any,
+        completedSteps: ['step1_castle_overview'] as unknown as string[],
         completedEvents: [],
         currentStepId: null,
         currentSubStepIndex: 0,
@@ -634,7 +634,7 @@ describe('ACC-11 引导系统引擎层验收', () => {
       const remoteData: TutorialSaveData = {
         version: TUTORIAL_SAVE_VERSION,
         currentPhase: 'free_play',
-        completedSteps: ['step1_castle_overview', 'step2_build_farm', 'step3_recruit_hero'] as any,
+        completedSteps: ['step1_castle_overview', 'step2_build_farm', 'step3_recruit_hero'] as unknown as string[],
         completedEvents: [],
         currentStepId: null,
         currentSubStepIndex: 0,

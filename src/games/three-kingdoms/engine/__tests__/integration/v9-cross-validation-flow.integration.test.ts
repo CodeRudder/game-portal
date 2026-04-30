@@ -329,7 +329,7 @@ describe('v9.0 离线收益 — §7.22 五系统全链路', () => {
       content: '测试',
     });
     try {
-      activitySystem.calculateOfflineProgress({ activities: {} } as any, 3600000);
+      activitySystem.calculateOfflineProgress({ activities: {} } as unknown as Record<string, unknown>, 3600000);
     } catch {
       // 无活动时可能报错，不影响其他系统
     }

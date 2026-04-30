@@ -20,6 +20,7 @@ import {
   CITY_IDS, CITY_LABELS, PROSPERITY_LABELS,
 } from '../../../core/trade/trade.types';
 import {
+import type { ISystemDeps } from "../../core/types";
   TRADE_ROUTE_DEFS, TRADE_GOODS_DEFS, PRICE_REFRESH_INTERVAL,
   PROSPERITY_TIERS, INITIAL_PROSPERITY, PROSPERITY_GAIN_PER_TRADE,
   TRADE_EVENT_DEFS, TRADE_SAVE_VERSION,
@@ -43,7 +44,7 @@ function createMockCurrencyOps(): TradeCurrencyOps {
 
 function createTrade(): TradeSystem {
   const trade = new TradeSystem();
-  trade.init(createMockDeps() as any);
+  trade.init(createMockDeps() as unknown as ISystemDeps);
   return trade;
 }
 
@@ -171,12 +172,12 @@ describe('TradeSystem - 价格波动', () => {
   it('价格在基础价50%~200%之间', () => {
     // 通过手动修改 lastRefreshTime 来触发刷新
     for (const [id, price] of trade.getAllPrices()) {
-      (trade as any).goodsPrices.get(id).lastRefreshTime = 0;
+      (trade as unknown as Record<string, unknown>).goodsPrices.get(id).lastRefreshTime = 0;
     }
     // 多次刷新验证范围
     for (let i = 0; i < 50; i++) {
       for (const [id, price] of trade.getAllPrices()) {
-        (trade as any).goodsPrices.get(id).lastRefreshTime = 0;
+        (trade as unknown as Record<string, unknown>).goodsPrices.get(id).lastRefreshTime = 0;
       }
       trade.refreshPrices();
       for (const def of TRADE_GOODS_DEFS) {
@@ -391,7 +392,7 @@ describe('TradeSystem - 序列化', () => {
   it('deserialize 版本不匹配抛异常', () => {
     expect(() => trade.deserialize({
       routes: {}, prices: {}, caravans: [], activeEvents: [], npcMerchants: [], version: 999,
-    } as any)).toThrow();
+    } as unknown as Record<string, unknown>)).toThrow();
   });
 
   it('reset 恢复初始状态', () => {

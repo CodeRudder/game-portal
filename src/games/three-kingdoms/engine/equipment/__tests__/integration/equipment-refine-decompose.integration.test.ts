@@ -324,7 +324,7 @@ describe('§15 存档序列化', () => {
     forge.reset();
     expect(forge.getTotalForgeCount()).toBe(0);
 
-    forge.deserialize(saved as any);
+    forge.deserialize(saved as unknown as Record<string, unknown>);
     expect(forge.getTotalForgeCount()).toBe(1);
     expect(forge.getPityState().basicBluePity).toBe(saved.pityState.basicBluePity);
   });

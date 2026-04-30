@@ -23,7 +23,7 @@
  *
  * 测试原则：
  * - 使用真实 ThreeKingdomsEngine，不使用 mock
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  * - 重点验证系统间数据流转正确性
  */
 

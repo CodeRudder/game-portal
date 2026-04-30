@@ -11,7 +11,7 @@
  * 编码规范：
  * - 每个it前创建新的 MapEventSystem 实例
  * - describe按play流程ID组织
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  */
 
 import { describe, it, expect } from 'vitest';
@@ -330,8 +330,8 @@ describe('V4 MAP-EVENT-LIFECYCLE 地图事件生命周期', () => {
 
     it('无效数据反序列化不崩溃', () => {
       const sys = createAlwaysTrigger();
-      expect(() => sys.deserialize(null as any)).not.toThrow();
-      expect(() => sys.deserialize({ version: 999 } as any)).not.toThrow();
+      expect(() => sys.deserialize(null as unknown as string)).not.toThrow();
+      expect(() => sys.deserialize({ version: 999 } as unknown as Record<string, unknown>)).not.toThrow();
     });
 
     it('reset清空所有状态', () => {

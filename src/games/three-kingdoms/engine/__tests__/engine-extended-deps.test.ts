@@ -19,6 +19,7 @@ import {
 } from '../engine-extended-deps';
 import { SubsystemRegistry } from '../../core/engine/SubsystemRegistry';
 import type { ISystemDeps } from '../../core/types';
+import type { ISubsystem } from "../../core/types";
 
 // ─────────────────────────────────────────────
 // Mock deps
@@ -32,18 +33,18 @@ function createMockDeps(): ISystemDeps {
       emit: vi.fn(),
       once: vi.fn(),
       removeAllListeners: vi.fn(),
-    } as any,
+    } as unknown as Record<string, unknown>,
     config: {
       get: vi.fn().mockReturnValue(undefined),
       set: vi.fn(),
       getAll: vi.fn().mockReturnValue({}),
-    } as any,
+    } as unknown as Record<string, unknown>,
     registry: {
       register: vi.fn(),
       get: vi.fn(),
       getAll: vi.fn().mockReturnValue(new Map()),
       unregister: vi.fn(),
-    } as any,
+    } as unknown as Record<string, unknown>,
   };
 }
 
@@ -86,7 +87,7 @@ describe('engine-extended-deps', () => {
       const keys = Object.keys(systems) as (keyof R11Systems)[];
 
       for (const key of keys) {
-        const sys = systems[key] as any;
+        const sys = systems[key] as unknown as ISubsystem;
         expect(typeof sys.name).toBe('string');
         expect(sys.name.length).toBeGreaterThan(0);
       }
@@ -100,7 +101,7 @@ describe('engine-extended-deps', () => {
 
     it('传入自定义 EquipmentSystem 时使用传入的实例', () => {
       const mockEq = { name: 'custom-equipment', init: vi.fn(), update: vi.fn(), getState: vi.fn(), reset: vi.fn() };
-      const systems = createR11Systems(mockEq as any);
+      const systems = createR11Systems(mockEq as unknown as Record<string, unknown>);
       expect(systems.equipmentSystem).toBe(mockEq);
     });
   });

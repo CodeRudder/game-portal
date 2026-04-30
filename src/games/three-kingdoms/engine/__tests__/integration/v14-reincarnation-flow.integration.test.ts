@@ -57,7 +57,7 @@ function createRebirthWithDeps(): RebirthSystem {
       getAll: () => new Map(),
       has: () => false,
       unregister: () => {},
-    } as any,
+    } as unknown as Record<string, unknown>,
   };
   rebirth.init(deps);
   return rebirth;

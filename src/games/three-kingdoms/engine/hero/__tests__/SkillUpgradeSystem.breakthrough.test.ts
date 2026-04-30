@@ -5,7 +5,7 @@
  *
  * 注意：unlockSkillOnBreakthrough / getCooldownReduce / hasExtraEffect
  * 依赖 SkillUpgradeSystem 内部的 heroSkills Map（private），
- * 测试中通过 (system as any).heroSkills 注入测试数据。
+ * 测试中通过 (system as unknown as Record<string, unknown>).heroSkills 注入测试数据。
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -61,7 +61,7 @@ function injectHeroSkills(
   unlockedSkills: string[] = [],
 ): void {
   const entry: HeroSkillEntry = { skills, unlockedSkills: [...unlockedSkills] };
-  (system as any).heroSkills.set(heroId, entry);
+  (system as unknown as Record<string, unknown>).heroSkills.set(heroId, entry);
 }
 
 // ═══════════════════════════════════════════

@@ -127,7 +127,7 @@ function createSpawnTemplate(overrides: Partial<NPCSpawnTemplate> = {}): NPCSpaw
 /** 设置 spawn/despawn 回调 */
 function setupSpawnCallbacks(sys: ReturnType<typeof getSys>): void {
   sys.spawn.setSpawnCallback((defId, x, y, name) => {
-    const npc = sys.npc.createNPC(name ?? `NPC-${defId}`, defId as any, { x, y });
+    const npc = sys.npc.createNPC(name ?? `NPC-${defId}`, defId as unknown as Record<string, unknown>, { x, y });
     return npc.id;
   });
   sys.spawn.setDespawnCallback((npcId) => {

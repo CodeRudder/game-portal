@@ -69,9 +69,9 @@ function createSystem(): {
   };
 
   sys.init({
-    eventBus: mockEventBus as any,
-    config: { get: vi.fn() } as any,
-    registry: { get: vi.fn() } as any,
+    eventBus: mockEventBus as unknown as { emit: (...args: unknown[]) => void; on: (...args: unknown[]) => void; off: (...args: unknown[]) => void },
+    config: { get: vi.fn() as unknown as (key: string) => unknown },
+    registry: { get: vi.fn() as unknown as (key: string) => unknown },
   });
 
   sys.setCallbacks({

@@ -57,7 +57,7 @@ describe('v9.0 离线收益 — §6.1 活动离线积分累积', () => {
     // calculateOfflineProgress需要ActivityState（含activities字段）
     // 默认状态下无活动，应返回空数组
     try {
-      const offlineProgress = activitySystem.calculateOfflineProgress({ activities: {} } as any, 3600000);
+      const offlineProgress = activitySystem.calculateOfflineProgress({ activities: {} } as unknown as Record<string, unknown>, 3600000);
       expect(offlineProgress).toBeDefined();
       expect(Array.isArray(offlineProgress)).toBe(true);
     } catch {
@@ -70,9 +70,9 @@ describe('v9.0 离线收益 — §6.1 活动离线积分累积', () => {
     const sim = createSim();
     const activitySystem = sim.engine.getActivitySystem();
     try {
-      const progress = activitySystem.calculateOfflineProgress({ activities: {} } as any, 3600000);
+      const progress = activitySystem.calculateOfflineProgress({ activities: {} } as unknown as Record<string, unknown>, 3600000);
       if (progress && progress.length > 0) {
-        activitySystem.applyOfflineProgress({ activities: {} } as any, progress);
+        activitySystem.applyOfflineProgress({ activities: {} } as unknown as Record<string, unknown>, progress);
       }
     } catch {
       // 无活动时applyOfflineProgress可能不需要调用
@@ -192,7 +192,7 @@ describe('v9.0 离线收益 — §7.26 三角闭环验证', () => {
     const sim = createSim();
     const activitySystem = sim.engine.getActivitySystem();
     try {
-      const offlineProgress = activitySystem.calculateOfflineProgress({ activities: {} } as any, 28800000);
+      const offlineProgress = activitySystem.calculateOfflineProgress({ activities: {} } as unknown as Record<string, unknown>, 28800000);
       expect(offlineProgress).toBeDefined();
     } catch {
       expect(activitySystem).toBeDefined();

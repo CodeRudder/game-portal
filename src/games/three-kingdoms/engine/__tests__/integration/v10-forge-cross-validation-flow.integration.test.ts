@@ -254,7 +254,7 @@ describe('v10.0 兵强马壮 — §6.4 背包→分解→炼制资源循环', ()
     const uids: string[] = [];
     for (let i = 0; i < 5; i++) {
       const equip = equipmentSystem.generateEquipment(
-        ['weapon', 'armor', 'accessory', 'mount'][i % 4] as any,
+        ['weapon', 'armor', 'accessory', 'mount'][i % 4] as unknown as string,
         'white'
       );
       equipmentSystem.addToBag(equip);
@@ -305,7 +305,7 @@ describe('v10.0 兵强马壮 — §6.5 商店→装备箱→炼制→强化', ()
     const inputs: string[] = [];
     for (let i = 0; i < 5; i++) {
       const equip = equipmentSystem.generateEquipment(
-        ['weapon', 'armor', 'accessory', 'mount'][i % 4] as any,
+        ['weapon', 'armor', 'accessory', 'mount'][i % 4] as unknown as string,
         'white'
       );
       equipmentSystem.addToBag(equip);

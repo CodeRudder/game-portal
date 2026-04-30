@@ -67,7 +67,7 @@ function createSkill(overrides: Partial<BattleSkill> = {}): BattleSkill {
     level: 1,
     description: '普通攻击',
     multiplier: 1.0,
-    targetType: 'SINGLE_ENEMY' as any,
+    targetType: 'SINGLE_ENEMY' as unknown as string,
     rageCost: 0,
     cooldown: 0,
     currentCooldown: 0,
@@ -84,7 +84,7 @@ function createUltimateSkill(overrides: Partial<BattleSkill> = {}): BattleSkill 
     level: 1,
     description: '终极技能',
     multiplier: 2.5,
-    targetType: 'ALL_ENEMY' as any,
+    targetType: 'ALL_ENEMY' as unknown as string,
     rageCost: 100,
     cooldown: 3,
     currentCooldown: 0,
@@ -303,7 +303,7 @@ describe('§1.2 大招系统', () => {
 
   it('注册和移除 handler', () => {
     const handler = { onTimeStopStart: () => {}, onTimeStopEnd: () => {} };
-    ultimateSystem.registerHandler(handler as any);
+    ultimateSystem.registerHandler(handler as unknown as Record<string, unknown>);
     // 注册后不抛异常即通过
     ultimateSystem.removeHandler();
   });

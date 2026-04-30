@@ -310,10 +310,10 @@ describe('v8.0 商贸繁荣: 资源交易Play流程', () => {
       trade.init(createMockDeps());
 
       // 开通一条商路
-      trade.openRoute('route_luoyang_xuchang' as any, 5);
+      trade.openRoute('route_luoyang_xuchang' as unknown as string, 5);
 
       // 完成贸易提升繁荣度
-      trade.completeTrade('route_luoyang_xuchang' as any);
+      trade.completeTrade('route_luoyang_xuchang' as unknown as string);
 
       const saved = trade.serialize();
       expect(saved.version).toBeDefined();
@@ -324,7 +324,7 @@ describe('v8.0 商贸繁荣: 资源交易Play流程', () => {
       trade2.deserialize(saved);
 
       // 验证商路状态恢复
-      const routeState = trade2.getRouteState('route_luoyang_xuchang' as any);
+      const routeState = trade2.getRouteState('route_luoyang_xuchang' as unknown as string);
       expect(routeState?.opened).toBe(true);
       expect(routeState?.completedTrades).toBe(1);
       expect(routeState?.prosperity).toBeGreaterThan(0);
@@ -333,10 +333,10 @@ describe('v8.0 商贸繁荣: 资源交易Play流程', () => {
     it('TradeSystem reset恢复初始状态', () => {
       const trade = new TradeSystem();
       trade.init(createMockDeps());
-      trade.openRoute('route_luoyang_xuchang' as any, 5);
+      trade.openRoute('route_luoyang_xuchang' as unknown as string, 5);
       trade.reset();
 
-      const routeState = trade.getRouteState('route_luoyang_xuchang' as any);
+      const routeState = trade.getRouteState('route_luoyang_xuchang' as unknown as string);
       expect(routeState?.opened).toBe(false);
     });
 
@@ -357,7 +357,7 @@ describe('v8.0 商贸繁荣: 资源交易Play流程', () => {
 
     it('版本不匹配时反序列化抛异常', () => {
       const trade = new TradeSystem();
-      expect(() => trade.deserialize({ version: -1 } as any)).toThrow();
+      expect(() => trade.deserialize({ version: -1 } as unknown as Record<string, unknown>)).toThrow();
     });
   });
 
@@ -369,18 +369,18 @@ describe('v8.0 商贸繁荣: 资源交易Play流程', () => {
       trade.init(createMockDeps());
 
       // 1. 开通商路
-      const openResult = trade.openRoute('route_luoyang_xuchang' as any, 5);
+      const openResult = trade.openRoute('route_luoyang_xuchang' as unknown as string, 5);
       expect(openResult.success).toBe(true);
 
       // 2. 计算利润
-      const profit = trade.calculateProfit('route_luoyang_xuchang' as any, { silk: 10 }, 1.0, 0);
+      const profit = trade.calculateProfit('route_luoyang_xuchang' as unknown as string, { silk: 10 }, 1.0, 0);
       expect(profit).toBeDefined();
       expect(typeof profit.profit).toBe('number');
       expect(typeof profit.profitRate).toBe('number');
 
       // 3. 完成贸易提升繁荣度
-      trade.completeTrade('route_luoyang_xuchang' as any);
-      const prosperity = trade.getProsperityLevel('route_luoyang_xuchang' as any);
+      trade.completeTrade('route_luoyang_xuchang' as unknown as string);
+      const prosperity = trade.getProsperityLevel('route_luoyang_xuchang' as unknown as string);
       expect(prosperity).toBeDefined();
 
       // 4. 资源交易
@@ -420,7 +420,7 @@ describe('v8.0 商贸繁荣: 资源交易Play流程', () => {
       // 派遣商队
       const dispatch = caravanSys.dispatch({
         caravanId: idle[0].id,
-        routeId: 'route_luoyang_xuchang' as any,
+        routeId: 'route_luoyang_xuchang' as unknown as string,
         cargo: { silk: 5 },
         guardHeroId: 'hero_guanyu',
       });
@@ -435,10 +435,10 @@ describe('v8.0 商贸繁荣: 资源交易Play流程', () => {
     it('NPC商人→贸易事件 完整交互', () => {
       const trade = new TradeSystem();
       trade.init(createMockDeps());
-      trade.openRoute('route_luoyang_xuchang' as any, 5);
+      trade.openRoute('route_luoyang_xuchang' as unknown as string, 5);
 
       // 生成贸易事件
-      const events = trade.generateTradeEvents('caravan_01', 'route_luoyang_xuchang' as any);
+      const events = trade.generateTradeEvents('caravan_01', 'route_luoyang_xuchang' as unknown as string);
       // 事件可能为空（概率性），但API不报错即可
       expect(Array.isArray(events)).toBe(true);
 

@@ -10,6 +10,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { MailSystem } from '../MailSystem';
 import type { ISystemDeps } from '../../../core/types/subsystem';
+import type { ISubsystem } from "../../../core/types";
 
 // ── Mock 依赖 ──
 
@@ -39,9 +40,9 @@ function createMockDeps(resourceSystem: ReturnType<typeof createMockResourceSyst
       on: vi.fn(),
       off: vi.fn(),
       emit: vi.fn(),
-    } as any,
-    config: { get: vi.fn() } as any,
-    registry: createMockRegistry(resourceSystem) as any,
+    } as unknown as Record<string, unknown>,
+    config: { get: vi.fn() as unknown as (key: string) => unknown },
+    registry: createMockRegistry(resourceSystem) as unknown as ISubsystem,
   } as ISystemDeps;
 }
 
@@ -194,15 +195,15 @@ describe('P0-1: 邮件附件领取后资源到账', () => {
 
   it('registry 中无 resource 子系统时不报错', () => {
     const emptyDeps = {
-      eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() } as any,
-      config: { get: vi.fn() } as any,
+      eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() } as unknown as Record<string, unknown>,
+      config: { get: vi.fn() as unknown as (key: string) => unknown },
       registry: {
         get: vi.fn(() => { throw new Error('not found'); }),
         getAll: vi.fn(() => new Map()),
         has: vi.fn(() => false),
         register: vi.fn(),
         unregister: vi.fn(),
-      } as any,
+      } as unknown as Record<string, unknown>,
     } as ISystemDeps;
 
     const sys = new MailSystem();

@@ -611,7 +611,7 @@ describe('§12.5 资源溢出处理', () => {
     env.resource.setCap('grain', 1000);
 
     // 监听溢出事件
-    const eventBus = (env.resource as any).deps?.eventBus;
+    const eventBus = (env.resource as unknown as Record<string, unknown>).deps?.eventBus;
     if (eventBus) {
       eventBus.on('resource:overflow', (data: any) => {
         overflowEmitted = true;

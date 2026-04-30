@@ -306,7 +306,7 @@ describe('§1 竖屏布局', () => {
 
     it('init/getState/isInitialized 应满足 ISubsystem 接口', () => {
       expect(manager.isInitialized).toBe(false);
-      manager.init({} as any);
+      manager.init({} as Record<string, unknown>);
       expect(manager.isInitialized).toBe(true);
       const state = manager.getState();
       expect(state.breakpoint).toBeDefined();

@@ -410,7 +410,7 @@ describe('§4 离线回归全链路集成', () => {
       const entries = [
         { playerId: 'p1', playerName: 'A', points: 500, tokens: 50, rank: 0, faction: 'wei' },
       ];
-      timedSys.updateLeaderboard('settle-lb', entries as any);
+      timedSys.updateLeaderboard('settle-lb', entries as unknown as Record<string, unknown>);
       const lb = timedSys.getLeaderboard('settle-lb');
       expect(lb).toHaveLength(1);
     });

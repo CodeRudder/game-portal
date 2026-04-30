@@ -8,7 +8,7 @@
  *
  * 测试原则：
  * - 每个用例创建独立的 sim 实例（createSim）
- * - 使用真实引擎 API，不使用 mock，不使用 as any
+ * - 使用真实引擎 API，不使用 mock，不使用 as unknown as Record<string, unknown>
  * - 引擎未实现的 API 用 it.todo 标注 [引擎未实现]
  * - 以实际代码行为为准
  *

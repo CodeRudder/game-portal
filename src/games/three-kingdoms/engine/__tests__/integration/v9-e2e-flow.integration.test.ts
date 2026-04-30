@@ -11,7 +11,7 @@
  * - 每个用例创建独立的 sim 实例
  * - 使用真实引擎 API，不使用 mock
  * - 引擎未实现的功能用 it.todo + [引擎未实现] 标注
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  *
  * @see docs/games/three-kingdoms/play/v9-play.md §5~§8
  */

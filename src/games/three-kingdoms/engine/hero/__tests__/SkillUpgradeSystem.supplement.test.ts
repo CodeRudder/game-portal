@@ -78,7 +78,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should upgrade skill from Lv1 to Lv2 with correct cost', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 3;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 3;
 
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
@@ -92,7 +92,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should increase effect after upgrade', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 3;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 3;
 
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
@@ -106,7 +106,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should record upgrade in history', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 3;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 3;
 
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
@@ -160,7 +160,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should fail when insufficient materials (skillBooks)', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 3;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 3;
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
 
@@ -171,7 +171,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should fail when insufficient materials (gold)', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 3;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 3;
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
 
@@ -197,7 +197,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should fail when canAffordResource returns false for gold', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 3;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 3;
 
       const deps = makeSkillDeps({
         heroSystem,
@@ -213,7 +213,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should fail when spendResource fails for gold', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 3;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 3;
 
       const deps = makeSkillDeps({
         heroSystem,
@@ -229,7 +229,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should fail when spendResource fails for skillBook', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 3;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 3;
 
       let callCount = 0;
       const deps = makeSkillDeps({
@@ -250,7 +250,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should fail when skill level cap reached', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 1; // star 1 → cap 3
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 1; // star 1 → cap 3
 
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
@@ -346,7 +346,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should return true when breakthrough stage >= 1', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.breakthroughStages['guanyu'] = 1;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.breakthroughStages['guanyu'] = 1;
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
       expect(skillSystem.canUpgradeAwakenSkill('guanyu')).toBe(true);
@@ -370,13 +370,13 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should return extra effect when skill level >= 5', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 5;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 5;
 
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
 
       // Inject heroSkills data directly (as the internal heroSkills map is separate from general.skills)
-      (skillSystem as any).heroSkills.set('guanyu', {
+      (skillSystem as unknown as { heroSkills: Map<string, unknown> }).heroSkills.set('guanyu', {
         skills: [{ level: 5 }],
         unlockedSkills: [],
       });
@@ -390,20 +390,20 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should scale bonus with level above 5', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 6;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 6;
 
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
 
       // Level 5
-      (skillSystem as any).heroSkills.set('guanyu', {
+      (skillSystem as unknown as { heroSkills: Map<string, unknown> }).heroSkills.set('guanyu', {
         skills: [{ level: 5 }],
         unlockedSkills: [],
       });
       const effect5 = skillSystem.getExtraEffect('guanyu', 0);
 
       // Level 6
-      (skillSystem as any).heroSkills.set('guanyu', {
+      (skillSystem as unknown as { heroSkills: Map<string, unknown> }).heroSkills.set('guanyu', {
         skills: [{ level: 6 }],
         unlockedSkills: [],
       });
@@ -439,7 +439,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('reset should clear all state', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 3;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 3;
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
       skillSystem.upgradeSkill('guanyu', 0, { skillBooks: 1, gold: 500 });
@@ -582,7 +582,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should return cooldown reduce based on skill level', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 5;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 5;
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
 
@@ -601,7 +601,7 @@ describe('SkillUpgradeSystem — 补充覆盖', () => {
     it('should cap cooldown reduce at 0.30', () => {
       const { heroSystem, starSystem, skillSystem } = createTestEnv();
       heroSystem.addGeneral('guanyu');
-      (starSystem as any).state.stars['guanyu'] = 6;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 6;
       const deps = makeSkillDeps({ heroSystem, heroStarSystem: starSystem });
       skillSystem.setSkillUpgradeDeps(deps);
 

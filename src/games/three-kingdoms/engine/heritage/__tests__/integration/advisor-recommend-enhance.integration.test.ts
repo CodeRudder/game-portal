@@ -270,7 +270,7 @@ describe('§10.3 军师推荐→装备推荐→强化', () => {
       const suggestions = env.advisor.getDisplayedSuggestions();
       if (suggestions.length > 0) {
         env.advisor.executeSuggestion(suggestions[0].id);
-        expect((env.deps.eventBus as any).emit).toHaveBeenCalledWith(
+        expect((env.deps.eventBus as unknown as Record<string, unknown>).emit).toHaveBeenCalledWith(
           'advisor:suggestionExecuted',
           expect.objectContaining({ id: suggestions[0].id }),
         );

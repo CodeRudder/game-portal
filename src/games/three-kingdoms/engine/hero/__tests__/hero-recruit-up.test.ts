@@ -65,7 +65,7 @@ function createMockDeps() {
     getResource: () => 0,
     getProductionRate: () => 0,
     emit: () => {},
-  } as any;
+  } as unknown as Record<string, unknown>;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -447,7 +447,7 @@ describe('HeroRecruitSystem — UP武将专项', () => {
       const state2 = recruit.getUpHeroState();
 
       // 修改快照不影响内部状态
-      (state1 as any).upGeneralId = 'lvbu';
+      (state1 as unknown as Record<string, unknown>).upGeneralId = 'lvbu';
       expect(recruit.getUpHeroState().upGeneralId).toBe('guanyu');
 
       // 两个快照是不同引用

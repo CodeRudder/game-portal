@@ -19,6 +19,7 @@ import { TechResearchSystem } from '../../TechResearchSystem';
 import { TechLinkSystem } from '../../TechLinkSystem';
 import type { ISystemDeps } from '../../../../core/types';
 import type { ISubsystemRegistry } from '../../../../core/types/subsystem';
+import type { ResourceType } from '../../TechEffectTypes';
 
 // ─────────────────────────────────────────────
 // 辅助工具
@@ -114,7 +115,7 @@ describe('§1.1 科技树浏览与详情', () => {
     expect(statuses).toContain('locked');    // 高层节点
 
     // 第1层节点应可研究（前置满足）
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       const result = tree.canResearch(firstTier[0].id);
       expect(result.can).toBe(true);
@@ -160,7 +161,7 @@ describe('§1.2 科技研究启动', () => {
     for (let i = 0; i < 100; i++) point.update(1);
 
     // 第1层节点无前置，可研究
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       const result = research.startResearch(firstTier[0].id);
       // 可能因科技点不足失败，但不应因前置失败
@@ -174,7 +175,7 @@ describe('§1.2 科技研究启动', () => {
     point.syncAcademyLevel(10);
     for (let i = 0; i < 500; i++) point.update(1);
 
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       const result = research.startResearch(firstTier[0].id);
       if (result.success) {
@@ -186,7 +187,7 @@ describe('§1.2 科技研究启动', () => {
 
   it('研究完成后效果立即生效', () => {
     // 直接通过 TechTreeSystem 完成节点
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       tree.setResearching(firstTier[0].id, Date.now(), Date.now() + 1000);
       tree.completeNode(firstTier[0].id);
@@ -227,7 +228,7 @@ describe('§1.3 研究队列管理', () => {
     point.syncAcademyLevel(10);
     for (let i = 0; i < 500; i++) point.update(1);
 
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       const startResult = research.startResearch(firstTier[0].id);
       if (startResult.success) {
@@ -245,7 +246,7 @@ describe('§1.3 研究队列管理', () => {
     point.syncAcademyLevel(10);
     for (let i = 0; i < 1000; i++) point.update(1);
 
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       research.startResearch(firstTier[0].id);
     }
@@ -255,7 +256,7 @@ describe('§1.3 研究队列管理', () => {
     point.syncAcademyLevel(10);
     for (let i = 0; i < 1000; i++) point.update(1);
 
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       const r1 = research.startResearch(firstTier[0].id);
       if (r1.success) {
@@ -293,12 +294,12 @@ describe('§1.4 科技加速机制', () => {
     point.syncAcademyLevel(10);
     for (let i = 0; i < 500; i++) point.update(1);
 
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       const startResult = research.startResearch(firstTier[0].id);
       if (startResult.success) {
         const remainingBefore = research.getRemainingTime(firstTier[0].id);
-        const speedResult = research.speedUp(firstTier[0].id, 'gold' as any, 1000);
+        const speedResult = research.speedUp(firstTier[0].id, 'gold' as ResourceType, 1000);
         // 加速后剩余时间应减少
         if (speedResult.success) {
           const remainingAfter = research.getRemainingTime(firstTier[0].id);
@@ -312,11 +313,11 @@ describe('§1.4 科技加速机制', () => {
     point.syncAcademyLevel(10);
     for (let i = 0; i < 500; i++) point.update(1);
 
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       const startResult = research.startResearch(firstTier[0].id);
       if (startResult.success) {
-        const speedResult = research.speedUp(firstTier[0].id, 'ingot' as any, 9999);
+        const speedResult = research.speedUp(firstTier[0].id, 'ingot' as CurrencyType, 9999);
         if (speedResult.success) {
           // 应该已完成
           const state = tree.getNodeState(firstTier[0].id);

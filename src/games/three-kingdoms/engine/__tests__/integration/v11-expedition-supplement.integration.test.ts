@@ -62,8 +62,8 @@ function prepareThreeStarRoute(
   if (!easyRoute) return routes[0]?.id ?? 'route_hulao_easy';
 
   // 手动设置三星通关状态
-  (expedition as any).state.routeStars[easyRoute.id] = 3;
-  (expedition as any).state.clearedRouteIds.add(easyRoute.id);
+  (expedition as unknown as Record<string, unknown>).state.routeStars[easyRoute.id] = 3;
+  (expedition as unknown as Record<string, unknown>).state.clearedRouteIds.add(easyRoute.id);
   return easyRoute.id;
 }
 

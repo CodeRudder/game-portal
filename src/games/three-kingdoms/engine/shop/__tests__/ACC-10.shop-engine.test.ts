@@ -45,9 +45,9 @@ import type { CurrencySystem } from '../../currency/CurrencySystem';
 function createShop(): ShopSystem {
   const shop = new ShopSystem();
   shop.init({
-    eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() } as any,
-    config: { get: vi.fn() } as any,
-    registry: { get: vi.fn() } as any,
+    eventBus: { emit: vi.fn() as unknown as (...args: unknown[]) => void, on: vi.fn() as unknown as (...args: unknown[]) => void, off: vi.fn() as unknown as (...args: unknown[]) => void },
+    config: { get: vi.fn() as unknown as (key: string) => unknown },
+    registry: { get: vi.fn() as unknown as (key: string) => unknown },
   });
   return shop;
 }
@@ -81,7 +81,7 @@ function createMockCurrencySystem(balances: Record<string, number> = { copper: 9
         state[cur] = bal - amt;
       }
     }),
-  } as any;
+  } as unknown as Record<string, unknown>;
 }
 
 /** 获取 normal 商店的第一个商品ID */
@@ -132,12 +132,12 @@ describe('ACC-10 商店系统引擎层验收', () => {
       const def = GOODS_DEF_MAP[id];
       const basePrice = Object.entries(def!.basePrice)[0]; // [currency, amount]
 
-      const before = (cs.getBalance as any)(basePrice[0]);
+      const before = (cs.getBalance as unknown as (type: string) => number)(basePrice[0]);
       const req: BuyRequest = { goodsId: id, quantity: 1, shopType: 'normal' };
       const result = shop.executeBuy(req);
 
       expect(result.success).toBe(true);
-      const after = (cs.getBalance as any)(basePrice[0]);
+      const after = (cs.getBalance as unknown as (type: string) => number)(basePrice[0]);
       // 扣费差额应等于基础价格（无折扣时）
       expect(before - after).toBe(basePrice[1]);
     });
@@ -150,12 +150,12 @@ describe('ACC-10 商店系统引擎层验收', () => {
       const def = GOODS_DEF_MAP[id];
       const basePrice = Object.entries(def!.basePrice)[0];
 
-      const before = (cs.getBalance as any)(basePrice[0]);
+      const before = (cs.getBalance as unknown as (type: string) => number)(basePrice[0]);
       const req: BuyRequest = { goodsId: id, quantity: 2, shopType: 'normal' };
       const result = shop.executeBuy(req);
 
       expect(result.success).toBe(true);
-      const after = (cs.getBalance as any)(basePrice[0]);
+      const after = (cs.getBalance as unknown as (type: string) => number)(basePrice[0]);
       expect(before - after).toBe(basePrice[1] * 2);
     });
   });
@@ -406,7 +406,7 @@ describe('ACC-10 商店系统引擎层验收', () => {
 
       const result = shop.executeBuy({ goodsId: id, quantity: 1, shopType: 'normal' });
       expect(result.success).toBe(true);
-      expect((cs.getBalance as any)(cur)).toBe(0);
+      expect((cs.getBalance as unknown as (type: string) => number)(cur)).toBe(0);
     });
   });
 
@@ -540,7 +540,7 @@ describe('ACC-10 商店系统引擎层验收', () => {
         expect(result.success).toBe(true);
       }
 
-      expect((cs.getBalance as any)(cur)).toBe(0);
+      expect((cs.getBalance as unknown as (type: string) => number)(cur)).toBe(0);
       const item = shop.getGoodsItem('normal', id);
       expect(item!.dailyPurchased).toBe(5);
     });

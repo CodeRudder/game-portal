@@ -28,6 +28,7 @@ import {
   LIMITED_GOODS_STOCK,
 } from '../../../core/shop';
 import { GOODS_DEF_MAP, SHOP_GOODS_IDS } from '../../../core/shop';
+import type { ISystemDeps } from "../../core/types";
 
 // ─── 辅助 ────────────────────────────────
 
@@ -42,14 +43,14 @@ function createMockDeps() {
 /** 创建集成了CurrencySystem的ShopSystem */
 function createIntegratedShop(initialCopper = 100000): { shop: ShopSystem; currency: CurrencySystem } {
   const currency = new CurrencySystem();
-  currency.init(createMockDeps() as any);
+  currency.init(createMockDeps() as unknown as ISystemDeps);
   currency.setCurrency('copper', initialCopper);
   currency.setCurrency('ingot', 5000);
   currency.setCurrency('mandate', 500);
   currency.setCurrency('reputation', 5000);
 
   const shop = new ShopSystem();
-  shop.init(createMockDeps() as any);
+  shop.init(createMockDeps() as unknown as ISystemDeps);
   shop.setCurrencySystem(currency);
 
   return { shop, currency };
@@ -603,7 +604,7 @@ describe('ShopSystem 序列化集成', () => {
 
     // 新实例反序列化
     const shop2 = new ShopSystem();
-    shop2.init(createMockDeps() as any);
+    shop2.init(createMockDeps() as unknown as ISystemDeps);
     shop2.deserialize(data);
 
     // 验证

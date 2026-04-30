@@ -282,7 +282,7 @@ describe('EventTriggerSystem', () => {
 
     it('无过期时间的事件 expireTurn 为 null', () => {
       const def = createRandomEventDef();
-      delete (def as any).expireAfterTurns;
+      delete (def as unknown as Record<string, unknown>).expireAfterTurns;
       sys.registerEvent(def);
 
       const result = sys.forceTriggerEvent(def.id, 1);
@@ -884,14 +884,14 @@ describe('EventTriggerSystem', () => {
 
         // undefined
         const undefDef = createFixedEventDef({ id: 'undef-cond' });
-        delete (undefDef as any).triggerConditions;
+        delete (undefDef as unknown as Record<string, unknown>).triggerConditions;
         sys.registerEvent(undefDef);
         expect(sys.canTrigger('undef-cond', 1)).toBe(true);
 
         // 未知类型
         const unkDef = createFixedEventDef({
           id: 'unknown-cond',
-          triggerConditions: [{ type: 'future_condition' as any, params: {} }],
+          triggerConditions: [{ type: 'future_condition' as unknown as string, params: {} }],
         });
         sys.registerEvent(unkDef);
         expect(sys.canTrigger('unknown-cond', 1)).toBe(true);

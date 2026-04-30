@@ -46,7 +46,7 @@ describe('HeroBadgeSystem', () => {
     });
 
     it('should implement init without throwing', () => {
-      expect(() => system.init({} as any)).not.toThrow();
+      expect(() => system.init({} as Record<string, unknown>)).not.toThrow();
     });
 
     it('should implement update without throwing', () => {

@@ -161,7 +161,7 @@ describe('§3.2 驻防机制', () => {
     const general2 = createGeneral({ id: 'general-test-02', name: '武将2' });
     // 注册第二个武将 — 保存原始 registry 引用避免递归
     const originalRegistry = sys.garrison['deps']?.registry;
-    (sys.garrison as any).deps = {
+    (sys.garrison as unknown as Record<string, unknown>).deps = {
       ...sys.garrison['deps'],
       registry: {
         get: (name: string) => {

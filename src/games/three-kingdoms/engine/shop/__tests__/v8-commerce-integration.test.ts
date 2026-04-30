@@ -30,6 +30,8 @@ import {
   INITIAL_CARAVAN_COUNT,
 } from '../../../core/trade/trade-config';
 import type { TradeRouteId } from '../../../core/trade/trade.types';
+import type { CurrencyType } from "../../core/currency";
+import type { ISystemDeps } from "../../core/types";
 
 // ─── 辅助 ────────────────────────────────
 
@@ -45,7 +47,7 @@ function createMockDeps() {
 function createCommerceSuite(initialCopper = 100000) {
   // 1. CurrencySystem
   const currency = new CurrencySystem();
-  currency.init(createMockDeps() as any);
+  currency.init(createMockDeps() as unknown as ISystemDeps);
   currency.setCurrency('copper', initialCopper);
   currency.setCurrency('ingot', 5000);
   currency.setCurrency('mandate', 500);
@@ -53,10 +55,10 @@ function createCommerceSuite(initialCopper = 100000) {
 
   // 2. TradeSystem
   const trade = new TradeSystem();
-  trade.init(createMockDeps() as any);
+  trade.init(createMockDeps() as unknown as ISystemDeps);
   trade.setCurrencyOps({
-    addCurrency: (type: string, amount: number) => currency.addCurrency(type as any, amount),
-    canAfford: (type: string, amount: number) => currency.hasEnough(type as any, amount),
+    addCurrency: (type: string, amount: number) => currency.addCurrency(type as CurrencyType, amount),
+    canAfford: (type: string, amount: number) => currency.hasEnough(type as CurrencyType, amount),
     spendByPriority: (shopType: string, amount: number, currencyType?: string) => {
       try {
         const costs = currencyType ? { [currencyType]: amount } : { copper: amount };
@@ -70,7 +72,7 @@ function createCommerceSuite(initialCopper = 100000) {
 
   // 3. CaravanSystem
   const caravan = new CaravanSystem();
-  caravan.init(createMockDeps() as any);
+  caravan.init(createMockDeps() as unknown as ISystemDeps);
   const provider: RouteInfoProvider = {
     getRouteDef: (routeId: TradeRouteId) => {
       const state = trade.getRouteState(routeId);
@@ -91,7 +93,7 @@ function createCommerceSuite(initialCopper = 100000) {
 
   // 4. ShopSystem
   const shop = new ShopSystem();
-  shop.init(createMockDeps() as any);
+  shop.init(createMockDeps() as unknown as ISystemDeps);
   shop.setCurrencySystem(currency);
 
   return { currency, trade, caravan, shop };
@@ -360,7 +362,7 @@ describe('§8.10 转生→商贸系统影响验证', () => {
 
     // 模拟转生：重置后恢复
     const trade2 = new TradeSystem();
-    trade2.init(createMockDeps() as any);
+    trade2.init(createMockDeps() as unknown as ISystemDeps);
     trade2.deserialize(tradeData);
 
     if (routeId) {

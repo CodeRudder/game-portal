@@ -12,7 +12,7 @@
  *
  * 测试原则：
  * - 每个用例创建独立的 sim 实例（createSim）
- * - 使用真实引擎 API，不使用 mock，不使用 as any
+ * - 使用真实引擎 API，不使用 mock，不使用 as unknown as Record<string, unknown>
  * - 以实际代码行为为准
  *
  * @see docs/games/three-kingdoms/play/v20-play.md
@@ -748,7 +748,7 @@ describe('v20.0 天下一统(下) — §7 统计查询与筛选', () => {
       const sim = createSim();
       const achievement = sim.engine.getAchievementSystem();
       const before = achievement.getTotalPoints();
-      achievement.loadSaveData({ state: {} as any, version: -1 });
+      achievement.loadSaveData({ state: {} as Record<string, unknown>, version: -1 });
       // 版本不匹配应忽略
       expect(achievement.getTotalPoints()).toBe(before);
     });
@@ -774,7 +774,7 @@ describe('v20.0 天下一统(下) — §7 统计查询与筛选', () => {
       const sim = createSim();
       const prestige = sim.engine.getPrestigeSystem();
       const before = prestige.getPrestigePanel();
-      prestige.loadSaveData({ prestige: {} as any, rebirth: {} as any, version: -1 });
+      prestige.loadSaveData({ prestige: {} as Record<string, unknown>, rebirth: {} as Record<string, unknown>, version: -1 });
       const after = prestige.getPrestigePanel();
       expect(after.currentLevel).toBe(before.currentLevel);
     });

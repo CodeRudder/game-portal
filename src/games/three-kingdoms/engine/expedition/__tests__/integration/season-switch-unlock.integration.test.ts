@@ -97,7 +97,7 @@ describe('§8.5 赛季切换+段位重置+商店刷新', () => {
     it('结算重置每日数据并清理回放/防守日志', () => {
       const p = makePlayer({
         dailyChallengesLeft: 0, dailyBoughtChallenges: 3, dailyManualRefreshes: 2,
-        replays: [{ id: 'r1' } as any], defenseLogs: [{ id: 'd1' } as any],
+        replays: [{ id: 'r1' } as unknown as Record<string, unknown>], defenseLogs: [{ id: 'd1' } as unknown as Record<string, unknown>],
       });
       const { state } = season.settleSeason(p, 'BRONZE_V');
       expect(state.dailyChallengesLeft).toBe(5);

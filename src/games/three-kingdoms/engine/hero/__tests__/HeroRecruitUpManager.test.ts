@@ -183,7 +183,7 @@ describe('HeroRecruitUpManager', () => {
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 },
         history: [],
-        upHero: null as any,
+        upHero: null as unknown as string,
       };
       manager.deserializeUpHero(data);
       expect(manager.getUpGeneralId()).toBeNull();
@@ -194,7 +194,7 @@ describe('HeroRecruitUpManager', () => {
         version: RECRUIT_SAVE_VERSION,
         pity: { normalPity: 0, advancedPity: 0, normalHardPity: 0, advancedHardPity: 0 },
         history: [],
-        upHero: {} as any,
+        upHero: {} as Record<string, unknown>,
       };
       manager.deserializeUpHero(data);
       expect(manager.getUpGeneralId()).toBeNull();

@@ -43,7 +43,7 @@ function createMockGeneral(
   return {
     id,
     name,
-    quality: 'RARE' as any,
+    quality: 'RARE' as unknown as string,
     baseStats: {
       attack: opts.attack ?? 100,
       defense: opts.defense ?? 80,
@@ -97,7 +97,7 @@ function createMockBattleUnit(
       level: 1,
       description: '',
       multiplier: 1.0,
-      targetType: 'SINGLE_ENEMY' as any,
+      targetType: 'SINGLE_ENEMY' as unknown as string,
       rageCost: 0,
       cooldown: 0,
       currentCooldown: 0,

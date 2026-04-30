@@ -23,6 +23,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
+import type { ResourceType } from '../tech/TechEffectTypes';
 
 // ── localStorage mock ──
 const storage: Record<string, string> = {};
@@ -109,7 +110,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       testEngine.reset();
 
       // 验证原型未被污染
-      expect(({} as any).polluted).toBeUndefined();
+      expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     });
   });
 
@@ -133,26 +134,26 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
   describe('场景 3: 负数资源操作', () => {
     it('addResource 传入负数不应增加资源', () => {
-      const before = engine.getSnapshot().resources as any;
+      const before = engine.getSnapshot().resources;
       // ResourceSystem.addResource 应忽略负数
-      const result = engine.resource.addResource('grain' as any, -1000);
+      const result = engine.resource.addResource('grain' as ResourceType, -1000);
       expect(result).toBe(0);
 
-      const after = engine.getSnapshot().resources as any;
+      const after = engine.getSnapshot().resources;
       expect(after.grain).toBe(before.grain);
     });
 
     it('setResource 传入负数应被截断为 0', () => {
-      engine.resource.setResource('grain' as any, -999);
-      const snap = engine.getSnapshot().resources as any;
+      engine.resource.setResource('grain' as ResourceType, -999);
+      const snap = engine.getSnapshot().resources;
       expect(snap.grain).toBeGreaterThanOrEqual(0);
     });
 
     it('consumeResource 传入负数不应改变资源', () => {
-      const before = engine.getSnapshot().resources as any;
-      const result = engine.resource.consumeResource('grain' as any, -100);
+      const before = engine.getSnapshot().resources;
+      const result = engine.resource.consumeResource('grain' as ResourceType, -100);
       expect(result).toBe(0);
-      const after = engine.getSnapshot().resources as any;
+      const after = engine.getSnapshot().resources;
       expect(after.grain).toBe(before.grain);
     });
   });
@@ -161,20 +162,20 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
   describe('场景 4: 超大数值 (Number.MAX_SAFE_INTEGER)', () => {
     it('addResource 传入 MAX_SAFE_INTEGER 不应导致 NaN', () => {
-      engine.resource.addResource('grain' as any, Number.MAX_SAFE_INTEGER);
-      const snap = engine.getSnapshot().resources as any;
+      engine.resource.addResource('grain' as ResourceType, Number.MAX_SAFE_INTEGER);
+      const snap = engine.getSnapshot().resources;
       expect(Number.isFinite(snap.grain)).toBe(true);
       expect(Number.isNaN(snap.grain)).toBe(false);
     });
 
     it('setResource 传入 MAX_SAFE_INTEGER 不应导致 NaN', () => {
-      engine.resource.setResource('grain' as any, Number.MAX_SAFE_INTEGER);
-      const snap = engine.getSnapshot().resources as any;
+      engine.resource.setResource('grain' as ResourceType, Number.MAX_SAFE_INTEGER);
+      const snap = engine.getSnapshot().resources;
       expect(Number.isFinite(snap.grain)).toBe(true);
     });
 
     it('超大资源下 tick 不应崩溃', () => {
-      engine.resource.setResource('grain' as any, Number.MAX_SAFE_INTEGER);
+      engine.resource.setResource('grain' as ResourceType, Number.MAX_SAFE_INTEGER);
       expect(() => engine.tick(1000)).not.toThrow();
     });
   });
@@ -183,9 +184,9 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
   describe('场景 5: NaN 和 Infinity', () => {
     it('setResource 传入 NaN 应被安全处理', () => {
-      const before = (engine.getSnapshot().resources as any).grain;
-      engine.resource.setResource('grain' as any, NaN);
-      const snap = engine.getSnapshot().resources as any;
+      const before = (engine.getSnapshot().resources).grain;
+      engine.resource.setResource('grain' as ResourceType, NaN);
+      const snap = engine.getSnapshot().resources;
       // Math.max(0, NaN) = NaN → Math.min(NaN, cap) = NaN
       // 系统可能不完美防御 NaN，但后续操作不应崩溃
       // 关键：引擎继续工作时不应抛出未捕获异常
@@ -193,14 +194,14 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
     });
 
     it('setResource 传入 Infinity 应被安全处理', () => {
-      engine.resource.setResource('grain' as any, Infinity);
-      const snap = engine.getSnapshot().resources as any;
+      engine.resource.setResource('grain' as ResourceType, Infinity);
+      const snap = engine.getSnapshot().resources;
       expect(Number.isFinite(snap.grain)).toBe(true);
     });
 
     it('setResource 传入 -Infinity 应被安全处理', () => {
-      engine.resource.setResource('grain' as any, -Infinity);
-      const snap = engine.getSnapshot().resources as any;
+      engine.resource.setResource('grain' as ResourceType, -Infinity);
+      const snap = engine.getSnapshot().resources;
       expect(Number.isFinite(snap.grain)).toBe(true);
       expect(snap.grain).toBeGreaterThanOrEqual(0);
     });
@@ -242,7 +243,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
     });
 
     it('序列化包含超长字符串的数据不应崩溃', () => {
-      engine.resource.addResource('grain' as any, 100);
+      engine.resource.addResource('grain' as ResourceType, 100);
       // 正常序列化
       const serialized = engine.serialize();
       expect(typeof serialized).toBe('string');
@@ -256,7 +257,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
     it('setResource 传入对象不应导致内部状态异常', () => {
       // TypeScript 类型系统阻止直接传入对象，但运行时可能绕过
       expect(() => {
-        (engine.resource as any).setResource('grain', { value: 100 });
+        (engine.resource as unknown as Record<string, (...args: unknown[]) => unknown>).setResource('grain', { value: 100 });
       }).not.toThrow();
 
       // 引擎仍能正常工作
@@ -265,7 +266,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
     it('addResource 传入对象不应导致内部状态异常', () => {
       expect(() => {
-        (engine.resource as any).addResource('grain', { value: 100 });
+        (engine.resource as unknown as Record<string, (...args: unknown[]) => unknown>).addResource('grain', { value: 100 });
       }).not.toThrow();
     });
   });
@@ -354,11 +355,11 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
   describe('场景 12: 并发修改', () => {
     it('快速连续 addResource 不应导致资源值异常', () => {
-      const before = (engine.getSnapshot().resources as any).grain;
+      const before = (engine.getSnapshot().resources).grain;
       for (let i = 0; i < 100; i++) {
-        engine.resource.addResource('grain' as any, 10);
+        engine.resource.addResource('grain' as ResourceType, 10);
       }
-      const after = (engine.getSnapshot().resources as any).grain;
+      const after = (engine.getSnapshot().resources).grain;
       // 资源应增加（受上限约束）
       expect(after).toBeGreaterThanOrEqual(before);
       expect(Number.isFinite(after)).toBe(true);
@@ -370,7 +371,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       }
       const snap = engine.getSnapshot();
       expect(snap).toBeDefined();
-      expect(Number.isFinite((snap.resources as any).grain)).toBe(true);
+      expect(Number.isFinite(snap.resources.grain)).toBe(true);
     });
 
     it('tick 与序列化交替执行不应崩溃', () => {
@@ -391,7 +392,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       // 尝试覆盖 readonly 属性 — 在严格模式下可能抛出 TypeError
       // 我们只验证覆盖后引擎的恢复能力
       try {
-        (testEngine as any).resource = null;
+        (testEngine as unknown as Record<string, unknown>).resource = null;
       } catch (e) {
         // strict mode 或 frozen 对象可能阻止赋值
         expect(e).toBeDefined();
@@ -409,7 +410,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
     it('尝试删除引擎属性后新引擎应正常工作', () => {
       const testEngine = createEngine();
       try {
-        delete (testEngine as any).initialized;
+        delete (testEngine as unknown as Record<string, unknown>).initialized;
       } catch (e) {
         // 可能因严格模式失败
         expect(e).toBeDefined();
@@ -472,8 +473,8 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       testEngine.reset();
 
       // 验证原型未被污染
-      expect(({} as any).polluted).toBeUndefined();
-      expect(({} as any).hacked).toBeUndefined();
+      expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+      expect(({} as Record<string, unknown>).hacked).toBeUndefined();
     });
 
     it('序列化→注入→反序列化不应导致原型污染', () => {
@@ -481,9 +482,9 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       const parsed = JSON.parse(serialized);
 
       // 注入恶意字段
-      (parsed as any).__proto__ = { admin: true };
+      (parsed as Record<string, unknown>).__proto__ = { admin: true };
       if (parsed.resources && typeof parsed.resources === 'object') {
-        (parsed as any).resources.__proto__ = { polluted: true };
+        (parsed as Record<string, unknown>).resources.__proto__ = { polluted: true };
       }
 
       const injected = JSON.stringify(parsed);
@@ -494,8 +495,8 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       testEngine.reset();
 
       // 验证原型未被污染
-      expect(({} as any).admin).toBeUndefined();
-      expect(({} as any).polluted).toBeUndefined();
+      expect(({} as Record<string, unknown>).admin).toBeUndefined();
+      expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     });
 
     it('注入超深嵌套数据不应导致栈溢出', () => {

@@ -538,9 +538,9 @@ describe('FactionBondSystem — ISubsystem 接口', () => {
   it('init 不抛异常', () => {
     expect(() => {
       system.init({
-        eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() } as any,
-        config: { get: vi.fn() } as any,
-        registry: { get: vi.fn() } as any,
+        eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() } as unknown as Record<string, unknown>,
+        config: { get: vi.fn() as unknown as (key: string) => unknown },
+        registry: { get: vi.fn() as unknown as (key: string) => unknown },
       });
     }).not.toThrow();
   });

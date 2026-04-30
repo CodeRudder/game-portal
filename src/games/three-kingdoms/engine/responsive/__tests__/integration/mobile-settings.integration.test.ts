@@ -316,7 +316,7 @@ describe('§3 移动端UI设置', () => {
 
     it('ISubsystem 接口 — init/getState/isInitialized 应正常工作', () => {
       expect(settings.isInitialized).toBe(false);
-      settings.init({} as any);
+      settings.init({} as Record<string, unknown>);
       expect(settings.isInitialized).toBe(true);
       const state = settings.getState();
       expect(state.fontSize).toBeDefined();

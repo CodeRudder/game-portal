@@ -99,7 +99,7 @@ function createReplay(timestamp: number, overrides: Record<string, unknown> = {}
     result: { winner: 'attacker' },
     keyMoments: [3],
     ...overrides,
-  } as any;
+  } as unknown as Record<string, unknown>;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -636,7 +636,7 @@ describe('v13.0 PvP赛季 — §7.4 防守阵容与策略', () => {
   it('should provide strategy suggestion text', () => {
     const dfs = new DefenseFormationSystem();
 
-    const lowStats = { totalDefenses: 10, wins: 2, losses: 8, winRate: 0.2, suggestedStrategy: AIDefenseStrategy.DEFENSIVE as any };
+    const lowStats = { totalDefenses: 10, wins: 2, losses: 8, winRate: 0.2, suggestedStrategy: AIDefenseStrategy.DEFENSIVE as unknown as string };
     const suggestion = dfs.getStrategySuggestion(lowStats);
     expect(suggestion).toBeTruthy();
     expect(suggestion).toContain('坚守');

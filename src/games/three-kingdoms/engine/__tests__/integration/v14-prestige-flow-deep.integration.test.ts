@@ -60,7 +60,7 @@ function createPrestigeWithDeps(): PrestigeSystem {
       getAll: () => new Map(),
       has: () => false,
       unregister: () => {},
-    } as any,
+    } as unknown as Record<string, unknown>,
   };
   prestige.init(deps);
   return prestige;

@@ -310,7 +310,7 @@ describe('集成测试: 领土管理 + 驻防 + 筛选 + 地标 (Play §9, §10.
         ...lm,
         position: LANDMARK_POSITIONS[lm.id] ?? { x: 0, y: 0 },
       }));
-      const result = MapFilterSystem.filter(tiles, landmarks as any, {
+      const result = MapFilterSystem.filter(tiles, landmarks as unknown as Record<string, unknown>, {
         regions: ['wei'],
       });
       expect(result).toBeDefined();
@@ -327,7 +327,7 @@ describe('集成测试: 领土管理 + 驻防 + 筛选 + 地标 (Play §9, §10.
         ...lm,
         position: LANDMARK_POSITIONS[lm.id] ?? { x: 0, y: 0 },
       }));
-      const result = MapFilterSystem.filter(tiles, landmarks as any, {
+      const result = MapFilterSystem.filter(tiles, landmarks as unknown as Record<string, unknown>, {
         terrains: ['plain'],
       });
       expect(result).toBeDefined();
@@ -342,7 +342,7 @@ describe('集成测试: 领土管理 + 驻防 + 筛选 + 地标 (Play §9, §10.
         ...lm,
         position: LANDMARK_POSITIONS[lm.id] ?? { x: 0, y: 0 },
       }));
-      const result = MapFilterSystem.filter(tiles, landmarks as any, {
+      const result = MapFilterSystem.filter(tiles, landmarks as unknown as Record<string, unknown>, {
         regions: ['wei'],
         terrains: ['plain'],
       });
@@ -360,7 +360,7 @@ describe('集成测试: 领土管理 + 驻防 + 筛选 + 地标 (Play §9, §10.
         ...lm,
         position: LANDMARK_POSITIONS[lm.id] ?? { x: 0, y: 0 },
       }));
-      const result = MapFilterSystem.filter(tiles, landmarks as any, {});
+      const result = MapFilterSystem.filter(tiles, landmarks as unknown as Record<string, unknown>, {});
       expect(result.tiles.length).toBe(tiles.length);
     });
 
@@ -370,7 +370,7 @@ describe('集成测试: 领土管理 + 驻防 + 筛选 + 地标 (Play §9, §10.
         ...lm,
         position: LANDMARK_POSITIONS[lm.id] ?? { x: 0, y: 0 },
       }));
-      const result = MapFilterSystem.filter(tiles, landmarks as any, {
+      const result = MapFilterSystem.filter(tiles, landmarks as unknown as Record<string, unknown>, {
         regions: ['shu'],
       });
       expect(result.totalTiles).toBeGreaterThan(0);

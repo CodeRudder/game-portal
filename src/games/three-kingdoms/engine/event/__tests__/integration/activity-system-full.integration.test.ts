@@ -272,7 +272,7 @@ describe('§2 活动系统全链路集成', () => {
         { playerId: 'p2', playerName: 'B', points: 300, tokens: 80, rank: 0, faction: 'shu' },
         { playerId: 'p3', playerName: 'C', points: 200, tokens: 60, rank: 0, faction: 'wu' },
       ];
-      const result = timedSys.updateLeaderboard('act-lb-1', entries as any);
+      const result = timedSys.updateLeaderboard('act-lb-1', entries as unknown as Record<string, unknown>);
       expect(result[0].rank).toBe(1);
       expect(result[0].points).toBe(300);
       expect(result[1].rank).toBe(2);
@@ -284,7 +284,7 @@ describe('§2 活动系统全链路集成', () => {
         { playerId: 'p1', playerName: 'A', points: 200, tokens: 30, rank: 0, faction: 'wei' },
         { playerId: 'p2', playerName: 'B', points: 200, tokens: 80, rank: 0, faction: 'shu' },
       ];
-      const result = timedSys.updateLeaderboard('act-lb-2', entries as any);
+      const result = timedSys.updateLeaderboard('act-lb-2', entries as unknown as Record<string, unknown>);
       expect(result[0].playerId).toBe('p2');
     });
 
@@ -293,7 +293,7 @@ describe('§2 活动系统全链路集成', () => {
         { playerId: 'p1', playerName: 'A', points: 500, tokens: 50, rank: 0, faction: 'wei' },
         { playerId: 'p2', playerName: 'B', points: 100, tokens: 20, rank: 0, faction: 'shu' },
       ];
-      timedSys.updateLeaderboard('act-lb-3', entries as any);
+      timedSys.updateLeaderboard('act-lb-3', entries as unknown as Record<string, unknown>);
       expect(timedSys.getPlayerRank('act-lb-3', 'p1')).toBe(1);
       expect(timedSys.getPlayerRank('act-lb-3', 'p2')).toBe(2);
     });
@@ -311,7 +311,7 @@ describe('§2 活动系统全链路集成', () => {
       const entries = Array.from({ length: 200 }, (_, i) => ({
         playerId: `p${i}`, playerName: `P${i}`, points: 200 - i, tokens: 50, rank: 0, faction: 'wei',
       }));
-      const result = timedSys.updateLeaderboard('act-lb-4', entries as any);
+      const result = timedSys.updateLeaderboard('act-lb-4', entries as unknown as Record<string, unknown>);
       expect(result.length).toBeLessThanOrEqual(100);
     });
   });
@@ -528,7 +528,7 @@ describe('§2 活动系统全链路集成', () => {
     });
 
     it('不存在的节日类型返回 null', () => {
-      const result = timedSys.createFestivalActivity('nonexistent' as any, Date.now());
+      const result = timedSys.createFestivalActivity('nonexistent' as unknown as string, Date.now());
       expect(result).toBeNull();
     });
   });

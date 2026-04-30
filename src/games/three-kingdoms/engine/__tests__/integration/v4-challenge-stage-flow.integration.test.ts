@@ -12,7 +12,7 @@
  * 编码规范：
  * - 每个it前创建新的 ChallengeStageSystem 实例
  * - describe按play流程ID组织
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  */
 
 import { describe, it, expect } from 'vitest';
@@ -333,8 +333,8 @@ describe('V4 CHALLENGE-STAGE-FLOW 挑战关卡完整流程', () => {
 
     it('无效数据反序列化不崩溃', () => {
       const { sys } = createSystem();
-      expect(() => sys.deserialize(null as any)).not.toThrow();
-      expect(() => sys.deserialize({ version: 999 } as any)).not.toThrow();
+      expect(() => sys.deserialize(null as unknown as string)).not.toThrow();
+      expect(() => sys.deserialize({ version: 999 } as unknown as Record<string, unknown>)).not.toThrow();
     });
 
     it('reset清空所有进度', () => {

@@ -361,7 +361,7 @@ describe('§4.3 联盟任务与活跃度', () => {
     expect(serialized[0].status).toBe(AllianceTaskStatus.COMPLETED);
     // Deserialize
     const newSys = new AllianceTaskSystem();
-    newSys.init({} as any);
+    newSys.init({} as Record<string, unknown>);
     newSys.deserializeTasks(serialized);
     const restored = newSys.getActiveTasks();
     expect(restored).toHaveLength(3);

@@ -46,12 +46,12 @@ function createDeps(): ISystemDeps {
     },
   };
   return {
-    registry: registry as any,
-    eventBus: eventBus as any,
+    registry: registry as unknown as Record<string, unknown>,
+    eventBus: eventBus as unknown as Record<string, unknown>,
     getResource: () => null,
     emit: () => {},
     subscribe: () => {},
-    gameLog: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} } as any,
+    gameLog: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} } as unknown as Record<string, unknown>,
   };
 }
 

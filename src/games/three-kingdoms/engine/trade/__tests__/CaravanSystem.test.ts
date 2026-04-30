@@ -23,9 +23,9 @@ import {
 function createCaravan(): CaravanSystem {
   const caravan = new CaravanSystem();
   caravan.init({
-    eventBus: { emit: vi.fn(), on: vi.fn(), off: vi.fn(), once: vi.fn(), removeAllListeners: vi.fn() } as any,
-    config: { get: vi.fn() } as any,
-    registry: { get: vi.fn() } as any,
+    eventBus: { emit: vi.fn() as unknown as (...args: unknown[]) => void, on: vi.fn() as unknown as (...args: unknown[]) => void, off: vi.fn() as unknown as (...args: unknown[]) => void },
+    config: { get: vi.fn() as unknown as (key: string) => unknown },
+    registry: { get: vi.fn() as unknown as (key: string) => unknown },
   });
   return caravan;
 }
@@ -203,7 +203,7 @@ describe('CaravanSystem - update 状态流转', () => {
     cs.setRouteProvider(provider);
     const first = cs.getCaravans()[0];
     cs.dispatch({ caravanId: first.id, routeId: 'route_luoyang_xuchang', cargo: { silk: 5 } });
-    const caravan = (cs as any).caravans.get(first.id);
+    const caravan = (cs as unknown as Record<string, unknown>).caravans.get(first.id);
     caravan.arrivalTime = Date.now() - 1;
     cs.update(1);
     expect(caravan.status).toBe('returning');
@@ -215,7 +215,7 @@ describe('CaravanSystem - update 状态流转', () => {
     cs.setRouteProvider(provider);
     const first = cs.getCaravans()[0];
     cs.dispatch({ caravanId: first.id, routeId: 'route_luoyang_xuchang', cargo: { silk: 5 } });
-    const caravan = (cs as any).caravans.get(first.id);
+    const caravan = (cs as unknown as Record<string, unknown>).caravans.get(first.id);
     caravan.status = 'returning';
     caravan.arrivalTime = Date.now() - 1;
     cs.update(1);

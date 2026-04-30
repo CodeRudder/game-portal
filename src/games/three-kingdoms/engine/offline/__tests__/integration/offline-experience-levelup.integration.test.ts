@@ -123,9 +123,9 @@ describe('v9-int §2.2 经验分配到武将', () => {
 
   beforeEach(() => {
     heroSystem = new HeroSystem();
-    heroSystem.init({ emit: vi.fn(), on: vi.fn(), off: vi.fn() } as any);
+    heroSystem.init({ emit: vi.fn() as unknown as (...args: unknown[]) => void, on: vi.fn() as unknown as (...args: unknown[]) => void, off: vi.fn() as unknown as (...args: unknown[]) => void });
     levelSystem = new HeroLevelSystem();
-    levelSystem.init({ emit: vi.fn(), on: vi.fn(), off: vi.fn() } as any);
+    levelSystem.init({ emit: vi.fn() as unknown as (...args: unknown[]) => void, on: vi.fn() as unknown as (...args: unknown[]) => void, off: vi.fn() as unknown as (...args: unknown[]) => void });
     levelSystem.setLevelDeps({
       heroSystem,
       spendResource: () => true,
@@ -209,9 +209,9 @@ describe('v9-int §2.x 升级判定与边界', () => {
 
   beforeEach(() => {
     const heroSystem = new HeroSystem();
-    heroSystem.init({ emit: vi.fn(), on: vi.fn(), off: vi.fn() } as any);
+    heroSystem.init({ emit: vi.fn() as unknown as (...args: unknown[]) => void, on: vi.fn() as unknown as (...args: unknown[]) => void, off: vi.fn() as unknown as (...args: unknown[]) => void });
     levelSystem = new HeroLevelSystem();
-    levelSystem.init({ emit: vi.fn(), on: vi.fn(), off: vi.fn() } as any);
+    levelSystem.init({ emit: vi.fn() as unknown as (...args: unknown[]) => void, on: vi.fn() as unknown as (...args: unknown[]) => void, off: vi.fn() as unknown as (...args: unknown[]) => void });
     levelSystem.setLevelDeps({
       heroSystem,
       spendResource: () => true,

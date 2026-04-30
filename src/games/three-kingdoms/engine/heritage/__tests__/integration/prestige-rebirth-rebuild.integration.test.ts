@@ -119,7 +119,7 @@ function createFullEnv() {
     getRebirthCount: () => rebirthCount,
     /** 增加声望并同步到转生系统 */
     addPrestigeAndSync: (points: number, source: string = 'main_quest') => {
-      prestige.addPrestigePoints(source as any, points);
+      prestige.addPrestigePoints(source as unknown as Record<string, unknown>, points);
       prestigeLevel = prestige.getCurrentLevelInfo().level;
       rebirth.updatePrestigeLevel(prestigeLevel);
     },

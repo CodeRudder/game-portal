@@ -68,7 +68,7 @@ function createSystemBundle() {
 }
 
 function completeStep(stepManager: TutorialStepManager, stepId: string) {
-  const result = stepManager.startStep(stepId as any);
+  const result = stepManager.startStep(stepId as unknown as Record<string, unknown>);
   if (!result.success) return result;
   const definition = result.step!;
   for (let i = 0; i < definition.subSteps.length; i++) {
@@ -308,7 +308,7 @@ describe('§2 剧情事件集成测试', () => {
     });
 
     it('不存在的剧情事件ID应返回null', () => {
-      const def = bundle.storyPlayer.getStoryEventDefinition('e99_nonexistent' as any);
+      const def = bundle.storyPlayer.getStoryEventDefinition('e99_nonexistent' as unknown as string);
       expect(def).toBeNull();
     });
   });

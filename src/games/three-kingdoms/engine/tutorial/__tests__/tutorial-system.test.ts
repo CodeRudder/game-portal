@@ -502,7 +502,7 @@ describe('TutorialSystem', () => {
 
     it('序列化数据是快照（修改不影响原系统）', () => {
       const data = system.serialize();
-      data.completedSteps.push('claim_newbie_pack' as any);
+      data.completedSteps.push('claim_newbie_pack' as unknown as string);
       data.skipped = true;
 
       // 原系统不受影响
@@ -530,7 +530,7 @@ describe('TutorialSystem', () => {
     });
 
     it('getStepById() 对不存在的ID返回 null', () => {
-      const step = system.getStepById('nonexistent' as any);
+      const step = system.getStepById('nonexistent' as unknown as string);
       expect(step).toBeNull();
     });
 

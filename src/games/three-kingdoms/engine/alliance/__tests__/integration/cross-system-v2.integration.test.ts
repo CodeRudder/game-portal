@@ -230,10 +230,10 @@ describe('§11.4 离线→回归→活动结算串联', () => {
     ];
     const totalContribution = pendingRewards
       .filter(r => 'contribution' in r)
-      .reduce((s, r) => s + (r as any).contribution, 0);
+      .reduce((s, r) => s + (r as unknown as Record<string, unknown>).contribution, 0);
     const totalTokens = pendingRewards
       .filter(r => 'tokens' in r)
-      .reduce((s, r) => s + (r as any).tokens, 0);
+      .reduce((s, r) => s + (r as unknown as Record<string, unknown>).tokens, 0);
     expect(totalContribution).toBe(150);
     expect(totalTokens).toBe(300);
   });

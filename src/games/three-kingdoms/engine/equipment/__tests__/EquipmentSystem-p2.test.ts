@@ -58,9 +58,9 @@ function createSystem(): EquipmentSystem {
   const mockConfig = { get: vi.fn() };
   const mockRegistry = { get: vi.fn() };
   sys.init({
-    eventBus: mockEventBus as any,
-    config: mockConfig as any,
-    registry: mockRegistry as any,
+    eventBus: mockEventBus as unknown as { emit: (...args: unknown[]) => void; on: (...args: unknown[]) => void; off: (...args: unknown[]) => void },
+    config: mockConfig as unknown as { get: (key: string) => unknown },
+    registry: mockRegistry as unknown as { get: (key: string) => unknown },
   });
   return sys;
 }
@@ -403,7 +403,7 @@ describe('EquipmentSystem — 背包管理', () => {
     it('添加装备触发 equipment:added 事件', () => {
       const eq = sys.generateEquipment('weapon', 'white', 'campaign_drop', 42);
       sys.addToBag(eq);
-      const mockEventBus = (sys as any).deps.eventBus;
+      const mockEventBus = (sys as unknown as Record<string, unknown>).deps.eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith(
         'equipment:added',
         expect.objectContaining({ uid: eq.uid }),
@@ -448,7 +448,7 @@ describe('EquipmentSystem — 背包管理', () => {
     it('移除装备触发 equipment:removed 事件', () => {
       const eq = addRandomEquipment(sys);
       sys.removeFromBag(eq.uid);
-      const mockEventBus = (sys as any).deps.eventBus;
+      const mockEventBus = (sys as unknown as Record<string, unknown>).deps.eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith(
         'equipment:removed',
         expect.objectContaining({ uid: eq.uid }),
@@ -497,7 +497,7 @@ describe('EquipmentSystem — 背包管理', () => {
 
     it('expandBag 触发 equipment:bag_expanded 事件', () => {
       sys.expandBag();
-      const mockEventBus = (sys as any).deps.eventBus;
+      const mockEventBus = (sys as unknown as Record<string, unknown>).deps.eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith(
         'equipment:bag_expanded',
         expect.objectContaining({ capacity: DEFAULT_BAG_CAPACITY + BAG_EXPAND_INCREMENT }),
@@ -694,7 +694,7 @@ describe('EquipmentSystem — 装备分解', () => {
     it('分解触发 equipment:decomposed 事件', () => {
       const eq = addRandomEquipment(sys);
       sys.decompose(eq.uid);
-      const mockEventBus = (sys as any).deps.eventBus;
+      const mockEventBus = (sys as unknown as Record<string, unknown>).deps.eventBus;
       expect(mockEventBus.emit).toHaveBeenCalledWith(
         'equipment:decomposed',
         expect.objectContaining({
@@ -801,7 +801,7 @@ describe('EquipmentSystem — 序列化', () => {
       bagCapacity: 100,
     };
     const consoleSpy = vi.spyOn(gameLog, 'warn').mockImplementation(() => {});
-    sys.deserialize(data as any);
+    sys.deserialize(data as unknown as Record<string, unknown>);
     expect(sys.getBagCapacity()).toBe(100);
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();

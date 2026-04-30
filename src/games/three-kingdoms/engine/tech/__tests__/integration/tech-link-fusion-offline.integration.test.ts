@@ -103,7 +103,7 @@ describe('§1.5 互斥分支选择', () => {
     // 检查Tier5+节点是否有互斥组
     const tier5Plus = defs.filter(d => d.tier >= 5);
     if (tier5Plus.length > 0) {
-      const hasMutex = tier5Plus.some(d => (d as any).mutexGroup);
+      const hasMutex = tier5Plus.some(d => (d as unknown as Record<string, unknown>).mutexGroup);
       expect(hasMutex).toBe(true);
     }
   });
@@ -131,8 +131,8 @@ describe('§1.5 互斥分支选择', () => {
     const defs = tree.getAllNodeDefs();
     const mutexGroups = new Set<string>();
     for (const d of defs) {
-      if ((d as any).mutexGroup) {
-        mutexGroups.add((d as any).mutexGroup);
+      if ((d as unknown as Record<string, unknown>).mutexGroup) {
+        mutexGroups.add((d as unknown as Record<string, unknown>).mutexGroup);
       }
     }
     // 每条路线Tier5~7各有互斥组，实际数量取决于配置
@@ -296,7 +296,7 @@ describe('§1.8 离线研究回归', () => {
     point.syncAcademyLevel(10);
     for (let i = 0; i < 500; i++) point.update(1);
 
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       research.startResearch(firstTier[0].id);
 
@@ -316,7 +316,7 @@ describe('§1.8 离线研究回归', () => {
     point.syncAcademyLevel(10);
     for (let i = 0; i < 500; i++) point.update(1);
 
-    const firstTier = tree.getTierNodes('military' as any, 1);
+    const firstTier = tree.getTierNodes('military' as unknown as string, 1);
     if (firstTier.length > 0) {
       research.startResearch(firstTier[0].id);
       offline.onGoOffline(Date.now());

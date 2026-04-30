@@ -20,6 +20,7 @@ import {
   RecruitTokenEconomySystem,
 } from '../recruit-token-economy-system';
 import type { RecruitTokenEconomyDeps } from '../recruit-token-economy-system';
+import type { ISystemDeps } from "../../core/types";
 
 // ── 辅助函数 ──
 
@@ -91,16 +92,16 @@ describe('RecruitTokenEconomySystem', () => {
     });
 
     it('init() 不抛异常', () => {
-      expect(() => system.init(makeSystemDeps() as any)).not.toThrow();
+      expect(() => system.init(makeSystemDeps() as unknown as ISystemDeps)).not.toThrow();
     });
 
     it('update() 不抛异常', () => {
-      system.init(makeSystemDeps() as any);
+      system.init(makeSystemDeps() as unknown as ISystemDeps);
       expect(() => system.update(1)).not.toThrow();
     });
 
     it('getState() 返回序列化数据', () => {
-      const state = system.getState() as any;
+      const state = system.getState() as Record<string, unknown>;
       expect(state).toHaveProperty('version');
       expect(state).toHaveProperty('newbiePackClaimed');
       expect(state).toHaveProperty('dailyShopPurchased');
@@ -582,7 +583,7 @@ describe('RecruitTokenEconomySystem', () => {
       newSystem.deserialize({
         version: 1,
         newbiePackClaimed: true,
-      } as any);
+      } as unknown as Record<string, unknown>);
 
       expect(newSystem.getNewbiePackClaimed()).toBe(true);
       expect(newSystem.getDailyShopPurchased()).toBe(0);
@@ -655,7 +656,7 @@ describe('RecruitTokenEconomySystem', () => {
     });
 
     it('update 同时处理日重置和被动产出', () => {
-      system.init(makeSystemDeps() as any);
+      system.init(makeSystemDeps() as unknown as ISystemDeps);
       const addSpy = deps.addRecruitToken;
       system.update(60); // 60 秒
       expect(addSpy).toHaveBeenCalledWith(0.12); // 0.002 * 60

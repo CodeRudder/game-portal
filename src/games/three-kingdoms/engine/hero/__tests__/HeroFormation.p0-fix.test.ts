@@ -261,13 +261,13 @@ describe('P0-02: 编队战力羁绊加成', () => {
     expect(power).toBe(1000); // 500+500=1000
 
     // 1羁绊
-    (prereqs as any).getActiveBondCount = () => 1;
+    (prereqs as unknown as Record<string, unknown>).getActiveBondCount = () => 1;
     formation.setPrerequisites(prereqs);
     power = formation.calculateFormationPower(formation.getFormation(f.id)!, makeGetGeneral(generals), calcPower);
     expect(power).toBe(1050); // 1000 * 1.05
 
     // 3羁绊
-    (prereqs as any).getActiveBondCount = () => 3;
+    (prereqs as unknown as Record<string, unknown>).getActiveBondCount = () => 3;
     formation.setPrerequisites(prereqs);
     power = formation.calculateFormationPower(formation.getFormation(f.id)!, makeGetGeneral(generals), calcPower);
     expect(power).toBe(1150); // 1000 * 1.15

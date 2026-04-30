@@ -129,7 +129,7 @@ describe('§6 跨系统联动全链路 集成', () => {
       expect(result.triggered).toBe(true);
       const attackOption = def.options.find(o => o.id === 'opt-attack');
       expect(attackOption).toBeDefined();
-      expect((attackOption!.consequences as any).triggerSystem).toBe('battle');
+      expect((attackOption!.consequences as unknown as Record<string, unknown>).triggerSystem).toBe('battle');
     });
 
     it('商队事件选择"交易" → 进入NPC交易面板', () => {

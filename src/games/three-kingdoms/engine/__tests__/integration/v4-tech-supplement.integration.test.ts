@@ -9,7 +9,7 @@
  * 编码规范：
  * - 每个it前创建新的sim实例
  * - describe按play流程ID组织
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  */
 
 import { describe, it, expect } from 'vitest';

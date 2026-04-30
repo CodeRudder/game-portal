@@ -14,7 +14,7 @@
  * - describe按play流程ID组织
  * - UI层测试 it.skip + [UI层测试]
  * - 引擎未实现 it.skip + [引擎未实现]
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  */
 
 import { describe, it, expect } from 'vitest';

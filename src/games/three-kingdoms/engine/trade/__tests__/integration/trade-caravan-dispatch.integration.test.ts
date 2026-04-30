@@ -18,6 +18,7 @@ import type { TradeCurrencyOps } from '../../TradeSystem';
 import type { RouteInfoProvider } from '../../CaravanSystem';
 import type { TradeRouteId, CaravanDispatchRequest } from '../../../../core/trade/trade.types';
 import {
+import type { ISystemDeps } from "../../../../core/types";
   TRADE_ROUTE_DEFS,
   TRADE_GOODS_DEFS,
   INITIAL_PROSPERITY,
@@ -48,14 +49,14 @@ function createMockCurrencyOps(): TradeCurrencyOps {
 
 function createTrade(): TradeSystem {
   const trade = new TradeSystem();
-  trade.init(createMockDeps() as any);
+  trade.init(createMockDeps() as unknown as ISystemDeps);
   trade.setCurrencyOps(createMockCurrencyOps());
   return trade;
 }
 
 function createCaravan(trade: TradeSystem): CaravanSystem {
   const caravan = new CaravanSystem();
-  caravan.init(createMockDeps() as any);
+  caravan.init(createMockDeps() as unknown as ISystemDeps);
 
   const provider: RouteInfoProvider = {
     getRouteDef: (routeId: TradeRouteId) => {
@@ -795,7 +796,7 @@ describe('Trade+Caravan 序列化集成', () => {
 
     const data = caravan.serialize();
     const caravan2 = new CaravanSystem();
-    caravan2.init(createMockDeps() as any);
+    caravan2.init(createMockDeps() as unknown as ISystemDeps);
     caravan2.deserialize(data);
 
     expect(caravan2.getCaravanCount()).toBe(caravan.getCaravanCount());

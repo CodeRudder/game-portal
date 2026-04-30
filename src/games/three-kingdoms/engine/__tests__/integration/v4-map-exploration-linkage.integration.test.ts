@@ -12,7 +12,7 @@
  * 编码规范：
  * - 每个it前创建新的系统实例
  * - describe按play流程ID组织
- * - 不使用 as any
+ * - 不使用 as unknown as Record<string, unknown>
  */
 
 import { describe, it, expect } from 'vitest';
@@ -66,7 +66,7 @@ function createFullDeps(): {
     },
   };
 
-  const deps: ISystemDeps = { registry: registry as any, eventBus: eventBus as any };
+  const deps: ISystemDeps = { registry: registry as unknown as Record<string, unknown>, eventBus: eventBus as unknown as { emit: (...args: unknown[]) => void; on: (...args: unknown[]) => void; off: (...args: unknown[]) => void } };
   territory.init(deps);
   siege.init(deps);
   enhancer.init(deps);

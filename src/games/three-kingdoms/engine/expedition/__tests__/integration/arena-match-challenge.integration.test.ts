@@ -93,7 +93,7 @@ function createReplay(overrides: Partial<BattleReplay> = {}): BattleReplay {
     timestamp: Date.now(),
     totalTurns: 5,
     actions: [],
-    result: { winner: 'attacker' } as any,
+    result: { winner: 'attacker' } as unknown as Record<string, unknown>,
     keyMoments: [3],
     ...overrides,
   };

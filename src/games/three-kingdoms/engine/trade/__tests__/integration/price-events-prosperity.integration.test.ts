@@ -17,6 +17,7 @@ import {
   PROSPERITY_LABELS,
 } from '../../../../core/trade/trade.types';
 import {
+import type { ISystemDeps } from "../../../../core/types";
   TRADE_GOODS_DEFS,
   TRADE_ROUTE_DEFS,
   TRADE_EVENT_DEFS,
@@ -49,7 +50,7 @@ function createMockCurrencyOps(): TradeCurrencyOps {
 
 function createTrade(): TradeSystem {
   const trade = new TradeSystem();
-  trade.init(createMockDeps() as any);
+  trade.init(createMockDeps() as unknown as ISystemDeps);
   trade.setCurrencyOps(createMockCurrencyOps());
   return trade;
 }

@@ -12,6 +12,7 @@ import { CurrencySystem } from '../../../currency/CurrencySystem';
 import type { ISystemDeps } from '../../../../core/types';
 import type { GoodsFilter } from '../../../../core/shop';
 import {
+import type { CurrencyType } from "../../../../core/currency";
   DEFAULT_RESTOCK_CONFIG,
   DAILY_MANUAL_REFRESH_LIMIT,
   SHOP_SAVE_VERSION,
@@ -315,7 +316,7 @@ describe('§6.1+§7.1 收藏与补货', () => {
       // 获取价格并确保有足够货币
       const price = shop.calculateFinalPrice(purchasable.defId, 'normal');
       for (const [cur, amt] of Object.entries(price)) {
-        currency.addCurrency(cur as any, amt + 1000);
+        currency.addCurrency(cur as CurrencyType, amt + 1000);
       }
 
       const beforeStock = shop.getStockInfo('normal', purchasable.defId)!.stock;

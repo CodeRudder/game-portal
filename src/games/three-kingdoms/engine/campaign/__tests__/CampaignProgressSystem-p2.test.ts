@@ -627,7 +627,7 @@ describe('CampaignProgressSystem ISubsystem', () => {
   });
 
   it('init 注入依赖不报错', () => {
-    const mockDeps = { eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() } } as any;
+    const mockDeps = { eventBus: { on: vi.fn(), off: vi.fn(), emit: vi.fn() } } as unknown as Record<string, unknown>;
     expect(() => system.init(mockDeps)).not.toThrow();
   });
 

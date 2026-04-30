@@ -27,6 +27,7 @@ import {
   INITIAL_CARAVAN_COUNT,
 } from '../../../../core/trade/trade-config';
 import { CURRENCY_TYPES } from '../../../../core/currency';
+import type { CurrencyType } from "../../../../core/currency";
 
 // ─── 辅助工具 ────────────────────────────────
 
@@ -44,26 +45,26 @@ function createFullEnv() {
 
   // 1. CurrencySystem
   const currency = new CurrencySystem();
-  currency.init(deps as any);
+  currency.init(deps as unknown as Record<string, unknown>);
 
   // 2. ShopSystem（依赖CurrencySystem）
   const shop = new ShopSystem();
-  shop.init(deps as any);
+  shop.init(deps as unknown as Record<string, unknown>);
   shop.setCurrencySystem(currency);
 
   // 3. TradeSystem（通过currencyOps与CurrencySystem交互）
   const trade = new TradeSystem();
-  trade.init(deps as any);
+  trade.init(deps as unknown as Record<string, unknown>);
 
   const currencyOps: TradeCurrencyOps = {
-    addCurrency: (type: string, amount: number) => currency.addCurrency(type as any, amount),
-    canAfford: (type: string, amount: number) => currency.hasEnough(type as any, amount),
+    addCurrency: (type: string, amount: number) => currency.addCurrency(type as CurrencyType, amount),
+    canAfford: (type: string, amount: number) => currency.hasEnough(type as CurrencyType, amount),
     spendByPriority: (shopType: string, amount: number, currencyType?: string) => {
       try {
         if (currencyType) {
-          const balance = currency.getBalance(currencyType as any);
+          const balance = currency.getBalance(currencyType as unknown as Record<string, unknown>);
           if (balance < amount) return { success: false };
-          currency.spendCurrency(currencyType as any, amount);
+          currency.spendCurrency(currencyType as CurrencyType, amount);
           return { success: true };
         }
         // 默认用铜钱
@@ -80,7 +81,7 @@ function createFullEnv() {
 
   // 4. CaravanSystem（依赖TradeSystem）
   const caravan = new CaravanSystem();
-  caravan.init(deps as any);
+  caravan.init(deps as unknown as Record<string, unknown>);
 
   const provider: RouteInfoProvider = {
     getRouteDef: (routeId: TradeRouteId) => {
@@ -582,7 +583,7 @@ describe('§8.11 多商店并发状态验证', () => {
 
     // 每种商店应有自己的商品
     for (const type of shopTypes) {
-      const goods = shop.getShopGoods(type as any);
+      const goods = shop.getShopGoods(type as CurrencyType);
       // 商品列表存在（可能为空，但不应undefined）
       expect(Array.isArray(goods)).toBe(true);
     }
@@ -593,8 +594,8 @@ describe('§8.11 多商店并发状态验证', () => {
     const shopTypes = Object.keys(state) as Array<keyof typeof state>;
     if (shopTypes.length < 2) return;
 
-    const type1 = shopTypes[0] as any;
-    const type2 = shopTypes[1] as any;
+    const type1 = shopTypes[0] as unknown as string;
+    const type2 = shopTypes[1] as unknown as string;
 
     const goods1 = shop.getShopGoods(type1);
     if (goods1.length === 0) return;

@@ -96,8 +96,8 @@ function createEnv() {
   saveSlot.init(deps);
 
   const cloudSave = new CloudSaveSystem({
-    cloudStorage: cloudStorage as any,
-    networkDetector: networkDetector as any,
+    cloudStorage: cloudStorage as unknown as Record<string, unknown>,
+    networkDetector: networkDetector as unknown as Record<string, unknown>,
     nowFn: () => Date.now(),
   });
   cloudSave.init(deps);
@@ -246,7 +246,7 @@ describe('§10.5 存档→云同步→设置', () => {
     });
 
     it('§10.5.3.3 导入无效数据返回失败', () => {
-      const result = env.saveSlot.importSaves(null as any);
+      const result = env.saveSlot.importSaves(null as unknown as string);
       expect(result.success).toBe(false);
     });
 

@@ -48,7 +48,7 @@ function createBundle() {
 
 /** 完成一个步骤（开始 → 推进所有子步骤） */
 function finishStep(mgr: TutorialStepManager, stepId: string) {
-  const r = mgr.startStep(stepId as any);
+  const r = mgr.startStep(stepId as unknown as Record<string, unknown>);
   if (!r.success) return r;
   for (let i = 0; i < r.step!.subSteps.length; i++) mgr.advanceSubStep();
   return r;

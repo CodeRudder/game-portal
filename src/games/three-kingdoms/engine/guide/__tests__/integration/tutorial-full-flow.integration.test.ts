@@ -80,7 +80,7 @@ function createSystemBundle() {
 
 /** 完成指定步骤（含所有子步骤） */
 function completeStep(stepManager: TutorialStepManager, stepId: string) {
-  const result = stepManager.startStep(stepId as any);
+  const result = stepManager.startStep(stepId as unknown as Record<string, unknown>);
   if (!result.success) return result;
   const definition = result.step!;
   // 推进所有子步骤

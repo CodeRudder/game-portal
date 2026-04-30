@@ -112,10 +112,10 @@ function createTestEnv(
   heroSystem.setLevelCapGetter((id: string) => starSystem.getLevelCap(id));
 
   if (opts?.star) {
-    (starSystem as any).state.stars[heroId] = opts.star;
+    (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars[heroId] = opts.star;
   }
   if (opts?.breakthrough) {
-    (starSystem as any).state.breakthroughStages[heroId] = opts.breakthrough;
+    (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.breakthroughStages[heroId] = opts.breakthrough;
   }
 
   const awakeningSystem = new AwakeningSystem(heroSystem, starSystem);
@@ -245,8 +245,8 @@ describe('AwakeningSystem — 补充覆盖', () => {
       awakeningSystem.setDeps(awakeningDeps);
 
       for (const id of heroIds) {
-        (starSystem as any).state.stars[id] = 6;
-        (starSystem as any).state.breakthroughStages[id] = 4;
+        (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars[id] = 6;
+        (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.breakthroughStages[id] = 4;
         awakeningSystem.awaken(id);
       }
 
@@ -259,7 +259,7 @@ describe('AwakeningSystem — 补充覆盖', () => {
     it('should include unawakened heroes in state but skip them in passive calc', () => {
       const { awakeningSystem } = createTestEnv('guanyu');
       // Manually add an unawakened entry to state
-      (awakeningSystem as any).state.heroes['guanyu'] = { isAwakened: false, awakeningLevel: 0 };
+      (awakeningSystem as unknown as Record<string, unknown>).state.heroes['guanyu'] = { isAwakened: false, awakeningLevel: 0 };
       const summary = awakeningSystem.getPassiveSummary();
       expect(summary.awakenedCount).toBe(0);
       expect(summary.globalStatBonus).toBe(0);
@@ -281,7 +281,7 @@ describe('AwakeningSystem — 补充覆盖', () => {
       const { awakeningSystem } = createTestEnv('guanyu');
       awakeningSystem.deserialize({
         version: AWAKENING_SAVE_VERSION,
-        state: { heroes: null as any },
+        state: { heroes: null as unknown as string },
       });
       expect(awakeningSystem.isAwakened('guanyu')).toBe(false);
     });
@@ -413,8 +413,8 @@ describe('AwakeningSystem — 补充覆盖', () => {
       starDeps.spendFragments = (id: string, count: number) => heroSystem.useFragments(id, count);
       starSystem.setDeps(starDeps);
       heroSystem.setLevelCapGetter((id: string) => starSystem.getLevelCap(id));
-      (starSystem as any).state.stars['guanyu'] = 6;
-      (starSystem as any).state.breakthroughStages['guanyu'] = 4;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.stars['guanyu'] = 6;
+      (starSystem as unknown as { state: { stars: Record<string, number>; breakthroughStages: Record<string, number> } }).state.breakthroughStages['guanyu'] = 4;
 
       const awakeningSystem = new AwakeningSystem(heroSystem, starSystem);
       awakeningSystem.init(makeMockCoreDeps());

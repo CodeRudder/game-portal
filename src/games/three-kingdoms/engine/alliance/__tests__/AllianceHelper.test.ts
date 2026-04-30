@@ -180,7 +180,7 @@ describe('AllianceHelper', () => {
     });
 
     it('null data 应返回默认值', () => {
-      const result = deserializeAlliance(null as any);
+      const result = deserializeAlliance(null as unknown as string);
       expect(result.alliance).toBeNull();
     });
   });

@@ -109,7 +109,7 @@ describe('StoryTriggerEvaluator', () => {
     });
 
     it('未知类型返回 false', () => {
-      const condition = { type: 'unknown_type' } as any as StoryTriggerCondition;
+      const condition = { type: 'unknown_type' } as unknown as StoryTriggerCondition;
       expect(evaluator.evaluateStoryTrigger(condition, createGameState())).toBe(false);
     });
   });
