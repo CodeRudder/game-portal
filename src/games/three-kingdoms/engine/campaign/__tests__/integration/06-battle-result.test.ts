@@ -45,6 +45,7 @@ import {
   getStage,
   getStagesByChapter,
 } from '../../campaign-config';
+import { ThreeKingdomsEngine } from '../../../ThreeKingdomsEngine';
 
 // ─────────────────────────────────────────────
 // Mock 数据工厂
@@ -153,8 +154,14 @@ function createBattleState(
   };
 }
 
-/** 创建 RewardDistributorDeps 的 mock（使用对象包装避免闭包陷阱） */
-function createMockDeps(): {
+/**
+ * 创建真实引擎实例 + 跟踪包装器
+ *
+ * R21 mockDeps 治理：使用 ThreeKingdomsEngine 真实子系统替代纯 mock。
+ * tracking 仍保留用于断言，但底层调用真实 resource.addResource / hero.addFragment / hero.addExp。
+ */
+function createRealEngineDeps(): {
+  engine: ThreeKingdomsEngine;
   deps: RewardDistributorDeps;
   tracking: {
     addedResources: Record<string, number>;
@@ -162,6 +169,8 @@ function createMockDeps(): {
     addedExp: number;
   };
 } {
+  const engine = new ThreeKingdomsEngine();
+
   const tracking = {
     addedResources: {} as Record<string, number>,
     addedFragments: {} as Record<string, number>,
@@ -169,17 +178,24 @@ function createMockDeps(): {
   };
 
   return {
+    engine,
     tracking,
     deps: {
       addResource: (type, amount) => {
         tracking.addedResources[type] = (tracking.addedResources[type] ?? 0) + amount;
-        return amount;
+        return engine.resource.addResource(type as import('../../../../shared/types').ResourceType, amount);
       },
       addFragment: (generalId, count) => {
         tracking.addedFragments[generalId] = (tracking.addedFragments[generalId] ?? 0) + count;
+        engine.hero.addFragment(generalId, count);
       },
       addExp: (exp) => {
         tracking.addedExp += exp;
+        const gs = engine.hero.getAllGenerals();
+        if (!gs.length) return;
+        const per = Math.floor(exp / gs.length);
+        if (per <= 0) return;
+        for (const g of gs) engine.hero.addExp(g.id, per);
       },
     },
   };
@@ -201,11 +217,11 @@ function createSeededRng(values: number[]): () => number {
 
 describe('§4.1 胜利结算', () => {
   let distributor: RewardDistributor;
-  let mockDeps: ReturnType<typeof createMockDeps>;
+  let realEngineDeps: ReturnType<typeof createRealEngineDeps>;
 
   beforeEach(() => {
-    mockDeps = createMockDeps();
-    distributor = new RewardDistributor(campaignDataProvider, mockDeps.deps);
+    realEngineDeps = createRealEngineDeps();
+    distributor = new RewardDistributor(campaignDataProvider, realEngineDeps.deps);
   });
 
   it('should calculate rewards for victorious battle with 3 stars', () => {
@@ -222,7 +238,7 @@ describe('§4.1 胜利结算', () => {
     const stage = getStage('chapter1_stage1')!;
     // 使用固定 RNG 避免掉落表干扰
     const noDrop = createSeededRng([0.99, 0.99, 0.99]);
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, noDrop);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, noDrop);
     const reward = dist.calculateRewards('chapter1_stage1', 3, true);
 
     // 3星 = 2.0倍率（PRD: ★★★×2.0）, 基础资源 * 2.0 + 首通额外资源
@@ -248,7 +264,7 @@ describe('§4.1 胜利结算', () => {
     const stage = getStage('chapter1_stage1')!;
     // 使用固定 RNG 避免掉落表干扰
     const noDrop = createSeededRng([0.99, 0.99, 0.99]);
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, noDrop);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, noDrop);
     const reward = dist.calculateRewards('chapter1_stage1', 3, false);
 
     expect(reward.isFirstClear).toBe(false);
@@ -278,43 +294,43 @@ describe('§4.1 胜利结算', () => {
 
 describe('§4.2 奖励飞出动画（引擎层数据验证）', () => {
   let distributor: RewardDistributor;
-  let mockDeps: ReturnType<typeof createMockDeps>;
+  let realEngineDeps: ReturnType<typeof createRealEngineDeps>;
 
   beforeEach(() => {
-    mockDeps = createMockDeps();
-    distributor = new RewardDistributor(campaignDataProvider, mockDeps.deps);
+    realEngineDeps = createRealEngineDeps();
+    distributor = new RewardDistributor(campaignDataProvider, realEngineDeps.deps);
   });
 
   it('should distribute resources via addResource callback', () => {
     distributor.calculateAndDistribute('chapter1_stage1', 3, true);
 
-    expect(Object.keys(mockDeps.tracking.addedResources).length).toBeGreaterThan(0);
-    expect(mockDeps.tracking.addedResources.grain).toBeGreaterThan(0);
-    expect(mockDeps.tracking.addedResources.gold).toBeGreaterThan(0);
+    expect(Object.keys(realEngineDeps.tracking.addedResources).length).toBeGreaterThan(0);
+    expect(realEngineDeps.tracking.addedResources.grain).toBeGreaterThan(0);
+    expect(realEngineDeps.tracking.addedResources.gold).toBeGreaterThan(0);
   });
 
   it('should distribute experience via addExp callback', () => {
     distributor.calculateAndDistribute('chapter1_stage1', 3, true);
 
-    expect(mockDeps.tracking.addedExp).toBeGreaterThan(0);
+    expect(realEngineDeps.tracking.addedExp).toBeGreaterThan(0);
   });
 
   it('should distribute fragments via addFragment callback when dropped', () => {
     // 使用固定 RNG 确保碎片掉落（概率 0.1，设 rng 返回 0.05 < 0.1）
     const rng = createSeededRng([0.05, 0.5]); // 0.05 < 0.1 → 掉落, 0.5 → 数量
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, rng);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, rng);
 
     dist.calculateAndDistribute('chapter1_stage1', 3, true);
 
     // chapter1_stage1 的掉落表包含 zhangjiao 碎片
-    expect(mockDeps.tracking.addedFragments['zhangjiao']).toBeGreaterThanOrEqual(1);
+    expect(realEngineDeps.tracking.addedFragments['zhangjiao']).toBeGreaterThanOrEqual(1);
   });
 
   it('should have correct reward types matching stage config', () => {
     const stage = getStage('chapter1_stage1')!;
     // 使用固定 RNG 避免掉落表干扰
     const noDrop = createSeededRng([0.99, 0.99, 0.99]);
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, noDrop);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, noDrop);
     const reward = dist.calculateRewards('chapter1_stage1', 1, false);
 
     // 1星基础奖励应与配置一致（无掉落）
@@ -338,11 +354,11 @@ describe('§4.2 奖励飞出动画（引擎层数据验证）', () => {
 
 describe('§4.3 掉落物品确认', () => {
   it('should respect probability threshold in drop table', () => {
-    const mockDeps = createMockDeps();
+    const realEngineDeps = createRealEngineDeps();
 
     // RNG 始终返回 0.99 → 高概率阈值项不触发（0.99 > 0.8）
     const neverDrop = createSeededRng([0.99, 0.99, 0.99]);
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, neverDrop);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, neverDrop);
 
     const reward = dist.calculateRewards('chapter1_stage1', 1, false);
 
@@ -353,11 +369,11 @@ describe('§4.3 掉落物品确认', () => {
   });
 
   it('should produce drops when RNG is favorable', () => {
-    const mockDeps = createMockDeps();
+    const realEngineDeps = createRealEngineDeps();
 
     // RNG 始终返回 0 → 所有掉落项都触发
     const alwaysDrop = createSeededRng([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, alwaysDrop);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, alwaysDrop);
 
     const reward = dist.calculateRewards('chapter1_stage1', 1, false);
 
@@ -368,11 +384,11 @@ describe('§4.3 掉落物品确认', () => {
   });
 
   it('should produce drop amounts within min-max range', () => {
-    const mockDeps = createMockDeps();
+    const realEngineDeps = createRealEngineDeps();
 
     // 使用固定序列让 grain 掉落触发（rng < 0.8），数量取 min
     const rng = createSeededRng([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, rng);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, rng);
 
     const reward = dist.calculateRewards('chapter1_stage1', 1, false);
 
@@ -396,8 +412,8 @@ describe('§4.3 掉落物品确认', () => {
       },
     };
 
-    const mockDeps = createMockDeps();
-    const dist = new RewardDistributor(emptyDropProvider, mockDeps.deps);
+    const realEngineDeps = createRealEngineDeps();
+    const dist = new RewardDistributor(emptyDropProvider, realEngineDeps.deps);
 
     const reward = dist.calculateRewards('chapter1_stage1', 1, false);
 
@@ -412,10 +428,10 @@ describe('§4.3 掉落物品确认', () => {
 
 describe('§4.3a 关卡↔武将碎片映射', () => {
   it('should drop correct fragment type for chapter1_stage1 (zhangjiao)', () => {
-    const mockDeps = createMockDeps();
+    const realEngineDeps = createRealEngineDeps();
     // RNG: 0.05 < 0.1 → 碎片掉落触发, 0.5 → 数量
     const rng = createSeededRng([0.9, 0.9, 0.05, 0.5]);
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, rng);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, rng);
 
     const reward = dist.calculateRewards('chapter1_stage1', 1, false);
 
@@ -451,10 +467,10 @@ describe('§4.3a 关卡↔武将碎片映射', () => {
   });
 
   it('should produce fragment counts within configured range', () => {
-    const mockDeps = createMockDeps();
+    const realEngineDeps = createRealEngineDeps();
     // 让所有掉落都触发
     const rng = createSeededRng([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, rng);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, rng);
 
     const reward = dist.calculateRewards('chapter1_stage5', 3, true);
 
@@ -551,19 +567,19 @@ describe('§4.4 关卡解锁', () => {
 
 describe('§4.5 失败结算', () => {
   let distributor: RewardDistributor;
-  let mockDeps: ReturnType<typeof createMockDeps>;
+  let realEngineDeps: ReturnType<typeof createRealEngineDeps>;
   let progress: CampaignProgressSystem;
 
   beforeEach(() => {
-    mockDeps = createMockDeps();
-    distributor = new RewardDistributor(campaignDataProvider, mockDeps.deps);
+    realEngineDeps = createRealEngineDeps();
+    distributor = new RewardDistributor(campaignDataProvider, realEngineDeps.deps);
     progress = new CampaignProgressSystem(campaignDataProvider);
   });
 
   it('should not distribute rewards when battle is lost (0 stars)', () => {
     // 0星 = 0倍率，使用固定 RNG 避免掉落干扰
     const noDrop = createSeededRng([0.99, 0.99, 0.99]);
-    const dist = new RewardDistributor(campaignDataProvider, mockDeps.deps, noDrop);
+    const dist = new RewardDistributor(campaignDataProvider, realEngineDeps.deps, noDrop);
     const reward = dist.calculateRewards('chapter1_stage1', 0, false);
 
     expect(reward.starMultiplier).toBe(0);

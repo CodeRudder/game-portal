@@ -17,6 +17,7 @@ import { CaravanSystem } from '../../CaravanSystem';
 import type { RouteInfoProvider } from '../../CaravanSystem';
 import type { ISystemDeps } from '../../../../core/types';
 import type { GoodsFilter } from '../../../../core/shop';
+import { ThreeKingdomsEngine } from '../../../ThreeKingdomsEngine';
 import {
   TRADE_EVENT_DEFS,
   PROSPERITY_GAIN_PER_TRADE,
@@ -29,17 +30,16 @@ import type { CurrencyType } from '../../../../core/currency';
 
 // ─── 辅助 ────────────────────────────────────
 
-function mockDeps(): ISystemDeps {
+/**
+ * R21 mockDeps 治理：使用 ThreeKingdomsEngine 创建真实 ISystemDeps，
+ * 替代纯 mock 的 eventBus/config/registry。
+ */
+function createRealDeps(): ISystemDeps {
+  const engine = new ThreeKingdomsEngine();
   return {
-    eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+    eventBus: engine['bus'],
+    config: engine['configRegistry'],
+    registry: engine['registry'],
   } as unknown as ISystemDeps;
 }
 
@@ -49,10 +49,10 @@ function createFullFixture() {
   const trade = new TradeSystem();
   const caravan = new CaravanSystem();
 
-  shop.init(mockDeps());
-  currency.init(mockDeps());
-  trade.init(mockDeps());
-  caravan.init(mockDeps());
+  shop.init(createRealDeps());
+  currency.init(createRealDeps());
+  trade.init(createRealDeps());
+  caravan.init(createRealDeps());
 
   shop.setCurrencySystem(currency);
 
@@ -475,7 +475,7 @@ describe('§8.1~8.5 跨系统联动', () => {
       }
       const data = trade.serialize();
       const trade2 = new TradeSystem();
-      trade2.init(mockDeps());
+      trade2.init(createRealDeps());
       trade2.deserialize(data);
       // 验证商路状态一致
       for (const [id, state] of trade.getAllRouteStates()) {
@@ -502,7 +502,7 @@ describe('§8.1~8.5 跨系统联动', () => {
       }
       const data = caravan.serialize();
       const caravan2 = new CaravanSystem();
-      caravan2.init(mockDeps());
+      caravan2.init(createRealDeps());
       caravan2.deserialize(data);
       expect(caravan2.getCaravanCount()).toBe(caravan.getCaravanCount());
     });
@@ -518,7 +518,7 @@ describe('§8.1~8.5 跨系统联动', () => {
       if (favId) shop.toggleFavorite(favId);
       const data = shop.serialize();
       const shop2 = new ShopSystem();
-      shop2.init(mockDeps());
+      shop2.init(createRealDeps());
       shop2.setCurrencySystem(currency);
       shop2.deserialize(data);
       if (favId) expect(shop2.isFavorite(favId)).toBe(true);
@@ -546,10 +546,10 @@ describe('§8.1~8.5 跨系统联动', () => {
       const caravanData = caravan.serialize();
       // 恢复
       const trade2 = new TradeSystem();
-      trade2.init(mockDeps());
+      trade2.init(createRealDeps());
       trade2.deserialize(tradeData);
       const caravan2 = new CaravanSystem();
-      caravan2.init(mockDeps());
+      caravan2.init(createRealDeps());
       caravan2.deserialize(caravanData);
       // 验证
       if (routeId) {
@@ -563,7 +563,7 @@ describe('§8.1~8.5 跨系统联动', () => {
       const data = trade.serialize();
       data.version = 999;
       const trade2 = new TradeSystem();
-      trade2.init(mockDeps());
+      trade2.init(createRealDeps());
       expect(() => trade2.deserialize(data)).toThrow();
     });
   });
