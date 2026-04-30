@@ -1,560 +1,442 @@
 {
-  "dagId": "nav-main-v1",
+  "dagId": "three-kingdoms-navigation-v1",
   "dagType": "navigation",
-  "nodeCount": 70,
-  "edgeCount": 77,
+  "nodeCount": 119,
+  "edgeCount": 121,
   "totalPaths": 73,
   "criticalPaths": [
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "dialog-siege-confirm",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-result",
-      "panel-campaign-map",
-      "dialog-stage-detail",
-      "panel-sweep",
-      "dialog-sweep-result"
+      "main-screen",
+      "building-tab",
+      "building-list",
+      "building-detail",
+      "upgrade-progress-bar",
+      "cancel-upgrade-dialog"
     ]
   ],
   "paths": [
     [
-      "page-main",
-      "tab-prestige"
+      "main-screen",
+      "offline-reward-dialog"
     ],
     [
-      "page-main",
-      "dialog-version-notice"
+      "main-screen",
+      "advisor-panel"
     ],
     [
-      "page-main",
-      "dialog-activity-reminder"
+      "main-screen",
+      "event-log-panel"
     ],
     [
-      "page-main",
-      "dialog-welcome-back"
+      "main-screen",
+      "offline-estimate-panel"
     ],
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "panel-map-filter"
+      "main-screen",
+      "npc-dialog"
     ],
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "panel-map-stats"
+      "main-screen",
+      "offline-event-panel"
     ],
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "panel-territory-detail"
+      "main-screen",
+      "timed-activity-panel"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "panel-formation"
+      "main-screen",
+      "sign-in-panel"
     ],
     [
-      "page-main",
-      "tab-tech",
-      "panel-tech-tree",
-      "panel-research-queue"
+      "main-screen",
+      "activity-main"
     ],
     [
-      "page-main",
-      "tab-tech",
-      "panel-tech-tree",
-      "dialog-fusion-tech"
+      "main-screen",
+      "ending-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-quest"
+      "main-screen",
+      "global-statistics-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-activity"
+      "main-screen",
+      "resource-bar",
+      "resource-trade-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-mail"
+      "main-screen",
+      "campaign-tab",
+      "vip-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-backpack"
+      "main-screen",
+      "equipment-tab",
+      "equipment-forge-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-friends"
+      "main-screen",
+      "equipment-tab",
+      "equipment-enhance-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-guild"
+      "main-screen",
+      "equipment-tab",
+      "equipment-set-bonus-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-ranking"
+      "main-screen",
+      "equipment-tab",
+      "equipment-recommend-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-expedition"
+      "main-screen",
+      "tech-tab",
+      "tech-fusion-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-shop"
+      "main-screen",
+      "alliance-tab",
+      "alliance-create-dialog"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-equipment"
+      "main-screen",
+      "alliance-tab",
+      "alliance-join-dialog"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-battle-report"
+      "main-screen",
+      "more-menu",
+      "chat-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-encyclopedia"
+      "main-screen",
+      "more-menu",
+      "social-leaderboard-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-announcement"
+      "main-screen",
+      "more-menu",
+      "calendar-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-help"
+      "main-screen",
+      "tutorial-overlay",
+      "tutorial-step-dialog"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "panel-quest"
+      "main-screen",
+      "tutorial-overlay",
+      "story-event-dialog"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "panel-formation"
+      "main-screen",
+      "prestige-panel",
+      "prestige-shop-panel"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-hero-detail",
-      "panel-hero-upgrade"
+      "main-screen",
+      "achievement-panel",
+      "achievement-detail-dialog"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-hero-detail",
-      "panel-star-up"
+      "main-screen",
+      "quest-panel",
+      "quest-reward-dialog"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-hero-detail",
-      "panel-breakthrough"
+      "main-screen",
+      "season-panel",
+      "season-reward-dialog"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-hero-detail",
-      "panel-skill-upgrade"
+      "main-screen",
+      "hero-tab",
+      "hero-list",
+      "hero-badge-panel"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "panel-recruit-history"
+      "main-screen",
+      "hero-tab",
+      "recruit-panel",
+      "recruit-result-dialog"
     ],
     [
-      "page-main",
-      "tab-tech",
-      "panel-tech-tree",
-      "dialog-tech-detail",
-      "dialog-tech-accelerate"
+      "main-screen",
+      "hero-tab",
+      "recruit-panel",
+      "recruit-ten-result-dialog"
     ],
     [
-      "page-main",
-      "tab-tech",
-      "panel-tech-tree",
-      "dialog-tech-detail",
-      "dialog-mutual-exclusive"
+      "main-screen",
+      "hero-tab",
+      "recruit-panel",
+      "recruit-token-shop"
     ],
     [
-      "page-main",
-      "tab-buildings",
-      "panel-building-list",
-      "dialog-building-detail",
-      "dialog-trade"
+      "main-screen",
+      "hero-tab",
+      "formation-panel",
+      "formation-edit-panel"
     ],
     [
-      "page-main",
-      "tab-buildings",
-      "tab-tech",
-      "panel-tech-tree",
-      "panel-research-queue"
+      "main-screen",
+      "hero-tab",
+      "formation-panel",
+      "formation-recommend-panel"
     ],
     [
-      "page-main",
-      "tab-buildings",
-      "tab-tech",
-      "panel-tech-tree",
-      "dialog-fusion-tech"
+      "main-screen",
+      "hero-tab",
+      "bond-panel",
+      "faction-bond-panel"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-settings",
-      "dialog-account-bind"
+      "main-screen",
+      "map-tab",
+      "world-map",
+      "map-event-dialog"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-settings",
-      "dialog-save-manage"
+      "main-screen",
+      "shop-tab",
+      "shop-main",
+      "shop-buy-confirm-dialog"
     ],
     [
-      "page-main",
-      "tab-more",
-      "dropdown-more-menu",
-      "panel-settings",
-      "dialog-account-delete"
+      "main-screen",
+      "trade-tab",
+      "trade-panel",
+      "resource-trade-panel"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "dialog-hero-detail",
-      "panel-hero-upgrade"
+      "main-screen",
+      "trade-tab",
+      "trade-panel",
+      "caravan-panel"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "dialog-hero-detail",
-      "panel-star-up"
+      "main-screen",
+      "arena-tab",
+      "arena-main",
+      "defense-formation-panel"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "dialog-hero-detail",
-      "panel-breakthrough"
+      "main-screen",
+      "arena-tab",
+      "arena-main",
+      "ranking-panel"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "dialog-hero-detail",
-      "panel-skill-upgrade"
+      "main-screen",
+      "arena-tab",
+      "arena-main",
+      "arena-shop-panel"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "dialog-building-detail",
-      "dialog-trade"
+      "main-screen",
+      "expedition-tab",
+      "expedition-main",
+      "expedition-team-select"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "dialog-tech-detail",
-      "dialog-tech-accelerate"
+      "main-screen",
+      "expedition-tab",
+      "expedition-main",
+      "expedition-result-dialog"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "dialog-tech-detail",
-      "dialog-mutual-exclusive"
+      "main-screen",
+      "alliance-tab",
+      "alliance-main",
+      "alliance-task-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "panel-campaign-map",
-      "dialog-stage-detail",
-      "panel-sweep",
-      "dialog-sweep-result"
+      "main-screen",
+      "alliance-tab",
+      "alliance-main",
+      "alliance-boss-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-hero-detail",
-      "panel-hero-upgrade"
+      "main-screen",
+      "alliance-tab",
+      "alliance-main",
+      "alliance-shop-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-hero-detail",
-      "panel-star-up"
+      "main-screen",
+      "more-menu",
+      "friend-panel",
+      "friend-assist-select-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-hero-detail",
-      "panel-breakthrough"
+      "main-screen",
+      "more-menu",
+      "settings-panel",
+      "settings-graphics-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-hero-detail",
-      "panel-skill-upgrade"
+      "main-screen",
+      "more-menu",
+      "settings-panel",
+      "settings-audio-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "panel-recruit-history"
+      "main-screen",
+      "more-menu",
+      "mail-panel",
+      "mail-detail-dialog"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "dialog-hero-detail",
-      "panel-hero-upgrade"
+      "main-screen",
+      "event-notification-banner",
+      "event-detail-dialog",
+      "event-chain-panel"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "dialog-hero-detail",
-      "panel-star-up"
+      "main-screen",
+      "prestige-panel",
+      "rebirth-dialog",
+      "heritage-panel"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "dialog-hero-detail",
-      "panel-breakthrough"
+      "main-screen",
+      "building-tab",
+      "building-list",
+      "building-detail",
+      "upgrade-confirm-dialog"
     ],
     [
-      "page-main",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "dialog-hero-detail",
-      "panel-skill-upgrade"
+      "main-screen",
+      "hero-tab",
+      "hero-list",
+      "hero-detail",
+      "hero-level-up-dialog"
     ],
     [
-      "page-main",
-      "tab-buildings",
-      "tab-tech",
-      "panel-tech-tree",
-      "dialog-tech-detail",
-      "dialog-tech-accelerate"
+      "main-screen",
+      "hero-tab",
+      "hero-list",
+      "hero-detail",
+      "hero-star-up-dialog"
     ],
     [
-      "page-main",
-      "tab-buildings",
-      "tab-tech",
-      "panel-tech-tree",
-      "dialog-tech-detail",
-      "dialog-mutual-exclusive"
+      "main-screen",
+      "hero-tab",
+      "hero-list",
+      "hero-detail",
+      "skill-upgrade-panel"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-pause"
+      "main-screen",
+      "hero-tab",
+      "hero-list",
+      "hero-detail",
+      "equip-dialog"
     ],
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "dialog-siege-confirm",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-pause"
+      "main-screen",
+      "hero-tab",
+      "hero-list",
+      "hero-detail",
+      "hero-attribute-compare-panel"
     ],
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "dialog-map-event",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-pause"
+      "main-screen",
+      "hero-tab",
+      "hero-list",
+      "hero-detail",
+      "hero-dispatch-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "panel-campaign-map",
-      "dialog-stage-detail",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-pause"
+      "main-screen",
+      "campaign-tab",
+      "chapter-list",
+      "stage-list",
+      "sweep-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "dialog-hero-detail",
-      "panel-hero-upgrade"
+      "main-screen",
+      "campaign-tab",
+      "chapter-list",
+      "stage-list",
+      "challenge-stage-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "dialog-hero-detail",
-      "panel-star-up"
+      "main-screen",
+      "map-tab",
+      "world-map",
+      "city-detail",
+      "siege-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "dialog-hero-detail",
-      "panel-breakthrough"
+      "main-screen",
+      "map-tab",
+      "world-map",
+      "city-detail",
+      "garrison-panel"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "tab-heroes",
-      "panel-hero-list",
-      "dialog-recruit",
-      "dialog-hero-detail",
-      "panel-skill-upgrade"
+      "main-screen",
+      "equipment-tab",
+      "equipment-list",
+      "equipment-detail",
+      "equip-dialog"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-result",
-      "dialog-battle-log"
+      "main-screen",
+      "equipment-tab",
+      "equipment-list",
+      "equipment-detail",
+      "unequip-dialog"
     ],
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "dialog-siege-confirm",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-result",
-      "dialog-battle-log"
+      "main-screen",
+      "tech-tab",
+      "tech-tree",
+      "tech-detail-dialog",
+      "tech-research-confirm-dialog"
     ],
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "dialog-map-event",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-result",
-      "dialog-battle-log"
+      "main-screen",
+      "arena-tab",
+      "arena-main",
+      "arena-battle-scene",
+      "arena-battle-result-dialog"
     ],
     [
-      "page-main",
-      "tab-campaign",
-      "panel-campaign-map",
-      "dialog-stage-detail",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-result",
-      "dialog-battle-log"
+      "main-screen",
+      "arena-tab",
+      "arena-main",
+      "arena-battle-scene",
+      "arena-battle-result-dialog"
     ],
     [
-      "page-main",
-      "dialog-offline-reward",
-      "panel-advisor",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-result",
-      "panel-campaign-map",
-      "dialog-stage-detail",
-      "panel-sweep",
-      "dialog-sweep-result"
+      "main-screen",
+      "building-tab",
+      "building-list",
+      "building-detail",
+      "upgrade-progress-bar",
+      "cancel-upgrade-dialog"
     ],
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "dialog-siege-confirm",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-result",
-      "panel-campaign-map",
-      "dialog-stage-detail",
-      "panel-sweep",
-      "dialog-sweep-result"
+      "main-screen",
+      "hero-tab",
+      "hero-list",
+      "hero-detail",
+      "awakening-panel",
+      "awakening-confirm-dialog"
     ],
     [
-      "page-main",
-      "tab-world",
-      "panel-world-map",
-      "dialog-map-event",
-      "panel-pre-battle",
-      "page-battle",
-      "dialog-battle-result",
-      "panel-campaign-map",
-      "dialog-stage-detail",
-      "panel-sweep",
-      "dialog-sweep-result"
+      "main-screen",
+      "campaign-tab",
+      "chapter-list",
+      "stage-list",
+      "battle-scene",
+      "battle-result-dialog"
     ]
   ],
-  "avgPathLength": 5.3,
-  "maxPathLength": 11,
+  "avgPathLength": 3.75,
+  "maxPathLength": 6,
   "minPathLength": 2
 }

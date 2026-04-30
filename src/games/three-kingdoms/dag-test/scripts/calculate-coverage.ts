@@ -205,8 +205,8 @@ function matchTestCoverage(
     for (const nodeId of dagPath) {
       const lowerNodeId = nodeId.toLowerCase();
 
-      // 将节点ID按分隔符拆分为关键词
-      const keywords = lowerNodeId.split(/[-_]/).filter(k => k.length >= 3);
+      // 将节点ID按分隔符拆分为关键词（包含冒号，支持StateDAG的 "category:state" 格式）
+      const keywords = lowerNodeId.split(/[-_:]/).filter(k => k.length >= 3);
 
       for (const testName of allTestNames) {
         // 检查完整节点ID是否在测试名称中
@@ -285,7 +285,7 @@ function calculateDAGCoverage(
   const uncoveredNodes: string[] = [];
   for (const node of nodes) {
     const lowerId = node.id.toLowerCase();
-    const keywords = lowerId.split(/[-_]/).filter(k => k.length >= 3);
+    const keywords = lowerId.split(/[-_:]/).filter(k => k.length >= 3);
     let found = false;
     for (const tn of allTestNames) {
       if (lowerId.length >= 3 && tn.includes(lowerId)) { found = true; break; }
@@ -310,8 +310,8 @@ function calculateDAGCoverage(
     const edgeKey = `${edge.from}→${edge.to}`;
     const lowerFrom = edge.from.toLowerCase();
     const lowerTo = edge.to.toLowerCase();
-    const kwFrom = lowerFrom.split(/[-_]/).filter(k => k.length >= 3);
-    const kwTo = lowerTo.split(/[-_]/).filter(k => k.length >= 3);
+    const kwFrom = lowerFrom.split(/[-_:]/).filter(k => k.length >= 3);
+    const kwTo = lowerTo.split(/[-_:]/).filter(k => k.length >= 3);
     let found = false;
     for (const tn of allTestNames) {
       // 边的任一端点匹配即可

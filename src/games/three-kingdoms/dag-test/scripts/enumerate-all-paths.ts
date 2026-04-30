@@ -22,16 +22,21 @@ interface HasId { id: string; }
 interface HasFromTo { from: string; to: string; }
 
 /**
- * BFS路径枚举 — 与Phase 1 path-enumerator.ts 算法一致
+ * BFS路径枚举 — 增强版（R2改进）
  *
  * 给定DAG的nodes和edges，从entryPoints出发BFS枚举所有可达路径。
  * 路径以节点ID序列表示，如 ['A', 'B', 'C']。
+ *
+ * R2改进：支持 allowBackEdges 模式，用于StateDAG等包含回退边的DAG。
+ * 当 allowBackEdges=true 时，允许回退到已访问节点（但限制回退次数≤1），
+ * 从而覆盖 building:upgrading→building:idle 等状态回退边。
  *
  * @param nodes       - DAG节点列表（至少包含id字段）
  * @param edges       - DAG边列表（至少包含from/to字段）
  * @param entryPoints - 入口节点ID列表
  * @param maxDepth    - 最大搜索深度，默认20
  * @param maxPaths    - 最大路径数量，默认1000
+ * @param allowBackEdges - 是否允许回退边（StateDAG专用），默认false
  * @returns 所有可达路径
  */
 function enumeratePaths(
@@ -40,6 +45,7 @@ function enumeratePaths(
   entryPoints: string[],
   maxDepth: number = 20,
   maxPaths: number = 1000,
+  allowBackEdges: boolean = false,
 ): string[][] {
   if (nodes.length === 0 || entryPoints.length === 0) return [];
 
@@ -56,10 +62,13 @@ function enumeratePaths(
   if (validEntries.length === 0) return [];
 
   const allPaths: string[][] = [];
-  const queue: string[][] = validEntries.map(ep => [ep]);
+  // R2: 路径项增加 backEdgeUsed 集合，记录已使用的回退目标节点
+  const queue: Array<{ path: string[]; backEdgeTargets: Set<string> }> = 
+    validEntries.map(ep => ({ path: [ep], backEdgeTargets: new Set<string>() }));
 
   while (queue.length > 0 && allPaths.length < maxPaths) {
-    const currentPath = queue.shift()!;
+    const item = queue.shift()!;
+    const currentPath = item.path;
 
     if (currentPath.length > maxDepth) {
       allPaths.push(currentPath.slice(0, maxDepth));
@@ -75,7 +84,20 @@ function enumeratePaths(
       let hasUnvisited = false;
       for (const neighbor of neighbors) {
         if (!currentPath.includes(neighbor)) {
-          queue.push([...currentPath, neighbor]);
+          // 正常前进：节点未在当前路径中
+          queue.push({ 
+            path: [...currentPath, neighbor], 
+            backEdgeTargets: new Set(item.backEdgeTargets) 
+          });
+          hasUnvisited = true;
+        } else if (allowBackEdges && !item.backEdgeTargets.has(neighbor)) {
+          // R2改进：允许回退边（仅回退一次到同一目标）
+          const newBackTargets = new Set(item.backEdgeTargets);
+          newBackTargets.add(neighbor);
+          queue.push({ 
+            path: [...currentPath, neighbor], 
+            backEdgeTargets: newBackTargets 
+          });
           hasUnvisited = true;
         }
       }
@@ -277,7 +299,7 @@ const stateEdges = state.transitions.map((t: any) => ({ from: t.from, to: t.to }
 const stateEntryPoints = state.states
   .filter((s: any) => s.isInitial)
   .map((s: any) => s.id);
-const statePaths = enumeratePaths(stateNodes, stateEdges, stateEntryPoints);
+const statePaths = enumeratePaths(stateNodes, stateEdges, stateEntryPoints, 20, 1000, true);
 const stateCritical = extractCriticalPaths(statePaths);
 const stateStats = computeStats(state.id, 'state', state.states.length, state.transitions.length, statePaths, stateCritical);
 allStats.push(stateStats);

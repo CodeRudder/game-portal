@@ -1,9 +1,7 @@
 {
   "id": "three-kingdoms-navigation-v1",
   "name": "三国霸业 — 页面导航DAG",
-  "entryPoints": [
-    "main-screen"
-  ],
+  "entryPoints": ["main-screen"],
   "nodes": [
     {
       "id": "main-screen",
@@ -37,37 +35,28 @@
       "id": "building-detail",
       "type": "panel",
       "label": "建筑详情面板",
-      "preconditions": [
-        "点击某建筑"
-      ],
+      "preconditions": ["点击某建筑"],
       "version": "v1.0"
     },
     {
       "id": "upgrade-confirm-dialog",
       "type": "dialog",
       "label": "升级确认弹窗",
-      "preconditions": [
-        "建筑非锁定状态",
-        "资源充足"
-      ],
+      "preconditions": ["建筑非锁定状态", "资源充足"],
       "version": "v1.0"
     },
     {
       "id": "upgrade-progress-bar",
       "type": "panel",
       "label": "升级进度条",
-      "preconditions": [
-        "建筑正在升级中"
-      ],
+      "preconditions": ["建筑正在升级中"],
       "version": "v1.0"
     },
     {
       "id": "cancel-upgrade-dialog",
       "type": "dialog",
       "label": "取消升级确认弹窗",
-      "preconditions": [
-        "建筑正在升级中"
-      ],
+      "preconditions": ["建筑正在升级中"],
       "version": "v1.0"
     },
     {
@@ -88,38 +77,28 @@
       "id": "hero-detail",
       "type": "page",
       "label": "武将详情页",
-      "preconditions": [
-        "点击某武将"
-      ],
+      "preconditions": ["点击某武将"],
       "version": "v2.0"
     },
     {
       "id": "hero-level-up-dialog",
       "type": "dialog",
       "label": "武将升级弹窗",
-      "preconditions": [
-        "拥有武将",
-        "铜钱充足"
-      ],
+      "preconditions": ["拥有武将", "铜钱充足"],
       "version": "v2.0"
     },
     {
       "id": "hero-star-up-dialog",
       "type": "dialog",
       "label": "武将升星/突破弹窗",
-      "preconditions": [
-        "碎片足够",
-        "铜钱充足"
-      ],
+      "preconditions": ["碎片足够", "铜钱充足"],
       "version": "v2.0"
     },
     {
       "id": "skill-upgrade-panel",
       "type": "panel",
       "label": "技能升级面板",
-      "preconditions": [
-        "武将已解锁技能"
-      ],
+      "preconditions": ["武将已解锁技能"],
       "version": "v2.0"
     },
     {
@@ -133,63 +112,49 @@
       "id": "recruit-result-dialog",
       "type": "dialog",
       "label": "招募结果弹窗",
-      "preconditions": [
-        "执行招募操作"
-      ],
+      "preconditions": ["执行招募操作"],
       "version": "v2.0"
     },
     {
       "id": "recruit-ten-result-dialog",
       "type": "dialog",
       "label": "十连招募结果弹窗",
-      "preconditions": [
-        "执行十连招募"
-      ],
+      "preconditions": ["执行十连招募"],
       "version": "v2.0"
     },
     {
       "id": "formation-panel",
       "type": "panel",
       "label": "编队面板",
-      "preconditions": [
-        "拥有武将"
-      ],
+      "preconditions": ["拥有武将"],
       "version": "v2.0"
     },
     {
       "id": "formation-edit-panel",
       "type": "panel",
       "label": "编队编辑面板",
-      "preconditions": [
-        "进入编队面板"
-      ],
+      "preconditions": ["进入编队面板"],
       "version": "v2.0"
     },
     {
       "id": "formation-recommend-panel",
       "type": "panel",
       "label": "推荐编队面板",
-      "preconditions": [
-        "进入编队面板"
-      ],
+      "preconditions": ["进入编队面板"],
       "version": "v2.0"
     },
     {
       "id": "bond-panel",
       "type": "panel",
       "label": "羁绊面板",
-      "preconditions": [
-        "拥有多个武将"
-      ],
+      "preconditions": ["拥有多个武将"],
       "version": "v2.0"
     },
     {
       "id": "faction-bond-panel",
       "type": "panel",
       "label": "阵营羁绊面板",
-      "preconditions": [
-        "拥有同阵营武将"
-      ],
+      "preconditions": ["拥有同阵营武将"],
       "version": "v2.0"
     },
     {
@@ -210,45 +175,35 @@
       "id": "stage-list",
       "type": "page",
       "label": "关卡列表",
-      "preconditions": [
-        "选择某章节"
-      ],
+      "preconditions": ["选择某章节"],
       "version": "v3.0"
     },
     {
       "id": "battle-scene",
       "type": "page",
       "label": "战斗场景",
-      "preconditions": [
-        "选择关卡并开始战斗"
-      ],
+      "preconditions": ["选择关卡并开始战斗"],
       "version": "v3.0"
     },
     {
       "id": "battle-result-dialog",
       "type": "dialog",
       "label": "战斗结算弹窗",
-      "preconditions": [
-        "战斗结束"
-      ],
+      "preconditions": ["战斗结束"],
       "version": "v3.0"
     },
     {
       "id": "sweep-panel",
       "type": "panel",
       "label": "扫荡面板",
-      "preconditions": [
-        "关卡已三星通关"
-      ],
+      "preconditions": ["关卡已三星通关"],
       "version": "v3.0"
     },
     {
       "id": "challenge-stage-panel",
       "type": "panel",
       "label": "挑战关卡面板",
-      "preconditions": [
-        "解锁挑战关卡"
-      ],
+      "preconditions": ["解锁挑战关卡"],
       "version": "v3.0"
     },
     {
@@ -269,36 +224,28 @@
       "id": "city-detail",
       "type": "panel",
       "label": "城池详情面板",
-      "preconditions": [
-        "点击某城池"
-      ],
+      "preconditions": ["点击某城池"],
       "version": "v4.0"
     },
     {
       "id": "siege-panel",
       "type": "panel",
       "label": "攻城面板",
-      "preconditions": [
-        "选择可攻击城池"
-      ],
+      "preconditions": ["选择可攻击城池"],
       "version": "v4.0"
     },
     {
       "id": "garrison-panel",
       "type": "panel",
       "label": "驻军面板",
-      "preconditions": [
-        "拥有已占领城池"
-      ],
+      "preconditions": ["拥有已占领城池"],
       "version": "v4.0"
     },
     {
       "id": "map-event-dialog",
       "type": "dialog",
       "label": "地图事件弹窗",
-      "preconditions": [
-        "触发地图随机事件"
-      ],
+      "preconditions": ["触发地图随机事件"],
       "version": "v4.0"
     },
     {
@@ -319,28 +266,21 @@
       "id": "equipment-detail",
       "type": "panel",
       "label": "装备详情面板",
-      "preconditions": [
-        "点击某装备"
-      ],
+      "preconditions": ["点击某装备"],
       "version": "v5.0"
     },
     {
       "id": "equip-dialog",
       "type": "dialog",
       "label": "装备穿戴弹窗",
-      "preconditions": [
-        "拥有装备",
-        "武将有空槽位"
-      ],
+      "preconditions": ["拥有装备", "武将有空槽位"],
       "version": "v5.0"
     },
     {
       "id": "unequip-dialog",
       "type": "dialog",
       "label": "卸下装备确认弹窗",
-      "preconditions": [
-        "武将已穿戴装备"
-      ],
+      "preconditions": ["武将已穿戴装备"],
       "version": "v5.0"
     },
     {
@@ -354,27 +294,21 @@
       "id": "equipment-enhance-panel",
       "type": "panel",
       "label": "装备强化面板",
-      "preconditions": [
-        "拥有装备"
-      ],
+      "preconditions": ["拥有装备"],
       "version": "v5.0"
     },
     {
       "id": "equipment-set-bonus-panel",
       "type": "panel",
       "label": "套装加成面板",
-      "preconditions": [
-        "拥有同套装装备"
-      ],
+      "preconditions": ["拥有同套装装备"],
       "version": "v5.0"
     },
     {
       "id": "equipment-recommend-panel",
       "type": "panel",
       "label": "装备推荐面板",
-      "preconditions": [
-        "选择某武将"
-      ],
+      "preconditions": ["选择某武将"],
       "version": "v5.0"
     },
     {
@@ -395,10 +329,7 @@
       "id": "shop-buy-confirm-dialog",
       "type": "dialog",
       "label": "购买确认弹窗",
-      "preconditions": [
-        "选择商品",
-        "货币充足"
-      ],
+      "preconditions": ["选择商品", "货币充足"],
       "version": "v5.0"
     },
     {
@@ -419,9 +350,7 @@
       "id": "resource-trade-panel",
       "type": "panel",
       "label": "资源交易面板",
-      "preconditions": [
-        "市集等级≥1"
-      ],
+      "preconditions": ["市集等级≥1"],
       "version": "v5.0"
     },
     {
@@ -449,55 +378,42 @@
       "id": "tech-detail-dialog",
       "type": "dialog",
       "label": "科技详情弹窗",
-      "preconditions": [
-        "点击某科技节点"
-      ],
+      "preconditions": ["点击某科技节点"],
       "version": "v6.0"
     },
     {
       "id": "tech-research-confirm-dialog",
       "type": "dialog",
       "label": "科技研究确认弹窗",
-      "preconditions": [
-        "科技点充足",
-        "前置科技已研究"
-      ],
+      "preconditions": ["科技点充足", "前置科技已研究"],
       "version": "v6.0"
     },
     {
       "id": "tech-fusion-panel",
       "type": "panel",
       "label": "融合科技面板",
-      "preconditions": [
-        "解锁融合科技"
-      ],
+      "preconditions": ["解锁融合科技"],
       "version": "v6.0"
     },
     {
       "id": "event-notification-banner",
       "type": "panel",
       "label": "事件通知横幅",
-      "preconditions": [
-        "有活跃事件"
-      ],
+      "preconditions": ["有活跃事件"],
       "version": "v7.0"
     },
     {
       "id": "event-detail-dialog",
       "type": "dialog",
       "label": "事件详情弹窗",
-      "preconditions": [
-        "点击事件横幅"
-      ],
+      "preconditions": ["点击事件横幅"],
       "version": "v7.0"
     },
     {
       "id": "event-chain-panel",
       "type": "panel",
       "label": "事件链面板",
-      "preconditions": [
-        "触发事件链"
-      ],
+      "preconditions": ["触发事件链"],
       "version": "v7.0"
     },
     {
@@ -525,18 +441,14 @@
       "id": "arena-battle-scene",
       "type": "page",
       "label": "竞技场战斗场景",
-      "preconditions": [
-        "选择对手并发起挑战"
-      ],
+      "preconditions": ["选择对手并发起挑战"],
       "version": "v7.0"
     },
     {
       "id": "arena-battle-result-dialog",
       "type": "dialog",
       "label": "竞技场战斗结算弹窗",
-      "preconditions": [
-        "竞技场战斗结束"
-      ],
+      "preconditions": ["竞技场战斗结束"],
       "version": "v7.0"
     },
     {
@@ -578,27 +490,21 @@
       "id": "expedition-team-select",
       "type": "panel",
       "label": "远征队伍选择面板",
-      "preconditions": [
-        "发起远征"
-      ],
+      "preconditions": ["发起远征"],
       "version": "v8.0"
     },
     {
       "id": "expedition-result-dialog",
       "type": "dialog",
       "label": "远征结果弹窗",
-      "preconditions": [
-        "远征完成"
-      ],
+      "preconditions": ["远征完成"],
       "version": "v8.0"
     },
     {
       "id": "offline-reward-dialog",
       "type": "dialog",
       "label": "离线收益弹窗",
-      "preconditions": [
-        "离线后重新上线"
-      ],
+      "preconditions": ["离线后重新上线"],
       "version": "v9.0"
     },
     {
@@ -612,18 +518,14 @@
       "id": "npc-dialog",
       "type": "dialog",
       "label": "NPC对话弹窗",
-      "preconditions": [
-        "触发NPC事件"
-      ],
+      "preconditions": ["触发NPC事件"],
       "version": "v10.0"
     },
     {
       "id": "hero-dispatch-panel",
       "type": "panel",
       "label": "武将派遣面板",
-      "preconditions": [
-        "拥有空闲武将"
-      ],
+      "preconditions": ["拥有空闲武将"],
       "version": "v10.0"
     },
     {
@@ -637,27 +539,21 @@
       "id": "hero-attribute-compare-panel",
       "type": "panel",
       "label": "属性对比面板",
-      "preconditions": [
-        "选择对比武将"
-      ],
+      "preconditions": ["选择对比武将"],
       "version": "v10.0"
     },
     {
       "id": "awakening-panel",
       "type": "panel",
       "label": "觉醒面板",
-      "preconditions": [
-        "武将达到突破上限"
-      ],
+      "preconditions": ["武将达到突破上限"],
       "version": "v11.0"
     },
     {
       "id": "awakening-confirm-dialog",
       "type": "dialog",
       "label": "觉醒确认弹窗",
-      "preconditions": [
-        "觉醒材料充足"
-      ],
+      "preconditions": ["觉醒材料充足"],
       "version": "v11.0"
     },
     {
@@ -678,55 +574,42 @@
       "id": "alliance-main",
       "type": "page",
       "label": "联盟主页面",
-      "preconditions": [
-        "已加入联盟"
-      ],
+      "preconditions": ["已加入联盟"],
       "version": "v13.0"
     },
     {
       "id": "alliance-create-dialog",
       "type": "dialog",
       "label": "创建联盟弹窗",
-      "preconditions": [
-        "未加入联盟"
-      ],
+      "preconditions": ["未加入联盟"],
       "version": "v13.0"
     },
     {
       "id": "alliance-join-dialog",
       "type": "dialog",
       "label": "加入联盟弹窗",
-      "preconditions": [
-        "未加入联盟"
-      ],
+      "preconditions": ["未加入联盟"],
       "version": "v13.0"
     },
     {
       "id": "alliance-task-panel",
       "type": "panel",
       "label": "联盟任务面板",
-      "preconditions": [
-        "已加入联盟"
-      ],
+      "preconditions": ["已加入联盟"],
       "version": "v13.0"
     },
     {
       "id": "alliance-boss-panel",
       "type": "panel",
       "label": "联盟Boss面板",
-      "preconditions": [
-        "已加入联盟",
-        "Boss已刷新"
-      ],
+      "preconditions": ["已加入联盟", "Boss已刷新"],
       "version": "v13.0"
     },
     {
       "id": "alliance-shop-panel",
       "type": "panel",
       "label": "联盟商店面板",
-      "preconditions": [
-        "已加入联盟"
-      ],
+      "preconditions": ["已加入联盟"],
       "version": "v13.0"
     },
     {
@@ -747,18 +630,14 @@
       "id": "rebirth-dialog",
       "type": "dialog",
       "label": "转生确认弹窗",
-      "preconditions": [
-        "声望达到转生要求"
-      ],
+      "preconditions": ["声望达到转生要求"],
       "version": "v14.0"
     },
     {
       "id": "heritage-panel",
       "type": "panel",
       "label": "传承面板",
-      "preconditions": [
-        "完成转生"
-      ],
+      "preconditions": ["完成转生"],
       "version": "v14.0"
     },
     {
@@ -772,9 +651,7 @@
       "id": "achievement-detail-dialog",
       "type": "dialog",
       "label": "成就详情弹窗",
-      "preconditions": [
-        "点击某成就"
-      ],
+      "preconditions": ["点击某成就"],
       "version": "v14.0"
     },
     {
@@ -788,18 +665,14 @@
       "id": "quest-reward-dialog",
       "type": "dialog",
       "label": "任务领奖弹窗",
-      "preconditions": [
-        "任务已完成"
-      ],
+      "preconditions": ["任务已完成"],
       "version": "v14.0"
     },
     {
       "id": "offline-event-panel",
       "type": "panel",
       "label": "离线事件面板",
-      "preconditions": [
-        "有未处理离线事件"
-      ],
+      "preconditions": ["有未处理离线事件"],
       "version": "v15.0"
     },
     {
@@ -813,9 +686,7 @@
       "id": "season-reward-dialog",
       "type": "dialog",
       "label": "赛季奖励弹窗",
-      "preconditions": [
-        "赛季结算"
-      ],
+      "preconditions": ["赛季结算"],
       "version": "v16.0"
     },
     {
@@ -843,36 +714,28 @@
       "id": "tutorial-overlay",
       "type": "panel",
       "label": "新手引导遮罩层",
-      "preconditions": [
-        "首次进入游戏"
-      ],
+      "preconditions": ["首次进入游戏"],
       "version": "v18.0"
     },
     {
       "id": "tutorial-step-dialog",
       "type": "dialog",
       "label": "引导步骤弹窗",
-      "preconditions": [
-        "引导进行中"
-      ],
+      "preconditions": ["引导进行中"],
       "version": "v18.0"
     },
     {
       "id": "story-event-dialog",
       "type": "dialog",
       "label": "剧情事件弹窗",
-      "preconditions": [
-        "触发剧情事件"
-      ],
+      "preconditions": ["触发剧情事件"],
       "version": "v18.0"
     },
     {
       "id": "timed-activity-panel",
       "type": "panel",
       "label": "限时活动面板",
-      "preconditions": [
-        "有活跃限时活动"
-      ],
+      "preconditions": ["有活跃限时活动"],
       "version": "v19.0"
     },
     {
@@ -893,18 +756,14 @@
       "id": "advisor-panel",
       "type": "panel",
       "label": "军师建议面板",
-      "preconditions": [
-        "触发军师建议"
-      ],
+      "preconditions": ["触发军师建议"],
       "version": "v19.0"
     },
     {
       "id": "ending-panel",
       "type": "panel",
       "label": "结局面板",
-      "preconditions": [
-        "达成统一条件"
-      ],
+      "preconditions": ["达成统一条件"],
       "version": "v20.0"
     },
     {
@@ -932,9 +791,7 @@
       "id": "mail-detail-dialog",
       "type": "dialog",
       "label": "邮件详情弹窗",
-      "preconditions": [
-        "点击某封邮件"
-      ],
+      "preconditions": ["点击某封邮件"],
       "version": "v5.0"
     },
     {
@@ -957,29 +814,6 @@
       "label": "更多菜单",
       "preconditions": [],
       "version": "v1.0"
-    },
-    {
-      "id": "settings-graphics-panel",
-      "type": "panel",
-      "label": "画质设置面板",
-      "preconditions": [],
-      "version": "v1.0"
-    },
-    {
-      "id": "settings-audio-panel",
-      "type": "panel",
-      "label": "音效设置面板",
-      "preconditions": [],
-      "version": "v1.0"
-    },
-    {
-      "id": "friend-assist-select-panel",
-      "type": "panel",
-      "label": "好友助战选择面板",
-      "preconditions": [
-        "拥有好友"
-      ],
-      "version": "v17.0"
     }
   ],
   "edges": [
@@ -1718,25 +1552,6 @@
       "action": "点击赛季竞技场入口",
       "condition": "arenaSeasonActive",
       "bidirectional": false
-    },
-    {
-      "from": "settings-panel",
-      "to": "settings-graphics-panel",
-      "action": "点击画质设置",
-      "bidirectional": true
-    },
-    {
-      "from": "settings-panel",
-      "to": "settings-audio-panel",
-      "action": "点击音效设置",
-      "bidirectional": true
-    },
-    {
-      "from": "friend-panel",
-      "to": "friend-assist-select-panel",
-      "action": "点击助战选择",
-      "condition": "selectAssist",
-      "bidirectional": true
     }
   ]
 }

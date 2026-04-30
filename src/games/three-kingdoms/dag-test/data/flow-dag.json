@@ -8,513 +8,261 @@
       "version": "v1.0",
       "module": "engine",
       "operation": "初始化游戏引擎",
-      "preconditions": [
-        "无存档数据"
-      ],
-      "validations": [
-        "引擎初始化完成",
-        "资源系统就绪",
-        "建筑系统就绪"
-      ],
-      "expectedResults": [
-        "initialized=true",
-        "所有子系统已注册"
-      ]
+      "preconditions": ["无存档数据"],
+      "validations": ["引擎初始化完成", "资源系统就绪", "建筑系统就绪"],
+      "expectedResults": ["initialized=true", "所有子系统已注册"]
     },
     {
       "id": "v1-init-2",
       "version": "v1.0",
       "module": "engine",
       "operation": "加载存档",
-      "preconditions": [
-        "有存档数据"
-      ],
-      "validations": [
-        "存档版本匹配",
-        "反序列化成功",
-        "离线收益计算完成"
-      ],
-      "expectedResults": [
-        "游戏状态恢复",
-        "离线收益弹窗显示"
-      ]
+      "preconditions": ["有存档数据"],
+      "validations": ["存档版本匹配", "反序列化成功", "离线收益计算完成"],
+      "expectedResults": ["游戏状态恢复", "离线收益弹窗显示"]
     },
     {
       "id": "v1-res-1",
       "version": "v1.0",
       "module": "resource",
       "operation": "查看资源面板",
-      "preconditions": [
-        "游戏已初始化"
-      ],
-      "validations": [
-        "资源数量正确显示",
-        "产出速率正确显示",
-        "容量警告正确显示"
-      ],
-      "expectedResults": [
-        "粮草/铜钱/兵力/天命数值可见",
-        "产出速率实时更新"
-      ]
+      "preconditions": ["游戏已初始化"],
+      "validations": ["资源数量正确显示", "产出速率正确显示", "容量警告正确显示"],
+      "expectedResults": ["粮草/铜钱/兵力/天命数值可见", "产出速率实时更新"]
     },
     {
       "id": "v1-res-2",
       "version": "v1.0",
       "module": "resource",
       "operation": "资源自然产出",
-      "preconditions": [
-        "建筑等级>0"
-      ],
-      "validations": [
-        "每tick产出正确",
-        "达到上限后停止产出",
-        "溢出事件触发"
-      ],
-      "expectedResults": [
-        "资源随时间增长",
-        "达到上限时触发cap-warning"
-      ]
+      "preconditions": ["建筑等级>0"],
+      "validations": ["每tick产出正确", "达到上限后停止产出", "溢出事件触发"],
+      "expectedResults": ["资源随时间增长", "达到上限时触发cap-warning"]
     },
     {
       "id": "v1-bld-1",
       "version": "v1.0",
       "module": "building",
       "operation": "查看建筑列表",
-      "preconditions": [
-        "游戏已初始化"
-      ],
-      "validations": [
-        "8种建筑全部显示",
-        "等级/状态正确",
-        "锁定建筑灰显"
-      ],
-      "expectedResults": [
-        "castle/farmland/market/barracks/smithy/academy/clinic/wall可见"
-      ]
+      "preconditions": ["游戏已初始化"],
+      "validations": ["8种建筑全部显示", "等级/状态正确", "锁定建筑灰显"],
+      "expectedResults": ["castle/farmland/market/barracks/smithy/academy/clinic/wall可见"]
     },
     {
       "id": "v1-bld-2",
       "version": "v1.0",
       "module": "building",
       "operation": "检查建筑升级条件",
-      "preconditions": [
-        "选择某建筑"
-      ],
-      "validations": [
-        "资源是否充足判断正确",
-        "等级上限检查正确",
-        "前置建筑检查正确"
-      ],
-      "expectedResults": [
-        "canUpgrade=true/false",
-        "reasons列表准确"
-      ]
+      "preconditions": ["选择某建筑"],
+      "validations": ["资源是否充足判断正确", "等级上限检查正确", "前置建筑检查正确"],
+      "expectedResults": ["canUpgrade=true/false", "reasons列表准确"]
     },
     {
       "id": "v1-bld-3",
       "version": "v1.0",
       "module": "building",
       "operation": "执行建筑升级",
-      "preconditions": [
-        "canUpgrade=true",
-        "资源充足"
-      ],
-      "validations": [
-        "资源扣除正确",
-        "建筑状态变为upgrading",
-        "升级事件触发"
-      ],
-      "expectedResults": [
-        "grain/gold/troops扣除",
-        "status=upgrading",
-        "building:upgrade-start事件"
-      ]
+      "preconditions": ["canUpgrade=true", "资源充足"],
+      "validations": ["资源扣除正确", "建筑状态变为upgrading", "升级事件触发"],
+      "expectedResults": ["grain/gold/troops扣除", "status=upgrading", "building:upgrade-start事件"]
     },
     {
       "id": "v1-bld-4",
       "version": "v1.0",
       "module": "building",
       "operation": "建筑升级完成",
-      "preconditions": [
-        "升级时间已到"
-      ],
-      "validations": [
-        "建筑等级+1",
-        "状态恢复idle",
-        "产出速率更新",
-        "building:upgraded事件"
-      ],
-      "expectedResults": [
-        "level+1",
-        "status=idle",
-        "productionRate更新"
-      ]
+      "preconditions": ["升级时间已到"],
+      "validations": ["建筑等级+1", "状态恢复idle", "产出速率更新", "building:upgraded事件"],
+      "expectedResults": ["level+1", "status=idle", "productionRate更新"]
     },
     {
       "id": "v1-bld-5",
       "version": "v1.0",
       "module": "building",
       "operation": "取消建筑升级",
-      "preconditions": [
-        "建筑正在升级中"
-      ],
-      "validations": [
-        "资源返还正确",
-        "状态恢复idle"
-      ],
-      "expectedResults": [
-        "资源部分返还",
-        "status=idle"
-      ]
+      "preconditions": ["建筑正在升级中"],
+      "validations": ["资源返还正确", "状态恢复idle"],
+      "expectedResults": ["资源部分返还", "status=idle"]
     },
     {
       "id": "v1-bld-6",
       "version": "v1.0",
       "module": "building",
       "operation": "资源不足时尝试升级",
-      "preconditions": [
-        "资源 < 升级费用"
-      ],
-      "validations": [
-        "升级按钮灰显",
-        "提示信息正确"
-      ],
-      "expectedResults": [
-        "canUpgrade=false",
-        "reasons包含资源不足"
-      ]
+      "preconditions": ["资源 < 升级费用"],
+      "validations": ["升级按钮灰显", "提示信息正确"],
+      "expectedResults": ["canUpgrade=false", "reasons包含资源不足"]
     },
     {
       "id": "v1-save-1",
       "version": "v1.0",
       "module": "engine",
       "operation": "自动保存",
-      "preconditions": [
-        "autoSaveAccumulator >= 30秒"
-      ],
-      "validations": [
-        "存档数据完整",
-        "game:saved事件触发"
-      ],
-      "expectedResults": [
-        "localStorage写入成功",
-        "存档时间戳更新"
-      ]
+      "preconditions": ["autoSaveAccumulator >= 30秒"],
+      "validations": ["存档数据完整", "game:saved事件触发"],
+      "expectedResults": ["localStorage写入成功", "存档时间戳更新"]
     },
     {
       "id": "v1-save-2",
       "version": "v1.0",
       "module": "engine",
       "operation": "手动保存",
-      "preconditions": [
-        "游戏已初始化"
-      ],
-      "validations": [
-        "存档数据完整",
-        "所有子系统状态序列化"
-      ],
-      "expectedResults": [
-        "save()返回成功",
-        "快照数据完整"
-      ]
+      "preconditions": ["游戏已初始化"],
+      "validations": ["存档数据完整", "所有子系统状态序列化"],
+      "expectedResults": ["save()返回成功", "快照数据完整"]
     },
     {
       "id": "v1-save-3",
       "version": "v1.0",
       "module": "engine",
       "operation": "序列化与反序列化",
-      "preconditions": [
-        "游戏有数据"
-      ],
-      "validations": [
-        "serialize→deserialize后状态一致",
-        "所有子系统恢复正确"
-      ],
-      "expectedResults": [
-        "资源/建筑/武将/编队/科技等状态完全恢复"
-      ]
+      "preconditions": ["游戏有数据"],
+      "validations": ["serialize→deserialize后状态一致", "所有子系统恢复正确"],
+      "expectedResults": ["资源/建筑/武将/编队/科技等状态完全恢复"]
     },
     {
       "id": "v2-hero-1",
       "version": "v2.0",
       "module": "hero",
       "operation": "查看武将列表",
-      "preconditions": [
-        "拥有武将"
-      ],
-      "validations": [
-        "武将列表正确显示",
-        "等级/星级/战力正确"
-      ],
-      "expectedResults": [
-        "所有已拥有武将可见",
-        "totalPower计算正确"
-      ]
+      "preconditions": ["拥有武将"],
+      "validations": ["武将列表正确显示", "等级/星级/战力正确"],
+      "expectedResults": ["所有已拥有武将可见", "totalPower计算正确"]
     },
     {
       "id": "v2-hero-2",
       "version": "v2.0",
       "module": "hero",
       "operation": "查看武将详情",
-      "preconditions": [
-        "点击某武将"
-      ],
-      "validations": [
-        "基础属性正确",
-        "技能列表正确",
-        "装备槽位正确"
-      ],
-      "expectedResults": [
-        "attack/defense/intelligence/speed显示",
-        "技能等级可见"
-      ]
+      "preconditions": ["点击某武将"],
+      "validations": ["基础属性正确", "技能列表正确", "装备槽位正确"],
+      "expectedResults": ["attack/defense/intelligence/speed显示", "技能等级可见"]
     },
     {
       "id": "v2-hero-3",
       "version": "v2.0",
       "module": "hero",
       "operation": "武将升级（单次）",
-      "preconditions": [
-        "铜钱充足",
-        "等级未达上限"
-      ],
-      "validations": [
-        "铜钱扣除",
-        "等级+1",
-        "属性增长"
-      ],
-      "expectedResults": [
-        "level+1",
-        "gold扣除",
-        "属性值增加"
-      ]
+      "preconditions": ["铜钱充足", "等级未达上限"],
+      "validations": ["铜钱扣除", "等级+1", "属性增长"],
+      "expectedResults": ["level+1", "gold扣除", "属性值增加"]
     },
     {
       "id": "v2-hero-4",
       "version": "v2.0",
       "module": "hero",
       "operation": "武将批量升级",
-      "preconditions": [
-        "铜钱充足"
-      ],
-      "validations": [
-        "批量升级结果正确",
-        "铜钱总扣除正确"
-      ],
-      "expectedResults": [
-        "所有目标武将等级提升",
-        "gold总消耗正确"
-      ]
+      "preconditions": ["铜钱充足"],
+      "validations": ["批量升级结果正确", "铜钱总扣除正确"],
+      "expectedResults": ["所有目标武将等级提升", "gold总消耗正确"]
     },
     {
       "id": "v2-hero-5",
       "version": "v2.0",
       "module": "hero",
       "operation": "武将升星/突破",
-      "preconditions": [
-        "碎片数量足够",
-        "铜钱充足"
-      ],
-      "validations": [
-        "碎片扣除",
-        "星级+1",
-        "等级上限提升",
-        "技能可能解锁"
-      ],
-      "expectedResults": [
-        "star+1",
-        "fragments扣除",
-        "levelCap提升",
-        "新技能解锁"
-      ]
+      "preconditions": ["碎片数量足够", "铜钱充足"],
+      "validations": ["碎片扣除", "星级+1", "等级上限提升", "技能可能解锁"],
+      "expectedResults": ["star+1", "fragments扣除", "levelCap提升", "新技能解锁"]
     },
     {
       "id": "v2-recruit-1",
       "version": "v2.0",
       "module": "hero",
       "operation": "单次招募（普通）",
-      "preconditions": [
-        "招贤令>=1"
-      ],
-      "validations": [
-        "招贤令扣除",
-        "获得武将或碎片",
-        "招募历史记录"
-      ],
-      "expectedResults": [
-        "recruitToken-1",
-        "获得generalId或fragment"
-      ]
+      "preconditions": ["招贤令>=1"],
+      "validations": ["招贤令扣除", "获得武将或碎片", "招募历史记录"],
+      "expectedResults": ["recruitToken-1", "获得generalId或fragment"]
     },
     {
       "id": "v2-recruit-2",
       "version": "v2.0",
       "module": "hero",
       "operation": "十连招募",
-      "preconditions": [
-        "招贤令>=10"
-      ],
-      "validations": [
-        "招贤令扣除10",
-        "获得10个结果",
-        "保底机制触发"
-      ],
-      "expectedResults": [
-        "recruitToken-10",
-        "至少1个高品质武将"
-      ]
+      "preconditions": ["招贤令>=10"],
+      "validations": ["招贤令扣除10", "获得10个结果", "保底机制触发"],
+      "expectedResults": ["recruitToken-10", "至少1个高品质武将"]
     },
     {
       "id": "v2-recruit-3",
       "version": "v2.0",
       "module": "hero",
       "operation": "免费招募",
-      "preconditions": [
-        "免费次数>0",
-        "冷却时间已到"
-      ],
-      "validations": [
-        "免费次数-1",
-        "不扣除招贤令",
-        "获得武将或碎片"
-      ],
-      "expectedResults": [
-        "freeCount-1",
-        "recruitToken不变"
-      ]
+      "preconditions": ["免费次数>0", "冷却时间已到"],
+      "validations": ["免费次数-1", "不扣除招贤令", "获得武将或碎片"],
+      "expectedResults": ["freeCount-1", "recruitToken不变"]
     },
     {
       "id": "v2-recruit-4",
       "version": "v2.0",
       "module": "hero",
       "operation": "UP池招募",
-      "preconditions": [
-        "UP武将已设置"
-      ],
-      "validations": [
-        "UP概率提升生效",
-        "UP武将获得时标记正确"
-      ],
-      "expectedResults": [
-        "UP武将出现概率高于普通池"
-      ]
+      "preconditions": ["UP武将已设置"],
+      "validations": ["UP概率提升生效", "UP武将获得时标记正确"],
+      "expectedResults": ["UP武将出现概率高于普通池"]
     },
     {
       "id": "v2-formation-1",
       "version": "v2.0",
       "module": "hero",
       "operation": "创建编队",
-      "preconditions": [
-        "拥有武将"
-      ],
-      "validations": [
-        "编队创建成功",
-        "编队ID唯一"
-      ],
-      "expectedResults": [
-        "新编队出现在列表中"
-      ]
+      "preconditions": ["拥有武将"],
+      "validations": ["编队创建成功", "编队ID唯一"],
+      "expectedResults": ["新编队出现在列表中"]
     },
     {
       "id": "v2-formation-2",
       "version": "v2.0",
       "module": "hero",
       "operation": "设置编队武将",
-      "preconditions": [
-        "编队存在",
-        "武将未在其他编队"
-      ],
-      "validations": [
-        "武将加入编队",
-        "编队战力更新"
-      ],
-      "expectedResults": [
-        "formation.generalIds包含新武将ID"
-      ]
+      "preconditions": ["编队存在", "武将未在其他编队"],
+      "validations": ["武将加入编队", "编队战力更新"],
+      "expectedResults": ["formation.generalIds包含新武将ID"]
     },
     {
       "id": "v2-formation-3",
       "version": "v2.0",
       "module": "hero",
       "operation": "激活编队",
-      "preconditions": [
-        "编队有武将"
-      ],
-      "validations": [
-        "activeFormationId更新",
-        "旧编队取消激活"
-      ],
-      "expectedResults": [
-        "activeFormationId指向新编队"
-      ]
+      "preconditions": ["编队有武将"],
+      "validations": ["activeFormationId更新", "旧编队取消激活"],
+      "expectedResults": ["activeFormationId指向新编队"]
     },
     {
       "id": "v2-formation-4",
       "version": "v2.0",
       "module": "hero",
       "operation": "推荐编队",
-      "preconditions": [
-        "拥有多个武将"
-      ],
-      "validations": [
-        "推荐编队合理",
-        "战力最优"
-      ],
-      "expectedResults": [
-        "推荐编队列表生成"
-      ]
+      "preconditions": ["拥有多个武将"],
+      "validations": ["推荐编队合理", "战力最优"],
+      "expectedResults": ["推荐编队列表生成"]
     },
     {
       "id": "v2-skill-1",
       "version": "v2.0",
       "module": "hero",
       "operation": "升级技能",
-      "preconditions": [
-        "技能已解锁",
-        "铜钱充足"
-      ],
-      "validations": [
-        "铜钱扣除",
-        "技能等级+1",
-        "技能效果提升"
-      ],
-      "expectedResults": [
-        "skill.level+1",
-        "skill.effect增强"
-      ]
+      "preconditions": ["技能已解锁", "铜钱充足"],
+      "validations": ["铜钱扣除", "技能等级+1", "技能效果提升"],
+      "expectedResults": ["skill.level+1", "skill.effect增强"]
     },
     {
       "id": "v2-bond-1",
       "version": "v2.0",
       "module": "bond",
       "operation": "查看羁绊列表",
-      "preconditions": [
-        "拥有多个武将"
-      ],
-      "validations": [
-        "羁绊条件显示正确",
-        "激活状态正确"
-      ],
-      "expectedResults": [
-        "已激活羁绊高亮",
-        "未激活羁绊灰显"
-      ]
+      "preconditions": ["拥有多个武将"],
+      "validations": ["羁绊条件显示正确", "激活状态正确"],
+      "expectedResults": ["已激活羁绊高亮", "未激活羁绊灰显"]
     },
     {
       "id": "v2-bond-2",
       "version": "v2.0",
       "module": "bond",
       "operation": "激活阵营羁绊",
-      "preconditions": [
-        "同阵营武将数量达标"
-      ],
-      "validations": [
-        "羁绊加成生效",
-        "属性提升正确"
-      ],
-      "expectedResults": [
-        "对应属性加成应用到武将"
-      ]
+      "preconditions": ["同阵营武将数量达标"],
+      "validations": ["羁绊加成生效", "属性提升正确"],
+      "expectedResults": ["对应属性加成应用到武将"]
     },
     {
       "id": "v3-campaign-1",
@@ -522,122 +270,62 @@
       "module": "campaign",
       "operation": "查看章节列表",
       "preconditions": [],
-      "validations": [
-        "章节解锁状态正确",
-        "章节进度显示正确"
-      ],
-      "expectedResults": [
-        "已通关章节标记完成",
-        "当前章节可进入"
-      ]
+      "validations": ["章节解锁状态正确", "章节进度显示正确"],
+      "expectedResults": ["已通关章节标记完成", "当前章节可进入"]
     },
     {
       "id": "v3-campaign-2",
       "version": "v3.0",
       "module": "campaign",
       "operation": "查看关卡列表",
-      "preconditions": [
-        "选择某章节"
-      ],
-      "validations": [
-        "关卡解锁状态正确",
-        "星级显示正确"
-      ],
-      "expectedResults": [
-        "已通关关卡显示星级",
-        "未解锁关卡灰显"
-      ]
+      "preconditions": ["选择某章节"],
+      "validations": ["关卡解锁状态正确", "星级显示正确"],
+      "expectedResults": ["已通关关卡显示星级", "未解锁关卡灰显"]
     },
     {
       "id": "v3-campaign-3",
       "version": "v3.0",
       "module": "campaign",
       "operation": "发起关卡战斗",
-      "preconditions": [
-        "关卡已解锁",
-        "编队已设置"
-      ],
-      "validations": [
-        "战斗引擎启动",
-        "双方队伍构建正确"
-      ],
-      "expectedResults": [
-        "战斗场景加载",
-        "回合制战斗开始"
-      ]
+      "preconditions": ["关卡已解锁", "编队已设置"],
+      "validations": ["战斗引擎启动", "双方队伍构建正确"],
+      "expectedResults": ["战斗场景加载", "回合制战斗开始"]
     },
     {
       "id": "v3-campaign-4",
       "version": "v3.0",
       "module": "campaign",
       "operation": "战斗胜利结算",
-      "preconditions": [
-        "战斗结果为VICTORY"
-      ],
-      "validations": [
-        "星级评定正确",
-        "奖励发放正确",
-        "关卡标记已通关"
-      ],
-      "expectedResults": [
-        "stars记录",
-        "资源/碎片/经验奖励发放",
-        "下一关卡解锁"
-      ]
+      "preconditions": ["战斗结果为VICTORY"],
+      "validations": ["星级评定正确", "奖励发放正确", "关卡标记已通关"],
+      "expectedResults": ["stars记录", "资源/碎片/经验奖励发放", "下一关卡解锁"]
     },
     {
       "id": "v3-campaign-5",
       "version": "v3.0",
       "module": "campaign",
       "operation": "战斗失败处理",
-      "preconditions": [
-        "战斗结果为DEFEAT"
-      ],
-      "validations": [
-        "无奖励发放",
-        "关卡状态不变"
-      ],
-      "expectedResults": [
-        "可重新挑战",
-        "无资源扣除"
-      ]
+      "preconditions": ["战斗结果为DEFEAT"],
+      "validations": ["无奖励发放", "关卡状态不变"],
+      "expectedResults": ["可重新挑战", "无资源扣除"]
     },
     {
       "id": "v3-campaign-6",
       "version": "v3.0",
       "module": "campaign",
       "operation": "扫荡关卡",
-      "preconditions": [
-        "关卡已三星通关",
-        "体力充足"
-      ],
-      "validations": [
-        "模拟战斗结果",
-        "奖励直接发放",
-        "体力扣除"
-      ],
-      "expectedResults": [
-        "获得扫荡奖励",
-        "无需进入战斗场景"
-      ]
+      "preconditions": ["关卡已三星通关", "体力充足"],
+      "validations": ["模拟战斗结果", "奖励直接发放", "体力扣除"],
+      "expectedResults": ["获得扫荡奖励", "无需进入战斗场景"]
     },
     {
       "id": "v3-campaign-7",
       "version": "v3.0",
       "module": "campaign",
       "operation": "挑战关卡",
-      "preconditions": [
-        "挑战关卡已解锁",
-        "挑战次数未用完"
-      ],
-      "validations": [
-        "挑战消耗正确",
-        "奖励发放正确"
-      ],
-      "expectedResults": [
-        "挑战资源消耗",
-        "获得挑战奖励"
-      ]
+      "preconditions": ["挑战关卡已解锁", "挑战次数未用完"],
+      "validations": ["挑战消耗正确", "奖励发放正确"],
+      "expectedResults": ["挑战资源消耗", "获得挑战奖励"]
     },
     {
       "id": "v3-vip-1",
@@ -645,13 +333,8 @@
       "module": "campaign",
       "operation": "查看VIP等级",
       "preconditions": [],
-      "validations": [
-        "VIP等级正确",
-        "VIP特权显示正确"
-      ],
-      "expectedResults": [
-        "VIP等级和特权列表可见"
-      ]
+      "validations": ["VIP等级正确", "VIP特权显示正确"],
+      "expectedResults": ["VIP等级和特权列表可见"]
     },
     {
       "id": "v4-map-1",
@@ -659,208 +342,107 @@
       "module": "map",
       "operation": "查看世界地图",
       "preconditions": [],
-      "validations": [
-        "地图渲染正确",
-        "城池位置正确",
-        "领土颜色正确"
-      ],
-      "expectedResults": [
-        "所有城池可见",
-        "己方领土高亮"
-      ]
+      "validations": ["地图渲染正确", "城池位置正确", "领土颜色正确"],
+      "expectedResults": ["所有城池可见", "己方领土高亮"]
     },
     {
       "id": "v4-map-2",
       "version": "v4.0",
       "module": "map",
       "operation": "查看城池详情",
-      "preconditions": [
-        "点击某城池"
-      ],
-      "validations": [
-        "城池信息正确",
-        "守军信息正确",
-        "占领状态正确"
-      ],
-      "expectedResults": [
-        "城池名称/等级/归属显示"
-      ]
+      "preconditions": ["点击某城池"],
+      "validations": ["城池信息正确", "守军信息正确", "占领状态正确"],
+      "expectedResults": ["城池名称/等级/归属显示"]
     },
     {
       "id": "v4-map-3",
       "version": "v4.0",
       "module": "map",
       "operation": "发起攻城战",
-      "preconditions": [
-        "城池非己方",
-        "兵力充足",
-        "编队已设置"
-      ],
-      "validations": [
-        "攻城战斗启动",
-        "兵力扣除",
-        "战斗结果处理"
-      ],
-      "expectedResults": [
-        "攻城战斗开始",
-        "troops扣除"
-      ]
+      "preconditions": ["城池非己方", "兵力充足", "编队已设置"],
+      "validations": ["攻城战斗启动", "兵力扣除", "战斗结果处理"],
+      "expectedResults": ["攻城战斗开始", "troops扣除"]
     },
     {
       "id": "v4-map-4",
       "version": "v4.0",
       "module": "map",
       "operation": "攻城胜利占领",
-      "preconditions": [
-        "攻城战斗胜利"
-      ],
-      "validations": [
-        "领土归属更新",
-        "领土收益更新",
-        "时代推进检查"
-      ],
-      "expectedResults": [
-        "城池归属变更",
-        "territory收益增加"
-      ]
+      "preconditions": ["攻城战斗胜利"],
+      "validations": ["领土归属更新", "领土收益更新", "时代推进检查"],
+      "expectedResults": ["城池归属变更", "territory收益增加"]
     },
     {
       "id": "v4-map-5",
       "version": "v4.0",
       "module": "map",
       "operation": "设置驻军",
-      "preconditions": [
-        "拥有已占领城池"
-      ],
-      "validations": [
-        "驻军设置成功",
-        "城池防御力提升"
-      ],
-      "expectedResults": [
-        "garrison武将设置成功"
-      ]
+      "preconditions": ["拥有已占领城池"],
+      "validations": ["驻军设置成功", "城池防御力提升"],
+      "expectedResults": ["garrison武将设置成功"]
     },
     {
       "id": "v4-map-6",
       "version": "v4.0",
       "module": "map",
       "operation": "地图随机事件",
-      "preconditions": [
-        "随机事件触发"
-      ],
-      "validations": [
-        "事件弹窗显示",
-        "选择后结果正确"
-      ],
-      "expectedResults": [
-        "事件奖励/惩罚正确应用"
-      ]
+      "preconditions": ["随机事件触发"],
+      "validations": ["事件弹窗显示", "选择后结果正确"],
+      "expectedResults": ["事件奖励/惩罚正确应用"]
     },
     {
       "id": "v5-equip-1",
       "version": "v5.0",
       "module": "equipment",
       "operation": "查看装备列表",
-      "preconditions": [
-        "拥有装备"
-      ],
-      "validations": [
-        "装备属性正确",
-        "穿戴状态正确"
-      ],
-      "expectedResults": [
-        "所有装备可见",
-        "已穿戴/未穿戴标记正确"
-      ]
+      "preconditions": ["拥有装备"],
+      "validations": ["装备属性正确", "穿戴状态正确"],
+      "expectedResults": ["所有装备可见", "已穿戴/未穿戴标记正确"]
     },
     {
       "id": "v5-equip-2",
       "version": "v5.0",
       "module": "equipment",
       "operation": "穿戴装备",
-      "preconditions": [
-        "拥有装备",
-        "武将有空槽位"
-      ],
-      "validations": [
-        "装备绑定武将",
-        "武将属性提升",
-        "旧装备卸下"
-      ],
-      "expectedResults": [
-        "equipment.equippedHeroId设置",
-        "武将attack/defense等增加"
-      ]
+      "preconditions": ["拥有装备", "武将有空槽位"],
+      "validations": ["装备绑定武将", "武将属性提升", "旧装备卸下"],
+      "expectedResults": ["equipment.equippedHeroId设置", "武将attack/defense等增加"]
     },
     {
       "id": "v5-equip-3",
       "version": "v5.0",
       "module": "equipment",
       "operation": "卸下装备",
-      "preconditions": [
-        "武将已穿戴装备"
-      ],
-      "validations": [
-        "装备解除绑定",
-        "武将属性降低"
-      ],
-      "expectedResults": [
-        "equipment.equippedHeroId=null",
-        "武将属性恢复"
-      ]
+      "preconditions": ["武将已穿戴装备"],
+      "validations": ["装备解除绑定", "武将属性降低"],
+      "expectedResults": ["equipment.equippedHeroId=null", "武将属性恢复"]
     },
     {
       "id": "v5-equip-4",
       "version": "v5.0",
       "module": "equipment",
       "operation": "炼制装备",
-      "preconditions": [
-        "材料充足"
-      ],
-      "validations": [
-        "材料扣除",
-        "新装备生成",
-        "品质随机"
-      ],
-      "expectedResults": [
-        "获得新装备",
-        "材料扣除"
-      ]
+      "preconditions": ["材料充足"],
+      "validations": ["材料扣除", "新装备生成", "品质随机"],
+      "expectedResults": ["获得新装备", "材料扣除"]
     },
     {
       "id": "v5-equip-5",
       "version": "v5.0",
       "module": "equipment",
       "operation": "强化装备",
-      "preconditions": [
-        "拥有装备",
-        "铜钱充足"
-      ],
-      "validations": [
-        "铜钱扣除",
-        "装备等级+1",
-        "属性提升"
-      ],
-      "expectedResults": [
-        "equipLevel+1",
-        "属性值增加"
-      ]
+      "preconditions": ["拥有装备", "铜钱充足"],
+      "validations": ["铜钱扣除", "装备等级+1", "属性提升"],
+      "expectedResults": ["equipLevel+1", "属性值增加"]
     },
     {
       "id": "v5-equip-6",
       "version": "v5.0",
       "module": "equipment",
       "operation": "查看套装加成",
-      "preconditions": [
-        "拥有同套装装备"
-      ],
-      "validations": [
-        "套装件数正确",
-        "加成效果正确"
-      ],
-      "expectedResults": [
-        "套装加成列表显示"
-      ]
+      "preconditions": ["拥有同套装装备"],
+      "validations": ["套装件数正确", "加成效果正确"],
+      "expectedResults": ["套装加成列表显示"]
     },
     {
       "id": "v5-shop-1",
@@ -868,103 +450,53 @@
       "module": "shop",
       "operation": "浏览商店商品",
       "preconditions": [],
-      "validations": [
-        "商品列表正确",
-        "价格显示正确",
-        "库存显示正确"
-      ],
-      "expectedResults": [
-        "所有可购买商品可见"
-      ]
+      "validations": ["商品列表正确", "价格显示正确", "库存显示正确"],
+      "expectedResults": ["所有可购买商品可见"]
     },
     {
       "id": "v5-shop-2",
       "version": "v5.0",
       "module": "shop",
       "operation": "购买商品",
-      "preconditions": [
-        "货币充足",
-        "商品有库存"
-      ],
-      "validations": [
-        "货币扣除",
-        "商品发放",
-        "库存减少"
-      ],
-      "expectedResults": [
-        "gold扣除",
-        "获得商品",
-        "stock-1"
-      ]
+      "preconditions": ["货币充足", "商品有库存"],
+      "validations": ["货币扣除", "商品发放", "库存减少"],
+      "expectedResults": ["gold扣除", "获得商品", "stock-1"]
     },
     {
       "id": "v5-trade-1",
       "version": "v5.0",
       "module": "trade",
       "operation": "资源交易",
-      "preconditions": [
-        "市集等级>=1"
-      ],
-      "validations": [
-        "汇率正确",
-        "交易数量合法",
-        "资源扣除和增加正确"
-      ],
-      "expectedResults": [
-        "卖出资源扣除",
-        "买入资源增加"
-      ]
+      "preconditions": ["市集等级>=1"],
+      "validations": ["汇率正确", "交易数量合法", "资源扣除和增加正确"],
+      "expectedResults": ["卖出资源扣除", "买入资源增加"]
     },
     {
       "id": "v5-trade-2",
       "version": "v5.0",
       "module": "trade",
       "operation": "商队交易",
-      "preconditions": [
-        "商队可用"
-      ],
-      "validations": [
-        "商队商品正确",
-        "交易后资源变化正确"
-      ],
-      "expectedResults": [
-        "商队商品列表显示",
-        "交易完成"
-      ]
+      "preconditions": ["商队可用"],
+      "validations": ["商队商品正确", "交易后资源变化正确"],
+      "expectedResults": ["商队商品列表显示", "交易完成"]
     },
     {
       "id": "v5-mail-1",
       "version": "v5.0",
       "module": "mail",
       "operation": "查看邮件列表",
-      "preconditions": [
-        "有邮件"
-      ],
-      "validations": [
-        "邮件列表正确",
-        "已读/未读状态正确"
-      ],
-      "expectedResults": [
-        "所有邮件可见",
-        "未读邮件高亮"
-      ]
+      "preconditions": ["有邮件"],
+      "validations": ["邮件列表正确", "已读/未读状态正确"],
+      "expectedResults": ["所有邮件可见", "未读邮件高亮"]
     },
     {
       "id": "v5-mail-2",
       "version": "v5.0",
       "module": "mail",
       "operation": "读取邮件并领取附件",
-      "preconditions": [
-        "邮件有附件"
-      ],
-      "validations": [
-        "附件发放正确",
-        "邮件标记已读"
-      ],
-      "expectedResults": [
-        "附件资源到账",
-        "邮件状态变为已读"
-      ]
+      "preconditions": ["邮件有附件"],
+      "validations": ["附件发放正确", "邮件标记已读"],
+      "expectedResults": ["附件资源到账", "邮件状态变为已读"]
     },
     {
       "id": "v6-tech-1",
@@ -972,172 +504,89 @@
       "module": "tech",
       "operation": "查看科技树",
       "preconditions": [],
-      "validations": [
-        "科技节点显示正确",
-        "研究状态正确",
-        "前置依赖正确"
-      ],
-      "expectedResults": [
-        "科技树完整渲染",
-        "已研究/可研究/锁定状态正确"
-      ]
+      "validations": ["科技节点显示正确", "研究状态正确", "前置依赖正确"],
+      "expectedResults": ["科技树完整渲染", "已研究/可研究/锁定状态正确"]
     },
     {
       "id": "v6-tech-2",
       "version": "v6.0",
       "module": "tech",
       "operation": "开始科技研究",
-      "preconditions": [
-        "科技点充足",
-        "前置科技已研究"
-      ],
-      "validations": [
-        "科技点扣除",
-        "研究加入队列",
-        "研究开始"
-      ],
-      "expectedResults": [
-        "techPoint扣除",
-        "researchQueue新增条目"
-      ]
+      "preconditions": ["科技点充足", "前置科技已研究"],
+      "validations": ["科技点扣除", "研究加入队列", "研究开始"],
+      "expectedResults": ["techPoint扣除", "researchQueue新增条目"]
     },
     {
       "id": "v6-tech-3",
       "version": "v6.0",
       "module": "tech",
       "operation": "科技研究完成",
-      "preconditions": [
-        "研究时间已到"
-      ],
-      "validations": [
-        "科技标记已研究",
-        "效果应用",
-        "后续科技解锁"
-      ],
-      "expectedResults": [
-        "tech.researched=true",
-        "buff效果生效"
-      ]
+      "preconditions": ["研究时间已到"],
+      "validations": ["科技标记已研究", "效果应用", "后续科技解锁"],
+      "expectedResults": ["tech.researched=true", "buff效果生效"]
     },
     {
       "id": "v6-tech-4",
       "version": "v6.0",
       "module": "tech",
       "operation": "取消科技研究",
-      "preconditions": [
-        "研究进行中"
-      ],
-      "validations": [
-        "科技点部分返还",
-        "研究从队列移除"
-      ],
-      "expectedResults": [
-        "techPoint部分返还",
-        "researchQueue移除"
-      ]
+      "preconditions": ["研究进行中"],
+      "validations": ["科技点部分返还", "研究从队列移除"],
+      "expectedResults": ["techPoint部分返还", "researchQueue移除"]
     },
     {
       "id": "v6-tech-5",
       "version": "v6.0",
       "module": "tech",
       "operation": "加速科技研究",
-      "preconditions": [
-        "研究进行中",
-        "加速道具充足"
-      ],
-      "validations": [
-        "研究时间减少",
-        "加速道具扣除"
-      ],
-      "expectedResults": [
-        "remainingTime减少"
-      ]
+      "preconditions": ["研究进行中", "加速道具充足"],
+      "validations": ["研究时间减少", "加速道具扣除"],
+      "expectedResults": ["remainingTime减少"]
     },
     {
       "id": "v6-tech-6",
       "version": "v6.0",
       "module": "tech",
       "operation": "融合科技",
-      "preconditions": [
-        "融合科技解锁",
-        "材料科技已研究"
-      ],
-      "validations": [
-        "融合条件满足",
-        "融合后效果正确"
-      ],
-      "expectedResults": [
-        "融合科技激活",
-        "组合效果生效"
-      ]
+      "preconditions": ["融合科技解锁", "材料科技已研究"],
+      "validations": ["融合条件满足", "融合后效果正确"],
+      "expectedResults": ["融合科技激活", "组合效果生效"]
     },
     {
       "id": "v6-tech-7",
       "version": "v6.0",
       "module": "tech",
       "operation": "科技离线收益",
-      "preconditions": [
-        "有研究进行中",
-        "玩家离线"
-      ],
-      "validations": [
-        "离线期间研究进度推进",
-        "上线后研究进度正确"
-      ],
-      "expectedResults": [
-        "研究进度根据离线时间推进"
-      ]
+      "preconditions": ["有研究进行中", "玩家离线"],
+      "validations": ["离线期间研究进度推进", "上线后研究进度正确"],
+      "expectedResults": ["研究进度根据离线时间推进"]
     },
     {
       "id": "v7-event-1",
       "version": "v7.0",
       "module": "event",
       "operation": "事件触发",
-      "preconditions": [
-        "触发条件满足"
-      ],
-      "validations": [
-        "事件正确触发",
-        "通知正确发送",
-        "UI横幅显示"
-      ],
-      "expectedResults": [
-        "事件通知弹出",
-        "横幅显示"
-      ]
+      "preconditions": ["触发条件满足"],
+      "validations": ["事件正确触发", "通知正确发送", "UI横幅显示"],
+      "expectedResults": ["事件通知弹出", "横幅显示"]
     },
     {
       "id": "v7-event-2",
       "version": "v7.0",
       "module": "event",
       "operation": "处理事件链",
-      "preconditions": [
-        "触发事件链"
-      ],
-      "validations": [
-        "事件链步骤正确推进",
-        "每步奖励正确发放"
-      ],
-      "expectedResults": [
-        "事件链进度推进",
-        "逐步奖励发放"
-      ]
+      "preconditions": ["触发事件链"],
+      "validations": ["事件链步骤正确推进", "每步奖励正确发放"],
+      "expectedResults": ["事件链进度推进", "逐步奖励发放"]
     },
     {
       "id": "v7-event-3",
       "version": "v7.0",
       "module": "event",
       "operation": "查看事件日志",
-      "preconditions": [
-        "有历史事件"
-      ],
-      "validations": [
-        "日志记录完整",
-        "时间排序正确"
-      ],
-      "expectedResults": [
-        "历史事件列表可查看"
-      ]
+      "preconditions": ["有历史事件"],
+      "validations": ["日志记录完整", "时间排序正确"],
+      "expectedResults": ["历史事件列表可查看"]
     },
     {
       "id": "v7-arena-1",
@@ -1145,85 +594,44 @@
       "module": "pvp",
       "operation": "查看竞技场主页",
       "preconditions": [],
-      "validations": [
-        "排名显示正确",
-        "挑战次数显示",
-        "对手列表正确"
-      ],
-      "expectedResults": [
-        "当前排名可见",
-        "挑战次数可见"
-      ]
+      "validations": ["排名显示正确", "挑战次数显示", "对手列表正确"],
+      "expectedResults": ["当前排名可见", "挑战次数可见"]
     },
     {
       "id": "v7-arena-2",
       "version": "v7.0",
       "module": "pvp",
       "operation": "发起竞技场挑战",
-      "preconditions": [
-        "挑战次数>0",
-        "编队已设置"
-      ],
-      "validations": [
-        "PvP战斗启动",
-        "挑战次数-1",
-        "战斗结果正确"
-      ],
-      "expectedResults": [
-        "pvpBattle开始",
-        "challengeCount-1"
-      ]
+      "preconditions": ["挑战次数>0", "编队已设置"],
+      "validations": ["PvP战斗启动", "挑战次数-1", "战斗结果正确"],
+      "expectedResults": ["pvpBattle开始", "challengeCount-1"]
     },
     {
       "id": "v7-arena-3",
       "version": "v7.0",
       "module": "pvp",
       "operation": "竞技场胜利排名变化",
-      "preconditions": [
-        "PvP战斗胜利"
-      ],
-      "validations": [
-        "排名提升",
-        "积分增加",
-        "奖励发放"
-      ],
-      "expectedResults": [
-        "rank提升",
-        "arenaPoints增加"
-      ]
+      "preconditions": ["PvP战斗胜利"],
+      "validations": ["排名提升", "积分增加", "奖励发放"],
+      "expectedResults": ["rank提升", "arenaPoints增加"]
     },
     {
       "id": "v7-arena-4",
       "version": "v7.0",
       "module": "pvp",
       "operation": "设置防守编队",
-      "preconditions": [
-        "编队已设置"
-      ],
-      "validations": [
-        "防守编队保存成功",
-        "防守战力计算正确"
-      ],
-      "expectedResults": [
-        "defenseFormation保存"
-      ]
+      "preconditions": ["编队已设置"],
+      "validations": ["防守编队保存成功", "防守战力计算正确"],
+      "expectedResults": ["defenseFormation保存"]
     },
     {
       "id": "v7-arena-5",
       "version": "v7.0",
       "module": "pvp",
       "operation": "竞技商店购买",
-      "preconditions": [
-        "竞技积分充足"
-      ],
-      "validations": [
-        "积分扣除",
-        "商品发放"
-      ],
-      "expectedResults": [
-        "arenaPoints扣除",
-        "获得商品"
-      ]
+      "preconditions": ["竞技积分充足"],
+      "validations": ["积分扣除", "商品发放"],
+      "expectedResults": ["arenaPoints扣除", "获得商品"]
     },
     {
       "id": "v7-ranking-1",
@@ -1231,13 +639,8 @@
       "module": "pvp",
       "operation": "查看排行榜",
       "preconditions": [],
-      "validations": [
-        "排名列表正确",
-        "玩家信息正确"
-      ],
-      "expectedResults": [
-        "排行榜数据加载完成"
-      ]
+      "validations": ["排名列表正确", "玩家信息正确"],
+      "expectedResults": ["排行榜数据加载完成"]
     },
     {
       "id": "v8-exp-1",
@@ -1245,80 +648,44 @@
       "module": "expedition",
       "operation": "查看远征主页",
       "preconditions": [],
-      "validations": [
-        "远征列表显示",
-        "远征状态正确"
-      ],
-      "expectedResults": [
-        "可用远征任务可见"
-      ]
+      "validations": ["远征列表显示", "远征状态正确"],
+      "expectedResults": ["可用远征任务可见"]
     },
     {
       "id": "v8-exp-2",
       "version": "v8.0",
       "module": "expedition",
       "operation": "选择远征队伍",
-      "preconditions": [
-        "发起远征"
-      ],
-      "validations": [
-        "武将选择正确",
-        "战力计算正确"
-      ],
-      "expectedResults": [
-        "远征队伍设置完成"
-      ]
+      "preconditions": ["发起远征"],
+      "validations": ["武将选择正确", "战力计算正确"],
+      "expectedResults": ["远征队伍设置完成"]
     },
     {
       "id": "v8-exp-3",
       "version": "v8.0",
       "module": "expedition",
       "operation": "远征完成领奖",
-      "preconditions": [
-        "远征时间已到"
-      ],
-      "validations": [
-        "远征奖励正确",
-        "资源到账"
-      ],
-      "expectedResults": [
-        "获得远征奖励"
-      ]
+      "preconditions": ["远征时间已到"],
+      "validations": ["远征奖励正确", "资源到账"],
+      "expectedResults": ["获得远征奖励"]
     },
     {
       "id": "v9-offline-1",
       "version": "v9.0",
       "module": "offline",
       "operation": "计算离线收益",
-      "preconditions": [
-        "玩家离线时间>0"
-      ],
-      "validations": [
-        "离线时间计算正确",
-        "收益按时段计算",
-        "上限检查正确"
-      ],
-      "expectedResults": [
-        "earned资源正确",
-        "isCapped标志正确"
-      ]
+      "preconditions": ["玩家离线时间>0"],
+      "validations": ["离线时间计算正确", "收益按时段计算", "上限检查正确"],
+      "expectedResults": ["earned资源正确", "isCapped标志正确"]
     },
     {
       "id": "v9-offline-2",
       "version": "v9.0",
       "module": "offline",
       "operation": "领取离线收益",
-      "preconditions": [
-        "有离线收益"
-      ],
-      "validations": [
-        "资源到账",
-        "收益弹窗关闭"
-      ],
-      "expectedResults": [
-        "资源增加",
-        "弹窗关闭"
-      ]
+      "preconditions": ["有离线收益"],
+      "validations": ["资源到账", "收益弹窗关闭"],
+      "expectedResults": ["资源增加", "弹窗关闭"]
     },
     {
       "id": "v9-offline-3",
@@ -1326,62 +693,35 @@
       "module": "offline",
       "operation": "预估离线收益",
       "preconditions": [],
-      "validations": [
-        "预估计算正确",
-        "各时段效率显示"
-      ],
-      "expectedResults": [
-        "预估收益数值显示"
-      ]
+      "validations": ["预估计算正确", "各时段效率显示"],
+      "expectedResults": ["预估收益数值显示"]
     },
     {
       "id": "v10-npc-1",
       "version": "v10.0",
       "module": "npc",
       "operation": "触发NPC事件",
-      "preconditions": [
-        "NPC事件条件满足"
-      ],
-      "validations": [
-        "NPC对话显示",
-        "选项正确"
-      ],
-      "expectedResults": [
-        "NPC对话弹窗出现"
-      ]
+      "preconditions": ["NPC事件条件满足"],
+      "validations": ["NPC对话显示", "选项正确"],
+      "expectedResults": ["NPC对话弹窗出现"]
     },
     {
       "id": "v10-npc-2",
       "version": "v10.0",
       "module": "npc",
       "operation": "NPC事件选择",
-      "preconditions": [
-        "NPC对话进行中"
-      ],
-      "validations": [
-        "选择结果正确",
-        "奖励/惩罚正确"
-      ],
-      "expectedResults": [
-        "选择后效果应用"
-      ]
+      "preconditions": ["NPC对话进行中"],
+      "validations": ["选择结果正确", "奖励/惩罚正确"],
+      "expectedResults": ["选择后效果应用"]
     },
     {
       "id": "v10-dispatch-1",
       "version": "v10.0",
       "module": "hero",
       "operation": "派遣武将",
-      "preconditions": [
-        "武将空闲",
-        "有派遣任务"
-      ],
-      "validations": [
-        "武将状态变为派遣中",
-        "派遣时间开始"
-      ],
-      "expectedResults": [
-        "hero.status=dispatched"
-      ]
+      "preconditions": ["武将空闲", "有派遣任务"],
+      "validations": ["武将状态变为派遣中", "派遣时间开始"],
+      "expectedResults": ["hero.status=dispatched"]
     },
     {
       "id": "v10-badge-1",
@@ -1389,64 +729,35 @@
       "module": "hero",
       "operation": "查看武将角标",
       "preconditions": [],
-      "validations": [
-        "角标类型正确",
-        "角标条件判断正确"
-      ],
-      "expectedResults": [
-        "可升级/可升星/可装备角标正确显示"
-      ]
+      "validations": ["角标类型正确", "角标条件判断正确"],
+      "expectedResults": ["可升级/可升星/可装备角标正确显示"]
     },
     {
       "id": "v10-compare-1",
       "version": "v10.0",
       "module": "hero",
       "operation": "属性对比",
-      "preconditions": [
-        "选择两个武将"
-      ],
-      "validations": [
-        "属性差异正确",
-        "装备/科技/羁绊加成分离显示"
-      ],
-      "expectedResults": [
-        "属性对比面板显示差异"
-      ]
+      "preconditions": ["选择两个武将"],
+      "validations": ["属性差异正确", "装备/科技/羁绊加成分离显示"],
+      "expectedResults": ["属性对比面板显示差异"]
     },
     {
       "id": "v11-awaken-1",
       "version": "v11.0",
       "module": "hero",
       "operation": "查看觉醒面板",
-      "preconditions": [
-        "武将达到突破上限"
-      ],
-      "validations": [
-        "觉醒条件显示正确",
-        "材料需求显示"
-      ],
-      "expectedResults": [
-        "觉醒面板显示条件和材料"
-      ]
+      "preconditions": ["武将达到突破上限"],
+      "validations": ["觉醒条件显示正确", "材料需求显示"],
+      "expectedResults": ["觉醒面板显示条件和材料"]
     },
     {
       "id": "v11-awaken-2",
       "version": "v11.0",
       "module": "hero",
       "operation": "执行觉醒",
-      "preconditions": [
-        "觉醒材料充足",
-        "铜钱充足"
-      ],
-      "validations": [
-        "材料扣除",
-        "武将觉醒标记",
-        "等级上限提升到120"
-      ],
-      "expectedResults": [
-        "isAwakened=true",
-        "levelCap=120"
-      ]
+      "preconditions": ["觉醒材料充足", "铜钱充足"],
+      "validations": ["材料扣除", "武将觉醒标记", "等级上限提升到120"],
+      "expectedResults": ["isAwakened=true", "levelCap=120"]
     },
     {
       "id": "v12-token-1",
@@ -1454,136 +765,71 @@
       "module": "hero",
       "operation": "查看招贤令商城",
       "preconditions": [],
-      "validations": [
-        "招贤令商城商品显示",
-        "价格正确"
-      ],
-      "expectedResults": [
-        "招贤令购买选项可见"
-      ]
+      "validations": ["招贤令商城商品显示", "价格正确"],
+      "expectedResults": ["招贤令购买选项可见"]
     },
     {
       "id": "v12-token-2",
       "version": "v12.0",
       "module": "hero",
       "operation": "购买招贤令",
-      "preconditions": [
-        "铜钱充足"
-      ],
-      "validations": [
-        "铜钱扣除",
-        "招贤令增加"
-      ],
-      "expectedResults": [
-        "gold扣除",
-        "recruitToken增加"
-      ]
+      "preconditions": ["铜钱充足"],
+      "validations": ["铜钱扣除", "招贤令增加"],
+      "expectedResults": ["gold扣除", "recruitToken增加"]
     },
     {
       "id": "v13-ally-1",
       "version": "v13.0",
       "module": "alliance",
       "operation": "创建联盟",
-      "preconditions": [
-        "未加入联盟",
-        "铜钱充足"
-      ],
-      "validations": [
-        "联盟创建成功",
-        "铜钱扣除",
-        "成为盟主"
-      ],
-      "expectedResults": [
-        "allianceId生成",
-        "role=leader"
-      ]
+      "preconditions": ["未加入联盟", "铜钱充足"],
+      "validations": ["联盟创建成功", "铜钱扣除", "成为盟主"],
+      "expectedResults": ["allianceId生成", "role=leader"]
     },
     {
       "id": "v13-ally-2",
       "version": "v13.0",
       "module": "alliance",
       "operation": "加入联盟",
-      "preconditions": [
-        "未加入联盟"
-      ],
-      "validations": [
-        "加入成功",
-        "成为成员"
-      ],
-      "expectedResults": [
-        "allianceId设置",
-        "role=member"
-      ]
+      "preconditions": ["未加入联盟"],
+      "validations": ["加入成功", "成为成员"],
+      "expectedResults": ["allianceId设置", "role=member"]
     },
     {
       "id": "v13-ally-3",
       "version": "v13.0",
       "module": "alliance",
       "operation": "查看联盟任务",
-      "preconditions": [
-        "已加入联盟"
-      ],
-      "validations": [
-        "任务列表正确",
-        "进度显示正确"
-      ],
-      "expectedResults": [
-        "联盟任务列表可见"
-      ]
+      "preconditions": ["已加入联盟"],
+      "validations": ["任务列表正确", "进度显示正确"],
+      "expectedResults": ["联盟任务列表可见"]
     },
     {
       "id": "v13-ally-4",
       "version": "v13.0",
       "module": "alliance",
       "operation": "完成联盟任务",
-      "preconditions": [
-        "任务条件满足"
-      ],
-      "validations": [
-        "任务标记完成",
-        "联盟积分增加",
-        "个人贡献增加"
-      ],
-      "expectedResults": [
-        "alliancePoints增加",
-        "personalContribution增加"
-      ]
+      "preconditions": ["任务条件满足"],
+      "validations": ["任务标记完成", "联盟积分增加", "个人贡献增加"],
+      "expectedResults": ["alliancePoints增加", "personalContribution增加"]
     },
     {
       "id": "v13-ally-5",
       "version": "v13.0",
       "module": "alliance",
       "operation": "挑战联盟Boss",
-      "preconditions": [
-        "已加入联盟",
-        "Boss已刷新"
-      ],
-      "validations": [
-        "Boss战斗启动",
-        "伤害计算正确",
-        "奖励发放"
-      ],
-      "expectedResults": [
-        "Boss血量减少",
-        "个人伤害记录"
-      ]
+      "preconditions": ["已加入联盟", "Boss已刷新"],
+      "validations": ["Boss战斗启动", "伤害计算正确", "奖励发放"],
+      "expectedResults": ["Boss血量减少", "个人伤害记录"]
     },
     {
       "id": "v13-ally-6",
       "version": "v13.0",
       "module": "alliance",
       "operation": "联盟商店购买",
-      "preconditions": [
-        "联盟积分充足"
-      ],
-      "validations": [
-        "积分扣除",
-        "商品发放"
-      ],
-      "expectedResults": [
-        "alliancePoints扣除",
-        "获得商品"
-      ]
+      "preconditions": ["联盟积分充足"],
+      "validations": ["积分扣除", "商品发放"],
+      "expectedResults": ["alliancePoints扣除", "获得商品"]
     },
     {
       "id": "v14-prestige-1",
@@ -1591,64 +837,35 @@
       "module": "prestige",
       "operation": "查看声望面板",
       "preconditions": [],
-      "validations": [
-        "声望等级正确",
-        "声望点数正确"
-      ],
-      "expectedResults": [
-        "prestigeLevel和points显示"
-      ]
+      "validations": ["声望等级正确", "声望点数正确"],
+      "expectedResults": ["prestigeLevel和points显示"]
     },
     {
       "id": "v14-prestige-2",
       "version": "v14.0",
       "module": "prestige",
       "operation": "声望商店购买",
-      "preconditions": [
-        "声望点数充足"
-      ],
-      "validations": [
-        "声望点数扣除",
-        "商品发放"
-      ],
-      "expectedResults": [
-        "prestigePoints扣除",
-        "获得商品"
-      ]
+      "preconditions": ["声望点数充足"],
+      "validations": ["声望点数扣除", "商品发放"],
+      "expectedResults": ["prestigePoints扣除", "获得商品"]
     },
     {
       "id": "v14-rebirth-1",
       "version": "v14.0",
       "module": "prestige",
       "operation": "执行转生",
-      "preconditions": [
-        "声望达到转生要求"
-      ],
-      "validations": [
-        "转生执行",
-        "部分资源保留",
-        "传承点数获得"
-      ],
-      "expectedResults": [
-        "游戏重置但保留传承加成",
-        "heritagePoints增加"
-      ]
+      "preconditions": ["声望达到转生要求"],
+      "validations": ["转生执行", "部分资源保留", "传承点数获得"],
+      "expectedResults": ["游戏重置但保留传承加成", "heritagePoints增加"]
     },
     {
       "id": "v14-heritage-1",
       "version": "v14.0",
       "module": "heritage",
       "operation": "查看传承面板",
-      "preconditions": [
-        "完成过转生"
-      ],
-      "validations": [
-        "传承加成正确",
-        "传承等级正确"
-      ],
-      "expectedResults": [
-        "传承加成列表显示"
-      ]
+      "preconditions": ["完成过转生"],
+      "validations": ["传承加成正确", "传承等级正确"],
+      "expectedResults": ["传承加成列表显示"]
     },
     {
       "id": "v14-achieve-1",
@@ -1656,31 +873,17 @@
       "module": "achievement",
       "operation": "查看成就列表",
       "preconditions": [],
-      "validations": [
-        "成就分类正确",
-        "进度显示正确"
-      ],
-      "expectedResults": [
-        "成就列表按分类显示"
-      ]
+      "validations": ["成就分类正确", "进度显示正确"],
+      "expectedResults": ["成就列表按分类显示"]
     },
     {
       "id": "v14-achieve-2",
       "version": "v14.0",
       "module": "achievement",
       "operation": "解锁成就",
-      "preconditions": [
-        "成就条件满足"
-      ],
-      "validations": [
-        "成就标记已解锁",
-        "奖励发放",
-        "声望点数增加"
-      ],
-      "expectedResults": [
-        "achievement.unlocked=true",
-        "奖励到账"
-      ]
+      "preconditions": ["成就条件满足"],
+      "validations": ["成就标记已解锁", "奖励发放", "声望点数增加"],
+      "expectedResults": ["achievement.unlocked=true", "奖励到账"]
     },
     {
       "id": "v14-quest-1",
@@ -1688,46 +891,26 @@
       "module": "quest",
       "operation": "查看任务列表",
       "preconditions": [],
-      "validations": [
-        "任务列表正确",
-        "任务状态正确"
-      ],
-      "expectedResults": [
-        "日常/周常/主线任务可见"
-      ]
+      "validations": ["任务列表正确", "任务状态正确"],
+      "expectedResults": ["日常/周常/主线任务可见"]
     },
     {
       "id": "v14-quest-2",
       "version": "v14.0",
       "module": "quest",
       "operation": "领取任务奖励",
-      "preconditions": [
-        "任务已完成"
-      ],
-      "validations": [
-        "奖励发放正确",
-        "任务标记已领奖"
-      ],
-      "expectedResults": [
-        "奖励资源到账",
-        "quest.claimed=true"
-      ]
+      "preconditions": ["任务已完成"],
+      "validations": ["奖励发放正确", "任务标记已领奖"],
+      "expectedResults": ["奖励资源到账", "quest.claimed=true"]
     },
     {
       "id": "v15-offline-evt-1",
       "version": "v15.0",
       "module": "event",
       "operation": "处理离线事件",
-      "preconditions": [
-        "有未处理离线事件"
-      ],
-      "validations": [
-        "离线事件队列正确",
-        "自动处理规则生效"
-      ],
-      "expectedResults": [
-        "离线事件处理完成"
-      ]
+      "preconditions": ["有未处理离线事件"],
+      "validations": ["离线事件队列正确", "自动处理规则生效"],
+      "expectedResults": ["离线事件处理完成"]
     },
     {
       "id": "v16-season-1",
@@ -1735,45 +918,26 @@
       "module": "season",
       "operation": "查看赛季面板",
       "preconditions": [],
-      "validations": [
-        "赛季信息正确",
-        "赛季进度正确"
-      ],
-      "expectedResults": [
-        "赛季编号/开始时间/结束时间显示"
-      ]
+      "validations": ["赛季信息正确", "赛季进度正确"],
+      "expectedResults": ["赛季编号/开始时间/结束时间显示"]
     },
     {
       "id": "v16-season-2",
       "version": "v16.0",
       "module": "season",
       "operation": "赛季结算领奖",
-      "preconditions": [
-        "赛季结束"
-      ],
-      "validations": [
-        "结算奖励正确",
-        "段位奖励正确"
-      ],
-      "expectedResults": [
-        "赛季奖励发放"
-      ]
+      "preconditions": ["赛季结束"],
+      "validations": ["结算奖励正确", "段位奖励正确"],
+      "expectedResults": ["赛季奖励发放"]
     },
     {
       "id": "v17-social-1",
       "version": "v17.0",
       "module": "social",
       "operation": "添加好友",
-      "preconditions": [
-        "好友列表未满"
-      ],
-      "validations": [
-        "好友请求发送",
-        "对方收到请求"
-      ],
-      "expectedResults": [
-        "好友请求发送成功"
-      ]
+      "preconditions": ["好友列表未满"],
+      "validations": ["好友请求发送", "对方收到请求"],
+      "expectedResults": ["好友请求发送成功"]
     },
     {
       "id": "v17-social-2",
@@ -1781,13 +945,8 @@
       "module": "social",
       "operation": "发送聊天消息",
       "preconditions": [],
-      "validations": [
-        "消息发送成功",
-        "消息显示正确"
-      ],
-      "expectedResults": [
-        "聊天消息出现在频道中"
-      ]
+      "validations": ["消息发送成功", "消息显示正确"],
+      "expectedResults": ["聊天消息出现在频道中"]
     },
     {
       "id": "v17-social-3",
@@ -1795,163 +954,89 @@
       "module": "social",
       "operation": "查看社交排行榜",
       "preconditions": [],
-      "validations": [
-        "排行榜数据正确",
-        "排名更新及时"
-      ],
-      "expectedResults": [
-        "好友排名和全服排名可见"
-      ]
+      "validations": ["排行榜数据正确", "排名更新及时"],
+      "expectedResults": ["好友排名和全服排名可见"]
     },
     {
       "id": "v18-tutorial-1",
       "version": "v18.0",
       "module": "guide",
       "operation": "首次启动检测",
-      "preconditions": [
-        "首次进入游戏"
-      ],
-      "validations": [
-        "首次启动标记正确",
-        "引导流程启动"
-      ],
-      "expectedResults": [
-        "isFirstLaunch=true",
-        "tutorial开始"
-      ]
+      "preconditions": ["首次进入游戏"],
+      "validations": ["首次启动标记正确", "引导流程启动"],
+      "expectedResults": ["isFirstLaunch=true", "tutorial开始"]
     },
     {
       "id": "v18-tutorial-2",
       "version": "v18.0",
       "module": "guide",
       "operation": "执行引导步骤",
-      "preconditions": [
-        "引导进行中"
-      ],
-      "validations": [
-        "引导遮罩正确",
-        "步骤指引正确",
-        "步骤完成检测"
-      ],
-      "expectedResults": [
-        "引导步骤完成",
-        "进入下一步"
-      ]
+      "preconditions": ["引导进行中"],
+      "validations": ["引导遮罩正确", "步骤指引正确", "步骤完成检测"],
+      "expectedResults": ["引导步骤完成", "进入下一步"]
     },
     {
       "id": "v18-tutorial-3",
       "version": "v18.0",
       "module": "guide",
       "operation": "领取引导奖励",
-      "preconditions": [
-        "引导步骤完成"
-      ],
-      "validations": [
-        "奖励发放正确",
-        "资源到账"
-      ],
-      "expectedResults": [
-        "tutorialRewards到账"
-      ]
+      "preconditions": ["引导步骤完成"],
+      "validations": ["奖励发放正确", "资源到账"],
+      "expectedResults": ["tutorialRewards到账"]
     },
     {
       "id": "v18-tutorial-4",
       "version": "v18.0",
       "module": "guide",
       "operation": "剧情事件播放",
-      "preconditions": [
-        "触发剧情节点"
-      ],
-      "validations": [
-        "剧情对话显示",
-        "选择分支正确"
-      ],
-      "expectedResults": [
-        "剧情事件播放完成"
-      ]
+      "preconditions": ["触发剧情节点"],
+      "validations": ["剧情对话显示", "选择分支正确"],
+      "expectedResults": ["剧情事件播放完成"]
     },
     {
       "id": "v18-tutorial-5",
       "version": "v18.0",
       "module": "guide",
       "operation": "引导完成",
-      "preconditions": [
-        "所有引导步骤完成"
-      ],
-      "validations": [
-        "引导标记完成",
-        "引导遮罩移除"
-      ],
-      "expectedResults": [
-        "tutorialCompleted=true"
-      ]
+      "preconditions": ["所有引导步骤完成"],
+      "validations": ["引导标记完成", "引导遮罩移除"],
+      "expectedResults": ["tutorialCompleted=true"]
     },
     {
       "id": "v19-activity-1",
       "version": "v19.0",
       "module": "activity",
       "operation": "查看限时活动",
-      "preconditions": [
-        "有活跃限时活动"
-      ],
-      "validations": [
-        "活动信息正确",
-        "活动时间显示"
-      ],
-      "expectedResults": [
-        "限时活动列表可见"
-      ]
+      "preconditions": ["有活跃限时活动"],
+      "validations": ["活动信息正确", "活动时间显示"],
+      "expectedResults": ["限时活动列表可见"]
     },
     {
       "id": "v19-activity-2",
       "version": "v19.0",
       "module": "activity",
       "operation": "参与限时活动",
-      "preconditions": [
-        "活动进行中"
-      ],
-      "validations": [
-        "活动条件检查",
-        "奖励发放"
-      ],
-      "expectedResults": [
-        "活动进度更新",
-        "奖励到账"
-      ]
+      "preconditions": ["活动进行中"],
+      "validations": ["活动条件检查", "奖励发放"],
+      "expectedResults": ["活动进度更新", "奖励到账"]
     },
     {
       "id": "v19-signin-1",
       "version": "v19.0",
       "module": "activity",
       "operation": "每日签到",
-      "preconditions": [
-        "今日未签到"
-      ],
-      "validations": [
-        "签到成功",
-        "签到奖励发放",
-        "连续签到天数+1"
-      ],
-      "expectedResults": [
-        "签到标记完成",
-        "奖励到账"
-      ]
+      "preconditions": ["今日未签到"],
+      "validations": ["签到成功", "签到奖励发放", "连续签到天数+1"],
+      "expectedResults": ["签到标记完成", "奖励到账"]
     },
     {
       "id": "v19-advisor-1",
       "version": "v19.0",
       "module": "advisor",
       "operation": "查看军师建议",
-      "preconditions": [
-        "触发条件满足"
-      ],
-      "validations": [
-        "建议内容正确",
-        "建议优先级合理"
-      ],
-      "expectedResults": [
-        "军师建议面板显示"
-      ]
+      "preconditions": ["触发条件满足"],
+      "validations": ["建议内容正确", "建议优先级合理"],
+      "expectedResults": ["军师建议面板显示"]
     },
     {
       "id": "v19-copper-1",
@@ -1959,14 +1044,8 @@
       "module": "resource",
       "operation": "铜钱经济操作",
       "preconditions": [],
-      "validations": [
-        "铜钱产出正确",
-        "铜钱消耗正确",
-        "铜钱上限检查"
-      ],
-      "expectedResults": [
-        "铜钱收支平衡"
-      ]
+      "validations": ["铜钱产出正确", "铜钱消耗正确", "铜钱上限检查"],
+      "expectedResults": ["铜钱收支平衡"]
     },
     {
       "id": "v19-material-1",
@@ -1974,29 +1053,17 @@
       "module": "resource",
       "operation": "材料经济操作",
       "preconditions": [],
-      "validations": [
-        "突破石/技能书产出正确",
-        "消耗正确"
-      ],
-      "expectedResults": [
-        "材料收支平衡"
-      ]
+      "validations": ["突破石/技能书产出正确", "消耗正确"],
+      "expectedResults": ["材料收支平衡"]
     },
     {
       "id": "v20-ending-1",
       "version": "v20.0",
       "module": "unification",
       "operation": "触发结局",
-      "preconditions": [
-        "达成统一条件"
-      ],
-      "validations": [
-        "结局类型正确",
-        "结局动画播放"
-      ],
-      "expectedResults": [
-        "结局面板显示"
-      ]
+      "preconditions": ["达成统一条件"],
+      "validations": ["结局类型正确", "结局动画播放"],
+      "expectedResults": ["结局面板显示"]
     },
     {
       "id": "v20-stats-1",
@@ -2004,29 +1071,17 @@
       "module": "unification",
       "operation": "查看全局统计",
       "preconditions": [],
-      "validations": [
-        "统计数据正确",
-        "统计快照完整"
-      ],
-      "expectedResults": [
-        "全局统计面板显示所有数据"
-      ]
+      "validations": ["统计数据正确", "统计快照完整"],
+      "expectedResults": ["全局统计面板显示所有数据"]
     },
     {
       "id": "v20-stats-2",
       "version": "v20.0",
       "module": "unification",
       "operation": "记录全局统计",
-      "preconditions": [
-        "游戏事件发生"
-      ],
-      "validations": [
-        "统计项更新正确",
-        "计数器递增"
-      ],
-      "expectedResults": [
-        "全局统计数据更新"
-      ]
+      "preconditions": ["游戏事件发生"],
+      "validations": ["统计项更新正确", "计数器递增"],
+      "expectedResults": ["全局统计数据更新"]
     },
     {
       "id": "v1-calendar-1",
@@ -2034,29 +1089,17 @@
       "module": "calendar",
       "operation": "查看日历",
       "preconditions": [],
-      "validations": [
-        "游戏日期正确",
-        "季节显示正确"
-      ],
-      "expectedResults": [
-        "日历面板显示当前日期和季节"
-      ]
+      "validations": ["游戏日期正确", "季节显示正确"],
+      "expectedResults": ["日历面板显示当前日期和季节"]
     },
     {
       "id": "v1-calendar-2",
       "version": "v1.0",
       "module": "calendar",
       "operation": "日期推进",
-      "preconditions": [
-        "tick执行"
-      ],
-      "validations": [
-        "日期随时间推进",
-        "季节变化正确"
-      ],
-      "expectedResults": [
-        "游戏日期更新"
-      ]
+      "preconditions": ["tick执行"],
+      "validations": ["日期随时间推进", "季节变化正确"],
+      "expectedResults": ["游戏日期更新"]
     },
     {
       "id": "v5-currency-1",
@@ -2064,64 +1107,26 @@
       "module": "currency",
       "operation": "货币系统操作",
       "preconditions": [],
-      "validations": [
-        "多货币支持正确",
-        "汇率转换正确"
-      ],
-      "expectedResults": [
-        "货币系统正常运作"
-      ]
+      "validations": ["多货币支持正确", "汇率转换正确"],
+      "expectedResults": ["货币系统正常运作"]
     },
     {
       "id": "v5-equip-recommend-1",
       "version": "v5.0",
       "module": "equipment",
       "operation": "装备推荐",
-      "preconditions": [
-        "选择某武将"
-      ],
-      "validations": [
-        "推荐装备适合武将",
-        "推荐列表排序合理"
-      ],
-      "expectedResults": [
-        "推荐装备列表生成"
-      ]
+      "preconditions": ["选择某武将"],
+      "validations": ["推荐装备适合武将", "推荐列表排序合理"],
+      "expectedResults": ["推荐装备列表生成"]
     },
     {
       "id": "v7-arena-season-1",
       "version": "v7.0",
       "module": "pvp",
       "operation": "竞技场赛季切换",
-      "preconditions": [
-        "赛季结束"
-      ],
-      "validations": [
-        "赛季切换正确",
-        "奖励结算",
-        "排名重置"
-      ],
-      "expectedResults": [
-        "新赛季开始",
-        "上赛季奖励发放"
-      ]
-    },
-    {
-      "id": "v5-trade-3",
-      "version": "v5.0",
-      "module": "trade",
-      "operation": "贸易商品刷新",
-      "preconditions": [
-        "商队商品已显示"
-      ],
-      "validations": [
-        "刷新冷却检查正确",
-        "新商品列表生成"
-      ],
-      "expectedResults": [
-        "商品列表更新",
-        "冷却时间重置"
-      ]
+      "preconditions": ["赛季结束"],
+      "validations": ["赛季切换正确", "奖励结算", "排名重置"],
+      "expectedResults": ["新赛季开始", "上赛季奖励发放"]
     }
   ],
   "edges": [
@@ -2863,119 +1868,26 @@
       "to": "v19-material-1",
       "type": "parallel",
       "label": "装备强化消耗材料"
-    },
-    {
-      "from": "v5-trade-2",
-      "to": "v5-trade-3",
-      "type": "branch",
-      "condition": "refreshGoods",
-      "label": "刷新商队商品"
     }
   ],
   "criticalPaths": [
-    [
-      "v1-init-1",
-      "v1-bld-1",
-      "v1-bld-2",
-      "v1-bld-3",
-      "v1-bld-4",
-      "v1-res-2"
-    ],
-    [
-      "v1-init-1",
-      "v2-hero-1",
-      "v2-recruit-1",
-      "v2-formation-1",
-      "v2-formation-2",
-      "v2-formation-3"
-    ],
-    [
-      "v2-formation-3",
-      "v3-campaign-1",
-      "v3-campaign-2",
-      "v3-campaign-3",
-      "v3-campaign-4"
-    ],
-    [
-      "v1-init-1",
-      "v4-map-1",
-      "v4-map-2",
-      "v4-map-3",
-      "v4-map-4"
-    ],
-    [
-      "v1-init-1",
-      "v5-equip-1",
-      "v5-equip-2"
-    ],
-    [
-      "v1-init-1",
-      "v5-shop-1",
-      "v5-shop-2"
-    ],
-    [
-      "v1-init-1",
-      "v6-tech-1",
-      "v6-tech-2",
-      "v6-tech-3"
-    ],
-    [
-      "v2-formation-3",
-      "v7-arena-1",
-      "v7-arena-2",
-      "v7-arena-3"
-    ],
-    [
-      "v1-init-1",
-      "v8-exp-1",
-      "v8-exp-2",
-      "v8-exp-3"
-    ],
-    [
-      "v1-init-2",
-      "v9-offline-1",
-      "v9-offline-2"
-    ],
-    [
-      "v1-init-1",
-      "v13-ally-1",
-      "v13-ally-3",
-      "v13-ally-4"
-    ],
-    [
-      "v1-init-1",
-      "v14-prestige-1",
-      "v14-rebirth-1",
-      "v14-heritage-1"
-    ],
-    [
-      "v1-init-1",
-      "v18-tutorial-1",
-      "v18-tutorial-2",
-      "v18-tutorial-3",
-      "v18-tutorial-5"
-    ],
-    [
-      "v1-init-1",
-      "v20-ending-1",
-      "v20-stats-1"
-    ],
-    [
-      "v11-awaken-1",
-      "v11-awaken-2",
-      "v2-hero-3"
-    ],
-    [
-      "v1-bld-3",
-      "v1-bld-5"
-    ],
-    [
-      "v3-campaign-2",
-      "v3-campaign-6"
-    ],
-    [
-      "v16-season-1",
-      "v16-season-2"
-    ]
+    ["v1-init-1", "v1-bld-1", "v1-bld-2", "v1-bld-3", "v1-bld-4", "v1-res-2"],
+    ["v1-init-1", "v2-hero-1", "v2-recruit-1", "v2-formation-1", "v2-formation-2", "v2-formation-3"],
+    ["v2-formation-3", "v3-campaign-1", "v3-campaign-2", "v3-campaign-3", "v3-campaign-4"],
+    ["v1-init-1", "v4-map-1", "v4-map-2", "v4-map-3", "v4-map-4"],
+    ["v1-init-1", "v5-equip-1", "v5-equip-2"],
+    ["v1-init-1", "v5-shop-1", "v5-shop-2"],
+    ["v1-init-1", "v6-tech-1", "v6-tech-2", "v6-tech-3"],
+    ["v2-formation-3", "v7-arena-1", "v7-arena-2", "v7-arena-3"],
+    ["v1-init-1", "v8-exp-1", "v8-exp-2", "v8-exp-3"],
+    ["v1-init-2", "v9-offline-1", "v9-offline-2"],
+    ["v1-init-1", "v13-ally-1", "v13-ally-3", "v13-ally-4"],
+    ["v1-init-1", "v14-prestige-1", "v14-rebirth-1", "v14-heritage-1"],
+    ["v1-init-1", "v18-tutorial-1", "v18-tutorial-2", "v18-tutorial-3", "v18-tutorial-5"],
+    ["v1-init-1", "v20-ending-1", "v20-stats-1"],
+    ["v11-awaken-1", "v11-awaken-2", "v2-hero-3"],
+    ["v1-bld-3", "v1-bld-5"],
+    ["v3-campaign-2", "v3-campaign-6"],
+    ["v16-season-1", "v16-season-2"]
   ]
 }

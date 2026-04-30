@@ -1,180 +1,330 @@
 {
-  "dagId": "three-kingdoms-events",
+  "dagId": "three-kingdoms-event-v1",
   "dagType": "event",
-  "nodeCount": 40,
-  "edgeCount": 42,
-  "totalPaths": 38,
+  "nodeCount": 91,
+  "edgeCount": 94,
+  "totalPaths": 62,
   "criticalPaths": [
     [
-      "evt-battle-end",
-      "evt-battle-victory",
-      "evt-quest-complete",
-      "evt-quest-claim",
-      "evt-res-changed"
+      "evt-game-initialized",
+      "evt-tutorial-first-launch-detected",
+      "evt-tutorial-phase-changed",
+      "evt-tutorial-step-completed",
+      "evt-tutorial-reward-granted",
+      "evt-resource-changed"
     ]
   ],
   "paths": [
     [
-      "evt-res-insufficient"
+      "evt-game-initialized",
+      "evt-resource-changed"
     ],
     [
-      "evt-equip-equip"
+      "evt-game-saved",
+      "evt-resource-changed"
     ],
     [
-      "evt-alliance-create"
+      "evt-resource-overflow",
+      "evt-resource-cap-warning"
     ],
     [
-      "evt-expedition-start"
+      "evt-currency-changed",
+      "evt-resource-changed"
     ],
     [
-      "evt-bld-upgrade-start",
-      "evt-res-changed"
+      "evt-economy-tech-researched",
+      "evt-resource-changed"
     ],
     [
-      "evt-bld-upgrade-done",
-      "evt-res-changed"
+      "evt-event-expired",
+      "evt-event-log-added"
     ],
     [
-      "evt-hero-recruit",
-      "evt-res-changed"
+      "evt-event-chain-advanced",
+      "evt-event-story-triggered"
     ],
     [
-      "evt-hero-recruit",
-      "evt-achievement"
+      "evt-shop-goods-purchased",
+      "evt-resource-changed"
     ],
     [
-      "evt-hero-starup",
-      "evt-res-changed"
+      "evt-shop-goods-purchased",
+      "evt-quest-progress"
     ],
     [
-      "evt-hero-starup",
-      "evt-achievement"
+      "evt-season-settled",
+      "evt-resource-changed"
     ],
     [
-      "evt-tech-research-start",
-      "evt-res-changed"
+      "evt-season-settled",
+      "evt-season-created"
     ],
     [
-      "evt-battle-start",
-      "evt-res-changed"
+      "evt-advisor-suggestion-executed",
+      "evt-resource-changed"
     ],
     [
-      "evt-battle-end",
-      "evt-battle-defeat"
+      "evt-prestige-shop-purchased",
+      "evt-resource-changed"
     ],
     [
-      "evt-siege-start",
-      "evt-res-changed"
+      "evt-siege-victory",
+      "evt-siege-auto-garrison"
     ],
     [
-      "evt-siege-result",
-      "evt-res-changed"
+      "evt-siege-defeat",
+      "evt-resource-changed"
     ],
     [
-      "evt-siege-result",
-      "evt-achievement"
+      "evt-calendar-day-changed",
+      "evt-quest-activity-reset"
     ],
     [
-      "evt-shop-buy",
-      "evt-res-changed"
+      "evt-npc-created",
+      "evt-patrol-assigned"
     ],
     [
-      "evt-equip-enhance",
-      "evt-res-changed"
+      "evt-npc-spawned",
+      "evt-patrol-assigned"
     ],
     [
-      "evt-offline-reward",
-      "evt-res-changed"
+      "evt-npc-training-win",
+      "evt-resource-changed"
     ],
     [
-      "evt-guide-step",
-      "evt-guide-done"
+      "evt-tutorial-guide-step-completed",
+      "evt-tutorial-guide-completed"
     ],
     [
-      "evt-guide-step",
-      "evt-res-changed"
+      "evt-heritage-initial-gift-claimed",
+      "evt-resource-changed"
     ],
     [
-      "evt-alliance-join",
-      "evt-achievement"
+      "evt-ending-unified",
+      "evt-graphics-transition-complete"
     ],
     [
-      "evt-mail-receive",
-      "evt-mail-read"
+      "evt-graphics-preset-changed",
+      "evt-graphics-transition-complete"
     ],
     [
-      "evt-arena-battle",
-      "evt-res-changed"
+      "evt-game-loaded",
+      "evt-game-offline-earnings",
+      "evt-resource-changed"
     ],
     [
-      "evt-arena-battle",
-      "evt-achievement"
+      "evt-economy-fusion-tech-completed",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
     ],
     [
-      "evt-expedition-done",
-      "evt-res-changed"
+      "evt-tech-offline-research-completed",
+      "evt-economy-tech-completed",
+      "evt-quest-progress"
     ],
     [
-      "evt-expedition-done",
-      "evt-achievement"
+      "evt-event-encounter-resolved",
+      "evt-event-resolved",
+      "evt-resource-changed"
     ],
     [
-      "evt-rebirth",
-      "evt-res-changed"
+      "evt-event-encounter-resolved",
+      "evt-event-resolved",
+      "evt-event-log-added"
     ],
     [
-      "evt-rebirth",
-      "evt-achievement"
+      "evt-quest-completed",
+      "evt-quest-reward-claimed",
+      "evt-resource-changed"
     ],
     [
-      "evt-daily-refresh",
-      "evt-quest-accept"
+      "evt-quest-activity-changed",
+      "evt-quest-activity-milestone-claimed",
+      "evt-resource-changed"
     ],
     [
-      "evt-bld-upgrade-done",
-      "evt-bld-levelup",
-      "evt-achievement"
+      "evt-advisor-suggestion-executed",
+      "evt-building-upgrade-start",
+      "evt-resource-changed"
     ],
     [
-      "evt-tech-research-done",
-      "evt-tech-unlocked",
-      "evt-achievement"
+      "evt-territory-upgraded",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
     ],
     [
-      "evt-battle-end",
-      "evt-battle-victory",
-      "evt-res-changed"
+      "evt-siege-victory",
+      "evt-territory-captured",
+      "evt-quest-progress"
     ],
     [
-      "evt-battle-end",
-      "evt-battle-victory",
-      "evt-achievement"
+      "evt-siege-victory",
+      "evt-siege-reward",
+      "evt-resource-changed"
     ],
     [
-      "evt-save",
-      "evt-load",
-      "evt-res-changed"
+      "evt-garrison-assigned",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
     ],
     [
-      "evt-formation-change",
-      "evt-hero-dispatch",
-      "evt-res-changed"
+      "evt-garrison-withdrawn",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
     ],
     [
-      "evt-battle-end",
-      "evt-battle-victory",
-      "evt-hero-levelup",
-      "evt-res-changed"
+      "evt-calendar-day-changed",
+      "evt-quest-daily-refreshed",
+      "evt-quest-accepted"
     ],
     [
-      "evt-battle-end",
-      "evt-battle-victory",
-      "evt-quest-complete",
-      "evt-quest-claim",
-      "evt-res-changed"
+      "evt-weather-changed",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
+    ],
+    [
+      "evt-npc-dialog-started",
+      "evt-npc-dialog-ended",
+      "evt-resource-changed"
+    ],
+    [
+      "evt-npc-gift-given",
+      "evt-npc-affinity-changed",
+      "evt-npc-affinity-level-changed"
+    ],
+    [
+      "evt-npc-alliance-formed",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
+    ],
+    [
+      "evt-tutorial-guide-step-completed",
+      "evt-tutorial-reward-granted",
+      "evt-resource-changed"
+    ],
+    [
+      "evt-tutorial-guide-skipped",
+      "evt-tutorial-completed",
+      "evt-tutorial-protection-changed"
+    ],
+    [
+      "evt-heritage-rebuild-completed",
+      "evt-building-upgraded",
+      "evt-resource-changed"
+    ],
+    [
+      "evt-heritage-rebuild-completed",
+      "evt-building-upgraded",
+      "evt-building-unlocked"
+    ],
+    [
+      "evt-heritage-rebuild-completed",
+      "evt-building-upgraded",
+      "evt-quest-progress"
+    ],
+    [
+      "evt-heritage-rebuild-completed",
+      "evt-building-upgraded",
+      "evt-tech-links-changed"
+    ],
+    [
+      "evt-heritage-rebuild-completed",
+      "evt-building-upgraded",
+      "evt-alert-added"
+    ],
+    [
+      "evt-game-initialized",
+      "evt-tutorial-first-launch-detected",
+      "evt-tutorial-phase-changed",
+      "evt-tutorial-accelerated"
+    ],
+    [
+      "evt-tech-offline-research-completed",
+      "evt-economy-tech-completed",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
+    ],
+    [
+      "evt-siege-victory",
+      "evt-territory-captured",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
+    ],
+    [
+      "evt-siege-victory",
+      "evt-territory-captured",
+      "evt-achievement-completed",
+      "evt-resource-changed"
+    ],
+    [
+      "evt-siege-victory",
+      "evt-territory-captured",
+      "evt-achievement-completed",
+      "evt-achievement-chain-completed"
+    ],
+    [
+      "evt-calendar-day-changed",
+      "evt-calendar-season-changed",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
+    ],
+    [
+      "evt-npc-removed",
+      "evt-patrol-unassigned",
+      "evt-npc-moved",
+      "evt-patrol-path-registered"
+    ],
+    [
+      "evt-heritage-rebuild-completed",
+      "evt-building-upgraded",
+      "evt-resource-rate-changed",
+      "evt-resource-cap-warning"
+    ],
+    [
+      "evt-heritage-rebuild-completed",
+      "evt-building-upgraded",
+      "evt-achievement-completed",
+      "evt-resource-changed"
+    ],
+    [
+      "evt-heritage-rebuild-completed",
+      "evt-building-upgraded",
+      "evt-achievement-completed",
+      "evt-achievement-chain-completed"
+    ],
+    [
+      "evt-bond-story-triggered",
+      "evt-story-triggered",
+      "evt-story-act-advanced",
+      "evt-story-completed",
+      "evt-resource-changed"
+    ],
+    [
+      "evt-game-initialized",
+      "evt-tutorial-first-launch-detected",
+      "evt-tutorial-phase-changed",
+      "evt-tutorial-step-completed",
+      "evt-tutorial-reward-granted",
+      "evt-resource-changed"
+    ],
+    [
+      "evt-game-initialized",
+      "evt-tutorial-first-launch-detected",
+      "evt-tutorial-phase-changed",
+      "evt-tutorial-step-completed",
+      "evt-tutorial-story-triggered",
+      "evt-tutorial-story-completed"
+    ],
+    [
+      "evt-game-initialized",
+      "evt-tutorial-first-launch-detected",
+      "evt-tutorial-phase-changed",
+      "evt-tutorial-step-completed",
+      "evt-tutorial-completed",
+      "evt-tutorial-protection-changed"
     ]
   ],
-  "avgPathLength": 2.18,
-  "maxPathLength": 5,
-  "minPathLength": 1
+  "avgPathLength": 2.97,
+  "maxPathLength": 6,
+  "minPathLength": 2
 }

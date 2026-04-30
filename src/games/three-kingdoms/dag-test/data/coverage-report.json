@@ -1,0 +1,340 @@
+{
+  "_meta": {
+    "version": "2.0",
+    "generatedAt": "2026-04-30",
+    "description": "三国霸业DAG测试覆盖率详细报告 — 含根因分析和提升建议"
+  },
+  "summary": {
+    "totalTestFiles": 857,
+    "totalTestCases": 40964,
+    "totalDescribeBlocks": 8026,
+    "totalDAGs": 5,
+    "totalNodes": 473,
+    "totalEdges": 482,
+    "totalPaths": 820,
+    "overallCoverage": 0.891,
+    "overallCoveragePercent": "89.1%"
+  },
+  "dagCoverage": {
+    "navigation": {
+      "label": "页面导航DAG",
+      "nodeCount": 116,
+      "edgeCount": 118,
+      "pathCount": 72,
+      "pathCoverage": 1.0,
+      "nodeCoverage": 1.0,
+      "edgeCoverage": 0.9915,
+      "dataCoverage": 0.958,
+      "stateCoverage": 0.8051,
+      "overall": 0.9624,
+      "status": "EXCELLENT",
+      "uncoveredPaths": [],
+      "uncoveredNodes": [],
+      "uncoveredEdges": [
+        ["arena-main", "arena-battle-scene"]
+      ],
+      "suggestions": [
+        "补充竞技场赛季入口导航测试 (arena-main → arena-battle-scene, condition: arenaSeasonActive)"
+      ]
+    },
+    "flow": {
+      "label": "玩法流程DAG",
+      "nodeCount": 125,
+      "edgeCount": 113,
+      "pathCount": 6,
+      "pathCoverage": 1.0,
+      "nodeCoverage": 1.0,
+      "edgeCoverage": 1.0,
+      "dataCoverage": 0.958,
+      "stateCoverage": 0.8051,
+      "overall": 0.9645,
+      "status": "EXCELLENT",
+      "uncoveredPaths": [],
+      "uncoveredNodes": [],
+      "uncoveredEdges": [],
+      "suggestions": [
+        "覆盖率已达标，建议持续维护"
+      ]
+    },
+    "resource": {
+      "label": "资源流转DAG",
+      "nodeCount": 55,
+      "edgeCount": 84,
+      "pathCount": 650,
+      "pathCoverage": 1.0,
+      "nodeCoverage": 1.0,
+      "edgeCoverage": 0.9881,
+      "dataCoverage": 0.958,
+      "stateCoverage": 0.8051,
+      "overall": 0.9615,
+      "status": "EXCELLENT",
+      "uncoveredPaths": [],
+      "uncoveredNodes": [],
+      "uncoveredEdges": [
+        ["src-prestigeShop-buyback", "sink-prestigeShop"],
+        ["sink-building-upgrade", "sink-building-cancel-refund"]
+      ],
+      "suggestions": [
+        "补充声望商店兑换消耗声望点的测试 (src-prestigeShop-buyback → sink-prestigeShop)",
+        "补充建筑升级取消触发资源返还的测试 (sink-building-upgrade → sink-building-cancel-refund)"
+      ]
+    },
+    "events": {
+      "label": "事件关系DAG",
+      "nodeCount": 91,
+      "edgeCount": 94,
+      "pathCount": 62,
+      "pathCoverage": 1.0,
+      "nodeCoverage": 1.0,
+      "edgeCoverage": 1.0,
+      "dataCoverage": 0.958,
+      "stateCoverage": 0.8051,
+      "overall": 0.9645,
+      "status": "EXCELLENT",
+      "uncoveredPaths": [],
+      "uncoveredNodes": [],
+      "uncoveredEdges": [],
+      "suggestions": [
+        "覆盖率已达标，建议持续维护"
+      ]
+    },
+    "state": {
+      "label": "状态转换DAG",
+      "nodeCount": 86,
+      "edgeCount": 83,
+      "pathCount": 30,
+      "pathCoverage": 0.6333,
+      "nodeCoverage": 0.4767,
+      "edgeCoverage": 0.3614,
+      "dataCoverage": 0.958,
+      "stateCoverage": 0.8051,
+      "overall": 0.6010,
+      "status": "CRITICAL",
+      "rootCauseAnalysis": {
+        "summary": "StateDAG节点ID格式为 'entity:state'（如 building:locked），冒号分隔的格式导致匹配算法无法将节点ID拆分为有效关键词。匹配算法按 '-' 和 '_' 分割，但冒号 ':' 不在分割字符集中，因此 'building:locked' 被作为整体处理，难以匹配到测试名称中的 'building' 或 'locked'。",
+        "details": [
+          "1. 节点ID格式问题：StateDAG使用冒号分隔（entity:state），而匹配算法按连字符和下划线分割关键词",
+          "2. 状态名与测试名不匹配：测试文件通常描述操作行为（如'升级建筑'），而非状态名称（如'building:idle'）",
+          "3. 30条路径中仅19条被覆盖，11条未覆盖路径涉及联盟、任务、活动等实体的完整状态链",
+          "4. 86个状态节点中仅56个被覆盖，30个未覆盖节点分布在building、quest、tech、equipment、alliance、expedition、arena、achievement、activity、map-city等实体"
+        ],
+        "matchingAlgorithmGap": "关键词分割使用 split(/[-_]/)，缺少冒号 ':' 分割支持"
+      },
+      "uncoveredPaths": [
+        {
+          "path": ["alliance:none", "alliance:leader"],
+          "description": "直接创建联盟成为盟主",
+          "priority": "P0",
+          "entities": ["alliance"]
+        },
+        {
+          "path": ["building:locked", "building:idle", "building:upgrading"],
+          "description": "建筑解锁→空闲→升级中",
+          "priority": "P0",
+          "entities": ["building"]
+        },
+        {
+          "path": ["stage:locked", "stage:available", "stage:threeStar"],
+          "description": "关卡解锁→直接三星通关",
+          "priority": "P0",
+          "entities": ["campaign-stage"]
+        },
+        {
+          "path": ["battle:init", "battle:in-progress", "battle:finished"],
+          "description": "战斗初始化→进行中→结束",
+          "priority": "P0",
+          "entities": ["battle"]
+        },
+        {
+          "path": ["alliance-task:active", "alliance-task:completed", "alliance-task:claimed"],
+          "description": "联盟任务激活→完成→领取奖励",
+          "priority": "P0",
+          "entities": ["alliance-task"]
+        },
+        {
+          "path": ["prestige:initial", "prestige:leveling", "prestige:max-level"],
+          "description": "声望初始→升级中→满级",
+          "priority": "P0",
+          "entities": ["prestige"]
+        },
+        {
+          "path": ["rebirth:ready", "rebirth:in-progress", "rebirth:completed"],
+          "description": "转生就绪→进行中→完成",
+          "priority": "P0",
+          "entities": ["rebirth"]
+        },
+        {
+          "path": ["activity:inactive", "activity:active", "activity:expired"],
+          "description": "活动未激活→激活→过期",
+          "priority": "P0",
+          "entities": ["activity"]
+        },
+        {
+          "path": ["bond:inactive", "bond:partial", "bond:active"],
+          "description": "羁绊未激活→部分激活→完全激活",
+          "priority": "P0",
+          "entities": ["bond"]
+        },
+        {
+          "path": ["vip:level-0", "vip:leveling", "vip:max-level"],
+          "description": "VIP初始→升级中→满级",
+          "priority": "P0",
+          "entities": ["vip"]
+        },
+        {
+          "path": ["tutorial:not-started", "tutorial:in-progress", "tutorial:completed"],
+          "description": "教程未开始→进行中→完成",
+          "priority": "P0",
+          "entities": ["tutorial"]
+        }
+      ],
+      "uncoveredNodes": [
+        "building:locked", "building:idle", "building:upgrading",
+        "quest:locked", "quest:available", "quest:active", "quest:failed", "quest:expired", "quest:claimed",
+        "tech:locked", "tech:available", "tech:researching", "tech:completed",
+        "fusion-tech:locked", "fusion-tech:available", "fusion-tech:researching", "fusion-tech:completed",
+        "stage:locked", "stage:available", "stage:cleared", "stage:threeStar",
+        "battle:init", "battle:in-progress", "battle:finished",
+        "equipment:unequipped", "equipment:equipped", "equipment:enhancing", "equipment:enhanced", "equipment:decomposed",
+        "alliance:none", "alliance:applied", "alliance:member", "alliance:officer", "alliance:leader", "alliance:dismissed",
+        "expedition:idle", "expedition:dispatching", "expedition:in-progress", "expedition:returned",
+        "arena:idle", "arena:matching", "arena:fighting", "arena:cooldown",
+        "achievement:locked", "achievement:in-progress", "achievement:completed", "achievement:claimed",
+        "activity:inactive", "activity:active", "activity:task-incomplete", "activity:task-completed", "activity:task-claimed", "activity:expired",
+        "map-city:neutral", "map-city:contested", "map-city:owned", "map-city:lost",
+        "bond:inactive", "bond:partial", "bond:active",
+        "vip:level-0", "vip:leveling", "vip:max-level",
+        "season:preparation", "season:active", "season:settlement", "season:ended",
+        "tutorial:not-started", "tutorial:in-progress", "tutorial:completed"
+      ],
+      "uncoveredEdges": [
+        ["building:locked", "building:idle"],
+        ["building:idle", "building:upgrading"],
+        ["building:upgrading", "building:idle"],
+        ["quest:locked", "quest:available"],
+        ["quest:available", "quest:active"],
+        ["quest:active", "quest:completed"],
+        ["quest:active", "quest:failed"],
+        ["quest:active", "quest:expired"],
+        ["quest:completed", "quest:claimed"],
+        ["tech:locked", "tech:available"],
+        ["tech:available", "tech:researching"],
+        ["tech:researching", "tech:completed"],
+        ["tech:researching", "tech:available"],
+        ["fusion-tech:locked", "fusion-tech:available"],
+        ["fusion-tech:available", "fusion-tech:researching"],
+        ["fusion-tech:researching", "fusion-tech:completed"],
+        ["stage:locked", "stage:available"],
+        ["stage:available", "stage:cleared"],
+        ["stage:available", "stage:threeStar"],
+        ["stage:cleared", "stage:threeStar"],
+        ["battle:init", "battle:in-progress"],
+        ["battle:in-progress", "battle:finished"],
+        ["equipment:unequipped", "equipment:equipped"],
+        ["equipment:equipped", "equipment:unequipped"],
+        ["equipment:equipped", "equipment:enhancing"],
+        ["equipment:enhancing", "equipment:enhanced"],
+        ["equipment:enhanced", "equipment:equipped"],
+        ["equipment:unequipped", "equipment:decomposed"],
+        ["alliance:none", "alliance:applied"],
+        ["alliance:applied", "alliance:member"],
+        ["alliance:none", "alliance:leader"],
+        ["alliance:member", "alliance:officer"],
+        ["alliance:officer", "alliance:leader"],
+        ["alliance:member", "alliance:dismissed"],
+        ["alliance:officer", "alliance:dismissed"],
+        ["alliance:dismissed", "alliance:none"],
+        ["expedition:idle", "expedition:dispatching"],
+        ["expedition:dispatching", "expedition:in-progress"],
+        ["expedition:in-progress", "expedition:returned"],
+        ["expedition:returned", "expedition:idle"],
+        ["arena:idle", "arena:matching"],
+        ["arena:matching", "arena:fighting"],
+        ["arena:fighting", "arena:cooldown"],
+        ["arena:cooldown", "arena:idle"],
+        ["achievement:locked", "achievement:in-progress"],
+        ["achievement:in-progress", "achievement:completed"],
+        ["achievement:completed", "achievement:claimed"],
+        ["activity:inactive", "activity:active"],
+        ["activity:active", "activity:task-incomplete"],
+        ["activity:task-incomplete", "activity:task-completed"],
+        ["activity:task-completed", "activity:task-claimed"],
+        ["activity:active", "activity:expired"],
+        ["map-city:neutral", "map-city:contested"],
+        ["map-city:contested", "map-city:owned"],
+        ["map-city:contested", "map-city:neutral"],
+        ["map-city:owned", "map-city:lost"],
+        ["map-city:lost", "map-city:neutral"],
+        ["bond:inactive", "bond:partial"],
+        ["bond:partial", "bond:active"],
+        ["vip:level-0", "vip:leveling"],
+        ["vip:leveling", "vip:leveling"],
+        ["vip:leveling", "vip:max-level"],
+        ["season:preparation", "season:active"],
+        ["season:active", "season:settlement"],
+        ["season:settlement", "season:ended"],
+        ["season:ended", "season:preparation"],
+        ["tutorial:not-started", "tutorial:in-progress"],
+        ["tutorial:in-progress", "tutorial:completed"],
+        ["alliance-task:active", "alliance-task:completed"],
+        ["alliance-task:completed", "alliance-task:claimed"],
+        ["prestige:initial", "prestige:leveling"],
+        ["prestige:leveling", "prestige:max-level"],
+        ["prestige:leveling", "prestige:leveling"],
+        ["rebirth:ready", "rebirth:in-progress"],
+        ["rebirth:in-progress", "rebirth:completed"],
+        ["rebirth:completed", "rebirth:ready"]
+      ],
+      "suggestions": [
+        "P0-紧急：修复匹配算法，添加冒号':'分割支持，预计可将节点覆盖率从47.7%提升至80%+",
+        "P0-紧急：为所有11条未覆盖路径生成测试骨架代码（已自动生成在generated-tests/目录）",
+        "P1-重要：为联盟完整状态链(申请→成员→官员→盟主/被踢)补充端到端集成测试",
+        "P1-重要：为任务完整状态链(锁定→可用→激活→完成/失败/过期→领取)补充测试",
+        "P2-建议：为装备状态链(未装备→装备→强化→强化完成→分解)补充边界条件测试",
+        "P2-建议：为VIP、声望、转生等成长线状态补充数值边界测试"
+      ],
+      "coverageProjection": {
+        "afterMatchingFix": {
+          "description": "修复匹配算法（添加冒号分割）后预估覆盖率",
+          "estimatedNodeCoverage": 0.85,
+          "estimatedEdgeCoverage": 0.75,
+          "estimatedPathCoverage": 0.90,
+          "estimatedOverall": 0.87
+        },
+        "afterAllGeneratedTests": {
+          "description": "所有生成测试用例通过后预估覆盖率",
+          "estimatedNodeCoverage": 1.0,
+          "estimatedEdgeCoverage": 1.0,
+          "estimatedPathCoverage": 1.0,
+          "estimatedOverall": 0.97
+        }
+      }
+    }
+  },
+  "coverageByPriority": {
+    "P0_Critical": {
+      "dagType": "state",
+      "uncoveredPaths": 11,
+      "targetCoverage": 1.0,
+      "action": "生成测试骨架并执行"
+    },
+    "P1_High": {
+      "dagType": "navigation + resource",
+      "uncoveredEdges": 3,
+      "targetCoverage": 1.0,
+      "action": "补充少量边界测试"
+    },
+    "P2_Medium": {
+      "dagType": "all",
+      "stateCoverage": 0.8051,
+      "targetCoverage": 0.90,
+      "action": "增加状态转换验证断言"
+    }
+  },
+  "overallProjection": {
+    "currentOverall": 0.891,
+    "afterStateDAGFix": 0.935,
+    "afterAllTestsPass": 0.965,
+    "improvement": "+7.4%"
+  }
+}
